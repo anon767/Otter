@@ -1,0 +1,7 @@
+./run-merge \
+	--useLogicalOperators \
+	--doexecute \
+		$*
+
+	# --printQueries \
+	# --printSTP \

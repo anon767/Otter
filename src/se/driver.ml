@@ -1,0 +1,578 @@
+open Cil
+open Types
+open Executeargs
+
+module PcSet = Set.Make
+		(struct
+			type t = annotated_bytes list
+			let compare = compare
+		end)
+
+let branches_taken = Hashtbl.create 100
+;;
+
+(* Note:
+ * stmt = Cil.stmt
+ * statement is union type of Cil.stmt and Cil.instr
+ *)
+(* TODO: need so modification for handling exit() *)
+let init_argvs state func argvs = 
+	let rec impl state pars argvs =
+		match (pars,argvs) with
+			| (h1::t1,h2::t2) ->
+				let (block,offset) = Eval.lval state h1 in
+				let size = (Cil.bitsSizeOf (Cil.typeOfLval h1))/8 in
+				let state2 = MemOp.state__assign state (block,offset) size h2
+				in 
+					impl state2 t1 t2
+			| ([],varg) -> 	
+				Output.set_mode Output.MSG_FUNC;
+				Output.print_endline ("Rest of args: "^(Utility.print_list To_string.bytes varg " , "));
+				{state with va_arg = varg::state.va_arg; }
+			| (_,[]) -> failwith "Unreachable init_argvs" 
+	in
+		let pars = List.map (fun x -> (Var(x),NoOffset)) func.sformals in
+			impl state pars argvs
+ ;;
+
+let rec
+
+exec_function state func argvs caller_stmt =
+  if List.length func.sallstmts > 0 then
+    Output.set_cur_loc (Cil.get_stmtLoc (List.hd func.sallstmts).skind)
+  else 
+    failwith "No statements; you probably forgot to use the '--domakeCFG' flag"
+    ;
+	let state1 = MemOp.state__start_fcall state func caller_stmt in
+	let state2 = init_argvs state1 func argvs in
+	let scfg = Scfg.universe in
+	let entry = List.hd func.sallstmts in
+		exec_stmt state2 scfg entry
+and
+
+exec_statement state scfg (statement: statement) =
+	match statement with
+		| MainEntry -> failwith "MainEntry is never executed!"
+		| Instruction (instr, stmt) -> 
+			(* ugly globals for current instr/stmt *)
+			Types.current_stmt := stmt;
+			Types.current_instr := instr;
+			let state2 = exec_instr state scfg instr stmt in 
+				state2
+		| Statement (stmt) -> 
+			Types.current_stmt := stmt;
+			exec_stmt state scfg stmt
+			
+and
+			
+exec_stmt state scfg (stmt: Cil.stmt) =
+	Output.set_mode Output.MSG_STMT;
+    Output.set_cur_loc (Cil.get_stmtLoc stmt.skind);
+	Output.print_endline (To_string.stmt stmt);
+	match stmt.skind with
+		| Instr (instrs) ->
+				if List.length instrs = 0 then exec_stmt state scfg (next_stmt stmt) else
+					let instr =
+						List.hd instrs
+					in
+					exec_statement state scfg (Instruction(instr, stmt)) (* at least one instr? *)
+
+		| Return (expopt, loc) ->
+				begin
+					let instruction = MemOp.state__get_caller_stmt state in
+					let state2 =
+						match expopt with
+							| None ->
+									let state3 = MemOp.state__end_fcall state in
+									state3
+							| Some(exp) ->
+									begin match instruction with
+										| Instruction(Call(lvalopt, fexp, exps, loc), stmt) ->
+												let state3 = begin match lvalopt with
+													| None ->
+															let state3 = MemOp.state__end_fcall state in
+															state3
+													| Some(lval) -> (* assign exp to lval *)
+															let rv = Eval.rval state exp in
+															let state = MemOp.state__end_fcall state in
+															let (block, offset) = Eval.lval state lval in
+															let size = (Cil.bitsSizeOf (Cil.typeOfLval lval)) / 8 in
+															MemOp.state__assign state (block, offset) size rv
+												end
+												in
+												state3
+										| MainEntry ->
+												state
+										| _ -> failwith "Impossible"
+									end
+					in
+					(* varinfo_to_block: memory_block VarinfoMap.t; *)
+					let pop_frame = List.hd state.locals in
+					let state2' = VarinfoMap.fold (fun varinfo block s -> MemOp.state__remove_block s block) pop_frame.varinfo_to_block state2 in 
+					if instruction = MainEntry then(
+						Output.set_mode Output.MSG_REG;
+						Output.print_endline "Program execution finished";
+						state2')
+						else
+							exec_statement state2' scfg (next_statement instruction)
+				end
+		| Goto (stmtref, loc) ->
+				exec_stmt state scfg (!stmtref)
+		| Loop (block, loc, breakopt, continueopt) ->
+				exec_block state scfg block
+		| If (exp, block1, block2, loc) ->
+				begin
+				(* try a branch *)
+					let try_branch pcopt block =
+						let state_t = match pcopt with
+							| Some(pc) -> MemOp.state__add_path_condition state pc
+							| None -> state
+						in
+						if run_args.arg_branch_coverage then
+							begin
+								let which = (if block == block1 then fst else snd) in
+								try
+									let pcSet_ref = which (Hashtbl.find branches_taken (exp,loc)) in
+									(* Add the path condition to the list of ways we take this branch *)
+									pcSet_ref := PcSet.add state.human_readable_path_condition !pcSet_ref
+								with Not_found ->
+									(* We haven't hit this conditional before. Initialize its entry in
+										 the branch coverage table with the current path condition (and
+										 an empty set for the other direction of the branch). *)
+									Hashtbl.add
+										branches_taken
+										(exp,loc)
+										(let res = (ref PcSet.empty, ref PcSet.empty) in
+										which res := PcSet.singleton state.human_readable_path_condition;
+										res)
+							end;
+						if block_is_empty block then
+							exec_stmt state_t scfg (next_stmt stmt)
+						else
+							exec_block state_t scfg block
+					in
+ 
+					let rv = Eval.rval state exp in
+ 
+					Output.set_mode Output.MSG_GUARD;
+					if(Output.need_print Output.MSG_GUARD) then
+						begin
+							Output.print_endline ("Check if the following holds:");
+							Output.print_endline (To_string.bytes rv);
+							Output.print_endline ("Under the path condition:")
+						end;
+					let pc_str = (Utility.print_list (fun pc -> To_string.bytes pc) state.path_condition " AND ") in
+					Output.print_endline (if String.length pc_str = 0 then "(nil)" else pc_str);
+ 
+					let truth = Stp.eval state.path_condition rv in
+ 
+					Output.set_mode Output.MSG_REG;
+					if truth == Stp.True then
+						begin
+							Output.print_endline "True";
+							try_branch None block1
+						end
+					else if truth == Stp.False then
+						begin
+							Output.print_endline "False";
+							try_branch None block2
+						end
+					else
+						begin
+							Output.print_endline "Unknown";
+							Output.increase ();
+							Output.set_mode Output.MSG_MUSTPRINT;
+							Output.print_endline ("Try True branch of the conditional at " ^ (To_string.location loc) ^ " by assuming (" ^ (To_string.exp exp) ^")");
+							let state_t = try try_branch (Some rv) block1 with Function.Notification_Exit(state_exit, _) -> state_exit in
+							Output.print_endline "<TRUE BRANCH ENDED>";
+ 
+							Output.set_mode Output.MSG_MUSTPRINT;
+							Output.print_endline ("Try False branch of the conditional at " ^ (To_string.location loc) ^ " by assuming !(" ^ (To_string.exp exp) ^")");
+							let state_f =
+								try try_branch (Some (Bytes_Op(OP_LNOT,[(rv, Cil.typeOf exp)]))) block2
+								with Function.Notification_Exit(state_exit, _) -> state_exit
+							in
+
+							Output.print_endline "<FALSE BRANCH ENDED>";
+
+							Output.decrease ();
+							combine_states [state_t; state_f]
+						end
+				end
+		| Block(block) ->
+				exec_block state scfg block
+		| _ -> failwith "Not implemented yet"
+and
+block_is_empty block = (List.length block.bstmts = 0)
+	
+and
+
+next_statement statement =
+	match statement with
+		| MainEntry -> failwith "Not implemented"
+		| Instruction (instr, stmt) ->
+				begin match stmt.skind with
+					| Instr(instrs) ->
+							let rec search_next instrs =
+								begin match instrs with
+									| [] -> failwith "instrs must contain instr"
+									| h1::[] -> (* assert h1==instr *) Statement(next_stmt stmt)
+									| h1:: h2:: t -> if h1 == instr then Instruction(h2, stmt) else search_next (h2:: t)
+								end
+							in
+							search_next instrs
+					| _ -> failwith "Instruction (instr, stmt): stmt must be Instr(instrs)"
+				end
+		| Statement (stmt) -> Statement (next_stmt stmt)
+	
+and
+
+next_stmt stmt =
+	match stmt.skind with
+		| If (exp, block1, block2, loc) ->
+				begin
+					let add block lst = if List.length block.bstmts = 0 then lst else (List.hd block.bstmts):: lst in
+					let heads = add block1 (add block2 []) in
+					let rec find succs = match succs with
+						| [] -> failwith "no succ stmt?!"
+						| h:: t -> if List.memq h heads then find t else h
+					in
+					find stmt.succs
+				end
+		| Return (_) -> failwith "Don't call next_stmt with Return!"
+		| _ -> List.hd stmt.succs
+	
+and
+
+exec_block state scfg block =
+	let stmts = block.bstmts in
+	exec_stmt state scfg (List.hd stmts)
+
+and
+
+exec_instr state scfg instr stmt =
+	(* MemOp.function_stat_increment (List.hd state.callstack); (*used to count the workload of each function*)*)
+	Output.set_mode Output.MSG_STMT;
+    Output.set_cur_loc (Cil.get_instrLoc instr);
+	Output.print_endline (To_string.instr instr);
+	match instr with
+		| Set(lval,exp,loc) -> 
+			begin try
+				let (block,offset) = Eval.lval state lval in
+				let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
+				let rv = Eval.rval state exp in
+				let state2 = MemOp.state__assign state (block,offset) size rv in
+					exec_statement state2 scfg (next_statement (Instruction(instr,stmt)))
+			with Failure(fail) ->
+				Output.set_mode Output.MSG_MUSTPRINT;
+				Output.print_endline 
+				(Printf.sprintf "Error \"%s\" occurs at %s" fail (To_string.location loc));
+				exit 1
+			end
+		| Call(lvalopt, fexp, exps, loc) ->
+			begin try
+				exec_instr_call state scfg instr stmt lvalopt fexp exps loc
+			with Failure(fail) ->
+				Output.set_mode Output.MSG_MUSTPRINT;
+				Output.print_endline 
+				(Printf.sprintf "Error \"%s\" occurs at %s" fail (To_string.location loc));
+				exit 1
+			end
+		| Asm (attributes, s1_list, l1, l2, l3, loc) ->
+				Output.set_mode Output.MSG_REG;
+				Output.print_endline "Warning: ASM unsupported";
+				exec_statement state scfg (next_statement (Instruction(instr, stmt)))
+and
+
+exec_instr_call state scfg instr stmt lvalopt fexp exps loc =
+				let rec op_exps exps binop =
+					let rec impl exps =
+						match exps with
+							| [] -> failwith "AND/OR must take at least 1 argument"
+							| h::[] -> h
+							| h:: tail -> let t = impl tail in BinOp(binop, h, t, Cil.voidType)
+					in
+					Eval.rval state (impl exps)
+				in
+				
+				let func = Function.from_exp state fexp exps in
+				begin match func with
+					| Function.Ordinary (fundec) ->					
+						(* TODO: do a casting if necessary: look at fundec.sformals, varinfo.vtype *)
+						(* exps may be longer than fundec.sformals *)
+						(* goal: create a list of targetted types:
+							for regular arguments - look at fundec.sformals
+							for vargs - same as the expressions *)
+							(* NECESSARY? *)
+							(*
+							let rec exptyps_f lefts rights = match lefts,rights with
+								| vh::vt,ah::at -> vh.vtype::(exptyps_f vt at)
+								| [],ah::at -> (Cil.typeOf ah)::(exptyps_f [] at)
+								| vh::vt,[] -> failwith "unreachable"
+								| [],[] -> []
+							in
+							let exptyps = exptyps_f fundec.sformals exps in
+							let argvs = (List.map2 (fun exp typ -> 
+								let targetted_typ = Cil.typeOf exp in
+								let final_exp = if targetted_typ == typ 
+									then exp 
+									else exp (*CastE(targetted_typ,exp) *)
+								in
+								Eval.rval state final_exp) exps exptyps) 
+							*)
+							let argvs = (List.map (fun exp -> Eval.rval state exp) exps)
+							in
+							let state2 = exec_function state fundec argvs	(Instruction(instr,stmt)) in 
+								state2
+					| _ ->
+				let state_end = begin match func with
+					| Function.Builtin (builtin) ->
+						let (state2,bytes) = builtin state exps in
+							begin match lvalopt with
+								| None -> state2
+								| Some(lval) ->
+									let (block,offset) = Eval.lval state lval in
+									let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
+										MemOp.state__assign state2 (block,offset) size bytes
+							end					
+										
+					| Function.Symbolic -> (* removed the size argument of __SYMBOLIC *)
+							begin match lvalopt with
+								| None -> 
+									state
+								| Some(lval) ->
+									let isWritable = (*if List.length exps > 1 then false else*) true in
+									let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
+									let ssize = if List.length exps >0 
+										then
+											let size_bytes = Eval.rval state (List.hd exps) in
+												Convert.bytes_to_int_auto size_bytes 
+										else
+											size
+									in
+									let (block,offset) = Eval.lval state lval in
+										MemOp.state__assign state (block,offset) size (MemOp.bytes__symbolic ssize isWritable)
+							end								
+					| Function.SymbolicStatic ->
+							begin match lvalopt with
+								| None -> 
+									state
+								| Some(lval) ->
+									let key = 
+										if List.length exps == 0 then 0 else
+										let size_bytes = Eval.rval state (List.hd exps) in
+												Convert.bytes_to_int_auto size_bytes 
+									in
+									let isWritable = (*if List.length exps > 1 then false else*) true in
+									let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
+									let ssize =	size in
+									let (block,offset) = Eval.lval state lval in
+									let state2 = if  MemOp.loc_table__has state (loc,key) then state
+										else MemOp.loc_table__add state (loc,key) (MemOp.bytes__symbolic ssize isWritable)
+									in
+									let newbytes = MemOp.loc_table__get state2 (loc,key) in
+										MemOp.state__assign state2 (block,offset) size newbytes
+							end												
+(*
+					| Function.Fresh ->
+							begin match lvalopt with
+								| None -> 
+									state
+								| Some(lval) ->
+									let id = Convert.bytes_to_int_auto (Eval.rval state (List.hd exps)) in
+									let (block,offset) = Eval.lval state lval in
+									let size = 1 in
+										MemOp.state__assign state (block,offset) size (MemOp.bytes__of_list [(MemOp.byte__symbolic_with_id id true)])
+							end				
+*)												
+					| Function.NotFound ->
+							begin
+								match lvalopt with
+								| None -> 
+										state
+								| Some(lval) ->
+										let (block,offset) = Eval.lval state lval in
+										let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
+										MemOp.state__assign state (block,offset) size (MemOp.bytes__symbolic size true)
+							end
+						
+					| Function.Exit -> 
+						
+						Output.set_mode Output.MSG_MUSTPRINT;
+						Output.print_endline (Printf.sprintf "exit() called.\n Path Condition (length=%d):" (List.length state.path_condition));
+						List.iter (fun bytes -> Output.print_endline (To_string.bytes bytes)) state.path_condition;
+						
+						raise (Function.Notification_Exit (state,Eval.rval state (List.hd exps)))
+					
+					| Function.Evaluate ->
+						let pc = op_exps exps Cil.LAnd in
+							Output.set_mode Output.MSG_MUSTPRINT;
+							Output.print_endline ("    Evaluates to "^(To_string.bytes pc));
+							state
+							
+					| Function.EvaluateString ->
+							let exp = List.hd exps in
+							let sizeexp = List.nth exps 1 in
+							let str = match Eval.rval state exp with
+								| Bytes_Address(Some(block),offset) -> 
+									let size = Convert.bytes_to_int_auto (Eval.rval state sizeexp) in
+									let bytes = MemOp.state__get_bytes_from_lval state (block,offset,size) in
+									begin match bytes with
+										| Bytes_ByteArray(bytearray) -> To_string.bytestring bytearray
+										| Bytes_Constant(CInt64(i,_,_)) -> Int64.to_string i
+										| _ -> "(complicate)"
+									end
+								| _ -> "(nil)"
+							in
+							Output.set_mode Output.MSG_MUSTPRINT;
+							Output.print_endline ("Evaluate to string: "^str);
+							state
+												
+					| Function.Assume ->
+						let pc = op_exps exps Cil.LAnd in
+							MemOp.state__add_path_condition state pc
+					
+					| Function.PathCondition ->
+						let pc_str = (Utility.print_list (fun pc->To_string.bytes pc) state.path_condition " AND ") in
+						Output.set_mode Output.MSG_MUSTPRINT;
+						Output.print_endline (if String.length pc_str = 0 then "(nil)" else pc_str);
+							state
+															
+					| Function.Assert -> 
+						let post = op_exps exps Cil.LAnd in
+							let truth = Stp.eval state.path_condition post in
+							begin
+								if truth == Stp.True then
+									begin
+									Output.set_mode Output.MSG_REG;
+									Output.print_endline "Assertion satisfied.\n"
+									end
+								else
+									begin
+									Output.set_mode Output.MSG_MUSTPRINT;
+									Output.print_endline "Assertion not-satisfied (see error log).";
+									Executedebug.log "\n(****************************";
+									Executedebug.log "Assertion not-satisfied:";
+									Executedebug.log "Assertion:";
+									Executedebug.log (To_string.bytes post);
+									Executedebug.log "Is Unsatisfiable with the path condition:";
+									let pc_str = (Utility.print_list (fun pc->To_string.bytes pc) state.path_condition " AND ") in
+									Executedebug.log (if String.length pc_str = 0 then "(nil)" else pc_str);
+									Executedebug.log "****************************)";
+									()
+									end									
+									
+							end;
+							state
+												
+					| Function.BooleanOp (binop) ->
+							begin match lvalopt with
+								| None -> failwith "Unreachable BooleanOp"
+								| Some(lval) ->
+									let (block,offset) = Eval.lval state lval in
+									let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
+
+									let rv= op_exps exps binop in 
+									MemOp.state__assign state (block,offset) size rv
+							end
+
+					| Function.BooleanNot ->
+							begin match lvalopt with
+								| None -> failwith "Unreachable BooleanNot"
+								| Some(lval) ->
+									let (block,offset) = Eval.lval state lval in
+									let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
+									let rv = Eval.rval state (UnOp(Cil.LNot, List.nth exps 0, Cil.voidType)) in
+										MemOp.state__assign state (block,offset) size rv
+							end
+
+					| Function.Aspect(pointcut, advice) ->
+						let argvs = List.map (fun exp -> Eval.rval state exp) exps in
+							advice state argvs instr
+							
+					| Function.BreakPt ->
+						Output.set_mode Output.MSG_REG;
+						Output.print_endline "Option (h for help):";
+						Scanf.scanf "%d\n" 
+						begin
+							fun p1->
+								Printf.printf "sth\n";	
+							state
+						end
+							
+					| Function.Comment ->
+						let exp = List.hd exps in
+							Output.set_mode Output.MSG_REG;
+							Output.print_endline ("COMMENT:"^(To_string.exp exp));
+							state
+				(*			
+					| Function.CurrentState ->
+						let bytes = Eval.rval state (List.hd exps) in
+						let key = Convert.bytes_to_int_auto bytes in
+							Output.set_mode Output.MSG_MUSTPRINT;
+							Output.print_endline (Printf.sprintf "Record state %d" key);
+							MemOp.index_to_state__add key state;
+							state
+													
+					| Function.CompareState ->
+						let bytes0 = Eval.rval state (List.nth exps 0) in
+						let bytes1 = Eval.rval state (List.nth exps 1) in
+						let key0 = Convert.bytes_to_int_auto bytes0 in
+						let key1 = Convert.bytes_to_int_auto bytes1 in
+						Output.set_mode Output.MSG_MUSTPRINT;
+						Output.print_endline (Printf.sprintf "Compare states %d and %d" key0 key1);
+						begin try
+						  let s0 = try MemOp.index_to_state__get key0 
+						  with Not_found -> (
+						   	Output.set_mode Output.MSG_MUSTPRINT;
+						   	Output.print_endline (Printf.sprintf "Warning: snapshot %d is absent" key0);
+						   	    raise Not_found )
+                          in
+						  let s1 = try MemOp.index_to_state__get key1
+						  with Not_found -> (
+						   	Output.set_mode Output.MSG_MUSTPRINT;
+						   	Output.print_endline (Printf.sprintf "Warning: snapshot %d is absent" key1);
+						   	    raise Not_found )
+                          in
+						    let output = MemOp.cmp_states s0 s1 in
+						    	Output.set_mode Output.MSG_MUSTPRINT;
+						    	Output.print_endline output;			
+						    	state
+                        with Not_found -> 
+						   	Output.set_mode Output.MSG_MUSTPRINT;
+						   	Output.print_endline (Printf.sprintf "Compare states fail");
+                            state
+                        end
+					*)
+					| Function.AssertEqualState ->
+						let bytes0 = Eval.rval state (List.nth exps 0) in
+						let key0 = Convert.bytes_to_int_auto bytes0 in
+						begin try 
+							let s0 = MemOp.index_to_state__get key0 in
+							Output.set_mode Output.MSG_MUSTPRINT;
+							let output = MemOp.cmp_states s0 state in
+							let output = if String.length output = 0 then "AssertEqualState satisfied" else output in
+						    	Output.set_mode Output.MSG_MUSTPRINT;
+						    	Output.print_endline output;			
+						    	MemOp.index_to_state__add key0 state; 
+									state
+						with Not_found -> 
+							MemOp.index_to_state__add key0 state; 
+							state
+						end
+						
+					| _ -> failwith "unreachable"
+						
+						end in
+							exec_statement state_end scfg (next_statement (Instruction(instr,stmt)))
+
+						
+					end (* match func *)
+	
+					
+	
+and
+
+combine_states states =
+	List.hd states
+;; 

@@ -1,0 +1,4 @@
+#!/bin/tcsh
+setenv OCAMLRUNPARAM b
+setenv CILLY_DONT_COMPILE_AFTER_MERGE
+exec bin/cilly --domakeCFG --merge --noPrintLn --dorandomrepair $*

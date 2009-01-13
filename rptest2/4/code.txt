@@ -1,0 +1,33 @@
+/*
+	Code is from RCP 0.8.4. To guarantee that eventually there is going to be window size agreement, the protocol asks that we "meet" the other party. 
+This means that if we have previously sent value X and we just received value Y, we should send something between X and Y. 
+This is what this code was trying to do, except there are some paranthesis missing. Luckily, most RCP implementations have a window size of 512 and 
+therefore will generate agreement to start with, so this code was almost never executed - but when it was.....
+
+	Estimated difficulty for abduction: Medium?
+
+	Solution: 
+			msgout.payload[0] =  msgin.payload[0] + wndsize[sock_in] / 2;
+			should be:
+			msgout.payload[0] =  (msgin.payload[0] + wndsize[sock_in]) / 2;
+*/
+
+#define RCP_MAX_WNDSIZE 4096
+#define RCP_MIN_WNDSIZE 32
+
+1. int sz = recv(sock_in, inbuf, MAX_MSG_SIZE);
+2. rcp_extract(inbuf, sz, &msgin);
+3. if(msgin.type == RCP_WNDSIZE) {
+4. 	if(msgin.payload[0] != wndsize[sock_in]) {
+5. 		msgout.type = RCP_WNDSIZE;
+6. 		if((msgin.payload[0] > RCP_MAX_WNDSIZE) || (msgin.payload[0] < RCP_MIN_WNDSIZE))
+7. 			send_protocol_error(sock_in,ERR_WNDSIZE);
+8. 		else {	
+9. 			msgout.payload[0] =  msgin.payload[0] + wndsize[sock_in] / 2;
+10.  			sz = rcp_compose(msgout, outbuf, MAX_MSG_SIZE);
+11.			send(sock_in, outbuf, sz);
+12.		}
+13.	} else {
+14.		send_file_request(sock_in, F);
+15.	}
+16. }

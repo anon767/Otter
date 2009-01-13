@@ -1,0 +1,34 @@
+Statement: sz = recv(sock_in, inbuf, MAX_MSG_SIZE);
+Facts: {$lastsz[sock_in] = wndsize[sock_in]; wndsize[sock_in] = 512; inbuf[3] = RCP_WNDSIZE; inbuf[4..7] < RCP_MAX_WNDSIZE; inbuf[4..7] >= RCP_MIN_WNDSIZE; inbuf[4..7] != $lastsz[sock_in]}
+Notes: Input pattern matched for rule wndnegotiate
+-------------------
+Statement: rcp_extract(inbuf, sz, &msgin);
+Facts: {$lastsz[sock_in] = wndsize[sock_in]; wndsize[sock_in] = 512; inbuf[3] = RCP_WNDSIZE; inbuf[4..7] < RCP_MAX_WNDSIZE; inbuf[4..7] >= RCP_MIN_WNDSIZE, msgin.type = RCP_WNDSIZE, msgin.payload[0] < RCP_MAX_WNDSIZE; msgin.payload[0] >= RCP_MIN_WNDSIZE; inbuf[4..7] != $lastsz[sock_in]; msgin.payload[0] != $lastsz[sock_in]}
+-------------------
+Statement: if(msgin.type == RCP_WNDSIZE) 
+Facts: {$lastsz[sock_in] = wndsize[sock_in]; wndsize[sock_in] = 512; inbuf[3] = RCP_WNDSIZE; inbuf[4..7] < RCP_MAX_WNDSIZE; inbuf[4..7] >= RCP_MIN_WNDSIZE, msgin.type = RCP_WNDSIZE, msgin.payload[0] < RCP_MAX_WNDSIZE; msgin.payload[0] >= RCP_MIN_WNDSIZE; inbuf[4..7] != $lastwnd[sock_in]; msgin.payload[0] != $lastsz[sock_in]}
+Notes: True branch
+-------------------
+Statement: if(msgin.payload[0] != wndsize[sock_in])
+Facts: {wndsize[sock_in] = $lastsz[sock_in]; wndsize[sock_in] = 512; inbuf[3] = RCP_WNDSIZE; inbuf[4..7] < RCP_MAX_WNDSIZE; inbuf[4..7] >= RCP_MIN_WNDSIZE, msgin.type = RCP_WNDSIZE, msgin.payload[0] < RCP_MAX_WNDSIZE; msgin.payload[0] >= RCP_MIN_WNDSIZE; inbuf[4..7] != $lastsz[sock_in]; msgin.payload[0] != $lastsz[sock_in]; msgin.payload[0] = !wndsize[sock_in]}
+Notes: True branch
+-------------------
+Statement: msgout.type = RCP_WNDSIZE;
+Facts: {wndsize[sock_in] = $lastsz[sock_in]; wndsize[sock_in] = 512; inbuf[3] = RCP_WNDSIZE; inbuf[4..7] < RCP_MAX_WNDSIZE; inbuf[4..7] >= RCP_MIN_WNDSIZE, msgin.type = RCP_WNDSIZE, msgin.payload[0] < RCP_MAX_WNDSIZE; msgin.payload[0] >= RCP_MIN_WNDSIZE; inbuf[4..7] != $lastsz[sock_in]; msgin.payload[0] != $lastsz[sock_in]; msgin.payload[0] = !wndsize[sock_in]; msgout.type = RCP_WNDSIZE;}
+-------------------
+Statement: if((msgin.payload[0] > RCP_MAX_WNDSIZE) || (msgin.payload[0] < RCP_MIN_WNDSIZE))
+Facts: {wndsize[sock_in] = $lastsz[sock_in]; wndsize[sock_in] = 512; inbuf[3] = RCP_WNDSIZE; inbuf[4..7] < RCP_MAX_WNDSIZE; inbuf[4..7] >= RCP_MIN_WNDSIZE, msgin.type = RCP_WNDSIZE, msgin.payload[0] < RCP_MAX_WNDSIZE; msgin.payload[0] >= RCP_MIN_WNDSIZE; inbuf[4..7] != $lastsz[sock_in]; msgin.payload[0] != $lastsz[sock_in]; msgin.payload[0] = !wndsize[sock_in]; msgout.type = RCP_WNDSIZE;}
+Notes: False branch
+-------------------
+Statement: msgout.payload[0] =  (msgin.payload[0] + wndsize[sock_in]) / 2;
+Facts: {wndsize[sock_in] = $lastsz[sock_in]; wndsize[sock_in] = 512; inbuf[3] = RCP_WNDSIZE; inbuf[4..7] < RCP_MAX_WNDSIZE; inbuf[4..7] >= RCP_MIN_WNDSIZE, msgin.type = RCP_WNDSIZE, msgin.payload[0] < RCP_MAX_WNDSIZE; msgin.payload[0] >= RCP_MIN_WNDSIZE; inbuf[4..7] != $lastsz[sock_in]; msgin.payload[0] != $lastsz[sock_in]; msgin.payload[0] = !wndsize[sock_in]; msgout.type = RCP_WNDSIZE; msgout.payload[0] = (msgin.payload[0] + wndsize[sock_in]) / 2}
+-------------------
+Statement: sz = rcp_compose(msgout, outbuf, MAX_MSG_SIZE);
+Facts: {wndsize[sock_in] = $lastsz[sock_in]; wndsize[sock_in] = 512; inbuf[3] = RCP_WNDSIZE; inbuf[4..7] < RCP_MAX_WNDSIZE; inbuf[4..7] >= RCP_MIN_WNDSIZE, msgin.type = RCP_WNDSIZE, msgin.payload[0] < RCP_MAX_WNDSIZE; msgin.payload[0] >= RCP_MIN_WNDSIZE; inbuf[4..7] != $lastsz[sock_in]; msgin.payload[0] != $lastsz[sock_in]; msgin.payload[0] = !wndsize[sock_in]; msgout.type = RCP_WNDSIZE; (msgin.payload[0] + wndsize[sock_in]) / 2; outbuf[3] = RCP_WNDSIZE; outbuf[4..7] = (msgin.payload[0] + wndsize[sock_in]) / 2; sz > 0}
+-------------------
+Statement: send(sock_in, outbuf, sz);
+Facts: {wndsize[sock_in] = $lastsz[sock_in]; wndsize[sock_in] = 512; inbuf[3] = RCP_WNDSIZE; inbuf[4..7] < RCP_MAX_WNDSIZE; inbuf[4..7] >= RCP_MIN_WNDSIZE, msgin.type = RCP_WNDSIZE, msgin.payload[0] < RCP_MAX_WNDSIZE; msgin.payload[0] >= RCP_MIN_WNDSIZE; inbuf[4..7] != $lastsz[sock_in]; msgin.payload[0] != $lastsz[sock_in]; msgin.payload[0] = !wndsize[sock_in]; msgout.type = RCP_WNDSIZE; msgout.payload[0] = (msgin.payload[0] + wndsize[sock_in]) / 2; outbuf[3] = RCP_WNDSIZE; outbuf[4..7] = (msgin.payload[0] + wndsize[sock_in]) / 2; sz > 0}
+
+CHECK: outbuf[3] = RCP_WNDSIZE __AND__ 
+       ((outbuf[4..7] <= $lastsz[sock_in]  __AND__ outbuf[4..7] >= inbuf[4..7]) __OR__
+ 	(outbuf[4..7] >= $lastsz[sock_in]  __AND__ outbuf[4..7] <= inbuf[4..7])) >>> SUCCESS

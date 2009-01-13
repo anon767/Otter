@@ -1,0 +1,1 @@
+./run libc/ALL.c $*

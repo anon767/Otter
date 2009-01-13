@@ -1,0 +1,1 @@
+tar cvfz `date "+%Y%m%d_%H%M%S"`.tar.gz *.ml TRICKS TODO THOUGHTS
