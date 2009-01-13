@@ -218,19 +218,20 @@ let doExecute (f: file) =
 					print_newline ())
 				sortedList
 		end;
-	let alwaysExecuted =
-		List.fold_left
-			(fun interAcc (_,eS) -> EdgeSet.inter interAcc eS)
-			(snd (List.hd !Driver.coverage))
-			(List.tl !Driver.coverage)
-	in
+(*	let alwaysExecuted =                                  *)
+(*		List.fold_left                                      *)
+(*			(fun interAcc (_,eS) -> EdgeSet.inter interAcc eS)*)
+(*			(snd (List.hd !Driver.coverage))                  *)
+(*			(List.tl !Driver.coverage)                        *)
+(*	in                                                    *)
 	List.iter
 		(fun (pc,eS) ->
-			print_endline "Under condition:";
+			print_endline "The following edges were executed only under condition";
 			print_endline
-				(let str = (To_string.annotated_bytes_list pc) in if str = "" then "<None>" else str);
-			print_endline "these non-universal edges were executed:";
-			Driver.dumpEdges (EdgeSet.diff eS alwaysExecuted))
+				((let str = (To_string.annotated_bytes_list pc) in if str = "" then "<None>" else str)^"\n");
+			Driver.dumpEdges (List.fold_left (fun acc (_,eS') -> EdgeSet.diff acc eS') eS !Driver.coverage);
+(*			print_endline "\nAnd these non-universal edges were executed:";*)
+(*			Driver.dumpEdges (EdgeSet.diff eS alwaysExecuted) *) )
 		!Driver.coverage;
 (*	print_endline "Always executed";*)
 (*	Output.dumpEdges alwaysExecuted;*)
