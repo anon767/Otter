@@ -1,0 +1,26 @@
+if [ "$1" == merge ]; then
+	if [ -f vsftpd_comb.c ]; then
+		echo "Deleting old vsftpd_comb.c"
+		rm vsftpd_comb.c
+	fi
+	shift
+	MERGE=1
+elif [ ! -f vsftpd_comb.c ]; then
+	MERGE=1
+fi
+
+if [ "$MERGE" == 1 ]; then
+	echo "Merging"
+	../../cil/bin/cilly --merge --useLogicalOperators --out=vsftpd_comb.c \
+		*.c otherFiles/*.c -IotherFiles -IotherFiles/libc -include otherFiles/symexe.h --warnall $*
+elif [ "$1" == libc ]; then
+	echo "Merging libc"
+	../../cil/bin/cilly --merge --useLogicalOperators --out=otherFiles/libc_comb.c \
+		-IotherFiles/libc otherFiles/libc/*.c --warnall
+else
+	echo "Doing symbolic execution"
+	# TODO: allow arguments to have spaces
+	../../cil/bin/cilly --merge --useLogicalOperators \
+		vsftpd_comb.c otherFiles/symtest/symtest1.c -include tunables.h \
+		-include otherFiles/symexe.h --warnall --domakeCFG --doexecute $*
+fi

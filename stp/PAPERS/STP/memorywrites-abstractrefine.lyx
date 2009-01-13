@@ -1,0 +1,488 @@
+#LyX 1.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 221
+\textclass artthm
+\language english
+\inputencoding auto
+\fontscheme default
+\graphics default
+\paperfontsize default
+\spacing single 
+\papersize Default
+\paperpackage a4
+\use_geometry 0
+\use_amsmath 0
+\use_natbib 0
+\use_numerical_citations 0
+\paperorientation portrait
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\quotes_times 2
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+
+\layout Title
+
+Abstraction Refinement and Memory Writes
+\layout Subsection
+
+Problem
+\layout Standard
+
+Consider an input of the form
+\layout Standard
+
+
+\begin_inset Formula \begin{equation}
+\begin{array}{l}
+Read(Write(Write(A,i,v_{i}),k,v_{k}),j)\,=\, t_{1}\;\wedge\\
+Read(Write(Write(A,i,v_{i}),k,v_{k}),j)\,=\, t_{2}\end{array}\label{eq:orig}\end{equation}
+
+\end_inset 
+
+
+\layout Standard
+
+The naive transformation of unrolling the 
+\emph on 
+writes
+\emph default 
+ based on the following rule 
+\layout Standard
+
+
+\begin_inset Formula \[
+Read(Write(A,i,v_{i}),j)\iff ITE(i=j,v_{i},Read(A,j))\]
+
+\end_inset 
+
+
+\layout Standard
+
+results in a multiplicative blow-up.
+ In particular, the above example turns into 
+\layout Standard
+
+
+\begin_inset Formula \[
+\begin{array}{cc}
+ITE(k=j_{1},v_{k},\, ITE(i=j_{1},v_{i},Read(A,\, j_{1})))\,=\, t_{1} & \wedge\\
+ITE(k=j_{2},v_{k},\, ITE(i=j_{2},v_{i},Read(A,\, j_{2})))\,=\, t_{2}\end{array}\]
+
+\end_inset 
+
+
+\layout Standard
+
+Whereas previously the 
+\emph on 
+write
+\emph default 
+ term was shared, the sharing is destroyed by the introduction of the equalities
+ in the ITE conditionals.
+ We have now introduced 
+\begin_inset Formula $m\times n$
+\end_inset 
+
+ equalities in the ITE expansion, where 
+\begin_inset Formula $m$
+\end_inset 
+
+ is the number of write indices in the shared 
+\emph on 
+write 
+\emph default 
+term, and 
+\begin_inset Formula $n$
+\end_inset 
+
+ is the number of read indices over the shared 
+\emph on 
+write 
+\emph default 
+term.
+ Furthermore, the writes often do not matter because the read index is different
+ from all the write indices.
+ In such cases, one could have simply replaced the write terms with the
+ appropriate array variable and still be logically equivalent to the original
+ input.
+ Therefore the naive transformation is problematic.
+ We would like to avoid or delay the multiplicative explosion of equalities
+ mentioned above.
+\layout Subsection
+
+Solution
+\layout Standard
+
+Our solution is to replace the naive transformation with an 
+\emph on 
+abstraction-refinement
+\emph default 
+ based transformation as illustrated by the following example.
+ Replace each 
+\emph on 
+write 
+\emph default 
+term with a new array variable as follows:
+\layout Standard
+
+
+\begin_inset Formula \begin{equation}
+Read(A,\, j_{1})=t_{1}\wedge Read(A,\, j_{2})=t_{2}\label{eq:abs-ref}\end{equation}
+
+\end_inset 
+
+
+\layout Standard
+
+and also generate some side conditions as follows:
+\layout Standard
+
+
+\begin_inset Formula \begin{equation}
+\begin{array}{l}
+if(i=j_{1}\wedge i\neq k)\quad Read(A,j_{1})=v_{i}\\
+if(k=j_{1})\quad Read(A,j_{1})=v_{k}\\
+if(i=j_{2}\wedge i\neq k)\quad Read(A,j_{2})=v_{i}\\
+if(k=j_{2})\quad Read(A,j_{2})=v_{k}\end{array}\label{eq:side-cond}\end{equation}
+
+\end_inset 
+
+
+\layout Standard
+
+By case analysis over values of 
+\begin_inset Formula $i,k,j_{1},j_{2}$
+\end_inset 
+
+ we can easily show that the conjunction of the formula\SpecialChar ~
+
+\begin_inset LatexCommand \ref{eq:abs-ref}
+
+\end_inset 
+
+ and side-condition\SpecialChar ~
+
+\begin_inset LatexCommand \ref{eq:side-cond}
+
+\end_inset 
+
+ above is logically equivalent to the original formula\SpecialChar ~
+
+\begin_inset LatexCommand \ref{eq:orig}
+
+\end_inset 
+
+.
+ 
+\layout Standard
+
+In the abstraction refinement loop, the formula\SpecialChar ~
+
+\begin_inset LatexCommand \ref{eq:orig}
+
+\end_inset 
+
+ is replaced with the formula\SpecialChar ~
+
+\begin_inset LatexCommand \ref{eq:abs-ref}
+
+\end_inset 
+
+, and the new formula goes through the various transformations in STP, followed
+ by translation to SAT.
+ If the SATSolver says that formula is unsatisfiable, then STP returns UNSAT.
+ If the SATSolver says that the formula is SAT, then the satisfying assignment
+ is plugged back into the original formula.
+ If the assignment is indeed a satisfying assignment to the original formula,
+ then STP returns SAT.
+ Else, it adds one of the sideconditions and the refinement loop repeats.
+ Since the number of side-conditions is finite we are garaunteed that the
+ loop will terminate.
+ Furthermore, we can easily show that this algorithm is sound and complete.
+\layout Theorem
+
+The following are logically equivalent
+\layout Theorem
+
+
+\begin_inset Formula \begin{equation}
+\varphi(Read(Write(\ldots Write(Write(A,i_{1},v_{1}),i_{2},v_{2}),i_{n},v_{n}),\; j))\label{eq:theorem-eqn1}\end{equation}
+
+\end_inset 
+
+
+\layout Theorem
+
+
+\begin_inset Formula \begin{equation}
+\begin{array}{ll}
+\varphi(Read(A,j)) & \wedge\\
+if(j=i_{n})\quad Read(A,j)=v_{n} & \wedge\\
+if(j=i_{n-1}\wedge i_{n-1}\neq i_{n})\quad Read(A,j)=v_{n-1} & \wedge\\
+\vdots & \vdots\\
+if(j=i_{1}\wedge i_{1}\neq i_{2}\wedge\ldots\wedge i_{1}\neq i_{n})\quad Read(A,j)=v_{1}\end{array}\label{eq:theorem-eqn2}\end{equation}
+
+\end_inset 
+
+
+\layout Proof
+
+It is sufficient to consider the following cases where 
+\layout Proof
+
+Case 1 : Consider the case where in all models of the formula\SpecialChar ~
+
+\begin_inset LatexCommand \ref{eq:theorem-eqn1}
+
+\end_inset 
+
+ 
+\begin_inset Formula $j$
+\end_inset 
+
+ is not equal to any of the write indices.
+ It follows that the formula\SpecialChar ~
+
+\begin_inset LatexCommand \ref{eq:theorem-eqn1}
+
+\end_inset 
+
+ reduces to 
+\begin_inset Formula $\varphi(Read(A,j))$
+\end_inset 
+
+, and the side if-conditions in the formula\SpecialChar ~
+
+\begin_inset LatexCommand \ref{eq:theorem-eqn2}
+
+\end_inset 
+
+ are all trivially true.
+ It follows that the formula\SpecialChar ~
+
+\begin_inset LatexCommand \ref{eq:theorem-eqn1}
+
+\end_inset 
+
+ entails the formula\SpecialChar ~
+
+\begin_inset LatexCommand \ref{eq:theorem-eqn2}
+
+\end_inset 
+
+ in these same models.
+ Conversely, if 
+\begin_inset Formula $j$
+\end_inset 
+
+ is not equal to any write indices in all models of the formula\SpecialChar ~
+
+\begin_inset LatexCommand \ref{eq:theorem-eqn2}
+
+\end_inset 
+
+, then it reduces to 
+\begin_inset Formula $\varphi(Read(A,j))$
+\end_inset 
+
+, and so does the formula\SpecialChar ~
+
+\begin_inset LatexCommand \ref{eq:theorem-eqn1}
+
+\end_inset 
+
+.
+ 
+\layout Proof
+
+Case 2: Consider those models of the formula\SpecialChar ~
+
+\begin_inset LatexCommand \ref{eq:theorem-eqn1}
+
+\end_inset 
+
+, where 
+\begin_inset Formula $j$
+\end_inset 
+
+ equals some index 
+\begin_inset Formula $i_{k}$
+\end_inset 
+
+ in the set 
+\begin_inset Formula $\{ i_{1},\ldots,i_{n}\}$
+\end_inset 
+
+, but not any other.
+ It follow that the formula\SpecialChar ~
+
+\begin_inset LatexCommand \ref{eq:theorem-eqn1}
+
+\end_inset 
+
+ reduces to 
+\begin_inset Formula $\varphi(v_{k})$
+\end_inset 
+
+ in that model.
+ In the same model, the formula\SpecialChar ~
+
+\begin_inset LatexCommand \ref{eq:theorem-eqn2}
+
+\end_inset 
+
+ reduces to 
+\begin_inset Formula \[
+\varphi(Read(A,j))\wedge if(j=i_{k}\wedge\ldots\wedge i_{k}\neq i_{n})Read(A,j)=v_{k}\]
+
+\end_inset 
+
+ since all other side if-conditions are trivially true.
+ But this formula also reduces to 
+\begin_inset Formula $\varphi(v_{k})$
+\end_inset 
+
+.
+ The converse is similar and easy.
+ 
+\layout Proof
+
+Case 3: Consider those models of the formula\SpecialChar ~
+
+\begin_inset LatexCommand \ref{eq:theorem-eqn1}
+
+\end_inset 
+
+, where 
+\begin_inset Formula $j$
+\end_inset 
+
+ equals a set of indices 
+\begin_inset Formula $\{ i_{k},\ldots,i_{k+l}\}$
+\end_inset 
+
+ in the set 
+\begin_inset Formula $\{ i_{1},\ldots,i_{n}\}$
+\end_inset 
+
+, but not any other.
+ Since 
+\begin_inset Formula $i_{k}=\ldots=i_{k+l}$
+\end_inset 
+
+ the value of the final relevant write (the writes are ordered) is the value
+ that will be read.
+ The final relevant write index is 
+\begin_inset Formula $i_{k+l}$
+\end_inset 
+
+, and the corresponding value is 
+\begin_inset Formula $v_{k+l}$
+\end_inset 
+
+.
+ Hence the formula\SpecialChar ~
+
+\begin_inset LatexCommand \ref{eq:theorem-eqn1}
+
+\end_inset 
+
+ reduces to 
+\begin_inset Formula $\varphi(v_{k+l})$
+\end_inset 
+
+.
+ In the same model, the formula\SpecialChar ~
+
+\begin_inset LatexCommand \ref{eq:theorem-eqn2}
+
+\end_inset 
+
+ reduces to 
+\layout Proof
+
+
+\begin_inset Formula \[
+\varphi(Read(A,j))\wedge if(j=i_{k+l}\wedge i_{k+l}\neq i_{k+l+1}\ldots\wedge i_{k+l}\neq i_{n})Read(A,j)=v_{k+l}\]
+
+\end_inset 
+
+ since all other side if-conditions are trivially true.
+ To see this, notice that for all indices 
+\begin_inset Formula $h$
+\end_inset 
+
+ greater than 
+\begin_inset Formula $i_{k+l}$
+\end_inset 
+
+ in our order of write indices, 
+\begin_inset Formula $j\neq h$
+\end_inset 
+
+ in the model.
+ Hence the corresponding if-conditions become trivially true.
+ For all indices 
+\begin_inset Formula $g$
+\end_inset 
+
+ lower than 
+\begin_inset Formula $i_{k+l}$
+\end_inset 
+
+ or equal to 
+\begin_inset Formula $i_{k+l}$
+\end_inset 
+
+ in the order, the corresponding if-conditionals have both 
+\begin_inset Formula $g\neq i_{k+l}$
+\end_inset 
+
+ and 
+\begin_inset Formula $j=g$
+\end_inset 
+
+.
+ If 
+\begin_inset Formula $g\in\{ i_{k},\ldots,i_{k+l}\}$
+\end_inset 
+
+ then 
+\begin_inset Formula $g\neq i_{k+l}$
+\end_inset 
+
+ is false, thus making these conditionals trivially true.
+ If 
+\begin_inset Formula $g\not\in\{ i_{k},\ldots,i_{k+l}\}$
+\end_inset 
+
+, then 
+\begin_inset Formula $j=g$
+\end_inset 
+
+ is false, thus making the remaining conditionals trivially true.
+ But the above formula reduces to 
+\begin_inset Formula $\varphi(v_{k+l})$
+\end_inset 
+
+.
+ Thus the formula\SpecialChar ~
+
+\begin_inset LatexCommand \ref{eq:theorem-eqn1}
+
+\end_inset 
+
+ entails the formula\SpecialChar ~
+
+\begin_inset LatexCommand \ref{eq:theorem-eqn2}
+
+\end_inset 
+
+ in all its models.
+ The converse is similar and easy.
+ 
+\the_end

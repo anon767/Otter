@@ -1,0 +1,165 @@
+\section{STP Overview}
+
+STP's input language has most of the functions and predicates
+implemented in a programming language such as C or a machine
+instruction set, except that it has no floating point datatypes or
+operations. The current set of operations supported include
+$\stptrue$, $\stpfalse$, propositional variables, arbitrary Boolean
+connectives, bitwise Boolean operators, extraction, concatenation,
+left and right shifts, addition, multiplication, unary minus, (signed)
+division and modulo, array read and write functions, and relational
+operators. The semantics parallel the semantics of the SMTLIB
+bit-vector language~\cite{smtlib} or the C programming language, except
+that in STP bit-vectors can have any positive length. Also, all
+arithmetic and bitwise Boolean operations require that the inputs be
+of the same length. STP can be used as a stand-alone program, and can
+parse input files in a special human readable syntax and also the
+SMTLIB QF\_UFBV32 syntax~\cite{smtlib}. It can also be used as a
+library, and has a special C-language API that makes it relatively
+easy to integrate with other applications.
+
+STP converts a decision problem in its logic to propositional CNF,
+which is solved with a high-performance off-the-shelf CNF SAT solver,
+MiniSat~\cite{minisat} (MiniSat has a nice API, and it is concise,
+clean, efficient, reliable, and relatively unencumbered by licensing
+conditions).  However, the process of converting to CNF includes many
+word-level transformations and optimizations that reduce the
+difficulty of the eventual SAT problem.  Problems are frequently
+solved during the transformation stages of STP, so that SAT does not
+need to be called.
+
+STP's architecture differs significantly from many other decision
+procedures based on case splitting and backtracking, including tools
+like SVC, and CVC Lite~\cite{svc,cvcl}, and other solvers
+based on the Davis-Putnam-Logemann-Loveland (DPLL(T))
+architecture~\cite{ganzinger04dpllt}.  Conceptually, those solvers
+recursively assert atomic formulas and their negations to a
+theory-specific decision procedures to check for consistency with
+formulas that are already asserted, backtracking if the current
+combination of assertions is inconsistent.  In recent versions of this
+style of decision procedure, the choice of formulas to assert is made
+by a conventional DPLL SAT solver, which treats the formulas as
+propositional variables until they are asserted and the decision
+procedures invoked.
+
+Architectures based on assertion and backtracking invoke
+theory-specific decision-procedures in the ``inner loop'' of the SAT
+solver.  However, modern SAT solvers are very fast largely because of
+the incredible efficiency of their inner loops, and so it is difficult
+with these architectures to take the best advantage of fast SAT
+solvers.
+
+STP on the other hand does all theory-specific processing {\em
+before\/} invoking the SAT solver.  The SAT solver works on a purely
+propositional formula, and its internals are not modified, including
+the highly optimized inner loop.  Optimizing transformations are
+employed before the SAT solver when they can solve a problem more
+efficiently than the SAT solver, or when they reduce the difficulty of
+the problem that is eventually presented to the SAT solver.
+
+DPLL(T) solvers often use Nelson-Oppen combination~\cite{nelsonoppen},
+or variants thereof, to link together multiple theory-specific
+decision procedures. Nelson-Oppen combination needs the individual
+theories to be disjoint, stably-infinite and requires the exchange of
+equality relationships deduced in each individual theory, leading to
+inflexibility and implementation complexity.  In return, Nelson-Oppen
+ensures that the combination of theories is complete. STP is complete
+because the entire formula is converted by a set of satisfiability
+preserving steps to CNF, the satisfiability of which is decided by the
+SAT solver.  So there is no need to worry about meeting the conditions
+of Nelson-Oppen combination. Furthermore, the extra overhead of
+communication between theories in the Nelson-Oppen style decision
+procedures can become a bottleneck for the very large inputs that we
+have seen, and this overhead is avoided in STP.
+
+The STP approach is not always going to be superior to a good
+backtracking solver.  A good input to STP is a conjunction of many
+formulas that enable local algebraic transformations.  On the other
+hand, formulas with top-level disjunctions may be very
+difficult. Fortunately, the software applications used by STP tend to
+generate large conjunctions, and hence STP's approach has worked well
+in practice.
+
+\input{epsf}
+\begin{figure}
+\center
+\epsfysize=1.5in
+\epsfxsize=3in
+\epsffile{STP.eps}
+\caption{STP Architecture}
+\label{stparch}
+\end{figure}
+
+In more detail, STP's architecture is depicted in Figure
+\ref{stparch}.  Processing consists of three phases of word-level
+transformations; followed by conversion to a purely Boolean formula
+and Boolean simplifications (this process is called ``Bit Blasting'');
+and finally conversion to propositional CNF and solving by a SAT
+solver.  The primary focus of this paper is on word level
+optimizations for arithmetic, arrays and refinement for arrays.
+
+Expressions are represented as directed acyclic graphs (DAGs), from
+the time they are created by the parser or through the C-interface,
+until they are converted to CNF.  In the DAG representation,
+isomorphic subtrees are represented by a single node, which may be
+pointed to by many parent nodes.  This representation has advantages
+and disadvantages, but the overwhelming advantage is compactness.
+
+It is possible to identify some design principles that have worked
+well during the development of STP.  The overarching principle is to
+procrastinate when faced with hard problems.  That principle is
+applied in many ways. Transformations that are risky because they can
+significantly expand the size of the expression DAG are postponed until
+other, less risky, transformations are performed, in the hope that the
+less risky transformation will reduce the size and number of
+expressions requiring more risky transformations.  This approach is
+particularly helpful for array expressions.
+
+Counter-example-guided abstraction/refinement is now a standard
+paradigm in formal tools, which can be applied in a variety of ways.
+It is another application of the procrastination principle.
+For example, the UCLID tool abstracts and refines the precision of
+integer variables.
+
+A major novelty of STP's implementation is the particular
+implementation of the refinement loop in Figure \ref{stparch}.  In
+STP, abstraction is implemented (i.e. an {\it abstract formula} is
+obtained) by omitting conjunctive constraints from a {\em concrete
+formula}, where the concrete formula must be equisatisfiable with the
+original formula. (Logical formulas $\phi$ and $\psi$ are
+equisatisfiable iff $\phi$ is satisfiable exactly when $\psi$ is
+satisfiable.)
+  
+When testing an abstract formula for satisfiability, there can be
+three results.  First, STP can determine that the abstracted formula
+is unsatisfiable.  In this case, it is clear that the original formula
+is unsatisfiable, and hence STP can return ``unsatisfiable'' without
+additional refinement, potentially saving a massive amount of work.
+
+A second possible outcome is that STP finds a satisfying assignment to
+the abstract formula.  In this case, STP converts the satisfying
+assignment to a (purported) concrete model,~\footnote{A model is an
+assignment of constant values to all of the variables in a formula
+such that the formula is {\it satisfied}} and also assigns zero to any
+variables that appear in the original formula but not the abstract
+formula, and evaluates the original formula with respect to the
+purported model.  If the result of the evaluations is $\stptrue$, the
+purported model is truly a model of the original formula (i.e. the
+original formula is indeed satisfiable) and STP returns the model
+without further refinement iterations.
+
+The third possible outcome is that STP finds a purported model, but
+evaluating the original formula with respect to that model returns
+$\stpfalse$.  In that case, STP refines the abstracted formula by
+heuristically choosing additional conjuncts, at least one of which
+must be false in the purported model and conjoining those formulas
+with the abstracted formula to create a new, less abstract formula.
+In practice, the abstract formula is not modified; instead, the new
+formulas are bit-blasted, converted to CNF, and added as clauses to
+the CNF formula derived from the previous abstract formula, and the
+resulting CNF formula solved by the SAT solver.  This process is
+iterated until a correct result is found, which must occur because, in
+the worst case, the abstract formula will be made fully concrete by
+conjoining every formula that was omitted by abstraction.  When all
+formulas are included, the result is guaranteed to be correct because
+of the equisatisfiability requirement above.

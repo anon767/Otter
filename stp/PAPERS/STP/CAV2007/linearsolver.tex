@@ -1,0 +1,305 @@
+\section{Linear Solver and Variable Elimination}
+%% \newtheorem{theorem}{Theorem}[section]
+%% \newtheorem{lemma}[theorem]{Lemma}
+%% \newtheorem{proposition}[theorem]{Proposition}
+%% \newtheorem{corollary}[theorem]{Corollary}
+
+%% \newenvironment{proof}[1][Proof]{\begin{trivlist}
+%% \item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+%% \newenvironment{definition}[1][Definition]{\begin{trivlist}
+%% \item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+%% \newenvironment{example}[1][Example]{\begin{trivlist}
+%% \item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+%% \newenvironment{remark}[1][Remark]{\begin{trivlist}
+%% \item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+
+%% \newcommand{\qed}{\nobreak \ifvmode \relax \else
+%%   \ifdim\lastskip<1.5em \hskip-\lastskip
+%%   \hskip1.5em plus0em minus0.5em \fi \nobreak
+%%   \vrule height0.75em width0.5em depth0.25em\fi}
+
+One of the essential features of STP for software analysis
+applications is its efficient handling of linear twos-complement
+arithmetic.  The heart of this is an {\em on-the-fly\/} solver.  The
+main goal of the solver is to eliminate as many bits of as many
+variables as possible, to reduce the size of the transformed problem
+for the SAT solver.  In addition, it enables many other
+simplifications, and can solve purely linear problems outright, so
+that the SAT solver does not need to be used.
+
+The solver solves for one equation for one variable at a time.  That
+variable can then be eliminated by substitution in the rest of the
+formula, whether the variable occurs in linear equations or other
+formulas.  In some cases, it cannot solve an entire variable, so it
+solves for some of the low-order bits of the variable.  After
+bit-blasting, these bits will not appear as variables in the problem
+presented to the SAT solver. Non-linear or word-level terms (extracts,
+concats etc.) appearing in linear equations are treated as bit-vector
+variables.
+
+%% This actually says it's sound and complete.
+
+The algorithm has worst-case time running time of $O(k^2n)$
+multiplications, where $k$ is the number of equations and $n$ is the
+number of variables in the input system of linear bit-vector
+equations.\footnote{As observed in ~\cite{BDL98}, the theory of linear
+mod $2^n$ arithmetic (equations only) in tandem with concatenate and
+extract operations is NP-complete. Although STP has concatenate and
+extraction operations, terms with those operations are treated as
+independent variables in the linear solving process, which is
+polynomial. 
+%% (Dave) I didn't understand all this, and I don't think it's necessary to
+%% say, given that the extractions are also treated as independent variables.
+%% Also, STP introduces extraction over variables while
+%% solving a system of linear equations with only even
+%% coefficients. However, this introduction of extraction is over all the
+%% variables in the equations, and of the same length. Hence, they can be
+%% safely considered as new variables without affecting the logical
+%% equivalence between the old and new systems of equations or the
+%% polynomial time complexity of linear solving.  
+A hard
+NP-complete input problem constructed out of linear operations,
+concatenate and extract operations will not be solved completely by
+linear solving, and will result in work for the SAT solver.}  If the
+input is unsatisfiable the solver terminates with $\stpfalse$. If the
+input is satisfiable it terminates with a set of equations in
+\textit{solved form}, which symbolically represent all possible
+satisfying assignments to the input equations.  So, in the special
+case where the formula is a system of linear equations, the solver
+leads to a sound and complete polynomial-time decision procedure.
+Furthermore, the equations are reduced to a closed form that captures
+all of the possible solutions.
+
+\begin{definition}
+\emph{Solved Form:} A list of equations is in
+\textit{solved form} if the following invariants hold over the
+equations in the list.
+
+1) Each equation in the list is of the form $x[i:0] = t$ or $x=t$,
+where $x$ is a variable and $t$ is a linear combination of the
+variables or constant times a variable (or extractions thereof)
+occuring in the equations of the list, except $x$
+
+2) Variables on the left hand side of the equations occuring earlier
+in the list may not occur on the right hand side of subsequent
+equations. Also, there may not be two equations with the same left
+hand side in the list
+
+3) If extractions of variables occur in the list, then they must
+always be of the form $x[i:0]$, i.e. the lower extraction index must
+be 0, and all extractions must be of the same length
+
+4) If an extraction of a variable $x[i:0]= t$ occurs in the list, then
+   an entry is made in the list for $x=x^{1}@t$, where $x^1$ is a new
+   variable refering to the top bits of $x$ and $@$ is the
+   concatenation symbol
+\end{definition}
+
+%% (Dave) I don't think this term was used.
+
+%% \begin{definition}
+%% \emph{Solved Variable:} Variables occuring on the left hand side of
+%% equations in solved form are called \textit{solved variables}.
+%% \end{definition}
+
+The algorithm is illustrated on the following system:
+\begin{eqnarray}
+3x + 4y + 2z &=& 0\nonumber\\
+2x + 2y + 2 &=& 0 \nonumber\\
+4y + 2x + 2z &=& 0\nonumber
+\end{eqnarray}
+where all constants, variables and functions are 3 bits long. 
+
+The solver proceeds by first choosing an equation and always checks if
+the chosen equation is {\it solvable}. It uses the following theorem
+from basic number theory to determine if an equation is solvable:
+$\Sigma_{i=1}^n a_ix_i = c_i$ mod $2^b$ is solvable for the unknowns
+$x_i$ if and only if the greatest common divisor of
+\{$a_1,\ldots,a_n,2^b$\} divides $c_i$.
+
+In the example above, the solver chooses $3x + 4y + 2z = 0$ which is
+solvable since the $gcd(3,4,2,2^3)$ does indeed divide $0$. It is also
+a basic result from number theory that a number $a$ has a
+multiplicative inverse mod $m$ iff $\gcd(a, m) = 1$, and that this
+inverse can be computed by the extended greatest-common divisor
+algorithm~\cite{CLR} or a method from~\cite{BDL98}. So, if there is a
+variable with an odd coefficient, the solver isolates it on the
+left-hand-side and multiplies through by the inverse of the
+coefficient.  In the example, the multiplicative inverse of $3$ mod
+$8$ is also $3$, so $3x + 4y + 2z = 0$ can be solved to yield $x = 4y
++ 6z$.
+
+Substituting $4y+6z$ for $x$ in the remaining two equations yields the
+system 
+\begin{eqnarray}
+2y + 4z + 2 &=& 0 \nonumber\\
+4y + 6z &=& 0\nonumber
+\end{eqnarray}
+
+where all coefficients are even. Note that even coefficients do not
+have multiplicative inverses in arithmetic mod $2^b$, and, hence we
+cannot isolate a variable. However, it is possible to solve for {\em
+some bits\/} of the remaining variables.
+
+The solver transforms the whole system of solvable equations into a
+system which has at least one summand with an odd coefficient. To do
+this, the solver chooses an equation which has a summand whose
+coefficient has the minimum number of factors of 2. In the example,
+this would the equation $2y + 4z + 2 =0$, and the summand would be
+$2y$. The whole system is divided by 2, and the high-order bit of each
+variable is dropped, to obtain a reduced set of equations
+
+\begin{eqnarray}
+ y[1:0] + 2z[1:0] + 1 &=& 0 \nonumber\\
+2y[1:0] + 3z[1:0] &=& 0 \nonumber\
+\end{eqnarray}
+
+where all constants, variables and operations are 2 bits.  Next,
+$y[1:0]$ is solved for to obtain $y[1:0] = 2z[1:0] + 3$. Substituting
+for $y[1:0]$ in the system yields a new system of equations $3z[1:0] +
+2 = 0$. This equation can be solved for $z[1:0]$ to obtain $z[1:0] =
+2$. It follows that original system of equations is satisfiable. It is
+important to note here that the bits $y[2:1]$ and $z[2:1]$ are
+unconstrained. The solved form in this case is $x=4y+6z$ $\wedge$
+$y[1:0] = 2z[1:0] + 3$ $\wedge$ $z[1:0] = 2$ (Note that in the last
+two equations all variables, constants and functions are 2 bits long).
+
+%\subsection{Completeness and Complexity}
+%% It is easy to show that the solver algorithm is sound and complete,
+%% and further that its worst-case time complexity is $O(k^2n)$, where
+%% $k$ is the number of equations in the input, and $n$ is the number
+%% bit-vector variables.
+
+%% \begin{definition}
+%% \emph{Soundness and Completeness:} A decision procedure is said to be
+%% sound and complete iff for every satisfiable input formula the
+%% procedure indeed returns \textit{satisfiable}
+%% \end{definition}
+
+%% The proof strategy for the completeness theorems is as follows: We
+%% show that every step of the algorithm is equivalence preserving,
+%% i.e. they are logically equivalent transformations, and further that
+%% the algorithm terminates for the right reasons.
+
+%% \begin{theorem}
+%% \emph{(Soundness and Completeness Theorem)}
+%% \label{SoundComplete}
+%% The solver algorithm is both sound and complete.
+%% \end{theorem}
+
+%% The proof sketch is as follows: Every step of the algorithm is shown
+%% to be equivalence preserving. Next, we examine the termination
+%% conditions. Notice that the solver processes one equation at a
+%% time. The solver terminates with \textit{FALSE} only when the equation
+%% being processed by the solver is shown to be not solvable by theorem
+%% \ref{solvable_theorem}. Since all the transformations are equivalence
+%% preserving it follows that the original input is also not solvable.
+
+%% On the otherhand, if the solver terminates with a set of equations in
+%% solved form we need to show that the input is satisfiable. Recall that
+%% the solved form is a list where the $i^{th}$ entry in the list has
+%% none of the solved variables of the previous entries. This implies
+%% that the variables in the right hand side of the last entry in the
+%% list can be assigned any value or are free variables. Once the last
+%% equation is satisfied, we can chain up the order to satisfy the
+%% remaining equations in solved form to obtain a solution to input
+%% system of equations.
+
+%% \begin{theorem}
+%% Let $k$ be the number of equations in the input, $b$ be the number of
+%% bits per variable, and $n$ be the number variables in the system. It
+%% is safe to assume that $n$ and $k$ are much larger than $b$ in
+%% practice. The solver algorithm has a worst-case time complexity of
+%% $O(k^2n)$, where $n$ is total number of variables in the input system
+%% of linear bit-vector equations.
+%% \end{theorem}
+
+%% then a multiplicative inverse has to be computed which entails atmost
+%% $b$ two input $b$-bit multiplies \cite{BDL98}, and the inverse has to
+%% be multiplied through the equation resulting in $n$ two input $b$-bit
+%% multiplies. Since $n >> b$, the total number of multiplications is $n$
+%% Thus, the worst-case time complexity of solving an equation with
+%% atleast one odd coefficient is $O(n)$. The solved variable has to be
+%% substituted into the remaining $k-1$ equations, resulting in $O(nk)$
+%% arithmetic operations. This has to be repeated for each equation in
+%% the worst case, and thus the worst-case time complexity is $O(k^2n)$
+%% arithmetic operations.
+
+%% If the system has no odd coefficient, then an even coefficient with
+%% least number of factors of $2$ has to be found in the system requiring
+%% $n \dot k$ comparisons. Furthermore, every summand in the system has
+%% to be divided by $2^l$ requiring $n \dot k$ $b$-bit divisions.
+
+%% In the worst-case, after the $i^{th}$ equation is solved, the system
+%% will have $i-1$ equations in it where all the coefficients are still
+%% even. As seen before this requires $O(nk)$ comparisons, $O(nk)$
+%% divisions and $O(n)$ two input $b$-bit multiplications.
+
+%% Thus solving each equation in the worst-case requires $O(nk)$
+%% arithmetic operations. Since there are $k$ equations, the worst-case
+%% time complexity is $O(k^2n)$.
+
+%\subsection{Comparisons With Other Solvers}
+Algorithms for deciding the satisfiability of a system of equations
+and congruences in modular or residue arithmetic have been well-known
+for a long time. However, most of these algorithms do not provide a
+solved form that captures all possible solutions.  Some of the ideas
+presented here were devised by Clark Barrett and implemented in the
+SVC decision procedure~\cite{cheng01,BDL98}, but the SVC algorithm has
+exponential worst-case time complexity while STP's linear solver is
+polynomial in the worst-case.
+
+The closest related work is probably in a paper by Huang and
+Cheng~\cite{cheng01}, which reduces a set of equations to a solved
+form by Guassian elimination. On the other hand, STP implements an
+online solving and substitution algorithm that gives a closed form
+solution. Such algorithms are easier to integrate into complex
+decision procedures.
+
+%% In ~\cite{cheng01}, the authors 
+%% inverse with product $k$ in order to deal with the fact that even
+%% numbers do not have a multiplicative inverse with product 1. This new
+%% concept allows them to use a modified version of the \textit{offline}
+%% Gauss-Jordan elimination method to solve the equations where all the
+%% coefficients are even. The primary difference between the algorithm
+%% presented in our paper and that of ~\cite{cheng01} is that we do not
+%% use the notion of multiplicative inverse with product $k$. We get
+%% around this by solving for the lower order bits of the variables as
+%% illustrated by the example above. 
+
+
+
+%% In Barrett et al. \cite{BDL98} they
+%% use a solve and substitute method which in fact form the basis of the
+%% algorithm presented here. The big difference is that the Barrett's
+%% algorithm has an exponential time worst-case behaviour, while our
+%% algorithm is $O(k^2n)$.
+
+%% Consider the example discussed earlier. After the variable $x$
+%% is eliminated the new system is
+
+%% \begin{eqnarray}
+%% 4z + 2y +2 &=& 0 \nonumber\\
+%% 4y + 6z &=& 0 \nonumber\
+%% \end{eqnarray}
+
+%% Without loss of generality we can assume that Barrett's algorithm
+%% chooses the equation $4z + 2y + 2 = 0$ to solve, and we can further
+%% assume that it isolates the summand $2y$ to obtain a new equation $2y
+%% = 4z + 2$ (The choice of equation or summand does not affect the
+%% behavior of the algorithm for systems of equations where all
+%% variables, constants and operations are of same length. The algorithm
+%% displays the same behavior irrespective of the choice). The chosen
+%% equation is translated into
+
+%% \begin{eqnarray}
+%% y = (4z + 2)[2:1] \nonumber\\
+%% 0_[1] = (4z +_[0] 2)[0:0] \nonumber
+%% \end{eqnarray}
+
+%% The above transformation requires a call to the \textit{canonizer} 
+%% \cite{BDL98} in order linearize the first of the two equations. 
+%% Unfortunately, \textit{canonization} is NP-hard\cite{BDL98} and
+%% consequently Barrett's algorithm displays worst-case exponential time
+%% behavior.
+

@@ -1,0 +1,142 @@
+Specification of a simplified IRC protocol
+
+1. Introduction
+
+We are interested in checking the correctness of an IRCd implementation.
+To achieve this, we outline a simplified IRC protocol that is simple
+enough for us to start with, and yet covers all basics functionalities of
+IRC to be interesting. The simplified IRC protocol (simIRC hereafter) can
+be thought as the limitation of what msgs clients will send to the 
+server, so that any complete IRCd implementation should support simIRC as
+well. The behavor of IRCd when seeing an IRC command not in simIRC is 
+ignored for now.
+
+simIRC assumes the following:
+
+	* Single server
+	* No channel operators
+	* Limited commands
+
+Without operators, all channels have default modes (ns). Although the user
+who creates a channel is an operator by default, it's assured that he will
+not send any operator-level commands.
+
+Reference: RFC 1459
+
+
+2. Commands
+
+The commands supported by simIRC are
+
+Registration:
+	NICK
+	USER
+
+Query:
+	LIST
+	NAMES
+
+Channel operation:
+	JOIN
+	PART
+
+Sending messages:
+	PRIVMSG
+
+Quitting:
+	QUIT
+
+
+
+3. Spec
+
+3.1 States
+
+Registration states between client and server:
+
+CONNECTED  -  USER_ENTERED
+    |              |
+NICK_ENTERED - REGISTERED - DISCONNECTED
+
+
+Channel states (under REGISTERED):
+
+JOIN - NOT_JOIN
+
+EXIST - NOT_EXIST
+
+
+3.2 Commands in detail:
+
+NICK <nickname>
+	CONNECTED,NICK_ENTERED -> NICK_ENTERED
+	USER_ENTERED -> REGISTERED
+	
+	Server replies:
+		ERR_NONICKNAMEGIVEN             
+		ERR_ERRONEUSNICKNAME
+		ERR_NICKNAMEINUSE
+		ERR_NICKCOLLISION
+
+
+USER <username> <hostname> <servername> :<realname>
+	CONNECTED -> USER_ENTERED
+	NICK_ENTERED -> REGISTERED
+
+	Server replies:
+		ERR_NEEDMOREPARAMS
+		ERR_ALREADYREGISTRED
+
+LIST
+	w/ REGISTERED
+
+	Server replies:
+		RPL_LISTSTART
+		RPL_LIST
+		RPL_LISTEND
+
+NAMES
+	w/ REGISTERED
+
+	Server replies:
+		RPL_NAMREPLY
+		RPL_ENDOFNAMES
+
+JOIN <channel>
+	w/ REGISTERED
+	NOT_JOIN,JOIN -> JOIN
+	NOT_EXIST,EXIST -> EXIST
+
+	Server replies:
+		ERR_NEEDMOREPARAMS
+		RPL_TOPIC
+
+PART <channel>
+	w/ REGISTERED
+	NOT_JOIN,JOIN -> NOT_JOIN
+	NOT_EXIST -> NOT_EXIST
+	EXIST -> NOT_EXIST (if channel becomes empty)
+
+	Server replies:
+		ERR_NEEDMOREPARAMS
+		ERR_NOSUCHCHANNEL
+		ERR_NOTONCHANNEL
+
+PRIVMSG <receiver> <text>
+	w/ REGISTERED
+	
+	Server replies:
+		ERR_NORECIPIENT
+		ERR_NOTEXTTOSEND
+		ERR_CANNOTSENDTOCHAN
+		ERR_NOSUCHNICK
+		RPL_AWAY
+
+QUIT <message>
+	w/ REGISTERED
+	REGISTERED -> DISCONNECTED
+
+	Server replies:
+		(none)
+	
+	

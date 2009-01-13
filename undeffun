@@ -1,8 +1,0 @@
-OCAMLRUNPARAM=b bin/cilly --domakeCFG --merge --noPrintLn \
-	--doexecute \
-	--debug-mode \
-	--printUndefined \
-	$@
-	# --printQueries \
-	# --printSTP \
-	# --save-temps \

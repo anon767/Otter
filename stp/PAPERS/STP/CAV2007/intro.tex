@@ -1,0 +1,73 @@
+\section{Introduction}
+
+Decision procedures for fragments of first-order logic are
+increasingly being used in modern hardware verification and theorem
+proving tools. These decision procedures usually support integer and
+real arithmetic, uninterpreted functions, bit-vectors, and
+arrays. Examples of such decision procedures include Yices, SVC, CVC
+Lite,UCLID~\cite{yices,svc,cvcl,uclid}. Although theorem-proving and
+hardware verification have been the primary users of decision
+procedures, increasingly they are being used in large-scale program
+analysis, bug finding and test generation
+tools~\cite{exe-ccs06,replayer06}. These tools often symbolically
+analyze code and generate constraints for the decision procedure to
+solve, and use the results to further guide the analysis or generate
+new testcases.
+
+Software analysis tools create demands on decision procedures that are
+different from those imposed by hardware applications. These
+applications often generate very large array constraints, especially
+when tools choose to model system memory as one or more arrays.  Also,
+software analysis tools need to be able to reason about bit-vectors,
+and especially mod-$2^n$ arithmetic, which is an important source of
+incorrect system behavior.  The constraint problems are large and
+extremely challenging to solve.
+
+This paper reports on STP, a decision procedure for quantifier-free
+first order logic with bit-vector and array
+datatypes~\cite{stumparray}.  The design of STP is has been driven
+primarily by the demands of software analysis research projects. STP
+is being used in several software analysis, bug finding and hardware
+verification applications. Notable applications include the EXE
+project~\cite{exe-ccs06} at Stanford, which generates test cases for C
+programs using symbolic execution, and uses STP to solve the
+constraints. Other projects include the Replayer
+project~\cite{replayer06} and Minesweeper~\cite{minesweeper2007} at
+Carnegie Mellon University which produce constraints from symbolic
+execution of machine code, and the CATCHCONV
+project~\cite{catchconv07} at Berkeley which tries to catch errors due
+to type conversion in C programs. The CATCHCONV project produced the
+largest example solved by STP so far. It is a 412 Mbyte formula, with
+2.12 million 32 bit bit-vector variables, array write terms which are
+tens of thousands of levels deep, a large number of array reads with
+non-constant indices (corresponding to aliased reads in memory), many
+linear constraints, and liberal use of bit-vector functions and
+predicates, and STP solves it in approx. 2 minutes on a 3.2GHz Linux
+box.
+
+There is a nice overview of bit-vector decison procedures
+in~\cite{uclid07}, which we do not repeat here.  STP's architecture is
+different from most decision procedures that support both bit-vectors
+and arrays~\cite{cvc,cvcl,yices}, which are based on backtracking and
+a framework for combining specialized theories such as
+Nelson-Oppen~\cite{nelsonoppen}. Instead, STP consists of a series of
+word-level transformations and optimizations that eventually convert
+the original problem to a conjunctive-normal form (CNF) formula for
+input to a high-speed solver for the satisfiability problem for
+propositional logic formulas (SAT)~\cite{minisat}.  Thus, STP fully
+exploits the speed of modern SAT solvers while also taking advantage
+of theory-specific optimizations for bit-vectors and arrays.  In this
+respect, STP is most similar to UCLID~\cite{uclid}.
+
+The goal of this paper is to describe the factors that enable STP to
+handle the large constraints from software applications.  In some
+cases, simple optimizations or a careful decision about the ordering
+of transformations can make a huge difference in the capacity of the
+tool.  In other cases, more sophisticated optimizations are required.
+Two are discussed in detail: An on-the-fly solver for mod-$2^n$ linear
+arithmetic, and abstraction-refinement heuristics for array
+expressions. The rest of the paper discusses the architecture of STP,
+the basic engineering principles, and then goes into more detail about
+the optimizations for bit-vector arithmetic and arrays. Performance on
+large examples is discussed, and there is a comparative evaluation
+with Yices~\cite{yices}, that is well-known for its efficiency.

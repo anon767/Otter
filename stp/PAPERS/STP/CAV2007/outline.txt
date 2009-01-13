@@ -1,0 +1,82 @@
+Outline of the Paper
+--------------------
+
+1.Introduction
+
+  1.1 Problem Motivation
+
+    * Increasing use of logical decision procedures in software
+      (vs. software or just for logic's sake).
+      - Word-level operations easily identifiable
+      - interaction of bitwise & arithmetic is important (-x = not x + 1)
+      - wrap-around in integer arithmetic is an important source of bugs
+      - arrays 
+        - they're important
+        - memory modeled as arrays (especially in C).
+
+  1.2 A clear presentation of the contributions
+
+    1. Engineering principles
+
+    2. Practical issues in efficient handling of large array expressions.
+       (Applying the principles in this particular case.)
+
+    3. A new solver algorithm for linear arithmetic
+       (Applying the principles in this particular case).
+
+  1.3 Related Work
+
+    Categorize them into 3 types
+
+    1. Direct translation to SAT or ILP (HSAT, LPSAT, MINISAT)
+
+    2. Canonizer and Solver based approach (Barrett et al, Cyrluk et
+       al.)
+
+    3. Others based on Modular arithmetic etc.
+
+2.STP Overview
+
+  3.1 Discuss the syntax and semantics of the input laguage
+
+  3.2 Describe the STP architecture and illustrate with a figure
+
+  3.3 Describe each step of the decision procedure briefly
+
+  3.4  Engineering principles
+       - Transform first, go to SAT at the end (eager solving).  (Contrast
+         with N-O, DPLLT-style).
+         Depend on SAT for completeness
+	 (refinement loop)
+       - Have lots of different phases.
+       - Do guaranteed simplifications first.
+       - Kinds of costly transformations: 
+	  -- Tree blowup -- Distributive law
+	  -- Sharing blowup.
+       - When in doubt, eliminate variables, unless you introduce them.
+       - Abstraction/refinement
+
+4. Practical handling of arrays.
+
+   Simplifications, ordering thereof.
+
+   Things that don't work.
+      Seshia transform is not friendly for refinement.
+
+   Constant-folding, substitution.  This reduces number of Leibnitz axioms.
+
+   4.1 Abstraction refinement in the context of array reads. Illustrate
+     algorithm using an example.
+     [all constant indices -> no axioms or refinement]
+
+   4.2 Abstraction refinement in the context of array
+     writes. Illustrate algorithm using an example
+        Be careful about read-over-write.
+
+5.Linear Solver and Variable Elimination
+
+  5.1 Illustrate the working of the linear solver using an example
+
+7.Results on benchmarks.  -- SMTLIB comparisons.
+
+8.Conclusion and Future Work

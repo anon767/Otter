@@ -1,0 +1,280 @@
+\documentclass{article}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+
+\newenvironment{proof}[1][Proof]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+\newenvironment{definition}[1][Definition]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+\newenvironment{example}[1][Example]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+\newenvironment{remark}[1][Remark]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+
+\newcommand{\qed}{\nobreak \ifvmode \relax \else
+  \ifdim\lastskip<1.5em \hskip-\lastskip
+  \hskip1.5em plus0em minus0.5em \fi \nobreak
+  \vrule height0.75em width0.5em depth0.25em\fi}
+
+
+\begin{document}
+
+\section{Introduction}
+
+\textbf{discuss the nature of the input, importance, previous work etc}
+
+\section{Solving Linear Modular Arithmetic Equations}
+A sound and complete decision procedure for deciding the
+satisfiability of linear equations in modular arithmetic is presented
+here. The input to the algorithm is a system of linear equations
+modulo m over n unknowns. The output of the algorithm is either
+``SAT'' if the input has a satisfying assignment or ``UNSAT'' if the
+the input has no satisfying assignment.
+
+\textbf{general discussion about the algorithm. Refer to Clark's paper
+ also definitions like decision procedure etc.}
+
+\section{Termination, Soundness and Completeness}
+In this section the algorithm in figure \ref{fig1} is shown to always
+terminate for any input, and to be sound and complete. 
+
+In order to make the termination/soundness/completeness argument work
+we make certain assumptions about the subroutine
+substitute\_simplify(). This function is assumed to always terminates,
+and further that its input is always equisatisfiable with its
+output. Also, it is assumed that the output of this function can only
+be one of TRUE, FALSE, or a linear modular arithmetic equation.
+
+\begin{theorem}
+\emph{(Termination Theorem)}
+\label{Termination}
+The algorithm presented in figure \ref{fig1} terminates in finite time
+for any input.
+\end{theorem}
+
+\begin{proof}
+We are given the assumption that the subroutine substitute\_simplify()
+terminates in finite time for any input. It is easy to check by
+inspection that every step of the algorithm in figure \ref{fig1} takes
+finite amount of time for any input with the exception of the call to
+the subroutine SolveAnEqn() presented in figure \ref{fig2}. For this
+call to SolveAnEqn(), it has to be established separately that the time
+taken is finite.
+
+Consider the algorithm for the subroutine SolveAnEqn() presented in
+figure \ref{fig2}. The only cause for worry here is the recursive call
+in step 2.9. Notice that in step 2.4 the coefficients of the input
+equation are divided by 2. This step ensures that eventually the
+coefficient of some variable will become odd, and hence that variable
+will be solved for in step 1 of the algorithm in figure \ref{fig2},
+and the recursion will terminate.
+
+Since there are only finitely many conjuncts in the input to
+TopLevelSolver function, the top level loop iterates only finitely
+many times. Also, the loop body in takes finite time for each
+conjunct, and therefore the function TopLevelSolver takes finite
+amount of time for any input. \qed
+\end{proof}
+
+\textbf{some discussion about soundness and completeness.define
+assignment, satisfying assignment, satisfiability, equisatisfiability,
+equivalid, logical equivalence, substitutability, SAT and UNSAT values
+returned by the decision procedure etc}
+
+
+\begin{definition}
+\item \emph{Soundness:} A decision procedure is said to be sound, if
+for every unsatisfiable input the procedure returns UNSAT.
+
+\item \emph{Completeness:} A decision procedure is said to be
+complete, if for every satisfiable input the procedure returns SAT.
+\end{definition}
+
+The proof strategy for the soundness/completeness theorems is as
+follows: We show that every step of the algorithm is satisfiability
+preserving, i.e. they are equisatisfiable transformations, and further
+that the algorithm terminates for the right reasons.
+
+\begin{theorem}
+\emph{(Soundness and Completeness Theorem)}
+\label{SoundComplete}
+The decision procedure presented in figure \ref{fig1} is both sound
+and complete.
+\end{theorem}
+
+\begin{proof}
+In order to prove that the decision procedure is both sound and
+complete it suffices to show that every step in the algorithm is
+satisfiability preserving, and that the termination condition is
+correct, i.e. the algorithm terminates with SAT iff the input is
+satisfiable.
+
+First, observe that the substitute\_simplify function substitutes for
+variables in its input, and is assumed to do only equi-satisfiable
+transformations. We only need to show that SolveAnEqn() is an
+equi-satisfiable transformation, since all other steps are
+satisfiability preserving trivially or by assumption.
+
+From the laws of modular arithmetic, it is easy to see that step 1.0
+to 1.2 in the algorithm \ref{fig2} are equi-satisfiable
+transformations. Let us examine step 1.3 further. In this step an
+entry, say $t$, is made in the substitutionmap for the solved variable
+$x_i$, and the procedure returns TRUE. Note that $t$ does not contain
+any occurence of $x_i$, and hence $t$ is substitutable for $x_i$.
+
+From the laws of logic it follows that $x=t \wedge \phi$ is
+equi-satisfiable to $\phi^t_x$, and $x=t$ reduces to TRUE under this
+substitution. By updating the substitutionmap for $x_i$, Step 1.3
+ensures that in the rest of the input $x_i$ is replaced with the
+appropriate value of $x_i$, i.e. $t$, thus eliminating $x_i$ and
+$x_i=t$ from the system.
+
+In other words, Step 1.3 captures exactly the Substitution law
+mentioned earlier, and it follows that this step preserves
+satisfiability.
+
+From the laws of modular arithmetic it can be deduced that the
+remaining steps are also satisfiability preserving. In step 2.0, if
+all the coefficient of the variables are even, then the sum
+$\Sigma_1^na_ix_i$ is even mod $m$. If c is odd, then it follows that
+the equation is unsatisfiable, and hence the algorithm is correct in
+returning FALSE.
+
+The remaining steps are easily shown to be equi-satisfiable, with the
+exception of Step 2.4. But, this step is also an equi-satisfiable, by
+Theorem [yet to writeup].
+
+Finally, step 2.5 is assumed to be equi-satisfiable. Steps 2.6 and 2.7
+are trivially so. By the time control reaches step 2.8, we are
+gauranteed that atleast one variable has an odd coefficient. This
+implies that the function SolveAnEqn is called recursively atmost
+once.
+
+It is now easy to verify that the algorithm \ref{fig2} produces TRUE
+only if the input is satisfiable, and FALSE only if the input is
+unsatisfiable. Hence, it terminates for the right reasons.
+
+It immediately follows that the decision procedure in figure
+\ref{fig1} is sound and complete.
+\qed
+\end{proof}
+
+\textbf{to prove theorems: substitute\_simplify is equisatisfiable.  the
+theorem about division by 2. the theorem that the substitutionmap is
+updated only by substitutable terms. i.e. the algorithm SolveAnEqn()
+produces only substitutable terms for $x_i$.}
+
+\section{Complexity}
+
+The size of the input is defined in terms of the number of equations
+$k$, number of variables per equation $n$, and the number of bits $b$
+required to represent the modulus $m$.
+
+\begin{theorem}
+\emph{(Polytime Complexity Theorem)}
+\label{complexity}
+The worst-case running time of the decision procedure in figure
+\ref{fig1} is a polynomial in $k$, $b$ and $n$.
+\end{theorem}
+
+\begin{proof}
+It is given that the worst-case running time of substitute\_simplify
+function is bounded by a polynomial, say $Q$, in $k$, $b$, and
+$n$. The maximum depth of the recursion in the function SolveAnEqn is
+atmost 1, as discussed earlier.
+
+All steps in SolveAnEqn are bounded by some polynomial $P$ in $n$ and
+$b$, except for the substitute\_simplify call which is bounded by
+$Q$. Hence, the worst-case running time for SolveAnEqn is
+$O((P+Q))$.
+
+The maximum number of possible iterations of TopLevelSolver is
+$k$. Hence its worst-case running time is $O(k(P+Q))$.
+\qed
+\end{proof}
+
+\section{Solving Linear Bitvector Equations}
+Now we turn our attention to solving linear equations over
+bitvectors. The algorithm is similar to the one presented for modular
+arithmetic. Hence, the theorems carry over easily.
+
+\begin{figure} [p]
+\begin{verbatim}
+INPUT C: A conjunction of k linear equations over n unknowns 
+modulo m, where k,m,n are positive integers and m is power 
+of 2
+
+OUTPUT: SAT or UNSAT or ERROR
+
+SIDEFFECT: updates substitutionmap through subroutine 
+           SolveAnEqn()
+
+Algorithm: TopLevelSolver(Conjunction of equations C) {
+
+ 0.Check input legality. If illegal return ERROR;
+
+ 1.For each equation e in C {
+   1.1 e = substitute_simplify(e);
+   1.2 if(e == FALSE) return UNSAT;
+   1.3 if(e == TRUE)  continue;
+   1.4 b = SolveAnEqn(e);
+   1.5 if(TRUE  == b) continue;
+   1.6 if(FALSE == b) return UNSAT;
+   }
+
+ 2.return SAT;
+
+}//end of TopLevelSolver()
+\end{verbatim}
+\caption{\label{fig1} Algorithm for solving linear modular arithmetic
+equations}
+\end{figure}
+
+\begin{figure} [p]
+\begin{verbatim}
+INPUT: An equation of the form a1x1+a2x2+ ... +anxn+c= 0 mod m, 
+where ai and c are integers ranging over {0,...,m-1}, and xi 
+are distinct variables, m is a power of 2
+
+OUTPUT: TRUE or FALSE
+
+SIDEEFFECT: Updates the substitutionmap
+
+Subroutine: SolveAnEqn(equation e) {
+
+ 1.If any coefficient ai of variable xi is odd then
+   1.0 rewrite e into aixi = -a1x1 ... -anxn -c
+   1.1 Replace each of -a1,...,-an by its representative 
+       to obtain aixi = b1x1 + ... + bnxn + d
+   1.2 Multiply both sides by the multiplicative inverse of 
+       ai to obtain xi = c1x1 + ... + cnxn + d
+   1.3 Update substitutionmap with  xi = c1x1 + ... + cnxn + d, 
+       and return TRUE
+
+ 2.If control reaches here, then all coefficients of 
+   variables are definitely even   
+   2.0 If c is odd then return FALSE 
+   2.1 Isolate aixi where ai is the coeff with the fewest factors of 2,
+       Let ai = 2^k*b, where b is odd
+   2.2 rewrite e into aixi = -a1x1 ... -anxn -c
+   2.3 Replace each of -a1,...,-an by its representative    
+   2.4 Divide both sides by 2^k to obtain equation e': 
+       (ai/2^k)xi = c1x1 + ... + cnxn - d mod 2^(j-k), 
+       where m was 2^j
+   2.5 e' = substitute_simplify(e');
+   2.6 if(e' == TRUE) return TRUE;
+   2.7 if(e' == FALSE) return FALSE;
+   2.8 return SolveAnEqn(e');
+} //end of SolveAnEqn()
+\end{verbatim}
+\caption{\label{fig2} Subroutine to solve a single linear modular
+arithmetic equation}
+\end{figure}
+\bibliography{biblio} \bibliographystyle{plain}
+\end{document}
+
+
+
+

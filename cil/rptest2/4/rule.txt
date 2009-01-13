@@ -1,0 +1,10 @@
+recv(sock_in, inbuf,_)
+inbuf[3] = RCP_WNDSIZE
+inbuf[4..7] < RCP_MAX_WNDSIZE
+inbuf[4..7] >= RCP_MIN_WNDSIZE
+inbuf[4..7] != $lastsz[sock_in]
+=>
+send(sock_in, outbuf,_)
+outbuf[3] = RCP_WNDSIZE
+(outbuf[4..7] - $lastsz[sock_in])(outbuf[4..7] - inbuf[4..7]) <= 0
+SET! $lastsz[sock_in] = outbuf[4..7]

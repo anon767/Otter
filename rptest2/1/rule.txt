@@ -1,7 +1,0 @@
-(this rule is for server code)
-
-recv(_,inmsg,_)
-inmsg[3..6] = MSGTYPE_PROTOVER
-=>
-send(_,outmsg,_)
-outmsg[3..6] = MSGTYPE_PROTOVER

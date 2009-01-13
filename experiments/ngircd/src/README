@@ -1,0 +1,3 @@
+To merge:
+1. Extract the tarball into this directory.
+2. Run "make VERSION=<directory name without ending slash>".

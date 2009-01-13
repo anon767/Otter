@@ -1,0 +1,383 @@
+%\documentclass{article}[10pt]
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+
+\newenvironment{proof}[1][Proof]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+\newenvironment{definition}[1][Definition]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+\newenvironment{example}[1][Example]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+\newenvironment{remark}[1][Remark]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+
+\newcommand{\qed}{\nobreak \ifvmode \relax \else
+  \ifdim\lastskip<1.5em \hskip-\lastskip
+  \hskip1.5em plus0em minus0.5em \fi \nobreak
+  \vrule height0.75em width0.5em depth0.25em\fi}
+
+
+%\begin{document}
+
+\section{Introduction}
+
+\textbf{discuss the nature of the input, importance, previous work etc}
+
+\section{Solving Linear Bitvector Arithmetic Equations}
+A sound and complete decision procedure for deciding the
+satisfiability of linear bitvector arithmetic equations is presented
+here in figures \ref{fig1} and \ref{fig2}. The input to the algorithm
+is a system of $k$ linear equations over $n$ bitvector variables where
+all variables, constants and operations are of length $b$. The output
+of the algorithm is either ``SAT'' if the input has a satisfying
+assignment or ``UNSAT'' if the the input has no satisfying assignment.
+
+\textbf{general discussion about bitvector arithmetic (mention two's
+ complement, and the correspondence between bit strings and
+ non-negative integers), the algorithm. Refer to Clark's paper. also
+ definitions like decision procedure etc.}
+
+\section{An Example}
+Consider the following system of equations 
+
+\begin{eqnarray}
+3x + 4y + 2z = 0\nonumber\\
+2x + 2y + 2 = 0\nonumber\\
+4y + 2x + 2z = 0\nonumber\
+\end{eqnarray}
+
+where all variables and constants are 3 bits long, and the operations
+are 3 bit operation. The constants are always represented by their
+representative modulo $2^b$.
+
+The algorithm TopLevelSolve chooses the equation with odd coefficients
+first. It first isolates the term $3x$ to obtain $3x = 4y + 2z$, and
+then solves for $x$ by computing the multiplicative inverse of 3, and
+multiplying both sides with it to obtain $x = 4y + 2z$, which is then
+entered into the substitutionmap. In the next step, $x$ is substituted
+for in the system. The new system of equations is
+
+\begin{eqnarray}
+4z + 2y +2 = 0 \nonumber\\
+4y + 6z = 0 \nonumber\
+\end{eqnarray}
+
+In the new system, all the coefficients are even. First, the algorithm
+chooses an equation which has a coefficient with the minimum number of
+factors of 2. In this case, that would be the equation $4z + 2y + 2
+=0$, where $y$ has the minimum number of factors of 2. The whole
+system is divided by 2 to obtain,
+
+\begin{eqnarray}
+2z[1:0] +_{[2]} y[1:0] + 1 = 0 \nonumber\\
+2y[1:0] +_{[2]} 3z[1:0] = 0 \nonumber\
+\end{eqnarray}
+
+Two entries are made in the substitutionmap, namely $z=z[2:2] @
+z[1:0]$ and $y=y[2:2] @ y[1:0]$. Observe that the top bits of the
+variables have been cleaved away, and all constants, variables and
+operations are 2 bits. Now, $y[1:0]$ is solved for to obtain $y[1:0] =
+2z[1:0] +_{[2]} 3$, and a corresponding entry is made in the
+substitutionmap. Substituting for $y[1:0]$ in the system we get a new
+system of equations,
+
+\begin{eqnarray}
+3z[1:0] +_{[2]} 2 = 0 \nonumber\
+\end{eqnarray}
+
+The above equation can be solved for z[1:0] to obtain $z[1:0] = 2$. It
+follows that the system of equation that we started out with is
+satisfiable, where one set of values of the variables are $z=010$, $y
+= 011$, and $x=000$.
+
+\subsection{The Substitution Map}
+The substitution map is an ordered map that holds key-value pairs
+where the key is a variable or an extraction of some bits of a
+variable, and the value is a term. The following invariants must hold
+on the substitutionmap after an entry is made.
+
+\begin{itemize}
+\item The substitution map is a conjunction of equations of the form
+$x[i:0] = t$ or $x=t$, where $t$ is a linear bitvector term not
+containing $x$.
+
+\item In order to prevent cycles, it is essential that the variable
+occuring in the key does not occur in the value.
+
+\item keys occuring earlier in the map do not occur in value terms
+occuring later in the map. This prevents un-necessary dependencies.
+
+\item A key may have atmost one entry in the map.
+
+\item If there is an entry of the form $x[i:0] = t$, then there also
+must be an entry in the map of the form $x=x[b-1:i+1]@x[i:0]$
+\end{itemize}
+
+\section{Termination, Soundness and Completeness}
+In this section the algorithm in figure \ref{fig1} is shown to always
+terminate for any input, and to be sound and complete. 
+
+In order to make the termination/soundness/completeness argument work
+we make certain assumptions about the subroutine
+substitute\_simplify(). This function is assumed to always terminates,
+and further that its input is always equisatisfiable with its
+output. Also, it is assumed that the output of this function can only
+be one of TRUE, FALSE, or a linear bitvector arithmetic equation.
+
+\begin{theorem}
+\emph{(Termination Theorem)}
+\label{Termination}
+The algorithm presented in figure \ref{fig1} terminates in finite time
+for any input.
+\end{theorem}
+
+\begin{proof}
+We are given the assumption that the subroutine substitute\_simplify()
+terminates in finite time for any input. It is easy to check by
+inspection that every step of the algorithm in figure \ref{fig1} takes
+finite amount of time for any input with the exception of the call to
+the subroutine SolveAnEqn\_Odd presented in figure \ref{fig2}, and the
+possibility of non terminating loops. 
+
+From the laws of bitvector arithmetic and an inspection of the
+subroutine SolveAnEqn\_Odd will also quickly lead to the conclusion
+that each step is finite time, and since there are no loops in the
+subroutine, it takes finite time.
+
+Regarding the loop in step 2: The loop is bounded by the number of
+equations in the input conjunction, and hence will always terminate.
+
+Regarding the loop in step 4.5 the argument is little bit
+trickier. The loop termination condition is that the conjunction C
+should reduce to TRUE or FALSE, i.e. the loop should ensure that
+equations in C are somehow consumed and transformed into TRUE or
+FALSE.
+
+Observe that every iteration of this outer loop ensures that there is
+atleast one fewer equation in the conjunction C when the control
+reaches step 1 at the end of the loop. The reason for this is that in
+step 4.3 we are garaunteed that atleast one variable will have odd
+coefficient and hence it will be solved for, and therefore the return
+value of the call to SolveAnEqn\_Odd at this step will be either TRUE
+or FALSE. Hence, newC, and therefore C, will have one fewer eqn in it.
+\end{proof}
+
+\textbf{some discussion about soundness and completeness.define
+assignment, satisfying assignment, satisfiability, equisatisfiability,
+equivalid, logical equivalence, substitutability, SAT and UNSAT values
+returned by the decision procedure etc}
+
+
+\begin{definition}
+\item \emph{Soundness:} A decision procedure is said to be sound, if
+for every unsatisfiable input the procedure returns UNSAT.
+
+\item \emph{Completeness:} A decision procedure is said to be
+complete, if for every satisfiable input the procedure returns SAT.
+\end{definition}
+
+The proof strategy for the soundness/completeness theorems is as
+follows: We show that every step of the algorithm is equivalence
+preserving, i.e. they are logically equivalent transformations, and
+further that the algorithm terminates for the right reasons.
+
+\begin{theorem}
+\emph{(Soundness and Completeness Theorem)}
+\label{SoundComplete}
+The decision procedure presented in figure \ref{fig1} is both sound
+and complete.
+\end{theorem}
+
+\begin{proof}
+In order to prove that the decision procedure is both sound and
+complete it suffices to show that every step in the algorithm is
+equivalence preserving, and that the termination condition is
+correct, i.e. the algorithm terminates with SAT iff the input is
+satisfiable.
+
+We can define the notion of a state of the algorithm at the end of any
+step to be the conjunction of
+\begin{item}
+the formula output by that step of the algorithm
+the formulas that are not yet processed by any step so far
+the equalities stored in the substitutionmap
+\end{item}
+
+We denote the state before a step of the algorithm is executed by
+$P(\bar{x})$, where $\bar{x}$ are the variables of the formula
+$P(\bar{x})$. The state after a step has been executed is denoted by
+$newP(\bar{x})$. It is implicit that $newP(\bar{x})$ of step $i$ is
+the $P(\bar{x})$ of step $i+1$ of the algorithm.
+
+First, observe that every step of the algorithm is either a
+transformation based on the laws of bitvector arithmetic/logic or an
+entry into the substitutionmap (This is assumed to be true for the
+subroutine substitute\_simplify). 
+
+By the laws of bitvector arithmetic and substitution, it follows that
+every step of the algorithm transforms the state such that $\forall
+x(P(\bar{x}) \iff newP(\bar{x}))$, i.e. every step preserves logical
+equivalence. The only steps which require more elaboration are steps
+4.1 and 4.2. However, Theorem [to be proved] allows the conclusion
+that equivalence is preserved in these steps as well.
+
+Since logical equivalence is bi-transitive, it follows that the input
+system of equations is logically equivalent to the state right after
+the final step of the algorithm.
+
+The final question is whether the algorithm terminates for the right
+reason.
+
+If after the final step, the state is FALSE in conjunction with
+entries in the substitutionmap, then because of logical equivalence it
+follows that the original system is unsatisfiable. Hence the algorithm
+is correct in return UNSAT.
+
+On the other hand, if the state after the final step is TRUE in
+conjunction with entries in the substitutionmap, we need to argue that
+the entries in the map form a satisfiable system. 
+
+Recall that the substitutionmap requires that the $i^{th}$ entry have
+no variables in the keys of entries numbered $1$ to $i-1$. This
+implies that all variables in the value-portion of the first entry are
+independent of any constraints, i.e. they can be assigned any
+value. Once the first entry has been assigned a value, we can then
+proceed to discover the value for the second entry and so on, till all
+variables have been assigned some value. It follows that the final
+state is satisfiable, and since every step in the algorithm was
+equivalence preserving it implies that the original system is
+satisfiable.
+
+\ref{fig1} is sound and complete.  
+\qed
+\end{proof}
+
+\textbf{to prove theorems: substitute\_simplify is equisatisfiable.  the
+theorem about division by 2. the theorem that the substitutionmap is
+updated only by substitutable terms. i.e. the algorithm SolveAnEqn()
+produces only substitutable terms for $x_i$.}
+
+\section{Complexity}
+
+The size of the input is defined in terms of the number of equations
+$k$, number of variables per equation $n$, and the number of bits $b$
+per variable.
+
+\begin{theorem}
+\emph{(Polytime Complexity Theorem)}
+\label{complexity}
+The worst-case running time of the decision procedure in figure
+\ref{fig1} is a polynomial in $k$, $b$ and $n$.
+\end{theorem}
+
+\begin{proof}
+It is given that the worst-case running time of substitute\_simplify
+function is bounded by a polynomial, say $Q$, in $k$, $b$, and
+$n$.
+
+All steps in SolveAnEqn\_Odd are bounded by some polynomial $P$ in $n$
+and $b$, except for the substitute\_simplify call which is bounded by
+$Q$. Hence, the worst-case running time for SolveAnEqn is $O((P+Q))$.
+
+The maximum number of possible iterations in step 2 of TopLevelSolver
+is $k$. The maximum number of possible iterations induced by step 4 is
+also $k$. To see this, note that in the worst case all equations have
+even coefficient in the input, and in every iteration one equation is
+definitely solved away in step 4.2, Thus leading to a maximum of $k$
+goto calls from step 4.4 to step 1 of the algorithm.
+
+Hence TopLevelSolver's worst-case running time is $O(k^2(P+Q))$.  
+
+\qed
+\end{proof}
+
+\section{Solving Linear Bitvector Equations}
+Now we turn our attention to solving linear equations over
+bitvectors. The algorithm is similar to the one presented for modular
+arithmetic. Hence, the theorems carry over easily.
+
+\begin{figure} [p]
+\begin{verbatim}
+INPUT C: A conjunction of k linear equations over n variables of
+length $b$ each
+
+OUTPUT: SAT or UNSAT or ERROR
+
+SIDEFFECT: updates substitutionmap through subroutine 
+           SolveAnEqn()
+
+Algorithm: TopLevelSolver(Conjunction of equations C) {
+ 0.Check input legality. If illegal return ERROR;
+ 1.C = substitute_simplify(C);
+   1.0 if(FALSE == e) return UNSAT;
+   1.1 if(TRUE == e) continue;
+ 2.For each equation e in C {
+   2.0 e = substitute_simplify(e);
+   2.1 if(FALSE == e) return UNSAT;
+   2.2 if(TRUE == e)  continue;
+   2.3 b = SolveAnEqn_Odd(e);
+   2.4 if(TRUE  == b) continue;
+   2.5 if(FALSE == b) return UNSAT;
+   2.6 if b is an eqn, then collect b in a 
+       conjunction to obtain newC
+ }
+ 3.If newC is an empty conjunction return SAT
+ //If control reaches here we know that all 
+ //coeffs are even in newC
+ 4. 
+   4.0 Find that equation e in newC such which has a coeff 
+       ai with the fewest factors of 2, say m.
+   4.1 Divide all equations by 2^m, i.e. cleave away the 
+       top m bits of all variables and divide each constant 
+       by 2^m to obtain a new conjunction of eqn D
+   4.2 For each variable xi in e, enter 
+       xi = xi[b-1:m]@xi[m-1:0] in the substmap
+   4.3 b = SolveAnEqn_Odd(e); b is garaunteed to be 
+       TRUE or FALSE
+   4.4 Drop the eqn e from newC, and 
+       if b is FALSE set C = FALSE, else set C = newC
+   4.5 Goto step 1
+ 5.return SAT
+}//end of TopLevelSolver()
+
+\end{verbatim}
+\caption{\label{fig1} Algorithm for solving linear modular arithmetic
+equations}
+\end{figure}
+
+\begin{figure} [p]
+\begin{verbatim}
+INPUT: An equation of the form a1x1+a2x2+ ... +anxn+c= 0 mod m, 
+where ai and c are integers ranging over {0,...,m-1}, and xi 
+are distinct variables, m is a power of 2
+
+OUTPUT: TRUE or FALSE or EQN with even coeffs only
+
+SIDEEFFECT: Updates the substitutionmap
+
+Subroutine: SolveAnEqn_Odd(equation e) {
+  1.non-deterministically choose aixi, if it exists, where 
+    coefficient ai is odd:
+    1.0 rewrite e into aixi = -a1x1 ... -anxn -c
+    1.1 Replace each of -a1,...,-an by its representative 
+        to obtain aixi = b1x1 + ... + bnxn + d
+    1.2 Multiply both sides by the multiplicative inverse of 
+        ai to obtain xi = c1x1 + ... + cnxn + d
+    1.3 Update substitutionmap with  xi = c1x1 + ... + cnxn + d, 
+        and return TRUE
+  //If control reaches here then all coeffs in e are even
+  2.if c is odd and all ai's are even, return FALSE;
+  3. return e;
+} //end of SolveAnEqn_Odd()
+\end{verbatim}
+\caption{\label{fig2} Subroutine to solve a single linear equation with atleast one odd coeff}
+\end{figure}
+
+%\bibliography{biblio} \bibliographystyle{plain}
+%\end{document}
+
+
+
+
