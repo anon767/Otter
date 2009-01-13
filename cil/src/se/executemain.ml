@@ -218,21 +218,47 @@ let doExecute (f: file) =
 					print_newline ())
 				sortedList
 		end;
-	let alwaysExecuted =
-		List.fold_left
-			(fun interAcc (_,eS) -> EdgeSet.inter interAcc eS)
-			(snd (List.hd !Driver.coverage))
-			(List.tl !Driver.coverage)
-	in
+
 	List.iter
-		(fun (pc,eS) ->
-			print_endline "The following edges were executed only under condition";
-			print_endline
-				((let str = (To_string.annotated_bytes_list pc) in if str = "" then "<None>" else str)^"\n");
-			Driver.dumpEdges (List.fold_left (fun acc (_,eS') -> EdgeSet.diff acc eS') eS !Driver.coverage);
-			print_endline "\nand these non-universal edges were executed:";
-			Driver.dumpEdges (EdgeSet.diff eS alwaysExecuted))
+		(fun (pc1,eS1) ->
+			List.iter
+				(fun (pc2,eS2) ->
+					if pc1 < pc2 then( (* Compare each pair only once---that is, don't compare (a,b) and then (b,a) *)
+						print_endline "\n====================\n";
+						print_endline ("A =\n" ^ (To_string.annotated_bytes_list pc1) ^ "\n\nand B =\n" ^ (To_string.annotated_bytes_list pc2) ^ "\n");
+						Printf.printf "A executed %d edges; B executed %d\n\n" (EdgeSet.cardinal eS1) (EdgeSet.cardinal eS2);
+						if EdgeSet.equal eS1 eS2
+						then print_endline ("A and B cover the same edges.\n")
+						else(
+							let printDiffs set1 set2 =
+								let diffSet = EdgeSet.diff set1 set2 in
+								let numDiffs = EdgeSet.cardinal diffSet in
+								print_int numDiffs;
+								print_newline ();
+								if numDiffs < 10 then (print_newline (); Driver.dumpEdges diffSet; print_newline ())
+							in
+							(print_endline ("Number of edges executed under A but not B:");
+							 printDiffs eS1 eS2;
+							 print_endline ("Number of edges executed under B but not A:");
+							 printDiffs eS2 eS1))))
+				!Driver.coverage)
 		!Driver.coverage;
+
+(*	let alwaysExecuted =                                                                                *)
+(*		List.fold_left                                                                                    *)
+(*			(fun interAcc (_,eS) -> EdgeSet.inter interAcc eS)                                              *)
+(*			(snd (List.hd !Driver.coverage))                                                                *)
+(*			(List.tl !Driver.coverage)                                                                      *)
+(*	in                                                                                                  *)
+(*	List.iter                                                                                           *)
+(*		(fun (pc,eS) ->                                                                                   *)
+(*			print_endline "The following edges were executed only under condition";                         *)
+(*			print_endline                                                                                   *)
+(*				((let str = (To_string.annotated_bytes_list pc) in if str = "" then "<None>" else str)^"\n"); *)
+(*			Driver.dumpEdges (List.fold_left (fun acc (_,eS') -> EdgeSet.diff acc eS') eS !Driver.coverage);*)
+(*			print_endline "\nand these non-universal edges were executed:";                                 *)
+(*			Driver.dumpEdges (EdgeSet.diff eS alwaysExecuted))                                              *)
+(*		!Driver.coverage;                                                                                 *)
 (*	print_endline "Always executed";*)
 (*	Output.dumpEdges alwaysExecuted;*)
 (*	print_endline "Edges executed at least once but not always:";*)
