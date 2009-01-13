@@ -142,7 +142,7 @@ let evaluate file func =
     Function.with_aspect ("__ASSERT", advice) begin fun () ->
         let initstate = Executemain.init_globalvars MemOp.state__empty file.Cil.globals in
         (* let argvs = Executemain.init_cmdline_argvs func in *)
-        let endstate = try Driver.exec_function initstate func [] Types.MainEntry
+        let endstate = try Driver.exec_function initstate Types.emptyHistory func [] Types.MainEntry (* The history argument was added by Elnatan (1/12/08) *)
             with Function.Notification_Exit(state_exit,_) -> state_exit in
         (endstate, result, !total)
     end

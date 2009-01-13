@@ -305,7 +305,10 @@ ifeq ($(NATIVECAML),1)
 $(OBJDIR)/libcil.a: $(OCAML_CIL_LIB_CMODULES:%=$(OBJDIR)/lib%.a) \
                     $(OCAML_CIL_LIB_MODULES:%=$(OBJDIR)/%.$(CMO))
 	@$(NARRATIVE) "Linking $(COMPILETOWHAT) $@ $(LINKMSG)"
-	$(AT)$(CAMLLINK) -output-obj -o $@ $(CILLY_LIBS:%=%.cmxa) $^
+	$(AT)$(CAMLLINK) -output-obj -o $(OBJDIR)/libcil.o $(CILLY_LIBS:%=%.cmxa) $^
+	rm -f $@
+	ar rcs $@ $(OBJDIR)/libcil.o
+	rm -f $(OBJDIR)/libcil.o
 else
 $(OBJDIR)/libcil.a:
 	@echo "Can only build $@ when NATIVECAML is 1."

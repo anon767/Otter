@@ -168,8 +168,6 @@ let (string_table : bytes MemoryBlockMap.t ref) = ref MemoryBlockMap.empty;;
 
 (* some globals that are helpful *)
 let stp_count = ref 0;;
-let current_stmt = ref Cil.dummyStmt;;
-let current_instr = ref Cil.dummyInstr;;
 
 (* Coerce a bytes into an annotated_bytes (without adding any annotations) *)
 let rec bytes_to_annotated = function
@@ -188,3 +186,38 @@ let rec bytes_to_annotated = function
 			bytes_to_annotated bytesToWrite)
 	| Bytes_FunPtr(fdec,addr) -> Annot_Bytes_FunPtr(fdec,bytes_to_annotated addr)
 ;;
+
+(*type edgeSet = (stmt*stmt) list
+let add (e:stmt*stmt) (eS:edgeSet) : edgeSet = if List.memq e eS then eS else e::eS;;*)
+module EdgeSet = Set.Make
+	(struct
+		type t = Cil.stmt*Cil.stmt
+		(* Order edges primarily by source id, then by destination id *)
+		let compare (src1,dst1) (src2,dst2) =
+			let srcCmp = compare src1.Cil.sid src2.Cil.sid in
+			if srcCmp = 0
+			then compare dst1.Cil.sid dst2.Cil.sid
+			else srcCmp
+	end)
+
+type executionHistory = {
+	edgesTaken : EdgeSet.t; (** Which edges we've traversed on this execution *)
+	prevStmt : Cil.stmt; (** The [stmt] we just executed *)  
+}
+
+let emptyHistory = {
+	edgesTaken = EdgeSet.empty;
+	prevStmt = Cil.dummyStmt;
+}
+
+module PcSet = Set.Make
+	(struct
+		type t = annotated_bytes list
+		let compare = compare
+	end)
+
+(** This maps (Cil.exp,Cil.location) pairs to a pair (T_set,F_set) of
+	PcSet refs, which are the sets of path conditions under which we
+	took the true branch and false branch, respectively, of this condition. *)
+let branches_taken : (Cil.exp * Cil.location, PcSet.t ref * PcSet.t ref) Hashtbl.t =
+	Hashtbl.create 100

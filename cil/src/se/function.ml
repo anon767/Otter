@@ -45,8 +45,8 @@ let from_signature (s : string) =
 	let rec search ss gs =
 		match gs with
 			| [] -> raise Not_found
-			| GFun (fundec, _) :: t ->
-				if fundec.svar.vname = ss then fundec else search ss t
+			| GFun (fundec,loc) :: t ->
+				if fundec.svar.vname = ss then (fundec,loc) else search ss t
 			| _ :: t -> search ss t
 	in search s (Executedata.globals ())
 	;;

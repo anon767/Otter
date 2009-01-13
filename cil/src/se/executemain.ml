@@ -150,18 +150,26 @@ let doExecute (f: file) =
 	Cil.initCIL ();
   Executedata.file := f;
 
-	let main_func = 
+	let (main_func,main_loc) = 
 		try Function.from_signature "main"  
 		with Not_found -> try Function.from_signature "main : int (void)"
 		with Not_found -> try Function.from_signature "main : int (int,char**)"
 		with Not_found -> failwith "No main function found!"
 	in
-  let state = MemOp.state__empty in
+
+	let cfgOutChannel = open_out (Filename.basename (Filename.chop_extension main_loc.file)^".cfg") in
+  iterGlobals f (fun g ->
+		match g with GFun(fd,_) ->
+      Cfg.printCfgChannel cfgOutChannel fd
+    | _ -> ());
+
+
+	let state = MemOp.state__empty in
 	let state1 = init_globalvars state f.globals in
 	let (state2,main_args) = init_cmdline_argvs state1 f.fileName in
-  let state3 = 
+	let state3 = 
 		try
-			Driver.exec_function state2 main_func main_args MainEntry
+			Driver.exec_function state2 emptyHistory main_func main_args MainEntry
 		with Function.Notification_Exit (state_exit,_) -> state_exit		
 	in    
 	let rep = Report.format state3 in
@@ -182,39 +190,56 @@ let doExecute (f: file) =
 			let hashtblAsList =
 				Hashtbl.fold
 					(fun a b acc -> (a,b) :: acc)
-					Driver.branches_taken
+					branches_taken
 					[]
-			and cmpByLoc ((_,loc1),_) ((_,loc2),_) =
-				(* Sort by file name, then by line, then by offset *)
-				let fileCmp = compare loc1.file loc2.file in
-				if fileCmp = 0 then
-					let lineCmp = compare loc1.line loc2.line in
-					if lineCmp = 0 then compare loc1.byte loc2.byte
-					else lineCmp
-				else fileCmp
+			and cmpByLoc ((_,loc1),_) ((_,loc2),_) = Cilutility.compareLoc loc1 loc2
 			in
 			let sortedList = List.sort cmpByLoc hashtblAsList and
 					printPcSet pcSet =
 						let counter = ref 0 in
-						List.iter (fun pc -> let str = To_string.annotated_bytes_list pc in
-																 counter := !counter + 1;
-																 print_endline ("Condition " ^ (string_of_int !counter) ^ ":");
-																 print_endline (if str = "" then "[None]" else str);
-																 print_newline ())
-											(Driver.PcSet.elements pcSet)
+						PcSet.iter
+							(fun pc ->
+								let str = To_string.annotated_bytes_list pc in
+								counter := !counter + 1;
+								print_endline ("Condition " ^ (string_of_int !counter) ^ ":");
+								print_endline (if str = "" then "[None]" else str);
+								print_newline ())
+							pcSet
 			in
 			List.iter
 				(fun ((exp,loc), (true_pcSet_ref,false_pcSet_ref)) ->
 					print_endline ((To_string.location loc) ^ ", " ^ (To_string.exp exp));
-					if !true_pcSet_ref <> Driver.PcSet.empty then
+					if !true_pcSet_ref <> PcSet.empty then
 						(print_endline "True branch taken under the following conditions:";
 						 printPcSet !true_pcSet_ref);
-					if !false_pcSet_ref <> Driver.PcSet.empty then
+					if !false_pcSet_ref <> PcSet.empty then
 						(print_endline "False branch taken under the following conditions:";
 						 printPcSet !false_pcSet_ref);
 					print_newline ())
 				sortedList
 		end;
+	let alwaysExecuted =
+		List.fold_left
+			(fun interAcc (_,eS) -> EdgeSet.inter interAcc eS)
+			(snd (List.hd !Driver.coverage))
+			(List.tl !Driver.coverage)
+	in
+	List.iter
+		(fun (pc,eS) ->
+			print_endline "Under condition:";
+			print_endline
+				(let str = (To_string.annotated_bytes_list pc) in if str = "" then "<None>" else str);
+			print_endline "these non-universal edges were executed:";
+			Driver.dumpEdges (EdgeSet.diff eS alwaysExecuted))
+		!Driver.coverage;
+(*	print_endline "Always executed";*)
+(*	Output.dumpEdges alwaysExecuted;*)
+(*	print_endline "Edges executed at least once but not always:";*)
+(*	Driver.dumpEdges (EdgeSet.diff everExecuted alwaysExecuted); *)
+	
+(*	List.iter                                                                                          *)
+(*		(fun (pc,edgeSet) -> print_endline (To_string.annotated_bytes_list pc); Driver.dumpEdges edgeSet)*)
+(*		!Driver.coverage;                                                                                *)
 
   Output.print_endline "Finished.";
 	()

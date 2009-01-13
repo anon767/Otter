@@ -60,7 +60,7 @@ let libc_malloc state exps =
 	let name = Printf.sprintf "malloc(%d)#%d/%s%s" 
 		size
 		(Utility.next_id libc_malloc__id) 
-		(To_string.location (Cil.get_instrLoc (!Types.current_instr))) 
+		(To_string.location !Output.cur_loc) 
 		(MemOp.state__trace state)
 	in
 	let block =  MemOp.block__make name size Block_type_Heap in

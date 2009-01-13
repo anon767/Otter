@@ -2,13 +2,31 @@ open Cil
 open Types
 open Executeargs
 
-module PcSet = Set.Make
-		(struct
-			type t = annotated_bytes list
-			let compare = compare
-		end)
+(** List of (path condition,edgeSet) pairs denoting coverage on
+	different executions. *)
+let coverage = ref [];;
 
-let branches_taken = Hashtbl.create 100
+let dumpEdges (eS:EdgeSet.t) : unit =
+	if eS = EdgeSet.empty
+	then ()
+	else
+		let currentSrc = ref (fst (EdgeSet.min_elt eS)) in
+		if (!currentSrc = dummyStmt)
+		then Printf.printf "-1 [label:\"-1:Program start\"]\n"
+		else Printf.printf "%d [label:\"%d:%s\"]\n"
+			!currentSrc.sid !currentSrc.sid (Pretty.sprint 500 (Cil.d_stmt () !currentSrc));
+		EdgeSet.iter
+			(fun (src,dst) ->
+				if src != !currentSrc (* Print the label when the source statement changes. *)
+				then(
+					currentSrc := src;
+					try
+						Printf.printf "%d [label:\"%d:%s\"]\n" !currentSrc.sid !currentSrc.sid (Pretty.sprint 500 (Cil.d_stmt () !currentSrc))
+					with Errormsg.Error ->
+						Printf.printf "%d [label:\"%d:<error>\"]\n" !currentSrc.sid !currentSrc.sid
+					);
+				Printf.printf "\t%d -> %d\n" src.sid dst.sid)
+			eS
 ;;
 
 (* Note:
@@ -37,7 +55,7 @@ let init_argvs state func argvs =
 
 let rec
 
-exec_function state func argvs caller_stmt =
+exec_function state exHist func argvs caller_stmt =
   if List.length func.sallstmts > 0 then
     Output.set_cur_loc (Cil.get_stmtLoc (List.hd func.sallstmts).skind)
   else 
@@ -45,37 +63,33 @@ exec_function state func argvs caller_stmt =
     ;
 	let state1 = MemOp.state__start_fcall state func caller_stmt in
 	let state2 = init_argvs state1 func argvs in
-	let scfg = Scfg.universe in
 	let entry = List.hd func.sallstmts in
-		exec_stmt state2 scfg entry
+	exec_stmt state2 exHist entry 
 and
 
-exec_statement state scfg (statement: statement) =
+exec_statement state exHist (statement: statement) =
 	match statement with
 		| MainEntry -> failwith "MainEntry is never executed!"
-		| Instruction (instr, stmt) -> 
-			(* ugly globals for current instr/stmt *)
-			Types.current_stmt := stmt;
-			Types.current_instr := instr;
-			let state2 = exec_instr state scfg instr stmt in 
-				state2
-		| Statement (stmt) -> 
-			Types.current_stmt := stmt;
-			exec_stmt state scfg stmt
+		| Instruction (instr, stmt) -> exec_instr state exHist instr stmt
+		| Statement (stmt) -> exec_stmt state exHist stmt
 			
 and
 			
-exec_stmt state scfg (stmt: Cil.stmt) =
+exec_stmt state oldExHist (stmt: Cil.stmt) =
+	let exHist = {
+		edgesTaken = EdgeSet.add (oldExHist.prevStmt,stmt) oldExHist.edgesTaken;
+		prevStmt = stmt;
+	} in
 	Output.set_mode Output.MSG_STMT;
     Output.set_cur_loc (Cil.get_stmtLoc stmt.skind);
 	Output.print_endline (To_string.stmt stmt);
 	match stmt.skind with
 		| Instr (instrs) ->
-				if List.length instrs = 0 then exec_stmt state scfg (next_stmt stmt) else
+				if List.length instrs = 0 then exec_stmt state exHist (next_stmt stmt) else
 					let instr =
 						List.hd instrs
 					in
-					exec_statement state scfg (Instruction(instr, stmt)) (* at least one instr? *)
+					exec_statement state exHist (Instruction(instr, stmt)) (* at least one instr? *)
 
 		| Return (expopt, loc) ->
 				begin
@@ -112,14 +126,15 @@ exec_stmt state scfg (stmt: Cil.stmt) =
 					if instruction = MainEntry then(
 						Output.set_mode Output.MSG_REG;
 						Output.print_endline "Program execution finished";
+						coverage := (state.human_readable_path_condition,exHist.edgesTaken) :: !coverage;
 						state2')
 						else
-							exec_statement state2' scfg (next_statement instruction)
+							exec_statement state2' exHist (next_statement instruction)
 				end
 		| Goto (stmtref, loc) ->
-				exec_stmt state scfg (!stmtref)
+				exec_stmt state exHist (!stmtref)
 		| Loop (block, loc, breakopt, continueopt) ->
-				exec_block state scfg block
+				exec_block state exHist block
 		| If (exp, block1, block2, loc) ->
 				begin
 				(* try a branch *)
@@ -147,9 +162,9 @@ exec_stmt state scfg (stmt: Cil.stmt) =
 										res)
 							end;
 						if block_is_empty block then
-							exec_stmt state_t scfg (next_stmt stmt)
+							exec_stmt state_t exHist (next_stmt stmt)
 						else
-							exec_block state_t scfg block
+							exec_block state_t exHist block
 					in
  
 					let rv = Eval.rval state exp in
@@ -200,7 +215,8 @@ exec_stmt state scfg (stmt: Cil.stmt) =
 						end
 				end
 		| Block(block) ->
-				exec_block state scfg block
+				(* Use oldExHist here because we don't need [Block]s in the CFG *)
+				exec_block state oldExHist block
 		| _ -> failwith "Not implemented yet"
 and
 block_is_empty block = (List.length block.bstmts = 0)
@@ -244,13 +260,13 @@ next_stmt stmt =
 	
 and
 
-exec_block state scfg block =
+exec_block state exHist block =
 	let stmts = block.bstmts in
-	exec_stmt state scfg (List.hd stmts)
+	exec_stmt state exHist (List.hd stmts)
 
 and
 
-exec_instr state scfg instr stmt =
+exec_instr state exHist instr stmt =
 	(* MemOp.function_stat_increment (List.hd state.callstack); (*used to count the workload of each function*)*)
 	Output.set_mode Output.MSG_STMT;
     Output.set_cur_loc (Cil.get_instrLoc instr);
@@ -262,7 +278,7 @@ exec_instr state scfg instr stmt =
 				let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
 				let rv = Eval.rval state exp in
 				let state2 = MemOp.state__assign state (block,offset) size rv in
-					exec_statement state2 scfg (next_statement (Instruction(instr,stmt)))
+					exec_statement state2 exHist (next_statement (Instruction(instr,stmt)))
 			with Failure(fail) ->
 				Output.set_mode Output.MSG_MUSTPRINT;
 				Output.print_endline 
@@ -271,7 +287,7 @@ exec_instr state scfg instr stmt =
 			end
 		| Call(lvalopt, fexp, exps, loc) ->
 			begin try
-				exec_instr_call state scfg instr stmt lvalopt fexp exps loc
+				exec_instr_call state exHist instr stmt lvalopt fexp exps loc
 			with Failure(fail) ->
 				Output.set_mode Output.MSG_MUSTPRINT;
 				Output.print_endline 
@@ -281,10 +297,10 @@ exec_instr state scfg instr stmt =
 		| Asm (attributes, s1_list, l1, l2, l3, loc) ->
 				Output.set_mode Output.MSG_REG;
 				Output.print_endline "Warning: ASM unsupported";
-				exec_statement state scfg (next_statement (Instruction(instr, stmt)))
+				exec_statement state exHist (next_statement (Instruction(instr, stmt)))
 and
 
-exec_instr_call state scfg instr stmt lvalopt fexp exps loc =
+exec_instr_call state exHist instr stmt lvalopt fexp exps loc =
 				let rec op_exps exps binop =
 					let rec impl exps =
 						match exps with
@@ -320,10 +336,8 @@ exec_instr_call state scfg instr stmt lvalopt fexp exps loc =
 								in
 								Eval.rval state final_exp) exps exptyps) 
 							*)
-							let argvs = (List.map (fun exp -> Eval.rval state exp) exps)
-							in
-							let state2 = exec_function state fundec argvs	(Instruction(instr,stmt)) in 
-								state2
+							let argvs = (List.map (fun exp -> Eval.rval state exp) exps) in
+							exec_function state exHist fundec argvs (Instruction(instr,stmt))
 					| _ ->
 				let state_end = begin match func with
 					| Function.Builtin (builtin) ->
@@ -564,7 +578,7 @@ exec_instr_call state scfg instr stmt lvalopt fexp exps loc =
 					| _ -> failwith "unreachable"
 						
 						end in
-							exec_statement state_end scfg (next_statement (Instruction(instr,stmt)))
+							exec_statement state_end exHist (next_statement (Instruction(instr,stmt)))
 
 						
 					end (* match func *)
