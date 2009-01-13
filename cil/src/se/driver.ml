@@ -14,14 +14,14 @@ let dumpEdges (eS:EdgeSet.t) : unit =
 		if (!currentSrc = dummyStmt)
 		then Printf.printf "-1 [label:\"-1:Program start\"]\n"
 		else Printf.printf "%d [label:\"%d:%s\"]\n"
-			!currentSrc.sid !currentSrc.sid (Pretty.sprint 500 (Cil.d_stmt () !currentSrc));
+			!currentSrc.sid !currentSrc.sid (Pretty.sprint 500 (Cil.d_loc () (get_stmtLoc !currentSrc.skind)));
 		EdgeSet.iter
 			(fun (src,dst) ->
 				if src != !currentSrc (* Print the label when the source statement changes. *)
 				then(
 					currentSrc := src;
 					try
-						Printf.printf "%d [label:\"%d:%s\"]\n" !currentSrc.sid !currentSrc.sid (Pretty.sprint 500 (Cil.d_stmt () !currentSrc))
+						Printf.printf "%d [label:\"%d:%s\"]\n" !currentSrc.sid !currentSrc.sid (Pretty.sprint 500 (Cil.d_loc () (get_stmtLoc !currentSrc.skind)))
 					with Errormsg.Error ->
 						Printf.printf "%d [label:\"%d:<error>\"]\n" !currentSrc.sid !currentSrc.sid
 					);
@@ -415,7 +415,7 @@ exec_instr_call state exHist instr stmt lvalopt fexp exps loc =
 						Output.set_mode Output.MSG_MUSTPRINT;
 						Output.print_endline (Printf.sprintf "exit() called.\n Path Condition (length=%d):" (List.length state.path_condition));
 						List.iter (fun bytes -> Output.print_endline (To_string.bytes bytes)) state.path_condition;
-						
+						coverage := (state.human_readable_path_condition,exHist.edgesTaken) :: !coverage;
 						raise (Function.Notification_Exit (state,Eval.rval state (List.hd exps)))
 					
 					| Function.Evaluate ->
