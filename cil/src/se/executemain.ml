@@ -136,6 +136,12 @@ let init_cmdline_argvs state fileName =
 	(state'', [argc; argv])
 ;;
 
+module AnnotatedBytesSet = Set.Make
+	(struct
+		 type t = annotated_bytes
+		 let compare = compare
+	 end)
+
 let doExecute (f: file) =
 	(*
 	let f = Frontc.parse "int main(){return 0;}" () in
@@ -219,6 +225,7 @@ let doExecute (f: file) =
 				sortedList
 		end;
 
+(*
 	List.iter
 		(fun (pc1,eS1) ->
 			List.iter
@@ -243,13 +250,60 @@ let doExecute (f: file) =
 							 printDiffs eS2 eS1))))
 				!Driver.coverage)
 		!Driver.coverage;
+*)
 
-(*	let alwaysExecuted =                                                                                *)
-(*		List.fold_left                                                                                    *)
-(*			(fun interAcc (_,eS) -> EdgeSet.inter interAcc eS)                                              *)
-(*			(snd (List.hd !Driver.coverage))                                                                *)
-(*			(List.tl !Driver.coverage)                                                                      *)
-(*	in                                                                                                  *)
+	let alwaysExecuted =
+		List.fold_left
+			(fun interAcc (_,eS) -> EdgeSet.inter interAcc eS)
+			(snd (List.hd !Driver.coverage))
+			(List.tl !Driver.coverage)
+	in
+
+	(* Print number of non-universal edges executed by each path condition *)
+	List.iter
+		(fun (pc,eS) ->
+			 print_int (EdgeSet.cardinal (EdgeSet.diff eS alwaysExecuted));
+			 print_endline " non-universal edges were executed under condition";
+			 print_endline
+				 (let str = (To_string.annotated_bytes_list pc) in
+					if str = "" then "<None>\n" else str ^ "\n"))
+		!Driver.coverage;
+
+	(* Gather all proposition from all path conditions, after removing initial 'not's *)
+	let rec stripNots bytes = match bytes with
+		| Annot_Bytes_Op(OP_LNOT,[(b',_)]) -> stripNots b'
+		| _ -> bytes
+	and	allPropsRef = ref AnnotatedBytesSet.empty in
+	List.iter
+		(fun (pc,_) ->
+			 List.iter
+				 (fun b -> allPropsRef := AnnotatedBytesSet.add (stripNots b) !allPropsRef)
+				 pc)
+		!Driver.coverage;
+
+	(* For each proposition, see what edges are 'controlled' by that prop.
+		 For now, 'controlling' an edge means the edge occurs iff [prop] is
+		 true. *)
+	AnnotatedBytesSet.iter
+		(fun prop ->
+			 (* Partition the set of path conditions into ones with [prop] set
+					to true on the one hand, and anything else on the other. (A
+					path condition which doesn't mention [prop] goes into the
+					'other' category because it includes the case where [prop] is
+					false.) *)
+			 let (propTrue,propFalse) =
+				 List.partition
+					 (fun (pc,_) ->
+							let rec saysPropIsTrue isNegated q =
+								match q with
+									| Annot_Bytes_Op(OP_LNOT,[(q',_)]) -> saysPropIsTrue q' (not isNegated)
+									| _ -> q = prop
+							in
+							List.exists (saysPropIsTrue true) pc)
+					 !Driver.coverage
+			 in )
+		!allConditionsRef;
+
 (*	List.iter                                                                                           *)
 (*		(fun (pc,eS) ->                                                                                   *)
 (*			print_endline "The following edges were executed only under condition";                         *)

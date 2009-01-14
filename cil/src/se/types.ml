@@ -210,6 +210,7 @@ let emptyHistory = {
 	prevStmt = Cil.dummyStmt;
 }
 
+(** A set of human-readable path conditions *)
 module PcSet = Set.Make
 	(struct
 		type t = annotated_bytes list

@@ -46,7 +46,7 @@ let rec eval pc bytes =
 				begin try
 					let b = Convert.bytes_to_bool bytes in  (* TODO:need to use int64 *)
 						if b = false then False else True
-				with Failure(_) -> consult_stp pc bytes
+				with Failure(_) -> nontrivial()
 				end
 		| Bytes_Address (None, offset) -> 
 			eval pc offset
