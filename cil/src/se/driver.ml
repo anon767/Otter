@@ -7,23 +7,27 @@ open Executeargs
 let coverage = ref [];;
 
 let dumpEdges (eS:EdgeSet.t) : unit =
-	if eS = EdgeSet.empty
+	if EdgeSet.is_empty eS
 	then ()
 	else
 		let currentSrc = ref (fst (EdgeSet.min_elt eS)) in
 		if (!currentSrc = dummyStmt)
 		then Printf.printf "-1 [label:\"-1:Program start\"]\n"
 		else Printf.printf "%d [label:\"%d:%s\"]\n"
-			!currentSrc.sid !currentSrc.sid (Pretty.sprint 500 (Cil.d_loc () (get_stmtLoc !currentSrc.skind)));
+			!currentSrc.sid !currentSrc.sid
+			(Pretty.sprint 500 (Cil.d_loc () (get_stmtLoc !currentSrc.skind)));
 		EdgeSet.iter
 			(fun (src,dst) ->
 				if src != !currentSrc (* Print the label when the source statement changes. *)
 				then(
 					currentSrc := src;
 					try
-						Printf.printf "%d [label:\"%d:%s\"]\n" !currentSrc.sid !currentSrc.sid (Pretty.sprint 500 (Cil.d_loc () (get_stmtLoc !currentSrc.skind)))
+						Printf.printf "%d [label:\"%d:%s\"]\n"
+							!currentSrc.sid !currentSrc.sid
+							(Pretty.sprint 500 (Cil.d_loc () (get_stmtLoc !currentSrc.skind)))
 					with Errormsg.Error ->
-						Printf.printf "%d [label:\"%d:<error>\"]\n" !currentSrc.sid !currentSrc.sid
+						Printf.printf "%d [label:\"%d:<error>\"]\n"
+							!currentSrc.sid !currentSrc.sid
 					);
 				Printf.printf "\t%d -> %d\n" src.sid dst.sid)
 			eS
@@ -76,7 +80,7 @@ exec_statement state exHist (statement: statement) =
 and
 			
 exec_stmt state oldExHist (stmt: Cil.stmt) =
-	let exHist = {
+	let exHist () = {
 		edgesTaken = EdgeSet.add (oldExHist.prevStmt,stmt) oldExHist.edgesTaken;
 		prevStmt = stmt;
 	} in
@@ -85,11 +89,11 @@ exec_stmt state oldExHist (stmt: Cil.stmt) =
 	Output.print_endline (To_string.stmt stmt);
 	match stmt.skind with
 		| Instr (instrs) ->
-				if List.length instrs = 0 then exec_stmt state exHist (next_stmt stmt) else
+				if List.length instrs = 0 then exec_stmt state (exHist ()) (next_stmt stmt) else
 					let instr =
 						List.hd instrs
 					in
-					exec_statement state exHist (Instruction(instr, stmt)) (* at least one instr? *)
+					exec_statement state (exHist ()) (Instruction(instr, stmt)) (* at least one instr? *)
 
 		| Return (expopt, loc) ->
 				begin
@@ -126,15 +130,15 @@ exec_stmt state oldExHist (stmt: Cil.stmt) =
 					if instruction = MainEntry then(
 						Output.set_mode Output.MSG_REG;
 						Output.print_endline "Program execution finished";
-						coverage := (state.human_readable_path_condition,exHist.edgesTaken) :: !coverage;
+						coverage := (state.human_readable_path_condition,(exHist ()).edgesTaken) :: !coverage;
 						state2')
 						else
-							exec_statement state2' exHist (next_statement instruction)
+							exec_statement state2' (exHist ()) (next_statement instruction)
 				end
 		| Goto (stmtref, loc) ->
-				exec_stmt state exHist (!stmtref)
+				exec_stmt state (exHist ()) (!stmtref)
 		| Loop (block, loc, breakopt, continueopt) ->
-				exec_block state exHist block
+				exec_block state (exHist ()) block
 		| If (exp, block1, block2, loc) ->
 				begin
 				(* try a branch *)
@@ -162,9 +166,9 @@ exec_stmt state oldExHist (stmt: Cil.stmt) =
 										res)
 							end;
 						if block_is_empty block then
-							exec_stmt state_t exHist (next_stmt stmt)
+							exec_stmt state_t (exHist ()) (next_stmt stmt)
 						else
-							exec_block state_t exHist block
+							exec_block state_t (exHist ()) block
 					in
  
 					let rv = Eval.rval state exp in
@@ -414,7 +418,8 @@ exec_instr_call state exHist instr stmt lvalopt fexp exps loc =
 						
 						Output.set_mode Output.MSG_MUSTPRINT;
 						Output.print_endline (Printf.sprintf "exit() called.\n Path Condition (length=%d):" (List.length state.path_condition));
-						List.iter (fun bytes -> Output.print_endline (To_string.bytes bytes)) state.path_condition;
+						Output.print_endline
+							(To_string.annotated_bytes_list state.human_readable_path_condition);
 						coverage := (state.human_readable_path_condition,exHist.edgesTaken) :: !coverage;
 						raise (Function.Notification_Exit (state,Eval.rval state (List.hd exps)))
 					

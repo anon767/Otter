@@ -215,10 +215,10 @@ let doExecute (f: file) =
 			List.iter
 				(fun ((exp,loc), (true_pcSet_ref,false_pcSet_ref)) ->
 					print_endline ((To_string.location loc) ^ ", " ^ (To_string.exp exp));
-					if !true_pcSet_ref <> PcSet.empty then
+					if not (PcSet.is_empty !true_pcSet_ref) then
 						(print_endline "True branch taken under the following conditions:";
 						 printPcSet !true_pcSet_ref);
-					if !false_pcSet_ref <> PcSet.empty then
+					if not (PcSet.is_empty !false_pcSet_ref) then
 						(print_endline "False branch taken under the following conditions:";
 						 printPcSet !false_pcSet_ref);
 					print_newline ())
@@ -252,38 +252,50 @@ let doExecute (f: file) =
 		!Driver.coverage;
 *)
 
-	let alwaysExecuted =
+	let (alwaysExecuted,everExecuted) =
 		List.fold_left
-			(fun interAcc (_,eS) -> EdgeSet.inter interAcc eS)
-			(snd (List.hd !Driver.coverage))
+			(fun (interAcc,unionAcc) (_,eS) -> EdgeSet.inter interAcc eS, EdgeSet.union unionAcc eS)
+			(snd (List.hd !Driver.coverage),snd (List.hd !Driver.coverage))
 			(List.tl !Driver.coverage)
 	in
+	print_newline ();
+	print_string "In all, ";
+	print_int (EdgeSet.cardinal everExecuted);
+	print_string " edges were executed, of which ";
+	print_int (EdgeSet.cardinal alwaysExecuted);
+	print_endline " were always executed.\n";
 
 	(* Print number of non-universal edges executed by each path condition *)
-	List.iter
-		(fun (pc,eS) ->
-			 print_int (EdgeSet.cardinal (EdgeSet.diff eS alwaysExecuted));
-			 print_endline " non-universal edges were executed under condition";
-			 print_endline
-				 (let str = (To_string.annotated_bytes_list pc) in
-					if str = "" then "<None>\n" else str ^ "\n"))
-		!Driver.coverage;
+	let coverageWithoutUniversalEdges =
+		List.map
+			(fun (pc,eS) ->
+				 let eS' = EdgeSet.diff eS alwaysExecuted in
+				 print_int (EdgeSet.cardinal eS');
+				 print_endline " non-universal edges were executed under condition\n";
+				 print_endline
+					 (let str = (To_string.annotated_bytes_list pc) in
+						if str = "" then "<None>\n" else str ^ "\n");
+				 (pc,eS'))
+			!Driver.coverage;
+	in
 
 	(* Gather all proposition from all path conditions, after removing initial 'not's *)
 	let rec stripNots bytes = match bytes with
 		| Annot_Bytes_Op(OP_LNOT,[(b',_)]) -> stripNots b'
 		| _ -> bytes
-	and	allPropsRef = ref AnnotatedBytesSet.empty in
-	List.iter
-		(fun (pc,_) ->
-			 List.iter
-				 (fun b -> allPropsRef := AnnotatedBytesSet.add (stripNots b) !allPropsRef)
-				 pc)
-		!Driver.coverage;
+	in
+  let allProps =
+		let getPropSetFromPc pc =
+			List.fold_left (fun acc bytes -> AnnotatedBytesSet.add (stripNots bytes) acc) AnnotatedBytesSet.empty pc
+		in
+		List.fold_left (fun acc (pc,_) -> AnnotatedBytesSet.union (getPropSetFromPc pc) acc)
+			AnnotatedBytesSet.empty coverageWithoutUniversalEdges
+	in
 
-	(* For each proposition, see what edges are 'controlled' by that prop.
-		 For now, 'controlling' an edge means the edge occurs iff [prop] is
-		 true. *)
+(*	let controlledEdges = ref [] in*)
+	(* For each proposition, see what edges are executed if [prop] is
+		 true, if [prop] is false, *only if* [prop] is true, and *only if*
+		 [prop] is false. *)
 	AnnotatedBytesSet.iter
 		(fun prop ->
 			 (* Partition the set of path conditions into ones with [prop] set
@@ -291,19 +303,114 @@ let doExecute (f: file) =
 					path condition which doesn't mention [prop] goes into the
 					'other' category because it includes the case where [prop] is
 					false.) *)
-			 let (propTrue,propFalse) =
+			 let rec saysPropIs t_or_f q =
+				 match q with
+					 | Annot_Bytes_Op(OP_LNOT,[(q',_)]) -> saysPropIs (not t_or_f) q'
+					 | _ -> t_or_f && q = prop
+			 in
+			 let (propTrue,others) =
 				 List.partition
-					 (fun (pc,_) ->
-							let rec saysPropIsTrue isNegated q =
-								match q with
-									| Annot_Bytes_Op(OP_LNOT,[(q',_)]) -> saysPropIsTrue q' (not isNegated)
-									| _ -> q = prop
-							in
-							List.exists (saysPropIsTrue true) pc)
-					 !Driver.coverage
-			 in )
-		!allConditionsRef;
+					 (fun (pc,_) -> List.exists (saysPropIs true) pc)
+					 coverageWithoutUniversalEdges
+			 in
+			 let (propFalse,propUnmentioned) =
+				 List.partition
+					 (fun (pc,_) -> List.exists (saysPropIs false) pc)
+					 others
+			 in
+			 let bigUnion =
+				 List.fold_left EdgeSet.union EdgeSet.empty
+			 and bigInter setList =
+				 match setList with
+					 | [] -> everExecuted (* An empty intersection leaves you with everything *)
+					 | h::t -> List.fold_left EdgeSet.inter h t
+							 (* Slight optimization: if the list is not empty, start
+									with the first set, rather than with everything. *)
+			 in
+			 let edgeSetsWithPropTrue = List.map snd propTrue and
+					 edgeSetsWithPropFalse = List.map snd propFalse and
+					 edgeSetsWithoutProp = List.map snd propUnmentioned in
+			 let trueUnion = bigUnion edgeSetsWithPropTrue and
+					 trueInter = bigInter edgeSetsWithPropTrue and
+					 falseUnion = bigUnion edgeSetsWithPropFalse and
+					 falseInter = bigInter edgeSetsWithPropFalse and
+					 unmentionedUnion = bigUnion edgeSetsWithoutProp and
+					 unmentionedInter = bigInter edgeSetsWithoutProp in
+			 let pImpliesE = EdgeSet.inter trueInter unmentionedInter and
+					 notPImpliesE = EdgeSet.inter falseInter unmentionedInter and
+					 pImpliesNotE = EdgeSet.diff falseUnion (EdgeSet.union trueUnion unmentionedUnion) and
+					 notPImpliesNotE = EdgeSet.diff trueUnion (EdgeSet.union falseUnion unmentionedUnion) in
+			 let vennSplit set1 set2 =
+				 let theIntersection = EdgeSet.inter set1 set2 in
+				 (EdgeSet.diff set1 theIntersection, theIntersection, EdgeSet.diff set2 theIntersection)
+			 in
+			 let (pImplE,pIffE,notPImplNotE) = vennSplit pImpliesE notPImpliesNotE and
+					 (notPImplE,notPIffE,pImplNotE) = vennSplit notPImpliesE pImpliesNotE in
+(*			 controlledEdges := (prop,notPImpliesNotE,pImpliesNotE) :: !controlledEdges;*)
+			 print_endline ("For the proposition\nP = " ^ (To_string.annotated_bytes prop));
+			 let printEdgeSet messageFormat edgeSet =
+				 if not (EdgeSet.is_empty edgeSet) then(
+					 Printf.printf messageFormat (EdgeSet.cardinal edgeSet);
+					 Driver.dumpEdges edgeSet;
+					 print_newline ())
+			 in
+			 printEdgeSet "these %d edges are executed iff P:\n\n" pIffE;
+			 printEdgeSet "and these %d edges are executed iff (not P):\n\n" notPIffE;
+			 if not (List.for_all EdgeSet.is_empty [pImplE;notPImplNotE;notPImplE;pImplNotE])
+			 then(
+				 print_string "In addition, ";
+				 printEdgeSet "these %d edges are executed if P:\n\n" pImplE;
+				 printEdgeSet "these %d edges are executed only if P:\n\n" notPImplNotE;
+				 printEdgeSet "these %d edges are executed if (not P):\n\n" notPImplE;
+				 printEdgeSet "these %d edges are executed only if (not P):\n\n" pImplNotE))
+		allProps;
 
+	let greedySetCover coverageList =
+		let rec helper acc cvrgList remaining =
+			if EdgeSet.is_empty remaining then acc
+			else(
+				match cvrgList with
+					| [] -> failwith "Impossible to cover universe."
+					| h::t -> let nextPick = ref h and
+								score x = EdgeSet.cardinal (EdgeSet.inter (snd x) remaining) in
+						let nextPickScore = ref (score h) in
+						List.iter
+							(fun s -> let sScore = score s in
+							 if sScore > !nextPickScore (*|| (sScore > 1 && Random.bool ())*)
+							 then (nextPickScore := sScore; nextPick := s))
+							cvrgList;
+						Printf.printf "Covering %d new edges\n" !nextPickScore;
+						helper (fst !nextPick::acc)
+							(List.filter ((!=) !nextPick) cvrgList)
+							(EdgeSet.diff remaining (snd !nextPick)))
+		in helper [] coverageList (EdgeSet.diff everExecuted alwaysExecuted)
+	in
+	print_endline "Here is set of configurations which covers all the edges:";
+	List.iter
+		(fun pc -> print_endline (To_string.annotated_bytes_list pc ^ "\n"))
+		(greedySetCover !Driver.coverage);
+
+(*
+	List.iter
+		(fun (prop1,true1,false1) ->
+			 List.iter
+				 (fun (prop2,true2,false2) ->
+						if prop1 < prop2 then(
+							let sameTrues = EdgeSet.inter true1 true2 in
+							if not (EdgeSet.is_empty sameTrues)
+							then(
+								Printf.printf "%s\n\nand\n%s\n\nmust both be true if any of these edges were executed:\n"
+									(To_string.annotated_bytes prop1) (To_string.annotated_bytes prop2);
+								Driver.dumpEdges sameTrues);
+							let sameFalses = EdgeSet.inter false1 false2 in
+							if not (EdgeSet.is_empty sameFalses)
+							then(
+								Printf.printf "%s\n\nand\n%s\n\nmust both be false any of these edges were executed:\n"
+									(To_string.annotated_bytes prop1) (To_string.annotated_bytes prop2);
+								Driver.dumpEdges sameFalses)))
+				 !controlledEdges)
+		!controlledEdges;
+*)
 (*	List.iter                                                                                           *)
 (*		(fun (pc,eS) ->                                                                                   *)
 (*			print_endline "The following edges were executed only under condition";                         *)
