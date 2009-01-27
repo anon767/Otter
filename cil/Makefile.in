@@ -111,20 +111,20 @@ CILLY_MODULES = $(CILLY_LIBRARY_MODULES) \
 				function \
 				driver \
 				executemain \
-				ilist \
-				domz \
-				dtree \
-				randommod \
-				modaddone \
-				modflipbranch \
-				modreplacelocal \
-				inconsistency \
-				randomrepair \
+#				ilist \
+#				domz \
+#				dtree \
+#				randommod \
+#				modaddone \
+#				modflipbranch \
+#				modreplacelocal \
+#				inconsistency \
+#				randomrepair \
 				main
 CILLY_CMODULES = perfcount
 CILLY_LIBS     = unix str stpvc
 
-SOURCEDIRS  += src src/frontc src/ext src/ext/pta ocamlutil @EXTRASRCDIRS@ src/se src/common src/randomrepair
+SOURCEDIRS  += src src/frontc src/ext src/ext/pta ocamlutil @EXTRASRCDIRS@ src/se src/common# src/randomrepair
 MLLS        += clexer.mll formatlex.mll
 MLYS        += cparser.mly formatparse.mly
 MODULES     += $(CILLY_MODULES) libmaincil

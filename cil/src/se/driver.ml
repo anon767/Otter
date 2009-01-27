@@ -5,6 +5,7 @@ open Executeargs
 (** List of (path condition,edgeSet) pairs denoting coverage on
 	different executions. *)
 let coverage = ref [];;
+let abandonedPaths = ref [];;
 
 let dumpEdges (eS:EdgeSet.t) : unit =
 	if EdgeSet.is_empty eS
@@ -60,11 +61,10 @@ let init_argvs state func argvs =
 let rec
 
 exec_function state exHist func argvs caller_stmt =
-  if List.length func.sallstmts > 0 then
+  if func.sallstmts <> [] then
     Output.set_cur_loc (Cil.get_stmtLoc (List.hd func.sallstmts).skind)
-  else 
-    failwith "No statements; you probably forgot to use the '--domakeCFG' flag"
-    ;
+  else
+		Errormsg.s (Errormsg.error "No statements in function %s" func.svar.vname);
 	let state1 = MemOp.state__start_fcall state func caller_stmt in
 	let state2 = init_argvs state1 func argvs in
 	let entry = List.hd func.sallstmts in
@@ -89,7 +89,9 @@ exec_stmt state oldExHist (stmt: Cil.stmt) =
 	Output.print_endline (To_string.stmt stmt);
 	match stmt.skind with
 		| Instr (instrs) ->
-				if List.length instrs = 0 then exec_stmt state (exHist ()) (next_stmt stmt) else
+				(* Should the next line use oldExHist instead of (exHist ())?
+					 It seems that [instrs] is empty iff [stmt] is a label. *)
+				if instrs = [] then exec_stmt state (exHist ()) (next_stmt stmt) else
 					let instr =
 						List.hd instrs
 					in
@@ -138,6 +140,8 @@ exec_stmt state oldExHist (stmt: Cil.stmt) =
 		| Goto (stmtref, loc) ->
 				exec_stmt state (exHist ()) (!stmtref)
 		| Loop (block, loc, breakopt, continueopt) ->
+				(* We might want to use oldExHist here, as in the [Block] case
+					 below because [stmt]s with skind [Loop] are uninteresting. *)
 				exec_block state (exHist ()) block
 		| If (exp, block1, block2, loc) ->
 				begin
@@ -202,16 +206,36 @@ exec_stmt state oldExHist (stmt: Cil.stmt) =
 							Output.increase ();
 							Output.set_mode Output.MSG_MUSTPRINT;
 							Output.print_endline ("Try True branch of the conditional at " ^ (To_string.location loc) ^ " by assuming (" ^ (To_string.exp exp) ^")");
-							let state_t = try try_branch (Some rv) block1 with Function.Notification_Exit(state_exit, _) -> state_exit in
+							let state_t =
+								try try_branch (Some rv) block1 with
+									| Function.Notification_Exit(state_exit, _) -> state_exit
+									| Failure fail ->
+											Output.set_mode Output.MSG_MUSTPRINT;
+											Output.print_endline
+												(Printf.sprintf "Error \"%s\" occurs at %s" fail
+													 (To_string.location !Output.cur_loc));
+											Output.print_endline "Abandoning branch";
+											abandonedPaths :=
+												state.human_readable_path_condition :: !abandonedPaths;
+											state
+							in
 							Output.print_endline "<TRUE BRANCH ENDED>";
  
 							Output.set_mode Output.MSG_MUSTPRINT;
 							Output.print_endline ("Try False branch of the conditional at " ^ (To_string.location loc) ^ " by assuming !(" ^ (To_string.exp exp) ^")");
 							let state_f =
-								try try_branch (Some (Bytes_Op(OP_LNOT,[(rv, Cil.typeOf exp)]))) block2
-								with Function.Notification_Exit(state_exit, _) -> state_exit
+								try try_branch (Some (Bytes_Op(OP_LNOT,[(rv, Cil.typeOf exp)]))) block2 with
+									| Function.Notification_Exit(state_exit, _) -> state_exit
+									| Failure fail ->
+											Output.set_mode Output.MSG_MUSTPRINT;
+											Output.print_endline
+												(Printf.sprintf "Error \"%s\" occurs at %s" fail
+													 (To_string.location !Output.cur_loc));
+											Output.print_endline "Abandoning branch";
+											abandonedPaths :=
+												state.human_readable_path_condition :: !abandonedPaths;
+											state
 							in
-
 							Output.print_endline "<FALSE BRANCH ENDED>";
 
 							Output.decrease ();
@@ -277,27 +301,13 @@ exec_instr state exHist instr stmt =
 	Output.print_endline (To_string.instr instr);
 	match instr with
 		| Set(lval,exp,loc) -> 
-			begin try
 				let (block,offset) = Eval.lval state lval in
 				let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
 				let rv = Eval.rval state exp in
 				let state2 = MemOp.state__assign state (block,offset) size rv in
-					exec_statement state2 exHist (next_statement (Instruction(instr,stmt)))
-			with Failure(fail) ->
-				Output.set_mode Output.MSG_MUSTPRINT;
-				Output.print_endline 
-				(Printf.sprintf "Error \"%s\" occurs at %s" fail (To_string.location loc));
-				exit 1
-			end
+				exec_statement state2 exHist (next_statement (Instruction(instr,stmt)))
 		| Call(lvalopt, fexp, exps, loc) ->
-			begin try
 				exec_instr_call state exHist instr stmt lvalopt fexp exps loc
-			with Failure(fail) ->
-				Output.set_mode Output.MSG_MUSTPRINT;
-				Output.print_endline 
-				(Printf.sprintf "Error \"%s\" occurs at %s" fail (To_string.location loc));
-				exit 1
-			end
 		| Asm (attributes, s1_list, l1, l2, l3, loc) ->
 				Output.set_mode Output.MSG_REG;
 				Output.print_endline "Warning: ASM unsupported";
@@ -521,7 +531,7 @@ exec_instr_call state exHist instr stmt lvalopt fexp exps loc =
 							
 					| Function.Comment ->
 						let exp = List.hd exps in
-							Output.set_mode Output.MSG_REG;
+							Output.set_mode Output.MSG_MUSTPRINT;
 							Output.print_endline ("COMMENT:"^(To_string.exp exp));
 							state
 				(*			

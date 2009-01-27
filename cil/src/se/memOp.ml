@@ -99,6 +99,38 @@ let rec bytes__length bytes =
 		| Bytes_FunPtr(_) -> word__size
 ;;
 
+let rec diff_bytes bytes1 bytes2 = 
+	if (bytes__length bytes1 <> bytes__length bytes2) then true else
+	match bytes1,bytes2 with
+		| Bytes_Constant(c1),_ -> diff_bytes (Convert.constant_to_bytes c1) bytes2
+		| _,Bytes_Constant(c2) -> diff_bytes bytes1 (Convert.constant_to_bytes c2)
+		| Bytes_ByteArray(a1),Bytes_ByteArray(a2) -> 
+			ImmutableArray.fold2_left 
+			(fun t e1 e2 -> let t' = match e1,e2 with
+				| Byte_Concrete(c1),Byte_Concrete(c2) -> c1<>c2
+				| Byte_Symbolic(s1),Byte_Symbolic(s2) -> s1.symbol_id<>s2.symbol_id (* Don't try to do hard compare *)
+				| Byte_Bytes(b1,off1),Byte_Bytes(b2,off2) -> (diff_bytes b1 b2) || (off1<>off2)
+				| _,_ -> true
+				in t || t'
+			) 
+			false a1 a2
+		| Bytes_Address(Some(b1),off1),Bytes_Address(Some(b2),off2) -> 
+			(b1!=b2) || (diff_bytes off1 off2)
+		| Bytes_Address(None,off1),Bytes_Address(None,off2) -> 
+			(diff_bytes off1 off2)
+		| Bytes_Op(op1,[]),Bytes_Op(op2,[]) -> false
+		| Bytes_Op(op1,(b1,_)::operands1),Bytes_Op(op2,(b2,_)::operands2) -> 
+			(op1!=op2) || (diff_bytes b1 b2) ||	(diff_bytes (Bytes_Op(op1,operands1)) (Bytes_Op(op2,operands2)))
+		| Bytes_Read(b1,off1,s1),Bytes_Read(b2,off2,s2) -> 
+			(diff_bytes b1 b2) || (diff_bytes off1 off2) || (s1<>s2)
+		| Bytes_Write(old1,off1,s1,new1),Bytes_Write(old2,off2,s2,new2) -> 
+			(diff_bytes old1 old2) || (diff_bytes off1 off2) || (s1<>s2) || (diff_bytes new1 new2)
+		| Bytes_FunPtr(f1,addr1),Bytes_FunPtr(f2,addr2) -> 
+			(f1!=f2)
+		| _,_ ->  true
+;;
+let same_bytes b1 b2 = not (diff_bytes b1 b2);;
+
 let rec bytes__get_byte bytes i : byte =
 	match bytes with
 		| Bytes_Constant (constant) ->  bytes__get_byte (Convert.constant_to_bytes constant) i
@@ -458,30 +490,34 @@ let state__add_path_condition state bytes =
 	(** Convert a bytes into an annotated_bytes, adding annotations where possible *)
 	let rec annotate_bytes innerBytes =
 		try
-			(* First, if the bytes is not concrete, try to find a global variable*)
-			(* whose value is this bytes. (Do this only for non-concrete bytes*)
-			(* because we are only interested in symbolic bytes.) *)
-			if not (Convert.isConcrete_bytes innerBytes)
-			then
+			if Convert.isConcrete_bytes innerBytes
+			then (
+				(* If the bytes is concrete, we don't add any annotation. *)
+				bytes_to_annotated innerBytes
+			) else (
+				(* If the bytes is not concrete, try to find a variable *)
+				(* whose value is this bytes. For now, only look for a global *)
+				(* variables. *)
 				VarinfoMap.iter
 					(fun varinf block ->
-						if innerBytes = MemoryBlockMap.find block state.block_to_bytes
-						then
-							(* Add the annotation, and stop searching by raising FoundVar *)
-							raise (FoundVar (Annot_Bytes (varinf,bytes_to_annotated innerBytes))))
+						 if same_bytes innerBytes (MemoryBlockMap.find block state.block_to_bytes)
+						 then
+							 (* Add the annotation, and stop searching by raising FoundVar *)
+							 raise (FoundVar (Annot_Bytes (varinf,bytes_to_annotated innerBytes))))
 					state.global.varinfo_to_block;
-			(* If we fail to find such a variable, we recursively descend into the bytes *)
-			match innerBytes with
-				| Bytes_Constant(const) -> Annot_Bytes_Constant(const)
-				| Bytes_ByteArray(arr) -> Annot_Bytes_ByteArray(arr)
-				| Bytes_Address(memBlockOpt,off) -> Annot_Bytes_Address(memBlockOpt,annotate_bytes off)
-				| Bytes_Op(op,bytes_typ_list) ->
-					Annot_Bytes_Op(op,List.map (fun (b,t) -> (annotate_bytes b,t)) bytes_typ_list)
-				| Bytes_Read(oldBytes,off,len) ->
-					Annot_Bytes_Read(annotate_bytes oldBytes,annotate_bytes off,len)
-				| Bytes_Write(oldBytes,offset,len,bytesToWrite) ->
-					Annot_Bytes_Write(annotate_bytes oldBytes,annotate_bytes offset,len,annotate_bytes bytesToWrite)
-				| Bytes_FunPtr(fdec,addr) -> Annot_Bytes_FunPtr(fdec,annotate_bytes addr)
+				(* If we fail to find such a variable, we recursively descend into the bytes *)
+				match innerBytes with
+					| Bytes_Constant(const) -> Annot_Bytes_Constant(const)
+					| Bytes_ByteArray(arr) -> Annot_Bytes_ByteArray(arr)
+					| Bytes_Address(memBlockOpt,off) -> Annot_Bytes_Address(memBlockOpt,annotate_bytes off)
+					| Bytes_Op(op,bytes_typ_list) ->
+							Annot_Bytes_Op(op,List.map (fun (b,t) -> (annotate_bytes b,t)) bytes_typ_list)
+					| Bytes_Read(oldBytes,off,len) ->
+							Annot_Bytes_Read(annotate_bytes oldBytes,annotate_bytes off,len)
+					| Bytes_Write(oldBytes,offset,len,bytesToWrite) ->
+							Annot_Bytes_Write(annotate_bytes oldBytes,annotate_bytes offset,len,annotate_bytes bytesToWrite)
+					| Bytes_FunPtr(fdec,addr) -> Annot_Bytes_FunPtr(fdec,annotate_bytes addr)
+			)
 		(* If we found a match, return the annotated bytes *)
 		with FoundVar annot_bytes -> annot_bytes
 	in
@@ -527,37 +563,6 @@ let index_to_state__get index =
 	Utility.IndexMap.find index (!index_to_state)
 ;;
 
-
-let rec diff_bytes bytes1 bytes2 = 
-	if (bytes__length bytes1 <> bytes__length bytes2) then true else
-	match bytes1,bytes2 with
-		| Bytes_Constant(c1),_ -> diff_bytes (Convert.constant_to_bytes c1) bytes2
-		| _,Bytes_Constant(c2) -> diff_bytes bytes1 (Convert.constant_to_bytes c2)
-		| Bytes_ByteArray(a1),Bytes_ByteArray(a2) -> 
-			ImmutableArray.fold2_left 
-			(fun t e1 e2 -> let t' = match e1,e2 with
-				| Byte_Concrete(c1),Byte_Concrete(c2) -> c1<>c2
-				| Byte_Symbolic(s1),Byte_Symbolic(s2) -> s1.symbol_id<>s2.symbol_id (* Don't try to do hard compare *)
-				| Byte_Bytes(b1,off1),Byte_Bytes(b2,off2) -> (diff_bytes b1 b2) || (off1<>off2)
-				| _,_ -> true
-				in t || t'
-			) 
-			false a1 a2
-		| Bytes_Address(Some(b1),off1),Bytes_Address(Some(b2),off2) -> 
-			(b1!=b2) || (diff_bytes off1 off2)
-		| Bytes_Address(None,off1),Bytes_Address(None,off2) -> 
-			(diff_bytes off1 off2)
-		| Bytes_Op(op1,[]),Bytes_Op(op2,[]) -> false
-		| Bytes_Op(op1,(b1,_)::operands1),Bytes_Op(op2,(b2,_)::operands2) -> 
-			(op1!=op2) || (diff_bytes b1 b2) ||	(diff_bytes (Bytes_Op(op1,operands1)) (Bytes_Op(op2,operands2)))
-		| Bytes_Read(b1,off1,s1),Bytes_Read(b2,off2,s2) -> 
-			(diff_bytes b1 b2) || (diff_bytes off1 off2) || (s1<>s2)
-		| Bytes_Write(old1,off1,s1,new1),Bytes_Write(old2,off2,s2,new2) -> 
-			(diff_bytes old1 old2) || (diff_bytes off1 off2) || (s1<>s2) || (diff_bytes new1 new2)
-		| Bytes_FunPtr(f1,addr1),Bytes_FunPtr(f2,addr2) -> 
-			(f1!=f2)
-		| _,_ ->  true
-;;
 
 (** Compare two states *)
 let cmp_states (s1:state) (s2:state) =

@@ -143,6 +143,9 @@ module AnnotatedBytesSet = Set.Make
 	 end)
 
 let doExecute (f: file) =
+  if not !Cilutil.makeCFG then
+    Errormsg.s (Errormsg.error
+                  "--doexecute: you must also specify --domakeCFG\n");
 	(*
 	let f = Frontc.parse "int main(){return 0;}" () in
 	*)
@@ -162,13 +165,13 @@ let doExecute (f: file) =
 		with Not_found -> try Function.from_signature "main : int (int,char**)"
 		with Not_found -> failwith "No main function found!"
 	in
-
+(*
 	let cfgOutChannel = open_out (Filename.basename (Filename.chop_extension main_loc.file)^".cfg") in
   iterGlobals f (fun g ->
 		match g with GFun(fd,_) ->
       Cfg.printCfgChannel cfgOutChannel fd
     | _ -> ());
-
+*)
 
 	let state = MemOp.state__empty in
 	let state1 = init_globalvars state f.globals in
@@ -252,19 +255,29 @@ let doExecute (f: file) =
 		!Driver.coverage;
 *)
 
+	if !Driver.coverage = []
+	then(
+		Printf.printf "All %d paths had errors.\n"
+			(List.length !Driver.abandonedPaths);
+		exit 0)
+	else
+		Printf.printf "%d paths ran to completion successfully; %d had errors.\n"
+			(List.length !Driver.coverage) (List.length !Driver.abandonedPaths);
+
 	let (alwaysExecuted,everExecuted) =
 		List.fold_left
 			(fun (interAcc,unionAcc) (_,eS) -> EdgeSet.inter interAcc eS, EdgeSet.union unionAcc eS)
 			(snd (List.hd !Driver.coverage),snd (List.hd !Driver.coverage))
 			(List.tl !Driver.coverage)
 	in
+
 	print_newline ();
 	print_string "In all, ";
 	print_int (EdgeSet.cardinal everExecuted);
 	print_string " edges were executed, of which ";
 	print_int (EdgeSet.cardinal alwaysExecuted);
 	print_endline " were always executed.\n";
-
+(*
 	(* Print number of non-universal edges executed by each path condition *)
 	let coverageWithoutUniversalEdges =
 		List.map
@@ -364,7 +377,7 @@ let doExecute (f: file) =
 				 printEdgeSet "these %d edges are executed if (not P):\n\n" notPImplE;
 				 printEdgeSet "these %d edges are executed only if (not P):\n\n" pImplNotE))
 		allProps;
-
+*)
 	let greedySetCover coverageList =
 		let rec helper acc cvrgList remaining =
 			if EdgeSet.is_empty remaining then acc
@@ -385,10 +398,13 @@ let doExecute (f: file) =
 							(EdgeSet.diff remaining (snd !nextPick)))
 		in helper [] coverageList (EdgeSet.diff everExecuted alwaysExecuted)
 	in
-	print_endline "Here is set of configurations which covers all the edges:";
-	List.iter
-		(fun pc -> print_endline (To_string.annotated_bytes_list pc ^ "\n"))
-		(greedySetCover !Driver.coverage);
+	let coveringSet = greedySetCover !Driver.coverage in
+	if coveringSet = [] then print_endline "No constraints: any run covers all edges"
+	else(
+		print_endline "Here is a set of configurations which covers all the edges:";
+		List.iter
+			(fun pc -> print_endline (To_string.annotated_bytes_list pc ^ "\n"))
+			coveringSet);
 
 (*
 	List.iter

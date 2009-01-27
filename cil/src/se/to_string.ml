@@ -10,7 +10,7 @@ let bytestring arr =
 	let byte b = 
   match b with
 	| Byte_Concrete (c) -> 
-        if Char.code c >=32 then sprintf "%c" c
+        if Char.code c >=32 && Char.code c <= 126 then sprintf "%c" c
 				else if c = '\n' then "\n"
         else sprintf "/%d" (Char.code c)
 	| Byte_Symbolic (s) -> sprintf "\\%d" (s.symbol_id)
@@ -76,8 +76,12 @@ fundec f =
 and
 
 char_ff ff c = 
-	if Executeargs.print_args.Executeargs.arg_print_char_as_int then
+	if Executeargs.print_args.Executeargs.arg_print_char_as_int ||
+		Char.code c < 32 || Char.code c > 126
+	then
 		fprintf ff "/%02X" (Char.code c)
+	else if c = '/'
+	then fprintf ff "//"
 	else
 		fprintf ff "%c" (c)
 
