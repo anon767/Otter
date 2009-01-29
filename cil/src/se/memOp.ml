@@ -421,6 +421,7 @@ let state__varinfo_to_block state varinfo =
 		failwith ("Varinfo "^(varinfo.vname)^" not found.")
 ;;
 
+(* TODO: collapse '(block,offset) size' into single argument: 'lval' *)
 let state__assign state (block, offset) (size:int) bytes = (* have problem *)
 	if block.memory_block_type == Block_type_StringLiteral then 
 		failwith "Error: write to a constant string literal"

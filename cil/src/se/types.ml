@@ -187,8 +187,6 @@ let rec bytes_to_annotated = function
 	| Bytes_FunPtr(fdec,addr) -> Annot_Bytes_FunPtr(fdec,bytes_to_annotated addr)
 ;;
 
-(*type edgeSet = (stmt*stmt) list
-let add (e:stmt*stmt) (eS:edgeSet) : edgeSet = if List.memq e eS then eS else e::eS;;*)
 module EdgeSet = Set.Make
 	(struct
 		type t = Cil.stmt*Cil.stmt
@@ -202,12 +200,22 @@ module EdgeSet = Set.Make
 
 type executionHistory = {
 	edgesTaken : EdgeSet.t; (** Which edges we've traversed on this execution *)
-	prevStmt : Cil.stmt; (** The [stmt] we just executed *)  
+	prevStmt : Cil.stmt; (** The [stmt] we just executed *)
+
+	bytesToVars : (bytes * Cil.varinfo) list;
+		(** List associating symbolic bytes to the variable that was
+				assigned this value by a call to __SYMBOLIC(&<variable>), in
+				reverse order (so the most recent is the head of the list).
+				For purposes of mapping symbolic values back to the variables
+				from which they came, if a given varinfo is paired with more
+				than one bytes, ambiguities may arise if a report refers to
+				'the' symbolic value given to this variable. *)
 }
 
 let emptyHistory = {
 	edgesTaken = EdgeSet.empty;
 	prevStmt = Cil.dummyStmt;
+	bytesToVars = [];
 }
 
 (** A set of human-readable path conditions *)

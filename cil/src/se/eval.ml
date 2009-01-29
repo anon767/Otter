@@ -113,11 +113,11 @@ rval_cast typ rv rvtyp =
 								let isSigned = match rvtyp with TInt(ikind,_) when Cil.isSigned ikind -> true | _ -> false in
 								let leftmost_is_one = 
 									match ImmutableArray.get bytearray ((ImmutableArray.length bytearray)-1) with
-										| Byte_Concrete (c) -> (Char.code c) >= 0x10000000
+										| Byte_Concrete (c) -> (Printf.printf "Hit the test\n";Char.code c >= 128)
 										| _ -> failwith "unreachable (bytearray is concrete)"
 								in
 								let sth = if isSigned && leftmost_is_one 
-										then MemOp.byte__111
+										then (Printf.printf "Cast a negative number!\n"; MemOp.byte__111)
 										else MemOp.byte__zero
 								in
 								let rec pack_sth newbytes old_len new_len =

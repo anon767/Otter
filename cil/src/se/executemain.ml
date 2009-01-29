@@ -38,8 +38,9 @@ let rec init_globalvars state globals =
 								in
 									myInit NoOffset init zeros
 					in
-					Output.print_endline ("Initialize "^varinfo.vname(*^" with value "*)
-						(*^(To_string.bytes init_bytes)*)
+					Output.set_mode Output.MSG_REG;
+					Output.print_endline ("Initialize "^varinfo.vname^" to "
+						^(if init_bytes == zeros then "zeros" else To_string.bytes init_bytes)
 					);					
 					let state2 = MemOp.state__add_global state varinfo init_bytes in
 					init_globalvars state2 tail
@@ -51,7 +52,7 @@ let rec init_globalvars state globals =
 					 such extra declarations. If this is true, then this should work fine. If
 					 not, a declaration occuring *after* a definition will wipe out the
 					 definition, replacing the value with zeros. *)
-				Output.set_mode Output.MSG_DEBUG;
+				Output.set_mode Output.MSG_REG;
 				Output.print_endline ("Initialize "^varinfo.vname^" without initial value"
 					(*^(To_string.bytes init)*)
 				);
@@ -389,7 +390,7 @@ let doExecute (f: file) =
 						let nextPickScore = ref (score h) in
 						List.iter
 							(fun s -> let sScore = score s in
-							 if sScore > !nextPickScore (*|| (sScore > 1 && Random.bool ())*)
+							 if sScore > !nextPickScore
 							 then (nextPickScore := sScore; nextPick := s))
 							cvrgList;
 						Printf.printf "Covering %d new edges\n" !nextPickScore;
@@ -403,7 +404,7 @@ let doExecute (f: file) =
 	else(
 		print_endline "Here is a set of configurations which covers all the edges:";
 		List.iter
-			(fun pc -> print_endline (To_string.annotated_bytes_list pc ^ "\n"))
+			(fun pc -> print_endline (To_string.bytes_list pc ^ "\n"))
 			coveringSet);
 
 (*

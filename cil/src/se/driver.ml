@@ -5,6 +5,8 @@ open Executeargs
 (** List of (path condition,edgeSet) pairs denoting coverage on
 	different executions. *)
 let coverage = ref [];;
+
+(** List of path conditions that led to errors in the symbolic executor *)
 let abandonedPaths = ref [];;
 
 let dumpEdges (eS:EdgeSet.t) : unit =
@@ -79,9 +81,9 @@ exec_statement state exHist (statement: statement) =
 			
 and
 			
-exec_stmt state oldExHist (stmt: Cil.stmt) =
-	let exHist () = {
-		edgesTaken = EdgeSet.add (oldExHist.prevStmt,stmt) oldExHist.edgesTaken;
+exec_stmt state exHist (stmt: Cil.stmt) =
+	let nextExHist () = { exHist with
+		edgesTaken = EdgeSet.add (exHist.prevStmt,stmt) exHist.edgesTaken;
 		prevStmt = stmt;
 	} in
 	Output.set_mode Output.MSG_STMT;
@@ -89,13 +91,13 @@ exec_stmt state oldExHist (stmt: Cil.stmt) =
 	Output.print_endline (To_string.stmt stmt);
 	match stmt.skind with
 		| Instr (instrs) ->
-				(* Should the next line use oldExHist instead of (exHist ())?
+				(* Should the next line use exHist instead of (nextExHist ())?
 					 It seems that [instrs] is empty iff [stmt] is a label. *)
-				if instrs = [] then exec_stmt state (exHist ()) (next_stmt stmt) else
+				if instrs = [] then exec_stmt state (nextExHist ()) (next_stmt stmt) else
 					let instr =
 						List.hd instrs
 					in
-					exec_statement state (exHist ()) (Instruction(instr, stmt)) (* at least one instr? *)
+					exec_statement state (nextExHist ()) (Instruction(instr, stmt)) (* at least one instr? *)
 
 		| Return (expopt, loc) ->
 				begin
@@ -132,17 +134,18 @@ exec_stmt state oldExHist (stmt: Cil.stmt) =
 					if instruction = MainEntry then(
 						Output.set_mode Output.MSG_REG;
 						Output.print_endline "Program execution finished";
-						coverage := (state.human_readable_path_condition,(exHist ()).edgesTaken) :: !coverage;
+						List.iter (fun (b,v) -> Printf.printf "%s := %s\n" (To_string.bytes b) v.vname) exHist.bytesToVars;
+						coverage := (state.path_condition,(nextExHist ()).edgesTaken) :: !coverage;
 						state2')
 						else
-							exec_statement state2' (exHist ()) (next_statement instruction)
+							exec_statement state2' (nextExHist ()) (next_statement instruction)
 				end
 		| Goto (stmtref, loc) ->
-				exec_stmt state (exHist ()) (!stmtref)
+				exec_stmt state (nextExHist ()) (!stmtref)
 		| Loop (block, loc, breakopt, continueopt) ->
-				(* We might want to use oldExHist here, as in the [Block] case
+				(* We might want to use exHist here, as in the [Block] case
 					 below because [stmt]s with skind [Loop] are uninteresting. *)
-				exec_block state (exHist ()) block
+				exec_block state (nextExHist ()) block
 		| If (exp, block1, block2, loc) ->
 				begin
 				(* try a branch *)
@@ -170,9 +173,9 @@ exec_stmt state oldExHist (stmt: Cil.stmt) =
 										res)
 							end;
 						if block_is_empty block then
-							exec_stmt state_t (exHist ()) (next_stmt stmt)
+							exec_stmt state_t (nextExHist ()) (next_stmt stmt)
 						else
-							exec_block state_t (exHist ()) block
+							exec_block state_t (nextExHist ()) block
 					in
  
 					let rv = Eval.rval state exp in
@@ -243,8 +246,9 @@ exec_stmt state oldExHist (stmt: Cil.stmt) =
 						end
 				end
 		| Block(block) ->
-				(* Use oldExHist here because we don't need [Block]s in the CFG *)
-				exec_block state oldExHist block
+				(* Use exHist here (rather than nextExHist) because we don't
+					 need [Block]s in the CFG *)
+				exec_block state exHist block
 		| _ -> failwith "Not implemented yet"
 and
 block_is_empty block = (List.length block.bstmts = 0)
@@ -353,6 +357,7 @@ exec_instr_call state exHist instr stmt lvalopt fexp exps loc =
 							let argvs = (List.map (fun exp -> Eval.rval state exp) exps) in
 							exec_function state exHist fundec argvs (Instruction(instr,stmt))
 					| _ ->
+						let nextExHist = ref exHist in
 				let state_end = begin match func with
 					| Function.Builtin (builtin) ->
 						let (state2,bytes) = builtin state exps in
@@ -363,24 +368,34 @@ exec_instr_call state exHist instr stmt lvalopt fexp exps loc =
 									let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
 										MemOp.state__assign state2 (block,offset) size bytes
 							end					
-										
-					| Function.Symbolic -> (* removed the size argument of __SYMBOLIC *)
-							begin match lvalopt with
-								| None -> 
-									state
-								| Some(lval) ->
-									let isWritable = (*if List.length exps > 1 then false else*) true in
-									let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
-									let ssize = if List.length exps >0 
-										then
-											let size_bytes = Eval.rval state (List.hd exps) in
-												Convert.bytes_to_int_auto size_bytes 
-										else
-											size
-									in
-									let (block,offset) = Eval.lval state lval in
-										MemOp.state__assign state (block,offset) size (MemOp.bytes__symbolic ssize isWritable)
-							end								
+
+					| Function.Symbolic -> (
+							match exps with
+								| [CastE (_, AddrOf (Var varinf, NoOffset as lval))] ->
+										let isWritable = (*if List.length exps > 1 then false else*) true in
+										let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
+										let (block,offset) = Eval.lval state lval in
+										let symbBytes = (MemOp.bytes__symbolic size isWritable) in
+										nextExHist := { exHist with bytesToVars = (symbBytes,varinf) :: exHist.bytesToVars; };
+										MemOp.state__assign state (block,offset) size symbBytes
+								| _ ->
+										begin match lvalopt with
+											| None ->
+												state
+											| Some(lval) ->
+												let isWritable = (*if List.length exps > 1 then false else*) true in
+												let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
+												let ssize = match exps with
+													| [] -> size
+													| [CastE (_, h)] | [h] ->
+														Convert.bytes_to_int_auto (Eval.rval state h)
+													| _ -> failwith "__SYMBOLIC takes at most one argument"
+												in
+												let (block,offset) = Eval.lval state lval in
+												MemOp.state__assign state (block,offset) size (*ssize?*) (MemOp.bytes__symbolic ssize isWritable)
+										end
+						)
+
 					| Function.SymbolicStatic ->
 							begin match lvalopt with
 								| None -> 
@@ -430,7 +445,8 @@ exec_instr_call state exHist instr stmt lvalopt fexp exps loc =
 						Output.print_endline (Printf.sprintf "exit() called.\n Path Condition (length=%d):" (List.length state.path_condition));
 						Output.print_endline
 							(To_string.annotated_bytes_list state.human_readable_path_condition);
-						coverage := (state.human_readable_path_condition,exHist.edgesTaken) :: !coverage;
+						List.iter (fun (b,v) -> Printf.printf "%s := %s\n" (To_string.bytes b) v.vname) exHist.bytesToVars;
+						coverage := (state.path_condition,exHist.edgesTaken) :: !coverage;
 						raise (Function.Notification_Exit (state,Eval.rval state (List.hd exps)))
 					
 					| Function.Evaluate ->
@@ -593,7 +609,7 @@ exec_instr_call state exHist instr stmt lvalopt fexp exps loc =
 					| _ -> failwith "unreachable"
 						
 						end in
-							exec_statement state_end exHist (next_statement (Instruction(instr,stmt)))
+							exec_statement state_end !nextExHist (next_statement (Instruction(instr,stmt)))
 
 						
 					end (* match func *)
