@@ -2,8 +2,8 @@ open Cil
 open Types
 open Executeargs
 
-(** List of (path condition,edgeSet) pairs denoting coverage on
-	different executions. *)
+(** List of (path condition,executionHistory) pairs denoting coverage
+		on different executions. *)
 let coverage = ref [];;
 
 (** List of path conditions that led to errors in the symbolic executor *)
@@ -134,8 +134,7 @@ exec_stmt state exHist (stmt: Cil.stmt) =
 					if instruction = MainEntry then(
 						Output.set_mode Output.MSG_REG;
 						Output.print_endline "Program execution finished";
-						List.iter (fun (b,v) -> Printf.printf "%s := %s\n" (To_string.bytes b) v.vname) exHist.bytesToVars;
-						coverage := (state.path_condition,(nextExHist ()).edgesTaken) :: !coverage;
+						coverage := (state.human_readable_path_condition, nextExHist ()) :: !coverage;
 						state2')
 						else
 							exec_statement state2' (nextExHist ()) (next_statement instruction)
@@ -370,8 +369,19 @@ exec_instr_call state exHist instr stmt lvalopt fexp exps loc =
 							end					
 
 					| Function.Symbolic -> (
+(* There are 2 ways to use __SYMBOLIC:
+	 (1) '__SYMBOLIC(&x);' gives x a fresh symbolic value and associates
+	 that value with the variable x.
+	 (2) 'x = __SYMBOLIC(n);' assigns to x a fresh symbolic value which
+	 is not associated to any variable. If n > 0, n is the number of
+	 symbolic bytes desired; if n <= 0, a number of symbolic bytes equal
+	 to the size of x is returned. (If you manage to get something like
+	 'x = __SYMBOLIC();' past CIL despite the disagreement in the number
+	 of arguments, this behaves like the n <= 0 case.) *)
 							match exps with
+								| [AddrOf (Var varinf, NoOffset as lval)]
 								| [CastE (_, AddrOf (Var varinf, NoOffset as lval))] ->
+										(* If we are given a variable's address, we track the symbolic value *)
 										let isWritable = (*if List.length exps > 1 then false else*) true in
 										let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
 										let (block,offset) = Eval.lval state lval in
@@ -379,20 +389,24 @@ exec_instr_call state exHist instr stmt lvalopt fexp exps loc =
 										nextExHist := { exHist with bytesToVars = (symbBytes,varinf) :: exHist.bytesToVars; };
 										MemOp.state__assign state (block,offset) size symbBytes
 								| _ ->
+										(* Any symbolic value not directly given to a variable by a call to
+											 __SYMBOLIC(&<var>) does not get tracked. *)
 										begin match lvalopt with
 											| None ->
-												state
+													state
 											| Some(lval) ->
-												let isWritable = (*if List.length exps > 1 then false else*) true in
-												let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
-												let ssize = match exps with
-													| [] -> size
-													| [CastE (_, h)] | [h] ->
-														Convert.bytes_to_int_auto (Eval.rval state h)
-													| _ -> failwith "__SYMBOLIC takes at most one argument"
-												in
-												let (block,offset) = Eval.lval state lval in
-												MemOp.state__assign state (block,offset) size (*ssize?*) (MemOp.bytes__symbolic ssize isWritable)
+													let isWritable = (*if List.length exps > 1 then false else*) true in
+													let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
+													let ssize = match exps with
+														| [] -> size
+														| [CastE (_, h)] | [h] ->
+																let newsize = Convert.bytes_to_int_auto (Eval.rval state h) in
+																if newsize <= 0 then size else newsize
+														| _ -> failwith "__SYMBOLIC takes at most one argument"
+													in
+													let (block,offset) = Eval.lval state lval in
+													MemOp.state__assign state (block,offset) size (*ssize?*)
+														(MemOp.bytes__symbolic ssize isWritable)
 										end
 						)
 
@@ -445,8 +459,7 @@ exec_instr_call state exHist instr stmt lvalopt fexp exps loc =
 						Output.print_endline (Printf.sprintf "exit() called.\n Path Condition (length=%d):" (List.length state.path_condition));
 						Output.print_endline
 							(To_string.annotated_bytes_list state.human_readable_path_condition);
-						List.iter (fun (b,v) -> Printf.printf "%s := %s\n" (To_string.bytes b) v.vname) exHist.bytesToVars;
-						coverage := (state.path_condition,exHist.edgesTaken) :: !coverage;
+						coverage := (state.human_readable_path_condition, exHist) :: !coverage;
 						raise (Function.Notification_Exit (state,Eval.rval state (List.hd exps)))
 					
 					| Function.Evaluate ->

@@ -509,7 +509,7 @@ let state__add_path_condition state bytes =
 				(* If we fail to find such a variable, we recursively descend into the bytes *)
 				match innerBytes with
 					| Bytes_Constant(const) -> Annot_Bytes_Constant(const)
-					| Bytes_ByteArray(arr) -> Annot_Bytes_ByteArray(arr)
+					| Bytes_ByteArray(arr) -> Annot_Bytes_ByteArray(arr) (* TODO: there could be more Bytes in the array within a Byte_Bytes. *)
 					| Bytes_Address(memBlockOpt,off) -> Annot_Bytes_Address(memBlockOpt,annotate_bytes off)
 					| Bytes_Op(op,bytes_typ_list) ->
 							Annot_Bytes_Op(op,List.map (fun (b,t) -> (annotate_bytes b,t)) bytes_typ_list)

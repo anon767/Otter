@@ -119,7 +119,23 @@ query pc bytes equal_zero =
 	
 	let bool = Stpc.query vc q  in
 		bool
-	
+
+(* (* This commented-out chunk is trying to merge query and consult_stp.
+	 Unfortunately, STP hangs if I try to make more than one query with
+	 the same vc. Why? *)
+	print_endline "Trying to prove it false";
+	if Stpc.query vc q then (* Ask if [bytes] *must* be false. *)
+		False (* If so, return False *)
+	else (
+		let q = (Stpc.e_not vc q) in
+		Output.print_endline ("QUERY("^(Stpc.to_string q)^");");
+		print_endline "Now trying to prove it true";
+		if Stpc.query vc q then (* Otherwise, ask if [bytes] *must* be true. *)
+			True (* If so, return True *)
+		else
+			Unknown (* [bytes] might be true and might be false *)
+	)
+*)
 and
 
 
@@ -386,4 +402,56 @@ and
 
 make_var symbol =
 	"symbol_"^(string_of_int symbol.symbol_id)
+;;
+
+(** Get sample values for the variables that satisfy the path
+		condition, so the resulting inputs would have driven the program
+		down this path. *)
+let getSampleInput
+		(pathCondition : bytes list)
+		(bytesToVars : (bytes * varinfo) list)
+		: (varinfo * bytes) list =
+	let vc = Stpc.create_validity_checker () in
+
+	(* To get values for the symbolic values which make the path
+		 condition true, we need to query for its *negation* because STP
+		 gives counterexamples (not satisfying assignments).
+		 The path condition is a list which is to be interpreted as a
+		 conjunction:
+		 A /\ B /\ C
+		 which really means
+		 (A != 0) /\ (B != 0) /\ (C != 0)
+		 The negation of that is
+		 (A == 0) \/ (B == 0) \/ (C == 0)
+		 which is the formula we ask STP about. (Actually, we add an
+		 '\/ false' to the formula as the base case in the fold_left.
+		 Think about it.) *)
+	let negatedPcExpr =
+		List.fold_left
+			(fun expr bytes ->
+				 let (bv, len) = to_stp_bv vc bytes in
+				 Stpc.e_or vc expr
+					 (Stpc.e_eq vc bv (Stpc.e_bv_of_int vc len 0)))
+			(Stpc.e_false vc)
+			pathCondition
+	in
+	if Stpc.query vc negatedPcExpr
+	then failwith ("The path condition is unsatisfiable!\n" ^
+									 (To_string.bytes_list pathCondition));
+	(* Extract the value of a symbolic ByteArray from STP's counterexample *)
+	let getVal = function
+		| Bytes_ByteArray bytArr ->
+				Bytes_ByteArray
+					(ImmutableArray.map
+						 (function
+								| Byte_Symbolic s ->
+										let bv = Stpc.e_var vc (make_var s) (Stpc.bitvector_t vc 8) in
+										Byte_Concrete (Char.chr (Stpc.int_of_e (Stpc.get_counterexample vc bv)))
+								| _ -> failwith "Impossible: tracked symbolic value must be fully symbolic")
+						 bytArr)
+		| _ -> failwith "Impossible: symbolic bytes must be a ByteArray"
+	in
+	List.map
+		(fun (bytes,varinf) -> (varinf, getVal bytes))
+		bytesToVars
 ;;

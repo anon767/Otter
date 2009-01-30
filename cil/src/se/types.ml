@@ -187,6 +187,21 @@ let rec bytes_to_annotated = function
 	| Bytes_FunPtr(fdec,addr) -> Annot_Bytes_FunPtr(fdec,bytes_to_annotated addr)
 ;;
 
+let rec strip_annotation = function
+	| Annot_Bytes_Constant(const) -> Bytes_Constant(const)
+	| Annot_Bytes_ByteArray(arr) -> Bytes_ByteArray(arr) (* TODO: there could be more Bytes in the array within a Byte_Bytes. *)
+	| Annot_Bytes_Address (addr,off) -> Bytes_Address (addr,strip_annotation off)
+	| Annot_Bytes_Op (op,operands) ->
+			Bytes_Op (op, List.map (fun (b,t) -> (strip_annotation b,t)) operands)
+	| Annot_Bytes_Read (content,off,len) ->
+			Bytes_Read(strip_annotation content, strip_annotation off, len)
+	| Annot_Bytes_Write (content,off,len,newbytes) ->
+			Bytes_Write (strip_annotation content, strip_annotation off,
+									 len, strip_annotation newbytes)
+	| Annot_Bytes_FunPtr (f,addr) -> Bytes_FunPtr (f, strip_annotation addr)
+	| Annot_Bytes(varinf,bytes) -> strip_annotation bytes
+;;
+
 module EdgeSet = Set.Make
 	(struct
 		type t = Cil.stmt*Cil.stmt

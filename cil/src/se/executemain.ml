@@ -267,8 +267,11 @@ let doExecute (f: file) =
 
 	let (alwaysExecuted,everExecuted) =
 		List.fold_left
-			(fun (interAcc,unionAcc) (_,eS) -> EdgeSet.inter interAcc eS, EdgeSet.union unionAcc eS)
-			(snd (List.hd !Driver.coverage),snd (List.hd !Driver.coverage))
+			(fun (interAcc,unionAcc) (_,hist) ->
+				 EdgeSet.inter interAcc hist.edgesTaken,
+				 EdgeSet.union unionAcc hist.edgesTaken)
+			((snd (List.hd !Driver.coverage)).edgesTaken,
+			 (snd (List.hd !Driver.coverage)).edgesTaken)
 			(List.tl !Driver.coverage)
 	in
 
@@ -379,14 +382,15 @@ let doExecute (f: file) =
 				 printEdgeSet "these %d edges are executed only if (not P):\n\n" pImplNotE))
 		allProps;
 *)
+
 	let greedySetCover coverageList =
 		let rec helper acc cvrgList remaining =
 			if EdgeSet.is_empty remaining then acc
-			else(
+			else (
 				match cvrgList with
 					| [] -> failwith "Impossible to cover universe."
 					| h::t -> let nextPick = ref h and
-								score x = EdgeSet.cardinal (EdgeSet.inter (snd x) remaining) in
+								score x = EdgeSet.cardinal (EdgeSet.inter (snd x).edgesTaken remaining) in
 						let nextPickScore = ref (score h) in
 						List.iter
 							(fun s -> let sScore = score s in
@@ -394,18 +398,31 @@ let doExecute (f: file) =
 							 then (nextPickScore := sScore; nextPick := s))
 							cvrgList;
 						Printf.printf "Covering %d new edges\n" !nextPickScore;
-						helper (fst !nextPick::acc)
+						helper (!nextPick::acc)
 							(List.filter ((!=) !nextPick) cvrgList)
-							(EdgeSet.diff remaining (snd !nextPick)))
+							(EdgeSet.diff remaining (snd !nextPick).edgesTaken)
+			)
 		in helper [] coverageList (EdgeSet.diff everExecuted alwaysExecuted)
 	in
 	let coveringSet = greedySetCover !Driver.coverage in
 	if coveringSet = [] then print_endline "No constraints: any run covers all edges"
-	else(
+	else (
+		(* TODO: we might only want to print out values for variables
+			 whose values are actually constrained. For now, I think STP
+			 just assigns zero to non-constrained values. *)
 		print_endline "Here is a set of configurations which covers all the edges:";
 		List.iter
-			(fun pc -> print_endline (To_string.bytes_list pc ^ "\n"))
-			coveringSet);
+			(fun (pc,hist) ->
+				 print_newline ();
+				 print_endline (To_string.annotated_bytes_list pc ^ "\n");
+				 print_endline "For example:";
+				 List.iter
+					 (fun (varinf,bytes) ->
+							Printf.printf "%s = %d\n" varinf.vname (Convert.bytes_to_int_auto bytes))
+					 (Stp.getSampleInput (List.map strip_annotation pc) hist.bytesToVars);
+				 print_newline ())
+			coveringSet
+	);
 
 (*
 	List.iter
@@ -477,7 +494,7 @@ let feature : featureDescr =
 			("--printAssign",
 			Arg.Unit (fun () -> Executeargs.print_args.arg_print_assign <- true),
 			" Print assignments (from rval to lval) \n");
-			(* Assignment in the form lval = rval *)
+
 			("--printFunctionCall",
 			Arg.Unit (fun () -> Executeargs.print_args.arg_print_func <- true),
 			" Print function calls \n");
@@ -506,11 +523,13 @@ let feature : featureDescr =
 			 *)
 			("--arg",
 			Arg.String (fun argv -> Executeargs.run_args.arg_cmdline_argvs <- Executeargs.run_args.arg_cmdline_argvs @ [argv]),
-			"<argv> Run with command line arguments <argvs>");	
+			"<argv> Run with command line argument <argv>
+\t\t\t(This option can be repeated to give multiple arguments.)\n");
 
-		  ("--symbolicExternFns",
+(*		  ("--symbolicExternFns",
 			 Arg.Unit (fun () -> Executeargs.run_args.arg_symbolic_extern_fns <- true),
-			 " Return a fresh symbolic value (instead of dying) upon encountering an undefined function. This effectively assumes that undefined functions are nondeterministic and side-effect-free, which is usually not true. (Note that ending program execution is a side-effect that will be ignored.)");
+			 " Return a fresh symbolic value (instead of dying) upon encountering an undefined function. This effectively assumes that undefined functions are nondeterministic and side-effect-free, which is usually not true. (Note that ending program execution is a side-effect that will be ignored.)\n");
+*)
 
 			("--branchCoverage",
 			 Arg.Unit (fun () -> run_args.arg_branch_coverage <- true),

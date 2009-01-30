@@ -203,8 +203,9 @@ let bytes_to_int64_auto bytes : int64 =
 	Exception if bytes is not concrete int *)
 let bytes_to_int_auto bytes : int = 
 	let n64 = bytes_to_int64_auto bytes in
-	(* TODO: warn if n64 is out of range *)
-		Int64.to_int n64
+	if n64 > Int64.of_int max_int || n64 < Int64.of_int min_int then
+		Errormsg.warn "Int64 %s is being truncated to an int" (Int64.to_string n64);
+	Int64.to_int n64
 	;;
 
 (** Convert a bytes to boolean. Exception if bytes is not concrete *int* *)
