@@ -1,6 +1,6 @@
 export OCAMLMAKEFILE=OCamlMakefile
 
-SOURCES=libstp_regerrorhandler.c libstp.idl stpvc.ml stpvc.mli 
+SOURCES=libstp_regerrorhandler.c libstp_helper.c libstp.idl stpvc.ml stpvc.mli 
 RESULT=stpvc
 
 LIBDIRS = ..

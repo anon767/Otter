@@ -341,7 +341,7 @@ namespace BEEV {
 
     // Manager object.  Having this backpointer means it's easy to
     // find the manager when we need it.
-    BeevMgr &_bm;
+    weak_ptr<BeevMgr> _bm;
 
     //Nodenum is a unique positive integer for the node.  The nodenum
     //of a node should always be greater than its descendents (which
@@ -381,7 +381,7 @@ namespace BEEV {
     void SetNodeNum(int nn) { _node_num = nn; };
 
     // Constructor (bm only)
-    ASTInternal(BeevMgr &bm, int nodenum = 0) :
+    ASTInternal(weak_ptr<BeevMgr> bm, int nodenum = 0) :
       _ref_count(0),
       _kind(UNDEFINED),
       _bm(bm),
@@ -390,7 +390,7 @@ namespace BEEV {
       _value_width(0) { }
 
     // Constructor (kind only, empty children, int nodenum) 
-    ASTInternal(Kind kind, BeevMgr &bm, int nodenum = 0) : 
+    ASTInternal(Kind kind, weak_ptr<BeevMgr> bm, int nodenum = 0) : 
       _ref_count(0),
       _kind(kind),
       _bm(bm),
@@ -401,7 +401,7 @@ namespace BEEV {
     // Constructor (kind and children).  This copies the contents of
     // the child nodes.
     // FIXME: is there a way to avoid repeating these?
-    ASTInternal(Kind kind, const ASTVec &children, BeevMgr &bm, int nodenum = 0) : 
+    ASTInternal(Kind kind, const ASTVec &children, weak_ptr<BeevMgr> bm, int nodenum = 0) : 
       _ref_count(0),
       _kind(kind),
       _children(children),
@@ -490,10 +490,10 @@ namespace BEEV {
     // to put "friend class hash_set<ASTInterior, ...>" in here.
 
     // Basic constructors
-    ASTInterior(Kind kind,  BeevMgr &bm) :
+    ASTInterior(Kind kind,  weak_ptr<BeevMgr> bm) :
       ASTInternal(kind, bm) {  }    
 
-    ASTInterior(Kind kind, ASTVec &children, BeevMgr &bm) :
+    ASTInterior(Kind kind, ASTVec &children, weak_ptr<BeevMgr> bm) :
       ASTInternal(kind, children, bm) {  }    
 
     //Copy constructor.  This copies the contents of the child nodes
@@ -552,10 +552,10 @@ namespace BEEV {
     public:
 
     // Default constructor
-    ASTSymbol(BeevMgr &bm) : ASTInternal(bm), _name(NULL) { }
+    ASTSymbol(weak_ptr<BeevMgr> bm) : ASTInternal(bm), _name(NULL) { }
 
     // Constructor.  This does NOT copy its argument.
-    ASTSymbol(const char * const name, BeevMgr &bm) : ASTInternal(SYMBOL, bm), 
+    ASTSymbol(const char * const name, weak_ptr<BeevMgr> bm) : ASTInternal(SYMBOL, bm), 
 						      _name(name) { }
     
     // Destructor (does nothing, but is declared virtual here.
@@ -604,7 +604,7 @@ namespace BEEV {
     };
     
     //FIXME Keep an eye on this function
-    ASTBVConst(CBV bv, unsigned int width, BeevMgr &bm) :
+    ASTBVConst(CBV bv, unsigned int width, weak_ptr<BeevMgr> bm) :
       ASTInternal(BVCONST, bm)
     {
       _bvconst = CONSTANTBV::BitVector_Clone(bv);
@@ -711,7 +711,7 @@ namespace BEEV {
     virtual void CleanUp();
   public:
     // Default constructor
-    ASTBVConst(const unsigned long long int bv, BeevMgr &bm) : 
+    ASTBVConst(const unsigned long long int bv, weak_ptr<BeevMgr> bm) : 
       ASTInternal(BVCONST, bm), _bvconst(bv) { 
     }
 
@@ -786,7 +786,7 @@ namespace BEEV {
       }
     };
     
-    ASTBVConst(const char * bv, BeevMgr &bm) : 
+    ASTBVConst(const char * bv, weak_ptr<BeevMgr> bm) : 
       ASTInternal(BVCONST, bm), _bvconst(bv) { 
       //_value_width = strlen(bv);
     }
@@ -1050,7 +1050,7 @@ namespace BEEV {
   };
 #endif
 
-  inline BeevMgr& ASTNode::GetBeevMgr() const { return _int_node_ptr->_bm; }
+  inline BeevMgr& ASTNode::GetBeevMgr() const { return *(_int_node_ptr->_bm.lock()); }
 
   /***************************************************************************
    * Class BeevMgr.  This holds all "global" variables for the system, such as
@@ -1091,6 +1091,12 @@ namespace BEEV {
 #endif
 
   private:
+    // pointer to self for creating weak_ptr back-references
+    struct null_deleter {
+      void operator()(void const *) const {}
+    };
+    shared_ptr<BeevMgr> _self;
+
     // Typedef for unique Interior node table. 
     typedef hash_set<ASTInterior *, 
 		     ASTInterior::ASTInteriorHasher, 
@@ -1772,8 +1778,11 @@ namespace BEEV {
     //this function biases the activity levels of MINISAT variables.
     void ChangeActivityLevels_Of_SATVars(MINISAT::Solver& n);
 
+  public:
     // Constructor
-    BeevMgr() : _interior_unique_table(INITIAL_INTERIOR_UNIQUE_TABLE_SIZE),
+    BeevMgr() :
+        _self(this, null_deleter()),
+        _interior_unique_table(INITIAL_INTERIOR_UNIQUE_TABLE_SIZE),
 		_symbol_unique_table(INITIAL_SYMBOL_UNIQUE_TABLE_SIZE),
 		_bvconst_unique_table(INITIAL_BVCONST_UNIQUE_TABLE_SIZE),
 		BBTermMemo(INITIAL_BBTERM_MEMO_TABLE_SIZE),

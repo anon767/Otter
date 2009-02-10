@@ -47,89 +47,69 @@ open Libstp
 
 
 type vc = Libstp.vc
-type exp = (*vc *) Libstp.expr 
+type exp = Libstp.expr 
 type typ = Libstp.typ 
 
 
 (* some helper functions *)
-let finalize f v = Gc.finalise f v; v
-
-let free_type = Libstp.vc_DeleteType
-let free_exp = Libstp.vc_DeleteExpr
-
-let wrap1 f arg1 = finalize free_exp (f arg1)
-let wrap2 f arg1 arg2 = finalize free_exp (f arg1 arg2)
-let wrap3 f arg1 arg2 arg3 = finalize free_exp (f arg1 arg2 arg3)
-let wrap4 f arg1 arg2 arg3 arg4 = finalize free_exp (f arg1 arg2 arg3 arg4)
 let wrap3bv f arg1 arg2 arg3 =
   if arg2 > 0
-  then finalize free_exp (f arg1 arg2 arg3)
+  then (f arg1 arg2 arg3)
   else failwith "bitvector width must be greater than 0"
-let wrap4bv f arg1 arg2 arg3 arg4 =
-  if arg2 > 0
-  then finalize free_exp (f arg1 arg2 arg3 arg4)
-  else failwith "bitvector width must be greater than 0"
-
 (* end helper functions *)
 
 
-let create_validity_checker () =
-  (* There doesn't seem to be any way to free resources associated with
-   * a VC, so I guess we don't... *)
-  finalize Libstp.vc_Destroy (vc_createValidityChecker())
+let create_validity_checker = vc_createValidityChecker
 
 (* functions for constructing types *)
-let bool_t vc =
-  finalize free_type (vc_boolType vc)
-let array_t vc index_t data_t =
-  finalize free_type (vc_arrayType vc index_t data_t)
-let bitvector_t vc width =
-  finalize free_type (vc_bvType vc width)
+let bool_t = vc_boolType
+let array_t = vc_arrayType
+let bitvector_t = vc_bvType
 
 
-let e_simplify = wrap2 vc_simplify
+let e_simplify = vc_simplify
 
 (* functions for constructing expressions *)
-let e_var = wrap3 vc_varExpr
-let e_eq = wrap3 vc_eqExpr
-let e_true = wrap1 vc_trueExpr
-let e_false = wrap1 vc_falseExpr
-let e_not = wrap2 vc_notExpr
-let e_and = wrap3 vc_andExpr
-let e_or = wrap3 vc_orExpr
-let e_implies = wrap3 vc_impliesExpr
-let e_iff = wrap3 vc_iffExpr
-let e_ite = wrap4 vc_iteExpr
+let e_var = vc_varExpr
+let e_eq = vc_eqExpr
+let e_true = vc_trueExpr
+let e_false = vc_falseExpr
+let e_not = vc_notExpr
+let e_and = vc_andExpr
+let e_or = vc_orExpr
+let e_implies = vc_impliesExpr
+let e_iff = vc_iffExpr
+let e_ite = vc_iteExpr
 
-let e_boolbv = wrap2 vc_boolToBVExpr
-let e_read = wrap3 vc_readExpr
-let e_write = wrap4 vc_writeExpr
+let e_boolbv = vc_boolToBVExpr
+let e_read = vc_readExpr
+let e_write = vc_writeExpr
 
-let e_bv_of_string = wrap2 vc_bvConstExprFromStr
+let e_bv_of_string = vc_bvConstExprFromStr
 let e_bv_of_int = wrap3bv vc_bvConstExprFromInt
-let e_bv_of_int32 = wrap2 vc_bv32ConstExprFromInt
+let e_bv_of_int32 = vc_bv32ConstExprFromInt
 let e_bv_of_int64 = wrap3bv vc_bvConstExprFromLL
 
-let e_bvconcat = wrap3 vc_bvConcatExpr
-let e_bvplus = wrap4 vc_bvPlusExpr
-let e_bvminus = wrap4 vc_bvMinusExpr
-let e_bvmult = wrap4 vc_bvMultExpr
-let e_bvdiv = wrap4 vc_bvDivExpr
-let e_bvmod = wrap4 vc_bvModExpr
-let e_bvand = wrap3 vc_bvAndExpr
-let e_bvor = wrap3 vc_bvOrExpr
-let e_bvxor = wrap3 vc_bvXorExpr
-let e_bvneg = wrap2 vc_bvUMinusExpr
-let e_bvnot = wrap2 vc_bvNotExpr
+let e_bvconcat = vc_bvConcatExpr
+let e_bvplus = vc_bvPlusExpr
+let e_bvminus = vc_bvMinusExpr
+let e_bvmult = vc_bvMultExpr
+let e_bvdiv = vc_bvDivExpr
+let e_bvmod = vc_bvModExpr
+let e_bvand = vc_bvAndExpr
+let e_bvor = vc_bvOrExpr
+let e_bvxor = vc_bvXorExpr
+let e_bvneg = vc_bvUMinusExpr
+let e_bvnot = vc_bvNotExpr
 
-let e_bvextract = wrap4 vc_bvExtract
+let e_bvextract = vc_bvExtract
 
 (* vc_bvBoolExtract seems to be implemented backwards and unlikely to get fixed
-let e_bvbitextract = wrap3 vc_bvBoolExtract *)
+let e_bvbitextract = vc_bvBoolExtract *)
 let e_bvbitextract vc child bit =
   e_eq vc (e_bvextract vc child bit bit) (e_bv_of_int vc 1 1)
 
-let e_bvsextend vc w e = wrap3 vc_bvSignExtend vc e w
+let e_bvsextend vc w e = vc_bvSignExtend vc e w
 (* some shift functions that are a bit more consistent with the other 
  * STP functions *)
 let e_bvconstshiftleft vc w e sh_amt =
@@ -161,14 +141,14 @@ let e_bvshiftleft = var_sh e_bvconstshiftleft
 let e_bvshiftright = var_sh e_bvconstshiftright
 let e_bvshiftright_arith = var_sh e_bvconstshiftright_arith
 
-let e_bvlt = wrap3 vc_bvLtExpr
-let e_bvle = wrap3 vc_bvLeExpr
-let e_bvgt = wrap3 vc_bvGtExpr
-let e_bvge = wrap3 vc_bvGeExpr
-let e_bvslt = wrap3 vc_sbvLtExpr
-let e_bvsle = wrap3 vc_sbvLeExpr
-let e_bvsgt = wrap3 vc_sbvGtExpr
-let e_bvsge = wrap3 vc_sbvGeExpr
+let e_bvlt = vc_bvLtExpr
+let e_bvle = vc_bvLeExpr
+let e_bvgt = vc_bvGtExpr
+let e_bvge = vc_bvGeExpr
+let e_bvslt = vc_sbvLtExpr
+let e_bvsle = vc_sbvLeExpr
+let e_bvsgt = vc_sbvGtExpr
+let e_bvsge = vc_sbvGeExpr
 
 
 let do_assert = vc_assertFormula
@@ -180,7 +160,7 @@ let query vc exp =
     | 2 -> failwith "vc_query failed"
     | _ -> failwith "vc_query returned unexpected result"
 
-let get_counterexample = wrap2 vc_getCounterExample
+let get_counterexample = vc_getCounterExample
 let int_of_e = getBVInt
 let int64_of_e = getBVUnsignedLongLong
 

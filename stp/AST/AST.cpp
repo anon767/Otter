@@ -139,7 +139,10 @@ namespace BEEV {
 
   void ASTInterior::CleanUp() {
     // cout << "Deleting node " << this->GetNodeNum() << endl;
-    _bm._interior_unique_table.erase(this);
+    shared_ptr<BeevMgr> bm = _bm.lock();
+    if (bm) {
+      bm->_interior_unique_table.erase(this);
+    }
     delete this;
   }
 
@@ -655,7 +658,7 @@ namespace BEEV {
   ////////////////////////////////////////////////////////////////
   ASTNode BeevMgr::CreateNode(Kind kind, const ASTVec & back_children) {
     // create a new node.  Children will be modified.
-    ASTInterior *n_ptr = new ASTInterior(kind, *this);
+    ASTInterior *n_ptr = new ASTInterior(kind, _self);
 
     // insert all of children at end of new_children.
     ASTNode n(CreateInteriorNode(kind, n_ptr, back_children));
@@ -666,7 +669,7 @@ namespace BEEV {
 			      const ASTNode& child0,
 			      const ASTVec & back_children) {
 
-    ASTInterior *n_ptr = new ASTInterior(kind, *this);
+    ASTInterior *n_ptr = new ASTInterior(kind, _self);
     ASTVec &front_children = n_ptr->_children;
     front_children.push_back(child0);
     ASTNode n(CreateInteriorNode(kind, n_ptr,  back_children));
@@ -678,7 +681,7 @@ namespace BEEV {
 			      const ASTNode& child1,
 			      const ASTVec & back_children) {
 
-    ASTInterior *n_ptr = new ASTInterior(kind, *this);
+    ASTInterior *n_ptr = new ASTInterior(kind, _self);
     ASTVec &front_children = n_ptr->_children;
     front_children.push_back(child0);
     front_children.push_back(child1);
@@ -692,7 +695,7 @@ namespace BEEV {
 			      const ASTNode& child1,
 			      const ASTNode& child2,
 			      const ASTVec & back_children) {
-    ASTInterior *n_ptr = new ASTInterior(kind, *this);
+    ASTInterior *n_ptr = new ASTInterior(kind, _self);
     ASTVec &front_children = n_ptr->_children;
     front_children.push_back(child0);
     front_children.push_back(child1);
@@ -740,7 +743,7 @@ namespace BEEV {
   ////////////////////////////////////////////////////////////////
   ASTNode BeevMgr::CreateSymbol(const char * const name) 
   { 
-    ASTSymbol temp_sym(name, *this);
+    ASTSymbol temp_sym(name, _self);
     ASTNode n(LookupOrCreateSymbol(temp_sym));
     return n;
   }
@@ -812,7 +815,7 @@ namespace BEEV {
 
   //FIXME Code currently assumes that it will destroy the bitvector passed to it
   ASTNode BeevMgr::CreateBVConst(CBV bv, unsigned width){
-     ASTBVConst temp_bvconst(bv, width, *this);
+     ASTBVConst temp_bvconst(bv, width, _self);
      ASTNode n(LookupOrCreateBVConst(temp_bvconst));
      
      CONSTANTBV::BitVector_Destroy(bv);
@@ -874,7 +877,10 @@ namespace BEEV {
   // Inline because we need to wait until unique_table is defined
   void ASTBVConst::CleanUp() {
     //  cout << "Deleting node " << this->GetNodeNum() << endl;
-    _bm._bvconst_unique_table.erase(this);
+    shared_ptr<BeevMgr> bm = _bm.lock();
+    if (bm) {
+      bm->_bvconst_unique_table.erase(this);
+    }
     delete this;
   }
 
@@ -941,7 +947,7 @@ namespace BEEV {
       // Make a new ASTBVConst. Can cast the iterator to non-const --
       // carefully.
       unsigned int width = s_ptr->_value_width;
-      ASTBVConst * s_ptr1 = new ASTBVConst(s_ptr->GetBVConst(), *this);
+      ASTBVConst * s_ptr1 = new ASTBVConst(s_ptr->GetBVConst(), _self);
       s_ptr1->SetNodeNum(NewNodeNum());
       s_ptr1->_value_width = width;
       pair<ASTBVConstSet::const_iterator, bool> p = _bvconst_unique_table.insert(s_ptr1);
@@ -955,7 +961,10 @@ namespace BEEV {
   // Inline because we need to wait until unique_table is defined
   void ASTBVConst::CleanUp() {
     //  cout << "Deleting node " << this->GetNodeNum() << endl;
-    _bm._bvconst_unique_table.erase(this);
+    shared_ptr<BeevMgr> bm = _bm.lock();
+    if (bm) {
+      bm->_bvconst_unique_table.erase(this);
+    }
     delete this;
   }
 
@@ -1008,7 +1017,7 @@ namespace BEEV {
       // _name because it's const).  Can cast the iterator to
       // non-const -- carefully.
       //std::string strname(s_ptr->GetName());
-      ASTSymbol * s_ptr1 = new ASTSymbol(strdup(s_ptr->GetName()), *this);
+      ASTSymbol * s_ptr1 = new ASTSymbol(strdup(s_ptr->GetName()), _self);
       s_ptr1->SetNodeNum(NewNodeNum());
       s_ptr1->_value_width = s_ptr->_value_width;
       pair<ASTSymbolSet::const_iterator, bool> p = _symbol_unique_table.insert(s_ptr1);
@@ -1031,7 +1040,10 @@ namespace BEEV {
   // Inline because we need to wait until unique_table is defined
   void ASTSymbol::CleanUp() {
     //  cout << "Deleting node " << this->GetNodeNum() << endl;
-    _bm._symbol_unique_table.erase(this);
+    shared_ptr<BeevMgr> bm = _bm.lock();
+    if (bm) {
+      bm->_symbol_unique_table.erase(this);
+    }
     //FIXME This is a HUGE free to invoke.
     //TEST IT!
     free((char*) this->_name);

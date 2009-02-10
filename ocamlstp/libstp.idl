@@ -1,6 +1,6 @@
-typedef [abstract] void* Vc;
-typedef [abstract] void* Expr;
-typedef [abstract] void* Typ;
+typedef [abstract, c2ml(c2ml_Vc), ml2c(ml2c_Vc)] void* Vc;
+typedef [abstract, finalize(finalize_Expr)] void* Expr;
+typedef [abstract, finalize(finalize_Typ)] void* Typ;
 
 // o  : optimizations
 // c  : check counterexample
@@ -12,11 +12,6 @@ void vc_setFlags(char c);
 
 //! Flags can be NULL
 Vc vc_createValidityChecker(void);
-//destroys the STP instance, and removes all the created expressions
-void vc_Destroy(Vc vc);
-
-void vc_DeleteExpr(Expr e);
-void vc_DeleteType(Typ e);
 
 // Basic types
 Typ vc_boolType(Vc vc);
@@ -135,7 +130,7 @@ int getBVInt(Expr e);
 //! Return an unsigned int from a constant bitvector expression
 unsigned int getBVUnsigned(Expr e);
 //! Return an unsigned long long int from a constant bitvector expressions
-[int64] unsigned long long int getBVUnsignedLongLong(Expr e);
+unsigned long long int getBVUnsignedLongLong(Expr e);
 
 /**************************/
 /* BIT VECTOR OPERATIONS  */
@@ -146,7 +141,7 @@ Typ vc_bv32Type(Vc vc);
 Expr vc_bvConstExprFromStr(Vc vc, [string] char* binary_repr);
 Expr vc_bvConstExprFromInt(Vc vc, int n_bits, unsigned int val);
 Expr vc_bv32ConstExprFromInt(Vc vc, [int32] unsigned int val);
-Expr vc_bvConstExprFromLL(Vc vc, int n_bits, [int64]unsigned long long val);
+Expr vc_bvConstExprFromLL(Vc vc, int n_bits, unsigned long long val);
 
 Expr vc_bvConcatExpr(Vc vc, Expr left, Expr right);
 Expr vc_bvPlusExpr(Vc vc, int n_bits, Expr left, Expr right);
@@ -200,9 +195,11 @@ Expr vc_bvWriteToMemoryArray(Vc vc,
 			       Expr array, Expr  byteIndex, 
 			       Expr element, int numOfBytes);
 
-[string] char* exprString(Expr e);
+[string] char* exprString(Expr e)
+    quote(dealloc, "free(_res); ");
 
-[string] char* typeString(Typ t);
+[string] char* typeString(Typ t)
+    quote(dealloc, "free(_res); ");
 
 Expr getChild(Expr e, int i);
 
