@@ -16,13 +16,9 @@ module VarinfoMap =
 let bitsSizeOfExp exp =
 	(Cil.bitsSizeOf (Cil.typeOf exp)) / 8;;
 
-let rec search_function varinfo gs =
-	match gs with
-		| [] -> failwith "Function not found"
-		| GFun (fundec, _) :: t ->
-				if fundec.svar == varinfo then fundec else search_function varinfo t
-		| _ :: t -> search_function varinfo t
-;;
+let fundecHashtbl : (varinfo, fundec) Hashtbl.t = Hashtbl.create 100;;
+
+let search_function = Hashtbl.find fundecHashtbl;;
 
 module FundecMap =
 	Utility.MakeMap (

@@ -82,6 +82,11 @@ exec_statement state exHist (statement: statement) =
 and
 			
 exec_stmt state exHist (stmt: Cil.stmt) =
+	(* Check to see if we got a signal; if so, stop execution *)
+	(match !signalStringOpt with
+			Some s -> print_endline s; raise SignalException
+		 | _ -> ());
+
 	let nextExHist () = { exHist with
 		edgesTaken = EdgeSet.add (exHist.prevStmt,stmt) exHist.edgesTaken;
 		prevStmt = stmt;
@@ -132,8 +137,10 @@ exec_stmt state exHist (stmt: Cil.stmt) =
 					let pop_frame = List.hd state.locals in
 					let state2' = VarinfoMap.fold (fun varinfo block s -> MemOp.state__remove_block s block) pop_frame.varinfo_to_block state2 in 
 					if instruction = MainEntry then(
-						Output.set_mode Output.MSG_REG;
-						Output.print_endline "Program execution finished";
+						Output.set_mode Output.MSG_MUSTPRINT;
+						Output.print_endline "Program execution finished\nPath Condition:";
+						Output.print_endline
+							(To_string.annotated_bytes_list state.human_readable_path_condition);
 						coverage := (state.human_readable_path_condition, nextExHist ()) :: !coverage;
 						state2')
 						else
@@ -186,7 +193,7 @@ exec_stmt state exHist (stmt: Cil.stmt) =
 							Output.print_endline (To_string.bytes rv);
 							Output.print_endline ("Under the path condition:")
 						end;
-					let pc_str = (Utility.print_list (fun pc -> To_string.bytes pc) state.path_condition " AND ") in
+					let pc_str = (Utility.print_list To_string.bytes state.path_condition " AND ") in
 					Output.print_endline (if String.length pc_str = 0 then "(nil)" else pc_str);
  
 					let truth = Stp.eval state.path_condition rv in
@@ -206,10 +213,8 @@ exec_stmt state exHist (stmt: Cil.stmt) =
 						begin
 							Output.print_endline "Unknown";
 							Output.increase ();
-							Output.set_mode Output.MSG_MUSTPRINT;
-							Output.print_endline ("Try True branch of the conditional at " ^ (To_string.location loc) ^ " by assuming (" ^ (To_string.exp exp) ^")");
-							let state_t =
-								try try_branch (Some rv) block1 with
+							let explore assumption block =
+								try try_branch (Some assumption) block with
 									| Function.Notification_Exit(state_exit, _) -> state_exit
 									| Failure fail ->
 											Output.set_mode Output.MSG_MUSTPRINT;
@@ -221,23 +226,26 @@ exec_stmt state exHist (stmt: Cil.stmt) =
 												state.human_readable_path_condition :: !abandonedPaths;
 											state
 							in
+							Output.print_endline
+								(String.concat ""
+									 ["Try True branch of the conditional at ";
+										To_string.location loc;
+										" by assuming (";
+										Pretty.sprint 100 (Cil.d_exp () exp);
+										")"]);
+							let state_t = explore rv block1 in
+							Output.set_mode Output.MSG_REG;
 							Output.print_endline "<TRUE BRANCH ENDED>";
  
-							Output.set_mode Output.MSG_MUSTPRINT;
-							Output.print_endline ("Try False branch of the conditional at " ^ (To_string.location loc) ^ " by assuming !(" ^ (To_string.exp exp) ^")");
-							let state_f =
-								try try_branch (Some (Bytes_Op(OP_LNOT,[(rv, Cil.typeOf exp)]))) block2 with
-									| Function.Notification_Exit(state_exit, _) -> state_exit
-									| Failure fail ->
-											Output.set_mode Output.MSG_MUSTPRINT;
-											Output.print_endline
-												(Printf.sprintf "Error \"%s\" occurs at %s" fail
-													 (To_string.location !Output.cur_loc));
-											Output.print_endline "Abandoning branch";
-											abandonedPaths :=
-												state.human_readable_path_condition :: !abandonedPaths;
-											state
-							in
+							Output.print_endline
+								(String.concat ""
+									 ["Try False branch of the conditional at ";
+										To_string.location loc;
+										" by assuming !(";
+										Pretty.sprint 100 (Cil.d_exp () exp);
+										")"]);
+							let state_f = explore (Bytes_Op(OP_LNOT,[(rv, Cil.typeOf exp)])) block2 in
+							Output.set_mode Output.MSG_REG;
 							Output.print_endline "<FALSE BRANCH ENDED>";
 
 							Output.decrease ();
@@ -381,7 +389,12 @@ exec_instr_call state exHist instr stmt lvalopt fexp exps loc =
 							match exps with
 								| [AddrOf (Var varinf, NoOffset as lval)]
 								| [CastE (_, AddrOf (Var varinf, NoOffset as lval))] ->
-										(* If we are given a variable's address, we track the symbolic value *)
+										(* If we are given a variable's address, we track the symbolic value.
+											 But make sure we don't give the same variable two different values. *)
+										if List.exists (fun (_,v) -> v == varinf) exHist.bytesToVars
+										then Errormsg.s
+											(Errormsg.error "Can't assign two tracked values to variable %s" varinf.vname);
+
 										let isWritable = (*if List.length exps > 1 then false else*) true in
 										let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
 										let (block,offset) = Eval.lval state lval in
@@ -456,7 +469,7 @@ exec_instr_call state exHist instr stmt lvalopt fexp exps loc =
 					| Function.Exit -> 
 						
 						Output.set_mode Output.MSG_MUSTPRINT;
-						Output.print_endline (Printf.sprintf "exit() called.\n Path Condition (length=%d):" (List.length state.path_condition));
+						Output.print_endline "exit() called.\nPath Condition:";
 						Output.print_endline
 							(To_string.annotated_bytes_list state.human_readable_path_condition);
 						coverage := (state.human_readable_path_condition, exHist) :: !coverage;
@@ -491,7 +504,7 @@ exec_instr_call state exHist instr stmt lvalopt fexp exps loc =
 							MemOp.state__add_path_condition state pc
 					
 					| Function.PathCondition ->
-						let pc_str = (Utility.print_list (fun pc->To_string.bytes pc) state.path_condition " AND ") in
+						let pc_str = (Utility.print_list To_string.bytes state.path_condition " AND ") in
 						Output.set_mode Output.MSG_MUSTPRINT;
 						Output.print_endline (if String.length pc_str = 0 then "(nil)" else pc_str);
 							state
@@ -514,7 +527,7 @@ exec_instr_call state exHist instr stmt lvalopt fexp exps loc =
 									Executedebug.log "Assertion:";
 									Executedebug.log (To_string.bytes post);
 									Executedebug.log "Is Unsatisfiable with the path condition:";
-									let pc_str = (Utility.print_list (fun pc->To_string.bytes pc) state.path_condition " AND ") in
+									let pc_str = (Utility.print_list To_string.bytes state.path_condition " AND ") in
 									Executedebug.log (if String.length pc_str = 0 then "(nil)" else pc_str);
 									Executedebug.log "****************************)";
 									()

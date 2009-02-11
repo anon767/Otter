@@ -245,3 +245,12 @@ module PcSet = Set.Make
 	took the true branch and false branch, respectively, of this condition. *)
 let branches_taken : (Cil.exp * Cil.location, PcSet.t ref * PcSet.t ref) Hashtbl.t =
 	Hashtbl.create 100
+
+module SymbolSet = Set.Make
+	(struct
+		 type t = symbol
+		 let compare x y = x.symbol_id - y.symbol_id
+	 end)
+
+let signalStringOpt : string option ref = ref None
+exception SignalException

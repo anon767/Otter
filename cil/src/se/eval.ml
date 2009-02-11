@@ -55,7 +55,7 @@ rval state exp : bytes =
 					begin
 						match (Cil.typeOfLval cil_lval,lhost) with
 							| (TFun(_, _, _, _),Var(varinfo)) ->
-								let fundec = Cilutility.search_function varinfo (Executedata.globals ()) in
+								let fundec = Cilutility.search_function varinfo in
 								let f_addr = MemOp.bytes__random Types.word__size in (* TODO: assign an addr for each function ptr *)
 									Bytes_FunPtr(fundec,f_addr)
 							| _ ->

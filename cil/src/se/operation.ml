@@ -62,7 +62,7 @@ let bnot operands =
 	unop op_conc OP_BNOT operands 
 ;;
 
-let lnot operands = (* should return unsigned int (32-bit) *)
+let lnot operands = (* should return int (32-bit) *)
 	let op_conc arr typ = 
 		if ImmutableArray.fold_left (fun a byte -> match byte with
 			| Byte_Concrete (c) -> a || (Char.code c <>0)
@@ -151,10 +151,10 @@ let band operands = binop (fun s x y -> Int64.logand x y ) OP_BAND operands ;;
 let bxor operands = binop (fun s x y -> Int64.logxor x y ) OP_BXOR operands ;;
 let bor operands  = binop (fun s x y -> Int64.logor x y )  OP_BOR operands ;;
 
-let logand operands =  (* should return unsigned int (32-bit) *)
+let logand operands =  (* should return int (32-bit) *)
 	binop (fun s x y -> if Int64.compare x Int64.zero = 0 || Int64.compare y Int64.zero = 0
 	then Int64.zero else Int64.one) OP_LAND operands ;;
-let logor operands =  (* should return unsigned int (32-bit) *)
+let logor operands =  (* should return int (32-bit) *)
 	binop (fun s x y -> if Int64.compare x Int64.zero = 0 && Int64.compare y Int64.zero = 0
 	then Int64.zero else Int64.one) OP_LOR operands ;;
 

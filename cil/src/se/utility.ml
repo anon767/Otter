@@ -27,14 +27,9 @@ let next_id idref =
 ;;
 
 let rec print_list print list delim =
-	match list with
-		| [] -> ""
-		| h::[] -> (print h)
-		| h::t -> (print h)^delim^(print_list print t delim)
+	String.concat delim (List.map print list)
 ;;
 
 let pause () =
 	Scanf.scanf "%c" (fun x->())
 ;;	
-	
-	

@@ -74,9 +74,8 @@ let from_varinfo state varinfo args =
 		| "OR" -> BooleanOp(Cil.LOr)
 		| "NOT" -> BooleanNot
 		| f ->
-				let gs = (Executedata.globals ()) in
 				try
-					Ordinary(Cilutility.search_function varinfo gs)
+					Ordinary(Cilutility.search_function varinfo)
 				with (Failure (x))-> 
 					if Executeargs.run_args.arg_symbolic_extern_fns then
 						(Output.print_endline(varinfo.vname^" is undefined; returning fresh symbolic value.");

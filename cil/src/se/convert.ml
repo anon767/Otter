@@ -58,6 +58,7 @@ let lazy_int_to_bytes n : bytes =
 	lazy_int64_to_bytes (Int64.of_int n) IInt 
 	;;
 	
+(* Why were there two copies of this?
 (** Convert ocaml string to Bytes_ByteArray (not Bytes_Address) *)
 let string_to_bytes string : bytes =
 	let string_map f s =
@@ -70,7 +71,7 @@ let string_to_bytes string : bytes =
 	in
 		Bytes_ByteArray (ImmutableArray.of_list (string_map (fun ch -> Byte_Concrete ch) (string^"\000")))
 	;;
-
+*)
 
 (** Convert in64 of ikind to Bytes_ByteArray. Truncate if needed.  *)
 let int64_to_bytes n64 ikind : bytes =
@@ -89,16 +90,16 @@ Printf.printf "%s" (Utility.print_list (function | Byte_Concrete(c) -> Printf.sp
 Printf.printf " (length %d)\n" len; Bytes_ByteArray (ImmutableArray.of_list ans)*)
 	;;
 
+let string_map f s =
+	let rec helper i acc =
+		if i < 0 then
+			acc
+		else
+			helper (i-1) (f s.[i] :: acc)
+	in helper (String.length s - 1) []
+
 (** Convert CString to Bytes_ByteArray.  *)
 let string_to_bytes (s : string) : bytes =
-	let string_map f s =
-		let rec helper i acc =
-			if i < 0 then
-				acc
-			else
-				helper (i-1) (f s.[i] :: acc)
-		in helper (String.length s - 1) []
-	in
 	Bytes_ByteArray (ImmutableArray.of_list (string_map (fun ch -> Byte_Concrete ch) (s^"\000")))
 ;;
 
@@ -203,9 +204,10 @@ let bytes_to_int64_auto bytes : int64 =
 	Exception if bytes is not concrete int *)
 let bytes_to_int_auto bytes : int = 
 	let n64 = bytes_to_int64_auto bytes in
-	if n64 > Int64.of_int max_int || n64 < Int64.of_int min_int then
-		Errormsg.warn "Int64 %s is being truncated to an int" (Int64.to_string n64);
-	Int64.to_int n64
+	let res = Int64.to_int n64 in
+	if n64 <> Int64.of_int res then
+		Errormsg.warn "Int64 %Ld is being truncated to an int" n64;
+	res
 	;;
 
 (** Convert a bytes to boolean. Exception if bytes is not concrete *int* *)

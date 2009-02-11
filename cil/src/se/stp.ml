@@ -9,8 +9,6 @@ let not truth = match truth with
 	| Unknown -> Unknown
 ;;
 
-let global_vc = Stpc.create_validity_checker ();;
-
 let rec eval pc bytes =
 	(*
 	if not Executeargs.args.Executeargs.arg_print_queries then () else
@@ -19,7 +17,7 @@ let rec eval pc bytes =
 			ignore (Utility.next_id Types.stp_count);
 			Output.set_mode Output.MSG_REG;
 			Output.print_endline "Ask STP...";
-			consult_stp pc bytes
+			Stats.time "STP" consult_stp (pc,bytes)
 	in
 	let is_comparison op = match op with	
 		| OP_LT -> true
@@ -77,7 +75,7 @@ let rec eval pc bytes =
 						
 and
 
-consult_stp pc bytes =
+consult_stp (pc,bytes) =
 	let equal_zero = query pc bytes true in
 	if equal_zero then False else
 		let not_equal_zero = query pc bytes false in
@@ -96,11 +94,12 @@ query pc bytes equal_zero =
 	Output.print_endline "%% STP Program: %%";
 	Output.print_endline "%%%%%%%%%%%%%%%%%%";
 		
+	let to_stp_bv_wrapper (theVC,theExpr) = to_stp_bv theVC theExpr in
 		
 	let rec do_assert pc = match pc with
 		| [] -> ()
 		| head::tail -> 
-			let (bv, len) = to_stp_bv vc head in
+			let (bv, len) = Stats.time "to_stp_bv" to_stp_bv_wrapper (vc,head) in
 			let a = Stpc.e_not vc (Stpc.e_eq vc bv (Stpc.e_bv_of_int vc len 0)) in
 			Stpc.do_assert vc a;
 			Output.set_mode Output.MSG_STP;
@@ -116,9 +115,12 @@ query pc bytes equal_zero =
 	
 	Output.set_mode Output.MSG_STP;
 	Output.print_endline ("QUERY("^(Stpc.to_string q)^");");
-	
+(*	
 	let bool = Stpc.query vc q  in
 		bool
+*)
+	let query_wrapper (theVC,theExpr) = Stpc.query theVC theExpr in
+	Stats.time "STP query" query_wrapper (vc,q)
 
 (* (* This commented-out chunk is trying to merge query and consult_stp.
 	 Unfortunately, STP hangs if I try to make more than one query with
@@ -145,13 +147,7 @@ and
 		
 		note: e_bv_of_int (with) (content)  -> bv
  *)
-to_stp_bv vc0 bytes =
-	let vc = 
-		(*
-		global_vc 
-		*)
-		vc0
-	in
+to_stp_bv vc bytes =
 	match bytes with
 		| Bytes_Constant (constant) ->
 			let bytes2 = Convert.constant_to_bytes constant in
@@ -310,13 +306,7 @@ to_stp_bv vc0 bytes =
 						
 and
 
-to_stp_array vc0 arr bytes =	
-	let vc = 
-		(*
-		global_vc 
-		*)
-		vc0
-	in
+to_stp_array vc arr bytes =	
 	match bytes with
 		| Bytes_Constant(constant) ->
 			let bytes2 = Convert.constant_to_bytes constant in
@@ -385,13 +375,7 @@ to_stp_array vc0 arr bytes =
 			
 and
 
-new_array vc0 bytes = 
-	let vc = 
-		(*
-		global_vc 
-		*)
-		vc0
-	in
+new_array vc bytes = 
 	let name = 
 		("bytes_"^(string_of_int (Hashtbl.hash bytes))) (* may clash *)
 	in
@@ -404,15 +388,11 @@ make_var symbol =
 	"symbol_"^(string_of_int symbol.symbol_id)
 ;;
 
-(** Get sample values for the variables that satisfy the path
-		condition, so the resulting inputs would have driven the program
-		down this path. *)
-let getSampleInput
-		(pathCondition : bytes list)
-		(bytesToVars : (bytes * varinfo) list)
-		: (varinfo * bytes) list =
+(** Given a path condition and a list of symbols, return an
+		association list of (symbol,char)s, where each char is the value
+		STP gives to that symbol to make the path condition true. *)
+let getValues pathCondition symbolList =
 	let vc = Stpc.create_validity_checker () in
-
 	(* To get values for the symbolic values which make the path
 		 condition true, we need to query for its *negation* because STP
 		 gives counterexamples (not satisfying assignments).
@@ -438,20 +418,10 @@ let getSampleInput
 	if Stpc.query vc negatedPcExpr
 	then failwith ("The path condition is unsatisfiable!\n" ^
 									 (To_string.bytes_list pathCondition));
-	(* Extract the value of a symbolic ByteArray from STP's counterexample *)
-	let getVal = function
-		| Bytes_ByteArray bytArr ->
-				Bytes_ByteArray
-					(ImmutableArray.map
-						 (function
-								| Byte_Symbolic s ->
-										let bv = Stpc.e_var vc (make_var s) (Stpc.bitvector_t vc 8) in
-										Byte_Concrete (Char.chr (Stpc.int_of_e (Stpc.get_counterexample vc bv)))
-								| _ -> failwith "Impossible: tracked symbolic value must be fully symbolic")
-						 bytArr)
-		| _ -> failwith "Impossible: symbolic bytes must be a ByteArray"
+	(* Extract the value of a symbol from STP's counterexample *)
+	let getOneVal s =
+		let bv = Stpc.e_var vc (make_var s) (Stpc.bitvector_t vc 8) in
+		(s, Char.chr (Stpc.int_of_e (Stpc.get_counterexample vc bv)))
 	in
-	List.map
-		(fun (bytes,varinf) -> (varinf, getVal bytes))
-		bytesToVars
+	List.map getOneVal symbolList
 ;;

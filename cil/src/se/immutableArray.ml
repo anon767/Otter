@@ -106,3 +106,11 @@ let fold2_left ff a bs1 bs2 =
 	in
 		impl ff a bs1 bs2 0
 ;;
+
+let exists p arr =
+	let rec exists_aux i =
+		if i >= arr.length
+		then false
+		else p (get arr i) || exists_aux (succ i)
+	in
+	exists_aux 0
