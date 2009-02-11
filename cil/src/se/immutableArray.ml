@@ -109,7 +109,7 @@ let fold2_left ff a bs1 bs2 =
 
 let exists p arr =
 	let rec exists_aux i =
-		if i >= arr.length
+		if i >= length arr
 		then false
 		else p (get arr i) || exists_aux (succ i)
 	in
