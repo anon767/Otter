@@ -37,7 +37,7 @@ IO_BUF* IOSIM_findfile(const char *file){
 
 void IOSIM_addfile(const char *file,IO_BUF* buf){
 	if (IOSIM_num_file >= IOSIM_MAX_FILE) {
-		__EVALSTR("Too many files",14);
+		__COMMENT("Too many files");
 		exit(); // This should cause the symbolic executor to halt with 'Failure("hd")'
 	}
 	IOSIM_file_name[IOSIM_num_file] = file;
@@ -47,7 +47,7 @@ void IOSIM_addfile(const char *file,IO_BUF* buf){
 
 int IOSIM_newfd(){
 	if (IOSIM_num_fd >= IOSIM_MAX_FD) {
-		__EVALSTR("Too many file descriptors",24);
+		__COMMENT("Too many file descriptors");
 		exit(); // This should cause the symbolic executor to halt with 'Failure("hd")'
 	}
 	int ret = IOSIM_num_fd;
@@ -86,7 +86,7 @@ int IOSIM_read(int fildes, void *buf, int nbyte){
 	}
 	in->cur = cur;
 	if (n < 0) {
-		__EVALSTR("n is negative in IOSIM_read; this shouldn't be",46);
+		__COMMENT("n is negative in IOSIM_read; this shouldn't be");
 		exit(); // This should cause the symbolic executor to halt with 'Failure("hd")'
 	}
 	return n;
@@ -94,6 +94,8 @@ int IOSIM_read(int fildes, void *buf, int nbyte){
 int IOSIM_write(int fildes, const void *buf, int nbyte){
 	int n,cur,len;
 	char* cbuf = buf;
+
+	static int numWritten[IOSIM_MAX_FD]; // Initialized to 0
 
 	if(nbyte == 0) return 0;
 	if(fildes == 0) return -1;
@@ -106,6 +108,10 @@ int IOSIM_write(int fildes, const void *buf, int nbyte){
 		out->buf[cur] = cbuf[n];
 		cur++;
 	}
+
+	numWritten[fildes] += n;
+	__EVALSTR(out->buf,numWritten[fildes]);
+
 	out->cur = cur;
 	if(n<=0) return -1;
 	else return n;

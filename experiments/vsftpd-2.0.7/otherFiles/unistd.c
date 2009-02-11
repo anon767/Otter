@@ -21,11 +21,11 @@ gid_t        getgid(void){
 pid_t fork(void){
 //	static pid_t new_pid = 0;
 //	if ((char)__SYMBOLIC()) {
-//		__EVALSTR("Forking to parent",17);
+//		__COMMENT("Forking to parent");
 //		new_pid++;
 //		return new_pid; // child process id > 0
 //	}
-	__EVALSTR("Forking to child",16);
+	__COMMENT("Forking to child");
 	return 0;
 }
 //#endif
@@ -78,16 +78,12 @@ ssize_t write(int fildes, const void *buf, size_t nbyte){
 		//assert(fildes==5);
 		//strncat(write_output[fildes],buf,nbyte);
 		//__EVALSTR(write_output[fildes]);
-//	switch (fildes) {
-//	case 0: __EVALSTR("Writing on fildes 0",20); break;
-//	case 1: __EVALSTR("Writing on fildes 1",20); break;
-//	case 2: __EVALSTR("Writing on fildes 2",20); break;
-//	case 3: __EVALSTR("Writing on fildes 3",20); break;
-//	case 4: __EVALSTR("Writing on fildes 4",20); break;
-//	case 5: __EVALSTR("Writing on fildes 5",20); break;
-//	default: __EVALSTR("Writing on fildes >5",20); break;
-//	}
+
+	__COMMENT("Writing on fildes");
+	__EVAL(fildes);
+
 		__EVALSTR(buf,nbyte);
+		IOSIM_write(fildes, buf, nbyte);
 		return nbyte;
 //	}
 //	return -1;

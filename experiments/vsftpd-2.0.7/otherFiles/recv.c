@@ -5,7 +5,7 @@
 
 ssize_t recv(int __fd, void *__buf, size_t __n, int __flags) {
 	if (__fd >= IOSIM_num_fd || IOSIM_fd[__fd] == NULL) {
-		__EVALSTR("Bad file descriptor in recv",27);
+		__COMMENT("Bad file descriptor in recv");
 		errno = EBADF; exit();
 		return -1;
 	}

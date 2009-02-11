@@ -27,7 +27,7 @@ int __fxstat(int __ver, int __fildes, struct stat *__stat_buf) {
 		
 	IO_BUF* buf = IOSIM_fd[__fildes];
 	if (buf == NULL) {
-		__EVALSTR("Bad file descriptor in __fxstat",31);
+		__COMMENT("Bad file descriptor in __fxstat");
 		errno = EBADF;
 		return -1;
 	}

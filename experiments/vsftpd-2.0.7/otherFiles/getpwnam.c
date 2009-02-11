@@ -14,11 +14,11 @@ struct passwd *getpwnam(char const   *__name ) {
 
 	x->pw_dir = "some name goes here";
 //	__uid_t uid;
-	x->pw_uid = __SYMBOLIC();
+	x->pw_uid = __SYMBOLIC(0);
 //	char *p;
-	x->pw_name = __SYMBOLIC();
+	x->pw_name = __SYMBOLIC(0);
 //	__gid_t gid;
-	x->pw_gid = __SYMBOLIC();
+	x->pw_gid = __SYMBOLIC(0);
 
 	return x;
 }

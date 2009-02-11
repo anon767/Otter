@@ -39,3 +39,8 @@ int gettimeofday(struct timeval *tv, struct timezone *tz ) {
 	tv->tv_usec = 456;
 	return 0;
 }
+
+int nanosleep(struct timespec  const  *__requested_time , struct timespec *__remaining ) {
+	__COMMENT("Sleeping");
+	return 0;
+}

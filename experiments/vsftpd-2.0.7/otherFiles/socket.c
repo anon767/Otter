@@ -15,7 +15,7 @@ int socket(int domain, int type, int protocol) {
 	int fd = IOSIM_newfd();
 	char *filename = malloc(18); // 18 == strlen("socket_at_fd_9999*"). This should allow fds up to 9999
 	if (sprintf(filename,"socket_at_fd_%d",fd) < 0) {
-		__EVALSTR("Problem creating socket",23);
+		__COMMENT("Problem creating socket");
 		exit(); // This should cause the symbolic executor to halt with 'Failure: hd'
 	}
 	IOSIM_addfile(filename, new_buffer);
@@ -50,8 +50,8 @@ int accept(int socket, struct sockaddr *restrict address,
 					 socklen_t *restrict address_len) {
 	address->sa_family = AF_INET;
 
-	address->sa_data[0] = __SYMBOLIC();
-	address->sa_data[1] = __SYMBOLIC();
+	address->sa_data[0] = __SYMBOLIC(0);
+	address->sa_data[1] = __SYMBOLIC(0);
 
 	// Here's a fake IP address
 	address->sa_data[2] = 10;
