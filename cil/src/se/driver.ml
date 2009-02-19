@@ -125,6 +125,37 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 								| Some dest -> MemOp.state__assign state2 dest bytes
 						end
 
+                    | Function.StringEqual -> 
+                        (* The function evaluates to a (symbolic) integer value.
+                         * 1 - Equal
+                         * 0 - Not equal
+                         * symbolic - depends *)
+
+                        (* Maybe instead write a function that returns whether
+                         * an expression is true, false or unknown
+                         *)
+                        
+                        
+                        state
+
+                    | Function.TruthValue -> 
+						begin match blkOffSizeOpt with
+							| None -> state 
+							| Some dest ->
+                                let truthvalue = 
+                                  Convert.lazy_int_to_bytes
+                                  begin
+                                  if List.length exps = 0 then 0 else
+				                  let rv = Eval.rval state (List.hd exps) in
+				                  let truth = Stp.eval state.path_condition rv in
+				                  if truth == Stp.True then 1
+				                  else if truth == Stp.False then -1
+				                  else 0
+                                  end
+                                in
+								MemOp.state__assign state dest truthvalue
+						end
+
 					| Function.Symbolic -> (
 (* There are 2 ways to use __SYMBOLIC:
 	 (1) '__SYMBOLIC(&x);' gives x a fresh symbolic value and associates

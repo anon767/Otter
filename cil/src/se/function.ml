@@ -30,6 +30,8 @@ type function_type =
 	| AssertEqualState
 	| IsConcrete
 	| PathCondition
+    | StringEqual
+    | TruthValue
 (*	| Fresh *)
 ;;
 
@@ -69,6 +71,8 @@ let from_varinfo state varinfo args =
 		| "__ASSERT_EQUAL_STATE" -> AssertEqualState
 		| "__ISCONCRETE" -> IsConcrete
 		| "__PATHCONDITION" -> PathCondition
+        | "__STRING_EQUAL" -> StringEqual
+        | "__TRUTH_VALUE" -> TruthValue
 		| "exit" -> Exit			(* exit is so special that can't be put in builtin *)
 		| "AND" -> BooleanOp(Cil.LAnd)
 		| "OR" -> BooleanOp(Cil.LOr)
