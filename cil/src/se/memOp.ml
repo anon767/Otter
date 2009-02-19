@@ -388,7 +388,7 @@ let state__empty =
 		path_condition = [];
 		human_readable_path_condition = [];
 		(*return = None;*)
-		caller_stmts = [];
+		callContexts = [];
 		va_arg = [];
 		va_arg_map = VargsMap.empty;
 		loc_map = LocMap.empty;
@@ -421,8 +421,7 @@ let state__varinfo_to_block state varinfo =
 		failwith ("Varinfo "^(varinfo.vname)^" not found.")
 ;;
 
-(* TODO: collapse '(block,offset) size' into single argument: 'lval' *)
-let state__assign state (block, offset) (size:int) bytes = (* have problem *)
+let state__assign state (block, offset, size) bytes = (* have problem *)
 	if block.memory_block_type == Block_type_StringLiteral then 
 		failwith "Error: write to a constant string literal"
 	else
@@ -440,7 +439,7 @@ let state__assign state (block, offset) (size:int) bytes = (* have problem *)
 	}
 ;;
 
-let state__start_fcall state fundec caller_stmt =
+let state__start_fcall state fundec callContext =
 	Output.set_mode Output.MSG_FUNC;
 	Output.print_endline (">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
 	Output.print_endline ("Enter function " ^ (To_string.fundec fundec));
@@ -451,7 +450,7 @@ let state__start_fcall state fundec caller_stmt =
 		locals = frame:: state.locals;
 		callstack = fundec:: state.callstack;
 		block_to_bytes = block_to_bytes2;
-		caller_stmts = caller_stmt::state.caller_stmts;
+		callContexts = callContext::state.callContexts;
 	}	;;
 
 let state__end_fcall state =
@@ -462,12 +461,12 @@ let state__end_fcall state =
 	{	state with
 		locals = List.tl state.locals;
 		callstack = List.tl state.callstack;
-		caller_stmts = List.tl state.caller_stmts;
+		callContexts = List.tl state.callContexts;
 		va_arg = List.tl state.va_arg;
 	}
 ;;
 
-let state__get_caller_stmt state = List.hd state.caller_stmts;;
+let state__get_callContext state = List.hd state.callContexts;;
 
 let state__get_bytes_from_block state block =
 	let source = 
@@ -547,12 +546,9 @@ let state__remove_block state block=
 ;;
 
 let state__trace state: string = 
-	List.fold_left (fun  str stmt ->
-		str^(match stmt with
-			| Instruction(instr,cilstmt) -> 
-				Printf.sprintf "/%s" (To_string.location (Cil.get_instrLoc instr))
-			| _ -> "")
-		) "" state.caller_stmts
+	List.fold_left (fun str (_,instr,_) ->
+		str^(Printf.sprintf "/%s" (To_string.location (Cil.get_instrLoc instr)))
+		) "" state.callContexts
 ;;
 
 (** map address to state (!) *)

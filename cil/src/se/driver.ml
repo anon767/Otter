@@ -47,7 +47,7 @@ let init_argvs state func argvs =
 			| (h1::t1,h2::t2) ->
 				let (block,offset) = Eval.lval state h1 in
 				let size = (Cil.bitsSizeOf (Cil.typeOfLval h1))/8 in
-				let state2 = MemOp.state__assign state (block,offset) size h2
+				let state2 = MemOp.state__assign state (block,offset,size) h2
 				in 
 					impl state2 t1 t2
 			| ([],varg) -> 	
@@ -60,285 +60,22 @@ let init_argvs state func argvs =
 			impl state pars argvs
  ;;
 
-let rec
+let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
+	let state,exHist,stmt = job.state,job.exHist,job.nextStmt in
 
-exec_function state exHist func argvs caller_stmt =
-  if func.sallstmts <> [] then
-    Output.set_cur_loc (Cil.get_stmtLoc (List.hd func.sallstmts).skind)
-  else
-		Errormsg.s (Errormsg.error "No statements in function %s" func.svar.vname);
-	let state1 = MemOp.state__start_fcall state func caller_stmt in
-	let state2 = init_argvs state1 func argvs in
-	let entry = List.hd func.sallstmts in
-	exec_stmt state2 exHist entry 
-and
+	let op_exps exps binop =
+		let rec impl exps =
+			match exps with
+				| [] -> failwith "AND/OR must take at least 1 argument"
+				| h::[] -> h
+				| h:: tail -> let t = impl tail in BinOp(binop, h, t, Cil.voidType)
+		in
+		Eval.rval state (impl exps)
+	in
 
-exec_statement state exHist (statement: statement) =
-	match statement with
-		| MainEntry -> failwith "MainEntry is never executed!"
-		| Instruction (instr, stmt) -> exec_instr state exHist instr stmt
-		| Statement (stmt) -> exec_stmt state exHist stmt
-			
-and
-			
-exec_stmt state exHist (stmt: Cil.stmt) =
-	(* Check to see if we got a signal; if so, stop execution *)
-	(match !signalStringOpt with
-			Some s -> print_endline s; raise SignalException
-		 | _ -> ());
-
-	let nextExHist () = { exHist with
-		edgesTaken = EdgeSet.add (exHist.prevStmt,stmt) exHist.edgesTaken;
-		prevStmt = stmt;
-	} in
-	Output.set_mode Output.MSG_STMT;
-    Output.set_cur_loc (Cil.get_stmtLoc stmt.skind);
-	Output.print_endline (To_string.stmt stmt);
-	match stmt.skind with
-		| Instr (instrs) ->
-				(* Should the next line use exHist instead of (nextExHist ())?
-					 It seems that [instrs] is empty iff [stmt] is a label. *)
-				if instrs = [] then exec_stmt state (nextExHist ()) (next_stmt stmt) else
-					let instr =
-						List.hd instrs
-					in
-					exec_statement state (nextExHist ()) (Instruction(instr, stmt)) (* at least one instr? *)
-
-		| Return (expopt, loc) ->
-				begin
-					let instruction = MemOp.state__get_caller_stmt state in
-					let state2 =
-						match expopt with
-							| None ->
-									let state3 = MemOp.state__end_fcall state in
-									state3
-							| Some(exp) ->
-									begin match instruction with
-										| Instruction(Call(lvalopt, fexp, exps, loc), stmt) ->
-												let state3 = begin match lvalopt with
-													| None ->
-															let state3 = MemOp.state__end_fcall state in
-															state3
-													| Some(lval) -> (* assign exp to lval *)
-															let rv = Eval.rval state exp in
-															let state = MemOp.state__end_fcall state in
-															let (block, offset) = Eval.lval state lval in
-															let size = (Cil.bitsSizeOf (Cil.typeOfLval lval)) / 8 in
-															MemOp.state__assign state (block, offset) size rv
-												end
-												in
-												state3
-										| MainEntry ->
-												state
-										| _ -> failwith "Impossible"
-									end
-					in
-					(* varinfo_to_block: memory_block VarinfoMap.t; *)
-					let pop_frame = List.hd state.locals in
-					let state2' = VarinfoMap.fold (fun varinfo block s -> MemOp.state__remove_block s block) pop_frame.varinfo_to_block state2 in 
-					if instruction = MainEntry then(
-						Output.set_mode Output.MSG_MUSTPRINT;
-						Output.print_endline "Program execution finished\nPath Condition:";
-						Output.print_endline
-							(To_string.annotated_bytes_list state.human_readable_path_condition);
-						coverage := (state.human_readable_path_condition, nextExHist ()) :: !coverage;
-						state2')
-						else
-							exec_statement state2' (nextExHist ()) (next_statement instruction)
-				end
-		| Goto (stmtref, loc) ->
-				exec_stmt state (nextExHist ()) (!stmtref)
-		| Loop (block, loc, breakopt, continueopt) ->
-				(* We might want to use exHist here, as in the [Block] case
-					 below because [stmt]s with skind [Loop] are uninteresting. *)
-				exec_block state (nextExHist ()) block
-		| If (exp, block1, block2, loc) ->
-				begin
-				(* try a branch *)
-					let try_branch pcopt block =
-						let state_t = match pcopt with
-							| Some(pc) -> MemOp.state__add_path_condition state pc
-							| None -> state
-						in
-						if run_args.arg_branch_coverage then
-							begin
-								let which = (if block == block1 then fst else snd) in
-								try
-									let pcSet_ref = which (Hashtbl.find branches_taken (exp,loc)) in
-									(* Add the path condition to the list of ways we take this branch *)
-									pcSet_ref := PcSet.add state.human_readable_path_condition !pcSet_ref
-								with Not_found ->
-									(* We haven't hit this conditional before. Initialize its entry in
-										 the branch coverage table with the current path condition (and
-										 an empty set for the other direction of the branch). *)
-									Hashtbl.add
-										branches_taken
-										(exp,loc)
-										(let res = (ref PcSet.empty, ref PcSet.empty) in
-										which res := PcSet.singleton state.human_readable_path_condition;
-										res)
-							end;
-						if block_is_empty block then
-							exec_stmt state_t (nextExHist ()) (next_stmt stmt)
-						else
-							exec_block state_t (nextExHist ()) block
-					in
- 
-					let rv = Eval.rval state exp in
- 
-					Output.set_mode Output.MSG_GUARD;
-					if(Output.need_print Output.MSG_GUARD) then
-						begin
-							Output.print_endline ("Check if the following holds:");
-							Output.print_endline (To_string.bytes rv);
-							Output.print_endline ("Under the path condition:")
-						end;
-					let pc_str = (Utility.print_list To_string.bytes state.path_condition " AND ") in
-					Output.print_endline (if String.length pc_str = 0 then "(nil)" else pc_str);
- 
-					let truth = Stp.eval state.path_condition rv in
- 
-					Output.set_mode Output.MSG_REG;
-					if truth == Stp.True then
-						begin
-							Output.print_endline "True";
-							try_branch None block1
-						end
-					else if truth == Stp.False then
-						begin
-							Output.print_endline "False";
-							try_branch None block2
-						end
-					else
-						begin
-							Output.print_endline "Unknown";
-							Output.increase ();
-							let explore assumption block =
-								try try_branch (Some assumption) block with
-									| Function.Notification_Exit(state_exit, _) -> state_exit
-									| Failure fail ->
-											Output.set_mode Output.MSG_MUSTPRINT;
-											Output.print_endline
-												(Printf.sprintf "Error \"%s\" occurs at %s" fail
-													 (To_string.location !Output.cur_loc));
-											Output.print_endline "Abandoning branch";
-											abandonedPaths :=
-												state.human_readable_path_condition :: !abandonedPaths;
-											state
-							in
-							Output.print_endline
-								(String.concat ""
-									 ["Try True branch of the conditional at ";
-										To_string.location loc;
-										" by assuming (";
-										Pretty.sprint 100 (Cil.d_exp () exp);
-										")"]);
-							let state_t = explore rv block1 in
-							Output.set_mode Output.MSG_REG;
-							Output.print_endline "<TRUE BRANCH ENDED>";
- 
-							Output.print_endline
-								(String.concat ""
-									 ["Try False branch of the conditional at ";
-										To_string.location loc;
-										" by assuming !(";
-										Pretty.sprint 100 (Cil.d_exp () exp);
-										")"]);
-							let state_f = explore (Bytes_Op(OP_LNOT,[(rv, Cil.typeOf exp)])) block2 in
-							Output.set_mode Output.MSG_REG;
-							Output.print_endline "<FALSE BRANCH ENDED>";
-
-							Output.decrease ();
-							combine_states [state_t; state_f]
-						end
-				end
-		| Block(block) ->
-				(* Use exHist here (rather than nextExHist) because we don't
-					 need [Block]s in the CFG *)
-				exec_block state exHist block
-		| _ -> failwith "Not implemented yet"
-and
-block_is_empty block = (List.length block.bstmts = 0)
-	
-and
-
-next_statement statement =
-	match statement with
-		| MainEntry -> failwith "Not implemented"
-		| Instruction (instr, stmt) ->
-				begin match stmt.skind with
-					| Instr(instrs) ->
-							let rec search_next instrs =
-								begin match instrs with
-									| [] -> failwith "instrs must contain instr"
-									| h1::[] -> (* assert h1==instr *) Statement(next_stmt stmt)
-									| h1:: h2:: t -> if h1 == instr then Instruction(h2, stmt) else search_next (h2:: t)
-								end
-							in
-							search_next instrs
-					| _ -> failwith "Instruction (instr, stmt): stmt must be Instr(instrs)"
-				end
-		| Statement (stmt) -> Statement (next_stmt stmt)
-	
-and
-
-next_stmt stmt =
-	match stmt.skind with
-		| If (exp, block1, block2, loc) ->
-				begin
-					let add block lst = if List.length block.bstmts = 0 then lst else (List.hd block.bstmts):: lst in
-					let heads = add block1 (add block2 []) in
-					let rec find succs = match succs with
-						| [] -> failwith "no succ stmt?!"
-						| h:: t -> if List.memq h heads then find t else h
-					in
-					find stmt.succs
-				end
-		| Return (_) -> failwith "Don't call next_stmt with Return!"
-		| _ -> List.hd stmt.succs
-	
-and
-
-exec_block state exHist block =
-	let stmts = block.bstmts in
-	exec_stmt state exHist (List.hd stmts)
-
-and
-
-exec_instr state exHist instr stmt =
-	(* MemOp.function_stat_increment (List.hd state.callstack); (*used to count the workload of each function*)*)
-	Output.set_mode Output.MSG_STMT;
-    Output.set_cur_loc (Cil.get_instrLoc instr);
-	Output.print_endline (To_string.instr instr);
-	match instr with
-		| Set(lval,exp,loc) -> 
-				let (block,offset) = Eval.lval state lval in
-				let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
-				let rv = Eval.rval state exp in
-				let state2 = MemOp.state__assign state (block,offset) size rv in
-				exec_statement state2 exHist (next_statement (Instruction(instr,stmt)))
-		| Call(lvalopt, fexp, exps, loc) ->
-				exec_instr_call state exHist instr stmt lvalopt fexp exps loc
-		| Asm (attributes, s1_list, l1, l2, l3, loc) ->
-				Output.set_mode Output.MSG_REG;
-				Output.print_endline "Warning: ASM unsupported";
-				exec_statement state exHist (next_statement (Instruction(instr, stmt)))
-and
-
-exec_instr_call state exHist instr stmt lvalopt fexp exps loc =
-				let rec op_exps exps binop =
-					let rec impl exps =
-						match exps with
-							| [] -> failwith "AND/OR must take at least 1 argument"
-							| h::[] -> h
-							| h:: tail -> let t = impl tail in BinOp(binop, h, t, Cil.voidType)
-					in
-					Eval.rval state (impl exps)
-				in
-				
-				let func = Function.from_exp state fexp exps in
-				begin match func with
-					| Function.Ordinary (fundec) ->					
+	let func = Function.from_exp state fexp exps in
+	begin match func with
+		| Function.Ordinary (fundec) ->					
 						(* TODO: do a casting if necessary: look at fundec.sformals, varinfo.vtype *)
 						(* exps may be longer than fundec.sformals *)
 						(* goal: create a list of targetted types:
@@ -361,20 +98,32 @@ exec_instr_call state exHist instr stmt lvalopt fexp exps loc =
 								in
 								Eval.rval state final_exp) exps exptyps) 
 							*)
-							let argvs = (List.map (fun exp -> Eval.rval state exp) exps) in
-							exec_function state exHist fundec argvs (Instruction(instr,stmt))
-					| _ ->
-						let nextExHist = ref exHist in
+				let argvs = (List.map (fun exp -> Eval.rval state exp) exps) in
+				let theSuccessor =
+					(* [stmt] is an [Instr], so it can't have two successors. If
+						 [func] returns, then [stmt] has exactly one successor. If
+						 [func] is [exit] or has the [noreturn] attribute, [stmt]
+						 has no successor. *)
+					match stmt.succs with
+							[] -> None
+						| [h] -> Some h
+						| _ -> assert false
+				in
+				let callContext = blkOffSizeOpt,instr,theSuccessor in
+				let state1 = MemOp.state__start_fcall state fundec callContext in
+				let state2 = init_argvs state1 fundec argvs in
+				[makeJob state2 exHist (List.hd fundec.sallstmts)]
+		| _ ->
+				try (
+					let nextExHist = ref exHist in
 				let state_end = begin match func with
 					| Function.Builtin (builtin) ->
 						let (state2,bytes) = builtin state exps in
-							begin match lvalopt with
+						begin
+							match blkOffSizeOpt with
 								| None -> state2
-								| Some(lval) ->
-									let (block,offset) = Eval.lval state lval in
-									let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
-										MemOp.state__assign state2 (block,offset) size bytes
-							end					
+								| Some dest -> MemOp.state__assign state2 dest bytes
+						end
 
 					| Function.Symbolic -> (
 (* There are 2 ways to use __SYMBOLIC:
@@ -400,16 +149,15 @@ exec_instr_call state exHist instr stmt lvalopt fexp exps loc =
 										let (block,offset) = Eval.lval state lval in
 										let symbBytes = (MemOp.bytes__symbolic size isWritable) in
 										nextExHist := { exHist with bytesToVars = (symbBytes,varinf) :: exHist.bytesToVars; };
-										MemOp.state__assign state (block,offset) size symbBytes
+										MemOp.state__assign state (block,offset,size) symbBytes
 								| _ ->
 										(* Any symbolic value not directly given to a variable by a call to
 											 __SYMBOLIC(&<var>) does not get tracked. *)
-										begin match lvalopt with
+										begin match blkOffSizeOpt with
 											| None ->
 													state
-											| Some(lval) ->
+											| Some (block,offset,size) ->
 													let isWritable = (*if List.length exps > 1 then false else*) true in
-													let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
 													let ssize = match exps with
 														| [] -> size
 														| [CastE (_, h)] | [h] ->
@@ -417,63 +165,50 @@ exec_instr_call state exHist instr stmt lvalopt fexp exps loc =
 																if newsize <= 0 then size else newsize
 														| _ -> failwith "__SYMBOLIC takes at most one argument"
 													in
-													let (block,offset) = Eval.lval state lval in
-													MemOp.state__assign state (block,offset) size (*ssize?*)
+													MemOp.state__assign state (block,offset,size (*ssize?*))
 														(MemOp.bytes__symbolic ssize isWritable)
 										end
 						)
 
 					| Function.SymbolicStatic ->
-							begin match lvalopt with
+							begin match blkOffSizeOpt with
 								| None -> 
 									state
-								| Some(lval) ->
+								| Some (_,_,size as dest) ->
 									let key = 
 										if List.length exps == 0 then 0 else
 										let size_bytes = Eval.rval state (List.hd exps) in
 												Convert.bytes_to_int_auto size_bytes 
 									in
 									let isWritable = (*if List.length exps > 1 then false else*) true in
-									let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
 									let ssize =	size in
-									let (block,offset) = Eval.lval state lval in
 									let state2 = if  MemOp.loc_table__has state (loc,key) then state
 										else MemOp.loc_table__add state (loc,key) (MemOp.bytes__symbolic ssize isWritable)
 									in
 									let newbytes = MemOp.loc_table__get state2 (loc,key) in
-										MemOp.state__assign state2 (block,offset) size newbytes
+										MemOp.state__assign state2 dest newbytes
 							end												
 (*
 					| Function.Fresh ->
-							begin match lvalopt with
+							begin match blkOffSizeOpt with
 								| None -> 
 									state
-								| Some(lval) ->
+								| Some (block,offset,_) ->
 									let id = Convert.bytes_to_int_auto (Eval.rval state (List.hd exps)) in
-									let (block,offset) = Eval.lval state lval in
 									let size = 1 in
-										MemOp.state__assign state (block,offset) size (MemOp.bytes__of_list [(MemOp.byte__symbolic_with_id id true)])
+										MemOp.state__assign state (block,offset,size) (MemOp.bytes__of_list [(MemOp.byte__symbolic_with_id id true)])
 							end				
 *)												
 					| Function.NotFound ->
 							begin
-								match lvalopt with
+								match blkOffSizeOpt with
 								| None -> 
 										state
-								| Some(lval) ->
-										let (block,offset) = Eval.lval state lval in
-										let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
-										MemOp.state__assign state (block,offset) size (MemOp.bytes__symbolic size true)
+								| Some (block,offset,size as dest) ->
+										MemOp.state__assign state dest (MemOp.bytes__symbolic size true)
 							end
 						
-					| Function.Exit -> 
-						
-						Output.set_mode Output.MSG_MUSTPRINT;
-						Output.print_endline "exit() called.\nPath Condition:";
-						Output.print_endline
-							(To_string.annotated_bytes_list state.human_readable_path_condition);
-						coverage := (state.human_readable_path_condition, exHist) :: !coverage;
-						raise (Function.Notification_Exit (state,Eval.rval state (List.hd exps)))
+					| Function.Exit -> raise Function.Notification_Exit
 					
 					| Function.Evaluate ->
 						let pc = op_exps exps Cil.LAnd in
@@ -537,24 +272,19 @@ exec_instr_call state exHist instr stmt lvalopt fexp exps loc =
 							state
 												
 					| Function.BooleanOp (binop) ->
-							begin match lvalopt with
+							begin match blkOffSizeOpt with
 								| None -> failwith "Unreachable BooleanOp"
-								| Some(lval) ->
-									let (block,offset) = Eval.lval state lval in
-									let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
-
+								| Some dest ->
 									let rv= op_exps exps binop in 
-									MemOp.state__assign state (block,offset) size rv
+									MemOp.state__assign state dest rv
 							end
 
 					| Function.BooleanNot ->
-							begin match lvalopt with
+							begin match blkOffSizeOpt with
 								| None -> failwith "Unreachable BooleanNot"
-								| Some(lval) ->
-									let (block,offset) = Eval.lval state lval in
-									let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
-									let rv = Eval.rval state (UnOp(Cil.LNot, List.nth exps 0, Cil.voidType)) in
-										MemOp.state__assign state (block,offset) size rv
+								| Some dest ->
+									let rv = Eval.rval state (UnOp(Cil.LNot, List.hd exps, Cil.voidType)) in
+										MemOp.state__assign state dest rv
 							end
 
 					| Function.Aspect(pointcut, advice) ->
@@ -634,16 +364,238 @@ exec_instr_call state exHist instr stmt lvalopt fexp exps loc =
 						
 					| _ -> failwith "unreachable"
 						
-						end in
-							exec_statement state_end !nextExHist (next_statement (Instruction(instr,stmt)))
+				end in (* inner [match func] *)
 
-						
-					end (* match func *)
-	
-					
-	
-and
+				let theSuccessor =
+					(* [stmt] is an [Instr] which doesn't end with a call to a
+						 [noreturn] function, so it has exactly one successor. *)
+					match stmt.succs with
+							[h] -> h
+						| _ -> assert false
+				in
+				[makeJob state_end !nextExHist theSuccessor]
 
-combine_states states =
-	List.hd states
-;; 
+				) with Function.Notification_Exit ->
+					(* If it was [Exit], there is no job to return *)
+					Output.set_mode Output.MSG_MUSTPRINT;
+					Output.print_endline "exit() called.\nPath Condition:";
+					Output.print_endline
+						(To_string.annotated_bytes_list state.human_readable_path_condition);
+					coverage := (state.human_readable_path_condition, exHist) :: !coverage;
+					[]
+
+	end (* outer [match func] *)
+;;
+
+let exec_stmt job =
+	let state,exHist,stmt = job.state,job.exHist,job.nextStmt in
+
+	(* Check to see if we got a signal; if so, stop execution *)
+	(match !signalStringOpt with
+			Some s -> print_endline s; raise SignalException
+		 | _ -> ());
+
+	let nextExHist = { exHist with
+		edgesTaken = EdgeSet.add (exHist.prevStmt,stmt) exHist.edgesTaken;
+		prevStmt = stmt;
+	} in
+	Output.set_mode Output.MSG_STMT;
+	Output.set_cur_loc (Cil.get_stmtLoc stmt.skind);
+	Output.print_endline (To_string.stmt stmt);
+	match stmt.skind with
+		| Instr (instrs) ->
+				(* Since we've used --domakeCFG, an [Instr] is a series of
+					 [Set]s and [Asm]s, possibly terminated with a [Call]. Here,
+					 we iterate through [instrs], performing each [Set]. If the
+					 final [instr] is a [Call], we perform the call. Otherwise,
+					 we just return the job resulting from the sequence of
+					 assignments. *)
+				let printInstr instr =
+					Output.set_mode Output.MSG_STMT;
+					Output.set_cur_loc (Cil.get_instrLoc instr);
+					Output.print_endline (To_string.instr instr)
+				in
+				let rec doInstrs instrList latestState =
+					match instrList with
+							[] ->
+								(* We know [stmt] is an [Instr], and if we've gotten
+									 here, it doesn't have a [Call] in it. Thus, it has
+									 exactly one successor. (A [stmt] ending with a
+									 [Call] can have no successors if the call doesn't
+									 return.) *)
+								let theSuccessor =
+									match stmt.succs with
+											[h] -> h
+										| _ -> assert false
+								in
+								[makeJob latestState nextExHist theSuccessor]
+						| (Set(lval,exp,loc) as instr)::tail ->
+								printInstr instr;
+								let (block,offset) = Eval.lval latestState lval in
+								let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
+								let rv = Eval.rval latestState exp in
+								let state2 = MemOp.state__assign latestState (block,offset,size) rv in
+								doInstrs tail state2
+						| [Call(lvalopt, fexp, exps, loc) as instr] ->
+								printInstr instr;
+								let destOpt =
+									match lvalopt with
+										| None -> None
+										| Some lval ->
+												let (block,offset) = Eval.lval latestState lval in
+												let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
+												Some (block,offset,size)
+								in
+								exec_instr_call
+									(makeJob latestState nextExHist stmt)
+									instr destOpt fexp exps loc
+						| (Asm _ as instr)::tail ->
+								Output.set_mode Output.MSG_MUSTPRINT;
+								Output.print_endline "Warning: ASM unsupported";
+								printInstr instr;
+								doInstrs tail latestState
+						| _ -> assert false (* [Call]s only occur at the end of [Instr]s *)
+				in
+				doInstrs instrs state
+
+		| Return (expopt, loc) ->
+				begin
+					match state.callContexts with
+							[] -> (* Returning from main *)
+								Output.set_mode Output.MSG_MUSTPRINT;
+								Output.print_endline "Program execution finished\nPath Condition:";
+								Output.print_endline
+									(To_string.annotated_bytes_list state.human_readable_path_condition);
+								coverage := (state.human_readable_path_condition, nextExHist) :: !coverage;
+								[] (* This job is complete *)
+						| (destOpt,_,Some nextStmt)::_ ->
+								let state2 =
+									match expopt, destOpt with
+										| None, _ (* If we are not returning a value *)
+										| _, None -> (* or if we ignore the result of the call *)
+												MemOp.state__end_fcall state (* Just end the call *)
+										| Some exp, Some dest ->
+												let rv = Eval.rval state exp in
+												let state = MemOp.state__end_fcall state in
+												MemOp.state__assign state dest rv
+								in
+								(* varinfo_to_block: memory_block VarinfoMap.t; *)
+								let pop_frame = List.hd state.locals in
+								let state2' = VarinfoMap.fold (fun varinfo block s -> MemOp.state__remove_block s block) pop_frame.varinfo_to_block state2 in 
+								[makeJob state2' nextExHist nextStmt]
+						| _ ->
+								(* [(_,_,None)] is impossible, because we wouldn't
+									 be returning in that case. *)
+								assert false
+				end
+		| Goto (stmtref, loc) ->
+				[makeJob state nextExHist !stmtref]
+		| If (exp, block1, block2, loc) ->
+				begin
+				(* try a branch *)
+					let try_branch pcopt block =
+						let nextState = match pcopt with
+							| Some(pc) -> MemOp.state__add_path_condition state pc
+							| None -> state
+						in
+						if run_args.arg_branch_coverage then
+							begin
+								let which = (if block == block1 then fst else snd) in
+								try
+									let pcSet_ref = which (Hashtbl.find branches_taken (exp,loc)) in
+									(* Add the path condition to the list of ways we take this branch *)
+									pcSet_ref := PcSet.add state.human_readable_path_condition !pcSet_ref
+								with Not_found ->
+									(* We haven't hit this conditional before. Initialize its entry in
+										 the branch coverage table with the current path condition (and
+										 an empty set for the other direction of the branch). *)
+									Hashtbl.add
+										branches_taken
+										(exp,loc)
+										(let res = (ref PcSet.empty, ref PcSet.empty) in
+										which res := PcSet.singleton state.human_readable_path_condition;
+										res)
+							end;
+						let nextStmt = match stmt.succs with
+								[succ] -> succ (* This happens for 'if (...);', with nothing on either branch *)
+							| [succF;succT] -> (* The successors are in reverse order: false then true *)
+									(* Just making sure I understand this correctly *)
+									assert ((block1.bstmts = [] || List.hd block1.bstmts == succT) &&
+														(block2.bstmts = [] || List.hd block2.bstmts == succF));
+									if block == block1 then succT else succF
+							| _ -> assert false (* Impossible: there must be 1 or 2 successors *)
+						in
+						(nextState, nextStmt)
+					in
+ 
+					let rv = Eval.rval state exp in
+ 
+					Output.set_mode Output.MSG_GUARD;
+					if(Output.need_print Output.MSG_GUARD) then
+						begin
+							Output.print_endline ("Check if the following holds:");
+							Output.print_endline (To_string.bytes rv);
+							Output.print_endline ("Under the path condition:")
+						end;
+					let pc_str = (Utility.print_list To_string.bytes state.path_condition " AND ") in
+					Output.print_endline (if String.length pc_str = 0 then "(nil)" else pc_str);
+ 
+					let truth = Stp.eval state.path_condition rv in
+ 
+					Output.set_mode Output.MSG_REG;
+					if truth == Stp.True then
+						begin
+							Output.print_endline "True";
+							let nextState,nextStmt = try_branch None block1 in
+							[makeJob nextState nextExHist nextStmt]
+						end
+					else if truth == Stp.False then
+						begin
+							Output.print_endline "False";
+							let nextState,nextStmt = try_branch None block2 in
+							[makeJob nextState nextExHist nextStmt]
+						end
+					else
+						begin
+							Output.print_endline "Unknown";
+							let nextStateT,nextStmtT = try_branch (Some rv) block1 in
+							let nextStateF,nextStmtF =
+								try_branch (Some (Bytes_Op(OP_LNOT,[(rv, Cil.typeOf exp)]))) block2 in
+							[makeJob nextStateT nextExHist nextStmtT;
+							 makeJob nextStateF nextExHist nextStmtF]
+						end
+				end
+		| Block(block) -> [makeJob state exHist (List.hd block.bstmts)]
+		| Loop (block, _, _, _) ->
+				(* A [Loop]'s block always has a non-empty bstmts. (See
+					 Cil.succpred_stmt.)
+					 This is not true for [Block]s, but it *does* seem to be
+					 true for [Block]s which are not under [If]s, so we're okay. *)
+				[makeJob state nextExHist (List.hd block.bstmts)]
+		| _ -> failwith "Not implemented yet"
+;;
+
+let rec main_loop = function
+		[] ->
+			print_endline "Done executing";
+	| job::jobs ->
+			try
+				(* Why does this make the executor crash? *)
+(*				main_loop (exec_stmt state exHist stmt @ t)*)
+				let rec runUntilBranch theJob =
+					match exec_stmt theJob with
+						| [] -> jobs
+						| [j] -> runUntilBranch j
+						| [j1;j2] -> j1 :: j2 :: jobs
+						| _ -> assert false (* No more than 2 jobs returned *)
+				in
+				main_loop (runUntilBranch job)
+			with Failure fail ->
+				Output.set_mode Output.MSG_MUSTPRINT;
+				Output.print_endline
+					(Printf.sprintf "Error \"%s\" occurs at %s" fail
+						 (To_string.location !Output.cur_loc));
+				Output.print_endline "Abandoning branch";
+				abandonedPaths :=
+					job.state.human_readable_path_condition :: !abandonedPaths;
+				main_loop jobs

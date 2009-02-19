@@ -135,7 +135,14 @@ module LocMap =
 	end
 	)	
 	
-type statement = Statement of Cil.stmt | Instruction of Cil.instr * Cil.stmt | MainEntry ;;
+(** A calling context is a triple [(destOpt,callInstr,nextStmtOpt)].
+		[nextStmtOpt] is the [stmt] to execute after the call returns, or
+		[None] if the call does not return; [callInstr] is the function
+		call instruction; and [destOpt] is [None] if we ignore the result
+		of the call, or it is [Some (block,offset,size)], which means we
+		should assign the result to that triple. *)
+type callingContext =
+	(memory_block * bytes * int) option * Cil.instr * Cil.stmt option;;
 
 type state =
 	{
@@ -146,7 +153,10 @@ type state =
 		block_to_bytes : bytes MemoryBlockMap.t;
 		path_condition : bytes list;
 		human_readable_path_condition : annotated_bytes list;
-		caller_stmts : statement list;	
+		callContexts : callingContext list;
+		(** callContexts is off by one relative to callstack because
+				callstack starts out as [main] while callContexts starts out
+				empty. *)
 		
 		va_arg : bytes list list;			(* A stack of va_arg *)
 		va_arg_map : bytes list VargsMap.t;
@@ -219,12 +229,7 @@ type executionHistory = {
 
 	bytesToVars : (bytes * Cil.varinfo) list;
 		(** List associating symbolic bytes to the variable that was
-				assigned this value by a call to __SYMBOLIC(&<variable>), in
-				reverse order (so the most recent is the head of the list).
-				For purposes of mapping symbolic values back to the variables
-				from which they came, if a given varinfo is paired with more
-				than one bytes, ambiguities may arise if a report refers to
-				'the' symbolic value given to this variable. *)
+				assigned this value by a call to __SYMBOLIC(&<variable>). *)
 }
 
 let emptyHistory = {
@@ -254,3 +259,20 @@ module SymbolSet = Set.Make
 
 let signalStringOpt : string option ref = ref None
 exception SignalException
+
+type job = {
+	state : state;
+	exHist : executionHistory;
+	nextStmt : Cil.stmt; (** The next statement the job should execute *)
+}
+
+let makeJob state exHist nextStmt = {
+	state = state;
+	exHist = exHist;
+	nextStmt = nextStmt;
+}
+
+(** Map [sid]s of if statements to the [sid]s of join points which the
+		[If]s dominate.
+		This will allow to know where we should expect to merge paths. *)
+let ifToJoinPointsHash : int Inthash.t = Inthash.create 500

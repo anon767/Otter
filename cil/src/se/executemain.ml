@@ -343,6 +343,32 @@ let finish_up () =
 	()
 ;;
 
+let computeJoinPointsForIfs fundec =
+	(* Compute the dominators for the function *)
+	let idomHashtbl = Dominators.computeIDom ~doCFG:false fundec in
+	(* Iterate through all statements in the function *)
+	List.iter
+		(fun s ->
+			 (* For each statement, see if it is a join-point (i.e., has > 1 pred) *)
+			 match s.preds with
+					 [] | [_] -> () (* Ignore non-join points *)
+				 | _ ->
+						 let rec getClosestDominatingIf stmt =
+							 match Dominators.getIdom idomHashtbl stmt with
+									 None -> None (* s is not dominated by any [If]s *)
+								 | Some dom ->
+										 (match dom.skind with
+												| If _ -> Some dom (* Aha! [dom] is the closest dominating [If] *)
+												| _ -> getClosestDominatingIf dom) (* Not an [If]; get its dominator *)
+						 in
+						 match getClosestDominatingIf s with
+								 None -> () (* No dominating [If]; do nothing *)
+							 | Some ifDom ->
+									 (* Add this join point to the dominating [If]'s list *)
+									 Inthash.add ifToJoinPointsHash ifDom.sid s.sid)
+		fundec.sallstmts
+;;
+
 let doExecute (f: file) =
   if not !Cilutil.makeCFG then
     Errormsg.s (Errormsg.error
@@ -361,13 +387,16 @@ let doExecute (f: file) =
 	(* Keep track of how long we run *)
 	let startTime = Unix.time () in
 
-	(* Hash all of the fundecs by their varinfos *)
+	(* Hash all of the fundecs by their varinfos.
+		 Also, compute the join points which each [If] dominates.*)
 	List.iter
 		(function
 				 GFun(fundec,_) ->
-					 Hashtbl.add Cilutility.fundecHashtbl fundec.svar fundec
+					 Hashtbl.add Cilutility.fundecHashtbl fundec.svar fundec;
+					 computeJoinPointsForIfs fundec
 			 | _ -> ())
 		f.globals;
+
 	let (main_func,main_loc) = 
 		try Function.from_signature "main"  
 		with Not_found -> try Function.from_signature "main : int (void)"
@@ -375,9 +404,23 @@ let doExecute (f: file) =
 		with Not_found -> failwith "No main function found!"
 	in
 
+	(* Initialize the state *)
 	let state = MemOp.state__empty in
 	let state1 = init_globalvars state f.globals in
 	let (state2,main_args) = init_cmdline_argvs state1 f.fileName in
+
+	(* Initialize the call to main, like MemOp.start__fcall, except
+		 without a calling context. *)
+	let vars = List.append main_func.sformals main_func.slocals in
+	let (frame, block_to_bytes2) = 
+		MemOp.frame__add_varinfos MemOp.frame__empty state2.block_to_bytes vars in
+	let state3 =
+		{ state2 with
+				locals = frame:: state.locals;
+				callstack = [main_func];
+				block_to_bytes = block_to_bytes2;
+		} in
+	let state4 = Driver.init_argvs state3 main_func main_args in
 
 	(* Set signal handlers to catch timeouts and interrupts *)
 	let old_ALRM_handler =
@@ -387,16 +430,16 @@ let doExecute (f: file) =
 		Sys.signal Sys.sigint
 			(Sys.Signal_handle (fun _ -> signalStringOpt := Some "User interrupt!"))
 	in
+	(* Set a timer *)
+	ignore (Unix.alarm !(Executeargs.run_args.arg_timeout));
 
-	let state3 =
-		try
-			ignore (Unix.alarm !(Executeargs.run_args.arg_timeout)); (* Set a timer *)
-			Driver.exec_function state2 emptyHistory main_func main_args MainEntry
-		with
-			| Function.Notification_Exit (state_exit,_) ->
-					state_exit
-			| SignalException -> MemOp.state__empty
-	in
+	(try
+		 (* Start the main loop with a single job, starting at the first
+				statement in main() *)
+		 Driver.main_loop
+			 [makeJob state4 emptyHistory (List.hd main_func.sallstmts)]
+	 with SignalException -> ()
+	);
 
 	(* Turn off the alarm and reset the signal handlers *)
 	ignore (Unix.alarm 0);
