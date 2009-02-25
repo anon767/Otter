@@ -557,41 +557,64 @@ let state__trace state: string =
  *    Let PC be the path condition. 
  *    Then newPC = PC && PC[$i->$i'] for all i
  *)
-let rec 
-state__clone_bytes state bytes =
-  let no_clone = (state,bytes) in
-  match bytes with
-    | Bytes_Constant(_) ->  no_clone
-    | Bytes_ByteArray(arr) -> 
-        let length = ImmutableArray.length arr in
-          no_clone
-
-
-    | Bytes_Address(blkOpt,offset) ->
-        let (state2,offset') = state__clone_bytes state offset in
-          (state2,Bytes_Address(blkOpt,offset'))
-    | Bytes_Op(op,lst) -> 
-        let (state2,lst') = state__clone_bytes_list state lst in
-          (state2,Bytes_Op(op,lst'))
-    | Bytes_Read (content,offset,size) -> 
-        let (state2,content') = state__clone_bytes state content in
-        let (state3,offset') = state__clone_bytes state2 offset in
-          (state3,Bytes_Read(content',offset',size))
-    | Bytes_Write(oldbytes,offset,size,newbytes) -> 
-        let (state2,oldbytes') = state__clone_bytes state oldbytes in
-        let (state3,offset') = state__clone_bytes state2 offset in
-        let (state4,newbytes') = state__clone_bytes state3 newbytes in
-          (state4,Bytes_Write(oldbytes',offset',size,newbytes'))
-    | Bytes_FunPtr (_) -> no_clone
-
-and
-state__clone_bytes_list state bytesTypLst =
-  match bytesTypLst with
-    | [] -> (state,[])
-    | (h,typ)::t -> 
-        let (state2,tt) = state__clone_bytes_list state t in
-        let (state3,hh) = state__clone_bytes state2 h in
-          (state3,(hh,typ)::tt)
+let state__clone_bytes state bytes =
+    let rec 
+    traverse_bytes bytes process merge =
+      match bytes with
+        | Bytes_Constant(_) ->  (merge [],bytes)
+        | Bytes_ByteArray(arr) -> 
+            let (fact,arr') = process arr in
+              (fact,Bytes_ByteArray(arr'))
+        | Bytes_Address(blkOpt,offset) ->
+            let (fact,offset') = traverse_bytes offset process merge in
+              (fact,Bytes_Address(blkOpt,offset'))
+        | Bytes_Op(op,lst) -> 
+            let (fact,lst') = traverse_bytes_list lst process merge in
+              (fact,Bytes_Op(op,lst'))
+        | Bytes_Read (content,offset,size) -> 
+            let (fact1,content') = traverse_bytes content process merge in
+            let (fact2,offset') = traverse_bytes offset process merge in
+              (merge [fact1;fact2],Bytes_Read(content',offset',size))
+        | Bytes_Write(oldbytes,offset,size,newbytes) -> 
+            let (fact1,oldbytes') = traverse_bytes oldbytes process merge in
+            let (fact2,offset') = traverse_bytes offset process merge in
+            let (fact3,newbytes') = traverse_bytes newbytes process merge in
+              (merge [fact1;fact2;fact3],Bytes_Write(oldbytes',offset',size,newbytes'))
+        | Bytes_FunPtr (_) -> (merge [],bytes)
+    and
+    traverse_bytes_list bytesTypLst process merge =
+      List.fold_left 
+        (fun (fact,lst) (bytes_elm,typ) ->
+            let (fact2,bytes_elm') = traverse_bytes bytes_elm process merge in
+              (merge [fact;fact2], (bytes_elm',typ)::lst)
+        )   
+        (merge [],[]) 
+        bytesTypLst
+    in
+    let extract_mapping arr =  (* TODO *)
+      ([],arr)
+    and extract_merge lst = (* TODO *)
+      []
+    in
+    let (mapping,cloned_bytes) = traverse_bytes bytes extract_mapping extract_merge in
+    let rec apply_mapping arr = (* TODO *)
+      (* use mapping *)
+      (true,arr)
+    and apply_merge lst =
+      match lst with [] -> false | h::t -> h || (apply_merge t)
+    in
+    let added_pc = List.fold_left 
+                     ( fun a b ->
+                         let (hasChanged,b') = (traverse_bytes b apply_mapping apply_merge) in 
+                           if hasChanged then b'::a else a
+                     )
+                     [] state.path_condition in
+    let state2 = 
+      { state with
+            path_condition = List.rev_append added_pc state.path_condition;
+      }
+    in
+      (state2,cloned_bytes)
 ;;
 
 (** map address to state (!) *)
