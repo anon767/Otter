@@ -32,6 +32,7 @@ type function_type =
 	| PathCondition
     | StringEqual
     | TruthValue
+    | DataStructureOp of Data_structure.ds_op 
 (*	| Fresh *)
 ;;
 
@@ -71,8 +72,10 @@ let from_varinfo state varinfo args =
 		| "__ASSERT_EQUAL_STATE" -> AssertEqualState
 		| "__ISCONCRETE" -> IsConcrete
 		| "__PATHCONDITION" -> PathCondition
-        | "__STRING_EQUAL" -> StringEqual
+(*      | "__STRING_EQUAL" -> StringEqual *)
         | "__TRUTH_VALUE" -> TruthValue
+(*        | "__SET_INIT" -> DataStructureOp (Data_structure.op__SET_INIT) *)
+(*        | "__SET_FIND" -> DataStructureOp (Data_structure.op__SET_FIND) *)
 		| "exit" -> Exit			(* exit is so special that can't be put in builtin *)
 		| "AND" -> BooleanOp(Cil.LAnd)
 		| "OR" -> BooleanOp(Cil.LOr)

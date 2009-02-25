@@ -108,6 +108,7 @@ CILLY_MODULES = $(CILLY_LIBRARY_MODULES) \
 				stp \
 				stmt \
 				builtin_function \
+				data_structure \
 				function \
 				driver \
 				executemain \

@@ -125,6 +125,9 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 								| Some dest -> MemOp.state__assign state2 dest bytes
 						end
 
+                    | Function.DataStructureOp (dsop) -> 
+                        dsop state blkOffSizeOpt exps
+
                     | Function.StringEqual -> 
                         (* The function evaluates to a (symbolic) integer value.
                          * 1 - Equal
