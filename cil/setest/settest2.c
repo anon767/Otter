@@ -3,7 +3,8 @@
 // temporary
 void __SYMBOLIC_STRING(char** a){
 	*a = malloc(1);
-	__SYMBOLIC(*a);
+	**a = __SYMBOLIC();
+	//__SYMBOLIC(&(*a));   // fail to work
 }
 int __STRING_EQUAL(char* a,char* b){
 	return a[0]==b[0];
@@ -48,7 +49,9 @@ int __SET_FIND(void** ret,__SET* set,int (*pred)(void*)){
 		nr++;
 		*ret = newobj;
 		__SET_ADD(newobj,set);
-	}
+	}// TODO: delete newobj will delete constraints that only associate with newobj.
+	else
+		__ASSUME(!pred(set->rest));
 	return nr;
 }
 
@@ -65,7 +68,7 @@ typedef struct _channel{
 CHANNEL* make_symbolic_channel(){
 	CHANNEL* c = malloc(sizeof(CHANNEL));
 	__SYMBOLIC_STRING(&c->name);
-	__SYMBOLIC(&c->data);
+	c->data = __SYMBOLIC();
 	return c;
 }
 
@@ -81,6 +84,7 @@ void* channel_clone(void* src_void){
 	CHANNEL* tar = make_symbolic_channel();
 	__CLONE(&tar->data,&src->data,sizeof(int));
 	__CLONE(tar->name,src->name,1); // 1 is temporary
+	return tar;
 }
 
 int main(){
@@ -103,18 +107,20 @@ int main(){
 	num = __SET_FIND(&a,&My_Channels,channel_name_equal);
 	__ASSERT(num<=1);
 
-	if(num==0){
-		CHANNEL* new_channel = make_symbolic_channel();
-		__ASSUME(__STRING_EQUAL(new_channel->name,target_channel));
-		__SET_ADD(new_channel,&My_Channels);
-	}
+	//if(num==0){
+	//	CHANNEL* new_channel = make_symbolic_channel();
+	//	__ASSUME(__STRING_EQUAL(new_channel->name,target_channel));
+	//	__SET_ADD(new_channel,&My_Channels);
+	//}
 
-	__SET_FOREACH(&a,&My_Channels){
-		printf("%s\n",a->name);
-	}
+	//__SET_FOREACH(&a,&My_Channels){
+	//	printf("%s\n",a->name);
+	//}
 
-	num = __SET_FIND(&a,&My_Channels,__STRING_EQUAL(a->name,target_channel));
-	__ASSERT(num==1);
+	channel_name_equal__target = target_channel;
+	num = __SET_FIND(&a,&My_Channels,channel_name_equal);
+	__ASSERT(num<=2);
+	//__ASSERT(num==1);
 	
 	return 0;
 }

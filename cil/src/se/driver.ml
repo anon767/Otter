@@ -141,6 +141,28 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
                         
                         state
 
+                    | Function.Clone ->
+                        if List.length exps <> 3 then failwith "Clone takes 3 arguments" else
+				        let argvs = (List.map (fun exp -> Eval.rval state exp) exps) in
+                        let target_ptr_bytes = List.nth argvs 0 in
+                        let source_ptr_bytes = List.nth argvs 1 in
+                        let length_int_bytes = List.nth argvs 2 in
+                        begin
+                        match target_ptr_bytes,source_ptr_bytes,length_int_bytes with
+                          | Bytes_Address(Some(target_block),target_offset),
+                            Bytes_Address(Some(source_block),source_offset),
+                            Bytes_Constant(_)
+                            ->
+                              begin
+                              let length_int_val = Convert.bytes_to_int_auto length_int_bytes in
+                              let source_bytes = MemOp.state__get_bytes_from_lval state (source_block,source_offset,length_int_val) in
+                              let (state2,cloned_bytes) = MemOp.state__clone_bytes state source_bytes in
+                              let state3 = MemOp.state__assign state2 (target_block, target_offset,length_int_val) cloned_bytes in
+                                state3
+                              end
+                          | _ -> failwith "Clone error"
+                       end
+
                     | Function.TruthValue -> 
 						begin match blkOffSizeOpt with
 							| None -> state 

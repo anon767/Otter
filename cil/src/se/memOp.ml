@@ -551,6 +551,49 @@ let state__trace state: string =
 		) "" state.callContexts
 ;;
 
+(* 
+ *    clone the structure of bytes
+ *    newbytes =  bytes[$i->$i'] for all i
+ *    Let PC be the path condition. 
+ *    Then newPC = PC && PC[$i->$i'] for all i
+ *)
+let rec 
+state__clone_bytes state bytes =
+  let no_clone = (state,bytes) in
+  match bytes with
+    | Bytes_Constant(_) ->  no_clone
+    | Bytes_ByteArray(arr) -> 
+        let length = ImmutableArray.length arr in
+          no_clone
+
+
+    | Bytes_Address(blkOpt,offset) ->
+        let (state2,offset') = state__clone_bytes state offset in
+          (state2,Bytes_Address(blkOpt,offset'))
+    | Bytes_Op(op,lst) -> 
+        let (state2,lst') = state__clone_bytes_list state lst in
+          (state2,Bytes_Op(op,lst'))
+    | Bytes_Read (content,offset,size) -> 
+        let (state2,content') = state__clone_bytes state content in
+        let (state3,offset') = state__clone_bytes state2 offset in
+          (state3,Bytes_Read(content',offset',size))
+    | Bytes_Write(oldbytes,offset,size,newbytes) -> 
+        let (state2,oldbytes') = state__clone_bytes state oldbytes in
+        let (state3,offset') = state__clone_bytes state2 offset in
+        let (state4,newbytes') = state__clone_bytes state3 newbytes in
+          (state4,Bytes_Write(oldbytes',offset',size,newbytes'))
+    | Bytes_FunPtr (_) -> no_clone
+
+and
+state__clone_bytes_list state bytesTypLst =
+  match bytesTypLst with
+    | [] -> (state,[])
+    | (h,typ)::t -> 
+        let (state2,tt) = state__clone_bytes_list state t in
+        let (state3,hh) = state__clone_bytes state2 h in
+          (state3,(hh,typ)::tt)
+;;
+
 (** map address to state (!) *)
 let index_to_state: state Utility.IndexMap.t ref = ref (Utility.IndexMap.empty);;
 let index_to_state__add index state = 

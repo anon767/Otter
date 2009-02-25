@@ -32,6 +32,7 @@ type function_type =
 	| PathCondition
     | StringEqual
     | TruthValue
+    | Clone
     | DataStructureOp of Data_structure.ds_op 
 (*	| Fresh *)
 ;;
@@ -74,6 +75,7 @@ let from_varinfo state varinfo args =
 		| "__PATHCONDITION" -> PathCondition
 (*      | "__STRING_EQUAL" -> StringEqual *)
         | "__TRUTH_VALUE" -> TruthValue
+        | "__CLONE" -> Clone
 (*        | "__SET_INIT" -> DataStructureOp (Data_structure.op__SET_INIT) *)
 (*        | "__SET_FIND" -> DataStructureOp (Data_structure.op__SET_FIND) *)
 		| "exit" -> Exit			(* exit is so special that can't be put in builtin *)

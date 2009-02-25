@@ -51,7 +51,7 @@ bytes =
 | Bytes_Read of bytes * bytes * int						(* less preferrable type *)
 | Bytes_Write of bytes * bytes * int * bytes	(* least preferrable type*)
 | Bytes_FunPtr of Cil.fundec * bytes (* bytes is the "imaginary address" of the funptr *)
-| Bytes_DS of data_structure
+(*| Bytes_DS of data_structure*)
 (* | Bytes_Concat  (* allow this to make things more efficient *) *)
 
 and
