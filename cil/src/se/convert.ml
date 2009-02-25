@@ -21,7 +21,7 @@ let ikind_to_len_isSigned ikind =
 			|	IULongLong	-> 8,false
 	in (len,isSigned)
 ;;
-
+(*
 let bytearray_to_strrep ba =
 	ImmutableArray.fold_left 
 		(fun s b -> match b with
@@ -38,7 +38,7 @@ let rec strrep_to_bytearray s =
 	else let ba = strrep_to_bytearray (String.sub s 2 (len-2)) in
 		ImmutableArray.add ba (Byte_Concrete(Char.chr (int_of_string ("0X"^(String.sub s 0 2)))))
 	;;
-
+*)
 (**
  *	to bytes
  *)
@@ -109,7 +109,7 @@ let float_to_bytes f fkind =
 	match fkind with
 		|	FFloat			(*	float	*) -> Bytes_ByteArray (ImmutableArray.make word__size (Byte_Concrete '\000'))
 		|	FDouble			(*	double	*) -> Bytes_ByteArray (ImmutableArray.make (2 * word__size) (Byte_Concrete '\000'))
-		|	FLongDouble	(*	long double	*) -> Bytes_ByteArray (ImmutableArray.make (4 * word__size) (Byte_Concrete '\000'))
+		|	FLongDouble	(*	long double	*) -> Bytes_ByteArray (ImmutableArray.make (3 * word__size) (Byte_Concrete '\000'))
 ;;
 
 (** Convert constant to Bytes_ByteArray *)
@@ -254,9 +254,10 @@ let rec bytes_to_address bytes : memory_block option*bytes =
 
 (** True if bytearray is concrete *)
 let isConcrete_bytearray (bytearray : byte ImmutableArray.t) =
-	ImmutableArray.fold_left 
+	not (ImmutableArray.exists (function Byte_Concrete _ -> false | _ -> true) bytearray)
+(*	ImmutableArray.fold_left 
 		(fun a b -> a && match b with Byte_Concrete(_)-> true | _ -> false) 
-		true bytearray
+		true bytearray*)
 	;;
 
 (** True if bytes is concrete *)

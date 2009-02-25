@@ -137,12 +137,6 @@ let init_cmdline_argvs state fileName =
 	(state'', [argc; argv])
 ;;
 
-module AnnotatedBytesSet = Set.Make
-	(struct
-		 type t = annotated_bytes
-		 let compare = compare
-	 end)
-
 let rec allSymbols = function
 	| Bytes_Constant const -> SymbolSet.empty
 	| Bytes_ByteArray bytearray ->
@@ -195,7 +189,7 @@ let finish_up () =
 						let counter = ref 0 in
 						PcSet.iter
 							(fun pc ->
-								let str = To_string.annotated_bytes_list pc in
+								let str = To_string.bytes_list pc in
 								counter := !counter + 1;
 								print_endline ("Condition " ^ (string_of_int !counter) ^ ":");
 								print_endline (if str = "" then "[None]" else str);
@@ -222,6 +216,8 @@ let finish_up () =
 	) else (
 		Printf.printf "%d paths ran to completion; %d had errors.\n"
 			(List.length !Driver.coverage) (List.length !Driver.abandonedPaths);
+		Printf.printf "There are %d truncated paths.\n" (List.length !Driver.truncatedCoverage);
+		Driver.coverage := !Driver.truncatedCoverage @ !Driver.coverage;
 
 	let (alwaysExecuted,everExecuted) =
 		List.fold_left
@@ -269,10 +265,10 @@ let finish_up () =
 		List.iter
 			(fun (pc,hist) ->
 				 print_newline ();
-				 print_endline (To_string.annotated_bytes_list pc ^ "\n");
+				 print_endline (To_string.bytes_list pc ^ "\n");
 
-				 let mentionedSymbols = allSymbolsInList (List.map strip_annotation pc) in
-				 let valuesForSymbols = Stp.getValues (List.map strip_annotation pc) (SymbolSet.elements mentionedSymbols) in
+				 let mentionedSymbols = allSymbolsInList pc in
+				 let valuesForSymbols = Stp.getValues pc (SymbolSet.elements mentionedSymbols) in
 
 				 (* Keep track of which symbols we haven't given values to.
 						This would happen if there are untracked symbolic values
@@ -385,7 +381,7 @@ let doExecute (f: file) =
 	Executedata.file := f;
 
 	(* Keep track of how long we run *)
-	let startTime = Unix.time () in
+	let startTime = Unix.gettimeofday () in
 
 	(* Hash all of the fundecs by their varinfos.
 		 Also, compute the join points which each [If] dominates.*)
@@ -431,14 +427,21 @@ let doExecute (f: file) =
 			(Sys.Signal_handle (fun _ -> signalStringOpt := Some "User interrupt!"))
 	in
 	(* Set a timer *)
-	ignore (Unix.alarm !(Executeargs.run_args.arg_timeout));
+	ignore (Unix.alarm Executeargs.run_args.arg_timeout);
 
 	(try
 		 (* Start the main loop with a single job, starting at the first
 				statement in main() *)
 		 Driver.main_loop
-			 [makeJob state4 emptyHistory (List.hd main_func.sallstmts)]
-	 with SignalException -> ()
+			 [{ state = state4;
+				 exHist = emptyHistory;
+				 nextStmt = List.hd main_func.sallstmts;
+				 mergePoints = IntSet.empty;
+				 jid = Utility.next_id Output.jidCounter;
+				}]
+	 with
+(*		 | Function.Notification_Exit*)
+		 | SignalException -> ()
 	);
 
 	(* Turn off the alarm and reset the signal handlers *)
@@ -454,13 +457,13 @@ let doExecute (f: file) =
 	*)
 	Printf.printf "\nSTP was invoked %d times.\n" !Types.stp_count;
 
-	let executionTime = (Unix.time ()) -. startTime
+	let executionTime = (Unix.gettimeofday ()) -. startTime
 	and stpTime = Stats.lookupTime "STP" in
 	Printf.printf "It ran for %.2f s, which is %.2f%% of the total %.2f s execution.\n"
 		stpTime (100. *. stpTime /. executionTime) executionTime;
-	Printf.printf "  %.2f s of STP's time was spent converting to bit-vectors.
+	Printf.printf "  %.2f s of STP's time was spent asserting the path condition.
   %.2f s were spent actually solving the resulting formulas.\n\n"
-		(Stats.lookupTime "to_stp_bv")
+		(Stats.lookupTime "STP assert")
 		(Stats.lookupTime "STP query");
 
 (*	let rep = Report.format state3 in
@@ -535,8 +538,12 @@ let feature : featureDescr =
 			 Arg.Unit (fun () -> run_args.arg_branch_coverage <- true),
 			 " Track branch coverage\n");
 
+			("--mergePaths",
+			 Arg.Unit (fun () -> Executeargs.run_args.arg_merge_branches <- true),
+			 " Merge similar execution paths");
+
 			("--timeout",
-			 Arg.Set_int Executeargs.run_args.arg_timeout,
+			 Arg.Int (fun n -> Executeargs.run_args.arg_timeout <- n),
 			 "<numSeconds> Set a timeout for the executor.\n")
 		];
 		fd_post_check = true;

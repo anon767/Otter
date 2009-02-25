@@ -386,7 +386,6 @@ let state__empty =
 		callstack = [];
 		block_to_bytes = MemoryBlockMap.empty;
 		path_condition = [];
-		human_readable_path_condition = [];
 		(*return = None;*)
 		callContexts = [];
 		va_arg = [];
@@ -485,45 +484,9 @@ let state__get_bytes_from_lval state (block, offset, size) =
 		bytes__read source offset size
 ;;
 
-exception FoundVar of annotated_bytes;;
 let state__add_path_condition state bytes =
-	(** Convert a bytes into an annotated_bytes, adding annotations where possible *)
-	let rec annotate_bytes innerBytes =
-		try
-			if Convert.isConcrete_bytes innerBytes
-			then (
-				(* If the bytes is concrete, we don't add any annotation. *)
-				bytes_to_annotated innerBytes
-			) else (
-				(* If the bytes is not concrete, try to find a variable *)
-				(* whose value is this bytes. For now, only look for a global *)
-				(* variables. *)
-				VarinfoMap.iter
-					(fun varinf block ->
-						 if same_bytes innerBytes (MemoryBlockMap.find block state.block_to_bytes)
-						 then
-							 (* Add the annotation, and stop searching by raising FoundVar *)
-							 raise (FoundVar (Annot_Bytes (varinf,bytes_to_annotated innerBytes))))
-					state.global.varinfo_to_block;
-				(* If we fail to find such a variable, we recursively descend into the bytes *)
-				match innerBytes with
-					| Bytes_Constant(const) -> Annot_Bytes_Constant(const)
-					| Bytes_ByteArray(arr) -> Annot_Bytes_ByteArray(arr) (* TODO: there could be more Bytes in the array within a Byte_Bytes. *)
-					| Bytes_Address(memBlockOpt,off) -> Annot_Bytes_Address(memBlockOpt,annotate_bytes off)
-					| Bytes_Op(op,bytes_typ_list) ->
-							Annot_Bytes_Op(op,List.map (fun (b,t) -> (annotate_bytes b,t)) bytes_typ_list)
-					| Bytes_Read(oldBytes,off,len) ->
-							Annot_Bytes_Read(annotate_bytes oldBytes,annotate_bytes off,len)
-					| Bytes_Write(oldBytes,offset,len,bytesToWrite) ->
-							Annot_Bytes_Write(annotate_bytes oldBytes,annotate_bytes offset,len,annotate_bytes bytesToWrite)
-					| Bytes_FunPtr(fdec,addr) -> Annot_Bytes_FunPtr(fdec,annotate_bytes addr)
-			)
-		(* If we found a match, return the annotated bytes *)
-		with FoundVar annot_bytes -> annot_bytes
-	in
 	{ state with
 		path_condition = bytes::(state.path_condition);
-		human_readable_path_condition = (annotate_bytes bytes)::state.human_readable_path_condition;
 	}
 ;;
 

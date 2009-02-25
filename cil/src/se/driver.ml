@@ -5,9 +5,16 @@ open Executeargs
 (** List of (path condition,executionHistory) pairs denoting coverage
 		on different executions. *)
 let coverage = ref [];;
+let truncatedCoverage = ref [];;
 
 (** List of path conditions that led to errors in the symbolic executor *)
 let abandonedPaths = ref [];;
+
+(** Remove a NOT from a bytes, or add one. The type of the bytes may
+		be lost. *)
+let logicalNegateBytes = function
+		Bytes_Op(OP_LNOT,[bytes,_]) -> bytes
+	| bytes -> Bytes_Op(OP_LNOT,[(bytes, Cil.intType)])
 
 let dumpEdges (eS:EdgeSet.t) : unit =
 	if EdgeSet.is_empty eS
@@ -112,7 +119,7 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 				let callContext = blkOffSizeOpt,instr,theSuccessor in
 				let state1 = MemOp.state__start_fcall state fundec callContext in
 				let state2 = init_argvs state1 fundec argvs in
-				[makeJob state2 exHist (List.hd fundec.sallstmts)]
+				[updateJob job state2 exHist (List.hd fundec.sallstmts)]
 		| _ ->
 				try (
 					let nextExHist = ref exHist in
@@ -204,6 +211,10 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 										let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
 										let (block,offset) = Eval.lval state lval in
 										let symbBytes = (MemOp.bytes__symbolic size isWritable) in
+										Output.set_mode Output.MSG_MUSTPRINT;
+										Printf.printf "%s = %s\n"
+											varinf.vname
+											(To_string.bytes symbBytes);
 										nextExHist := { exHist with bytesToVars = (symbBytes,varinf) :: exHist.bytesToVars; };
 										MemOp.state__assign state (block,offset,size) symbBytes
 								| _ ->
@@ -230,7 +241,7 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 							begin match blkOffSizeOpt with
 								| None -> 
 									state
-								| Some (_,_,size as dest) ->
+								| Some (block,offset,size as dest) ->
 									let key = 
 										if List.length exps == 0 then 0 else
 										let size_bytes = Eval.rval state (List.hd exps) in
@@ -418,7 +429,7 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 							state
 						end
 						
-					| _ -> failwith "unreachable"
+					| _ -> failwith "unreachable exec_instr_call"
 						
 				end in (* inner [match func] *)
 
@@ -429,15 +440,13 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 							[h] -> h
 						| _ -> assert false
 				in
-				[makeJob state_end !nextExHist theSuccessor]
+				[updateJob job state_end !nextExHist theSuccessor]
 
 				) with Function.Notification_Exit ->
 					(* If it was [Exit], there is no job to return *)
 					Output.set_mode Output.MSG_MUSTPRINT;
-					Output.print_endline "exit() called.\nPath Condition:";
-					Output.print_endline
-						(To_string.annotated_bytes_list state.human_readable_path_condition);
-					coverage := (state.human_readable_path_condition, exHist) :: !coverage;
+					Output.print_endline "exit() called.";
+					coverage := (state.path_condition, exHist) :: !coverage;
 					[]
 
 	end (* outer [match func] *)
@@ -457,6 +466,7 @@ let exec_stmt job =
 	} in
 	Output.set_mode Output.MSG_STMT;
 	Output.set_cur_loc (Cil.get_stmtLoc stmt.skind);
+	Output.runningJob := job.jid;
 	Output.print_endline (To_string.stmt stmt);
 	match stmt.skind with
 		| Instr (instrs) ->
@@ -464,8 +474,8 @@ let exec_stmt job =
 					 [Set]s and [Asm]s, possibly terminated with a [Call]. Here,
 					 we iterate through [instrs], performing each [Set]. If the
 					 final [instr] is a [Call], we perform the call. Otherwise,
-					 we just return the job resulting from the sequence of
-					 assignments. *)
+					 we just return the singleton JobSet resulting from the
+					 sequence of assignments. *)
 				let printInstr instr =
 					Output.set_mode Output.MSG_STMT;
 					Output.set_cur_loc (Cil.get_instrLoc instr);
@@ -484,7 +494,7 @@ let exec_stmt job =
 											[h] -> h
 										| _ -> assert false
 								in
-								[makeJob latestState nextExHist theSuccessor]
+								[updateJob job latestState nextExHist theSuccessor]
 						| (Set(lval,exp,loc) as instr)::tail ->
 								printInstr instr;
 								let (block,offset) = Eval.lval latestState lval in
@@ -503,7 +513,7 @@ let exec_stmt job =
 												Some (block,offset,size)
 								in
 								exec_instr_call
-									(makeJob latestState nextExHist stmt)
+									(updateJob job latestState nextExHist stmt)
 									instr destOpt fexp exps loc
 						| (Asm _ as instr)::tail ->
 								Output.set_mode Output.MSG_MUSTPRINT;
@@ -519,10 +529,8 @@ let exec_stmt job =
 					match state.callContexts with
 							[] -> (* Returning from main *)
 								Output.set_mode Output.MSG_MUSTPRINT;
-								Output.print_endline "Program execution finished\nPath Condition:";
-								Output.print_endline
-									(To_string.annotated_bytes_list state.human_readable_path_condition);
-								coverage := (state.human_readable_path_condition, nextExHist) :: !coverage;
+								Output.print_endline "Program execution finished";
+								coverage := (state.path_condition, nextExHist) :: !coverage;
 								[] (* This job is complete *)
 						| (destOpt,_,Some nextStmt)::_ ->
 								let state2 =
@@ -538,14 +546,14 @@ let exec_stmt job =
 								(* varinfo_to_block: memory_block VarinfoMap.t; *)
 								let pop_frame = List.hd state.locals in
 								let state2' = VarinfoMap.fold (fun varinfo block s -> MemOp.state__remove_block s block) pop_frame.varinfo_to_block state2 in 
-								[makeJob state2' nextExHist nextStmt]
+								[updateJob job state2' nextExHist nextStmt]
 						| _ ->
 								(* [(_,_,None)] is impossible, because we wouldn't
 									 be returning in that case. *)
 								assert false
 				end
 		| Goto (stmtref, loc) ->
-				[makeJob state nextExHist !stmtref]
+				[updateJob job state nextExHist !stmtref]
 		| If (exp, block1, block2, loc) ->
 				begin
 				(* try a branch *)
@@ -560,7 +568,7 @@ let exec_stmt job =
 								try
 									let pcSet_ref = which (Hashtbl.find branches_taken (exp,loc)) in
 									(* Add the path condition to the list of ways we take this branch *)
-									pcSet_ref := PcSet.add state.human_readable_path_condition !pcSet_ref
+									pcSet_ref := PcSet.add state.path_condition !pcSet_ref
 								with Not_found ->
 									(* We haven't hit this conditional before. Initialize its entry in
 										 the branch coverage table with the current path condition (and
@@ -569,7 +577,7 @@ let exec_stmt job =
 										branches_taken
 										(exp,loc)
 										(let res = (ref PcSet.empty, ref PcSet.empty) in
-										which res := PcSet.singleton state.human_readable_path_condition;
+										which res := PcSet.singleton state.path_condition;
 										res)
 							end;
 						let nextStmt = match stmt.succs with
@@ -603,49 +611,391 @@ let exec_stmt job =
 						begin
 							Output.print_endline "True";
 							let nextState,nextStmt = try_branch None block1 in
-							[makeJob nextState nextExHist nextStmt]
+							[updateJob job nextState nextExHist nextStmt]
 						end
 					else if truth == Stp.False then
 						begin
 							Output.print_endline "False";
 							let nextState,nextStmt = try_branch None block2 in
-							[makeJob nextState nextExHist nextStmt]
+							[updateJob job nextState nextExHist nextStmt]
 						end
 					else
 						begin
 							Output.print_endline "Unknown";
 							let nextStateT,nextStmtT = try_branch (Some rv) block1 in
-							let nextStateF,nextStmtF =
-								try_branch (Some (Bytes_Op(OP_LNOT,[(rv, Cil.typeOf exp)]))) block2 in
-							[makeJob nextStateT nextExHist nextStmtT;
-							 makeJob nextStateF nextExHist nextStmtF]
+							let nextStateF,nextStmtF = try_branch (Some (logicalNegateBytes rv)) block2 in
+
+							let nextMergePts = (* Add in the new merge points *)
+								if run_args.arg_merge_branches then (
+									List.fold_left (fun set n -> IntSet.add n set) job.mergePoints
+										(match Inthash.find_all ifToJoinPointsHash stmt.sid with
+												 [] -> (match state.callContexts with
+																		(_,_,Some nextStmt)::_ ->
+																			print_endline "Will merge upon function return";
+																			[nextStmt.sid]
+																	| _ -> [])
+											 | x -> x)
+								) else (
+									IntSet.empty
+								)
+							in
+							let (j1,j2) =
+								forkJob job nextStateT nextStateF nextStmtT nextStmtF nextExHist nextMergePts
+							in
+							Output.set_mode Output.MSG_MUSTPRINT;
+							Output.print_endline
+								(Printf.sprintf "Branching on %s at %s.
+Job %d is the true branch and job %d is the false branch.\n"
+									 (To_string.exp exp)
+									 (To_string.location loc)
+									 j1.jid j2.jid);
+							[j1;j2]
 						end
 				end
-		| Block(block) -> [makeJob state exHist (List.hd block.bstmts)]
+		| Block(block)
 		| Loop (block, _, _, _) ->
 				(* A [Loop]'s block always has a non-empty bstmts. (See
 					 Cil.succpred_stmt.)
 					 This is not true for [Block]s, but it *does* seem to be
 					 true for [Block]s which are not under [If]s, so we're okay. *)
-				[makeJob state nextExHist (List.hd block.bstmts)]
+				[updateJob job state nextExHist (List.hd block.bstmts)]
 		| _ -> failwith "Not implemented yet"
 ;;
 
+(*
+let printJob (state,stmt) =
+	Printf.printf "path condition = %s\n" (To_string.bytes_list state.path_condition);
+	Printf.printf "statement:\n%s\n"
+		(try Pretty.sprint 100 (Cil.d_stmt () stmt)
+		 with Errormsg.Error -> "<error printing statement>")
+*)
+
+let cmp_memory blkToByt1 blkToByt2 =
+	(* Split the blocks in s1 into those which are in s2 but map to
+		 different bytes, those which map to the same bytes in s2, and
+		 those which are not in s2 at all. *)
+	let cmpSharedBlocks b2b1 b2b2 =
+		let f block bytes1 (diffShared,sameShared,in1ButNot2) =
+			try
+				let bytes2 = MemoryBlockMap.find block b2b2 in
+				if MemOp.diff_bytes bytes1 bytes2 then
+					((block,bytes1,bytes2) :: diffShared, sameShared, in1ButNot2)
+				else
+					(diffShared, (block,bytes1) :: sameShared, in1ButNot2)
+			with Not_found -> (diffShared, sameShared, (block,bytes1) :: in1ButNot2)
+		in
+		MemoryBlockMap.fold f b2b1 ([],[],[])
+	in
+	let sharedBlockDiffs,sharedBlockSames,blocksIn1ButNot2 =
+		cmpSharedBlocks blkToByt1 blkToByt2 in
+
+	(* List blocks (memory allocations) that are in s2 but not in s1 *)
+	let cmpUnsharedBlocks b2b1 b2b2 =
+	  let h b2b block bytes listOfDiffs =
+	    if MemoryBlockMap.mem block b2b then listOfDiffs else
+	      (block,bytes) :: listOfDiffs
+	  in
+	  MemoryBlockMap.fold (h b2b1) b2b2 []
+	in
+	let blocksIn2ButNot1 = cmpUnsharedBlocks blkToByt1 blkToByt2 in
+	sharedBlockDiffs,sharedBlockSames,blocksIn1ButNot2,blocksIn2ButNot1
+
+(** Find the common suffix of 2 lists l1 and l2, and return a triple
+		(a,b,c) such that l1 = a @ c and l2 = b @ c. *)
+let splitOutCommonSuffix l1 l2 =
+	let rec helper a b acc =
+		match a,b with
+				[],_ -> [], List.rev b, acc
+			| _,[] -> List.rev a, [], acc
+			| h1::t1,h2::t2 ->
+					if h1 == h2
+					then helper t1 t2 (h1 :: acc)
+					else List.rev a, List.rev b, acc
+	in helper (List.rev l1) (List.rev l2) []
+;;
+
+(* Essentially, union for maps. However, anything bound in both x and
+	 y in a call to [memoryMerge x y] will end up being mapped according
+	 to x. *)
+(*let memoryMerge : bytes MemoryBlockMap.t = MemoryBlockMap.fold MemoryBlockMap.add*)
+
+(* Transform an association list into a memory block map, preserving
+	 only the *last* binding for each key.
+	 Preserving the *first* instead (which is more natural for
+	 association lists) could be accomplished by reversing [lst] in the
+	 first call to [helper].
+	 I currently don't reverse [lst] because I currently only call this
+	 function on values of [lst] which have only one binding per key. *)
+let assocListToMemoryBlockMap lst =
+	let rec helper acc = function
+			[] -> acc
+		| (a,b)::t ->
+				helper (MemoryBlockMap.add a b acc) t
+	in helper MemoryBlockMap.empty lst
+
+let pcToBytes = function
+		[] -> failwith "pcToAND"
+	| [h] -> h
+	| pc -> Bytes_Op(OP_LAND, List.map (fun b -> (b,Cil.intType)) pc)
+
+(* MergeDone includes the old job (which is swallowed by the current
+	 job) and the state for the merged job. *)
+exception MergeDone of job * state
+exception TooDifferent
+
+(* Merge job states *)
+let mergeJobs job jobSet =
+	try
+		JobSet.iter
+			(fun j ->
+				 try
+				 let jPC,jobPC,commonPC =
+					 splitOutCommonSuffix j.state.path_condition job.state.path_condition
+				 in
+				 let jobPCBytes = pcToBytes jobPC and
+						 jPCBytes = pcToBytes jPC in
+				 let mergedPC =
+					 match jPC,jobPC with
+							 (* Optimize the common case of P \/ ~P *)
+						 | [byts],[Bytes_Op(OP_LNOT,[(byts',_)])] when byts == byts' ->
+								 commonPC
+						 | [Bytes_Op(OP_LNOT,[(byts',_)])],[byts] when byts == byts' ->
+								 commonPC
+						 | _ ->
+								 (* General case: either one condition or the other is
+										true. We might sometimes be able to simplify the
+										pc, but right now we don't try to do so. *)
+								 Bytes_Op(OP_LOR, [(jPCBytes,Cil.intType);(jobPCBytes,Cil.intType)])
+								 :: commonPC
+				 in
+				 (* I'm assuming [j.state.locals == job.state.locals] for now
+						(due to the implementation of atSameProgramPoint),
+						so the varinfos always map to the same blocks. This means I
+						only need to mess with the [block_to_bytes]---I can leave
+						[locals] alone. *)
+				 let diffShared,sameShared,inJOnly,inJobOnly =
+					 cmp_memory j.state.block_to_bytes job.state.block_to_bytes in
+				 if diffShared = [] then (
+					 (* The memory is identical in [j] and [job] *)
+					 assert (inJOnly = [] && inJobOnly = []);
+					 Printf.printf "Merging jobs %d and %d (identical memory)\n" j.jid job.jid;
+					 raise (MergeDone (j, { job.state with path_condition = mergedPC; }))
+				 ) else (
+					 (* We have to fiddle with memory *)
+					 let numSymbolsCreated = ref 0 in
+					 let newSharedBlocks =
+						 (* Make a new symbolic bytes for each differing block *)
+						 List.map
+							 (fun (block,jBytes,jobBytes) ->
+									let size = MemOp.bytes__length jBytes in (* or should I just check block.memory_block_size? *)
+									if size <> MemOp.bytes__length jobBytes then (
+										failwith "Unimplemented: merging bytes with different lengths"
+									) else (
+										numSymbolsCreated := !numSymbolsCreated + size;
+										if !numSymbolsCreated > 100 then raise TooDifferent;
+										let symbBytes = MemOp.bytes__symbolic size true in
+										let jobImplication =
+											(* jobPCBytes => symbBytes == jobBytes, i.e. ~jobPCBytes \/ symbBytes == jobBytes *)
+											Bytes_Op(OP_LOR,
+															 [(logicalNegateBytes jobPCBytes, Cil.intType);
+																(Bytes_Op(OP_EQ,[(symbBytes,Cil.intType);
+																								 (jobBytes,Cil.intType)]),Cil.intType)])
+										and jImplication =
+											(* Similarly for j *)
+											Bytes_Op(OP_LOR,
+															 [(logicalNegateBytes jPCBytes, Cil.intType);
+																(Bytes_Op(OP_EQ,[(symbBytes,Cil.intType);
+																								 (jBytes,Cil.intType)]),Cil.intType)])
+										in
+										((block, symbBytes), [jobImplication;jImplication])
+									)
+							 )
+							 diffShared
+					 in
+					 let finalMergedPC = (* Attach all of the extra constraints to the path condition *)
+						 List.fold_left
+							 (fun pc (_,implications) -> List.rev_append implications pc)
+							 mergedPC
+							 newSharedBlocks
+					 and mergedMemory =
+						 (* I think it's safe (if not optimal) to keep both
+								[inJOnly] and [inJobOnly] because [j]'s memory will be
+								unreachable from [job]'s path and vice versa. *)
+						 assocListToMemoryBlockMap
+							 (List.concat [List.map fst newSharedBlocks; sameShared; inJOnly; inJobOnly])
+					 in
+					 Printf.printf "Merging jobs %d and %d (differing memory)\n" j.jid job.jid;
+					 raise (MergeDone (j, { job.state with
+																		block_to_bytes = mergedMemory;
+																		path_condition = finalMergedPC;
+																}))
+				 )
+				 with TooDifferent -> print_endline "Memory too different to merge"; ()
+			) (* End iteration function *)
+			jobSet;
+		(* Reaching here means we've iterated through all jobs, never
+			 being able to merge. So we just add the job to jobSet. *)
+		JobSet.add job jobSet
+	with MergeDone (oldJob,mergedState) ->
+		(* This is a pretty stupid way of getting complete coverage with
+			 merging, but it's something. It only credits a merged execution
+			 with the edges that *both* sides covered. Edges covered by only
+			 one side are attributed to truncated executions that end at the
+			 join point. *)
+		let jobOnlyEdges = EdgeSet.diff
+			(EdgeSet.add (job.exHist.prevStmt,job.nextStmt) job.exHist.edgesTaken)
+			oldJob.exHist.edgesTaken
+		and oldJobOnlyEdges = EdgeSet.diff
+			(* job.nextStmt == oldJob.nextStmt because we are at the same program point *)
+			(EdgeSet.add (oldJob.exHist.prevStmt,job.nextStmt) oldJob.exHist.edgesTaken)
+			job.exHist.edgesTaken
+		in
+		truncatedCoverage :=
+			(job.state.path_condition,{job.exHist with edgesTaken = jobOnlyEdges;}) ::
+				(oldJob.state.path_condition,{oldJob.exHist with edgesTaken = oldJobOnlyEdges;}) ::
+				!truncatedCoverage;
+		(* Remove the old job and add the merged job *)
+		JobSet.add
+			{ job with
+					state = mergedState;
+					exHist =
+					{ job.exHist with
+							edgesTaken = EdgeSet.inter job.exHist.edgesTaken oldJob.exHist.edgesTaken;
+					};
+					mergePoints = IntSet.union job.mergePoints oldJob.mergePoints;
+					jid = min job.jid oldJob.jid; (* Keep the lower jid, just because *)
+			}
+			(JobSet.remove oldJob jobSet)
+
+(*
+(** This is like [List.for_all2 (==)], except that it returns true
+		immediately as soon as the 2 lists are physically equal. *)
+let rec listEq l1 l2 =
+	match l1,l2 with
+			x,y when x == y -> true
+		| [],_ | _,[] -> false
+		| h1::t1,h2::t2 -> h1 == h2 && listEq t1 t2
+
+let rec callContextEq ctx1 ctx2 =
+	match ctx1,ctx2 with
+			[],[] -> true
+		| (blkBytOffOpt1,instr1,stmtOpt1)::t1,(blkBytOffOpt2,instr2,stmtOpt2)::t2 ->
+				instr1 == instr2 &&
+					(match stmtOpt1,stmtOpt2 with
+							 None,None -> true
+						 | Some a,Some b -> a == b
+						 | _ -> false) &&
+					(match blkBytOffOpt1,blkBytOffOpt2 with
+							 None,None -> true
+						 | Some (blk1,byt1,off1),Some (blk2,byt2,off2) ->
+								 blk1 == blk2 && byt1 == byt2 && off1 == off2
+						 | _ -> false) &&
+					callContextEq t1 t2
+		| _ -> false
+
+let rec listRemove x = function
+		[] -> []
+	| y::t -> if x == y then t else y :: listRemove x t
+*)
+
+let atSameProgramPoint job1 job2 =
+	let state1 = job1.state
+	and state2 = job2.state in
+	(* I'm trying to be conservative here by using physical equality
+		 because I haven't quite figured out what 'being at the same
+		 program point' means. But I'm pretty sure that if these are
+		 physically equal, then they really are at the same program point,
+		 whatever that means. *)
+	if job1.nextStmt == job2.nextStmt &&
+		state1.callContexts == state2.callContexts
+	then (
+		assert
+			(job1.exHist.bytesToVars == job2.exHist.bytesToVars &&
+				 state1.global         == state2.global &&
+			 	 state1.locals         == state2.locals &&
+				 state1.callstack      == state2.callstack &&
+				 state1.va_arg         == state2.va_arg &&
+				 state1.va_arg_map     == state2.va_arg_map &&
+				 state1.loc_map        == state2.loc_map);
+			true
+		) else (
+			false
+		)
+
+let pausedJobs = ref JobSet.empty
+
 let rec main_loop = function
 		[] ->
-			print_endline "Done executing";
+			(* There are no unpaused jobs. *)
+			if JobSet.is_empty !pausedJobs
+			then (
+				(* There are no paused jobs, either. We're done. *)
+				print_endline "Done executing";
+			) else (
+				(* Pick a paused job, remove it from pausedJobs, and run it. *)
+				let someJob = JobSet.choose !pausedJobs in
+				pausedJobs := JobSet.remove someJob !pausedJobs;
+				main_loop (exec_stmt someJob)
+			)
 	| job::jobs ->
 			try
-				(* Why does this make the executor crash? *)
-(*				main_loop (exec_stmt state exHist stmt @ t)*)
+
 				let rec runUntilBranch theJob =
-					match exec_stmt theJob with
-						| [] -> jobs
-						| [j] -> runUntilBranch j
-						| [j1;j2] -> j1 :: j2 :: jobs
-						| _ -> assert false (* No more than 2 jobs returned *)
+					(* First test to see if the job should pause and/or merge *)
+					if run_args.arg_merge_branches &&
+						IntSet.mem theJob.nextStmt.sid theJob.mergePoints
+					then (
+						(* See if there are other jobs we should merge theJob with *)
+						let jobsToMergeWith =
+							JobSet.filter (atSameProgramPoint theJob) !pausedJobs in
+						(* Remove jobsToMergeWith from pausedJobs *)
+						let otherPaused = (JobSet.diff !pausedJobs jobsToMergeWith) in
+						(* Merge with theJob *)
+						let nowPaused = (mergeJobs theJob jobsToMergeWith) in
+						(* Place the results of the merge back into pausedJobs. We
+							 pause theJob and re-pause all results of the merge
+							 because there could be other jobs that will also merge
+							 at this statement. *)
+						pausedJobs := JobSet.union otherPaused nowPaused;
+						(* Continue with the remaining jobs *)
+						jobs
+					) else ( (* Don't pause this job---run it *)
+						match exec_stmt theJob with
+							| [] -> jobs
+							| [j] -> runUntilBranch j
+							| [j1;j2] -> j1 :: j2 :: jobs
+							| _ -> assert false (* No more than 2 jobs returned *)
+					)
 				in
 				main_loop (runUntilBranch job)
+(* (* Why does this cause the executor to crash? *)
+				let newJobs =
+					(* First test to see if the job should pause and/or merge *)
+					if run_args.arg_merge_branches &&
+						IntSet.mem job.nextStmt.sid job.mergePoints
+					then (
+						(* See if there are other jobs we should merge theJob with *)
+						let jobsToMergeWith =
+							JobSet.filter (atSameProgramPoint job) !pausedJobs in
+						(* Remove jobsToMergeWith from pausedJobs *)
+						let otherPaused = (JobSet.diff !pausedJobs jobsToMergeWith) in
+						(* Merge with theJob *)
+						let nowPaused = (mergeJobs job jobsToMergeWith) in
+						(* Place the results of the merge back into pausedJobs. We
+							 pause theJob and re-pause all results of the merge
+							 because there could be other jobs that will also merge
+							 at this statement. *)
+						pausedJobs := JobSet.union otherPaused nowPaused;
+						(* Don't add any new jobs *)
+						[]
+					) else (
+						(* Don't pause this job---run it, and add any resulting
+							 jobs to the queue. *)
+						exec_stmt job
+					)
+				in
+				main_loop (newJobs @ jobs)
+*)
 			with Failure fail ->
 				Output.set_mode Output.MSG_MUSTPRINT;
 				Output.print_endline
@@ -653,5 +1003,5 @@ let rec main_loop = function
 						 (To_string.location !Output.cur_loc));
 				Output.print_endline "Abandoning branch";
 				abandonedPaths :=
-					job.state.human_readable_path_condition :: !abandonedPaths;
+					job.state.path_condition :: !abandonedPaths;
 				main_loop jobs

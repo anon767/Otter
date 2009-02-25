@@ -56,8 +56,9 @@ type run_args =
 		mutable arg_cmdline_argvs : string list;
 		mutable arg_symbolic_extern_fns : bool;
 		mutable arg_branch_coverage : bool;
-		arg_timeout : int ref;
+		mutable arg_timeout : int;
 		(** How many seconds to allow the executor to run. *)
+		mutable arg_merge_branches : bool;
 	};;
 
 let run_args = 
@@ -66,5 +67,6 @@ let run_args =
 		arg_cmdline_argvs = [];
 		arg_symbolic_extern_fns = false;
 		arg_branch_coverage = false;
-		arg_timeout = ref 0;
+		arg_timeout = 0;
+		arg_merge_branches = false;
 	} ;;

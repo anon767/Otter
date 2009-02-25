@@ -87,6 +87,23 @@ and
 (** return (True) False if bytes (not) evaluates to all zeros. Unknown otherwise.
  *) 
 query pc bytes equal_zero =
+(*
+	let rec getRelevantAssumptions acc symbols pc' =
+		match List.partition
+			(fun b -> SymbolSet.is_empty (SymbolSet.inter symbols (allSymbols b)))
+			pc'
+		with
+			| [],_ -> pc (* Everything is relevant *)
+			| _,[] -> acc (* Nothing else is relevant *)
+			| subPC,relevant ->
+					getRelevantAssumptions (relevant @ acc)
+						(SymbolSet.union symbols (allSymbolsList relevant))
+						subPC
+	in
+	let relevantAssumptions =
+		getRelevantAssumptions [] (allSymbols bytes) pc
+	in
+*)
 	let vc = Stpc.create_validity_checker () in
 	
 	Output.set_mode Output.MSG_STP;
@@ -94,19 +111,18 @@ query pc bytes equal_zero =
 	Output.print_endline "%% STP Program: %%";
 	Output.print_endline "%%%%%%%%%%%%%%%%%%";
 		
-	let to_stp_bv_wrapper (theVC,theExpr) = to_stp_bv theVC theExpr in
-		
 	let rec do_assert pc = match pc with
 		| [] -> ()
 		| head::tail -> 
-			let (bv, len) = Stats.time "to_stp_bv" to_stp_bv_wrapper (vc,head) in
+			let (bv, len) = to_stp_bv vc head in
 			let a = Stpc.e_not vc (Stpc.e_eq vc bv (Stpc.e_bv_of_int vc len 0)) in
 			Stpc.do_assert vc a;
 			Output.set_mode Output.MSG_STP;
 			Output.print_endline ("ASSERT("^(Stpc.to_string a)^");");
 			do_assert tail
 	in
-		do_assert pc;	
+		Stats.time "STP assert" do_assert pc;	
+(*		Stats.time "STP assert" do_assert relevantAssumptions;*)	
 		
 	
 	let (bv, len) = to_stp_bv vc bytes in
@@ -190,11 +206,8 @@ to_stp_bv vc bytes =
 			let len = l_blockaddr in
 				(Stpc.e_bvplus vc len bv_blockaddr bv_offset,len)
 			
-		| Bytes_Op(op, operands) ->
-			(* BINOP *)
-				if List.length operands = 2 then
-				let (bytes1, typ1) = List.nth operands 0 in (* typ info maybe added to the stp formula later *)
-				let (bytes2, typ2) = List.nth operands 1 in
+		| Bytes_Op(op, [(bytes1,typ1);(bytes2,typ2)]) -> (* BINOP *)
+				(* typ info maybe added to the stp formula later *)
 				let (bv1, len1) = to_stp_bv vc bytes1 in
 				let (bv2, len2) = to_stp_bv vc bytes2 in
 				let len_of_1_0 = 32 in
@@ -244,13 +257,10 @@ to_stp_bv vc bytes =
 							bv_0 bv_1 , len_of_1_0)
 						| OP_SX -> (* here bv2 must be constant *)
 							failwith "not implemented"
-						| _ -> failwith "Unreachable"
+						| _ -> failwith ((To_string.operation op) ^ " is not a binary operator")
 					end in
 					op_func bv1 len1 bv2 len2
-					
-			(* UNOP *)
-				else if List.length operands = 1 then
-				let (bytes1, typ1) = List.nth operands 0 in 
+		| Bytes_Op(op, [(bytes1,typ1)]) -> (* UNOP *)
 				let (bv1, len1) = to_stp_bv vc bytes1 in
 				let len_of_1_0 = 32 in
 				let bv_1 = (Stpc.e_bv_of_int vc len_of_1_0 1) in
@@ -265,11 +275,27 @@ to_stp_bv vc bytes =
 									(Stpc.e_eq vc bv1 (Stpc.e_bv_of_int vc len1 0)) 
 								) 
 							bv_0 bv_1 , len_of_1_0)
-						| _ -> failwith "Unreachable"
+						| _ -> failwith ((To_string.operation op) ^ " is not a unary operator")
 					end in
 					op_func bv1 len1 
-				
-				else failwith "Unreachable"
+		| Bytes_Op(OP_LAND, bytesTypList) -> (* Let AND be variadic *)
+				let bvLenList =
+					List.map (fun (bytes,_) -> to_stp_bv vc bytes) bytesTypList
+				in
+				let len_of_1_0 = 32 in
+				let bv_1 = (Stpc.e_bv_of_int vc len_of_1_0 1) in
+				let bv_0 = (Stpc.e_bv_of_int vc len_of_1_0 0) in
+				(* If any is false, then 0; otherwise 1. *)
+				(Stpc.e_ite vc
+					 (List.fold_left
+							(fun expr (bv,len) ->
+								 Stpc.e_or vc expr
+									 (Stpc.e_cfalse vc len bv))
+							(Stpc.e_false vc)
+							bvLenList)
+					 bv_0 bv_1 , len_of_1_0)
+		| Bytes_Op(op, _) ->
+				failwith ("Invalid number of operands for " ^ (To_string.operation op))
 
 		| Bytes_Read (content,offset,len) ->
 			let arr = new_array vc content in
@@ -411,7 +437,7 @@ let getValues pathCondition symbolList =
 			(fun expr bytes ->
 				 let (bv, len) = to_stp_bv vc bytes in
 				 Stpc.e_or vc expr
-					 (Stpc.e_eq vc bv (Stpc.e_bv_of_int vc len 0)))
+					 (Stpc.e_cfalse vc len bv))
 			(Stpc.e_false vc)
 			pathCondition
 	in

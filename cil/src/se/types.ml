@@ -61,18 +61,6 @@ data_structure =
 
 and
 
-annotated_bytes =
-| Annot_Bytes_Constant of Cil.constant (* length=Cil.sizeOf (Cil.typeOf (Const(constant))) *)
-| Annot_Bytes_ByteArray of byte ImmutableArray.t  (* content *) 
-| Annot_Bytes_Address of memory_block option * annotated_bytes (* offset *)
-| Annot_Bytes_Op of operator * (annotated_bytes * Cil.typ) list
-| Annot_Bytes_Read of annotated_bytes * annotated_bytes * int						(* less preferrable type *)
-| Annot_Bytes_Write of annotated_bytes * annotated_bytes * int * annotated_bytes	(* least preferrable type*)
-| Annot_Bytes_FunPtr of Cil.fundec * annotated_bytes (* annotated_bytes is the "imaginary address" of the funptr *)
-| Annot_Bytes of Cil.varinfo * annotated_bytes (* varinfo is the variable with the associated bytes as its value *)
-
-and
-
 memory_block_type = 
 	| Block_type_StringLiteral
 	| Block_type_Global
@@ -159,7 +147,6 @@ type state =
 		callstack : Cil.fundec list;	(* Function call stack *)
 		block_to_bytes : bytes MemoryBlockMap.t;
 		path_condition : bytes list;
-		human_readable_path_condition : annotated_bytes list;
 		callContexts : callingContext list;
 		(** callContexts is off by one relative to callstack because
 				callstack starts out as [main] while callContexts starts out
@@ -185,39 +172,6 @@ let (string_table : bytes MemoryBlockMap.t ref) = ref MemoryBlockMap.empty;;
 
 (* some globals that are helpful *)
 let stp_count = ref 0;;
-
-(* Coerce a bytes into an annotated_bytes (without adding any annotations) *)
-let rec bytes_to_annotated = function
-	| Bytes_Constant(const) -> Annot_Bytes_Constant(const)
-	| Bytes_ByteArray(arr) -> Annot_Bytes_ByteArray(arr)
-	| Bytes_Address(memBlockOpt,off) -> Annot_Bytes_Address(memBlockOpt,bytes_to_annotated off)
-	| Bytes_Op(op,bytes_typ_list) ->
-		Annot_Bytes_Op(op,List.map (fun (b,t) -> (bytes_to_annotated b,t)) bytes_typ_list)
-	| Bytes_Read(oldBytes,off,len) ->
-		Annot_Bytes_Read(bytes_to_annotated oldBytes,bytes_to_annotated off,len)
-	| Bytes_Write(oldBytes,offset,len,bytesToWrite) ->
-		Annot_Bytes_Write(
-			bytes_to_annotated oldBytes,
-			bytes_to_annotated offset,
-			len,
-			bytes_to_annotated bytesToWrite)
-	| Bytes_FunPtr(fdec,addr) -> Annot_Bytes_FunPtr(fdec,bytes_to_annotated addr)
-;;
-
-let rec strip_annotation = function
-	| Annot_Bytes_Constant(const) -> Bytes_Constant(const)
-	| Annot_Bytes_ByteArray(arr) -> Bytes_ByteArray(arr) (* TODO: there could be more Bytes in the array within a Byte_Bytes. *)
-	| Annot_Bytes_Address (addr,off) -> Bytes_Address (addr,strip_annotation off)
-	| Annot_Bytes_Op (op,operands) ->
-			Bytes_Op (op, List.map (fun (b,t) -> (strip_annotation b,t)) operands)
-	| Annot_Bytes_Read (content,off,len) ->
-			Bytes_Read(strip_annotation content, strip_annotation off, len)
-	| Annot_Bytes_Write (content,off,len,newbytes) ->
-			Bytes_Write (strip_annotation content, strip_annotation off,
-									 len, strip_annotation newbytes)
-	| Annot_Bytes_FunPtr (f,addr) -> Bytes_FunPtr (f, strip_annotation addr)
-	| Annot_Bytes(varinf,bytes) -> strip_annotation bytes
-;;
 
 module EdgeSet = Set.Make
 	(struct
@@ -245,10 +199,10 @@ let emptyHistory = {
 	bytesToVars = [];
 }
 
-(** A set of human-readable path conditions *)
+(** A set of path conditions *)
 module PcSet = Set.Make
 	(struct
-		type t = annotated_bytes list
+		type t = bytes list
 		let compare = compare
 	end)
 
@@ -267,17 +221,44 @@ module SymbolSet = Set.Make
 let signalStringOpt : string option ref = ref None
 exception SignalException
 
+module IntSet = Set.Make
+	(struct
+		 type t = int
+		 let compare = (-)
+	 end)
+
 type job = {
 	state : state;
 	exHist : executionHistory;
 	nextStmt : Cil.stmt; (** The next statement the job should execute *)
+	mergePoints : IntSet.t; (** A list of potential merge points, by sid *)
+	jid : int; (** A unique identifier for the job *)
 }
 
-let makeJob state exHist nextStmt = {
-	state = state;
-	exHist = exHist;
-	nextStmt = nextStmt;
-}
+let updateJob job state exHist nextStmt =
+	{ job with
+			state = state;
+			exHist = exHist;
+			nextStmt = nextStmt;
+	}
+
+let forkJob job nextStateT nextStateF nextStmtT nextStmtF newExHist newMergePoints =
+	let j =
+		{ job with mergePoints = newMergePoints; exHist = newExHist; } in
+	(* Increment the jid of the job which takes the false branch *)
+	({ j with state = nextStateT; nextStmt = nextStmtT; },
+	 { j with state = nextStateF; nextStmt = nextStmtF;
+			 jid = Utility.next_id Output.jidCounter; })
+
+module JobSet = Set.Make
+	(struct
+		 type t = job
+				 (** The state, executionHistory, and stmt about to be executed *)
+		 let compare job1 job2 =
+			 let c = job1.nextStmt.Cil.sid - job2.nextStmt.Cil.sid in
+			 if c = 0 then compare (job1.state,job1.exHist,job1.mergePoints) (job2.state,job2.exHist,job2.mergePoints)
+			 else c
+	 end)
 
 (** Map [sid]s of if statements to the [sid]s of join points which the
 		[If]s dominate.

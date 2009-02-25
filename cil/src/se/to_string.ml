@@ -195,43 +195,6 @@ and bytes_list_ff ff =
 
 and bytes_list b = bytes_list_ff str_formatter b; flush_str_formatter ()
 
-and annotated_bytes ann_byts =
-	let sprintf_helper () = annotated_bytes in
-	match ann_byts with
-	| Annot_Bytes_Constant(const) -> bytes (Bytes_Constant(const))
-	| Annot_Bytes_ByteArray(arr) -> bytes (Bytes_ByteArray(arr))
-	| Annot_Bytes_Address (Some(block), offset) -> sprintf "\naddrOf(%s,%a)" (memory_block block) sprintf_helper offset
-	| Annot_Bytes_Address (None, offset) -> sprintf "addrOf(@[<hov>null,@,%a])" sprintf_helper offset
-(*	| Annot_Bytes_Op (op,(firstop,_)::[]) ->                                                                                    *)
-(*		sprintf "%s(@[<hov>%a@])" (operation op) sprintf_helper firstop                                                           *)
-(*  | Annot_Bytes_Op (op,(firstop,_)::tailops) ->                                                                               *)
-(*		sprintf "%s(@[<hov>%a%a@])"                                                                                               *)
-(*			(operation op)                                                                                                          *)
-(*			sprintf_helper firstop                                                                                                  *)
-(*			(fun () operandList -> String.concat "" (List.map (fun (t,_) -> sprintf ",@\n%a" sprintf_helper t) operandList)) tailops*)
-(*	| Annot_Bytes_Op (op,[]) -> sprintf "%s()" (operation op)                                                                   *)
-	| Annot_Bytes_Op (op,operands) ->
-		sprintf "%s(@[<hov>%s@])"
-			(operation op)
-			(String.concat "," (List.map (fun (b,_) -> annotated_bytes b) operands))
-	| Annot_Bytes_Read (content,off,len) ->
-		sprintf "READ(@[<hov>%a,@,%a,@,%s@])"
-			sprintf_helper content
-			sprintf_helper off
-			(string_of_int len)
-	| Annot_Bytes_Write (content,off,len,newbytes) ->
-		sprintf "WRITE(@[<hov>%a,@,%a,@,%s,@,%a@])"
-			sprintf_helper content
-			sprintf_helper off
-			(string_of_int len)
-			sprintf_helper newbytes
-	| Annot_Bytes_FunPtr (f,_) -> sprintf "funptr(%s)" (fundec f)
-	| Annot_Bytes(varinf,_) -> varinf.vname
-
-and annotated_bytes_list (abl:annotated_bytes list) : string =
-(*	annotated_bytes (Annot_Bytes_Op(OP_LAND,List.map (fun b -> (b,TVoid [])) abl))*)
-	String.concat "\nAND\n" (List.map annotated_bytes abl)
-
 and
 
 operation op =
