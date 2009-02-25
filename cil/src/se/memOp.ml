@@ -583,6 +583,7 @@ let state__clone_bytes state bytes =
         | Bytes_FunPtr (_) -> (merge [],bytes)
     and
     traverse_bytes_list bytesTypLst process merge =
+      let (fact,lst) = 
       List.fold_left 
         (fun (fact,lst) (bytes_elm,typ) ->
             let (fact2,bytes_elm') = traverse_bytes bytes_elm process merge in
@@ -590,16 +591,49 @@ let state__clone_bytes state bytes =
         )   
         (merge [],[]) 
         bytesTypLst
+      in (fact,List.rev lst)
     in
-    let extract_mapping arr =  (* TODO *)
-      ([],arr)
-    and extract_merge lst = (* TODO *)
-      []
+    let extract_mapping arr =  
+      let (mapping,lst) = 
+      ImmutableArray.fold_left 
+          (fun ((mfrom,mto),lst) byte ->
+             match byte with 
+               | Byte_Concrete(_) -> ((mfrom,mto),byte::lst)
+               | Byte_Symbolic(s) -> 
+                   let new_s = symbol__next () in
+                    ((s::mfrom,new_s::mto),(Byte_Symbolic(new_s))::lst)
+               | Byte_Bytes(_,_) -> failwith "state__clone_bytes: Byte_Bytes not supported"
+          )
+          (([],[]),[])
+          arr
+      in (mapping,ImmutableArray.of_list (List.rev lst))
+    and extract_merge lst = 
+      List.fold_left
+         ( fun (af,at) (bf,bt) -> (List.rev_append af bf,List.rev_append at bt))
+         ([],[])
+         lst
     in
     let (mapping,cloned_bytes) = traverse_bytes bytes extract_mapping extract_merge in
-    let rec apply_mapping arr = (* TODO *)
-      (* use mapping *)
-      (true,arr)
+    let rec apply_mapping arr = 
+      let (truth,lst) = 
+      ImmutableArray.fold_left 
+          (fun (truth,lst) byte ->
+             match byte with 
+               | Byte_Concrete(_) -> (truth,byte::lst)
+               | Byte_Symbolic(s) -> 
+                     let rec impl mapping = 
+                     match mapping with
+                       | ([],[]) -> (truth,byte::lst)
+                       | (h_from::t_from,h_to::t_to) -> 
+                           if (s==h_from) then (true,(Byte_Symbolic(h_to))::lst)
+                           else impl (t_from,t_to)
+                       | _ -> failwith "state__clone_bytes: unreachable"
+                     in impl mapping
+               | Byte_Bytes(_,_) -> failwith "state__clone_bytes: Byte_Bytes not supported"
+          )
+          (false,[])
+          arr
+      in (truth,ImmutableArray.of_list (List.rev lst))
     and apply_merge lst =
       match lst with [] -> false | h::t -> h || (apply_merge t)
     in

@@ -51,7 +51,7 @@ int __SET_FIND(void** ret,__SET* set,int (*pred)(void*)){
 		__SET_ADD(newobj,set);
 	}// TODO: delete newobj will delete constraints that only associate with newobj.
 	else
-		__ASSUME(!pred(set->rest));
+		__ASSUME(!pred(set->rest)); // PROBLEM: cil converts not(!) into if statements
 	return nr;
 }
 
@@ -117,9 +117,9 @@ int main(){
 	//	printf("%s\n",a->name);
 	//}
 
-	channel_name_equal__target = target_channel;
-	num = __SET_FIND(&a,&My_Channels,channel_name_equal);
-	__ASSERT(num<=2);
+	//channel_name_equal__target = target_channel;
+	//num = __SET_FIND(&a,&My_Channels,channel_name_equal);
+	//__ASSERT(num<=2);
 	//__ASSERT(num==1);
 	
 	return 0;
