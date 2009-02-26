@@ -85,13 +85,13 @@ quit
 	__SYMBOLIC(&tunable_ascii_download_enable);
 	__SYMBOLIC(&tunable_listen);
 	__SYMBOLIC(&tunable_run_as_launching_user);
-//
-//	// Setting everything to here symbolic took 1m 43s and required 3 runs to cover
-//	__SYMBOLIC(&tunable_anonymous_enable);
-//	__SYMBOLIC(&tunable_local_enable);
-//	__SYMBOLIC(&tunable_pasv_enable);
-//	__SYMBOLIC(&tunable_port_enable);
-//	__SYMBOLIC(&tunable_chroot_local_user);
+
+	// Setting everything to here symbolic took 1m 43s and required 3 runs to cover
+	__SYMBOLIC(&tunable_anonymous_enable);
+	__SYMBOLIC(&tunable_local_enable);
+	__SYMBOLIC(&tunable_pasv_enable);
+	__SYMBOLIC(&tunable_port_enable);
+	__SYMBOLIC(&tunable_chroot_local_user);
 //	// Setting everything to here symbolic took 7m 4s and required 5 runs to cover (but there were errors)
 //	__SYMBOLIC(&tunable_anon_mkdir_write_enable);
 //	__SYMBOLIC(&tunable_anon_other_write_enable);
@@ -184,5 +184,5 @@ quit
 //		cp = strchr(cp+1,'?');
 //	}
 //	IOSIM_addfile("/etc/vsftpd.conf",defaultConfFile);
-	return 0;
+	return;
 }
