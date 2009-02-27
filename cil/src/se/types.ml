@@ -199,17 +199,17 @@ let emptyHistory = {
 	bytesToVars = [];
 }
 
-(** A set of path conditions *)
-module PcSet = Set.Make
+(** A set of (path condition, execution history) pairs *)
+module PcHistSet = Set.Make
 	(struct
-		type t = bytes list
+		type t = bytes list * executionHistory
 		let compare = compare
 	end)
 
 (** This maps (Cil.exp,Cil.location) pairs to a pair (T_set,F_set) of
-	PcSet refs, which are the sets of path conditions under which we
+	PcHistSet refs, which are the sets of path conditions under which we
 	took the true branch and false branch, respectively, of this condition. *)
-let branches_taken : (Cil.exp * Cil.location, PcSet.t ref * PcSet.t ref) Hashtbl.t =
+let branches_taken : (Cil.exp * Cil.location, PcHistSet.t ref * PcHistSet.t ref) Hashtbl.t =
 	Hashtbl.create 100
 
 module SymbolSet = Set.Make

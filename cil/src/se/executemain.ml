@@ -185,26 +185,26 @@ let finish_up () =
 			and cmpByLoc ((_,loc1),_) ((_,loc2),_) = Cilutility.compareLoc loc1 loc2
 			in
 			let sortedList = List.sort cmpByLoc hashtblAsList and
-					printPcSet pcSet =
+					printPcHistSet pcHistSet =
 						let counter = ref 0 in
-						PcSet.iter
-							(fun pc ->
-								let str = To_string.bytes_list pc in
+						PcHistSet.iter
+							(fun (pc,hist) ->
+								let str = To_string.humanReadablePc pc hist.bytesToVars in
 								counter := !counter + 1;
 								print_endline ("Condition " ^ (string_of_int !counter) ^ ":");
-								print_endline (if str = "" then "[None]" else str);
+								print_endline (if str = "" then "true" else str);
 								print_newline ())
-							pcSet
+							pcHistSet
 			in
 			List.iter
-				(fun ((exp,loc), (true_pcSet_ref,false_pcSet_ref)) ->
+				(fun ((exp,loc), (true_pcHistSet_ref,false_pcHistSet_ref)) ->
 					print_endline ((To_string.location loc) ^ ", " ^ (To_string.exp exp));
-					if not (PcSet.is_empty !true_pcSet_ref) then
+					if not (PcHistSet.is_empty !true_pcHistSet_ref) then
 						(print_endline "True branch taken under the following conditions:";
-						 printPcSet !true_pcSet_ref);
-					if not (PcSet.is_empty !false_pcSet_ref) then
+						 printPcHistSet !true_pcHistSet_ref);
+					if not (PcHistSet.is_empty !false_pcHistSet_ref) then
 						(print_endline "False branch taken under the following conditions:";
-						 printPcSet !false_pcSet_ref);
+						 printPcHistSet !false_pcHistSet_ref);
 					print_newline ())
 				sortedList
 		end;
@@ -265,7 +265,7 @@ let finish_up () =
 		List.iter
 			(fun (pc,hist) ->
 				 print_newline ();
-				 print_endline (To_string.bytes_list pc ^ "\n");
+				 print_endline (To_string.humanReadablePc pc hist.bytesToVars ^ "\n");
 
 				 let mentionedSymbols = allSymbolsInList pc in
 				 let valuesForSymbols = Stp.getValues pc (SymbolSet.elements mentionedSymbols) in
@@ -308,7 +308,7 @@ let finish_up () =
 					 | _ -> failwith "Impossible: symbolic bytes must be a ByteArray"
 				 in
 
-				 print_endline "\nFor example:";
+				 print_endline "For example:";
 				 List.iter
 					 (fun (bytes,varinf) ->
 							match getVal bytes with

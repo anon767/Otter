@@ -445,7 +445,9 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 				) with Function.Notification_Exit ->
 					(* If it was [Exit], there is no job to return *)
 					Output.set_mode Output.MSG_MUSTPRINT;
-					Output.print_endline "exit() called.";
+					Output.print_endline "exit() called\nPath condition:";
+					Output.print_endline
+						(To_string.humanReadablePc state.path_condition exHist.bytesToVars);
 					coverage := (state.path_condition, exHist) :: !coverage;
 					[]
 
@@ -464,9 +466,16 @@ let exec_stmt job =
 		edgesTaken = EdgeSet.add (exHist.prevStmt,stmt) exHist.edgesTaken;
 		prevStmt = stmt;
 	} in
+
+	if !Output.runningJobId <> job.jid then (
+		Output.runningJobId := job.jid;
+		Output.set_mode Output.MSG_MUSTPRINT;
+		Output.print_endline "\nChanging running job\n";
+	);
+	Output.runningJobDepth := (List.length job.state.path_condition);
+
 	Output.set_mode Output.MSG_STMT;
 	Output.set_cur_loc (Cil.get_stmtLoc stmt.skind);
-	Output.runningJob := job.jid;
 	Output.print_endline (To_string.stmt stmt);
 	match stmt.skind with
 		| Instr (instrs) ->
@@ -529,7 +538,9 @@ let exec_stmt job =
 					match state.callContexts with
 							[] -> (* Returning from main *)
 								Output.set_mode Output.MSG_MUSTPRINT;
-								Output.print_endline "Program execution finished";
+								Output.print_endline "Program execution finished\nPath condition:";
+								Output.print_endline
+									(To_string.humanReadablePc state.path_condition exHist.bytesToVars);
 								coverage := (state.path_condition, nextExHist) :: !coverage;
 								[] (* This job is complete *)
 						| (destOpt,_,Some nextStmt)::_ ->
@@ -568,7 +579,7 @@ let exec_stmt job =
 								try
 									let pcSet_ref = which (Hashtbl.find branches_taken (exp,loc)) in
 									(* Add the path condition to the list of ways we take this branch *)
-									pcSet_ref := PcSet.add state.path_condition !pcSet_ref
+									pcSet_ref := PcHistSet.add (state.path_condition,nextExHist) !pcSet_ref
 								with Not_found ->
 									(* We haven't hit this conditional before. Initialize its entry in
 										 the branch coverage table with the current path condition (and
@@ -576,8 +587,8 @@ let exec_stmt job =
 									Hashtbl.add
 										branches_taken
 										(exp,loc)
-										(let res = (ref PcSet.empty, ref PcSet.empty) in
-										which res := PcSet.singleton state.path_condition;
+										(let res = (ref PcHistSet.empty, ref PcHistSet.empty) in
+										which res := PcHistSet.singleton (state.path_condition,nextExHist);
 										res)
 							end;
 						let nextStmt = match stmt.succs with
@@ -1001,7 +1012,9 @@ let rec main_loop = function
 				Output.print_endline
 					(Printf.sprintf "Error \"%s\" occurs at %s" fail
 						 (To_string.location !Output.cur_loc));
-				Output.print_endline "Abandoning branch";
+				Output.print_endline "Abandoning branch\nPath condition:";
+				Output.print_endline
+					(To_string.humanReadablePc job.state.path_condition job.exHist.bytesToVars);
 				abandonedPaths :=
 					job.state.path_condition :: !abandonedPaths;
 				main_loop jobs

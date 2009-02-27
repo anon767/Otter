@@ -20,17 +20,18 @@ let time_elapsed () =
 let cur_loc = ref Cil.locUnknown;;
 let set_cur_loc loc = cur_loc := loc;;
 
-let runningJob = ref 0
+let runningJobId = ref 0
+let runningJobDepth = ref 0
 let jidCounter = ref 0
 
-let internalIndent = ref 0;;
+(*let internalIndent = ref 0;;*)
 
 let print_loc loc = 
   if loc==Cil.locUnknown then "" else
   loc.Cil.file^":"^(string_of_int loc.Cil.line)^" : ";;
 
 let getIndent () = 
-	Printf.sprintf "[%d] %s " !runningJob (print_loc (!cur_loc))
+	Printf.sprintf "[%d,%d] %s " !runningJobId !runningJobDepth (print_loc (!cur_loc))
 ;;
 	(*
   let rec f x = if x<=0 then "" else "    "^(f (x-1)) in
@@ -50,7 +51,7 @@ let insertIndent str =
 	in
 		impl str
 ;;
-
+(*
 let increase () =
 	internalIndent := (!internalIndent)+1
 ;;
@@ -58,7 +59,7 @@ let increase () =
 let decrease () =
 	internalIndent := (!internalIndent)-1
 ;;
-
+*)
 
 type msg_type = 
 	| MSG_REG

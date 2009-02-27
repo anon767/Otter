@@ -229,3 +229,50 @@ memory_block block =
 
 
 ;;
+
+let humanReadableBytes bytesToVars bytes =
+	let rec helper bytes =
+		match bytes with
+			| Bytes_Constant _ -> bytes_ff str_formatter bytes; flush_str_formatter ()
+			| Bytes_ByteArray arr -> (
+					try (List.assoc bytes bytesToVars).vname
+					with Not_found -> bytes_ff str_formatter bytes; flush_str_formatter ()
+				)
+			| Bytes_Address (memBlockOpt,offsetBytes) -> (
+					Printf.sprintf "addrOf(%s,%s)"
+						(match memBlockOpt with None -> "null" | Some blk -> memory_block blk)
+						(helper offsetBytes)
+				)
+			| Bytes_Op (OP_LNOT,[(byts,_)]) ->
+					"!" ^ helper byts
+			| Bytes_Op (OP_LAND,bytes_typ_list) ->
+					Printf.sprintf "(%s)"
+						(String.concat " /\\ " (List.map (fun (a,_) -> helper a) bytes_typ_list))
+			| Bytes_Op (OP_LOR,bytes_typ_list) ->
+					Printf.sprintf "(%s)"
+						(String.concat " \\/ " (List.map (fun (a,_) -> helper a) bytes_typ_list))
+			| Bytes_Op (op,bytes_typ_list) ->
+					Printf.sprintf "%s(%s)"
+						(operation op)
+						(String.concat "," (List.map (fun (a,_) -> helper a) bytes_typ_list))
+			| Bytes_Read (srcBytes,offsetBytes,len) ->
+					Printf.sprintf "READ(%s,%s,%d)"
+						(helper srcBytes)
+						(helper offsetBytes)
+						len
+			| Bytes_Write (writeToTheseBytes,offsetBytes,len,writeTheseBytes) ->
+					Printf.sprintf "WRITE(%s,%s,%d,%s)"
+						(helper writeToTheseBytes)
+						(helper offsetBytes)
+						len
+						(helper writeTheseBytes)
+			| Bytes_FunPtr (fundec,_) ->
+					Printf.sprintf "funptr(%s:%s)"
+						fundec.svar.vname
+						(typ fundec.svar.vtype)
+	in
+	helper bytes
+
+let humanReadablePc pc bytesToVars =
+	String.concat " /\\ "
+		(List.map (humanReadableBytes bytesToVars) pc)
