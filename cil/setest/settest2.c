@@ -1,3 +1,4 @@
+// TODO: change this test to make it look more close to the real one
 /******** START IMPLEMENTATION ***********/
 
 // temporary
@@ -51,7 +52,8 @@ int __SET_FIND(void** ret,__SET* set,int (*pred)(void*)){
 		__SET_ADD(newobj,set);
 	}// TODO: delete newobj will delete constraints that only associate with newobj.
 	else
-		__ASSUME(!pred(set->rest)); // PROBLEM: cil converts not(!) into if statements
+		// Use NOT here because cil converts (!) into if statements
+		__ASSUME(NOT(pred(set->rest))); 
 	return nr;
 }
 
@@ -84,6 +86,7 @@ void* channel_clone(void* src_void){
 	CHANNEL* tar = make_symbolic_channel();
 	__CLONE(&tar->data,&src->data,sizeof(int));
 	__CLONE(tar->name,src->name,1); // 1 is temporary
+	__ASSUME(NOT(__STRING_EQUAL(tar->name,src->name)));
 	return tar;
 }
 
@@ -97,29 +100,33 @@ int main(){
 
 
 	__SET_INIT(&My_Channels,make_symbolic_channel(),channel_clone);
+	
+	// May not really need the set constraints...
+	//
 	//__SET_CONSTRAIN(
 	//		__FORALL(&a,&My_Channels, 
 	//		__FORALL(&b,&My_Channels, 
 	//		__IMPLY((a!=b),(!__STRING_EQUAL(a->name,b->name)))
 	//	)));
 
+	
 	channel_name_equal__target = target_channel;
 	num = __SET_FIND(&a,&My_Channels,channel_name_equal);
 	__ASSERT(num<=1);
 
-	//if(num==0){
-	//	CHANNEL* new_channel = make_symbolic_channel();
-	//	__ASSUME(__STRING_EQUAL(new_channel->name,target_channel));
-	//	__SET_ADD(new_channel,&My_Channels);
-	//}
+	if(num==0){
+		CHANNEL* new_channel = make_symbolic_channel();
+		__ASSUME(__STRING_EQUAL(new_channel->name,target_channel));
+		__SET_ADD(new_channel,&My_Channels);
+	}
 
 	//__SET_FOREACH(&a,&My_Channels){
 	//	printf("%s\n",a->name);
 	//}
 
-	//channel_name_equal__target = target_channel;
-	//num = __SET_FIND(&a,&My_Channels,channel_name_equal);
-	//__ASSERT(num<=2);
+	channel_name_equal__target = target_channel;
+	num = __SET_FIND(&a,&My_Channels,channel_name_equal);
+	__ASSERT(num<=2);
 	//__ASSERT(num==1);
 	
 	return 0;
