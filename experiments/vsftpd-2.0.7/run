@@ -12,19 +12,20 @@ fi
 LIBCDIR=~/symexe/libc
 MOCKEDDIR=~/symexe/mockedFns
 
-if [ "$MERGE" == 1 ]; then
-	echo "Merging"
-	../../cil/bin/cilly --merge --useLogicalOperators --out=vsftpd_comb.c \
-		*.c otherFiles/libc_comb.c $MOCKEDDIR/*.c -I $MOCKEDDIR -I $LIBCDIR \
-		-include $MOCKEDDIR/symexe.h --warnall $*
-elif [ "$1" == libc ]; then
+if [ "$1" == libc ]; then
 	echo "Merging libc"
 	../../cil/bin/cilly --merge --useLogicalOperators --out=otherFiles/libc_comb.c \
 		-I $LIBCDIR $LIBCDIR/*.c --warnall
+elif [ "$MERGE" == 1 ]; then
+	echo "Merging"
+	../../cil/bin/cilly --merge --useLogicalOperators --out=vsftpd_comb.c \
+		-D_FILE_OFFSET_BITS=64 \
+		-I $LIBCDIR -I $MOCKEDDIR -include $MOCKEDDIR/symexe.h \
+		*.c otherFiles/libc_comb.c $MOCKEDDIR/*.c --warnall $*
 else
 	echo "Doing symbolic execution"
 	# TODO: allow arguments to have spaces
 	../../cil/bin/cilly --merge --useLogicalOperators \
-		vsftpd_comb.c -I $MOCKEDDIR \
+		-D_FILE_OFFSET_BITS=64 -I $MOCKEDDIR vsftpd_comb.c \
 		 --warnall --domakeCFG --doexecute $*
 fi
