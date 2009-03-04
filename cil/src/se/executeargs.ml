@@ -54,7 +54,7 @@ type run_args =
 	{
 		mutable arg_run_regression : bool;
 		mutable arg_cmdline_argvs : string list;
-		mutable arg_symbolic_extern_fns : bool;
+(*		mutable arg_symbolic_extern_fns : bool;*)
 		mutable arg_branch_coverage : bool;
 		mutable arg_timeout : int;
 		(** How many seconds to allow the executor to run. *)
@@ -65,7 +65,7 @@ let run_args =
 	{
 		arg_run_regression = false;
 		arg_cmdline_argvs = [];
-		arg_symbolic_extern_fns = false;
+(*		arg_symbolic_extern_fns = false;*)
 		arg_branch_coverage = false;
 		arg_timeout = 0;
 		arg_merge_branches = false;

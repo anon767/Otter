@@ -114,3 +114,11 @@ let exists p arr =
 		else p (get arr i) || exists_aux (succ i)
 	in
 	exists_aux 0
+
+let for_all p arr =
+	let rec for_all_aux i =
+		if i >= length arr
+		then true
+		else p (get arr i) && for_all_aux (succ i)
+	in
+	for_all_aux 0

@@ -165,11 +165,21 @@ let rec bytes__read bytes off len =
 		(* try to inflate any Bytes_ByteArray of Byte_Bytes *)
 		match ret_bytes with
 			| Bytes_ByteArray(bytearray) ->
-				let byte = ImmutableArray.get bytearray 0 in 
-				begin match byte with
-					| Byte_Bytes(condensed_bytes,i) -> condensed_bytes
-					| _ -> ret_bytes
-				end
+					begin match ImmutableArray.get bytearray 0 with
+						| Byte_Bytes(condensed_bytes,0) when
+								(* Make sure length agrees, and that each byte is the
+									 correct one. *)
+								bytes__length condensed_bytes = len &&
+								(let n = ref 0 in
+								 ImmutableArray.for_all
+									 (function
+												Byte_Bytes(b,i) when i = !n && b == condensed_bytes ->
+													incr n; true
+											| _ -> false)
+									 bytearray)
+								-> condensed_bytes
+						| _ -> ret_bytes
+					end
 			| _ -> ret_bytes
 ;;
 

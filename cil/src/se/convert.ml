@@ -225,7 +225,10 @@ let rec bytes_to_constant bytes typ : Cil.constant =
 			let exp =	Cil.kinteger64 ikind n64 in
 				(match exp with Const(const) -> const | _ -> failwith "unreachable")
 		| TNamed(tinfo,_) -> bytes_to_constant bytes tinfo.ttype
-        | TFloat(fkind,_) -> (*TMP*) CReal(0.1,fkind,None)
+		| TFloat(fkind,_) -> (*TMP*) CReal(0.1,fkind,None)
+		| TEnum (enuminf,_) ->
+				(* An enum has type int. [Standard 6.7.2.2.2, but I'm confused by 6.7.2.2.4] *)
+				bytes_to_constant bytes (TInt (IInt,[]))
 		| t ->	
 			begin match bytes with
 				| Bytes_Constant(c) -> c
@@ -253,11 +256,9 @@ let rec bytes_to_address bytes : memory_block option*bytes =
 			
 
 (** True if bytearray is concrete *)
+(* Shouldn't a Byte_Bytes with concrete values be considered concrete, too? *)
 let isConcrete_bytearray (bytearray : byte ImmutableArray.t) =
-	not (ImmutableArray.exists (function Byte_Concrete _ -> false | _ -> true) bytearray)
-(*	ImmutableArray.fold_left 
-		(fun a b -> a && match b with Byte_Concrete(_)-> true | _ -> false) 
-		true bytearray*)
+	ImmutableArray.for_all (function Byte_Concrete _ -> true | _ -> false) bytearray
 	;;
 
 (** True if bytes is concrete *)

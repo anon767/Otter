@@ -85,11 +85,11 @@ let from_varinfo state varinfo args =
 		| f ->
 				try
 					Ordinary(Cilutility.search_function varinfo)
-				with (Failure (x))-> 
-					if Executeargs.run_args.arg_symbolic_extern_fns then
+				with Not_found ->
+(*					if Executeargs.run_args.arg_symbolic_extern_fns then
 						(Output.print_endline(varinfo.vname^" is undefined; returning fresh symbolic value.");
 						 NotFound)
-					else
+					else*)
 						failwith ("Function "^varinfo.vname^" not found.")
 	end
 ;;
