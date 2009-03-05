@@ -1,0 +1,81 @@
+.\"
+.\" $Id: ngircd.8.tmpl,v 1.2 2007/11/15 01:03:29 fw Exp $
+.\"
+.TH ngircd 8 "August 2005" ngircd "ngIRCd Manual"
+.SH NAME
+ngIRCd \- the next generation IRC daemon
+.SH SYNOPSIS
+.B ngircd [
+.I Options
+.B ]
+.SH DESCRIPTION
+.BR ngIRCd
+is a free open source daemon for the Internet Relay Chat (IRC),
+developed under the GNU General Public License (GPL).
+.PP
+It's written from scratch and is not based upon the original IRCd like
+many others. It is easy to configure, supports server links (even with
+original ircd's) and runs on hosts with changing IP addresses (such as
+dial-in networks).
+.PP
+Currently supported platforms include AIX, A/UX, FreeBSD, HP-UX, IRIX,
+Linux, Mac OS X, NetBSD, OpenBSD, Solaris, and Windows with Cygwin.
+.PP
+As ngIRCd relies on UNIX standards and uses GNU automake and GNU autoconf
+there are good chances that it also supports other UNIX-based operating
+systems as well. By default, ngIRCd writes diagnostic and informational messages using
+the syslog mechanism.
+.SH OPTIONS
+The default behaviour of
+.BR ngircd
+is to read its standard configuration file (see below), to detach from the
+controlling terminal and to wait for clients.
+.PP
+You can use these options to modify this default:
+.TP
+\fB\-f\fR \fIfile\fR, \fB\-\-config\fR \fIfile\fR
+Use
+.I file
+as configuration file.
+.TP
+\fB\-n\fR, \fB\-\-nodaemon\fR
+Don't fork a child and don't detach from controlling terminal.
+All log messages go to the console and you can use CTRL-C to
+terminate the server.
+.TP
+\fB\-p\fR, \fB\-\-passive\fR
+Disable automatic connections to other servers. You can use the IRC command
+CONNECT later on as IRC Operator to link this ngIRCd to other servers.
+.TP
+\fB\-t\fR, \fB\-\-configtest\fR
+Read, validate and display the configuration; then exit.
+.TP
+\fB\-\-version\fR
+Output version information and exit.
+.TP
+\fB\-\-help\fR
+Display a brief help text and exit.
+.SH FILES
+.I :ETCDIR:/ngircd.conf
+.RS
+The system wide default configuration file.
+.RE
+.I :ETCDIR:/ngircd.motd
+.RS
+Default "message of the day" (MOTD).
+.RE
+.SH AUTHOR
+Alexander Barton,
+.UR mailto:alex@barton.de
+alex@barton.de
+.UE
+.br
+Homepage:
+.UR http://ngircd.barton.de/
+http://ngircd.barton.de/
+.UE
+.SH "SEE ALSO"
+.BR ngircd.conf (5),
+.BR ircd (8)
+.\"
+.\" -eof-

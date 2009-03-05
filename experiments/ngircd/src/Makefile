@@ -1,6 +1,6 @@
 # Remember to change the DIRs for your system!
 CURDIR=.
-CIL_DIR=/Users/kkma/repo/symexe/cil/
+CIL_DIR=/Users/kkma/s/cil/
 
 VERSION=ngircd-0.12.0
 NGIRCD_DIR=$(CURDIR)/$(VERSION)
