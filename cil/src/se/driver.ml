@@ -170,6 +170,25 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
                           | _ -> failwith "Clone error"
                        end
 
+                    | Function.Given -> 
+						begin match blkOffSizeOpt with
+							| None -> state 
+							| Some dest ->
+                                let truthvalue = 
+                                  begin
+                                  if List.length exps <> 2 then 
+                                    failwith "__GIVEN takes 2 arguments"
+                                  else
+                                  let given = Eval.rval state (List.nth exps 0) in
+				                  let rv = Eval.rval state (List.nth exps 1 ) in
+				                  let truth = Stp.eval (given::state.path_condition) rv in
+				                  if truth == Stp.True then Convert.lazy_int_to_bytes 1 
+				                  else if truth == Stp.False then Convert.lazy_int_to_bytes 0
+				                  else MemOp.bytes__symbolic 4
+                                  end
+                                in
+								MemOp.state__assign state dest truthvalue
+						end
                     | Function.TruthValue -> 
 						begin match blkOffSizeOpt with
 							| None -> state 
@@ -207,10 +226,9 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 										then Errormsg.s
 											(Errormsg.error "Can't assign two tracked values to variable %s" varinf.vname);
 
-										let isWritable = (*if List.length exps > 1 then false else*) true in
 										let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
 										let (block,offset) = Eval.lval state lval in
-										let symbBytes = (MemOp.bytes__symbolic size isWritable) in
+										let symbBytes = (MemOp.bytes__symbolic size ) in
 										Output.set_mode Output.MSG_MUSTPRINT;
 										Printf.printf "%s = %s\n"
 											varinf.vname
@@ -224,7 +242,6 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 											| None ->
 													state
 											| Some (block,offset,size) ->
-													let isWritable = (*if List.length exps > 1 then false else*) true in
 													let ssize = match exps with
 														| [] -> size
 														| [CastE (_, h)] | [h] ->
@@ -233,7 +250,7 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 														| _ -> failwith "__SYMBOLIC takes at most one argument"
 													in
 													MemOp.state__assign state (block,offset,size (*ssize?*))
-														(MemOp.bytes__symbolic ssize isWritable)
+														(MemOp.bytes__symbolic ssize )
 										end
 						)
 
@@ -247,10 +264,9 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 										let size_bytes = Eval.rval state (List.hd exps) in
 												Convert.bytes_to_int_auto size_bytes 
 									in
-									let isWritable = (*if List.length exps > 1 then false else*) true in
 									let ssize =	size in
 									let state2 = if  MemOp.loc_table__has state (loc,key) then state
-										else MemOp.loc_table__add state (loc,key) (MemOp.bytes__symbolic ssize isWritable)
+										else MemOp.loc_table__add state (loc,key) (MemOp.bytes__symbolic ssize )
 									in
 									let newbytes = MemOp.loc_table__get state2 (loc,key) in
 										MemOp.state__assign state2 dest newbytes
@@ -272,7 +288,7 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 								| None -> 
 										state
 								| Some (block,offset,size as dest) ->
-										MemOp.state__assign state dest (MemOp.bytes__symbolic size true)
+										MemOp.state__assign state dest (MemOp.bytes__symbolic size )
 							end
 						
 					| Function.Exit -> raise Function.Notification_Exit
@@ -804,7 +820,7 @@ let mergeJobs job jobSet =
 									) else (
 										numSymbolsCreated := !numSymbolsCreated + size;
 										if !numSymbolsCreated > 100 then raise TooDifferent;
-										let symbBytes = MemOp.bytes__symbolic size true in
+										let symbBytes = MemOp.bytes__symbolic size in
 										let jobImplication =
 											(* jobPCBytes => symbBytes == jobBytes, i.e. ~jobPCBytes \/ symbBytes == jobBytes *)
 											Bytes_Op(OP_LOR,

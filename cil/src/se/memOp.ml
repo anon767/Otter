@@ -7,10 +7,9 @@ open Types
 (* negative id is used as special symbolic values.
    0 is used for the symbolic byte representing uninitialized memory *)
 let symbol__currentID = ref 1;;
-let symbol__next isWritable = 
+let symbol__next () = 
 	{	
 		symbol_id = Utility.next_id symbol__currentID; 
-		(*symbol_writable = isWritable;*)
 	} ;;
 
 let char__random () = Char.chr ((Random.int 255)+1);;
@@ -22,11 +21,12 @@ let byte__make c = Byte_Concrete c;;
 let byte__zero = byte__make ('\000');;
 let byte__111 = byte__make ('\255');;
 let byte__random () = byte__make (char__random ());;
-let byte__symbolic isWritable = Byte_Symbolic (symbol__next isWritable);;
+let byte__symbolic () = Byte_Symbolic (symbol__next ());;
+(*
 let byte__symbolic_with_id id isWritable = 
 	assert (id>0);
-	Byte_Symbolic ({symbol_id = -id; (*symbol_writable=isWritable;*)})
-;;
+	Byte_Symbolic ({symbol_id = -id; })
+;;*)
 
 (*
 let rec
@@ -79,9 +79,9 @@ let bytes__random n =
 	Bytes_ByteArray(impl 0 (ImmutableArray.make n byte__zero))
 ;;
 
-let bytes__symbolic n isWritable =
+let bytes__symbolic n =
 	let rec impl len = 
-		if len <= 0 then [] else (byte__symbolic isWritable)::(impl (len-1))
+		if len <= 0 then [] else (byte__symbolic ())::(impl (len-1))
 	in
 		bytes__of_list (impl n)
 ;;
@@ -183,17 +183,6 @@ let rec bytes__read bytes off len =
 			| _ -> ret_bytes
 ;;
 
-(*
-let bytes__isWritable bytes =
-	match bytes with
-		| Bytes_ByteArray(ba) ->
-			ImmutableArray.fold_left (fun a b -> match b with Byte_Symbolic(s) when s.symbol_writable=false 
-			-> false | _ -> a) true ba
-		| Bytes_Constant(c) -> true
-		| _-> true (*TODO *)
-;;
-*)
-	
 let bytes__write bytes off len newbytes =
 	let rec do_write bytes off len newbytes =
 		match bytes,off,newbytes with
@@ -233,11 +222,6 @@ let bytes__write bytes off len newbytes =
 
 			| _ -> Bytes_Write (bytes,off,len,newbytes)
 	in
-	(*
-	if not (bytes__isWritable (bytes__read bytes off len))  then
-		do_write bytes off len (bytes__symbolic len false)
-	else 
-	*)
 	if (bytes__length bytes)=len && (Convert.isConcrete_bytes off) && (Convert.bytes_to_int_auto off = 0) then 
       newbytes 
 	else
@@ -325,7 +309,7 @@ let frame__add_varinfo frame block_to_bytes varinfo =
 	let fresh_block = block__make (To_string.varinfo varinfo) size Block_type_Local in
 (*	let bytes = Bytes_ByteArray ({ImmutableArray.empty with ImmutableArray.length = size}) in (* initially undefined (so any accesses will crash the executor) *) *)
 (*	let bytes = bytes__make_default size byte__undef in (* initially the symbolic 'undef' byte *) *)
-	let bytes = bytes__symbolic size true in (* initially symbolic *)
+	let bytes = bytes__symbolic size in (* initially symbolic *)
 		frame__add_varinfo_initialized frame block_to_bytes varinfo bytes fresh_block
 ;;
 
@@ -354,7 +338,7 @@ let string_table__get block =
 (** Vargs table
  *)
 let vargs_table__add state byteslst : state*bytes =
-	let key = bytes__symbolic 4 true in
+	let key = bytes__symbolic 4 in
 	let va_arg_map2 = VargsMap.add key byteslst state.va_arg_map in
 		({state with va_arg_map = va_arg_map2;},key)
 ;;
