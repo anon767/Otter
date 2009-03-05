@@ -65,6 +65,19 @@ void __SET_ADD_INTERNAL(void* newobj, __SET* set){
 	set->head[0] = newelm;
 }
 
+void __SET_ITERATE(__SET* set,void (*iterate)(void*)){
+	__SET_ELM* cur;
+	for(int i=0;i<2;i++){
+		cur = set->head[i];
+		while(cur!=0){
+			iterate(cur->elm);
+			cur = cur->next;
+		}
+	}
+	void* newobj = set->clone(set->rest);
+	__SET_ADD_INTERNAL(newobj,set);
+}
+
 void __SET_FOREACH(void** ret,__SET* set){
 	__SET_ELM* cur;
 	for(int i=0;i<2;i++){
@@ -97,7 +110,8 @@ int __SET_FIND(void** ret,__SET* set,int (*pred)(void**,void*),void** pars){
 		}
 	}
 	void* newobj = set->clone(set->rest);
-	if(__GIVEN(set->rest_constraint(newobj),pred(pars,newobj))){
+	//if(__GIVEN(set->rest_constraint(newobj),pred(pars,newobj))){
+	if(pred(pars,newobj)){
 		nr++;
 		*ret = newobj;
 		__SET_ADD_INTERNAL(newobj,set);
@@ -198,14 +212,12 @@ int cl2chan_rest_constraint(void* rest_void){
 	
 	cur = cl2chan_rest_constraint_clientset->head[0];
 	while(cur!=0){
-		CL2CHAN* elm = cur->elm;
-		client_formula = OR(client_formula,elm->client==rest->client);
+		client_formula = OR(client_formula,cur->elm==rest->client);
 		cur = cur->next;
 	}
 	cur = cl2chan_rest_constraint_channelset->head[0];
 	while(cur!=0){
-		CL2CHAN* elm = cur->elm;
-		channel_formula = OR(channel_formula,elm->channel==rest->channel);
+		channel_formula = OR(channel_formula,cur->elm==rest->channel);
 		cur = cur->next;
 	}
 	return AND(client_formula,channel_formula);
@@ -217,7 +229,16 @@ void* cl2chan_clone(void* src_void){
 	__CLONE(&tar->client,&src->client,sizeof(CLIENT*));
 	__CLONE(&tar->channel,&src->channel,sizeof(CHANNEL*));
 	__ASSUME_SIMPLIFY(OR(tar->client!=src->client,tar->channel!=src->channel));
+	__ASSUME_SIMPLIFY(cl2chan_rest_constraint(tar));
 	return tar;
+}
+
+void cl2chan_iterate(void* src_void){
+	CL2CHAN* cl2chan = (CL2CHAN*)src_void;
+	//if(cl2chan->channel==chan && cl2chan->client!=client){
+	//	//conn = Client_Conn(cl2chan->client);
+	//	//Conn_SetFlag(conn,SEND_TO_USER);
+	//}
 }
 
 
@@ -225,6 +246,7 @@ void* cl2chan_clone(void* src_void){
 __SET My_Channels;
 __SET My_Clients;
 __SET My_Cl2Chan;
+
 
 
 
@@ -245,7 +267,7 @@ int IRC_JOIN(CLIENT* client,char* some_channel_name){
 	CL2CHAN* cl2chan;
 
 	// 1. if chan does not exist, create it.
-	num =  __SET_FIND(&chan,&My_Channels,channel_equal,__ARG(1,some_channel_name));
+	num =  __SET_FIND(&chan,&My_Channels,channel_equal,__ARG(1,some_channel_name));   // branch
 	__ASSERT(num>=0,num<=1);
 	
 	if(num==0){
@@ -266,20 +288,15 @@ int IRC_JOIN(CLIENT* client,char* some_channel_name){
 	num =  __SET_FIND(&cl2chan,&My_Cl2Chan,cl2chan_equal,__ARG(1,make_cl2chan(client,chan)));
 	__ASSERT(num==0);
 
-	//// 3. put client in the channel
+	// 3. put client in the channel
 	__SET_ADD(make_cl2chan(client,chan),&My_Cl2Chan);
 
 	num =  __SET_FIND(&cl2chan,&My_Cl2Chan,cl2chan_equal,__ARG(1,make_cl2chan(client,chan)));
 	__ASSERT(num==1);
 
+
 	// 4. for all y in the channel s.t. y is not the client, tell y that client joins in.
-	
-	//__SET_FORALL(&cl2chan2,&My_Cl2Chan){
-	//	if(cl2chan2->channel==chan && cl2chan->client!=client){
-	//		conn = Client_Conn(cl2chan->client);
-	//		Conn_SetFlag(conn,SEND_TO_USER);
-	//	}
-	//}
+	//__SET_ITERATE(My_Cl2Chan,cl2chan_iterate);
 	
 	return 0;
 }
