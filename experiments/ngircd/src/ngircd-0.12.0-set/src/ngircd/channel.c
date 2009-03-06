@@ -49,6 +49,10 @@ static char UNUSED id[] = "$Id: channel.c,v 1.65 2008/02/05 16:31:35 fw Exp $";
 #define REMOVE_QUIT 1
 #define REMOVE_KICK 2
 
+#ifndef __ORIGINAL_NGIRCD__
+#include "abstractset.h"
+#endif
+
 
 static CHANNEL *My_Channels;
 static CL2CHAN *My_Cl2Chan;
@@ -410,6 +414,8 @@ Channel_Search( const char *Name )
 
 	assert( Name != NULL );
 
+//#ifdef __ORIGINAL_NGIRCD__
+#ifndef __ORIGINAL_NGIRCD__
 	search_hash = Hash( Name );
 	c = My_Channels;
 	while( c )
@@ -421,6 +427,10 @@ Channel_Search( const char *Name )
 		}
 		c = c->next;
 	}
+#else
+	if(__SET_FIND(&c,__SET_My_Channels,/* some predicate */)>0)
+		return c;
+#endif
 	return NULL;
 } /* Channel_Search */
 

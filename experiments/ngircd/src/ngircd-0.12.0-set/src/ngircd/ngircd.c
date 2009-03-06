@@ -76,8 +76,19 @@ static bool NGIRCd_Init PARAMS(( bool ));
  * @param argv An array containing all the arguments passed to ngIRCd.
  * @return Global exit code of ngIRCd, zero on success.
  */
+
+//#ifndef __ORIGINAL_NGIRCD__
+//int main(){
+//	return 0;
+//}
+//#endif 
+
 GLOBAL int
+//#ifdef __ORIGINAL_NGIRCD__
 main( int argc, const char *argv[] )
+//#else
+//main_ngircd( int argc, const char *argv[] )
+//#endif
 {
 	bool ok, configtest = false;
 	bool NGIRCd_NoDaemon = false;

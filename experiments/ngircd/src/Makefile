@@ -2,7 +2,8 @@
 CURDIR=.
 CIL_DIR=/Users/kkma/s/cil/
 
-VERSION=ngircd-0.12.0
+VERSION=ngircd-0.12.0-set
+#VERSION=ngircd-0.12.0
 NGIRCD_DIR=$(CURDIR)/$(VERSION)
 
 CILLY_OPT= --merge \
@@ -21,7 +22,7 @@ CONFIG_OPT= \
 
 		#--without-poll \   # Need at least one of these. I chose poll.
 
-merge: conf
+merge: 
 	cd $(NGIRCD_DIR) && \
 	make AR="$(CILLY) --mode=AR" && \
 	mv src/ngircd/ngircd_comb.c ../$(VERSION).c

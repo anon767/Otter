@@ -1,4 +1,5 @@
 #include<stdarg.h>
+#include "abstractset.h"
 
 // Make the compiler happy (these are not executed)
 //
@@ -13,17 +14,17 @@ int __SYMBOLIC(){ return 0;}
 int __TRUTH_VALUE(int a){ return 0;}
 
 
+#define IMPLY(X,Y)	OR(NOT(X),(Y))
 
 
 /******* (temporary) ***/
-void __SYMBOLIC_STRING(char** a){
-	*a = malloc(1);
-	**a = __SYMBOLIC();
-}
-int __STRING_EQUAL(char* a,char* b){
-	return a[0]==b[0];
-}
-#define IMPLY(X,Y)	OR(NOT(X),(Y))
+//void __SYMBOLIC_STRING(char** a){
+//	*a = malloc(1);
+//	**a = __SYMBOLIC();
+//}
+//int __STRING_EQUAL(char* a,char* b){
+//	return a[0]==b[0];
+//}
 
 void** __ARG(int arg1,...){
 	va_list ap;
@@ -44,17 +45,6 @@ void __ASSUME_SIMPLIFY(int exp){
 }
 
 /******** SET IMPLEMENTATION ***********/
-typedef struct _set_elm{
-	void* elm;
-	struct _set_elm* next;
-} __SET_ELM;
-
-typedef struct _set{
-	__SET_ELM* head[2]; // 0-internal, 1-external
-	void* rest; 
-	int (*rest_constraint)(void*); // constraints that comes with rest (but not in PC)
-	void* (*clone)(void*); // how to clone an object
-} __SET;
 
 int __SET_DEFAULT_REST_CONSTRAINT(void* r){ return 1;} // unconstrained
 

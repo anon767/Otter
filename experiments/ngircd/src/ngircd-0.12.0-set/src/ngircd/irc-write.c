@@ -104,7 +104,11 @@ va_dcl
 	vsnprintf( buffer, 1000, Format, ap );
 	va_end( ap );
 
+#ifdef __ORIGINAL_NGIRCD__
 	return Conn_WriteStr( Client_Conn( Client_NextHop( Client )), ":%s %s", Get_Prefix( Client_NextHop( Client ), Prefix ), buffer );
+#else
+	return 1;
+#endif
 } /* IRC_WriteStrClientPrefix */
 
 
