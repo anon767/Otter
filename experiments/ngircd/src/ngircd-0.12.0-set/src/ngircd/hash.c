@@ -34,14 +34,10 @@ GLOBAL UINT32
 Hash( const char *String )
 {
 	/* Hash-Wert ueber String berechnen */
-#ifdef __ORIGINAL_NGIRCD__
 	char buffer[LINE_LEN];
 
 	strlcpy( buffer, String, sizeof( buffer ));
 	return jenkins_hash( (UINT8 *)ngt_LowerStr( buffer ), strlen( buffer ), 42 );
-#else
-	return 0;
-#endif
 } /* Hash */
 
 

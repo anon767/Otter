@@ -22,6 +22,7 @@ void __SET_ADD_INTERNAL(void* newobj, __SET* set);
 void __SET_ITERATE(__SET* set,void (*iterate)(void**,void*),void* pars);
 void __SET_FOREACH(void** ret,__SET* set);
 int __SET_FIND(void** ret,__SET* set,int (*pred)(void**,void*),void** pars);
+void __SET_REMOVE(void** obj, __SET* set);
 
 #endif
 /* -eof- */

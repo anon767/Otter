@@ -54,8 +54,13 @@ static char UNUSED id[] = "$Id: channel.c,v 1.65 2008/02/05 16:31:35 fw Exp $";
 #endif
 
 
+#ifdef __ORIGINAL_NGIRCD__
 static CHANNEL *My_Channels;
 static CL2CHAN *My_Cl2Chan;
+#else
+static __SET My_Channels;
+static __SET My_Cl2Chan;
+#endif
 
 
 static CL2CHAN *Get_Cl2Chan PARAMS(( CHANNEL *Chan, CLIENT *Client ));
@@ -69,8 +74,14 @@ static bool Delete_Channel PARAMS(( CHANNEL *Chan ));
 GLOBAL void
 Channel_Init( void )
 {
+#ifdef __ORIGINAL_NGIRCD__
 	My_Channels = NULL;
 	My_Cl2Chan = NULL;
+#else
+	// TODO: initialization
+	__SET_INIT(&My_Channels,Channel_Rest,Channel_Clone,0);
+	__SET_INIT(&My_Cl2Chan,Cl2Chan_Rest,Cl2Chan_Clone,Cl2Chan_Rest_constraint);
+#endif
 } /* Channel_Init */
 
 
@@ -154,6 +165,7 @@ Channel_Exit( void )
 	CL2CHAN *cl2chan, *cl2chan_next;
 
 	/* Channel-Strukturen freigeben */
+#ifdef __ORIGINAL_NGIRCD__
 	c = My_Channels;
 	while( c )
 	{
@@ -162,8 +174,12 @@ Channel_Exit( void )
 		free( c );
 		c = c_next;
 	}
+#else
+	// TODO: clear My_Channels 
+#endif
 
 	/* Channel-Zuordnungstabelle freigeben */
+#ifdef __ORIGINAL_NGIRCD__
 	cl2chan = My_Cl2Chan;
 	while( c )
 	{
@@ -171,6 +187,9 @@ Channel_Exit( void )
 		free( cl2chan );
 		cl2chan = cl2chan_next;
 	}
+#else
+	// TODO: clear My_Cl2Chan 
+#endif
 } /* Channel_Exit */
 
 
@@ -291,6 +310,7 @@ Channel_Quit( CLIENT *Client, char *Reason )
 
 	IRC_WriteStrRelatedPrefix( Client, Client, false, "QUIT :%s", Reason );
 
+#ifdef __ORIGINAL_NGIRCD__
 	c = My_Channels;
 	while( c )
 	{
@@ -298,6 +318,10 @@ Channel_Quit( CLIENT *Client, char *Reason )
 		Remove_Client( REMOVE_QUIT, c, Client, Client, Reason, false );
 		c = next_c;
 	}
+#else
+	// TODO: remove Client from every channel
+	__SET_ITERATE(&My_Channels,Channel_Quit_Iter);
+#endif
 } /* Channel_Quit */
 
 
@@ -307,6 +331,7 @@ Channel_Count( void )
 	CHANNEL *c;
 	unsigned long count = 0;
 	
+#ifdef __ORIGINAL_NGIRCD__
 	c = My_Channels;
 	while( c )
 	{
@@ -314,6 +339,10 @@ Channel_Count( void )
 		c = c->next;
 	}
 	return count;
+#else
+	// TODO: return the size of My_Channels (which is a constrained symbolic value)
+	return __SET_SIZE(&My_Channels);
+#endif
 } /* Channel_Count */
 
 
@@ -325,6 +354,7 @@ Channel_MemberCount( CHANNEL *Chan )
 
 	assert( Chan != NULL );
 
+#ifdef __ORIGINAL_NGIRCD__
 	cl2chan = My_Cl2Chan;
 	while( cl2chan )
 	{
@@ -332,6 +362,10 @@ Channel_MemberCount( CHANNEL *Chan )
 		cl2chan = cl2chan->next;
 	}
 	return count;
+#else
+	// TODO
+	return __SET_FIND(&cl2chan,My_Cl2Chan,/* P(x) if x->channel == Chan */);
+#endif
 } /* Channel_MemberCount */
 
 
@@ -345,6 +379,7 @@ Channel_CountForUser( CLIENT *Client )
 	
 	assert( Client != NULL );
 	
+#ifdef __ORIGINAL_NGIRCD__
 	cl2chan = My_Cl2Chan;
 	while( cl2chan )
 	{
@@ -353,6 +388,10 @@ Channel_CountForUser( CLIENT *Client )
 	}
 
 	return count;
+#else
+	// TODO
+	return __SET_FIND(&cl2chan,My_Cl2Chan,/* P(x) if x->client == Client */);
+#endif
 } /* Channel_CountForUser */
 
 
@@ -392,15 +431,27 @@ Channel_MaxUsers( CHANNEL *Chan )
 GLOBAL CHANNEL *
 Channel_First( void )
 {
+#ifdef __ORIGINAL_NGIRCD__
 	return My_Channels;
+#else
+	// This function should not be called since we don't want the set to be iterated manuallly
+	assert(0);
+	return 0;
+#endif
 } /* Channel_First */
 
 
 GLOBAL CHANNEL *
 Channel_Next( CHANNEL *Chan )
 {
+#ifdef __ORIGINAL_NGIRCD__
 	assert( Chan != NULL );
 	return Chan->next;
+#else
+	// This function should not be called since we don't want the set to be iterated manuallly
+	assert(0);
+	return 0;
+#endif
 } /* Channel_Next */
 
 
@@ -414,8 +465,7 @@ Channel_Search( const char *Name )
 
 	assert( Name != NULL );
 
-//#ifdef __ORIGINAL_NGIRCD__
-#ifndef __ORIGINAL_NGIRCD__
+#ifdef __ORIGINAL_NGIRCD__
 	search_hash = Hash( Name );
 	c = My_Channels;
 	while( c )
@@ -428,7 +478,7 @@ Channel_Search( const char *Name )
 		c = c->next;
 	}
 #else
-	if(__SET_FIND(&c,__SET_My_Channels,/* some predicate */)>0)
+	if(__SET_FIND(&c,__SET_My_Channels,/* P(x) if strcasecmp(Name,x->name)==0 */)>0)
 		return c;
 #endif
 	return NULL;
@@ -796,9 +846,13 @@ Channel_Create( char *Name )
 	}
 	memset( c, 0, sizeof( CHANNEL ));
 	strlcpy( c->name, Name, sizeof( c->name ));
+#ifdef __ORIGINAL_NGIRCD__
 	c->hash = Hash( c->name );
 	c->next = My_Channels;
 	My_Channels = c;
+#else
+	__SET_ADD(c,&My_Channels);
+#endif
 	LogDebug("Created new channel structure for \"%s\".", Name);
 	return c;
 } /* Channel_Create */
@@ -812,12 +866,18 @@ Get_Cl2Chan( CHANNEL *Chan, CLIENT *Client )
 	assert( Chan != NULL );
 	assert( Client != NULL );
 
+#ifdef __ORIGINAL_NGIRCD__
 	cl2chan = My_Cl2Chan;
 	while( cl2chan )
 	{
 		if(( cl2chan->channel == Chan ) && ( cl2chan->client == Client )) return cl2chan;
 		cl2chan = cl2chan->next;
 	}
+#else
+	// TODO
+	if(__SET_FIND(&cl2chan,&My_Cl2Chan,/* P(x) if x->channel==Chan && x->client==Client */) >0)
+		return cl2chan;
+#endif
 	return NULL;
 } /* Get_Cl2Chan */
 
@@ -841,9 +901,13 @@ Add_Client( CHANNEL *Chan, CLIENT *Client )
 	cl2chan->client = Client;
 	strcpy( cl2chan->modes, "" );
 
+#ifdef __ORIGINAL_NGIRCD__
 	/* Verketten */
 	cl2chan->next = My_Cl2Chan;
 	My_Cl2Chan = cl2chan;
+#else
+	__SET_ADD(cl2chan,&My_Cl2Chan);
+#endif
 
 	Log( LOG_DEBUG, "User \"%s\" joined channel \"%s\".", Client_Mask( Client ), Chan->name );
 
@@ -862,6 +926,7 @@ Remove_Client( int Type, CHANNEL *Chan, CLIENT *Client, CLIENT *Origin, const ch
 	assert( Origin != NULL );
 	assert( Reason != NULL );
 
+#ifdef __ORIGINAL_NGIRCD__
 	last_cl2chan = NULL;
 	cl2chan = My_Cl2Chan;
 	while( cl2chan )
@@ -871,13 +936,23 @@ Remove_Client( int Type, CHANNEL *Chan, CLIENT *Client, CLIENT *Origin, const ch
 		cl2chan = cl2chan->next;
 	}
 	if( ! cl2chan ) return false;
+#else
+	// TODO
+	if(__SET_FIND(&cl2chan,&My_Cl2Chan,/* P(x) if x->channel==Chan&&x->client==Client*/)==0)
+		return false;
+#endif
 
 	c = cl2chan->channel;
 	assert( c != NULL );
 
+#ifdef __ORIGINAL_NGIRCD__
 	/* Aus Verkettung loesen und freigeben */
 	if( last_cl2chan ) last_cl2chan->next = cl2chan->next;
 	else My_Cl2Chan = cl2chan->next;
+#else
+	// TODO
+	__SET_REMOVE(&cl2chan,&My_Cl2Chan);
+#endif
 	free( cl2chan );
 
 	switch( Type )
@@ -1007,6 +1082,7 @@ Get_Next_Cl2Chan( CL2CHAN *Start, CLIENT *Client, CHANNEL *Channel )
 
 	assert( Client != NULL || Channel != NULL );
 	
+#ifdef __ORIGINAL_NGIRCD__
 	cl2chan = Start;
 	while( cl2chan )
 	{
@@ -1015,6 +1091,11 @@ Get_Next_Cl2Chan( CL2CHAN *Start, CLIENT *Client, CHANNEL *Channel )
 		cl2chan = cl2chan->next;
 	}
 	return NULL;
+#else
+	// should not be called
+	assert(0);
+	return 0;
+#endif
 } /* Get_Next_Cl2Chan */
 
 
@@ -1025,6 +1106,7 @@ Delete_Channel( CHANNEL *Chan )
 
 	CHANNEL *chan, *last_chan;
 
+#ifdef __ORIGINAL_NGIRCD__
 	last_chan = NULL;
 	chan = My_Channels;
 	while( chan )
@@ -1034,6 +1116,11 @@ Delete_Channel( CHANNEL *Chan )
 		chan = chan->next;
 	}
 	if( ! chan ) return false;
+#else
+	// TODO: need that?
+	if(__SET_FIND(&chan,&My_Channels,/* P(x) if chan==Chan */)==0)
+		return false;
+#endif
 
 	Log( LOG_DEBUG, "Freed channel structure for \"%s\".", Chan->name );
 
@@ -1041,9 +1128,14 @@ Delete_Channel( CHANNEL *Chan )
 	Lists_Free( &chan->list_bans );
 	Lists_Free( &chan->list_invites );
 
+#ifdef __ORIGINAL_NGIRCD__
 	/* Neu verketten und freigeben */
 	if( last_chan ) last_chan->next = chan->next;
 	else My_Channels = chan->next;
+#else
+	// TODO
+	__SET_REMOVE(&chan,My_Channels);
+#endif
 	free( chan );
 
 	return true;

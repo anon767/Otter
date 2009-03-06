@@ -39,9 +39,6 @@ static char UNUSED id[] = "$Id: irc-channel.c,v 1.45 2008/02/24 18:57:38 fw Exp 
 #include "exp.h"
 #include "irc-channel.h"
 
-#ifndef __ORIGINAL_NGIRCD__
-#include "abstractset.h"
-#endif
 
 
 /*
@@ -202,11 +199,9 @@ IRC_JOIN( CLIENT *Client, REQUEST *Req )
 	if (!target)
 		return IRC_WriteStrClient(Client, ERR_NOSUCHNICK_MSG, Client_ID(Client), Req->prefix);
 
-#ifdef __ORIGINAL_NGIRCD__
 	/* Is argument "0"? */
 	if (Req->argc == 1 && !strncmp("0", Req->argv[0], 2))
 		return part_from_all_channels(Client, target);
-#endif
 
 	/* Are channel keys given? */
 	if (Req->argc > 1) {

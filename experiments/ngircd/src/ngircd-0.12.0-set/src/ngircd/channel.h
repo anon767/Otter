@@ -26,7 +26,9 @@
 
 typedef struct _CHANNEL
 {
+#ifdef __ORIGINAL_NGIRCD__
 	struct _CHANNEL *next;
+#endif
 	char name[CHANNEL_NAME_LEN];	/* Name of the channel */
 	UINT32 hash;			/* Hash of the (lowecase!) name */
 	char modes[CHANNEL_MODE_LEN];	/* Channel modes */
@@ -43,7 +45,9 @@ typedef struct _CHANNEL
 
 typedef struct _CLIENT2CHAN
 {
+#ifdef __ORIGINAL_NGIRCD__
 	struct _CLIENT2CHAN *next;
+#endif
 	CLIENT *client;
 	CHANNEL *channel;
 	char modes[CHANNEL_MODE_LEN];	/* User-Modes in dem Channel */
