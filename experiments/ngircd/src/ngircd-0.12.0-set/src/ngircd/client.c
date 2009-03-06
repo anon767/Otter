@@ -47,10 +47,18 @@ static char UNUSED id[] = "$Id: client.c,v 1.98 2008/04/04 19:30:01 fw Exp $";
 #include <exp.h>
 
 
+#ifndef __ORIGINAL_NGIRCD__
+#include "abstractset.h"
+#endif
+
 #define GETID_LEN (CLIENT_NICK_LEN-1) + 1 + (CLIENT_USER_LEN-1) + 1 + (CLIENT_HOST_LEN-1) + 1
 
-
+#ifdef __ORIGINAL_NGIRCD__
 static CLIENT *This_Server, *My_Clients;
+#else
+static CLIENT *This_Server;
+static __SET My_Clients;
+#endif
 static char GetID_Buffer[GETID_LEN];
 
 static WHOWAS My_Whowas[MAX_WHOWAS];
@@ -99,7 +107,12 @@ Client_Init( void )
 	Client_SetID( This_Server, Conf_ServerName );
 	Client_SetInfo( This_Server, Conf_ServerInfo );
 
+#ifdef __ORIGINAL_NGIRCD__
 	My_Clients = This_Server;
+#else
+	// TODO
+	__SET_INIT(&My_Clients,Client_Rest,Client_Clone,0);
+#endif
 	
 	memset( &My_Whowas, 0, sizeof( My_Whowas ));
 } /* Client_Init */
@@ -114,6 +127,7 @@ Client_Exit( void )
 	if( NGIRCd_SignalRestart ) Client_Destroy( This_Server, "Server going down (restarting).", NULL, false );
 	else Client_Destroy( This_Server, "Server going down.", NULL, false );
 	
+#ifdef __ORIGINAL_NGIRCD__
 	cnt = 0;
 	c = My_Clients;
 	while( c )
@@ -124,6 +138,9 @@ Client_Exit( void )
 		c = next;
 	}
 	if( cnt ) Log( LOG_INFO, "Freed %d client structure%s.", cnt, cnt == 1 ? "" : "s" );
+#else
+	// TODO: clear My_Channels 
+#endif
 } /* Client_Exit */
 
 
@@ -209,9 +226,13 @@ Init_New_Client(CONN_ID Idx, CLIENT *Introducer, CLIENT *TopServer,
 	if( strchr( client->modes, 'a' ))
 		strlcpy( client->away, DEFAULT_AWAY_MSG, sizeof( client->away ));
 
+#ifdef __ORIGINAL_NGIRCD__
 	/* Verketten */
 	client->next = (POINTER *)My_Clients;
 	My_Clients = client;
+#else
+	__SET_ADD(client,&My_Clients);
+#endif
 
 	/* Adjust counters */
 	Adjust_Counters( client );
@@ -223,6 +244,7 @@ Init_New_Client(CONN_ID Idx, CLIENT *Introducer, CLIENT *TopServer,
 GLOBAL void
 Client_Destroy( CLIENT *Client, char *LogMsg, char *FwdMsg, bool SendQuit )
 {
+#ifdef __ORIGINAL_NGIRCD__
 	/* Client entfernen. */
 	
 	CLIENT *last, *c;
@@ -328,6 +350,9 @@ Client_Destroy( CLIENT *Client, char *LogMsg, char *FwdMsg, bool SendQuit )
 		last = c;
 		c = (CLIENT *)c->next;
 	}
+#else
+	// TODO: so complicated... do it later
+#endif
 } /* Client_Destroy */
 
 
@@ -547,6 +572,7 @@ Client_Search( char *Nick )
 	ptr = strchr( search_id, '!' );
 	if( ptr ) *ptr = '\0';
 
+#ifdef __ORIGINAL_NGIRCD__
 	search_hash = Hash( search_id );
 
 	c = My_Clients;
@@ -559,6 +585,10 @@ Client_Search( char *Nick )
 		}
 		c = (CLIENT *)c->next;
 	}
+#else
+	if(__SET_FIND(&c,&My_Clients,/* P(x) if strcasecmp( c->id, search_id ) == 0 */)>0)
+		return c;
+#endif
 	return NULL;
 } /* Client_Search */
 
@@ -575,12 +605,17 @@ Client_GetFromToken( CLIENT *Client, int Token )
 	assert( Client != NULL );
 	assert( Token > 0 );
 
+#ifdef __ORIGINAL_NGIRCD__
 	c = My_Clients;
 	while( c )
 	{
 		if(( c->type == CLIENT_SERVER ) && ( c->introducer == Client ) && ( c->token == Token )) return c;
 		c = (CLIENT *)c->next;
 	}
+#else
+	if(__SET_FIND(&c,&My_Clients,/* P(x) if ( c->type == CLIENT_SERVER ) && ( c->introducer == Client ) && ( c->token == Token ) */)>0)
+		return c;
+#endif
 	return NULL;
 } /* Client_GetFromToken */
 
@@ -803,6 +838,7 @@ Client_CheckID( CLIENT *Client, char *ID )
 		return false;
 	}
 
+#ifdef __ORIGINAL_NGIRCD__
 	/* ID bereits vergeben? */
 	c = My_Clients;
 	while( c )
@@ -818,6 +854,16 @@ Client_CheckID( CLIENT *Client, char *ID )
 		}
 		c = (CLIENT *)c->next;
 	}
+#else
+	if(__SET_FIND(&c,My_Clients,/* P(x) if strcasecmp( c->id, ID ) == 0 */)>0){
+			/* die Server-ID gibt es bereits */
+			snprintf( str, sizeof( str ), "ID \"%s\" already registered", ID );
+			if( Client->conn_id != c->conn_id ) Log( LOG_ERR, "%s (on connection %d)!", str, c->conn_id );
+			else Log( LOG_ERR, "%s (via network)!", str );
+			Conn_Close( Client->conn_id, str, str, true);
+			return false;
+	}
+#endif
 
 	return true;
 } /* Client_CheckID */
@@ -828,7 +874,13 @@ Client_First( void )
 {
 	/* Ersten Client liefern. */
 
+#ifdef __ORIGINAL_NGIRCD__
 	return My_Clients;
+#else
+	// This function should not be called since we don't want the set to be iterated manuallly
+	assert(0);
+	return 0;
+#endif
 } /* Client_First */
 
 
@@ -838,8 +890,14 @@ Client_Next( CLIENT *c )
 	/* Naechsten Client liefern. Existiert keiner,
 	 * so wird NULL geliefert. */
 
+#ifdef __ORIGINAL_NGIRCD__
 	assert( c != NULL );
 	return (CLIENT *)c->next;
+#else
+	// This function should not be called since we don't want the set to be iterated manuallly
+	assert(0);
+	return 0;
+#endif
 } /* Client_Next */
 
 
@@ -884,6 +942,7 @@ Client_MyServerCount( void )
 	CLIENT *c;
 	unsigned long cnt = 0;
 
+#ifdef __ORIGINAL_NGIRCD__
 	c = My_Clients;
 	while( c )
 	{
@@ -891,6 +950,9 @@ Client_MyServerCount( void )
 		c = (CLIENT *)c->next;
 	}
 	return cnt;
+#else
+	return __SET_FIND(&c,My_Clients,/* P(x) if ( c->type == CLIENT_SERVER ) && ( c->hops == 1 ) */);
+#endif
 } /* Client_MyServerCount */
 
 
@@ -900,6 +962,7 @@ Client_OperCount( void )
 	CLIENT *c;
 	unsigned long cnt = 0;
 
+#ifdef __ORIGINAL_NGIRCD__
 	c = My_Clients;
 	while( c )
 	{
@@ -907,6 +970,9 @@ Client_OperCount( void )
 		c = (CLIENT *)c->next;
 	}
 	return cnt;
+#else
+	return __SET_FIND(&c,My_Clients,/* P(x) if  c && ( c->type == CLIENT_USER ) && ( strchr( c->modes, 'o' ))*/);
+#endif
 } /* Client_OperCount */
 
 
@@ -916,6 +982,7 @@ Client_UnknownCount( void )
 	CLIENT *c;
 	unsigned long cnt = 0;
 
+#ifdef __ORIGINAL_NGIRCD__
 	c = My_Clients;
 	while( c )
 	{
@@ -924,6 +991,9 @@ Client_UnknownCount( void )
 	}
 
 	return cnt;
+#else
+	return __SET_FIND(&c,My_Clients,/* P(x) if c && ( c->type != CLIENT_USER ) && ( c->type != CLIENT_SERVICE ) && ( c->type != CLIENT_SERVER ) */);
+#endif
 } /* Client_UnknownCount */
 
 
@@ -1003,6 +1073,7 @@ Count( CLIENT_TYPE Type )
 	CLIENT *c;
 	unsigned long cnt = 0;
 
+#ifdef __ORIGINAL_NGIRCD__
 	c = My_Clients;
 	while( c )
 	{
@@ -1010,6 +1081,9 @@ Count( CLIENT_TYPE Type )
 		c = (CLIENT *)c->next;
 	}
 	return cnt;
+#else
+	return __SET_FIND(&c,My_Clients,/* P(x) if c->type == Type */);
+#endif
 } /* Count */
 
 
@@ -1019,6 +1093,7 @@ MyCount( CLIENT_TYPE Type )
 	CLIENT *c;
 	unsigned long cnt = 0;
 
+#ifdef __ORIGINAL_NGIRCD__
 	c = My_Clients;
 	while( c )
 	{
@@ -1026,6 +1101,9 @@ MyCount( CLIENT_TYPE Type )
 		c = (CLIENT *)c->next;
 	}
 	return cnt;
+#else
+	return __SET_FIND(&c,My_Clients,/* P(x) if ( c->introducer == This_Server ) && ( c->type == Type )*/);
+#endif
 } /* MyCount */
 
 
@@ -1062,6 +1140,7 @@ Generate_MyToken( CLIENT *Client )
 	CLIENT *c;
 	int token;
 
+#ifdef __ORIGINAL_NGIRCD__
 	c = My_Clients;
 	token = 2;
 	while( c )
@@ -1076,6 +1155,10 @@ Generate_MyToken( CLIENT *Client )
 		else c = (CLIENT *)c->next;
 	}
 	Client->mytoken = token;
+#else
+	// This function first find the largest token that anyone has. Then it assigns token+1 to Client
+	// TODO: implement if needed
+#endif
 	Log( LOG_DEBUG, "Assigned token %d to server \"%s\".", token, Client->id );
 } /* Generate_MyToken */
 

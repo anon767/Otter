@@ -38,7 +38,9 @@ typedef struct _CLIENT
 	time_t starttime;		/* Start time of link */
 	char id[CLIENT_ID_LEN];		/* nick (user) / ID (server) */
 	UINT32 hash;			/* hash of lower-case ID */
+#ifdef __ORIGINAL_NGIRCD__
 	POINTER *next;			/* pointer to next client structure */
+#endif
 	CLIENT_TYPE type;		/* type of client, see CLIENT_xxx */
 	CONN_ID conn_id;		/* ID of the connection (if local) or NONE (remote) */
 	struct _CLIENT *introducer;	/* ID of the servers which the client is connected to */
