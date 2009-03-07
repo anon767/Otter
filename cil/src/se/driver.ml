@@ -462,6 +462,7 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 					(* If it was [Exit], there is no job to return *)
 					Output.set_mode Output.MSG_MUSTPRINT;
 					Output.print_endline "exit() called\nPath condition:";
+					Output.set_mode Output.MSG_REG;
 					Output.print_endline
 						(To_string.humanReadablePc state.path_condition exHist.bytesToVars);
 					coverage := (state.path_condition, exHist) :: !coverage;
@@ -555,6 +556,7 @@ let exec_stmt job =
 							[] -> (* Returning from main *)
 								Output.set_mode Output.MSG_MUSTPRINT;
 								Output.print_endline "Program execution finished\nPath condition:";
+								Output.set_mode Output.MSG_REG;
 								Output.print_endline
 									(To_string.humanReadablePc state.path_condition exHist.bytesToVars);
 								coverage := (state.path_condition, nextExHist) :: !coverage;
@@ -1029,6 +1031,7 @@ let rec main_loop = function
 					(Printf.sprintf "Error \"%s\" occurs at %s" fail
 						 (To_string.location !Output.cur_loc));
 				Output.print_endline "Abandoning branch\nPath condition:";
+				Output.set_mode Output.MSG_REG;
 				Output.print_endline
 					(To_string.humanReadablePc job.state.path_condition job.exHist.bytesToVars);
 				abandonedPaths :=

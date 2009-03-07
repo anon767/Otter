@@ -234,7 +234,7 @@ let finish_up () =
 	print_string " edges were executed, of which ";
 	print_int (EdgeSet.cardinal alwaysExecuted);
 	print_endline " were always executed.\n";
-
+    begin if Executeargs.print_args.arg_print_reg then begin
 	let greedySetCover coverageList =
 		let rec helper acc cvrgList remaining =
 			if EdgeSet.is_empty remaining then acc
@@ -333,7 +333,7 @@ let finish_up () =
 				 print_newline ())
 			coveringSet
 	);
-	
+    ()end else () end;	
 	);
 	print_endline "Finished.";
 	()

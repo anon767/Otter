@@ -188,7 +188,7 @@ let get fname =
 (*		| "listen" -> libc_listen *)
 		| "malloc" -> libc_malloc
 		| "memset" -> libc_memset
-		| "strlen" -> libc_strlen
+(*		| "strlen" -> libc_strlen *)
 (*		| "open" -> libc_open *)
 (*		| "pipe" -> libc_pipe *)
 (*		| "putenv" -> libc_putenv *)
