@@ -2,7 +2,6 @@
 #include "abstractset.h"
 
 // Make the compiler happy (these are not executed)
-//
 
 void __ASSERT(int a){};
 void __ASSUME(int a){};
@@ -10,27 +9,45 @@ void __ASSUME(int a){};
 int AND(int a,int b){ return a&&b; }
 int OR(int a,int b){ return a||b; }
 int NOT(int a){ return !a; }
-int __SYMBOLIC(){ return 0;}
+int __SYMBOLIC(int a){ return 0;}
 int __TRUTH_VALUE(int a){ return 0;}
-
+void __CLONE(void* a,void* b,int c){}
 
 #define IMPLY(X,Y)	OR(NOT(X),(Y))
 
+// symbolic string functions (temporary)
+void* __PTR_SYMBOLIC(int n){
+	char* p = malloc(n);
+	for(int i=0;i<n;i++)
+		p[i] = __SYMBOLIC(1);
+	return p;
+}
 
-/******* (temporary) ***/
-//void __SYMBOLIC_STRING(char** a){
-//	*a = malloc(1);
-//	**a = __SYMBOLIC();
-//}
-//int __STRING_EQUAL(char* a,char* b){
-//	return a[0]==b[0];
-//}
+#define __SYMBOLIC_STR_LEN__   2
+char* __SYMBOLIC_STR(){
+	char* s = malloc(__SYMBOLIC_STR_LEN__+1);
+	for(int i=0;i<__SYMBOLIC_STR_LEN__;i++){
+		s[i] = __SYMBOLIC(1);
+		__ASSUME(s[i]>32);
+		__ASSUME(s[i]!='0');
+		__ASSUME(s[i]!=',');
+	}
+	s[__SYMBOLIC_STR_LEN__] = '\0';
+	return s;
+}
+int __STRING_EQUAL(char* a,char* b){
+	int pred = 1;
+	for(int i=0;i<__SYMBOLIC_STR_LEN__;i++)
+		pred = AND(pred,a[i]==b[i]);
+	return pred;
+}
 
+// aux functions
 void** __ARG(int arg1,...){
 	va_list ap;
 	int i;
 
-	void** ret = malloc(arg1*sizeof(void*));
+	void** ret = malloc((arg1+1)*sizeof(void*));
 	va_start(ap,arg1);
 
 	for(i=0;i<arg1;i++)
@@ -45,17 +62,11 @@ void __ASSUME_SIMPLIFY(int exp){
 }
 
 /******** SET IMPLEMENTATION ***********/
-
-int __SET_DEFAULT_REST_CONSTRAINT(void* r){ return 1;} // unconstrained
-
-void __SET_INIT(__SET* set,void* rest,void* (*clone)(void*),int (*rest_constraint)(void*)){
+void __SET_INIT(__SET* set,void* rest,void* (*clone)(void*)){
 	set->head[0] = 0;
 	set->head[1] = 0;
 	set->rest = rest;
 	set->clone = clone;
-	if(rest_constraint==0)
-		set->rest_constraint = __SET_DEFAULT_REST_CONSTRAINT;
-	else set->rest_constraint = rest_constraint;
 }
 
 void __SET_ADD(void* newobj, __SET* set){
@@ -69,6 +80,21 @@ void __SET_ADD_INTERNAL(void* newobj, __SET* set){
 	newelm->elm = newobj;
 	newelm->next = set->head[0];
 	set->head[0] = newelm;
+}
+
+// Return a symbolic pointer that is equal to any one of the internal elements, or nothing
+void* __SET_ABSTRACT_INTERNAL(__SET* set){
+	void* abstract_nothing = malloc(1); // so that no other concrete pointers equal it
+	void* r; // symbolic
+	int formula = (r==abstract_nothing); // TODO: make sure it's not converted to any if-stmt
+
+	__SET_ELM* cur;
+	cur = set->head[0];
+	while(cur!=0){
+		formula = OR(formula,r==cur->elm);
+		cur = cur->next;
+	}
+	return r;
 }
 
 void __SET_ITERATE(__SET* set,void (*iterate)(void**,void*),void* pars){
@@ -117,7 +143,6 @@ int __SET_FIND(void** ret,__SET* set,int (*pred)(void**,void*),void** pars){
 		}
 	}
 	void* newobj = set->clone(set->rest);
-	//if(__GIVEN(set->rest_constraint(newobj),pred(pars,newobj))){
 	if(pred(pars,newobj)){
 		nr++;
 		*ret = newobj;
@@ -128,4 +153,16 @@ int __SET_FIND(void** ret,__SET* set,int (*pred)(void**,void*),void** pars){
 	return nr;
 }
 
-/******** END SET IMPLEMENTATION ***********/
+int __SET_SIZE(__SET* set){
+	// TODO: how to deduce the size?
+	int size;
+	return size;
+}
+int __SET_FALSE_PRED(void** pars,void* x){
+	return 0;
+}
+
+void __SET_REMOVE(void** obj, __SET* set){
+	__ASSERT(0);
+}
+

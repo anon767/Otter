@@ -77,7 +77,62 @@ static CLIENT *Init_New_Client PARAMS((CONN_ID Idx, CLIENT *Introducer,
  CLIENT *TopServer, int Type, char *ID, char *User, char *Hostname,
  char *Info, int Hops, int Token, char *Modes, bool Idented));
 
+#ifndef __ORIGINAL_NGIRCD__
+GLOBAL __SET* Client_GetTheSet PARAMS(( void )){
+	return & My_Clients;
+}
+#endif
 
+#ifndef __ORIGINAL_NGIRCD__
+Init_New_Client_noadd(CONN_ID Idx, CLIENT *Introducer, CLIENT *TopServer,
+ int Type, char *ID, char *User, char *Hostname, char *Info, int Hops,
+ int Token, char *Modes, bool Idented)
+{
+	CLIENT *client;
+
+	assert( Idx >= NONE );
+	assert( Introducer != NULL );
+	assert( Hostname != NULL );
+
+	client = New_Client_Struct( );
+	if( ! client ) return NULL;
+
+	/* Initialisieren */
+	client->starttime = time(NULL);
+	client->conn_id = Idx;
+	client->introducer = Introducer;
+	client->topserver = TopServer;
+	client->type = Type;
+	if( ID ) Client_SetID( client, ID );
+	if( User ) Client_SetUser( client, User, Idented );
+	if( Hostname ) Client_SetHostname( client, Hostname );
+	if( Info ) Client_SetInfo( client, Info );
+	client->hops = Hops;
+	client->token = Token;
+	if( Modes ) Client_SetModes( client, Modes );
+	if( Type == CLIENT_SERVER ) Generate_MyToken( client );
+	return client;
+}
+CLIENT* Client_Symbolic(){
+    return Init_New_Client_noadd(
+        /* CONN_ID Idx */        __SYMBOLIC(sizeof(CONN_ID)),
+        /* CLIENT *Introducer */ 0,
+        /* CLIENT *TopServer*/   0,
+        /* int Type*/            16/*CLIENT_USER*/,
+        /* char *ID*/            __SYMBOLIC_STR(),
+        /* char *User*/          __SYMBOLIC_STR(),
+        /* char *Hostname*/      __SYMBOLIC_STR(),
+        /* char *Info*/          __SYMBOLIC_STR(),
+        /* int Hops*/            __SYMBOLIC(sizeof(int)),
+        /* int Token*/           __SYMBOLIC(sizeof(int)),
+        /* char *Modes*/         __SYMBOLIC_STR(),
+        /* bool Idented*/        1
+        );
+}
+void* Client_Clone(void* src_void){
+	return Client_Symbolic();
+}	
+#endif
 GLOBAL void
 Client_Init( void )
 {
@@ -92,7 +147,9 @@ Client_Init( void )
 	}
 
 	/* Client-Struktur dieses Servers */
+#ifdef __ORIGINAL_NGIRCD__
 	This_Server->next = NULL;
+#endif
 	This_Server->type = CLIENT_SERVER;
 	This_Server->conn_id = NONE;
 	This_Server->introducer = This_Server;
@@ -110,8 +167,7 @@ Client_Init( void )
 #ifdef __ORIGINAL_NGIRCD__
 	My_Clients = This_Server;
 #else
-	// TODO
-	__SET_INIT(&My_Clients,Client_Rest,Client_Clone,0);
+	__SET_INIT(&My_Clients,Client_Symbolic(),Client_Clone);
 #endif
 	
 	memset( &My_Whowas, 0, sizeof( My_Whowas ));
@@ -554,6 +610,14 @@ Client_ModeDel( CLIENT *Client, char Mode )
 } /* Client_ModeDel */
 
 
+
+#ifndef __ORIGINAL_NGIRCD__
+int Client_Search_Find(void** pars,void* cv){
+	CLIENT *c = cv;
+	char *search_id = pars[0];
+	return ( strcasecmp( c->id, search_id ) == 0 ) ;
+}
+#endif
 GLOBAL CLIENT *
 Client_Search( char *Nick )
 {
@@ -586,7 +650,7 @@ Client_Search( char *Nick )
 		c = (CLIENT *)c->next;
 	}
 #else
-	if(__SET_FIND(&c,&My_Clients,/* P(x) if strcasecmp( c->id, search_id ) == 0 */)>0)
+	if(__SET_FIND(&c,&My_Clients,Client_Search_Find,__ARG(1,search_id)/* P(x) if strcasecmp( c->id, search_id ) == 0 */)>0)
 		return c;
 #endif
 	return NULL;
@@ -613,7 +677,7 @@ Client_GetFromToken( CLIENT *Client, int Token )
 		c = (CLIENT *)c->next;
 	}
 #else
-	if(__SET_FIND(&c,&My_Clients,/* P(x) if ( c->type == CLIENT_SERVER ) && ( c->introducer == Client ) && ( c->token == Token ) */)>0)
+	if(__SET_FIND(&c,&My_Clients,__SET_FALSE_PRED,__ARG(0)/* P(x) if ( c->type == CLIENT_SERVER ) && ( c->introducer == Client ) && ( c->token == Token ) */)>0)
 		return c;
 #endif
 	return NULL;
@@ -819,6 +883,13 @@ Client_CheckNick( CLIENT *Client, char *Nick )
 } /* Client_CheckNick */
 
 
+#ifndef __ORIGINAL_NGIRCD__
+int Client_CheckID_Find(void** pars,void* cv){
+	CLIENT *c = cv;
+	char *ID = pars[0];
+	return ( strcasecmp( c->id, ID ) == 0 );
+}
+#endif
 GLOBAL bool
 Client_CheckID( CLIENT *Client, char *ID )
 {
@@ -855,7 +926,7 @@ Client_CheckID( CLIENT *Client, char *ID )
 		c = (CLIENT *)c->next;
 	}
 #else
-	if(__SET_FIND(&c,My_Clients,/* P(x) if strcasecmp( c->id, ID ) == 0 */)>0){
+	if(__SET_FIND(&c,&My_Clients,Client_CheckID_Find,__ARG(1,ID)/* P(x) if strcasecmp( c->id, ID ) == 0 */)>0){
 			/* die Server-ID gibt es bereits */
 			snprintf( str, sizeof( str ), "ID \"%s\" already registered", ID );
 			if( Client->conn_id != c->conn_id ) Log( LOG_ERR, "%s (on connection %d)!", str, c->conn_id );
@@ -951,7 +1022,7 @@ Client_MyServerCount( void )
 	}
 	return cnt;
 #else
-	return __SET_FIND(&c,My_Clients,/* P(x) if ( c->type == CLIENT_SERVER ) && ( c->hops == 1 ) */);
+	return __SET_FIND(&c,&My_Clients,__SET_FALSE_PRED,__ARG(0)/* P(x) if ( c->type == CLIENT_SERVER ) && ( c->hops == 1 ) */);
 #endif
 } /* Client_MyServerCount */
 
@@ -971,7 +1042,7 @@ Client_OperCount( void )
 	}
 	return cnt;
 #else
-	return __SET_FIND(&c,My_Clients,/* P(x) if  c && ( c->type == CLIENT_USER ) && ( strchr( c->modes, 'o' ))*/);
+	return __SET_FIND(&c,&My_Clients,__SET_FALSE_PRED,__ARG(0)/* P(x) if  c && ( c->type == CLIENT_USER ) && ( strchr( c->modes, 'o' ))*/);
 #endif
 } /* Client_OperCount */
 
@@ -992,7 +1063,7 @@ Client_UnknownCount( void )
 
 	return cnt;
 #else
-	return __SET_FIND(&c,My_Clients,/* P(x) if c && ( c->type != CLIENT_USER ) && ( c->type != CLIENT_SERVICE ) && ( c->type != CLIENT_SERVER ) */);
+	return __SET_FIND(&c,&My_Clients,__SET_FALSE_PRED,__ARG(0)/* P(x) if c && ( c->type != CLIENT_USER ) && ( c->type != CLIENT_SERVICE ) && ( c->type != CLIENT_SERVER ) */);
 #endif
 } /* Client_UnknownCount */
 
@@ -1082,7 +1153,7 @@ Count( CLIENT_TYPE Type )
 	}
 	return cnt;
 #else
-	return __SET_FIND(&c,My_Clients,/* P(x) if c->type == Type */);
+	return __SET_FIND(&c,&My_Clients,__SET_FALSE_PRED,__ARG(0)/* P(x) if c->type == Type */);
 #endif
 } /* Count */
 
@@ -1102,7 +1173,7 @@ MyCount( CLIENT_TYPE Type )
 	}
 	return cnt;
 #else
-	return __SET_FIND(&c,My_Clients,/* P(x) if ( c->introducer == This_Server ) && ( c->type == Type )*/);
+	return __SET_FIND(&c,&My_Clients,__SET_FALSE_PRED,__ARG(0)/* P(x) if ( c->introducer == This_Server ) && ( c->type == Type )*/);
 #endif
 } /* MyCount */
 

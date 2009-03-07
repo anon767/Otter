@@ -71,6 +71,55 @@ static CL2CHAN *Get_Next_Cl2Chan PARAMS(( CL2CHAN *Start, CLIENT *Client, CHANNE
 static bool Delete_Channel PARAMS(( CHANNEL *Chan ));
 
 
+#ifndef __ORIGINAL_NGIRCD__
+CHANNEL* Channel_Symbolic(){
+	CHANNEL *c;
+	c = (CHANNEL *)malloc( sizeof( CHANNEL ));
+	strcpy(c->name,__SYMBOLIC_STR());
+	c->hash = __SYMBOLIC(sizeof(c->hash));
+	strcpy(c->modes,"");
+	array_init(&c->topic);
+	c->topic_time = __SYMBOLIC(sizeof(c->topic_time));
+	strcpy(c->topic_who,__SYMBOLIC_STR());
+	c->list_bans.first = 0 ;
+	c->list_invites.first = 0 ;
+	return c;
+}
+void* Channel_Clone(void* src_void){
+    CHANNEL* src = (CHANNEL*)src_void;
+    CHANNEL* tar = Channel_Symbolic();
+    __CLONE(tar->name,src->name,2);
+    // constraint: any channel has different name from the rest
+    __ASSUME_SIMPLIFY(NOT(__STRING_EQUAL(tar->name,src->name)));
+    return tar;
+}
+CL2CHAN* Cl2Chan_Symbolic(){
+	CL2CHAN* c = malloc(sizeof(CL2CHAN));
+	c->client = __SYMBOLIC(4);
+	c->channel = __SYMBOLIC(4);
+	strcpy(c->modes,"");
+	return c;
+}
+
+void* Cl2Chan_Clone(void* src_void){
+	CL2CHAN* src = (CL2CHAN*)src_void;
+	CL2CHAN* tar = Cl2Chan_Symbolic();
+	__CLONE(&tar->client,&src->client,sizeof(CLIENT*));
+	__CLONE(&tar->channel,&src->channel,sizeof(CHANNEL*));
+	__ASSUME_SIMPLIFY(OR(tar->client!=src->client,tar->channel!=src->channel));
+
+	__SET* All_existing_Clients = Client_GetTheSet();
+	__SET* All_existing_Channels = &My_Channels;
+	__ASSUME_SIMPLIFY( tar->client==__SET_ABSTRACT_INTERNAL(All_existing_Clients));
+	__ASSUME_SIMPLIFY( tar->channel==__SET_ABSTRACT_INTERNAL(All_existing_Channels));
+	return tar;
+}
+
+
+
+
+#endif
+
 GLOBAL void
 Channel_Init( void )
 {
@@ -79,8 +128,8 @@ Channel_Init( void )
 	My_Cl2Chan = NULL;
 #else
 	// TODO: initialization
-	__SET_INIT(&My_Channels,Channel_Rest,Channel_Clone,0);
-	__SET_INIT(&My_Cl2Chan,Cl2Chan_Rest,Cl2Chan_Clone,Cl2Chan_Rest_constraint);
+	__SET_INIT(&My_Channels,Channel_Symbolic(),Channel_Clone);
+	__SET_INIT(&My_Cl2Chan,Cl2Chan_Symbolic(),Cl2Chan_Clone);
 #endif
 } /* Channel_Init */
 
@@ -299,7 +348,13 @@ Channel_Kick( CLIENT *Client, CLIENT *Origin, char *Name, char *Reason )
 	Remove_Client( REMOVE_KICK, chan, Client, Origin, Reason, true);
 } /* Channel_Kick */
 
-
+#ifndef __ORIGINAL_NGIRCD__
+void Channel_Quit_Iter(void** pars,void* c){
+	CLIENT *Client = pars[0];
+	char *Reason = pars[1];
+	Remove_Client( REMOVE_QUIT, c, Client, Client, Reason, false );
+}
+#endif
 GLOBAL void
 Channel_Quit( CLIENT *Client, char *Reason )
 {
@@ -319,8 +374,7 @@ Channel_Quit( CLIENT *Client, char *Reason )
 		c = next_c;
 	}
 #else
-	// TODO: remove Client from every channel
-	__SET_ITERATE(&My_Channels,Channel_Quit_Iter);
+	__SET_ITERATE(&My_Channels,Channel_Quit_Iter,__ARG(2,Client,Reason));
 #endif
 } /* Channel_Quit */
 
@@ -340,12 +394,18 @@ Channel_Count( void )
 	}
 	return count;
 #else
-	// TODO: return the size of My_Channels (which is a constrained symbolic value)
 	return __SET_SIZE(&My_Channels);
 #endif
 } /* Channel_Count */
 
 
+#ifndef __ORIGINAL_NGIRCD__
+int Channel_MemberCount_Find(void** pars,void* cl2chan_void){
+	CL2CHAN *cl2chan = cl2chan_void;
+	CHANNEL *Chan = pars[0];
+	return cl2chan->channel == Chan;
+}
+#endif
 GLOBAL unsigned long
 Channel_MemberCount( CHANNEL *Chan )
 {
@@ -363,8 +423,7 @@ Channel_MemberCount( CHANNEL *Chan )
 	}
 	return count;
 #else
-	// TODO
-	return __SET_FIND(&cl2chan,My_Cl2Chan,/* P(x) if x->channel == Chan */);
+	return __SET_FIND(&cl2chan,&My_Cl2Chan,Channel_MemberCount_Find,__ARG(1,Chan)/* P(x) if x->channel == Chan */);
 #endif
 } /* Channel_MemberCount */
 
@@ -390,7 +449,7 @@ Channel_CountForUser( CLIENT *Client )
 	return count;
 #else
 	// TODO
-	return __SET_FIND(&cl2chan,My_Cl2Chan,/* P(x) if x->client == Client */);
+	return __SET_FIND(&cl2chan,&My_Cl2Chan,__SET_FALSE_PRED,__ARG(0)/* P(x) if x->client == Client */);
 #endif
 } /* Channel_CountForUser */
 
@@ -455,6 +514,15 @@ Channel_Next( CHANNEL *Chan )
 } /* Channel_Next */
 
 
+#ifndef __ORIGINAL_NGIRCD__
+int Channel_Search_Find(void** pars,void* c_void){
+	CHANNEL *c = c_void;
+	char *Name = pars[0];
+	//return ( strcasecmp( Name, c->name ) == 0 ) ;
+	// procedures in any pred cannot contain if stmts
+	return ( __STRING_EQUAL( Name, c->name )  ) ;
+}
+#endif
 GLOBAL CHANNEL *
 Channel_Search( const char *Name )
 {
@@ -478,7 +546,7 @@ Channel_Search( const char *Name )
 		c = c->next;
 	}
 #else
-	if(__SET_FIND(&c,__SET_My_Channels,/* P(x) if strcasecmp(Name,x->name)==0 */)>0)
+	if(__SET_FIND(&c,&My_Channels,Channel_Search_Find,__ARG(1,Name)/* P(x) if strcasecmp(Name,x->name)==0 */)>0)
 		return c;
 #endif
 	return NULL;
@@ -488,34 +556,54 @@ Channel_Search( const char *Name )
 GLOBAL CL2CHAN *
 Channel_FirstMember( CHANNEL *Chan )
 {
+#ifdef __ORIGINAL_NGIRCD__
 	assert( Chan != NULL );
 	return Get_First_Cl2Chan( NULL, Chan );
+#else
+	assert(0);
+	return 0;
+#endif
 } /* Channel_FirstMember */
 
 
 GLOBAL CL2CHAN *
 Channel_NextMember( CHANNEL *Chan, CL2CHAN *Cl2Chan )
 {
+#ifdef __ORIGINAL_NGIRCD__
 	assert( Chan != NULL );
 	assert( Cl2Chan != NULL );
 	return Get_Next_Cl2Chan( Cl2Chan->next, NULL, Chan );
+#else
+	assert(0);
+	return 0;
+#endif
 } /* Channel_NextMember */
 
 
 GLOBAL CL2CHAN *
 Channel_FirstChannelOf( CLIENT *Client )
 {
+#ifdef __ORIGINAL_NGIRCD__
 	assert( Client != NULL );
 	return Get_First_Cl2Chan( Client, NULL );
+#else
+	assert(0);
+	return 0;
+#endif
 } /* Channel_FirstChannelOf */
 
 
 GLOBAL CL2CHAN *
 Channel_NextChannelOf( CLIENT *Client, CL2CHAN *Cl2Chan )
 {
+#ifdef __ORIGINAL_NGIRCD__
 	assert( Client != NULL );
 	assert( Cl2Chan != NULL );
 	return Get_Next_Cl2Chan( Cl2Chan->next, Client, NULL );
+#else
+	assert(0);
+	return 0;
+#endif
 } /* Channel_NextChannelOf */
 
 
@@ -858,6 +946,14 @@ Channel_Create( char *Name )
 } /* Channel_Create */
 
 
+#ifndef __ORIGINAL_NGIRCD__
+int Get_Cl2Chan_Find(void** pars,void* cl2chan_void){
+	CL2CHAN *cl2chan = cl2chan_void;
+	CHANNEL *Chan = pars[0];
+	CLIENT *Client = pars[1];
+	return AND(( cl2chan->channel == Chan ) , ( cl2chan->client == Client )) ;
+}
+#endif
 static CL2CHAN *
 Get_Cl2Chan( CHANNEL *Chan, CLIENT *Client )
 {
@@ -874,8 +970,7 @@ Get_Cl2Chan( CHANNEL *Chan, CLIENT *Client )
 		cl2chan = cl2chan->next;
 	}
 #else
-	// TODO
-	if(__SET_FIND(&cl2chan,&My_Cl2Chan,/* P(x) if x->channel==Chan && x->client==Client */) >0)
+	if(__SET_FIND(&cl2chan,&My_Cl2Chan,Get_Cl2Chan_Find,__ARG(2,Chan,Client)/* P(x) if x->channel==Chan && x->client==Client */) >0)
 		return cl2chan;
 #endif
 	return NULL;
@@ -938,7 +1033,7 @@ Remove_Client( int Type, CHANNEL *Chan, CLIENT *Client, CLIENT *Origin, const ch
 	if( ! cl2chan ) return false;
 #else
 	// TODO
-	if(__SET_FIND(&cl2chan,&My_Cl2Chan,/* P(x) if x->channel==Chan&&x->client==Client*/)==0)
+	if(__SET_FIND(&cl2chan,&My_Cl2Chan,__SET_FALSE_PRED,__ARG(0)/* P(x) if x->channel==Chan&&x->client==Client*/)==0)
 		return false;
 #endif
 
@@ -1071,7 +1166,12 @@ Channel_ShowInvites( CLIENT *Client, CHANNEL *Channel )
 static CL2CHAN *
 Get_First_Cl2Chan( CLIENT *Client, CHANNEL *Chan )
 {
+#ifdef __ORIGINAL_NGIRCD__
 	return Get_Next_Cl2Chan( My_Cl2Chan, Client, Chan );
+#else
+	assert(0);
+	return 0;
+#endif
 } /* Get_First_Cl2Chan */
 
 
@@ -1118,7 +1218,7 @@ Delete_Channel( CHANNEL *Chan )
 	if( ! chan ) return false;
 #else
 	// TODO: need that?
-	if(__SET_FIND(&chan,&My_Channels,/* P(x) if chan==Chan */)==0)
+	if(__SET_FIND(&chan,&My_Channels,__SET_FALSE_PRED,__ARG(0)/* P(x) if chan==Chan */)==0)
 		return false;
 #endif
 
@@ -1134,7 +1234,7 @@ Delete_Channel( CHANNEL *Chan )
 	else My_Channels = chan->next;
 #else
 	// TODO
-	__SET_REMOVE(&chan,My_Channels);
+	__SET_REMOVE(&chan,&My_Channels);
 #endif
 	free( chan );
 

@@ -30,6 +30,9 @@
 #define CLIENT_TYPE int
 
 #include "defines.h"
+#ifndef __ORIGINAL_NGIRCD__
+#include "abstractset.h"
+#endif
 
 #if defined(__client_c__) | defined(S_SPLINT_S)
 
@@ -74,6 +77,9 @@ typedef struct _WHOWAS
 } WHOWAS;
 
 
+#ifndef __ORIGINAL_NGIRCD__
+GLOBAL __SET* Client_GetTheSet PARAMS(( void ));
+#endif
 GLOBAL void Client_Init PARAMS(( void ));
 GLOBAL void Client_Exit PARAMS(( void ));
 
