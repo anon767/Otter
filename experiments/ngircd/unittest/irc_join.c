@@ -20,10 +20,10 @@ CLIENT* make_symbolic_client(){
 		);
 }
 
-REQUEST* make_part_request(){
+REQUEST* make_join_request(){
 	REQUEST *request = malloc(sizeof(REQUEST));
 	request->prefix = "";
-	request->command = "PART";
+	request->command = "JOIN";
 	request->argv[0] = __SYMBOLIC_STR();
 	request->argc = 1;
 	return request;
@@ -37,10 +37,11 @@ int main(){
 	CLIENT *client;
 	__SET_FOREACH(&client,&My_Clients);
 
-	REQUEST *request = make_part_request();
+	REQUEST *request = make_join_request();
 
 	// Channels: C
-	IRC_PART(client,request);
+	IRC_JOIN(client,request);
+	// Channels: C+ c(request->argv[0]) if it's valid
 
 	return 0;
 }

@@ -30,5 +30,6 @@ char* __SYMBOLIC_STR();
 
 // make compiler happy
 void __CLONE(void* a,void* b,int c);
+void __EVAL(int a);
 #endif
 /* -eof- */

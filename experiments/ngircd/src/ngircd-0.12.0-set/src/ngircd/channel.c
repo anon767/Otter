@@ -106,6 +106,7 @@ void* Cl2Chan_Clone(void* src_void){
 	CL2CHAN* tar = Cl2Chan_Symbolic();
 	__CLONE(&tar->client,&src->client,sizeof(CLIENT*));
 	__CLONE(&tar->channel,&src->channel,sizeof(CHANNEL*));
+	// constraint: the (cl,ch) pair must not appear twice in the set
 	__ASSUME_SIMPLIFY(OR(tar->client!=src->client,tar->channel!=src->channel));
 
 	__SET* All_existing_Clients = Client_GetTheSet();
@@ -1010,6 +1011,14 @@ Add_Client( CHANNEL *Chan, CLIENT *Client )
 } /* Add_Client */
 
 
+#ifndef __ORIGINAL_NGIRCD__
+int Remove_Client_Find(void** pars,void* cl2chan_void){
+	CL2CHAN *cl2chan = cl2chan_void;
+	CHANNEL *Chan = pars[0];
+	CLIENT *Client = pars[1];
+	return AND(( cl2chan->channel == Chan ) , ( cl2chan->client == Client )) ;
+}
+#endif
 static bool
 Remove_Client( int Type, CHANNEL *Chan, CLIENT *Client, CLIENT *Origin, const char *Reason, bool InformServer )
 {
@@ -1032,20 +1041,19 @@ Remove_Client( int Type, CHANNEL *Chan, CLIENT *Client, CLIENT *Origin, const ch
 	}
 	if( ! cl2chan ) return false;
 #else
-	// TODO
-	if(__SET_FIND(&cl2chan,&My_Cl2Chan,__SET_FALSE_PRED,__ARG(0)/* P(x) if x->channel==Chan&&x->client==Client*/)==0)
+	if(__SET_FIND(&cl2chan,&My_Cl2Chan,Remove_Client_Find,__ARG(2,Chan,Client)/* P(x) if x->channel==Chan&&x->client==Client*/)==0)
 		return false;
 #endif
 
 	c = cl2chan->channel;
 	assert( c != NULL );
 
+
 #ifdef __ORIGINAL_NGIRCD__
 	/* Aus Verkettung loesen und freigeben */
 	if( last_cl2chan ) last_cl2chan->next = cl2chan->next;
 	else My_Cl2Chan = cl2chan->next;
 #else
-	// TODO
 	__SET_REMOVE(&cl2chan,&My_Cl2Chan);
 #endif
 	free( cl2chan );

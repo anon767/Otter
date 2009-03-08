@@ -3,8 +3,9 @@
 
 // Make the compiler happy (these are not executed)
 
-void __ASSERT(int a){};
-void __ASSUME(int a){};
+void __ASSERT(int a){}
+void __ASSUME(int a){}
+void __EVAL(int a){}
 
 int AND(int a,int b){ return a&&b; }
 int OR(int a,int b){ return a||b; }
@@ -163,6 +164,24 @@ int __SET_FALSE_PRED(void** pars,void* x){
 }
 
 void __SET_REMOVE(void** obj, __SET* set){
-	__ASSERT(0);
+	__SET_ELM* cur;
+	__SET_ELM* last;
+	for(int i=0;i<2;i++){
+		last = 0;
+		cur = set->head[i];
+		while(cur!=0){
+			if(cur->elm==*obj){
+				if(last==0){
+					set->head[i]->next = cur->next;
+				}else{
+					last->next = cur->next;
+				}
+				free(cur);
+				goto DONE;
+			}
+			cur = cur->next;
+		}
+	}
+DONE: return;
 }
 
