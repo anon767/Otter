@@ -248,9 +248,9 @@ let humanReadableBytes bytesToVars bytes =
 			| Bytes_Op (OP_LAND,bytes_typ_list) ->
 					Printf.sprintf "(%s)"
 						(String.concat " /\\ " (List.map (fun (a,_) -> helper a) bytes_typ_list))
-			| Bytes_Op (OP_LOR,bytes_typ_list) ->
+			(*| Bytes_Op (OP_LOR,bytes_typ_list) ->
 					Printf.sprintf "(%s)"
-						(String.concat " \\/ " (List.map (fun (a,_) -> helper a) bytes_typ_list))
+						(String.concat " \\/ " (List.map (fun (a,_) -> helper a) bytes_typ_list)) *)
 			| Bytes_Op (op,bytes_typ_list) ->
 					Printf.sprintf "%s(%s)"
 						(operation op)

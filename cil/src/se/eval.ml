@@ -168,7 +168,25 @@ deref state bytes : memory_block * bytes=
 	(*Output.set_mode Output.MSG_MUSTPRINT;  tmp *)
 	match bytes with
 		| Bytes_Constant (c) -> failwith ("Dereference something not an address (constant) "^(To_string.bytes bytes))
-		| Bytes_ByteArray(bytearray) -> failwith ("Dereference something not an address (bytearray) "^(To_string.bytes bytes))
+		| Bytes_ByteArray(bytearray) -> 
+            (* 
+            * Special treatment: look for
+             * "==(Bytearray(bytearray),Bytes_Address(b,f))" in PC.
+             * If found, return deref state Bytes_Address(b,f).
+             * Otherwise, throw exception
+            * *)
+            let rec find_match pc = match pc with [] -> 
+                failwith ("Dereference something not an address (bytearray) "^(To_string.bytes bytes))
+              | Bytes_Op(OP_EQ,(bytes1,_)::(bytes2,_)::[])::pc' -> 
+                  begin
+                    let bytes_tentative = if bytes1=bytes then bytes2 else if bytes2=bytes then bytes1 else MemOp.bytes__zero in 
+                      match bytes_tentative with Bytes_Address(_,_) -> deref state bytes_tentative | _ -> find_match pc'
+                  end
+              | Bytes_Op(OP_LAND,btlist)::pc' ->
+                  find_match (List.rev_append (List.fold_left (fun a (b,_) -> b::a) [] btlist) pc')
+              | _::pc' -> find_match pc'
+            in
+              find_match state.path_condition
 		| Bytes_Address(Some(block), offset) -> (block, offset) 
 		| Bytes_Address(None, offset) -> failwith "Dereference a dangling pointer"
 		| Bytes_Op(op, operands) -> failwith ("Dereference something not an address (op) "^(To_string.bytes bytes))
