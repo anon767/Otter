@@ -219,6 +219,7 @@ IRC_PRIVMSG( CLIENT *Client, REQUEST *Req )
 	else from = Client;
 	if( ! from ) return IRC_WriteStrClient( Client, ERR_NOSUCHNICK_MSG, Client_ID( Client ), Req->prefix );
 
+#ifdef __ORIGINAL_NGIRCD__
 	cl = Client_Search( Req->argv[0] );
 	if( cl )
 	{
@@ -236,6 +237,7 @@ IRC_PRIVMSG( CLIENT *Client, REQUEST *Req )
 		if( Client_Conn( from ) > NONE ) Conn_UpdateIdle( Client_Conn( from ));
 		return IRC_WriteStrClientPrefix( cl, from, "PRIVMSG %s :%s", Client_ID( cl ), Req->argv[1] );
 	}
+#endif
 
 	chan = Channel_Search( Req->argv[0] );
 	if( chan ) return Channel_Write( chan, from, Client, Req->argv[1] );

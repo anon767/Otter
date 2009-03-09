@@ -81,56 +81,65 @@ static CLIENT *Init_New_Client PARAMS((CONN_ID Idx, CLIENT *Introducer,
 GLOBAL __SET* Client_GetTheSet PARAMS(( void )){
 	return & My_Clients;
 }
-#endif
 
-#ifndef __ORIGINAL_NGIRCD__
-Init_New_Client_noadd(CONN_ID Idx, CLIENT *Introducer, CLIENT *TopServer,
- int Type, char *ID, char *User, char *Hostname, char *Info, int Hops,
- int Token, char *Modes, bool Idented)
-{
-	CLIENT *client;
-
-	assert( Idx >= NONE );
-	assert( Introducer != NULL );
-	assert( Hostname != NULL );
-
-	client = New_Client_Struct( );
-	if( ! client ) return NULL;
-
-	/* Initialisieren */
-	client->starttime = time(NULL);
-	client->conn_id = Idx;
-	client->introducer = Introducer;
-	client->topserver = TopServer;
-	client->type = Type;
-	if( ID ) Client_SetID( client, ID );
-	if( User ) Client_SetUser( client, User, Idented );
-	if( Hostname ) Client_SetHostname( client, Hostname );
-	if( Info ) Client_SetInfo( client, Info );
-	client->hops = Hops;
-	client->token = Token;
-	if( Modes ) Client_SetModes( client, Modes );
-	if( Type == CLIENT_SERVER ) Generate_MyToken( client );
-	return client;
-}
 CLIENT* Client_Symbolic(){
-    return Init_New_Client_noadd(
-        /* CONN_ID Idx */        __SYMBOLIC(sizeof(CONN_ID)),
-        /* CLIENT *Introducer */ 0,
-        /* CLIENT *TopServer*/   0,
-        /* int Type*/            16/*CLIENT_USER*/,
-        /* char *ID*/            __SYMBOLIC_STR(),
-        /* char *User*/          __SYMBOLIC_STR(),
-        /* char *Hostname*/      __SYMBOLIC_STR(),
-        /* char *Info*/          __SYMBOLIC_STR(),
-        /* int Hops*/            __SYMBOLIC(sizeof(int)),
-        /* int Token*/           __SYMBOLIC(sizeof(int)),
-        /* char *Modes*/         __SYMBOLIC_STR(),
-        /* bool Idented*/        1
-        );
+	CLIENT *c = malloc(sizeof(CLIENT));
+
+	c->introducer = 0;	
+	c->topserver = 0;	
+	c->type = CLIENT_USER;		
+
+	c->starttime = __SYMBOLIC(0);		
+	c->hash = __SYMBOLIC(0);			
+	c->conn_id = __SYMBOLIC(0);		
+	c->hops = __SYMBOLIC(0);	
+	c->token = __SYMBOLIC(0);	
+	c->mytoken = __SYMBOLIC(0);	
+	c->oper_by_me = __SYMBOLIC(0);		
+
+	__SYMBOLIC_STRING(c->id);
+	__SYMBOLIC_STRING(c->pwd);
+	__SYMBOLIC_STRING(c->host);
+	__SYMBOLIC_STRING(c->user);
+	__SYMBOLIC_STRING(c->info);
+	__SYMBOLIC_STRING(c->modes);
+	__SYMBOLIC_STRING(c->away);
+	__SYMBOLIC_STRING(c->flags);
+
+	return c;
 }
 void* Client_Clone(void* src_void){
-	return Client_Symbolic();
+	CLIENT *src = src_void;
+	CLIENT *c = malloc(sizeof(CLIENT));
+
+	c->introducer = src->introducer;
+	c->topserver = src->topserver;
+	c->type = src->type;
+
+	__CLONE(&c->starttime,&src->starttime,sizeof(src->starttime));
+	__CLONE(&c->hash,&src->hash,sizeof(src->hash));
+	__CLONE(&c->conn_id,&src->conn_id,sizeof(src->conn_id));
+	__CLONE(&c->hops,&src->hops,sizeof(src->hops));
+	__CLONE(&c->token,&src->token,sizeof(src->token));
+	__CLONE(&c->mytoken,&src->mytoken,sizeof(src->mytoken));
+	__CLONE(&c->oper_by_me,&src->oper_by_me,sizeof(src->oper_by_me));
+	__SYMBOLIC_STRING(c->id);
+	__SYMBOLIC_STRING(c->pwd);
+	__SYMBOLIC_STRING(c->host);
+	__SYMBOLIC_STRING(c->user);
+	__SYMBOLIC_STRING(c->info);
+	__SYMBOLIC_STRING(c->modes);
+	__SYMBOLIC_STRING(c->away);
+	__SYMBOLIC_STRING(c->flags);
+	__CLONE(c->id,src->id,__SYMBOLIC_STR_LEN__);
+	__CLONE(c->pwd,src->pwd,__SYMBOLIC_STR_LEN__);
+	__CLONE(c->host,src->host,__SYMBOLIC_STR_LEN__);
+	__CLONE(c->user,src->user,__SYMBOLIC_STR_LEN__);
+	__CLONE(c->info,src->info,__SYMBOLIC_STR_LEN__);
+	__CLONE(c->modes,src->modes,__SYMBOLIC_STR_LEN__);
+	__CLONE(c->away,src->away,__SYMBOLIC_STR_LEN__);
+	__CLONE(c->flags,src->flags,__SYMBOLIC_STR_LEN__);
+	return c;
 }	
 #endif
 GLOBAL void
@@ -156,6 +165,7 @@ Client_Init( void )
 	This_Server->mytoken = 1;
 	This_Server->hops = 0;
 
+#ifdef __ORIGINAL_NGIRCD__
 	gethostname( This_Server->host, CLIENT_HOST_LEN );
 	if (!Conf_NoDNS) {
 		h = gethostbyname( This_Server->host );
@@ -164,10 +174,10 @@ Client_Init( void )
 	Client_SetID( This_Server, Conf_ServerName );
 	Client_SetInfo( This_Server, Conf_ServerInfo );
 
-#ifdef __ORIGINAL_NGIRCD__
 	My_Clients = This_Server;
 #else
 	__SET_INIT(&My_Clients,Client_Symbolic(),Client_Clone);
+	//__SET_ADD(&This_Server,&My_Clients);
 #endif
 	
 	memset( &My_Whowas, 0, sizeof( My_Whowas ));

@@ -14,27 +14,23 @@ int __SYMBOLIC(int a){ return 0;}
 int __TRUTH_VALUE(int a){ return 0;}
 void __CLONE(void* a,void* b,int c){}
 
-#define IMPLY(X,Y)	OR(NOT(X),(Y))
 
 // symbolic string functions (temporary)
 void* __PTR_SYMBOLIC(int n){
 	char* p = malloc(n);
 	for(int i=0;i<n;i++)
-		p[i] = __SYMBOLIC(1);
+		p[i] = __SYMBOLIC(0);
 	return p;
 }
 
-#define __SYMBOLIC_STR_LEN__   2
-char* __SYMBOLIC_STR(){
-	char* s = malloc(__SYMBOLIC_STR_LEN__+1);
+void __SYMBOLIC_STRING(char* s){
 	for(int i=0;i<__SYMBOLIC_STR_LEN__;i++){
-		s[i] = __SYMBOLIC(1);
+		s[i] = __SYMBOLIC(0);
 		__ASSUME(s[i]>32);
 		__ASSUME(s[i]!='0');
 		__ASSUME(s[i]!=',');
 	}
 	s[__SYMBOLIC_STR_LEN__] = '\0';
-	return s;
 }
 int __STRING_EQUAL(char* a,char* b){
 	int pred = 1;
@@ -58,7 +54,7 @@ void** __ARG(int arg1,...){
 }
 
 void __ASSUME_SIMPLIFY(int exp){
-	if(__TRUTH_VALUE(exp)==0) // unknown
+	//if(__TRUTH_VALUE(exp)==0) // unknown
 		__ASSUME(exp);
 }
 

@@ -72,31 +72,57 @@ static bool Delete_Channel PARAMS(( CHANNEL *Chan ));
 
 
 #ifndef __ORIGINAL_NGIRCD__
+GLOBAL __SET* Channel_GetTheSet PARAMS(( void )){
+	return & My_Channels;
+}
+GLOBAL __SET* Cl2Chan_GetTheSet PARAMS(( void )){
+	return & My_Cl2Chan;
+}
 CHANNEL* Channel_Symbolic(){
-	CHANNEL *c;
-	c = (CHANNEL *)malloc( sizeof( CHANNEL ));
-	strcpy(c->name,__SYMBOLIC_STR());
-	c->hash = __SYMBOLIC(sizeof(c->hash));
+	CHANNEL *c = (CHANNEL *)malloc( sizeof( CHANNEL ));
+
 	strcpy(c->modes,"");
+	strcpy(c->key,"");
 	array_init(&c->topic);
-	c->topic_time = __SYMBOLIC(sizeof(c->topic_time));
-	strcpy(c->topic_who,__SYMBOLIC_STR());
 	c->list_bans.first = 0 ;
 	c->list_invites.first = 0 ;
+
+	c->hash = __SYMBOLIC(0);
+	c->topic_time = __SYMBOLIC(0);
+	c->maxusers = __SYMBOLIC(0);
+
+	__SYMBOLIC_STRING(c->name);
+	__SYMBOLIC_STRING(c->topic_who);
+
 	return c;
 }
 void* Channel_Clone(void* src_void){
     CHANNEL* src = (CHANNEL*)src_void;
-    CHANNEL* tar = Channel_Symbolic();
-    __CLONE(tar->name,src->name,2);
+	CHANNEL *c = (CHANNEL *)malloc( sizeof( CHANNEL ));
+
+	strcpy(c->modes,src->modes);
+	strcpy(c->key,src->key);
+	array_init(&c->topic); // TODO: copy?
+	c->list_bans.first = src->list_bans.first;
+	c->list_invites.first = src->list_invites.first;
+
+	__CLONE(&c->hash,&src->hash,sizeof(src->hash));
+	__CLONE(&c->topic_time,&src->topic_time,sizeof(src->topic_time));
+	__CLONE(&c->maxusers,&src->maxusers,sizeof(src->maxusers));
+
+	__SYMBOLIC_STRING(c->name);
+	__SYMBOLIC_STRING(c->topic_who);
+	__CLONE(c->name,src->name,__SYMBOLIC_STR_LEN__);
+	__CLONE(c->topic_who,src->topic_who,__SYMBOLIC_STR_LEN__);
+
     // constraint: any channel has different name from the rest
-    __ASSUME_SIMPLIFY(NOT(__STRING_EQUAL(tar->name,src->name)));
-    return tar;
+    __ASSUME_SIMPLIFY(NOT(__STRING_EQUAL(c->name,src->name)));
+    return c;
 }
 CL2CHAN* Cl2Chan_Symbolic(){
 	CL2CHAN* c = malloc(sizeof(CL2CHAN));
-	c->client = __SYMBOLIC(4);
-	c->channel = __SYMBOLIC(4);
+	c->client = __SYMBOLIC(0);
+	c->channel = __SYMBOLIC(0);
 	strcpy(c->modes,"");
 	return c;
 }
@@ -109,6 +135,8 @@ void* Cl2Chan_Clone(void* src_void){
 	// constraint: the (cl,ch) pair must not appear twice in the set
 	__ASSUME_SIMPLIFY(OR(tar->client!=src->client,tar->channel!=src->channel));
 
+	// the follow constraint should be attached to the rest object instead
+	// but since it's changing over time, it's put to the clone everytime instead.
 	__SET* All_existing_Clients = Client_GetTheSet();
 	__SET* All_existing_Channels = &My_Channels;
 	__ASSUME_SIMPLIFY( tar->client==__SET_ABSTRACT_INTERNAL(All_existing_Clients));
@@ -897,8 +925,10 @@ Channel_Write(CHANNEL *Chan, CLIENT *From, CLIENT *Client, const char *Text)
 	if (!Can_Send_To_Channel(Chan, From))
 		return IRC_WriteStrClient(From, ERR_CANNOTSENDTOCHAN_MSG, Client_ID(From), Channel_Name(Chan));
 
+#ifdef __ORIGINAL_NGIRCD__
 	if (Client_Conn(From) > NONE)
 		Conn_UpdateIdle(Client_Conn(From));
+#endif
 
 	return IRC_WriteStrChannelPrefix(Client, Chan, From, true,
 			"PRIVMSG %s :%s", Channel_Name(Chan), Text);

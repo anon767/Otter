@@ -60,6 +60,10 @@ typedef POINTER CL2CHAN;
 
 #endif
 
+#ifndef __ORIGINAL_NGIRCD__
+GLOBAL __SET* Channel_GetTheSet PARAMS(( void ));
+GLOBAL __SET* Cl2Chan_GetTheSet PARAMS(( void ));
+#endif
 GLOBAL struct list_head *Channel_GetListBans PARAMS((CHANNEL *c));
 GLOBAL struct list_head *Channel_GetListInvites PARAMS((CHANNEL *c));
 
