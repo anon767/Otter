@@ -6,6 +6,8 @@
 void __ASSERT(int a){}
 void __ASSUME(int a){}
 void __EVAL(int a){}
+void __EVALSTR(char* a,int len){}
+void __COMMENT(char* a){}
 
 int AND(int a,int b){ return a&&b; }
 int OR(int a,int b){ return a||b; }
@@ -126,7 +128,7 @@ void __SET_FOREACH(void** ret,__SET* set){
 	__SET_ADD_INTERNAL(newobj,set);
 }
 
-int __SET_FIND(void** ret,__SET* set,int (*pred)(void**,void*),void** pars){
+int __SET_FIND_CONCRETE(void** ret,__SET* set,int (*pred)(void**,void*),void** pars){
 	int nr = 0;
 	__SET_ELM* cur;
 	for(int i=0;i<2;i++){
@@ -139,6 +141,10 @@ int __SET_FIND(void** ret,__SET* set,int (*pred)(void**,void*),void** pars){
 			cur = cur->next;
 		}
 	}
+	return nr;
+}
+int __SET_FIND(void** ret,__SET* set,int (*pred)(void**,void*),void** pars){
+	int nr = __SET_FIND_CONCRETE(ret,set,pred,pars);
 	void* newobj = set->clone(set->rest);
 	if(pred(pars,newobj)){
 		nr++;

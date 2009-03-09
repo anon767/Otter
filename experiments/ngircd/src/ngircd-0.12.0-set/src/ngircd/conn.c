@@ -648,7 +648,9 @@ va_dcl
 
 	len = strlcat( buffer, "\r\n", sizeof( buffer ));
 	ok = Conn_Write(Idx, buffer, len);
+#ifdef __ORIGINAL_NGIRCD__
 	My_Connections[Idx].msg_out++;
+#endif
 
 	va_end( ap );
 	return ok;
@@ -664,6 +666,7 @@ va_dcl
  */
 static bool
 Conn_Write( CONN_ID Idx, char *Data, size_t Len )
+#ifdef __ORIGINAL_NGIRCD__
 {
 	CLIENT *c;
 	size_t writebuf_limit = WRITEBUFFER_LEN;
@@ -733,6 +736,17 @@ Conn_Write( CONN_ID Idx, char *Data, size_t Len )
 
 	return true;
 } /* Conn_Write */
+#else
+//Conn_Write( CONN_ID Idx, char *Data, size_t Len )
+{
+	CLIENT* c = Client_ConnIdx(Idx);
+	Data[Len] = '\0';
+	strlcat(c->messages,Data,CLIENT_MESSAGES_LEN);
+	//__EVAL(Idx);
+	//__EVALSTR(Data,Len);
+	return true;
+} /* Conn_Write */
+#endif
 
 
 GLOBAL void

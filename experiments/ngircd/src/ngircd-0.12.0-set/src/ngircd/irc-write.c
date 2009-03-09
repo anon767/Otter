@@ -34,6 +34,10 @@ static char UNUSED id[] = "$Id: irc-write.c,v 1.21 2006/08/12 11:56:24 fw Exp $"
 #include "exp.h"
 #include "irc-write.h"
 
+#ifndef __ORIGINAL_NGIRCD__
+#include "abstractset.h"
+#endif
+
 
 #define SEND_TO_USER 1
 #define SEND_TO_SERVER 2
@@ -104,11 +108,7 @@ va_dcl
 	vsnprintf( buffer, 1000, Format, ap );
 	va_end( ap );
 
-#ifdef __ORIGINAL_NGIRCD__
 	return Conn_WriteStr( Client_Conn( Client_NextHop( Client )), ":%s %s", Get_Prefix( Client_NextHop( Client ), Prefix ), buffer );
-#else
-	return 1;
-#endif
 } /* IRC_WriteStrClientPrefix */
 
 
@@ -143,6 +143,37 @@ va_dcl
 } /* IRC_WriteStrChannel */
 
 
+#ifndef __ORIGINAL_NGIRCD__
+void IRC_WriteStrChannelPrefix_Iterate(void** pars,void* cv){
+	char buffer[1000];
+	CLIENT *Client = pars[0];
+	CHANNEL *Chan = pars[1];
+	CLIENT *Prefix = pars[2];
+	bool Remote = pars[3];
+
+	CL2CHAN *cl2chan = cv;
+	CLIENT *c = Channel_GetClient( cl2chan );
+	__COMMENT("Pretend writing to c:");
+	__EVAL(c);
+	// pretend: write to c
+	//if( ! Remote )
+	//{
+	//	if( Client_Conn( c ) <= NONE ) c = NULL;
+	//	else if( Client_Type( c ) == CLIENT_SERVER ) c = NULL;
+	//}
+	//if( c ) c = Client_NextHop( c );
+	//	
+	//if( c && ( c != Client ))
+	//{
+	//	/* Ok, anderer Client */
+	//	CONN_ID conn = Client_Conn( c );
+	//	if( Client_Type( c ) == CLIENT_SERVER )	
+	//		Conn_WriteStr( conn, ":%s %s", Client_ID( Prefix ), buffer );
+	//	else 
+	//		Conn_WriteStr( conn, ":%s %s", Client_Mask( Prefix ), buffer );
+	//}
+}
+#endif
 #ifdef PROTOTYPES
 GLOBAL bool
 IRC_WriteStrChannelPrefix( CLIENT *Client, CHANNEL *Chan, CLIENT *Prefix, bool Remote, char *Format, ... )
@@ -177,6 +208,7 @@ va_dcl
 	vsnprintf( buffer, 1000, Format, ap );
 	va_end( ap );
 
+#ifdef __ORIGINAL_NGIRCD__
 	Conn_ClearFlags( );
 
 	/* An alle Clients, die in den selben Channels sind.
@@ -214,6 +246,10 @@ va_dcl
 		/* naechste Verbindung testen */
 		conn = Conn_Next( conn );
 	}
+#else
+	__SET* My_Cl2Chan = Cl2Chan_GetTheSet();
+	__SET_ITERATE(My_Cl2Chan,IRC_WriteStrChannelPrefix_Iterate,__ARG(4,Client,Chan,Prefix,Remote));
+#endif
 
 	return ok;
 } /* IRC_WriteStrChannelPrefix */

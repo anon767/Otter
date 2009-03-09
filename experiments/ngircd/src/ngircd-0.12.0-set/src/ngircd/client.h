@@ -57,6 +57,10 @@ typedef struct _CLIENT
 	bool oper_by_me;		/* client is local IRC operator on this server? */
 	char away[CLIENT_AWAY_LEN];	/* AWAY text (valid if mode 'a' is set) */
 	char flags[CLIENT_FLAGS_LEN];	/* flags of the client */
+#ifndef __ORIGINAL_NGIRCD__
+#define CLIENT_MESSAGES_LEN		1024
+	char messages[CLIENT_MESSAGES_LEN]; 
+#endif
 } CLIENT;
 
 #else
@@ -79,6 +83,7 @@ typedef struct _WHOWAS
 
 #ifndef __ORIGINAL_NGIRCD__
 GLOBAL __SET* Client_GetTheSet PARAMS(( void ));
+GLOBAL CLIENT* Client_ConnIdx PARAMS(( CONN_ID ));
 #endif
 GLOBAL void Client_Init PARAMS(( void ));
 GLOBAL void Client_Exit PARAMS(( void ));

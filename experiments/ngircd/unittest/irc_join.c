@@ -3,8 +3,6 @@
 #undef main
 
 
-
-
 REQUEST* make_join_request(){
 	REQUEST *request = malloc(sizeof(REQUEST));
 	request->prefix = "";
@@ -53,11 +51,39 @@ int main(){
 	IRC_JOIN(client,request);
 	// Channels: C+ c(request->argv[0]) if it's valid
 	
+	// existing channels still exist
 	__ASSERT(Channel_Search(existing_channel_name)!=0);
+	// nonexisting channels, if not equal to the requested channel, still don't exist
 	__ASSERT(OR(__STRING_EQUAL(nonexisting_channel_name,request->argv[0]),
-				Channel_Search(nonexisting_channel_name)==0));
+				Channel_Search(nonexisting_channel_name)==0)); 
+	
+	// if the requested channel has valid name
+	if(Channel_IsValidName(request->argv[0])){
+		CHANNEL *Chan = Channel_Search(request->argv[0]);
+		// Requested channel is in the channel set
+		__ASSERT(Chan!=0);
+		// client is in the channel
+		__ASSERT(Get_Cl2Chan(Chan,client)!=0);
 
+		CLIENT *client2;
+		// for each client2 in the client set, 
+		// if it's in the channel and not == client,
+		__SET_FOREACH(&client2,&My_Clients);
+		if(AND(client2!=client,Get_Cl2Chan(Chan,client2)!=0)){
+			// TODO: client2 receives ":{client->ID} JOIN :{request->argv[0]}"
+			__COMMENT("Expect: client2 receives \":{client->ID} JOIN :{request->argv[0]}\"");
+			__EVALSTR(client2->messages,strlen(client2->messages));
+		}
+	}
+	else{
+		// TODO: client receives ERR_NOSUCHCHANNEL
+		__COMMENT("Expect: ERR_NOSUCHCHANNEL");
+		__EVALSTR(client->messages,strlen(client->messages));
+	}
+	
+	
 	__COMMENT("DONE");
 
 	return 0;
 }
+

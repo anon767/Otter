@@ -119,6 +119,9 @@ void* Channel_Clone(void* src_void){
     __ASSUME_SIMPLIFY(NOT(__STRING_EQUAL(c->name,src->name)));
     return c;
 }
+int Channel_Equal(void* va, void* bv){
+	return 1;
+}
 CL2CHAN* Cl2Chan_Symbolic(){
 	CL2CHAN* c = malloc(sizeof(CL2CHAN));
 	c->client = __SYMBOLIC(0);
@@ -127,20 +130,53 @@ CL2CHAN* Cl2Chan_Symbolic(){
 	return c;
 }
 
+int Get_Cl2Chan_Find(void** pars,void* cl2chan_void);
 void* Cl2Chan_Clone(void* src_void){
 	CL2CHAN* src = (CL2CHAN*)src_void;
 	CL2CHAN* tar = Cl2Chan_Symbolic();
-	__CLONE(&tar->client,&src->client,sizeof(CLIENT*));
-	__CLONE(&tar->channel,&src->channel,sizeof(CHANNEL*));
-	// constraint: the (cl,ch) pair must not appear twice in the set
-	__ASSUME_SIMPLIFY(OR(tar->client!=src->client,tar->channel!=src->channel));
 
-	// the follow constraint should be attached to the rest object instead
-	// but since it's changing over time, it's put to the clone everytime instead.
-	__SET* All_existing_Clients = Client_GetTheSet();
-	__SET* All_existing_Channels = &My_Channels;
-	__ASSUME_SIMPLIFY( tar->client==__SET_ABSTRACT_INTERNAL(All_existing_Clients));
-	__ASSUME_SIMPLIFY( tar->channel==__SET_ABSTRACT_INTERNAL(All_existing_Channels));
+	 __CLONE(&tar->client,&src->client,sizeof(CLIENT*));
+	 __CLONE(&tar->channel,&src->channel,sizeof(CHANNEL*));
+	 // constraint: the (cl,ch) pair must not appear twice in the set
+	 __ASSUME_SIMPLIFY(OR(tar->client!=src->client,tar->channel!=src->channel));
+
+	 // the follow constraint should be attached to the rest object instead
+	 // but since it's changing over time, it's put to the clone everytime instead.
+	 __SET* All_existing_Clients = Client_GetTheSet();
+	 __SET* All_existing_Channels = &My_Channels;
+	 __ASSUME_SIMPLIFY( tar->client==__SET_ABSTRACT_INTERNAL(All_existing_Clients));
+	 __ASSUME_SIMPLIFY( tar->channel==__SET_ABSTRACT_INTERNAL(All_existing_Channels));
+
+	/*
+	 * The method above has a problem when we want to deref x
+	 * where x is a symbolic value which is constrained to be one of some addresses.
+	 * Instead, I will do the following:
+	 * The current rest object of My_Cl2Chan has symbolic pointers client and channel.
+	 * But the constraints with them are all about what they CANNOT be.
+	 * So a clone will be branching all possible values of (client,channel),
+	 * given the rest objects, My_Clients and My_Channels. 
+	 *
+	 * After generating a pair, add constraint to the rest object that this pair has been generated.
+	 *
+	 * OK: This method doesn't scale.
+	 */
+	//CLIENT *client;
+	//CHANNEL *channel;
+	//__SET* All_existing_Clients = Client_GetTheSet();
+	//
+	//__SET_FOREACH(&client,All_existing_Clients);
+	//__SET_FOREACH(&channel,&My_Channels);
+	//
+	//// Here, PC has OR(client!=src->client,channel!=src->channel)
+	//CL2CHAN* tar;
+	//if(__SET_FIND_CONCRETE(&tar,&My_Cl2Chan,Get_Cl2Chan_Find,__ARG(2,channel,client))>0) {
+	//	__COMMENT("We don't want this branch");
+	//	exit(1);
+	//}
+
+	//tar = Cl2Chan_Symbolic();
+	//tar->client = client;
+	//tar->channel = channel;
 	return tar;
 }
 

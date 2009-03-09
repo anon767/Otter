@@ -81,6 +81,18 @@ static CLIENT *Init_New_Client PARAMS((CONN_ID Idx, CLIENT *Introducer,
 GLOBAL __SET* Client_GetTheSet PARAMS(( void )){
 	return & My_Clients;
 }
+int Client_ConnIdx_Find(void** pars,void* cv){
+	CLIENT *c = cv;
+	CONN_ID Idx = pars[0];
+	return ( Idx == c->conn_id ) ;
+}
+GLOBAL CLIENT *Client_ConnIdx PARAMS((CONN_ID Idx)){
+	CLIENT* c;
+	if(__SET_FIND(&c,&My_Clients,Client_ConnIdx_Find,__ARG(1,Idx))>0)
+		return c;
+	else
+		return 0;
+}
 
 CLIENT* Client_Symbolic(){
 	CLIENT *c = malloc(sizeof(CLIENT));
@@ -88,10 +100,12 @@ CLIENT* Client_Symbolic(){
 	c->introducer = 0;	
 	c->topserver = 0;	
 	c->type = CLIENT_USER;		
+	strcpy(c->messages,"");
 
 	c->starttime = __SYMBOLIC(0);		
 	c->hash = __SYMBOLIC(0);			
 	c->conn_id = __SYMBOLIC(0);		
+	__ASSUME_SIMPLIFY(c->conn_id>NONE);
 	c->hops = __SYMBOLIC(0);	
 	c->token = __SYMBOLIC(0);	
 	c->mytoken = __SYMBOLIC(0);	
@@ -115,6 +129,7 @@ void* Client_Clone(void* src_void){
 	c->introducer = src->introducer;
 	c->topserver = src->topserver;
 	c->type = src->type;
+	strcpy(c->messages,src->messages);
 
 	__CLONE(&c->starttime,&src->starttime,sizeof(src->starttime));
 	__CLONE(&c->hash,&src->hash,sizeof(src->hash));
@@ -139,6 +154,9 @@ void* Client_Clone(void* src_void){
 	__CLONE(c->modes,src->modes,__SYMBOLIC_STR_LEN__);
 	__CLONE(c->away,src->away,__SYMBOLIC_STR_LEN__);
 	__CLONE(c->flags,src->flags,__SYMBOLIC_STR_LEN__);
+
+	__ASSUME_SIMPLIFY(c->conn_id!=src->conn_id);
+	__ASSUME_SIMPLIFY(NOT(__STRING_EQUAL(c->id,src->id)));
 	return c;
 }	
 #endif
