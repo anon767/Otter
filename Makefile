@@ -1,40 +1,54 @@
 
-SUBDIRS=cil ocamlstp stp camlidl
+SUBDIRS=cilqual cil ocamlstp stp camlidl
+EXTRALIBDIRS = $(addprefix $(CURDIR)/,camlidl/runtime stp/lib ocamlstp)
+
 
 all : cil
 
-cil : cil/bin/cilly.exe
-cil/bin/cilly.exe : cil/Makefile
-	make -C cil
-cil/Makefile : CONFIGURE_FLAGS=EXTRALIBDIRS='../camlidl/runtime ../stp/lib ../ocamlstp'
-cil/Makefile : ocamlstp
+
+cil : make//cil
+make//cil : MAKEGOALS=
+make//cil : CONFIGURE_FLAGS=EXTRALIBDIRS='$(EXTRALIBDIRS)'
+make//cil : ocamlstp
 
 
-ocamlstp : ocamlstp/stpvc.a
-ocamlstp/stpvc.a : stp camlidl
-	make -C ocamlstp CAMLIDL='../camlidl/compiler/camlidl' \
-	                 LIBDIRS='../camlidl/runtime ../stp/lib' \
-					 INCDIRS='../camlidl/runtime ../stp/c_interface'
+cilqual : make//cilqual
+cilqual : MAKEGOALS=
+test-cilqual : make//cilqual
+test-cilqual : MAKEGOALS=test
+make//cilqual : CONFIGURE_FLAGS=EXTRALIBDIRS='$(EXTRALIBDIRS)' --with-cil='$(CURDIR)/cil'
+make//cilqual : cil
 
 
-stp : stp/lib/libstp.a
-stp/lib/libstp.a : stp/Makefile
-	make -C stp
-stp/Makefile : CONFIGURE_FLAGS=--with-prefix=.
+ocamlstp : make//ocamlstp
+make//ocamlstp : MAKEGOALS=CAMLIDL='../camlidl/compiler/camlidl' \
+	                      LIBDIRS='../camlidl/runtime ../stp/lib' \
+					      INCDIRS='../camlidl/runtime ../stp/c_interface'
+make//ocamlstp : stp camlidl
 
 
-camlidl : camlidl/compiler/camlidl
-camlidl/compiler/camlidl :
-	make -C camlidl
+stp : make//stp
+make//stp : MAKEGOALS=
+make//stp : CONFIGURE_FLAGS=--with-prefix=.
+
+
+camlidl : make//camlidl
 
 
 clean :
-	$(foreach foo,$(SUBDIRS),make -C $(foo) clean;)
+	$(foreach foo,$(SUBDIRS),$(MAKE) -C $(foo) clean;)
 
 
-%/Makefile : %/Makefile.in Makefile
+.PRECIOUS : %/Makefile
+%/Makefile : %/Makefile.in %/configure Makefile
 	cd $(@D) && ./configure $(CONFIGURE_FLAGS)
 
-%/Makefile : Makefile
+%/Makefile : %/configure Makefile
 	cd $(@D) && ./configure $(CONFIGURE_FLAGS)
 
+.PRECIOUS : %/configure
+%/configure : %/configure.ac
+	cd $(@D) && autoreconf
+
+make//% : %/Makefile
+	$(MAKE) -C $(@F) $(MAKEGOALS)

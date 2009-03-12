@@ -1264,12 +1264,13 @@ sub compilerArgument {
    return 0;
 }
 
-sub get_terminal {
+sub give_terminal {
+    my ($pgrp) = @_;
     # figure out if we're on a terminal
     if ((tcgetpgrp fileno(STDIN)) > 0) {
         # http://www.opengroup.org/onlinepubs/007908775/xsh/tcsetpgrp.html
         local $SIG{TTOU} = "IGNORE";
-        if (!defined POSIX::tcsetpgrp fileno(STDIN), (getpgrp)) {
+        if (!defined POSIX::tcsetpgrp fileno(STDIN), $pgrp) {
             die "tcsetpgrp failed: $!";
         }
     }
@@ -1325,12 +1326,31 @@ sub runShell {
     #    all forked processes, and monitor it. Then wait() to get the child's
     #    exit status (which will be likely be wrong if run under the debugger).
     my $child;
+    my $childexit;
 
     # handle signal to properly kill the entire process group
     local $SIG{INT} = local $SIG{TERM} = sub {
         my ($signame) = @_;
         kill $signame => -$child; # kill child's group
         exit 255;
+    };
+    # handle child stop signal
+    local $SIG{CHLD} = sub {
+        my $waitchild = waitpid(-1, POSIX::WUNTRACED);
+        $childexit = $?;
+        if ($waitchild == $child) {
+            if (POSIX::WIFSTOPPED($childexit)) {
+                give_terminal (getpgrp);
+                kill POSIX::WSTOPSIG($childexit) => $$;
+                undef $childexit;
+            } elsif (POSIX::WIFSIGNALED($childexit)) {
+                kill POSIX::WTERMSIG($childexit) => $$;
+            }
+        }
+    };
+    local $SIG{CONT} = sub {
+        give_terminal $child;
+        kill CONT => $child;
     };
 
     # create monitoring pipe
@@ -1341,26 +1361,26 @@ sub runShell {
         # first, monitor the terminal
         close($monitor_out);
         vec(my $rin = "", fileno($monitor_in), 1) = 1;
-        while ((select $rin, undef, undef, undef) == 0) {}
+        while(!defined $childexit) {
+            select $rin, undef, undef, undef;
+        };
         close($monitor_in);
         
-        # then, get the return value, and fail if the child 
-        wait;
-        my $code = $?;
-        if ($code != 0) {
-            die "Error $! running $cmd[0]";
+        # then, get the return value, and fail if the child fails
+        if ($childexit != 0) {
+            die "Error running $cmd[0]";
         }
         
         # finally, retake over the terminal and return
-        get_terminal;
+        give_terminal (getpgrp);
         
-        return $code;
+        return $childexit;
     } elsif (defined $child) { # Child
         # first, group grandchildren
         setpgrp;
         
         # then, take over the terminal
-        get_terminal;
+        give_terminal (getpgrp);
         
         # finally, launch the process
         exec { $cmd[0] } @cmd; # Perl will automatically close $monitor_in
