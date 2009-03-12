@@ -1,0 +1,100 @@
+CIL_SRCDIR = @CIL_SRCDIR@
+OCAMLBUILD = @OCAMLBUILD@
+OCAMLFIND = @OCAMLFIND@
+EXTRALIBDIRS = @EXTRALIBDIRS@
+
+include $(CIL_SRCDIR)/config.mk
+
+CIL_OBJDIR = $(CILHOME)/obj/$(ARCHOS)
+
+OCAMLBUILD_CIL = -cflags -I,$(CIL_OBJDIR) -lflags -I,$(CIL_OBJDIR) -tags pkg_unix,pkg_str -libs stpvc,cil
+OCAMLBUILD_PA_MONAD = -X pa_monad -tag syntax_camlp4o -tag pkg_pa_monad
+OCAMLBUILD_GRAPH = -X ocamlgraph -tag pkg_ocamlgraph
+OCAMLBUILD_OUNIT = -tag pkg_oUnit
+
+OCAMLBUILD_FLAGS = $(OCAMLBUILD_CIL) $(OCAMLBUILD_PA_MONAD) $(OCAMLBUILD_GRAPH)
+OCAMLBUILD_FLAGS += $(EXTRALIBDIRS:%=-lflags -I,%) $(OCAMLBUILD_EXTRAFLAGS)
+export OCAMLPATH:=$(CURDIR):$(OCAMLPATH)
+
+OCAMLBUILD_DEPS = pa_monad ocamlgraph
+
+VPATH = src
+
+.PHONY : all native debug config test
+
+all : native
+
+native : ocamlbuild//runcilqual.native config
+debug : ocamlbuild//runcilqual.d.byte config
+config : CilQualConfig.pm
+test : ounit//runtestcilqual.d.byte
+
+ounit//runtestcilqual.d.byte : OCAMLBUILD_FLAGS += $(OCAMLBUILD_OUNIT)
+ounit//runtestcilqual.d.byte : OUNIT_FLAGS = -verbose
+ounit//runtestcilqual.d.byte : VPATH += test
+
+pa_monad : pa_monad/pa_monad.cmo
+pa_monad/pa_monad.cmo : make//pa_monad
+make//pa_monad : MAKEGOALS=all META
+
+ocamlgraph : ocamlgraph/graph.cma ocamlgraph/graph.cmxa
+ocamlgraph/graph.cma ocamlgraph/graph.cmxa : make//ocamlgraph
+
+CilQualConfig.pm : Makefile $(CIL_SRCDIR)/config.mk
+	echo '$$::cilhome = "$(CILHOME)";' > $@
+	echo '$$::cc  = "$(CC)";' >> $@
+	echo '$$::default_mode = "$(DEFAULT_CIL_MODE)"' >> $@
+
+clean : clean-cilqual
+	$(MAKE) -C pa_monad clean
+	$(MAKE) -C ocamlgraph clean
+
+clean-cilqual :
+	$(OCAMLBUILD) -clean
+	$(RM) CilQualConfig.pm *.native *.byte
+
+distclean : clean-cilqual
+	$(MAKE) -C pa_monad distclean
+	$(MAKE) -C ocamlgraph distclean
+	$(RM) config.cache config.log config.status
+
+maintainer-clean : distclean
+	$(RM) Makefile
+	$(RM) -r auto4mate.cache
+
+
+# Makefile implicit rules
+
+OCAMLBUILD.build = $(OCAMLBUILD) $(OCAMLBUILD_FLAGS) $(VPATH:%=-I %) $(OCAMLBUILD_EXTRATARGETS) $*
+
+# ocamlbuild places a symbolic link to the product in the project root, but deletes all such links prior to
+# the next build; so the following copies the actual product in place of the link.
+define OCAMLBUILD.exe
+	$(RM) $* && \
+	$(OCAMLBUILD.build) && \
+	TMPCIL=`mktemp $*.tmpXXXXXX` && \
+	mv $* $$TMPCIL && \
+	cp $$TMPCIL $* && \
+	$(RM) $$TMPCIL
+endef
+
+# for executables, move the product; everything else, leave it as is
+ocamlbuild//% : $(OCAMLBUILD_DEPS)
+	$(if $(filter %.native %.byte,$*),$(OCAMLBUILD.exe),$(OCAMLBUILD.build))
+
+# ounit: build and run
+ounit//% : ocamlbuild//%
+	./$* $(OUNIT_FLAGS)
+
+
+# recursive Makefile build
+make//% : %/Makefile
+	$(MAKE) -C $* $(MAKEGOALS)
+
+.PRECIOUS : %/Makefile
+%/Makefile : %/Makefile.in
+	cd $* && ./configure $(CONFIGURE_FLAGS)
+
+# autoconf
+Makefile : Makefile.in
+	./config.status
