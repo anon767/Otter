@@ -65,7 +65,8 @@ let libc_malloc state exps =
 	in
 	let block =  MemOp.block__make name size Block_type_Heap in
 (*	let bytes = Bytes_ByteArray ({ImmutableArray.empty with ImmutableArray.length = size}) in*)
-	let bytes = MemOp.bytes__make_default size byte__undef in
+(*	let bytes = MemOp.bytes__make_default size byte__undef in (* initially the symbolic 'undef' byte *) *)
+	let bytes = MemOp.bytes__make size in (* initially zero, as though malloc were calloc *)
 	let addrof_block = Bytes_Address (Some(block),MemOp.bytes__zero) in
 	let state2 = MemOp.state__add_block state block bytes in
 		(state2,addrof_block)	

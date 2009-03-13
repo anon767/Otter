@@ -216,7 +216,7 @@ flatten_offset state lhost_typ offset : bytes * typ (* type of (lhost,offset) *)
 								(* TODO: right thing to do?*)
               	let rv = if MemOp.bytes__length rv0 <> word__size then rval_cast Cil.intType rv0 (Cil.typeOf exp) else rv0 in
 							let typ = Cil.typeOf exp in
-							let base_typ = match lhost_typ with TArray(typ2, _, _) -> typ2 | _ -> failwith "Must be array" in
+							let base_typ = match Cilutility.unrollType lhost_typ with TArray(typ2, _, _) -> typ2 | _ -> failwith "Must be array" in
 							let base_size = (Cil.bitsSizeOf base_typ) / 8 in (* must be known *)
 							(* TODO: if typ is not IInt, should we change it to? *)
 							let (index) = Operation.mult [(rv,typ);(Convert.lazy_int_to_bytes base_size,typ)] in 
@@ -238,7 +238,12 @@ flatten_offset state lhost_typ offset : bytes * typ (* type of (lhost,offset) *)
 
 and
 
-(* TODO: need to see how C pack data in struct *)
+(* This does not align fields based on their type. For example, a
+	 struct { char c; int n; } would have n at offset 1, whereas gcc has
+	 ints 4-byte aligned, so it is at offset 4. I'm not exactly sure
+	 what gcc does generally, though. Also, the C specification seems to
+	 leave alignment implementation-defined [6.7.2.1.12], so not
+	 padding for alignment should be okay. *)
 field_offset f : int =
 	if not f.fcomp.cstruct
 	then 0 (* This is a field in a union, so the offset is 0. *)

@@ -80,7 +80,7 @@ let lnot operands = (* should return int (32-bit) *)
 
  *)
 (* binop. suitable for binop with operands of equal type *)
-let binop op_const op_symb operands : bytes (* * typ *)=
+let rec binop op_const op_symb operands : bytes (* * typ *)=
 	let (bytes1, typ1) = List.nth operands 0 in
 	let (bytes2, typ2) = List.nth operands 1 in
 
@@ -93,7 +93,25 @@ let binop op_const op_symb operands : bytes (* * typ *)=
 				let (n64,_) = Cil.truncateInteger64 k1 n64 in
 				let const = CInt64(n64, k1, None) in (* ASSUMED result always has type equal to that of first operand *)
 				(Bytes_Constant(const))
-		
+		(* Allow a particular piece of pointer arithmetic: ptr % num. *)
+		| Bytes_Address(Some blk, offset), op2
+				when op_symb = OP_MOD &&
+					Convert.isConcrete_bytes offset &&
+					Convert.isConcrete_bytes op2 ->
+				(* Are these types right? *)
+				let offsetConstant = Convert.bytes_to_constant offset Cil.intType in
+				let op2Constant = Convert.bytes_to_constant op2 Cil.intType in
+				begin match offsetConstant,op2Constant with
+					| CInt64 _,CInt64 _ ->
+							let ptrAsNum = plus [(Bytes_Constant
+																			(Convert.bytes_to_constant blk.memory_block_addr !Cil.upointType),
+																		!Cil.upointType);
+																	 (Bytes_Constant offsetConstant, typ2)]
+							in
+							impl (ptrAsNum, Bytes_Constant op2Constant)
+					| _ -> failwith "Unimplemented pointer arithmetic operation"
+				end
+
 		| (b1,b2)  ->
 			if not (Convert.isConcrete_bytes b1 & Convert.isConcrete_bytes b2) then
 				(Bytes_Op(op_symb, operands))
@@ -108,7 +126,10 @@ let binop op_const op_symb operands : bytes (* * typ *)=
 			end
 	in
 		impl (bytes1,bytes2)
-;;
+
+and
+
+plus operands  = binop (fun s x y -> Int64.add x y) OP_PLUS operands ;;
 (*
 let signextend operands = 
 	let nativeop n1 n2 =
@@ -118,7 +139,6 @@ let signextend operands =
 ;;*)
 
 (* Fix sign problem! *)
-let plus operands  = binop (fun s x y -> Int64.add x y) OP_PLUS operands ;;
 let minus operands = binop (fun s x y -> Int64.sub x y) OP_SUB operands ;;	
 let mult operands  = binop (fun s x y -> Int64.mul x y) OP_MULT operands ;;
 let div operands   = binop (fun s x y -> Int64.div x y) OP_DIV operands ;;
@@ -172,6 +192,7 @@ let opPI op operands =
 				| _ -> failwith "type of Bytes_Address not TPtr"
 			end
 		| _ ->
+			Output.set_mode Output.MSG_MUSTPRINT;
 			Output.print_endline ("Bytes1: "^(To_string.bytes bytes1)); 
 			Output.print_endline ("Bytes2: "^(To_string.bytes bytes2));
 			failwith "plusPI (p1,p2) not of type (addr,int)"
@@ -200,7 +221,11 @@ let minusPP operands : bytes =
 						(offset4)
 				| _ -> failwith "type of Bytes_Address not TPtr"
 			end
-		| _ -> failwith "plusPI (p1,p2) not of type (addr,int)"
+		| _ ->
+				Output.set_mode Output.MSG_MUSTPRINT;
+				Output.print_endline ("Bytes1: "^(To_string.bytes bytes1));
+				Output.print_endline ("Bytes2: "^(To_string.bytes bytes2));
+				failwith "minusPP (p1,p2) not of type (addr,addr)"
 ;;
 
 

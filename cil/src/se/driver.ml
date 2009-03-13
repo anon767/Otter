@@ -461,10 +461,11 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 				) with Function.Notification_Exit ->
 					(* If it was [Exit], there is no job to return *)
 					Output.set_mode Output.MSG_MUSTPRINT;
-					Output.print_endline "exit() called\nPath condition:";
+					Output.print_endline "exit() called";
 					Output.set_mode Output.MSG_REG;
 					Output.print_endline
-						(To_string.humanReadablePc state.path_condition exHist.bytesToVars);
+						("Path condition:\n" ^
+							 (To_string.humanReadablePc state.path_condition exHist.bytesToVars));
 					coverage := (state.path_condition, exHist) :: !coverage;
 					[]
 
@@ -555,10 +556,11 @@ let exec_stmt job =
 					match state.callContexts with
 							[] -> (* Returning from main *)
 								Output.set_mode Output.MSG_MUSTPRINT;
-								Output.print_endline "Program execution finished\nPath condition:";
+								Output.print_endline "Program execution finished";
 								Output.set_mode Output.MSG_REG;
 								Output.print_endline
-									(To_string.humanReadablePc state.path_condition exHist.bytesToVars);
+									("Path condition:\n" ^
+										 (To_string.humanReadablePc state.path_condition exHist.bytesToVars));
 								coverage := (state.path_condition, nextExHist) :: !coverage;
 								[] (* This job is complete *)
 						| (destOpt,_,Some nextStmt)::_ ->
@@ -1028,12 +1030,13 @@ let rec main_loop = function
 			with Failure fail ->
 				Output.set_mode Output.MSG_MUSTPRINT;
 				Output.print_endline
-					(Printf.sprintf "Error \"%s\" occurs at %s" fail
+					(Printf.sprintf "Error \"%s\" occurs at %s\nAbandoning branch"
+						 fail
 						 (To_string.location !Output.cur_loc));
-				Output.print_endline "Abandoning branch\nPath condition:";
 				Output.set_mode Output.MSG_REG;
 				Output.print_endline
-					(To_string.humanReadablePc job.state.path_condition job.exHist.bytesToVars);
+					("Path condition:\n" ^
+						 (To_string.humanReadablePc job.state.path_condition job.exHist.bytesToVars));
 				abandonedPaths :=
 					job.state.path_condition :: !abandonedPaths;
 				main_loop jobs

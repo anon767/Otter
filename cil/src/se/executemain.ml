@@ -461,8 +461,10 @@ let doExecute (f: file) =
 	and stpTime = Stats.lookupTime "STP" in
 	Printf.printf "It ran for %.2f s, which is %.2f%% of the total %.2f s execution.\n"
 		stpTime (100. *. stpTime /. executionTime) executionTime;
-	Printf.printf "  %.2f s of STP's time was spent asserting the path condition.
-  %.2f s were spent actually solving the resulting formulas.\n\n"
+	Printf.printf "  It took %.2f s to construct the formulas for the expressions inside 'if(...)'s,
+  %.2f s to construct and assert the path conditions,
+  and %.2f s to solve the resulting formulas.\n\n"
+		(Stats.lookupTime "convert conditional")
 		(Stats.lookupTime "STP assert")
 		(Stats.lookupTime "STP query");
 

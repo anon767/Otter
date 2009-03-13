@@ -36,3 +36,9 @@ let compareLoc loc1 loc2 =
 		if lineCmp = 0 then compare loc1.byte loc2.byte
 		else lineCmp
 	else fileCmp
+
+(** This is like {!Cil.unrollType} except that it only keeps the
+		attributes in the base (unnamed) type. *)
+let unrollType = function
+	| TNamed (typInfo,_) -> unrollType typInfo.ttype
+	| x -> x

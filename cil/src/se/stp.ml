@@ -17,7 +17,7 @@ let rec eval pc bytes =
 			ignore (Utility.next_id Types.stp_count);
 			Output.set_mode Output.MSG_REG;
 			Output.print_endline "Ask STP...";
-			Stats.time "STP" consult_stp (pc,bytes)
+			Stats.time "STP" (consult_stp pc) bytes
 	in
 	let is_comparison op = match op with	
 		| OP_LT -> true
@@ -75,7 +75,7 @@ let rec eval pc bytes =
 						
 and
 
-consult_stp (pc,bytes) =
+consult_stp pc bytes =
     let vc = doassert pc in
 	let equal_zero = query vc bytes true in
 	if equal_zero then False else
@@ -134,7 +134,7 @@ and
 query vc bytes equal_zero =
     Stpc.e_push vc;
 		
-	let (bv, len) = to_stp_bv vc bytes in
+	let (bv, len) = Stats.time "convert conditional" (to_stp_bv vc) bytes in
 	let q = Stpc.e_eq vc bv (Stpc.e_bv_of_int vc len 0) in
 	let q = if equal_zero then q else Stpc.e_not vc q in
 	
@@ -144,8 +144,7 @@ query vc bytes equal_zero =
 	let bool = Stpc.query vc q  in
 		bool
 *)
-	let query_wrapper (theVC,theExpr) = Stpc.query theVC theExpr in
-	let return = Stats.time "STP query" query_wrapper (vc,q) in
+	let return = Stats.time "STP query" (Stpc.query vc) q in
       Stpc.e_pop vc;
       return
 
@@ -224,12 +223,10 @@ to_stp_bv vc bytes =
 				let len_of_1_0 = 32 in
 				let bv_1 = (Stpc.e_bv_of_int vc len_of_1_0 1) in
 				let bv_0 = (Stpc.e_bv_of_int vc len_of_1_0 0) in
-				let rec seeIfSigned = function
+				let isSigned = match Cilutility.unrollType typ1 with
 					| TInt (ikind,_) -> Cil.isSigned ikind
-					| TNamed (typInfo,_) -> seeIfSigned (typInfo.ttype)
 					| _ -> false
 				in
-				let isSigned = seeIfSigned typ1 in
 				let op_func = fun bv1 len1 bv2 len2 ->
 					begin match op with
 						| OP_PLUS ->	(Stpc.e_bvplus vc len1 bv1 bv2, len1)

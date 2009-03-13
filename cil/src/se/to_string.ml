@@ -19,7 +19,7 @@ let bytestring arr =
   ImmutableArray.fold_left (fun a b -> 
 		match b with
 			| Byte_Concrete('\000')-> a
-			| _ -> a^(byte b)) ":" arr
+			| _ -> a^(byte b)) "" arr
 ;;
 
 let location loc = 
@@ -248,9 +248,9 @@ let humanReadableBytes bytesToVars bytes =
 			| Bytes_Op (OP_LAND,bytes_typ_list) ->
 					Printf.sprintf "(%s)"
 						(String.concat " /\\ " (List.map (fun (a,_) -> helper a) bytes_typ_list))
-			(*| Bytes_Op (OP_LOR,bytes_typ_list) ->
+			| Bytes_Op (OP_LOR,bytes_typ_list) ->
 					Printf.sprintf "(%s)"
-						(String.concat " \\/ " (List.map (fun (a,_) -> helper a) bytes_typ_list)) *)
+						(String.concat " \\/ " (List.map (fun (a,_) -> helper a) bytes_typ_list))
 			| Bytes_Op (op,bytes_typ_list) ->
 					Printf.sprintf "%s(%s)"
 						(operation op)
@@ -274,5 +274,5 @@ let humanReadableBytes bytesToVars bytes =
 	helper bytes
 
 let humanReadablePc pc bytesToVars =
-	String.concat " /\\ "
+	String.concat "\n"
 		(List.map (humanReadableBytes bytesToVars) pc)
