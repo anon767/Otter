@@ -95,6 +95,10 @@ val e_bvsle : vc -> exp -> exp -> exp
 val e_bvsgt : vc -> exp -> exp -> exp
 val e_bvsge : vc -> exp -> exp -> exp
 
+
+val e_push : vc -> unit
+val e_pop : vc -> unit
+
 val do_assert : vc -> exp -> unit
   (** Assert an expression in the VC *)
 val e_simplify : vc -> exp -> exp

@@ -150,6 +150,8 @@ let e_bvsle = vc_sbvLeExpr
 let e_bvsgt = vc_sbvGtExpr
 let e_bvsge = vc_sbvGeExpr
 
+let e_push = vc_push
+let e_pop = vc_pop
 
 let do_assert = vc_assertFormula
 

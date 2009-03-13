@@ -76,9 +76,10 @@ let rec eval pc bytes =
 and
 
 consult_stp (pc,bytes) =
-	let equal_zero = query pc bytes true in
+    let vc = doassert pc in
+	let equal_zero = query vc bytes true in
 	if equal_zero then False else
-		let not_equal_zero = query pc bytes false in
+		let not_equal_zero = query vc bytes false in
 		if not_equal_zero then True else
 			Unknown
 	
@@ -86,7 +87,9 @@ and
 
 (** return (True) False if bytes (not) evaluates to all zeros. Unknown otherwise.
  *) 
-query pc bytes equal_zero =
+
+
+doassert pc =
 (*
 	let rec getRelevantAssumptions acc symbols pc' =
 		match List.partition
@@ -105,6 +108,7 @@ query pc bytes equal_zero =
 	in
 *)
 	let vc = Stpc.create_validity_checker () in
+    (*Stpc.e_push vc;*)
 	
 	Output.set_mode Output.MSG_STP;
 	Output.print_endline "%%%%%%%%%%%%%%%%%%";
@@ -123,8 +127,13 @@ query pc bytes equal_zero =
 	in
 		Stats.time "STP assert" do_assert pc;	
 (*		Stats.time "STP assert" do_assert relevantAssumptions;*)	
+    vc
+
+and
+
+query vc bytes equal_zero =
+    Stpc.e_push vc;
 		
-	
 	let (bv, len) = to_stp_bv vc bytes in
 	let q = Stpc.e_eq vc bv (Stpc.e_bv_of_int vc len 0) in
 	let q = if equal_zero then q else Stpc.e_not vc q in
@@ -136,7 +145,9 @@ query pc bytes equal_zero =
 		bool
 *)
 	let query_wrapper (theVC,theExpr) = Stpc.query theVC theExpr in
-	Stats.time "STP query" query_wrapper (vc,q)
+	let return = Stats.time "STP query" query_wrapper (vc,q) in
+      Stpc.e_pop vc;
+      return
 
 (* (* This commented-out chunk is trying to merge query and consult_stp.
 	 Unfortunately, STP hangs if I try to make more than one query with
