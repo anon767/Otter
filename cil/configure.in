@@ -182,6 +182,25 @@ else
   ])
 fi
 
+
+# find OUnit
+AC_MSG_CHECKING(checking for ounit)
+
+# first try ocamlfind
+AC_CHECK_PROG(OCAMLFIND,ocamlfind,ocamlfind,no)
+if test "$OCAMLFIND" != no; then
+    OUNITLIBDIR=`$OCAMLFIND query ounit`
+fi
+# then try ocamlopt -where
+if test "x$OUNITLIBDIR" = x; then
+    OUNITLIBDIR=`ocamlopt -where`
+    AC_CHECK_FILE("$OUNITLIBDIR/oUnit.mli",,
+        AC_MSG_ERROR(OUnit was not found with ocamlfind or in the ocaml library path.
+                  It is available at <http://www.xs4all.nl/~mmzeeman/ocaml/>.)
+    )
+fi
+EXTRALIBDIRS="$EXTRALIBDIRS $OUNITLIBDIR"
+
 #
 # ------------------- Perl ----------------
 #

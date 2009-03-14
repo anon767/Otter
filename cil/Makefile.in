@@ -144,6 +144,38 @@ $(OBJDIR)/cilly$(EXE) : $(CILLY_MODULES:%=$(OBJDIR)/%.$(CMO)) \
 
 quickbuild: cilversion machdep cilly
 
+
+#
+# The rules for building and running the ounit-cilly tests.
+#
+
+OUNIT_CILLY_TEST_MODULES = OUnitSymexeIntegration
+OUNIT_CILLY_MODULES = MyOUnit $(OUNIT_CILLY_TEST_MODULES) OUnitMain
+OUNIT_CILLY_LIBC = $(CILLY_LIBS) cil ounit
+OUNIT_CILLY_SOURCEDIRS = ounit
+
+.PHONY : ounit ounit-cilly
+
+ounit : ounit-cilly
+
+# To reduce the risk of naming conflicts, build Cil as a library first, then do a sub-make to compile and run the
+# OUnit testsuite in a different directory.
+ounit-cilly : cillib
+	$(AT)mkdir -p $(OBJDIR)/ounit && \
+	$(MAKE) OBJDIR=$(OBJDIR)/ounit \
+	        LIBFLAGS="$(LIBFLAGS) -I $(OBJDIR)" \
+			SOURCEDIRS="$(SOURCEDIRS) $(OUNIT_CILLY_SOURCEDIRS)" \
+	        MODULES="$(OUNIT_CILLY_MODULES)" \
+	        $(OBJDIR)/ounit/ounit-cilly$(EXE)
+
+$(OBJDIR)/ounit-cilly$(EXE) : $(OUNIT_CILLY_MODULES:%=$(OBJDIR)/%.$(CMO)) $(OBJDIR)/../cil.$(CMXA)
+	@$(NARRATIVE) "Linking $(COMPILETOWHAT) $@ $(LINKMSG)"
+	$(AT)$(CAMLLINK) -verbose -o $@ $(OUNIT_CILLY_LIBC:%=%.$(CMXA)) $^ && \
+	$(NARRATIVE) "Running $@" && \
+	./$@ -verbose
+
+
+
 # Setup also makes the native code versions
 #
 # sm: cillib is only built with NATIVECAML=1 because it builds libcil.a,

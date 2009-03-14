@@ -7,7 +7,9 @@ all : cil
 
 
 cil : make//cil
-make//cil : MAKEGOALS=
+cil : MAKEGOALS=
+test-cil : make//cil
+test-cil : MAKEGOALS=ounit
 make//cil : CONFIGURE_FLAGS=EXTRALIBDIRS='$(EXTRALIBDIRS)'
 make//cil : ocamlstp
 
