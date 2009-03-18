@@ -511,8 +511,8 @@ let feature : featureDescr =
 			("--printIf",
 			Arg.Unit (fun () -> Executeargs.print_args.arg_print_guard <- true),
 			" Print the guard of an if statement \n");
-			(* No Printing *)
-			("--printNothing",
+			(* Sparse printing *)
+			("--printLittle",
 			Arg.Unit (fun () -> 
 				Executeargs.print_args.arg_print_reg <- false;
 				Executeargs.print_args.arg_print_ifstmt <- false;
@@ -522,8 +522,12 @@ let feature : featureDescr =
 				Executeargs.print_args.arg_print_assign <- false;
 				()
 			),
-			" Print nothing \n");
-			(*  *)
+			" Suppress most output \n");
+
+			("--printNothing",
+			 Arg.Unit (fun () -> print_args.arg_print_nothing <- true),
+			" Suppress (pretty much) all output. This trumps all other --print* options\n");
+
 			("--printCharAsInt",
 			Arg.Unit (fun () -> Executeargs.print_args.arg_print_char_as_int <- true),
 			" Print char as int \n");
@@ -546,11 +550,11 @@ let feature : featureDescr =
 
 			("--mergePaths",
 			 Arg.Unit (fun () -> Executeargs.run_args.arg_merge_branches <- true),
-			 " Merge similar execution paths");
+			 " Merge similar execution paths\n");
 
 			("--timeout",
 			 Arg.Int (fun n -> Executeargs.run_args.arg_timeout <- n),
-			 "<numSeconds> Set a timeout for the executor.\n")
+			 "<numSeconds> Set a timeout for the executor\n")
 		];
 		fd_post_check = true;
     fd_doit = doExecute

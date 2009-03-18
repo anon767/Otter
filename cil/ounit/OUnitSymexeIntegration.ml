@@ -4,13 +4,9 @@ open Executeargs
 (* Suppress all output from the symbolic executor *)
 let _ = print_args.arg_print_nothing <- true
 
-(* integration test helper: given a source code as a string, generate a C file and run Cil on it *)
-let test_file ?label content (*test*) =
-		let label = (match label with Some x -> x | _ -> content) in
-    label >:: bracket begin fun () ->
-        let filename, fileout = Filename.open_temp_file "ounit_cil_integration." ".c" in
-        output_string fileout ("extern void __ASSERT();\nint main (){" ^ content ^ "return 0;}\n");
-        close_out fileout;
+(* integration test helper: given a file name, run Cil on the file *)
+let test_file filename =
+    filename >:: bracket begin fun () ->
         filename
     end begin fun filename ->
         Errormsg.hadErrors := false;
@@ -30,22 +26,21 @@ let test_file ?label content (*test*) =
 				assert_string (Executedebug.get_log ())
 (*        test file (* TODO: also pass some result to check *)*)
     end begin fun filename ->
-        Unix.unlink filename
+        ()
     end
 
+let filesFromDir dirname =
+	let fileList = ref [] in
+	Array.iter
+		(fun name ->
+			let file = Filename.concat dirname name in
+			if (Unix.stat file).Unix.st_kind == Unix.S_REG
+			then fileList := file :: !fileList)
+		(Sys.readdir dirname);
+	!fileList
 
-let simple_testsuite = "Simple" >::: [
-	test_file ~label:"trivial assignment" "
-	int x = 10;
-	x = x;
-	__ASSERT(x==10);
-";
-	test_file ~label:"failing test" "
-	int x = 10;
-	x = x;
-	__ASSERT(x==1);
-"
-]
+let simple_testsuite = "Simple" >:::
+	List.map test_file (filesFromDir "ounitTests")
 
 let testsuite = "Integration" >::: [
     simple_testsuite;

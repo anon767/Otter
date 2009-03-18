@@ -340,14 +340,18 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 									begin
 									Output.set_mode Output.MSG_MUSTPRINT;
 									Output.print_endline "Assertion not-satisfied (see error log).";
+									let oldPrintNothingVal = print_args.arg_print_nothing in
+									print_args.arg_print_nothing <- false; (* Allow printing for the log *)
 									Executedebug.log "\n(****************************";
-									Executedebug.log "Assertion not-satisfied:";
 									Executedebug.log "Assertion:";
+									Executedebug.log (Utility.print_list To_string.exp exps " and "); 
+									Executedebug.log "which becomes";
 									Executedebug.log (To_string.bytes post);
-									Executedebug.log "Is Unsatisfiable with the path condition:";
+									Executedebug.log "can be false with the path condition:";
 									let pc_str = (Utility.print_list To_string.bytes state.path_condition " AND ") in
 									Executedebug.log (if String.length pc_str = 0 then "(nil)" else pc_str);
 									Executedebug.log "****************************)";
+									print_args.arg_print_nothing <- oldPrintNothingVal;
 									()
 									end									
 									
