@@ -17,6 +17,7 @@ type print_args =
 		mutable arg_print_debug : bool;
 		mutable arg_print_mustprint : bool;
 		mutable arg_print_char_as_int : bool;
+		mutable arg_print_nothing : bool; (* If true, overrides all other flags *)
 	}	;;
 (*let print_args =
 	{
@@ -49,6 +50,7 @@ let print_args =
 		arg_print_debug = false;
 		arg_print_mustprint = true;
 		arg_print_char_as_int = false;
+		arg_print_nothing = false;
 	}	;;
 type run_args = 
 	{

@@ -80,6 +80,7 @@ let current_msg_type = ref MSG_REG;;
 let set_mode msg_type = current_msg_type := msg_type;;
 
 let need_print msg_type =
+	if Executeargs.print_args.arg_print_nothing then false else
 	match msg_type with
 	| MSG_REG 		-> Executeargs.print_args.arg_print_reg
 	| MSG_STMT		-> Executeargs.print_args.arg_print_stmt

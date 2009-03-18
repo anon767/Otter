@@ -444,33 +444,37 @@ let doExecute (f: file) =
 		 | SignalException -> ()
 	);
 
-	(* Turn off the alarm and reset the signal handlers *)
-	ignore (Unix.alarm 0);
-	Sys.set_signal Sys.sigalrm old_ALRM_handler;
-	Sys.set_signal Sys.sigint old_INT_handler;
+	(* Stop if arg_print_nothing is true *)
+	if not print_args.arg_print_nothing then (
+
+		(* Turn off the alarm and reset the signal handlers *)
+		ignore (Unix.alarm 0);
+		Sys.set_signal Sys.sigalrm old_ALRM_handler;
+		Sys.set_signal Sys.sigint old_INT_handler;
 
 
-	print_endline (Executedebug.get_log ());
-	(* function stat 
-	Output.print_endline "\nFunction call stat:";
-	Cilutility.FundecMap.iter (fun f c -> Output.print_endline ((To_string.fundec f)^" : "^(string_of_int c))) (!MemOp.function_stat);	
-	*)
-	Printf.printf "\nSTP was invoked %d times.\n" !Types.stp_count;
+		print_endline (Executedebug.get_log ());
+		(* function stat 
+		Output.print_endline "\nFunction call stat:";
+		Cilutility.FundecMap.iter (fun f c -> Output.print_endline ((To_string.fundec f)^" : "^(string_of_int c))) (!MemOp.function_stat);	
+		*)
+		Printf.printf "\nSTP was invoked %d times.\n" !Types.stp_count;
 
-	let executionTime = (Unix.gettimeofday ()) -. startTime
-	and stpTime = Stats.lookupTime "STP" in
-	Printf.printf "It ran for %.2f s, which is %.2f%% of the total %.2f s execution.\n"
-		stpTime (100. *. stpTime /. executionTime) executionTime;
-	Printf.printf "  It took %.2f s to construct the formulas for the expressions inside 'if(...)'s,
+		let executionTime = (Unix.gettimeofday ()) -. startTime
+		and stpTime = Stats.lookupTime "STP" in
+		Printf.printf "It ran for %.2f s, which is %.2f%% of the total %.2f s execution.\n"
+			stpTime (100. *. stpTime /. executionTime) executionTime;
+		Printf.printf "  It took %.2f s to construct the formulas for the expressions inside 'if(...)'s,
   %.2f s to construct and assert the path conditions,
   and %.2f s to solve the resulting formulas.\n\n"
-		(Stats.lookupTime "convert conditional")
-		(Stats.lookupTime "STP assert")
-		(Stats.lookupTime "STP query");
+			(Stats.lookupTime "convert conditional")
+			(Stats.lookupTime "STP assert")
+			(Stats.lookupTime "STP query");
 
-(*	let rep = Report.format state3 in
-	Output.print_endline rep;*)
-	finish_up ()
+	(*	let rep = Report.format state3 in
+		Output.print_endline rep;*)
+		finish_up ()
+	)
 ;;
 
 let feature : featureDescr = 
