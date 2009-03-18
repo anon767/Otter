@@ -19,15 +19,15 @@ let test_file ?label content (*test*) =
 				Cilly.makeCFGFeature.Cil.fd_doit file;
 				Cilutil.makeCFG := true; (* doExecute checks that this is set *)
 (*
-        assert_logf "@[<v>";
+        assert_log "@[<v>";
         (* TODO: setup and log some initial state here *)
         (* TODO: run analysis here *)
         (* TODO: log some end state here *)
-        assert_logf "@]";
+        assert_log "@]";
 *)
         (* finally run the test *)
 				Executemain.doExecute file;
-				OUnit.assert_string (Executedebug.get_log ())
+				assert_string (Executedebug.get_log ())
 (*        test file (* TODO: also pass some result to check *)*)
     end begin fun filename ->
         Unix.unlink filename
