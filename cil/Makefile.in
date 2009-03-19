@@ -160,13 +160,18 @@ ounit : ounit-cilly
 
 # To reduce the risk of naming conflicts, build Cil as a library first, then do a sub-make to compile and run the
 # OUnit testsuite in a different directory.
-ounit-cilly : cillib
-	$(AT)mkdir -p $(OBJDIR)/ounit && \
+define OUNIT_MAKE_COMMAND
 	$(MAKE) OBJDIR=$(OBJDIR)/ounit \
 	        LIBFLAGS="$(LIBFLAGS) -I $(OBJDIR)" \
 			SOURCEDIRS="$(SOURCEDIRS) $(OUNIT_CILLY_SOURCEDIRS)" \
-	        MODULES="$(OUNIT_CILLY_MODULES)" \
-	        $(OBJDIR)/ounit/ounit-cilly$(EXE)
+	        MODULES="$(OUNIT_CILLY_MODULES)"
+endef
+
+ounit-cilly : cillib
+	$(AT)$(OUNIT_MAKE_COMMAND) $(OBJDIR)/ounit/ounit-cilly$(EXE)
+
+# add cil.$(CMXA) as a dependency
+$(OUNIT_CILLY_MODULES:%=$(OBJDIR)/%.$(CMO)) : $(OBJDIR)/../cil.$(CMXA)
 
 $(OBJDIR)/ounit-cilly$(EXE) : $(OUNIT_CILLY_MODULES:%=$(OBJDIR)/%.$(CMO)) $(OBJDIR)/../cil.$(CMXA)
 	@$(NARRATIVE) "Linking $(COMPILETOWHAT) $@ $(LINKMSG)"
@@ -174,6 +179,8 @@ $(OBJDIR)/ounit-cilly$(EXE) : $(OUNIT_CILLY_MODULES:%=$(OBJDIR)/%.$(CMO)) $(OBJD
 	$(NARRATIVE) "Running $@" && \
 	./$@ -verbose
 
+clean-ounit :
+	$(AT)$(OUNIT_MAKE_COMMAND) CLEANING=1 cleancaml
 
 
 # Setup also makes the native code versions
@@ -581,7 +588,7 @@ cleancheck:
 	rm -f test/small1/vararg1
 	rm -f test/small1/wchar1
 
-clean: cleancaml cleancheck
+clean: cleancaml cleancheck clean-ounit
 
 
 # Now include the compiler specific stuff
