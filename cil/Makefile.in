@@ -93,7 +93,7 @@ CILLY_LIBRARY_MODULES = pretty inthash errormsg alpha trace stats util clist \
                 utility \
                 immutableArray cilutility \
                 types \
-                executedata scfg\
+                scfg \
                 to_string \
                 convert \
                 operation \

@@ -378,7 +378,6 @@ let doExecute (f: file) =
 	Output.print_endline "\nA (symbolic) executor for C\n";
 
 	Cil.initCIL ();
-	Executedata.file := f;
 
 	(* Keep track of how long we run *)
 	let startTime = Unix.gettimeofday () in
@@ -393,10 +392,8 @@ let doExecute (f: file) =
 			 | _ -> ())
 		f.globals;
 
-	let (main_func,main_loc) = 
-		try Function.from_signature "main"  
-		with Not_found -> try Function.from_signature "main : int (void)"
-		with Not_found -> try Function.from_signature "main : int (int,char**)"
+	let main_func = 
+		try Function.from_name_in_file "main" f  
 		with Not_found -> failwith "No main function found!"
 	in
 
