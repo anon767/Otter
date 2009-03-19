@@ -195,8 +195,9 @@ fi
 if test "x$OUNITLIBDIR" = x; then
     OUNITLIBDIR=`ocamlopt -where`
     AC_CHECK_FILE("$OUNITLIBDIR/oUnit.mli",,
-        AC_MSG_ERROR(OUnit was not found with ocamlfind or in the ocaml library path.
-                  It is available at <http://www.xs4all.nl/~mmzeeman/ocaml/>.)
+        AC_MSG_WARN(OUnit was not found with ocamlfind or in the ocaml library path.
+                  (It is available at <http://www.xs4all.nl/~mmzeeman/ocaml/>.)
+                  You will not be able to run the OUnit tests.)
     )
 fi
 EXTRALIBDIRS="$EXTRALIBDIRS $OUNITLIBDIR"
