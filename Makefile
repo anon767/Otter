@@ -52,5 +52,8 @@ clean :
 %/configure : %/configure.ac
 	cd $(@D) && autoreconf
 
+%/configure : %/configure.in
+	cd $(@D) && autoreconf
+
 make//% : %/Makefile
 	$(MAKE) -C $(@F) $(MAKEGOALS)
