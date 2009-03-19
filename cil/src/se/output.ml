@@ -31,7 +31,7 @@ let print_loc loc =
   loc.Cil.file^":"^(string_of_int loc.Cil.line)^" : ";;
 
 let getIndent () = 
-	Printf.sprintf "[%d,%d] %s " !runningJobId !runningJobDepth (print_loc (!cur_loc))
+	Printf.sprintf "[%d,%d] %s" !runningJobId !runningJobDepth (print_loc (!cur_loc))
 ;;
 	(*
   let rec f x = if x<=0 then "" else "    "^(f (x-1)) in
@@ -107,7 +107,7 @@ let print_string str =
 	;;
 
 let print_endline str = 
-	print_string (str^"\n")
+	if str <> "" then print_string (str^"\n")
 	;;
 
 let print_newline () =
