@@ -2,14 +2,6 @@ open Cil
 open Types
 open Executeargs
 
-(** List of (path condition,executionHistory) pairs denoting coverage
-		on different executions. *)
-let coverage = ref [];;
-let truncatedCoverage = ref [];;
-
-(** List of path conditions that led to errors in the symbolic executor *)
-let abandonedPaths = ref [];;
-
 (** Remove a NOT from a bytes, or add one. The type of the bytes may
 		be lost. *)
 let logicalNegateBytes = function
@@ -119,7 +111,7 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 				let callContext = blkOffSizeOpt,instr,theSuccessor in
 				let state1 = MemOp.state__start_fcall state fundec callContext in
 				let state2 = init_argvs state1 fundec argvs in
-				[updateJob job state2 exHist (List.hd fundec.sallstmts)]
+				Active [updateJob job state2 exHist (List.hd fundec.sallstmts)]
 		| _ ->
 				try (
 					let nextExHist = ref exHist in
@@ -291,7 +283,12 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 										MemOp.state__assign state dest (MemOp.bytes__symbolic size )
 							end
 						
-					| Function.Exit -> raise Function.Notification_Exit
+					| Function.Exit ->
+						let exit_code = match exps with
+							| exp1::_ -> Some (Eval.rval state exp1)
+							| [] -> None
+						in
+						raise (Function.Notification_Exit (exit_code))
 					
 					| Function.Evaluate ->
 						let pc = op_exps exps Cil.LAnd in
@@ -460,9 +457,9 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 							[h] -> h
 						| _ -> assert false
 				in
-				[updateJob job state_end !nextExHist theSuccessor]
+				Active [updateJob job state_end !nextExHist theSuccessor]
 
-				) with Function.Notification_Exit ->
+				) with Function.Notification_Exit exit_code ->
 					(* If it was [Exit], there is no job to return *)
 					Output.set_mode Output.MSG_MUSTPRINT;
 					Output.print_endline "exit() called";
@@ -470,19 +467,15 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 					Output.print_endline
 						("Path condition:\n" ^
 							 (To_string.humanReadablePc state.path_condition exHist.bytesToVars));
-					coverage := (state.path_condition, exHist) :: !coverage;
-					[]
+					Complete { result_state = state;
+					           result_history = exHist;
+					           result_completion = Types.Exit exit_code }
 
 	end (* outer [match func] *)
 ;;
 
 let exec_stmt job =
 	let state,exHist,stmt = job.state,job.exHist,job.nextStmt in
-
-	(* Check to see if we got a signal; if so, stop execution *)
-	(match !signalStringOpt with
-			Some s -> print_endline s; raise SignalException
-		 | _ -> ());
 
 	let nextExHist = { exHist with
 		edgesTaken = EdgeSet.add (exHist.prevStmt,stmt) exHist.edgesTaken;
@@ -525,7 +518,7 @@ let exec_stmt job =
 											[h] -> h
 										| _ -> assert false
 								in
-								[updateJob job latestState nextExHist theSuccessor]
+								Active [updateJob job latestState nextExHist theSuccessor]
 						| (Set(lval,exp,loc) as instr)::tail ->
 								printInstr instr;
 								let (block,offset) = Eval.lval latestState lval in
@@ -555,7 +548,7 @@ let exec_stmt job =
 				in
 				doInstrs instrs state
 
-		| Return (expopt, loc) ->
+		| Cil.Return (expopt, loc) ->
 				begin
 					match state.callContexts with
 							[] -> (* Returning from main *)
@@ -565,8 +558,16 @@ let exec_stmt job =
 								Output.print_endline
 									("Path condition:\n" ^
 										 (To_string.humanReadablePc state.path_condition exHist.bytesToVars));
-								coverage := (state.path_condition, nextExHist) :: !coverage;
-								[] (* This job is complete *)
+								begin match expopt with
+									| None ->
+										Complete { result_state = state;
+										           result_history = nextExHist;
+										           result_completion = Types.Return None } 
+									| Some exp ->
+										Complete { result_state = state;
+										           result_history = nextExHist;
+										           result_completion = Types.Return (Some (Eval.rval state exp)) }
+								end
 						| (destOpt,_,Some nextStmt)::_ ->
 								let state2 =
 									match expopt, destOpt with
@@ -581,14 +582,14 @@ let exec_stmt job =
 								(* varinfo_to_block: memory_block VarinfoMap.t; *)
 								let pop_frame = List.hd state.locals in
 								let state2' = VarinfoMap.fold (fun varinfo block s -> MemOp.state__remove_block s block) pop_frame.varinfo_to_block state2 in 
-								[updateJob job state2' nextExHist nextStmt]
+								Active [updateJob job state2' nextExHist nextStmt]
 						| _ ->
 								(* [(_,_,None)] is impossible, because we wouldn't
 									 be returning in that case. *)
 								assert false
 				end
 		| Goto (stmtref, loc) ->
-				[updateJob job state nextExHist !stmtref]
+				Active [updateJob job state nextExHist !stmtref]
 		| If (exp, block1, block2, loc) ->
 				begin
 				(* try a branch *)
@@ -646,13 +647,13 @@ let exec_stmt job =
 						begin
 							Output.print_endline "True";
 							let nextState,nextStmt = try_branch None block1 in
-							[updateJob job nextState nextExHist nextStmt]
+							Active [updateJob job nextState nextExHist nextStmt]
 						end
 					else if truth == Stp.False then
 						begin
 							Output.print_endline "False";
 							let nextState,nextStmt = try_branch None block2 in
-							[updateJob job nextState nextExHist nextStmt]
+							Active [updateJob job nextState nextExHist nextStmt]
 						end
 					else
 						begin
@@ -684,7 +685,7 @@ Job %d is the true branch and job %d is the false branch.\n"
 									 (To_string.exp exp)
 									 (To_string.location loc)
 									 j1.jid j2.jid);
-							[j1;j2]
+							Active [j1;j2]
 						end
 				end
 		| Block(block)
@@ -693,7 +694,7 @@ Job %d is the true branch and job %d is the false branch.\n"
 					 Cil.succpred_stmt.)
 					 This is not true for [Block]s, but it *does* seem to be
 					 true for [Block]s which are not under [If]s, so we're okay. *)
-				[updateJob job state nextExHist (List.hd block.bstmts)]
+				Active [updateJob job state nextExHist (List.hd block.bstmts)]
 		| _ -> failwith "Not implemented yet"
 ;;
 
@@ -779,7 +780,7 @@ exception MergeDone of job * state
 exception TooDifferent
 
 (* Merge job states *)
-let mergeJobs job jobSet =
+let mergeJobs results job jobSet =
 	try
 		JobSet.iter
 			(fun j ->
@@ -870,7 +871,7 @@ let mergeJobs job jobSet =
 			jobSet;
 		(* Reaching here means we've iterated through all jobs, never
 			 being able to merge. So we just add the job to jobSet. *)
-		JobSet.add job jobSet
+		(results, JobSet.add job jobSet)
 	with MergeDone (oldJob,mergedState) ->
 		(* This is a pretty stupid way of getting complete coverage with
 			 merging, but it's something. It only credits a merged execution
@@ -885,12 +886,14 @@ let mergeJobs job jobSet =
 			(EdgeSet.add (oldJob.exHist.prevStmt,job.nextStmt) oldJob.exHist.edgesTaken)
 			job.exHist.edgesTaken
 		in
-		truncatedCoverage :=
-			(job.state.path_condition,{job.exHist with edgesTaken = jobOnlyEdges;}) ::
-				(oldJob.state.path_condition,{oldJob.exHist with edgesTaken = oldJobOnlyEdges;}) ::
-				!truncatedCoverage;
+		let results =
+			{ result_state = job.state; result_history = {job.exHist with edgesTaken = jobOnlyEdges };
+              result_completion = Truncated } ::
+			{ result_state = oldJob.state; result_history = {oldJob.exHist with edgesTaken = oldJobOnlyEdges };
+              result_completion = Truncated } ::
+			results in
 		(* Remove the old job and add the merged job *)
-		JobSet.add
+		let merged_jobs = JobSet.add
 			{ job with
 					state = mergedState;
 					exHist =
@@ -901,6 +904,8 @@ let mergeJobs job jobSet =
 					jid = min job.jid oldJob.jid; (* Keep the lower jid, just because *)
 			}
 			(JobSet.remove oldJob jobSet)
+		in
+		(results, merged_jobs)
 
 (*
 (** This is like [List.for_all2 (==)], except that it returns true
@@ -959,23 +964,33 @@ let atSameProgramPoint job1 job2 =
 
 let pausedJobs = ref JobSet.empty
 
-let rec main_loop = function
+let main_loop jobs =
+	let rec main_loop results jobs =
+		(* Check to see if we got a signal; if so, stop execution, and return the results *)
+		match !signalStringOpt with
+			| Some s ->
+				print_endline s;
+				results
+			| None ->
+		match jobs with
 		[] ->
 			(* There are no unpaused jobs. *)
 			if JobSet.is_empty !pausedJobs
 			then (
 				(* There are no paused jobs, either. We're done. *)
 				print_endline "Done executing";
+				results
 			) else (
 				(* Pick a paused job, remove it from pausedJobs, and run it. *)
 				let someJob = JobSet.choose !pausedJobs in
 				pausedJobs := JobSet.remove someJob !pausedJobs;
-				main_loop (exec_stmt someJob)
+				match exec_stmt someJob with
+					| Active jobs -> main_loop results jobs
+					| Complete result -> main_loop (result::results) []
 			)
-	| job::jobs ->
+		| job::jobs ->
 			try
-
-				let rec runUntilBranch theJob =
+				let rec runUntilBranch results theJob =
 					(* First test to see if the job should pause and/or merge *)
 					if run_args.arg_merge_branches &&
 						IntSet.mem theJob.nextStmt.sid theJob.mergePoints
@@ -986,23 +1001,29 @@ let rec main_loop = function
 						(* Remove jobsToMergeWith from pausedJobs *)
 						let otherPaused = (JobSet.diff !pausedJobs jobsToMergeWith) in
 						(* Merge with theJob *)
-						let nowPaused = (mergeJobs theJob jobsToMergeWith) in
+						let results, nowPaused = (mergeJobs results theJob jobsToMergeWith) in
 						(* Place the results of the merge back into pausedJobs. We
 							 pause theJob and re-pause all results of the merge
 							 because there could be other jobs that will also merge
 							 at this statement. *)
 						pausedJobs := JobSet.union otherPaused nowPaused;
 						(* Continue with the remaining jobs *)
-						jobs
+						main_loop results jobs
 					) else ( (* Don't pause this job---run it *)
 						match exec_stmt theJob with
-							| [] -> jobs
-							| [j] -> runUntilBranch j
-							| [j1;j2] -> j1 :: j2 :: jobs
-							| _ -> assert false (* No more than 2 jobs returned *)
+							| Active [] ->
+								(* returned job list must be non-empty *)
+								assert false
+							| Active [j] ->
+								runUntilBranch results j
+							| Active js ->
+								(* js should be short since @ isn't tail-recursive *)
+								main_loop results (js @ jobs)
+							| Complete result ->
+								main_loop (result::results) jobs
 					)
 				in
-				main_loop (runUntilBranch job)
+				runUntilBranch results job
 (* (* Why does this cause the executor to crash? *)
 				let newJobs =
 					(* First test to see if the job should pause and/or merge *)
@@ -1041,6 +1062,10 @@ let rec main_loop = function
 				Output.print_endline
 					("Path condition:\n" ^
 						 (To_string.humanReadablePc job.state.path_condition job.exHist.bytesToVars));
-				abandonedPaths :=
-					job.state.path_condition :: !abandonedPaths;
-				main_loop jobs
+				let result = { result_state = job.state;
+					           result_history = job.exHist;
+					           result_completion = Abandoned }
+				in
+				main_loop (result::results) jobs
+	in
+	main_loop [] jobs

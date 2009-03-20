@@ -2,7 +2,7 @@ open Cil
 open Types
 open Executeargs
 
-exception Notification_Exit
+exception Notification_Exit of bytes option
 
 (* borrow aspect-oriented programming terminology *)
 type pointcut = string

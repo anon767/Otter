@@ -169,7 +169,7 @@ let allSymbolsInList byteslist =
 		SymbolSet.empty
 		byteslist
 
-let finish_up () =
+let finish_up results =
 	if run_args.arg_branch_coverage then
 		begin
 			print_endline "Branch coverage:";
@@ -205,24 +205,31 @@ let finish_up () =
 				sortedList
 		end;
 
-	if !Driver.coverage = []
-	then (
-		Printf.printf "All %d paths had errors.\n"
-			(List.length !Driver.abandonedPaths);
+	let coverage, completed, truncated, abandoned =
+		List.fold_left begin fun (coverage, completed, truncated, abandoned) result ->
+			match result.result_completion with
+				| Types.Return _
+				| Types.Exit _    -> (result::coverage, completed + 1, truncated, abandoned)
+				| Types.Truncated -> (result::coverage, completed, truncated + 1, abandoned)
+				| Types.Abandoned -> (coverage, completed, truncated, abandoned + 1)
+	end ([], 0, 0, 0) results in
+	if completed = 0 then (
+		Printf.printf "All %d paths had errors.\n" abandoned
 	) else (
-		Printf.printf "%d paths ran to completion; %d had errors.\n"
-			(List.length !Driver.coverage) (List.length !Driver.abandonedPaths);
-		Printf.printf "There are %d truncated paths.\n" (List.length !Driver.truncatedCoverage);
-		Driver.coverage := !Driver.truncatedCoverage @ !Driver.coverage;
+		Printf.printf "%d paths ran to completion; %d had errors.\n" completed abandoned;
+		Printf.printf "There are %d truncated paths.\n" truncated;
 
 	let (alwaysExecuted,everExecuted) =
-		List.fold_left
-			(fun (interAcc,unionAcc) (_,hist) ->
-				 EdgeSet.inter interAcc hist.edgesTaken,
-				 EdgeSet.union unionAcc hist.edgesTaken)
-			((snd (List.hd !Driver.coverage)).edgesTaken,
-			 (snd (List.hd !Driver.coverage)).edgesTaken)
-			(List.tl !Driver.coverage)
+		match coverage with
+			|  hd::tl ->
+				let first_edges = hd.result_history.edgesTaken in
+				List.fold_left
+					(fun (interAcc,unionAcc) { result_history=hist } ->
+						 EdgeSet.inter interAcc hist.edgesTaken,
+						 EdgeSet.union unionAcc hist.edgesTaken)
+					(first_edges, first_edges)
+					tl
+			| [] -> assert false (* there has to be at least one execution *)
 	in
 
 	print_string "\nIn all, ";
@@ -237,8 +244,9 @@ let finish_up () =
 			else (
 				match cvrgList with
 					| [] -> failwith "Impossible to cover universe."
-					| h::t -> let nextPick = ref h and
-								score x = EdgeSet.cardinal (EdgeSet.inter (snd x).edgesTaken remaining) in
+					| h::t ->
+						let nextPick = ref h in
+						let score x = EdgeSet.cardinal (EdgeSet.inter x.result_history.edgesTaken remaining) in
 						let nextPickScore = ref (score h) in
 						List.iter
 							(fun s -> let sScore = score s in
@@ -248,18 +256,18 @@ let finish_up () =
 						Printf.printf "Covering %d new edges\n" !nextPickScore;
 						helper (!nextPick::acc)
 							(List.filter ((!=) !nextPick) cvrgList)
-							(EdgeSet.diff remaining (snd !nextPick).edgesTaken)
+							(EdgeSet.diff remaining (!nextPick.result_history).edgesTaken)
 			)
 		in helper [] coverageList (EdgeSet.diff everExecuted alwaysExecuted)
 	in
-	let coveringSet = greedySetCover !Driver.coverage in
+	let coveringSet = greedySetCover coverage in
 	if coveringSet = [] then print_endline "No constraints: any run covers all edges"
 	else (
 		Printf.printf "Here is a set of %d configurations which covers all the edges:\n"
 			(List.length coveringSet);
 		Output.set_mode Output.MSG_MUSTPRINT;
 		List.iter
-			(fun (pc,hist) ->
+			(fun { result_state={ path_condition=pc }; result_history=hist } ->
 				 print_newline ();
 				 print_endline (To_string.humanReadablePc pc hist.bytesToVars ^ "\n");
 
@@ -425,20 +433,15 @@ let doExecute (f: file) =
 		} in
 	let state4 = Driver.init_argvs state3 main_func main_args in
 
-	(try
-		 (* Start the main loop with a single job, starting at the first
-				statement in main() *)
-		 Driver.main_loop
-			 [{ state = state4;
-				 exHist = emptyHistory;
-				 nextStmt = List.hd main_func.sallstmts;
-				 mergePoints = IntSet.empty;
-				 jid = Utility.next_id Output.jidCounter;
-				}]
-	 with
-(*		 | Function.Notification_Exit*)
-		 | SignalException -> ()
-	);
+	(* Start the main loop with a single job, starting at the first
+			statement in main() *)
+	let results = Driver.main_loop
+		 [{ state = state4;
+			exHist = emptyHistory;
+			nextStmt = List.hd main_func.sallstmts;
+			mergePoints = IntSet.empty;
+			jid = Utility.next_id Output.jidCounter; }]
+	in
 
 	(* Turn off the alarm and reset the signal handlers *)
 	ignore (Unix.alarm 0);
@@ -468,7 +471,7 @@ let doExecute (f: file) =
 
 	(*	let rep = Report.format state3 in
 		Output.print_endline rep;*)
-		finish_up ()
+		finish_up results
 	)
 ;;
 
