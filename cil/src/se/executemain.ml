@@ -73,11 +73,7 @@ let rec init_globalvars state globals =
 	 block is itself a byteArray of concrete byte-s (the characters in the arguments).
 	 Because of the way things point to each other, we construct these three layers
 	 bottom-up. *)
-let init_cmdline_argvs state fileName =
-	(* (argstr : string list) is the list of arguments beginning with the name of the command itself
-		 and continuing with all arguments passed by using '--arg' *)
-	let argstr = fileName :: Executeargs.run_args.arg_cmdline_argvs in
-
+let init_cmdline_argvs state argstr =
 	(* How many arguments were there? *)
 	let num_args = List.length argstr in
 
@@ -411,7 +407,10 @@ let doExecute (f: file) =
 	(* Initialize the state *)
 	let state = MemOp.state__empty in
 	let state1 = init_globalvars state f.globals in
-	let (state2,main_args) = init_cmdline_argvs state1 f.fileName in
+
+    (* the list of commandline arguments begins with the name of the command itself and continues with all arguments;
+       here, we take it from the '--arg' option *)
+	let (state2,main_args) = init_cmdline_argvs state1 (f.fileName :: Executeargs.run_args.arg_cmdline_argvs) in
 
 	(* Initialize the call to main, like MemOp.start__fcall, except
 		 without a calling context. *)
