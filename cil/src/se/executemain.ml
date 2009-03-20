@@ -397,6 +397,17 @@ let doExecute (f: file) =
 		with Not_found -> failwith "No main function found!"
 	in
 
+	(* Set signal handlers to catch timeouts and interrupts *)
+	let old_ALRM_handler =
+		Sys.signal Sys.sigalrm
+			(Sys.Signal_handle (fun _ -> signalStringOpt := Some "Timed out!"))
+	and old_INT_handler =
+		Sys.signal Sys.sigint
+			(Sys.Signal_handle (fun _ -> signalStringOpt := Some "User interrupt!"))
+	in
+	(* Set a timer *)
+	ignore (Unix.alarm Executeargs.run_args.arg_timeout);
+
 	(* Initialize the state *)
 	let state = MemOp.state__empty in
 	let state1 = init_globalvars state f.globals in
@@ -415,17 +426,6 @@ let doExecute (f: file) =
 		} in
 	let state4 = Driver.init_argvs state3 main_func main_args in
 
-	(* Set signal handlers to catch timeouts and interrupts *)
-	let old_ALRM_handler =
-		Sys.signal Sys.sigalrm
-			(Sys.Signal_handle (fun _ -> signalStringOpt := Some "Timed out!"))
-	and old_INT_handler =
-		Sys.signal Sys.sigint
-			(Sys.Signal_handle (fun _ -> signalStringOpt := Some "User interrupt!"))
-	in
-	(* Set a timer *)
-	ignore (Unix.alarm Executeargs.run_args.arg_timeout);
-
 	(try
 		 (* Start the main loop with a single job, starting at the first
 				statement in main() *)
@@ -441,14 +441,13 @@ let doExecute (f: file) =
 		 | SignalException -> ()
 	);
 
+	(* Turn off the alarm and reset the signal handlers *)
+	ignore (Unix.alarm 0);
+	Sys.set_signal Sys.sigalrm old_ALRM_handler;
+	Sys.set_signal Sys.sigint old_INT_handler;
+
 	(* Stop if arg_print_nothing is true *)
 	if not print_args.arg_print_nothing then (
-
-		(* Turn off the alarm and reset the signal handlers *)
-		ignore (Unix.alarm 0);
-		Sys.set_signal Sys.sigalrm old_ALRM_handler;
-		Sys.set_signal Sys.sigint old_INT_handler;
-
 
 		print_endline (Executedebug.get_log ());
 		(* function stat 
