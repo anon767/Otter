@@ -1,4 +1,5 @@
-open OUnit
+(* include the test type *)
+type test = OUnit.test = TestCase of (unit -> unit) | TestList of test list | TestLabel of string * test
 
 exception MyOUnitFailure
 
@@ -78,9 +79,11 @@ let fork_test testfn = fun () ->
 
 
 (* redefine OUnit functions to use the above buffer, test wrapper, and Format-based printer *)
+let (>:) = OUnit.(>:)
 let (>::) label testfn = OUnit.(>::) label (fork_test testfn)
 let (>:::) = OUnit.(>:::)
 let bracket = OUnit.bracket
+let run_test_tt_main = OUnit.run_test_tt_main
 
 let assert_failure format =
     Format.kfprintf (fun _ -> raise MyOUnitFailure) formatter format
