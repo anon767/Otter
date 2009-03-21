@@ -438,6 +438,7 @@ let doExecute (f: file) =
 	let results = Driver.main_loop
 		 [{ state = state4;
 			exHist = emptyHistory;
+			prevStmt = Cil.dummyStmt;
 			nextStmt = List.hd main_func.sallstmts;
 			mergePoints = IntSet.empty;
 			jid = Utility.next_id Output.jidCounter; }]

@@ -478,8 +478,7 @@ let exec_stmt job =
 	let state,exHist,stmt = job.state,job.exHist,job.nextStmt in
 
 	let nextExHist = { exHist with
-		edgesTaken = EdgeSet.add (exHist.prevStmt,stmt) exHist.edgesTaken;
-		prevStmt = stmt;
+		edgesTaken = EdgeSet.add (job.prevStmt,stmt) exHist.edgesTaken;
 	} in
 
 	if !Output.runningJobId <> job.jid then (
@@ -879,11 +878,11 @@ let mergeJobs results job jobSet =
 			 one side are attributed to truncated executions that end at the
 			 join point. *)
 		let jobOnlyEdges = EdgeSet.diff
-			(EdgeSet.add (job.exHist.prevStmt,job.nextStmt) job.exHist.edgesTaken)
+			(EdgeSet.add (job.prevStmt,job.nextStmt) job.exHist.edgesTaken)
 			oldJob.exHist.edgesTaken
 		and oldJobOnlyEdges = EdgeSet.diff
 			(* job.nextStmt == oldJob.nextStmt because we are at the same program point *)
-			(EdgeSet.add (oldJob.exHist.prevStmt,job.nextStmt) oldJob.exHist.edgesTaken)
+			(EdgeSet.add (oldJob.prevStmt,job.nextStmt) oldJob.exHist.edgesTaken)
 			job.exHist.edgesTaken
 		in
 		let results =

@@ -186,8 +186,6 @@ module EdgeSet = Set.Make
 
 type executionHistory = {
 	edgesTaken : EdgeSet.t; (** Which edges we've traversed on this execution *)
-	prevStmt : Cil.stmt; (** The [stmt] we just executed *)
-
 	bytesToVars : (bytes * Cil.varinfo) list;
 		(** List associating symbolic bytes to the variable that was
 				assigned this value by a call to __SYMBOLIC(&<variable>). *)
@@ -195,7 +193,6 @@ type executionHistory = {
 
 let emptyHistory = {
 	edgesTaken = EdgeSet.empty;
-	prevStmt = Cil.dummyStmt;
 	bytesToVars = [];
 }
 
@@ -230,6 +227,7 @@ module IntSet = Set.Make
 type job = {
 	state : state;
 	exHist : executionHistory;
+	prevStmt : Cil.stmt; (** The [stmt] we just executed *)
 	nextStmt : Cil.stmt; (** The next statement the job should execute *)
 	mergePoints : IntSet.t; (** A list of potential merge points, by sid *)
 	jid : int; (** A unique identifier for the job *)
@@ -255,12 +253,15 @@ let updateJob job state exHist nextStmt =
 	{ job with
 			state = state;
 			exHist = exHist;
+			prevStmt = job.nextStmt;
 			nextStmt = nextStmt;
 	}
 
 let forkJob job nextStateT nextStateF nextStmtT nextStmtF newExHist newMergePoints =
-	let j =
-		{ job with mergePoints = newMergePoints; exHist = newExHist; } in
+	let j = { job with mergePoints = newMergePoints;
+	                   exHist = newExHist;
+	                   prevStmt = job.nextStmt; }
+	in
 	(* Increment the jid of the job which takes the false branch *)
 	({ j with state = nextStateT; nextStmt = nextStmtT; },
 	 { j with state = nextStateF; nextStmt = nextStmtF;
