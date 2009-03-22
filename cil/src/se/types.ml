@@ -130,14 +130,17 @@ module LocMap =
 	end
 	)	
 	
-(** A calling context is a triple [(destOpt,callInstr,nextStmtOpt)].
+(** A calling context may either be the symbolic executor, represented by
+		[Runtime], or from another function in the source code, represented
+		by a triple [Source (destOpt,callInstr,nextStmtOpt)].
 		[nextStmtOpt] is the [stmt] to execute after the call returns, or
 		[None] if the call does not return; [callInstr] is the function
 		call instruction; and [destOpt] is [None] if we ignore the result
 		of the call, or it is [Some (block,offset,size)], which means we
 		should assign the result to that triple. *)
 type callingContext =
-	(memory_block * bytes * int) option * Cil.instr * Cil.stmt option;;
+    | Runtime
+    | Source of ((memory_block * bytes * int) option * Cil.instr * Cil.stmt option);;
 
 type state =
 	{

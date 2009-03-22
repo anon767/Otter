@@ -432,31 +432,44 @@ let state__assign state (block, offset, size) bytes = (* have problem *)
 	}
 ;;
 
-let state__start_fcall state fundec callContext =
-	Output.set_mode Output.MSG_FUNC;
-	Output.print_endline (">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-	Output.print_endline ("Enter function " ^ (To_string.fundec fundec));
-	let vars = List.append fundec.Cil.sformals fundec.Cil.slocals in
-	let (frame, block_to_bytes2) = 
-		frame__add_varinfos frame__empty state.block_to_bytes vars in
-	{ state with
-		locals = frame:: state.locals;
-		callstack = fundec:: state.callstack;
-		block_to_bytes = block_to_bytes2;
-		callContexts = callContext::state.callContexts;
-	}	;;
+(* start a new function call frame *)
+let state__start_fcall state callContext fundec argvs =
+    Output.set_mode Output.MSG_FUNC;
+    Output.print_endline (">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+    Output.print_endline ("Enter function " ^ (To_string.fundec fundec));
+    (* set up the new stack frame *)
+	let frame, block_to_bytes = frame__empty, state.block_to_bytes in
+	let frame, block_to_bytes = frame__add_varinfos frame block_to_bytes fundec.Cil.sformals in
+	let frame, block_to_bytes = frame__add_varinfos frame block_to_bytes fundec.Cil.slocals in
+	let state = { state with locals = frame::state.locals;
+	                         callstack = fundec::state.callstack;
+	                         block_to_bytes = block_to_bytes;
+                             callContexts = callContext::state.callContexts } in
+    (* assign arguments to parameters *)
+	let rec assign_argvs state pars argvs = match pars, argvs with
+		| par::pars, argv::argvs ->
+			let block = state__varinfo_to_block state par in
+			let size = (Cil.bitsSizeOf par.Cil.vtype)/8 in
+			let state = state__assign state (block, bytes__zero, size) argv in
+			assign_argvs state pars argvs
+		| [], va_arg ->
+			Output.set_mode Output.MSG_FUNC;
+			Output.print_endline ("Rest of args: "^(Utility.print_list To_string.bytes va_arg " , "));
+			{ state with va_arg = va_arg::state.va_arg }
+		| _, [] ->
+			failwith "Unreachable init_argvs"
+	in
+	assign_argvs state fundec.Cil.sformals argvs
+;;
 
 let state__end_fcall state =
 	Output.set_mode Output.MSG_FUNC;
 	Output.print_endline ("Exit function "^(To_string.fundec (List.hd state.callstack)));
 	Output.print_endline ("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
-
-	{	state with
-		locals = List.tl state.locals;
-		callstack = List.tl state.callstack;
-		callContexts = List.tl state.callContexts;
-		va_arg = List.tl state.va_arg;
-	}
+    { state with locals = List.tl state.locals;
+                 callstack = List.tl state.callstack;
+                 va_arg = List.tl state.va_arg;
+	             callContexts = List.tl state.callContexts }
 ;;
 
 let state__get_callContext state = List.hd state.callContexts;;
@@ -503,9 +516,10 @@ let state__remove_block state block=
 ;;
 
 let state__trace state: string = 
-	List.fold_left (fun str (_,instr,_) ->
-		str^(Printf.sprintf "/%s" (To_string.location (Cil.get_instrLoc instr)))
-		) "" state.callContexts
+	List.fold_left begin fun str context -> match context with
+		| Runtime -> str^"Runtime"
+		| Source (_,instr,_) -> str^(Printf.sprintf "/%s" (To_string.location (Cil.get_instrLoc instr)))
+	end "" state.callContexts
 ;;
 
 (* 

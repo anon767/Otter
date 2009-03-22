@@ -35,30 +35,6 @@ let dumpEdges (eS:EdgeSet.t) : unit =
 			eS
 ;;
 
-(* Note:
- * stmt = Cil.stmt
- * statement is union type of Cil.stmt and Cil.instr
- *)
-(* TODO: need so modification for handling exit() *)
-let init_argvs state func argvs = 
-	let rec impl state pars argvs =
-		match (pars,argvs) with
-			| (h1::t1,h2::t2) ->
-				let (block,offset) = Eval.lval state h1 in
-				let size = (Cil.bitsSizeOf (Cil.typeOfLval h1))/8 in
-				let state2 = MemOp.state__assign state (block,offset,size) h2
-				in 
-					impl state2 t1 t2
-			| ([],varg) -> 	
-				Output.set_mode Output.MSG_FUNC;
-				Output.print_endline ("Rest of args: "^(Utility.print_list To_string.bytes varg " , "));
-				{state with va_arg = varg::state.va_arg; }
-			| (_,[]) -> failwith "Unreachable init_argvs" 
-	in
-		let pars = List.map (fun x -> (Var(x),NoOffset)) func.sformals in
-			impl state pars argvs
- ;;
-
 let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 	let state,exHist,stmt = job.state,job.exHist,job.nextStmt in
 
@@ -109,9 +85,8 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 						| _ -> assert false
 				in
 				let callContext = blkOffSizeOpt,instr,theSuccessor in
-				let state1 = MemOp.state__start_fcall state fundec callContext in
-				let state2 = init_argvs state1 fundec argvs in
-				Active [updateJob job state2 exHist (List.hd fundec.sallstmts)]
+				let state = MemOp.state__start_fcall state (Source callContext) fundec argvs in
+				Active [updateJob job state exHist (List.hd fundec.sallstmts)]
 		| _ ->
 				try (
 					let nextExHist = ref exHist in
@@ -550,7 +525,7 @@ let exec_stmt job =
 		| Cil.Return (expopt, loc) ->
 				begin
 					match state.callContexts with
-							[] -> (* Returning from main *)
+						| Runtime::_ -> (* completed symbolic execution (e.g., return from main) *)
 								Output.set_mode Output.MSG_MUSTPRINT;
 								Output.print_endline "Program execution finished";
 								Output.set_mode Output.MSG_REG;
@@ -567,7 +542,7 @@ let exec_stmt job =
 										           result_history = nextExHist;
 										           result_completion = Types.Return (Some (Eval.rval state exp)) }
 								end
-						| (destOpt,_,Some nextStmt)::_ ->
+						| (Source (destOpt,_,Some nextStmt))::_ ->
 								let state2 =
 									match expopt, destOpt with
 										| None, _ (* If we are not returning a value *)
@@ -663,13 +638,17 @@ let exec_stmt job =
 							let nextMergePts = (* Add in the new merge points *)
 								if run_args.arg_merge_branches then (
 									List.fold_left (fun set n -> IntSet.add n set) job.mergePoints
-										(match Inthash.find_all ifToJoinPointsHash stmt.sid with
-												 [] -> (match state.callContexts with
-																		(_,_,Some nextStmt)::_ ->
-																			print_endline "Will merge upon function return";
-																			[nextStmt.sid]
-																	| _ -> [])
-											 | x -> x)
+										begin match Inthash.find_all ifToJoinPointsHash stmt.sid with
+											| [] ->
+												begin match state.callContexts with
+													| (Source (_,_,Some nextStmt))::_ ->
+														print_endline "Will merge upon function return";
+														[nextStmt.sid]
+													| _ ->
+														[]
+													end
+											| x -> x
+										end
 								) else (
 									IntSet.empty
 								)
@@ -963,7 +942,8 @@ let atSameProgramPoint job1 job2 =
 
 let pausedJobs = ref JobSet.empty
 
-let main_loop jobs =
+let main_loop job =
+	Random.init 226; (* TODO: move random into some local state *)
 	let rec main_loop results jobs =
 		(* Check to see if we got a signal; if so, stop execution, and return the results *)
 		match !signalStringOpt with
@@ -1067,4 +1047,4 @@ let main_loop jobs =
 				in
 				main_loop (result::results) jobs
 	in
-	main_loop [] jobs
+	main_loop [] [job]

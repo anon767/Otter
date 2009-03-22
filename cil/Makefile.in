@@ -86,7 +86,7 @@ CILLY_LIBRARY_MODULES = pretty inthash errormsg alpha trace stats util clist \
               availexpslv predabst marshal_feature\
               testcil \
 	      $(CILLY_FEATURES) \
-	      ciloptions feature_config \
+	      ciloptions feature_config cilly \
                 executeargs \
                 output \
                 executedebug \
@@ -107,8 +107,7 @@ CILLY_LIBRARY_MODULES = pretty inthash errormsg alpha trace stats util clist \
                 data_structure \
                 function \
                 driver \
-                executemain \
-                cilly
+                executemain
 # ww: we don't want "main" in an external cil library (cil.cma),
 # otherwise every program that links against that library will get
 # main's argument checking and whatnot ...
@@ -153,7 +152,7 @@ quickbuild: cilversion machdep cilly
 # The rules for building and running the ounit-cilly tests.
 #
 
-OUNIT_CILLY_TEST_MODULES = OUnitSymexeIntegration
+OUNIT_CILLY_TEST_MODULES = OUnitSymexeFileJobs OUnitSymexeIntegration
 OUNIT_CILLY_MODULES = MyOUnit $(OUNIT_CILLY_TEST_MODULES) OUnitMain
 OUNIT_CILLY_LIBC = $(CILLY_LIBS) cil oUnit
 OUNIT_CILLY_SOURCEDIRS = ounit
@@ -175,6 +174,8 @@ endef
 
 # ounit-cilly modules also depends on cil.$(CMXA)
 $(OUNIT_CILLY_MODULES:%=$(OBJDIR)/%.$(CMO)) : $(OUNIT_CILLY_LIBC:%=%.$(CMXA))
+# disable pattern-match warnings for tests
+$(OUNIT_CILLY_MODULES:%=$(OBJDIR)/%.$(CMO)) : COMPILEFLAGS+=-w p
 
 ounit-cilly : cillib
 	$(AT)$(OUNIT_MAKE_COMMAND) $(OBJDIR)/ounit/ounit-cilly$(EXE) && \

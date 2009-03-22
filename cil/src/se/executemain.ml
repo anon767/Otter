@@ -369,37 +369,56 @@ let computeJoinPointsForIfs fundec =
 		fundec.sallstmts
 ;;
 
-let doExecute (f: file) =
-  if not !Cilutil.makeCFG then
-    Errormsg.s (Errormsg.error
-                  "--doexecute: you must also specify --domakeCFG\n");
-	(*
-	let f = Frontc.parse "int main(){return 0;}" () in
-	*)
-	Random.init 226;
+(* set up the file for symbolic execution *)
+let prepare_file file =
+	Cilly.makeCFGFeature.fd_doit file;
 
+	(* TODO: move this out of global variable *)
+	(* Hash all of the fundecs by their varinfos. Also, compute the join points which each [If] dominates.*)
+	List.iter begin function
+		| GFun(fundec,_) ->
+			Hashtbl.add Cilutility.fundecHashtbl fundec.svar fundec;
+			computeJoinPointsForIfs fundec
+		| _ -> ()
+	end file.globals
+
+
+(* create a job that begins at a function, given an initial state *)
+let job_for_function state fn argvs =
+	let state = MemOp.state__start_fcall state Runtime fn argvs in
+	(* create a new job *)
+	{ state = state;
+	  exHist = emptyHistory;
+	  prevStmt = Cil.dummyStmt;
+	  nextStmt = List.hd fn.sallstmts;
+	  mergePoints = IntSet.empty;
+	  jid = Utility.next_id Output.jidCounter }
+
+
+(* create a job that begins at the main function of a file, with the initial state set up for the file *)
+let job_for_file file cmdline =
+	let main_func =
+		try Function.from_name_in_file "main" file
+		with Not_found -> failwith "No main function found!"
+	in
+
+	(* Initialize the state *)
+	let state = MemOp.state__empty in
+	let state = init_globalvars state file.globals in
+
+	(* prepare the command line arguments *)
+	let state, main_args = init_cmdline_argvs state cmdline in
+
+	(* create a job starting at main *)
+	job_for_function state main_func main_args
+
+
+let doExecute (f: file) =
 	Output.set_mode Output.MSG_REG;
 	Output.print_endline "\nA (symbolic) executor for C\n";
 
-	Cil.initCIL ();
-
 	(* Keep track of how long we run *)
 	let startTime = Unix.gettimeofday () in
-
-	(* Hash all of the fundecs by their varinfos.
-		 Also, compute the join points which each [If] dominates.*)
-	List.iter
-		(function
-				 GFun(fundec,_) ->
-					 Hashtbl.add Cilutility.fundecHashtbl fundec.svar fundec;
-					 computeJoinPointsForIfs fundec
-			 | _ -> ())
-		f.globals;
-
-	let main_func = 
-		try Function.from_name_in_file "main" f  
-		with Not_found -> failwith "No main function found!"
-	in
 
 	(* Set signal handlers to catch timeouts and interrupts *)
 	let old_ALRM_handler =
@@ -412,37 +431,15 @@ let doExecute (f: file) =
 	(* Set a timer *)
 	ignore (Unix.alarm Executeargs.run_args.arg_timeout);
 
-	(* Initialize the state *)
-	let state = MemOp.state__empty in
-	let state1 = init_globalvars state f.globals in
+	(* prepare the file for symbolic execution *)
+	prepare_file f;
 
-    (* the list of commandline arguments begins with the name of the command itself and continues with all arguments;
-       here, we take it from the '--arg' option *)
-	let (state2,main_args) = init_cmdline_argvs state1 (f.fileName :: Executeargs.run_args.arg_cmdline_argvs) in
+	(* create a job for the file, with the commandline arguments set to the file name and the arguments from the
+	   '--arg' option *)
+	let file_job = job_for_file f (f.fileName::Executeargs.run_args.arg_cmdline_argvs) in
 
-	(* Initialize the call to main, like MemOp.start__fcall, except
-		 without a calling context. *)
-	let vars = List.append main_func.sformals main_func.slocals in
-	let (frame, block_to_bytes2) = 
-		MemOp.frame__add_varinfos MemOp.frame__empty state2.block_to_bytes vars in
-	let state3 =
-		{ state2 with
-				locals = frame:: state.locals;
-				callstack = [main_func];
-				block_to_bytes = block_to_bytes2;
-		} in
-	let state4 = Driver.init_argvs state3 main_func main_args in
-
-	(* Start the main loop with a single job, starting at the first
-			statement in main() *)
-	let results = Driver.main_loop
-		 [{ state = state4;
-			exHist = emptyHistory;
-			prevStmt = Cil.dummyStmt;
-			nextStmt = List.hd main_func.sallstmts;
-			mergePoints = IntSet.empty;
-			jid = Utility.next_id Output.jidCounter; }]
-	in
+	(* run the job *)
+	let results = Driver.main_loop file_job in
 
 	(* Turn off the alarm and reset the signal handlers *)
 	ignore (Unix.alarm 0);
