@@ -168,8 +168,9 @@ define OUNIT_MAKE_COMMAND
 	$(MAKE) OBJDIR=$(OBJDIR)/ounit \
 			EXTRALIBDIRS="$(EXTRALIBDIRS) $(OBJDIR)" \
 	        LIBFLAGS="$(LIBFLAGS) -I $(OBJDIR)" \
-			SOURCEDIRS="$(SOURCEDIRS) $(OUNIT_CILLY_SOURCEDIRS)" \
-	        MODULES="$(OUNIT_CILLY_MODULES)"
+			SOURCEDIRS="$(OUNIT_CILLY_SOURCEDIRS)" \
+	        MODULES="$(OUNIT_CILLY_MODULES)" \
+	        BEFOREDEPS=""
 endef
 
 # ounit-cilly modules also depends on cil.$(CMXA)
