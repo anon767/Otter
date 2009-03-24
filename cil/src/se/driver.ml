@@ -197,9 +197,7 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 										let (block,offset) = Eval.lval state lval in
 										let symbBytes = (MemOp.bytes__symbolic size ) in
 										Output.set_mode Output.MSG_MUSTPRINT;
-										Printf.printf "%s = %s\n"
-											varinf.vname
-											(To_string.bytes symbBytes);
+										Output.print_endline (varinf.vname ^ " = " ^ (To_string.bytes symbBytes));
 										nextExHist := { exHist with bytesToVars = (symbBytes,varinf) :: exHist.bytesToVars; };
 										MemOp.state__assign state (block,offset,size) symbBytes
 								| _ ->
@@ -466,9 +464,9 @@ let exec_stmt job =
 	} in
 
 	if !Output.runningJobId <> job.jid then (
+		Output.set_mode Output.MSG_REG;
+		Output.print_endline "***** Changing running job *****";
 		Output.runningJobId := job.jid;
-		Output.set_mode Output.MSG_MUSTPRINT;
-		Output.print_endline "\nChanging running job\n";
 	);
 	Output.runningJobDepth := (List.length job.state.path_condition);
 
