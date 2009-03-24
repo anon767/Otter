@@ -33,36 +33,36 @@ quit
 	tunable_one_process_model = 1;
 
 	// These are the integer flags
-//	__SYMBOLIC(&tunable_accept_timeout);
-//	__SYMBOLIC(&tunable_connect_timeout);
-//	__SYMBOLIC(&tunable_local_umask);
-//	__SYMBOLIC(&tunable_anon_umask);
-//	__SYMBOLIC(&tunable_ftp_data_port);
-//	__SYMBOLIC(&tunable_idle_session_timeout);
-//	__SYMBOLIC(&tunable_data_connection_timeout);
-//	//	__SYMBOLIC(&tunable_pasv_min_port); // Caused trouble with double arithmetic
-//	//	__SYMBOLIC(&tunable_pasv_max_port); // Caused trouble with double arithmetic
-//	__SYMBOLIC(&tunable_anon_max_rate);
-//	__SYMBOLIC(&tunable_local_max_rate);
-//	__SYMBOLIC(&tunable_listen_port);
-//	__SYMBOLIC(&tunable_max_clients);
-//	__SYMBOLIC(&tunable_file_open_mode);
-//	__SYMBOLIC(&tunable_max_per_ip);
-//	__SYMBOLIC(&tunable_trans_chunk_size);
-//	__SYMBOLIC(&tunable_delay_failed_login);
-//	__SYMBOLIC(&tunable_delay_successful_login);
-//	__SYMBOLIC(&tunable_max_login_fails);
-//	__SYMBOLIC(&tunable_chown_upload_mode);
+	__SYMBOLIC(&tunable_accept_timeout);
+	__SYMBOLIC(&tunable_connect_timeout);
+	__SYMBOLIC(&tunable_local_umask);
+	__SYMBOLIC(&tunable_anon_umask);
+	__SYMBOLIC(&tunable_ftp_data_port);
+	__SYMBOLIC(&tunable_idle_session_timeout);
+	__SYMBOLIC(&tunable_data_connection_timeout);
+	//	__SYMBOLIC(&tunable_pasv_min_port); // Caused trouble with double arithmetic
+	//	__SYMBOLIC(&tunable_pasv_max_port); // Caused trouble with double arithmetic
+	__SYMBOLIC(&tunable_anon_max_rate);
+	__SYMBOLIC(&tunable_local_max_rate);
+	__SYMBOLIC(&tunable_listen_port);
+	__SYMBOLIC(&tunable_max_clients);
+	__SYMBOLIC(&tunable_file_open_mode);
+	__SYMBOLIC(&tunable_max_per_ip);
+	__SYMBOLIC(&tunable_trans_chunk_size);
+	__SYMBOLIC(&tunable_delay_failed_login);
+	__SYMBOLIC(&tunable_delay_successful_login);
+	__SYMBOLIC(&tunable_max_login_fails);
+	__SYMBOLIC(&tunable_chown_upload_mode);
 
 	// All flags from here down are boolean
 
-//	__SYMBOLIC(&tunable_write_enable);
-//	__SYMBOLIC(&tunable_anon_upload_enable);
-//	__SYMBOLIC(&tunable_dirmessage_enable);
-//	__SYMBOLIC(&tunable_ascii_upload_enable);
-//	__SYMBOLIC(&tunable_ascii_download_enable);
-//	__SYMBOLIC(&tunable_listen);
-//	__SYMBOLIC(&tunable_run_as_launching_user);
+	__SYMBOLIC(&tunable_write_enable);
+	__SYMBOLIC(&tunable_anon_upload_enable);
+	__SYMBOLIC(&tunable_dirmessage_enable);
+	__SYMBOLIC(&tunable_ascii_upload_enable);
+	__SYMBOLIC(&tunable_ascii_download_enable);
+	__SYMBOLIC(&tunable_listen);
+	__SYMBOLIC(&tunable_run_as_launching_user);
 
 	__SYMBOLIC(&tunable_anonymous_enable);
 	__SYMBOLIC(&tunable_local_enable);

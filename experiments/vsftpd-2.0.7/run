@@ -9,8 +9,9 @@ elif [ ! -f vsftpd_comb.c ]; then
 	MERGE=1
 fi
 
-LIBCDIR=~/symexe/libc
-MOCKEDDIR=~/symexe/mockedFns
+TOPDIR=~/symexe/trunk
+LIBCDIR=$TOPDIR/libc
+MOCKEDDIR=$TOPDIR/mockedFns
 
 if [ "$1" == libc ]; then
 	echo "Merging libc"
