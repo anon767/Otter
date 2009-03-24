@@ -125,7 +125,7 @@ doassert pc =
 			Output.print_endline ("ASSERT("^(Stpc.to_string a)^");");
 			do_assert tail
 	in
-		Stats.time "STP assert" do_assert pc;	
+		Stats.time "STP assert" do_assert pc ;	
 (*		Stats.time "STP assert" do_assert relevantAssumptions;*)	
     vc
 

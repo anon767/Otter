@@ -221,6 +221,15 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 										end
 						)
 
+					| Function.SymbolicState ->
+                        {state with
+                             block_to_bytes = MemoryBlockMap.map 
+                                (fun b -> match b with
+                                     Bytes_FunPtr(_) -> b
+                                   | _ -> MemOp.bytes__symbolic (MemOp.bytes__length b)
+                                ) 
+                                state.block_to_bytes;
+                        }
 					| Function.SymbolicStatic ->
 							begin match blkOffSizeOpt with
 								| None -> 

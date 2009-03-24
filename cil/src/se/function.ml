@@ -27,6 +27,7 @@ type function_type =
 	| Comment
 	| CurrentState
 	| CompareState
+    | SymbolicState
 	| AssertEqualState
 	| IsConcrete
 	| PathCondition
@@ -67,6 +68,7 @@ let from_varinfo state varinfo args =
 		| "__COMMENT" -> Comment
 		| "__CURRENT_STATE" -> CurrentState
 		| "__COMPARE_STATE" -> CompareState
+		| "__SYMBOLIC_STATE" -> CompareState
 		| "__ASSERT_EQUAL_STATE" -> AssertEqualState
 		| "__ISCONCRETE" -> IsConcrete
 		| "__PATHCONDITION" -> PathCondition
