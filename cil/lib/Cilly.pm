@@ -1013,11 +1013,11 @@ sub applyCilAndCompile {
     Carp::confess "$self produced bad output file: $aftercil" 
         unless $aftercil->isa('OutputFile');
 
-    # Now preprocess
-    my $aftercilpp = $self->preprocessAfterOutputFile($aftercil);
-    $self->preprocess_after_cil($aftercil, $aftercilpp, $ppargs);
-
     if (!defined($ENV{CILLY_DONT_COMPILE_AFTER_MERGE})) {
+      # Now preprocess
+      my $aftercilpp = $self->preprocessAfterOutputFile($aftercil);
+      $self->preprocess_after_cil($aftercil, $aftercilpp, $ppargs);
+
       # Now compile
       return $self->compile_cil($aftercilpp, $dest, $ppargs, $ccargs);
     }
