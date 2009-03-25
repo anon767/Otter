@@ -2,9 +2,9 @@ open MyOUnit
 open Types
 
 (* test helper that runs the symbolic executor on a file given a source code as a string, and calculates coverage *)
-let test_coverage_job content ?(label=content) test =
+let test_coverage content ?(label=content) test =
     label >:: bracket begin fun () ->
-        let filename, fileout = Filename.open_temp_file "OUnitSymexeJobs." ".c" in
+        let filename, fileout = Filename.open_temp_file "OUnitSymexeCoverage." ".c" in
         output_string fileout content;
         close_out fileout;
         filename
@@ -19,7 +19,7 @@ let test_coverage_job content ?(label=content) test =
 
         (* prepare the file and run the symbolic executor *)
         Executemain.prepare_file file;
-        let job = Executemain.job_for_file file ["a"] in
+        let job = Executemain.job_for_file file ["OUnitSymexeCoverage"] in
         let results = Driver.main_loop job in
 
         (* figure out the edges that were executed *)
@@ -46,7 +46,7 @@ let assert_edges_count = assert_equal ~printer:(fun ff -> Format.fprintf ff "%d"
  *)
 
 let simple_coverage_testsuite = "Simple" >::: [
-    test_coverage_job ~label:"One statement" "
+    test_coverage ~label:"One statement" "
         int main(int argc, char *argv[]) {
             return 0; /* 1 */
         }
@@ -54,7 +54,7 @@ let simple_coverage_testsuite = "Simple" >::: [
         assert_edges_count 1 all_count
     end;
 
-    test_coverage_job ~label:"Two statements" "
+    test_coverage ~label:"Two statements" "
         int main(int argc, char *argv[]) {
             int i;
             i = 0;     /* 1 */
@@ -68,7 +68,7 @@ let simple_coverage_testsuite = "Simple" >::: [
 (* WARNING: this testsuite is currently fragile; it depends on the specifics of how edges are counted, and how blocks
    are introduced by Partial.calls_end_basic_blocks (+ x edges) *)
 let function_calls_coverage_testsuite = "Function calls" >::: [
-    test_coverage_job ~label:"foo();" "
+    test_coverage ~label:"foo();" "
         void foo(void) { /* return:2 */ }
         int main(int argc, char *argv[]) {
             foo();    /* 1 */
@@ -78,7 +78,7 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
         assert_edges_count (3 + 1) all_count
     end;
 
-    test_coverage_job ~label:"x = 1; foo();" "
+    test_coverage ~label:"x = 1; foo();" "
         void foo(void) { /* return:3 */ }
         int main(int argc, char *argv[]) {
             int x;
@@ -90,7 +90,7 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
         assert_edges_count (4 + 1) all_count
     end;
 
-    test_coverage_job ~label:"foo(); bar();" "
+    test_coverage ~label:"foo(); bar();" "
         void foo(void) { /* return:2 */ }
         void bar(void) { /* return:4 */ }
         int main(int argc, char *argv[]) {
@@ -102,7 +102,7 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
         assert_edges_count (5 + 1) all_count
     end;
 
-    test_coverage_job ~label:"x = 1; foo(); y = 2; bar();" "
+    test_coverage ~label:"x = 1; foo(); y = 2; bar();" "
         void foo(void) { /* return:3 */ }
         void bar(void) { /* return:5 */ }
         int main(int argc, char *argv[]) {
@@ -117,7 +117,7 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
         assert_edges_count (7 + 1) all_count
     end;
 
-    test_coverage_job ~label:"foo() { bar(); };" "
+    test_coverage ~label:"foo() { bar(); };" "
         void bar(void) { /* return:3 */ }
         void foo(void) { bar(); /* 2, return:4 */ }
         int main(int argc, char *argv[]) {

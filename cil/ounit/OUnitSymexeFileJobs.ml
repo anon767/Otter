@@ -4,7 +4,7 @@ open Types
 (* test helper that runs the symbolic executor on a file given a source code as a string *)
 let test_file_job cmdline content ?(label=content) test =
     label >:: bracket begin fun () ->
-        let filename, fileout = Filename.open_temp_file "OUnitSymexeJobs." ".c" in
+        let filename, fileout = Filename.open_temp_file "OUnitSymexeFileJobs." ".c" in
         output_string fileout content;
         close_out fileout;
         filename
@@ -55,14 +55,14 @@ let command_line_testsuite = "Command Line" >::: [
             __ASSERT(argv[0][0] == 'a');
             __ASSERT(argv[1][0] == 'b');
             return 0;
-        }"
-    begin fun file results ->
+        }
+    " begin fun file results ->
         ()
     end;
 ]
 
 let exit_code_testsuite = "Exit Code" >::: [
-    test_file_job ~label:"Return 0 from main"
+    test_file_job ~label:"return 0 from main"
     ["a"] "
         int main(void) {
             return 0;
@@ -73,7 +73,7 @@ let exit_code_testsuite = "Exit Code" >::: [
         end results
     end;
 
-    test_file_job ~label:"Exit 0 from main"
+    test_file_job ~label:"exit(0) from main"
     ["a"] "
         int main(void) {
             exit(0);
@@ -85,7 +85,7 @@ let exit_code_testsuite = "Exit Code" >::: [
         end results
     end;
 
-    test_file_job ~label:"Exit (none) from main"
+    test_file_job ~label:"exit() from main"
     ["a"] "
         int main(void) {
             exit();
