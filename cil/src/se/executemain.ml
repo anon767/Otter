@@ -214,10 +214,10 @@ let finish_up results =
 				| Types.Abandoned -> (coverage, completed, truncated, abandoned + 1)
 	end ([], 0, 0, 0) results in
 	if completed = 0 then (
-		Printf.printf "All %d paths had errors.\n" abandoned
+		Output.printf "All %d paths had errors.\n" abandoned
 	) else (
-		Printf.printf "%d paths ran to completion; %d had errors.\n" completed abandoned;
-		Printf.printf "There are %d truncated paths.\n" truncated;
+		Output.printf "%d paths ran to completion; %d had errors.\n" completed abandoned;
+		Output.printf "There are %d truncated paths.\n" truncated;
 
 	let (alwaysExecuted,everExecuted) =
 		match coverage with
@@ -253,7 +253,7 @@ let finish_up results =
 							 if sScore > !nextPickScore
 							 then (nextPickScore := sScore; nextPick := s))
 							cvrgList;
-						Printf.printf "Covering %d new edges\n" !nextPickScore;
+						Output.printf "Covering %d new edges\n" !nextPickScore;
 						helper (!nextPick::acc)
 							(List.filter ((!=) !nextPick) cvrgList)
 							(EdgeSet.diff remaining (!nextPick.result_history).edgesTaken)
@@ -263,7 +263,7 @@ let finish_up results =
 	let coveringSet = greedySetCover coverage in
 	if coveringSet = [] then print_endline "No constraints: any run covers all edges"
 	else (
-		Printf.printf "Here is a set of %d configurations which covers all the edges:\n"
+		Output.printf "Here is a set of %d configurations which covers all the edges:\n"
 			(List.length coveringSet);
 		Output.set_mode Output.MSG_MUSTPRINT;
 		List.iter
@@ -321,7 +321,7 @@ let finish_up results =
 										match Convert.bytes_to_constant concreteByteArray varinf.vtype with
 											| CInt64 (n,_,_) ->
 													(* Is it okay to ignore the type? Or might we have to truncate? *)
-													Printf.printf "%s=%Ld\n" varinf.vname n
+													Output.printf "%s=%Ld\n" varinf.vname n
 											| _ -> failwith "Unimplemented: non-integer symbolic")
 					 hist.bytesToVars;
 
@@ -454,13 +454,13 @@ let doExecute (f: file) =
 		Output.print_endline "\nFunction call stat:";
 		Cilutility.FundecMap.iter (fun f c -> Output.print_endline ((To_string.fundec f)^" : "^(string_of_int c))) (!MemOp.function_stat);	
 		*)
-		Printf.printf "\nSTP was invoked %d times.\n" !Types.stp_count;
+		Output.printf "\nSTP was invoked %d times.\n" !Types.stp_count;
 
 		let executionTime = (Unix.gettimeofday ()) -. startTime
 		and stpTime = Stats.lookupTime "STP" in
-		Printf.printf "It ran for %.2f s, which is %.2f%% of the total %.2f s execution.\n"
+		Output.printf "It ran for %.2f s, which is %.2f%% of the total %.2f s execution.\n"
 			stpTime (100. *. stpTime /. executionTime) executionTime;
-		Printf.printf "  It took %.2f s to construct the formulas for the expressions inside 'if(...)'s,
+		Output.printf "  It took %.2f s to construct the formulas for the expressions inside 'if(...)'s,
   %.2f s to construct and assert the path conditions,
   and %.2f s to solve the resulting formulas.\n\n"
 			(Stats.lookupTime "convert conditional")

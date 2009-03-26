@@ -14,8 +14,8 @@ let dumpEdges (eS:EdgeSet.t) : unit =
 	else
 		let currentSrc = ref (fst (EdgeSet.min_elt eS)) in
 		if (!currentSrc = dummyStmt)
-		then Printf.printf "-1 [label:\"-1:Program start\"]\n"
-		else Printf.printf "%d [label:\"%d:%s\"]\n"
+		then Output.printf "-1 [label:\"-1:Program start\"]\n"
+		else Output.printf "%d [label:\"%d:%s\"]\n"
 			!currentSrc.sid !currentSrc.sid
 			(Pretty.sprint 500 (Cil.d_loc () (get_stmtLoc !currentSrc.skind)));
 		EdgeSet.iter
@@ -24,14 +24,14 @@ let dumpEdges (eS:EdgeSet.t) : unit =
 				then(
 					currentSrc := src;
 					try
-						Printf.printf "%d [label:\"%d:%s\"]\n"
+						Output.printf "%d [label:\"%d:%s\"]\n"
 							!currentSrc.sid !currentSrc.sid
 							(Pretty.sprint 500 (Cil.d_loc () (get_stmtLoc !currentSrc.skind)))
 					with Errormsg.Error ->
-						Printf.printf "%d [label:\"%d:<error>\"]\n"
+						Output.printf "%d [label:\"%d:<error>\"]\n"
 							!currentSrc.sid !currentSrc.sid
 					);
-				Printf.printf "\t%d -> %d\n" src.sid dst.sid)
+				Output.printf "\t%d -> %d\n" src.sid dst.sid)
 			eS
 ;;
 
@@ -363,7 +363,7 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 						Scanf.scanf "%d\n" 
 						begin
 							fun p1->
-								Printf.printf "sth\n";	
+								Output.printf "sth\n";	
 							state
 						end
 							
@@ -377,7 +377,7 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 						let bytes = Eval.rval state (List.hd exps) in
 						let key = Convert.bytes_to_int_auto bytes in
 							Output.set_mode Output.MSG_MUSTPRINT;
-							Output.print_endline (Printf.sprintf "Record state %d" key);
+							Output.printf "Record state %d\n" key;
 							MemOp.index_to_state__add key state;
 							state
 													
@@ -387,18 +387,18 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 						let key0 = Convert.bytes_to_int_auto bytes0 in
 						let key1 = Convert.bytes_to_int_auto bytes1 in
 						Output.set_mode Output.MSG_MUSTPRINT;
-						Output.print_endline (Printf.sprintf "Compare states %d and %d" key0 key1);
+						Output.printf "Compare states %d and %d\n" key0 key1;
 						begin try
 						  let s0 = try MemOp.index_to_state__get key0 
 						  with Not_found -> (
 						   	Output.set_mode Output.MSG_MUSTPRINT;
-						   	Output.print_endline (Printf.sprintf "Warning: snapshot %d is absent" key0);
+						   	Output.printf "Warning: snapshot %d is absent\n" key0;
 						   	    raise Not_found )
                           in
 						  let s1 = try MemOp.index_to_state__get key1
 						  with Not_found -> (
 						   	Output.set_mode Output.MSG_MUSTPRINT;
-						   	Output.print_endline (Printf.sprintf "Warning: snapshot %d is absent" key1);
+						   	Output.printf "Warning: snapshot %d is absent\n" key1;
 						   	    raise Not_found )
                           in
 						    let output = MemOp.cmp_states s0 s1 in
@@ -407,7 +407,7 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 						    	state
                         with Not_found -> 
 						   	Output.set_mode Output.MSG_MUSTPRINT;
-						   	Output.print_endline (Printf.sprintf "Compare states fail");
+						   	Output.printf "Compare states fail\n";
                             state
                         end
 					*)
@@ -664,12 +664,11 @@ let exec_stmt job =
 								forkJob job nextStateT nextStateF nextStmtT nextStmtF nextExHist nextMergePts
 							in
 							Output.set_mode Output.MSG_MUSTPRINT;
-							Output.print_endline
-								(Printf.sprintf "Branching on %s at %s.
-Job %d is the true branch and job %d is the false branch.\n"
-									 (To_string.exp exp)
-									 (To_string.location loc)
-									 j1.jid j2.jid);
+							Output.printf "Branching on %s at %s.
+Job %d is the true branch and job %d is the false branch.\n\n"
+								 (To_string.exp exp)
+								 (To_string.location loc)
+								 j1.jid j2.jid;
 							Active [j1;j2]
 						end
 				end
@@ -685,8 +684,8 @@ Job %d is the true branch and job %d is the false branch.\n"
 
 (*
 let printJob (state,stmt) =
-	Printf.printf "path condition = %s\n" (To_string.bytes_list state.path_condition);
-	Printf.printf "statement:\n%s\n"
+	Output.printf "path condition = %s\n" (To_string.bytes_list state.path_condition);
+	Output.printf "statement:\n%s\n"
 		(try Pretty.sprint 100 (Cil.d_stmt () stmt)
 		 with Errormsg.Error -> "<error printing statement>")
 *)
@@ -799,7 +798,7 @@ let mergeJobs results job jobSet =
 				 if diffShared = [] then (
 					 (* The memory is identical in [j] and [job] *)
 					 assert (inJOnly = [] && inJobOnly = []);
-					 Printf.printf "Merging jobs %d and %d (identical memory)\n" j.jid job.jid;
+					 Output.printf "Merging jobs %d and %d (identical memory)\n" j.jid job.jid;
 					 raise (MergeDone (j, { job.state with path_condition = mergedPC; }))
 				 ) else (
 					 (* We have to fiddle with memory *)
@@ -845,7 +844,7 @@ let mergeJobs results job jobSet =
 						 assocListToMemoryBlockMap
 							 (List.concat [List.map fst newSharedBlocks; sameShared; inJOnly; inJobOnly])
 					 in
-					 Printf.printf "Merging jobs %d and %d (differing memory)\n" j.jid job.jid;
+					 Output.printf "Merging jobs %d and %d (differing memory)\n" j.jid job.jid;
 					 raise (MergeDone (j, { job.state with
 																		block_to_bytes = mergedMemory;
 																		path_condition = finalMergedPC;
@@ -964,7 +963,7 @@ let main_loop job =
 			if JobSet.is_empty !pausedJobs
 			then (
 				(* There are no paused jobs, either. We're done. *)
-				print_endline "Done executing";
+				Output.print_endline "Done executing";
 				results
 			) else (
 				(* Pick a paused job, remove it from pausedJobs, and run it. *)
@@ -1040,10 +1039,9 @@ let main_loop job =
 *)
 			with Failure fail ->
 				Output.set_mode Output.MSG_MUSTPRINT;
-				Output.print_endline
-					(Printf.sprintf "Error \"%s\" occurs at %s\nAbandoning branch"
-						 fail
-						 (To_string.location !Output.cur_loc));
+				Output.printf "Error \"%s\" occurs at %s\nAbandoning branch\n"
+					 fail
+					 (To_string.location !Output.cur_loc);
 				Output.set_mode Output.MSG_REG;
 				Output.print_endline
 					("Path condition:\n" ^

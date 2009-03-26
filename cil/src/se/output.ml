@@ -31,7 +31,7 @@ let print_loc loc =
   loc.Cil.file^":"^(string_of_int loc.Cil.line)^" : ";;
 
 let getIndent () = 
-	Printf.sprintf "[%d,%d] %s" !runningJobId !runningJobDepth (print_loc (!cur_loc))
+	Format.sprintf "[%d,%d] %s" !runningJobId !runningJobDepth (print_loc (!cur_loc))
 ;;
 	(*
   let rec f x = if x<=0 then "" else "    "^(f (x-1)) in
@@ -95,6 +95,15 @@ let need_print msg_type =
 	| MSG_DEBUG		-> Executeargs.print_args.arg_print_debug
 	| MSG_MUSTPRINT -> Executeargs.print_args.arg_print_mustprint
 ;;
+
+let fprintf ff format =
+	if (need_print (!current_msg_type)) then
+		Format.fprintf ff format
+	else
+		Format.ifprintf ff format
+;;
+
+let printf format = fprintf Format.std_formatter format
 
 let print_string str = 
 	if (need_print (!current_msg_type)) then
