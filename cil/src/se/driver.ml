@@ -760,11 +760,40 @@ let pcToBytes = function
 exception MergeDone of job * state
 exception TooDifferent
 
+
+let atSameProgramPoint job1 job2 =
+	let state1 = job1.state
+	and state2 = job2.state in
+	(* I'm trying to be conservative here by using physical equality
+		 because I haven't quite figured out what 'being at the same
+		 program point' means. But I'm pretty sure that if these are
+		 physically equal, then they really are at the same program point,
+		 whatever that means. *)
+	if job1.nextStmt == job2.nextStmt &&
+		state1.callContexts == state2.callContexts
+	then (
+		assert
+			(job1.exHist.bytesToVars == job2.exHist.bytesToVars &&
+				 state1.global         == state2.global &&
+			 	 state1.locals         == state2.locals &&
+				 state1.callstack      == state2.callstack &&
+				 state1.va_arg         == state2.va_arg &&
+				 state1.va_arg_map     == state2.va_arg_map &&
+				 state1.loc_map        == state2.loc_map);
+			true
+		) else (
+			false
+		)
+
 (* Merge job states *)
-let mergeJobs results job jobSet =
+let mergeJobs job jobSet =
 	try
+		(* First test to see if the job should pause and/or merge *)
+		if run_args.arg_merge_branches
+		   && IntSet.mem job.nextStmt.sid job.mergePoints then begin
 		JobSet.iter
 			(fun j ->
+				if atSameProgramPoint job j then begin
 				 try
 				 let jPC,jobPC,commonPC =
 					 splitOutCommonSuffix j.state.path_condition job.state.path_condition
@@ -848,11 +877,16 @@ let mergeJobs results job jobSet =
 																}))
 				 )
 				 with TooDifferent -> print_endline "Memory too different to merge"; ()
+				end
 			) (* End iteration function *)
 			jobSet;
-		(* Reaching here means we've iterated through all jobs, never
-			 being able to merge. So we just add the job to jobSet. *)
-		(results, JobSet.add job jobSet)
+			(* Reaching here means we've iterated through all jobs, never
+				 being able to merge. So we just add the job to jobSet. *)
+			(None, JobSet.add job jobSet)
+		end else begin
+			(* not at merge point *)
+			(Some (Active job), jobSet)
+		end;
 	with MergeDone (oldJob,mergedState) ->
 		(* This is a pretty stupid way of getting complete coverage with
 			 merging, but it's something. It only credits a merged execution
@@ -867,11 +901,11 @@ let mergeJobs results job jobSet =
 			(EdgeSet.add (oldJob.prevStmt,job.nextStmt) oldJob.exHist.edgesTaken)
 			job.exHist.edgesTaken
 		in
-		let results = (Types.Truncated
+		let completed = Complete (Types.Truncated
 			({ result_state = job.state;
-			   result_history = { job.exHist with edgesTaken = jobOnlyEdges } },
+			   result_history = {job.exHist with edgesTaken = jobOnlyEdges } },
 			 { result_state = oldJob.state;
-			   result_history = { oldJob.exHist with edgesTaken = oldJobOnlyEdges } }))::results
+			   result_history = {oldJob.exHist with edgesTaken = oldJobOnlyEdges } }))
 		in
 		(* Remove the old job and add the merged job *)
 		let merged_jobs = JobSet.add
@@ -886,37 +920,12 @@ let mergeJobs results job jobSet =
 			}
 			(JobSet.remove oldJob jobSet)
 		in
-		(results, merged_jobs)
+		(Some completed, merged_jobs)
 
-
-let atSameProgramPoint job1 job2 =
-	let state1 = job1.state
-	and state2 = job2.state in
-	(* I'm trying to be conservative here by using physical equality
-		 because I haven't quite figured out what 'being at the same
-		 program point' means. But I'm pretty sure that if these are
-		 physically equal, then they really are at the same program point,
-		 whatever that means. *)
-	if job1.nextStmt == job2.nextStmt &&
-		state1.callContexts == state2.callContexts
-	then (
-		assert
-			(job1.exHist.bytesToVars == job2.exHist.bytesToVars &&
-				 state1.global         == state2.global &&
-			 	 state1.locals         == state2.locals &&
-				 state1.callstack      == state2.callstack &&
-				 state1.va_arg         == state2.va_arg &&
-				 state1.va_arg_map     == state2.va_arg_map &&
-				 state1.loc_map        == state2.loc_map);
-			true
-		) else (
-			false
-		)
-
-let pausedJobs = ref JobSet.empty
 
 let main_loop job =
 	Random.init 226; (* TODO: move random into some local state *)
+	let pausedJobs = ref JobSet.empty in
 	let rec main_loop results jobs =
 		(* Check to see if we got a signal; if so, stop execution, and return the results *)
 		match !signalStringOpt with
@@ -943,34 +952,28 @@ let main_loop job =
 			)
 		| job::jobs ->
 			try
-				let rec runUntilBranch results theJob =
-					(* First test to see if the job should pause and/or merge *)
-					if run_args.arg_merge_branches &&
-						IntSet.mem theJob.nextStmt.sid theJob.mergePoints
-					then (
-						(* See if there are other jobs we should merge theJob with *)
-						let jobsToMergeWith =
-							JobSet.filter (atSameProgramPoint theJob) !pausedJobs in
-						(* Remove jobsToMergeWith from pausedJobs *)
-						let otherPaused = (JobSet.diff !pausedJobs jobsToMergeWith) in
-						(* Merge with theJob *)
-						let results, nowPaused = (mergeJobs results theJob jobsToMergeWith) in
-						(* Place the results of the merge back into pausedJobs. We
-							 pause theJob and re-pause all results of the merge
-							 because there could be other jobs that will also merge
-							 at this statement. *)
-						pausedJobs := JobSet.union otherPaused nowPaused;
-						(* Continue with the remaining jobs *)
-						main_loop results jobs
-					) else ( (* Don't pause this job---run it *)
-						match exec_stmt theJob with
-							| Active j ->
-								runUntilBranch results j
-							| Fork (j1, j2) ->
-								main_loop results (j1::j2::jobs)
-							| Complete result ->
-								main_loop (result::results) jobs
-					)
+				let rec runUntilBranch results job =
+					let maybe_result, merged = mergeJobs job !pausedJobs in
+					(* Place the results of the merge back into pausedJobs. We
+					   pause theJob and re-pause all results of the merge
+					   because there could be other jobs that will also merge
+					   at this statement. *)
+					pausedJobs := merged;
+					match maybe_result with
+						| None ->
+							(* job was at merge point, but wasn't merged *)
+							main_loop results jobs
+						| Some result ->
+							(* job was either at merge point and merged, or was not at merge point *)
+							let result = match result with Active job -> exec_stmt job | _ -> result in 
+							begin match result with
+								| Active j ->
+									runUntilBranch results j
+								| Fork (j1, j2) ->
+									main_loop results (j1::j2::jobs)
+								| Complete result ->
+									main_loop (result::results) jobs
+							end
 				in
 				runUntilBranch results job
 			with Failure fail ->
