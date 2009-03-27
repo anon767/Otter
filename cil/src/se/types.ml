@@ -236,21 +236,21 @@ type job = {
 	jid : int; (** A unique identifier for the job *)
 }
 
-type job_completion =
-	| Return of bytes option
-	| Exit of bytes option
-	| Abandoned
-	| Truncated
-
 type job_result = {
 	result_state : state;
 	result_history : executionHistory;
-	result_completion : job_completion;
 }
 
+type job_completion =
+	| Return of bytes option * job_result
+	| Exit of bytes option * job_result
+	| Abandoned of job_result
+	| Truncated of job_result * job_result
+
 type job_state =
-	| Active of job list
-	| Complete of job_result
+	| Active of job
+	| Fork of job * job
+	| Complete of job_completion
 
 let updateJob job state exHist nextStmt =
 	{ job with

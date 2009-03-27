@@ -207,11 +207,11 @@ let finish_up results =
 
 	let coverage, completed, truncated, abandoned =
 		List.fold_left begin fun (coverage, completed, truncated, abandoned) result ->
-			match result.result_completion with
-				| Types.Return _
-				| Types.Exit _    -> (result::coverage, completed + 1, truncated, abandoned)
-				| Types.Truncated -> (result::coverage, completed, truncated + 1, abandoned)
-				| Types.Abandoned -> (coverage, completed, truncated, abandoned + 1)
+			match result with
+				| Types.Return (_, c)
+				| Types.Exit (_, c)      -> (c::coverage, completed + 1, truncated, abandoned)
+				| Types.Truncated (c, d) -> (c::d::coverage, completed, truncated + 2, abandoned)
+				| Types.Abandoned _      -> (coverage, completed, truncated, abandoned + 1)
 	end ([], 0, 0, 0) results in
 	if completed = 0 then (
 		Output.printf "All %d paths had errors.\n" abandoned

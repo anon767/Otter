@@ -68,7 +68,7 @@ let exit_code_testsuite = "Exit Code" >::: [
             return 0;
         }
     " begin fun file results ->
-        assert_match begin fun [ { result_completion=(Return (Some actual)) } ] ->
+        assert_match begin fun [ Return (Some actual, _) ] ->
             assert_equal ~cmp:MemOp.same_bytes MemOp.bytes__zero actual
         end results
     end;
@@ -80,7 +80,7 @@ let exit_code_testsuite = "Exit Code" >::: [
             return 1;
         }
     " begin fun file results ->
-        assert_match begin fun [ { result_completion=(Exit (Some actual)) } ] ->
+        assert_match begin fun [ Exit (Some actual, _) ] ->
             assert_equal ~cmp:MemOp.same_bytes MemOp.bytes__zero actual
         end results
     end;
@@ -92,7 +92,7 @@ let exit_code_testsuite = "Exit Code" >::: [
             return 1;
         }
     " begin fun file results ->
-        assert_match begin fun [ { result_completion=(Exit None) } ] ->
+        assert_match begin fun [ Exit (None, _) ] ->
             ()
         end results
     end;

@@ -86,7 +86,7 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 				in
 				let callContext = blkOffSizeOpt,instr,theSuccessor in
 				let state = MemOp.state__start_fcall state (Source callContext) fundec argvs in
-				Active [updateJob job state exHist (List.hd fundec.sallstmts)]
+				Active (updateJob job state exHist (List.hd fundec.sallstmts))
 		| _ ->
 				try (
 					let nextExHist = ref exHist in
@@ -439,7 +439,7 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 							[h] -> h
 						| _ -> assert false
 				in
-				Active [updateJob job state_end !nextExHist theSuccessor]
+				Active (updateJob job state_end !nextExHist theSuccessor)
 
 				) with Function.Notification_Exit exit_code ->
 					(* If it was [Exit], there is no job to return *)
@@ -449,9 +449,7 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 					Output.print_endline
 						("Path condition:\n" ^
 							 (To_string.humanReadablePc state.path_condition exHist.bytesToVars));
-					Complete { result_state = state;
-					           result_history = exHist;
-					           result_completion = Types.Exit exit_code }
+					Complete (Types.Exit (exit_code, { result_state = state; result_history = exHist; }))
 
 	end (* outer [match func] *)
 ;;
@@ -499,7 +497,7 @@ let exec_stmt job =
 											[h] -> h
 										| _ -> assert false
 								in
-								Active [updateJob job latestState nextExHist theSuccessor]
+								Active (updateJob job latestState nextExHist theSuccessor)
 						| (Set(lval,exp,loc) as instr)::tail ->
 								printInstr instr;
 								let (block,offset) = Eval.lval latestState lval in
@@ -541,13 +539,12 @@ let exec_stmt job =
 										 (To_string.humanReadablePc state.path_condition exHist.bytesToVars));
 								begin match expopt with
 									| None ->
-										Complete { result_state = state;
-										           result_history = nextExHist;
-										           result_completion = Types.Return None } 
+										Complete (Types.Return
+											(None, { result_state = state; result_history = nextExHist; })) 
 									| Some exp ->
-										Complete { result_state = state;
-										           result_history = nextExHist;
-										           result_completion = Types.Return (Some (Eval.rval state exp)) }
+										Complete (Types.Return
+											(Some (Eval.rval state exp),
+											 { result_state = state; result_history = nextExHist; }))
 								end
 						| (Source (destOpt,_,Some nextStmt))::_ ->
 								let state2 =
@@ -563,14 +560,14 @@ let exec_stmt job =
 								(* varinfo_to_block: memory_block VarinfoMap.t; *)
 								let pop_frame = List.hd state.locals in
 								let state2' = VarinfoMap.fold (fun varinfo block s -> MemOp.state__remove_block s block) pop_frame.varinfo_to_block state2 in 
-								Active [updateJob job state2' nextExHist nextStmt]
+								Active (updateJob job state2' nextExHist nextStmt)
 						| _ ->
 								(* [(_,_,None)] is impossible, because we wouldn't
 									 be returning in that case. *)
 								assert false
 				end
 		| Goto (stmtref, loc) ->
-				Active [updateJob job state nextExHist !stmtref]
+				Active (updateJob job state nextExHist !stmtref)
 		| If (exp, block1, block2, loc) ->
 				begin
 				(* try a branch *)
@@ -628,13 +625,13 @@ let exec_stmt job =
 						begin
 							Output.print_endline "True";
 							let nextState,nextStmt = try_branch None block1 in
-							Active [updateJob job nextState nextExHist nextStmt]
+							Active (updateJob job nextState nextExHist nextStmt)
 						end
 					else if truth == Stp.False then
 						begin
 							Output.print_endline "False";
 							let nextState,nextStmt = try_branch None block2 in
-							Active [updateJob job nextState nextExHist nextStmt]
+							Active (updateJob job nextState nextExHist nextStmt)
 						end
 					else
 						begin
@@ -669,7 +666,7 @@ Job %d is the true branch and job %d is the false branch.\n\n"
 								 (To_string.exp exp)
 								 (To_string.location loc)
 								 j1.jid j2.jid;
-							Active [j1;j2]
+							Fork (j1, j2)
 						end
 				end
 		| Block(block)
@@ -678,7 +675,7 @@ Job %d is the true branch and job %d is the false branch.\n\n"
 					 Cil.succpred_stmt.)
 					 This is not true for [Block]s, but it *does* seem to be
 					 true for [Block]s which are not under [If]s, so we're okay. *)
-				Active [updateJob job state nextExHist (List.hd block.bstmts)]
+				Active (updateJob job state nextExHist (List.hd block.bstmts))
 		| _ -> failwith "Not implemented yet"
 ;;
 
@@ -870,12 +867,12 @@ let mergeJobs results job jobSet =
 			(EdgeSet.add (oldJob.prevStmt,job.nextStmt) oldJob.exHist.edgesTaken)
 			job.exHist.edgesTaken
 		in
-		let results =
-			{ result_state = job.state; result_history = {job.exHist with edgesTaken = jobOnlyEdges };
-              result_completion = Truncated } ::
-			{ result_state = oldJob.state; result_history = {oldJob.exHist with edgesTaken = oldJobOnlyEdges };
-              result_completion = Truncated } ::
-			results in
+		let results = (Types.Truncated
+			({ result_state = job.state;
+			   result_history = { job.exHist with edgesTaken = jobOnlyEdges } },
+			 { result_state = oldJob.state;
+			   result_history = { oldJob.exHist with edgesTaken = oldJobOnlyEdges } }))::results
+		in
 		(* Remove the old job and add the merged job *)
 		let merged_jobs = JobSet.add
 			{ job with
@@ -970,7 +967,8 @@ let main_loop job =
 				let someJob = JobSet.choose !pausedJobs in
 				pausedJobs := JobSet.remove someJob !pausedJobs;
 				match exec_stmt someJob with
-					| Active jobs -> main_loop results jobs
+					| Active job -> main_loop results [ job ]
+					| Fork (j1, j2) -> main_loop results [j1; j2]
 					| Complete result -> main_loop (result::results) []
 			)
 		| job::jobs ->
@@ -996,14 +994,10 @@ let main_loop job =
 						main_loop results jobs
 					) else ( (* Don't pause this job---run it *)
 						match exec_stmt theJob with
-							| Active [] ->
-								(* returned job list must be non-empty *)
-								assert false
-							| Active [j] ->
+							| Active j ->
 								runUntilBranch results j
-							| Active js ->
-								(* js should be short since @ isn't tail-recursive *)
-								main_loop results (js @ jobs)
+							| Fork (j1, j2) ->
+								main_loop results (j1::j2::jobs)
 							| Complete result ->
 								main_loop (result::results) jobs
 					)
@@ -1046,10 +1040,7 @@ let main_loop job =
 				Output.print_endline
 					("Path condition:\n" ^
 						 (To_string.humanReadablePc job.state.path_condition job.exHist.bytesToVars));
-				let result = { result_state = job.state;
-					           result_history = job.exHist;
-					           result_completion = Abandoned }
-				in
+				let result = Types.Abandoned { result_state = job.state; result_history = job.exHist; } in
 				main_loop (result::results) jobs
 	in
 	main_loop [] [job]

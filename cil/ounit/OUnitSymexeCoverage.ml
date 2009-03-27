@@ -24,7 +24,14 @@ let test_coverage content ?(label=content) test =
 
         (* figure out the edges that were executed *)
         let all_edges = List.fold_left begin fun edges result ->
-            EdgeSet.union edges result.result_history.edgesTaken
+            match result with
+                | Return (_, c)
+                | Exit (_, c) ->
+                    EdgeSet.union edges c.result_history.edgesTaken
+                | Truncated (c, d) ->
+                    EdgeSet.union (EdgeSet.union edges c.result_history.edgesTaken) d.result_history.edgesTaken
+                | Abandoned _ ->
+                    edges
         end EdgeSet.empty results in
         let all_count = EdgeSet.cardinal all_edges in
 

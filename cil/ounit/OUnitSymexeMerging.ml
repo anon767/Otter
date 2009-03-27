@@ -27,9 +27,10 @@ let test_merging content ?(label=content) test =
 
         (* count jobs that were merged *)
         let truncated, other =
-            List.partition (function { result_completion=Types.Truncated } -> true | _ -> false) results in
+            List.partition (function Types.Truncated _ -> true | _ -> false) results in
         let truncated_count = List.length truncated in
         let other_count = List.length other in
+        assert_log "Truncated: %d; Other: %d@\n" truncated_count other_count;
 
         (* test that no assertions failed *)
         assert_string (Executedebug.get_log ());
@@ -42,7 +43,8 @@ let test_merging content ?(label=content) test =
 
 (* assert_equal helper with a descriptive error message *)
 let assert_job_count =
-    assert_equal ~printer:(fun ff -> Format.fprintf ff "%d") ~msg:"Wrong number of jobs"
+    assert_equal ~printer:(fun ff (x, y) -> Format.fprintf ff "Truncated: %d; Other: %d" x y)
+                 ~msg:"Wrong number of jobs"
 
 
 (*
@@ -63,9 +65,7 @@ let one_branch_testsuite = "One branch" >::: [
             return 0;
         }
     " begin fun file truncated truncated_count other other_count ->
-        assert_log "%d, %d@\n" truncated_count other_count;
-        assert_job_count 2 truncated_count;
-        assert_job_count 1 other_count
+        assert_job_count (1, 1) (truncated_count, other_count)
     end;
 ]
 
@@ -90,9 +90,7 @@ let two_branches_testsuite = "Two branches" >::: [
             return 0;
         }
     " begin fun file truncated truncated_count other other_count ->
-        assert_log "%d, %d@\n" truncated_count other_count;
-        assert_job_count 4 truncated_count;
-        assert_job_count 1 other_count
+        assert_job_count (2, 1) (truncated_count, other_count)
     end;
 
     test_merging ~label:"if (a) {} else {} if (a) {} else {}" "
@@ -114,9 +112,7 @@ let two_branches_testsuite = "Two branches" >::: [
             return 0;
         }
     " begin fun file truncated truncated_count other other_count ->
-        assert_log "%d, %d@\n" truncated_count other_count;
-        assert_job_count 4 truncated_count;
-        assert_job_count 1 other_count
+        assert_job_count (2, 1) (truncated_count, other_count)
     end;
 
     test_merging ~label:"if (a) { if (b) {} else {} } else {}" "
@@ -138,9 +134,7 @@ let two_branches_testsuite = "Two branches" >::: [
             return 0;
         }
     " begin fun file truncated truncated_count other other_count ->
-        assert_log "%d, %d@\n" truncated_count other_count;
-        assert_job_count 4 truncated_count;
-        assert_job_count 1 other_count
+        assert_job_count (2, 1) (truncated_count, other_count)
     end;
 
     test_merging ~label:"if (a) {} else { if (b) {} else {} }" "
@@ -162,9 +156,7 @@ let two_branches_testsuite = "Two branches" >::: [
             return 0;
         }
     " begin fun file truncated truncated_count other other_count ->
-        assert_log "%d, %d@\n" truncated_count other_count;
-        assert_job_count 4 truncated_count;
-        assert_job_count 1 other_count
+        assert_job_count (2, 1) (truncated_count, other_count)
     end;
 ]
 
@@ -204,9 +196,7 @@ let many_branches_testsuite = "Many branches" >::: [
             return 0;
         }
     " begin fun file truncated truncated_count other other_count ->
-        assert_log "%d, %d@\n" truncated_count other_count;
-        assert_job_count 10 truncated_count;
-        assert_job_count 1 other_count
+        assert_job_count (5, 1) (truncated_count, other_count)
     end;
 ]
 
