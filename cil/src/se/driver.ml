@@ -888,36 +888,6 @@ let mergeJobs results job jobSet =
 		in
 		(results, merged_jobs)
 
-(*
-(** This is like [List.for_all2 (==)], except that it returns true
-		immediately as soon as the 2 lists are physically equal. *)
-let rec listEq l1 l2 =
-	match l1,l2 with
-			x,y when x == y -> true
-		| [],_ | _,[] -> false
-		| h1::t1,h2::t2 -> h1 == h2 && listEq t1 t2
-
-let rec callContextEq ctx1 ctx2 =
-	match ctx1,ctx2 with
-			[],[] -> true
-		| (blkBytOffOpt1,instr1,stmtOpt1)::t1,(blkBytOffOpt2,instr2,stmtOpt2)::t2 ->
-				instr1 == instr2 &&
-					(match stmtOpt1,stmtOpt2 with
-							 None,None -> true
-						 | Some a,Some b -> a == b
-						 | _ -> false) &&
-					(match blkBytOffOpt1,blkBytOffOpt2 with
-							 None,None -> true
-						 | Some (blk1,byt1,off1),Some (blk2,byt2,off2) ->
-								 blk1 == blk2 && byt1 == byt2 && off1 == off2
-						 | _ -> false) &&
-					callContextEq t1 t2
-		| _ -> false
-
-let rec listRemove x = function
-		[] -> []
-	| y::t -> if x == y then t else y :: listRemove x t
-*)
 
 let atSameProgramPoint job1 job2 =
 	let state1 = job1.state
@@ -1003,34 +973,6 @@ let main_loop job =
 					)
 				in
 				runUntilBranch results job
-(* (* Why does this cause the executor to crash? *)
-				let newJobs =
-					(* First test to see if the job should pause and/or merge *)
-					if run_args.arg_merge_branches &&
-						IntSet.mem job.nextStmt.sid job.mergePoints
-					then (
-						(* See if there are other jobs we should merge theJob with *)
-						let jobsToMergeWith =
-							JobSet.filter (atSameProgramPoint job) !pausedJobs in
-						(* Remove jobsToMergeWith from pausedJobs *)
-						let otherPaused = (JobSet.diff !pausedJobs jobsToMergeWith) in
-						(* Merge with theJob *)
-						let nowPaused = (mergeJobs job jobsToMergeWith) in
-						(* Place the results of the merge back into pausedJobs. We
-							 pause theJob and re-pause all results of the merge
-							 because there could be other jobs that will also merge
-							 at this statement. *)
-						pausedJobs := JobSet.union otherPaused nowPaused;
-						(* Don't add any new jobs *)
-						[]
-					) else (
-						(* Don't pause this job---run it, and add any resulting
-							 jobs to the queue. *)
-						exec_stmt job
-					)
-				in
-				main_loop (newJobs @ jobs)
-*)
 			with Failure fail ->
 				Output.set_mode Output.MSG_MUSTPRINT;
 				Output.printf "Error \"%s\" occurs at %s\nAbandoning branch\n"
