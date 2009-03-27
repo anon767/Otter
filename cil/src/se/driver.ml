@@ -755,11 +755,6 @@ let pcToBytes = function
 	| [h] -> h
 	| pc -> Bytes_Op(OP_LAND, List.map (fun b -> (b,Cil.intType)) pc)
 
-(* MergeDone includes the old job (which is swallowed by the current
-	 job) and the state for the merged job. *)
-exception MergeDone of job * state
-exception TooDifferent
-
 
 let atSameProgramPoint job1 job2 =
 	let state1 = job1.state
@@ -785,8 +780,33 @@ let atSameProgramPoint job1 job2 =
 			false
 		)
 
+
+(* pick a job from the job_pool *)
+let pick_job (job_queue, merge_set) =
+	(* pick either from the job_queue, or from the merge_set *)
+	match job_queue with
+		| job::job_queue ->
+			Some (job, (job_queue, merge_set))
+		| [] ->
+			try let job = JobSet.choose merge_set in
+				let merge_set = JobSet.remove job merge_set in
+				Some (job, ([], merge_set))
+			with Not_found ->
+				None
+
+(* queue a job into the job_pool *)
+let queue_job job (job_queue, merge_set) =
+	(job::job_queue,  merge_set)
+
+
+(* MergeDone includes the old job (which is swallowed by the current
+	 job) and the state for the merged job. *)
+exception MergeDone of job * state
+exception TooDifferent
+
+
 (* Merge job states *)
-let mergeJobs job jobSet =
+let mergeJobs job ((job_queue, merge_set) as job_pool) =
 	try
 		(* First test to see if the job should pause and/or merge *)
 		if run_args.arg_merge_branches
@@ -879,13 +899,19 @@ let mergeJobs job jobSet =
 				 with TooDifferent -> print_endline "Memory too different to merge"; ()
 				end
 			) (* End iteration function *)
-			jobSet;
+			merge_set;
 			(* Reaching here means we've iterated through all jobs, never
-				 being able to merge. So we just add the job to jobSet. *)
-			(None, JobSet.add job jobSet)
+			   being able to merge. So we just add the job to merge_set
+			   and return another job, if available *)
+			match pick_job job_pool with
+				| Some (job', (job_queue, merge_set)) ->
+					let merge_set = JobSet.add job merge_set in
+					(Active job', (job_queue, merge_set))
+				| None ->
+					(Active job, job_pool)
 		end else begin
 			(* not at merge point *)
-			(Some (Active job), jobSet)
+			(Active job, job_pool)
 		end;
 	with MergeDone (oldJob,mergedState) ->
 		(* This is a pretty stupid way of getting complete coverage with
@@ -918,74 +944,65 @@ let mergeJobs job jobSet =
 					mergePoints = IntSet.union job.mergePoints oldJob.mergePoints;
 					jid = min job.jid oldJob.jid; (* Keep the lower jid, just because *)
 			}
-			(JobSet.remove oldJob jobSet)
+			(JobSet.remove oldJob merge_set)
 		in
-		(Some completed, merged_jobs)
+		(completed, (job_queue, merged_jobs))
+
+
+(* advance the job by one step, merging if it arrives at a merge point *)
+let step_job job job_pool =
+	try match exec_stmt job with
+		| Active job ->
+			mergeJobs job job_pool
+		| Fork _
+		| Complete _ as result ->
+			(result, job_pool)
+	with Failure msg ->
+		let result = { result_state = job.state; result_history = job.exHist } in
+		let completed = Complete (Types.Abandoned (msg, !Output.cur_loc, result)) in 
+		(completed, job_pool)
 
 
 let main_loop job =
 	Random.init 226; (* TODO: move random into some local state *)
-	let pausedJobs = ref JobSet.empty in
-	let rec main_loop results jobs =
-		(* Check to see if we got a signal; if so, stop execution, and return the results *)
+	let rec main_loop completed job job_pool =
 		match !signalStringOpt with
 			| Some s ->
-				print_endline s;
-				results
-			| None ->
-		match jobs with
-		[] ->
-			(* There are no unpaused jobs. *)
-			if JobSet.is_empty !pausedJobs
-			then (
-				(* There are no paused jobs, either. We're done. *)
-				Output.print_endline "Done executing";
-				results
-			) else (
-				(* Pick a paused job, remove it from pausedJobs, and run it. *)
-				let someJob = JobSet.choose !pausedJobs in
-				pausedJobs := JobSet.remove someJob !pausedJobs;
-				match exec_stmt someJob with
-					| Active job -> main_loop results [ job ]
-					| Fork (j1, j2) -> main_loop results [j1; j2]
-					| Complete result -> main_loop (result::results) []
-			)
-		| job::jobs ->
-			try
-				let rec runUntilBranch results job =
-					let maybe_result, merged = mergeJobs job !pausedJobs in
-					(* Place the results of the merge back into pausedJobs. We
-					   pause theJob and re-pause all results of the merge
-					   because there could be other jobs that will also merge
-					   at this statement. *)
-					pausedJobs := merged;
-					match maybe_result with
-						| None ->
-							(* job was at merge point, but wasn't merged *)
-							main_loop results jobs
-						| Some result ->
-							(* job was either at merge point and merged, or was not at merge point *)
-							let result = match result with Active job -> exec_stmt job | _ -> result in 
-							begin match result with
-								| Active j ->
-									runUntilBranch results j
-								| Fork (j1, j2) ->
-									main_loop results (j1::j2::jobs)
-								| Complete result ->
-									main_loop (result::results) jobs
-							end
-				in
-				runUntilBranch results job
-			with Failure fail ->
+				(* if we got a signal, stop and return the completed results *)
 				Output.set_mode Output.MSG_MUSTPRINT;
-				Output.printf "Error \"%s\" occurs at %s\nAbandoning branch\n"
-					 fail
-					 (To_string.location !Output.cur_loc);
-				Output.set_mode Output.MSG_REG;
-				Output.print_endline
-					("Path condition:\n" ^
-						 (To_string.humanReadablePc job.state.path_condition job.exHist.bytesToVars));
-				let result = Types.Abandoned { result_state = job.state; result_history = job.exHist; } in
-				main_loop (result::results) jobs
+				Output.print_endline s;
+				completed
+			| None ->
+				let result, job_pool = step_job job job_pool in
+				begin match result with
+					| Active job ->
+						main_loop completed job job_pool
+					| Fork (j1, j2) ->
+						let job_pool = queue_job j1 job_pool in (* queue the true branch *)
+						main_loop completed j2 job_pool (* continue the false branch *)
+					| Complete completion ->
+						(* log some interesting errors *)
+						begin match completion with
+							| Types.Abandoned (msg, loc, { result_state=state; result_history=hist }) ->
+								Output.set_mode Output.MSG_MUSTPRINT;
+								Output.printf "Error \"%s\" occurs at %s\nAbandoning branch\n"
+									msg (To_string.location loc);
+								Output.set_mode Output.MSG_REG;
+								Output.printf "Path condition: %s\n"
+									(To_string.humanReadablePc state.path_condition hist.bytesToVars)
+							| _ ->
+								()
+						end;
+						(* store the result and pick another job to continue, if available *)
+						let completed = completion::completed in
+						match pick_job job_pool with
+							| Some (job, job_pool) ->
+								main_loop completed job job_pool
+							| None ->
+								Output.set_mode Output.MSG_MUSTPRINT;
+								Output.print_endline "Done executing";
+								completed
+				end
 	in
-	main_loop [] [job]
+	main_loop [] job ([], JobSet.empty)
+

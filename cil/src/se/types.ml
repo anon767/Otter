@@ -244,7 +244,7 @@ type job_result = {
 type job_completion =
 	| Return of bytes option * job_result
 	| Exit of bytes option * job_result
-	| Abandoned of job_result
+	| Abandoned of string * Cil.location * job_result
 	| Truncated of job_result * job_result
 
 type job_state =
