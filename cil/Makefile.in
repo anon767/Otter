@@ -164,6 +164,7 @@ ounit : ounit-cilly
 # To reduce the risk of naming conflicts, build Cil as a library first, then do a sub-make to compile and run the
 # OUnit testsuite in a different directory.
 define OUNIT_MAKE_COMMAND
+	mkdir -p $(OBJDIR)/ounit && \
 	$(MAKE) OBJDIR=$(OBJDIR)/ounit \
 			EXTRALIBDIRS="$(EXTRALIBDIRS) $(OBJDIR)" \
 	        LIBFLAGS="$(LIBFLAGS) -I $(OBJDIR)" \
