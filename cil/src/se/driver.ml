@@ -74,18 +74,16 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 								Eval.rval state final_exp) exps exptyps) 
 							*)
 				let argvs = (List.map (fun exp -> Eval.rval state exp) exps) in
-				let theSuccessor =
-					(* [stmt] is an [Instr], so it can't have two successors. If
-						 [func] returns, then [stmt] has exactly one successor. If
-						 [func] is [exit] or has the [noreturn] attribute, [stmt]
-						 has no successor. *)
-					match stmt.succs with
-							[] -> None
-						| [h] -> Some h
-						| _ -> assert false
+				(* [stmt] is an [Instr], so it can't have two successors. If
+					 [func] returns, then [stmt] has exactly one successor. If
+					 [func] is [exit] or has the [noreturn] attribute, [stmt]
+					 has no successor. *)
+				let callContext = match stmt.succs with
+					| []  -> NoReturn instr
+					| [h] -> Source (blkOffSizeOpt,instr,h)
+					| _   -> assert false
 				in
-				let callContext = blkOffSizeOpt,instr,theSuccessor in
-				let state = MemOp.state__start_fcall state (Source callContext) fundec argvs in
+				let state = MemOp.state__start_fcall state callContext fundec argvs in
 				Active (updateJob job state exHist (List.hd fundec.sallstmts))
 		| _ ->
 				try (
@@ -454,7 +452,49 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 	end (* outer [match func] *)
 ;;
 
+let exec_instr job =
+	assert (job.instrList <> []);
+	let printInstr instr =
+		Output.set_mode Output.MSG_STMT;
+		Output.set_cur_loc (Cil.get_instrLoc instr);
+		Output.print_endline (To_string.instr instr)
+	in
+
+	(* Since we've used --domakeCFG, an [Instr] is a series of
+	   [Set]s and [Asm]s, possibly terminated with a [Call]. *)
+	match job.instrList with
+		| (Set(lval,exp,loc) as instr)::tail ->
+			printInstr instr;
+			let (block,offset) = Eval.lval job.state lval in
+			let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
+			let rv = Eval.rval job.state exp in
+			let state = MemOp.state__assign job.state (block,offset,size) rv in
+			let nextStmt = if tail = [] then List.hd job.nextStmt.succs else job.nextStmt in
+			Active { job with state = state; instrList = tail; nextStmt = nextStmt }
+		| [ Call(lvalopt, fexp, exps, loc) as instr ] ->
+			printInstr instr;
+			let destOpt =
+				match lvalopt with
+					| None -> None
+					| Some lval ->
+							let (block,offset) = Eval.lval job.state lval in
+							let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
+							Some (block,offset,size)
+			in
+			exec_instr_call
+				{ job with instrList = [] }
+				instr destOpt fexp exps loc
+		| (Asm _ as instr)::tail ->
+			Output.set_mode Output.MSG_MUSTPRINT;
+			Output.print_endline "Warning: ASM unsupported";
+			printInstr instr;
+			Active { job with instrList = tail }
+		| _ ->
+			assert false
+
+
 let exec_stmt job =
+	assert (job.instrList = []);
 	let state,exHist,stmt = job.state,job.exHist,job.nextStmt in
 
 	let nextExHist = { exHist with
@@ -472,61 +512,11 @@ let exec_stmt job =
 	Output.set_cur_loc (Cil.get_stmtLoc stmt.skind);
 	Output.print_endline (To_string.stmt stmt);
 	match stmt.skind with
+		| Instr [] ->
+			Active (updateJob job state nextExHist (List.hd stmt.succs))
 		| Instr (instrs) ->
-				(* Since we've used --domakeCFG, an [Instr] is a series of
-					 [Set]s and [Asm]s, possibly terminated with a [Call]. Here,
-					 we iterate through [instrs], performing each [Set]. If the
-					 final [instr] is a [Call], we perform the call. Otherwise,
-					 we just return the singleton JobSet resulting from the
-					 sequence of assignments. *)
-				let printInstr instr =
-					Output.set_mode Output.MSG_STMT;
-					Output.set_cur_loc (Cil.get_instrLoc instr);
-					Output.print_endline (To_string.instr instr)
-				in
-				let rec doInstrs instrList latestState =
-					match instrList with
-							[] ->
-								(* We know [stmt] is an [Instr], and if we've gotten
-									 here, it doesn't have a [Call] in it. Thus, it has
-									 exactly one successor. (A [stmt] ending with a
-									 [Call] can have no successors if the call doesn't
-									 return.) *)
-								let theSuccessor =
-									match stmt.succs with
-											[h] -> h
-										| _ -> assert false
-								in
-								Active (updateJob job latestState nextExHist theSuccessor)
-						| (Set(lval,exp,loc) as instr)::tail ->
-								printInstr instr;
-								let (block,offset) = Eval.lval latestState lval in
-								let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
-								let rv = Eval.rval latestState exp in
-								let state2 = MemOp.state__assign latestState (block,offset,size) rv in
-								doInstrs tail state2
-						| [Call(lvalopt, fexp, exps, loc) as instr] ->
-								printInstr instr;
-								let destOpt =
-									match lvalopt with
-										| None -> None
-										| Some lval ->
-												let (block,offset) = Eval.lval latestState lval in
-												let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
-												Some (block,offset,size)
-								in
-								exec_instr_call
-									(updateJob job latestState nextExHist stmt)
-									instr destOpt fexp exps loc
-						| (Asm _ as instr)::tail ->
-								Output.set_mode Output.MSG_MUSTPRINT;
-								Output.print_endline "Warning: ASM unsupported";
-								printInstr instr;
-								doInstrs tail latestState
-						| _ -> assert false (* [Call]s only occur at the end of [Instr]s *)
-				in
-				doInstrs instrs state
-
+			let job = updateJob job state nextExHist stmt in
+			Active { job with instrList = instrs }
 		| Cil.Return (expopt, loc) ->
 				begin
 					match state.callContexts with
@@ -546,7 +536,7 @@ let exec_stmt job =
 											(Some (Eval.rval state exp),
 											 { result_state = state; result_history = nextExHist; }))
 								end
-						| (Source (destOpt,_,Some nextStmt))::_ ->
+						| (Source (destOpt,_,nextStmt))::_ ->
 								let state2 =
 									match expopt, destOpt with
 										| None, _ (* If we are not returning a value *)
@@ -561,9 +551,10 @@ let exec_stmt job =
 								let pop_frame = List.hd state.locals in
 								let state2' = VarinfoMap.fold (fun varinfo block s -> MemOp.state__remove_block s block) pop_frame.varinfo_to_block state2 in 
 								Active (updateJob job state2' nextExHist nextStmt)
-						| _ ->
-								(* [(_,_,None)] is impossible, because we wouldn't
-									 be returning in that case. *)
+						| (NoReturn _)::_ ->
+								failwith "Return from @noreturn function"
+						| [] ->
+								(* there should always be a Runtime at the start of the list *)
 								assert false
 				end
 		| Goto (stmtref, loc) ->
@@ -645,7 +636,7 @@ let exec_stmt job =
 										begin match Inthash.find_all ifToJoinPointsHash stmt.sid with
 											| [] ->
 												begin match state.callContexts with
-													| (Source (_,_,Some nextStmt))::_ ->
+													| (Source (_,_,nextStmt))::_ ->
 														print_endline "Will merge upon function return";
 														[nextStmt.sid]
 													| _ ->
@@ -951,7 +942,11 @@ let mergeJobs job ((job_queue, merge_set) as job_pool) =
 
 (* advance the job by one step, merging if it arrives at a merge point *)
 let step_job job job_pool =
-	try match exec_stmt job with
+	try let result = match job.instrList with
+			| [] -> exec_stmt job
+			| _ -> exec_instr job
+		in
+		match result with
 		| Active job ->
 			mergeJobs job job_pool
 		| Fork _

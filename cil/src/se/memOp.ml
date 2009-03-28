@@ -517,8 +517,9 @@ let state__remove_block state block=
 
 let state__trace state: string = 
 	List.fold_left begin fun str context -> match context with
-		| Runtime -> str^"Runtime"
-		| Source (_,instr,_) -> str^(Printf.sprintf "/%s" (To_string.location (Cil.get_instrLoc instr)))
+		| Runtime            -> Format.sprintf "%s/Runtime" str
+		| Source (_,instr,_) -> Format.sprintf "%s/%s" str (To_string.location (Cil.get_instrLoc instr))
+		| NoReturn instr     -> Format.sprintf "%s/NoReturn@%s" str (To_string.location (Cil.get_instrLoc instr))
 	end "" state.callContexts
 ;;
 

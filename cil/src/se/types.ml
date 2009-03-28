@@ -132,15 +132,17 @@ module LocMap =
 	
 (** A calling context may either be the symbolic executor, represented by
 		[Runtime], or from another function in the source code, represented
-		by a triple [Source (destOpt,callInstr,nextStmtOpt)].
-		[nextStmtOpt] is the [stmt] to execute after the call returns, or
-		[None] if the call does not return; [callInstr] is the function
-		call instruction; and [destOpt] is [None] if we ignore the result
-		of the call, or it is [Some (block,offset,size)], which means we
-		should assign the result to that triple. *)
+		either by a triple [Source (destOpt,callInstr,nextStmt)] if the
+		function returns or [NoReturn (callInstr)] if the function doesn't return.
+		[nextStmt] is the [stmt] to execute after the call returns; [callInstr]
+		is the function call instruction; and [destOpt] is [None] if we ignore
+		the result of the call, or it is [Some (block,offset,size)], which
+		means we should assign the result to that triple. *)
 type callingContext =
     | Runtime
-    | Source of ((memory_block * bytes * int) option * Cil.instr * Cil.stmt option);;
+    | Source of ((memory_block * bytes * int) option * Cil.instr * Cil.stmt)
+	| NoReturn of Cil.instr
+;;
 
 type state =
 	{
@@ -230,9 +232,10 @@ module IntSet = Set.Make
 type job = {
 	state : state;
 	exHist : executionHistory;
-	prevStmt : Cil.stmt; (** The [stmt] we just executed *)
-	nextStmt : Cil.stmt; (** The next statement the job should execute *)
-	mergePoints : IntSet.t; (** A list of potential merge points, by sid *)
+	prevStmt : Cil.stmt;        (** The [stmt] we just executed *)
+	instrList : Cil.instr list; (** [instr]s to execute before moving to the next [stmt] *)
+	nextStmt : Cil.stmt;        (** The next statement the job should execute *)
+	mergePoints : IntSet.t;     (** A list of potential merge points, by sid *)
 	jid : int; (** A unique identifier for the job *)
 }
 

@@ -390,6 +390,7 @@ let job_for_function state fn argvs =
 	{ state = state;
 	  exHist = emptyHistory;
 	  prevStmt = Cil.dummyStmt;
+	  instrList = [];
 	  nextStmt = List.hd fn.sallstmts;
 	  mergePoints = IntSet.empty;
 	  jid = Utility.next_id Output.jidCounter }
