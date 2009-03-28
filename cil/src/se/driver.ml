@@ -947,14 +947,14 @@ let step_job job job_pool =
 			| _ -> exec_instr job
 		in
 		match result with
-		| Active job ->
-			mergeJobs job job_pool
-		| Fork _
-		| Complete _ as result ->
-			(result, job_pool)
+			| Active job ->
+				mergeJobs job job_pool
+			| Fork _
+			| Complete _ as result ->
+				(result, job_pool)
 	with Failure msg ->
 		let result = { result_state = job.state; result_history = job.exHist } in
-		let completed = Complete (Types.Abandoned (msg, !Output.cur_loc, result)) in 
+		let completed = Complete (Types.Abandoned (msg, !Output.cur_loc, result)) in
 		(completed, job_pool)
 
 
