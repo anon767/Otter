@@ -6,6 +6,8 @@ open Types
 let strlen = 1000;;
 let donotprint() = not (Output.need_print (!Output.current_msg_type));;
 
+(** Print out a bytearray as though it were a string, stopping at the
+		first (concrete) null byte. *)
 let bytestring arr =
 	let byte b = 
   match b with
@@ -16,10 +18,16 @@ let bytestring arr =
 	| Byte_Symbolic (s) -> sprintf "\\%d" (s.symbol_id)
 	| Byte_Bytes (b,i) ->  "."
 	in
-  ImmutableArray.fold_left (fun a b -> 
-		match b with
-			| Byte_Concrete('\000')-> a
-			| _ -> a^(byte b)) "" arr
+	let rec helper n result =
+		if n = ImmutableArray.length arr
+		then result
+		else (
+			match byte (ImmutableArray.get arr n) with
+				| "/0" -> result
+				| s -> helper (succ n) (result ^ s)
+		)
+	in
+	helper 0 ""
 ;;
 
 let location loc = 

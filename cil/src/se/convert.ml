@@ -80,9 +80,9 @@ let int64_to_bytes n64 ikind : bytes =
 		if count = len then acc
 		else helper (Int64.shift_right n 8)
 				(Byte_Concrete (Char.chr ((Int64.to_int n) land 255)) :: acc)
-				(count + 1)
+				(succ count)
 	in
-	Bytes_ByteArray(ImmutableArray.of_list (List.rev (helper n64 [] 0)))
+	Bytes_ByteArray(ImmutableArray.of_list (List.rev (helper n64 [] 0))) (* Reverse because we are little-endian *)
 (* (* Replacing the previous line with this commented chunk prints out what this does *)
 let ans = List.rev (helper n64 [] 0)
 in Printf.printf "int64 to bytes: %Lx -> " n64;
@@ -161,7 +161,7 @@ let rec bytes_to_int64 bytes isSigned : int64 =
 	match bytes with
 		(* TODO: special case for const==Int64 *)
 		| Bytes_Constant (const) -> bytes_to_int64 (constant_to_bytes const) isSigned
-		| Bytes_ByteArray (bytearray) -> 
+		| Bytes_ByteArray (bytearray) -> (* This assumes little-endian *)
 				let rec bytearray_to_int64_helper index acc =
 					if index < 0 then acc
 					else
@@ -213,7 +213,7 @@ let bytes_to_int_auto bytes : int =
 (** Convert a bytes to boolean. Exception if bytes is not concrete *int* *)
 let bytes_to_bool bytes : bool = 
 	let n64 = bytes_to_int64_auto bytes in
-		Int64.compare n64 Int64.zero <> 0	
+		n64 <> 0L
 	;;
 	
 (** Convert a bytes of typ to Cil constant. Exception if bytes is not concrete *)
@@ -228,7 +228,7 @@ let rec bytes_to_constant bytes typ : Cil.constant =
 		| TFloat(fkind,_) -> (*TMP*) CReal(0.1,fkind,None)
 		| TEnum (enuminf,_) ->
 				(* An enum has type int. [Standard 6.7.2.2.2, but I'm confused by 6.7.2.2.4] *)
-				bytes_to_constant bytes (TInt (IInt,[]))
+				bytes_to_constant bytes Cil.intType
 		| t ->	
 			begin match bytes with
 				| Bytes_Constant(c) -> c

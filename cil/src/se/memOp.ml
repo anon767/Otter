@@ -67,7 +67,7 @@ bytes__get_concrete bytes i : char =
  *	bytes
  *)
 (*let bytes__zero n = Bytes_ByteArray (ImmutableArray.make n byte__zero) ;;*)
-let bytes__zero = Bytes_Constant(Cil.CInt64(Int64.zero,IInt,None));;
+let bytes__zero = Bytes_Constant(Cil.CInt64(0L,IInt,None));;
 let bytes__of_list (lst: byte list) =	Bytes_ByteArray (ImmutableArray.of_list lst) ;;
 let bytes__make_default n byte = Bytes_ByteArray(ImmutableArray.make n byte);;
 let bytes__make n = bytes__make_default n byte__zero;;

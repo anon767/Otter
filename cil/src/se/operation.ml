@@ -120,7 +120,7 @@ let rec binop op_const op_symb operands : bytes (* * typ *)=
 			let c2 = Convert.bytes_to_constant b2 typ2 in
 			begin match (c1,c2) with
 			| (CInt64(i1,k1,s1),CInt64(i2,k2,s2)) ->
-				impl ((Bytes_Constant(CInt64(i1,k1,s1))),(Bytes_Constant(CInt64(i2,k2,s2))))
+				impl (Bytes_Constant c1, Bytes_Constant c2)
 			| (CReal(i1,k1,s1),CReal(i2,k2,s2)) -> (*TMP*) bytes1
 			| _ -> failwith "Match error"
 			end
@@ -149,34 +149,34 @@ let shiftrt operands = 	binop (fun s x y -> Int64.shift_right x (Int64.to_int y)
 
 let signed_compare s x y =
 	if s then Int64.compare x y else
-	match (Int64.compare x Int64.zero >=0 ,Int64.compare y Int64.zero >=0) with
+	match (x >= 0L, y >= 0L) with
 		| (true,true) -> Int64.compare x y
 		| (true,false) -> -1
 		| (false,true) -> 1
 		| (false,false) -> Int64.compare y x
 ;;
 
-let lt operands =	binop (fun s x y -> if signed_compare s x y < 0 then Int64.one else Int64.zero) OP_LT operands ;;
-let gt operands =	binop (fun s x y -> if signed_compare s x y > 0 then Int64.one else Int64.zero) OP_GT operands ;;
-let le operands =	binop (fun s x y -> if signed_compare s x y <= 0 then Int64.one else Int64.zero) OP_LE operands ;;
-let ge operands =	binop (fun s x y -> if signed_compare s x y >= 0 then Int64.one else Int64.zero) OP_GE operands ;;
+let lt operands =	binop (fun s x y -> if signed_compare s x y < 0 then 1L else 0L) OP_LT operands ;;
+let gt operands =	binop (fun s x y -> if signed_compare s x y > 0 then 1L else 0L) OP_GT operands ;;
+let le operands =	binop (fun s x y -> if signed_compare s x y <= 0 then 1L else 0L) OP_LE operands ;;
+let ge operands =	binop (fun s x y -> if signed_compare s x y >= 0 then 1L else 0L) OP_GE operands ;;
 
 let eq operands =	
-	binop (fun s x y -> if Int64.compare x y = 0 then Int64.one else Int64.zero) OP_EQ operands ;;
+	binop (fun s x y -> if x = y then 1L else 0L) OP_EQ operands ;;
 
 let ne operands =	
-	binop (fun s x y -> if Int64.compare x y <> 0 then Int64.one else Int64.zero) OP_NE operands ;;
+	binop (fun s x y -> if x <> y then 1L else 0L) OP_NE operands ;;
 
 let band operands = binop (fun s x y -> Int64.logand x y ) OP_BAND operands ;;
 let bxor operands = binop (fun s x y -> Int64.logxor x y ) OP_BXOR operands ;;
 let bor operands  = binop (fun s x y -> Int64.logor x y )  OP_BOR operands ;;
 
 let logand operands =  (* should return int (32-bit) *)
-	binop (fun s x y -> if Int64.compare x Int64.zero = 0 || Int64.compare y Int64.zero = 0
-	then Int64.zero else Int64.one) OP_LAND operands ;;
+	binop (fun s x y -> if x = 0L || y = 0L
+	then 0L else 1L) OP_LAND operands ;;
 let logor operands =  (* should return int (32-bit) *)
-	binop (fun s x y -> if Int64.compare x Int64.zero = 0 && Int64.compare y Int64.zero = 0
-	then Int64.zero else Int64.one) OP_LOR operands ;;
+	binop (fun s x y -> if x = 0L && y = 0L
+	then 0L else 1L) OP_LOR operands ;;
 
 let opPI op operands =
 	let (bytes1, typ1) = List.nth operands 0 in

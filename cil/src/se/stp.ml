@@ -39,7 +39,7 @@ let rec eval pc bytes =
 	in
 	match bytes with
 		(* The following cases are simple enough to not consult STP *)
-		| Bytes_Constant (CInt64(n,_,_)) -> if Int64.compare n Int64.zero = 0 then False else True			
+		| Bytes_Constant (CInt64(n,_,_)) -> if n = 0L then False else True			
 		| Bytes_ByteArray (bytearray) ->
 				begin try
 					let b = Convert.bytes_to_bool bytes in  (* TODO:need to use int64 *)
