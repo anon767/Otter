@@ -1,0 +1,31 @@
+if [ "$1" == merge ]; then
+        if [ -f grep_comb.c ]; then
+                echo "Deleting old grep_comb.c"
+                rm grep_comb.c
+        fi
+        shift
+        MERGE=1
+elif [ ! -f grep_comb.c ]; then
+        MERGE=1
+fi
+
+CILLY=../../cil/bin/cilly
+LIBCDIR=../../libc
+MOCKEDDIR=../../mockedFns
+
+if [ "$1" == libc ]; then
+        echo "Merging libc"
+        $CILLY --merge --useLogicalOperators --out=otherFiles/libc_comb.c \
+                -I $LIBCDIR $LIBCDIR/*.c --warnall
+elif [ "$MERGE" == 1 ]; then
+        echo "Merging"
+        $CILLY --merge --useLogicalOperators --out=grep_comb.c \
+                -I. -I $LIBCDIR -I $MOCKEDDIR -include $MOCKEDDIR/symexe.h \
+                grep.c otherFiles/libc_comb.c $MOCKEDDIR/*.c --warnall $*
+else
+        echo "Doing symbolic execution"
+        $CILLY --merge --useLogicalOperators \
+		-I. -I $MOCKEDDIR \
+                grep_comb.c otherFiles/symtest.c \
+		--warnall --domakeCFG --doexecute $*
+fi
