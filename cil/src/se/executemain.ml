@@ -178,7 +178,7 @@ let finish_up results =
 					(fun a b acc -> (a,b) :: acc)
 					branches_taken
 					[]
-			and cmpByLoc ((_,loc1),_) ((_,loc2),_) = Cilutility.compareLoc loc1 loc2
+			and cmpByLoc ((_,loc1),_) ((_,loc2),_) = compareLoc loc1 loc2
 			in
 			let sortedList = List.sort cmpByLoc hashtblAsList and
 					printPcHistSet pcHistSet =

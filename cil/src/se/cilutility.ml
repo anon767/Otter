@@ -28,15 +28,6 @@ module FundecMap =
 	end
 	)
 
-(* Order locations by file name, then by line, then by offset *)
-let compareLoc loc1 loc2 =
-	let fileCmp = compare loc1.file loc2.file in
-	if fileCmp = 0 then
-		let lineCmp = compare loc1.line loc2.line in
-		if lineCmp = 0 then compare loc1.byte loc2.byte
-		else lineCmp
-	else fileCmp
-
 (** This is like {!Cil.unrollType} except that it only keeps the
 		attributes in the base (unnamed) type. *)
 let unrollType = function
