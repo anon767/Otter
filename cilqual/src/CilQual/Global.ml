@@ -30,12 +30,12 @@ module InterpreterT (S : Statement.InterpreterMonad) = struct
         in
         interpret_init_lval (Cil.var v) init
 
-    let interpret_function { Cil.svar=f; Cil.sformals=formals; Cil.sbody=body } = perform
-        qt <-- lookup_var f;
+    let interpret_function fn = perform
+        qt <-- lookup_var fn.Cil.svar;
         qtr <-- retval qt;
         qta <-- args qt;
-        qtv <-- interpret_block body;
-        zipWithM_ (fun v a -> assign_lval (Cil.var v) a) formals qta;
+        qtv <-- interpret_block fn.Cil.sbody;
+        zipWithM_ (fun v a -> assign_lval (Cil.var v) a) fn.Cil.sformals qta;
         assign qtr qtv;
         return ()
 
@@ -65,10 +65,9 @@ module InterpreterT (S : Statement.InterpreterMonad) = struct
         | Cil.GText _ ->
             return ()
 
-
-    let interpret_file { Cil.globals=globals; Cil.globinit=init } = perform
-        mapM_ interpret_global globals;
-        match init with
+    let interpret_file file = perform
+        mapM_ interpret_global file.Cil.globals;
+        match file.Cil.globinit with
             | Some f -> interpret_function f
             | None -> return ()
 end
