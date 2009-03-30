@@ -14,7 +14,7 @@ typedef struct {
 
 typedef struct {
 	//	FILE *stream; // Pointer to the FILE object
-	//	int fd; // The fd for this stream
+	int fd; // The fd for this stream
 	//	unsigned flags; // I'm not sure what these are
 	off_t offset; // The offset into the file
   sym_file_t* sym_file;   /* ptr to the file on disk */
