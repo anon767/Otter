@@ -31,5 +31,5 @@ conf:
 	./configure $(CONFIG_OPT)
 
 clean:
-	cd $(NGIRCD_DIR) && make clean
+	cd $(NGIRCD_DIR) && make clean 
 

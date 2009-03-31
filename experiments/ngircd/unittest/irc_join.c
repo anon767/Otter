@@ -31,6 +31,10 @@ int main(){
 	 *
 	 *	Consider really add FIND(x) before ADD(x) and REMOVE(x)
 	 */
+	__SYMBOLIC_STATE();
+	Conf_MaxJoins = 0;
+	Conf_PredefChannelsOnly = 0;
+
 	CLIENT *client;
 	//   char existing_channel_name[10];		__SYMBOLIC_STRING(existing_channel_name);
 	//   char nonexisting_channel_name[10];	__SYMBOLIC_STRING(nonexisting_channel_name);
