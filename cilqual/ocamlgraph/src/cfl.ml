@@ -6,7 +6,7 @@ module Check
         module V : Sig.COMPARABLE
         val start_cfl : cfl
         val accept_cfl : cfl -> bool
-        val iter_succ_cfl : (V.t -> cfl -> unit) -> t -> V.t -> cfl -> unit
+        val iter_cfl : (V.t -> cfl -> unit) -> t -> V.t -> cfl -> unit
     end) = struct
 
     module HV = Hashtbl.Make(G.V)
@@ -36,7 +36,7 @@ module Check
                 else begin
                     if not (HV.mem visited v) then begin
                         HV.add visited v ();
-                        G.iter_succ_cfl (fun v' cfl -> Queue.add (v', cfl) q) pc.graph v cfl
+                        G.iter_cfl (fun v' cfl -> Queue.add (v', cfl) q) pc.graph v cfl
                     end;
                     loop ()
                 end

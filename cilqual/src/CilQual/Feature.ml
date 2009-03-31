@@ -19,22 +19,17 @@ module C (G : Constraints with type E.label = QualTypeConstraints.TypeVarLabel.t
     include G
     open QualTypeConstraints.TypeVarLabel
 
-    (* print forward edges only *)
-    let iter_edges_e f = iter_edges_e begin fun e -> match E.label e with
-        | Forward _ -> f e
-        | Backward _ -> ()
-    end
+    let quote printer x =
+        let quoted = Format.fprintf Format.str_formatter "%a" printer x; Format.flush_str_formatter () in
+        (Str.global_replace (Str.regexp "\"") "\\\"" quoted)
 
     (* Graphviz attributes *)
-    let vertex_name v =
-        let quoted = Str.global_replace (Str.regexp "\"") "\\\""
-            (vertex_printer Format.str_formatter v; Format.flush_str_formatter ()) in
-        "\""^quoted^"\""
+    let vertex_name v = "\""^(quote vertex_printer v)^"\""
     let graph_attributes _ = []
     let default_vertex_attributes _ = []
-    let vertex_attributes _ = []
+    let vertex_attributes v = [ `Label (quote vertex_printer v) ]
     let default_edge_attributes _ = []
-    let edge_attributes _ = []
+    let edge_attributes e = [ `Label (quote edge_printer e) ]
     let get_subgraph _ = None
 end
 module D = Graph.Graphviz.Dot (C (G.Constraints))
@@ -48,7 +43,7 @@ let opt_statistics = ref false
 (* timing helpers *)
 let timer = None
 let tic s t =
-    Format.eprintf "%s...@\n" s;
+    Format.eprintf "%s...@." s;
     match t with
         | None -> Some (Sys.time (), s, [])
         | Some (was, s', l) -> let now = Sys.time () in Some (now, s, (s', now -. was)::l)

@@ -77,45 +77,29 @@ module QualTypeConstraints = struct
         | Const _ as c -> c
 
     module TypeVarLabel = struct
-        type v = Default
+        type t = Default
                | TypeVar of TypeVar.t
-        and t = Forward of v | Backward of v
 
         let compare x y = if x == y then 0 else match x, y with
-            | Forward (TypeVar x), Forward (TypeVar y)
-            | Backward (TypeVar x), Backward (TypeVar y) ->
+            | TypeVar x, TypeVar y ->
                 TypeVar.compare x y
-            | Forward x, Forward y
-            | Backward x, Backward y ->
+            | x, y ->
                 let rank = function Default -> 0 | TypeVar _ -> 1 in
                 Pervasives.compare (rank x) (rank y)
-            | x, y ->
-                let rank = function Forward _ -> 0 | Backward _ -> 1 in
-                Pervasives.compare (rank x) (rank y)
-        let default = Forward Default
+        let default = Default
 
-        let typevar_printer ff = function
+        let printer ff = function
             | TypeVar (Deref _)      -> Format.fprintf ff "Deref"
             | TypeVar (FnRet _)      -> Format.fprintf ff "FnRet"
             | TypeVar (FnArg (i, _)) -> Format.fprintf ff "FnArg:%d" i
             | _ -> ()
-        let printer ff = function
-            | Forward v  -> Format.fprintf ff "=%a=" typevar_printer v
-            | Backward v -> Format.fprintf ff "#%a#" typevar_printer v
     end
     open TypeVarLabel
 
     module ConstraintGraph = struct
-        include Graph.Persistent.Digraph.ConcreteLabeled (Qual) (TypeVarLabel)
+        include Graph.Persistent.Digraph.ConcreteBidirectionalLabeled (Qual) (TypeVarLabel)
 
-        let add_edge g x y =
-            let g = add_edge_e g (E.create x (Forward Default) y) in
-            let g = add_edge_e g (E.create y (Backward Default) x) in
-            g
-        let add_typevar_edge g x y =
-            let g = add_edge_e g (E.create x (Forward (TypeVar (typevar x))) y) in
-            let g = add_edge_e g (E.create y (Backward (TypeVar (typevar x))) x) in
-            g
+        let add_typevar_edge g x y = add_edge_e g (E.create x (TypeVar (typevar x)) y)
 
         (* Type extension edges:
          *      var:    x -----> y      var:    x -----> y      var:    x -----> y
@@ -127,53 +111,64 @@ module QualTypeConstraints = struct
         type cfl = TypeVar.t list
         let start_cfl = []
         let accept_cfl = Pervasives.(=) []
-        let iter_succ_cfl f g x cfl = (* (V.t -> cfl -> unit) -> t -> V.t -> cfl -> unit *)
-            iter_succ_e begin fun e ->
-                let label = E.label e in
-                let y = E.dst e in
-                begin match cfl with
-                    | [] -> begin function (* start: allow all forward edges *)
-                        | Forward Default      -> f y cfl
-                        | Forward (TypeVar tv) -> f y (tv::cfl)
-                        | _                    -> ()
-                        end
-                    | (Deref _)::tail -> begin function (* deref edge: non-variant *)
-                        | Forward Default
-                        | Backward Default     -> f y cfl
-                        | Forward (TypeVar tv) -> f y (tv::cfl)
-                        | Backward (TypeVar (Deref _)) -> f y tail
-                        | _                    -> ()
-                        end
-                    | (FnRet _)::tail -> begin function (* fnRet edge: co-variant *)
-                        | Forward Default      -> f y cfl
-                        | Forward (TypeVar tv) -> f y (tv::cfl)
-                        | Backward (TypeVar (FnRet _)) -> f y tail
-                        | _                    -> ()
-                        end
-                    | (FnArg (i, _))::tail -> begin function (* fnRet edge: contra-variant *)
-                        | Backward Default     -> f y cfl
-                        | Forward (TypeVar tv) -> f y (tv::cfl)
-                        | Backward (TypeVar (FnArg (j, _))) when i = j -> f y tail
-                        | _                    -> ()
-                        end
-                    | _ -> failwith "Impossible!"
-                end label
-            end g x
+        let iter_succ_vl f = iter_succ_e (fun e -> f (E.dst e) (E.label e))
+        let iter_pred_vl f = iter_pred_e (fun e -> f (E.src e) (E.label e))
+        let iter_cfl f g x cfl = match cfl with
+            (* start: all forward edges *)
+            | [] ->
+                iter_succ_vl begin fun y l -> match l with
+                    | TypeVar tv -> f y (tv::cfl)
+                    | Default -> f y cfl
+                end g x
+
+            (* deref edge: non-variant *)
+            | (Deref _)::tail ->
+                iter_succ_vl begin fun y l -> match l with
+                    | TypeVar tv -> f y (tv::cfl)
+                    | Default -> f y cfl
+                end g x;
+                iter_pred_vl begin fun y l -> match l with
+                    | TypeVar (Deref _) -> f y tail
+                    | TypeVar _ -> ()
+                    | Default -> f y cfl
+                end g x
+
+            (* fnRet edge: co-variant *)
+            | (FnRet _)::tail ->
+                iter_succ_vl begin fun y l -> match l with
+                    | TypeVar tv -> f y (tv::cfl)
+                    | Default -> f y cfl
+                end g x;
+                iter_pred_vl begin fun y l -> match l with
+                    | TypeVar (FnRet _) -> f y tail
+                    | TypeVar _
+                    | Default -> ()
+                end g x
+
+            (* fnRet edge: contra-variant *)
+            | (FnArg (i, _))::tail ->
+                iter_succ_vl begin fun y l -> match l with
+                    | TypeVar tv -> f y (tv::cfl)
+                    | Default -> ()
+                end g x;
+                iter_pred_vl begin fun y l -> match l with
+                    | TypeVar (FnArg (j, _)) when i = j -> f y tail
+                    | TypeVar _ -> ()
+                    | Default -> f y cfl
+                end g x
+
+            | (Fresh _)::_ ->
+                failwith "Impossible!"
 
         let vertex_printer = Qual.printer
         let edge_printer ff e =
-            Format.fprintf ff "@[<2>%a@ <%a %a@]"
+            Format.fprintf ff "@[<2>%a@ <=%a= %a@]"
                 Qual.printer (E.src e)
                 TypeVarLabel.printer (E.label e)
                 Qual.printer (E.dst e)
 
-        let printer ff graph = ignore begin
-            fold_edges_e begin fun e format ->
-                match E.label e with
-                    | Backward _ -> format
-                    | Forward _ -> Format.fprintf ff format edge_printer e; ",@ @[%a@]"
-            end graph "@[%a@]"
-        end
+        let printer ff graph =
+            ignore (fold_edges_e (fun e format -> Format.fprintf ff format edge_printer e; ",@ @[%a@]") graph "@[%a@]")
     end
     include ConstraintGraph
 

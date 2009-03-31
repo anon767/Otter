@@ -96,15 +96,9 @@ module Digraph = struct
 
     include I.Digraph.ConcreteBidirectional(V)
 
-    let add_vertex g v = 
-      if not (HM.mem v g) then ignore (unsafe_add_vertex g v)
-
-    let add_edge g v1 v2 = 
-      add_vertex g v1;
-      add_vertex g v2;
-      ignore (unsafe_add_edge g v1 v2)
-
-    let add_edge_e g (v1, v2) = add_edge g v1 v2
+    let add_vertex g v = ignore (add_vertex g v)
+    let add_edge g v1 v2 = ignore (add_edge g v1 v2)
+    let add_edge_e g e = ignore (add_edge_e g e)
 
     let remove_vertex g v =
       if HM.mem v g then begin

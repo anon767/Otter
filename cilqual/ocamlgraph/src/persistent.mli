@@ -63,7 +63,15 @@ module type S = sig
 end
 
 (** Persistent Directed Graphs. *)
-module Digraph : S
+module Digraph : sig
+    include S
+
+    (** Persistent Labeled, Bidirectional Graphs (gives predecessors in
+        constant time *)
+    module ConcreteBidirectionalLabeled (V: COMPARABLE)(E: ORDERED_TYPE_DFT) :
+      Sig.P with type V.t = V.t and type V.label = V.t
+          and type E.t = V.t * E.t * V.t and type E.label = E.t
+end
 
 (** Persistent Undirected Graphs. *)
 module Graph : S
