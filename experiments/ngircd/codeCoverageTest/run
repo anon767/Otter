@@ -1,0 +1,32 @@
+if [ "$1" == merge ]; then
+	if [ -f ngircd_comb.c ]; then
+		echo "Deleting old ngircd_comb.c"
+		rm ngircd_comb.c
+	fi
+	shift
+	MERGE=1
+elif [ ! -f ngircd_comb.c ]; then
+	MERGE=1
+fi
+
+TOPDIR=~/t
+LIBCDIR=$TOPDIR/libc
+MOCKEDDIR=$TOPDIR/mockedFns
+
+if [ "$1" == libc ]; then
+	echo "Merging libc"
+	../../../cil/bin/cilly --merge --useLogicalOperators --out=libc_comb.c \
+		-I $LIBCDIR $LIBCDIR/*.c --warnall
+elif [ "$MERGE" == 1 ]; then
+	echo "Merging"
+	../../../cil/bin/cilly --merge --useLogicalOperators --out=ngircd_comb.c \
+		-D_FILE_OFFSET_BITS=64 \
+		-I $LIBCDIR -I $MOCKEDDIR -include $MOCKEDDIR/symexe.h \
+		*.c libc_comb.c $MOCKEDDIR/*.c --warnall $*
+else
+	echo "Doing symbolic execution"
+	# TODO: allow arguments to have spaces
+	../../../cil/bin/cilly --merge --useLogicalOperators \
+		-D_FILE_OFFSET_BITS=64 -I $MOCKEDDIR ngircd_comb.c \
+		 --warnall --domakeCFG --doexecute $*
+fi
