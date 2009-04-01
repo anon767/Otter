@@ -11,7 +11,8 @@ module G =
                 (CilQual.Expression.InterpreterT
                     (CilQual.Environment.InterpreterT
                         (CilQual.Type.InterpreterT
-                            (TypeQual.QualType.QualTypeT (Identity)))))))
+                            (CilQual.Config.InterpreterT
+                                (TypeQual.QualType.QualTypeT (Identity))))))))
 open G
 
 module Setup1 = TestUtil.CilQualUtil.Setup (G)
@@ -31,6 +32,8 @@ let test_cilqual content ?(label=content) lattice expected_result =
         Errormsg.hadErrors := false;
         let file = Frontc.parse filename () in
         assert_bool "Cil parse error" (not !Errormsg.hadErrors);
+
+        CilQual.Feature.prepare_file file;
 
         assert_logf "@[<v>";
         (* show Cil file structure *)

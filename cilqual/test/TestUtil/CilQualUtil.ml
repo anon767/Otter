@@ -8,7 +8,7 @@ module Setup (E : CilQual.Expression.InterpreterMonad) = struct
 
     let dummy_loc = { Cil.line=0; Cil.file=""; Cil.byte=0 }
 
-    let preprocess_cilqual = global_replace (regexp "\\([ \t\r\n(]\\)\\$\\([_a-zA-Z0-9]+\\)") ("\\1__attribute__(("^CilQual.Config.attribute_string^"(\\2)))")
+    let preprocess_cilqual = global_replace (regexp "\\([ \t\r\n(]\\)\\$\\([_a-zA-Z0-9]+\\)") ("\\1__attribute__(("^CilQual.Config.annot_attribute_string^"(\\2)))")
 
     let create_env typedecls vardecls =
         (* helper to patch some limitations of Formatcil *)

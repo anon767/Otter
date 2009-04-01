@@ -16,6 +16,8 @@ module CilType = struct
     let deref = function
         | TPtr (t, _) -> t
         | _ -> failwith "TODO: report deref of non-pointer Cil.typ"
+
+    let is_cil_inserted_type typ = Cil.hasAttribute Config.cil_inserted_attribute_string (Cil.typeAttrs typ)
 end
 
 module CilVar = struct

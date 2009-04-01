@@ -9,7 +9,8 @@ module E =
     CilQual.Expression.InterpreterT
         (CilQual.Environment.InterpreterT
             (CilQual.Type.InterpreterT
-                (TypeQual.QualType.QualTypeT (Identity))))
+                (CilQual.Config.InterpreterT
+                    (TypeQual.QualType.QualTypeT (Identity)))))
 open E
 
 module Setup1 = TestUtil.CilQualUtil.Setup (E)

@@ -4,9 +4,7 @@ open CilData
 
 
 module type InterpreterMonad = sig
-    include QualTypeMonad
-
-    val init_cil : unit -> unit
+    include Config.InterpreterMonad
 
     val annot_attr : QualType.t -> Cil.attributes -> QualType.t monad
     val embed_lval : Cil.typ -> QualType.t monad
@@ -15,22 +13,15 @@ end
 
 
 (* interpreter for Cil.exp types *)
-module InterpreterT (QT : QualTypeMonad) = struct
-    include QT
-    module Ops = MonadOps (QT)
+module InterpreterT (C : Config.InterpreterMonad) = struct
+    include C
+    module Ops = MonadOps (C)
     open Ops
 
-    let init_cil () = ()
-
     (* annotated with qualifiers from attributes *)
-    let annot_attr qt attrlist =
-        let rec parse_quals attrlist quallist = match attrlist with
-            | Cil.Attr (s, [ Cil.ACons (qual, _) ])::tail when s = Config.attribute_string -> parse_quals tail (qual::quallist)
-            | Cil.Attr (s, _)::_ when s = Config.attribute_string -> failwith "TODO: report invalid qualifier"
-            | _::tail -> parse_quals tail quallist
-            | [] -> quallist
-        in
-        annot qt (parse_quals attrlist [])
+    let annot_attr qt attrlist = perform
+        quals <-- parse_annot attrlist;
+        annot qt quals
 
     (* Translation from C types to CilQual types:
      *      Base/Fn         Ref Base/Fn     Ref Ref Base/Fn

@@ -1,5 +1,6 @@
 open Control.Monad
 open TypeQual.QualType
+open CilData
 
 
 module type InterpreterMonad = sig
@@ -17,21 +18,6 @@ module InterpreterT (E : Environment.InterpreterMonad) = struct
     include E
     module Ops = MonadOps (E)
     open Ops
-
-    (* Cil setup *)
-    let cil_inserted_attribute_string = "cilqual_cil_inserted"
-    let is_cil_inserted_type typ = Cil.hasAttribute cil_inserted_attribute_string (Cil.typeAttrs typ)
-
-    let init_cil () =
-        (* don't annotate inserted variables *)
-        Cabs2cil.typeForInsertedVar := Cil.visitCilType begin object
-            inherit Cil.nopCilVisitor
-            method vattr attr = Cil.ChangeTo (Cil.dropAttribute Config.attribute_string [ attr ])
-        end end;
-        (* mark inserted casts *)
-        Cabs2cil.typeForInsertedCast := Cil.typeAddAttributes [ Cil.Attr (cil_inserted_attribute_string, []) ];
-        init_cil ()
-    
 
     let rec access_lval (l, o) =
         let rec outermost_field f = function
@@ -79,7 +65,7 @@ module InterpreterT (E : Environment.InterpreterMonad) = struct
             interpret_exp e
 
         | Cil.CastE (t, e) ->
-            if is_cil_inserted_type t then
+            if CilType.is_cil_inserted_type t then
                 interpret_exp e (* ignore casts inserted by Cil *)
             else
                 embed_rval t (* safe to ignore e since it's side-effect free *)

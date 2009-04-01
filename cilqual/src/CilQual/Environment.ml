@@ -42,7 +42,6 @@ module InterpreterT (T : Type.InterpreterMonad) = struct
     let emptyEnv = empty
 
     module Constraints = T.Constraints
-    let init_cil = T.init_cil
 
     (* lift monad operations *)
     let assign x y = lift (T.assign x y)
@@ -55,6 +54,7 @@ module InterpreterT (T : Type.InterpreterMonad) = struct
     let app qtf qta = lift (T.app qtf qta)
     let retval qtf = lift (T.retval qtf)
     let args qtf = lift (T.args qtf)
+    let parse_annot attrlist = lift (T.parse_annot attrlist)
     let annot_attr qt attrlist = lift (T.annot_attr qt attrlist)
     let embed_lval t = lift (T.embed_lval t)
     let embed_rval t = lift (T.embed_rval t)

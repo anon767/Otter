@@ -12,7 +12,8 @@ module G =
                 (Expression.InterpreterT
                     (Environment.InterpreterT
                         (Type.InterpreterT
-                            (QualTypeT (Identity)))))))
+                            (Config.InterpreterT
+                                (QualTypeT (Identity))))))))
 
 (* setup Graphviz module *)
 module C (G : Constraints with type E.label = QualTypeConstraints.TypeVarLabel.t) = struct
@@ -56,7 +57,7 @@ let toc = function
  * modifies the file. *)
 
 (* call to configure Cil as required for CilQual *)
-let init_cil () = G.init_cil ()
+let init_cil () = Config.init_cil ()
 
 (* prepare file for analysis by assigning globally unique vids to varinfo, and breaking up Cil.Instr to have at
  * most one Cil.Call, placed at the end *)

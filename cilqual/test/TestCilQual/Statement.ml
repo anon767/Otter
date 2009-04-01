@@ -11,7 +11,8 @@ module S =
             (CilQual.Expression.InterpreterT
                 (CilQual.Environment.InterpreterT
                     (CilQual.Type.InterpreterT
-                        (TypeQual.QualType.QualTypeT (Identity))))))
+                        (CilQual.Config.InterpreterT
+                            (TypeQual.QualType.QualTypeT (Identity)))))))
 open S
 
 module Setup1 = TestUtil.CilQualUtil.Setup (S)
