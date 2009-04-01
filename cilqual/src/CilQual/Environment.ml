@@ -42,6 +42,7 @@ module InterpreterT (T : Type.InterpreterMonad) = struct
     let emptyEnv = empty
 
     module Constraints = T.Constraints
+    let init_cil = T.init_cil
 
     (* lift monad operations *)
     let assign x y = lift (T.assign x y)

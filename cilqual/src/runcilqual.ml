@@ -6,11 +6,10 @@ module OcamlbuildDependencies = struct
     open CilQual
 end
 
-let _ = begin
+let _ =
     (* setup and run CilQual *)
-    Cil.insertImplicitCasts := false;
+    CilQual.Feature.init_cil ();
     Cilly.run [
         CilQual.Feature.description
     ] ()
-end
 

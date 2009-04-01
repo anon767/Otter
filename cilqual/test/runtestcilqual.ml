@@ -14,8 +14,8 @@ let _ =
     Cil.lineDirectiveStyle := None;
     (* enable print_CIL_Input, otherwise, for some reason, some __attribute__ are commented *)
     Cil.print_CIL_Input := true;
-    (* disable implicit casts *)
-    Cil.insertImplicitCasts := false;
+    (* setup CilQual *)
+    CilQual.Feature.init_cil ();
 
     run_test_tt_main begin "TestCilQual" >::: [
         Expression.testsuite;

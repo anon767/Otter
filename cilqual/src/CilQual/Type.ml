@@ -6,6 +6,8 @@ open CilData
 module type InterpreterMonad = sig
     include QualTypeMonad
 
+    val init_cil : unit -> unit
+
     val annot_attr : QualType.t -> Cil.attributes -> QualType.t monad
     val embed_lval : Cil.typ -> QualType.t monad
     val embed_rval : Cil.typ -> QualType.t monad
@@ -17,6 +19,8 @@ module InterpreterT (QT : QualTypeMonad) = struct
     include QT
     module Ops = MonadOps (QT)
     open Ops
+
+    let init_cil () = ()
 
     (* annotated with qualifiers from attributes *)
     let annot_attr qt attrlist =

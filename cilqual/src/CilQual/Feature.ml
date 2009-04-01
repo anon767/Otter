@@ -52,15 +52,21 @@ let toc = function
     | Some (was, s', l) -> let now = Sys.time () in (s', now -. was)::l
 
 
+(* It's unclear to me how Cil handles interaction between features, especially since makeCFGFeature destructively
+ * modifies the file. *)
+
+(* call to configure Cil as required for CilQual *)
+let init_cil () = G.init_cil ()
+
+(* prepare file for analysis by assigning globally unique vids to varinfo, and breaking up Cil.Instr to have at
+ * most one Cil.Call, placed at the end *)
+let prepare_file = Cilly.makeCFGFeature.Cil.fd_doit
+
+
 (* cilqual driver *)
 let doit file =
-    (* check Cil setup *)
-    if !Cil.insertImplicitCasts then begin
-        Format.eprintf
-            "Error: @[Cil is configured to insert implicit typecasts!@\n\
-                    CilQual will not be able to track type qualifiers correctly.@]@.";
-        exit 1
-    end;
+    (* prepare file for analysis *)
+    prepare_file file;
 
     (* initialize constraint graph *)
     let null = (G.Constraints.const "null") in
