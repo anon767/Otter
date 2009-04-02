@@ -27,5 +27,5 @@ else
         $CILLY --merge --useLogicalOperators \
 		-I. -I $MOCKEDDIR \
                 grep_comb.c otherFiles/symtest.c \
-		--warnall --domakeCFG --doexecute $*
+		--warnall --doexecute $*
 fi

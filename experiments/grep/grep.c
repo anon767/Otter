@@ -1385,15 +1385,55 @@ main (int argc, char **argv)
 
   symtest_initialize();
 
+#ifdef LIST_FILES
+  list_files = LIST_FILES;
+#else
   __SYMBOLIC(&list_files);
+  // list_files => (out_quiet==1 /\ done_on_match==1)
+  __ASSUME(OR(NOT(list_files),AND(out_quiet==1,done_on_match==1)));
+#endif
+#ifdef WITH_FILENAMES
+  with_filenames = WITH_FILENAMES;
+#else
   __SYMBOLIC(&with_filenames);
+#endif
+#ifdef OUT_LINE
+  out_line = OUT_LINE;
+#else
   __SYMBOLIC(&out_line);
+#endif
+#ifdef MATCH_WORDS
+  match_words = MATCH_WORDS;
+#else
   __SYMBOLIC(&match_words);
+#endif
+#ifdef MATCH_LINES
+  match_lines = MATCH_LINES;
+#else
   __SYMBOLIC(&match_lines);
+#endif
+#ifdef BINARY_FILES
+  binary_files = BINARY_FILES;
+#else
   __SYMBOLIC(&binary_files);
+#endif
+#ifdef COUNT_MATCHES
+  count_matches = COUNT_MATCHES;
+#else
   __SYMBOLIC(&count_matches);
+  // count_matches => out_quiet==1
+  __ASSUME(OR(NOT(count_matches),out_quiet==1));
+#endif
+#ifdef NO_FILENAMES
+  no_filenames = NO_FILENAMES;
+#else
   __SYMBOLIC(&no_filenames);
+#endif
+#ifdef SUPPRESS_ERRORS
+  suppress_errors = SUPPRESS_ERRORS;
+#else
   __SYMBOLIC(&suppress_errors);
+#endif
 
 
   if (out_after < 0)
@@ -4111,7 +4151,7 @@ dfamust (struct dfa *dfa)
 /*#include <sys/types.h>*/
 /*#include "system.h"*/
 #include "kwset.h"
-#include "obstack.h"
+//#include "obstack.h"
 
 #ifdef GREP
 extern char *xmalloc();
