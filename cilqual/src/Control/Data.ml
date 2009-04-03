@@ -4,12 +4,17 @@ module type Type = sig
     type t
 end
 
+module type PrintableType = sig
+    include Type
+    val printer : Format.formatter -> t -> unit
+end
+
 module type OrderedType = sig
     include Type
     val compare : t -> t -> int
 end
 
-module type PrintableType = sig
+module type PrintableOrderedType = sig
     include OrderedType
     val printer : Format.formatter -> t -> unit
 end
