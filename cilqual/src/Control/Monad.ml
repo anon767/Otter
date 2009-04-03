@@ -57,7 +57,7 @@ end
 
 
 (* reader monad *)
-module ReaderT (R : Type)  (M : Monad) = struct
+module ReaderT (R : Type) (M : Monad) = struct
     type 'a monad = Reader of (R.t -> 'a M.monad)
     let runReader (Reader m) = m
     let return a = Reader (fun _ -> M.return a)
@@ -73,7 +73,7 @@ end
 
 
 (* state transformer *)
-module StateT (S : Type)  (M : Monad) = struct
+module StateT (S : Type) (M : Monad) = struct
     type 'a monad = State of (S.t -> ('a * S.t) M.monad)
     let runState (State m) = m
     let return a = State (fun s -> M.return (a, s))
@@ -97,8 +97,16 @@ end
 
 (* monad-transformer to manage fresh variables *)
 module FreshT (Value : FreshType) (M : Monad) = struct
-    include StateT (struct type t = int end) (M)
-    let fresh = bind get (fun s -> bind (put (s + 1)) (fun _ -> return (Value.fresh s)))
+    type 'a monad = Fresh of (int -> ('a * int) M.monad)
+    let runFresh (Fresh m) = m
+    let return a = Fresh (fun s -> M.return (a, s))
+    let bind m k = Fresh (fun s -> M.bind (runFresh m s) (fun (a, s') -> runFresh (k a) s'))
+    let lift a   = Fresh (fun s -> M.bind a (fun a' -> M.return (a', s)))
+
+    type 'a result = int -> ('a * int) M.result
+    let run (Fresh m) = fun s -> M.run (m s)
+
+    let fresh = Fresh (fun s -> M.return (Value.fresh s, s + 1))
 end
 
 
@@ -108,8 +116,16 @@ module EnvT (Key : OrderedType) (Value : Type) (M : Monad) = struct
     type env = Value.t Env.t
     let empty = Env.empty
 
-    include StateT (struct type t = env end) (M)
-    let update v x = modify (fun s -> Env.add v x s)
-    let lookup v   = bind get (fun s -> return (try Some (Env.find v s) with Not_found -> None))
+    type 'a monad = Env of (env -> ('a * env) M.monad)
+    let runEnv (Env m) = m
+    let return a = Env (fun s -> M.return (a, s))
+    let bind m k = Env (fun s -> M.bind (runEnv m s) (fun (a, s') -> runEnv (k a) s'))
+    let lift a   = Env (fun s -> M.bind a (fun a' -> M.return (a', s)))
+
+    type 'a result = env -> ('a * env) M.result
+    let run (Env m) = fun s -> M.run (m s)
+
+    let update v x = Env (fun s -> M.return ((), Env.add v x s))
+    let lookup v   = Env (fun s -> M.return ((try Some (Env.find v s) with Not_found -> None), s))
 end
 
