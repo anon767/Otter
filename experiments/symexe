@@ -1,0 +1,9 @@
+#!/bin/sh
+
+BINDIR=`dirname $0`
+PWDIR=`pwd`
+
+APP=${1#*=}
+TEST=${2#*=}
+
+$BINDIR/$APP/tests/$TEST.test $BINDIR/$APP/tests

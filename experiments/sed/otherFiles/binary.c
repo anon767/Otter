@@ -1,0 +1,20 @@
+#include "iosim.h"
+#include <stdlib.h>
+
+void symtest_initialize() {
+	IOSIM_fd[1] = malloc(sizeof(sym_file_stream_t));
+	IOSIM_fd[1]->offset = 0;
+	IOSIM_fd[1]->fd = 1;
+	IOSIM_fd[1]->sym_file = malloc(sizeof(sym_file_t));
+	IOSIM_fd[1]->sym_file->contents = NULL;
+	IOSIM_fd[1]->sym_file->stat.st_size = 0;
+	stdout = IOSIM_fd[1];
+
+	sym_file_t* sed = IOSIM_addfile("binary.sed", 0);
+	sed->contents = "\n\n1s/^/%%/\n\n:cmd\ns/\\(.*%%\\) *\\([0-9][0-9]*\\)/\\2\\\n\\1/\ntcmd\ns/%% *#.*/%%/\n/%%$/ {\n  $b quit\n  N\n}\n\n/^.*%%D/ s/^[^\\n]*\\n/&&/\n/^.*%%P/ s/^[^\\n]*\\n//\n/^.*%%x/ s/^\\([^\\n]*\\n\\)\\([^\\n]*\\n\\)/\\2\\1/\n/^.*%%r/ s/^\\([^\\n]*\\n\\)\\([^%]*\\)/\\2\\1/\n/^.*%%R/ s/^\\([^%]*\\n\\)\\([^\\n]*\\n\\)/\\2\\1/\n/^.*%%c/ s/^.*%%/%%/\n/^.*%%p/ P\n\n/^.*%%l/ {\n  h\n  s/.%%.*//\n  p\n  g\n}\n\n/^.*%%q/ {\n  :quit\n  /^%%/!P\n  d\n}\n\n/^.*%%b/ {\n  # Decimal to binary via analog form\n  s/^\\([^\\n]*\\)/-&;9876543210aaaaaaaaa/\n  :d2bloop1\n  s/\\(a*\\)-\\(.\\)\\([^;]*;[0-9]*\\2.\\{9\\}\\(a*\\)\\)/\\1\\1\\1\\1\\1\\1\\1\\1\\1\\1\\4-\\3/\n  t d2bloop1\n  s/-;9876543210aaaaaaaaa/;a01!/\n  :d2bloop2\n  s/\\(a*\\)\\1\\(a\\{0,1\\}\\)\\(;\\2.\\(.\\)[^!]*!\\)/\\1\\3\\4/\n  /^a/b d2bloop2\n  s/[^!]*!//\n}\n\n/^.*%%d/ {\n  # Binary to decimal via analog form\n  s/^\\([^\\n]*\\)/-&;10a/\n  :b2dloop1\n  s/\\(a*\\)-\\(.\\)\\([^;]*;[0-9]*\\2.\\(a*\\)\\)/\\1\\1\\4-\\3/\n  t b2dloop1\n  s/-;10a/;aaaaaaaaa0123456789!/\n  :b2dloop2\n  s/\\(a*\\)\\1\\1\\1\\1\\1\\1\\1\\1\\1\\(a\\{0,9\\}\\)\\(;\\2.\\{9\\}\\(.\\)[^!]*!\\)/\\1\\3\\4/\n  /^a/b b2dloop2\n  s/[^!]*!//\n}\n\n/^.*%%&/ {\n  # Binary AND\n  s/\\([^\\n]*\\)\\n\\([^\\n]*\\)/-\\1-\\2-111 01000/\n  :andloop\n  s/\\([^-]*\\)-\\([^-]*\\)\\([^-]\\)-\\([^-]*\\)\\([^-]\\)-\\([01 ]*\\3\\5\\([01]\\)\\)/\\7\\1-\\2-\\4-\\6/\n  t andloop\n  s/^0*\\([^-]*\\)-[^\\n]*/\\1/\n  s/^\\n/0&/\n}\n\n/^.*%%^/ {\n  # Binary XOR\n  s/\\([^\\n]*\\)\\n\\([^\\n]*\\)/-\\1-\\2-000 01101/\n  b orloop\n}\n\n/^.*%%|/ {\n  # Binary OR\n  s/\\([^\\n]*\\)\\n\\([^\\n]*\\)/-\\1-\\2-000 10111/\n  :orloop\n  s/\\([^-]*\\)-\\([^-]*\\)\\([^-]\\)-\\([^-]*\\)\\([^-]\\)-\\([01 ]*\\3\\5\\([01]\\)\\)/\\7\\1-\\2-\\4-\\6/\n  t orloop\n  s/\\([^-]*\\)-\\([^-]*\\)-\\([^-]*\\)-[^\\n]*/\\2\\3\\1/\n}\n\n/^.*%%~/ {\n  # Binary NOT\n  s/^\\(.\\)\\([^\\n]*\\n\\)/\\1-010-\\2/\n  :notloop\n  s/\\(.\\)-0\\{0,1\\}\\1\\(.\\)0\\{0,1\\}-\\([01\\n]\\)/\\2\\3-010-/\n  t notloop\n\n  # If result is 00001..., \\3 does not match (it looks for -10) and we just\n  # remove the table and leading zeros.  If result is 0000...0, \\3 matches\n  # (it looks for -0), \\4 is a zero and we leave a lone zero as top of the\n  # stack.\n\n  s/0*\\(1\\{0,1\\}\\)\\([^-]*\\)-\\(\\1\\(0\\)\\)\\{0,1\\}[^-]*-/\\4\\1\\2/\n}\n\n/^.*%%</ {\n  # Left shift, convert to analog and add a binary digit for each analog digit\n  s/^\\([^\\n]*\\)/-&;9876543210aaaaaaaaa/\n  :lshloop1\n  s/\\(a*\\)-\\(.\\)\\([^;]*;[0-9]*\\2.\\{9\\}\\(a*\\)\\)/\\1\\1\\1\\1\\1\\1\\1\\1\\1\\1\\4-\\3/\n  t lshloop1\n  s/^\\(a*\\)-;9876543210aaaaaaaaa\\n\\([^\\n]*\\)/\\2\\1/\n  s/a/0/g\n}\n\n/^.*%%>/ {\n  # Right shift, convert to analog and remove a binary digit for each analog digit\n  s/^\\([^\\n]*\\)/-&;9876543210aaaaaaaaa/\n  :rshloop1\n  s/\\(a*\\)-\\(.\\)\\([^;]*;[0-9]*\\2.\\{9\\}\\(a*\\)\\)/\\1\\1\\1\\1\\1\\1\\1\\1\\1\\1\\4-\\3/\n  t rshloop1\n  s/^\\(a*\\)-;9876543210aaaaaaaaa\\n\\([^\\n]*\\)/\\2\\1/\n  :rshloop2\n  s/.a//\n  s/^aa*/0/\n  /a\\n/b rshloop2\n}\n\n\ns/%%./%%/\ntcmd";
+	sed->stat.st_size = 2626;
+
+	sym_file_t* input = IOSIM_addfile("binary.inp", 0);
+	input->contents = "192.168.1.2 br b8<r b16<r b24< R|R|R| D\n255.255.255.0 br b8<r b16<r b24< R|R|R| D~r\n& DDD 24>dpP 16>11111111& dpP 8>11111111& dpP 11111111& dpP\n| DDD 24>dpP 16>11111111& dpP 8>11111111& dpP 11111111& dpP";
+	input->stat.st_size = 203;
+}

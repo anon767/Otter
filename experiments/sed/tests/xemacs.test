@@ -1,0 +1,11 @@
+CILLY=../../../cil/bin/cilly
+LIBCDIR=../../../libc
+MOCKEDDIR=../../../mockedFns
+
+cd $1
+
+$CILLY --merge --useLogicalOperators \
+	-I.. -I $MOCKEDDIR \
+	../sed_comb.c ../otherFiles/xemacs.c \
+	--warnall --domakeCFG --doexecute \
+	--arg=-f --arg=xemacs.sed --arg=xemacs.inp &> xemacs.output

@@ -1,0 +1,11 @@
+CILLY=../../../cil/bin/cilly
+LIBCDIR=../../../libc
+MOCKEDDIR=../../../mockedFns
+
+cd $1
+
+$CILLY --merge --useLogicalOperators \
+	-I.. -I $MOCKEDDIR \
+	../grep_comb.c ../otherFiles/spencer_54.c \
+	--warnall --domakeCFG --doexecute \
+	--arg=$* --arg=spencer_54.txt &> spencer_54.output

@@ -1,0 +1,11 @@
+CILLY=../../../cil/bin/cilly
+LIBCDIR=../../../libc
+MOCKEDDIR=../../../mockedFns
+
+cd $1
+
+$CILLY --merge --useLogicalOperators \
+	-I.. -I $MOCKEDDIR \
+	../sed_comb.c ../otherFiles/uniq.c \
+	--warnall --domakeCFG --doexecute \
+	--arg=-f --arg=uniq.sed --arg=uniq.inp &> uniq.output

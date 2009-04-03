@@ -1,0 +1,11 @@
+CILLY=../../../cil/bin/cilly
+LIBCDIR=../../../libc
+MOCKEDDIR=../../../mockedFns
+
+cd $1
+
+$CILLY --merge --useLogicalOperators \
+	-I.. -I $MOCKEDDIR \
+	../sed_comb.c ../otherFiles/subwrite.c \
+	--warnall --domakeCFG --doexecute \
+	--arg=-f --arg=subwrite.sed --arg=subwrite.inp &> subwrite.output

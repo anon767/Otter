@@ -1,0 +1,11 @@
+CILLY=../../../cil/bin/cilly
+LIBCDIR=../../../libc
+MOCKEDDIR=../../../mockedFns
+
+cd $1
+
+$CILLY --merge --useLogicalOperators \
+	-I.. -I $MOCKEDDIR \
+	../sed_comb.c ../otherFiles/readin.c \
+	--warnall --domakeCFG --doexecute \
+	--arg=-f --arg=readin.sed --arg=readin.inp &> readin.output

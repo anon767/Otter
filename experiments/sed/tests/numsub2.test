@@ -1,0 +1,11 @@
+CILLY=../../../cil/bin/cilly
+LIBCDIR=../../../libc
+MOCKEDDIR=../../../mockedFns
+
+cd $1
+
+$CILLY --merge --useLogicalOperators \
+	-I.. -I $MOCKEDDIR \
+	../sed_comb.c ../otherFiles/numsub2.c \
+	--warnall --domakeCFG --doexecute \
+	--arg=-f --arg=numsub2.sed --arg=numsub2.inp &> numsub2.output

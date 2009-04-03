@@ -1,0 +1,20 @@
+#include "iosim.h"
+#include <stdlib.h>
+
+void symtest_initialize() {
+	IOSIM_fd[1] = malloc(sizeof(sym_file_stream_t));
+	IOSIM_fd[1]->offset = 0;
+	IOSIM_fd[1]->fd = 1;
+	IOSIM_fd[1]->sym_file = malloc(sizeof(sym_file_t));
+	IOSIM_fd[1]->sym_file->contents = NULL;
+	IOSIM_fd[1]->sym_file->stat.st_size = 0;
+	stdout = IOSIM_fd[1];
+
+	sym_file_t* sed = IOSIM_addfile("mac-mf.sed", 0);
+	sed->contents = "/^\\./s/^\\(\\.[a-z]*\\)\\(\\.[a-z]*\\)\\( *: *\\)$/\\1\\2\\3 \\1/\n\n/::/s/::/ \\\\Option-f\\\\Option-f /g\n/:/s/:/ \\\\Option-f /g\n/^[SU]=/s/ \\\\Option-f /:/g\n\n/\\$/s/\\${\\([a-zA-Z0-9_]*\\)}/{\\1}/g\n/\\$/s/\\$(\\([a-zA-Z0-9_]*\\))/{\\1}/g\n\n/\\$@/s/\\$@/{targ}/g\n\n/\\./s,\\.\\./\\.\\.$,::,\n/\\./s,\\.\\.$,:,\n/\\./s,\\.$,,g\n/\\./s,\\.\\./:,::,g\n/\\./s,\\.\\./\\.\\./,:::,g\n/\\./s,\\.\\./,::,g\n/\\.\\//s,\\./,:,g\n/\\//s,/,:,g\n\n/=/s/ = \\.$/ = :/\n\n\n/version/s/^version=/# version=/\n\n/BASEDIR/s/^BASEDIR =.*$/BASEDIR = "{srcroot}"/\n/{BASEDIR}:/s/{BASEDIR}:/{BASEDIR}/g\n/{srcdir}:/s/{srcdir}://g\n\n\n/-I/s/-I\\./-i :/g\n/-I/s/-I::bfd/-i ::bfd:/g\n/-I/s/-I::include/-i ::include:/g\n/-I/s/-I/-i /g\n\n/-D/s/\\([ =]\\)-D\\([^ ]*\\)/\\1-d \\2/g\n\n/\\\\$/s/\\\\$/\\\\Option-d/\n\n/^[^#]/s/\\*/\\\\Option-x/g\n\n\n/^OBJEXT/!s/\\([ 	=]\\)\\([-a-zA-Z0-9_${}:"]*\\)\\.o/\\1\\2.c.o/g\n/\\.o/s/^\\([-a-zA-Z0-9_${}:"]*\\)\\.o/\\1.c.o/g\n\n\n/^	-/s/^	-/	/\n\n/^RM=/s/rm -f/Delete -i -y/\n\n\n/LDFLAGS/    s/{CC} \\(.*\\){CFLAGS}\\(.*\\){LDFLAGS}/Link \\1 \\2 {LDFLAGS}/\n/CFLAGS_LINK/s/{CC} \\(.*\\){CFLAGS_LINK}\\(.*\\){LDFLAGS}/Link \\1 \\2 {LDFLAGS}/\n\n/\\.PHONY/s/^\\.PHONY/# \\.PHONY/\n/\\.SUFFIXES/s/^\\.SUFFIXES/# \\.SUFFIXES/\n/\\.PRECIOUS/s/^\\.PRECIOUS/# \\.PRECIOUS/\n\n\n\n\n\n/-i/s/\\(-i [^ ]*\\) \\1 /\\1 /g\n\n/Option/s/\\\\Option-f/�/g\n/Option/s/\\\\Option-d/�/g\n/Option/s/\\\\Option-x/�/g";
+	sed->stat.st_size = 1236;
+
+	sym_file_t* input = IOSIM_addfile("mac-mf.inp", 0);
+	input->contents = "\n\n\nWHAT = mac\n\nR=\nC=\nS=:\nU=:\n\nBUILDTOP = ../../..\nsrcdir = .\n\n\n\n.c.o: .c\n   {CC}  {DepDir}{Default}.c {CFLAGS} -s {Default} -o {TargDir}{Default}.c.o\n\nCPPFLAGS =  -I$(SRCTOP)/include -I$(BUILDTOP)/include -I$(SRCTOP)/include/krb5 -I$(BUILDTOP)/include/krb5 -i {CIncludes}\nDEFS =   $(CPPFLAGS)\nCC = c\nLD = link\nLDFLAGS=-t MPST -c "MPS " -sym on {Libraries}"Runtime."o {CLibraries}"StdClib."o {Libraries}"ToolLibs."o {Libraries}"Interface."o\nCCOPTS = \nLIBS = \nKRB5ROOT= @KRB5ROOT@\nKRB4=@KRB4@\nINSTALL=Duplicate -y\nINSTALL_PROGRAM=Duplicate -y\nINSTALL_DATA=Duplicate -y\nINSTALL_SETUID=Duplicate -y\n\nKRB5MANROOT = $(KRB5ROOT)$(S)man\nADMIN_BINDIR = $(KRB5ROOT)$(S)admin\nSERVER_BINDIR = $(KRB5ROOT)$(S)sbin\nCLIENT_BINDIR = $(KRB5ROOT)$(S)bin\nADMIN_MANDIR = $(KRB5MANROOT)$(S)man8\nSERVER_MANDIR = $(KRB5MANROOT)$(S)man8\nCLIENT_MANDIR = $(KRB5MANROOT)$(S)man1\nFILE_MANDIR = $(KRB5MANROOT)$(S)man5\nKRB5_LIBDIR = $(KRB5ROOT)$(S)lib\nKRB5_INCDIR = $(KRB5ROOT)$(S)include\nKRB5_INCSUBDIRS = \\\n	$(KRB5_INCDIR)$(S)krb5 \\\n	$(KRB5_INCDIR)$(S)asn.1 \\\n	$(KRB5_INCDIR)$(S)kerberosIV\n\n\nRM = Delete -y -i\nCP = Duplicate -y\nMV = mv -f\nCHMOD=chmod\nRANLIB = @RANLIB@\nARCHIVE = @ARCHIVE@\nARADD = @ARADD@\nLN = @LN_S@\nAWK = @AWK@\nLEX = @LEX@\nLEXLIB = @LEXLIB@\nYACC = @YACC@\n\nSRCTOP = $(BUILDTOP)\nSUBDIRS = @subdirs@\n\nTOPLIBD = $(BUILDTOP)$(S)lib\n\nOBJEXT = c.o\nLIBEXT = a\nEXEEXT =\n\nall::\nCFLAGS = $(CCOPTS) $(DEFS) -I$(srcdir)/../des\n\n\nOBJS=	md5.$(OBJEXT) md5glue.$(OBJEXT) md5crypto.$(OBJEXT)\n\nSRCS=	$(srcdir)/md5.c $(srcdir)/md5glue.c $(srcdir)/md5crypto.c\n\nall:: $(OBJS) \n\nt_mddriver: t_mddriver.o md5.o\n	$(CC) $(CFLAGS) $(LDFLAGS) -o t_mddriver t_mddriver.o md5.o\n\nt_mddriver.exe:\n	$(CC) $(CFLAGS2) -o t_mddriver.exe t_mddriver.c md5.c\n\ncheck:: t_mddriver$(EXEEXT)\n	$(C)t_mddriver$(EXEEXT) -x\n\nclean::\n	$(RM) t_mddriver$(EXEEXT) t_mddriver.$(OBJEXT)\nall::\n\ncheck::\n\nclean:: clean-$(WHAT)\n	$(RM) config.log pre.out post.out Makefile.out\n\nclean-unix::\n	if test -n "$(OBJS)" ; then $(RM) $(OBJS); else :; fi\n\nclean-windows::\n	$(RM) *.$(OBJEXT)\n	$(RM) msvc.pdb *.err";
+	input->stat.st_size = 2036;
+}

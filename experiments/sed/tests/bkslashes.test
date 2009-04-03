@@ -1,0 +1,11 @@
+CILLY=../../../cil/bin/cilly
+LIBCDIR=../../../libc
+MOCKEDDIR=../../../mockedFns
+
+cd $1
+
+$CILLY --merge --useLogicalOperators \
+	-I.. -I $MOCKEDDIR \
+	../sed_comb.c ../otherFiles/bkslashes.c \
+	--warnall --domakeCFG --doexecute \
+	--arg=-f --arg=bkslashes.sed --arg=bkslashes.inp &> bkslashes.output
