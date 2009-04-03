@@ -8,8 +8,8 @@ char **environ;
 
 void symtest_initialize() {
 	// Make the string of commands on fd 0
-	char commandString[] = "user ftp
-pass rightPass
+	static char commandString[] = "user ftp
+pass
 pasv
 stor aFile
 pasv
@@ -39,15 +39,22 @@ quit
 	IOSIM_fd[5]->sym_file->stat.st_size = sizeof(fileText);
 
 	// fd 6 is the second listening socket
-	// fd 7 is the socket on which we would have sent out the ls info
-	// fd 8 is the third listening socket
-	// fd 9 is the fd opened to read the file
-	// fd 10 is the socket on which we're writing out the file
-	IOSIM_fd[10] = malloc(sizeof(sym_file_stream_t));
-	IOSIM_fd[10]->offset = 0;
-	IOSIM_fd[10]->sym_file = malloc(sizeof(sym_file_t));
-	IOSIM_fd[10]->sym_file->contents = NULL;
-	IOSIM_fd[10]->sym_file->stat.st_size = 0;
+	// fd 7 is the stream on which we read the directory info
+	// fd 8 is the socket on which we send out the ls info
+	IOSIM_fd[8] = malloc(sizeof(sym_file_stream_t));
+	IOSIM_fd[8]->offset = 0;
+	IOSIM_fd[8]->sym_file = malloc(sizeof(sym_file_t));
+	IOSIM_fd[8]->sym_file->contents = NULL;
+	IOSIM_fd[8]->sym_file->stat.st_size = 0;
+
+	// fd 9 is the third listening socket
+	// fd 10 is the stream opened to read the file
+	// fd 11 is the socket on which we write out the file
+	IOSIM_fd[11] = malloc(sizeof(sym_file_stream_t));
+	IOSIM_fd[11]->offset = 0;
+	IOSIM_fd[11]->sym_file = malloc(sizeof(sym_file_t));
+	IOSIM_fd[11]->sym_file->contents = NULL;
+	IOSIM_fd[11]->sym_file->stat.st_size = 0;
 
 
 	// Make empty environ variable
@@ -86,9 +93,9 @@ quit
 //	__SYMBOLIC(&tunable_dirmessage_enable);
 //	__SYMBOLIC(&tunable_ascii_upload_enable);
 //	__SYMBOLIC(&tunable_ascii_download_enable);
-//	__SYMBOLIC(&tunable_listen);
+	__SYMBOLIC(&tunable_listen);
 //	__SYMBOLIC(&tunable_run_as_launching_user);
-//
+
 //	__SYMBOLIC(&tunable_anonymous_enable);
 //	__SYMBOLIC(&tunable_local_enable);
 //	__SYMBOLIC(&tunable_pasv_enable);

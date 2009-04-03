@@ -1,32 +1,20 @@
-if [ "$1" == merge ]; then
-	if [ -f vsftpd_comb.c ]; then
-		echo "Deleting old vsftpd_comb.c"
-		rm vsftpd_comb.c
-	fi
-	shift
-	MERGE=1
-elif [ ! -f vsftpd_comb.c ]; then
-	MERGE=1
+VSFTPDFILES="main.c utility.c prelogin.c ftpcmdio.c postlogin.c privsock.c tunables.c ftpdataio.c secbuf.c ls.c postprivparent.c logging.c str.c netstr.c sysstr.c strlist.c banner.c filestr.c parseconf.c secutil.c ascii.c oneprocess.c twoprocess.c privops.c standalone.c hash.c tcpwrap.c ipaddrparse.c access.c features.c readwrite.c opts.c ssl.c sysutil.c sysdeputil.c"
+
+STATSFILE=vsftpd.stats
+
+if [ "$1" == stats ]; then
+	../../cil/bin/cilly --merge --useLogicalOperators --doprogStats \
+		--statsFile=$STATSFILE $VSFTPDFILES
+	exit
 fi
 
-TOPDIR=~/symexe/trunk
+TOPDIR=../..
 LIBCDIR=$TOPDIR/libc
 MOCKEDDIR=$TOPDIR/mockedFns
 
-if [ "$1" == libc ]; then
-	echo "Merging libc"
-	../../cil/bin/cilly --merge --useLogicalOperators --out=otherFiles/libc_comb.c \
-		-I $LIBCDIR $LIBCDIR/*.c --warnall
-elif [ "$MERGE" == 1 ]; then
-	echo "Merging"
-	../../cil/bin/cilly --merge --useLogicalOperators --out=vsftpd_comb.c \
-		-D_FILE_OFFSET_BITS=64 \
-		-I $LIBCDIR -I $MOCKEDDIR -include $MOCKEDDIR/symexe.h \
-		*.c otherFiles/libc_comb.c $MOCKEDDIR/*.c --warnall $*
-else
-	echo "Doing symbolic execution"
-	# TODO: allow arguments to have spaces
-	../../cil/bin/cilly --merge --useLogicalOperators \
-		-D_FILE_OFFSET_BITS=64 -I $MOCKEDDIR vsftpd_comb.c \
-		 --warnall --domakeCFG --doexecute $*
-fi
+../../cil/bin/cilly --merge --useLogicalOperators \
+	-I $LIBCDIR $LIBCDIR/*.c \
+	-D_FILE_OFFSET_BITS=64 \
+	-I $MOCKEDDIR -include $MOCKEDDIR/symexe.h $MOCKEDDIR/*.c \
+	$VSFTPDFILES --warnall \
+	--covStats=$STATSFILE --doexecute $*
