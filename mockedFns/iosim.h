@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <dirent.h>
 
 // This symbolic file system borrows a bit from KLEE's
 
@@ -29,9 +30,16 @@ sym_file_t* IOSIM_findfile(const char *file);
 sym_file_t* IOSIM_addfile(const char *file, mode_t);
 
 int IOSIM_newfd();
-//int IOSIM_attach(int fildes, sym_file_stream_t* s);
 int IOSIM_read(int fildes, void *buf, int nbyte);
 int IOSIM_write(int fildes, const void *buf, int nbyte);
 int IOSIM_close(int fildes);
+int IOSIM_openWithMode(const char *pathname, int flags, mode_t mode);
+int IOSIM_open(const char *pathname, int flags);
 
+char *IOSIM_getcwd(char *buf, size_t size);
+int IOSIM_chdir(const char *path);
+DIR *IOSIM_opendir(const char *dirname);
+int IOSIM_closedir(DIR *dir);
+struct dirent *IOSIM_readdir(DIR *dir);
+int IOSIM_dirfd(DIR *dir);
 #endif

@@ -123,8 +123,7 @@ int setuid(uid_t uid) {
 	return 0;
 }
 char *getcwd(char *buf, size_t size) {
-	strcpy(buf, "/");
-	return buf;
+	return IOSIM_getcwd(buf,size);
 }
 int dup2(int fildes, int fildes2) {
 	IOSIM_fd[fildes2] = IOSIM_fd[fildes];

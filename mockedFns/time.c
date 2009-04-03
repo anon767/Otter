@@ -25,6 +25,10 @@ struct tm* localtime(const time_t *timer) {
 	return x;
 }
 
+struct tm *gmtime(time_t const   *__timer ) {
+	return localtime(__timer);
+}
+
 size_t strftime(char *restrict s, size_t maxsize,
 								const char *restrict format, const struct tm *restrict timeptr) {
 	if (maxsize >= 6) {

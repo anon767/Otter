@@ -1,12 +1,33 @@
-#include <string.h>
+/*
+ * strerror.c
+ */
 
-static char error[] = {'s', 't', 'r', 'e', 'r', 'r', 'o', 'r', ' ', 'm', 'e', 's', 's', 'a', 'g', 'e'};
+#include <string.h>
 
 char *strerror(int errnum)
 {
-  char *msg = malloc(sizeof(char) * strlen(error));
+	static char message[32] = "error ";	/* enough for error 2^63-1 */
+	char numbuf[32];
+	char *p;
+	unsigned int e = (unsigned int)errnum;
 
-  strcpy(msg, error);
+#ifdef WITH_ERRLIST
+	extern const int sys_nerr;
+	extern const char *const sys_errlist[];
 
-  return msg;
+	if (e < (unsigned int)sys_nerr && sys_errlist[e])
+		return (char *)sys_errlist[e];
+#endif
+
+	p = numbuf + sizeof numbuf;
+	*--p = '\0';
+
+	do {
+		*--p = (e % 10) + '0';
+		e /= 10;
+	} while (e);
+
+	memcpy(message + 6, p, (numbuf + sizeof numbuf) - p);
+
+	return message;
 }

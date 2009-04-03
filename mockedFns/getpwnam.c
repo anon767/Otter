@@ -12,13 +12,13 @@ struct passwd *getpwnam(char const   *__name ) {
 /*   char pw_dir[100]; */
 /*    char *pw_shell ; */
 
-	x->pw_dir = "some name goes here";
+	x->pw_dir = "ftp";
 //	__uid_t uid;
-	x->pw_uid = __SYMBOLIC(0);
+//	x->pw_uid = __SYMBOLIC(0);
 //	char *p;
-	x->pw_name = __SYMBOLIC(0);
+//	x->pw_name = __SYMBOLIC(0);
 //	__gid_t gid;
-	x->pw_gid = __SYMBOLIC(0);
+//	x->pw_gid = __SYMBOLIC(0);
 
 	return x;
 }

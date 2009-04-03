@@ -5,16 +5,13 @@
 #include <sys/stat.h>
 
 int __xstat(int __ver, const char *__filename, struct stat *__stat_buf) {
-	if (IOSIM_findfile(__filename) != NULL) {
-		// What information do I put in __stat_buf?
+	sym_file_t *file = IOSIM_findfile(__filename);
+	if (file) {
+		*__stat_buf = file->stat;
 		return 0;
 	}
+	errno = ENOENT;
 	return -1;
-/* 	const char *symbolic_file; */
-/* 	if (__filename == symbolic_file) { */
-/* 		return 1; */
-/* 	} */
-/* 	return 0; */
 }
 
 int __fxstat(int __ver, int __fildes, struct stat *__stat_buf) {
@@ -38,5 +35,6 @@ int __fxstat(int __ver, int __fildes, struct stat *__stat_buf) {
 
 int __lxstat(int __ver , char const   *__filename ,
 						 struct stat *__stat_buf ) {
-	return 0;
+	// We don't have links yet, so this is just normal stat.
+	return __xstat(__ver, __filename, __stat_buf);
 }
