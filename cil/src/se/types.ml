@@ -153,9 +153,11 @@ type state =
 		block_to_bytes : bytes MemoryBlockMap.t;
 		path_condition : bytes list;
 		callContexts : callingContext list;
-		(** callContexts is off by one relative to callstack because
-				callstack starts out as [main] while callContexts starts out
-				empty. *)
+		(** The last element of callstack is the function at which the
+				executor started execution. The last element of callContexts
+				is [Runtime]. Other than that, the nth element of callstack is
+				the fundec called by the [Instr] at the nth position in
+				callContexts. *)
 		
 		va_arg : bytes list list;			(* A stack of va_arg *)
 		va_arg_map : bytes list VargsMap.t;
@@ -189,15 +191,35 @@ module EdgeSet = Set.Make
 			else srcCmp
 	end)
 
+module IntSet = Set.Make
+	(struct
+		 type t = int
+		 let compare = (-)
+	 end)
+
+module LineSet = Set.Make
+	(struct
+		 type t = string * int (** (filename,line number) pair *)
+		 let compare (f1,l1) (f2,l2) =
+			 let tmp = compare f1 f2 in
+			 if tmp = 0
+			 then l1 - l2
+			 else tmp
+	 end)
+
 type executionHistory = {
-	edgesTaken : EdgeSet.t; (** Which edges we've traversed on this execution *)
+	coveredLines : LineSet.t; (** Which lines we've hit *)
+	coveredStmts : IntSet.t; (** Which statements we've hit, by sid *)
+	coveredEdges : EdgeSet.t; (** Which edges we've traversed on this execution *)
 	bytesToVars : (bytes * Cil.varinfo) list;
 		(** List associating symbolic bytes to the variable that was
 				assigned this value by a call to __SYMBOLIC(&<variable>). *)
 }
 
 let emptyHistory = {
-	edgesTaken = EdgeSet.empty;
+	coveredLines = LineSet.empty;
+	coveredStmts = IntSet.empty;
+	coveredEdges = EdgeSet.empty;
 	bytesToVars = [];
 }
 
@@ -205,7 +227,11 @@ let emptyHistory = {
 module PcHistSet = Set.Make
 	(struct
 		type t = bytes list * executionHistory
-		let compare = compare
+		let compare (bl1,eh1) (bl2,eh2) =
+			let bytesListCmp = compare bl1 bl2 in
+			if bytesListCmp = 0
+			then compare eh1.bytesToVars eh2.bytesToVars
+			else bytesListCmp
 	end)
 
 (** This maps (Cil.exp,Cil.location) pairs to a pair (T_set,F_set) of
@@ -223,18 +249,12 @@ module SymbolSet = Set.Make
 let signalStringOpt : string option ref = ref None
 exception SignalException
 
-module IntSet = Set.Make
-	(struct
-		 type t = int
-		 let compare = (-)
-	 end)
-
 type job = {
 	state : state;
 	exHist : executionHistory;
-	prevStmt : Cil.stmt;        (** The [stmt] we just executed *)
 	instrList : Cil.instr list; (** [instr]s to execute before moving to the next [stmt] *)
-	nextStmt : Cil.stmt;        (** The next statement the job should execute *)
+	stmt : Cil.stmt;            (** The next statement the job should execute *)
+	inTrackedFn : bool;         (** Is nextStmt in a function in the original program (as opposed to in a library or system call)? *)
 	mergePoints : IntSet.t;     (** A list of potential merge points, by sid *)
 	jid : int; (** A unique identifier for the job *)
 }
@@ -255,31 +275,13 @@ type job_state =
 	| Fork of job * job
 	| Complete of job_completion
 
-let updateJob job state exHist nextStmt =
-	{ job with
-			state = state;
-			exHist = exHist;
-			prevStmt = job.nextStmt;
-			nextStmt = nextStmt;
-	}
-
-let forkJob job nextStateT nextStateF nextStmtT nextStmtF newExHist newMergePoints =
-	let j = { job with mergePoints = newMergePoints;
-	                   exHist = newExHist;
-	                   prevStmt = job.nextStmt; }
-	in
-	(* Increment the jid of the job which takes the false branch *)
-	({ j with state = nextStateT; nextStmt = nextStmtT; },
-	 { j with state = nextStateF; nextStmt = nextStmtF;
-			 jid = Utility.next_id Output.jidCounter; })
-
 module JobSet = Set.Make
 	(struct
 		 type t = job
-				 (** The state, executionHistory, and stmt about to be executed *)
 		 let compare job1 job2 =
-			 let c = job1.nextStmt.Cil.sid - job2.nextStmt.Cil.sid in
-			 if c = 0 then compare (job1.state,job1.exHist,job1.mergePoints) (job2.state,job2.exHist,job2.mergePoints)
+			 (* I want the job with earliest stmt.sid to be first in the ordering *)
+			 let c = job1.stmt.Cil.sid - job2.stmt.Cil.sid in
+			 if c = 0 then job1.jid - job2.jid
 			 else c
 	 end)
 
@@ -287,3 +289,5 @@ module JobSet = Set.Make
 		[If]s dominate.
 		This will allow to know where we should expect to merge paths. *)
 let ifToJoinPointsHash : int Inthash.t = Inthash.create 500
+
+module StringSet = Set.Make(String)

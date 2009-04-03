@@ -87,18 +87,17 @@ CILLY_LIBRARY_MODULES = pretty inthash errormsg alpha trace stats util clist \
               testcil \
 	      $(CILLY_FEATURES) \
 	      ciloptions feature_config cilly \
-                executeargs \
-                output \
-                executedebug \
                 utility \
                 immutableArray cilutility \
                 types \
+                executeargs \
+                output \
+                executedebug \
                 scfg \
                 to_string \
                 convert \
                 operation \
                 memOp \
-                report \
                 eval \
                 stpc \
                 stp \
@@ -107,7 +106,9 @@ CILLY_LIBRARY_MODULES = pretty inthash errormsg alpha trace stats util clist \
                 data_structure \
                 function \
                 driver \
-                executemain
+                report \
+                executemain \
+                progStats
 # ww: we don't want "main" in an external cil library (cil.cma),
 # otherwise every program that links against that library will get
 # main's argument checking and whatnot ...

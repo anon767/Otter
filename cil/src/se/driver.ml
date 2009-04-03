@@ -35,8 +35,67 @@ let dumpEdges (eS:EdgeSet.t) : unit =
 			eS
 ;;
 
+(** Return the first statement in the CFG which is relevant to
+		coverage, starting at [stmt] and continuing to successors.
+		Statements relevant to coverage are ifs, returns, gotos, and
+		nonempty lists of instrs. *)
+let rec nextCoverageRelevantStmt stmt =
+	match stmt.skind with
+			Instr [] -> (* Look past [Instr] with empty list *)
+				List.hd stmt.succs
+		|	Instr _ (* [Instr] with nonempty list *is* relevant *)
+		| Cil.Return _
+		| Goto _
+		|	If _ ->
+				stmt
+		| Block(block)
+		| Loop (block, _, _, _) ->
+				(* I think [block.bstmts] will never be empty here.
+					 See comment in exec_stmt about [Block] and [Loop]. *)
+				nextCoverageRelevantStmt (List.hd block.bstmts)
+		| _ -> failwith "Unhandled stmtkind"
+	
+(** Return a new exHist with
+		- statement coverage updated by the addition of [job.stmt]
+		- if [job.stmt] is an if, return, or goto, line coverage is updated
+		- if the second argument is [Some s], edge coverage is updated by
+			the addition of the edge from [job.stmt] to the first coverage-
+			relevant statement starting from [s]. *)
+let addStmtCoverage job nextStmtOpt =
+	{ job.exHist with
+			coveredLines =
+				if run_args.arg_line_coverage
+				then match job.stmt.skind with
+						If(_,_,_,loc)
+					| Cil.Return(_,loc)
+					| Goto(_,loc) ->
+							LineSet.add (loc.file,loc.line) job.exHist.coveredLines
+					| _ -> job.exHist.coveredLines
+				else LineSet.empty;
+			coveredStmts =
+				if run_args.arg_stmt_coverage
+				then IntSet.add job.stmt.sid job.exHist.coveredStmts
+				else IntSet.empty;
+			coveredEdges =
+				if run_args.arg_edge_coverage
+				then (
+					match nextStmtOpt with
+							Some nextStmt ->
+								EdgeSet.add (job.stmt, nextCoverageRelevantStmt nextStmt) job.exHist.coveredEdges
+						| _ -> job.exHist.coveredEdges
+				) else EdgeSet.empty;
+	}
+
+let addInstrCoverage job instr =
+	if run_args.arg_line_coverage
+	then (
+		let instrLoc = get_instrLoc instr in
+		{ job.exHist with coveredLines =
+				LineSet.add (instrLoc.file,instrLoc.line) job.exHist.coveredLines; }
+	) else job.exHist
+
 let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
-	let state,exHist,stmt = job.state,job.exHist,job.nextStmt in
+	let state,exHist,stmt = job.state,job.exHist,job.stmt in
 
 	let op_exps exps binop =
 		let rec impl exps =
@@ -84,7 +143,16 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 					| _   -> assert false
 				in
 				let state = MemOp.state__start_fcall state callContext fundec argvs in
-				Active (updateJob job state exHist (List.hd fundec.sallstmts))
+				(* Update the state, the next stmt to execute, and whether or
+					 not we're in a tracked function. *)
+				Active { job with
+									 state = state;
+									 stmt = List.hd fundec.sallstmts;
+									 inTrackedFn =
+										if job.inTrackedFn &&
+											 not (StringSet.mem fundec.svar.vname run_args.arg_fns)
+										then false
+										else job.inTrackedFn; }
 		| _ ->
 				try (
 					let nextExHist = ref exHist in
@@ -437,7 +505,9 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 							[h] -> h
 						| _ -> assert false
 				in
-				Active (updateJob job state_end !nextExHist theSuccessor)
+				(* Update state, the stmt to execute, and exHist (which may
+					 have gotten an extra bytesToVar mapping added to it). *)
+				Active { job with state = state_end; stmt = theSuccessor; exHist = !nextExHist; }
 
 				) with Function.Notification_Exit exit_code ->
 					(* If it was [Exit], there is no job to return *)
@@ -460,18 +530,30 @@ let exec_instr job =
 		Output.print_endline (To_string.instr instr)
 	in
 
-	(* Since we've used --domakeCFG, an [Instr] is a series of
+	let instr,tail = match job.instrList with i::tl -> i,tl | _ -> assert false in
+	let job = { job with instrList = tail; } in
+
+	(* Within instructions, we have to update line coverage (but not
+		 statement or edge coverage). *)
+	let job =
+		if job.inTrackedFn
+		then { job with exHist = addInstrCoverage job instr; }
+		else job
+	in
+
+	(* Since we've used the makeCFGFeature, an [Instr] is a series of
 	   [Set]s and [Asm]s, possibly terminated with a [Call]. *)
-	match job.instrList with
-		| (Set(lval,exp,loc) as instr)::tail ->
+	match instr with
+		| Set(lval,exp,loc) ->
 			printInstr instr;
 			let (block,offset) = Eval.lval job.state lval in
 			let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
 			let rv = Eval.rval job.state exp in
 			let state = MemOp.state__assign job.state (block,offset,size) rv in
-			let nextStmt = if tail = [] then List.hd job.nextStmt.succs else job.nextStmt in
-			Active { job with state = state; instrList = tail; nextStmt = nextStmt }
-		| [ Call(lvalopt, fexp, exps, loc) as instr ] ->
+			let nextStmt = if tail = [] then List.hd job.stmt.succs else job.stmt in
+			Active { job with state = state; stmt = nextStmt }
+		| Call(lvalopt, fexp, exps, loc) ->
+			assert (tail = []);
 			printInstr instr;
 			let destOpt =
 				match lvalopt with
@@ -481,25 +563,24 @@ let exec_instr job =
 							let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
 							Some (block,offset,size)
 			in
-			exec_instr_call
-				{ job with instrList = [] }
-				instr destOpt fexp exps loc
-		| (Asm _ as instr)::tail ->
+			exec_instr_call job instr destOpt fexp exps loc
+		| Asm _ ->
 			Output.set_mode Output.MSG_MUSTPRINT;
 			Output.print_endline "Warning: ASM unsupported";
 			printInstr instr;
-			Active { job with instrList = tail }
-		| _ ->
-			assert false
-
+			Active (if tail = [] (* Update job.stmt if this instr ends this stmt *)
+							then { job with stmt = List.hd job.stmt.succs }
+							else job)
 
 let exec_stmt job =
 	assert (job.instrList = []);
-	let state,exHist,stmt = job.state,job.exHist,job.nextStmt in
+	let state,stmt = job.state,job.stmt in
 
-	let nextExHist = { exHist with
-		edgesTaken = EdgeSet.add (job.prevStmt,stmt) exHist.edgesTaken;
-	} in
+	let nextExHist nextStmtOpt =
+		if job.inTrackedFn
+		then addStmtCoverage job nextStmtOpt
+		else job.exHist
+	in
 
 	if !Output.runningJobId <> job.jid then (
 		Output.set_mode Output.MSG_REG;
@@ -513,10 +594,16 @@ let exec_stmt job =
 	Output.print_endline (To_string.stmt stmt);
 	match stmt.skind with
 		| Instr [] ->
-			Active (updateJob job state nextExHist (List.hd stmt.succs))
+			(* Coverage ignores [Instr]s with empty lists, so we don't update exHist in this case *)
+			Active { job with stmt = List.hd stmt.succs; }
 		| Instr (instrs) ->
-			let job = updateJob job state nextExHist stmt in
-			Active { job with instrList = instrs }
+			(* Since we aren't tracking function call edges for purposes of
+				 coverage, we can udpate the execution history here, at the
+				 beginning of a list of [Instr]s. Within the list, we'll only
+				 need to update the line coverage (but not statement or edge
+				 coverage). *)
+			let succOpt = match stmt.succs with [succ] -> Some succ | _ -> None in
+			Active { job with instrList = instrs; exHist = nextExHist succOpt; }
 		| Cil.Return (expopt, loc) ->
 				begin
 					match state.callContexts with
@@ -526,31 +613,43 @@ let exec_stmt job =
 								Output.set_mode Output.MSG_REG;
 								Output.print_endline
 									("Path condition:\n" ^
-										 (To_string.humanReadablePc state.path_condition exHist.bytesToVars));
+										 (To_string.humanReadablePc state.path_condition job.exHist.bytesToVars));
 								begin match expopt with
 									| None ->
 										Complete (Types.Return
-											(None, { result_state = state; result_history = nextExHist; })) 
+											(None, { result_state = state; result_history = nextExHist None; })) 
 									| Some exp ->
 										Complete (Types.Return
 											(Some (Eval.rval state exp),
-											 { result_state = state; result_history = nextExHist; }))
+											 { result_state = state; result_history = nextExHist None; }))
 								end
 						| (Source (destOpt,_,nextStmt))::_ ->
 								let state2 =
 									match expopt, destOpt with
-										| None, _ (* If we are not returning a value *)
-										| _, None -> (* or if we ignore the result of the call *)
-												MemOp.state__end_fcall state (* Just end the call *)
 										| Some exp, Some dest ->
 												let rv = Eval.rval state exp in
 												let state = MemOp.state__end_fcall state in
 												MemOp.state__assign state dest rv
+										| _, _ ->
+												(* If we are not returning a value, or if we
+													 ignore the result, just end the call *)
+												MemOp.state__end_fcall state
 								in
 								(* varinfo_to_block: memory_block VarinfoMap.t; *)
 								let pop_frame = List.hd state.locals in
 								let state2' = VarinfoMap.fold (fun varinfo block s -> MemOp.state__remove_block s block) pop_frame.varinfo_to_block state2 in 
-								Active (updateJob job state2' nextExHist nextStmt)
+								(* Update the state and the stmt *)
+								let job' = { job with state = state2'; stmt = nextStmt; } in
+								let job'' =
+									if job.inTrackedFn
+									then { job' with exHist = nextExHist None; } (* We don't currently track returns as edges for purposes of coverage *)
+									else if StringSet.mem (List.hd state2'.callstack).svar.vname run_args.arg_fns
+									(* If we are leaving a nontracked function and we
+										 have to start tracking coverage again. *)
+									then { job' with inTrackedFn = true; }
+									else job'
+								in
+								Active job''
 						| (NoReturn _)::_ ->
 								failwith "Return from @noreturn function"
 						| [] ->
@@ -558,7 +657,7 @@ let exec_stmt job =
 								assert false
 				end
 		| Goto (stmtref, loc) ->
-				Active (updateJob job state nextExHist !stmtref)
+				Active { job with stmt = !stmtref; exHist = nextExHist (Some !stmtref); }
 		| If (exp, block1, block2, loc) ->
 				begin
 				(* try a branch *)
@@ -567,22 +666,22 @@ let exec_stmt job =
 							| Some(pc) -> MemOp.state__add_path_condition state pc
 							| None -> state
 						in
-						if run_args.arg_branch_coverage then
+						if run_args.arg_edge_coverage && job.inTrackedFn then
 							begin
 								let which = (if block == block1 then fst else snd) in
 								try
 									let pcSet_ref = which (Hashtbl.find branches_taken (exp,loc)) in
 									(* Add the path condition to the list of ways we take this branch *)
-									pcSet_ref := PcHistSet.add (state.path_condition,nextExHist) !pcSet_ref
+									pcSet_ref := PcHistSet.add (state.path_condition,job.exHist) !pcSet_ref
 								with Not_found ->
 									(* We haven't hit this conditional before. Initialize its entry in
-										 the branch coverage table with the current path condition (and
+										 the edge coverage table with the current path condition (and
 										 an empty set for the other direction of the branch). *)
 									Hashtbl.add
 										branches_taken
 										(exp,loc)
 										(let res = (ref PcHistSet.empty, ref PcHistSet.empty) in
-										which res := PcHistSet.singleton (state.path_condition,nextExHist);
+										which res := PcHistSet.singleton (state.path_condition,job.exHist);
 										res)
 							end;
 						let nextStmt = match stmt.succs with
@@ -616,13 +715,15 @@ let exec_stmt job =
 						begin
 							Output.print_endline "True";
 							let nextState,nextStmt = try_branch None block1 in
-							Active (updateJob job nextState nextExHist nextStmt)
+							let job' = { job with state = nextState; stmt = nextStmt; } in
+							Active { job' with exHist = nextExHist (Some nextStmt); }
 						end
 					else if truth == Stp.False then
 						begin
 							Output.print_endline "False";
 							let nextState,nextStmt = try_branch None block2 in
-							Active (updateJob job nextState nextExHist nextStmt)
+							let job' = { job with state = nextState; stmt = nextStmt; } in
+							Active { job' with exHist = nextExHist (Some nextStmt); }
 						end
 					else
 						begin
@@ -630,34 +731,46 @@ let exec_stmt job =
 							let nextStateT,nextStmtT = try_branch (Some rv) block1 in
 							let nextStateF,nextStmtF = try_branch (Some (logicalNegateBytes rv)) block2 in
 
-							let nextMergePts = (* Add in the new merge points *)
-								if run_args.arg_merge_branches then (
-									List.fold_left (fun set n -> IntSet.add n set) job.mergePoints
-										begin match Inthash.find_all ifToJoinPointsHash stmt.sid with
-											| [] ->
-												begin match state.callContexts with
-													| (Source (_,_,nextStmt))::_ ->
-														print_endline "Will merge upon function return";
-														[nextStmt.sid]
-													| _ ->
-														[]
-													end
-											| x -> x
-										end
-								) else (
-									IntSet.empty
+							let job' = 
+								if run_args.arg_merge_paths then (
+									(* Add in the new merge points *)
+									{ job with mergePoints =
+											List.fold_left (fun set n -> IntSet.add n set) job.mergePoints
+												begin match Inthash.find_all ifToJoinPointsHash stmt.sid with
+													| [] ->
+															begin match state.callContexts with
+																| (Source (_,_,nextStmt))::_ ->
+																		print_endline "Will merge upon function return";
+																		[nextStmt.sid]
+																| _ ->
+																		[]
+															end
+													| x -> x
+												end; }
+								) else ( (* We aren't merging paths, so job' is just job *)
+									job
 								)
 							in
-							let (j1,j2) =
-								forkJob job nextStateT nextStateF nextStmtT nextStmtF nextExHist nextMergePts
-							in
+							(* Create two jobs, one for each branch. Since we
+								 continue executing the false branch immediately, let
+								 that job inherit the old jid. Give the true job a new
+								 jid. *)
+							let trueJob = { job' with
+																state = nextStateT;
+																stmt = nextStmtT;
+																exHist = nextExHist (Some nextStmtT);
+														 		jid = Utility.next_id Output.jidCounter; } in
+							let falseJob = { job' with
+																 state = nextStateF;
+																 stmt = nextStmtF;
+																 exHist = nextExHist (Some nextStmtF); } in
 							Output.set_mode Output.MSG_MUSTPRINT;
 							Output.printf "Branching on %s at %s.
 Job %d is the true branch and job %d is the false branch.\n\n"
 								 (To_string.exp exp)
 								 (To_string.location loc)
-								 j1.jid j2.jid;
-							Fork (j1, j2)
+								 trueJob.jid falseJob.jid;
+							Fork (trueJob, falseJob)
 						end
 				end
 		| Block(block)
@@ -666,7 +779,9 @@ Job %d is the true branch and job %d is the false branch.\n\n"
 					 Cil.succpred_stmt.)
 					 This is not true for [Block]s, but it *does* seem to be
 					 true for [Block]s which are not under [If]s, so we're okay. *)
-				Active (updateJob job state nextExHist (List.hd block.bstmts))
+				(* Coverage ignores [Block]s and [Loop]s. Also, state doesn't
+					 change, so we only update the next statement to execute. *)
+				Active { job with stmt = List.hd block.bstmts; }
 		| _ -> failwith "Not implemented yet"
 ;;
 
@@ -752,10 +867,10 @@ let atSameProgramPoint job1 job2 =
 	and state2 = job2.state in
 	(* I'm trying to be conservative here by using physical equality
 		 because I haven't quite figured out what 'being at the same
-		 program point' means. But I'm pretty sure that if these are
-		 physically equal, then they really are at the same program point,
-		 whatever that means. *)
-	if job1.nextStmt == job2.nextStmt &&
+		 program point' means. But I'm pretty sure that if these 3 things
+		 are physically equal, then they really are at the same program
+		 point, whatever that's supposed to mean. *)
+	if job1.stmt == job2.stmt && job1.instrList == job2.instrList &&
 		state1.callContexts == state2.callContexts
 	then (
 		assert
@@ -800,8 +915,8 @@ exception TooDifferent
 let mergeJobs job ((job_queue, merge_set) as job_pool) =
 	try
 		(* First test to see if the job should pause and/or merge *)
-		if run_args.arg_merge_branches
-		   && IntSet.mem job.nextStmt.sid job.mergePoints then begin
+		if run_args.arg_merge_paths
+		   && IntSet.mem job.stmt.sid job.mergePoints then begin
 		JobSet.iter
 			(fun j ->
 				if atSameProgramPoint job j then begin
@@ -905,24 +1020,29 @@ let mergeJobs job ((job_queue, merge_set) as job_pool) =
 			(Active job, job_pool)
 		end;
 	with MergeDone (oldJob,mergedState) ->
-		(* This is a pretty stupid way of getting complete coverage with
+		(* This is a pretty stupid way of getting complete coverage information with
 			 merging, but it's something. It only credits a merged execution
-			 with the edges that *both* sides covered. Edges covered by only
+			 with the parts that *both* jobs covered. Things covered by only
 			 one side are attributed to truncated executions that end at the
 			 join point. *)
-		let jobOnlyEdges = EdgeSet.diff
-			(EdgeSet.add (job.prevStmt,job.nextStmt) job.exHist.edgesTaken)
-			oldJob.exHist.edgesTaken
-		and oldJobOnlyEdges = EdgeSet.diff
-			(* job.nextStmt == oldJob.nextStmt because we are at the same program point *)
-			(EdgeSet.add (oldJob.prevStmt,job.nextStmt) oldJob.exHist.edgesTaken)
-			job.exHist.edgesTaken
+		let jobOnlyLines = LineSet.diff job.exHist.coveredLines oldJob.exHist.coveredLines
+		and oldJobOnlyLines = LineSet.diff oldJob.exHist.coveredLines job.exHist.coveredLines
+		and jobOnlyStmts = IntSet.diff job.exHist.coveredStmts oldJob.exHist.coveredStmts
+		and oldJobOnlyStmts = IntSet.diff oldJob.exHist.coveredStmts job.exHist.coveredStmts
+		and jobOnlyEdges = EdgeSet.diff job.exHist.coveredEdges oldJob.exHist.coveredEdges
+		and oldJobOnlyEdges = EdgeSet.diff oldJob.exHist.coveredEdges job.exHist.coveredEdges
 		in
 		let completed = Complete (Types.Truncated
 			({ result_state = job.state;
-			   result_history = {job.exHist with edgesTaken = jobOnlyEdges } },
+			   result_history = {job.exHist with
+														 coveredLines = jobOnlyLines;
+														 coveredStmts = jobOnlyStmts;
+														 coveredEdges = jobOnlyEdges; } },
 			 { result_state = oldJob.state;
-			   result_history = {oldJob.exHist with edgesTaken = oldJobOnlyEdges } }))
+			   result_history = {oldJob.exHist with
+														 coveredLines = oldJobOnlyLines;
+														 coveredStmts = oldJobOnlyStmts;
+														 coveredEdges = oldJobOnlyEdges; } }))
 		in
 		(* Remove the old job and add the merged job *)
 		let merged_jobs = JobSet.add
@@ -930,7 +1050,9 @@ let mergeJobs job ((job_queue, merge_set) as job_pool) =
 					state = mergedState;
 					exHist =
 					{ job.exHist with
-							edgesTaken = EdgeSet.inter job.exHist.edgesTaken oldJob.exHist.edgesTaken;
+							coveredLines = LineSet.inter job.exHist.coveredLines oldJob.exHist.coveredLines;
+							coveredStmts = IntSet.inter job.exHist.coveredStmts oldJob.exHist.coveredStmts;
+							coveredEdges = EdgeSet.inter job.exHist.coveredEdges oldJob.exHist.coveredEdges;
 					};
 					mergePoints = IntSet.union job.mergePoints oldJob.mergePoints;
 					jid = min job.jid oldJob.jid; (* Keep the lower jid, just because *)
@@ -980,7 +1102,7 @@ let main_loop job =
 						begin match completion with
 							| Types.Abandoned (msg, loc, { result_state=state; result_history=hist }) ->
 								Output.set_mode Output.MSG_MUSTPRINT;
-								Output.printf "Error \"%s\" occurs at %s\nAbandoning branch\n"
+								Output.printf "Error \"%s\" occurs at %s\nAbandoning path\n"
 									msg (To_string.location loc);
 								Output.set_mode Output.MSG_REG;
 								Output.printf "Path condition: %s\n"

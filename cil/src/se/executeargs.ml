@@ -57,10 +57,16 @@ type run_args =
 		mutable arg_run_regression : bool;
 		mutable arg_cmdline_argvs : string list;
 (*		mutable arg_symbolic_extern_fns : bool;*)
-		mutable arg_branch_coverage : bool;
+		mutable arg_edge_coverage : bool;
+		mutable arg_stmt_coverage : bool;
+		mutable arg_line_coverage : bool;
+		mutable arg_total_lines : int;
+		mutable arg_total_stmts : int;
+		mutable arg_total_edges : int;
+		mutable arg_fns : Types.StringSet.t;
 		mutable arg_timeout : int;
 		(** How many seconds to allow the executor to run. *)
-		mutable arg_merge_branches : bool;
+		mutable arg_merge_paths : bool;
 	};;
 
 let run_args = 
@@ -68,7 +74,31 @@ let run_args =
 		arg_run_regression = false;
 		arg_cmdline_argvs = [];
 (*		arg_symbolic_extern_fns = false;*)
-		arg_branch_coverage = false;
+		arg_edge_coverage = false;
+		arg_stmt_coverage = false;
+		arg_line_coverage = false;
+		arg_total_lines = -1;
+		arg_total_stmts = -1;
+		arg_total_edges = -1;
+		arg_fns = Types.StringSet.empty;
 		arg_timeout = 0;
-		arg_merge_branches = false;
+		arg_merge_paths = false;
 	} ;;
+
+let readCovStatsFromFile filename =
+	let inChan = open_in filename in
+	Scanf.sscanf (input_line inChan) "%d lines"
+		(fun n -> run_args.arg_total_lines <- n);
+	Scanf.sscanf (input_line inChan) "%d locations"
+		ignore;
+	Scanf.sscanf (input_line inChan) "%d statements"
+		(fun n -> run_args.arg_total_stmts <- n);
+	Scanf.sscanf (input_line inChan) "%d edges"
+		(fun n -> run_args.arg_total_edges <- n);
+	Scanf.sscanf (input_line inChan) "%d functions:"
+		ignore;
+	try
+		while true do
+			run_args.arg_fns <- Types.StringSet.add (input_line inChan) run_args.arg_fns
+		done
+	with End_of_file -> ()
