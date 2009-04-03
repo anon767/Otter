@@ -1,7 +1,7 @@
 # Remember to change the DIRs for your system!
 DOT=.
 
-VERSION=ngircd-0.12.0-set
+VERSION=ngircd-0.12.0
 NGIRCD_DIR=$(DOT)/$(VERSION)
 
 CILLY_OPT= --merge \
