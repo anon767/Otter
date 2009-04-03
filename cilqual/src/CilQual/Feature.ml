@@ -107,9 +107,9 @@ let doit file =
         end (List.rev timing);
         Format.eprintf "@[<v2>Constraint graph:@\n\
                           Vertex count: %7d@\n\
-                          Edge count  : %7d (halved to account for backward edges)@]@\n"
+                          Edge count  : %7d@]@\n"
             (G.Constraints.nb_vertex constraints)
-            (G.Constraints.nb_edges constraints / 2);
+            (G.Constraints.nb_edges constraints);
         let gc = Gc.quick_stat () in
         Format.eprintf "@[<v2>Memory:@\n\
                           Allocated: %10.2fMiB@\n\
