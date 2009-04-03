@@ -21,7 +21,7 @@ CONFIG_OPT= \
 
 merge: 
 	make -C $(NGIRCD_DIR) AR="$(CILLY) --mode=AR"
-	cp $(NGIRCD_DIR)/src/ngircd/ngircd_comb.c $(VERSION).c
+	cp $(NGIRCD_DIR)/src/ngircd/ngircd_comb.c $(OSTYPE)/$(VERSION).c
 
 conf: 
 	cd $(NGIRCD_DIR) && \

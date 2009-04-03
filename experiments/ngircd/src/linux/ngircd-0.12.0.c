@@ -445,7 +445,7 @@ typedef int __int32_t;
 /* compiler builtin: 
    int __builtin_strcmp(char const   * , char const   * ) ;  */
 #line 1 "ngircd.o"
-#pragma merger(0,"/tmp/cil-QUT1bfZI.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-GIi5e6Jj.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 140 "./../portab/portab.h"
 size_t strlcat(char *dst , char const   *src , size_t size ) ;
 #line 144
@@ -568,8 +568,6 @@ char Conf_PidFile[256] ;
 int Conf_OperCanMode ;
 #line 157
 unsigned int Conf_MaxNickLength ;
-#line 159
-void Conf_Init(void) ;
 #line 160
 int Conf_Rehash(void) ;
 #line 161
@@ -622,7 +620,9 @@ static void Fill_Version(void) ;
 static void Setup_FDStreams(void) ;
 #line 69
 static int NGIRCd_Init(int NGIRCd_NoDaemon ) ;
-#line 79 "ngircd.c"
+#line 82 "ngircd.c"
+void (*symtest_Conf_Init)()  ;
+#line 84 "ngircd.c"
 int main(int argc , char const   **argv ) 
 { int ok ;
   int configtest ;
@@ -666,375 +666,375 @@ int main(int argc , char const   **argv )
   unsigned int __cil_tmp___63 ;
 
   {
-#line 82
-  configtest = 0;
-#line 83
-  NGIRCd_NoDaemon = 0;
 #line 87
+  configtest = 0;
+#line 88
+  NGIRCd_NoDaemon = 0;
+#line 92
   umask(63U);
-#line 89
+#line 94
   NGIRCd_SignalRehash = 0;
-#line 89
+#line 94
   NGIRCd_SignalRestart = NGIRCd_SignalRehash;
-#line 89
+#line 94
   NGIRCd_SignalQuit = NGIRCd_SignalRestart;
-#line 90
+#line 95
   NGIRCd_Passive = 0;
-#line 97
+#line 103
   strlcpy(NGIRCd_ConfFile, "/usr/local/etc", sizeof(NGIRCd_ConfFile));
-#line 98
+#line 104
   strlcat(NGIRCd_ConfFile, "/ngircd.conf", sizeof(NGIRCd_ConfFile));
-#line 100
+#line 106
   Fill_Version();
-#line 103
+#line 109
   i = 1;
-#line 103
+#line 109
   while (i < argc) {
-#line 105
+#line 111
     ok = 0;
-#line 106
+#line 112
     if ((int const   )*(*(argv + i) + 0) == 45) {
-#line 106
+#line 112
       if ((int const   )*(*(argv + i) + 1) == 45) {
-#line 110
+#line 116
         if (0) {
-#line 110
+#line 116
           __s1_len = strlen(*(argv + i));
-#line 110
+#line 116
           __s2_len = strlen("--config");
-#line 110
+#line 116
           if (! ((unsigned int )((void const   *)(*(argv + i) + 1)) - (unsigned int )((void const   *)*(argv + i)) == 1U)) {
             goto _L___0;
           } else {
-#line 110
+#line 116
             if (__s1_len >= 4U) {
               _L___0: /* CIL Label */ 
-#line 110
+#line 116
               if (! ((unsigned int )((void const   *)("--config" + 1)) - (unsigned int )((void const   *)"--config") == 1U)) {
-#line 110
+#line 116
                 __cil_tmp___8 = 1;
               } else {
-#line 110
+#line 116
                 if (__s2_len >= 4U) {
-#line 110
+#line 116
                   __cil_tmp___8 = 1;
                 } else {
-#line 110
+#line 116
                   __cil_tmp___8 = 0;
                 }
               }
             } else {
-#line 110
+#line 116
               __cil_tmp___8 = 0;
             }
           }
-#line 110
+#line 116
           if (__cil_tmp___8) {
-#line 110
+#line 116
             __cil_tmp___4 = __builtin_strcmp(*(argv + i), "--config");
           } else {
-#line 110
+#line 116
             __cil_tmp___7 = __builtin_strcmp(*(argv + i), "--config");
-#line 110
+#line 116
             __cil_tmp___4 = __cil_tmp___7;
           }
         } else {
-#line 110
+#line 116
           __cil_tmp___7 = __builtin_strcmp(*(argv + i), "--config");
-#line 110
+#line 116
           __cil_tmp___4 = __cil_tmp___7;
         }
-#line 110
+#line 116
         if (__cil_tmp___4 == 0) {
-#line 112
+#line 118
           if (i + 1 < argc) {
-#line 115
+#line 121
             strlcpy(NGIRCd_ConfFile, *(argv + (i + 1)), sizeof(NGIRCd_ConfFile));
-#line 118
+#line 124
             i ++;
-#line 118
+#line 124
             ok = 1;
           }
         }
-#line 121
+#line 127
         if (0) {
-#line 121
+#line 127
           __s1_len___0 = strlen(*(argv + i));
-#line 121
+#line 127
           __s2_len___0 = strlen("--configtest");
-#line 121
+#line 127
           if (! ((unsigned int )((void const   *)(*(argv + i) + 1)) - (unsigned int )((void const   *)*(argv + i)) == 1U)) {
             goto _L___2;
           } else {
-#line 121
+#line 127
             if (__s1_len___0 >= 4U) {
               _L___2: /* CIL Label */ 
-#line 121
+#line 127
               if (! ((unsigned int )((void const   *)("--configtest" + 1)) - (unsigned int )((void const   *)"--configtest") == 1U)) {
-#line 121
+#line 127
                 __cil_tmp___18 = 1;
               } else {
-#line 121
+#line 127
                 if (__s2_len___0 >= 4U) {
-#line 121
+#line 127
                   __cil_tmp___18 = 1;
                 } else {
-#line 121
+#line 127
                   __cil_tmp___18 = 0;
                 }
               }
             } else {
-#line 121
+#line 127
               __cil_tmp___18 = 0;
             }
           }
-#line 121
+#line 127
           if (__cil_tmp___18) {
-#line 121
+#line 127
             __cil_tmp___14 = __builtin_strcmp(*(argv + i), "--configtest");
           } else {
-#line 121
+#line 127
             __cil_tmp___17 = __builtin_strcmp(*(argv + i), "--configtest");
-#line 121
+#line 127
             __cil_tmp___14 = __cil_tmp___17;
           }
         } else {
-#line 121
+#line 127
           __cil_tmp___17 = __builtin_strcmp(*(argv + i), "--configtest");
-#line 121
+#line 127
           __cil_tmp___14 = __cil_tmp___17;
         }
-#line 121
+#line 127
         if (__cil_tmp___14 == 0) {
-#line 123
+#line 129
           configtest = 1;
-#line 124
+#line 130
           ok = 1;
         }
-#line 133
+#line 139
         if (0) {
-#line 133
+#line 139
           __s1_len___1 = strlen(*(argv + i));
-#line 133
+#line 139
           __s2_len___1 = strlen("--help");
-#line 133
+#line 139
           if (! ((unsigned int )((void const   *)(*(argv + i) + 1)) - (unsigned int )((void const   *)*(argv + i)) == 1U)) {
             goto _L___4;
           } else {
-#line 133
+#line 139
             if (__s1_len___1 >= 4U) {
               _L___4: /* CIL Label */ 
-#line 133
+#line 139
               if (! ((unsigned int )((void const   *)("--help" + 1)) - (unsigned int )((void const   *)"--help") == 1U)) {
-#line 133
+#line 139
                 __cil_tmp___28 = 1;
               } else {
-#line 133
+#line 139
                 if (__s2_len___1 >= 4U) {
-#line 133
+#line 139
                   __cil_tmp___28 = 1;
                 } else {
-#line 133
+#line 139
                   __cil_tmp___28 = 0;
                 }
               }
             } else {
-#line 133
+#line 139
               __cil_tmp___28 = 0;
             }
           }
-#line 133
+#line 139
           if (__cil_tmp___28) {
-#line 133
+#line 139
             __cil_tmp___24 = __builtin_strcmp(*(argv + i), "--help");
           } else {
-#line 133
+#line 139
             __cil_tmp___27 = __builtin_strcmp(*(argv + i), "--help");
-#line 133
+#line 139
             __cil_tmp___24 = __cil_tmp___27;
           }
         } else {
-#line 133
+#line 139
           __cil_tmp___27 = __builtin_strcmp(*(argv + i), "--help");
-#line 133
+#line 139
           __cil_tmp___24 = __cil_tmp___27;
         }
-#line 133
+#line 139
         if (__cil_tmp___24 == 0) {
-#line 135
+#line 141
           Show_Version();
-#line 136
+#line 142
           puts("");
-#line 136
+#line 142
           Show_Help();
-#line 136
+#line 142
           puts("");
-#line 137
+#line 143
           exit(1);
         }
-#line 139
+#line 145
         if (0) {
-#line 139
+#line 145
           __s1_len___2 = strlen(*(argv + i));
-#line 139
+#line 145
           __s2_len___2 = strlen("--nodaemon");
-#line 139
+#line 145
           if (! ((unsigned int )((void const   *)(*(argv + i) + 1)) - (unsigned int )((void const   *)*(argv + i)) == 1U)) {
             goto _L___6;
           } else {
-#line 139
+#line 145
             if (__s1_len___2 >= 4U) {
               _L___6: /* CIL Label */ 
-#line 139
+#line 145
               if (! ((unsigned int )((void const   *)("--nodaemon" + 1)) - (unsigned int )((void const   *)"--nodaemon") == 1U)) {
-#line 139
+#line 145
                 __cil_tmp___38 = 1;
               } else {
-#line 139
+#line 145
                 if (__s2_len___2 >= 4U) {
-#line 139
+#line 145
                   __cil_tmp___38 = 1;
                 } else {
-#line 139
+#line 145
                   __cil_tmp___38 = 0;
                 }
               }
             } else {
-#line 139
+#line 145
               __cil_tmp___38 = 0;
             }
           }
-#line 139
+#line 145
           if (__cil_tmp___38) {
-#line 139
+#line 145
             __cil_tmp___34 = __builtin_strcmp(*(argv + i), "--nodaemon");
           } else {
-#line 139
+#line 145
             __cil_tmp___37 = __builtin_strcmp(*(argv + i), "--nodaemon");
-#line 139
+#line 145
             __cil_tmp___34 = __cil_tmp___37;
           }
         } else {
-#line 139
+#line 145
           __cil_tmp___37 = __builtin_strcmp(*(argv + i), "--nodaemon");
-#line 139
+#line 145
           __cil_tmp___34 = __cil_tmp___37;
         }
-#line 139
+#line 145
         if (__cil_tmp___34 == 0) {
-#line 141
+#line 147
           NGIRCd_NoDaemon = 1;
-#line 142
+#line 148
           ok = 1;
         }
-#line 144
+#line 150
         if (0) {
-#line 144
+#line 150
           __s1_len___3 = strlen(*(argv + i));
-#line 144
+#line 150
           __s2_len___3 = strlen("--passive");
-#line 144
+#line 150
           if (! ((unsigned int )((void const   *)(*(argv + i) + 1)) - (unsigned int )((void const   *)*(argv + i)) == 1U)) {
             goto _L___8;
           } else {
-#line 144
+#line 150
             if (__s1_len___3 >= 4U) {
               _L___8: /* CIL Label */ 
-#line 144
+#line 150
               if (! ((unsigned int )((void const   *)("--passive" + 1)) - (unsigned int )((void const   *)"--passive") == 1U)) {
-#line 144
+#line 150
                 __cil_tmp___48 = 1;
               } else {
-#line 144
+#line 150
                 if (__s2_len___3 >= 4U) {
-#line 144
+#line 150
                   __cil_tmp___48 = 1;
                 } else {
-#line 144
+#line 150
                   __cil_tmp___48 = 0;
                 }
               }
             } else {
-#line 144
+#line 150
               __cil_tmp___48 = 0;
             }
           }
-#line 144
+#line 150
           if (__cil_tmp___48) {
-#line 144
+#line 150
             __cil_tmp___44 = __builtin_strcmp(*(argv + i), "--passive");
           } else {
-#line 144
+#line 150
             __cil_tmp___47 = __builtin_strcmp(*(argv + i), "--passive");
-#line 144
+#line 150
             __cil_tmp___44 = __cil_tmp___47;
           }
         } else {
-#line 144
+#line 150
           __cil_tmp___47 = __builtin_strcmp(*(argv + i), "--passive");
-#line 144
+#line 150
           __cil_tmp___44 = __cil_tmp___47;
         }
-#line 144
+#line 150
         if (__cil_tmp___44 == 0) {
-#line 146
+#line 152
           NGIRCd_Passive = 1;
-#line 147
+#line 153
           ok = 1;
         }
-#line 156
+#line 162
         if (0) {
-#line 156
+#line 162
           __s1_len___4 = strlen(*(argv + i));
-#line 156
+#line 162
           __s2_len___4 = strlen("--version");
-#line 156
+#line 162
           if (! ((unsigned int )((void const   *)(*(argv + i) + 1)) - (unsigned int )((void const   *)*(argv + i)) == 1U)) {
             goto _L___10;
           } else {
-#line 156
+#line 162
             if (__s1_len___4 >= 4U) {
               _L___10: /* CIL Label */ 
-#line 156
+#line 162
               if (! ((unsigned int )((void const   *)("--version" + 1)) - (unsigned int )((void const   *)"--version") == 1U)) {
-#line 156
+#line 162
                 __cil_tmp___58 = 1;
               } else {
-#line 156
+#line 162
                 if (__s2_len___4 >= 4U) {
-#line 156
+#line 162
                   __cil_tmp___58 = 1;
                 } else {
-#line 156
+#line 162
                   __cil_tmp___58 = 0;
                 }
               }
             } else {
-#line 156
+#line 162
               __cil_tmp___58 = 0;
             }
           }
-#line 156
+#line 162
           if (__cil_tmp___58) {
-#line 156
+#line 162
             __cil_tmp___54 = __builtin_strcmp(*(argv + i), "--version");
           } else {
-#line 156
+#line 162
             __cil_tmp___57 = __builtin_strcmp(*(argv + i), "--version");
-#line 156
+#line 162
             __cil_tmp___54 = __cil_tmp___57;
           }
         } else {
-#line 156
+#line 162
           __cil_tmp___57 = __builtin_strcmp(*(argv + i), "--version");
-#line 156
+#line 162
           __cil_tmp___54 = __cil_tmp___57;
         }
-#line 156
+#line 162
         if (__cil_tmp___54 == 0) {
-#line 158
+#line 164
           Show_Version();
-#line 159
+#line 165
           exit(1);
         }
       } else {
@@ -1042,222 +1042,222 @@ int main(int argc , char const   **argv )
       }
     } else {
       _L___11: /* CIL Label */ 
-#line 162
+#line 168
       if ((int const   )*(*(argv + i) + 0) == 45) {
-#line 162
+#line 168
         if ((int const   )*(*(argv + i) + 1) != 45) {
-#line 165
+#line 171
           n = 1U;
-#line 165
+#line 171
           while (1) {
-#line 165
+#line 171
             __cil_tmp___59 = strlen(*(argv + i));
-#line 165
+#line 171
             if (! (n < __cil_tmp___59)) {
-#line 165
+#line 171
               break;
             }
-#line 167
+#line 173
             ok = 0;
-#line 175
+#line 181
             if ((int const   )*(*(argv + i) + n) == 102) {
-#line 177
-              if (! *(*(argv + i) + (n + 1U))) {
-#line 177
-                if (i + 1 < argc) {
-#line 180
-                  strlcpy(NGIRCd_ConfFile, *(argv + (i + 1)), sizeof(NGIRCd_ConfFile));
 #line 183
+              if (! *(*(argv + i) + (n + 1U))) {
+#line 183
+                if (i + 1 < argc) {
+#line 186
+                  strlcpy(NGIRCd_ConfFile, *(argv + (i + 1)), sizeof(NGIRCd_ConfFile));
+#line 189
                   i ++;
-#line 184
+#line 190
                   n = strlen(*(argv + i));
-#line 185
+#line 191
                   ok = 1;
                 }
               }
             }
-#line 188
+#line 194
             if ((int const   )*(*(argv + i) + n) == 110) {
-#line 190
-              NGIRCd_NoDaemon = 1;
-#line 191
-              ok = 1;
-            }
-#line 193
-            if ((int const   )*(*(argv + i) + n) == 112) {
-#line 195
-              NGIRCd_Passive = 1;
 #line 196
+              NGIRCd_NoDaemon = 1;
+#line 197
               ok = 1;
             }
-#line 205
-            if ((int const   )*(*(argv + i) + n) == 116) {
-#line 207
-              configtest = 1;
-#line 208
+#line 199
+            if ((int const   )*(*(argv + i) + n) == 112) {
+#line 201
+              NGIRCd_Passive = 1;
+#line 202
               ok = 1;
             }
 #line 211
-            if (! ok) {
+            if ((int const   )*(*(argv + i) + n) == 116) {
 #line 213
+              configtest = 1;
+#line 214
+              ok = 1;
+            }
+#line 217
+            if (! ok) {
+#line 219
               printf((char const   * __restrict  )"%s: invalid option \"-%c\"!\n",
                      "ngircd", *(*(argv + i) + n));
-#line 214
+#line 220
               printf((char const   * __restrict  )"Try \"%s --help\" for more information.\n",
                      "ngircd");
-#line 215
+#line 221
               exit(1);
             }
-#line 165
+#line 171
             n ++;
           }
         }
       }
     }
-#line 220
+#line 226
     if (! ok) {
-#line 222
+#line 228
       printf((char const   * __restrict  )"%s: invalid option \"%s\"!\n", "ngircd",
              *(argv + i));
-#line 223
+#line 229
       printf((char const   * __restrict  )"Try \"%s --help\" for more information.\n",
              "ngircd");
-#line 224
+#line 230
       exit(1);
     }
-#line 103
+#line 109
     i ++;
   }
-#line 229
+#line 235
   NGIRCd_DebugLevel[0] = (char )'\000';
-#line 242
+#line 248
   if (configtest) {
-#line 244
+#line 250
     Show_Version();
-#line 244
+#line 250
     puts("");
-#line 245
+#line 251
     __cil_tmp___60 = Conf_Test();
-#line 245
+#line 251
     exit(__cil_tmp___60);
   }
-#line 248
+#line 254
   while (! NGIRCd_SignalQuit) {
-#line 251
+#line 257
     NGIRCd_Start = time((time_t *)((void *)0));
-#line 252
+#line 258
     __cil_tmp___61 = localtime((time_t const   *)(& NGIRCd_Start));
-#line 252
+#line 258
     strftime((char * __restrict  )(NGIRCd_StartStr), 64U, (char const   * __restrict  )"%a %b %d %Y at %H:%M:%S (%Z)",
              (struct tm  const  * __restrict  )__cil_tmp___61);
-#line 254
-    NGIRCd_SignalRehash = 0;
-#line 255
-    NGIRCd_SignalRestart = 0;
-#line 256
-    NGIRCd_SignalQuit = 0;
-#line 259
-    Log_Init(! NGIRCd_NoDaemon);
 #line 260
-    Conf_Init();
-#line 264
-    __cil_tmp___62 = NGIRCd_Init(NGIRCd_NoDaemon);
-#line 264
-    if (! __cil_tmp___62) {
+    NGIRCd_SignalRehash = 0;
+#line 261
+    NGIRCd_SignalRestart = 0;
+#line 262
+    NGIRCd_SignalQuit = 0;
 #line 265
+    Log_Init(! NGIRCd_NoDaemon);
+#line 269
+    (*symtest_Conf_Init)();
+#line 274
+    __cil_tmp___62 = NGIRCd_Init(NGIRCd_NoDaemon);
+#line 274
+    if (! __cil_tmp___62) {
+#line 275
       Log(1, "Fatal: Initialization failed");
-#line 266
+#line 276
       exit(1);
     }
-#line 271
+#line 281
     Channel_Init();
-#line 272
+#line 282
     Client_Init();
-#line 276
+#line 286
     Conn_Init();
-#line 285
+#line 295
     Initialize_Signal_Handler();
-#line 291
+#line 301
     snprintf((char * __restrict  )(NGIRCd_ProtoID), sizeof(NGIRCd_ProtoID), (char const   * __restrict  )"%s%s %s|%s:%s",
              "0210", "-IRC+", "ngircd", "0.12.0", "CHL");
-#line 295
+#line 305
     if (Conf_OperCanMode) {
-#line 295
+#line 305
       strcat((char * __restrict  )(NGIRCd_ProtoID), (char const   * __restrict  )"o");
     }
-#line 299
+#line 309
     strlcat(NGIRCd_ProtoID, " P", sizeof(NGIRCd_ProtoID));
-#line 303
-    Log(7, "Protocol and server ID is \"%s\".", NGIRCd_ProtoID);
-#line 306
-    Channel_InitPredefined();
-#line 309
-    __cil_tmp___63 = Conn_InitListeners();
-#line 309
-    if (__cil_tmp___63 < 1U) {
-#line 311
-      Log(1, "Server isn\'t listening on a single port!");
-#line 312
-      Log(1, "%s exiting due to fatal errors!", "ngircd");
 #line 313
+    Log(7, "Protocol and server ID is \"%s\".", NGIRCd_ProtoID);
+#line 316
+    Channel_InitPredefined();
+#line 319
+    __cil_tmp___63 = Conn_InitListeners();
+#line 319
+    if (__cil_tmp___63 < 1U) {
+#line 321
+      Log(1, "Server isn\'t listening on a single port!");
+#line 322
+      Log(1, "%s exiting due to fatal errors!", "ngircd");
+#line 323
       Pidfile_Delete();
-#line 314
+#line 324
       exit(1);
     }
-#line 318
+#line 328
     Conn_Handler();
-#line 321
+#line 331
     Conn_Exit();
-#line 325
+#line 335
     Client_Exit();
-#line 326
+#line 336
     Channel_Exit();
-#line 327
+#line 337
     Log_Exit();
   }
-#line 329
+#line 339
   Pidfile_Delete();
-#line 331
+#line 341
   return (0);
 }
 }
-#line 341 "ngircd.c"
+#line 351 "ngircd.c"
 static void Fill_Version(void) 
 { 
 
   {
-#line 344
+#line 354
   NGIRCd_VersionAddition[0] = (char )'\000';
-#line 392
+#line 402
   if (NGIRCd_VersionAddition[0]) {
-#line 393
+#line 403
     strlcat(NGIRCd_VersionAddition, "+", sizeof(NGIRCd_VersionAddition));
   }
-#line 395
+#line 405
   strlcat(NGIRCd_VersionAddition, "IRCPLUS", sizeof(NGIRCd_VersionAddition));
-#line 403
+#line 413
   if (NGIRCd_VersionAddition[0]) {
-#line 404
+#line 414
     strlcat(NGIRCd_VersionAddition, "-", sizeof(NGIRCd_VersionAddition));
   }
-#line 406
+#line 416
   strlcat(NGIRCd_VersionAddition, "i686", sizeof(NGIRCd_VersionAddition));
-#line 407
+#line 417
   strlcat(NGIRCd_VersionAddition, "/", sizeof(NGIRCd_VersionAddition));
-#line 408
+#line 418
   strlcat(NGIRCd_VersionAddition, "pc", sizeof(NGIRCd_VersionAddition));
-#line 409
+#line 419
   strlcat(NGIRCd_VersionAddition, "/", sizeof(NGIRCd_VersionAddition));
-#line 410
+#line 420
   strlcat(NGIRCd_VersionAddition, "linux-gnu", sizeof(NGIRCd_VersionAddition));
-#line 412
+#line 422
   snprintf((char * __restrict  )(NGIRCd_Version), sizeof(NGIRCd_Version), (char const   * __restrict  )"%s %s-%s",
            "ngircd", "0.12.0", NGIRCd_VersionAddition);
-#line 414
+#line 424
   return;
 }
 }
-#line 420 "ngircd.c"
+#line 430 "ngircd.c"
 void NGIRCd_Rehash(void) 
 { char old_name[64] ;
   unsigned int old_nicklen ;
@@ -1269,233 +1269,233 @@ void NGIRCd_Rehash(void)
   int __cil_tmp___9 ;
 
   {
-#line 426
+#line 436
   Log(1029, "Re-reading configuration NOW!");
-#line 427
+#line 437
   NGIRCd_SignalRehash = 0;
-#line 430
+#line 440
   strlcpy(old_name, (char const   *)(Conf_ServerName), sizeof(old_name));
-#line 431
+#line 441
   old_nicklen = Conf_MaxNickLength;
-#line 434
+#line 444
   __cil_tmp = Conf_Rehash();
-#line 434
+#line 444
   if (! __cil_tmp) {
-#line 435
+#line 445
     return;
   }
-#line 438
+#line 448
   Conn_ExitListeners();
-#line 442
+#line 452
   if (0) {
-#line 442
+#line 452
     __s1_len = strlen((char const   *)(old_name));
-#line 442
+#line 452
     __s2_len = strlen((char const   *)(Conf_ServerName));
-#line 442
+#line 452
     if (! ((unsigned int )((void const   *)(old_name + 1)) - (unsigned int )((void const   *)(old_name)) == 1U)) {
       goto _L___0;
     } else {
-#line 442
+#line 452
       if (__s1_len >= 4U) {
         _L___0: /* CIL Label */ 
-#line 442
+#line 452
         if (! ((unsigned int )((void const   *)(Conf_ServerName + 1)) - (unsigned int )((void const   *)(Conf_ServerName)) == 1U)) {
-#line 442
+#line 452
           __cil_tmp___9 = 1;
         } else {
-#line 442
+#line 452
           if (__s2_len >= 4U) {
-#line 442
+#line 452
             __cil_tmp___9 = 1;
           } else {
-#line 442
+#line 452
             __cil_tmp___9 = 0;
           }
         }
       } else {
-#line 442
+#line 452
         __cil_tmp___9 = 0;
       }
     }
-#line 442
+#line 452
     if (__cil_tmp___9) {
-#line 442
+#line 452
       __cil_tmp___5 = __builtin_strcmp((char const   *)(old_name), (char const   *)(Conf_ServerName));
     } else {
-#line 442
+#line 452
       __cil_tmp___8 = __builtin_strcmp((char const   *)(old_name), (char const   *)(Conf_ServerName));
-#line 442
+#line 452
       __cil_tmp___5 = __cil_tmp___8;
     }
   } else {
-#line 442
+#line 452
     __cil_tmp___8 = __builtin_strcmp((char const   *)(old_name), (char const   *)(Conf_ServerName));
-#line 442
+#line 452
     __cil_tmp___5 = __cil_tmp___8;
   }
-#line 442
+#line 452
   if (__cil_tmp___5 != 0) {
-#line 443
+#line 453
     strlcpy(Conf_ServerName, (char const   *)(old_name), sizeof(Conf_ServerName));
-#line 444
+#line 454
     Log(3, "Can\'t change \"ServerName\" on runtime! Ignored new name.");
   }
-#line 446
+#line 456
   if (old_nicklen != Conf_MaxNickLength) {
-#line 447
+#line 457
     Conf_MaxNickLength = old_nicklen;
-#line 448
+#line 458
     Log(3, "Can\'t change \"MaxNickLength\" on runtime! Ignored new value.");
   }
-#line 452
+#line 462
   Channel_InitPredefined();
-#line 455
+#line 465
   Conn_InitListeners();
-#line 458
+#line 468
   Conn_SyncServerStruct();
-#line 460
+#line 470
   Log(1029, "Re-reading of configuration done.");
-#line 461
+#line 471
   return;
 }
 }
-#line 467 "ngircd.c"
+#line 477 "ngircd.c"
 static void Initialize_Signal_Handler(void) 
 { struct sigaction saction ;
 
   {
-#line 479
-  memset((void *)(& saction), 0, sizeof(saction));
-#line 480
-  saction.__sigaction_handler.sa_handler = & Signal_Handler;
-#line 482
-  saction.sa_flags |= 268435456;
-#line 485
-  saction.sa_flags |= 2;
 #line 489
-  sigaction(2, (struct sigaction  const  * __restrict  )(& saction), (struct sigaction * __restrict  )((void *)0));
+  memset((void *)(& saction), 0, sizeof(saction));
 #line 490
-  sigaction(3, (struct sigaction  const  * __restrict  )(& saction), (struct sigaction * __restrict  )((void *)0));
-#line 491
-  sigaction(15, (struct sigaction  const  * __restrict  )(& saction), (struct sigaction * __restrict  )((void *)0));
+  saction.__sigaction_handler.sa_handler = & Signal_Handler;
 #line 492
+  saction.sa_flags |= 268435456;
+#line 495
+  saction.sa_flags |= 2;
+#line 499
+  sigaction(2, (struct sigaction  const  * __restrict  )(& saction), (struct sigaction * __restrict  )((void *)0));
+#line 500
+  sigaction(3, (struct sigaction  const  * __restrict  )(& saction), (struct sigaction * __restrict  )((void *)0));
+#line 501
+  sigaction(15, (struct sigaction  const  * __restrict  )(& saction), (struct sigaction * __restrict  )((void *)0));
+#line 502
   sigaction(1, (struct sigaction  const  * __restrict  )(& saction), (struct sigaction * __restrict  )((void *)0));
-#line 493
+#line 503
   sigaction(17, (struct sigaction  const  * __restrict  )(& saction), (struct sigaction * __restrict  )((void *)0));
-#line 496
+#line 506
   saction.__sigaction_handler.sa_handler = (void (*)(int  ))1;
-#line 497
+#line 507
   sigaction(13, (struct sigaction  const  * __restrict  )(& saction), (struct sigaction * __restrict  )((void *)0));
-#line 511
+#line 521
   return;
 }
 }
-#line 520 "ngircd.c"
+#line 530 "ngircd.c"
 static void Signal_Handler(int Signal ) 
 { __pid_t __cil_tmp ;
 
   {
-#line 523
+#line 533
   switch (Signal) {
   case 15: 
   case 2: 
   case 3: 
-#line 529
+#line 539
   NGIRCd_SignalQuit = 1;
-#line 530
+#line 540
   break;
   case 1: 
-#line 533
+#line 543
   NGIRCd_SignalRehash = 1;
-#line 534
+#line 544
   break;
   case 17: 
-#line 537
+#line 547
   while (1) {
-#line 537
+#line 547
     __cil_tmp = waitpid(-1, (int *)((void *)0), 1);
-#line 537
+#line 547
     if (! (__cil_tmp > 0)) {
-#line 537
+#line 547
       break;
     }
   }
-#line 538
+#line 548
   break;
   }
-#line 545
+#line 555
   return;
 }
 }
-#line 551 "ngircd.c"
+#line 561 "ngircd.c"
 static void Show_Version(void) 
 { 
 
   {
-#line 554
+#line 564
   puts((char const   *)(NGIRCd_Version));
-#line 555
+#line 565
   puts("Copyright (c)2001-2008 Alexander Barton (<alex@barton.de>) and Contributors.");
-#line 556
+#line 566
   puts("Homepage: <http://ngircd.barton.de/>\n");
-#line 557
+#line 567
   puts("This is free software; see the source for copying conditions. There is NO");
-#line 558
+#line 568
   puts("warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.");
-#line 559
+#line 569
   return;
 }
 }
-#line 567 "ngircd.c"
+#line 577 "ngircd.c"
 static void Show_Help(void) 
 { 
 
   {
-#line 573
+#line 583
   puts("  -f, --config <f>   use file <f> as configuration file");
-#line 574
+#line 584
   puts("  -n, --nodaemon     don\'t fork and don\'t detach from controlling terminal");
-#line 575
+#line 585
   puts("  -p, --passive      disable automatic connections to other servers");
-#line 579
+#line 589
   puts("  -t, --configtest   read, validate and display configuration; then exit");
-#line 580
+#line 590
   puts("      --version      output version information and exit");
-#line 581
+#line 591
   puts("      --help         display this help and exit");
-#line 582
+#line 592
   return;
 }
 }
-#line 588 "ngircd.c"
+#line 598 "ngircd.c"
 static void Pidfile_Delete(void) 
 { int *__cil_tmp ;
   char *__cil_tmp___0 ;
   int __cil_tmp___1 ;
 
   {
-#line 592
+#line 602
   if (! Conf_PidFile[0]) {
-#line 592
+#line 602
     return;
   }
-#line 598
+#line 608
   __cil_tmp___1 = unlink((char const   *)(Conf_PidFile));
-#line 598
+#line 608
   if (__cil_tmp___1) {
-#line 599
+#line 609
     __cil_tmp = __errno_location();
-#line 599
+#line 609
     __cil_tmp___0 = strerror(*__cil_tmp);
-#line 599
+#line 609
     Log(3, "Error unlinking PID file (%s): %s", Conf_PidFile, __cil_tmp___0);
   }
-#line 600
+#line 610
   return;
 }
 }
-#line 607 "ngircd.c"
+#line 617 "ngircd.c"
 static void Pidfile_Create(pid_t pid ) 
 { int pidfd ;
   char pidbuf[64] ;
@@ -1510,143 +1510,143 @@ static void Pidfile_Create(pid_t pid )
   int __cil_tmp___6 ;
 
   {
-#line 615
+#line 625
   if (! Conf_PidFile[0]) {
-#line 615
+#line 625
     return;
   }
-#line 621
+#line 631
   pidfd = open((char const   *)(Conf_PidFile), 194, (384 | (256 >> 3)) | ((256 >> 3) >> 3));
-#line 622
+#line 632
   if (pidfd < 0) {
-#line 623
+#line 633
     __cil_tmp = __errno_location();
-#line 623
+#line 633
     __cil_tmp___0 = strerror(*__cil_tmp);
-#line 623
+#line 633
     Log(3, "Error writing PID file (%s): %s", Conf_PidFile, __cil_tmp___0);
-#line 624
+#line 634
     return;
   }
-#line 627
+#line 637
   len = snprintf((char * __restrict  )(pidbuf), sizeof(pidbuf), (char const   * __restrict  )"%ld\n",
                  (long )pid);
-#line 628
+#line 638
   if (len < 0) {
-#line 629
+#line 639
     Log(3, "Error converting pid");
-#line 630
+#line 640
     return;
   } else {
-#line 628
+#line 638
     if (len >= (int )sizeof(pidbuf)) {
-#line 629
+#line 639
       Log(3, "Error converting pid");
-#line 630
+#line 640
       return;
     }
   }
-#line 633
+#line 643
   __cil_tmp___3 = write(pidfd, (void const   *)(pidbuf), (unsigned int )len);
-#line 633
+#line 643
   if (__cil_tmp___3 != len) {
-#line 634
+#line 644
     __cil_tmp___1 = __errno_location();
-#line 634
+#line 644
     __cil_tmp___2 = strerror(*__cil_tmp___1);
-#line 634
+#line 644
     Log(3, "Can\'t write PID file (%s): %s", Conf_PidFile, __cil_tmp___2);
   }
-#line 636
+#line 646
   __cil_tmp___6 = close(pidfd);
-#line 636
+#line 646
   if (__cil_tmp___6 != 0) {
-#line 637
+#line 647
     __cil_tmp___4 = __errno_location();
-#line 637
+#line 647
     __cil_tmp___5 = strerror(*__cil_tmp___4);
-#line 637
+#line 647
     Log(3, "Error closing PID file (%s): %s", Conf_PidFile, __cil_tmp___5);
   }
-#line 638
+#line 648
   return;
 }
 }
-#line 644 "ngircd.c"
+#line 654 "ngircd.c"
 static void Setup_FDStreams(void) 
 { int fd ;
   int *__cil_tmp ;
   char *__cil_tmp___0 ;
 
   {
-#line 652
+#line 662
   fd = open("/dev/null", 2);
-#line 653
+#line 663
   if (fd < 0) {
-#line 654
+#line 664
     __cil_tmp = __errno_location();
-#line 654
+#line 664
     __cil_tmp___0 = strerror(*__cil_tmp);
-#line 654
+#line 664
     Log(4, "Could not open /dev/null: %s", __cil_tmp___0);
-#line 655
+#line 665
     return;
   }
-#line 658
+#line 668
   fflush(stdout);
-#line 659
+#line 669
   fflush(stderr);
-#line 662
+#line 672
   dup2(fd, 0);
-#line 662
+#line 672
   dup2(fd, 1);
-#line 662
+#line 672
   dup2(fd, 2);
-#line 665
+#line 675
   if (fd > 2) {
-#line 665
+#line 675
     close(fd);
   }
-#line 666
+#line 676
   return;
 }
 }
-#line 669 "ngircd.c"
+#line 679 "ngircd.c"
 static int NGIRCd_getNobodyID(uid_t *uid , gid_t *gid ) 
 { struct passwd *pwd ;
 
   {
-#line 674
+#line 684
   pwd = getpwnam("nobody");
-#line 675
+#line 685
   if (! pwd) {
-#line 675
+#line 685
     return (0);
   }
-#line 677
+#line 687
   if (! pwd->pw_uid) {
-#line 678
+#line 688
     return (0);
   } else {
-#line 677
+#line 687
     if (! pwd->pw_gid) {
-#line 678
+#line 688
       return (0);
     }
   }
-#line 680
+#line 690
   *uid = pwd->pw_uid;
-#line 681
+#line 691
   *gid = pwd->pw_gid;
-#line 682
+#line 692
   endpwent();
-#line 684
+#line 694
   return (1);
 }
 }
-#line 691 "ngircd.c"
+#line 701 "ngircd.c"
 static int initialized  ;
-#line 688 "ngircd.c"
+#line 698 "ngircd.c"
 static int NGIRCd_Init(int NGIRCd_NoDaemon ) 
 { int chrooted ;
   struct passwd *pwd ;
@@ -1684,123 +1684,98 @@ static int NGIRCd_Init(int NGIRCd_NoDaemon )
   int __cil_tmp___30 ;
 
   {
-#line 692
+#line 702
   chrooted = 0;
-#line 698
+#line 708
   if (initialized) {
-#line 699
+#line 709
     return (1);
   }
-#line 701
+#line 711
   if (Conf_Chroot[0]) {
-#line 702
+#line 712
     __cil_tmp___1 = chdir((char const   *)(Conf_Chroot));
-#line 702
+#line 712
     if (__cil_tmp___1 != 0) {
-#line 703
+#line 713
       __cil_tmp = __errno_location();
-#line 703
+#line 713
       __cil_tmp___0 = strerror(*__cil_tmp);
-#line 703
+#line 713
       Log(3, "Can\'t chdir() in ChrootDir (%s): %s", Conf_Chroot, __cil_tmp___0);
-#line 704
+#line 714
       return (0);
     }
-#line 707
+#line 717
     __cil_tmp___5 = chroot((char const   *)(Conf_Chroot));
-#line 707
+#line 717
     if (__cil_tmp___5 != 0) {
-#line 708
+#line 718
       __cil_tmp___4 = __errno_location();
-#line 708
+#line 718
       if (*__cil_tmp___4 != 1) {
-#line 709
+#line 719
         __cil_tmp___2 = __errno_location();
-#line 709
+#line 719
         __cil_tmp___3 = strerror(*__cil_tmp___2);
-#line 709
+#line 719
         Log(3, "Can\'t change root directory to \"%s\": %s", Conf_Chroot, __cil_tmp___3);
-#line 712
+#line 722
         return (0);
       }
     } else {
-#line 715
+#line 725
       chrooted = 1;
-#line 716
+#line 726
       Log(6, "Changed root and working directory to \"%s\".", Conf_Chroot);
     }
   }
-#line 720
+#line 730
   if (Conf_UID == 0U) {
-#line 721
+#line 731
     Log(6, "ServerUID must not be 0, using \"nobody\" instead.", Conf_UID);
-#line 723
+#line 733
     __cil_tmp___13 = NGIRCd_getNobodyID(& Conf_UID, & Conf_GID);
-#line 723
+#line 733
     if (! __cil_tmp___13) {
-#line 724
+#line 734
       __cil_tmp___12 = __errno_location();
-#line 724
+#line 734
       if (*__cil_tmp___12) {
-#line 724
+#line 734
         __cil_tmp___10 = __errno_location();
-#line 724
+#line 734
         __cil_tmp___11 = strerror(*__cil_tmp___10);
-#line 724
+#line 734
         __cil_tmp___9 = (char const   *)__cil_tmp___11;
       } else {
-#line 724
+#line 734
         __cil_tmp___9 = "not found";
       }
-#line 724
+#line 734
       Log(4, "Could not get user/group ID of user \"nobody\": %s", __cil_tmp___9);
-#line 726
+#line 736
       return (0);
     }
   }
-#line 730
+#line 740
   __cil_tmp___18 = getgid();
-#line 730
+#line 740
   if (__cil_tmp___18 != Conf_GID) {
-#line 732
+#line 742
     __cil_tmp___17 = setgid(Conf_GID);
-#line 732
+#line 742
     if (__cil_tmp___17 != 0) {
-#line 733
+#line 743
       __cil_tmp___14 = __errno_location();
-#line 733
+#line 743
       real_errno = *__cil_tmp___14;
-#line 734
+#line 744
       __cil_tmp___15 = __errno_location();
-#line 734
+#line 744
       __cil_tmp___16 = strerror(*__cil_tmp___15);
-#line 734
+#line 744
       Log(3, "Can\'t change group ID to %u: %s", Conf_GID, __cil_tmp___16);
-#line 735
-      if (real_errno != 1) {
-#line 736
-        return (0);
-      }
-    }
-  }
-#line 740
-  __cil_tmp___23 = getuid();
-#line 740
-  if (__cil_tmp___23 != Conf_UID) {
-#line 742
-    __cil_tmp___22 = setuid(Conf_UID);
-#line 742
-    if (__cil_tmp___22 != 0) {
-#line 743
-      __cil_tmp___19 = __errno_location();
-#line 743
-      real_errno = *__cil_tmp___19;
-#line 744
-      __cil_tmp___20 = __errno_location();
-#line 744
-      __cil_tmp___21 = strerror(*__cil_tmp___20);
-#line 744
-      Log(3, "Can\'t change user ID to %u: %s", Conf_UID, __cil_tmp___21);
 #line 745
       if (real_errno != 1) {
 #line 746
@@ -1809,101 +1784,126 @@ static int NGIRCd_Init(int NGIRCd_NoDaemon )
     }
   }
 #line 750
-  initialized = 1;
+  __cil_tmp___23 = getuid();
+#line 750
+  if (__cil_tmp___23 != Conf_UID) {
+#line 752
+    __cil_tmp___22 = setuid(Conf_UID);
+#line 752
+    if (__cil_tmp___22 != 0) {
+#line 753
+      __cil_tmp___19 = __errno_location();
+#line 753
+      real_errno = *__cil_tmp___19;
+#line 754
+      __cil_tmp___20 = __errno_location();
+#line 754
+      __cil_tmp___21 = strerror(*__cil_tmp___20);
+#line 754
+      Log(3, "Can\'t change user ID to %u: %s", Conf_UID, __cil_tmp___21);
 #line 755
-  if (! NGIRCd_NoDaemon) {
+      if (real_errno != 1) {
 #line 756
+        return (0);
+      }
+    }
+  }
+#line 760
+  initialized = 1;
+#line 765
+  if (! NGIRCd_NoDaemon) {
+#line 766
     pid = fork();
-#line 757
+#line 767
     if (pid > 0) {
-#line 759
+#line 769
       exit(0);
     }
-#line 761
+#line 771
     if (pid < 0) {
-#line 763
+#line 773
       __cil_tmp___24 = __errno_location();
-#line 763
+#line 773
       __cil_tmp___25 = strerror(*__cil_tmp___24);
-#line 763
+#line 773
       fprintf((FILE * __restrict  )stderr, (char const   * __restrict  )"%s: Can\'t fork: %s!\nFatal error, exiting now ...\n",
               "ngircd", __cil_tmp___25);
-#line 765
+#line 775
       exit(1);
     }
-#line 769
+#line 779
     setsid();
-#line 770
+#line 780
     chdir("/");
-#line 773
+#line 783
     Setup_FDStreams();
   }
-#line 775
-  pid = getpid();
-#line 777
-  Pidfile_Create(pid);
-#line 781
-  Conf_UID = getuid();
-#line 782
-  Conf_GID = getgid();
-#line 784
-  pwd = getpwuid(Conf_UID);
 #line 785
+  pid = getpid();
+#line 787
+  Pidfile_Create(pid);
+#line 791
+  Conf_UID = getuid();
+#line 792
+  Conf_GID = getgid();
+#line 794
+  pwd = getpwuid(Conf_UID);
+#line 795
   grp = getgrgid(Conf_GID);
-#line 787
+#line 797
   if (grp) {
-#line 787
+#line 797
     __cil_tmp___26 = (char const   *)grp->gr_name;
   } else {
-#line 787
+#line 797
     __cil_tmp___26 = "unknown";
   }
-#line 787
+#line 797
   if (pwd) {
-#line 787
+#line 797
     __cil_tmp___27 = (char const   *)pwd->pw_name;
   } else {
-#line 787
+#line 797
     __cil_tmp___27 = "unknown";
   }
-#line 787
+#line 797
   Log(6, "Running as user %s(%ld), group %s(%ld), with PID %ld.", __cil_tmp___27,
       Conf_UID, __cil_tmp___26, Conf_GID, pid);
-#line 791
+#line 801
   if (chrooted) {
-#line 792
+#line 802
     Log(6, "Running chrooted, chrootdir \"%s\".", Conf_Chroot);
-#line 793
+#line 803
     return (1);
   } else {
-#line 795
+#line 805
     Log(6, "Not running chrooted.");
   }
-#line 801
+#line 811
   if (pwd) {
-#line 802
+#line 812
     if (! NGIRCd_NoDaemon) {
-#line 803
+#line 813
       __cil_tmp___30 = chdir((char const   *)pwd->pw_dir);
-#line 803
+#line 813
       if (__cil_tmp___30 == 0) {
-#line 804
+#line 814
         Log(7, "Changed working directory to \"%s\" ...", pwd->pw_dir);
       } else {
-#line 806
+#line 816
         __cil_tmp___28 = __errno_location();
-#line 806
+#line 816
         __cil_tmp___29 = strerror(*__cil_tmp___28);
-#line 806
+#line 816
         Log(6, "Notice: Can\'t change working directory to \"%s\": %s", pwd->pw_dir,
             __cil_tmp___29);
       }
     }
   } else {
-#line 810
+#line 820
     Log(3, "Can\'t get user informaton for UID %d!?", Conf_UID);
   }
-#line 813
+#line 823
   return (1);
 }
 }
@@ -5905,6 +5905,8 @@ int Conf_MaxJoins  ;
 int Conf_MaxConnectionsIP  ;
 #line 157 "conf.h"
 unsigned int Conf_MaxNickLength  ;
+#line 159
+void Conf_Init(void) ;
 #line 163
 void Conf_UnsetServer(CONN_ID Idx ) ;
 #line 164
@@ -22320,7 +22322,7 @@ int Lists_Check(struct list_head *header , CLIENT *Client )
 }
 }
 #line 1 "log.o"
-#pragma merger(0,"/tmp/cil-IaXEQoob.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-mo1D06Rx.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 50 "log.h"
 void Log_Init_Resolver(void) ;
 #line 51
