@@ -30,6 +30,7 @@ let features : C.featureDescr list =
      *)
     Executemain.feature;
     Marshal_feature.feature;
+		ProgStats.feature;
   ] 
   @ Feature_config.features;;
 
