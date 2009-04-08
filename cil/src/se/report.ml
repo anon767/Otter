@@ -173,12 +173,8 @@ let printCov covType hist =
 
 let printLines lineset =
 	Output.printf "The lines hit were:\n";
-	let currFile = ref "" in
 	LineSet.iter
-		(fun (file,lineNum) ->
-			 if file <> !currFile
-			 then (currFile := file; Output.printf "%s\n" file);
-			 Output.printf "%d\n" lineNum)
+		(fun (file,lineNum) -> Output.printf "%s:%d\n" file lineNum)
 		lineset;
 	Output.printf "\n"
 
