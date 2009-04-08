@@ -157,10 +157,14 @@ int IOSIM_read(int fildes, void *buf, int nbyte){
 
 	sym_file_stream_t* in = IOSIM_fd[fildes];
 	cur = in->offset;
+	if (in->buffer == NULL){
+		in->buffer=strdup(in->sym_file->contents);
+	}
 	len = in->sym_file->stat.st_size;
 	for(n=0;n<nbyte;n++){
 		if(cur>=len) break;
-		cbuf[n] = in->sym_file->contents[cur];
+		cbuf[n] = in->buffer[cur];
+
 		cur++;
 	}
 	in->offset = cur;
@@ -170,6 +174,16 @@ int IOSIM_read(int fildes, void *buf, int nbyte){
 	}
 	return n;
 }
+
+int IOSIM_ungetc(int c, int fildes){
+	sym_file_stream_t* in = IOSIM_fd[fildes];
+
+	in->offset--;
+	in->buffer[in->offset] = (char)c;
+
+	return c;
+}
+
 int IOSIM_write(int fildes, const void *buf, int nbyte){
 	int n,cur,len;
 	char* cbuf = buf;
@@ -208,6 +222,16 @@ int IOSIM_write(int fildes, const void *buf, int nbyte){
 	return nbyte;
 }
 
+int IOSIM_eof(int fildes){
+        int cur,len;
+
+        sym_file_stream_t* in = IOSIM_fd[fildes];
+        cur = in->offset;
+        len = in->sym_file->stat.st_size;
+
+        return cur >= len;
+}
+		
 int IOSIM_chdir(const char *path) {
 	if (realpath(path,workingDir)) {
 		return 0;

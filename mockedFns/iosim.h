@@ -19,6 +19,7 @@ typedef struct {
 	//	unsigned flags; // I'm not sure what these are
 	off_t offset; // The offset into the file
   sym_file_t* sym_file;   /* ptr to the file on disk */
+  char* buffer;
 } sym_file_stream_t;
 
 #define	IOSIM_MAX_FD	1024
@@ -31,8 +32,10 @@ sym_file_t* IOSIM_addfile(const char *file, mode_t);
 
 int IOSIM_newfd();
 int IOSIM_read(int fildes, void *buf, int nbyte);
+int IOSIM_ungetc(int c, int fildes);
 int IOSIM_write(int fildes, const void *buf, int nbyte);
 int IOSIM_close(int fildes);
+int IOSIM_eof(int fildes);
 int IOSIM_openWithMode(const char *pathname, int flags, mode_t mode);
 int IOSIM_open(const char *pathname, int flags);
 
