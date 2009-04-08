@@ -1,0 +1,15 @@
+TOPDIR=~/t
+LIBCDIR=$TOPDIR/libc
+MOCKEDDIR=./mockedFns
+CILLY="env CILLY_DONT_COMPILE_AFTER_MERGE= ../../../cil/bin/cilly --merge --useLogicalOperators -D_FILE_OFFSET_BITS=64 --warnall"
+
+# 
+echo "--> Merging ngIRCd sources"
+cd ../src && make merge && cd ../codeCoverageTest
+# 
+echo "--> Merging ngIRCd with mockedFns"
+$CILLY --out=ngircd_comb.c -I $LIBCDIR -I $MOCKEDDIR otherFiles/libc_comb.c $MOCKEDDIR/*.c ngircd.c
+#
+echo "--> Doing symbolic execution"
+$CILLY -D__builtin_strchr=strchr -D__rawmemchr=strchr \
+	-I $MOCKEDDIR --doexecute --covStats=ngircd.stats otherFiles/symtest1.c  --lineCov $*

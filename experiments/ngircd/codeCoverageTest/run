@@ -11,7 +11,7 @@ fi
 
 TOPDIR=~/t
 LIBCDIR=$TOPDIR/libc
-MOCKEDDIR=$TOPDIR/mockedFns
+MOCKEDDIR=./mockedFns
 CILLY="env CILLY_DONT_COMPILE_AFTER_MERGE= ../../../cil/bin/cilly --merge --useLogicalOperators -D_FILE_OFFSET_BITS=64 --warnall"
 
 if [ "$1" == libc ]; then
@@ -26,5 +26,5 @@ elif [ "$MERGE" == 1 ]; then
 else
 	echo "Doing symbolic execution"
 	# TODO: allow arguments to have spaces
-	$CILLY -I $MOCKEDDIR --doexecute $*
+	./rerun $*
 fi

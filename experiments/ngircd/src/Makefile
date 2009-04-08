@@ -26,7 +26,7 @@ merge:
 conf: 
 	cd $(NGIRCD_DIR) && \
 	CC="$(CILLY)" \
-	CPPFLAGS="-I$(DOT)/include -D __client_c__ -D __channel_c__ -D _DONT_USE_CTYPE_INLINE_" \
+	CPPFLAGS="-I$(DOT)/include -D __client_c__ -D __channel_c__ -D _DONT_USE_CTYPE_INLINE_ -D __NO_INLINE__" \
 	RANLIB=echo \
 	./configure $(CONFIG_OPT)
 
