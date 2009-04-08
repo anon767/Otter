@@ -512,7 +512,8 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 				) with Function.Notification_Exit exit_code ->
 					(* If it was [Exit], there is no job to return *)
 					Output.set_mode Output.MSG_MUSTPRINT;
-					Output.print_endline "exit() called";
+					Output.print_endline ("exit() called with code "^(
+                        match exit_code with None-> "(NONE)" | Some(code) -> To_string.bytes code));
 					Output.set_mode Output.MSG_REG;
 					Output.print_endline
 						("Path condition:\n" ^
