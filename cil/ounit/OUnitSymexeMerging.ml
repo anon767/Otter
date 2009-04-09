@@ -13,7 +13,7 @@ let test_merging content ?(label=content) test =
         (* suppress all output from the symbolic executor *)
         Executeargs.print_args.Executeargs.arg_print_nothing <- true;
         (* enable merging *)
-        Executeargs.run_args.Executeargs.arg_merge_branches <- true;
+        Executeargs.run_args.Executeargs.arg_merge_paths <- true;
 
         (* reset error flag *)
         Errormsg.hadErrors := false;

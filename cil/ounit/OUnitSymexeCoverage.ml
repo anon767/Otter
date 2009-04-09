@@ -2,7 +2,7 @@ open MyOUnit
 open Types
 
 (* test helper that runs the symbolic executor on a file given a source code as a string, and calculates coverage *)
-let test_coverage content ?(label=content) test =
+let test_coverage content ?(label=content) tracked_fns test =
     label >:: bracket begin fun () ->
         let filename, fileout = Filename.open_temp_file "OUnitSymexeCoverage." ".c" in
         output_string fileout content;
@@ -11,6 +11,13 @@ let test_coverage content ?(label=content) test =
     end begin fun filename ->
         (* Suppress all output from the symbolic executor *)
         Executeargs.print_args.Executeargs.arg_print_nothing <- true;
+        (* enable coverage tracking *)
+        Executeargs.run_args.Executeargs.arg_edge_coverage <- true;
+        Executeargs.run_args.Executeargs.arg_stmt_coverage <- true;
+        Executeargs.run_args.Executeargs.arg_line_coverage <- true;
+        (* enable tracking on given functions *)
+        Executeargs.run_args.Executeargs.arg_fns <-
+            List.fold_left (fun a f -> StringSet.add f a) Executeargs.run_args.Executeargs.arg_fns tracked_fns;
 
         (* reset error flag *)
         Errormsg.hadErrors := false;
@@ -22,30 +29,41 @@ let test_coverage content ?(label=content) test =
         let job = Executemain.job_for_file file ["OUnitSymexeCoverage"] in
         let results = Driver.main_loop job in
 
-        (* figure out the edges that were executed *)
-        let all_edges = List.fold_left begin fun edges result ->
+        (* figure out the statements that were executed *)
+        let (all_edges, all_stmts, all_lines) = List.fold_left begin fun (edges, stmts, lines) result ->
             match result with
                 | Return (_, c)
                 | Exit (_, c) ->
-                    EdgeSet.union edges c.result_history.edgesTaken
+                    let edges = EdgeSet.union edges c.result_history.coveredEdges in
+                    let stmts = IntSet.union stmts c.result_history.coveredStmts in
+                    let lines = LineSet.union lines c.result_history.coveredLines in
+                    (edges, stmts, lines)
                 | Truncated (c, d) ->
-                    EdgeSet.union (EdgeSet.union edges c.result_history.edgesTaken) d.result_history.edgesTaken
+                    let edges = EdgeSet.union (EdgeSet.union edges c.result_history.coveredEdges)
+                                             d.result_history.coveredEdges in
+                    let stmts = IntSet.union (IntSet.union stmts c.result_history.coveredStmts)
+                                             d.result_history.coveredStmts in
+                    let lines = LineSet.union (LineSet.union lines c.result_history.coveredLines)
+                                             d.result_history.coveredLines in
+                    (edges, stmts, lines)
                 | Abandoned _ ->
-                    edges
-        end EdgeSet.empty results in
-        let all_count = EdgeSet.cardinal all_edges in
+                    (edges, stmts, lines)
+        end (EdgeSet.empty, IntSet.empty, LineSet.empty) results in
+        let all_edges_count = EdgeSet.cardinal all_edges in
+        let all_stmts_count = IntSet.cardinal all_stmts in
+        let all_lines_count = LineSet.cardinal all_lines in
 
         (* test that no assertions failed *)
         assert_string (Executedebug.get_log ());
 
         (* finally run the test *)
-        test file results all_edges all_count
+        test file results all_edges all_edges_count all_stmts all_stmts_count all_lines all_lines_count
     end begin fun filename ->
         Unix.unlink filename
     end
 
 (* assert_equal helper with a descriptive error message *)
-let assert_edges_count = assert_equal ~printer:(fun ff -> Format.fprintf ff "%d") ~msg:"Wrong number of edges"
+let assert_stmts_count = assert_equal ~printer:(fun ff -> Format.fprintf ff "%d") ~msg:"Wrong number of statements"
 
 
 (*
@@ -57,8 +75,9 @@ let simple_coverage_testsuite = "Simple" >::: [
         int main(int argc, char *argv[]) {
             return 0; /* 1 */
         }
-    " begin fun file results all_edges all_count ->
-        assert_edges_count 1 all_count
+    " ["main"]
+    begin fun file results all_edges all_edges_count all_stmts all_stmts_count all_lines all_lines_count ->
+        assert_stmts_count 1 all_stmts_count
     end;
 
     test_coverage ~label:"Two statements" "
@@ -67,13 +86,12 @@ let simple_coverage_testsuite = "Simple" >::: [
             i = 0;     /* 1 */
             return i;  /* 2 */
         }
-    " begin fun file results all_edges all_count ->
-        assert_edges_count 2 all_count
+    " ["main"]
+    begin fun file results all_edges all_edges_count all_stmts all_stmts_count all_lines all_lines_count ->
+        assert_stmts_count 2 all_stmts_count
     end;
 ]
 
-(* WARNING: this testsuite is currently fragile; it depends on the specifics of how edges are counted, and how blocks
-   are introduced by Partial.calls_end_basic_blocks (+ x edges) *)
 let function_calls_coverage_testsuite = "Function calls" >::: [
     test_coverage ~label:"foo();" "
         void foo(void) { /* return:2 */ }
@@ -81,8 +99,9 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
             foo();    /* 1 */
             return 0; /* 3 */
         }
-    " begin fun file results all_edges all_count ->
-        assert_edges_count (3 + 1) all_count
+    " ["main"; "foo"]
+    begin fun file results all_edges all_edges_count all_stmts all_stmts_count all_lines all_lines_count ->
+        assert_stmts_count 3 all_stmts_count
     end;
 
     test_coverage ~label:"x = 1; foo();" "
@@ -93,8 +112,9 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
             foo();    /* 2 */
             return 0; /* 4 */
         }
-    " begin fun file results all_edges all_count ->
-        assert_edges_count (4 + 1) all_count
+    " ["main"; "foo"]
+    begin fun file results all_edges all_edges_count all_stmts all_stmts_count all_lines all_lines_count ->
+        assert_stmts_count 4 all_stmts_count
     end;
 
     test_coverage ~label:"foo(); bar();" "
@@ -105,8 +125,9 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
             bar();    /* 3 */
             return 0; /* 5 */
         }
-    " begin fun file results all_edges all_count ->
-        assert_edges_count (5 + 1) all_count
+    " ["main"; "foo"; "bar"]
+    begin fun file results all_edges all_edges_count all_stmts all_stmts_count all_lines all_lines_count ->
+        assert_stmts_count 5 all_stmts_count
     end;
 
     test_coverage ~label:"x = 1; foo(); y = 2; bar();" "
@@ -120,8 +141,9 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
             bar();    /* 6 */
             return 0; /* 7 */
         }
-    " begin fun file results all_edges all_count ->
-        assert_edges_count (7 + 1) all_count
+    " ["main"; "foo"; "bar"]
+    begin fun file results all_edges all_edges_count all_stmts all_stmts_count all_lines all_lines_count ->
+        assert_stmts_count 7 all_stmts_count
     end;
 
     test_coverage ~label:"foo() { bar(); };" "
@@ -131,8 +153,9 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
             foo();    /* 1 */
             return 0; /* 5 */
         }
-    " begin fun file results all_edges all_count ->
-        assert_edges_count (5 + 2) all_count
+    " ["main"; "foo"; "bar"]
+    begin fun file results all_edges all_edges_count all_stmts all_stmts_count all_lines all_lines_count ->
+        assert_stmts_count 5 all_stmts_count
     end;
 ]
 
