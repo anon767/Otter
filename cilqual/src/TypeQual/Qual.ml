@@ -42,7 +42,7 @@ module type Constraints = sig
     end
     val const : Qual.const -> Qual.t
 
-    include Graph.Sig.P with type V.t = Qual.t
+    include Ocamlgraph.Sig.P with type V.t = Qual.t
 
     type path_checker
     val create_path_checker : t -> path_checker

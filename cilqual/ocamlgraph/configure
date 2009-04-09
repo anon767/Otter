@@ -635,7 +635,6 @@ OCAMLWIN32
 EXE
 LIBEXT
 OBJEXT
-FORPACK
 INCLUDEGTK2
 LIBOBJS
 LTLIBOBJS'
@@ -1685,7 +1684,7 @@ case $OCAMLVERSION in
 echo "$as_me: error: ocamlgraph needs ocaml version 3.10.0 or higher" >&2;}
    { (exit 1); exit 1; }; };;
   *)
-	FORPACK="-for-pack Graph";;
+        ;;
 esac
 
 # OCAMLLIB=`$OCAMLC -v | tail -n 1 | cut -f 4 -d " "`
@@ -2298,7 +2297,6 @@ echo "$as_me: WARNING: lablgnomecanvas not found: the graph editor and view_grap
 fi
 
 # substitutions to perform
-
 
 
 
@@ -3006,13 +3004,12 @@ OCAMLWIN32!$OCAMLWIN32$ac_delim
 EXE!$EXE$ac_delim
 LIBEXT!$LIBEXT$ac_delim
 OBJEXT!$OBJEXT$ac_delim
-FORPACK!$FORPACK$ac_delim
 INCLUDEGTK2!$INCLUDEGTK2$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 62; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 61; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

@@ -97,7 +97,7 @@ module QualTypeConstraints = struct
     open TypeVarLabel
 
     module ConstraintGraph = struct
-        include Graph.Persistent.Digraph.ConcreteBidirectionalLabeled (Qual) (TypeVarLabel)
+        include Ocamlgraph.Persistent.Digraph.ConcreteBidirectionalLabeled (Qual) (TypeVarLabel)
 
         let add_typevar_edge g x y = add_edge_e g (E.create x (TypeVar (typevar x)) y)
 
@@ -172,7 +172,7 @@ module QualTypeConstraints = struct
     end
     include ConstraintGraph
 
-    module PathChecker = Graph.Cfl.Check (ConstraintGraph)
+    module PathChecker = Ocamlgraph.Cfl.Check (ConstraintGraph)
     type path_checker = PathChecker.path_checker
     let create_path_checker = PathChecker.create
     let check_path = PathChecker.check_path

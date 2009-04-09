@@ -11,8 +11,8 @@ src/blocks.cmo: src/util.cmi src/sig.cmi
 src/blocks.cmx: src/util.cmx src/sig.cmi 
 src/builder.cmo: src/sig.cmi src/builder.cmi 
 src/builder.cmx: src/sig.cmi src/builder.cmi 
-src/cfl.cmo: src/util.cmi src/sig.cmi 
-src/cfl.cmx: src/util.cmx src/sig.cmi 
+src/cfl.cmo: src/util.cmi src/sig.cmi src/cfl.cmi 
+src/cfl.cmx: src/util.cmx src/sig.cmi src/cfl.cmi 
 src/classic.cmo: src/sig.cmi src/builder.cmi src/classic.cmi 
 src/classic.cmx: src/sig.cmi src/builder.cmx src/classic.cmi 
 src/cliquetree.cmo: src/util.cmi src/sig.cmi src/persistent.cmi src/oper.cmi \
@@ -88,6 +88,7 @@ src/util.cmx: src/sig.cmi src/util.cmi
 src/version.cmo: 
 src/version.cmx: 
 src/builder.cmi: src/sig.cmi 
+src/cfl.cmi: src/sig.cmi 
 src/classic.cmi: src/sig.cmi 
 src/cliquetree.cmi: src/sig.cmi 
 src/coloring.cmi: src/sig.cmi 

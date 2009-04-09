@@ -51,7 +51,7 @@ case $OCAMLVERSION in
   0.*|1.*|2.*|3.0*)
         AC_MSG_ERROR(ocamlgraph needs ocaml version 3.10.0 or higher);;
   *)
-	FORPACK="-for-pack Graph";;
+        ;;
 esac
 
 # OCAMLLIB=`$OCAMLC -v | tail -n 1 | cut -f 4 -d " "`
@@ -192,7 +192,6 @@ AC_SUBST(OCAMLWIN32)
 AC_SUBST(EXE)
 AC_SUBST(LIBEXT)
 AC_SUBST(OBJEXT)
-AC_SUBST(FORPACK)
 AC_SUBST(INCLUDEGTK2)
 
 # Finally create the Makefile from Makefile.in

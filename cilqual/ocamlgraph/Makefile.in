@@ -47,12 +47,12 @@ LIBDIR	= lib
 
 INCLUDES= -I $(SRCDIR) -I $(LIBDIR)
 BFLAGS = $(INCLUDES) -g
-OFLAGS = $(INCLUDES) @FORPACK@
+OFLAGS = $(INCLUDES) -for-pack $(NAME)
 
 # main target
 #############
 
-NAME=ocamlgraph
+NAME=Ocamlgraph
 
 ifeq (@LABLGNOMECANVAS@,yes)
 all: byte $(OCAMLBEST) viewer editor
@@ -74,8 +74,8 @@ CMO = 	version util blocks persistent imperative \
 CMO := $(LIB) $(patsubst %, $(SRCDIR)/%.cmo, $(CMO))
 
 CMX = $(CMO:.cmo=.cmx)
-CMA = graph.cma
-CMXA = graph.cmxa
+CMA = $(NAME).cma
+CMXA = $(NAME).cmxa
 
 CMI = sig sig_pack dot_ast
 CMI := $(patsubst %, src/%.cmi, $(CMI))
@@ -87,19 +87,19 @@ GENERATED = META \
 byte: $(CMA)
 opt: $(CMXA)
 
-graph.cma: graph.cmo
+$(NAME).cma: $(NAME).cmo
 	$(OCAMLC) $(INCLUDES) -a -o $@ $^
 
-graph.cmxa: graph.cmx
+$(NAME).cmxa: $(NAME).cmx
 	$(OCAMLOPT) $(INCLUDES) -a -o $@ $^
 
-graph.cmi: graph.cmo
-graph.o: graph.cmx
+$(NAME).cmi: $(NAME).cmo
+$(NAME).o: $(NAME).cmx
 
-graph.cmo: $(CMI) $(CMO)
+$(NAME).cmo: $(CMI) $(CMO)
 	$(OCAMLC) $(INCLUDES) -pack -o $@ $^
 
-graph.cmx: $(CMI) $(CMX)
+$(NAME).cmx: $(CMI) $(CMX)
 	$(OCAMLOPT) $(INCLUDES) -pack -o $@ $^
 
 VERSION=1.0
@@ -252,7 +252,7 @@ endif
 endif
 
 install-byte: 
-	cp -f graph.cmo graph.cmi $(CMA) "$(DESTDIR)$(OCAMLLIB)"
+	cp -f $(NAME).cmo $(NAME).cmi $(CMA) "$(DESTDIR)$(OCAMLLIB)"
 ifeq (@LABLGNOMECANVAS@,yes)
 	cp -f $(ED_DIR)/editor.byte $(BINDIR)/graph-editor.byte
 	cp -f $(VIEWER_CMO) "$(DESTDIR)$(OCAMLLIB)"
@@ -260,7 +260,7 @@ ifeq (@LABLGNOMECANVAS@,yes)
 endif
 
 install-opt: install-byte
-	cp -f graph$(LIBEXT) graph.cmx $(CMXA) "$(DESTDIR)$(OCAMLLIB)"
+	cp -f $(NAME)$(LIBEXT) $(NAME).cmx $(CMXA) "$(DESTDIR)$(OCAMLLIB)"
 ifeq (@LABLGNOMECANVAS@,yes)
 	cp -f $(ED_DIR)/editor.opt $(BINDIR)/graph-editor.opt
 	cp -f $(VIEWER_CMX) "$(DESTDIR)$(OCAMLLIB)"
@@ -270,7 +270,7 @@ endif
 install-findlib: META
 ifdef OCAMLFIND
 	$(OCAMLFIND) install ocamlgraph META $(SRCDIR)/*.mli \
-		graph$(LIBEXT) graph.cmx graph.cmo graph.cmi $(CMA) $(CMXA) \
+		$(NAME)$(LIBEXT) $(NAME).cmx $(NAME).cmo $(NAME).cmi $(CMA) $(CMXA) \
 		$(VIEWER_CMX) $(VIEWER_CMO)
 endif
 
@@ -442,7 +442,7 @@ clean:
 	  rm -f $$d/*.cm[iox] $$d/*$(OBJEXT) $$d/*~; \
 	done
 	rm -f $(GENERATED) $(SRCDIR)/dot_parser.output
-	rm -f graph.*a graph.cm* graph.o graph$(LIBEXT) 
+	rm -f $(NAME).*a $(NAME).cm* $(NAME).o $(NAME)$(LIBEXT) 
 	rm -f $(ED_DIR)/editor.byte $(ED_DIR)/editor.opt
 	rm -f $(VIEWER_DIR)/viewgraph.byte $(VIEWER_DIR)/viewgraph.opt
 	rm -f *.haux *.aux *.log $(NAME).tex $(NAME).dvi $(DOCFILES)

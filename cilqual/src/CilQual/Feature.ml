@@ -33,7 +33,7 @@ module C (G : Constraints with type E.label = QualTypeConstraints.TypeVarLabel.t
     let edge_attributes e = [ `Label (quote edge_printer e) ]
     let get_subgraph _ = None
 end
-module D = Graph.Graphviz.Dot (C (G.Constraints))
+module D = Ocamlgraph.Graphviz.Dot (C (G.Constraints))
 
 
 (* cilqual options *)

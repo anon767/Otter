@@ -5,9 +5,9 @@ module Setup (QT : TypeQual.QualType.QualTypeMonad) = struct
     open QT
 
     module QPaths = struct
-        module G = Graph.Persistent.Digraph.Concrete (Constraints.Qual)
+        module G = Ocamlgraph.Persistent.Digraph.Concrete (Constraints.Qual)
         include G
-        include Graph.Oper.P (G)
+        include Ocamlgraph.Oper.P (G)
     end
 
     let path_printer ff (x, y) =
