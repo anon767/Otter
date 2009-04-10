@@ -18,7 +18,7 @@ let wrap_test testfn = fun () ->
     Format.pp_print_flush formatter ();
     Buffer.clear buffer;
     (* indent *)
-    assert_log "\n  @[";
+    assert_log "@\n  @[";
     (* run test *)
     try testfn () with e -> begin
         begin match e with
