@@ -1,250 +1,102 @@
 open Control.Data
 open Control.Monad
+open Control.Graph
+
+open QualGraph
 open Qual
 
 
-(* qualified-type type *)
-module QualTypeConstraints = struct
-    (* qualifier variables that encode types in reverse *)
-    module TypeVar = struct
-        type t = Fresh of int
-               | Deref of t
-               | FnRet of t
-               | FnArg of int * t
+(** qualifier variables encoded by reversed-types *)
+module TypedQualVar = struct
+    type t = Fresh of int
+           | Deref of t
+           | FnRet of t
+           | FnArg of int * t
 
-        let rec compare x y = if x == y then 0 else match x, y with
-            | Fresh x, Fresh y ->
-                Pervasives.compare x y
-            | Deref x, Deref y
-            | FnRet x, FnRet y ->
-                compare x y
-            | FnArg (ix, x), FnArg (iy, y) ->
-                begin match Pervasives.compare ix iy with
-                    | 0 -> compare x y
-                    | i -> i
-                end
-            | x, y ->
-                let rank = function Fresh _ -> 0 | Deref _ -> 1 | FnRet _ -> 2 | FnArg _ -> 3 in
-                Pervasives.compare (rank x) (rank y)
+    let rec compare x y = if x == y then 0 else match x, y with
+        | Fresh x, Fresh y ->
+            Pervasives.compare x y
+        | Deref x, Deref y
+        | FnRet x, FnRet y ->
+            compare x y
+        | FnArg (ix, x), FnArg (iy, y) ->
+            begin match Pervasives.compare ix iy with
+                | 0 -> compare x y
+                | i -> i
+            end
+        | x, y ->
+            let rank = function Fresh _ -> 0 | Deref _ -> 1 | FnRet _ -> 2 | FnArg _ -> 3 in
+            Pervasives.compare (rank x) (rank y)
 
-        let rec hash = function
-            | Fresh i -> i
-            | Deref x -> 1 + (31 * hash x)
-            | FnRet x -> 2 + (31 * hash x)
-            | FnArg (i, x) -> 3 + i + (31 * hash x)
+    let rec hash = function
+        | Fresh i -> i
+        | Deref x -> 1 + (31 * hash x)
+        | FnRet x -> 2 + (31 * hash x)
+        | FnArg (i, x) -> 3 + i + (31 * hash x)
 
-        let equal x y = (compare x y) = 0
+    let equal x y = (compare x y) = 0
 
-        let rec printer ff = function
-            | Fresh i      -> Format.fprintf ff "Fresh %d" i
-            | Deref v      -> Format.fprintf ff "Deref @[(%a)@]" printer v
-            | FnRet v      -> Format.fprintf ff "FnRet @[(%a)@]" printer v
-            | FnArg (i, v) -> Format.fprintf ff "FnArg:%d @[(%a)@]" i printer v
+    let rec printer ff = function
+        | Fresh i      -> Format.fprintf ff "Fresh %d" i
+        | Deref v      -> Format.fprintf ff "Deref @[(%a)@]" printer v
+        | FnRet v      -> Format.fprintf ff "FnRet @[(%a)@]" printer v
+        | FnArg (i, v) -> Format.fprintf ff "FnArg:%d @[(%a)@]" i printer v
 
-        let fresh i = Fresh i
-    end
-    open TypeVar
+    let fresh i = Fresh i
 
-    module Qual = Qual (TypeVar) (String)
-    open Qual
-
-    (* qualifier variable constructors *)
-    let const s = Const s
-    let deref = function
-        | Var v -> Var (Deref v)
-        | Const _ -> failwith "TODO: report deref of Const"
-    let fnRet = function
-        | Var v -> Var (FnRet v)
-        | Const _ -> failwith "TODO: report fnRet of Const"
-    let fnArg i = function
-        | Var v -> Var (FnArg (i, v))
-        | Const _ -> failwith "TODO: report fnArg of Const"
-
-    (* qualifier variable operations *)
-    let typevar = function
-        | Var v -> v
-        | Const _ -> failwith "TODO: report typevar of Const"
-    let subst x y = function
-        | Var v ->
-            let x = typevar x in
-            let y = typevar y in
-            let rec subst v = if TypeVar.equal v x then y else match v with
-                | Fresh _ as f -> f
-                | Deref v      -> Deref (subst v)
-                | FnRet v      -> FnRet (subst v)
-                | FnArg (i, v) -> FnArg (i, subst v)
-            in Var (subst v)
-        | Const _ as c -> c
-
-    module TypeVarLabel = struct
-        type t = Default
-               | TypeVar of TypeVar.t
-
-        let compare x y = if x == y then 0 else match x, y with
-            | TypeVar x, TypeVar y ->
-                TypeVar.compare x y
-            | x, y ->
-                let rank = function Default -> 0 | TypeVar _ -> 1 in
-                Pervasives.compare (rank x) (rank y)
-        let default = Default
-
-        let printer ff = function
-            | TypeVar (Deref _)      -> Format.fprintf ff "Deref"
-            | TypeVar (FnRet _)      -> Format.fprintf ff "FnRet"
-            | TypeVar (FnArg (i, _)) -> Format.fprintf ff "FnArg:%d" i
-            | _ -> ()
-    end
-    open TypeVarLabel
-
-    module ConstraintGraph = struct
-        include Ocamlgraph.Persistent.Digraph.ConcreteBidirectionalLabeled (Qual) (TypeVarLabel)
-
-        let add_typevar_edge g x y = add_edge_e g (E.create x (TypeVar (typevar x)) y)
-
-        (* Type extension edges:
-         *      var:    x -----> y      var:    x -----> y      var:    x -----> y
-         *              ^        ^              ^        ^              ^        ^
-         *              |        |              |        |              |        |
-         *      deref: *x <====> *y     fnRet: rx =====> ry     fnArg: ax <===== ay
-         *      (non-variant)           (co-variant)            (contra-variant)
-         *)
-        type cfl = TypeVar.t list
-        let start_cfl = []
-        let accept_cfl = Pervasives.(=) []
-        let iter_succ_vl f = iter_succ_e (fun e -> f (E.dst e) (E.label e))
-        let iter_pred_vl f = iter_pred_e (fun e -> f (E.src e) (E.label e))
-        let iter_cfl f g x cfl = match cfl with
-            (* start: all forward edges *)
-            | [] ->
-                iter_succ_vl begin fun y l -> match l with
-                    | TypeVar tv -> f y (tv::cfl)
-                    | Default -> f y cfl
-                end g x
-
-            (* deref edge: non-variant *)
-            | (Deref _)::tail ->
-                iter_succ_vl begin fun y l -> match l with
-                    | TypeVar tv -> f y (tv::cfl)
-                    | Default -> f y cfl
-                end g x;
-                iter_pred_vl begin fun y l -> match l with
-                    | TypeVar (Deref _) -> f y tail
-                    | TypeVar _ -> ()
-                    | Default -> f y cfl
-                end g x
-
-            (* fnRet edge: co-variant *)
-            | (FnRet _)::tail ->
-                iter_succ_vl begin fun y l -> match l with
-                    | TypeVar tv -> f y (tv::cfl)
-                    | Default -> f y cfl
-                end g x;
-                iter_pred_vl begin fun y l -> match l with
-                    | TypeVar (FnRet _) -> f y tail
-                    | TypeVar _
-                    | Default -> ()
-                end g x
-
-            (* fnRet edge: contra-variant *)
-            | (FnArg (i, _))::tail ->
-                iter_succ_vl begin fun y l -> match l with
-                    | TypeVar tv -> f y (tv::cfl)
-                    | Default -> ()
-                end g x;
-                iter_pred_vl begin fun y l -> match l with
-                    | TypeVar (FnArg (j, _)) when i = j -> f y tail
-                    | TypeVar _ -> ()
-                    | Default -> f y cfl
-                end g x
-
-            | (Fresh _)::_ ->
-                failwith "Impossible!"
-
-        let vertex_printer = Qual.printer
-        let edge_printer ff e =
-            Format.fprintf ff "@[<2>%a@ <=%a= %a@]"
-                Qual.printer (E.src e)
-                TypeVarLabel.printer (E.label e)
-                Qual.printer (E.dst e)
-
-        let printer ff graph =
-            ignore (fold_edges_e (fun e format -> Format.fprintf ff format edge_printer e; ",@ @[%a@]") graph "@[%a@]")
-    end
-    include ConstraintGraph
-
-    module PathChecker = Ocamlgraph.Cfl.Check (ConstraintGraph)
-    type path_checker = PathChecker.path_checker
-    let create_path_checker = PathChecker.create
-    let check_path = PathChecker.check_path
+    let subst x y v =
+        let rec subst v = if equal v x then y else match v with
+            | Fresh _ as f -> f
+            | Deref v      -> Deref (subst v)
+            | FnRet v      -> FnRet (subst v)
+            | FnArg (i, v) -> FnArg (i, subst v)
+        in subst v
 end
 
 
-module QualType = struct
-    open QualTypeConstraints
-    type const = Qual.const
-    type t = Ref of Qual.t * t         (* reference types *)
-           | Fn of Qual.t * t * t list (* function types *)
-           | Base of Qual.t            (* base types *)
-           | Empty                     (* empty/constant types (identity) *)
+(** qualifier constraint for TypedQualVar *)
+module TypedConstraint = struct
+    open TypedQualVar
+    type t = Default
+           | Typed of TypedQualVar.t
 
-    include ReaderT (Qual) (Identity)
+    let compare x y = if x == y then 0 else match x, y with
+        | Typed x, Typed y ->
+            TypedQualVar.compare x y
+        | x, y ->
+            let rank = function Default -> 0 | Typed _ -> 1 in
+            Pervasives.compare (rank x) (rank y)
+    let default = Default
 
-    (* explicit qualified-type constructors *)
-    let ref qt = perform
-        let subst_qt x y qt =
-            let subst_qv = subst x y in
-            let rec subst_qt = function
-                | Ref (qv, qt)      -> Ref (subst_qv qv, subst_qt qt)
-                | Fn (qv, qtr, qtp) -> Fn (subst_qv qv, subst_qt qtr, List.map subst_qt qtp)
-                | Base qv           -> Base (subst_qv qv)
-                | Empty             -> failwith "TODO: report invalid use of QualType constructor"
-            in subst_qt qt
-        in
-        let rec shift_qt = function
-            | Ref (qv, qt)   -> Ref (qv, shift_qt qt)
-            | Fn (qv, _, _)
-            | Base qv as qt  -> Ref (qv, subst_qt qv (deref qv) qt)
-            | Empty          -> failwith "TODO: report invalid use of QualType constructor"
-        in
-        return (shift_qt qt)
-    let fn qtr qtp = perform
-        qv <-- ask;
-        let qtr = match qtr with
-            | Ref (_, qt)      -> Ref (fnRet qv, qt)
-            | Fn (_, qtr, qtp) -> Fn (fnRet qv, qtr, qtp)
-            | Base _           -> Base (fnRet qv)
-            | Empty            -> failwith "TODO: report invalid use of QualType constructor"
-        and (_, qtp) = List.fold_left begin fun (i, qtp) a ->
-            let qt = match a with
-                | Ref (_, qt)      -> Ref (fnArg i qv, qt)
-                | Fn (_, qtr, qtp) -> Fn (fnArg i qv, qtr, qtp)
-                | Base _           -> Base (fnArg i qv)
-                | Empty            -> failwith "TODO: report invalid use of QualType constructor"
-            in (i + 1, qt::qtp)
-        end (0, []) qtp in
-        return (Fn (qv, qtr, List.rev qtp))
-    let base = perform
-        qv <-- ask;
-        return (Base qv)
-
-    let rec printer ff = function
-        | Ref (q, qt) ->
-            Format.fprintf ff "Ref @[(@[%a,@ %a@]@,)@]" Qual.printer q printer qt
-        | Fn  (q, rt, pt) ->
-            let list_printer ff args = ignore begin
-                List.fold_left (fun b a -> Format.fprintf ff "%(%)@[%a@]" b printer a; ",@ ") "" args
-            end in
-            Format.fprintf ff "Fn @[(@[<v>%a,@ %a,@ [@[<v>%a@]]@]@,)@]" Qual.printer q printer rt list_printer pt
-        | Base q ->
-            Format.fprintf ff "Base @[(@[%a@]@,)@]" Qual.printer q
-        | Empty ->
-            Format.fprintf ff "Empty"
+    let printer ff = function
+        | Typed (Deref _)      -> Format.fprintf ff "Deref"
+        | Typed (FnRet _)      -> Format.fprintf ff "FnRet"
+        | Typed (FnArg (i, _)) -> Format.fprintf ff "FnArg:%d" i
+        | _ -> ()
 end
 
 
 module type QualTypeMonad = sig
     include Monad
-    module Constraints : Constraints
+    (** qualified-type: types embedded with qualifier variables *)
+    module QualType : sig
+        module Qual : Qual with type Var.t = TypedQualVar.t
+        type t = Ref of Qual.t * t         (* reference types *)
+               | Fn of Qual.t * t * t list (* function types *)
+               | Base of Qual.t            (* base types *)
+               | Empty                     (* empty/constant types (identity) *)
+
+        include Monad
+        val ref  : t -> t monad
+        val fn   : t -> t list -> t monad
+        val base : t monad
+        val printer : Format.formatter -> t -> unit
+    end
+    module QualGraph : sig
+        include QualGraphAutomataType
+        module V : VertexType with type t = vertex
+        module E : EdgeType with type t = edge and type label = Constraint.t
+    end with module Qual = QualType.Qual
 
     val create : QualType.t QualType.monad -> QualType.t monad
     val empty  : QualType.t monad
@@ -253,7 +105,7 @@ module type QualTypeMonad = sig
     val join   : QualType.t -> QualType.t -> QualType.t monad
     val meet   : QualType.t -> QualType.t -> QualType.t monad
 
-    val annot  : QualType.t -> QualType.const list -> QualType.t monad
+    val annot  : QualType.t -> QualType.Qual.Const.t list -> QualType.t monad
     val deref  : QualType.t -> QualType.t monad
     val app    : QualType.t -> QualType.t list -> QualType.t monad
     val retval : QualType.t -> QualType.t monad
@@ -261,13 +113,168 @@ module type QualTypeMonad = sig
 end
 
 
-module QualTypeT (M : Monad) = struct
+module QualTypeT (QM : QualMonad with type Qual.Var.t = TypedQualVar.t
+                                  and type QualGraph.Constraint.t = TypedConstraint.t) = struct
     (* monad stack *)
-    module Q = QualT (QualTypeConstraints) (M)
-    include Q
-    (* module Ops = MonadOps (Q) *)
+    include (QM : Monad with type 'a monad = 'a QM.monad and type 'a result = 'a QM.result)
+    open QM
+    module Ops = MonadOps (QM)
     open Ops
 
+    let lift x = x
+
+    module QualType = struct
+        open TypedQualVar
+        module Qual = QM.Qual
+        type t = Ref of Qual.t * t         (* reference types *)
+               | Fn of Qual.t * t * t list (* function types *)
+               | Base of Qual.t            (* base types *)
+               | Empty                     (* empty/constant types (identity) *)
+
+        include ReaderT (Qual) (Identity)
+
+        let projvar = function
+            | Qual.Var v -> v
+            | Qual.Const _ -> failwith "TODO: report projvar of Const"
+        let deref v   = Qual.Var (Deref (projvar v))
+        let fnRet v   = Qual.Var (FnRet (projvar v))
+        let fnArg i v = Qual.Var (FnArg (i, projvar v))
+
+        (* explicit qualified-type constructors *)
+        let ref qt = perform
+            let subst_qt x y qt =
+                let subst_qv v = Qual.Var (subst (projvar x) (projvar y) (projvar v)) in
+                let rec subst_qt = function
+                    | Ref (qv, qt)      -> Ref (subst_qv qv, subst_qt qt)
+                    | Fn (qv, qtr, qtp) -> Fn (subst_qv qv, subst_qt qtr, List.map subst_qt qtp)
+                    | Base qv           -> Base (subst_qv qv)
+                    | Empty             -> failwith "TODO: report invalid use of QualType constructor"
+                in subst_qt qt
+            in
+            let rec shift_qt = function
+                | Ref (qv, qt)   -> Ref (qv, shift_qt qt)
+                | Fn (qv, _, _)
+                | Base qv as qt  -> Ref (qv, subst_qt  qv (deref qv) qt)
+                | Empty          -> failwith "TODO: report invalid use of QualType constructor"
+            in
+            return (shift_qt qt)
+        let fn qtr qtp = perform
+            qv <-- ask;
+            let qtr = match qtr with
+                | Ref (_, qt)      -> Ref (fnRet qv, qt)
+                | Fn (_, qtr, qtp) -> Fn (fnRet qv, qtr, qtp)
+                | Base _           -> Base (fnRet qv)
+                | Empty            -> failwith "TODO: report invalid use of QualType constructor"
+            and (_, qtp) = List.fold_left begin fun (i, qtp) a ->
+                let qt = match a with
+                    | Ref (_, qt)      -> Ref (fnArg i qv, qt)
+                    | Fn (_, qtr, qtp) -> Fn (fnArg i qv, qtr, qtp)
+                    | Base _           -> Base (fnArg i qv)
+                    | Empty            -> failwith "TODO: report invalid use of QualType constructor"
+                in (i + 1, qt::qtp)
+            end (0, []) qtp in
+            return (Fn (qv, qtr, List.rev qtp))
+        let base = perform
+            qv <-- ask;
+            return (Base qv)
+
+        let rec printer ff = function
+            | Ref (q, qt) ->
+                Format.fprintf ff "Ref @[(@[%a,@ %a@]@,)@]" Qual.printer q printer qt
+            | Fn  (q, rt, pt) ->
+                let list_printer ff args = ignore begin
+                    List.fold_left (fun b a -> Format.fprintf ff "%(%)@[%a@]" b printer a; ",@ ") "" args
+                end in
+                Format.fprintf ff "Fn @[(@[<v>%a,@ %a,@ [@[<v>%a@]]@]@,)@]" Qual.printer q printer rt list_printer pt
+            | Base q ->
+                Format.fprintf ff "Base @[(@[%a@]@,)@]" Qual.printer q
+            | Empty ->
+                Format.fprintf ff "Empty"
+    end
+
+    module QualGraph = struct
+        include (QualGraph : QualGraphType with type t = QualGraph.t
+                                            and type edge = QualGraph.edge
+                                            and module Qual = QualGraph.Qual
+                                            and module Constraint = QualGraph.Constraint)
+        open TypedQualVar
+        open TypedConstraint
+        module V = QualGraph.V
+        module E = QualGraph.E
+
+
+        (* Type extension edges:
+         *      var:    x -----> y      var:    x -----> y      var:    x -----> y
+         *              ^        ^              ^        ^              ^        ^
+         *              |        |              |        |              |        |
+         *      deref: *x <====> *y     fnRet: rx =====> ry     fnArg: ax <===== ay
+         *      (non-variant)           (co-variant)            (contra-variant)
+         *)
+        module Automata = struct
+            type t = TypedQualVar.t list
+            let rec compare x y = match x, y with
+                | x::xs, y::ys ->
+                    begin match TypedQualVar.compare x y with
+                        | 0 -> compare xs ys
+                        | i -> i
+                    end
+                | [], [] -> 0
+                | [], _  -> -1
+                | _, []  -> 1
+            let start = []
+            let accept automata = Pervasives.(=) [] automata
+        end
+        let fold_bidi_lv f g v acc =
+            let acc = fold_succ_e (fun e acc -> f `Forward (E.label e) (E.dst e) acc) g v acc in
+            let acc = fold_pred_e (fun e acc -> f `Backward (E.label e) (E.src e) acc) g v acc in
+            acc
+        let rec fold_flow direction f g v automata acc = match automata with
+            | [] ->
+                fold_bidi_lv begin fun d l w acc -> match d, l with
+                    | `Forward,  Typed tv -> f w (tv::automata) acc
+                    | `Backward, Typed _  -> acc
+                    (* start: all forward edges *)
+                    | d, Default when d = direction -> f w automata acc
+                    | d, Default                    -> acc
+                end g v acc
+
+            | (Deref _)::tail ->
+                fold_bidi_lv begin fun d l w acc -> match d, l with
+                    | `Forward,  Typed tv        -> f w (tv::automata) acc
+                    | `Backward, Typed (Deref _) -> f w tail acc
+                    | `Backward, Typed _         -> acc
+                    (* deref edge: non-variant *)
+                    | _, Default -> f w automata acc
+                end g v acc
+
+            | (FnRet _)::tail ->
+                fold_bidi_lv begin fun d l w acc -> match d, l with
+                    | `Forward,  Typed tv        -> f w (tv::automata) acc
+                    | `Backward, Typed (FnRet _) -> f w tail acc
+                    | `Backward, Typed _         -> acc
+                    (* fnRet edge: co-variant *)
+                    | d, Default when d = direction -> f w automata acc
+                    | d, Default                    -> acc
+                end g v acc
+
+            | (FnArg (i, _))::tail ->
+                fold_bidi_lv begin fun d l w acc -> match d, l with
+                    | `Forward,  Typed tv                        -> f w (tv::automata) acc
+                    | `Backward, Typed (FnArg (j, _)) when i = j -> f w tail acc
+                    | `Backward, Typed _                         -> acc
+                    (* fnRet edge: contra-variant *)
+                    | d, Default when d = direction -> acc
+                    | d, Default                    -> f w automata acc
+                end g v acc
+
+            | (Fresh _)::_ ->
+                failwith "Impossible!"
+
+        and fold_forward f g v automata acc = fold_flow `Forward f g v automata acc
+        and fold_backward f g v automata acc = fold_flow `Backward f g v automata acc
+    end
+
+    (* qualified-type constructors *)
     let create qt = perform
         qv <-- fresh;
         return (QualType.run qt qv)
@@ -275,18 +282,19 @@ module QualTypeT (M : Monad) = struct
     let empty = return QualType.Empty
 
     (* qualified-type extenders *)
-    let extend_type x y =
-        modify (fun g -> QualTypeConstraints.add_typevar_edge g x y)
+    let extend_type x y = perform
+        let label = TypedConstraint.Typed (QualType.projvar x) in
+        add_edge ~label:label x y
     let extend_deref qv = perform
-        let qv' = QualTypeConstraints.deref qv in
+        let qv' = QualType.deref qv in
         extend_type qv' qv;
         return (QualType.Base qv')
     let extend_fnRet qv = perform
-        let qv' = QualTypeConstraints.fnRet qv in
+        let qv' = QualType.fnRet qv in
         extend_type qv' qv;
         return (QualType.Base qv')
     let extend_fnArg i qv = perform
-        let qv' = QualTypeConstraints.fnArg i qv in
+        let qv' = QualType.fnArg i qv in
         extend_type qv' qv;
         return (QualType.Base qv')
 
@@ -398,10 +406,10 @@ module QualTypeT (M : Monad) = struct
 
     (* qualified-type operations *)
     let annot qt qlist = match qt with
-        | QualType.Ref (qv, _)
-        | QualType.Fn (qv, _, _)
-        | QualType.Base qv -> perform
-            annot qv qlist;
+        | QualType.Ref (v, _)
+        | QualType.Fn (v, _, _)
+        | QualType.Base v -> perform
+            annot v qlist;
             return qt
         | QualType.Empty -> perform
             return qt

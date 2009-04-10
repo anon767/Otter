@@ -34,30 +34,35 @@ end
 (* interpreter for Cil.exp side-effect free expressions *)
 module InterpreterT (T : Type.InterpreterMonad) = struct
     (* setup monad stack *)
-    module EnvironmentT = EnvT (CilFieldOrVar) (QualType) (T)
+    module EnvironmentT = struct
+        include EnvT (CilFieldOrVar) (T.QualType) (T)
+        let emptyEnv = empty
+
+        module QualGraph = T.QualGraph
+        module QualType = T.QualType
+        let emptyContext = T.emptyContext
+
+        (* lift monad operations *)
+        let inContext f m = Env (fun s -> T.inContext f (runEnv m s))
+        let askContext = lift T.askContext
+        let assign x y = lift (T.assign x y)
+        let join x y = lift (T.join x y)
+        let meet x y = lift (T.meet x y)
+        let create qt = lift (T.create qt)
+        let empty = lift T.empty
+        let annot qt clist = lift (T.annot qt clist)
+        let deref qt = lift (T.deref qt)
+        let app qtf qta = lift (T.app qtf qta)
+        let retval qtf = lift (T.retval qtf)
+        let args qtf = lift (T.args qtf)
+        let parse_annot attrlist = lift (T.parse_annot attrlist)
+        let annot_attr qt attrlist = lift (T.annot_attr qt attrlist)
+        let embed_lval t = lift (T.embed_lval t)
+        let embed_rval t = lift (T.embed_rval t)
+    end
     include EnvironmentT
     module Ops = MonadOps (EnvironmentT)
     open Ops
-
-    let emptyEnv = empty
-
-    module Constraints = T.Constraints
-
-    (* lift monad operations *)
-    let assign x y = lift (T.assign x y)
-    let join x y = lift (T.join x y)
-    let meet x y = lift (T.meet x y)
-    let create qt = lift (T.create qt)
-    let empty = lift T.empty
-    let annot qt clist = lift (T.annot qt clist)
-    let deref qt = lift (T.deref qt)
-    let app qtf qta = lift (T.app qtf qta)
-    let retval qtf = lift (T.retval qtf)
-    let args qtf = lift (T.args qtf)
-    let parse_annot attrlist = lift (T.parse_annot attrlist)
-    let annot_attr qt attrlist = lift (T.annot_attr qt attrlist)
-    let embed_lval t = lift (T.embed_lval t)
-    let embed_rval t = lift (T.embed_rval t)
 
     let embed_field_or_var fv =
         let typ, attrlist = match fv with

@@ -1,16 +1,15 @@
 open TestUtil.MyOUnit
 open Control.Monad
 
-open TypeQual.QualType
-open TypeQual.QualType.QualType
-open TypeQual.QualType.QualTypeConstraints.Qual
-
+(* setup CilQual interpreter monad stack *)
 module E =
     CilQual.Expression.InterpreterT
         (CilQual.Environment.InterpreterT
             (CilQual.Type.InterpreterT
                 (CilQual.Config.InterpreterT
-                    (TypeQual.QualType.QualTypeT (Identity)))))
+                    (CilQual.CilQualType.CilQualTypeT (Identity)))))
+open E.QualType.Qual
+open E.QualType
 open E
 
 module Setup1 = TestUtil.CilQualUtil.Setup (E)
@@ -36,12 +35,12 @@ let test_exp exp ?(label=exp) ?(typedecls=[]) vardecls test =
         let expM = interpret_exp exp in
 
         (* run interpreter *)
-        let (((result, env), constraints), _) = run expM emptyEnv Constraints.empty 0 in
+        let (((result, env), _), constraints) = run expM emptyEnv 0 emptyContext QualGraph.empty  in
 
         (* print the result, environment and constraints *)
         assert_log "@[<v2>Result:@ %a@]@\n" QualType.printer result;
         assert_log "@[<v2>Environment:@ %a@]@\n" cilqual_env_printer env;
-        assert_log "@[<v2>Constraints:@ %a@]@\n" Constraints.printer constraints;
+        assert_log "@[<v2>Constraints:@ %a@]@\n" QualGraph.printer constraints;
         assert_log "@]";
 
         (* finally run the test *)

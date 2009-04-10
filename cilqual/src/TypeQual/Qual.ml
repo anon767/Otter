@@ -1,94 +1,103 @@
 open Control.Data
 open Control.Monad
+open Control.Graph
+
+open QualGraph
 
 
-(* qualifier variable functor *)
-module Qual (V : sig include PrintableComparableType val fresh : int -> t end) (C : PrintableComparableType) = struct
-    type var = V.t
-    type const = C.t
-    type qual = Var of var      (* qualifier variables *)
-              | Const of const  (* qualifier constants *)
+(** qualifier node functor *)
+module Qual (Var : QualVar) (Const : QualConst) = struct
+    module Var = Var
+    module Const = Const
+    type qual = Var of Var.t      (* qualifier variables *)
+              | Const of Const.t  (* qualifier constants *)
     type t = qual
 
     let compare x y = if x == y then 0 else match x, y with
-        | Var x, Var y -> V.compare x y
-        | Const x, Const y -> C.compare x y
+        | Var x, Var y -> Var.compare x y
+        | Const x, Const y -> Const.compare x y
         | x, y ->
             let rank = function Var _ -> 0 | Const _ -> 1 in
             Pervasives.compare (rank x) (rank y)
     let hash = function
-        | Var v -> V.hash v
-        | Const c -> 1 + C.hash c
+        | Var v -> Var.hash v
+        | Const c -> 1 + Const.hash c
     let equal x y = if x == y then true else match x, y with
-        | Var x, Var y -> V.equal x y
-        | Const x, Const y -> C.equal x y
+        | Var x, Var y -> Var.equal x y
+        | Const x, Const y -> Const.equal x y
         | _, _ -> false
 
-    let fresh i = Var (V.fresh i)
+    let fresh i = Var (Var.fresh i)
 
     let printer ff = function
-        | Var v   -> Format.fprintf ff "Var @[(%a)@]" V.printer v
-        | Const c -> Format.fprintf ff "Const @[\"%a\"@]" C.printer c
+        | Var v   -> Format.fprintf ff "Var @[(%a)@]" Var.printer v
+        | Const c -> Format.fprintf ff "Const @[\"%a\"@]" Const.printer c
 end
 
-(* qualifier constraint graph type *)
-module type Constraints = sig
-    module Qual : sig
-        type var
-        type const
-        type qual = Var of var | Const of const
-        include PrintableComparableType with type t = qual
-        val fresh : int -> t
-    end
-    val const : Qual.const -> Qual.t
 
-    include Ocamlgraph.Sig.P with type V.t = Qual.t
-
-    type path_checker
-    val create_path_checker : t -> path_checker
-    val check_path : path_checker -> V.t -> V.t -> bool
-    val vertex_printer : Format.formatter -> V.t -> unit
-    val edge_printer : Format.formatter -> E.t -> unit
-    val printer : Format.formatter -> t -> unit
-end
+(** qualifier constraint functor *)
+module Constraint (C : Constraint) = C
 
 
 module type QualMonad = sig
     include Monad
-    module Constraints : Constraints
-    open Constraints
+    module Qual : Qual
+    module QualGraph : sig
+        include QualGraphAutomataType
+        module V : VertexType with type t = vertex
+        module E : EdgeType with type t = edge and type label = Constraint.t
+    end with module Qual = Qual
+    val add_edge : ?label:QualGraph.Constraint.t -> Qual.t -> Qual.t -> unit monad
+
+    val fresh : Qual.t monad
+    val const : Qual.Const.t -> Qual.t monad
 
     val eq  : Qual.t -> Qual.t -> unit monad
     val leq : Qual.t -> Qual.t -> unit monad
     val lub : Qual.t -> Qual.t -> Qual.t monad
     val glb : Qual.t -> Qual.t -> Qual.t monad
 
-    val const : Qual.const -> Qual.t monad
-    val fresh : Qual.t monad
-    val annot : Qual.t -> Qual.const list -> Qual.t monad
+    val annot : Qual.t -> Qual.Const.t list -> Qual.t monad
 end
 
 
 (* list-based monad-transformer to create and manage qualifiers *)
-module QualT (Constraints : Constraints) (M : Monad) = struct
-    module Constraints = Constraints
-    open Constraints
-    (* monad stack *)
-    module FreshM = FreshT (Constraints.Qual) (M) (* for generating fresh qualifier variables *)
-    module StateFreshM = StateT (Constraints) (FreshM) (* for keeping constraints *)
-    include StateFreshM
-    module Ops = MonadOps (StateFreshM)
+module QualT (Q : Qual) (C : Constraint)
+        (G : GraphMonad with type Graph.V.t = Q.t and type Graph.E.label = C.t) = struct
+    module Qual = Q
+    module FreshM = struct (* for generating fresh qualifier variables *)
+        include FreshT (Qual) (G)
+        (* lift monad operations *)
+        let add_edge ?label x y = lift (G.add_edge ?label x y)
+    end
+    include FreshM
+    module Ops = MonadOps (FreshM)
     open Ops
 
-    (* lift monad operations *)
-    let lift x = StateFreshM.lift (FreshM.lift x)
-    let fresh = StateFreshM.lift FreshM.fresh
+    module QualGraph = struct
+        include G.Graph
+        module Qual = Qual
+        module Constraint = C
+
+        module Automata = struct
+            include Unit
+            let start = ()
+            let accept () = true
+        end
+        let fold_forward f g v automata acc = fold_succ (fun v acc -> f v automata acc) g v acc
+        let fold_backward f g v automata acc = fold_pred (fun v acc -> f v automata acc) g v acc
+    end
+
+    (* qualifier constructors *)
+    let var v = return (Q.Var v)
+    let const s = return (Q.Const s)
 
     (* qualifier constraints *)
-    let eq x y =
-        modify (fun g -> add_edge (add_edge g x y) y x)
-    let leq x y =
-        modify (fun g -> add_edge g x y)
+    let eq x y = perform
+        add_edge x y;
+        add_edge y x
+    let leq x y = perform
+        add_edge x y
     let lub x y = perform (* least upper bound *)
         z <-- fresh;
         leq x z;
@@ -99,9 +108,6 @@ module QualT (Constraints : Constraints) (M : Monad) = struct
         leq z x;
         leq z y;
         return z
-
-    (* qualifier constructors *)
-    let const s = return (const s)
 
     (* annotate qualifier *)
     let annot qv alist = perform

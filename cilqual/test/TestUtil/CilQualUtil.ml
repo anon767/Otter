@@ -72,7 +72,7 @@ module Setup (E : CilQual.Expression.InterpreterMonad) = struct
 
     let cilqual_env_printer ff env = ignore begin
         let kvprinter ff (k, v) = match k with
-            | `Var vi -> Format.fprintf ff "@[%s:%d@] => @[%a@]" vi.Cil.vname vi.Cil.vid TypeQual.QualType.QualType.printer v
+            | `Var vi -> Format.fprintf ff "@[%s:%d@] => @[%a@]" vi.Cil.vname vi.Cil.vid E.QualType.printer v
             | _ -> ()
         in
         Env.fold (fun k v b -> Format.fprintf ff "%(%)@[%a@]" b kvprinter (k, v); "@\n") env ""

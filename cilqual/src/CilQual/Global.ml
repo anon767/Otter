@@ -41,10 +41,14 @@ module InterpreterT (S : Statement.InterpreterMonad) = struct
 
     let interpret_global = function
         | Cil.GVar (v, { Cil.init=Some init }, loc) ->
-            interpret_init_var v init
+            inContext (fun _ -> loc) begin perform
+                interpret_init_var v init
+            end
 
         | Cil.GFun (f, loc) ->
-            interpret_function f
+            inContext (fun _ -> loc) begin perform
+                interpret_function f
+            end
 
         | Cil.GPragma (attr, loc) ->
             return () (*failwith "TODO: read partial-order configuration"*)

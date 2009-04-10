@@ -93,7 +93,7 @@ module InterpreterT (C : Config.InterpreterMonad) = struct
         in
         let ts = Cil.typeSig t in
         qt <-- create (embed_ts ts);
-        annot_qt qt ts
+        inContext (fun _ -> emptyContext) (annot_qt qt ts) (* annotate qualifiers ignoring context *)
 
     let embed_lval t = perform
         if CilType.is_or_points_to_function t

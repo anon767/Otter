@@ -39,6 +39,13 @@ module type PrintableComparableType = sig
     val printer : Format.formatter -> t -> unit
 end
 
+module Unit = struct
+    type t = unit
+    let compare () () = 0
+    let hash () = 0
+    let equal () () = true
+end
+
 module String = struct
     include String
     let equal (x : string) (y : string) = x = y

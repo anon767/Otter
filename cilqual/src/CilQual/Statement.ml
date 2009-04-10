@@ -25,7 +25,7 @@ module InterpreterT (I : Instruction.InterpreterMonad) = struct
     and interpret_stmt { Cil.skind=skind } = match skind with
         (* only return interprets to a qualified type (of the expression) *)
         | Cil.Return ((Some e), loc) -> perform
-            interpret_exp e
+            inContext (fun _ -> loc) (interpret_exp e)
 
         (* interpret instructions for side effects *)
         | Cil.Instr instrlist -> perform
@@ -36,18 +36,20 @@ module InterpreterT (I : Instruction.InterpreterMonad) = struct
         | Cil.Return (None, loc)
         | Cil.Goto (_, loc)
         | Cil.Break loc
-        | Cil.Continue loc -> perform
+        | Cil.Continue loc ->
             empty
 
         (* safe to ignore condition expression since it's side-effect free *)
-        | Cil.If (_, ifblock, elseblock, loc) -> perform
-            qtif <-- interpret_block ifblock;
-            qtelse <-- interpret_block elseblock;
-            join qtif qtelse
+        | Cil.If (_, ifblock, elseblock, loc) ->
+            inContext (fun _ -> loc) begin perform
+                qtif <-- interpret_block ifblock;
+                qtelse <-- interpret_block elseblock;
+                join qtif qtelse
+            end
         | Cil.Switch (_, block, _, loc)
         | Cil.Loop (block, loc, _, _) -> perform
-            interpret_block block
-        | Cil.Block block -> perform
+            inContext (fun _ -> loc) (interpret_block block)
+        | Cil.Block block ->
             interpret_block block
 
         | Cil.TryFinally (_, _, _)

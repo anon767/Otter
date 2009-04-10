@@ -1,3 +1,4 @@
+open Control.Data
 open Control.Monad
 open TypeQual.QualType
 
@@ -21,14 +22,14 @@ let init_cil () =
 
 
 module type InterpreterMonad = sig
-    include QualTypeMonad
+    include CilQualType.CilQualTypeMonad
 
     val parse_annot : Cil.attributes -> string list monad
 end
 
 
 (* interpreter for Cil.exp types *)
-module InterpreterT (QT : QualTypeMonad) = struct
+module InterpreterT (QT : CilQualType.CilQualTypeMonad) = struct
     include QT
     module Ops = MonadOps (QT)
     open Ops

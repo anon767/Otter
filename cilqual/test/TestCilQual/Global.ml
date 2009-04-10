@@ -1,9 +1,7 @@
 open TestUtil.MyOUnit
 open Control.Monad
 
-open TypeQual.QualType.QualType
-open TypeQual.QualType.QualTypeConstraints.Qual
-
+(* setup CilQual interpreter monad stack *)
 module G =
     CilQual.Global.InterpreterT
         (CilQual.Statement.InterpreterT
@@ -12,7 +10,9 @@ module G =
                     (CilQual.Environment.InterpreterT
                         (CilQual.Type.InterpreterT
                             (CilQual.Config.InterpreterT
-                                (TypeQual.QualType.QualTypeT (Identity))))))))
+                                (CilQual.CilQualType.CilQualTypeT (Identity))))))))
+open G.QualType.Qual
+open G.QualType
 open G
 
 module Setup1 = TestUtil.CilQualUtil.Setup (G)
@@ -43,11 +43,11 @@ let test_file content ?(label=content) test =
         let expM = interpret_file file in
 
         (* run interpreter *)
-        let ((((), env), constraints), _) = run expM emptyEnv Constraints.empty 0 in
+        let ((((), env), _), constraints) = run expM emptyEnv 0 emptyContext QualGraph.empty in
 
         (* print the environment and constraints *)
         assert_log "@[<v2>Environment:@ %a@]@\n" cilqual_env_printer env;
-        assert_log "@[<v2>Constraints:@ %a@]@\n" Constraints.printer constraints;
+        assert_log "@[<v2>Constraints:@ %a@]@\n" QualGraph.printer constraints;
         assert_log "@]";
 
         (* finally run the test *)

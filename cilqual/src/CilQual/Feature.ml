@@ -1,10 +1,7 @@
 open Control.Monad
+open Control.Graph
 
-open TypeQual.Qual
-open TypeQual.QualType
-
-
-(* setup CilQual monad stack *)
+(* setup CilQual interpreter monad stack *)
 module G =
     Global.InterpreterT
         (Statement.InterpreterT
@@ -13,12 +10,15 @@ module G =
                     (Environment.InterpreterT
                         (Type.InterpreterT
                             (Config.InterpreterT
-                                (QualTypeT (Identity))))))))
+                                (CilQualType.CilQualTypeT (Identity))))))))
+
+(* setup CilQual solver *)
+module SourceSink = TypeQual.QualSolver.Reachability.SourceSink (G.QualGraph)
+
 
 (* setup Graphviz module *)
-module C (G : Constraints with type E.label = QualTypeConstraints.TypeVarLabel.t) = struct
-    include G
-    open QualTypeConstraints.TypeVarLabel
+module C (Graph : sig include PrintableGraphType module V : VertexType module E : EdgeType end) = struct
+    include Graph
 
     let quote printer x =
         let quoted = Format.fprintf Format.str_formatter "%a" printer x; Format.flush_str_formatter () in
@@ -33,7 +33,7 @@ module C (G : Constraints with type E.label = QualTypeConstraints.TypeVarLabel.t
     let edge_attributes e = [ `Label (quote edge_printer e) ]
     let get_subgraph _ = None
 end
-module D = Ocamlgraph.Graphviz.Dot (C (G.Constraints))
+module D = Ocamlgraph.Graphviz.Dot (C (G.QualGraph))
 
 
 (* cilqual options *)
@@ -70,9 +70,9 @@ let doit file =
     prepare_file file;
 
     (* initialize constraint graph *)
-    let null = (G.Constraints.const "null") in
-    let nonnull = (G.Constraints.const "nonnull") in
-    let init_constraints = List.fold_left G.Constraints.add_vertex G.Constraints.empty [null; nonnull] in
+    let null = G.QualGraph.Qual.Const "null" in
+    let nonnull = G.QualGraph.Qual.Const "nonnull" in
+    let init_constraints = List.fold_left G.QualGraph.add_vertex G.QualGraph.empty [null; nonnull] in
 
     let timing = timer in
 
@@ -82,13 +82,13 @@ let doit file =
 
     (* run the interpreter *)
     let timing = tic "Running interpreter monad" timing in
-    let ((((), _), constraints), _) = G.run expM G.emptyEnv init_constraints 0 in
+    let ((((), env), fresh), constraints) = G.run expM G.emptyEnv 0 G.emptyContext init_constraints in
 
     (* determine if there is a path between $null and $nonnull *)
     let timing = tic "Resolving constraints" timing in
-    let path_checker = G.Constraints.create_path_checker constraints in
-    let has_error = (G.Constraints.check_path path_checker null nonnull)
-                    or (G.Constraints.check_path path_checker nonnull null)
+
+    let solver = SourceSink.create constraints in
+    let has_error = (SourceSink.check solver null nonnull) or (SourceSink.check solver nonnull null)
     in
 
     let timing = toc timing in
@@ -108,8 +108,8 @@ let doit file =
         Format.eprintf "@[<v2>Constraint graph:@\n\
                           Vertex count: %7d@\n\
                           Edge count  : %7d@]@\n"
-            (G.Constraints.nb_vertex constraints)
-            (G.Constraints.nb_edges constraints);
+            (G.QualGraph.nb_vertex constraints)
+            (G.QualGraph.nb_edges constraints);
         let gc = Gc.quick_stat () in
         Format.eprintf "@[<v2>Memory:@\n\
                           Allocated: %10.2fMiB@\n\
