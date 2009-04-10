@@ -4,6 +4,7 @@ SRCS = c_interface.cpp
 OBJS = $(SRCS:.cpp=.o)
 
 libcinterface.a: $(OBJS)
+	$(RM) $@
 	$(AR) rc $@ $^
 	$(RANLIB) $@
 

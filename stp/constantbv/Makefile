@@ -4,6 +4,7 @@ SRCS = constantbv.cpp
 OBJS = $(SRCS:.cpp=.o)
 
 libconstantbv.a: $(OBJS)
+	$(RM) $@
 	$(AR) rc $@ $^
 	$(RANLIB) $@
 

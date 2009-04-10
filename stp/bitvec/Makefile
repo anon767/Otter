@@ -4,6 +4,7 @@ SRCS = consteval.cpp
 OBJS = $(SRCS:.cpp=.o)
 
 libconsteval.a: $(OBJS)
+	$(RM) $@
 	$(AR) rc $@ $^
 	$(RANLIB) $@
 

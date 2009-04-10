@@ -4,6 +4,7 @@ SRCS = Solver.C Simplifier.C
 OBJS = $(SRCS:.C=.o)
 
 libsatsolver.a: $(OBJS)
+	$(RM) $@
 	$(AR) rc $@ $^
 	$(RANLIB) $@
 
