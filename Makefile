@@ -38,15 +38,17 @@ camlidl : make//camlidl
 
 
 clean :
-	$(foreach foo,$(SUBDIRS),$(MAKE) -C $(foo) clean;)
+	$(foreach foo,$(SUBDIRS),$(MAKE) -C $(foo) clean;) true
 
+distclean :
+	$(foreach foo,$(SUBDIRS),$(MAKE) -C $(foo) clean distclean;) true
 
 .PRECIOUS : %/Makefile
 %/Makefile : %/Makefile.in %/configure Makefile
-	cd $(@D) && ./configure $(CONFIGURE_FLAGS)
+	cd $(@D) && ./configure $(CONFIGURE_FLAGS) $(CONFIGURE_EXTRAFLAGS)
 
 %/Makefile : %/configure Makefile
-	cd $(@D) && ./configure $(CONFIGURE_FLAGS)
+	cd $(@D) && ./configure $(CONFIGURE_FLAGS) $(CONFIGURE_EXTRAFLAGS)
 
 .PRECIOUS : %/configure
 %/configure : %/configure.ac

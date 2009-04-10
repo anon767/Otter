@@ -1,0 +1,9 @@
+include Printexc
+
+@MYPRINTEXC_ENABLE_COMMENT@
+
+let backtrace_status () = true
+let record_backtrace _ = ()
+let get_backtrace () = "Printexc.get_backtrace requires Ocaml 3.11"
+
+@MYPRINTEXC_ENABLE_UNCOMMENT@

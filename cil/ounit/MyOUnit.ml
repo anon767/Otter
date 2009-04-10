@@ -12,8 +12,8 @@ let assert_log format = Format.fprintf formatter format
 (* test wrapper that sets up the log and reports unexpected exceptions *)
 let wrap_test testfn = fun () ->
     (* enable backtrace *)
-    let prev_backtrace = Printexc.backtrace_status () in
-    Printexc.record_backtrace true;
+    let prev_backtrace = MyPrintexc.backtrace_status () in
+    MyPrintexc.record_backtrace true;
     (* reset printing boxes *)
     Format.pp_print_flush formatter ();
     Buffer.clear buffer;
@@ -25,17 +25,17 @@ let wrap_test testfn = fun () ->
             | MyOUnitFailure -> ()
             | _ ->
                 (* report unexpected exceptions *)
-                let b = Str.split (Str.regexp "\n") (Printexc.get_backtrace ()) in
+                let b = Str.split (Str.regexp "\n") (MyPrintexc.get_backtrace ()) in
                 let line_printer ff l =
                     ignore (List.fold_left (fun b e -> Format.fprintf ff "%(%)%s" b e; "@\n") "" l)
                 in
-                assert_log "@[<2>Unexpected exception: %s@\n@[<v>%a@]@]" (Printexc.to_string e) line_printer b
+                assert_log "@[<2>Unexpected exception: %s@\n@[<v>%a@]@]" (MyPrintexc.to_string e) line_printer b
         end;
-        Printexc.record_backtrace prev_backtrace;
+        MyPrintexc.record_backtrace prev_backtrace;
         Format.pp_print_flush formatter ();
         ignore (OUnit.assert_failure (Buffer.contents buffer))
     end;
-    Printexc.record_backtrace prev_backtrace
+    MyPrintexc.record_backtrace prev_backtrace
 
 
 (* test wrapper that forks the process before running the test *)
