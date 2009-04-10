@@ -27,10 +27,10 @@ let test_instr instr ?(label=instr) ?(typedecls=[]) vardecls test =
         (* Cil instruction to interpret *)
         let instr = Formatcil.cInstr (preprocess_cilqual instr) dummy_loc formatcilenv in
 
-        assert_logf "@[<v>";
+        assert_log "@[<v>";
         (* show Cil environment and instruction structure *)
-        assert_logf "@[<v2>Environment:@ %a@]@\n" (env_printer Cil.plainCilPrinter) cilenv;
-        assert_logf "@[<v2>Instruction:@ %a@]@\n" (adapt_cil_printer Cil.plainCilPrinter#pInstr) instr;
+        assert_log "@[<v2>Environment:@ %a@]@\n" (env_printer Cil.plainCilPrinter) cilenv;
+        assert_log "@[<v2>Instruction:@ %a@]@\n" (adapt_cil_printer Cil.plainCilPrinter#pInstr) instr;
 
         (* CilQual interpreter for instruction *)
         let expM = interpret_instr instr in
@@ -39,9 +39,9 @@ let test_instr instr ?(label=instr) ?(typedecls=[]) vardecls test =
         let ((((), env), constraints), _) = run expM emptyEnv Constraints.empty 0 in
 
         (* print the environment and constraints *)
-        assert_logf "@[<v2>Environment:@ %a@]@\n" cilqual_env_printer env;
-        assert_logf "@[<v2>Constraints:@ %a@]@\n" Constraints.printer constraints;
-        assert_logf "@]";
+        assert_log "@[<v2>Environment:@ %a@]@\n" cilqual_env_printer env;
+        assert_log "@[<v2>Constraints:@ %a@]@\n" Constraints.printer constraints;
+        assert_log "@]";
 
         (* finally run the test *)
         test (cilenv, env) constraints

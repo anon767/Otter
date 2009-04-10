@@ -35,9 +35,9 @@ let test_cilqual content ?(label=content) lattice expected_result =
 
         CilQual.Feature.prepare_file file;
 
-        assert_logf "@[<v>";
+        assert_log "@[<v>";
         (* show Cil file structure *)
-        assert_logf "@[<v2>Compilation unit:@ %a@]@\n" (file_printer Cil.plainCilPrinter) file;
+        assert_log "@[<v2>Compilation unit:@ %a@]@\n" (file_printer Cil.plainCilPrinter) file;
 
         (* CilQual interpreter for file *)
         let expM = interpret_file file in
@@ -51,9 +51,9 @@ let test_cilqual content ?(label=content) lattice expected_result =
         let ((((), env), constraints), _) = run expM emptyEnv init_constraints 0 in
 
         (* print the environment and constraints *)
-        assert_logf "@[<v2>Environment:@ %a@]@\n" cilqual_env_printer env;
-        assert_logf "@[<v2>Constraints:@ %a@]@\n" Constraints.printer constraints;
-        assert_logf "@]";
+        assert_log "@[<v2>Environment:@ %a@]@\n" cilqual_env_printer env;
+        assert_log "@[<v2>Constraints:@ %a@]@\n" Constraints.printer constraints;
+        assert_log "@]";
 
         (* check the result against the lattice *)
         let assert_test = match expected_result with

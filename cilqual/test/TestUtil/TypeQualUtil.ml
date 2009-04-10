@@ -23,24 +23,21 @@ module Setup (QT : TypeQual.QualType.QualTypeMonad) = struct
         let pc = Constraints.create_path_checker graph in
         let bad = List.filter (fun (x, y) -> not (Constraints.check_path pc x y)) list in
         if bad != [] then begin
-            assert_logf "@[<v2>Should be in:@ %a@]" path_list_printer bad;
-            assert_failure ()
+            assert_failure "@[<v2>Should be in:@ %a@]" path_list_printer bad
         end
 
     let assert_some_paths list graph =
         let pc = Constraints.create_path_checker graph in
         let has_path = List.exists (fun (x, y) -> (Constraints.check_path pc x y)) list in
         if not has_path then begin
-            assert_logf "@[<v2>One should be in:@ %a@]" path_list_printer list;
-            assert_failure ()
+            assert_failure "@[<v2>One should be in:@ %a@]" path_list_printer list
         end
 
     let assert_no_paths list graph =
         let pc = Constraints.create_path_checker graph in
         let bad = List.filter (fun (x, y) -> (Constraints.check_path pc x y)) list in
         if bad != [] then begin
-            assert_logf "@[<v2>Should not be in:@ %a@]" path_list_printer bad;
-            assert_failure ()
+            assert_failure "@[<v2>Should not be in:@ %a@]" path_list_printer bad
         end
 
     let assert_only_paths list ?(others=[]) graph =
@@ -65,15 +62,15 @@ module Setup (QT : TypeQual.QualType.QualTypeMonad) = struct
         let notin = QPaths.fold_edges begin fun x y notin ->
             if not (Constraints.Qual.equal x y) && Constraints.check_path pc x y then notin else (x, y)::notin
         end pathin [] in
-        if notin != [] then assert_logf "@[<v2>Should be in:@ %a@]@\n" path_list_printer notin;
+        if notin != [] then assert_log "@[<v2>Should be in:@ %a@]@\n" path_list_printer notin;
 
         (* check for unexpected paths *)
         let notout = QPaths.fold_edges begin fun x y notout ->
             if not (Constraints.Qual.equal x y) && Constraints.check_path pc x y then (x, y)::notout else notout
         end pathout [] in
-        if notout != [] then assert_logf "@[<v2>Should not be in:@ %a@]" path_list_printer notout;
+        if notout != [] then assert_log "@[<v2>Should not be in:@ %a@]@\n" path_list_printer notout;
 
-        if notin != [] || notout != [] then assert_failure ()
+        if notin != [] || notout != [] then assert_failure "Paths do not match"
 
     let assert_nb_edges expected graph =
         assert_equal

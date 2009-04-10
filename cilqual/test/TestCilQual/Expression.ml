@@ -27,10 +27,10 @@ let test_exp exp ?(label=exp) ?(typedecls=[]) vardecls test =
         (* Cil expression to interpret *)
         let exp = Formatcil.cExp (preprocess_cilqual exp) formatcilenv in
 
-        assert_logf "@[<v>";
+        assert_log "@[<v>";
         (* show Cil environment and expression structure *)
-        assert_logf "@[<v2>Environment:@ %a@]@\n" (env_printer Cil.plainCilPrinter) cilenv;
-        assert_logf "@[<v2>Expression:@ %a@]@\n" (adapt_cil_printer Cil.plainCilPrinter#pExp) exp;
+        assert_log "@[<v2>Environment:@ %a@]@\n" (env_printer Cil.plainCilPrinter) cilenv;
+        assert_log "@[<v2>Expression:@ %a@]@\n" (adapt_cil_printer Cil.plainCilPrinter#pExp) exp;
 
         (* CilQual interpreter for expression *)
         let expM = interpret_exp exp in
@@ -39,10 +39,10 @@ let test_exp exp ?(label=exp) ?(typedecls=[]) vardecls test =
         let (((result, env), constraints), _) = run expM emptyEnv Constraints.empty 0 in
 
         (* print the result, environment and constraints *)
-        assert_logf "@[<v2>Result:@ %a@]@\n" QualType.printer result;
-        assert_logf "@[<v2>Environment:@ %a@]@\n" cilqual_env_printer env;
-        assert_logf "@[<v2>Constraints:@ %a@]@\n" Constraints.printer constraints;
-        assert_logf "@]";
+        assert_log "@[<v2>Result:@ %a@]@\n" QualType.printer result;
+        assert_log "@[<v2>Environment:@ %a@]@\n" cilqual_env_printer env;
+        assert_log "@[<v2>Constraints:@ %a@]@\n" Constraints.printer constraints;
+        assert_log "@]";
 
         (* finally run the test *)
         test (cilenv, env) result constraints
