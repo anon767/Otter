@@ -432,7 +432,7 @@ $(DEPENDDIR)/%.di: %.mli $(BEFOREDEPS)
 # sm: it turns out there's a variable which lists all the goals
 # specified on the command line; I'll use this to set CLEANING
 # (which is not set anywhere else, currently)
-ifeq ($(MAKECMDGOALS),clean)
+ifeq ($(findstring clean,$(MAKECMDGOALS)),clean)
   #$(warning "Skipping dependency rules because we're cleaning")
   CLEANING := 1
 endif
