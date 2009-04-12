@@ -1383,7 +1383,9 @@ main (int argc, char **argv)
 	break;
       }
 
+#ifndef CONCRETE
   symtest_initialize();
+#endif
 
 #ifdef LIST_FILES
   list_files = LIST_FILES;
