@@ -24,7 +24,6 @@ def compile(config, exe)
     args += " -D#{k}=#{v}"
   }
   cmd = "gcc -I. #{args} -DCONCRETE grep.c -o #{exe} > /dev/null 2>&1"
-#  puts cmd
   system cmd
 end
 
@@ -62,7 +61,13 @@ void symtest_initialize() {
 END
 end
 
-def symbolic_exec(config, search, contents)
+def readline_echo(fin, fout)
+  result = fin.readline
+  fout.puts result
+  result
+end
+
+def symbolic_exec(i, config, search, contents)
   tmpfile = "/tmp/#{Process.pid}-test.c"
   combfile = "/tmp/#{Process.pid}_comb.c"
   File.open(tmpfile, "w") { |f|
@@ -77,32 +82,31 @@ def symbolic_exec(config, search, contents)
         "#{args} -I. -I #{$libcdir} -I #{$mockeddir} " +
         "-include #{$mockeddir}/symexe.h " +
             "#{$libcdir}/*.c #{$mockeddir}/*.c #{tmpfile} grep.c --warnall > /dev/null 2>&1"
-#  puts cmd
   system cmd
   File.unlink tmpfile
 
   cmd = "#{$cilly} #{combfile} --useLogicalOperators --arg=#{search} " +
         "--arg=input.txt --doexecute"
-#  CILLY_DONT_COMPILE_AFTER_MERGE=1
-#  puts cmd
+  #  CILLY_DONT_COMPILE_AFTER_MERGE=1
   result = ""
-  state = 0
+  out = File.open("out/#{i}.out", "w")
   Open3.popen3(cmd) { |stdin,stdout,stderr|
     while not stdout.eof?
-      if ((stdout.readline =~ /__COMMENT\(\(char \*\)"Writing on fildes"\);/) &&
-          (stdout.readline) && # COMMENT:(char *)"Writing on fildes"
-          (stdout.readline) && # #line 101
-          (stdout.readline) && # __EVAL(fildes)
-          (stdout.readline =~ /Evaluates to Bytearray\(\/01\/00\/00\/00\)/) &&
-          (stdout.readline) && # #line 103
-          (stdout.readline) && # __EVALSTR((char *_buf, (int )nbyte)
-          (stdout.readline =~ /Evaluates to string: "(.*)"/))
+      if ((readline_echo(stdout, out) =~ /__COMMENT\(\(char \*\)"Writing on fildes"\);/) &&
+          (readline_echo(stdout, out)) && # COMMENT:(char *)"Writing on fildes"
+          (readline_echo(stdout, out)) && # #line 101
+          (readline_echo(stdout, out)) && # __EVAL(fildes)
+          (readline_echo(stdout, out) =~ /Evaluates to Bytearray\(\/01\/00\/00\/00\)/) &&
+          (readline_echo(stdout, out)) && # #line 103
+          (readline_echo(stdout, out)) && # __EVALSTR((char *_buf, (int )nbyte)
+          (readline_echo(stdout, out) =~ /Evaluates to string: "(.*)"/))
         result = result + $1
       end
     end
   }
 
   File.unlink combfile
+  out.close
   result
 end
 
@@ -118,20 +122,24 @@ tests = [
   ["ab*bc", "abbc"],
 ]
 
+puts "pid: #{Process.pid}"
 grep_exe = "/tmp/#{Process.pid}.exe"
+if not (File.exists?("out"))
+  Dir.mkdir("out")
+end
 compile(config, grep_exe)
+i = 0
 tests.each { |search, contents|
-  msg = "Testing search=\"#{search}\", contents=\"#{contents}\"..."
+  msg = "#{i}: Testing search=\"#{search}\", contents=\"#{contents}\"..."
   print msg
   real = run(grep_exe, search, contents)
-#  puts "Got string: #{real}"
-  symbolic = symbolic_exec(config, search, contents)
+  symbolic = symbolic_exec(i, config, search, contents)
   symbolic = eval("\"" + symbolic + "\"") # unescape string
-#  puts "Got symbolic string: #{symbolic}"
   if (real == symbolic)
     puts "PASS"
   else
     puts "FAIL:  real=\"#{real}\" symbolic=\"#{symbolic}\""
   end
+  i = i + 1
 }
 File.unlink grep_exe
