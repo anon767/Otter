@@ -105,7 +105,7 @@ module type QualTypeMonad = sig
     val join   : QualType.t -> QualType.t -> QualType.t monad
     val meet   : QualType.t -> QualType.t -> QualType.t monad
 
-    val annot  : QualType.t -> QualType.Qual.Const.t list -> QualType.t monad
+    val annot  : QualType.t -> QualType.Qual.Const.t -> QualType.t monad
     val deref  : QualType.t -> QualType.t monad
     val app    : QualType.t -> QualType.t list -> QualType.t monad
     val retval : QualType.t -> QualType.t monad
@@ -405,11 +405,11 @@ module QualTypeT (QM : QualMonad with type Qual.Var.t = TypedQualVar.t
 
 
     (* qualified-type operations *)
-    let annot qt qlist = match qt with
+    let annot qt s = match qt with
         | QualType.Ref (v, _)
         | QualType.Fn (v, _, _)
         | QualType.Base v -> perform
-            annot v qlist;
+            annot v s;
             return qt
         | QualType.Empty -> perform
             return qt

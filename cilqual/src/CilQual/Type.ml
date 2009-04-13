@@ -21,7 +21,8 @@ module InterpreterT (C : Config.InterpreterMonad) = struct
     (* annotated with qualifiers from attributes *)
     let annot_attr qt attrlist = perform
         quals <-- parse_annot attrlist;
-        annot qt quals
+        mapM_ (annot qt) quals;
+        return qt
 
     (* Translation from C types to CilQual types:
      *      Base/Fn         Ref Base/Fn     Ref Ref Base/Fn

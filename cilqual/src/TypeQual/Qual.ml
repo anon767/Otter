@@ -57,7 +57,7 @@ module type QualMonad = sig
     val lub : Qual.t -> Qual.t -> Qual.t monad
     val glb : Qual.t -> Qual.t -> Qual.t monad
 
-    val annot : Qual.t -> Qual.Const.t list -> Qual.t monad
+    val annot : Qual.t -> Qual.Const.t -> Qual.t monad
 end
 
 
@@ -71,8 +71,6 @@ module QualT (Q : Qual) (C : Constraint)
         let add_edge ?label x y = lift (G.add_edge ?label x y)
     end
     include FreshM
-    module Ops = MonadOps (FreshM)
-    open Ops
 
     module QualGraph = struct
         include G.Graph
@@ -110,8 +108,9 @@ module QualT (Q : Qual) (C : Constraint)
         return z
 
     (* annotate qualifier *)
-    let annot qv alist = perform
-        mapM_ (fun s -> perform s <-- const s; eq qv s) alist;
+    let annot qv c = perform
+        c <-- const c;
+        eq qv c;
         return qv
 end
 
