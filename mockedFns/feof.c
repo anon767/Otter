@@ -1,6 +1,8 @@
 #include <stdio.h>
+#include "iosim.h"
 
 int feof(FILE *stream)
 {
-	return IOSIM_eof(stream);
+	sym_file_stream_t *streamAsSymStream = stream;
+	return IOSIM_eof(streamAsSymStream->fd);
 }

@@ -3,7 +3,8 @@
 
 int getc(FILE *stream){
 	char b[1];
-	int flag = IOSIM_read(stream,b,1); //TODO: it's slow
+	sym_file_stream_t *streamAsSymStream = stream;
+	int flag = IOSIM_read(streamAsSymStream->fd,b,1); //TODO: it's slow
 	if(flag<0) return EOF;
 	else return b[0];
 }
