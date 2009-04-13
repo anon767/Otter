@@ -97,10 +97,6 @@ ssize_t write(int fildes, const void *buf, size_t nbyte){
 		//strncat(write_output[fildes],buf,nbyte);
 		//__EVALSTR(write_output[fildes]);
 
-	__COMMENT("Writing on fildes");
-	__EVAL(fildes);
-
-		__EVALSTR(buf,nbyte);
 		IOSIM_write(fildes, buf, nbyte);
 		return nbyte;
 //	}

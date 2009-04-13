@@ -210,6 +210,11 @@ int IOSIM_write(int fildes, const void *buf, int nbyte){
 //		cur++;
 //	}
 
+	__COMMENT("Writing on fildes");
+	__EVAL(fildes);
+	__EVALSTR(buf,nbyte);
+	__COMMENT("Done");
+
 	// Update offset pointer
 	out->offset += nbyte;
 
