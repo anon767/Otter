@@ -53,20 +53,21 @@ sym_file_t *IOSIM_addfile(const char *filename, mode_t mode){
 	sym_file_t *file = malloc(sizeof(sym_file_t));
 	file->stat.st_size = 0;
 	file->contents = NULL;
-	file->stat.st_mode = (S_IFREG | mode | S_IROTH); // For now, I'm only making regular files (S_IFREG) which are readable by others (S_IROTH)
 	file->stat.st_nlink = 1; // Only one hard link
-	file->stat.st_uid = 1234; // Does this need to be a real value?
-	file->stat.st_gid = 5678; // Does this need to be a real value?
+
+	// For now, I'm only making regular files (S_IFREG) which are readable by others (S_IROTH)
+	file->stat.st_mode = (S_IFREG | mode | S_IROTH);
+
+	// Setting (to arbitrary values) some fields that get accessed.
+	// At some point, these values might want to be more 'real'.
+	file->stat.st_uid = 1234;
+	file->stat.st_gid = 5678;
 	file->stat.st_atim.tv_sec = 1;
 	file->stat.st_atim.tv_nsec = 2;
 	file->stat.st_mtim.tv_sec = 1;
 	file->stat.st_mtim.tv_nsec = 2;
 	file->stat.st_ctim.tv_sec = 1;
 	file->stat.st_ctim.tv_nsec = 2;
-	// I probably have to set some more fields here.
-
-	__COMMENT("Adding file");
-	__EVALSTR(filename,strlen(filename));
 
 	IOSIM_file_name[IOSIM_num_file] = strdup(filename);
 	IOSIM_file[IOSIM_num_file] = file;
@@ -188,8 +189,6 @@ int IOSIM_write(int fildes, const void *buf, int nbyte){
 	int n,cur,len;
 	char* cbuf = buf;
 
-	static int numWritten[IOSIM_MAX_FD]; // Initialized to 0
-
 	if(nbyte == 0) return 0;
 	if(fildes == 0) return -1;
 
@@ -210,11 +209,6 @@ int IOSIM_write(int fildes, const void *buf, int nbyte){
 //		out->sym_file->contents[cur] = cbuf[n];
 //		cur++;
 //	}
-
-	/* Print out, for the benefit of the person running the symbolic
-		 executor, everything written on this file so far. */
-	numWritten[fildes] += nbyte;
-	__EVALSTR(out->sym_file->contents,numWritten[fildes]);
 
 	// Update offset pointer
 	out->offset += nbyte;
