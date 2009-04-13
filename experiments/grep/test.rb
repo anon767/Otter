@@ -106,7 +106,16 @@ def symbolic_exec(config, search, contents)
   result
 end
 
-tests = [ ["abc", "abc"],
+tests = [
+  ["abc", "abc"],
+  ["abc", "xbc"],
+  ["abc", "axc"],
+  ["abc", "abx"],
+  ["abc", "xabcy"],
+  ["abc", "ababc"],
+  ["ab*c", "abc"],
+  ["ab*bc", "abc"],
+  ["ab*bc", "abbc"],
 ]
 
 grep_exe = "/tmp/#{Process.pid}.exe"
