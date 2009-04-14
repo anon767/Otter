@@ -8,15 +8,7 @@ char **environ;
 
 void symtest_initialize() {
 	// Make the string of commands on fd 0
-	static char commandString[] = "user ftp
-pass
-pasv
-stor aFile
-pasv
-list
-pasv
-retr nonexistent
-retr aFile
+	char commandString[] = "opts
 quit
 ";
 	IOSIM_fd[0] = malloc(sizeof(sym_file_stream_t));
@@ -25,37 +17,6 @@ quit
 	IOSIM_fd[0]->sym_file->contents = strdup(commandString);
 	IOSIM_fd[0]->sym_file->stat.st_size = sizeof(commandString);
 	IOSIM_fd[0]->sym_file->stat.st_mode = S_IFSOCK;
-
-	// fd 3 is the first listening socket
-	// fd 4 is the file being created (It is made by open().)
-	// fd 5 is the socket from which we get the data for the file
-	static char fileText[] = "something
- a bunch of text
-			and some more text!!!";
-	IOSIM_fd[5] = malloc(sizeof(sym_file_stream_t));
-	IOSIM_fd[5]->offset = 0;
-	IOSIM_fd[5]->sym_file = malloc(sizeof(sym_file_t));
-	IOSIM_fd[5]->sym_file->contents = fileText;
-	IOSIM_fd[5]->sym_file->stat.st_size = sizeof(fileText);
-
-	// fd 6 is the second listening socket
-	// fd 7 is the stream on which we read the directory info
-	// fd 8 is the socket on which we send out the ls info
-	IOSIM_fd[8] = malloc(sizeof(sym_file_stream_t));
-	IOSIM_fd[8]->offset = 0;
-	IOSIM_fd[8]->sym_file = malloc(sizeof(sym_file_t));
-	IOSIM_fd[8]->sym_file->contents = NULL;
-	IOSIM_fd[8]->sym_file->stat.st_size = 0;
-
-	// fd 9 is the third listening socket
-	// fd 10 is the stream opened to read the file
-	// fd 11 is the socket on which we write out the file
-	IOSIM_fd[11] = malloc(sizeof(sym_file_stream_t));
-	IOSIM_fd[11]->offset = 0;
-	IOSIM_fd[11]->sym_file = malloc(sizeof(sym_file_t));
-	IOSIM_fd[11]->sym_file->contents = NULL;
-	IOSIM_fd[11]->sym_file->stat.st_size = 0;
-
 
 	// Make empty environ variable
 	environ = malloc(sizeof(char*));
@@ -85,17 +46,17 @@ quit
 //	__SYMBOLIC(&tunable_delay_successful_login);
 //	__SYMBOLIC(&tunable_max_login_fails);
 //	__SYMBOLIC(&tunable_chown_upload_mode);
-
+//
 	// All flags from here down are boolean
 
-	__SYMBOLIC(&tunable_write_enable);
-	__SYMBOLIC(&tunable_anon_upload_enable);
+//	__SYMBOLIC(&tunable_write_enable);
+//	__SYMBOLIC(&tunable_anon_upload_enable);
 //	__SYMBOLIC(&tunable_dirmessage_enable);
 //	__SYMBOLIC(&tunable_ascii_upload_enable);
 //	__SYMBOLIC(&tunable_ascii_download_enable);
-	__SYMBOLIC(&tunable_listen);
+//	__SYMBOLIC(&tunable_listen);
 //	__SYMBOLIC(&tunable_run_as_launching_user);
-
+//
 //	__SYMBOLIC(&tunable_anonymous_enable);
 //	__SYMBOLIC(&tunable_local_enable);
 //	__SYMBOLIC(&tunable_pasv_enable);
@@ -108,6 +69,7 @@ quit
 //	__SYMBOLIC(&tunable_xferlog_enable);
 //	__SYMBOLIC(&tunable_anon_world_readable_only);
 //	__SYMBOLIC(&tunable_async_abor_enable);
+//	__SYMBOLIC(&tunable_one_process_model);
 //	__SYMBOLIC(&tunable_xferlog_std_format);
 //	__SYMBOLIC(&tunable_pasv_promiscuous);
 //	__SYMBOLIC(&tunable_deny_email_enable);
