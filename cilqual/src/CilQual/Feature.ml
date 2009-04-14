@@ -69,11 +69,6 @@ let doit file =
     (* prepare file for analysis *)
     prepare_file file;
 
-    (* initialize constraint graph *)
-    let null = G.QualGraph.Qual.Const "null" in
-    let nonnull = G.QualGraph.Qual.Const "nonnull" in
-    let init_constraints = List.fold_left G.QualGraph.add_vertex G.QualGraph.empty [null; nonnull] in
-
     let timing = timer in
 
     (* generate the interpreter for the file *)
@@ -82,14 +77,15 @@ let doit file =
 
     (* run the interpreter *)
     let timing = tic "Running interpreter monad" timing in
-    let ((((), env), fresh), constraints) = G.run expM G.emptyEnv 0 G.emptyContext init_constraints in
+    let ((((), env), fresh), constraints) = G.run expM G.emptyEnv 0 G.emptyContext G.QualGraph.empty in
 
     (* determine if there is a path between $null and $nonnull *)
     let timing = tic "Resolving constraints" timing in
 
     let solver = SourceSink.create constraints in
-    let has_error = (SourceSink.check solver null nonnull) or (SourceSink.check solver nonnull null)
-    in
+    let null = G.QualGraph.Qual.Const "null" in
+    let nonnull = G.QualGraph.Qual.Const "nonnull" in
+    let has_error = SourceSink.check solver null nonnull || SourceSink.check solver nonnull null in
 
     let timing = toc timing in
 

@@ -13,7 +13,9 @@ module Reachability = struct
         end
         module PathChecker = Ocamlgraph.Cfl.Check (CflGraph)
         let create = PathChecker.create
-        let check = PathChecker.check_path
+        let check pc x y =
+            try PathChecker.check_path pc x y
+            with Invalid_argument s -> false
     end
 end
 
