@@ -1,0 +1,38 @@
+# Makefile implicit rules
+
+OCAMLBUILD ?= ocamlbuild
+OCAMLFIND ?= ocamlfind
+
+OCAMLBUILD.build = $(OCAMLBUILD) $(OCAMLBUILD_FLAGS) $(VPATH:%=-I %) $(OCAMLBUILD_EXTRATARGETS) $*
+
+# ocamlbuild places a symbolic link to the product in the project root, but deletes all such links prior to
+# the next build; so the following copies the actual product in place of the link.
+define OCAMLBUILD.exe
+	$(RM) $* && \
+	$(OCAMLBUILD.build) && \
+	TMPCIL=`mktemp $*.tmpXXXXXX` && \
+	mv $* $$TMPCIL && \
+	cp $$TMPCIL $* && \
+	$(RM) $$TMPCIL
+endef
+
+# for executables, move the product; everything else, leave it as is
+ocamlbuild//% : $(OCAMLBUILD_DEPS)
+	$(if $(filter %.native %.byte,$*),$(OCAMLBUILD.exe),$(OCAMLBUILD.build))
+
+# ounit: build and run
+ounit//% : ocamlbuild//%
+	./$* $(OUNIT_FLAGS)
+
+
+# recursive Makefile build
+make//% : %/Makefile
+	$(MAKE) -C $* $(MAKEGOALS)
+
+.PRECIOUS : %/Makefile
+%/Makefile : %/Makefile.in
+	cd $* && ./configure $(CONFIGURE_FLAGS)
+
+# autoconf
+Makefile : Makefile.in
+	./config.status

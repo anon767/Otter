@@ -12,7 +12,8 @@ OCAMLBUILD_PA_MONAD = -X pa_monad -tag syntax_camlp4o -tag pkg_pa_monad
 OCAMLBUILD_GRAPH = -X ocamlgraph -tag pkg_ocamlgraph
 OCAMLBUILD_OUNIT = -tag pkg_oUnit
 
-OCAMLBUILD_FLAGS = $(OCAMLBUILD_CIL) $(OCAMLBUILD_PA_MONAD) $(OCAMLBUILD_GRAPH)
+OCAMLBUILD_FLAGS = -j 0
+OCAMLBUILD_FLAGS += $(OCAMLBUILD_CIL) $(OCAMLBUILD_PA_MONAD) $(OCAMLBUILD_GRAPH)
 OCAMLBUILD_FLAGS += $(EXTRALIBDIRS:%=-lflags -I,%) $(OCAMLBUILD_EXTRAFLAGS)
 export OCAMLPATH:=$(CURDIR):$(OCAMLPATH)
 
@@ -62,39 +63,4 @@ maintainer-clean : distclean
 	$(RM) Makefile
 	$(RM) -r auto4mate.cache
 
-
-# Makefile implicit rules
-
-OCAMLBUILD.build = $(OCAMLBUILD) $(OCAMLBUILD_FLAGS) $(VPATH:%=-I %) $(OCAMLBUILD_EXTRATARGETS) $*
-
-# ocamlbuild places a symbolic link to the product in the project root, but deletes all such links prior to
-# the next build; so the following copies the actual product in place of the link.
-define OCAMLBUILD.exe
-	$(RM) $* && \
-	$(OCAMLBUILD.build) && \
-	TMPCIL=`mktemp $*.tmpXXXXXX` && \
-	mv $* $$TMPCIL && \
-	cp $$TMPCIL $* && \
-	$(RM) $$TMPCIL
-endef
-
-# for executables, move the product; everything else, leave it as is
-ocamlbuild//% : $(OCAMLBUILD_DEPS)
-	$(if $(filter %.native %.byte,$*),$(OCAMLBUILD.exe),$(OCAMLBUILD.build))
-
-# ounit: build and run
-ounit//% : ocamlbuild//%
-	./$* $(OUNIT_FLAGS)
-
-
-# recursive Makefile build
-make//% : %/Makefile
-	$(MAKE) -C $* $(MAKEGOALS)
-
-.PRECIOUS : %/Makefile
-%/Makefile : %/Makefile.in
-	cd $* && ./configure $(CONFIGURE_FLAGS)
-
-# autoconf
-Makefile : Makefile.in
-	./config.status
+include Makefile.rules
