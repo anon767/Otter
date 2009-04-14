@@ -27,7 +27,7 @@ all : native
 
 native : ocamlbuild//runcilqual.native config
 debug : ocamlbuild//runcilqual.d.byte config
-config : CilQualConfig.pm
+config : cilqual.pl.config
 test : ounit//runtestcilqual.d.byte
 
 ounit//runtestcilqual.d.byte : OCAMLBUILD_FLAGS += $(OCAMLBUILD_OUNIT)
@@ -41,10 +41,16 @@ make//pa_monad : MAKEGOALS=all META
 ocamlgraph : ocamlgraph/graph.cma ocamlgraph/graph.cmxa
 ocamlgraph/graph.cma ocamlgraph/graph.cmxa : make//ocamlgraph
 
-CilQualConfig.pm : Makefile $(CIL_SRCDIR)/config.mk
-	echo '$$::cilhome = "$(CILHOME)";' > $@
-	echo '$$::cc  = "$(CC)";' >> $@
-	echo '$$::default_mode = "$(DEFAULT_CIL_MODE)"' >> $@
+cilqual.pl.config : Makefile $(CIL_SRCDIR)/config.mk
+	printf "\
+	$$::cilhome = '$(CILHOME)';\n\
+	$$::cc  = '$(CC)';\n\
+	$$::default_mode = '$(DEFAULT_CIL_MODE)';\n\
+	$$::native = 'runcilqual.native';\n\
+	$$::byte = 'runcilqual.d.byte';\n\
+	$$::do_default = '--docilqual';\n\
+	$$::compile_after_merge = 0;\n\
+	1;" > $@
 
 clean : clean-cilqual
 	$(MAKE) -C pa_monad clean
@@ -52,7 +58,7 @@ clean : clean-cilqual
 
 clean-cilqual :
 	$(OCAMLBUILD) -clean
-	$(RM) CilQualConfig.pm *.native *.byte
+	$(RM) cilqual.pl.config *.native *.byte
 
 distclean : clean-cilqual
 	$(MAKE) -C pa_monad distclean
