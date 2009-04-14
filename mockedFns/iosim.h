@@ -28,7 +28,9 @@ extern int		IOSIM_num_fd;
 
 sym_file_t* IOSIM_newbuf(int len, char* buf);
 sym_file_t* IOSIM_findfile(const char *file);
-sym_file_t* IOSIM_addfile(const char *file, mode_t);
+sym_file_t* IOSIM_addfile(const char *file, /*const char *contents,*/ mode_t mode);
+
+char *IOSIM_toAbsolute(const char *name);
 
 int IOSIM_newfd();
 int IOSIM_read(int fildes, void *buf, int nbyte);
@@ -38,6 +40,8 @@ int IOSIM_close(int fildes);
 int IOSIM_eof(int fildes);
 int IOSIM_openWithMode(const char *pathname, int flags, mode_t mode);
 int IOSIM_open(const char *pathname, int flags);
+int IOSIM_rename(const char *old, const char *new);
+int IOSIM_unlink(const char *pathname);
 
 char *IOSIM_getcwd(char *buf, size_t size);
 int IOSIM_chdir(const char *path);

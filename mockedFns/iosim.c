@@ -32,6 +32,7 @@ int		IOSIM_num_fd = 3;
 //}
 
 // If the file exists, return it; otherwise return NULL.
+// This requires *absolute* file names.
 sym_file_t *IOSIM_findfile(const char *file){
 	for(int i=0;i<IOSIM_num_file;i++){
 		if(strcmp(file,IOSIM_file_name[i])==0)
@@ -41,7 +42,7 @@ sym_file_t *IOSIM_findfile(const char *file){
 }
 
 // This creates the file and returns it
-sym_file_t *IOSIM_addfile(const char *filename, mode_t mode){
+sym_file_t *IOSIM_addfile(const char *filename, /*const char *contents,*/ mode_t mode){
 	if (IOSIM_num_file >= IOSIM_MAX_FILE) {
 		errno = EMFILE;
 		return -1;
@@ -51,8 +52,13 @@ sym_file_t *IOSIM_addfile(const char *filename, mode_t mode){
 		return -1;
 	}
 	sym_file_t *file = malloc(sizeof(sym_file_t));
-	file->stat.st_size = 0;
-	file->contents = NULL;
+//	if (contents) {
+//		file->stat.st_size = strlen(contents);
+//		file->contents = strdup(contents);
+//	} else {
+		file->stat.st_size = 0;
+		file->contents = NULL;
+//	}
 	file->stat.st_nlink = 1; // Only one hard link
 
 	// For now, I'm only making regular files (S_IFREG) which are readable by others (S_IROTH)
@@ -86,38 +92,49 @@ int IOSIM_newfd(){
 	return ret;
 }
 
-int IOSIM_openWithMode(const char *name, int flags, mode_t mode) {
-	char absoluteName[PATH_MAX+1];
+// Allocates and returns a string which holds the absolute path for 'name'
+char *IOSIM_toAbsolute(const char *name) {
+	char *absoluteName = malloc(PATH_MAX+1);
 	char *lastSlash = strrchr(name,'/');
 	if (lastSlash) { // If 'name' is not a bare file name
 		char *path = strdup(name);
 		path[lastSlash - name] = 0; // Make 'path' be just the path, excluding the file name
 		if (!realpath(path,absoluteName)) { // Make the path absolute
+			free(path);
 			return -1; // Return -1 on error
 		}
 		free(path);
-	} else { // There was no path at all, only a file name
+	} else { // 'name' contained no path at all, only a file name
 		strcpy(absoluteName,workingDir);
 	}
 	// At this point, absoluteName is the absolute path, but only the path
 	char *end = strchr(absoluteName,0);
+	// Potential buffer overflow here
 	if (absoluteName[1]) { // If absoluteName is not "/", so it doesn't end with a '/'
 		*end++ = '/'; // add a '/'
 	}
 	strcpy(end, lastSlash ? lastSlash + 1 : name); // Add the file name
+	return absoluteName;
+}
+
+int IOSIM_openWithMode(const char *name, int flags, mode_t mode) {
+	char *absoluteName = IOSIM_toAbsolute(name);
 	sym_file_t *sym_file = IOSIM_findfile(absoluteName);
 	if (sym_file) {
 		// If the file exists, then return an error if it shouldn't
 		if ((flags & O_CREAT) && (flags & O_EXCL)) {
 			errno = EEXIST;
+			free(absoluteName);
 			return -1;
 		}
 	} else if (flags & O_CREAT) {
 		// File doesn't exist and we should create it
-		sym_file = IOSIM_addfile(absoluteName, mode & ~usermask);
+		sym_file = IOSIM_addfile(absoluteName, /*NULL,*/ mode & ~usermask);
+		free(absoluteName);
 	} else {
 		// File doesn't exist, and we shouldn't create it.
 		errno = ENOENT;
+		free(absoluteName);
 		return -1;
 	}
 
@@ -138,6 +155,54 @@ int IOSIM_openWithMode(const char *name, int flags, mode_t mode) {
 
 int IOSIM_open(const char *name, int flags) {
 	return IOSIM_openWithMode(name,flags,0777);
+}
+
+int IOSIM_rename(const char *old, const char *new) {
+	char *absOld = IOSIM_toAbsolute(old);
+	for(int i=0;i<IOSIM_num_file;i++){
+		if(strcmp(absOld,IOSIM_file_name[i])==0) {
+			// We found the old name. Compute the new name
+			char *absNew = IOSIM_toAbsolute(new);
+			if (absNew == -1) { // If there is a problem with the new name
+				return -1;
+			}
+			free(IOSIM_file_name[i]);
+			free(absOld);
+			IOSIM_file_name[i] = absNew;
+			return 0;
+		}
+	}
+	// The file "old" doesn't exist
+	free(absOld);
+	errno = ENOENT;
+	return -1;
+}
+int IOSIM_unlink(const char *pathname) {
+	char *absoluteName = IOSIM_toAbsolute(pathname);
+	for (int i = 0; i < IOSIM_num_file; i++) {
+		if (strcmp(absoluteName, IOSIM_file_name[i]) == 0) {
+			free(absoluteName);
+			free(IOSIM_file_name[i]);
+			sym_file_t *sym_file = IOSIM_file[i];
+			// Decrement the hard-link count
+			sym_file->stat.st_nlink--;
+			// If the count goes to 0, delete the file
+			if (sym_file->stat.st_nlink == 0) {
+				free(sym_file->contents);
+				free(sym_file);
+			}
+			// Remove the file entry from IOSIM_file and IOSIM_file_name
+			for (int iPlus1 = i+1; iPlus1 < IOSIM_num_file; iPlus1++, i++) {
+				IOSIM_file[i] = IOSIM_file[iPlus1];
+				IOSIM_file_name[i] = IOSIM_file_name[iPlus1];
+			}
+			IOSIM_num_file--;
+			// We unlinked successfully
+			return 0;
+		}
+	}
+	errno = ENOENT;
+	return -1;
 }
 
 int IOSIM_close(int fildes) {
@@ -190,7 +255,11 @@ int IOSIM_write(int fildes, const void *buf, int nbyte){
 	char* cbuf = buf;
 
 	if(nbyte == 0) return 0;
-	if(fildes == 0) return -1;
+	if(fildes == 0) {
+		__COMMENT("Writing on fildes 0");
+		__EVALSTR(buf,nbyte);
+		return -1;
+	}
 
 	sym_file_stream_t* out = IOSIM_fd[fildes];
 	cur = out->offset;
@@ -230,7 +299,8 @@ int IOSIM_eof(int fildes){
 
         return cur >= len;
 }
-		
+
+// This doesn't check that the destination directory exists		
 int IOSIM_chdir(const char *path) {
 	if (realpath(path,workingDir)) {
 		return 0;
@@ -243,7 +313,7 @@ int IOSIM_chdir(const char *path) {
 //}
 
 // For now, a struct __dirstream (aka, a DIR) contains:
-//  1. The name of the directory as an absolute path and ending with a slash
+//  1. The name of the directory as an absolute path
 //  2. An index into the array of all file names
 //  3. A struct dirent which we return when readdir is called on this DIR
 //  4. A sym_file_stream_t, so we can treat the directory sort of like a file
@@ -257,6 +327,7 @@ typedef struct __dirstream {
 DIR *IOSIM_opendir(const char *dirname) {
 	DIR *dir = malloc(sizeof(DIR));
 	if (!realpath(dirname,dir->dirname)) {
+		free(dir);
 		return NULL;
 	}
 	dir->index = 0;
@@ -271,12 +342,6 @@ int IOSIM_closedir(DIR *dir) {
 	IOSIM_fd[dir->filestream.fd] = NULL;
 	free(dir);
 	return 0;
-}
-
-int dirContainsFile(const char *dirname, const char *filename) {
-	// Check that filename is "<dirname>/<something without slashes>"
-	char *lastSlash = strrchr(filename,'/');
-	return !strncmp(filename,dirname,lastSlash - filename);
 }
 
 /* Right now, this returns the full, absolute path of the next file in

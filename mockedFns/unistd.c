@@ -3,7 +3,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <errno.h>
-
+#include <stdlib.h>
 
 #if __HAVE_getpid__
 pid_t        getpid(void){

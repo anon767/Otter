@@ -5,7 +5,9 @@
 #include <sys/stat.h>
 
 int __xstat(int __ver, const char *__filename, struct stat *__stat_buf) {
-	sym_file_t *file = IOSIM_findfile(__filename);
+	char *absoluteName = IOSIM_toAbsolute(__filename);
+	sym_file_t *file = IOSIM_findfile(absoluteName);
+	free(absoluteName);
 	if (file) {
 		*__stat_buf = file->stat;
 		return 0;
