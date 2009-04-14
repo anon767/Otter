@@ -129,6 +129,7 @@ int IOSIM_openWithMode(const char *name, int flags, mode_t mode) {
 
 	// Initialize the values for the stream
 	sym_stream->sym_file = sym_file;
+	sym_stream->sym_fileout = sym_file;
 	sym_stream->offset = 0;
 	sym_stream->fd = fd;
 
@@ -185,6 +186,7 @@ int IOSIM_ungetc(int c, int fildes){
 }
 
 int IOSIM_write(int fildes, const void *buf, int nbyte){
+
 	int n,cur,len;
 	char* cbuf = buf;
 
@@ -194,30 +196,34 @@ int IOSIM_write(int fildes, const void *buf, int nbyte){
 	if(fildes == 0) return -1;
 
 	sym_file_stream_t* out = IOSIM_fd[fildes];
-	cur = out->offset;
-	len = out->sym_file->stat.st_size;
+	// tricky: redirect to the real writing stream
+	//if(out->fd_type==IOSIM_FD_SOCK){
+	//	return IOSIM_write(fildes+1,buf,nbyte);
+	//}
+	cur = out->offsetout;
+	len = out->sym_fileout->stat.st_size;
 
 	// Enlarge file if necessary
 	if (cur + nbyte > len) {
-		out->sym_file->contents = realloc(out->sym_file->contents, cur + nbyte);
-		out->sym_file->stat.st_size = cur + nbyte;
+		out->sym_fileout->contents = realloc(out->sym_fileout->contents, cur + nbyte);
+		out->sym_fileout->stat.st_size = cur + nbyte;
 		len = cur + nbyte;
 	}
 
-	memcpy(out->sym_file->contents + cur, cbuf, nbyte);
+	memcpy(out->sym_fileout->contents + cur, cbuf, nbyte);
 //	for(n=0;n<nbyte;n++){
 //		if(cur>=len) break; // I don't think this ever happens
-//		out->sym_file->contents[cur] = cbuf[n];
+//		out->sym_fileout->contents[cur] = cbuf[n];
 //		cur++;
 //	}
 
 	/* Print out, for the benefit of the person running the symbolic
 		 executor, everything written on this file so far. */
 	numWritten[fildes] += nbyte;
-	__EVALSTR(out->sym_file->contents,numWritten[fildes]);
+	__EVALSTR(out->sym_fileout->contents,numWritten[fildes]);
 
-	// Update offset pointer
-	out->offset += nbyte;
+	// Update offsetout pointer
+	out->offsetout += nbyte;
 
 	return nbyte;
 }
@@ -327,3 +333,12 @@ char *IOSIM_getcwd(char *buf, size_t size) {
 int IOSIM_dirfd(DIR *dir) {
 	return dir->filestream.fd;
 }
+
+
+void IOSIM_updatesize(int fildes, int t){
+	sym_file_stream_t* f = IOSIM_fd[fildes];
+	f->sym_file->stat.st_size = f->sym_file->size[t];
+}
+
+
+

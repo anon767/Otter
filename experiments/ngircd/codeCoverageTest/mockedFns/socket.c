@@ -10,18 +10,16 @@ int setsockopt(int socket, int level, int option_name,
 }
 
 int socket(int domain, int type, int protocol) {
-	return IOSIM_newfd();
-//#define DEFAULT_BUF_SIZE 1024
-//	IO_BUF* new_buffer = IOSIM_newbuf(DEFAULT_BUF_SIZE,malloc(DEFAULT_BUF_SIZE));
-//	int fd = IOSIM_newfd();
-//	char *filename = malloc(18); // 18 == strlen("socket_at_fd_9999*"). This should allow fds up to 9999
-//	if (sprintf(filename,"socket_at_fd_%d",fd) < 0) {
-//		__COMMENT("Problem creating socket");
-//		exit(1);
-//	}
-//	IOSIM_addfile(filename, new_buffer);
-//	IOSIM_attach(fd, new_buffer);
-//	return fd;
+	int fd = IOSIM_newfd();
+	// reading stream
+	IOSIM_fd[fd] = malloc(sizeof(sym_file_stream_t));
+	IOSIM_fd[fd]->fd_type = IOSIM_FD_SOCK;
+	IOSIM_fd[fd]->fd = fd;
+	IOSIM_fd[fd]->offset = 0;
+	IOSIM_fd[fd]->sym_file = malloc(sizeof(sym_file_t));
+	IOSIM_fd[fd]->offsetout = 0;
+	IOSIM_fd[fd]->sym_fileout = malloc(sizeof(sym_file_t));
+	return fd;
 }
 
 int bind(int socket, const struct sockaddr *address,
@@ -30,7 +28,12 @@ int bind(int socket, const struct sockaddr *address,
 	return 0;
 }
 
+int listen_queue[100];
+int listen_queue_size;
 int listen(int socket, int backlog) {
+	IOSIM_fd[socket]->fd_type = IOSIM_FD_SSOCK;
+	IOSIM_fd[socket]->sym_file->contents  = listen_queue;
+	//listen_ssock_size = &(IOSIM_fd[socket]->sym_file->stat.st_size);
 	return 0;
 }
 
@@ -49,6 +52,16 @@ int connect(int socket, const struct sockaddr *address,
 
 int accept(int sockfd, struct sockaddr *restrict address,
 					 socklen_t *restrict address_len) {
+
+	sym_file_stream_t* sock = IOSIM_fd[sockfd];
+	if(sock->fd_type!=IOSIM_FD_SSOCK ||
+	   sock->offset>=sock->sym_file->stat.st_size){
+		__COMMENT("Error in accept(). Either a non-ssock is passed to accept(), or there's no socket available to be accepted (accept() called too early).");
+		exit(1);
+	}
+	int fd = ((int*)sock->sym_file->contents)[sock->offset];
+	sock->offset++;
+
 	address->sa_family = AF_INET;
 
 //	address->sa_data[0] = __SYMBOLIC(0);
@@ -61,7 +74,8 @@ int accept(int sockfd, struct sockaddr *restrict address,
 	address->sa_data[5] = 40;
 //	*address_len = 8;
 
-	return IOSIM_newfd();
+	return fd;
+	//return accept_fd[fd];
 }
 
 int socketpair(int domain, int type, int protocol, int socket_vector[2]) {

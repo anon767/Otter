@@ -436,10 +436,8 @@ struct _NUMERIC {
    int numeric ;
    int (*function)(CLIENT *Client , REQUEST *Request ) ;
 };
-#line 44 "/usr/include/bits/types.h"
-typedef int __int32_t;
 #line 1 "ngircd.o"
-#pragma merger(0,"/tmp/cil-ksE4mfhw.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-1vXKVkNp.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 140 "./../portab/portab.h"
 size_t strlcat(char *dst , char const   *src , size_t size ) ;
 #line 144
@@ -1555,7 +1553,7 @@ static int NGIRCd_Init(int NGIRCd_NoDaemon )
 }
 }
 #line 1 "array.o"
-#pragma merger(0,"/tmp/cil-YLFvJdAv.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-tjsc4cQc.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 32 "array.h"
 void array_init(array *a ) ;
 #line 36
@@ -2059,7 +2057,7 @@ void array_moveleft(array *a , size_t membersize , size_t pos )
 }
 }
 #line 1 "channel.o"
-#pragma merger(0,"/tmp/cil-z3ydsId8.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-RPmBiiIK.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 584 "/usr/include/stdlib.h"
 extern  __attribute__((__nothrow__)) void *malloc(size_t __size )  __attribute__((__malloc__)) ;
 #line 84 "/usr/include/string.h"
@@ -3707,7 +3705,7 @@ static int Delete_Channel(CHANNEL *Chan )
 }
 }
 #line 1 "client.o"
-#pragma merger(0,"/tmp/cil-vU6GgQ37.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-dcREKgUb.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 793 "/usr/include/unistd.h"
 extern  __attribute__((__nothrow__)) int gethostname(char *__name , size_t __len )  __attribute__((__nonnull__(1))) ;
 #line 138 "/usr/include/netdb.h"
@@ -5363,7 +5361,7 @@ void Client_RegisterWhowas(CLIENT *Client )
 /* compiler builtin: 
    void __builtin_va_start(__builtin_va_list  ) ;  */
 #line 1 "conf.o"
-#pragma merger(0,"/tmp/cil-qnegsYBL.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-z3F8Rkae.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 451 "/usr/include/libio.h"
 extern  __attribute__((__nothrow__)) int _IO_putc(int __c , _IO_FILE *__fp ) ;
 #line 142 "/usr/include/stdio.h"
@@ -7566,7 +7564,7 @@ static void Init_Server_Struct(CONF_SERVER *Server )
 }
 }
 #line 1 "conn.o"
-#pragma merger(0,"/tmp/cil-qodzRgeB.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-MuLDsY32.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 25 "io.h"
 int io_library_init(unsigned int eventsize ) ;
 #line 28
@@ -7608,6 +7606,8 @@ extern  __attribute__((__nothrow__)) int setsockopt(int __fd , int __level , int
 extern  __attribute__((__nothrow__)) int listen(int __fd , int __n ) ;
 #line 209
 extern int accept(int __fd , struct sockaddr * __restrict  __addr , socklen_t * __restrict  __addr_len ) ;
+#line 355 "/usr/include/netinet/in.h"
+extern  __attribute__((__nothrow__)) uint16_t ntohs(uint16_t __netshort )  __attribute__((__const__)) ;
 #line 54 "/usr/include/arpa/inet.h"
 extern  __attribute__((__nothrow__)) char *inet_ntoa(struct in_addr __in ) ;
 #line 43 "./../ipaddr/ng_ipaddr.h"
@@ -7630,16 +7630,13 @@ __inline static socklen_t ng_ipaddr_salen(ng_ipaddr_t const   *a )
 }
 #line 68 "./../ipaddr/ng_ipaddr.h"
 __inline static UINT16 ng_ipaddr_getport(ng_ipaddr_t const   *a ) 
-{ register unsigned short __v ;
-  register unsigned short __x ;
+{ uint16_t __cil_tmp ;
 
   {
 #line 80
-  __x = (unsigned short )a->sin4.sin_port;
+  __cil_tmp = ntohs((unsigned short )a->sin4.sin_port);
 #line 80
-  __asm__  ("rorw $8, %w0": "=r" (__v): "0" (__x): "cc");
-#line 80
-  return (__v);
+  return (__cil_tmp);
 }
 }
 #line 93
@@ -8407,28 +8404,28 @@ void Conn_Handler(void)
 #line 567
       tv.tv_sec = 0L;
     }
-#line 568
-    exit(111);
-#line 571
+#line 570
     i = io_dispatch(& tv);
-#line 572
+#line 571
     if (i == -1) {
-#line 572
+#line 571
       __cil_tmp___2 = __errno_location();
-#line 572
+#line 571
       if (*__cil_tmp___2 != 4) {
-#line 573
+#line 572
         __cil_tmp___0 = __errno_location();
-#line 573
+#line 572
         __cil_tmp___1 = strerror(*__cil_tmp___0);
-#line 573
+#line 572
         Log(0, "Conn_Handler(): io_dispatch(): %s!", __cil_tmp___1);
-#line 574
+#line 573
         Log(1, "%s exiting due to fatal errors!", "ngircd");
-#line 575
+#line 574
         exit(1);
       }
     }
+#line 576
+    exit(11111);
   }
 #line 579
   if (NGIRCd_SignalQuit) {
@@ -9909,7 +9906,7 @@ CLIENT *Conn_GetClient(CONN_ID Idx )
 }
 }
 #line 1 "conn-func.o"
-#pragma merger(0,"/tmp/cil-2CqMNi9F.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-IpmzNmoU.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 30 "conn-func.h"
 time_t Conn_GetSignon(CONN_ID Idx ) ;
 #line 31
@@ -10201,9 +10198,9 @@ long Conn_WCounter(void)
 }
 }
 #line 1 "conn-zip.o"
-#pragma merger(0,"/tmp/cil-Ct50x4aA.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-iCmyVOnj.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 1 "hash.o"
-#pragma merger(0,"/tmp/cil-CFDowvAz.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-RPIBUYD6.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 33 "hash.c"
 UINT32 Hash(char const   *String ) 
 { 
@@ -10214,7 +10211,7 @@ UINT32 Hash(char const   *String )
 }
 }
 #line 1 "io.o"
-#pragma merger(0,"/tmp/cil-KacC8q9p.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-2JOeuM23.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 63 "/usr/include/fcntl.h"
 extern int fcntl(int __fd , int __cmd  , ...) ;
 #line 69 "io.c"
@@ -10743,7 +10740,7 @@ static void io_docallback(int fd , short what )
 }
 }
 #line 1 "irc.o"
-#pragma merger(0,"/tmp/cil-7gKmzT3m.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-jm9zAmyr.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 33 "irc-write.h"
 void IRC_SetPenalty(CLIENT *Client , time_t Seconds ) ;
 #line 43 "parse.h"
@@ -11494,7 +11491,7 @@ static char *Option_String(CONN_ID Idx )
 }
 }
 #line 1 "irc-channel.o"
-#pragma merger(0,"/tmp/cil-nPg8gblg.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-GYCUYrHd.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 102 "/usr/include/string.h"
 extern  __attribute__((__nothrow__)) int strncmp(char const   *__s1 , char const   *__s2 ,
                                                  size_t __n )  __attribute__((__pure__,
@@ -12708,7 +12705,7 @@ int IRC_CHANINFO(CLIENT *Client , REQUEST *Req )
 }
 }
 #line 1 "irc-info.o"
-#pragma merger(0,"/tmp/cil-h1hqxDIY.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-iRs3Mno6.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 27 "./../tool/tool.h"
 void ngt_TrimLastChr(char *String , char Chr ) ;
 #line 31
@@ -15857,7 +15854,7 @@ int IRC_Send_ISUPPORT(CLIENT *Client )
 }
 }
 #line 1 "irc-login.o"
-#pragma merger(0,"/tmp/cil-OCnUU4mv.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-SLSQyWNj.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 27 "irc-write.h"
 void IRC_WriteStrServers(CLIENT *ExceptOf , char *Format  , ...) ;
 #line 21 "irc-login.h"
@@ -17157,7 +17154,7 @@ static void Kill_Nick(char *Nick , char *Reason )
 }
 }
 #line 1 "irc-mode.o"
-#pragma merger(0,"/tmp/cil-coWufLR5.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-4xFm4Ye9.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 31 "lists.h"
 int Lists_CheckDupeMask(struct list_head  const  *h , char const   *Mask ) ;
 #line 34
@@ -18637,7 +18634,7 @@ static int Send_ListChange(char *Mode , CLIENT *Prefix , CLIENT *Client , CHANNE
 }
 }
 #line 1 "irc-op.o"
-#pragma merger(0,"/tmp/cil-kNyaVTng.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-esaU1WPC.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 21 "irc-op.h"
 int IRC_KICK(CLIENT *Client , REQUEST *Req ) ;
 #line 22
@@ -18919,7 +18916,7 @@ int IRC_INVITE(CLIENT *Client , REQUEST *Req )
 }
 }
 #line 1 "irc-oper.o"
-#pragma merger(0,"/tmp/cil-NRSU9jGC.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-X2uSBUNE.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 21 "irc-oper.h"
 int IRC_OPER(CLIENT *Client , REQUEST *Req ) ;
 #line 22
@@ -19600,7 +19597,7 @@ int IRC_WALLOPS(CLIENT *Client , REQUEST *Req )
 }
 }
 #line 1 "irc-server.o"
-#pragma merger(0,"/tmp/cil-qNeWJig0.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-TUAHvbC2.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 19 "numeric.h"
 int IRC_Num_ENDOFMOTD(CLIENT *Client , REQUEST *Req  __attribute__((__unused__)) ) ;
 #line 21 "irc-server.h"
@@ -20187,7 +20184,7 @@ int IRC_SQUIT(CLIENT *Client , REQUEST *Req )
 }
 }
 #line 1 "irc-write.o"
-#pragma merger(0,"/tmp/cil-3PdhaTPw.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-yyXJS7G9.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 24 "irc-write.h"
 int IRC_WriteStrChannel(CLIENT *Client , CHANNEL *Chan , int Remote , char *Format 
                         , ...) ;
@@ -20667,7 +20664,7 @@ static char *Get_Prefix(CLIENT *Target , CLIENT *Client )
 }
 }
 #line 1 "lists.o"
-#pragma merger(0,"/tmp/cil-AM9Lf2u2.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-vSACk9Bh.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 45 "lists.c"
 char const   *Lists_GetMask(struct list_elem  const  *e ) 
 { 
@@ -20951,7 +20948,7 @@ int Lists_Check(struct list_head *header , CLIENT *Client )
 }
 }
 #line 1 "log.o"
-#pragma merger(0,"/tmp/cil-R6e7yPfy.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-8gpkiGas.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 50 "log.h"
 void Log_Init_Resolver(void) ;
 #line 51
@@ -21162,7 +21159,7 @@ static void Wall_ServerNotice(char *Msg )
 }
 }
 #line 1 "match.o"
-#pragma merger(0,"/tmp/cil-0cZq71LS.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-9ZdvtJnq.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 35 "match.c"
 static int Matche(char const   *p , char const   *t ) ;
 #line 36
@@ -21516,7 +21513,7 @@ static int Matche_After_Star(char const   *p , char const   *t )
 }
 }
 #line 1 "numeric.o"
-#pragma merger(0,"/tmp/cil-jrAM2S3S.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-tQPq87xX.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 20 "numeric.h"
 int IRC_Num_ISUPPORT(CLIENT *Client , REQUEST *Req ) ;
 #line 46 "numeric.c"
@@ -22081,7 +22078,7 @@ int IRC_Num_ISUPPORT(CLIENT *Client , REQUEST *Req )
 }
 }
 #line 1 "parse.o"
-#pragma merger(0,"/tmp/cil-mUpS1ZWi.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-93H7xy2c.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 61 "parse.c"
 static COMMAND My_Commands[48]  = 
 #line 61 "parse.c"
@@ -22672,9 +22669,9 @@ static int Handle_Request(CONN_ID Idx , REQUEST *Req )
 }
 }
 #line 1 "rendezvous.o"
-#pragma merger(0,"/tmp/cil-6Di8vPiQ.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-CdcT2h63.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 1 "resolve.o"
-#pragma merger(0,"/tmp/cil-uLGYBRKj.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-YuNieWH9.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 371 "/usr/include/unistd.h"
 extern  __attribute__((__nothrow__)) int pipe(int *__pipedes ) ;
 #line 61 "/usr/include/netdb.h"
@@ -23254,7 +23251,7 @@ size_t Resolve_Read(RES_STAT *s , void *readbuf , size_t buflen )
 }
 }
 #line 1 "strlcpy.o"
-#pragma merger(0,"/tmp/cil-O9ymOphv.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-MVMeQ1In.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 33 "strlcpy.c"
 size_t strlcat(char *dst , char const   *src , size_t size ) 
 { size_t len1 ;
@@ -23324,9 +23321,9 @@ size_t strlcpy(char *dst , char const   *src , size_t size )
 }
 }
 #line 1 "strdup.o"
-#pragma merger(0,"/tmp/cil-J9dzSJI1.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-12CuEiPj.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 1 "vsnprintf.o"
-#pragma merger(0,"/tmp/cil-YI4OGn9J.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-SKFhl8zl.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 101 "vsnprintf.c"
 void dummy_snprintf(void) ;
 #line 102 "vsnprintf.c"
@@ -23339,10 +23336,8 @@ void dummy_snprintf(void)
 }
 }
 #line 1 "libngtool.a"
-#pragma merger(0,"/tmp/cil-g2jtvcHl.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 83 "/usr/include/ctype.h"
-extern __int32_t const   **__ctype_tolower_loc(void)  __attribute__((__const__)) ;
-#line 116
+#pragma merger(0,"/tmp/cil-Ymy9fspb.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#line 116 "/usr/include/ctype.h"
 extern  __attribute__((__nothrow__)) int tolower(int __c ) ;
 #line 35 "tool.c"
 void ngt_TrimStr(char *String ) 
@@ -23427,8 +23422,7 @@ void ngt_TrimStr(char *String )
 #line 68 "tool.c"
 char *ngt_LowerStr(char *String ) 
 { char *ptr ;
-  int __res ;
-  __int32_t const   **__cil_tmp___1 ;
+  int __cil_tmp ;
 
   {
 #line 80
@@ -23436,17 +23430,9 @@ char *ngt_LowerStr(char *String )
 #line 81
   while (*ptr) {
 #line 83
-    if (sizeof(*ptr) > 1U) {
+    __cil_tmp = tolower((int )*ptr);
 #line 83
-      __res = tolower((int )*ptr);
-    } else {
-#line 83
-      __cil_tmp___1 = __ctype_tolower_loc();
-#line 83
-      __res = (int )*(*__cil_tmp___1 + (int )*ptr);
-    }
-#line 83
-    *ptr = (char )__res;
+    *ptr = (char )__cil_tmp;
 #line 84
     ptr ++;
   }
@@ -23478,63 +23464,60 @@ void ngt_TrimLastChr(char *String , char Chr )
 }
 }
 #line 1 "libngipaddr.a"
-#pragma merger(0,"/tmp/cil-RQtUQspQ.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-4NBf0jmK.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 62 "/usr/include/string.h"
 extern  __attribute__((__nothrow__)) int memcmp(void const   *__s1 , void const   *__s2 ,
                                                 size_t __n )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
+#line 359 "/usr/include/netinet/in.h"
+extern  __attribute__((__nothrow__)) uint16_t htons(uint16_t __hostshort )  __attribute__((__const__)) ;
 #line 74 "/usr/include/arpa/inet.h"
 extern  __attribute__((__nothrow__)) int inet_aton(char const   *__cp , struct in_addr *__inp ) ;
-#line 20 "ng_ipaddr.c"
+#line 24 "ng_ipaddr.c"
 int ng_ipaddr_init(ng_ipaddr_t *addr , char const   *ip_str , UINT16 port ) 
 { int __cil_tmp ;
 
   {
-#line 52
+#line 56
   if ((unsigned int )ip_str == (unsigned int )((void *)0)) {
-#line 53
+#line 57
     ip_str = "0.0.0.0";
   }
-#line 54
+#line 58
   addr->sin4.sin_family = (unsigned short)2;
-#line 56
+#line 60
   __cil_tmp = inet_aton(ip_str, & addr->sin4.sin_addr);
-#line 56
+#line 60
   if (__cil_tmp == 0) {
-#line 57
+#line 61
     return (0);
   }
-#line 63
+#line 67
   ng_ipaddr_setport(addr, port);
-#line 64
+#line 68
   return (1);
 }
 }
-#line 69 "ng_ipaddr.c"
+#line 73 "ng_ipaddr.c"
 void ng_ipaddr_setport(ng_ipaddr_t *a , UINT16 port ) 
-{ register unsigned short __v ;
-  register unsigned short __x ;
+{ 
 
   {
-#line 92
-  __x = port;
-#line 92
-  __asm__  ("rorw $8, %w0": "=r" (__v): "0" (__x): "cc");
-#line 92
-  a->sin4.sin_port = __v;
-#line 94
+#line 96
+  a->sin4.sin_port = htons(port);
+#line 98
   return;
 }
 }
-#line 98 "ng_ipaddr.c"
+#line 102 "ng_ipaddr.c"
 int ng_ipaddr_ipequal(ng_ipaddr_t const   *a , ng_ipaddr_t const   *b ) 
 { int __cil_tmp ;
 
   {
-#line 117
+#line 121
   __cil_tmp = memcmp((void const   *)(& a->sin4.sin_addr), (void const   *)(& b->sin4.sin_addr),
                      sizeof(a->sin4.sin_addr));
-#line 117
+#line 121
   return (__cil_tmp == 0);
 }
 }

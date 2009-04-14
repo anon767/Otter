@@ -130,6 +130,22 @@ void symtest_Conf_Init_impl(){
 	
 }
 
+void symtest1(){
+
+	// setup client(s)
+	int client_fd1 = socket(0,0,0);
+
+	// setup listen socket
+	listen_queue[0] = client_fd1;
+	listen_queue_size = 1;
+		
+	event_accept(client_fd1,0);
+	event_recv(client_fd1,"NICK nick",1);
+	event_recv(client_fd1,"USER user x x :x",2);
+	event_send(client_fd1,3);
+	event_end(4);
+}
+
 int main(){
 
 	symtest_Conf_Init = symtest_Conf_Init_impl;
@@ -138,18 +154,20 @@ int main(){
 	char  argstr[] = "ngircd\0-n";
 	char* argv[]   = {argstr,argstr+7};
 
-	char stdout_content[1024];
-
 	IOSIM_fd[1] = malloc(sizeof(sym_file_stream_t));
 	IOSIM_fd[1]->fd = 1;
-	IOSIM_fd[1]->offset = 0;
-	IOSIM_fd[1]->sym_file = malloc(sizeof(sym_file_t));
-	IOSIM_fd[1]->sym_file->contents = stdout_content;
-	IOSIM_fd[1]->sym_file->stat.st_size = 1024;
-	IOSIM_fd[1]->sym_file->stat.st_mode = S_IFSOCK;//
+	IOSIM_fd[1]->offsetout = 0;
+	IOSIM_fd[1]->sym_fileout = malloc(sizeof(sym_file_t));
+	IOSIM_fd[1]->sym_fileout->contents = malloc(1);
+	IOSIM_fd[1]->sym_fileout->stat.st_size = 1024;
+	IOSIM_fd[1]->sym_fileout->stat.st_mode = S_IFSOCK;//
 
 	stdout = IOSIM_fd[1];
 	stderr = IOSIM_fd[1];
+
+	symtest1();
+
+
 	int ngircd_exit = main_ngircd(argc,argv);
 
 	return 0;

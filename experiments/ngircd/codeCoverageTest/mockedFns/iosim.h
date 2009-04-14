@@ -10,16 +10,27 @@
 
 typedef struct {
   char* contents;
-  struct stat stat;
+  struct stat stat;  // stat.st_size will be changed over time
+  off_t* size; // an array of sizes over time
 } sym_file_t;
 
+#define IOSIM_FD_FILE  0
+#define IOSIM_FD_SOCK  1
+#define IOSIM_FD_SSOCK  2
+
 typedef struct {
+	int fd_type;
 	//	FILE *stream; // Pointer to the FILE object
 	int fd; // The fd for this stream
 	//	unsigned flags; // I'm not sure what these are
+	
+	// if fd_type==SSOCK, sym_file->contents will be casted to (int*) (an array of fds) 
 	off_t offset; // The offset into the file
-  sym_file_t* sym_file;   /* ptr to the file on disk */
-  char* buffer;
+	sym_file_t* sym_file;   /* ptr to the file on disk */
+	off_t offsetout; // The offset into the fileout
+	sym_file_t* sym_fileout;   /* ptr to the fileout */
+
+	char* buffer;
 } sym_file_stream_t;
 
 #define	IOSIM_MAX_FD	1024
@@ -38,6 +49,8 @@ int IOSIM_close(int fildes);
 int IOSIM_eof(int fildes);
 int IOSIM_openWithMode(const char *pathname, int flags, mode_t mode);
 int IOSIM_open(const char *pathname, int flags);
+
+void IOSIM_updatesize(int fildes, int t);
 
 char *IOSIM_getcwd(char *buf, size_t size);
 int IOSIM_chdir(const char *path);
