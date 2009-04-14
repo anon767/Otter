@@ -33,7 +33,7 @@ def run(exe, search, contents)
     f.puts contents
   }
   result = nil
-  IO.popen("#{exe} \"#{search}\" #{input}") { |f|
+  IO.popen("#{exe} '#{search}' #{input}") { |f|
     result = f.read
   }
   File.unlink input
@@ -85,7 +85,7 @@ def symbolic_exec(i, config, search, contents)
   system cmd
   File.unlink tmpfile
 
-  cmd = "#{$cilly} #{combfile} --useLogicalOperators --arg=\"#{search}\" " +
+  cmd = "#{$cilly} #{combfile} --useLogicalOperators --arg='#{search}' " +
         "--arg=input.txt --doexecute"
   #  CILLY_DONT_COMPILE_AFTER_MERGE=1
   result = ""
@@ -231,7 +231,7 @@ tests = [
   ["[k]", "ab"],
   ["abcd", "abcd"],
   ["a(bc)d", "abcd"],
-  ["a[^A-^C]?c", "ac"],
+  ["a[-]?c", "ac"],
   ["(....).*\1", "beriberi"],
 ]
 
