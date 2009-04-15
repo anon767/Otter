@@ -10,13 +10,45 @@ module Setup (QT : TypeQual.QualType.QualTypeMonad) = struct
         include Ocamlgraph.Oper.P (G)
     end
 
+
+    (*
+     * solvers
+     *)
+
     module SourceSink = TypeQual.QualSolver.Reachability.SourceSink (QualGraph)
+
+
+    (*
+     * printers
+     *)
 
     let path_printer ff (x, y) =
         Format.fprintf ff "%a@ <= %a" QualGraph.vertex_printer x QualGraph.vertex_printer y
 
     let path_list_printer ff list =
         ignore (List.fold_left (fun b p -> Format.fprintf ff "%(%)@[%a@]" b path_printer p; ",@ ") "" list)
+
+
+    (*
+     * helpers
+     *)
+
+    let permute list =
+        if List.length list > 4 then invalid_arg "permutation limited to 4 items";
+        (* from: http://caml.inria.fr/pub/ml-archives/caml-list/2001/06/d4059d1cf784e6eeff6978245ffcb319.fr.html *)
+        let rec distribute elt = function
+            | (hd::tl) as list -> (elt::list)::(List.map (fun x -> hd::x) (distribute elt tl))
+            | [] -> [ [elt] ]
+        and permute = function
+            | x::rest -> List.flatten (List.map (distribute x) (permute rest))
+            | [] -> [ [] ]
+        in
+        permute list
+
+
+    (*
+     * assertions
+     *)
 
     let assert_qualtype_match expected_match actual =
         assert_match ~printer:QT.QualType.printer expected_match actual

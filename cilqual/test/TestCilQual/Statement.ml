@@ -50,15 +50,6 @@ let test_stmt stmt ?(label=stmt) ?(typedecls=[]) vardecls test =
 
 (* test helper that tests all permutations of statements *)
 let test_permute_stmt stmtlist ?(typedecls=[]) vardecls test =
-    (* from: http://caml.inria.fr/pub/ml-archives/caml-list/2001/06/d4059d1cf784e6eeff6978245ffcb319.fr.html *)
-    let rec distribute elt = function
-        | (hd::tl) as list -> (elt::list)::(List.map (fun x -> hd::x) (distribute elt tl))
-        | [] -> [ [elt] ]
-    in
-    let rec permute = function
-        | x::rest -> List.flatten (List.map (distribute x) (permute rest))
-        | [] -> [ [] ]
-    in
     List.map begin fun ss ->
         test_stmt ("{ " ^ (String.concat "; " ss) ^ "; }") ~typedecls vardecls test
     end (permute stmtlist)
