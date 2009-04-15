@@ -21,32 +21,18 @@ let init_cil () =
     end
 
 
-module type InterpreterMonad = sig
-    include CilQualType.CilQualTypeMonad
-
-    val parse_annot : Cil.attributes -> string list monad
-end
-
-
-(* interpreter for Cil.exp types *)
-module InterpreterT (QT : CilQualType.CilQualTypeMonad) = struct
-    include QT
-    module Ops = MonadOps (QT)
-    open Ops
-
-    (* annotated with qualifiers from attributes *)
-    let parse_annot attrlist =
-        let rec parse_annot attrlist quallist = match attrlist with
-            (* attribute in the form __attribute__((cilqual(qual))) *)
-            | Cil.Attr (s, [ Cil.ACons (qual, _) ])::tail when s = annot_attribute_string ->
-                parse_annot tail (qual::quallist)
-            | Cil.Attr (s, _)::_ when s = annot_attribute_string ->
-                failwith "TODO: report invalid qualifier"
-            | _::tail ->
-                parse_annot tail quallist
-            | [] ->
-                quallist
-        in
-        return (parse_annot attrlist [])
-end
+(* parse type qualifiers annotations from attributes *)
+let parse_annot attrlist =
+    let rec parse_annot attrlist quallist = match attrlist with
+        (* attribute in the form __attribute__((cilqual(qual))) *)
+        | Cil.Attr (s, [ Cil.ACons (qual, _) ])::tail when s = annot_attribute_string ->
+            parse_annot tail (qual::quallist)
+        | Cil.Attr (s, _)::_ when s = annot_attribute_string ->
+            failwith "TODO: report invalid qualifier"
+        | _::tail ->
+            parse_annot tail quallist
+        | [] ->
+            quallist
+    in
+    parse_annot attrlist []
 

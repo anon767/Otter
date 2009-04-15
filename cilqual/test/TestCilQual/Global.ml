@@ -9,8 +9,7 @@ module G =
                 (CilQual.Expression.InterpreterT
                     (CilQual.Environment.InterpreterT
                         (CilQual.Type.InterpreterT
-                            (CilQual.Config.InterpreterT
-                                (CilQual.CilQualType.CilQualTypeT (Identity))))))))
+                            (CilQual.CilQualType.CilQualTypeT (CilQual.Environment.CilFieldOrVar) (Identity)))))))
 open G.QualType.Qual
 open G.QualType
 open G

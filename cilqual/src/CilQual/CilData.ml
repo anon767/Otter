@@ -22,13 +22,17 @@ end
 
 module CilVar = struct
     type t = varinfo
-    let compare x y = compare x.vid y.vid
+    let compare x y = if x == y then 0 else compare x.vid y.vid
+    let hash x = x.vid
+    let equal x y = compare x y = 0
     let printer ff x = Format.fprintf ff "%s" x.vname
 end
 
 module CilField = struct
     type t = fieldinfo
-    let compare x y = compare (x.fcomp.ckey, x.fname) (y.fcomp.ckey, y.fname)
+    let compare x y = if x == y then 0 else compare (x.fcomp.ckey, x.fname) (y.fcomp.ckey, y.fname)
+    let hash x = x.fcomp.ckey
+    let equal x y = compare x y = 0
     let printer ff x = Format.fprintf ff "%s.%s" x.fcomp.cname x.fname
 end
 

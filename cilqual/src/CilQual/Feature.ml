@@ -9,8 +9,7 @@ module G =
                 (Expression.InterpreterT
                     (Environment.InterpreterT
                         (Type.InterpreterT
-                            (Config.InterpreterT
-                                (CilQualType.CilQualTypeT (Identity))))))))
+                            (CilQualType.CilQualTypeT (Environment.CilFieldOrVar) (Identity)))))))
 
 (* setup CilQual solver *)
 module SourceSink = TypeQual.QualSolver.Reachability.SourceSink (G.QualGraph)

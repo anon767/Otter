@@ -1,5 +1,7 @@
 open Str
 open Control.Monad
+open CilQual.Environment.CilFieldOrVar
+
 
 module Setup (E : CilQual.Expression.InterpreterMonad) = struct
     open E
@@ -48,7 +50,7 @@ module Setup (E : CilQual.Expression.InterpreterMonad) = struct
 
     let lookup_env x (cilenv, env) =
         let v = List.assoc x cilenv in
-        Env.find (`Var v) env
+        Env.find (CilVar v) env
 
     let adapt_cil_printer printer ff x =
         let code = Pretty.sprint ~width:120 (printer () x) in
@@ -72,7 +74,7 @@ module Setup (E : CilQual.Expression.InterpreterMonad) = struct
 
     let cilqual_env_printer ff env = ignore begin
         let kvprinter ff (k, v) = match k with
-            | `Var vi -> Format.fprintf ff "@[%s:%d@] => @[%a@]" vi.Cil.vname vi.Cil.vid E.QualType.printer v
+            | CilVar vi -> Format.fprintf ff "@[%s:%d@] => @[%a@]" vi.Cil.vname vi.Cil.vid E.QualType.printer v
             | _ -> ()
         in
         Env.fold (fun k v b -> Format.fprintf ff "%(%)@[%a@]" b kvprinter (k, v); "@\n") env ""

@@ -1,27 +1,27 @@
 open Control.Monad
 open TypeQual.QualType
+open Config
 open CilData
 
 
 module type InterpreterMonad = sig
-    include Config.InterpreterMonad
+    include CilQualType.CilQualTypeMonad
 
     val annot_attr : QualType.t -> Cil.attributes -> QualType.t monad
-    val embed_lval : Cil.typ -> QualType.t monad
+    val embed_lval : QualType.Var.Embed.t -> Cil.typ -> QualType.t monad
     val embed_rval : Cil.typ -> QualType.t monad
 end
 
 
 (* interpreter for Cil.exp types *)
-module InterpreterT (C : Config.InterpreterMonad) = struct
+module InterpreterT (C : CilQualType.CilQualTypeMonad) = struct
     include C
     module Ops = MonadOps (C)
     open Ops
 
     (* annotated with qualifiers from attributes *)
     let annot_attr qt attrlist = perform
-        quals <-- parse_annot attrlist;
-        mapM_ (annot qt) quals;
+        mapM_ (annot qt) (parse_annot attrlist);
         return qt
 
     (* Translation from C types to CilQual types:
@@ -52,26 +52,29 @@ module InterpreterT (C : Config.InterpreterMonad) = struct
      * Construction of qualifier variable is in the QualType monad instead of the QualTypeMonad monad, so conversion
      * needs to be done in two stages: first, construct QualType.t, then annotate the qualifier variables.
      *)
-    let embed t = perform
+    let embed_type t =
         let module QualTypeOps = MonadOps (QualType) in
-        let rec embed_ts = function
+        let rec embed_type = function
             | Cil.TSArray (typ, _, attrlist) -> perform with module QualType in
                 (* treat n-d arrays as a single cell;
                  * fortunately, Cil makes conversion to pointer explicit with Cil.StartOf *)
-                embed_ts typ
+                embed_type typ
             | Cil.TSPtr (pointsTo, attrlist) -> perform with module QualType in
-                qtarget <-- embed_ts pointsTo;
+                qtarget <-- embed_type pointsTo;
                 QualType.ref qtarget
             | Cil.TSFun (r, a, is_vararg, attrlist) -> perform with module QualType in
-                qtr <-- embed_ts r;
+                qtr <-- embed_type r;
                 (* add one void * parameter for vararg *)
-                qta <-- QualTypeOps.mapM embed_ts (if is_vararg then a @ [Cil.typeSig Cil.voidPtrType] else a);
+                qta <-- QualTypeOps.mapM embed_type (if is_vararg then a @ [Cil.typeSig Cil.voidPtrType] else a);
                 QualType.fn qtr qta
             | Cil.TSComp _ (* structs are field-based, unions are untyped *)
             | Cil.TSEnum _
             | Cil.TSBase _ -> perform with module QualType in
                 QualType.base
         in
+        embed_type (Cil.typeSig t)
+
+    let annot_qt qt t = perform
         let rec annot_qt qt = function
             | Cil.TSArray (typ, _, attrlist) -> perform
                 annot_qt qt typ;
@@ -92,18 +95,22 @@ module InterpreterT (C : Config.InterpreterMonad) = struct
             | Cil.TSBase _ as t -> perform
                 annot_attr qt (Cil.typeSigAttrs t)
         in
-        let ts = Cil.typeSig t in
-        qt <-- create (embed_ts ts);
-        annot_qt qt ts
+        annot_qt qt (Cil.typeSig t)
 
-    let embed_lval t = perform
-        if CilType.is_or_points_to_function t
-            then embed t               (* C'ism: function pointers are already lvals, so do not need an extra ref *)
-            else embed (CilType.ref t) (* but other variables need an extra ref to become lvals *)
+    let embed_lval v t = perform
+        let t = if CilType.is_or_points_to_function t
+            then t               (* C'ism: function pointers are already lvals, so do not need an extra ref *)
+            else (CilType.ref t) (* but other variables need an extra ref to become lvals *)
+        in
+        qt <-- embed v (embed_type t);
+        annot_qt qt t
 
     let embed_rval t = perform
-        if CilType.is_or_points_to_function t
-            then embed (CilType.deref t) (* C'ism: deref cast to function pointers to become rvals *)
-            else embed t                 (* but casts to other types are already rvals *)
+        let t = if CilType.is_or_points_to_function t
+            then (CilType.deref t) (* C'ism: deref cast to function pointers to become rvals *)
+            else t                 (* but casts to other types are already rvals *)
+        in
+        qt <-- fresh (embed_type t);
+        annot_qt qt t
 end
 

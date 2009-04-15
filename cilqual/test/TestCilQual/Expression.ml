@@ -6,8 +6,7 @@ module E =
     CilQual.Expression.InterpreterT
         (CilQual.Environment.InterpreterT
             (CilQual.Type.InterpreterT
-                (CilQual.Config.InterpreterT
-                    (CilQual.CilQualType.CilQualTypeT (Identity)))))
+                (CilQual.CilQualType.CilQualTypeT (CilQual.Environment.CilFieldOrVar) (Identity))))
 open E.QualType.Qual
 open E.QualType
 open E

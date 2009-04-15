@@ -28,10 +28,13 @@ module type CilQualTypeMonad = sig
 end
 
 
-module CilQualTypeT (M : Monad) = struct
+module CilQualTypeT (QualVar : PrintableComparableType) (M : Monad) = struct
     (* setup CilQual constraint graph *)
-    module QT = Qual (TypedQualVar) (String)
-    module QC = Constraint (TypedConstraint)
+    module TQV = TypedQualVar (QualVar)
+    module QT = Qual (TQV) (String)
+
+    module TQC = TypedConstraint (TQV)
+    module QC = Constraint (TQC)
     module ContextQC = ContextualEdge (Context) (QC)
 
     (* setup CilQual monad stack *)
@@ -41,7 +44,7 @@ module CilQualTypeT (M : Monad) = struct
         include QualT (QT) (QC) (ContextGraphM)
         let local f m = Fresh (fun s -> ContextGraphM.local f (runFresh m s))
     end
-    module QualTypeQualContextGraphM = QualTypeT (QualContextGraphM)
+    module QualTypeQualContextGraphM = QualTypeT (TQV) (TQC) (QualContextGraphM)
     include QualTypeQualContextGraphM
 
     let emptyContext = Context.default

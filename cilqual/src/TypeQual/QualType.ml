@@ -6,16 +6,49 @@ open QualGraph
 open Qual
 
 
-(** qualifier variables encoded by reversed-types *)
-module TypedQualVar = struct
+module type TypedQualVar = sig
+    module Embed : PrintableComparableType
     type t = Fresh of int
+           | Embed of Embed.t
+           | Deref of t
+           | FnRet of t
+           | FnArg of int * t
+    val fresh : int -> t
+    val compare : t -> t -> int
+    val hash : t -> int
+    val equal : t -> t -> bool
+    val subst : t -> t -> t -> t
+    val printer : Format.formatter -> t -> unit
+end
+
+
+module type TypedConstraint = sig
+    module TypedQualVar : TypedQualVar
+    type t = Default
+           | Typed of TypedQualVar.t
+    val compare : t -> t -> int
+    val default : t
+    val printer : Format.formatter -> t -> unit
+end
+
+
+(** qualifier variables encoded by reversed-types *)
+module TypedQualVar (Embed : PrintableComparableType) = struct
+    module Embed = Embed
+
+    type t = Fresh of int
+           | Embed of Embed.t
            | Deref of t
            | FnRet of t
            | FnArg of int * t
 
+    let fresh i = Fresh i
+
     let rec compare x y = if x == y then 0 else match x, y with
         | Fresh x, Fresh y ->
             Pervasives.compare x y
+        | Embed x, Embed y ->
+            Embed.compare x y
         | Deref x, Deref y
         | FnRet x, FnRet y ->
             compare x y
@@ -25,38 +58,41 @@ module TypedQualVar = struct
                 | i -> i
             end
         | x, y ->
-            let rank = function Fresh _ -> 0 | Deref _ -> 1 | FnRet _ -> 2 | FnArg _ -> 3 in
+            let rank = function Fresh _ -> 0 | Embed _ -> 1 | Deref _ -> 2 | FnRet _ -> 3 | FnArg _ -> 4 in
             Pervasives.compare (rank x) (rank y)
 
     let rec hash = function
-        | Fresh i -> i
-        | Deref x -> 1 + (31 * hash x)
-        | FnRet x -> 2 + (31 * hash x)
-        | FnArg (i, x) -> 3 + i + (31 * hash x)
+        | Fresh i -> 31 * i
+        | Embed v -> 1 + (31 * Embed.hash v)
+        | Deref v -> 2 + (31 * hash v)
+        | FnRet v -> 3 + (31 * hash v)
+        | FnArg (i, v) -> 4 + i + (31 * hash v)
 
     let equal x y = (compare x y) = 0
 
-    let rec printer ff = function
-        | Fresh i      -> Format.fprintf ff "Fresh %d" i
-        | Deref v      -> Format.fprintf ff "Deref @[(%a)@]" printer v
-        | FnRet v      -> Format.fprintf ff "FnRet @[(%a)@]" printer v
-        | FnArg (i, v) -> Format.fprintf ff "FnArg:%d @[(%a)@]" i printer v
-
-    let fresh i = Fresh i
-
     let subst x y v =
         let rec subst v = if equal v x then y else match v with
-            | Fresh _ as f -> f
+            | Fresh _
+            | Embed _ as v -> v
             | Deref v      -> Deref (subst v)
             | FnRet v      -> FnRet (subst v)
             | FnArg (i, v) -> FnArg (i, subst v)
         in subst v
+
+    let rec printer ff = function
+        | Fresh i      -> Format.fprintf ff "Fresh %d" i
+        | Embed v      -> Format.fprintf ff "Embed @[%a@]" Embed.printer v
+        | Deref v      -> Format.fprintf ff "Deref @[(%a)@]" printer v
+        | FnRet v      -> Format.fprintf ff "FnRet @[(%a)@]" printer v
+        | FnArg (i, v) -> Format.fprintf ff "FnArg:%d @[(%a)@]" i printer v
 end
 
 
 (** qualifier constraint for TypedQualVar *)
-module TypedConstraint = struct
+module TypedConstraint (TypedQualVar : TypedQualVar) = struct
+    module TypedQualVar = TypedQualVar
     open TypedQualVar
+
     type t = Default
            | Typed of TypedQualVar.t
 
@@ -78,9 +114,11 @@ end
 
 module type QualTypeMonad = sig
     include Monad
+
     (** qualified-type: types embedded with qualifier variables *)
     module QualType : sig
-        module Qual : Qual with type Var.t = TypedQualVar.t
+        module Var : TypedQualVar
+        module Qual : Qual with type Var.t = Var.t
         type t = Ref of Qual.t * t         (* reference types *)
                | Fn of Qual.t * t * t list (* function types *)
                | Base of Qual.t            (* base types *)
@@ -98,7 +136,8 @@ module type QualTypeMonad = sig
         module E : EdgeType with type t = edge and type label = Constraint.t
     end with module Qual = QualType.Qual
 
-    val create : QualType.t QualType.monad -> QualType.t monad
+    val embed  : QualType.Var.Embed.t -> QualType.t QualType.monad -> QualType.t monad
+    val fresh  : QualType.t QualType.monad -> QualType.t monad
     val empty  : QualType.t monad
 
     val assign : QualType.t -> QualType.t -> unit monad
@@ -113,7 +152,9 @@ module type QualTypeMonad = sig
 end
 
 
-module QualTypeT (QM : QualMonad with type Qual.Var.t = TypedQualVar.t
+module QualTypeT (TypedQualVar : TypedQualVar)
+                 (TypedConstraint : TypedConstraint with module TypedQualVar = TypedQualVar)
+                 (QM : QualMonad with type Qual.Var.t = TypedQualVar.t
                                   and type QualGraph.Constraint.t = TypedConstraint.t) = struct
     (* monad stack *)
     include (QM : Monad with type 'a monad = 'a QM.monad and type 'a result = 'a QM.result)
@@ -124,7 +165,8 @@ module QualTypeT (QM : QualMonad with type Qual.Var.t = TypedQualVar.t
     let lift x = x
 
     module QualType = struct
-        open TypedQualVar
+        module Var = TypedQualVar
+        open Var
         module Qual = QM.Qual
         type t = Ref of Qual.t * t         (* reference types *)
                | Fn of Qual.t * t * t list (* function types *)
@@ -267,7 +309,7 @@ module QualTypeT (QM : QualMonad with type Qual.Var.t = TypedQualVar.t
                     | d, Default                    -> f w automata acc
                 end g v acc
 
-            | (Fresh _)::_ ->
+            | (Fresh _)::_ | (Embed _)::_ ->
                 failwith "Impossible!"
 
         and fold_forward f g v automata acc = fold_flow `Forward f g v automata acc
@@ -275,7 +317,10 @@ module QualTypeT (QM : QualMonad with type Qual.Var.t = TypedQualVar.t
     end
 
     (* qualified-type constructors *)
-    let create qt = perform
+    let embed e qt = perform
+        let qv = Qual.Var (QualType.Var.Embed e) in
+        return (QualType.run qt qv)
+    let fresh qt = perform
         qv <-- fresh;
         return (QualType.run qt qv)
 
