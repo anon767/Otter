@@ -49,7 +49,6 @@ module type QualMonad = sig
     val add_edge : ?label:QualGraph.Constraint.t -> Qual.t -> Qual.t -> unit monad
 
     val fresh : Qual.t monad
-    val const : Qual.Const.t -> Qual.t monad
 
     val eq  : Qual.t -> Qual.t -> unit monad
     val leq : Qual.t -> Qual.t -> unit monad
@@ -85,10 +84,6 @@ module QualT (Q : Qual) (C : Constraint)
         let fold_backward f g v automata acc = fold_pred (fun v acc -> f v automata acc) g v acc
     end
 
-    (* qualifier constructors *)
-    let var v = return (Q.Var v)
-    let const s = return (Q.Const s)
-
     (* qualifier constraints *)
     let eq x y = perform
         add_edge x y;
@@ -108,8 +103,7 @@ module QualT (Q : Qual) (C : Constraint)
 
     (* annotate qualifier *)
     let annot qv c = perform
-        c <-- const c;
-        eq qv c;
+        eq qv (Qual.Const c);
         return qv
 end
 
