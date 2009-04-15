@@ -14,10 +14,13 @@ module type QualConst = PrintableComparableType
 module type Qual = sig
     module Var : QualVar
     module Const : QualConst
-    type qual = Var of Var.t
-              | Const of Const.t
-    include PrintableComparableType with type t = qual
+    type t = Var of Var.t
+           | Const of Const.t
     val fresh : int -> t
+    val compare : t -> t -> int
+    val hash : t -> int
+    val equal : t -> t -> bool
+    val printer : Format.formatter -> t -> unit
 end
 
 

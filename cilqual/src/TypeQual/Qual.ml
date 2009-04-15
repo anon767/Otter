@@ -9,9 +9,8 @@ open QualGraph
 module Qual (Var : QualVar) (Const : QualConst) = struct
     module Var = Var
     module Const = Const
-    type qual = Var of Var.t      (* qualifier variables *)
-              | Const of Const.t  (* qualifier constants *)
-    type t = qual
+    type t = Var of Var.t      (* qualifier variables *)
+           | Const of Const.t  (* qualifier constants *)
 
     let compare x y = if x == y then 0 else match x, y with
         | Var x, Var y -> Var.compare x y
