@@ -643,15 +643,12 @@ let exec_stmt job =
 													 ignore the result, just end the call *)
 												MemOp.state__end_fcall state
 								in
-								(* varinfo_to_block: memory_block VarinfoMap.t; *)
-								let pop_frame = List.hd state.locals in
-								let state2' = VarinfoMap.fold (fun varinfo block s -> MemOp.state__remove_block s block) pop_frame.varinfo_to_block state2 in 
 								(* Update the state and the stmt *)
-								let job' = { job with state = state2'; stmt = nextStmt; } in
+								let job' = { job with state = state2; stmt = nextStmt; } in
 								let job'' =
 									if job.inTrackedFn
 									then { job' with exHist = nextExHist None; } (* We don't currently track returns as edges for purposes of coverage *)
-									else if StringSet.mem (List.hd state2'.callstack).svar.vname run_args.arg_fns
+									else if StringSet.mem (List.hd state2.callstack).svar.vname run_args.arg_fns
 									(* If we are leaving a nontracked function and we
 										 have to start tracking coverage again. *)
 									then { job' with inTrackedFn = true; }

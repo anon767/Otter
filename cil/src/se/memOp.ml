@@ -321,6 +321,10 @@ let rec frame__add_varinfos frame block_to_bytes varinfos =
 			frame__add_varinfos frame2 block_to_bytes2 tail
 ;;
 
+let frame__clear_varinfos frame block_to_bytes =
+	VarinfoMap.fold (fun varinfo -> MemoryBlockMap.remove) frame.varinfo_to_block block_to_bytes
+
+
 (**
  *	string table
  *)
@@ -466,8 +470,10 @@ let state__end_fcall state =
 	Output.set_mode Output.MSG_FUNC;
 	Output.print_endline ("Exit function "^(To_string.fundec (List.hd state.callstack)));
 	Output.print_endline ("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
+	let block_to_bytes = frame__clear_varinfos (List.hd state.locals) state.block_to_bytes in
     { state with locals = List.tl state.locals;
                  callstack = List.tl state.callstack;
+                 block_to_bytes = block_to_bytes;
                  va_arg = List.tl state.va_arg;
 	             callContexts = List.tl state.callContexts }
 ;;
