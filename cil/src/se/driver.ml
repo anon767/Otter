@@ -359,7 +359,14 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 								| _ -> "(nil)"
 							in
 							Output.set_mode Output.MSG_MUSTPRINT;
-							Output.print_endline ("Evaluates to string: \"" ^ (String.escaped str) ^ "\"");
+							Output.print_endline ("Evaluates to string: \"" ^ (
+                                if
+                                    Executeargs.print_args.arg_print_no_escaped_string
+                                then
+                                    str
+                                else
+                                    String.escaped str
+                                ) ^ "\"");
 							state
 												
 					| Function.Assume ->

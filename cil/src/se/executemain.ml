@@ -292,6 +292,9 @@ let feature : featureDescr =
 			("--printIf",
 			Arg.Unit (fun () -> Executeargs.print_args.arg_print_guard <- true),
 			" Print the guard of an if statement \n");
+			("--printNoEscapedString",
+			Arg.Unit (fun () -> Executeargs.print_args.arg_print_no_escaped_string <- true),
+			" Print strings without escaped characters \n");
 			(* Sparse printing *)
 			("--printLittle",
 			Arg.Unit (fun () -> 

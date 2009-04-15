@@ -9,6 +9,7 @@ type print_args =
 		mutable arg_print_rval : bool;
 		mutable arg_print_lval : bool;
 		mutable arg_print_guard : bool;
+		mutable arg_print_no_escaped_string : bool;
 		mutable arg_print_stp : bool;
 		mutable arg_print_stmt : bool;
 		mutable arg_print_func : bool;
@@ -42,6 +43,7 @@ let print_args =
 		arg_print_rval = false;
 		arg_print_lval = false;
 		arg_print_guard = false;
+		arg_print_no_escaped_string = false;
 		arg_print_stp = false;
 		arg_print_stmt = true;
 		arg_print_func = true;
