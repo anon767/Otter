@@ -17,8 +17,16 @@ int socket(int domain, int type, int protocol) {
 	IOSIM_fd[fd]->fd = fd;
 	IOSIM_fd[fd]->offset = 0;
 	IOSIM_fd[fd]->sym_file = malloc(sizeof(sym_file_t));
+	IOSIM_fd[fd]->sym_file->contents = malloc(IOSIM_MAX_STREAM_SIZE);
+	IOSIM_fd[fd]->sym_file->size = malloc(sizeof(off_t)*IOSIM_MAX_EVENTS);
+	for(int i=0;i<IOSIM_MAX_EVENTS;i++)
+		IOSIM_fd[fd]->sym_file->size[i] = 0;
 	IOSIM_fd[fd]->offsetout = 0;
 	IOSIM_fd[fd]->sym_fileout = malloc(sizeof(sym_file_t));
+	IOSIM_fd[fd]->sym_fileout->contents = malloc(IOSIM_MAX_STREAM_SIZE);
+	IOSIM_fd[fd]->sym_fileout->size = malloc(sizeof(off_t)*IOSIM_MAX_EVENTS);
+	for(int i=0;i<IOSIM_MAX_EVENTS;i++)
+		IOSIM_fd[fd]->sym_fileout->size[i] = 0;
 	return fd;
 }
 
@@ -28,12 +36,13 @@ int bind(int socket, const struct sockaddr *address,
 	return 0;
 }
 
-int listen_queue[100];
-int listen_queue_size;
+int listen_queue[IOSIM_MAX_EVENTS];
+int listen_queue_last;
+int listen_queue_size[IOSIM_MAX_EVENTS];
 int listen(int socket, int backlog) {
 	IOSIM_fd[socket]->fd_type = IOSIM_FD_SSOCK;
 	IOSIM_fd[socket]->sym_file->contents  = listen_queue;
-	//listen_ssock_size = &(IOSIM_fd[socket]->sym_file->stat.st_size);
+	IOSIM_fd[socket]->sym_file->size  = listen_queue_size;
 	return 0;
 }
 
@@ -54,9 +63,13 @@ int accept(int sockfd, struct sockaddr *restrict address,
 					 socklen_t *restrict address_len) {
 
 	sym_file_stream_t* sock = IOSIM_fd[sockfd];
-	if(sock->fd_type!=IOSIM_FD_SSOCK ||
-	   sock->offset>=sock->sym_file->stat.st_size){
-		__COMMENT("Error in accept(). Either a non-ssock is passed to accept(), or there's no socket available to be accepted (accept() called too early).");
+	if(sock->fd_type!=IOSIM_FD_SSOCK){
+		__COMMENT("Error in accept(): a non-ssock is passed to accept().");
+		exit(1);
+
+	}
+	if(sock->offset>=sock->sym_file->stat.st_size){
+		__COMMENT("Error in accept(): there's no socket available to be accepted (accept() called too early).");
 		exit(1);
 	}
 	int fd = ((int*)sock->sym_file->contents)[sock->offset];
@@ -64,8 +77,8 @@ int accept(int sockfd, struct sockaddr *restrict address,
 
 	address->sa_family = AF_INET;
 
-//	address->sa_data[0] = __SYMBOLIC(0);
-//	address->sa_data[1] = __SYMBOLIC(0);
+	address->sa_data[0] = 0;//__SYMBOLIC(0);
+	address->sa_data[1] = 0;//__SYMBOLIC(0);
 
 	// Here's a fake IP address
 	address->sa_data[2] = 10;

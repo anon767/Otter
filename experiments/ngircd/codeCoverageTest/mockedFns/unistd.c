@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <errno.h>
 
+extern int socket(int domain, int type, int protocol);
 
 //#if __HAVE_getpid__
 pid_t        getpid(void){
@@ -26,8 +27,10 @@ pid_t fork(void){
 //		new_pid++;
 //		return new_pid; // child process id > 0
 //	}
-	__COMMENT("Forking to child");
-	return 0;
+	//__COMMENT("Forking to child");
+	//return 0;
+	__COMMENT("Forking to parent");
+	return 1;
 }
 //#endif
 
@@ -44,13 +47,13 @@ int gethostname(char *name, size_t namelen){
 }
 //#endif
 
-#if __HAVE_pipe__
+//#if __HAVE_pipe__
 int pipe(int fildes[2]){
-	fildes[0] = IOSIM_newfd(); // 6
-	fildes[1] = IOSIM_newfd(); // 7, never use coz we don't really fork a child
+	fildes[0] = socket(0,0,0); // 6
+	fildes[1] = socket(0,0,0); // 7, never use coz we don't really fork a child
 	return 0;
 }
-#endif
+//#endif
 
 //#if __HAVE_read__
 ssize_t read(int fildes, void *buf, size_t nbyte){

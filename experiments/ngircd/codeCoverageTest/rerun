@@ -11,4 +11,27 @@ echo "--> Merging ngIRCd with mockedFns"
 $CILLY --out=ngircd_comb.c -I $LIBCDIR -I $MOCKEDDIR otherFiles/libc_comb.c $MOCKEDDIR/*.c ngircd.c
 #
 echo "--> Doing symbolic execution"
-$CILLY -I $MOCKEDDIR --doexecute --covStats=ngircd.stats otherFiles/symtest1.c  --lineCov $*
+$CILLY \
+	-DCONF_UID=0 \
+	-DCONF_GID=0 \
+	-DCONF_PINGTIMEOUT=1000 \
+	-DCONF_PONGTIMEOUT=1000 \
+	-DCONF_CONNECTRETRY=0 \
+	-DCONF_OPERCANMODE=0 \
+	-DCONF_NODNS=0 \
+	-DCONF_LISTENIPV6=0 \
+	-DCONF_LISTENIPV4=1 \
+	-DCONF_CONNECTIPV6=0 \
+	-DCONF_CONNECTIPV4=1 \
+	-DCONF_OPERSERVERMODE=0 \
+	-DCONF_MAXJOINS=0 \
+	-DCONF_MAXCONNECTIONSIP=0 \
+	-DCONF_MAXNICKLENGTH=9 \
+	-I $MOCKEDDIR \
+	--doexecute \
+	--printNoEscapedString \
+	--covStats=ngircd.stats \
+	otherFiles/symtest1.c \
+	$*
+
+#	--lineCov \

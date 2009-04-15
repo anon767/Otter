@@ -8,6 +8,9 @@
 
 // This symbolic file system borrows a bit from KLEE's
 
+#define IOSIM_MAX_EVENTS	32
+#define IOSIM_MAX_STREAM_SIZE	0xffff
+
 typedef struct {
   char* contents;
   struct stat stat;  // stat.st_size will be changed over time

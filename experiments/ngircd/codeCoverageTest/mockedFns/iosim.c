@@ -31,6 +31,15 @@ int		IOSIM_num_fd = 3;
 //	return ret;
 //}
 
+
+char *realpath(const char *restrict file_name,
+	       char *restrict resolved_name){
+	strcpy(resolved_name,file_name);
+	strcat(resolved_name,"/");
+	return resolved_name;
+}
+
+
 // If the file exists, return it; otherwise return NULL.
 sym_file_t *IOSIM_findfile(const char *file){
 	for(int i=0;i<IOSIM_num_file;i++){
@@ -163,7 +172,10 @@ int IOSIM_read(int fildes, void *buf, int nbyte){
 	}
 	len = in->sym_file->stat.st_size;
 	for(n=0;n<nbyte;n++){
-		if(cur>=len) break;
+		if(cur>=len) {
+			cbuf[n] = EOF;
+			break;
+		}
 		cbuf[n] = in->buffer[cur];
 
 		cur++;
@@ -336,6 +348,10 @@ int IOSIM_dirfd(DIR *dir) {
 
 
 void IOSIM_updatesize(int fildes, int t){
+	if(t>=IOSIM_MAX_EVENTS){
+		__COMMENT("Error: too many events!");
+		exit(1);
+	}
 	sym_file_stream_t* f = IOSIM_fd[fildes];
 	f->sym_file->stat.st_size = f->sym_file->size[t];
 }
