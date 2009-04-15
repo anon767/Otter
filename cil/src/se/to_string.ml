@@ -41,6 +41,21 @@ let varinfo v =
 (* TODO: avoid rec *)
 let rec
 
+callstack s =
+    match s with 
+    | [] -> "\n"
+    | context::tail -> (
+        let instr_p i = 
+            "\t"^(location (get_instrLoc i))
+        in
+        match context with
+        | Runtime -> "\t(END)"
+        | Source (_,i,_) -> instr_p i
+        | NoReturn (i) -> instr_p i
+    )^"\n"^(callstack tail)
+
+and
+
 stmt s =
   if donotprint() then "" else
 	match s.skind with

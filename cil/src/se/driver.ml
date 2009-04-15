@@ -773,10 +773,15 @@ let exec_stmt job =
 																 stmt = nextStmtF;
 																 exHist = nextExHist (Some nextStmtF); } in
 							Output.set_mode Output.MSG_MUSTPRINT;
-							Output.printf "Branching on %s at %s.
+							Output.printf "Branching on %s at %s. %s
 Job %d is the true branch and job %d is the false branch.\n\n"
 								 (To_string.exp exp)
 								 (To_string.location loc)
+                                 (if Executeargs.print_args.arg_print_callstack then
+                                     "Call stack:\n"^
+								    (To_string.callstack state.callContexts)
+                                 else ""
+                                 )
 								 trueJob.jid falseJob.jid;
 							Fork (trueJob, falseJob)
 						end

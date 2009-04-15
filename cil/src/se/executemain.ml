@@ -295,6 +295,9 @@ let feature : featureDescr =
 			("--printNoEscapedString",
 			Arg.Unit (fun () -> Executeargs.print_args.arg_print_no_escaped_string <- true),
 			" Print strings without escaped characters \n");
+			("--printCallStack",
+			Arg.Unit (fun () -> Executeargs.print_args.arg_print_callstack <- true),
+			" Print call stack (when branching)\n");
 			(* Sparse printing *)
 			("--printLittle",
 			Arg.Unit (fun () -> 
