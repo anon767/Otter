@@ -69,6 +69,12 @@ module InterpreterT (S : Statement.InterpreterMonad) = struct
         | Cil.GText _ ->
             return ()
 
+    let interpret_init file = perform
+        mapM_ interpret_global (List.filter (function Cil.GFun _ -> false | _ -> true) file.Cil.globals);
+        match file.Cil.globinit with
+            | Some f -> interpret_function f
+            | None -> return ()
+
     let interpret_file file = perform
         mapM_ interpret_global file.Cil.globals;
         match file.Cil.globinit with
