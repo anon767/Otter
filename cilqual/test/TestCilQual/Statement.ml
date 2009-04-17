@@ -25,7 +25,7 @@ let test_stmt stmt ?(label=stmt) ?(typedecls=[]) vardecls test =
         let cilenv, formatcilenv = create_env typedecls vardecls in
 
         (* Cil statements to interpret *)
-        let stmt = Formatcil.cStmt (preprocess_cilqual stmt) Cil.makeGlobalVar dummy_loc formatcilenv in
+        let stmt = Formatcil.cStmt (preprocess stmt) Cil.makeGlobalVar Cil.locUnknown formatcilenv in
 
         assert_log "@[<v>";
         (* show Cil environment and statement structure *)

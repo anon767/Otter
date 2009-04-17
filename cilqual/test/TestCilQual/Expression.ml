@@ -23,7 +23,7 @@ let test_exp exp ?(label=exp) ?(typedecls=[]) vardecls test =
         let cilenv, formatcilenv = create_env typedecls vardecls in
 
         (* Cil expression to interpret *)
-        let exp = Formatcil.cExp (preprocess_cilqual exp) formatcilenv in
+        let exp = Formatcil.cExp (preprocess exp) formatcilenv in
 
         assert_log "@[<v>";
         (* show Cil environment and expression structure *)

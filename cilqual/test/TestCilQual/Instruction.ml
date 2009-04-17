@@ -24,7 +24,7 @@ let test_instr instr ?(label=instr) ?(typedecls=[]) vardecls test =
         let cilenv, formatcilenv = create_env typedecls vardecls in
 
         (* Cil instruction to interpret *)
-        let instr = Formatcil.cInstr (preprocess_cilqual instr) dummy_loc formatcilenv in
+        let instr = Formatcil.cInstr (preprocess instr) Cil.locUnknown formatcilenv in
 
         assert_log "@[<v>";
         (* show Cil environment and instruction structure *)

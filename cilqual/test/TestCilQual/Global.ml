@@ -24,7 +24,7 @@ open Setup2
 let test_file content ?(label=content) test =
     label >:: bracket begin fun () ->
         let filename, fileout = Filename.open_temp_file "test_cilqual_global." ".c" in
-        output_string fileout (preprocess_cilqual content);
+        output_string fileout (preprocess content);
         close_out fileout;
         filename
     end begin fun filename ->

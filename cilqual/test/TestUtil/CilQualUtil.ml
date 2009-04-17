@@ -8,9 +8,10 @@ module Setup (E : CilQual.Expression.InterpreterMonad) = struct
     module Ops = MonadOps (E)
     open Ops
 
-    let dummy_loc = { Cil.line=0; Cil.file=""; Cil.byte=0 }
-
-    let preprocess_cilqual = global_replace (regexp "\\([ \t\r\n(]\\)\\$\\([_a-zA-Z0-9]+\\)") ("\\1__attribute__(("^CilQual.Config.annot_attribute_string^"(\\2)))")
+    let preprocess =
+        (* convert $foo to __attribute__((cilqual(foo))) *)
+        global_replace (regexp "\\([ \t\r\n(]\\)\\$\\([_a-zA-Z0-9]+\\)")
+                       ("\\1__attribute__(("^CilQual.Config.annot_attribute_string^"(\\2)))")
 
     let create_env typedecls vardecls =
         (* helper to patch some limitations of Formatcil *)
@@ -26,7 +27,7 @@ module Setup (E : CilQual.Expression.InterpreterMonad) = struct
             let fields = begin fun comp ->
                 let env = (name, Cil.Fc comp)::env in
                 List.map begin fun (fname, ftype) ->
-                    let typ = patchtype (Formatcil.cType (preprocess_cilqual ftype) env) in
+                    let typ = patchtype (Formatcil.cType (preprocess ftype) env) in
                     (fname, typ, None, [], dummy_loc)
                 end fieldstr
             end in
