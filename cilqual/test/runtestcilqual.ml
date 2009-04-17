@@ -1,5 +1,6 @@
 open OUnit
 open TestCilQual
+open TestTypeQual
 
 (* ocamlbuild's dynamic dependency is broken: turn the below into static dependencies *)
 module OcamlbuildDependencies = struct
@@ -17,11 +18,16 @@ let _ =
     (* setup CilQual *)
     CilQual.Feature.init_cil ();
 
-    run_test_tt_main begin "TestCilQual" >::: [
-        Expression.testsuite;
-        Instruction.testsuite;
-        Statement.testsuite;
-        Global.testsuite;
-        Integration.testsuite;
+    run_test_tt_main begin TestList [
+        "TestTypeQual" >::: [
+            QualSolver.testsuite;
+        ];
+        "TestCilQual" >::: [
+            Expression.testsuite;
+            Instruction.testsuite;
+            Statement.testsuite;
+            Global.testsuite;
+            Integration.testsuite;
+        ];
     ] end
 

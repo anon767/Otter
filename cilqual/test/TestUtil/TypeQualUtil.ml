@@ -1,8 +1,13 @@
 open MyOUnit
+open Control.Monad
 
 
 module Setup (QT : TypeQual.QualType.QualTypeMonad) = struct
-    open QT
+    include QT
+    module Ops = MonadOps (QT)
+    include Ops
+
+    module QualTypeOps = MonadOps (QualType)
 
     module QPaths = struct
         module G = Ocamlgraph.Persistent.Digraph.Concrete (QualGraph.Qual)
@@ -16,6 +21,7 @@ module Setup (QT : TypeQual.QualType.QualTypeMonad) = struct
      *)
 
     module SourceSink = TypeQual.QualSolver.Reachability.SourceSink (QualGraph)
+    module DiscreteSolver = TypeQual.QualSolver.DiscreteOrder (QualGraph)
 
 
     (*
@@ -111,5 +117,87 @@ module Setup (QT : TypeQual.QualType.QualTypeMonad) = struct
             ~printer:(fun ff -> Format.fprintf ff "%d")
             ~msg:"Wrong number of edges"
             expected (QualGraph.nb_edges graph)
+
+    let assert_discrete_satisfiable solution =
+        if DiscreteSolver.Solution.is_unsatisfiable solution then
+            assert_failure "@[<v2>Should be satisfiable:@\n%a@]" DiscreteSolver.Solution.printer solution
+
+    let assert_discrete_unsatisfiable solution =
+        if not (DiscreteSolver.Solution.is_unsatisfiable solution) then
+            assert_failure "@[<v2>Should be unsatisfiable:@\n%a@]" DiscreteSolver.Solution.printer solution
+
+
+    (*
+     * QualTypeT monad programming
+     *)
+
+    module Programming = struct
+        module ProgrammingQualTypeM = EnvT (String) (QualType) (QT)
+        include ProgrammingQualTypeM
+        module Ops = MonadOps (ProgrammingQualTypeM)
+        open Ops
+
+        let emptyEnv = empty
+
+        (* lift monad operations *)
+        let assign x y = lift (QT.assign x y)
+        let join x y = lift (QT.join x y)
+        let meet x y = lift (QT.meet x y)
+        let fresh qt = lift (QT.fresh qt)
+        let annot qt clist = lift (QT.annot qt clist)
+        let deref qt = lift (QT.deref qt)
+        let app qtf qta = lift (QT.app qtf qta)
+        let retval qtf = lift (QT.retval qtf)
+        let args qtf = lift (QT.args qtf)
+
+        (* printers *)
+        let env_printer ff env = ignore begin
+            let kvprinter ff (k, v) = Format.fprintf ff "@[\"%s\"@]@ => @[%a@]" k QualType.printer v in
+            Env.fold (fun k v b -> Format.fprintf ff "%(%)@[%a@]" b kvprinter (k, v); "@\n") env ""
+        end
+
+        (* operations *)
+        let var x t = perform
+            let rec embed_t = function
+                | `Ref v -> perform with module QualType in
+                    qt <-- embed_t v;
+                    QualType.ref qt
+                | `Fun (r, a) -> perform with module QualType in
+                    qtr <-- embed_t r;
+                    qta <-- QualTypeOps.mapM embed_t a;
+                    QualType.fn qtr qta
+                | `Base -> perform with module QualType in
+                    QualType.base
+                | `Annot (_, v) -> perform with module QualType in
+                    embed_t v
+            in
+            let rec annot_qt qt = function
+                | `Ref v -> perform
+                    qt' <-- deref qt;
+                    annot_qt qt' v
+                | `Fun (r, a) -> perform
+                    qtr <-- retval qt;
+                    annot_qt qtr r;
+                    qta <-- args qt;
+                    zipWithM_ annot_qt qta a
+                | `Base ->
+                    return ()
+                | `Annot (c, v) -> perform
+                    annot qt c;
+                    annot_qt qt v
+            in
+            qt <-- fresh (embed_t t);
+            annot_qt qt t;
+            update x qt
+
+        let (<==) x y = perform
+            vx <-- lookup x;
+            vy <-- lookup y;
+            match vx, vy with
+                | Some vx, Some vy -> assign vx vy
+                | None _, None _ -> assert_failure "\"%s\" and \"%s\" have not been declared" x y
+                | None _, _ -> assert_failure "\"%s\" has not been declared" x
+                | _, None _ -> assert_failure "\"%s\" has not been declared" y
+    end
 end
 
