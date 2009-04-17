@@ -36,3 +36,11 @@ module CilField = struct
     let printer ff x = Format.fprintf ff "%s.%s" x.fcomp.cname x.fname
 end
 
+module CilFundec = struct
+    type t = fundec
+    let compare x y = if x == y then 0 else CilVar.compare x.svar y.svar
+    let hash x = x.svar.vid
+    let equal x y = compare x y = 0
+    let printer ff x = Format.fprintf ff "%s" x.svar.vname
+end
+
