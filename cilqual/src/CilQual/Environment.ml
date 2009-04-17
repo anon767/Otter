@@ -52,6 +52,7 @@ module InterpreterT (T : Type.InterpreterMonad with type QualType.Var.Embed.t = 
         module QualGraph = T.QualGraph
         module QualType = T.QualType
         let emptyContext = T.emptyContext
+        let fileContext = T.fileContext
 
         (* lift monad operations *)
         let inContext f m = Env (fun s -> T.inContext f (runEnv m s))

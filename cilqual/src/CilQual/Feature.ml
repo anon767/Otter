@@ -12,7 +12,7 @@ module G =
                             (CilQualType.CilQualTypeT (Environment.CilFieldOrVar) (Identity)))))))
 
 (* setup CilQual solver *)
-module SourceSink = TypeQual.QualSolver.Reachability.SourceSink (G.QualGraph)
+module DiscreteSolver = TypeQual.QualSolver.DiscreteOrder (G.QualGraph)
 
 
 (* setup Graphviz module *)
@@ -42,14 +42,22 @@ let opt_statistics = ref false
 
 (* timing helpers *)
 let timer = None
-let tic s t =
-    Format.eprintf "%s...@." s;
-    match t with
-        | None -> Some (Sys.time (), s, [])
-        | Some (was, s', l) -> let now = Sys.time () in Some (now, s, (s', now -. was)::l)
+let tic s = function
+    | None ->
+        Format.eprintf "%s...@?" s;
+        Some (Sys.time (), s, [])
+    | Some (was, s', l) ->
+        let now = Sys.time () in
+        let elapsed = now -. was in
+        Format.eprintf "(%7.3fs)@.%s...@?" elapsed s;
+        Some (now, s, (s', elapsed)::l)
 let toc = function
     | None -> []
-    | Some (was, s', l) -> let now = Sys.time () in (s', now -. was)::l
+    | Some (was, s', l) ->
+        let now = Sys.time () in
+        let elapsed = now -. was in
+        Format.eprintf "(%7.3fs)@." elapsed;
+        (s', now -. was)::l
 
 
 (* It's unclear to me how Cil handles interaction between features, especially since makeCFGFeature destructively
@@ -76,17 +84,23 @@ let doit file =
 
     (* run the interpreter *)
     let timing = tic "Running interpreter monad" timing in
-    let ((((), env), fresh), constraints) = G.run expM G.emptyEnv 0 G.emptyContext G.QualGraph.empty in
+    let ((((), env), fresh), constraints) = G.run expM G.emptyEnv 0 (G.fileContext file) G.QualGraph.empty in
 
     (* determine if there is a path between $null and $nonnull *)
-    let timing = tic "Resolving constraints" timing in
+    let timing = tic "Solving constraints" timing in
 
-    let solver = SourceSink.create constraints in
-    let null = G.QualGraph.Qual.Const "null" in
-    let nonnull = G.QualGraph.Qual.Const "nonnull" in
-    let has_error = SourceSink.check solver null nonnull || SourceSink.check solver nonnull null in
+    let consts = [ "null"; "nonnull" ] in
+    let solution = DiscreteSolver.solve consts constraints in
+    let has_error = DiscreteSolver.Solution.is_unsatisfiable solution in
 
-    let timing = toc timing in
+    let timing, explanation = if not has_error then (toc timing, DiscreteSolver.Explanation.empty) else begin
+        let timing = tic "Explaining solution" timing in
+        let explanation = DiscreteSolver.explain solution consts constraints in
+
+        let timing = toc timing in
+        Format.eprintf "@[%a@]@\n" DiscreteSolver.Explanation.printer explanation;
+        (timing, explanation)
+    end in
 
     (* save the constraint graph, if requested *)
     if !opt_save_dot <> "" then begin
@@ -116,7 +130,8 @@ let doit file =
 
     (* finally, report the error *)
     if has_error then begin
-        Format.eprintf "Error: path found between $null and $nonnull!@.";
+        Format.eprintf "Error: %d acyclic path(s) found between $null and $nonnull!@."
+            (DiscreteSolver.Explanation.cardinal explanation);
         exit 1
     end else begin
         Format.eprintf "Safe: no path found between $null and $nonnull.@."
