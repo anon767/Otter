@@ -622,15 +622,13 @@ let exec_stmt job =
 								Output.print_endline
 									("Path condition:\n" ^
 										 (To_string.humanReadablePc state.path_condition job.exHist.bytesToVars));
-								begin match expopt with
-									| None ->
-										Complete (Types.Return
-											(None, { result_state = state; result_history = nextExHist None; })) 
-									| Some exp ->
-										Complete (Types.Return
-											(Some (Eval.rval state exp),
-											 { result_state = state; result_history = nextExHist None; }))
-								end
+								let retval = match expopt with
+									| None -> None
+									| Some exp -> Some (Eval.rval state exp)
+								in
+								let state = MemOp.state__end_fcall state in                                                                    
+								Complete (Types.Return
+									(retval, { result_state = state; result_history = nextExHist None; })) 
 						| (Source (destOpt,_,nextStmt))::_ ->
 								let state2 =
 									match expopt, destOpt with
