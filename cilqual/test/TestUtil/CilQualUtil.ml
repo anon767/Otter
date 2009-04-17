@@ -28,7 +28,7 @@ module Setup (E : CilQual.Expression.InterpreterMonad) = struct
                 let env = (name, Cil.Fc comp)::env in
                 List.map begin fun (fname, ftype) ->
                     let typ = patchtype (Formatcil.cType (preprocess ftype) env) in
-                    (fname, typ, None, [], dummy_loc)
+                    (fname, typ, None, [], Cil.locUnknown)
                 end fieldstr
             end in
             let comp = Cil.mkCompInfo isStruct name fields [] in
@@ -38,7 +38,7 @@ module Setup (E : CilQual.Expression.InterpreterMonad) = struct
         (* create Cil variables *)
         let cilenv =
             let mkvar (name, typstr) =
-                let typ = patchtype (Formatcil.cType (preprocess_cilqual typstr) formatcilenv) in
+                let typ = patchtype (Formatcil.cType (preprocess typstr) formatcilenv) in
                 (name, Cil.makeGlobalVar name typ)
             in
             List.map mkvar vardecls
