@@ -37,7 +37,7 @@ end
 module type QualGraphAutomataType = sig
     include QualGraphType
     module Automata : sig
-        include OrderedType
+        include PrintableOrderedType
         val start : t
         val accept : t -> bool
     end

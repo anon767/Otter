@@ -108,6 +108,7 @@ module TypedConstraint (TypedQualVar : TypedQualVar) = struct
         | Typed (Deref _)      -> Format.fprintf ff "Deref"
         | Typed (FnRet _)      -> Format.fprintf ff "FnRet"
         | Typed (FnArg (i, _)) -> Format.fprintf ff "FnArg:%d" i
+        | Default -> Format.fprintf ff "="
         | _ -> ()
 end
 
@@ -253,60 +254,69 @@ module QualTypeT (TypedQualVar : TypedQualVar)
          *      (non-variant)           (co-variant)            (contra-variant)
          *)
         module Automata = struct
-            type t = TypedQualVar.t list
-            let rec compare x y = match x, y with
-                | x::xs, y::ys ->
-                    begin match TypedQualVar.compare x y with
-                        | 0 -> compare xs ys
-                        | i -> i
-                    end
-                | [], [] -> 0
-                | [], _  -> -1
-                | _, []  -> 1
-            let start = []
-            let accept automata = Pervasives.(=) [] automata
+            (* carry a little more information for printing explanations *)
+            type explain = Push of edge | Pop of edge | Walk of edge | Start
+            type t = explain * TypedQualVar.t list
+            let compare (_, xs) (_, ys) =
+                let rec compare xs ys = if xs == ys then 0 else match xs, ys with
+                    | x::xs, y::ys ->
+                        begin match TypedQualVar.compare x y with
+                            | 0 -> compare xs ys
+                            | i -> i
+                        end
+                    | [], [] -> 0
+                    | [], _  -> -1
+                    | _, []  -> 1
+                in
+                compare xs ys
+            let start = (Start, [])
+            let accept (_, stack) = stack = []
+
+            let printer ff (explain, stack) = match explain with
+                | Push c | Pop c | Walk c -> E.printer ff c
+                | Start  -> ()
         end
         let fold_bidi_lv f g v acc =
-            let acc = fold_succ_e (fun e acc -> f `Forward (E.label e) (E.dst e) acc) g v acc in
-            let acc = fold_pred_e (fun e acc -> f `Backward (E.label e) (E.src e) acc) g v acc in
+            let acc = fold_succ_e (fun e acc -> f `Forward e (E.dst e) acc) g v acc in
+            let acc = fold_pred_e (fun e acc -> f `Backward e (E.src e) acc) g v acc in
             acc
-        let rec fold_flow direction f g v automata acc = match automata with
+        let rec fold_flow direction f g v (explain, stack) acc = match stack with
             | [] ->
-                fold_bidi_lv begin fun d l w acc -> match d, l with
-                    | `Forward,  Typed tv -> f w (tv::automata) acc
+                fold_bidi_lv begin fun d e w acc -> match d, E.label e with
+                    | `Forward,  Typed tv -> f w (Automata.Push e, tv::stack) acc
                     | `Backward, Typed _  -> acc
                     (* start: all forward edges *)
-                    | d, Default when d = direction -> f w automata acc
+                    | d, Default when d = direction -> f w (Automata.Walk e, stack) acc
                     | d, Default                    -> acc
                 end g v acc
 
             | (Deref _)::tail ->
-                fold_bidi_lv begin fun d l w acc -> match d, l with
-                    | `Forward,  Typed tv        -> f w (tv::automata) acc
-                    | `Backward, Typed (Deref _) -> f w tail acc
+                fold_bidi_lv begin fun d e w acc -> match d, E.label e with
+                    | `Forward,  Typed tv        -> f w (Automata.Push e, tv::stack) acc
+                    | `Backward, Typed (Deref _) -> f w (Automata.Pop e, tail) acc
                     | `Backward, Typed _         -> acc
                     (* deref edge: non-variant *)
-                    | _, Default -> f w automata acc
+                    | _, Default -> f w (Automata.Walk e, stack) acc
                 end g v acc
 
             | (FnRet _)::tail ->
-                fold_bidi_lv begin fun d l w acc -> match d, l with
-                    | `Forward,  Typed tv        -> f w (tv::automata) acc
-                    | `Backward, Typed (FnRet _) -> f w tail acc
+                fold_bidi_lv begin fun d e w acc -> match d, E.label e with
+                    | `Forward,  Typed tv        -> f w (Automata.Push e, tv::stack) acc
+                    | `Backward, Typed (FnRet _) -> f w (Automata.Pop e, tail) acc
                     | `Backward, Typed _         -> acc
                     (* fnRet edge: co-variant *)
-                    | d, Default when d = direction -> f w automata acc
+                    | d, Default when d = direction -> f w (Automata.Walk e, stack) acc
                     | d, Default                    -> acc
                 end g v acc
 
             | (FnArg (i, _))::tail ->
-                fold_bidi_lv begin fun d l w acc -> match d, l with
-                    | `Forward,  Typed tv                        -> f w (tv::automata) acc
-                    | `Backward, Typed (FnArg (j, _)) when i = j -> f w tail acc
+                fold_bidi_lv begin fun d e w acc -> match d, E.label e with
+                    | `Forward,  Typed tv                        -> f w (Automata.Push e, tv::stack) acc
+                    | `Backward, Typed (FnArg (j, _)) when i = j -> f w (Automata.Pop e, tail) acc
                     | `Backward, Typed _                         -> acc
                     (* fnRet edge: contra-variant *)
                     | d, Default when d = direction -> acc
-                    | d, Default                    -> f w automata acc
+                    | d, Default                    -> f w (Automata.Walk e, stack) acc
                 end g v acc
 
             | (Fresh _)::_ | (Embed _)::_ ->

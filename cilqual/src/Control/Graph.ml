@@ -18,12 +18,16 @@ module type VertexType = sig
     type label = t
     val create : label -> t
     val label : t -> label
+    val printer : Format.formatter -> t -> unit
 end
-module type EdgeType = Sig.EDGE
+module type EdgeType = sig
+    include Sig.EDGE
+    val printer : Format.formatter -> t -> unit
+end
 
 
 (** Graph signature similar to Sig.P, but without the V and E modules; useful for overriding V and E *)
-module type PrintableGraphType = sig
+module type GraphType = sig
     type t
     type vertex
     type edge
@@ -63,6 +67,10 @@ module type PrintableGraphType = sig
     val add_edge_e : t -> edge -> t
     val remove_edge : t -> vertex -> vertex -> t
     val remove_edge_e : t -> edge -> t
+end
+
+module type PrintableGraphType = sig
+    include GraphType
     val vertex_printer : Format.formatter -> vertex -> unit
     val edge_printer : Format.formatter -> edge -> unit
     val printer : Format.formatter -> t -> unit
@@ -86,10 +94,19 @@ end
 (** Monad wrapper for Ocamlgraph's persistent, labeled graphs *)
 module BidirectionalGraphT (VertexLabel : VertexLabel) (EdgeLabel : EdgeLabel) (M : Monad) = struct
     module Graph = struct
-        include Persistent.Digraph.ConcreteBidirectionalLabeled (VertexLabel) (EdgeLabel)
+        module Ocamlgraph = Persistent.Digraph.ConcreteBidirectionalLabeled (VertexLabel) (EdgeLabel)
+        module V = struct
+            include Ocamlgraph.V
+            let printer = VertexLabel.printer
+        end
+        module E = struct
+            include Ocamlgraph.E
+            let printer ff e = EdgeLabel.printer ff (label e)
+        end
+        include (Ocamlgraph : GraphType with type vertex = V.t and type edge = E.t)
 
-        let vertex_printer = VertexLabel.printer
-        let edge_printer ff e = EdgeLabel.printer ff (E.label e)
+        let vertex_printer = V.printer
+        let edge_printer = E.printer
         let printer ff graph = ignore begin
             let printer ff e = Format.fprintf ff "@[%a@]@ @[<><=%a=@] @[%a@]"
                 vertex_printer (E.dst e) edge_printer e vertex_printer (E.src e) in
@@ -149,6 +166,7 @@ module ContextualEdgeGraphT (CE : ContextualEdge)
             let context e = fst (E.label e)
             let data e = snd (E.label e)
             let label = data
+            let printer = E.printer
         end
         include (G.Graph : PrintableGraphType with type t = G.Graph.t
                                                and type vertex = G.Graph.vertex
