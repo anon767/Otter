@@ -158,7 +158,7 @@ module QualTypeT (TypedQualVar : TypedQualVar)
                  (QM : QualMonad with type Qual.Var.t = TypedQualVar.t
                                   and type QualGraph.Constraint.t = TypedConstraint.t) = struct
     (* monad stack *)
-    include (QM : Monad with type 'a monad = 'a QM.monad and type 'a result = 'a QM.result)
+    include (QM : Monad with type 'a monad = 'a QM.monad and type 'a param = 'a QM.param)
     open QM
     module Ops = MonadOps (QM)
     open Ops
@@ -233,6 +233,7 @@ module QualTypeT (TypedQualVar : TypedQualVar)
                 Format.fprintf ff "Base @[(@[%a@]@,)@]" Qual.printer q
             | Empty ->
                 Format.fprintf ff "Empty"
+        let create qt qv = let qt, _ = run qt ((), qv) in qt
     end
 
     module QualGraph = struct
@@ -329,10 +330,10 @@ module QualTypeT (TypedQualVar : TypedQualVar)
     (* qualified-type constructors *)
     let embed e qt = perform
         let qv = Qual.Var (QualType.Var.Embed e) in
-        return (QualType.run qt qv)
+        return (QualType.create qt qv)
     let fresh qt = perform
         qv <-- fresh;
-        return (QualType.run qt qv)
+        return (QualType.create qt qv)
 
     let empty = return QualType.Empty
 

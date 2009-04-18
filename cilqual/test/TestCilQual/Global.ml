@@ -42,7 +42,8 @@ let test_file content ?(label=content) test =
         let expM = interpret_file file in
 
         (* run interpreter *)
-        let ((((), env), _), constraints) = run expM emptyEnv 0 emptyContext QualGraph.empty in
+        let (((((), constraints), _), _), env) =
+            run expM (((((), QualGraph.empty), (fileContext file)), 0), emptyEnv) in
 
         (* print the environment and constraints *)
         assert_log "@[<v2>Environment:@ %a@]@\n" cilqual_env_printer env;

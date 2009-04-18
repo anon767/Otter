@@ -56,7 +56,7 @@ module Interpreter (T : Config.BlockConfig) = struct
         calls_in_block [] fn.Cil.sbody
 
 
-    let call file fn env fresh constraints k =
+    let call file fn expState k =
         Format.eprintf "Evaluating typed block...@.";
 
         (* first, determine the call graph inside the typed-block *)
@@ -86,7 +86,7 @@ module Interpreter (T : Config.BlockConfig) = struct
 
         (* generate the interpreter monad and evaluate *)
         let expM = mapM_ interpret_function (fn::(CallSet.elements typed_calls)) in
-        let ((((), env), fresh), constraints) = run expM env fresh emptyContext constraints in
+        let ((((_, constraints), _), _), _) as expState = G.run expM expState in
 
         (* solve and call other_calls, or return solution *)
         let solution = DiscreteSolver.solve consts constraints in
@@ -95,17 +95,18 @@ module Interpreter (T : Config.BlockConfig) = struct
         if DiscreteSolver.Solution.is_unsatisfiable solution then
             Format.eprintf "Unsatisfiable solution in TypedBlock.exec@.";
 
-        let rec call_others others state = match others with
-            | [] -> k state
-            | call::callwork -> `TypedBlock (call, state, call_others callwork)
+        let rec call_others others (expState, solution) = match others with
+            | [] -> k (expState, solution)
+            | call::callwork -> `TypedBlock (call, expState, solution, call_others callwork)
         in
-        call_others (CallSet.elements other_calls) (env, fresh, constraints, solution)
+        call_others (CallSet.elements other_calls) (expState, solution)
 
 
     let exec file =
         (* generate and evaluate everything before main *)
         let expM = interpret_init file in
-        let ((((), env), fresh), constraints) = run expM emptyEnv 0 emptyContext QualGraph.empty in
+        let ((((_, constraints), _), _), _) as expState =
+            G.run expM (((((), G.QualGraph.empty), (G.fileContext file)), 0), G.emptyEnv) in
         let solution = DiscreteSolver.solve consts constraints in
 
         (* TODO: properly explain error *)
@@ -114,13 +115,13 @@ module Interpreter (T : Config.BlockConfig) = struct
 
         (* dispatch call to main *)
         let mainfn = Function.from_name_in_file "main" file in
-        `TypedBlock (mainfn, (env, fresh, constraints, solution), (fun _ -> `Done))
+        `TypedBlock (mainfn, expState, solution, (fun _ -> `Done))
 
 
     let dispatch chain file = function
-        | `TypedBlock (fn, (env, fresh, constraints, solution), k)
+        | `TypedBlock (fn, expState, solution, k)
                 when T.should_enter_block fn.Cil.svar.Cil.vattr ->
-            call file fn env fresh constraints k
+            call file fn expState k
         | call ->
             chain file call
 end

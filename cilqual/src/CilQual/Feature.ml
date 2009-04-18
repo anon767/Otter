@@ -84,7 +84,8 @@ let doit file =
 
     (* run the interpreter *)
     let timing = tic "Running interpreter monad" timing in
-    let ((((), env), fresh), constraints) = G.run expM G.emptyEnv 0 (G.fileContext file) G.QualGraph.empty in
+    let (((((), constraints), _), _), _) =
+        G.run expM (((((), G.QualGraph.empty), (G.fileContext file)), 0), G.emptyEnv) in
 
     (* determine if there is a path between $null and $nonnull *)
     let timing = tic "Solving constraints" timing in

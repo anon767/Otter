@@ -25,9 +25,9 @@ open Setup.Programming
 
 
 (* test helper *)
-let test_solver solver consts program test = fun () ->
+let test_solver solver consts expM test = fun () ->
     let solver = solver consts in
-    let ((((), env), _), constraints) = run program emptyEnv 0 QualGraph.empty in
+    let ((((), constraints), _), env) = run expM ((((), QualGraph.empty), 0), emptyEnv) in
     let solution = solver constraints in
 
     assert_log "@[<v>";

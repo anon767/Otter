@@ -36,7 +36,8 @@ let test_stmt stmt ?(label=stmt) ?(typedecls=[]) vardecls test =
         let expM = interpret_stmt stmt in
 
         (* run interpreter *)
-        let (((result, env), _), constraints) = run expM emptyEnv 0 emptyContext QualGraph.empty in
+        let ((((result, constraints), _), _), env) =
+            run expM (((((), QualGraph.empty), emptyContext), 0), emptyEnv) in
 
         (* print the result, environment and constraints *)
         assert_log "@[<v2>Result:@ %a@]@\n" QualType.printer result;

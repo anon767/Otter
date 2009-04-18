@@ -35,7 +35,8 @@ let test_instr instr ?(label=instr) ?(typedecls=[]) vardecls test =
         let expM = interpret_instr instr in
 
         (* run interpreter *)
-        let ((((), env), _), constraints) = run expM emptyEnv 0 emptyContext QualGraph.empty in
+        let (((((), constraints), _), _), env) =
+            run expM (((((), QualGraph.empty), emptyContext), 0), emptyEnv) in
 
         (* print the environment and constraints *)
         assert_log "@[<v2>Environment:@ %a@]@\n" cilqual_env_printer env;

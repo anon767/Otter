@@ -11,7 +11,7 @@ open TypedBlock
 
 module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
 
-    let switch file fn env fresh constraints solution k =
+    let switch file fn ((((((), constraints), _), _), _) as expState) solution k =
         Format.eprintf "Switching from typed to symbolic...@.";
 
         let constrain_bytes state bytes qv typ =
@@ -55,39 +55,40 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
                 failwith "TODO: report qt_to_bytes of non-variable"
         in
 
-        let varinfo_to_bytes env fresh constraints state block_type v =
+        let varinfo_to_bytes expState state block_type v =
             (* TODO: handle structs *)
             (* force v to be initialized *)
-            let (((_, env), fresh), constraints) = run (lookup_var v) env fresh v.Cil.vdecl constraints in
+            let (_, env) as expState = run (perform lookup_var v; return ()) expState in
+
             let state, bytes = qt_to_bytes state block_type v.Cil.vtype (Env.find (CilVar v) env) in
-            (env, fresh, constraints, state, bytes)
+            (expState, state, bytes)
         in
 
         (* convert a typed environment into a symbolic environment *)
         let state = MemOp.state__empty in
 
         (* first, setup global variables *)
-        let env, fresh, constraints, state = List.fold_left begin
-            fun (env, fresh, constraints, state) g -> match g with
+        let expState, state = List.fold_left begin
+            fun (expState, state) g -> match g with
                 | Cil.GVarDecl (v, _) | Cil.GVar (v, _, _)
                         when not (Types.VarinfoMap.mem v state.Types.global.Types.varinfo_to_block) ->
-                    let env, fresh, constraints, state, bytes =
-                        varinfo_to_bytes env fresh constraints state Types.Block_type_Global v
+                    let expState, state, bytes =
+                        varinfo_to_bytes expState state Types.Block_type_Global v
                     in
                     let state = MemOp.state__add_global state v bytes in
-                    (env, fresh, constraints, state)
+                    (expState, state)
                 | _ ->
-                    (env, fresh, constraints, state)
-        end (env, fresh, constraints, state) file.Cil.globals in
+                    (expState, state)
+        end (expState, state) file.Cil.globals in
 
         (* then, setup the function arguments *)
-        let env, fresh, constraints, state, args = List.fold_right begin
-            fun v (env, fresh, constraints, state, args) ->
-                let env, fresh, constraints, state, bytes =
-                    varinfo_to_bytes env fresh constraints state Types.Block_type_Local v
+        let expState, state, args = List.fold_right begin
+            fun v (expState, state, args) ->
+                let expState, state, bytes =
+                    varinfo_to_bytes expState state Types.Block_type_Local v
                 in
-                (env, fresh, constraints, state, bytes::args)
-        end fn.Cil.sformals (env, fresh, constraints, state, []) in
+                (expState, state, bytes::args)
+        end fn.Cil.sformals (expState, state, []) in
 
         (* next, prepare the function call job *)
         let job = Executemain.job_for_function state fn args in
@@ -97,6 +98,7 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
             Format.eprintf "Returning from symbolic to typed...@.";
 
             (* figure out the return value qualtype *)
+            let _, env = expState in
             let qtr = match Env.find (CilVar fn.Cil.svar) env with
                 | Fn (_, qtr, _) -> qtr
                 | _ -> failwith "Impossible!"
@@ -168,14 +170,14 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
             end completed in
 
             (* evaluate the constraints and solve again *)
-            let ((((), env), fresh), constraints) = run expM env fresh emptyContext constraints in
+            let ((((_, constraints), _), _), _) as expState = G.run expM expState in
             let solution = DiscreteSolver.solve consts constraints in
 
             (* TODO: properly explain error *)
             if DiscreteSolver.Solution.is_unsatisfiable solution then
                 Format.eprintf "Unsatisfiable solution in TypedSymbolic.switcher@.";
 
-            k (env, fresh, constraints, solution)
+            k (expState, solution)
         in
 
         (* dispatch *)
@@ -183,9 +185,9 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
 
 
     let dispatch chain file = function
-        | `TypedBlock (fn, (env, fresh, constraints, solution), k)
+        | `TypedBlock (fn, expState, solution, k)
                 when S.should_enter_block fn.Cil.svar.Cil.vattr ->
-            switch file fn env fresh constraints solution k
+            switch file fn expState solution k
         | call ->
             chain file call
 end

@@ -23,7 +23,7 @@ open Setup2
 (* test helper for compilation units (files) *)
 let test_cilqual content ?(label=content) lattice expected_result =
     label >:: bracket begin fun () ->
-        let filename, fileout = Filename.open_temp_file "test_cilqual_global." ".c" in
+        let filename, fileout = Filename.open_temp_file "test_cilqual_integration." ".c" in
         output_string fileout (preprocess content);
         close_out fileout;
         filename
@@ -42,7 +42,8 @@ let test_cilqual content ?(label=content) lattice expected_result =
         let expM = interpret_file file in
 
         (* run interpreter *)
-        let ((((), env), _), constraints) = run expM emptyEnv 0 emptyContext QualGraph.empty in
+        let (((((), constraints), _), _), env) =
+            run expM (((((), QualGraph.empty), (fileContext file)), 0), emptyEnv) in
 
         (* print the environment and constraints *)
         assert_log "@[<v2>Environment:@ %a@]@\n" cilqual_env_printer env;
