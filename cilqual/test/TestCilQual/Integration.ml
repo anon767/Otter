@@ -41,13 +41,8 @@ let test_cilqual content ?(label=content) lattice expected_result =
         (* CilQual interpreter for file *)
         let expM = interpret_file file in
 
-        (* setup initial constraint graph *)
-        let init_constraints = List.fold_left begin
-            fun c (x, y) -> QualGraph.add_vertex (QualGraph.add_vertex c x) y
-        end QualGraph.empty lattice in
-
         (* run interpreter *)
-        let ((((), env), _), constraints) = run expM emptyEnv 0 emptyContext init_constraints in
+        let ((((), env), _), constraints) = run expM emptyEnv 0 emptyContext QualGraph.empty in
 
         (* print the environment and constraints *)
         assert_log "@[<v2>Environment:@ %a@]@\n" cilqual_env_printer env;
