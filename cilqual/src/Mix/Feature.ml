@@ -17,7 +17,7 @@ let dispatcher file =
     let switch_register = [
         TypedSymbolicSwitcher.dispatch;
     ] in
-    let terminal = (fun file stack -> failwith "Can't dispatch call") in
+    let terminal x = failwith "Can't dispatch call" in
 
     (* chained in reverse to ensure that analysis occurs before switch *)
     let switcher = List.fold_left (fun d f -> f d) terminal switch_register in
@@ -36,9 +36,9 @@ let prepare_file file =
 
 
 (* mix dispatch loop *)
-let rec dispatch_loop file = function
+let rec dispatch_loop = function
     | `Done -> ()
-    | call -> dispatch_loop file (dispatcher file call)
+    | work -> dispatch_loop (dispatcher work)
 
 
 (* mix driver *)
@@ -46,9 +46,9 @@ let doit file =
     prepare_file file;
 
     if not !opt_symbolic_top then
-        dispatch_loop file (TypedInterpreter.exec file)
+        dispatch_loop (TypedInterpreter.exec file)
     else
-        dispatch_loop file (SymbolicInterpreter.exec file !opt_args)
+        dispatch_loop (SymbolicInterpreter.exec file !opt_args)
 
 
 (* Cil feature description *)

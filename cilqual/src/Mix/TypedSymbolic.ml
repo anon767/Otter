@@ -181,14 +181,14 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
         in
 
         (* dispatch *)
-        `SymbolicBlock (job, return)
+        `SymbolicBlock (file, job, return)
 
 
-    let dispatch chain file = function
-        | `TypedBlock (fn, expState, k)
+    let dispatch chain = function
+        | `TypedBlock (file, fn, expState, k)
                 when S.should_enter_block fn.Cil.svar.Cil.vattr ->
             switch file fn expState k
-        | call ->
-            chain file call
+        | work ->
+            chain work
 end
 

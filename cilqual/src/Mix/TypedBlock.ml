@@ -90,7 +90,7 @@ module Interpreter (T : Config.BlockConfig) = struct
 
         let rec call_others others expState = match others with
             | [] -> k expState
-            | call::callwork -> `TypedBlock (call, expState, call_others callwork)
+            | call::callwork -> `TypedBlock (file, call, expState, call_others callwork)
         in
         call_others (CallSet.elements other_calls) expState
 
@@ -113,14 +113,14 @@ module Interpreter (T : Config.BlockConfig) = struct
 
         (* dispatch call to main *)
         let mainfn = Function.from_name_in_file "main" file in
-        `TypedBlock (mainfn, expState, return)
+        `TypedBlock (file, mainfn, expState, return)
 
 
-    let dispatch chain file = function
-        | `TypedBlock (fn, expState, k)
+    let dispatch chain = function
+        | `TypedBlock (file, fn, expState, k)
                 when T.should_enter_block fn.Cil.svar.Cil.vattr ->
             call file fn expState k
-        | call ->
-            chain file call
+        | work ->
+            chain work
 end
 
