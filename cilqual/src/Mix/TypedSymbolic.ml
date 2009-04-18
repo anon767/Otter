@@ -182,7 +182,7 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
         `SymbolicBlock (job, return)
 
 
-    let switch chain file = function
+    let dispatch chain file = function
         | `TypedBlock (fn, (env, fresh, constraints, solution), k)
                 when S.should_enter_block fn.Cil.svar.Cil.vattr ->
             switch file fn env fresh constraints solution k

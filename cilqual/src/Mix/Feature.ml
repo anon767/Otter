@@ -10,18 +10,18 @@ module SymbolicInterpreter = SymbolicBlock.Interpreter (Config.SymbolicBlockConf
 module TypedSymbolicSwitcher = TypedSymbolic.Switcher (Config.TypedBlockConfig) (Config.SymbolicBlockConfig)
 
 let dispatcher file =
-    let dispatch_register = [
+    let analysis_register = [
         TypedInterpreter.dispatch;
         SymbolicInterpreter.dispatch;
     ] in
     let switch_register = [
-        TypedSymbolicSwitcher.switch;
+        TypedSymbolicSwitcher.dispatch;
     ] in
     let terminal = (fun file stack -> failwith "Can't dispatch call") in
 
-    (* chained in reverse to ensure that dispatch occurs before switch *)
+    (* chained in reverse to ensure that analysis occurs before switch *)
     let switcher = List.fold_left (fun d f -> f d) terminal switch_register in
-    let dispatcher = List.fold_left (fun d f -> f d) switcher dispatch_register in
+    let dispatcher = List.fold_left (fun d f -> f d) switcher analysis_register in
     dispatcher file
 
 
