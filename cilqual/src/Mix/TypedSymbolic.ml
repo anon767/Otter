@@ -11,8 +11,15 @@ open TypedBlock
 
 module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
 
-    let switch file fn ((((((), constraints), _), _), _) as expState) solution k =
+    let switch file fn ((((((), constraints), _), _), _) as expState) k =
         Format.eprintf "Switching from typed to symbolic...@.";
+
+        (* first, solve the typed constraints, needed to setup the symbolic constraints *)
+        let solution = DiscreteSolver.solve consts constraints in
+
+        (* TODO: properly explain error *)
+        if Solution.is_unsatisfiable solution then
+            Format.eprintf "Unsatisfiable solution entering TypedSymbolic.switch@.";
 
         let constrain_bytes state bytes qv typ =
             if Solution.is_const qv "null" solution then
@@ -169,15 +176,8 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
                     failwith "TODO: handle other completion values"
             end completed in
 
-            (* evaluate the constraints and solve again *)
-            let ((((_, constraints), _), _), _) as expState = G.run expM expState in
-            let solution = DiscreteSolver.solve consts constraints in
-
-            (* TODO: properly explain error *)
-            if DiscreteSolver.Solution.is_unsatisfiable solution then
-                Format.eprintf "Unsatisfiable solution in TypedSymbolic.switcher@.";
-
-            k (expState, solution)
+            (* update the constraints and return *)
+            k (run expM expState)
         in
 
         (* dispatch *)
@@ -185,9 +185,9 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
 
 
     let dispatch chain file = function
-        | `TypedBlock (fn, expState, solution, k)
+        | `TypedBlock (fn, expState, k)
                 when S.should_enter_block fn.Cil.svar.Cil.vattr ->
-            switch file fn expState solution k
+            switch file fn expState k
         | call ->
             chain file call
 end

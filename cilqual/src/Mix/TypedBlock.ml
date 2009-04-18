@@ -86,40 +86,38 @@ module Interpreter (T : Config.BlockConfig) = struct
 
         (* generate the interpreter monad and evaluate *)
         let expM = mapM_ interpret_function (fn::(CallSet.elements typed_calls)) in
-        let ((((_, constraints), _), _), _) as expState = G.run expM expState in
+        let expState = G.run expM expState in
 
-        (* solve and call other_calls, or return solution *)
-        let solution = DiscreteSolver.solve consts constraints in
-
-        (* TODO: properly explain error *)
-        if DiscreteSolver.Solution.is_unsatisfiable solution then
-            Format.eprintf "Unsatisfiable solution in TypedBlock.exec@.";
-
-        let rec call_others others (expState, solution) = match others with
-            | [] -> k (expState, solution)
-            | call::callwork -> `TypedBlock (call, expState, solution, call_others callwork)
+        let rec call_others others expState = match others with
+            | [] -> k expState
+            | call::callwork -> `TypedBlock (call, expState, call_others callwork)
         in
-        call_others (CallSet.elements other_calls) (expState, solution)
+        call_others (CallSet.elements other_calls) expState
 
 
     let exec file =
         (* generate and evaluate everything before main *)
         let expM = interpret_init file in
-        let ((((_, constraints), _), _), _) as expState =
-            G.run expM (((((), G.QualGraph.empty), (G.fileContext file)), 0), G.emptyEnv) in
-        let solution = DiscreteSolver.solve consts constraints in
+        let expState = G.run expM (((((), G.QualGraph.empty), (G.fileContext file)), 0), G.emptyEnv) in
 
-        (* TODO: properly explain error *)
-        if DiscreteSolver.Solution.is_unsatisfiable solution then
-            Format.eprintf "Unsatisfiable solution in TypedBlock.exec@.";
+        (* prepare the return continuation to perform the final check *)
+        let return ((((_, constraints), _), _), _) =
+            let solution = DiscreteSolver.solve consts constraints in
+
+            (* TODO: properly explain error *)
+            if DiscreteSolver.Solution.is_unsatisfiable solution then
+                Format.eprintf "Unsatisfiable solution in TypedBlock.exec@.";
+
+            `Done
+        in
 
         (* dispatch call to main *)
         let mainfn = Function.from_name_in_file "main" file in
-        `TypedBlock (mainfn, expState, solution, (fun _ -> `Done))
+        `TypedBlock (mainfn, expState, return)
 
 
     let dispatch chain file = function
-        | `TypedBlock (fn, expState, solution, k)
+        | `TypedBlock (fn, expState, k)
                 when T.should_enter_block fn.Cil.svar.Cil.vattr ->
             call file fn expState k
         | call ->
