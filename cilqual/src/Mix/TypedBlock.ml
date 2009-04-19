@@ -56,7 +56,7 @@ module Interpreter (T : Config.BlockConfig) = struct
         calls_in_block [] fn.Cil.sbody
 
 
-    let call file fn expState k =
+    let call dispatch file fn expState k =
         Format.eprintf "Evaluating typed block...@.";
 
         (* first, determine the call graph inside the typed-block *)
@@ -90,7 +90,7 @@ module Interpreter (T : Config.BlockConfig) = struct
 
         let rec call_others others expState = match others with
             | [] -> k expState
-            | call::callwork -> `TypedBlock (file, call, expState, call_others callwork)
+            | call::callwork -> dispatch (`TypedBlock (file, call, expState, call_others callwork))
         in
         call_others (CallSet.elements other_calls) expState
 
@@ -106,9 +106,7 @@ module Interpreter (T : Config.BlockConfig) = struct
 
             (* TODO: properly explain error *)
             if DiscreteSolver.Solution.is_unsatisfiable solution then
-                Format.eprintf "Unsatisfiable solution in TypedBlock.exec@.";
-
-            `Done
+                Format.eprintf "Unsatisfiable solution in TypedBlock.exec@."
         in
 
         (* dispatch call to main *)
@@ -116,10 +114,9 @@ module Interpreter (T : Config.BlockConfig) = struct
         `TypedBlock (file, mainfn, expState, return)
 
 
-    let dispatch chain = function
-        | `TypedBlock (file, fn, expState, k)
-                when T.should_enter_block fn.Cil.svar.Cil.vattr ->
-            call file fn expState k
+    let dispatch chain dispatch = function
+        | `TypedBlock (file, fn, expState, k) when T.should_enter_block fn.Cil.svar.Cil.vattr ->
+            call dispatch file fn expState k
         | work ->
             chain work
 end

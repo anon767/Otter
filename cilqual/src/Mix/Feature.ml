@@ -9,7 +9,7 @@ module TypedInterpreter = TypedBlock.Interpreter (Config.TypedBlockConfig)
 module SymbolicInterpreter = SymbolicBlock.Interpreter (Config.SymbolicBlockConfig)
 module TypedSymbolicSwitcher = TypedSymbolic.Switcher (Config.TypedBlockConfig) (Config.SymbolicBlockConfig)
 
-let dispatcher file =
+let dispatcher x =
     let analysis_register = [
         TypedInterpreter.dispatch;
         SymbolicInterpreter.dispatch;
@@ -17,12 +17,12 @@ let dispatcher file =
     let switch_register = [
         TypedSymbolicSwitcher.dispatch;
     ] in
-    let terminal x = failwith "Can't dispatch call" in
+    let terminal dispatch x = failwith "Can't dispatch call" in
 
     (* chained in reverse to ensure that analysis occurs before switch *)
-    let switcher = List.fold_left (fun d f -> f d) terminal switch_register in
-    let dispatcher = List.fold_left (fun d f -> f d) switcher analysis_register in
-    dispatcher file
+    let switcher = List.fold_left (fun f g d -> g (f d) d) terminal switch_register in
+    let dispatcher = List.fold_left (fun f g d -> g (f d) d) switcher analysis_register in
+    dispatcher x
 
 
 (* Cil setup *)
@@ -36,9 +36,8 @@ let prepare_file file =
 
 
 (* mix dispatch loop *)
-let rec dispatch_loop = function
-    | `Done -> ()
-    | work -> dispatch_loop (dispatcher work)
+let rec fix f x = f (fix f) x
+let dispatch_loop x = fix dispatcher x
 
 
 (* mix driver *)

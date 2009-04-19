@@ -42,7 +42,7 @@ module Interpreter (S : Config.BlockConfig) = struct
             None
 
 
-    let call file job k =
+    let call dispatch file job k =
         Format.eprintf "Evaluating symbolic block...@.";
 
         let rec symbolic_loop completed job job_pool = match should_delegate_call job with
@@ -82,7 +82,7 @@ module Interpreter (S : Config.BlockConfig) = struct
                     Types.inTrackedFn = false;
                 } in
 
-                `SymbolicBlock (file, job, return)
+                dispatch (`SymbolicBlock (file, job, return))
 
             | None ->
                 let result, job_pool = Driver.step_job job job_pool in
@@ -107,12 +107,12 @@ module Interpreter (S : Config.BlockConfig) = struct
 
     let exec file args =
         let job = Executemain.job_for_file file (file.Cil.fileName::args) in
-        `SymbolicBlock (file, job, (fun _ -> `Done))
+        `SymbolicBlock (file, job, (fun _ -> ()))
 
 
-    let dispatch chain = function
+    let dispatch chain dispatch = function
         |  `SymbolicBlock (file, job, k) when should_delegate_call job = None ->
-            call file job k
+            call dispatch file job k
         | work ->
             chain work
 end

@@ -11,7 +11,7 @@ open TypedBlock
 
 module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
 
-    let switch file fn ((((((), constraints), _), _), _) as expState) k =
+    let switch dispatch file fn ((((((), constraints), _), _), _) as expState) k =
         Format.eprintf "Switching from typed to symbolic...@.";
 
         (* first, solve the typed constraints, needed to setup the symbolic constraints *)
@@ -181,13 +181,12 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
         in
 
         (* dispatch *)
-        `SymbolicBlock (file, job, return)
+        dispatch (`SymbolicBlock (file, job, return))
 
 
-    let dispatch chain = function
-        | `TypedBlock (file, fn, expState, k)
-                when S.should_enter_block fn.Cil.svar.Cil.vattr ->
-            switch file fn expState k
+    let dispatch chain dispatch = function
+        | `TypedBlock (file, fn, expState, k) when S.should_enter_block fn.Cil.svar.Cil.vattr ->
+            switch dispatch file fn expState k
         | work ->
             chain work
 end
