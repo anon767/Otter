@@ -108,7 +108,8 @@ CILLY_LIBRARY_MODULES = pretty inthash errormsg alpha trace stats util clist \
                 driver \
                 report \
                 executemain \
-                progStats
+                progStats \
+                traceLines
 # ww: we don't want "main" in an external cil library (cil.cma),
 # otherwise every program that links against that library will get
 # main's argument checking and whatnot ...

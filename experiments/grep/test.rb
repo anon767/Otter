@@ -30,7 +30,7 @@ end
 def run(exe, search, contents)
   input = "/tmp/#{Process.pid}.txt"
   File.open(input, "w") { |f|
-    f.puts contents
+    f.print contents
   }
   result = nil
   IO.popen("#{exe} '#{search}' #{input}") { |f|
@@ -86,19 +86,14 @@ def symbolic_exec(i, config, search, contents)
   File.unlink tmpfile
 
   cmd = "#{$cilly} #{combfile} --useLogicalOperators --arg='#{search}' " +
-        "--arg=input.txt --doexecute"
+        "--arg=input.txt --doexecute --printLittle"
   #  CILLY_DONT_COMPILE_AFTER_MERGE=1
   result = ""
   out = File.open("out/#{i}.out", "w")
   Open3.popen3(cmd) { |stdin,stdout,stderr|
     while not stdout.eof?
-      if ((readline_echo(stdout, out) =~ /__COMMENT\(\(char \*\)"Writing on fildes"\);/) &&
-          (readline_echo(stdout, out)) && # COMMENT:(char *)"Writing on fildes"
-          (readline_echo(stdout, out)) && # #line 101
-          (readline_echo(stdout, out)) && # __EVAL(fildes)
+      if ((readline_echo(stdout, out) =~ /COMMENT:\(char \*\)"Writing on fildes"/) &&
           (readline_echo(stdout, out) =~ /Evaluates to Bytearray\(\/01\/00\/00\/00\)/) &&
-          (readline_echo(stdout, out)) && # #line 103
-          (readline_echo(stdout, out)) && # __EVALSTR((char *_buf, (int )nbyte)
           (readline_echo(stdout, out) =~ /Evaluates to string: "(.*)"/))
         result = result + $1
       end
@@ -191,7 +186,6 @@ tests = [
   ["(ab|)*", "-"],
   [")(", "-"],
   ["abc", ""],
-  ["abc", ""],
   ["a*", ""],
   ["([abc])*d", "abbbcd"],
   ["([abc])*bcd", "abcd"],
@@ -249,7 +243,7 @@ tests.each { |search, contents|
   symbolic = symbolic_exec(i, config, search, contents)
   symbolic = eval("\"" + symbolic + "\"") # unescape string
   if (real == symbolic)
-    puts "PASS"
+    puts "PASS with output " + real
   else
     puts "FAIL:  real=\"#{real}\" symbolic=\"#{symbolic}\""
   end

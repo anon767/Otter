@@ -13,15 +13,12 @@ void* realloc(void* ptr, size_t size) {
 
 	/* currently memory block has unbounded length, so we just write
 		 into the last byte so the symbolic executor knows that the array
-		 is that long now. */
+		 is that long now. If we prohibit out-of-bounds writes, then we
+		 will have to do realloc the obvious (but slightly less efficient)
+		 way, using malloc and memcpy, below. */
 	((char*)ptr)[size-1] = 0;
 	return ptr;
 //	void* result = malloc(size);
-//	if (result == NULL) {
-//		errno = ENOMEM;
-//		return NULL;
-//	}
-//
 //	memcpy(result, ptr, size);
 //	free(ptr);
 //

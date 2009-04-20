@@ -220,6 +220,17 @@ let bytes__write bytes off len newbytes =
 					let n_off = Convert.bytes_to_constant off Cil.intType in
 					do_write bytes (Bytes_Constant(n_off)) len newbytes
 
+			(* Without this next case, writing to a constant would introduce
+				 a Bytes_Write. Aside from not wanting a Bytes_Write if we can
+				 avoid it (for example, writing a concrete byte to the first
+				 byte of a concrete int), this could cause problems. The
+				 potential problem has to do with writing past the end of an
+				 array that is represented as a Bytes_Constant (which could
+				 exist if, for example, you have a 4-byte ByteArray and write
+				 a Bytes_Constant int to it). *)
+			| Bytes_Constant c,_,_ ->
+					do_write (Convert.constant_to_bytes c) off len newbytes
+
 			| _ -> Bytes_Write (bytes,off,len,newbytes)
 	in
 	if (bytes__length bytes)=len && (Convert.isConcrete_bytes off) && (Convert.bytes_to_int_auto off = 0) then 

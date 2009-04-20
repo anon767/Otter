@@ -31,6 +31,7 @@ let features : C.featureDescr list =
     Executemain.feature;
     Marshal_feature.feature;
 		ProgStats.feature;
+		TraceLines.feature;
   ] 
   @ Feature_config.features;;
 
