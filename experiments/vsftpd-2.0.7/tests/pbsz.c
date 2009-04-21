@@ -8,9 +8,7 @@ char **environ;
 
 void symtest_initialize() {
 	// Make the string of commands on fd 0
-	static char commandString[] = "user anonymous
-pass
-rein
+	char commandString[] = "pbsz
 quit
 ";
 	IOSIM_fd[0] = malloc(sizeof(sym_file_stream_t));
@@ -28,9 +26,6 @@ quit
 	tunable_one_process_model = 1;
 
 #include "symbolic_values"
-
-
-
 
 	return;
 }

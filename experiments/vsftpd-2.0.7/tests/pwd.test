@@ -1,0 +1,10 @@
+STATSFILE=../vsftpd.stats
+
+TOPDIR=../../..
+LIBCDIR=$TOPDIR/libc
+MOCKEDDIR=$TOPDIR/mockedFns
+
+$TOPDIR/cil/bin/cilly --merge --useLogicalOperators \
+-D_FILE_OFFSET_BITS=64 \
+-I $MOCKEDDIR \
+../vsftpd_comb.c --covStats=$STATSFILE --doexecute pwd.c --printLittle --lineCov
