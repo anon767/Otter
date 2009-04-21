@@ -231,6 +231,8 @@ int IOSIM_write(int fildes, const void *buf, int nbyte){
 
 	/* Print out, for the benefit of the person running the symbolic
 		 executor, everything written on this file so far. */
+	__COMMENT("Writing on fildes");
+	__EVAL(fildes);
 	numWritten[fildes] += nbyte;
 	__EVALSTR(out->sym_fileout->contents,numWritten[fildes]);
 
