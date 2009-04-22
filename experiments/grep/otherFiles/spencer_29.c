@@ -10,7 +10,7 @@ void symtest_initialize() {
 	IOSIM_fd[1]->sym_file->stat.st_size = 0;
 	stdout = IOSIM_fd[1];
 
-	sym_file_t* input = IOSIM_addfile("spencer_29.txt", 0);
+	sym_file_t* input = IOSIM_addfile("/spencer_29.txt", 0);
 	input->contents = "axyzd";
 	input->stat.st_size = 5;
 }
