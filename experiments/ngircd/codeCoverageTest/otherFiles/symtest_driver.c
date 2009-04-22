@@ -6,214 +6,145 @@
 #include <string.h>
 #include <iosim.h>
 
+#define MOTDFILE "/usr/local/etc/ngircd.motd"
+#define CONFFILE "/usr/local/etc/ngircd.conf"
 
-#define MOTDFILE "/MotdFile.txt"
-
-void symtest_Conf_Init_impl(){
-	 /* Name ("Nick") of the servers */
-	 // char Conf_ServerName[CLIENT_ID_LEN];
-	 strcpy(Conf_ServerName,"@Conf_ServerName");
-	 
-	 /* Server info text */
-	 // char Conf_ServerInfo[CLIENT_INFO_LEN];
-	 strcpy(Conf_ServerInfo,"@Conf_ServerInfo");
-	 
-	 /* // server passwort */
-	 // char Conf_ServerPwd[CLIENT_PASS_LEN];
-	 strcpy(Conf_ServerPwd,"");
-	 //strcpy(Conf_ServerPwd,"@Conf_ServerPwd");
-	 
-	 /* Administrative information */
-	 // char Conf_ServerAdmin1[CLIENT_INFO_LEN];
-	 // char Conf_ServerAdmin2[CLIENT_INFO_LEN];
-	 // char Conf_ServerAdminMail[CLIENT_INFO_LEN];
-	 strcpy(Conf_ServerAdmin1,"@Conf_ServerAdmin1");
-	 strcpy(Conf_ServerAdmin2,"@Conf_ServerAdmin2");
-	 strcpy(Conf_ServerAdminMail,"@Conf_ServerAdminMail");
-	 
-	 /* File with MOTD text */
-	 // char Conf_MotdFile[FNAME_LEN];
-	 strcpy(Conf_MotdFile,MOTDFILE);
-	 
-	 /* Phrase with MOTD text */
-	 // char Conf_MotdPhrase[LINE_LEN];
-	 
-	 /* Ports the server should listen on */
-	 // array Conf_ListenPorts;
-	 ports_parse(&Conf_ListenPorts,0,strdup("6667"));
-	 
-	 /* Address to which the socket should be bound or empty (=all) */
-	 // char Conf_ListenAddress[16];
-	 
-	 /* User and group ID the server should run with */
-	 // uid_t Conf_UID;
-	 // gid_t Conf_GID;
-
-	 
-#ifdef CONF_UID
-	Conf_UID = CONF_UID;
-#else
-	__SYMBOLIC(&Conf_UID);
-#endif
-
-	 
-#ifdef CONF_GID
-	Conf_GID = CONF_GID;
-#else
-	__SYMBOLIC(&Conf_GID);
-#endif
-	 
-	 /* A directory to chroot() in */
-	 // char Conf_Chroot[FNAME_LEN];
-	 
-	 /* File with PID of daemon */
-	 // char Conf_PidFile[FNAME_LEN];
-	 
-	 /* Timeouts for PING and PONG */
-
-	 
-#ifdef CONF_PINGTIMEOUT
-	Conf_PingTimeout = CONF_PINGTIMEOUT;
-#else
-	__SYMBOLIC(&Conf_PingTimeout);
-#endif
-
-	 
-#ifdef CONF_PONGTIMEOUT
-	Conf_PongTimeout = CONF_PONGTIMEOUT;
-#else
-	__SYMBOLIC(&Conf_PongTimeout);
-#endif
-	 
-	 /* Seconds between connect attempts to other servers */
-	 // int Conf_ConnectRetry;
-	 
-#ifdef CONF_CONNECTRETRY
-	Conf_ConnectRetry = CONF_CONNECTRETRY;
-#else
-	__SYMBOLIC(&Conf_ConnectRetry);
-#endif
-	 
-	 /* Operators */
-	 // CONF_OPER Conf_Oper[MAX_OPERATORS];
-	 // unsigned int Conf_Oper_Count;
-	 
-	 /* Servers */
-	 // CONF_SERVER Conf_Server[MAX_SERVERS];
-	 
-	 /* Pre-defined channels */
-	 // CONF_CHANNEL Conf_Channel[MAX_DEFCHANNELS];
-	 // unsigned int Conf_Channel_Count;
-	 /* Pre-defined channels only */
-	 // bool Conf_PredefChannelsOnly;
-	 
-	 /* Are IRC operators allowed to always use MODE? */
-	 // bool Conf_OperCanMode;
-	 
-#ifdef CONF_OPERCANMODE
-	Conf_OperCanMode = CONF_OPERCANMODE;
-#else
-	__SYMBOLIC(&Conf_OperCanMode);
-#endif
-	 
-	 /* Disable all DNS functions? */
-	 // bool Conf_NoDNS;
-	 
-#ifdef CONF_NODNS
-	Conf_NoDNS = CONF_NODNS;
-#else
-	__SYMBOLIC(&Conf_NoDNS);
-#endif
-	 
-	 /* listen for incoming ipv6 connections if OS supports it (default: yes)? */
-	 // bool Conf_ListenIPv6;
-	 
-#ifdef CONF_LISTENIPV6
-	Conf_ListenIPv6 = CONF_LISTENIPV6;
-#else
-	__SYMBOLIC(&Conf_ListenIPv6);
-#endif
-	 
-	 /* listen for incoming ipv4 connections if OS supports it (default: yes)? */
-	 // bool Conf_ListenIPv4;
-	 
-#ifdef CONF_LISTENIPV4
-	Conf_ListenIPv4 = CONF_LISTENIPV4;
-#else
-	__SYMBOLIC(&Conf_ListenIPv4);
-#endif
-	 
-	 /*
-	  * try to connect to remote systems using the ipv6 protocol,
-	  * if they have an ipv6 address? (default yes)
-	  */
-	 // bool Conf_ConnectIPv6;
-	 
-#ifdef CONF_CONNECTIPV6
-	Conf_ConnectIPv6 = CONF_CONNECTIPV6;
-#else
-	__SYMBOLIC(&Conf_ConnectIPv6);
-#endif
-	 
-	 /* same as above, but for ipv4 hosts, default: yes  */
-	 // bool Conf_ConnectIPv4;
-	 
-#ifdef CONF_CONNECTIPV4
-	Conf_ConnectIPv4 = CONF_CONNECTIPV4;
-#else
-	__SYMBOLIC(&Conf_ConnectIPv4);
-#endif
-	 
-	 /* If an IRC op gives chanop privileges without being a chanop,
-	  * ircd2 will ignore the command. This enables a workaround:
-	  * It masks the command as coming from the server */
-	 // bool Conf_OperServerMode;
-	 
-#ifdef CONF_OPERSERVERMODE
-	Conf_OperServerMode = CONF_OPERSERVERMODE;
-#else
-	__SYMBOLIC(&Conf_OperServerMode);
-#endif
-	 
-	 /* Maximum number of connections to this server */
-	 // long Conf_MaxConnections;
-//	 __SYMBOLIC(&Conf_MaxConnections);
-//	 __ASSUME(Conf_MaxConnections>=0);
-	 
-	 /* Maximum number of channels a user can join */
-	 // int Conf_MaxJoins;
-#ifdef CONF_MAXJOINS
-	Conf_MaxJoins = CONF_MAXJOINS;
-#else
-	 __SYMBOLIC(&Conf_MaxJoins);
-	 __ASSUME(Conf_MaxJoins>=1);
-	 __ASSUME(Conf_MaxJoins<=9);
-#endif
-	 
-	 /* Maximum number of connections per IP address */
-	 // int Conf_MaxConnectionsIP;
-#ifdef CONF_MAXCONNECTIONSIP 
-	 Conf_MaxConnectionsIP = CONF_MAXCONNECTIONSIP;
-#else
-	 __SYMBOLIC(&Conf_MaxConnectionsIP);
-	 __ASSUME(Conf_MaxConnectionsIP>=1);
-	 __ASSUME(Conf_MaxConnectionsIP<=9);
-#endif
-	 
-	 /* Maximum length of a nick name */
-	 // unsigned int Conf_MaxNickLength;
-#ifdef CONF_MAXNICKLENGTH
-	 Conf_MaxNickLength = CONF_MAXNICKLENGTH;
-#else
-	 __SYMBOLIC(&Conf_MaxNickLength);
-	 __ASSUME(Conf_MaxNickLength>=1);
-	 __ASSUME(Conf_MaxNickLength<=9);
-#endif
-	
-}
-
+// Defined in one of the symtest{i}.c
 extern int symtest();
 
+void symtest_Conf_Init_impl(){
+	#ifndef CONF_UID
+		__SYMBOLIC(&Conf_UID);
+	#endif
+		 
+	#ifndef CONF_GID
+		__SYMBOLIC(&Conf_GID);
+	#endif
+		 
+	#ifndef CONF_PINGTIMEOUT
+		__SYMBOLIC(&Conf_PingTimeout);
+	#endif
+	
+	#ifndef CONF_PONGTIMEOUT
+		__SYMBOLIC(&Conf_PongTimeout);
+	#endif
+		 
+	#ifndef CONF_CONNECTRETRY
+		__SYMBOLIC(&Conf_ConnectRetry);
+	#endif
+		 
+	#ifndef CONF_OPERCANMODE
+		__SYMBOLIC(&Conf_OperCanMode);
+	#endif
+		 
+	#ifndef CONF_NODNS
+		__SYMBOLIC(&Conf_NoDNS);
+	#endif
+		 
+	#ifndef CONF_LISTENIPV6
+		__SYMBOLIC(&Conf_ListenIPv6);
+	#endif
+		 
+	#ifndef CONF_LISTENIPV4
+		__SYMBOLIC(&Conf_ListenIPv4);
+	#endif
+		 
+	#ifndef CONF_CONNECTIPV6
+		__SYMBOLIC(&Conf_ConnectIPv6);
+	#endif
+		 
+	#ifndef CONF_CONNECTIPV4
+		__SYMBOLIC(&Conf_ConnectIPv4);
+	#endif
+		 
+	#ifndef CONF_OPERSERVERMODE
+		__SYMBOLIC(&Conf_OperServerMode);
+	#endif
+		 
+	#ifndef CONF_MAXCONNECTIONS
+		 __SYMBOLIC(&Conf_MaxConnections);
+		 __ASSUME(Conf_MaxConnections>=0);
+		 __ASSUME(Conf_MaxConnections<=9);
+	#endif
+		 
+	#ifndef CONF_MAXJOINS
+		 __SYMBOLIC(&Conf_MaxJoins);
+		 __ASSUME(Conf_MaxJoins>=0);
+		 __ASSUME(Conf_MaxJoins<=9);
+	#endif
+		 
+	#ifndef CONF_MAXCONNECTIONSIP 
+		 __SYMBOLIC(&Conf_MaxConnectionsIP);
+		 __ASSUME(Conf_MaxConnectionsIP>=0);
+		 __ASSUME(Conf_MaxConnectionsIP<=9);
+	#endif
+		 
+	#ifndef CONF_MAXNICKLENGTH
+		 __SYMBOLIC(&Conf_MaxNickLength);
+		 __ASSUME(Conf_MaxNickLength>=1);
+		 __ASSUME(Conf_MaxNickLength<=9);
+	#endif
+		
+}
+
+// Default configuration being read into ngircd
+// It will be overwritten by the symbolic configuration
+char* confString(){
+	static char confStr[] = "[Global]
+	Name = irc.the.net
+	Info = Server Info Text
+	;Password = abc
+	;AdminInfo1 = Description
+	;AdminInfo2 = Location
+	;AdminEMail = admin@irc.server
+	Ports = 6667
+	;Listen = 1.2.3.4
+	MotdFile = /usr/local/etc/ngircd.motd
+	;MotdPhrase = \"Hello world!\"
+	;ServerUID = 65534
+	;ServerGID = 65534
+	;ChrootDir = /var/empty
+	;PidFile = /var/run/ngircd/ngircd.pid
+	PingTimeout = 1200
+	PongTimeout = 200
+	;ConnectRetry = 60
+	;OperCanUseMode = no
+	;OperServerMode = no
+	;PredefChannelsOnly = no
+	;NoDNS = no
+	;ListenIPv6 = yes
+	;ListenIPv4 = yes
+	;ConnectIPv6 = yes
+	;ConnectIPv4 = yes
+	MaxConnections = 0
+	MaxConnectionsIP = 0
+	;MaxJoins = 10
+	MaxNickLength = 9
+[Operator]
+	Name = TheOper
+	Password = ThePwd
+	Mask = *
+[Operator]
+[Server]
+	;Name = irc2.the.net
+	;Host = connect-to-host.the.net
+	;Bind = 10.0.0.1
+	;Port = 6667
+	;MyPassword = MySecret
+	;PeerPassword = PeerSecret
+	;Group = 123
+	;Passive = no
+[Server]
+[Channel]
+	;Name = #TheName
+	;Topic = a great topic
+	;Modes = tnk
+	;Key = Secret
+	;MaxUsers = 23
+[Channel]";
+
+	return confStr;
+}
 
 int main(){
 
@@ -231,12 +162,17 @@ int main(){
 	IOSIM_fd[1]->sym_fileout->stat.st_size = 1024;
 	IOSIM_fd[1]->sym_fileout->stat.st_mode = S_IFSOCK;//
 
-	sym_file_t* motdFile = IOSIM_addfile(MOTDFILE,0);
-	motdFile->contents = strdup("stdout:\n");
-	motdFile->stat.st_size = strlen(motdFile->contents);
-
 	stdout = IOSIM_fd[1];
 	stderr = IOSIM_fd[1];
+
+	sym_file_t* motdFile = IOSIM_addfile(MOTDFILE,0);
+	motdFile->contents = strdup("This is the content of <motdFile>\n");
+	motdFile->stat.st_size = strlen(motdFile->contents);
+
+	sym_file_t* confFile = IOSIM_addfile(CONFFILE,0);
+	confFile->contents = confString();
+	confFile->stat.st_size = strlen(confFile->contents);
+
 
 	symtest();
 
