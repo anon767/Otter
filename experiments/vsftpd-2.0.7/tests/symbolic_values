@@ -1,95 +1,456 @@
-	// These are the integer flags
-	__SYMBOLIC(&tunable_accept_timeout);
-	__SYMBOLIC(&tunable_connect_timeout);
-	__SYMBOLIC(&tunable_local_umask);
-	//	__SYMBOLIC(&tunable_anon_umask); // Too much branching
-	__SYMBOLIC(&tunable_ftp_data_port);
-	__SYMBOLIC(&tunable_idle_session_timeout);
-	__SYMBOLIC(&tunable_data_connection_timeout);
-	//	__SYMBOLIC(&tunable_pasv_min_port); // Caused trouble with double arithmetic
-	//	__SYMBOLIC(&tunable_pasv_max_port); // Caused trouble with double arithmetic
-	__SYMBOLIC(&tunable_anon_max_rate);
-	__SYMBOLIC(&tunable_local_max_rate);
-	__SYMBOLIC(&tunable_listen_port);
-	__SYMBOLIC(&tunable_max_clients);
-	//	__SYMBOLIC(&tunable_file_open_mode); // Too much branching
-	__SYMBOLIC(&tunable_max_per_ip);
-	__SYMBOLIC(&tunable_trans_chunk_size);
-	__SYMBOLIC(&tunable_delay_failed_login);
-	__SYMBOLIC(&tunable_delay_successful_login);
-	__SYMBOLIC(&tunable_max_login_fails);
-	__SYMBOLIC(&tunable_chown_upload_mode);
+// These are the integer flags
+
+#ifdef TUNABLE_ACCEPT_TIMEOUT
+  tunable_accept_timeout = TUNABLE_ACCEPT_TIMEOUT;
+#else
+  __SYMBOLIC(&tunable_accept_timeout);
+#endif
+#ifdef TUNABLE_CONNECT_TIMEOUT
+  tunable_connect_timeout = TUNABLE_CONNECT_TIMEOUT;
+#else
+  __SYMBOLIC(&tunable_connect_timeout);
+#endif
+#ifdef TUNABLE_LOCAL_UMASK
+  tunable_local_umask = TUNABLE_LOCAL_UMASK;
+#else
+  __SYMBOLIC(&tunable_local_umask);
+#endif
+#ifdef TUNABLE_ANON_UMASK
+  tunable_anon_umask = TUNABLE_ANON_UMASK;
+#else
+//  __SYMBOLIC(&tunable_anon_umask); // Too much branching
+#endif
+#ifdef TUNABLE_FTP_DATA_PORT
+  tunable_ftp_data_port = TUNABLE_FTP_DATA_PORT;
+#else
+  __SYMBOLIC(&tunable_ftp_data_port);
+#endif
+#ifdef TUNABLE_IDLE_SESSION_TIMEOUT
+  tunable_idle_session_timeout = TUNABLE_IDLE_SESSION_TIMEOUT;
+#else
+  __SYMBOLIC(&tunable_idle_session_timeout);
+#endif
+#ifdef TUNABLE_DATA_CONNECTION_TIMEOUT
+  tunable_data_connection_timeout = TUNABLE_DATA_CONNECTION_TIMEOUT;
+#else
+  __SYMBOLIC(&tunable_data_connection_timeout);
+#endif
+#ifdef TUNABLE_PASV_MIN_PORT
+  tunable_pasv_min_port = TUNABLE_PASV_MIN_PORT;
+#else
+//  __SYMBOLIC(&tunable_pasv_min_port); // Caused trouble with double arithmetic
+#endif
+#ifdef TUNABLE_PASV_MAX_PORT
+  tunable_pasv_max_port = TUNABLE_PASV_MAX_PORT;
+#else
+//  __SYMBOLIC(&tunable_pasv_max_port); // Caused trouble with double arithmetic
+#endif
+#ifdef TUNABLE_ANON_MAX_RATE
+  tunable_anon_max_rate = TUNABLE_ANON_MAX_RATE;
+#else
+//  __SYMBOLIC(&tunable_anon_max_rate);
+#endif
+#ifdef TUNABLE_LOCAL_MAX_RATE
+  tunable_local_max_rate = TUNABLE_LOCAL_MAX_RATE;
+#else
+  __SYMBOLIC(&tunable_local_max_rate);
+#endif
+#ifdef TUNABLE_LISTEN_PORT
+  tunable_listen_port = TUNABLE_LISTEN_PORT;
+#else
+  __SYMBOLIC(&tunable_listen_port);
+#endif
+#ifdef TUNABLE_MAX_CLIENTS
+  tunable_max_clients = TUNABLE_MAX_CLIENTS;
+#else
+  __SYMBOLIC(&tunable_max_clients);
+#endif
+#ifdef TUNABLE_FILE_OPEN_MODE
+  tunable_file_open_mode = TUNABLE_FILE_OPEN_MODE;
+#else
+//  __SYMBOLIC(&tunable_file_open_mode); // Too much branching
+#endif
+#ifdef TUNABLE_MAX_PER_IP
+  tunable_max_per_ip = TUNABLE_MAX_PER_IP;
+#else
+  __SYMBOLIC(&tunable_max_per_ip);
+#endif
+#ifdef TUNABLE_TRANS_CHUNK_SIZE
+  tunable_trans_chunk_size = TUNABLE_TRANS_CHUNK_SIZE;
+#else
+  __SYMBOLIC(&tunable_trans_chunk_size);
+#endif
+#ifdef TUNABLE_DELAY_FAILED_LOGIN
+  tunable_delay_failed_login = TUNABLE_DELAY_FAILED_LOGIN;
+#else
+  __SYMBOLIC(&tunable_delay_failed_login);
+#endif
+#ifdef TUNABLE_DELAY_SUCCESSFUL_LOGIN
+  tunable_delay_successful_login = TUNABLE_DELAY_SUCCESSFUL_LOGIN;
+#else
+  __SYMBOLIC(&tunable_delay_successful_login);
+#endif
+#ifdef TUNABLE_MAX_LOGIN_FAILS
+  tunable_max_login_fails = TUNABLE_MAX_LOGIN_FAILS;
+#else
+  __SYMBOLIC(&tunable_max_login_fails);
+#endif
+#ifdef TUNABLE_CHOWN_UPLOAD_MODE
+  tunable_chown_upload_mode = TUNABLE_CHOWN_UPLOAD_MODE;
+#else
+  __SYMBOLIC(&tunable_chown_upload_mode);
+#endif
 
 	// All flags from here down are boolean
 
-	__SYMBOLIC(&tunable_write_enable);
-	__SYMBOLIC(&tunable_anon_upload_enable);
-	__SYMBOLIC(&tunable_dirmessage_enable);
-	__SYMBOLIC(&tunable_ascii_upload_enable);
-	__SYMBOLIC(&tunable_ascii_download_enable);
-	__SYMBOLIC(&tunable_listen);
-	__SYMBOLIC(&tunable_run_as_launching_user);
+#ifdef TUNABLE_WRITE_ENABLE
+  tunable_write_enable = TUNABLE_WRITE_ENABLE;
+#else
+  __SYMBOLIC(&tunable_write_enable);
+#endif
+#ifdef TUNABLE_ANON_UPLOAD_ENABLE
+  tunable_anon_upload_enable = TUNABLE_ANON_UPLOAD_ENABLE;
+#else
+  __SYMBOLIC(&tunable_anon_upload_enable);
+#endif
+#ifdef TUNABLE_DIRMESSAGE_ENABLE
+  tunable_dirmessage_enable = TUNABLE_DIRMESSAGE_ENABLE;
+#else
+  __SYMBOLIC(&tunable_dirmessage_enable);
+#endif
+#ifdef TUNABLE_ASCII_UPLOAD_ENABLE
+  tunable_ascii_upload_enable = TUNABLE_ASCII_UPLOAD_ENABLE;
+#else
+  __SYMBOLIC(&tunable_ascii_upload_enable);
+#endif
+#ifdef TUNABLE_ASCII_DOWNLOAD_ENABLE
+  tunable_ascii_download_enable = TUNABLE_ASCII_DOWNLOAD_ENABLE;
+#else
+  __SYMBOLIC(&tunable_ascii_download_enable);
+#endif
+#ifdef TUNABLE_LISTEN
+  tunable_listen = TUNABLE_LISTEN;
+#else
+  __SYMBOLIC(&tunable_listen);
+#endif
+#ifdef TUNABLE_RUN_AS_LAUNCHING_USER
+  tunable_run_as_launching_user = TUNABLE_RUN_AS_LAUNCHING_USER;
+#else
+  __SYMBOLIC(&tunable_run_as_launching_user);
+#endif
 
-	__SYMBOLIC(&tunable_anonymous_enable);
-	__SYMBOLIC(&tunable_local_enable);
-//	__SYMBOLIC(&tunable_pasv_enable);
-//	__SYMBOLIC(&tunable_port_enable);
-	__SYMBOLIC(&tunable_chroot_local_user);
-//	__SYMBOLIC(&tunable_anon_mkdir_write_enable);
-//	__SYMBOLIC(&tunable_anon_other_write_enable);
-//	__SYMBOLIC(&tunable_chown_uploads);
-//	__SYMBOLIC(&tunable_connect_from_port_20);
-//	__SYMBOLIC(&tunable_xferlog_enable);
-//	__SYMBOLIC(&tunable_anon_world_readable_only);
-//	__SYMBOLIC(&tunable_async_abor_enable);
-//	__SYMBOLIC(&tunable_xferlog_std_format);
-//	__SYMBOLIC(&tunable_pasv_promiscuous);
-//	__SYMBOLIC(&tunable_deny_email_enable);
-//	__SYMBOLIC(&tunable_chroot_list_enable);
-//	__SYMBOLIC(&tunable_setproctitle_enable);
-//	__SYMBOLIC(&tunable_text_userdb_names);
-//	__SYMBOLIC(&tunable_ls_recurse_enable);
-//	__SYMBOLIC(&tunable_log_ftp_protocol);
-//	__SYMBOLIC(&tunable_guest_enable);
-//	__SYMBOLIC(&tunable_userlist_enable);
-//	__SYMBOLIC(&tunable_userlist_deny);
-//	__SYMBOLIC(&tunable_use_localtime);
-//	__SYMBOLIC(&tunable_check_shell);
-//	__SYMBOLIC(&tunable_hide_ids);
-//	__SYMBOLIC(&tunable_port_promiscuous);
-//	__SYMBOLIC(&tunable_passwd_chroot_enable);
-//	__SYMBOLIC(&tunable_no_anon_password);
-//	__SYMBOLIC(&tunable_tcp_wrappers);
-//	__SYMBOLIC(&tunable_use_sendfile);
-//	__SYMBOLIC(&tunable_force_dot_files);
-//	__SYMBOLIC(&tunable_listen_ipv6);
-//	__SYMBOLIC(&tunable_dual_log_enable);
-//	__SYMBOLIC(&tunable_syslog_enable);
-//	__SYMBOLIC(&tunable_background);
-//	__SYMBOLIC(&tunable_virtual_use_local_privs);
-//	__SYMBOLIC(&tunable_session_support);
-//	__SYMBOLIC(&tunable_download_enable);
-//	__SYMBOLIC(&tunable_dirlist_enable);
-//	__SYMBOLIC(&tunable_chmod_enable);
-//	__SYMBOLIC(&tunable_secure_email_list_enable);
-//	__SYMBOLIC(&tunable_no_log_lock);
-//	__SYMBOLIC(&tunable_ssl_enable);
-//	__SYMBOLIC(&tunable_allow_anon_ssl);
-//	__SYMBOLIC(&tunable_force_local_logins_ssl);
-//	__SYMBOLIC(&tunable_force_local_data_ssl);
-//	__SYMBOLIC(&tunable_sslv2);
-//	__SYMBOLIC(&tunable_sslv3);
-//	__SYMBOLIC(&tunable_tlsv1);
-//	__SYMBOLIC(&tunable_tilde_user_enable);
-//	__SYMBOLIC(&tunable_force_anon_logins_ssl);
-//	__SYMBOLIC(&tunable_force_anon_data_ssl);
-//	__SYMBOLIC(&tunable_mdtm_write);
-//	__SYMBOLIC(&tunable_lock_upload_files);
-//	__SYMBOLIC(&tunable_pasv_addr_resolve);
-//	__SYMBOLIC(&tunable_debug_ssl);
-//	__SYMBOLIC(&tunable_require_cert);
-//	__SYMBOLIC(&tunable_validate_cert);
-//	__SYMBOLIC(&tunable_strict_ssl_read_eof);
-//	__SYMBOLIC(&tunable_strict_ssl_write_shutdown);
-//	__SYMBOLIC(&tunable_ssl_request_cert);
-//	__SYMBOLIC(&tunable_delete_failed_uploads);
+#ifdef TUNABLE_ANONYMOUS_ENABLE
+  tunable_anonymous_enable = TUNABLE_ANONYMOUS_ENABLE;
+#else
+  __SYMBOLIC(&tunable_anonymous_enable);
+#endif
+#ifdef TUNABLE_LOCAL_ENABLE
+  tunable_local_enable = TUNABLE_LOCAL_ENABLE;
+#else
+  __SYMBOLIC(&tunable_local_enable);
+#endif
+#ifdef TUNABLE_PASV_ENABLE
+  tunable_pasv_enable = TUNABLE_PASV_ENABLE;
+#else
+//  __SYMBOLIC(&tunable_pasv_enable);
+#endif
+#ifdef TUNABLE_PORT_ENABLE
+  tunable_port_enable = TUNABLE_PORT_ENABLE;
+#else
+//  __SYMBOLIC(&tunable_port_enable);
+#endif
+#ifdef TUNABLE_CHROOT_LOCAL_USER
+  tunable_chroot_local_user = TUNABLE_CHROOT_LOCAL_USER;
+#else
+  __SYMBOLIC(&tunable_chroot_local_user);
+#endif
+#ifdef TUNABLE_ANON_MKDIR_WRITE_ENABLE
+  tunable_anon_mkdir_write_enable = TUNABLE_ANON_MKDIR_WRITE_ENABLE;
+#else
+//  __SYMBOLIC(&tunable_anon_mkdir_write_enable);
+#endif
+#ifdef TUNABLE_ANON_OTHER_WRITE_ENABLE
+  tunable_anon_other_write_enable = TUNABLE_ANON_OTHER_WRITE_ENABLE;
+#else
+  __SYMBOLIC(&tunable_anon_other_write_enable);
+#endif
+#ifdef TUNABLE_CHOWN_UPLOADS
+  tunable_chown_uploads = TUNABLE_CHOWN_UPLOADS;
+#else
+//  __SYMBOLIC(&tunable_chown_uploads);
+#endif
+#ifdef TUNABLE_CONNECT_FROM_PORT_20
+  tunable_connect_from_port_20 = TUNABLE_CONNECT_FROM_PORT_20;
+#else
+//  __SYMBOLIC(&tunable_connect_from_port_20);
+#endif
+#ifdef TUNABLE_XFERLOG_ENABLE
+  tunable_xferlog_enable = TUNABLE_XFERLOG_ENABLE;
+#else
+//  __SYMBOLIC(&tunable_xferlog_enable);
+#endif
+#ifdef TUNABLE_ANON_WORLD_READABLE_ONLY
+  tunable_anon_world_readable_only = TUNABLE_ANON_WORLD_READABLE_ONLY;
+#else
+//  __SYMBOLIC(&tunable_anon_world_readable_only);
+#endif
+#ifdef TUNABLE_ASYNC_ABOR_ENABLE
+  tunable_async_abor_enable = TUNABLE_ASYNC_ABOR_ENABLE;
+#else
+//  __SYMBOLIC(&tunable_async_abor_enable);
+#endif
+#ifdef TUNABLE_XFERLOG_STD_FORMAT
+  tunable_xferlog_std_format = TUNABLE_XFERLOG_STD_FORMAT;
+#else
+//  __SYMBOLIC(&tunable_xferlog_std_format);
+#endif
+#ifdef TUNABLE_PASV_PROMISCUOUS
+  tunable_pasv_promiscuous = TUNABLE_PASV_PROMISCUOUS;
+#else
+//  __SYMBOLIC(&tunable_pasv_promiscuous);
+#endif
+#ifdef TUNABLE_DENY_EMAIL_ENABLE
+  tunable_deny_email_enable = TUNABLE_DENY_EMAIL_ENABLE;
+#else
+//  __SYMBOLIC(&tunable_deny_email_enable);
+#endif
+#ifdef TUNABLE_CHROOT_LIST_ENABLE
+  tunable_chroot_list_enable = TUNABLE_CHROOT_LIST_ENABLE;
+#else
+//  __SYMBOLIC(&tunable_chroot_list_enable);
+#endif
+#ifdef TUNABLE_SETPROCTITLE_ENABLE
+  tunable_setproctitle_enable = TUNABLE_SETPROCTITLE_ENABLE;
+#else
+//  __SYMBOLIC(&tunable_setproctitle_enable);
+#endif
+#ifdef TUNABLE_TEXT_USERDB_NAMES
+  tunable_text_userdb_names = TUNABLE_TEXT_USERDB_NAMES;
+#else
+//  __SYMBOLIC(&tunable_text_userdb_names);
+#endif
+#ifdef TUNABLE_LS_RECURSE_ENABLE
+  tunable_ls_recurse_enable = TUNABLE_LS_RECURSE_ENABLE;
+#else
+//  __SYMBOLIC(&tunable_ls_recurse_enable);
+#endif
+#ifdef TUNABLE_LOG_FTP_PROTOCOL
+  tunable_log_ftp_protocol = TUNABLE_LOG_FTP_PROTOCOL;
+#else
+//  __SYMBOLIC(&tunable_log_ftp_protocol);
+#endif
+#ifdef TUNABLE_GUEST_ENABLE
+  tunable_guest_enable = TUNABLE_GUEST_ENABLE;
+#else
+//  __SYMBOLIC(&tunable_guest_enable);
+#endif
+#ifdef TUNABLE_USERLIST_ENABLE
+  tunable_userlist_enable = TUNABLE_USERLIST_ENABLE;
+#else
+//  __SYMBOLIC(&tunable_userlist_enable);
+#endif
+#ifdef TUNABLE_USERLIST_DENY
+  tunable_userlist_deny = TUNABLE_USERLIST_DENY;
+#else
+//  __SYMBOLIC(&tunable_userlist_deny);
+#endif
+#ifdef TUNABLE_USE_LOCALTIME
+  tunable_use_localtime = TUNABLE_USE_LOCALTIME;
+#else
+//  __SYMBOLIC(&tunable_use_localtime);
+#endif
+#ifdef TUNABLE_CHECK_SHELL
+  tunable_check_shell = TUNABLE_CHECK_SHELL;
+#else
+//  __SYMBOLIC(&tunable_check_shell);
+#endif
+#ifdef TUNABLE_HIDE_IDS
+  tunable_hide_ids = TUNABLE_HIDE_IDS;
+#else
+//  __SYMBOLIC(&tunable_hide_ids);
+#endif
+#ifdef TUNABLE_PORT_PROMISCUOUS
+  tunable_port_promiscuous = TUNABLE_PORT_PROMISCUOUS;
+#else
+//  __SYMBOLIC(&tunable_port_promiscuous);
+#endif
+#ifdef TUNABLE_PASSWD_CHROOT_ENABLE
+  tunable_passwd_chroot_enable = TUNABLE_PASSWD_CHROOT_ENABLE;
+#else
+//  __SYMBOLIC(&tunable_passwd_chroot_enable);
+#endif
+#ifdef TUNABLE_NO_ANON_PASSWORD
+  tunable_no_anon_password = TUNABLE_NO_ANON_PASSWORD;
+#else
+//  __SYMBOLIC(&tunable_no_anon_password);
+#endif
+#ifdef TUNABLE_TCP_WRAPPERS
+  tunable_tcp_wrappers = TUNABLE_TCP_WRAPPERS;
+#else
+//  __SYMBOLIC(&tunable_tcp_wrappers);
+#endif
+#ifdef TUNABLE_USE_SENDFILE
+  tunable_use_sendfile = TUNABLE_USE_SENDFILE;
+#else
+//  __SYMBOLIC(&tunable_use_sendfile);
+#endif
+#ifdef TUNABLE_FORCE_DOT_FILES
+  tunable_force_dot_files = TUNABLE_FORCE_DOT_FILES;
+#else
+//  __SYMBOLIC(&tunable_force_dot_files);
+#endif
+#ifdef TUNABLE_LISTEN_IPV6
+  tunable_listen_ipv6 = TUNABLE_LISTEN_IPV6;
+#else
+//  __SYMBOLIC(&tunable_listen_ipv6);
+#endif
+#ifdef TUNABLE_DUAL_LOG_ENABLE
+  tunable_dual_log_enable = TUNABLE_DUAL_LOG_ENABLE;
+#else
+//  __SYMBOLIC(&tunable_dual_log_enable);
+#endif
+#ifdef TUNABLE_SYSLOG_ENABLE
+  tunable_syslog_enable = TUNABLE_SYSLOG_ENABLE;
+#else
+//  __SYMBOLIC(&tunable_syslog_enable);
+#endif
+#ifdef TUNABLE_BACKGROUND
+  tunable_background = TUNABLE_BACKGROUND;
+#else
+//  __SYMBOLIC(&tunable_background);
+#endif
+#ifdef TUNABLE_VIRTUAL_USE_LOCAL_PRIVS
+  tunable_virtual_use_local_privs = TUNABLE_VIRTUAL_USE_LOCAL_PRIVS;
+#else
+//  __SYMBOLIC(&tunable_virtual_use_local_privs);
+#endif
+#ifdef TUNABLE_SESSION_SUPPORT
+  tunable_session_support = TUNABLE_SESSION_SUPPORT;
+#else
+//  __SYMBOLIC(&tunable_session_support);
+#endif
+#ifdef TUNABLE_DOWNLOAD_ENABLE
+  tunable_download_enable = TUNABLE_DOWNLOAD_ENABLE;
+#else
+//  __SYMBOLIC(&tunable_download_enable);
+#endif
+#ifdef TUNABLE_DIRLIST_ENABLE
+  tunable_dirlist_enable = TUNABLE_DIRLIST_ENABLE;
+#else
+//  __SYMBOLIC(&tunable_dirlist_enable);
+#endif
+#ifdef TUNABLE_CHMOD_ENABLE
+  tunable_chmod_enable = TUNABLE_CHMOD_ENABLE;
+#else
+//  __SYMBOLIC(&tunable_chmod_enable);
+#endif
+#ifdef TUNABLE_SECURE_EMAIL_LIST_ENABLE
+  tunable_secure_email_list_enable = TUNABLE_SECURE_EMAIL_LIST_ENABLE;
+#else
+//  __SYMBOLIC(&tunable_secure_email_list_enable);
+#endif
+#ifdef TUNABLE_NO_LOG_LOCK
+  tunable_no_log_lock = TUNABLE_NO_LOG_LOCK;
+#else
+//  __SYMBOLIC(&tunable_no_log_lock);
+#endif
+#ifdef TUNABLE_SSL_ENABLE
+  tunable_ssl_enable = TUNABLE_SSL_ENABLE;
+#else
+//  __SYMBOLIC(&tunable_ssl_enable);
+#endif
+#ifdef TUNABLE_ALLOW_ANON_SSL
+  tunable_allow_anon_ssl = TUNABLE_ALLOW_ANON_SSL;
+#else
+//  __SYMBOLIC(&tunable_allow_anon_ssl);
+#endif
+#ifdef TUNABLE_FORCE_LOCAL_LOGINS_SSL
+  tunable_force_local_logins_ssl = TUNABLE_FORCE_LOCAL_LOGINS_SSL;
+#else
+//  __SYMBOLIC(&tunable_force_local_logins_ssl);
+#endif
+#ifdef TUNABLE_FORCE_LOCAL_DATA_SSL
+  tunable_force_local_data_ssl = TUNABLE_FORCE_LOCAL_DATA_SSL;
+#else
+//  __SYMBOLIC(&tunable_force_local_data_ssl);
+#endif
+#ifdef TUNABLE_SSLV2
+  tunable_sslv2 = TUNABLE_SSLV2;
+#else
+//  __SYMBOLIC(&tunable_sslv2);
+#endif
+#ifdef TUNABLE_SSLV3
+  tunable_sslv3 = TUNABLE_SSLV3;
+#else
+//  __SYMBOLIC(&tunable_sslv3);
+#endif
+#ifdef TUNABLE_TLSV1
+  tunable_tlsv1 = TUNABLE_TLSV1;
+#else
+//  __SYMBOLIC(&tunable_tlsv1);
+#endif
+#ifdef TUNABLE_TILDE_USER_ENABLE
+  tunable_tilde_user_enable = TUNABLE_TILDE_USER_ENABLE;
+#else
+//  __SYMBOLIC(&tunable_tilde_user_enable);
+#endif
+#ifdef TUNABLE_FORCE_ANON_LOGINS_SSL
+  tunable_force_anon_logins_ssl = TUNABLE_FORCE_ANON_LOGINS_SSL;
+#else
+//  __SYMBOLIC(&tunable_force_anon_logins_ssl);
+#endif
+#ifdef TUNABLE_FORCE_ANON_DATA_SSL
+  tunable_force_anon_data_ssl = TUNABLE_FORCE_ANON_DATA_SSL;
+#else
+//  __SYMBOLIC(&tunable_force_anon_data_ssl);
+#endif
+#ifdef TUNABLE_MDTM_WRITE
+  tunable_mdtm_write = TUNABLE_MDTM_WRITE;
+#else
+//  __SYMBOLIC(&tunable_mdtm_write);
+#endif
+#ifdef TUNABLE_LOCK_UPLOAD_FILES
+  tunable_lock_upload_files = TUNABLE_LOCK_UPLOAD_FILES;
+#else
+//  __SYMBOLIC(&tunable_lock_upload_files);
+#endif
+#ifdef TUNABLE_PASV_ADDR_RESOLVE
+  tunable_pasv_addr_resolve = TUNABLE_PASV_ADDR_RESOLVE;
+#else
+//  __SYMBOLIC(&tunable_pasv_addr_resolve);
+#endif
+#ifdef TUNABLE_DEBUG_SSL
+  tunable_debug_ssl = TUNABLE_DEBUG_SSL;
+#else
+//  __SYMBOLIC(&tunable_debug_ssl);
+#endif
+#ifdef TUNABLE_REQUIRE_CERT
+  tunable_require_cert = TUNABLE_REQUIRE_CERT;
+#else
+//  __SYMBOLIC(&tunable_require_cert);
+#endif
+#ifdef TUNABLE_VALIDATE_CERT
+  tunable_validate_cert = TUNABLE_VALIDATE_CERT;
+#else
+//  __SYMBOLIC(&tunable_validate_cert);
+#endif
+#ifdef TUNABLE_STRICT_SSL_READ_EOF
+  tunable_strict_ssl_read_eof = TUNABLE_STRICT_SSL_READ_EOF;
+#else
+//  __SYMBOLIC(&tunable_strict_ssl_read_eof);
+#endif
+#ifdef TUNABLE_STRICT_SSL_WRITE_SHUTDOWN
+  tunable_strict_ssl_write_shutdown = TUNABLE_STRICT_SSL_WRITE_SHUTDOWN;
+#else
+//  __SYMBOLIC(&tunable_strict_ssl_write_shutdown);
+#endif
+#ifdef TUNABLE_SSL_REQUEST_CERT
+  tunable_ssl_request_cert = TUNABLE_SSL_REQUEST_CERT;
+#else
+//  __SYMBOLIC(&tunable_ssl_request_cert);
+#endif
+#ifdef TUNABLE_DELETE_FAILED_UPLOADS
+  tunable_delete_failed_uploads = TUNABLE_DELETE_FAILED_UPLOADS;
+#else
+//  __SYMBOLIC(&tunable_delete_failed_uploads);
+#endif
