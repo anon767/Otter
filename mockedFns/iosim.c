@@ -218,17 +218,18 @@ int IOSIM_close(int fildes) {
 	return 0;
 }
 
-int IOSIM_read(sym_file_stream_t* in, void *buf, int nbyte){
+int IOSIM_read(int fildes, void *buf, int nbyte){
 	int n,cur,len;
 	char* cbuf = buf;
 
 	if(nbyte == 0) return 0;
 
-	if (in->offset >= in->sym_file->stat.st_size) return EOF;
-
 	//	if(fildes == 0) return -1;
 
-/*	sym_file_stream_t* in = IOSIM_fd[fildes];*/
+	sym_file_stream_t* in = IOSIM_fd[fildes];
+
+	if (in->offset >= in->sym_file->stat.st_size) return EOF;
+
 	cur = in->offset;
 	if (in->buffer == NULL){
 		in->buffer=strdup(in->sym_file->contents);
@@ -248,7 +249,9 @@ int IOSIM_read(sym_file_stream_t* in, void *buf, int nbyte){
 	return n;
 }
 
-int IOSIM_ungetc(int c, sym_file_stream_t* in){
+int IOSIM_ungetc(int c, int fildes){
+
+	sym_file_stream_t* in = IOSIM_fd[fildes];
 
 	in->offset--;
 	in->buffer[in->offset] = (char)c;
@@ -296,11 +299,13 @@ int IOSIM_write(int fildes, const void *buf, int nbyte){
 	return nbyte;
 }
 
-int IOSIM_eof(sym_file_stream_t *stream){
+int IOSIM_eof(int fildes){
         int cur,len;
 
-        cur = stream->offset;
-        len = stream->sym_file->stat.st_size;
+	sym_file_stream_t* in = IOSIM_fd[fildes];
+
+        cur = in->offset;
+        len = in->sym_file->stat.st_size;
 
         return cur >= len;
 }

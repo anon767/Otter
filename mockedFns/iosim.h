@@ -33,11 +33,11 @@ sym_file_t* IOSIM_addfile(const char *file, /*const char *contents,*/ mode_t mod
 char *IOSIM_toAbsolute(const char *name);
 
 int IOSIM_newfd();
-int IOSIM_read(sym_file_stream_t *stream, void *buf, int nbyte);
-int IOSIM_ungetc(int c, sym_file_stream_t* stream);
+int IOSIM_read(int fildes, void *buf, int nbyte);
+int IOSIM_ungetc(int c, int fildes);
 int IOSIM_write(int fildes, const void *buf, int nbyte);
 int IOSIM_close(int fildes);
-int IOSIM_eof(sym_file_stream_t *stream);
+int IOSIM_eof(int fildes);
 int IOSIM_openWithMode(const char *pathname, int flags, mode_t mode);
 int IOSIM_open(const char *pathname, int flags);
 sym_file_stream_t *IOSIM_getStream(int fd);
