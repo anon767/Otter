@@ -1,11 +1,12 @@
 CILLY=../../../cil/bin/cilly
 LIBCDIR=../../../libc
 MOCKEDDIR=../../../mockedFns
+STATSFILE=../grep.stats
 
 cd $1
 
 $CILLY --merge --useLogicalOperators \
 	-I.. -I $MOCKEDDIR \
 	../grep_comb.c ../otherFiles/spencer_51.c \
-	--warnall --domakeCFG --doexecute \
-	--arg=()* --arg=spencer_51.txt &> spencer_51.output
+	--warnall --doexecute --covStats=$STATSFILE --lineCov \
+	--arg='()*' --arg=spencer_51.txt
