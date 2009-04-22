@@ -54,7 +54,8 @@ int pipe(int fildes[2]){
 
 //#if __HAVE_read__
 ssize_t read(int fildes, void *buf, size_t nbyte){
-	return IOSIM_read(fildes, buf, nbyte);
+	sym_file_stream_t* stream = IOSIM_getStream(fildes);
+	return IOSIM_read(stream, buf, nbyte);
 }	
 //#endif
 

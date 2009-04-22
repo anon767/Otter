@@ -1,11 +1,11 @@
 
 long __builtin_expect(long x, long expected_value) {
-  if (x == expected_value)
+/*  if (x == expected_value)
     return 0;
 
-  return 1;
-/*
-  return x;*/
+  return 1;*/
+
+  return x;
 }
 
 #ifndef __SIZE_T
