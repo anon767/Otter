@@ -10,6 +10,7 @@ CILLY_OPT= --merge \
 		  --keepmerged \
 
 CILLY:= $(CURDIR)/../../../cil/bin/cilly $(CILLY_OPT)
+LIBC:= $(CURDIR)/../../../libc
 
 CONFIG_OPT= \
 		--without-epoll \
@@ -21,12 +22,13 @@ CONFIG_OPT= \
 
 merge: 
 	make -C $(NGIRCD_DIR) AR="$(CILLY) --mode=AR"
-	cp $(NGIRCD_DIR)/src/ngircd/ngircd_comb.c $(OSTYPE)/$(VERSION).c
+	cp $(NGIRCD_DIR)/src/ngircd/ngircd_comb.c linux/$(VERSION).c
+	#cp $(NGIRCD_DIR)/src/ngircd/ngircd_comb.c $(OSTYPE)/$(VERSION).c
 
 conf: 
 	cd $(NGIRCD_DIR) && \
 	CC="$(CILLY)" \
-	CPPFLAGS="-I$(DOT)/include -D __client_c__ -D __channel_c__ -D _DONT_USE_CTYPE_INLINE_ -D __NO_INLINE__ -U __OPTIMIZE__" \
+	CPPFLAGS="-I $(LIBC) -D __client_c__ -D __channel_c__ -D _DONT_USE_CTYPE_INLINE_ -D __NO_INLINE__ -U __OPTIMIZE__" \
 	RANLIB=echo \
 	./configure $(CONFIG_OPT)
 

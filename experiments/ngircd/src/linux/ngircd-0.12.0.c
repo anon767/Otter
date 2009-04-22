@@ -437,7 +437,7 @@ struct _NUMERIC {
    int (*function)(CLIENT *Client , REQUEST *Request ) ;
 };
 #line 1 "ngircd.o"
-#pragma merger(0,"/tmp/cil-1vXKVkNp.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-o1hF1DNj.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 140 "./../portab/portab.h"
 size_t strlcat(char *dst , char const   *src , size_t size ) ;
 #line 144
@@ -563,6 +563,8 @@ char Conf_PidFile[256] ;
 int Conf_OperCanMode ;
 #line 157
 unsigned int Conf_MaxNickLength ;
+#line 159
+void Conf_Init(void) ;
 #line 160
 int Conf_Rehash(void) ;
 #line 161
@@ -853,106 +855,108 @@ int main(int argc , char const   **argv )
     NGIRCd_SignalQuit = 0;
 #line 265
     Log_Init(! NGIRCd_NoDaemon);
-#line 269
+#line 266
+    Conf_Init();
+#line 268
     (*symtest_Conf_Init)();
-#line 274
+#line 273
     __cil_tmp___8 = NGIRCd_Init(NGIRCd_NoDaemon);
-#line 274
+#line 273
     if (! __cil_tmp___8) {
-#line 275
+#line 274
       Log(1, "Fatal: Initialization failed");
-#line 276
+#line 275
       exit(1);
     }
-#line 281
+#line 280
     Channel_Init();
-#line 282
+#line 281
     Client_Init();
-#line 286
+#line 285
     Conn_Init();
-#line 296
+#line 295
     Initialize_Signal_Handler();
-#line 302
+#line 301
     snprintf((char * __restrict  )(NGIRCd_ProtoID), sizeof(NGIRCd_ProtoID), (char const   * __restrict  )"%s%s %s|%s:%s",
              "0210", "-IRC+", "ngircd", "0.12.0", "CHL");
-#line 306
+#line 305
     if (Conf_OperCanMode) {
-#line 306
+#line 305
       strcat((char * __restrict  )(NGIRCd_ProtoID), (char const   * __restrict  )"o");
     }
-#line 310
+#line 309
     strlcat(NGIRCd_ProtoID, " P", sizeof(NGIRCd_ProtoID));
-#line 314
+#line 313
     Log(7, "Protocol and server ID is \"%s\".", NGIRCd_ProtoID);
-#line 317
+#line 316
     Channel_InitPredefined();
-#line 320
+#line 319
     __cil_tmp___9 = Conn_InitListeners();
-#line 320
+#line 319
     if (__cil_tmp___9 < 1U) {
-#line 322
+#line 321
       Log(1, "Server isn\'t listening on a single port!");
-#line 323
+#line 322
       Log(1, "%s exiting due to fatal errors!", "ngircd");
-#line 324
+#line 323
       Pidfile_Delete();
-#line 325
+#line 324
       exit(1);
     }
-#line 329
+#line 328
     Conn_Handler();
-#line 332
+#line 331
     Conn_Exit();
-#line 336
+#line 335
     Client_Exit();
-#line 337
+#line 336
     Channel_Exit();
-#line 338
+#line 337
     Log_Exit();
   }
-#line 340
+#line 339
   Pidfile_Delete();
-#line 342
+#line 341
   return (0);
 }
 }
-#line 352 "ngircd.c"
+#line 351 "ngircd.c"
 static void Fill_Version(void) 
 { 
 
   {
-#line 355
+#line 354
   NGIRCd_VersionAddition[0] = (char )'\000';
-#line 403
+#line 402
   if (NGIRCd_VersionAddition[0]) {
-#line 404
+#line 403
     strlcat(NGIRCd_VersionAddition, "+", sizeof(NGIRCd_VersionAddition));
   }
-#line 406
+#line 405
   strlcat(NGIRCd_VersionAddition, "IRCPLUS", sizeof(NGIRCd_VersionAddition));
-#line 414
+#line 413
   if (NGIRCd_VersionAddition[0]) {
-#line 415
+#line 414
     strlcat(NGIRCd_VersionAddition, "-", sizeof(NGIRCd_VersionAddition));
   }
-#line 417
+#line 416
   strlcat(NGIRCd_VersionAddition, "i686", sizeof(NGIRCd_VersionAddition));
+#line 417
+  strlcat(NGIRCd_VersionAddition, "/", sizeof(NGIRCd_VersionAddition));
 #line 418
-  strlcat(NGIRCd_VersionAddition, "/", sizeof(NGIRCd_VersionAddition));
-#line 419
   strlcat(NGIRCd_VersionAddition, "pc", sizeof(NGIRCd_VersionAddition));
-#line 420
+#line 419
   strlcat(NGIRCd_VersionAddition, "/", sizeof(NGIRCd_VersionAddition));
-#line 421
+#line 420
   strlcat(NGIRCd_VersionAddition, "linux-gnu", sizeof(NGIRCd_VersionAddition));
-#line 423
+#line 422
   snprintf((char * __restrict  )(NGIRCd_Version), sizeof(NGIRCd_Version), (char const   * __restrict  )"%s %s-%s",
            "ngircd", "0.12.0", NGIRCd_VersionAddition);
-#line 425
+#line 424
   return;
 }
 }
-#line 431 "ngircd.c"
+#line 430 "ngircd.c"
 void NGIRCd_Rehash(void) 
 { char old_name[64] ;
   unsigned int old_nicklen ;
@@ -960,187 +964,187 @@ void NGIRCd_Rehash(void)
   int __cil_tmp___0 ;
 
   {
-#line 437
+#line 436
   Log(1029, "Re-reading configuration NOW!");
-#line 438
+#line 437
   NGIRCd_SignalRehash = 0;
-#line 441
+#line 440
   strlcpy(old_name, (char const   *)(Conf_ServerName), sizeof(old_name));
-#line 442
+#line 441
   old_nicklen = Conf_MaxNickLength;
-#line 445
+#line 444
   __cil_tmp = Conf_Rehash();
-#line 445
+#line 444
   if (! __cil_tmp) {
-#line 446
+#line 445
     return;
   }
-#line 449
+#line 448
   Conn_ExitListeners();
-#line 453
+#line 452
   __cil_tmp___0 = strcmp((char const   *)(old_name), (char const   *)(Conf_ServerName));
-#line 453
+#line 452
   if (__cil_tmp___0 != 0) {
-#line 454
+#line 453
     strlcpy(Conf_ServerName, (char const   *)(old_name), sizeof(Conf_ServerName));
-#line 455
+#line 454
     Log(3, "Can\'t change \"ServerName\" on runtime! Ignored new name.");
   }
-#line 457
+#line 456
   if (old_nicklen != Conf_MaxNickLength) {
-#line 458
+#line 457
     Conf_MaxNickLength = old_nicklen;
-#line 459
+#line 458
     Log(3, "Can\'t change \"MaxNickLength\" on runtime! Ignored new value.");
   }
-#line 463
+#line 462
   Channel_InitPredefined();
-#line 466
+#line 465
   Conn_InitListeners();
-#line 469
+#line 468
   Conn_SyncServerStruct();
-#line 471
+#line 470
   Log(1029, "Re-reading of configuration done.");
-#line 472
+#line 471
   return;
 }
 }
-#line 478 "ngircd.c"
+#line 477 "ngircd.c"
 static void Initialize_Signal_Handler(void) 
 { struct sigaction saction ;
 
   {
-#line 490
+#line 489
   memset((void *)(& saction), 0, sizeof(saction));
-#line 491
+#line 490
   saction.__sigaction_handler.sa_handler = & Signal_Handler;
-#line 493
+#line 492
   saction.sa_flags |= 268435456;
-#line 496
+#line 495
   saction.sa_flags |= 2;
-#line 500
+#line 499
   sigaction(2, (struct sigaction  const  * __restrict  )(& saction), (struct sigaction * __restrict  )((void *)0));
-#line 501
+#line 500
   sigaction(3, (struct sigaction  const  * __restrict  )(& saction), (struct sigaction * __restrict  )((void *)0));
-#line 502
+#line 501
   sigaction(15, (struct sigaction  const  * __restrict  )(& saction), (struct sigaction * __restrict  )((void *)0));
-#line 503
+#line 502
   sigaction(1, (struct sigaction  const  * __restrict  )(& saction), (struct sigaction * __restrict  )((void *)0));
-#line 504
+#line 503
   sigaction(17, (struct sigaction  const  * __restrict  )(& saction), (struct sigaction * __restrict  )((void *)0));
-#line 507
+#line 506
   saction.__sigaction_handler.sa_handler = (void (*)(int  ))1;
-#line 508
+#line 507
   sigaction(13, (struct sigaction  const  * __restrict  )(& saction), (struct sigaction * __restrict  )((void *)0));
-#line 522
+#line 521
   return;
 }
 }
-#line 531 "ngircd.c"
+#line 530 "ngircd.c"
 static void Signal_Handler(int Signal ) 
 { __pid_t __cil_tmp ;
 
   {
-#line 534
+#line 533
   switch (Signal) {
   case 15: 
   case 2: 
   case 3: 
-#line 540
+#line 539
   NGIRCd_SignalQuit = 1;
-#line 541
+#line 540
   break;
   case 1: 
-#line 544
+#line 543
   NGIRCd_SignalRehash = 1;
-#line 545
+#line 544
   break;
   case 17: 
-#line 548
+#line 547
   while (1) {
-#line 548
+#line 547
     __cil_tmp = waitpid(-1, (int *)((void *)0), 1);
-#line 548
+#line 547
     if (! (__cil_tmp > 0)) {
-#line 548
+#line 547
       break;
     }
   }
-#line 549
+#line 548
   break;
   }
-#line 556
+#line 555
   return;
 }
 }
-#line 562 "ngircd.c"
+#line 561 "ngircd.c"
 static void Show_Version(void) 
 { 
 
   {
-#line 565
+#line 564
   puts((char const   *)(NGIRCd_Version));
-#line 566
+#line 565
   puts("Copyright (c)2001-2008 Alexander Barton (<alex@barton.de>) and Contributors.");
-#line 567
+#line 566
   puts("Homepage: <http://ngircd.barton.de/>\n");
-#line 568
+#line 567
   puts("This is free software; see the source for copying conditions. There is NO");
-#line 569
+#line 568
   puts("warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.");
-#line 570
+#line 569
   return;
 }
 }
-#line 578 "ngircd.c"
+#line 577 "ngircd.c"
 static void Show_Help(void) 
 { 
 
   {
-#line 584
+#line 583
   puts("  -f, --config <f>   use file <f> as configuration file");
-#line 585
+#line 584
   puts("  -n, --nodaemon     don\'t fork and don\'t detach from controlling terminal");
-#line 586
+#line 585
   puts("  -p, --passive      disable automatic connections to other servers");
-#line 590
+#line 589
   puts("  -t, --configtest   read, validate and display configuration; then exit");
-#line 591
+#line 590
   puts("      --version      output version information and exit");
-#line 592
+#line 591
   puts("      --help         display this help and exit");
-#line 593
+#line 592
   return;
 }
 }
-#line 599 "ngircd.c"
+#line 598 "ngircd.c"
 static void Pidfile_Delete(void) 
 { int *__cil_tmp ;
   char *__cil_tmp___0 ;
   int __cil_tmp___1 ;
 
   {
-#line 603
+#line 602
   if (! Conf_PidFile[0]) {
-#line 603
+#line 602
     return;
   }
-#line 609
+#line 608
   __cil_tmp___1 = unlink((char const   *)(Conf_PidFile));
-#line 609
+#line 608
   if (__cil_tmp___1) {
-#line 610
+#line 609
     __cil_tmp = __errno_location();
-#line 610
+#line 609
     __cil_tmp___0 = strerror(*__cil_tmp);
-#line 610
+#line 609
     Log(3, "Error unlinking PID file (%s): %s", Conf_PidFile, __cil_tmp___0);
   }
-#line 611
+#line 610
   return;
 }
 }
-#line 618 "ngircd.c"
+#line 617 "ngircd.c"
 static void Pidfile_Create(pid_t pid ) 
 { int pidfd ;
   char pidbuf[64] ;
@@ -1155,143 +1159,143 @@ static void Pidfile_Create(pid_t pid )
   int __cil_tmp___6 ;
 
   {
-#line 626
+#line 625
   if (! Conf_PidFile[0]) {
-#line 626
+#line 625
     return;
   }
-#line 632
+#line 631
   pidfd = open((char const   *)(Conf_PidFile), 194, (384 | (256 >> 3)) | ((256 >> 3) >> 3));
-#line 633
+#line 632
   if (pidfd < 0) {
-#line 634
+#line 633
     __cil_tmp = __errno_location();
-#line 634
+#line 633
     __cil_tmp___0 = strerror(*__cil_tmp);
-#line 634
+#line 633
     Log(3, "Error writing PID file (%s): %s", Conf_PidFile, __cil_tmp___0);
-#line 635
+#line 634
     return;
   }
-#line 638
+#line 637
   len = snprintf((char * __restrict  )(pidbuf), sizeof(pidbuf), (char const   * __restrict  )"%ld\n",
                  (long )pid);
-#line 639
+#line 638
   if (len < 0) {
-#line 640
+#line 639
     Log(3, "Error converting pid");
-#line 641
+#line 640
     return;
   } else {
-#line 639
+#line 638
     if (len >= (int )sizeof(pidbuf)) {
-#line 640
+#line 639
       Log(3, "Error converting pid");
-#line 641
+#line 640
       return;
     }
   }
-#line 644
+#line 643
   __cil_tmp___3 = write(pidfd, (void const   *)(pidbuf), (unsigned int )len);
-#line 644
+#line 643
   if (__cil_tmp___3 != len) {
-#line 645
+#line 644
     __cil_tmp___1 = __errno_location();
-#line 645
+#line 644
     __cil_tmp___2 = strerror(*__cil_tmp___1);
-#line 645
+#line 644
     Log(3, "Can\'t write PID file (%s): %s", Conf_PidFile, __cil_tmp___2);
   }
-#line 647
+#line 646
   __cil_tmp___6 = close(pidfd);
-#line 647
+#line 646
   if (__cil_tmp___6 != 0) {
-#line 648
+#line 647
     __cil_tmp___4 = __errno_location();
-#line 648
+#line 647
     __cil_tmp___5 = strerror(*__cil_tmp___4);
-#line 648
+#line 647
     Log(3, "Error closing PID file (%s): %s", Conf_PidFile, __cil_tmp___5);
   }
-#line 649
+#line 648
   return;
 }
 }
-#line 655 "ngircd.c"
+#line 654 "ngircd.c"
 static void Setup_FDStreams(void) 
 { int fd ;
   int *__cil_tmp ;
   char *__cil_tmp___0 ;
 
   {
-#line 663
+#line 662
   fd = open("/dev/null", 2);
-#line 664
+#line 663
   if (fd < 0) {
-#line 665
+#line 664
     __cil_tmp = __errno_location();
-#line 665
+#line 664
     __cil_tmp___0 = strerror(*__cil_tmp);
-#line 665
+#line 664
     Log(4, "Could not open /dev/null: %s", __cil_tmp___0);
-#line 666
+#line 665
     return;
   }
-#line 669
+#line 668
   fflush(stdout);
-#line 670
+#line 669
   fflush(stderr);
-#line 673
+#line 672
   dup2(fd, 0);
-#line 673
+#line 672
   dup2(fd, 1);
-#line 673
+#line 672
   dup2(fd, 2);
-#line 676
+#line 675
   if (fd > 2) {
-#line 676
+#line 675
     close(fd);
   }
-#line 677
+#line 676
   return;
 }
 }
-#line 680 "ngircd.c"
+#line 679 "ngircd.c"
 static int NGIRCd_getNobodyID(uid_t *uid , gid_t *gid ) 
 { struct passwd *pwd ;
 
   {
-#line 685
+#line 684
   pwd = getpwnam("nobody");
-#line 686
+#line 685
   if (! pwd) {
-#line 686
+#line 685
     return (0);
   }
-#line 688
+#line 687
   if (! pwd->pw_uid) {
-#line 689
+#line 688
     return (0);
   } else {
-#line 688
+#line 687
     if (! pwd->pw_gid) {
-#line 689
+#line 688
       return (0);
     }
   }
-#line 691
+#line 690
   *uid = pwd->pw_uid;
-#line 692
+#line 691
   *gid = pwd->pw_gid;
-#line 693
+#line 692
   endpwent();
-#line 695
+#line 694
   return (1);
 }
 }
-#line 702 "ngircd.c"
+#line 701 "ngircd.c"
 static int initialized  ;
-#line 699 "ngircd.c"
+#line 698 "ngircd.c"
 static int NGIRCd_Init(int NGIRCd_NoDaemon ) 
 { int chrooted ;
   struct passwd *pwd ;
@@ -1329,231 +1333,231 @@ static int NGIRCd_Init(int NGIRCd_NoDaemon )
   int __cil_tmp___30 ;
 
   {
-#line 703
+#line 702
   chrooted = 0;
-#line 709
+#line 708
   if (initialized) {
-#line 710
+#line 709
     return (1);
   }
-#line 712
+#line 711
   if (Conf_Chroot[0]) {
-#line 713
+#line 712
     __cil_tmp___1 = chdir((char const   *)(Conf_Chroot));
-#line 713
+#line 712
     if (__cil_tmp___1 != 0) {
-#line 714
+#line 713
       __cil_tmp = __errno_location();
-#line 714
+#line 713
       __cil_tmp___0 = strerror(*__cil_tmp);
-#line 714
+#line 713
       Log(3, "Can\'t chdir() in ChrootDir (%s): %s", Conf_Chroot, __cil_tmp___0);
-#line 715
+#line 714
       return (0);
     }
-#line 718
+#line 717
     __cil_tmp___5 = chroot((char const   *)(Conf_Chroot));
-#line 718
+#line 717
     if (__cil_tmp___5 != 0) {
-#line 719
+#line 718
       __cil_tmp___4 = __errno_location();
-#line 719
+#line 718
       if (*__cil_tmp___4 != 1) {
-#line 720
+#line 719
         __cil_tmp___2 = __errno_location();
-#line 720
+#line 719
         __cil_tmp___3 = strerror(*__cil_tmp___2);
-#line 720
+#line 719
         Log(3, "Can\'t change root directory to \"%s\": %s", Conf_Chroot, __cil_tmp___3);
-#line 723
+#line 722
         return (0);
       }
     } else {
-#line 726
+#line 725
       chrooted = 1;
-#line 727
+#line 726
       Log(6, "Changed root and working directory to \"%s\".", Conf_Chroot);
     }
   }
-#line 731
+#line 730
   if (Conf_UID == 0U) {
-#line 732
+#line 731
     Log(6, "ServerUID must not be 0, using \"nobody\" instead.", Conf_UID);
-#line 734
+#line 733
     __cil_tmp___13 = NGIRCd_getNobodyID(& Conf_UID, & Conf_GID);
-#line 734
+#line 733
     if (! __cil_tmp___13) {
-#line 735
+#line 734
       __cil_tmp___12 = __errno_location();
-#line 735
+#line 734
       if (*__cil_tmp___12) {
-#line 735
+#line 734
         __cil_tmp___10 = __errno_location();
-#line 735
+#line 734
         __cil_tmp___11 = strerror(*__cil_tmp___10);
-#line 735
+#line 734
         __cil_tmp___9 = (char const   *)__cil_tmp___11;
       } else {
-#line 735
+#line 734
         __cil_tmp___9 = "not found";
       }
-#line 735
+#line 734
       Log(4, "Could not get user/group ID of user \"nobody\": %s", __cil_tmp___9);
-#line 737
+#line 736
       return (0);
     }
   }
-#line 741
+#line 740
   __cil_tmp___18 = getgid();
-#line 741
+#line 740
   if (__cil_tmp___18 != Conf_GID) {
-#line 743
+#line 742
     __cil_tmp___17 = setgid(Conf_GID);
-#line 743
+#line 742
     if (__cil_tmp___17 != 0) {
-#line 744
+#line 743
       __cil_tmp___14 = __errno_location();
-#line 744
+#line 743
       real_errno = *__cil_tmp___14;
-#line 745
+#line 744
       __cil_tmp___15 = __errno_location();
-#line 745
+#line 744
       __cil_tmp___16 = strerror(*__cil_tmp___15);
-#line 745
+#line 744
       Log(3, "Can\'t change group ID to %u: %s", Conf_GID, __cil_tmp___16);
+#line 745
+      if (real_errno != 1) {
 #line 746
-      if (real_errno != 1) {
-#line 747
         return (0);
       }
     }
   }
-#line 751
+#line 750
   __cil_tmp___23 = getuid();
-#line 751
+#line 750
   if (__cil_tmp___23 != Conf_UID) {
-#line 753
+#line 752
     __cil_tmp___22 = setuid(Conf_UID);
-#line 753
+#line 752
     if (__cil_tmp___22 != 0) {
-#line 754
+#line 753
       __cil_tmp___19 = __errno_location();
-#line 754
+#line 753
       real_errno = *__cil_tmp___19;
-#line 755
+#line 754
       __cil_tmp___20 = __errno_location();
-#line 755
+#line 754
       __cil_tmp___21 = strerror(*__cil_tmp___20);
-#line 755
+#line 754
       Log(3, "Can\'t change user ID to %u: %s", Conf_UID, __cil_tmp___21);
-#line 756
+#line 755
       if (real_errno != 1) {
-#line 757
+#line 756
         return (0);
       }
     }
   }
-#line 761
+#line 760
   initialized = 1;
-#line 766
+#line 765
   if (! NGIRCd_NoDaemon) {
-#line 767
+#line 766
     pid = fork();
-#line 768
+#line 767
     if (pid > 0) {
-#line 770
+#line 769
       exit(0);
     }
-#line 772
+#line 771
     if (pid < 0) {
-#line 774
+#line 773
       __cil_tmp___24 = __errno_location();
-#line 774
+#line 773
       __cil_tmp___25 = strerror(*__cil_tmp___24);
-#line 774
+#line 773
       fprintf((FILE * __restrict  )stderr, (char const   * __restrict  )"%s: Can\'t fork: %s!\nFatal error, exiting now ...\n",
               "ngircd", __cil_tmp___25);
-#line 776
+#line 775
       exit(1);
     }
-#line 780
+#line 779
     setsid();
-#line 781
+#line 780
     chdir("/");
-#line 784
+#line 783
     Setup_FDStreams();
   }
-#line 786
+#line 785
   pid = getpid();
-#line 788
+#line 787
   Pidfile_Create(pid);
-#line 792
+#line 791
   Conf_UID = getuid();
-#line 793
+#line 792
   Conf_GID = getgid();
-#line 795
+#line 794
   pwd = getpwuid(Conf_UID);
-#line 796
+#line 795
   grp = getgrgid(Conf_GID);
-#line 798
+#line 797
   if (grp) {
-#line 798
+#line 797
     __cil_tmp___26 = (char const   *)grp->gr_name;
   } else {
-#line 798
+#line 797
     __cil_tmp___26 = "unknown";
   }
-#line 798
+#line 797
   if (pwd) {
-#line 798
+#line 797
     __cil_tmp___27 = (char const   *)pwd->pw_name;
   } else {
-#line 798
+#line 797
     __cil_tmp___27 = "unknown";
   }
-#line 798
+#line 797
   Log(6, "Running as user %s(%ld), group %s(%ld), with PID %ld.", __cil_tmp___27,
       Conf_UID, __cil_tmp___26, Conf_GID, pid);
-#line 802
+#line 801
   if (chrooted) {
-#line 803
+#line 802
     Log(6, "Running chrooted, chrootdir \"%s\".", Conf_Chroot);
-#line 804
+#line 803
     return (1);
   } else {
-#line 806
+#line 805
     Log(6, "Not running chrooted.");
   }
-#line 812
+#line 811
   if (pwd) {
-#line 813
+#line 812
     if (! NGIRCd_NoDaemon) {
-#line 814
+#line 813
       __cil_tmp___30 = chdir((char const   *)pwd->pw_dir);
-#line 814
+#line 813
       if (__cil_tmp___30 == 0) {
-#line 815
+#line 814
         Log(7, "Changed working directory to \"%s\" ...", pwd->pw_dir);
       } else {
-#line 817
+#line 816
         __cil_tmp___28 = __errno_location();
-#line 817
+#line 816
         __cil_tmp___29 = strerror(*__cil_tmp___28);
-#line 817
+#line 816
         Log(6, "Notice: Can\'t change working directory to \"%s\": %s", pwd->pw_dir,
             __cil_tmp___29);
       }
     }
   } else {
-#line 821
+#line 820
     Log(3, "Can\'t get user informaton for UID %d!?", Conf_UID);
   }
-#line 824
+#line 823
   return (1);
 }
 }
 #line 1 "array.o"
-#pragma merger(0,"/tmp/cil-tjsc4cQc.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-C4N7P7Jg.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 32 "array.h"
 void array_init(array *a ) ;
 #line 36
@@ -2057,7 +2061,7 @@ void array_moveleft(array *a , size_t membersize , size_t pos )
 }
 }
 #line 1 "channel.o"
-#pragma merger(0,"/tmp/cil-RPmBiiIK.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-m62wzo26.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 584 "/usr/include/stdlib.h"
 extern  __attribute__((__nothrow__)) void *malloc(size_t __size )  __attribute__((__malloc__)) ;
 #line 84 "/usr/include/string.h"
@@ -2273,6 +2277,7 @@ void Channel_InitPredefined(void)
   while (i < Conf_Channel_Count) {
 #line 101
     if (! Conf_Channel[i].name[0]) {
+#line 101
       goto __Cont;
     }
 #line 104
@@ -2283,6 +2288,7 @@ void Channel_InitPredefined(void)
       Log(3, "Can\'t create pre-defined channel: invalid name: \"%s\"!", Conf_Channel[i].name);
 #line 107
       array_free(& Conf_Channel[i].topic);
+#line 108
       goto __Cont;
     }
 #line 112
@@ -2293,6 +2299,7 @@ void Channel_InitPredefined(void)
       Log(6, "Can\'t create pre-defined channel \"%s\": name already in use.", Conf_Channel[i].name);
 #line 116
       array_free(& Conf_Channel[i].topic);
+#line 117
       goto __Cont;
     }
 #line 121
@@ -3705,7 +3712,7 @@ static int Delete_Channel(CHANNEL *Chan )
 }
 }
 #line 1 "client.o"
-#pragma merger(0,"/tmp/cil-dcREKgUb.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-wHggozqi.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 793 "/usr/include/unistd.h"
 extern  __attribute__((__nothrow__)) int gethostname(char *__name , size_t __len )  __attribute__((__nonnull__(1))) ;
 #line 138 "/usr/include/netdb.h"
@@ -5361,7 +5368,7 @@ void Client_RegisterWhowas(CLIENT *Client )
 /* compiler builtin: 
    void __builtin_va_start(__builtin_va_list  ) ;  */
 #line 1 "conf.o"
-#pragma merger(0,"/tmp/cil-z3F8Rkae.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-mSpUHtEY.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 451 "/usr/include/libio.h"
 extern  __attribute__((__nothrow__)) int _IO_putc(int __c , _IO_FILE *__fp ) ;
 #line 142 "/usr/include/stdio.h"
@@ -5398,8 +5405,8 @@ extern  __attribute__((__nothrow__)) char *strtok(char * __restrict  __s , char 
 extern  __attribute__((__nothrow__)) int isatty(int __fd ) ;
 #line 109 "/usr/include/grp.h"
 extern struct group *getgrnam(char const   *__name ) ;
-#line 81 "/usr/include/ctype.h"
-extern unsigned short const   **__ctype_b_loc(void)  __attribute__((__const__)) ;
+#line 131 "/fs/junkfood2/kkma/repo/kkma/symexe/trunk/experiments/ngircd/src/../../../libc/ctype.h"
+extern int isdigit(int  ) ;
 #line 29 "./../tool/tool.h"
 void ngt_TrimStr(char *String ) ;
 #line 90 "./../ipaddr/ng_ipaddr.h"
@@ -5474,8 +5481,6 @@ int Conf_MaxJoins  ;
 int Conf_MaxConnectionsIP  ;
 #line 157 "conf.h"
 unsigned int Conf_MaxNickLength  ;
-#line 159
-void Conf_Init(void) ;
 #line 163
 void Conf_UnsetServer(CONN_ID Idx ) ;
 #line 164
@@ -5833,6 +5838,7 @@ int Conf_Test(void)
   while (i < Conf_Oper_Count) {
 #line 230
     if (! Conf_Oper[i].name[0]) {
+#line 230
       goto __Cont;
     }
 #line 233
@@ -5858,6 +5864,7 @@ int Conf_Test(void)
   while (i < 16U) {
 #line 241
     if (! Conf_Server[i].name[0]) {
+#line 241
       goto __Cont___0;
     }
 #line 244
@@ -5894,6 +5901,7 @@ int Conf_Test(void)
   while (i < Conf_Channel_Count) {
 #line 255
     if (! Conf_Channel[i].name[0]) {
+#line 255
       goto __Cont___1;
     }
 #line 258
@@ -5940,6 +5948,7 @@ void Conf_UnsetServer(CONN_ID Idx )
   while (i < 16) {
 #line 285
     if (Conf_Server[i].conn_id != Idx) {
+#line 285
       goto __Cont;
     }
 #line 288
@@ -6291,6 +6300,7 @@ static int Read_Config(int ngircd_starting )
         while (n < 16) {
 #line 522
           if (n == i) {
+#line 522
             goto __Cont;
           }
 #line 524
@@ -6630,10 +6640,10 @@ static void Handle_GLOBAL(int Line , char *Var , char *Arg )
   int __cil_tmp___8 ;
   int __cil_tmp___9 ;
   int __cil_tmp___10 ;
-  unsigned short const   **__cil_tmp___11 ;
+  int __cil_tmp___11 ;
   int __cil_tmp___12 ;
   int __cil_tmp___13 ;
-  unsigned short const   **__cil_tmp___14 ;
+  int __cil_tmp___14 ;
   int __cil_tmp___15 ;
   int __cil_tmp___16 ;
   int __cil_tmp___17 ;
@@ -6642,11 +6652,11 @@ static void Handle_GLOBAL(int Line , char *Var , char *Arg )
   int __cil_tmp___20 ;
   int __cil_tmp___21 ;
   int __cil_tmp___22 ;
-  unsigned short const   **__cil_tmp___23 ;
+  int __cil_tmp___23 ;
   int __cil_tmp___24 ;
-  unsigned short const   **__cil_tmp___25 ;
+  int __cil_tmp___25 ;
   int __cil_tmp___26 ;
-  unsigned short const   **__cil_tmp___27 ;
+  int __cil_tmp___27 ;
   int __cil_tmp___28 ;
   int __cil_tmp___29 ;
   int __cil_tmp___30 ;
@@ -6813,9 +6823,9 @@ static void Handle_GLOBAL(int Line , char *Var , char *Arg )
       Conf_UID = pwd->pw_uid;
     } else {
 #line 781
-      __cil_tmp___11 = __ctype_b_loc();
+      __cil_tmp___11 = isdigit((int )*Arg);
 #line 781
-      if ((int const   )*(*__cil_tmp___11 + (int )*Arg) & 2048) {
+      if (__cil_tmp___11) {
 #line 784
         __cil_tmp___10 = atoi((char const   *)Arg);
 #line 784
@@ -6840,9 +6850,9 @@ static void Handle_GLOBAL(int Line , char *Var , char *Arg )
       Conf_GID = grp->gr_gid;
     } else {
 #line 794
-      __cil_tmp___14 = __ctype_b_loc();
+      __cil_tmp___14 = isdigit((int )*Arg);
 #line 794
-      if ((int const   )*(*__cil_tmp___14 + (int )*Arg) & 2048) {
+      if (__cil_tmp___14) {
 #line 797
         __cil_tmp___13 = atoi((char const   *)Arg);
 #line 797
@@ -6947,9 +6957,9 @@ static void Handle_GLOBAL(int Line , char *Var , char *Arg )
 #line 878
   if (__cil_tmp___24 == 0) {
 #line 881
-    __cil_tmp___23 = __ctype_b_loc();
+    __cil_tmp___23 = isdigit((int )*Arg);
 #line 881
-    if ((int const   )*(*__cil_tmp___23 + (int )*Arg) & 2048) {
+    if (__cil_tmp___23) {
 #line 884
       Conf_MaxConnections = atol((char const   *)Arg);
     } else {
@@ -6964,9 +6974,9 @@ static void Handle_GLOBAL(int Line , char *Var , char *Arg )
 #line 887
   if (__cil_tmp___26 == 0) {
 #line 890
-    __cil_tmp___25 = __ctype_b_loc();
+    __cil_tmp___25 = isdigit((int )*Arg);
 #line 890
-    if ((int const   )*(*__cil_tmp___25 + (int )*Arg) & 2048) {
+    if (__cil_tmp___25) {
 #line 893
       Conf_MaxConnectionsIP = atoi((char const   *)Arg);
     } else {
@@ -6981,9 +6991,9 @@ static void Handle_GLOBAL(int Line , char *Var , char *Arg )
 #line 896
   if (__cil_tmp___28 == 0) {
 #line 899
-    __cil_tmp___27 = __ctype_b_loc();
+    __cil_tmp___27 = isdigit((int )*Arg);
 #line 899
-    if ((int const   )*(*__cil_tmp___27 + (int )*Arg) & 2048) {
+    if (__cil_tmp___27) {
 #line 902
       Conf_MaxJoins = atoi((char const   *)Arg);
     } else {
@@ -7099,7 +7109,7 @@ static void Handle_SERVER(int Line , char *Var , char *Arg )
   int __cil_tmp___3 ;
   int __cil_tmp___4 ;
   int __cil_tmp___5 ;
-  unsigned short const   **__cil_tmp___6 ;
+  int __cil_tmp___6 ;
   int __cil_tmp___7 ;
   int __cil_tmp___8 ;
   int __cil_tmp___9 ;
@@ -7219,9 +7229,9 @@ static void Handle_SERVER(int Line , char *Var , char *Arg )
 #line 1029
   if (__cil_tmp___7 == 0) {
 #line 1032
-    __cil_tmp___6 = __ctype_b_loc();
+    __cil_tmp___6 = isdigit((int )*Arg);
 #line 1032
-    if ((int const   )*(*__cil_tmp___6 + (int )*Arg) & 2048) {
+    if (__cil_tmp___6) {
 #line 1036
       New_Server.group = atoi((char const   *)Arg);
     } else {
@@ -7395,6 +7405,7 @@ static void Validate_Config(int Configtest , int Rehash )
     if ((int )*ptr >= 97) {
 #line 1130
       if ((int )*ptr <= 122) {
+#line 1130
         goto __Cont;
       }
     }
@@ -7402,6 +7413,7 @@ static void Validate_Config(int Configtest , int Rehash )
     if ((int )*ptr >= 65) {
 #line 1131
       if ((int )*ptr <= 90) {
+#line 1131
         goto __Cont;
       }
     }
@@ -7409,6 +7421,7 @@ static void Validate_Config(int Configtest , int Rehash )
     if ((int )*ptr >= 48) {
 #line 1132
       if ((int )*ptr <= 57) {
+#line 1132
         goto __Cont;
       }
     }
@@ -7416,10 +7429,12 @@ static void Validate_Config(int Configtest , int Rehash )
     if ((unsigned int )ptr > (unsigned int )(Conf_ServerName)) {
 #line 1134
       if ((int )*ptr == 46) {
+#line 1135
         goto __Cont;
       } else {
 #line 1134
         if ((int )*ptr == 45) {
+#line 1135
           goto __Cont;
         }
       }
@@ -7564,7 +7579,7 @@ static void Init_Server_Struct(CONF_SERVER *Server )
 }
 }
 #line 1 "conn.o"
-#pragma merger(0,"/tmp/cil-MuLDsY32.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-CaBN7VsG.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 25 "io.h"
 int io_library_init(unsigned int eventsize ) ;
 #line 28
@@ -8351,6 +8366,7 @@ void Conn_Handler(void)
     while (i < Pool_Size) {
 #line 527
       if ((My_Connections + i)->sock <= -1) {
+#line 528
         goto __Cont;
       }
 #line 530
@@ -8370,22 +8386,26 @@ void Conn_Handler(void)
     while (i < Pool_Size) {
 #line 545
       if ((My_Connections + i)->sock <= -1) {
+#line 546
         goto __Cont___0;
       }
 #line 548
       if ((My_Connections + i)->res_stat.resolver_fd >= 0) {
 #line 550
         io_event_del((My_Connections + i)->sock, (short)1);
+#line 551
         goto __Cont___0;
       }
 #line 554
       if (((int )(My_Connections + i)->options & 2) != 0) {
+#line 555
         goto __Cont___0;
       }
 #line 557
       if ((My_Connections + i)->delaytime > t) {
 #line 559
         io_event_del((My_Connections + i)->sock, (short)1);
+#line 560
         goto __Cont___0;
       }
 #line 562
@@ -8424,25 +8444,23 @@ void Conn_Handler(void)
         exit(1);
       }
     }
-#line 576
-    exit(11111);
   }
-#line 579
+#line 578
   if (NGIRCd_SignalQuit) {
-#line 579
+#line 578
     Log(1029, "Server going down NOW!");
   } else {
-#line 580
+#line 579
     if (NGIRCd_SignalRestart) {
-#line 580
+#line 579
       Log(1029, "Server restarting NOW!");
     }
   }
-#line 581
+#line 580
   return;
 }
 }
-#line 594 "conn.c"
+#line 593 "conn.c"
 int Conn_WriteStr(CONN_ID Idx , char *Format  , ...) 
 { char buffer[513] ;
   size_t len ;
@@ -8452,32 +8470,32 @@ int Conn_WriteStr(CONN_ID Idx , char *Format  , ...)
   int __cil_tmp___0 ;
 
   {
-#line 613
+#line 612
   __builtin_va_start(ap, Format);
-#line 617
+#line 616
   __cil_tmp___0 = vsnprintf((char * __restrict  )(buffer), 511U, (char const   * __restrict  )Format,
                             ap);
-#line 617
+#line 616
   if (__cil_tmp___0 >= 511) {
-#line 641
+#line 640
     __cil_tmp = strlen("[CUT]");
-#line 641
+#line 640
     strcpy((char * __restrict  )((((buffer + sizeof(buffer)) - __cil_tmp) - 2) - 1),
            (char const   * __restrict  )"[CUT]");
   }
-#line 650
+#line 649
   len = strlcat(buffer, "\r\n", sizeof(buffer));
-#line 651
+#line 650
   ok = Conn_Write(Idx, buffer, len);
-#line 652
+#line 651
   ((My_Connections + Idx)->msg_out) ++;
-#line 654
+#line 653
   __builtin_va_end(ap);
-#line 655
+#line 654
   return (ok);
 }
 }
-#line 666 "conn.c"
+#line 665 "conn.c"
 static int Conn_Write(CONN_ID Idx , char *Data , size_t Len ) 
 { CLIENT *c ;
   size_t writebuf_limit ;
@@ -8486,60 +8504,60 @@ static int Conn_Write(CONN_ID Idx , char *Data , size_t Len )
   int __cil_tmp___1 ;
 
   {
-#line 670
+#line 669
   writebuf_limit = (size_t )4096;
-#line 675
+#line 674
   c = Conn_GetClient(Idx);
-#line 680
+#line 679
   __cil_tmp = Client_Type(c);
-#line 680
+#line 679
   if (__cil_tmp == 32) {
-#line 681
+#line 680
     writebuf_limit = 51200U;
   }
-#line 686
+#line 685
   if ((My_Connections + Idx)->sock <= -1) {
-#line 687
+#line 686
     LogDebug("Skipped write on closed socket (connection %d).", Idx);
-#line 688
+#line 687
     return (0);
   }
-#line 705
+#line 704
   if ((My_Connections + Idx)->wbuf.used + Len >= writebuf_limit) {
-#line 709
+#line 708
     __cil_tmp___0 = Handle_Write(Idx);
-#line 709
+#line 708
     if (! __cil_tmp___0) {
-#line 710
+#line 709
       return (0);
     }
   }
-#line 715
+#line 714
   if ((My_Connections + Idx)->wbuf.used + Len >= writebuf_limit) {
-#line 717
+#line 716
     Log(5, "Write buffer overflow (connection %d, size %lu byte)!", Idx, (unsigned long )(My_Connections + Idx)->wbuf.used);
-#line 721
+#line 720
     Conn_Close(Idx, (char *)"Write buffer overflow!", (char *)((void *)0), 0);
-#line 722
+#line 721
     return (0);
   }
-#line 726
+#line 725
   __cil_tmp___1 = array_catb(& (My_Connections + Idx)->wbuf, (char const   *)Data,
                              Len);
-#line 726
+#line 725
   if (! __cil_tmp___1) {
-#line 727
+#line 726
     return (0);
   }
-#line 729
+#line 728
   (My_Connections + Idx)->bytes_out = (long )((unsigned long )(My_Connections + Idx)->bytes_out + (unsigned long )Len);
-#line 733
+#line 732
   WCounter = (long )((unsigned long )WCounter + (unsigned long )Len);
-#line 735
+#line 734
   return (1);
 }
 }
-#line 739 "conn.c"
+#line 738 "conn.c"
 void Conn_Close(CONN_ID Idx , char *LogMsg , char *FwdMsg , int InformClient ) 
 { CLIENT *c ;
   char *txt ;
@@ -8556,122 +8574,122 @@ void Conn_Close(CONN_ID Idx , char *LogMsg , char *FwdMsg , int InformClient )
   int __cil_tmp___6 ;
 
   {
-#line 757
+#line 756
   if (((int )(My_Connections + Idx)->options & 1) != 0) {
-#line 760
+#line 759
     LogDebug("Recursive request to close connection: %d", Idx);
-#line 761
+#line 760
     return;
   }
-#line 767
+#line 766
   (My_Connections + Idx)->options = (unsigned short )((int )(My_Connections + Idx)->options | 1);
-#line 769
+#line 768
   if (LogMsg) {
-#line 770
+#line 769
     txt = LogMsg;
   } else {
-#line 772
+#line 771
     txt = FwdMsg;
   }
-#line 773
+#line 772
   if (! txt) {
-#line 774
+#line 773
     txt = (char *)"Reason unknown";
   }
-#line 776
+#line 775
   port = ng_ipaddr_getport((ng_ipaddr_t const   *)(& (My_Connections + Idx)->addr));
-#line 777
+#line 776
   if (LogMsg) {
-#line 777
+#line 776
     __cil_tmp = LogMsg;
   } else {
-#line 777
+#line 776
     __cil_tmp = FwdMsg;
   }
-#line 777
+#line 776
   Log(6, "Shutting down connection %d (%s) with %s:%d ...", Idx, __cil_tmp, (My_Connections + Idx)->host,
       port);
-#line 781
+#line 780
   c = Conn_GetClient(Idx);
-#line 784
+#line 783
   if (InformClient) {
-#line 787
+#line 786
     if ((unsigned int )c != (unsigned int )((void *)0)) {
-#line 787
+#line 786
       __cil_tmp___3 = Client_Type(c);
-#line 787
+#line 786
       if (__cil_tmp___3 == 16) {
-#line 788
+#line 787
         __cil_tmp___0 = Client_ID(c);
-#line 788
+#line 787
         __cil_tmp___1 = Client_ThisServer();
-#line 788
+#line 787
         __cil_tmp___2 = Client_ID(__cil_tmp___1);
-#line 788
+#line 787
         Conn_WriteStr(Idx, (char *)":%s NOTICE %s :%sConnection statistics: client %.1f kb, server %.1f kb.",
                       __cil_tmp___2, __cil_tmp___0, "", (double )(My_Connections + Idx)->bytes_in / (double )1024,
                       (double )(My_Connections + Idx)->bytes_out / (double )1024);
       }
     }
-#line 797
+#line 796
     if (FwdMsg) {
-#line 798
+#line 797
       Conn_WriteStr(Idx, (char *)"ERROR :%s", FwdMsg);
     } else {
-#line 800
+#line 799
       Conn_WriteStr(Idx, (char *)"ERROR :Closing connection.");
     }
   }
-#line 807
+#line 806
   Handle_Write(Idx);
-#line 810
+#line 809
   c = Conn_GetClient(Idx);
-#line 813
+#line 812
   __cil_tmp___6 = io_close((My_Connections + Idx)->sock);
-#line 813
+#line 812
   if (! __cil_tmp___6) {
-#line 815
+#line 814
     __cil_tmp___4 = __errno_location();
-#line 815
+#line 814
     __cil_tmp___5 = strerror(*__cil_tmp___4);
-#line 815
+#line 814
     Log(2, "Error closing connection %d (socket %d) with %s:%d - %s! (ignored)", Idx,
         (My_Connections + Idx)->sock, (My_Connections + Idx)->host, port, __cil_tmp___5);
   }
-#line 822
+#line 821
   (My_Connections + Idx)->sock = -1;
-#line 825
+#line 824
   if (c) {
-#line 826
+#line 825
     Client_Destroy(c, LogMsg, FwdMsg, 1);
   }
-#line 829
+#line 828
   in_k = (double )(My_Connections + Idx)->bytes_in / (double )1024;
-#line 830
+#line 829
   out_k = (double )(My_Connections + Idx)->bytes_out / (double )1024;
-#line 853
+#line 852
   Log(6, "Connection %d with %s:%d closed (in: %.1fk, out: %.1fk).", Idx, (My_Connections + Idx)->host,
       port, in_k, out_k);
-#line 860
+#line 859
   if ((My_Connections + Idx)->res_stat.resolver_fd >= 0) {
-#line 861
+#line 860
     Resolve_Shutdown(& (My_Connections + Idx)->res_stat);
   }
-#line 864
+#line 863
   Conf_UnsetServer(Idx);
-#line 876
+#line 875
   array_free(& (My_Connections + Idx)->rbuf);
-#line 877
+#line 876
   array_free(& (My_Connections + Idx)->wbuf);
-#line 880
+#line 879
   Init_Conn_Struct(Idx);
-#line 882
+#line 881
   LogDebug("Shutdown of connection %d completed.", Idx);
-#line 883
+#line 882
   return;
 }
 }
-#line 886 "conn.c"
+#line 885 "conn.c"
 void Conn_SyncServerStruct(void) 
 { CLIENT *client ;
   CONN_ID i ;
@@ -8681,57 +8699,61 @@ void Conn_SyncServerStruct(void)
   int __cil_tmp___1 ;
 
   {
-#line 896
+#line 895
   i = 0;
-#line 896
+#line 895
   while (i < Pool_Size) {
-#line 898
+#line 897
     if ((My_Connections + i)->sock < 0) {
+#line 898
       goto __Cont;
     }
-#line 902
+#line 901
     client = Conn_GetClient(i);
-#line 903
+#line 902
     if (! client) {
+#line 902
       goto __Cont;
     } else {
-#line 903
+#line 902
       __cil_tmp = Client_Type(client);
-#line 903
+#line 902
       if (__cil_tmp != 32) {
+#line 902
         goto __Cont;
       }
     }
-#line 905
+#line 904
     c = 0;
-#line 905
+#line 904
     while (c < 16) {
-#line 908
+#line 907
       if (! Conf_Server[c].host[0]) {
+#line 907
         goto __Cont___0;
       }
-#line 911
+#line 910
       __cil_tmp___0 = Client_ID(client);
-#line 911
+#line 910
       __cil_tmp___1 = strcmp((char const   *)(Conf_Server[c].name), (char const   *)__cil_tmp___0);
-#line 911
+#line 910
       if (__cil_tmp___1 == 0) {
-#line 912
+#line 911
         Conf_Server[c].conn_id = i;
       }
       __Cont___0: /* CIL Label */ 
-#line 905
+#line 904
       c ++;
     }
     __Cont: /* CIL Label */ 
-#line 896
+#line 895
     i ++;
   }
-#line 915
+#line 914
   return;
 }
 }
-#line 921 "conn.c"
+#line 920 "conn.c"
 static int Handle_Write(CONN_ID Idx ) 
 { ssize_t len ;
   size_t wdatalen ;
@@ -8742,98 +8764,99 @@ static int Handle_Write(CONN_ID Idx )
   char *__cil_tmp___3 ;
 
   {
-#line 928
+#line 927
   if ((My_Connections + Idx)->sock < 0) {
-#line 929
+#line 928
     LogDebug("Handle_Write() on closed socket, connection %d", Idx);
-#line 930
+#line 929
     return (0);
   }
-#line 934
+#line 933
   wdatalen = (My_Connections + Idx)->wbuf.used;
-#line 948
+#line 947
   if (wdatalen == 0U) {
-#line 950
+#line 949
     io_event_del((My_Connections + Idx)->sock, (short)2);
-#line 951
+#line 950
     return (1);
   }
-#line 954
+#line 953
   LogDebug("Handle_Write() called for connection %d, %ld bytes pending ...", Idx,
            wdatalen);
-#line 958
+#line 957
   __cil_tmp = array_start((array const   *)(& (My_Connections + Idx)->wbuf));
-#line 958
+#line 957
   len = write((My_Connections + Idx)->sock, (void const   *)__cil_tmp, wdatalen);
-#line 961
+#line 960
   if (len < 0) {
-#line 962
+#line 961
     __cil_tmp___0 = __errno_location();
-#line 962
+#line 961
     if (*__cil_tmp___0 == 11) {
-#line 963
+#line 962
       return (1);
     } else {
-#line 962
+#line 961
       __cil_tmp___1 = __errno_location();
-#line 962
+#line 961
       if (*__cil_tmp___1 == 4) {
-#line 963
+#line 962
         return (1);
       }
     }
-#line 965
+#line 964
     __cil_tmp___2 = __errno_location();
-#line 965
+#line 964
     __cil_tmp___3 = strerror(*__cil_tmp___2);
-#line 965
+#line 964
     Log(3, "Write error on connection %d (socket %d): %s!", Idx, (My_Connections + Idx)->sock,
         __cil_tmp___3);
-#line 967
+#line 966
     Conn_Close(Idx, (char *)"Write error!", (char *)((void *)0), 0);
-#line 968
+#line 967
     return (0);
   }
-#line 972
+#line 971
   array_moveleft(& (My_Connections + Idx)->wbuf, 1U, (unsigned int )len);
-#line 974
+#line 973
   return (1);
 }
 }
-#line 978 "conn.c"
+#line 977 "conn.c"
 static int Count_Connections(ng_ipaddr_t *a ) 
 { int i ;
   int cnt ;
   int __cil_tmp ;
 
   {
-#line 983
+#line 982
   cnt = 0;
-#line 984
+#line 983
   i = 0;
-#line 984
+#line 983
   while (i < Pool_Size) {
-#line 985
+#line 984
     if ((My_Connections + i)->sock <= -1) {
+#line 985
       goto __Cont;
     }
-#line 987
+#line 986
     __cil_tmp = ng_ipaddr_ipequal((ng_ipaddr_t const   *)(& (My_Connections + i)->addr),
                                   (ng_ipaddr_t const   *)a);
-#line 987
+#line 986
     if (__cil_tmp) {
-#line 988
+#line 987
       cnt ++;
     }
     __Cont: /* CIL Label */ 
-#line 984
+#line 983
     i ++;
   }
-#line 990
+#line 989
   return (cnt);
 }
 }
-#line 994 "conn.c"
+#line 993 "conn.c"
 static int New_Connection(int Sock ) 
 { ng_ipaddr_t new_addr ;
   char ip_str[16] ;
@@ -8855,204 +8878,204 @@ static int New_Connection(int Sock )
   UINT16 __cil_tmp___9 ;
 
   {
-#line 1011
+#line 1010
   new_sock_len = (int )sizeof(new_addr);
-#line 1013
+#line 1012
   new_sock = accept(Sock, (struct sockaddr * __restrict  )((struct sockaddr *)(& new_addr)),
                     (socklen_t * __restrict  )((socklen_t *)(& new_sock_len)));
-#line 1015
+#line 1014
   if (new_sock < 0) {
-#line 1016
+#line 1015
     __cil_tmp = __errno_location();
-#line 1016
+#line 1015
     __cil_tmp___0 = strerror(*__cil_tmp);
-#line 1016
+#line 1015
     Log(2, "Can\'t accept connection: %s!", __cil_tmp___0);
-#line 1017
+#line 1016
     return (-1);
   }
-#line 1020
+#line 1019
   __cil_tmp___1 = ng_ipaddr_tostr_r((ng_ipaddr_t const   *)(& new_addr), ip_str);
-#line 1020
+#line 1019
   if (! __cil_tmp___1) {
-#line 1021
+#line 1020
     Log(2, "fd %d: Can\'t convert IP address!", new_sock);
-#line 1022
+#line 1021
     Simple_Message(new_sock, "ERROR :Internal Server Error");
-#line 1023
+#line 1022
     close(new_sock);
   }
-#line 1039
+#line 1038
   __cil_tmp___2 = Init_Socket(new_sock);
-#line 1039
+#line 1038
   if (! __cil_tmp___2) {
-#line 1040
+#line 1039
     return (-1);
   }
-#line 1043
+#line 1042
   __cil_tmp___3 = Count_Connections(& new_addr);
-#line 1043
+#line 1042
   cnt = (long )__cil_tmp___3;
-#line 1044
+#line 1043
   if (Conf_MaxConnectionsIP > 0) {
-#line 1044
+#line 1043
     if (cnt >= (long )Conf_MaxConnectionsIP) {
-#line 1046
+#line 1045
       Log(3, "Refused connection from %s: too may connections (%ld) from this IP address!",
           ip_str, cnt);
-#line 1047
+#line 1046
       Simple_Message(new_sock, "ERROR :Connection refused, too many connections from your IP address!");
-#line 1048
+#line 1047
       close(new_sock);
-#line 1049
+#line 1048
       return (-1);
     }
   }
-#line 1052
+#line 1051
   if (new_sock >= Pool_Size) {
-#line 1053
+#line 1052
     new_Pool_Size = new_sock + 1;
-#line 1055
+#line 1054
     if (Conf_MaxConnections > 0L) {
-#line 1055
+#line 1054
       if ((long )Pool_Size >= Conf_MaxConnections) {
-#line 1058
+#line 1057
         Log(1, "Can\'t accept connection: limit (%d) reached!", Pool_Size);
-#line 1059
+#line 1058
         Simple_Message(new_sock, "ERROR :Connection limit reached");
-#line 1060
+#line 1059
         close(new_sock);
-#line 1061
+#line 1060
         return (-1);
       } else {
         goto _L;
       }
     } else {
       _L: /* CIL Label */ 
-#line 1055
+#line 1054
       if (new_Pool_Size < Pool_Size) {
-#line 1058
+#line 1057
         Log(1, "Can\'t accept connection: limit (%d) reached!", Pool_Size);
-#line 1059
+#line 1058
         Simple_Message(new_sock, "ERROR :Connection limit reached");
-#line 1060
+#line 1059
         close(new_sock);
-#line 1061
+#line 1060
         return (-1);
       }
     }
-#line 1064
+#line 1063
     __cil_tmp___4 = array_alloc(& My_ConnArray, sizeof(CONNECTION ), (unsigned int )new_sock);
-#line 1064
+#line 1063
     if (! __cil_tmp___4) {
-#line 1066
+#line 1065
       Log(0, "Can\'t allocate memory! [New_Connection]");
-#line 1067
+#line 1066
       Simple_Message(new_sock, "ERROR: Internal error");
-#line 1068
+#line 1067
       close(new_sock);
-#line 1069
+#line 1068
       return (-1);
     }
-#line 1071
+#line 1070
     __cil_tmp___5 = array_length((array const   *)(& My_ConnArray), sizeof(CONNECTION ));
-#line 1071
+#line 1070
     LogDebug("Bumped connection pool to %ld items (internal: %ld items, %ld bytes)",
              new_sock, __cil_tmp___5, My_ConnArray.used);
-#line 1075
+#line 1074
     __cil_tmp___6 = array_start((array const   *)(& My_ConnArray));
-#line 1075
+#line 1074
     My_Connections = (CONNECTION *)__cil_tmp___6;
-#line 1076
+#line 1075
     while (Pool_Size < new_Pool_Size) {
-#line 1077
+#line 1076
       __cil_tmp___7 = Pool_Size;
-#line 1077
+#line 1076
       Pool_Size ++;
-#line 1077
+#line 1076
       Init_Conn_Struct(__cil_tmp___7);
     }
   }
-#line 1081
+#line 1080
   __cil_tmp___8 = io_event_create(new_sock, (short)1, & cb_clientserver);
-#line 1081
+#line 1080
   if (! __cil_tmp___8) {
-#line 1082
+#line 1081
     Log(1, "Can\'t accept connection: io_event_create failed!");
+#line 1082
+    Simple_Message(new_sock, "ERROR :Internal error");
 #line 1083
-    Simple_Message(new_sock, "ERROR :Internal error");
-#line 1084
     close(new_sock);
-#line 1085
+#line 1084
     return (-1);
   }
-#line 1088
+#line 1087
   c = Client_NewLocal(new_sock, ip_str, 1, 0);
-#line 1089
+#line 1088
   if (! c) {
-#line 1090
+#line 1089
     Log(1, "Can\'t accept connection: can\'t create client structure!");
-#line 1091
+#line 1090
     Simple_Message(new_sock, "ERROR :Internal error");
-#line 1092
+#line 1091
     io_close(new_sock);
-#line 1093
+#line 1092
     return (-1);
   }
-#line 1096
+#line 1095
   Init_Conn_Struct(new_sock);
-#line 1097
+#line 1096
   (My_Connections + new_sock)->sock = new_sock;
-#line 1098
+#line 1097
   (My_Connections + new_sock)->addr = new_addr;
-#line 1099
+#line 1098
   (My_Connections + new_sock)->client = c;
-#line 1101
+#line 1100
   __cil_tmp___9 = ng_ipaddr_getport((ng_ipaddr_t const   *)(& new_addr));
-#line 1101
+#line 1100
   Log(6, "Accepted connection %d from %s:%d on socket %d.", new_sock, ip_str, __cil_tmp___9,
       Sock);
-#line 1105
+#line 1104
   strlcpy((My_Connections + new_sock)->host, (char const   *)(ip_str), sizeof((My_Connections + new_sock)->host));
-#line 1107
+#line 1106
   Client_SetHostname(c, (My_Connections + new_sock)->host);
-#line 1109
+#line 1108
   if (! Conf_NoDNS) {
-#line 1110
+#line 1109
     Resolve_Addr(& (My_Connections + new_sock)->res_stat, (ng_ipaddr_t const   *)(& new_addr),
                  (My_Connections + new_sock)->sock, & cb_Read_Resolver_Result);
   }
-#line 1113
+#line 1112
   Conn_SetPenalty(new_sock, 4L);
-#line 1114
+#line 1113
   return (new_sock);
 }
 }
-#line 1118 "conn.c"
+#line 1117 "conn.c"
 static CONN_ID Socket2Index(int Sock ) 
 { 
 
   {
-#line 1125
+#line 1124
   if (Sock >= Pool_Size) {
-#line 1128
+#line 1127
     LogDebug("Socket2Index: can\'t get connection for socket %d!", Sock);
-#line 1129
+#line 1128
     return (-1);
   } else {
-#line 1125
+#line 1124
     if ((My_Connections + Sock)->sock != Sock) {
-#line 1128
+#line 1127
       LogDebug("Socket2Index: can\'t get connection for socket %d!", Sock);
-#line 1129
+#line 1128
       return (-1);
     }
   }
-#line 1131
+#line 1130
   return (Sock);
 }
 }
-#line 1139 "conn.c"
+#line 1138 "conn.c"
 static void Read_Request(CONN_ID Idx ) 
 { ssize_t len ;
   char readbuf[2048] ;
@@ -9068,107 +9091,107 @@ static void Read_Request(CONN_ID Idx )
   int __cil_tmp___7 ;
 
   {
-#line 1152
+#line 1151
   if ((My_Connections + Idx)->rbuf.used >= 2048U) {
-#line 1156
+#line 1155
     Log(3, "Receive buffer overflow (connection %d): %d bytes!", Idx, (My_Connections + Idx)->rbuf.used);
-#line 1159
+#line 1158
     Conn_Close(Idx, (char *)"Receive buffer overflow!", (char *)((void *)0), 0);
-#line 1160
+#line 1159
     return;
   }
-#line 1163
+#line 1162
   len = read((My_Connections + Idx)->sock, (void *)(readbuf), sizeof(readbuf));
-#line 1164
+#line 1163
   if (len == 0) {
-#line 1165
+#line 1164
     __cil_tmp = ng_ipaddr_tostr((ng_ipaddr_t const   *)(& (My_Connections + Idx)->addr));
-#line 1165
+#line 1164
     __cil_tmp___0 = ng_ipaddr_getport((ng_ipaddr_t const   *)(& (My_Connections + Idx)->addr));
-#line 1165
+#line 1164
     Log(6, "%s:%u (%s) is closing the connection ...", (My_Connections + Idx)->host,
         (unsigned int )__cil_tmp___0, __cil_tmp);
-#line 1169
+#line 1168
     Conn_Close(Idx, (char *)"Socket closed!", (char *)"Client closed connection",
                0);
-#line 1172
+#line 1171
     return;
   }
-#line 1175
+#line 1174
   if (len < 0) {
-#line 1176
+#line 1175
     __cil_tmp___1 = __errno_location();
-#line 1176
+#line 1175
     if (*__cil_tmp___1 == 11) {
-#line 1176
+#line 1175
       return;
     }
-#line 1177
+#line 1176
     __cil_tmp___2 = __errno_location();
-#line 1177
+#line 1176
     __cil_tmp___3 = strerror(*__cil_tmp___2);
-#line 1177
+#line 1176
     Log(3, "Read error on connection %d (socket %d): %s!", Idx, (My_Connections + Idx)->sock,
         __cil_tmp___3);
-#line 1179
+#line 1178
     Conn_Close(Idx, (char *)"Read error!", (char *)"Client closed connection", 0);
-#line 1181
+#line 1180
     return;
   }
-#line 1197
+#line 1196
   __cil_tmp___4 = array_catb(& (My_Connections + Idx)->rbuf, (char const   *)(readbuf),
                              (unsigned int )len);
-#line 1197
+#line 1196
   if (! __cil_tmp___4) {
-#line 1198
+#line 1197
     Log(3, "Could not append recieved data to input buffer (connn %d): %d bytes!",
         Idx, len);
-#line 1199
+#line 1198
     Conn_Close(Idx, (char *)"Receive buffer overflow!", (char *)((void *)0), 0);
   }
-#line 1204
+#line 1203
   (My_Connections + Idx)->bytes_in += (long )len;
-#line 1211
+#line 1210
   c = Conn_GetClient(Idx);
-#line 1212
+#line 1211
   if (c) {
-#line 1212
+#line 1211
     __cil_tmp___5 = Client_Type(c);
-#line 1212
+#line 1211
     if (__cil_tmp___5 == 16) {
-#line 1215
+#line 1214
       (My_Connections + Idx)->lastdata = time((time_t *)((void *)0));
-#line 1216
+#line 1215
       (My_Connections + Idx)->lastping = (My_Connections + Idx)->lastdata;
     } else {
-#line 1212
+#line 1211
       __cil_tmp___6 = Client_Type(c);
-#line 1212
+#line 1211
       if (__cil_tmp___6 == 32) {
-#line 1215
+#line 1214
         (My_Connections + Idx)->lastdata = time((time_t *)((void *)0));
-#line 1216
+#line 1215
         (My_Connections + Idx)->lastping = (My_Connections + Idx)->lastdata;
       } else {
-#line 1212
+#line 1211
         __cil_tmp___7 = Client_Type(c);
-#line 1212
+#line 1211
         if (__cil_tmp___7 == 64) {
-#line 1215
+#line 1214
           (My_Connections + Idx)->lastdata = time((time_t *)((void *)0));
-#line 1216
+#line 1215
           (My_Connections + Idx)->lastping = (My_Connections + Idx)->lastdata;
         }
       }
     }
   }
-#line 1220
+#line 1219
   Handle_Buffer(Idx);
-#line 1221
+#line 1220
   return;
 }
 }
-#line 1224 "conn.c"
+#line 1223 "conn.c"
 static int Handle_Buffer(CONN_ID Idx ) 
 { char *ptr1 ;
   char *ptr2 ;
@@ -9186,58 +9209,58 @@ static int Handle_Buffer(CONN_ID Idx )
   int __cil_tmp___5 ;
 
   {
-#line 1240
+#line 1239
   starttime = time((time_t *)((void *)0));
-#line 1241
+#line 1240
   result = 0;
-#line 1242
+#line 1241
   while (1) {
-#line 1244
+#line 1243
     if ((My_Connections + Idx)->delaytime > starttime) {
-#line 1244
+#line 1243
       return (result);
     }
-#line 1251
+#line 1250
     if (0U == (My_Connections + Idx)->rbuf.used) {
-#line 1252
+#line 1251
       break;
     }
-#line 1254
+#line 1253
     __cil_tmp = array_cat0_temporary(& (My_Connections + Idx)->rbuf);
-#line 1254
+#line 1253
     if (! __cil_tmp) {
-#line 1255
+#line 1254
       return (0);
     }
-#line 1258
+#line 1257
     __cil_tmp___0 = array_start((array const   *)(& (My_Connections + Idx)->rbuf));
-#line 1258
+#line 1257
     ptr = strstr((char const   *)__cil_tmp___0, "\r\n");
-#line 1260
+#line 1259
     if (ptr) {
-#line 1260
+#line 1259
       delta = 2U;
     } else {
-#line 1265
+#line 1264
       __cil_tmp___1 = array_start((array const   *)(& (My_Connections + Idx)->rbuf));
-#line 1265
+#line 1264
       ptr1 = strchr((char const   *)__cil_tmp___1, '\r');
-#line 1266
+#line 1265
       __cil_tmp___2 = array_start((array const   *)(& (My_Connections + Idx)->rbuf));
-#line 1266
+#line 1265
       ptr2 = strchr((char const   *)__cil_tmp___2, '\n');
-#line 1267
+#line 1266
       delta = 1U;
-#line 1268
+#line 1267
       if (ptr1) {
-#line 1268
+#line 1267
         if (ptr2) {
-#line 1268
+#line 1267
           if ((unsigned int )ptr1 > (unsigned int )ptr2) {
-#line 1268
+#line 1267
             ptr = ptr2;
           } else {
-#line 1268
+#line 1267
             ptr = ptr1;
           }
         } else {
@@ -9245,70 +9268,70 @@ static int Handle_Buffer(CONN_ID Idx )
         }
       } else {
         _L: /* CIL Label */ 
-#line 1269
+#line 1268
         if (ptr1) {
-#line 1269
+#line 1268
           ptr = ptr1;
         } else {
-#line 1270
+#line 1269
           if (ptr2) {
-#line 1270
+#line 1269
             ptr = ptr2;
           }
         }
       }
     }
-#line 1274
+#line 1273
     if (! ptr) {
-#line 1275
+#line 1274
       break;
     }
-#line 1278
+#line 1277
     *ptr = (char )'\000';
-#line 1280
+#line 1279
     __cil_tmp___3 = array_start((array const   *)(& (My_Connections + Idx)->rbuf));
-#line 1280
+#line 1279
     len = (size_t )(ptr - (char *)__cil_tmp___3) + delta;
-#line 1282
+#line 1281
     if (len > 512U) {
-#line 1285
+#line 1284
       Log(3, "Request too long (connection %d): %d bytes (max. %d expected)!", Idx,
           (My_Connections + Idx)->rbuf.used, 512);
-#line 1287
+#line 1286
       Conn_Close(Idx, (char *)((void *)0), (char *)"Request too long", 1);
-#line 1288
+#line 1287
       return (0);
     }
-#line 1291
+#line 1290
     if (len <= 2U) {
-#line 1292
+#line 1291
       array_moveleft(& (My_Connections + Idx)->rbuf, 1U, delta);
-#line 1293
+#line 1292
       break;
     }
-#line 1300
+#line 1299
     ((My_Connections + Idx)->msg_in) ++;
-#line 1301
+#line 1300
     __cil_tmp___4 = array_start((array const   *)(& (My_Connections + Idx)->rbuf));
-#line 1301
+#line 1300
     __cil_tmp___5 = Parse_Request(Idx, (char *)__cil_tmp___4);
-#line 1301
+#line 1300
     if (! __cil_tmp___5) {
-#line 1302
+#line 1301
       return (0);
     }
-#line 1304
+#line 1303
     result = 1;
-#line 1306
+#line 1305
     array_moveleft(& (My_Connections + Idx)->rbuf, 1U, len);
-#line 1307
+#line 1306
     LogDebug("Connection %d: %d bytes left in read buffer.", Idx, (My_Connections + Idx)->rbuf.used);
   }
-#line 1325
+#line 1324
   return (result);
 }
 }
-#line 1329 "conn.c"
+#line 1328 "conn.c"
 static void Check_Connections(void) 
 { CLIENT *c ;
   CONN_ID i ;
@@ -9322,60 +9345,61 @@ static void Check_Connections(void)
   int __cil_tmp___6 ;
 
   {
-#line 1337
+#line 1336
   i = 0;
-#line 1337
+#line 1336
   while (i < Pool_Size) {
-#line 1338
+#line 1337
     if ((My_Connections + i)->sock < 0) {
+#line 1338
       goto __Cont;
     }
-#line 1341
+#line 1340
     c = Conn_GetClient(i);
-#line 1342
+#line 1341
     if (c) {
-#line 1342
+#line 1341
       __cil_tmp___4 = Client_Type(c);
-#line 1342
+#line 1341
       if (__cil_tmp___4 == 16) {
         goto _L___0;
       } else {
-#line 1342
+#line 1341
         __cil_tmp___5 = Client_Type(c);
-#line 1342
+#line 1341
         if (__cil_tmp___5 == 32) {
           goto _L___0;
         } else {
-#line 1342
+#line 1341
           __cil_tmp___6 = Client_Type(c);
-#line 1342
+#line 1341
           if (__cil_tmp___6 == 64) {
             _L___0: /* CIL Label */ 
-#line 1346
+#line 1345
             if ((My_Connections + i)->lastping > (My_Connections + i)->lastdata) {
-#line 1349
+#line 1348
               __cil_tmp = time((time_t *)((void *)0));
-#line 1349
+#line 1348
               if ((My_Connections + i)->lastping < __cil_tmp - (time_t )Conf_PongTimeout) {
-#line 1352
+#line 1351
                 LogDebug("Connection %d: Ping timeout: %d seconds.", i, Conf_PongTimeout);
-#line 1355
+#line 1354
                 Conn_Close(i, (char *)((void *)0), (char *)"Ping timeout", 1);
               }
             } else {
-#line 1358
+#line 1357
               __cil_tmp___2 = time((time_t *)((void *)0));
-#line 1358
+#line 1357
               if ((My_Connections + i)->lastdata < __cil_tmp___2 - (time_t )Conf_PingTimeout) {
-#line 1361
+#line 1360
                 LogDebug("Connection %d: sending PING ...", i);
-#line 1362
+#line 1361
                 (My_Connections + i)->lastping = time((time_t *)((void *)0));
-#line 1363
+#line 1362
                 __cil_tmp___0 = Client_ThisServer();
-#line 1363
+#line 1362
                 __cil_tmp___1 = Client_ID(__cil_tmp___0);
-#line 1363
+#line 1362
                 Conn_WriteStr(i, (char *)"PING :%s", __cil_tmp___1);
               }
             }
@@ -9386,103 +9410,110 @@ static void Check_Connections(void)
       }
     } else {
       _L: /* CIL Label */ 
-#line 1372
+#line 1371
       __cil_tmp___3 = time((time_t *)((void *)0));
-#line 1372
+#line 1371
       if ((My_Connections + i)->lastdata < __cil_tmp___3 - (time_t )Conf_PongTimeout) {
-#line 1374
+#line 1373
         LogDebug("Unregistered connection %d timed out ...", i);
-#line 1377
+#line 1376
         Conn_Close(i, (char *)((void *)0), (char *)"Timeout", 0);
       }
     }
     __Cont: /* CIL Label */ 
-#line 1337
+#line 1336
     i ++;
   }
-#line 1381
+#line 1380
   return;
 }
 }
-#line 1384 "conn.c"
+#line 1383 "conn.c"
 static void Check_Servers(void) 
 { int i ;
   int n ;
   time_t time_now ;
 
   {
-#line 1393
+#line 1392
   i = 0;
-#line 1393
+#line 1392
   while (i < 16) {
-#line 1395
+#line 1394
     if (! Conf_Server[i].host[0]) {
+#line 1396
       goto __Cont;
     } else {
-#line 1395
+#line 1394
       if (! Conf_Server[i].port > 0) {
+#line 1396
         goto __Cont;
       } else {
-#line 1395
+#line 1394
         if (Conf_Server[i].conn_id > -1) {
+#line 1396
           goto __Cont;
         } else {
-#line 1395
+#line 1394
           if (Conf_Server[i].flags & 2) {
+#line 1396
             goto __Cont;
           }
         }
       }
     }
-#line 1400
+#line 1399
     if (Conf_Server[i].group > -1) {
-#line 1401
+#line 1400
       n = 0;
-#line 1401
+#line 1400
       while (n < 16) {
-#line 1402
+#line 1401
         if (n == i) {
+#line 1401
           goto __Cont___0;
         }
-#line 1403
+#line 1402
         if (Conf_Server[n].conn_id != -1) {
-#line 1403
+#line 1402
           if (Conf_Server[n].group == Conf_Server[i].group) {
-#line 1405
+#line 1404
             break;
           }
         }
         __Cont___0: /* CIL Label */ 
-#line 1401
+#line 1400
         n ++;
       }
-#line 1407
+#line 1406
       if (n < 16) {
+#line 1406
         goto __Cont;
       }
     }
-#line 1411
+#line 1410
     time_now = time((time_t *)((void *)0));
-#line 1412
+#line 1411
     if (Conf_Server[i].lasttry > time_now - (time_t )Conf_ConnectRetry) {
+#line 1412
       goto __Cont;
     }
-#line 1416
+#line 1415
     Conf_Server[i].lasttry = time_now;
-#line 1417
+#line 1416
     Conf_Server[i].conn_id = -2;
-#line 1419
+#line 1418
     Resolve_Name(& Conf_Server[i].res_stat, (char const   *)(Conf_Server[i].host),
                  & cb_Connect_to_Server);
     __Cont: /* CIL Label */ 
-#line 1393
+#line 1392
     i ++;
   }
-#line 1421
+#line 1420
   return;
 }
 }
-#line 1424 "conn.c"
+#line 1423 "conn.c"
 static void New_Server___0(int Server , ng_ipaddr_t *dest ) 
 { char ip_str[16] ;
   int af_dest ;
@@ -9508,184 +9539,184 @@ static void New_Server___0(int Server , ng_ipaddr_t *dest )
   int __cil_tmp___15 ;
 
   {
-#line 1434
+#line 1433
   __cil_tmp = ng_ipaddr_tostr_r((ng_ipaddr_t const   *)dest, ip_str);
-#line 1434
+#line 1433
   if (! __cil_tmp) {
-#line 1435
+#line 1434
     Log(4, "New_Server: Could not convert IP to string");
-#line 1436
+#line 1435
     return;
   }
-#line 1439
+#line 1438
   Log(6, "Establishing connection to \"%s\", %s, port %d ... ", Conf_Server[Server].host,
       ip_str, Conf_Server[Server].port);
-#line 1442
+#line 1441
   af_dest = ng_ipaddr_af((ng_ipaddr_t const   *)dest);
-#line 1443
+#line 1442
   new_sock = socket(af_dest, 1, 0);
-#line 1444
+#line 1443
   if (new_sock < 0) {
-#line 1445
+#line 1444
     __cil_tmp___0 = __errno_location();
-#line 1445
+#line 1444
     __cil_tmp___1 = strerror(*__cil_tmp___0);
-#line 1445
+#line 1444
     Log(2, "Can\'t create socket: %s!", __cil_tmp___1);
-#line 1446
+#line 1445
     return;
   }
-#line 1449
+#line 1448
   __cil_tmp___2 = Init_Socket(new_sock);
-#line 1449
+#line 1448
   if (! __cil_tmp___2) {
-#line 1450
+#line 1449
     return;
   }
-#line 1453
+#line 1452
   res = ng_ipaddr_af((ng_ipaddr_t const   *)(& Conf_Server[Server].bind_addr));
-#line 1455
+#line 1454
   if (res) {
-#line 1455
+#line 1454
     __cil_tmp___5 = ng_ipaddr_salen((ng_ipaddr_t const   *)(& Conf_Server[Server].bind_addr));
-#line 1455
+#line 1454
     __cil_tmp___6 = bind(new_sock, (struct sockaddr  const  *)((struct sockaddr *)(& Conf_Server[Server].bind_addr)),
                          __cil_tmp___5);
-#line 1455
+#line 1454
     if (__cil_tmp___6) {
-#line 1458
+#line 1457
       ng_ipaddr_tostr_r((ng_ipaddr_t const   *)(& Conf_Server[Server].bind_addr),
                         ip_str);
-#line 1459
+#line 1458
       __cil_tmp___3 = __errno_location();
-#line 1459
+#line 1458
       __cil_tmp___4 = strerror(*__cil_tmp___3);
-#line 1459
+#line 1458
       Log(4, "Can\'t bind socket to %s: %s!", ip_str, __cil_tmp___4);
     }
   }
-#line 1461
+#line 1460
   ng_ipaddr_setport(dest, Conf_Server[Server].port);
-#line 1462
+#line 1461
   __cil_tmp___7 = ng_ipaddr_salen((ng_ipaddr_t const   *)dest);
-#line 1462
+#line 1461
   res = connect(new_sock, (struct sockaddr  const  *)((struct sockaddr *)dest), __cil_tmp___7);
-#line 1463
+#line 1462
   if (res != 0) {
-#line 1463
+#line 1462
     __cil_tmp___10 = __errno_location();
-#line 1463
+#line 1462
     if (*__cil_tmp___10 != 115) {
-#line 1464
+#line 1463
       __cil_tmp___8 = __errno_location();
-#line 1464
+#line 1463
       __cil_tmp___9 = strerror(*__cil_tmp___8);
-#line 1464
+#line 1463
       Log(2, "Can\'t connect socket: %s!", __cil_tmp___9);
-#line 1465
+#line 1464
       close(new_sock);
-#line 1466
+#line 1465
       return;
     }
   }
-#line 1469
+#line 1468
   __cil_tmp___11 = array_alloc(& My_ConnArray, sizeof(CONNECTION ), (unsigned int )new_sock);
-#line 1469
+#line 1468
   if (! __cil_tmp___11) {
-#line 1470
+#line 1469
     Log(1, "Cannot allocate memory for server connection (socket %d)", new_sock);
+#line 1472
+    close(new_sock);
 #line 1473
-    close(new_sock);
-#line 1474
     return;
   }
-#line 1477
+#line 1476
   __cil_tmp___12 = array_start((array const   *)(& My_ConnArray));
-#line 1477
+#line 1476
   My_Connections = (CONNECTION *)__cil_tmp___12;
-#line 1481
+#line 1480
   Init_Conn_Struct(new_sock);
-#line 1483
+#line 1482
   ng_ipaddr_tostr_r((ng_ipaddr_t const   *)dest, ip_str);
-#line 1484
+#line 1483
   c = Client_NewLocal(new_sock, ip_str, 128, 0);
-#line 1485
+#line 1484
   if (! c) {
-#line 1486
+#line 1485
     Log(1, "Can\'t establish connection: can\'t create client structure!");
-#line 1487
+#line 1486
     close(new_sock);
-#line 1488
+#line 1487
     return;
   }
-#line 1491
+#line 1490
   Client_SetIntroducer(c, c);
-#line 1492
+#line 1491
   Client_SetToken(c, -2);
-#line 1495
+#line 1494
   Conf_Server[Server].conn_id = new_sock;
-#line 1496
+#line 1495
   (My_Connections + new_sock)->sock = new_sock;
-#line 1497
+#line 1496
   (My_Connections + new_sock)->addr = *dest;
-#line 1498
+#line 1497
   (My_Connections + new_sock)->client = c;
-#line 1499
+#line 1498
   strlcpy((My_Connections + new_sock)->host, (char const   *)(Conf_Server[Server].host),
           sizeof((My_Connections + new_sock)->host));
-#line 1503
+#line 1502
   __cil_tmp___15 = io_event_create(new_sock, (short)2, & cb_connserver);
-#line 1503
+#line 1502
   if (! __cil_tmp___15) {
-#line 1504
+#line 1503
     __cil_tmp___13 = __errno_location();
-#line 1504
+#line 1503
     __cil_tmp___14 = strerror(*__cil_tmp___13);
-#line 1504
+#line 1503
     Log(1, "io_event_create(): could not add fd %d", __cil_tmp___14);
-#line 1505
+#line 1504
     Conn_Close(new_sock, (char *)"io_event_create() failed", (char *)((void *)0),
                0);
-#line 1506
+#line 1505
     Init_Conn_Struct(new_sock);
-#line 1507
+#line 1506
     Conf_Server[Server].conn_id = -1;
   }
-#line 1510
+#line 1509
   LogDebug("Registered new connection %d on socket %d.", new_sock, (My_Connections + new_sock)->sock);
-#line 1512
+#line 1511
   (My_Connections + new_sock)->options = (unsigned short )((int )(My_Connections + new_sock)->options | 2);
-#line 1513
+#line 1512
   return;
 }
 }
-#line 1519 "conn.c"
+#line 1518 "conn.c"
 static void Init_Conn_Struct(CONN_ID Idx ) 
 { time_t now ;
   time_t __cil_tmp ;
 
   {
-#line 1522
+#line 1521
   __cil_tmp = time((time_t *)((void *)0));
-#line 1522
+#line 1521
   now = __cil_tmp;
-#line 1524
+#line 1523
   memset((void *)(My_Connections + Idx), 0, sizeof(CONNECTION ));
-#line 1525
+#line 1524
   (My_Connections + Idx)->sock = -1;
-#line 1526
+#line 1525
   (My_Connections + Idx)->signon = now;
-#line 1527
+#line 1526
   (My_Connections + Idx)->lastdata = now;
-#line 1528
+#line 1527
   (My_Connections + Idx)->lastprivmsg = now;
-#line 1529
+#line 1528
   Resolve_Init(& (My_Connections + Idx)->res_stat);
-#line 1530
+#line 1529
   return;
 }
 }
-#line 1533 "conn.c"
+#line 1532 "conn.c"
 static int Init_Socket(int Sock ) 
 { int value ;
   int *__cil_tmp ;
@@ -9696,102 +9727,102 @@ static int Init_Socket(int Sock )
   int __cil_tmp___4 ;
 
   {
-#line 1540
+#line 1539
   __cil_tmp___1 = io_setnonblock(Sock);
-#line 1540
+#line 1539
   if (! __cil_tmp___1) {
-#line 1541
+#line 1540
     __cil_tmp = __errno_location();
-#line 1541
+#line 1540
     __cil_tmp___0 = strerror(*__cil_tmp);
-#line 1541
+#line 1540
     Log(2, "Can\'t enable non-blocking mode for socket: %s!", __cil_tmp___0);
-#line 1542
+#line 1541
     close(Sock);
-#line 1543
+#line 1542
     return (0);
   }
-#line 1547
+#line 1546
   value = 1;
-#line 1548
+#line 1547
   __cil_tmp___4 = setsockopt(Sock, 1, 2, (void const   *)(& value), sizeof(value));
-#line 1548
+#line 1547
   if (__cil_tmp___4 != 0) {
-#line 1550
+#line 1549
     __cil_tmp___2 = __errno_location();
-#line 1550
+#line 1549
     __cil_tmp___3 = strerror(*__cil_tmp___2);
-#line 1550
+#line 1549
     Log(3, "Can\'t set socket option SO_REUSEADDR: %s!", __cil_tmp___3);
   }
-#line 1565
+#line 1564
   return (1);
 }
 }
-#line 1570 "conn.c"
+#line 1569 "conn.c"
 static void cb_Connect_to_Server(int fd , short events  __attribute__((__unused__)) ) 
 { int i ;
   size_t len ;
   ng_ipaddr_t dest_addrs[4] ;
 
   {
-#line 1580
+#line 1579
   LogDebug("Resolver: Got forward lookup callback on fd %d, events %d", fd, events);
-#line 1582
+#line 1581
   i = 0;
-#line 1582
+#line 1581
   while (i < 16) {
-#line 1583
+#line 1582
     if (Conf_Server[i].res_stat.resolver_fd == fd) {
-#line 1584
+#line 1583
       break;
     }
-#line 1582
+#line 1581
     i ++;
   }
-#line 1587
+#line 1586
   if (i >= 16) {
-#line 1589
+#line 1588
     io_close(fd);
-#line 1590
+#line 1589
     LogDebug("Resolver: Got Forward Lookup callback for unknown server!?");
-#line 1591
+#line 1590
     return;
   }
-#line 1595
+#line 1594
   len = Resolve_Read(& Conf_Server[i].res_stat, (void *)(dest_addrs), sizeof(dest_addrs));
-#line 1596
+#line 1595
   if (len == 0U) {
-#line 1597
+#line 1596
     return;
   }
-#line 1601
+#line 1600
   LogDebug("Got result from resolver: %u structs (%u bytes).", len / sizeof(ng_ipaddr_t ),
            len);
-#line 1603
+#line 1602
   memset((void *)(& Conf_Server[i].dst_addr), 0, sizeof(& Conf_Server[i].dst_addr));
-#line 1604
+#line 1603
   if (len > sizeof(ng_ipaddr_t )) {
-#line 1607
+#line 1606
     len -= sizeof(ng_ipaddr_t );
-#line 1608
+#line 1607
     if (len > sizeof(& Conf_Server[i].dst_addr)) {
-#line 1609
+#line 1608
       len = sizeof(& Conf_Server[i].dst_addr);
-#line 1610
+#line 1609
       Log(5, "Notice: Resolver returned more IP Addresses for host than we can handle, additional addresses dropped");
     }
-#line 1613
+#line 1612
     memcpy((void * __restrict  )(& Conf_Server[i].dst_addr), (void const   * __restrict  )(& dest_addrs[1]),
            len);
   }
-#line 1616
+#line 1615
   New_Server___0(i, dest_addrs);
-#line 1617
+#line 1616
   return;
 }
 }
-#line 1620 "conn.c"
+#line 1619 "conn.c"
 static void cb_Read_Resolver_Result(int r_fd , short events  __attribute__((__unused__)) ) 
 { CLIENT *c ;
   int i ;
@@ -9801,112 +9832,112 @@ static void cb_Read_Resolver_Result(int r_fd , short events  __attribute__((__un
   int __cil_tmp ;
 
   {
-#line 1637
+#line 1636
   LogDebug("Resolver: Got callback on fd %d, events %d", r_fd, events);
-#line 1640
+#line 1639
   i = 0;
-#line 1640
+#line 1639
   while (i < Pool_Size) {
-#line 1641
+#line 1640
     if ((My_Connections + i)->sock != -1) {
-#line 1641
+#line 1640
       if ((My_Connections + i)->res_stat.resolver_fd == r_fd) {
-#line 1643
+#line 1642
         break;
       }
     }
-#line 1640
+#line 1639
     i ++;
   }
-#line 1645
+#line 1644
   if (i >= Pool_Size) {
-#line 1648
+#line 1647
     io_close(r_fd);
-#line 1649
+#line 1648
     LogDebug("Resolver: Got callback for unknown connection!?");
-#line 1650
+#line 1649
     return;
   }
-#line 1654
+#line 1653
   len = Resolve_Read(& (My_Connections + i)->res_stat, (void *)(readbuf), sizeof(readbuf) - 1U);
-#line 1655
+#line 1654
   if (len == 0U) {
-#line 1656
+#line 1655
     return;
   }
-#line 1658
+#line 1657
   readbuf[len] = (char )'\000';
-#line 1659
+#line 1658
   identptr = strchr((char const   *)(readbuf), '\n');
-#line 1661
+#line 1660
   if (! identptr) {
-#line 1662
+#line 1661
     Log(2, "Resolver: Got malformed result!");
-#line 1663
+#line 1662
     return;
   }
-#line 1666
+#line 1665
   *identptr = (char )'\000';
-#line 1667
+#line 1666
   LogDebug("Got result from resolver: \"%s\" (%u bytes read).", readbuf, len);
-#line 1673
+#line 1672
   c = Conn_GetClient(i);
-#line 1677
+#line 1676
   __cil_tmp = Client_Type(c);
-#line 1677
+#line 1676
   if (__cil_tmp == 1) {
-#line 1678
+#line 1677
     strlcpy((My_Connections + i)->host, (char const   *)(readbuf), sizeof((My_Connections + i)->host));
-#line 1679
+#line 1678
     Client_SetHostname(c, readbuf);
   }
-#line 1694
+#line 1693
   Conn_ResetPenalty(i);
-#line 1695
+#line 1694
   return;
 }
 }
-#line 1698 "conn.c"
+#line 1697 "conn.c"
 static void Simple_Message(int Sock , char const   *Msg ) 
 { char buf[513] ;
   size_t len ;
 
   {
-#line 1709
+#line 1708
   strlcpy(buf, Msg, sizeof(buf) - 2U);
-#line 1710
+#line 1709
   len = strlcat(buf, "\r\n", sizeof(buf));
-#line 1711
+#line 1710
   write(Sock, (void const   *)(buf), len);
-#line 1712
+#line 1711
   return;
 }
 }
-#line 1715 "conn.c"
+#line 1714 "conn.c"
 CLIENT *Conn_GetClient(CONN_ID Idx ) 
 { CONNECTION *c ;
   void *__cil_tmp ;
   CLIENT *__cil_tmp___0 ;
 
   {
-#line 1724
+#line 1723
   __cil_tmp = array_get(& My_ConnArray, sizeof(CONNECTION ), (unsigned int )Idx);
-#line 1724
+#line 1723
   c = (CONNECTION *)__cil_tmp;
-#line 1728
+#line 1727
   if (c) {
-#line 1728
+#line 1727
     __cil_tmp___0 = c->client;
   } else {
-#line 1728
+#line 1727
     __cil_tmp___0 = (CLIENT *)((void *)0);
   }
-#line 1728
+#line 1727
   return (__cil_tmp___0);
 }
 }
 #line 1 "conn-func.o"
-#pragma merger(0,"/tmp/cil-IpmzNmoU.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-lBJ1ibuX.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 30 "conn-func.h"
 time_t Conn_GetSignon(CONN_ID Idx ) ;
 #line 31
@@ -10198,9 +10229,9 @@ long Conn_WCounter(void)
 }
 }
 #line 1 "conn-zip.o"
-#pragma merger(0,"/tmp/cil-iCmyVOnj.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-0E5fR1TP.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 1 "hash.o"
-#pragma merger(0,"/tmp/cil-RPIBUYD6.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-zA2PIhNp.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 33 "hash.c"
 UINT32 Hash(char const   *String ) 
 { 
@@ -10211,7 +10242,7 @@ UINT32 Hash(char const   *String )
 }
 }
 #line 1 "io.o"
-#pragma merger(0,"/tmp/cil-2JOeuM23.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-QARt35HB.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 63 "/usr/include/fcntl.h"
 extern int fcntl(int __fd , int __cmd  , ...) ;
 #line 69 "io.c"
@@ -10740,7 +10771,7 @@ static void io_docallback(int fd , short what )
 }
 }
 #line 1 "irc.o"
-#pragma merger(0,"/tmp/cil-jm9zAmyr.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-d1rB5DvX.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 33 "irc-write.h"
 void IRC_SetPenalty(CLIENT *Client , time_t Seconds ) ;
 #line 43 "parse.h"
@@ -11491,7 +11522,7 @@ static char *Option_String(CONN_ID Idx )
 }
 }
 #line 1 "irc-channel.o"
-#pragma merger(0,"/tmp/cil-GYCUYrHd.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-0JgKAvj4.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 102 "/usr/include/string.h"
 extern  __attribute__((__nothrow__)) int strncmp(char const   *__s1 , char const   *__s2 ,
                                                  size_t __n )  __attribute__((__pure__,
@@ -12705,7 +12736,7 @@ int IRC_CHANINFO(CLIENT *Client , REQUEST *Req )
 }
 }
 #line 1 "irc-info.o"
-#pragma merger(0,"/tmp/cil-iRs3Mno6.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-yVMDMp64.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 27 "./../tool/tool.h"
 void ngt_TrimLastChr(char *String , char Chr ) ;
 #line 31
@@ -13890,6 +13921,7 @@ int IRC_STATS(CLIENT *Client , REQUEST *Req )
     cl = Conn_GetClient(con);
 #line 485
     if (! cl) {
+#line 486
       goto __Cont;
     }
 #line 487
@@ -13945,6 +13977,7 @@ int IRC_STATS(CLIENT *Client , REQUEST *Req )
     if (cmd->lcount == 0L) {
 #line 510
       if (cmd->rcount == 0L) {
+#line 511
         goto __Cont___0;
       }
     }
@@ -14486,6 +14519,7 @@ static int IRC_Send_WHO(CLIENT *Client , CHANNEL *Chan , int OnlyOps )
     if (OnlyOps) {
 #line 729
       if (! is_ircop) {
+#line 730
         goto __Cont;
       }
     }
@@ -14658,6 +14692,7 @@ int IRC_WHO(CLIENT *Client , REQUEST *Req )
     __cil_tmp___4 = Client_Type(c);
 #line 805
     if (__cil_tmp___4 != 16) {
+#line 806
       goto __Cont;
     }
 #line 819
@@ -14668,6 +14703,7 @@ int IRC_WHO(CLIENT *Client , REQUEST *Req )
     __cil_tmp___6 = strchr(client_modes, 'i');
 #line 820
     if (__cil_tmp___6) {
+#line 821
       goto __Cont;
     }
 #line 823
@@ -14676,6 +14712,7 @@ int IRC_WHO(CLIENT *Client , REQUEST *Req )
       __cil_tmp___7 = strchr(client_modes, 'o');
 #line 823
       if (! __cil_tmp___7) {
+#line 824
         goto __Cont;
       }
     }
@@ -14710,6 +14747,7 @@ int IRC_WHO(CLIENT *Client , REQUEST *Req )
       }
 #line 835
       if (! client_match) {
+#line 836
         goto __Cont;
       }
     }
@@ -15854,7 +15892,7 @@ int IRC_Send_ISUPPORT(CLIENT *Client )
 }
 }
 #line 1 "irc-login.o"
-#pragma merger(0,"/tmp/cil-SLSQyWNj.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-wNPu3Wzg.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 27 "irc-write.h"
 void IRC_WriteStrServers(CLIENT *ExceptOf , char *Format  , ...) ;
 #line 21 "irc-login.h"
@@ -17154,7 +17192,7 @@ static void Kill_Nick(char *Nick , char *Reason )
 }
 }
 #line 1 "irc-mode.o"
-#pragma merger(0,"/tmp/cil-4xFm4Ye9.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-MrSn7yu9.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 31 "lists.h"
 int Lists_CheckDupeMask(struct list_head  const  *h , char const   *Mask ) ;
 #line 34
@@ -17546,6 +17584,7 @@ static int Client_Mode(CLIENT *Client , REQUEST *Req , CLIENT *Origin , CLIENT *
     }
 #line 192
     x[0] = (char )'\000';
+#line 193
     goto client_exit;
     }
 #line 195
@@ -18287,6 +18326,7 @@ static int Channel_Mode(CLIENT *Client , REQUEST *Req , CLIENT *Origin , CHANNEL
     }
 #line 500
     x[0] = (char )'\000';
+#line 501
     goto chan_exit;
     }
 #line 504
@@ -18634,7 +18674,7 @@ static int Send_ListChange(char *Mode , CLIENT *Prefix , CLIENT *Client , CHANNE
 }
 }
 #line 1 "irc-op.o"
-#pragma merger(0,"/tmp/cil-esaU1WPC.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-MSRufI2B.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 21 "irc-op.h"
 int IRC_KICK(CLIENT *Client , REQUEST *Req ) ;
 #line 22
@@ -18916,7 +18956,7 @@ int IRC_INVITE(CLIENT *Client , REQUEST *Req )
 }
 }
 #line 1 "irc-oper.o"
-#pragma merger(0,"/tmp/cil-X2uSBUNE.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-vCC2HD44.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 21 "irc-oper.h"
 int IRC_OPER(CLIENT *Client , REQUEST *Req ) ;
 #line 22
@@ -19563,6 +19603,7 @@ int IRC_WALLOPS(CLIENT *Client , REQUEST *Req )
     __cil_tmp___6 = Client_Conn(to);
 #line 296
     if (__cil_tmp___6 < 0) {
+#line 297
       goto __Cont;
     }
 #line 299
@@ -19597,7 +19638,7 @@ int IRC_WALLOPS(CLIENT *Client , REQUEST *Req )
 }
 }
 #line 1 "irc-server.o"
-#pragma merger(0,"/tmp/cil-TUAHvbC2.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-E097tRSP.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 19 "numeric.h"
 int IRC_Num_ENDOFMOTD(CLIENT *Client , REQUEST *Req  __attribute__((__unused__)) ) ;
 #line 21 "irc-server.h"
@@ -20184,7 +20225,7 @@ int IRC_SQUIT(CLIENT *Client , REQUEST *Req )
 }
 }
 #line 1 "irc-write.o"
-#pragma merger(0,"/tmp/cil-yyXJS7G9.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-Dj7PCYEm.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 24 "irc-write.h"
 int IRC_WriteStrChannel(CLIENT *Client , CHANNEL *Chan , int Remote , char *Format 
                         , ...) ;
@@ -20664,7 +20705,7 @@ static char *Get_Prefix(CLIENT *Target , CLIENT *Client )
 }
 }
 #line 1 "lists.o"
-#pragma merger(0,"/tmp/cil-vSACk9Bh.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-Rt7KKgC5.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 45 "lists.c"
 char const   *Lists_GetMask(struct list_elem  const  *e ) 
 { 
@@ -20948,7 +20989,7 @@ int Lists_Check(struct list_head *header , CLIENT *Client )
 }
 }
 #line 1 "log.o"
-#pragma merger(0,"/tmp/cil-8gpkiGas.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-wpmLOw6v.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 50 "log.h"
 void Log_Init_Resolver(void) ;
 #line 51
@@ -21159,7 +21200,7 @@ static void Wall_ServerNotice(char *Msg )
 }
 }
 #line 1 "match.o"
-#pragma merger(0,"/tmp/cil-9ZdvtJnq.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-TOSlxBWm.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 35 "match.c"
 static int Matche(char const   *p , char const   *t ) ;
 #line 36
@@ -21513,7 +21554,7 @@ static int Matche_After_Star(char const   *p , char const   *t )
 }
 }
 #line 1 "numeric.o"
-#pragma merger(0,"/tmp/cil-tQPq87xX.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-ApDmqDbP.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 20 "numeric.h"
 int IRC_Num_ISUPPORT(CLIENT *Client , REQUEST *Req ) ;
 #line 46 "numeric.c"
@@ -21849,22 +21890,26 @@ int IRC_Num_ENDOFMOTD(CLIENT *Client , REQUEST *Req  __attribute__((__unused__))
       __cil_tmp___2 = Client_Type(c);
 #line 215
       if (__cil_tmp___2 != 32) {
+#line 216
         goto __Cont;
       }
 #line 217
       __cil_tmp___3 = Client_Hops(c);
 #line 217
       if (__cil_tmp___3 != i) {
+#line 218
         goto __Cont;
       }
 #line 219
       if ((unsigned int )c == (unsigned int )Client) {
+#line 220
         goto __Cont;
       } else {
 #line 219
         __cil_tmp___4 = Client_ThisServer();
 #line 219
         if ((unsigned int )c == (unsigned int )__cil_tmp___4) {
+#line 220
           goto __Cont;
         }
       }
@@ -22054,6 +22099,7 @@ int IRC_Num_ISUPPORT(CLIENT *Client , REQUEST *Req )
       __cil_tmp___0 = atol((char const   *)value);
 #line 316
       if ((unsigned int )__cil_tmp___0 == Conf_MaxNickLength - 1U) {
+#line 317
         goto __Cont;
       }
 #line 320
@@ -22078,7 +22124,7 @@ int IRC_Num_ISUPPORT(CLIENT *Client , REQUEST *Req )
 }
 }
 #line 1 "parse.o"
-#pragma merger(0,"/tmp/cil-93H7xy2c.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-KwAiJUQ0.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 61 "parse.c"
 static COMMAND My_Commands[48]  = 
 #line 61 "parse.c"
@@ -22669,9 +22715,9 @@ static int Handle_Request(CONN_ID Idx , REQUEST *Req )
 }
 }
 #line 1 "rendezvous.o"
-#pragma merger(0,"/tmp/cil-CdcT2h63.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-SpqPzXpL.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 1 "resolve.o"
-#pragma merger(0,"/tmp/cil-YuNieWH9.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-msMKIjYS.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 371 "/usr/include/unistd.h"
 extern  __attribute__((__nothrow__)) int pipe(int *__pipedes ) ;
 #line 61 "/usr/include/netdb.h"
@@ -23084,6 +23130,7 @@ static void Do_ResolveAddr(ng_ipaddr_t const   *Addr , int identsock , int w_fd 
   __cil_tmp = ReverseLookup(Addr, hostname, sizeof(hostname));
 #line 417
   if (! __cil_tmp) {
+#line 418
     goto dns_done;
   }
 #line 420
@@ -23251,7 +23298,7 @@ size_t Resolve_Read(RES_STAT *s , void *readbuf , size_t buflen )
 }
 }
 #line 1 "strlcpy.o"
-#pragma merger(0,"/tmp/cil-MVMeQ1In.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-EQ0d5caC.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 33 "strlcpy.c"
 size_t strlcat(char *dst , char const   *src , size_t size ) 
 { size_t len1 ;
@@ -23321,9 +23368,9 @@ size_t strlcpy(char *dst , char const   *src , size_t size )
 }
 }
 #line 1 "strdup.o"
-#pragma merger(0,"/tmp/cil-12CuEiPj.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-56ncpqHU.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 1 "vsnprintf.o"
-#pragma merger(0,"/tmp/cil-SKFhl8zl.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-7HyGMQfB.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 101 "vsnprintf.c"
 void dummy_snprintf(void) ;
 #line 102 "vsnprintf.c"
@@ -23336,9 +23383,9 @@ void dummy_snprintf(void)
 }
 }
 #line 1 "libngtool.a"
-#pragma merger(0,"/tmp/cil-Ymy9fspb.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 116 "/usr/include/ctype.h"
-extern  __attribute__((__nothrow__)) int tolower(int __c ) ;
+#pragma merger(0,"/tmp/cil-kagifA1C.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#line 140 "/fs/junkfood2/kkma/repo/kkma/symexe/trunk/experiments/ngircd/src/../../../libc/ctype.h"
+extern int tolower(int  ) ;
 #line 35 "tool.c"
 void ngt_TrimStr(char *String ) 
 { char *start ;
@@ -23464,7 +23511,7 @@ void ngt_TrimLastChr(char *String , char Chr )
 }
 }
 #line 1 "libngipaddr.a"
-#pragma merger(0,"/tmp/cil-4NBf0jmK.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-spKc3xlw.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 62 "/usr/include/string.h"
 extern  __attribute__((__nothrow__)) int memcmp(void const   *__s1 , void const   *__s2 ,
                                                 size_t __n )  __attribute__((__pure__,
@@ -23473,51 +23520,51 @@ __nonnull__(1,2))) ;
 extern  __attribute__((__nothrow__)) uint16_t htons(uint16_t __hostshort )  __attribute__((__const__)) ;
 #line 74 "/usr/include/arpa/inet.h"
 extern  __attribute__((__nothrow__)) int inet_aton(char const   *__cp , struct in_addr *__inp ) ;
-#line 24 "ng_ipaddr.c"
+#line 21 "ng_ipaddr.c"
 int ng_ipaddr_init(ng_ipaddr_t *addr , char const   *ip_str , UINT16 port ) 
 { int __cil_tmp ;
 
   {
-#line 56
+#line 53
   if ((unsigned int )ip_str == (unsigned int )((void *)0)) {
-#line 57
+#line 54
     ip_str = "0.0.0.0";
   }
-#line 58
+#line 55
   addr->sin4.sin_family = (unsigned short)2;
-#line 60
+#line 57
   __cil_tmp = inet_aton(ip_str, & addr->sin4.sin_addr);
-#line 60
+#line 57
   if (__cil_tmp == 0) {
-#line 61
+#line 58
     return (0);
   }
-#line 67
+#line 64
   ng_ipaddr_setport(addr, port);
-#line 68
+#line 65
   return (1);
 }
 }
-#line 73 "ng_ipaddr.c"
+#line 70 "ng_ipaddr.c"
 void ng_ipaddr_setport(ng_ipaddr_t *a , UINT16 port ) 
 { 
 
   {
-#line 96
+#line 93
   a->sin4.sin_port = htons(port);
-#line 98
+#line 95
   return;
 }
 }
-#line 102 "ng_ipaddr.c"
+#line 99 "ng_ipaddr.c"
 int ng_ipaddr_ipequal(ng_ipaddr_t const   *a , ng_ipaddr_t const   *b ) 
 { int __cil_tmp ;
 
   {
-#line 121
+#line 118
   __cil_tmp = memcmp((void const   *)(& a->sin4.sin_addr), (void const   *)(& b->sin4.sin_addr),
                      sizeof(a->sin4.sin_addr));
-#line 121
+#line 118
   return (__cil_tmp == 0);
 }
 }
