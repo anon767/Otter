@@ -2,12 +2,12 @@
 #include<stdlib.h>
 #include<string.h>
 
-#define LINE 100000
 #define LEN	 50
 #define TARGET "The lines hit were:\n"
 
-char* table[LINE];
+char** table;
 int size;
+int LINE=10000;
 
 int scmp( const void *sp1, const void *sp2 )
 {
@@ -18,6 +18,8 @@ int main(){
 
 	int i,count;
 	char buf[1024];
+
+	table = malloc(sizeof(char*)*LINE);		
 	while(!feof(stdin)){
 		fgets(buf,1024,stdin);
 		if(strcmp(buf,TARGET)==0){
@@ -26,8 +28,8 @@ int main(){
 				if(strcmp(buf,"\n")==0) break;
 				table[size++] = strdup(buf);
 				if(size>=LINE){
-					printf("Too many lines (try increase the LINE bound)\n");
-					exit(1);
+					LINE*=2;
+					table = realloc(table,sizeof(char*)*LINE);
 				}
 			}
 		}
@@ -40,7 +42,4 @@ int main(){
 	printf("Without repeat: %d\n",count);
 	return 0;
 }
-
-	
-
 
