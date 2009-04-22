@@ -31,15 +31,6 @@ int		IOSIM_num_fd = 3;
 //	return ret;
 //}
 
-
-char *realpath(const char *restrict file_name,
-	       char *restrict resolved_name){
-	strcpy(resolved_name,file_name);
-	strcat(resolved_name,"/");
-	return resolved_name;
-}
-
-
 // If the file exists, return it; otherwise return NULL.
 sym_file_t *IOSIM_findfile(const char *file){
 	for(int i=0;i<IOSIM_num_file;i++){
@@ -94,38 +85,49 @@ int IOSIM_newfd(){
 	return ret;
 }
 
-int IOSIM_openWithMode(const char *name, int flags, mode_t mode) {
-	char absoluteName[PATH_MAX+1];
+// Allocates and returns a string which holds the absolute path for 'name'
+char *IOSIM_toAbsolute(const char *name) {
+	char *absoluteName = malloc(PATH_MAX+1);
 	char *lastSlash = strrchr(name,'/');
 	if (lastSlash) { // If 'name' is not a bare file name
 		char *path = strdup(name);
 		path[lastSlash - name] = 0; // Make 'path' be just the path, excluding the file name
 		if (!realpath(path,absoluteName)) { // Make the path absolute
+			free(path);
 			return -1; // Return -1 on error
 		}
 		free(path);
-	} else { // There was no path at all, only a file name
+	} else { // 'name' contained no path at all, only a file name
 		strcpy(absoluteName,workingDir);
 	}
 	// At this point, absoluteName is the absolute path, but only the path
 	char *end = strchr(absoluteName,0);
+	// Potential buffer overflow here
 	if (absoluteName[1]) { // If absoluteName is not "/", so it doesn't end with a '/'
 		*end++ = '/'; // add a '/'
 	}
 	strcpy(end, lastSlash ? lastSlash + 1 : name); // Add the file name
+	return absoluteName;
+}
+
+int IOSIM_openWithMode(const char *name, int flags, mode_t mode) {
+	char *absoluteName = IOSIM_toAbsolute(name);
 	sym_file_t *sym_file = IOSIM_findfile(absoluteName);
 	if (sym_file) {
 		// If the file exists, then return an error if it shouldn't
 		if ((flags & O_CREAT) && (flags & O_EXCL)) {
 			errno = EEXIST;
+			free(absoluteName);
 			return -1;
 		}
 	} else if (flags & O_CREAT) {
 		// File doesn't exist and we should create it
-		sym_file = IOSIM_addfile(absoluteName, mode & ~usermask);
+		sym_file = IOSIM_addfile(absoluteName, /*NULL,*/ mode & ~usermask);
+		free(absoluteName);
 	} else {
 		// File doesn't exist, and we shouldn't create it.
 		errno = ENOENT;
+		free(absoluteName);
 		return -1;
 	}
 
@@ -138,13 +140,11 @@ int IOSIM_openWithMode(const char *name, int flags, mode_t mode) {
 
 	// Initialize the values for the stream
 	sym_stream->sym_file = sym_file;
-	sym_stream->sym_fileout = sym_file;
 	sym_stream->offset = 0;
 	sym_stream->fd = fd;
 
 	return fd;
 }
-
 int IOSIM_open(const char *name, int flags) {
 	return IOSIM_openWithMode(name,flags,0777);
 }

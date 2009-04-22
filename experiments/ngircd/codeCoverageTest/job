@@ -1,0 +1,12 @@
+for file in `ls otherFiles/4*.c otherFiles/5*.c`
+	do
+		i=${file%\.*}
+		echo -n "Running job " $i "   	"
+		if [ -a $i.out ] ;
+			then
+				echo "[Skipped]"
+			else
+				./rerun --printLittle $i.c &> $i.out
+				echo "[Done]"
+		fi
+	done
