@@ -13,7 +13,6 @@
 extern int symtest();
 
 // define if do not make the flag symbolic
-//#define	CONF_MAXCONNECTIONS 
 //#define	CONF_CONNECTRETRY 
 //#define	CONF_UID 
 //#define	CONF_GID 
@@ -24,11 +23,12 @@ extern int symtest();
 //#define	CONF_OPERSERVERMODE 
 //#define	CONF_CONNECTIPV6 
 //#define	CONF_CONNECTIPV4 
-//#define	CONF_MAXJOINS 
-//#define	CONF_MAXCONNECTIONSIP 
-//#define	CONF_MAXNICKLENGTH 
-//#define	CONF_PINGTIMEOUT 
-//#define	CONF_PONGTIMEOUT 
+#define	CONF_MAXJOINS 
+#define	CONF_MAXCONNECTIONSIP 
+#define	CONF_MAXNICKLENGTH 
+#define	CONF_MAXCONNECTIONS 
+#define	CONF_PINGTIMEOUT 
+#define	CONF_PONGTIMEOUT 
 
 void symtest_Conf_Init_impl(){
 	#ifndef CONF_UID
