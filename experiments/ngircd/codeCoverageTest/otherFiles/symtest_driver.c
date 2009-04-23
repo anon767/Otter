@@ -12,6 +12,24 @@
 // Defined in one of the symtest{i}.c
 extern int symtest();
 
+// define if do not make the flag symbolic
+//#define	CONF_MAXCONNECTIONS 
+//#define	CONF_CONNECTRETRY 
+//#define	CONF_UID 
+//#define	CONF_GID 
+//#define	CONF_OPERCANMODE 
+//#define	CONF_NODNS 
+//#define	CONF_LISTENIPV6 
+//#define	CONF_LISTENIPV4 
+//#define	CONF_OPERSERVERMODE 
+//#define	CONF_CONNECTIPV6 
+//#define	CONF_CONNECTIPV4 
+//#define	CONF_MAXJOINS 
+//#define	CONF_MAXCONNECTIONSIP 
+//#define	CONF_MAXNICKLENGTH 
+//#define	CONF_PINGTIMEOUT 
+//#define	CONF_PONGTIMEOUT 
+
 void symtest_Conf_Init_impl(){
 	#ifndef CONF_UID
 		__SYMBOLIC(&Conf_UID);
