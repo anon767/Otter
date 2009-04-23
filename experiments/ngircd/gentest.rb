@@ -2,11 +2,12 @@
 
 def make_testcontents(name)
   s = <<END
-STATSFILE=../ngircd.stats
+COVDIR=../codeCoverageTest
+STATSFILE=$COVDIR/ngircd.stats
 
-TOPDIR=../../../..
+TOPDIR=../../..
 LIBCDIR=$TOPDIR/libc
-MOCKEDDIR=../mockedFns
+MOCKEDDIR=$COVDIR/mockedFns
 
 cd $1
 
@@ -21,8 +22,8 @@ $TOPDIR/cil/bin/cilly \\
 	--printNoEscapedString \\
 	--covStats=$STATSFILE \\
 	--lineCov \\
-	../otherFiles/symtest_driver.c \\
-	../otherFiles/#{name}.c
+	$COVDIR/otherFiles/symtest_driver.c \\
+	$COVDIR/otherFiles/#{name}.c
 END
 end
 
