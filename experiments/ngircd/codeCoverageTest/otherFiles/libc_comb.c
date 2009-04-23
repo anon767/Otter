@@ -2963,7 +2963,9 @@ static size_t format_int(char *q , size_t n , uintmax_t val , enum flags flags ,
 #line 168 "/fs/junkfood2/kkma/t/libc/vsnprintf.c"
 int ( /* format attribute */  vsnprintf)(char * __restrict  buffer , size_t n , char const   * __restrict  format ,
                                          __gnuc_va_list ap ) 
-{ char const   *p ;
+{ 
+#ifdef __ORIGINAL_VSNPRINTF__
+  char const   *p ;
   char ch ;
   char *q ;
   size_t o ;
@@ -3539,6 +3541,10 @@ int ( /* format attribute */  vsnprintf)(char * __restrict  buffer , size_t n , 
 #line 489
   return ((int )o);
 }
+#else
+  strcpy(buffer,format);
+  return 0;
+#endif
 }
 #line 1 "cil-AWJ2OAQG.o"
 #pragma merger(0,"/tmp/cil-KUUWK3S5.i","")

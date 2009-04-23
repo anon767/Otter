@@ -23,12 +23,14 @@ extern int symtest();
 //#define	CONF_OPERSERVERMODE 
 //#define	CONF_CONNECTIPV6 
 //#define	CONF_CONNECTIPV4 
-#define	CONF_MAXJOINS 
-#define	CONF_MAXCONNECTIONSIP 
-#define	CONF_MAXNICKLENGTH 
+
+//#define	CONF_MAXJOINS 
+//#define	CONF_MAXCONNECTIONSIP 
+//#define	CONF_MAXNICKLENGTH 
+//#define	CONF_PINGTIMEOUT 
+//#define	CONF_PONGTIMEOUT 
+
 #define	CONF_MAXCONNECTIONS 
-#define	CONF_PINGTIMEOUT 
-#define	CONF_PONGTIMEOUT 
 
 void symtest_Conf_Init_impl(){
 	#ifndef CONF_UID
@@ -81,26 +83,22 @@ void symtest_Conf_Init_impl(){
 		 
 	#ifndef CONF_MAXCONNECTIONS
 		 __SYMBOLIC(&Conf_MaxConnections);
-		 __ASSUME(Conf_MaxConnections>=1);
-		 __ASSUME(Conf_MaxConnections<=9);
+		 __ASSUME(Conf_MaxConnections>=0);
 	#endif
 		 
 	#ifndef CONF_MAXJOINS
 		 __SYMBOLIC(&Conf_MaxJoins);
-		 __ASSUME(Conf_MaxJoins>=1);
-		 __ASSUME(Conf_MaxJoins<=9);
+		 __ASSUME(Conf_MaxJoins>=0);
 	#endif
 		 
 	#ifndef CONF_MAXCONNECTIONSIP 
 		 __SYMBOLIC(&Conf_MaxConnectionsIP);
-		 __ASSUME(Conf_MaxConnectionsIP>=1);
-		 __ASSUME(Conf_MaxConnectionsIP<=9);
+		 __ASSUME(Conf_MaxConnectionsIP>=0);
 	#endif
 		 
 	#ifndef CONF_MAXNICKLENGTH
 		 __SYMBOLIC(&Conf_MaxNickLength);
-		 __ASSUME(Conf_MaxNickLength>=1);
-		 __ASSUME(Conf_MaxNickLength<=9);
+		 __ASSUME(Conf_MaxNickLength>=0);
 	#endif
 		
 }

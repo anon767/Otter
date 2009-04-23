@@ -35,22 +35,15 @@ int inet_aton(const char *cp, struct in_addr *pin){
 //#endif
 
 //#if __HAVE_inet_ntoa__
-//extern int __vsnprintf(char *buffer, size_t n, const char *format, va_list ap);
-char inet_ntoa_return[20]; // static buffer overwritten with each call
 char *inet_ntoa(struct in_addr in){
-	long n = in.s_addr;
-	int ip[4];
-	for(int i=0;i<4;i++){
-		ip[i] = n%256;
-		n /=256;
-	}
-	sprintf(inet_ntoa_return,"%d.%d.%d.%d",ip[3],ip[2],ip[1],ip[0]);
-	//SYMTEST
-	//__EVAL(n);
-	//__EVAL(inet_ntoa_return[0]);
-	//__EVAL(inet_ntoa_return[1]);
-	//exit(1);
-	return inet_ntoa_return;
+	//long n = in.s_addr;
+	//int ip[4];
+	//for(int i=0;i<4;i++){
+	//	ip[i] = n%256;
+	//	n /=256;
+	//}
+	//sprxxxf(inet_ntoa_return,"%d.%d.%d.%d",ip[3],ip[2],ip[1],ip[0]);
+	return strdup("44.33.22.11");
 }
 //#endif
 //char *inet_ntoa(struct in_add in) {
