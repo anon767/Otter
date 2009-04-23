@@ -28,7 +28,7 @@
 #ifdef TUNABLE_IDLE_SESSION_TIMEOUT
   tunable_idle_session_timeout = TUNABLE_IDLE_SESSION_TIMEOUT;
 #else
-  __SYMBOLIC(&tunable_idle_session_timeout);
+//  __SYMBOLIC(&tunable_idle_session_timeout);
 #endif
 #ifdef TUNABLE_DATA_CONNECTION_TIMEOUT
   tunable_data_connection_timeout = TUNABLE_DATA_CONNECTION_TIMEOUT;
@@ -407,50 +407,50 @@
 #ifdef TUNABLE_MDTM_WRITE
   tunable_mdtm_write = TUNABLE_MDTM_WRITE;
 #else
-//  __SYMBOLIC(&tunable_mdtm_write);
+  __SYMBOLIC(&tunable_mdtm_write);
 #endif
 #ifdef TUNABLE_LOCK_UPLOAD_FILES
   tunable_lock_upload_files = TUNABLE_LOCK_UPLOAD_FILES;
 #else
-//  __SYMBOLIC(&tunable_lock_upload_files);
+  __SYMBOLIC(&tunable_lock_upload_files);
 #endif
 #ifdef TUNABLE_PASV_ADDR_RESOLVE
   tunable_pasv_addr_resolve = TUNABLE_PASV_ADDR_RESOLVE;
 #else
-//  __SYMBOLIC(&tunable_pasv_addr_resolve);
+  __SYMBOLIC(&tunable_pasv_addr_resolve);
 #endif
 #ifdef TUNABLE_DEBUG_SSL
   tunable_debug_ssl = TUNABLE_DEBUG_SSL;
 #else
-//  __SYMBOLIC(&tunable_debug_ssl);
+  __SYMBOLIC(&tunable_debug_ssl);
 #endif
 #ifdef TUNABLE_REQUIRE_CERT
   tunable_require_cert = TUNABLE_REQUIRE_CERT;
 #else
-//  __SYMBOLIC(&tunable_require_cert);
+  __SYMBOLIC(&tunable_require_cert);
 #endif
 #ifdef TUNABLE_VALIDATE_CERT
   tunable_validate_cert = TUNABLE_VALIDATE_CERT;
 #else
-//  __SYMBOLIC(&tunable_validate_cert);
+  __SYMBOLIC(&tunable_validate_cert);
 #endif
 #ifdef TUNABLE_STRICT_SSL_READ_EOF
   tunable_strict_ssl_read_eof = TUNABLE_STRICT_SSL_READ_EOF;
 #else
-//  __SYMBOLIC(&tunable_strict_ssl_read_eof);
+  __SYMBOLIC(&tunable_strict_ssl_read_eof);
 #endif
 #ifdef TUNABLE_STRICT_SSL_WRITE_SHUTDOWN
   tunable_strict_ssl_write_shutdown = TUNABLE_STRICT_SSL_WRITE_SHUTDOWN;
 #else
-//  __SYMBOLIC(&tunable_strict_ssl_write_shutdown);
+  __SYMBOLIC(&tunable_strict_ssl_write_shutdown);
 #endif
 #ifdef TUNABLE_SSL_REQUEST_CERT
   tunable_ssl_request_cert = TUNABLE_SSL_REQUEST_CERT;
 #else
-//  __SYMBOLIC(&tunable_ssl_request_cert);
+  __SYMBOLIC(&tunable_ssl_request_cert);
 #endif
 #ifdef TUNABLE_DELETE_FAILED_UPLOADS
   tunable_delete_failed_uploads = TUNABLE_DELETE_FAILED_UPLOADS;
 #else
-//  __SYMBOLIC(&tunable_delete_failed_uploads);
+  __SYMBOLIC(&tunable_delete_failed_uploads);
 #endif
