@@ -5,6 +5,8 @@ int symtest(){
 
 	// setup client(s)
 	int client_fd1 = socket(0,0,0);
+	int client_fd2 = socket(0,0,0);
+	int client_fd3 = socket(0,0,0);
 
 	t = 0;
 		

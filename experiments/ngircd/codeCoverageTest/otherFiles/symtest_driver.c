@@ -63,19 +63,19 @@ void symtest_Conf_Init_impl(){
 		 
 	#ifndef CONF_MAXCONNECTIONS
 		 __SYMBOLIC(&Conf_MaxConnections);
-		 __ASSUME(Conf_MaxConnections>=0);
+		 __ASSUME(Conf_MaxConnections>=1);
 		 __ASSUME(Conf_MaxConnections<=9);
 	#endif
 		 
 	#ifndef CONF_MAXJOINS
 		 __SYMBOLIC(&Conf_MaxJoins);
-		 __ASSUME(Conf_MaxJoins>=0);
+		 __ASSUME(Conf_MaxJoins>=1);
 		 __ASSUME(Conf_MaxJoins<=9);
 	#endif
 		 
 	#ifndef CONF_MAXCONNECTIONSIP 
 		 __SYMBOLIC(&Conf_MaxConnectionsIP);
-		 __ASSUME(Conf_MaxConnectionsIP>=0);
+		 __ASSUME(Conf_MaxConnectionsIP>=1);
 		 __ASSUME(Conf_MaxConnectionsIP<=9);
 	#endif
 		 
