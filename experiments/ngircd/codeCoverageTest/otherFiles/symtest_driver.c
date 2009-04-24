@@ -13,23 +13,23 @@
 extern int symtest();
 
 // define if do not make the flag symbolic
-#define	CONF_CONNECTRETRY 
-#define	CONF_UID 
-#define	CONF_GID 
-#define	CONF_OPERCANMODE 
-#define	CONF_NODNS 
-#define	CONF_LISTENIPV6 
-#define	CONF_LISTENIPV4 
-#define	CONF_OPERSERVERMODE 
-#define	CONF_CONNECTIPV6 
-#define	CONF_CONNECTIPV4 
-
-#define	CONF_MAXJOINS 
-#define	CONF_MAXCONNECTIONSIP 
-#define	CONF_MAXNICKLENGTH 
-
-#define	CONF_PINGTIMEOUT 
-#define	CONF_PONGTIMEOUT 
+//#define	CONF_CONNECTRETRY 
+//#define	CONF_UID 
+//#define	CONF_GID 
+//#define	CONF_OPERCANMODE 
+//#define	CONF_NODNS 
+//#define	CONF_LISTENIPV6 
+//#define	CONF_LISTENIPV4 
+//#define	CONF_OPERSERVERMODE 
+//#define	CONF_CONNECTIPV6 
+//#define	CONF_CONNECTIPV4 
+//
+//#define	CONF_MAXJOINS 
+//#define	CONF_MAXCONNECTIONSIP 
+//#define	CONF_MAXNICKLENGTH 
+//
+//#define	CONF_PINGTIMEOUT 
+//#define	CONF_PONGTIMEOUT 
 //#define	CONF_MAXCONNECTIONS 
 
 void symtest_Conf_Init_impl(){
@@ -93,7 +93,7 @@ void symtest_Conf_Init_impl(){
 		 
 	#ifndef CONF_MAXCONNECTIONS
 		 __SYMBOLIC(&Conf_MaxConnections);
-		 __ASSUME(Conf_MaxConnections==1 || Conf_MaxConnections==20 || Conf_MaxConnections==0);
+		 __ASSUME(Conf_MaxConnections==1 || Conf_MaxConnections==20 || Conf_MaxConnections==0); // 0: unlimited
 	#endif
 		 
 	#ifndef CONF_MAXJOINS
