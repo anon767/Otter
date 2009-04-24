@@ -15,14 +15,16 @@ void *memset(void *dst, int c, size_t n)
 	// "slow start" - to minimize the no. of times of comparing symbolic values
 	
 	int i=0,nn;
+#define FACTOR 8
 
 	if(n<=0) return dst;
 
-	for(nn=1;nn<=n;nn*=2){
-		while(i<nn) // both i and nn are concrete!
-			q[i++] = c;
+	for(nn=1;nn<=n;nn*=FACTOR){
+		__EVAL(nn);
+		// both i and nn are concrete!
+		memset__concrete(dst,c,nn);
 	}
-	memset(dst+i,c,n-nn/2);
+	memset(dst+i,c,n-nn/FACTOR);
 
 #else
 	while (n--) {
