@@ -163,12 +163,11 @@ format_int(char *q, size_t n, uintmax_t val, enum flags flags,
 	return o;
 }
 
-//#include<string.h>
-//int __vsnprintf(char *buffer, size_t n, const char *format, va_list ap);
 int vsnprintf(char *buffer, size_t n, const char *format, va_list ap){
-//	return strcpy(buffer,format);
-//}
-//int __vsnprintf(char *buffer, size_t n, const char *format, va_list ap) {
+#ifdef __FAVORITE_SE__
+	strcpy(buffer,format);
+	return 0;
+#else
 	const char *p = format;
 	char ch;
 	char *q = buffer;
@@ -487,4 +486,5 @@ int vsnprintf(char *buffer, size_t n, const char *format, va_list ap){
 		buffer[n - 1] = '\0';	/* Overflow - terminate at end of buffer */
 
 	return o;
+#endif
 }
