@@ -27,12 +27,20 @@ extern int symtest();
 //#define	CONF_MAXJOINS 
 //#define	CONF_MAXCONNECTIONSIP 
 //#define	CONF_MAXNICKLENGTH 
+
 //#define	CONF_PINGTIMEOUT 
 //#define	CONF_PONGTIMEOUT 
-
 #define	CONF_MAXCONNECTIONS 
 
 void symtest_Conf_Init_impl(){
+
+	// this function is stepped in only once.
+	static int called = 0;
+	if(called==0)
+		called = 1;
+	else
+		return;
+
 	#ifndef CONF_UID
 		__SYMBOLIC(&Conf_UID);
 	#endif
@@ -43,10 +51,12 @@ void symtest_Conf_Init_impl(){
 		 
 	#ifndef CONF_PINGTIMEOUT
 		__SYMBOLIC(&Conf_PingTimeout);
+		__ASSUME(Conf_PingTimeout==3600 || Conf_PingTimeout==120 || Conf_PingTimeout==1);
 	#endif
 	
 	#ifndef CONF_PONGTIMEOUT
 		__SYMBOLIC(&Conf_PongTimeout);
+		__ASSUME(Conf_PongTimeout==3600 || Conf_PongTimeout==20 || Conf_PongTimeout==1);
 	#endif
 		 
 	#ifndef CONF_CONNECTRETRY
@@ -83,7 +93,7 @@ void symtest_Conf_Init_impl(){
 		 
 	#ifndef CONF_MAXCONNECTIONS
 		 __SYMBOLIC(&Conf_MaxConnections);
-		 __ASSUME(Conf_MaxConnections>=0);
+		 __ASSUME(Conf_MaxConnections==9);
 	#endif
 		 
 	#ifndef CONF_MAXJOINS

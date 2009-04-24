@@ -17,6 +17,7 @@ CILLY="env CILLY_DONT_COMPILE_AFTER_MERGE= ../../../cil/bin/cilly --merge --useL
 if [ "$1" == libc ]; then
 	echo "Merging libc"
 	$CILLY --out=otherFiles/libc_comb.c \
+		-D__FAVORITE_SE__ \
 		-I $LIBCDIR $LIBCDIR/*.c --warnall
 elif [ "$MERGE" == 1 ]; then
 	echo "Merging"
