@@ -63,9 +63,14 @@ let getStats (file : Cil.file) : unit =
 	let numLocs = Hashtbl.length locations in
 	let numStmts = Hashtbl.length stmts in
 	let numEdges = Hashtbl.length edges in
+	Printf.fprintf outChan "%d lines:\n" numLines;
+	let allLines = Hashtbl.fold (fun line () lst -> line :: lst) lines [] in
+	List.iter
+		(fun (file,lineNum) -> Printf.fprintf outChan "%s:%d\n" file lineNum)
+		(List.sort compare allLines);
 	Printf.fprintf outChan
-		"%d lines\n%d locations\n%d statements\n%d edges\n%d functions:\n"
-		numLines numLocs numStmts numEdges (List.length !funs);
+		"%d locations\n%d statements\n%d edges\n%d functions:\n"
+		numLocs numStmts numEdges (List.length !funs);
 	List.iter (fun str -> output_string outChan (str ^ "\n")) !funs;
   close_out outChan
 

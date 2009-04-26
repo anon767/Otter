@@ -521,10 +521,13 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 					Output.set_mode Output.MSG_MUSTPRINT;
 					Output.print_endline ("exit() called with code "^(
                         match exit_code with None-> "(NONE)" | Some(code) -> To_string.bytes code));
+					Report.printPath state.path_condition exHist;
+(*
 					Output.set_mode Output.MSG_REG;
 					Output.print_endline
 						("Path condition:\n" ^
 							 (To_string.humanReadablePc state.path_condition exHist.bytesToVars));
+*)
 					Complete (Types.Exit (exit_code, { result_state = state; result_history = exHist; }))
 
 	end (* outer [match func] *)
@@ -618,10 +621,13 @@ let exec_stmt job =
 						| Runtime::_ -> (* completed symbolic execution (e.g., return from main) *)
 								Output.set_mode Output.MSG_MUSTPRINT;
 								Output.print_endline "Program execution finished";
+								Report.printPath state.path_condition job.exHist;
+(*
 								Output.set_mode Output.MSG_REG;
 								Output.print_endline
 									("Path condition:\n" ^
 										 (To_string.humanReadablePc state.path_condition job.exHist.bytesToVars));
+*)
 								let retval = match expopt with
 									| None -> None
 									| Some exp -> Some (Eval.rval state exp)
@@ -706,10 +712,10 @@ let exec_stmt job =
 						begin
 							Output.print_endline ("Check if the following holds:");
 							Output.print_endline (To_string.bytes rv);
-							Output.print_endline ("Under the path condition:")
+							Output.print_endline ("Under the path condition:");
+							let pc_str = (Utility.print_list To_string.bytes state.path_condition " AND ") in
+							Output.print_endline (if String.length pc_str = 0 then "(nil)" else pc_str);
 						end;
-					let pc_str = (Utility.print_list To_string.bytes state.path_condition " AND ") in
-					Output.print_endline (if String.length pc_str = 0 then "(nil)" else pc_str);
  
 					let truth = Stp.eval state.path_condition rv in
  
@@ -743,7 +749,7 @@ let exec_stmt job =
 													| [] ->
 															begin match state.callContexts with
 																| (Source (_,_,nextStmt))::_ ->
-																		print_endline "Will merge upon function return";
+																		Output.print_endline "Will merge upon function return";
 																		[nextStmt.sid]
 																| _ ->
 																		[]
@@ -1010,7 +1016,7 @@ let mergeJobs job ((job_queue, merge_set) as job_pool) =
 																		path_condition = finalMergedPC;
 																}))
 				 )
-				 with TooDifferent -> print_endline "Memory too different to merge"; ()
+				 with TooDifferent -> Output.print_endline "Memory too different to merge"; ()
 				end
 			) (* End iteration function *)
 			merge_set;
@@ -1112,9 +1118,12 @@ let main_loop job =
 								Output.set_mode Output.MSG_MUSTPRINT;
 								Output.printf "Error \"%s\" occurs at %s\nAbandoning path\n"
 									msg (To_string.location loc);
+								Report.printPath state.path_condition hist;
+(*
 								Output.set_mode Output.MSG_REG;
 								Output.printf "Path condition: %s\n"
 									(To_string.humanReadablePc state.path_condition hist.bytesToVars)
+*)
 							| _ ->
 								()
 						end;

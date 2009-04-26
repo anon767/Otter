@@ -9,6 +9,44 @@ let not truth = match truth with
 	| Unknown -> Unknown
 ;;
 
+(** Return a SymbolSet of all symbols in the given Bytes *)
+let rec allSymbols = function
+	| Bytes_Constant const -> SymbolSet.empty
+	| Bytes_ByteArray bytearray ->
+			ImmutableArray.fold_left
+				(fun symbSet byte -> match byte with
+					 | Byte_Concrete _ -> symbSet
+					 | Byte_Symbolic symb -> SymbolSet.add symb symbSet
+					 | Byte_Bytes (bytes,_) -> SymbolSet.union symbSet (allSymbols bytes))
+				SymbolSet.empty
+				bytearray
+	| Bytes_Address (memBlockOpt,bytes) -> (
+			let partialAnswer = allSymbols bytes in
+			match memBlockOpt with
+					None -> partialAnswer
+				| Some memBlock ->
+						SymbolSet.union partialAnswer (allSymbols memBlock.memory_block_addr)
+		)
+	| Bytes_Op (_,bytes_typ_list) ->
+			List.fold_left
+				(fun symbSet (b,_) -> SymbolSet.union symbSet (allSymbols b))
+				SymbolSet.empty
+				bytes_typ_list
+	| Bytes_Read (bytes1,bytes2,_) ->
+			SymbolSet.union (allSymbols bytes1) (allSymbols bytes2)
+	| Bytes_Write (bytes1,bytes2,_,bytes3) ->
+			SymbolSet.union
+				(allSymbols bytes3)
+				(SymbolSet.union (allSymbols bytes1) (allSymbols bytes2))
+	| Bytes_FunPtr (_,bytes) -> allSymbols bytes
+
+(** Return a SymbolSet of all symbols in the given list of Bytes *)
+let allSymbolsInList byteslist =
+	List.fold_left
+		(fun symbSet b -> SymbolSet.union symbSet (allSymbols b))
+		SymbolSet.empty
+		byteslist
+
 let rec eval pc bytes =
 	(*
 	if not Executeargs.args.Executeargs.arg_print_queries then () else
@@ -76,6 +114,7 @@ let rec eval pc bytes =
 and
 
 consult_stp pc bytes =
+(*
     let vc = doassert pc in
 	let equal_zero = query vc bytes true in
 	if equal_zero then False else
@@ -90,7 +129,7 @@ and
 
 
 doassert pc =
-(*
+*)
 	let rec getRelevantAssumptions acc symbols pc' =
 		match List.partition
 			(fun b -> SymbolSet.is_empty (SymbolSet.inter symbols (allSymbols b)))
@@ -100,13 +139,13 @@ doassert pc =
 			| _,[] -> acc (* Nothing else is relevant *)
 			| subPC,relevant ->
 					getRelevantAssumptions (relevant @ acc)
-						(SymbolSet.union symbols (allSymbolsList relevant))
+						(SymbolSet.union symbols (allSymbolsInList relevant))
 						subPC
 	in
 	let relevantAssumptions =
 		getRelevantAssumptions [] (allSymbols bytes) pc
 	in
-*)
+
 	let vc = Stpc.create_validity_checker () in
     (*Stpc.e_push vc;*)
 	
@@ -125,9 +164,15 @@ doassert pc =
 			Output.print_endline ("ASSERT("^(Stpc.to_string a)^");");
 			do_assert tail
 	in
-		Stats.time "STP assert" do_assert pc ;	
-(*		Stats.time "STP assert" do_assert relevantAssumptions;*)	
-    vc
+(*		Stats.time "STP assert" do_assert pc;
+			vc;*)
+		Stats.time "STP assert" do_assert relevantAssumptions;
+
+	let equal_zero = query vc bytes true in
+	if equal_zero then False else
+		let not_equal_zero = query vc bytes false in
+		if not_equal_zero then True else
+			Unknown
 
 and
 
@@ -148,22 +193,6 @@ query vc bytes equal_zero =
       Stpc.e_pop vc;
       return
 
-(* (* This commented-out chunk is trying to merge query and consult_stp.
-	 Unfortunately, STP hangs if I try to make more than one query with
-	 the same vc. Why? *)
-	print_endline "Trying to prove it false";
-	if Stpc.query vc q then (* Ask if [bytes] *must* be false. *)
-		False (* If so, return False *)
-	else (
-		let q = (Stpc.e_not vc q) in
-		Output.print_endline ("QUERY("^(Stpc.to_string q)^");");
-		print_endline "Now trying to prove it true";
-		if Stpc.query vc q then (* Otherwise, ask if [bytes] *must* be true. *)
-			True (* If so, return True *)
-		else
-			Unknown (* [bytes] might be true and might be false *)
-	)
-*)
 and
 
 

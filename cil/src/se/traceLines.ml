@@ -48,7 +48,7 @@ class traceLinesVisitorClass = object
   
   method vinst i = begin
 		let loc = get_instrLoc i in
-		ChangeTo [ mkPrint (d_string "at line %s:%d\n" loc.file loc.line) [] ; i ]
+		ChangeTo [ mkPrint (d_string "at line %s:%d" loc.file loc.line) [] ; i ]
   end
 end
 

@@ -19,44 +19,6 @@ let getNumCovered covType hist = match covType with
 	| Stmt -> IntSet.cardinal hist.coveredStmts
 	| Edge -> EdgeSet.cardinal hist.coveredEdges
 
-(** Return a SymbolSet of all symbols in the given Bytes *)
-let rec allSymbols = function
-	| Bytes_Constant const -> SymbolSet.empty
-	| Bytes_ByteArray bytearray ->
-			ImmutableArray.fold_left
-				(fun symbSet byte -> match byte with
-					 | Byte_Concrete _ -> symbSet
-					 | Byte_Symbolic symb -> SymbolSet.add symb symbSet
-					 | Byte_Bytes (bytes,_) -> SymbolSet.union symbSet (allSymbols bytes))
-				SymbolSet.empty
-				bytearray
-	| Bytes_Address (memBlockOpt,bytes) -> (
-			let partialAnswer = allSymbols bytes in
-			match memBlockOpt with
-					None -> partialAnswer
-				| Some memBlock ->
-						SymbolSet.union partialAnswer (allSymbols memBlock.memory_block_addr)
-		)
-	| Bytes_Op (_,bytes_typ_list) ->
-			List.fold_left
-				(fun symbSet (b,_) -> SymbolSet.union symbSet (allSymbols b))
-				SymbolSet.empty
-				bytes_typ_list
-	| Bytes_Read (bytes1,bytes2,_) ->
-			SymbolSet.union (allSymbols bytes1) (allSymbols bytes2)
-	| Bytes_Write (bytes1,bytes2,_,bytes3) ->
-			SymbolSet.union
-				(allSymbols bytes3)
-				(SymbolSet.union (allSymbols bytes1) (allSymbols bytes2))
-	| Bytes_FunPtr (_,bytes) -> allSymbols bytes
-
-(** Return a SymbolSet of all symbols in the given list of Bytes *)
-let allSymbolsInList byteslist =
-	List.fold_left
-		(fun symbSet b -> SymbolSet.union symbSet (allSymbols b))
-		SymbolSet.empty
-		byteslist
-
 (** Compute set cover greedily.
 		[greedySetCover emptyCheck scoreFn setdiff setList universe]
 		selects the element [x] from [setList] which gives the highest
@@ -92,15 +54,18 @@ let greedySetCover emptyCheck scoreFn setdiff setList universe =
 let percentage numer denom = 100. *. float_of_int numer /. float_of_int denom
 
 (* Given a path condition and a list of mappings from ByteArrays of
-	 symbolic values to variables, print out the path condition (in
-	 terms of those variables, where possible), a sample set of values
-	 for those variables which would lead execution down this path, and
-	 coverage information for this path. *)
-let printPath pc hist =
-	Output.printf "Path condition:\n%s\n\n"
-		(To_string.humanReadablePc pc hist.bytesToVars);
+	 symbolic values to variables, print a sample set of values for
+	 those variables which would lead execution down this path, and
+	 print coverage information for this path. There is an optional
+	 first argument which defaults to false; if true, the path condition
+	 itself (in terms of those variables, where possible) is printed
+	 before the other information. *)
+let printPath ?(printFormula=false) pc hist =
+	if printFormula then
+		Output.printf "Path condition:\n%s\n\n"
+			(To_string.humanReadablePc pc hist.bytesToVars);
 
-	let mentionedSymbols = allSymbolsInList pc in
+	let mentionedSymbols = Stp.allSymbolsInList pc in
 	let valuesForSymbols = Stp.getValues pc (SymbolSet.elements mentionedSymbols) in
 
 	(* Keep track of which symbols we haven't given values to.
@@ -309,7 +274,7 @@ let print_report results =
 	if completed = 0 then (
 		Output.printf "All %d paths had errors.\n" abandoned
 			(* Program execution ends. *)
-	);
+	) else (
 	(* If there were successful runs *)
 	Output.printf "%d paths ran to completion; %d had errors.\n" completed abandoned;
 	Output.printf "There are %d truncated paths.\n" truncated;
@@ -339,6 +304,13 @@ let print_report results =
 *)
 
 		Output.printf "Finished.\n";
-		()
+
+		(* Marshal out (coverage : Types.job_result list) so that we can
+			 read it back in later. Is there a better place to send this
+			 than stdout? *)
+		if run_args.arg_marshal_coverage
+		then Marshal.to_channel stdout coverage [];
+
 	end
+	)
 ;;
