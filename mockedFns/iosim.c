@@ -97,19 +97,23 @@ char *IOSIM_toAbsolute(const char *name) {
 	char *absoluteName = malloc(PATH_MAX+1);
 	char *lastSlash = strrchr(name,'/');
 	if (lastSlash) { // If 'name' is not a bare file name
-		char *path = strdup(name);
-		path[lastSlash - name] = 0; // Make 'path' be just the path, excluding the file name
-		if (!realpath(path,absoluteName)) { // Make the path absolute
+		if (lastSlash == name) { // If name is "/<something without a slash>"
+			strcpy(absoluteName,"/");
+		} else {
+			char *path = strdup(name);
+			path[lastSlash - name] = 0; // Make 'path' be just the path, excluding the file name
+			if (!realpath(path,absoluteName)) { // Make the path absolute
+				free(path);
+				return -1; // Return -1 on error
+			}
 			free(path);
-			return -1; // Return -1 on error
 		}
-		free(path);
 	} else { // 'name' contained no path at all, only a file name
 		strcpy(absoluteName,workingDir);
 	}
 	// At this point, absoluteName is the absolute path, but only the path
 	char *end = strchr(absoluteName,0);
-	// Potential buffer overflow here
+	// Potential buffer overflow here if (absolute path + file name) is too long
 	if (absoluteName[1]) { // If absoluteName is not "/", so it doesn't end with a '/'
 		*end++ = '/'; // add a '/'
 	}
@@ -228,15 +232,16 @@ int IOSIM_read(int fildes, void *buf, int nbyte){
 
 	sym_file_stream_t* in = IOSIM_fd[fildes];
 
-	if (in->offset >= in->sym_file->stat.st_size) return EOF;
-
 	cur = in->offset;
 	if (in->buffer == NULL){
 		in->buffer=strdup(in->sym_file->contents);
 	}
 	len = in->sym_file->stat.st_size;
 	for(n=0;n<nbyte;n++){
-		if(cur>=len) break;
+		if(cur>=len) {
+			cbuf[n] = EOF;
+			break;
+		}
 		cbuf[n] = in->buffer[cur];
 
 		cur++;
