@@ -11,7 +11,13 @@ int LINE=10000;
 
 int scmp( const void *sp1, const void *sp2 )
 {
-	    return( strcmp(*(char **)sp1, *(char **)sp2) );
+	int tmp;
+	char* s1 = strdup(*(char**)sp1);
+	char* s2 = strdup(*(char**)sp2);
+	s1 = strtok(s1,":"); int i1 = atoi(strtok(0,"\0"));
+	s2 = strtok(s2,":"); int i2 = atoi(strtok(0,"\0"));
+	if((tmp=strcmp(s1,s2))!=0) return tmp;
+	else return i1-i2;
 }
 
 int main(){
@@ -25,7 +31,8 @@ int main(){
 		if(strcmp(buf,TARGET)==0){
 			while(1){
 				fgets(buf,1024,stdin);
-				if(strcmp(buf,"\n")==0) break;
+				buf[strlen(buf)-1] = '\0';
+				if(strcmp(buf,"")==0) break;
 				table[size++] = strdup(buf);
 				if(size>=LINE){
 					LINE*=2;
@@ -35,10 +42,14 @@ int main(){
 		}
 	}
 	qsort(table,size,sizeof(char*),scmp);
-	printf("With repeat: %d\n",size);
+	printf("%s\n",table[0]);
 	for(i=1,count=1;i<size;i++){
-		if(strcmp(table[i],table[i-1])!=0) count++;
+		if(strcmp(table[i],table[i-1])!=0) {
+			count++;
+			printf("%s\n",table[i]);
+		}
 	}
+	printf("With repeat: %d\n",size);
 	printf("Without repeat: %d\n",count);
 	return 0;
 }

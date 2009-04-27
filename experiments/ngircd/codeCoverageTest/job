@@ -6,7 +6,7 @@ for file in `ls otherFiles/rfc*.c`
 			then
 				echo "[Skipped]"
 			else
-				./rerun --printLittle $i.c &> $i.out
+				./rerun --printLittle --dontMarshalCoverage $i.c &> $i.out
 				echo "[Done]"
 		fi
 	done

@@ -437,7 +437,7 @@ struct _NUMERIC {
    int (*function)(CLIENT *Client , REQUEST *Request ) ;
 };
 #line 1 "ngircd.o"
-#pragma merger(0,"/tmp/cil-OC1SBquC.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-FUpMQKMT.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 140 "./../portab/portab.h"
 size_t strlcat(char *dst , char const   *src , size_t size ) ;
 #line 144
@@ -857,17 +857,17 @@ int main(int argc , char const   **argv )
     Log_Init(! NGIRCd_NoDaemon);
 #line 263
     Conf_Init();
-#line 267
+#line 265
+    (*symtest_Conf_Init)();
+#line 270
     __cil_tmp___8 = NGIRCd_Init(NGIRCd_NoDaemon);
-#line 267
+#line 270
     if (! __cil_tmp___8) {
-#line 268
+#line 271
       Log(1, "Fatal: Initialization failed");
-#line 269
+#line 272
       exit(1);
     }
-#line 272
-    (*symtest_Conf_Init)();
 #line 277
     Channel_Init();
 #line 278
