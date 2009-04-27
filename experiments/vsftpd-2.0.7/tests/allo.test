@@ -6,7 +6,8 @@ MOCKEDDIR=$TOPDIR/mockedFns
 
 cd $1
 
+CILLY_DONT_COMPILE_AFTER_MERGE= \
 $TOPDIR/cil/bin/cilly --merge --useLogicalOperators \
 -D_FILE_OFFSET_BITS=64 \
 -I $MOCKEDDIR \
-../vsftpd_comb.c --covStats=$STATSFILE --doexecute allo.c --printLittle --lineCov --timeout=7200
+../vsftpd_comb.c --covStats=$STATSFILE --doexecute allo.c --printLittle --lineCov --timeout=14400
