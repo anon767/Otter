@@ -568,8 +568,8 @@ struct _NUMERIC {
    void __builtin_va_copy(__builtin_va_list  , __builtin_va_list  ) ;  */
 /* compiler builtin: 
    void __builtin_va_start(__builtin_va_list  ) ;  */
-#line 1 "cil-61ch8Ryz.o"
-#pragma merger(0,"/tmp/cil-F8zER2dM.i","")
+#line 1 "cil-Zv7ajAMx.o"
+#pragma merger(0,"/tmp/cil-qhQ5ObPS.i","")
 #line 1 "cil-UQ82Je4i.o"
 #pragma merger(0,"/tmp/cil-0oxd5IWY.i","")
 #line 640 "/usr/include/stdlib.h"
@@ -3109,8 +3109,8 @@ int vsprintf(char * __restrict  buffer , char const   * __restrict  format , __g
   return (__cil_tmp);
 }
 }
-#line 1 "cil-XHlTZcpS.o"
-#pragma merger(0,"/tmp/cil-beM5lp3A.i","")
+#line 1 "cil-rfPkh3Qm.o"
+#pragma merger(0,"/tmp/cil-tMjQTHSs.i","")
 #line 1 "./mockedFns/alarm.c"
 unsigned int alarm(unsigned int seconds ) 
 { 
@@ -3122,8 +3122,8 @@ unsigned int alarm(unsigned int seconds )
 }
 /* compiler builtin: 
    long __builtin_expect(long x , long expected_value ) ;  */
-#line 1 "cil-5XH17WJA.o"
-#pragma merger(0,"/tmp/cil-y340hFop.i","")
+#line 1 "cil-AhQ10eur.o"
+#pragma merger(0,"/tmp/cil-6d3dKDpI.i","")
 #line 2 "./mockedFns/builtin.c"
 long __builtin_expect(long x , long expected_value ) 
 { 
@@ -3147,8 +3147,8 @@ size_t __ctype_get_mb_cur_max(void)
   return (1U);
 }
 }
-#line 1 "cil-tkc5K1HW.o"
-#pragma merger(0,"/tmp/cil-I3fxheqY.i","")
+#line 1 "cil-HVEOAHsv.o"
+#pragma merger(0,"/tmp/cil-0uwugoDO.i","")
 #line 586 "/usr/include/stdlib.h"
  __attribute__((__nothrow__)) void *calloc(size_t nmemb , size_t size )  __attribute__((__malloc__)) ;
 #line 4 "./mockedFns/calloc.c"
@@ -3169,8 +3169,8 @@ void *calloc(size_t nmemb , size_t size )
   return (p);
 }
 }
-#line 1 "cil-gL8kl3OT.o"
-#pragma merger(0,"/tmp/cil-P3kJB3zY.i","")
+#line 1 "cil-epLyUyxS.o"
+#pragma merger(0,"/tmp/cil-QquPIdFv.i","")
 #line 722 "/usr/include/stdio.h"
  __attribute__((__nothrow__)) void clearerr(FILE *stream ) ;
 #line 3 "./mockedFns/clearerr.c"
@@ -3184,8 +3184,8 @@ void clearerr(FILE *stream )
   return;
 }
 }
-#line 1 "cil-SEncaHjK.o"
-#pragma merger(0,"/tmp/cil-ipN88PuT.i","")
+#line 1 "cil-kE5uIpbL.o"
+#pragma merger(0,"/tmp/cil-xlYQNPEx.i","")
 #line 135 "/usr/include/dirent.h"
 DIR *opendir(char const   *dirname )  __attribute__((__nonnull__(1))) ;
 #line 142
@@ -3280,8 +3280,8 @@ struct dirent *readdir(DIR *dir )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-7OjBu4n1.o"
-#pragma merger(0,"/tmp/cil-ra3EdmtK.i","")
+#line 1 "cil-ZazU8org.o"
+#pragma merger(0,"/tmp/cil-LZK6nzfT.i","")
 #line 79 "/usr/include/pwd.h"
 void endpwent(void) ;
 #line 3 "./mockedFns/endpwent.c"
@@ -3293,8 +3293,8 @@ void endpwent(void)
   return;
 }
 }
-#line 1 "cil-NjEYhGfT.o"
-#pragma merger(0,"/tmp/cil-1sWOvU0z.i","")
+#line 1 "cil-5cViMBO6.o"
+#pragma merger(0,"/tmp/cil-XB2W0G8h.i","")
 #line 654 "/usr/include/stdlib.h"
  __attribute__((__nothrow__)) char *getenv(char const   *name )  __attribute__((__nonnull__(1))) ;
 #line 665
@@ -3321,8 +3321,8 @@ int putenv(char *str )
   return (0);
 }
 }
-#line 1 "cil-vMkGalcV.o"
-#pragma merger(0,"/tmp/cil-xbhX45CW.i","")
+#line 1 "cil-RukikueK.o"
+#pragma merger(0,"/tmp/cil-SVYWJmD6.i","")
 #line 2 "./mockedFns/__errno_location.c"
 static int mock_errno  ;
 #line 1
@@ -3336,8 +3336,8 @@ int *__errno_location(void)
   return (& mock_errno);
 }
 }
-#line 1 "cil-AsrvwKwO.o"
-#pragma merger(0,"/tmp/cil-6AMmzeIh.i","")
+#line 1 "cil-A1FFGDdV.o"
+#pragma merger(0,"/tmp/cil-tHFXmuBh.i","")
 #line 1 "./mockedFns/_exit.c"
 void _exit(int status ) 
 { 
@@ -3347,8 +3347,8 @@ void _exit(int status )
   exit(status);
 }
 }
-#line 1 "cil-qqac8m3s.o"
-#pragma merger(0,"/tmp/cil-EkHHZwzc.i","")
+#line 1 "cil-kdvr8Qdx.o"
+#pragma merger(0,"/tmp/cil-r1tB3ihU.i","")
 #line 6 "./mockedFns/fcntl.c"
 int fcntl(int fildes , int cmd  , ...) 
 { 
@@ -3358,8 +3358,8 @@ int fcntl(int fildes , int cmd  , ...)
   return (0);
 }
 }
-#line 1 "cil-BOFqnXIR.o"
-#pragma merger(0,"/tmp/cil-Um6sCMCV.i","")
+#line 1 "cil-NsqSoRnF.o"
+#pragma merger(0,"/tmp/cil-VLDjbY1p.i","")
 #line 724 "/usr/include/stdio.h"
  __attribute__((__nothrow__)) int feof(FILE *stream ) ;
 #line 5 "./mockedFns/feof.c"
@@ -3377,8 +3377,8 @@ int feof(FILE *stream )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-bNlnOSVx.o"
-#pragma merger(0,"/tmp/cil-yZ2emaVX.i","")
+#line 1 "cil-YN9WK9WU.o"
+#pragma merger(0,"/tmp/cil-DGTEVfAE.i","")
 #line 726 "/usr/include/stdio.h"
  __attribute__((__nothrow__)) int ferror(FILE *stream ) ;
 #line 3 "./mockedFns/ferror.c"
@@ -3392,8 +3392,8 @@ int ferror(FILE *stream )
   return (0);
 }
 }
-#line 1 "cil-7rKhf2oB.o"
-#pragma merger(0,"/tmp/cil-sMHfAWYn.i","")
+#line 1 "cil-8KU0QStf.o"
+#pragma merger(0,"/tmp/cil-i3SChizq.i","")
 #line 759 "/usr/include/stdio.h"
  __attribute__((__nothrow__)) int fileno_unlocked(FILE *stream ) ;
 #line 4 "./mockedFns/fileno.c"
@@ -3427,8 +3427,8 @@ int fileno_unlocked(FILE *stream )
   return (-1);
 }
 }
-#line 1 "cil-omYOVctV.o"
-#pragma merger(0,"/tmp/cil-5HXxZyVX.i","")
+#line 1 "cil-a2xoGFj8.o"
+#pragma merger(0,"/tmp/cil-MxvH3GSf.i","")
 #line 254 "/usr/include/stdio.h"
 FILE *fopen(char const   * __restrict  filename , char const   * __restrict  mode )  __asm__("fopen64")  ;
 #line 40 "./mockedFns/iosim.h"
@@ -3449,8 +3449,8 @@ FILE *fopen(char const   * __restrict  filename , char const   * __restrict  mod
   return ((FILE *)IOSIM_fd[fd]);
 }
 }
-#line 1 "cil-6sgGODfD.o"
-#pragma merger(0,"/tmp/cil-mDHQNvwD.i","")
+#line 1 "cil-zY5Nby7Y.o"
+#pragma merger(0,"/tmp/cil-PmXpxmHA.i","")
 #line 48 "./mockedFns/iosim.h"
 int IOSIM_read(int fildes , void *buf , int nbyte ) ;
 #line 4 "./mockedFns/getc.c"
@@ -3479,8 +3479,8 @@ int _IO_getc(struct _IO_FILE *stream )
   }
 }
 }
-#line 1 "cil-lVUPh6Sv.o"
-#pragma merger(0,"/tmp/cil-EJeoPT08.i","")
+#line 1 "cil-r7OfkuCD.o"
+#pragma merger(0,"/tmp/cil-f7RkMNnq.i","")
 #line 103 "/usr/include/grp.h"
 struct group *getgrgid(__gid_t gid ) ;
 #line 3 "./mockedFns/getgrgid.c"
@@ -3492,8 +3492,8 @@ struct group *getgrgid(__gid_t gid )
   return ((struct group *)0);
 }
 }
-#line 1 "cil-ibqR21g3.o"
-#pragma merger(0,"/tmp/cil-xidUT2Of.i","")
+#line 1 "cil-d8mdmDe4.o"
+#pragma merger(0,"/tmp/cil-LrLw3ij0.i","")
 #line 59 "/usr/include/getopt.h"
 extern char *optarg ;
 #line 73
@@ -4283,8 +4283,8 @@ int ( /* missing proto */  _getopt_internal)(int argc , char * const  *argv , ch
   return ((int )c);
 }
 }
-#line 1 "cil-NHASoxrV.o"
-#pragma merger(0,"/tmp/cil-xieLzvfL.i","")
+#line 1 "cil-mGh2oPSM.o"
+#pragma merger(0,"/tmp/cil-39jz2MHk.i","")
 #line 1 "./mockedFns/getpagesize.c"
 int getpagesize(void) 
 { 
@@ -4294,8 +4294,8 @@ int getpagesize(void)
   return (4096);
 }
 }
-#line 1 "cil-cdC0atRk.o"
-#pragma merger(0,"/tmp/cil-mVH3pg39.i","")
+#line 1 "cil-W9g72rUK.o"
+#pragma merger(0,"/tmp/cil-bpNA6pYz.i","")
 #line 128 "/usr/include/sys/socket.h"
  __attribute__((__nothrow__)) int getpeername(int socket___0 , struct sockaddr * __restrict  address ,
                                               socklen_t * __restrict  address_len ) ;
@@ -4327,8 +4327,8 @@ int getpeername(int socket___0 , struct sockaddr * __restrict  address , socklen
   return (0);
 }
 }
-#line 1 "cil-4dn8lRjN.o"
-#pragma merger(0,"/tmp/cil-DEblZtR4.i","")
+#line 1 "cil-ruvMHDAY.o"
+#pragma merger(0,"/tmp/cil-VCUstBSh.i","")
 #line 117 "/usr/include/pwd.h"
 struct passwd *getpwnam(char const   *__name ) ;
 #line 4 "./mockedFns/getpwnam.c"
@@ -4349,8 +4349,8 @@ struct passwd *getpwnam(char const   *__name )
   return (x);
 }
 }
-#line 1 "cil-6Mpov1zO.o"
-#pragma merger(0,"/tmp/cil-RpldAxUc.i","")
+#line 1 "cil-OIpizGMx.o"
+#pragma merger(0,"/tmp/cil-nkvvFaSE.i","")
 #line 111 "/usr/include/pwd.h"
 struct passwd *getpwuid(__uid_t uid ) ;
 #line 3 "./mockedFns/getpwuid.c"
@@ -4362,8 +4362,8 @@ struct passwd *getpwuid(__uid_t uid )
   return ((struct passwd *)0);
 }
 }
-#line 1 "cil-is6HeSMw.o"
-#pragma merger(0,"/tmp/cil-d3dwOTyn.i","")
+#line 1 "cil-oApgrMvM.o"
+#pragma merger(0,"/tmp/cil-QmhNRKl1.i","")
 #line 3 "./mockedFns/gettext.c"
 char *gettext(char const   *text ) 
 { 
@@ -4373,8 +4373,8 @@ char *gettext(char const   *text )
   return ((char *)text);
 }
 }
-#line 1 "cil-Fc5BhDCQ.o"
-#pragma merger(0,"/tmp/cil-AiRjdwon.i","")
+#line 1 "cil-ViiCjKxK.o"
+#pragma merger(0,"/tmp/cil-FSG1jPz0.i","")
 #line 2 "./mockedFns/groups.c"
 int initgroups(char const   *user , gid_t group ) 
 { 
@@ -4393,8 +4393,8 @@ int setgroups(size_t __n , __gid_t const   *__groups )
   return (0);
 }
 }
-#line 1 "cil-WpyWw080.o"
-#pragma merger(0,"/tmp/cil-PcsDz6FQ.i","")
+#line 1 "cil-LcXJItUK.o"
+#pragma merger(0,"/tmp/cil-RYTNCVAs.i","")
 #line 54 "/usr/include/arpa/inet.h"
  __attribute__((__nothrow__)) char *inet_ntoa(struct in_addr in ) ;
 #line 65
@@ -4496,8 +4496,8 @@ char const   *inet_ntop(int af , void const   * __restrict  src , char * __restr
   return ((char const   *)dst);
 }
 }
-#line 1 "cil-1f1iRxlv.o"
-#pragma merger(0,"/tmp/cil-CPM8lsN1.i","")
+#line 1 "cil-hug4uY0v.o"
+#pragma merger(0,"/tmp/cil-uvY0un3e.i","")
 #line 275 "/usr/include/sys/stat.h"
  __attribute__((__nothrow__)) __mode_t umask(__mode_t cmask ) ;
 #line 40 "./mockedFns/iosim.h"
@@ -5238,8 +5238,8 @@ void IOSIM_updatesize(int fildes , int t )
   return;
 }
 }
-#line 1 "cil-30VTI1rN.o"
-#pragma merger(0,"/tmp/cil-wjyGZ1tP.i","")
+#line 1 "cil-FUY2DmLL.o"
+#pragma merger(0,"/tmp/cil-1WiYyEUR.i","")
 #line 81 "/usr/include/libintl.h"
  __attribute__((__nothrow__)) char *textdomain(char const   *domainname ) ;
 #line 85
@@ -5274,8 +5274,8 @@ char *textdomain(char const   *domainname )
   return (directory);
 }
 }
-#line 1 "cil-0mX7a9cZ.o"
-#pragma merger(0,"/tmp/cil-jYRNzvVv.i","")
+#line 1 "cil-4IAOnqfE.o"
+#pragma merger(0,"/tmp/cil-VP1bh9jF.i","")
 #line 66 "/usr/include/string.h"
  __attribute__((__nothrow__)) void *memchr(void const   *s , int c , size_t n )  __attribute__((__pure__,
 __nonnull__(1))) ;
@@ -5305,8 +5305,8 @@ void *memchr(void const   *s , int c , size_t n )
   return ((void *)0);
 }
 }
-#line 1 "cil-BjkTHDwJ.o"
-#pragma merger(0,"/tmp/cil-qrLOBlrz.i","")
+#line 1 "cil-FkWfrdeB.o"
+#pragma merger(0,"/tmp/cil-eFEZAA19.i","")
 #line 7 "./mockedFns/mmap.c"
 void *mmap(void *start , size_t length , int prot , int flags , int fd , off_t offset ) 
 { void *x ;
@@ -5330,8 +5330,8 @@ int munmap(void *addr , size_t len )
   return (0);
 }
 }
-#line 1 "cil-0rRjo7JX.o"
-#pragma merger(0,"/tmp/cil-iYDr3VZJ.i","")
+#line 1 "cil-gvdFYPuk.o"
+#pragma merger(0,"/tmp/cil-7vgq0zMS.i","")
 #line 2 "./mockedFns/mprotect.c"
 int mprotect(void *__addr , size_t __len , int __prot ) 
 { 
@@ -5341,8 +5341,8 @@ int mprotect(void *__addr , size_t __len , int __prot )
   return (0);
 }
 }
-#line 1 "cil-9ZmnyFR9.o"
-#pragma merger(0,"/tmp/cil-0pDYz8ju.i","")
+#line 1 "cil-9WJVc1WC.o"
+#pragma merger(0,"/tmp/cil-fdnGyHrJ.i","")
 #line 3 "./mockedFns/my_index.c"
 char *my_index(char const   *s , int c ) 
 { char *__cil_tmp ;
@@ -5354,8 +5354,8 @@ char *my_index(char const   *s , int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-Ip9rAEfH.o"
-#pragma merger(0,"/tmp/cil-fnk9tCCh.i","")
+#line 1 "cil-hiPAQT6Y.o"
+#pragma merger(0,"/tmp/cil-5NIOd0h7.i","")
 #line 354 "/usr/include/netinet/in.h"
  __attribute__((__nothrow__)) uint32_t ntohl(uint32_t netlong )  __attribute__((__const__)) ;
 #line 355
@@ -5456,8 +5456,8 @@ uint16_t ntohs(uint16_t netshort )
   return (retval);
 }
 }
-#line 1 "cil-SYdOIwz2.o"
-#pragma merger(0,"/tmp/cil-qb11PQIx.i","")
+#line 1 "cil-kLwxUaix.o"
+#pragma merger(0,"/tmp/cil-hddCUrZj.i","")
 #line 131 "/usr/include/netdb.h"
 struct hostent *gethostbyaddr(void const   *addr , __socklen_t len , int type ) ;
 #line 138
@@ -5482,8 +5482,8 @@ struct hostent *gethostbyname(char const   *name )
 }
 /* compiler builtin: 
    void __builtin_va_arg(__builtin_va_list  , unsigned int  , void * ) ;  */
-#line 1 "cil-q0QoakE5.o"
-#pragma merger(0,"/tmp/cil-93KuSBsB.i","")
+#line 1 "cil-h0J6C4d7.o"
+#pragma merger(0,"/tmp/cil-Vz0O5OY4.i","")
 #line 7 "./mockedFns/open.c"
 int open(char const   *pathname , int flags  , ...)  __asm__("open64") __attribute__((__nonnull__(1))) ;
 #line 7 "./mockedFns/open.c"
@@ -5516,8 +5516,8 @@ int open(char const   *pathname , int flags  , ...)
   return (__cil_tmp___1);
 }
 }
-#line 1 "cil-50SLHtZm.o"
-#pragma merger(0,"/tmp/cil-cVtmK1r8.i","")
+#line 1 "cil-w0huBfd7.o"
+#pragma merger(0,"/tmp/cil-rWq4zJMt.i","")
 #line 27 "/usr/include/security/pam_appl.h"
 int pam_start(char const   *service_name , char const   *user , struct pam_conv  const  *pam_conversation ,
               pam_handle_t **pamh ) ;
@@ -5531,8 +5531,8 @@ int pam_start(char const   *service_name , char const   *user , struct pam_conv 
   return (-1);
 }
 }
-#line 1 "cil-zEdwAJJU.o"
-#pragma merger(0,"/tmp/cil-QgD23Lcx.i","")
+#line 1 "cil-KVzUaahY.o"
+#pragma merger(0,"/tmp/cil-rZ6gsyTh.i","")
 #line 48 "/usr/include/sys/poll.h"
 int poll(struct pollfd *fds , nfds_t nfds , int timeout ) ;
 #line 5 "./mockedFns/poll.c"
@@ -5678,8 +5678,8 @@ int event_end(int t )
   return (0);
 }
 }
-#line 1 "cil-MzUU556g.o"
-#pragma merger(0,"/tmp/cil-4TRO0Crk.i","")
+#line 1 "cil-hxCZIulI.o"
+#pragma merger(0,"/tmp/cil-Q6Bcprm0.i","")
 #line 1 "./mockedFns/prctl.c"
 int prctl(int __option  , ...) 
 { 
@@ -5689,8 +5689,8 @@ int prctl(int __option  , ...)
   return (0);
 }
 }
-#line 1 "cil-H159ujad.o"
-#pragma merger(0,"/tmp/cil-i49OXi22.i","")
+#line 1 "cil-4d9lnTBz.o"
+#pragma merger(0,"/tmp/cil-FmbWoikd.i","")
 #line 4 "./mockedFns/realloc.c"
  __attribute__((__nothrow__)) void *realloc(void *ptr , size_t size )  __attribute__((__malloc__)) ;
 #line 4 "./mockedFns/realloc.c"
@@ -5718,8 +5718,8 @@ void *realloc(void *ptr , size_t size )
   return (ptr);
 }
 }
-#line 1 "cil-CNQ2tm5j.o"
-#pragma merger(0,"/tmp/cil-tnXrMS7u.i","")
+#line 1 "cil-IMcr5GIA.o"
+#pragma merger(0,"/tmp/cil-MRrRhnvX.i","")
 #line 450 "/usr/include/unistd.h"
  __attribute__((__nothrow__)) char *getcwd(char *buf , size_t size ) ;
 #line 9 "./mockedFns/realpath.c"
@@ -5899,8 +5899,8 @@ char *realpath(char const   * __restrict  path , char * __restrict  got_path )
   return ((char *)got_path);
 }
 }
-#line 1 "cil-eRtU8LJF.o"
-#pragma merger(0,"/tmp/cil-cl0i3sTn.i","")
+#line 1 "cil-aDYv5gge.o"
+#pragma merger(0,"/tmp/cil-tUmSeycL.i","")
 #line 143 "/usr/include/sys/socket.h"
 ssize_t recv(int sockfd , void *buf , size_t len , int flags ) ;
 #line 6 "./mockedFns/recv.c"
@@ -5932,8 +5932,8 @@ ssize_t recv(int sockfd , void *buf , size_t len , int flags )
   return (num_chars_read);
 }
 }
-#line 1 "cil-7aMJdblS.o"
-#pragma merger(0,"/tmp/cil-mrTijoLA.i","")
+#line 1 "cil-CwrIIsSV.o"
+#pragma merger(0,"/tmp/cil-Ihf7O01o.i","")
 #line 38 "/usr/include/sys/sendfile.h"
  __attribute__((__nothrow__)) ssize_t sendfile(int out_fd , int in_fd , __off64_t *offset ,
                                                size_t count )  __asm__("sendfile64")  ;
@@ -6006,8 +6006,8 @@ ssize_t sendfile(int out_fd , int in_fd , __off64_t *offset , size_t count )
   return (numSent);
 }
 }
-#line 1 "cil-r2uJIeJo.o"
-#pragma merger(0,"/tmp/cil-E07GkObf.i","")
+#line 1 "cil-vXtkYEXt.o"
+#pragma merger(0,"/tmp/cil-89b1n9pi.i","")
 #line 125 "/usr/include/locale.h"
  __attribute__((__nothrow__)) char *setlocale(int category , char const   *locale ) ;
 #line 3 "./mockedFns/setlocale.c"
@@ -6021,8 +6021,8 @@ char *setlocale(int category , char const   *locale )
   return ((char *)locale);
 }
 }
-#line 1 "cil-PrMMWoWR.o"
-#pragma merger(0,"/tmp/cil-9S6E4sTP.i","")
+#line 1 "cil-P6oVYWkQ.o"
+#pragma merger(0,"/tmp/cil-ELANyneu.i","")
 #line 216 "/usr/include/signal.h"
  __attribute__((__nothrow__)) int sigemptyset(sigset_t *set )  __attribute__((__nonnull__(1))) ;
 #line 219
@@ -6092,8 +6092,8 @@ int sigprocmask(int how , sigset_t const   * __restrict  set , sigset_t * __rest
   return (0);
 }
 }
-#line 1 "cil-9OCOgZHD.o"
-#pragma merger(0,"/tmp/cil-HrmWnPxT.i","")
+#line 1 "cil-QsDpoWAv.o"
+#pragma merger(0,"/tmp/cil-fxANT1BY.i","")
 #line 109 "/usr/include/sys/select.h"
 int select(int nfds , fd_set * __restrict  readfds , fd_set * __restrict  writefds ,
            fd_set * __restrict  errorfds , struct timeval * __restrict  timeout ) ;
@@ -6408,8 +6408,8 @@ int select(int nfds , fd_set * __restrict  readfds , fd_set * __restrict  writef
   return (1);
 }
 }
-#line 1 "cil-AIUlQguK.o"
-#pragma merger(0,"/tmp/cil-P0IockAr.i","")
+#line 1 "cil-R5i9vv0f.o"
+#pragma merger(0,"/tmp/cil-vP9ZYyKl.i","")
 #line 332 "/usr/include/sys/stat.h"
  __attribute__((__nothrow__)) int __fxstat(int __ver , int __fildes , struct stat *__stat_buf )  __asm__("__fxstat64") __attribute__((__nonnull__(3))) ;
 #line 335
@@ -6486,8 +6486,8 @@ int __lxstat(int __ver , char const   *__filename , struct stat *__stat_buf )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-DxchM01Z.o"
-#pragma merger(0,"/tmp/cil-1iScYF3E.i","")
+#line 1 "cil-SEZNvqGb.o"
+#pragma merger(0,"/tmp/cil-PPulfceD.i","")
 #line 106 "/usr/include/string.h"
  __attribute__((__nothrow__)) int strcoll(char const   *s1 , char const   *s2 )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
@@ -6505,8 +6505,8 @@ int strcoll(char const   *s1 , char const   *s2 )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-dMQJ4IbU.o"
-#pragma merger(0,"/tmp/cil-4JVY0i1a.i","")
+#line 1 "cil-ZTUW0WR4.o"
+#pragma merger(0,"/tmp/cil-rG76FPhU.i","")
 #line 4 "./mockedFns/strdup.c"
  __attribute__((__nothrow__)) char *strdup(char const   *p_str )  __attribute__((__nonnull__(1),
 __malloc__)) ;
@@ -6535,8 +6535,8 @@ char *strdup(char const   *p_str )
   return (theCopy);
 }
 }
-#line 1 "cil-TFny2u2a.o"
-#pragma merger(0,"/tmp/cil-FQ5q63QP.i","")
+#line 1 "cil-thztGYQs.o"
+#pragma merger(0,"/tmp/cil-UOy6peNy.i","")
 #line 256 "/usr/include/string.h"
  __attribute__((__nothrow__)) char *strerror(int errnum ) ;
 #line 9 "./mockedFns/strerror.c"
@@ -6579,8 +6579,8 @@ char *strerror(int errnum )
   return (message);
 }
 }
-#line 1 "cil-9Eg0ABDM.o"
-#pragma merger(0,"/tmp/cil-GLYwsn4r.i","")
+#line 1 "cil-wO8WzAJ0.o"
+#pragma merger(0,"/tmp/cil-rOCHwh2t.i","")
 #line 4 "./mockedFns/strrchr.c"
  __attribute__((__nothrow__)) char *strrchr(char const   *s , int c )  __attribute__((__pure__,
 __nonnull__(1))) ;
@@ -6613,8 +6613,8 @@ char *strrchr(char const   *s , int c )
   return ((char *)p);
 }
 }
-#line 1 "cil-SQMB7lu3.o"
-#pragma merger(0,"/tmp/cil-wrCzgd8V.i","")
+#line 1 "cil-MvcTdMWA.o"
+#pragma merger(0,"/tmp/cil-thD9FQHc.i","")
 #line 184 "/usr/include/time.h"
  __attribute__((__nothrow__)) time_t time(time_t *__timer ) ;
 #line 197
@@ -6699,12 +6699,12 @@ size_t strftime(char * __restrict  s , size_t maxsize , char const   * __restric
   return (0U);
 }
 }
-#line 1 "cil-bVDdAX08.o"
-#pragma merger(0,"/tmp/cil-8YVis124.i","")
+#line 1 "cil-oQGLYLl0.o"
+#pragma merger(0,"/tmp/cil-Qet27LUL.i","")
 #line 3 "./mockedFns/umask.c"
 static int usermask___0  ;
-#line 1 "cil-kMXemZB0.o"
-#pragma merger(0,"/tmp/cil-z13di8OV.i","")
+#line 1 "cil-DCV1HUYZ.o"
+#pragma merger(0,"/tmp/cil-FHSw6XZn.i","")
 #line 598 "/usr/include/stdio.h"
 int ungetc(int c , FILE *stream ) ;
 #line 4 "./mockedFns/unget.c"
@@ -6718,8 +6718,8 @@ int ungetc(int c , FILE *stream )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-Moru2JMP.o"
-#pragma merger(0,"/tmp/cil-e6swAjoY.i","")
+#line 1 "cil-l5ZTb9HT.o"
+#pragma merger(0,"/tmp/cil-ZZN8Z6Xa.i","")
 #line 292 "/usr/include/unistd.h"
  __attribute__((__nothrow__)) __off64_t lseek(int fildes , __off64_t offset , int whence )  __asm__("lseek64")  ;
 #line 371
@@ -6995,10 +6995,10 @@ __off64_t lseek(int fildes , __off64_t offset , int whence )
   return (newOffset);
 }
 }
-#line 1 "cil-qsz1E7wm.o"
-#pragma merger(0,"/tmp/cil-kZWDg2UF.i","")
+#line 1 "cil-SfDC8vHx.o"
+#pragma merger(0,"/tmp/cil-HcKmFtkS.i","")
 #line 1 "ngircd.o"
-#pragma merger(0,"/tmp/cil-o1hF1DNj.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-OC1SBquC.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 591 "/usr/include/stdio.h"
 extern int puts(char const   *__s ) ;
 #line 746 "/usr/include/unistd.h"
@@ -7078,26 +7078,26 @@ char NGIRCd_ProtoID[513]  ;
 #line 51
 void NGIRCd_Rehash(void) ;
 #line 56 "ngircd.c"
-static void Initialize_Signal_Handler(void) ;
-#line 57
-static void Signal_Handler(int Signal ) ;
+int (*symtest_Conf_Init)()  ;
 #line 59
-static void Show_Version(void) ;
+static void Initialize_Signal_Handler(void) ;
 #line 60
-static void Show_Help(void) ;
+static void Signal_Handler(int Signal ) ;
 #line 62
-static void Pidfile_Create(pid_t pid ) ;
+static void Show_Version(void) ;
 #line 63
-static void Pidfile_Delete(void) ;
+static void Show_Help(void) ;
 #line 65
+static void Pidfile_Create(pid_t pid ) ;
+#line 66
+static void Pidfile_Delete(void) ;
+#line 68
 static void Fill_Version(void) ;
-#line 67
+#line 70
 static void Setup_FDStreams(void) ;
-#line 69
+#line 72
 static int NGIRCd_Init(int NGIRCd_NoDaemon ) ;
 #line 82 "ngircd.c"
-void (*symtest_Conf_Init)()  ;
-#line 84 "ngircd.c"
 int main(int argc , char const   **argv ) 
 { int ok ;
   int configtest ;
@@ -7117,325 +7117,325 @@ int main(int argc , char const   **argv )
   unsigned int __cil_tmp___9 ;
 
   {
-#line 87
+#line 85
   configtest = 0;
-#line 88
+#line 86
   NGIRCd_NoDaemon = 0;
-#line 92
+#line 90
   umask(63U);
-#line 94
+#line 92
   NGIRCd_SignalRehash = 0;
-#line 94
+#line 92
   NGIRCd_SignalRestart = NGIRCd_SignalRehash;
-#line 94
+#line 92
   NGIRCd_SignalQuit = NGIRCd_SignalRestart;
-#line 95
+#line 93
   NGIRCd_Passive = 0;
-#line 103
+#line 100
   strlcpy(NGIRCd_ConfFile, "/usr/local/etc", sizeof(NGIRCd_ConfFile));
-#line 104
+#line 101
   strlcat(NGIRCd_ConfFile, "/ngircd.conf", sizeof(NGIRCd_ConfFile));
-#line 106
+#line 103
   Fill_Version();
-#line 109
+#line 106
   i = 1;
-#line 109
+#line 106
   while (i < argc) {
-#line 111
+#line 108
     ok = 0;
-#line 112
+#line 109
     if ((int const   )*(*(argv + i) + 0) == 45) {
-#line 112
+#line 109
       if ((int const   )*(*(argv + i) + 1) == 45) {
-#line 116
+#line 113
         __cil_tmp = strcmp(*(argv + i), "--config");
-#line 116
+#line 113
         if (__cil_tmp == 0) {
-#line 118
+#line 115
           if (i + 1 < argc) {
-#line 121
+#line 118
             strlcpy(NGIRCd_ConfFile, *(argv + (i + 1)), sizeof(NGIRCd_ConfFile));
-#line 124
+#line 121
             i ++;
-#line 124
+#line 121
             ok = 1;
           }
         }
-#line 127
+#line 124
         __cil_tmp___0 = strcmp(*(argv + i), "--configtest");
-#line 127
+#line 124
         if (__cil_tmp___0 == 0) {
-#line 129
+#line 126
           configtest = 1;
-#line 130
+#line 127
           ok = 1;
         }
-#line 139
+#line 136
         __cil_tmp___1 = strcmp(*(argv + i), "--help");
-#line 139
+#line 136
         if (__cil_tmp___1 == 0) {
-#line 141
+#line 138
           Show_Version();
-#line 142
+#line 139
           puts("");
-#line 142
+#line 139
           Show_Help();
-#line 142
+#line 139
           puts("");
-#line 143
+#line 140
           exit(1);
         }
-#line 145
+#line 142
         __cil_tmp___2 = strcmp(*(argv + i), "--nodaemon");
-#line 145
+#line 142
         if (__cil_tmp___2 == 0) {
-#line 147
+#line 144
           NGIRCd_NoDaemon = 1;
-#line 148
+#line 145
           ok = 1;
         }
-#line 150
+#line 147
         __cil_tmp___3 = strcmp(*(argv + i), "--passive");
-#line 150
+#line 147
         if (__cil_tmp___3 == 0) {
-#line 152
+#line 149
           NGIRCd_Passive = 1;
-#line 153
+#line 150
           ok = 1;
         }
-#line 162
+#line 159
         __cil_tmp___4 = strcmp(*(argv + i), "--version");
-#line 162
+#line 159
         if (__cil_tmp___4 == 0) {
-#line 164
+#line 161
           Show_Version();
-#line 165
+#line 162
           exit(1);
         }
       } else {
-#line 168
+#line 165
         goto _L;
       }
     } else {
       _L: 
-#line 168
+#line 165
       if ((int const   )*(*(argv + i) + 0) == 45) {
-#line 168
+#line 165
         if ((int const   )*(*(argv + i) + 1) != 45) {
-#line 171
+#line 168
           n = 1U;
-#line 171
+#line 168
           while (1) {
-#line 171
+#line 168
             __cil_tmp___5 = strlen(*(argv + i));
-#line 171
+#line 168
             if (! (n < __cil_tmp___5)) {
-#line 171
+#line 168
               break;
             }
-#line 173
+#line 170
             ok = 0;
-#line 181
+#line 178
             if ((int const   )*(*(argv + i) + n) == 102) {
-#line 183
+#line 180
               if (! *(*(argv + i) + (n + 1U))) {
-#line 183
+#line 180
                 if (i + 1 < argc) {
-#line 186
+#line 183
                   strlcpy(NGIRCd_ConfFile, *(argv + (i + 1)), sizeof(NGIRCd_ConfFile));
-#line 189
+#line 186
                   i ++;
-#line 190
+#line 187
                   n = strlen(*(argv + i));
-#line 191
+#line 188
                   ok = 1;
                 }
               }
             }
-#line 194
+#line 191
             if ((int const   )*(*(argv + i) + n) == 110) {
-#line 196
+#line 193
               NGIRCd_NoDaemon = 1;
-#line 197
+#line 194
               ok = 1;
             }
-#line 199
+#line 196
             if ((int const   )*(*(argv + i) + n) == 112) {
-#line 201
+#line 198
               NGIRCd_Passive = 1;
-#line 202
+#line 199
               ok = 1;
             }
-#line 211
+#line 208
             if ((int const   )*(*(argv + i) + n) == 116) {
-#line 213
+#line 210
               configtest = 1;
-#line 214
+#line 211
               ok = 1;
             }
-#line 217
+#line 214
             if (! ok) {
-#line 219
+#line 216
               printf((char const   * __restrict  )"%s: invalid option \"-%c\"!\n",
                      "ngircd", *(*(argv + i) + n));
-#line 220
+#line 217
               printf((char const   * __restrict  )"Try \"%s --help\" for more information.\n",
                      "ngircd");
-#line 221
+#line 218
               exit(1);
             }
-#line 171
+#line 168
             n ++;
           }
         }
       }
     }
-#line 226
+#line 223
     if (! ok) {
-#line 228
+#line 225
       printf((char const   * __restrict  )"%s: invalid option \"%s\"!\n", "ngircd",
              *(argv + i));
-#line 229
+#line 226
       printf((char const   * __restrict  )"Try \"%s --help\" for more information.\n",
              "ngircd");
-#line 230
+#line 227
       exit(1);
     }
-#line 109
+#line 106
     i ++;
   }
-#line 235
+#line 232
   NGIRCd_DebugLevel[0] = (char )'\000';
-#line 248
+#line 245
   if (configtest) {
-#line 250
+#line 247
     Show_Version();
-#line 250
+#line 247
     puts("");
-#line 251
+#line 248
     __cil_tmp___6 = Conf_Test();
-#line 251
+#line 248
     exit(__cil_tmp___6);
   }
-#line 254
+#line 251
   while (! NGIRCd_SignalQuit) {
-#line 257
+#line 254
     NGIRCd_Start = time((time_t *)((void *)0));
-#line 258
+#line 255
     __cil_tmp___7 = localtime((time_t const   *)(& NGIRCd_Start));
-#line 258
+#line 255
     strftime((char * __restrict  )(NGIRCd_StartStr), 64U, (char const   * __restrict  )"%a %b %d %Y at %H:%M:%S (%Z)",
              (struct tm  const  * __restrict  )__cil_tmp___7);
-#line 260
+#line 257
     NGIRCd_SignalRehash = 0;
-#line 261
+#line 258
     NGIRCd_SignalRestart = 0;
-#line 262
+#line 259
     NGIRCd_SignalQuit = 0;
-#line 265
+#line 262
     Log_Init(! NGIRCd_NoDaemon);
-#line 266
+#line 263
     Conf_Init();
-#line 268
-    (*symtest_Conf_Init)();
-#line 273
+#line 267
     __cil_tmp___8 = NGIRCd_Init(NGIRCd_NoDaemon);
-#line 273
+#line 267
     if (! __cil_tmp___8) {
-#line 274
+#line 268
       Log(1, "Fatal: Initialization failed");
-#line 275
+#line 269
       exit(1);
     }
-#line 280
+#line 272
+    (*symtest_Conf_Init)();
+#line 277
     Channel_Init();
-#line 281
+#line 278
     Client_Init();
-#line 285
+#line 282
     Conn_Init();
-#line 295
+#line 291
     Initialize_Signal_Handler();
-#line 301
+#line 297
     snprintf((char * __restrict  )(NGIRCd_ProtoID), sizeof(NGIRCd_ProtoID), (char const   * __restrict  )"%s%s %s|%s:%s",
              "0210", "-IRC+", "ngircd", "0.12.0", "CHL");
-#line 305
+#line 301
     if (Conf_OperCanMode) {
-#line 305
+#line 301
       strcat((char * __restrict  )(NGIRCd_ProtoID), (char const   * __restrict  )"o");
     }
-#line 309
+#line 305
     strlcat(NGIRCd_ProtoID, " P", sizeof(NGIRCd_ProtoID));
-#line 313
+#line 309
     Log(7, "Protocol and server ID is \"%s\".", NGIRCd_ProtoID);
-#line 316
+#line 312
     Channel_InitPredefined();
-#line 319
+#line 315
     __cil_tmp___9 = Conn_InitListeners();
-#line 319
+#line 315
     if (__cil_tmp___9 < 1U) {
-#line 321
+#line 317
       Log(1, "Server isn\'t listening on a single port!");
-#line 322
+#line 318
       Log(1, "%s exiting due to fatal errors!", "ngircd");
-#line 323
+#line 319
       Pidfile_Delete();
-#line 324
+#line 320
       exit(1);
     }
-#line 328
+#line 324
     Conn_Handler();
-#line 331
+#line 327
     Conn_Exit();
-#line 335
+#line 331
     Client_Exit();
-#line 336
+#line 332
     Channel_Exit();
-#line 337
+#line 333
     Log_Exit();
   }
-#line 339
+#line 335
   Pidfile_Delete();
-#line 341
+#line 337
   return (0);
 }
 }
-#line 351 "ngircd.c"
+#line 347 "ngircd.c"
 static void Fill_Version(void) 
 { 
 
   {
-#line 354
+#line 350
   NGIRCd_VersionAddition[0] = (char )'\000';
-#line 402
+#line 398
   if (NGIRCd_VersionAddition[0]) {
-#line 403
+#line 399
     strlcat(NGIRCd_VersionAddition, "+", sizeof(NGIRCd_VersionAddition));
   }
-#line 405
+#line 401
   strlcat(NGIRCd_VersionAddition, "IRCPLUS", sizeof(NGIRCd_VersionAddition));
-#line 413
+#line 409
   if (NGIRCd_VersionAddition[0]) {
-#line 414
+#line 410
     strlcat(NGIRCd_VersionAddition, "-", sizeof(NGIRCd_VersionAddition));
   }
-#line 416
+#line 412
   strlcat(NGIRCd_VersionAddition, "i686", sizeof(NGIRCd_VersionAddition));
-#line 417
+#line 413
   strlcat(NGIRCd_VersionAddition, "/", sizeof(NGIRCd_VersionAddition));
-#line 418
+#line 414
   strlcat(NGIRCd_VersionAddition, "pc", sizeof(NGIRCd_VersionAddition));
-#line 419
+#line 415
   strlcat(NGIRCd_VersionAddition, "/", sizeof(NGIRCd_VersionAddition));
-#line 420
+#line 416
   strlcat(NGIRCd_VersionAddition, "linux-gnu", sizeof(NGIRCd_VersionAddition));
-#line 422
+#line 418
   snprintf((char * __restrict  )(NGIRCd_Version), sizeof(NGIRCd_Version), (char const   * __restrict  )"%s %s-%s",
            "ngircd", "0.12.0", NGIRCd_VersionAddition);
-#line 424
+#line 420
   return;
 }
 }
-#line 430 "ngircd.c"
+#line 426 "ngircd.c"
 void NGIRCd_Rehash(void) 
 { char old_name[64] ;
   unsigned int old_nicklen ;
@@ -7443,187 +7443,187 @@ void NGIRCd_Rehash(void)
   int __cil_tmp___0 ;
 
   {
-#line 436
+#line 432
   Log(1029, "Re-reading configuration NOW!");
-#line 437
+#line 433
   NGIRCd_SignalRehash = 0;
-#line 440
+#line 436
   strlcpy(old_name, (char const   *)(Conf_ServerName), sizeof(old_name));
-#line 441
+#line 437
   old_nicklen = Conf_MaxNickLength;
-#line 444
+#line 440
   __cil_tmp = Conf_Rehash();
-#line 444
+#line 440
   if (! __cil_tmp) {
-#line 445
+#line 441
     return;
   }
-#line 448
+#line 444
   Conn_ExitListeners();
-#line 452
+#line 448
   __cil_tmp___0 = strcmp((char const   *)(old_name), (char const   *)(Conf_ServerName));
-#line 452
+#line 448
   if (__cil_tmp___0 != 0) {
-#line 453
+#line 449
     strlcpy(Conf_ServerName, (char const   *)(old_name), sizeof(Conf_ServerName));
-#line 454
+#line 450
     Log(3, "Can\'t change \"ServerName\" on runtime! Ignored new name.");
   }
-#line 456
+#line 452
   if (old_nicklen != Conf_MaxNickLength) {
-#line 457
+#line 453
     Conf_MaxNickLength = old_nicklen;
-#line 458
+#line 454
     Log(3, "Can\'t change \"MaxNickLength\" on runtime! Ignored new value.");
   }
-#line 462
+#line 458
   Channel_InitPredefined();
-#line 465
+#line 461
   Conn_InitListeners();
-#line 468
+#line 464
   Conn_SyncServerStruct();
-#line 470
+#line 466
   Log(1029, "Re-reading of configuration done.");
-#line 471
+#line 467
   return;
 }
 }
-#line 477 "ngircd.c"
+#line 473 "ngircd.c"
 static void Initialize_Signal_Handler(void) 
 { struct sigaction saction ;
 
   {
-#line 489
+#line 485
   memset((void *)(& saction), 0, sizeof(saction));
-#line 490
+#line 486
   saction.__sigaction_handler.sa_handler = & Signal_Handler;
-#line 492
+#line 488
   saction.sa_flags |= 268435456;
-#line 495
+#line 491
   saction.sa_flags |= 2;
-#line 499
+#line 495
   sigaction(2, (struct sigaction  const  * __restrict  )(& saction), (struct sigaction * __restrict  )((void *)0));
-#line 500
+#line 496
   sigaction(3, (struct sigaction  const  * __restrict  )(& saction), (struct sigaction * __restrict  )((void *)0));
-#line 501
+#line 497
   sigaction(15, (struct sigaction  const  * __restrict  )(& saction), (struct sigaction * __restrict  )((void *)0));
-#line 502
+#line 498
   sigaction(1, (struct sigaction  const  * __restrict  )(& saction), (struct sigaction * __restrict  )((void *)0));
-#line 503
+#line 499
   sigaction(17, (struct sigaction  const  * __restrict  )(& saction), (struct sigaction * __restrict  )((void *)0));
-#line 506
+#line 502
   saction.__sigaction_handler.sa_handler = (void (*)(int  ))1;
-#line 507
+#line 503
   sigaction(13, (struct sigaction  const  * __restrict  )(& saction), (struct sigaction * __restrict  )((void *)0));
-#line 521
+#line 517
   return;
 }
 }
-#line 530 "ngircd.c"
+#line 526 "ngircd.c"
 static void Signal_Handler(int Signal ) 
 { __pid_t __cil_tmp ;
 
   {
-#line 533
+#line 529
   switch (Signal) {
   case 15: 
   case 2: 
   case 3: 
-#line 539
+#line 535
   NGIRCd_SignalQuit = 1;
-#line 540
+#line 536
   break;
   case 1: 
-#line 543
+#line 539
   NGIRCd_SignalRehash = 1;
-#line 544
+#line 540
   break;
   case 17: 
-#line 547
+#line 543
   while (1) {
-#line 547
+#line 543
     __cil_tmp = waitpid(-1, (int *)((void *)0), 1);
-#line 547
+#line 543
     if (! (__cil_tmp > 0)) {
-#line 547
+#line 543
       break;
     }
   }
-#line 548
+#line 544
   break;
   }
-#line 555
+#line 551
   return;
 }
 }
-#line 561 "ngircd.c"
+#line 557 "ngircd.c"
 static void Show_Version(void) 
 { 
 
   {
-#line 564
+#line 560
   puts((char const   *)(NGIRCd_Version));
-#line 565
+#line 561
   puts("Copyright (c)2001-2008 Alexander Barton (<alex@barton.de>) and Contributors.");
-#line 566
+#line 562
   puts("Homepage: <http://ngircd.barton.de/>\n");
-#line 567
+#line 563
   puts("This is free software; see the source for copying conditions. There is NO");
-#line 568
+#line 564
   puts("warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.");
-#line 569
+#line 565
   return;
 }
 }
-#line 577 "ngircd.c"
+#line 573 "ngircd.c"
 static void Show_Help(void) 
 { 
 
   {
-#line 583
+#line 579
   puts("  -f, --config <f>   use file <f> as configuration file");
-#line 584
+#line 580
   puts("  -n, --nodaemon     don\'t fork and don\'t detach from controlling terminal");
-#line 585
+#line 581
   puts("  -p, --passive      disable automatic connections to other servers");
-#line 589
+#line 585
   puts("  -t, --configtest   read, validate and display configuration; then exit");
-#line 590
+#line 586
   puts("      --version      output version information and exit");
-#line 591
+#line 587
   puts("      --help         display this help and exit");
-#line 592
+#line 588
   return;
 }
 }
-#line 598 "ngircd.c"
+#line 594 "ngircd.c"
 static void Pidfile_Delete(void) 
 { int *__cil_tmp ;
   char *__cil_tmp___0 ;
   int __cil_tmp___1 ;
 
   {
-#line 602
+#line 598
   if (! Conf_PidFile[0]) {
-#line 602
+#line 598
     return;
   }
-#line 608
+#line 604
   __cil_tmp___1 = unlink((char const   *)(Conf_PidFile));
-#line 608
+#line 604
   if (__cil_tmp___1) {
-#line 609
+#line 605
     __cil_tmp = __errno_location();
-#line 609
+#line 605
     __cil_tmp___0 = strerror(*__cil_tmp);
-#line 609
+#line 605
     Log(3, "Error unlinking PID file (%s): %s", Conf_PidFile, __cil_tmp___0);
   }
-#line 610
+#line 606
   return;
 }
 }
-#line 617 "ngircd.c"
+#line 613 "ngircd.c"
 static void Pidfile_Create(pid_t pid ) 
 { int pidfd ;
   char pidbuf[64] ;
@@ -7638,143 +7638,143 @@ static void Pidfile_Create(pid_t pid )
   int __cil_tmp___6 ;
 
   {
-#line 625
+#line 621
   if (! Conf_PidFile[0]) {
-#line 625
+#line 621
     return;
   }
-#line 631
+#line 627
   pidfd = open((char const   *)(Conf_PidFile), 194, (384 | (256 >> 3)) | ((256 >> 3) >> 3));
-#line 632
+#line 628
   if (pidfd < 0) {
-#line 633
+#line 629
     __cil_tmp = __errno_location();
-#line 633
+#line 629
     __cil_tmp___0 = strerror(*__cil_tmp);
-#line 633
+#line 629
     Log(3, "Error writing PID file (%s): %s", Conf_PidFile, __cil_tmp___0);
-#line 634
+#line 630
     return;
   }
-#line 637
+#line 633
   len = snprintf((char * __restrict  )(pidbuf), sizeof(pidbuf), (char const   * __restrict  )"%ld\n",
                  (long )pid);
-#line 638
+#line 634
   if (len < 0) {
-#line 639
+#line 635
     Log(3, "Error converting pid");
-#line 640
+#line 636
     return;
   } else {
-#line 638
+#line 634
     if (len >= (int )sizeof(pidbuf)) {
-#line 639
+#line 635
       Log(3, "Error converting pid");
-#line 640
+#line 636
       return;
     }
   }
-#line 643
+#line 639
   __cil_tmp___3 = write(pidfd, (void const   *)(pidbuf), (unsigned int )len);
-#line 643
+#line 639
   if (__cil_tmp___3 != len) {
-#line 644
+#line 640
     __cil_tmp___1 = __errno_location();
-#line 644
+#line 640
     __cil_tmp___2 = strerror(*__cil_tmp___1);
-#line 644
+#line 640
     Log(3, "Can\'t write PID file (%s): %s", Conf_PidFile, __cil_tmp___2);
   }
-#line 646
+#line 642
   __cil_tmp___6 = close(pidfd);
-#line 646
+#line 642
   if (__cil_tmp___6 != 0) {
-#line 647
+#line 643
     __cil_tmp___4 = __errno_location();
-#line 647
+#line 643
     __cil_tmp___5 = strerror(*__cil_tmp___4);
-#line 647
+#line 643
     Log(3, "Error closing PID file (%s): %s", Conf_PidFile, __cil_tmp___5);
   }
-#line 648
+#line 644
   return;
 }
 }
-#line 654 "ngircd.c"
+#line 650 "ngircd.c"
 static void Setup_FDStreams(void) 
 { int fd ;
   int *__cil_tmp ;
   char *__cil_tmp___0 ;
 
   {
-#line 662
+#line 658
   fd = open("/dev/null", 2);
-#line 663
+#line 659
   if (fd < 0) {
-#line 664
+#line 660
     __cil_tmp = __errno_location();
-#line 664
+#line 660
     __cil_tmp___0 = strerror(*__cil_tmp);
-#line 664
+#line 660
     Log(4, "Could not open /dev/null: %s", __cil_tmp___0);
-#line 665
+#line 661
     return;
   }
-#line 668
+#line 664
   fflush(stdout);
-#line 669
+#line 665
   fflush(stderr);
-#line 672
+#line 668
   dup2(fd, 0);
-#line 672
+#line 668
   dup2(fd, 1);
-#line 672
+#line 668
   dup2(fd, 2);
-#line 675
+#line 671
   if (fd > 2) {
-#line 675
+#line 671
     close(fd);
   }
-#line 676
+#line 672
   return;
 }
 }
-#line 679 "ngircd.c"
+#line 675 "ngircd.c"
 static int NGIRCd_getNobodyID(uid_t *uid , gid_t *gid ) 
 { struct passwd *pwd ;
 
   {
-#line 684
+#line 680
   pwd = getpwnam("nobody");
-#line 685
+#line 681
   if (! pwd) {
-#line 685
+#line 681
     return (0);
   }
-#line 687
+#line 683
   if (! pwd->pw_uid) {
-#line 688
+#line 684
     return (0);
   } else {
-#line 687
+#line 683
     if (! pwd->pw_gid) {
-#line 688
+#line 684
       return (0);
     }
   }
-#line 690
+#line 686
   *uid = pwd->pw_uid;
-#line 691
+#line 687
   *gid = pwd->pw_gid;
-#line 692
+#line 688
   endpwent();
-#line 694
+#line 690
   return (1);
 }
 }
-#line 701 "ngircd.c"
+#line 697 "ngircd.c"
 static int initialized  ;
-#line 698 "ngircd.c"
+#line 694 "ngircd.c"
 static int NGIRCd_Init(int NGIRCd_NoDaemon ) 
 { int chrooted ;
   struct passwd *pwd ;
@@ -7812,231 +7812,231 @@ static int NGIRCd_Init(int NGIRCd_NoDaemon )
   int __cil_tmp___30 ;
 
   {
-#line 702
+#line 698
   chrooted = 0;
-#line 708
+#line 704
   if (initialized) {
-#line 709
+#line 705
     return (1);
   }
-#line 711
+#line 707
   if (Conf_Chroot[0]) {
-#line 712
+#line 708
     __cil_tmp___1 = chdir((char const   *)(Conf_Chroot));
-#line 712
+#line 708
     if (__cil_tmp___1 != 0) {
-#line 713
+#line 709
       __cil_tmp = __errno_location();
-#line 713
+#line 709
       __cil_tmp___0 = strerror(*__cil_tmp);
-#line 713
+#line 709
       Log(3, "Can\'t chdir() in ChrootDir (%s): %s", Conf_Chroot, __cil_tmp___0);
-#line 714
+#line 710
       return (0);
     }
-#line 717
+#line 713
     __cil_tmp___5 = chroot((char const   *)(Conf_Chroot));
-#line 717
+#line 713
     if (__cil_tmp___5 != 0) {
-#line 718
+#line 714
       __cil_tmp___4 = __errno_location();
-#line 718
+#line 714
       if (*__cil_tmp___4 != 1) {
-#line 719
+#line 715
         __cil_tmp___2 = __errno_location();
-#line 719
+#line 715
         __cil_tmp___3 = strerror(*__cil_tmp___2);
-#line 719
+#line 715
         Log(3, "Can\'t change root directory to \"%s\": %s", Conf_Chroot, __cil_tmp___3);
-#line 722
+#line 718
         return (0);
       }
     } else {
-#line 725
+#line 721
       chrooted = 1;
-#line 726
+#line 722
       Log(6, "Changed root and working directory to \"%s\".", Conf_Chroot);
     }
   }
-#line 730
+#line 726
   if (Conf_UID == 0U) {
-#line 731
+#line 727
     Log(6, "ServerUID must not be 0, using \"nobody\" instead.", Conf_UID);
-#line 733
+#line 729
     __cil_tmp___13 = NGIRCd_getNobodyID(& Conf_UID, & Conf_GID);
-#line 733
+#line 729
     if (! __cil_tmp___13) {
-#line 734
+#line 730
       __cil_tmp___12 = __errno_location();
-#line 734
+#line 730
       if (*__cil_tmp___12) {
-#line 734
+#line 730
         __cil_tmp___10 = __errno_location();
-#line 734
+#line 730
         __cil_tmp___11 = strerror(*__cil_tmp___10);
-#line 734
+#line 730
         __cil_tmp___9 = (char const   *)__cil_tmp___11;
       } else {
-#line 734
+#line 730
         __cil_tmp___9 = "not found";
       }
-#line 734
+#line 730
       Log(4, "Could not get user/group ID of user \"nobody\": %s", __cil_tmp___9);
-#line 736
+#line 732
       return (0);
     }
   }
-#line 740
+#line 736
   __cil_tmp___18 = getgid();
-#line 740
+#line 736
   if (__cil_tmp___18 != Conf_GID) {
-#line 742
+#line 738
     __cil_tmp___17 = setgid(Conf_GID);
-#line 742
+#line 738
     if (__cil_tmp___17 != 0) {
-#line 743
+#line 739
       __cil_tmp___14 = __errno_location();
-#line 743
+#line 739
       real_errno = *__cil_tmp___14;
-#line 744
+#line 740
       __cil_tmp___15 = __errno_location();
-#line 744
+#line 740
       __cil_tmp___16 = strerror(*__cil_tmp___15);
-#line 744
+#line 740
       Log(3, "Can\'t change group ID to %u: %s", Conf_GID, __cil_tmp___16);
-#line 745
+#line 741
       if (real_errno != 1) {
+#line 742
+        return (0);
+      }
+    }
+  }
 #line 746
-        return (0);
-      }
-    }
-  }
-#line 750
   __cil_tmp___23 = getuid();
-#line 750
+#line 746
   if (__cil_tmp___23 != Conf_UID) {
-#line 752
+#line 748
     __cil_tmp___22 = setuid(Conf_UID);
-#line 752
+#line 748
     if (__cil_tmp___22 != 0) {
-#line 753
+#line 749
       __cil_tmp___19 = __errno_location();
-#line 753
+#line 749
       real_errno = *__cil_tmp___19;
-#line 754
+#line 750
       __cil_tmp___20 = __errno_location();
-#line 754
+#line 750
       __cil_tmp___21 = strerror(*__cil_tmp___20);
-#line 754
+#line 750
       Log(3, "Can\'t change user ID to %u: %s", Conf_UID, __cil_tmp___21);
-#line 755
+#line 751
       if (real_errno != 1) {
-#line 756
+#line 752
         return (0);
       }
     }
   }
-#line 760
+#line 756
   initialized = 1;
-#line 765
+#line 761
   if (! NGIRCd_NoDaemon) {
-#line 766
+#line 762
     pid = fork();
-#line 767
+#line 763
     if (pid > 0) {
-#line 769
+#line 765
       exit(0);
     }
-#line 771
+#line 767
     if (pid < 0) {
-#line 773
+#line 769
       __cil_tmp___24 = __errno_location();
-#line 773
+#line 769
       __cil_tmp___25 = strerror(*__cil_tmp___24);
-#line 773
+#line 769
       fprintf((FILE * __restrict  )stderr, (char const   * __restrict  )"%s: Can\'t fork: %s!\nFatal error, exiting now ...\n",
               "ngircd", __cil_tmp___25);
-#line 775
+#line 771
       exit(1);
     }
-#line 779
+#line 775
     setsid();
-#line 780
+#line 776
     chdir("/");
-#line 783
+#line 779
     Setup_FDStreams();
   }
-#line 785
+#line 781
   pid = getpid();
-#line 787
+#line 783
   Pidfile_Create(pid);
-#line 791
+#line 787
   Conf_UID = getuid();
-#line 792
+#line 788
   Conf_GID = getgid();
-#line 794
+#line 790
   pwd = getpwuid(Conf_UID);
-#line 795
+#line 791
   grp = getgrgid(Conf_GID);
-#line 797
+#line 793
   if (grp) {
-#line 797
+#line 793
     __cil_tmp___26 = (char const   *)grp->gr_name;
   } else {
-#line 797
+#line 793
     __cil_tmp___26 = "unknown";
   }
-#line 797
+#line 793
   if (pwd) {
-#line 797
+#line 793
     __cil_tmp___27 = (char const   *)pwd->pw_name;
   } else {
-#line 797
+#line 793
     __cil_tmp___27 = "unknown";
   }
-#line 797
+#line 793
   Log(6, "Running as user %s(%ld), group %s(%ld), with PID %ld.", __cil_tmp___27,
       Conf_UID, __cil_tmp___26, Conf_GID, pid);
-#line 801
+#line 797
   if (chrooted) {
-#line 802
+#line 798
     Log(6, "Running chrooted, chrootdir \"%s\".", Conf_Chroot);
-#line 803
+#line 799
     return (1);
   } else {
-#line 805
+#line 801
     Log(6, "Not running chrooted.");
   }
-#line 811
+#line 807
   if (pwd) {
-#line 812
+#line 808
     if (! NGIRCd_NoDaemon) {
-#line 813
+#line 809
       __cil_tmp___30 = chdir((char const   *)pwd->pw_dir);
-#line 813
+#line 809
       if (__cil_tmp___30 == 0) {
-#line 814
+#line 810
         Log(7, "Changed working directory to \"%s\" ...", pwd->pw_dir);
       } else {
-#line 816
+#line 812
         __cil_tmp___28 = __errno_location();
-#line 816
+#line 812
         __cil_tmp___29 = strerror(*__cil_tmp___28);
-#line 816
+#line 812
         Log(6, "Notice: Can\'t change working directory to \"%s\": %s", pwd->pw_dir,
             __cil_tmp___29);
       }
     }
   } else {
-#line 820
+#line 816
     Log(3, "Can\'t get user informaton for UID %d!?", Conf_UID);
   }
-#line 823
+#line 819
   return (1);
 }
 }
 #line 1 "array.o"
-#pragma merger(0,"/tmp/cil-C4N7P7Jg.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-wIysENEF.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 32 "array.h"
 void array_init(array *a ) ;
 #line 36
@@ -8530,7 +8530,7 @@ void array_moveleft(array *a , size_t membersize , size_t pos )
 }
 }
 #line 1 "channel.o"
-#pragma merger(0,"/tmp/cil-m62wzo26.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-myBGfnPy.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 92 "client.h"
 int Client_Type(CLIENT *Client ) ;
 #line 93
@@ -10168,7 +10168,7 @@ static int Delete_Channel(CHANNEL *Chan )
 }
 }
 #line 1 "client.o"
-#pragma merger(0,"/tmp/cil-wHggozqi.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-Tw5mMPY6.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 78 "client.h"
 CLIENT *Client_NewLocal(CONN_ID Idx , char *Hostname , int Type , int Idented ) ;
 #line 79
@@ -11816,7 +11816,7 @@ void Client_RegisterWhowas(CLIENT *Client )
 }
 }
 #line 1 "conf.o"
-#pragma merger(0,"/tmp/cil-mSpUHtEY.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-GpiHWMJ4.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 451 "/usr/include/libio.h"
 extern  __attribute__((__nothrow__)) int _IO_putc(int __c , _IO_FILE *__fp ) ;
 #line 142 "/usr/include/stdio.h"
@@ -13977,7 +13977,7 @@ static void Init_Server_Struct(CONF_SERVER *Server )
 }
 }
 #line 1 "conn.o"
-#pragma merger(0,"/tmp/cil-CaBN7VsG.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-an9gGRCT.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 25 "io.h"
 int io_library_init(unsigned int eventsize ) ;
 #line 28
@@ -16318,7 +16318,7 @@ CLIENT *Conn_GetClient(CONN_ID Idx )
 }
 }
 #line 1 "conn-func.o"
-#pragma merger(0,"/tmp/cil-lBJ1ibuX.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-JdR0sMoU.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 30 "conn-func.h"
 time_t Conn_GetSignon(CONN_ID Idx ) ;
 #line 31
@@ -16610,9 +16610,9 @@ long Conn_WCounter(void)
 }
 }
 #line 1 "conn-zip.o"
-#pragma merger(0,"/tmp/cil-0E5fR1TP.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-9XnsS6HB.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 1 "hash.o"
-#pragma merger(0,"/tmp/cil-zA2PIhNp.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-ImoeyZVq.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 33 "hash.c"
 UINT32 Hash(char const   *String ) 
 { 
@@ -16623,7 +16623,7 @@ UINT32 Hash(char const   *String )
 }
 }
 #line 1 "io.o"
-#pragma merger(0,"/tmp/cil-QARt35HB.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-QNscEywM.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 69 "io.c"
 static int library_initialized  =    0;
 #line 92 "io.c"
@@ -17148,7 +17148,7 @@ static void io_docallback(int fd , short what )
 }
 }
 #line 1 "irc.o"
-#pragma merger(0,"/tmp/cil-d1rB5DvX.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-Kd9jqyYD.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 33 "irc-write.h"
 void IRC_SetPenalty(CLIENT *Client , time_t Seconds ) ;
 #line 43 "parse.h"
@@ -17900,7 +17900,7 @@ static char *Option_String(CONN_ID Idx )
 }
 }
 #line 1 "irc-channel.o"
-#pragma merger(0,"/tmp/cil-0JgKAvj4.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-egFYh1SI.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 21 "match.h"
 int Match(char const   *Pattern , char const   *String ) ;
 #line 39 "irc-info.h"
@@ -19111,7 +19111,7 @@ int IRC_CHANINFO(CLIENT *Client , REQUEST *Req )
 }
 }
 #line 1 "irc-info.o"
-#pragma merger(0,"/tmp/cil-yVMDMp64.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-1CEWe8Ew.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 27 "./../tool/tool.h"
 void ngt_TrimLastChr(char *String , char Chr ) ;
 #line 31
@@ -22270,7 +22270,7 @@ int IRC_Send_ISUPPORT(CLIENT *Client )
 }
 }
 #line 1 "irc-login.o"
-#pragma merger(0,"/tmp/cil-wNPu3Wzg.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-CXBmCvSz.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 27 "irc-write.h"
 void IRC_WriteStrServers(CLIENT *ExceptOf , char *Format  , ...) ;
 #line 21 "irc-login.h"
@@ -23583,7 +23583,7 @@ static void Kill_Nick(char *Nick , char *Reason )
 }
 }
 #line 1 "irc-mode.o"
-#pragma merger(0,"/tmp/cil-MrSn7yu9.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-vBQzgPeT.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 31 "lists.h"
 int Lists_CheckDupeMask(struct list_head  const  *h , char const   *Mask ) ;
 #line 34
@@ -25070,7 +25070,7 @@ static int Send_ListChange(char *Mode , CLIENT *Prefix , CLIENT *Client , CHANNE
 }
 }
 #line 1 "irc-op.o"
-#pragma merger(0,"/tmp/cil-MSRufI2B.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-guJAOLoE.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 21 "irc-op.h"
 int IRC_KICK(CLIENT *Client , REQUEST *Req ) ;
 #line 22
@@ -25352,7 +25352,7 @@ int IRC_INVITE(CLIENT *Client , REQUEST *Req )
 }
 }
 #line 1 "irc-oper.o"
-#pragma merger(0,"/tmp/cil-vCC2HD44.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-Vp8AUyUG.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 21 "irc-oper.h"
 int IRC_OPER(CLIENT *Client , REQUEST *Req ) ;
 #line 22
@@ -26034,7 +26034,7 @@ int IRC_WALLOPS(CLIENT *Client , REQUEST *Req )
 }
 }
 #line 1 "irc-server.o"
-#pragma merger(0,"/tmp/cil-E097tRSP.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-NGC3bFvp.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 19 "numeric.h"
 int IRC_Num_ENDOFMOTD(CLIENT *Client , REQUEST *Req  __attribute__((__unused__)) ) ;
 #line 21 "irc-server.h"
@@ -26621,7 +26621,7 @@ int IRC_SQUIT(CLIENT *Client , REQUEST *Req )
 }
 }
 #line 1 "irc-write.o"
-#pragma merger(0,"/tmp/cil-Dj7PCYEm.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-X8Rt9I64.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 24 "irc-write.h"
 int IRC_WriteStrChannel(CLIENT *Client , CHANNEL *Chan , int Remote , char *Format 
                         , ...) ;
@@ -27101,7 +27101,7 @@ static char *Get_Prefix(CLIENT *Target , CLIENT *Client )
 }
 }
 #line 1 "lists.o"
-#pragma merger(0,"/tmp/cil-Rt7KKgC5.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-JHaoTbyl.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 45 "lists.c"
 char const   *Lists_GetMask(struct list_elem  const  *e ) 
 { 
@@ -27385,7 +27385,7 @@ int Lists_Check(struct list_head *header , CLIENT *Client )
 }
 }
 #line 1 "log.o"
-#pragma merger(0,"/tmp/cil-wpmLOw6v.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-525AlsoV.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 50 "log.h"
 void Log_Init_Resolver(void) ;
 #line 51
@@ -27596,7 +27596,7 @@ static void Wall_ServerNotice(char *Msg )
 }
 }
 #line 1 "match.o"
-#pragma merger(0,"/tmp/cil-TOSlxBWm.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-XmfspmeH.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 35 "match.c"
 static int Matche(char const   *p , char const   *t ) ;
 #line 36
@@ -27951,7 +27951,7 @@ static int Matche_After_Star(char const   *p , char const   *t )
 }
 }
 #line 1 "numeric.o"
-#pragma merger(0,"/tmp/cil-ApDmqDbP.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-d20CGEHZ.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 20 "numeric.h"
 int IRC_Num_ISUPPORT(CLIENT *Client , REQUEST *Req ) ;
 #line 46 "numeric.c"
@@ -28521,7 +28521,7 @@ int IRC_Num_ISUPPORT(CLIENT *Client , REQUEST *Req )
 }
 }
 #line 1 "parse.o"
-#pragma merger(0,"/tmp/cil-KwAiJUQ0.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-kQZoJ2Zx.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 61 "parse.c"
 static COMMAND My_Commands[48]  = 
 #line 61 "parse.c"
@@ -29113,9 +29113,9 @@ static int Handle_Request(CONN_ID Idx , REQUEST *Req )
 }
 }
 #line 1 "rendezvous.o"
-#pragma merger(0,"/tmp/cil-SpqPzXpL.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-yukDs2Mz.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 1 "resolve.o"
-#pragma merger(0,"/tmp/cil-msMKIjYS.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-rGMHmKf9.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 61 "/usr/include/netdb.h"
 extern  __attribute__((__nothrow__)) int *__h_errno_location(void)  __attribute__((__const__)) ;
 #line 44 "resolve.c"
@@ -29692,11 +29692,11 @@ size_t Resolve_Read(RES_STAT *s , void *readbuf , size_t buflen )
 }
 }
 #line 1 "strlcpy.o"
-#pragma merger(0,"/tmp/cil-EQ0d5caC.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-sIJfEdJS.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 1 "strdup.o"
-#pragma merger(0,"/tmp/cil-56ncpqHU.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-lhBJncGH.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 1 "vsnprintf.o"
-#pragma merger(0,"/tmp/cil-7HyGMQfB.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-MMUKggv1.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 101 "vsnprintf.c"
 void dummy_snprintf(void) ;
 #line 102 "vsnprintf.c"
@@ -29709,7 +29709,7 @@ void dummy_snprintf(void)
 }
 }
 #line 1 "libngtool.a"
-#pragma merger(0,"/tmp/cil-kagifA1C.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-ktS615X6.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 35 "tool.c"
 void ngt_TrimStr(char *String ) 
 { char *start ;
@@ -29838,52 +29838,52 @@ void ngt_TrimLastChr(char *String , char Chr )
 }
 }
 #line 1 "libngipaddr.a"
-#pragma merger(0,"/tmp/cil-spKc3xlw.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 21 "ng_ipaddr.c"
+#pragma merger(0,"/tmp/cil-uzJG6DWx.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#line 20 "ng_ipaddr.c"
 int ng_ipaddr_init(ng_ipaddr_t *addr , char const   *ip_str , UINT16 port ) 
 { int __cil_tmp ;
 
   {
-#line 53
+#line 52
   if ((unsigned int )ip_str == (unsigned int )((void *)0)) {
-#line 54
+#line 53
     ip_str = "0.0.0.0";
   }
-#line 55
+#line 54
   addr->sin4.sin_family = (unsigned short)2;
-#line 57
+#line 56
   __cil_tmp = inet_aton(ip_str, & addr->sin4.sin_addr);
-#line 57
+#line 56
   if (__cil_tmp == 0) {
-#line 58
+#line 57
     return (0);
   }
-#line 64
+#line 63
   ng_ipaddr_setport(addr, port);
-#line 65
+#line 64
   return (1);
 }
 }
-#line 70 "ng_ipaddr.c"
+#line 69 "ng_ipaddr.c"
 void ng_ipaddr_setport(ng_ipaddr_t *a , UINT16 port ) 
 { 
 
   {
-#line 93
+#line 92
   a->sin4.sin_port = htons(port);
-#line 95
+#line 94
   return;
 }
 }
-#line 99 "ng_ipaddr.c"
+#line 98 "ng_ipaddr.c"
 int ng_ipaddr_ipequal(ng_ipaddr_t const   *a , ng_ipaddr_t const   *b ) 
 { int __cil_tmp ;
 
   {
-#line 118
+#line 117
   __cil_tmp = memcmp((void const   *)(& a->sin4.sin_addr), (void const   *)(& b->sin4.sin_addr),
                      sizeof(a->sin4.sin_addr));
-#line 118
+#line 117
   return (__cil_tmp == 0);
 }
 }

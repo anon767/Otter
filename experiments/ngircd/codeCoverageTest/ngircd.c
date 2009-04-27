@@ -1,1 +1,1 @@
-link ../src/linux/ngircd-0.12.0.c
+../src/linux/ngircd-0.12.0.c

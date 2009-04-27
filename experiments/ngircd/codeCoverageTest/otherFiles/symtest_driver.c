@@ -30,7 +30,7 @@ extern int symtest();
 //
 //#define	CONF_PINGTIMEOUT 
 //#define	CONF_PONGTIMEOUT 
-//#define	CONF_MAXCONNECTIONS 
+#define	CONF_MAXCONNECTIONS 
 
 void symtest_Conf_Init_impl(){
 
