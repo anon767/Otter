@@ -21,15 +21,15 @@ int symtest(){
 	event_recv(client_fd2,"USER user x x :user\r\n",t++);
 	event_send(client_fd2,t++);
 	
-	event_accept(client_fd3,t++);
-	event_recv(client_fd3,"NICK nick3\r\n",t++);
-	event_recv(client_fd3,"USER user x x :user\r\n",t++);
-	event_send(client_fd3,t++);
-	
-	event_accept(client_fd4,t++);
-	event_recv(client_fd4,"NICK nick4\r\n",t++);
-	event_recv(client_fd4,"USER user x x :user\r\n",t++);
-	event_send(client_fd4,t++);
+	//event_accept(client_fd3,t++);
+	//event_recv(client_fd3,"NICK nick3\r\n",t++);
+	//event_recv(client_fd3,"USER user x x :user\r\n",t++);
+	//event_send(client_fd3,t++);
+	//
+	//event_accept(client_fd4,t++);
+	//event_recv(client_fd4,"NICK nick4\r\n",t++);
+	//event_recv(client_fd4,"USER user x x :user\r\n",t++);
+	//event_send(client_fd4,t++);
 	
 	event_recv(client_fd1,"ISON nick2 u2 nick3 u3 nick4 u4\r\n",t++);
 	event_send(client_fd1,t++);
