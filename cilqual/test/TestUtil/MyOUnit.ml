@@ -33,7 +33,7 @@ let wrap_test testfn = fun () ->
         end;
         Printexc.record_backtrace prev_backtrace;
         Format.pp_print_flush formatter ();
-        ignore (OUnit.assert_failure (Buffer.contents buffer))
+        failwith (Buffer.contents buffer)
     end;
     Printexc.record_backtrace prev_backtrace
 
@@ -42,15 +42,18 @@ let wrap_test testfn = fun () ->
 let fork_test testfn = fun () ->
     (* first, flush stdout to avoid printing twice *)
     Format.print_flush ();
-    (* create a pipe to proxy the error report from child to parent *)
+    (* create a pipe to proxy the error report from child to parent, including console printouts *)
     let fdin, fdout = Unix.pipe () in
     let child = Unix.fork () in
     if child = 0 then begin
         (* child process runs the test and proxies the result to the parent *)
         Unix.close fdin;
+        (* redirect console descriptors *)
+        Unix.dup2 fdout Unix.stdout;
+        Unix.dup2 fdout Unix.stderr;
         begin try wrap_test testfn () with
             | Failure s ->
-                ignore (Unix.single_write fdout s 0 (String.length s));
+                Format.printf "@.MyOunit:%s" s;
                 exit 1
         end;
         exit 0
@@ -69,12 +72,14 @@ let fork_test testfn = fun () ->
             | Unix.WEXITED 0 ->
                 ()
             | Unix.WEXITED _ ->
-                OUnit.assert_failure (Buffer.contents message)
+                failwith (Buffer.contents message)
             | Unix.WSIGNALED i ->
-                OUnit.assert_failure (Format.sprintf "Test process unexpectedly killed by signal %d." i)
+                assert_log "Test process unexpectedly killed by signal %d." i;
+                failwith (Buffer.contents message)
             | Unix.WSTOPPED i ->
                 (* this should never occur since waitpid wasn't given the WUNTRACED flag *)
-                OUnit.assert_failure (Format.sprintf "Test process unexpectedly stopped by signal %d." i)
+                assert_log "Test process unexpectedly stopped by signal %d." i;
+                failwith (Buffer.contents message)
     end
 
 
