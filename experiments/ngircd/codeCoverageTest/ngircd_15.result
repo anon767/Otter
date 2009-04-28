@@ -1,0 +1,336 @@
+application=ngircd  testcase=rfc1459_4.2.4
+Running time: 435.72 s
+492 paths ran to completion; 0 had errors.
+1456 out of 4419 lines (32.95%)
+a set of 4 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_5.2
+Running time: 140.53 s
+180 paths ran to completion; 0 had errors.
+1237 out of 4419 lines (27.99%)
+a set of 4 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.1.3-a
+Running time: 37.35 s
+108 paths ran to completion; 0 had errors.
+1150 out of 4419 lines (26.02%)
+a set of 4 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.4.1-a
+Running time: 233.59 s
+252 paths ran to completion; 0 had errors.
+1377 out of 4419 lines (31.16%)
+a set of 5 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.1.4
+Running time: 22.40 s
+60 paths ran to completion; 0 had errors.
+964 out of 4419 lines (21.81%)
+a set of 4 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.2.7
+Running time: 213.65 s
+300 paths ran to completion; 0 had errors.
+1406 out of 4419 lines (31.82%)
+a set of 5 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_5.1
+Running time: 63.01 s
+132 paths ran to completion; 0 had errors.
+1178 out of 4419 lines (26.66%)
+a set of 4 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.2.1-a
+Running time: 326.04 s
+444 paths ran to completion; 0 had errors.
+1352 out of 4419 lines (30.60%)
+a set of 6 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.3.3
+Running time: 46.84 s
+108 paths ran to completion; 0 had errors.
+1174 out of 4419 lines (26.57%)
+a set of 4 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_5.8
+Running time: 145.63 s
+180 paths ran to completion; 0 had errors.
+1181 out of 4419 lines (26.73%)
+a set of 6 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.2.1
+Running time: 61.08 s
+156 paths ran to completion; 0 had errors.
+1312 out of 4419 lines (29.69%)
+a set of 4 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.6.2
+Running time: 24.77 s
+60 paths ran to completion; 0 had errors.
+966 out of 4419 lines (21.86%)
+a set of 4 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.1.6
+Running time: 63.19 s
+108 paths ran to completion; 0 had errors.
+1205 out of 4419 lines (27.27%)
+a set of 4 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.3.6
+Running time: 48.23 s
+108 paths ran to completion; 0 had errors.
+1170 out of 4419 lines (26.48%)
+a set of 4 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.6.1
+Running time: 174.64 s
+180 paths ran to completion; 0 had errors.
+1211 out of 4419 lines (27.40%)
+a set of 5 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.1.2
+Running time: 53.61 s
+108 paths ran to completion; 0 had errors.
+1016 out of 4419 lines (22.99%)
+a set of 4 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.3.4
+Running time: 48.08 s
+108 paths ran to completion; 0 had errors.
+1163 out of 4419 lines (26.32%)
+a set of 4 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc2812_3.4.2
+Running time: 350.56 s
+288 paths ran to completion; 0 had errors.
+1237 out of 4419 lines (27.99%)
+a set of 5 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.2.3.2
+Running time: 69.40 s
+132 paths ran to completion; 0 had errors.
+1256 out of 4419 lines (28.42%)
+a set of 4 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.6.3
+Running time: 43.60 s
+108 paths ran to completion; 0 had errors.
+1162 out of 4419 lines (26.30%)
+a set of 4 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.1.7
+Running time: 28.14 s
+60 paths ran to completion; 0 had errors.
+965 out of 4419 lines (21.84%)
+a set of 4 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.3.7
+Running time: 47.98 s
+108 paths ran to completion; 0 had errors.
+1168 out of 4419 lines (26.43%)
+a set of 4 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_5.3
+Running time: 158.39 s
+132 paths ran to completion; 0 had errors.
+1288 out of 4419 lines (29.15%)
+a set of 4 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.2.2-a
+Running time: 301.77 s
+444 paths ran to completion; 0 had errors.
+1341 out of 4419 lines (30.35%)
+a set of 6 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.3.5
+Running time: 57.69 s
+108 paths ran to completion; 0 had errors.
+1197 out of 4419 lines (27.09%)
+a set of 4 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.5.1
+Running time: 178.71 s
+204 paths ran to completion; 0 had errors.
+1272 out of 4419 lines (28.78%)
+a set of 5 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.2.3.1
+Running time: 107.90 s
+180 paths ran to completion; 0 had errors.
+1443 out of 4419 lines (32.65%)
+a set of 4 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.4.1
+Running time: 146.14 s
+180 paths ran to completion; 0 had errors.
+1189 out of 4419 lines (26.91%)
+a set of 6 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc2813_4.1.2
+Running time: 52.67 s
+132 paths ran to completion; 0 had errors.
+1159 out of 4419 lines (26.23%)
+a set of 4 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.2.2
+Running time: 49.12 s
+108 paths ran to completion; 0 had errors.
+1172 out of 4419 lines (26.52%)
+a set of 4 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.3.8
+Running time: 48.21 s
+108 paths ran to completion; 0 had errors.
+1171 out of 4419 lines (26.50%)
+a set of 4 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_5.7
+Running time: 148.40 s
+180 paths ran to completion; 0 had errors.
+1186 out of 4419 lines (26.84%)
+a set of 5 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.1.2-b
+Running time: 22.34 s
+60 paths ran to completion; 0 had errors.
+948 out of 4419 lines (21.45%)
+a set of 4 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.3.2
+Running time: 47.82 s
+108 paths ran to completion; 0 had errors.
+1171 out of 4419 lines (26.50%)
+a set of 4 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_5.5
+Running time: 146.04 s
+180 paths ran to completion; 0 had errors.
+1169 out of 4419 lines (26.45%)
+a set of 5 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.1.5
+Running time: 53.45 s
+108 paths ran to completion; 0 had errors.
+1194 out of 4419 lines (27.02%)
+a set of 4 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.3.1
+Running time: 48.41 s
+108 paths ran to completion; 0 had errors.
+1164 out of 4419 lines (26.34%)
+a set of 4 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.2.8
+Running time: 236.37 s
+252 paths ran to completion; 0 had errors.
+1388 out of 4419 lines (31.41%)
+a set of 5 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc2813_4.2.2
+Running time: 79.82 s
+132 paths ran to completion; 0 had errors.
+1127 out of 4419 lines (25.50%)
+a set of 4 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.1.2-a
+Running time: 60.91 s
+156 paths ran to completion; 0 had errors.
+1194 out of 4419 lines (27.02%)
+a set of 4 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.4.2-a
+Running time: 235.79 s
+252 paths ran to completion; 0 had errors.
+1377 out of 4419 lines (31.16%)
+a set of 5 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.5.2
+Running time: 147.89 s
+180 paths ran to completion; 0 had errors.
+1196 out of 4419 lines (27.06%)
+a set of 5 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.2.5
+Running time: 96.69 s
+180 paths ran to completion; 0 had errors.
+1342 out of 4419 lines (30.37%)
+a set of 4 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.1.3
+Running time: 50.16 s
+108 paths ran to completion; 0 had errors.
+1157 out of 4419 lines (26.18%)
+a set of 4 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.4.2
+Running time: 147.29 s
+180 paths ran to completion; 0 had errors.
+1182 out of 4419 lines (26.75%)
+a set of 5 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.5.3
+Running time: 181.30 s
+204 paths ran to completion; 0 had errors.
+1262 out of 4419 lines (28.56%)
+a set of 7 configurations  needed.
+=======================================
+application=ngircd  testcase=rfc1459_4.2.6
+Running time: 285.27 s
+300 paths ran to completion; 0 had errors.
+1469 out of 4419 lines (33.24%)
+a set of 5 configurations  needed.
+=======================================
+
+47 out of 47 testcases finished.
+2386 out of 4380 lines were hit (54.47%)
+
+30 testcases required 4 configurations.
+12 testcases required 5 configurations.
+4 testcases required 6 configurations.
+1 testcases required 7 configurations.
+
+Config: Conf_MaxNickLength=5,Conf_MaxConnectionsIP=0,Conf_MaxJoins=4,Conf_ListenIPv4=524288,Conf_NoDNS=0,Conf_OperCanMode=0,Conf_PongTimeout=20,Conf_PingTimeout=1,Conf_UID=0, appeared 2 times.
+Config: Conf_MaxNickLength=0,Conf_MaxConnectionsIP=0,Conf_MaxJoins=0,Conf_ListenIPv4=8388608,Conf_NoDNS=4096,Conf_OperCanMode=0,Conf_PongTimeout=20,Conf_PingTimeout=1,Conf_GID=1,Conf_UID=16, appeared 4 times.
+Config: Conf_MaxNickLength=1,Conf_MaxConnectionsIP=0,Conf_MaxJoins=0,Conf_ListenIPv4=4096,Conf_NoDNS=8192,Conf_OperCanMode=0,Conf_PongTimeout=20,Conf_PingTimeout=120,Conf_GID=1,Conf_UID=64, appeared 7 times.
+Config: Conf_MaxNickLength=16,Conf_MaxConnectionsIP=0,Conf_MaxJoins=4,Conf_ListenIPv4=67108864,Conf_NoDNS=0,Conf_OperCanMode=0,Conf_PongTimeout=20,Conf_PingTimeout=1,Conf_UID=0, appeared 1 times.
+Config: Conf_MaxNickLength=0,Conf_MaxConnectionsIP=0,Conf_MaxJoins=0,Conf_ListenIPv4=536870912,Conf_NoDNS=536870912,Conf_OperCanMode=0,Conf_PongTimeout=20,Conf_PingTimeout=3600,Conf_GID=1,Conf_UID=268435456, appeared 9 times.
+Config: Conf_MaxNickLength=8,Conf_MaxConnectionsIP=0,Conf_MaxJoins=0,Conf_ListenIPv4=4096,Conf_NoDNS=0,Conf_OperCanMode=0,Conf_PongTimeout=3600,Conf_PingTimeout=1,Conf_UID=0, appeared 2 times.
+Config: Conf_MaxNickLength=6,Conf_MaxConnectionsIP=0,Conf_MaxJoins=0,Conf_ListenIPv4=32768,Conf_NoDNS=1,Conf_OperCanMode=0,Conf_PongTimeout=20,Conf_PingTimeout=1,Conf_GID=1,Conf_UID=8388608, appeared 1 times.
+Config: Conf_MaxNickLength=16,Conf_MaxConnectionsIP=0,Conf_MaxJoins=4,Conf_ListenIPv4=131072,Conf_NoDNS=0,Conf_OperCanMode=0,Conf_PongTimeout=3600,Conf_PingTimeout=1,Conf_UID=0, appeared 3 times.
+Config: Conf_MaxNickLength=6,Conf_MaxConnectionsIP=0,Conf_MaxJoins=0,Conf_ListenIPv4=2048,Conf_NoDNS=0,Conf_OperCanMode=0,Conf_PongTimeout=20,Conf_PingTimeout=1,Conf_UID=0, appeared 10 times.
+Config: Conf_MaxNickLength=0,Conf_MaxConnectionsIP=1,Conf_MaxJoins=0,Conf_ListenIPv4=-2147483648,Conf_NoDNS=33554432,Conf_OperCanMode=0,Conf_PongTimeout=20,Conf_PingTimeout=1,Conf_GID=0,Conf_UID=64, appeared 1 times.
+Config: Conf_MaxNickLength=0,Conf_MaxConnectionsIP=0,Conf_MaxJoins=0,Conf_ListenIPv4=2,Conf_NoDNS=0,Conf_OperCanMode=0,Conf_PongTimeout=1,Conf_PingTimeout=1,Conf_GID=0,Conf_UID=1, appeared 22 times.
+Config: Conf_MaxNickLength=2,Conf_MaxConnectionsIP=1,Conf_MaxJoins=0,Conf_ListenIPv4=268435456,Conf_NoDNS=524288,Conf_OperCanMode=0,Conf_PongTimeout=20,Conf_PingTimeout=3600,Conf_GID=1,Conf_UID=32768, appeared 2 times.
+Config: Conf_MaxNickLength=10,Conf_MaxConnectionsIP=0,Conf_MaxJoins=2,Conf_ListenIPv4=262144,Conf_NoDNS=1073741824,Conf_OperCanMode=0,Conf_PongTimeout=20,Conf_PingTimeout=3600,Conf_GID=0,Conf_UID=16777216, appeared 1 times.
+Config: Conf_MaxNickLength=16,Conf_MaxConnectionsIP=0,Conf_MaxJoins=0,Conf_ListenIPv4=67108864,Conf_NoDNS=33554432,Conf_OperCanMode=0,Conf_PongTimeout=3600,Conf_PingTimeout=120,Conf_GID=1,Conf_UID=512, appeared 3 times.
+Config: Conf_MaxNickLength=64,Conf_MaxConnectionsIP=0,Conf_MaxJoins=0,Conf_ListenIPv4=8192,Conf_NoDNS=1048576,Conf_OperCanMode=0,Conf_PongTimeout=20,Conf_PingTimeout=3600,Conf_GID=1,Conf_UID=128, appeared 1 times.
+Config: Conf_MaxNickLength=0,Conf_MaxConnectionsIP=1,Conf_MaxJoins=0,Conf_ListenIPv4=4096,Conf_NoDNS=33554432,Conf_OperCanMode=0,Conf_PongTimeout=20,Conf_PingTimeout=1,Conf_GID=0,Conf_UID=128, appeared 8 times.
+Config: Conf_MaxNickLength=0,Conf_MaxConnectionsIP=0,Conf_MaxJoins=0,Conf_ListenIPv4=0,Conf_NoDNS=2,Conf_OperCanMode=0,Conf_PongTimeout=1,Conf_PingTimeout=1,Conf_GID=1,Conf_UID=1, appeared 47 times.
+Config: Conf_MaxNickLength=5,Conf_MaxConnectionsIP=0,Conf_MaxJoins=1,Conf_ListenIPv4=131072,Conf_NoDNS=0,Conf_OperCanMode=0,Conf_PongTimeout=20,Conf_PingTimeout=1,Conf_UID=0, appeared 2 times.
+Config: Conf_MaxNickLength=0,Conf_MaxConnectionsIP=0,Conf_MaxJoins=0,Conf_ListenIPv4=2,Conf_NoDNS=0,Conf_OperCanMode=0,Conf_PongTimeout=1,Conf_PingTimeout=1,Conf_GID=1,Conf_UID=1, appeared 25 times.
+Config: Conf_MaxNickLength=16,Conf_MaxConnectionsIP=0,Conf_MaxJoins=0,Conf_ListenIPv4=2,Conf_NoDNS=0,Conf_OperCanMode=0,Conf_PongTimeout=20,Conf_PingTimeout=1,Conf_UID=0, appeared 1 times.
+Config: Conf_MaxNickLength=1,Conf_MaxConnectionsIP=1,Conf_MaxJoins=0,Conf_ListenIPv4=8388608,Conf_NoDNS=4096,Conf_OperCanMode=0,Conf_PongTimeout=20,Conf_PingTimeout=1,Conf_GID=1,Conf_UID=16, appeared 1 times.
+Config: Conf_MaxNickLength=0,Conf_MaxConnectionsIP=0,Conf_MaxJoins=0,Conf_ListenIPv4=2,Conf_NoDNS=0,Conf_OperCanMode=0,Conf_PongTimeout=20,Conf_PingTimeout=1,Conf_UID=0, appeared 2 times.
+Config: Conf_MaxNickLength=8,Conf_MaxConnectionsIP=0,Conf_MaxJoins=0,Conf_ListenIPv4=4194304,Conf_NoDNS=0,Conf_OperCanMode=0,Conf_PongTimeout=3600,Conf_PingTimeout=1,Conf_UID=0, appeared 1 times.
+Config: Conf_MaxNickLength=6,Conf_MaxConnectionsIP=1,Conf_MaxJoins=0,Conf_ListenIPv4=2048,Conf_NoDNS=0,Conf_OperCanMode=0,Conf_PongTimeout=20,Conf_PingTimeout=1,Conf_UID=0, appeared 5 times.
+Config: Conf_MaxNickLength=0,Conf_MaxConnectionsIP=0,Conf_MaxJoins=0,Conf_ListenIPv4=1,Conf_NoDNS=2097152,Conf_OperCanMode=0,Conf_PongTimeout=3600,Conf_PingTimeout=1,Conf_GID=1,Conf_UID=4096, appeared 4 times.
+Config: Conf_MaxNickLength=69,Conf_MaxConnectionsIP=0,Conf_MaxJoins=1,Conf_ListenIPv4=2048,Conf_NoDNS=0,Conf_OperCanMode=0,Conf_PongTimeout=20,Conf_PingTimeout=1,Conf_UID=0, appeared 1 times.
+Config: Conf_MaxNickLength=1,Conf_MaxConnectionsIP=0,Conf_MaxJoins=0,Conf_ListenIPv4=1,Conf_NoDNS=134217728,Conf_OperCanMode=0,Conf_PongTimeout=20,Conf_PingTimeout=3600,Conf_GID=0,Conf_UID=512, appeared 2 times.
+Config: Conf_MaxNickLength=2,Conf_MaxConnectionsIP=0,Conf_MaxJoins=0,Conf_ListenIPv4=268435456,Conf_NoDNS=524288,Conf_OperCanMode=0,Conf_PongTimeout=20,Conf_PingTimeout=3600,Conf_GID=1,Conf_UID=32768, appeared 2 times.
+Config: Conf_MaxNickLength=2,Conf_MaxConnectionsIP=1,Conf_MaxJoins=0,Conf_ListenIPv4=-2147483648,Conf_NoDNS=33554432,Conf_OperCanMode=0,Conf_PongTimeout=20,Conf_PingTimeout=3600,Conf_GID=0,Conf_UID=32768, appeared 1 times.
+Config: Conf_MaxNickLength=8,Conf_MaxConnectionsIP=0,Conf_MaxJoins=1,Conf_ListenIPv4=65536,Conf_NoDNS=0,Conf_OperCanMode=0,Conf_PongTimeout=20,Conf_PingTimeout=1,Conf_UID=0, appeared 1 times.
+Config: Conf_MaxNickLength=10,Conf_MaxConnectionsIP=0,Conf_MaxJoins=0,Conf_ListenIPv4=16384,Conf_NoDNS=4194304,Conf_OperCanMode=0,Conf_PongTimeout=3600,Conf_PingTimeout=3600,Conf_GID=0,Conf_UID=65536, appeared 1 times.
+Config: Conf_MaxNickLength=8,Conf_MaxConnectionsIP=2,Conf_MaxJoins=0,Conf_ListenIPv4=2048,Conf_NoDNS=16777216,Conf_OperCanMode=0,Conf_PongTimeout=3600,Conf_PingTimeout=120,Conf_GID=0,Conf_UID=1024, appeared 1 times.
+Config: Conf_MaxNickLength=16,Conf_MaxConnectionsIP=0,Conf_MaxJoins=1,Conf_ListenIPv4=8192,Conf_NoDNS=0,Conf_OperCanMode=0,Conf_PongTimeout=20,Conf_PingTimeout=1,Conf_UID=0, appeared 1 times.
+Config: Conf_MaxNickLength=0,Conf_MaxConnectionsIP=0,Conf_MaxJoins=0,Conf_ListenIPv4=512,Conf_NoDNS=1048576,Conf_OperCanMode=0,Conf_PongTimeout=20,Conf_PingTimeout=120,Conf_GID=0,Conf_UID=32, appeared 1 times.
+Config: Conf_MaxNickLength=8,Conf_MaxConnectionsIP=0,Conf_MaxJoins=0,Conf_ListenIPv4=32,Conf_NoDNS=0,Conf_OperCanMode=0,Conf_PongTimeout=3600,Conf_PingTimeout=1,Conf_UID=0, appeared 7 times.
+Config: Conf_MaxNickLength=10,Conf_MaxConnectionsIP=0,Conf_MaxJoins=0,Conf_ListenIPv4=2,Conf_NoDNS=2048,Conf_OperCanMode=0,Conf_PongTimeout=3600,Conf_PingTimeout=120,Conf_GID=1,Conf_UID=512, appeared 2 times.
+Config: Conf_MaxNickLength=0,Conf_MaxConnectionsIP=0,Conf_MaxJoins=0,Conf_ListenIPv4=-2147483648,Conf_NoDNS=33554432,Conf_OperCanMode=0,Conf_PongTimeout=20,Conf_PingTimeout=1,Conf_GID=0,Conf_UID=64, appeared 5 times.
+Config: Conf_MaxNickLength=64,Conf_MaxConnectionsIP=0,Conf_MaxJoins=0,Conf_ListenIPv4=4,Conf_NoDNS=0,Conf_OperCanMode=0,Conf_PongTimeout=20,Conf_PingTimeout=1,Conf_UID=0, appeared 1 times.
+Config: Conf_MaxNickLength=0,Conf_MaxConnectionsIP=0,Conf_MaxJoins=0,Conf_ListenIPv4=262144,Conf_NoDNS=0,Conf_OperCanMode=0,Conf_PongTimeout=20,Conf_PingTimeout=1,Conf_UID=0, appeared 4 times.
+Config: Conf_MaxNickLength=0,Conf_MaxConnectionsIP=0,Conf_MaxJoins=0,Conf_ListenIPv4=16,Conf_NoDNS=4096,Conf_OperCanMode=0,Conf_PongTimeout=20,Conf_PingTimeout=1,Conf_GID=1,Conf_UID=2, appeared 8 times.
+Config: Conf_MaxNickLength=0,Conf_MaxConnectionsIP=0,Conf_MaxJoins=0,Conf_ListenIPv4=536870912,Conf_NoDNS=512,Conf_OperCanMode=0,Conf_PongTimeout=3600,Conf_PingTimeout=1,Conf_GID=1,Conf_UID=131072, appeared 1 times.
+Config: Conf_MaxNickLength=6,Conf_MaxConnectionsIP=0,Conf_MaxJoins=0,Conf_ListenIPv4=16384,Conf_NoDNS=0,Conf_OperCanMode=0,Conf_PongTimeout=3600,Conf_PingTimeout=1,Conf_UID=0, appeared 1 times.
+Config: Conf_MaxNickLength=8,Conf_MaxConnectionsIP=0,Conf_MaxJoins=0,Conf_ListenIPv4=4,Conf_NoDNS=0,Conf_OperCanMode=0,Conf_PongTimeout=20,Conf_PingTimeout=3600,Conf_UID=0, appeared 1 times.
+Config: Conf_MaxNickLength=10,Conf_MaxConnectionsIP=0,Conf_MaxJoins=0,Conf_ListenIPv4=2,Conf_NoDNS=0,Conf_OperCanMode=0,Conf_PongTimeout=20,Conf_PingTimeout=1,Conf_UID=0, appeared 1 times.
+Config: Conf_MaxNickLength=0,Conf_MaxConnectionsIP=0,Conf_MaxJoins=0,Conf_ListenIPv4=4096,Conf_NoDNS=33554432,Conf_OperCanMode=0,Conf_PongTimeout=20,Conf_PingTimeout=1,Conf_GID=0,Conf_UID=128, appeared 4 times.
