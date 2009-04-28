@@ -33,10 +33,7 @@ module type InterpreterMonad = sig
     val emptyEnv : env
 
     val lookup_var : CilVar.t -> QualType.t monad
-    val update_var : CilVar.t -> QualType.t -> unit monad
-
-    val lookup_field : CilField.t -> QualType.t monad
-    val update_field : CilField.t -> QualType.t -> unit monad
+    val get_field : QualType.t -> CilField.t -> QualType.t monad
 end
 
 
@@ -96,8 +93,11 @@ module InterpreterT (T : Type.InterpreterMonad with type QualType.Var.Embed.t = 
                 return qt
 
     let lookup_var v = lookup_field_or_var (CilVar v)
-    let update_var v qt = update (CilVar v) qt
-    let lookup_field f = lookup_field_or_var (CilField f)
-    let update_field f qt = update (CilField f) qt
+
+    let get_field qt f =
+        if f.Cil.fcomp.Cil.cstruct then
+            lookup_field_or_var (CilField f) (* field-based: just substitute the field *)
+        else
+            return qt (* don't lookup union fields *)
 end
 

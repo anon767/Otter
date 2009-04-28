@@ -20,21 +20,21 @@ module InterpreterT (E : Environment.InterpreterMonad) = struct
     open Ops
 
     let rec access_lval (l, o) =
-        let rec outermost_field f = function
-            | Cil.NoOffset -> f
-            | Cil.Field (f', o) -> outermost_field (Some f') o
-            | Cil.Index (_, o) -> outermost_field f o
+        let rec apply_offset v = function
+            | Cil.NoOffset ->
+                return v
+            | Cil.Field (f, o) -> perform
+                v <-- get_field v f;
+                apply_offset v o
+            | Cil.Index (_, o) -> perform
+                apply_offset v o
         in
-        let lookup_lval = function
-            | Cil.Var v -> lookup_var v (* x *)
-            | Cil.Mem e -> interpret_exp e (* *x *)
-        in
-        match Cil.typeSig (Cil.typeOfLval (l, Cil.NoOffset)) with
-            | Cil.TSComp (false, _, _) -> lookup_lval l (* don't lookup union fields *)
-            | _ -> begin match outermost_field None o with
-                | Some f -> lookup_field f
-                | None -> lookup_lval l
-                end
+        perform
+            v <-- begin match l with
+                | Cil.Var v -> lookup_var v    (* x *)
+                | Cil.Mem e -> interpret_exp e (* *x *)
+            end;
+            apply_offset v o
     and access_rval l = perform
         qt <-- access_lval l;
         deref qt
