@@ -184,37 +184,28 @@ module QualTypeT (TypedQualVar : TypedQualVar)
         let fnArg i v = Qual.Var (FnArg (i, projvar v))
 
         (* explicit qualified-type constructors *)
+        let subst_qt x y qt =
+            let subst_qv v = Qual.Var (subst (projvar x) (projvar y) (projvar v)) in
+            let rec subst_qt = function
+                | Ref (qv, qt)      -> Ref (subst_qv qv, subst_qt qt)
+                | Fn (qv, qtr, qtp) -> Fn (subst_qv qv, subst_qt qtr, List.map subst_qt qtp)
+                | Base qv           -> Base (subst_qv qv)
+                | Empty             -> failwith "TODO: report invalid use of QualType constructor"
+            in subst_qt qt
         let ref qt = perform
-            let subst_qt x y qt =
-                let subst_qv v = Qual.Var (subst (projvar x) (projvar y) (projvar v)) in
-                let rec subst_qt = function
-                    | Ref (qv, qt)      -> Ref (subst_qv qv, subst_qt qt)
-                    | Fn (qv, qtr, qtp) -> Fn (subst_qv qv, subst_qt qtr, List.map subst_qt qtp)
-                    | Base qv           -> Base (subst_qv qv)
-                    | Empty             -> failwith "TODO: report invalid use of QualType constructor"
-                in subst_qt qt
-            in
             let rec shift_qt = function
                 | Ref (qv, qt)   -> Ref (qv, shift_qt qt)
                 | Fn (qv, _, _)
-                | Base qv as qt  -> Ref (qv, subst_qt  qv (deref qv) qt)
+                | Base qv as qt  -> Ref (qv, subst_qt qv (deref qv) qt)
                 | Empty          -> failwith "TODO: report invalid use of QualType constructor"
             in
             return (shift_qt qt)
         let fn qtr qtp = perform
             qv <-- ask;
-            let qtr = match qtr with
-                | Ref (_, qt)      -> Ref (fnRet qv, qt)
-                | Fn (_, qtr, qtp) -> Fn (fnRet qv, qtr, qtp)
-                | Base _           -> Base (fnRet qv)
-                | Empty            -> failwith "TODO: report invalid use of QualType constructor"
-            and (_, qtp) = List.fold_left begin fun (i, qtp) a ->
-                let qt = match a with
-                    | Ref (_, qt)      -> Ref (fnArg i qv, qt)
-                    | Fn (_, qtr, qtp) -> Fn (fnArg i qv, qtr, qtp)
-                    | Base _           -> Base (fnArg i qv)
-                    | Empty            -> failwith "TODO: report invalid use of QualType constructor"
-                in (i + 1, qt::qtp)
+            let qtr = subst_qt qv (fnRet qv) qtr in
+            let _, qtp = List.fold_left begin fun (i, qtp) a ->
+                let qt = subst_qt qv (fnArg i qv) a in
+                (i + 1, qt::qtp)
             end (0, []) qtp in
             return (Fn (qv, qtr, List.rev qtp))
         let base = perform

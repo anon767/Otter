@@ -9,9 +9,9 @@ module DummyContext = struct
 end
 
 
-module Setup (E : CilQual.Expression.InterpreterMonad) = struct
-    open E
-    module Ops = MonadOps (E)
+module SetupType (T : CilQual.Type.InterpreterMonad) = struct
+    open T
+    module Ops = MonadOps (T)
     open Ops
 
     let preprocess =
@@ -19,14 +19,29 @@ module Setup (E : CilQual.Expression.InterpreterMonad) = struct
         global_replace (regexp "\\([ \t\r\n(]\\)\\$\\([_a-zA-Z0-9]+\\)")
                        ("\\1__attribute__(("^CilQual.Config.annot_attribute_string^"(\\2)))")
 
-    let create_env typedecls vardecls =
-        (* helper to patch some limitations of Formatcil *)
-        let rec patchtype = function
-            | Cil.TFun (t, Some [ (s, Cil.TVoid _, _) ], b, a) -> Cil.TFun (t, Some [], b, a)
-            | Cil.TPtr (t, a) -> Cil.TPtr (patchtype t, a)
-            | t -> t
-        in
+    (* helper to patch some limitations of Formatcil *)
+    let rec patchtype = function
+        | Cil.TFun (t, Some [ (s, Cil.TVoid _, _) ], b, a) -> Cil.TFun (t, Some [], b, a)
+        | Cil.TPtr (t, a) -> Cil.TPtr (patchtype t, a)
+        | t -> t
 
+    let create_type typestr = patchtype (Formatcil.cType (preprocess typestr) [])
+
+    let adapt_cil_printer printer ff x =
+        let code = Pretty.sprint ~width:120 (printer () x) in
+        let code = global_replace (regexp "^[ \t]*\n") "" code in
+        let lines = split (regexp "\n") code in
+        ignore (List.fold_left (fun b e -> Format.fprintf ff "%(%)%s" b e; "@\n") "" lines)
+
+    let type_printer printer ff t = Format.fprintf ff "@[%a@]" (adapt_cil_printer printer#pType) t
+end
+
+
+module Setup (E : CilQual.Environment.InterpreterMonad) = struct
+    include SetupType (E)
+    open E
+
+    let create_env typedecls vardecls =
         (* setup structs/unions *)
         let formatcilenv = List.fold_left begin fun env decl ->
             let isStruct, (name, fieldstr) = match decl with `Struct d -> true, d | `Union d -> false, d in
@@ -58,12 +73,6 @@ module Setup (E : CilQual.Expression.InterpreterMonad) = struct
     let lookup_env x (cilenv, env) =
         let v = List.assoc x cilenv in
         Env.find (CilVar v) env
-
-    let adapt_cil_printer printer ff x =
-        let code = Pretty.sprint ~width:120 (printer () x) in
-        let code = global_replace (regexp "^[ \t]*\n") "" code in
-        let lines = split (regexp "\n") code in
-        ignore (List.fold_left (fun b e -> Format.fprintf ff "%(%)%s" b e; "@\n") "" lines)
 
     let env_printer printer ff env = ignore begin
         List.fold_left (fun b (_, v) -> Format.fprintf ff "%(%)@[%a@]" b (adapt_cil_printer printer#pVDecl) v; ",@ ") "" env

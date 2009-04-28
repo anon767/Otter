@@ -23,6 +23,7 @@ let _ =
             QualSolver.testsuite;
         ];
         "TestCilQual" >::: [
+            Type.testsuite;
             Expression.testsuite;
             Instruction.testsuite;
             Statement.testsuite;
