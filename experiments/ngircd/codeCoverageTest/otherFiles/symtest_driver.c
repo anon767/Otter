@@ -32,6 +32,12 @@ extern int symtest();
 //#define	CONF_PONGTIMEOUT 
 #define	CONF_MAXCONNECTIONS 
 
+#define __SYMBOLIC_BOOL(X)  \
+{ \
+	__SYMBOLIC(X); \
+	__ASSUME((*(X))==0 || (*(X))==1); \
+}
+
 void symtest_Conf_Init_impl(){
 
 	// this function is stepped in only once.
@@ -42,53 +48,43 @@ void symtest_Conf_Init_impl(){
 		return;
 
 	#ifndef CONF_UID
-		__SYMBOLIC(&Conf_UID);
+		__SYMBOLIC_BOOL(&Conf_UID);
 	#endif
 		 
 	#ifndef CONF_GID
-		__SYMBOLIC(&Conf_GID);
-	#endif
-		 
-	#ifndef CONF_PINGTIMEOUT
-		__SYMBOLIC(&Conf_PingTimeout);
-		__ASSUME(Conf_PingTimeout==3600 || Conf_PingTimeout==120 || Conf_PingTimeout==1);
-	#endif
-	
-	#ifndef CONF_PONGTIMEOUT
-		__SYMBOLIC(&Conf_PongTimeout);
-		__ASSUME(Conf_PongTimeout==3600 || Conf_PongTimeout==20 || Conf_PongTimeout==1);
+		__SYMBOLIC_BOOL(&Conf_GID);
 	#endif
 		 
 	#ifndef CONF_CONNECTRETRY
-		__SYMBOLIC(&Conf_ConnectRetry);
+		__SYMBOLIC_BOOL(&Conf_ConnectRetry);
 	#endif
 		 
 	#ifndef CONF_OPERCANMODE
-		__SYMBOLIC(&Conf_OperCanMode);
+		__SYMBOLIC_BOOL(&Conf_OperCanMode);
 	#endif
 		 
 	#ifndef CONF_NODNS
-		__SYMBOLIC(&Conf_NoDNS);
+		__SYMBOLIC_BOOL(&Conf_NoDNS);
 	#endif
 		 
 	#ifndef CONF_LISTENIPV6
-		__SYMBOLIC(&Conf_ListenIPv6);
+		__SYMBOLIC_BOOL(&Conf_ListenIPv6);
 	#endif
 		 
 	#ifndef CONF_LISTENIPV4
-		__SYMBOLIC(&Conf_ListenIPv4);
+		__SYMBOLIC_BOOL(&Conf_ListenIPv4);
 	#endif
 		 
 	#ifndef CONF_CONNECTIPV6
-		__SYMBOLIC(&Conf_ConnectIPv6);
+		__SYMBOLIC_BOOL(&Conf_ConnectIPv6);
 	#endif
 		 
 	#ifndef CONF_CONNECTIPV4
-		__SYMBOLIC(&Conf_ConnectIPv4);
+		__SYMBOLIC_BOOL(&Conf_ConnectIPv4);
 	#endif
 		 
 	#ifndef CONF_OPERSERVERMODE
-		__SYMBOLIC(&Conf_OperServerMode);
+		__SYMBOLIC_BOOL(&Conf_OperServerMode);
 	#endif
 		 
 	#ifndef CONF_MAXCONNECTIONS
@@ -111,6 +107,16 @@ void symtest_Conf_Init_impl(){
 		 __ASSUME(Conf_MaxNickLength>=0);
 	#endif
 		
+	#ifndef CONF_PINGTIMEOUT
+		__SYMBOLIC(&Conf_PingTimeout);
+		__ASSUME(Conf_PingTimeout==3600 || Conf_PingTimeout==120 || Conf_PingTimeout==1);
+	#endif
+	
+	#ifndef CONF_PONGTIMEOUT
+		__SYMBOLIC(&Conf_PongTimeout);
+		__ASSUME(Conf_PongTimeout==3600 || Conf_PongTimeout==20 || Conf_PongTimeout==1);
+	#endif
+		 
 }
 
 // Default configuration being read into ngircd
