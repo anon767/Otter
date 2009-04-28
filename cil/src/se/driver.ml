@@ -367,7 +367,7 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 												
 					| Function.Assume ->
 						let pc = op_exps exps Cil.LAnd in
-							MemOp.state__add_path_condition state pc
+							MemOp.state__add_path_condition state pc false
 					
 					| Function.PathCondition ->
 						let pc_str = (Utility.print_list To_string.bytes state.path_condition " AND ") in
@@ -670,7 +670,7 @@ let exec_stmt job =
 				(* try a branch *)
 					let try_branch pcopt block =
 						let nextState = match pcopt with
-							| Some(pc) -> MemOp.state__add_path_condition state pc
+							| Some(pc) -> MemOp.state__add_path_condition state pc true
 							| None -> state
 						in
 						if run_args.arg_edge_coverage && job.inTrackedFn then

@@ -395,6 +395,7 @@ let state__empty =
 		callstack = [];
 		block_to_bytes = MemoryBlockMap.empty;
 		path_condition = [];
+		path_condition_tracked = [];
 		(*return = None;*)
 		callContexts = [];
 		va_arg = [];
@@ -508,9 +509,10 @@ let state__get_bytes_from_lval state (block, offset, size) =
 		bytes__read source offset size
 ;;
 
-let state__add_path_condition state bytes =
+let state__add_path_condition state bytes tracked=
 	{ state with
 		path_condition = bytes::(state.path_condition);
+		path_condition_tracked = tracked::(state.path_condition_tracked);
 	}
 ;;
 

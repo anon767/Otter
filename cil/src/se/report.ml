@@ -141,6 +141,13 @@ let printLines lineset =
 	Output.printf "\n"
 
 let printCoveringConfigs coveringSet covType =
+    let rec eliminate_untracked apc apct =
+      match apc,apct with 
+        | [],[]->[]
+        | apch::apct,true::apctt ->  apch::(eliminate_untracked apct apctt)
+        | apch::apct,false::apctt ->  eliminate_untracked apct apctt
+        | _,_ -> failwith "Impossible: path_condition and path_condition_tracked must be of equal length"
+    in
 	let name = covTypeToStr covType in
 	if coveringSet = [] then Output.printf "No constraints: any run covers all %s\n" name
 	else begin
@@ -154,8 +161,8 @@ let printCoveringConfigs coveringSet covType =
 				 Output.printf "-------------\n\n")
 			(* Map job_results to (pathCondition, hist) pairs *)
 			(List.map
-				 (fun { result_state={ path_condition=pc }; result_history=hist } ->
-						pc,hist)
+				 (fun { result_state={ path_condition=pc; path_condition_tracked=pct }; result_history=hist } ->
+						(eliminate_untracked pc pct),hist)
 				 coveringSet)
 	end
 

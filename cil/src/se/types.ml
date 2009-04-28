@@ -152,6 +152,7 @@ type state =
 		callstack : Cil.fundec list;	(* Function call stack *)
 		block_to_bytes : bytes MemoryBlockMap.t;
 		path_condition : bytes list;
+		path_condition_tracked : bool list;
 		callContexts : callingContext list;
 		(** The last element of callstack is the function at which the
 				executor started execution. The last element of callContexts
