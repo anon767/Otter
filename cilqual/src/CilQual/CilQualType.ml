@@ -46,10 +46,11 @@ module CilQualTypeT (QualVar : PrintableComparableType) (Context : CilQualContex
         let printer =
             let super = printer in
             let rec printer ff = function
+                | Deref (Deref _ as v) -> Format.fprintf ff "*%a" printer v
                 | Deref (Embed x) -> Format.fprintf ff "%a" Embed.printer x
-                | Deref v -> Format.fprintf ff "*%a" printer v
+                | Deref v -> Format.fprintf ff "<%a>" super v
                 | Embed x -> Format.fprintf ff "&%a" Embed.printer x
-                | x -> super ff x
+                | v -> Format.fprintf ff "&<%a>" super v
             in
             printer
     end
