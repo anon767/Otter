@@ -107,7 +107,9 @@ module Interpreter (T : Config.BlockConfig) = struct
 
             (* TODO: properly explain error *)
             if DiscreteSolver.Solution.is_unsatisfiable solution then
-                Format.eprintf "Unsatisfiable solution in TypedBlock.exec@."
+                Format.eprintf "Unsatisfiable solution in TypedBlock.exec@.";
+
+            (file, solution)
         in
 
         (* dispatch call to main *)

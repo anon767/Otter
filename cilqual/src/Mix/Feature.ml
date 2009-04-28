@@ -36,18 +36,20 @@ let prepare_file file =
 
 
 (* mix dispatch loop *)
-let rec fix f x = f (fix f) x
-let dispatch_loop x = fix dispatcher x
+let dispatch_loop x =
+    let rec fix f x = f (fix f) x in
+    fix dispatcher x
 
 
 (* mix driver *)
 let doit file =
     prepare_file file;
 
-    if not !opt_symbolic_top then
-        dispatch_loop (TypedInterpreter.exec file)
-    else
-        dispatch_loop (SymbolicInterpreter.exec file !opt_args)
+    if not !opt_symbolic_top then begin
+        ignore (dispatch_loop (TypedInterpreter.exec file))
+    end else begin
+        ignore (dispatch_loop (SymbolicInterpreter.exec file !opt_args))
+    end
 
 
 (* Cil feature description *)
