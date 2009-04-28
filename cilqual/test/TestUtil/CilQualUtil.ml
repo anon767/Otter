@@ -69,14 +69,9 @@ module Setup (E : CilQual.Expression.InterpreterMonad) = struct
         List.fold_left (fun b (_, v) -> Format.fprintf ff "%(%)@[%a@]" b (adapt_cil_printer printer#pVDecl) v; ",@ ") "" env
     end
 
-    let is_cil_builtin = function
-        | Cil.GVarDecl (v, _) -> Hashtbl.mem Cil.builtinFunctions v.Cil.vname
-        | _ -> false
-
     let file_printer printer ff file = ignore begin
         let globalprinter = (adapt_cil_printer printer#pGlobal) in
-        let globals = List.filter (fun g -> not (is_cil_builtin g)) file.Cil.globals in
-        List.fold_left (fun b g -> Format.fprintf ff "%(%)@[%a@]" b globalprinter g; "@\n") "" globals
+        List.fold_left (fun b g -> Format.fprintf ff "%(%)@[%a@]" b globalprinter g; "@\n") "" file.Cil.globals
     end
 
     let cilqual_env_printer ff env = ignore begin

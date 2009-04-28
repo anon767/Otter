@@ -67,9 +67,13 @@ let toc = function
 (* call to configure Cil as required for CilQual *)
 let init_cil () = Config.init_cil ()
 
-(* prepare file for analysis by assigning globally unique vids to varinfo, and breaking up Cil.Instr to have at
- * most one Cil.Call, placed at the end *)
-let prepare_file = Cilly.makeCFGFeature.Cil.fd_doit
+(* prepare file for analysis *)
+let prepare_file file =
+    (* remove unused declarations *)
+    Rmtmps.removeUnusedTemps file;
+    (* assign globally unique vids to varinfo, and break up Cil.Instr to have at most one Cil.Call,
+     * placed at the end *)
+    Cilly.makeCFGFeature.Cil.fd_doit file
 
 
 (* cilqual driver *)
