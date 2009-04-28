@@ -59,19 +59,26 @@ let percentage numer denom = 100. *. float_of_int numer /. float_of_int denom
 	 - a sample set of values for those variables which would lead execution down this path
 	 - coverage information for this path *)
 let printPath state hist =
+
     let rec eliminate_untracked apc apct =
       match apc,apct with 
-        | [],[]->[]
-        | apch::apct,true::apctt -> apch::(eliminate_untracked apct apctt)
-        | apch::apct,false::apctt ->  eliminate_untracked apct apctt
-        | _,_ -> failwith "Impossible: path_condition and path_condition_tracked must be of equal length"
+      | [],[]->([],[])
+      | apch::apct,apcth::apctt -> 
+          let (apct1,apct2) = eliminate_untracked apct apctt in
+          if apcth then (apch::apct1,apct2) else  (apct1,apch::apct2)
+      | _,_ -> failwith "Impossible: path_condition and path_condition_tracked must be of equal length"
     in
-    let pc = eliminate_untracked (state.path_condition) (state.path_condition_tracked) in
-	Output.printf "Path condition:\n%s\n\n"
-		(To_string.humanReadablePc pc hist.bytesToVars);
 
-	let mentionedSymbols = Stp.allSymbolsInList pc in
-	let valuesForSymbols = Stp.getValues pc (SymbolSet.elements mentionedSymbols) in
+    let pc_all = state.path_condition in
+    let (pc_branch,pc_assume) = eliminate_untracked (state.path_condition) (state.path_condition_tracked) in
+
+	Output.printf "Path condition:\n%s\n\n"
+		(To_string.humanReadablePc pc_branch hist.bytesToVars);
+	Output.printf "Path condition (ASSUMEs):\n%s\n\n"
+		(To_string.humanReadablePc pc_assume hist.bytesToVars);
+
+	let mentionedSymbols = Stp.allSymbolsInList pc_branch in
+	let valuesForSymbols = Stp.getValues pc_all (SymbolSet.elements mentionedSymbols) in
 
 	(* Keep track of which symbols we haven't given values to.
 		 This would happen if there are untracked symbolic values in the
