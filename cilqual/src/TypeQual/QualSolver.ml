@@ -59,11 +59,18 @@ module DiscreteOrder (G : sig include QualGraphAutomataType module V : VertexTyp
         module Unsolvables = Set.Make (G.Qual.Var)
 
         type t = {
+            consts : ConstSet.t;
+            constraints : G.t;
             solution : ConstSet.t SolutionMap.t;
             unsolvables : Unsolvables.t;
         }
 
-        let empty = { solution = SolutionMap.empty; unsolvables = Unsolvables.empty }
+        let empty consts constraints = {
+            consts = consts;
+            constraints = constraints;
+            solution = SolutionMap.empty;
+            unsolvables = Unsolvables.empty
+        }
 
         let add var consts result =
             let unsolvables = if ConstSet.is_empty consts then
@@ -72,7 +79,7 @@ module DiscreteOrder (G : sig include QualGraphAutomataType module V : VertexTyp
                 result.unsolvables
             in
             let solution = SolutionMap.add var consts result.solution in
-            { solution = solution; unsolvables = unsolvables }
+            { result with solution = solution; unsolvables = unsolvables }
 
         let const c = ConstSet.singleton c
 
@@ -104,7 +111,8 @@ module DiscreteOrder (G : sig include QualGraphAutomataType module V : VertexTyp
             Format.fprintf ff "@[<2>Unsolvable:@ %a@]" unsolvables_printer result.unsolvables
 
         let is_unsatisfiable result = not (Unsolvables.is_empty result.unsolvables)
-
+        let consts result = result.consts
+        let constraints result = result.constraints
         let unsolvables result = result.unsolvables
     end
 
@@ -184,7 +192,7 @@ module DiscreteOrder (G : sig include QualGraphAutomataType module V : VertexTyp
         in
         (* filter out consts that are not in the constraint graph *)
         let qual_consts = List.filter (G.mem_vertex g) (List.map (fun c -> G.Qual.Const c) consts) in
-        solve Solution.empty qual_consts
+        solve (Solution.empty initial_consts g) qual_consts
 
 
     module Explanation = struct
@@ -218,7 +226,8 @@ module DiscreteOrder (G : sig include QualGraphAutomataType module V : VertexTyp
 
 
     (* given a solution, explain all unsolvables *)
-    let explain solution consts g =
+    let explain solution =
+        let constraints = Solution.constraints solution in
         let unsolvables = Solution.unsolvables solution in
 
         let rec explain explanations consts =
@@ -262,7 +271,7 @@ module DiscreteOrder (G : sig include QualGraphAutomataType module V : VertexTyp
                                         (explanations, prefix::prefixwork)
                                 | _ ->
                                     (explanations, prefixwork)
-                            end g part automata (explanations, prefixwork)
+                            end constraints part automata (explanations, prefixwork)
                         in
 
                         (* recurse *)
@@ -285,9 +294,8 @@ module DiscreteOrder (G : sig include QualGraphAutomataType module V : VertexTyp
                 explanations
         in
 
-        (* filter out consts that are not in the constraint graph, and turn it into a set *)
-        let consts = List.filter (fun c -> G.mem_vertex g (G.Qual.Const c)) consts in
-        let consts = List.fold_left (fun consts c -> ConstSet.add c consts) ConstSet.empty consts in
+        (* filter out consts that are not in the constraint graph *)
+        let consts = ConstSet.filter (fun c -> G.mem_vertex constraints (G.Qual.Const c)) (Solution.consts solution) in
         explain Explanation.empty consts
 end
 

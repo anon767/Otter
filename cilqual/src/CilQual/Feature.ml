@@ -101,7 +101,7 @@ let doit file =
 
     let timing, explanation = if not has_error then (toc timing, DiscreteSolver.Explanation.empty) else begin
         let timing = tic "Explaining solution" timing in
-        let explanation = DiscreteSolver.explain solution consts constraints in
+        let explanation = DiscreteSolver.explain solution in
 
         let timing = toc timing in
         Format.eprintf "@[%a@]@\n" DiscreteSolver.Explanation.printer explanation;
