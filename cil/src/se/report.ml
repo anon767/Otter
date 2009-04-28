@@ -54,16 +54,13 @@ let greedySetCover emptyCheck scoreFn setdiff setList universe =
 let percentage numer denom = 100. *. float_of_int numer /. float_of_int denom
 
 (* Given a path condition and a list of mappings from ByteArrays of
-	 symbolic values to variables, print a sample set of values for
-	 those variables which would lead execution down this path, and
-	 print coverage information for this path. There is an optional
-	 first argument which defaults to false; if true, the path condition
-	 itself (in terms of those variables, where possible) is printed
-	 before the other information. *)
-let printPath ?(printFormula=false) pc hist =
-	if printFormula then
-		Output.printf "Path condition:\n%s\n\n"
-			(To_string.humanReadablePc pc hist.bytesToVars);
+	 symbolic values to variables, print:
+	 - the path condition (in terms of those variables, where possible)
+	 - a sample set of values for those variables which would lead execution down this path
+	 - coverage information for this path *)
+let printPath pc hist =
+	Output.printf "Path condition:\n%s\n\n"
+		(To_string.humanReadablePc pc hist.bytesToVars);
 
 	let mentionedSymbols = Stp.allSymbolsInList pc in
 	let valuesForSymbols = Stp.getValues pc (SymbolSet.elements mentionedSymbols) in
