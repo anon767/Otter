@@ -2,6 +2,7 @@
 
 use strict;
 use FindBin;
+use lib "$FindBin::Bin/";
 # Read the configuration script
 BEGIN { require "$FindBin::Script.config"; };
 use lib "$::cilhome/lib"; # The libraries are in the lib directory
@@ -17,8 +18,8 @@ use strict;
 BEGIN {
     @CilCompiler::ISA = qw(Cilly);
     # default to using the native compiler
-    $CilCompiler::cil_native = "$FindBin::RealBin/$::native";
-    $CilCompiler::cil_byte = "$FindBin::RealBin/$::byte";
+    $CilCompiler::cil_native = "$FindBin::Bin/$::native";
+    $CilCompiler::cil_byte = "$FindBin::Bin/$::byte";
     $CilCompiler::do_default = "$::do_default";
 
     # use the most recent version of cil, or whichever is available
