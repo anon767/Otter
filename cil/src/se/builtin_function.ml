@@ -86,6 +86,23 @@ let libc_free state exps =
               (state,MemOp.bytes__zero)
 ;;
 
+let libc_memset__concrete state exps = 
+	let bytes = Eval.rval state (List.hd exps) in
+	try
+		let (blockopt,offset) = Convert.bytes_to_address bytes in
+		match blockopt with None -> failwith "libc_memset: passed with null pointer" | Some(block) ->
+		let old_whole_bytes = MemOp.state__get_bytes_from_block state block in
+		let c = MemOp.bytes__get_byte (Eval.rval state (List.nth exps 1)) 0 (* little endian *) in
+		let n_bytes = Eval.rval state (List.nth exps 2) in
+		if Convert.isConcrete_bytes n_bytes then
+			let n = Convert.bytes_to_int_auto n_bytes in
+			let newbytes = MemOp.bytes__make_default n c in
+			let finalbytes = MemOp.bytes__write old_whole_bytes offset n newbytes in
+			let state2 = MemOp.state__add_block state block finalbytes  in
+  			(state2,bytes)
+		else failwith "libc_memset__concrete: n is symbolic (TODO)"
+	with x -> raise x
+;;
 let libc_memset state exps = 
 	let bytes = Eval.rval state (List.hd exps) in
 	try
@@ -189,6 +206,7 @@ let get fname =
 (*		| "listen" -> libc_listen *)
 		| "malloc" -> libc_malloc
 		| "memset" -> libc_memset
+		| "memset__concrete" -> libc_memset__concrete
 (*		| "strlen" -> libc_strlen *)
 (*		| "open" -> libc_open *)
 (*		| "pipe" -> libc_pipe *)

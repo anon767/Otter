@@ -518,7 +518,7 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 					Output.print_endline ("exit() called with code "^(
                         match exit_code with None-> "(NONE)" | Some(code) -> To_string.bytes code));
 					if run_args.arg_line_coverage then (
-						Report.printPath state.path_condition exHist;
+						Report.printPath state exHist;
 						Report.printLines exHist.coveredLines
 					);
 (*
@@ -621,7 +621,7 @@ let exec_stmt job =
 								Output.set_mode Output.MSG_MUSTPRINT;
 								Output.print_endline "Program execution finished";
 								if run_args.arg_line_coverage then (
-									Report.printPath state.path_condition job.exHist;
+									Report.printPath state job.exHist;
 									Report.printLines job.exHist.coveredLines
 								);
 (*
@@ -1114,10 +1114,16 @@ let main_loop job =
 						begin match completion with
 							| Types.Abandoned (msg, loc, { result_state=state; result_history=hist }) ->
 								Output.set_mode Output.MSG_MUSTPRINT;
-								Output.printf "Error \"%s\" occurs at %s\nAbandoning path\n"
-									msg (To_string.location loc);
+								Output.printf "Error \"%s\" occurs at %s\n%sAbandoning path\n"
+									msg (To_string.location loc)
+                                    (if Executeargs.print_args.arg_print_callstack then
+                                        "Call stack:\n"^
+								       (To_string.callstack state.callContexts)
+                                    else ""
+                                    )
+                                    ;
 								if run_args.arg_line_coverage then (
-									Report.printPath state.path_condition hist;
+									Report.printPath state hist;
 									Report.printLines hist.coveredLines
 								)
 (*

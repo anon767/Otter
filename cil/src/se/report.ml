@@ -58,7 +58,15 @@ let percentage numer denom = 100. *. float_of_int numer /. float_of_int denom
 	 - the path condition (in terms of those variables, where possible)
 	 - a sample set of values for those variables which would lead execution down this path
 	 - coverage information for this path *)
-let printPath pc hist =
+let printPath state hist =
+    let rec eliminate_untracked apc apct =
+      match apc,apct with 
+        | [],[]->[]
+        | apch::apct,true::apctt -> apch::(eliminate_untracked apct apctt)
+        | apch::apct,false::apctt ->  eliminate_untracked apct apctt
+        | _,_ -> failwith "Impossible: path_condition and path_condition_tracked must be of equal length"
+    in
+    let pc = eliminate_untracked (state.path_condition) (state.path_condition_tracked) in
 	Output.printf "Path condition:\n%s\n\n"
 		(To_string.humanReadablePc pc hist.bytesToVars);
 
@@ -141,29 +149,18 @@ let printLines lineset =
 	Output.printf "\n"
 
 let printCoveringConfigs coveringSet covType =
-    let rec eliminate_untracked apc apct =
-      match apc,apct with 
-        | [],[]->[]
-        | apch::apct,true::apctt ->  apch::(eliminate_untracked apct apctt)
-        | apch::apct,false::apctt ->  eliminate_untracked apct apctt
-        | _,_ -> failwith "Impossible: path_condition and path_condition_tracked must be of equal length"
-    in
 	let name = covTypeToStr covType in
 	if coveringSet = [] then Output.printf "No constraints: any run covers all %s\n" name
 	else begin
 		Output.printf "Here is a set of %d configurations which covers all the %s ever hit:\n\n"
 				(List.length coveringSet) name;
 		List.iter
-			(fun (pc,hist) ->
-				 printPath pc hist;
+        (fun { result_state=state; result_history=hist} ->
+				 printPath state hist;
 				 printCov covType hist;
 				 if covType = Line then printLines hist.coveredLines;
 				 Output.printf "-------------\n\n")
-			(* Map job_results to (pathCondition, hist) pairs *)
-			(List.map
-				 (fun { result_state={ path_condition=pc; path_condition_tracked=pct }; result_history=hist } ->
-						(eliminate_untracked pc pct),hist)
-				 coveringSet)
+			 coveringSet
 	end
 
 let printCoverageInfo resultList =
