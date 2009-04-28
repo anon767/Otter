@@ -309,7 +309,10 @@ let print_report results =
 			 read it back in later. Is there a better place to send this
 			 than stdout? *)
 		if run_args.arg_marshal_coverage
-		then Marshal.to_channel stdout coverage [];
+		then (
+			set_binary_mode_out stdout true;
+			Marshal.to_channel stdout coverage []
+		)
 
 	end
 	)

@@ -517,7 +517,10 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 					Output.set_mode Output.MSG_MUSTPRINT;
 					Output.print_endline ("exit() called with code "^(
                         match exit_code with None-> "(NONE)" | Some(code) -> To_string.bytes code));
-					Report.printPath state.path_condition exHist;
+					if run_args.arg_line_coverage then (
+						Report.printPath state.path_condition exHist;
+						Report.printLines exHist.coveredLines
+					);
 (*
 					Output.set_mode Output.MSG_REG;
 					Output.print_endline
@@ -617,7 +620,10 @@ let exec_stmt job =
 						| Runtime::_ -> (* completed symbolic execution (e.g., return from main) *)
 								Output.set_mode Output.MSG_MUSTPRINT;
 								Output.print_endline "Program execution finished";
-								Report.printPath state.path_condition job.exHist;
+								if run_args.arg_line_coverage then (
+									Report.printPath state.path_condition job.exHist;
+									Report.printLines job.exHist.coveredLines
+								);
 (*
 								Output.set_mode Output.MSG_REG;
 								Output.print_endline
@@ -1110,7 +1116,10 @@ let main_loop job =
 								Output.set_mode Output.MSG_MUSTPRINT;
 								Output.printf "Error \"%s\" occurs at %s\nAbandoning path\n"
 									msg (To_string.location loc);
-								Report.printPath state.path_condition hist;
+								if run_args.arg_line_coverage then (
+									Report.printPath state.path_condition hist;
+									Report.printLines hist.coveredLines
+								)
 (*
 								Output.set_mode Output.MSG_REG;
 								Output.printf "Path condition: %s\n"
