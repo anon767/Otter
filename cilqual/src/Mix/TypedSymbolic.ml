@@ -31,10 +31,10 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
         let constrain_bytes state bytes qv typ =
             if Solution.is_const qv "null" solution then
                 let null_constraint = Types.Bytes_Op (Types.OP_EQ, [(bytes, typ); (MemOp.bytes__zero, typ)]) in
-                MemOp.state__add_path_condition state null_constraint
+                MemOp.state__add_path_condition state null_constraint false
             else if Solution.is_const qv "nonnull" solution then
                 let nonnull_constraint = Types.Bytes_Op (Types.OP_NE, [(bytes, typ); (MemOp.bytes__zero, typ)]) in
-                MemOp.state__add_path_condition state nonnull_constraint
+                MemOp.state__add_path_condition state nonnull_constraint false
             else
                 state
         in
