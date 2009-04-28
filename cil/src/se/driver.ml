@@ -148,11 +148,7 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 				Active { job with
 									 state = state;
 									 stmt = List.hd fundec.sallstmts;
-									 inTrackedFn =
-										if job.inTrackedFn &&
-											 not (StringSet.mem fundec.svar.vname run_args.arg_fns)
-										then false
-										else job.inTrackedFn; }
+									 inTrackedFn = StringSet.mem fundec.svar.vname run_args.arg_fns; }
 		| _ ->
 				try (
 					let nextExHist = ref exHist in
@@ -647,18 +643,14 @@ let exec_stmt job =
 													 ignore the result, just end the call *)
 												MemOp.state__end_fcall state
 								in
-								(* Update the state and the stmt *)
-								let job' = { job with state = state2; stmt = nextStmt; } in
-								let job'' =
-									if job.inTrackedFn
-									then { job' with exHist = nextExHist None; } (* We don't currently track returns as edges for purposes of coverage *)
-									else if StringSet.mem (List.hd state2.callstack).svar.vname run_args.arg_fns
-									(* If we are leaving a nontracked function and we
-										 have to start tracking coverage again. *)
-									then { job' with inTrackedFn = true; }
-									else job'
-								in
-								Active job''
+								(* Update the state, stmt, exHist, and whether or not
+									 we're in a tracked function *)
+								Active { job with
+													 state = state2;
+													 stmt = nextStmt;
+													 exHist = nextExHist None; (* [None] because we don't currently track returns as edges for purposes of coverage *)
+													 inTrackedFn =
+										StringSet.mem (List.hd state2.callstack).svar.vname run_args.arg_fns; }
 						| (NoReturn _)::_ ->
 								failwith "Return from @noreturn function"
 						| [] ->
