@@ -33,7 +33,7 @@ let wrap_test testfn = fun () ->
         end;
         Printexc.record_backtrace prev_backtrace;
         Format.pp_print_flush formatter ();
-        failwith (Buffer.contents buffer)
+        ignore (failwith (Buffer.contents buffer))
     end;
     Printexc.record_backtrace prev_backtrace
 
