@@ -152,11 +152,11 @@ char* confString(){
 	Mask = *
 [Operator]
 [Server]
-	;Name = irc2.the.net
+	Name = irc2.the.net
 	;Host = connect-to-host.the.net
 	;Bind = 10.0.0.1
 	;Port = 6667
-	;MyPassword = MySecret
+	MyPassword = password
 	;PeerPassword = PeerSecret
 	;Group = 123
 	;Passive = no

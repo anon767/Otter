@@ -1,4 +1,4 @@
-// NJOIN  
+// server message  
 int symtest(){
 	
 	int t;
@@ -9,10 +9,10 @@ int symtest(){
 	t = 0;
 		
 	event_accept(client_fd1,t++);
-	event_recv(client_fd1,"SERVER test.oulu.fi 1 1 :Experimental server\r\n",t++);
-	event_send(client_fd1,t++);
+	event_recv(client_fd1,"PASS password 0210-IRC+ IRC|aBgH$ Z\r\n",t++);
+	event_recv(client_fd1,"SERVER irc2.the.net  1 :Experimental server\r\n",t++);
+	event_recv(client_fd1,"NJOIN #ch :@@foo,@bar,+fun,abc\r\n",t++);
 
-	event_recv(client_fd1,"NJOIN #ch :@@nick1,@nick2,+nick3,nick4\r\n",t++);
 	event_send(client_fd1,t++);
 
 	event_end(t++);

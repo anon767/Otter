@@ -11,7 +11,7 @@ int symtest(){
 	event_accept(client_fd1,t++);
 	event_recv(client_fd1,"PASS password 0210-IRC+ IRC|aBgH$ Z\r\n",t++);
 	event_recv(client_fd1,"SERVER irc2.the.net  1 :Experimental server\r\n",t++);
-	event_recv(client_fd1,"NICK syrk 0 kalt irc2.the.net 1 +i :Christophe Kalt\r\n",t++);
+	event_recv(client_fd1,"SERVICE dict@irc.fr 1 *.fr 0 0 :French Dictionary\r\n",t++);
 
 	event_send(client_fd1,t++);
 
