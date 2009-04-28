@@ -4,9 +4,10 @@ open Control.Monad
 (* setup CilQual interpreter monad stack *)
 module E =
     CilQual.Expression.InterpreterT
-        (CilQual.Environment.InterpreterT
-            (CilQual.Type.InterpreterT
-                (CilQual.CilQualType.CilQualTypeT (CilQual.Environment.CilFieldOrVar) (Identity))))
+    (CilQual.Environment.InterpreterT
+    (CilQual.Type.InterpreterT
+    (CilQual.CilQualType.CilQualTypeT (CilQual.Environment.CilFieldOrVar) (TestUtil.CilQualUtil.DummyContext)
+    (Identity))))
 open E.QualType.Qual
 open E.QualType
 open E

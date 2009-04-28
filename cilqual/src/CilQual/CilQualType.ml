@@ -6,6 +6,13 @@ open TypeQual.Qual
 open TypeQual.QualType
 
 
+module type CilQualContext = sig
+    include PrintableOrderedType with type t = Cil.location
+    val default : t
+    val file : Cil.file -> t
+end
+
+
 module Context = struct
     type t = Cil.location
     let compare = Cil.compareLoc
@@ -15,9 +22,9 @@ module Context = struct
         if loc == Cil.locUnknown then
             Format.fprintf ff ""
         else if loc.Cil.line <= 0 then
-            Format.fprintf ff "%s" loc.Cil.file
+            Format.fprintf ff "%s:" loc.Cil.file
         else
-            Format.fprintf ff "%s:%d" loc.Cil.file loc.Cil.line
+            Format.fprintf ff "%s:%d:" loc.Cil.file loc.Cil.line
 end
 
 
@@ -32,7 +39,7 @@ module type CilQualTypeMonad = sig
 end
 
 
-module CilQualTypeT (QualVar : PrintableComparableType) (M : Monad) = struct
+module CilQualTypeT (QualVar : PrintableComparableType) (Context : CilQualContext) (M : Monad) = struct
     (* setup CilQual constraint graph *)
     module TQV = struct
         include TypedQualVar (QualVar)

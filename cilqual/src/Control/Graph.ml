@@ -144,7 +144,7 @@ module ContextualEdge (C : Context) (D : EdgeLabel) = struct
         | 0 -> Data.compare xe ye
         | i -> i
     let default = (Context.default, Data.default)
-    let printer ff e = Format.fprintf ff "%a:%a" Context.printer (context e) Data.printer (data e)
+    let printer ff e = Format.fprintf ff "%a%a" Context.printer (context e) Data.printer (data e)
 end
 
 

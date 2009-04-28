@@ -3,6 +3,12 @@ open Control.Monad
 open CilQual.Environment.CilFieldOrVar
 
 
+module DummyContext = struct
+    include CilQual.CilQualType.Context
+    let printer ff x = ()
+end
+
+
 module Setup (E : CilQual.Expression.InterpreterMonad) = struct
     open E
     module Ops = MonadOps (E)

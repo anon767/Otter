@@ -4,12 +4,13 @@ open Control.Graph
 (* setup CilQual interpreter monad stack *)
 module G =
     Global.InterpreterT
-        (Statement.InterpreterT
-            (Instruction.InterpreterT
-                (Expression.InterpreterT
-                    (Environment.InterpreterT
-                        (Type.InterpreterT
-                            (CilQualType.CilQualTypeT (Environment.CilFieldOrVar) (Identity)))))))
+    (Statement.InterpreterT
+    (Instruction.InterpreterT
+    (Expression.InterpreterT
+    (Environment.InterpreterT
+    (Type.InterpreterT
+    (CilQualType.CilQualTypeT (Environment.CilFieldOrVar) (CilQualType.Context)
+    (Identity)))))))
 
 (* setup CilQual solver *)
 module DiscreteSolver = TypeQual.QualSolver.DiscreteOrder (G.QualGraph)

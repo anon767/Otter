@@ -4,12 +4,13 @@ open Control.Graph
 (* setup CilQual interpreter monad stack *)
 module G =
     CilQual.Global.InterpreterT
-        (CilQual.Statement.InterpreterT
-            (CilQual.Instruction.InterpreterT
-                (CilQual.Expression.InterpreterT
-                    (CilQual.Environment.InterpreterT
-                        (CilQual.Type.InterpreterT
-                            (CilQual.CilQualType.CilQualTypeT (CilQual.Environment.CilFieldOrVar) (Identity)))))))
+    (CilQual.Statement.InterpreterT
+    (CilQual.Instruction.InterpreterT
+    (CilQual.Expression.InterpreterT
+    (CilQual.Environment.InterpreterT
+    (CilQual.Type.InterpreterT
+    (CilQual.CilQualType.CilQualTypeT (CilQual.Environment.CilFieldOrVar) (CilQual.CilQualType.Context)
+    (Identity)))))))
 module GOps = MonadOps (G)
 open G
 open GOps
