@@ -21,6 +21,13 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
         if Solution.is_unsatisfiable solution then
             Format.eprintf "Unsatisfiable solution entering TypedSymbolic.switch@.";
 
+        let drop_qt = function
+            (* take off one Ref to match the bytes representation *)
+            (* TODO: handle function pointers *)
+            | Ref (_, qt) -> qt
+            | _ -> failwith "TODO: report drop_qt of non-variable"
+        in
+
         let constrain_bytes state bytes qv typ =
             if Solution.is_const qv "null" solution then
                 let null_constraint = Types.Bytes_Op (Types.OP_EQ, [(bytes, typ); (MemOp.bytes__zero, typ)]) in
@@ -32,70 +39,96 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
                 state
         in
 
-        let qt_to_bytes state block_type typ = function
-            (* take off one Ref to match the bytes representation *)
-            (* TODO: this should be done in the monad to account for mismatched types *)
-            | Ref (_, qt) ->
-                let rec qt_to_bytes state block_type typ qt = match typ, qt with
-                    | Cil.TPtr (typtarget, _), Ref (Var v, qtarget) ->
-                        let state, target_bytes = qt_to_bytes state Types.Block_type_Global typtarget qtarget in
-                        let target_block = MemOp.block__make
-                            (Var.printer Format.str_formatter v; Format.flush_str_formatter ())
-                            (MemOp.bytes__length target_bytes)
-                            block_type
+        let qt_to_bytes expState state block_type typ qt =
+            let rec qt_to_bytes expState state block_type typ qt = match typ, qt with
+                (* first handle qualified types *)
+
+                | Cil.TPtr (typtarget, _), Ref (Var v, qtarget) ->
+                    (* for pointers, recursively deref and generate point-to blocks *)
+                    let expState, state, target_bytes =
+                        qt_to_bytes expState state Types.Block_type_Global typtarget qtarget
+                    in
+                    let target_block = MemOp.block__make
+                        (Var.printer Format.str_formatter v; Format.flush_str_formatter ())
+                        (MemOp.bytes__length target_bytes)
+                        block_type
+                    in
+                    let state = MemOp.state__add_block state target_block target_bytes in
+                    let bytes = Types.Bytes_Address (Some target_block, MemOp.bytes__zero) in
+                    let state = constrain_bytes state bytes v typ in
+                    expState, state, bytes
+
+                | Cil.TComp (compinfo, _), Base (Var v) when compinfo.Cil.cstruct ->
+                    (* for structs, initialize and iterate over the fields *)
+                    let size = (Cil.bitsSizeOf (typ)) / 8 in
+                    let size = if size <= 0 then 1 else size in
+                    let bytes = MemOp.bytes__symbolic size in
+                    let state = constrain_bytes state bytes v typ in
+                    List.fold_left begin fun (expState, state, bytes) f ->
+                        (* force f to be initialized, since they may have type qualifiers *)
+                        let (_, env) as expState = run (perform get_field qt f; return ()) expState in
+
+                        let expState, state, field_bytes =
+                            qt_to_bytes expState state block_type f.Cil.ftype (drop_qt (Env.find (CilField f) env))
                         in
-                        let state = MemOp.state__add_block state target_block target_bytes in
-                        let bytes = Types.Bytes_Address (Some target_block, MemOp.bytes__zero) in
-                        let state = constrain_bytes state bytes v typ in
-                        state, bytes
-                    | typ, Base (Var v) ->
-                        let size = (Cil.bitsSizeOf (typ)) / 8 in
-                        let size = if size <= 0 then 1 else size in
-                        let bytes = MemOp.bytes__symbolic size in
-                        let state = constrain_bytes state bytes v typ in
-                        state, bytes
-                    | _, _ ->
-                        failwith "TODO: handle function pointers?"
-                in
-                qt_to_bytes state block_type typ qt
-            | _ ->
-                failwith "TODO: report qt_to_bytes of non-variable"
+
+                        let offset = Convert.lazy_int_to_bytes (Eval.field_offset f) in
+                        let size = MemOp.bytes__length field_bytes in
+                        let bytes = MemOp.bytes__write bytes offset size field_bytes in
+                        (expState, state, bytes)
+                    end (expState, state, bytes) compinfo.Cil.cfields
+
+                | typ, Base (Var v) ->
+                    let size = (Cil.bitsSizeOf (typ)) / 8 in
+                    let size = if size <= 0 then 1 else size in
+                    let bytes = MemOp.bytes__symbolic size in
+                    let state = constrain_bytes state bytes v typ in
+                    expState, state, bytes
+
+                (* TODO: handle extended types, e.g., void * and unions *)
+                | _, _ ->
+                    failwith "TODO: handle function pointers? mismatched types?"
+            in
+            qt_to_bytes expState state block_type typ (drop_qt qt)
         in
 
         let varinfo_to_bytes expState state block_type v =
-            (* TODO: handle structs *)
-            (* force v to be initialized *)
+            (* force v to be initialized, since they may have type qualifiers *)
             let (_, env) as expState = run (perform lookup_var v; return ()) expState in
 
-            let state, bytes = qt_to_bytes state block_type v.Cil.vtype (Env.find (CilVar v) env) in
+            let expState, state, bytes = qt_to_bytes expState state block_type v.Cil.vtype (Env.find (CilVar v) env) in
             (expState, state, bytes)
+        in
+
+        (* figure out the return value and arguments qualtype *)
+        let _, env = expState in
+        let qtr, qta = match Env.find (CilVar fn.Cil.svar) env with
+            | Fn (_, qtr, qta) -> (qtr, qta)
+            | _ -> failwith "Impossible!"
         in
 
         (* convert a typed environment into a symbolic environment *)
         let state = MemOp.state__empty in
 
         (* first, setup global variables *)
-        let expState, state = List.fold_left begin
-            fun (expState, state) g -> match g with
-                | Cil.GVarDecl (v, _) | Cil.GVar (v, _, _)
-                        when not (Types.VarinfoMap.mem v state.Types.global.Types.varinfo_to_block) ->
-                    let expState, state, bytes =
-                        varinfo_to_bytes expState state Types.Block_type_Global v
-                    in
-                    let state = MemOp.state__add_global state v bytes in
-                    (expState, state)
-                | _ ->
-                    (expState, state)
+        let expState, state = List.fold_left begin fun (expState, state) g -> match g with
+            | Cil.GVarDecl (v, _) | Cil.GVar (v, _, _)
+                    when not (Types.VarinfoMap.mem v state.Types.global.Types.varinfo_to_block) ->
+                let expState, state, bytes =
+                    varinfo_to_bytes expState state Types.Block_type_Global v
+                in
+                let state = MemOp.state__add_global state v bytes in
+                (expState, state)
+            | _ ->
+                (expState, state)
         end (expState, state) file.Cil.globals in
 
         (* then, setup the function arguments *)
-        let expState, state, args = List.fold_right begin
-            fun v (expState, state, args) ->
-                let expState, state, bytes =
-                    varinfo_to_bytes expState state Types.Block_type_Local v
-                in
-                (expState, state, bytes::args)
-        end fn.Cil.sformals (expState, state, []) in
+        let expState, state, args = List.fold_right2 begin fun v a (expState, state, args) ->
+            (* TODO: handle varargs *)
+            let expState, state, bytes = qt_to_bytes expState state Types.Block_type_Local v.Cil.vtype a in
+            (expState, state, bytes::args)
+        end fn.Cil.sformals qta (expState, state, []) in
 
         (* next, prepare the function call job *)
         let job = Executemain.job_for_function state fn args in
@@ -104,20 +137,14 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
         let return completed =
             Format.eprintf "Returning from symbolic to typed...@.";
 
-            (* figure out the return value qualtype *)
-            let _, env = expState in
-            let qtr = match Env.find (CilVar fn.Cil.svar) env with
-                | Fn (_, qtr, _) -> qtr
-                | _ -> failwith "Impossible!"
-            in
-
             (* prepare a monad that represents the symbolic result *)
             let expM = mapM_ begin function
                 | Types.Return (retvalopt, { Types.result_state=state; Types.result_history=history }) ->
-                    let constrain_qt bytes qt =
-                        let rec constrain_qt bytes = function
-                            (* TODO: account for mismatched types *)
-                            | Ref (qv, qtarget) as qt ->
+                    let rec bytes_to_qt typ bytes qt =
+                        let rec bytes_to_qt typ bytes qt = match typ, qt with
+                            (* first handle qualified types *)
+
+                            | Cil.TPtr (typtarget, _), Ref (qv, qtarget) ->
                                 begin try perform
                                     let target_block, target_offset = Eval.deref state bytes in
                                     (* didn't fail, so is not a null pointer *)
@@ -128,7 +155,7 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
                                                 (target_block, target_offset, Types.word__size)
                                             in
                                             (* not tail-recursive due to try! *)
-                                            constrain_qt target_bytes qtarget
+                                            bytes_to_qt typtarget target_bytes qtarget
                                         | _ ->
                                             return ()
                                     end
@@ -147,30 +174,56 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
                                             (* TODO: otherwise, nonnull? *)
                                             return ()
                                 end
-                            | _ ->
+
+                            | Cil.TComp (compinfo, _), Base (Var v) when compinfo.Cil.cstruct -> perform
+                                (* for structs, iterate over the fields;
+                                 * note that the monad is composed right-to-left, but executed left-to-right *)
+                                List.fold_right begin fun f expM -> perform
+                                    let offset = Convert.lazy_int_to_bytes (Eval.field_offset f) in
+                                    let size = (Cil.bitsSizeOf (f.Cil.ftype)) / 8 in
+                                    let field_bytes = MemOp.bytes__read bytes offset size in
+                                    bytes_to_qt f.Cil.ftype field_bytes (drop_qt (Env.find (CilField f) env));
+                                    expM;
+                                end compinfo.Cil.cfields (return ())
+
+                            | typ, Base (Var v) ->
                                 return ()
+
+                            (* TODO: handle extended types, e.g., void * and unions *)
+                            | _, _ ->
+                                failwith "TODO: handle function pointers? mismatched types?"
                         in
-                        constrain_qt bytes qt
+                        bytes_to_qt typ bytes qt
                     in
+
                     perform
                         (* first, the return value *)
                         begin match retvalopt with
                             | None ->
                                 return ()
                             | Some retval ->
-                                constrain_qt retval qtr
+                                let rettyp = match fn.Cil.svar.Cil.vtype with
+                                    | Cil.TFun (rettyp, _, _, _) -> rettyp
+                                    | _ -> failwith "Impossible!"
+                                in
+                                bytes_to_qt rettyp retval qtr
                         end;
+
+                        (* then, the function arguments (for output arguments) *)
+                        (* TODO: handle varargs *)
+                        let rec args_bytes_to_qt vs bs qs = match vs, bs, qs with
+                            | v::vs, b::bs, q::qs -> perform
+                                bytes_to_qt v.Cil.vtype b q; (args_bytes_to_qt vs bs qs)
+                            | _, _, _ ->
+                                return ()
+                        in
+                        args_bytes_to_qt fn.Cil.sformals args qta;
 
                         (* then, global variables *)
                         Types.VarinfoMap.fold begin fun v block expM -> perform
                             expM;
-                            let qt = Env.find (CilVar v) env in
                             let bytes = MemOp.state__get_bytes_from_block state block in
-                            match qt with
-                                (* first, take off one Ref to match the bytes representation *)
-                                (* TODO: this should be done in the monad to account for mismatched types *)
-                                | Ref (_, qt) -> constrain_qt bytes qt
-                                | _ -> failwith "Impossible!"
+                            bytes_to_qt v.Cil.vtype bytes (drop_qt (Env.find (CilVar v) env))
                         end state.Types.global.Types.varinfo_to_block (return ())
                 | _ ->
                     failwith "TODO: handle other completion values"

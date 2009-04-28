@@ -1,12 +1,11 @@
-open OUnit
-open TestCilQual
-open TestTypeQual
+open TestUtil.MyOUnit
 
 (* ocamlbuild's dynamic dependency is broken: turn the below into static dependencies *)
 module OcamlbuildDependencies = struct
     open Control
     open TypeQual
     open CilQual
+    open Mix
     open TestUtil
 end
 
@@ -17,18 +16,23 @@ let _ =
     Cil.print_CIL_Input := true;
     (* setup CilQual *)
     CilQual.Feature.init_cil ();
+    Mix.Feature.init_cil ();
+    Cil.initCIL ();
 
     run_test_tt_main begin TestList [
         "TestTypeQual" >::: [
-            QualSolver.testsuite;
+            TestTypeQual.QualSolver.testsuite;
         ];
         "TestCilQual" >::: [
-            Type.testsuite;
-            Expression.testsuite;
-            Instruction.testsuite;
-            Statement.testsuite;
-            Global.testsuite;
-            Integration.testsuite;
+            TestCilQual.Type.testsuite;
+            TestCilQual.Expression.testsuite;
+            TestCilQual.Instruction.testsuite;
+            TestCilQual.Statement.testsuite;
+            TestCilQual.Global.testsuite;
+            TestCilQual.Integration.testsuite;
+        ];
+        "TestMix" >::: [
+            TestMix.TypedTopIntegration.testsuite;
         ];
     ] end
 
