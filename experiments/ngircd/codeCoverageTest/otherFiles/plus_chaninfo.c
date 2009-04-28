@@ -1,4 +1,4 @@
-// CHANINFO
+// server message  (CHANINFO)
 int symtest(){
 	
 	int t;
@@ -9,12 +9,11 @@ int symtest(){
 	t = 0;
 		
 	event_accept(client_fd1,t++);
-	event_recv(client_fd1,"NICK nick1\r\n",t++);
-	event_recv(client_fd1,"USER user1 x x :user\r\n",t++);
-	event_send(client_fd1,t++);
+	event_recv(client_fd1,"PASS password 0210-IRC+ IRC|aBgH$ Z\r\n",t++);
+	event_recv(client_fd1,"SERVER irc2.the.net  1 :Experimental server\r\n",t++);
+	event_recv(client_fd1,"CHANINFO #ch1 + :topic\r\n",t++);
 
-	event_recv(client_fd1,"JOIN #ch\r\n",t++);
-	event_recv(client_fd1,"CHANINFO #ch\r\n",t++);
+	event_send(client_fd1,t++);
 
 	event_end(t++);
 }
