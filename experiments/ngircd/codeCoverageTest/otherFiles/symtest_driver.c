@@ -161,13 +161,13 @@ char* confString(){
 [Operator]
 [Server]
 	Name = irc2.the.net
-	;Host = connect-to-host.the.net
-	;Bind = 10.0.0.1
-	;Port = 6667
+	Host = connect-to-host.the.net
+	Bind = 10.0.0.1
+	Port = 6667
 	MyPassword = password
-	;PeerPassword = PeerSecret
-	;Group = 123
-	;Passive = no
+	PeerPassword = PeerSecret
+	Group = 123
+	Passive = no
 [Server]
 [Channel]
 	Name = #TheName
