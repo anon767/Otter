@@ -9,6 +9,8 @@
 #define MOTDFILE "/usr/local/etc/ngircd.motd"
 #define CONFFILE "/usr/local/etc/ngircd.conf"
 
+int symtest_configtest = 0;
+
 // Defined in one of the symtest{i}.c
 extern int symtest();
 
@@ -168,11 +170,23 @@ char* confString(){
 	;Passive = no
 [Server]
 [Channel]
-	;Name = #TheName
-	;Topic = a great topic
-	;Modes = tnk
-	;Key = Secret
-	;MaxUsers = 23
+	Name = #TheName
+	Topic = a great topic
+	Modes = tnk
+	Key = Secret
+	MaxUsers = 23
+[Channel]
+	Name = #TheName
+	Topic = a great topic
+	Modes = tnk
+	Key = Secret
+	MaxUsers = 23
+[Channel]
+	Name = #TheNameooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+	Topic = a great topic
+	Modes = tnk
+	Key = Secret
+	MaxUsers = 23
 [Channel]";
 
 	return confStr;
@@ -183,8 +197,9 @@ int main(){
 	symtest_Conf_Init = symtest_Conf_Init_impl;
 
 	int argc = 2;
-	char  argstr[] = "ngircd\0-n";
-	char* argv[]   = {argstr,argstr+7};
+	char  argstr[] = "ngircd\0-n\0--configtest";
+	char* argv[]   = {argstr,argstr+7,argstr+10};
+	if(symtest_configtest) argc = 3;
 
 	IOSIM_fd[1] = malloc(sizeof(sym_file_stream_t));
 	IOSIM_fd[1]->fd = 1;

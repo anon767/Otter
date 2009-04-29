@@ -3,6 +3,8 @@
 #include "iosim.h"
 
 int poll_endtime;
+int poll_end_with_signal = 0;
+extern int NGIRCd_SignalQuit;
 
 int poll(struct pollfd fds[], nfds_t nfds, int timeout){
 	static int time = 0;
@@ -10,7 +12,13 @@ int poll(struct pollfd fds[], nfds_t nfds, int timeout){
 	int c = 0;
 
 	if(time>=poll_endtime){
-		exit(1010);
+		if(poll_end_with_signal) // Ctrl-C, quit properly
+		{
+			NGIRCd_SignalQuit = 1;
+			return 0;
+		}
+		else // quit immediately
+			exit(1010);
 	}
 	for(i=3;i<nfds;i++){ // fd 0,1,2 are stdio
 		int flag = 0;
@@ -89,7 +97,12 @@ int event_accept(int fd,int t){
 }
 
 int event_end(int t){
-
 	poll_endtime = t;
+	return 0;
+}
+
+int event_end_with_signal(int t){
+	poll_endtime = t;
+	poll_end_with_signal = 1;
 	return 0;
 }

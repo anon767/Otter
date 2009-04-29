@@ -5,7 +5,7 @@ CILLY="env CILLY_DONT_COMPILE_AFTER_MERGE=1 ../../../cil/bin/cilly --merge --use
 
 # 
 echo "--> Merging ngIRCd sources"
-cd ../src && make merge && cd ../codeCoverageTest
+cd ../src && make merge && cd ../codeCoverageTest && cp ../src/linux/ngircd-0.12.0.c ngircd.c
 # 
 echo "--> Merging ngIRCd with mockedFns"
 $CILLY --out=ngircd_comb.c -I $LIBCDIR -I $MOCKEDDIR otherFiles/libc_comb.c $MOCKEDDIR/*.c ngircd.c

@@ -1,4 +1,4 @@
-for file in `ls otherFiles/rfc*.c otherFiles/plus*.c`
+for file in `ls otherFiles/rfc*.c otherFiles/plus*.c otherFiles/ngircd*.c`
 	do
 		i=${file%\.*}
 		echo -n "Running job " $i "   	"
