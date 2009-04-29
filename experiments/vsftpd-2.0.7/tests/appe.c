@@ -8,21 +8,10 @@ char **environ;
 
 void symtest_initialize() {
 	// Make the string of commands on fd 0
-	char commandString[] = "user anonymous
+	static char commandString[] = "user ftp
 pass
-pwd
-cdup
-pwd
-cdup
-pwd
-cwd /
-pwd
-cwd ~
-pwd
-cwd ~ftp
-pwd
-cwd
-pwd
+pasv
+appe aFile
 quit
 ";
 	IOSIM_fd[0] = malloc(sizeof(sym_file_stream_t));
@@ -32,6 +21,18 @@ quit
 	IOSIM_fd[0]->sym_file->stat.st_size = sizeof(commandString);
 	IOSIM_fd[0]->sym_file->stat.st_mode = S_IFSOCK;
 
+	// fd 3 is the first listening socket
+	// fd 4 is the file being created (It is made by open().)
+	// fd 5 is the socket from which we get the data for the file
+	static char fileText[] = "something
+ a bunch of text
+			and some more text!!!";
+	IOSIM_fd[5] = malloc(sizeof(sym_file_stream_t));
+	IOSIM_fd[5]->offset = 0;
+	IOSIM_fd[5]->sym_file = malloc(sizeof(sym_file_t));
+	IOSIM_fd[5]->sym_file->contents = fileText;
+	IOSIM_fd[5]->sym_file->stat.st_size = sizeof(fileText);
+
 	// Make empty environ variable
 	environ = malloc(sizeof(char*));
 	environ[0] = NULL;
@@ -40,6 +41,9 @@ quit
 	tunable_one_process_model = 1;
 
 #include "symbolic_values"
+
+
+
 
 	return;
 }

@@ -24,3 +24,11 @@ int dirfd(DIR *dir) {
 struct dirent *readdir(DIR *dir) {
 	return IOSIM_readdir(dir);
 }
+
+int mkdir(const char *pathname, mode_t mode) {
+	return 0;
+}
+
+int rmdir(const char *pathname) {
+	return 0;
+}

@@ -179,8 +179,8 @@
 #ifdef TUNABLE_ANON_MKDIR_WRITE_ENABLE
   tunable_anon_mkdir_write_enable = TUNABLE_ANON_MKDIR_WRITE_ENABLE;
 #else
-//  __SYMBOLIC(&tunable_anon_mkdir_write_enable);
-//  __ASSUME((tunable_anon_mkdir_write_enable == 0) || (tunable_anon_mkdir_write_enable == 1));
+  __SYMBOLIC(&tunable_anon_mkdir_write_enable);
+  __ASSUME((tunable_anon_mkdir_write_enable == 0) || (tunable_anon_mkdir_write_enable == 1));
 #endif
 #ifdef TUNABLE_ANON_OTHER_WRITE_ENABLE
   tunable_anon_other_write_enable = TUNABLE_ANON_OTHER_WRITE_ENABLE;
@@ -245,8 +245,8 @@
 #ifdef TUNABLE_SETPROCTITLE_ENABLE
   tunable_setproctitle_enable = TUNABLE_SETPROCTITLE_ENABLE;
 #else
-//  __SYMBOLIC(&tunable_setproctitle_enable);
-//  __ASSUME((tunable_setproctitle_enable == 0) || (tunable_setproctitle_enable == 1));
+  __SYMBOLIC(&tunable_setproctitle_enable);
+  __ASSUME((tunable_setproctitle_enable == 0) || (tunable_setproctitle_enable == 1));
 #endif
 #ifdef TUNABLE_TEXT_USERDB_NAMES
   tunable_text_userdb_names = TUNABLE_TEXT_USERDB_NAMES;

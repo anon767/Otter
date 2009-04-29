@@ -8,21 +8,9 @@ char **environ;
 
 void symtest_initialize() {
 	// Make the string of commands on fd 0
-	char commandString[] = "user anonymous
+	static char commandString[] = "user anonymous
 pass
-pwd
-cdup
-pwd
-cdup
-pwd
-cwd /
-pwd
-cwd ~
-pwd
-cwd ~ftp
-pwd
-cwd
-pwd
+type
 quit
 ";
 	IOSIM_fd[0] = malloc(sizeof(sym_file_stream_t));
