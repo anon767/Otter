@@ -15,10 +15,10 @@ int symtest(){
 	event_recv(client_fd1,"USER user1 x x :user\r\n",t++);
 	event_send(client_fd1,t++);
 
-	event_accept(client_fd2,t++);
-	event_recv(client_fd2,"NICK nick2\r\n",t++);
-	event_recv(client_fd2,"USER user2 x x :user\r\n",t++);
-	event_send(client_fd2,t++);
+	//event_accept(client_fd2,t++);
+	//event_recv(client_fd2,"NICK nick2\r\n",t++);
+	//event_recv(client_fd2,"USER user2 x x :user\r\n",t++);
+	//event_send(client_fd2,t++);
 
 	//event_accept(client_fd3,t++);
 	//event_recv(client_fd3,"NICK nick3\r\n",t++);
@@ -27,13 +27,13 @@ int symtest(){
 
 	event_recv(client_fd1,"JOIN #ch\r\n",t++);
 	event_send(client_fd1,t++);
-	event_recv(client_fd2,"JOIN #ch\r\n",t++);
-	event_send(client_fd2,t++);
+	//event_recv(client_fd2,"JOIN #ch\r\n",t++);
+	//event_send(client_fd2,t++);
 	//event_recv(client_fd3,"JOIN #ch\r\n",t++);
 	//event_send(client_fd3,t++);
 
 	event_recv(client_fd1,"PRIVMSG #ch :Hello!\r\n",t++);
-	event_send(client_fd2,t++);
+	//event_send(client_fd2,t++);
 
 	event_end(t++);
 }
