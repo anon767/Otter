@@ -58,24 +58,24 @@ for filename in sys.argv[1:]:
 # Now do the greedy set cover
 
 # Compute the universe
-linesToCover = set()
-coveredSoFar = set()
+remainingToCover = set()
 for (ignore,coverage) in configs:
-    linesToCover |= coverage
+    remainingToCover |= coverage
+coveredSoFar = set()
 
 chosenConfigs = []
-while linesToCover:
+while remainingToCover:
     score = -1
     chosenConfig = None
     for (config,coverage) in configs:
-        newScore = len(coverage & linesToCover)
+        newScore = len(coverage & remainingToCover)
         if newScore > score:
             score = newScore
             chosenConfig = config
             chosenCoverage = coverage
     assert chosenConfig
     chosenConfigs.append(chosenConfig)
-    linesToCover -= chosenCoverage
+    remainingToCover -= chosenCoverage
     coveredSoFar |= chosenCoverage
     print '\nConfiguration',len(chosenConfigs),'is\n'
     for variable,value in sorted(chosenConfig):
@@ -83,3 +83,22 @@ while linesToCover:
     print '\nThe total coverage so far is',len(coveredSoFar)
 
 print '\nThat covers everything'
+
+
+print 'These variables were set in some configuration:'
+varsEverSet = set()
+for config,ignore in configs:
+    varsEverSet |= set([x[0] for x in config])
+for variable in sorted(varsEverSet):
+    print variable
+
+print '\nThese variables were set in one of the chosen configurations:'
+varsSetInChosenConfigs = set()
+for config in chosenConfigs:
+    varsSetInChosenConfigs |= set([x[0] for x in config])
+for variable in sorted(varsSetInChosenConfigs):
+    print variable
+
+print '\nAnd these were set somewhere, but not in any chosen configuration:'
+for variable in sorted(varsEverSet - varsSetInChosenConfigs):
+    print variable
