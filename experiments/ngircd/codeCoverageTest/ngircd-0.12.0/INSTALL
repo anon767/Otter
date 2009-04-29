@@ -1,0 +1,246 @@
+
+                     ngIRCd - Next Generation IRC Server
+
+                        (c)2001-2007 Alexander Barton,
+                    alex@barton.de, http://www.barton.de/
+
+               ngIRCd is free software and published under the
+                   terms of the GNU General Public License.
+
+                                -- INSTALL --
+
+                         
+
+I. Upgrade Information
+~~~~~~~~~~~~~~~~~~~~~~
+
+Differences to version 0.9.x
+
+- The option of the configure script to enable support for Zeroconf/Bonjour/
+  Rendezvous/WhateverItIsNamedToday has been renamed:
+    --with-rendezvous  ->  --with-zeroconf
+
+Differences to version 0.8.x
+
+- The maximum length of passwords has been raised to 20 characters (instead
+  of 8 characters). If your passwords are longer than 8 characters then they
+  are cut at an other position now.
+
+Differences to version 0.6.x
+
+- Some options of the configure script have been renamed:
+    --disable-syslog  ->  --without-syslog
+    --disable-zlib    ->  --without-zlib
+  Please call "./configure --help" to review the full list of options!
+
+Differences to version 0.5.x
+
+- Starting with version 0.6.0, other servers are identified using asynchronous
+  passwords: therefore the variable "Password" in [Server]-sections has been
+  replaced by "MyPassword" and "PeerPassword".
+
+- New configuration variables, section [Global]: MaxConnections, MaxJoins
+  (see example configuration file "doc/sample-ngircd.conf"!).
+
+
+II. Standard Installation
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ngIRCd is developed for UNIX-based systems, which means that the installation
+on modern UNIX-like systems that are supported by GNU autoconf and GNU
+automake ("configure") should be no problem.
+
+The normal installation procedure after getting (and expanding) the source
+files (using a distribution archive or GIT) is as following:
+
+  1) ./autogen.sh	[only necessary when using GIT]
+  2) ./configure
+  3) make
+  4) make install
+
+(Please see details below!)
+
+Now the newly compiled executable "ngircd" is installed in its standard
+location, /usr/local/sbin/.
+
+The next step is to configure and afterwards starting the daemon. Please
+have a look at the ngircd(8) and ngircd.conf(5) manual pages for details
+and all possible options.
+
+If no previous version of the configuration file exists (the standard name
+is /usr/local/etc/ngircd.conf), a sample configuration file containing all
+possible options will be installed there. You'll find its template in the
+doc/ directory: sample-ngircd.conf.
+
+
+1): "autogen.sh"
+
+The first step, autogen.sh, is only necessary if the configure-script isn't
+already generated. This never happens in official ("stable") releases in
+tar.gz-archives, but when using GIT.
+
+This step is therefore only interesting for developers.
+
+autogen.sh produces the Makefile.in's, which are necessary for the configure
+script itself, and some more files for make. To run autogen.sh you'll need
+GNU autoconf and GNU automake (use recent versions! autoconf 2.53 and
+automake 1.6.1 are known to work).
+
+Again: "end users" do not need this step!
+
+
+2): "./configure"
+
+The configure-script is used to detect local system dependencies.
+
+In the perfect case, configure should recognise all needed libraries, header
+files and so on. If this shouldn't work, "./configure --help" shows all
+possible options.
+
+In addition, you can pass some command line options to "configure" to enable
+and/or disable some features of ngIRCd. All these options are shown using
+"./configure --help", too.
+
+Compiling a static binary will avoid you the hassle of feeding a chroot dir
+(if you want use the chroot feature). Just do something like:
+  CFLAGS=-static ./configure [--your-options ...]
+Then you can use a void directory as ChrootDir (like OpenSSH's /var/empty).
+
+
+3): "make"
+
+The make command uses the Makefiles produced by configure and compiles the
+ngIRCd daemon.
+
+
+4): "make install"
+
+Use "make install" to install the server and a sample configuration file on
+the local system. Normally, root privileges are necessary to complete this
+step. If there is already an older configuration file present, it won't be
+overwritten.
+
+This files will be installed by default:
+
+- /usr/local/sbin/ngircd: executable server
+- /usr/local/etc/ngircd.conf: sample configuration (if not already present)
+- /usr/local/share/doc/ngircd/: documentation
+
+
+III. Additional features
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The following optional features can be compiled into the daemon by passing
+options to the "configure" script. Most options can handle a <path> argument
+which will be used to search for the required libraries and header files in
+the given paths ("<path>/lib/...", "<path>/include/...") in addition to the
+standard locations.
+
+* Syslog Logging (autodetected by default): 
+  --with-syslog[=<path>] / --without-syslog
+
+  Enable (disable) support for logging to "syslog", which should be
+  available on most modern UNIX-like operating systems by default.
+
+* ZLib Compression (autodetected by default):
+  --with-zlib[=<path>] / --without-zlib
+
+  Enable (disable) support for compressed server-server links.
+  The Z compression library ("libz") is required for this option.
+  
+* IO Backend (autodetected by default):
+  --with-select[=<path>] / --without-select
+  --with-poll[=<path>] / --without-poll
+  --with-devpoll[=<path>] / --without-devpoll
+  --with-epoll[=<path>] / --without-epoll
+  --with-kqueue[=<path>] / --without-kqueue  
+
+  ngIRCd can use different IO "backends": the "old school" select() and poll()
+  API which should be supported by most UNIX-like operating systems, or the
+  more efficient and flexible epoll() (Linux >=2.6), kqueue() (BSD) and
+  /dev/poll APIs.
+  By default the IO backend is autodetected, but you can use "--without-xxx"
+  to disable a more enhanced API.
+  When using the epoll() API, support for select() is compiled in as well by
+  default to enable the binary to run on older Linux kernels (<2.6), too.
+
+* IDENT-Support:
+  --with-ident[=<path>]
+
+  Include support for IDENT ("AUTH") lookups. The "ident" library is
+  required for this option.
+
+* ZeroConf Support:
+  --with-zeroconf[=<path>] 
+
+  Compile ngIRCd with support for ZeroConf multicast DNS service registration.
+  Either the Apple ZeroConf implementation (e. g. Mac OS X) or the Howl
+  library is required. Which one is available is autodetected.
+
+* TCP-Wrappers:
+  --with-tcp-wrappers[=<path>] 
+
+  Include support for Wietse Venemas "TCP Wrappers" to limit client access
+  to the daemon, for example by using "/etc/hosts.{allow|deny}".
+  The "libwrap" is required for this option.
+
+
+IV. Useful make-targets
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The Makefile produced by the configure-script contains always these useful
+targets:
+
+ - clean: delete every product from the compiler/linker
+   next step: -> make
+
+ - distclean: the above plus erase all generated Makefiles
+   next step: -> ./configure
+
+ - maintainer-clean: erase all automatic generated files
+   next step: -> ./autogen.sh
+
+
+V. Sample configuration file ngircd.conf
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In the sample configuration file, there are comments beginning with "#" OR
+";" -- this is only for the better understanding of the file.
+
+The file is separated in four blocks: [Global], [Operator], [Server], and
+[Channel].
+
+In the [Global] section, there is the main configuration like the server
+name and the ports, on which the server should be listening. IRC operators
+of this server are defined in [Operator] blocks. [Server] is the section
+where server links are configured. And [Channel] blocks are used to
+configure pre-defined ("persistent") IRC channels.
+
+The meaning of the variables in the configuration file is explained in the 
+"doc/sample-ngircd.conf", which is used as sample configuration file in
+/usr/local/etc after running "make install" (if you don't already have one)
+and in the "ngircd.conf" manual page.
+
+
+VI. Command line options
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+These parameters could be passed to the ngIRCd:
+
+-f, --config <file>
+	The daemon uses the file <file> as configuration file rather than
+	the standard configuration /usr/local/etc/ngircd.conf.
+
+-n, --nodaemon
+	ngIRCd should be running as a foreground process.
+
+-p, --passive
+	Server-links won't be automatically established.
+
+-t, --configtest
+	Reads, validates and dumps the configuration file as interpreted
+	by the server. Then exits.
+
+Use "--help" to see a short help text describing all available parameters
+the server understands, with "--version" the ngIRCd shows its version
+number. In both cases the server exits after the output.

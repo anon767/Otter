@@ -1,9 +1,6 @@
-0. To merge ngircd, go to ../src and run make conf; make merge
+0. To merge ngircd, run make conf; make merge
 1. To merge libc run
 	./run libc
 2. To merge merged libc, mockedFns and merged ngircd, run
 	./run merge
-3. ./run to run symtest1
-
-0,2,3 can be run by ./rerun
 

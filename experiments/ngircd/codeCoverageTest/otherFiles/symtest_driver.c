@@ -199,7 +199,6 @@ int main(){
 	int argc = 2;
 	char  argstr[] = "ngircd\0-n\0--configtest";
 	char* argv[]   = {argstr,argstr+7,argstr+10};
-	if(symtest_configtest) argc = 3;
 
 	IOSIM_fd[1] = malloc(sizeof(sym_file_stream_t));
 	IOSIM_fd[1]->fd = 1;
@@ -222,6 +221,7 @@ int main(){
 
 
 	symtest();
+	if(symtest_configtest) argc = 3;
 
 
 	int ngircd_exit = main_ngircd(argc,argv);

@@ -1,0 +1,86 @@
+#!/bin/sh
+#
+# ngIRCd start and stop script for Debian-based systems
+#
+# $Id: ngircd.init,v 1.7 2006/12/26 14:43:46 alex Exp $
+#
+
+### BEGIN INIT INFO
+# Provides:		ircd
+# Required-Start:	$local_fs
+# Required-Stop:	$local_fs
+# Should-Start:		$syslog $network
+# Should-Stop:		$syslog $network
+# Default-Start:	2 3 4 5
+# Default-Stop:		0 1 6
+# Short-Description:	Next Generation IRC Server
+### END INIT INFO
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+DAEMON=/usr/sbin/ngircd
+NAME=ngIRCd
+DESC="IRC daemon"
+PARAMS=""
+
+test -h "$0" && me=`readlink $0` || me="$0"
+BASENAME=`basename $me`
+
+test -f /etc/default/$BASENAME && . /etc/default/$BASENAME
+
+test -x $DAEMON || exit 0
+
+Check_Config()
+{
+	$DAEMON --configtest >/dev/null 2>&1
+	if [ $? -ne 0 ]; then
+		echo "Configuration of $NAME is not valide, won't (re)start!"
+		echo "Please run \"$DAEMON --configtest\" manually and fix it up ..."
+		exit 1
+	fi
+}
+
+Try_Start()
+{
+	[ ! -d /var/run/ircd ] || chown irc:irc /var/run/ircd
+	start-stop-daemon --start --quiet --exec $DAEMON -- $PARAMS
+	if [ $? -ne 0 ]; then
+		echo "$NAME failed!"
+		exit 1
+	fi
+	echo "$NAME."
+}
+
+case "$1" in
+  start)
+	Check_Config
+	echo -n "Starting $DESC: "
+	Try_Start
+	;;
+  stop)
+	echo -n "Stopping $DESC: "
+	start-stop-daemon --stop --quiet --pidfile /var/run/ircd/ngircd.pid --exec $DAEMON \
+	  && echo "$NAME." \
+	  || echo "(none running)"
+	;;
+  reload|force-reload)
+	Check_Config
+	echo "Reloading $DESC configuration files."
+	start-stop-daemon --stop --signal 1 --quiet --exec $DAEMON
+	;;
+  restart)
+	Check_Config
+	echo -n "Restarting $DESC: "
+	start-stop-daemon --stop --quiet --oknodo --exec $DAEMON
+	sleep 1
+	Try_Start
+	;;
+  *)
+	N=/etc/init.d/$NAME
+	echo "Usage: $N {start|stop|restart|reload|force-reload}" >&2
+	exit 1
+	;;
+esac
+
+exit 0
+
+# -eof-
