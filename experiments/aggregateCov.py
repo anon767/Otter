@@ -1,7 +1,7 @@
 import sys
 
 if len(sys.argv) == 1:
-    print 'Usage: python aggregateCov.py FILE...'
+    print 'Usage: python aggregateCov.py [--useMethod2] FILE...'
     sys.exit(0)
 
 configs = []
@@ -9,15 +9,30 @@ coverage = []
 
 counter=0
 
-def merge(config1,config2):
+def merge1(config1,config2):
     if config1 <= config2:
         return config2
     if config1 >= config2:
         return config1
     return None
 
+def merge2(config1,config2):
+    union = config1 | config2
+    varList = [x[0] for x in union]
+    # If they agree on all variables they share, they are compatible
+    if len(varList) == len(set(varList)):
+        return union
+    return None
+
+if sys.argv[1] == '--useMethod2':
+    merge = merge2
+    sys.argv[:2] = []
+else:
+    merge = merge1
+    sys.argv[:1] = []
+
 # First, read in the coverage information from all of the files
-for filename in sys.argv[1:]:
+for filename in sys.argv:
     file = open(filename)
     line = 'x'
     while line != '' and not line.startswith('STP was invoked'):
