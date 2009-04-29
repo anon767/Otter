@@ -9,8 +9,8 @@ int symtest(){
 	t = 0;
 		
 	event_accept(client_fd1,t++);
-	event_recv(client_fd1,"SERVER test.oulu.fi 1 1 :Experimental server\r\n",t++);
-	event_send(client_fd1,t++);
+	event_recv(client_fd1,"NICK nick\r\n",t++);
+	event_recv(client_fd1,"USER user x x :user\r\n",t++);
 	event_recv(client_fd1,"PING test.oulu.fi\r\n",t++);
 
 	event_end(t++);

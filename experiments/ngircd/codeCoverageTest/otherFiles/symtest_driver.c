@@ -200,6 +200,14 @@ int main(){
 	char  argstr[] = "ngircd\0-n\0--configtest";
 	char* argv[]   = {argstr,argstr+7,argstr+10};
 
+	IOSIM_fd[0] = malloc(sizeof(sym_file_stream_t));
+	IOSIM_fd[0]->fd = 0;
+	IOSIM_fd[0]->offset = 0;
+	IOSIM_fd[0]->sym_file = malloc(sizeof(sym_file_t));
+	IOSIM_fd[0]->sym_file->contents = malloc(1);
+	IOSIM_fd[0]->sym_file->stat.st_size = 1;
+	IOSIM_fd[0]->sym_file->stat.st_mode = S_IFSOCK;//
+
 	IOSIM_fd[1] = malloc(sizeof(sym_file_stream_t));
 	IOSIM_fd[1]->fd = 1;
 	IOSIM_fd[1]->offsetout = 0;
@@ -208,6 +216,7 @@ int main(){
 	IOSIM_fd[1]->sym_fileout->stat.st_size = 1024;
 	IOSIM_fd[1]->sym_fileout->stat.st_mode = S_IFSOCK;//
 
+	stdin = IOSIM_fd[0];
 	stdout = IOSIM_fd[1];
 	stderr = IOSIM_fd[1];
 
