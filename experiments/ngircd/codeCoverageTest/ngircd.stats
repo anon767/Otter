@@ -4830,4 +4830,4 @@ Signal_Handler
 Initialize_Signal_Handler
 NGIRCd_Rehash
 Fill_Version
-main
+main_ngircd
