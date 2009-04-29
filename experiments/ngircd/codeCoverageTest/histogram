@@ -1,0 +1,240 @@
+
+Configuration 1 is
+
+Conf_ListenIPv4=1
+Conf_MaxConnectionsIP=1
+Conf_MaxJoins=0
+Conf_MaxNickLength=16
+Conf_NoDNS=0
+Conf_OperCanMode=0
+Conf_PingTimeout=120
+Conf_PongTimeout=20
+Conf_UID=0
+
+The total coverage so far is 1959
+
+Configuration 2 is
+
+Conf_GID=0
+Conf_ListenIPv4=1
+Conf_MaxConnectionsIP=0
+Conf_MaxJoins=0
+Conf_MaxNickLength=33
+Conf_NoDNS=1
+Conf_OperCanMode=0
+Conf_PingTimeout=1
+Conf_PongTimeout=20
+Conf_UID=1
+
+The total coverage so far is 2238
+
+Configuration 3 is
+
+Conf_GID=1
+Conf_ListenIPv4=1
+Conf_MaxConnectionsIP=0
+Conf_MaxNickLength=10
+Conf_NoDNS=1
+Conf_OperCanMode=0
+Conf_PingTimeout=1
+Conf_PongTimeout=20
+Conf_UID=1
+
+The total coverage so far is 2459
+
+Configuration 4 is
+
+Conf_MaxJoins=0
+Conf_NoDNS=1
+Conf_OperCanMode=0
+Conf_OperServerMode=0
+
+The total coverage so far is 2550
+
+Configuration 5 is
+
+Conf_ListenIPv4=1
+Conf_MaxConnectionsIP=0
+Conf_MaxJoins=1
+Conf_MaxNickLength=16
+Conf_NoDNS=1
+Conf_OperCanMode=0
+Conf_PingTimeout=3600
+Conf_PongTimeout=20
+Conf_UID=0
+
+The total coverage so far is 2611
+
+Configuration 6 is
+
+Conf_ListenIPv4=1
+Conf_MaxConnectionsIP=2
+Conf_MaxNickLength=6
+Conf_NoDNS=0
+Conf_OperCanMode=0
+Conf_PingTimeout=3600
+Conf_PongTimeout=20
+Conf_UID=0
+
+The total coverage so far is 2661
+
+Configuration 7 is
+
+Conf_GID=1
+Conf_ListenIPv4=1
+Conf_MaxConnectionsIP=0
+Conf_MaxJoins=0
+Conf_MaxNickLength=8
+Conf_NoDNS=1
+Conf_OperCanMode=0
+Conf_PingTimeout=3600
+Conf_PongTimeout=20
+Conf_UID=1
+
+The total coverage so far is 2678
+
+Configuration 8 is
+
+Conf_GID=1
+Conf_ListenIPv4=1
+Conf_MaxConnectionsIP=1
+Conf_MaxJoins=0
+Conf_MaxNickLength=5
+Conf_NoDNS=1
+Conf_OperCanMode=0
+Conf_PingTimeout=1
+Conf_PongTimeout=20
+Conf_UID=1
+
+The total coverage so far is 2692
+
+Configuration 9 is
+
+Conf_ListenIPv4=1
+Conf_MaxConnectionsIP=0
+Conf_MaxNickLength=1
+Conf_NoDNS=1
+Conf_OperCanMode=0
+Conf_PongTimeout=20
+Conf_UID=0
+
+The total coverage so far is 2701
+
+Configuration 10 is
+
+Conf_GID=1
+Conf_ListenIPv4=0
+Conf_NoDNS=1
+Conf_OperCanMode=0
+Conf_UID=1
+
+The total coverage so far is 2707
+
+Configuration 11 is
+
+Conf_ListenIPv4=1
+Conf_MaxConnectionsIP=1
+Conf_MaxNickLength=17
+Conf_NoDNS=1
+Conf_OperCanMode=0
+Conf_PongTimeout=20
+Conf_UID=0
+
+The total coverage so far is 2710
+
+Configuration 12 is
+
+Conf_GID=1
+Conf_ListenIPv4=1
+Conf_MaxConnectionsIP=0
+Conf_MaxNickLength=5
+Conf_NoDNS=1
+Conf_OperCanMode=0
+Conf_PingTimeout=120
+Conf_PongTimeout=20
+Conf_UID=1
+
+The total coverage so far is 2712
+
+Configuration 13 is
+
+Conf_GID=1
+Conf_ListenIPv4=1
+Conf_MaxConnectionsIP=0
+Conf_MaxNickLength=6
+Conf_NoDNS=1
+Conf_OperCanMode=0
+Conf_PingTimeout=1
+Conf_PongTimeout=3600
+Conf_UID=1
+
+The total coverage so far is 2714
+
+Configuration 14 is
+
+Conf_GID=1
+Conf_ListenIPv4=1
+Conf_MaxConnectionsIP=0
+Conf_MaxNickLength=34
+Conf_NoDNS=1
+Conf_OperCanMode=0
+Conf_PingTimeout=3600
+Conf_PongTimeout=20
+Conf_UID=1
+
+The total coverage so far is 2715
+
+Configuration 15 is
+
+Conf_GID=1
+Conf_ListenIPv4=1
+Conf_MaxConnectionsIP=0
+Conf_NoDNS=0
+Conf_OperCanMode=0
+Conf_PongTimeout=1
+Conf_UID=1
+
+The total coverage so far is 2716
+
+Configuration 16 is
+
+Conf_GID=1
+Conf_ListenIPv4=1
+Conf_MaxConnectionsIP=0
+Conf_MaxNickLength=0
+Conf_NoDNS=1
+Conf_OperCanMode=0
+Conf_PingTimeout=120
+Conf_PongTimeout=20
+Conf_UID=1
+
+The total coverage so far is 2717
+
+That covers everything
+These variables were set in some configuration:
+Conf_GID
+Conf_ListenIPv4
+Conf_MaxConnectionsIP
+Conf_MaxJoins
+Conf_MaxNickLength
+Conf_NoDNS
+Conf_OperCanMode
+Conf_OperServerMode
+Conf_PingTimeout
+Conf_PongTimeout
+Conf_UID
+
+These variables were set in one of the chosen configurations:
+Conf_GID
+Conf_ListenIPv4
+Conf_MaxConnectionsIP
+Conf_MaxJoins
+Conf_MaxNickLength
+Conf_NoDNS
+Conf_OperCanMode
+Conf_OperServerMode
+Conf_PingTimeout
+Conf_PongTimeout
+Conf_UID
+
+And these were set somewhere, but not in any chosen configuration:
