@@ -31,6 +31,13 @@ quit
 	IOSIM_fd[2]->sym_file->contents = NULL;
 	IOSIM_fd[2]->sym_file->stat.st_size = 0;
 
+	// the socket on which we send out the ls info
+	IOSIM_fd[5] = malloc(sizeof(sym_file_stream_t));
+	IOSIM_fd[5]->offset = 0;
+	IOSIM_fd[5]->sym_file = malloc(sizeof(sym_file_t));
+	IOSIM_fd[5]->sym_file->contents = NULL;
+	IOSIM_fd[5]->sym_file->stat.st_size = 0;
+
 	sym_file_t* input = IOSIM_addfile("/ftp/file", 0);
 	input->contents = "abc\n";
 	input->stat.st_size = 4;
