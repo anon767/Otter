@@ -228,11 +228,8 @@ let function_calls_testsuite = "Function Calls" >::: [
         [ ("x", "int $a"); ("y", "int $b"); ("z", "int $c * $d"); ("void_fn_int_vararg", "void ()(int, ...)") ]
         begin fun env constraints ->
             let f = lookup_env "void_fn_int_vararg" env in
-            assert_qualtype_match begin
-                fun (Fn (_, Base (Var _), [ Base (Var _ as qv1); Ref (Var _ as qv2, Base (Var _ as qv3)) ])) ->
-                    assert_only_paths
-                        [ (Const "a", qv1); (Const "b", qv2);
-                          (Const "c", qv3); (qv3, Const "c"); (Const "d", qv2) ] constraints
+            assert_qualtype_match begin fun (Fn (_, Base (Var _), [ Base (Var _ as qv1); Base (Var _ as qv2) ])) ->
+                assert_only_paths [ (Const "a", qv1); (Const "b", qv2); (Const "d", qv2) ] constraints
             end f;
         end;
 ]
