@@ -31,24 +31,22 @@ module InterpreterT (E : Expression.InterpreterMonad) = struct
             inContext (fun _ -> loc) begin perform
                 qtf <-- access_lval f;
                 qta <-- mapM interpret_exp a;
-                qta <-- begin match Cil.typeSig (Cil.typeOfLval f) with
-                        | Cil.TSFun (_, _, false, _) ->
-                            return qta (* not vararg: map the arguments as is *)
-                        | Cil.TSFun (_, atypelist, true, _) -> perform
-                            (* is vararg: map the first n arguments, and fold the rest *)
-                            qtvararg <-- embed_rval Cil.voidPtrType;
-                            (_, qta) <-- foldM begin fun (n, a) x ->
-                                if n > 0 then
-                                    return (n - 1, x::a)
-                                else begin perform
-                                    assign qtvararg x;
-                                    return (0, a)
-                                end
-                            end (List.length atypelist, []) qta;
-                            return (List.rev (qtvararg::qta))
-                        | _ -> failwith "Impossible!"
-                    end;
                 qtr <-- app qtf qta;
+                begin match Cil.typeSig (Cil.typeOfLval f) with
+                    (* for vararg functions, fold the vararg arguments *)
+                    | Cil.TSFun (_, _, true, _) -> perform
+                        qtp <-- args qtf;
+                        foldM begin fun ps a -> match ps with
+                            | p::[] -> perform assign p a; return ps
+                            | _::ps -> return ps
+                            | _ -> failwith "Impossible!"
+                        end qtp qta;
+                        return ()
+                    | Cil.TSFun (_, _, false, _) ->
+                        return ()
+                    | _ ->
+                        failwith "Impossible!"
+                end;
                 begin match lopt with
                     | Some l -> assign_lval l qtr
                     | None -> return ()
