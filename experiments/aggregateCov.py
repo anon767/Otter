@@ -1,4 +1,4 @@
-import sys
+import sys,zipfile
 
 if len(sys.argv) == 1:
     print 'Usage: python aggregateCov.py [--useMethod2] FILE...'
@@ -32,12 +32,15 @@ else:
     sys.argv[:1] = []
 
 # First, read in the coverage information from all of the files
-for filename in sys.argv:
-    file = open(filename)
+for zipfilename in sys.argv:
+    print 'Reading from',zipfilename
+    zipfileObj = zipfile.ZipFile(zipfilename)
+    outputFilename = zipfilename[zipfilename.rindex('/')+1:-4] + '-test'
+    file = open(zipfileObj.extract(outputFilename,'/tmp'))
     line = 'x'
     while line != '' and not line.startswith('STP was invoked'):
         line = file.readline()
-        if line == 'Sample value:\n':
+        if line.startswith('Sample value'):
             counter += 1
             thisConfig = set() # A configuration is a set of (variable,value) pairs
             # Read in the configuration
@@ -96,11 +99,7 @@ while remainingToCover:
         print variable + '=' + str(value)
     print '\nThe total coverage so far is',len(coveredSoFar)
 
-print '\nThat covers everything, where everything is:'
-
-linesAsPairs = [str.split(':') for str in coveredSoFar]
-for fileLinePair in sorted([(x[0],int(x[1])) for x in linesAsPairs]):
-    print '%s:%d' % fileLinePair
+print '\nThat covers everything'
 
 print '\nThese variables were set in some configuration:'
 varsEverSet = set()
@@ -119,3 +118,9 @@ for variable in sorted(varsSetInChosenConfigs):
 print '\nAnd these were set somewhere, but not in any chosen configuration:'
 for variable in sorted(varsEverSet - varsSetInChosenConfigs):
     print variable
+
+print '\nHere are all lines ever covered:'
+linesAsPairs = [str.split(':') for str in coveredSoFar]
+for fileLinePair in sorted([(x[0],int(x[1])) for x in linesAsPairs]):
+    print '%s:%d' % fileLinePair
+
