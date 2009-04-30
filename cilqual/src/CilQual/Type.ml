@@ -55,18 +55,22 @@ module InterpreterT (C : CilQualType.CilQualTypeMonad) = struct
     let embed_type t =
         let module QualTypeOps = MonadOps (QualType) in
         let rec embed_type = function
-            | Cil.TSArray (typ, _, attrlist) -> perform with module QualType in
+            | Cil.TSArray (typ, _, _) -> perform with module QualType in
                 (* treat n-d arrays as a single cell;
                  * fortunately, Cil makes conversion to pointer explicit with Cil.StartOf *)
                 embed_type typ
-            | Cil.TSPtr (pointsTo, attrlist) -> perform with module QualType in
+            | Cil.TSPtr (pointsTo, _) -> perform with module QualType in
                 qtarget <-- embed_type pointsTo;
                 QualType.ref qtarget
-            | Cil.TSFun (r, a, is_vararg, attrlist) -> perform with module QualType in
+            | Cil.TSFun (r, a, is_vararg, _) -> perform with module QualType in
                 qtr <-- embed_type r;
-                (* add one void * parameter for vararg *)
-                qta <-- QualTypeOps.mapM embed_type (if is_vararg then a @ [Cil.typeSig Cil.voidPtrType] else a);
-                QualType.fn qtr qta
+                qta <-- QualTypeOps.mapM embed_type a;
+                if is_vararg then perform with module QualType in
+                    (* add one variable to represent varargs *)
+                    qtva <-- QualType.base;
+                    QualType.fn qtr (qta @ [ qtva ])
+                else
+                    QualType.fn qtr qta
             | Cil.TSComp _ (* structs are field-based, unions are untyped *)
             | Cil.TSEnum _
             | Cil.TSBase _ -> perform with module QualType in
