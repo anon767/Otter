@@ -252,9 +252,19 @@ module QualTypeT (TypedQualVar : TypedQualVar)
             let compare (_, xs) (_, ys) =
                 let rec compare xs ys = if xs == ys then 0 else match xs, ys with
                     | x::xs, y::ys ->
-                        begin match TypedQualVar.compare x y with
-                            | 0 -> compare xs ys
-                            | i -> i
+                        begin match x, y with
+                            | Deref _, Deref _
+                            | FnRet _, FnRet _ ->
+                                compare xs ys
+                            | FnArg (x, _), FnArg (y, _) ->
+                                begin match Pervasives.compare x y with
+                                    | 0 -> compare xs ys
+                                    | i -> i
+                                end
+                            | x, y ->
+                                let rank = function Deref _ -> 0 | FnRet _ -> 1 | FnArg _ -> 2
+                                                  | Fresh _ | Embed _ -> failwith "Impossible!"
+                                in Pervasives.compare (rank x) (rank y)
                         end
                     | [], [] -> 0
                     | [], _  -> -1
