@@ -48,3 +48,11 @@ int nanosleep(struct timespec  const  *__requested_time , struct timespec *__rem
 	__COMMENT("Sleeping");
 	return 0;
 }
+
+time_t mktime(struct tm *tm) {
+	return 0;
+}
+
+int utime(const char *path, const struct utimbuf *times) {
+	return 0;
+}
