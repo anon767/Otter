@@ -38,7 +38,6 @@ module D = Ocamlgraph.Graphviz.Dot (C (G.QualGraph))
 
 (* cilqual options *)
 let opt_save_dot = ref ""
-let opt_statistics = ref false
 
 
 (* timing helpers *)
@@ -92,6 +91,15 @@ let doit file =
     let (((((), constraints), _), _), _) =
         G.run expM (((((), G.QualGraph.empty), (G.fileContext file)), 0), G.emptyEnv) in
 
+    (* save the constraint graph, if requested *)
+    let timing = if !opt_save_dot = "" then timing else begin
+        let timing = tic "Saving constraint graph" timing in
+        let dot_file = open_out !opt_save_dot in
+        D.output_graph dot_file constraints;
+        close_out dot_file;
+        timing
+    end in
+
     (* determine if there is a path between $null and $nonnull *)
     let timing = tic "Solving constraints" timing in
 
@@ -108,15 +116,8 @@ let doit file =
         (timing, explanation)
     end in
 
-    (* save the constraint graph, if requested *)
-    if !opt_save_dot <> "" then begin
-        let dot_file = open_out !opt_save_dot in
-        D.output_graph dot_file constraints;
-        close_out dot_file
-    end;
-
     (* print statistics, if requested *)
-    if !opt_statistics then begin
+    if !Errormsg.verboseFlag || !Cilutil.printStats then begin
         Format.eprintf "@[<v2>Timing:@\n%a@]@\n" begin fun ff ts ->
             ignore (List.fold_left (fun b (s, t) -> Format.fprintf ff "%(%)@[%-30s: %7.3fs@]" b s t; "@\n") "" ts)
         end (List.rev timing);
@@ -152,8 +153,6 @@ let description = {
     Cil.fd_extraopt = [
         ("--cilqual-save-dot", Arg.Set_string(opt_save_dot),
             "<file> Save the constraint graph in Graphviz DOT format");
-        ("--cilqual-statistics", Arg.Set(opt_statistics),
-            " Print statistics about the analysis");
     ];
     Cil.fd_post_check = false;
     Cil.fd_doit = doit
