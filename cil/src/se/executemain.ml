@@ -360,7 +360,6 @@ let feature : featureDescr =
 			 " Don't marshal coverage information to output file.
 \t\t\tBy default, coverage info is marshalled if it is gathered.
 \t\t\t(This option must be given after any '--*Cov' options.)");
-(*
 			("--marshalFrom",
 			 Arg.String
 				 (fun filename ->
@@ -370,7 +369,6 @@ let feature : featureDescr =
 						ignore coverage (* Do something with the coverage information *)
 				 ),
 			 "<filename> Read coverage information from an output file.");
-*)
 		];
 		fd_post_check = true;
     fd_doit = doExecute

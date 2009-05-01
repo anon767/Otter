@@ -219,7 +219,7 @@ flatten_offset state lhost_typ offset : bytes * typ (* type of (lhost,offset) *)
 							let base_typ = match Cilutility.unrollType lhost_typ with TArray(typ2, _, _) -> typ2 | _ -> failwith "Must be array" in
 							let base_size = (Cil.bitsSizeOf base_typ) / 8 in (* must be known *)
 							(* TODO: if typ is not IInt, should we change it to? *)
-							let (index) = Operation.mult [(rv,typ);(Convert.lazy_int_to_bytes base_size,typ)] in 
+							let (index) = Operation.mult [(Convert.lazy_int_to_bytes base_size,Cil.intType);(rv,typ)] in 
 							(index, base_typ, offset2)
 					| _ -> failwith "Unreachable"
 				end

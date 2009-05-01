@@ -114,7 +114,7 @@ let rec binop op_const op_symb operands : bytes (* * typ *)=
 
 		| (b1,b2)  ->
 			if not (Convert.isConcrete_bytes b1 & Convert.isConcrete_bytes b2) then
-				(Bytes_Op(op_symb, operands))
+				(Bytes_Op(op_symb, operands)) (* TODO: Check that STP treats Bytes_Ops as having the type of the first operand *)
 			else
 			let c1 = Convert.bytes_to_constant b1 typ1 in (*TODO: look at typ1 to see if it's unsigned *)
 			let c2 = Convert.bytes_to_constant b2 typ2 in
