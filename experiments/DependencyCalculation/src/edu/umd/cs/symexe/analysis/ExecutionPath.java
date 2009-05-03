@@ -7,6 +7,21 @@ public class ExecutionPath
 	private List<String> pathConditions;
 	private BitSet coverage;
 	
+	public boolean assumesConditionalExpressionTrue(String conditionalExpression)
+	{
+		return false;
+	}
+	
+	public boolean assumesConditionalExpressionFalse(String conditionalExpression)
+	{
+		return false;
+	}
+	
+	public boolean noAssumptionsForCoditionalExpression(String conditionalExpression)
+	{
+		return false;
+	}
+	
 	public List<String> getPathConditions()
 	{
 		return pathConditions;
