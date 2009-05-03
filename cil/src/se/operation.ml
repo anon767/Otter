@@ -191,6 +191,14 @@ let opPI op operands =
 					(Bytes_Address(blockopt,offset4))
 				| _ -> failwith "type of Bytes_Address not TPtr"
 			end
+		| Bytes_ByteArray(_),_ -> (* Doing pointer arithmetic off of a non-pointer, probably NULL *)
+			begin match typ1 with
+				| TPtr(basetyp,_) ->
+					let base_size = (Cil.bitsSizeOf basetyp)/8 in
+					let (offset3) = mult [(bytes2,typ2);(Convert.lazy_int_to_bytes base_size,Cil.intType)] in
+					op [(bytes1,!Cil.upointType);(offset3,Cil.intType)] (* TODO: make typing of offset more accurate? *)
+				| _ -> failwith "type of Bytes_ByteArray (used as a pointer) not TPtr"
+			end
 		| _ ->
 			Output.set_mode Output.MSG_MUSTPRINT;
 			Output.print_endline ("Bytes1: "^(To_string.bytes bytes1)); 
