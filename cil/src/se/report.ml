@@ -311,15 +311,19 @@ let print_report results =
 		(EdgeSet.cardinal everExecuted) (EdgeSet.cardinal alwaysExecuted);
 *)
 
+		if run_args.arg_calculate_dependencies then (
+			CalculateDependencies.calculateDeps coverage
+		);
+
 		Output.printf "Finished.\n";
 
 		(* Marshal out (coverage : Types.job_result list) so that we can
-			 read it back in later. Is there a better place to send this
-			 than stdout? *)
-		if run_args.arg_marshal_coverage
+			 read it back in later. *)
+		if run_args.arg_marshal_file <> ""
 		then (
-			set_binary_mode_out stdout true;
-			Marshal.to_channel stdout coverage []
+			Output.printf "Coverage data is in %s.\n" run_args.arg_marshal_file;
+			let outChan = open_out_bin run_args.arg_marshal_file in
+			Marshal.to_channel outChan coverage []
 		)
 
 	end

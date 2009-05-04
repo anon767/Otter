@@ -71,7 +71,8 @@ type run_args =
 		mutable arg_timeout : int;
 		(** How many seconds to allow the executor to run. *)
 		mutable arg_merge_paths : bool;
-		mutable arg_marshal_coverage : bool;
+		mutable arg_marshal_file : string;
+		mutable arg_calculate_dependencies : bool;
 	};;
 
 let run_args = 
@@ -88,7 +89,8 @@ let run_args =
 		arg_fns = Types.StringSet.empty;
 		arg_timeout = 0;
 		arg_merge_paths = false;
-		arg_marshal_coverage = false; (* Gets set to true if any arg_*_coverage is set *)
+		arg_marshal_file = ""; (* File to which to marshal coverage information *)
+		arg_calculate_dependencies = false;
 	} ;;
 
 let readCovStatsFromFile filename =

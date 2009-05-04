@@ -332,16 +332,13 @@ let feature : featureDescr =
 *)
 
 			("--edgeCov",
-			 Arg.Unit (fun () -> run_args.arg_edge_coverage <- true;
-									 run_args.arg_marshal_coverage <- true),
+			 Arg.Unit (fun () -> run_args.arg_edge_coverage <- true),
 			 " Track edge coverage\n");
 			("--stmtCov",
-			 Arg.Unit (fun () -> run_args.arg_stmt_coverage <- true;
-									 run_args.arg_marshal_coverage <- true),
+			 Arg.Unit (fun () -> run_args.arg_stmt_coverage <- true),
 			 " Track statement coverage\n");
 			("--lineCov",
-			 Arg.Unit (fun () -> run_args.arg_line_coverage <- true;
-									 run_args.arg_marshal_coverage <- true),
+			 Arg.Unit (fun () -> run_args.arg_line_coverage <- true),
 			 " Track line coverage\n");
 			("--covStats",
 			 Arg.String readCovStatsFromFile,
@@ -355,16 +352,18 @@ let feature : featureDescr =
 			 Arg.Int (fun n -> run_args.arg_timeout <- n),
 			 "<numSeconds> Set a timeout for the executor\n");
 
-			("--dontMarshalCoverage",
-			 Arg.Unit (fun () -> run_args.arg_marshal_coverage <- false),
-			 " Don't marshal coverage information to output file.
-\t\t\tBy default, coverage info is marshalled if it is gathered.
-\t\t\t(This option must be given after any '--*Cov' options.)");
+			("--marshalCoverageTo",
+			 Arg.String (fun str -> run_args.arg_marshal_file <- str),
+			 "<file> Marshal coverage information to <file>.\n");
+
+			("--calculateDepsDuringExecution",
+			 Arg.Unit (fun () -> run_args.arg_calculate_dependencies <- true),
+			 " Calculate (at the end of symbolic execution) what lines depend on what symbolic variables\n");
+
 			("--marshalFrom",
 			 Arg.String
 				 (fun filename ->
 						let inChan = open_in_bin filename in
-						while input_line inChan <> "Finished." do () done;
 						let coverage = (Marshal.from_channel inChan : job_result list) in
 						ignore coverage (* Do something with the coverage information *)
 				 ),
