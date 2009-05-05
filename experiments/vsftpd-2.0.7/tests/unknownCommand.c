@@ -32,6 +32,9 @@ quit
 	environ = malloc(sizeof(char*));
 	environ[0] = NULL;
 
+	// The symbolic executor can't currently handle multiple processes
+	tunable_one_process_model = 1;
+
 #include "symbolic_values"
 
 	return;

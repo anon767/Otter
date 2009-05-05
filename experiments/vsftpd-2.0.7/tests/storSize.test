@@ -10,4 +10,5 @@ CILLY_DONT_COMPILE_AFTER_MERGE= \
 $TOPDIR/cil/bin/cilly --merge --useLogicalOperators \
 -D_FILE_OFFSET_BITS=64 \
 -I $MOCKEDDIR \
-../vsftpd_comb.c --covStats=$STATSFILE --doexecute storSize.c --printLittle --lineCov --timeout=14400
+../vsftpd_comb.c --covStats=$STATSFILE --doexecute storSize.c --printLittle --lineCov --timeout=14400 \
+--marshalCoverageTo=/fs/skoll/symexe/data/vsftpd-2.0.7/marshalledData/storSize.data
