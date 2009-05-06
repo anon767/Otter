@@ -323,7 +323,8 @@ let print_report results =
 		then (
 			Output.printf "Coverage data is in %s.\n" run_args.arg_marshal_file;
 			let outChan = open_out_bin run_args.arg_marshal_file in
-			Marshal.to_channel outChan coverage []
+			Marshal.to_channel outChan coverage [];
+			close_out outChan
 		)
 
 	end

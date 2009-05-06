@@ -108,6 +108,7 @@ CILLY_LIBRARY_MODULES = pretty inthash errormsg alpha trace stats util clist \
                 calculateDependencies \
                 report \
                 driver \
+                getProgInfo \
                 executemain \
                 progStats \
                 traceLines

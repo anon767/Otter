@@ -170,8 +170,18 @@ let prepare_file file =
 			Hashtbl.add Cilutility.fundecHashtbl fundec.svar fundec;
 			computeJoinPointsForIfs fundec
 		| _ -> ()
-	end file.globals
+	end file.globals;
 
+	(* Find all executable lines. For now, we don't care about the rest *)
+	let (hashtblOfLines,_,_,_) = GetProgInfo.getProgInfo file run_args.arg_fns in
+	Output.printf "This program contains %d executable lines within the functions specified\n"
+		(Hashtbl.length hashtblOfLines);
+	if run_args.arg_list_executable_lines then (
+		let listOfLines = Hashtbl.fold (fun line () lst -> line :: lst) hashtblOfLines [] in
+		List.iter
+			(fun (file,lineNum) -> Output.printf "%s:%d\n" file lineNum)
+			(List.sort compare listOfLines)
+	)
 
 (* create a job that begins at a function, given an initial state *)
 let job_for_function state fn argvs =
@@ -343,6 +353,9 @@ let feature : featureDescr =
 			("--covStats",
 			 Arg.String readCovStatsFromFile,
 			 "<filename> File containing coverage statistics\n");
+			("--listAllExecutableLines",
+			 Arg.Unit (fun () -> run_args.arg_list_executable_lines <- true),
+			 " Before execution, print out all of the executable lines in the program.\n");
 
 			("--mergePaths",
 			 Arg.Unit (fun () -> run_args.arg_merge_paths <- true),
