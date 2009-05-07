@@ -177,7 +177,6 @@ let prepare_file file =
 	run_args.arg_total_lines <- Hashtbl.length hashtblOfLines;
 	Output.printf "This program contains %d executable lines within the functions specified\n"
 		run_args.arg_total_lines;
-	run_args.arg_total_lines <- Hashtbl.length hashtblOfLines;
 	if run_args.arg_list_executable_lines then (
 		let listOfLines = Hashtbl.fold (fun line () lst -> line :: lst) hashtblOfLines [] in
 		List.iter
