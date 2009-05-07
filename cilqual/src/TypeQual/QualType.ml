@@ -132,7 +132,7 @@ module type QualTypeMonad = sig
         val printer : Format.formatter -> t -> unit
     end
     module QualGraph : sig
-        include QualGraphAutomataType
+        include QualGraphAutomatonType
         module V : VertexType with type t = vertex
         module E : EdgeType with type t = edge and type label = Constraint.t
     end with module Qual = QualType.Qual
@@ -245,7 +245,7 @@ module QualTypeT (TypedQualVar : TypedQualVar)
          *      deref: *x <====> *y     fnRet: rx =====> ry     fnArg: ax <===== ay
          *      (non-variant)           (co-variant)            (contra-variant)
          *)
-        module Automata = struct
+        module Automaton = struct
             (* carry a little more information for printing explanations *)
             type explain = Push of edge | Pop of edge | Walk of edge | Start
             type t = explain * TypedQualVar.t list
@@ -285,47 +285,47 @@ module QualTypeT (TypedQualVar : TypedQualVar)
         let rec fold_flow direction f g v (explain, stack) acc = match stack with
             | [] ->
                 fold_bidi_lv begin fun d e w acc -> match d, E.label e with
-                    | `Forward,  Typed tv -> f w (Automata.Push e, tv::stack) acc
+                    | `Forward,  Typed tv -> f w (Automaton.Push e, tv::stack) acc
                     | `Backward, Typed _  -> acc
                     (* start: all forward edges *)
-                    | d, Default when d = direction -> f w (Automata.Walk e, stack) acc
+                    | d, Default when d = direction -> f w (Automaton.Walk e, stack) acc
                     | d, Default                    -> acc
                 end g v acc
 
             | (Deref _)::tail ->
                 fold_bidi_lv begin fun d e w acc -> match d, E.label e with
-                    | `Forward,  Typed tv        -> f w (Automata.Push e, tv::stack) acc
-                    | `Backward, Typed (Deref _) -> f w (Automata.Pop e, tail) acc
+                    | `Forward,  Typed tv        -> f w (Automaton.Push e, tv::stack) acc
+                    | `Backward, Typed (Deref _) -> f w (Automaton.Pop e, tail) acc
                     | `Backward, Typed _         -> acc
                     (* deref edge: non-variant *)
-                    | _, Default -> f w (Automata.Walk e, stack) acc
+                    | _, Default -> f w (Automaton.Walk e, stack) acc
                 end g v acc
 
             | (FnRet _)::tail ->
                 fold_bidi_lv begin fun d e w acc -> match d, E.label e with
-                    | `Forward,  Typed tv        -> f w (Automata.Push e, tv::stack) acc
-                    | `Backward, Typed (FnRet _) -> f w (Automata.Pop e, tail) acc
+                    | `Forward,  Typed tv        -> f w (Automaton.Push e, tv::stack) acc
+                    | `Backward, Typed (FnRet _) -> f w (Automaton.Pop e, tail) acc
                     | `Backward, Typed _         -> acc
                     (* fnRet edge: co-variant *)
-                    | d, Default when d = direction -> f w (Automata.Walk e, stack) acc
+                    | d, Default when d = direction -> f w (Automaton.Walk e, stack) acc
                     | d, Default                    -> acc
                 end g v acc
 
             | (FnArg (i, _))::tail ->
                 fold_bidi_lv begin fun d e w acc -> match d, E.label e with
-                    | `Forward,  Typed tv                        -> f w (Automata.Push e, tv::stack) acc
-                    | `Backward, Typed (FnArg (j, _)) when i = j -> f w (Automata.Pop e, tail) acc
+                    | `Forward,  Typed tv                        -> f w (Automaton.Push e, tv::stack) acc
+                    | `Backward, Typed (FnArg (j, _)) when i = j -> f w (Automaton.Pop e, tail) acc
                     | `Backward, Typed _                         -> acc
                     (* fnRet edge: contra-variant *)
                     | d, Default when d = direction -> acc
-                    | d, Default                    -> f w (Automata.Walk e, stack) acc
+                    | d, Default                    -> f w (Automaton.Walk e, stack) acc
                 end g v acc
 
             | (Fresh _)::_ | (Embed _)::_ ->
                 failwith "Impossible!"
 
-        and fold_forward f g v automata acc = fold_flow `Forward f g v automata acc
-        and fold_backward f g v automata acc = fold_flow `Backward f g v automata acc
+        and fold_forward f g v automaton acc = fold_flow `Forward f g v automaton acc
+        and fold_backward f g v automaton acc = fold_flow `Backward f g v automaton acc
     end
 
     (* qualified-type constructors *)

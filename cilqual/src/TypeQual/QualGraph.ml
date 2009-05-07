@@ -34,14 +34,14 @@ module type QualGraphType = sig
 end
 
 
-module type QualGraphAutomataType = sig
+module type QualGraphAutomatonType = sig
     include QualGraphType
-    module Automata : sig
+    module Automaton : sig
         include PrintableOrderedType
         val start : t
         val accept : t -> bool
     end
-    val fold_forward : (vertex -> Automata.t -> 'a -> 'a) -> t -> vertex -> Automata.t -> 'a -> 'a
-    val fold_backward : (vertex -> Automata.t -> 'a -> 'a) -> t -> vertex -> Automata.t -> 'a -> 'a
+    val fold_forward : (vertex -> Automaton.t -> 'a -> 'a) -> t -> vertex -> Automaton.t -> 'a -> 'a
+    val fold_backward : (vertex -> Automaton.t -> 'a -> 'a) -> t -> vertex -> Automaton.t -> 'a -> 'a
 end
 

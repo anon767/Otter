@@ -3,12 +3,12 @@ open Control.Graph
 open QualGraph
 
 module Reachability = struct
-    module SourceSink (G : sig include QualGraphAutomataType module V : VertexType with type t = vertex end) = struct
+    module SourceSink (G : sig include QualGraphAutomatonType module V : VertexType with type t = vertex end) = struct
         module CflGraph = struct
             include G
-            type cfl = Automata.t
-            let start_cfl = Automata.start
-            let accept_cfl = Automata.accept
+            type cfl = Automaton.t
+            let start_cfl = Automaton.start
+            let accept_cfl = Automaton.accept
             let iter_cfl f g v cfl = fold_forward (fun v cfl () -> f v cfl) g v cfl ()
         end
         module PathChecker = Ocamlgraph.Cfl.Check (CflGraph)
@@ -42,17 +42,17 @@ Qual-solve(C) =
         return S
 *)
 
-module DiscreteOrder (G : sig include QualGraphAutomataType module V : VertexType with type t = vertex end) = struct
+module DiscreteOrder (G : sig include QualGraphAutomatonType module V : VertexType with type t = vertex end) = struct
     module ConstSet = Set.Make (G.Qual.Const)
 
-    module AutomataState = struct
-        type t = G.Qual.Var.t * G.Automata.t
+    module AutomatonState = struct
+        type t = G.Qual.Var.t * G.Automaton.t
         let compare (x1, x2) (y1, y2) = match G.Qual.Var.compare x1 y1 with
-            | 0 -> G.Automata.compare x2 y2
+            | 0 -> G.Automaton.compare x2 y2
             | i -> i
     end
 
-    module VisitedSet = Set.Make (AutomataState)
+    module VisitedSet = Set.Make (AutomatonState)
 
     module Solution = struct
         module SolutionMap = Map.Make (G.Qual.Var)
@@ -129,21 +129,21 @@ module DiscreteOrder (G : sig include QualGraphAutomataType module V : VertexTyp
                 let find_adjacent_accept fold =
                     let rec find_adjacent_accept visited accepts = function
 
-                        | (part, automata)::partwork ->
+                        | (part, automaton)::partwork ->
                             (* traverse adjacents of part *)
                             let visited, accepts, partwork =
-                                fold begin fun v automata (visited, accepts, partwork) -> match v with
-                                    | G.Qual.Var a when not (VisitedSet.mem (a, automata) visited) ->
-                                        let visited = VisitedSet.add (a, automata) visited in
-                                        if G.Automata.accept automata then
+                                fold begin fun v automaton (visited, accepts, partwork) -> match v with
+                                    | G.Qual.Var a when not (VisitedSet.mem (a, automaton) visited) ->
+                                        let visited = VisitedSet.add (a, automaton) visited in
+                                        if G.Automaton.accept automaton then
                                             (* could have duplicates, but the result is usually added to sets anyway *)
                                             (visited, a::accepts, partwork)
                                         else
                                             (* not visited and not accepted yet; so add to work list *)
-                                            (visited, accepts, (v, automata)::partwork)
+                                            (visited, accepts, (v, automaton)::partwork)
                                     | _ ->
                                         (visited, accepts, partwork)
-                                end g part automata (visited, accepts, partwork)
+                                end g part automaton (visited, accepts, partwork)
                             in
 
                             (* and recurse *)
@@ -153,7 +153,7 @@ module DiscreteOrder (G : sig include QualGraphAutomataType module V : VertexTyp
                             (* done *)
                             accepts
                     in
-                    find_adjacent_accept VisitedSet.empty [] [(qual, G.Automata.start)]
+                    find_adjacent_accept VisitedSet.empty [] [(qual, G.Automaton.start)]
                 in
                 let forwards = find_adjacent_accept G.fold_forward in
                 let backwards = find_adjacent_accept G.fold_backward in
@@ -198,12 +198,12 @@ module DiscreteOrder (G : sig include QualGraphAutomataType module V : VertexTyp
     module Explanation = struct
         (* TODO: implement a "most different first" order; probably using a trie instead of a set *)
         module Path = struct
-            type t = (G.Qual.t * G.Automata.t) list
+            type t = (G.Qual.t * G.Automaton.t) list
             let rec compare x y = match x, y with
                 | (x, xa)::xs, (y, ya)::ys ->
                     begin match G.Qual.compare x y with
                         | 0 ->
-                            begin match G.Automata.compare xa ya with
+                            begin match G.Automaton.compare xa ya with
                                 | 0 -> compare xs ys
                                 | i -> i
                             end
@@ -213,8 +213,8 @@ module DiscreteOrder (G : sig include QualGraphAutomataType module V : VertexTyp
                 | [], _  -> -1
                 | _, []  -> 1
 
-            let printer ff path = ignore begin List.fold_left begin fun b (qual, automata) ->
-                Format.fprintf ff "%(%)%a %a" b G.Automata.printer automata G.Qual.printer qual; "@\n"
+            let printer ff path = ignore begin List.fold_left begin fun b (qual, automaton) ->
+                Format.fprintf ff "%(%)%a %a" b G.Automaton.printer automaton G.Qual.printer qual; "@\n"
             end "" path end
         end
         include Set.Make(Path)
@@ -240,38 +240,38 @@ module DiscreteOrder (G : sig include QualGraphAutomataType module V : VertexTyp
                 (* depth-first traversal to sink *)
                 let rec find_sink explanations = function
                     | (prefix, direction, visited)::prefixwork ->
-                        let part, automata = List.hd prefix in
+                        let part, automaton = List.hd prefix in
                         let fold = match direction with
                             | `Forward -> G.fold_forward
                             | `Backward -> G.fold_backward
                         in
                         let explanations, prefixwork =
                             (* explore every successor/predecessor of this part *)
-                            fold begin fun v automata (explanations, prefixwork) -> match v with
+                            fold begin fun v automaton (explanations, prefixwork) -> match v with
                                 | G.Qual.Const c when ConstSet.mem c consts
-                                                   && G.Automata.accept automata ->
+                                                   && G.Automaton.accept automaton ->
                                     (* reached a sink *)
-                                    let explanation = List.rev ((v, automata)::prefix) in
+                                    let explanation = List.rev ((v, automaton)::prefix) in
                                     (Explanation.add explanation explanations, prefixwork)
 
-                                | G.Qual.Var a when not (VisitedSet.mem (a, automata) visited) ->
-                                    let visited = VisitedSet.add (a, automata) visited in
-                                    if G.Automata.accept automata then
+                                | G.Qual.Var a when not (VisitedSet.mem (a, automaton) visited) ->
+                                    let visited = VisitedSet.add (a, automaton) visited in
+                                    if G.Automaton.accept automaton then
                                         if Solution.Unsolvables.mem a unsolvables then
                                             (* explore in both directions if we've reached an accepting state *)
-                                            let forward  = ((v, automata)::prefix, `Forward, visited) in
-                                            let backward = ((v, automata)::prefix, `Backward, visited) in
+                                            let forward  = ((v, automaton)::prefix, `Forward, visited) in
+                                            let backward = ((v, automaton)::prefix, `Backward, visited) in
                                             (explanations, forward::backward::prefixwork)
                                         else
                                             (* don't explore qualifier variables with solutions *)
                                             (explanations, prefixwork)
                                     else
                                         (* traverse until we reach an accepting state *)
-                                        let prefix = ((v, automata)::prefix, direction, visited) in
+                                        let prefix = ((v, automaton)::prefix, direction, visited) in
                                         (explanations, prefix::prefixwork)
                                 | _ ->
                                     (explanations, prefixwork)
-                            end constraints part automata (explanations, prefixwork)
+                            end constraints part automaton (explanations, prefixwork)
                         in
 
                         (* recurse *)
@@ -282,8 +282,8 @@ module DiscreteOrder (G : sig include QualGraphAutomataType module V : VertexTyp
                         explanations
                 in
                 (* traverse from this source to all other sinks, forwards and backwards *)
-                let forwardwork = ([(G.Qual.Const source, G.Automata.start)], `Forward, VisitedSet.empty) in
-                let backwardwork = ([(G.Qual.Const source, G.Automata.start)], `Backward, VisitedSet.empty) in
+                let forwardwork = ([(G.Qual.Const source, G.Automaton.start)], `Forward, VisitedSet.empty) in
+                let backwardwork = ([(G.Qual.Const source, G.Automaton.start)], `Backward, VisitedSet.empty) in
                 let explanations = find_sink explanations [ forwardwork; backwardwork ] in
 
                 (* recurse, until there are no more sources *)

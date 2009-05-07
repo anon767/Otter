@@ -42,7 +42,7 @@ module type QualMonad = sig
     include Monad
     module Qual : Qual
     module QualGraph : sig
-        include QualGraphAutomataType
+        include QualGraphAutomatonType
         module V : VertexType with type t = vertex
         module E : EdgeType with type t = edge and type label = Constraint.t
     end with module Qual = Qual
@@ -75,13 +75,13 @@ module QualT (Q : Qual) (C : Constraint)
         module Qual = Qual
         module Constraint = C
 
-        module Automata = struct
+        module Automaton = struct
             include Unit
             let start = ()
             let accept () = true
         end
-        let fold_forward f g v automata acc = fold_succ (fun v acc -> f v automata acc) g v acc
-        let fold_backward f g v automata acc = fold_pred (fun v acc -> f v automata acc) g v acc
+        let fold_forward f g v automaton acc = fold_succ (fun v acc -> f v automaton acc) g v acc
+        let fold_backward f g v automaton acc = fold_pred (fun v acc -> f v automaton acc) g v acc
     end
 
     (* qualifier constraints *)
