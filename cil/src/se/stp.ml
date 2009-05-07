@@ -171,8 +171,8 @@ doassert pc =
 
 	match queryType with
 		| TrueOrNot ->
-				let equal_zero = query vc bytes false in
-				if equal_zero then True else Unknown
+				let not_equal_zero = query vc bytes false in
+				if not_equal_zero then True else Unknown
 		| FalseOrNot ->
 				let equal_zero = query vc bytes true in
 				if equal_zero then False else Unknown
