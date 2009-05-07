@@ -97,9 +97,10 @@ let run_args =
 
 let readCovStatsFromFile filename =
 	let inChan = open_in filename in
+	let wrongLineCount = ref 0 in
 	Scanf.sscanf (input_line inChan) "%d lines"
-		(fun n -> run_args.arg_total_lines <- n);
-	for i = 1 to run_args.arg_total_lines do
+		(fun n -> wrongLineCount := n);
+	for i = 1 to !wrongLineCount do
 		ignore (input_line inChan)
 	done;
 	Scanf.sscanf (input_line inChan) "%d locations"
