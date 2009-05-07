@@ -134,7 +134,7 @@ module type QualTypeMonad = sig
     module QualGraph : sig
         include QualGraphAutomatonType
         module V : VertexType with type t = vertex
-        module E : EdgeType with type t = edge and type label = Constraint.t
+        module E : EdgeType with type t = edge and type vertex = vertex and type label = Constraint.t
     end with module Qual = QualType.Qual
 
     val embed  : QualType.Var.Embed.t -> QualType.t QualType.monad -> QualType.t monad
