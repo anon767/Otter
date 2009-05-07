@@ -81,7 +81,7 @@ end
 module type GraphMonad = sig
     module Graph : sig
         module V : VertexType
-        module E : EdgeType
+        module E : EdgeType with type vertex = V.t
         include PrintableGraphType with type vertex = V.t
                                     and type edge = E.t
     end
