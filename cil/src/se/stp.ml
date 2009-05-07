@@ -2,6 +2,7 @@ open Types
 open Cil
 
 type truth = True | False | Unknown;;
+type queryType = TrueOrNot | FalseOrNot | TrueFalseOrUnknown
 
 let not truth = match truth with
 	| True -> False
@@ -55,7 +56,7 @@ let rec eval pc bytes =
 			ignore (Utility.next_id Types.stp_count);
 			Output.set_mode Output.MSG_REG;
 			Output.print_endline "Ask STP...";
-			Stats.time "STP" (consult_stp pc) bytes
+			Stats.time "STP" (consult_stp pc bytes) TrueFalseOrUnknown
 	in
 	let is_comparison op = match op with	
 		| OP_LT -> true
@@ -113,7 +114,7 @@ let rec eval pc bytes =
 						
 and
 
-consult_stp pc bytes =
+consult_stp pc bytes queryType =
 (*
     let vc = doassert pc in
 	let equal_zero = query vc bytes true in
@@ -168,11 +169,19 @@ doassert pc =
 			vc;*)
 		Stats.time "STP assert" do_assert relevantAssumptions;
 
-	let equal_zero = query vc bytes true in
-	if equal_zero then False else
-		let not_equal_zero = query vc bytes false in
-		if not_equal_zero then True else
-			Unknown
+	match queryType with
+		| TrueOrNot ->
+				let equal_zero = query vc bytes false in
+				if equal_zero then True else Unknown
+		| FalseOrNot ->
+				let equal_zero = query vc bytes true in
+				if equal_zero then False else Unknown
+		| TrueFalseOrUnknown ->
+				let equal_zero = query vc bytes true in
+				if equal_zero then False else
+					let not_equal_zero = query vc bytes false in
+					if not_equal_zero then True else
+						Unknown
 
 and
 

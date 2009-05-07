@@ -106,6 +106,7 @@ CILLY_LIBRARY_MODULES = pretty inthash errormsg alpha trace stats util clist \
                 data_structure \
                 function \
                 calculateDependencies \
+                calculateVarDeps \
                 report \
                 driver \
                 getProgInfo \

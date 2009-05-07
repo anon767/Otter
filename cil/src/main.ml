@@ -33,6 +33,7 @@ let features : C.featureDescr list =
 		ProgStats.feature;
 		TraceLines.feature;
 		CalculateDependencies.feature;
+		CalculateVarDeps.feature;
   ] 
   @ Feature_config.features;;
 

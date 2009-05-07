@@ -10,10 +10,15 @@ let fileToRead = ref ""
 	 variables? *)
 let bytesToVars = ref []
 
+let subsetSize = ref 1
+
 module BytesSet = Set.Make
 	(struct
 		 type t = bytes
-		 let compare = compare
+		 let compare a b =
+			 if MemOp.diff_bytes a b
+			 then compare a b
+			 else 0
 	 end)
 
 (* CAUTION: Requires exponential amount of memory! *)
@@ -155,27 +160,39 @@ let linesControlledBy pcsAndLines allLines propAndTruthValueList =
 			| x -> bigInter x
 	in
 	if not (LineSet.is_empty result) then (
-		Printf.printf "\nUnder the condition\n%s\nthese lines are hit\n"
+		Output.printf "\nUnder the condition\n%s\nthese %d lines are hit\n"
 			(String.concat "\n"
 				 (List.map
 						(fun (prop,truthValue) ->
 							 Printf.sprintf "%s -> %b"
 								 (To_string.humanReadableBytes !bytesToVars prop)
 								 truthValue)
-						propAndTruthValueList));
-		LineSet.iter (fun (file,line) -> Printf.printf "%s:%d\n" file line) result
+						propAndTruthValueList))
+			(LineSet.cardinal result);
+		LineSet.iter (fun (file,line) -> Output.printf "%s:%d\n" file line) result
 	);
 	result
 
 exception Stop of (bytes list * LineSet.t) list * LineSet.t
 
+(* This version never removes lines from consideration *)
+let findDependencies (pcsAndLines,linesToExplain) propSet =
+	Output.printf "\nConsidering\n%s\n"
+		(To_string.humanReadablePc (BytesSet.elements propSet) !bytesToVars);
+	List.iter
+		(fun propTvList ->
+			 ignore (linesControlledBy pcsAndLines linesToExplain propTvList))
+		(allTruthValues (BytesSet.elements propSet));
+	(pcsAndLines,linesToExplain)
+(*
+(* This version removes lines once they are controlled by something. *)
 let findDependenciesAndUpdate (pcsAndLines,linesToExplain) propSet =
-	Printf.printf "\n%d lines left\n" (LineSet.cardinal linesToExplain);
+	Output.printf "\n%d lines left\n" (LineSet.cardinal linesToExplain);
 
 	if LineSet.is_empty linesToExplain
 	then raise (Stop (pcsAndLines,linesToExplain));
 
-	Printf.printf "\nConsidering\n%s\n" (To_string.humanReadablePc (BytesSet.elements propSet) !bytesToVars);
+	Output.printf "\nConsidering\n%s\n" (To_string.humanReadablePc (BytesSet.elements propSet) !bytesToVars);
 	let linesControlledByPropSet =
 		bigUnion
 			(List.map
@@ -183,32 +200,11 @@ let findDependenciesAndUpdate (pcsAndLines,linesToExplain) propSet =
 						linesControlledBy pcsAndLines linesToExplain propTvList)
 				 (allTruthValues (BytesSet.elements propSet)))
 	in
-(*
- (* Removing path conditions is not okay, even when they don't have any lines left: consider
-		if (x) {
-		  exit();
-		}
-		if (y) {
-		  ...;
-		}
- *)
-	(* Remove the lines that have been accounted for from each pair and
-		 from linesToExplain. Also, if any path condition now has no lines
-		 left, remove it. *)
-	(List.fold_left
-		 (fun lst (pc,lines) ->
-				let remainingLines = LineSet.diff lines linesControlledByPropSet in
-				if LineSet.is_empty remainingLines
-				then lst
-				else (pc,remainingLines)::lst)
-		 []
-		 pcsAndLines,
-*)
 	(* Remove the lines that have been accounted for from each pair and
 		 from linesToExplain. *)
 	(List.map (fun (pc,lines) -> pc,LineSet.diff lines linesControlledByPropSet) pcsAndLines,
-
 	 LineSet.diff linesToExplain linesControlledByPropSet)
+*)
 
 let calculateDeps coverage =
 	let firstResult,restResults =
@@ -228,11 +224,6 @@ let calculateDeps coverage =
 
 	(* See comment at top of file *)
 	bytesToVars := firstResult.result_history.bytesToVars;
-
-	print_endline "Lines always executed:";
-	LineSet.iter
-		(fun (file,line) -> Printf.printf "%s:%d\n" file line)
-		alwaysExecuted;
 
 	(* Gather all propositions from all path conditions, after
 		 removing initial 'NOT's. Also, ignore __ASSUMEs.*)
@@ -266,9 +257,17 @@ let calculateDeps coverage =
 			BytesSet.empty
 			coverage
 	in
-	print_endline "\nallProps:";
-	BytesSet.iter (fun bytes -> print_endline (To_string.humanReadableBytes !bytesToVars bytes)) allProps;
-	print_newline();
+
+	Output.printf "There are %d predicates in all:\n" (BytesSet.cardinal allProps);
+	BytesSet.iter
+		(fun bytes -> Output.printf "%s\n" (To_string.humanReadableBytes !bytesToVars bytes))
+		allProps;
+	Output.printf "\n";
+
+	Output.printf "%d lines always executed:\n" (LineSet.cardinal alwaysExecuted);
+	LineSet.iter
+		(fun (file,line) -> Output.printf "%s:%d\n" file line)
+		alwaysExecuted;
 
 	(* At this point, all we really need are the path conditions and the
 		 coverage information. Also, we can remove the lines that are
@@ -279,37 +278,30 @@ let calculateDeps coverage =
 			 LineSet.diff jobRes.result_history.coveredLines alwaysExecuted)
 		coverage
 	in
-(*
-	(* Explain all the lines we can *)
-	let (remainingPCsAndLines,remainingLines) =
-		try
-		List.fold_left
-			findDependenciesAndUpdate
-			(pcsAndLines, LineSet.diff everExecuted alwaysExecuted) (* Initial path conditions and coverage information, and all lines that weren't always executed *)
-			(match allSubsets allProps with
-					 _::t -> t (* Ignore the empty set *)
-				 | _ -> assert false)
-		with Stop(x,y) -> x,y
-	in
-*)
 	(* Explain all the lines we can *)
 	let remainingPCsAndLines = ref pcsAndLines (* Initial path conditions and coverage information *)
 	and remainingLines = ref (LineSet.diff everExecuted alwaysExecuted) in (* All lines that weren't always executed *)
+
+	ignore(
+		List.fold_left
+			findDependencies
+			(!remainingPCsAndLines, !remainingLines)
+			(subsetsOfSize !subsetSize allProps))
+
+(* (* If you remove explained lines, replace the preceding lines with this: *)
 	try
-		for size = 1 to 3 do (* We probably won't be able get past 3, if we can even get that far *)
-			Printf.printf "Trying subsets of size %d\n" size;
-			let (nextPcs,nextLines) =
-				List.fold_left
-					findDependenciesAndUpdate
-					(!remainingPCsAndLines, !remainingLines)
-					(subsetsOfSize size allProps)
-			in
-			remainingPCsAndLines := nextPcs;
-			remainingLines := nextLines
-		done
+		let (nextPcs,nextLines) =
+			List.fold_left
+				findDependenciesAndUpdate
+				(!remainingPCsAndLines, !remainingLines)
+				(subsetsOfSize !subsetSize allProps)
+		in
+		remainingPCsAndLines := nextPcs;
+		remainingLines := nextLines
 	with Stop(_,_) -> ();
-	print_endline "These lines remain unexplained:";
-	LineSet.iter (fun (file,line) -> Printf.printf "%s:%d\n" file line) !remainingLines
+	Output.printf "These lines remain unexplained:\n";
+	LineSet.iter (fun (file,line) -> Output.printf "%s:%d\n" file line) !remainingLines
+*)
 
 let readInDataAndGo _ = (* This needs to take a Cil.file, but I don't use it *)
 	let inChan = open_in_bin !fileToRead in
@@ -324,7 +316,10 @@ let feature : Cil.featureDescr = {
   Cil.fd_extraopt = [
 		("--fromFile",
 		 Arg.Set_string fileToRead,
-		 "<filename> The file from which to read the coverage information")
+		 "<filename> The file from which to read the coverage information");
+		("--subsetSize",
+		 Arg.Set_int subsetSize,
+		 "<n> Calculate dependencies for sets of propositions this size (default: 1)\n");
 	];
   Cil.fd_doit = readInDataAndGo;
   Cil.fd_post_check = false;
