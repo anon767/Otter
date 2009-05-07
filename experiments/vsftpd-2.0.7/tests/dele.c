@@ -11,23 +11,8 @@ void symtest_initialize() {
 	static char commandString[] = "user anonymous
 pass
 epsv
-stor file2
-epsv
 stor file1
-pasv
-list
-dele file2
-epsv
-list
-dele file
-epsv
-list
 dele file1
-pasv
-list
-dele file2
-pasv
-list
 quit
 ";
 	IOSIM_fd[0] = malloc(sizeof(sym_file_stream_t));
@@ -48,22 +33,6 @@ quit
 	IOSIM_fd[5]->sym_file = malloc(sizeof(sym_file_t));
 	IOSIM_fd[5]->sym_file->contents = fileText;
 	IOSIM_fd[5]->sym_file->stat.st_size = sizeof(fileText);
-
-	static char fileText2[] = "the text of a second file";
-	IOSIM_fd[8] = malloc(sizeof(sym_file_stream_t));
-	IOSIM_fd[8]->offset = 0;
-	IOSIM_fd[8]->sym_file = malloc(sizeof(sym_file_t));
-	IOSIM_fd[8]->sym_file->contents = fileText2;
-	IOSIM_fd[8]->sym_file->stat.st_size = sizeof(fileText2);
-
-	// Every third file descriptor is a socket on which we write out information
-	for (int i = 11; i < 24; i += 3) {
-		IOSIM_fd[i] = malloc(sizeof(sym_file_stream_t));
-		IOSIM_fd[i]->offset = 0;
-		IOSIM_fd[i]->sym_file = malloc(sizeof(sym_file_t));
-		IOSIM_fd[i]->sym_file->contents = NULL;
-		IOSIM_fd[i]->sym_file->stat.st_size = 0;
-	}
 
 	// Make empty environ variable
 	environ = malloc(sizeof(char*));
