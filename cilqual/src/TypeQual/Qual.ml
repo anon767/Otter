@@ -12,6 +12,12 @@ module Qual (Var : QualVar) (Const : QualConst) = struct
     type t = Var of Var.t      (* qualifier variables *)
            | Const of Const.t  (* qualifier constants *)
 
+    let fresh i = Var (Var.fresh i)
+
+    let projvar = function
+        | Var v -> v
+        | Const _ -> failwith "TODO: report projvar of Const"
+
     let compare x y = if x == y then 0 else match x, y with
         | Var x, Var y -> Var.compare x y
         | Const x, Const y -> Const.compare x y
@@ -25,8 +31,6 @@ module Qual (Var : QualVar) (Const : QualConst) = struct
         | Var x, Var y -> Var.equal x y
         | Const x, Const y -> Const.equal x y
         | _, _ -> false
-
-    let fresh i = Var (Var.fresh i)
 
     let printer ff = function
         | Var v   -> Format.fprintf ff "Var @[(%a)@]" Var.printer v

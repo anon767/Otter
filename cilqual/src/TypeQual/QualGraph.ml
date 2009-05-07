@@ -17,6 +17,7 @@ module type Qual = sig
     type t = Var of Var.t
            | Const of Const.t
     val fresh : int -> t
+    val projvar : t -> Var.t
     val compare : t -> t -> int
     val hash : t -> int
     val equal : t -> t -> bool

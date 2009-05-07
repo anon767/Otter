@@ -176,16 +176,13 @@ module QualTypeT (TypedQualVar : TypedQualVar)
 
         include ReaderT (Qual) (Identity)
 
-        let projvar = function
-            | Qual.Var v -> v
-            | Qual.Const _ -> failwith "TODO: report projvar of Const"
-        let deref v   = Qual.Var (Deref (projvar v))
-        let fnRet v   = Qual.Var (FnRet (projvar v))
-        let fnArg i v = Qual.Var (FnArg (i, projvar v))
+        let deref v   = Qual.Var (Deref (Qual.projvar v))
+        let fnRet v   = Qual.Var (FnRet (Qual.projvar v))
+        let fnArg i v = Qual.Var (FnArg (i, Qual.projvar v))
 
         (* explicit qualified-type constructors *)
         let subst_qt x y qt =
-            let subst_qv v = Qual.Var (subst (projvar x) (projvar y) (projvar v)) in
+            let subst_qv v = Qual.Var (subst (Qual.projvar x) (Qual.projvar y) (Qual.projvar v)) in
             let rec subst_qt = function
                 | Ref (qv, qt)      -> Ref (subst_qv qv, subst_qt qt)
                 | Fn (qv, qtr, qtp) -> Fn (subst_qv qv, subst_qt qtr, List.map subst_qt qtp)
@@ -340,7 +337,7 @@ module QualTypeT (TypedQualVar : TypedQualVar)
 
     (* qualified-type extenders *)
     let extend_type x y = perform
-        let label = TypedConstraint.Typed (QualType.projvar x) in
+        let label = TypedConstraint.Typed (Qual.projvar x) in
         add_edge ~label:label x y
     let extend_deref qv = perform
         let qv' = QualType.deref qv in
