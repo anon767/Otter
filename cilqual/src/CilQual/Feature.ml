@@ -9,7 +9,7 @@ module G =
     (Expression.InterpreterT
     (Environment.InterpreterT
     (Type.InterpreterT
-    (CilQualType.CilQualTypeT (Environment.CilFieldOrVar) (CilQualType.Context)
+    (CilUnionQualType.CilUnionQualTypeT (Environment.CilFieldOrVar) (CilQualType.Context)
     (Identity)))))))
 
 (* setup CilQual solver *)
@@ -88,8 +88,8 @@ let doit file =
 
     (* run the interpreter *)
     let timing = tic "Running interpreter monad" timing in
-    let (((((), constraints), _), _), _) =
-        G.run expM (((((), G.QualGraph.empty), (G.fileContext file)), 0), G.emptyEnv) in
+    let ((((((), constraints), _), _), _), _) =
+        G.run expM ((((((), G.QualGraph.empty), (G.fileContext file)), 0), G.emptyUnionTable), G.emptyEnv) in
 
     (* save the constraint graph, if requested *)
     let timing = if !opt_save_dot = "" then timing else begin

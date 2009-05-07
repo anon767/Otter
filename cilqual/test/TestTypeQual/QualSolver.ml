@@ -5,21 +5,20 @@ open Control.Monad
 open Control.Graph
 
 open TypeQual.Qual
-open TypeQual.QualType
+open TypeQual.UnionQualType
 
 
 (* setup CilQual constraint graph *)
 module TQV = TypedQualVar (Unit)
-module TQC = TypedConstraint (TQV)
 module QT = Qual (TQV) (String)
-module QC = Constraint (TQC)
+module QC = Constraint (struct include Unit let default = () let printer ff () = () end)
 
 (* setup CilQual monad stack *)
 module GraphM = BidirectionalGraphT (QT) (QC) (Identity)
 module QualGraphM = QualT (QT) (QC) (GraphM)
-module QualTypeQualGraphM = QualTypeT (TQV) (TQC) (QualGraphM)
+module UnionQualTypeQualGraphM = UnionQualTypeT (TQV) (QualGraphM)
 
-module Setup = TypeQualUtil.Setup (QualTypeQualGraphM)
+module Setup = TypeQualUtil.Setup (UnionQualTypeQualGraphM)
 open Setup
 open Setup.Programming
 
@@ -27,7 +26,7 @@ open Setup.Programming
 (* test helper *)
 let test_solver solver consts expM test = fun () ->
     let solver = solver consts in
-    let ((((), constraints), _), env) = run expM ((((), QualGraph.empty), 0), emptyEnv) in
+    let (((((), constraints), _), _), env) = run expM (((((), QualGraph.empty), 0), emptyUnionTable), emptyEnv) in
     let solution = solver constraints in
 
     assert_log "@[<v>";

@@ -6,7 +6,7 @@ module E =
     CilQual.Expression.InterpreterT
     (CilQual.Environment.InterpreterT
     (CilQual.Type.InterpreterT
-    (CilQual.CilQualType.CilQualTypeT (CilQual.Environment.CilFieldOrVar) (TestUtil.CilQualUtil.DummyContext)
+    (CilQual.CilUnionQualType.CilUnionQualTypeT (CilQual.Environment.CilFieldOrVar) (TestUtil.CilQualUtil.DummyContext)
     (Identity))))
 open E.QualType.Qual
 open E.QualType
@@ -35,8 +35,8 @@ let test_exp exp ?(label=exp) ?(typedecls=[]) vardecls test =
         let expM = interpret_exp exp in
 
         (* run interpreter *)
-        let ((((result, constraints), _), _), env) =
-            run expM (((((), QualGraph.empty), emptyContext), 0), emptyEnv) in
+        let (((((result, constraints), _), _), _), env) =
+            run expM ((((((), QualGraph.empty), emptyContext), 0), emptyUnionTable), emptyEnv) in
 
         (* print the result, environment and constraints *)
         assert_log "@[<v2>Result:@ %a@]@\n" QualType.printer result;
@@ -402,16 +402,8 @@ let voidptr_testsuite = "void *" >::: [
     test_exp "void_ptr"
         [ ("void_ptr", "void $b * $a") ]
         begin fun env result constraints ->
-            assert_qualtype_match begin fun (Ref (Var _ as qva, (Base (Var _ as qvb)))) ->
-                assert_only_paths [ (Const "a", qva); (qva, Const "a"); (Const "b", qvb); (qvb, Const "b") ] constraints
-            end result
-        end;
-
-    test_exp "*void_ptr"
-        [ ("void_ptr", "void $b * $a") ]
-        begin fun env result constraints ->
-            assert_qualtype_match begin fun (Base (Var _ as qvb)) ->
-                assert_only_paths [ (Const "b", qvb); (qvb, Const "b") ] constraints
+            assert_qualtype_match begin fun (Base (Var _ as qva)) ->
+                assert_only_paths [ (Const "a", qva); (qva, Const "a"); ] constraints
             end result
         end;
 ]

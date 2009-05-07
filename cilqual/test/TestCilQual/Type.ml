@@ -4,7 +4,7 @@ open Control.Monad
 (* setup CilQual interpreter monad stack *)
 module T =
     CilQual.Type.InterpreterT
-    (CilQual.CilQualType.CilQualTypeT (CilQual.Environment.CilFieldOrVar) (TestUtil.CilQualUtil.DummyContext)
+    (CilQual.CilUnionQualType.CilUnionQualTypeT (CilQual.Environment.CilFieldOrVar) (TestUtil.CilQualUtil.DummyContext)
     (Identity))
 open T.QualType.Var
 open T.QualType.Qual
@@ -25,8 +25,8 @@ let test_type typestr ?(label=typestr) test =
         let typM = embed_rval typ in
 
         (* run interpreter *)
-        let (((result, constraints), _), _) =
-            run typM ((((), QualGraph.empty), emptyContext), 0) in
+        let ((((result, constraints), _), _), _) =
+            run typM (((((), QualGraph.empty), emptyContext), 0), emptyUnionTable) in
 
         (* print the result and constraints *)
         assert_log "@[<v>";

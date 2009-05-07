@@ -7,7 +7,7 @@ module I =
     (CilQual.Expression.InterpreterT
     (CilQual.Environment.InterpreterT
     (CilQual.Type.InterpreterT
-    (CilQual.CilQualType.CilQualTypeT (CilQual.Environment.CilFieldOrVar) (TestUtil.CilQualUtil.DummyContext)
+    (CilQual.CilUnionQualType.CilUnionQualTypeT (CilQual.Environment.CilFieldOrVar) (TestUtil.CilQualUtil.DummyContext)
     (Identity)))))
 open I.QualType.Qual
 open I.QualType
@@ -36,8 +36,8 @@ let test_instr instr ?(label=instr) ?(typedecls=[]) vardecls test =
         let expM = interpret_instr instr in
 
         (* run interpreter *)
-        let (((((), constraints), _), _), env) =
-            run expM (((((), QualGraph.empty), emptyContext), 0), emptyEnv) in
+        let ((((((), constraints), _), _), _), env) =
+            run expM ((((((), QualGraph.empty), emptyContext), 0), emptyUnionTable), emptyEnv) in
 
         (* print the environment and constraints *)
         assert_log "@[<v2>Environment:@ %a@]@\n" cilqual_env_printer env;
@@ -173,13 +173,13 @@ let variable_assignments_testsuite = "Variable Assignments" >::: [
     test_instr "void_ptr = x_ptr;"
         [ ("void_ptr", "void $a * $b"); ("x_ptr", "int $c * $d") ]
         begin fun env constraints ->
-            assert_only_paths [ (Const "c", Const "a"); (Const "a", Const "c"); (Const "d", Const "b") ] constraints
+            assert_only_paths [ (Const "d", Const "b") ] constraints
         end;
 
     test_instr "void_ptr = x_ptr_ptr;"
         [ ("void_ptr", "void $a * $b"); ("x_ptr_ptr", "int $c * $d * $e") ]
         begin fun env constraints ->
-            assert_only_paths [ (Const "d", Const "a"); (Const "a", Const "d"); (Const "e", Const "b") ] constraints
+            assert_only_paths [ (Const "e", Const "b") ] constraints
         end;
 
     test_instr "void_ptr = foo;"

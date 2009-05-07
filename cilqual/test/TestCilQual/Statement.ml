@@ -8,7 +8,7 @@ module S =
     (CilQual.Expression.InterpreterT
     (CilQual.Environment.InterpreterT
     (CilQual.Type.InterpreterT
-    (CilQual.CilQualType.CilQualTypeT (CilQual.Environment.CilFieldOrVar) (TestUtil.CilQualUtil.DummyContext)
+    (CilQual.CilUnionQualType.CilUnionQualTypeT (CilQual.Environment.CilFieldOrVar) (TestUtil.CilQualUtil.DummyContext)
     (Identity))))))
 open S.QualType.Qual
 open S.QualType
@@ -37,8 +37,8 @@ let test_stmt stmt ?(label=stmt) ?(typedecls=[]) vardecls test =
         let expM = interpret_stmt stmt in
 
         (* run interpreter *)
-        let ((((result, constraints), _), _), env) =
-            run expM (((((), QualGraph.empty), emptyContext), 0), emptyEnv) in
+        let (((((result, constraints), _), _), _), env) =
+            run expM ((((((), QualGraph.empty), emptyContext), 0), emptyUnionTable), emptyEnv) in
 
         (* print the result, environment and constraints *)
         assert_log "@[<v2>Result:@ %a@]@\n" QualType.printer result;
@@ -112,8 +112,8 @@ let sequence_testsuite = "Instruction Sequence" >::: [
         [ ("void_ptr", "void $a * $b");
           ("x_ptr_ptr_ptr", "int $c * $d * $e * $f"); ("y_ptr_ptr_ptr", "int $g * $h * $i * $j") ]
         begin fun env result constraints -> assert_only_paths
-            [ (Const "e", Const "a"); (Const "a", Const "e"); (Const "f", Const "b"); (* void_ptr/x_ptr_ptr_ptr *)
-              (Const "i", Const "a"); (Const "a", Const "i"); (Const "b", Const "j"); (* y_ptr_ptr_ptr/void_ptr *)
+            [ (Const "f", Const "b"); (* void_ptr/x_ptr_ptr_ptr *)
+              (Const "b", Const "j"); (* y_ptr_ptr_ptr/void_ptr *)
               (Const "c", Const "g"); (Const "g", Const "c"); (* y_ptr_ptr_ptr/x_ptr_ptr_ptr *)
               (Const "d", Const "h"); (Const "h", Const "d");
               (Const "e", Const "i"); (Const "i", Const "e");
@@ -125,8 +125,8 @@ let sequence_testsuite = "Instruction Sequence" >::: [
         [ ("void_ptr", "void $a * $b");
           ("x_ptr_ptr_ptr", "int $c * $d * $e * $f"); ("y_ptr_ptr_ptr", "int $g * $h * $i * $j") ]
         begin fun env result constraints -> assert_only_paths
-            [ (Const "e", Const "a"); (Const "a", Const "e"); (Const "b", Const "f"); (* x_ptr_ptr_ptr/void_ptr *)
-              (Const "i", Const "a"); (Const "a", Const "i"); (Const "b", Const "j"); (* y_ptr_ptr_ptr/void_ptr *)
+            [ (Const "b", Const "f"); (* x_ptr_ptr_ptr/void_ptr *)
+              (Const "b", Const "j"); (* y_ptr_ptr_ptr/void_ptr *)
               (Const "c", Const "g"); (Const "g", Const "c"); (* x_ptr_ptr_ptr/y_ptr_ptr_ptr *)
               (Const "d", Const "h"); (Const "h", Const "d");
               (Const "e", Const "i"); (Const "i", Const "e") ] constraints
@@ -137,8 +137,8 @@ let sequence_testsuite = "Instruction Sequence" >::: [
         [ ("void_ptr", "void $a * $b");
           ("x_ptr_ptr_ptr", "int $c * $d * $e * $f"); ("y_ptr_ptr_ptr", "int $g * $h * $i * $j") ]
         begin fun env result constraints -> assert_only_paths
-            [ (Const "e", Const "a"); (Const "a", Const "e"); (Const "f", Const "b"); (* void_ptr/x_ptr_ptr_ptr *)
-              (Const "i", Const "a"); (Const "a", Const "i"); (Const "j", Const "b"); (* void_ptr/y_ptr_ptr_ptr *)
+            [ (Const "f", Const "b"); (* void_ptr/x_ptr_ptr_ptr *)
+              (Const "j", Const "b"); (* void_ptr/y_ptr_ptr_ptr *)
               (Const "c", Const "g"); (Const "g", Const "c"); (* x_ptr_ptr_ptr/y_ptr_ptr_ptr *)
               (Const "d", Const "h"); (Const "h", Const "d");
               (Const "e", Const "i"); (Const "i", Const "e") ] constraints
@@ -149,11 +149,11 @@ let sequence_testsuite = "Instruction Sequence" >::: [
         [ ("void_ptr1", "void $a * $b"); ("void_ptr2", "void $c * $d");
           ("x_ptr_ptr_ptr", "int $e * $f * $g * $h"); ("y_ptr_ptr_ptr", "int $i * $j * $k * $l") ]
         begin fun env result constraints -> assert_only_paths
-            [ (Const "c", Const "a"); (Const "a", Const "c"); (Const "b", Const "d"); (* void_ptr2/void_ptr1 *)
-              (Const "g", Const "a"); (Const "a", Const "g"); (Const "h", Const "b"); (* void_ptr1/x_ptr_ptr_ptr *)
-              (Const "k", Const "a"); (Const "a", Const "k"); (Const "b", Const "l"); (* y_ptr_ptr_ptr/void_ptr1 *)
-              (Const "g", Const "c"); (Const "c", Const "g"); (Const "h", Const "d"); (* void_ptr2/x_ptr_ptr_ptr *)
-              (Const "k", Const "c"); (Const "c", Const "k"); (Const "d", Const "l"); (* y_ptr_ptr_ptr/void_ptr2 *)
+            [ (Const "b", Const "d"); (* void_ptr2/void_ptr1 *)
+              (Const "h", Const "b"); (* void_ptr1/x_ptr_ptr_ptr *)
+              (Const "b", Const "l"); (* y_ptr_ptr_ptr/void_ptr1 *)
+              (Const "h", Const "d"); (* void_ptr2/x_ptr_ptr_ptr *)
+              (Const "d", Const "l"); (* y_ptr_ptr_ptr/void_ptr2 *)
               (Const "e", Const "i"); (Const "i", Const "e"); (* x_ptr_ptr_ptr/y_ptr_ptr_ptr *)
               (Const "f", Const "j"); (Const "j", Const "f");
               (Const "g", Const "k"); (Const "k", Const "g");
@@ -165,11 +165,10 @@ let sequence_testsuite = "Instruction Sequence" >::: [
         [ ("void_ptr1", "void $a * $b"); ("void_ptr2", "void $c * $d");
           ("x_ptr_ptr_ptr", "int $e * $f * $g * $h"); ("y_ptr_ptr_ptr", "int $i * $j * $k * $l") ]
         begin fun env result constraints -> assert_only_paths
-            [ (Const "c", Const "a"); (Const "a", Const "c"); (Const "b", Const "d"); (* void_ptr2/void_ptr1 *)
-              (Const "g", Const "a"); (Const "a", Const "g"); (Const "b", Const "h"); (* x_ptr_ptr_ptr/void_ptr1 *)
-              (Const "k", Const "a"); (Const "a", Const "k"); (Const "b", Const "l"); (* y_ptr_ptr_ptr/void_ptr1 *)
-              (Const "g", Const "c"); (Const "c", Const "g");                         (* x_ptr_ptr_ptr/void_ptr2 *)
-              (Const "k", Const "c"); (Const "c", Const "k"); (Const "d", Const "l"); (* y_ptr_ptr_ptr/void_ptr2 *)
+            [ (Const "b", Const "d"); (* void_ptr2/void_ptr1 *)
+              (Const "b", Const "h"); (* x_ptr_ptr_ptr/void_ptr1 *)
+              (Const "b", Const "l"); (* y_ptr_ptr_ptr/void_ptr1 *)
+              (Const "d", Const "l"); (* y_ptr_ptr_ptr/void_ptr2 *)
               (Const "e", Const "i"); (Const "i", Const "e"); (* x_ptr_ptr_ptr/y_ptr_ptr_ptr *)
               (Const "f", Const "j"); (Const "j", Const "f");
               (Const "g", Const "k"); (Const "k", Const "g") ] constraints
@@ -180,11 +179,10 @@ let sequence_testsuite = "Instruction Sequence" >::: [
         [ ("void_ptr1", "void $a * $b"); ("void_ptr2", "void $c * $d");
           ("x_ptr_ptr_ptr", "int $e * $f * $g * $h"); ("y_ptr_ptr_ptr", "int $i * $j * $k * $l") ]
         begin fun env result constraints -> assert_only_paths
-            [ (Const "c", Const "a"); (Const "a", Const "c"); (Const "b", Const "d"); (* void_ptr2/void_ptr1 *)
-              (Const "g", Const "a"); (Const "a", Const "g"); (Const "h", Const "b"); (* void_ptr1/x_ptr_ptr_ptr *)
-              (Const "k", Const "a"); (Const "a", Const "k");                         (* void_ptr1/y_ptr_ptr_ptr *)
-              (Const "g", Const "c"); (Const "c", Const "g"); (Const "h", Const "d"); (* void_ptr2/x_ptr_ptr_ptr *)
-              (Const "k", Const "c"); (Const "c", Const "k"); (Const "l", Const "d"); (* void_ptr2/y_ptr_ptr_ptr *)
+            [ (Const "b", Const "d"); (* void_ptr2/void_ptr1 *)
+              (Const "h", Const "b"); (* void_ptr1/x_ptr_ptr_ptr *)
+              (Const "h", Const "d"); (* void_ptr2/x_ptr_ptr_ptr *)
+              (Const "l", Const "d"); (* void_ptr2/y_ptr_ptr_ptr *)
               (Const "e", Const "i"); (Const "i", Const "e"); (* x_ptr_ptr_ptr/y_ptr_ptr_ptr *)
               (Const "f", Const "j"); (Const "j", Const "f");
               (Const "g", Const "k"); (Const "k", Const "g") ] constraints
@@ -195,11 +193,11 @@ let sequence_testsuite = "Instruction Sequence" >::: [
         [ ("void_ptr1", "void $a * $b"); ("void_ptr2", "void $c * $d");
           ("x_ptr_ptr_ptr", "int $e * $f * $g * $h"); ("y_ptr_ptr_ptr", "int $i * $j * $k * $l"); ("z", "int") ]
         begin fun env result constraints -> assert_only_paths
-            [ (Const "c", Const "a"); (Const "a", Const "c"); (Const "b", Const "d"); (* void_ptr2/void_ptr1 *)
-              (Const "g", Const "a"); (Const "a", Const "g"); (Const "h", Const "b"); (* void_ptr1/x_ptr_ptr_ptr *)
-              (Const "k", Const "a"); (Const "a", Const "k"); (Const "b", Const "l"); (* y_ptr_ptr_ptr/void_ptr1 *)
-              (Const "g", Const "c"); (Const "c", Const "g"); (Const "h", Const "d"); (* void_ptr2/x_ptr_ptr_ptr *)
-              (Const "k", Const "c"); (Const "c", Const "k"); (Const "d", Const "l"); (* y_ptr_ptr_ptr/void_ptr2 *)
+            [ (Const "b", Const "d"); (* void_ptr2/void_ptr1 *)
+              (Const "h", Const "b"); (* void_ptr1/x_ptr_ptr_ptr *)
+              (Const "b", Const "l"); (* y_ptr_ptr_ptr/void_ptr1 *)
+              (Const "h", Const "d"); (* void_ptr2/x_ptr_ptr_ptr *)
+              (Const "d", Const "l"); (* y_ptr_ptr_ptr/void_ptr2 *)
               (Const "e", Const "i"); (Const "i", Const "e"); (* x_ptr_ptr_ptr/y_ptr_ptr_ptr *)
               (Const "f", Const "j"); (Const "j", Const "f");
               (Const "g", Const "k"); (Const "k", Const "g");
@@ -239,7 +237,7 @@ let sequence_testsuite = "Instruction Sequence" >::: [
         [ ("void_ptr1", "void $a * $b"); ("void_ptr2", "void $c * $d");
           ("foo", "int $e ($f * $g)(int $h, int $i)"); ("bar", "int $j ($k * $l)(int $m, int $n)") ]
         begin fun env result constraints -> assert_only_paths
-            [ (Const "c", Const "a"); (Const "a", Const "c"); (Const "b", Const "d"); (* void_ptr1/void_ptr2 *)
+            [ (Const "b", Const "d"); (* void_ptr1/void_ptr2 *)
               (Const "f", Const "b"); (* void_ptr1/foo *)
               (Const "b", Const "k"); (* void_ptr1/bar *)
               (Const "f", Const "d"); (* void_ptr2/foo *)
@@ -253,7 +251,7 @@ let sequence_testsuite = "Instruction Sequence" >::: [
         [ ("void_ptr1", "void $a * $b"); ("void_ptr2", "void $c * $d"); ("x", "int");
           ("foo", "int $e ($f * $g)(int $h, int $i)"); ("bar", "int $j ($k * $l)(int $m, int $n)") ]
         begin fun env result constraints -> assert_only_paths
-            [ (Const "c", Const "a"); (Const "a", Const "c"); (Const "b", Const "d"); (* void_ptr1/void_ptr2 *)
+            [ (Const "b", Const "d"); (* void_ptr1/void_ptr2 *)
               (Const "f", Const "b"); (* void_ptr1/foo *)
               (Const "b", Const "k"); (* void_ptr1/bar *)
               (Const "f", Const "d"); (* void_ptr2/foo *)

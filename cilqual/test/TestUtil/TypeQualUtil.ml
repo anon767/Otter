@@ -2,7 +2,7 @@ open MyOUnit
 open Control.Monad
 
 
-module Setup (QT : TypeQual.QualType.QualTypeMonad) = struct
+module Setup (QT : TypeQual.UnionQualType.UnionQualTypeMonad) = struct
     include QT
     module Ops = MonadOps (QT)
     include Ops
@@ -137,6 +137,7 @@ module Setup (QT : TypeQual.QualType.QualTypeMonad) = struct
         module Ops = MonadOps (ProgrammingQualTypeM)
         open Ops
 
+        let emptyUnionTable = QT.UnionTable.empty
         let emptyEnv = empty
 
         (* lift monad operations *)

@@ -9,7 +9,7 @@ module G =
     (CilQual.Expression.InterpreterT
     (CilQual.Environment.InterpreterT
     (CilQual.Type.InterpreterT
-    (CilQual.CilQualType.CilQualTypeT (CilQual.Environment.CilFieldOrVar) (TestUtil.CilQualUtil.DummyContext)
+    (CilQual.CilUnionQualType.CilUnionQualTypeT (CilQual.Environment.CilFieldOrVar) (TestUtil.CilQualUtil.DummyContext)
     (Identity)))))))
 open G.QualType.Qual
 open G.QualType
@@ -43,8 +43,8 @@ let test_cilqual content ?(label=content) lattice expected_result =
         let expM = interpret_file file in
 
         (* run interpreter *)
-        let (((((), constraints), _), _), env) =
-            run expM (((((), QualGraph.empty), (fileContext file)), 0), emptyEnv) in
+        let ((((((), constraints), _), _), _), env) =
+            run expM ((((((), QualGraph.empty), (fileContext file)), 0), emptyUnionTable), emptyEnv) in
 
         (* print the environment and constraints *)
         assert_log "@[<v2>Environment:@ %a@]@\n" cilqual_env_printer env;

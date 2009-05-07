@@ -11,7 +11,7 @@ open TypedBlock
 
 module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
 
-    let switch dispatch file fn ((((((), constraints), _), _), _) as expState) k =
+    let switch dispatch file fn (((((((), constraints), _), _), variant_table), _) as expState) k =
         Format.eprintf "Switching from typed to symbolic...@.";
 
         (* first, solve the typed constraints, needed to setup the symbolic constraints *)

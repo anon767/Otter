@@ -1,6 +1,7 @@
 CilQual/Config
 CilQual/CilData
 CilQual/CilQualType
+CilQual/CilUnionQualType
 CilQual/Type
 CilQual/Environment
 CilQual/Expression

@@ -46,8 +46,10 @@ module InterpreterT (T : Type.InterpreterMonad with type QualType.Var.Embed.t = 
         include EnvT (CilFieldOrVar) (T.QualType) (T)
         let emptyEnv = empty
 
+        module UnionTable = T.UnionTable
         module QualGraph = T.QualGraph
         module QualType = T.QualType
+        let emptyUnionTable = T.emptyUnionTable
         let emptyContext = T.emptyContext
         let fileContext = T.fileContext
 

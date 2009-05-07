@@ -5,7 +5,7 @@ open CilData
 
 
 module type InterpreterMonad = sig
-    include CilQualType.CilQualTypeMonad
+    include CilUnionQualType.CilUnionQualTypeMonad
 
     val annot_attr : QualType.t -> Cil.attributes -> QualType.t monad
     val embed_lval : QualType.Var.Embed.t -> Cil.typ -> QualType.t monad
@@ -14,7 +14,7 @@ end
 
 
 (* interpreter for Cil.exp types *)
-module InterpreterT (C : CilQualType.CilQualTypeMonad) = struct
+module InterpreterT (C : CilUnionQualType.CilUnionQualTypeMonad) = struct
     include C
     module Ops = MonadOps (C)
     open Ops
@@ -59,6 +59,8 @@ module InterpreterT (C : CilQualType.CilQualTypeMonad) = struct
                 (* treat n-d arrays as a single cell;
                  * fortunately, Cil makes conversion to pointer explicit with Cil.StartOf *)
                 embed_type typ
+            | Cil.TSPtr (Cil.TSBase t, _) when Cil.isVoidType t -> perform with module QualType in
+                QualType.base
             | Cil.TSPtr (pointsTo, _) -> perform with module QualType in
                 qtarget <-- embed_type pointsTo;
                 QualType.ref qtarget
@@ -82,6 +84,9 @@ module InterpreterT (C : CilQualType.CilQualTypeMonad) = struct
         let rec annot_qt qt = function
             | Cil.TSArray (typ, _, attrlist) -> perform
                 annot_qt qt typ;
+                annot_attr qt attrlist
+            | Cil.TSPtr (Cil.TSBase t, attrlist) when Cil.isVoidType t -> perform
+                (* TODO: warn about qualifiers in t *)
                 annot_attr qt attrlist
             | Cil.TSPtr (pointsTo, attrlist) -> perform
                 qtarget <-- deref qt;
