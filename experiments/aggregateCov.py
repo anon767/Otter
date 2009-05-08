@@ -60,7 +60,7 @@ for zipfilename in os.listdir(dir):
 	if zipfilename[-4:]!=".zip":
 		continue
 	zipfilename = dir+'/'+zipfilename
-	print 'Reading from',zipfilename,
+	print 'Reading from',zipfilename
 	zipfileObj = zipfile.ZipFile(zipfilename)
 	outputFilename = zipfilename[zipfilename.rindex('/')+1:-4] + '-test'
 	file = open(zipfileObj.extract(outputFilename,temp_dir))
@@ -70,10 +70,10 @@ for zipfilename in os.listdir(dir):
 		need_process = False
 		while line != '' and not line.startswith('STP was invoked'):
 			line = file.readline()
-			if line.startswith("Running Test"):      #  Edit this and the line below to suit your need
-				print line,
-			if line.startswith("Running Macro"):     #
-				print line,
+			#if line.startswith("Running Test"):      #  Edit this and the line below to suit your need
+			#	print line,
+			#if line.startswith("Running Macro"):     #
+			#	print line,
 			if line.find(interrupt)>=0:
 				print '(Warning: test interrupted)',
 			if line.find(keyword)>=0:
@@ -116,10 +116,10 @@ for zipfilename in os.listdir(dir):
 	
 		if line=='':
 			break
-		if need_process:
-			print '[Done]'
-		else:
-			print '[Omitted]'
+		#if need_process:
+		#	print '[Done]'
+		#else:
+		#	print '[Omitted]'
 		#print line
 		#line = file.readline()
 		#print line
@@ -127,7 +127,8 @@ for zipfilename in os.listdir(dir):
 		#print line
 		
 		#Skip lines till Finish
-		while not line == 'Finished.\n':
+		#Handle: "All 1 paths had errors."
+		while not (line == 'Finished.\n' or (line.startswith("All") and line.endswith("paths had errors.\n"))):
 			line = file.readline()
 		
 	os.unlink(temp_dir+"/"+outputFilename)
