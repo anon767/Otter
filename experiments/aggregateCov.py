@@ -1,4 +1,4 @@
-import sys,zipfile,os
+import sys,zipfile,os,re
 
 #todo: look for: "User interrupt!"
 
@@ -15,7 +15,7 @@ option:
 configs = []
 coverage = []
 lines_covered = set()
-test_data = set()
+statistics = []
 
 counter=0
 calculate = True
@@ -56,7 +56,6 @@ temp_dir = '/fs/skoll/symexe/data/.tmp'
 
 # First, read in the coverage information from all of the files
 for zipfilename in os.listdir(dir):
-	nPaths = 0
 	if zipfilename[-4:]!=".zip":
 		continue
 	zipfilename = dir+'/'+zipfilename
@@ -68,6 +67,7 @@ for zipfilename in os.listdir(dir):
 
 	while True: 
 		need_process = False
+		nPaths = 0
 		while line != '' and not line.startswith('STP was invoked'):
 			line = file.readline()
 			#if line.startswith("Running Test"):      #  Edit this and the line below to suit your need
@@ -120,11 +120,17 @@ for zipfilename in os.listdir(dir):
 		#	print '[Done]'
 		#else:
 		#	print '[Omitted]'
-		#print line
-		#line = file.readline()
-		#print line
-		#line = file.readline()
-		#print line
+		if need_process:
+			# (nPaths) is the # of paths
+			stp_invoked = int(re.match(r"STP was invoked (\S+) times",line).group(1))
+			line = file.readline()
+			time_spent = float(re.match(r"It ran for \S+ s, which is \S+ of the total (\S+) s execution.",line).group(1))
+			statistics.append((nPaths,stp_invoked,time_spent))
+			#print line
+			#line = file.readline()
+			#print line
+			#line = file.readline()
+			#print line
 		
 		#Skip lines till Finish
 		#Handle: "All 1 paths had errors."
@@ -188,6 +194,12 @@ if calculate:
 	print '\nAnd these were set somewhere, but not in any chosen configuration:'
 	for variable in sorted(varsEverSet - varsSetInChosenConfigs):
 		print variable
+
+print '\nStatistics:'
+print '#paths\tstp\ttime'
+for x in sorted(statistics):
+	print '%d\t%d\t%0.2f' % x
+	
 
 print '\nHere are all',len(lines_covered),'lines ever covered:'
 linesAsPairs = [str.split(':') for str in lines_covered]
