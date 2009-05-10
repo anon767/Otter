@@ -186,7 +186,7 @@ let opPI op operands =
 			begin match typ1 with
 				| TPtr(basetyp,_) ->
 					let base_size = (Cil.bitsSizeOf basetyp)/8 in
-					let (offset3) = mult [(offset2,typ2);(Convert.lazy_int_to_bytes base_size,Cil.intType)] in
+					let (offset3) = mult [(Convert.lazy_int_to_bytes base_size,Cil.intType);(offset2,typ2)] in
 					let (offset4) = op [(offset,Cil.intType);(offset3,Cil.intType)] in (* TODO: make typing of offset more accurate? *)
 					(Bytes_Address(blockopt,offset4))
 				| _ -> failwith "type of Bytes_Address not TPtr"
