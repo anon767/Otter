@@ -17,6 +17,16 @@ def addLinesTo(setOrList,theFile,stopStr):
 		except AttributeError: setOrList.append(line)
 		line = theFile.readline()
 
+def line_cmp(line1,line2):
+	[file1,no1] = line1.split(":")
+	[file2,no2] = line2.split(":")
+	if file1<file2: 
+		return -1
+	elif file1>file2: 
+		return 1
+	else:
+		return int(no1)-int(no2)
+
 
 line_count = int(sys.argv[1])
 dir = sys.argv[2:]
@@ -99,9 +109,14 @@ for t in range(0,len(dir)):
 	
 	print
 	print 'Lines always executed (i.e., there is *some* test under which the line is always executed):'
-	for line in sorted(coverage[t][emptyAssignment[t]]):
+	for line in sorted(coverage[t][emptyAssignment[t]],line_cmp):
 		print line
 	
+	print
+	print 'Lines covered by t-way but not (t-1)-way:'
+	for line in sorted(local_coverage,line_cmp):
+		print line
+
 	cov_stat = []
 	
 	for assignment,lines in sorted(coverage[t].iteritems()):
@@ -113,17 +128,25 @@ for t in range(0,len(dir)):
 			print '%s=%d' % varVal
 		print 'these',len(lines),'lines are hit'
 		cov_stat.append(len(lines))
-		for line in sorted(lines):
+		for line in sorted(lines,line_cmp):
 			print line
+	
 	
 	print "\nSummary:"
 	print_size("TOUCHED_VAR",len(variables[t]),False)
-	print_size("%LINE_0way",len(coverage[t][emptyAssignment[t]]))
+	print_size("%LINE 0-way",len(coverage[t][emptyAssignment[t]]))
+	print_size("%LINE (t-way)\\(t-1-way)",len(local_coverage))
 	print_size ("LEN", len(cov_stat),False)
 	print_size ("MAX", max(cov_stat))
 	print_size ("MIN", min(cov_stat))
-	print_size ("SUM", sum(cov_stat))
 	print_size ("AVG", float(sum(cov_stat))/len(cov_stat))
 	print "\nDone\n"
 	
 # END for each t
+total_coverage = global_coverage | coverage[0][emptyAssignment[0]]
+print
+print "--------------------------------------------------"
+print 'Lines covered by all ways:'
+print len(total_coverage),"lines total"
+for line in sorted(total_coverage,line_cmp):
+	print line
