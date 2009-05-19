@@ -7,7 +7,7 @@ only call STP once per 'if'.
 Profile to see where inefficiencies lie
 
 Make output more customizable, and make it easier to find the source
-of errors
+of errors (structural output ... can XML play a part?)
 
 Report errors in ways other than printing them to the screen
 
@@ -36,6 +36,11 @@ Improve --mergePaths:
 	- Elimination of non-live variables might make this simpler/more
 	effective
 
+Richer execution semantics:
+	- branch on dereferencing symbolic pointers. If a pointer takes n
+	values, fork n branches.
+	- (what else?)
+
 Hashcons?
 
 Heuristics to avoid too much branching?
@@ -43,3 +48,5 @@ Heuristics to avoid too much branching?
 Better handling of strings?
 
 Use a real libc implementation?
+
+Have a fixed header space (so things can be run cross-platform)
