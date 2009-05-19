@@ -6,6 +6,8 @@ let valuesFile = ref ""
 (* Map variable names to possible values *)
 let varToVals = Hashtbl.create 20
 
+let concreteVarToVal = Hashtbl.create 20
+
 (* We need a bytesToVars in order to print out the conditions in a
 	 readable way.  I think the way we are doing things now, all of the
 	 bytesToVars should be the same, so picking an arbitrary one should be
@@ -16,18 +18,18 @@ let bytesToVars = ref []
 let numVars = ref 1
 
 (* CAUTION: Requires exponential amount of memory! *)
-let rec allPossibleValues localBytesToVars =
+let rec allPossibleValues localBytesToVars hashtbl =
 	match localBytesToVars with
 		| [] -> [[]]
 		| (bytes,var)::tail ->
-				let allTailAssignments = allPossibleValues tail in
+				let allTailAssignments = allPossibleValues tail hashtbl in
 				let listOfLists =
 					List.map (* Attach each possible value to each possible value for the tail *)
 						(fun value ->
 							 List.map
 								 (fun tailAssignment -> (bytes, value) :: tailAssignment)
 								 allTailAssignments)
-						(Hashtbl.find_all varToVals var.vname)
+						(Hashtbl.find_all hashtbl var.vname)
 				in
 				List.concat listOfLists
 
@@ -141,7 +143,7 @@ let findDependencies (pcsAndLines,linesToExplain) localBytesToVars =
 	List.iter
 		(fun assignments ->
 			 ignore (linesControlledBy pcsAndLines assignments))
-		(allPossibleValues localBytesToVars);
+		(allPossibleValues localBytesToVars varToVals);
 	(pcsAndLines,linesToExplain)
 (*
 (* This version removes lines once they are controlled by something. *)
@@ -159,7 +161,7 @@ let findDependenciesAndUpdate (pcsAndLines,linesToExplain) localBytesToVars =
 			(List.map
 				 (fun assignments ->
 						linesControlledBy pcsAndLines assignments)
-				 (allPossibleValues localBytesToVars))
+				 (allPossibleValues localBytesToVars varToVals))
 	in
 	(* Remove the lines that have been accounted for from each pair of
 		 pcsAndLines, and from linesToExplain. *)
@@ -263,19 +265,43 @@ let readInDataAndGo _ = (* This needs to take a Cil.file, but I don't use it *)
 	let coverage = (Marshal.from_channel inChan : job_result list) in
 	close_in inChan;
 	let inChan = open_in !valuesFile in
-	(* Read in the possible variable values *)
 	try
-		while true do
-			match Str.split (Str.regexp "[\t ]+") (input_line inChan) with
+		let line = ref (input_line inChan) in
+		(* Read in the possible variable values *)
+		while !line <> "" do
+			begin
+			match Str.split (Str.regexp "[\t ]+") !line with
 					[] -> failwith "Badly formatted input"
 				| var::valList ->
 						List.iter
 							(fun str -> Hashtbl.add varToVals var (int_of_string str))
 							valList
+			end;
+			line := input_line inChan
+		done;
+		(* Read in the required values *)
+		line := input_line inChan;
+		while true do
+			begin
+				match Str.split (Str.regexp "[\t ]+") !line with
+					| [var;value] -> Hashtbl.add concreteVarToVal var (int_of_string value)
+					| _ -> failwith "Badly formatted input"
+			end;
+			line := input_line inChan
 		done
 	with End_of_file ->
 		close_in inChan;
-		calculateDeps coverage
+		let bytesToVars = (List.hd coverage).result_history.bytesToVars in
+		let bytesToVars_concrete = List.filter (fun (_,varinf) -> Hashtbl.mem concreteVarToVal varinf.vname) bytesToVars in
+		let concreteAssignments =
+			match allPossibleValues bytesToVars_concrete concreteVarToVal with
+					[x] -> x
+				| _ -> failwith "There can't be more than one concrete value"
+		in
+		if concreteAssignments = [] then
+			calculateDeps coverage
+		else
+			calculateDeps (List.filter (fun jobRes -> isConsistentWithList jobRes.result_state.path_condition concreteAssignments) coverage)
 ;;
 
 let feature : Cil.featureDescr = {

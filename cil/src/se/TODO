@@ -1,0 +1,45 @@
+Simplify bytes as they are constructed
+
+Have concrete values underlying symbolic values, and check which path
+the concrete value would take at a branch. This would enable us to
+only call STP once per 'if'.
+
+Profile to see where inefficiencies lie
+
+Make output more customizable, and make it easier to find the source
+of errors
+
+Report errors in ways other than printing them to the screen
+
+Refactor to make more modular
+
+Be consistent about numerical representations and types (e.g., do we
+ever store something greater than 255 in a char, relying on the type
+to make sure we always use it as the right value?)
+
+Allow concrete values to be plugged in for symbolic values when an
+equality becomes part of the path condition
+
+Don't initialize function parameters with symbolic values; just plug
+in the arguments
+
+Experiment with using other SMT solvers. (Is the boundary with STP
+clean enough that this will be easy?)
+
+Migrate to CIL 1.3.7
+
+Improve --mergePaths:
+	- Calculation of dominators isn't really the right way to find merge
+	points
+	- 'Will merge on function return' might want to be replaced with a
+	one-return transformation
+	- Elimination of non-live variables might make this simpler/more
+	effective
+
+Hashcons?
+
+Heuristics to avoid too much branching?
+
+Better handling of strings?
+
+Use a real libc implementation?
