@@ -13,12 +13,12 @@ pass
 opts
 quit
 ";
-	IOSIM_fd[0] = malloc(sizeof(sym_file_stream_t));
-	IOSIM_fd[0]->offset = 0;
-	IOSIM_fd[0]->sym_file = malloc(sizeof(sym_file_t));
-	IOSIM_fd[0]->sym_file->contents = strdup(commandString);
-	IOSIM_fd[0]->sym_file->stat.st_size = sizeof(commandString);
-	IOSIM_fd[0]->sym_file->stat.st_mode = S_IFSOCK;
+	IOSIM_fd[4] = malloc(sizeof(sym_file_stream_t));
+	IOSIM_fd[4]->offset = 0;
+	IOSIM_fd[4]->sym_file = malloc(sizeof(sym_file_t));
+	IOSIM_fd[4]->sym_file->contents = strdup(commandString);
+	IOSIM_fd[4]->sym_file->stat.st_size = sizeof(commandString);
+	IOSIM_fd[4]->sym_file->stat.st_mode = S_IFSOCK;
 
 	// Make empty environ variable
 	environ = malloc(sizeof(char*));

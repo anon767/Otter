@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# set environment path here
+START_PATH=""
+
+BINDIR=`dirname $0`
+PWDIR=`pwd`
+
+export PATH=$PATH:$START_PATH
+
+java -jar $BINDIR/SkollScheduler.jar $BINDIR $PWDIR $1 $2 $3 $4 $5

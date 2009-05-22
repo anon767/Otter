@@ -149,14 +149,16 @@
 #ifdef TUNABLE_ANONYMOUS_ENABLE
   tunable_anonymous_enable = TUNABLE_ANONYMOUS_ENABLE;
 #else
-  __SYMBOLIC(&tunable_anonymous_enable);
-  __ASSUME((tunable_anonymous_enable == 0) || (tunable_anonymous_enable == 1));
+//  __SYMBOLIC(&tunable_anonymous_enable);
+//  __ASSUME((tunable_anonymous_enable == 0) || (tunable_anonymous_enable == 1));
+  tunable_anonymous_enable=1;
 #endif
 #ifdef TUNABLE_LOCAL_ENABLE
   tunable_local_enable = TUNABLE_LOCAL_ENABLE;
 #else
-  __SYMBOLIC(&tunable_local_enable);
-  __ASSUME((tunable_local_enable == 0) || (tunable_local_enable == 1));
+//  __SYMBOLIC(&tunable_local_enable);
+//  __ASSUME((tunable_local_enable == 0) || (tunable_local_enable == 1));
+  tunable_local_enable=0;
 #endif
 #ifdef TUNABLE_PASV_ENABLE
   tunable_pasv_enable = TUNABLE_PASV_ENABLE;
@@ -407,8 +409,9 @@
 #ifdef TUNABLE_SSL_ENABLE
   tunable_ssl_enable = TUNABLE_SSL_ENABLE;
 #else
-  __SYMBOLIC(&tunable_ssl_enable);
-  __ASSUME((tunable_ssl_enable == 0) || (tunable_ssl_enable == 1));
+//  __SYMBOLIC(&tunable_ssl_enable);
+//  __ASSUME((tunable_ssl_enable == 0) || (tunable_ssl_enable == 1));
+  tunable_ssl_enable=0;
 #endif
 #ifdef TUNABLE_ALLOW_ANON_SSL
   tunable_allow_anon_ssl = TUNABLE_ALLOW_ANON_SSL;

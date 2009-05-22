@@ -21,12 +21,12 @@ quit
 //list -r file{2,1}
 //quit
 //";
-	IOSIM_fd[0] = malloc(sizeof(sym_file_stream_t));
-	IOSIM_fd[0]->offset = 0;
-	IOSIM_fd[0]->sym_file = malloc(sizeof(sym_file_t));
-	IOSIM_fd[0]->sym_file->contents = strdup(commandString);
-	IOSIM_fd[0]->sym_file->stat.st_size = sizeof(commandString);
-	IOSIM_fd[0]->sym_file->stat.st_mode = S_IFSOCK;
+	IOSIM_fd[4] = malloc(sizeof(sym_file_stream_t));
+	IOSIM_fd[4]->offset = 0;
+	IOSIM_fd[4]->sym_file = malloc(sizeof(sym_file_t));
+	IOSIM_fd[4]->sym_file->contents = strdup(commandString);
+	IOSIM_fd[4]->sym_file->stat.st_size = sizeof(commandString);
+	IOSIM_fd[4]->sym_file->stat.st_mode = S_IFSOCK;
 
 	// fd 3 is the first listening socket
 	// fd 4 is the descriptor for writing the file (It is made by open().)
@@ -34,25 +34,25 @@ quit
 	static char fileText[] = "something
  a bunch of text
 			and some more text!!!";
-	IOSIM_fd[5] = malloc(sizeof(sym_file_stream_t));
-	IOSIM_fd[5]->offset = 0;
-	IOSIM_fd[5]->sym_file = malloc(sizeof(sym_file_t));
-	IOSIM_fd[5]->sym_file->contents = fileText;
-	IOSIM_fd[5]->sym_file->stat.st_size = sizeof(fileText);
+	IOSIM_fd[7] = malloc(sizeof(sym_file_stream_t));
+	IOSIM_fd[7]->offset = 0;
+	IOSIM_fd[7]->sym_file = malloc(sizeof(sym_file_t));
+	IOSIM_fd[7]->sym_file->contents = fileText;
+	IOSIM_fd[7]->sym_file->stat.st_size = sizeof(fileText);
 
 	static char fileText2[] = "the text of a second file";
-	IOSIM_fd[8] = malloc(sizeof(sym_file_stream_t));
-	IOSIM_fd[8]->offset = 0;
-	IOSIM_fd[8]->sym_file = malloc(sizeof(sym_file_t));
-	IOSIM_fd[8]->sym_file->contents = fileText2;
-	IOSIM_fd[8]->sym_file->stat.st_size = sizeof(fileText2);
+	IOSIM_fd[10] = malloc(sizeof(sym_file_stream_t));
+	IOSIM_fd[10]->offset = 0;
+	IOSIM_fd[10]->sym_file = malloc(sizeof(sym_file_t));
+	IOSIM_fd[10]->sym_file->contents = fileText2;
+	IOSIM_fd[10]->sym_file->stat.st_size = sizeof(fileText2);
 
 	// To send out the ls information
-	IOSIM_fd[11] = malloc(sizeof(sym_file_stream_t));
-	IOSIM_fd[11]->offset = 0;
-	IOSIM_fd[11]->sym_file = malloc(sizeof(sym_file_t));
-	IOSIM_fd[11]->sym_file->contents = NULL;
-	IOSIM_fd[11]->sym_file->stat.st_size = 0;
+	IOSIM_fd[13] = malloc(sizeof(sym_file_stream_t));
+	IOSIM_fd[13]->offset = 0;
+	IOSIM_fd[13]->sym_file = malloc(sizeof(sym_file_t));
+	IOSIM_fd[13]->sym_file->contents = NULL;
+	IOSIM_fd[13]->sym_file->stat.st_size = 0;
 
 	// Make empty environ variable
 	environ = malloc(sizeof(char*));

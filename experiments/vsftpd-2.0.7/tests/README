@@ -1,0 +1,43 @@
+This is not perfectly laid out, and things require a bit of tinkering
+to change from one type of run to the next. Here's how it works:
+
+The *.c files shouldn't have to be changed. These are the actual tests.
+
+The *.test files just call './command' with their own name as an
+argument. They shouldn't have to be changed, either.
+
+symbolic_values contains the ifdefs to allow configuration options to
+be symbolic or concrete based on preprocessor variables. Each *.c file
+#includes this file. Right now, symbolic_values is set up for the
+'restricted' configuration space, where the values for the 3 options
+tunable_ssl_enable, tunable_local_enable, and tunable_anonymous_enable
+are never made symbolic, but instead are set to their 'correct'
+values. This probably could be accomplished just as well by setting
+their values with the preprocessor variables, but I didn't realize
+this before. So, right now, in order to do an unrestricted symbolic
+run, symbolic_values would have to be changed slightly to allow those
+3 options to be symbolic.
+
+The file 'command' is a symbolic link which you should make point to
+the script you want to run:
+
+varDep - This calculates guaranteed coverage, but you have to set the
+DIR variable in the script to point to the right place
+
+concreteTest - This runs the concrete tests in the unrestricted
+configuration space
+
+noQuickExitConcrete - This runs the concrete tests in the restricted
+configuration space
+
+symbTest - This runs symbolic tests in the configuration space
+dictated by symbolic_values. It should be easy to change
+symbolic_values to allow both restricted and unrestricted, and then
+symbTest should be split in two: one for the unrestricted space (the
+original) and one for the restricted space (which should add
+"-DTUNABLE_SSL_ENABLE=0 -DTUNABLE_LOCAL_ENABLE=0
+-DTUNABLE_ANONYMOUS_ENABLE=1" to the call to cilly).
+
+
+The tests themselves can be scheduled by running the commands in
+trunk/experiments/vsftpd-2.0.7/skoll_scheduler/schedulingCommands.

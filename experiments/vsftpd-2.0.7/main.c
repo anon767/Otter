@@ -144,7 +144,7 @@ main(int argc, const char* argv[])
     the_session.num_clients = ret.num_children;
     the_session.num_this_ip = ret.num_this_ip;
   }
-  if (tunable_tcp_wrappers)
+  else { socket(0,0,0); socket(0,0,0); dup2(4,0); }/* Fake calls to allow file desciptor numbers to match when tunable_listen is true and false.*/  if (tunable_tcp_wrappers)
   {
     the_session.tcp_wrapper_ok = vsf_tcp_wrapper_ok(VSFTP_COMMAND_FD);
   }

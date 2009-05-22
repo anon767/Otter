@@ -14,12 +14,12 @@ pasv
 appe aFile
 quit
 ";
-	IOSIM_fd[0] = malloc(sizeof(sym_file_stream_t));
-	IOSIM_fd[0]->offset = 0;
-	IOSIM_fd[0]->sym_file = malloc(sizeof(sym_file_t));
-	IOSIM_fd[0]->sym_file->contents = strdup(commandString);
-	IOSIM_fd[0]->sym_file->stat.st_size = sizeof(commandString);
-	IOSIM_fd[0]->sym_file->stat.st_mode = S_IFSOCK;
+	IOSIM_fd[4] = malloc(sizeof(sym_file_stream_t));
+	IOSIM_fd[4]->offset = 0;
+	IOSIM_fd[4]->sym_file = malloc(sizeof(sym_file_t));
+	IOSIM_fd[4]->sym_file->contents = strdup(commandString);
+	IOSIM_fd[4]->sym_file->stat.st_size = sizeof(commandString);
+	IOSIM_fd[4]->sym_file->stat.st_mode = S_IFSOCK;
 
 	// fd 3 is the first listening socket
 	// fd 4 is the file being created (It is made by open().)
@@ -27,11 +27,11 @@ quit
 	static char fileText[] = "something
  a bunch of text
 			and some more text!!!";
-	IOSIM_fd[5] = malloc(sizeof(sym_file_stream_t));
-	IOSIM_fd[5]->offset = 0;
-	IOSIM_fd[5]->sym_file = malloc(sizeof(sym_file_t));
-	IOSIM_fd[5]->sym_file->contents = fileText;
-	IOSIM_fd[5]->sym_file->stat.st_size = sizeof(fileText);
+	IOSIM_fd[7] = malloc(sizeof(sym_file_stream_t));
+	IOSIM_fd[7]->offset = 0;
+	IOSIM_fd[7]->sym_file = malloc(sizeof(sym_file_t));
+	IOSIM_fd[7]->sym_file->contents = fileText;
+	IOSIM_fd[7]->sym_file->stat.st_size = sizeof(fileText);
 
 	// Make empty environ variable
 	environ = malloc(sizeof(char*));
