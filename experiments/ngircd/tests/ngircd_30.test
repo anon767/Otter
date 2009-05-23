@@ -1,0 +1,9 @@
+# This is not a real test
+
+cd $1
+FILE=/fs/skoll/symexe/data/hello
+
+echo "Test 1"
+cat $FILE $FILE > $FILE
+echo "DONE"
+

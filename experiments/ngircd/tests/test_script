@@ -1,0 +1,13 @@
+DATA_DIR=/fs/skoll/symexe/data/ngircd/
+PROJ_DIR=/fs/skoll/symexe/trunk/experiments/ngircd/codeCoverageTest/otherFiles/
+# $1 = test name
+
+echo \#BEGIN TEST_SCRIPT
+date
+
+./test_suite "$DATA_DIR/normal" "$PROJ_DIR/symtest_driver.c" "$1" 166
+./test_suite "$DATA_DIR/restricted3" "$PROJ_DIR/symtest_driver_restricted3.c" "$1" 154
+## ./test_suite "$DATA_DIR/restricted2" "$PROJ_DIR/symtest_driver_restricted2.c" "$1"
+
+echo \#DONE TEST_SCRIPT
+date

@@ -1,0 +1,28 @@
+#
+#  $1 = DATA_DIR
+#  $2 = PROJ_DIR
+#  $3 = test name
+#  $4 = numVars
+#
+DATA_DIR=$1
+PROJ_DIR=$2
+TEST_NAME=$3
+NUMVARS=$4
+
+TOPDIR=../../..
+MARSHALDIR=$DATA_DIR/marshal
+POSSIBLE=$DATA_DIR/ngircdPossibleValues
+
+
+echo \#BEGIN TEST_VARDEPS TEST_NAME=$TEST_NAME NUMVARS=$NUMVARS
+date
+
+
+CILLY_DONT_COMPILE_AFTER_MERGE= \
+$TOPDIR/cil/bin/cilly \
+	--docalculateVarDeps \
+	--fileWithCovInfo=$MARSHALDIR/$TEST_NAME.marshal \
+	--fileWithPossibleValues=$POSSIBLE --numVars=$4 /fs/skoll/symexe/trunk/cil/setest/test0.c 
+
+echo \#DONE TEST_VARDEPS TEST_NAME=$TEST_NAME NUMVARS=$NUMVARS
+date

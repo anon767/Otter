@@ -1,0 +1,4 @@
+cd $1
+echo TEST_SCRIPT plus_chaninfo 
+./test_script plus_chaninfo
+

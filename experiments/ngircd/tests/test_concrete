@@ -1,0 +1,49 @@
+#
+#  $1 = DATA_DIR
+#  $2 = PROJ_DIR
+#  $3 = test name
+#  $4 = NUM_CONF
+#
+DATA_DIR=$1
+PROJ_DIR=$2
+TEST_NAME=$3
+NUM_CONF=$4
+
+COVDIR=../codeCoverageTest
+EXPDIR=../..
+STATSFILE=$COVDIR/ngircd.stats
+
+TOPDIR=../../..
+LIBCDIR=$TOPDIR/libc
+MOCKEDDIR=$COVDIR/mockedFns
+MACRODIR=$DATA_DIR/macro
+
+MACROFILE=$MACRODIR/$TEST_NAME.macro
+
+for((i=1;i<=$NUM_CONF;i++))
+	do
+		MACRO=`sed 1q $MACROFILE ; sed 1d $MACROFILE -i`
+		echo \#BEGIN TEST_CONCRETE TEST_NAME=$TEST_NAME TEST_NUM=$i MACRO=\"$MACRO\"
+		date
+		
+		CILLY_DONT_COMPILE_AFTER_MERGE= \
+		$TOPDIR/cil/bin/cilly \
+			--merge \
+			$MACRO \
+			--useLogicalOperators \
+			-D_FILE_OFFSET_BITS=64 \
+			-U __OPTIMIZE__ \
+			-I $MOCKEDDIR \
+			--doexecute \
+			--printLittle \
+			--printNoEscapedString \
+			--covStats=$STATSFILE \
+			--lineCov \
+			--timeout=3600 \
+			$PROJ_DIR \
+			$COVDIR/otherFiles/$TEST_NAME.c
+
+		echo \#DONE TEST_CONCRETE TEST_NAME=$TEST_NAME TEST_NUM=$i MACRO=\"$MACRO\"
+		date
+
+	done

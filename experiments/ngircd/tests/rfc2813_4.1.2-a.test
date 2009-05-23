@@ -1,0 +1,4 @@
+cd $1
+echo TEST_SCRIPT rfc2813_4.1.2-a 
+./test_script rfc2813_4.1.2-a
+

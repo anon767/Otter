@@ -1,0 +1,4 @@
+cd $1
+echo TEST_SCRIPT ngircd_10 
+./test_script ngircd_10
+
