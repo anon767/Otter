@@ -45,8 +45,7 @@ else:
 sys.argv[:2] = []
 
 keyword = ""
-#interrupt = "User interrupt!"
-interrupt = "Timed out!"
+interrupt = "User interrupt!"
 
 if len(sys.argv) == 2:
 	keyword = sys.argv[0]
@@ -78,12 +77,12 @@ for zipfilename in os.listdir(dir):
 		nPaths = 0
 		while line != '' and not line.startswith('STP was invoked'):
 			line = file.readline()
-			#if line.startswith("Running Test"):      #  Edit this and the line below to suit your need
-			#	print line,
-			#if line.startswith("Running Macro"):     #
-			#	print line,
+			if line.startswith("Running Test"):      #  Edit this and the line below to suit your need
+				print line,
+			if line.startswith("Running Macro"):     #
+				print line,
 			if line.find(interrupt)>=0:
-				print '(Warning: test interrupted)'
+				print '(Warning: test interrupted)',
 			if line.find(keyword)>=0:
 				need_process = True
 			if line.startswith('Sample value'):

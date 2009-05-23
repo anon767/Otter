@@ -18,14 +18,18 @@ def addLinesTo(setOrList,theFile,stopStr):
 		line = theFile.readline()
 
 def line_cmp(line1,line2):
-	[file1,no1] = line1.split(":")
-	[file2,no2] = line2.split(":")
-	if file1<file2: 
-		return -1
-	elif file1>file2: 
-		return 1
-	else:
-		return int(no1)-int(no2)
+	try:
+		[file1,no1] = line1.split(":")
+		[file2,no2] = line2.split(":")
+		if file1<file2: 
+			return -1
+		elif file1>file2: 
+			return 1
+		else:
+			return int(no1)-int(no2)
+	except ValueError:
+		print "Error:",line1, line2
+		raise ValueError
 
 
 line_count = int(sys.argv[1])
@@ -45,16 +49,18 @@ variables = []
 # Start by mapping the empty assignment to an empty set of lines
 emptyAssignment = []
 coverage = []
-
-global_coverage = set()
+t_coverage = []
+zero_coverage = set()
+total_coverage = set()
 
 # for each t
 for t in range(0,len(dir)):
 	variables.append(None)
 	emptyAssignment.append(None)
 	coverage.append(None)
+	t_coverage.append(None)
 
-	local_coverage = set()
+	#local_coverage = set()
 
 	# All variable touched by any path condition
 	variables[t] = set()
@@ -62,14 +68,20 @@ for t in range(0,len(dir)):
 	# Start by mapping the empty assignment to an empty set of lines
 	emptyAssignment[t] = frozenset()
 	coverage[t] = { emptyAssignment[t] : set() }
+	t_coverage[t] = set()
 
 	print "--------------------------------------------------"
 	print 'Reading directory',dir[t]
 	print ""
 	for filename in os.listdir(dir[t]):
 		#print 'Reading from',filename
+		if not filename.endswith(".deps"):
+			continue
 		file = open(dir[t] + '/' + filename)
-		file.readline() # 'These n variables[t]'
+		line = file.readline() # 'These n variables[t]'
+		while not line.startswith("These "):
+			line = file.readline() # 'These n variables[t]'
+			
 		# Read in the variables[t]
 		addLinesTo(variables[t],file,'\n')
 	
@@ -77,6 +89,7 @@ for t in range(0,len(dir)):
 		# Read in the lines which are always covered in all executions.
 		# These lines are covered by the empty assignment
 		addLinesTo(coverage[t][emptyAssignment[t]],file,'\n')
+		zero_coverage |= coverage[t][emptyAssignment[t]]
 	
 		# Go through the rest of the file
 		while line != '':
@@ -92,15 +105,18 @@ for t in range(0,len(dir)):
 				# Now read in the coverage[t]
 				coveredLines = []
 				addLinesTo(coveredLines,file,'\n')
-				coveredLines = list(set(coveredLines)-global_coverage)
-				local_coverage |= set(coveredLines)
+				t_coverage[t] |= set(coveredLines)
 				# Add the coverage[t] to thisAssignment's coverage[t]
 				try:
 					coverage[t][thisAssignment].update(coveredLines)
 				except KeyError:
 					coverage[t][thisAssignment] = set(coveredLines)
 
-	global_coverage |= local_coverage
+	t_coverage[t] -= zero_coverage
+	for tt in range(0,t):
+		t_coverage[t] -= t_coverage[tt]
+	
+	total_coverage |= t_coverage[t]
 
 	#print
 	print 'All variables[t] ever touched:'
@@ -114,13 +130,18 @@ for t in range(0,len(dir)):
 	
 	print
 	print 'Lines covered by t-way but not (t-1)-way:'
-	for line in sorted(local_coverage,line_cmp):
+	for line in sorted(t_coverage[t]-zero_coverage,line_cmp):
 		print line
 
 	cov_stat = []
 	
 	for assignment,lines in sorted(coverage[t].iteritems()):
 		if assignment == emptyAssignment[t]:
+			continue
+		lines -= zero_coverage
+		for tt in range(0,t):
+			lines -= t_coverage[tt]
+		if len(lines)==0:
 			continue
 		print
 		print 'Under the condition'
@@ -135,7 +156,7 @@ for t in range(0,len(dir)):
 	print "\nSummary:"
 	print_size("TOUCHED_VAR",len(variables[t]),False)
 	print_size("%LINE 0-way",len(coverage[t][emptyAssignment[t]]))
-	print_size("%LINE (t-way)\\(t-1-way)",len(local_coverage))
+	print_size("%LINE (t-way)\\(t-1-way)",len(t_coverage[t]))
 	print_size ("LEN", len(cov_stat),False)
 	print_size ("MAX", max(cov_stat))
 	print_size ("MIN", min(cov_stat))
@@ -143,10 +164,10 @@ for t in range(0,len(dir)):
 	print "\nDone\n"
 	
 # END for each t
-total_coverage = global_coverage | coverage[0][emptyAssignment[0]]
+total_coverage |= zero_coverage 
 print
 print "--------------------------------------------------"
 print 'Lines covered by all ways:'
-print len(total_coverage),"lines total"
+print_size ("Lines total",len(total_coverage))
 for line in sorted(total_coverage,line_cmp):
 	print line
