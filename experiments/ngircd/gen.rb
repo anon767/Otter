@@ -2,55 +2,10 @@
 
 def make_testcontents(name)
   s = <<END
-COVDIR=../codeCoverageTest
-EXPDIR=../..
-STATSFILE=$COVDIR/ngircd.stats
-
-TOPDIR=../../..
-LIBCDIR=$TOPDIR/libc
-MOCKEDDIR=$COVDIR/mockedFns
-
-MARSHALDIR=/fs/skoll/symexe/data/ngircd/12.6data
-
-MACRO="\\
--DSYM_CONF_PREDEFCHANNELSONLY \\
--DSYM_CONF_CONNECTRETRY \\
--DSYM_CONF_UID \\
--DSYM_CONF_GID \\
--DSYM_CONF_OPERCANMODE \\
--DSYM_CONF_NODNS \\
--DSYM_CONF_LISTENIPV4 \\
--DSYM_CONF_OPERSERVERMODE \\
--DSYM_CONF_MAXJOINS \\
--DSYM_CONF_MAXCONNECTIONSIP \\
--DSYM_CONF_MAXNICKLENGTH \\
--DSYM_CONF_PINGTIMEOUT \\
--DSYM_CONF_PONGTIMEOUT"
-
 cd $1
+echo TEST_SCRIPT #{name} 
+./test_script #{name}
 
-echo
-echo Running Test #{name} 
-echo Running Macro $MACRO
-echo
-
-CILLY_DONT_COMPILE_AFTER_MERGE= \\
-$TOPDIR/cil/bin/cilly \\
-	--merge \\
-	$MACRO \\
-	--useLogicalOperators \\
-	-D_FILE_OFFSET_BITS=64 \\
-	-U __OPTIMIZE__ \\
-	-I $MOCKEDDIR \\
-	--doexecute \\
-	--printLittle \\
-	--printNoEscapedString \\
-	--covStats=$STATSFILE \\
-	--lineCov \\
-	--timeout=14400 \\
-	--marshalCoverageTo=$MARSHALDIR/#{name}.marshal \\
-	$COVDIR/otherFiles/symtest_driver.c \\
-	$COVDIR/otherFiles/#{name}.c
 END
 end
 

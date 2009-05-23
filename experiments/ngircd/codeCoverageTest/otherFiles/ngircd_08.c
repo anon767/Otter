@@ -1,4 +1,4 @@
-// RESTART, with connected server
+// RESTART, with Client/ChannelExit
 int symtest(){
 	
 	int t;
@@ -9,19 +9,23 @@ int symtest(){
 
 	t = 0;
 		
-	event_accept(client_fd2,t++);
-	event_recv(client_fd2,"PASS password 0210-IRC+ IRC|aBgH$ Z\r\n",t++);
-	event_recv(client_fd2,"SERVER irc2.the.net  1 :Experimental server\r\n",t++);
 
 	event_accept(client_fd1,t++);
 	event_recv(client_fd1,"NICK nick1\r\n",t++);
 	event_recv(client_fd1,"USER user x x :user\r\n",t++);
-	event_send(client_fd1,t++);
+	//event_send(client_fd1,t++);
 	event_recv(client_fd1,"OPER TheOper ThePwd\r\n",t++);
-	event_send(client_fd1,t++);
-	
+	//event_send(client_fd1,t++);
+
+	event_accept(client_fd2,t++);
+	event_recv(client_fd2,"NICK nick2\r\n",t++);
+	event_recv(client_fd2,"USER user2 x x :user\r\n",t++);
+	//event_send(client_fd2,t++);
+
+	event_recv(client_fd1,"JOIN #ch1\r\n",t++);
+	event_recv(client_fd2,"JOIN #ch2\r\n",t++);
+
 	event_recv(client_fd1,"RESTART\r\n",t++);
-	event_send(client_fd1,t++);
 
 	event_end(t++);
 }

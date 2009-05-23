@@ -1,22 +1,4 @@
-COVDIR=../codeCoverageTest
-STATSFILE=$COVDIR/ngircd.stats
-
-TOPDIR=../../..
-LIBCDIR=$TOPDIR/libc
-MOCKEDDIR=$COVDIR/mockedFns
-
 cd $1
+echo TEST_SCRIPT rfc1459_4.1.2 
+./test_script rfc1459_4.1.2
 
-$TOPDIR/cil/bin/cilly \
-	--merge \
-	--useLogicalOperators \
-	-D_FILE_OFFSET_BITS=64 \
-	-U __OPTIMIZE__ \
-	-I $MOCKEDDIR \
-	--doexecute \
-	--printLittle \
-	--printNoEscapedString \
-	--covStats=$STATSFILE \
-	--lineCov \
-	$COVDIR/otherFiles/symtest_driver.c \
-	$COVDIR/otherFiles/rfc1459_4.1.2.c

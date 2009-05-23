@@ -148,7 +148,7 @@ void symtest_Conf_Init_impl(){
 		__SYMBOLIC_BOOL(&Conf_ListenIPv6);
 	#endif
 	#ifdef SYM_CONF_LISTENIPV4
-		__SYMBOLIC_BOOL(&Conf_ListenIPv4);
+		Conf_ListenIPv4 = 1;
 	#endif
 	#ifdef SYM_CONF_CONNECTIPV6
 		__SYMBOLIC_BOOL(&Conf_ConnectIPv6);
@@ -176,12 +176,12 @@ void symtest_Conf_Init_impl(){
 		 //__ASSUME(Conf_MaxNickLength>=0);
 	#endif
 	#ifdef SYM_CONF_PINGTIMEOUT
-		__SYMBOLIC(&Conf_PingTimeout);
-		__ASSUME(Conf_PingTimeout==3600 || Conf_PingTimeout==120 || Conf_PingTimeout==1);
+		//__SYMBOLIC(&Conf_PingTimeout);
+		Conf_PingTimeout = 3600;
 	#endif
 	#ifdef SYM_CONF_PONGTIMEOUT
-		__SYMBOLIC(&Conf_PongTimeout);
-		__ASSUME(Conf_PongTimeout==3600 || Conf_PongTimeout==20 || Conf_PongTimeout==1);
+		//__SYMBOLIC(&Conf_PongTimeout);
+		Conf_PongTimeout = 3600;
 	#endif
 	#ifdef SYM_CONF_PREDEFCHANNELSONLY
 		__SYMBOLIC_BOOL(&Conf_PredefChannelsOnly);

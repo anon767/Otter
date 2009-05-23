@@ -30,7 +30,6 @@ extern int symtest();
 // Conf_MaxNickLength
 // Conf_PingTimeout
 // Conf_PongTimeout
-// Conf_PredefChannelsOnly
 
 //#define	SYM_CONF_CONNECTRETRY 
 //#define	SYM_CONF_UID 
@@ -39,7 +38,6 @@ extern int symtest();
 //#define	SYM_CONF_NODNS 
 //#define	SYM_CONF_LISTENIPV4 
 //#define	SYM_CONF_OPERSERVERMODE 
-//#define	SYM_CONF_PREDEFCHANNELSONLY
 //
 //#define	SYM_CONF_MAXJOINS 
 //#define	SYM_CONF_MAXCONNECTIONSIP 
@@ -121,22 +119,18 @@ void symtest_Conf_Init_impl(){
 	#ifdef CConf_PongTimeout
 		Conf_PongTimeout = CConf_PongTimeout;
 	#endif
-	#ifdef CConf_PredefChannelsOnly
-		Conf_PredefChannelsOnly = CConf_PredefChannelsOnly;
-	#endif
 
 	/* Make flags symbolic
 	   Will overwrite any previous concrete assignments
 	 */
 	#ifdef SYM_CONF_UID
-		__SYMBOLIC(&Conf_UID);
+		__SYMBOLIC_BOOL(&Conf_UID);
 	#endif
 	#ifdef SYM_CONF_GID
-		__SYMBOLIC(&Conf_GID);
+		__SYMBOLIC_BOOL(&Conf_GID);
 	#endif
 	#ifdef SYM_CONF_CONNECTRETRY
-		__SYMBOLIC(&Conf_ConnectRetry);
-		__ASSUME(Conf_ConnectRetry==5 || Conf_ConnectRetry==60);
+		__SYMBOLIC_BOOL(&Conf_ConnectRetry);
 	#endif
 	#ifdef SYM_CONF_OPERCANMODE
 		__SYMBOLIC_BOOL(&Conf_OperCanMode);
@@ -165,15 +159,15 @@ void symtest_Conf_Init_impl(){
 	#endif
 	#ifdef SYM_CONF_MAXJOINS
 		 __SYMBOLIC(&Conf_MaxJoins);
-		 //__ASSUME(Conf_MaxJoins>=0);
+		 __ASSUME(Conf_MaxJoins>=0);
 	#endif
 	#ifdef SYM_CONF_MAXCONNECTIONSIP 
 		 __SYMBOLIC(&Conf_MaxConnectionsIP);
-		 //__ASSUME(Conf_MaxConnectionsIP>=0);
+		 __ASSUME(Conf_MaxConnectionsIP>=0);
 	#endif
 	#ifdef SYM_CONF_MAXNICKLENGTH
 		 __SYMBOLIC(&Conf_MaxNickLength);
-		 //__ASSUME(Conf_MaxNickLength>=0);
+		 __ASSUME(Conf_MaxNickLength>=0);
 	#endif
 	#ifdef SYM_CONF_PINGTIMEOUT
 		__SYMBOLIC(&Conf_PingTimeout);
@@ -183,9 +177,7 @@ void symtest_Conf_Init_impl(){
 		__SYMBOLIC(&Conf_PongTimeout);
 		__ASSUME(Conf_PongTimeout==3600 || Conf_PongTimeout==20 || Conf_PongTimeout==1);
 	#endif
-	#ifdef SYM_CONF_PREDEFCHANNELSONLY
-		__SYMBOLIC_BOOL(&Conf_PredefChannelsOnly);
-	#endif	 
+		 
 }
 
 // Default configuration being read into ngircd

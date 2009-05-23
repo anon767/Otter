@@ -10,7 +10,7 @@ TOPDIR=../../..
 LIBCDIR=$TOPDIR/libc
 MOCKEDDIR=$COVDIR/mockedFns
 
-MARSHALDIR=/fs/skoll/symexe/data/ngircd/12.6data
+MARSHALDIR=/fs/skoll/symexe/data/ngircd/12.6fewer
 
 MACRO="\\
 -DSYM_CONF_PREDEFCHANNELSONLY \\
@@ -49,7 +49,7 @@ $TOPDIR/cil/bin/cilly \\
 	--lineCov \\
 	--timeout=14400 \\
 	--marshalCoverageTo=$MARSHALDIR/#{name}.marshal \\
-	$COVDIR/otherFiles/symtest_driver.c \\
+	$COVDIR/otherFiles/symtest_driver_fewer.c \\
 	$COVDIR/otherFiles/#{name}.c
 END
 end
