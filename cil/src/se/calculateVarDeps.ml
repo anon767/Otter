@@ -1,17 +1,105 @@
 open Cil
 open Types
 
-let covInfoFile = ref ""
-let valuesFile = ref ""
-(* Map variable names to possible values *)
-let varToVals = Hashtbl.create 20
-
 (* We need a bytesToVars in order to print out the conditions in a
 	 readable way.  I think the way we are doing things now, all of the
 	 bytesToVars should be the same, so picking an arbitrary one should be
 	 fine, but is there a better, more general way to map bytes to
 	 variables? *)
 let bytesToVars = ref []
+
+type 'a tree =
+	| Node of 'a * 'a tree list (* (data, children) *)
+
+type varDepTree = (bytes * LineSet.t) tree
+
+(* trueBytes will be at the root of the tree *)
+let trueBytes = Convert.lazy_int_to_bytes 1
+
+(* This makes a tree which is a single path. lst is represented up
+	 from the bottom of the path, with trueBytes at the root. Also, the
+	 leaf gets cov as its coverage, while all internal nodes get
+	 LineSet.empty *)
+let lstToTree lst cov : varDepTree =
+	match lst with
+		| [] -> failwith "I don't think this should happen" (* Node ((trueBytes,cov), []) *)
+		| h::t ->
+				let rec helper acc = function
+					| [] -> Node ((trueBytes,LineSet.empty), acc)
+					| h::t -> helper [Node ((h,LineSet.empty), acc)] t
+				in
+				helper [Node ((h,cov),[])] t
+
+let myEqual bytes1 (bytes2,_) = MemOp.same_bytes bytes1 bytes2
+
+let findMatchingChild equal elt children : 'a tree * 'a tree list =
+	let rec helper acc = function
+		| Node(otherElt,_) as x :: t ->
+				if equal elt otherElt
+				then x, List.rev_append acc t
+				else helper (x::acc) t
+		| _ -> raise Not_found
+	in
+	helper [] children
+
+let rec add_aux lst cov tree : varDepTree =
+	match lst,tree with
+		| [], Node ((bytes, oldCov), children) -> (* lst is already represented in the tree *)
+				Node ((bytes, LineSet.union cov oldCov), children) (* Union in the coverage *)
+		| h::t, Node (value, children) ->
+				try (* See if we can step to a child *)
+					let matchingChild,otherChildren =
+						findMatchingChild myEqual h children
+					in
+(*Format.printf "Matched %s\n\n" (To_string.humanReadableBytes !bytesToVars h);*)
+					(* Try to add the rest of lst to the child that matches *)
+					let newTree = add_aux t cov matchingChild in
+					Node (value, newTree :: otherChildren)
+				with Not_found ->
+					(* No child matches; add lst as a new child *)
+(*Format.printf "Adding\n%s\nas new\n\n" (To_string.humanReadablePc (List.rev lst) !bytesToVars);*)
+					let subtree = match lstToTree (List.rev lst) cov with
+						| Node (_,[x]) -> x
+						| _ -> failwith "lstToTree can't return this"
+					in
+					Node (value, subtree :: children)
+
+(* Add a list into the tree *)
+let add lst cov tree = add_aux (List.rev lst) cov tree
+
+let rec getLeavesWithCoverage_aux pc_acc cov_acc tree = match tree with
+	| Node ((bytes,cov), children) ->
+			let newPc = bytes::pc_acc
+			and newCov = LineSet.union cov cov_acc in
+			if children = []
+			then [(newPc,newCov)]
+			else List.concat (List.map (getLeavesWithCoverage_aux newPc newCov) children)
+
+let getLeavesWithCoverage tree = match tree with
+	| Node ((x,y),children) when x == trueBytes && y == LineSet.empty ->
+			(* Ignore trueBytes at root of tree *)
+			List.concat
+				(List.map (getLeavesWithCoverage_aux [] LineSet.empty) children)
+	| _ -> failwith "Impossible: root must be (trueBytes,LineSet.empty)"
+(*
+let rec countLeaves = function
+	| Node (_,[]) -> 1
+	| Node (_,children) -> List.fold_left (fun sum subtree -> sum + countLeaves subtree) 0 children
+
+let rec countNodes = function
+	| Node (_,children) -> List.fold_left (fun sum subtree -> sum + countNodes subtree) 1 children
+
+let rec printTree_aux indent = function
+	| Node ((bytes,cov),children) ->
+			Format.printf "%s%s (%d)\n" indent (To_string.humanReadableBytes !bytesToVars bytes) (LineSet.cardinal cov);
+			List.iter (printTree_aux (indent^"\t")) children
+
+let printTree = printTree_aux ""
+*)
+let covInfoFiles = ref []
+let valuesFile = ref ""
+(* Map variable names to possible values *)
+let varToVals = Hashtbl.create 20
 
 let numVars = ref 1
 
@@ -44,14 +132,62 @@ let rec subsetsOfSize n lst =
 				subsetsWithoutX
 				(List.map (fun subset -> x :: subset) smallerSubsets)
 
-(* Memoization table recording whether a path condition is consistent
-	 with an assignment *)
-let implicationHash = Hashtbl.create 1000
-
 let makeEquality bytes value =
 	(* Is intType okay here? *)
 	Bytes_Op(OP_EQ,[(bytes,intType);
 									(Convert.lazy_int_to_bytes value, intType)])
+(*
+(* Is a pc consistent with a set of assignments? *)
+let implicationHash = Hashtbl.create 1000
+
+(* Is it possible for bytes to true, given the pc? Ask STP. *)
+let mightBeTrue pc bytes =
+	try (* See if the answer is memoized *)
+		let res = Hashtbl.find implicationHash (pc,bytes) in
+Format.printf "%scache hit\n" (if res then "" else "useful ");
+		res
+	with Not_found -> (* Answer isn't memoized; ask STP *)
+		let result =
+			match Stp.consult_stp pc bytes Stp.FalseOrNot with
+				| Stp.False -> false (* Must be false *)
+				| _ -> true (* Might be true *)
+		in
+		Hashtbl.add implicationHash (pc,bytes) result; (* Memoize the answer *)
+Format.printf "cache miss\n";
+		result
+
+(* This checks all subsets to see if they are inconsistent before checking the assignment itself. If subsets are often inconsistent, this should prevent calls to the SAT solver and, hence, speed things up. In one test I tried, though, this made things run 3 times more slowly than just checking the single assignments for consistency, so I'm sticking with the other version for now. *)
+exception Inconsistent
+
+let isConsistentWithList pc assignments =
+	try
+		let rec helper size =
+			List.iter
+				(fun (assns:(bytes*int) list) ->
+					 let equalities =
+						 match assns with
+							 | [] -> failwith "Empty list in isConsistentWithList"
+							 | [(varBytes,value)] -> makeEquality varBytes value
+							 | _ ->
+									 Bytes_Op(OP_LAND,
+														List.map
+															(fun (varBytes,value) -> (makeEquality varBytes value,
+																												intType))
+															assns)
+					 in
+					 if not (mightBeTrue pc equalities) then raise Inconsistent
+				)
+				(subsetsOfSize size assignments);
+			if size = List.length assignments
+			then true (* The whole thing is consistent *)
+			else helper (succ size)
+		in helper 1
+	with Inconsistent -> false
+*)
+
+(* Memoization table recording whether a path condition is consistent
+	 with an assignment *)
+let implicationHash = Hashtbl.create 1000
 
 (* Is it possible for bytes to true, given the pc? Ask STP. *)
 let mightBeTrue pc bytes =
@@ -66,10 +202,13 @@ let mightBeTrue pc bytes =
 (* Is pc consistent with 'var = value'? *)
 let isConsistentWithAssignment pc (varBytes,value) =
 	try (* See if the answer is memoized *)
-		Hashtbl.find implicationHash (pc,varBytes,value)
+		let res = Hashtbl.find implicationHash (pc,varBytes,value) in
+Format.printf "%scache hit\n" (if res then "" else "useful ");
+		res
 	with Not_found ->
 		let result = mightBeTrue pc (makeEquality varBytes value) in
 		Hashtbl.add implicationHash (pc,varBytes,value) result; (* Memoize the answer *)
+Format.printf "cache miss\n";
 		result
 
 (* Is the pc consistent with the assignments? *)
@@ -98,6 +237,7 @@ let isConsistentWithList pc assignments =
 					)
 	)
 
+
 (* Which of the (pc,lines) pairs have pcs which are consistent with
 	 the assignments? *)
 let consistentPCsAndLines allPCsAndLines assignments =
@@ -119,7 +259,7 @@ let linesControlledBy pcsAndLines assignments =
 			| x -> bigInter x
 	in
 	if not (LineSet.is_empty result) then (
-		Output.printf "\nUnder the condition\n%s\nthese %d lines are hit\n"
+		Format.printf "\nUnder the condition\n%s\nthese %d lines are hit\n"
 			(String.concat "\n"
 				 (List.map
 						(fun (varBytes,value) ->
@@ -128,31 +268,12 @@ let linesControlledBy pcsAndLines assignments =
 								 value)
 						assignments))
 			(LineSet.cardinal result);
-		LineSet.iter (fun (file,line) -> Output.printf "%s:%d\n" file line) result
+		LineSet.iter (fun (file,line) -> Format.printf "%s:%d\n" file line) result
 	);
 	result
 
-exception Stop of (bytes list * LineSet.t) list * LineSet.t
-
-(* This version never removes lines from consideration *)
-let findDependencies (pcsAndLines,linesToExplain) localBytesToVars =
-	Output.printf "\nConsidering\n%s\n"
-		(String.concat ", " (List.map (fun (_,var) -> var.vname) localBytesToVars));
-	List.iter
-		(fun assignments ->
-			 ignore (linesControlledBy pcsAndLines assignments))
-		(allPossibleValues localBytesToVars);
-	(pcsAndLines,linesToExplain)
-(*
-(* This version removes lines once they are controlled by something. *)
 let findDependenciesAndUpdate (pcsAndLines,linesToExplain) localBytesToVars =
-	Output.printf "\n%d lines left\n" (LineSet.cardinal linesToExplain);
-
-	if LineSet.is_empty linesToExplain
-	then raise (Stop (pcsAndLines,linesToExplain));
-
-
-	Output.printf "\nConsidering\n%s\n"
+	Format.printf "\nConsidering\n%s\n"
 		(String.concat ", " (List.map (fun (_,var) -> var.vname) localBytesToVars));
 	let linesControlledByVars =
 		bigUnion
@@ -167,7 +288,8 @@ let findDependenciesAndUpdate (pcsAndLines,linesToExplain) localBytesToVars =
 		 (fun (pc,lines) -> pc,LineSet.diff lines linesControlledByVars)
 		 pcsAndLines,
 	 LineSet.diff linesToExplain linesControlledByVars)
-*)
+
+exception EverythingCovered
 
 let calculateDeps coverage =
 	let firstResult,restResults =
@@ -187,6 +309,10 @@ let calculateDeps coverage =
 
 	(* See comment at top of file *)
 	bytesToVars := firstResult.result_history.bytesToVars;
+	(* Make sure all bytesToVars are the same *)
+	List.iter
+		(fun {result_history={bytesToVars=b2v}} -> if b2v <> !bytesToVars then failwith "Not all bytesToVars are equal")
+		restResults;
 
 	(* Other than the bytesToVars, all we really need are the path
 		 conditions (without the __ASSUMEs) and the coverage
@@ -210,11 +336,53 @@ let calculateDeps coverage =
 		coverage
 	in
 
+	let treeOfPcs =
+		List.fold_left
+			(fun treeSoFar (pc,cov) -> add pc cov treeSoFar)
+			(Node ((trueBytes,LineSet.empty), []))
+			pcsAndLines
+	in
+	let maximalPcsAndLines = getLeavesWithCoverage treeOfPcs in
+(*
+printTree treeOfPcs;
+Format.printf "# of pcs: %d\nTotal size of pcs: %d\nNumber of leaves: %d\nNumber of nodes: %d\n"
+(List.length pcsAndLines) (List.fold_left (fun sum (pc,_) -> sum + List.length pc) 0 pcsAndLines)
+(countLeaves treeOfPcs) (countNodes treeOfPcs);
+Format.printf "Check: # max. pcs = %d, total size of max. pcs = %d\n" (List.length maximalPcsAndLines) (List.fold_left (fun sum (pc,_) -> sum + List.length pc) 0 maximalPcsAndLines);
+exit(0);
+
+(*
+let pcsAndLines2 = List.map (fun (pc,_) -> Format.printf "%s\n" (To_string.humanReadablePc pc !bytesToVars); List.find (fun (pc',_) -> List.for_all2 MemOp.same_bytes (List.tl (List.rev pc)) pc') pcsAndLines) maximalPcsAndLines in
+List.iter2 (fun (_,cov1) (_,cov2) -> Format.printf "Differing lines:\n"; LineSet.iter (fun (file,line) -> Format.printf "%s:%d\n" file line) (LineSet.diff cov2 cov1)) pcsAndLines2 maximalPcsAndLines;
+exit(0);
+*)
+
+let mySort = List.sort (fun (x,_) (y,_) -> compare x y) in
+List.iter2
+	(fun (pc1,cov1) (pc2,cov2) ->
+		 if pc1 = pc2 then (
+			 Format.printf "%d\t%d\n" (LineSet.cardinal cov1) (LineSet.cardinal cov2);
+			 Format.printf "Differing lines:\n";
+			 LineSet.iter
+				 (fun (file,line) -> Format.printf "%s:%d\n" file line)
+				 (LineSet.diff cov2 cov1)
+		 ) else (
+			 Format.printf "Differing pcs:\n%s\n\n%s\n\n"
+(*(To_string.bytes_list pc1) (To_string.bytes_list pc2)*)
+				 (To_string.humanReadablePc pc1 !bytesToVars)
+				 (To_string.humanReadablePc pc2 !bytesToVars)
+		 )
+	)
+	(mySort (let rec drop n l = if n < 1 then l else drop (pred n) (List.tl l) in drop 276 pcsAndLines))
+	(mySort maximalPcsAndLines);
+	exit(0);
+*)
+
 	(* Pick out variables that appear in some path condition, ignoring
 		 those that aren't mentioned anywhere. *)
 	let symbolsInPcs =
 		bigUnionForSymbols
-			(List.map (fun (pc,_) -> Stp.allSymbolsInList pc) pcsAndLines)
+			(List.map (fun (pc,_) -> Stp.allSymbolsInList pc) maximalPcsAndLines)
 	in
 	bytesToVars :=
 		List.filter
@@ -222,46 +390,53 @@ let calculateDeps coverage =
 				 not (SymbolSet.is_empty
 								(SymbolSet.inter (Stp.allSymbols bytes) symbolsInPcs)))
 			!bytesToVars;
-	Output.printf "These %d variables are mentioned in the path conditions:\n"
+	Format.printf "These %d variables are mentioned in the path conditions:\n"
 		(List.length !bytesToVars);
-	List.iter (fun (_,var) -> Output.printf "%s\n" var.vname) !bytesToVars;
+	List.iter (fun (_,var) -> Format.printf "%s\n" var.vname) !bytesToVars;
 
-	Output.printf "\n%d lines always executed:\n" (LineSet.cardinal alwaysExecuted);
+	Format.printf "\n%d lines always executed:\n" (LineSet.cardinal alwaysExecuted);
 	LineSet.iter
-		(fun (file,line) -> Output.printf "%s:%d\n" file line)
+		(fun (file,line) -> Format.printf "%s:%d\n" file line)
 		alwaysExecuted;
 
 	(* Explain all the lines we can *)
-	let remainingPCsAndLines = ref pcsAndLines (* Initial path conditions and coverage information *)
+	let remainingPCsAndLines = ref maximalPcsAndLines (* Initial path conditions and coverage information *)
 	and remainingLines = ref (LineSet.diff everExecuted alwaysExecuted) in (* All lines that weren't always executed *)
 
-	ignore(
-		List.fold_left
-			findDependencies
-			(!remainingPCsAndLines, !remainingLines)
-			(subsetsOfSize !numVars !bytesToVars))
-
-(* (* If you remove explained lines, replace the preceding lines with this: *)
 	(try
-		 let (nextPcs,nextLines) =
-			 List.fold_left
-				 findDependenciesAndUpdate
-				 (!remainingPCsAndLines, !remainingLines)
-				 (subsetsOfSize !numVars !bytesToVars)
-		 in
-		 remainingPCsAndLines := nextPcs;
-		 remainingLines := nextLines
-	 with Stop(_,_) -> ()
+		 let size = ref 1 in
+		 while true do
+			 Format.printf "\n%d lines left\n" (LineSet.cardinal !remainingLines);
+			 LineSet.iter
+				 (fun (file,lineNum) -> Format.printf "%s:%d\n" file lineNum)
+				 !remainingLines;
+			 if LineSet.is_empty !remainingLines
+			 then raise EverythingCovered;
+			 let (nextPcs,nextLines) =
+				 List.fold_left
+					 findDependenciesAndUpdate
+					 (!remainingPCsAndLines, !remainingLines)
+					 (subsetsOfSize !size !bytesToVars)
+			 in
+			 remainingPCsAndLines := nextPcs;
+			 remainingLines := nextLines;
+			 incr size
+		 done
+	 with EverythingCovered -> ()
 	)
-	Output.printf "These lines are unexplained:\n";
-	LineSet.iter (fun (file,line) -> Output.printf "%s:%d\n" file line) !remainingLines
-*)
 
 let readInDataAndGo _ = (* This needs to take a Cil.file, but I don't use it *)
-	let inChan = open_in_bin !covInfoFile in
-	(* Read in the coverage data structure *)
-	let coverage = (Marshal.from_channel inChan : job_result list) in
-	close_in inChan;
+	let coverage =
+		List.fold_left
+			(fun acc file ->
+				 let inChan = open_in_bin file in
+				 (* Read in the coverage data structure *)
+				 let res = List.rev_append (Marshal.from_channel inChan : job_result list) acc in
+				 close_in inChan;
+				 res)
+			[]
+			!covInfoFiles
+	in
 	let inChan = open_in !valuesFile in
 	(* Read in the possible variable values *)
 	try
@@ -284,8 +459,8 @@ let feature : Cil.featureDescr = {
   Cil.fd_description = "Calculate what lines depend on what symbolic variables.\n";
   Cil.fd_extraopt = [
 		("--fileWithCovInfo",
-		 Arg.Set_string covInfoFile,
-		 "<filename> The file from which to read the coverage information\n");
+		 Arg.String (fun s -> covInfoFiles := s :: !covInfoFiles),
+		 "<filename> A file from which to read the coverage information\n");
 		("--fileWithPossibleValues",
 		 Arg.Set_string valuesFile,
 		 "<filename> File from which to read the possible values for variables

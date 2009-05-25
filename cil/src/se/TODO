@@ -49,4 +49,6 @@ Better handling of strings?
 
 Use a real libc implementation?
 
+Handle multiple processes
+
 Have a fixed header space (so things can be run cross-platform)

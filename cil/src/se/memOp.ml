@@ -319,8 +319,8 @@ let frame__add_varinfo frame block_to_bytes varinfo =
 	(* This is only called for local variables. Globals are handled by state__add_global. *)
 	let fresh_block = block__make (To_string.varinfo varinfo) size Block_type_Local in
 (*	let bytes = Bytes_ByteArray ({ImmutableArray.empty with ImmutableArray.length = size}) in (* initially undefined (so any accesses will crash the executor) *) *)
-(*	let bytes = bytes__make_default size byte__undef in (* initially the symbolic 'undef' byte *) *)
-	let bytes = bytes__symbolic size in (* initially symbolic *)
+	let bytes = bytes__make_default size byte__undef in (* initially the symbolic 'undef' byte *)
+(*	let bytes = bytes__symbolic size in (* initially symbolic *) *)
 		frame__add_varinfo_initialized frame block_to_bytes varinfo bytes fresh_block
 ;;
 
