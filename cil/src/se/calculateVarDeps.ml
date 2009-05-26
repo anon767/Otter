@@ -51,13 +51,11 @@ let rec add_aux lst cov tree : varDepTree =
 					let matchingChild,otherChildren =
 						findMatchingChild myEqual h children
 					in
-(*Format.printf "Matched %s\n\n" (To_string.humanReadableBytes !bytesToVars h);*)
 					(* Try to add the rest of lst to the child that matches *)
 					let newTree = add_aux t cov matchingChild in
 					Node (value, newTree :: otherChildren)
 				with Not_found ->
 					(* No child matches; add lst as a new child *)
-(*Format.printf "Adding\n%s\nas new\n\n" (To_string.humanReadablePc (List.rev lst) !bytesToVars);*)
 					let subtree = match lstToTree (List.rev lst) cov with
 						| Node (_,[x]) -> x
 						| _ -> failwith "lstToTree can't return this"
@@ -143,9 +141,7 @@ let implicationHash = Hashtbl.create 1000
 (* Is it possible for bytes to true, given the pc? Ask STP. *)
 let mightBeTrue pc bytes =
 	try (* See if the answer is memoized *)
-		let res = Hashtbl.find implicationHash (pc,bytes) in
-Format.printf "%scache hit\n" (if res then "" else "useful ");
-		res
+		Hashtbl.find implicationHash (pc,bytes)
 	with Not_found -> (* Answer isn't memoized; ask STP *)
 		let result =
 			match Stp.consult_stp pc bytes Stp.FalseOrNot with
@@ -153,16 +149,18 @@ Format.printf "%scache hit\n" (if res then "" else "useful ");
 				| _ -> true (* Might be true *)
 		in
 		Hashtbl.add implicationHash (pc,bytes) result; (* Memoize the answer *)
-Format.printf "cache miss\n";
 		result
 
-(* This checks all subsets to see if they are inconsistent before checking the assignment itself. If subsets are often inconsistent, this should prevent calls to the SAT solver and, hence, speed things up. In one test I tried, though, this made things run 3 times more slowly than just checking the single assignments for consistency, so I'm sticking with the other version for now. *)
-exception Inconsistent
-
+(* This checks all subsets to see if they are inconsistent before
+	 checking the assignment itself. If subsets are often inconsistent,
+	 this should prevent calls to the SAT solver and, hence, speed
+	 things up. In some tests I tried, though, this runs much more
+	 slowly than just checking the single assignments for consistency,
+	 so I'm sticking with the other version for now. *)
 let isConsistentWithList pc assignments =
-	try
-		let rec helper size =
-			List.iter
+	let rec helper size =
+		let isInconsistent =
+			List.exists
 				(fun (assns:(bytes*int) list) ->
 					 let equalities =
 						 match assns with
@@ -175,14 +173,15 @@ let isConsistentWithList pc assignments =
 																												intType))
 															assns)
 					 in
-					 if not (mightBeTrue pc equalities) then raise Inconsistent
+					 not (mightBeTrue pc equalities)
 				)
-				(subsetsOfSize size assignments);
-			if size = List.length assignments
-			then true (* The whole thing is consistent *)
-			else helper (succ size)
-		in helper 1
-	with Inconsistent -> false
+				(subsetsOfSize size assignments)
+		in
+		if isInconsistent then false
+		else if size = List.length assignments then true (* The whole thing is consistent *)
+		else helper (succ size) (* Try larger subsets *)
+	in
+	helper 1
 *)
 
 (* Memoization table recording whether a path condition is consistent
@@ -202,13 +201,10 @@ let mightBeTrue pc bytes =
 (* Is pc consistent with 'var = value'? *)
 let isConsistentWithAssignment pc (varBytes,value) =
 	try (* See if the answer is memoized *)
-		let res = Hashtbl.find implicationHash (pc,varBytes,value) in
-Format.printf "%scache hit\n" (if res then "" else "useful ");
-		res
+		Hashtbl.find implicationHash (pc,varBytes,value)
 	with Not_found ->
 		let result = mightBeTrue pc (makeEquality varBytes value) in
 		Hashtbl.add implicationHash (pc,varBytes,value) result; (* Memoize the answer *)
-Format.printf "cache miss\n";
 		result
 
 (* Is the pc consistent with the assignments? *)
@@ -343,40 +339,7 @@ let calculateDeps coverage =
 			pcsAndLines
 	in
 	let maximalPcsAndLines = getLeavesWithCoverage treeOfPcs in
-(*
-printTree treeOfPcs;
-Format.printf "# of pcs: %d\nTotal size of pcs: %d\nNumber of leaves: %d\nNumber of nodes: %d\n"
-(List.length pcsAndLines) (List.fold_left (fun sum (pc,_) -> sum + List.length pc) 0 pcsAndLines)
-(countLeaves treeOfPcs) (countNodes treeOfPcs);
-Format.printf "Check: # max. pcs = %d, total size of max. pcs = %d\n" (List.length maximalPcsAndLines) (List.fold_left (fun sum (pc,_) -> sum + List.length pc) 0 maximalPcsAndLines);
-exit(0);
-
-(*
-let pcsAndLines2 = List.map (fun (pc,_) -> Format.printf "%s\n" (To_string.humanReadablePc pc !bytesToVars); List.find (fun (pc',_) -> List.for_all2 MemOp.same_bytes (List.tl (List.rev pc)) pc') pcsAndLines) maximalPcsAndLines in
-List.iter2 (fun (_,cov1) (_,cov2) -> Format.printf "Differing lines:\n"; LineSet.iter (fun (file,line) -> Format.printf "%s:%d\n" file line) (LineSet.diff cov2 cov1)) pcsAndLines2 maximalPcsAndLines;
-exit(0);
-*)
-
-let mySort = List.sort (fun (x,_) (y,_) -> compare x y) in
-List.iter2
-	(fun (pc1,cov1) (pc2,cov2) ->
-		 if pc1 = pc2 then (
-			 Format.printf "%d\t%d\n" (LineSet.cardinal cov1) (LineSet.cardinal cov2);
-			 Format.printf "Differing lines:\n";
-			 LineSet.iter
-				 (fun (file,line) -> Format.printf "%s:%d\n" file line)
-				 (LineSet.diff cov2 cov1)
-		 ) else (
-			 Format.printf "Differing pcs:\n%s\n\n%s\n\n"
-(*(To_string.bytes_list pc1) (To_string.bytes_list pc2)*)
-				 (To_string.humanReadablePc pc1 !bytesToVars)
-				 (To_string.humanReadablePc pc2 !bytesToVars)
-		 )
-	)
-	(mySort (let rec drop n l = if n < 1 then l else drop (pred n) (List.tl l) in drop 276 pcsAndLines))
-	(mySort maximalPcsAndLines);
-	exit(0);
-*)
+Format.printf "%d (instead of %d) path conditions\n" (List.length maximalPcsAndLines) (List.length pcsAndLines);
 
 	(* Pick out variables that appear in some path condition, ignoring
 		 those that aren't mentioned anywhere. *)
