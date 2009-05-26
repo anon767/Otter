@@ -8,13 +8,15 @@ open Types
 	 variables? *)
 let bytesToVars = ref []
 
+let totalNumberOfPcs = ref 0
+
 type 'a tree =
 	| Node of 'a * 'a tree list (* (data, children) *)
 
 type varDepTree = (bytes * LineSet.t) tree
 
-(* trueBytes will be at the root of the tree *)
-let trueBytes = Convert.lazy_int_to_bytes 1
+(* Placeholder value for the root of the tree *)
+let rootNodeData = (Convert.lazy_int_to_bytes 1, LineSet.empty)
 
 (* This makes a tree which is a single path. lst is represented up
 	 from the bottom of the path, with trueBytes at the root. Also, the
@@ -25,7 +27,7 @@ let lstToTree lst cov : varDepTree =
 		| [] -> failwith "I don't think this should happen" (* Node ((trueBytes,cov), []) *)
 		| h::t ->
 				let rec helper acc = function
-					| [] -> Node ((trueBytes,LineSet.empty), acc)
+					| [] -> Node (rootNodeData, acc)
 					| h::t -> helper [Node ((h,LineSet.empty), acc)] t
 				in
 				helper [Node ((h,cov),[])] t
@@ -74,11 +76,11 @@ let rec getLeavesWithCoverage_aux pc_acc cov_acc tree = match tree with
 			else List.concat (List.map (getLeavesWithCoverage_aux newPc newCov) children)
 
 let getLeavesWithCoverage tree = match tree with
-	| Node ((x,y),children) when x == trueBytes && y == LineSet.empty ->
-			(* Ignore trueBytes at root of tree *)
+	| Node (x,children) when x == rootNodeData ->
+			(* Ignore the root of tree, which is just a placeholder *)
 			List.concat
 				(List.map (getLeavesWithCoverage_aux [] LineSet.empty) children)
-	| _ -> failwith "Impossible: root must be (trueBytes,LineSet.empty)"
+	| _ -> failwith "Impossible: bad root of tree"
 (*
 let rec countLeaves = function
 	| Node (_,[]) -> 1
@@ -94,7 +96,7 @@ let rec printTree_aux indent = function
 
 let printTree = printTree_aux ""
 *)
-let covInfoFiles = ref []
+
 let valuesFile = ref ""
 (* Map variable names to possible values *)
 let varToVals = Hashtbl.create 20
@@ -287,65 +289,27 @@ let findDependenciesAndUpdate (pcsAndLines,linesToExplain) localBytesToVars =
 
 exception EverythingCovered
 
-let calculateDeps coverage =
+let calculateDeps pcsAndLines =
 	let firstResult,restResults =
-		match coverage with
+		match pcsAndLines with
 			| hd::tl -> hd,tl
 			| _ -> failwith "No coverage information"
 	in
 	let (alwaysExecuted,everExecuted) =
 		List.fold_left
-			(fun (interAcc,unionAcc) { result_history = hist } ->
-				 LineSet.inter interAcc hist.coveredLines,
-				 LineSet.union unionAcc hist.coveredLines)
-			(firstResult.result_history.coveredLines,
-			 firstResult.result_history.coveredLines)
+			(fun (interAcc,unionAcc) (_,cov) ->
+				 LineSet.inter interAcc cov, LineSet.union unionAcc cov)
+			(snd firstResult, snd firstResult)
 			restResults
 	in
 
-	(* See comment at top of file *)
-	bytesToVars := firstResult.result_history.bytesToVars;
-	(* Make sure all bytesToVars are the same *)
-	List.iter
-		(fun {result_history={bytesToVars=b2v}} -> if b2v <> !bytesToVars then failwith "Not all bytesToVars are equal")
-		restResults;
-
-	(* Other than the bytesToVars, all we really need are the path
-		 conditions (without the __ASSUMEs) and the coverage
-		 information. Also, we can remove the lines that are always
-		 executed from each path's coverage info. *)
-  let rec eliminate_untracked apc apct =
-    match apc,apct with 
-      | [],[]->([],[])
-      | apch::apct,apcth::apctt -> 
-          let (apct1,apct2) = eliminate_untracked apct apctt in
-          if apcth then (apch::apct1,apct2) else  (apct1,apch::apct2)
-      | _,_ -> failwith "Impossible: path_condition and path_condition_tracked must be of equal length"
-  in
-	let pcsAndLines = List.map
-		(fun jobRes ->
-			 (fst (eliminate_untracked
-							 jobRes.result_state.path_condition
-							 jobRes.result_state.path_condition_tracked),
-				LineSet.diff jobRes.result_history.coveredLines alwaysExecuted)
-		)
-		coverage
-	in
-
-	let treeOfPcs =
-		List.fold_left
-			(fun treeSoFar (pc,cov) -> add pc cov treeSoFar)
-			(Node ((trueBytes,LineSet.empty), []))
-			pcsAndLines
-	in
-	let maximalPcsAndLines = getLeavesWithCoverage treeOfPcs in
-Format.printf "%d (instead of %d) path conditions\n" (List.length maximalPcsAndLines) (List.length pcsAndLines);
+Format.printf "%d (instead of %d) path conditions\n" (List.length pcsAndLines) !totalNumberOfPcs;
 
 	(* Pick out variables that appear in some path condition, ignoring
 		 those that aren't mentioned anywhere. *)
 	let symbolsInPcs =
 		bigUnionForSymbols
-			(List.map (fun (pc,_) -> Stp.allSymbolsInList pc) maximalPcsAndLines)
+			(List.map (fun (pc,_) -> Stp.allSymbolsInList pc) pcsAndLines)
 	in
 	bytesToVars :=
 		List.filter
@@ -363,7 +327,7 @@ Format.printf "%d (instead of %d) path conditions\n" (List.length maximalPcsAndL
 		alwaysExecuted;
 
 	(* Explain all the lines we can *)
-	let remainingPCsAndLines = ref maximalPcsAndLines (* Initial path conditions and coverage information *)
+	let remainingPCsAndLines = ref pcsAndLines (* Initial path conditions and coverage information *)
 	and remainingLines = ref (LineSet.diff everExecuted alwaysExecuted) in (* All lines that weren't always executed *)
 
 	(try
@@ -388,18 +352,9 @@ Format.printf "%d (instead of %d) path conditions\n" (List.length maximalPcsAndL
 	 with EverythingCovered -> ()
 	)
 
+let treeOfPcs = ref (Node (rootNodeData, []))
+
 let readInDataAndGo _ = (* This needs to take a Cil.file, but I don't use it *)
-	let coverage =
-		List.fold_left
-			(fun acc file ->
-				 let inChan = open_in_bin file in
-				 (* Read in the coverage data structure *)
-				 let res = List.rev_append (Marshal.from_channel inChan : job_result list) acc in
-				 close_in inChan;
-				 res)
-			[]
-			!covInfoFiles
-	in
 	let inChan = open_in !valuesFile in
 	(* Read in the possible variable values *)
 	try
@@ -413,8 +368,40 @@ let readInDataAndGo _ = (* This needs to take a Cil.file, but I don't use it *)
 		done
 	with End_of_file ->
 		close_in inChan;
-		calculateDeps coverage
+		calculateDeps (getLeavesWithCoverage !treeOfPcs)
 ;;
+
+(* Get rid of the __ASSUMEs from a path condition. The arguments are
+	 the path_condition and path_condition_tracked fields of a state
+	 structure. *)
+let rec eliminate_untracked apc apct =
+  match apc,apct with 
+    | [],[]->([],[])
+    | apch::apct,apcth::apctt -> 
+        let (apct1,apct2) = eliminate_untracked apct apctt in
+        if apcth then (apch::apct1,apct2) else  (apct1,apch::apct2)
+    | _,_ -> failwith "Impossible: path_condition and path_condition_tracked must be of equal length"
+
+let addCoverageFromFile filename =
+	initCIL();
+	let inChan = open_in_bin filename in
+	(* Read in the coverage data structure *)
+	let jobResults = (Marshal.from_channel inChan : job_result list) in
+	close_in inChan;
+	if !bytesToVars = [] then bytesToVars := (List.hd jobResults).result_history.bytesToVars;
+	(* Add each path condition, with its coverage, to the tree of path conditions *)
+	List.iter
+		(fun { result_state = state ; result_history = hist } ->
+			 (* Make sure all bytesToVars are the same *)
+			 if hist.bytesToVars <> !bytesToVars then failwith "Not all bytesToVars are equal";
+			 incr totalNumberOfPcs;
+			 (* Remove __ASSUMEs from the path condition *)
+			 let pc = fst (eliminate_untracked
+											 state.path_condition
+											 state.path_condition_tracked)
+			 in
+			 treeOfPcs := add pc hist.coveredLines !treeOfPcs)
+		jobResults
 
 let feature : Cil.featureDescr = {
   Cil.fd_enabled = ref false;
@@ -422,7 +409,7 @@ let feature : Cil.featureDescr = {
   Cil.fd_description = "Calculate what lines depend on what symbolic variables.\n";
   Cil.fd_extraopt = [
 		("--fileWithCovInfo",
-		 Arg.String (fun s -> covInfoFiles := s :: !covInfoFiles),
+		 Arg.String addCoverageFromFile,
 		 "<filename> A file from which to read the coverage information\n");
 		("--fileWithPossibleValues",
 		 Arg.Set_string valuesFile,
