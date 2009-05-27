@@ -17,9 +17,15 @@ rval state exp : bytes =
 					| _ -> Convert.lazy_constant_to_bytes constant
 				end
 			| Lval (cil_lval) ->
-					let (block, offset) = lval state cil_lval in
+					let lvals = lval state cil_lval in
 					let size = (Cil.bitsSizeOf (Cil.typeOfLval cil_lval))/8 in
-					MemOp.state__get_bytes_from_lval state (block, offset, size)
+					let rec get_bytes = function
+						| Lval_Block (block, offset) ->
+							MemOp.state__get_bytes_from_lval state (block, offset, size)
+						| Lval_May (indicator, lvals1, lvals2) ->
+							Bytes_MayBytes (indicator, get_bytes lvals1, get_bytes lvals2)
+					in
+					get_bytes lvals
 					
 			|	SizeOf (typ) ->
 					let exp2 = Cil.sizeOf typ in
@@ -50,21 +56,20 @@ rval state exp : bytes =
 					rval_unop state unop exp1
 			|	BinOp (binop, exp1, exp2, _) ->
 					rval_binop state binop exp1 exp2
-			|	AddrOf (cil_lval) ->
-				let (lhost,offset) = cil_lval in
-					begin
-						match (Cil.typeOfLval cil_lval,lhost) with
-							| (TFun(_, _, _, _),Var(varinfo)) ->
-								let fundec = Cilutility.search_function varinfo in
-								let f_addr = MemOp.bytes__random Types.word__size in (* TODO: assign an addr for each function ptr *)
-									Bytes_FunPtr(fundec,f_addr)
-							| _ ->
-									let (block, offset) = lval state cil_lval in
-									Bytes_Address(Some(block), offset)
-					end 
+			|	AddrOf (Var varinfo, _) when Cil.isFunctionType (varinfo.Cil.vtype) ->
+					let fundec = Cilutility.search_function varinfo in
+					let f_addr = MemOp.bytes__random Types.word__size in (* TODO: assign an addr for each function ptr *)
+					Bytes_FunPtr(fundec,f_addr)
+			|	AddrOf (cil_lval)
 			|	StartOf (cil_lval) ->
-					let (block, offset) = lval state cil_lval in
-					Bytes_Address(Some(block), offset)
+					let lvals = lval state cil_lval in
+					let rec get_addrof = function
+						| Lval_Block (block, offset) ->
+							Bytes_Address(Some(block), offset)
+						| Lval_May (indicator, lvals1, lvals2) ->
+							Bytes_MayBytes (indicator, get_addrof lvals1, get_addrof lvals2)
+					in
+					get_addrof lvals
 			|	CastE (typ, exp2) -> rval_cast typ (rval state exp2) (Cil.typeOf exp2)
 	in
 	result
@@ -141,30 +146,27 @@ rval_cast typ rv rvtyp =
 *)
 and
 
-lval state (lhost, offset_exp) : memory_block * bytes =
-	let (block, offset) =
-		match lhost with
-			| Var(varinfo) ->
-					let block = MemOp.state__varinfo_to_block state varinfo in
-					let (offset, typ) = flatten_offset state varinfo.vtype offset_exp in
-					(block, offset)
-			| Mem(exp) ->
-					let rv = rval state exp in
-					let (offset, typ) = flatten_offset state (Cil.typeOf exp) offset_exp in
-					let (block,offset2) = deref state rv in
-					let (offset3) = Operation.plus [(offset,Cil.intType);(offset2,Cil.intType)] in
-						(block,offset3)
-	in
-	(*
-	Output.debug_endline ("Evaluate lval of "^(To_string.lval (lhost, offset_exp))^" to "^
-	(To_string.memory_block block)^","^(To_string.bytes offset));
-	*)
-		(block, offset)
+lval state (lhost, offset_exp) = match lhost with
+	| Var(varinfo) ->
+		let block = MemOp.state__varinfo_to_block state varinfo in
+		let offset, _ = flatten_offset state varinfo.vtype offset_exp in
+		Lval_Block (block, offset)
+	| Mem(exp) ->
+		let rv = rval state exp in
+		let lvals = deref state rv in
+		let offset, _ = flatten_offset state (Cil.typeOf exp) offset_exp in
+		let rec add_offset = function
+			| Lval_Block (block, offset2) ->
+				Lval_Block (block, Operation.plus [(offset,Cil.intType);(offset2,Cil.intType)])
+			| Lval_May (indicator, lvals1, lvals2) ->
+				Lval_May (indicator, add_offset lvals1, add_offset lvals2)
+		in
+		add_offset lvals
 
 and
 
 (* harder than I thought! *)
-deref state bytes : memory_block * bytes=
+deref state bytes =
 	(*Output.set_mode Output.MSG_MUSTPRINT;  tmp *)
 	match bytes with
 		| Bytes_Constant (c) -> failwith ("Dereference something not an address (constant) "^(To_string.bytes bytes))
@@ -187,8 +189,15 @@ deref state bytes : memory_block * bytes=
               | _::pc' -> find_match pc'
             in
               find_match state.path_condition
-		| Bytes_Address(Some(block), offset) -> (block, offset) 
+		| Bytes_Address(Some(block), offset) -> Lval_Block (block, offset) 
 		| Bytes_Address(None, offset) -> failwith "Dereference a dangling pointer"
+		| Bytes_MayBytes (indicator, bytes1, bytes2) ->
+			(* TODO: update the pointer after the below pruning *)
+			begin match Stp.query_indicator state.path_condition indicator with
+				| Stp.True -> deref state bytes1
+				| Stp.False -> deref state bytes2
+				| Stp.Unknown -> Lval_May (indicator, deref state bytes1, deref state bytes2)
+			end
 		| Bytes_Op(op, operands) -> failwith ("Dereference something not an address (op) "^(To_string.bytes bytes))
 		| Bytes_Read(bytes,off,len) ->failwith "Dereference: Not implemented"
 		| Bytes_Write(bytes,off,len,newbytes) ->failwith "Dereference: Not implemented"

@@ -97,10 +97,10 @@ CILLY_LIBRARY_MODULES = pretty inthash errormsg alpha trace stats util clist \
                 to_string \
                 convert \
                 operation \
-                memOp \
-                eval \
                 stpc \
                 stp \
+                memOp \
+                eval \
                 stmt \
                 builtin_function \
                 data_structure \
@@ -127,7 +127,7 @@ MODULES     += $(CILLY_MODULES) libmaincil
 
 EXTRALIBDIRS = @EXTRALIBDIRS@
 LIBFLAGS += $(foreach lib,$(EXTRALIBDIRS),-I $(lib))
-COMPILEFLAGS += $(LIBFLAGS)
+COMPILEFLAGS += $(LIBFLAGS) -warn-error P
 LINKFLAGS    += $(LIBFLAGS)
 
 BEFOREDEPS += $(OBJDIR)/machdep.ml

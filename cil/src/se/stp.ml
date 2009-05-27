@@ -10,6 +10,19 @@ let not truth = match truth with
 	| Unknown -> Unknown
 ;;
 
+let rec bytes_length bytes =
+	match bytes with
+		| Bytes_Constant (constant) -> (Cil.bitsSizeOf (Cil.typeOf (Const(constant))))/8
+		| Bytes_ByteArray (bytearray) -> ImmutableArray.length bytearray
+		| Bytes_Address (_,_)-> word__size
+		| Bytes_MayBytes (_,b,_) -> bytes_length b (* all bytes in MayBytes have the same length *)
+		| Bytes_Op (op,(bytes2,typ)::tail) -> bytes_length bytes2
+		| Bytes_Op (op,[]) -> 0 (* reachable from diff_bytes *)
+		| Bytes_Write(bytes2,_,_,_) -> bytes_length bytes2
+		| Bytes_Read(_,_,len) -> len
+		| Bytes_FunPtr(_) -> word__size
+;;
+
 (** Return a SymbolSet of all symbols in the given Bytes *)
 let rec allSymbols = function
 	| Bytes_Constant const -> SymbolSet.empty
@@ -28,6 +41,8 @@ let rec allSymbols = function
 				| Some memBlock ->
 						SymbolSet.union partialAnswer (allSymbols memBlock.memory_block_addr)
 		)
+	| Bytes_MayBytes (_, bytes1, bytes2) ->
+			SymbolSet.union (allSymbols bytes1) (allSymbols bytes2)
 	| Bytes_Op (_,bytes_typ_list) ->
 			List.fold_left
 				(fun symbSet (b,_) -> SymbolSet.union symbSet (allSymbols b))
@@ -114,15 +129,27 @@ let rec eval pc bytes =
 						
 and
 
+(* TODO: refactor consult_stp/doassert/query/query_indicator, since query_indicator similar in purpose to consult_stp *)
 consult_stp pc bytes queryType =
-(*
     let vc = doassert pc in
-	let equal_zero = query vc bytes true in
-	if equal_zero then False else
-		let not_equal_zero = query vc bytes false in
-		if not_equal_zero then True else
-			Unknown
-	
+	match queryType with
+		| TrueOrNot ->
+			if query vc bytes false then
+				True
+			else
+				Unknown
+		| FalseOrNot ->
+			if query vc bytes true then
+				False
+			else
+				Unknown
+		| TrueFalseOrUnknown ->
+			if query vc bytes true then
+				False
+			else if query vc bytes false then
+				True
+			else
+				Unknown
 and
 
 (** return (True) False if bytes (not) evaluates to all zeros. Unknown otherwise.
@@ -130,8 +157,9 @@ and
 
 
 doassert pc =
-*)
-	let rec getRelevantAssumptions acc symbols pc' =
+(* Yit: I think the below won't work for multiple split/merged paths, since path condition clauses may be interrelated.
+ *      E.g., consider the path condition a == b && b == c && c == d, and the query a == d *)
+(*	let rec getRelevantAssumptions acc symbols pc' =
 		match List.partition
 			(fun b -> SymbolSet.is_empty (SymbolSet.inter symbols (allSymbols b)))
 			pc'
@@ -146,9 +174,8 @@ doassert pc =
 	let relevantAssumptions =
 		getRelevantAssumptions [] (allSymbols bytes) pc
 	in
-
+*)
 	let vc = Stpc.create_validity_checker () in
-    (*Stpc.e_push vc;*)
 	
 	Output.set_mode Output.MSG_STP;
 	Output.print_endline "%%%%%%%%%%%%%%%%%%";
@@ -165,24 +192,9 @@ doassert pc =
 			Output.print_endline ("ASSERT("^(Stpc.to_string a)^");");
 			do_assert tail
 	in
-(*		Stats.time "STP assert" do_assert pc;
-			vc;*)
-		Stats.time "STP assert" do_assert relevantAssumptions;
-
-	match queryType with
-		| TrueOrNot ->
-				let not_equal_zero = query vc bytes false in
-				if not_equal_zero then True else Unknown
-		| FalseOrNot ->
-				let equal_zero = query vc bytes true in
-				if equal_zero then False else Unknown
-		| TrueFalseOrUnknown ->
-				let equal_zero = query vc bytes true in
-				if equal_zero then False else
-					let not_equal_zero = query vc bytes false in
-					if not_equal_zero then True else
-						Unknown
-
+	(*Stats.time "STP assert" do_assert relevantAssumptions;*)
+	Stats.time "STP assert" do_assert pc;
+	vc
 and
 
 query vc bytes equal_zero =
@@ -201,6 +213,32 @@ query vc bytes equal_zero =
 	let return = Stats.time "STP query" (Stpc.query vc) q in
       Stpc.e_pop vc;
       return
+
+and
+
+query_indicator pc indicator =
+    let vc = doassert pc in
+	let indicator_exp = Stats.time "convert conditional" (to_stp_indicator vc) indicator in
+
+	Output.set_mode Output.MSG_STP;
+	let query exp =
+		Stpc.e_push vc;
+		let result = Stats.time "STP query_indicator" (Stpc.query vc) exp in
+		Stpc.e_pop vc;
+		result
+	in
+	if query indicator_exp then
+		True
+	else if query (Stpc.e_not vc indicator_exp) then
+		False
+	else
+		Unknown
+and
+
+to_stp_indicator vc = function
+	| Indicator i -> Stpc.e_var vc (Format.sprintf "indicator(%d)" i) (Stpc.bool_t vc)
+	| Indicator_Not s -> Stpc.e_not vc (to_stp_indicator vc s)
+	| Indicator_And (s1, s2) -> Stpc.e_and vc (to_stp_indicator vc s1) (to_stp_indicator vc s2)
 
 and
 
@@ -253,7 +291,15 @@ to_stp_bv vc bytes =
 			in
 			let len = l_blockaddr in
 				(Stpc.e_bvplus vc len bv_blockaddr bv_offset,len)
-			
+
+		| Bytes_MayBytes (indicator, bytes1, bytes2) ->
+			(* TODO: should check for indicator.symbol_id = 0? *)
+			let cond = to_stp_indicator vc indicator in
+			let bv1, len1 = to_stp_bv vc bytes1 in
+			let bv2, len2 = to_stp_bv vc bytes2 in
+			assert (len1 = len2);
+			(Stpc.e_ite vc cond bv1 bv2, len1)
+
 		| Bytes_Op(op, [(bytes1,typ1);(bytes2,typ2)]) -> (* BINOP *)
 				(* typ info maybe added to the stp formula later *)
 				let (bv1, len1) = to_stp_bv vc bytes1 in
@@ -365,7 +411,7 @@ to_stp_bv vc bytes =
 			to_stp_bv vc f_addr
 		
 		| _ ->
-			let len = MemOp.bytes__length bytes in
+			let len = bytes_length bytes in
 			let arr = to_stp_array vc (new_array vc bytes) bytes in
 			let rec flatten bv_offset len =
 			  if len = 1 then (Stpc.e_read vc arr bv_offset,8) 

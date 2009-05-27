@@ -33,7 +33,12 @@ type symbol =
 		(*symbol_writable: bool;*)
 	}
 
-	
+and
+
+indicator = Indicator of int
+          | Indicator_Not of indicator 
+          | Indicator_And of indicator * indicator
+
 and
 
 byte = (* corresponds to BV *)
@@ -47,12 +52,18 @@ bytes =
 | Bytes_Constant of Cil.constant (* length=Cil.sizeOf (Cil.typeOf (Const(constant))) *)
 | Bytes_ByteArray of byte ImmutableArray.t  (* content *) 
 | Bytes_Address of memory_block option * bytes (* offset *)
+| Bytes_MayBytes of indicator * bytes * bytes (* conditional value of the form: if indicator then bytes1 else bytes2 *)
 | Bytes_Op of operator * (bytes * Cil.typ) list
 | Bytes_Read of bytes * bytes * int						(* less preferrable type *)
 | Bytes_Write of bytes * bytes * int * bytes	(* least preferrable type*)
 | Bytes_FunPtr of Cil.fundec * bytes (* bytes is the "imaginary address" of the funptr *)
 (*| Bytes_DS of data_structure*)
 (* | Bytes_Concat  (* allow this to make things more efficient *) *)
+
+and
+
+lval_block = Lval_Block of memory_block * bytes
+           | Lval_May of indicator * lval_block * lval_block
 
 and
 
@@ -87,20 +98,6 @@ type memory_frame =
 	}
 ;;
 
-module AddressMap =
-	Utility.MakeMap (
-	struct
-		type t = bytes
-		let compare a b = Hashtbl.hash a - Hashtbl.hash b
-	end
-	)
-(*
-type memory_heap = 
-	{
-		address_to_block: memory_block AddressMap.t;
-	}
-;;
-*)
 type operator_action = (bytes*Cil.typ) list -> (bytes (* *Cil.typ*))
 ;;
 
@@ -136,11 +133,11 @@ module LocMap =
 		function returns or [NoReturn (callInstr)] if the function doesn't return.
 		[nextStmt] is the [stmt] to execute after the call returns; [callInstr]
 		is the function call instruction; and [destOpt] is [None] if we ignore
-		the result of the call, or it is [Some (block,offset,size)], which
+		the result of the call, or it is [Some (lval_block,size)], which
 		means we should assign the result to that triple. *)
 type callingContext =
     | Runtime
-    | Source of ((memory_block * bytes * int) option * Cil.instr * Cil.stmt)
+    | Source of ((lval_block * int) option * Cil.instr * Cil.stmt)
 	| NoReturn of Cil.instr
 ;;
 

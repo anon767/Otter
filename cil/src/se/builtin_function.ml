@@ -7,11 +7,11 @@ let libc___builtin_va_arg state exps =
 	let lastarg = List.nth exps 2 in
 		match lastarg with
 			| CastE(_,AddrOf(lval)) -> 
-					let (block,offset) = Eval.lval state lval in
+					let lvals = Eval.lval state lval in
 					let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
 					(* cast ret to sth of typ sth *)
 					let ret2 = MemOp.bytes__resize ret size in
-					let state3 = MemOp.state__assign state2 (block,offset,size) ret2 in
+					let state3 = MemOp.state__assign state2 (lvals,size) ret2 in
 						(state3,ret2)
 			| _ -> failwith "Last argument of __builtin_va_arg must be of the form CastE(_,AddrOf(lval))"
 		
@@ -23,9 +23,9 @@ let libc___builtin_va_copy state exps =
 	let (state2,key) = MemOp.vargs_table__add state srcList in
 	match List.hd exps with
 	|	Lval(lval) ->
-			let (block,offset) = Eval.lval state lval in
+			let lvals = Eval.lval state lval in
 			let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
-			let state3 = MemOp.state__assign state2 (block,offset,size) key in
+			let state3 = MemOp.state__assign state2 (lvals,size) key in
 			(state3,MemOp.bytes__zero)
 	|	_ -> failwith "First argument of va_copy must have lval"
 ;;
@@ -41,9 +41,9 @@ let libc___builtin_va_start state exps =
 	match List.hd exps with
 		| Lval(lval) -> 
 				let (state2,key) = MemOp.vargs_table__add state (List.hd state.va_arg) in
-				let (block,offset) = Eval.lval state lval in
+				let lvals = Eval.lval state lval in
 				let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
-				let state3 = MemOp.state__assign state2 (block,offset,size) key in
+				let state3 = MemOp.state__assign state2 (lvals,size) key in
 					(state3,MemOp.bytes__zero)
 		| _ -> failwith "First argument of va_start must have lval"
 ;;

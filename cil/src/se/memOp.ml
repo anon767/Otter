@@ -12,6 +12,9 @@ let symbol__next () =
 		symbol_id = Utility.next_id symbol__currentID; 
 	} ;;
 
+let indicator__currentID = ref 0
+let indicator__next () = Indicator (Utility.next_id indicator__currentID)
+
 let char__random () = Char.chr ((Random.int 255)+1);;
 
 (**
@@ -87,17 +90,9 @@ let bytes__symbolic n =
 ;;
 
 
-let rec bytes__length bytes =
-	match bytes with
-		| Bytes_Constant (constant) -> (Cil.bitsSizeOf (Cil.typeOf (Const(constant))))/8
-		| Bytes_ByteArray (bytearray) -> ImmutableArray.length bytearray 
-		| Bytes_Address (_,_)-> word__size 
-		| Bytes_Op (op,(bytes2,typ)::tail) -> bytes__length bytes2
-		| Bytes_Op (op,[]) -> 0 (* reachable from diff_bytes *)
-		| Bytes_Write(bytes2,_,_,_) -> bytes__length bytes2
-		| Bytes_Read(_,_,len) -> len
-		| Bytes_FunPtr(_) -> word__size
-;;
+(* TODO: moves all bytes operation into Stp or a new module to eliminate circular dependency;
+ *       the (partial) dependency chain is state__* -> Stp.* -> bytes__* *)
+let rec bytes__length = Stp.bytes_length
 
 let rec diff_bytes bytes1 bytes2 = 
 	if (bytes__length bytes1 <> bytes__length bytes2) then true else
@@ -118,6 +113,8 @@ let rec diff_bytes bytes1 bytes2 =
 			(b1!=b2) || (diff_bytes off1 off2)
 		| Bytes_Address(None,off1),Bytes_Address(None,off2) -> 
 			(diff_bytes off1 off2)
+		| Bytes_MayBytes (ix, tx, fx), Bytes_MayBytes (iy, ty, fy) ->
+			(Pervasives.compare ix iy <> 0) || (diff_bytes tx ty) || (diff_bytes fx fy)
 		| Bytes_Op(op1,[]),Bytes_Op(op2,[]) -> false
 		| Bytes_Op(op1,(b1,_)::operands1),Bytes_Op(op2,(b2,_)::operands2) -> 
 			(op1!=op2) || (diff_bytes b1 b2) ||	(diff_bytes (Bytes_Op(op1,operands1)) (Bytes_Op(op2,operands2)))
@@ -430,22 +427,55 @@ let state__varinfo_to_block state varinfo =
 		failwith ("Varinfo "^(varinfo.vname)^" not found.")
 ;;
 
-let state__assign state (block, offset, size) bytes = (* have problem *)
-	if block.memory_block_type == Block_type_StringLiteral then 
-		failwith "Error: write to a constant string literal"
-	else
-	let oldbytes = MemoryBlockMap.find block state.block_to_bytes in
-	(*Output.print_endline (To_string.bytes oldbytes);*)
-	let newbytes = bytes__write oldbytes offset size bytes in
-	(*Output.print_endline (To_string.bytes newbytes);*)
-	(*(*TMP*) (if block.memory_block_type = 3 then 
-		Output.set_mode Output.MSG_MUSTPRINT
-		else		*)
-	Output.set_mode Output.MSG_ASSIGN;
-	Output.print_endline ("    Assign "^(To_string.bytes bytes)^" to "^(To_string.memory_block block)^","^(To_string.bytes offset));
-	{ state with
-		block_to_bytes = MemoryBlockMap.add block newbytes state.block_to_bytes;
-	}
+let state__assign state (lvals, size) bytes = (* have problem *)
+	let rec assign count state indicator = function
+		| Lval_Block (block, offset) ->
+			(* TODO: provide some way to report partial error *)
+			if block.memory_block_type == Block_type_StringLiteral then
+				failwith "Error: write to a constant string literal"
+			else
+
+			let oldbytes = MemoryBlockMap.find block state.block_to_bytes in
+
+			let newbytes =
+				(*Output.print_endline (To_string.bytes oldbytes);*)
+				let newbytes = bytes__write oldbytes offset size bytes in
+				(*Output.print_endline (To_string.bytes newbytes);*)
+				(*(*TMP*) (if block.memory_block_type = 3 then
+					Output.set_mode Output.MSG_MUSTPRINT
+					else		*)
+				match indicator with
+					| None ->
+						Some newbytes
+					| Some i ->
+						begin match Stp.query_indicator state.path_condition i with
+							| Stp.True -> Some newbytes
+							| Stp.False -> None
+							| Stp.Unknown -> Some (Bytes_MayBytes (i, newbytes, oldbytes))
+						end
+			in
+
+			begin match newbytes with
+				| None ->
+					(count, state)
+				| Some newbytes ->
+					Output.set_mode Output.MSG_ASSIGN;
+					Output.print_endline ("    Assign "^(To_string.bytes bytes)^" to "^(To_string.memory_block block)^","^(To_string.bytes offset));
+					(count + 1, { state with block_to_bytes = MemoryBlockMap.add block newbytes state.block_to_bytes; })
+			end
+
+		| Lval_May (j, tlvals, flvals) ->
+			let ts, fs = begin match indicator with
+				| None   -> (j, Indicator_Not j)
+				| Some i -> (Indicator_And (i, j), Indicator_And (i, Indicator_Not j))
+			end in
+			let count, state = assign count state (Some ts) tlvals in
+			let count, state = assign count state (Some fs) flvals in
+			(count, state)
+	in
+	let count, state = assign 0 state None lvals in
+	assert (count > 0);
+	state
 ;;
 
 (* start a new function call frame *)
@@ -466,7 +496,7 @@ let state__start_fcall state callContext fundec argvs =
 		| par::pars, argv::argvs ->
 			let block = state__varinfo_to_block state par in
 			let size = (Cil.bitsSizeOf par.Cil.vtype)/8 in
-			let state = state__assign state (block, bytes__zero, size) argv in
+			let state = state__assign state (Lval_Block (block, bytes__zero), size) argv in
 			assign_argvs state pars argvs
 		| [], va_arg ->
 			Output.set_mode Output.MSG_FUNC;
@@ -559,6 +589,9 @@ let state__clone_bytes state bytes =
         | Bytes_Address(blkOpt,offset) ->
             let (fact,offset') = traverse_bytes offset process merge in
               (fact,Bytes_Address(blkOpt,offset'))
+		| Bytes_MayBytes _ ->
+			(* what exactly does state__clone_bytes do? *)
+			failwith "TODO: implement Bytes_MayBytes for state__clone_bytes"
         | Bytes_Op(op,lst) -> 
             let (fact,lst') = traverse_bytes_list lst process merge in
               (fact,Bytes_Op(op,lst'))

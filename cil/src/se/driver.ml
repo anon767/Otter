@@ -157,12 +157,16 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 						let (state2,bytes) = builtin state exps in
 						begin
 							match blkOffSizeOpt with
-								| None -> state2
-								| Some dest -> MemOp.state__assign state2 dest bytes
+								| None ->
+									state2
+								| Some dest ->
+									MemOp.state__assign state2 dest bytes
 						end
 
+(*
                     | Function.DataStructureOp (dsop) -> 
                         dsop state blkOffSizeOpt exps
+*)
 
                     | Function.StringEqual -> 
                         (* The function evaluates to a (symbolic) integer value.
@@ -193,7 +197,7 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
                               let length_int_val = Convert.bytes_to_int_auto length_int_bytes in
                               let source_bytes = MemOp.state__get_bytes_from_lval state (source_block,source_offset,length_int_val) in
                               let (state2,cloned_bytes) = MemOp.state__clone_bytes state source_bytes in
-                              let state3 = MemOp.state__assign state2 (target_block, target_offset,length_int_val) cloned_bytes in
+                              let state3 = MemOp.state__assign state2 (Lval_Block (target_block, target_offset),length_int_val) cloned_bytes in
                                 state3
                               end
                           | _ -> failwith "Clone error"
@@ -256,19 +260,19 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 											(Errormsg.error "Can't assign two tracked values to variable %s" varinf.vname);
 
 										let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
-										let (block,offset) = Eval.lval state lval in
+										let lvals = Eval.lval state lval in
 										let symbBytes = (MemOp.bytes__symbolic size ) in
 										Output.set_mode Output.MSG_MUSTPRINT;
 										Output.print_endline (varinf.vname ^ " = " ^ (To_string.bytes symbBytes));
 										nextExHist := { exHist with bytesToVars = (symbBytes,varinf) :: exHist.bytesToVars; };
-										MemOp.state__assign state (block,offset,size) symbBytes
+										MemOp.state__assign state (lvals,size) symbBytes
 								| _ ->
 										(* Any symbolic value not directly given to a variable by a call to
 											 __SYMBOLIC(&<var>) does not get tracked. *)
 										begin match blkOffSizeOpt with
 											| None ->
 													state
-											| Some (block,offset,size) ->
+											| Some (lvals, size) ->
 													let ssize = match exps with
 														| [] -> size
 														| [CastE (_, h)] | [h] ->
@@ -276,7 +280,7 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 																if newsize <= 0 then size else newsize
 														| _ -> failwith "__SYMBOLIC takes at most one argument"
 													in
-													MemOp.state__assign state (block,offset,size (*ssize?*))
+													MemOp.state__assign state (lvals, size (*ssize?*))
 														(MemOp.bytes__symbolic ssize )
 										end
 						)
@@ -294,15 +298,14 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 							begin match blkOffSizeOpt with
 								| None -> 
 									state
-								| Some (block,offset,size as dest) ->
+								| Some (lvals, size as dest) ->
 									let key = 
 										if List.length exps == 0 then 0 else
 										let size_bytes = Eval.rval state (List.hd exps) in
 												Convert.bytes_to_int_auto size_bytes 
 									in
-									let ssize =	size in
 									let state2 = if  MemOp.loc_table__has state (loc,key) then state
-										else MemOp.loc_table__add state (loc,key) (MemOp.bytes__symbolic ssize )
+										else MemOp.loc_table__add state (loc,key) (MemOp.bytes__symbolic size)
 									in
 									let newbytes = MemOp.loc_table__get state2 (loc,key) in
 										MemOp.state__assign state2 dest newbytes
@@ -323,8 +326,8 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 								match blkOffSizeOpt with
 								| None -> 
 										state
-								| Some (block,offset,size as dest) ->
-										MemOp.state__assign state dest (MemOp.bytes__symbolic size )
+								| Some (lvals, size as dest) ->
+										MemOp.state__assign state dest (MemOp.bytes__symbolic size)
 							end
 						
 					| Function.Exit ->
@@ -556,10 +559,10 @@ let exec_instr job =
 	match instr with
 		| Set(lval,exp,loc) ->
 			printInstr instr;
-			let (block,offset) = Eval.lval job.state lval in
+			let lvals = Eval.lval job.state lval in
 			let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
 			let rv = Eval.rval job.state exp in
-			let state = MemOp.state__assign job.state (block,offset,size) rv in
+			let state = MemOp.state__assign job.state (lvals,size) rv in
 			let nextStmt = if tail = [] then List.hd job.stmt.succs else job.stmt in
 			Active { job with state = state; stmt = nextStmt }
 		| Call(lvalopt, fexp, exps, loc) ->
@@ -569,9 +572,9 @@ let exec_instr job =
 				match lvalopt with
 					| None -> None
 					| Some lval ->
-							let (block,offset) = Eval.lval job.state lval in
+							let lvals = Eval.lval job.state lval in
 							let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
-							Some (block,offset,size)
+							Some (lvals,size)
 			in
 			exec_instr_call job instr destOpt fexp exps loc
 		| Asm _ ->

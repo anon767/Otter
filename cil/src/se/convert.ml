@@ -140,7 +140,7 @@ let constant_to_bytearray constant : byte ImmutableArray.t =
  *	from bytes
  *)
 
-
+(*
 (** Convert a bytes to its length. (moved from MemOp) *)
 let rec bytes_to_length bytes : int =
 	match bytes with
@@ -153,6 +153,7 @@ let rec bytes_to_length bytes : int =
 		| Bytes_Read(_,_,len) -> len
 		| Bytes_FunPtr(_) -> word__size
 ;;
+*)
 
 (** Convert a bytes of (len,isSigned) to int64 of (len,isSigned). 
 		If (len,isSigned) == IULongLong then interpret int64 as unsigned. (Same treatment throughout the program).

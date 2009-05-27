@@ -120,8 +120,15 @@ char_ff ff c = fprintf ff "%s"
 *)
 and
 
-symbol_ff ff s = fprintf ff "\\%s" (*if s.symbol_writable then "" else "u"*)(string_of_int s.symbol_id)
+symbol_ff ff s = fprintf ff "\\%d" (*if s.symbol_writable then "" else "u"*) s.symbol_id
 
+and
+
+indicator_ff ff = function
+	(* TODO: print something more meaningful for indicator *)
+	| Indicator i -> Format.fprintf ff "indicator(%d)" i
+	| Indicator_Not s -> Format.fprintf ff "NOT @[%a@]" indicator_ff s
+	| Indicator_And (s1, s2) -> Format.fprintf ff "(@[%a@]@ AND @[%a@])" indicator_ff s1 indicator_ff s2
 and
 
 byte_ff ff = function
@@ -145,34 +152,46 @@ and byte b = byte_ff str_formatter b; flush_str_formatter ()
 
 (* format entire bytes structure in function-like syntax: op(operand1, ...) *)
 (* TODO: convert all formatting to use Format (exp, operation, string_of_int, ...) *)
-and bytes_ff ff = function
-    | Bytes_Constant (CInt64(n,ikind,_)) -> fprintf ff "Bytes(%s)" (exp (Const(CInt64(n,ikind,None))))
-    | Bytes_Constant (n) -> fprintf ff "Bytes(%s)" (exp (Const(n)))
-                              
-    | Bytes_ByteArray (bytearray) -> fprintf ff "Bytearray(%a)" (fun ff -> (ImmutableArray.fold_left (fun _ -> byte_ff ff)) ()) bytearray
-                              (*
-    | Bytes_ByteArray (bytearray) -> fprintf ff "ByteArray(%s)" (bytestring bytearray)
-		| *)
-		(*
-    | Bytes_Address (Some(block), offset) -> fprintf ff "addrOf(@[<hov>%s,@,%a@])" (memory_block block) bytes_ff offset
-		*)
-    | Bytes_Address (Some(block), offset) -> fprintf ff "\naddrOf(%s,%a)" (memory_block block) bytes_ff offset
-    | Bytes_Address (None, offset) -> fprintf ff "addrOf(@[<hov>null,@,%a])" bytes_ff offset
-    | Bytes_Op (op,(firstop,_)::[]) ->
-        fprintf ff "%s(@[<hov>%a@])"
-        (operation op)
-        bytes_ff firstop
-    | Bytes_Op (op,(firstop,_)::tailops) ->
-        fprintf ff "%s(@[<hov>%a%a@])"
-        (operation op)
-        bytes_ff firstop
-        (fun ff -> List.iter (fun (t,_) -> fprintf ff ",@\n%a" bytes_ff t)) tailops
-    | Bytes_Op (op,[]) -> fprintf ff "%s()" (operation op)
-    | Bytes_Read (content,off,len) -> fprintf ff "READ(@[<hov>%a,@,%a,@,%s@])" bytes_ff content bytes_ff off (string_of_int len)
-    | Bytes_Write (content,off,len,newbytes) -> fprintf ff "WRITE(@[<hov>%a,@,%a,@,%s,@,%a@])" bytes_ff content bytes_ff off (string_of_int len) bytes_ff newbytes
+and bytes_ff ff = bytes_ff_named [] ff
+and bytes_ff_named bytes_to_var ff =
+	let rec bytes_ff ff = function
+		| Bytes_Constant (CInt64(n,ikind,_)) -> fprintf ff "Bytes(%s)" (exp (Const(CInt64(n,ikind,None))))
+		| Bytes_Constant (n) -> fprintf ff "Bytes(%s)" (exp (Const(n)))
+
+		| Bytes_ByteArray (bytearray) as bytes ->
+			begin try
+				let var = List.assoc bytes bytes_to_var in
+				fprintf ff "%s" var.vname
+			with Not_found ->
+				fprintf ff "Bytearray(%a)" begin fun ff ->
+					ImmutableArray.fold_left (fun _ -> byte_ff ff) ()
+				end bytearray
+			end
+
+		| Bytes_Address (Some(block), offset) -> fprintf ff "(%a + %a)" bytes_ff block.memory_block_addr bytes_ff offset
+		(*| Bytes_Address (Some(block), offset) -> fprintf ff "addrOf(%s,%a)" (memory_block block) bytes_ff offset*)
+		| Bytes_Address (None, offset) -> fprintf ff "addrOf(@[<hov>null,@,%a])" bytes_ff offset
+
+		| Bytes_MayBytes (indicator, bytes1, bytes2) ->
+			fprintf ff "@[<hv>IF @[%a@] THEN@;<1 2>@[%a@]@ ELSE@;<1 2>@[%a@]@]"
+				indicator_ff indicator bytes_ff bytes1 bytes_ff bytes2
+
+		| Bytes_Op (op,(firstop,_)::[]) ->
+			fprintf ff "%s(@[<hov>%a@])"
+			(operation op)
+			bytes_ff firstop
+		| Bytes_Op (op,(firstop,_)::tailops) ->
+			fprintf ff "%s(@[<hov>%a%a@])"
+			(operation op)
+			bytes_ff firstop
+			(fun ff -> List.iter (fun (t,_) -> fprintf ff ",@\n%a" bytes_ff t)) tailops
+		| Bytes_Op (op,[]) -> fprintf ff "%s()" (operation op)
+		| Bytes_Read (content,off,len) -> fprintf ff "READ(@[<hov>%a,@,%a,@,%d@])" bytes_ff content bytes_ff off len
+		| Bytes_Write (content,off,len,newbytes) -> fprintf ff "WRITE(@[<hov>%a,@,%a,@,%d,@,%a@])" bytes_ff content bytes_ff off len bytes_ff newbytes
 		| Bytes_FunPtr (f,_) -> fprintf ff "funptr(%s)" (fundec f)
-(*		| Bytes_PtrToConstantBytes (content,off) ->
-				fprintf ff "PtrToConstantBytes(@[<hov>%a,@,%a,@,@])" bytes_ff content bytes_ff off*)
+	in
+	bytes_ff ff
+
 		
 and bytes b = 
   if donotprint() then "" else
@@ -253,6 +272,7 @@ memory_block block =
 
 ;;
 
+(*
 let humanReadableBytes bytesToVars bytes =
 	let rec helper bytes =
 		match bytes with
@@ -297,7 +317,11 @@ let humanReadableBytes bytesToVars bytes =
 						(typ fundec.svar.vtype)
 	in
 	helper bytes
+*)
+let humanReadableBytes bytes_to_var bytes =
+	bytes_ff_named bytes_to_var str_formatter bytes;
+	flush_str_formatter ()
 
-let humanReadablePc pc bytesToVars =
-	String.concat "\n"
-		(List.map (humanReadableBytes bytesToVars) pc)
+let humanReadablePc pc bytes_to_var =
+	List.iter (Format.fprintf str_formatter "%a@\n" (bytes_ff_named bytes_to_var)) pc;
+	flush_str_formatter ()

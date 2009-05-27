@@ -34,7 +34,7 @@ type function_type =
     | TruthValue
     | Clone
     | Given
-    | DataStructureOp of Data_structure.ds_op 
+(*    | DataStructureOp of Data_structure.ds_op*) 
 (*	| Fresh *)
 ;;
 
