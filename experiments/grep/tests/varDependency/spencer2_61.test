@@ -1,0 +1,3 @@
+cd $1
+
+./varDep spencer2_61

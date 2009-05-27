@@ -1,0 +1,34 @@
+CILLY=../../../cil/bin/cilly
+LIBCDIR=../../../libc
+MOCKEDDIR=../../../mockedFns
+STATSFILE=../grep.stats
+
+MACRODIR=/fs/skoll/symexe/data/grep/macro
+MACROFILE=$MACRODIR/ere_100.macro
+cd $1
+
+for ((x = 1; x <= 52; x++))
+do
+
+MACRO=`sed 1q $MACROFILE ; sed 1d $MACROFILE -i`
+
+echo
+echo Running grep ere_100 with macro
+echo $MACRO
+echo
+
+$CILLY --merge --useLogicalOperators --out=../grep_comb.c \
+	$MACRO \
+	-I.. -I $LIBCDIR -I $MOCKEDDIR -include $MOCKEDDIR/symexe.h \
+	../grep.c ../otherFiles/libc_comb.c $MOCKEDDIR/*.c --warnall
+
+$CILLY --merge --useLogicalOperators \
+	$MACRO \
+	-I.. -I $LIBCDIR -I $MOCKEDDIR -include $MOCKEDDIR/symexe.h \
+	../grep_comb.c ../otherFiles/ere_100.c \
+	--warnall --doexecute --printLittle \
+	--covStats=$STATSFILE --lineCov \
+	--timeout=14400 \
+	--arg='[a]b[a]' --arg=ere_100.txt
+
+done

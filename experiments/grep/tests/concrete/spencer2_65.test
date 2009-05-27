@@ -1,0 +1,34 @@
+CILLY=../../../cil/bin/cilly
+LIBCDIR=../../../libc
+MOCKEDDIR=../../../mockedFns
+STATSFILE=../grep.stats
+
+MACRODIR=/fs/skoll/symexe/data/grep/macro
+MACROFILE=$MACRODIR/spencer2_65.macro
+cd $1
+
+for ((x = 1; x <= 52; x++))
+do
+
+MACRO=`sed 1q $MACROFILE ; sed 1d $MACROFILE -i`
+
+echo
+echo Running grep spencer2_65 with macro
+echo $MACRO
+echo
+
+$CILLY --merge --useLogicalOperators --out=../grep_comb.c \
+	$MACRO \
+	-I.. -I $LIBCDIR -I $MOCKEDDIR -include $MOCKEDDIR/symexe.h \
+	../grep.c ../otherFiles/libc_comb.c $MOCKEDDIR/*.c --warnall
+
+$CILLY --merge --useLogicalOperators \
+	$MACRO \
+	-I.. -I $LIBCDIR -I $MOCKEDDIR -include $MOCKEDDIR/symexe.h \
+	../grep_comb.c ../otherFiles/spencer2_65.c \
+	--warnall --doexecute --printLittle \
+	--covStats=$STATSFILE --lineCov \
+	--timeout=14400 \
+	--arg='\(a\)\1bc*d' --arg=spencer2_65.txt
+
+done

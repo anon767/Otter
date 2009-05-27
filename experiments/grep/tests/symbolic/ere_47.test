@@ -1,0 +1,18 @@
+CILLY=../../../cil/bin/cilly
+LIBCDIR=../../../libc
+MOCKEDDIR=../../../mockedFns
+STATSFILE=../grep.stats
+
+cd $1
+
+$CILLY --merge --useLogicalOperators --out=../grep_comb.c \
+	-I.. -I $LIBCDIR -I $MOCKEDDIR -include $MOCKEDDIR/symexe.h \
+	../grep.c ../otherFiles/libc_comb.c $MOCKEDDIR/*.c --warnall
+
+$CILLY --merge --useLogicalOperators \
+	-I.. -I $LIBCDIR -I $MOCKEDDIR -include $MOCKEDDIR/symexe.h \
+	../grep_comb.c ../otherFiles/ere_47.c \
+	--warnall --doexecute --printLittle \
+	--covStats=$STATSFILE --lineCov \
+	--marshalCoverageTo=/fs/skoll/symexe/data/grep/marshalledData/ere_47.data --timeout=14400 \
+	--arg='ab{0,1}c' --arg=ere_47.txt
