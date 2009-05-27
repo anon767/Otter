@@ -32,6 +32,18 @@ let test_merging content ?(label=content) test =
         let other_count = List.length other in
         assert_log "Truncated: %d; Other: %d@\n" truncated_count other_count;
 
+        (* count jobs that were abandoned *)
+        let abandoned = List.fold_left begin fun abandoned result -> match result with
+			| Types.Abandoned (s, loc, _) -> (loc.Cil.file, loc.Cil.line, s)::abandoned
+			| _ -> abandoned
+		end [] results in
+		if abandoned <> [] then begin
+			let printer ff abandoned = ignore begin List.fold_left begin fun b (f, l, s) ->
+				Format.fprintf ff "%(%)@[%s:%d: %s@]" b f l s; "@\n"
+			end "" abandoned end in
+			assert_failure "@[<hv2>Abandoned paths:@\n%a@]" printer abandoned
+		end;
+
         (* test that no assertions failed *)
         assert_string (Executedebug.get_log ());
 
@@ -200,9 +212,117 @@ let many_branches_testsuite = "Many branches" >::: [
     end;
 ]
 
+let aliasing_testsuite = "Aliasing" >::: [
+    test_merging ~label:"x == &a || x == &b" "
+        int main(void) {
+            int *x, a, b, c;
+            __SYMBOLIC(&a);
+			__SYMBOLIC(&b);
+			__SYMBOLIC(&c);
+			__ASSUME(a > 0, b > 1);
+
+			if (c) {
+				x = &a;
+			} else {
+				x = &b;
+			}
+
+			__ASSERT(x);
+			__ASSERT(*x > 0);
+
+			if (x == &a) {
+				__ASSERT(*x == a);
+			} else {
+				__ASSERT(*x == b);
+			}
+
+			if (c) {
+				__ASSERT(*x == a);
+			} else {
+				__ASSERT(*x == b);
+			}
+
+            return 0;
+        }
+    " begin fun file truncated truncated_count other other_count ->
+        ()
+    end;
+
+    test_merging ~label:"x == &a || x == NULL" "
+        int main(void) {
+            int *x, a, b;
+            __SYMBOLIC(&a);
+			__SYMBOLIC(&b);
+
+			if (b) {
+				x = &a;
+			} else {
+				x = 0;
+			}
+
+			if (x) {
+				__ASSERT(*x == a);
+			} else {
+				__ASSERT(x == 0);
+			}
+
+			if (b) {
+				__ASSERT(*x == a);
+			} else {
+				__ASSERT(x == 0);
+			}
+
+            return 0;
+        }
+    " begin fun file truncated truncated_count other other_count ->
+        ()
+    end;
+
+    test_merging ~label:"*x, *y" "
+        int main(void) {
+            int *x, *y, a, b, c, d;
+            __SYMBOLIC(&a);
+			__SYMBOLIC(&b);
+			__SYMBOLIC(&c);
+			__SYMBOLIC(&d);
+
+			if (c) {
+				x = &a;
+			} else {
+				x = &b;
+			}
+
+			if (d) {
+				y = &a;
+			} else {
+				y = &b;
+			}
+
+			if (!c == !d) {
+				__ASSERT(x == y);
+			} else {
+				__ASSERT(x != y);
+			}
+
+			*x = 1;
+			*y = 2;
+			if (x == y) {
+				__ASSERT(*x == 2);
+			} else {
+				__ASSERT(*x == 1);
+			}
+
+            return 0;
+        }
+    " begin fun file truncated truncated_count other other_count ->
+        ()
+    end;
+]
+
 let testsuite = "OUnitSymexeMerging" >::: [
     one_branch_testsuite;
     two_branches_testsuite;
     many_branches_testsuite;
+	aliasing_testsuite
 ]
 

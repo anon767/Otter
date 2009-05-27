@@ -969,6 +969,9 @@ let mergeJobs job ((job_queue, merge_set) as job_pool) =
 					 raise (MergeDone (j, { job.state with path_condition = mergedPC; }))
 				 ) else (
 					 (* We have to fiddle with memory *)
+					 (* TODO: do we still want to have a limit on number of blocks merged? Should benchmark the burden
+                      *       on STP using the MayBytes/Morris encoding. *)
+					 let indicator = MemOp.indicator__next () in
 					 let numSymbolsCreated = ref 0 in
 					 let newSharedBlocks =
 						 (* Make a new symbolic bytes for each differing block *)
@@ -980,36 +983,19 @@ let mergeJobs job ((job_queue, merge_set) as job_pool) =
 									) else (
 										numSymbolsCreated := !numSymbolsCreated + size;
 										if !numSymbolsCreated > 100 then raise TooDifferent;
-										let symbBytes = MemOp.bytes__symbolic size in
-										let jobImplication =
-											(* jobPCBytes => symbBytes == jobBytes, i.e. ~jobPCBytes \/ symbBytes == jobBytes *)
-											Bytes_Op(OP_LOR,
-															 [(logicalNegateBytes jobPCBytes, Cil.intType);
-																(Bytes_Op(OP_EQ,[(symbBytes,Cil.intType);
-																								 (jobBytes,Cil.intType)]),Cil.intType)])
-										and jImplication =
-											(* Similarly for j *)
-											Bytes_Op(OP_LOR,
-															 [(logicalNegateBytes jPCBytes, Cil.intType);
-																(Bytes_Op(OP_EQ,[(symbBytes,Cil.intType);
-																								 (jBytes,Cil.intType)]),Cil.intType)])
-										in
-										((block, symbBytes), [jobImplication;jImplication])
+										let symbBytes = Bytes_MayBytes (indicator, jobBytes, jBytes) in
+										(block, symbBytes)
 									)
 							 )
 							 diffShared
 					 in
-					 let finalMergedPC = (* Attach all of the extra constraints to the path condition *)
-						 List.fold_left
-							 (fun pc (_,implications) -> List.rev_append implications pc)
-							 mergedPC
-							 newSharedBlocks
+					 let finalMergedPC = (Bytes_MayBytes (indicator, jobPCBytes, jPCBytes))::mergedPC
 					 and mergedMemory =
 						 (* I think it's safe (if not optimal) to keep both
 								[inJOnly] and [inJobOnly] because [j]'s memory will be
 								unreachable from [job]'s path and vice versa. *)
 						 assocListToMemoryBlockMap
-							 (List.concat [List.map fst newSharedBlocks; sameShared; inJOnly; inJobOnly])
+							 (List.concat [newSharedBlocks; sameShared; inJOnly; inJobOnly])
 					 in
 					 Output.printf "Merging jobs %d and %d (differing memory)\n" j.jid job.jid;
 					 raise (MergeDone (j, { job.state with
