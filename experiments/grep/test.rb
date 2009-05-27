@@ -16,6 +16,16 @@ config = {
   "COUNT_MATCHES" => "0",
   "NO_FILENAMES" => "0",
   "SUPPRESS_ERRORS" => "0",
+  "SHOW_HELP" => "0",
+  "SHOW_VERSION" => "0",
+  "FILENAME_MASK" => "0",
+  "OUT_QUIET" => "0",
+  "OUT_INVERT" => "0",
+  "OUT_FILE" => "0",
+  "OUT_BYTE" => "0",
+  "MATCH_ICASE" => "0",
+  "DONE_ON_MATCH" => "0",
+  "EXE_INDEX" => "0",
 }
 
 def compile(config, exe)
@@ -81,7 +91,7 @@ def symbolic_exec(i, config, search, contents)
         "#{$cilly} --merge --useLogicalOperators --out=#{combfile} " +
         "#{args} -I. -I #{$libcdir} -I #{$mockeddir} " +
         "-include #{$mockeddir}/symexe.h " +
-            "#{$libcdir}/*.c #{$mockeddir}/*.c #{tmpfile} grep.c --warnall > /dev/null 2>&1"
+            "#{$libcdir}/*.c #{$mockeddir}/*.c #{tmpfile} grep.c --warnall > out/#{i}.log 2>&1"
   system cmd
   File.unlink tmpfile
 

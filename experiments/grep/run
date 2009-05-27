@@ -12,6 +12,8 @@ fi
 CILLY=../../cil/bin/cilly
 LIBCDIR=../../libc
 MOCKEDDIR=../../mockedFns
+STATSFILE=grep.stats
+GREPFILES=grep.c
 
 if [ "$1" == libc ]; then
         echo "Merging libc"
@@ -22,6 +24,12 @@ elif [ "$MERGE" == 1 ]; then
         $CILLY --merge --useLogicalOperators --out=grep_comb.c \
                 -I. -I $LIBCDIR -I $MOCKEDDIR -include $MOCKEDDIR/symexe.h \
                 grep.c otherFiles/libc_comb.c $MOCKEDDIR/*.c --warnall $*
+elif [ "$1" == stat ]; then
+	echo "Generating stats"
+	$CILLY --merge --useLogicalOperators --doprogStats \
+		-I. \
+		--statsFile=$STATSFILE $GREPFILES
+	exit
 else
         echo "Doing symbolic execution"
         $CILLY --merge --useLogicalOperators \

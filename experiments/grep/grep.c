@@ -1138,6 +1138,7 @@ main (int argc, char **argv)
   FILE *fp;
   extern char *optarg;
   extern int optind;
+  int exe_index;
 
   initialize_main (&argc, &argv);
   /* added for diff target and target.int.exe */
@@ -1387,56 +1388,115 @@ main (int argc, char **argv)
   symtest_initialize();
 #endif
 
+#ifdef SHOW_HELP
+  show_help = 0; /*show_help = SHOW_HELP;*/
+#else
+  show_help = 0; /*__SYMBOLIC(&show_help);  __ASSUME(show_help == 0 || show_help == 1);*/
+#endif
+#ifdef SHOW_VERSION
+  show_version = 0; /*show_version = SHOW_VERSION;*/
+#else
+  show_version = 0; /*__SYMBOLIC(&show_version);  __ASSUME(show_version == 0 || show_version == 1);*/
+#endif
 #ifdef LIST_FILES
   list_files = LIST_FILES;
 #else
-  __SYMBOLIC(&list_files);
-  // list_files => (out_quiet==1 /\ done_on_match==1)
-  __ASSUME(OR(NOT(list_files),AND(out_quiet==1,done_on_match==1)));
+  __SYMBOLIC(&list_files);  __ASSUME(list_files == -1 || list_files == 0 ||  list_files == 1);
 #endif
 #ifdef WITH_FILENAMES
   with_filenames = WITH_FILENAMES;
 #else
-  __SYMBOLIC(&with_filenames);
+  __SYMBOLIC(&with_filenames);  __ASSUME(with_filenames == 0 || with_filenames == 1);
+#endif
+#ifdef FILENAME_MASK
+  filename_mask = FILENAME_MASK;
+#else
+  __SYMBOLIC(&filename_mask);  __ASSUME(filename_mask == 0 || filename_mask == 1);
+#endif
+#ifdef OUT_QUIET
+  out_quiet = OUT_QUIET;
+#else
+  __SYMBOLIC(&out_quiet);  __ASSUME(out_quiet == 0 || out_quiet == 1);
+#endif
+#ifdef OUT_INVERT
+  out_invert = OUT_INVERT;
+#else
+  __SYMBOLIC(&out_invert);  __ASSUME(out_invert == 0 || out_invert == 1);
+#endif
+#ifdef OUT_FILE
+  out_file = OUT_FILE;
+#else
+  __SYMBOLIC(&out_file);  __ASSUME(out_file == 0 || out_file == 1);
 #endif
 #ifdef OUT_LINE
   out_line = OUT_LINE;
 #else
-  __SYMBOLIC(&out_line);
+  __SYMBOLIC(&out_line);  __ASSUME(out_line == 0 || out_line == 1);
+#endif
+#ifdef OUT_BYTE
+  out_byte = OUT_BYTE;
+#else
+  __SYMBOLIC(&out_byte);  __ASSUME(out_byte == 0 || out_byte == 1);
+#endif
+#ifdef MATCH_ICASE
+  match_icase = MATCH_ICASE;
+#else
+  __SYMBOLIC(&match_icase);  __ASSUME(match_icase == 0 || match_icase == 1);
 #endif
 #ifdef MATCH_WORDS
   match_words = MATCH_WORDS;
 #else
-  __SYMBOLIC(&match_words);
+  __SYMBOLIC(&match_words);  __ASSUME(match_words == 0 || match_words == 1);
 #endif
 #ifdef MATCH_LINES
   match_lines = MATCH_LINES;
 #else
-  __SYMBOLIC(&match_lines);
+  __SYMBOLIC(&match_lines);  __ASSUME(match_lines == 0 || match_lines == 1);
 #endif
 #ifdef BINARY_FILES
   binary_files = BINARY_FILES;
 #else
-  __SYMBOLIC(&binary_files);
+  __SYMBOLIC(&binary_files);  __ASSUME(binary_files == BINARY_BINARY_FILES || binary_files == TEXT_BINARY_FILES || binary_files == WITHOUT_MATCH_BINARY_FILES);
 #endif
 #ifdef COUNT_MATCHES
   count_matches = COUNT_MATCHES;
 #else
-  __SYMBOLIC(&count_matches);
-  // count_matches => out_quiet==1
-  __ASSUME(OR(NOT(count_matches),out_quiet==1));
+  __SYMBOLIC(&count_matches);  __ASSUME(count_matches == 0 || count_matches == 1);
 #endif
 #ifdef NO_FILENAMES
   no_filenames = NO_FILENAMES;
 #else
-  __SYMBOLIC(&no_filenames);
+  __SYMBOLIC(&no_filenames);  __ASSUME(no_filenames == 0 || no_filenames == 1);
 #endif
 #ifdef SUPPRESS_ERRORS
   suppress_errors = SUPPRESS_ERRORS;
 #else
-  __SYMBOLIC(&suppress_errors);
+  __SYMBOLIC(&suppress_errors);  __ASSUME(suppress_errors == 0 || suppress_errors == 1);
+#endif
+#ifdef DONE_ON_MATCH
+  done_on_match = DONE_ON_MATCH;
+#else
+  __SYMBOLIC(&done_on_match);  __ASSUME(done_on_match == 0 || done_on_match == 1);
 #endif
 
+#ifdef EXE_INDEX
+  exe_index = EXE_INDEX;
+#else
+  __SYMBOLIC(&exe_index); __ASSUME(exe_index == 0 || exe_index == 1 || exe_index == 2);
+#endif
+
+  if (exe_index == 0)
+  {
+    setmatcher("grep");
+  }
+  if (exe_index == 1)
+  {
+    setmatcher("egrep");
+  }
+  if (exe_index == 2)
+  {
+    setmatcher("fgrep");
+  }
 
   if (out_after < 0)
     out_after = default_context;
