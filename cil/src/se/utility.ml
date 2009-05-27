@@ -11,7 +11,7 @@ module MakeSet(Ord: OrderedMemStruct) = Set.Make (Ord)
 module IndexMap = MakeMap
 (struct
 	type t = int
-	let compare a b = a - b
+	let compare (a : int) (b : int) = Pervasives.compare a b
 end)
 
 let rec add_all add_function keys values map = 

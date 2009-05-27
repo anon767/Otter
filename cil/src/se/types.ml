@@ -108,7 +108,7 @@ module MemoryBlockMap =
 	Utility.MakeMap (
 	struct
 		type t = memory_block
-		let compare a b = a.memory_block_id - b.memory_block_id
+		let compare a b = Pervasives.compare a.memory_block_id b.memory_block_id
 	end
 	)
 
@@ -116,7 +116,7 @@ module VargsMap =
 	Utility.MakeMap (
 	struct
 		type t = bytes 
-		let compare a b = Hashtbl.hash a - Hashtbl.hash b				
+		let compare = Pervasives.compare				
 	end
 	)	
 
@@ -124,9 +124,9 @@ module LocMap =
 	Utility.MakeMap (
 	struct
 		type t = Cil.location*int 
-		let compare (a,ai) (b,bi) = if ai<>bi then ai-bi else
-			let strcmp = String.compare a.Cil.file b.Cil.file in
-			if strcmp <> 0 then strcmp else a.Cil.line - b.Cil.line
+		let compare (a,ai) (b,bi) =
+			if ai<>bi then Pervasives.compare ai bi else
+				Cil.compareLoc a b
 	end
 	)	
 	
@@ -195,7 +195,7 @@ module EdgeSet = Set.Make
 module IntSet = Set.Make
 	(struct
 		 type t = int
-		 let compare = (-)
+		 let compare (x: int) (y: int) = Pervasives.compare x y
 	 end)
 
 module LineSet = Set.Make
@@ -204,7 +204,7 @@ module LineSet = Set.Make
 		 let compare (f1,l1) (f2,l2) =
 			 let tmp = compare f1 f2 in
 			 if tmp = 0
-			 then l1 - l2
+			 then Pervasives.compare l1 l2
 			 else tmp
 	 end)
 
@@ -244,7 +244,7 @@ let branches_taken : (Cil.exp * Cil.location, PcHistSet.t ref * PcHistSet.t ref)
 module SymbolSet = Set.Make
 	(struct
 		 type t = symbol
-		 let compare x y = x.symbol_id - y.symbol_id
+		 let compare x y = Pervasives.compare x.symbol_id y.symbol_id
 	 end)
 
 let signalStringOpt : string option ref = ref None
@@ -281,8 +281,8 @@ module JobSet = Set.Make
 		 type t = job
 		 let compare job1 job2 =
 			 (* I want the job with earliest stmt.sid to be first in the ordering *)
-			 let c = job1.stmt.Cil.sid - job2.stmt.Cil.sid in
-			 if c = 0 then job1.jid - job2.jid
+			 let c = Pervasives.compare job1.stmt.Cil.sid job2.stmt.Cil.sid in
+			 if c = 0 then Pervasives.compare job1.jid job2.jid
 			 else c
 	 end)
 

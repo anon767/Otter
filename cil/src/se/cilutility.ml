@@ -7,7 +7,7 @@ module VarinfoMap =
 		let compare a b =
 			(* try Output.print_endline ("Compare "^a.Cil.vname^" and            *)
 			(* "^b.Cil.vname);                                                   *)
-			let c = a.Cil.vid - b.Cil.vid in
+			let c = Pervasives.compare a.Cil.vid b.Cil.vid in
 				(* Output.print_endline ("Result = "^(string_of_int c)); *)
 			c
 	end
@@ -24,7 +24,7 @@ module FundecMap =
 	Utility.MakeMap (
 	struct
 		type t = Cil.fundec
-		let compare a b = let id x = x.svar.vid in id a - id b
+		let compare a b = let id x = x.svar.vid in Pervasives.compare (id a) (id b)
 	end
 	)
 
