@@ -30,7 +30,7 @@ let features : C.featureDescr list =
      *)
     Executemain.feature;
     Marshal_feature.feature;
-		ProgStats.feature;
+		FindFns.feature;
 		TraceLines.feature;
 		CalculateDependencies.feature;
 		CalculateVarDeps.feature;

@@ -173,15 +173,14 @@ let prepare_file file =
 	end file.globals;
 
 	(* Find all executable lines. For now, we don't care about the rest *)
-	let (hashtblOfLines,_,_,_) = GetProgInfo.getProgInfo file run_args.arg_fns in
-	run_args.arg_total_lines <- Hashtbl.length hashtblOfLines;
+	let (setOfLines,(*_,*)_,_) = GetProgInfo.getProgInfo file run_args.arg_fns in
+	run_args.arg_total_lines <- LineSet.cardinal setOfLines;
 	Output.printf "This program contains %d executable lines within the functions specified\n"
 		run_args.arg_total_lines;
 	if run_args.arg_list_executable_lines then (
-		let listOfLines = Hashtbl.fold (fun line () lst -> line :: lst) hashtblOfLines [] in
-		List.iter
+		LineSet.iter
 			(fun (file,lineNum) -> Output.printf "%s:%d\n" file lineNum)
-			(List.sort compare listOfLines)
+			setOfLines
 	)
 
 (* create a job that begins at a function, given an initial state *)
