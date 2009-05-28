@@ -4,18 +4,12 @@ let outFile = ref ""
 
 let findFns (file : Cil.file) : unit =
 	let outChan = if !outFile = "" then stdout else open_out !outFile in
-	Cilly.makeCFGFeature.fd_doit file;
-	let funs =
-		foldGlobals
-			file
-			(fun funNameList glob ->
-				 match glob with
-						 GFun(fundec,_) -> fundec.svar.vname :: funNameList
-					 | _ -> funNameList)
-			[]
-	in
-	List.iter (fun str -> output_string outChan (str ^ "\n")) funs;
-  if outChan != stdout then close_out outChan
+	iterGlobals
+		file
+		(fun glob ->
+			 match glob with
+					 GFun(fundec,_) -> output_string outChan (fundec.svar.vname ^ "\n")
+				 | _ -> ())
 
 let feature : Cil.featureDescr = {
   Cil.fd_enabled = ref false;
