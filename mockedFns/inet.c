@@ -15,7 +15,7 @@ char* inet_nextint(char* s,char delim,int* n){
 	if(flag) return 0;
 	else return p+1;
 }
-#if __HAVE_inet_aton__
+//#if __HAVE_inet_aton__
 int inet_aton(const char *cp, struct in_addr *pin){
 	int r = 0,n;
 	char cp2[1024];
@@ -32,7 +32,7 @@ int inet_aton(const char *cp, struct in_addr *pin){
 	//exit(1);
 	return 1;
 }
-#endif
+//#endif
 
 //#if __HAVE_inet_ntoa__
 //extern int __vsnprintf(char *buffer, size_t n, const char *format, va_list ap);
@@ -61,4 +61,15 @@ const char *inet_ntop(int af, const void *restrict src,
 											char *restrict dst, socklen_t size) {
 	strcpy(dst, "11.22.33.44");
 	return dst;
+}
+
+in_addr_t inet_addr(const char *cp)
+{
+	struct in_addr val;
+
+	if (inet_aton(cp, &val)) {
+		return (val.s_addr);
+	}
+
+	return (INADDR_NONE);
 }

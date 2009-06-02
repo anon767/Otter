@@ -21,3 +21,7 @@ void *__builtin_alloca(unsigned int size) {
   void *p = malloc(size);
   return p;
 }
+
+int __builtin_strcmp(const char* s1, const char* s2) {
+  return strcmp(s1, s2);
+}

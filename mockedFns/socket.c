@@ -87,8 +87,8 @@ int socketpair(int domain, int type, int protocol, int socket_vector[2]) {
 	return 0;
 }
 
-int select(int nfds, fd_set *restrict readfds,
-					 fd_set *restrict writefds, fd_set *restrict errorfds,
-					 struct timeval *restrict timeout) {
+int select(int nfds, fd_set *restrict readfds, fd_set *restrict writefds,
+		fd_set *restrict errorfds, struct timeval *restrict timeout)
+{
 	return 1;
 }

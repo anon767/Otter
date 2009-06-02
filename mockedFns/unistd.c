@@ -162,3 +162,9 @@ off_t lseek(int fildes, off_t offset, int whence) {
 
 	return newOffset;
 }
+
+int isatty(int fildes)
+{
+  return 1;
+}
+

@@ -40,3 +40,7 @@ int __lxstat(int __ver , char const   *__filename ,
 	// We don't have links yet, so this is just normal stat.
 	return __xstat(__ver, __filename, __stat_buf);
 }
+
+int stat(const char *__filename, struct stat *__stat_buf) {
+	return __xstat(0, __filename, __stat_buf);
+}
