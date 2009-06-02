@@ -180,7 +180,7 @@ module PcAssn = Set.Make
 let contradictionCache = ref PcAssn.empty
 
 let numberOfHits = Array.make 5 0
-let numberOfUselessHits = Array.make 5 0
+let numberOfMisses = Array.make 5 0
 let numberOfSTPCalls = Array.make 5 0
 
 let rec range a b = if a > b then [] else a :: range (succ a) b
@@ -197,7 +197,7 @@ let knownContradiction pc equalities =
 		List.exists
 			(fun assns ->
 				 let contradictory = PcAssn.mem (pc,assns) !contradictionCache in
-				 let arr = if contradictory then numberOfHits else numberOfUselessHits in
+				 let arr = if contradictory then numberOfHits else numberOfMisses in
 				 arr.(n) <- succ arr.(n);
 				 contradictory)
 			(subsetsOfSize n equalities)
@@ -329,7 +329,7 @@ Format.printf "%d path conditions\n" (List.length pcsAndLines);
 			 LineSet.iter
 				 (fun (file,lineNum) -> Format.printf "%s:%d\n" file lineNum)
 				 !remainingLines;
-			 if !size = 3 || LineSet.is_empty !remainingLines then raise EverythingCovered;
+			 if LineSet.is_empty !remainingLines then raise EverythingCovered;
 			 let linesStillUncovered =
 				 List.fold_left
 					 (fun lines b2v -> findDependenciesAndUpdate !remainingPcsAndLines lines b2v)
@@ -353,8 +353,8 @@ Format.printf "%d path conditions\n" (List.length pcsAndLines);
 
 	print_endline "numberOfHits";
 	for i = 1 to 4 do Format.printf "Size %d: %d\n" i numberOfHits.(i) done;
-	print_endline "numberOfUselessHits";
-	for i = 1 to 4 do Format.printf "Size %d: %d\n" i numberOfUselessHits.(i) done;
+	print_endline "numberOfMisses";
+	for i = 1 to 4 do Format.printf "Size %d: %d\n" i numberOfMisses.(i) done;
 	print_endline "numberOfSTPCalls";
 	for i = 1 to 4 do Format.printf "Size %d: %d\n" i numberOfSTPCalls.(i) done;
 	Format.printf "Optimization total time: %.2f s
