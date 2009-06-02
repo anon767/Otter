@@ -179,9 +179,9 @@ module PcAssn = Set.Make
 (* Cache of (pc,assignment) pairs that contradict each other *)
 let contradictionCache = ref PcAssn.empty
 
-let numberOfHits = Array.make 5 0
-let numberOfMisses = Array.make 5 0
-let numberOfSTPCalls = Array.make 5 0
+let numberOfHits = Array.make 50 0
+let numberOfMisses = Array.make 50 0
+let numberOfSTPCalls = Array.make 50 0
 
 let rec range a b = if a > b then [] else a :: range (succ a) b
 
