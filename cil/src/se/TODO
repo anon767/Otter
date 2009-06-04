@@ -52,3 +52,9 @@ Use a real libc implementation?
 Handle multiple processes
 
 Have a fixed header space (so things can be run cross-platform)
+
+The Cil CFG is not perfect (e.g., stmt block structure, line numbers for goto's, ...).
+Perhaps we want to transform the Cil.file into another intermediate structure before executing.
+(This has a benefit that it's easier to migrate to another C analyzer in the future.)
+
+
