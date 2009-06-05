@@ -1,4 +1,5 @@
 import sys,os,re
+from collections import defaultdict
 
 if len(sys.argv) == 1:
 	print '''Usage: python combineVarDeps.py linecount dir1 [dir2 ...]
@@ -37,10 +38,12 @@ dir = sys.argv[2:]
 
 
 def print_size(name,len,print_percent=True):
+	typ = "%d"
+	if type(len) is float: typ = "%.2f"
 	if print_percent and line_count>0:
-		print "%s=%d(%.2f%%)" % (name,len,float(len)*100/line_count)
+		print ("%s="+typ+"(%.2f%%)") % (name,len,float(len)*100/line_count)
 	else:
-		print "%s=%d" % (name,len)
+		print ("%s="+typ) % (name,len)
 
 
 # All variable touched by any path condition
@@ -129,39 +132,59 @@ for t in range(0,len(dir)):
 	for line in sorted(coverage[t][emptyAssignment[t]],line_cmp):
 		print line
 	
-	print
-	print 'Lines covered by t-way but not (t-1)-way:'
-	for line in sorted(t_coverage[t]-zero_coverage,line_cmp):
-		print line
+	#print
+	#print 'Lines covered by t-way but not (t-1)-way:'
+	#for line in sorted(t_coverage[t]-zero_coverage,line_cmp):
+	#	print line
 
 	cov_stat = []
+	allway_cov_stat = defaultdict(lambda:(0,set(),0,line_count))
+	max_t = 0
 	
 	for assignment,lines in sorted(coverage[t].iteritems()):
-		if assignment == emptyAssignment[t]:
-			continue
-		lines -= zero_coverage
-		for tt in range(0,t):
-			lines -= t_coverage[tt]
-		if len(lines)==0:
-			continue
-		print
-		print 'Under the condition'
-		for varVal in sorted(assignment):
-			print '%s=%d' % varVal
-		print 'these',len(lines),'lines are hit'
-		cov_stat.append(len(lines))
-		for line in sorted(lines,line_cmp):
-			print line
-	
+		len_of_assignment = len(assignment)
+		if max_t<len_of_assignment:
+			max_t = len_of_assignment
+
+	for tk in range(1,max_t+1):
+		for assignment,lines in sorted(coverage[t].iteritems()):
+			if assignment == emptyAssignment[t]:
+				continue
+			if len(assignment) != tk:
+				continue
+			lines -= zero_coverage
+			for tt in range(0,t):
+				lines -= t_coverage[tt]
+			if len(lines)==0:
+				continue
+			#for tt in range(1,tk-1):
+			for tt in range(1,tk+1):
+				lines -= allway_cov_stat[tt][1]
+			if len(lines)==0:
+				continue
+			print
+			print 'Under the condition'
+			for varVal in sorted(assignment):
+				print '%s=%d' % varVal
+			print 'these',len(lines),'lines are hit'
+			cov_stat.append(len(lines))
+			for line in sorted(lines,line_cmp):
+				print line
+			(count,s,MAX,MIN) = allway_cov_stat[len(assignment)] 
+			allway_cov_stat[len(assignment)] = (count+1,s|lines,max([MAX,len(lines)]),min([MIN,len(lines)]))
+
 	
 	print "\nSummary:"
 	print_size("TOUCHED_VAR",len(variables[t]),False)
 	print_size("%LINE 0-way",len(coverage[t][emptyAssignment[t]]))
-	print_size("%LINE (t-way)\\(t-1-way)",len(t_coverage[t]))
-	print_size ("LEN", len(cov_stat),False)
-	print_size ("MAX", max(cov_stat))
-	print_size ("MIN", min(cov_stat))
-	print_size ("AVG", float(sum(cov_stat))/len(cov_stat))
+	for tk in allway_cov_stat.keys(): 
+		(count,s,MAX,MIN) = allway_cov_stat[tk]
+		print "%d-way:" % tk
+		print_size("  %LINE",len(s))
+		print_size ("  #config", (count),False)
+		print_size ("  MAX", MAX)
+		print_size ("  MIN", MIN)
+		print_size ("  AVG", float(len(s))/count)
 	print "\nDone\n"
 	
 # END for each t
