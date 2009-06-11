@@ -22,7 +22,9 @@ CILLY_DONT_COMPILE_AFTER_MERGE= \
 $TOPDIR/cil/bin/cilly \
 	--docalculateVarDeps \
 	--fileWithCovInfo=$MARSHALDIR/$TEST_NAME.marshal \
-	--fileWithPossibleValues=$POSSIBLE --numVars=$4 /fs/skoll/symexe/trunk/cil/setest/test0.c 
+	--fileWithPossibleValues=$POSSIBLE /fs/skoll/symexe/trunk/cil/setest/test0.c 
+
+	#--fileWithPossibleValues=$POSSIBLE --numVars=$4 /fs/skoll/symexe/trunk/cil/setest/test0.c 
 
 echo \#DONE TEST_VARDEPS TEST_NAME=$TEST_NAME NUMVARS=$NUMVARS
 date
