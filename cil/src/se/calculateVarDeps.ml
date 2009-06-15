@@ -322,14 +322,15 @@ Format.printf "%d path conditions\n" (List.length pcsAndLines);
 			 pcsAndLines)
 	and remainingLines = ref (LineSet.diff everExecuted alwaysExecuted) in
 
+	let size = ref 0 in
 	(try
-		 let size = ref 1 in
 		 while true do
 			 Format.printf "\n%d lines left\n" (LineSet.cardinal !remainingLines);
 			 LineSet.iter
 				 (fun (file,lineNum) -> Format.printf "%s:%d\n" file lineNum)
 				 !remainingLines;
 			 if LineSet.is_empty !remainingLines then raise EverythingCovered;
+			 incr size;
 			 let linesStillUncovered =
 				 List.fold_left
 					 (fun lines b2v -> findDependenciesAndUpdate !remainingPcsAndLines lines b2v)
@@ -345,18 +346,17 @@ Format.printf "%d path conditions\n" (List.length pcsAndLines);
 				 List.rev_map
 					 (fun (pc,lines) -> (pc, LineSet.diff lines linesJustCovered))
 					 !remainingPcsAndLines;
-			 remainingLines := linesStillUncovered;
-			 incr size
+			 remainingLines := linesStillUncovered
 		 done
 	 with EverythingCovered -> ()
 	);
 
 	print_endline "numberOfHits";
-	for i = 1 to 4 do Format.printf "Size %d: %d\n" i numberOfHits.(i) done;
+	for i = 1 to !size do Format.printf "Size %d: %d\n" i numberOfHits.(i) done;
 	print_endline "numberOfMisses";
-	for i = 1 to 4 do Format.printf "Size %d: %d\n" i numberOfMisses.(i) done;
+	for i = 1 to !size do Format.printf "Size %d: %d\n" i numberOfMisses.(i) done;
 	print_endline "numberOfSTPCalls";
-	for i = 1 to 4 do Format.printf "Size %d: %d\n" i numberOfSTPCalls.(i) done;
+	for i = 1 to !size do Format.printf "Size %d: %d\n" i numberOfSTPCalls.(i) done;
 	Format.printf "Optimization total time: %.2f s
   It took %.2f s to construct the formulas for the expressions inside 'if(...)'s,
   %.2f s to construct and assert the path conditions,
