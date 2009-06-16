@@ -254,7 +254,7 @@ let linesControlledBy pcsAndLines assignments =
 			(String.concat "\n"
 				 (List.map
 						(fun (var,value) ->
-							 Printf.sprintf "%s=%d,"
+							 Printf.sprintf "%s=%d"
 								 (To_string.humanReadableBytes !bytesToVars var)
 								 value)
 						assignments))
