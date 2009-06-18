@@ -200,11 +200,11 @@ int IOSIM_unlink(const char *pathname) {
 				free(sym_file);
 			}
 			// Remove the file entry from IOSIM_file and IOSIM_file_name
-			for (int iPlus1 = i+1; iPlus1 < IOSIM_num_file; iPlus1++, i++) {
-				IOSIM_file[i] = IOSIM_file[iPlus1];
-				IOSIM_file_name[i] = IOSIM_file_name[iPlus1];
-			}
 			IOSIM_num_file--;
+			for ( ; i < IOSIM_num_file; i++) {
+				IOSIM_file[i] = IOSIM_file[i+1];
+				IOSIM_file_name[i] = IOSIM_file_name[i+1];
+			}
 			// We unlinked successfully
 			return 0;
 		}
@@ -317,7 +317,11 @@ int IOSIM_eof(int fildes){
 
 // This doesn't check that the destination directory exists		
 int IOSIM_chdir(const char *path) {
-	if (realpath(path,workingDir)) {
+	// Work with a temporary string so workingDir only changes if
+	// realpath() succeeds.
+	char newWorkingDir[PATH_MAX+1];
+	if (realpath(path,newWorkingDir)) {
+		strcpy(workingDir,newWorkingDir);
 		return 0;
 	}
 	return -1;
@@ -363,23 +367,27 @@ int IOSIM_closedir(DIR *dir) {
 	 the directory. Is this the right thing to do? */
 struct dirent *IOSIM_readdir(DIR *dir) {
 	while (dir->index < IOSIM_num_file) {
-		// See if the file is "<dirname>/<something without slashes>"
-		char *filename = strdup(IOSIM_file_name[dir->index]);
+		// See if the file name is "<dirname>/<something without slashes>"
+		// (or just "/<something without slashes>" if <dirname> is "/")
+		char *filename = IOSIM_file_name[dir->index];
 		dir->index++;
 		char *lastSlash = strrchr(filename,'/');
-		*lastSlash = 0; // Overwrite the final '/' with null
-		if (!strcmp(filename,dir->dirname)) { // Check that the path is dir->dirname
+		int dirContainsThisFile;
+		if (lastSlash == filename) { // The file is in '/'
+			dirContainsThisFile = !strcmp("/",dir->dirname);
+		} else {
+			*lastSlash = 0; // Overwrite the final '/' with null, leaving only filename's directory
+			dirContainsThisFile = !strcmp(filename,dir->dirname); // Check that the path is dir->dirname
 			*lastSlash = '/'; // Restore the full file name
+		}
+		if (dirContainsThisFile) {
 			if (strlen(filename) >= sizeof(dir->readdirRetval.d_name)) {
 				errno = EOVERFLOW;
-				free(filename);
 				return NULL;
 			}
 			strcpy(dir->readdirRetval.d_name,filename);
-			free(filename);
 			return &dir->readdirRetval;
 		}
-		free(filename);
 	}
 	return NULL;
 }
