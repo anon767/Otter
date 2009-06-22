@@ -3,5 +3,5 @@ EXTRALIBDIRS = ../../../../camlidl/runtime ../../../../stp/lib ../../../../ocaml
 STPVCFILE=../../../../ocamlstp/stpvc.cmxa
 
 guaranteedCoverage: guaranteedCoverage.ml
-	ocamlopt -annot -c -I $(CILOBJDIR) guaranteedCoverage.ml
+	ocamlopt -dtypes -c -I $(CILOBJDIR) guaranteedCoverage.ml
 	ocamlopt -ccopt "$(foreach lib,$(EXTRALIBDIRS),-L$(lib))" -I $(CILOBJDIR) -o guaranteedCoverage unix.cmxa str.cmxa $(STPVCFILE) $(CILOBJDIR)/cil.cmxa guaranteedCoverage.cmx

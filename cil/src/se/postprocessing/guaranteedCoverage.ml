@@ -266,14 +266,12 @@ let getControlledLines pcsAndLines configs =
 			 (fun config -> linesControlledBy pcsAndLines config)
 			 configs)
 
-let findDependenciesAndUpdate pcsAndLines linesToExplain localBytesToVars =
+let accumulateControlledLines pcsAndLines controlledLines localBytesToVars =
 	Format.printf "\nConsidering\n%s\n"
 		(String.concat ", " (List.map (fun (_,var) -> var.vname) localBytesToVars));
-	let linesControlledByVars =
-		getControlledLines pcsAndLines (allPossibleValues localBytesToVars)
-	in
-	(* Remove the lines that have been accounted for from linesToExplain. *)
-	LineSet.diff linesToExplain linesControlledByVars
+	LineSet.union
+		controlledLines
+		(getControlledLines pcsAndLines (allPossibleValues localBytesToVars))
 
 let allLinesInFile filename =
 	let inChan = open_in filename in
@@ -289,6 +287,8 @@ let allLinesInFile filename =
 	!allLines
 
 exception EverythingCovered
+
+let elimDups = ref true
 
 let calculateDeps pcsAndLines linesToIgnoreFile configsToTry =
 	let firstResult,restResults =
@@ -343,43 +343,40 @@ let calculateDeps pcsAndLines linesToIgnoreFile configsToTry =
 	in
 
 	let size = ref 0 in
-	(match configsToTry with
-			 None ->
-				 (try
-						while true do
-							Format.printf "\n%d lines left\n" (LineSet.cardinal !remainingLines);
-							LineSet.iter
-								(fun (file,lineNum) -> Format.printf "%s:%d\n" file lineNum)
-								!remainingLines;
-							if LineSet.is_empty !remainingLines then raise EverythingCovered;
-							incr size;
-							let linesStillUncovered =
-								List.fold_left
-									(fun lines b2v -> findDependenciesAndUpdate !remainingPcsAndLines lines b2v)
-									!remainingLines
-									(subsetsOfSize !size !bytesToVars)
-							in
-							let linesJustCovered = LineSet.diff !remainingLines linesStillUncovered in
-							(* Update the pcsAndLines only after all subsets of a given
-								 size have been examined. This enables us to see if there are
-								 several ways of hitting guaranteeing coverage of the same
-								 lines. *)
-							remainingPcsAndLines :=
-								List.rev_map
-									(fun (pc,lines) -> (pc, LineSet.diff lines linesJustCovered))
-									!remainingPcsAndLines;
-							remainingLines := linesStillUncovered
-						done
-					with EverythingCovered -> ()
-				 )
-		 | Some configs ->
-				 size := List.fold_left max 0 (List.map List.length configs);
-				 let controlledLines = getControlledLines !remainingPcsAndLines configs in
-				 remainingLines := LineSet.diff !remainingLines controlledLines;
-				 Format.printf "\n%d lines left\n" (LineSet.cardinal !remainingLines);
-				 LineSet.iter
-					 (fun (file,lineNum) -> Format.printf "%s:%d\n" file lineNum)
-					 !remainingLines
+	(try
+		 while true do
+			 Format.printf "\n%d lines left\n" (LineSet.cardinal !remainingLines);
+			 LineSet.iter
+				 (fun (file,lineNum) -> Format.printf "%s:%d\n" file lineNum)
+				 !remainingLines;
+			 if LineSet.is_empty !remainingLines then raise EverythingCovered;
+			 incr size;
+			 let linesJustCovered =
+				 match configsToTry with
+						 None ->
+							 List.fold_left
+								 (fun lines b2v ->
+										accumulateControlledLines !remainingPcsAndLines lines b2v)
+								 LineSet.empty
+								 (subsetsOfSize !size !bytesToVars)
+					 | Some configs ->
+							 getControlledLines
+								 !remainingPcsAndLines
+								 (List.filter (fun config -> List.length config = !size) configs)
+			 in
+			 (* Update the pcsAndLines only after all subsets of a given
+					size have been examined. This enables us to see if there are
+					several ways of guaranteeing coverage of the same lines by
+					different interactions of the same size, even if elimDups is
+					specified,. *)
+			 if !elimDups then
+				 remainingPcsAndLines :=
+					 List.rev_map
+						 (fun (pc,lines) -> (pc, LineSet.diff lines linesJustCovered))
+						 !remainingPcsAndLines;
+			 remainingLines := LineSet.diff !remainingLines linesJustCovered
+		 done
+	 with EverythingCovered -> ()
 	);
 
 	print_endline "numberOfHits";
@@ -498,6 +495,9 @@ let speclist = [
 	 Arg.Set_string configsToTryFile,
 	 "<filename> Only check configurations from this file for guaranteed coverage.
 \t\t\t(If this option is not set, do a full search.)");
+	("--printFull",
+	 Arg.Clear elimDups,
+	 " Print every line guaranteed by every configuration, even duplicates");
 ]
 ;;
 
@@ -505,7 +505,7 @@ let usageMsg =
 	"Usage: guaranteedCoverage [options] coverage-file[...]
 
 Options can come before, after, or interspersed with coverage files.
-You must specify either a values file or a configsToTry file.
+You must specify either a possibleValues file or a configsToTry file.
 "
 
 let main () =
