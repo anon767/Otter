@@ -207,10 +207,10 @@ let bytes__write bytes off len newbytes =
 				
 			| Bytes_ByteArray(oldarray),Bytes_Constant(CInt64(i64,k,_)),_(* anything *) ->
 				let rec impl arr i =
-					if i>=word__size then arr else
+					if i>=len then arr else
 						impl (ImmutableArray.set arr i (Byte_Bytes(newbytes,i))) (i+1)
 				in
-					do_write bytes off len (Bytes_ByteArray(impl (ImmutableArray.make word__size byte__zero) 0))			
+					do_write bytes off len (Bytes_ByteArray(impl (ImmutableArray.make len byte__zero) 0))			
 			
 			| Bytes_ByteArray(oldarray),_,_
 				when Convert.isConcrete_bytes off ->
