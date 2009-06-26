@@ -147,7 +147,7 @@ let rec allPossibleValues localBytesToVars =
 					List.map (* Attach each possible value to each possible value for the tail *)
 						(fun value ->
 							 List.map
-								 (fun tailAssignment -> (bytes, value) :: tailAssignment)
+								 (fun tailAssignment -> makeEquality bytes value :: tailAssignment)
 								 allTailAssignments)
 						(Hashtbl.find_all varToVals var.vname)
 				in
@@ -166,70 +166,17 @@ let rec subsetsOfSize n lst =
 				(List.rev_map (fun subset -> x :: subset) smallerSubsets)
 				subsetsWithoutX
 
-module PcAssn = Set.Make
-	(struct
-		 type t = bytes list * (bytes*int) list (* pc, assignments *)
-		 let compare ((pc1,cov1) as x:t) ((pc2,cov2) as y) = (* Type annotation to remove polymorphism *)
-			 if pc1 == pc2 (* Try physical comparison on pc1 and pc2 before structural. *)
-			 then compare cov1 cov2
-			 else compare x y
-	 end)
-
-(* Cache of (pc,assignment) pairs that contradict each other *)
-let contradictionCache = ref PcAssn.empty
-
-let numberOfHits = Array.make 50 0
-let numberOfMisses = Array.make 50 0
-let numberOfSTPCalls = Array.make 50 0
-
-let rec range a b = if a > b then [] else a :: range (succ a) b
-
-let knownContradiction pc equalities =
-	let sizesToCheck =
-		match equalities with
-				[] -> failwith "knownContradiction: empty list"
-			| _ -> range 1 (List.length (List.tl equalities)) (* Change this to modify the method of optimization. I'm not sure going beyond size 1, and maybe size 2, will be helpful in practice. *)
-	in
-	let existsContradictionOfSize n =
-		List.exists
-			(fun assns ->
-				 let contradictory = PcAssn.mem (pc,assns) !contradictionCache in
-				 let arr = if contradictory then numberOfHits else numberOfMisses in
-				 arr.(n) <- succ arr.(n);
-				 contradictory)
-			(subsetsOfSize n equalities)
-	in
-	List.exists existsContradictionOfSize sizesToCheck
-
-let isConsistentWithList pc assignments =
-	if Stats.time "knownContradiction" (fun x -> knownContradiction pc x) assignments then false
-	else
-		let theQuery =
-			match assignments with
-				| [] -> failwith "Empty list in isConsistentWithList"
-				| [var,value] -> makeEquality var value
-				| _ ->
-						Bytes_Op(OP_LAND,
-										 List.map
-											 (fun (var,value) -> (makeEquality var value, intType))
-											 assignments)
-		in
-		let size = List.length assignments in
-		numberOfSTPCalls.(size) <- succ numberOfSTPCalls.(size);
-		let result =
-			match Stp.consult_stp pc theQuery Stp.FalseOrNot with
-				| Stp.False ->
-						contradictionCache := PcAssn.add (pc,assignments) !contradictionCache; (* Memoize the answer *)
-						false (* Must be false *)
-				| _ -> true (* Might be true *)
-		in
-		Output.set_mode Output.MSG_MUSTPRINT;
-		result
+let rec isConsistentWithList pc = function
+		[] -> true (* The pc is consistent with the set of assignments *)
+	| assignment::assignments ->
+			if Stp.consult_stp pc assignment = Stp.False
+			then false
+			else isConsistentWithList (assignment::pc) assignments
 
 (* Which of the (pc,lines) pairs have pcs which are consistent with
 	 the assignments? *)
-let consistentPCsAndLines allPCsAndLines assignments =
-	List.filter (fun (pc,_) -> isConsistentWithList pc assignments) allPCsAndLines
+let consistentPcsAndLines allPcsAndLines assignments =
+	List.filter (fun (pc,_) -> isConsistentWithList pc assignments) allPcsAndLines
 
 let bigUnionForSymbols = List.fold_left SymbolSet.union SymbolSet.empty
 let bigUnion = List.fold_left LineSet.union LineSet.empty
@@ -242,20 +189,22 @@ let bigInter setList =
 
 let linesControlledBy pcsAndLines assignments =
 	let result =
-		match List.map snd (consistentPCsAndLines pcsAndLines assignments) with
+		match List.map snd (consistentPcsAndLines pcsAndLines assignments) with
 			| [] -> failwith "Impossible: assignments not compatible with any pc"
 			| x -> bigInter x
 	in
 	if not (LineSet.is_empty result) then (
-		Format.printf "\nUnder the condition\n%s\nthese %d lines are hit\n"
-			(String.concat "\n"
-				 (List.map
-						(fun (var,value) ->
-							 Printf.sprintf "%s=%d"
-								 (To_string.humanReadableBytes !bytesToVars var)
-								 value)
-						assignments))
-			(LineSet.cardinal result);
+		Output.set_mode Output.MSG_REG;
+		Format.printf "\nUnder the condition\n";
+		List.iter
+			(fun assignment ->
+				 Format.printf "%s\n"
+				 (Str.replace_first
+						(Str.regexp "==(\\(.*\\),Bytes(\\([^)]*\\)))")
+						"\\1=\\2"
+						(To_string.humanReadableBytes !bytesToVars assignment)))
+			assignments;
+		Format.printf "these %d lines are hit\n" (LineSet.cardinal result);
 		LineSet.iter (fun (file,line) -> Format.printf "%s:%d\n" file line) result
 	);
 	result
@@ -305,6 +254,7 @@ let calculateDeps pcsAndLines linesToIgnoreFile configsToTry =
 	in
 
 	Format.printf "%d path conditions\n" (List.length pcsAndLines);
+	Format.printf "(instead of %d)\n" !totalNumberOfPcs;
 
 	(* Pick out variables that appear in some path condition, ignoring
 		 those that aren't mentioned anywhere. *)
@@ -379,17 +329,11 @@ let calculateDeps pcsAndLines linesToIgnoreFile configsToTry =
 	 with EverythingCovered -> ()
 	);
 
-	print_endline "numberOfHits";
-	for i = 1 to !size do Format.printf "Size %d: %d\n" i numberOfHits.(i) done;
-	print_endline "numberOfMisses";
-	for i = 1 to !size do Format.printf "Size %d: %d\n" i numberOfMisses.(i) done;
-	print_endline "numberOfSTPCalls";
-	for i = 1 to !size do Format.printf "Size %d: %d\n" i numberOfSTPCalls.(i) done;
-	Format.printf "Optimization total time: %.2f s
+	Format.printf "The cache was hit %d times and missed %d times. (STP was called %d times.)
   It took %.2f s to construct the formulas for the expressions inside 'if(...)'s,
   %.2f s to construct and assert the path conditions,
   and %.2f s to solve the resulting formulas.\n\n"
-		(Stats.lookupTime "knownContradiction")
+		!Stp.cacheHits !Stp.cacheMisses !stp_count
 		(Stats.lookupTime "convert conditional")
 		(Stats.lookupTime "STP assert")
 		(Stats.lookupTime "STP query");
@@ -409,7 +353,6 @@ let rec eliminate_untracked apc apct =
 let treeOfPcs = ref (Node (rootNodeData, []))
 
 let addCoverageFromFile filename =
-	initCIL();
 	let inChan = open_in_bin filename in
 	(* Read in the coverage data structure *)
 	let jobResults = (Marshal.from_channel inChan : job_result list) in
@@ -464,7 +407,7 @@ let readInConfigsToTry configsFile =
 					 (match Str.split (Str.regexp "=") !line with
 								[var;value] ->
 									config :=
-										(varNameToBytes var,int_of_string value) :: !config
+										makeEquality (varNameToBytes var) (int_of_string value) :: !config
 							| _ -> failwith "Badly formatted configuration"
 					 );
 					 line := input_line inChan
@@ -509,6 +452,7 @@ You must specify either a possibleValues file or a configsToTry file.
 "
 
 let main () =
+	initCIL();
 	Arg.parse
 		(Arg.align speclist)
 		addCoverageFromFile (* Unnamed arguments are treated as coverage files *)

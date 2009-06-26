@@ -2,7 +2,6 @@ open Types
 open Cil
 
 type truth = True | False | Unknown;;
-type queryType = TrueOrNot | FalseOrNot | TrueFalseOrUnknown
 
 let not truth = match truth with
 	| True -> False
@@ -63,15 +62,128 @@ let allSymbolsInList byteslist =
 		SymbolSet.empty
 		byteslist
 
+type symbolOrIndicator = Symb of symbol | Indic of int
+
+module SymbolAndIndicatorSet = Set.Make
+	(struct
+		 type t = symbolOrIndicator
+		 (* I arbitrarily chose to make symbols less than indicators *)
+		 let compare x y = match x,y with
+			 | Symb s1, Symb s2 -> Pervasives.compare s1.symbol_id s2.symbol_id
+			 | Indic i1, Indic i2 -> Pervasives.compare i1 i2
+			 | Symb _, Indic _ -> -1
+			 | Indic _, Symb _ -> 1
+	 end)
+(* Abbreviating the name *)
+module SISet = SymbolAndIndicatorSet
+
+let rec allIndicators = function
+	| Indicator i -> SISet.singleton (Indic i)
+	| Indicator_Not i -> allIndicators i
+	| Indicator_And (i1,i2) ->
+			SISet.union (allIndicators i1) (allIndicators i2)
+
+(** Return an SISet of all symbols and indicators in the given Bytes *)
+let rec allSymbolsAndIndicators = function
+	| Bytes_Constant const -> SISet.empty
+	| Bytes_ByteArray bytearray ->
+			ImmutableArray.fold_left
+				(fun symbSet byte -> match byte with
+					 | Byte_Concrete _ -> symbSet
+					 | Byte_Symbolic symb ->
+							 SISet.add (Symb symb) symbSet
+					 | Byte_Bytes (bytes,_) ->
+							 SISet.union symbSet (allSymbolsAndIndicators bytes))
+				SISet.empty
+				bytearray
+	| Bytes_Address (memBlockOpt,bytes) -> (
+			let partialAnswer = allSymbolsAndIndicators bytes in
+			match memBlockOpt with
+					None -> partialAnswer
+				| Some memBlock ->
+						SISet.union partialAnswer
+							(allSymbolsAndIndicators memBlock.memory_block_addr)
+		)
+	| Bytes_MayBytes (indicator, bytes1, bytes2) ->
+			SISet.union (allIndicators indicator)
+				(SISet.union (allSymbolsAndIndicators bytes1)
+					 (allSymbolsAndIndicators bytes2))
+	| Bytes_Op (_,bytes_typ_list) ->
+			List.fold_left
+				(fun symbSet (b,_) -> SISet.union symbSet (allSymbolsAndIndicators b))
+				SISet.empty
+				bytes_typ_list
+	| Bytes_Read (bytes1,bytes2,_) ->
+			SISet.union (allSymbolsAndIndicators bytes1) (allSymbolsAndIndicators bytes2)
+	| Bytes_Write (bytes1,bytes2,_,bytes3) ->
+			SISet.union
+				(allSymbolsAndIndicators bytes3)
+				(SISet.union (allSymbolsAndIndicators bytes1) (allSymbolsAndIndicators bytes2))
+	| Bytes_FunPtr (_,bytes) -> allSymbolsAndIndicators bytes
+
+(** Return a SISet of all symbols in the given list of Bytes *)
+let allSymbolsAndIndicatorsInList byteslist =
+	List.fold_left
+		(fun symbSet b -> SISet.union symbSet (allSymbolsAndIndicators b))
+		SISet.empty
+		byteslist
+
+(* This implements 'constraint independence': it picks out only those
+	 clauses from the pc which can have an influence on the given
+	 symbols. It grabs the clauses that mention any of the symbols, and
+	 then iterates with the symbols present in these clauses, and so on,
+	 until nothing else mentions any of the symbols we care about. (This
+	 will happen eventually, because eventually pc will become empty.) *)
+let rec getRelevantAssumptions_aux acc symbols pc =
+	match List.partition (* See what clauses mention any of the symbols *)
+		(fun b -> SISet.is_empty (SISet.inter symbols (allSymbolsAndIndicators b)))
+		pc
+	with
+		| _,[] -> acc (* Nothing else is relevant *)
+		| subPC,relevant ->
+				getRelevantAssumptions_aux
+					(List.rev_append relevant acc) (* Does using rev_append, rather than (@), mess with the order in a way that's bad for the cache? I think not, but I'm not sure. *)
+					(allSymbolsAndIndicatorsInList relevant)
+					subPC
+
+let getRelevantAssumptions pc query =
+	getRelevantAssumptions_aux [] (allSymbolsAndIndicators query) pc
+
+let rec listCompare l1 l2 =
+	match l1,l2 with
+			_ when l1 == l2 -> 0 (* This includes [],[] *)
+		| [],_ -> -1
+		| _,[] -> 1
+ 		| h1::t1,h2::t2 ->
+				if h1 == h2 then compare t1 t2
+				else let x = compare h1 h2 in
+				if x <> 0 then x else compare t1 t2
+
+(* Map a pc and a query *)
+module StpCache = Map.Make
+	(struct
+		 type t = bytes list * bytes (* pc, query *)
+		 (* It might be better to have this be set-based equality rather
+				than list-based. *)
+		 let compare ((pc1,cov1):t) ((pc2,cov2):t) = (* Type annotation to remove polymorphism *)
+			 let result1 = listCompare pc1 pc2 in
+			 if result1 = 0
+			 then compare cov1 cov2
+			 else result1
+	 end)
+
+let cacheHits = ref 0
+let cacheMisses = ref 0
+let stpCacheRef = ref StpCache.empty
+
 let rec eval pc bytes =
 	(*
 	if not Executeargs.args.Executeargs.arg_print_queries then () else
 	Output.print_endline ("Is the following not equal to zero? \n"^(To_string.bytes bytes));*)
 	let nontrivial () = 
-			ignore (Utility.next_id Types.stp_count);
 			Output.set_mode Output.MSG_REG;
 			Output.print_endline "Ask STP...";
-			Stats.time "STP" (consult_stp pc bytes) TrueFalseOrUnknown
+			Stats.time "STP" (consult_stp pc) bytes
 	in
 	let is_comparison op = match op with	
 		| OP_LT -> true
@@ -130,26 +242,26 @@ let rec eval pc bytes =
 and
 
 (* TODO: refactor consult_stp/doassert/query/query_indicator, since query_indicator similar in purpose to consult_stp *)
-consult_stp pc bytes queryType =
+consult_stp pc bytes =
+	let pc = getRelevantAssumptions pc bytes in
+	try
+		let ans = StpCache.find (pc,bytes) !stpCacheRef in
+		incr cacheHits;
+		ans
+	with Not_found ->
+		incr cacheMisses;
     let vc = doassert pc in
-	match queryType with
-		| TrueOrNot ->
-			if query vc bytes false then
-				True
-			else
-				Unknown
-		| FalseOrNot ->
-			if query vc bytes true then
-				False
-			else
-				Unknown
-		| TrueFalseOrUnknown ->
+		let answer =
 			if query vc bytes true then
 				False
 			else if query vc bytes false then
 				True
 			else
 				Unknown
+		in
+		stpCacheRef := StpCache.add (pc,bytes) answer !stpCacheRef;
+		answer
+
 and
 
 (** return (True) False if bytes (not) evaluates to all zeros. Unknown otherwise.
@@ -157,24 +269,6 @@ and
 
 
 doassert pc =
-(* Yit: I think the below won't work for multiple split/merged paths, since path condition clauses may be interrelated.
- *      E.g., consider the path condition a == b && b == c && c == d, and the query a == d *)
-(*	let rec getRelevantAssumptions acc symbols pc' =
-		match List.partition
-			(fun b -> SymbolSet.is_empty (SymbolSet.inter symbols (allSymbols b)))
-			pc'
-		with
-			| [],_ -> pc (* Everything is relevant *)
-			| _,[] -> acc (* Nothing else is relevant *)
-			| subPC,relevant ->
-					getRelevantAssumptions (relevant @ acc)
-						(SymbolSet.union symbols (allSymbolsInList relevant))
-						subPC
-	in
-	let relevantAssumptions =
-		getRelevantAssumptions [] (allSymbols bytes) pc
-	in
-*)
 	let vc = Stpc.create_validity_checker () in
 	
 	Output.set_mode Output.MSG_STP;
@@ -206,10 +300,7 @@ query vc bytes equal_zero =
 	
 	Output.set_mode Output.MSG_STP;
 	Output.print_endline ("QUERY("^(Stpc.to_string q)^");");
-(*	
-	let bool = Stpc.query vc q  in
-		bool
-*)
+	incr Types.stp_count;
 	let return = Stats.time "STP query" (Stpc.query vc) q in
       Stpc.e_pop vc;
       return
