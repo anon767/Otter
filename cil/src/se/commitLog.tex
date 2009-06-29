@@ -1,0 +1,28 @@
+\documentclass{amsbook}
+\usepackage{fullpage}
+\begin{document}
+\section*{r8073 -- June 26, 2009 -- Elnatan}
+I implemented a caching optimization in stp.ml, memoizing calls to
+STP. We do not cache the full path condition, but only the part of the
+path condition that is relevant to the query. This increases the
+likelihood of cache hits relative to caching the full path
+condition. (Also, the smaller the items in the cache, the faster
+lookup will be.)
+
+Related to this, I changed the way I query STP for guaranteed
+coverage. Before, when checking whether a path condition was
+consistent with a configuration, say, \texttt{x=1 \&\& y=0}, I would
+query, in the context of $pc$, the conjunction $x=1 \wedge y=0$. I
+realized, though, that it is probably better to do this as two
+consecutive queries: first query $x=1$ in the context of $pc$, then
+query $y=0$ in the context $pc \wedge x=1$. (Notice that you need to
+add $x=1$ here; $pc$ might contain something like $x=0 \vee y=0$.)
+This has the benefits that, with a smaller query, we are more likely
+to get a cache hit; and if the $x=1$ query returns \texttt{false}, we
+never ask about $y$ at all. To be sure, the overhead of two queries
+might be greater than a single query (even if the single one is more
+complicated), but from some initial tests, unfolding conjunctions
+seems to be beneficial. If, upon further investigation, this
+observation seems generally true, we could do this conjunction
+unfolding within stp.ml itself.
+\end{document}
