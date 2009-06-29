@@ -33,7 +33,6 @@ let features : C.featureDescr list =
 		FindFns.feature;
 		TraceLines.feature;
 		CalculateDependencies.feature;
-		CalculateVarDeps.feature;
   ] 
   @ Feature_config.features;;
 
