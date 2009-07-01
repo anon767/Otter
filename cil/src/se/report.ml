@@ -155,6 +155,14 @@ let printLines lineset =
 		lineset;
 	Output.printf "\n"
 
+let printEdges edgeset =
+	Output.printf "The edges hit were:\n";
+	EdgeSet.iter
+		(fun (b_stmt,e_stmt) -> Output.printf "%d-%d\n" b_stmt.sid e_stmt.sid)
+		(*(fun (b_stmt,e_stmt) -> Output.printf "%s-%s\n" (To_string.stmt b_stmt) (To_string.stmt e_stmt))*)
+		edgeset;
+	Output.printf "\n"
+
 let printCoveringConfigs coveringSet covType =
 	let name = covTypeToStr covType in
 	if coveringSet = [] then Output.printf "No constraints: any run covers all %s\n" name
@@ -166,6 +174,7 @@ let printCoveringConfigs coveringSet covType =
 				 printPath state hist;
 				 printCov covType hist;
 				 if covType = Line then printLines hist.coveredLines;
+				 if covType = Edge then printEdges hist.coveredEdges;
 				 Output.printf "-------------\n\n")
 			 coveringSet
 	end
