@@ -35,7 +35,7 @@ int main(){
 
 	__ASSERT(__TRUTH_VALUE(global.arr[5]) == 0);
 	__ASSERT(__TRUTH_VALUE(local.arr[5]) == 0);
-	__ASSERT(__TRUTH_VALUE(heap->arr[5]) == 0);
+	__ASSERT(__TRUTH_VALUE(heap == 0) == 0);
 
 	return 0;
 }

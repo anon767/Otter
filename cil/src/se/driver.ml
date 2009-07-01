@@ -290,6 +290,7 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
                              block_to_bytes = MemoryBlockMap.map 
                                 (fun b -> match b with
                                      Bytes_FunPtr(_) -> b
+                                   (* TODO: handle pointers by generating MayBytes trees based on alias analysis *)
                                    | _ -> MemOp.bytes__symbolic (MemOp.bytes__length b)
                                 ) 
                                 state.block_to_bytes;
