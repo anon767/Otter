@@ -48,8 +48,9 @@ let libc___builtin_va_start state exps =
 		| _ -> failwith "First argument of va_start must have lval"
 ;;
 
-let libc_malloc__id = ref 1;;
-let libc_malloc state exps = 
+(* __builtin_alloca is used for local arrays with variable size; has the same semantics as malloc *)
+let libc___builtin_alloca__id = ref 1;;
+let libc___builtin_alloca state exps =
 	let b_size = Eval.rval state (List.hd exps) in
 	let size = 
 		if Convert.isConcrete_bytes b_size then
@@ -57,9 +58,10 @@ let libc_malloc state exps =
 		else
 			1 (* currently bytearray have unbounded length *)
 	in
-	let name = Printf.sprintf "malloc(%d)#%d/%s%s" 
+	let name = Printf.sprintf "%s(%d)#%d/%s%s"
+		(List.hd state.callstack).svar.vname
 		size
-		(Utility.next_id libc_malloc__id) 
+		(Utility.next_id libc___builtin_alloca__id)
 		(To_string.location !Output.cur_loc) 
 		(MemOp.state__trace state)
 	in
@@ -71,6 +73,9 @@ let libc_malloc state exps =
 	let state2 = MemOp.state__add_block state block bytes in
 		(state2,addrof_block)	
 ;;
+
+(* share implementation with __builtin_alloca *)
+let libc_malloc = libc___builtin_alloca
 
 let libc_free state exps = 
   (* What it does is to remove the mapping of (block,bytes) in the state.
@@ -187,6 +192,7 @@ let get fname =
 		| "__builtin_va_copy" -> libc___builtin_va_copy
 		| "__builtin_va_end" -> libc___builtin_va_end
 		| "__builtin_va_start" -> libc___builtin_va_start
+		| "__builtin_alloca" -> libc___builtin_alloca
 (*		| "__create_file" -> libc___create_file *)
 (*		| "__error" -> libc___error *)
 (*		| "__maskrune" -> libc___maskrune*)
