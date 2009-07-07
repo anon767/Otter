@@ -50,9 +50,9 @@ module Interpreter (S : Config.BlockConfig) = struct
                 let destopt = match lvalopt with
                     | None -> None
                     | Some lval ->
-                        let (block, offset) = Eval.lval job.Types.state lval in
+                        let lvals = Eval.lval job.Types.state lval in
                         let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
-                        Some (block, offset, size)
+                        Some (lvals, size)
                 in
 
                 (* prepare the return continuation *)

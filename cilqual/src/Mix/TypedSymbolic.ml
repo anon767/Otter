@@ -146,16 +146,23 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
 
                             | Cil.TPtr (typtarget, _), Ref (qv, qtarget) ->
                                 begin try perform
-                                    let target_block, target_offset = Eval.deref state bytes in
+                                    let target_lvals = Eval.deref state bytes in
                                     (* didn't fail, so is not a null pointer *)
                                     annot qt "nonnull";
                                     begin match qtarget with
                                         | Ref _ ->
-                                            let target_bytes = MemOp.state__get_bytes_from_lval state
-                                                (target_block, target_offset, Types.word__size)
+                                            let rec recurse = function
+                                                | Types.Lval_Block (block, offset) ->
+                                                    let target_bytes = MemOp.state__get_bytes_from_lval state
+                                                        (block, offset, Types.word__size)
+                                                    in
+                                                    (* not tail-recursive! *)
+                                                    bytes_to_qt typtarget target_bytes qtarget
+                                                | Types.Lval_May (indicator, lval1, lval2) -> perform
+                                                    recurse lval1;
+                                                    recurse lval2
                                             in
-                                            (* not tail-recursive due to try! *)
-                                            bytes_to_qt typtarget target_bytes qtarget
+                                            recurse target_lvals
                                         | _ ->
                                             return ()
                                     end
