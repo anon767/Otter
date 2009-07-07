@@ -348,11 +348,11 @@ to_stp_bv vc bytes =
 		| Bytes_ByteArray (bytearray) ->
 				let len = ImmutableArray.length bytearray in
 				let bv8 = begin match ImmutableArray.get bytearray 0 with
-					|	Byte_Concrete(c) -> Stpc.e_bv_of_int vc 8 (Char.code c)
-					|	Byte_Symbolic(s) -> (* Here is where we catch attempts to use the undefined symbolic byte *)
-							if s.symbol_id = 0 then failwith "Conditional depends on undefined value"
-							else
-								Stpc.e_var vc (make_var s) (Stpc.bitvector_t vc 8)
+					| Byte_Concrete(c) -> Stpc.e_bv_of_int vc 8 (Char.code c)
+					| Byte_Symbolic(_) as b when b = byte__undef -> (* Here is where we catch attempts to use the undefined symbolic byte *)
+						failwith "Conditional depends on undefined value"
+					| Byte_Symbolic(s) ->
+						Stpc.e_var vc (make_var s) (Stpc.bitvector_t vc 8)
 					| Byte_Bytes(b,i) -> 
 						let (bv_condensed,l_condensed) = to_stp_bv vc b in
 						(*let right_i = l_condensed * 8 in*)
@@ -527,11 +527,11 @@ to_stp_array vc arr bytes =
 				(*	Output.print_endline ("bytearray "^(string_of_int len)); *)
 
 				let bv8 = begin match ImmutableArray.get bytearray (len-1) with
-					|	Byte_Concrete(c) -> Stpc.e_bv_of_int vc 8 (Char.code c)
-					|	Byte_Symbolic(s) -> (* Here is where we catch attempts to use the undefined symbolic byte *)
-							if s.symbol_id = 0 then failwith "Conditional depends on undefined value"
-							else
-								Stpc.e_var vc (make_var s) (Stpc.bitvector_t vc 8)
+					| Byte_Concrete(c) -> Stpc.e_bv_of_int vc 8 (Char.code c)
+					| Byte_Symbolic(_) as b when b = byte__undef -> (* Here is where we catch attempts to use the undefined symbolic byte *)
+						failwith "Conditional depends on undefined value"
+					| Byte_Symbolic(s) ->
+						Stpc.e_var vc (make_var s) (Stpc.bitvector_t vc 8)
 					| Byte_Bytes(b,i) -> 
 						let (bv_condensed,l_condensed) = to_stp_bv vc b in
 						let right_i = l_condensed * 8 in
