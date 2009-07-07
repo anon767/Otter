@@ -41,6 +41,7 @@ int FD_ISSET(int fd, fd_set *fdset)
 	for (i = 0; i < fdset->count; i++) {
 		if (fdset->fd[i] == fd) return 1;
 	}
+
 	return 0;
 }
 

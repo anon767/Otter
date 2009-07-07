@@ -4,6 +4,8 @@
 #include <string.h>
 #include <stdio.h>
 
+#define DEFAULT_BUF_SIZE 1024
+
 int setsockopt(int socket, int level, int option_name,
 							 const void *option_value, socklen_t option_len) {
 	return 0;

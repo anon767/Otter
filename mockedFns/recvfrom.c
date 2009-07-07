@@ -3,5 +3,5 @@
 ssize_t recvfrom (int sockfd, void *buffer, size_t len, int flags,
 	__SOCKADDR_ARG to, socklen_t *tolen)
 {
-	return 0;
+	return recv(sockfd, buffer, len, flags);
 }
