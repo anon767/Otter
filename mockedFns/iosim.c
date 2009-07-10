@@ -363,8 +363,6 @@ int IOSIM_closedir(DIR *dir) {
 	return 0;
 }
 
-/* Right now, this returns the full, absolute path of the next file in
-	 the directory. Is this the right thing to do? */
 struct dirent *IOSIM_readdir(DIR *dir) {
 	while (dir->index < IOSIM_num_file) {
 		// See if the file name is "<dirname>/<something without slashes>"
@@ -385,7 +383,7 @@ struct dirent *IOSIM_readdir(DIR *dir) {
 				errno = EOVERFLOW;
 				return NULL;
 			}
-			strcpy(dir->readdirRetval.d_name,filename);
+			strcpy(dir->readdirRetval.d_name,lastSlash+1);
 			return &dir->readdirRetval;
 		}
 	}
