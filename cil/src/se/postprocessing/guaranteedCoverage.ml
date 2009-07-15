@@ -173,10 +173,28 @@ let rec isConsistentWithList pc = function
 			then false
 			else isConsistentWithList (assignment::pc) assignments
 
-(* Which of the (pc,lines) pairs have pcs which are consistent with
-	 the assignments? *)
-let consistentPcsAndLines allPcsAndLines assignments =
-	List.filter (fun (pc,_) -> isConsistentWithList pc assignments) allPcsAndLines
+let consistentPcsAndLines treeOfPcs assignments =
+	let rec helper pcCov = function
+			Node ((condition,cov),children) ->
+				let newPcCov = (condition :: fst pcCov, LineSet.union cov (snd pcCov)) in
+				if isConsistentWithList (fst newPcCov) assignments
+				then (
+					(* We only want to return the leaf nodes *)
+					if children = []
+					then [newPcCov]
+					else List.concat (List.map (fun child -> helper newPcCov child) children)
+				) else (
+					[]
+				)
+	in
+  match treeOfPcs with
+			(* Skip the root node, which is just a placeholder *)
+			Node (x,children) when x == rootNodeData ->
+				List.concat
+					(List.map
+						 (fun child -> helper ([],LineSet.empty) child)
+						 children)
+		| _ -> failwith "Bad root node"
 
 let bigUnionForSymbols = List.fold_left SymbolSet.union SymbolSet.empty
 let bigUnion = List.fold_left LineSet.union LineSet.empty
@@ -184,8 +202,53 @@ let bigInter setList =
 	match setList with
 		| [] -> failwith "Taking intersection of no sets"
 		| h::t -> List.fold_left LineSet.inter h t
-				(* Slight optimization: if the list is not empty, start
-					 with the first set, rather than with everything. *)
+
+module CoverageMap = Map.Make
+	(struct
+		 type t = bytes list
+		 let compare : t -> t -> int = compare
+	 end)
+let coverageMap = ref CoverageMap.empty
+
+(*
+(* This assumes both sub and super are sorted (according to cmp) *)
+let rec isSubset ?(cmp=Pervasives.compare) (sub:bytes list) super =
+	match sub,super with
+		| [],_ -> true
+		| _,[] -> false
+		| h1::t1,h2::t2 ->
+				match cmp h1 h2 with
+					| 0 -> isSubset ~cmp t1 t2
+					| n when n < 0 -> false (* Because the lists are sorted *)
+					| _ -> isSubset ~cmp sub t2
+let notCoveredByASubset assignments resultIn =
+	CoverageMap.fold
+		(fun subassignments coveredLines resultOut ->
+			 if isSubset subassignments assignments
+			 then LineSet.diff resultOut coveredLines
+			 else resultOut)
+		!coverageMap
+		resultIn
+*)
+
+exception Break
+let notCoveredByASubset assignments resultIn =
+	let result = ref resultIn in
+	(try
+		 for i = 0 to pred (List.length assignments) (*downto 0*) do
+			 let subsets = subsetsOfSize i assignments in
+			 List.iter
+				 (fun subset ->
+						try
+							let covered = CoverageMap.find subset !coverageMap in
+							result := LineSet.diff !result covered;
+							if LineSet.is_empty !result
+							then raise Break
+						with Not_found -> ())
+				 subsets
+		 done
+	 with Break -> ());
+	!result
 
 let linesControlledBy pcsAndLines assignments =
 	let result =
@@ -193,7 +256,10 @@ let linesControlledBy pcsAndLines assignments =
 			| [] -> failwith "Impossible: assignments not compatible with any pc"
 			| x -> bigInter x
 	in
+(*	let assignments = List.sort Pervasives.compare assignments in*)
+	let result = Stats.time "filter subsets" (notCoveredByASubset assignments) result in
 	if not (LineSet.is_empty result) then (
+		coverageMap := CoverageMap.add assignments result !coverageMap;
 		Output.set_mode Output.MSG_REG;
 		Format.printf "\nUnder the condition\n";
 		List.iter
@@ -237,9 +303,8 @@ let allLinesInFile filename =
 
 exception EverythingCovered
 
-let elimDups = ref true
-
-let calculateDeps pcsAndLines linesToIgnoreFile configsToTry =
+let calculateDeps treeOfPcs linesToIgnoreFile configsToTry =
+	let pcsAndLines = getLeavesWithCoverage treeOfPcs in
 	let firstResult,restResults =
 		match pcsAndLines with
 			| hd::tl -> hd,tl
@@ -272,6 +337,7 @@ let calculateDeps pcsAndLines linesToIgnoreFile configsToTry =
 		(List.length !bytesToVars);
 	List.iter (fun (_,var) -> Format.printf "%s\n" var.vname) !bytesToVars;
 
+	coverageMap := CoverageMap.add [] alwaysExecuted !coverageMap;
 	Format.printf "\n%d lines always executed:\n" (LineSet.cardinal alwaysExecuted);
 	LineSet.iter
 		(fun (file,line) -> Format.printf "%s:%d\n" file line)
@@ -284,11 +350,7 @@ let calculateDeps pcsAndLines linesToIgnoreFile configsToTry =
 	in
 
 	(* Remove lines that were always executed *)
-	let remainingPcsAndLines = ref
-		(List.rev_map
-			 (fun (pc,lines) -> (pc, LineSet.diff (LineSet.diff lines alwaysExecuted) linesToIgnore))
-			 pcsAndLines)
-	and remainingLines = ref
+	let remainingLines = ref
 		(LineSet.diff (LineSet.diff everExecuted alwaysExecuted) linesToIgnore)
 	in
 
@@ -306,24 +368,14 @@ let calculateDeps pcsAndLines linesToIgnoreFile configsToTry =
 						 None ->
 							 List.fold_left
 								 (fun lines b2v ->
-										accumulateControlledLines !remainingPcsAndLines lines b2v)
+										accumulateControlledLines treeOfPcs lines b2v)
 								 LineSet.empty
 								 (subsetsOfSize !size !bytesToVars)
 					 | Some configs ->
 							 getControlledLines
-								 !remainingPcsAndLines
+								 treeOfPcs
 								 (List.filter (fun config -> List.length config = !size) configs)
 			 in
-			 (* Update the pcsAndLines only after all subsets of a given
-					size have been examined. This enables us to see if there are
-					several ways of guaranteeing coverage of the same lines by
-					different interactions of the same size, even if elimDups is
-					specified,. *)
-			 if !elimDups then
-				 remainingPcsAndLines :=
-					 List.rev_map
-						 (fun (pc,lines) -> (pc, LineSet.diff lines linesJustCovered))
-						 !remainingPcsAndLines;
 			 remainingLines := LineSet.diff !remainingLines linesJustCovered
 		 done
 	 with EverythingCovered -> ()
@@ -332,11 +384,13 @@ let calculateDeps pcsAndLines linesToIgnoreFile configsToTry =
 	Format.printf "The cache was hit %d times and missed %d times. (STP was called %d times.)
   It took %.2f s to construct the formulas for the expressions inside 'if(...)'s,
   %.2f s to construct and assert the path conditions,
-  and %.2f s to solve the resulting formulas.\n\n"
+  and %.2f s to solve the resulting formulas.
+  Time for filtering subsets: %.2f s.\n\n"
 		!Stp.cacheHits !Stp.cacheMisses !stp_count
 		(Stats.lookupTime "convert conditional")
 		(Stats.lookupTime "STP assert")
-		(Stats.lookupTime "STP query");
+		(Stats.lookupTime "STP query")
+		(Stats.lookupTime "filter subsets");
 	()
 
 (* Get rid of the __ASSUMEs from a path condition. The arguments are
@@ -438,9 +492,6 @@ let speclist = [
 	 Arg.Set_string configsToTryFile,
 	 "<filename> Only check configurations from this file for guaranteed coverage.
 \t\t\t(If this option is not set, do a full search.)");
-	("--printFull",
-	 Arg.Clear elimDups,
-	 " Print every line guaranteed by every configuration, even duplicates");
 ]
 ;;
 
@@ -465,7 +516,7 @@ let main () =
 	in
 	if Hashtbl.length varToVals = 0 && !configsToTryFile = ""
 	then (print_endline usageMsg; exit(1));
-	calculateDeps (getLeavesWithCoverage !treeOfPcs) !linesToIgnoreFile configsToTry
+	calculateDeps !treeOfPcs !linesToIgnoreFile configsToTry
 ;;
 
 main ()
