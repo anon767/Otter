@@ -341,6 +341,9 @@ let feature : featureDescr =
 			 " Return a fresh symbolic value (instead of dying) upon encountering an undefined function. This effectively assumes that undefined functions are nondeterministic and side-effect-free, which is usually not true. (Note that ending program execution is a side-effect that will be ignored.)\n");
 *)
 
+			("--condCov",
+			 Arg.Unit (fun () -> run_args.arg_cond_coverage <- true),
+			 " Track condition coverage\n");
 			("--edgeCov",
 			 Arg.Unit (fun () -> run_args.arg_edge_coverage <- true),
 			 " Track edge coverage\n");

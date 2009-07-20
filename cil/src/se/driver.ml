@@ -55,6 +55,19 @@ let rec nextCoverageRelevantStmt stmt =
 				nextCoverageRelevantStmt (List.hd block.bstmts)
 		| _ -> failwith "Unhandled stmtkind"
 	
+let addCondCoverage job truth =
+	{
+		job.exHist with
+			coveredConds =
+				if run_args.arg_cond_coverage
+				then (
+					match job.stmt.skind with
+						If(exp,_,_,loc) ->
+							CondSet.add (exp,loc,truth) job.exHist.coveredConds	
+					| _ -> job.exHist.coveredConds
+				) else CondSet.empty;
+	}
+
 (** Return a new exHist with
 		- statement coverage updated by the addition of [job.stmt]
 		- if [job.stmt] is an if, return, or goto, line coverage is updated
@@ -725,6 +738,15 @@ let exec_stmt job =
 					if truth == Stp.True then
 						begin
 							Output.print_endline "True";
+							
+							let nextExHist nextStmtOpt =
+							if job.inTrackedFn
+							then
+								addCondCoverage job "True"
+								(*Output.printf "%s (%s) True\n" (To_string.location loc) (To_string.exp exp);*)
+							else job.exHist
+							in
+							
 							let nextState,nextStmt = try_branch None block1 in
 							let job' = { job with state = nextState; stmt = nextStmt; } in
 							Active { job' with exHist = nextExHist (Some nextStmt); }
@@ -732,13 +754,31 @@ let exec_stmt job =
 					else if truth == Stp.False then
 						begin
 							Output.print_endline "False";
+							
+							let nextExHist nextStmtOpt =
+							if job.inTrackedFn
+							then
+								addCondCoverage job "False"
+								(*Output.printf "%s (%s) True\n" (To_string.location loc) (To_string.exp exp);*)
+							else job.exHist
+							in
+							
 							let nextState,nextStmt = try_branch None block2 in
 							let job' = { job with state = nextState; stmt = nextStmt; } in
 							Active { job' with exHist = nextExHist (Some nextStmt); }
 						end
 					else
 						begin
-							Output.print_endline "Unknown";
+							Output.print_endline "Unknown\n";
+							
+							(*let nextExHist nextStmtOpt =
+							if job.inTrackedFn
+							then
+								addCondCoverage job "Unknown"
+								(*Output.printf "%s (%s) True\n" (To_string.location loc) (To_string.exp exp);*)
+							else job.exHist
+							in*)
+							
 							let nextStateT,nextStmtT = try_branch (Some rv) block1 in
 							let nextStateF,nextStmtF = try_branch (Some (logicalNegateBytes rv)) block2 in
 
@@ -766,15 +806,28 @@ let exec_stmt job =
 								 continue executing the false branch immediately, let
 								 that job inherit the old jid. Give the true job a new
 								 jid. *)
+							let nextExHist nextStmtOpt =
+							if job.inTrackedFn
+							then
+								addCondCoverage job "True"
+							else job.exHist
+							in
 							let trueJob = { job' with
 																state = nextStateT;
 																stmt = nextStmtT;
 																exHist = nextExHist (Some nextStmtT);
 														 		jid = Utility.next_id Output.jidCounter; } in
+							let nextExHist nextStmtOpt =
+							if job.inTrackedFn
+							then
+								addCondCoverage job "False"
+								(*Output.printf "%s (%s) True\n" (To_string.location loc) (To_string.exp exp);*)
+							else job.exHist
+							in
 							let falseJob = { job' with
 																 state = nextStateF;
 																 stmt = nextStmtF;
-																 exHist = nextExHist (Some nextStmtF); } in
+																 exHist =  nextExHist (Some nextStmtF); } in
 							Output.set_mode Output.MSG_MUSTPRINT;
 							Output.printf "Branching on %s at %s. %s
 Job %d is the true branch and job %d is the false branch.\n\n"
@@ -786,7 +839,7 @@ Job %d is the true branch and job %d is the false branch.\n\n"
                                  else ""
                                  )
 								 trueJob.jid falseJob.jid;
-							Fork (trueJob, falseJob)
+							Fork (trueJob, falseJob)	
 						end
 				end
 		| Block(block)
@@ -1033,18 +1086,22 @@ let mergeJobs job ((job_queue, merge_set) as job_pool) =
 		and oldJobOnlyStmts = IntSet.diff oldJob.exHist.coveredStmts job.exHist.coveredStmts
 		and jobOnlyEdges = EdgeSet.diff job.exHist.coveredEdges oldJob.exHist.coveredEdges
 		and oldJobOnlyEdges = EdgeSet.diff oldJob.exHist.coveredEdges job.exHist.coveredEdges
+		and jobOnlyConds = CondSet.diff job.exHist.coveredConds oldJob.exHist.coveredConds
+		and oldJobOnlyConds = CondSet.diff oldJob.exHist.coveredConds job.exHist.coveredConds
 		in
 		let completed = Complete (Types.Truncated
 			({ result_state = job.state;
 			   result_history = {job.exHist with
 														 coveredLines = jobOnlyLines;
 														 coveredStmts = jobOnlyStmts;
-														 coveredEdges = jobOnlyEdges; } },
+														 coveredEdges = jobOnlyEdges;
+														 coveredConds = jobOnlyConds; } },
 			 { result_state = oldJob.state;
 			   result_history = {oldJob.exHist with
 														 coveredLines = oldJobOnlyLines;
 														 coveredStmts = oldJobOnlyStmts;
-														 coveredEdges = oldJobOnlyEdges; } }))
+														 coveredEdges = oldJobOnlyEdges;
+														 coveredConds = oldJobOnlyConds; } }))
 		in
 		(* Remove the old job and add the merged job *)
 		let merged_jobs = JobSet.add
@@ -1055,6 +1112,7 @@ let mergeJobs job ((job_queue, merge_set) as job_pool) =
 							coveredLines = LineSet.inter job.exHist.coveredLines oldJob.exHist.coveredLines;
 							coveredStmts = IntSet.inter job.exHist.coveredStmts oldJob.exHist.coveredStmts;
 							coveredEdges = EdgeSet.inter job.exHist.coveredEdges oldJob.exHist.coveredEdges;
+							coveredConds = CondSet.inter job.exHist.coveredConds oldJob.exHist.coveredConds;
 					};
 					mergePoints = IntSet.union job.mergePoints oldJob.mergePoints;
 					jid = min job.jid oldJob.jid; (* Keep the lower jid, just because *)

@@ -178,6 +178,20 @@ let (string_table : bytes MemoryBlockMap.t ref) = ref MemoryBlockMap.empty;;
 (* some globals that are helpful *)
 let stp_count = ref 0;;
 
+module CondSet = Set.Make
+	(struct
+		type t = Cil.exp*Cil.location*string
+		(* the condition and value *)
+		let compare (exp1,loc1,truth1) (exp2,loc2,truth2) =
+			let expCmp = compare exp1 exp2 in
+			let locCmp = compare loc1.Cil.line loc2.Cil.line in
+			if expCmp = 0
+			then if locCmp = 0
+						then compare truth1 truth2
+						else locCmp
+			else expCmp
+	end)
+
 module EdgeSet = Set.Make
 	(struct
 		type t = Cil.stmt*Cil.stmt
@@ -209,6 +223,7 @@ type executionHistory = {
 	coveredLines : LineSet.t; (** Which lines we've hit *)
 	coveredStmts : IntSet.t; (** Which statements we've hit, by sid *)
 	coveredEdges : EdgeSet.t; (** Which edges we've traversed on this execution *)
+	coveredConds : CondSet.t; (** Which conditions we've hit *)
 	bytesToVars : (bytes * Cil.varinfo) list;
 		(** List associating symbolic bytes to the variable that was
 				assigned this value by a call to __SYMBOLIC(&<variable>). *)
@@ -218,6 +233,7 @@ let emptyHistory = {
 	coveredLines = LineSet.empty;
 	coveredStmts = IntSet.empty;
 	coveredEdges = EdgeSet.empty;
+	coveredConds = CondSet.empty;
 	bytesToVars = [];
 }
 

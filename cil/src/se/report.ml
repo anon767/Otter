@@ -2,22 +2,25 @@ open Types
 open Cil
 open Executeargs
 
-type coverageType = Line | Stmt | Edge
+type coverageType = Line | Stmt | Edge | Cond
 
 let covTypeToStr = function
 	| Line -> "lines"
 	| Stmt -> "statements"
 	| Edge -> "edges"
+	| Cond -> "conditions"
 
 let getTotal = function
 	| Line -> run_args.arg_total_lines
 	| Stmt -> run_args.arg_total_stmts
 	| Edge -> run_args.arg_total_edges
+	| Cond -> run_args.arg_total_conds
 
 let getNumCovered covType hist = match covType with
 	| Line -> LineSet.cardinal hist.coveredLines
 	| Stmt -> IntSet.cardinal hist.coveredStmts
 	| Edge -> EdgeSet.cardinal hist.coveredEdges
+	| Cond -> CondSet.cardinal hist.coveredConds
 
 (** Compute set cover greedily.
 		[greedySetCover emptyCheck scoreFn setdiff setList universe]
@@ -162,7 +165,14 @@ let printEdges edgeset =
 		(*(fun (b_stmt,e_stmt) -> Output.printf "%s-%s\n" (To_string.stmt b_stmt) (To_string.stmt e_stmt))*)
 		edgeset;
 	Output.printf "\n"
-
+	
+let printConditions condset =
+	Output.printf "The conditions hit were:\n";
+	CondSet.iter
+	  (fun (condition, location, truth) -> Output.printf "%s (%s) %s\n" (To_string.location location) (To_string.exp condition) truth)
+		condset;
+	Output.printf "\n"
+	
 let printCoveringConfigs coveringSet covType =
 	let name = covTypeToStr covType in
 	if coveringSet = [] then Output.printf "No constraints: any run covers all %s\n" name
@@ -175,6 +185,7 @@ let printCoveringConfigs coveringSet covType =
 				 printCov covType hist;
 				 if covType = Line then printLines hist.coveredLines;
 				 if covType = Edge then printEdges hist.coveredEdges;
+				 if covType = Cond then printConditions hist.coveredConds;
 				 Output.printf "-------------\n\n")
 			 coveringSet
 	end
@@ -241,7 +252,29 @@ let printCoverageInfo resultList =
 			allEdgesCovered
 		in
 		printCoveringConfigs coveringSet Edge
+	);
+
+  if run_args.arg_cond_coverage then (
+		Output.printf "Condition coverage:\n\n";
+		let allCondsCovered =
+ 			(List.fold_left
+				 (fun acc { result_history=hist } ->
+						CondSet.union acc hist.coveredConds)
+				 CondSet.empty
+				 resultList)
+		in
+		printCov Cond { emptyHistory with coveredConds = allCondsCovered; };
+		let coveringSet = greedySetCover
+			CondSet.is_empty
+			(fun job remaining ->
+				 CondSet.cardinal (CondSet.inter job.result_history.coveredConds remaining))
+			(fun remaining job -> CondSet.diff remaining job.result_history.coveredConds)
+			resultList
+			allCondsCovered
+		in
+		printCoveringConfigs coveringSet Cond
 	)
+
 
 let print_report results =
 (*
@@ -296,7 +329,7 @@ let print_report results =
 	Output.printf "%d paths ran to completion; %d had errors.\n" completed abandoned;
 	Output.printf "There are %d truncated paths.\n" truncated;
 
-	if run_args.arg_line_coverage || run_args.arg_stmt_coverage || run_args.arg_edge_coverage
+	if run_args.arg_line_coverage || run_args.arg_stmt_coverage || run_args.arg_edge_coverage || run_args.arg_cond_coverage
 	then begin
 		(* Print coverage information, if it was gathered, regardless of anything else.*)
 		print_args.arg_print_nothing <- false;
