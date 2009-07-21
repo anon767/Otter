@@ -76,6 +76,8 @@ type run_args =
 		mutable arg_marshal_file : string;
 		mutable arg_calculate_dependencies : bool;
 		mutable arg_list_executable_lines : bool;
+		mutable arg_list_executable_edges : bool;
+		mutable arg_list_executable_conds : bool;
 	};;
 
 let run_args = 
@@ -97,6 +99,8 @@ let run_args =
 		arg_marshal_file = ""; (* File to which to marshal coverage information *)
 		arg_calculate_dependencies = false;
 		arg_list_executable_lines = false;
+		arg_list_executable_edges = false;
+		arg_list_executable_conds = false;
 	} ;;
 
 let readCovStatsFromFile filename =

@@ -6,11 +6,13 @@ class getStatsVisitor = object
 (*	val locations = ref LocSet.empty*)
 	val stmts = ref IntSet.empty
 	val edges = ref EdgeSet.empty
+	val conds = ref CondSet.empty
 
 	method lines = !lines
 	method stmts = !stmts
 (*	method locations = !locations*)
 	method edges = !edges
+	method conds = !conds
 
 	inherit nopCilVisitor
 
@@ -46,6 +48,16 @@ class getStatsVisitor = object
 					stmts := IntSet.add stmt.sid !stmts
 			| _ -> ()
 		);
+		(* Get the conditions *)
+		(match stmt.skind with
+				If (exp,_,_,loc) ->
+					List.iter
+						(fun succ ->
+								conds := CondSet.add (exp,loc,"True") !conds;
+								conds := CondSet.add (exp,loc,"False") !conds)
+						 stmt.succs
+				| _ -> ()
+		);
 		DoChildren (* There could be stmts or instrs inside, which we should visit *)
 end
 
@@ -59,4 +71,4 @@ let getProgInfo (file : Cil.file) fnNameSet =
 					 then ignore (visitCilBlock (vis:>cilVisitor) fundec.sbody)
 			 | _ -> ()
 		);
-	(vis#lines,(*vis#locations,*)vis#stmts,vis#edges)
+	(vis#lines,(*vis#locations,*)vis#stmts,vis#edges,vis#conds)

@@ -173,14 +173,32 @@ let prepare_file file =
 	end file.globals;
 
 	(* Find all executable lines. For now, we don't care about the rest *)
-	let (setOfLines,(*_,*)_,_) = GetProgInfo.getProgInfo file run_args.arg_fns in
+	let (setOfLines,_,setOfEdges,setOfConds) = GetProgInfo.getProgInfo file run_args.arg_fns in
 	run_args.arg_total_lines <- LineSet.cardinal setOfLines;
+	run_args.arg_total_edges <- EdgeSet.cardinal setOfEdges;
+	run_args.arg_total_conds <- CondSet.cardinal setOfConds;
 	Output.printf "This program contains %d executable lines within the functions specified\n"
 		run_args.arg_total_lines;
+	Output.printf "This program contains %d executable edges within the functions specified\n"
+		run_args.arg_total_edges;
+	Output.printf "This program contains %d executable conditions within the functions specified\n"
+		run_args.arg_total_conds;
 	if run_args.arg_list_executable_lines then (
 		LineSet.iter
 			(fun (file,lineNum) -> Output.printf "%s:%d\n" file lineNum)
-			setOfLines
+			setOfLines	
+	)
+	else
+	if run_args.arg_list_executable_edges then (
+		EdgeSet.iter
+			(fun (b_stmt,e_stmt) -> Output.printf "%d-%d\n" b_stmt.sid e_stmt.sid)
+		setOfEdges
+	)
+	else
+	if run_args.arg_list_executable_lines then (
+		CondSet.iter
+	  	(fun (condition, location, truth) -> Output.printf "%s (%s) %s\n" (To_string.location location) (To_string.exp condition) truth)
+		setOfConds
 	)
 
 (* create a job that begins at a function, given an initial state *)

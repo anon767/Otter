@@ -738,12 +738,11 @@ let exec_stmt job =
 					if truth == Stp.True then
 						begin
 							Output.print_endline "True";
-							
+							(* Save condition coverage for True branch taken *)
 							let nextExHist nextStmtOpt =
 							if job.inTrackedFn
 							then
 								addCondCoverage job "True"
-								(*Output.printf "%s (%s) True\n" (To_string.location loc) (To_string.exp exp);*)
 							else job.exHist
 							in
 							
@@ -754,12 +753,11 @@ let exec_stmt job =
 					else if truth == Stp.False then
 						begin
 							Output.print_endline "False";
-							
+							(* Save condition coverage for False branch taken *)
 							let nextExHist nextStmtOpt =
 							if job.inTrackedFn
 							then
 								addCondCoverage job "False"
-								(*Output.printf "%s (%s) True\n" (To_string.location loc) (To_string.exp exp);*)
 							else job.exHist
 							in
 							
@@ -770,14 +768,6 @@ let exec_stmt job =
 					else
 						begin
 							Output.print_endline "Unknown\n";
-							
-							(*let nextExHist nextStmtOpt =
-							if job.inTrackedFn
-							then
-								addCondCoverage job "Unknown"
-								(*Output.printf "%s (%s) True\n" (To_string.location loc) (To_string.exp exp);*)
-							else job.exHist
-							in*)
 							
 							let nextStateT,nextStmtT = try_branch (Some rv) block1 in
 							let nextStateF,nextStmtF = try_branch (Some (logicalNegateBytes rv)) block2 in
@@ -806,24 +796,27 @@ let exec_stmt job =
 								 continue executing the false branch immediately, let
 								 that job inherit the old jid. Give the true job a new
 								 jid. *)
+							(* Save condition coverage for True job *)
 							let nextExHist nextStmtOpt =
 							if job.inTrackedFn
 							then
 								addCondCoverage job "True"
 							else job.exHist
 							in
+							(* Create True job *)
 							let trueJob = { job' with
 																state = nextStateT;
 																stmt = nextStmtT;
 																exHist = nextExHist (Some nextStmtT);
 														 		jid = Utility.next_id Output.jidCounter; } in
+							(* Save condition coverage for False job *)
 							let nextExHist nextStmtOpt =
 							if job.inTrackedFn
 							then
 								addCondCoverage job "False"
-								(*Output.printf "%s (%s) True\n" (To_string.location loc) (To_string.exp exp);*)
 							else job.exHist
 							in
+							(* Create False job *)
 							let falseJob = { job' with
 																 state = nextStateF;
 																 stmt = nextStmtF;

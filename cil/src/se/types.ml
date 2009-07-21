@@ -184,7 +184,7 @@ module CondSet = Set.Make
 		(* the condition and value *)
 		let compare (exp1,loc1,truth1) (exp2,loc2,truth2) =
 			let expCmp = compare exp1 exp2 in
-			let locCmp = compare loc1.Cil.line loc2.Cil.line in
+			let locCmp = Cil.compareLoc loc1 loc2 in
 			if expCmp = 0
 			then if locCmp = 0
 						then compare truth1 truth2
