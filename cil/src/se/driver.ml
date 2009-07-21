@@ -399,7 +399,7 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 								if truth == Stp.True then
 									begin
 									Output.set_mode Output.MSG_REG;
-									Output.print_endline "Assertion satisfied.\n"
+									Output.print_endline "Assertion satisfied."
 									end
 								else
 									begin

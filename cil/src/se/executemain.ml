@@ -270,7 +270,7 @@ let doExecute (f: file) =
 		Output.print_endline "\nFunction call stat:";
 		Cilutility.FundecMap.iter (fun f c -> Output.print_endline ((To_string.fundec f)^" : "^(string_of_int c))) (!MemOp.function_stat);	
 		*)
-	Output.printf "\nSTP was invoked %d times.\n" !Types.stp_count;
+	Output.printf "\nSTP was invoked %d times. (%d cache hits; %d misses)\n" !Types.stp_count !Stp.cacheHits !Stp.cacheMisses;
 
 	let executionTime = (Unix.gettimeofday ()) -. startTime
 	and stpTime = Stats.lookupTime "STP" in

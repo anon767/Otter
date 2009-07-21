@@ -168,7 +168,7 @@ and bytes_ff_named bytes_to_var ff =
 				end bytearray
 			end
 
-		| Bytes_Address (Some(block), offset) -> fprintf ff "(%a + %a)" bytes_ff block.memory_block_addr bytes_ff offset
+		| Bytes_Address (Some(block), offset) -> fprintf ff "(addrOf(%s) [%a] + %a)" (memory_block block) bytes_ff block.memory_block_addr bytes_ff offset
 		(*| Bytes_Address (Some(block), offset) -> fprintf ff "addrOf(%s,%a)" (memory_block block) bytes_ff offset*)
 		| Bytes_Address (None, offset) -> fprintf ff "addrOf(@[<hov>null,@,%a])" bytes_ff offset
 
