@@ -280,10 +280,9 @@ doassert pc =
 		| [] -> ()
 		| head::tail -> 
 			let (bv, len) = to_stp_bv vc head in
-			let a = Stpc.e_not vc (Stpc.e_eq vc bv (Stpc.e_bv_of_int vc len 0)) in
-			Stpc.do_assert vc a;
+			Stpc.assert_ctrue vc len bv;
 			Output.set_mode Output.MSG_STP;
-			Output.print_endline ("ASSERT("^(Stpc.to_string a)^");");
+			Output.print_endline ("ASSERT("^(Stpc.to_string bv)^"!=0);");
 			do_assert tail
 	in
 	(*Stats.time "STP assert" do_assert relevantAssumptions;*)
@@ -534,7 +533,7 @@ to_stp_array vc arr bytes =
 						Stpc.e_var vc (make_var s) (Stpc.bitvector_t vc 8)
 					| Byte_Bytes(b,i) -> 
 						let (bv_condensed,l_condensed) = to_stp_bv vc b in
-						let right_i = l_condensed * 8 in
+						let right_i = l_condensed * 8 in (* This differs from the parallel case in to_stp_bv, and is independent of i. How can this be right? *)
 						let left_i = right_i+7 in
 							Stpc.e_bvextract vc bv_condensed left_i right_i 
 				end in
