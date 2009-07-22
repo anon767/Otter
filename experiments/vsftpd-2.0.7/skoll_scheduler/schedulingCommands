@@ -1,58 +1,116 @@
+echo Scheduling acct
 ./stats -b vsftpd 1=3 2=167 # acct
+echo Scheduling allo
 ./stats -b vsftpd 1=3 2=168 # allo
+echo Scheduling auth
 ./stats -b vsftpd 1=3 2=169 # auth
+echo Scheduling cd
 ./stats -b vsftpd 1=3 2=170 # cd
+echo Scheduling dele
 ./stats -b vsftpd 1=3 2=171 # dele
+echo Scheduling epsvAllRename
 ./stats -b vsftpd 1=3 2=172 # epsvAllRename
+echo Scheduling epsvStorList
 ./stats -b vsftpd 1=3 2=173 # epsvStorList
+echo Scheduling failList
 ./stats -b vsftpd 1=3 2=174 # failList
+echo Scheduling failRetr
 ./stats -b vsftpd 1=3 2=175 # failRetr
+echo Scheduling feat
 ./stats -b vsftpd 1=3 2=176 # feat
+echo Scheduling help
 ./stats -b vsftpd 1=3 2=177 # help
+echo Scheduling list
 ./stats -b vsftpd 1=3 2=178 # list
+echo Scheduling listHidden
 ./stats -b vsftpd 1=3 2=179 # listHidden
+echo Scheduling loggedInFeat
 ./stats -b vsftpd 1=3 2=180 # loggedInFeat
+echo Scheduling loggedInOpts2
 ./stats -b vsftpd 1=3 2=181 # loggedInOpts2
+echo Scheduling loggedInOpts
 ./stats -b vsftpd 1=3 2=182 # loggedInOpts
+echo Scheduling noop
 ./stats -b vsftpd 1=3 2=183 # noop
+echo Scheduling opts2
 ./stats -b vsftpd 1=3 2=184 # opts2
+echo Scheduling opts
 ./stats -b vsftpd 1=3 2=185 # opts
+echo Scheduling passFirst
 ./stats -b vsftpd 1=3 2=186 # passFirst
+echo Scheduling pbsz
 ./stats -b vsftpd 1=3 2=187 # pbsz
+echo Scheduling prot
 ./stats -b vsftpd 1=3 2=188 # prot
+echo Scheduling pwd
 ./stats -b vsftpd 1=3 2=189 # pwd
+echo Scheduling rein
 ./stats -b vsftpd 1=3 2=191 # rein
+echo Scheduling smnt
 ./stats -b vsftpd 1=3 2=192 # smnt
+echo Scheduling stat
 ./stats -b vsftpd 1=3 2=193 # stat
+echo Scheduling storList
 ./stats -b vsftpd 1=3 2=194 # storList
+echo Scheduling storListDot
 ./stats -b vsftpd 1=3 2=195 # storListDot
-./stats -b vsftpd 1=3 2=196 # storListFtp ?
-./stats -b vsftpd 1=3 2=198 # storListTilde ?
+echo Scheduling storListFtp
+./stats -b vsftpd 1=3 2=196 # storListFtp
+echo Scheduling storListTilde
+./stats -b vsftpd 1=3 2=198 # storListTilde
+echo Scheduling storNlst
 ./stats -b vsftpd 1=3 2=199 # storNlst
+echo Scheduling storRetr
 ./stats -b vsftpd 1=3 2=200 # storRetr
+echo Scheduling syst
 ./stats -b vsftpd 1=3 2=201 # syst
+echo Scheduling unknownCommand
 ./stats -b vsftpd 1=3 2=202 # unknownCommand
+echo Scheduling abor
 ./stats -b vsftpd 1=3 2=678 # abor
+echo Scheduling appe
 ./stats -b vsftpd 1=3 2=679 # appe
+echo Scheduling loggedInPass
 ./stats -b vsftpd 1=3 2=680 # loggedInPass
+echo Scheduling loggedInPbsz
 ./stats -b vsftpd 1=3 2=681 # loggedInPbsz
+echo Scheduling loggedInProt
 ./stats -b vsftpd 1=3 2=682 # loggedInProt
+echo Scheduling loggedInUser
 ./stats -b vsftpd 1=3 2=683 # loggedInUser
+echo Scheduling mkd
 ./stats -b vsftpd 1=3 2=684 # mkd
+echo Scheduling modeS
 ./stats -b vsftpd 1=3 2=685 # modeS
+echo Scheduling mode
 ./stats -b vsftpd 1=3 2=686 # mode
+echo Scheduling rest
 ./stats -b vsftpd 1=3 2=687 # rest
+echo Scheduling rmd
 ./stats -b vsftpd 1=3 2=688 # rmd
+echo Scheduling storRetrBinary
 ./stats -b vsftpd 1=3 2=689 # storRetrBinary
+echo Scheduling storSize
 ./stats -b vsftpd 1=3 2=690 # storSize
+echo Scheduling storStat
 ./stats -b vsftpd 1=3 2=691 # storStat
+echo Scheduling struF
 ./stats -b vsftpd 1=3 2=692 # struF
+echo Scheduling stru
 ./stats -b vsftpd 1=3 2=693 # stru
+echo Scheduling typeA
 ./stats -b vsftpd 1=3 2=694 # typeA
+echo Scheduling type
 ./stats -b vsftpd 1=3 2=695 # type
+echo Scheduling mdtm
 ./stats -b vsftpd 1=3 2=696 # mdtm
+echo Scheduling storMdtm
 ./stats -b vsftpd 1=3 2=697 # storMdtm
-./stats -b vsftpd 1=3 2=698 # storMdtmw
+echo Scheduling storMdtm2
+./stats -b vsftpd 1=3 2=698 # storMdtm2
+echo Scheduling listQ
 ./stats -b vsftpd 1=3 2=699 # listQ
+echo Scheduling storListBraceR
 ./stats -b vsftpd 1=3 2=701 # storListBraceR
+echo Scheduling storListStarF
 ./stats -b vsftpd 1=3 2=702 # storListStarF

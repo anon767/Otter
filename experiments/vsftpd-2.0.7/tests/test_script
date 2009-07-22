@@ -1,0 +1,21 @@
+# $1 is the name of the test
+
+#echo TEST_SCRIPT $1
+#echo \#BEGIN TEST_SCRIPT
+#date
+#	echo \#BEGIN TEST_SUITE restricted
+#	date
+#		./symbTest_restricted $1
+#		./concreteTest_restricted $1
+#	echo \#DONE TEST_SUITE restricted
+#	date
+#	echo \#BEGIN TEST_SUITE normal
+#	date
+#		./symbTest $1
+#		./concreteTest $1
+#	echo \#DONE TEST_SUITE normal
+#	date
+#echo \#DONE TEST_SCRIPT
+#date
+
+./guarCov $1
