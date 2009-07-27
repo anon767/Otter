@@ -54,7 +54,7 @@ let rec nextCoverageRelevantStmt stmt =
 					 See comment in exec_stmt about [Block] and [Loop]. *)
 				nextCoverageRelevantStmt (List.hd block.bstmts)
 		| _ -> failwith "Unhandled stmtkind"
-	
+(*	
 let addCondCoverage job truth =
 	{
 		job.exHist with
@@ -67,14 +67,14 @@ let addCondCoverage job truth =
 					| _ -> job.exHist.coveredConds
 				) else CondSet.empty;
 	}
-
+*)
 (** Return a new exHist with
 		- statement coverage updated by the addition of [job.stmt]
 		- if [job.stmt] is an if, return, or goto, line coverage is updated
 		- if the second argument is [Some s], edge coverage is updated by
 			the addition of the edge from [job.stmt] to the first coverage-
 			relevant statement starting from [s]. *)
-let addStmtCoverage job nextStmtOpt =
+let addStmtCoverage job nextStmtOpt truth =
 	{ job.exHist with
 			coveredLines =
 				if run_args.arg_line_coverage
@@ -97,6 +97,14 @@ let addStmtCoverage job nextStmtOpt =
 								EdgeSet.add (job.stmt, nextCoverageRelevantStmt nextStmt) job.exHist.coveredEdges
 						| _ -> job.exHist.coveredEdges
 				) else EdgeSet.empty;
+			coveredConds =
+                                if run_args.arg_cond_coverage
+                                then (
+                                        match job.stmt.skind with
+                                                If(exp,_,_,loc) ->
+                                                        CondSet.add (exp,loc,truth) job.exHist.coveredConds     
+                                        | _ -> job.exHist.coveredConds
+                                ) else CondSet.empty;
 	}
 
 let addInstrCoverage job instr =
@@ -603,9 +611,9 @@ let exec_stmt job =
 	assert (job.instrList = []);
 	let state,stmt = job.state,job.stmt in
 
-	let nextExHist nextStmtOpt =
+	let nextExHist nextStmtOpt branchTaken =
 		if job.inTrackedFn
-		then addStmtCoverage job nextStmtOpt
+		then addStmtCoverage job nextStmtOpt branchTaken
 		else job.exHist
 	in
 
@@ -630,7 +638,7 @@ let exec_stmt job =
 				 need to update the line coverage (but not statement or edge
 				 coverage). *)
 			let succOpt = match stmt.succs with [succ] -> Some succ | _ -> None in
-			Active { job with instrList = instrs; exHist = nextExHist succOpt; }
+			Active { job with instrList = instrs; exHist = nextExHist succOpt "Ignored"; }
 		| Cil.Return (expopt, loc) ->
 				begin
 					match state.callContexts with
@@ -653,7 +661,7 @@ let exec_stmt job =
 								in
 								let state = MemOp.state__end_fcall state in                                                                    
 								Complete (Types.Return
-									(retval, { result_state = state; result_history = nextExHist None; })) 
+									(retval, { result_state = state; result_history = nextExHist None "Ignored"; })) 
 						| (Source (destOpt,_,nextStmt))::_ ->
 								let state2 =
 									match expopt, destOpt with
@@ -671,7 +679,7 @@ let exec_stmt job =
 								Active { job with
 													 state = state2;
 													 stmt = nextStmt;
-													 exHist = nextExHist None; (* [None] because we don't currently track returns as edges for purposes of coverage *)
+													 exHist = nextExHist None "Ignored"; (* [None] because we don't currently track returns as edges for purposes of coverage *)
 													 inTrackedFn =
 										StringSet.mem (List.hd state2.callstack).svar.vname run_args.arg_fns; }
 						| (NoReturn _)::_ ->
@@ -681,7 +689,7 @@ let exec_stmt job =
 								assert false
 				end
 		| Goto (stmtref, loc) ->
-				Active { job with stmt = !stmtref; exHist = nextExHist (Some !stmtref); }
+				Active { job with stmt = !stmtref; exHist = nextExHist (Some !stmtref) "Ignored"; }
 		| If (exp, block1, block2, loc) ->
 				begin
 				(* try a branch *)
@@ -739,31 +747,33 @@ let exec_stmt job =
 						begin
 							Output.print_endline "True";
 							(* Save condition coverage for True branch taken *)
+							(*
 							let nextExHist nextStmtOpt =
 							if job.inTrackedFn
 							then
 								addCondCoverage job "True"
 							else job.exHist
 							in
-							
+							*)
 							let nextState,nextStmt = try_branch None block1 in
 							let job' = { job with state = nextState; stmt = nextStmt; } in
-							Active { job' with exHist = nextExHist (Some nextStmt); }
+							Active { job' with exHist = nextExHist (Some nextStmt) "True"; }
 						end
 					else if truth == Stp.False then
 						begin
 							Output.print_endline "False";
 							(* Save condition coverage for False branch taken *)
+							(*
 							let nextExHist nextStmtOpt =
 							if job.inTrackedFn
 							then
 								addCondCoverage job "False"
 							else job.exHist
 							in
-							
+							*)
 							let nextState,nextStmt = try_branch None block2 in
 							let job' = { job with state = nextState; stmt = nextStmt; } in
-							Active { job' with exHist = nextExHist (Some nextStmt); }
+							Active { job' with exHist = nextExHist (Some nextStmt) "False"; }
 						end
 					else
 						begin
@@ -797,30 +807,34 @@ let exec_stmt job =
 								 that job inherit the old jid. Give the true job a new
 								 jid. *)
 							(* Save condition coverage for True job *)
+							(*
 							let nextExHist nextStmtOpt =
 							if job.inTrackedFn
 							then
 								addCondCoverage job "True"
 							else job.exHist
 							in
+							*)
 							(* Create True job *)
 							let trueJob = { job' with
 																state = nextStateT;
 																stmt = nextStmtT;
-																exHist = nextExHist (Some nextStmtT);
+																exHist = nextExHist (Some nextStmtT) "True";
 														 		jid = Utility.next_id Output.jidCounter; } in
 							(* Save condition coverage for False job *)
+							(*
 							let nextExHist nextStmtOpt =
 							if job.inTrackedFn
 							then
 								addCondCoverage job "False"
 							else job.exHist
 							in
+							*)
 							(* Create False job *)
 							let falseJob = { job' with
 																 state = nextStateF;
 																 stmt = nextStmtF;
-																 exHist =  nextExHist (Some nextStmtF); } in
+																 exHist =  nextExHist (Some nextStmtF) "False"; } in
 							Output.set_mode Output.MSG_MUSTPRINT;
 							Output.printf "Branching on %s at %s. %s
 Job %d is the true branch and job %d is the false branch.\n\n"
