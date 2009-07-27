@@ -58,3 +58,4 @@ Perhaps we want to transform the Cil.file into another intermediate structure be
 (This has a benefit that it's easier to migrate to another C analyzer in the future.)
 
 
+Handle alloca() properly.

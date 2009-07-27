@@ -279,8 +279,8 @@ doassert pc =
 	let rec do_assert pc = match pc with
 		| [] -> ()
 		| head::tail -> 
-			let (bv, len) = to_stp_bv vc head in
-			Stpc.assert_ctrue vc len bv;
+			let (bv, len) = Stats.time "STP construct" (fun ()-> to_stp_bv vc head) () in (* 1 *)
+			Stats.time "STP doassert" (fun () -> Stpc.assert_ctrue vc len bv) () ; (* 2 *)
 			Output.set_mode Output.MSG_STP;
 			Output.print_endline ("ASSERT("^(Stpc.to_string bv)^"!=0);");
 			do_assert tail
@@ -363,8 +363,8 @@ to_stp_bv vc bytes =
 					(bv8, 8)
 				else
 					let (bv, l) = to_stp_bv vc (Bytes_ByteArray (ImmutableArray.sub bytearray 1 (len - 1))) in
-					(*(Stpc.e_bvconcat vc bv bv8, l + 8) (* little endian *)*)
-					(Stpc.e_bvconcat vc bv8 bv, l + 8) (* big endian *)
+					(*(Stpc.e_bvconcat vc bv bv8, l + 8) (* reversed orientation *)*)
+					(Stpc.e_bvconcat vc bv8 bv, l + 8) (* same orientation *)
  
 		| Bytes_Address (blockopt, offset) ->
 			let (bv_offset,l_offset) = to_stp_bv vc offset in
@@ -440,7 +440,8 @@ to_stp_bv vc bytes =
 						| OP_SX -> (* here bv2 must be constant *)
 							failwith "not implemented"
 						| _ -> failwith ((To_string.operation op) ^ " is not a binary operator")
-					end in
+					end 
+                in
 					op_func bv1 len1 bv2 len2
 		| Bytes_Op(op, [(bytes1,typ1)]) -> (* UNOP *)
 				let (bv1, len1) = to_stp_bv vc bytes1 in
@@ -500,7 +501,7 @@ to_stp_bv vc bytes =
 *)
 			to_stp_bv vc f_addr
 		
-		| _ ->
+		| _ -> (*TODO: Bytes_Write *)
 			let len = bytes_length bytes in
 			let arr = to_stp_array vc (new_array vc bytes) bytes in
 			let rec flatten bv_offset len =
