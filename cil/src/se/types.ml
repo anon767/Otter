@@ -90,6 +90,20 @@ memory_block =
 	}
 ;;
 
+let hash_consing_bytes_hits = ref 0;;
+let hash_consing_bytes_misses = ref 0;;
+let hash_consing_bytes_init_size = 1000000;;
+let hash_consing_bytes_tbl : (bytes,bytes) Hashtbl.t = Hashtbl.create hash_consing_bytes_init_size;;
+let hash_consing_bytes_create bs = 
+  if true then bs else
+  try let rv = Hashtbl.find hash_consing_bytes_tbl bs in Utility.increment hash_consing_bytes_hits; rv
+  with Not_found -> Hashtbl.add hash_consing_bytes_tbl bs bs; Utility.increment hash_consing_bytes_misses; bs;;
+
+
+(*
+ *  Since bytes objects are immutable, and bytes is private type, all *bs* are
+ *  created by calling make_Bytes_* and do not require hash consing check.
+ *)
 let rec 
 make_Byte_Concrete (c) =
 	Byte_Concrete (c)
@@ -101,31 +115,29 @@ make_Byte_Bytes ( bs, n ) =
 	Byte_Bytes ( bs, n )
 and
 make_Bytes_Constant ( const ) =
-	Bytes_Constant ( const )
+	hash_consing_bytes_create (Bytes_Constant ( const ))
 and
 make_Bytes_ByteArray ( bytearray ) =
-	Bytes_ByteArray ( bytearray )
+	hash_consing_bytes_create (Bytes_ByteArray ( bytearray ))
 and
 make_Bytes_Address ( blockopt , bs ) =
-	Bytes_Address ( blockopt , bs )
+	hash_consing_bytes_create (Bytes_Address ( blockopt , bs ))
 and
 make_Bytes_MayBytes ( indr , bs1 , bs2 ) =
-	Bytes_MayBytes ( indr , bs1 , bs2 )
+	hash_consing_bytes_create (Bytes_MayBytes ( indr , bs1 , bs2 ))
 and
 make_Bytes_Op ( op , lst) =
-	Bytes_Op ( op , lst)
+	hash_consing_bytes_create (Bytes_Op ( op , lst))
 and
 make_Bytes_Read ( src , off , len ) =
-	Bytes_Read ( src , off , len )
+	hash_consing_bytes_create (Bytes_Read ( src , off , len ))
 and
 make_Bytes_Write ( des , off , n , src ) =
-	Bytes_Write ( des , off , n , src )
+	hash_consing_bytes_create (Bytes_Write ( des , off , n , src ))
 and
 make_Bytes_FunPtr ( f , bs ) =
-	Bytes_FunPtr ( f , bs )
+	hash_consing_bytes_create (Bytes_FunPtr ( f , bs ))
 ;;
-
-
 
 
 (* A single global byte representing uninitialized memory *)
@@ -167,6 +179,15 @@ module LocMap =
 				Cil.compareLoc a b
 	end
 	)	
+
+module BytesMap =
+	Utility.MakeMap (
+	struct
+		type t = bytes 
+		let compare = Pervasives.compare				
+	end
+	)	
+
 	
 (** A calling context may either be the symbolic executor, represented by
 		[Runtime], or from another function in the source code, represented
@@ -201,6 +222,7 @@ type state =
 		va_arg : bytes list list;			(* A stack of va_arg *)
 		va_arg_map : bytes list VargsMap.t;
 		loc_map : bytes LocMap.t;     (* Map loc to symbolic bytes *)
+        bytes_eval_cache : bool BytesMap.t; (* Map bytes to boolean value, if exists *) 
 	}
 ;;
 

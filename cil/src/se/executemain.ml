@@ -283,6 +283,11 @@ let doExecute (f: file) =
 		(Stats.lookupTime "STP construct")
 		(Stats.lookupTime "STP doassert")
 		(Stats.lookupTime "STP query");
+    Output.printf "Hash-consing: hits=%d misses=%d\n" (!Types.hash_consing_bytes_hits) (!Types.hash_consing_bytes_misses);
+    Output.printf "Bytes eval caching: hits=%d misses=%d\n\n" (!MemOp.bytes_eval_cache_hits) (!MemOp.bytes_eval_cache_misses);
+    (*
+    Hashtbl.iter (fun a b -> print_endline (To_string.bytes b)) Types.hash_consing_bytes_tbl; 
+     *)
 
 	Report.print_report results
 ;;

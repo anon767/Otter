@@ -21,9 +21,12 @@ let rec add_all add_function keys values map =
 		| _ -> raise (Failure "wow")
 ;;
 
+let increment iref =
+  iref:=(!iref)+1
+
 let next_id idref = 
 	let id = !idref in
-	idref:=id+1; id
+      increment idref; id
 ;;
 
 let rec print_list print list delim =

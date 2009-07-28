@@ -398,6 +398,7 @@ let state__empty =
 		va_arg = [];
 		va_arg_map = VargsMap.empty;
 		loc_map = LocMap.empty;
+        bytes_eval_cache = BytesMap.empty;
 	}
 ;;
 
@@ -562,6 +563,28 @@ let state__remove_block state block=
 	{ state with
 		block_to_bytes = MemoryBlockMap.remove block state.block_to_bytes;
 	}
+;;
+
+let state__add_bytes_eval_cache state bytes boolval =
+  if true then state else
+  if BytesMap.mem bytes state.bytes_eval_cache then
+    failwith "state__add_bytes_eval_cache: value of bytes already set"
+  else
+	{ state with
+       bytes_eval_cache = BytesMap.add bytes boolval state.bytes_eval_cache;
+	}
+;;
+
+let bytes_eval_cache_hits = ref 0;;
+let bytes_eval_cache_misses = ref 0;;
+
+let state__get_bytes_eval_cache state bytes =
+  (*
+  try
+    raise Not_found;
+    let ret = Some (BytesMap.find bytes state.bytes_eval_cache) in
+      Utility.increment bytes_eval_cache_hits; ret
+  with Not_found -> *)Utility.increment bytes_eval_cache_misses; None
 ;;
 
 let state__trace state: string = 

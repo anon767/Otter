@@ -27,12 +27,10 @@ and indicator =
   | Indicator_Not of indicator
   | Indicator_And of indicator * indicator
 and byte =
-  private
     Byte_Concrete of char
   | Byte_Symbolic of symbol
   | Byte_Bytes of bytes * int
 and bytes =
-  private
     Bytes_Constant of Cil.constant
   | Bytes_ByteArray of byte ImmutableArray.t
   | Bytes_Address of memory_block option * bytes
@@ -57,6 +55,11 @@ and memory_block = {
   memory_block_addr : bytes;
   memory_block_type : memory_block_type;
 }
+val hash_consing_bytes_hits : int ref
+val hash_consing_bytes_misses : int ref
+val hash_consing_bytes_init_size : int
+val hash_consing_bytes_tbl : (bytes, bytes) Hashtbl.t
+val hash_consing_bytes_create : bytes -> bytes
 val make_Byte_Concrete : char -> byte
 val make_Byte_Symbolic : symbol -> byte
 val make_Byte_Bytes : bytes * int -> byte
@@ -139,6 +142,23 @@ module LocMap :
     val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
     val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
   end
+module BytesMap :
+  sig
+    type key = bytes
+    type +'a t
+    val empty : 'a t
+    val is_empty : 'a t -> bool
+    val add : key -> 'a -> 'a t -> 'a t
+    val find : key -> 'a t -> 'a
+    val remove : key -> 'a t -> 'a t
+    val mem : key -> 'a t -> bool
+    val iter : (key -> 'a -> unit) -> 'a t -> unit
+    val map : ('a -> 'b) -> 'a t -> 'b t
+    val mapi : (key -> 'a -> 'b) -> 'a t -> 'b t
+    val fold : (key -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
+    val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
+    val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
+  end
 type callingContext =
     Runtime
   | Source of ((lval_block * int) option * Cil.instr * Cil.stmt)
@@ -154,6 +174,7 @@ type state = {
   va_arg : bytes list list;
   va_arg_map : bytes list VargsMap.t;
   loc_map : bytes LocMap.t;
+  bytes_eval_cache : bool BytesMap.t;
 }
 val word__size : int
 val string_table : bytes MemoryBlockMap.t ref

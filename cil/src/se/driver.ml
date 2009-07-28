@@ -2,6 +2,19 @@ open Cil
 open Types
 open Executeargs
 
+
+let eval_with_cache state pc bytes =
+    (Stp.eval pc bytes,state) 
+  (*
+  match MemOp.state__get_bytes_eval_cache state bytes with
+    | Some (boolval) -> ((if boolval then Stp.True else Stp.False), state)
+    | None ->
+        let truth = Stp.eval pc bytes in
+          if truth = Stp.True then (truth,MemOp.state__add_bytes_eval_cache state bytes true)
+          else if truth = Stp.False then (truth,MemOp.state__add_bytes_eval_cache state bytes false)
+          else (truth,state)
+   *)
+
 (** Remove a NOT from a bytes, or add one. The type of the bytes may
 		be lost. *)
 let logicalNegateBytes = function
@@ -235,7 +248,7 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
                                   else
                                   let given = Eval.rval state (List.nth exps 0) in
 				                  let rv = Eval.rval state (List.nth exps 1 ) in
-				                  let truth = Stp.eval (given::state.path_condition) rv in
+				                  let (truth,state) = eval_with_cache state (given::state.path_condition) rv in
 				                  if truth == Stp.True then Convert.lazy_int_to_bytes 1 
 				                  else if truth == Stp.False then Convert.lazy_int_to_bytes 0
 				                  else MemOp.bytes__symbolic 4
@@ -252,7 +265,7 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
                                   begin
                                   if List.length exps = 0 then 0 else
 				                  let rv = Eval.rval state (List.hd exps) in
-				                  let truth = Stp.eval state.path_condition rv in
+				                  let (truth,state) = eval_with_cache state state.path_condition rv in
 				                  if truth == Stp.True then 1
 				                  else if truth == Stp.False then -1
 				                  else 0
@@ -402,7 +415,7 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 															
 					| Function.Assert -> 
 						let post = op_exps exps Cil.LAnd in
-							let truth = Stp.eval state.path_condition post in
+							let (truth,state) = eval_with_cache state state.path_condition post in
 							begin
 								if truth == Stp.True then
 									begin
@@ -740,7 +753,7 @@ let exec_stmt job =
 							Output.print_endline (if String.length pc_str = 0 then "(nil)" else pc_str);
 						end;
  
-					let truth = Stp.eval state.path_condition rv in
+					let (truth,state) = eval_with_cache state state.path_condition rv in
  
 					Output.set_mode Output.MSG_REG;
 					if truth == Stp.True then

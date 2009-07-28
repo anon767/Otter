@@ -1,6 +1,22 @@
 open Types
 open Cil
 
+let global_vc = Stpc.create_validity_checker ();;
+
+module BytesMagicMap =
+	Utility.MakeMap (
+	struct
+		type t = bytes
+		let compare a b = compare (Obj.magic a : int) (Obj.magic b)
+	end
+	)
+
+let bytes_stpbv_map : (Stpvc.exp*int) BytesMagicMap.t ref = ref BytesMagicMap.empty;;
+let bytes_stpbv_add bytes bv len =
+  bytes_stpbv_map := BytesMagicMap.add bytes (bv,len) (!bytes_stpbv_map);;
+let bytes_stpbv_get bytes =
+  BytesMagicMap.find bytes (!bytes_stpbv_map);; (* raise Not_found *)
+
 type truth = True | False | Unknown;;
 
 let not truth = match truth with
@@ -22,7 +38,7 @@ let rec bytes_length bytes =
 		| Bytes_FunPtr(_) -> word__size
 ;;
 
-(** Return a SymbolSet of all symbols in the given make_Bytes *)
+(** Return a SymbolSet of all symbols in the given Bytes *)
 let rec allSymbols = function
 	| Bytes_Constant const -> SymbolSet.empty
 	| Bytes_ByteArray bytearray ->
@@ -55,7 +71,7 @@ let rec allSymbols = function
 				(SymbolSet.union (allSymbols bytes1) (allSymbols bytes2))
 	| Bytes_FunPtr (_,bytes) -> allSymbols bytes
 
-(** Return a SymbolSet of all symbols in the given list of make_Bytes *)
+(** Return a SymbolSet of all symbols in the given list of Bytes *)
 let allSymbolsInList byteslist =
 	List.fold_left
 		(fun symbSet b -> SymbolSet.union symbSet (allSymbols b))
@@ -83,7 +99,7 @@ let rec allIndicators = function
 	| Indicator_And (i1,i2) ->
 			SISet.union (allIndicators i1) (allIndicators i2)
 
-(** Return an SISet of all symbols and indicators in the given make_Bytes *)
+(** Return an SISet of all symbols and indicators in the given Bytes *)
 let rec allSymbolsAndIndicators = function
 	| Bytes_Constant const -> SISet.empty
 	| Bytes_ByteArray bytearray ->
@@ -121,7 +137,7 @@ let rec allSymbolsAndIndicators = function
 				(SISet.union (allSymbolsAndIndicators bytes1) (allSymbolsAndIndicators bytes2))
 	| Bytes_FunPtr (_,bytes) -> allSymbolsAndIndicators bytes
 
-(** Return a SISet of all symbols in the given list of make_Bytes *)
+(** Return a SISet of all symbols in the given list of Bytes *)
 let allSymbolsAndIndicatorsInList byteslist =
 	List.fold_left
 		(fun symbSet b -> SISet.union symbSet (allSymbolsAndIndicators b))
@@ -165,10 +181,10 @@ module StpCache = Map.Make
 		 type t = bytes list * bytes (* pc, query *)
 		 (* It might be better to have this be set-based equality rather
 				than list-based. *)
-		 let compare ((pc1,cov1):t) ((pc2,cov2):t) = (* Type annotation to remove polymorphism *)
-			 let result1 = listCompare pc1 pc2 in
+		 let compare ((pc1,query1):t) ((pc2,query2):t) = (* Type annotation to remove polymorphism *)
+			 let result1 = (if query1==query2 then 0 else compare query1 query2) in
 			 if result1 = 0
-			 then compare cov1 cov2
+			 then listCompare pc1 pc2 
 			 else result1
 	 end)
 
@@ -269,7 +285,9 @@ and
 
 
 doassert pc =
-	let vc = Stpc.create_validity_checker () in
+	let vc = global_vc in
+    Stpc.e_pop vc;
+    Stpc.e_push vc;
 	
 	Output.set_mode Output.MSG_STP;
 	Output.print_endline "%%%%%%%%%%%%%%%%%%";
@@ -332,6 +350,17 @@ to_stp_indicator vc = function
 
 and
 
+                             
+to_stp_bv vc bytes =
+  (*if false then to_stp_bv_impl vc bytes else*)
+  try
+    bytes_stpbv_get bytes
+  with Not_found ->
+    let (bv,len) = to_stp_bv_impl vc bytes in
+      bytes_stpbv_add bytes bv len;
+      (bv,len)
+
+and
 
 (** return (bv,len)
     bv: a 1-d bitvector that describe the bytes
@@ -339,7 +368,7 @@ and
 		
 		note: e_bv_of_int (with) (content)  -> bv
  *)
-to_stp_bv vc bytes =
+to_stp_bv_impl vc bytes =
 	match bytes with
 		| Bytes_Constant (constant) ->
 			let bytes2 = Convert.constant_to_bytes constant in
@@ -601,7 +630,7 @@ make_var symbol =
 		association list of (symbol,char)s, where each char is the value
 		STP gives to that symbol to make the path condition true. *)
 let getValues pathCondition symbolList =
-	let vc = Stpc.create_validity_checker () in
+	let vc = global_vc in
 	(* To get values for the symbolic values which make the path
 		 condition true, we need to query for its *negation* because STP
 		 gives counterexamples (not satisfying assignments).
