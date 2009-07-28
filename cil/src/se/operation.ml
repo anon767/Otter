@@ -22,10 +22,10 @@ let unop op_conc (*bytearray->bytearray*) op_symb operands : bytes  =
 			| Bytes_ByteArray(bytearray) -> 
 				if Convert.isConcrete_bytearray bytearray 
 				then
-					Bytes_ByteArray(op_conc bytearray typ)
+					make_Bytes_ByteArray(op_conc bytearray typ)
 				else 
-					Bytes_Op(op_symb,operands)
-			| _ -> (Bytes_Op(op_symb, operands))
+					make_Bytes_Op(op_symb,operands)
+			| _ -> (make_Bytes_Op(op_symb, operands))
 	in 
 		impl bytes1 typ1
 ;;
@@ -43,7 +43,7 @@ let neg operands =
 			| Byte_Concrete (c) ->
 				let c' = Char.chr ( (!carry + (lnot (Char.code c))) land 255) in
 					if c <> '\000' then carry := 0;
-					Byte_Concrete(c')
+					make_Byte_Concrete(c')
 			| _ -> failwith "neg: unreachable"
 		) arr 
 	in
@@ -55,7 +55,7 @@ let bnot operands =
 		ImmutableArray.map (fun byte -> match byte with
 			| Byte_Concrete (c) ->
 				let c' = Char.chr ( (lnot (Char.code c)) land 255)  in
-					Byte_Concrete(c')
+					make_Byte_Concrete(c')
 			| _ -> failwith "bnot: unreachable"
 		) arr 
 	in
@@ -69,9 +69,9 @@ let lnot operands = (* should return int (32-bit) *)
 			| _ -> failwith "lnot: unreachable"
 		) false arr 
 		then (* 0 *)
-			ImmutableArray.of_list [Byte_Concrete('\000');Byte_Concrete('\000');Byte_Concrete('\000');Byte_Concrete('\000')]
+			ImmutableArray.of_list [make_Byte_Concrete('\000');make_Byte_Concrete('\000');make_Byte_Concrete('\000');make_Byte_Concrete('\000')]
 		else (* 1 *)
-			ImmutableArray.of_list [Byte_Concrete('\001');Byte_Concrete('\000');Byte_Concrete('\000');Byte_Concrete('\000')]
+			ImmutableArray.of_list [make_Byte_Concrete('\001');make_Byte_Concrete('\000');make_Byte_Concrete('\000');make_Byte_Concrete('\000')]
 	in
 	unop op_conc OP_LNOT operands ;;
 
@@ -92,7 +92,7 @@ let rec binop op_const op_symb operands : bytes (* * typ *)=
 				let n64 = op_const isSigned i1 i2 in
 				let (n64,_) = Cil.truncateInteger64 k1 n64 in
 				let const = CInt64(n64, k1, None) in (* ASSUMED result always has type equal to that of first operand *)
-				(Bytes_Constant(const))
+				(make_Bytes_Constant(const))
 		(* Allow a particular piece of pointer arithmetic: ptr % num. *)
 		| Bytes_Address(Some blk, offset), op2
 				when op_symb = OP_MOD &&
@@ -103,24 +103,24 @@ let rec binop op_const op_symb operands : bytes (* * typ *)=
 				let op2Constant = Convert.bytes_to_constant op2 Cil.intType in
 				begin match offsetConstant,op2Constant with
 					| CInt64 _,CInt64 _ ->
-							let ptrAsNum = plus [(Bytes_Constant
+							let ptrAsNum = plus [(make_Bytes_Constant
 																			(Convert.bytes_to_constant blk.memory_block_addr !Cil.upointType),
 																		!Cil.upointType);
-																	 (Bytes_Constant offsetConstant, typ2)]
+																	 (make_Bytes_Constant offsetConstant, typ2)]
 							in
-							impl (ptrAsNum, Bytes_Constant op2Constant)
+							impl (ptrAsNum, make_Bytes_Constant op2Constant)
 					| _ -> failwith "Unimplemented pointer arithmetic operation"
 				end
 
 		| (b1,b2)  ->
 			if not (Convert.isConcrete_bytes b1 & Convert.isConcrete_bytes b2) then
-				(Bytes_Op(op_symb, operands)) (* TODO: Check that STP treats Bytes_Ops as having the type of the first operand *)
+				(make_Bytes_Op(op_symb, operands)) (* TODO: Check that STP treats make_Bytes_Ops as having the type of the first operand *)
 			else
 			let c1 = Convert.bytes_to_constant b1 typ1 in (*TODO: look at typ1 to see if it's unsigned *)
 			let c2 = Convert.bytes_to_constant b2 typ2 in
 			begin match (c1,c2) with
 			| (CInt64(i1,k1,s1),CInt64(i2,k2,s2)) ->
-				impl (Bytes_Constant c1, Bytes_Constant c2)
+				impl (make_Bytes_Constant c1, make_Bytes_Constant c2)
 			| (CReal(i1,k1,s1),CReal(i2,k2,s2)) -> (*TMP*) bytes1
 			| _ -> failwith "Match error"
 			end
@@ -188,7 +188,7 @@ let opPI op operands =
 					let base_size = (Cil.bitsSizeOf basetyp)/8 in
 					let (offset3) = mult [(Convert.lazy_int_to_bytes base_size,Cil.intType);(offset2,typ2)] in
 					let (offset4) = op [(offset,Cil.intType);(offset3,Cil.intType)] in (* TODO: make typing of offset more accurate? *)
-					(Bytes_Address(blockopt,offset4))
+					(make_Bytes_Address(blockopt,offset4))
 				| _ -> failwith "type of Bytes_Address not TPtr"
 			end
 		| Bytes_ByteArray(_),_ -> (* Doing pointer arithmetic off of a non-pointer, probably NULL *)
@@ -201,8 +201,8 @@ let opPI op operands =
 			end
 		| _ ->
 			Output.set_mode Output.MSG_MUSTPRINT;
-			Output.print_endline ("Bytes1: "^(To_string.bytes bytes1)); 
-			Output.print_endline ("Bytes2: "^(To_string.bytes bytes2));
+			Output.print_endline ("make_Bytes1: "^(To_string.bytes bytes1)); 
+			Output.print_endline ("make_Bytes2: "^(To_string.bytes bytes2));
 			failwith "plusPI (p1,p2) not of type (addr,int)"
 ;;
 
@@ -231,8 +231,8 @@ let minusPP operands : bytes =
 			end
 		| _ ->
 				Output.set_mode Output.MSG_MUSTPRINT;
-				Output.print_endline ("Bytes1: "^(To_string.bytes bytes1));
-				Output.print_endline ("Bytes2: "^(To_string.bytes bytes2));
+				Output.print_endline ("make_Bytes1: "^(To_string.bytes bytes1));
+				Output.print_endline ("make_Bytes2: "^(To_string.bytes bytes2));
 				failwith "minusPP (p1,p2) not of type (addr,addr)"
 ;;
 

@@ -20,15 +20,15 @@ let char__random () = Char.chr ((Random.int 255)+1);;
 (**
  *	byte 
  *)
-let byte__make c = Byte_Concrete c;;
+let byte__make c = make_Byte_Concrete c;;
 let byte__zero = byte__make ('\000');;
 let byte__111 = byte__make ('\255');;
 let byte__random () = byte__make (char__random ());;
-let byte__symbolic () = Byte_Symbolic (symbol__next ());;
+let byte__symbolic () = make_Byte_Symbolic (symbol__next ());;
 (*
 let byte__symbolic_with_id id isWritable = 
 	assert (id>0);
-	Byte_Symbolic ({symbol_id = -id; })
+	make_Byte_Symbolic ({symbol_id = -id; })
 ;;*)
 
 (*
@@ -53,7 +53,7 @@ bytes__get_concrete bytes i : char =
 	match bytes with 
 		| Bytes_Constant (constant) -> 
 			let bytearray = Convert.constant_to_bytearray constant in
-				bytes__get_concrete (Bytes_ByteArray(bytearray)) i
+				bytes__get_concrete (make_Bytes_ByteArray(bytearray)) i
 		| Bytes_ByteArray (bytearray) -> 
 			let byte = ImmutableArray.get bytearray i in
 				byte__get_concrete byte
@@ -69,17 +69,17 @@ bytes__get_concrete bytes i : char =
 (**
  *	bytes
  *)
-(*let bytes__zero n = Bytes_ByteArray (ImmutableArray.make n byte__zero) ;;*)
-let bytes__zero = Bytes_Constant(Cil.CInt64(0L,IInt,None));;
-let bytes__of_list (lst: byte list) =	Bytes_ByteArray (ImmutableArray.of_list lst) ;;
-let bytes__make_default n byte = Bytes_ByteArray(ImmutableArray.make n byte);;
+(*let bytes__zero n = make_Bytes_ByteArray (ImmutableArray.make n byte__zero) ;;*)
+let bytes__zero = make_Bytes_Constant(Cil.CInt64(0L,IInt,None));;
+let bytes__of_list (lst: byte list) =	make_Bytes_ByteArray (ImmutableArray.of_list lst) ;;
+let bytes__make_default n byte = make_Bytes_ByteArray(ImmutableArray.make n byte);;
 let bytes__make n = bytes__make_default n byte__zero;;
 let bytes__random n =
 	let rec impl i arr =
 		if i>=n then arr else
 			impl (i+1) (ImmutableArray.set arr i (byte__random ()))
 		in
-	Bytes_ByteArray(impl 0 (ImmutableArray.make n byte__zero))
+	make_Bytes_ByteArray(impl 0 (ImmutableArray.make n byte__zero))
 ;;
 
 let bytes__symbolic n =
@@ -117,7 +117,7 @@ let rec diff_bytes bytes1 bytes2 =
 			(Pervasives.compare ix iy <> 0) || (diff_bytes tx ty) || (diff_bytes fx fy)
 		| Bytes_Op(op1,[]),Bytes_Op(op2,[]) -> false
 		| Bytes_Op(op1,(b1,_)::operands1),Bytes_Op(op2,(b2,_)::operands2) -> 
-			(op1!=op2) || (diff_bytes b1 b2) ||	(diff_bytes (Bytes_Op(op1,operands1)) (Bytes_Op(op2,operands2)))
+			(op1!=op2) || (diff_bytes b1 b2) ||	(diff_bytes (make_Bytes_Op(op1,operands1)) (make_Bytes_Op(op2,operands2)))
 		| Bytes_Read(b1,off1,s1),Bytes_Read(b2,off2,s2) -> 
 			(diff_bytes b1 b2) || (diff_bytes off1 off2) || (s1<>s2)
 		| Bytes_Write(old1,off1,s1,new1),Bytes_Write(old2,off2,s2,new2) -> 
@@ -132,23 +132,23 @@ let rec bytes__get_byte bytes i : byte =
 	match bytes with
 		| Bytes_Constant (constant) ->  bytes__get_byte (Convert.constant_to_bytes constant) i
 		| Bytes_ByteArray (bytearray) -> ImmutableArray.get bytearray i 
-		| _ -> Byte_Bytes(bytes,i)
+		| _ -> make_Byte_Bytes(bytes,i)
 ;;
 
 let rec bytes__read bytes off len =
 	if (bytes__length bytes) = len then bytes else
-	let worst_case = Bytes_Read (bytes,off,len) in
+	let worst_case = make_Bytes_Read (bytes,off,len) in
 	let ret_bytes = 
 		begin match bytes,off with
 			| Bytes_ByteArray(array),Bytes_Constant(CInt64(i64,k,_)) -> 
 					let i = Int64.to_int i64 in
-					Bytes_ByteArray (ImmutableArray.sub array i len)
+					make_Bytes_ByteArray (ImmutableArray.sub array i len)
 			| Bytes_Constant(constant),Bytes_Constant(CInt64(i64,k,_)) -> 
                     let converted_bytes = Convert.constant_to_bytes constant in
                       begin match converted_bytes with
                         | Bytes_ByteArray(array) ->
 					        let i = Int64.to_int i64 in
-					        Bytes_ByteArray (ImmutableArray.sub array i len)
+					        make_Bytes_ByteArray (ImmutableArray.sub array i len)
                         | _ -> worst_case
                       end
 			| Bytes_Write (bytes2,off2,len2,newbytes),_ -> 
@@ -159,7 +159,7 @@ let rec bytes__read bytes off len =
 			| _ -> worst_case
 		end
 		in
-		(* try to inflate any Bytes_ByteArray of Byte_Bytes *)
+		(* try to inflate any Bytes_ByteArray of make_Byte_Bytes *)
 		match ret_bytes with
 			| Bytes_ByteArray(bytearray) ->
 					begin match ImmutableArray.get bytearray 0 with
@@ -200,7 +200,7 @@ let bytes__write bytes off len newbytes =
 						*)
 							ImmutableArray.set array2 (i+j) (ImmutableArray.get newarray j)
 				in
-					Bytes_ByteArray(impl (len-1) oldarray)
+					make_Bytes_ByteArray(impl (len-1) oldarray)
 					
 			| Bytes_ByteArray(oldarray),Bytes_Constant(CInt64(i64,k,_)),Bytes_Constant(const) ->
 				do_write bytes off len (Convert.constant_to_bytes const)
@@ -208,27 +208,27 @@ let bytes__write bytes off len newbytes =
 			| Bytes_ByteArray(oldarray),Bytes_Constant(CInt64(i64,k,_)),_(* anything *) ->
 				let rec impl arr i =
 					if i>=len then arr else
-						impl (ImmutableArray.set arr i (Byte_Bytes(newbytes,i))) (i+1)
+						impl (ImmutableArray.set arr i (make_Byte_Bytes(newbytes,i))) (i+1)
 				in
-					do_write bytes off len (Bytes_ByteArray(impl (ImmutableArray.make len byte__zero) 0))			
+					do_write bytes off len (make_Bytes_ByteArray(impl (ImmutableArray.make len byte__zero) 0))			
 			
 			| Bytes_ByteArray(oldarray),_,_
 				when Convert.isConcrete_bytes off ->
 					let n_off = Convert.bytes_to_constant off Cil.intType in
-					do_write bytes (Bytes_Constant(n_off)) len newbytes
+					do_write bytes (make_Bytes_Constant(n_off)) len newbytes
 
 			(* Without this next case, writing to a constant would introduce
-				 a Bytes_Write. Aside from not wanting a Bytes_Write if we can
+				 a Bytes_Write. Aside from not wanting a make_Bytes_Write if we can
 				 avoid it (for example, writing a concrete byte to the first
 				 byte of a concrete int), this could cause problems. The
 				 potential problem has to do with writing past the end of an
-				 array that is represented as a Bytes_Constant (which could
-				 exist if, for example, you have a 4-byte ByteArray and write
-				 a Bytes_Constant int to it). *)
+				 array that is represented as a make_Bytes_Constant (which could
+				 exist if, for example, you have a 4-byte make_ByteArray and write
+				 a make_Bytes_Constant int to it). *)
 			| Bytes_Constant c,_,_ ->
 					do_write (Convert.constant_to_bytes c) off len newbytes
 
-			| _ -> Bytes_Write (bytes,off,len,newbytes)
+			| _ -> make_Bytes_Write (bytes,off,len,newbytes)
 	in
 	if (bytes__length bytes)=len && (Convert.isConcrete_bytes off) && (Convert.bytes_to_int_auto off = 0) then 
       newbytes 
@@ -315,7 +315,7 @@ let frame__add_varinfo frame block_to_bytes varinfo =
 	let size = (Cil.bitsSizeOf varinfo.vtype) / 8 in
 	(* This is only called for local variables. Globals are handled by state__add_global. *)
 	let fresh_block = block__make (To_string.varinfo varinfo) size Block_type_Local in
-(*	let bytes = Bytes_ByteArray ({ImmutableArray.empty with ImmutableArray.length = size}) in (* initially undefined (so any accesses will crash the executor) *) *)
+(*	let bytes = make_Bytes_ByteArray ({ImmutableArray.empty with ImmutableArray.length = size}) in (* initially undefined (so any accesses will crash the executor) *) *)
 	let bytes = bytes__make_default size byte__undef in (* initially the symbolic 'undef' byte *)
 (*	let bytes = bytes__symbolic size in (* initially symbolic *) *)
 		frame__add_varinfo_initialized frame block_to_bytes varinfo bytes fresh_block
@@ -451,7 +451,7 @@ let state__assign state (lvals, size) bytes = (* have problem *)
 						begin match Stp.query_indicator state.path_condition i with
 							| Stp.True -> Some newbytes
 							| Stp.False -> None
-							| Stp.Unknown -> Some (Bytes_MayBytes (i, newbytes, oldbytes))
+							| Stp.Unknown -> Some (make_Bytes_MayBytes (i, newbytes, oldbytes))
 						end
 			in
 
@@ -585,25 +585,25 @@ let state__clone_bytes state bytes =
         | Bytes_Constant(_) ->  (merge [],bytes)
         | Bytes_ByteArray(arr) -> 
             let (fact,arr') = process arr in
-              (fact,Bytes_ByteArray(arr'))
+              (fact,make_Bytes_ByteArray(arr'))
         | Bytes_Address(blkOpt,offset) ->
             let (fact,offset') = traverse_bytes offset process merge in
-              (fact,Bytes_Address(blkOpt,offset'))
+              (fact,make_Bytes_Address(blkOpt,offset'))
 		| Bytes_MayBytes _ ->
 			(* what exactly does state__clone_bytes do? *)
-			failwith "TODO: implement Bytes_MayBytes for state__clone_bytes"
+			failwith "TODO: implement make_Bytes_MayBytes for state__clone_bytes"
         | Bytes_Op(op,lst) -> 
             let (fact,lst') = traverse_bytes_list lst process merge in
-              (fact,Bytes_Op(op,lst'))
+              (fact,make_Bytes_Op(op,lst'))
         | Bytes_Read (content,offset,size) -> 
             let (fact1,content') = traverse_bytes content process merge in
             let (fact2,offset') = traverse_bytes offset process merge in
-              (merge [fact1;fact2],Bytes_Read(content',offset',size))
+              (merge [fact1;fact2],make_Bytes_Read(content',offset',size))
         | Bytes_Write(oldbytes,offset,size,newbytes) -> 
             let (fact1,oldbytes') = traverse_bytes oldbytes process merge in
             let (fact2,offset') = traverse_bytes offset process merge in
             let (fact3,newbytes') = traverse_bytes newbytes process merge in
-              (merge [fact1;fact2;fact3],Bytes_Write(oldbytes',offset',size,newbytes'))
+              (merge [fact1;fact2;fact3],make_Bytes_Write(oldbytes',offset',size,newbytes'))
         | Bytes_FunPtr (_) -> (merge [],bytes)
     and
     traverse_bytes_list bytesTypLst process merge =
@@ -625,7 +625,7 @@ let state__clone_bytes state bytes =
                | Byte_Concrete(_) -> ((mfrom,mto),byte::lst)
                | Byte_Symbolic(s) -> 
                    let new_s = symbol__next () in
-                    ((s::mfrom,new_s::mto),(Byte_Symbolic(new_s))::lst)
+                    ((s::mfrom,new_s::mto),(make_Byte_Symbolic(new_s))::lst)
                | Byte_Bytes(_,_) -> failwith "state__clone_bytes: Byte_Bytes not supported"
           )
           (([],[]),[])
@@ -649,7 +649,7 @@ let state__clone_bytes state bytes =
                      match mapping with
                        | ([],[]) -> (truth,byte::lst)
                        | (h_from::t_from,h_to::t_to) -> 
-                           if (s==h_from) then (true,(Byte_Symbolic(h_to))::lst)
+                           if (s==h_from) then (true,(make_Byte_Symbolic(h_to))::lst)
                            else impl (t_from,t_to)
                        | _ -> failwith "state__clone_bytes: unreachable"
                      in impl mapping

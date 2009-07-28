@@ -13,7 +13,7 @@ rval state exp : bytes =
 					| CStr(str) ->
 						let bytes = Convert.constant_to_bytes constant in
 						let block = MemOp.string_table__add bytes in
-							Bytes_Address(Some(block),MemOp.bytes__zero)
+							make_Bytes_Address(Some(block),MemOp.bytes__zero)
 					| _ -> Convert.lazy_constant_to_bytes constant
 				end
 			| Lval (cil_lval) ->
@@ -23,7 +23,7 @@ rval state exp : bytes =
 						| Lval_Block (block, offset) ->
 							MemOp.state__get_bytes_from_lval state (block, offset, size)
 						| Lval_May (indicator, lvals1, lvals2) ->
-							Bytes_MayBytes (indicator, get_bytes lvals1, get_bytes lvals2)
+							make_Bytes_MayBytes (indicator, get_bytes lvals1, get_bytes lvals2)
 					in
 					get_bytes lvals
 					
@@ -35,7 +35,7 @@ rval state exp : bytes =
 								begin
 									match bytes with
 										| Bytes_Constant(CInt64(n,_,stropt)) ->
-											Bytes_Constant(CInt64(n,!kindOfSizeOf,stropt))
+											make_Bytes_Constant(CInt64(n,!kindOfSizeOf,stropt))
 										| b -> b
 								end
 					end
@@ -59,15 +59,15 @@ rval state exp : bytes =
 			|	AddrOf (Var varinfo, _) when Cil.isFunctionType (varinfo.Cil.vtype) ->
 					let fundec = Cilutility.search_function varinfo in
 					let f_addr = MemOp.bytes__random Types.word__size in (* TODO: assign an addr for each function ptr *)
-					Bytes_FunPtr(fundec,f_addr)
+					make_Bytes_FunPtr(fundec,f_addr)
 			|	AddrOf (cil_lval)
 			|	StartOf (cil_lval) ->
 					let lvals = lval state cil_lval in
 					let rec get_addrof = function
 						| Lval_Block (block, offset) ->
-							Bytes_Address(Some(block), offset)
+							make_Bytes_Address(Some(block), offset)
 						| Lval_May (indicator, lvals1, lvals2) ->
-							Bytes_MayBytes (indicator, get_addrof lvals1, get_addrof lvals2)
+							make_Bytes_MayBytes (indicator, get_addrof lvals1, get_addrof lvals2)
 					in
 					get_addrof lvals
 			|	CastE (typ, exp2) -> rval_cast typ (rval state exp2) (Cil.typeOf exp2)
@@ -83,14 +83,14 @@ rval_cast typ rv rvtyp =
 		(* optimize for casting among int family *)
 		| Bytes_Constant(CInt64(n,ikind,_)),TInt(new_ikind,_) -> 
         begin match Cil.kinteger64 new_ikind n with
-            Const (const) -> Bytes_Constant(const)
+            Const (const) -> make_Bytes_Constant(const)
           | _ -> failwith "rval_cast, const: unreachable"
         end						
 		(* optimize for casting among float family *)
 		| Bytes_Constant(CReal(f,fkind,s)),TFloat(new_fkind,_) -> 
 			let const = CReal(f,new_fkind,s) in
-         Bytes_Constant(const)
-		(* added so that from now on there'll be no Bytes_Constant *)
+         make_Bytes_Constant(const)
+		(* added so that from now on there'll be no make_Bytes_Constant *)
 		| Bytes_Constant(const),_ ->
 			rval_cast typ (Convert.constant_to_bytes const) rvtyp
 			
@@ -130,11 +130,11 @@ rval_cast typ rv rvtyp =
 									let newbytes2 = ImmutableArray.set newbytes old_len sth in
 										pack_sth newbytes2 (old_len+1) new_len
 								in
-									Bytes_ByteArray (pack_sth newbytes old_len new_len)
+									make_Bytes_ByteArray (pack_sth newbytes old_len new_len)
 							end
 						else worst_case () (* don't know how to do if new_len > old_len && bytearray is NOT concrete *)
 					else (* new_len < old_len *)
-						Bytes_ByteArray (ImmutableArray.sub bytearray 0 new_len) (* simply truncate *)
+						make_Bytes_ByteArray (ImmutableArray.sub bytearray 0 new_len) (* simply truncate *)
 				| Bytes_Constant(const) -> failwith "unreachable"
 				| _ -> worst_case ()
 				end
@@ -173,8 +173,8 @@ deref state bytes =
 		| Bytes_ByteArray(bytearray) -> 
             (* 
             * Special treatment: look for
-             * "==(Bytearray(bytearray),Bytes_Address(b,f))" in PC.
-             * If found, return deref state Bytes_Address(b,f).
+             * "==(Bytearray(bytearray),make_Bytes_Address(b,f))" in PC.
+             * If found, return deref state make_Bytes_Address(b,f).
              * Otherwise, throw exception
             * *)
             let rec find_match pc = match pc with [] -> 

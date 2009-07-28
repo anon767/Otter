@@ -90,6 +90,47 @@ memory_block =
 	}
 ;;
 
+let rec 
+make_Byte_Concrete (c) =
+	Byte_Concrete (c)
+and
+make_Byte_Symbolic (s) =
+	Byte_Symbolic (s)
+and
+make_Byte_Bytes ( bs, n ) =
+	Byte_Bytes ( bs, n )
+and
+make_Bytes_Constant ( const ) =
+	Bytes_Constant ( const )
+and
+make_Bytes_ByteArray ( bytearray ) =
+	Bytes_ByteArray ( bytearray )
+and
+make_Bytes_Address ( blockopt , bs ) =
+	Bytes_Address ( blockopt , bs )
+and
+make_Bytes_MayBytes ( indr , bs1 , bs2 ) =
+	Bytes_MayBytes ( indr , bs1 , bs2 )
+and
+make_Bytes_Op ( op , lst) =
+	Bytes_Op ( op , lst)
+and
+make_Bytes_Read ( src , off , len ) =
+	Bytes_Read ( src , off , len )
+and
+make_Bytes_Write ( des , off , n , src ) =
+	Bytes_Write ( des , off , n , src )
+and
+make_Bytes_FunPtr ( f , bs ) =
+	Bytes_FunPtr ( f , bs )
+;;
+
+
+
+
+(* A single global byte representing uninitialized memory *)
+let byte__undef = Byte_Symbolic({symbol_id = 0}) ;;
+
 module VarinfoMap = Cilutility.VarinfoMap
 
 type memory_frame = 
@@ -165,9 +206,6 @@ type state =
 
 let word__size = 4
 ;;
-
-(* A single global byte representing uninitialized memory *)
-let byte__undef = Byte_Symbolic({symbol_id = 0});;
 
 (* http://www.c-faq.com/decl/strlitinit.html *)
 

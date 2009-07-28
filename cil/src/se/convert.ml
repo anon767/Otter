@@ -33,33 +33,33 @@ let bytearray_to_strrep ba =
 
 let rec strrep_to_bytearray s =
 	let len = String.length s in
-	if len = 0 then ImmutableArray.make 0 (Byte_Concrete '\000')
+	if len = 0 then ImmutableArray.make 0 (make_Byte_Concrete '\000')
 	else if len = 1 then failwith "strrep_to_bytearray: error"
 	else let ba = strrep_to_bytearray (String.sub s 2 (len-2)) in
-		ImmutableArray.add ba (Byte_Concrete(Char.chr (int_of_string ("0X"^(String.sub s 0 2)))))
+		ImmutableArray.add ba (make_Byte_Concrete(Char.chr (int_of_string ("0X"^(String.sub s 0 2)))))
 	;;
 *)
 (**
  *	to bytes
  *)
 
-(** Convert constant to Bytes_Constant *)
+(** Convert constant to make_Bytes_Constant *)
 let lazy_constant_to_bytes constant : bytes =
-	Bytes_Constant(constant)
+	make_Bytes_Constant(constant)
 	;;
 
-(** Convert an (int64 of ikind) to Bytes_Constant(CInt64(int64,ikind,None)) *)
+(** Convert an (int64 of ikind) to make_Bytes_Constant(CInt64(int64,ikind,None)) *)
 let lazy_int64_to_bytes n ikind : bytes =
 	lazy_constant_to_bytes (CInt64(n,ikind,None))
 	;;
 
-(** Convert an ocaml (signed) int to Bytes_Constant(CInt64(int64,IInt,None)) *)
+(** Convert an ocaml (signed) int to make_Bytes_Constant(CInt64(int64,IInt,None)) *)
 let lazy_int_to_bytes n : bytes =
 	lazy_int64_to_bytes (Int64.of_int n) IInt 
 	;;
 	
 (* Why were there two copies of this?
-(** Convert ocaml string to Bytes_ByteArray (not Bytes_Address) *)
+(** Convert ocaml string to make_Bytes_ByteArray (not make_Bytes_Address) *)
 let string_to_bytes string : bytes =
 	let string_map f s =
 		let rec helper i acc =
@@ -69,25 +69,25 @@ let string_to_bytes string : bytes =
 				helper (i-1) (f s.[i] :: acc)
 		in helper (String.length s - 1) []
 	in
-		Bytes_ByteArray (ImmutableArray.of_list (string_map (fun ch -> Byte_Concrete ch) (string^"\000")))
+		make_Bytes_ByteArray (ImmutableArray.of_list (string_map (fun ch -> make_Byte_Concrete ch) (string^"\000")))
 	;;
 *)
 
-(** Convert in64 of ikind to Bytes_ByteArray. Truncate if needed.  *)
+(** Convert in64 of ikind to make_Bytes_ByteArray. Truncate if needed.  *)
 let int64_to_bytes n64 ikind : bytes =
 	let (len,isSigned) = ikind_to_len_isSigned ikind in
 	let rec helper n acc count =
 		if count = len then acc
 		else helper (Int64.shift_right n 8)
-				(Byte_Concrete (Char.chr ((Int64.to_int n) land 255)) :: acc)
+				(make_Byte_Concrete (Char.chr ((Int64.to_int n) land 255)) :: acc)
 				(succ count)
 	in
-	Bytes_ByteArray(ImmutableArray.of_list (List.rev (helper n64 [] 0))) (* Reverse because we are little-endian *)
+	make_Bytes_ByteArray(ImmutableArray.of_list (List.rev (helper n64 [] 0))) (* Reverse because we are little-endian *)
 (* (* Replacing the previous line with this commented chunk prints out what this does *)
 let ans = List.rev (helper n64 [] 0)
 in Printf.printf "int64 to bytes: %Lx -> " n64;
 Printf.printf "%s" (Utility.print_list (function | Byte_Concrete(c) -> Printf.sprintf "%C" c | _ -> failwith "hm") ans ",");
-Printf.printf " (length %d)\n" len; Bytes_ByteArray (ImmutableArray.of_list ans)*)
+Printf.printf " (length %d)\n" len; make_Bytes_ByteArray (ImmutableArray.of_list ans)*)
 	;;
 
 let string_map f s =
@@ -98,21 +98,21 @@ let string_map f s =
 			helper (i-1) (f s.[i] :: acc)
 	in helper (String.length s - 1) []
 
-(** Convert CString to Bytes_ByteArray.  *)
+(** Convert CString to make_Bytes_ByteArray.  *)
 let string_to_bytes (s : string) : bytes =
-	Bytes_ByteArray (ImmutableArray.of_list (string_map (fun ch -> Byte_Concrete ch) (s^"\000")))
+	make_Bytes_ByteArray (ImmutableArray.of_list (string_map (fun ch -> make_Byte_Concrete ch) (s^"\000")))
 ;;
 
-(** Coonvert real numbers to Bytes *)
+(** Coonvert real numbers to make_Bytes *)
 (* TODO: actually represent the numbers *)
 let float_to_bytes f fkind =
 	match fkind with
-		|	FFloat			(*	float	*) -> Bytes_ByteArray (ImmutableArray.make word__size (Byte_Concrete '\000'))
-		|	FDouble			(*	double	*) -> Bytes_ByteArray (ImmutableArray.make (2 * word__size) (Byte_Concrete '\000'))
-		|	FLongDouble	(*	long double	*) -> Bytes_ByteArray (ImmutableArray.make (3 * word__size) (Byte_Concrete '\000'))
+		|	FFloat			(*	float	*) -> make_Bytes_ByteArray (ImmutableArray.make word__size (make_Byte_Concrete '\000'))
+		|	FDouble			(*	double	*) -> make_Bytes_ByteArray (ImmutableArray.make (2 * word__size) (make_Byte_Concrete '\000'))
+		|	FLongDouble	(*	long double	*) -> make_Bytes_ByteArray (ImmutableArray.make (3 * word__size) (make_Byte_Concrete '\000'))
 ;;
 
-(** Convert constant to Bytes_ByteArray *)
+(** Convert constant to make_Bytes_ByteArray *)
 let rec constant_to_bytes constant : bytes =
 	match constant with
 		| CInt64(n64,ikind,_) -> int64_to_bytes n64 ikind
@@ -122,7 +122,7 @@ let rec constant_to_bytes constant : bytes =
 						(str.[0]) :: (impl (String.sub str 1 ((String.length str) - 1)))
 				in
 				let chars = impl str in
-				let bytes = Bytes_ByteArray (ImmutableArray.of_list (List.map (fun x -> Byte_Concrete(x)) (chars))) in
+				let bytes = make_Bytes_ByteArray (ImmutableArray.of_list (List.map (fun x -> make_Byte_Concrete(x)) (chars))) in
 					bytes
 		| CChr(char) ->
 				constant_to_bytes (Cil.charConstToInt char)
@@ -238,7 +238,7 @@ let rec bytes_to_constant bytes typ : Cil.constant =
 			end
 	;;
 
-(** Convert a possibly-address bytes to Bytes_Address *)
+(** Convert a possibly-address bytes to make_Bytes_Address *)
 let rec bytes_to_address bytes : memory_block option*bytes =
 	let fail () = failwith "bytes_to_address: not an address" in
 	match bytes with
@@ -257,7 +257,7 @@ let rec bytes_to_address bytes : memory_block option*bytes =
 			
 
 (** True if bytearray is concrete *)
-(* Shouldn't a Byte_Bytes with concrete values be considered concrete, too? *)
+(* Shouldn't a make_Byte_Bytes with concrete values be considered concrete, too? *)
 let isConcrete_bytearray (bytearray : byte ImmutableArray.t) =
 	ImmutableArray.for_all (function Byte_Concrete _ -> true | _ -> false) bytearray
 	;;
@@ -298,14 +298,14 @@ type t = char array
 ;;
 (*
 let lazy_unsigned_int_to_bytes n = 
-	Bytes_Constant(CInt64(Int64.of_int n,IUInt,None))
+	make_Bytes_Constant(CInt64(Int64.of_int n,IUInt,None))
 ;;
 let lazy_int_to_bytes n = 
-	Bytes_Constant(CInt64(Int64.of_int n,IInt,None))
+	make_Bytes_Constant(CInt64(Int64.of_int n,IInt,None))
 ;;
 
 let lazy_constant_to_bytes constant = 
-	Bytes_Constant(constant)
+	make_Bytes_Constant(constant)
 ;;
 *)
 (* TODO *)
@@ -317,7 +317,7 @@ let int64_to_bytes_impl n64 isSigned len =
 		else
 			((Char.chr (Int64.to_int (Int64.logand n mask255))))::
 			(impl (Int64.shift_right_logical n 8) (nbytes - 1))
-	in Bytes_ByteArray (ImmutableArray.of_list (List.map (fun b -> Byte_Concrete (b)) (impl n64 len)))
+	in make_Bytes_ByteArray (ImmutableArray.of_list (List.map (fun b -> make_Byte_Concrete (b)) (impl n64 len)))
 ;;
 
 (** Convert an int64 of kind ikind to bytes *)
@@ -352,7 +352,7 @@ let string_map f s =
 ;;
 
 let string_to_bytes (s : string) : bytes =
-	Bytes_ByteArray (ImmutableArray.of_list (string_map (fun ch -> Byte_Concrete ch) (s^"\000")))
+	make_Bytes_ByteArray (ImmutableArray.of_list (string_map (fun ch -> make_Byte_Concrete ch) (s^"\000")))
 ;;
 
 (* TODO *)
@@ -364,7 +364,7 @@ let float_to_bytes f fkind =
 ;;
 
 
-let rec constant_to_bytes constant = (* bytes will be of type Bytes_ByteArray of concrete byte *)
+let rec constant_to_bytes constant = (* bytes will be of type make_Bytes_ByteArray of concrete byte *)
 	match constant with
 		| CInt64(n64, ikind, _) -> int64_to_bytes n64 ikind
 		| CStr(str) ->
@@ -373,7 +373,7 @@ let rec constant_to_bytes constant = (* bytes will be of type Bytes_ByteArray of
 						(str.[0]) :: (impl (String.sub str 1 ((String.length str) - 1)))
 				in
 				let chars = impl str in
-				let bytes = Bytes_ByteArray (ImmutableArray.of_list (List.map (fun x -> Byte_Concrete(x)) (chars))) in
+				let bytes = make_Bytes_ByteArray (ImmutableArray.of_list (List.map (fun x -> make_Byte_Concrete(x)) (chars))) in
 					bytes
 		| CChr(char) ->
 				constant_to_bytes (Cil.charConstToInt char)
@@ -390,7 +390,7 @@ let constant_to_bytearray const =
 *)
 let bytearray_is_concrete bytearray =
 	ImmutableArray.fold_left 
-	(fun a b -> a && match b with Byte_Concrete(_)-> true | _ -> false) 
+	(fun a b -> a && match b with make_Byte_Concrete(_)-> true | _ -> false) 
 	true bytearray
 	;;
 

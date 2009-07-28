@@ -22,7 +22,7 @@ let rec bytes_length bytes =
 		| Bytes_FunPtr(_) -> word__size
 ;;
 
-(** Return a SymbolSet of all symbols in the given Bytes *)
+(** Return a SymbolSet of all symbols in the given make_Bytes *)
 let rec allSymbols = function
 	| Bytes_Constant const -> SymbolSet.empty
 	| Bytes_ByteArray bytearray ->
@@ -55,7 +55,7 @@ let rec allSymbols = function
 				(SymbolSet.union (allSymbols bytes1) (allSymbols bytes2))
 	| Bytes_FunPtr (_,bytes) -> allSymbols bytes
 
-(** Return a SymbolSet of all symbols in the given list of Bytes *)
+(** Return a SymbolSet of all symbols in the given list of make_Bytes *)
 let allSymbolsInList byteslist =
 	List.fold_left
 		(fun symbSet b -> SymbolSet.union symbSet (allSymbols b))
@@ -83,7 +83,7 @@ let rec allIndicators = function
 	| Indicator_And (i1,i2) ->
 			SISet.union (allIndicators i1) (allIndicators i2)
 
-(** Return an SISet of all symbols and indicators in the given Bytes *)
+(** Return an SISet of all symbols and indicators in the given make_Bytes *)
 let rec allSymbolsAndIndicators = function
 	| Bytes_Constant const -> SISet.empty
 	| Bytes_ByteArray bytearray ->
@@ -121,7 +121,7 @@ let rec allSymbolsAndIndicators = function
 				(SISet.union (allSymbolsAndIndicators bytes1) (allSymbolsAndIndicators bytes2))
 	| Bytes_FunPtr (_,bytes) -> allSymbolsAndIndicators bytes
 
-(** Return a SISet of all symbols in the given list of Bytes *)
+(** Return a SISet of all symbols in the given list of make_Bytes *)
 let allSymbolsAndIndicatorsInList byteslist =
 	List.fold_left
 		(fun symbSet b -> SISet.union symbSet (allSymbolsAndIndicators b))
@@ -362,7 +362,7 @@ to_stp_bv vc bytes =
 				if len = 1 then
 					(bv8, 8)
 				else
-					let (bv, l) = to_stp_bv vc (Bytes_ByteArray (ImmutableArray.sub bytearray 1 (len - 1))) in
+					let (bv, l) = to_stp_bv vc (make_Bytes_ByteArray (ImmutableArray.sub bytearray 1 (len - 1))) in
 					(*(Stpc.e_bvconcat vc bv bv8, l + 8) (* reversed orientation *)*)
 					(Stpc.e_bvconcat vc bv8 bv, l + 8) (* same orientation *)
  
@@ -485,7 +485,7 @@ to_stp_bv vc bytes =
 			let array_content = to_stp_array vc arr content in
 			let (bv_offset,len_offset) = to_stp_bv vc offset in (* assert(len_offset=32) *)
 			let rec read bv_offset len =
-				if len < 1 then failwith "Bytes_Read len < 1" 
+				if len < 1 then failwith "make_Bytes_Read len < 1" 
 				else if len = 1 then (Stpc.e_read vc array_content bv_offset,8) 
 				else
 					let (bv_head,len_head) = (Stpc.e_read vc array_content bv_offset,8)  in
@@ -541,7 +541,7 @@ to_stp_array vc arr bytes =
 				if len = 1 then
 					Stpc.e_write vc arr (Stpc.e_bv_of_int vc 32 0) bv8
 				else
-					let arr2 = to_stp_array vc arr (Bytes_ByteArray (ImmutableArray.sub bytearray 0 (len - 1))) in
+					let arr2 = to_stp_array vc arr (make_Bytes_ByteArray (ImmutableArray.sub bytearray 0 (len - 1))) in
 						Stpc.e_write vc arr2 (Stpc.e_bv_of_int vc 32 (len-1)) bv8
 		
 		| Bytes_Read (content,offset,len) -> 
@@ -549,7 +549,7 @@ to_stp_array vc arr bytes =
 			let (bv_offset,len_offset) = to_stp_bv vc offset in 
 
 			let rec read bv_offset len array =
-				if len < 1 then failwith "Bytes_Read len < 1" 
+				if len < 1 then failwith "make_Bytes_Read len < 1" 
 				else if len = 1 then Stpc.e_write vc array (Stpc.e_bv_of_int vc 32 0) (Stpc.e_read vc array_content bv_offset)
 				else
 					let array2 = read bv_offset (len-1) array in
@@ -562,7 +562,7 @@ to_stp_array vc arr bytes =
 			let (bv_offset,len_offset) = to_stp_bv vc offset in 
 			let array_source = to_stp_array vc (new_array vc newbytes) newbytes in
 			let rec write array_target bv_offset len  =
-				if len < 1 then failwith "Bytes_Read len < 1" 
+				if len < 1 then failwith "make_Bytes_Read len < 1" 
 				else if len = 1 then Stpc.e_write vc array_target bv_offset (Stpc.e_read vc array_source (Stpc.e_bv_of_int vc 32 0))
 				else
 					let array_target2 = write array_target bv_offset (len-1)  in

@@ -130,10 +130,10 @@ let isConsistentWithList pc propAndTruthValueList =
 			| [_] -> true (* A single prop cannot contradict itself, so it is consistent *)
 			| _ ->
 					(let conjunction =
-						 Bytes_Op(OP_LAND,
+						 make_Bytes_Op(OP_LAND,
 											List.map
 												(fun (prop,t_or_f) ->
-													 ((if t_or_f then prop else Bytes_Op(OP_LNOT,[(prop,intType)])),
+													 ((if t_or_f then prop else make_Bytes_Op(OP_LNOT,[(prop,intType)])),
 														intType)
 												)
 												propAndTruthValueList

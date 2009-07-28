@@ -6,7 +6,7 @@ open Executeargs
 		be lost. *)
 let logicalNegateBytes = function
 		Bytes_Op(OP_LNOT,[bytes,_]) -> bytes
-	| bytes -> Bytes_Op(OP_LNOT,[(bytes, Cil.intType)])
+	| bytes -> make_Bytes_Op(OP_LNOT,[(bytes, Cil.intType)])
 
 let dumpEdges (eS:EdgeSet.t) : unit =
 	if EdgeSet.is_empty eS
@@ -935,7 +935,7 @@ let assocListToMemoryBlockMap lst =
 let pcToBytes = function
 		[] -> failwith "pcToAND"
 	| [h] -> h
-	| pc -> Bytes_Op(OP_LAND, List.map (fun b -> (b,Cil.intType)) pc)
+	| pc -> make_Bytes_Op(OP_LAND, List.map (fun b -> (b,Cil.intType)) pc)
 
 
 let atSameProgramPoint job1 job2 =
@@ -1013,7 +1013,7 @@ let mergeJobs job ((job_queue, merge_set) as job_pool) =
 								 (* General case: either one condition or the other is
 										true. We might sometimes be able to simplify the
 										pc, but right now we don't try to do so. *)
-								 Bytes_Op(OP_LOR, [(jPCBytes,Cil.intType);(jobPCBytes,Cil.intType)])
+								 make_Bytes_Op(OP_LOR, [(jPCBytes,Cil.intType);(jobPCBytes,Cil.intType)])
 								 :: commonPC
 				 in
 				 (* I'm assuming [j.state.locals == job.state.locals] for now
@@ -1044,13 +1044,13 @@ let mergeJobs job ((job_queue, merge_set) as job_pool) =
 									) else (
 										numSymbolsCreated := !numSymbolsCreated + size;
 										if !numSymbolsCreated > 100 then raise TooDifferent;
-										let symbBytes = Bytes_MayBytes (indicator, jobBytes, jBytes) in
+										let symbBytes = make_Bytes_MayBytes (indicator, jobBytes, jBytes) in
 										(block, symbBytes)
 									)
 							 )
 							 diffShared
 					 in
-					 let finalMergedPC = (Bytes_MayBytes (indicator, jobPCBytes, jPCBytes))::mergedPC
+					 let finalMergedPC = (make_Bytes_MayBytes (indicator, jobPCBytes, jPCBytes))::mergedPC
 					 and mergedMemory =
 						 (* I think it's safe (if not optimal) to keep both
 								[inJOnly] and [inJobOnly] because [j]'s memory will be

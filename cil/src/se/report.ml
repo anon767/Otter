@@ -56,7 +56,7 @@ let greedySetCover emptyCheck scoreFn setdiff setList universe =
 
 let percentage numer denom = 100. *. float_of_int numer /. float_of_int denom
 
-(* Given a path condition and a list of mappings from ByteArrays of
+(* Given a path condition and a list of mappings from make_ByteArrays of
 	 symbolic values to variables, print:
 	 - the path condition (in terms of those variables, where possible)
 	 - a sample set of values for those variables which would lead execution down this path
@@ -88,7 +88,7 @@ let printPath state hist =
 		 path condition. *)
 	let unboundSymbols = ref mentionedSymbols in
 
-	(* Get the value of a symbolic ByteArray *)
+	(* Get the value of a symbolic make_ByteArray *)
 	let getVal = function
 		| Bytes_ByteArray bytArr ->
 				let byteOptArray =
@@ -99,7 +99,7 @@ let printPath state hist =
 											let valueForS = List.assq s valuesForSymbols in
 											(* Now s is bound *)
 											unboundSymbols := SymbolSet.remove s !unboundSymbols;
-											Some (Byte_Concrete valueForS)
+											Some (make_Byte_Concrete valueForS)
 										with Not_found -> None)
 							 | _ -> failwith "Impossible: tracked symbolic value must be fully symbolic")
 						bytArr
@@ -110,7 +110,7 @@ let printPath state hist =
 				then (
 					(* Return a Some with the bytearray, filling in
 						 unconstrained bytes with 0. *)
-					Some (Bytes_ByteArray
+					Some (make_Bytes_ByteArray
 									(ImmutableArray.map
 										 (function Some b -> b | None -> MemOp.byte__zero)
 										 byteOptArray))

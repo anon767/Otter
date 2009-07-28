@@ -88,7 +88,7 @@ let init_cmdline_argvs state argstr =
 	(* First we make the concatenated string *)
 	let argv_strings = String.concat "\000" argstr in
 
-	(* Then we make a bytes (specifically, a Bytes_ByteArray) out of this string *)
+	(* Then we make a bytes (specifically, a make_Bytes_ByteArray) out of this string *)
 	let argv_strings_bytes = Convert.string_to_bytes argv_strings in
 
 	(* Make a block to point to this bytes. *)
@@ -113,13 +113,13 @@ let init_cmdline_argvs state argstr =
 				Output.set_mode Output.MSG_DEBUG;
 				Output.print_endline ("With arguments: \""^h^"\"");
 				let h_bytes =
-					Bytes_Address (Some argv_strings_block, Convert.lazy_int_to_bytes charsSoFar) in
+					make_Bytes_Address (Some argv_strings_block, Convert.lazy_int_to_bytes charsSoFar) in
 				impl t (ptrsSoFar + 1)
 					(charsSoFar + String.length h + 1 (* '+ 1' for the null character *))
 					(MemOp.bytes__write bytes (Convert.lazy_int_to_bytes (ptrsSoFar * word__size)) word__size h_bytes)
 	in
 	let argv_ptrs_bytes =
-		impl argstr 0 0 (Bytes_ByteArray (ImmutableArray.make (num_args * word__size) MemOp.byte__zero)) in
+		impl argstr 0 0 (make_Bytes_ByteArray (ImmutableArray.make (num_args * word__size) MemOp.byte__zero)) in
 
 	(* Map the pointers block to its bytes *)
 	let state'' = MemOp.state__add_block state' argv_ptrs_block argv_ptrs_bytes in
@@ -127,7 +127,7 @@ let init_cmdline_argvs state argstr =
 	(* Make the top-level address that is the actual argv. It is the address of
 		 argv_ptrs_bytes. We do not have to map this to anything; we just pass it as the
 		 argument to main. *)
-	let argv = Bytes_Address (Some argv_ptrs_block, MemOp.bytes__zero) in
+	let argv = make_Bytes_Address (Some argv_ptrs_block, MemOp.bytes__zero) in
 
 	(* Finally, return the updated state and the list of arguments *)
 	(state'', [argc; argv])
