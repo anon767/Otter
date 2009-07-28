@@ -1,6 +1,8 @@
 int main(){
 
 	int input1,input2;
+	__SYMBOLIC(&input1);
+	__SYMBOLIC(&input2);
 	int most = input1;
 	int least = input2;
 

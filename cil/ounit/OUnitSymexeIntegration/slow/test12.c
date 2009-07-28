@@ -1,6 +1,7 @@
 int main(){
 	int MAX = 10;
 	int x; //symbolic
+	__SYMBOLIC(&x);
 	if(x>=0){
 		if(x<=MAX){
 			//x = ((((((((x+1)+1)+1)+1)+1)+1)+1)+1);

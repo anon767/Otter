@@ -33,6 +33,7 @@ int strlen(char *s) {
 int main(){
 
 	int x;
+	__SYMBOLIC(&x);
 	__ASSUME(x>=0,x<=99999);
 	char s[26];
 	my_sprintf(s,"%d",x);

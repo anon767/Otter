@@ -11,6 +11,8 @@ int main (){
 
 	int x,y;
 	// Without these assumptions, overflow might make the absdiff negative
+	__SYMBOLIC(&x);
+	__SYMBOLIC(&y);
 	__ASSUME(x>=0);
 	__ASSUME(y>=0);
 	

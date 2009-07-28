@@ -1,5 +1,7 @@
 int main(){
 	int x,y;
+	__SYMBOLIC(&x);
+	__SYMBOLIC(&y);
 	if(x<0){
 		if(x<x+3){
 			y = 0;

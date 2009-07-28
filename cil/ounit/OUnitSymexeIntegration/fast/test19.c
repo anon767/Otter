@@ -1,6 +1,8 @@
 int main(){
 
 	int x,y,z;
+	__SYMBOLIC(&x);
+	__SYMBOLIC(&y);
 
 	__ASSUME(x==1);
 	__ASSUME(y==260);

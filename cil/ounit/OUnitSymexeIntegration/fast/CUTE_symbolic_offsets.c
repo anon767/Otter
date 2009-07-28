@@ -4,6 +4,8 @@
 int main(){
 	int a[100];
 	int i,j; //symbolic
+	__SYMBOLIC(&i);
+	__SYMBOLIC(&j);
 	__ASSUME(i>=0,i<100);
 	__ASSUME(j>=0,j<100);
 	
