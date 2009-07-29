@@ -161,15 +161,17 @@ let printLines lineset =
 let printEdges edgeset =
 	Output.printf "The edges hit were:\n";
 	EdgeSet.iter
-		(fun (b_stmt,e_stmt) -> Output.printf "%d-%d\n" b_stmt.sid e_stmt.sid)
-		(*(fun (b_stmt,e_stmt) -> Output.printf "%s-%s\n" (To_string.stmt b_stmt) (To_string.stmt e_stmt))*)
+		(fun (srcStmt,destStmt) ->
+			 Output.printf "%s -> %s\n"
+				 (To_string.location (get_stmtLoc srcStmt.skind))
+				 (To_string.location (get_stmtLoc destStmt.skind)))
 		edgeset;
 	Output.printf "\n"
 	
 let printConditions condset =
 	Output.printf "The conditions hit were:\n";
 	CondSet.iter
-	  (fun (condition, location, truth) -> Output.printf "%s (%s) %s\n" (To_string.location location) (To_string.exp condition) truth)
+	  (fun (stmt, truth) -> Output.printf "%s %c\n" (To_string.location (get_stmtLoc stmt.skind)) (if truth then 'T' else 'F'))
 		condset;
 	Output.printf "\n"
 	

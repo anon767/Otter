@@ -16,8 +16,6 @@ class getStatsVisitor = object
 
 	inherit nopCilVisitor
 
-	(* I use Hashtbl.replace instead of Hashtbl.add because I'm using
-		 the hash table as a set, so I don't want duplicates. *)
 	method vinst instr =
 		let loc = get_instrLoc instr in
 		lines := LineSet.add (loc.file,loc.line) !lines;
@@ -50,12 +48,8 @@ class getStatsVisitor = object
 		);
 		(* Get the conditions *)
 		(match stmt.skind with
-				If (exp,_,_,loc) ->
-					List.iter
-						(fun succ ->
-								conds := CondSet.add (exp,loc,"True") !conds;
-								conds := CondSet.add (exp,loc,"False") !conds)
-						 stmt.succs
+				If _ ->
+					conds := CondSet.add (stmt,true) (CondSet.add (stmt,false) !conds)
 				| _ -> ()
 		);
 		DoChildren (* There could be stmts or instrs inside, which we should visit *)

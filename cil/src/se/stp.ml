@@ -171,9 +171,9 @@ let rec listCompare l1 l2 =
 		| [],_ -> -1
 		| _,[] -> 1
  		| h1::t1,h2::t2 ->
-				if h1 == h2 then compare t1 t2
-				else let x = compare h1 h2 in
-				if x <> 0 then x else compare t1 t2
+				if h1 == h2 then listCompare t1 t2
+				else let x = Pervasives.compare h1 h2 in
+				if x <> 0 then x else listCompare t1 t2
 
 (* Map a pc and a query *)
 module StpCache = Map.Make
@@ -514,7 +514,7 @@ to_stp_bv_impl vc bytes =
 			let array_content = to_stp_array vc arr content in
 			let (bv_offset,len_offset) = to_stp_bv vc offset in (* assert(len_offset=32) *)
 			let rec read bv_offset len =
-				if len < 1 then failwith "make_Bytes_Read len < 1" 
+				if len < 1 then failwith "to_stp_bv: Bytes_Read len < 1" 
 				else if len = 1 then (Stpc.e_read vc array_content bv_offset,8) 
 				else
 					let (bv_head,len_head) = (Stpc.e_read vc array_content bv_offset,8)  in
@@ -530,7 +530,7 @@ to_stp_bv_impl vc bytes =
 *)
 			to_stp_bv vc f_addr
 		
-		| _ -> (*TODO: Bytes_Write *)
+		| Bytes_Write _ ->
 			let len = bytes_length bytes in
 			let arr = to_stp_array vc (new_array vc bytes) bytes in
 			let rec flatten bv_offset len =
@@ -578,7 +578,7 @@ to_stp_array vc arr bytes =
 			let (bv_offset,len_offset) = to_stp_bv vc offset in 
 
 			let rec read bv_offset len array =
-				if len < 1 then failwith "make_Bytes_Read len < 1" 
+				if len < 1 then failwith "Bytes_Read len < 1" 
 				else if len = 1 then Stpc.e_write vc array (Stpc.e_bv_of_int vc 32 0) (Stpc.e_read vc array_content bv_offset)
 				else
 					let array2 = read bv_offset (len-1) array in
@@ -591,7 +591,7 @@ to_stp_array vc arr bytes =
 			let (bv_offset,len_offset) = to_stp_bv vc offset in 
 			let array_source = to_stp_array vc (new_array vc newbytes) newbytes in
 			let rec write array_target bv_offset len  =
-				if len < 1 then failwith "make_Bytes_Read len < 1" 
+				if len < 1 then failwith "Bytes_Write len < 1" 
 				else if len = 1 then Stpc.e_write vc array_target bv_offset (Stpc.e_read vc array_source (Stpc.e_bv_of_int vc 32 0))
 				else
 					let array_target2 = write array_target bv_offset (len-1)  in
@@ -631,6 +631,8 @@ make_var symbol =
 		STP gives to that symbol to make the path condition true. *)
 let getValues pathCondition symbolList =
 	let vc = global_vc in
+	Stpc.e_pop vc;
+	Stpc.e_push vc;
 	(* To get values for the symbolic values which make the path
 		 condition true, we need to query for its *negation* because STP
 		 gives counterexamples (not satisfying assignments).

@@ -158,7 +158,7 @@ module MemoryBlockMap =
 	Utility.MakeMap (
 	struct
 		type t = memory_block
-		let compare a b = Pervasives.compare a.memory_block_id b.memory_block_id
+		let compare (a:t) b = Pervasives.compare a.memory_block_id b.memory_block_id
 	end
 	)
 
@@ -166,7 +166,7 @@ module VargsMap =
 	Utility.MakeMap (
 	struct
 		type t = bytes 
-		let compare = Pervasives.compare				
+		let compare : t -> t -> int = Pervasives.compare				
 	end
 	)	
 
@@ -174,7 +174,7 @@ module LocMap =
 	Utility.MakeMap (
 	struct
 		type t = Cil.location*int 
-		let compare (a,ai) (b,bi) =
+		let compare ((a,ai):t) (b,bi) =
 			if ai<>bi then Pervasives.compare ai bi else
 				Cil.compareLoc a b
 	end
@@ -240,26 +240,23 @@ let stp_count = ref 0;;
 
 module CondSet = Set.Make
 	(struct
-		type t = Cil.exp*Cil.location*string
-		(* the condition and value *)
-		let compare (exp1,loc1,truth1) (exp2,loc2,truth2) =
-			let expCmp = compare exp1 exp2 in
-			let locCmp = Cil.compareLoc loc1 loc2 in
-			if expCmp = 0
-			then if locCmp = 0
-						then compare truth1 truth2
-						else locCmp
-			else expCmp
+		type t = Cil.stmt*bool
+		(* the if statement and branch direction *)
+		let compare ((stmt1,truth1):t) (stmt2,truth2) =
+			let sidCmp = Pervasives.compare stmt1.Cil.sid stmt2.Cil.sid in
+			if sidCmp = 0
+			then Pervasives.compare truth1 truth2
+			else sidCmp
 	end)
 
 module EdgeSet = Set.Make
 	(struct
 		type t = Cil.stmt*Cil.stmt
 		(* Order edges primarily by source id, then by destination id *)
-		let compare (src1,dst1) (src2,dst2) =
-			let srcCmp = compare src1.Cil.sid src2.Cil.sid in
+		let compare ((src1,dst1):t) (src2,dst2) =
+			let srcCmp = Pervasives.compare src1.Cil.sid src2.Cil.sid in
 			if srcCmp = 0
-			then compare dst1.Cil.sid dst2.Cil.sid
+			then Pervasives.compare dst1.Cil.sid dst2.Cil.sid
 			else srcCmp
 	end)
 
@@ -272,8 +269,8 @@ module IntSet = Set.Make
 module LineSet = Set.Make
 	(struct
 		 type t = string * int (** (filename,line number) pair *)
-		 let compare (f1,l1) (f2,l2) =
-			 let tmp = compare f1 f2 in
+		 let compare ((f1,l1):t) (f2,l2) =
+			 let tmp = String.compare f1 f2 in
 			 if tmp = 0
 			 then Pervasives.compare l1 l2
 			 else tmp
@@ -301,10 +298,10 @@ let emptyHistory = {
 module PcHistSet = Set.Make
 	(struct
 		type t = bytes list * executionHistory
-		let compare (bl1,eh1) (bl2,eh2) =
-			let bytesListCmp = compare bl1 bl2 in
+		let compare ((bl1,eh1):t) (bl2,eh2) =
+			let bytesListCmp = Pervasives.compare bl1 bl2 in
 			if bytesListCmp = 0
-			then compare eh1.bytesToVars eh2.bytesToVars
+			then Pervasives.compare eh1.bytesToVars eh2.bytesToVars
 			else bytesListCmp
 	end)
 
@@ -317,7 +314,7 @@ let branches_taken : (Cil.exp * Cil.location, PcHistSet.t ref * PcHistSet.t ref)
 module SymbolSet = Set.Make
 	(struct
 		 type t = symbol
-		 let compare x y = Pervasives.compare x.symbol_id y.symbol_id
+		 let compare (x:t) y = Pervasives.compare x.symbol_id y.symbol_id
 	 end)
 
 let signalStringOpt : string option ref = ref None
@@ -352,7 +349,7 @@ type job_state =
 module JobSet = Set.Make
 	(struct
 		 type t = job
-		 let compare job1 job2 =
+		 let compare (job1:t) job2 =
 			 (* I want the job with earliest stmt.sid to be first in the ordering *)
 			 let c = Pervasives.compare job1.stmt.Cil.sid job2.stmt.Cil.sid in
 			 if c = 0 then Pervasives.compare job1.jid job2.jid

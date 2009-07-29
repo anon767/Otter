@@ -177,11 +177,11 @@ let prepare_file file =
 	run_args.arg_total_lines <- LineSet.cardinal setOfLines;
 	run_args.arg_total_edges <- EdgeSet.cardinal setOfEdges;
 	run_args.arg_total_conds <- CondSet.cardinal setOfConds;
-	Output.printf "This program contains %d executable lines within the functions specified\n"
+	Output.printf "This program contains %d lines within the functions specified\n"
 		run_args.arg_total_lines;
-	Output.printf "This program contains %d executable edges within the functions specified\n"
+	Output.printf "This program contains %d edges within the functions specified\n"
 		run_args.arg_total_edges;
-	Output.printf "This program contains %d executable conditions within the functions specified\n"
+	Output.printf "This program contains %d conditions within the functions specified\n"
 		run_args.arg_total_conds;
 	if run_args.arg_list_executable_lines then (
 		LineSet.iter
@@ -191,13 +191,16 @@ let prepare_file file =
 	else
 	if run_args.arg_list_executable_edges then (
 		EdgeSet.iter
-			(fun (b_stmt,e_stmt) -> Output.printf "%d-%d\n" b_stmt.sid e_stmt.sid)
+			(fun (srcStmt,destStmt) ->
+				 Output.printf "%s -> %s\n"
+					 (To_string.location (get_stmtLoc srcStmt.skind))
+					 (To_string.location (get_stmtLoc destStmt.skind)))
 		setOfEdges
 	)
 	else
-	if run_args.arg_list_executable_lines then (
+	if run_args.arg_list_executable_conds then (
 		CondSet.iter
-	  	(fun (condition, location, truth) -> Output.printf "%s (%s) %s\n" (To_string.location location) (To_string.exp condition) truth)
+			(fun (stmt, truth) -> Output.printf "%s %c\n" (To_string.location (get_stmtLoc stmt.skind)) (if truth then 'T' else 'F'))
 		setOfConds
 	)
 
@@ -410,6 +413,11 @@ let feature : featureDescr =
 			 "<filename> Read coverage information from an output file.");
 		];
 		fd_post_check = true;
-    fd_doit = doExecute
+    fd_doit = fun file ->
+			(if run_args.arg_edge_coverage && not !useLogicalOperators
+			 then ignore (Cil.warn "Edge coverage should be called with --useLogicalOperators");
+			 if run_args.arg_cond_coverage && !useLogicalOperators
+			 then ignore (Cil.warn "Condition coverage should be called without --useLogicalOperators");
+			 doExecute file)
   } 
 	;;

@@ -67,27 +67,20 @@ let rec nextCoverageRelevantStmt stmt =
 					 See comment in exec_stmt about [Block] and [Loop]. *)
 				nextCoverageRelevantStmt (List.hd block.bstmts)
 		| _ -> failwith "Unhandled stmtkind"
-(*	
-let addCondCoverage job truth =
-	{
-		job.exHist with
-			coveredConds =
-				if run_args.arg_cond_coverage
-				then (
-					match job.stmt.skind with
-						If(exp,_,_,loc) ->
-							CondSet.add (exp,loc,truth) job.exHist.coveredConds	
-					| _ -> job.exHist.coveredConds
-				) else CondSet.empty;
-	}
-*)
+
 (** Return a new exHist with
 		- statement coverage updated by the addition of [job.stmt]
 		- if [job.stmt] is an if, return, or goto, line coverage is updated
 		- if the second argument is [Some s], edge coverage is updated by
 			the addition of the edge from [job.stmt] to the first coverage-
-			relevant statement starting from [s]. *)
-let addStmtCoverage job nextStmtOpt truth =
+			relevant statement starting from [s].
+		- whichBranch tells us which branch we are taking for condition
+			coverage, which only cares about [If] statements. whichBranch is
+			ignored for other types of coverage, and it is entirely ignored
+			if [job.stmt] is not an [If]. (Really, it might be better if
+			whichBranch were a bool option, so we could pass in [None] if
+			weren't at an [If], but this is more convenient.) *)
+let addStmtCoverage job whichBranch nextStmtOpt =
 	{ job.exHist with
 			coveredLines =
 				if run_args.arg_line_coverage
@@ -114,8 +107,7 @@ let addStmtCoverage job nextStmtOpt truth =
                                 if run_args.arg_cond_coverage
                                 then (
                                         match job.stmt.skind with
-                                                If(exp,_,_,loc) ->
-                                                        CondSet.add (exp,loc,truth) job.exHist.coveredConds     
+                                                If _ -> CondSet.add (job.stmt,whichBranch) job.exHist.coveredConds
                                         | _ -> job.exHist.coveredConds
                                 ) else CondSet.empty;
 	}
@@ -555,11 +547,11 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 					Output.set_mode Output.MSG_MUSTPRINT;
 					Output.print_endline ("exit() called with code "^(
                         match exit_code with None-> "(NONE)" | Some(code) -> To_string.bytes code));
+(*
 					if run_args.arg_line_coverage then (
 						Report.printPath state exHist;
 						Report.printLines exHist.coveredLines
 					);
-(*
 					Output.set_mode Output.MSG_REG;
 					Output.print_endline
 						("Path condition:\n" ^
@@ -624,9 +616,9 @@ let exec_stmt job =
 	assert (job.instrList = []);
 	let state,stmt = job.state,job.stmt in
 
-	let nextExHist nextStmtOpt branchTaken =
+	let nextExHist ?(whichBranch=false) nextStmtOpt =
 		if job.inTrackedFn
-		then addStmtCoverage job nextStmtOpt branchTaken
+		then addStmtCoverage job whichBranch nextStmtOpt
 		else job.exHist
 	in
 
@@ -651,18 +643,18 @@ let exec_stmt job =
 				 need to update the line coverage (but not statement or edge
 				 coverage). *)
 			let succOpt = match stmt.succs with [succ] -> Some succ | _ -> None in
-			Active { job with instrList = instrs; exHist = nextExHist succOpt "Ignored"; }
+			Active { job with instrList = instrs; exHist = nextExHist succOpt; }
 		| Cil.Return (expopt, loc) ->
 				begin
 					match state.callContexts with
 						| Runtime::_ -> (* completed symbolic execution (e.g., return from main) *)
 								Output.set_mode Output.MSG_MUSTPRINT;
 								Output.print_endline "Program execution finished";
+(*
 								if run_args.arg_line_coverage then (
 									Report.printPath state job.exHist;
 									Report.printLines job.exHist.coveredLines
 								);
-(*
 								Output.set_mode Output.MSG_REG;
 								Output.print_endline
 									("Path condition:\n" ^
@@ -674,7 +666,7 @@ let exec_stmt job =
 								in
 								let state = MemOp.state__end_fcall state in                                                                    
 								Complete (Types.Return
-									(retval, { result_state = state; result_history = nextExHist None "Ignored"; })) 
+									(retval, { result_state = state; result_history = nextExHist None; })) 
 						| (Source (destOpt,_,nextStmt))::_ ->
 								let state2 =
 									match expopt, destOpt with
@@ -692,7 +684,7 @@ let exec_stmt job =
 								Active { job with
 													 state = state2;
 													 stmt = nextStmt;
-													 exHist = nextExHist None "Ignored"; (* [None] because we don't currently track returns as edges for purposes of coverage *)
+													 exHist = nextExHist None; (* [None] because we don't currently track returns as edges for purposes of coverage *)
 													 inTrackedFn =
 										StringSet.mem (List.hd state2.callstack).svar.vname run_args.arg_fns; }
 						| (NoReturn _)::_ ->
@@ -702,7 +694,7 @@ let exec_stmt job =
 								assert false
 				end
 		| Goto (stmtref, loc) ->
-				Active { job with stmt = !stmtref; exHist = nextExHist (Some !stmtref) "Ignored"; }
+				Active { job with stmt = !stmtref; exHist = nextExHist (Some !stmtref); }
 		| If (exp, block1, block2, loc) ->
 				begin
 				(* try a branch *)
@@ -759,34 +751,16 @@ let exec_stmt job =
 					if truth == Stp.True then
 						begin
 							Output.print_endline "True";
-							(* Save condition coverage for True branch taken *)
-							(*
-							let nextExHist nextStmtOpt =
-							if job.inTrackedFn
-							then
-								addCondCoverage job "True"
-							else job.exHist
-							in
-							*)
 							let nextState,nextStmt = try_branch None block1 in
 							let job' = { job with state = nextState; stmt = nextStmt; } in
-							Active { job' with exHist = nextExHist (Some nextStmt) "True"; }
+							Active { job' with exHist = nextExHist (Some nextStmt) ~whichBranch:true; }
 						end
 					else if truth == Stp.False then
 						begin
 							Output.print_endline "False";
-							(* Save condition coverage for False branch taken *)
-							(*
-							let nextExHist nextStmtOpt =
-							if job.inTrackedFn
-							then
-								addCondCoverage job "False"
-							else job.exHist
-							in
-							*)
 							let nextState,nextStmt = try_branch None block2 in
 							let job' = { job with state = nextState; stmt = nextStmt; } in
-							Active { job' with exHist = nextExHist (Some nextStmt) "False"; }
+							Active { job' with exHist = nextExHist (Some nextStmt) ~whichBranch:false; }
 						end
 					else
 						begin
@@ -819,35 +793,15 @@ let exec_stmt job =
 								 continue executing the false branch immediately, let
 								 that job inherit the old jid. Give the true job a new
 								 jid. *)
-							(* Save condition coverage for True job *)
-							(*
-							let nextExHist nextStmtOpt =
-							if job.inTrackedFn
-							then
-								addCondCoverage job "True"
-							else job.exHist
-							in
-							*)
-							(* Create True job *)
 							let trueJob = { job' with
 																state = nextStateT;
 																stmt = nextStmtT;
-																exHist = nextExHist (Some nextStmtT) "True";
+																exHist = nextExHist (Some nextStmtT) ~whichBranch:true;
 														 		jid = Utility.next_id Output.jidCounter; } in
-							(* Save condition coverage for False job *)
-							(*
-							let nextExHist nextStmtOpt =
-							if job.inTrackedFn
-							then
-								addCondCoverage job "False"
-							else job.exHist
-							in
-							*)
-							(* Create False job *)
 							let falseJob = { job' with
 																 state = nextStateF;
 																 stmt = nextStmtF;
-																 exHist =  nextExHist (Some nextStmtF) "False"; } in
+																 exHist =  nextExHist (Some nextStmtF) ~whichBranch:false; } in
 							Output.set_mode Output.MSG_MUSTPRINT;
 							Output.printf "Branching on %s at %s. %s
 Job %d is the true branch and job %d is the false branch.\n\n"
@@ -1053,7 +1007,8 @@ let mergeJobs job ((job_queue, merge_set) as job_pool) =
 							 (fun (block,jBytes,jobBytes) ->
 									let size = MemOp.bytes__length jBytes in (* or should I just check block.memory_block_size? *)
 									if size <> MemOp.bytes__length jobBytes then (
-										failwith "Unimplemented: merging bytes with different lengths"
+										Output.printf "Unimplemented: merging bytes with different lengths\n";
+										raise TooDifferent
 									) else (
 										numSymbolsCreated := !numSymbolsCreated + size;
 										if !numSymbolsCreated > 100 then raise TooDifferent;
@@ -1190,11 +1145,11 @@ let main_loop job =
                                     else ""
                                     )
                                     ;
+(*
 								if run_args.arg_line_coverage then (
 									Report.printPath state hist;
 									Report.printLines hist.coveredLines
 								)
-(*
 								Output.set_mode Output.MSG_REG;
 								Output.printf "Path condition: %s\n"
 									(To_string.humanReadablePc state.path_condition hist.bytesToVars)

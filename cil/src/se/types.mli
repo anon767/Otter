@@ -181,7 +181,7 @@ val string_table : bytes MemoryBlockMap.t ref
 val stp_count : int ref
 module CondSet :
   sig
-    type elt = Cil.exp * Cil.location * string
+    type elt = Cil.stmt * bool
     type t
     val empty : t
     val is_empty : t -> bool

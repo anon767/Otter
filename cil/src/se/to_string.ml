@@ -31,7 +31,7 @@ let bytestring arr =
 ;;
 
 let location loc = 
-	(loc.file)^":"^(string_of_int loc.line)
+	String.concat ":" [loc.file;string_of_int loc.line;string_of_int loc.byte]
 	;;
 
 let varinfo v =
