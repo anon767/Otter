@@ -90,12 +90,13 @@ memory_block =
 	}
 ;;
 
+let hash_consing_bytes_enabled = ref false;;
 let hash_consing_bytes_hits = ref 0;;
 let hash_consing_bytes_misses = ref 0;;
 let hash_consing_bytes_init_size = 1000000;;
 let hash_consing_bytes_tbl : (bytes,bytes) Hashtbl.t = Hashtbl.create hash_consing_bytes_init_size;;
 let hash_consing_bytes_create bs = 
-  if true then bs else
+  if not (!hash_consing_bytes_enabled) then bs else
   try let rv = Hashtbl.find hash_consing_bytes_tbl bs in Utility.increment hash_consing_bytes_hits; rv
   with Not_found -> Hashtbl.add hash_consing_bytes_tbl bs bs; Utility.increment hash_consing_bytes_misses; bs;;
 

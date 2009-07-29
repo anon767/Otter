@@ -55,6 +55,7 @@ and memory_block = {
   memory_block_addr : bytes;
   memory_block_type : memory_block_type;
 }
+val hash_consing_bytes_enabled : bool ref
 val hash_consing_bytes_hits : int ref
 val hash_consing_bytes_misses : int ref
 val hash_consing_bytes_init_size : int

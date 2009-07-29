@@ -579,12 +579,14 @@ let bytes_eval_cache_hits = ref 0;;
 let bytes_eval_cache_misses = ref 0;;
 
 let state__get_bytes_eval_cache state bytes =
-  (*
-  try
-    raise Not_found;
-    let ret = Some (BytesMap.find bytes state.bytes_eval_cache) in
-      Utility.increment bytes_eval_cache_hits; ret
-  with Not_found -> *)Utility.increment bytes_eval_cache_misses; None
+  if not Executeargs.run_args.Executeargs.arg_opt_bytes_eval_cache then None else
+    begin
+      try
+        let ret = Some (BytesMap.find bytes state.bytes_eval_cache) in
+          Utility.increment bytes_eval_cache_hits; ret
+      with Not_found -> 
+        Utility.increment bytes_eval_cache_misses; None
+    end
 ;;
 
 let state__trace state: string = 

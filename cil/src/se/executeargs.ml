@@ -78,6 +78,9 @@ type run_args =
 		mutable arg_list_executable_lines : bool;
 		mutable arg_list_executable_edges : bool;
 		mutable arg_list_executable_conds : bool;
+		mutable arg_opt_hash_consing : bool;
+		mutable arg_opt_bytes_eval_cache : bool;
+		mutable arg_opt_stpbv_cache : bool;
 	};;
 
 let run_args = 
@@ -101,7 +104,13 @@ let run_args =
 		arg_list_executable_lines = false;
 		arg_list_executable_edges = false;
 		arg_list_executable_conds = false;
+		arg_opt_hash_consing = false;  (* This module depends on Types!!! *)
+		arg_opt_bytes_eval_cache = false;
+		arg_opt_stpbv_cache = false;
 	} ;;
+
+(* This is bad---I know *)
+Types.hash_consing_bytes_enabled := run_args.arg_opt_hash_consing
 
 let readCovStatsFromFile filename =
 	let inChan = open_in filename in

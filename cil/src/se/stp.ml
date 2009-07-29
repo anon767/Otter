@@ -6,16 +6,20 @@ let global_vc = Stpc.create_validity_checker ();;
 module BytesMagicMap =
 	Utility.MakeMap (
 	struct
-		type t = bytes
-		let compare a b = compare (Obj.magic a : int) (Obj.magic b)
+		type t = bytes*int
+		let compare (bs1,id1) (bs2,id2) = 
+          if true then compare (Obj.magic bs1:int) (Obj.magic bs2) else
+          if (bs1=bs2) then 0 else compare id1 id2
 	end
 	)
 
+let bytes_stpbv_id = ref 0;;
 let bytes_stpbv_map : (Stpvc.exp*int) BytesMagicMap.t ref = ref BytesMagicMap.empty;;
 let bytes_stpbv_add bytes bv len =
-  bytes_stpbv_map := BytesMagicMap.add bytes (bv,len) (!bytes_stpbv_map);;
+  bytes_stpbv_map := BytesMagicMap.add (bytes,Utility.next_id bytes_stpbv_id) (bv,len) (!bytes_stpbv_map);;
 let bytes_stpbv_get bytes =
-  BytesMagicMap.find bytes (!bytes_stpbv_map);; (* raise Not_found *)
+  if not Executeargs.run_args.Executeargs.arg_opt_stpbv_cache then raise Not_found else
+  BytesMagicMap.find (bytes,Utility.next_id bytes_stpbv_id) (!bytes_stpbv_map);; (* raise Not_found *)
 
 type truth = True | False | Unknown;;
 
