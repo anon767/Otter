@@ -1,2 +1,2 @@
 cd $1
-./command mode
+./test_script mode

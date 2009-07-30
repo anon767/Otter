@@ -1,2 +1,2 @@
 cd $1
-./command abor
+./test_script abor

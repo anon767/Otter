@@ -1,2 +1,2 @@
 cd $1
-./command rein
+./test_script rein

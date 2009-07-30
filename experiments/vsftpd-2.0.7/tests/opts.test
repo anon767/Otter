@@ -1,2 +1,2 @@
 cd $1
-./command opts
+./test_script opts

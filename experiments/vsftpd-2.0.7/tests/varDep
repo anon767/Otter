@@ -1,8 +1,0 @@
-# Requires 1 argument: name of test
-
-DIR=/fs/skoll/symexe/data/vsftpd-2.0.7/noQuickExits/
-
-../../../cil/bin/cilly --docalculateVarDeps \
-  --fileWithCovInfo=$DIR/data/marshalledData/$1.data \
-  --fileWithPossibleValues=$DIR/../vsftpdPossibleValues \
-  --numVars=2 ../../../cil/setest/test0.c

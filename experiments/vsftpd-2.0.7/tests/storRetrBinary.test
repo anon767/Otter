@@ -1,2 +1,2 @@
 cd $1
-./command storRetrBinary
+./test_script storRetrBinary

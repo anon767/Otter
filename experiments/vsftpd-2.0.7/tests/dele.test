@@ -1,2 +1,2 @@
 cd $1
-./command dele
+./test_script dele

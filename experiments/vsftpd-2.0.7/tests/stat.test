@@ -1,2 +1,2 @@
 cd $1
-./command stat
+./test_script stat

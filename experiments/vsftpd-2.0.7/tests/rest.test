@@ -1,2 +1,2 @@
 cd $1
-./command rest
+./test_script rest

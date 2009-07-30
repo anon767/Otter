@@ -1,2 +1,2 @@
 cd $1
-./command listQ
+./test_script listQ

@@ -1,2 +1,2 @@
 cd $1
-./command pbsz
+./test_script pbsz

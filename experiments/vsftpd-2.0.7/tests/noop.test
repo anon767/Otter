@@ -1,2 +1,2 @@
 cd $1
-./command noop
+./test_script noop

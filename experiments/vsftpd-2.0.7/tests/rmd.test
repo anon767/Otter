@@ -1,2 +1,2 @@
 cd $1
-./command rmd
+./test_script rmd

@@ -1,2 +1,2 @@
 cd $1
-./command storMdtm
+./test_script storMdtm

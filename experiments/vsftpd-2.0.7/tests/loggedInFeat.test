@@ -1,2 +1,2 @@
 cd $1
-./command loggedInFeat
+./test_script loggedInFeat

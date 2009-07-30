@@ -1,0 +1,10 @@
+# Requires 1 argument: name of test
+
+DIR=/fs/skoll/symexe/data/vsftpd-2.0.7/jun19Runs/partialRunsJun19
+
+MARSHALLED_FILE=$DIR/data/marshalledData/${1}.data
+echo $MARSHALLED_FILE
+
+../../../cil/src/se/postprocessing/guaranteedCoverage \
+  $MARSHALLED_FILE \
+  --fileWithPossibleValues $DIR/../../vsftpdPossibleValues

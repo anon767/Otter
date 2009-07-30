@@ -1,2 +1,2 @@
 cd $1
-./command storListFtp
+./test_script storListFtp

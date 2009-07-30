@@ -1,2 +1,2 @@
 cd $1
-./command mkd
+./test_script mkd

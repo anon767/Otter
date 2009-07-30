@@ -1,2 +1,2 @@
 cd $1
-./command failList
+./test_script failList

@@ -1,2 +1,2 @@
 cd $1
-./command struF
+./test_script struF

@@ -1,2 +1,2 @@
 cd $1
-./command storListDot
+./test_script storListDot

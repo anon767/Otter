@@ -3,8 +3,9 @@ VSFTPDFILES="main.c utility.c prelogin.c ftpcmdio.c postlogin.c privsock.c tunab
 STATSFILE=vsftpd.stats
 
 if [ "$1" == stats ]; then
-	../../cil/bin/cilly --merge --useLogicalOperators --doprogStats \
-		--statsFile=$STATSFILE $VSFTPDFILES
+	CILLY_DONT_COMPILE_AFTER_MERGE= \
+	../../cil/bin/cilly --merge --useLogicalOperators --dofindFns \
+		--fnOutfile=$STATSFILE $VSFTPDFILES
 	exit
 fi
 

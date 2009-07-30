@@ -1,2 +1,2 @@
 cd $1
-./command loggedInPass
+./test_script loggedInPass

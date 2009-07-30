@@ -1,2 +1,2 @@
 cd $1
-./command unknownCommand
+./test_script unknownCommand

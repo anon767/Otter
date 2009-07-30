@@ -1,2 +1,2 @@
 cd $1
-./command help
+./test_script help
