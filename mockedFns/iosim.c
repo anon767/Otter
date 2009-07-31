@@ -104,7 +104,7 @@ char *IOSIM_toAbsolute(const char *name) {
 			path[lastSlash - name] = 0; // Make 'path' be just the path, excluding the file name
 			if (!realpath(path,absoluteName)) { // Make the path absolute
 				free(path);
-				return -1; // Return -1 on error
+				return NULL; // Return NULL on error
 			}
 			free(path);
 		}
@@ -166,13 +166,22 @@ sym_file_stream_t *IOSIM_getStream(int fd) {
 }
 
 int IOSIM_rename(const char *old, const char *new) {
+	// Compute the absolute path names, returning -1 if there is a problem
 	char *absOld = IOSIM_toAbsolute(old);
+	if (!absOld) {
+		return -1;
+	}
+	char *absNew = IOSIM_toAbsolute(new);
+	if (!absNew) {
+		free(absOld);
+		return -1;
+	}
 	for(int i=0;i<IOSIM_num_file;i++){
 		if(strcmp(absOld,IOSIM_file_name[i])==0) {
-			// We found the old name. Compute the new name
-			char *absNew = IOSIM_toAbsolute(new);
-			if (absNew == -1) { // If there is a problem with the new name
-				return -1;
+			// We found the old name.
+			if (IOSIM_findfile(absNew)) {
+				// A file with the new name already exists. Overwrite it.
+				IOSIM_unlink(absNew);
 			}
 			free(IOSIM_file_name[i]);
 			free(absOld);

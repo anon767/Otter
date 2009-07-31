@@ -12,7 +12,7 @@ struct passwd *getpwnam(char const   *__name ) {
 /*   char pw_dir[100]; */
 /*    char *pw_shell ; */
 
-	x->pw_dir = "ftp";
+	x->pw_dir = "/ftp";
 //	__uid_t uid;
 //	x->pw_uid = __SYMBOLIC(0);
 //	char *p;
