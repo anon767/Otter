@@ -6,8 +6,6 @@ pass
 pwd
 cdup
 pwd
-cdup
-pwd
 cwd /
 pwd
 cwd ~

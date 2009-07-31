@@ -1,10 +1,10 @@
 #include "iosim.h"
 
 void symtest_initialize() {
-	char commandString[] = "user ftp
+	char commandString[] = "user anonymous
 pass
 pasv
-list -t
+list -l
 quit
 ";
 

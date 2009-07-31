@@ -37,7 +37,7 @@ void common_initialization(const char *commandString) {
 	// depending on the configuration. I modified it so that it always
 	// reads its commands from fd 4.
 	newStream(4);
-	IOSIM_fd[4]->sym_file->contents = commandString; // This might want to be strdup'd
+	IOSIM_fd[4]->sym_file->contents = strdup(commandString);
 	IOSIM_fd[4]->sym_file->stat.st_size = 1 + strlen(commandString);
 	IOSIM_fd[4]->sym_file->stat.st_mode = S_IFSOCK;
 
