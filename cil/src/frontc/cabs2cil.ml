@@ -4487,7 +4487,7 @@ and compileCondExp (ce: condExpRes) (st: chunk) (sf: chunk) : chunk =
         try (st, duplicateChunk st) 
         with Failure _ -> 
           let lab = newLabelName "_L" in
-          (gotoChunk lab lu, consLabel lab st !currentLoc false)
+          (gotoChunk lab !currentLoc, consLabel lab st !currentLoc false)
       in
       let st' = st1 in
       let sf' = compileCondExp ce2 st2 sf in
