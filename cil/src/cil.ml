@@ -1973,8 +1973,8 @@ let truncateInteger64 (k: ikind) (i: int64) : int64 * bool =
          *   e.g. casting the constant 0x80000000 to int makes it
          *        0xffffffff80000000.
          * Suppress the truncation warning in this case.      *)
-        let chopped = Int64.shift_right_logical i (64 - nrBits)
-        in chopped <> Int64.zero
+        let chopped = Int64.shift_right i nrBits (* CIL 1.3.7 makes this change *)
+        in chopped <> 0L && chopped <> -1L (* CIL 1.3.7 makes this change *)
     in
     i2, truncated
   end
