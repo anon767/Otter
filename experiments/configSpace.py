@@ -1,3 +1,5 @@
+# Given a covering array spec, calculate the size of the config space
+
 import sys,os,re
 
 if len(sys.argv) == 1:
