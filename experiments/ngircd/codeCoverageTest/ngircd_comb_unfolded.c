@@ -572,8 +572,8 @@ enum __anonenum_ordering_10___0 {
    void __builtin_va_end(__builtin_va_list  ) ;  */
 /* compiler builtin: 
    void __builtin_va_start(__builtin_va_list  ) ;  */
-#line 1 "cil-aVlKM6hW.o"
-#pragma merger(0,"/tmp/cil-fTj84i7S.i","")
+#line 1 "cil-Arzgcygc.o"
+#pragma merger(0,"/tmp/cil-M3VfvYij.i","")
 #line 1 "ngircd.o"
 #pragma merger(0,"/tmp/cil-xiMtRV1u.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 140 "./../portab/portab.h"
@@ -23019,12 +23019,12 @@ int ng_ipaddr_ipequal(ng_ipaddr_t const   *a , ng_ipaddr_t const   *b )
    void __builtin_va_arg(__builtin_va_list  , unsigned int  , void * ) ;  */
 /* compiler builtin: 
    long __builtin_expect(long x , long expected_value ) ;  */
-#line 1 "cil-0pktWySc.o"
-#pragma merger(0,"/tmp/cil-6CDp5Cok.i","")
-#line 1 "cil-Arzgcygc.o"
-#pragma merger(0,"/tmp/cil-M3VfvYij.i","")
+#line 1 "cil-AMOfb8ic.o"
+#pragma merger(0,"/tmp/cil-BIdvKra4.i","")
+#line 1 "cil-Q2U6CBnD.o"
+#pragma merger(0,"/tmp/cil-UzygFlIA.i","")
 #line 1 "ngircd.o"
-#pragma merger(0,"/tmp/cil-xiMtRV1u.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-4XCVAE39.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 56 "ngircd.c"
 static void Initialize_Signal_Handler___0(void) ;
 #line 57
@@ -23251,11 +23251,19 @@ static void Pidfile_Create___0(pid_t pid )
   len = snprintf((char * __restrict  )(pidbuf), sizeof(pidbuf), (char const   * __restrict  )"%ld\n",
                  (long )pid);
 #line 638
-  if (len < 0 || len >= (int )sizeof(pidbuf)) {
+  if (len < 0) {
 #line 639
     Log(3, "Error converting pid");
 #line 640
     return;
+  } else {
+#line 638
+    if (len >= (int )sizeof(pidbuf)) {
+#line 639
+      Log(3, "Error converting pid");
+#line 640
+      return;
+    }
   }
 #line 643
   __cil_tmp___3 = write(pidfd, (void const   *)(pidbuf), (unsigned int )len);
@@ -23335,9 +23343,15 @@ static int NGIRCd_getNobodyID___0(uid_t *uid , gid_t *gid )
     return (0);
   }
 #line 687
-  if (! pwd->pw_uid || ! pwd->pw_gid) {
+  if (! pwd->pw_uid) {
 #line 688
     return (0);
+  } else {
+#line 687
+    if (! pwd->pw_gid) {
+#line 688
+      return (0);
+    }
   }
 #line 690
   *uid = pwd->pw_uid;
@@ -23613,7 +23627,7 @@ static int NGIRCd_Init___0(int NGIRCd_NoDaemon )
 }
 }
 #line 1 "array.o"
-#pragma merger(0,"/tmp/cil-d575kQNJ.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-YtQK44s0.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 36 "array.c"
 static int safemult_sizet___0(size_t a , size_t b , size_t *res ) 
 { size_t tmp ;
@@ -23622,9 +23636,12 @@ static int safemult_sizet___0(size_t a , size_t b , size_t *res )
 #line 39
   tmp = a * b;
 #line 41
-  if ((int )b && tmp / b != a) {
+  if (b) {
+#line 41
+    if (tmp / b != a) {
 #line 42
-    return (0);
+      return (0);
+    }
   }
 #line 44
   *res = tmp;
@@ -23633,7 +23650,7 @@ static int safemult_sizet___0(size_t a , size_t b , size_t *res )
 }
 }
 #line 1 "channel.o"
-#pragma merger(0,"/tmp/cil-3nm7TNrP.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-kO90ilEo.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 53 "channel.c"
 static CHANNEL *My_Channels___0  ;
 #line 54 "channel.c"
@@ -23705,14 +23722,23 @@ static int Can_Send_To_Channel___0(CHANNEL *Chan , CLIENT *From )
 #line 732
   __cil_tmp___5 = strchr((char const   *)__cil_tmp___4, 'n');
 #line 732
-  if ((int )__cil_tmp___5 && ! is_member) {
+  if (__cil_tmp___5) {
+#line 732
+    if (! is_member) {
 #line 733
-    return (0);
+      return (0);
+    }
   }
 #line 735
-  if (is_op || has_voice) {
+  if (is_op) {
 #line 736
     return (1);
+  } else {
+#line 735
+    if (has_voice) {
+#line 736
+      return (1);
+    }
   }
 #line 738
   __cil_tmp___6 = Channel_Modes(Chan);
@@ -23747,9 +23773,12 @@ static CL2CHAN *Get_Cl2Chan___0(CHANNEL *Chan , CLIENT *Client )
 #line 806
   while (cl2chan) {
 #line 808
-    if ((unsigned int )cl2chan->channel == (unsigned int )Chan && (unsigned int )cl2chan->client == (unsigned int )Client) {
+    if ((unsigned int )cl2chan->channel == (unsigned int )Chan) {
 #line 808
-      return (cl2chan);
+      if ((unsigned int )cl2chan->client == (unsigned int )Client) {
+#line 808
+        return (cl2chan);
+      }
     }
 #line 809
     cl2chan = cl2chan->next;
@@ -23824,9 +23853,12 @@ static int Remove_Client___0(int Type , CHANNEL *Chan , CLIENT *Client , CLIENT 
 #line 857
   while (cl2chan) {
 #line 859
-    if ((unsigned int )cl2chan->channel == (unsigned int )Chan && (unsigned int )cl2chan->client == (unsigned int )Client) {
+    if ((unsigned int )cl2chan->channel == (unsigned int )Chan) {
 #line 859
-      break;
+      if ((unsigned int )cl2chan->client == (unsigned int )Client) {
+#line 859
+        break;
+      }
     }
 #line 860
     last_cl2chan = cl2chan;
@@ -24029,14 +24061,20 @@ static CL2CHAN *Get_Next_Cl2Chan___0(CL2CHAN *Start , CLIENT *Client , CHANNEL *
 #line 1001
   while (cl2chan) {
 #line 1003
-    if ((int )Client && (unsigned int )cl2chan->client == (unsigned int )Client) {
+    if (Client) {
 #line 1003
-      return (cl2chan);
+      if ((unsigned int )cl2chan->client == (unsigned int )Client) {
+#line 1003
+        return (cl2chan);
+      }
     }
 #line 1004
-    if ((int )Channel && (unsigned int )cl2chan->channel == (unsigned int )Channel) {
+    if (Channel) {
 #line 1004
-      return (cl2chan);
+      if ((unsigned int )cl2chan->channel == (unsigned int )Channel) {
+#line 1004
+        return (cl2chan);
+      }
     }
 #line 1005
     cl2chan = cl2chan->next;
@@ -24093,7 +24131,7 @@ static int Delete_Channel___0(CHANNEL *Chan )
 }
 }
 #line 1 "client.o"
-#pragma merger(0,"/tmp/cil-Abw6yZ7s.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-jEmGxpre.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 53 "client.c"
 static CLIENT *This_Server___0  ;
 #line 53 "client.c"
@@ -24244,9 +24282,12 @@ static unsigned long MyCount___0(int Type )
 #line 1023
   while (c) {
 #line 1025
-    if ((unsigned int )c->introducer == (unsigned int )This_Server___0 && c->type == Type) {
+    if ((unsigned int )c->introducer == (unsigned int )This_Server___0) {
 #line 1025
-      cnt ++;
+      if (c->type == Type) {
+#line 1025
+        cnt ++;
+      }
     }
 #line 1026
     c = (CLIENT *)c->next;
@@ -24355,7 +24396,7 @@ static void Adjust_Counters___0(CLIENT *Client )
 }
 }
 #line 1 "conf.o"
-#pragma merger(0,"/tmp/cil-pQ2HhLfw.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-wO0olIIx.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 57 "conf.c"
 static int Use_Log___0  =    1;
 #line 58 "conf.c"
@@ -24473,20 +24514,27 @@ static void ports_parse___0(array *a , int Line , char *Arg )
 #line 121
     port = (int )__cil_tmp;
 #line 122
-    if (port > 0 && port < 65535) {
+    if (port > 0) {
+#line 122
+      if (port < 65535) {
 #line 123
-      port16 = (unsigned short )port;
+        port16 = (unsigned short )port;
 #line 124
-      __cil_tmp___2 = array_catb(a, (char const   *)((char *)(& port16)), sizeof(port16));
+        __cil_tmp___2 = array_catb(a, (char const   *)((char *)(& port16)), sizeof(port16));
 #line 124
-      if (! __cil_tmp___2) {
+        if (! __cil_tmp___2) {
 #line 125
-        __cil_tmp___0 = __errno_location();
+          __cil_tmp___0 = __errno_location();
 #line 125
-        __cil_tmp___1 = strerror(*__cil_tmp___0);
+          __cil_tmp___1 = strerror(*__cil_tmp___0);
 #line 125
-        Config_Error___0(3, "%s, line %d Could not add port number %ld: %s", NGIRCd_ConfFile,
-                         Line, port, __cil_tmp___1);
+          Config_Error___0(3, "%s, line %d Could not add port number %ld: %s", NGIRCd_ConfFile,
+                           Line, port, __cil_tmp___1);
+        }
+      } else {
+#line 128
+        Config_Error___0(3, "%s, line %d (section \"Global\"): Illegal port number %ld!",
+                         NGIRCd_ConfFile, Line, port);
       }
     } else {
 #line 128
@@ -24718,9 +24766,21 @@ static int Read_Config___0(int ngircd_starting )
 #line 556
     line ++;
 #line 559
-    if (((int )str[0] == 59 || (int )str[0] == 35) || (int )str[0] == 0) {
+    if ((int )str[0] == 59) {
 #line 559
       continue;
+    } else {
+#line 559
+      if ((int )str[0] == 35) {
+#line 559
+        continue;
+      } else {
+#line 559
+        if ((int )str[0] == 0) {
+#line 559
+          continue;
+        }
+      }
     }
 #line 562
     if ((int )str[0] == 91) {
@@ -25569,9 +25629,16 @@ static void Handle_SERVER___0(int Line , char *Var , char *Arg )
 #line 1027
     port = atol((char const   *)Arg);
 #line 1028
-    if (port > 0L && port < 65535L) {
+    if (port > 0L) {
+#line 1028
+      if (port < 65535L) {
 #line 1029
-      New_Server___1.port = (unsigned short )port;
+        New_Server___1.port = (unsigned short )port;
+      } else {
+#line 1031
+        Config_Error___0(3, "%s, line %d (section \"Server\"): Illegal port number %ld!",
+                         NGIRCd_ConfFile, Line, port);
+      }
     } else {
 #line 1031
       Config_Error___0(3, "%s, line %d (section \"Server\"): Illegal port number %ld!",
@@ -25630,13 +25697,16 @@ static int Handle_Channelname___0(size_t chancount , char const   *name )
 #line 1060
   dest = Conf_Channel[chancount].name;
 #line 1062
-  if ((int )*name && (int const   )*name != 35) {
+  if (*name) {
+#line 1062
+    if ((int const   )*name != 35) {
 #line 1063
-    *dest = (char )'#';
+      *dest = (char )'#';
 #line 1064
-    size --;
+      size --;
 #line 1065
-    dest ++;
+      dest ++;
+    }
   }
 #line 1067
   __cil_tmp = strlcpy(dest, name, size);
@@ -25755,26 +25825,41 @@ static void Validate_Config___0(int Configtest , int Rehash )
 #line 1135
   while (1) {
 #line 1136
-    if ((int )*ptr >= 97 && (int )*ptr <= 122) {
+    if ((int )*ptr >= 97) {
 #line 1136
-      goto __Cont;
+      if ((int )*ptr <= 122) {
+#line 1136
+        goto __Cont;
+      }
     }
 #line 1137
-    if ((int )*ptr >= 65 && (int )*ptr <= 90) {
+    if ((int )*ptr >= 65) {
 #line 1137
-      goto __Cont;
+      if ((int )*ptr <= 90) {
+#line 1137
+        goto __Cont;
+      }
     }
 #line 1138
-    if ((int )*ptr >= 48 && (int )*ptr <= 57) {
+    if ((int )*ptr >= 48) {
 #line 1138
-      goto __Cont;
+      if ((int )*ptr <= 57) {
+#line 1138
+        goto __Cont;
+      }
     }
 #line 1139
     if ((unsigned int )ptr > (unsigned int )(Conf_ServerName)) {
 #line 1140
-      if ((int )*ptr == 46 || (int )*ptr == 45) {
+      if ((int )*ptr == 46) {
 #line 1141
         goto __Cont;
+      } else {
+#line 1140
+        if ((int )*ptr == 45) {
+#line 1141
+          goto __Cont;
+        }
       }
     }
 #line 1143
@@ -25796,11 +25881,14 @@ static void Validate_Config___0(int Configtest , int Rehash )
     Config_Error___0(1, "No (valid) server name configured in \"%s\" (section \'Global\': \'Name\')!",
                      NGIRCd_ConfFile);
 #line 1152
-    if (! Configtest && ! Rehash) {
+    if (! Configtest) {
+#line 1152
+      if (! Rehash) {
 #line 1153
-      Config_Error___0(1, "%s exiting due to fatal errors!", "ngircd");
+        Config_Error___0(1, "%s exiting due to fatal errors!", "ngircd");
 #line 1156
-      exit(1);
+        exit(1);
+      }
     }
   }
 #line 1160
@@ -25822,9 +25910,15 @@ static void Validate_Config___0(int Configtest , int Rehash )
     }
   }
 #line 1188
-  if ((! Conf_ServerAdmin1[0] && ! Conf_ServerAdmin2[0]) && ! Conf_ServerAdminMail[0]) {
+  if (! Conf_ServerAdmin1[0]) {
+#line 1188
+    if (! Conf_ServerAdmin2[0]) {
+#line 1188
+      if (! Conf_ServerAdminMail[0]) {
 #line 1191
-    Config_Error___0(4, "No administrative information configured but required by RFC!");
+        Config_Error___0(4, "No administrative information configured but required by RFC!");
+      }
+    }
   }
 #line 1218
   return;
@@ -25908,7 +26002,7 @@ static void Init_Server_Struct___0(CONF_SERVER *Server )
 }
 }
 #line 1 "conn.o"
-#pragma merger(0,"/tmp/cil-z50srFo2.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-lbjpJDUQ.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 79 "conn.c"
 static int Handle_Write___0(CONN_ID Idx ) ;
 #line 80
@@ -25991,46 +26085,53 @@ static void cb_connserver___0(int sock , short what  __attribute__((__unused__))
   res = getsockopt((My_Connections + idx)->sock, 1, 4, (void * __restrict  )(& err),
                    (socklen_t * __restrict  )(& sock_len));
 #line 135
-  if (res != 0 || err != 0) {
+  if (res != 0) {
 #line 136
-    if (res != 0) {
+    goto _L;
+  } else {
+#line 135
+    if (err != 0) {
+      _L: 
+#line 136
+      if (res != 0) {
 #line 137
-      __cil_tmp___0 = __errno_location();
+        __cil_tmp___0 = __errno_location();
 #line 137
-      __cil_tmp___1 = strerror(*__cil_tmp___0);
+        __cil_tmp___1 = strerror(*__cil_tmp___0);
 #line 137
-      Log(2, "getsockopt (connection %d): %s!", idx, __cil_tmp___1);
-    } else {
+        Log(2, "getsockopt (connection %d): %s!", idx, __cil_tmp___1);
+      } else {
 #line 140
-      __cil_tmp___2 = strerror(err);
+        __cil_tmp___2 = strerror(err);
 #line 140
-      __cil_tmp___3 = Conf_GetServer(idx);
+        __cil_tmp___3 = Conf_GetServer(idx);
 #line 140
-      Log(2, "Can\'t connect socket to \"%s:%d\" (connection %d): %s!", (My_Connections + idx)->host,
-          Conf_Server[__cil_tmp___3].port, idx, __cil_tmp___2);
-    }
+        Log(2, "Can\'t connect socket to \"%s:%d\" (connection %d): %s!", (My_Connections + idx)->host,
+            Conf_Server[__cil_tmp___3].port, idx, __cil_tmp___2);
+      }
 #line 146
-    res = Conf_GetServer(idx);
+      res = Conf_GetServer(idx);
 #line 149
-    Conn_Close(idx, (char *)"Can\'t connect!", (char *)((void *)0), 0);
+      Conn_Close(idx, (char *)"Can\'t connect!", (char *)((void *)0), 0);
 #line 151
-    if (res < 0) {
+      if (res < 0) {
 #line 152
+        return;
+      }
+#line 153
+      __cil_tmp___4 = ng_ipaddr_af((ng_ipaddr_t const   *)(& Conf_Server[res].dst_addr[0]));
+#line 153
+      if (__cil_tmp___4) {
+#line 155
+        New_Server___2(res, & Conf_Server[res].dst_addr[0]);
+#line 157
+        Conf_Server[res].dst_addr[0] = Conf_Server[res].dst_addr[1];
+#line 159
+        memset((void *)(& Conf_Server[res].dst_addr[1]), 0, sizeof(& Conf_Server[res].dst_addr[1]));
+      }
+#line 161
       return;
     }
-#line 153
-    __cil_tmp___4 = ng_ipaddr_af((ng_ipaddr_t const   *)(& Conf_Server[res].dst_addr[0]));
-#line 153
-    if (__cil_tmp___4) {
-#line 155
-      New_Server___2(res, & Conf_Server[res].dst_addr[0]);
-#line 157
-      Conf_Server[res].dst_addr[0] = Conf_Server[res].dst_addr[1];
-#line 159
-      memset((void *)(& Conf_Server[res].dst_addr[1]), 0, sizeof(& Conf_Server[res].dst_addr[1]));
-    }
-#line 161
-    return;
   }
 #line 164
   res = Conf_GetServer(idx);
@@ -26552,31 +26653,53 @@ static int New_Connection___0(int Sock )
 #line 1042
   cnt = (long )__cil_tmp___3;
 #line 1043
-  if (Conf_MaxConnectionsIP > 0 && cnt >= (long )Conf_MaxConnectionsIP) {
+  if (Conf_MaxConnectionsIP > 0) {
+#line 1043
+    if (cnt >= (long )Conf_MaxConnectionsIP) {
 #line 1045
-    Log(3, "Refused connection from %s: too may connections (%ld) from this IP address!",
-        ip_str, cnt);
+      Log(3, "Refused connection from %s: too may connections (%ld) from this IP address!",
+          ip_str, cnt);
 #line 1046
-    Simple_Message___0(new_sock, "ERROR :Connection refused, too many connections from your IP address!");
+      Simple_Message___0(new_sock, "ERROR :Connection refused, too many connections from your IP address!");
 #line 1047
-    close(new_sock);
+      close(new_sock);
 #line 1048
-    return (-1);
+      return (-1);
+    }
   }
 #line 1051
   if (new_sock >= Pool_Size) {
 #line 1052
     new_Pool_Size = new_sock + 1;
 #line 1054
-    if ((Conf_MaxConnections > 0L && (long )Pool_Size >= Conf_MaxConnections) || new_Pool_Size < Pool_Size) {
+    if (Conf_MaxConnections > 0L) {
+#line 1054
+      if ((long )Pool_Size >= Conf_MaxConnections) {
 #line 1057
-      Log(1, "Can\'t accept connection: limit (%d) reached!", Pool_Size);
+        Log(1, "Can\'t accept connection: limit (%d) reached!", Pool_Size);
 #line 1058
-      Simple_Message___0(new_sock, "ERROR :Connection limit reached");
+        Simple_Message___0(new_sock, "ERROR :Connection limit reached");
 #line 1059
-      close(new_sock);
+        close(new_sock);
 #line 1060
-      return (-1);
+        return (-1);
+      } else {
+#line 1062
+        goto _L;
+      }
+    } else {
+      _L: 
+#line 1054
+      if (new_Pool_Size < Pool_Size) {
+#line 1057
+        Log(1, "Can\'t accept connection: limit (%d) reached!", Pool_Size);
+#line 1058
+        Simple_Message___0(new_sock, "ERROR :Connection limit reached");
+#line 1059
+        close(new_sock);
+#line 1060
+        return (-1);
+      }
     }
 #line 1063
     __cil_tmp___4 = array_alloc(& My_ConnArray___0, sizeof(CONNECTION ), (unsigned int )new_sock);
@@ -26671,11 +26794,19 @@ static CONN_ID Socket2Index___0(int Sock )
 
   {
 #line 1124
-  if (Sock >= Pool_Size || (My_Connections + Sock)->sock != Sock) {
+  if (Sock >= Pool_Size) {
 #line 1127
     LogDebug("Socket2Index: can\'t get connection for socket %d!", Sock);
 #line 1128
     return (-1);
+  } else {
+#line 1124
+    if ((My_Connections + Sock)->sock != Sock) {
+#line 1127
+      LogDebug("Socket2Index: can\'t get connection for socket %d!", Sock);
+#line 1128
+      return (-1);
+    }
   }
 #line 1130
   return (Sock);
@@ -26858,16 +26989,23 @@ static int Handle_Buffer___0(CONN_ID Idx )
 #line 1266
       delta = 1U;
 #line 1267
-      if ((int )ptr1 && (int )ptr2) {
+      if (ptr1) {
 #line 1267
-        if ((unsigned int )ptr1 > (unsigned int )ptr2) {
+        if (ptr2) {
 #line 1267
-          ptr = ptr2;
+          if ((unsigned int )ptr1 > (unsigned int )ptr2) {
+#line 1267
+            ptr = ptr2;
+          } else {
+#line 1267
+            ptr = ptr1;
+          }
         } else {
-#line 1267
-          ptr = ptr1;
+#line 1270
+          goto _L;
         }
       } else {
+        _L: 
 #line 1268
         if (ptr1) {
 #line 1268
@@ -26962,14 +27100,14 @@ static void Check_Connections___0(void)
       __cil_tmp___4 = Client_Type(c);
 #line 1341
       if (__cil_tmp___4 == 16) {
-#line 1341
+#line 1342
         goto _L___0;
       } else {
 #line 1341
         __cil_tmp___5 = Client_Type(c);
 #line 1341
         if (__cil_tmp___5 == 32) {
-#line 1341
+#line 1342
           goto _L___0;
         } else {
 #line 1341
@@ -27006,7 +27144,7 @@ static void Check_Connections___0(void)
               }
             }
           } else {
-#line 1341
+#line 1366
             goto _L;
           }
         }
@@ -27043,9 +27181,27 @@ static void Check_Servers___0(void)
 #line 1392
   while (i < 16) {
 #line 1394
-    if (((! Conf_Server[i].host[0] || ! Conf_Server[i].port > 0) || Conf_Server[i].conn_id > -1) || Conf_Server[i].flags & 2) {
+    if (! Conf_Server[i].host[0]) {
 #line 1396
       goto __Cont;
+    } else {
+#line 1394
+      if (! Conf_Server[i].port > 0) {
+#line 1396
+        goto __Cont;
+      } else {
+#line 1394
+        if (Conf_Server[i].conn_id > -1) {
+#line 1396
+          goto __Cont;
+        } else {
+#line 1394
+          if (Conf_Server[i].flags & 2) {
+#line 1396
+            goto __Cont;
+          }
+        }
+      }
     }
 #line 1399
     if (Conf_Server[i].group > -1) {
@@ -27059,9 +27215,12 @@ static void Check_Servers___0(void)
           goto __Cont___0;
         }
 #line 1402
-        if (Conf_Server[n].conn_id != -1 && Conf_Server[n].group == Conf_Server[i].group) {
+        if (Conf_Server[n].conn_id != -1) {
+#line 1402
+          if (Conf_Server[n].group == Conf_Server[i].group) {
 #line 1404
-          break;
+            break;
+          }
         }
         __Cont___0: 
 #line 1400
@@ -27421,9 +27580,12 @@ static void cb_Read_Resolver_Result___0(int r_fd , short events  __attribute__((
 #line 1639
   while (i < Pool_Size) {
 #line 1640
-    if ((My_Connections + i)->sock != -1 && (My_Connections + i)->res_stat.resolver_fd == r_fd) {
+    if ((My_Connections + i)->sock != -1) {
+#line 1640
+      if ((My_Connections + i)->res_stat.resolver_fd == r_fd) {
 #line 1642
-      break;
+        break;
+      }
     }
 #line 1639
     i ++;
@@ -27493,13 +27655,13 @@ static void Simple_Message___0(int Sock , char const   *Msg )
 }
 }
 #line 1 "conn-func.o"
-#pragma merger(0,"/tmp/cil-C64HeA05.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-zVXuqp45.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 1 "conn-zip.o"
-#pragma merger(0,"/tmp/cil-JqklbPRy.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-S074rjSY.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 1 "hash.o"
-#pragma merger(0,"/tmp/cil-oFgAQTkI.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-t084XT95.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 1 "io.o"
-#pragma merger(0,"/tmp/cil-kHQtJolL.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-5DsNAvql.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 69 "io.c"
 static int library_initialized___0  =    0;
 #line 92 "io.c"
@@ -27577,9 +27739,12 @@ static int io_dispatch_poll___0(struct timeval *tv )
       what = (short )((int )what | 2);
     }
 #line 261
-    if ((int )(p + i)->revents && ! what) {
+    if ((p + i)->revents) {
+#line 261
+      if (! what) {
 #line 263
-      what = (short)4;
+        what = (short)4;
+      }
     }
 #line 265
     if (what) {
@@ -27668,9 +27833,12 @@ static void io_close_poll___0(int fd )
 #line 308
       p = (struct pollfd *)__cil_tmp___0;
 #line 309
-      if ((int )p && p->fd >= 0) {
+      if (p) {
+#line 309
+        if (p->fd >= 0) {
 #line 310
-        break;
+          break;
+        }
       }
     }
   }
@@ -27760,7 +27928,7 @@ static void io_docallback___0(int fd , short what )
 }
 }
 #line 1 "irc.o"
-#pragma merger(0,"/tmp/cil-cC40lRox.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-mR97IQRU.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 40 "irc.c"
 static char *Option_String___0(CONN_ID Idx ) ;
 #line 338 "irc.c"
@@ -27779,7 +27947,7 @@ static char *Option_String___0(CONN_ID Idx )
 }
 }
 #line 1 "irc-channel.o"
-#pragma merger(0,"/tmp/cil-X3pfHfXb.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-sM9WRUVu.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 51 "irc-channel.c"
 static int part_from_all_channels___0(CLIENT *client , CLIENT *target ) 
 { CL2CHAN *cl2chan ;
@@ -27842,14 +28010,17 @@ static int join_allowed___0(CLIENT *Client , CLIENT *target , CHANNEL *chan , ch
 #line 74
   is_invited = Lists_Check(__cil_tmp___0, target);
 #line 76
-  if (is_banned && ! is_invited) {
+  if (is_banned) {
+#line 76
+    if (! is_invited) {
 #line 77
-    __cil_tmp___1 = Client_ID(Client);
+      __cil_tmp___1 = Client_ID(Client);
 #line 77
-    IRC_WriteStrClient(Client, (char *)"474 %s %s :Cannot join channel (+b)", __cil_tmp___1,
-                       channame);
+      IRC_WriteStrClient(Client, (char *)"474 %s %s :Cannot join channel (+b)", __cil_tmp___1,
+                         channame);
 #line 78
-    return (0);
+      return (0);
+    }
   }
 #line 81
   __cil_tmp___2 = Channel_Modes(chan);
@@ -27858,14 +28029,17 @@ static int join_allowed___0(CLIENT *Client , CLIENT *target , CHANNEL *chan , ch
 #line 82
   __cil_tmp___4 = strchr(channel_modes, 'i');
 #line 82
-  if ((int )__cil_tmp___4 && ! is_invited) {
+  if (__cil_tmp___4) {
+#line 82
+    if (! is_invited) {
 #line 84
-    __cil_tmp___3 = Client_ID(Client);
+      __cil_tmp___3 = Client_ID(Client);
 #line 84
-    IRC_WriteStrClient(Client, (char *)"473 %s %s :Cannot join channel (+i)", __cil_tmp___3,
-                       channame);
+      IRC_WriteStrClient(Client, (char *)"473 %s %s :Cannot join channel (+i)", __cil_tmp___3,
+                         channame);
 #line 85
-    return (0);
+      return (0);
+    }
   }
 #line 89
   __cil_tmp___6 = strchr(channel_modes, 'k');
@@ -28072,7 +28246,7 @@ static int join_send_topic___0(CLIENT *Client , CLIENT *target , CHANNEL *chan ,
 }
 }
 #line 1 "irc-info.o"
-#pragma merger(0,"/tmp/cil-vFigapgs.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-SMRh9LaQ.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 401 "irc-info.c"
 static unsigned int t_diff___0(time_t *t , time_t div___0 ) 
 { time_t diff ;
@@ -28266,41 +28440,51 @@ static int IRC_Send_WHO___0(CLIENT *Client , CHANNEL *Chan , int OnlyOps )
 #line 728
     is_ircop = (unsigned int )__cil_tmp___5 != (unsigned int )((void *)0);
 #line 729
-    if (OnlyOps && ! is_ircop) {
+    if (OnlyOps) {
+#line 729
+      if (! is_ircop) {
 #line 730
-      goto __Cont;
+        goto __Cont;
+      }
     }
 #line 732
     __cil_tmp___6 = strchr(client_modes, 'i');
 #line 732
     is_visible = (unsigned int )__cil_tmp___6 == (unsigned int )((void *)0);
 #line 733
-    if (is_member || is_visible) {
+    if (is_member) {
 #line 734
-      __cil_tmp___7 = who_flags_status___0(client_modes);
+      goto _L;
+    } else {
+#line 733
+      if (is_visible) {
+        _L: 
 #line 734
-      strcpy((char * __restrict  )(flags), (char const   * __restrict  )__cil_tmp___7);
+        __cil_tmp___7 = who_flags_status___0(client_modes);
+#line 734
+        strcpy((char * __restrict  )(flags), (char const   * __restrict  )__cil_tmp___7);
 #line 735
-      if (is_ircop) {
+        if (is_ircop) {
 #line 736
-        strlcat(flags, "*", sizeof(flags));
-      }
+          strlcat(flags, "*", sizeof(flags));
+        }
 #line 738
-      __cil_tmp___8 = Channel_UserModes(Chan, c);
+        __cil_tmp___8 = Channel_UserModes(Chan, c);
 #line 738
-      chan_user_modes = (char const   *)__cil_tmp___8;
+        chan_user_modes = (char const   *)__cil_tmp___8;
 #line 739
-      __cil_tmp___9 = who_flags_qualifier___0(chan_user_modes);
+        __cil_tmp___9 = who_flags_qualifier___0(chan_user_modes);
 #line 739
-      strlcat(flags, __cil_tmp___9, sizeof(flags));
+        strlcat(flags, __cil_tmp___9, sizeof(flags));
 #line 741
-      __cil_tmp___10 = Channel_Name((CHANNEL const   *)Chan);
+        __cil_tmp___10 = Channel_Name((CHANNEL const   *)Chan);
 #line 741
-      __cil_tmp___11 = write_whoreply___0(Client, c, __cil_tmp___10, (char const   *)(flags));
+        __cil_tmp___11 = write_whoreply___0(Client, c, __cil_tmp___10, (char const   *)(flags));
 #line 741
-      if (! __cil_tmp___11) {
+        if (! __cil_tmp___11) {
 #line 742
-        return (0);
+          return (0);
+        }
       }
     }
     __Cont: 
@@ -28385,7 +28569,7 @@ static int Show_MOTD_End___0(CLIENT *Client )
 }
 }
 #line 1 "irc-login.o"
-#pragma merger(0,"/tmp/cil-I6fgJ9jR.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-8nSY8NMK.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 41 "irc-login.c"
 static int Hello_User___0(CLIENT *Client ) ;
 #line 42
@@ -28570,7 +28754,7 @@ static void Kill_Nick___0(char *Nick , char *Reason )
 }
 }
 #line 1 "irc-mode.o"
-#pragma merger(0,"/tmp/cil-rhOANZZq.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-xuPh32hq.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 39 "irc-mode.c"
 static int Client_Mode___0(CLIENT *Client , REQUEST *Req , CLIENT *Origin , CLIENT *Target ) ;
 #line 40
@@ -28707,28 +28891,51 @@ static int Client_Mode___0(CLIENT *Client , REQUEST *Req , CLIENT *Origin , CLIE
     case 43: 
     case 45: 
 #line 135
-    if (((int )*mode_ptr == 43 && ! set) || ((int )*mode_ptr == 45 && set)) {
-#line 138
-      __cil_tmp___7 = strlen((char const   *)(the_modes));
-#line 138
-      len = __cil_tmp___7 - 1U;
-#line 139
-      if ((int )the_modes[len] == 43 || (int )the_modes[len] == 45) {
-#line 142
-        the_modes[len] = *mode_ptr;
+    if ((int )*mode_ptr == 43) {
+#line 135
+      if (! set) {
+#line 136
+        goto _L;
       } else {
-#line 147
-        x[0] = *mode_ptr;
-#line 148
-        strlcat(the_modes, (char const   *)(x), sizeof(the_modes));
+#line 138
+        goto _L___0;
       }
+    } else {
+      _L___0: 
+#line 135
+      if ((int )*mode_ptr == 45) {
+#line 135
+        if (set) {
+          _L: 
+#line 138
+          __cil_tmp___7 = strlen((char const   *)(the_modes));
+#line 138
+          len = __cil_tmp___7 - 1U;
+#line 139
+          if ((int )the_modes[len] == 43) {
+#line 142
+            the_modes[len] = *mode_ptr;
+          } else {
+#line 139
+            if ((int )the_modes[len] == 45) {
+#line 142
+              the_modes[len] = *mode_ptr;
+            } else {
+#line 147
+              x[0] = *mode_ptr;
+#line 148
+              strlcat(the_modes, (char const   *)(x), sizeof(the_modes));
+            }
+          }
 #line 150
-      if ((int )*mode_ptr == 43) {
+          if ((int )*mode_ptr == 43) {
 #line 150
-        set = 1;
-      } else {
+            set = 1;
+          } else {
 #line 151
-        set = 0;
+            set = 0;
+          }
+        }
       }
     }
 #line 153
@@ -28882,9 +29089,15 @@ static int Client_Mode___0(CLIENT *Client , REQUEST *Req , CLIENT *Origin , CLIE
 #line 218
     len = __cil_tmp___21 - 1U;
 #line 219
-    if ((int )the_modes[len] == 43 || (int )the_modes[len] == 45) {
+    if ((int )the_modes[len] == 43) {
 #line 219
       the_modes[len] = (char )'\000';
+    } else {
+#line 219
+      if ((int )the_modes[len] == 45) {
+#line 219
+        the_modes[len] = (char )'\000';
+      }
     }
 #line 221
     __cil_tmp___25 = Client_Type(Client);
@@ -29230,23 +29443,46 @@ static int Channel_Mode___0(CLIENT *Client , REQUEST *Req , CLIENT *Origin , CHA
     case 43: 
     case 45: 
 #line 360
-    if (((int )*mode_ptr == 43 && ! set) || ((int )*mode_ptr == 45 && set)) {
-#line 362
-      __cil_tmp___9 = strlen((char const   *)(the_modes));
-#line 362
-      len = __cil_tmp___9 - 1U;
-#line 363
-      if ((int )the_modes[len] == 43 || (int )the_modes[len] == 45) {
-#line 365
-        the_modes[len] = *mode_ptr;
+    if ((int )*mode_ptr == 43) {
+#line 360
+      if (! set) {
+#line 361
+        goto _L;
       } else {
-#line 368
-        x[0] = *mode_ptr;
-#line 369
-        strlcat(the_modes, (char const   *)(x), sizeof(the_modes));
+#line 363
+        goto _L___0;
       }
+    } else {
+      _L___0: 
+#line 360
+      if ((int )*mode_ptr == 45) {
+#line 360
+        if (set) {
+          _L: 
+#line 362
+          __cil_tmp___9 = strlen((char const   *)(the_modes));
+#line 362
+          len = __cil_tmp___9 - 1U;
+#line 363
+          if ((int )the_modes[len] == 43) {
+#line 365
+            the_modes[len] = *mode_ptr;
+          } else {
+#line 363
+            if ((int )the_modes[len] == 45) {
+#line 365
+              the_modes[len] = *mode_ptr;
+            } else {
+#line 368
+              x[0] = *mode_ptr;
+#line 369
+              strlcat(the_modes, (char const   *)(x), sizeof(the_modes));
+            }
+          }
 #line 371
-      set = (int )*mode_ptr == 43;
+          set = (int )*mode_ptr == 43;
+        }
+      }
     }
 #line 373
     continue;
@@ -29365,16 +29601,19 @@ static int Channel_Mode___0(CLIENT *Client , REQUEST *Req , CLIENT *Origin , CHA
 #line 428
         l = atol((char const   *)Req->argv[arg_arg]);
 #line 429
-        if (l > 0L && l < 65535L) {
+        if (l > 0L) {
+#line 429
+          if (l < 65535L) {
 #line 430
-          Channel_ModeDel(Channel, (char )'l');
+            Channel_ModeDel(Channel, (char )'l');
 #line 431
-          Channel_SetMaxUsers(Channel, (unsigned long )l);
+            Channel_SetMaxUsers(Channel, (unsigned long )l);
 #line 432
-          snprintf((char * __restrict  )(argadd), sizeof(argadd), (char const   * __restrict  )"%ld",
-                   l);
+            snprintf((char * __restrict  )(argadd), sizeof(argadd), (char const   * __restrict  )"%ld",
+                     l);
 #line 433
-          x[0] = *mode_ptr;
+            x[0] = *mode_ptr;
+          }
         }
       } else {
 #line 436
@@ -29658,9 +29897,15 @@ static int Channel_Mode___0(CLIENT *Client , REQUEST *Req , CLIENT *Origin , CHA
 #line 549
     len = __cil_tmp___57 - 1U;
 #line 550
-    if ((int )the_modes[len] == 43 || (int )the_modes[len] == 45) {
+    if ((int )the_modes[len] == 43) {
 #line 551
       the_modes[len] = (char )'\000';
+    } else {
+#line 550
+      if ((int )the_modes[len] == 45) {
+#line 551
+        the_modes[len] = (char )'\000';
+      }
     }
 #line 553
     __cil_tmp___63 = Client_Type(Client);
@@ -29834,9 +30079,9 @@ static int Send_ListChange___0(char *Mode , CLIENT *Prefix , CLIENT *Client , CH
 }
 }
 #line 1 "irc-op.o"
-#pragma merger(0,"/tmp/cil-V8yjQMti.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-NtNzPUfh.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 1 "irc-oper.o"
-#pragma merger(0,"/tmp/cil-dcLVj2e4.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-DfQRd0Qz.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 40 "irc-oper.c"
 static int Bad_OperPass___0(CLIENT *Client , char *errtoken , char *errmsg ) 
 { char *__cil_tmp ;
@@ -29859,9 +30104,9 @@ static int Bad_OperPass___0(CLIENT *Client , char *errtoken , char *errmsg )
 }
 }
 #line 1 "irc-server.o"
-#pragma merger(0,"/tmp/cil-QhOSj8Ba.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-ae4wiM1l.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 1 "irc-write.o"
-#pragma merger(0,"/tmp/cil-QMKB9hQf.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-n25xOfef.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 42 "irc-write.c"
 static char *Get_Prefix___0(CLIENT *Target , CLIENT *Client ) ;
 #line 418 "irc-write.c"
@@ -29888,7 +30133,7 @@ static char *Get_Prefix___0(CLIENT *Target , CLIENT *Client )
 }
 }
 #line 1 "lists.o"
-#pragma merger(0,"/tmp/cil-7J439Owu.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-LdFXrMYp.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 94 "lists.c"
 static void Lists_Unlink___0(struct list_head *header , struct list_elem *p , struct list_elem *victim ) 
 { 
@@ -29911,7 +30156,7 @@ static void Lists_Unlink___0(struct list_head *header , struct list_elem *p , st
 #line 171 "lists.c"
 static char TheMask___0[128]  ;
 #line 1 "log.o"
-#pragma merger(0,"/tmp/cil-5ADGQOfJ.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-nLsh5cPb.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 47 "log.c"
 static char Init_Txt___0[127]  ;
 #line 48 "log.c"
@@ -29952,7 +30197,7 @@ static void Wall_ServerNotice___0(char *Msg )
 }
 }
 #line 1 "match.o"
-#pragma merger(0,"/tmp/cil-uqGiWVMI.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-kvy3e6vb.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 35 "match.c"
 static int Matche___0(char const   *p , char const   *t ) ;
 #line 36
@@ -30007,11 +30252,19 @@ static int Matche___0(char const   *p , char const   *t )
 #line 86
     invert = 0;
 #line 87
-    if ((int const   )*p == 33 || (int const   )*p == 94) {
+    if ((int const   )*p == 33) {
 #line 89
       invert = 1;
 #line 90
       p ++;
+    } else {
+#line 87
+      if ((int const   )*p == 94) {
+#line 89
+        invert = 1;
+#line 90
+        p ++;
+      }
     }
 #line 94
     if ((int const   )*p == 93) {
@@ -30059,9 +30312,15 @@ static int Matche___0(char const   *p , char const   *t )
 #line 119
         range_end = (char )*p;
 #line 122
-        if ((int )range_end == 0 || (int )range_end == 93) {
+        if ((int )range_end == 0) {
 #line 122
           return (6);
+        } else {
+#line 122
+          if ((int )range_end == 93) {
+#line 122
+            return (6);
+          }
         }
 #line 125
         if ((int )range_end == 92) {
@@ -30081,26 +30340,48 @@ static int Matche___0(char const   *p , char const   *t )
 #line 139
       if ((int )range_start < (int )range_end) {
 #line 141
-        if ((int const   )*t >= (int const   )range_start && (int const   )*t <= (int const   )range_end) {
+        if ((int const   )*t >= (int const   )range_start) {
+#line 141
+          if ((int const   )*t <= (int const   )range_end) {
 #line 143
-          member_match = 1;
+            member_match = 1;
 #line 144
-          loop = 0;
+            loop = 0;
+          }
         }
       } else {
 #line 149
-        if ((int const   )*t >= (int const   )range_end && (int const   )*t <= (int const   )range_start) {
+        if ((int const   )*t >= (int const   )range_end) {
+#line 149
+          if ((int const   )*t <= (int const   )range_start) {
 #line 151
-          member_match = 1;
+            member_match = 1;
 #line 152
-          loop = 0;
+            loop = 0;
+          }
         }
       }
     }
 #line 159
-    if ((invert && member_match) || ! (invert || member_match)) {
+    if (invert) {
 #line 159
-      return (4);
+      if (member_match) {
+#line 159
+        return (4);
+      } else {
+#line 161
+        goto _L;
+      }
+    } else {
+      _L: 
+#line 159
+      if (! invert) {
+#line 159
+        if (! member_match) {
+#line 159
+          return (4);
+        }
+      }
     }
 #line 163
     if (member_match) {
@@ -30168,7 +30449,15 @@ static int Matche_After_Star___0(char const   *p , char const   *t )
 #line 206
   match = 0;
 #line 209
-  while ((int const   )*p == 63 || (int const   )*p == 42) {
+  while (1) {
+#line 209
+    if (! ((int const   )*p == 63)) {
+#line 209
+      if (! ((int const   )*p == 42)) {
+#line 209
+        break;
+      }
+    }
 #line 212
     if ((int const   )*p == 63) {
 #line 215
@@ -30204,9 +30493,15 @@ static int Matche_After_Star___0(char const   *p , char const   *t )
 #line 236
   while (1) {
 #line 242
-    if (nextp == (int )*t || nextp == 91) {
+    if (nextp == (int )*t) {
 #line 242
       match = Matche___0(p, t);
+    } else {
+#line 242
+      if (nextp == 91) {
+#line 242
+        match = Matche___0(p, t);
+      }
     }
 #line 245
     __cil_tmp___0 = t;
@@ -30218,7 +30513,19 @@ static int Matche_After_Star___0(char const   *p , char const   *t )
       match = 3;
     }
 #line 236
-    if (! ((match != 1 && match != 3) && match != 6)) {
+    if (match != 1) {
+#line 236
+      if (match != 3) {
+#line 236
+        if (! (match != 6)) {
+#line 236
+          break;
+        }
+      } else {
+#line 236
+        break;
+      }
+    } else {
 #line 236
       break;
     }
@@ -30228,7 +30535,7 @@ static int Matche_After_Star___0(char const   *p , char const   *t )
 }
 }
 #line 1 "numeric.o"
-#pragma merger(0,"/tmp/cil-IEo0zmsA.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-bPctWQYd.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 46 "numeric.c"
 static int Announce_Server___0(CLIENT *Client , CLIENT *Server ) 
 { CLIENT *c ;
@@ -30421,9 +30728,12 @@ static int Send_CHANINFO___0(CLIENT *Client , CHANNEL *Chan )
 #line 151
   topic = Channel_Topic(Chan);
 #line 153
-  if (! *modes && ! *topic) {
+  if (! *modes) {
+#line 153
+    if (! *topic) {
 #line 154
-    return (1);
+      return (1);
+    }
   }
 #line 156
   __cil_tmp = strchr((char const   *)modes, 'k');
@@ -30434,24 +30744,27 @@ static int Send_CHANINFO___0(CLIENT *Client , CHANNEL *Chan )
 #line 157
   has_l = (unsigned int )__cil_tmp___0 != (unsigned int )((void *)0);
 #line 160
-  if (! has_k && ! has_l) {
+  if (! has_k) {
+#line 160
+    if (! has_l) {
 #line 161
-    if (! *topic) {
+      if (! *topic) {
 #line 163
-      __cil_tmp___1 = Channel_Name((CHANNEL const   *)Chan);
+        __cil_tmp___1 = Channel_Name((CHANNEL const   *)Chan);
 #line 163
-      __cil_tmp___2 = IRC_WriteStrClient(Client, (char *)"CHANINFO %s +%s", __cil_tmp___1,
-                                         modes);
+        __cil_tmp___2 = IRC_WriteStrClient(Client, (char *)"CHANINFO %s +%s", __cil_tmp___1,
+                                           modes);
 #line 163
-      return (__cil_tmp___2);
+        return (__cil_tmp___2);
+      }
+#line 167
+      __cil_tmp___3 = Channel_Name((CHANNEL const   *)Chan);
+#line 167
+      __cil_tmp___4 = IRC_WriteStrClient(Client, (char *)"CHANINFO %s +%s :%s", __cil_tmp___3,
+                                         modes, topic);
+#line 167
+      return (__cil_tmp___4);
     }
-#line 167
-    __cil_tmp___3 = Channel_Name((CHANNEL const   *)Chan);
-#line 167
-    __cil_tmp___4 = IRC_WriteStrClient(Client, (char *)"CHANINFO %s +%s :%s", __cil_tmp___3,
-                                       modes, topic);
-#line 167
-    return (__cil_tmp___4);
   }
 #line 171
   if (has_l) {
@@ -30482,7 +30795,7 @@ static int Send_CHANINFO___0(CLIENT *Client , CHANNEL *Chan )
 }
 }
 #line 1 "parse.o"
-#pragma merger(0,"/tmp/cil-hFGuiy3J.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-n5wA4K2A.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 61 "parse.c"
 static COMMAND My_Commands___0[48]  = 
 #line 61 "parse.c"
@@ -30815,19 +31128,26 @@ static int Handle_Request___0(CONN_ID Idx , REQUEST *Req )
 #line 438
   client_type = Client_Type(client);
 #line 439
-  if (client_type == 32 || client_type == 128) {
+  if (client_type == 32) {
+#line 440
+    goto _L;
+  } else {
 #line 439
-    __cil_tmp___0 = strlen((char const   *)Req->command);
+    if (client_type == 128) {
+      _L: 
 #line 439
-    if (__cil_tmp___0 == 3U) {
+      __cil_tmp___0 = strlen((char const   *)Req->command);
 #line 439
-      __cil_tmp___1 = atoi((char const   *)Req->command);
+      if (__cil_tmp___0 == 3U) {
 #line 439
-      if (__cil_tmp___1 > 1) {
+        __cil_tmp___1 = atoi((char const   *)Req->command);
+#line 439
+        if (__cil_tmp___1 > 1) {
 #line 442
-        __cil_tmp = Handle_Numeric___0(client, Req);
+          __cil_tmp = Handle_Numeric___0(client, Req);
 #line 442
-        return (__cil_tmp);
+          return (__cil_tmp);
+        }
       }
     }
   }
@@ -30874,9 +31194,15 @@ static int Handle_Request___0(CONN_ID Idx , REQUEST *Req )
     return (result);
   }
 #line 468
-  if ((client_type != 16 && client_type != 32) && client_type != 64) {
+  if (client_type != 16) {
+#line 468
+    if (client_type != 32) {
+#line 468
+      if (client_type != 64) {
 #line 471
-    return (1);
+        return (1);
+      }
+    }
   }
 #line 474
   if (Req->prefix) {
@@ -30916,9 +31242,9 @@ static int Handle_Request___0(CONN_ID Idx , REQUEST *Req )
 }
 }
 #line 1 "rendezvous.o"
-#pragma merger(0,"/tmp/cil-zMpbCs9x.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-lazPIFGx.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 1 "resolve.o"
-#pragma merger(0,"/tmp/cil-vttV1T4X.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-hEYrxdl6.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 44 "resolve.c"
 static void Do_ResolveAddr___0(ng_ipaddr_t const   *Addr , int identsock , int w_fd ) ;
 #line 45
@@ -31354,72 +31680,6 @@ static int register_callback___0(RES_STAT *s , void (*cbfunc)(int  , short  ) )
   return (0);
 }
 }
-#line 1 "strlcpy.o"
-#pragma merger(0,"/tmp/cil-570RgdRQ.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "strdup.o"
-#pragma merger(0,"/tmp/cil-uCT5KQ4f.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "vsnprintf.o"
-#pragma merger(0,"/tmp/cil-yjIbTdXN.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "libngtool.a"
-#pragma merger(0,"/tmp/cil-CQkBTjmC.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "libngipaddr.a"
-#pragma merger(0,"/tmp/cil-0Tbgzs97.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "cil-AMOfb8ic.o"
-#pragma merger(0,"/tmp/cil-BIdvKra4.i","")
-#line 1 "cil-Q2U6CBnD.o"
-#pragma merger(0,"/tmp/cil-UzygFlIA.i","")
-#line 1 "ngircd.o"
-#pragma merger(0,"/tmp/cil-4XCVAE39.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "array.o"
-#pragma merger(0,"/tmp/cil-YtQK44s0.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "channel.o"
-#pragma merger(0,"/tmp/cil-kO90ilEo.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "client.o"
-#pragma merger(0,"/tmp/cil-jEmGxpre.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "conf.o"
-#pragma merger(0,"/tmp/cil-wO0olIIx.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "conn.o"
-#pragma merger(0,"/tmp/cil-lbjpJDUQ.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "conn-func.o"
-#pragma merger(0,"/tmp/cil-zVXuqp45.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "conn-zip.o"
-#pragma merger(0,"/tmp/cil-S074rjSY.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "hash.o"
-#pragma merger(0,"/tmp/cil-t084XT95.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "io.o"
-#pragma merger(0,"/tmp/cil-5DsNAvql.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "irc.o"
-#pragma merger(0,"/tmp/cil-mR97IQRU.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "irc-channel.o"
-#pragma merger(0,"/tmp/cil-sM9WRUVu.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "irc-info.o"
-#pragma merger(0,"/tmp/cil-SMRh9LaQ.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "irc-login.o"
-#pragma merger(0,"/tmp/cil-8nSY8NMK.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "irc-mode.o"
-#pragma merger(0,"/tmp/cil-xuPh32hq.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "irc-op.o"
-#pragma merger(0,"/tmp/cil-NtNzPUfh.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "irc-oper.o"
-#pragma merger(0,"/tmp/cil-DfQRd0Qz.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "irc-server.o"
-#pragma merger(0,"/tmp/cil-ae4wiM1l.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "irc-write.o"
-#pragma merger(0,"/tmp/cil-n25xOfef.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "lists.o"
-#pragma merger(0,"/tmp/cil-LdFXrMYp.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "log.o"
-#pragma merger(0,"/tmp/cil-nLsh5cPb.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "match.o"
-#pragma merger(0,"/tmp/cil-kvy3e6vb.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "numeric.o"
-#pragma merger(0,"/tmp/cil-bPctWQYd.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "parse.o"
-#pragma merger(0,"/tmp/cil-n5wA4K2A.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "rendezvous.o"
-#pragma merger(0,"/tmp/cil-lazPIFGx.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "resolve.o"
-#pragma merger(0,"/tmp/cil-hEYrxdl6.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 1 "strlcpy.o"
 #pragma merger(0,"/tmp/cil-OHhQM2pa.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 1 "strdup.o"
@@ -38100,372 +38360,6 @@ __off64_t lseek(int fildes , __off64_t offset , int whence )
 }
 #line 1 "cil-BamZxpJP.o"
 #pragma merger(0,"/tmp/cil-wFIhSEgV.i","")
-#line 1 "ngircd.o"
-#pragma merger(0,"/tmp/cil-4XCVAE39.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "array.o"
-#pragma merger(0,"/tmp/cil-YtQK44s0.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "channel.o"
-#pragma merger(0,"/tmp/cil-kO90ilEo.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "client.o"
-#pragma merger(0,"/tmp/cil-jEmGxpre.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "conf.o"
-#pragma merger(0,"/tmp/cil-wO0olIIx.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "conn.o"
-#pragma merger(0,"/tmp/cil-lbjpJDUQ.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "conn-func.o"
-#pragma merger(0,"/tmp/cil-zVXuqp45.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "conn-zip.o"
-#pragma merger(0,"/tmp/cil-S074rjSY.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "hash.o"
-#pragma merger(0,"/tmp/cil-t084XT95.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "io.o"
-#pragma merger(0,"/tmp/cil-5DsNAvql.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "irc.o"
-#pragma merger(0,"/tmp/cil-mR97IQRU.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "irc-channel.o"
-#pragma merger(0,"/tmp/cil-sM9WRUVu.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "irc-info.o"
-#pragma merger(0,"/tmp/cil-SMRh9LaQ.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "irc-login.o"
-#pragma merger(0,"/tmp/cil-8nSY8NMK.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "irc-mode.o"
-#pragma merger(0,"/tmp/cil-xuPh32hq.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "irc-op.o"
-#pragma merger(0,"/tmp/cil-NtNzPUfh.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "irc-oper.o"
-#pragma merger(0,"/tmp/cil-DfQRd0Qz.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "irc-server.o"
-#pragma merger(0,"/tmp/cil-ae4wiM1l.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "irc-write.o"
-#pragma merger(0,"/tmp/cil-n25xOfef.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "lists.o"
-#pragma merger(0,"/tmp/cil-LdFXrMYp.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "log.o"
-#pragma merger(0,"/tmp/cil-nLsh5cPb.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "match.o"
-#pragma merger(0,"/tmp/cil-kvy3e6vb.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "numeric.o"
-#pragma merger(0,"/tmp/cil-bPctWQYd.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "parse.o"
-#pragma merger(0,"/tmp/cil-n5wA4K2A.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "rendezvous.o"
-#pragma merger(0,"/tmp/cil-lazPIFGx.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "resolve.o"
-#pragma merger(0,"/tmp/cil-hEYrxdl6.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "strlcpy.o"
-#pragma merger(0,"/tmp/cil-OHhQM2pa.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "strdup.o"
-#pragma merger(0,"/tmp/cil-dE2PNln9.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "vsnprintf.o"
-#pragma merger(0,"/tmp/cil-rAh6XhtT.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "libngtool.a"
-#pragma merger(0,"/tmp/cil-h5Ye35KD.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "libngipaddr.a"
-#pragma merger(0,"/tmp/cil-QeTlew75.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "cil-sShVh3z3.o"
-#pragma merger(0,"/tmp/cil-fKfxKzqa.i","")
-#line 1 "cil-UQ82Je4i.o"
-#pragma merger(0,"/tmp/cil-0oxd5IWY.i","")
-#line 1 "cil-4aCKS9UA.o"
-#pragma merger(0,"/tmp/cil-dhjZBNW0.i","")
-#line 1 "cil-6oyrp5nU.o"
-#pragma merger(0,"/tmp/cil-sk3QdnuZ.i","")
-#line 1 "cil-QhCkEGGO.o"
-#pragma merger(0,"/tmp/cil-Aw9U7LUH.i","")
-#line 1 "cil-yqttQkKr.o"
-#pragma merger(0,"/tmp/cil-DpeAB1BB.i","")
-#line 1 "cil-HSjvUEtY.o"
-#pragma merger(0,"/tmp/cil-WwZCS2cW.i","")
-#line 1 "cil-nuWItn2v.o"
-#pragma merger(0,"/tmp/cil-fc8K1moP.i","")
-#line 1 "cil-U9nmEM6H.o"
-#pragma merger(0,"/tmp/cil-SbJPHgt7.i","")
-#line 1 "cil-xpb1fAlS.o"
-#pragma merger(0,"/tmp/cil-dsTECxA3.i","")
-#line 1 "cil-gLIxr7uA.o"
-#pragma merger(0,"/tmp/cil-nVrMGbe8.i","")
-#line 1 "cil-Z1UvuxJi.o"
-#pragma merger(0,"/tmp/cil-niSiEOz9.i","")
-#line 1 "cil-kSkNPND0.o"
-#pragma merger(0,"/tmp/cil-V5czSTPC.i","")
-#line 1 "cil-7Ucwjgh1.o"
-#pragma merger(0,"/tmp/cil-6sVvct3Q.i","")
-#line 1 "cil-OOzQGl9x.o"
-#pragma merger(0,"/tmp/cil-6yDo083a.i","")
-#line 1 "cil-QG5GxzKo.o"
-#pragma merger(0,"/tmp/cil-XPDHXgg8.i","")
-#line 1 "cil-9nO5frrM.o"
-#pragma merger(0,"/tmp/cil-QB8qTx8y.i","")
-#line 1 "cil-QgFhzFyL.o"
-#pragma merger(0,"/tmp/cil-FKWjE5Jv.i","")
-#line 1 "cil-WWFcYS7h.o"
-#pragma merger(0,"/tmp/cil-vVpLwibZ.i","")
-#line 1 "cil-A1OmDiex.o"
-#pragma merger(0,"/tmp/cil-ksdwZYyB.i","")
-#line 1 "cil-PddKCaNA.o"
-#pragma merger(0,"/tmp/cil-AdCchDTk.i","")
-#line 1 "cil-X5PIZYK2.o"
-#pragma merger(0,"/tmp/cil-LkVnQyyK.i","")
-#line 1 "cil-sYHrEgVB.o"
-#pragma merger(0,"/tmp/cil-vbeTpC6A.i","")
-#line 1 "cil-N5bQbEbP.o"
-#pragma merger(0,"/tmp/cil-Vk837SDa.i","")
-#line 1 "cil-Au4STS6i.o"
-#pragma merger(0,"/tmp/cil-VsKsE7JJ.i","")
-#line 1 "cil-JUPHh32T.o"
-#pragma merger(0,"/tmp/cil-hbM9fArk.i","")
-#line 1 "cil-sSap22WZ.o"
-#pragma merger(0,"/tmp/cil-Ys2IgD9Y.i","")
-#line 1 "cil-k7OFnudt.o"
-#pragma merger(0,"/tmp/cil-y6Z1EhhO.i","")
-#line 1 "cil-eb90RbNH.o"
-#pragma merger(0,"/tmp/cil-D2M7GRWi.i","")
-#line 1 "cil-oK0XI9qq.o"
-#pragma merger(0,"/tmp/cil-7MqODej3.i","")
-#line 1 "cil-m7xpqVj9.o"
-#pragma merger(0,"/tmp/cil-oIRooZMy.i","")
-#line 1 "cil-SJhWPmnt.o"
-#pragma merger(0,"/tmp/cil-acwtcaZu.i","")
-#line 1 "cil-TSkGBmus.o"
-#pragma merger(0,"/tmp/cil-cFt8nLkQ.i","")
-#line 1 "cil-KXkRke2W.o"
-#pragma merger(0,"/tmp/cil-mrrb5GvR.i","")
-#line 1 "cil-28XWl2vC.o"
-#pragma merger(0,"/tmp/cil-RXUD7hct.i","")
-#line 1 "cil-0MYoO4U6.o"
-#pragma merger(0,"/tmp/cil-P99VCC2U.i","")
-#line 1 "cil-dus0V0PK.o"
-#pragma merger(0,"/tmp/cil-C8wXVzJX.i","")
-#line 1 "cil-pbW91Pvh.o"
-#pragma merger(0,"/tmp/cil-6qqPLU7N.i","")
-#line 1 "cil-3uCqcDMD.o"
-#pragma merger(0,"/tmp/cil-DeKjeSlW.i","")
-#line 1 "cil-BaPWm1ZA.o"
-#pragma merger(0,"/tmp/cil-tL9f08mV.i","")
-#line 1 "cil-vSgY6RJc.o"
-#pragma merger(0,"/tmp/cil-dcoYzTXV.i","")
-#line 1 "cil-TpOGzJQE.o"
-#pragma merger(0,"/tmp/cil-CpbPWLPl.i","")
-#line 1 "cil-54C6VJEE.o"
-#pragma merger(0,"/tmp/cil-Vv0QMCRQ.i","")
-#line 1 "cil-KPScf0Wh.o"
-#pragma merger(0,"/tmp/cil-eaHdFcce.i","")
-#line 1 "cil-N2k5gYwK.o"
-#pragma merger(0,"/tmp/cil-zxLB7xAp.i","")
-#line 1 "cil-dvcbyWxk.o"
-#pragma merger(0,"/tmp/cil-ICBkMeaD.i","")
-#line 1 "cil-S53QgXKc.o"
-#pragma merger(0,"/tmp/cil-C6QTE2Ea.i","")
-#line 1 "cil-o1NaLmzQ.o"
-#pragma merger(0,"/tmp/cil-hLrwkxST.i","")
-#line 1 "cil-AnZ5cQrZ.o"
-#pragma merger(0,"/tmp/cil-CxENlA9E.i","")
-#line 1 "cil-tl2Kbpf1.o"
-#pragma merger(0,"/tmp/cil-VX93qWir.i","")
-#line 1 "cil-w3fOmZ4w.o"
-#pragma merger(0,"/tmp/cil-hkGYSQvX.i","")
-#line 1 "cil-mJIcm6en.o"
-#pragma merger(0,"/tmp/cil-oS4JR0T6.i","")
-#line 1 "cil-c9IFcVNt.o"
-#pragma merger(0,"/tmp/cil-lZihdxcu.i","")
-#line 1 "cil-RXcKsPhY.o"
-#pragma merger(0,"/tmp/cil-wB1VM3t6.i","")
-#line 1 "cil-Tyh15Ge8.o"
-#pragma merger(0,"/tmp/cil-KrLZ5tIq.i","")
-#line 1 "cil-A2x8JX7b.o"
-#pragma merger(0,"/tmp/cil-Czz0I7TH.i","")
-#line 1 "cil-XvkOkLPh.o"
-#pragma merger(0,"/tmp/cil-ibX9WH8D.i","")
-#line 1 "cil-lxEiTjxT.o"
-#pragma merger(0,"/tmp/cil-u63GFMNq.i","")
-#line 1 "cil-8vCnGjWu.o"
-#pragma merger(0,"/tmp/cil-uo5Zm7om.i","")
-#line 1 "cil-vG8TeYF4.o"
-#pragma merger(0,"/tmp/cil-Q5zDPAfc.i","")
-#line 1 "cil-mxgnhqbj.o"
-#pragma merger(0,"/tmp/cil-rl27hM8N.i","")
-#line 1 "cil-QqkmMoub.o"
-#pragma merger(0,"/tmp/cil-T092Timn.i","")
-#line 1 "cil-ErXACV4T.o"
-#pragma merger(0,"/tmp/cil-ZVMwoCqK.i","")
-#line 1 "cil-X2Orzohy.o"
-#pragma merger(0,"/tmp/cil-VILtN0X8.i","")
-#line 1 "cil-qB0KJmqm.o"
-#pragma merger(0,"/tmp/cil-5yyu1c31.i","")
-#line 1 "cil-H9dsZp4r.o"
-#pragma merger(0,"/tmp/cil-LCqME2J3.i","")
-#line 1 "cil-dd9Aigxl.o"
-#pragma merger(0,"/tmp/cil-elJkpqQV.i","")
-#line 1 "cil-RZgHPI8e.o"
-#pragma merger(0,"/tmp/cil-b1ZOxME8.i","")
-#line 1 "cil-bs15bk4A.o"
-#pragma merger(0,"/tmp/cil-9uyedgb2.i","")
-#line 1 "cil-1kXvWxz5.o"
-#pragma merger(0,"/tmp/cil-nCfvoxYB.i","")
-#line 1 "cil-I4T20vwI.o"
-#pragma merger(0,"/tmp/cil-BcnaWV50.i","")
-#line 1 "cil-l3oQiHa2.o"
-#pragma merger(0,"/tmp/cil-AWFZKmgC.i","")
-#line 1 "cil-PSeBi6nd.o"
-#pragma merger(0,"/tmp/cil-MJVuO6gY.i","")
-#line 1 "cil-2xjrw7Rq.o"
-#pragma merger(0,"/tmp/cil-LbvYvUjs.i","")
-#line 1 "cil-ttky2ucn.o"
-#pragma merger(0,"/tmp/cil-CCNKZM6M.i","")
-#line 1 "cil-qCR0qmP4.o"
-#pragma merger(0,"/tmp/cil-6wRjFpnR.i","")
-#line 1 "cil-V7VWdEzJ.o"
-#pragma merger(0,"/tmp/cil-B7I6JhTd.i","")
-#line 1 "cil-wJEzYLIW.o"
-#pragma merger(0,"/tmp/cil-dNvDIXeb.i","")
-#line 1 "cil-0Mtk2Q7q.o"
-#pragma merger(0,"/tmp/cil-yfjHIMqK.i","")
-#line 1 "cil-NaX1Kjrh.o"
-#pragma merger(0,"/tmp/cil-1EBC3uSO.i","")
-#line 1 "cil-nvos4HTB.o"
-#pragma merger(0,"/tmp/cil-oQEF0UnX.i","")
-#line 1 "cil-5FlhfnbT.o"
-#pragma merger(0,"/tmp/cil-RiqX7k38.i","")
-#line 1 "cil-17tZ2UQY.o"
-#pragma merger(0,"/tmp/cil-xffFC3rC.i","")
-#line 1 "cil-3IlJxF6I.o"
-#pragma merger(0,"/tmp/cil-L5dDlB34.i","")
-#line 1 "cil-Q3BYq8fw.o"
-#pragma merger(0,"/tmp/cil-Q98I8c8s.i","")
-#line 1 "cil-OOQgqjxV.o"
-#pragma merger(0,"/tmp/cil-N2CotcaN.i","")
-#line 1 "cil-MkDonRbW.o"
-#pragma merger(0,"/tmp/cil-iGVz1mgy.i","")
-#line 1 "cil-6Rdz3cLE.o"
-#pragma merger(0,"/tmp/cil-UuKvYlxk.i","")
-#line 1 "cil-iJfERdP8.o"
-#pragma merger(0,"/tmp/cil-lIhl9e3w.i","")
-#line 1 "cil-dFVHosFS.o"
-#pragma merger(0,"/tmp/cil-a2cCMknI.i","")
-#line 1 "cil-zIZyyDH3.o"
-#pragma merger(0,"/tmp/cil-4Be0Cviw.i","")
-#line 1 "cil-Ar1qyoBc.o"
-#pragma merger(0,"/tmp/cil-P3WlL8G6.i","")
-#line 1 "cil-E275p27V.o"
-#pragma merger(0,"/tmp/cil-rBleJ0aS.i","")
-#line 1 "cil-n1jDWpfF.o"
-#pragma merger(0,"/tmp/cil-x9v3sLa5.i","")
-#line 1 "cil-BLrxd0Vh.o"
-#pragma merger(0,"/tmp/cil-VEPYLeOQ.i","")
-#line 1 "cil-GB1Ct29O.o"
-#pragma merger(0,"/tmp/cil-EQv0pkoT.i","")
-#line 1 "cil-C4j3YcBZ.o"
-#pragma merger(0,"/tmp/cil-34hTqjBK.i","")
-#line 1 "cil-mmVQbtov.o"
-#pragma merger(0,"/tmp/cil-OANkx9me.i","")
-#line 1 "cil-U6HRuziw.o"
-#pragma merger(0,"/tmp/cil-q5CnCael.i","")
-#line 1 "cil-Czpvnfab.o"
-#pragma merger(0,"/tmp/cil-HCWZX2OW.i","")
-#line 1 "cil-56qW4kfX.o"
-#pragma merger(0,"/tmp/cil-LzDkVNev.i","")
-#line 1 "cil-OkeGz1F9.o"
-#pragma merger(0,"/tmp/cil-RAHW2H1K.i","")
-#line 1 "cil-1qqfvT0F.o"
-#pragma merger(0,"/tmp/cil-68lSh4We.i","")
-#line 1 "cil-2K5hmJfy.o"
-#pragma merger(0,"/tmp/cil-Iro5HUFy.i","")
-#line 1 "cil-TD25I06O.o"
-#pragma merger(0,"/tmp/cil-pnHXHNXN.i","")
-#line 1 "cil-R2Etn68u.o"
-#pragma merger(0,"/tmp/cil-5cfgViqm.i","")
-#line 1 "cil-vf1P5AhC.o"
-#pragma merger(0,"/tmp/cil-fqsRLQBZ.i","")
-#line 1 "cil-xXJaWIof.o"
-#pragma merger(0,"/tmp/cil-pV9Bt6pm.i","")
-#line 1 "cil-GfThQbiF.o"
-#pragma merger(0,"/tmp/cil-ZbONJNdE.i","")
-#line 1 "cil-FOhwRWFJ.o"
-#pragma merger(0,"/tmp/cil-upO64g4I.i","")
-#line 1 "cil-6Kl9Rl05.o"
-#pragma merger(0,"/tmp/cil-k46vmc0e.i","")
-#line 1 "cil-I6im3DAM.o"
-#pragma merger(0,"/tmp/cil-0JV535jM.i","")
-#line 1 "cil-t1N13Anw.o"
-#pragma merger(0,"/tmp/cil-VE0LD4mO.i","")
-#line 1 "cil-GOHR5q8v.o"
-#pragma merger(0,"/tmp/cil-OZSpCXP8.i","")
-#line 1 "cil-GRaZQnBY.o"
-#pragma merger(0,"/tmp/cil-vqxWh14a.i","")
-#line 1 "cil-u1CdmqYY.o"
-#pragma merger(0,"/tmp/cil-YMFQVh1G.i","")
-#line 1 "cil-7NwzRdLy.o"
-#pragma merger(0,"/tmp/cil-tCHWW6yD.i","")
-#line 1 "cil-4oZuDpb4.o"
-#pragma merger(0,"/tmp/cil-SzT50mNJ.i","")
-#line 1 "cil-8z5Kncif.o"
-#pragma merger(0,"/tmp/cil-ANGsudoy.i","")
-#line 1 "cil-dEY0jHT4.o"
-#pragma merger(0,"/tmp/cil-sbPITUcy.i","")
-#line 1 "ngircd.o"
-#pragma merger(0,"/tmp/cil-4XCVAE39.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "array.o"
-#pragma merger(0,"/tmp/cil-YtQK44s0.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "channel.o"
-#pragma merger(0,"/tmp/cil-kO90ilEo.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "client.o"
-#pragma merger(0,"/tmp/cil-jEmGxpre.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "conf.o"
-#pragma merger(0,"/tmp/cil-wO0olIIx.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "conn.o"
-#pragma merger(0,"/tmp/cil-lbjpJDUQ.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "conn-func.o"
-#pragma merger(0,"/tmp/cil-zVXuqp45.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "conn-zip.o"
-#pragma merger(0,"/tmp/cil-S074rjSY.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "hash.o"
-#pragma merger(0,"/tmp/cil-t084XT95.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "io.o"
-#pragma merger(0,"/tmp/cil-5DsNAvql.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "irc.o"
-#pragma merger(0,"/tmp/cil-mR97IQRU.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "irc-channel.o"
-#pragma merger(0,"/tmp/cil-sM9WRUVu.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "irc-info.o"
-#pragma merger(0,"/tmp/cil-SMRh9LaQ.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "irc-login.o"
-#pragma merger(0,"/tmp/cil-8nSY8NMK.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "irc-mode.o"
-#pragma merger(0,"/tmp/cil-xuPh32hq.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "irc-op.o"
-#pragma merger(0,"/tmp/cil-NtNzPUfh.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "irc-oper.o"
-#pragma merger(0,"/tmp/cil-DfQRd0Qz.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "irc-server.o"
-#pragma merger(0,"/tmp/cil-ae4wiM1l.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "irc-write.o"
-#pragma merger(0,"/tmp/cil-n25xOfef.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "lists.o"
-#pragma merger(0,"/tmp/cil-LdFXrMYp.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "log.o"
-#pragma merger(0,"/tmp/cil-nLsh5cPb.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "match.o"
-#pragma merger(0,"/tmp/cil-kvy3e6vb.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "numeric.o"
-#pragma merger(0,"/tmp/cil-bPctWQYd.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "parse.o"
-#pragma merger(0,"/tmp/cil-n5wA4K2A.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "rendezvous.o"
-#pragma merger(0,"/tmp/cil-lazPIFGx.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "resolve.o"
-#pragma merger(0,"/tmp/cil-hEYrxdl6.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "strlcpy.o"
-#pragma merger(0,"/tmp/cil-OHhQM2pa.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "strdup.o"
-#pragma merger(0,"/tmp/cil-dE2PNln9.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "vsnprintf.o"
-#pragma merger(0,"/tmp/cil-rAh6XhtT.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "libngtool.a"
-#pragma merger(0,"/tmp/cil-h5Ye35KD.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "libngipaddr.a"
-#pragma merger(0,"/tmp/cil-QeTlew75.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "cil-oPFHIZA4.o"
-#pragma merger(0,"/tmp/cil-jXasMkCY.i","")
 #line 1 "ngircd.o"
 #pragma merger(0,"/tmp/cil-4XCVAE39.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 56 "ngircd.c"
@@ -47133,8 +47027,8 @@ static int register_callback___1(RES_STAT *s , void (*cbfunc)(int  , short  ) )
 #pragma merger(0,"/tmp/cil-h5Ye35KD.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 1 "libngipaddr.a"
 #pragma merger(0,"/tmp/cil-QeTlew75.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 1 "cil-MkeDBh4T.o"
-#pragma merger(0,"/tmp/cil-objJRhuG.i","")
+#line 1 "cil-sShVh3z3.o"
+#pragma merger(0,"/tmp/cil-fKfxKzqa.i","")
 #line 1 "cil-UQ82Je4i.o"
 #pragma merger(0,"/tmp/cil-0oxd5IWY.i","")
 #line 1 "cil-4aCKS9UA.o"
@@ -47334,42 +47228,42 @@ static int syslog_flags___0  =    0;
 #pragma merger(0,"/tmp/cil-ZVMwoCqK.i","")
 #line 1 "cil-X2Orzohy.o"
 #pragma merger(0,"/tmp/cil-VILtN0X8.i","")
-#line 1 "cil-SaNEjG1Q.o"
-#pragma merger(0,"/tmp/cil-jnAsM2da.i","")
-#line 1 "cil-pRGivmr4.o"
-#pragma merger(0,"/tmp/cil-V84ApMol.i","")
-#line 1 "cil-X7xpI332.o"
-#pragma merger(0,"/tmp/cil-591KdrC8.i","")
-#line 1 "cil-WDbDVgnj.o"
-#pragma merger(0,"/tmp/cil-YRYCUCiZ.i","")
-#line 1 "cil-cDcLzQCo.o"
-#pragma merger(0,"/tmp/cil-mTu3GGMJ.i","")
-#line 1 "cil-2TP2kkwc.o"
-#pragma merger(0,"/tmp/cil-IZOVz7vR.i","")
-#line 1 "cil-fTPbLjBr.o"
-#pragma merger(0,"/tmp/cil-nkH3W2gC.i","")
-#line 1 "cil-28iUuRwh.o"
-#pragma merger(0,"/tmp/cil-pASZ07cQ.i","")
+#line 1 "cil-qB0KJmqm.o"
+#pragma merger(0,"/tmp/cil-5yyu1c31.i","")
+#line 1 "cil-H9dsZp4r.o"
+#pragma merger(0,"/tmp/cil-LCqME2J3.i","")
+#line 1 "cil-dd9Aigxl.o"
+#pragma merger(0,"/tmp/cil-elJkpqQV.i","")
+#line 1 "cil-RZgHPI8e.o"
+#pragma merger(0,"/tmp/cil-b1ZOxME8.i","")
+#line 1 "cil-bs15bk4A.o"
+#pragma merger(0,"/tmp/cil-9uyedgb2.i","")
+#line 1 "cil-1kXvWxz5.o"
+#pragma merger(0,"/tmp/cil-nCfvoxYB.i","")
+#line 1 "cil-I4T20vwI.o"
+#pragma merger(0,"/tmp/cil-BcnaWV50.i","")
+#line 1 "cil-l3oQiHa2.o"
+#pragma merger(0,"/tmp/cil-AWFZKmgC.i","")
 #line 2 "./mockedFns/__errno_location.c"
 static int mock_errno___0  ;
-#line 1 "cil-mn9LXTd8.o"
-#pragma merger(0,"/tmp/cil-9IsSThXK.i","")
-#line 1 "cil-iPe5MpR9.o"
-#pragma merger(0,"/tmp/cil-drdG95By.i","")
-#line 1 "cil-AtAGG2OO.o"
-#pragma merger(0,"/tmp/cil-cVQOYvVU.i","")
-#line 1 "cil-sxfi3br2.o"
-#pragma merger(0,"/tmp/cil-EPNg6ELh.i","")
-#line 1 "cil-sUhSULK3.o"
-#pragma merger(0,"/tmp/cil-wVjF2BAf.i","")
-#line 1 "cil-zRoHORyM.o"
-#pragma merger(0,"/tmp/cil-V2suruzT.i","")
-#line 1 "cil-p2iTysLJ.o"
-#pragma merger(0,"/tmp/cil-vOauZuMG.i","")
-#line 1 "cil-iRjVsyzW.o"
-#pragma merger(0,"/tmp/cil-CfVqMCs8.i","")
-#line 1 "cil-XGVrio5A.o"
-#pragma merger(0,"/tmp/cil-vQIEYhxX.i","")
+#line 1 "cil-PSeBi6nd.o"
+#pragma merger(0,"/tmp/cil-MJVuO6gY.i","")
+#line 1 "cil-2xjrw7Rq.o"
+#pragma merger(0,"/tmp/cil-LbvYvUjs.i","")
+#line 1 "cil-ttky2ucn.o"
+#pragma merger(0,"/tmp/cil-CCNKZM6M.i","")
+#line 1 "cil-qCR0qmP4.o"
+#pragma merger(0,"/tmp/cil-6wRjFpnR.i","")
+#line 1 "cil-V7VWdEzJ.o"
+#pragma merger(0,"/tmp/cil-B7I6JhTd.i","")
+#line 1 "cil-wJEzYLIW.o"
+#pragma merger(0,"/tmp/cil-dNvDIXeb.i","")
+#line 1 "cil-0Mtk2Q7q.o"
+#pragma merger(0,"/tmp/cil-yfjHIMqK.i","")
+#line 1 "cil-NaX1Kjrh.o"
+#pragma merger(0,"/tmp/cil-1EBC3uSO.i","")
+#line 1 "cil-nvos4HTB.o"
+#pragma merger(0,"/tmp/cil-oQEF0UnX.i","")
 #line 6 "./mockedFns/getopt.c"
 static int first_nonopt___0  ;
 #line 7 "./mockedFns/getopt.c"
@@ -47425,97 +47319,97 @@ static char const   *_getopt_initialize___0(int argc , char * const  *argv , cha
   return (optstring);
 }
 }
-#line 1 "cil-cgRA52Jx.o"
-#pragma merger(0,"/tmp/cil-2Kud5vlS.i","")
-#line 1 "cil-E1YK7NUm.o"
-#pragma merger(0,"/tmp/cil-Eoyfb4CE.i","")
-#line 1 "cil-BpsOXUmN.o"
-#pragma merger(0,"/tmp/cil-yCCK6Oiu.i","")
-#line 1 "cil-cBFGAMJi.o"
-#pragma merger(0,"/tmp/cil-sLK6kMIT.i","")
-#line 1 "cil-1QQXsIn2.o"
-#pragma merger(0,"/tmp/cil-8AwD4OhW.i","")
-#line 1 "cil-1lm49xOS.o"
-#pragma merger(0,"/tmp/cil-DfLhvAus.i","")
-#line 1 "cil-UPv4mKgl.o"
-#pragma merger(0,"/tmp/cil-quCHkBMW.i","")
-#line 1 "cil-A02jVTqp.o"
-#pragma merger(0,"/tmp/cil-7VS95kal.i","")
-#line 1 "cil-PqsuNG5o.o"
-#pragma merger(0,"/tmp/cil-KKJINc1I.i","")
+#line 1 "cil-5FlhfnbT.o"
+#pragma merger(0,"/tmp/cil-RiqX7k38.i","")
+#line 1 "cil-17tZ2UQY.o"
+#pragma merger(0,"/tmp/cil-xffFC3rC.i","")
+#line 1 "cil-3IlJxF6I.o"
+#pragma merger(0,"/tmp/cil-L5dDlB34.i","")
+#line 1 "cil-Q3BYq8fw.o"
+#pragma merger(0,"/tmp/cil-Q98I8c8s.i","")
+#line 1 "cil-OOQgqjxV.o"
+#pragma merger(0,"/tmp/cil-N2CotcaN.i","")
+#line 1 "cil-MkDonRbW.o"
+#pragma merger(0,"/tmp/cil-iGVz1mgy.i","")
+#line 1 "cil-6Rdz3cLE.o"
+#pragma merger(0,"/tmp/cil-UuKvYlxk.i","")
+#line 1 "cil-iJfERdP8.o"
+#pragma merger(0,"/tmp/cil-lIhl9e3w.i","")
+#line 1 "cil-dFVHosFS.o"
+#pragma merger(0,"/tmp/cil-a2cCMknI.i","")
 #line 3 "./mockedFns/umask.c"
 static int usermask___0  ;
 #line 205 "./mockedFns/iosim.c"
 static int numWritten___0[1024]  ;
-#line 1 "cil-Nnc8LgBk.o"
-#pragma merger(0,"/tmp/cil-nRYmU7Gu.i","")
-#line 1 "cil-EC4zMIXd.o"
-#pragma merger(0,"/tmp/cil-aju9YF2q.i","")
-#line 1 "cil-Rymorx6p.o"
-#pragma merger(0,"/tmp/cil-GYR7qEk2.i","")
-#line 1 "cil-GoI7Tu5T.o"
-#pragma merger(0,"/tmp/cil-pGVm7aEh.i","")
-#line 1 "cil-n4XGRqOH.o"
-#pragma merger(0,"/tmp/cil-WlLNSX45.i","")
-#line 1 "cil-Qxg6rT7j.o"
-#pragma merger(0,"/tmp/cil-B6FEQJhQ.i","")
-#line 1 "cil-OqipujTn.o"
-#pragma merger(0,"/tmp/cil-G0bIIp4B.i","")
-#line 1 "cil-x2xFhsBP.o"
-#pragma merger(0,"/tmp/cil-tpUWaimL.i","")
-#line 1 "cil-2FH3Dkyb.o"
-#pragma merger(0,"/tmp/cil-J3Xy5XeF.i","")
-#line 1 "cil-mRJvg30y.o"
-#pragma merger(0,"/tmp/cil-njMSB0H6.i","")
-#line 1 "cil-DEHYHk0W.o"
-#pragma merger(0,"/tmp/cil-gDZyD7HU.i","")
+#line 1 "cil-zIZyyDH3.o"
+#pragma merger(0,"/tmp/cil-4Be0Cviw.i","")
+#line 1 "cil-Ar1qyoBc.o"
+#pragma merger(0,"/tmp/cil-P3WlL8G6.i","")
+#line 1 "cil-E275p27V.o"
+#pragma merger(0,"/tmp/cil-rBleJ0aS.i","")
+#line 1 "cil-n1jDWpfF.o"
+#pragma merger(0,"/tmp/cil-x9v3sLa5.i","")
+#line 1 "cil-BLrxd0Vh.o"
+#pragma merger(0,"/tmp/cil-VEPYLeOQ.i","")
+#line 1 "cil-GB1Ct29O.o"
+#pragma merger(0,"/tmp/cil-EQv0pkoT.i","")
+#line 1 "cil-C4j3YcBZ.o"
+#pragma merger(0,"/tmp/cil-34hTqjBK.i","")
+#line 1 "cil-mmVQbtov.o"
+#pragma merger(0,"/tmp/cil-OANkx9me.i","")
+#line 1 "cil-U6HRuziw.o"
+#pragma merger(0,"/tmp/cil-q5CnCael.i","")
+#line 1 "cil-Czpvnfab.o"
+#pragma merger(0,"/tmp/cil-HCWZX2OW.i","")
+#line 1 "cil-56qW4kfX.o"
+#pragma merger(0,"/tmp/cil-LzDkVNev.i","")
 #line 10 "./mockedFns/poll.c"
 static int time___1  =    0;
-#line 1 "cil-jTRmrUdc.o"
-#pragma merger(0,"/tmp/cil-N8CIytvF.i","")
-#line 1 "cil-Q1QcSlWF.o"
-#pragma merger(0,"/tmp/cil-HZLWqxOU.i","")
-#line 1 "cil-NvsmIYer.o"
-#pragma merger(0,"/tmp/cil-yfxRx27o.i","")
-#line 1 "cil-C86z0CFZ.o"
-#pragma merger(0,"/tmp/cil-EKGxbSl3.i","")
-#line 1 "cil-spd10zPN.o"
-#pragma merger(0,"/tmp/cil-dhPvUnpn.i","")
-#line 1 "cil-Ks1bCjot.o"
-#pragma merger(0,"/tmp/cil-vVwCjaql.i","")
-#line 1 "cil-KpEMn6fO.o"
-#pragma merger(0,"/tmp/cil-8WYrpgmh.i","")
-#line 1 "cil-wjNSTvPc.o"
-#pragma merger(0,"/tmp/cil-Xj6YeVBM.i","")
-#line 1 "cil-AZokR7yB.o"
-#pragma merger(0,"/tmp/cil-ardlaOvx.i","")
-#line 1 "cil-r0YNARbr.o"
-#pragma merger(0,"/tmp/cil-UWLRxqkd.i","")
-#line 1 "cil-yssUcCU6.o"
-#pragma merger(0,"/tmp/cil-G2JvkL1O.i","")
-#line 1 "cil-dVP0O8m5.o"
-#pragma merger(0,"/tmp/cil-AZTb0vHH.i","")
-#line 1 "cil-Wvy6Dler.o"
-#pragma merger(0,"/tmp/cil-1RYPWmZg.i","")
+#line 1 "cil-OkeGz1F9.o"
+#pragma merger(0,"/tmp/cil-RAHW2H1K.i","")
+#line 1 "cil-1qqfvT0F.o"
+#pragma merger(0,"/tmp/cil-68lSh4We.i","")
+#line 1 "cil-2K5hmJfy.o"
+#pragma merger(0,"/tmp/cil-Iro5HUFy.i","")
+#line 1 "cil-TD25I06O.o"
+#pragma merger(0,"/tmp/cil-pnHXHNXN.i","")
+#line 1 "cil-R2Etn68u.o"
+#pragma merger(0,"/tmp/cil-5cfgViqm.i","")
+#line 1 "cil-vf1P5AhC.o"
+#pragma merger(0,"/tmp/cil-fqsRLQBZ.i","")
+#line 1 "cil-xXJaWIof.o"
+#pragma merger(0,"/tmp/cil-pV9Bt6pm.i","")
+#line 1 "cil-GfThQbiF.o"
+#pragma merger(0,"/tmp/cil-ZbONJNdE.i","")
+#line 1 "cil-FOhwRWFJ.o"
+#pragma merger(0,"/tmp/cil-upO64g4I.i","")
+#line 1 "cil-6Kl9Rl05.o"
+#pragma merger(0,"/tmp/cil-k46vmc0e.i","")
+#line 1 "cil-I6im3DAM.o"
+#pragma merger(0,"/tmp/cil-0JV535jM.i","")
+#line 1 "cil-t1N13Anw.o"
+#pragma merger(0,"/tmp/cil-VE0LD4mO.i","")
+#line 1 "cil-GOHR5q8v.o"
+#pragma merger(0,"/tmp/cil-OZSpCXP8.i","")
 #line 9 "./mockedFns/strerror.c"
 static char message___0[32]  = {      (char )'e',      (char )'r',      (char )'r',      (char )'o', 
         (char )'r',      (char )' ',      (char )'\000'};
-#line 1 "cil-wT6ZQWdv.o"
-#pragma merger(0,"/tmp/cil-gUW7jdZG.i","")
-#line 1 "cil-6B0AYQBG.o"
-#pragma merger(0,"/tmp/cil-somIkXye.i","")
-#line 1 "cil-hSRxCML1.o"
-#pragma merger(0,"/tmp/cil-wcUvCLs7.i","")
+#line 1 "cil-GRaZQnBY.o"
+#pragma merger(0,"/tmp/cil-vqxWh14a.i","")
+#line 1 "cil-u1CdmqYY.o"
+#pragma merger(0,"/tmp/cil-YMFQVh1G.i","")
+#line 1 "cil-7NwzRdLy.o"
+#pragma merger(0,"/tmp/cil-tCHWW6yD.i","")
 #line 3 "./mockedFns/umask.c"
 static int usermask___1  ;
-#line 1 "cil-0KYlj5z5.o"
-#pragma merger(0,"/tmp/cil-EcTYBBri.i","")
-#line 1 "cil-VcodPTrA.o"
-#pragma merger(0,"/tmp/cil-YLh9NO6h.i","")
-#line 1 "cil-Wskr4lTY.o"
-#pragma merger(0,"/tmp/cil-GNB4J0i8.i","")
+#line 1 "cil-4oZuDpb4.o"
+#pragma merger(0,"/tmp/cil-SzT50mNJ.i","")
+#line 1 "cil-8z5Kncif.o"
+#pragma merger(0,"/tmp/cil-ANGsudoy.i","")
+#line 1 "cil-dEY0jHT4.o"
+#pragma merger(0,"/tmp/cil-sbPITUcy.i","")
 #line 1 "ngircd.o"
-#pragma merger(0,"/tmp/cil-xiMtRV1u.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-4XCVAE39.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 56 "ngircd.c"
 static void Initialize_Signal_Handler___2(void) ;
 #line 57
@@ -47742,11 +47636,19 @@ static void Pidfile_Create___2(pid_t pid )
   len = snprintf((char * __restrict  )(pidbuf), sizeof(pidbuf), (char const   * __restrict  )"%ld\n",
                  (long )pid);
 #line 638
-  if (len < 0 || len >= (int )sizeof(pidbuf)) {
+  if (len < 0) {
 #line 639
     Log(3, "Error converting pid");
 #line 640
     return;
+  } else {
+#line 638
+    if (len >= (int )sizeof(pidbuf)) {
+#line 639
+      Log(3, "Error converting pid");
+#line 640
+      return;
+    }
   }
 #line 643
   __cil_tmp___3 = write(pidfd, (void const   *)(pidbuf), (unsigned int )len);
@@ -47826,9 +47728,15 @@ static int NGIRCd_getNobodyID___2(uid_t *uid , gid_t *gid )
     return (0);
   }
 #line 687
-  if (! pwd->pw_uid || ! pwd->pw_gid) {
+  if (! pwd->pw_uid) {
 #line 688
     return (0);
+  } else {
+#line 687
+    if (! pwd->pw_gid) {
+#line 688
+      return (0);
+    }
   }
 #line 690
   *uid = pwd->pw_uid;
@@ -48104,7 +48012,7 @@ static int NGIRCd_Init___2(int NGIRCd_NoDaemon )
 }
 }
 #line 1 "array.o"
-#pragma merger(0,"/tmp/cil-d575kQNJ.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-YtQK44s0.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 36 "array.c"
 static int safemult_sizet___2(size_t a , size_t b , size_t *res ) 
 { size_t tmp ;
@@ -48113,9 +48021,12 @@ static int safemult_sizet___2(size_t a , size_t b , size_t *res )
 #line 39
   tmp = a * b;
 #line 41
-  if ((int )b && tmp / b != a) {
+  if (b) {
+#line 41
+    if (tmp / b != a) {
 #line 42
-    return (0);
+      return (0);
+    }
   }
 #line 44
   *res = tmp;
@@ -48124,7 +48035,7 @@ static int safemult_sizet___2(size_t a , size_t b , size_t *res )
 }
 }
 #line 1 "channel.o"
-#pragma merger(0,"/tmp/cil-3nm7TNrP.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-kO90ilEo.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 53 "channel.c"
 static CHANNEL *My_Channels___2  ;
 #line 54 "channel.c"
@@ -48196,14 +48107,23 @@ static int Can_Send_To_Channel___2(CHANNEL *Chan , CLIENT *From )
 #line 732
   __cil_tmp___5 = strchr((char const   *)__cil_tmp___4, 'n');
 #line 732
-  if ((int )__cil_tmp___5 && ! is_member) {
+  if (__cil_tmp___5) {
+#line 732
+    if (! is_member) {
 #line 733
-    return (0);
+      return (0);
+    }
   }
 #line 735
-  if (is_op || has_voice) {
+  if (is_op) {
 #line 736
     return (1);
+  } else {
+#line 735
+    if (has_voice) {
+#line 736
+      return (1);
+    }
   }
 #line 738
   __cil_tmp___6 = Channel_Modes(Chan);
@@ -48238,9 +48158,12 @@ static CL2CHAN *Get_Cl2Chan___2(CHANNEL *Chan , CLIENT *Client )
 #line 806
   while (cl2chan) {
 #line 808
-    if ((unsigned int )cl2chan->channel == (unsigned int )Chan && (unsigned int )cl2chan->client == (unsigned int )Client) {
+    if ((unsigned int )cl2chan->channel == (unsigned int )Chan) {
 #line 808
-      return (cl2chan);
+      if ((unsigned int )cl2chan->client == (unsigned int )Client) {
+#line 808
+        return (cl2chan);
+      }
     }
 #line 809
     cl2chan = cl2chan->next;
@@ -48315,9 +48238,12 @@ static int Remove_Client___2(int Type , CHANNEL *Chan , CLIENT *Client , CLIENT 
 #line 857
   while (cl2chan) {
 #line 859
-    if ((unsigned int )cl2chan->channel == (unsigned int )Chan && (unsigned int )cl2chan->client == (unsigned int )Client) {
+    if ((unsigned int )cl2chan->channel == (unsigned int )Chan) {
 #line 859
-      break;
+      if ((unsigned int )cl2chan->client == (unsigned int )Client) {
+#line 859
+        break;
+      }
     }
 #line 860
     last_cl2chan = cl2chan;
@@ -48520,14 +48446,20 @@ static CL2CHAN *Get_Next_Cl2Chan___2(CL2CHAN *Start , CLIENT *Client , CHANNEL *
 #line 1001
   while (cl2chan) {
 #line 1003
-    if ((int )Client && (unsigned int )cl2chan->client == (unsigned int )Client) {
+    if (Client) {
 #line 1003
-      return (cl2chan);
+      if ((unsigned int )cl2chan->client == (unsigned int )Client) {
+#line 1003
+        return (cl2chan);
+      }
     }
 #line 1004
-    if ((int )Channel && (unsigned int )cl2chan->channel == (unsigned int )Channel) {
+    if (Channel) {
 #line 1004
-      return (cl2chan);
+      if ((unsigned int )cl2chan->channel == (unsigned int )Channel) {
+#line 1004
+        return (cl2chan);
+      }
     }
 #line 1005
     cl2chan = cl2chan->next;
@@ -48584,7 +48516,7 @@ static int Delete_Channel___2(CHANNEL *Chan )
 }
 }
 #line 1 "client.o"
-#pragma merger(0,"/tmp/cil-Abw6yZ7s.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-jEmGxpre.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 53 "client.c"
 static CLIENT *This_Server___2  ;
 #line 53 "client.c"
@@ -48735,9 +48667,12 @@ static unsigned long MyCount___2(int Type )
 #line 1023
   while (c) {
 #line 1025
-    if ((unsigned int )c->introducer == (unsigned int )This_Server___2 && c->type == Type) {
+    if ((unsigned int )c->introducer == (unsigned int )This_Server___2) {
 #line 1025
-      cnt ++;
+      if (c->type == Type) {
+#line 1025
+        cnt ++;
+      }
     }
 #line 1026
     c = (CLIENT *)c->next;
@@ -48846,7 +48781,7 @@ static void Adjust_Counters___2(CLIENT *Client )
 }
 }
 #line 1 "conf.o"
-#pragma merger(0,"/tmp/cil-pQ2HhLfw.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-wO0olIIx.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 57 "conf.c"
 static int Use_Log___2  =    1;
 #line 58 "conf.c"
@@ -48964,20 +48899,27 @@ static void ports_parse___2(array *a , int Line , char *Arg )
 #line 121
     port = (int )__cil_tmp;
 #line 122
-    if (port > 0 && port < 65535) {
+    if (port > 0) {
+#line 122
+      if (port < 65535) {
 #line 123
-      port16 = (unsigned short )port;
+        port16 = (unsigned short )port;
 #line 124
-      __cil_tmp___2 = array_catb(a, (char const   *)((char *)(& port16)), sizeof(port16));
+        __cil_tmp___2 = array_catb(a, (char const   *)((char *)(& port16)), sizeof(port16));
 #line 124
-      if (! __cil_tmp___2) {
+        if (! __cil_tmp___2) {
 #line 125
-        __cil_tmp___0 = __errno_location();
+          __cil_tmp___0 = __errno_location();
 #line 125
-        __cil_tmp___1 = strerror(*__cil_tmp___0);
+          __cil_tmp___1 = strerror(*__cil_tmp___0);
 #line 125
-        Config_Error___2(3, "%s, line %d Could not add port number %ld: %s", NGIRCd_ConfFile,
-                         Line, port, __cil_tmp___1);
+          Config_Error___2(3, "%s, line %d Could not add port number %ld: %s", NGIRCd_ConfFile,
+                           Line, port, __cil_tmp___1);
+        }
+      } else {
+#line 128
+        Config_Error___2(3, "%s, line %d (section \"Global\"): Illegal port number %ld!",
+                         NGIRCd_ConfFile, Line, port);
       }
     } else {
 #line 128
@@ -49209,9 +49151,21 @@ static int Read_Config___2(int ngircd_starting )
 #line 556
     line ++;
 #line 559
-    if (((int )str[0] == 59 || (int )str[0] == 35) || (int )str[0] == 0) {
+    if ((int )str[0] == 59) {
 #line 559
       continue;
+    } else {
+#line 559
+      if ((int )str[0] == 35) {
+#line 559
+        continue;
+      } else {
+#line 559
+        if ((int )str[0] == 0) {
+#line 559
+          continue;
+        }
+      }
     }
 #line 562
     if ((int )str[0] == 91) {
@@ -50060,9 +50014,16 @@ static void Handle_SERVER___2(int Line , char *Var , char *Arg )
 #line 1027
     port = atol((char const   *)Arg);
 #line 1028
-    if (port > 0L && port < 65535L) {
+    if (port > 0L) {
+#line 1028
+      if (port < 65535L) {
 #line 1029
-      New_Server___5.port = (unsigned short )port;
+        New_Server___5.port = (unsigned short )port;
+      } else {
+#line 1031
+        Config_Error___2(3, "%s, line %d (section \"Server\"): Illegal port number %ld!",
+                         NGIRCd_ConfFile, Line, port);
+      }
     } else {
 #line 1031
       Config_Error___2(3, "%s, line %d (section \"Server\"): Illegal port number %ld!",
@@ -50121,13 +50082,16 @@ static int Handle_Channelname___2(size_t chancount , char const   *name )
 #line 1060
   dest = Conf_Channel[chancount].name;
 #line 1062
-  if ((int )*name && (int const   )*name != 35) {
+  if (*name) {
+#line 1062
+    if ((int const   )*name != 35) {
 #line 1063
-    *dest = (char )'#';
+      *dest = (char )'#';
 #line 1064
-    size --;
+      size --;
 #line 1065
-    dest ++;
+      dest ++;
+    }
   }
 #line 1067
   __cil_tmp = strlcpy(dest, name, size);
@@ -50246,26 +50210,41 @@ static void Validate_Config___2(int Configtest , int Rehash )
 #line 1135
   while (1) {
 #line 1136
-    if ((int )*ptr >= 97 && (int )*ptr <= 122) {
+    if ((int )*ptr >= 97) {
 #line 1136
-      goto __Cont;
+      if ((int )*ptr <= 122) {
+#line 1136
+        goto __Cont;
+      }
     }
 #line 1137
-    if ((int )*ptr >= 65 && (int )*ptr <= 90) {
+    if ((int )*ptr >= 65) {
 #line 1137
-      goto __Cont;
+      if ((int )*ptr <= 90) {
+#line 1137
+        goto __Cont;
+      }
     }
 #line 1138
-    if ((int )*ptr >= 48 && (int )*ptr <= 57) {
+    if ((int )*ptr >= 48) {
 #line 1138
-      goto __Cont;
+      if ((int )*ptr <= 57) {
+#line 1138
+        goto __Cont;
+      }
     }
 #line 1139
     if ((unsigned int )ptr > (unsigned int )(Conf_ServerName)) {
 #line 1140
-      if ((int )*ptr == 46 || (int )*ptr == 45) {
+      if ((int )*ptr == 46) {
 #line 1141
         goto __Cont;
+      } else {
+#line 1140
+        if ((int )*ptr == 45) {
+#line 1141
+          goto __Cont;
+        }
       }
     }
 #line 1143
@@ -50287,11 +50266,14 @@ static void Validate_Config___2(int Configtest , int Rehash )
     Config_Error___2(1, "No (valid) server name configured in \"%s\" (section \'Global\': \'Name\')!",
                      NGIRCd_ConfFile);
 #line 1152
-    if (! Configtest && ! Rehash) {
+    if (! Configtest) {
+#line 1152
+      if (! Rehash) {
 #line 1153
-      Config_Error___2(1, "%s exiting due to fatal errors!", "ngircd");
+        Config_Error___2(1, "%s exiting due to fatal errors!", "ngircd");
 #line 1156
-      exit(1);
+        exit(1);
+      }
     }
   }
 #line 1160
@@ -50313,9 +50295,15 @@ static void Validate_Config___2(int Configtest , int Rehash )
     }
   }
 #line 1188
-  if ((! Conf_ServerAdmin1[0] && ! Conf_ServerAdmin2[0]) && ! Conf_ServerAdminMail[0]) {
+  if (! Conf_ServerAdmin1[0]) {
+#line 1188
+    if (! Conf_ServerAdmin2[0]) {
+#line 1188
+      if (! Conf_ServerAdminMail[0]) {
 #line 1191
-    Config_Error___2(4, "No administrative information configured but required by RFC!");
+        Config_Error___2(4, "No administrative information configured but required by RFC!");
+      }
+    }
   }
 #line 1218
   return;
@@ -50399,7 +50387,7 @@ static void Init_Server_Struct___2(CONF_SERVER *Server )
 }
 }
 #line 1 "conn.o"
-#pragma merger(0,"/tmp/cil-z50srFo2.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-lbjpJDUQ.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 79 "conn.c"
 static int Handle_Write___2(CONN_ID Idx ) ;
 #line 80
@@ -50482,46 +50470,53 @@ static void cb_connserver___2(int sock , short what  __attribute__((__unused__))
   res = getsockopt((My_Connections + idx)->sock, 1, 4, (void * __restrict  )(& err),
                    (socklen_t * __restrict  )(& sock_len));
 #line 135
-  if (res != 0 || err != 0) {
+  if (res != 0) {
 #line 136
-    if (res != 0) {
+    goto _L;
+  } else {
+#line 135
+    if (err != 0) {
+      _L: 
+#line 136
+      if (res != 0) {
 #line 137
-      __cil_tmp___0 = __errno_location();
+        __cil_tmp___0 = __errno_location();
 #line 137
-      __cil_tmp___1 = strerror(*__cil_tmp___0);
+        __cil_tmp___1 = strerror(*__cil_tmp___0);
 #line 137
-      Log(2, "getsockopt (connection %d): %s!", idx, __cil_tmp___1);
-    } else {
+        Log(2, "getsockopt (connection %d): %s!", idx, __cil_tmp___1);
+      } else {
 #line 140
-      __cil_tmp___2 = strerror(err);
+        __cil_tmp___2 = strerror(err);
 #line 140
-      __cil_tmp___3 = Conf_GetServer(idx);
+        __cil_tmp___3 = Conf_GetServer(idx);
 #line 140
-      Log(2, "Can\'t connect socket to \"%s:%d\" (connection %d): %s!", (My_Connections + idx)->host,
-          Conf_Server[__cil_tmp___3].port, idx, __cil_tmp___2);
-    }
+        Log(2, "Can\'t connect socket to \"%s:%d\" (connection %d): %s!", (My_Connections + idx)->host,
+            Conf_Server[__cil_tmp___3].port, idx, __cil_tmp___2);
+      }
 #line 146
-    res = Conf_GetServer(idx);
+      res = Conf_GetServer(idx);
 #line 149
-    Conn_Close(idx, (char *)"Can\'t connect!", (char *)((void *)0), 0);
+      Conn_Close(idx, (char *)"Can\'t connect!", (char *)((void *)0), 0);
 #line 151
-    if (res < 0) {
+      if (res < 0) {
 #line 152
+        return;
+      }
+#line 153
+      __cil_tmp___4 = ng_ipaddr_af((ng_ipaddr_t const   *)(& Conf_Server[res].dst_addr[0]));
+#line 153
+      if (__cil_tmp___4) {
+#line 155
+        New_Server___6(res, & Conf_Server[res].dst_addr[0]);
+#line 157
+        Conf_Server[res].dst_addr[0] = Conf_Server[res].dst_addr[1];
+#line 159
+        memset((void *)(& Conf_Server[res].dst_addr[1]), 0, sizeof(& Conf_Server[res].dst_addr[1]));
+      }
+#line 161
       return;
     }
-#line 153
-    __cil_tmp___4 = ng_ipaddr_af((ng_ipaddr_t const   *)(& Conf_Server[res].dst_addr[0]));
-#line 153
-    if (__cil_tmp___4) {
-#line 155
-      New_Server___6(res, & Conf_Server[res].dst_addr[0]);
-#line 157
-      Conf_Server[res].dst_addr[0] = Conf_Server[res].dst_addr[1];
-#line 159
-      memset((void *)(& Conf_Server[res].dst_addr[1]), 0, sizeof(& Conf_Server[res].dst_addr[1]));
-    }
-#line 161
-    return;
   }
 #line 164
   res = Conf_GetServer(idx);
@@ -51043,31 +51038,53 @@ static int New_Connection___2(int Sock )
 #line 1042
   cnt = (long )__cil_tmp___3;
 #line 1043
-  if (Conf_MaxConnectionsIP > 0 && cnt >= (long )Conf_MaxConnectionsIP) {
+  if (Conf_MaxConnectionsIP > 0) {
+#line 1043
+    if (cnt >= (long )Conf_MaxConnectionsIP) {
 #line 1045
-    Log(3, "Refused connection from %s: too may connections (%ld) from this IP address!",
-        ip_str, cnt);
+      Log(3, "Refused connection from %s: too may connections (%ld) from this IP address!",
+          ip_str, cnt);
 #line 1046
-    Simple_Message___2(new_sock, "ERROR :Connection refused, too many connections from your IP address!");
+      Simple_Message___2(new_sock, "ERROR :Connection refused, too many connections from your IP address!");
 #line 1047
-    close(new_sock);
+      close(new_sock);
 #line 1048
-    return (-1);
+      return (-1);
+    }
   }
 #line 1051
   if (new_sock >= Pool_Size) {
 #line 1052
     new_Pool_Size = new_sock + 1;
 #line 1054
-    if ((Conf_MaxConnections > 0L && (long )Pool_Size >= Conf_MaxConnections) || new_Pool_Size < Pool_Size) {
+    if (Conf_MaxConnections > 0L) {
+#line 1054
+      if ((long )Pool_Size >= Conf_MaxConnections) {
 #line 1057
-      Log(1, "Can\'t accept connection: limit (%d) reached!", Pool_Size);
+        Log(1, "Can\'t accept connection: limit (%d) reached!", Pool_Size);
 #line 1058
-      Simple_Message___2(new_sock, "ERROR :Connection limit reached");
+        Simple_Message___2(new_sock, "ERROR :Connection limit reached");
 #line 1059
-      close(new_sock);
+        close(new_sock);
 #line 1060
-      return (-1);
+        return (-1);
+      } else {
+#line 1062
+        goto _L;
+      }
+    } else {
+      _L: 
+#line 1054
+      if (new_Pool_Size < Pool_Size) {
+#line 1057
+        Log(1, "Can\'t accept connection: limit (%d) reached!", Pool_Size);
+#line 1058
+        Simple_Message___2(new_sock, "ERROR :Connection limit reached");
+#line 1059
+        close(new_sock);
+#line 1060
+        return (-1);
+      }
     }
 #line 1063
     __cil_tmp___4 = array_alloc(& My_ConnArray___2, sizeof(CONNECTION ), (unsigned int )new_sock);
@@ -51162,11 +51179,19 @@ static CONN_ID Socket2Index___2(int Sock )
 
   {
 #line 1124
-  if (Sock >= Pool_Size || (My_Connections + Sock)->sock != Sock) {
+  if (Sock >= Pool_Size) {
 #line 1127
     LogDebug("Socket2Index: can\'t get connection for socket %d!", Sock);
 #line 1128
     return (-1);
+  } else {
+#line 1124
+    if ((My_Connections + Sock)->sock != Sock) {
+#line 1127
+      LogDebug("Socket2Index: can\'t get connection for socket %d!", Sock);
+#line 1128
+      return (-1);
+    }
   }
 #line 1130
   return (Sock);
@@ -51349,16 +51374,23 @@ static int Handle_Buffer___2(CONN_ID Idx )
 #line 1266
       delta = 1U;
 #line 1267
-      if ((int )ptr1 && (int )ptr2) {
+      if (ptr1) {
 #line 1267
-        if ((unsigned int )ptr1 > (unsigned int )ptr2) {
+        if (ptr2) {
 #line 1267
-          ptr = ptr2;
+          if ((unsigned int )ptr1 > (unsigned int )ptr2) {
+#line 1267
+            ptr = ptr2;
+          } else {
+#line 1267
+            ptr = ptr1;
+          }
         } else {
-#line 1267
-          ptr = ptr1;
+#line 1270
+          goto _L;
         }
       } else {
+        _L: 
 #line 1268
         if (ptr1) {
 #line 1268
@@ -51453,14 +51485,14 @@ static void Check_Connections___2(void)
       __cil_tmp___4 = Client_Type(c);
 #line 1341
       if (__cil_tmp___4 == 16) {
-#line 1341
+#line 1342
         goto _L___0;
       } else {
 #line 1341
         __cil_tmp___5 = Client_Type(c);
 #line 1341
         if (__cil_tmp___5 == 32) {
-#line 1341
+#line 1342
           goto _L___0;
         } else {
 #line 1341
@@ -51497,7 +51529,7 @@ static void Check_Connections___2(void)
               }
             }
           } else {
-#line 1341
+#line 1366
             goto _L;
           }
         }
@@ -51534,9 +51566,27 @@ static void Check_Servers___2(void)
 #line 1392
   while (i < 16) {
 #line 1394
-    if (((! Conf_Server[i].host[0] || ! Conf_Server[i].port > 0) || Conf_Server[i].conn_id > -1) || Conf_Server[i].flags & 2) {
+    if (! Conf_Server[i].host[0]) {
 #line 1396
       goto __Cont;
+    } else {
+#line 1394
+      if (! Conf_Server[i].port > 0) {
+#line 1396
+        goto __Cont;
+      } else {
+#line 1394
+        if (Conf_Server[i].conn_id > -1) {
+#line 1396
+          goto __Cont;
+        } else {
+#line 1394
+          if (Conf_Server[i].flags & 2) {
+#line 1396
+            goto __Cont;
+          }
+        }
+      }
     }
 #line 1399
     if (Conf_Server[i].group > -1) {
@@ -51550,9 +51600,12 @@ static void Check_Servers___2(void)
           goto __Cont___0;
         }
 #line 1402
-        if (Conf_Server[n].conn_id != -1 && Conf_Server[n].group == Conf_Server[i].group) {
+        if (Conf_Server[n].conn_id != -1) {
+#line 1402
+          if (Conf_Server[n].group == Conf_Server[i].group) {
 #line 1404
-          break;
+            break;
+          }
         }
         __Cont___0: 
 #line 1400
@@ -51912,9 +51965,12 @@ static void cb_Read_Resolver_Result___2(int r_fd , short events  __attribute__((
 #line 1639
   while (i < Pool_Size) {
 #line 1640
-    if ((My_Connections + i)->sock != -1 && (My_Connections + i)->res_stat.resolver_fd == r_fd) {
+    if ((My_Connections + i)->sock != -1) {
+#line 1640
+      if ((My_Connections + i)->res_stat.resolver_fd == r_fd) {
 #line 1642
-      break;
+        break;
+      }
     }
 #line 1639
     i ++;
@@ -51984,13 +52040,13 @@ static void Simple_Message___2(int Sock , char const   *Msg )
 }
 }
 #line 1 "conn-func.o"
-#pragma merger(0,"/tmp/cil-C64HeA05.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-zVXuqp45.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 1 "conn-zip.o"
-#pragma merger(0,"/tmp/cil-JqklbPRy.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-S074rjSY.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 1 "hash.o"
-#pragma merger(0,"/tmp/cil-oFgAQTkI.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-t084XT95.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 1 "io.o"
-#pragma merger(0,"/tmp/cil-kHQtJolL.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-5DsNAvql.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 69 "io.c"
 static int library_initialized___2  =    0;
 #line 92 "io.c"
@@ -52068,9 +52124,12 @@ static int io_dispatch_poll___2(struct timeval *tv )
       what = (short )((int )what | 2);
     }
 #line 261
-    if ((int )(p + i)->revents && ! what) {
+    if ((p + i)->revents) {
+#line 261
+      if (! what) {
 #line 263
-      what = (short)4;
+        what = (short)4;
+      }
     }
 #line 265
     if (what) {
@@ -52159,9 +52218,12 @@ static void io_close_poll___2(int fd )
 #line 308
       p = (struct pollfd *)__cil_tmp___0;
 #line 309
-      if ((int )p && p->fd >= 0) {
+      if (p) {
+#line 309
+        if (p->fd >= 0) {
 #line 310
-        break;
+          break;
+        }
       }
     }
   }
@@ -52251,7 +52313,7 @@ static void io_docallback___2(int fd , short what )
 }
 }
 #line 1 "irc.o"
-#pragma merger(0,"/tmp/cil-cC40lRox.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-mR97IQRU.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 40 "irc.c"
 static char *Option_String___2(CONN_ID Idx ) ;
 #line 338 "irc.c"
@@ -52270,7 +52332,7 @@ static char *Option_String___2(CONN_ID Idx )
 }
 }
 #line 1 "irc-channel.o"
-#pragma merger(0,"/tmp/cil-X3pfHfXb.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-sM9WRUVu.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 51 "irc-channel.c"
 static int part_from_all_channels___2(CLIENT *client , CLIENT *target ) 
 { CL2CHAN *cl2chan ;
@@ -52333,14 +52395,17 @@ static int join_allowed___2(CLIENT *Client , CLIENT *target , CHANNEL *chan , ch
 #line 74
   is_invited = Lists_Check(__cil_tmp___0, target);
 #line 76
-  if (is_banned && ! is_invited) {
+  if (is_banned) {
+#line 76
+    if (! is_invited) {
 #line 77
-    __cil_tmp___1 = Client_ID(Client);
+      __cil_tmp___1 = Client_ID(Client);
 #line 77
-    IRC_WriteStrClient(Client, (char *)"474 %s %s :Cannot join channel (+b)", __cil_tmp___1,
-                       channame);
+      IRC_WriteStrClient(Client, (char *)"474 %s %s :Cannot join channel (+b)", __cil_tmp___1,
+                         channame);
 #line 78
-    return (0);
+      return (0);
+    }
   }
 #line 81
   __cil_tmp___2 = Channel_Modes(chan);
@@ -52349,14 +52414,17 @@ static int join_allowed___2(CLIENT *Client , CLIENT *target , CHANNEL *chan , ch
 #line 82
   __cil_tmp___4 = strchr(channel_modes, 'i');
 #line 82
-  if ((int )__cil_tmp___4 && ! is_invited) {
+  if (__cil_tmp___4) {
+#line 82
+    if (! is_invited) {
 #line 84
-    __cil_tmp___3 = Client_ID(Client);
+      __cil_tmp___3 = Client_ID(Client);
 #line 84
-    IRC_WriteStrClient(Client, (char *)"473 %s %s :Cannot join channel (+i)", __cil_tmp___3,
-                       channame);
+      IRC_WriteStrClient(Client, (char *)"473 %s %s :Cannot join channel (+i)", __cil_tmp___3,
+                         channame);
 #line 85
-    return (0);
+      return (0);
+    }
   }
 #line 89
   __cil_tmp___6 = strchr(channel_modes, 'k');
@@ -52563,7 +52631,7 @@ static int join_send_topic___2(CLIENT *Client , CLIENT *target , CHANNEL *chan ,
 }
 }
 #line 1 "irc-info.o"
-#pragma merger(0,"/tmp/cil-vFigapgs.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-SMRh9LaQ.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 401 "irc-info.c"
 static unsigned int t_diff___2(time_t *t , time_t div___0 ) 
 { time_t diff ;
@@ -52757,41 +52825,51 @@ static int IRC_Send_WHO___2(CLIENT *Client , CHANNEL *Chan , int OnlyOps )
 #line 728
     is_ircop = (unsigned int )__cil_tmp___5 != (unsigned int )((void *)0);
 #line 729
-    if (OnlyOps && ! is_ircop) {
+    if (OnlyOps) {
+#line 729
+      if (! is_ircop) {
 #line 730
-      goto __Cont;
+        goto __Cont;
+      }
     }
 #line 732
     __cil_tmp___6 = strchr(client_modes, 'i');
 #line 732
     is_visible = (unsigned int )__cil_tmp___6 == (unsigned int )((void *)0);
 #line 733
-    if (is_member || is_visible) {
+    if (is_member) {
 #line 734
-      __cil_tmp___7 = who_flags_status___2(client_modes);
+      goto _L;
+    } else {
+#line 733
+      if (is_visible) {
+        _L: 
 #line 734
-      strcpy((char * __restrict  )(flags), (char const   * __restrict  )__cil_tmp___7);
+        __cil_tmp___7 = who_flags_status___2(client_modes);
+#line 734
+        strcpy((char * __restrict  )(flags), (char const   * __restrict  )__cil_tmp___7);
 #line 735
-      if (is_ircop) {
+        if (is_ircop) {
 #line 736
-        strlcat(flags, "*", sizeof(flags));
-      }
+          strlcat(flags, "*", sizeof(flags));
+        }
 #line 738
-      __cil_tmp___8 = Channel_UserModes(Chan, c);
+        __cil_tmp___8 = Channel_UserModes(Chan, c);
 #line 738
-      chan_user_modes = (char const   *)__cil_tmp___8;
+        chan_user_modes = (char const   *)__cil_tmp___8;
 #line 739
-      __cil_tmp___9 = who_flags_qualifier___2(chan_user_modes);
+        __cil_tmp___9 = who_flags_qualifier___2(chan_user_modes);
 #line 739
-      strlcat(flags, __cil_tmp___9, sizeof(flags));
+        strlcat(flags, __cil_tmp___9, sizeof(flags));
 #line 741
-      __cil_tmp___10 = Channel_Name((CHANNEL const   *)Chan);
+        __cil_tmp___10 = Channel_Name((CHANNEL const   *)Chan);
 #line 741
-      __cil_tmp___11 = write_whoreply___2(Client, c, __cil_tmp___10, (char const   *)(flags));
+        __cil_tmp___11 = write_whoreply___2(Client, c, __cil_tmp___10, (char const   *)(flags));
 #line 741
-      if (! __cil_tmp___11) {
+        if (! __cil_tmp___11) {
 #line 742
-        return (0);
+          return (0);
+        }
       }
     }
     __Cont: 
@@ -52876,7 +52954,7 @@ static int Show_MOTD_End___2(CLIENT *Client )
 }
 }
 #line 1 "irc-login.o"
-#pragma merger(0,"/tmp/cil-I6fgJ9jR.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-8nSY8NMK.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 41 "irc-login.c"
 static int Hello_User___2(CLIENT *Client ) ;
 #line 42
@@ -53061,7 +53139,7 @@ static void Kill_Nick___2(char *Nick , char *Reason )
 }
 }
 #line 1 "irc-mode.o"
-#pragma merger(0,"/tmp/cil-rhOANZZq.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-xuPh32hq.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 39 "irc-mode.c"
 static int Client_Mode___2(CLIENT *Client , REQUEST *Req , CLIENT *Origin , CLIENT *Target ) ;
 #line 40
@@ -53198,28 +53276,51 @@ static int Client_Mode___2(CLIENT *Client , REQUEST *Req , CLIENT *Origin , CLIE
     case 43: 
     case 45: 
 #line 135
-    if (((int )*mode_ptr == 43 && ! set) || ((int )*mode_ptr == 45 && set)) {
-#line 138
-      __cil_tmp___7 = strlen((char const   *)(the_modes));
-#line 138
-      len = __cil_tmp___7 - 1U;
-#line 139
-      if ((int )the_modes[len] == 43 || (int )the_modes[len] == 45) {
-#line 142
-        the_modes[len] = *mode_ptr;
+    if ((int )*mode_ptr == 43) {
+#line 135
+      if (! set) {
+#line 136
+        goto _L;
       } else {
-#line 147
-        x[0] = *mode_ptr;
-#line 148
-        strlcat(the_modes, (char const   *)(x), sizeof(the_modes));
+#line 138
+        goto _L___0;
       }
+    } else {
+      _L___0: 
+#line 135
+      if ((int )*mode_ptr == 45) {
+#line 135
+        if (set) {
+          _L: 
+#line 138
+          __cil_tmp___7 = strlen((char const   *)(the_modes));
+#line 138
+          len = __cil_tmp___7 - 1U;
+#line 139
+          if ((int )the_modes[len] == 43) {
+#line 142
+            the_modes[len] = *mode_ptr;
+          } else {
+#line 139
+            if ((int )the_modes[len] == 45) {
+#line 142
+              the_modes[len] = *mode_ptr;
+            } else {
+#line 147
+              x[0] = *mode_ptr;
+#line 148
+              strlcat(the_modes, (char const   *)(x), sizeof(the_modes));
+            }
+          }
 #line 150
-      if ((int )*mode_ptr == 43) {
+          if ((int )*mode_ptr == 43) {
 #line 150
-        set = 1;
-      } else {
+            set = 1;
+          } else {
 #line 151
-        set = 0;
+            set = 0;
+          }
+        }
       }
     }
 #line 153
@@ -53373,9 +53474,15 @@ static int Client_Mode___2(CLIENT *Client , REQUEST *Req , CLIENT *Origin , CLIE
 #line 218
     len = __cil_tmp___21 - 1U;
 #line 219
-    if ((int )the_modes[len] == 43 || (int )the_modes[len] == 45) {
+    if ((int )the_modes[len] == 43) {
 #line 219
       the_modes[len] = (char )'\000';
+    } else {
+#line 219
+      if ((int )the_modes[len] == 45) {
+#line 219
+        the_modes[len] = (char )'\000';
+      }
     }
 #line 221
     __cil_tmp___25 = Client_Type(Client);
@@ -53721,23 +53828,46 @@ static int Channel_Mode___2(CLIENT *Client , REQUEST *Req , CLIENT *Origin , CHA
     case 43: 
     case 45: 
 #line 360
-    if (((int )*mode_ptr == 43 && ! set) || ((int )*mode_ptr == 45 && set)) {
-#line 362
-      __cil_tmp___9 = strlen((char const   *)(the_modes));
-#line 362
-      len = __cil_tmp___9 - 1U;
-#line 363
-      if ((int )the_modes[len] == 43 || (int )the_modes[len] == 45) {
-#line 365
-        the_modes[len] = *mode_ptr;
+    if ((int )*mode_ptr == 43) {
+#line 360
+      if (! set) {
+#line 361
+        goto _L;
       } else {
-#line 368
-        x[0] = *mode_ptr;
-#line 369
-        strlcat(the_modes, (char const   *)(x), sizeof(the_modes));
+#line 363
+        goto _L___0;
       }
+    } else {
+      _L___0: 
+#line 360
+      if ((int )*mode_ptr == 45) {
+#line 360
+        if (set) {
+          _L: 
+#line 362
+          __cil_tmp___9 = strlen((char const   *)(the_modes));
+#line 362
+          len = __cil_tmp___9 - 1U;
+#line 363
+          if ((int )the_modes[len] == 43) {
+#line 365
+            the_modes[len] = *mode_ptr;
+          } else {
+#line 363
+            if ((int )the_modes[len] == 45) {
+#line 365
+              the_modes[len] = *mode_ptr;
+            } else {
+#line 368
+              x[0] = *mode_ptr;
+#line 369
+              strlcat(the_modes, (char const   *)(x), sizeof(the_modes));
+            }
+          }
 #line 371
-      set = (int )*mode_ptr == 43;
+          set = (int )*mode_ptr == 43;
+        }
+      }
     }
 #line 373
     continue;
@@ -53856,16 +53986,19 @@ static int Channel_Mode___2(CLIENT *Client , REQUEST *Req , CLIENT *Origin , CHA
 #line 428
         l = atol((char const   *)Req->argv[arg_arg]);
 #line 429
-        if (l > 0L && l < 65535L) {
+        if (l > 0L) {
+#line 429
+          if (l < 65535L) {
 #line 430
-          Channel_ModeDel(Channel, (char )'l');
+            Channel_ModeDel(Channel, (char )'l');
 #line 431
-          Channel_SetMaxUsers(Channel, (unsigned long )l);
+            Channel_SetMaxUsers(Channel, (unsigned long )l);
 #line 432
-          snprintf((char * __restrict  )(argadd), sizeof(argadd), (char const   * __restrict  )"%ld",
-                   l);
+            snprintf((char * __restrict  )(argadd), sizeof(argadd), (char const   * __restrict  )"%ld",
+                     l);
 #line 433
-          x[0] = *mode_ptr;
+            x[0] = *mode_ptr;
+          }
         }
       } else {
 #line 436
@@ -54149,9 +54282,15 @@ static int Channel_Mode___2(CLIENT *Client , REQUEST *Req , CLIENT *Origin , CHA
 #line 549
     len = __cil_tmp___57 - 1U;
 #line 550
-    if ((int )the_modes[len] == 43 || (int )the_modes[len] == 45) {
+    if ((int )the_modes[len] == 43) {
 #line 551
       the_modes[len] = (char )'\000';
+    } else {
+#line 550
+      if ((int )the_modes[len] == 45) {
+#line 551
+        the_modes[len] = (char )'\000';
+      }
     }
 #line 553
     __cil_tmp___63 = Client_Type(Client);
@@ -54325,9 +54464,9 @@ static int Send_ListChange___2(char *Mode , CLIENT *Prefix , CLIENT *Client , CH
 }
 }
 #line 1 "irc-op.o"
-#pragma merger(0,"/tmp/cil-V8yjQMti.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-NtNzPUfh.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 1 "irc-oper.o"
-#pragma merger(0,"/tmp/cil-dcLVj2e4.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-DfQRd0Qz.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 40 "irc-oper.c"
 static int Bad_OperPass___2(CLIENT *Client , char *errtoken , char *errmsg ) 
 { char *__cil_tmp ;
@@ -54350,9 +54489,9 @@ static int Bad_OperPass___2(CLIENT *Client , char *errtoken , char *errmsg )
 }
 }
 #line 1 "irc-server.o"
-#pragma merger(0,"/tmp/cil-QhOSj8Ba.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-ae4wiM1l.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 1 "irc-write.o"
-#pragma merger(0,"/tmp/cil-QMKB9hQf.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-n25xOfef.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 42 "irc-write.c"
 static char *Get_Prefix___2(CLIENT *Target , CLIENT *Client ) ;
 #line 418 "irc-write.c"
@@ -54379,7 +54518,7 @@ static char *Get_Prefix___2(CLIENT *Target , CLIENT *Client )
 }
 }
 #line 1 "lists.o"
-#pragma merger(0,"/tmp/cil-7J439Owu.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-LdFXrMYp.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 94 "lists.c"
 static void Lists_Unlink___2(struct list_head *header , struct list_elem *p , struct list_elem *victim ) 
 { 
@@ -54402,7 +54541,7 @@ static void Lists_Unlink___2(struct list_head *header , struct list_elem *p , st
 #line 171 "lists.c"
 static char TheMask___2[128]  ;
 #line 1 "log.o"
-#pragma merger(0,"/tmp/cil-5ADGQOfJ.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-nLsh5cPb.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 47 "log.c"
 static char Init_Txt___2[127]  ;
 #line 48 "log.c"
@@ -54443,7 +54582,7 @@ static void Wall_ServerNotice___2(char *Msg )
 }
 }
 #line 1 "match.o"
-#pragma merger(0,"/tmp/cil-uqGiWVMI.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-kvy3e6vb.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 35 "match.c"
 static int Matche___2(char const   *p , char const   *t ) ;
 #line 36
@@ -54498,11 +54637,19 @@ static int Matche___2(char const   *p , char const   *t )
 #line 86
     invert = 0;
 #line 87
-    if ((int const   )*p == 33 || (int const   )*p == 94) {
+    if ((int const   )*p == 33) {
 #line 89
       invert = 1;
 #line 90
       p ++;
+    } else {
+#line 87
+      if ((int const   )*p == 94) {
+#line 89
+        invert = 1;
+#line 90
+        p ++;
+      }
     }
 #line 94
     if ((int const   )*p == 93) {
@@ -54550,9 +54697,15 @@ static int Matche___2(char const   *p , char const   *t )
 #line 119
         range_end = (char )*p;
 #line 122
-        if ((int )range_end == 0 || (int )range_end == 93) {
+        if ((int )range_end == 0) {
 #line 122
           return (6);
+        } else {
+#line 122
+          if ((int )range_end == 93) {
+#line 122
+            return (6);
+          }
         }
 #line 125
         if ((int )range_end == 92) {
@@ -54572,26 +54725,48 @@ static int Matche___2(char const   *p , char const   *t )
 #line 139
       if ((int )range_start < (int )range_end) {
 #line 141
-        if ((int const   )*t >= (int const   )range_start && (int const   )*t <= (int const   )range_end) {
+        if ((int const   )*t >= (int const   )range_start) {
+#line 141
+          if ((int const   )*t <= (int const   )range_end) {
 #line 143
-          member_match = 1;
+            member_match = 1;
 #line 144
-          loop = 0;
+            loop = 0;
+          }
         }
       } else {
 #line 149
-        if ((int const   )*t >= (int const   )range_end && (int const   )*t <= (int const   )range_start) {
+        if ((int const   )*t >= (int const   )range_end) {
+#line 149
+          if ((int const   )*t <= (int const   )range_start) {
 #line 151
-          member_match = 1;
+            member_match = 1;
 #line 152
-          loop = 0;
+            loop = 0;
+          }
         }
       }
     }
 #line 159
-    if ((invert && member_match) || ! (invert || member_match)) {
+    if (invert) {
 #line 159
-      return (4);
+      if (member_match) {
+#line 159
+        return (4);
+      } else {
+#line 161
+        goto _L;
+      }
+    } else {
+      _L: 
+#line 159
+      if (! invert) {
+#line 159
+        if (! member_match) {
+#line 159
+          return (4);
+        }
+      }
     }
 #line 163
     if (member_match) {
@@ -54659,7 +54834,15 @@ static int Matche_After_Star___2(char const   *p , char const   *t )
 #line 206
   match = 0;
 #line 209
-  while ((int const   )*p == 63 || (int const   )*p == 42) {
+  while (1) {
+#line 209
+    if (! ((int const   )*p == 63)) {
+#line 209
+      if (! ((int const   )*p == 42)) {
+#line 209
+        break;
+      }
+    }
 #line 212
     if ((int const   )*p == 63) {
 #line 215
@@ -54695,9 +54878,15 @@ static int Matche_After_Star___2(char const   *p , char const   *t )
 #line 236
   while (1) {
 #line 242
-    if (nextp == (int )*t || nextp == 91) {
+    if (nextp == (int )*t) {
 #line 242
       match = Matche___2(p, t);
+    } else {
+#line 242
+      if (nextp == 91) {
+#line 242
+        match = Matche___2(p, t);
+      }
     }
 #line 245
     __cil_tmp___0 = t;
@@ -54709,7 +54898,19 @@ static int Matche_After_Star___2(char const   *p , char const   *t )
       match = 3;
     }
 #line 236
-    if (! ((match != 1 && match != 3) && match != 6)) {
+    if (match != 1) {
+#line 236
+      if (match != 3) {
+#line 236
+        if (! (match != 6)) {
+#line 236
+          break;
+        }
+      } else {
+#line 236
+        break;
+      }
+    } else {
 #line 236
       break;
     }
@@ -54719,7 +54920,7 @@ static int Matche_After_Star___2(char const   *p , char const   *t )
 }
 }
 #line 1 "numeric.o"
-#pragma merger(0,"/tmp/cil-IEo0zmsA.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-bPctWQYd.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 46 "numeric.c"
 static int Announce_Server___2(CLIENT *Client , CLIENT *Server ) 
 { CLIENT *c ;
@@ -54912,9 +55113,12 @@ static int Send_CHANINFO___2(CLIENT *Client , CHANNEL *Chan )
 #line 151
   topic = Channel_Topic(Chan);
 #line 153
-  if (! *modes && ! *topic) {
+  if (! *modes) {
+#line 153
+    if (! *topic) {
 #line 154
-    return (1);
+      return (1);
+    }
   }
 #line 156
   __cil_tmp = strchr((char const   *)modes, 'k');
@@ -54925,24 +55129,27 @@ static int Send_CHANINFO___2(CLIENT *Client , CHANNEL *Chan )
 #line 157
   has_l = (unsigned int )__cil_tmp___0 != (unsigned int )((void *)0);
 #line 160
-  if (! has_k && ! has_l) {
+  if (! has_k) {
+#line 160
+    if (! has_l) {
 #line 161
-    if (! *topic) {
+      if (! *topic) {
 #line 163
-      __cil_tmp___1 = Channel_Name((CHANNEL const   *)Chan);
+        __cil_tmp___1 = Channel_Name((CHANNEL const   *)Chan);
 #line 163
-      __cil_tmp___2 = IRC_WriteStrClient(Client, (char *)"CHANINFO %s +%s", __cil_tmp___1,
-                                         modes);
+        __cil_tmp___2 = IRC_WriteStrClient(Client, (char *)"CHANINFO %s +%s", __cil_tmp___1,
+                                           modes);
 #line 163
-      return (__cil_tmp___2);
+        return (__cil_tmp___2);
+      }
+#line 167
+      __cil_tmp___3 = Channel_Name((CHANNEL const   *)Chan);
+#line 167
+      __cil_tmp___4 = IRC_WriteStrClient(Client, (char *)"CHANINFO %s +%s :%s", __cil_tmp___3,
+                                         modes, topic);
+#line 167
+      return (__cil_tmp___4);
     }
-#line 167
-    __cil_tmp___3 = Channel_Name((CHANNEL const   *)Chan);
-#line 167
-    __cil_tmp___4 = IRC_WriteStrClient(Client, (char *)"CHANINFO %s +%s :%s", __cil_tmp___3,
-                                       modes, topic);
-#line 167
-    return (__cil_tmp___4);
   }
 #line 171
   if (has_l) {
@@ -54973,7 +55180,7 @@ static int Send_CHANINFO___2(CLIENT *Client , CHANNEL *Chan )
 }
 }
 #line 1 "parse.o"
-#pragma merger(0,"/tmp/cil-hFGuiy3J.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-n5wA4K2A.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 61 "parse.c"
 static COMMAND My_Commands___2[48]  = 
 #line 61 "parse.c"
@@ -55306,19 +55513,26 @@ static int Handle_Request___2(CONN_ID Idx , REQUEST *Req )
 #line 438
   client_type = Client_Type(client);
 #line 439
-  if (client_type == 32 || client_type == 128) {
+  if (client_type == 32) {
+#line 440
+    goto _L;
+  } else {
 #line 439
-    __cil_tmp___0 = strlen((char const   *)Req->command);
+    if (client_type == 128) {
+      _L: 
 #line 439
-    if (__cil_tmp___0 == 3U) {
+      __cil_tmp___0 = strlen((char const   *)Req->command);
 #line 439
-      __cil_tmp___1 = atoi((char const   *)Req->command);
+      if (__cil_tmp___0 == 3U) {
 #line 439
-      if (__cil_tmp___1 > 1) {
+        __cil_tmp___1 = atoi((char const   *)Req->command);
+#line 439
+        if (__cil_tmp___1 > 1) {
 #line 442
-        __cil_tmp = Handle_Numeric___2(client, Req);
+          __cil_tmp = Handle_Numeric___2(client, Req);
 #line 442
-        return (__cil_tmp);
+          return (__cil_tmp);
+        }
       }
     }
   }
@@ -55365,9 +55579,15 @@ static int Handle_Request___2(CONN_ID Idx , REQUEST *Req )
     return (result);
   }
 #line 468
-  if ((client_type != 16 && client_type != 32) && client_type != 64) {
+  if (client_type != 16) {
+#line 468
+    if (client_type != 32) {
+#line 468
+      if (client_type != 64) {
 #line 471
-    return (1);
+        return (1);
+      }
+    }
   }
 #line 474
   if (Req->prefix) {
@@ -55407,9 +55627,9 @@ static int Handle_Request___2(CONN_ID Idx , REQUEST *Req )
 }
 }
 #line 1 "rendezvous.o"
-#pragma merger(0,"/tmp/cil-zMpbCs9x.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-lazPIFGx.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 1 "resolve.o"
-#pragma merger(0,"/tmp/cil-vttV1T4X.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-hEYrxdl6.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 44 "resolve.c"
 static void Do_ResolveAddr___2(ng_ipaddr_t const   *Addr , int identsock , int w_fd ) ;
 #line 45
@@ -55846,12 +56066,12 @@ static int register_callback___2(RES_STAT *s , void (*cbfunc)(int  , short  ) )
 }
 }
 #line 1 "strlcpy.o"
-#pragma merger(0,"/tmp/cil-570RgdRQ.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-OHhQM2pa.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 1 "strdup.o"
-#pragma merger(0,"/tmp/cil-uCT5KQ4f.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-dE2PNln9.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 1 "vsnprintf.o"
-#pragma merger(0,"/tmp/cil-yjIbTdXN.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-rAh6XhtT.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 1 "libngtool.a"
-#pragma merger(0,"/tmp/cil-CQkBTjmC.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-h5Ye35KD.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 1 "libngipaddr.a"
-#pragma merger(0,"/tmp/cil-0Tbgzs97.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-QeTlew75.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
