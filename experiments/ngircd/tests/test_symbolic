@@ -2,10 +2,12 @@
 #  $1 = DATA_DIR
 #  $2 = PROJ_DIR
 #  $3 = test name
+#  $4 = cov type
 #
 DATA_DIR=$1
 PROJ_DIR=$2
 TEST_NAME=$3
+COVTYPE=$4
 
 COVDIR=../codeCoverageTest
 EXPDIR=../..
@@ -34,7 +36,7 @@ MACRO="\
 -DSYM_CONF_PONGTIMEOUT"
 
 
-echo \#BEGIN TEST_SYMBOLIC TEST_NAME=$TEST_NAME MACRO=\"$MACRO\"
+echo \#BEGIN TEST_SYMBOLIC TEST_NAME=$TEST_NAME COVTYPE=\"$COVTYPE\" MACRO=\"$MACRO\"
 date
 
 CILLY_DONT_COMPILE_AFTER_MERGE= \
@@ -49,11 +51,13 @@ $TOPDIR/cil/bin/cilly \
 	--printLittle \
 	--printNoEscapedString \
 	--covStats=$STATSFILE \
-	--lineCov \
+	$COVTYPE \
 	--timeout=14400 \
 	--marshalCoverageTo=$MARSHALDIR/$TEST_NAME.marshal \
 	$PROJ_DIR \
 	$COVDIR/otherFiles/$TEST_NAME.c
 
-echo \#DONE TEST_SYMBOLIC TEST_NAME=$TEST_NAME MACRO=\"$MACRO\"
+echo \#DONE TEST_SYMBOLIC TEST_NAME=$TEST_NAME COVTYPE=\"$COVTYPE\" MACRO=\"$MACRO\" 
 date
+
+#	--lineCov \

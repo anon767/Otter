@@ -4,6 +4,7 @@ VERSION=ngircd-0.12.0
 NGIRCD_DIR=./$(VERSION)
 
 CILLY_OPT= --merge \
+		  --useLogicalOperators \
 		  -fno-builtin \
 		  -fno-inline \
 		  --keepmerged \

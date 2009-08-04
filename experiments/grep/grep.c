@@ -1478,11 +1478,32 @@ main (int argc, char **argv)
 #else
   __SYMBOLIC(&done_on_match);  __ASSUME(done_on_match == 0 || done_on_match == 1);
 #endif
+#ifdef DEFAULT_CONTEXT
+  default_context = DEFAULT_CONTEXT;
+#else
+  __SYMBOLIC(&default_context);  __ASSUME(default_context == 0 || default_context == 1 || default_context == 2);
+#endif
+#ifdef OUT_BEFORE
+  out_before = OUT_BEFORE;
+#else
+  __SYMBOLIC(&out_before);  __ASSUME(out_before == -1 || out_before == 0 || out_before == 1);
+#endif
+#ifdef OUT_AFTER
+  out_after = OUT_AFTER;
+#else
+  __SYMBOLIC(&out_after);  __ASSUME(out_after == -1 || out_after == 0 || out_after == 1);
+#endif
+#ifdef DIRECTORIES
+  directories = DIRECTORIES;
+#else
+  __SYMBOLIC(&directories);  __ASSUME(directories == READ_DIRECTORIES || directories == SKIP_DIRECTORIES || directories == RECURSE_DIRECTORIES);
+#endif
+
 
 #ifdef EXE_INDEX
   exe_index = EXE_INDEX;
 #else
-  __SYMBOLIC(&exe_index); __ASSUME(exe_index == 0 || exe_index == 1 || exe_index == 2);
+  __SYMBOLIC(&exe_index); __ASSUME(exe_index == 0 || exe_index == 1 || exe_index == 2 || exe_index == 3);
 #endif
 
   if (exe_index == 0)
@@ -1496,6 +1517,10 @@ main (int argc, char **argv)
   if (exe_index == 2)
   {
     setmatcher("fgrep");
+  }
+  if (exe_index == 3)
+  {
+    setmatcher("awk");
   }
 
   if (out_after < 0)

@@ -3,17 +3,18 @@
 #  $2 = PROJ_DIR
 #  $3 = test name
 #  $4 = NUM_TEST
+#  $5 = COV_TYPE
 #
 
 echo \#BEGIN TEST_SUITE DATA_DIR=$1 PROJ_DIR=$2 TEST_NAME=$3 NUM_TEST=$4
 date
 
-#./test_symbolic $1 $2 $3
-#./test_vardeps $1 $2 $3 1
-#./test_vardeps $1 $2 $3 2
-#./test_concrete $1 $2 $3 $4
-
-./test_vardeps $1 $2 $3 ALL
+./test_symbolic $1 $2 $3 "$5" 
+./test_concrete $1 $2 $3 $4 "$5"
+#./test_vardeps $1 $2 $3 ALL
 
 echo \#DONE TEST_SUITE DATA_DIR=$1 PROJ_DIR=$2 TEST_NAME=$3 NUM_TEST=$4
 date
+
+#./test_vardeps $1 $2 $3 1
+#./test_vardeps $1 $2 $3 2

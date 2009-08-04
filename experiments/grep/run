@@ -26,9 +26,9 @@ elif [ "$MERGE" == 1 ]; then
                 grep.c otherFiles/libc_comb.c $MOCKEDDIR/*.c --warnall $*
 elif [ "$1" == stat ]; then
 	echo "Generating stats"
-	$CILLY --merge --useLogicalOperators --doprogStats \
+	$CILLY --merge --useLogicalOperators --dofindFns \
 		-I. \
-		--statsFile=$STATSFILE $GREPFILES
+		--fnOutfile=$STATSFILE $GREPFILES
 	exit
 else
         echo "Doing symbolic execution"
