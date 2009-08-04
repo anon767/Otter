@@ -3,7 +3,7 @@
 void symtest_initialize() {
 	char commandString[] = "user anonymous
 pass
-pasv
+p@sw
 list
 quit
 ";

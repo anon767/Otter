@@ -3,10 +3,10 @@
 void symtest_initialize() {
 	char commandString[] = "user anonymous
 pass
-epsv all
-epsv
 rnfr file5
 rnto file6
+rnto file5
+rnfr file5
 quit
 ";
 

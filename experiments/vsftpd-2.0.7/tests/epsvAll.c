@@ -3,19 +3,8 @@
 void symtest_initialize() {
 	char commandString[] = "user anonymous
 pass
-pwd
-xcup
-xpwd
-cdup
-pwd
-cwd /
-pwd
-xcwd ~
-pwd
-cwd ~ftp
-pwd
-cwd
-pwd
+epsv all
+pasv
 quit
 ";
 

@@ -4,6 +4,7 @@ void symtest_initialize() {
 	char commandString[] = "user ftp
 pass
 mkd myDir
+xmkd myDir2
 quit
 ";
 
