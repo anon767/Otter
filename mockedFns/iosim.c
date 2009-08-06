@@ -209,6 +209,7 @@ int IOSIM_unlink(const char *pathname) {
 				free(sym_file);
 			}
 			// Remove the file entry from IOSIM_file and IOSIM_file_name
+			// This may mess up readdir(), though, because it shifts indices.
 			IOSIM_num_file--;
 			for ( ; i < IOSIM_num_file; i++) {
 				IOSIM_file[i] = IOSIM_file[i+1];
@@ -231,8 +232,9 @@ int IOSIM_close(int fildes) {
 	return 0;
 }
 
-int IOSIM_read(int fildes, void *buf, int nbyte){
-	int n,cur,len;
+int IOSIM_read(int fildes, void *buf, size_t nbyte){
+	size_t n;
+	int cur,len;
 	char* cbuf = buf;
 
 	if(nbyte == 0) return 0;
@@ -242,10 +244,10 @@ int IOSIM_read(int fildes, void *buf, int nbyte){
 	sym_file_stream_t* in = IOSIM_fd[fildes];
 
 	cur = in->offset;
-	if (in->buffer == NULL){
-		in->buffer=strdup(in->sym_file->contents);
-	}
 	len = in->sym_file->stat.st_size;
+	if (in->buffer == NULL){
+		in->buffer=memcpy(malloc(len),in->sym_file->contents,len);
+	}
 	for(n=0;n<nbyte;n++){
 		if(cur>=len) {
 			cbuf[n] = EOF;
@@ -256,10 +258,6 @@ int IOSIM_read(int fildes, void *buf, int nbyte){
 		cur++;
 	}
 	in->offset = cur;
-	if (n < 0) {
-		__COMMENT("n is negative in IOSIM_read; this shouldn't be");
-		exit(1);
-	}
 	return n;
 }
 
@@ -273,8 +271,8 @@ int IOSIM_ungetc(int c, int fildes){
 	return c;
 }
 
-int IOSIM_write(int fildes, const void *buf, int nbyte){
-	int n,cur,len;
+int IOSIM_write(int fildes, const void *buf, size_t nbyte){
+	int cur,len;
 	char* cbuf = buf;
 
 	if(nbyte == 0) return 0;
@@ -352,18 +350,46 @@ typedef struct __dirstream {
 	sym_file_stream_t filestream;
 };
 
+void initDir(DIR *dir, int i) {
+	dir->index = i;
+	dir->filestream.fd = IOSIM_newfd();
+	dir->filestream.sym_file = malloc(sizeof(sym_file_t));
+	dir->filestream.sym_file->stat.st_mode = S_IROTH;
+	IOSIM_fd[dir->filestream.fd] = &dir->filestream;
+}
+
 DIR *IOSIM_opendir(const char *dirname) {
 	DIR *dir = malloc(sizeof(DIR));
 	if (!realpath(dirname,dir->dirname)) {
 		free(dir);
 		return NULL;
 	}
-	dir->index = 0;
-	dir->filestream.fd = IOSIM_newfd();
-	dir->filestream.sym_file = malloc(sizeof(sym_file_t));
-	dir->filestream.sym_file->stat.st_mode = S_IROTH;
-	IOSIM_fd[dir->filestream.fd] = &dir->filestream;
-	return dir;
+	int length = strlen(dir->dirname);
+	if (length == 1) { // dir->dirname is "/", so it exists
+		initDir(dir,0);
+		return dir;
+	}
+	for (int i = 0; i < IOSIM_num_file; i++) {
+		char *filename = IOSIM_file_name[i];
+		// In this next 'if', the strncmp() checks that filename is a
+		// prefix of dir->dirname and the expression to the right of the
+		// '&&' makes sure what we find is really a directory.
+		// Since IOSIM_file_name only contains file names (and not
+		// directory names), if filename really is a file in dir->dirname
+		// (or a subdirectory), the next character will be '/'. Otherwise,
+		// filename is a prefix but *not* the directory we're looking for.
+		// (e.g., "/foo" should match "/foo/bar", but not "/foot" or "/foot/bar")
+		if (!strncmp(dir->dirname,filename,length) && filename[length] == '/') {
+			// filename is the name of a file in directory dirname (or in a subdirectory),
+			// so the directory exists and i is the first index of a file in the directory
+			initDir(dir,i);
+			return dir;
+		}
+	}
+	// The directory does not exist
+	errno = ENOENT;
+	free(dir);
+	return NULL;
 }
 
 int IOSIM_closedir(DIR *dir) {
