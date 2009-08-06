@@ -8,8 +8,8 @@ echo Scheduling cd
 ./stats -b vsftpd 1=3 2=170 # cd
 echo Scheduling dele
 ./stats -b vsftpd 1=3 2=171 # dele
-echo Scheduling epsvAllRename
-./stats -b vsftpd 1=3 2=172 # epsvAllRename
+#echo Scheduling epsvAllRename
+#./stats -b vsftpd 1=3 2=172 # epsvAllRename
 echo Scheduling epsvStorList
 ./stats -b vsftpd 1=3 2=173 # epsvStorList
 echo Scheduling failList
@@ -50,16 +50,16 @@ echo Scheduling smnt
 ./stats -b vsftpd 1=3 2=192 # smnt
 echo Scheduling stat
 ./stats -b vsftpd 1=3 2=193 # stat
-echo Scheduling storList
-./stats -b vsftpd 1=3 2=194 # storList
-echo Scheduling storListDot
-./stats -b vsftpd 1=3 2=195 # storListDot
-echo Scheduling storListFtp
-./stats -b vsftpd 1=3 2=196 # storListFtp
-echo Scheduling storListTilde
-./stats -b vsftpd 1=3 2=198 # storListTilde
-echo Scheduling storNlst
-./stats -b vsftpd 1=3 2=199 # storNlst
+#echo Scheduling storList
+#./stats -b vsftpd 1=3 2=194 # storList
+#echo Scheduling storListDot
+#./stats -b vsftpd 1=3 2=195 # storListDot
+#echo Scheduling storListFtp
+#./stats -b vsftpd 1=3 2=196 # storListFtp
+#echo Scheduling storListTilde
+#./stats -b vsftpd 1=3 2=198 # storListTilde
+#echo Scheduling storNlst
+#./stats -b vsftpd 1=3 2=199 # storNlst
 echo Scheduling storRetr
 ./stats -b vsftpd 1=3 2=200 # storRetr
 echo Scheduling syst
@@ -90,10 +90,10 @@ echo Scheduling rmd
 ./stats -b vsftpd 1=3 2=688 # rmd
 echo Scheduling storRetrBinary
 ./stats -b vsftpd 1=3 2=689 # storRetrBinary
-echo Scheduling storSize
-./stats -b vsftpd 1=3 2=690 # storSize
-echo Scheduling storStat
-./stats -b vsftpd 1=3 2=691 # storStat
+#echo Scheduling storSize
+#./stats -b vsftpd 1=3 2=690 # storSize
+#echo Scheduling storStat
+#./stats -b vsftpd 1=3 2=691 # storStat
 echo Scheduling struF
 ./stats -b vsftpd 1=3 2=692 # struF
 echo Scheduling stru
@@ -104,13 +104,61 @@ echo Scheduling type
 ./stats -b vsftpd 1=3 2=695 # type
 echo Scheduling mdtm
 ./stats -b vsftpd 1=3 2=696 # mdtm
-echo Scheduling storMdtm
-./stats -b vsftpd 1=3 2=697 # storMdtm
-echo Scheduling storMdtm2
-./stats -b vsftpd 1=3 2=698 # storMdtm2
+#echo Scheduling storMdtm
+#./stats -b vsftpd 1=3 2=697 # storMdtm
+#echo Scheduling storMdtm2
+#./stats -b vsftpd 1=3 2=698 # storMdtm2
 echo Scheduling listQ
 ./stats -b vsftpd 1=3 2=699 # listQ
-echo Scheduling storListBraceR
-./stats -b vsftpd 1=3 2=701 # storListBraceR
-echo Scheduling storListStarF
-./stats -b vsftpd 1=3 2=702 # storListStarF
+#echo Scheduling storListBraceR
+#./stats -b vsftpd 1=3 2=701 # storListBraceR
+#echo Scheduling storListStarF
+#./stats -b vsftpd 1=3 2=702 # storListStarF
+echo Scheduling epsvAll
+./stats -b vsftpd 1=3 2=843 # epsvAll
+echo Scheduling listDot
+./stats -b vsftpd 1=3 2=844 # listDot
+echo Scheduling listFtp
+./stats -b vsftpd 1=3 2=845 # listFtp
+echo Scheduling listL
+./stats -b vsftpd 1=3 2=846 # listL
+echo Scheduling listR
+./stats -b vsftpd 1=3 2=847 # listR
+echo Scheduling listSlash
+./stats -b vsftpd 1=3 2=848 # listSlash
+echo Scheduling listTilde
+./stats -b vsftpd 1=3 2=849 # listTilde
+echo Scheduling loggedInUnknownCommand
+./stats -b vsftpd 1=3 2=850 # loggedInUnknownCommand
+echo Scheduling mdtm2
+./stats -b vsftpd 1=3 2=851 # mdtm2
+echo Scheduling mdtm3
+./stats -b vsftpd 1=3 2=852 # mdtm3
+echo Scheduling nlstF
+./stats -b vsftpd 1=3 2=853 # nlstF
+echo Scheduling nlstT
+./stats -b vsftpd 1=3 2=854 # nlstT
+echo Scheduling rename
+./stats -b vsftpd 1=3 2=855 # rename
+echo Scheduling retr
+./stats -b vsftpd 1=3 2=856 # retr
+echo Scheduling retrBinary
+./stats -b vsftpd 1=3 2=857 # retrBinary
+echo Scheduling size
+./stats -b vsftpd 1=3 2=858 # size
+echo Scheduling stat2
+./stats -b vsftpd 1=3 2=859 # stat2
+echo Scheduling stor
+./stats -b vsftpd 1=3 2=860 # stor
+echo Scheduling stou
+./stats -b vsftpd 1=3 2=861 # stou
+echo Scheduling eprt
+./stats -b vsftpd 1=3 2=862 # eprt
+echo Scheduling listBraceR
+./stats -b vsftpd 1=3 2=863 # listBraceR
+echo Scheduling listRev
+./stats -b vsftpd 1=3 2=864 # listRev
+echo Scheduling nlstStarF
+./stats -b vsftpd 1=3 2=865 # nlstStarF
+echo Scheduling port
+./stats -b vsftpd 1=3 2=866 # port

@@ -31,6 +31,11 @@ static void do_sanity_checks(void);
 static void session_init(struct vsf_session* p_sess);
 static void env_init(void);
 
+// Inserted for symbolic execution
+extern void symtest_initialize(void);
+extern int dup2(int,int);
+extern int socket(int,int,int);
+
 int
 main(int argc, const char* argv[])
 {
@@ -230,14 +235,14 @@ main(int argc, const char* argv[])
       tunable_chown_uploads = 0;
     }
   }
-  if (tunable_one_process_model)
-  {
+//  if (tunable_one_process_model)
+//  {
     vsf_one_process_start(&the_session);
-  }
-  else
-  {
-    vsf_two_process_start(&the_session);
-  }
+//  }
+//  else
+//  {
+//    vsf_two_process_start(&the_session);
+//  }
   /* NOTREACHED */
   bug("should not get here: main");
   return 1;

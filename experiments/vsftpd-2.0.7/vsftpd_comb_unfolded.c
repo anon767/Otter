@@ -749,8 +749,8 @@ enum __anonenum_cap_flag_value_t_16 {
 } ;
 #line 66 "/usr/include/sys/capability.h"
 typedef enum __anonenum_cap_flag_value_t_16 cap_flag_value_t;
-#line 1 "cil-KsjQCfVB.o"
-#pragma merger(0,"/tmp/cil-D8WCuRkw.i","")
+#line 1 "cil-qWUYHWcu.o"
+#pragma merger(0,"/tmp/cil-blpcidLl.i","")
 #line 9 "./../../mockedFns/symexe.h"
 extern  __attribute__((__nothrow__, __noreturn__)) void exit(int __status ) ;
 #line 3 "../../libc/assert.c"
@@ -768,8 +768,8 @@ int assert(int expression )
   }
 }
 }
-#line 1 "cil-bnADFEHR.o"
-#pragma merger(0,"/tmp/cil-lA2avqHt.i","")
+#line 1 "cil-efkXa3BQ.o"
+#pragma merger(0,"/tmp/cil-qPd7GpiK.i","")
 #line 148 "/usr/include/stdlib.h"
  __attribute__((__nothrow__)) int atoi(char const   *nptr )  __attribute__((__pure__,
 __nonnull__(1))) ;
@@ -947,8 +947,8 @@ int atoi(char const   *nptr )
   return ((int )__cil_tmp);
 }
 }
-#line 1 "cil-DFO2ixpS.o"
-#pragma merger(0,"/tmp/cil-tD2UCuah.i","")
+#line 1 "cil-GcVfNokS.o"
+#pragma merger(0,"/tmp/cil-zRsFfPI0.i","")
 #line 151 "/usr/include/stdlib.h"
  __attribute__((__nothrow__)) long atol(char const   *nptr )  __attribute__((__pure__,
 __nonnull__(1))) ;
@@ -966,8 +966,8 @@ long atol(char const   *nptr )
   return ((long )__cil_tmp);
 }
 }
-#line 1 "cil-HB4WpBlY.o"
-#pragma merger(0,"/tmp/cil-prv5AfPM.i","")
+#line 1 "cil-ylExFGxo.o"
+#pragma merger(0,"/tmp/cil-4SzQxJbN.i","")
 #line 31 "../../libc/ctype.h"
 unsigned char const   __ctypes[257] ;
 #line 10 "../../libc/ctypes.c"
@@ -1038,8 +1038,8 @@ unsigned char const   __ctypes[257]  =
         (unsigned char const   )96,      (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34, 
         (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34, 
         (unsigned char const   )34};
-#line 1 "cil-c9Jx07iF.o"
-#pragma merger(0,"/tmp/cil-s5xpXLcE.i","")
+#line 1 "cil-JTP3hSCn.o"
+#pragma merger(0,"/tmp/cil-AKDreke1.i","")
 #line 208 "/usr/include/stdio.h"
 int fclose(FILE *f ) ;
 #line 754
@@ -1060,8 +1060,8 @@ int fclose(FILE *f )
   return (__cil_tmp___0);
 }
 }
-#line 1 "cil-hQZmioyJ.o"
-#pragma merger(0,"/tmp/cil-UAf5AoOX.i","")
+#line 1 "cil-qDTnwuSG.o"
+#pragma merger(0,"/tmp/cil-R6GDZj1H.i","")
 #line 213 "/usr/include/stdio.h"
 int fflush(FILE *stream ) ;
 #line 3 "../../libc/fflush.c"
@@ -1073,8 +1073,8 @@ int fflush(FILE *stream )
   return (0);
 }
 }
-#line 1 "cil-ZuX55QtH.o"
-#pragma merger(0,"/tmp/cil-40ERo2Hi.i","")
+#line 1 "cil-CVefZtX1.o"
+#pragma merger(0,"/tmp/cil-zLUpgY0N.i","")
 #line 450 "/usr/include/libio.h"
  __attribute__((__nothrow__)) int _IO_getc(struct _IO_FILE *stream ) ;
 #line 437 "/usr/include/stdio.h"
@@ -1090,8 +1090,8 @@ int fgetc(FILE *f )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-tGMkz9G3.o"
-#pragma merger(0,"/tmp/cil-ZERAUVY4.i","")
+#line 1 "cil-4zDxeJXa.o"
+#pragma merger(0,"/tmp/cil-OF0HO90C.i","")
 #line 528 "/usr/include/stdio.h"
 char *fgets(char * __restrict  s , int n , FILE * __restrict  f ) ;
 #line 11 "../../libc/fgets.c"
@@ -1141,8 +1141,8 @@ char *fgets(char * __restrict  s , int n , FILE * __restrict  f )
    void __builtin_va_end(__builtin_va_list  ) ;  */
 /* compiler builtin: 
    void __builtin_va_start(__builtin_va_list  ) ;  */
-#line 1 "cil-WMnJBA86.o"
-#pragma merger(0,"/tmp/cil-mXycIPbI.i","")
+#line 1 "cil-luffpjdF.o"
+#pragma merger(0,"/tmp/cil-1wqlQGno.i","")
 #line 323 "/usr/include/stdio.h"
 int fprintf(FILE * __restrict  file , char const   * __restrict  format  , ...) ;
 #line 338
@@ -1163,8 +1163,8 @@ int fprintf(FILE * __restrict  file , char const   * __restrict  format  , ...)
   return (rv);
 }
 }
-#line 1 "cil-Kte1dYxE.o"
-#pragma merger(0,"/tmp/cil-e1DXpC9O.i","")
+#line 1 "cil-7k1UbHDw.o"
+#pragma merger(0,"/tmp/cil-MtpL94sK.i","")
 #line 479 "/usr/include/stdio.h"
 int fputc(int c , FILE *f ) ;
 #line 38 "/usr/include/bits/errno.h"
@@ -1248,8 +1248,8 @@ int fputc(int c , FILE *f )
   return (__cil_tmp___0);
 }
 }
-#line 1 "cil-B46Rxqss.o"
-#pragma merger(0,"/tmp/cil-FjnBO2WR.i","")
+#line 1 "cil-PqMRuAFS.o"
+#pragma merger(0,"/tmp/cil-xM68ubdj.i","")
 #line 585 "/usr/include/stdio.h"
 int fputs(char const   * __restrict  s , FILE * __restrict  file ) ;
 #line 242 "/usr/include/string.h"
@@ -1269,8 +1269,8 @@ int fputs(char const   * __restrict  s , FILE * __restrict  file )
   return ((int )__cil_tmp___0);
 }
 }
-#line 1 "cil-JRwayppa.o"
-#pragma merger(0,"/tmp/cil-1SVEttFc.i","")
+#line 1 "cil-fJu2YQE1.o"
+#pragma merger(0,"/tmp/cil-jF5Booyq.i","")
 #line 605 "/usr/include/stdio.h"
 size_t fread(void * __restrict  ptr , size_t size , size_t nmemb , FILE * __restrict  f ) ;
 #line 314 "/usr/include/unistd.h"
@@ -1340,10 +1340,10 @@ size_t fread(void * __restrict  ptr , size_t size , size_t nmemb , FILE * __rest
   return (__cil_tmp / size);
 }
 }
-#line 1 "cil-IM7YZXLy.o"
-#pragma merger(0,"/tmp/cil-ZQVU4XkO.i","")
-#line 1 "cil-deb1JlYL.o"
-#pragma merger(0,"/tmp/cil-BngzBkxd.i","")
+#line 1 "cil-mSds65B6.o"
+#pragma merger(0,"/tmp/cil-eoa80d4X.i","")
+#line 1 "cil-zR57UVTG.o"
+#pragma merger(0,"/tmp/cil-M7HUM6uq.i","")
 #line 611 "/usr/include/stdio.h"
 size_t fwrite(void const   * __restrict  ptr , size_t size , size_t nmemb , FILE * __restrict  f ) ;
 #line 11 "../../libc/fwrite2.c"
@@ -1357,10 +1357,10 @@ size_t fwrite(void const   * __restrict  ptr , size_t size , size_t nmemb , FILE
   return (__cil_tmp / size);
 }
 }
-#line 1 "cil-acr8aWmv.o"
-#pragma merger(0,"/tmp/cil-VnlEe728.i","")
-#line 1 "cil-X9FdN9Q5.o"
-#pragma merger(0,"/tmp/cil-ZpYC9gbs.i","")
+#line 1 "cil-kGtSEwX4.o"
+#pragma merger(0,"/tmp/cil-oAia8G4X.i","")
+#line 1 "cil-8wBB7ahg.o"
+#pragma merger(0,"/tmp/cil-H3at1gpK.i","")
 #line 33 "../../libc/ctype.h"
 __inline static int __ctype_isalnum(int __c ) 
 { 
@@ -1383,8 +1383,8 @@ int isalnum(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-SkBLh0OJ.o"
-#pragma merger(0,"/tmp/cil-eDBl48z4.i","")
+#line 1 "cil-BThgdIbU.o"
+#pragma merger(0,"/tmp/cil-Hg3Dflar.i","")
 #line 39 "../../libc/ctype.h"
 __inline static int __ctype_isalpha(int __c ) 
 { 
@@ -1407,8 +1407,8 @@ int isalpha(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-nsy8H91d.o"
-#pragma merger(0,"/tmp/cil-rCaaR8aP.i","")
+#line 1 "cil-vFeOiIBp.o"
+#pragma merger(0,"/tmp/cil-3k5dT175.i","")
 #line 44 "../../libc/ctype.h"
 __inline static int __ctype_isascii(int __c ) 
 { 
@@ -1431,8 +1431,8 @@ int isascii(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-6gWFIAKq.o"
-#pragma merger(0,"/tmp/cil-WMGIcHNY.i","")
+#line 1 "cil-teP9Ryrv.o"
+#pragma merger(0,"/tmp/cil-2CMnT25h.i","")
 #line 49 "../../libc/ctype.h"
 __inline static int __ctype_isblank(int __c ) 
 { 
@@ -1455,8 +1455,8 @@ int isblank(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-I6JP3G8c.o"
-#pragma merger(0,"/tmp/cil-ScH2Wdyd.i","")
+#line 1 "cil-WKXJlviH.o"
+#pragma merger(0,"/tmp/cil-9B9KP08Y.i","")
 #line 54 "../../libc/ctype.h"
 __inline static int __ctype_iscntrl(int __c ) 
 { 
@@ -1479,8 +1479,8 @@ int iscntrl(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-AzWEsBFR.o"
-#pragma merger(0,"/tmp/cil-5TrO7lr3.i","")
+#line 1 "cil-TBp4I0aN.o"
+#pragma merger(0,"/tmp/cil-nM0nIk7f.i","")
 #line 59 "../../libc/ctype.h"
 __inline static int __ctype_isdigit(int __c ) 
 { 
@@ -1503,8 +1503,8 @@ int isdigit(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-dc4njXj4.o"
-#pragma merger(0,"/tmp/cil-dDF7GpnG.i","")
+#line 1 "cil-5yS9zVRG.o"
+#pragma merger(0,"/tmp/cil-D2XVEpRj.i","")
 #line 64 "../../libc/ctype.h"
 __inline static int __ctype_isgraph(int __c ) 
 { 
@@ -1527,8 +1527,8 @@ int isgraph(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-snsGDk6a.o"
-#pragma merger(0,"/tmp/cil-74WaV9My.i","")
+#line 1 "cil-JK7QEDWb.o"
+#pragma merger(0,"/tmp/cil-JMGqC7iZ.i","")
 #line 70 "../../libc/ctype.h"
 __inline static int __ctype_islower(int __c ) 
 { 
@@ -1551,8 +1551,8 @@ int islower(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-HVpK7R1f.o"
-#pragma merger(0,"/tmp/cil-ljVe0DD5.i","")
+#line 1 "cil-qT4CBl2v.o"
+#pragma merger(0,"/tmp/cil-CpaE2mxu.i","")
 #line 75 "../../libc/ctype.h"
 __inline static int __ctype_isprint(int __c ) 
 { 
@@ -1575,8 +1575,8 @@ int isprint(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-qa2LVPQR.o"
-#pragma merger(0,"/tmp/cil-yfFD39eQ.i","")
+#line 1 "cil-PsOW3XKR.o"
+#pragma merger(0,"/tmp/cil-9a9eqo5A.i","")
 #line 80 "../../libc/ctype.h"
 __inline static int __ctype_ispunct(int __c ) 
 { 
@@ -1599,8 +1599,8 @@ int ispunct(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-d7Ug2we2.o"
-#pragma merger(0,"/tmp/cil-ExL3a9Co.i","")
+#line 1 "cil-GebUK8ub.o"
+#pragma merger(0,"/tmp/cil-OMFQeKgY.i","")
 #line 85 "../../libc/ctype.h"
 __inline static int __ctype_isspace(int __c ) 
 { 
@@ -1621,8 +1621,8 @@ int isspace(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-8NCqAWnZ.o"
-#pragma merger(0,"/tmp/cil-HzGIl7kN.i","")
+#line 1 "cil-WTnJ0xtC.o"
+#pragma merger(0,"/tmp/cil-Py6osNvJ.i","")
 #line 90 "../../libc/ctype.h"
 __inline static int __ctype_isupper(int __c ) 
 { 
@@ -1645,8 +1645,8 @@ int isupper(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-laKzDD8f.o"
-#pragma merger(0,"/tmp/cil-YqTqjqCl.i","")
+#line 1 "cil-hMqrdcSj.o"
+#pragma merger(0,"/tmp/cil-Ms3K6yM1.i","")
 #line 95 "../../libc/ctype.h"
 __inline static int __ctype_isxdigit(int __c ) 
 { 
@@ -1669,8 +1669,8 @@ int isxdigit(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-5m57dxsB.o"
-#pragma merger(0,"/tmp/cil-wG0gYRZw.i","")
+#line 1 "cil-uXCuaDUD.o"
+#pragma merger(0,"/tmp/cil-k7454czH.i","")
 #line 62 "/usr/include/string.h"
  __attribute__((__nothrow__)) int memcmp(void const   *s1 , void const   *s2 , size_t n )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
@@ -1724,8 +1724,8 @@ int memcmp(void const   *s1 , void const   *s2 , size_t n )
   return (d);
 }
 }
-#line 1 "cil-3W8Dji5y.o"
-#pragma merger(0,"/tmp/cil-yvifbVLj.i","")
+#line 1 "cil-5BOCpbYu.o"
+#pragma merger(0,"/tmp/cil-jT0a2ScL.i","")
 #line 38 "/usr/include/string.h"
  __attribute__((__nothrow__)) void *memcpy(void * __restrict  dst , void const   * __restrict  src ,
                                            size_t n )  __attribute__((__nonnull__(1,2))) ;
@@ -1771,8 +1771,8 @@ void *memcpy(void * __restrict  dst , void const   * __restrict  src , size_t n 
   return ((void *)dst);
 }
 }
-#line 1 "cil-ZP1ntOe0.o"
-#pragma merger(0,"/tmp/cil-CrJJXfCz.i","")
+#line 1 "cil-apO057uV.o"
+#pragma merger(0,"/tmp/cil-N3eVhoXJ.i","")
 #line 14 "../../libc/memmem.c"
 void *memmem(void const   *haystack , size_t n , void const   *needle , size_t m ) 
 { unsigned char const   *y ;
@@ -1858,8 +1858,8 @@ void *memmem(void const   *haystack , size_t n , void const   *needle , size_t m
   return ((void *)0);
 }
 }
-#line 1 "cil-OLoj3iwq.o"
-#pragma merger(0,"/tmp/cil-PY6iaKXX.i","")
+#line 1 "cil-4kF1Md6W.o"
+#pragma merger(0,"/tmp/cil-0GSbar8u.i","")
 #line 43 "/usr/include/string.h"
  __attribute__((__nothrow__)) void *memmove(void *dst , void const   *src , size_t n )  __attribute__((__nonnull__(1,2))) ;
 #line 7 "../../libc/memmove.c"
@@ -1930,8 +1930,8 @@ void *memmove(void *dst , void const   *src , size_t n )
   return (dst);
 }
 }
-#line 1 "cil-jFoVqV8l.o"
-#pragma merger(0,"/tmp/cil-t7qf5bTn.i","")
+#line 1 "cil-8dqX0iIP.o"
+#pragma merger(0,"/tmp/cil-M1SuVfpJ.i","")
 #line 59 "/usr/include/string.h"
  __attribute__((__nothrow__)) void *memset(void *dst , int c , size_t n )  __attribute__((__nonnull__(1))) ;
 #line 7 "../../libc/memset.c"
@@ -1967,8 +1967,8 @@ void *memset(void *dst , int c , size_t n )
   return (dst);
 }
 }
-#line 1 "cil-PgD8dCVO.o"
-#pragma merger(0,"/tmp/cil-rHLW9w7v.i","")
+#line 1 "cil-MAXOrDcM.o"
+#pragma merger(0,"/tmp/cil-4plQFnJC.i","")
 #line 143 "/usr/include/stdio.h"
 extern struct _IO_FILE *stdout ;
 #line 329
@@ -1989,8 +1989,8 @@ int printf(char const   * __restrict  format  , ...)
   return (rv);
 }
 }
-#line 1 "cil-GJzHXUKF.o"
-#pragma merger(0,"/tmp/cil-lVSI8zM8.i","")
+#line 1 "cil-ta14CqyY.o"
+#pragma merger(0,"/tmp/cil-wgcR38Sz.i","")
 #line 493 "/usr/include/stdlib.h"
  __attribute__((__nothrow__)) int rand(void) ;
 #line 29 "../../libc/__random.c"
@@ -2265,8 +2265,8 @@ int rand(void)
   return ((int )__cil_tmp);
 }
 }
-#line 1 "cil-DVMQ8MqF.o"
-#pragma merger(0,"/tmp/cil-72lCBSW0.i","")
+#line 1 "cil-L8qwSG60.o"
+#pragma merger(0,"/tmp/cil-nN5tAkpK.i","")
 #line 108 "../../libc/__random.c"
 static int degrees___0[5]  = {      0,      7,      15,      31, 
         63};
@@ -2298,8 +2298,8 @@ static int rand_deg___0  =    31;
 static int rand_sep___0  =    3;
 #line 164 "../../libc/__random.c"
 static long *end_ptr___0  =    & randtbl___0[sizeof(randtbl___0) / sizeof(randtbl___0[0])];
-#line 1 "cil-GEjGFni2.o"
-#pragma merger(0,"/tmp/cil-5x6d5EUO.i","")
+#line 1 "cil-t8HZ1nza.o"
+#pragma merger(0,"/tmp/cil-5LZQe3xq.i","")
 #line 353 "/usr/include/stdio.h"
  __attribute__((__nothrow__)) int ( /* format attribute */  snprintf)(char * __restrict  buffer ,
                                                                       size_t n , char const   * __restrict  format 
@@ -2330,8 +2330,8 @@ int ( /* format attribute */  snprintf)(char * __restrict  buffer , size_t n , c
   return (rv);
 }
 }
-#line 1 "cil-9GkQBLxx.o"
-#pragma merger(0,"/tmp/cil-xag7CyK3.i","")
+#line 1 "cil-t4TSTxnD.o"
+#pragma merger(0,"/tmp/cil-JDtLMMor.i","")
 #line 331 "/usr/include/stdio.h"
  __attribute__((__nothrow__)) int sprintf(char * __restrict  buffer , char const   * __restrict  format 
                                           , ...) ;
@@ -2354,8 +2354,8 @@ int sprintf(char * __restrict  buffer , char const   * __restrict  format  , ...
   return (rv);
 }
 }
-#line 1 "cil-WC9GJwse.o"
-#pragma merger(0,"/tmp/cil-BZUr1nP7.i","")
+#line 1 "cil-5bBr8GnL.o"
+#pragma merger(0,"/tmp/cil-7mm8UZ1o.i","")
 #line 495 "/usr/include/stdlib.h"
  __attribute__((__nothrow__)) void srand(unsigned int seed ) ;
 #line 108 "../../libc/__random.c"
@@ -2402,13 +2402,13 @@ void srand(unsigned int seed )
   return;
 }
 }
-#line 1 "cil-2mGSmg00.o"
-#pragma merger(0,"/tmp/cil-ei8s2vR1.i","")
+#line 1 "cil-dzNPq3Kw.o"
+#pragma merger(0,"/tmp/cil-VvadRsuF.i","")
 #line 325 "/usr/include/string.h"
  __attribute__((__nothrow__)) int strcasecmp(char const   *s1 , char const   *s2 )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
 #line 139 "../../libc/ctype.h"
-int toupper(int c ) ;
+ __attribute__((__nothrow__)) int toupper(int c ) ;
 #line 8 "../../libc/strcasecmp.c"
  __attribute__((__nothrow__)) int strcasecmp(char const   *s1 , char const   *s2 )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
@@ -2458,8 +2458,8 @@ int strcasecmp(char const   *s1 , char const   *s2 )
   return (d);
 }
 }
-#line 1 "cil-QnSWsclZ.o"
-#pragma merger(0,"/tmp/cil-OLOzXUBX.i","")
+#line 1 "cil-GtbWFHPu.o"
+#pragma merger(0,"/tmp/cil-atzxZS8n.i","")
 #line 84 "/usr/include/string.h"
  __attribute__((__nothrow__)) char *strcpy(char * __restrict  dst , char const   * __restrict  src )  __attribute__((__nonnull__(1,2))) ;
 #line 92
@@ -2482,8 +2482,8 @@ char *strcat(char * __restrict  dst , char const   * __restrict  src )
   return ((char *)dst);
 }
 }
-#line 1 "cil-Y95SApIv.o"
-#pragma merger(0,"/tmp/cil-xfArcbbA.i","")
+#line 1 "cil-GV1A0WgP.o"
+#pragma merger(0,"/tmp/cil-xkqdJeuX.i","")
 #line 7 "../../libc/strchr.c"
  __attribute__((__nothrow__)) char *strchr(char const   *s , int c )  __attribute__((__pure__,
 __nonnull__(1))) ;
@@ -2506,8 +2506,8 @@ char *strchr(char const   *s , int c )
   return ((char *)s);
 }
 }
-#line 1 "cil-EDIHRy1W.o"
-#pragma merger(0,"/tmp/cil-sTb5pUdb.i","")
+#line 1 "cil-Mp7Jgdpn.o"
+#pragma merger(0,"/tmp/cil-92HZj3la.i","")
 #line 99 "/usr/include/string.h"
  __attribute__((__nothrow__)) int strcmp(char const   *s1 , char const   *s2 )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
@@ -2554,8 +2554,8 @@ int strcmp(char const   *s1 , char const   *s2 )
   return (d);
 }
 }
-#line 1 "cil-xNB4QVWw.o"
-#pragma merger(0,"/tmp/cil-NKN1wa2X.i","")
+#line 1 "cil-MJw2UqYo.o"
+#pragma merger(0,"/tmp/cil-Ju51GaJn.i","")
 #line 9 "../../libc/strcpy.c"
  __attribute__((__nothrow__)) char *strcpy(char * __restrict  dst , char const   * __restrict  src )  __attribute__((__nonnull__(1,2))) ;
 #line 9 "../../libc/strcpy.c"
@@ -2595,8 +2595,8 @@ char *strcpy(char * __restrict  dst , char const   * __restrict  src )
   return ((char *)dst);
 }
 }
-#line 1 "cil-4NugE0xg.o"
-#pragma merger(0,"/tmp/cil-qdciZLrr.i","")
+#line 1 "cil-Q8ABlBwK.o"
+#pragma merger(0,"/tmp/cil-kHaNVLsv.i","")
 #line 184 "/usr/include/string.h"
  __attribute__((__nothrow__)) size_t strcspn(char const   *s , char const   *reject )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
@@ -2635,8 +2635,8 @@ size_t strcspn(char const   *s , char const   *reject )
   return ((unsigned int )count);
 }
 }
-#line 1 "cil-y3pRVE5q.o"
-#pragma merger(0,"/tmp/cil-zj2FGYTe.i","")
+#line 1 "cil-ByD6yVX8.o"
+#pragma merger(0,"/tmp/cil-zvkf4vNl.i","")
 #line 4 "../../libc/strlcpy.c"
 size_t strlcat(char *dst , char const   *src , size_t size ) 
 { size_t len1 ;
@@ -2701,8 +2701,8 @@ size_t strlcpy(char *dst , char const   *src , size_t size )
   return (ret___0);
 }
 }
-#line 1 "cil-HKiNPFeH.o"
-#pragma merger(0,"/tmp/cil-efyLmUR2.i","")
+#line 1 "cil-xyZqvcf0.o"
+#pragma merger(0,"/tmp/cil-h9Ez3UEu.i","")
 #line 7 "../../libc/strlen.c"
  __attribute__((__nothrow__)) size_t strlen(char const   *s )  __attribute__((__pure__,
 __nonnull__(1))) ;
@@ -2722,8 +2722,8 @@ size_t strlen(char const   *s )
   return ((unsigned int )(ss - s));
 }
 }
-#line 1 "cil-Ajhr2MdJ.o"
-#pragma merger(0,"/tmp/cil-UDXwckFj.i","")
+#line 1 "cil-4Gao09jV.o"
+#pragma merger(0,"/tmp/cil-GvZEUjBF.i","")
 #line 95 "/usr/include/string.h"
  __attribute__((__nothrow__)) char *strncat(char * __restrict  dst , char const   * __restrict  src ,
                                             size_t n )  __attribute__((__nonnull__(1,2))) ;
@@ -2782,8 +2782,8 @@ char *strncat(char * __restrict  dst , char const   * __restrict  src , size_t n
   return ((char *)dst);
 }
 }
-#line 1 "cil-MfWV6cdr.o"
-#pragma merger(0,"/tmp/cil-LRCEb00N.i","")
+#line 1 "cil-rGpiuCbz.o"
+#pragma merger(0,"/tmp/cil-HOj0uUsQ.i","")
 #line 102 "/usr/include/string.h"
  __attribute__((__nothrow__)) int strncmp(char const   *s1 , char const   *s2 , size_t n )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
@@ -2840,8 +2840,8 @@ int strncmp(char const   *s1 , char const   *s2 , size_t n )
   return (d);
 }
 }
-#line 1 "cil-FMz3TbTT.o"
-#pragma merger(0,"/tmp/cil-lrLGIulU.i","")
+#line 1 "cil-ncYLDyAl.o"
+#pragma merger(0,"/tmp/cil-v3eLpmCg.i","")
 #line 87 "/usr/include/string.h"
  __attribute__((__nothrow__)) char *strncpy(char * __restrict  dst , char const   * __restrict  src ,
                                             size_t n )  __attribute__((__nonnull__(1,2))) ;
@@ -2889,10 +2889,10 @@ char *strncpy(char * __restrict  dst , char const   * __restrict  src , size_t n
   return ((char *)dst);
 }
 }
-#line 1 "cil-MB8LKPe4.o"
-#pragma merger(0,"/tmp/cil-32cAClRX.i","")
-#line 1 "cil-2T5W1zNu.o"
-#pragma merger(0,"/tmp/cil-moFWlu9G.i","")
+#line 1 "cil-tQidXtrj.o"
+#pragma merger(0,"/tmp/cil-7HdpsPI0.i","")
+#line 1 "cil-SG2qJmcS.o"
+#pragma merger(0,"/tmp/cil-zhc3pIoR.i","")
 #line 10 "../../libc/strxspn.h"
 size_t __strxspn(char const   *s , char const   *map , int parity ) ;
 #line 7 "../../libc/strpbrk.c"
@@ -2921,8 +2921,8 @@ char *strpbrk(char const   *s , char const   *accept___0 )
   return (__cil_tmp___0);
 }
 }
-#line 1 "cil-0YoOeWBG.o"
-#pragma merger(0,"/tmp/cil-m6XZQjGS.i","")
+#line 1 "cil-ezduSQVh.o"
+#pragma merger(0,"/tmp/cil-vqkkfdxm.i","")
 #line 348 "/usr/include/string.h"
  __attribute__((__nothrow__)) char *strsep(char ** __restrict  stringp , char const   * __restrict  delim )  __attribute__((__nonnull__(1,2))) ;
 #line 7 "../../libc/strsep.c"
@@ -2958,8 +2958,8 @@ char *strsep(char ** __restrict  stringp , char const   * __restrict  delim )
   return (s);
 }
 }
-#line 1 "cil-MIKK2CKw.o"
-#pragma merger(0,"/tmp/cil-uaE9epAg.i","")
+#line 1 "cil-QQDJIDE4.o"
+#pragma merger(0,"/tmp/cil-EwcnduIP.i","")
 #line 194 "/usr/include/string.h"
  __attribute__((__nothrow__)) char *strstr(char const   *haystack , char const   *needle )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
@@ -2984,8 +2984,8 @@ char *strstr(char const   *haystack , char const   *needle )
   return ((char *)__cil_tmp___1);
 }
 }
-#line 1 "cil-yHs8jtrO.o"
-#pragma merger(0,"/tmp/cil-6bTbWowk.i","")
+#line 1 "cil-yVL3dt08.o"
+#pragma merger(0,"/tmp/cil-GiL2hmSi.i","")
 #line 199 "/usr/include/string.h"
  __attribute__((__nothrow__)) char *strtok(char * __restrict  s , char const   * __restrict  delim )  __attribute__((__nonnull__(2))) ;
 #line 9 "../../libc/strtok.c"
@@ -3018,8 +3018,8 @@ char *strtok(char * __restrict  s , char const   * __restrict  delim )
   return ((char *)s);
 }
 }
-#line 1 "cil-QiHy6ORJ.o"
-#pragma merger(0,"/tmp/cil-bRY24gHt.i","")
+#line 1 "cil-hBgQjjZr.o"
+#pragma merger(0,"/tmp/cil-enGf5QvF.i","")
 #line 12 "../../libc/strxspn.c"
 size_t __strxspn(char const   *s , char const   *map , int parity ) 
 { char matchmap[257] ;
@@ -3061,8 +3061,8 @@ size_t __strxspn(char const   *s , char const   *map , int parity )
   return (n);
 }
 }
-#line 1 "cil-2XI5j5ik.o"
-#pragma merger(0,"/tmp/cil-GbhfmlIw.i","")
+#line 1 "cil-6WTsoDSv.o"
+#pragma merger(0,"/tmp/cil-bshScW0y.i","")
 #line 144 "/usr/include/stdio.h"
 extern struct _IO_FILE *stderr ;
 #line 181 "/usr/include/sys/syslog.h"
@@ -3215,8 +3215,8 @@ void ( /* format attribute */  syslog)(int prio , char const   *format  , ...)
   return;
 }
 }
-#line 1 "cil-OE1qWUsA.o"
-#pragma merger(0,"/tmp/cil-WlUHud9z.i","")
+#line 1 "cil-SXqz7hZe.o"
+#pragma merger(0,"/tmp/cil-oiQG66Lq.i","")
 #line 109 "../../libc/ctype.h"
 __inline static int __ctype_tolower(int __c ) 
 { int __cil_tmp___0 ;
@@ -3250,8 +3250,8 @@ int tolower(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-ZSMgR4M8.o"
-#pragma merger(0,"/tmp/cil-9ZmiDfdG.i","")
+#line 1 "cil-1mIOc0ri.o"
+#pragma merger(0,"/tmp/cil-IvaY5Aai.i","")
 #line 104 "../../libc/ctype.h"
 __inline static int __ctype_toupper(int __c ) 
 { int __cil_tmp___0 ;
@@ -3273,6 +3273,8 @@ __inline static int __ctype_toupper(int __c )
 }
 }
 #line 2 "../../libc/toupper.c"
+ __attribute__((__nothrow__)) int toupper(int c ) ;
+#line 2 "../../libc/toupper.c"
 int toupper(int c ) 
 { int __cil_tmp ;
 
@@ -3285,8 +3287,8 @@ int toupper(int c )
 }
 /* compiler builtin: 
    void __builtin_va_copy(__builtin_va_list  , __builtin_va_list  ) ;  */
-#line 1 "cil-CX7aerAS.o"
-#pragma merger(0,"/tmp/cil-0LBGgu5I.i","")
+#line 1 "cil-yspKEHfK.o"
+#pragma merger(0,"/tmp/cil-8k8iUTAW.i","")
 #line 584 "/usr/include/stdlib.h"
 extern  __attribute__((__nothrow__)) void *malloc(size_t __size )  __attribute__((__malloc__)) ;
 #line 9 "../../libc/vasprintf.c"
@@ -3326,8 +3328,8 @@ int vasprintf(char **bufp , char const   *format , va_list ap )
   return (__cil_tmp___1);
 }
 }
-#line 1 "cil-ZCQQSBwp.o"
-#pragma merger(0,"/tmp/cil-edS63WEU.i","")
+#line 1 "cil-fGKshUtq.o"
+#pragma merger(0,"/tmp/cil-zRHYC6Mp.i","")
 #line 13 "../../libc/vfprintf.c"
 int vfprintf(FILE * __restrict  file , char const   * __restrict  format , __gnuc_va_list ap ) 
 { int rv ;
@@ -3353,8 +3355,8 @@ int vfprintf(FILE * __restrict  file , char const   * __restrict  format , __gnu
   return ((int )__cil_tmp);
 }
 }
-#line 1 "cil-iKU8UQEY.o"
-#pragma merger(0,"/tmp/cil-1pKLF43n.i","")
+#line 1 "cil-ctKHnO2U.o"
+#pragma merger(0,"/tmp/cil-w4DLYftV.i","")
 #line 344 "/usr/include/stdio.h"
 int vprintf(char const   * __restrict  format , __gnuc_va_list ap ) ;
 #line 8 "../../libc/vprintf.c"
@@ -3370,8 +3372,8 @@ int vprintf(char const   * __restrict  format , __gnuc_va_list ap )
 }
 /* compiler builtin: 
    void __builtin_va_arg(__builtin_va_list  , unsigned int  , void * ) ;  */
-#line 1 "cil-DWimqR3o.o"
-#pragma merger(0,"/tmp/cil-zRdGJHT3.i","")
+#line 1 "cil-NpCrTm0e.o"
+#pragma merger(0,"/tmp/cil-shN182q8.i","")
 #line 48 "../../libc/vsnprintf.c"
 static size_t format_int(char *q , size_t n , uintmax_t val , enum flags flags , int base ,
                          int width , int prec ) ;
@@ -4256,8 +4258,8 @@ int ( /* format attribute */  vsnprintf)(char * __restrict  buffer , size_t n , 
   return ((int )o);
 }
 }
-#line 1 "cil-5guhCMwQ.o"
-#pragma merger(0,"/tmp/cil-Kxrhx6dB.i","")
+#line 1 "cil-MqDFuR0Z.o"
+#pragma merger(0,"/tmp/cil-aDxaRTq4.i","")
 #line 346 "/usr/include/stdio.h"
  __attribute__((__nothrow__)) int vsprintf(char * __restrict  buffer , char const   * __restrict  format ,
                                            __gnuc_va_list ap ) ;
@@ -4275,8 +4277,8 @@ int vsprintf(char * __restrict  buffer , char const   * __restrict  format , __g
   return (__cil_tmp);
 }
 }
-#line 1 "cil-y42S4gL5.o"
-#pragma merger(0,"/tmp/cil-KuUqF7BJ.i","")
+#line 1 "cil-3TPKv6yh.o"
+#pragma merger(0,"/tmp/cil-KW7wV1If.i","")
 #line 1 "../../mockedFns/alarm.c"
  __attribute__((__nothrow__)) unsigned int alarm(unsigned int seconds ) ;
 #line 1 "../../mockedFns/alarm.c"
@@ -4290,8 +4292,8 @@ unsigned int alarm(unsigned int seconds )
 }
 /* compiler builtin: 
    long __builtin_expect(long x , long expected_value ) ;  */
-#line 1 "cil-PTZJrwRs.o"
-#pragma merger(0,"/tmp/cil-H4RprpSO.i","")
+#line 1 "cil-K7xhrEP3.o"
+#pragma merger(0,"/tmp/cil-IZdQCmgs.i","")
 #line 2 "../../mockedFns/builtin.c"
 long __builtin_expect(long x , long expected_value ) 
 { 
@@ -4310,8 +4312,8 @@ size_t __ctype_get_mb_cur_max(void)
   return (1U);
 }
 }
-#line 1 "cil-BEnKILJ2.o"
-#pragma merger(0,"/tmp/cil-MYsks8qE.i","")
+#line 1 "cil-gAJj4XZB.o"
+#pragma merger(0,"/tmp/cil-XbXqzNqE.i","")
 #line 586 "/usr/include/stdlib.h"
  __attribute__((__nothrow__)) void *calloc(size_t nmemb , size_t size )  __attribute__((__malloc__)) ;
 #line 4 "../../mockedFns/calloc.c"
@@ -4332,8 +4334,8 @@ void *calloc(size_t nmemb , size_t size )
   return (p);
 }
 }
-#line 1 "cil-ib9QACoU.o"
-#pragma merger(0,"/tmp/cil-nN2DH7eZ.i","")
+#line 1 "cil-oJmjlXJV.o"
+#pragma merger(0,"/tmp/cil-5b54Qmq4.i","")
 #line 77 "/usr/include/sys/capability.h"
 int cap_free(void *obj_d ) ;
 #line 92
@@ -4356,8 +4358,8 @@ int cap_free(void *obj_d )
   return (-1);
 }
 }
-#line 1 "cil-Dempx3Wr.o"
-#pragma merger(0,"/tmp/cil-GnoVF7xy.i","")
+#line 1 "cil-YQtHRZzP.o"
+#pragma merger(0,"/tmp/cil-OkC6VLsC.i","")
 #line 722 "/usr/include/stdio.h"
  __attribute__((__nothrow__)) void clearerr(FILE *stream ) ;
 #line 3 "../../mockedFns/clearerr.c"
@@ -4371,8 +4373,8 @@ void clearerr(FILE *stream )
   return;
 }
 }
-#line 1 "cil-zFu0LhiV.o"
-#pragma merger(0,"/tmp/cil-uOFgNOlS.i","")
+#line 1 "cil-NanFYuYL.o"
+#pragma merger(0,"/tmp/cil-LN3KmTNh.i","")
 #line 284 "/usr/include/sys/stat.h"
  __attribute__((__nothrow__)) int mkdir(char const   *pathname , __mode_t mode )  __attribute__((__nonnull__(1))) ;
 #line 135 "/usr/include/dirent.h"
@@ -4491,8 +4493,8 @@ int rmdir(char const   *pathname )
   return (0);
 }
 }
-#line 1 "cil-2OJrng8F.o"
-#pragma merger(0,"/tmp/cil-WlAfx356.i","")
+#line 1 "cil-pOqw3DDO.o"
+#pragma merger(0,"/tmp/cil-NlgPmY7T.i","")
 #line 654 "/usr/include/stdlib.h"
  __attribute__((__nothrow__)) char *getenv(char const   *name )  __attribute__((__nonnull__(1))) ;
 #line 665
@@ -4519,8 +4521,8 @@ int putenv(char *str )
   return (0);
 }
 }
-#line 1 "cil-uiUhvwES.o"
-#pragma merger(0,"/tmp/cil-XEkqE3iO.i","")
+#line 1 "cil-TRf4j7jY.o"
+#pragma merger(0,"/tmp/cil-anZ262yb.i","")
 #line 2 "../../mockedFns/__errno_location.c"
 static int mock_errno  ;
 #line 1
@@ -4534,8 +4536,8 @@ int *__errno_location(void)
   return (& mock_errno);
 }
 }
-#line 1 "cil-Vi5K0Psx.o"
-#pragma merger(0,"/tmp/cil-D6ZaHRGa.i","")
+#line 1 "cil-jfauiz5T.o"
+#pragma merger(0,"/tmp/cil-nCcRTUyg.i","")
 #line 1 "../../mockedFns/_exit.c"
  __attribute__((__noreturn__)) void _exit(int status ) ;
 #line 1 "../../mockedFns/_exit.c"
@@ -4547,8 +4549,8 @@ void _exit(int status )
   exit(status);
 }
 }
-#line 1 "cil-HSYUz7nm.o"
-#pragma merger(0,"/tmp/cil-s8SGj39d.i","")
+#line 1 "cil-xqMcYsxJ.o"
+#pragma merger(0,"/tmp/cil-r69IJVJo.i","")
 #line 6 "../../mockedFns/fcntl.c"
 int fcntl(int fildes , int cmd  , ...) 
 { 
@@ -4558,8 +4560,8 @@ int fcntl(int fildes , int cmd  , ...)
   return (0);
 }
 }
-#line 1 "cil-rOM903Jh.o"
-#pragma merger(0,"/tmp/cil-AMM1dO2Q.i","")
+#line 1 "cil-CdJeeOSC.o"
+#pragma merger(0,"/tmp/cil-vlbbeQhj.i","")
 #line 724 "/usr/include/stdio.h"
  __attribute__((__nothrow__)) int feof(FILE *stream ) ;
 #line 40 "../../mockedFns/iosim.h"
@@ -4580,8 +4582,8 @@ int feof(FILE *stream )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-In5U0RC8.o"
-#pragma merger(0,"/tmp/cil-qepn6RoJ.i","")
+#line 1 "cil-JoSfw6zC.o"
+#pragma merger(0,"/tmp/cil-C98eqFQS.i","")
 #line 726 "/usr/include/stdio.h"
  __attribute__((__nothrow__)) int ferror(FILE *stream ) ;
 #line 3 "../../mockedFns/ferror.c"
@@ -4595,8 +4597,8 @@ int ferror(FILE *stream )
   return (0);
 }
 }
-#line 1 "cil-At4lBcVt.o"
-#pragma merger(0,"/tmp/cil-NDwFderA.i","")
+#line 1 "cil-Ca8PJH12.o"
+#pragma merger(0,"/tmp/cil-WWWzoYaI.i","")
 #line 759 "/usr/include/stdio.h"
  __attribute__((__nothrow__)) int fileno_unlocked(FILE *stream ) ;
 #line 4 "../../mockedFns/fileno.c"
@@ -4630,8 +4632,8 @@ int fileno_unlocked(FILE *stream )
   return (-1);
 }
 }
-#line 1 "cil-cco8Celi.o"
-#pragma merger(0,"/tmp/cil-MErVCAYc.i","")
+#line 1 "cil-jDRYpZMd.o"
+#pragma merger(0,"/tmp/cil-rxeA7md2.i","")
 #line 254 "/usr/include/stdio.h"
 FILE *fopen(char const   * __restrict  filename , char const   * __restrict  mode )  __asm__("fopen64")  ;
 #line 26 "../../mockedFns/iosim.h"
@@ -4726,8 +4728,8 @@ FILE *fopen(char const   * __restrict  filename , char const   * __restrict  mod
   return ((FILE *)IOSIM_fd[fd]);
 }
 }
-#line 1 "cil-lo0HO11j.o"
-#pragma merger(0,"/tmp/cil-bN31PH4v.i","")
+#line 1 "cil-FFGKtf9X.o"
+#pragma merger(0,"/tmp/cil-JrrWDdAs.i","")
 #line 36 "../../mockedFns/iosim.h"
 int IOSIM_read(int fildes , void *buf , size_t nbyte ) ;
 #line 4 "../../mockedFns/getc.c"
@@ -4756,8 +4758,8 @@ int _IO_getc(struct _IO_FILE *stream )
   }
 }
 }
-#line 1 "cil-4rzSeKaD.o"
-#pragma merger(0,"/tmp/cil-YVHpSd0o.i","")
+#line 1 "cil-qAeWD5ek.o"
+#pragma merger(0,"/tmp/cil-armWIJRH.i","")
 #line 59 "/usr/include/getopt.h"
 extern char *optarg ;
 #line 73
@@ -5564,8 +5566,8 @@ int ( /* missing proto */  _getopt_internal)(int argc , char * const  *argv , ch
   return ((int )c);
 }
 }
-#line 1 "cil-lR02MrKA.o"
-#pragma merger(0,"/tmp/cil-3NS2eNFK.i","")
+#line 1 "cil-rCD4eaRF.o"
+#pragma merger(0,"/tmp/cil-iELDvhNl.i","")
 #line 1 "../../mockedFns/getpagesize.c"
  __attribute__((__nothrow__)) int getpagesize(void)  __attribute__((__const__)) ;
 #line 1 "../../mockedFns/getpagesize.c"
@@ -5577,8 +5579,8 @@ int getpagesize(void)
   return (4096);
 }
 }
-#line 1 "cil-JwS0lFut.o"
-#pragma merger(0,"/tmp/cil-ohLNei8I.i","")
+#line 1 "cil-LcEWixnX.o"
+#pragma merger(0,"/tmp/cil-bBPnAnkO.i","")
 #line 1 "./../../mockedFns/symexe.h"
 extern long long __SYMBOLIC(void *var ) ;
 #line 128 "/usr/include/sys/socket.h"
@@ -5617,8 +5619,8 @@ int getpeername(int socket___0 , struct sockaddr * __restrict  address , socklen
   return (0);
 }
 }
-#line 1 "cil-aNIpkhWC.o"
-#pragma merger(0,"/tmp/cil-AwW9nJC2.i","")
+#line 1 "cil-9hAx8CIw.o"
+#pragma merger(0,"/tmp/cil-gVeY1IjV.i","")
 #line 117 "/usr/include/pwd.h"
 struct passwd *getpwnam(char const   *__name ) ;
 #line 4 "../../mockedFns/getpwnam.c"
@@ -5637,8 +5639,8 @@ struct passwd *getpwnam(char const   *__name )
   return (x);
 }
 }
-#line 1 "cil-320cZZgE.o"
-#pragma merger(0,"/tmp/cil-o1vo8SSY.i","")
+#line 1 "cil-ERX4n5iO.o"
+#pragma merger(0,"/tmp/cil-iNGQMaOq.i","")
 #line 3 "../../mockedFns/gettext.c"
 char *gettext(char const   *text ) 
 { 
@@ -5648,8 +5650,8 @@ char *gettext(char const   *text )
   return ((char *)text);
 }
 }
-#line 1 "cil-RKmWLBTx.o"
-#pragma merger(0,"/tmp/cil-hKL8y7K8.i","")
+#line 1 "cil-CHBe91Bs.o"
+#pragma merger(0,"/tmp/cil-hLKAXtUI.i","")
 #line 2 "../../mockedFns/groups.c"
 int initgroups(char const   *user , __gid_t group ) 
 { 
@@ -5670,8 +5672,8 @@ int setgroups(size_t __n , __gid_t const   *__groups )
   return (0);
 }
 }
-#line 1 "cil-JK3qI72f.o"
-#pragma merger(0,"/tmp/cil-J8BZ89tC.i","")
+#line 1 "cil-2lldQIkz.o"
+#pragma merger(0,"/tmp/cil-2fdmbVoY.i","")
 #line 54 "/usr/include/arpa/inet.h"
  __attribute__((__nothrow__)) char *inet_ntoa(struct in_addr in ) ;
 #line 65
@@ -5752,8 +5754,8 @@ char const   *inet_ntop(int af , void const   * __restrict  src , char * __restr
   return ((char const   *)dst);
 }
 }
-#line 1 "cil-v7SKlcFF.o"
-#pragma merger(0,"/tmp/cil-n7gLAMYy.i","")
+#line 1 "cil-pphRgU0B.o"
+#pragma merger(0,"/tmp/cil-qytWZmjv.i","")
 #line 2 "./../../mockedFns/symexe.h"
 extern void __EVAL() ;
 #line 7
@@ -6684,8 +6686,8 @@ int IOSIM_dirfd(DIR *dir )
   return (dir->filestream.fd);
 }
 }
-#line 1 "cil-4udPuP7w.o"
-#pragma merger(0,"/tmp/cil-1TOVMBet.i","")
+#line 1 "cil-av28TMVW.o"
+#pragma merger(0,"/tmp/cil-rGBzLoyf.i","")
 #line 81 "/usr/include/libintl.h"
  __attribute__((__nothrow__)) char *textdomain(char const   *domainname ) ;
 #line 85
@@ -6720,8 +6722,8 @@ char *textdomain(char const   *domainname )
   return (directory);
 }
 }
-#line 1 "cil-ZYmZHYzr.o"
-#pragma merger(0,"/tmp/cil-H7Mg18bC.i","")
+#line 1 "cil-vXsuWXzE.o"
+#pragma merger(0,"/tmp/cil-C99s8ybe.i","")
 #line 66 "/usr/include/string.h"
  __attribute__((__nothrow__)) void *memchr(void const   *s , int c , size_t n )  __attribute__((__pure__,
 __nonnull__(1))) ;
@@ -6751,8 +6753,8 @@ void *memchr(void const   *s , int c , size_t n )
   return ((void *)0);
 }
 }
-#line 1 "cil-9rb8popY.o"
-#pragma merger(0,"/tmp/cil-9kaQfKSF.i","")
+#line 1 "cil-iTUna7bC.o"
+#pragma merger(0,"/tmp/cil-FtWKUIea.i","")
 #line 12 "../../mockedFns/memswap.c"
 void memswap(void *m1 , void *m2 , size_t n ) 
 { char *p ;
@@ -6791,8 +6793,8 @@ void memswap(void *m1 , void *m2 , size_t n )
   return;
 }
 }
-#line 1 "cil-QpGy8j3H.o"
-#pragma merger(0,"/tmp/cil-2ibZue0w.i","")
+#line 1 "cil-EB8NmXpJ.o"
+#pragma merger(0,"/tmp/cil-8NZHGqGV.i","")
 #line 7 "../../mockedFns/mmap.c"
  __attribute__((__nothrow__)) void *mmap(void *start , size_t length , int prot ,
                                          int flags , int fd , __quad_t offset )  __asm__("mmap64")  ;
@@ -6821,8 +6823,8 @@ int munmap(void *addr , size_t len )
   return (0);
 }
 }
-#line 1 "cil-PvL0bTqp.o"
-#pragma merger(0,"/tmp/cil-5FCcAduj.i","")
+#line 1 "cil-Ys4HjWgG.o"
+#pragma merger(0,"/tmp/cil-hAyqNMin.i","")
 #line 2 "../../mockedFns/mprotect.c"
  __attribute__((__nothrow__)) int mprotect(void *__addr , size_t __len , int __prot ) ;
 #line 2 "../../mockedFns/mprotect.c"
@@ -6834,8 +6836,8 @@ int mprotect(void *__addr , size_t __len , int __prot )
   return (0);
 }
 }
-#line 1 "cil-eetU91e8.o"
-#pragma merger(0,"/tmp/cil-gCkMhlLC.i","")
+#line 1 "cil-pIeXJDLA.o"
+#pragma merger(0,"/tmp/cil-zN0vijBe.i","")
 #line 3 "../../mockedFns/my_index.c"
 char *my_index(char const   *s , int c ) 
 { char *__cil_tmp ;
@@ -6847,8 +6849,8 @@ char *my_index(char const   *s , int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-6JQbmNay.o"
-#pragma merger(0,"/tmp/cil-iQV9GsFc.i","")
+#line 1 "cil-wJB6AWNA.o"
+#pragma merger(0,"/tmp/cil-S1wYvKvp.i","")
 #line 354 "/usr/include/netinet/in.h"
  __attribute__((__nothrow__)) uint32_t ntohl(uint32_t netlong )  __attribute__((__const__)) ;
 #line 355
@@ -6949,8 +6951,8 @@ uint16_t ntohs(uint16_t netshort )
   return (retval);
 }
 }
-#line 1 "cil-BlqeemhC.o"
-#pragma merger(0,"/tmp/cil-8eyWhCAe.i","")
+#line 1 "cil-ok02n5Fr.o"
+#pragma merger(0,"/tmp/cil-erMPv158.i","")
 #line 7 "../../mockedFns/open.c"
 int open(char const   *pathname , int flags  , ...)  __asm__("open64") __attribute__((__nonnull__(1))) ;
 #line 7 "../../mockedFns/open.c"
@@ -6983,8 +6985,8 @@ int open(char const   *pathname , int flags  , ...)
   return (__cil_tmp___1);
 }
 }
-#line 1 "cil-fB3on8Vt.o"
-#pragma merger(0,"/tmp/cil-r8BC8d7f.i","")
+#line 1 "cil-593JHybH.o"
+#pragma merger(0,"/tmp/cil-w7St4Zhw.i","")
 #line 27 "/usr/include/security/pam_appl.h"
 int pam_start(char const   *service_name , char const   *user , struct pam_conv  const  *pam_conversation ,
               pam_handle_t **pamh ) ;
@@ -6998,8 +7000,8 @@ int pam_start(char const   *service_name , char const   *user , struct pam_conv 
   return (-1);
 }
 }
-#line 1 "cil-MVvWf9Bz.o"
-#pragma merger(0,"/tmp/cil-blNNOnEO.i","")
+#line 1 "cil-vDjBpeeW.o"
+#pragma merger(0,"/tmp/cil-YTiPjW8h.i","")
 #line 1 "../../mockedFns/prctl.c"
  __attribute__((__nothrow__)) int prctl(int __option  , ...) ;
 #line 1 "../../mockedFns/prctl.c"
@@ -7011,8 +7013,8 @@ int prctl(int __option  , ...)
   return (0);
 }
 }
-#line 1 "cil-d7Ho0wD2.o"
-#pragma merger(0,"/tmp/cil-TCaCElr5.i","")
+#line 1 "cil-XS2Vcbgh.o"
+#pragma merger(0,"/tmp/cil-yKVnJ1O8.i","")
 #line 480 "/usr/include/stdio.h"
 int putc(int c , FILE *stream ) ;
 #line 5 "../../mockedFns/putc.c"
@@ -7024,8 +7026,8 @@ int putc(int c , FILE *stream )
   return (0);
 }
 }
-#line 1 "cil-aWV6fqgt.o"
-#pragma merger(0,"/tmp/cil-SH0eCKTA.i","")
+#line 1 "cil-Gv6YgESN.o"
+#pragma merger(0,"/tmp/cil-Y5OGF9uy.i","")
 #line 15 "../../mockedFns/qsort.c"
 __inline static size_t newgap(size_t gap ) 
 { 
@@ -7109,8 +7111,8 @@ void qsort(void *base , size_t nmemb , size_t size , int (*compar)(void const   
   return;
 }
 }
-#line 1 "cil-tQyHfC3l.o"
-#pragma merger(0,"/tmp/cil-pmA4CfiC.i","")
+#line 1 "cil-VFa3tYvm.o"
+#pragma merger(0,"/tmp/cil-u4PtUQYl.i","")
 #line 4 "../../mockedFns/realloc.c"
  __attribute__((__nothrow__)) void *realloc(void *ptr , size_t size )  __attribute__((__malloc__)) ;
 #line 4 "../../mockedFns/realloc.c"
@@ -7138,8 +7140,8 @@ void *realloc(void *ptr , size_t size )
   return (ptr);
 }
 }
-#line 1 "cil-zT2GJlZ9.o"
-#pragma merger(0,"/tmp/cil-UJKUCJ7a.i","")
+#line 1 "cil-rPlo6ddi.o"
+#pragma merger(0,"/tmp/cil-BEKyNuWi.i","")
 #line 450 "/usr/include/unistd.h"
  __attribute__((__nothrow__)) char *getcwd(char *buf , size_t size ) ;
 #line 9 "../../mockedFns/realpath.c"
@@ -7319,8 +7321,8 @@ char *realpath(char const   * __restrict  path , char * __restrict  got_path )
   return ((char *)got_path);
 }
 }
-#line 1 "cil-7Nj5EPQt.o"
-#pragma merger(0,"/tmp/cil-RqZ3ixcK.i","")
+#line 1 "cil-Dn6jEKuY.o"
+#pragma merger(0,"/tmp/cil-druPrvdO.i","")
 #line 143 "/usr/include/sys/socket.h"
 ssize_t recv(int sockfd , void *buf , size_t len , int flags ) ;
 #line 6 "../../mockedFns/recv.c"
@@ -7352,8 +7354,8 @@ ssize_t recv(int sockfd , void *buf , size_t len , int flags )
   return (num_chars_read);
 }
 }
-#line 1 "cil-DD1NrBCz.o"
-#pragma merger(0,"/tmp/cil-7DYNqYgo.i","")
+#line 1 "cil-XadNgGM6.o"
+#pragma merger(0,"/tmp/cil-puV8kGeU.i","")
 #line 156 "/usr/include/stdio.h"
  __attribute__((__nothrow__)) int rename(char const   *old , char const   *new ) ;
 #line 4 "../../mockedFns/rename.c"
@@ -7369,8 +7371,8 @@ int rename(char const   *old , char const   *new )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-jGSvPiYt.o"
-#pragma merger(0,"/tmp/cil-8YtmumtO.i","")
+#line 1 "cil-pYXQKJNu.o"
+#pragma merger(0,"/tmp/cil-YcVFFUiT.i","")
 #line 38 "/usr/include/sys/sendfile.h"
  __attribute__((__nothrow__)) ssize_t sendfile(int out_fd , int in_fd , __quad_t *offset ,
                                                size_t count )  __asm__("sendfile64")  ;
@@ -7443,8 +7445,8 @@ ssize_t sendfile(int out_fd , int in_fd , __quad_t *offset , size_t count )
   return (numSent);
 }
 }
-#line 1 "cil-1cgDdpop.o"
-#pragma merger(0,"/tmp/cil-sVXQRZ6E.i","")
+#line 1 "cil-RheJIBxY.o"
+#pragma merger(0,"/tmp/cil-FZjE2gcJ.i","")
 #line 125 "/usr/include/locale.h"
  __attribute__((__nothrow__)) char *setlocale(int category , char const   *locale ) ;
 #line 3 "../../mockedFns/setlocale.c"
@@ -7458,8 +7460,8 @@ char *setlocale(int category , char const   *locale )
   return ((char *)locale);
 }
 }
-#line 1 "cil-jLpegZ81.o"
-#pragma merger(0,"/tmp/cil-imi2XaVk.i","")
+#line 1 "cil-QJsPqThq.o"
+#pragma merger(0,"/tmp/cil-LINeTfn6.i","")
 #line 216 "/usr/include/signal.h"
  __attribute__((__nothrow__)) int sigemptyset(sigset_t *set )  __attribute__((__nonnull__(1))) ;
 #line 219
@@ -7529,8 +7531,8 @@ int sigprocmask(int how , sigset_t const   * __restrict  set , sigset_t * __rest
   return (0);
 }
 }
-#line 1 "cil-Bz1e5ITl.o"
-#pragma merger(0,"/tmp/cil-vDPdxiZX.i","")
+#line 1 "cil-2dh3Efry.o"
+#pragma merger(0,"/tmp/cil-5MQsqhHm.i","")
 #line 109 "/usr/include/sys/select.h"
 int select(int nfds , fd_set * __restrict  readfds , fd_set * __restrict  writefds ,
            fd_set * __restrict  errorfds , struct timeval * __restrict  timeout ) ;
@@ -7744,8 +7746,8 @@ int select(int nfds , fd_set * __restrict  readfds , fd_set * __restrict  writef
   return (1);
 }
 }
-#line 1 "cil-AhRYVDFC.o"
-#pragma merger(0,"/tmp/cil-mU9YpjBh.i","")
+#line 1 "cil-LqFcfmwD.o"
+#pragma merger(0,"/tmp/cil-h6V5y4sd.i","")
 #line 332 "/usr/include/sys/stat.h"
  __attribute__((__nothrow__)) int __fxstat(int __ver , int __fildes , struct stat *__stat_buf )  __asm__("__fxstat64") __attribute__((__nonnull__(3))) ;
 #line 335
@@ -7830,8 +7832,8 @@ int __lxstat(int __ver , char const   *__filename , struct stat *__stat_buf )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-4Hbeseim.o"
-#pragma merger(0,"/tmp/cil-sHoWLHmr.i","")
+#line 1 "cil-aBZMEdAR.o"
+#pragma merger(0,"/tmp/cil-gfgQ03FA.i","")
 #line 106 "/usr/include/string.h"
  __attribute__((__nothrow__)) int strcoll(char const   *s1 , char const   *s2 )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
@@ -7849,8 +7851,8 @@ int strcoll(char const   *s1 , char const   *s2 )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-cww7zFFv.o"
-#pragma merger(0,"/tmp/cil-GGhc8DEL.i","")
+#line 1 "cil-hk9Ubsfj.o"
+#pragma merger(0,"/tmp/cil-vAWqfInP.i","")
 #line 4 "../../mockedFns/strdup.c"
  __attribute__((__nothrow__)) char *strdup(char const   *p_str )  __attribute__((__nonnull__(1),
 __malloc__)) ;
@@ -7879,8 +7881,8 @@ char *strdup(char const   *p_str )
   return (theCopy);
 }
 }
-#line 1 "cil-bch3eDDU.o"
-#pragma merger(0,"/tmp/cil-WRwcAGkL.i","")
+#line 1 "cil-Ccv8EWOt.o"
+#pragma merger(0,"/tmp/cil-orTXFQe0.i","")
 #line 256 "/usr/include/string.h"
  __attribute__((__nothrow__)) char *strerror(int errnum ) ;
 #line 9 "../../mockedFns/strerror.c"
@@ -7923,8 +7925,8 @@ char *strerror(int errnum )
   return (message);
 }
 }
-#line 1 "cil-ApmvFxvn.o"
-#pragma merger(0,"/tmp/cil-1eDg9U6z.i","")
+#line 1 "cil-Mx3mkH7S.o"
+#pragma merger(0,"/tmp/cil-SodbxbmI.i","")
 #line 4 "../../mockedFns/strrchr.c"
  __attribute__((__nothrow__)) char *strrchr(char const   *s , int c )  __attribute__((__pure__,
 __nonnull__(1))) ;
@@ -7957,8 +7959,8 @@ char *strrchr(char const   *s , int c )
   return ((char *)p);
 }
 }
-#line 1 "cil-usAgnQ6c.o"
-#pragma merger(0,"/tmp/cil-z84Y14tf.i","")
+#line 1 "cil-P6LSC9ld.o"
+#pragma merger(0,"/tmp/cil-oJ2CVBKc.i","")
 #line 184 "/usr/include/time.h"
  __attribute__((__nothrow__)) time_t time(time_t *__timer ) ;
 #line 191
@@ -8119,12 +8121,12 @@ int utime(char const   *path , struct utimbuf  const  *times )
   return (0);
 }
 }
-#line 1 "cil-Oiu1Gqb7.o"
-#pragma merger(0,"/tmp/cil-6jYnxKdx.i","")
+#line 1 "cil-xMExGzJN.o"
+#pragma merger(0,"/tmp/cil-DAKtyqgK.i","")
 #line 3 "../../mockedFns/umask.c"
 static int usermask___0  ;
-#line 1 "cil-HSj3m8Qq.o"
-#pragma merger(0,"/tmp/cil-lswlxvx7.i","")
+#line 1 "cil-BeSRR0fA.o"
+#pragma merger(0,"/tmp/cil-ffOTTifA.i","")
 #line 598 "/usr/include/stdio.h"
 int ungetc(int c , FILE *stream ) ;
 #line 4 "../../mockedFns/unget.c"
@@ -8141,8 +8143,8 @@ int ungetc(int c , FILE *stream )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-tt6OSiU7.o"
-#pragma merger(0,"/tmp/cil-BWS3hmBx.i","")
+#line 1 "cil-Mu2f0YTf.o"
+#pragma merger(0,"/tmp/cil-yWDX4M9F.i","")
 #line 292 "/usr/include/unistd.h"
  __attribute__((__nothrow__)) __quad_t lseek(int fildes , __quad_t offset , int whence )  __asm__("lseek64")  ;
 #line 471
@@ -8373,8 +8375,8 @@ __quad_t lseek(int fildes , __quad_t offset , int whence )
   return (newOffset);
 }
 }
-#line 1 "cil-u2wegnBU.o"
-#pragma merger(0,"/tmp/cil-7jiulD2U.i","")
+#line 1 "cil-bm1M7Pfw.o"
+#pragma merger(0,"/tmp/cil-NPBrsqfc.i","")
 #line 3 "../../mockedFns/unlink.c"
  __attribute__((__nothrow__)) int unlink(char const   *pathname )  __attribute__((__nonnull__(1))) ;
 #line 3 "../../mockedFns/unlink.c"
@@ -8388,10 +8390,12 @@ int unlink(char const   *pathname )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-msNpb96E.o"
-#pragma merger(0,"/tmp/cil-bU1nzAGl.i","")
+#line 1 "cil-F8FdSaH1.o"
+#pragma merger(0,"/tmp/cil-QtUtQ3C7.i","")
 #line 11 "./../../mockedFns/symexe.h"
 extern void symtest_initialize(void) ;
+#line 1 "cil-LEUaE9Ky.o"
+#pragma merger(0,"/tmp/cil-eYGi3kii.i","")
 #line 27 "str.h"
 void str_alloc_text(struct mystr *p_str , char const   *p_src ) ;
 #line 13 "utility.h"
@@ -8585,7 +8589,7 @@ int main(int argc , char const   **argv )
 #line 42
   the_session.anon_pass_str.PRIVATE_HANDS_OFF_alloc_bytes = 0U;
 #line 42
-  the_session.restart_pos = (filesize_t )0;
+  the_session.restart_pos = 0LL;
 #line 42
   the_session.is_ascii = 1;
 #line 42
@@ -8655,7 +8659,7 @@ int main(int argc , char const   **argv )
 #line 42
   the_session.log_str.PRIVATE_HANDS_OFF_alloc_bytes = 0U;
 #line 42
-  the_session.transfer_size = (filesize_t )0;
+  the_session.transfer_size = 0LL;
 #line 42
   the_session.ftp_cmd_str.PRIVATE_HANDS_OFF_p_buf = (char *)((void *)0);
 #line 42
@@ -8761,21 +8765,29 @@ int main(int argc , char const   **argv )
 #line 115
   symtest_initialize();
 #line 118
-  if ((int )tunable_pasv_address && tunable_pasv_addr_resolve) {
+  if (tunable_pasv_address) {
+#line 118
+    if (tunable_pasv_addr_resolve) {
 #line 120
-    p_addr = (struct vsf_sysutil_sockaddr *)0;
+      p_addr = (struct vsf_sysutil_sockaddr *)0;
 #line 122
-    vsf_sysutil_dns_resolve(& p_addr, tunable_pasv_address);
+      vsf_sysutil_dns_resolve(& p_addr, tunable_pasv_address);
 #line 123
-    vsf_sysutil_free((void *)((char *)tunable_pasv_address));
+      vsf_sysutil_free((void *)((char *)tunable_pasv_address));
 #line 124
-    p_numeric_addr = vsf_sysutil_inet_ntop((struct vsf_sysutil_sockaddr  const  *)p_addr);
+      p_numeric_addr = vsf_sysutil_inet_ntop((struct vsf_sysutil_sockaddr  const  *)p_addr);
 #line 125
-    __cil_tmp___2 = vsf_sysutil_strdup(p_numeric_addr);
+      __cil_tmp___2 = vsf_sysutil_strdup(p_numeric_addr);
 #line 125
-    tunable_pasv_address = (char const   *)__cil_tmp___2;
+      tunable_pasv_address = (char const   *)__cil_tmp___2;
 #line 126
-    vsf_sysutil_free((void *)p_addr);
+      vsf_sysutil_free((void *)p_addr);
+    } else {
+#line 118
+      goto _L;
+    }
+  } else {
+    _L: ;
   }
 #line 128
   if (! tunable_run_as_launching_user) {
@@ -8793,22 +8805,29 @@ int main(int argc , char const   **argv )
     ssl_init(& the_session);
   }
 #line 145
-  if (tunable_listen || tunable_listen_ipv6) {
-#line 148
-    __cil_tmp___3 = vsf_standalone_main();
-#line 148
-    ret___0 = __cil_tmp___3;
-#line 149
-    the_session.num_clients = ret___0.num_children;
-#line 150
-    the_session.num_this_ip = ret___0.num_this_ip;
+  if (tunable_listen) {
+#line 145
+    goto _L___0;
   } else {
+#line 145
+    if (tunable_listen_ipv6) {
+      _L___0: 
+#line 148
+      __cil_tmp___3 = vsf_standalone_main();
+#line 148
+      ret___0 = __cil_tmp___3;
+#line 149
+      the_session.num_clients = ret___0.num_children;
+#line 150
+      the_session.num_this_ip = ret___0.num_this_ip;
+    } else {
 #line 152
-    socket(0, 0, 0);
+      socket(0, 0, 0);
 #line 152
-    socket(0, 0, 0);
+      socket(0, 0, 0);
 #line 152
-    dup2(4, 0);
+      dup2(4, 0);
+    }
   }
 #line 153
   if (tunable_tcp_wrappers) {
@@ -8895,9 +8914,23 @@ int main(int argc , char const   **argv )
     }
   }
 #line 224
-  if ((! tunable_local_enable && ! tunable_connect_from_port_20) && ! tunable_chown_uploads) {
+  if (! tunable_local_enable) {
+#line 224
+    if (! tunable_connect_from_port_20) {
+#line 224
+      if (! tunable_chown_uploads) {
 #line 227
-    tunable_one_process_model = 1;
+        tunable_one_process_model = 1;
+      } else {
+#line 224
+        goto _L___2;
+      }
+    } else {
+#line 224
+      goto _L___2;
+    }
+  } else {
+    _L___2: ;
   }
 #line 229
   if (tunable_run_as_launching_user) {
@@ -8978,9 +9011,17 @@ static void do_sanity_checks(void)
     }
   }
 #line 287
-  if (! tunable_local_enable && ! tunable_anonymous_enable) {
+  if (! tunable_local_enable) {
+#line 287
+    if (! tunable_anonymous_enable) {
 #line 289
-    die("vsftpd: both local and anonymous access disabled!");
+      die("vsftpd: both local and anonymous access disabled!");
+    } else {
+#line 287
+      goto _L;
+    }
+  } else {
+    _L: ;
   }
 #line 291
   return;
@@ -8998,7 +9039,7 @@ static void env_init(void)
 #line 300
   vsf_sysutil_tzset();
 #line 302
-  vsf_sysutil_install_null_sighandler(4);
+  vsf_sysutil_install_null_sighandler((enum EVSFSysUtilSignal )4);
 #line 303
   return;
 }
@@ -9063,8 +9104,8 @@ static void session_init(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1 "cil-nfWmCARd.o"
-#pragma merger(0,"/tmp/cil-P6gyUVQd.i","")
+#line 1 "cil-PIa8ljCo.o"
+#pragma merger(0,"/tmp/cil-GFwGtkpQ.i","")
 #line 104 "sysutil.h"
 int vsf_sysutil_write_loop(int fd , void const   *p_buf , unsigned int size ) ;
 #line 165
@@ -9150,8 +9191,8 @@ void vsf_exit(char const   *p_text )
   return;
 }
 }
-#line 1 "cil-rRo1aXm6.o"
-#pragma merger(0,"/tmp/cil-bxLw15Bc.i","")
+#line 1 "cil-AjlmQ4LB.o"
+#pragma merger(0,"/tmp/cil-GRiYVzbR.i","")
 #line 14 "prelogin.h"
 void init_connection(struct vsf_session *p_sess ) ;
 #line 22 "ftpcmdio.h"
@@ -9256,34 +9297,50 @@ static void emit_greeting(struct vsf_session *p_sess )
 #line 52
   str_log_line.PRIVATE_HANDS_OFF_alloc_bytes = 0U;
 #line 54
-  if (tunable_max_clients > 0U && p_sess->num_clients > tunable_max_clients) {
+  if (tunable_max_clients > 0U) {
+#line 54
+    if (p_sess->num_clients > tunable_max_clients) {
 #line 57
-    str_alloc_text(& str_log_line, "Connection refused: too many sessions.");
+      str_alloc_text(& str_log_line, "Connection refused: too many sessions.");
 #line 58
-    vsf_log_line(p_sess, 8, & str_log_line);
+      vsf_log_line(p_sess, (enum EVSFLogEntryType )8, & str_log_line);
 #line 59
-    vsf_cmdio_write_exit(p_sess, 421, "There are too many connected users, please try later.");
+      vsf_cmdio_write_exit(p_sess, 421, "There are too many connected users, please try later.");
+    } else {
+#line 54
+      goto _L;
+    }
+  } else {
+    _L: ;
   }
 #line 62
-  if (tunable_max_per_ip > 0U && p_sess->num_this_ip > tunable_max_per_ip) {
+  if (tunable_max_per_ip > 0U) {
+#line 62
+    if (p_sess->num_this_ip > tunable_max_per_ip) {
 #line 65
-    str_alloc_text(& str_log_line, "Connection refused: too many sessions for this address.");
+      str_alloc_text(& str_log_line, "Connection refused: too many sessions for this address.");
 #line 67
-    vsf_log_line(p_sess, 8, & str_log_line);
+      vsf_log_line(p_sess, (enum EVSFLogEntryType )8, & str_log_line);
 #line 68
-    vsf_cmdio_write_exit(p_sess, 421, "There are too many connections from your internet address.");
+      vsf_cmdio_write_exit(p_sess, 421, "There are too many connections from your internet address.");
+    } else {
+#line 62
+      goto _L___0;
+    }
+  } else {
+    _L___0: ;
   }
 #line 71
   if (! p_sess->tcp_wrapper_ok) {
 #line 73
     str_alloc_text(& str_log_line, "Connection refused: tcp_wrappers denial.");
 #line 75
-    vsf_log_line(p_sess, 8, & str_log_line);
+    vsf_log_line(p_sess, (enum EVSFLogEntryType )8, & str_log_line);
 #line 76
     vsf_cmdio_write_exit(p_sess, 421, "Service not available.");
   }
 #line 78
-  vsf_log_line(p_sess, 8, & str_log_line);
+  vsf_log_line(p_sess, (enum EVSFLogEntryType )8, & str_log_line);
 #line 79
   __cil_tmp = str_isempty((struct mystr  const  *)(& p_sess->banner_str));
 #line 79
@@ -9381,7 +9438,7 @@ static void parse_username_password(struct vsf_session *p_sess )
                   goto _L___1;
                 }
               } else {
-                _L___1: /* CIL Label */ 
+                _L___1: 
 #line 128
                 if (tunable_ssl_enable) {
 #line 128
@@ -9396,7 +9453,7 @@ static void parse_username_password(struct vsf_session *p_sess )
                     goto _L___0;
                   }
                 } else {
-                  _L___0: /* CIL Label */ 
+                  _L___0: 
 #line 132
                   if (tunable_ssl_enable) {
 #line 132
@@ -9411,7 +9468,7 @@ static void parse_username_password(struct vsf_session *p_sess )
                       goto _L;
                     }
                   } else {
-                    _L: /* CIL Label */ 
+                    _L: 
 #line 138
                     vsf_cmdio_write(p_sess, 530, "Please login with USER and PASS.");
                   }
@@ -9444,7 +9501,7 @@ static void handle_user_command(struct vsf_session *p_sess )
   __cil_tmp = str_equal_text((struct mystr  const  *)(& p_sess->ftp_arg_str), "FTP");
 #line 154
   if (__cil_tmp) {
-    _L: /* CIL Label */ ;
+    _L: ;
   } else {
 #line 154
     __cil_tmp___0 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_arg_str),
@@ -9459,40 +9516,108 @@ static void handle_user_command(struct vsf_session *p_sess )
     }
   }
 #line 159
-  if (! tunable_local_enable && ! is_anon) {
+  if (! tunable_local_enable) {
+#line 159
+    if (! is_anon) {
 #line 161
-    vsf_cmdio_write(p_sess, 530, "This FTP server is anonymous only.");
+      vsf_cmdio_write(p_sess, 530, "This FTP server is anonymous only.");
 #line 163
-    str_empty(& p_sess->user_str);
+      str_empty(& p_sess->user_str);
 #line 164
-    return;
+      return;
+    } else {
+#line 159
+      goto _L___0;
+    }
+  } else {
+    _L___0: ;
   }
 #line 166
-  if (((is_anon && p_sess->control_use_ssl) && ! tunable_allow_anon_ssl) && ! tunable_force_anon_logins_ssl) {
+  if (is_anon) {
+#line 166
+    if (p_sess->control_use_ssl) {
+#line 166
+      if (! tunable_allow_anon_ssl) {
+#line 166
+        if (! tunable_force_anon_logins_ssl) {
 #line 169
-    vsf_cmdio_write(p_sess, 530, "Anonymous sessions may not use encryption.");
+          vsf_cmdio_write(p_sess, 530, "Anonymous sessions may not use encryption.");
 #line 171
-    str_empty(& p_sess->user_str);
+          str_empty(& p_sess->user_str);
 #line 172
-    return;
+          return;
+        } else {
+#line 166
+          goto _L___3;
+        }
+      } else {
+#line 166
+        goto _L___3;
+      }
+    } else {
+#line 166
+      goto _L___3;
+    }
+  } else {
+    _L___3: ;
   }
 #line 174
-  if (((tunable_ssl_enable && ! is_anon) && ! p_sess->control_use_ssl) && tunable_force_local_logins_ssl) {
+  if (tunable_ssl_enable) {
+#line 174
+    if (! is_anon) {
+#line 174
+      if (! p_sess->control_use_ssl) {
+#line 174
+        if (tunable_force_local_logins_ssl) {
 #line 177
-    vsf_cmdio_write(p_sess, 530, "Non-anonymous sessions must use encryption.");
+          vsf_cmdio_write(p_sess, 530, "Non-anonymous sessions must use encryption.");
 #line 179
-    str_empty(& p_sess->user_str);
+          str_empty(& p_sess->user_str);
 #line 180
-    return;
+          return;
+        } else {
+#line 174
+          goto _L___6;
+        }
+      } else {
+#line 174
+        goto _L___6;
+      }
+    } else {
+#line 174
+      goto _L___6;
+    }
+  } else {
+    _L___6: ;
   }
 #line 182
-  if (((tunable_ssl_enable && is_anon) && ! p_sess->control_use_ssl) && tunable_force_anon_logins_ssl) {
+  if (tunable_ssl_enable) {
+#line 182
+    if (is_anon) {
+#line 182
+      if (! p_sess->control_use_ssl) {
+#line 182
+        if (tunable_force_anon_logins_ssl) {
 #line 185
-    vsf_cmdio_write(p_sess, 530, "Anonymous sessions must use encryption.");
+          vsf_cmdio_write(p_sess, 530, "Anonymous sessions must use encryption.");
 #line 187
-    str_empty(& p_sess->user_str);
+          str_empty(& p_sess->user_str);
 #line 188
-    return;
+          return;
+        } else {
+#line 182
+          goto _L___9;
+        }
+      } else {
+#line 182
+        goto _L___9;
+      }
+    } else {
+#line 182
+      goto _L___9;
+    }
+  } else {
+    _L___9: ;
   }
 #line 190
   if (tunable_userlist_enable) {
@@ -9502,22 +9627,51 @@ static void handle_user_command(struct vsf_session *p_sess )
 #line 192
     located = __cil_tmp___1;
 #line 193
-    if ((located && tunable_userlist_deny) || (! located && ! tunable_userlist_deny)) {
+    if (located) {
+#line 193
+      if (tunable_userlist_deny) {
+#line 193
+        goto _L___10;
+      } else {
+#line 193
+        goto _L___12;
+      }
+    } else {
+      _L___12: 
+#line 193
+      if (! located) {
+#line 193
+        if (! tunable_userlist_deny) {
+          _L___10: 
 #line 196
-      vsf_cmdio_write(p_sess, 530, "Permission denied.");
+          vsf_cmdio_write(p_sess, 530, "Permission denied.");
 #line 197
-      str_empty(& p_sess->user_str);
+          str_empty(& p_sess->user_str);
 #line 198
-      return;
+          return;
+        } else {
+#line 193
+          goto _L___11;
+        }
+      } else {
+        _L___11: ;
+      }
     }
   }
 #line 201
-  if (is_anon && tunable_no_anon_password) {
+  if (is_anon) {
+#line 201
+    if (tunable_no_anon_password) {
 #line 204
-    str_alloc_text(& p_sess->ftp_arg_str, "<no password>");
+      str_alloc_text(& p_sess->ftp_arg_str, "<no password>");
 #line 205
-    handle_pass_command(p_sess);
+      handle_pass_command(p_sess);
+    } else {
+#line 201
+      goto _L___13;
+    }
   } else {
+    _L___13: 
 #line 209
     vsf_cmdio_write(p_sess, 331, "Please specify the password.");
   }
@@ -9562,8 +9716,8 @@ static void handle_pass_command(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1 "cil-dmVilsCw.o"
-#pragma merger(0,"/tmp/cil-okVwTbjq.i","")
+#line 1 "cil-KD8P0bWg.o"
+#pragma merger(0,"/tmp/cil-t8YFqd3B.i","")
 #line 34 "ftpcmdio.h"
 void vsf_cmdio_write_hyphen(struct vsf_session *p_sess , int status , char const   *p_text ) ;
 #line 46
@@ -9688,11 +9842,11 @@ void vsf_cmdio_write_raw(struct vsf_session *p_sess , char const   *p_text )
 #line 66
   if (tunable_log_ftp_protocol) {
 #line 68
-    vsf_log_line(p_sess, 7, & s_the_str);
+    vsf_log_line(p_sess, (enum EVSFLogEntryType )7, & s_the_str);
   }
 #line 70
   retval = ftp_write_str((struct vsf_session  const  *)p_sess, (struct mystr  const  *)(& s_the_str),
-                         1);
+                         (enum EVSFRWTarget )1);
 #line 71
   if (retval != 0) {
 #line 73
@@ -9775,7 +9929,7 @@ static void ftp_write_str_common(struct vsf_session *p_sess , int status , char 
 #line 124
     str_append_str(& s_write_buf_str, p_str);
 #line 125
-    vsf_log_line(p_sess, 7, & s_write_buf_str);
+    vsf_log_line(p_sess, (enum EVSFLogEntryType )7, & s_write_buf_str);
   }
 #line 127
   str_copy(& s_text_mangle_str, p_str);
@@ -9798,11 +9952,19 @@ static void ftp_write_str_common(struct vsf_session *p_sess , int status , char 
   }
 #line 142
   retval = ftp_write_str((struct vsf_session  const  *)p_sess, (struct mystr  const  *)(& s_write_buf_str),
-                         1);
+                         (enum EVSFRWTarget )1);
 #line 143
-  if (retval != 0 && ! noblock) {
+  if (retval != 0) {
+#line 143
+    if (! noblock) {
 #line 145
-    die("ftp_write");
+      die("ftp_write");
+    } else {
+#line 143
+      goto _L;
+    }
+  } else {
+    _L: ;
   }
 #line 147
   if (noblock) {
@@ -9821,7 +9983,8 @@ void vsf_cmdio_set_alarm(struct vsf_session *p_sess )
 #line 156
   if (tunable_idle_session_timeout > 0U) {
 #line 158
-    vsf_sysutil_install_sighandler(1, & handle_alarm_timeout, (void *)p_sess);
+    vsf_sysutil_install_sighandler((enum EVSFSysUtilSignal )1, & handle_alarm_timeout,
+                                   (void *)p_sess);
 #line 160
     vsf_sysutil_set_alarm(tunable_idle_session_timeout);
   }
@@ -9871,7 +10034,7 @@ void vsf_cmdio_get_cmd_and_arg(struct vsf_session *p_sess , struct mystr *p_cmd_
       }
     }
 #line 193
-    vsf_log_line(p_sess, 6, & s_log_str);
+    vsf_log_line(p_sess, (enum EVSFLogEntryType )6, & s_log_str);
   }
 #line 195
   return;
@@ -9909,7 +10072,7 @@ static void control_getline(struct mystr *p_str , struct vsf_session *p_sess )
         goto _L;
       }
     } else {
-      _L: /* CIL Label */ 
+      _L: 
 #line 210
       break;
     }
@@ -9922,8 +10085,8 @@ static void control_getline(struct mystr *p_str , struct vsf_session *p_sess )
   return;
 }
 }
-#line 1 "cil-YhX2YIHT.o"
-#pragma merger(0,"/tmp/cil-5c1zTiEq.i","")
+#line 1 "cil-E2XfXHmt.o"
+#pragma merger(0,"/tmp/cil-ezkcRxvH.i","")
 #line 12 "postlogin.h"
 void process_post_login(struct vsf_session *p_sess ) ;
 #line 31 "str.h"
@@ -10335,7 +10498,7 @@ void process_post_login(struct vsf_session *p_sess )
 #line 96
   if (tunable_async_abor_enable) {
 #line 98
-    vsf_sysutil_install_sighandler(5, & handle_sigurg, (void *)p_sess);
+    vsf_sysutil_install_sighandler((enum EVSFSysUtilSignal )5, & handle_sigurg, (void *)p_sess);
 #line 99
     vsf_sysutil_activate_sigurg(0);
   }
@@ -10431,14 +10594,14 @@ void process_post_login(struct vsf_session *p_sess )
 #line 158
         if (__cil_tmp___77) {
 #line 158
-          goto _L___49;
+          goto _L___65;
         } else {
 #line 158
           __cil_tmp___78 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                           "XPWD");
 #line 158
           if (__cil_tmp___78) {
-            _L___49: /* CIL Label */ 
+            _L___65: 
 #line 161
             handle_pwd(p_sess);
           } else {
@@ -10448,14 +10611,14 @@ void process_post_login(struct vsf_session *p_sess )
 #line 163
             if (__cil_tmp___75) {
 #line 163
-              goto _L___48;
+              goto _L___64;
             } else {
 #line 163
               __cil_tmp___76 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                               "XCWD");
 #line 163
               if (__cil_tmp___76) {
-                _L___48: /* CIL Label */ 
+                _L___64: 
 #line 166
                 handle_cwd(p_sess);
               } else {
@@ -10465,42 +10628,48 @@ void process_post_login(struct vsf_session *p_sess )
 #line 168
                 if (__cil_tmp___73) {
 #line 168
-                  goto _L___47;
+                  goto _L___63;
                 } else {
 #line 168
                   __cil_tmp___74 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                                   "XCUP");
 #line 168
                   if (__cil_tmp___74) {
-                    _L___47: /* CIL Label */ 
+                    _L___63: 
 #line 171
                     handle_cdup(p_sess);
                   } else {
 #line 173
-                    if (tunable_pasv_enable && ! p_sess->epsv_all) {
+                    if (tunable_pasv_enable) {
 #line 173
-                      __cil_tmp___71 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                      "PASV");
+                      if (! p_sess->epsv_all) {
 #line 173
-                      if (__cil_tmp___71) {
+                        __cil_tmp___71 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                        "PASV");
 #line 173
-                        goto _L___46;
-                      } else {
+                        if (__cil_tmp___71) {
 #line 173
-                        __cil_tmp___72 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                        "P@SW");
-#line 173
-                        if (__cil_tmp___72) {
-                          _L___46: /* CIL Label */ 
-#line 178
-                          handle_pasv(p_sess, 0);
+                          goto _L___61;
                         } else {
 #line 173
-                          goto _L___45;
+                          __cil_tmp___72 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                          "P@SW");
+#line 173
+                          if (__cil_tmp___72) {
+                            _L___61: 
+#line 178
+                            handle_pasv(p_sess, 0);
+                          } else {
+#line 173
+                            goto _L___62;
+                          }
                         }
+                      } else {
+#line 173
+                        goto _L___62;
                       }
                     } else {
-                      _L___45: /* CIL Label */ 
+                      _L___62: 
 #line 180
                       if (tunable_pasv_enable) {
 #line 180
@@ -10512,10 +10681,10 @@ void process_post_login(struct vsf_session *p_sess )
                           handle_pasv(p_sess, 1);
                         } else {
 #line 180
-                          goto _L___44;
+                          goto _L___59;
                         }
                       } else {
-                        _L___44: /* CIL Label */ 
+                        _L___59: 
 #line 185
                         if (tunable_download_enable) {
 #line 185
@@ -10527,10 +10696,10 @@ void process_post_login(struct vsf_session *p_sess )
                             handle_retr(p_sess);
                           } else {
 #line 185
-                            goto _L___43;
+                            goto _L___58;
                           }
                         } else {
-                          _L___43: /* CIL Label */ 
+                          _L___58: 
 #line 190
                           __cil_tmp___68 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                                           "NOOP");
@@ -10566,10 +10735,10 @@ void process_post_login(struct vsf_session *p_sess )
                                     handle_list(p_sess);
                                   } else {
 #line 202
-                                    goto _L___42;
+                                    goto _L___57;
                                   }
                                 } else {
-                                  _L___42: /* CIL Label */ 
+                                  _L___57: 
 #line 207
                                   __cil_tmp___64 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                                                   "TYPE");
@@ -10579,100 +10748,158 @@ void process_post_login(struct vsf_session *p_sess )
                                     handle_type(p_sess);
                                   } else {
 #line 211
-                                    if (tunable_port_enable && ! p_sess->epsv_all) {
+                                    if (tunable_port_enable) {
 #line 211
-                                      __cil_tmp___63 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                      "PORT");
+                                      if (! p_sess->epsv_all) {
 #line 211
-                                      if (__cil_tmp___63) {
+                                        __cil_tmp___63 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                        "PORT");
+#line 211
+                                        if (__cil_tmp___63) {
 #line 215
-                                        handle_port(p_sess);
-                                      } else {
-#line 211
-                                        goto _L___41;
-                                      }
-                                    } else {
-                                      _L___41: /* CIL Label */ 
-#line 217
-                                      if (tunable_write_enable && (tunable_anon_upload_enable || ! p_sess->is_anonymous)) {
-#line 217
-                                        __cil_tmp___62 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                        "STOR");
-#line 217
-                                        if (__cil_tmp___62) {
-#line 221
-                                          handle_stor(p_sess);
+                                          handle_port(p_sess);
                                         } else {
-#line 217
-                                          goto _L___40;
+#line 211
+                                          goto _L___56;
                                         }
                                       } else {
-                                        _L___40: /* CIL Label */ 
+#line 211
+                                        goto _L___56;
+                                      }
+                                    } else {
+                                      _L___56: 
+#line 217
+                                      if (tunable_write_enable) {
+#line 217
+                                        if (tunable_anon_upload_enable) {
+#line 217
+                                          goto _L___54;
+                                        } else {
+#line 217
+                                          if (! p_sess->is_anonymous) {
+                                            _L___54: 
+#line 217
+                                            __cil_tmp___62 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                            "STOR");
+#line 217
+                                            if (__cil_tmp___62) {
+#line 221
+                                              handle_stor(p_sess);
+                                            } else {
+#line 217
+                                              goto _L___53;
+                                            }
+                                          } else {
+#line 217
+                                            goto _L___53;
+                                          }
+                                        }
+                                      } else {
+                                        _L___53: 
 #line 223
-                                        if (tunable_write_enable && (tunable_anon_mkdir_write_enable || ! p_sess->is_anonymous)) {
+                                        if (tunable_write_enable) {
 #line 223
-                                          __cil_tmp___60 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                          "MKD");
+                                          if (tunable_anon_mkdir_write_enable) {
 #line 223
-                                          if (__cil_tmp___60) {
-#line 223
-                                            goto _L___39;
+                                            goto _L___51;
                                           } else {
 #line 223
-                                            __cil_tmp___61 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                            "XMKD");
+                                            if (! p_sess->is_anonymous) {
+                                              _L___51: 
 #line 223
-                                            if (__cil_tmp___61) {
-                                              _L___39: /* CIL Label */ 
+                                              __cil_tmp___60 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                              "MKD");
+#line 223
+                                              if (__cil_tmp___60) {
+#line 223
+                                                goto _L___49;
+                                              } else {
+#line 223
+                                                __cil_tmp___61 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                "XMKD");
+#line 223
+                                                if (__cil_tmp___61) {
+                                                  _L___49: 
 #line 228
-                                              handle_mkd(p_sess);
+                                                  handle_mkd(p_sess);
+                                                } else {
+#line 223
+                                                  goto _L___50;
+                                                }
+                                              }
                                             } else {
 #line 223
-                                              goto _L___38;
+                                              goto _L___50;
                                             }
                                           }
                                         } else {
-                                          _L___38: /* CIL Label */ 
+                                          _L___50: 
 #line 230
-                                          if (tunable_write_enable && (tunable_anon_other_write_enable || ! p_sess->is_anonymous)) {
+                                          if (tunable_write_enable) {
 #line 230
-                                            __cil_tmp___58 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                            "RMD");
+                                            if (tunable_anon_other_write_enable) {
 #line 230
-                                            if (__cil_tmp___58) {
-#line 230
-                                              goto _L___37;
+                                              goto _L___47;
                                             } else {
 #line 230
-                                              __cil_tmp___59 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                              "XRMD");
+                                              if (! p_sess->is_anonymous) {
+                                                _L___47: 
 #line 230
-                                              if (__cil_tmp___59) {
-                                                _L___37: /* CIL Label */ 
+                                                __cil_tmp___58 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                "RMD");
+#line 230
+                                                if (__cil_tmp___58) {
+#line 230
+                                                  goto _L___45;
+                                                } else {
+#line 230
+                                                  __cil_tmp___59 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                  "XRMD");
+#line 230
+                                                  if (__cil_tmp___59) {
+                                                    _L___45: 
 #line 235
-                                                handle_rmd(p_sess);
+                                                    handle_rmd(p_sess);
+                                                  } else {
+#line 230
+                                                    goto _L___46;
+                                                  }
+                                                }
                                               } else {
 #line 230
-                                                goto _L___36;
+                                                goto _L___46;
                                               }
                                             }
                                           } else {
-                                            _L___36: /* CIL Label */ 
+                                            _L___46: 
 #line 237
-                                            if (tunable_write_enable && (tunable_anon_other_write_enable || ! p_sess->is_anonymous)) {
+                                            if (tunable_write_enable) {
 #line 237
-                                              __cil_tmp___57 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                              "DELE");
+                                              if (tunable_anon_other_write_enable) {
 #line 237
-                                              if (__cil_tmp___57) {
-#line 241
-                                                handle_dele(p_sess);
+                                                goto _L___43;
                                               } else {
 #line 237
-                                                goto _L___35;
+                                                if (! p_sess->is_anonymous) {
+                                                  _L___43: 
+#line 237
+                                                  __cil_tmp___57 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                  "DELE");
+#line 237
+                                                  if (__cil_tmp___57) {
+#line 241
+                                                    handle_dele(p_sess);
+                                                  } else {
+#line 237
+                                                    goto _L___42;
+                                                  }
+                                                } else {
+#line 237
+                                                  goto _L___42;
+                                                }
                                               }
                                             } else {
-                                              _L___35: /* CIL Label */ 
+                                              _L___42: 
 #line 243
                                               __cil_tmp___56 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                                                               "REST");
@@ -10682,35 +10909,61 @@ void process_post_login(struct vsf_session *p_sess )
                                                 handle_rest(p_sess);
                                               } else {
 #line 247
-                                                if (tunable_write_enable && (tunable_anon_other_write_enable || ! p_sess->is_anonymous)) {
+                                                if (tunable_write_enable) {
 #line 247
-                                                  __cil_tmp___55 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                  "RNFR");
+                                                  if (tunable_anon_other_write_enable) {
 #line 247
-                                                  if (__cil_tmp___55) {
-#line 251
-                                                    handle_rnfr(p_sess);
+                                                    goto _L___40;
                                                   } else {
 #line 247
-                                                    goto _L___34;
+                                                    if (! p_sess->is_anonymous) {
+                                                      _L___40: 
+#line 247
+                                                      __cil_tmp___55 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                      "RNFR");
+#line 247
+                                                      if (__cil_tmp___55) {
+#line 251
+                                                        handle_rnfr(p_sess);
+                                                      } else {
+#line 247
+                                                        goto _L___39;
+                                                      }
+                                                    } else {
+#line 247
+                                                      goto _L___39;
+                                                    }
                                                   }
                                                 } else {
-                                                  _L___34: /* CIL Label */ 
+                                                  _L___39: 
 #line 253
-                                                  if (tunable_write_enable && (tunable_anon_other_write_enable || ! p_sess->is_anonymous)) {
+                                                  if (tunable_write_enable) {
 #line 253
-                                                    __cil_tmp___54 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                    "RNTO");
+                                                    if (tunable_anon_other_write_enable) {
 #line 253
-                                                    if (__cil_tmp___54) {
-#line 257
-                                                      handle_rnto(p_sess);
+                                                      goto _L___37;
                                                     } else {
 #line 253
-                                                      goto _L___33;
+                                                      if (! p_sess->is_anonymous) {
+                                                        _L___37: 
+#line 253
+                                                        __cil_tmp___54 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                        "RNTO");
+#line 253
+                                                        if (__cil_tmp___54) {
+#line 257
+                                                          handle_rnto(p_sess);
+                                                        } else {
+#line 253
+                                                          goto _L___36;
+                                                        }
+                                                      } else {
+#line 253
+                                                        goto _L___36;
+                                                      }
                                                     }
                                                   } else {
-                                                    _L___33: /* CIL Label */ 
+                                                    _L___36: 
 #line 259
                                                     if (tunable_dirlist_enable) {
 #line 259
@@ -10722,10 +10975,10 @@ void process_post_login(struct vsf_session *p_sess )
                                                         handle_nlst(p_sess);
                                                       } else {
 #line 259
-                                                        goto _L___32;
+                                                        goto _L___34;
                                                       }
                                                     } else {
-                                                      _L___32: /* CIL Label */ 
+                                                      _L___34: 
 #line 264
                                                       __cil_tmp___52 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                                                                       "SIZE");
@@ -10740,33 +10993,46 @@ void process_post_login(struct vsf_session *p_sess )
 #line 276
                                                         if (__cil_tmp___50) {
 #line 276
-                                                          goto _L___31;
+                                                          goto _L___33;
                                                         } else {
 #line 276
                                                           __cil_tmp___51 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                                                                           "\377\364\377\362ABOR");
 #line 276
                                                           if (__cil_tmp___51) {
-                                                            _L___31: /* CIL Label */ 
+                                                            _L___33: 
 #line 279
                                                             vsf_cmdio_write(p_sess,
                                                                             225, "No transfer to ABOR.");
                                                           } else {
 #line 281
-                                                            if (tunable_write_enable && (tunable_anon_other_write_enable || ! p_sess->is_anonymous)) {
+                                                            if (tunable_write_enable) {
 #line 281
-                                                              __cil_tmp___49 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                              "APPE");
+                                                              if (tunable_anon_other_write_enable) {
 #line 281
-                                                              if (__cil_tmp___49) {
-#line 285
-                                                                handle_appe(p_sess);
+                                                                goto _L___32;
                                                               } else {
 #line 281
-                                                                goto _L___30;
+                                                                if (! p_sess->is_anonymous) {
+                                                                  _L___32: 
+#line 281
+                                                                  __cil_tmp___49 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                  "APPE");
+#line 281
+                                                                  if (__cil_tmp___49) {
+#line 285
+                                                                    handle_appe(p_sess);
+                                                                  } else {
+#line 281
+                                                                    goto _L___31;
+                                                                  }
+                                                                } else {
+#line 281
+                                                                  goto _L___31;
+                                                                }
                                                               }
                                                             } else {
-                                                              _L___30: /* CIL Label */ 
+                                                              _L___31: 
 #line 287
                                                               __cil_tmp___48 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                                                                               "MDTM");
@@ -10789,7 +11055,7 @@ void process_post_login(struct vsf_session *p_sess )
                                                                     goto _L___29;
                                                                   }
                                                                 } else {
-                                                                  _L___29: /* CIL Label */ 
+                                                                  _L___29: 
 #line 296
                                                                   __cil_tmp___46 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                                                                                   "STRU");
@@ -10916,7 +11182,7 @@ void process_post_login(struct vsf_session *p_sess )
                                                                                         goto _L___28;
                                                                                       }
                                                                                     } else {
-                                                                                      _L___28: /* CIL Label */ 
+                                                                                      _L___28: 
 #line 353
                                                                                       if (tunable_dirlist_enable) {
 #line 353
@@ -10931,7 +11197,7 @@ void process_post_login(struct vsf_session *p_sess )
                                                                                           goto _L___27;
                                                                                         }
                                                                                       } else {
-                                                                                        _L___27: /* CIL Label */ 
+                                                                                        _L___27: 
 #line 358
                                                                                         if (tunable_ssl_enable) {
 #line 358
@@ -10946,7 +11212,7 @@ void process_post_login(struct vsf_session *p_sess )
                                                                                             goto _L___26;
                                                                                           }
                                                                                         } else {
-                                                                                          _L___26: /* CIL Label */ 
+                                                                                          _L___26: 
 #line 362
                                                                                           if (tunable_ssl_enable) {
 #line 362
@@ -10961,7 +11227,7 @@ void process_post_login(struct vsf_session *p_sess )
                                                                                               goto _L___25;
                                                                                             }
                                                                                           } else {
-                                                                                            _L___25: /* CIL Label */ 
+                                                                                            _L___25: 
 #line 366
                                                                                             __cil_tmp___32 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                                                                                                             "USER");
@@ -10991,7 +11257,7 @@ void process_post_login(struct vsf_session *p_sess )
                                                                                                                                  "PORT");
 #line 374
                                                                                                   if (__cil_tmp___5) {
-                                                                                                    _L___24: /* CIL Label */ 
+                                                                                                    _L___24: 
 #line 374
                                                                                                     goto _L___23;
                                                                                                   } else {
@@ -11000,7 +11266,7 @@ void process_post_login(struct vsf_session *p_sess )
                                                                                                                                    "STOR");
 #line 374
                                                                                                     if (__cil_tmp___6) {
-                                                                                                      _L___23: /* CIL Label */ 
+                                                                                                      _L___23: 
 #line 374
                                                                                                       goto _L___22;
                                                                                                     } else {
@@ -11009,7 +11275,7 @@ void process_post_login(struct vsf_session *p_sess )
                                                                                                                                      "MKD");
 #line 374
                                                                                                       if (__cil_tmp___7) {
-                                                                                                        _L___22: /* CIL Label */ 
+                                                                                                        _L___22: 
 #line 374
                                                                                                         goto _L___21;
                                                                                                       } else {
@@ -11018,7 +11284,7 @@ void process_post_login(struct vsf_session *p_sess )
                                                                                                                                        "XMKD");
 #line 374
                                                                                                         if (__cil_tmp___8) {
-                                                                                                          _L___21: /* CIL Label */ 
+                                                                                                          _L___21: 
 #line 374
                                                                                                           goto _L___20;
                                                                                                         } else {
@@ -11027,7 +11293,7 @@ void process_post_login(struct vsf_session *p_sess )
                                                                                                                                          "RMD");
 #line 374
                                                                                                           if (__cil_tmp___9) {
-                                                                                                            _L___20: /* CIL Label */ 
+                                                                                                            _L___20: 
 #line 374
                                                                                                             goto _L___19;
                                                                                                           } else {
@@ -11036,7 +11302,7 @@ void process_post_login(struct vsf_session *p_sess )
                                                                                                                                             "XRMD");
 #line 374
                                                                                                             if (__cil_tmp___10) {
-                                                                                                              _L___19: /* CIL Label */ 
+                                                                                                              _L___19: 
 #line 374
                                                                                                               goto _L___18;
                                                                                                             } else {
@@ -11045,7 +11311,7 @@ void process_post_login(struct vsf_session *p_sess )
                                                                                                                                               "DELE");
 #line 374
                                                                                                               if (__cil_tmp___11) {
-                                                                                                                _L___18: /* CIL Label */ 
+                                                                                                                _L___18: 
 #line 374
                                                                                                                 goto _L___17;
                                                                                                               } else {
@@ -11054,7 +11320,7 @@ void process_post_login(struct vsf_session *p_sess )
                                                                                                                                                 "RNFR");
 #line 374
                                                                                                                 if (__cil_tmp___12) {
-                                                                                                                  _L___17: /* CIL Label */ 
+                                                                                                                  _L___17: 
 #line 374
                                                                                                                   goto _L___16;
                                                                                                                 } else {
@@ -11063,7 +11329,7 @@ void process_post_login(struct vsf_session *p_sess )
                                                                                                                                                   "RNTO");
 #line 374
                                                                                                                   if (__cil_tmp___13) {
-                                                                                                                    _L___16: /* CIL Label */ 
+                                                                                                                    _L___16: 
 #line 374
                                                                                                                     goto _L___15;
                                                                                                                   } else {
@@ -11072,7 +11338,7 @@ void process_post_login(struct vsf_session *p_sess )
                                                                                                                                                     "SITE");
 #line 374
                                                                                                                     if (__cil_tmp___14) {
-                                                                                                                      _L___15: /* CIL Label */ 
+                                                                                                                      _L___15: 
 #line 374
                                                                                                                       goto _L___14;
                                                                                                                     } else {
@@ -11081,7 +11347,7 @@ void process_post_login(struct vsf_session *p_sess )
                                                                                                                                                       "APPE");
 #line 374
                                                                                                                       if (__cil_tmp___15) {
-                                                                                                                        _L___14: /* CIL Label */ 
+                                                                                                                        _L___14: 
 #line 374
                                                                                                                         goto _L___13;
                                                                                                                       } else {
@@ -11090,7 +11356,7 @@ void process_post_login(struct vsf_session *p_sess )
                                                                                                                                                         "EPSV");
 #line 374
                                                                                                                         if (__cil_tmp___16) {
-                                                                                                                          _L___13: /* CIL Label */ 
+                                                                                                                          _L___13: 
 #line 374
                                                                                                                           goto _L___12;
                                                                                                                         } else {
@@ -11099,7 +11365,7 @@ void process_post_login(struct vsf_session *p_sess )
                                                                                                                                                           "EPRT");
 #line 374
                                                                                                                           if (__cil_tmp___17) {
-                                                                                                                            _L___12: /* CIL Label */ 
+                                                                                                                            _L___12: 
 #line 374
                                                                                                                             goto _L___11;
                                                                                                                           } else {
@@ -11108,7 +11374,7 @@ void process_post_login(struct vsf_session *p_sess )
                                                                                                                                                             "RETR");
 #line 374
                                                                                                                             if (__cil_tmp___18) {
-                                                                                                                              _L___11: /* CIL Label */ 
+                                                                                                                              _L___11: 
 #line 374
                                                                                                                               goto _L___10;
                                                                                                                             } else {
@@ -11117,7 +11383,7 @@ void process_post_login(struct vsf_session *p_sess )
                                                                                                                                                               "LIST");
 #line 374
                                                                                                                               if (__cil_tmp___19) {
-                                                                                                                                _L___10: /* CIL Label */ 
+                                                                                                                                _L___10: 
 #line 374
                                                                                                                                 goto _L___9;
                                                                                                                               } else {
@@ -11126,7 +11392,7 @@ void process_post_login(struct vsf_session *p_sess )
                                                                                                                                                                 "NLST");
 #line 374
                                                                                                                                 if (__cil_tmp___20) {
-                                                                                                                                  _L___9: /* CIL Label */ 
+                                                                                                                                  _L___9: 
 #line 374
                                                                                                                                   goto _L___8;
                                                                                                                                 } else {
@@ -11135,7 +11401,7 @@ void process_post_login(struct vsf_session *p_sess )
                                                                                                                                                                   "STOU");
 #line 374
                                                                                                                                   if (__cil_tmp___21) {
-                                                                                                                                    _L___8: /* CIL Label */ 
+                                                                                                                                    _L___8: 
 #line 374
                                                                                                                                     goto _L___7;
                                                                                                                                   } else {
@@ -11144,7 +11410,7 @@ void process_post_login(struct vsf_session *p_sess )
                                                                                                                                                                     "ALLO");
 #line 374
                                                                                                                                     if (__cil_tmp___22) {
-                                                                                                                                      _L___7: /* CIL Label */ 
+                                                                                                                                      _L___7: 
 #line 374
                                                                                                                                       goto _L___6;
                                                                                                                                     } else {
@@ -11153,7 +11419,7 @@ void process_post_login(struct vsf_session *p_sess )
                                                                                                                                                                       "REIN");
 #line 374
                                                                                                                                       if (__cil_tmp___23) {
-                                                                                                                                        _L___6: /* CIL Label */ 
+                                                                                                                                        _L___6: 
 #line 374
                                                                                                                                         goto _L___5;
                                                                                                                                       } else {
@@ -11162,7 +11428,7 @@ void process_post_login(struct vsf_session *p_sess )
                                                                                                                                                                         "ACCT");
 #line 374
                                                                                                                                         if (__cil_tmp___24) {
-                                                                                                                                          _L___5: /* CIL Label */ 
+                                                                                                                                          _L___5: 
 #line 374
                                                                                                                                           goto _L___4;
                                                                                                                                         } else {
@@ -11171,7 +11437,7 @@ void process_post_login(struct vsf_session *p_sess )
                                                                                                                                                                           "SMNT");
 #line 374
                                                                                                                                           if (__cil_tmp___25) {
-                                                                                                                                            _L___4: /* CIL Label */ 
+                                                                                                                                            _L___4: 
 #line 374
                                                                                                                                             goto _L___3;
                                                                                                                                           } else {
@@ -11180,7 +11446,7 @@ void process_post_login(struct vsf_session *p_sess )
                                                                                                                                                                             "FEAT");
 #line 374
                                                                                                                                             if (__cil_tmp___26) {
-                                                                                                                                              _L___3: /* CIL Label */ 
+                                                                                                                                              _L___3: 
 #line 374
                                                                                                                                               goto _L___2;
                                                                                                                                             } else {
@@ -11189,7 +11455,7 @@ void process_post_login(struct vsf_session *p_sess )
                                                                                                                                                                               "OPTS");
 #line 374
                                                                                                                                               if (__cil_tmp___27) {
-                                                                                                                                                _L___2: /* CIL Label */ 
+                                                                                                                                                _L___2: 
 #line 374
                                                                                                                                                 goto _L___1;
                                                                                                                                               } else {
@@ -11198,7 +11464,7 @@ void process_post_login(struct vsf_session *p_sess )
                                                                                                                                                                                 "STAT");
 #line 374
                                                                                                                                                 if (__cil_tmp___28) {
-                                                                                                                                                  _L___1: /* CIL Label */ 
+                                                                                                                                                  _L___1: 
 #line 374
                                                                                                                                                   goto _L___0;
                                                                                                                                                 } else {
@@ -11207,7 +11473,7 @@ void process_post_login(struct vsf_session *p_sess )
                                                                                                                                                                                   "PBSZ");
 #line 374
                                                                                                                                                   if (__cil_tmp___29) {
-                                                                                                                                                    _L___0: /* CIL Label */ 
+                                                                                                                                                    _L___0: 
 #line 374
                                                                                                                                                     goto _L;
                                                                                                                                                   } else {
@@ -11216,7 +11482,7 @@ void process_post_login(struct vsf_session *p_sess )
                                                                                                                                                                                     "PROT");
 #line 374
                                                                                                                                                     if (__cil_tmp___30) {
-                                                                                                                                                      _L: /* CIL Label */ 
+                                                                                                                                                      _L: 
 #line 402
                                                                                                                                                       vsf_cmdio_write(p_sess,
                                                                                                                                                                       550,
@@ -11504,7 +11770,7 @@ static void handle_pasv(struct vsf_session *p_sess , int is_epsv )
 #line 517
     if (__cil_tmp___2) {
 #line 517
-      goto _L;
+      goto _L___2;
     } else {
 #line 520
       str_upper(& p_sess->ftp_arg_str);
@@ -11525,15 +11791,37 @@ static void handle_pasv(struct vsf_session *p_sess , int is_epsv )
 #line 527
       argval = vsf_sysutil_atoi(__cil_tmp___1);
 #line 528
-      if ((argval < 1 || argval > 2) || (! is_ipv6 && argval == 2)) {
+      if (argval < 1) {
+#line 528
+        goto _L___1;
+      } else {
+#line 528
+        if (argval > 2) {
+          _L___1: 
+#line 528
+          goto _L;
+        } else {
+#line 528
+          if (! is_ipv6) {
+#line 528
+            if (argval == 2) {
+              _L: 
 #line 530
-        vsf_cmdio_write(p_sess, 522, "Bad network protocol.");
+              vsf_cmdio_write(p_sess, 522, "Bad network protocol.");
 #line 531
-        return;
+              return;
+            } else {
+#line 528
+              goto _L___0;
+            }
+          } else {
+            _L___0: ;
+          }
+        }
       }
     }
   } else {
-    _L: /* CIL Label */ ;
+    _L___2: ;
   }
 #line 534
   pasv_cleanup(p_sess);
@@ -11550,14 +11838,30 @@ static void handle_pasv(struct vsf_session *p_sess , int is_epsv )
 #line 544
   vsf_sysutil_activate_reuseaddr(p_sess->pasv_listen_fd);
 #line 546
-  if (tunable_pasv_min_port > (unsigned int )min_port && tunable_pasv_min_port <= (unsigned int )max_port) {
+  if (tunable_pasv_min_port > (unsigned int )min_port) {
+#line 546
+    if (tunable_pasv_min_port <= (unsigned int )max_port) {
 #line 548
-    min_port = (unsigned short )tunable_pasv_min_port;
+      min_port = (unsigned short )tunable_pasv_min_port;
+    } else {
+#line 546
+      goto _L___3;
+    }
+  } else {
+    _L___3: ;
   }
 #line 550
-  if (tunable_pasv_max_port >= (unsigned int )min_port && tunable_pasv_max_port < (unsigned int )max_port) {
+  if (tunable_pasv_max_port >= (unsigned int )min_port) {
+#line 550
+    if (tunable_pasv_max_port < (unsigned int )max_port) {
 #line 552
-    max_port = (unsigned short )tunable_pasv_max_port;
+      max_port = (unsigned short )tunable_pasv_max_port;
+    } else {
+#line 550
+      goto _L___4;
+    }
+  } else {
+    _L___4: ;
   }
 #line 555
   while (1) {
@@ -11721,16 +12025,24 @@ static void handle_retr(struct vsf_session *p_sess )
     return;
   }
 #line 644
-  if (p_sess->is_ascii && offset != 0LL) {
+  if (p_sess->is_ascii) {
+#line 644
+    if (offset != 0LL) {
 #line 646
-    vsf_cmdio_write(p_sess, 550, "No support for resume of ASCII transfer.");
+      vsf_cmdio_write(p_sess, 550, "No support for resume of ASCII transfer.");
 #line 648
-    return;
+      return;
+    } else {
+#line 644
+      goto _L;
+    }
+  } else {
+    _L: ;
   }
 #line 650
   resolve_tilde(& p_sess->ftp_arg_str, p_sess);
 #line 651
-  vsf_log_start_entry(p_sess, 2);
+  vsf_log_start_entry(p_sess, (enum EVSFLogEntryType )2);
 #line 652
   str_copy(& p_sess->log_str, (struct mystr  const  *)(& p_sess->ftp_arg_str));
 #line 653
@@ -11745,7 +12057,7 @@ static void handle_retr(struct vsf_session *p_sess )
     return;
   }
 #line 659
-  opened_file = str_open((struct mystr  const  *)(& p_sess->ftp_arg_str), 1);
+  opened_file = str_open((struct mystr  const  *)(& p_sess->ftp_arg_str), (enum EVSFSysStrOpenMode )1);
 #line 660
   __cil_tmp___1 = vsf_sysutil_retval_is_error(opened_file);
 #line 660
@@ -11781,21 +12093,27 @@ static void handle_retr(struct vsf_session *p_sess )
 #line 688
   vsf_sysutil_deactivate_noblock(opened_file);
 #line 690
-  if (p_sess->is_anonymous && tunable_anon_world_readable_only) {
+  if (p_sess->is_anonymous) {
 #line 690
-    __cil_tmp___4 = vsf_sysutil_statbuf_is_readable_other((struct vsf_sysutil_statbuf  const  *)s_p_statbuf);
+    if (tunable_anon_world_readable_only) {
 #line 690
-    if (__cil_tmp___4) {
+      __cil_tmp___4 = vsf_sysutil_statbuf_is_readable_other((struct vsf_sysutil_statbuf  const  *)s_p_statbuf);
 #line 690
-      goto _L;
-    } else {
+      if (__cil_tmp___4) {
+#line 690
+        goto _L___1;
+      } else {
 #line 693
-      vsf_cmdio_write(p_sess, 550, "Failed to open file.");
+        vsf_cmdio_write(p_sess, 550, "Failed to open file.");
 #line 694
-      goto file_close_out;
+        goto file_close_out;
+      }
+    } else {
+#line 690
+      goto _L___1;
     }
   } else {
-    _L: /* CIL Label */ ;
+    _L___1: ;
   }
 #line 697
   if (offset != 0LL) {
@@ -11805,12 +12123,19 @@ static void handle_retr(struct vsf_session *p_sess )
 #line 701
   str_alloc_text(& s_mark_str, "Opening ");
 #line 702
-  if (tunable_ascii_download_enable && p_sess->is_ascii) {
+  if (tunable_ascii_download_enable) {
+#line 702
+    if (p_sess->is_ascii) {
 #line 704
-    str_append_text(& s_mark_str, "ASCII");
+      str_append_text(& s_mark_str, "ASCII");
 #line 705
-    is_ascii = 1;
+      is_ascii = 1;
+    } else {
+#line 702
+      goto _L___2;
+    }
   } else {
+    _L___2: 
 #line 709
     str_append_text(& s_mark_str, "BINARY");
   }
@@ -11842,9 +12167,17 @@ static void handle_retr(struct vsf_session *p_sess )
 #line 724
   __cil_tmp___8 = vsf_ftpdataio_dispose_transfer_fd(p_sess);
 #line 724
-  if (__cil_tmp___8 != 1 && trans_ret.retval == 0) {
+  if (__cil_tmp___8 != 1) {
+#line 724
+    if (trans_ret.retval == 0) {
 #line 726
-    trans_ret.retval = -2;
+      trans_ret.retval = -2;
+    } else {
+#line 724
+      goto _L___3;
+    }
+  } else {
+    _L___3: ;
   }
 #line 728
   p_sess->transfer_size = trans_ret.transferred;
@@ -11948,13 +12281,13 @@ static void handle_dir_common(struct vsf_session *p_sess , int full_details , in
       return;
     }
   } else {
-    _L: /* CIL Label */ ;
+    _L: ;
   }
 #line 785
   __cil_tmp___0 = str_isempty((struct mystr  const  *)(& p_sess->ftp_arg_str));
 #line 785
   if (__cil_tmp___0) {
-    _L___0: /* CIL Label */ 
+    _L___0: 
 #line 796
     str_copy(& s_filter_str, (struct mystr  const  *)(& p_sess->ftp_arg_str));
   } else {
@@ -12044,33 +12377,63 @@ static void handle_dir_common(struct vsf_session *p_sess , int full_details , in
     }
   }
 #line 856
-  if ((p_sess->is_anonymous && (int )p_dir) && tunable_anon_world_readable_only) {
+  if (p_sess->is_anonymous) {
+#line 856
+    if (p_dir) {
+#line 856
+      if (tunable_anon_world_readable_only) {
 #line 858
-    vsf_sysutil_dir_stat((struct vsf_sysutil_dir  const  *)p_dir, & s_p_dirstat);
+        vsf_sysutil_dir_stat((struct vsf_sysutil_dir  const  *)p_dir, & s_p_dirstat);
 #line 859
-    __cil_tmp___8 = vsf_sysutil_statbuf_is_readable_other((struct vsf_sysutil_statbuf  const  *)s_p_dirstat);
+        __cil_tmp___8 = vsf_sysutil_statbuf_is_readable_other((struct vsf_sysutil_statbuf  const  *)s_p_dirstat);
 #line 859
-    if (! __cil_tmp___8) {
+        if (! __cil_tmp___8) {
 #line 861
-      dir_allow_read = 0;
+          dir_allow_read = 0;
+        }
+      } else {
+#line 856
+        goto _L___2;
+      }
+    } else {
+#line 856
+      goto _L___2;
     }
+  } else {
+    _L___2: ;
   }
 #line 864
-  if ((unsigned int )p_dir != (unsigned int )((struct vsf_sysutil_dir *)0) && dir_allow_read) {
+  if ((unsigned int )p_dir != (unsigned int )((struct vsf_sysutil_dir *)0)) {
+#line 864
+    if (dir_allow_read) {
 #line 866
-    retval = vsf_ftpdataio_transfer_dir(p_sess, use_control, p_dir, (struct mystr  const  *)(& s_dir_name_str),
-                                        (struct mystr  const  *)(& s_option_str),
-                                        (struct mystr  const  *)(& s_filter_str),
-                                        full_details);
+      retval = vsf_ftpdataio_transfer_dir(p_sess, use_control, p_dir, (struct mystr  const  *)(& s_dir_name_str),
+                                          (struct mystr  const  *)(& s_option_str),
+                                          (struct mystr  const  *)(& s_filter_str),
+                                          full_details);
+    } else {
+#line 864
+      goto _L___3;
+    }
+  } else {
+    _L___3: ;
   }
 #line 870
   if (! stat_cmd) {
 #line 872
     __cil_tmp___9 = vsf_ftpdataio_dispose_transfer_fd(p_sess);
 #line 872
-    if (__cil_tmp___9 != 1 && retval == 0) {
+    if (__cil_tmp___9 != 1) {
+#line 872
+      if (retval == 0) {
 #line 874
-      retval = -1;
+        retval = -1;
+      } else {
+#line 872
+        goto _L___4;
+      }
+    } else {
+      _L___4: ;
     }
   }
 #line 877
@@ -12079,17 +12442,24 @@ static void handle_dir_common(struct vsf_session *p_sess , int full_details , in
     vsf_cmdio_write(p_sess, 213, "End of status");
   } else {
 #line 881
-    if ((unsigned int )p_dir == (unsigned int )((struct vsf_sysutil_dir *)0) || ! dir_allow_read) {
-#line 883
-      vsf_cmdio_write(p_sess, 226, "Transfer done (but failed to open directory).");
+    if ((unsigned int )p_dir == (unsigned int )((struct vsf_sysutil_dir *)0)) {
+#line 881
+      goto _L___5;
     } else {
-#line 886
-      if (retval == 0) {
-#line 888
-        vsf_cmdio_write(p_sess, 226, "Directory send OK.");
+#line 881
+      if (! dir_allow_read) {
+        _L___5: 
+#line 883
+        vsf_cmdio_write(p_sess, 226, "Transfer done (but failed to open directory).");
       } else {
+#line 886
+        if (retval == 0) {
+#line 888
+          vsf_cmdio_write(p_sess, 226, "Directory send OK.");
+        } else {
 #line 892
-        vsf_cmdio_write(p_sess, 426, "Failure writing network stream.");
+          vsf_cmdio_write(p_sess, 426, "Failure writing network stream.");
+        }
       }
     }
   }
@@ -12136,7 +12506,7 @@ static void handle_type(struct vsf_session *p_sess )
                                    "L8");
 #line 911
     if (__cil_tmp___2) {
-      _L___1: /* CIL Label */ 
+      _L___1: 
 #line 911
       goto _L___0;
     } else {
@@ -12145,7 +12515,7 @@ static void handle_type(struct vsf_session *p_sess )
                                      "L 8");
 #line 911
       if (__cil_tmp___3) {
-        _L___0: /* CIL Label */ 
+        _L___0: 
 #line 915
         p_sess->is_ascii = 0;
 #line 916
@@ -12164,7 +12534,7 @@ static void handle_type(struct vsf_session *p_sess )
                                          "A N");
 #line 918
           if (__cil_tmp___0) {
-            _L: /* CIL Label */ 
+            _L: 
 #line 921
             p_sess->is_ascii = 1;
 #line 922
@@ -12225,7 +12595,7 @@ static void handle_port(struct vsf_session *p_sess )
       __cil_tmp___0 = vsf_sysutil_is_port_reserved(the_port);
 #line 956
       if (__cil_tmp___0) {
-        _L: /* CIL Label */ 
+        _L: 
 #line 960
         vsf_cmdio_write(p_sess, 500, "Illegal PORT command.");
 #line 961
@@ -12305,7 +12675,7 @@ static void handle_upload_common(struct vsf_session *p_sess , int is_append , in
     p_filename = & s_filename;
   }
 #line 999
-  vsf_log_start_entry(p_sess, 3);
+  vsf_log_start_entry(p_sess, (enum EVSFLogEntryType )3);
 #line 1000
   str_copy(& p_sess->log_str, (struct mystr  const  *)(& p_sess->ftp_arg_str));
 #line 1001
@@ -12320,17 +12690,38 @@ static void handle_upload_common(struct vsf_session *p_sess , int is_append , in
     return;
   }
 #line 1011
-  if (is_unique || (p_sess->is_anonymous && ! tunable_anon_other_write_enable)) {
-#line 1013
-    new_file_fd = str_create((struct mystr  const  *)p_filename);
+  if (is_unique) {
+#line 1011
+    goto _L___0;
   } else {
-#line 1018
-    if (! is_append && offset == 0LL) {
-#line 1020
-      new_file_fd = str_create_overwrite((struct mystr  const  *)p_filename);
+#line 1011
+    if (p_sess->is_anonymous) {
+#line 1011
+      if (! tunable_anon_other_write_enable) {
+        _L___0: 
+#line 1013
+        new_file_fd = str_create((struct mystr  const  *)p_filename);
+      } else {
+#line 1011
+        goto _L___1;
+      }
     } else {
+      _L___1: 
+#line 1018
+      if (! is_append) {
+#line 1018
+        if (offset == 0LL) {
+#line 1020
+          new_file_fd = str_create_overwrite((struct mystr  const  *)p_filename);
+        } else {
+#line 1018
+          goto _L;
+        }
+      } else {
+        _L: 
 #line 1024
-      new_file_fd = str_create_append((struct mystr  const  *)p_filename);
+        new_file_fd = str_create_append((struct mystr  const  *)p_filename);
+      }
     }
   }
 #line 1027
@@ -12354,17 +12745,25 @@ static void handle_upload_common(struct vsf_session *p_sess , int is_append , in
     vsf_sysutil_deactivate_noblock(new_file_fd);
   }
 #line 1042
-  if (p_sess->is_anonymous && tunable_chown_uploads) {
+  if (p_sess->is_anonymous) {
+#line 1042
+    if (tunable_chown_uploads) {
 #line 1044
-    vsf_sysutil_fchmod(new_file_fd, tunable_chown_upload_mode);
+      vsf_sysutil_fchmod(new_file_fd, tunable_chown_upload_mode);
 #line 1045
-    if (tunable_one_process_model) {
+      if (tunable_one_process_model) {
 #line 1047
-      vsf_one_process_chown_upload(p_sess, new_file_fd);
-    } else {
+        vsf_one_process_chown_upload(p_sess, new_file_fd);
+      } else {
 #line 1051
-      vsf_two_process_chown_upload(p_sess, new_file_fd);
+        vsf_two_process_chown_upload(p_sess, new_file_fd);
+      }
+    } else {
+#line 1042
+      goto _L___2;
     }
+  } else {
+    _L___2: ;
   }
 #line 1055
   if (tunable_lock_upload_files) {
@@ -12372,9 +12771,17 @@ static void handle_upload_common(struct vsf_session *p_sess , int is_append , in
     vsf_sysutil_lock_file_write(new_file_fd);
   }
 #line 1059
-  if (! is_append && offset != 0LL) {
+  if (! is_append) {
+#line 1059
+    if (offset != 0LL) {
 #line 1062
-    vsf_sysutil_lseek_to(new_file_fd, offset);
+      vsf_sysutil_lseek_to(new_file_fd, offset);
+    } else {
+#line 1059
+      goto _L___3;
+    }
+  } else {
+    _L___3: ;
   }
 #line 1064
   if (is_unique) {
@@ -12406,19 +12813,34 @@ static void handle_upload_common(struct vsf_session *p_sess , int is_append , in
     goto port_pasv_cleanup_out;
   }
 #line 1080
-  if (tunable_ascii_upload_enable && p_sess->is_ascii) {
+  if (tunable_ascii_upload_enable) {
+#line 1080
+    if (p_sess->is_ascii) {
 #line 1082
-    trans_ret = vsf_ftpdataio_transfer_file(p_sess, remote_fd, new_file_fd, 1, 1);
+      trans_ret = vsf_ftpdataio_transfer_file(p_sess, remote_fd, new_file_fd, 1, 1);
+    } else {
+#line 1080
+      goto _L___4;
+    }
   } else {
+    _L___4: 
 #line 1087
     trans_ret = vsf_ftpdataio_transfer_file(p_sess, remote_fd, new_file_fd, 1, 0);
   }
 #line 1090
   __cil_tmp___5 = vsf_ftpdataio_dispose_transfer_fd(p_sess);
 #line 1090
-  if (__cil_tmp___5 != 1 && trans_ret.retval == 0) {
+  if (__cil_tmp___5 != 1) {
+#line 1090
+    if (trans_ret.retval == 0) {
 #line 1092
-    trans_ret.retval = -2;
+      trans_ret.retval = -2;
+    } else {
+#line 1090
+      goto _L___5;
+    }
+  } else {
+    _L___5: ;
   }
 #line 1094
   p_sess->transfer_size = trans_ret.transferred;
@@ -12451,9 +12873,23 @@ static void handle_upload_common(struct vsf_session *p_sess , int is_append , in
 #line 1115
   pasv_cleanup(p_sess);
 #line 1116
-  if ((tunable_delete_failed_uploads && created) && ! success) {
+  if (tunable_delete_failed_uploads) {
+#line 1116
+    if (created) {
+#line 1116
+      if (! success) {
 #line 1118
-    str_unlink((struct mystr  const  *)p_filename);
+        str_unlink((struct mystr  const  *)p_filename);
+      } else {
+#line 1116
+        goto _L___7;
+      }
+    } else {
+#line 1116
+      goto _L___7;
+    }
+  } else {
+    _L___7: ;
   }
 #line 1120
   vsf_sysutil_close(new_file_fd);
@@ -12474,7 +12910,7 @@ static void handle_mkd(struct vsf_session *p_sess )
 #line 1127
   resolve_tilde(& p_sess->ftp_arg_str, p_sess);
 #line 1128
-  vsf_log_start_entry(p_sess, 4);
+  vsf_log_start_entry(p_sess, (enum EVSFLogEntryType )4);
 #line 1129
   str_copy(& p_sess->log_str, (struct mystr  const  *)(& p_sess->ftp_arg_str));
 #line 1130
@@ -12526,7 +12962,7 @@ static void handle_rmd(struct vsf_session *p_sess )
 #line 1164
   resolve_tilde(& p_sess->ftp_arg_str, p_sess);
 #line 1165
-  vsf_log_start_entry(p_sess, 11);
+  vsf_log_start_entry(p_sess, (enum EVSFLogEntryType )11);
 #line 1166
   str_copy(& p_sess->log_str, (struct mystr  const  *)(& p_sess->ftp_arg_str));
 #line 1167
@@ -12565,7 +13001,7 @@ static void handle_dele(struct vsf_session *p_sess )
 #line 1191
   resolve_tilde(& p_sess->ftp_arg_str, p_sess);
 #line 1192
-  vsf_log_start_entry(p_sess, 9);
+  vsf_log_start_entry(p_sess, (enum EVSFLogEntryType )9);
 #line 1193
   str_copy(& p_sess->log_str, (struct mystr  const  *)(& p_sess->ftp_arg_str));
 #line 1194
@@ -12643,7 +13079,7 @@ static void handle_rnfr(struct vsf_session *p_sess )
 #line 1236
   if (! __cil_tmp) {
 #line 1238
-    vsf_log_start_entry(p_sess, 10);
+    vsf_log_start_entry(p_sess, (enum EVSFLogEntryType )10);
 #line 1239
     str_copy(& p_sess->log_str, (struct mystr  const  *)(& p_sess->ftp_arg_str));
 #line 1240
@@ -12663,7 +13099,7 @@ static void handle_rnfr(struct vsf_session *p_sess )
     vsf_cmdio_write(p_sess, 350, "Ready for RNTO.");
   } else {
 #line 1254
-    vsf_log_start_entry(p_sess, 10);
+    vsf_log_start_entry(p_sess, (enum EVSFLogEntryType )10);
 #line 1255
     str_copy(& p_sess->log_str, (struct mystr  const  *)(& p_sess->ftp_arg_str));
 #line 1256
@@ -12696,7 +13132,7 @@ static void handle_rnto(struct vsf_session *p_sess )
 #line 1273
   resolve_tilde(& p_sess->ftp_arg_str, p_sess);
 #line 1274
-  vsf_log_start_entry(p_sess, 10);
+  vsf_log_start_entry(p_sess, (enum EVSFLogEntryType )10);
 #line 1275
   str_copy(& p_sess->log_str, (struct mystr  const  *)(& p_sess->rnfr_filename_str));
 #line 1276
@@ -12771,7 +13207,7 @@ static void prepend_path_to_filename(struct mystr *p_str )
     __cil_tmp___3 = str_get_char_at((struct mystr  const  *)p_str, 0U);
 #line 1317
     if ((int )__cil_tmp___3 != 47) {
-      _L___0: /* CIL Label */ 
+      _L___0: 
 #line 1319
       str_getcwd(& s_tmp_str___1);
 #line 1321
@@ -12788,7 +13224,7 @@ static void prepend_path_to_filename(struct mystr *p_str )
                                         __cil_tmp___0 - 1U);
 #line 1321
         if ((int )__cil_tmp___1 != 47) {
-          _L: /* CIL Label */ 
+          _L: 
 #line 1324
           str_append_char(& s_tmp_str___1, (char )'/');
         }
@@ -12883,7 +13319,7 @@ static int get_remote_transfer_fd(struct vsf_session *p_sess , char const   *p_s
   __cil_tmp = pasv_active(p_sess);
 #line 1379
   if (__cil_tmp) {
-    _L: /* CIL Label */ ;
+    _L: ;
   } else {
 #line 1379
     __cil_tmp___0 = port_active(p_sess);
@@ -12987,7 +13423,7 @@ static void handle_size(struct vsf_session *p_sess )
 #line 1442
       vsf_cmdio_write_str(p_sess, 213, (struct mystr  const  *)(& s_size_res_str));
     } else {
-      _L: /* CIL Label */ 
+      _L: 
 #line 1435
       vsf_cmdio_write(p_sess, 550, "Could not get file size.");
     }
@@ -13045,43 +13481,62 @@ static void handle_mdtm(struct vsf_session *p_sess )
 #line 1552
   retval = __cil_tmp___0;
 #line 1553
-  if ((tunable_mdtm_write && retval != 0) && loc.found) {
+  if (tunable_mdtm_write) {
 #line 1553
-    __cil_tmp___2 = str_get_char_at((struct mystr  const  *)(& p_sess->ftp_arg_str),
-                                    0U);
+    if (retval != 0) {
 #line 1553
-    __cil_tmp___3 = vsf_sysutil_isdigit((int )__cil_tmp___2);
+      if (loc.found) {
 #line 1553
-    if (__cil_tmp___3) {
+        __cil_tmp___2 = str_get_char_at((struct mystr  const  *)(& p_sess->ftp_arg_str),
+                                        0U);
+#line 1553
+        __cil_tmp___3 = vsf_sysutil_isdigit((int )__cil_tmp___2);
+#line 1553
+        if (__cil_tmp___3) {
 #line 1556
-      if (loc.index == 8U || loc.index == 14U) {
+          if (loc.index == 8U) {
 #line 1556
-        goto _L;
-      } else {
-#line 1556
-        if (loc.index > 15U) {
-#line 1556
-          __cil_tmp___1 = str_get_char_at((struct mystr  const  *)(& p_sess->ftp_arg_str),
-                                          14U);
-#line 1556
-          if ((int )__cil_tmp___1 == 46) {
-            _L: /* CIL Label */ 
-#line 1559
-            do_write = 1;
+            goto _L___1;
           } else {
 #line 1556
-            goto _L___0;
+            if (loc.index == 14U) {
+              _L___1: 
+#line 1556
+              goto _L;
+            } else {
+#line 1556
+              if (loc.index > 15U) {
+#line 1556
+                __cil_tmp___1 = str_get_char_at((struct mystr  const  *)(& p_sess->ftp_arg_str),
+                                                14U);
+#line 1556
+                if ((int )__cil_tmp___1 == 46) {
+                  _L: 
+#line 1559
+                  do_write = 1;
+                } else {
+#line 1556
+                  goto _L___0;
+                }
+              } else {
+                _L___0: ;
+              }
+            }
           }
         } else {
-          _L___0: /* CIL Label */ ;
+#line 1553
+          goto _L___4;
         }
+      } else {
+#line 1553
+        goto _L___4;
       }
     } else {
 #line 1553
-      goto _L___1;
+      goto _L___4;
     }
   } else {
-    _L___1: /* CIL Label */ ;
+    _L___4: ;
   }
 #line 1562
   if (do_write != 0) {
@@ -13106,41 +13561,61 @@ static void handle_mdtm(struct vsf_session *p_sess )
     return;
   }
 #line 1574
-  if ((do_write && tunable_write_enable) && (tunable_anon_other_write_enable || ! p_sess->is_anonymous)) {
-#line 1577
-    retval = str_stat((struct mystr  const  *)(& p_sess->ftp_arg_str), & s_p_statbuf___2);
-#line 1578
-    if (retval != 0) {
-#line 1578
-      goto _L___2;
-    } else {
-#line 1578
-      __cil_tmp___7 = vsf_sysutil_statbuf_is_regfile((struct vsf_sysutil_statbuf  const  *)s_p_statbuf___2);
-#line 1578
-      if (__cil_tmp___7) {
-#line 1585
-        __cil_tmp___6 = str_getbuf((struct mystr  const  *)(& p_sess->ftp_arg_str));
-#line 1585
-        retval = vsf_sysutil_setmodtime(__cil_tmp___6, modtime, tunable_use_localtime);
-#line 1587
-        if (retval != 0) {
-#line 1589
-          vsf_cmdio_write(p_sess, 550, "Could not set file modification time.");
-        } else {
-#line 1594
-          vsf_cmdio_write(p_sess, 213, "File modification time set.");
-        }
+  if (do_write) {
+#line 1574
+    if (tunable_write_enable) {
+#line 1574
+      if (tunable_anon_other_write_enable) {
+#line 1574
+        goto _L___8;
       } else {
-        _L___2: /* CIL Label */ 
+#line 1574
+        if (! p_sess->is_anonymous) {
+          _L___8: 
+#line 1577
+          retval = str_stat((struct mystr  const  *)(& p_sess->ftp_arg_str), & s_p_statbuf___2);
+#line 1578
+          if (retval != 0) {
+#line 1578
+            goto _L___5;
+          } else {
+#line 1578
+            __cil_tmp___7 = vsf_sysutil_statbuf_is_regfile((struct vsf_sysutil_statbuf  const  *)s_p_statbuf___2);
+#line 1578
+            if (__cil_tmp___7) {
+#line 1585
+              __cil_tmp___6 = str_getbuf((struct mystr  const  *)(& p_sess->ftp_arg_str));
+#line 1585
+              retval = vsf_sysutil_setmodtime(__cil_tmp___6, modtime, tunable_use_localtime);
+#line 1587
+              if (retval != 0) {
+#line 1589
+                vsf_cmdio_write(p_sess, 550, "Could not set file modification time.");
+              } else {
+#line 1594
+                vsf_cmdio_write(p_sess, 213, "File modification time set.");
+              }
+            } else {
+              _L___5: 
 #line 1580
-        vsf_cmdio_write(p_sess, 550, "Could not set file modification time.");
+              vsf_cmdio_write(p_sess, 550, "Could not set file modification time.");
+            }
+          }
+        } else {
+#line 1574
+          goto _L___9;
+        }
       }
+    } else {
+#line 1574
+      goto _L___9;
     }
   } else {
+    _L___9: 
 #line 1601
     if (retval != 0) {
 #line 1601
-      goto _L___3;
+      goto _L___6;
     } else {
 #line 1601
       __cil_tmp___9 = vsf_sysutil_statbuf_is_regfile((struct vsf_sysutil_statbuf  const  *)s_p_statbuf___2);
@@ -13154,7 +13629,7 @@ static void handle_mdtm(struct vsf_session *p_sess )
 #line 1612
         vsf_cmdio_write_str(p_sess, 213, (struct mystr  const  *)(& s_mdtm_res_str));
       } else {
-        _L___3: /* CIL Label */ 
+        _L___6: 
 #line 1603
         vsf_cmdio_write(p_sess, 550, "Could not get file modification time.");
       }
@@ -13206,11 +13681,33 @@ static void handle_eprt(struct vsf_session *p_sess )
 #line 1636
   proto = str_atoi((struct mystr  const  *)(& s_part2_str));
 #line 1637
-  if ((proto < 1 || proto > 2) || (! is_ipv6 && proto == 2)) {
+  if (proto < 1) {
+#line 1637
+    goto _L___1;
+  } else {
+#line 1637
+    if (proto > 2) {
+      _L___1: 
+#line 1637
+      goto _L;
+    } else {
+#line 1637
+      if (! is_ipv6) {
+#line 1637
+        if (proto == 2) {
+          _L: 
 #line 1639
-    vsf_cmdio_write(p_sess, 500, "Bad EPRT protocol.");
+          vsf_cmdio_write(p_sess, 500, "Bad EPRT protocol.");
 #line 1640
-    return;
+          return;
+        } else {
+#line 1637
+          goto _L___0;
+        }
+      } else {
+        _L___0: ;
+      }
+    }
   }
 #line 1643
   str_split_char(& s_part1_str, & s_part2_str, (char )'|');
@@ -13237,20 +13734,27 @@ static void handle_eprt(struct vsf_session *p_sess )
     __cil_tmp___2 = str_isempty((struct mystr  const  *)(& s_part2_str));
 #line 1658
     if (__cil_tmp___2) {
-      _L: /* CIL Label */ 
+      _L___2: 
 #line 1660
       goto bad_eprt;
     }
   } else {
 #line 1658
-    goto _L;
+    goto _L___2;
   }
 #line 1662
   port = str_atoi((struct mystr  const  *)(& s_part2_str));
 #line 1663
-  if (port < 0 || port > 65535) {
+  if (port < 0) {
+#line 1663
+    goto _L___3;
+  } else {
+#line 1663
+    if (port > 65535) {
+      _L___3: 
 #line 1665
-    goto bad_eprt;
+      goto bad_eprt;
+    }
   }
 #line 1667
   vsf_sysutil_sockaddr_clone(& p_sess->p_port_sockaddr, (struct vsf_sysutil_sockaddr  const  *)p_sess->p_local_addr);
@@ -13275,7 +13779,7 @@ static void handle_eprt(struct vsf_session *p_sess )
       __cil_tmp___4 = vsf_sysutil_is_port_reserved((unsigned short )port);
 #line 1683
       if (__cil_tmp___4) {
-        _L___0: /* CIL Label */ 
+        _L___4: 
 #line 1687
         vsf_cmdio_write(p_sess, 500, "Illegal EPRT command.");
 #line 1688
@@ -13285,7 +13789,7 @@ static void handle_eprt(struct vsf_session *p_sess )
       }
     } else {
 #line 1683
-      goto _L___0;
+      goto _L___4;
     }
   }
 #line 1692
@@ -13485,7 +13989,7 @@ static int data_transfer_checks_ok(struct vsf_session *p_sess )
   __cil_tmp = pasv_active(p_sess);
 #line 1821
   if (__cil_tmp) {
-    _L: /* CIL Label */ ;
+    _L: ;
   } else {
 #line 1821
     __cil_tmp___0 = port_active(p_sess);
@@ -13501,11 +14005,46 @@ static int data_transfer_checks_ok(struct vsf_session *p_sess )
     }
   }
 #line 1826
-  if ((tunable_ssl_enable && ! p_sess->data_use_ssl) && ((tunable_force_local_data_ssl && ! p_sess->is_anonymous) || (tunable_force_anon_data_ssl && p_sess->is_anonymous))) {
+  if (tunable_ssl_enable) {
+#line 1826
+    if (! p_sess->data_use_ssl) {
+#line 1826
+      if (tunable_force_local_data_ssl) {
+#line 1826
+        if (! p_sess->is_anonymous) {
+#line 1826
+          goto _L___1;
+        } else {
+#line 1826
+          goto _L___3;
+        }
+      } else {
+        _L___3: 
+#line 1826
+        if (tunable_force_anon_data_ssl) {
+#line 1826
+          if (p_sess->is_anonymous) {
+            _L___1: 
 #line 1830
-    vsf_cmdio_write(p_sess, 522, "Data connections must be encrypted.");
+            vsf_cmdio_write(p_sess, 522, "Data connections must be encrypted.");
 #line 1832
-    return (0);
+            return (0);
+          } else {
+#line 1826
+            goto _L___2;
+          }
+        } else {
+          _L___2: 
+#line 1826
+          goto _L___4;
+        }
+      }
+    } else {
+#line 1826
+      goto _L___4;
+    }
+  } else {
+    _L___4: ;
   }
 #line 1834
   return (1);
@@ -13539,13 +14078,13 @@ static void resolve_tilde(struct mystr *p_str , struct vsf_session *p_sess )
 #line 1844
       if (len == 1U) {
 #line 1844
-        goto _L;
+        goto _L___0;
       } else {
 #line 1844
         __cil_tmp___2 = str_get_char_at((struct mystr  const  *)p_str, 1U);
 #line 1844
         if ((int )__cil_tmp___2 == 47) {
-          _L: /* CIL Label */ 
+          _L___0: 
 #line 1846
           str_split_char(p_str, & s_rhs_str___0, (char )'~');
 #line 1847
@@ -13554,40 +14093,48 @@ static void resolve_tilde(struct mystr *p_str , struct vsf_session *p_sess )
           str_append_str(p_str, (struct mystr  const  *)(& s_rhs_str___0));
         } else {
 #line 1850
-          if (tunable_tilde_user_enable && len > 1U) {
+          if (tunable_tilde_user_enable) {
+#line 1850
+            if (len > 1U) {
 #line 1854
-            str_copy(& s_rhs_str___0, (struct mystr  const  *)p_str);
+              str_copy(& s_rhs_str___0, (struct mystr  const  *)p_str);
 #line 1855
-            str_split_char(& s_rhs_str___0, & s_user_str, (char )'~');
+              str_split_char(& s_rhs_str___0, & s_user_str, (char )'~');
 #line 1856
-            str_split_char(& s_user_str, & s_rhs_str___0, (char )'/');
+              str_split_char(& s_user_str, & s_rhs_str___0, (char )'/');
 #line 1857
-            p_user = str_getpwnam((struct mystr  const  *)(& s_user_str));
+              p_user = str_getpwnam((struct mystr  const  *)(& s_user_str));
 #line 1858
-            if ((unsigned int )p_user != (unsigned int )((struct vsf_sysutil_user *)0)) {
+              if ((unsigned int )p_user != (unsigned int )((struct vsf_sysutil_user *)0)) {
 #line 1860
-              __cil_tmp___0 = vsf_sysutil_user_get_homedir((struct vsf_sysutil_user  const  *)p_user);
+                __cil_tmp___0 = vsf_sysutil_user_get_homedir((struct vsf_sysutil_user  const  *)p_user);
 #line 1860
-              str_alloc_text(p_str, __cil_tmp___0);
+                str_alloc_text(p_str, __cil_tmp___0);
 #line 1861
-              __cil_tmp___1 = str_isempty((struct mystr  const  *)(& s_rhs_str___0));
+                __cil_tmp___1 = str_isempty((struct mystr  const  *)(& s_rhs_str___0));
 #line 1861
-              if (! __cil_tmp___1) {
+                if (! __cil_tmp___1) {
 #line 1863
-                str_append_char(p_str, (char )'/');
+                  str_append_char(p_str, (char )'/');
 #line 1864
-                str_append_str(p_str, (struct mystr  const  *)(& s_rhs_str___0));
+                  str_append_str(p_str, (struct mystr  const  *)(& s_rhs_str___0));
+                }
               }
+            } else {
+#line 1850
+              goto _L;
             }
+          } else {
+            _L: ;
           }
         }
       }
     } else {
 #line 1841
-      goto _L___0;
+      goto _L___1;
     }
   } else {
-    _L___0: /* CIL Label */ ;
+    _L___1: ;
   }
 #line 1869
   return;
@@ -13615,8 +14162,8 @@ static void handle_logged_in_pass(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1 "cil-gXbnETAt.o"
-#pragma merger(0,"/tmp/cil-yAKDo4an.i","")
+#line 1 "cil-Mktyd8qp.o"
+#pragma merger(0,"/tmp/cil-snrnnFOo.i","")
 #line 13 "privsock.h"
 void priv_sock_init(struct vsf_session *p_sess ) ;
 #line 22
@@ -13864,8 +14411,8 @@ int priv_sock_get_int(int fd )
   return (the_int);
 }
 }
-#line 1 "cil-ctGrrver.o"
-#pragma merger(0,"/tmp/cil-l1W9tneC.i","")
+#line 1 "cil-gaeTftmz.o"
+#pragma merger(0,"/tmp/cil-3EdNducx.i","")
 #line 10 "tunables.h"
 int tunable_chroot_local_user ;
 #line 17
@@ -14230,8 +14777,8 @@ char const   *tunable_rsa_private_key_file  =    (char const   *)0;
 char const   *tunable_dsa_private_key_file  =    (char const   *)0;
 #line 137 "tunables.c"
 char const   *tunable_ca_certs_file  =    (char const   *)0;
-#line 1 "cil-j8VciRLw.o"
-#pragma merger(0,"/tmp/cil-tzPbNzlO.i","")
+#line 1 "cil-D4PhLX4X.o"
+#pragma merger(0,"/tmp/cil-vUQYk9eI.i","")
 #line 37 "str.h"
 void str_reserve(struct mystr *p_str , unsigned int res_len ) ;
 #line 18 "strlist.h"
@@ -14525,7 +15072,7 @@ static void start_data_alarm(struct vsf_session *p_sess )
 #line 189
   if (tunable_data_connection_timeout > 0U) {
 #line 191
-    vsf_sysutil_install_sighandler(1, & handle_sigalrm, (void *)p_sess);
+    vsf_sysutil_install_sighandler((enum EVSFSysUtilSignal )1, & handle_sigalrm, (void *)p_sess);
 #line 192
     vsf_sysutil_set_alarm(tunable_data_connection_timeout);
   }
@@ -14584,13 +15131,13 @@ static void handle_io(int retval , int fd , void *p_private )
     __cil_tmp = vsf_sysutil_retval_is_error(retval);
 #line 227
     if (__cil_tmp) {
-      _L___0: /* CIL Label */ 
+      _L___0: 
 #line 227
       goto _L;
     } else {
 #line 227
       if (retval == 0) {
-        _L: /* CIL Label */ 
+        _L: 
 #line 230
         return;
       }
@@ -14711,16 +15258,24 @@ static int transfer_dir_internal(struct vsf_session *p_sess , int is_control , s
 #line 291
   failed = 0;
 #line 292
-  target = 2;
+  target = (enum EVSFRWTarget )2;
 #line 293
   if (is_control) {
 #line 295
-    target = 1;
+    target = (enum EVSFRWTarget )1;
   }
 #line 297
-  if (loc_result.found && tunable_ls_recurse_enable) {
+  if (loc_result.found) {
+#line 297
+    if (tunable_ls_recurse_enable) {
 #line 299
-    p_subdir_list = & subdir_list;
+      p_subdir_list = & subdir_list;
+    } else {
+#line 297
+      goto _L;
+    }
+  } else {
+    _L: ;
   }
 #line 301
   vsf_ls_populate_dir_list(& dir_list, p_subdir_list, p_dir, p_base_dir_str, p_option_str,
@@ -14771,13 +15326,13 @@ static int transfer_dir_internal(struct vsf_session *p_sess , int is_control , s
 #line 330
       if (__cil_tmp___2) {
 #line 330
-        goto _L;
+        goto _L___0;
       } else {
 #line 330
         __cil_tmp___3 = str_equal_text(p_subdir_str, "..");
 #line 330
         if (__cil_tmp___3) {
-          _L: /* CIL Label */ 
+          _L___0: 
 #line 333
           goto __Cont;
         }
@@ -14819,7 +15374,7 @@ static int transfer_dir_internal(struct vsf_session *p_sess , int is_control , s
 #line 357
         break;
       }
-      __Cont: /* CIL Label */ 
+      __Cont: 
 #line 324
       subdir_index ++;
     }
@@ -14893,7 +15448,7 @@ static int write_dir_list(struct vsf_session *p_sess , struct mystr_list *p_dir_
       __cil_tmp___4 = str_getlen(__cil_tmp___3);
 #line 392
       if (__cil_tmp___2 + __cil_tmp___4 > 16384U) {
-        _L: /* CIL Label */ 
+        _L: 
 #line 398
         __cil_tmp___1 = ftp_write_str((struct vsf_session  const  *)p_sess, (struct mystr  const  *)(& buf_str),
                                       target);
@@ -14934,25 +15489,32 @@ struct vsf_transfer_ret vsf_ftpdataio_transfer_file(struct vsf_session *p_sess ,
 #line 415
   if (! is_recv) {
 #line 417
-    if (is_ascii || p_sess->data_use_ssl) {
-#line 419
-      __cil_tmp = do_file_send_rwloop(p_sess, file_fd, is_ascii);
-#line 419
-      return (__cil_tmp);
+    if (is_ascii) {
+#line 417
+      goto _L;
     } else {
+#line 417
+      if (p_sess->data_use_ssl) {
+        _L: 
+#line 419
+        __cil_tmp = do_file_send_rwloop(p_sess, file_fd, is_ascii);
+#line 419
+        return (__cil_tmp);
+      } else {
 #line 423
-      __cil_tmp___0 = vsf_sysutil_get_file_offset(file_fd);
+        __cil_tmp___0 = vsf_sysutil_get_file_offset(file_fd);
 #line 423
-      curr_offset = __cil_tmp___0;
+        curr_offset = __cil_tmp___0;
 #line 424
-      __cil_tmp___1 = calc_num_send(file_fd, curr_offset);
+        __cil_tmp___1 = calc_num_send(file_fd, curr_offset);
 #line 424
-      num_send = __cil_tmp___1;
+        num_send = __cil_tmp___1;
 #line 425
-      __cil_tmp___2 = do_file_send_sendfile(p_sess, remote_fd, file_fd, curr_offset,
-                                            num_send);
+        __cil_tmp___2 = do_file_send_sendfile(p_sess, remote_fd, file_fd, curr_offset,
+                                              num_send);
 #line 425
-      return (__cil_tmp___2);
+        return (__cil_tmp___2);
+      }
     }
   } else {
 #line 431
@@ -14984,7 +15546,7 @@ static struct vsf_transfer_ret do_file_send_rwloop(struct vsf_session *p_sess , 
 #line 440
   ret_struct.retval = 0;
 #line 440
-  ret_struct.transferred = (filesize_t )0;
+  ret_struct.transferred = 0LL;
 #line 441
   __cil_tmp = get_chunk_size();
 #line 441
@@ -15042,16 +15604,23 @@ static struct vsf_transfer_ret do_file_send_rwloop(struct vsf_session *p_sess , 
 #line 483
     if (! __cil_tmp___2) {
 #line 485
-      ret_struct.transferred += (filesize_t )((unsigned int )retval);
+      ret_struct.transferred += (long long )((unsigned int )retval);
     }
 #line 487
     __cil_tmp___3 = vsf_sysutil_retval_is_error(retval);
 #line 487
-    if (__cil_tmp___3 || (unsigned int )retval != num_to_write) {
+    if (__cil_tmp___3) {
+#line 487
+      goto _L;
+    } else {
+#line 487
+      if ((unsigned int )retval != num_to_write) {
+        _L: 
 #line 490
-      ret_struct.retval = -2;
+        ret_struct.retval = -2;
 #line 491
-      return (ret_struct);
+        return (ret_struct);
+      }
     }
   }
 }
@@ -15073,7 +15642,7 @@ static struct vsf_transfer_ret do_file_send_sendfile(struct vsf_session *p_sess 
 #line 502
   ret_struct.retval = 0;
 #line 502
-  ret_struct.transferred = (filesize_t )0;
+  ret_struct.transferred = 0LL;
 #line 503
   init_file_offset = curr_file_offset;
 #line 505
@@ -15121,9 +15690,16 @@ static filesize_t calc_num_send(int file_fd , filesize_t init_offset )
 #line 534
   bytes_to_send = vsf_sysutil_statbuf_get_size((struct vsf_sysutil_statbuf  const  *)s_p_statbuf___4);
 #line 535
-  if (init_offset < 0LL || bytes_to_send < 0LL) {
+  if (init_offset < 0LL) {
+#line 535
+    goto _L;
+  } else {
+#line 535
+    if (bytes_to_send < 0LL) {
+      _L: 
 #line 537
-    die("calc_num_send: negative file offset or send count");
+      die("calc_num_send: negative file offset or send count");
+    }
   }
 #line 540
   if (init_offset > bytes_to_send) {
@@ -15159,7 +15735,7 @@ static struct vsf_transfer_ret do_file_recv(struct vsf_session *p_sess , int fil
 #line 556
   ret_struct.retval = 0;
 #line 556
-  ret_struct.transferred = (filesize_t )0;
+  ret_struct.transferred = 0LL;
 #line 557
   __cil_tmp = get_chunk_size();
 #line 557
@@ -15189,15 +15765,23 @@ static struct vsf_transfer_ret do_file_recv(struct vsf_session *p_sess , int fil
       return (ret_struct);
     } else {
 #line 577
-      if (retval == 0 && ! prev_cr) {
+      if (retval == 0) {
+#line 577
+        if (! prev_cr) {
 #line 580
-        return (ret_struct);
+          return (ret_struct);
+        } else {
+#line 577
+          goto _L;
+        }
+      } else {
+        _L: ;
       }
     }
 #line 582
     num_to_write = (unsigned int )retval;
 #line 583
-    ret_struct.transferred += (filesize_t )num_to_write;
+    ret_struct.transferred += (long long )num_to_write;
 #line 584
     if (is_ascii) {
 #line 590
@@ -15216,11 +15800,18 @@ static struct vsf_transfer_ret do_file_recv(struct vsf_session *p_sess , int fil
 #line 597
     __cil_tmp___3 = vsf_sysutil_retval_is_error(retval);
 #line 597
-    if (__cil_tmp___3 || (unsigned int )retval != num_to_write) {
+    if (__cil_tmp___3) {
+#line 597
+      goto _L___0;
+    } else {
+#line 597
+      if ((unsigned int )retval != num_to_write) {
+        _L___0: 
 #line 600
-      ret_struct.retval = -1;
+        ret_struct.retval = -1;
 #line 601
-      return (ret_struct);
+        return (ret_struct);
+      }
     }
   }
 }
@@ -15233,21 +15824,29 @@ static unsigned int get_chunk_size(void)
 #line 609
   ret___0 = 65536U;
 #line 610
-  if (tunable_trans_chunk_size < 65536U && tunable_trans_chunk_size > 0U) {
+  if (tunable_trans_chunk_size < 65536U) {
+#line 610
+    if (tunable_trans_chunk_size > 0U) {
 #line 613
-    ret___0 = tunable_trans_chunk_size;
+      ret___0 = tunable_trans_chunk_size;
 #line 614
-    if (ret___0 < 4096U) {
+      if (ret___0 < 4096U) {
 #line 616
-      ret___0 = 4096U;
+        ret___0 = 4096U;
+      }
+    } else {
+#line 610
+      goto _L;
     }
+  } else {
+    _L: ;
   }
 #line 619
   return (ret___0);
 }
 }
-#line 1 "cil-hBraD1xF.o"
-#pragma merger(0,"/tmp/cil-d3V836NK.i","")
+#line 1 "cil-8ylzIdio.o"
+#pragma merger(0,"/tmp/cil-H7ywMtIl.i","")
 #line 24 "secbuf.h"
 void vsf_secbuf_free(char **p_ptr ) ;
 #line 152 "sysutil.h"
@@ -15299,13 +15898,13 @@ void vsf_secbuf_alloc(char **p_ptr , unsigned int size )
 #line 46
   p_no_access_page = (p_mmap + round_up) - page_size;
 #line 47
-  vsf_sysutil_memprotect((void *)p_no_access_page, page_size, 2);
+  vsf_sysutil_memprotect((void *)p_no_access_page, page_size, (enum EVSFSysUtilMapPermission )2);
 #line 52
   *((unsigned int *)p_mmap) = round_up;
 #line 53
   p_no_access_page = p_mmap;
 #line 54
-  vsf_sysutil_memprotect((void *)p_no_access_page, page_size, 2);
+  vsf_sysutil_memprotect((void *)p_no_access_page, page_size, (enum EVSFSysUtilMapPermission )2);
 #line 56
   p_mmap += page_size;
 #line 57
@@ -15349,7 +15948,7 @@ void vsf_secbuf_free(char **p_ptr )
 #line 81
   p_mmap -= page_size;
 #line 83
-  vsf_sysutil_memprotect((void *)p_mmap, page_size, 1);
+  vsf_sysutil_memprotect((void *)p_mmap, page_size, (enum EVSFSysUtilMapPermission )1);
 #line 85
   map_size = *((unsigned int *)p_mmap);
 #line 87
@@ -15358,8 +15957,8 @@ void vsf_secbuf_free(char **p_ptr )
   return;
 }
 }
-#line 1 "cil-zKK6uZav.o"
-#pragma merger(0,"/tmp/cil-wuU88BwB.i","")
+#line 1 "cil-4Qwxvt7p.o"
+#pragma merger(0,"/tmp/cil-itkNxgn4.i","")
 #line 41 "ls.h"
 int vsf_filename_passes_filter(struct mystr  const  *p_filename_str , struct mystr  const  *p_filter_str ) ;
 #line 26 "access.h"
@@ -15509,15 +16108,36 @@ void vsf_ls_populate_dir_list(struct mystr_list *p_list , struct mystr_list *p_s
     r_option = ! r_option;
   }
 #line 57
-  if (((is_verbose || t_option) || F_option) || (unsigned int )p_subdir_list != (unsigned int )((struct mystr_list *)0)) {
+  if (is_verbose) {
+#line 57
+    goto _L___1;
+  } else {
+#line 57
+    if (t_option) {
+      _L___1: 
+#line 57
+      goto _L___0;
+    } else {
+#line 57
+      if (F_option) {
+        _L___0: 
+#line 57
+        goto _L;
+      } else {
+#line 57
+        if ((unsigned int )p_subdir_list != (unsigned int )((struct mystr_list *)0)) {
+          _L: 
 #line 59
-    do_stat = 1;
+          do_stat = 1;
+        }
+      }
+    }
   }
 #line 62
   __cil_tmp = str_isempty(p_filter_str);
 #line 62
   if (__cil_tmp) {
-    _L: /* CIL Label */ ;
+    _L___2: ;
   } else {
 #line 62
     __cil_tmp___0 = str_get_char_at(p_filter_str, 0U);
@@ -15527,7 +16147,7 @@ void vsf_ls_populate_dir_list(struct mystr_list *p_list , struct mystr_list *p_s
       a_option = 1;
     } else {
 #line 62
-      goto _L;
+      goto _L___2;
     }
   }
 #line 69
@@ -15582,9 +16202,17 @@ void vsf_ls_populate_dir_list(struct mystr_list *p_list , struct mystr_list *p_s
 #line 98
       if ((int )__cil_tmp___8 == 46) {
 #line 100
-        if (! a_option && ! tunable_force_dot_files) {
+        if (! a_option) {
+#line 100
+          if (! tunable_force_dot_files) {
 #line 102
-          continue;
+            continue;
+          } else {
+#line 100
+            goto _L___3;
+          }
+        } else {
+          _L___3: ;
         }
 #line 104
         if (! a_option) {
@@ -15596,32 +16224,32 @@ void vsf_ls_populate_dir_list(struct mystr_list *p_list , struct mystr_list *p_s
 #line 104
             if ((int )__cil_tmp___7 == 46) {
 #line 104
-              goto _L___1;
+              goto _L___5;
             } else {
 #line 104
-              goto _L___2;
+              goto _L___6;
             }
           } else {
-            _L___2: /* CIL Label */ 
+            _L___6: 
 #line 104
             if (len___0 == 1) {
-              _L___1: /* CIL Label */ 
+              _L___5: 
 #line 108
               continue;
             } else {
 #line 104
-              goto _L___0;
+              goto _L___4;
             }
           }
         } else {
-          _L___0: /* CIL Label */ ;
+          _L___4: ;
         }
       } else {
 #line 98
-        goto _L___3;
+        goto _L___7;
       }
     } else {
-      _L___3: /* CIL Label */ ;
+      _L___7: ;
     }
 #line 112
     __cil_tmp___9 = vsf_access_check_file_visible((struct mystr  const  *)(& s_next_filename_str));
@@ -15681,7 +16309,7 @@ void vsf_ls_populate_dir_list(struct mystr_list *p_list , struct mystr_list *p_s
 #line 150
           if (__cil_tmp___15) {
 #line 150
-            goto _L___4;
+            goto _L___8;
           } else {
 #line 152
             str_append_text(& s_final_file_str, " -> ");
@@ -15689,7 +16317,7 @@ void vsf_ls_populate_dir_list(struct mystr_list *p_list , struct mystr_list *p_s
             str_append_str(& s_final_file_str, (struct mystr  const  *)(& s_temp_str));
           }
         } else {
-          _L___4: /* CIL Label */ ;
+          _L___8: ;
         }
       }
 #line 156
@@ -15702,10 +16330,10 @@ void vsf_ls_populate_dir_list(struct mystr_list *p_list , struct mystr_list *p_s
           str_append_char(& s_final_file_str, (char )'/');
         } else {
 #line 156
-          goto _L___5;
+          goto _L___9;
         }
       } else {
-        _L___5: /* CIL Label */ ;
+        _L___9: ;
       }
 #line 160
       build_dir_line(& dirline_str, (struct mystr  const  *)(& s_final_file_str),
@@ -15765,10 +16393,10 @@ void vsf_ls_populate_dir_list(struct mystr_list *p_list , struct mystr_list *p_s
                      p_sort_subdir_str);
       } else {
 #line 201
-        goto _L___6;
+        goto _L___10;
       }
     } else {
-      _L___6: /* CIL Label */ ;
+      _L___10: ;
     }
   }
 #line 207
@@ -15906,9 +16534,17 @@ int vsf_filename_passes_filter(struct mystr  const  *p_filename_str , struct mys
 #line 279
       indexx___0 = locate_result.index;
 #line 280
-      if (must_match_at_current_pos && indexx___0 > 0U) {
+      if (must_match_at_current_pos) {
+#line 280
+        if (indexx___0 > 0U) {
 #line 282
-        goto out;
+          goto out;
+        } else {
+#line 280
+          goto _L;
+        }
+      } else {
+        _L: ;
       }
 #line 285
       __cil_tmp___0 = str_getlen((struct mystr  const  *)(& s_match_needed_str));
@@ -15990,14 +16626,14 @@ int vsf_filename_passes_filter(struct mystr  const  *p_filename_str , struct mys
 #line 324
           if (__cil_tmp___8) {
 #line 324
-            goto _L;
+            goto _L___0;
           } else {
 #line 324
             __cil_tmp___9 = str_get_char_at((struct mystr  const  *)(& name_remain_str),
                                             0U);
 #line 324
             if ((int )__cil_tmp___9 != 123) {
-              _L: /* CIL Label */ 
+              _L___0: 
 #line 327
               goto out;
             } else {
@@ -16019,9 +16655,17 @@ int vsf_filename_passes_filter(struct mystr  const  *p_filename_str , struct mys
 #line 344
   __cil_tmp___11 = str_getlen((struct mystr  const  *)(& name_remain_str));
 #line 344
-  if (__cil_tmp___11 > 0U && (int )last_token != 42) {
+  if (__cil_tmp___11 > 0U) {
+#line 344
+    if ((int )last_token != 42) {
 #line 346
-    goto out;
+      goto out;
+    } else {
+#line 344
+      goto _L___1;
+    }
+  } else {
+    _L___1: ;
   }
 #line 349
   ret___0 = 1;
@@ -16168,8 +16812,8 @@ static void build_dir_line(struct mystr *p_str , struct mystr  const  *p_filenam
   return;
 }
 }
-#line 1 "cil-VGOStFMO.o"
-#pragma merger(0,"/tmp/cil-sPDDrbXB.i","")
+#line 1 "cil-d8vcO5it.o"
+#pragma merger(0,"/tmp/cil-Amvc7hez.i","")
 #line 13 "postprivparent.h"
 void vsf_priv_parent_postlogin(struct vsf_session *p_sess ) ;
 #line 15 "privops.h"
@@ -16212,21 +16856,35 @@ static void process_post_login_req(struct vsf_session *p_sess )
 
   {
 #line 45
-  vsf_sysutil_unblock_sig(3);
+  vsf_sysutil_unblock_sig((enum EVSFSysUtilSignal )3);
 #line 47
   cmd = priv_sock_get_cmd(p_sess->parent_fd);
 #line 48
-  vsf_sysutil_block_sig(3);
+  vsf_sysutil_block_sig((enum EVSFSysUtilSignal )3);
 #line 49
-  if (tunable_chown_uploads && (int )cmd == 2) {
+  if (tunable_chown_uploads) {
+#line 49
+    if ((int )cmd == 2) {
 #line 51
-    cmd_process_chown(p_sess);
-  } else {
-#line 53
-    if (tunable_connect_from_port_20 && (int )cmd == 3) {
-#line 55
-      cmd_process_get_data_sock(p_sess);
+      cmd_process_chown(p_sess);
     } else {
+#line 49
+      goto _L___0;
+    }
+  } else {
+    _L___0: 
+#line 53
+    if (tunable_connect_from_port_20) {
+#line 53
+      if ((int )cmd == 3) {
+#line 55
+        cmd_process_get_data_sock(p_sess);
+      } else {
+#line 53
+        goto _L;
+      }
+    } else {
+      _L: 
 #line 59
       die("bad request in process_post_login_req");
     }
@@ -16243,14 +16901,42 @@ static void minimize_privilege(struct vsf_session *p_sess )
 
   {
 #line 73
-  if (! p_sess->is_anonymous && tunable_session_support) {
+  if (! p_sess->is_anonymous) {
+#line 73
+    if (tunable_session_support) {
 #line 77
-    return;
+      return;
+    } else {
+#line 73
+      goto _L;
+    }
+  } else {
+    _L: ;
   }
 #line 79
-  if (((! tunable_chown_uploads && ! tunable_connect_from_port_20) && ! tunable_max_per_ip) && ! tunable_max_clients) {
+  if (! tunable_chown_uploads) {
+#line 79
+    if (! tunable_connect_from_port_20) {
+#line 79
+      if (! tunable_max_per_ip) {
+#line 79
+        if (! tunable_max_clients) {
 #line 83
-    vsf_sysutil_exit(0);
+          vsf_sysutil_exit(0);
+        } else {
+#line 79
+          goto _L___2;
+        }
+      } else {
+#line 79
+        goto _L___2;
+      }
+    } else {
+#line 79
+      goto _L___2;
+    }
+  } else {
+    _L___2: ;
   }
 #line 86
   caps = 0U;
@@ -16331,8 +17017,8 @@ static void cmd_process_get_data_sock(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1 "cil-2zzsXNrM.o"
-#pragma merger(0,"/tmp/cil-5drJ5Sia.i","")
+#line 1 "cil-Ae36bQZg.o"
+#pragma merger(0,"/tmp/cil-fGycpNfr.i","")
 #line 52 "str.h"
 void str_append_double(struct mystr *p_str , double the_double ) ;
 #line 87 "sysutil.h"
@@ -16371,44 +17057,73 @@ void vsf_log_init(struct vsf_session *p_sess )
 
   {
 #line 34
-  if (tunable_syslog_enable || tunable_tcp_wrappers) {
+  if (tunable_syslog_enable) {
+#line 34
+    goto _L;
+  } else {
+#line 34
+    if (tunable_tcp_wrappers) {
+      _L: 
 #line 36
-    vsf_sysutil_openlog();
+      vsf_sysutil_openlog();
+    }
   }
 #line 38
-  if (! tunable_xferlog_enable && ! tunable_dual_log_enable) {
+  if (! tunable_xferlog_enable) {
+#line 38
+    if (! tunable_dual_log_enable) {
 #line 40
-    return;
+      return;
+    } else {
+#line 38
+      goto _L___0;
+    }
+  } else {
+    _L___0: ;
   }
 #line 42
-  if (tunable_dual_log_enable || tunable_xferlog_std_format) {
+  if (tunable_dual_log_enable) {
+#line 42
+    goto _L___1;
+  } else {
+#line 42
+    if (tunable_xferlog_std_format) {
+      _L___1: 
 #line 44
-    retval = vsf_sysutil_create_or_open_file(tunable_xferlog_file, 384U);
+      retval = vsf_sysutil_create_or_open_file(tunable_xferlog_file, 384U);
 #line 45
-    __cil_tmp = vsf_sysutil_retval_is_error(retval);
+      __cil_tmp = vsf_sysutil_retval_is_error(retval);
 #line 45
-    if (__cil_tmp) {
+      if (__cil_tmp) {
 #line 47
-      die2("failed to open xferlog log file:", tunable_xferlog_file);
-    }
+        die2("failed to open xferlog log file:", tunable_xferlog_file);
+      }
 #line 49
-    p_sess->xferlog_fd = retval;
+      p_sess->xferlog_fd = retval;
+    }
   }
 #line 51
-  if (tunable_dual_log_enable || ! tunable_xferlog_std_format) {
+  if (tunable_dual_log_enable) {
+#line 51
+    goto _L___2;
+  } else {
+#line 51
+    if (! tunable_xferlog_std_format) {
+      _L___2: 
 #line 53
-    if (! tunable_syslog_enable) {
+      if (! tunable_syslog_enable) {
 #line 55
-      retval = vsf_sysutil_create_or_open_file(tunable_vsftpd_log_file, 384U);
+        retval = vsf_sysutil_create_or_open_file(tunable_vsftpd_log_file, 384U);
 #line 56
-      __cil_tmp___0 = vsf_sysutil_retval_is_error(retval);
+        __cil_tmp___0 = vsf_sysutil_retval_is_error(retval);
 #line 56
-      if (__cil_tmp___0) {
+        if (__cil_tmp___0) {
 #line 58
-        die2("failed to open vsftpd log file:", tunable_vsftpd_log_file);
-      }
+          die2("failed to open vsftpd log file:", tunable_vsftpd_log_file);
+        }
 #line 60
-      p_sess->vsftpd_log_fd = retval;
+        p_sess->vsftpd_log_fd = retval;
+      }
     }
   }
 #line 63
@@ -16417,11 +17132,26 @@ void vsf_log_init(struct vsf_session *p_sess )
 }
 #line 65 "logging.c"
 static int vsf_log_type_is_transfer(enum EVSFLogEntryType type ) 
-{ 
+{ int __cil_tmp ;
 
   {
 #line 68
-  return ((int )type == 2 || (int )type == 3);
+  if ((int )type == 2) {
+#line 68
+    goto _L;
+  } else {
+#line 68
+    if ((int )type == 3) {
+      _L: 
+#line 68
+      __cil_tmp = 1;
+    } else {
+#line 68
+      __cil_tmp = 0;
+    }
+  }
+#line 68
+  return (__cil_tmp);
 }
 }
 #line 71 "logging.c"
@@ -16532,7 +17262,7 @@ static void vsf_log_common(struct vsf_session *p_sess , int succeeded , enum EVS
       goto _L;
     }
   } else {
-    _L: /* CIL Label */ ;
+    _L: ;
   }
 #line 134
   if (p_sess->vsftpd_log_fd != -1) {
@@ -16548,9 +17278,17 @@ static void vsf_log_common(struct vsf_session *p_sess , int succeeded , enum EVS
 #line 143
     vsf_log_do_log_vsftpd_format(p_sess, & s_log_str___0, succeeded, what, p_str);
 #line 144
-    if ((int )what == 5 && ! succeeded) {
+    if ((int )what == 5) {
+#line 144
+      if (! succeeded) {
 #line 146
-      severe = 1;
+        severe = 1;
+      } else {
+#line 144
+        goto _L___0;
+      }
+    } else {
+      _L___0: ;
     }
 #line 148
     str_syslog((struct mystr  const  *)(& s_log_str___0), severe);
@@ -16656,12 +17394,19 @@ static void vsf_log_do_log_wuftpd_format(struct vsf_session *p_sess , struct mys
     str_append_text(p_str, "o ");
   }
 #line 220
-  if (p_sess->is_anonymous && ! p_sess->is_guest) {
+  if (p_sess->is_anonymous) {
+#line 220
+    if (! p_sess->is_guest) {
 #line 222
-    str_append_text(p_str, "a ");
+      str_append_text(p_str, "a ");
 #line 223
-    str_append_str(p_str, (struct mystr  const  *)(& p_sess->anon_pass_str));
+      str_append_str(p_str, (struct mystr  const  *)(& p_sess->anon_pass_str));
+    } else {
+#line 220
+      goto _L;
+    }
   } else {
+    _L: 
 #line 227
     if (p_sess->is_guest) {
 #line 229
@@ -16731,15 +17476,35 @@ static void vsf_log_do_log_vsftpd_format(struct vsf_session *p_sess , struct mys
     str_append_text(p_str, "] ");
   }
 #line 270
-  if ((((int )what != 6 && (int )what != 7) && (int )what != 8) && (int )what != 13) {
+  if ((int )what != 6) {
+#line 270
+    if ((int )what != 7) {
+#line 270
+      if ((int )what != 8) {
+#line 270
+        if ((int )what != 13) {
 #line 273
-    if (succeeded) {
+          if (succeeded) {
 #line 275
-      str_append_text(p_str, "OK ");
-    } else {
+            str_append_text(p_str, "OK ");
+          } else {
 #line 279
-      str_append_text(p_str, "FAIL ");
+            str_append_text(p_str, "FAIL ");
+          }
+        } else {
+#line 270
+          goto _L___1;
+        }
+      } else {
+#line 270
+        goto _L___1;
+      }
+    } else {
+#line 270
+      goto _L___1;
     }
+  } else {
+    _L___1: ;
   }
 #line 282
   switch ((int )what) {
@@ -16822,7 +17587,7 @@ static void vsf_log_do_log_vsftpd_format(struct vsf_session *p_sess , struct mys
 #line 327
     if (__cil_tmp___2) {
 #line 327
-      goto _L;
+      goto _L___2;
     } else {
 #line 329
       str_append_text(p_str, ", anon password \"");
@@ -16832,7 +17597,7 @@ static void vsf_log_do_log_vsftpd_format(struct vsf_session *p_sess , struct mys
       str_append_char(p_str, (char )'\"');
     }
   } else {
-    _L: /* CIL Label */ ;
+    _L___2: ;
   }
 #line 333
   __cil_tmp___3 = str_isempty(p_log_str);
@@ -16846,51 +17611,65 @@ static void vsf_log_do_log_vsftpd_format(struct vsf_session *p_sess , struct mys
     str_append_char(p_str, (char )'\"');
   }
 #line 339
-  if (((int )what != 6 && (int )what != 7) && (int )what != 13) {
+  if ((int )what != 6) {
+#line 339
+    if ((int )what != 7) {
+#line 339
+      if ((int )what != 13) {
 #line 342
-    if (p_sess->transfer_size) {
+        if (p_sess->transfer_size) {
 #line 344
-      str_append_text(p_str, ", ");
+          str_append_text(p_str, ", ");
 #line 345
-      str_append_filesize_t(p_str, p_sess->transfer_size);
+          str_append_filesize_t(p_str, p_sess->transfer_size);
 #line 346
-      str_append_text(p_str, " bytes");
-    }
+          str_append_text(p_str, " bytes");
+        }
 #line 348
-    __cil_tmp___6 = vsf_log_type_is_transfer(what);
+        __cil_tmp___6 = vsf_log_type_is_transfer(what);
 #line 348
-    if (__cil_tmp___6) {
+        if (__cil_tmp___6) {
 #line 350
-      __cil_tmp___4 = vsf_sysutil_get_cached_time_sec();
+          __cil_tmp___4 = vsf_sysutil_get_cached_time_sec();
 #line 350
-      delta_sec = __cil_tmp___4 - p_sess->log_start_sec;
+          delta_sec = __cil_tmp___4 - p_sess->log_start_sec;
 #line 352
-      __cil_tmp___5 = vsf_sysutil_get_cached_time_usec();
+          __cil_tmp___5 = vsf_sysutil_get_cached_time_usec();
 #line 352
-      delta_usec = __cil_tmp___5 - p_sess->log_start_usec;
+          delta_usec = __cil_tmp___5 - p_sess->log_start_usec;
 #line 354
-      time_delta = (double )delta_sec + (double )delta_usec / (double )1000000;
+          time_delta = (double )delta_sec + (double )delta_usec / (double )1000000;
 #line 357
-      if (time_delta <= (double )0) {
+          if (time_delta <= (double )0) {
 #line 359
-        time_delta = 0.1;
-      }
+            time_delta = 0.1;
+          }
 #line 361
-      kbyte_rate = ((double )p_sess->transfer_size / time_delta) / (double )1024;
+          kbyte_rate = ((double )p_sess->transfer_size / time_delta) / (double )1024;
 #line 363
-      str_append_text(p_str, ", ");
+          str_append_text(p_str, ", ");
 #line 364
-      str_append_double(p_str, kbyte_rate);
+          str_append_double(p_str, kbyte_rate);
 #line 365
-      str_append_text(p_str, "Kbyte/sec");
+          str_append_text(p_str, "Kbyte/sec");
+        }
+      } else {
+#line 339
+        goto _L___4;
+      }
+    } else {
+#line 339
+      goto _L___4;
     }
+  } else {
+    _L___4: ;
   }
 #line 368
   return;
 }
 }
-#line 1 "cil-urLZ9CAB.o"
-#pragma merger(0,"/tmp/cil-E6Ul00bP.i","")
+#line 1 "cil-NM1ec1nd.o"
+#pragma merger(0,"/tmp/cil-ad3rBpCJ.i","")
 #line 24 "str.h"
 void private_str_alloc_memchunk(struct mystr *p_str , char const   *p_src , unsigned int len ) ;
 #line 29
@@ -17209,9 +17988,16 @@ char const   *str_getbuf(struct mystr  const  *p_str )
 #line 176
   if ((unsigned int )p_str->PRIVATE_HANDS_OFF_p_buf == (unsigned int )((char * const  )0)) {
 #line 178
-    if (p_str->PRIVATE_HANDS_OFF_len != 0U || p_str->PRIVATE_HANDS_OFF_alloc_bytes != 0U) {
+    if (p_str->PRIVATE_HANDS_OFF_len != 0U) {
+#line 178
+      goto _L;
+    } else {
+#line 178
+      if (p_str->PRIVATE_HANDS_OFF_alloc_bytes != 0U) {
+        _L: 
 #line 180
-      bug("p_buf NULL and len or alloc_bytes != 0 in str_getbuf");
+        bug("p_buf NULL and len or alloc_bytes != 0 in str_getbuf");
+      }
     }
 #line 182
     private_str_alloc_memchunk((struct mystr *)p_str, (char const   *)0, 0U);
@@ -17250,9 +18036,16 @@ static int str_equal_internal(char const   *p_buf1 , unsigned int buf1_len , cha
 #line 204
   retval = vsf_sysutil_memcmp((void const   *)p_buf1, (void const   *)p_buf2, minlen);
 #line 205
-  if (retval != 0 || buf1_len == buf2_len) {
+  if (retval != 0) {
+#line 205
+    goto _L;
+  } else {
+#line 205
+    if (buf1_len == buf2_len) {
+      _L: 
 #line 207
-    return (retval);
+      return (retval);
+    }
   }
 #line 210
   return ((int )(buf1_len - buf2_len));
@@ -17733,9 +18526,16 @@ struct str_locate_result str_locate_text(struct mystr  const  *p_str , char cons
 #line 467
   retval.index = 0U;
 #line 468
-  if (text_len == 0U || text_len > (unsigned int )p_str->PRIVATE_HANDS_OFF_len) {
+  if (text_len == 0U) {
+#line 468
+    goto _L;
+  } else {
+#line 468
+    if (text_len > (unsigned int )p_str->PRIVATE_HANDS_OFF_len) {
+      _L: 
 #line 471
-    return (retval);
+      return (retval);
+    }
   }
 #line 473
   i = 0U;
@@ -17780,9 +18580,16 @@ struct str_locate_result str_locate_text_reverse(struct mystr  const  *p_str , c
 #line 494
   retval.index = 0U;
 #line 495
-  if (text_len == 0U || text_len > (unsigned int )p_str->PRIVATE_HANDS_OFF_len) {
+  if (text_len == 0U) {
+#line 495
+    goto _L;
+  } else {
+#line 495
+    if (text_len > (unsigned int )p_str->PRIVATE_HANDS_OFF_len) {
+      _L: 
 #line 497
-    return (retval);
+      return (retval);
+    }
   }
 #line 499
   i = (unsigned int )(p_str->PRIVATE_HANDS_OFF_len - (unsigned int const   )text_len);
@@ -18005,16 +18812,36 @@ int str_getline(struct mystr  const  *p_str , struct mystr *p_line_str , unsigne
     return (0);
   }
 #line 626
-  while (curr_pos < buf_len && (int const   )*(p_buf + curr_pos) != 10) {
+  while (1) {
+#line 626
+    if (curr_pos < buf_len) {
+#line 626
+      if (! ((int const   )*(p_buf + curr_pos) != 10)) {
+#line 626
+        goto _L;
+      }
+    } else {
+      _L: 
+#line 626
+      break;
+    }
 #line 628
     curr_pos ++;
   }
 #line 630
   out_len = curr_pos - start_pos;
 #line 632
-  if (curr_pos < buf_len && (int const   )*(p_buf + curr_pos) == 10) {
+  if (curr_pos < buf_len) {
+#line 632
+    if ((int const   )*(p_buf + curr_pos) == 10) {
 #line 634
-    curr_pos ++;
+      curr_pos ++;
+    } else {
+#line 632
+      goto _L___0;
+    }
+  } else {
+    _L___0: ;
   }
 #line 636
   private_str_alloc_memchunk(p_line_str, p_buf + start_pos, out_len);
@@ -18080,8 +18907,8 @@ void str_replace_unprintable(struct mystr *p_str , char new_char )
   return;
 }
 }
-#line 1 "cil-v1pKQrY0.o"
-#pragma merger(0,"/tmp/cil-8J4CTaLm.i","")
+#line 1 "cil-JkNjivw9.o"
+#pragma merger(0,"/tmp/cil-cqFteaGn.i","")
 #line 23 "netstr.h"
 void str_netfd_alloc(struct mystr *p_str , int fd , char term , char *p_readbuf___0 ,
                      unsigned int maxlen ) ;
@@ -18148,9 +18975,16 @@ void str_netfd_alloc(struct mystr *p_str , int fd , char term , char *p_readbuf_
 #line 56
         __cil_tmp___0 = vsf_sysutil_retval_is_error(retval);
 #line 56
-        if (__cil_tmp___0 || (unsigned int )retval != i + 1U) {
+        if (__cil_tmp___0) {
+#line 56
+          goto _L;
+        } else {
+#line 56
+          if ((unsigned int )retval != i + 1U) {
+            _L: 
 #line 59
-          die("vsf_sysutil_read_loop");
+            die("vsf_sysutil_read_loop");
+          }
         }
 #line 61
         if ((int )*(p_readpos + i) != (int )term) {
@@ -18177,9 +19011,16 @@ void str_netfd_alloc(struct mystr *p_str , int fd , char term , char *p_readbuf_
 #line 76
     __cil_tmp___1 = vsf_sysutil_retval_is_error(retval);
 #line 76
-    if (__cil_tmp___1 || (unsigned int )retval != bytes_read) {
+    if (__cil_tmp___1) {
+#line 76
+      goto _L___0;
+    } else {
+#line 76
+      if ((unsigned int )retval != bytes_read) {
+        _L___0: 
 #line 79
-      die("vsf_sysutil_read_loop");
+        die("vsf_sysutil_read_loop");
+      }
     }
 #line 81
     p_readpos += bytes_read;
@@ -18211,9 +19052,16 @@ int str_netfd_write(struct mystr  const  *p_str , int fd )
 #line 96
   __cil_tmp___0 = vsf_sysutil_retval_is_error(retval);
 #line 96
-  if (__cil_tmp___0 || (unsigned int )retval != str_len) {
+  if (__cil_tmp___0) {
+#line 96
+    goto _L;
+  } else {
+#line 96
+    if ((unsigned int )retval != str_len) {
+      _L: 
 #line 98
-    ret___0 = -1;
+      ret___0 = -1;
+    }
   }
 #line 100
   return (ret___0);
@@ -18234,16 +19082,23 @@ int str_netfd_read(struct mystr *p_str , int fd , unsigned int len )
 #line 110
   __cil_tmp = vsf_sysutil_retval_is_error(retval);
 #line 110
-  if (__cil_tmp || (unsigned int )retval != len) {
+  if (__cil_tmp) {
+#line 110
+    goto _L;
+  } else {
+#line 110
+    if ((unsigned int )retval != len) {
+      _L: 
 #line 112
-    return (-1);
+      return (-1);
+    }
   }
 #line 114
   return (retval);
 }
 }
-#line 1 "cil-h7LcQJ5g.o"
-#pragma merger(0,"/tmp/cil-Xu04J8Ke.i","")
+#line 1 "cil-giMM64AC.o"
+#pragma merger(0,"/tmp/cil-6Cq5Bwij.i","")
 #line 27 "sysstr.h"
 int str_chmod(struct mystr  const  *p_str , unsigned int mode ) ;
 #line 60 "sysutil.h"
@@ -18404,7 +19259,7 @@ int str_open(struct mystr  const  *p_str , enum EVSFSysStrOpenMode mode )
   switch ((int )mode) {
   case 1: 
 #line 81
-  open_mode = 1;
+  open_mode = (enum EVSFSysUtilOpenMode )1;
 #line 82
   break;
   default: 
@@ -18617,8 +19472,8 @@ void str_syslog(struct mystr  const  *p_str , int severe )
   return;
 }
 }
-#line 1 "cil-y3z6aKUT.o"
-#pragma merger(0,"/tmp/cil-DwI4i9lT.i","")
+#line 1 "cil-qKtl9pZF.o"
+#pragma merger(0,"/tmp/cil-OzI9p1zB.i","")
 #line 25 "strlist.h"
 int str_list_contains_str(struct mystr_list  const  *p_list , struct mystr  const  *p_str ) ;
 #line 298 "sysutil.h"
@@ -18847,8 +19702,8 @@ struct mystr  const  *str_list_get_pstr(struct mystr_list  const  *p_list , unsi
   return ((struct mystr  const  *)(& (p_list->PRIVATE_HANDS_OFF_p_nodes + indexx)->str));
 }
 }
-#line 1 "cil-Evq4yaRB.o"
-#pragma merger(0,"/tmp/cil-2yGroXTw.i","")
+#line 1 "cil-eJCLIL7S.o"
+#pragma merger(0,"/tmp/cil-Kiq0dWsN.i","")
 #line 26 "banner.c"
 void vsf_banner_dir_changed(struct vsf_session *p_sess , int ftpcode ) 
 { struct mystr dir_str ;
@@ -18952,8 +19807,8 @@ void vsf_banner_write(struct vsf_session *p_sess , struct mystr *p_str , int ftp
   return;
 }
 }
-#line 1 "cil-ydCCtVrx.o"
-#pragma merger(0,"/tmp/cil-MIPpU4J3.i","")
+#line 1 "cil-rrCAHY8t.o"
+#pragma merger(0,"/tmp/cil-EZaF5WOY.i","")
 #line 18 "filestr.c"
 int str_fileread(struct mystr *p_str , char const   *p_filename , unsigned int maxsize ) 
 { int fd ;
@@ -18973,7 +19828,7 @@ int str_fileread(struct mystr *p_str , char const   *p_filename , unsigned int m
 #line 27
   str_empty(p_str);
 #line 28
-  fd = vsf_sysutil_open_file(p_filename, 1);
+  fd = vsf_sysutil_open_file(p_filename, (enum EVSFSysUtilOpenMode )1);
 #line 29
   __cil_tmp = vsf_sysutil_retval_is_error(fd);
 #line 29
@@ -18990,7 +19845,7 @@ int str_fileread(struct mystr *p_str , char const   *p_filename , unsigned int m
 #line 36
     size = vsf_sysutil_statbuf_get_size((struct vsf_sysutil_statbuf  const  *)p_stat);
 #line 37
-    if (size > (filesize_t )maxsize) {
+    if (size > (long long )maxsize) {
 #line 39
       size = (long long )maxsize;
     }
@@ -19002,10 +19857,10 @@ int str_fileread(struct mystr *p_str , char const   *p_filename , unsigned int m
     __cil_tmp___0 = vsf_sysutil_retval_is_error(retval);
 #line 44
     if (__cil_tmp___0) {
-      _L: /* CIL Label */ ;
+      _L: ;
     } else {
 #line 44
-      if ((filesize_t )((unsigned int )retval) == size) {
+      if ((long long )((unsigned int )retval) == size) {
 #line 46
         private_str_alloc_memchunk(p_str, (char const   *)p_sec_buf, (unsigned int )size);
       } else {
@@ -19024,8 +19879,8 @@ int str_fileread(struct mystr *p_str , char const   *p_filename , unsigned int m
   return (0);
 }
 }
-#line 1 "cil-auYVIJmx.o"
-#pragma merger(0,"/tmp/cil-fAboVyBt.i","")
+#line 1 "cil-IwZkOdy0.o"
+#pragma merger(0,"/tmp/cil-sOfnOyis.i","")
 #line 19 "parseconf.c"
 static char const   *s_p_saved_filename  ;
 #line 20 "parseconf.c"
@@ -19267,7 +20122,7 @@ void vsf_parseconf_load_file(char const   *p_filename , int errs_fatal )
                                       0U);
 #line 230
       if ((int )__cil_tmp___2 == 35) {
-        _L: /* CIL Label */ 
+        _L: 
 #line 233
         continue;
       }
@@ -19380,7 +20235,7 @@ static void handle_config_setting(struct mystr *p_setting_str , struct mystr *p_
         __cil_tmp___8 = str_equal_text((struct mystr  const  *)p_value_str, "TRUE");
 #line 294
         if (__cil_tmp___8) {
-          _L___2: /* CIL Label */ 
+          _L___2: 
 #line 294
           goto _L___1;
         } else {
@@ -19388,7 +20243,7 @@ static void handle_config_setting(struct mystr *p_setting_str , struct mystr *p_
           __cil_tmp___9 = str_equal_text((struct mystr  const  *)p_value_str, "1");
 #line 294
           if (__cil_tmp___9) {
-            _L___1: /* CIL Label */ 
+            _L___1: 
 #line 298
             *(p_bool_setting->p_variable) = 1;
           } else {
@@ -19404,7 +20259,7 @@ static void handle_config_setting(struct mystr *p_setting_str , struct mystr *p_
                                              "FALSE");
 #line 300
               if (__cil_tmp___5) {
-                _L___0: /* CIL Label */ 
+                _L___0: 
 #line 300
                 goto _L;
               } else {
@@ -19413,7 +20268,7 @@ static void handle_config_setting(struct mystr *p_setting_str , struct mystr *p_
                                                "0");
 #line 300
                 if (__cil_tmp___6) {
-                  _L: /* CIL Label */ 
+                  _L: 
 #line 304
                   *(p_bool_setting->p_variable) = 0;
                 } else {
@@ -19448,7 +20303,7 @@ static void handle_config_setting(struct mystr *p_setting_str , struct mystr *p_
       __cil_tmp___12 = str_isempty((struct mystr  const  *)p_value_str);
 #line 325
       if (__cil_tmp___12) {
-        _L___3: /* CIL Label */ 
+        _L___3: 
 #line 332
         __cil_tmp___11 = str_atoi((struct mystr  const  *)p_value_str);
 #line 332
@@ -19506,8 +20361,8 @@ static void copy_string_settings(void)
   return;
 }
 }
-#line 1 "cil-7FHZui4v.o"
-#pragma merger(0,"/tmp/cil-KxltUCiw.i","")
+#line 1 "cil-bpQiZUiQ.o"
+#pragma merger(0,"/tmp/cil-D8nt4fpR.i","")
 #line 311 "sysutil.h"
 void vsf_sysutil_setuid(struct vsf_sysutil_user  const  *p_user ) ;
 #line 312
@@ -19587,7 +20442,7 @@ void vsf_secutil_change_credentials(struct mystr  const  *p_user_str , struct my
     __cil_tmp___2 = str_isempty(p_dir_str);
 #line 34
     if (__cil_tmp___2) {
-      _L: /* CIL Label */ 
+      _L: 
 #line 36
       __cil_tmp___1 = vsf_sysutil_user_get_homedir((struct vsf_sysutil_user  const  *)p_user);
 #line 36
@@ -19636,18 +20491,26 @@ void vsf_secutil_change_credentials(struct mystr  const  *p_user_str , struct my
 #line 73
     if (__cil_tmp___4) {
 #line 73
-      goto _L___0;
+      goto _L___1;
     } else {
 #line 75
       retval = str_chdir(p_ext_dir_str);
 #line 79
-      if (retval != 0 && ! (options & 1U)) {
+      if (retval != 0) {
+#line 79
+        if (! (options & 1U)) {
 #line 81
-        retval = 0;
+          retval = 0;
+        } else {
+#line 79
+          goto _L___0;
+        }
+      } else {
+        _L___0: ;
       }
     }
   } else {
-    _L___0: /* CIL Label */ ;
+    _L___1: ;
   }
 #line 84
   if (retval != 0) {
@@ -19704,8 +20567,8 @@ void vsf_secutil_change_credentials(struct mystr  const  *p_user_str , struct my
   return;
 }
 }
-#line 1 "cil-xchMroDx.o"
-#pragma merger(0,"/tmp/cil-4l0suF74.i","")
+#line 1 "cil-DhlfsIkH.o"
+#pragma merger(0,"/tmp/cil-ydNc2sDd.i","")
 #line 12 "ascii.c"
 struct ascii_to_bin_ret vsf_ascii_ascii_to_bin(char *p_buf , unsigned int in_len ,
                                                int prev_cr ) 
@@ -19727,14 +20590,28 @@ struct ascii_to_bin_ret vsf_ascii_ascii_to_bin(char *p_buf , unsigned int in_len
 #line 22
   ret___0.last_was_cr = 0;
 #line 23
-  if (prev_cr && (! in_len || (int )*(p_out + 0) != 10)) {
+  if (prev_cr) {
+#line 23
+    if (! in_len) {
+#line 23
+      goto _L___0;
+    } else {
+#line 23
+      if ((int )*(p_out + 0) != 10) {
+        _L___0: 
 #line 25
-    *(p_buf + 0) = (char )'\r';
+        *(p_buf + 0) = (char )'\r';
 #line 26
-    ret___0.p_buf = p_buf;
+        ret___0.p_buf = p_buf;
 #line 27
-    written ++;
+        written ++;
+      } else {
+#line 23
+        goto _L;
+      }
+    }
   } else {
+    _L: 
 #line 31
     ret___0.p_buf = p_out;
   }
@@ -19823,8 +20700,8 @@ unsigned int vsf_ascii_bin_to_ascii(char const   *p_in , char *p_out , unsigned 
   return (written);
 }
 }
-#line 1 "cil-6dxGCRPB.o"
-#pragma merger(0,"/tmp/cil-LeazZTlA.i","")
+#line 1 "cil-Cn8FZCdD.o"
+#pragma merger(0,"/tmp/cil-PHo2xokI.i","")
 #line 46 "privops.h"
 enum EVSFPrivopLoginResult vsf_privop_do_login(struct vsf_session *p_sess , struct mystr  const  *p_pass_str ) ;
 #line 26 "oneprocess.c"
@@ -19946,8 +20823,8 @@ void vsf_one_process_chown_upload(struct vsf_session *p_sess , int fd )
   return;
 }
 }
-#line 1 "cil-EK0rkvGG.o"
-#pragma merger(0,"/tmp/cil-lk4k6jS9.i","")
+#line 1 "cil-kpJLcqnu.o"
+#pragma merger(0,"/tmp/cil-jjqEPmma.i","")
 #line 18 "sysdeputil.h"
 int vsf_sysdep_check_auth(struct mystr  const  *p_user_str , struct mystr  const  *p_pass_str ,
                           struct mystr  const  *p_remote_host ) ;
@@ -20004,9 +20881,16 @@ int vsf_privop_get_ftp_port_sock(struct vsf_session *p_sess )
 #line 55
     __cil_tmp___0 = vsf_sysutil_get_error();
 #line 55
-    if ((int )__cil_tmp___0 != 2 || i == 1) {
+    if ((int )__cil_tmp___0 != 2) {
+#line 55
+      goto _L;
+    } else {
+#line 55
+      if (i == 1) {
+        _L: 
 #line 57
-      die("vsf_sysutil_bind");
+        die("vsf_sysutil_bind");
+      }
     }
 #line 59
     __cil_tmp___1 = vsf_sysutil_get_random_byte();
@@ -20061,7 +20945,7 @@ void vsf_privop_do_file_chown(struct vsf_session *p_sess , int fd )
         __cil_tmp___2 = vsf_sysutil_statbuf_get_uid((struct vsf_sysutil_statbuf  const  *)s_p_statbuf___6);
 #line 81
         if (__cil_tmp___2 != p_sess->guest_user_uid) {
-          _L: /* CIL Label */ 
+          _L: 
 #line 86
           die("invalid fd in cmd_process_chown");
         } else {
@@ -20069,10 +20953,10 @@ void vsf_privop_do_file_chown(struct vsf_session *p_sess , int fd )
           goto _L___0;
         }
       } else {
-        _L___0: /* CIL Label */ ;
+        _L___0: ;
       }
     } else {
-      _L___1: /* CIL Label */ 
+      _L___1: 
 #line 81
       goto _L;
     }
@@ -20094,7 +20978,7 @@ enum EVSFPrivopLoginResult vsf_privop_do_login(struct vsf_session *p_sess , stru
 #line 99
   result = __cil_tmp;
 #line 101
-  vsf_log_start_entry(p_sess, 5);
+  vsf_log_start_entry(p_sess, (enum EVSFLogEntryType )5);
 #line 102
   if ((int )result == 1) {
 #line 104
@@ -20140,9 +21024,16 @@ static enum EVSFPrivopLoginResult handle_login(struct vsf_session *p_sess , stru
 #line 129
   len = __cil_tmp;
 #line 130
-  if (len == 0U || len > 32U) {
+  if (len == 0U) {
+#line 130
+    goto _L;
+  } else {
+#line 130
+    if (len > 32U) {
+      _L: 
 #line 132
-    return (1);
+      return ((enum EVSFPrivopLoginResult )1);
+    }
   }
 #line 135
   __cil_tmp___0 = str_get_char_at(p_user_str, 0U);
@@ -20151,22 +21042,22 @@ static enum EVSFPrivopLoginResult handle_login(struct vsf_session *p_sess , stru
 #line 135
   if (! __cil_tmp___1) {
 #line 137
-    return (1);
+    return ((enum EVSFPrivopLoginResult )1);
   }
 #line 140
   __cil_tmp___2 = str_contains_space(p_user_str);
 #line 140
   if (__cil_tmp___2) {
 #line 140
-    goto _L;
+    goto _L___0;
   } else {
 #line 140
     __cil_tmp___3 = str_contains_unprintable(p_user_str);
 #line 140
     if (__cil_tmp___3) {
-      _L: /* CIL Label */ 
+      _L___0: 
 #line 143
-      return (1);
+      return ((enum EVSFPrivopLoginResult )1);
     }
   }
 #line 146
@@ -20174,7 +21065,7 @@ static enum EVSFPrivopLoginResult handle_login(struct vsf_session *p_sess , stru
 #line 147
   if (len > 128U) {
 #line 149
-    return (1);
+    return ((enum EVSFPrivopLoginResult )1);
   }
 #line 152
   if (tunable_anonymous_enable) {
@@ -20193,13 +21084,13 @@ static enum EVSFPrivopLoginResult handle_login(struct vsf_session *p_sess , stru
 #line 157
     if (__cil_tmp___4) {
 #line 157
-      goto _L___0;
+      goto _L___1;
     } else {
 #line 157
       __cil_tmp___5 = str_equal_text((struct mystr  const  *)(& upper_str), "ANONYMOUS");
 #line 157
       if (__cil_tmp___5) {
-        _L___0: /* CIL Label */ 
+        _L___1: 
 #line 160
         anonymous_login = 1;
       }
@@ -20208,7 +21099,7 @@ static enum EVSFPrivopLoginResult handle_login(struct vsf_session *p_sess , stru
     str_free(& upper_str);
   }
 #line 165
-  result = 1;
+  result = (enum EVSFPrivopLoginResult )1;
 #line 166
   if (anonymous_login) {
 #line 168
@@ -20242,7 +21133,7 @@ static enum EVSFPrivopLoginResult handle_anonymous_login(struct vsf_session *p_s
   __cil_tmp = str_isempty((struct mystr  const  *)(& p_sess->banned_email_str));
 #line 186
   if (__cil_tmp) {
-    _L: /* CIL Label */ ;
+    _L: ;
   } else {
 #line 186
     __cil_tmp___0 = str_contains_line((struct mystr  const  *)(& p_sess->banned_email_str),
@@ -20250,7 +21141,7 @@ static enum EVSFPrivopLoginResult handle_anonymous_login(struct vsf_session *p_s
 #line 186
     if (__cil_tmp___0) {
 #line 189
-      return (1);
+      return ((enum EVSFPrivopLoginResult )1);
     } else {
 #line 186
       goto _L;
@@ -20260,7 +21151,7 @@ static enum EVSFPrivopLoginResult handle_anonymous_login(struct vsf_session *p_s
   __cil_tmp___1 = str_isempty((struct mystr  const  *)(& p_sess->email_passwords_str));
 #line 191
   if (__cil_tmp___1) {
-    _L___0: /* CIL Label */ ;
+    _L___0: ;
   } else {
 #line 191
     __cil_tmp___2 = str_contains_line((struct mystr  const  *)(& p_sess->email_passwords_str),
@@ -20271,9 +21162,9 @@ static enum EVSFPrivopLoginResult handle_anonymous_login(struct vsf_session *p_s
       __cil_tmp___3 = str_isempty(p_pass_str);
 #line 191
       if (__cil_tmp___3) {
-        _L___1: /* CIL Label */ 
+        _L___1: 
 #line 195
-        return (1);
+        return ((enum EVSFPrivopLoginResult )1);
       } else {
 #line 191
         goto _L___0;
@@ -20313,7 +21204,7 @@ static enum EVSFPrivopLoginResult handle_anonymous_login(struct vsf_session *p_s
 #line 213
   str_free(& p_sess->email_passwords_str);
 #line 214
-  return (2);
+  return ((enum EVSFPrivopLoginResult )2);
 }
 }
 #line 217 "privops.c"
@@ -20328,12 +21219,12 @@ static enum EVSFPrivopLoginResult handle_local_login(struct vsf_session *p_sess 
 #line 222
   if (! __cil_tmp) {
 #line 224
-    return (1);
+    return ((enum EVSFPrivopLoginResult )1);
   }
 #line 226
   setup_username_globals(p_sess, p_user_str);
 #line 227
-  return (3);
+  return ((enum EVSFPrivopLoginResult )3);
 }
 }
 #line 230 "privops.c"
@@ -20366,8 +21257,8 @@ static void setup_username_globals(struct vsf_session *p_sess , struct mystr  co
   return;
 }
 }
-#line 1 "cil-8BW4qrVi.o"
-#pragma merger(0,"/tmp/cil-Kj0LM4K4.i","")
+#line 1 "cil-kJmvkHdt.o"
+#pragma merger(0,"/tmp/cil-5r1YWgqG.i","")
 #line 45 "sysutil.h"
 void vsf_sysutil_install_async_sighandler(enum EVSFSysUtilSignal sig , void (*handler)(int  ) ) ;
 #line 88
@@ -20448,9 +21339,17 @@ struct vsf_client_launch vsf_standalone_main(void)
 #line 42
   s_ipaddr_size = vsf_sysutil_get_ipaddr_size();
 #line 43
-  if (tunable_listen && tunable_listen_ipv6) {
+  if (tunable_listen) {
+#line 43
+    if (tunable_listen_ipv6) {
 #line 45
-    die("run two copies of vsftpd for IPv4 and IPv6");
+      die("run two copies of vsftpd for IPv4 and IPv6");
+    } else {
+#line 43
+      goto _L;
+    }
+  } else {
+    _L: ;
   }
 #line 47
   if (tunable_background) {
@@ -20492,9 +21391,9 @@ struct vsf_client_launch vsf_standalone_main(void)
     vsf_sysutil_setproctitle("LISTENER");
   }
 #line 79
-  vsf_sysutil_install_async_sighandler(3, & handle_sigchld);
+  vsf_sysutil_install_async_sighandler((enum EVSFSysUtilSignal )3, & handle_sigchld);
 #line 80
-  vsf_sysutil_install_async_sighandler(6, & handle_sighup);
+  vsf_sysutil_install_async_sighandler((enum EVSFSysUtilSignal )6, & handle_sighup);
 #line 81
   if (tunable_listen) {
 #line 83
@@ -20585,15 +21484,15 @@ struct vsf_client_launch vsf_standalone_main(void)
 #line 139
   while (1) {
 #line 145
-    vsf_sysutil_unblock_sig(3);
+    vsf_sysutil_unblock_sig((enum EVSFSysUtilSignal )3);
 #line 146
-    vsf_sysutil_unblock_sig(6);
+    vsf_sysutil_unblock_sig((enum EVSFSysUtilSignal )6);
 #line 147
     new_client_sock = vsf_sysutil_accept_timeout(listen_sock, p_accept_addr, 0U);
 #line 149
-    vsf_sysutil_block_sig(3);
+    vsf_sysutil_block_sig((enum EVSFSysUtilSignal )3);
 #line 150
-    vsf_sysutil_block_sig(6);
+    vsf_sysutil_block_sig((enum EVSFSysUtilSignal )6);
 #line 151
     __cil_tmp___4 = vsf_sysutil_retval_is_error(new_client_sock);
 #line 151
@@ -20813,8 +21712,8 @@ static unsigned int handle_ip_count(void *p_ipaddr )
   return (count);
 }
 }
-#line 1 "cil-urcJUhVZ.o"
-#pragma merger(0,"/tmp/cil-xXYrnOKC.i","")
+#line 1 "cil-fZZk2JFq.o"
+#pragma merger(0,"/tmp/cil-0bYolzm1.i","")
 #line 183 "sysutil.h"
 void vsf_sysutil_memclr(void *p_dest , unsigned int size ) ;
 #line 32 "hash.c"
@@ -21017,7 +21916,7 @@ struct hash_node *hash_get_node_by_key(struct hash *p_hash , void *p_key )
         goto _L;
       }
     } else {
-      _L: /* CIL Label */ 
+      _L: 
 #line 140
       break;
     }
@@ -21028,8 +21927,8 @@ struct hash_node *hash_get_node_by_key(struct hash *p_hash , void *p_key )
   return (p_node);
 }
 }
-#line 1 "cil-BWioLmov.o"
-#pragma merger(0,"/tmp/cil-rC0rGByT.i","")
+#line 1 "cil-QlGCiSzf.o"
+#pragma merger(0,"/tmp/cil-jLGVAbl3.i","")
 #line 40 "tcpwrap.c"
 int vsf_tcp_wrapper_ok(int remote_fd ) 
 { 
@@ -21041,8 +21940,8 @@ int vsf_tcp_wrapper_ok(int remote_fd )
   return (0);
 }
 }
-#line 1 "cil-GBgZthYG.o"
-#pragma merger(0,"/tmp/cil-PLGjlTPn.i","")
+#line 1 "cil-NInqs5M1.o"
+#pragma merger(0,"/tmp/cil-00IrF5zk.i","")
 #line 15 "ipaddrparse.c"
 static int ipv6_parse_main(struct mystr *p_out_str , struct mystr  const  *p_in_str ) ;
 #line 17
@@ -21174,7 +22073,7 @@ unsigned char const   *vsf_sysutil_parse_uchar_string_sep(struct mystr  const  *
         goto _L___1;
       }
     } else {
-      _L___1: /* CIL Label */ 
+      _L___1: 
 #line 83
       if (i == items___0 - 1U) {
 #line 83
@@ -21184,20 +22083,27 @@ unsigned char const   *vsf_sysutil_parse_uchar_string_sep(struct mystr  const  *
 #line 83
           goto _L___0;
         } else {
-          _L: /* CIL Label */ 
+          _L: 
 #line 86
           return ((unsigned char const   *)0);
         }
       } else {
-        _L___0: /* CIL Label */ ;
+        _L___0: ;
       }
     }
 #line 88
     this_number = str_atoi((struct mystr  const  *)(& s_tmp_str___4));
 #line 89
-    if (this_number < 0 || this_number > 255) {
+    if (this_number < 0) {
+#line 89
+      goto _L___2;
+    } else {
+#line 89
+      if (this_number > 255) {
+        _L___2: 
 #line 91
-      return ((unsigned char const   *)0);
+        return ((unsigned char const   *)0);
+      }
     }
 #line 94
     *(p_items + i) = (unsigned char )this_number;
@@ -21298,17 +22204,31 @@ static int ipv6_parse_hex(struct mystr *p_out_str , struct mystr  const  *p_in_s
 #line 142
     ch = __cil_tmp___1;
 #line 143
-    if (ch >= 48 && ch <= 57) {
+    if (ch >= 48) {
+#line 143
+      if (ch <= 57) {
 #line 145
-      ch -= 48;
-    } else {
-#line 147
-      if (ch >= 65 && ch <= 70) {
-#line 149
-        ch -= 65;
-#line 150
-        ch += 10;
+        ch -= 48;
       } else {
+#line 143
+        goto _L___0;
+      }
+    } else {
+      _L___0: 
+#line 147
+      if (ch >= 65) {
+#line 147
+        if (ch <= 70) {
+#line 149
+          ch -= 65;
+#line 150
+          ch += 10;
+        } else {
+#line 147
+          goto _L;
+        }
+      } else {
+        _L: 
 #line 154
         return (0);
       }
@@ -21369,9 +22289,16 @@ static int ipv4_parse_dotquad(struct mystr *p_out_str , struct mystr  const  *p_
 #line 180
     if (ch == 46) {
 #line 182
-      if (! seen_char || dots == 3) {
+      if (! seen_char) {
+#line 182
+        goto _L;
+      } else {
+#line 182
+        if (dots == 3) {
+          _L: 
 #line 184
-        return (0);
+          return (0);
+        }
       }
 #line 186
       seen_char = 0;
@@ -21385,21 +22312,28 @@ static int ipv4_parse_dotquad(struct mystr *p_out_str , struct mystr  const  *p_
       val = 0U;
     } else {
 #line 192
-      if (ch >= 48 && ch <= 57) {
+      if (ch >= 48) {
+#line 192
+        if (ch <= 57) {
 #line 194
-        ch -= 48;
+          ch -= 48;
 #line 195
-        val *= 10U;
+          val *= 10U;
 #line 196
-        val += (unsigned int )ch;
+          val += (unsigned int )ch;
 #line 197
-        if (val > 255U) {
+          if (val > 255U) {
 #line 199
-          return (0);
-        }
+            return (0);
+          }
 #line 201
-        seen_char = 1;
+          seen_char = 1;
+        } else {
+#line 192
+          goto _L___0;
+        }
       } else {
+        _L___0: 
 #line 205
         return (0);
       }
@@ -21408,9 +22342,16 @@ static int ipv4_parse_dotquad(struct mystr *p_out_str , struct mystr  const  *p_
     i ++;
   }
 #line 208
-  if (dots != 3 || ! seen_char) {
+  if (dots != 3) {
+#line 208
+    goto _L___1;
+  } else {
+#line 208
+    if (! seen_char) {
+      _L___1: 
 #line 210
-    return (0);
+      return (0);
+    }
   }
 #line 212
   final_val <<= 8;
@@ -21428,8 +22369,8 @@ static int ipv4_parse_dotquad(struct mystr *p_out_str , struct mystr  const  *p_
   return (1);
 }
 }
-#line 1 "cil-r4V1pXmg.o"
-#pragma merger(0,"/tmp/cil-hZdV4uuk.i","")
+#line 1 "cil-C0yX6KxF.o"
+#pragma merger(0,"/tmp/cil-y2siKJka.i","")
 #line 18 "access.c"
 static struct mystr s_access_str  ;
 #line 15 "access.c"
@@ -21516,8 +22457,8 @@ int vsf_access_check_file_visible(struct mystr  const  *p_filename_str )
   return (1);
 }
 }
-#line 1 "cil-m3pz7fxW.o"
-#pragma merger(0,"/tmp/cil-5nQrIXsD.i","")
+#line 1 "cil-hbt75ldg.o"
+#pragma merger(0,"/tmp/cil-PoEL0L8H.i","")
 #line 15 "features.c"
 void handle_feat(struct vsf_session *p_sess ) 
 { 
@@ -21570,8 +22511,8 @@ void handle_feat(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1 "cil-pt6EiK6k.o"
-#pragma merger(0,"/tmp/cil-7NKtpbeO.i","")
+#line 1 "cil-Suuy0J2r.o"
+#pragma merger(0,"/tmp/cil-PSUjxApu.i","")
 #line 7 "ssl.h"
 void ssl_getline(struct vsf_session  const  *p_sess , struct mystr *p_str , char end_char ,
                  char *p_buf , unsigned int buflen ) ;
@@ -21607,16 +22548,23 @@ int ftp_write_str(struct vsf_session  const  *p_sess , struct mystr  const  *p_s
     }
   } else {
 #line 36
-    if ((int )p_sess->control_use_ssl && (int )p_sess->ssl_slave_active) {
+    if (p_sess->control_use_ssl) {
+#line 36
+      if (p_sess->ssl_slave_active) {
 #line 38
-      priv_sock_send_cmd((int )p_sess->ssl_consumer_fd, (char)5);
+        priv_sock_send_cmd((int )p_sess->ssl_consumer_fd, (char)5);
 #line 39
-      priv_sock_send_str((int )p_sess->ssl_consumer_fd, p_str);
+        priv_sock_send_str((int )p_sess->ssl_consumer_fd, p_str);
 #line 40
-      __cil_tmp___1 = priv_sock_get_int((int )p_sess->ssl_consumer_fd);
+        __cil_tmp___1 = priv_sock_get_int((int )p_sess->ssl_consumer_fd);
 #line 40
-      return (__cil_tmp___1);
+        return (__cil_tmp___1);
+      } else {
+#line 36
+        goto _L;
+      }
     } else {
+      _L: 
 #line 42
       if (p_sess->control_use_ssl) {
 #line 44
@@ -21680,12 +22628,19 @@ void ftp_getline(struct vsf_session  const  *p_sess , struct mystr *p_str , char
 
   {
 #line 83
-  if ((int )p_sess->control_use_ssl && (int )p_sess->ssl_slave_active) {
+  if (p_sess->control_use_ssl) {
+#line 83
+    if (p_sess->ssl_slave_active) {
 #line 85
-    priv_sock_send_cmd((int )p_sess->ssl_consumer_fd, (char)4);
+      priv_sock_send_cmd((int )p_sess->ssl_consumer_fd, (char)4);
 #line 86
-    priv_sock_get_str((int )p_sess->ssl_consumer_fd, p_str);
+      priv_sock_get_str((int )p_sess->ssl_consumer_fd, p_str);
+    } else {
+#line 83
+      goto _L;
+    }
   } else {
+    _L: 
 #line 88
     if (p_sess->control_use_ssl) {
 #line 90
@@ -21699,8 +22654,8 @@ void ftp_getline(struct vsf_session  const  *p_sess , struct mystr *p_str , char
   return;
 }
 }
-#line 1 "cil-uKNPYgRF.o"
-#pragma merger(0,"/tmp/cil-sORk6PIZ.i","")
+#line 1 "cil-2lV4BMzA.o"
+#pragma merger(0,"/tmp/cil-Ig2tWlJX.i","")
 #line 14 "opts.c"
 void handle_opts(struct vsf_session *p_sess ) 
 { int __cil_tmp ;
@@ -21722,8 +22677,8 @@ void handle_opts(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1 "cil-idmnTWV2.o"
-#pragma merger(0,"/tmp/cil-adY1LMzc.i","")
+#line 1 "cil-ErPR4Mhr.o"
+#pragma merger(0,"/tmp/cil-LWzHOCwh.i","")
 #line 15 "ssl.h"
 void ssl_comm_channel_init(struct vsf_session *p_sess ) ;
 #line 618 "ssl.c"
@@ -21828,8 +22783,8 @@ void ssl_comm_channel_init(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1 "cil-tJQf6czn.o"
-#pragma merger(0,"/tmp/cil-v56i6ICu.i","")
+#line 1 "cil-HyrkqSXX.o"
+#pragma merger(0,"/tmp/cil-UqKMgFRT.i","")
 #line 47 "sysutil.h"
 void vsf_sysutil_default_sig(enum EVSFSysUtilSignal sig ) ;
 #line 50
@@ -21943,6 +22898,8 @@ extern  __attribute__((__nothrow__)) int inet_aton(char const   *__cp , struct i
 extern struct passwd *getpwuid(__uid_t __uid ) ;
 #line 103 "/usr/include/grp.h"
 extern struct group *getgrgid(__gid_t __gid ) ;
+#line 81 "/usr/include/ctype.h"
+extern unsigned short const   **__ctype_b_loc(void)  __attribute__((__const__)) ;
 #line 115 "/usr/include/sys/wait.h"
 extern __pid_t wait(union wait *__stat_loc ) ;
 #line 138
@@ -21987,9 +22944,16 @@ static void vsf_sysutil_common_sighandler(int signum )
 
   {
 #line 107
-  if (signum < 0 || signum >= 65) {
+  if (signum < 0) {
+#line 107
+    goto _L;
+  } else {
+#line 107
+    if (signum >= 65) {
+      _L: 
 #line 109
-    bug("signal out of range in vsf_sysutil_common_sighandler");
+      bug("signal out of range in vsf_sysutil_common_sighandler");
+    }
   }
 #line 111
   if (s_sig_details[signum].sync_sig_handler) {
@@ -22007,31 +22971,53 @@ void vsf_sysutil_check_pending_actions(enum EVSFSysUtilInterruptContext context 
 
   {
 #line 135
-  if (((int )s_io_handler && ! s_io_handler_running) && (int )context == 1) {
+  if (s_io_handler) {
+#line 135
+    if (! s_io_handler_running) {
+#line 135
+      if ((int )context == 1) {
 #line 137
-    s_io_handler_running = 1;
+        s_io_handler_running = 1;
 #line 138
-    (*s_io_handler)(retval, fd, s_p_io_handler_private);
+        (*s_io_handler)(retval, fd, s_p_io_handler_private);
 #line 139
-    s_io_handler_running = 0;
+        s_io_handler_running = 0;
+      } else {
+#line 135
+        goto _L___0;
+      }
+    } else {
+#line 135
+      goto _L___0;
+    }
+  } else {
+    _L___0: ;
   }
 #line 141
   i = 0U;
 #line 141
   while (i < 65U) {
 #line 143
-    if (s_sig_details[i].pending && ! s_sig_details[i].running) {
+    if (s_sig_details[i].pending) {
+#line 143
+      if (! s_sig_details[i].running) {
 #line 145
-      s_sig_details[i].running = 1;
+        s_sig_details[i].running = 1;
 #line 146
-      if (s_sig_details[i].sync_sig_handler) {
+        if (s_sig_details[i].sync_sig_handler) {
 #line 148
-        s_sig_details[i].pending = 0;
+          s_sig_details[i].pending = 0;
 #line 149
-        (*(s_sig_details[i].sync_sig_handler))(s_sig_details[i].p_private);
-      }
+          (*(s_sig_details[i].sync_sig_handler))(s_sig_details[i].p_private);
+        }
 #line 151
-      s_sig_details[i].running = 0;
+        s_sig_details[i].running = 0;
+      } else {
+#line 143
+        goto _L___1;
+      }
+    } else {
+      _L___1: ;
     }
 #line 141
     i ++;
@@ -22086,9 +23072,16 @@ static int vsf_sysutil_translate_sig(enum EVSFSysUtilSignal sig )
   break;
   }
 #line 184
-  if (realsig < 0 || realsig >= 65) {
+  if (realsig < 0) {
+#line 184
+    goto _L;
+  } else {
+#line 184
+    if (realsig >= 65) {
+      _L: 
 #line 186
-    bug("signal out of range in vsf_sysutil_translate_sig");
+      bug("signal out of range in vsf_sysutil_translate_sig");
+    }
   }
 #line 188
   return (realsig);
@@ -22356,11 +23349,20 @@ int vsf_sysutil_read(int fd , void *p_buf , unsigned int size )
 #line 334
     saved_errno = *__cil_tmp___0;
 #line 335
-    vsf_sysutil_check_pending_actions(1, retval, fd);
+    vsf_sysutil_check_pending_actions((enum EVSFSysUtilInterruptContext )1, retval,
+                                      fd);
 #line 336
-    if (retval < 0 && saved_errno == 4) {
+    if (retval < 0) {
+#line 336
+      if (saved_errno == 4) {
 #line 338
-      continue;
+        continue;
+      } else {
+#line 336
+        goto _L;
+      }
+    } else {
+      _L: ;
     }
 #line 340
     return (retval);
@@ -22386,11 +23388,20 @@ int vsf_sysutil_write(int fd , void const   *p_buf , unsigned int size )
 #line 350
     saved_errno = *__cil_tmp___0;
 #line 351
-    vsf_sysutil_check_pending_actions(1, retval, fd);
+    vsf_sysutil_check_pending_actions((enum EVSFSysUtilInterruptContext )1, retval,
+                                      fd);
 #line 352
-    if (retval < 0 && saved_errno == 4) {
+    if (retval < 0) {
+#line 352
+      if (saved_errno == 4) {
 #line 354
-      continue;
+        continue;
+      } else {
+#line 352
+        goto _L;
+      }
+    } else {
+      _L: ;
     }
 #line 356
     return (retval);
@@ -22534,9 +23545,16 @@ void *vsf_sysutil_malloc(unsigned int size )
 
   {
 #line 462
-  if (size == 0U || size > 2147483647U) {
+  if (size == 0U) {
+#line 462
+    goto _L;
+  } else {
+#line 462
+    if (size > 2147483647U) {
+      _L: 
 #line 464
-    bug("zero or big size in vsf_sysutil_malloc");
+      bug("zero or big size in vsf_sysutil_malloc");
+    }
   }
 #line 466
   p_ret = malloc(size);
@@ -22555,9 +23573,16 @@ void *vsf_sysutil_realloc(void *p_ptr , unsigned int size )
 
   {
 #line 478
-  if (size == 0U || size > 2147483647U) {
+  if (size == 0U) {
+#line 478
+    goto _L;
+  } else {
+#line 478
+    if (size > 2147483647U) {
+      _L: 
 #line 480
-    bug("zero or big size in vsf_sysutil_realloc");
+      bug("zero or big size in vsf_sysutil_realloc");
+    }
   }
 #line 482
   p_ret = realloc(p_ptr, size);
@@ -22697,7 +23722,8 @@ struct vsf_sysutil_wait_retval vsf_sysutil_wait(void)
 #line 567
       if (*__cil_tmp___0 == 4) {
 #line 569
-        vsf_sysutil_check_pending_actions(0, 0, 0);
+        vsf_sysutil_check_pending_actions((enum EVSFSysUtilInterruptContext )0, 0,
+                                          0);
 #line 570
         continue;
       } else {
@@ -22705,7 +23731,7 @@ struct vsf_sysutil_wait_retval vsf_sysutil_wait(void)
         goto _L;
       }
     } else {
-      _L: /* CIL Label */ ;
+      _L: ;
     }
 #line 572
     retval.syscall_retval = sys_ret;
@@ -22736,7 +23762,7 @@ int vsf_sysutil_wait_reap_one(void)
       __cil_tmp___0 = __errno_location();
 #line 581
       if (*__cil_tmp___0 == 10) {
-        _L: /* CIL Label */ 
+        _L: 
 #line 584
         return (0);
       } else {
@@ -22744,7 +23770,7 @@ int vsf_sysutil_wait_reap_one(void)
         goto _L___0;
       }
     } else {
-      _L___0: /* CIL Label */ ;
+      _L___0: ;
     }
   }
 #line 586
@@ -23039,11 +24065,20 @@ int vsf_sysutil_recv_peek(int fd , void *p_buf , unsigned int len )
 #line 748
     saved_errno = *__cil_tmp___0;
 #line 749
-    vsf_sysutil_check_pending_actions(1, retval, fd);
+    vsf_sysutil_check_pending_actions((enum EVSFSysUtilInterruptContext )1, retval,
+                                      fd);
 #line 750
-    if (retval < 0 && saved_errno == 4) {
+    if (retval < 0) {
+#line 750
+      if (saved_errno == 4) {
 #line 752
-      continue;
+        continue;
+      } else {
+#line 750
+        goto _L;
+      }
+    } else {
+      _L: ;
     }
 #line 754
     return (retval);
@@ -23073,9 +24108,9 @@ filesize_t vsf_sysutil_a_to_filesize_t(char const   *p_str )
 
   {
 #line 770
-  result = (filesize_t )0;
+  result = 0LL;
 #line 771
-  mult = (filesize_t )1;
+  mult = 1LL;
 #line 772
   __cil_tmp = vsf_sysutil_strlen(p_str);
 #line 772
@@ -23092,9 +24127,16 @@ filesize_t vsf_sysutil_a_to_filesize_t(char const   *p_str )
 #line 781
     the_char = (char )*(p_str + (len - (i + 1U)));
 #line 783
-    if ((int )the_char < 48 || (int )the_char > 57) {
+    if ((int )the_char < 48) {
+#line 783
+      goto _L;
+    } else {
+#line 783
+      if ((int )the_char > 57) {
+        _L: 
 #line 785
-      return (0LL);
+        return (0LL);
+      }
     }
 #line 787
     val = (long long )((int )the_char - 48);
@@ -23187,7 +24229,7 @@ unsigned int vsf_sysutil_octal_to_uint(char const   *p_str )
 { unsigned int result ;
   int seen_non_zero_digit ;
   int digit ;
-  int __cil_tmp ;
+  unsigned short const   **__cil_tmp ;
 
   {
 #line 848
@@ -23199,12 +24241,12 @@ unsigned int vsf_sysutil_octal_to_uint(char const   *p_str )
 #line 852
     digit = (int )*p_str;
 #line 853
-    __cil_tmp = isdigit(digit);
+    __cil_tmp = __ctype_b_loc();
 #line 853
-    if (__cil_tmp) {
+    if ((int const   )*(*__cil_tmp + digit) & 2048) {
 #line 853
       if (digit > 55) {
-        _L: /* CIL Label */ 
+        _L: 
 #line 855
         break;
       }
@@ -23244,19 +24286,19 @@ int vsf_sysutil_toupper(int the_char )
 }
 #line 877 "sysutil.c"
 int vsf_sysutil_isspace(int the_char ) 
-{ int __cil_tmp ;
+{ unsigned short const   **__cil_tmp ;
 
   {
 #line 880
-  __cil_tmp = isspace(the_char);
+  __cil_tmp = __ctype_b_loc();
 #line 880
-  return (__cil_tmp);
+  return ((int )((int const   )*(*__cil_tmp + the_char) & 8192));
 }
 }
 #line 883 "sysutil.c"
 int vsf_sysutil_isprint(int the_char ) 
 { unsigned char uc ;
-  int __cil_tmp ;
+  unsigned short const   **__cil_tmp ;
 
   {
 #line 889
@@ -23272,36 +24314,44 @@ int vsf_sysutil_isprint(int the_char )
     return (0);
   }
 #line 898
-  if ((int )uc >= 128 && (int )uc <= 159) {
+  if ((int )uc >= 128) {
+#line 898
+    if ((int )uc <= 159) {
 #line 900
-    return (0);
+      return (0);
+    } else {
+#line 898
+      goto _L;
+    }
+  } else {
+    _L: ;
   }
 #line 902
-  __cil_tmp = isprint(the_char);
+  __cil_tmp = __ctype_b_loc();
 #line 902
-  return (__cil_tmp);
+  return ((int )((int const   )*(*__cil_tmp + the_char) & 16384));
 }
 }
 #line 905 "sysutil.c"
 int vsf_sysutil_isalnum(int the_char ) 
-{ int __cil_tmp ;
+{ unsigned short const   **__cil_tmp ;
 
   {
 #line 908
-  __cil_tmp = isalnum(the_char);
+  __cil_tmp = __ctype_b_loc();
 #line 908
-  return (__cil_tmp);
+  return ((int )((int const   )*(*__cil_tmp + the_char) & 8));
 }
 }
 #line 911 "sysutil.c"
 int vsf_sysutil_isdigit(int the_char ) 
-{ int __cil_tmp ;
+{ unsigned short const   **__cil_tmp ;
 
   {
 #line 914
-  __cil_tmp = isdigit(the_char);
+  __cil_tmp = __ctype_b_loc();
 #line 914
-  return (__cil_tmp);
+  return ((int )((int const   )*(*__cil_tmp + the_char) & 2048));
 }
 }
 #line 917 "sysutil.c"
@@ -23751,7 +24801,8 @@ void vsf_sysutil_close(int fd )
 #line 1185
       if (*__cil_tmp___0 == 4) {
 #line 1187
-        vsf_sysutil_check_pending_actions(0, 0, 0);
+        vsf_sysutil_check_pending_actions((enum EVSFSysUtilInterruptContext )0, 0,
+                                          0);
 #line 1188
         continue;
       }
@@ -24093,9 +25144,16 @@ char const   *vsf_sysutil_statbuf_get_date(struct vsf_sysutil_statbuf  const  *p
     p_tm = localtime(& p_stat->st_mtim.tv_sec);
   }
 #line 1342
-  if (p_stat->st_mtim.tv_sec > (__time_t const   )local_time || local_time - (long )p_stat->st_mtim.tv_sec > 15724800L) {
+  if (p_stat->st_mtim.tv_sec > (long const   )local_time) {
+#line 1342
+    goto _L;
+  } else {
+#line 1342
+    if (local_time - (long )p_stat->st_mtim.tv_sec > 15724800L) {
+      _L: 
 #line 1345
-    p_date_format = "%b %d  %Y";
+      p_date_format = "%b %d  %Y";
+    }
   }
 #line 1347
   __cil_tmp___0 = strftime((char * __restrict  )(datebuf), sizeof(datebuf), (char const   * __restrict  )p_date_format,
@@ -24325,9 +25383,16 @@ static int lock_internal(int fd , int lock_type )
 #line 1492
     saved_errno = *__cil_tmp;
 #line 1493
-    vsf_sysutil_check_pending_actions(0, 0, 0);
+    vsf_sysutil_check_pending_actions((enum EVSFSysUtilInterruptContext )0, 0, 0);
 #line 1489
-    if (! (retval < 0 && saved_errno == 4)) {
+    if (retval < 0) {
+#line 1489
+      if (! (saved_errno == 4)) {
+#line 1489
+        goto _L;
+      }
+    } else {
+      _L: 
 #line 1489
       break;
     }
@@ -24408,34 +25473,34 @@ enum EVSFSysUtilError vsf_sysutil_get_error(void)
 
   {
 #line 1546
-  retval = 1;
+  retval = (enum EVSFSysUtilError )1;
 #line 1547
   __cil_tmp = __errno_location();
 #line 1547
   switch (*__cil_tmp) {
   case 98: 
 #line 1550
-  retval = 2;
+  retval = (enum EVSFSysUtilError )2;
 #line 1551
   break;
   case 38: 
 #line 1553
-  retval = 3;
+  retval = (enum EVSFSysUtilError )3;
 #line 1554
   break;
   case 4: 
 #line 1556
-  retval = 4;
+  retval = (enum EVSFSysUtilError )4;
 #line 1557
   break;
   case 22: 
 #line 1559
-  retval = 5;
+  retval = (enum EVSFSysUtilError )5;
 #line 1560
   break;
   case 95: 
 #line 1562
-  retval = 6;
+  retval = (enum EVSFSysUtilError )6;
 #line 1563
   break;
   }
@@ -24490,7 +25555,7 @@ struct vsf_sysutil_socketpair_retval vsf_sysutil_unix_stream_socketpair(void)
 
   {
 #line 1595
-  __cil_tmp = socketpair(1, 1, 0, (int *)(the_sockets));
+  __cil_tmp = socketpair(1, 1, 0, the_sockets);
 #line 1595
   sys_retval = __cil_tmp;
 #line 1596
@@ -24564,7 +25629,7 @@ int vsf_sysutil_listen(int fd , unsigned int backlog )
       goto _L;
     }
   } else {
-    _L: /* CIL Label */ ;
+    _L: ;
   }
 #line 1634
   return (retval);
@@ -24619,9 +25684,16 @@ int vsf_sysutil_accept_timeout(int fd , struct vsf_sysutil_sockaddr *p_sockaddr_
 #line 1663
       saved_errno = *__cil_tmp;
 #line 1664
-      vsf_sysutil_check_pending_actions(0, 0, 0);
+      vsf_sysutil_check_pending_actions((enum EVSFSysUtilInterruptContext )0, 0, 0);
 #line 1660
-      if (! (retval < 0 && saved_errno == 4)) {
+      if (retval < 0) {
+#line 1660
+        if (! (saved_errno == 4)) {
+#line 1660
+          goto _L;
+        }
+      } else {
+        _L: 
 #line 1660
         break;
       }
@@ -24640,7 +25712,7 @@ int vsf_sysutil_accept_timeout(int fd , struct vsf_sysutil_sockaddr *p_sockaddr_
   retval = accept(fd, (struct sockaddr * __restrict  )(& remote_addr.u.u_sockaddr),
                   (socklen_t * __restrict  )(& socklen));
 #line 1673
-  vsf_sysutil_check_pending_actions(0, 0, 0);
+  vsf_sysutil_check_pending_actions((enum EVSFSysUtilInterruptContext )0, 0, 0);
 #line 1674
   if (retval < 0) {
 #line 1676
@@ -24652,9 +25724,17 @@ int vsf_sysutil_accept_timeout(int fd , struct vsf_sysutil_sockaddr *p_sockaddr_
     return (-1);
   }
 #line 1683
-  if ((int )remote_addr.u.u_sockaddr.sa_family != 2 && (int )remote_addr.u.u_sockaddr.sa_family != 10) {
+  if ((int )remote_addr.u.u_sockaddr.sa_family != 2) {
+#line 1683
+    if ((int )remote_addr.u.u_sockaddr.sa_family != 10) {
 #line 1686
-    die("can only support ipv4 and ipv6 currently");
+      die("can only support ipv4 and ipv6 currently");
+    } else {
+#line 1683
+      goto _L___0;
+    }
+  } else {
+    _L___0: ;
   }
 #line 1688
   if (p_sockaddr___0) {
@@ -24750,9 +25830,17 @@ int vsf_sysutil_connect_timeout(int fd , struct vsf_sysutil_sockaddr  const  *p_
 #line 1742
         saved_errno = *__cil_tmp;
 #line 1743
-        vsf_sysutil_check_pending_actions(0, 0, 0);
+        vsf_sysutil_check_pending_actions((enum EVSFSysUtilInterruptContext )0, 0,
+                                          0);
 #line 1739
-        if (! (retval < 0 && saved_errno == 4)) {
+        if (retval < 0) {
+#line 1739
+          if (! (saved_errno == 4)) {
+#line 1739
+            goto _L;
+          }
+        } else {
+          _L: 
 #line 1739
           break;
         }
@@ -24780,10 +25868,10 @@ int vsf_sysutil_connect_timeout(int fd , struct vsf_sysutil_sockaddr  const  *p_
       }
     } else {
 #line 1731
-      goto _L;
+      goto _L___0;
     }
   } else {
-    _L: /* CIL Label */ ;
+    _L___0: ;
   }
 #line 1761
   if (wait_seconds > 0U) {
@@ -24814,9 +25902,17 @@ void vsf_sysutil_getsockname(int fd , struct vsf_sysutil_sockaddr **p_sockptr )
     die("getsockname");
   }
 #line 1780
-  if ((int )the_addr.u.u_sockaddr.sa_family != 2 && (int )the_addr.u.u_sockaddr.sa_family != 10) {
+  if ((int )the_addr.u.u_sockaddr.sa_family != 2) {
+#line 1780
+    if ((int )the_addr.u.u_sockaddr.sa_family != 10) {
 #line 1783
-    die("can only support ipv4 and ipv6 currently");
+      die("can only support ipv4 and ipv6 currently");
+    } else {
+#line 1780
+      goto _L;
+    }
+  } else {
+    _L: ;
   }
 #line 1785
   vsf_sysutil_sockaddr_alloc(p_sockptr);
@@ -24851,9 +25947,17 @@ void vsf_sysutil_getpeername(int fd , struct vsf_sysutil_sockaddr **p_sockptr )
     die("getpeername");
   }
 #line 1805
-  if ((int )the_addr.u.u_sockaddr.sa_family != 2 && (int )the_addr.u.u_sockaddr.sa_family != 10) {
+  if ((int )the_addr.u.u_sockaddr.sa_family != 2) {
+#line 1805
+    if ((int )the_addr.u.u_sockaddr.sa_family != 10) {
 #line 1808
-    die("can only support ipv4 and ipv6 currently");
+      die("can only support ipv4 and ipv6 currently");
+    } else {
+#line 1805
+      goto _L;
+    }
+  } else {
+    _L: ;
   }
 #line 1810
   vsf_sysutil_sockaddr_alloc(p_sockptr);
@@ -25005,50 +26109,65 @@ int vsf_sysutil_sockaddr_addr_equal(struct vsf_sysutil_sockaddr  const  *p1 , st
 #line 1903
   if (family1 != family2) {
 #line 1905
-    if (family1 == 2 && family2 == 10) {
+    if (family1 == 2) {
+#line 1905
+      if (family2 == 10) {
 #line 1907
-      __cil_tmp = vsf_sysutil_sockaddr_ipv6_v4(p2);
+        __cil_tmp = vsf_sysutil_sockaddr_ipv6_v4(p2);
 #line 1907
-      p_ipv4_addr = __cil_tmp;
+        p_ipv4_addr = __cil_tmp;
 #line 1908
-      if (p_ipv4_addr) {
+        if (p_ipv4_addr) {
 #line 1908
-        __cil_tmp___0 = vsf_sysutil_memcmp(p_ipv4_addr, (void const   *)(& p1->u.u_sockaddr_in.sin_addr),
-                                           sizeof(p1->u.u_sockaddr_in.sin_addr));
+          __cil_tmp___0 = vsf_sysutil_memcmp(p_ipv4_addr, (void const   *)(& p1->u.u_sockaddr_in.sin_addr),
+                                             sizeof(p1->u.u_sockaddr_in.sin_addr));
 #line 1908
-        if (__cil_tmp___0) {
+          if (__cil_tmp___0) {
 #line 1908
-          goto _L;
-        } else {
-#line 1912
-          return (1);
-        }
-      } else {
-        _L: /* CIL Label */ ;
-      }
-    } else {
-#line 1915
-      if (family1 == 10 && family2 == 2) {
-#line 1917
-        __cil_tmp___1 = vsf_sysutil_sockaddr_ipv6_v4(p1);
-#line 1917
-        p_ipv4_addr___0 = __cil_tmp___1;
-#line 1918
-        if (p_ipv4_addr___0) {
-#line 1918
-          __cil_tmp___2 = vsf_sysutil_memcmp(p_ipv4_addr___0, (void const   *)(& p2->u.u_sockaddr_in.sin_addr),
-                                             sizeof(p2->u.u_sockaddr_in.sin_addr));
-#line 1918
-          if (__cil_tmp___2) {
-#line 1918
-            goto _L___0;
+            goto _L;
           } else {
-#line 1922
+#line 1912
             return (1);
           }
         } else {
-          _L___0: /* CIL Label */ ;
+          _L: ;
         }
+      } else {
+#line 1905
+        goto _L___2;
+      }
+    } else {
+      _L___2: 
+#line 1915
+      if (family1 == 10) {
+#line 1915
+        if (family2 == 2) {
+#line 1917
+          __cil_tmp___1 = vsf_sysutil_sockaddr_ipv6_v4(p1);
+#line 1917
+          p_ipv4_addr___0 = __cil_tmp___1;
+#line 1918
+          if (p_ipv4_addr___0) {
+#line 1918
+            __cil_tmp___2 = vsf_sysutil_memcmp(p_ipv4_addr___0, (void const   *)(& p2->u.u_sockaddr_in.sin_addr),
+                                               sizeof(p2->u.u_sockaddr_in.sin_addr));
+#line 1918
+            if (__cil_tmp___2) {
+#line 1918
+              goto _L___0;
+            } else {
+#line 1922
+              return (1);
+            }
+          } else {
+            _L___0: ;
+          }
+        } else {
+#line 1915
+          goto _L___1;
+        }
+      } else {
+        _L___1: ;
       }
     }
 #line 1925
@@ -25997,7 +27116,19 @@ char const   *vsf_sysutil_get_current_date(void)
 #line 2518
   datebuf___1[sizeof(datebuf___1) - 1U] = (char )'\000';
 #line 2520
-  while ((int )datebuf___1[i] != 33 && (int )datebuf___1[i] != 0) {
+  while (1) {
+#line 2520
+    if ((int )datebuf___1[i] != 33) {
+#line 2520
+      if (! ((int )datebuf___1[i] != 0)) {
+#line 2520
+        goto _L;
+      }
+    } else {
+      _L: 
+#line 2520
+      break;
+    }
 #line 2522
     i ++;
   }
@@ -26088,9 +27219,16 @@ void vsf_sysutil_sleep(double seconds )
 #line 2578
     saved_errno = *__cil_tmp;
 #line 2579
-    vsf_sysutil_check_pending_actions(0, 0, 0);
+    vsf_sysutil_check_pending_actions((enum EVSFSysUtilInterruptContext )0, 0, 0);
 #line 2575
-    if (! (retval == -1 && saved_errno == 4)) {
+    if (retval == -1) {
+#line 2575
+      if (! (saved_errno == 4)) {
+#line 2575
+        goto _L;
+      }
+    } else {
+      _L: 
 #line 2575
       break;
     }
@@ -26228,8 +27366,8 @@ int vsf_sysutil_setmodtime(char const   *p_file , long the_time , int is_localti
   return (__cil_tmp);
 }
 }
-#line 1 "cil-PX1IxMoE.o"
-#pragma merger(0,"/tmp/cil-TpS533UJ.i","")
+#line 1 "cil-R2lq1gsS.o"
+#pragma merger(0,"/tmp/cil-L093AQcC.i","")
 #line 171 "/usr/include/sys/socket.h"
 extern ssize_t sendmsg(int __fd , struct msghdr  const  *__message , int __flags ) ;
 #line 179
@@ -26627,18 +27765,18 @@ void vsf_sysdep_adopt_capabilities(unsigned int caps )
 #line 579
     cap_value = 0;
 #line 580
-    cap_set_flag(adopt_caps, 0, 1, & cap_value, 1);
+    cap_set_flag(adopt_caps, (enum __anonenum_cap_flag_t_15 )0, 1, & cap_value, (enum __anonenum_cap_flag_value_t_16 )1);
 #line 581
-    cap_set_flag(adopt_caps, 1, 1, & cap_value, 1);
+    cap_set_flag(adopt_caps, (enum __anonenum_cap_flag_t_15 )1, 1, & cap_value, (enum __anonenum_cap_flag_value_t_16 )1);
   }
 #line 583
   if (caps & 2U) {
 #line 585
     cap_value = 10;
 #line 586
-    cap_set_flag(adopt_caps, 0, 1, & cap_value, 1);
+    cap_set_flag(adopt_caps, (enum __anonenum_cap_flag_t_15 )0, 1, & cap_value, (enum __anonenum_cap_flag_value_t_16 )1);
 #line 587
-    cap_set_flag(adopt_caps, 1, 1, & cap_value, 1);
+    cap_set_flag(adopt_caps, (enum __anonenum_cap_flag_t_15 )1, 1, & cap_value, (enum __anonenum_cap_flag_value_t_16 )1);
   }
 #line 589
   retval = cap_set_proc(adopt_caps);
@@ -26662,9 +27800,16 @@ int vsf_sysutil_sendfile(int out_fd , int in_fd , filesize_t *p_offset , filesiz
 
   {
 #line 606
-  if (*p_offset < 0LL || num_send < 0LL) {
+  if (*p_offset < 0LL) {
+#line 606
+    goto _L;
+  } else {
+#line 606
+    if (num_send < 0LL) {
+      _L: 
 #line 608
-    die("invalid offset or send count in vsf_sysutil_sendfile");
+      die("invalid offset or send count in vsf_sysutil_sendfile");
+    }
   }
 #line 610
   if (max_chunk == 0U) {
@@ -26674,7 +27819,7 @@ int vsf_sysutil_sendfile(int out_fd , int in_fd , filesize_t *p_offset , filesiz
 #line 614
   while (num_send > 0LL) {
 #line 618
-    if (num_send > (filesize_t )max_chunk) {
+    if (num_send > (long long )max_chunk) {
 #line 620
       send_this_time = max_chunk;
     } else {
@@ -26688,14 +27833,21 @@ int vsf_sysutil_sendfile(int out_fd , int in_fd , filesize_t *p_offset , filesiz
 #line 629
     __cil_tmp = vsf_sysutil_retval_is_error(retval);
 #line 629
-    if (__cil_tmp || retval == 0) {
+    if (__cil_tmp) {
+#line 629
+      goto _L___0;
+    } else {
+#line 629
+      if (retval == 0) {
+        _L___0: 
 #line 631
-      return (retval);
+        return (retval);
+      }
     }
 #line 633
-    num_send -= (filesize_t )retval;
+    num_send -= (long long )retval;
 #line 634
-    *p_offset += (filesize_t )retval;
+    *p_offset += (long long )retval;
   }
 #line 636
   return (0);
@@ -26725,53 +27877,82 @@ static int do_sendfile(int out_fd , int in_fd , unsigned int num_send , filesize
 #line 654
   if (tunable_use_sendfile) {
 #line 658
-    if (! s_sendfile_checked || s_runtime_sendfile_works) {
+    if (! s_sendfile_checked) {
+#line 658
+      goto _L___3;
+    } else {
+#line 658
+      if (s_runtime_sendfile_works) {
+        _L___3: 
 #line 660
-      while (1) {
+        while (1) {
 #line 663
-        retval = sendfile(out_fd, in_fd, (__quad_t *)((void *)0), num_send);
+          retval = sendfile(out_fd, in_fd, (__quad_t *)((void *)0), num_send);
 #line 716
-        error = vsf_sysutil_get_error();
+          error = vsf_sysutil_get_error();
 #line 717
-        vsf_sysutil_check_pending_actions(1, retval, out_fd);
+          vsf_sysutil_check_pending_actions((enum EVSFSysUtilInterruptContext )1,
+                                            retval, out_fd);
 #line 660
-        __cil_tmp = vsf_sysutil_retval_is_error(retval);
+          __cil_tmp = vsf_sysutil_retval_is_error(retval);
 #line 660
-        if (! (__cil_tmp && (int )error == 4)) {
+          if (__cil_tmp) {
 #line 660
-          break;
+            if (! ((int )error == 4)) {
+#line 660
+              goto _L;
+            }
+          } else {
+            _L: 
+#line 660
+            break;
+          }
         }
-      }
 #line 721
-      if (! s_sendfile_checked) {
+        if (! s_sendfile_checked) {
 #line 723
-        s_sendfile_checked = 1;
+          s_sendfile_checked = 1;
 #line 724
-        __cil_tmp___0 = vsf_sysutil_retval_is_error(retval);
+          __cil_tmp___0 = vsf_sysutil_retval_is_error(retval);
 #line 724
-        if (__cil_tmp___0) {
+          if (__cil_tmp___0) {
 #line 724
-          if ((int )error != 3) {
-            _L: /* CIL Label */ 
+            if ((int )error != 3) {
+              _L___0: 
 #line 727
-            s_runtime_sendfile_works = 1;
+              s_runtime_sendfile_works = 1;
+            }
+          } else {
+#line 724
+            goto _L___0;
+          }
+        }
+#line 730
+        __cil_tmp___1 = vsf_sysutil_retval_is_error(retval);
+#line 730
+        if (! __cil_tmp___1) {
+#line 732
+          return (retval);
+        }
+#line 734
+        if (s_runtime_sendfile_works) {
+#line 734
+          if ((int )error != 5) {
+#line 734
+            if ((int )error != 6) {
+#line 737
+              return (retval);
+            } else {
+#line 734
+              goto _L___2;
+            }
+          } else {
+#line 734
+            goto _L___2;
           }
         } else {
-#line 724
-          goto _L;
+          _L___2: ;
         }
-      }
-#line 730
-      __cil_tmp___1 = vsf_sysutil_retval_is_error(retval);
-#line 730
-      if (! __cil_tmp___1) {
-#line 732
-        return (retval);
-      }
-#line 734
-      if ((s_runtime_sendfile_works && (int )error != 5) && (int )error != 6) {
-#line 737
-        return (retval);
       }
     }
   }
