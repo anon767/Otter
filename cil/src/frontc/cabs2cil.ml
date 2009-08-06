@@ -1081,16 +1081,58 @@ let lookupLabel (l: string) =
   with Not_found -> 
     l
 
+(* This class visits a function body, checking label usage and
+ * entering non-locally declared label names into the alpha conversion
+ * table. This ensures the uniqueness of gotos which are inserted when
+ * unfolding boolean operators into conditionals. (Locally declared
+ * labels don't need to be entered into the alpha conversion table now
+ * because they are handled when actually processing the function body.) *)
 class gatherLabelsClass : V.cabsVisitor = object (self)
   inherit V.nopCabsVisitor as super
 
-  method vstmt s = match s with
-  | A.LABEL (l,_,loc) ->
-      currentLoc := convLoc loc;
-      let newname, oldloc = newAlphaName false "label" l in
-      if newname <> l then E.s (error "Duplicate label name %s (previous use of this label is at %a)" l d_loc oldloc);
-      V.DoChildren
-  | _ -> V.DoChildren
+  (* We have to know if a label is local to know if it is an error if
+   * another label with the same name exists. But a local label can be
+   * declared multiple times at different nesting depths. Since a
+   * Hashtbl can maintain multiple mappings, we add and remove local
+   * labels as we visit their blocks. We map each local label to a
+   * location option indicating where it was defined (if it has been).
+   * This enables us to raise an error if a local label is defined
+   * twice, and we can issue warnings if local labels are declared but
+   * never defined. *)
+  val localLabels : (string, location option) H.t = H.create 5
+
+  method private addLocalLabels blk =
+    List.iter (fun lbl -> H.add localLabels lbl None) blk.blabels
+  method private removeLocalLabels blk =
+    List.iter
+      (fun lbl ->
+         if H.find localLabels lbl = None
+         then ignore (warn "Local label %s declared but not defined" lbl);
+         H.remove localLabels lbl)
+      blk.blabels
+
+  method vblock blk =
+    (* Add the local labels, process the block, then remove the local labels *)
+    self#addLocalLabels blk;
+    V.ChangeDoChildrenPost (blk, fun _ -> (self#removeLocalLabels blk; blk))
+
+  method vstmt s =
+    currentLoc := convLoc (C.get_statementloc s);
+    (match s with
+       | A.LABEL (lbl,_,_) ->
+           (try
+              (match H.find localLabels lbl with
+                 | Some oldloc ->
+                     E.s (error "Duplicate local label '%s' (previous definition was at %a)" lbl d_loc oldloc)
+                 | None ->
+                     (* Mark this label as defined *)
+                     H.replace localLabels lbl (Some !currentLoc))
+            with Not_found -> (* lbl is not a local label *)
+              let newname, oldloc = newAlphaName false "label" lbl in
+              if newname <> lbl
+              then E.s (error "Duplicate label '%s' (previous definition was at %a)" lbl d_loc oldloc))
+       | _ -> ());
+    V.DoChildren
 end
 
 (** ALLOCA ***)
@@ -5374,7 +5416,7 @@ and doDecl (isglobal: bool) : A.definition -> chunk = function
             * they need alpha-conv  *)
             enterScope ();  (* Start the scope *)
 
-            (* Enter all the function's labels into the local scope *)
+            (* Enter all the function's labels into the alpha conversion table *)
             ignore (V.visitCabsBlock (new gatherLabelsClass) body);
             currentLoc := funloc; (* gatherLabelsClass#vstmt changes currentLoc, so reset it here *)
 
