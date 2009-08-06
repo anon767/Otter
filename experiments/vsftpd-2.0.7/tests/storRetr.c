@@ -1,5 +1,7 @@
 #include "iosim.h"
 
+extern void common_initialization(const char*);
+
 void symtest_initialize() {
 	char commandString[] = "user ftp
 pass
@@ -12,7 +14,7 @@ quit
 
 	common_initialization(commandString);
 
-	char fileText[] = "something
+	static char fileText[] = "something
  a bunch of text
 			and some more text!!!";
 	IOSIM_fd[7]->sym_file->contents = fileText;

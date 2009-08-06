@@ -5,7 +5,8 @@ extern void common_initialization(const char*);
 void symtest_initialize() {
 	char commandString[] = "user anonymous
 pass
-syst
+pasv
+list -r file{2,3,4,1}
 quit
 ";
 

@@ -1,4 +1,6 @@
 #include "iosim.h"
+
+extern void common_initialization(const char*);
 #include <string.h>
 #include <stdlib.h>
 #include "../tunables.h"
@@ -21,10 +23,10 @@ sym_file_stream_t *newStream(int fd) {
 	return stream;
 }
 
-void addfile(const char *filename, const char *contents) {
+void addfile(const char *filename, const char *contents, size_t len) {
 	sym_file_t *file = IOSIM_addfile(filename,0);
-	file->contents = contents; // This might want to be strdup'd
-	file->stat.st_size = strlen(contents);
+	file->contents = memcpy(malloc(len), contents, len);
+	file->stat.st_size = len;
 	return;
 }
 
@@ -37,8 +39,9 @@ void common_initialization(const char *commandString) {
 	// depending on the configuration. I modified it so that it always
 	// reads its commands from fd 4.
 	newStream(4);
-	IOSIM_fd[4]->sym_file->contents = strdup(commandString);
-	IOSIM_fd[4]->sym_file->stat.st_size = 1 + strlen(commandString);
+	int bufferLen = strlen(commandString); // No '1 +' because we don't need to include the terminating null
+	IOSIM_fd[4]->sym_file->contents = memcpy(malloc(bufferLen),commandString,bufferLen);
+	IOSIM_fd[4]->sym_file->stat.st_size = bufferLen;
 	IOSIM_fd[4]->sym_file->stat.st_mode = S_IFSOCK;
 
 	// vsftpd uses every third socket thereafter, at least as far Otter
@@ -47,23 +50,28 @@ void common_initialization(const char *commandString) {
 		newStream(i);
 	}
 
+	// For files, we don't include the terminating null, so we just copy strlen() bytes (not 1+strlen())
+#define ADDFILE(filename,contents) addfile((filename),(contents),strlen((contents)))
+
 	// Create some files in the file system
-	addfile("/file1","abc");
-	addfile("/file2","abc");
-	addfile("/file3","def");
-	addfile("/ftp/file4","jfwoeifj\nweofjaiwe");
-	char x[] = {6,2,78,250,9,100,17,0};
-	addfile("/ftp/file5",x);
-	addfile("/ftp/file6","junk");
-	addfile("/ftp/.hidden","boo!");
-	addfile("/ftp/123/456","");
-	addfile("/ftp/123/654","\b\b\b\b\b\t");
-	addfile("/ftp/123/.hidden","this file is hidden\n");
-	addfile("/dir/file1","38 2qu938 30r9 u3");
-	addfile("/dir/file2","       ");
-	addfile("/dir/file3","\r\r\r\r\n    \t\t\t x");
-	addfile("/dir/file4","oaihwefaj");
-	addfile("/dir/file5","joi \\\"joewijf");
+	ADDFILE("/file1","abc");
+	ADDFILE("/file2","abc");
+	ADDFILE("/file3","def");
+	ADDFILE("/ftp/file4","jfwoeifj\nweofjaiwe");
+	char x[] = {6,2,78,250,9,100,17,0,111};
+	addfile("/ftp/file5",x,sizeof(x));
+	ADDFILE("/ftp/file6","junk");
+	ADDFILE("/ftp/.hidden","boo!");
+	char y[0];
+	addfile("/ftp/emptyFile",y,0);
+	ADDFILE("/ftp/123/456","");
+	ADDFILE("/ftp/123/654","\b\b\b\b\b\t");
+	ADDFILE("/ftp/123/.hidden","this file is hidden\n");
+	ADDFILE("/dir/file1","38 2qu938 30r9 u3");
+	ADDFILE("/dir/file2","       ");
+	ADDFILE("/dir/file3","\r\r\r\r\n    \t\t\t x");
+	ADDFILE("/dir/file4","oaihwefaj");
+	ADDFILE("/dir/file5","joi \\\"joewijf");
 
 	// Make empty environ variable
 	environ = malloc(sizeof(char*));
@@ -94,7 +102,7 @@ void common_initialization(const char *commandString) {
 #ifdef TUNABLE_ANON_UMASK
 	  tunable_anon_umask = TUNABLE_ANON_UMASK;
 #else
-	//  __SYMBOLIC(&tunable_anon_umask); // Too much branching
+	//  __SYMBOLIC(&tunable_anon_umask); // Too much branching when printing file permissions
 #endif
 #ifdef TUNABLE_FTP_DATA_PORT
 	  tunable_ftp_data_port = TUNABLE_FTP_DATA_PORT;
@@ -104,7 +112,7 @@ void common_initialization(const char *commandString) {
 #ifdef TUNABLE_IDLE_SESSION_TIMEOUT
 	  tunable_idle_session_timeout = TUNABLE_IDLE_SESSION_TIMEOUT;
 #else
-	//  __SYMBOLIC(&tunable_idle_session_timeout);
+	//  __SYMBOLIC(&tunable_idle_session_timeout); // This value gets printed to the screen by a STAT command
 #endif
 #ifdef TUNABLE_DATA_CONNECTION_TIMEOUT
 	  tunable_data_connection_timeout = TUNABLE_DATA_CONNECTION_TIMEOUT;
@@ -124,7 +132,7 @@ void common_initialization(const char *commandString) {
 #ifdef TUNABLE_ANON_MAX_RATE
 	  tunable_anon_max_rate = TUNABLE_ANON_MAX_RATE;
 #else
-	//  __SYMBOLIC(&tunable_anon_max_rate);
+	//  __SYMBOLIC(&tunable_anon_max_rate); // This value gets printed to the screen by a STAT command
 #endif
 #ifdef TUNABLE_LOCAL_MAX_RATE
 	  tunable_local_max_rate = TUNABLE_LOCAL_MAX_RATE;
@@ -144,7 +152,7 @@ void common_initialization(const char *commandString) {
 #ifdef TUNABLE_FILE_OPEN_MODE
 	  tunable_file_open_mode = TUNABLE_FILE_OPEN_MODE;
 #else
-	//  __SYMBOLIC(&tunable_file_open_mode); // Too much branching
+	//  __SYMBOLIC(&tunable_file_open_mode); // Too much branching when printing file permissions
 #endif
 #ifdef TUNABLE_MAX_PER_IP
 	  tunable_max_per_ip = TUNABLE_MAX_PER_IP;

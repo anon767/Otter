@@ -1,19 +1,22 @@
 #include "iosim.h"
 
+extern void common_initialization(const char*);
+
 void symtest_initialize() {
 	char commandString[] = "user anonymous
 pass
 epsv all
 epsv
 stor 123/.hidden
+cwd 123
 epsv
-list
+list -a
 quit
 ";
 
 	common_initialization(commandString);
 
-	char fileText[] = "something
+	static char fileText[] = "something
  a bunch of text
 			and some more text!!!";
 	IOSIM_fd[7]->sym_file->contents = fileText;
