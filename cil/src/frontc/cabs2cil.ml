@@ -1081,6 +1081,17 @@ let lookupLabel (l: string) =
   with Not_found -> 
     l
 
+class gatherLabelsClass : V.cabsVisitor = object (self)
+  inherit V.nopCabsVisitor as super
+
+  method vstmt s = match s with
+  | A.LABEL (l,_,loc) ->
+      currentLoc := convLoc loc;
+      let newname, oldloc = newAlphaName false "label" l in
+      if newname <> l then E.s (error "Duplicate label name %s (previous use of this label is at %a)" l d_loc oldloc);
+      V.DoChildren
+  | _ -> V.DoChildren
+end
 
 (** ALLOCA ***)
 let allocaFun () = 
@@ -5362,7 +5373,11 @@ and doDecl (isglobal: bool) : A.definition -> chunk = function
             (* Setup the environment. Add the formals to the locals. Maybe
             * they need alpha-conv  *)
             enterScope ();  (* Start the scope *)
-            
+
+            (* Enter all the function's labels into the local scope *)
+            ignore (V.visitCabsBlock (new gatherLabelsClass) body);
+            currentLoc := funloc; (* gatherLabelsClass#vstmt changes currentLoc, so reset it here *)
+
             IH.clear varSizeArrays;
             
             (* Do not process transparent unions in function definitions.

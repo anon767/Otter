@@ -415,9 +415,9 @@ let feature : featureDescr =
 		fd_post_check = true;
     fd_doit = fun file ->
 			(if run_args.arg_edge_coverage && not !useLogicalOperators
-			 then ignore (Cil.warn "Edge coverage should be called with --useLogicalOperators");
+			 then ignore (Cil.warn "Tracking edge coverage without --useLogicalOperators");
 			 if run_args.arg_cond_coverage && !useLogicalOperators
-			 then ignore (Cil.warn "Condition coverage should be called without --useLogicalOperators");
+			 then ignore (Cil.warn "Tracking condition coverage with --useLogicalOperators");
 			 doExecute file)
   } 
 	;;
