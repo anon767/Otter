@@ -3,7 +3,7 @@
 
 #line 141 "/usr/include/stdint.h"
 typedef unsigned long long uintmax_t;
-#line 214 "/usr/local/gcc-4.0.1/lib/gcc/i686-pc-linux-gnu/4.0.1/include/stddef.h"
+#line 213 "/usr/lib/gcc/i386-redhat-linux/3.4.6/include/stddef.h"
 typedef unsigned int size_t;
 #line 59 "/usr/include/bits/types.h"
 typedef long long __quad_t;
@@ -57,9 +57,9 @@ struct _IO_FILE {
 };
 #line 337 "/usr/include/libio.h"
 typedef struct _IO_FILE _IO_FILE;
-#line 43 "/usr/local/gcc-4.0.1/lib/gcc/i686-pc-linux-gnu/4.0.1/include/stdarg.h"
+#line 43 "/usr/lib/gcc/i386-redhat-linux/3.4.6/include/stdarg.h"
 typedef __builtin_va_list __gnuc_va_list;
-#line 105 "/usr/local/gcc-4.0.1/lib/gcc/i686-pc-linux-gnu/4.0.1/include/stdarg.h"
+#line 105 "/usr/lib/gcc/i386-redhat-linux/3.4.6/include/stdarg.h"
 typedef __gnuc_va_list va_list;
 #line 182 "/usr/include/bits/types.h"
 typedef int __ssize_t;
@@ -67,11 +67,11 @@ typedef int __ssize_t;
 typedef __ssize_t ssize_t;
 #line 145 "/usr/include/bits/types.h"
 typedef int __pid_t;
-#line 1 "cil-UQ82Je4i.o"
-#pragma merger(0,"/tmp/cil-0oxd5IWY.i","")
+#line 1 "cil-szE29gCN.o"
+#pragma merger(0,"/tmp/cil-is1BnJGN.i","")
 #line 640 "/usr/include/stdlib.h"
 extern  __attribute__((__nothrow__, __noreturn__)) void exit(int __status ) ;
-#line 3 "/fs/junkfood2/kkma/t/libc/assert.c"
+#line 3 "/skollhomes/kkma/trunk/libc/assert.c"
 int assert(int expression ) 
 { 
 
@@ -86,14 +86,14 @@ int assert(int expression )
   }
 }
 }
-#line 1 "cil-4aCKS9UA.o"
-#pragma merger(0,"/tmp/cil-dhjZBNW0.i","")
+#line 1 "cil-kGawgq09.o"
+#pragma merger(0,"/tmp/cil-r16SeYNu.i","")
 #line 148 "/usr/include/stdlib.h"
  __attribute__((__nothrow__)) int atoi(char const   *nptr )  __attribute__((__pure__,
 __nonnull__(1))) ;
-#line 136 "/fs/junkfood2/kkma/t/libc/ctype.h"
+#line 136 "/skollhomes/kkma/trunk/libc/ctype.h"
 int isspace(int c ) ;
-#line 11 "/fs/junkfood2/kkma/t/libc/strntoumax.c"
+#line 11 "/skollhomes/kkma/trunk/libc/strntoumax.c"
 __inline static int digitval(int ch ) 
 { 
 
@@ -120,7 +120,7 @@ __inline static int digitval(int ch )
   }
 }
 }
-#line 24 "/fs/junkfood2/kkma/t/libc/strntoumax.c"
+#line 24 "/skollhomes/kkma/trunk/libc/strntoumax.c"
 uintmax_t strntoumax(char const   *nptr , char **endptr , int base , size_t n ) 
 { int minus ;
   uintmax_t v ;
@@ -249,10 +249,10 @@ uintmax_t strntoumax(char const   *nptr , char **endptr , int base , size_t n )
   return (__cil_tmp___0);
 }
 }
-#line 6 "/fs/junkfood2/kkma/t/libc/atoi.c"
+#line 6 "/skollhomes/kkma/trunk/libc/atoi.c"
  __attribute__((__nothrow__)) int atoi(char const   *nptr )  __attribute__((__pure__,
 __nonnull__(1))) ;
-#line 6 "/fs/junkfood2/kkma/t/libc/atoi.c"
+#line 6 "/skollhomes/kkma/trunk/libc/atoi.c"
 int atoi(char const   *nptr ) 
 { uintmax_t __cil_tmp ;
 
@@ -263,15 +263,15 @@ int atoi(char const   *nptr )
   return ((int )__cil_tmp);
 }
 }
-#line 1 "cil-6oyrp5nU.o"
-#pragma merger(0,"/tmp/cil-sk3QdnuZ.i","")
+#line 1 "cil-kBJNgPAa.o"
+#pragma merger(0,"/tmp/cil-dZltMWNO.i","")
 #line 151 "/usr/include/stdlib.h"
  __attribute__((__nothrow__)) long atol(char const   *nptr )  __attribute__((__pure__,
 __nonnull__(1))) ;
-#line 6 "/fs/junkfood2/kkma/t/libc/atol.c"
+#line 6 "/skollhomes/kkma/trunk/libc/atol.c"
  __attribute__((__nothrow__)) long atol(char const   *nptr )  __attribute__((__pure__,
 __nonnull__(1))) ;
-#line 6 "/fs/junkfood2/kkma/t/libc/atol.c"
+#line 6 "/skollhomes/kkma/trunk/libc/atol.c"
 long atol(char const   *nptr ) 
 { uintmax_t __cil_tmp ;
 
@@ -282,13 +282,13 @@ long atol(char const   *nptr )
   return ((long )__cil_tmp);
 }
 }
-#line 1 "cil-QhCkEGGO.o"
-#pragma merger(0,"/tmp/cil-Aw9U7LUH.i","")
-#line 31 "/fs/junkfood2/kkma/t/libc/ctype.h"
+#line 1 "cil-JZE5uYnE.o"
+#pragma merger(0,"/tmp/cil-iUbZlsVJ.i","")
+#line 31 "/skollhomes/kkma/trunk/libc/ctype.h"
 unsigned char const   __ctypes[257] ;
-#line 10 "/fs/junkfood2/kkma/t/libc/ctypes.c"
+#line 10 "/skollhomes/kkma/trunk/libc/ctypes.c"
 unsigned char const   __ctypes[257]  = 
-#line 10 "/fs/junkfood2/kkma/t/libc/ctypes.c"
+#line 10 "/skollhomes/kkma/trunk/libc/ctypes.c"
   {      (unsigned char const   )0,      (unsigned char const   )128,      (unsigned char const   )128,      (unsigned char const   )128, 
         (unsigned char const   )128,      (unsigned char const   )128,      (unsigned char const   )128,      (unsigned char const   )128, 
         (unsigned char const   )128,      (unsigned char const   )144,      (unsigned char const   )144,      (unsigned char const   )144, 
@@ -354,15 +354,15 @@ unsigned char const   __ctypes[257]  =
         (unsigned char const   )96,      (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34, 
         (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34, 
         (unsigned char const   )34};
-#line 1 "cil-yqttQkKr.o"
-#pragma merger(0,"/tmp/cil-DpeAB1BB.i","")
+#line 1 "cil-vi8MAaUY.o"
+#pragma merger(0,"/tmp/cil-LgZP3Dlm.i","")
 #line 208 "/usr/include/stdio.h"
 int fclose(FILE *f ) ;
 #line 754
 extern  __attribute__((__nothrow__)) int fileno(FILE *__stream ) ;
 #line 307 "/usr/include/unistd.h"
 extern int close(int __fd ) ;
-#line 11 "/fs/junkfood2/kkma/t/libc/fclose.c"
+#line 11 "/skollhomes/kkma/trunk/libc/fclose.c"
 int fclose(FILE *f ) 
 { int __cil_tmp ;
   int __cil_tmp___0 ;
@@ -376,11 +376,11 @@ int fclose(FILE *f )
   return (__cil_tmp___0);
 }
 }
-#line 1 "cil-HSjvUEtY.o"
-#pragma merger(0,"/tmp/cil-WwZCS2cW.i","")
+#line 1 "cil-IjstV8PH.o"
+#pragma merger(0,"/tmp/cil-b4t3puRS.i","")
 #line 213 "/usr/include/stdio.h"
 int fflush(FILE *stream ) ;
-#line 3 "/fs/junkfood2/kkma/t/libc/fflush.c"
+#line 3 "/skollhomes/kkma/trunk/libc/fflush.c"
 int fflush(FILE *stream ) 
 { 
 
@@ -389,13 +389,13 @@ int fflush(FILE *stream )
   return (0);
 }
 }
-#line 1 "cil-nuWItn2v.o"
-#pragma merger(0,"/tmp/cil-fc8K1moP.i","")
+#line 1 "cil-apbM0ao7.o"
+#pragma merger(0,"/tmp/cil-WHUM6mM3.i","")
 #line 450 "/usr/include/libio.h"
 extern  __attribute__((__nothrow__)) int _IO_getc(_IO_FILE *__fp ) ;
 #line 437 "/usr/include/stdio.h"
 int fgetc(FILE *f ) ;
-#line 11 "/fs/junkfood2/kkma/t/libc/fgetc.c"
+#line 11 "/skollhomes/kkma/trunk/libc/fgetc.c"
 int fgetc(FILE *f ) 
 { int __cil_tmp ;
 
@@ -406,11 +406,11 @@ int fgetc(FILE *f )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-U9nmEM6H.o"
-#pragma merger(0,"/tmp/cil-SbJPHgt7.i","")
+#line 1 "cil-eb7zENie.o"
+#pragma merger(0,"/tmp/cil-urLGxiVD.i","")
 #line 528 "/usr/include/stdio.h"
 char *fgets(char * __restrict  s , int n , FILE * __restrict  f ) ;
-#line 11 "/fs/junkfood2/kkma/t/libc/fgets.c"
+#line 11 "/skollhomes/kkma/trunk/libc/fgets.c"
 char *fgets(char * __restrict  s , int n , FILE * __restrict  f ) 
 { int ch ;
   char *p ;
@@ -457,13 +457,13 @@ char *fgets(char * __restrict  s , int n , FILE * __restrict  f )
    void __builtin_va_end(__builtin_va_list  ) ;  */
 /* compiler builtin: 
    void __builtin_va_start(__builtin_va_list  ) ;  */
-#line 1 "cil-xpb1fAlS.o"
-#pragma merger(0,"/tmp/cil-dsTECxA3.i","")
+#line 1 "cil-siQWR5wl.o"
+#pragma merger(0,"/tmp/cil-r1tGb9gS.i","")
 #line 323 "/usr/include/stdio.h"
 int fprintf(FILE * __restrict  file , char const   * __restrict  format  , ...) ;
 #line 338
 int vfprintf(FILE * __restrict  file , char const   * __restrict  format , __gnuc_va_list ap ) ;
-#line 10 "/fs/junkfood2/kkma/t/libc/fprintf.c"
+#line 10 "/skollhomes/kkma/trunk/libc/fprintf.c"
 int fprintf(FILE * __restrict  file , char const   * __restrict  format  , ...) 
 { va_list ap ;
   int rv ;
@@ -479,15 +479,15 @@ int fprintf(FILE * __restrict  file , char const   * __restrict  format  , ...)
   return (rv);
 }
 }
-#line 1 "cil-gLIxr7uA.o"
-#pragma merger(0,"/tmp/cil-nVrMGbe8.i","")
+#line 1 "cil-IqCdJgYe.o"
+#pragma merger(0,"/tmp/cil-M7B3zs04.i","")
 #line 479 "/usr/include/stdio.h"
 int fputc(int c , FILE *f ) ;
 #line 38 "/usr/include/bits/errno.h"
 extern  __attribute__((__nothrow__)) int *__errno_location(void)  __attribute__((__const__)) ;
 #line 320 "/usr/include/unistd.h"
 extern ssize_t write(int __fd , void const   *__buf , size_t __n ) ;
-#line 9 "/fs/junkfood2/kkma/t/libc/fwrite.c"
+#line 9 "/skollhomes/kkma/trunk/libc/fwrite.c"
 size_t _fwrite(void const   *buf , size_t count , FILE *f ) 
 { size_t bytes ;
   ssize_t rv ;
@@ -541,7 +541,7 @@ size_t _fwrite(void const   *buf , size_t count , FILE *f )
   return (bytes);
 }
 }
-#line 10 "/fs/junkfood2/kkma/t/libc/fputc.c"
+#line 10 "/skollhomes/kkma/trunk/libc/fputc.c"
 int fputc(int c , FILE *f ) 
 { unsigned char ch ;
   int __cil_tmp___0 ;
@@ -564,14 +564,14 @@ int fputc(int c , FILE *f )
   return (__cil_tmp___0);
 }
 }
-#line 1 "cil-Z1UvuxJi.o"
-#pragma merger(0,"/tmp/cil-niSiEOz9.i","")
+#line 1 "cil-nXbicINO.o"
+#pragma merger(0,"/tmp/cil-URcxOgKP.i","")
 #line 585 "/usr/include/stdio.h"
 int fputs(char const   * __restrict  s , FILE * __restrict  file ) ;
 #line 242 "/usr/include/string.h"
  __attribute__((__nothrow__)) size_t strlen(char const   *s )  __attribute__((__pure__,
 __nonnull__(1))) ;
-#line 13 "/fs/junkfood2/kkma/t/libc/fputs.c"
+#line 13 "/skollhomes/kkma/trunk/libc/fputs.c"
 int fputs(char const   * __restrict  s , FILE * __restrict  file ) 
 { size_t __cil_tmp ;
   size_t __cil_tmp___0 ;
@@ -585,13 +585,13 @@ int fputs(char const   * __restrict  s , FILE * __restrict  file )
   return ((int )__cil_tmp___0);
 }
 }
-#line 1 "cil-kSkNPND0.o"
-#pragma merger(0,"/tmp/cil-V5czSTPC.i","")
+#line 1 "cil-eKcJvEKf.o"
+#pragma merger(0,"/tmp/cil-vKDwNnAz.i","")
 #line 605 "/usr/include/stdio.h"
 size_t fread(void * __restrict  ptr , size_t size , size_t nmemb , FILE * __restrict  f ) ;
 #line 314 "/usr/include/unistd.h"
 extern ssize_t read(int __fd , void *__buf , size_t __nbytes ) ;
-#line 9 "/fs/junkfood2/kkma/t/libc/fread.c"
+#line 9 "/skollhomes/kkma/trunk/libc/fread.c"
 size_t _fread(void *buf , size_t count , FILE *f ) 
 { size_t bytes ;
   ssize_t rv ;
@@ -645,7 +645,7 @@ size_t _fread(void *buf , size_t count , FILE *f )
   return (bytes);
 }
 }
-#line 11 "/fs/junkfood2/kkma/t/libc/fread2.c"
+#line 11 "/skollhomes/kkma/trunk/libc/fread2.c"
 size_t fread(void * __restrict  ptr , size_t size , size_t nmemb , FILE * __restrict  f ) 
 { size_t __cil_tmp ;
 
@@ -656,13 +656,13 @@ size_t fread(void * __restrict  ptr , size_t size , size_t nmemb , FILE * __rest
   return (__cil_tmp / size);
 }
 }
-#line 1 "cil-7Ucwjgh1.o"
-#pragma merger(0,"/tmp/cil-6sVvct3Q.i","")
-#line 1 "cil-OOzQGl9x.o"
-#pragma merger(0,"/tmp/cil-6yDo083a.i","")
+#line 1 "cil-vUtxoIVv.o"
+#pragma merger(0,"/tmp/cil-05rfQ5by.i","")
+#line 1 "cil-6urvhUON.o"
+#pragma merger(0,"/tmp/cil-NhBrqSFW.i","")
 #line 611 "/usr/include/stdio.h"
 size_t fwrite(void const   * __restrict  ptr , size_t size , size_t nmemb , FILE * __restrict  f ) ;
-#line 11 "/fs/junkfood2/kkma/t/libc/fwrite2.c"
+#line 11 "/skollhomes/kkma/trunk/libc/fwrite2.c"
 size_t fwrite(void const   * __restrict  ptr , size_t size , size_t nmemb , FILE * __restrict  f ) 
 { size_t __cil_tmp ;
 
@@ -673,11 +673,11 @@ size_t fwrite(void const   * __restrict  ptr , size_t size , size_t nmemb , FILE
   return (__cil_tmp / size);
 }
 }
-#line 1 "cil-QG5GxzKo.o"
-#pragma merger(0,"/tmp/cil-XPDHXgg8.i","")
-#line 1 "cil-9nO5frrM.o"
-#pragma merger(0,"/tmp/cil-QB8qTx8y.i","")
-#line 33 "/fs/junkfood2/kkma/t/libc/ctype.h"
+#line 1 "cil-MGSOFjlI.o"
+#pragma merger(0,"/tmp/cil-AEgjZz2c.i","")
+#line 1 "cil-4ZiqLEne.o"
+#pragma merger(0,"/tmp/cil-yCLIfnra.i","")
+#line 33 "/skollhomes/kkma/trunk/libc/ctype.h"
 __inline static int __ctype_isalnum(int __c ) 
 { 
 
@@ -688,7 +688,7 @@ __inline static int __ctype_isalnum(int __c )
 }
 #line 126
 int isalnum(int c ) ;
-#line 2 "/fs/junkfood2/kkma/t/libc/isalnum.c"
+#line 2 "/skollhomes/kkma/trunk/libc/isalnum.c"
 int isalnum(int c ) 
 { int __cil_tmp ;
 
@@ -699,9 +699,9 @@ int isalnum(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-QgFhzFyL.o"
-#pragma merger(0,"/tmp/cil-FKWjE5Jv.i","")
-#line 39 "/fs/junkfood2/kkma/t/libc/ctype.h"
+#line 1 "cil-VGJipRfD.o"
+#pragma merger(0,"/tmp/cil-Ca7ztTzD.i","")
+#line 39 "/skollhomes/kkma/trunk/libc/ctype.h"
 __inline static int __ctype_isalpha(int __c ) 
 { 
 
@@ -712,7 +712,7 @@ __inline static int __ctype_isalpha(int __c )
 }
 #line 127
 int isalpha(int c ) ;
-#line 2 "/fs/junkfood2/kkma/t/libc/isalpha.c"
+#line 2 "/skollhomes/kkma/trunk/libc/isalpha.c"
 int isalpha(int c ) 
 { int __cil_tmp ;
 
@@ -723,9 +723,9 @@ int isalpha(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-WWFcYS7h.o"
-#pragma merger(0,"/tmp/cil-vVpLwibZ.i","")
-#line 44 "/fs/junkfood2/kkma/t/libc/ctype.h"
+#line 1 "cil-4xWjRvsO.o"
+#pragma merger(0,"/tmp/cil-l1epveiW.i","")
+#line 44 "/skollhomes/kkma/trunk/libc/ctype.h"
 __inline static int __ctype_isascii(int __c ) 
 { 
 
@@ -736,7 +736,7 @@ __inline static int __ctype_isascii(int __c )
 }
 #line 128
 int isascii(int c ) ;
-#line 2 "/fs/junkfood2/kkma/t/libc/isascii.c"
+#line 2 "/skollhomes/kkma/trunk/libc/isascii.c"
 int isascii(int c ) 
 { int __cil_tmp ;
 
@@ -747,9 +747,9 @@ int isascii(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-A1OmDiex.o"
-#pragma merger(0,"/tmp/cil-ksdwZYyB.i","")
-#line 49 "/fs/junkfood2/kkma/t/libc/ctype.h"
+#line 1 "cil-3HCKjYeR.o"
+#pragma merger(0,"/tmp/cil-nWEuKG6G.i","")
+#line 49 "/skollhomes/kkma/trunk/libc/ctype.h"
 __inline static int __ctype_isblank(int __c ) 
 { 
 
@@ -760,7 +760,7 @@ __inline static int __ctype_isblank(int __c )
 }
 #line 129
 int isblank(int c ) ;
-#line 2 "/fs/junkfood2/kkma/t/libc/isblank.c"
+#line 2 "/skollhomes/kkma/trunk/libc/isblank.c"
 int isblank(int c ) 
 { int __cil_tmp ;
 
@@ -771,9 +771,9 @@ int isblank(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-PddKCaNA.o"
-#pragma merger(0,"/tmp/cil-AdCchDTk.i","")
-#line 54 "/fs/junkfood2/kkma/t/libc/ctype.h"
+#line 1 "cil-IM4C5hK7.o"
+#pragma merger(0,"/tmp/cil-7h940FGq.i","")
+#line 54 "/skollhomes/kkma/trunk/libc/ctype.h"
 __inline static int __ctype_iscntrl(int __c ) 
 { 
 
@@ -784,7 +784,7 @@ __inline static int __ctype_iscntrl(int __c )
 }
 #line 130
 int iscntrl(int c ) ;
-#line 2 "/fs/junkfood2/kkma/t/libc/iscntrl.c"
+#line 2 "/skollhomes/kkma/trunk/libc/iscntrl.c"
 int iscntrl(int c ) 
 { int __cil_tmp ;
 
@@ -795,9 +795,9 @@ int iscntrl(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-X5PIZYK2.o"
-#pragma merger(0,"/tmp/cil-LkVnQyyK.i","")
-#line 59 "/fs/junkfood2/kkma/t/libc/ctype.h"
+#line 1 "cil-l43lnXnf.o"
+#pragma merger(0,"/tmp/cil-dISBvvvG.i","")
+#line 59 "/skollhomes/kkma/trunk/libc/ctype.h"
 __inline static int __ctype_isdigit(int __c ) 
 { 
 
@@ -808,7 +808,7 @@ __inline static int __ctype_isdigit(int __c )
 }
 #line 131
 int isdigit(int c ) ;
-#line 2 "/fs/junkfood2/kkma/t/libc/isdigit.c"
+#line 2 "/skollhomes/kkma/trunk/libc/isdigit.c"
 int isdigit(int c ) 
 { int __cil_tmp ;
 
@@ -819,9 +819,9 @@ int isdigit(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-sYHrEgVB.o"
-#pragma merger(0,"/tmp/cil-vbeTpC6A.i","")
-#line 64 "/fs/junkfood2/kkma/t/libc/ctype.h"
+#line 1 "cil-DtX8xW1b.o"
+#pragma merger(0,"/tmp/cil-nY73IFyB.i","")
+#line 64 "/skollhomes/kkma/trunk/libc/ctype.h"
 __inline static int __ctype_isgraph(int __c ) 
 { 
 
@@ -832,7 +832,7 @@ __inline static int __ctype_isgraph(int __c )
 }
 #line 132
 int isgraph(int c ) ;
-#line 2 "/fs/junkfood2/kkma/t/libc/isgraph.c"
+#line 2 "/skollhomes/kkma/trunk/libc/isgraph.c"
 int isgraph(int c ) 
 { int __cil_tmp ;
 
@@ -843,9 +843,9 @@ int isgraph(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-N5bQbEbP.o"
-#pragma merger(0,"/tmp/cil-Vk837SDa.i","")
-#line 70 "/fs/junkfood2/kkma/t/libc/ctype.h"
+#line 1 "cil-TExwheUz.o"
+#pragma merger(0,"/tmp/cil-mi0DSfLQ.i","")
+#line 70 "/skollhomes/kkma/trunk/libc/ctype.h"
 __inline static int __ctype_islower(int __c ) 
 { 
 
@@ -856,7 +856,7 @@ __inline static int __ctype_islower(int __c )
 }
 #line 133
 int islower(int c ) ;
-#line 2 "/fs/junkfood2/kkma/t/libc/islower.c"
+#line 2 "/skollhomes/kkma/trunk/libc/islower.c"
 int islower(int c ) 
 { int __cil_tmp ;
 
@@ -867,9 +867,9 @@ int islower(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-Au4STS6i.o"
-#pragma merger(0,"/tmp/cil-VsKsE7JJ.i","")
-#line 75 "/fs/junkfood2/kkma/t/libc/ctype.h"
+#line 1 "cil-iIwx2691.o"
+#pragma merger(0,"/tmp/cil-ElDvEQV4.i","")
+#line 75 "/skollhomes/kkma/trunk/libc/ctype.h"
 __inline static int __ctype_isprint(int __c ) 
 { 
 
@@ -880,7 +880,7 @@ __inline static int __ctype_isprint(int __c )
 }
 #line 134
 int isprint(int c ) ;
-#line 2 "/fs/junkfood2/kkma/t/libc/isprint.c"
+#line 2 "/skollhomes/kkma/trunk/libc/isprint.c"
 int isprint(int c ) 
 { int __cil_tmp ;
 
@@ -891,9 +891,9 @@ int isprint(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-JUPHh32T.o"
-#pragma merger(0,"/tmp/cil-hbM9fArk.i","")
-#line 80 "/fs/junkfood2/kkma/t/libc/ctype.h"
+#line 1 "cil-24qb7Mo2.o"
+#pragma merger(0,"/tmp/cil-Rva6WDCU.i","")
+#line 80 "/skollhomes/kkma/trunk/libc/ctype.h"
 __inline static int __ctype_ispunct(int __c ) 
 { 
 
@@ -904,7 +904,7 @@ __inline static int __ctype_ispunct(int __c )
 }
 #line 135
 int ispunct(int c ) ;
-#line 2 "/fs/junkfood2/kkma/t/libc/ispunct.c"
+#line 2 "/skollhomes/kkma/trunk/libc/ispunct.c"
 int ispunct(int c ) 
 { int __cil_tmp ;
 
@@ -915,9 +915,9 @@ int ispunct(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-sSap22WZ.o"
-#pragma merger(0,"/tmp/cil-Ys2IgD9Y.i","")
-#line 85 "/fs/junkfood2/kkma/t/libc/ctype.h"
+#line 1 "cil-CseUtwSM.o"
+#pragma merger(0,"/tmp/cil-TuUGGpOj.i","")
+#line 85 "/skollhomes/kkma/trunk/libc/ctype.h"
 __inline static int __ctype_isspace(int __c ) 
 { 
 
@@ -926,7 +926,7 @@ __inline static int __ctype_isspace(int __c )
   return ((int )((int const   )__ctypes[__c + 1] & 16));
 }
 }
-#line 2 "/fs/junkfood2/kkma/t/libc/isspace.c"
+#line 2 "/skollhomes/kkma/trunk/libc/isspace.c"
 int isspace(int c ) 
 { int __cil_tmp ;
 
@@ -937,9 +937,9 @@ int isspace(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-k7OFnudt.o"
-#pragma merger(0,"/tmp/cil-y6Z1EhhO.i","")
-#line 90 "/fs/junkfood2/kkma/t/libc/ctype.h"
+#line 1 "cil-FfOkTDta.o"
+#pragma merger(0,"/tmp/cil-dcBM4Aau.i","")
+#line 90 "/skollhomes/kkma/trunk/libc/ctype.h"
 __inline static int __ctype_isupper(int __c ) 
 { 
 
@@ -950,7 +950,7 @@ __inline static int __ctype_isupper(int __c )
 }
 #line 137
 int isupper(int c ) ;
-#line 2 "/fs/junkfood2/kkma/t/libc/isupper.c"
+#line 2 "/skollhomes/kkma/trunk/libc/isupper.c"
 int isupper(int c ) 
 { int __cil_tmp ;
 
@@ -961,9 +961,9 @@ int isupper(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-eb90RbNH.o"
-#pragma merger(0,"/tmp/cil-D2M7GRWi.i","")
-#line 95 "/fs/junkfood2/kkma/t/libc/ctype.h"
+#line 1 "cil-IzVra7VG.o"
+#pragma merger(0,"/tmp/cil-C0RSMZjr.i","")
+#line 95 "/skollhomes/kkma/trunk/libc/ctype.h"
 __inline static int __ctype_isxdigit(int __c ) 
 { 
 
@@ -974,7 +974,7 @@ __inline static int __ctype_isxdigit(int __c )
 }
 #line 138
 int isxdigit(int c ) ;
-#line 2 "/fs/junkfood2/kkma/t/libc/isxdigit.c"
+#line 2 "/skollhomes/kkma/trunk/libc/isxdigit.c"
 int isxdigit(int c ) 
 { int __cil_tmp ;
 
@@ -985,15 +985,15 @@ int isxdigit(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-oK0XI9qq.o"
-#pragma merger(0,"/tmp/cil-7MqODej3.i","")
+#line 1 "cil-q4v5rc5v.o"
+#pragma merger(0,"/tmp/cil-ID7EUXa2.i","")
 #line 62 "/usr/include/string.h"
  __attribute__((__nothrow__)) int memcmp(void const   *s1 , void const   *s2 , size_t n )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
-#line 7 "/fs/junkfood2/kkma/t/libc/memcmp.c"
+#line 7 "/skollhomes/kkma/trunk/libc/memcmp.c"
  __attribute__((__nothrow__)) int memcmp(void const   *s1 , void const   *s2 , size_t n )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
-#line 7 "/fs/junkfood2/kkma/t/libc/memcmp.c"
+#line 7 "/skollhomes/kkma/trunk/libc/memcmp.c"
 int memcmp(void const   *s1 , void const   *s2 , size_t n ) 
 { unsigned char const   *c1 ;
   unsigned char const   *c2 ;
@@ -1040,15 +1040,15 @@ int memcmp(void const   *s1 , void const   *s2 , size_t n )
   return (d);
 }
 }
-#line 1 "cil-m7xpqVj9.o"
-#pragma merger(0,"/tmp/cil-oIRooZMy.i","")
+#line 1 "cil-Urqq2E85.o"
+#pragma merger(0,"/tmp/cil-S2ozQ7KP.i","")
 #line 38 "/usr/include/string.h"
  __attribute__((__nothrow__)) void *memcpy(void * __restrict  dst , void const   * __restrict  src ,
                                            size_t n )  __attribute__((__nonnull__(1,2))) ;
-#line 8 "/fs/junkfood2/kkma/t/libc/memcpy.c"
+#line 8 "/skollhomes/kkma/trunk/libc/memcpy.c"
  __attribute__((__nothrow__)) void *memcpy(void * __restrict  dst , void const   * __restrict  src ,
                                            size_t n )  __attribute__((__nonnull__(1,2))) ;
-#line 8 "/fs/junkfood2/kkma/t/libc/memcpy.c"
+#line 8 "/skollhomes/kkma/trunk/libc/memcpy.c"
 void *memcpy(void * __restrict  dst , void const   * __restrict  src , size_t n ) 
 { char const   *p ;
   char *q ;
@@ -1087,9 +1087,9 @@ void *memcpy(void * __restrict  dst , void const   * __restrict  src , size_t n 
   return ((void *)dst);
 }
 }
-#line 1 "cil-SJhWPmnt.o"
-#pragma merger(0,"/tmp/cil-acwtcaZu.i","")
-#line 14 "/fs/junkfood2/kkma/t/libc/memmem.c"
+#line 1 "cil-YeMUK42c.o"
+#pragma merger(0,"/tmp/cil-Ag5mvlVo.i","")
+#line 14 "/skollhomes/kkma/trunk/libc/memmem.c"
 void *memmem(void const   *haystack , size_t n , void const   *needle , size_t m ) 
 { unsigned char const   *y ;
   unsigned char const   *x ;
@@ -1169,13 +1169,13 @@ void *memmem(void const   *haystack , size_t n , void const   *needle , size_t m
   return ((void *)0);
 }
 }
-#line 1 "cil-TSkGBmus.o"
-#pragma merger(0,"/tmp/cil-cFt8nLkQ.i","")
+#line 1 "cil-MlJPB3zV.o"
+#pragma merger(0,"/tmp/cil-R4WXAGqB.i","")
 #line 43 "/usr/include/string.h"
  __attribute__((__nothrow__)) void *memmove(void *dst , void const   *src , size_t n )  __attribute__((__nonnull__(1,2))) ;
-#line 7 "/fs/junkfood2/kkma/t/libc/memmove.c"
+#line 7 "/skollhomes/kkma/trunk/libc/memmove.c"
  __attribute__((__nothrow__)) void *memmove(void *dst , void const   *src , size_t n )  __attribute__((__nonnull__(1,2))) ;
-#line 7 "/fs/junkfood2/kkma/t/libc/memmove.c"
+#line 7 "/skollhomes/kkma/trunk/libc/memmove.c"
 void *memmove(void *dst , void const   *src , size_t n ) 
 { char const   *p ;
   char *q ;
@@ -1241,17 +1241,17 @@ void *memmove(void *dst , void const   *src , size_t n )
   return (dst);
 }
 }
-#line 1 "cil-KXkRke2W.o"
-#pragma merger(0,"/tmp/cil-mrrb5GvR.i","")
+#line 1 "cil-0PGYZOY6.o"
+#pragma merger(0,"/tmp/cil-DDkSOuTO.i","")
 #line 59 "/usr/include/string.h"
  __attribute__((__nothrow__)) void *memset(void *dst , int c , size_t n )  __attribute__((__nonnull__(1))) ;
-#line 23 "/fs/junkfood2/kkma/t/libc/memset.c"
+#line 23 "/skollhomes/kkma/trunk/libc/memset.c"
 extern int ( /* missing proto */  __EVAL)() ;
 #line 25
 extern int ( /* missing proto */  memset__concrete)() ;
 #line 7
  __attribute__((__nothrow__)) void *memset(void *dst , int c , size_t n )  __attribute__((__nonnull__(1))) ;
-#line 7 "/fs/junkfood2/kkma/t/libc/memset.c"
+#line 7 "/skollhomes/kkma/trunk/libc/memset.c"
 void *memset(void *dst , int c , size_t n ) 
 { char *q ;
   int i ;
@@ -1284,13 +1284,13 @@ void *memset(void *dst , int c , size_t n )
   return (dst);
 }
 }
-#line 1 "cil-28XWl2vC.o"
-#pragma merger(0,"/tmp/cil-RXUD7hct.i","")
+#line 1 "cil-mZRaSNDD.o"
+#pragma merger(0,"/tmp/cil-4dI3yTRi.i","")
 #line 143 "/usr/include/stdio.h"
 extern struct _IO_FILE *stdout ;
 #line 329
 int printf(char const   * __restrict  format  , ...) ;
-#line 10 "/fs/junkfood2/kkma/t/libc/printf.c"
+#line 10 "/skollhomes/kkma/trunk/libc/printf.c"
 int printf(char const   * __restrict  format  , ...) 
 { va_list ap ;
   int rv ;
@@ -1306,19 +1306,19 @@ int printf(char const   * __restrict  format  , ...)
   return (rv);
 }
 }
-#line 1 "cil-0MYoO4U6.o"
-#pragma merger(0,"/tmp/cil-P99VCC2U.i","")
+#line 1 "cil-tjsBtGTf.o"
+#pragma merger(0,"/tmp/cil-oUxbyEnG.i","")
 #line 493 "/usr/include/stdlib.h"
  __attribute__((__nothrow__)) int rand(void) ;
-#line 29 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 29 "/skollhomes/kkma/trunk/libc/__random.c"
 long __random(void) ;
-#line 108 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 108 "/skollhomes/kkma/trunk/libc/__random.c"
 static int degrees[5]  = {      0,      7,      15,      31, 
         63};
-#line 109 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 109 "/skollhomes/kkma/trunk/libc/__random.c"
 static int seps[5]  = {      0,      3,      1,      3, 
         1};
-#line 122 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 122 "/skollhomes/kkma/trunk/libc/__random.c"
 static long randtbl[32]  = 
 #line 122
   {      3L,      -851904987L,      -43806228L,      -2029755270L, 
@@ -1329,21 +1329,21 @@ static long randtbl[32]  =
         -1568001885L,      1275120390L,      -607508183L,      -205999574L, 
         -1696891592L,      1492211999L,      -1528267240L,      -952028296L, 
         -189082757L,      362343714L,      1424981831L,      2039449641L};
-#line 143 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 143 "/skollhomes/kkma/trunk/libc/__random.c"
 static long *fptr  =    & randtbl[4];
-#line 144 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 144 "/skollhomes/kkma/trunk/libc/__random.c"
 static long *rptr  =    & randtbl[1];
-#line 158 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 158 "/skollhomes/kkma/trunk/libc/__random.c"
 static long *state  =    & randtbl[1];
-#line 160 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 160 "/skollhomes/kkma/trunk/libc/__random.c"
 static int rand_type  =    3;
-#line 161 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 161 "/skollhomes/kkma/trunk/libc/__random.c"
 static int rand_deg  =    31;
-#line 162 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 162 "/skollhomes/kkma/trunk/libc/__random.c"
 static int rand_sep  =    3;
-#line 164 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 164 "/skollhomes/kkma/trunk/libc/__random.c"
 static long *end_ptr  =    & randtbl[sizeof(randtbl) / sizeof(randtbl[0])];
-#line 174 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 174 "/skollhomes/kkma/trunk/libc/__random.c"
 void __srandom(unsigned int x ) 
 { register long i ;
 
@@ -1379,7 +1379,7 @@ void __srandom(unsigned int x )
   return;
 }
 }
-#line 201 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 201 "/skollhomes/kkma/trunk/libc/__random.c"
 void *__initstate(unsigned int seed , void *arg_state , size_t n ) 
 { void *ostate ;
   int *__cil_tmp ;
@@ -1468,7 +1468,7 @@ void *__initstate(unsigned int seed , void *arg_state , size_t n )
   return (ostate);
 }
 }
-#line 267 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 267 "/skollhomes/kkma/trunk/libc/__random.c"
 void *__setstate(void *arg_state ) 
 { register long *new_state ;
   register int type ;
@@ -1531,7 +1531,7 @@ void *__setstate(void *arg_state )
   return (ostate);
 }
 }
-#line 320 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 320 "/skollhomes/kkma/trunk/libc/__random.c"
 long __random(void) 
 { long i ;
 
@@ -1569,9 +1569,9 @@ long __random(void)
   }
 }
 }
-#line 26 "/fs/junkfood2/kkma/t/libc/rand.c"
+#line 26 "/skollhomes/kkma/trunk/libc/rand.c"
  __attribute__((__nothrow__)) int rand(void) ;
-#line 26 "/fs/junkfood2/kkma/t/libc/rand.c"
+#line 26 "/skollhomes/kkma/trunk/libc/rand.c"
 int rand(void) 
 { long __cil_tmp ;
 
@@ -1582,15 +1582,15 @@ int rand(void)
   return ((int )__cil_tmp);
 }
 }
-#line 1 "cil-dus0V0PK.o"
-#pragma merger(0,"/tmp/cil-C8wXVzJX.i","")
-#line 108 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 1 "cil-fj4a6WBG.o"
+#pragma merger(0,"/tmp/cil-Y3Wq95Qh.i","")
+#line 108 "/skollhomes/kkma/trunk/libc/__random.c"
 static int degrees___0[5]  = {      0,      7,      15,      31, 
         63};
-#line 109 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 109 "/skollhomes/kkma/trunk/libc/__random.c"
 static int seps___0[5]  = {      0,      3,      1,      3, 
         1};
-#line 122 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 122 "/skollhomes/kkma/trunk/libc/__random.c"
 static long randtbl___0[32]  = 
 #line 122
   {      3L,      -851904987L,      -43806228L,      -2029755270L, 
@@ -1601,22 +1601,22 @@ static long randtbl___0[32]  =
         -1568001885L,      1275120390L,      -607508183L,      -205999574L, 
         -1696891592L,      1492211999L,      -1528267240L,      -952028296L, 
         -189082757L,      362343714L,      1424981831L,      2039449641L};
-#line 143 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 143 "/skollhomes/kkma/trunk/libc/__random.c"
 static long *fptr___0  =    & randtbl___0[4];
-#line 144 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 144 "/skollhomes/kkma/trunk/libc/__random.c"
 static long *rptr___0  =    & randtbl___0[1];
-#line 158 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 158 "/skollhomes/kkma/trunk/libc/__random.c"
 static long *state___0  =    & randtbl___0[1];
-#line 160 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 160 "/skollhomes/kkma/trunk/libc/__random.c"
 static int rand_type___0  =    3;
-#line 161 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 161 "/skollhomes/kkma/trunk/libc/__random.c"
 static int rand_deg___0  =    31;
-#line 162 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 162 "/skollhomes/kkma/trunk/libc/__random.c"
 static int rand_sep___0  =    3;
-#line 164 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 164 "/skollhomes/kkma/trunk/libc/__random.c"
 static long *end_ptr___0  =    & randtbl___0[sizeof(randtbl___0) / sizeof(randtbl___0[0])];
-#line 1 "cil-pbW91Pvh.o"
-#pragma merger(0,"/tmp/cil-6qqPLU7N.i","")
+#line 1 "cil-uvD9Pr9C.o"
+#pragma merger(0,"/tmp/cil-UvlGpzVJ.i","")
 #line 353 "/usr/include/stdio.h"
  __attribute__((__nothrow__)) int ( /* format attribute */  snprintf)(char * __restrict  buffer ,
                                                                       size_t n , char const   * __restrict  format 
@@ -1626,11 +1626,11 @@ static long *end_ptr___0  =    & randtbl___0[sizeof(randtbl___0) / sizeof(randtb
                                                                        size_t n ,
                                                                        char const   * __restrict  format ,
                                                                        __gnuc_va_list ap ) ;
-#line 8 "/fs/junkfood2/kkma/t/libc/snprintf.c"
+#line 8 "/skollhomes/kkma/trunk/libc/snprintf.c"
  __attribute__((__nothrow__)) int ( /* format attribute */  snprintf)(char * __restrict  buffer ,
                                                                       size_t n , char const   * __restrict  format 
                                                                       , ...) ;
-#line 8 "/fs/junkfood2/kkma/t/libc/snprintf.c"
+#line 8 "/skollhomes/kkma/trunk/libc/snprintf.c"
 int ( /* format attribute */  snprintf)(char * __restrict  buffer , size_t n , char const   * __restrict  format 
                                         , ...) 
 { va_list ap ;
@@ -1647,15 +1647,15 @@ int ( /* format attribute */  snprintf)(char * __restrict  buffer , size_t n , c
   return (rv);
 }
 }
-#line 1 "cil-3uCqcDMD.o"
-#pragma merger(0,"/tmp/cil-DeKjeSlW.i","")
+#line 1 "cil-iYXJq2MO.o"
+#pragma merger(0,"/tmp/cil-gjdGFiKs.i","")
 #line 331 "/usr/include/stdio.h"
  __attribute__((__nothrow__)) int sprintf(char * __restrict  buffer , char const   * __restrict  format 
                                           , ...) ;
-#line 10 "/fs/junkfood2/kkma/t/libc/sprintf.c"
+#line 10 "/skollhomes/kkma/trunk/libc/sprintf.c"
  __attribute__((__nothrow__)) int sprintf(char * __restrict  buffer , char const   * __restrict  format 
                                           , ...) ;
-#line 10 "/fs/junkfood2/kkma/t/libc/sprintf.c"
+#line 10 "/skollhomes/kkma/trunk/libc/sprintf.c"
 int sprintf(char * __restrict  buffer , char const   * __restrict  format  , ...) 
 { va_list ap ;
   int rv ;
@@ -1671,17 +1671,17 @@ int sprintf(char * __restrict  buffer , char const   * __restrict  format  , ...
   return (rv);
 }
 }
-#line 1 "cil-BaPWm1ZA.o"
-#pragma merger(0,"/tmp/cil-tL9f08mV.i","")
+#line 1 "cil-08Iisq9J.o"
+#pragma merger(0,"/tmp/cil-LQ3zJofP.i","")
 #line 495 "/usr/include/stdlib.h"
  __attribute__((__nothrow__)) void srand(unsigned int seed ) ;
-#line 108 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 108 "/skollhomes/kkma/trunk/libc/__random.c"
 static int degrees___1[5]  = {      0,      7,      15,      31, 
         63};
-#line 109 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 109 "/skollhomes/kkma/trunk/libc/__random.c"
 static int seps___1[5]  = {      0,      3,      1,      3, 
         1};
-#line 122 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 122 "/skollhomes/kkma/trunk/libc/__random.c"
 static long randtbl___1[32]  = 
 #line 122
   {      3L,      -851904987L,      -43806228L,      -2029755270L, 
@@ -1692,23 +1692,23 @@ static long randtbl___1[32]  =
         -1568001885L,      1275120390L,      -607508183L,      -205999574L, 
         -1696891592L,      1492211999L,      -1528267240L,      -952028296L, 
         -189082757L,      362343714L,      1424981831L,      2039449641L};
-#line 143 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 143 "/skollhomes/kkma/trunk/libc/__random.c"
 static long *fptr___1  =    & randtbl___1[4];
-#line 144 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 144 "/skollhomes/kkma/trunk/libc/__random.c"
 static long *rptr___1  =    & randtbl___1[1];
-#line 158 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 158 "/skollhomes/kkma/trunk/libc/__random.c"
 static long *state___1  =    & randtbl___1[1];
-#line 160 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 160 "/skollhomes/kkma/trunk/libc/__random.c"
 static int rand_type___1  =    3;
-#line 161 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 161 "/skollhomes/kkma/trunk/libc/__random.c"
 static int rand_deg___1  =    31;
-#line 162 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 162 "/skollhomes/kkma/trunk/libc/__random.c"
 static int rand_sep___1  =    3;
-#line 164 "/fs/junkfood2/kkma/t/libc/__random.c"
+#line 164 "/skollhomes/kkma/trunk/libc/__random.c"
 static long *end_ptr___1  =    & randtbl___1[sizeof(randtbl___1) / sizeof(randtbl___1[0])];
-#line 26 "/fs/junkfood2/kkma/t/libc/srand.c"
+#line 26 "/skollhomes/kkma/trunk/libc/srand.c"
  __attribute__((__nothrow__)) void srand(unsigned int seed ) ;
-#line 26 "/fs/junkfood2/kkma/t/libc/srand.c"
+#line 26 "/skollhomes/kkma/trunk/libc/srand.c"
 void srand(unsigned int seed ) 
 { 
 
@@ -1719,17 +1719,17 @@ void srand(unsigned int seed )
   return;
 }
 }
-#line 1 "cil-vSgY6RJc.o"
-#pragma merger(0,"/tmp/cil-dcoYzTXV.i","")
+#line 1 "cil-ixexPDO7.o"
+#pragma merger(0,"/tmp/cil-JQrjgZ3M.i","")
 #line 325 "/usr/include/string.h"
  __attribute__((__nothrow__)) int strcasecmp(char const   *s1 , char const   *s2 )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
-#line 139 "/fs/junkfood2/kkma/t/libc/ctype.h"
+#line 139 "/skollhomes/kkma/trunk/libc/ctype.h"
 int toupper(int c ) ;
-#line 8 "/fs/junkfood2/kkma/t/libc/strcasecmp.c"
+#line 8 "/skollhomes/kkma/trunk/libc/strcasecmp.c"
  __attribute__((__nothrow__)) int strcasecmp(char const   *s1 , char const   *s2 )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
-#line 8 "/fs/junkfood2/kkma/t/libc/strcasecmp.c"
+#line 8 "/skollhomes/kkma/trunk/libc/strcasecmp.c"
 int strcasecmp(char const   *s1 , char const   *s2 ) 
 { unsigned char const   *c1 ;
   unsigned char const   *c2 ;
@@ -1775,8 +1775,8 @@ int strcasecmp(char const   *s1 , char const   *s2 )
   return (d);
 }
 }
-#line 1 "cil-TpOGzJQE.o"
-#pragma merger(0,"/tmp/cil-CpbPWLPl.i","")
+#line 1 "cil-GGHOPGQQ.o"
+#pragma merger(0,"/tmp/cil-47m4szpu.i","")
 #line 84 "/usr/include/string.h"
  __attribute__((__nothrow__)) char *strcpy(char * __restrict  dst , char const   * __restrict  src )  __attribute__((__nonnull__(1,2))) ;
 #line 92
@@ -1784,9 +1784,9 @@ int strcasecmp(char const   *s1 , char const   *s2 )
 #line 167
  __attribute__((__nothrow__)) char *strchr(char const   *s , int c )  __attribute__((__pure__,
 __nonnull__(1))) ;
-#line 7 "/fs/junkfood2/kkma/t/libc/strcat.c"
+#line 7 "/skollhomes/kkma/trunk/libc/strcat.c"
  __attribute__((__nothrow__)) char *strcat(char * __restrict  dst , char const   * __restrict  src )  __attribute__((__nonnull__(1,2))) ;
-#line 7 "/fs/junkfood2/kkma/t/libc/strcat.c"
+#line 7 "/skollhomes/kkma/trunk/libc/strcat.c"
 char *strcat(char * __restrict  dst , char const   * __restrict  src ) 
 { char *__cil_tmp ;
 
@@ -1799,12 +1799,12 @@ char *strcat(char * __restrict  dst , char const   * __restrict  src )
   return ((char *)dst);
 }
 }
-#line 1 "cil-54C6VJEE.o"
-#pragma merger(0,"/tmp/cil-Vv0QMCRQ.i","")
-#line 7 "/fs/junkfood2/kkma/t/libc/strchr.c"
+#line 1 "cil-nXZ5FY8o.o"
+#pragma merger(0,"/tmp/cil-JdUGV6PV.i","")
+#line 7 "/skollhomes/kkma/trunk/libc/strchr.c"
  __attribute__((__nothrow__)) char *strchr(char const   *s , int c )  __attribute__((__pure__,
 __nonnull__(1))) ;
-#line 7 "/fs/junkfood2/kkma/t/libc/strchr.c"
+#line 7 "/skollhomes/kkma/trunk/libc/strchr.c"
 char *strchr(char const   *s , int c ) 
 { 
 
@@ -1823,15 +1823,15 @@ char *strchr(char const   *s , int c )
   return ((char *)s);
 }
 }
-#line 1 "cil-KPScf0Wh.o"
-#pragma merger(0,"/tmp/cil-eaHdFcce.i","")
+#line 1 "cil-D7mV0zi1.o"
+#pragma merger(0,"/tmp/cil-ke2ZBTQi.i","")
 #line 99 "/usr/include/string.h"
  __attribute__((__nothrow__)) int strcmp(char const   *s1 , char const   *s2 )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
-#line 7 "/fs/junkfood2/kkma/t/libc/strcmp.c"
+#line 7 "/skollhomes/kkma/trunk/libc/strcmp.c"
  __attribute__((__nothrow__)) int strcmp(char const   *s1 , char const   *s2 )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
-#line 7 "/fs/junkfood2/kkma/t/libc/strcmp.c"
+#line 7 "/skollhomes/kkma/trunk/libc/strcmp.c"
 int strcmp(char const   *s1 , char const   *s2 ) 
 { unsigned char const   *c1 ;
   unsigned char const   *c2 ;
@@ -1871,11 +1871,11 @@ int strcmp(char const   *s1 , char const   *s2 )
   return (d);
 }
 }
-#line 1 "cil-N2k5gYwK.o"
-#pragma merger(0,"/tmp/cil-zxLB7xAp.i","")
-#line 9 "/fs/junkfood2/kkma/t/libc/strcpy.c"
+#line 1 "cil-H1JsH9tM.o"
+#pragma merger(0,"/tmp/cil-tsPFRLkD.i","")
+#line 9 "/skollhomes/kkma/trunk/libc/strcpy.c"
  __attribute__((__nothrow__)) char *strcpy(char * __restrict  dst , char const   * __restrict  src )  __attribute__((__nonnull__(1,2))) ;
-#line 9 "/fs/junkfood2/kkma/t/libc/strcpy.c"
+#line 9 "/skollhomes/kkma/trunk/libc/strcpy.c"
 char *strcpy(char * __restrict  dst , char const   * __restrict  src ) 
 { char *q ;
   char const   *p ;
@@ -1912,15 +1912,15 @@ char *strcpy(char * __restrict  dst , char const   * __restrict  src )
   return ((char *)dst);
 }
 }
-#line 1 "cil-dvcbyWxk.o"
-#pragma merger(0,"/tmp/cil-ICBkMeaD.i","")
+#line 1 "cil-rWB621Tq.o"
+#pragma merger(0,"/tmp/cil-2QfspuDA.i","")
 #line 184 "/usr/include/string.h"
  __attribute__((__nothrow__)) size_t strcspn(char const   *s , char const   *reject )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
-#line 9 "/fs/junkfood2/kkma/t/libc/strcspn.c"
+#line 9 "/skollhomes/kkma/trunk/libc/strcspn.c"
  __attribute__((__nothrow__)) size_t strcspn(char const   *s , char const   *reject )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
-#line 9 "/fs/junkfood2/kkma/t/libc/strcspn.c"
+#line 9 "/skollhomes/kkma/trunk/libc/strcspn.c"
 size_t strcspn(char const   *s , char const   *reject ) 
 { char *r ;
   int count ;
@@ -1952,9 +1952,9 @@ size_t strcspn(char const   *s , char const   *reject )
   return ((unsigned int )count);
 }
 }
-#line 1 "cil-S53QgXKc.o"
-#pragma merger(0,"/tmp/cil-C6QTE2Ea.i","")
-#line 4 "/fs/junkfood2/kkma/t/libc/strlcpy.c"
+#line 1 "cil-W6GkqBj0.o"
+#pragma merger(0,"/tmp/cil-P4Ip0izc.i","")
+#line 4 "/skollhomes/kkma/trunk/libc/strlcpy.c"
 size_t strlcat(char *dst , char const   *src , size_t size ) 
 { size_t len1 ;
   size_t __cil_tmp ;
@@ -1989,7 +1989,7 @@ size_t strlcat(char *dst , char const   *src , size_t size )
   return (ret);
 }
 }
-#line 24 "/fs/junkfood2/kkma/t/libc/strlcpy.c"
+#line 24 "/skollhomes/kkma/trunk/libc/strlcpy.c"
 size_t strlcpy(char *dst , char const   *src , size_t size ) 
 { size_t len ;
   size_t __cil_tmp ;
@@ -2018,12 +2018,12 @@ size_t strlcpy(char *dst , char const   *src , size_t size )
   return (ret);
 }
 }
-#line 1 "cil-o1NaLmzQ.o"
-#pragma merger(0,"/tmp/cil-hLrwkxST.i","")
-#line 7 "/fs/junkfood2/kkma/t/libc/strlen.c"
+#line 1 "cil-tlyVHGyS.o"
+#pragma merger(0,"/tmp/cil-NLaAQAXX.i","")
+#line 7 "/skollhomes/kkma/trunk/libc/strlen.c"
  __attribute__((__nothrow__)) size_t strlen(char const   *s )  __attribute__((__pure__,
 __nonnull__(1))) ;
-#line 7 "/fs/junkfood2/kkma/t/libc/strlen.c"
+#line 7 "/skollhomes/kkma/trunk/libc/strlen.c"
 size_t strlen(char const   *s ) 
 { char const   *ss ;
 
@@ -2039,15 +2039,15 @@ size_t strlen(char const   *s )
   return ((unsigned int )(ss - s));
 }
 }
-#line 1 "cil-AnZ5cQrZ.o"
-#pragma merger(0,"/tmp/cil-CxENlA9E.i","")
+#line 1 "cil-GiG5U03i.o"
+#pragma merger(0,"/tmp/cil-LkxU3XiU.i","")
 #line 95 "/usr/include/string.h"
  __attribute__((__nothrow__)) char *strncat(char * __restrict  dst , char const   * __restrict  src ,
                                             size_t n )  __attribute__((__nonnull__(1,2))) ;
-#line 8 "/fs/junkfood2/kkma/t/libc/strncat.c"
+#line 8 "/skollhomes/kkma/trunk/libc/strncat.c"
  __attribute__((__nothrow__)) char *strncat(char * __restrict  dst , char const   * __restrict  src ,
                                             size_t n )  __attribute__((__nonnull__(1,2))) ;
-#line 8 "/fs/junkfood2/kkma/t/libc/strncat.c"
+#line 8 "/skollhomes/kkma/trunk/libc/strncat.c"
 char *strncat(char * __restrict  dst , char const   * __restrict  src , size_t n ) 
 { char *q ;
   char *__cil_tmp ;
@@ -2099,15 +2099,15 @@ char *strncat(char * __restrict  dst , char const   * __restrict  src , size_t n
   return ((char *)dst);
 }
 }
-#line 1 "cil-tl2Kbpf1.o"
-#pragma merger(0,"/tmp/cil-VX93qWir.i","")
+#line 1 "cil-myCO7E1b.o"
+#pragma merger(0,"/tmp/cil-Odo9D2lQ.i","")
 #line 102 "/usr/include/string.h"
  __attribute__((__nothrow__)) int strncmp(char const   *s1 , char const   *s2 , size_t n )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
-#line 7 "/fs/junkfood2/kkma/t/libc/strncmp.c"
+#line 7 "/skollhomes/kkma/trunk/libc/strncmp.c"
  __attribute__((__nothrow__)) int strncmp(char const   *s1 , char const   *s2 , size_t n )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
-#line 7 "/fs/junkfood2/kkma/t/libc/strncmp.c"
+#line 7 "/skollhomes/kkma/trunk/libc/strncmp.c"
 int strncmp(char const   *s1 , char const   *s2 , size_t n ) 
 { unsigned char const   *c1 ;
   unsigned char const   *c2 ;
@@ -2157,16 +2157,65 @@ int strncmp(char const   *s1 , char const   *s2 , size_t n )
   return (d);
 }
 }
-#line 1 "cil-w3fOmZ4w.o"
-#pragma merger(0,"/tmp/cil-hkGYSQvX.i","")
-#line 1 "cil-mJIcm6en.o"
-#pragma merger(0,"/tmp/cil-oS4JR0T6.i","")
-#line 10 "/fs/junkfood2/kkma/t/libc/strxspn.h"
+#line 1 "cil-wWja9exf.o"
+#pragma merger(0,"/tmp/cil-0ZLEGugl.i","")
+#line 87 "/usr/include/string.h"
+ __attribute__((__nothrow__)) char *strncpy(char * __restrict  dst , char const   * __restrict  src ,
+                                            size_t n )  __attribute__((__nonnull__(1,2))) ;
+#line 7 "/skollhomes/kkma/trunk/libc/strncpy.c"
+ __attribute__((__nothrow__)) char *strncpy(char * __restrict  dst , char const   * __restrict  src ,
+                                            size_t n )  __attribute__((__nonnull__(1,2))) ;
+#line 7 "/skollhomes/kkma/trunk/libc/strncpy.c"
+char *strncpy(char * __restrict  dst , char const   * __restrict  src , size_t n ) 
+{ char *q ;
+  char const   *p ;
+  char ch ;
+  char *__cil_tmp ;
+  char const   *__cil_tmp___0 ;
+
+  {
+#line 9
+  q = (char *)dst;
+#line 10
+  p = (char const   *)src;
+#line 13
+  while (n) {
+#line 14
+    n --;
+#line 15
+    __cil_tmp = q;
+#line 15
+    q ++;
+#line 15
+    __cil_tmp___0 = p;
+#line 15
+    p ++;
+#line 15
+    ch = (char )*__cil_tmp___0;
+#line 15
+    *__cil_tmp = ch;
+#line 16
+    if (! ch) {
+#line 17
+      break;
+    }
+  }
+#line 21
+  memset((void *)q, 0, n);
+#line 23
+  return ((char *)dst);
+}
+}
+#line 1 "cil-8pwNJEhx.o"
+#pragma merger(0,"/tmp/cil-N6At2Qcj.i","")
+#line 1 "cil-i2LS8k6O.o"
+#pragma merger(0,"/tmp/cil-FTo44QMw.i","")
+#line 10 "/skollhomes/kkma/trunk/libc/strxspn.h"
 size_t __strxspn(char const   *s , char const   *map , int parity ) ;
-#line 7 "/fs/junkfood2/kkma/t/libc/strpbrk.c"
+#line 7 "/skollhomes/kkma/trunk/libc/strpbrk.c"
  __attribute__((__nothrow__)) char *strpbrk(char const   *s , char const   *accept )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
-#line 7 "/fs/junkfood2/kkma/t/libc/strpbrk.c"
+#line 7 "/skollhomes/kkma/trunk/libc/strpbrk.c"
 char *strpbrk(char const   *s , char const   *accept ) 
 { char const   *ss ;
   size_t __cil_tmp ;
@@ -2189,13 +2238,13 @@ char *strpbrk(char const   *s , char const   *accept )
   return (__cil_tmp___0);
 }
 }
-#line 1 "cil-c9IFcVNt.o"
-#pragma merger(0,"/tmp/cil-lZihdxcu.i","")
+#line 1 "cil-j9k6oOsd.o"
+#pragma merger(0,"/tmp/cil-4OZuxfaO.i","")
 #line 348 "/usr/include/string.h"
  __attribute__((__nothrow__)) char *strsep(char ** __restrict  stringp , char const   * __restrict  delim )  __attribute__((__nonnull__(1,2))) ;
-#line 7 "/fs/junkfood2/kkma/t/libc/strsep.c"
+#line 7 "/skollhomes/kkma/trunk/libc/strsep.c"
  __attribute__((__nothrow__)) char *strsep(char ** __restrict  stringp , char const   * __restrict  delim )  __attribute__((__nonnull__(1,2))) ;
-#line 7 "/fs/junkfood2/kkma/t/libc/strsep.c"
+#line 7 "/skollhomes/kkma/trunk/libc/strsep.c"
 char *strsep(char ** __restrict  stringp , char const   * __restrict  delim ) 
 { char *s ;
   char *e ;
@@ -2226,15 +2275,15 @@ char *strsep(char ** __restrict  stringp , char const   * __restrict  delim )
   return (s);
 }
 }
-#line 1 "cil-RXcKsPhY.o"
-#pragma merger(0,"/tmp/cil-wB1VM3t6.i","")
+#line 1 "cil-EqoKPtNt.o"
+#pragma merger(0,"/tmp/cil-0Azyb9xX.i","")
 #line 194 "/usr/include/string.h"
  __attribute__((__nothrow__)) char *strstr(char const   *haystack , char const   *needle )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
-#line 8 "/fs/junkfood2/kkma/t/libc/strstr.c"
+#line 8 "/skollhomes/kkma/trunk/libc/strstr.c"
  __attribute__((__nothrow__)) char *strstr(char const   *haystack , char const   *needle )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
-#line 8 "/fs/junkfood2/kkma/t/libc/strstr.c"
+#line 8 "/skollhomes/kkma/trunk/libc/strstr.c"
 char *strstr(char const   *haystack , char const   *needle ) 
 { size_t __cil_tmp ;
   size_t __cil_tmp___0 ;
@@ -2252,15 +2301,15 @@ char *strstr(char const   *haystack , char const   *needle )
   return ((char *)__cil_tmp___1);
 }
 }
-#line 1 "cil-Tyh15Ge8.o"
-#pragma merger(0,"/tmp/cil-KrLZ5tIq.i","")
+#line 1 "cil-svM08HfE.o"
+#pragma merger(0,"/tmp/cil-KkCI2I3q.i","")
 #line 199 "/usr/include/string.h"
  __attribute__((__nothrow__)) char *strtok(char * __restrict  s , char const   * __restrict  delim )  __attribute__((__nonnull__(2))) ;
-#line 9 "/fs/junkfood2/kkma/t/libc/strtok.c"
+#line 9 "/skollhomes/kkma/trunk/libc/strtok.c"
 static char *holder  ;
 #line 7
  __attribute__((__nothrow__)) char *strtok(char * __restrict  s , char const   * __restrict  delim )  __attribute__((__nonnull__(2))) ;
-#line 7 "/fs/junkfood2/kkma/t/libc/strtok.c"
+#line 7 "/skollhomes/kkma/trunk/libc/strtok.c"
 char *strtok(char * __restrict  s , char const   * __restrict  delim ) 
 { char *__cil_tmp ;
 
@@ -2286,9 +2335,9 @@ char *strtok(char * __restrict  s , char const   * __restrict  delim )
   return ((char *)s);
 }
 }
-#line 1 "cil-A2x8JX7b.o"
-#pragma merger(0,"/tmp/cil-Czz0I7TH.i","")
-#line 12 "/fs/junkfood2/kkma/t/libc/strxspn.c"
+#line 1 "cil-AS52jVsS.o"
+#pragma merger(0,"/tmp/cil-mLo53RTP.i","")
+#line 12 "/skollhomes/kkma/trunk/libc/strxspn.c"
 size_t __strxspn(char const   *s , char const   *map , int parity ) 
 { char matchmap[257] ;
   size_t n ;
@@ -2329,13 +2378,10 @@ size_t __strxspn(char const   *s , char const   *map , int parity )
   return (n);
 }
 }
-#line 1 "cil-XvkOkLPh.o"
-#pragma merger(0,"/tmp/cil-ibX9WH8D.i","")
+#line 1 "cil-c89LxJaS.o"
+#pragma merger(0,"/tmp/cil-Fs19v4uE.i","")
 #line 144 "/usr/include/stdio.h"
 extern struct _IO_FILE *stderr ;
-#line 87 "/usr/include/string.h"
-extern  __attribute__((__nothrow__)) char *strncpy(char * __restrict  __dest , char const   * __restrict  __src ,
-                                                   size_t __n )  __attribute__((__nonnull__(1,2))) ;
 #line 181 "/usr/include/sys/syslog.h"
 void openlog(char const   *ident , int option , int facility ) ;
 #line 190
@@ -2348,13 +2394,13 @@ extern  __attribute__((__nothrow__)) __pid_t getpid(void) ;
 extern int fcntl(int __fd , int __cmd  , ...) ;
 #line 75
 extern int open(char const   *__file , int __oflag  , ...)  __asm__("open64") __attribute__((__nonnull__(1))) ;
-#line 23 "/fs/junkfood2/kkma/t/libc/syslog.c"
+#line 23 "/skollhomes/kkma/trunk/libc/syslog.c"
 int __syslog_fd  =    -1;
-#line 24 "/fs/junkfood2/kkma/t/libc/syslog.c"
+#line 24 "/skollhomes/kkma/trunk/libc/syslog.c"
 static char id[32]  ;
-#line 25 "/fs/junkfood2/kkma/t/libc/syslog.c"
+#line 25 "/skollhomes/kkma/trunk/libc/syslog.c"
 static int syslog_flags  =    0;
-#line 27 "/fs/junkfood2/kkma/t/libc/syslog.c"
+#line 27 "/skollhomes/kkma/trunk/libc/syslog.c"
 void openlog(char const   *ident , int option , int facility ) 
 { int fd ;
   char const   *__cil_tmp ;
@@ -2390,7 +2436,7 @@ void openlog(char const   *ident , int option , int facility )
   return;
 }
 }
-#line 46 "/fs/junkfood2/kkma/t/libc/syslog.c"
+#line 46 "/skollhomes/kkma/trunk/libc/syslog.c"
 void ( /* format attribute */  vsyslog)(int prio , char const   *format , __gnuc_va_list ap ) 
 { char buf[1024] ;
   int len ;
@@ -2471,7 +2517,7 @@ void ( /* format attribute */  vsyslog)(int prio , char const   *format , __gnuc
   return;
 }
 }
-#line 82 "/fs/junkfood2/kkma/t/libc/syslog.c"
+#line 82 "/skollhomes/kkma/trunk/libc/syslog.c"
 void ( /* format attribute */  syslog)(int prio , char const   *format  , ...) 
 { va_list ap ;
 
@@ -2486,9 +2532,9 @@ void ( /* format attribute */  syslog)(int prio , char const   *format  , ...)
   return;
 }
 }
-#line 1 "cil-lxEiTjxT.o"
-#pragma merger(0,"/tmp/cil-u63GFMNq.i","")
-#line 109 "/fs/junkfood2/kkma/t/libc/ctype.h"
+#line 1 "cil-eKmAA2pY.o"
+#pragma merger(0,"/tmp/cil-rDGfy45E.i","")
+#line 109 "/skollhomes/kkma/trunk/libc/ctype.h"
 __inline static int __ctype_tolower(int __c ) 
 { int __cil_tmp___0 ;
   int __cil_tmp___1 ;
@@ -2510,7 +2556,7 @@ __inline static int __ctype_tolower(int __c )
 }
 #line 140
 int tolower(int c ) ;
-#line 2 "/fs/junkfood2/kkma/t/libc/tolower.c"
+#line 2 "/skollhomes/kkma/trunk/libc/tolower.c"
 int tolower(int c ) 
 { int __cil_tmp ;
 
@@ -2521,9 +2567,9 @@ int tolower(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-8vCnGjWu.o"
-#pragma merger(0,"/tmp/cil-uo5Zm7om.i","")
-#line 104 "/fs/junkfood2/kkma/t/libc/ctype.h"
+#line 1 "cil-30yB6grN.o"
+#pragma merger(0,"/tmp/cil-7BNxYMYH.i","")
+#line 104 "/skollhomes/kkma/trunk/libc/ctype.h"
 __inline static int __ctype_toupper(int __c ) 
 { int __cil_tmp___0 ;
   int __cil_tmp___1 ;
@@ -2543,7 +2589,7 @@ __inline static int __ctype_toupper(int __c )
   return (__cil_tmp___0);
 }
 }
-#line 2 "/fs/junkfood2/kkma/t/libc/toupper.c"
+#line 2 "/skollhomes/kkma/trunk/libc/toupper.c"
 int toupper(int c ) 
 { int __cil_tmp ;
 
@@ -2556,11 +2602,11 @@ int toupper(int c )
 }
 /* compiler builtin: 
    void __builtin_va_copy(__builtin_va_list  , __builtin_va_list  ) ;  */
-#line 1 "cil-vG8TeYF4.o"
-#pragma merger(0,"/tmp/cil-Q5zDPAfc.i","")
+#line 1 "cil-DQxKNlrH.o"
+#pragma merger(0,"/tmp/cil-ncL23Cmf.i","")
 #line 584 "/usr/include/stdlib.h"
 extern  __attribute__((__nothrow__)) void *malloc(size_t __size )  __attribute__((__malloc__)) ;
-#line 9 "/fs/junkfood2/kkma/t/libc/vasprintf.c"
+#line 9 "/skollhomes/kkma/trunk/libc/vasprintf.c"
 int vasprintf(char **bufp , char const   *format , va_list ap ) 
 { va_list ap1 ;
   int bytes ;
@@ -2597,9 +2643,9 @@ int vasprintf(char **bufp , char const   *format , va_list ap )
   return (__cil_tmp___1);
 }
 }
-#line 1 "cil-mxgnhqbj.o"
-#pragma merger(0,"/tmp/cil-rl27hM8N.i","")
-#line 13 "/fs/junkfood2/kkma/t/libc/vfprintf.c"
+#line 1 "cil-X8jMiGGI.o"
+#pragma merger(0,"/tmp/cil-q2sPdkPx.i","")
+#line 13 "/skollhomes/kkma/trunk/libc/vfprintf.c"
 int vfprintf(FILE * __restrict  file , char const   * __restrict  format , __gnuc_va_list ap ) 
 { int rv ;
   char buffer[32768] ;
@@ -2624,11 +2670,11 @@ int vfprintf(FILE * __restrict  file , char const   * __restrict  format , __gnu
   return ((int )__cil_tmp);
 }
 }
-#line 1 "cil-QqkmMoub.o"
-#pragma merger(0,"/tmp/cil-T092Timn.i","")
+#line 1 "cil-m1AHGk60.o"
+#pragma merger(0,"/tmp/cil-JcaIwgBq.i","")
 #line 344 "/usr/include/stdio.h"
 int vprintf(char const   * __restrict  format , __gnuc_va_list ap ) ;
-#line 8 "/fs/junkfood2/kkma/t/libc/vprintf.c"
+#line 8 "/skollhomes/kkma/trunk/libc/vprintf.c"
 int vprintf(char const   * __restrict  format , __gnuc_va_list ap ) 
 { int __cil_tmp ;
 
@@ -2639,14 +2685,14 @@ int vprintf(char const   * __restrict  format , __gnuc_va_list ap )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-ErXACV4T.o"
-#pragma merger(0,"/tmp/cil-ZVMwoCqK.i","")
-#line 166 "/fs/junkfood2/kkma/t/libc/vsnprintf.c"
+#line 1 "cil-70Ib3t47.o"
+#pragma merger(0,"/tmp/cil-9eI8E74o.i","")
+#line 166 "/skollhomes/kkma/trunk/libc/vsnprintf.c"
  __attribute__((__nothrow__)) int ( /* format attribute */  vsnprintf)(char * __restrict  buffer ,
                                                                        size_t n ,
                                                                        char const   * __restrict  format ,
                                                                        __gnuc_va_list ap ) ;
-#line 166 "/fs/junkfood2/kkma/t/libc/vsnprintf.c"
+#line 166 "/skollhomes/kkma/trunk/libc/vsnprintf.c"
 int ( /* format attribute */  vsnprintf)(char * __restrict  buffer , size_t n , char const   * __restrict  format ,
                                          __gnuc_va_list ap ) 
 { 
@@ -2658,15 +2704,15 @@ int ( /* format attribute */  vsnprintf)(char * __restrict  buffer , size_t n , 
   return (0);
 }
 }
-#line 1 "cil-X2Orzohy.o"
-#pragma merger(0,"/tmp/cil-VILtN0X8.i","")
+#line 1 "cil-F2qpNeeQ.o"
+#pragma merger(0,"/tmp/cil-SgtDI2eU.i","")
 #line 346 "/usr/include/stdio.h"
  __attribute__((__nothrow__)) int vsprintf(char * __restrict  buffer , char const   * __restrict  format ,
                                            __gnuc_va_list ap ) ;
-#line 9 "/fs/junkfood2/kkma/t/libc/vsprintf.c"
+#line 9 "/skollhomes/kkma/trunk/libc/vsprintf.c"
  __attribute__((__nothrow__)) int vsprintf(char * __restrict  buffer , char const   * __restrict  format ,
                                            __gnuc_va_list ap ) ;
-#line 9 "/fs/junkfood2/kkma/t/libc/vsprintf.c"
+#line 9 "/skollhomes/kkma/trunk/libc/vsprintf.c"
 int vsprintf(char * __restrict  buffer , char const   * __restrict  format , __gnuc_va_list ap ) 
 { int __cil_tmp ;
 
