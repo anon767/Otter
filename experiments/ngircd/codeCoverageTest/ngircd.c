@@ -437,7 +437,7 @@ struct _NUMERIC {
    int (*function)(CLIENT *Client , REQUEST *Request ) ;
 };
 #line 1 "ngircd.o"
-#pragma merger(0,"/tmp/cil-xiMtRV1u.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-dXCcwSXz.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 140 "./../portab/portab.h"
 size_t strlcat(char *dst , char const   *src , size_t size ) ;
 #line 144
@@ -1531,7 +1531,7 @@ static int NGIRCd_Init(int NGIRCd_NoDaemon )
 }
 }
 #line 1 "array.o"
-#pragma merger(0,"/tmp/cil-d575kQNJ.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-eBFvZdQ1.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 32 "array.h"
 void array_init(array *a ) ;
 #line 36
@@ -1625,13 +1625,14 @@ void *array_alloc(array *a , size_t size , size_t pos )
   aligned = (size_t )0;
 #line 69
   if (pos_plus1 == 0U) {
-#line 70
-    return ((void *)0);
+#line 69
+    goto _L;
   } else {
 #line 69
     __cil_tmp = safemult_sizet(size, pos_plus1, & alloc);
 #line 69
     if (! __cil_tmp) {
+      _L: /* CIL Label */ 
 #line 70
       return ((void *)0);
     }
@@ -1984,7 +1985,7 @@ void array_moveleft(array *a , size_t membersize , size_t pos )
 }
 }
 #line 1 "channel.o"
-#pragma merger(0,"/tmp/cil-3nm7TNrP.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-Ha80Jb2M.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 584 "/usr/include/stdlib.h"
 extern  __attribute__((__nothrow__)) void *malloc(size_t __size )  __attribute__((__malloc__)) ;
 #line 84 "/usr/include/string.h"
@@ -2721,12 +2722,13 @@ int Channel_IsValidName(char const   *Name )
 #line 483
   if ((int const   )*(Name + 0) != 35) {
 #line 483
-    return (0);
+    goto _L;
   } else {
 #line 483
     __cil_tmp = strlen(Name);
 #line 483
     if (__cil_tmp >= 51U) {
+      _L: /* CIL Label */ 
 #line 483
       return (0);
     }
@@ -2919,17 +2921,14 @@ void Channel_SetTopic(CHANNEL *Chan , CLIENT *Client , char *Topic )
   }
 #line 663
   if (len >= 513U) {
-#line 664
-    __cil_tmp = __errno_location();
-#line 664
-    __cil_tmp___0 = strerror(*__cil_tmp);
-#line 664
-    Log(4, "could not set new Topic \"%s\" on %s: %s", Topic, Chan->name, __cil_tmp___0);
+#line 663
+    goto _L;
   } else {
 #line 663
     __cil_tmp___1 = array_copyb(& Chan->topic, (char const   *)Topic, len + 1U);
 #line 663
     if (! __cil_tmp___1) {
+      _L: /* CIL Label */ 
 #line 664
       __cil_tmp = __errno_location();
 #line 664
@@ -2951,10 +2950,11 @@ void Channel_SetTopic(CHANNEL *Chan , CLIENT *Client , char *Topic )
 #line 669
       strlcpy(Chan->topic_who, (char const   *)__cil_tmp___2, sizeof(Chan->topic_who));
     } else {
-#line 672
-      strlcpy(Chan->topic_who, "-Server-", sizeof(Chan->topic_who));
+#line 668
+      goto _L___0;
     }
   } else {
+    _L___0: /* CIL Label */ 
 #line 672
     strlcpy(Chan->topic_who, "-Server-", sizeof(Chan->topic_who));
   }
@@ -3347,7 +3347,12 @@ static int Remove_Client(int Type , CHANNEL *Chan , CLIENT *Client , CLIENT *Ori
 #line 892
       IRC_WriteStrClientPrefix(Client, Origin, (char *)"KICK %s %s :%s", c->name,
                                __cil_tmp___3, Reason);
+    } else {
+#line 889
+      goto _L;
     }
+  } else {
+    _L: /* CIL Label */ ;
   }
 #line 895
   __cil_tmp___6 = Client_ID(Origin);
@@ -3381,7 +3386,12 @@ static int Remove_Client(int Type , CHANNEL *Chan , CLIENT *Client , CLIENT *Ori
       __cil_tmp___8 = Client_Mask(Client);
 #line 909
       LogDebug("User \"%s\" left channel \"%s\" (%s).", __cil_tmp___8, c->name, Reason);
+    } else {
+#line 905
+      goto _L___0;
     }
+  } else {
+    _L___0: /* CIL Label */ ;
   }
   }
 #line 915
@@ -3614,7 +3624,7 @@ static int Delete_Channel(CHANNEL *Chan )
 }
 }
 #line 1 "client.o"
-#pragma merger(0,"/tmp/cil-Abw6yZ7s.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-VhSeBw4Q.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 793 "/usr/include/unistd.h"
 extern  __attribute__((__nothrow__)) int gethostname(char *__name , size_t __len )  __attribute__((__nonnull__(1))) ;
 #line 138 "/usr/include/netdb.h"
@@ -4871,7 +4881,12 @@ unsigned long Client_OperCount(void)
       if (__cil_tmp) {
 #line 906
         cnt ++;
+      } else {
+#line 906
+        goto _L;
       }
+    } else {
+      _L: /* CIL Label */ ;
     }
 #line 907
     c = (CLIENT *)c->next;
@@ -4965,10 +4980,15 @@ int Client_IsValidNick(char const   *Nick )
 #line 959
       __cil_tmp___1 = strchr(goodchars, (int )*ptr);
 #line 959
-      if (! __cil_tmp___1) {
+      if (__cil_tmp___1) {
+#line 959
+        goto _L;
+      } else {
 #line 959
         return (0);
       }
+    } else {
+      _L: /* CIL Label */ ;
     }
 #line 960
     if ((int const   )*ptr > 125) {
@@ -5217,7 +5237,7 @@ void Client_RegisterWhowas(CLIENT *Client )
 /* compiler builtin: 
    void __builtin_va_start(__builtin_va_list  ) ;  */
 #line 1 "conf.o"
-#pragma merger(0,"/tmp/cil-pQ2HhLfw.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-YjvyzwLc.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 451 "/usr/include/libio.h"
 extern  __attribute__((__nothrow__)) int _IO_putc(int __c , _IO_FILE *__fp ) ;
 #line 142 "/usr/include/stdio.h"
@@ -5583,10 +5603,11 @@ int Conf_Test(void)
 #line 189
       getchar();
     } else {
-#line 191
-      puts("Ok, dump of your server configuration follows:\n");
+#line 187
+      goto _L;
     }
   } else {
+    _L: /* CIL Label */ 
 #line 191
     puts("Ok, dump of your server configuration follows:\n");
   }
@@ -6297,7 +6318,12 @@ static int Read_Config(int ngircd_starting )
                      section);
 #line 621
         section[0] = (char)1;
+      } else {
+#line 562
+        goto _L;
       }
+    } else {
+      _L: /* CIL Label */ ;
     }
 #line 623
     if ((int )section[0] == 1) {
@@ -7274,7 +7300,10 @@ static void Validate_Config(int Configtest , int Rehash )
 #line 1160
     __cil_tmp = strchr((char const   *)(Conf_ServerName), '.');
 #line 1160
-    if (! __cil_tmp) {
+    if (__cil_tmp) {
+#line 1160
+      goto _L;
+    } else {
 #line 1162
       Config_Error(1, "Invalid server name configured in \"%s\" (section \'Global\': \'Name\'): Dot missing!",
                    NGIRCd_ConfFile);
@@ -7286,6 +7315,8 @@ static void Validate_Config(int Configtest , int Rehash )
         exit(1);
       }
     }
+  } else {
+    _L: /* CIL Label */ ;
   }
 #line 1188
   if ((! Conf_ServerAdmin1[0] && ! Conf_ServerAdmin2[0]) && ! Conf_ServerAdminMail[0]) {
@@ -7374,7 +7405,7 @@ static void Init_Server_Struct(CONF_SERVER *Server )
 }
 }
 #line 1 "conn.o"
-#pragma merger(0,"/tmp/cil-z50srFo2.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-LfTtH77B.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 25 "io.h"
 int io_library_init(unsigned int eventsize ) ;
 #line 28
@@ -8214,7 +8245,12 @@ void Conn_Handler(void)
         Log(1, "%s exiting due to fatal errors!", "ngircd");
 #line 574
         exit(1);
+      } else {
+#line 571
+        goto _L;
       }
+    } else {
+      _L: /* CIL Label */ ;
     }
   }
 #line 578
@@ -8401,7 +8437,12 @@ void Conn_Close(CONN_ID Idx , char *LogMsg , char *FwdMsg , int InformClient )
         Conn_WriteStr(Idx, (char *)":%s NOTICE %s :%sConnection statistics: client %.1f kb, server %.1f kb.",
                       __cil_tmp___2, __cil_tmp___0, "", (double )(My_Connections + Idx)->bytes_in / (double )1024,
                       (double )(My_Connections + Idx)->bytes_out / (double )1024);
+      } else {
+#line 786
+        goto _L;
       }
+    } else {
+      _L: /* CIL Label */ ;
     }
 #line 796
     if (FwdMsg) {
@@ -8485,12 +8526,13 @@ void Conn_SyncServerStruct(void)
 #line 902
     if (! client) {
 #line 902
-      goto __Cont;
+      goto _L;
     } else {
 #line 902
       __cil_tmp = Client_Type(client);
 #line 902
       if (__cil_tmp != 32) {
+        _L: /* CIL Label */ 
 #line 902
         goto __Cont;
       }
@@ -8565,13 +8607,14 @@ static int Handle_Write(CONN_ID Idx )
     __cil_tmp___0 = __errno_location();
 #line 961
     if (*__cil_tmp___0 == 11) {
-#line 962
-      return (1);
+#line 961
+      goto _L;
     } else {
 #line 961
       __cil_tmp___1 = __errno_location();
 #line 961
       if (*__cil_tmp___1 == 4) {
+        _L: /* CIL Label */ 
 #line 962
         return (1);
       }
@@ -8902,31 +8945,34 @@ static void Read_Request(CONN_ID Idx )
     __cil_tmp___5 = Client_Type(c);
 #line 1211
     if (__cil_tmp___5 == 16) {
-#line 1214
-      (My_Connections + Idx)->lastdata = time((time_t *)((void *)0));
-#line 1215
-      (My_Connections + Idx)->lastping = (My_Connections + Idx)->lastdata;
+#line 1211
+      goto _L___1;
     } else {
 #line 1211
       __cil_tmp___6 = Client_Type(c);
 #line 1211
       if (__cil_tmp___6 == 32) {
-#line 1214
-        (My_Connections + Idx)->lastdata = time((time_t *)((void *)0));
-#line 1215
-        (My_Connections + Idx)->lastping = (My_Connections + Idx)->lastdata;
+        _L___1: /* CIL Label */ 
+#line 1211
+        goto _L___0;
       } else {
 #line 1211
         __cil_tmp___7 = Client_Type(c);
 #line 1211
         if (__cil_tmp___7 == 64) {
+          _L___0: /* CIL Label */ 
 #line 1214
           (My_Connections + Idx)->lastdata = time((time_t *)((void *)0));
 #line 1215
           (My_Connections + Idx)->lastping = (My_Connections + Idx)->lastdata;
+        } else {
+#line 1211
+          goto _L;
         }
       }
     }
+  } else {
+    _L: /* CIL Label */ ;
   }
 #line 1219
   Handle_Buffer(Idx);
@@ -9100,12 +9146,13 @@ static void Check_Connections(void)
 #line 1341
       if (__cil_tmp___4 == 16) {
 #line 1341
-        goto _L___0;
+        goto _L___1;
       } else {
 #line 1341
         __cil_tmp___5 = Client_Type(c);
 #line 1341
         if (__cil_tmp___5 == 32) {
+          _L___1: /* CIL Label */ 
 #line 1341
           goto _L___0;
         } else {
@@ -9312,7 +9359,12 @@ static void New_Server___0(int Server , ng_ipaddr_t *dest )
       __cil_tmp___4 = strerror(*__cil_tmp___3);
 #line 1458
       Log(4, "Can\'t bind socket to %s: %s!", ip_str, __cil_tmp___4);
+    } else {
+#line 1454
+      goto _L;
     }
+  } else {
+    _L: /* CIL Label */ ;
   }
 #line 1460
   ng_ipaddr_setport(dest, Conf_Server[Server].port);
@@ -9336,7 +9388,12 @@ static void New_Server___0(int Server , ng_ipaddr_t *dest )
       close(new_sock);
 #line 1465
       return;
+    } else {
+#line 1462
+      goto _L___0;
     }
+  } else {
+    _L___0: /* CIL Label */ ;
   }
 #line 1468
   __cil_tmp___11 = array_alloc(& My_ConnArray, sizeof(CONNECTION ), (unsigned int )new_sock);
@@ -9653,7 +9710,7 @@ CLIENT *Conn_GetClient(CONN_ID Idx )
 }
 }
 #line 1 "conn-func.o"
-#pragma merger(0,"/tmp/cil-C64HeA05.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-jFrWhK7D.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 30 "conn-func.h"
 time_t Conn_GetSignon(CONN_ID Idx ) ;
 #line 31
@@ -9945,9 +10002,9 @@ long Conn_WCounter(void)
 }
 }
 #line 1 "conn-zip.o"
-#pragma merger(0,"/tmp/cil-JqklbPRy.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-XRktTWPY.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 1 "hash.o"
-#pragma merger(0,"/tmp/cil-oFgAQTkI.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-meTlh4Gv.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 33 "hash.c"
 UINT32 Hash(char const   *String ) 
 { 
@@ -9958,7 +10015,7 @@ UINT32 Hash(char const   *String )
 }
 }
 #line 1 "io.o"
-#pragma merger(0,"/tmp/cil-kHQtJolL.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-BbuzpXiR.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 63 "/usr/include/fcntl.h"
 extern int fcntl(int __fd , int __cmd  , ...) ;
 #line 69 "io.c"
@@ -10224,10 +10281,15 @@ int io_library_init(unsigned int eventsize )
 #line 633
     __cil_tmp = array_alloc(& io_events, sizeof(io_event ), eventsize);
 #line 633
-    if (! __cil_tmp) {
+    if (__cil_tmp) {
+#line 633
+      goto _L;
+    } else {
 #line 634
       eventsize = 0U;
     }
+  } else {
+    _L: /* CIL Label */ ;
   }
 #line 636
   io_library_init_devpoll(eventsize);
@@ -10481,7 +10543,7 @@ static void io_docallback(int fd , short what )
 }
 }
 #line 1 "irc.o"
-#pragma merger(0,"/tmp/cil-cC40lRox.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-Tjr85nbE.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 33 "irc-write.h"
 void IRC_SetPenalty(CLIENT *Client , time_t Seconds ) ;
 #line 43 "parse.h"
@@ -10557,7 +10619,10 @@ int IRC_KILL(CLIENT *Client , REQUEST *Req )
 #line 74
     __cil_tmp___2 = Client_OperByMe(Client);
 #line 74
-    if (! __cil_tmp___2) {
+    if (__cil_tmp___2) {
+#line 74
+      goto _L;
+    } else {
 #line 79
       __cil_tmp = Client_ID(Client);
 #line 79
@@ -10566,6 +10631,8 @@ int IRC_KILL(CLIENT *Client , REQUEST *Req )
 #line 79
       return (__cil_tmp___0);
     }
+  } else {
+    _L: /* CIL Label */ ;
   }
 #line 83
   if (Req->argc != 2) {
@@ -10656,7 +10723,12 @@ int IRC_KILL(CLIENT *Client , REQUEST *Req )
         __cil_tmp___13 = Client_Type(c);
 #line 148
         Log(3, "Got KILL for invalid client type: %d, \"%s\"!", __cil_tmp___13, Req->argv[0]);
+      } else {
+#line 128
+        goto _L___0;
       }
+    } else {
+      _L___0: /* CIL Label */ ;
     }
 #line 153
     conn = Client_Conn(c);
@@ -10680,10 +10752,11 @@ int IRC_KILL(CLIENT *Client , REQUEST *Req )
 #line 163
       return (1);
     } else {
-#line 165
-      return (0);
+#line 162
+      goto _L___1;
     }
   } else {
+    _L___1: /* CIL Label */ 
 #line 165
     return (0);
   }
@@ -10715,7 +10788,12 @@ int IRC_NOTICE(CLIENT *Client , REQUEST *Req )
     if (__cil_tmp___0 != 32) {
 #line 178
       return (1);
+    } else {
+#line 178
+      goto _L;
     }
+  } else {
+    _L: /* CIL Label */ ;
   }
 #line 181
   if (Req->argc != 2) {
@@ -10759,10 +10837,10 @@ int IRC_NOTICE(CLIENT *Client , REQUEST *Req )
       return (__cil_tmp___5);
     } else {
 #line 188
-      goto _L;
+      goto _L___0;
     }
   } else {
-    _L: /* CIL Label */ 
+    _L___0: /* CIL Label */ 
 #line 195
     chan = Channel_Search((char const   *)Req->argv[0]);
 #line 196
@@ -10900,7 +10978,12 @@ int IRC_PRIVMSG(CLIENT *Client , REQUEST *Req )
 #line 232
           return (0);
         }
+      } else {
+#line 229
+        goto _L;
       }
+    } else {
+      _L: /* CIL Label */ ;
     }
 #line 236
     __cil_tmp___19 = Client_Conn(from);
@@ -11031,17 +11114,13 @@ int IRC_TRACE(CLIENT *Client , REQUEST *Req )
 #line 272
     if (! target) {
 #line 272
-      __cil_tmp___4 = Client_ID(from);
-#line 272
-      __cil_tmp___5 = IRC_WriteStrClient(from, (char *)"402 %s %s :No such server",
-                                         __cil_tmp___4, Req->argv[0]);
-#line 272
-      return (__cil_tmp___5);
+      goto _L;
     } else {
 #line 272
       __cil_tmp___6 = Client_Type(target);
 #line 272
       if (__cil_tmp___6 != 32) {
+        _L: /* CIL Label */ 
 #line 272
         __cil_tmp___4 = Client_ID(from);
 #line 272
@@ -11157,7 +11236,12 @@ int IRC_TRACE(CLIENT *Client , REQUEST *Req )
 #line 301
             return (0);
           }
+        } else {
+#line 298
+          goto _L___0;
         }
+      } else {
+        _L___0: /* CIL Label */ ;
       }
     }
 #line 304
@@ -11233,7 +11317,7 @@ static char *Option_String(CONN_ID Idx )
 }
 }
 #line 1 "irc-channel.o"
-#pragma merger(0,"/tmp/cil-X3pfHfXb.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-B1yOTfTQ.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 102 "/usr/include/string.h"
 extern  __attribute__((__nothrow__)) int strncmp(char const   *__s1 , char const   *__s2 ,
                                                  size_t __n )  __attribute__((__pure__,
@@ -11367,7 +11451,12 @@ static int join_allowed(CLIENT *Client , CLIENT *target , CHANNEL *chan , char c
                          channame);
 #line 93
       return (0);
+    } else {
+#line 89
+      goto _L;
     }
+  } else {
+    _L: /* CIL Label */ ;
   }
 #line 96
   __cil_tmp___11 = strchr(channel_modes, 'l');
@@ -11386,7 +11475,12 @@ static int join_allowed(CLIENT *Client , CLIENT *target , CHANNEL *chan , char c
                          channame);
 #line 98
       return (0);
+    } else {
+#line 96
+      goto _L___0;
     }
+  } else {
+    _L___0: /* CIL Label */ ;
   }
 #line 100
   return (1);
@@ -11424,7 +11518,12 @@ static void join_set_channelmodes(CHANNEL *chan , CLIENT *target , char const   
     if (__cil_tmp___2) {
 #line 116
       Channel_UserModeAdd(chan, target, (char )'o');
+    } else {
+#line 115
+      goto _L;
     }
+  } else {
+    _L: /* CIL Label */ ;
   }
 #line 117
   return;
@@ -11609,12 +11708,17 @@ int IRC_JOIN(CLIENT *Client , REQUEST *Req )
 #line 202
     __cil_tmp___5 = strncmp("0", (char const   *)Req->argv[0], 2U);
 #line 202
-    if (! __cil_tmp___5) {
+    if (__cil_tmp___5) {
+#line 202
+      goto _L;
+    } else {
 #line 203
       __cil_tmp___4 = part_from_all_channels(Client, target);
 #line 203
       return (__cil_tmp___4);
     }
+  } else {
+    _L: /* CIL Label */ ;
   }
 #line 206
   if (Req->argc > 1) {
@@ -11689,7 +11793,12 @@ int IRC_JOIN(CLIENT *Client , REQUEST *Req )
                                              __cil_tmp___8, channame);
 #line 240
           return (__cil_tmp___9);
+        } else {
+#line 239
+          goto _L___0;
         }
+      } else {
+        _L___0: /* CIL Label */ ;
       }
 #line 242
       if (! chan) {
@@ -12098,18 +12207,14 @@ int IRC_LIST(CLIENT *Client , REQUEST *Req )
     target = Client_Search(Req->argv[1]);
 #line 430
     if (! target) {
-#line 431
-      __cil_tmp___4 = Client_ID(Client);
-#line 431
-      __cil_tmp___5 = IRC_WriteStrClient(from, (char *)"402 %s %s :No such server",
-                                         __cil_tmp___4, Req->argv[1]);
-#line 431
-      return (__cil_tmp___5);
+#line 430
+      goto _L;
     } else {
 #line 430
       __cil_tmp___6 = Client_Type(target);
 #line 430
       if (__cil_tmp___6 != 32) {
+        _L: /* CIL Label */ 
 #line 431
         __cil_tmp___4 = Client_ID(Client);
 #line 431
@@ -12154,7 +12259,7 @@ int IRC_LIST(CLIENT *Client , REQUEST *Req )
           __cil_tmp___17 = Channel_IsMemberOf(chan, from);
 #line 453
           if (__cil_tmp___17) {
-            _L: /* CIL Label */ 
+            _L___0: /* CIL Label */ 
 #line 456
             __cil_tmp___10 = Channel_Topic(chan);
 #line 456
@@ -12175,7 +12280,7 @@ int IRC_LIST(CLIENT *Client , REQUEST *Req )
           }
         } else {
 #line 453
-          goto _L;
+          goto _L___0;
         }
       }
 #line 464
@@ -12381,7 +12486,7 @@ int IRC_CHANINFO(CLIENT *Client , REQUEST *Req )
 }
 }
 #line 1 "irc-info.o"
-#pragma merger(0,"/tmp/cil-vFigapgs.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-cpgNBfZ9.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 27 "./../tool/tool.h"
 void ngt_TrimLastChr(char *String , char Chr ) ;
 #line 31
@@ -12492,17 +12597,13 @@ int IRC_ADMIN(CLIENT *Client , REQUEST *Req )
 #line 67
     if (! target) {
 #line 67
-      __cil_tmp___4 = Client_ID(prefix);
-#line 67
-      __cil_tmp___5 = IRC_WriteStrClient(prefix, (char *)"402 %s %s :No such server",
-                                         __cil_tmp___4, Req->argv[0]);
-#line 67
-      return (__cil_tmp___5);
+      goto _L;
     } else {
 #line 67
       __cil_tmp___6 = Client_Type(target);
 #line 67
       if (__cil_tmp___6 != 32) {
+        _L: /* CIL Label */ 
 #line 67
         __cil_tmp___4 = Client_ID(prefix);
 #line 67
@@ -12631,7 +12732,12 @@ int IRC_INFO(CLIENT *Client , REQUEST *Req )
     if (__cil_tmp___4 != 32) {
 #line 120
       target = Client_Introducer(target);
+    } else {
+#line 119
+      goto _L;
     }
+  } else {
+    _L: /* CIL Label */ ;
   }
 #line 122
   if (! target) {
@@ -12739,7 +12845,12 @@ int IRC_ISON(CLIENT *Client , REQUEST *Req )
           strlcat(rpl, (char const   *)ptr, sizeof(rpl));
 #line 176
           strlcat(rpl, " ", sizeof(rpl));
+        } else {
+#line 172
+          goto _L;
         }
+      } else {
+        _L: /* CIL Label */ ;
       }
 #line 178
       ptr = strtok((char * __restrict  )((void *)0), (char const   * __restrict  )" ");
@@ -12834,17 +12945,13 @@ int IRC_LINKS(CLIENT *Client , REQUEST *Req )
 #line 212
     if (! target) {
 #line 212
-      __cil_tmp___4 = Client_ID(from);
-#line 212
-      __cil_tmp___5 = IRC_WriteStrClient(from, (char *)"402 %s %s :No such server",
-                                         __cil_tmp___4, Req->argv[0]);
-#line 212
-      return (__cil_tmp___5);
+      goto _L;
     } else {
 #line 212
       __cil_tmp___8 = Client_Type(target);
 #line 212
       if (__cil_tmp___8 != 32) {
+        _L: /* CIL Label */ 
 #line 212
         __cil_tmp___4 = Client_ID(from);
 #line 212
@@ -12994,17 +13101,13 @@ int IRC_LUSERS(CLIENT *Client , REQUEST *Req )
 #line 256
     if (! target) {
 #line 256
-      __cil_tmp___4 = Client_ID(from);
-#line 256
-      __cil_tmp___5 = IRC_WriteStrClient(from, (char *)"402 %s %s :No such server",
-                                         __cil_tmp___4, Req->argv[1]);
-#line 256
-      return (__cil_tmp___5);
+      goto _L;
     } else {
 #line 256
       __cil_tmp___8 = Client_Type(target);
 #line 256
       if (__cil_tmp___8 != 32) {
+        _L: /* CIL Label */ 
 #line 256
         __cil_tmp___4 = Client_ID(from);
 #line 256
@@ -13108,17 +13211,13 @@ int IRC_MOTD(CLIENT *Client , REQUEST *Req )
 #line 292
     if (! target) {
 #line 292
-      __cil_tmp___4 = Client_ID(from);
-#line 292
-      __cil_tmp___5 = IRC_WriteStrClient(from, (char *)"402 %s %s :No such server",
-                                         __cil_tmp___4, Req->argv[0]);
-#line 292
-      return (__cil_tmp___5);
+      goto _L;
     } else {
 #line 292
       __cil_tmp___6 = Client_Type(target);
 #line 292
       if (__cil_tmp___6 != 32) {
+        _L: /* CIL Label */ 
 #line 292
         __cil_tmp___4 = Client_ID(from);
 #line 292
@@ -13221,17 +13320,13 @@ int IRC_NAMES(CLIENT *Client , REQUEST *Req )
 #line 328
     if (! target) {
 #line 328
-      __cil_tmp___4 = Client_ID(from);
-#line 328
-      __cil_tmp___5 = IRC_WriteStrClient(from, (char *)"402 %s %s :No such server",
-                                         __cil_tmp___4, Req->argv[1]);
-#line 328
-      return (__cil_tmp___5);
+      goto _L;
     } else {
 #line 328
       __cil_tmp___6 = Client_Type(target);
 #line 328
       if (__cil_tmp___6 != 32) {
+        _L: /* CIL Label */ 
 #line 328
         __cil_tmp___4 = Client_ID(from);
 #line 328
@@ -13322,7 +13417,10 @@ int IRC_NAMES(CLIENT *Client , REQUEST *Req )
 #line 373
         __cil_tmp___22 = strchr((char const   *)__cil_tmp___21, 'i');
 #line 373
-        if (! __cil_tmp___22) {
+        if (__cil_tmp___22) {
+#line 373
+          goto _L___1;
+        } else {
 #line 376
           __cil_tmp___14 = strlen((char const   *)(rpl));
 #line 376
@@ -13352,7 +13450,12 @@ int IRC_NAMES(CLIENT *Client , REQUEST *Req )
                      __cil_tmp___17, "*", "*");
           }
         }
+      } else {
+#line 373
+        goto _L___1;
       }
+    } else {
+      _L___1: /* CIL Label */ ;
     }
 #line 388
     c = Client_Next(c);
@@ -13506,18 +13609,14 @@ int IRC_STATS(CLIENT *Client , REQUEST *Req )
     target = Client_Search(Req->argv[1]);
 #line 465
     if (! target) {
-#line 466
-      __cil_tmp___4 = Client_ID(from);
-#line 466
-      __cil_tmp___5 = IRC_WriteStrClient(from, (char *)"402 %s %s :No such server",
-                                         __cil_tmp___4, Req->argv[1]);
-#line 466
-      return (__cil_tmp___5);
+#line 465
+      goto _L;
     } else {
 #line 465
       __cil_tmp___6 = Client_Type(target);
 #line 465
       if (__cil_tmp___6 != 32) {
+        _L: /* CIL Label */ 
 #line 466
         __cil_tmp___4 = Client_ID(from);
 #line 466
@@ -13744,17 +13843,13 @@ int IRC_TIME(CLIENT *Client , REQUEST *Req )
 #line 569
     if (! target) {
 #line 569
-      __cil_tmp___4 = Client_ID(Client);
-#line 569
-      __cil_tmp___5 = IRC_WriteStrClient(Client, (char *)"402 %s %s :No such server",
-                                         __cil_tmp___4, Req->argv[0]);
-#line 569
-      return (__cil_tmp___5);
+      goto _L;
     } else {
 #line 569
       __cil_tmp___6 = Client_Type(target);
 #line 569
       if (__cil_tmp___6 != 32) {
+        _L: /* CIL Label */ 
 #line 569
         __cil_tmp___4 = Client_ID(Client);
 #line 569
@@ -13879,7 +13974,12 @@ int IRC_USERHOST(CLIENT *Client , REQUEST *Req )
         strlcat(rpl, (char const   *)__cil_tmp___5, sizeof(rpl));
 #line 615
         strlcat(rpl, " ", sizeof(rpl));
+      } else {
+#line 604
+        goto _L;
       }
+    } else {
+      _L: /* CIL Label */ ;
     }
 #line 601
     i ++;
@@ -13971,17 +14071,13 @@ int IRC_VERSION(CLIENT *Client , REQUEST *Req )
 #line 659
     if (! target) {
 #line 659
-      __cil_tmp___4 = Client_ID(prefix);
-#line 659
-      __cil_tmp___5 = IRC_WriteStrClient(prefix, (char *)"402 %s %s :No such server",
-                                         __cil_tmp___4, Req->argv[0]);
-#line 659
-      return (__cil_tmp___5);
+      goto _L;
     } else {
 #line 659
       __cil_tmp___6 = Client_Type(target);
 #line 659
       if (__cil_tmp___6 != 32) {
+        _L: /* CIL Label */ 
 #line 659
         __cil_tmp___4 = Client_ID(prefix);
 #line 659
@@ -14135,7 +14231,12 @@ static int IRC_Send_WHO(CLIENT *Client , CHANNEL *Chan , int OnlyOps )
                                          __cil_tmp___0, __cil_tmp);
 #line 721
       return (__cil_tmp___1);
+    } else {
+#line 720
+      goto _L;
     }
+  } else {
+    _L: /* CIL Label */ ;
   }
 #line 723
   cl2chan = Channel_FirstMember(Chan);
@@ -14338,10 +14439,15 @@ int IRC_WHO(CLIENT *Client , REQUEST *Req )
 #line 823
       __cil_tmp___7 = strchr(client_modes, 'o');
 #line 823
-      if (! __cil_tmp___7) {
+      if (__cil_tmp___7) {
+#line 823
+        goto _L;
+      } else {
 #line 824
         goto __Cont;
       }
+    } else {
+      _L: /* CIL Label */ ;
     }
 #line 826
     if (have_arg) {
@@ -14399,10 +14505,8 @@ int IRC_WHO(CLIENT *Client , REQUEST *Req )
       __cil_tmp___15 = Channel_IsMemberOf(cn, Client);
 #line 848
       if (__cil_tmp___15) {
-#line 851
-        channelname = Channel_Name((CHANNEL const   *)cn);
-#line 852
-        break;
+#line 848
+        goto _L___0;
       } else {
 #line 848
         __cil_tmp___16 = Channel_Modes(cn);
@@ -14410,6 +14514,7 @@ int IRC_WHO(CLIENT *Client , REQUEST *Req )
         __cil_tmp___17 = strchr((char const   *)__cil_tmp___16, 's');
 #line 848
         if (! __cil_tmp___17) {
+          _L___0: /* CIL Label */ 
 #line 851
           channelname = Channel_Name((CHANNEL const   *)cn);
 #line 852
@@ -14553,17 +14658,13 @@ int IRC_WHOIS(CLIENT *Client , REQUEST *Req )
 #line 892
   if (! c) {
 #line 892
-    __cil_tmp___1 = Client_ID(Client);
-#line 892
-    __cil_tmp___2 = IRC_WriteStrClient(Client, (char *)"401 %s %s :No such nick or channel name",
-                                       __cil_tmp___1, Req->argv[Req->argc - 1]);
-#line 892
-    return (__cil_tmp___2);
+    goto _L;
   } else {
 #line 892
     __cil_tmp___3 = Client_Type(c);
 #line 892
     if (__cil_tmp___3 != 16) {
+      _L: /* CIL Label */ 
 #line 892
       __cil_tmp___1 = Client_ID(Client);
 #line 892
@@ -14628,7 +14729,12 @@ int IRC_WHOIS(CLIENT *Client , REQUEST *Req )
                                                Req->argv[0], Req->argv[1]);
 #line 910
       return (__cil_tmp___9);
+    } else {
+#line 910
+      goto _L___0;
     }
+  } else {
+    _L___0: /* CIL Label */ ;
   }
 #line 913
   __cil_tmp___14 = Client_Info(c);
@@ -14693,10 +14799,15 @@ int IRC_WHOIS(CLIENT *Client , REQUEST *Req )
 #line 930
       __cil_tmp___31 = Channel_IsMemberOf(chan, Client);
 #line 930
-      if (! __cil_tmp___31) {
+      if (__cil_tmp___31) {
+#line 930
+        goto _L___1;
+      } else {
 #line 930
         continue;
       }
+    } else {
+      _L___1: /* CIL Label */ ;
     }
 #line 933
     __cil_tmp___32 = strlen((char const   *)(str));
@@ -14906,18 +15017,14 @@ int IRC_WHOWAS(CLIENT *Client , REQUEST *Req )
   if ((unsigned int )target != (unsigned int )__cil_tmp___7) {
 #line 1017
     if (! target) {
-#line 1018
-      __cil_tmp___4 = Client_ID(prefix);
-#line 1018
-      __cil_tmp___5 = IRC_WriteStrClient(prefix, (char *)"402 %s %s :No such server",
-                                         __cil_tmp___4, Req->argv[2]);
-#line 1018
-      return (__cil_tmp___5);
+#line 1017
+      goto _L;
     } else {
 #line 1017
       __cil_tmp___6 = Client_Type(target);
 #line 1017
       if (__cil_tmp___6 != 32) {
+        _L: /* CIL Label */ 
 #line 1018
         __cil_tmp___4 = Client_ID(prefix);
 #line 1018
@@ -15001,7 +15108,12 @@ int IRC_WHOWAS(CLIENT *Client , REQUEST *Req )
 #line 1068
           break;
         }
+      } else {
+#line 1046
+        goto _L___0;
       }
+    } else {
+      _L___0: /* CIL Label */ ;
     }
 #line 1072
     i --;
@@ -15364,7 +15476,12 @@ int IRC_Send_NAMES(CLIENT *Client , CHANNEL *Chan )
     if (__cil_tmp___1) {
 #line 1211
       return (1);
+    } else {
+#line 1211
+      goto _L;
     }
+  } else {
+    _L: /* CIL Label */ ;
   }
 #line 1214
   __cil_tmp___2 = Channel_Name((CHANNEL const   *)Chan);
@@ -15491,7 +15608,7 @@ int IRC_Send_ISUPPORT(CLIENT *Client )
 }
 }
 #line 1 "irc-login.o"
-#pragma merger(0,"/tmp/cil-I6fgJ9jR.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-4xhAHmfB.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 27 "irc-write.h"
 void IRC_WriteStrServers(CLIENT *ExceptOf , char *Format  , ...) ;
 #line 21 "irc-login.h"
@@ -15568,13 +15685,13 @@ int IRC_PASS(CLIENT *Client , REQUEST *Req )
 #line 69
     if (__cil_tmp___10 == 1) {
 #line 69
-      goto _L___0;
+      goto _L___1;
     } else {
 #line 69
       __cil_tmp___11 = Client_Type(Client);
 #line 69
       if (__cil_tmp___11 == 128) {
-        _L___0: /* CIL Label */ 
+        _L___1: /* CIL Label */ 
 #line 69
         if (Req->argc == 3 || Req->argc == 4) {
 #line 75
@@ -15583,26 +15700,22 @@ int IRC_PASS(CLIENT *Client , REQUEST *Req )
           LogDebug("Connection %d: got PASS command (new server link) ...", __cil_tmp___3);
         } else {
 #line 69
-          goto _L;
+          goto _L___0;
         }
       } else {
-        _L: /* CIL Label */ 
+        _L___0: /* CIL Label */ 
 #line 77
         __cil_tmp___8 = Client_Type(Client);
 #line 77
         if (__cil_tmp___8 == 1) {
-#line 80
-          __cil_tmp___4 = Client_ID(Client);
-#line 80
-          __cil_tmp___5 = IRC_WriteStrClient(Client, (char *)"461 %s %s :Syntax error",
-                                             __cil_tmp___4, Req->command);
-#line 80
-          return (__cil_tmp___5);
+#line 77
+          goto _L;
         } else {
 #line 77
           __cil_tmp___9 = Client_Type(Client);
 #line 77
           if (__cil_tmp___9 == 128) {
+            _L: /* CIL Label */ 
 #line 80
             __cil_tmp___4 = Client_ID(Client);
 #line 80
@@ -15650,12 +15763,11 @@ int IRC_PASS(CLIENT *Client , REQUEST *Req )
 #line 104
       *(Req->argv[1] + 4) = (char )c4;
     } else {
-#line 106
-      protolow = 0;
-#line 106
-      protohigh = protolow;
+#line 92
+      goto _L___2;
     }
   } else {
+    _L___2: /* CIL Label */ 
 #line 106
     protolow = 0;
 #line 106
@@ -15670,10 +15782,11 @@ int IRC_PASS(CLIENT *Client , REQUEST *Req )
 #line 110
       type = Req->argv[1] + 4;
     } else {
-#line 112
-      type = (char *)((void *)0);
+#line 109
+      goto _L___3;
     }
   } else {
+    _L___3: /* CIL Label */ 
 #line 112
     type = (char *)((void *)0);
   }
@@ -15721,10 +15834,10 @@ int IRC_PASS(CLIENT *Client , REQUEST *Req )
             impl, serverver, protohigh, protolow, flags);
       } else {
 #line 129
-        goto _L___1;
+        goto _L___4;
       }
     } else {
-      _L___1: /* CIL Label */ 
+      _L___4: /* CIL Label */ 
 #line 145
       serverver = (char *)"";
 #line 146
@@ -15817,33 +15930,37 @@ int IRC_NICK(CLIENT *Client , REQUEST *Req )
 #line 179
   if (__cil_tmp___51 == 1) {
 #line 179
-    goto _L___0;
+    goto _L___4;
   } else {
 #line 179
     __cil_tmp___52 = Client_Type(Client);
 #line 179
     if (__cil_tmp___52 == 2) {
+      _L___4: /* CIL Label */ 
 #line 179
-      goto _L___0;
+      goto _L___3;
     } else {
 #line 179
       __cil_tmp___53 = Client_Type(Client);
 #line 179
       if (__cil_tmp___53 == 4) {
+        _L___3: /* CIL Label */ 
 #line 179
-        goto _L___0;
+        goto _L___2;
       } else {
 #line 179
         __cil_tmp___54 = Client_Type(Client);
 #line 179
         if (__cil_tmp___54 == 8) {
+          _L___2: /* CIL Label */ 
 #line 179
-          goto _L___0;
+          goto _L___1;
         } else {
 #line 179
           __cil_tmp___55 = Client_Type(Client);
 #line 179
           if (__cil_tmp___55 == 16) {
+            _L___1: /* CIL Label */ 
 #line 179
             goto _L___0;
           } else {
@@ -16156,20 +16273,21 @@ int IRC_USER(CLIENT *Client , REQUEST *Req )
 #line 362
   if (__cil_tmp___11 == 4) {
 #line 362
-    goto _L;
+    goto _L___2;
   } else {
 #line 362
     __cil_tmp___12 = Client_Type(Client);
 #line 362
     if (__cil_tmp___12 == 2) {
+      _L___2: /* CIL Label */ 
 #line 362
-      goto _L;
+      goto _L___1;
     } else {
 #line 362
       __cil_tmp___13 = Client_Type(Client);
 #line 362
       if (__cil_tmp___13 == 1) {
-        _L: /* CIL Label */ 
+        _L___1: /* CIL Label */ 
 #line 368
         if (Req->argc != 4) {
 #line 368
@@ -16213,30 +16331,22 @@ int IRC_USER(CLIENT *Client , REQUEST *Req )
         __cil_tmp___8 = Client_Type(Client);
 #line 388
         if (__cil_tmp___8 == 16) {
-#line 390
-          __cil_tmp___4 = Client_ID(Client);
-#line 390
-          __cil_tmp___5 = IRC_WriteStrClient(Client, (char *)"462 %s :Connection already registered",
-                                             __cil_tmp___4);
-#line 390
-          return (__cil_tmp___5);
+#line 388
+          goto _L___0;
         } else {
 #line 388
           __cil_tmp___9 = Client_Type(Client);
 #line 388
           if (__cil_tmp___9 == 32) {
-#line 390
-            __cil_tmp___4 = Client_ID(Client);
-#line 390
-            __cil_tmp___5 = IRC_WriteStrClient(Client, (char *)"462 %s :Connection already registered",
-                                               __cil_tmp___4);
-#line 390
-            return (__cil_tmp___5);
+            _L___0: /* CIL Label */ 
+#line 388
+            goto _L;
           } else {
 #line 388
             __cil_tmp___10 = Client_Type(Client);
 #line 388
             if (__cil_tmp___10 == 64) {
+              _L: /* CIL Label */ 
 #line 390
               __cil_tmp___4 = Client_ID(Client);
 #line 390
@@ -16380,18 +16490,14 @@ int IRC_PING(CLIENT *Client , REQUEST *Req )
     target = Client_Search(Req->argv[1]);
 #line 467
     if (! target) {
-#line 468
-      __cil_tmp___1 = Client_ID(Client);
-#line 468
-      __cil_tmp___2 = IRC_WriteStrClient(Client, (char *)"402 %s %s :No such server",
-                                         __cil_tmp___1, Req->argv[1]);
-#line 468
-      return (__cil_tmp___2);
+#line 467
+      goto _L;
     } else {
 #line 467
       __cil_tmp___3 = Client_Type(target);
 #line 467
       if (__cil_tmp___3 != 32) {
+        _L: /* CIL Label */ 
 #line 468
         __cil_tmp___1 = Client_ID(Client);
 #line 468
@@ -16569,7 +16675,12 @@ int IRC_PONG(CLIENT *Client , REQUEST *Req )
 #line 551
         return (__cil_tmp___9);
       }
+    } else {
+#line 532
+      goto _L;
     }
+  } else {
+    _L: /* CIL Label */ ;
   }
 #line 559
   __cil_tmp___17 = Client_Conn(Client);
@@ -16775,7 +16886,7 @@ static void Kill_Nick(char *Nick , char *Reason )
 }
 }
 #line 1 "irc-mode.o"
-#pragma merger(0,"/tmp/cil-rhOANZZq.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-g48Tr88s.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 31 "lists.h"
 int Lists_CheckDupeMask(struct list_head  const  *h , char const   *Mask ) ;
 #line 34
@@ -17069,15 +17180,14 @@ static int Client_Mode(CLIENT *Client , REQUEST *Req , CLIENT *Origin , CLIENT *
     case 111: 
 #line 176
     if (! set) {
-#line 178
-      Client_SetOperByMe(Target, 0);
-#line 179
-      x[0] = (char )'o';
+#line 176
+      goto _L;
     } else {
 #line 176
       __cil_tmp___11 = Client_Type(Client);
 #line 176
       if (__cil_tmp___11 == 32) {
+        _L: /* CIL Label */ 
 #line 178
         Client_SetOperByMe(Target, 0);
 #line 179
@@ -17095,12 +17205,13 @@ static int Client_Mode(CLIENT *Client , REQUEST *Req , CLIENT *Origin , CLIENT *
 #line 185
     if (set) {
 #line 185
-      x[0] = (char )'r';
+      goto _L___0;
     } else {
 #line 185
       __cil_tmp___13 = Client_Type(Client);
 #line 185
       if (__cil_tmp___13 == 32) {
+        _L___0: /* CIL Label */ 
 #line 185
         x[0] = (char )'r';
       } else {
@@ -17711,15 +17822,16 @@ static int Channel_Mode(CLIENT *Client , REQUEST *Req , CLIENT *Origin , CHANNEL
         __cil_tmp___24 = Client_OperByMe(Client);
 #line 448
         if (__cil_tmp___24) {
-#line 451
-          x[0] = (char )'P';
+#line 448
+          goto _L___0;
         } else {
 #line 448
           __cil_tmp___25 = Client_Type(Client);
 #line 448
           if (__cil_tmp___25 == 32) {
-#line 451
-            x[0] = (char )'P';
+            _L___0: /* CIL Label */ 
+#line 448
+            goto _L;
           } else {
 #line 449
             __cil_tmp___23 = Client_ID(Origin);
@@ -17728,6 +17840,7 @@ static int Channel_Mode(CLIENT *Client , REQUEST *Req , CLIENT *Origin , CHANNEL
           }
         }
       } else {
+        _L: /* CIL Label */ 
 #line 451
         x[0] = (char )'P';
       }
@@ -17876,7 +17989,10 @@ static int Channel_Mode(CLIENT *Client , REQUEST *Req , CLIENT *Origin , CHANNEL
 #line 512
       __cil_tmp___46 = Channel_IsMemberOf(Channel, client);
 #line 512
-      if (! __cil_tmp___46) {
+      if (__cil_tmp___46) {
+#line 512
+        goto _L___1;
+      } else {
 #line 513
         __cil_tmp___42 = Channel_Name((CHANNEL const   *)Channel);
 #line 513
@@ -17894,6 +18010,8 @@ static int Channel_Mode(CLIENT *Client , REQUEST *Req , CLIENT *Origin , CHANNEL
 #line 517
         continue;
       }
+    } else {
+      _L___1: /* CIL Label */ ;
     }
 #line 520
     if (client) {
@@ -18107,7 +18225,12 @@ static int Add_Ban_Invite(int what , CLIENT *Prefix , CLIENT *Client , CHANNEL *
     if (__cil_tmp___0 == 32) {
 #line 626
       return (1);
+    } else {
+#line 625
+      goto _L;
     }
+  } else {
+    _L: /* CIL Label */ ;
   }
 #line 628
   if (what == 73) {
@@ -18194,7 +18317,7 @@ static int Send_ListChange(char *Mode , CLIENT *Prefix , CLIENT *Client , CHANNE
 }
 }
 #line 1 "irc-op.o"
-#pragma merger(0,"/tmp/cil-V8yjQMti.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-GJhxMO5o.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 21 "irc-op.h"
 int IRC_KICK(CLIENT *Client , REQUEST *Req ) ;
 #line 22
@@ -18343,17 +18466,13 @@ int IRC_INVITE(CLIENT *Client , REQUEST *Req )
 #line 81
   if (! target) {
 #line 81
-    __cil_tmp___4 = Client_ID(Client);
-#line 81
-    __cil_tmp___5 = IRC_WriteStrClient(from, (char *)"401 %s %s :No such nick or channel name",
-                                       __cil_tmp___4, Req->argv[0]);
-#line 81
-    return (__cil_tmp___5);
+    goto _L;
   } else {
 #line 81
     __cil_tmp___6 = Client_Type(target);
 #line 81
     if (__cil_tmp___6 != 16) {
+      _L: /* CIL Label */ 
 #line 81
       __cil_tmp___4 = Client_ID(Client);
 #line 81
@@ -18465,7 +18584,7 @@ int IRC_INVITE(CLIENT *Client , REQUEST *Req )
 }
 }
 #line 1 "irc-oper.o"
-#pragma merger(0,"/tmp/cil-dcLVj2e4.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-iHw27hjp.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 21 "irc-oper.h"
 int IRC_OPER(CLIENT *Client , REQUEST *Req ) ;
 #line 22
@@ -18545,7 +18664,12 @@ int IRC_OPER(CLIENT *Client , REQUEST *Req )
       if (__cil_tmp___1 == 0) {
 #line 64
         break;
+      } else {
+#line 64
+        goto _L;
       }
+    } else {
+      _L: /* CIL Label */ ;
     }
 #line 62
     i ++;
@@ -18573,12 +18697,17 @@ int IRC_OPER(CLIENT *Client , REQUEST *Req )
 #line 74
     __cil_tmp___7 = Match((char const   *)Conf_Oper[i].mask, (char const   *)__cil_tmp___6);
 #line 74
-    if (! __cil_tmp___7) {
+    if (__cil_tmp___7) {
+#line 74
+      goto _L___0;
+    } else {
 #line 75
       __cil_tmp___5 = Bad_OperPass(Client, Conf_Oper[i].mask, (char *)"hostmask check failed");
 #line 75
       return (__cil_tmp___5);
     }
+  } else {
+    _L___0: /* CIL Label */ ;
   }
 #line 77
   __cil_tmp___11 = Client_HasMode(Client, (char )'o');
@@ -18644,6 +18773,7 @@ int IRC_DIE(CLIENT *Client , REQUEST *Req )
     __cil_tmp___2 = Client_OperByMe(Client);
 #line 104
     if (! __cil_tmp___2) {
+      _L: /* CIL Label */ 
 #line 105
       __cil_tmp = Client_ID(Client);
 #line 105
@@ -18653,13 +18783,8 @@ int IRC_DIE(CLIENT *Client , REQUEST *Req )
       return (__cil_tmp___0);
     }
   } else {
-#line 105
-    __cil_tmp = Client_ID(Client);
-#line 105
-    __cil_tmp___0 = IRC_WriteStrClient(Client, (char *)"481 %s :Permission denied",
-                                       __cil_tmp);
-#line 105
-    return (__cil_tmp___0);
+#line 104
+    goto _L;
   }
 #line 112
   if (Req->argc > 1) {
@@ -18721,6 +18846,7 @@ int IRC_REHASH(CLIENT *Client , REQUEST *Req )
     __cil_tmp___2 = Client_OperByMe(Client);
 #line 146
     if (! __cil_tmp___2) {
+      _L: /* CIL Label */ 
 #line 146
       __cil_tmp = Client_ID(Client);
 #line 146
@@ -18731,12 +18857,7 @@ int IRC_REHASH(CLIENT *Client , REQUEST *Req )
     }
   } else {
 #line 146
-    __cil_tmp = Client_ID(Client);
-#line 146
-    __cil_tmp___0 = IRC_WriteStrClient(Client, (char *)"481 %s :Permission denied",
-                                       __cil_tmp);
-#line 146
-    return (__cil_tmp___0);
+    goto _L;
   }
 #line 149
   if (Req->argc != 0) {
@@ -18777,6 +18898,7 @@ int IRC_RESTART(CLIENT *Client , REQUEST *Req )
     __cil_tmp___2 = Client_OperByMe(Client);
 #line 167
     if (! __cil_tmp___2) {
+      _L: /* CIL Label */ 
 #line 167
       __cil_tmp = Client_ID(Client);
 #line 167
@@ -18787,12 +18909,7 @@ int IRC_RESTART(CLIENT *Client , REQUEST *Req )
     }
   } else {
 #line 167
-    __cil_tmp = Client_ID(Client);
-#line 167
-    __cil_tmp___0 = IRC_WriteStrClient(Client, (char *)"481 %s :Permission denied",
-                                       __cil_tmp);
-#line 167
-    return (__cil_tmp___0);
+    goto _L;
   }
 #line 170
   if (Req->argc != 0) {
@@ -18847,6 +18964,7 @@ int IRC_CONNECT(CLIENT *Client , REQUEST *Req )
     __cil_tmp___2 = Client_OperByMe(Client);
 #line 189
     if (! __cil_tmp___2) {
+      _L: /* CIL Label */ 
 #line 190
       __cil_tmp = Client_ID(Client);
 #line 190
@@ -18856,13 +18974,8 @@ int IRC_CONNECT(CLIENT *Client , REQUEST *Req )
       return (__cil_tmp___0);
     }
   } else {
-#line 190
-    __cil_tmp = Client_ID(Client);
-#line 190
-    __cil_tmp___0 = IRC_WriteStrClient(Client, (char *)"481 %s :Permission denied",
-                                       __cil_tmp);
-#line 190
-    return (__cil_tmp___0);
+#line 189
+    goto _L;
   }
 #line 194
   if ((Req->argc != 1 && Req->argc != 2) && Req->argc != 5) {
@@ -18887,7 +19000,12 @@ int IRC_CONNECT(CLIENT *Client , REQUEST *Req )
                                          __cil_tmp___5, Req->command);
 #line 200
       return (__cil_tmp___6);
+    } else {
+#line 199
+      goto _L___0;
     }
+  } else {
+    _L___0: /* CIL Label */ ;
   }
 #line 203
   __cil_tmp___8 = Client_Mask(Client);
@@ -18972,6 +19090,7 @@ int IRC_DISCONNECT(CLIENT *Client , REQUEST *Req )
     __cil_tmp___2 = Client_OperByMe(Client);
 #line 247
     if (! __cil_tmp___2) {
+      _L: /* CIL Label */ 
 #line 247
       __cil_tmp = Client_ID(Client);
 #line 247
@@ -18982,12 +19101,7 @@ int IRC_DISCONNECT(CLIENT *Client , REQUEST *Req )
     }
   } else {
 #line 247
-    __cil_tmp = Client_ID(Client);
-#line 247
-    __cil_tmp___0 = IRC_WriteStrClient(Client, (char *)"481 %s :Permission denied",
-                                       __cil_tmp);
-#line 247
-    return (__cil_tmp___0);
+    goto _L;
   }
 #line 250
   if (Req->argc != 1) {
@@ -19138,7 +19252,7 @@ int IRC_WALLOPS(CLIENT *Client , REQUEST *Req )
 }
 }
 #line 1 "irc-server.o"
-#pragma merger(0,"/tmp/cil-QhOSj8Ba.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-uygEYJD1.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 19 "numeric.h"
 int IRC_Num_ENDOFMOTD(CLIENT *Client , REQUEST *Req  __attribute__((__unused__)) ) ;
 #line 21 "irc-server.h"
@@ -19708,7 +19822,7 @@ int IRC_SQUIT(CLIENT *Client , REQUEST *Req )
 }
 }
 #line 1 "irc-write.o"
-#pragma merger(0,"/tmp/cil-QMKB9hQf.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-GsXmKZSD.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 24 "irc-write.h"
 int IRC_WriteStrChannel(CLIENT *Client , CHANNEL *Chan , int Remote , char *Format 
                         , ...) ;
@@ -19989,7 +20103,7 @@ void IRC_WriteStrServersPrefixFlag(CLIENT *ExceptOf , CLIENT *Prefix , char Flag
 #line 311
             if ((int )Flag == 0) {
 #line 311
-              IRC_WriteStrClientPrefix(c, Prefix, (char *)"%s", buffer);
+              goto _L;
             } else {
 #line 311
               __cil_tmp = Client_Flags(c);
@@ -19997,13 +20111,25 @@ void IRC_WriteStrServersPrefixFlag(CLIENT *ExceptOf , CLIENT *Prefix , char Flag
               __cil_tmp___0 = strchr((char const   *)__cil_tmp, (int )Flag);
 #line 311
               if ((unsigned int )__cil_tmp___0 != (unsigned int )((void *)0)) {
+                _L: /* CIL Label */ 
 #line 311
                 IRC_WriteStrClientPrefix(c, Prefix, (char *)"%s", buffer);
               }
             }
+          } else {
+#line 308
+            goto _L___2;
           }
+        } else {
+#line 308
+          goto _L___2;
         }
+      } else {
+#line 308
+        goto _L___2;
       }
+    } else {
+      _L___2: /* CIL Label */ ;
     }
 #line 313
     c = Client_Next(c);
@@ -20182,7 +20308,7 @@ static char *Get_Prefix(CLIENT *Target , CLIENT *Client )
 }
 }
 #line 1 "lists.o"
-#pragma merger(0,"/tmp/cil-7J439Owu.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-1vdwNzCc.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 45 "lists.c"
 char const   *Lists_GetMask(struct list_elem  const  *e ) 
 { 
@@ -20454,7 +20580,7 @@ int Lists_Check(struct list_head *header , CLIENT *Client )
 }
 }
 #line 1 "log.o"
-#pragma merger(0,"/tmp/cil-5ADGQOfJ.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-nQdr0lHq.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 50 "log.h"
 void Log_Init_Resolver(void) ;
 #line 51
@@ -20655,7 +20781,12 @@ static void Wall_ServerNotice(char *Msg )
         __cil_tmp = Client_ID(c);
 #line 363
         IRC_WriteStrClient(c, (char *)"NOTICE %s :%s%s", __cil_tmp, "", Msg);
+      } else {
+#line 362
+        goto _L;
       }
+    } else {
+      _L: /* CIL Label */ ;
     }
 #line 366
     c = Client_Next(c);
@@ -20665,7 +20796,7 @@ static void Wall_ServerNotice(char *Msg )
 }
 }
 #line 1 "match.o"
-#pragma merger(0,"/tmp/cil-uqGiWVMI.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-4nC18f5G.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 35 "match.c"
 static int Matche(char const   *p , char const   *t ) ;
 #line 36
@@ -20712,9 +20843,10 @@ static int Matche(char const   *p , char const   *t )
           __cil_tmp = 1;
         } else {
 #line 69
-          __cil_tmp = 3;
+          goto _L;
         }
       } else {
+        _L: /* CIL Label */ 
 #line 69
         __cil_tmp = 3;
       }
@@ -20958,7 +21090,7 @@ static int Matche_After_Star(char const   *p , char const   *t )
 }
 }
 #line 1 "numeric.o"
-#pragma merger(0,"/tmp/cil-IEo0zmsA.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-iz20daz4.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 20 "numeric.h"
 int IRC_Num_ISUPPORT(CLIENT *Client , REQUEST *Req ) ;
 #line 46 "numeric.c"
@@ -21300,13 +21432,14 @@ int IRC_Num_ENDOFMOTD(CLIENT *Client , REQUEST *Req  __attribute__((__unused__))
       }
 #line 219
       if ((unsigned int )c == (unsigned int )Client) {
-#line 220
-        goto __Cont;
+#line 219
+        goto _L;
       } else {
 #line 219
         __cil_tmp___4 = Client_ThisServer();
 #line 219
         if ((unsigned int )c == (unsigned int )__cil_tmp___4) {
+          _L: /* CIL Label */ 
 #line 220
           goto __Cont;
         }
@@ -21522,7 +21655,7 @@ int IRC_Num_ISUPPORT(CLIENT *Client , REQUEST *Req )
 }
 }
 #line 1 "parse.o"
-#pragma merger(0,"/tmp/cil-hFGuiy3J.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-kgiLuJBx.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 61 "parse.c"
 static COMMAND My_Commands[48]  = 
 #line 61 "parse.c"
@@ -21797,8 +21930,16 @@ static int Validate_Prefix(CONN_ID Idx , REQUEST *Req , int *Closed )
         Req->prefix = (char *)((void *)0);
 #line 299
         return (1);
+      } else {
+#line 294
+        goto _L___0;
       }
+    } else {
+#line 294
+      goto _L___0;
     }
+  } else {
+    _L___0: /* CIL Label */ ;
   }
 #line 303
   c = Client_Search(Req->prefix);
@@ -22013,8 +22154,16 @@ static int Handle_Request(CONN_ID Idx , REQUEST *Req )
         __cil_tmp = Handle_Numeric(client, Req);
 #line 442
         return (__cil_tmp);
+      } else {
+#line 439
+        goto _L___0;
       }
+    } else {
+#line 439
+      goto _L___0;
     }
+  } else {
+    _L___0: /* CIL Label */ ;
   }
 #line 444
   cmd = My_Commands;
@@ -22101,9 +22250,9 @@ static int Handle_Request(CONN_ID Idx , REQUEST *Req )
 }
 }
 #line 1 "rendezvous.o"
-#pragma merger(0,"/tmp/cil-zMpbCs9x.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-TRLhQeB1.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 1 "resolve.o"
-#pragma merger(0,"/tmp/cil-vttV1T4X.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-tpbx3HhC.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 371 "/usr/include/unistd.h"
 extern  __attribute__((__nothrow__)) int pipe(int *__pipedes ) ;
 #line 61 "/usr/include/netdb.h"
@@ -22615,7 +22764,12 @@ static int register_callback(RES_STAT *s , void (*cbfunc)(int  , short  ) )
     if (__cil_tmp___0) {
 #line 493
       return (1);
+    } else {
+#line 491
+      goto _L;
     }
+  } else {
+    _L: /* CIL Label */ ;
   }
 #line 495
   __cil_tmp___1 = __errno_location();
@@ -22684,7 +22838,7 @@ size_t Resolve_Read(RES_STAT *s , void *readbuf , size_t buflen )
 }
 }
 #line 1 "strlcpy.o"
-#pragma merger(0,"/tmp/cil-570RgdRQ.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-MC8qslEU.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 33 "strlcpy.c"
 size_t strlcat(char *dst , char const   *src , size_t size ) 
 { size_t len1 ;
@@ -22750,9 +22904,9 @@ size_t strlcpy(char *dst , char const   *src , size_t size )
 }
 }
 #line 1 "strdup.o"
-#pragma merger(0,"/tmp/cil-uCT5KQ4f.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-Fj9GtvAi.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 1 "vsnprintf.o"
-#pragma merger(0,"/tmp/cil-yjIbTdXN.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-RWS04o8P.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 101 "vsnprintf.c"
 void dummy_snprintf(void) ;
 #line 102 "vsnprintf.c"
@@ -22765,7 +22919,7 @@ void dummy_snprintf(void)
 }
 }
 #line 1 "libngtool.a"
-#pragma merger(0,"/tmp/cil-CQkBTjmC.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-zmh0nMP2.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 140 "/fs/skoll/symexe/trunk/experiments/ngircd/codeCoverageTest/../../../libc/ctype.h"
 extern int tolower(int  ) ;
 #line 35 "tool.c"
@@ -22852,7 +23006,7 @@ void ngt_TrimLastChr(char *String , char Chr )
 }
 }
 #line 1 "libngipaddr.a"
-#pragma merger(0,"/tmp/cil-0Tbgzs97.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
+#pragma merger(0,"/tmp/cil-cYfsY9ut.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 62 "/usr/include/string.h"
 extern  __attribute__((__nothrow__)) int memcmp(void const   *__s1 , void const   *__s2 ,
                                                 size_t __n )  __attribute__((__pure__,
