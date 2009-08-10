@@ -122,8 +122,8 @@ echo Scheduling listFtp
 ./stats -b vsftpd 1=3 2=845 # listFtp
 echo Scheduling listL
 ./stats -b vsftpd 1=3 2=846 # listL
-echo Scheduling listR
-./stats -b vsftpd 1=3 2=847 # listR
+#echo Scheduling listR
+#./stats -b vsftpd 1=3 2=847 # listR
 echo Scheduling listSlash
 ./stats -b vsftpd 1=3 2=848 # listSlash
 echo Scheduling listTilde
