@@ -9,7 +9,8 @@ let findFns (file : Cil.file) : unit =
 		(fun glob ->
 			 match glob with
 					 GFun(fundec,_) -> output_string outChan (fundec.svar.vname ^ "\n")
-				 | _ -> ())
+				 | _ -> ());
+	close_out outChan
 
 let feature : Cil.featureDescr = {
   Cil.fd_enabled = ref false;
