@@ -28,12 +28,15 @@ int putenv(char* str) {
 
         if (found >= 0)
         {
+                free(var_values[found]);
                 var_values[found] = strdup(name_end + 1);
         }
         else
         {
-                var_names[var_count] = malloc(sizeof(char) * 32);
+                var_names[var_count] = malloc(sizeof(char) * (name_end - str + 1));
                 strncpy(var_names[var_count], str, name_end - str);
+                var_names[var_count][name_end - str] = '\0';
+
                 var_values[var_count] = strdup(name_end + 1);
 
                 var_count++;
