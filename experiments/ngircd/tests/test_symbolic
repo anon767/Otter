@@ -48,11 +48,12 @@ $TOPDIR/cil/bin/cilly \
 	-U __OPTIMIZE__ \
 	-I $MOCKEDDIR \
 	--doexecute \
+	--disallowDuplication \
 	--printLittle \
 	--printNoEscapedString \
 	--covStats=$STATSFILE \
 	$COVTYPE \
-	--timeout=14400 \
+	--timeout=40000 \
 	--marshalCoverageTo=$MARSHALDIR/$TEST_NAME.marshal \
 	$PROJ_DIR \
 	$COVDIR/otherFiles/$TEST_NAME.c
