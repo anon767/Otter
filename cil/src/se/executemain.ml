@@ -179,34 +179,43 @@ let prepare_file file =
 	end file.globals;
 
 	(* Find all lines, blocks, edges, and conditions. *)
+	(* TODO: wrap the listings of Lines,Edges,etc... *)
 	let (setOfLines,setOfBlocks,setOfEdges,setOfConds) = GetProgInfo.getProgInfo file run_args.arg_fns in
 	run_args.arg_num_lines <- LineSet.cardinal setOfLines;
 	run_args.arg_num_blocks <- StmtInfoSet.cardinal setOfBlocks;
 	run_args.arg_num_edges <- EdgeSet.cardinal setOfEdges;
 	run_args.arg_num_conds <- CondSet.cardinal setOfConds;
 	if run_args.arg_list_lines then (
+		Output.printf "Total number of %s: %d\n" "Lines" run_args.arg_num_lines;
 		LineSet.iter
 			(fun (file,lineNum) -> Output.printf "%s:%d\n" file lineNum)
-			setOfLines	
+			setOfLines
+		;Output.printf "\n"
 	);
 	if run_args.arg_list_blocks then (
+		Output.printf "Total number of %s: %d\n" "Blocks" run_args.arg_num_blocks;
 		StmtInfoSet.iter
 			(fun stmtInfo ->
 				 Output.printf "%s\n" (To_string.stmtInfo stmtInfo))
 		setOfBlocks
+		;Output.printf "\n"
 	);
 	if run_args.arg_list_edges then (
+		Output.printf "Total number of %s: %d\n" "Edges" run_args.arg_num_edges;
 		EdgeSet.iter
 			(fun (srcStmtInfo,destStmtInfo) ->
 				 Output.printf "%s -> %s\n"
 					 (To_string.stmtInfo srcStmtInfo)
 					 (To_string.stmtInfo destStmtInfo))
 		setOfEdges
+		;Output.printf "\n"
 	);
 	if run_args.arg_list_conds then (
+		Output.printf "Total number of %s: %d\n" "Conditions" run_args.arg_num_conds;
 		CondSet.iter
 			(fun (stmtInfo, truth) -> Output.printf "%s %c\n" (To_string.stmtInfo stmtInfo) (if truth then 'T' else 'F'))
 		setOfConds
+		;Output.printf "\n"
 	)
 
 (* create a job that begins at a function, given an initial state *)
@@ -241,7 +250,7 @@ let job_for_file file cmdline =
 
 
 let doExecute (f: file) =
-	Output.set_mode Output.MSG_REG;
+	Output.set_mode Output.MSG_MUSTPRINT;
 	Output.print_endline "\nA (symbolic) executor for C\n";
 
 	(* Keep track of how long we run *)
