@@ -169,16 +169,6 @@ let rec getRelevantAssumptions_aux acc symbols pc =
 let getRelevantAssumptions pc query =
 	getRelevantAssumptions_aux [] (allSymbolsAndIndicators query) pc
 
-let rec listCompare l1 l2 =
-	match l1,l2 with
-			_ when l1 == l2 -> 0 (* This includes [],[] *)
-		| [],_ -> -1
-		| _,[] -> 1
- 		| h1::t1,h2::t2 ->
-				if h1 == h2 then listCompare t1 t2
-				else let x = Pervasives.compare h1 h2 in
-				if x <> 0 then x else listCompare t1 t2
-
 (* Map a pc and a query *)
 module StpCache = Map.Make
 	(struct
@@ -186,9 +176,9 @@ module StpCache = Map.Make
 		 (* It might be better to have this be set-based equality rather
 				than list-based. *)
 		 let compare ((pc1,query1):t) ((pc2,query2):t) = (* Type annotation to remove polymorphism *)
-			 let result1 = (if query1==query2 then 0 else compare query1 query2) in
+			 let result1 = Pervasives.compare query1 query2 in
 			 if result1 = 0
-			 then listCompare pc1 pc2 
+			 then Pervasives.compare pc1 pc2 
 			 else result1
 	 end)
 
