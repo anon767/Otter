@@ -20,6 +20,7 @@ type print_args =
 		mutable arg_print_mustprint : bool;
 		mutable arg_print_char_as_int : bool;
 		mutable arg_print_nothing : bool; (* If true, overrides all other flags *)
+		mutable arg_print_stmt_locs : bool;
 	}	;;
 (*let print_args =
 	{
@@ -55,6 +56,7 @@ let print_args =
 		arg_print_mustprint = true;
 		arg_print_char_as_int = false;
 		arg_print_nothing = false;
+		arg_print_stmt_locs = false;
 	}	;;
 type run_args = 
 	{
@@ -63,21 +65,22 @@ type run_args =
 (*		mutable arg_symbolic_extern_fns : bool;*)
 		mutable arg_cond_coverage : bool;
 		mutable arg_edge_coverage : bool;
-		mutable arg_stmt_coverage : bool;
+		mutable arg_block_coverage : bool;
 		mutable arg_line_coverage : bool;
-		mutable arg_total_lines : int;
-		mutable arg_total_stmts : int;
-		mutable arg_total_edges : int;
-		mutable arg_total_conds : int;
+		mutable arg_num_lines : int;
+		mutable arg_num_blocks : int;
+		mutable arg_num_edges : int;
+		mutable arg_num_conds : int;
 		mutable arg_fns : Types.StringSet.t;
 		mutable arg_timeout : int;
 		(** How many seconds to allow the executor to run. *)
 		mutable arg_merge_paths : bool;
 		mutable arg_marshal_file : string;
 		mutable arg_calculate_dependencies : bool;
-		mutable arg_list_executable_lines : bool;
-		mutable arg_list_executable_edges : bool;
-		mutable arg_list_executable_conds : bool;
+		mutable arg_list_lines : bool;
+		mutable arg_list_blocks : bool;
+		mutable arg_list_edges : bool;
+		mutable arg_list_conds : bool;
 		mutable arg_opt_hash_consing : bool;
 		mutable arg_opt_bytes_eval_cache : bool;
 		mutable arg_opt_stpbv_cache : bool;
@@ -90,20 +93,21 @@ let run_args =
 (*		arg_symbolic_extern_fns = false;*)
 		arg_cond_coverage = false;
 		arg_edge_coverage = false;
-		arg_stmt_coverage = false;
+		arg_block_coverage = false;
 		arg_line_coverage = false;
-		arg_total_lines = -1;
-		arg_total_stmts = -1;
-		arg_total_edges = -1;
-		arg_total_conds = -1;
+		arg_num_lines = -1;
+		arg_num_blocks = -1;
+		arg_num_edges = -1;
+		arg_num_conds = -1;
 		arg_fns = Types.StringSet.empty;
 		arg_timeout = 0;
 		arg_merge_paths = false;
 		arg_marshal_file = ""; (* File to which to marshal coverage information *)
 		arg_calculate_dependencies = false;
-		arg_list_executable_lines = false;
-		arg_list_executable_edges = false;
-		arg_list_executable_conds = false;
+		arg_list_lines = false;
+		arg_list_blocks = false;
+		arg_list_edges = false;
+		arg_list_conds = false;
 		arg_opt_hash_consing = false;  (* This module depends on Types!!! *)
 		arg_opt_bytes_eval_cache = false;
 		arg_opt_stpbv_cache = false;

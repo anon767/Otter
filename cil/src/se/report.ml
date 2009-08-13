@@ -2,23 +2,23 @@ open Types
 open Cil
 open Executeargs
 
-type coverageType = Line | Stmt | Edge | Cond
+type coverageType = Line | Block | Edge | Cond
 
 let covTypeToStr = function
 	| Line -> "lines"
-	| Stmt -> "statements"
+	| Block -> "blocks"
 	| Edge -> "edges"
 	| Cond -> "conditions"
 
 let getTotal = function
-	| Line -> run_args.arg_total_lines
-	| Stmt -> run_args.arg_total_stmts
-	| Edge -> run_args.arg_total_edges
-	| Cond -> run_args.arg_total_conds
+	| Line -> run_args.arg_num_lines
+	| Block -> run_args.arg_num_blocks
+	| Edge -> run_args.arg_num_edges
+	| Cond -> run_args.arg_num_conds
 
 let getNumCovered covType hist = match covType with
 	| Line -> LineSet.cardinal hist.coveredLines
-	| Stmt -> IntSet.cardinal hist.coveredStmts
+	| Block -> StmtInfoSet.cardinal hist.coveredBlocks
 	| Edge -> EdgeSet.cardinal hist.coveredEdges
 	| Cond -> CondSet.cardinal hist.coveredConds
 
@@ -161,17 +161,24 @@ let printLines lineset =
 let printEdges edgeset =
 	Output.printf "The edges hit were:\n";
 	EdgeSet.iter
-		(fun (srcStmt,destStmt) ->
+		(fun (srcStmtInfo,destStmtInfo) ->
 			 Output.printf "%s -> %s\n"
-				 (To_string.location (get_stmtLoc srcStmt.skind))
-				 (To_string.location (get_stmtLoc destStmt.skind)))
+				 (To_string.stmtInfo srcStmtInfo)
+				 (To_string.stmtInfo destStmtInfo))
 		edgeset;
+	Output.printf "\n"
+	
+let printBlocks blockset =
+	Output.printf "The blocks hit were:\n";
+	StmtInfoSet.iter
+	  (fun stmtInfo -> Output.printf "%s\n" (To_string.stmtInfo stmtInfo))
+		blockset;
 	Output.printf "\n"
 	
 let printConditions condset =
 	Output.printf "The conditions hit were:\n";
 	CondSet.iter
-	  (fun (stmt, truth) -> Output.printf "%s %c\n" (To_string.location (get_stmtLoc stmt.skind)) (if truth then 'T' else 'F'))
+	  (fun (stmtInfo, truth) -> Output.printf "%s %c\n" (To_string.stmtInfo stmtInfo) (if truth then 'T' else 'F'))
 		condset;
 	Output.printf "\n"
 	
@@ -185,9 +192,11 @@ let printCoveringConfigs coveringSet covType =
         (fun { result_state=state; result_history=hist} ->
 				 printPath state hist;
 				 printCov covType hist;
-				 if covType = Line then printLines hist.coveredLines;
-				 if covType = Edge then printEdges hist.coveredEdges;
-				 if covType = Cond then printConditions hist.coveredConds;
+				 (match covType with
+							Line -> printLines hist.coveredLines
+						| Block -> printBlocks hist.coveredBlocks
+						| Edge -> printEdges hist.coveredEdges
+						| Cond -> printConditions hist.coveredConds);
 				 Output.printf "-------------\n\n")
 			 coveringSet
 	end
@@ -214,25 +223,25 @@ let printCoverageInfo resultList =
 		printCoveringConfigs coveringSet Line
 	);
 
-	if run_args.arg_stmt_coverage then (
-		Output.printf "Statement coverage:\n\n";
-		let allStmtsCovered =
+	if run_args.arg_block_coverage then (
+		Output.printf "Block coverage:\n\n";
+		let allBlocksCovered =
  			(List.fold_left
 				 (fun acc { result_history=hist } ->
-						IntSet.union acc hist.coveredStmts)
-				 IntSet.empty
+						StmtInfoSet.union acc hist.coveredBlocks)
+				 StmtInfoSet.empty
 				 resultList)
 		in
-		printCov Stmt  { emptyHistory with coveredStmts = allStmtsCovered; };
+		printCov Block { emptyHistory with coveredBlocks = allBlocksCovered; };
 		let coveringSet = greedySetCover
-			IntSet.is_empty
+			StmtInfoSet.is_empty
 			(fun job remaining ->
-				 IntSet.cardinal (IntSet.inter job.result_history.coveredStmts remaining))
-			(fun remaining job -> IntSet.diff remaining job.result_history.coveredStmts)
+				 StmtInfoSet.cardinal (StmtInfoSet.inter job.result_history.coveredBlocks remaining))
+			(fun remaining job -> StmtInfoSet.diff remaining job.result_history.coveredBlocks)
 			resultList
-			allStmtsCovered
+			allBlocksCovered
 		in
-		printCoveringConfigs coveringSet Stmt
+		printCoveringConfigs coveringSet Block
 	);
 
 	if run_args.arg_edge_coverage then (
@@ -331,7 +340,7 @@ let print_report results =
 	Output.printf "%d paths ran to completion; %d had errors.\n" completed abandoned;
 	Output.printf "There are %d truncated paths.\n" truncated;
 
-	if run_args.arg_line_coverage || run_args.arg_stmt_coverage || run_args.arg_edge_coverage || run_args.arg_cond_coverage
+	if run_args.arg_line_coverage || run_args.arg_block_coverage || run_args.arg_edge_coverage || run_args.arg_cond_coverage
 	then begin
 		(* Print coverage information, if it was gathered, regardless of anything else.*)
 		print_args.arg_print_nothing <- false;

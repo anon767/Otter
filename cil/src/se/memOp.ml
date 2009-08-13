@@ -592,7 +592,7 @@ let state__get_bytes_eval_cache state bytes =
 let state__trace state: string = 
 	List.fold_left begin fun str context -> match context with
 		| Runtime            -> Format.sprintf "%s/Runtime" str
-		| Source (_,instr,_) -> Format.sprintf "%s/%s" str (To_string.location (Cil.get_instrLoc instr))
+		| Source (_,_,instr,_) -> Format.sprintf "%s/%s" str (To_string.location (Cil.get_instrLoc instr))
 		| NoReturn instr     -> Format.sprintf "%s/NoReturn@%s" str (To_string.location (Cil.get_instrLoc instr))
 	end "" state.callContexts
 ;;

@@ -31,7 +31,7 @@ let bytestring arr =
 ;;
 
 let location loc = 
-	String.concat ":" [loc.file;string_of_int loc.line;string_of_int loc.byte]
+	loc.file^":"^(string_of_int loc.line)
 	;;
 
 let varinfo v =
@@ -50,7 +50,7 @@ callstack s =
         in
         match context with
         | Runtime -> "\t(END)"
-        | Source (_,i,_) -> instr_p i
+        | Source (_,_,i,_) -> instr_p i
         | NoReturn (i) -> instr_p i
     )^"\n"^(callstack tail)
 
@@ -325,3 +325,9 @@ let humanReadableBytes bytes_to_var bytes =
 let humanReadablePc pc bytes_to_var =
 	List.iter (Format.fprintf str_formatter "%a@\n" (bytes_ff_named bytes_to_var)) pc;
 	flush_str_formatter ()
+
+let stmtInfo si =
+	let str = si.siFuncName ^ " " ^ (string_of_int si.siStmt.sid) in
+	if Executeargs.print_args.Executeargs.arg_print_stmt_locs
+	then str ^ " (" ^ (location (get_stmtLoc si.siStmt.skind)) ^ ")"
+	else str

@@ -155,52 +155,57 @@ let computeJoinPointsForIfs fundec =
 								 None -> () (* No dominating [If]; do nothing *)
 							 | Some ifDom ->
 									 (* Add this join point to the dominating [If]'s list *)
-									 Inthash.add ifToJoinPointsHash ifDom.sid s.sid)
+									 Hashtbl.add ifToJoinPointsHash
+										 { siFuncName = fundec.svar.vname ; siStmt = ifDom }
+										 { siFuncName = fundec.svar.vname ; siStmt = s })
 		fundec.sallstmts
 ;;
 
 (* set up the file for symbolic execution *)
 let prepare_file file =
+	(* makeCFGFeature must precede the call to getProgInfo. *)
 	Cilly.makeCFGFeature.fd_doit file;
 
 	(* TODO: move this out of global variable *)
-	(* Hash all of the fundecs by their varinfos. Also, compute the join points which each [If] dominates.*)
+	(* - Hash all of the fundecs by their varinfos
+		 - Reset sids to be unique only within a function (not globally)
+		 - Compute the join points which each [If] dominates *)
 	List.iter begin function
 		| GFun(fundec,_) ->
 			Hashtbl.add Cilutility.fundecHashtbl fundec.svar fundec;
+			ignore (List.fold_left (fun n stmt -> stmt.sid <- n; succ n) 0 fundec.sallstmts);
 			computeJoinPointsForIfs fundec
 		| _ -> ()
 	end file.globals;
 
-	(* Find all executable lines. For now, we don't care about the rest *)
-	let (setOfLines,_,setOfEdges,setOfConds) = GetProgInfo.getProgInfo file run_args.arg_fns in
-	run_args.arg_total_lines <- LineSet.cardinal setOfLines;
-	run_args.arg_total_edges <- EdgeSet.cardinal setOfEdges;
-	run_args.arg_total_conds <- CondSet.cardinal setOfConds;
-	Output.printf "This program contains %d lines within the functions specified\n"
-		run_args.arg_total_lines;
-	Output.printf "This program contains %d edges within the functions specified\n"
-		run_args.arg_total_edges;
-	Output.printf "This program contains %d conditions within the functions specified\n"
-		run_args.arg_total_conds;
-	if run_args.arg_list_executable_lines then (
+	(* Find all lines, blocks, edges, and conditions. *)
+	let (setOfLines,setOfBlocks,setOfEdges,setOfConds) = GetProgInfo.getProgInfo file run_args.arg_fns in
+	run_args.arg_num_lines <- LineSet.cardinal setOfLines;
+	run_args.arg_num_blocks <- StmtInfoSet.cardinal setOfBlocks;
+	run_args.arg_num_edges <- EdgeSet.cardinal setOfEdges;
+	run_args.arg_num_conds <- CondSet.cardinal setOfConds;
+	if run_args.arg_list_lines then (
 		LineSet.iter
 			(fun (file,lineNum) -> Output.printf "%s:%d\n" file lineNum)
 			setOfLines	
-	)
-	else
-	if run_args.arg_list_executable_edges then (
+	);
+	if run_args.arg_list_blocks then (
+		StmtInfoSet.iter
+			(fun stmtInfo ->
+				 Output.printf "%s\n" (To_string.stmtInfo stmtInfo))
+		setOfBlocks
+	);
+	if run_args.arg_list_edges then (
 		EdgeSet.iter
-			(fun (srcStmt,destStmt) ->
+			(fun (srcStmtInfo,destStmtInfo) ->
 				 Output.printf "%s -> %s\n"
-					 (To_string.location (get_stmtLoc srcStmt.skind))
-					 (To_string.location (get_stmtLoc destStmt.skind)))
+					 (To_string.stmtInfo srcStmtInfo)
+					 (To_string.stmtInfo destStmtInfo))
 		setOfEdges
-	)
-	else
-	if run_args.arg_list_executable_conds then (
+	);
+	if run_args.arg_list_conds then (
 		CondSet.iter
-			(fun (stmt, truth) -> Output.printf "%s %c\n" (To_string.location (get_stmtLoc stmt.skind)) (if truth then 'T' else 'F'))
+			(fun (stmtInfo, truth) -> Output.printf "%s %c\n" (To_string.stmtInfo stmtInfo) (if truth then 'T' else 'F'))
 		setOfConds
 	)
 
@@ -213,7 +218,7 @@ let job_for_function state fn argvs =
 	  instrList = [];
 	  stmt = List.hd fn.sallstmts;
 	  inTrackedFn = StringSet.mem fn.svar.vname run_args.arg_fns;
-	  mergePoints = IntSet.empty;
+	  mergePoints = StmtInfoSet.empty;
 	  jid = Utility.next_id Output.jidCounter }
 
 
@@ -355,6 +360,11 @@ let feature : featureDescr =
 			("--printCharAsInt",
 			Arg.Unit (fun () -> Executeargs.print_args.arg_print_char_as_int <- true),
 			" Print char as int \n");
+
+			("--printStmtLocs",
+			Arg.Unit (fun () -> Executeargs.print_args.arg_print_stmt_locs <- true),
+			" Print file and line number for statements, in addition to function name an id number, for block and edge coverage\n");
+
 			(** 
 					Argvs
 			 *)
@@ -374,8 +384,8 @@ let feature : featureDescr =
 			("--edgeCov",
 			 Arg.Unit (fun () -> run_args.arg_edge_coverage <- true),
 			 " Track edge coverage\n");
-			("--stmtCov",
-			 Arg.Unit (fun () -> run_args.arg_stmt_coverage <- true),
+			("--blockCov",
+			 Arg.Unit (fun () -> run_args.arg_block_coverage <- true),
 			 " Track statement coverage\n");
 			("--lineCov",
 			 Arg.Unit (fun () -> run_args.arg_line_coverage <- true),
@@ -383,9 +393,19 @@ let feature : featureDescr =
 			("--covStats",
 			 Arg.String readCovStatsFromFile,
 			 "<filename> File containing coverage statistics\n");
-			("--listAllExecutableLines",
-			 Arg.Unit (fun () -> run_args.arg_list_executable_lines <- true),
-			 " Before execution, print out all of the executable lines in the program.\n");
+
+			("--listAllLines",
+			 Arg.Unit (fun () -> run_args.arg_list_lines <- true),
+			 " Before execution, print out all of the lines in the program.\n");
+			("--listAllBlocks",
+			 Arg.Unit (fun () -> run_args.arg_list_blocks <- true),
+			 " Before execution, print out all of the basic blocks in the program.\n");
+			("--listAllEdges",
+			 Arg.Unit (fun () -> run_args.arg_list_edges <- true),
+			 " Before execution, print out all of the intraprodecural edges in the program.\n");
+			("--listAllConds",
+			 Arg.Unit (fun () -> run_args.arg_list_conds <- true),
+			 " Before execution, print out all of the conditions in the program.\n");
 
 			("--mergePaths",
 			 Arg.Unit (fun () -> run_args.arg_merge_paths <- true),
@@ -413,11 +433,6 @@ let feature : featureDescr =
 			 "<filename> Read coverage information from an output file.");
 		];
 		fd_post_check = true;
-    fd_doit = fun file ->
-			(if run_args.arg_edge_coverage && not !useLogicalOperators
-			 then ignore (Cil.warn "Tracking edge coverage without --useLogicalOperators");
-			 if run_args.arg_cond_coverage && !useLogicalOperators
-			 then ignore (Cil.warn "Tracking condition coverage with --useLogicalOperators");
-			 doExecute file)
+    fd_doit = doExecute
   } 
 	;;

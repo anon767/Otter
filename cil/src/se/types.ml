@@ -192,15 +192,15 @@ module BytesMap =
 	
 (** A calling context may either be the symbolic executor, represented by
 		[Runtime], or from another function in the source code, represented
-		either by a triple [Source (destOpt,callInstr,nextStmt)] if the
+		either by a tuple [Source (destOpt,callStmt,callInstr,nextStmt)] if the
 		function returns or [NoReturn (callInstr)] if the function doesn't return.
-		[nextStmt] is the [stmt] to execute after the call returns; [callInstr]
-		is the function call instruction; and [destOpt] is [None] if we ignore
-		the result of the call, or it is [Some (lval_block,size)], which
-		means we should assign the result to that triple. *)
+		[nextStmt] is the [stmt] to execute after the call returns; [callStmt]
+		and [callInstr] are the function call statement and instruction;
+		and [destOpt] is [None] if we ignore the result of the call, or it is
+		[Some (lval_block,size)], which means we should assign the result there. *)
 type callingContext =
     | Runtime
-    | Source of ((lval_block * int) option * Cil.instr * Cil.stmt)
+    | Source of ((lval_block * int) option * Cil.stmt * Cil.instr * Cil.stmt)
 	| NoReturn of Cil.instr
 ;;
 
@@ -239,32 +239,42 @@ let (string_table : bytes MemoryBlockMap.t ref) = ref MemoryBlockMap.empty;;
 (* some globals that are helpful *)
 let stp_count = ref 0;;
 
+(* With statement ids which are unique only within functions, we need
+	 to know the function's name in addition to the sid to uniquely
+	 identify a stmt. *)
+type stmtInfo = { siFuncName : string ; siStmt : Cil.stmt }
+let compareStmtInfo x y =
+	let tmp = Pervasives.compare x.siFuncName y.siFuncName in
+	if tmp = 0
+	then Pervasives.compare x.siStmt.Cil.sid y.siStmt.Cil.sid
+	else tmp
+
 module CondSet = Set.Make
 	(struct
-		type t = Cil.stmt*bool
+		type t = stmtInfo*bool
 		(* the if statement and branch direction *)
 		let compare ((stmt1,truth1):t) (stmt2,truth2) =
-			let sidCmp = Pervasives.compare stmt1.Cil.sid stmt2.Cil.sid in
-			if sidCmp = 0
+			let stmtCmp = compareStmtInfo stmt1 stmt2 in
+			if stmtCmp = 0
 			then Pervasives.compare truth1 truth2
-			else sidCmp
+			else stmtCmp
 	end)
 
 module EdgeSet = Set.Make
 	(struct
-		type t = Cil.stmt*Cil.stmt
-		(* Order edges primarily by source id, then by destination id *)
+		type t = stmtInfo*stmtInfo (* These should always be the final stmts in their basic blocks *)
+		(* Order edges primarily by source, then by destination *)
 		let compare ((src1,dst1):t) (src2,dst2) =
-			let srcCmp = Pervasives.compare src1.Cil.sid src2.Cil.sid in
+			let srcCmp = compareStmtInfo src1 src2 in
 			if srcCmp = 0
-			then Pervasives.compare dst1.Cil.sid dst2.Cil.sid
+			then compareStmtInfo dst1 dst2
 			else srcCmp
 	end)
 
-module IntSet = Set.Make
+module StmtInfoSet = Set.Make
 	(struct
-		 type t = int
-		 let compare (x: int) (y: int) = Pervasives.compare x y
+		 type t = stmtInfo
+		 let compare = compareStmtInfo
 	 end)
 
 module LineSet = Set.Make
@@ -279,7 +289,7 @@ module LineSet = Set.Make
 
 type executionHistory = {
 	coveredLines : LineSet.t; (** Which lines we've hit *)
-	coveredStmts : IntSet.t; (** Which statements we've hit, by sid *)
+	coveredBlocks : StmtInfoSet.t; (** Which basic blocks we've hit. We identify a block by the last stmt within it. *)
 	coveredEdges : EdgeSet.t; (** Which edges we've traversed on this execution *)
 	coveredConds : CondSet.t; (** Which conditions we've hit *)
 	bytesToVars : (bytes * Cil.varinfo) list;
@@ -289,7 +299,7 @@ type executionHistory = {
 
 let emptyHistory = {
 	coveredLines = LineSet.empty;
-	coveredStmts = IntSet.empty;
+	coveredBlocks = StmtInfoSet.empty;
 	coveredEdges = EdgeSet.empty;
 	coveredConds = CondSet.empty;
 	bytesToVars = [];
@@ -326,8 +336,8 @@ type job = {
 	exHist : executionHistory;
 	instrList : Cil.instr list; (** [instr]s to execute before moving to the next [stmt] *)
 	stmt : Cil.stmt;            (** The next statement the job should execute *)
-	inTrackedFn : bool;         (** Is nextStmt in a function in the original program (as opposed to in a library or system call)? *)
-	mergePoints : IntSet.t;     (** A list of potential merge points, by sid *)
+	inTrackedFn : bool;         (** Is stmt in a function in the original program (as opposed to in a library or system call)? *)
+	mergePoints : StmtInfoSet.t;     (** A list of potential merge points *)
 	jid : int; (** A unique identifier for the job *)
 }
 
@@ -357,9 +367,9 @@ module JobSet = Set.Make
 			 else c
 	 end)
 
-(** Map [sid]s of if statements to the [sid]s of join points which the
-		[If]s dominate.
-		This will allow to know where we should expect to merge paths. *)
-let ifToJoinPointsHash : int Inthash.t = Inthash.create 500
+(** Map [stmtInfo]s of [If] statements to the [stmtInfo]s of join
+		points which the [If]s dominate.
+		This will allow us to know where we should expect to merge paths. *)
+let ifToJoinPointsHash : (stmtInfo,stmtInfo) Hashtbl.t = Hashtbl.create 500
 
 module StringSet = Set.Make(String)
