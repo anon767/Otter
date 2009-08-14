@@ -7,8 +7,6 @@ void symtest_initialize() {
 pass
 pasv
 stou aFile
-pasv
-list
 quit
 ";
 
