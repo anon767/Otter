@@ -1,6 +1,7 @@
 #include "iosim.h"
 #include <unistd.h>
 #include <string.h>
+#include <sys/socket.h>
 #include <sys/types.h>
 #include <errno.h>
 
@@ -47,9 +48,21 @@ int gethostname(char *name, size_t namelen){
 }
 //#endif
 
+extern int event_recv(int fd,char* s,int t);
 //#if __HAVE_pipe__
 int pipe(int fildes[2]){
-	fildes[0] = socket(0,0,0); // 6
+	char buf[sizeof(struct sockaddr)];
+	struct sockaddr* address = buf;
+	address->sa_family = AF_INET;
+	address->sa_data[0] = 0;//__SYMBOLIC(0);
+	address->sa_data[1] = 0;//__SYMBOLIC(0);
+	// Here's a fake IP address
+	address->sa_data[2] = 10;
+	address->sa_data[3] = 20;
+	address->sa_data[4] = 30;
+	address->sa_data[5] = 40;
+	fildes[0] = socket(0,0,0); // 6  // TODO: record these pipes!
+	event_recv(fildes[0],buf,0);
 	fildes[1] = socket(0,0,0); // 7, never use coz we don't really fork a child
 	return 0;
 }

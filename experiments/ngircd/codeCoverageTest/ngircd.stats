@@ -5,7 +5,6 @@ ng_ipaddr_init
 ngt_TrimLastChr
 ngt_LowerStr
 ngt_TrimStr
-dummy_snprintf
 Resolve_Read
 Resolve_Shutdown
 register_callback
