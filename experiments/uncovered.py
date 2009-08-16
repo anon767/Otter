@@ -8,11 +8,12 @@ if len(sys.argv)<3:
 
 path = []
 def open_under_path(filename,mode):
+	filename = "/"+filename
 	for p in path:
 		if os.path.exists(p+filename):
 			print (p+filename)
 			return open(p+filename,mode)
-	raise Not_found
+	raise NameError,filename+' not found'
 
 	
 
@@ -22,9 +23,7 @@ def txt2html(filename):
 	linenum = 0
 	output = [""]
 	
-	while True:
-		line = file.readline()
-		if line=="": break
+	for line in file:
 		linenum += 1
 		output.append(("%5d"%linenum)+ "\t"+ cgi.escape(line))
 	
@@ -34,9 +33,10 @@ def txt2html(filename):
 path = sys.argv[2:]
 file = open(sys.argv[1],"r")
 
-while True:
-	line = file.readline()
-	if line=="": break
+for p in path:
+	print p
+
+for line in file:
 	(filename,str_linenum) = line.split(":")
 	linenum = int(str_linenum)
 	if filename not in map:
@@ -44,7 +44,11 @@ while True:
 	map[filename][linenum] = "<span style=\"background-color: #ffff00\">"+map[filename][linenum][:-1]+"</span>\n"
 
 for (filename,lines) in map.items():
-	file = open(filename+".html","w")
+	try:
+		os.mkdir("html")
+	except OSError:
+		pass
+	file = open("html/"+filename+".html","w")
 	print >>file, ("<html>")
 	print >>file, ("<body>")
 	print >>file, ("<pre>")
