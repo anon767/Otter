@@ -1,3 +1,4 @@
+#include "symexe.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -7,7 +8,7 @@ char *var_names[MAX_VAR];
 char *var_values[MAX_VAR];
 
 char *getenv(const char *name) {
-        int i = 0;
+        int i;
         for (i = 0; i < var_count; i++) {
                 if (strcmp(name, var_names[i]) == 0)
                         return var_values[i];
@@ -19,7 +20,7 @@ int putenv(char* str) {
         char *name_end = strchr(str, '=');
         int found = -1;
 
-        int i = 0;
+        int i;
         for (i = 0; i < var_count; i++) {
                 if (!strncmp(var_names[i], str, name_end - str)) {
                         found = i;
@@ -33,7 +34,11 @@ int putenv(char* str) {
         }
         else
         {
-                var_names[var_count] = malloc(sizeof(char) * (name_end - str + 1));
+                if (var_count >= MAX_VAR) {
+                  __COMMENT("Too many environment variables");
+                  exit(1);
+                }
+                var_names[var_count] = malloc(name_end - str + 1);
                 strncpy(var_names[var_count], str, name_end - str);
                 var_names[var_count][name_end - str] = '\0';
 

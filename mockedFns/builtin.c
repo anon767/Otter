@@ -17,6 +17,8 @@ size_t __ctype_get_mb_cur_max() {
   return 1;
 }
 
+#include <string.h>
+
 int __builtin_strcmp(const char* s1, const char* s2) {
   return strcmp(s1, s2);
 }

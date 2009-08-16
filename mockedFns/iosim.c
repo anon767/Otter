@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <dirent.h>
-#include "umask.c"
 #include <fcntl.h>
 
 #define	IOSIM_MAX_FILE	1024
@@ -119,6 +118,13 @@ char *IOSIM_toAbsolute(const char *name) {
 	}
 	strcpy(end, lastSlash ? lastSlash + 1 : name); // Add the file name
 	return absoluteName;
+}
+
+static mode_t usermask;
+mode_t umask(mode_t cmask) {
+	mode_t oldMask = usermask;
+	usermask = cmask & 0777;
+	return oldMask;
 }
 
 int IOSIM_openWithMode(const char *name, int flags, mode_t mode) {

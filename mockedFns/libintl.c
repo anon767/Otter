@@ -1,5 +1,5 @@
-#include <libintl.h>
 #include <string.h>
+#include <stdlib.h>
 
 char * directory;
 

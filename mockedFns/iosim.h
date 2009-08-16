@@ -1,6 +1,7 @@
 #ifndef __IOSIM_H__
 #define __IOSIM_H__
 
+#include "symexe.h"
 #include <stdio.h>
 #include <sys/stat.h>
 #include <sys/types.h>

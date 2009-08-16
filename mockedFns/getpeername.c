@@ -1,3 +1,4 @@
+#include "symexe.h"
 #include <sys/socket.h>
 #include <string.h>
 

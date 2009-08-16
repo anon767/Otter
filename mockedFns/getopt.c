@@ -2,6 +2,11 @@
 
 #include "getopt.h"
 
+#include <string.h>
+#include <stdlib.h>
+char *my_index(const char *s, int c);
+extern void exchange();
+extern const char *_();
 
 static int first_nonopt;
 static int last_nonopt;
