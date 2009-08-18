@@ -151,35 +151,36 @@ let printCov covType hist =
 	Output.printf "%d out of %d %s (%.2f%%)\n\n"
 		numCovered total (covTypeToStr covType) (percentage numCovered total)
 
+let printLine (file,lineNum) =
+	Output.printf "%s:%d\n" file lineNum
 let printLines lineset =
 	Output.printf "The lines hit were:\n";
-	LineSet.iter
-		(fun (file,lineNum) -> Output.printf "%s:%d\n" file lineNum)
-		lineset;
+	LineSet.iter printLine lineset;
 	Output.printf "\n"
 
+let printEdge (srcStmtInfo,destStmtInfo) =
+	Output.printf "%s -> %s\n"
+		(To_string.stmtInfo srcStmtInfo)
+		(To_string.stmtInfo destStmtInfo)
 let printEdges edgeset =
 	Output.printf "The edges hit were:\n";
-	EdgeSet.iter
-		(fun (srcStmtInfo,destStmtInfo) ->
-			 Output.printf "%s -> %s\n"
-				 (To_string.stmtInfo srcStmtInfo)
-				 (To_string.stmtInfo destStmtInfo))
-		edgeset;
+	EdgeSet.iter printEdge edgeset;
 	Output.printf "\n"
 	
+let printBlock stmtInfo =
+	Output.printf "%s\n" (To_string.stmtInfo stmtInfo)
 let printBlocks blockset =
 	Output.printf "The blocks hit were:\n";
-	StmtInfoSet.iter
-	  (fun stmtInfo -> Output.printf "%s\n" (To_string.stmtInfo stmtInfo))
-		blockset;
+	StmtInfoSet.iter printBlock blockset;
 	Output.printf "\n"
 	
+let printCondition (stmtInfo, truth) =
+	Output.printf "%s %c\n"
+		(To_string.stmtInfo stmtInfo)
+		(if truth then 'T' else 'F')
 let printConditions condset =
 	Output.printf "The conditions hit were:\n";
-	CondSet.iter
-	  (fun (stmtInfo, truth) -> Output.printf "%s %c\n" (To_string.stmtInfo stmtInfo) (if truth then 'T' else 'F'))
-		condset;
+	CondSet.iter printCondition condset;
 	Output.printf "\n"
 	
 let printCoveringConfigs coveringSet covType =

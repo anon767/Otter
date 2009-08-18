@@ -45,89 +45,7 @@ let totalNumberOfPcs = ref 0
 type 'a tree =
 	| Node of 'a * 'a tree list (* (data, children) *)
 
-type varDepTree = (bytes * LineSet.t) tree
-
-(* Placeholder value for the root of the tree *)
-let rootNodeData = (trueBytes, LineSet.empty)
-
-(* This makes a tree which is a single path. lst is represented up
-	 from the bottom of the path, with trueBytes at the root. Also, the
-	 leaf gets cov as its coverage, while all internal nodes get
-	 LineSet.empty *)
-let lstToTree lst cov : varDepTree =
-	match lst with
-		| [] -> failwith "I don't think this should happen" (* Node ((trueBytes,cov), []) *)
-		| h::t ->
-				let rec helper acc = function
-					| [] -> Node (rootNodeData, acc)
-					| h::t -> helper [Node ((h,LineSet.empty), acc)] t
-				in
-				helper [Node ((h,cov),[])] t
-
 let myEqual bytes1 (bytes2,_) = MemOp.same_bytes bytes1 bytes2
-
-let findMatchingChild equal elt children : 'a tree * 'a tree list =
-	let rec helper acc = function
-		| Node(otherElt,_) as x :: t ->
-				if equal elt otherElt
-				then x, List.rev_append acc t
-				else helper (x::acc) t
-		| _ -> raise Not_found
-	in
-	helper [] children
-
-let rec add_aux lst cov tree : varDepTree =
-	match lst,tree with
-		| [], Node ((bytes, oldCov), children) -> (* lst is already represented in the tree *)
-				Node ((bytes, LineSet.union cov oldCov), children) (* Union in the coverage *)
-		| h::t, Node (value, children) ->
-				try (* See if we can step to a child *)
-					let matchingChild,otherChildren =
-						findMatchingChild myEqual h children
-					in
-					(* Try to add the rest of lst to the child that matches *)
-					let newTree = add_aux t cov matchingChild in
-					Node (value, newTree :: otherChildren)
-				with Not_found ->
-					(* No child matches; add lst as a new child *)
-					let subtree = match lstToTree (List.rev lst) cov with
-						| Node (_,[x]) -> x
-						| _ -> failwith "lstToTree can't return this"
-					in
-					Node (value, subtree :: children)
-
-(* Add a list into the tree *)
-let add lst cov tree = add_aux (List.rev lst) cov tree
-
-let rec getLeavesWithCoverage_aux pc_acc cov_acc tree = match tree with
-	| Node ((bytes,cov), children) ->
-			let newPc = bytes::pc_acc
-			and newCov = LineSet.union cov cov_acc in
-			if children = []
-			then [(newPc,newCov)]
-			else List.concat (List.map (getLeavesWithCoverage_aux newPc newCov) children)
-
-let getLeavesWithCoverage tree = match tree with
-	| Node (x,children) when x == rootNodeData ->
-			(* Ignore the root of tree, which is just a placeholder *)
-			List.concat
-				(List.map (getLeavesWithCoverage_aux [] LineSet.empty) children)
-	| _ -> failwith "Impossible: bad root of tree"
-(*
-let rec countLeaves = function
-	| Node (_,[]) -> 1
-	| Node (_,children) -> List.fold_left (fun sum subtree -> sum + countLeaves subtree) 0 children
-
-let rec countNodes = function
-	| Node (_,children) -> List.fold_left (fun sum subtree -> sum + countNodes subtree) 1 children
-
-let rec printTree_aux indent = function
-	| Node ((bytes,cov),children) ->
-			Format.printf "%s%s (%d)\n" indent (To_string.humanReadableBytes !bytesToVars bytes) (LineSet.cardinal cov);
-			List.iter (printTree_aux (indent^"\t")) children
-
-let printTree = printTree_aux ""
-*)
 
 (* Map variable names to possible values *)
 let varToVals = Hashtbl.create 20
@@ -173,10 +91,174 @@ let rec isConsistentWithList pc = function
 			then false
 			else isConsistentWithList (assignment::pc) assignments
 
-let consistentPcsAndLines treeOfPcs assignments =
+module type Coverage =
+sig
+	include Set.S
+	val covTypeString : string
+	val printAll : t -> unit
+	val from_exHist : executionHistory -> t
+	val from_string : string -> elt
+end
+
+module LineCoverage : Coverage =
+struct
+	include LineSet
+	let covTypeString = "line"
+	let printAll set = LineSet.iter Report.printLine set
+	let from_exHist hist = hist.coveredLines
+	let from_string str =
+		match Str.split (Str.regexp ":") str with
+				[filename;linenum] -> filename,int_of_string linenum
+			| _ -> failwith "Badly formatted ignoreLines file"
+end
+
+module BlockCoverage : Coverage =
+struct
+	include StmtInfoSet
+	let covTypeString = "block"
+	let printAll set = StmtInfoSet.iter Report.printBlock set
+	let from_exHist hist = hist.coveredBlocks
+	let from_string str =
+		if Str.string_match
+			(Str.regexp "\\([^ ]*\\) \\([0-9]+\\)")
+			str
+			0
+		then (
+			let funName1 = Str.replace_matched "\\1" str
+			and sid1 = int_of_string (Str.replace_matched "\\2" str) in
+			{ siFuncName = funName1; siStmt = { dummyStmt with sid = sid1; }; }
+		) else failwith "Badly formatted ignoreBlocks file"
+end
+
+module CondCoverage : Coverage =
+struct
+	include CondSet
+	let covTypeString = "cond"
+	let printAll set = CondSet.iter Report.printCondition set
+	let from_exHist hist = hist.coveredConds
+	let from_string str =
+	if Str.string_match
+		(Str.regexp "\\([^ ]*\\) \\([0-9]+\\) \\([TF]\\)")
+		str
+		0
+	then (
+		let funName = Str.replace_matched "\\1" str
+		and sid = int_of_string (Str.replace_matched "\\2" str)
+		and branch = ("T" = Str.replace_matched "\\3" str) in
+		({ siFuncName = funName; siStmt = { dummyStmt with sid = sid; }; },
+		 branch)
+	) else failwith "Badly formatted ignoreConds file"
+end
+
+module EdgeCoverage : Coverage =
+struct
+	include EdgeSet
+	let covTypeString = "edge"
+	let printAll set = EdgeSet.iter Report.printEdge set
+	let from_exHist hist = hist.coveredEdges
+	let from_string str =
+		if Str.string_match
+			(Str.regexp "\\([^ ]*\\) \\([0-9]+\\) .*-> \\([^ ]*\\) \\([0-9]+\\).*")
+			str
+			0
+		then (
+			let funName1 = Str.replace_matched "\\1" str
+			and sid1 = int_of_string (Str.replace_matched "\\2" str)
+			and funName2 = Str.replace_matched "\\3" str
+			and sid2 = int_of_string (Str.replace_matched "\\4" str) in
+			({ siFuncName = funName1; siStmt = { dummyStmt with sid = sid1; }; },
+			 { siFuncName = funName2; siStmt = { dummyStmt with sid = sid2; }; })
+		) else failwith "Badly formatted ignoreEdges file"
+end
+
+module GuarCov(CovSet : Coverage) =
+struct
+type varDepTree = (bytes * CovSet.t) tree
+
+(* Placeholder value for the root of the tree *)
+let rootNodeData = (trueBytes, CovSet.empty)
+
+(* This makes a tree which is a single path. lst is represented up
+	 from the bottom of the path, with trueBytes at the root. Also, the
+	 leaf gets cov as its coverage, while all internal nodes get
+	 CovSet.empty *)
+let lstToTree lst cov : varDepTree =
+	match lst with
+		| [] -> failwith "I don't think this should happen" (* Node ((trueBytes,cov), []) *)
+		| h::t ->
+				let rec helper acc = function
+					| [] -> Node (rootNodeData, acc)
+					| h::t -> helper [Node ((h,CovSet.empty), acc)] t
+				in
+				helper [Node ((h,cov),[])] t
+
+let findMatchingChild equal elt children : 'a tree * 'a tree list =
+	let rec helper acc = function
+		| Node(otherElt,_) as x :: t ->
+				if equal elt otherElt
+				then x, List.rev_append acc t
+				else helper (x::acc) t
+		| _ -> raise Not_found
+	in
+	helper [] children
+
+let rec add_aux lst cov tree : varDepTree =
+	match lst,tree with
+		| [], Node ((bytes, oldCov), children) -> (* lst is already represented in the tree *)
+				Node ((bytes, CovSet.union cov oldCov), children) (* Union in the coverage *)
+		| h::t, Node (value, children) ->
+				try (* See if we can step to a child *)
+					let matchingChild,otherChildren =
+						findMatchingChild myEqual h children
+					in
+					(* Try to add the rest of lst to the child that matches *)
+					let newTree = add_aux t cov matchingChild in
+					Node (value, newTree :: otherChildren)
+				with Not_found ->
+					(* No child matches; add lst as a new child *)
+					let subtree = match lstToTree (List.rev lst) cov with
+						| Node (_,[x]) -> x
+						| _ -> failwith "lstToTree can't return this"
+					in
+					Node (value, subtree :: children)
+
+(* Add a list into the tree *)
+let add lst cov tree = add_aux (List.rev lst) cov tree
+
+let rec getLeavesWithCoverage_aux pc_acc cov_acc tree = match tree with
+	| Node ((bytes,cov), children) ->
+			let newPc = bytes::pc_acc
+			and newCov = CovSet.union cov cov_acc in
+			if children = []
+			then [(newPc,newCov)]
+			else List.concat (List.map (getLeavesWithCoverage_aux newPc newCov) children)
+
+let getLeavesWithCoverage tree = match tree with
+	| Node (x,children) when x == rootNodeData ->
+			(* Ignore the root of tree, which is just a placeholder *)
+			List.concat
+				(List.map (getLeavesWithCoverage_aux [] CovSet.empty) children)
+	| _ -> failwith "Impossible: bad root of tree"
+(*
+let rec countLeaves = function
+	| Node (_,[]) -> 1
+	| Node (_,children) -> List.fold_left (fun sum subtree -> sum + countLeaves subtree) 0 children
+
+let rec countNodes = function
+	| Node (_,children) -> List.fold_left (fun sum subtree -> sum + countNodes subtree) 1 children
+
+let rec printTree_aux indent = function
+	| Node ((bytes,cov),children) ->
+			Format.printf "%s%s (%d)\n" indent (To_string.humanReadableBytes !bytesToVars bytes) (CovSet.cardinal cov);
+			List.iter (printTree_aux (indent^"\t")) children
+
+let printTree = printTree_aux ""
+*)
+
+let consistentPcsAndCovUnits treeOfPcs assignments =
 	let rec helper pcCov = function
 			Node ((condition,cov),children) ->
-				let newPcCov = (condition :: fst pcCov, LineSet.union cov (snd pcCov)) in
+				let newPcCov = (condition :: fst pcCov, CovSet.union cov (snd pcCov)) in
 				if isConsistentWithList (fst newPcCov) assignments
 				then (
 					(* We only want to return the leaf nodes *)
@@ -192,16 +274,16 @@ let consistentPcsAndLines treeOfPcs assignments =
 			Node (x,children) when x == rootNodeData ->
 				List.concat
 					(List.map
-						 (fun child -> helper ([],LineSet.empty) child)
+						 (fun child -> helper ([],CovSet.empty) child)
 						 children)
 		| _ -> failwith "Bad root node"
 
 let bigUnionForSymbols = List.fold_left SymbolSet.union SymbolSet.empty
-let bigUnion = List.fold_left LineSet.union LineSet.empty
+let bigUnion = List.fold_left CovSet.union CovSet.empty
 let bigInter setList =
 	match setList with
 		| [] -> failwith "Taking intersection of no sets"
-		| h::t -> List.fold_left LineSet.inter h t
+		| h::t -> List.fold_left CovSet.inter h t
 
 module CoverageMap = Map.Make
 	(struct
@@ -223,9 +305,9 @@ let rec isSubset ?(cmp=Pervasives.compare) (sub:bytes list) super =
 					| _ -> isSubset ~cmp sub t2
 let notCoveredByASubset assignments resultIn =
 	CoverageMap.fold
-		(fun subassignments coveredLines resultOut ->
+		(fun subassignments coveredCovUnits resultOut ->
 			 if isSubset subassignments assignments
-			 then LineSet.diff resultOut coveredLines
+			 then CovSet.diff resultOut coveredCovUnits
 			 else resultOut)
 		!coverageMap
 		resultIn
@@ -241,8 +323,8 @@ let notCoveredByASubset assignments resultIn =
 				 (fun subset ->
 						try
 							let covered = CoverageMap.find subset !coverageMap in
-							result := LineSet.diff !result covered;
-							if LineSet.is_empty !result
+							result := CovSet.diff !result covered;
+							if CovSet.is_empty !result
 							then raise Break
 						with Not_found -> ())
 				 subsets
@@ -250,15 +332,15 @@ let notCoveredByASubset assignments resultIn =
 	 with Break -> ());
 	!result
 
-let linesControlledBy pcsAndLines assignments =
+let covUnitsControlledBy pcsAndCovUnits assignments =
 	let result =
-		match List.map snd (consistentPcsAndLines pcsAndLines assignments) with
+		match List.map snd (consistentPcsAndCovUnits pcsAndCovUnits assignments) with
 			| [] -> failwith "Impossible: assignments not compatible with any pc"
 			| x -> bigInter x
 	in
 (*	let assignments = List.sort Pervasives.compare assignments in*)
 	let result = Stats.time "filter subsets" (notCoveredByASubset assignments) result in
-	if not (LineSet.is_empty result) then (
+	if not (CovSet.is_empty result) then (
 		coverageMap := CoverageMap.add assignments result !coverageMap;
 		Output.set_mode Output.MSG_REG;
 		Format.printf "\nUnder the condition\n";
@@ -266,66 +348,64 @@ let linesControlledBy pcsAndLines assignments =
 			(fun assignment ->
 				 Format.printf "%s\n"
 				 (Str.replace_first
-						(Str.regexp "==(\\(.*\\),Bytes(\\([^)]*\\)))")
+						(Str.regexp "==(\\(.*\\),[ \t\n]*Bytes(\\([^)]*\\)))")
 						"\\1=\\2"
 						(To_string.humanReadableBytes !bytesToVars assignment)))
 			assignments;
-		Format.printf "these %d lines are hit\n" (LineSet.cardinal result);
-		LineSet.iter (fun (file,line) -> Format.printf "%s:%d\n" file line) result
+		Format.printf "these %d %ss are hit\n" (CovSet.cardinal result) CovSet.covTypeString;
+		CovSet.printAll result
 	);
 	result
 
-let getControlledLines pcsAndLines configs =
+let getControlledCovUnits pcsAndCovUnits configs =
 	bigUnion
 		(List.rev_map
-			 (fun config -> linesControlledBy pcsAndLines config)
+			 (fun config -> covUnitsControlledBy pcsAndCovUnits config)
 			 configs)
 
-let accumulateControlledLines pcsAndLines controlledLines localBytesToVars =
+let accumulateControlledCovUnits pcsAndCovUnits controlledCovUnits localBytesToVars =
 	Format.printf "\nConsidering\n%s\n"
 		(String.concat ", " (List.map (fun (_,var) -> var.vname) localBytesToVars));
-	LineSet.union
-		controlledLines
-		(getControlledLines pcsAndLines (allPossibleValues localBytesToVars))
+	CovSet.union
+		controlledCovUnits
+		(getControlledCovUnits pcsAndCovUnits (allPossibleValues localBytesToVars))
 
-let allLinesInFile filename =
+let allCovUnitsInFile filename =
 	let inChan = open_in filename in
-	let allLines = ref LineSet.empty in
+	let allCovUnits = ref CovSet.empty in
 	(try
 		 while true do
-			 match Str.split (Str.regexp ":") (input_line inChan) with
-					 [var;value] -> allLines := LineSet.add (var,int_of_string value) !allLines
-				 | _ -> failwith "Badly formatted ignoreLines file"
+			 allCovUnits := CovSet.add (CovSet.from_string (input_line inChan)) !allCovUnits
 		 done
 	 with End_of_file -> ()
 	);
-	!allLines
+	!allCovUnits
 
 exception EverythingCovered
 
-let calculateDeps treeOfPcs linesToIgnoreFile configsToTry =
-	let pcsAndLines = getLeavesWithCoverage treeOfPcs in
+let calculateDeps treeOfPcs toIgnoreFile configsToTry =
+	let pcsAndCovUnits = getLeavesWithCoverage treeOfPcs in
 	let firstResult,restResults =
-		match pcsAndLines with
+		match pcsAndCovUnits with
 			| hd::tl -> hd,tl
 			| _ -> failwith "No coverage information"
 	in
 	let (alwaysExecuted,everExecuted) =
 		List.fold_left
 			(fun (interAcc,unionAcc) (_,cov) ->
-				 LineSet.inter interAcc cov, LineSet.union unionAcc cov)
+				 CovSet.inter interAcc cov, CovSet.union unionAcc cov)
 			(snd firstResult, snd firstResult)
 			restResults
 	in
 
-	Format.printf "%d path conditions\n" (List.length pcsAndLines);
+	Format.printf "%d path conditions\n" (List.length pcsAndCovUnits);
 	Format.printf "(instead of %d)\n" !totalNumberOfPcs;
 
 	(* Pick out variables that appear in some path condition, ignoring
 		 those that aren't mentioned anywhere. *)
 	let symbolsInPcs =
 		bigUnionForSymbols
-			(List.map (fun (pc,_) -> Stp.allSymbolsInList pc) pcsAndLines)
+			(List.map (fun (pc,_) -> Stp.allSymbolsInList pc) pcsAndCovUnits)
 	in
 	bytesToVars :=
 		List.filter
@@ -338,45 +418,41 @@ let calculateDeps treeOfPcs linesToIgnoreFile configsToTry =
 	List.iter (fun (_,var) -> Format.printf "%s\n" var.vname) !bytesToVars;
 
 	coverageMap := CoverageMap.add [] alwaysExecuted !coverageMap;
-	Format.printf "\n%d lines always executed:\n" (LineSet.cardinal alwaysExecuted);
-	LineSet.iter
-		(fun (file,line) -> Format.printf "%s:%d\n" file line)
-		alwaysExecuted;
+	Format.printf "\n%d %ss always executed:\n" (CovSet.cardinal alwaysExecuted) CovSet.covTypeString;
+	CovSet.printAll alwaysExecuted;
 
-	let linesToIgnore =
-		if linesToIgnoreFile = ""
-		then LineSet.empty
-		else allLinesInFile linesToIgnoreFile
+	let toIgnore =
+		if toIgnoreFile = ""
+		then CovSet.empty
+		else allCovUnitsInFile toIgnoreFile
 	in
 
-	(* Remove lines that were always executed *)
-	let remainingLines = ref
-		(LineSet.diff (LineSet.diff everExecuted alwaysExecuted) linesToIgnore)
+	(* Remove covUnits that were always executed *)
+	let remainingCovUnits = ref
+		(CovSet.diff (CovSet.diff everExecuted alwaysExecuted) toIgnore)
 	in
 
 	let size = ref 0 in
 	(try
 		 while true do
-			 Format.printf "\n%d lines left\n" (LineSet.cardinal !remainingLines);
-			 LineSet.iter
-				 (fun (file,lineNum) -> Format.printf "%s:%d\n" file lineNum)
-				 !remainingLines;
-			 if LineSet.is_empty !remainingLines then raise EverythingCovered;
+			 Format.printf "\n%d %ss left\n" (CovSet.cardinal !remainingCovUnits) CovSet.covTypeString;
+			 CovSet.printAll !remainingCovUnits;
+			 if CovSet.is_empty !remainingCovUnits then raise EverythingCovered;
 			 incr size;
-			 let linesJustCovered =
+			 let covUnitsJustCovered =
 				 match configsToTry with
 						 None ->
 							 List.fold_left
-								 (fun lines b2v ->
-										accumulateControlledLines treeOfPcs lines b2v)
-								 LineSet.empty
+								 (fun covUnits b2v ->
+										accumulateControlledCovUnits treeOfPcs covUnits b2v)
+								 CovSet.empty
 								 (subsetsOfSize !size !bytesToVars)
 					 | Some configs ->
-							 getControlledLines
+							 getControlledCovUnits
 								 treeOfPcs
 								 (List.filter (fun config -> List.length config = !size) configs)
 			 in
-			 remainingLines := LineSet.diff !remainingLines linesJustCovered
+			 remainingCovUnits := CovSet.diff !remainingCovUnits covUnitsJustCovered
 		 done
 	 with EverythingCovered -> ()
 	);
@@ -423,8 +499,9 @@ let addCoverageFromFile filename =
 											 state.path_condition
 											 state.path_condition_tracked)
 			 in
-			 treeOfPcs := add (List.map simplifyLogicalOps pc) hist.coveredLines !treeOfPcs)
+			 treeOfPcs := add (List.map simplifyLogicalOps pc) (CovSet.from_exHist hist) !treeOfPcs)
 		jobResults
+end
 
 let readInValues valuesFile =
 	let inChan = open_in valuesFile in
@@ -477,17 +554,29 @@ let readInConfigsToTry configsFile =
 	);
 	List.rev !configs
 
-let linesToIgnoreFile = ref ""
+let toIgnoreFile = ref ""
+
+let coverageType = ref Report.Line
+let setCoverageType s =
+	match String.lowercase s with
+			"line" -> coverageType := Report.Line
+		| "edge" -> coverageType := Report.Edge
+		| "block" -> coverageType := Report.Block
+		| "cond" -> coverageType := Report.Cond
+		| _ -> failwith "Unknown coverage type"
 
 let speclist = [
+	("--type",
+	 Arg.String setCoverageType,
+	 "<coverageType> which type of coverage: line, block, edge, or cond");
 	("--fileWithPossibleValues",
 	 Arg.String readInValues,
 	 "<filename> File from which to read the possible values for variables
 \t\t\tFormat is \"varname val_1 val_2 ... val_k\", with one variable per line,
 \t\t\tand the values must all be integers\n");
-	("--ignoreLines",
-	 Arg.Set_string linesToIgnoreFile,
-	 "<filename> A file listing which lines to ignore when computing guaranteed coverage");
+	("--ignore",
+	 Arg.Set_string toIgnoreFile,
+	 "<filename> A file listing which entities to ignore when computing guaranteed coverage");
 	("--configsToTry",
 	 Arg.Set_string configsToTryFile,
 	 "<filename> Only check configurations from this file for guaranteed coverage.
@@ -502,11 +591,18 @@ Options can come before, after, or interspersed with coverage files.
 You must specify either a possibleValues file or a configsToTry file.
 "
 
+module L = GuarCov(LineCoverage)
+module B = GuarCov(BlockCoverage)
+module C = GuarCov(CondCoverage)
+module E = GuarCov(EdgeCoverage)
+
+let coverageFiles = ref []
+
 let main () =
 	initCIL();
 	Arg.parse
 		(Arg.align speclist)
-		addCoverageFromFile (* Unnamed arguments are treated as coverage files *)
+		(fun filename -> coverageFiles := filename::!coverageFiles) (* Unnamed arguments are treated as coverage files *)
 		usageMsg;
 	Stats.reset Stats.HardwareIfAvail; (* Enable timing *)
 	let configsToTry =
@@ -516,7 +612,19 @@ let main () =
 	in
 	if Hashtbl.length varToVals = 0 && !configsToTryFile = ""
 	then (print_endline usageMsg; exit(1));
-	calculateDeps !treeOfPcs !linesToIgnoreFile configsToTry
+	match !coverageType with
+		| Report.Line ->
+				List.iter L.addCoverageFromFile !coverageFiles;
+				L.calculateDeps !L.treeOfPcs !toIgnoreFile configsToTry
+		| Report.Edge ->
+				List.iter E.addCoverageFromFile !coverageFiles;
+				E.calculateDeps !E.treeOfPcs !toIgnoreFile configsToTry
+		| Report.Block ->
+				List.iter B.addCoverageFromFile !coverageFiles;
+				B.calculateDeps !B.treeOfPcs !toIgnoreFile configsToTry
+		| Report.Cond ->
+				List.iter C.addCoverageFromFile !coverageFiles;
+				C.calculateDeps !C.treeOfPcs !toIgnoreFile configsToTry
 ;;
 
 main ()
