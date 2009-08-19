@@ -54,6 +54,13 @@ int getsockname(int __fd, struct sockaddr *__addr, socklen_t * __restrict  __len
 	return 0;
 }
 
+int getsockopt(int socket, int level, int option_name, void *restrict option_value, socklen_t *restrict option_len){
+	*((int*)option_value) = 0;
+	return 0;
+}
+
+
+
 int connect(int socket, const struct sockaddr *address,
 						socklen_t address_len) {
 	return 0;

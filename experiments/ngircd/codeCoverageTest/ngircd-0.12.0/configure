@@ -4651,7 +4651,7 @@ done
 
 
 
-for ac_header in arpa/inet.h ctype.h malloc.h stdbool.h stddef.h varargs.h
+for ac_header in arpa/inet.h ctype.h stdbool.h stddef.h varargs.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if eval "test \"\${$as_ac_Header+set}\" = set"; then
@@ -5977,7 +5977,7 @@ done
 
 
 for ac_func in  \
-	bind gethostbyaddr gethostbyname gethostname inet_ntoa malloc memmove \
+	bind gethostbyaddr gethostbyname gethostname inet_ntoa memmove \
 	memset realloc setsid setsockopt socket strcasecmp strchr strcspn strerror \
 	strstr waitpid
 do
