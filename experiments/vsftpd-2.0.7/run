@@ -1,5 +1,4 @@
-VSFTPDFILES="main.c utility.c prelogin.c ftpcmdio.c postlogin.c privsock.c tunables.c ftpdataio.c secbuf.c ls.c postprivparent.c logging.c str.c netstr.c sysstr.c strlist.c banner.c filestr.c parseconf.c secutil.c ascii.c oneprocess.c privops.c standalone.c hash.c tcpwrap.c ipaddrparse.c access.c features.c readwrite.c opts.c ssl.c sysutil.c sysdeputil.c"
-# twoprocess.c
+VSFTPDFILES="main.c utility.c prelogin.c ftpcmdio.c postlogin.c privsock.c tunables.c ftpdataio.c secbuf.c ls.c postprivparent.c logging.c str.c netstr.c sysstr.c strlist.c banner.c filestr.c parseconf.c secutil.c ascii.c oneprocess.c twoprocess.c privops.c standalone.c hash.c tcpwrap.c ipaddrparse.c access.c features.c readwrite.c opts.c ssl.c sysutil.c sysdeputil.c"
 
 STATSFILE=vsftpd.stats
 
@@ -10,33 +9,28 @@ if [[ "$1" == stats ]]; then
 	exit
 fi
 
-TOPDIR=../..
-LIBCDIR=$TOPDIR/libc
-MOCKEDDIR=$TOPDIR/mockedFns
+TRUNK=../..
+LIBCDIR=$TRUNK/libc
+MOCKEDDIR=$TRUNK/mockedFns
+CILLY="$TRUNK/cil/bin/cilly --merge --warnall --disallowDuplication -D_FILE_OFFSET_BITS=64"
 
 if [[ "$1" == merge ]]; then
 	shift
-	../../cil/bin/cilly --merge --warnall --useLogicalOperators --disallowDuplication \
+	$CILLY --useLogicalOperators \
 		-I $LIBCDIR $LIBCDIR/*.c \
-		-D_FILE_OFFSET_BITS=64 \
-		-I $MOCKEDDIR -include $MOCKEDDIR/symexe.h $MOCKEDDIR/*.c \
+		-I $MOCKEDDIR $MOCKEDDIR/*.c \
 		$VSFTPDFILES --out=vsftpd_comb.c $*
 elif [[ "$1" == mergeUnfolded ]]; then
 	shift
 	echo 'Merging vsftpd alone (without logical operators)'
-	../../cil/bin/cilly --merge --warnall --disallowDuplication \
-		-D_FILE_OFFSET_BITS=64 \
-		$VSFTPDFILES --out=vsftpdAlone_unfolded.c $*
+	$CILLY -I $LIBCDIR $VSFTPDFILES --out=vsftpdAlone_unfolded.c
 	echo 'Now merging in libc and mocked functions (with logical operators)'
-	../../cil/bin/cilly --merge --warnall --useLogicalOperators --disallowDuplication \
+	$CILLY --useLogicalOperators \
 		-I $LIBCDIR $LIBCDIR/*.c \
-		-D_FILE_OFFSET_BITS=64 \
-		-I $MOCKEDDIR -include $MOCKEDDIR/symexe.h $MOCKEDDIR/*.c \
+		-I $MOCKEDDIR $MOCKEDDIR/*.c \
 		vsftpdAlone_unfolded.c --out=vsftpd_comb_unfolded.c $*
 	rm vsftpdAlone_unfolded.c
 else
-	../../cil/bin/cilly --merge --warnall --disallowDuplication \
-		-D_FILE_OFFSET_BITS=64 \
-		-I $MOCKEDDIR \
+	$CILLY -I $MOCKEDDIR \
 		vsftpd_comb.c --covStats=$STATSFILE --doexecute $*
 fi
