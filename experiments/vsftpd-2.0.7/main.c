@@ -36,17 +36,17 @@ extern void symtest_initialize(void);
 extern int dup2(int,int);
 extern int socket(int,int,int);
 extern void addfile(const char *filename, const char *contents, unsigned int len);
-char confFileContents[] = "chown_upload_mode=004
-max_per_ip=3
+char confFileContents[] = "chown_upload_mode=00600
+max_login_fails=3
 
 anonymous_enable=1
-local_enable=TRUE
+port_enable=TRUE
 pasv_enable=YES
-port_enable=0
+local_enable=0
 chroot_local_user=FALSE
 write_enable=NO
 #
-user_config_dir=aow
+pam_service_name=ftp
 listen_address6=
 ";
 unsigned int confFileSize = sizeof(confFileContents) - 1;

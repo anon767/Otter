@@ -389,8 +389,8 @@ void common_initialization(const char *commandString) {
 #ifdef TUNABLE_PORT_PROMISCUOUS
 	  tunable_port_promiscuous = TUNABLE_PORT_PROMISCUOUS;
 #else
-	//  __SYMBOLIC(&tunable_port_promiscuous);
-	//  __ASSUME(OR((tunable_port_promiscuous == 0),(tunable_port_promiscuous == 1)));
+	  __SYMBOLIC(&tunable_port_promiscuous);
+	  __ASSUME(OR((tunable_port_promiscuous == 0),(tunable_port_promiscuous == 1)));
 #endif
 #ifdef TUNABLE_PASSWD_CHROOT_ENABLE
 	  tunable_passwd_chroot_enable = TUNABLE_PASSWD_CHROOT_ENABLE;
