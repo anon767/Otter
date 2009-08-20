@@ -163,8 +163,8 @@ echo Scheduling nlstStarF
 echo Scheduling port
 ./stats -b vsftpd 1=3 2=866 # port
 echo Scheduling listIPv6
-./stats -b vsftpd 1=3 2=867 # listIPv6
+./stats -b vsftpd 1=3 2=912 # listIPv6
 echo Scheduling retrIPv6
-./stats -b vsftpd 1=3 2=868 # retrIPv6
+./stats -b vsftpd 1=3 2=913 # retrIPv6
 echo Scheduling stouIPv6
-./stats -b vsftpd 1=3 2=869 # stouIPv6
+./stats -b vsftpd 1=3 2=914 # stouIPv6
