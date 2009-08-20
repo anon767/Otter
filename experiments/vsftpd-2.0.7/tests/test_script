@@ -7,15 +7,16 @@
 #	date
 #		./symbTest_restricted $1
 #		./concreteTest_restricted $1
-#	echo \#DONE TEST_SUITE restricted
 #	date
+#	echo \#DONE TEST_SUITE restricted
 #	echo \#BEGIN TEST_SUITE normal
 #	date
-#		./symbTest $1
+		./symbTest $1 line
+		./symbTest $1 block
+		./symbTest $1 edge
+		./symbTest $1 cond _unfolded
 #		./concreteTest $1
-#	echo \#DONE TEST_SUITE normal
 #	date
-#echo \#DONE TEST_SCRIPT
+#	echo \#DONE TEST_SUITE normal
 #date
-
-./guarCov $1
+#echo \#DONE TEST_SCRIPT

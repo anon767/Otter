@@ -31,7 +31,7 @@ void addfile(const char *filename, const char *contents, size_t len) {
 }
 
 void common_initialization(const char *commandString) {
-	// Make stdin and stderr
+	// Make stdout and stderr
 	newStream(1);
 	newStream(2);
 
@@ -44,9 +44,9 @@ void common_initialization(const char *commandString) {
 	IOSIM_fd[4]->sym_file->stat.st_size = bufferLen;
 	IOSIM_fd[4]->sym_file->stat.st_mode = S_IFSOCK;
 
-	// vsftpd uses every third socket thereafter, at least as far Otter
-	// is concerned. Here, we just initialize a bunch.
-	for (int i = 7; i <= 30; ++i) {
+	// From Otter's perspective, a PORT command increases the fd number by 2 and a PASV increases it by 3.
+	// Here, we just initialize a bunch of file descriptors.
+	for (int i = 6; i <= 15; ++i) {
 		newStream(i);
 	}
 
@@ -431,8 +431,8 @@ void common_initialization(const char *commandString) {
 #ifdef TUNABLE_DUAL_LOG_ENABLE
 	  tunable_dual_log_enable = TUNABLE_DUAL_LOG_ENABLE;
 #else
-	//  __SYMBOLIC(&tunable_dual_log_enable);
-	//  __ASSUME(OR((tunable_dual_log_enable == 0),(tunable_dual_log_enable == 1)));
+	  __SYMBOLIC(&tunable_dual_log_enable);
+	  __ASSUME(OR((tunable_dual_log_enable == 0),(tunable_dual_log_enable == 1)));
 #endif
 #ifdef TUNABLE_SYSLOG_ENABLE
 	  tunable_syslog_enable = TUNABLE_SYSLOG_ENABLE;

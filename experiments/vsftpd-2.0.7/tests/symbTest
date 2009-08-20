@@ -1,22 +1,28 @@
-STATSFILE=../vsftpd.stats
+STATS_FILE=../vsftpd.stats
 
-TOPDIR=../../..
-LIBCDIR=$TOPDIR/libc
-MOCKEDDIR=$TOPDIR/mockedFns
+TOP_DIR=../../..
+LIBC_DIR=$TOP_DIR/libc
+MOCKED_DIR=$TOP_DIR/mockedFns
 
 TEST_NAME=$1
-shift
+COV_TYPE=$2
+SUFFIX=$3
 
-echo \#BEGIN TEST_SYMBOLIC TEST_NAME=$TEST_NAME MACRO=\"$MACRO\"
+echo \#BEGIN TEST_SYMBOLIC TEST_NAME=$TEST_NAME COV_TYPE=\"$COV_TYPE\" SUFFIX=\"$SUFFIX\"
 date
+
+OUTPUT_DIR=/fs/skoll/symexe/data/vsftpd-2.0.7/$COV_TYPE$SUFFIX
+mkdir -p $OUTPUT_DIR/marshalledData
+chgrp -R skoll $OUTPUT_DIR
+chmod -R g=u $OUTPUT_DIR
 
 CILLY_DONT_COMPILE_AFTER_MERGE= \
-$TOPDIR/cil/bin/cilly --merge --useLogicalOperators \
--D_FILE_OFFSET_BITS=64 \
--I $MOCKEDDIR \
-../vsftpd_comb.c $TEST_NAME.c common_init.c \
---lineCov --edgeCov --covStats=$STATSFILE --doexecute --printLittle --timeout=14400 \
---marshalCoverageTo=/fs/skoll/symexe/data/vsftpd-2.0.7/marshalledData/$TEST_NAME.data
+	$TOP_DIR/cil/bin/cilly --merge --useLogicalOperators --disallowDuplication \
+	-D_FILE_OFFSET_BITS=64 \
+	-I $MOCKED_DIR \
+	../vsftpd_comb${SUFFIX}.c $TEST_NAME.c common_init.c \
+	--${COV_TYPE}Cov --covStats=$STATS_FILE --doexecute --printLittle --timeout=14400 \
+	--marshalCoverageTo=$OUTPUT_DIR/marshalledData/$TEST_NAME.data
 
-echo \#DONE TEST_SYMBOLIC TEST_NAME=$TEST_NAME MACRO=\"$MACRO\"
 date
+echo \#DONE TEST_SYMBOLIC TEST_NAME=$TEST_NAME COV_TYPE=\"$COV_TYPE\" SUFFIX=\"$SUFFIX\"
