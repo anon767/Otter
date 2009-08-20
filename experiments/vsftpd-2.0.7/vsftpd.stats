@@ -53,6 +53,9 @@ handle_sigurg
 get_remote_transfer_fd
 check_abor
 handle_size
+handle_site
+handle_site_chmod
+handle_site_umask
 handle_appe
 handle_mdtm
 handle_eprt
@@ -213,6 +216,17 @@ vsf_one_process_start
 vsf_one_process_login
 vsf_one_process_get_priv_data_sock
 vsf_one_process_chown_upload
+handle_sigchld
+vsf_two_process_start
+drop_all_privs
+vsf_two_process_login
+vsf_two_process_get_priv_data_sock
+vsf_two_process_chown_upload
+process_login_req
+process_ssl_slave_req
+common_do_login
+handle_per_user_config
+calculate_chdir_dir
 vsf_privop_get_ftp_port_sock
 vsf_privop_do_file_chown
 vsf_privop_do_login
@@ -223,7 +237,7 @@ setup_username_globals
 vsf_standalone_main
 prepare_child
 drop_ip_count
-handle_sigchld
+handle_sigchld___0
 handle_sighup
 hash_ip
 hash_pid

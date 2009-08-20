@@ -3,7 +3,7 @@
 
 #line 141 "/usr/include/stdint.h"
 typedef unsigned long long uintmax_t;
-#line 214 "/usr/local/gcc-4.0.1/lib/gcc/i686-pc-linux-gnu/4.0.1/include/stddef.h"
+#line 213 "/usr/lib/gcc/i386-redhat-linux/3.4.6/include/stddef.h"
 typedef unsigned int size_t;
 #line 59 "/usr/include/bits/types.h"
 typedef long long __quad_t;
@@ -55,9 +55,9 @@ struct _IO_FILE {
 };
 #line 337 "/usr/include/libio.h"
 typedef struct _IO_FILE _IO_FILE;
-#line 43 "/usr/local/gcc-4.0.1/lib/gcc/i686-pc-linux-gnu/4.0.1/include/stdarg.h"
+#line 43 "/usr/lib/gcc/i386-redhat-linux/3.4.6/include/stdarg.h"
 typedef __builtin_va_list __gnuc_va_list;
-#line 105 "/usr/local/gcc-4.0.1/lib/gcc/i686-pc-linux-gnu/4.0.1/include/stdarg.h"
+#line 105 "/usr/lib/gcc/i386-redhat-linux/3.4.6/include/stdarg.h"
 typedef __gnuc_va_list va_list;
 #line 182 "/usr/include/bits/types.h"
 typedef int __ssize_t;
@@ -106,6 +106,13 @@ struct dirent {
 struct __dirstream;
 #line 128 "/usr/include/dirent.h"
 typedef struct __dirstream DIR;
+#line 10 "../../mockedFns/FD_MACROS.c"
+struct fd_set {
+   unsigned int count ;
+   int fd[1024] ;
+};
+#line 10 "../../mockedFns/FD_MACROS.c"
+typedef struct fd_set fd_set___0;
 #line 136 "/usr/include/bits/types.h"
 typedef __u_quad_t __dev_t;
 #line 137 "/usr/include/bits/types.h"
@@ -146,31 +153,31 @@ struct stat {
    struct timespec st_ctim ;
    __ino64_t st_ino ;
 };
-#line 11 "../../mockedFns/iosim.h"
+#line 12 "../../mockedFns/iosim.h"
 struct __anonstruct_sym_file_t_17 {
    char *contents ;
    struct stat stat ;
 };
-#line 11 "../../mockedFns/iosim.h"
+#line 12 "../../mockedFns/iosim.h"
 typedef struct __anonstruct_sym_file_t_17 sym_file_t;
-#line 16 "../../mockedFns/iosim.h"
+#line 17 "../../mockedFns/iosim.h"
 struct __anonstruct_sym_file_stream_t_18 {
    int fd ;
    __quad_t offset ;
    sym_file_t *sym_file ;
    char *buffer ;
 };
-#line 16 "../../mockedFns/iosim.h"
+#line 17 "../../mockedFns/iosim.h"
 typedef struct __anonstruct_sym_file_stream_t_18 sym_file_stream_t;
-#line 106 "/usr/include/getopt.h"
+#line 83 "../../mockedFns/getopt.h"
 struct option {
    char const   *name ;
    int has_arg ;
    int *flag ;
    int val ;
 };
-#line 11 "../../mockedFns/getopt.c"
-enum __anonenum_ordering_10 {
+#line 16 "../../mockedFns/getopt.c"
+enum __anonenum_ordering_18 {
     REQUIRE_ORDER = 0,
     PERMUTE = 1,
     RETURN_IN_ORDER = 2
@@ -206,7 +213,7 @@ struct in_addr {
 };
 #line 72 "/usr/include/sys/types.h"
 typedef __mode_t mode_t;
-#line 346 "../../mockedFns/iosim.c"
+#line 352 "../../mockedFns/iosim.c"
 struct __dirstream {
    char dirname[4097] ;
    int index ;
@@ -317,6 +324,12 @@ struct sigaction {
    int sa_flags ;
    void (*sa_restorer)(void) ;
 };
+#line 50 "/usr/include/bits/sigstack.h"
+struct sigaltstack {
+   void *ss_sp ;
+   int ss_flags ;
+   size_t ss_size ;
+};
 #line 153 "/usr/include/bits/types.h"
 typedef long __suseconds_t;
 #line 69 "/usr/include/bits/time.h"
@@ -353,7 +366,7 @@ struct timezone {
    int tz_minuteswest ;
    int tz_dsttime ;
 };
-#line 56 "../../mockedFns/time.c"
+#line 57 "../../mockedFns/time.c"
 struct utimbuf;
 #line 4 "filesize.h"
 typedef long long filesize_t;
@@ -548,6 +561,11 @@ enum EVSFPrivopLoginResult {
     kVSFLoginAnon = 2,
     kVSFLoginReal = 3
 } ;
+#line 166 "sysutil.h"
+struct vsf_sysutil_wait_retval {
+   int PRIVATE_HANDS_OFF_syscall_retval ;
+   int PRIVATE_HANDS_OFF_exit_status ;
+};
 #line 4 "hash.h"
 struct hash;
 #line 236 "standalone.c"
@@ -572,11 +590,6 @@ enum EVSFSysUtilInterruptContext {
     kVSFSysUtilUnknown = 0,
     kVSFSysUtilIO = 1
 } ;
-#line 166 "sysutil.h"
-struct vsf_sysutil_wait_retval {
-   int syscall_retval ;
-   int exit_status ;
-};
 #line 308 "/usr/include/bits/socket.h"
 struct linger {
    int l_onoff ;
@@ -749,9 +762,9 @@ enum __anonenum_cap_flag_value_t_16 {
 } ;
 #line 66 "/usr/include/sys/capability.h"
 typedef enum __anonenum_cap_flag_value_t_16 cap_flag_value_t;
-#line 1 "cil-qWUYHWcu.o"
-#pragma merger(0,"/tmp/cil-blpcidLl.i","")
-#line 9 "./../../mockedFns/symexe.h"
+#line 1 "cil-fscMOfgb.o"
+#pragma merger(0,"/tmp/cil-4wY6AOY6.i","")
+#line 640 "/usr/include/stdlib.h"
 extern  __attribute__((__nothrow__, __noreturn__)) void exit(int __status ) ;
 #line 3 "../../libc/assert.c"
 int assert(int expression ) 
@@ -768,8 +781,8 @@ int assert(int expression )
   }
 }
 }
-#line 1 "cil-efkXa3BQ.o"
-#pragma merger(0,"/tmp/cil-qPd7GpiK.i","")
+#line 1 "cil-lXJTIjr3.o"
+#pragma merger(0,"/tmp/cil-MxWISZBu.i","")
 #line 148 "/usr/include/stdlib.h"
  __attribute__((__nothrow__)) int atoi(char const   *nptr )  __attribute__((__pure__,
 __nonnull__(1))) ;
@@ -947,8 +960,8 @@ int atoi(char const   *nptr )
   return ((int )__cil_tmp);
 }
 }
-#line 1 "cil-GcVfNokS.o"
-#pragma merger(0,"/tmp/cil-zRsFfPI0.i","")
+#line 1 "cil-cFjGNly9.o"
+#pragma merger(0,"/tmp/cil-UBgNCzHR.i","")
 #line 151 "/usr/include/stdlib.h"
  __attribute__((__nothrow__)) long atol(char const   *nptr )  __attribute__((__pure__,
 __nonnull__(1))) ;
@@ -966,8 +979,8 @@ long atol(char const   *nptr )
   return ((long )__cil_tmp);
 }
 }
-#line 1 "cil-ylExFGxo.o"
-#pragma merger(0,"/tmp/cil-4SzQxJbN.i","")
+#line 1 "cil-tdjIsoJH.o"
+#pragma merger(0,"/tmp/cil-0dH62sog.i","")
 #line 31 "../../libc/ctype.h"
 unsigned char const   __ctypes[257] ;
 #line 10 "../../libc/ctypes.c"
@@ -1038,8 +1051,8 @@ unsigned char const   __ctypes[257]  =
         (unsigned char const   )96,      (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34, 
         (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34, 
         (unsigned char const   )34};
-#line 1 "cil-JTP3hSCn.o"
-#pragma merger(0,"/tmp/cil-AKDreke1.i","")
+#line 1 "cil-RjhWU25C.o"
+#pragma merger(0,"/tmp/cil-mFG4xYbp.i","")
 #line 208 "/usr/include/stdio.h"
 int fclose(FILE *f ) ;
 #line 754
@@ -1060,8 +1073,8 @@ int fclose(FILE *f )
   return (__cil_tmp___0);
 }
 }
-#line 1 "cil-qDTnwuSG.o"
-#pragma merger(0,"/tmp/cil-R6GDZj1H.i","")
+#line 1 "cil-gd4KnAma.o"
+#pragma merger(0,"/tmp/cil-SNCobR1P.i","")
 #line 213 "/usr/include/stdio.h"
 int fflush(FILE *stream ) ;
 #line 3 "../../libc/fflush.c"
@@ -1073,8 +1086,8 @@ int fflush(FILE *stream )
   return (0);
 }
 }
-#line 1 "cil-CVefZtX1.o"
-#pragma merger(0,"/tmp/cil-zLUpgY0N.i","")
+#line 1 "cil-2xYYJCqy.o"
+#pragma merger(0,"/tmp/cil-sZBYb4X0.i","")
 #line 450 "/usr/include/libio.h"
  __attribute__((__nothrow__)) int _IO_getc(struct _IO_FILE *stream ) ;
 #line 437 "/usr/include/stdio.h"
@@ -1090,8 +1103,8 @@ int fgetc(FILE *f )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-4zDxeJXa.o"
-#pragma merger(0,"/tmp/cil-OF0HO90C.i","")
+#line 1 "cil-TMy49vhx.o"
+#pragma merger(0,"/tmp/cil-3DJJPvbU.i","")
 #line 528 "/usr/include/stdio.h"
 char *fgets(char * __restrict  s , int n , FILE * __restrict  f ) ;
 #line 11 "../../libc/fgets.c"
@@ -1141,8 +1154,8 @@ char *fgets(char * __restrict  s , int n , FILE * __restrict  f )
    void __builtin_va_end(__builtin_va_list  ) ;  */
 /* compiler builtin: 
    void __builtin_va_start(__builtin_va_list  ) ;  */
-#line 1 "cil-luffpjdF.o"
-#pragma merger(0,"/tmp/cil-1wqlQGno.i","")
+#line 1 "cil-YYtAZIzq.o"
+#pragma merger(0,"/tmp/cil-3IPdb9X1.i","")
 #line 323 "/usr/include/stdio.h"
 int fprintf(FILE * __restrict  file , char const   * __restrict  format  , ...) ;
 #line 338
@@ -1163,8 +1176,8 @@ int fprintf(FILE * __restrict  file , char const   * __restrict  format  , ...)
   return (rv);
 }
 }
-#line 1 "cil-7k1UbHDw.o"
-#pragma merger(0,"/tmp/cil-MtpL94sK.i","")
+#line 1 "cil-pPTBpuHt.o"
+#pragma merger(0,"/tmp/cil-lNOWncET.i","")
 #line 479 "/usr/include/stdio.h"
 int fputc(int c , FILE *f ) ;
 #line 38 "/usr/include/bits/errno.h"
@@ -1248,8 +1261,8 @@ int fputc(int c , FILE *f )
   return (__cil_tmp___0);
 }
 }
-#line 1 "cil-PqMRuAFS.o"
-#pragma merger(0,"/tmp/cil-xM68ubdj.i","")
+#line 1 "cil-IARTC1pA.o"
+#pragma merger(0,"/tmp/cil-MSF1Oquf.i","")
 #line 585 "/usr/include/stdio.h"
 int fputs(char const   * __restrict  s , FILE * __restrict  file ) ;
 #line 242 "/usr/include/string.h"
@@ -1269,8 +1282,8 @@ int fputs(char const   * __restrict  s , FILE * __restrict  file )
   return ((int )__cil_tmp___0);
 }
 }
-#line 1 "cil-fJu2YQE1.o"
-#pragma merger(0,"/tmp/cil-jF5Booyq.i","")
+#line 1 "cil-9hjAun7V.o"
+#pragma merger(0,"/tmp/cil-6QaaxfEy.i","")
 #line 605 "/usr/include/stdio.h"
 size_t fread(void * __restrict  ptr , size_t size , size_t nmemb , FILE * __restrict  f ) ;
 #line 314 "/usr/include/unistd.h"
@@ -1340,10 +1353,10 @@ size_t fread(void * __restrict  ptr , size_t size , size_t nmemb , FILE * __rest
   return (__cil_tmp / size);
 }
 }
-#line 1 "cil-mSds65B6.o"
-#pragma merger(0,"/tmp/cil-eoa80d4X.i","")
-#line 1 "cil-zR57UVTG.o"
-#pragma merger(0,"/tmp/cil-M7HUM6uq.i","")
+#line 1 "cil-TaWEawGv.o"
+#pragma merger(0,"/tmp/cil-ZB6JteVt.i","")
+#line 1 "cil-7BfSKZVp.o"
+#pragma merger(0,"/tmp/cil-hfldipok.i","")
 #line 611 "/usr/include/stdio.h"
 size_t fwrite(void const   * __restrict  ptr , size_t size , size_t nmemb , FILE * __restrict  f ) ;
 #line 11 "../../libc/fwrite2.c"
@@ -1357,10 +1370,10 @@ size_t fwrite(void const   * __restrict  ptr , size_t size , size_t nmemb , FILE
   return (__cil_tmp / size);
 }
 }
-#line 1 "cil-kGtSEwX4.o"
-#pragma merger(0,"/tmp/cil-oAia8G4X.i","")
-#line 1 "cil-8wBB7ahg.o"
-#pragma merger(0,"/tmp/cil-H3at1gpK.i","")
+#line 1 "cil-97cvNHBc.o"
+#pragma merger(0,"/tmp/cil-0P7rA2Cg.i","")
+#line 1 "cil-jzKZLdIZ.o"
+#pragma merger(0,"/tmp/cil-0FBtmyLT.i","")
 #line 33 "../../libc/ctype.h"
 __inline static int __ctype_isalnum(int __c ) 
 { 
@@ -1383,8 +1396,8 @@ int isalnum(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-BThgdIbU.o"
-#pragma merger(0,"/tmp/cil-Hg3Dflar.i","")
+#line 1 "cil-xqxADVG9.o"
+#pragma merger(0,"/tmp/cil-hXB1syTw.i","")
 #line 39 "../../libc/ctype.h"
 __inline static int __ctype_isalpha(int __c ) 
 { 
@@ -1407,8 +1420,8 @@ int isalpha(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-vFeOiIBp.o"
-#pragma merger(0,"/tmp/cil-3k5dT175.i","")
+#line 1 "cil-Q18pR7U5.o"
+#pragma merger(0,"/tmp/cil-YcWJuo5q.i","")
 #line 44 "../../libc/ctype.h"
 __inline static int __ctype_isascii(int __c ) 
 { 
@@ -1431,8 +1444,8 @@ int isascii(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-teP9Ryrv.o"
-#pragma merger(0,"/tmp/cil-2CMnT25h.i","")
+#line 1 "cil-BLDnITzw.o"
+#pragma merger(0,"/tmp/cil-Tj2NnAym.i","")
 #line 49 "../../libc/ctype.h"
 __inline static int __ctype_isblank(int __c ) 
 { 
@@ -1455,8 +1468,8 @@ int isblank(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-WKXJlviH.o"
-#pragma merger(0,"/tmp/cil-9B9KP08Y.i","")
+#line 1 "cil-cpl6vsAu.o"
+#pragma merger(0,"/tmp/cil-VaTLYbrE.i","")
 #line 54 "../../libc/ctype.h"
 __inline static int __ctype_iscntrl(int __c ) 
 { 
@@ -1479,8 +1492,8 @@ int iscntrl(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-TBp4I0aN.o"
-#pragma merger(0,"/tmp/cil-nM0nIk7f.i","")
+#line 1 "cil-QA9OqOG2.o"
+#pragma merger(0,"/tmp/cil-U3dHEC3r.i","")
 #line 59 "../../libc/ctype.h"
 __inline static int __ctype_isdigit(int __c ) 
 { 
@@ -1503,8 +1516,8 @@ int isdigit(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-5yS9zVRG.o"
-#pragma merger(0,"/tmp/cil-D2XVEpRj.i","")
+#line 1 "cil-Ls53yfQL.o"
+#pragma merger(0,"/tmp/cil-lpfUQ3Lk.i","")
 #line 64 "../../libc/ctype.h"
 __inline static int __ctype_isgraph(int __c ) 
 { 
@@ -1527,8 +1540,8 @@ int isgraph(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-JK7QEDWb.o"
-#pragma merger(0,"/tmp/cil-JMGqC7iZ.i","")
+#line 1 "cil-moRQCL8J.o"
+#pragma merger(0,"/tmp/cil-aDSNNO99.i","")
 #line 70 "../../libc/ctype.h"
 __inline static int __ctype_islower(int __c ) 
 { 
@@ -1551,8 +1564,8 @@ int islower(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-qT4CBl2v.o"
-#pragma merger(0,"/tmp/cil-CpaE2mxu.i","")
+#line 1 "cil-IKdVO3Xi.o"
+#pragma merger(0,"/tmp/cil-A01sc4Cu.i","")
 #line 75 "../../libc/ctype.h"
 __inline static int __ctype_isprint(int __c ) 
 { 
@@ -1575,8 +1588,8 @@ int isprint(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-PsOW3XKR.o"
-#pragma merger(0,"/tmp/cil-9a9eqo5A.i","")
+#line 1 "cil-XUQp1h5r.o"
+#pragma merger(0,"/tmp/cil-3KNWhaXg.i","")
 #line 80 "../../libc/ctype.h"
 __inline static int __ctype_ispunct(int __c ) 
 { 
@@ -1599,8 +1612,8 @@ int ispunct(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-GebUK8ub.o"
-#pragma merger(0,"/tmp/cil-OMFQeKgY.i","")
+#line 1 "cil-5v5CuT5h.o"
+#pragma merger(0,"/tmp/cil-W7ZfXslY.i","")
 #line 85 "../../libc/ctype.h"
 __inline static int __ctype_isspace(int __c ) 
 { 
@@ -1621,8 +1634,8 @@ int isspace(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-WTnJ0xtC.o"
-#pragma merger(0,"/tmp/cil-Py6osNvJ.i","")
+#line 1 "cil-NK1I1wZN.o"
+#pragma merger(0,"/tmp/cil-J5IcFcXk.i","")
 #line 90 "../../libc/ctype.h"
 __inline static int __ctype_isupper(int __c ) 
 { 
@@ -1645,8 +1658,8 @@ int isupper(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-hMqrdcSj.o"
-#pragma merger(0,"/tmp/cil-Ms3K6yM1.i","")
+#line 1 "cil-lcPj1yKA.o"
+#pragma merger(0,"/tmp/cil-YnfQSpmU.i","")
 #line 95 "../../libc/ctype.h"
 __inline static int __ctype_isxdigit(int __c ) 
 { 
@@ -1669,8 +1682,8 @@ int isxdigit(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-uXCuaDUD.o"
-#pragma merger(0,"/tmp/cil-k7454czH.i","")
+#line 1 "cil-7PZntUyi.o"
+#pragma merger(0,"/tmp/cil-z1FmpmF9.i","")
 #line 62 "/usr/include/string.h"
  __attribute__((__nothrow__)) int memcmp(void const   *s1 , void const   *s2 , size_t n )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
@@ -1724,8 +1737,8 @@ int memcmp(void const   *s1 , void const   *s2 , size_t n )
   return (d);
 }
 }
-#line 1 "cil-5BOCpbYu.o"
-#pragma merger(0,"/tmp/cil-jT0a2ScL.i","")
+#line 1 "cil-eBwyPCYJ.o"
+#pragma merger(0,"/tmp/cil-faiGqiSN.i","")
 #line 38 "/usr/include/string.h"
  __attribute__((__nothrow__)) void *memcpy(void * __restrict  dst , void const   * __restrict  src ,
                                            size_t n )  __attribute__((__nonnull__(1,2))) ;
@@ -1771,8 +1784,8 @@ void *memcpy(void * __restrict  dst , void const   * __restrict  src , size_t n 
   return ((void *)dst);
 }
 }
-#line 1 "cil-apO057uV.o"
-#pragma merger(0,"/tmp/cil-N3eVhoXJ.i","")
+#line 1 "cil-xFu2evtW.o"
+#pragma merger(0,"/tmp/cil-rEWaMrpn.i","")
 #line 14 "../../libc/memmem.c"
 void *memmem(void const   *haystack , size_t n , void const   *needle , size_t m ) 
 { unsigned char const   *y ;
@@ -1858,8 +1871,8 @@ void *memmem(void const   *haystack , size_t n , void const   *needle , size_t m
   return ((void *)0);
 }
 }
-#line 1 "cil-4kF1Md6W.o"
-#pragma merger(0,"/tmp/cil-0GSbar8u.i","")
+#line 1 "cil-Pa1T62lA.o"
+#pragma merger(0,"/tmp/cil-kE59LgkJ.i","")
 #line 43 "/usr/include/string.h"
  __attribute__((__nothrow__)) void *memmove(void *dst , void const   *src , size_t n )  __attribute__((__nonnull__(1,2))) ;
 #line 7 "../../libc/memmove.c"
@@ -1930,8 +1943,8 @@ void *memmove(void *dst , void const   *src , size_t n )
   return (dst);
 }
 }
-#line 1 "cil-8dqX0iIP.o"
-#pragma merger(0,"/tmp/cil-M1SuVfpJ.i","")
+#line 1 "cil-G2B4BBmt.o"
+#pragma merger(0,"/tmp/cil-D67WuI3O.i","")
 #line 59 "/usr/include/string.h"
  __attribute__((__nothrow__)) void *memset(void *dst , int c , size_t n )  __attribute__((__nonnull__(1))) ;
 #line 7 "../../libc/memset.c"
@@ -1967,8 +1980,8 @@ void *memset(void *dst , int c , size_t n )
   return (dst);
 }
 }
-#line 1 "cil-MAXOrDcM.o"
-#pragma merger(0,"/tmp/cil-4plQFnJC.i","")
+#line 1 "cil-JPoSuQAO.o"
+#pragma merger(0,"/tmp/cil-h3mrXerd.i","")
 #line 143 "/usr/include/stdio.h"
 extern struct _IO_FILE *stdout ;
 #line 329
@@ -1989,8 +2002,8 @@ int printf(char const   * __restrict  format  , ...)
   return (rv);
 }
 }
-#line 1 "cil-ta14CqyY.o"
-#pragma merger(0,"/tmp/cil-wgcR38Sz.i","")
+#line 1 "cil-oQBgKB2K.o"
+#pragma merger(0,"/tmp/cil-5b7WxpkX.i","")
 #line 493 "/usr/include/stdlib.h"
  __attribute__((__nothrow__)) int rand(void) ;
 #line 29 "../../libc/__random.c"
@@ -2265,8 +2278,8 @@ int rand(void)
   return ((int )__cil_tmp);
 }
 }
-#line 1 "cil-L8qwSG60.o"
-#pragma merger(0,"/tmp/cil-nN5tAkpK.i","")
+#line 1 "cil-1sTtmv4U.o"
+#pragma merger(0,"/tmp/cil-18H5HRyR.i","")
 #line 108 "../../libc/__random.c"
 static int degrees___0[5]  = {      0,      7,      15,      31, 
         63};
@@ -2298,8 +2311,8 @@ static int rand_deg___0  =    31;
 static int rand_sep___0  =    3;
 #line 164 "../../libc/__random.c"
 static long *end_ptr___0  =    & randtbl___0[sizeof(randtbl___0) / sizeof(randtbl___0[0])];
-#line 1 "cil-t8HZ1nza.o"
-#pragma merger(0,"/tmp/cil-5LZQe3xq.i","")
+#line 1 "cil-g0AD6LKU.o"
+#pragma merger(0,"/tmp/cil-xTXnIFAn.i","")
 #line 353 "/usr/include/stdio.h"
  __attribute__((__nothrow__)) int ( /* format attribute */  snprintf)(char * __restrict  buffer ,
                                                                       size_t n , char const   * __restrict  format 
@@ -2330,8 +2343,8 @@ int ( /* format attribute */  snprintf)(char * __restrict  buffer , size_t n , c
   return (rv);
 }
 }
-#line 1 "cil-t4TSTxnD.o"
-#pragma merger(0,"/tmp/cil-JDtLMMor.i","")
+#line 1 "cil-F9bySOgJ.o"
+#pragma merger(0,"/tmp/cil-9ku6wEKO.i","")
 #line 331 "/usr/include/stdio.h"
  __attribute__((__nothrow__)) int sprintf(char * __restrict  buffer , char const   * __restrict  format 
                                           , ...) ;
@@ -2354,8 +2367,8 @@ int sprintf(char * __restrict  buffer , char const   * __restrict  format  , ...
   return (rv);
 }
 }
-#line 1 "cil-5bBr8GnL.o"
-#pragma merger(0,"/tmp/cil-7mm8UZ1o.i","")
+#line 1 "cil-VKI0NdMN.o"
+#pragma merger(0,"/tmp/cil-D03dKlUG.i","")
 #line 495 "/usr/include/stdlib.h"
  __attribute__((__nothrow__)) void srand(unsigned int seed ) ;
 #line 108 "../../libc/__random.c"
@@ -2402,13 +2415,13 @@ void srand(unsigned int seed )
   return;
 }
 }
-#line 1 "cil-dzNPq3Kw.o"
-#pragma merger(0,"/tmp/cil-VvadRsuF.i","")
+#line 1 "cil-84zkzSEy.o"
+#pragma merger(0,"/tmp/cil-qZcs6rJA.i","")
 #line 325 "/usr/include/string.h"
  __attribute__((__nothrow__)) int strcasecmp(char const   *s1 , char const   *s2 )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
 #line 139 "../../libc/ctype.h"
- __attribute__((__nothrow__)) int toupper(int c ) ;
+int toupper(int c ) ;
 #line 8 "../../libc/strcasecmp.c"
  __attribute__((__nothrow__)) int strcasecmp(char const   *s1 , char const   *s2 )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
@@ -2458,8 +2471,8 @@ int strcasecmp(char const   *s1 , char const   *s2 )
   return (d);
 }
 }
-#line 1 "cil-GtbWFHPu.o"
-#pragma merger(0,"/tmp/cil-atzxZS8n.i","")
+#line 1 "cil-NkbEnV3G.o"
+#pragma merger(0,"/tmp/cil-6nGanKD7.i","")
 #line 84 "/usr/include/string.h"
  __attribute__((__nothrow__)) char *strcpy(char * __restrict  dst , char const   * __restrict  src )  __attribute__((__nonnull__(1,2))) ;
 #line 92
@@ -2482,8 +2495,8 @@ char *strcat(char * __restrict  dst , char const   * __restrict  src )
   return ((char *)dst);
 }
 }
-#line 1 "cil-GV1A0WgP.o"
-#pragma merger(0,"/tmp/cil-xkqdJeuX.i","")
+#line 1 "cil-UCdFS3r2.o"
+#pragma merger(0,"/tmp/cil-D6DSHR3A.i","")
 #line 7 "../../libc/strchr.c"
  __attribute__((__nothrow__)) char *strchr(char const   *s , int c )  __attribute__((__pure__,
 __nonnull__(1))) ;
@@ -2506,8 +2519,8 @@ char *strchr(char const   *s , int c )
   return ((char *)s);
 }
 }
-#line 1 "cil-Mp7Jgdpn.o"
-#pragma merger(0,"/tmp/cil-92HZj3la.i","")
+#line 1 "cil-9YUP9Ht8.o"
+#pragma merger(0,"/tmp/cil-c1haybSa.i","")
 #line 99 "/usr/include/string.h"
  __attribute__((__nothrow__)) int strcmp(char const   *s1 , char const   *s2 )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
@@ -2554,8 +2567,8 @@ int strcmp(char const   *s1 , char const   *s2 )
   return (d);
 }
 }
-#line 1 "cil-MJw2UqYo.o"
-#pragma merger(0,"/tmp/cil-Ju51GaJn.i","")
+#line 1 "cil-cIAblk69.o"
+#pragma merger(0,"/tmp/cil-3vwtzl2w.i","")
 #line 9 "../../libc/strcpy.c"
  __attribute__((__nothrow__)) char *strcpy(char * __restrict  dst , char const   * __restrict  src )  __attribute__((__nonnull__(1,2))) ;
 #line 9 "../../libc/strcpy.c"
@@ -2595,8 +2608,8 @@ char *strcpy(char * __restrict  dst , char const   * __restrict  src )
   return ((char *)dst);
 }
 }
-#line 1 "cil-Q8ABlBwK.o"
-#pragma merger(0,"/tmp/cil-kHaNVLsv.i","")
+#line 1 "cil-R8pLtSwl.o"
+#pragma merger(0,"/tmp/cil-eeQSRzVv.i","")
 #line 184 "/usr/include/string.h"
  __attribute__((__nothrow__)) size_t strcspn(char const   *s , char const   *reject )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
@@ -2635,8 +2648,8 @@ size_t strcspn(char const   *s , char const   *reject )
   return ((unsigned int )count);
 }
 }
-#line 1 "cil-ByD6yVX8.o"
-#pragma merger(0,"/tmp/cil-zvkf4vNl.i","")
+#line 1 "cil-8AQoSG0r.o"
+#pragma merger(0,"/tmp/cil-X2bVp47q.i","")
 #line 4 "../../libc/strlcpy.c"
 size_t strlcat(char *dst , char const   *src , size_t size ) 
 { size_t len1 ;
@@ -2701,8 +2714,8 @@ size_t strlcpy(char *dst , char const   *src , size_t size )
   return (ret___0);
 }
 }
-#line 1 "cil-xyZqvcf0.o"
-#pragma merger(0,"/tmp/cil-h9Ez3UEu.i","")
+#line 1 "cil-tQUjEXrI.o"
+#pragma merger(0,"/tmp/cil-7EQKzE2v.i","")
 #line 7 "../../libc/strlen.c"
  __attribute__((__nothrow__)) size_t strlen(char const   *s )  __attribute__((__pure__,
 __nonnull__(1))) ;
@@ -2722,8 +2735,8 @@ size_t strlen(char const   *s )
   return ((unsigned int )(ss - s));
 }
 }
-#line 1 "cil-4Gao09jV.o"
-#pragma merger(0,"/tmp/cil-GvZEUjBF.i","")
+#line 1 "cil-OsVOiZl0.o"
+#pragma merger(0,"/tmp/cil-MByW4XdN.i","")
 #line 95 "/usr/include/string.h"
  __attribute__((__nothrow__)) char *strncat(char * __restrict  dst , char const   * __restrict  src ,
                                             size_t n )  __attribute__((__nonnull__(1,2))) ;
@@ -2782,8 +2795,8 @@ char *strncat(char * __restrict  dst , char const   * __restrict  src , size_t n
   return ((char *)dst);
 }
 }
-#line 1 "cil-rGpiuCbz.o"
-#pragma merger(0,"/tmp/cil-HOj0uUsQ.i","")
+#line 1 "cil-FEg8Ifdd.o"
+#pragma merger(0,"/tmp/cil-WjaRT1dF.i","")
 #line 102 "/usr/include/string.h"
  __attribute__((__nothrow__)) int strncmp(char const   *s1 , char const   *s2 , size_t n )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
@@ -2840,8 +2853,8 @@ int strncmp(char const   *s1 , char const   *s2 , size_t n )
   return (d);
 }
 }
-#line 1 "cil-ncYLDyAl.o"
-#pragma merger(0,"/tmp/cil-v3eLpmCg.i","")
+#line 1 "cil-kLvfLK5D.o"
+#pragma merger(0,"/tmp/cil-IEoK4Dtq.i","")
 #line 87 "/usr/include/string.h"
  __attribute__((__nothrow__)) char *strncpy(char * __restrict  dst , char const   * __restrict  src ,
                                             size_t n )  __attribute__((__nonnull__(1,2))) ;
@@ -2889,10 +2902,10 @@ char *strncpy(char * __restrict  dst , char const   * __restrict  src , size_t n
   return ((char *)dst);
 }
 }
-#line 1 "cil-tQidXtrj.o"
-#pragma merger(0,"/tmp/cil-7HdpsPI0.i","")
-#line 1 "cil-SG2qJmcS.o"
-#pragma merger(0,"/tmp/cil-zhc3pIoR.i","")
+#line 1 "cil-fzRctpOB.o"
+#pragma merger(0,"/tmp/cil-HfPybExL.i","")
+#line 1 "cil-ZMD9rx30.o"
+#pragma merger(0,"/tmp/cil-2R2lLgla.i","")
 #line 10 "../../libc/strxspn.h"
 size_t __strxspn(char const   *s , char const   *map , int parity ) ;
 #line 7 "../../libc/strpbrk.c"
@@ -2921,8 +2934,8 @@ char *strpbrk(char const   *s , char const   *accept___0 )
   return (__cil_tmp___0);
 }
 }
-#line 1 "cil-ezduSQVh.o"
-#pragma merger(0,"/tmp/cil-vqkkfdxm.i","")
+#line 1 "cil-oM9rHxpK.o"
+#pragma merger(0,"/tmp/cil-aYJ8bBFN.i","")
 #line 348 "/usr/include/string.h"
  __attribute__((__nothrow__)) char *strsep(char ** __restrict  stringp , char const   * __restrict  delim )  __attribute__((__nonnull__(1,2))) ;
 #line 7 "../../libc/strsep.c"
@@ -2958,8 +2971,8 @@ char *strsep(char ** __restrict  stringp , char const   * __restrict  delim )
   return (s);
 }
 }
-#line 1 "cil-QQDJIDE4.o"
-#pragma merger(0,"/tmp/cil-EwcnduIP.i","")
+#line 1 "cil-3qoDiomx.o"
+#pragma merger(0,"/tmp/cil-bsfFK3dd.i","")
 #line 194 "/usr/include/string.h"
  __attribute__((__nothrow__)) char *strstr(char const   *haystack , char const   *needle )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
@@ -2984,8 +2997,8 @@ char *strstr(char const   *haystack , char const   *needle )
   return ((char *)__cil_tmp___1);
 }
 }
-#line 1 "cil-yVL3dt08.o"
-#pragma merger(0,"/tmp/cil-GiL2hmSi.i","")
+#line 1 "cil-BB7sjOgV.o"
+#pragma merger(0,"/tmp/cil-4WmC3YYT.i","")
 #line 199 "/usr/include/string.h"
  __attribute__((__nothrow__)) char *strtok(char * __restrict  s , char const   * __restrict  delim )  __attribute__((__nonnull__(2))) ;
 #line 9 "../../libc/strtok.c"
@@ -3018,8 +3031,8 @@ char *strtok(char * __restrict  s , char const   * __restrict  delim )
   return ((char *)s);
 }
 }
-#line 1 "cil-hBgQjjZr.o"
-#pragma merger(0,"/tmp/cil-enGf5QvF.i","")
+#line 1 "cil-kjA7WBRT.o"
+#pragma merger(0,"/tmp/cil-vfrxsoVo.i","")
 #line 12 "../../libc/strxspn.c"
 size_t __strxspn(char const   *s , char const   *map , int parity ) 
 { char matchmap[257] ;
@@ -3061,8 +3074,8 @@ size_t __strxspn(char const   *s , char const   *map , int parity )
   return (n);
 }
 }
-#line 1 "cil-6WTsoDSv.o"
-#pragma merger(0,"/tmp/cil-bshScW0y.i","")
+#line 1 "cil-LN96pTwq.o"
+#pragma merger(0,"/tmp/cil-wFt4PD76.i","")
 #line 144 "/usr/include/stdio.h"
 extern struct _IO_FILE *stderr ;
 #line 181 "/usr/include/sys/syslog.h"
@@ -3215,8 +3228,8 @@ void ( /* format attribute */  syslog)(int prio , char const   *format  , ...)
   return;
 }
 }
-#line 1 "cil-SXqz7hZe.o"
-#pragma merger(0,"/tmp/cil-oiQG66Lq.i","")
+#line 1 "cil-twBLUQ7h.o"
+#pragma merger(0,"/tmp/cil-4UdhWvNP.i","")
 #line 109 "../../libc/ctype.h"
 __inline static int __ctype_tolower(int __c ) 
 { int __cil_tmp___0 ;
@@ -3250,8 +3263,8 @@ int tolower(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-1mIOc0ri.o"
-#pragma merger(0,"/tmp/cil-IvaY5Aai.i","")
+#line 1 "cil-CCJFiL6N.o"
+#pragma merger(0,"/tmp/cil-r8wajmaq.i","")
 #line 104 "../../libc/ctype.h"
 __inline static int __ctype_toupper(int __c ) 
 { int __cil_tmp___0 ;
@@ -3273,8 +3286,6 @@ __inline static int __ctype_toupper(int __c )
 }
 }
 #line 2 "../../libc/toupper.c"
- __attribute__((__nothrow__)) int toupper(int c ) ;
-#line 2 "../../libc/toupper.c"
 int toupper(int c ) 
 { int __cil_tmp ;
 
@@ -3287,8 +3298,8 @@ int toupper(int c )
 }
 /* compiler builtin: 
    void __builtin_va_copy(__builtin_va_list  , __builtin_va_list  ) ;  */
-#line 1 "cil-yspKEHfK.o"
-#pragma merger(0,"/tmp/cil-8k8iUTAW.i","")
+#line 1 "cil-Wy71in61.o"
+#pragma merger(0,"/tmp/cil-bkpwFoqC.i","")
 #line 584 "/usr/include/stdlib.h"
 extern  __attribute__((__nothrow__)) void *malloc(size_t __size )  __attribute__((__malloc__)) ;
 #line 9 "../../libc/vasprintf.c"
@@ -3328,8 +3339,8 @@ int vasprintf(char **bufp , char const   *format , va_list ap )
   return (__cil_tmp___1);
 }
 }
-#line 1 "cil-fGKshUtq.o"
-#pragma merger(0,"/tmp/cil-zRHYC6Mp.i","")
+#line 1 "cil-FIaVAszv.o"
+#pragma merger(0,"/tmp/cil-QeGO85P5.i","")
 #line 13 "../../libc/vfprintf.c"
 int vfprintf(FILE * __restrict  file , char const   * __restrict  format , __gnuc_va_list ap ) 
 { int rv ;
@@ -3355,8 +3366,8 @@ int vfprintf(FILE * __restrict  file , char const   * __restrict  format , __gnu
   return ((int )__cil_tmp);
 }
 }
-#line 1 "cil-ctKHnO2U.o"
-#pragma merger(0,"/tmp/cil-w4DLYftV.i","")
+#line 1 "cil-NiPwrP0a.o"
+#pragma merger(0,"/tmp/cil-b8cVFaz2.i","")
 #line 344 "/usr/include/stdio.h"
 int vprintf(char const   * __restrict  format , __gnuc_va_list ap ) ;
 #line 8 "../../libc/vprintf.c"
@@ -3372,8 +3383,8 @@ int vprintf(char const   * __restrict  format , __gnuc_va_list ap )
 }
 /* compiler builtin: 
    void __builtin_va_arg(__builtin_va_list  , unsigned int  , void * ) ;  */
-#line 1 "cil-NpCrTm0e.o"
-#pragma merger(0,"/tmp/cil-shN182q8.i","")
+#line 1 "cil-xHeNLypV.o"
+#pragma merger(0,"/tmp/cil-Q9CXUO2N.i","")
 #line 48 "../../libc/vsnprintf.c"
 static size_t format_int(char *q , size_t n , uintmax_t val , enum flags flags , int base ,
                          int width , int prec ) ;
@@ -4258,8 +4269,8 @@ int ( /* format attribute */  vsnprintf)(char * __restrict  buffer , size_t n , 
   return ((int )o);
 }
 }
-#line 1 "cil-MqDFuR0Z.o"
-#pragma merger(0,"/tmp/cil-aDxaRTq4.i","")
+#line 1 "cil-OjJWZ3ET.o"
+#pragma merger(0,"/tmp/cil-plML7DPt.i","")
 #line 346 "/usr/include/stdio.h"
  __attribute__((__nothrow__)) int vsprintf(char * __restrict  buffer , char const   * __restrict  format ,
                                            __gnuc_va_list ap ) ;
@@ -4277,8 +4288,8 @@ int vsprintf(char * __restrict  buffer , char const   * __restrict  format , __g
   return (__cil_tmp);
 }
 }
-#line 1 "cil-3TPKv6yh.o"
-#pragma merger(0,"/tmp/cil-KW7wV1If.i","")
+#line 1 "cil-52hzellO.o"
+#pragma merger(0,"/tmp/cil-RdHggRFT.i","")
 #line 1 "../../mockedFns/alarm.c"
  __attribute__((__nothrow__)) unsigned int alarm(unsigned int seconds ) ;
 #line 1 "../../mockedFns/alarm.c"
@@ -4291,9 +4302,11 @@ unsigned int alarm(unsigned int seconds )
 }
 }
 /* compiler builtin: 
+   int __builtin_strcmp(char const   *s1 , char const   *s2 ) ;  */
+/* compiler builtin: 
    long __builtin_expect(long x , long expected_value ) ;  */
-#line 1 "cil-K7xhrEP3.o"
-#pragma merger(0,"/tmp/cil-IZdQCmgs.i","")
+#line 1 "cil-KtHQMxJ4.o"
+#pragma merger(0,"/tmp/cil-YlyC0ncH.i","")
 #line 2 "../../mockedFns/builtin.c"
 long __builtin_expect(long x , long expected_value ) 
 { 
@@ -4312,8 +4325,19 @@ size_t __ctype_get_mb_cur_max(void)
   return (1U);
 }
 }
-#line 1 "cil-gAJj4XZB.o"
-#pragma merger(0,"/tmp/cil-XbXqzNqE.i","")
+#line 22 "../../mockedFns/builtin.c"
+int __builtin_strcmp(char const   *s1 , char const   *s2 ) 
+{ int __cil_tmp ;
+
+  {
+#line 23
+  __cil_tmp = strcmp(s1, s2);
+#line 23
+  return (__cil_tmp);
+}
+}
+#line 1 "cil-1XN15Nbi.o"
+#pragma merger(0,"/tmp/cil-V4X6IMNA.i","")
 #line 586 "/usr/include/stdlib.h"
  __attribute__((__nothrow__)) void *calloc(size_t nmemb , size_t size )  __attribute__((__malloc__)) ;
 #line 4 "../../mockedFns/calloc.c"
@@ -4334,8 +4358,8 @@ void *calloc(size_t nmemb , size_t size )
   return (p);
 }
 }
-#line 1 "cil-oJmjlXJV.o"
-#pragma merger(0,"/tmp/cil-5b54Qmq4.i","")
+#line 1 "cil-hN948Xep.o"
+#pragma merger(0,"/tmp/cil-OTa7FuVN.i","")
 #line 77 "/usr/include/sys/capability.h"
 int cap_free(void *obj_d ) ;
 #line 92
@@ -4358,8 +4382,8 @@ int cap_free(void *obj_d )
   return (-1);
 }
 }
-#line 1 "cil-YQtHRZzP.o"
-#pragma merger(0,"/tmp/cil-OkC6VLsC.i","")
+#line 1 "cil-6Ta1mQ9l.o"
+#pragma merger(0,"/tmp/cil-wi86nLZn.i","")
 #line 722 "/usr/include/stdio.h"
  __attribute__((__nothrow__)) void clearerr(FILE *stream ) ;
 #line 3 "../../mockedFns/clearerr.c"
@@ -4373,8 +4397,8 @@ void clearerr(FILE *stream )
   return;
 }
 }
-#line 1 "cil-NanFYuYL.o"
-#pragma merger(0,"/tmp/cil-LN3KmTNh.i","")
+#line 1 "cil-y1JnI12G.o"
+#pragma merger(0,"/tmp/cil-1vnqq2FF.i","")
 #line 284 "/usr/include/sys/stat.h"
  __attribute__((__nothrow__)) int mkdir(char const   *pathname , __mode_t mode )  __attribute__((__nonnull__(1))) ;
 #line 135 "/usr/include/dirent.h"
@@ -4385,16 +4409,18 @@ int closedir(DIR *dir )  __attribute__((__nonnull__(1))) ;
 struct dirent *readdir(DIR *dir )  __asm__("readdir64") __attribute__((__nonnull__(1))) ;
 #line 216
  __attribute__((__nothrow__)) int dirfd(DIR *dir )  __attribute__((__nonnull__(1))) ;
-#line 48 "../../mockedFns/iosim.h"
+#line 49 "../../mockedFns/iosim.h"
 int IOSIM_chdir(char const   *path ) ;
-#line 49
-DIR *IOSIM_opendir(char const   *dirname ) ;
 #line 50
-int IOSIM_closedir(DIR *dir ) ;
+DIR *IOSIM_opendir(char const   *dirname ) ;
 #line 51
-struct dirent *IOSIM_readdir(DIR *dir ) ;
+int IOSIM_closedir(DIR *dir ) ;
 #line 52
+struct dirent *IOSIM_readdir(DIR *dir ) ;
+#line 53
 int IOSIM_dirfd(DIR *dir ) ;
+#line 58 "../../mockedFns/iosim.h"
+unsigned short iosim_ip_version  =    (unsigned short)2;
 #line 4 "../../mockedFns/dir.c"
  __attribute__((__nothrow__)) int chdir(char const   *path )  __attribute__((__nonnull__(1))) ;
 #line 4 "../../mockedFns/dir.c"
@@ -4493,36 +4519,117 @@ int rmdir(char const   *pathname )
   return (0);
 }
 }
-#line 1 "cil-pOqw3DDO.o"
-#pragma merger(0,"/tmp/cil-NlgPmY7T.i","")
-#line 654 "/usr/include/stdlib.h"
+#line 1 "cil-ADeU3Fff.o"
+#pragma merger(0,"/tmp/cil-KsqO36yU.i","")
+#line 8 "../../mockedFns/symexe.h"
+extern void __COMMENT(char *str ) ;
+#line 597 "/usr/include/stdlib.h"
+extern  __attribute__((__nothrow__)) void free(void *__ptr ) ;
+#line 654
  __attribute__((__nothrow__)) char *getenv(char const   *name )  __attribute__((__nonnull__(1))) ;
 #line 665
  __attribute__((__nothrow__)) int putenv(char *str )  __attribute__((__nonnull__(1))) ;
-#line 3 "../../mockedFns/env.c"
+#line 130 "/usr/include/string.h"
+ __attribute__((__nothrow__)) char *strdup(char const   *p_str )  __attribute__((__nonnull__(1),
+__malloc__)) ;
+#line 6 "../../mockedFns/env.c"
+int var_count  =    0;
+#line 7 "../../mockedFns/env.c"
+char *var_names[8]  ;
+#line 8 "../../mockedFns/env.c"
+char *var_values[8]  ;
+#line 10
  __attribute__((__nothrow__)) char *getenv(char const   *name )  __attribute__((__nonnull__(1))) ;
-#line 3 "../../mockedFns/env.c"
+#line 10 "../../mockedFns/env.c"
 char *getenv(char const   *name ) 
-{ 
+{ int i ;
+  int __cil_tmp ;
 
   {
-#line 4
+#line 12
+  i = 0;
+#line 12
+  while (i < var_count) {
+#line 13
+    __cil_tmp = strcmp(name, (char const   *)var_names[i]);
+#line 13
+    if (__cil_tmp == 0) {
+#line 14
+      return (var_values[i]);
+    }
+#line 12
+    i ++;
+  }
+#line 16
   return ((char *)((void *)0));
 }
 }
-#line 7
+#line 19
  __attribute__((__nothrow__)) int putenv(char *str )  __attribute__((__nonnull__(1))) ;
-#line 7 "../../mockedFns/env.c"
+#line 19 "../../mockedFns/env.c"
 int putenv(char *str ) 
-{ 
+{ char *name_end ;
+  char *__cil_tmp ;
+  int found ;
+  int i ;
+  int __cil_tmp___0 ;
+  void *__cil_tmp___1 ;
 
   {
-#line 8
+#line 20
+  __cil_tmp = strchr((char const   *)str, '=');
+#line 20
+  name_end = __cil_tmp;
+#line 21
+  found = -1;
+#line 24
+  i = 0;
+#line 24
+  while (i < var_count) {
+#line 25
+    __cil_tmp___0 = strncmp((char const   *)var_names[i], (char const   *)str, (unsigned int )(name_end - str));
+#line 25
+    if (! __cil_tmp___0) {
+#line 26
+      found = i;
+    }
+#line 24
+    i ++;
+  }
+#line 30
+  if (found >= 0) {
+#line 32
+    free((void *)var_values[found]);
+#line 33
+    var_values[found] = strdup((char const   *)(name_end + 1));
+  } else {
+#line 37
+    if (var_count >= 8) {
+#line 38
+      __COMMENT((char *)"Too many environment variables");
+#line 39
+      exit(1);
+    }
+#line 41
+    __cil_tmp___1 = malloc((unsigned int )((name_end - str) + 1));
+#line 41
+    var_names[var_count] = (char *)__cil_tmp___1;
+#line 42
+    strncpy((char * __restrict  )var_names[var_count], (char const   * __restrict  )str,
+            (unsigned int )(name_end - str));
+#line 43
+    *(var_names[var_count] + (name_end - str)) = (char )'\000';
+#line 45
+    var_values[var_count] = strdup((char const   *)(name_end + 1));
+#line 47
+    var_count ++;
+  }
+#line 50
   return (0);
 }
 }
-#line 1 "cil-TRf4j7jY.o"
-#pragma merger(0,"/tmp/cil-anZ262yb.i","")
+#line 1 "cil-3BGwO4dY.o"
+#pragma merger(0,"/tmp/cil-s8DKb0F2.i","")
 #line 2 "../../mockedFns/__errno_location.c"
 static int mock_errno  ;
 #line 1
@@ -4536,21 +4643,21 @@ int *__errno_location(void)
   return (& mock_errno);
 }
 }
-#line 1 "cil-jfauiz5T.o"
-#pragma merger(0,"/tmp/cil-nCcRTUyg.i","")
-#line 1 "../../mockedFns/_exit.c"
+#line 1 "cil-ln6EZjs3.o"
+#pragma merger(0,"/tmp/cil-gp8nXF48.i","")
+#line 2 "../../mockedFns/_exit.c"
  __attribute__((__noreturn__)) void _exit(int status ) ;
-#line 1 "../../mockedFns/_exit.c"
+#line 2 "../../mockedFns/_exit.c"
 void _exit(int status ) 
 { 
 
   {
-#line 2
+#line 3
   exit(status);
 }
 }
-#line 1 "cil-xqMcYsxJ.o"
-#pragma merger(0,"/tmp/cil-r69IJVJo.i","")
+#line 1 "cil-ulVdNIkC.o"
+#pragma merger(0,"/tmp/cil-VbVr2bY5.i","")
 #line 6 "../../mockedFns/fcntl.c"
 int fcntl(int fildes , int cmd  , ...) 
 { 
@@ -4560,11 +4667,93 @@ int fcntl(int fildes , int cmd  , ...)
   return (0);
 }
 }
-#line 1 "cil-CdJeeOSC.o"
-#pragma merger(0,"/tmp/cil-vlbbeQhj.i","")
+#line 1 "cil-j6yR3v9q.o"
+#pragma merger(0,"/tmp/cil-b26yiQk2.i","")
+#line 16 "../../mockedFns/FD_MACROS.c"
+void FD_SET(int fd , fd_set___0 *fdset ) 
+{ unsigned int __cil_tmp ;
+
+  {
+#line 18
+  if (fdset->count < 1024U) {
+#line 19
+    __cil_tmp = fdset->count;
+#line 19
+    (fdset->count) ++;
+#line 19
+    fdset->fd[__cil_tmp] = fd;
+  }
+#line 20
+  return;
+}
+}
+#line 22 "../../mockedFns/FD_MACROS.c"
+void FD_CLR(int fd , fd_set___0 *fdset ) 
+{ unsigned int i ;
+
+  {
+#line 26
+  i = 0U;
+#line 26
+  while (i < fdset->count) {
+#line 27
+    if (fdset->fd[i] == fd) {
+#line 28
+      while (i < fdset->count - 1U) {
+#line 29
+        fdset->fd[i] = fdset->fd[i + 1U];
+#line 30
+        i ++;
+      }
+#line 32
+      (fdset->count) --;
+#line 33
+      break;
+    }
+#line 26
+    i ++;
+  }
+#line 36
+  return;
+}
+}
+#line 38 "../../mockedFns/FD_MACROS.c"
+int FD_ISSET(int fd , fd_set___0 *fdset ) 
+{ unsigned int i ;
+
+  {
+#line 41
+  i = 0U;
+#line 41
+  while (i < fdset->count) {
+#line 42
+    if (fdset->fd[i] == fd) {
+#line 42
+      return (1);
+    }
+#line 41
+    i ++;
+  }
+#line 45
+  return (0);
+}
+}
+#line 48 "../../mockedFns/FD_MACROS.c"
+void FD_ZERO(fd_set___0 *fdset ) 
+{ 
+
+  {
+#line 50
+  fdset->count = 0U;
+#line 51
+  return;
+}
+}
+#line 1 "cil-mshRUmyD.o"
+#pragma merger(0,"/tmp/cil-4XlLp3A0.i","")
 #line 724 "/usr/include/stdio.h"
  __attribute__((__nothrow__)) int feof(FILE *stream ) ;
-#line 40 "../../mockedFns/iosim.h"
+#line 41 "../../mockedFns/iosim.h"
 int IOSIM_eof(int fildes ) ;
 #line 4 "../../mockedFns/feof.c"
  __attribute__((__nothrow__)) int feof(FILE *stream ) ;
@@ -4582,8 +4771,8 @@ int feof(FILE *stream )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-JoSfw6zC.o"
-#pragma merger(0,"/tmp/cil-C98eqFQS.i","")
+#line 1 "cil-b2nF6LK1.o"
+#pragma merger(0,"/tmp/cil-pWhS5EcS.i","")
 #line 726 "/usr/include/stdio.h"
  __attribute__((__nothrow__)) int ferror(FILE *stream ) ;
 #line 3 "../../mockedFns/ferror.c"
@@ -4597,8 +4786,8 @@ int ferror(FILE *stream )
   return (0);
 }
 }
-#line 1 "cil-Ca8PJH12.o"
-#pragma merger(0,"/tmp/cil-WWWzoYaI.i","")
+#line 1 "cil-DZ7fbUIa.o"
+#pragma merger(0,"/tmp/cil-dPXHDt3u.i","")
 #line 759 "/usr/include/stdio.h"
  __attribute__((__nothrow__)) int fileno_unlocked(FILE *stream ) ;
 #line 4 "../../mockedFns/fileno.c"
@@ -4632,11 +4821,11 @@ int fileno_unlocked(FILE *stream )
   return (-1);
 }
 }
-#line 1 "cil-jDRYpZMd.o"
-#pragma merger(0,"/tmp/cil-rxeA7md2.i","")
+#line 1 "cil-48rnemWl.o"
+#pragma merger(0,"/tmp/cil-dg7ed16W.i","")
 #line 254 "/usr/include/stdio.h"
 FILE *fopen(char const   * __restrict  filename , char const   * __restrict  mode )  __asm__("fopen64")  ;
-#line 26 "../../mockedFns/iosim.h"
+#line 27 "../../mockedFns/iosim.h"
 sym_file_stream_t *IOSIM_fd[1024] ;
 #line 6 "../../mockedFns/fopen.c"
 FILE *fopen(char const   * __restrict  filename , char const   * __restrict  mode )  __asm__("fopen64")  ;
@@ -4728,9 +4917,22 @@ FILE *fopen(char const   * __restrict  filename , char const   * __restrict  mod
   return ((FILE *)IOSIM_fd[fd]);
 }
 }
-#line 1 "cil-FFGKtf9X.o"
-#pragma merger(0,"/tmp/cil-JrrWDdAs.i","")
-#line 36 "../../mockedFns/iosim.h"
+#line 1 "cil-pKSZHaMA.o"
+#pragma merger(0,"/tmp/cil-JCuxsRtG.i","")
+#line 645 "/usr/include/stdio.h"
+int fseek(FILE *stream , long offset , int origin ) ;
+#line 4 "../../mockedFns/fseek.c"
+int fseek(FILE *stream , long offset , int origin ) 
+{ 
+
+  {
+#line 6
+  return (0);
+}
+}
+#line 1 "cil-RrMpLAjL.o"
+#pragma merger(0,"/tmp/cil-gBSFfTiK.i","")
+#line 37 "../../mockedFns/iosim.h"
 int IOSIM_read(int fildes , void *buf , size_t nbyte ) ;
 #line 4 "../../mockedFns/getc.c"
  __attribute__((__nothrow__)) int _IO_getc(struct _IO_FILE *stream ) ;
@@ -4758,107 +4960,98 @@ int _IO_getc(struct _IO_FILE *stream )
   }
 }
 }
-#line 1 "cil-qAeWD5ek.o"
-#pragma merger(0,"/tmp/cil-armWIJRH.i","")
-#line 59 "/usr/include/getopt.h"
+#line 1 "cil-wVqIMppk.o"
+#pragma merger(0,"/tmp/cil-MwSAevV5.i","")
+#line 36 "../../mockedFns/getopt.h"
 extern char *optarg ;
-#line 73
+#line 50
 extern int optind ;
-#line 78
+#line 55
 extern int opterr ;
-#line 82
+#line 59
 extern int optopt ;
-#line 159
- __attribute__((__nothrow__)) int getopt_long(int argc , char * const  *argv , char const   *options ,
-                                              struct option  const  *long_options ,
-                                              int *opt_index ) ;
-#line 6 "../../mockedFns/getopt.c"
-static int first_nonopt  ;
+#line 140
+int getopt_long(int argc , char * const  *argv , char const   *options , struct option  const  *long_options ,
+                int *opt_index ) ;
+#line 147
+int _getopt_internal(int argc , char * const  *argv , char const   *optstring , struct option  const  *longopts ,
+                     int *longind , int long_only ) ;
 #line 7 "../../mockedFns/getopt.c"
-static int last_nonopt  ;
-#line 8 "../../mockedFns/getopt.c"
-static char *nextchar  ;
-#line 9 "../../mockedFns/getopt.c"
-static char *posixly_correct  ;
+char *my_index(char const   *s , int c ) ;
+#line 8
+extern void exchange() ;
+#line 9
+extern char const   *_() ;
 #line 11 "../../mockedFns/getopt.c"
-static enum __anonenum_ordering_10 ordering  ;
+static int first_nonopt  ;
+#line 12 "../../mockedFns/getopt.c"
+static int last_nonopt  ;
+#line 13 "../../mockedFns/getopt.c"
+static char *nextchar  ;
+#line 14 "../../mockedFns/getopt.c"
+static char *posixly_correct  ;
 #line 16 "../../mockedFns/getopt.c"
+static enum __anonenum_ordering_18 ordering  ;
+#line 21 "../../mockedFns/getopt.c"
 int __getopt_initialized  =    0;
-#line 26
-int ( /* missing proto */  _getopt_internal)(int argc , char * const  *argv , char const   *optstring ,
-                                             struct option  const  *longopts , int *longind ,
-                                             int long_only ) ;
-#line 18
- __attribute__((__nothrow__)) int getopt_long(int argc , char * const  *argv , char const   *options ,
-                                              struct option  const  *long_options ,
-                                              int *opt_index ) ;
-#line 18 "../../mockedFns/getopt.c"
+#line 23 "../../mockedFns/getopt.c"
 int getopt_long(int argc , char * const  *argv , char const   *options , struct option  const  *long_options ,
                 int *opt_index ) 
 { int __cil_tmp ;
 
   {
-#line 26
+#line 31
   __cil_tmp = _getopt_internal(argc, argv, options, long_options, opt_index, 0);
-#line 26
+#line 31
   return (__cil_tmp);
 }
 }
-#line 33
+#line 38
 static char const   *_getopt_initialize(int argc , char * const  *argv , char const   *optstring ) ;
-#line 35 "../../mockedFns/getopt.c"
+#line 40 "../../mockedFns/getopt.c"
 static char const   *_getopt_initialize(int argc , char * const  *argv , char const   *optstring ) 
-{ int __cil_tmp ;
+{ 
 
   {
-#line 45
+#line 50
   last_nonopt = optind;
-#line 45
+#line 50
   first_nonopt = last_nonopt;
-#line 47
+#line 52
   nextchar = (char *)((void *)0);
-#line 49
-  __cil_tmp = (int )getenv("POSIXLY_CORRECT");
-#line 49
-  posixly_correct = (char *)__cil_tmp;
-#line 53
+#line 54
+  posixly_correct = getenv("POSIXLY_CORRECT");
+#line 58
   if ((int const   )*(optstring + 0) == 45) {
-#line 55
+#line 60
     ordering = 2;
-#line 56
+#line 61
     optstring ++;
   } else {
-#line 58
+#line 63
     if ((int const   )*(optstring + 0) == 43) {
-#line 60
+#line 65
       ordering = 0;
-#line 61
+#line 66
       optstring ++;
     } else {
-#line 63
+#line 68
       if ((unsigned int )posixly_correct != (unsigned int )((void *)0)) {
-#line 64
+#line 69
         ordering = 0;
       } else {
-#line 66
+#line 71
         ordering = 1;
       }
     }
   }
-#line 98
+#line 103
   return (optstring);
 }
 }
-#line 150
-extern int ( /* missing proto */  exchange)() ;
-#line 268
-extern int ( /* missing proto */  _)() ;
-#line 336
-char *my_index(char const   *s , int c ) ;
-#line 102 "../../mockedFns/getopt.c"
-int ( /* missing proto */  _getopt_internal)(int argc , char * const  *argv , char const   *optstring ,
-                                             struct option  const  *longopts , int *longind ,
-                                             int long_only ) 
+#line 107 "../../mockedFns/getopt.c"
+int _getopt_internal(int argc , char * const  *argv , char const   *optstring , struct option  const  *longopts ,
+                     int *longind , int long_only ) 
 { int __cil_tmp ;
   int __cil_tmp___0 ;
   char *nameend ;
@@ -4868,28 +5061,28 @@ int ( /* missing proto */  _getopt_internal)(int argc , char * const  *argv , ch
   int ambig ;
   int indfound ;
   int option_index ;
-  int __cil_tmp___1 ;
+  size_t __cil_tmp___1 ;
   int __cil_tmp___2 ;
-  int __cil_tmp___3 ;
-  int __cil_tmp___4 ;
-  int __cil_tmp___5 ;
-  int __cil_tmp___6 ;
-  int __cil_tmp___7 ;
+  char const   *__cil_tmp___3 ;
+  size_t __cil_tmp___4 ;
+  char const   *__cil_tmp___5 ;
+  char const   *__cil_tmp___6 ;
+  size_t __cil_tmp___7 ;
   int __cil_tmp___8 ;
-  int __cil_tmp___9 ;
-  int __cil_tmp___10 ;
+  char const   *__cil_tmp___9 ;
+  size_t __cil_tmp___10 ;
   int __cil_tmp___11 ;
-  int __cil_tmp___12 ;
-  int __cil_tmp___13 ;
-  int __cil_tmp___14 ;
-  int __cil_tmp___15 ;
-  int __cil_tmp___16 ;
+  size_t __cil_tmp___12 ;
+  char const   *__cil_tmp___13 ;
+  char const   *__cil_tmp___14 ;
+  char *__cil_tmp___15 ;
+  char *__cil_tmp___16 ;
   char c ;
   char *__cil_tmp___17 ;
   char *temp ;
-  int __cil_tmp___18 ;
-  int __cil_tmp___19 ;
-  int __cil_tmp___20 ;
+  char *__cil_tmp___18 ;
+  char const   *__cil_tmp___19 ;
+  char const   *__cil_tmp___20 ;
   char *nameend___0 ;
   struct option  const  *p___0 ;
   struct option  const  *pfound___0 ;
@@ -4897,358 +5090,359 @@ int ( /* missing proto */  _getopt_internal)(int argc , char * const  *argv , ch
   int ambig___0 ;
   int indfound___0 ;
   int option_index___0 ;
-  int __cil_tmp___21 ;
+  char const   *__cil_tmp___21 ;
   int __cil_tmp___22 ;
-  int __cil_tmp___23 ;
+  size_t __cil_tmp___23 ;
   int __cil_tmp___24 ;
-  int __cil_tmp___25 ;
-  int __cil_tmp___26 ;
-  int __cil_tmp___27 ;
-  int __cil_tmp___28 ;
+  char const   *__cil_tmp___25 ;
+  size_t __cil_tmp___26 ;
+  char const   *__cil_tmp___27 ;
+  size_t __cil_tmp___28 ;
   int __cil_tmp___29 ;
-  int __cil_tmp___30 ;
-  int __cil_tmp___31 ;
+  char const   *__cil_tmp___30 ;
+  size_t __cil_tmp___31 ;
   int __cil_tmp___32 ;
-  int __cil_tmp___33 ;
-  int __cil_tmp___34 ;
+  size_t __cil_tmp___33 ;
+  char const   *__cil_tmp___34 ;
   int __cil_tmp___35 ;
 
   {
-#line 111
-  optarg = (char *)((void *)0);
-#line 113
-  if (optind == 0 || ! __getopt_initialized) {
-#line 115
-    if (optind == 0) {
 #line 116
+  optarg = (char *)((void *)0);
+#line 118
+  if (optind == 0 || ! __getopt_initialized) {
+#line 120
+    if (optind == 0) {
+#line 121
       optind = 1;
     }
-#line 117
+#line 122
     optstring = _getopt_initialize(argc, argv, optstring);
-#line 118
+#line 123
     __getopt_initialized = 1;
   }
-#line 133
+#line 138
   if ((unsigned int )nextchar == (unsigned int )((void *)0) || (int )*nextchar == 0) {
-#line 139
+#line 144
     if (last_nonopt > optind) {
-#line 140
+#line 145
       last_nonopt = optind;
     }
-#line 141
+#line 146
     if (first_nonopt > optind) {
-#line 142
+#line 147
       first_nonopt = optind;
     }
-#line 144
-    if ((int )ordering == 1) {
 #line 149
+    if ((int )ordering == 1) {
+#line 154
       if (first_nonopt != last_nonopt && last_nonopt != optind) {
-#line 150
+#line 155
         exchange((char **)argv);
       } else {
-#line 151
+#line 156
         if (last_nonopt != optind) {
-#line 152
+#line 157
           first_nonopt = optind;
         }
       }
-#line 157
+#line 162
       while (optind < argc && ((int )*(*(argv + optind) + 0) != 45 || (int )*(*(argv + optind) + 1) == 0)) {
-#line 158
+#line 163
         optind ++;
       }
-#line 159
+#line 164
       last_nonopt = optind;
     }
-#line 167
+#line 172
     if (optind != argc) {
-#line 167
-      __cil_tmp = strcmp(*(argv + optind), "--");
-#line 167
+#line 172
+      __cil_tmp = strcmp((char const   *)*(argv + optind), "--");
+#line 172
       if (__cil_tmp) {
-#line 167
+#line 172
         goto _L;
       } else {
-#line 169
+#line 174
         optind ++;
-#line 171
+#line 176
         if (first_nonopt != last_nonopt && last_nonopt != optind) {
-#line 172
+#line 177
           exchange((char **)argv);
         } else {
-#line 173
+#line 178
           if (first_nonopt == last_nonopt) {
-#line 174
+#line 179
             first_nonopt = optind;
           }
         }
-#line 175
+#line 180
         last_nonopt = argc;
-#line 177
+#line 182
         optind = argc;
       }
     } else {
       _L: /* CIL Label */ ;
     }
-#line 183
-    if (optind == argc) {
-#line 187
-      if (first_nonopt != last_nonopt) {
 #line 188
+    if (optind == argc) {
+#line 192
+      if (first_nonopt != last_nonopt) {
+#line 193
         optind = first_nonopt;
       }
-#line 189
+#line 194
       return (-1);
     }
-#line 195
+#line 200
     if ((int )*(*(argv + optind) + 0) != 45 || (int )*(*(argv + optind) + 1) == 0) {
-#line 197
+#line 202
       if ((int )ordering == 0) {
-#line 198
+#line 203
         return (-1);
       }
-#line 199
+#line 204
       __cil_tmp___0 = optind;
-#line 199
+#line 204
       optind ++;
-#line 199
+#line 204
       optarg = (char *)*(argv + __cil_tmp___0);
-#line 200
+#line 205
       return (1);
     }
-#line 206
+#line 211
     nextchar = (char *)((*(argv + optind) + 1) + ((unsigned int )longopts != (unsigned int )((void *)0) && (int )*(*(argv + optind) + 1) == 45));
   }
-#line 225
+#line 230
   if ((unsigned int )longopts != (unsigned int )((void *)0)) {
-#line 225
+#line 230
     if ((int )*(*(argv + optind) + 1) == 45) {
-#line 225
+#line 230
       goto _L___4;
     } else {
-#line 225
+#line 230
       if (long_only) {
-#line 225
+#line 230
         if (*(*(argv + optind) + 2)) {
-#line 225
+#line 230
           goto _L___4;
         } else {
-#line 225
-          __cil_tmp___16 = (int )my_index(optstring, *(*(argv + optind) + 1));
-#line 225
+#line 230
+          __cil_tmp___16 = my_index(optstring, (int )*(*(argv + optind) + 1));
+#line 230
           if (__cil_tmp___16) {
-#line 225
+#line 230
             goto _L___3;
           } else {
             _L___4: /* CIL Label */ 
-#line 231
+#line 236
             pfound = (struct option  const  *)((void *)0);
-#line 232
+#line 237
             exact = 0;
-#line 233
+#line 238
             ambig = 0;
-#line 234
+#line 239
             indfound = -1;
-#line 237
+#line 242
             nameend = nextchar;
-#line 237
+#line 242
             while ((int )*nameend && (int )*nameend != 61) {
-#line 237
+#line 242
               nameend ++;
             }
-#line 242
+#line 247
             p = longopts;
-#line 242
+#line 247
             option_index = 0;
-#line 242
+#line 247
             while (p->name) {
-#line 243
-              __cil_tmp___2 = strncmp(p->name, nextchar, nameend - nextchar);
-#line 243
+#line 248
+              __cil_tmp___2 = strncmp((char const   *)p->name, (char const   *)nextchar,
+                                      (unsigned int )(nameend - nextchar));
+#line 248
               if (! __cil_tmp___2) {
-#line 245
-                __cil_tmp___1 = (int )strlen(p->name);
-#line 245
-                if ((unsigned int )(nameend - nextchar) == (unsigned int )__cil_tmp___1) {
-#line 249
-                  pfound = p;
 #line 250
+                __cil_tmp___1 = strlen((char const   *)p->name);
+#line 250
+                if ((unsigned int )(nameend - nextchar) == __cil_tmp___1) {
+#line 254
+                  pfound = p;
+#line 255
                   indfound = option_index;
-#line 251
+#line 256
                   exact = 1;
-#line 252
+#line 257
                   break;
                 } else {
-#line 254
+#line 259
                   if ((unsigned int )pfound == (unsigned int )((void *)0)) {
-#line 257
+#line 262
                     pfound = p;
-#line 258
+#line 263
                     indfound = option_index;
                   } else {
-#line 262
+#line 267
                     ambig = 1;
                   }
                 }
               }
-#line 242
+#line 247
               p ++;
-#line 242
+#line 247
               option_index ++;
             }
-#line 265
+#line 270
             if (ambig && ! exact) {
-#line 267
+#line 272
               if (opterr) {
-#line 268
+#line 273
                 __cil_tmp___3 = _("%s: option `%s\' is ambiguous\n");
-#line 268
+#line 273
                 fprintf((FILE * __restrict  )stderr, (char const   * __restrict  )__cil_tmp___3,
                         *(argv + 0), *(argv + optind));
               }
-#line 270
-              __cil_tmp___4 = (int )strlen(nextchar);
-#line 270
+#line 275
+              __cil_tmp___4 = strlen((char const   *)nextchar);
+#line 275
               nextchar += __cil_tmp___4;
-#line 271
+#line 276
               optind ++;
-#line 272
+#line 277
               optopt = 0;
-#line 273
+#line 278
               return ('?');
             }
-#line 276
+#line 281
             if ((unsigned int )pfound != (unsigned int )((void *)0)) {
-#line 278
+#line 283
               option_index = indfound;
-#line 279
-              optind ++;
-#line 280
-              if (*nameend) {
 #line 284
-                if (pfound->has_arg) {
+              optind ++;
 #line 285
+              if (*nameend) {
+#line 289
+                if (pfound->has_arg) {
+#line 290
                   optarg = nameend + 1;
                 } else {
-#line 288
+#line 293
                   if (opterr) {
-#line 289
+#line 294
                     if ((int )*(*(argv + (optind - 1)) + 1) == 45) {
-#line 291
+#line 296
                       __cil_tmp___5 = _("%s: option `--%s\' doesn\'t allow an argument\n");
-#line 291
+#line 296
                       fprintf((FILE * __restrict  )stderr, (char const   * __restrict  )__cil_tmp___5,
                               *(argv + 0), pfound->name);
                     } else {
-#line 296
+#line 301
                       __cil_tmp___6 = _("%s: option `%c%s\' doesn\'t allow an argument\n");
-#line 296
+#line 301
                       fprintf((FILE * __restrict  )stderr, (char const   * __restrict  )__cil_tmp___6,
                               *(argv + 0), *(*(argv + (optind - 1)) + 0), pfound->name);
                     }
                   }
-#line 300
-                  __cil_tmp___7 = (int )strlen(nextchar);
-#line 300
+#line 305
+                  __cil_tmp___7 = strlen((char const   *)nextchar);
+#line 305
                   nextchar += __cil_tmp___7;
-#line 302
+#line 307
                   optopt = (int )pfound->val;
-#line 303
+#line 308
                   return ('?');
                 }
               } else {
-#line 306
+#line 311
                 if (pfound->has_arg == 1) {
-#line 308
+#line 313
                   if (optind < argc) {
-#line 309
+#line 314
                     __cil_tmp___8 = optind;
-#line 309
+#line 314
                     optind ++;
-#line 309
+#line 314
                     optarg = (char *)*(argv + __cil_tmp___8);
                   } else {
-#line 312
+#line 317
                     if (opterr) {
-#line 313
+#line 318
                       __cil_tmp___9 = _("%s: option `%s\' requires an argument\n");
-#line 313
+#line 318
                       fprintf((FILE * __restrict  )stderr, (char const   * __restrict  )__cil_tmp___9,
                               *(argv + 0), *(argv + (optind - 1)));
                     }
-#line 316
-                    __cil_tmp___10 = (int )strlen(nextchar);
-#line 316
+#line 321
+                    __cil_tmp___10 = strlen((char const   *)nextchar);
+#line 321
                     nextchar += __cil_tmp___10;
-#line 317
+#line 322
                     optopt = (int )pfound->val;
-#line 318
+#line 323
                     if ((int const   )*(optstring + 0) == 58) {
-#line 318
+#line 323
                       __cil_tmp___11 = ':';
                     } else {
-#line 318
+#line 323
                       __cil_tmp___11 = '?';
                     }
-#line 318
+#line 323
                     return (__cil_tmp___11);
                   }
                 }
               }
-#line 321
-              __cil_tmp___12 = (int )strlen(nextchar);
-#line 321
+#line 326
+              __cil_tmp___12 = strlen((char const   *)nextchar);
+#line 326
               nextchar += __cil_tmp___12;
-#line 322
+#line 327
               if ((unsigned int )longind != (unsigned int )((void *)0)) {
-#line 323
+#line 328
                 *longind = option_index;
               }
-#line 324
+#line 329
               if (pfound->flag) {
-#line 326
+#line 331
                 *(pfound->flag) = (int )pfound->val;
-#line 327
+#line 332
                 return (0);
               }
-#line 329
+#line 334
               return ((int )pfound->val);
             }
-#line 336
+#line 341
             if (! long_only || (int )*(*(argv + optind) + 1) == 45) {
-#line 336
+#line 341
               goto _L___0;
             } else {
-#line 336
-              __cil_tmp___15 = (int )my_index(optstring, *nextchar);
-#line 336
+#line 341
+              __cil_tmp___15 = my_index(optstring, (int )*nextchar);
+#line 341
               if ((unsigned int )__cil_tmp___15 == (unsigned int )((void *)0)) {
                 _L___0: /* CIL Label */ 
-#line 339
+#line 344
                 if (opterr) {
-#line 341
+#line 346
                   if ((int )*(*(argv + optind) + 1) == 45) {
-#line 343
+#line 348
                     __cil_tmp___13 = _("%s: unrecognized option `--%s\'\n");
-#line 343
+#line 348
                     fprintf((FILE * __restrict  )stderr, (char const   * __restrict  )__cil_tmp___13,
                             *(argv + 0), nextchar);
                   } else {
-#line 347
+#line 352
                     __cil_tmp___14 = _("%s: unrecognized option `%c%s\'\n");
-#line 347
+#line 352
                     fprintf((FILE * __restrict  )stderr, (char const   * __restrict  )__cil_tmp___14,
                             *(argv + 0), *(*(argv + optind) + 0), nextchar);
                   }
                 }
-#line 350
+#line 355
                 nextchar = (char *)"";
-#line 351
+#line 356
                 optind ++;
-#line 352
+#line 357
                 optopt = 0;
-#line 353
+#line 358
                 return ('?');
               }
             }
@@ -5256,318 +5450,319 @@ int ( /* missing proto */  _getopt_internal)(int argc , char * const  *argv , ch
         }
       } else {
         _L___3: /* CIL Label */ 
-#line 225
+#line 230
         goto _L___1;
       }
     }
   } else {
     _L___1: /* CIL Label */ ;
   }
-#line 360
-  __cil_tmp___17 = nextchar;
-#line 360
-  nextchar ++;
-#line 360
-  c = *__cil_tmp___17;
-#line 361
-  __cil_tmp___18 = (int )my_index(optstring, c);
-#line 361
-  temp = (char *)__cil_tmp___18;
-#line 364
-  if ((int )*nextchar == 0) {
 #line 365
+  __cil_tmp___17 = nextchar;
+#line 365
+  nextchar ++;
+#line 365
+  c = *__cil_tmp___17;
+#line 366
+  __cil_tmp___18 = my_index(optstring, (int )c);
+#line 366
+  temp = __cil_tmp___18;
+#line 369
+  if ((int )*nextchar == 0) {
+#line 370
     optind ++;
   }
-#line 367
+#line 372
   if ((unsigned int )temp == (unsigned int )((void *)0) || (int )c == 58) {
-#line 369
+#line 374
     if (opterr) {
-#line 371
+#line 376
       if (posixly_correct) {
-#line 373
+#line 378
         __cil_tmp___19 = _("%s: illegal option -- %c\n");
-#line 373
+#line 378
         fprintf((FILE * __restrict  )stderr, (char const   * __restrict  )__cil_tmp___19,
                 *(argv + 0), c);
       } else {
-#line 376
+#line 381
         __cil_tmp___20 = _("%s: invalid option -- %c\n");
-#line 376
+#line 381
         fprintf((FILE * __restrict  )stderr, (char const   * __restrict  )__cil_tmp___20,
                 *(argv + 0), c);
       }
     }
-#line 379
+#line 384
     optopt = (int )c;
-#line 380
+#line 385
     return ('?');
   }
-#line 383
-  if ((int )*(temp + 0) == 87 && (int )*(temp + 1) == 59) {
-#line 387
-    pfound___0 = (struct option  const  *)((void *)0);
 #line 388
+  if ((int )*(temp + 0) == 87 && (int )*(temp + 1) == 59) {
+#line 392
+    pfound___0 = (struct option  const  *)((void *)0);
+#line 393
     exact___0 = 0;
-#line 389
-    ambig___0 = 0;
-#line 390
-    indfound___0 = 0;
 #line 394
-    if ((int )*nextchar != 0) {
-#line 396
-      optarg = nextchar;
+    ambig___0 = 0;
+#line 395
+    indfound___0 = 0;
 #line 399
+    if ((int )*nextchar != 0) {
+#line 401
+      optarg = nextchar;
+#line 404
       optind ++;
     } else {
-#line 401
+#line 406
       if (optind == argc) {
-#line 403
+#line 408
         if (opterr) {
-#line 406
+#line 411
           __cil_tmp___21 = _("%s: option requires an argument -- %c\n");
-#line 406
+#line 411
           fprintf((FILE * __restrict  )stderr, (char const   * __restrict  )__cil_tmp___21,
                   *(argv + 0), c);
         }
-#line 409
+#line 414
         optopt = (int )c;
-#line 410
+#line 415
         if ((int const   )*(optstring + 0) == 58) {
-#line 411
+#line 416
           c = (char )':';
         } else {
-#line 413
+#line 418
           c = (char )'?';
         }
-#line 414
+#line 419
         return ((int )c);
       } else {
-#line 419
+#line 424
         __cil_tmp___22 = optind;
-#line 419
+#line 424
         optind ++;
-#line 419
+#line 424
         optarg = (char *)*(argv + __cil_tmp___22);
       }
     }
-#line 424
+#line 429
     nameend___0 = optarg;
-#line 424
+#line 429
     nextchar = nameend___0;
-#line 424
+#line 429
     while ((int )*nameend___0 && (int )*nameend___0 != 61) {
-#line 424
+#line 429
       nameend___0 ++;
     }
-#line 429
+#line 434
     p___0 = longopts;
-#line 429
+#line 434
     option_index___0 = 0;
-#line 429
+#line 434
     while (p___0->name) {
-#line 430
-      __cil_tmp___24 = strncmp(p___0->name, nextchar, nameend___0 - nextchar);
-#line 430
-      if (! __cil_tmp___24) {
-#line 432
-        __cil_tmp___23 = (int )strlen(p___0->name);
-#line 432
-        if ((unsigned int )(nameend___0 - nextchar) == (unsigned int )__cil_tmp___23) {
 #line 435
-          pfound___0 = p___0;
-#line 436
-          indfound___0 = option_index___0;
+      __cil_tmp___24 = strncmp((char const   *)p___0->name, (char const   *)nextchar,
+                               (unsigned int )(nameend___0 - nextchar));
+#line 435
+      if (! __cil_tmp___24) {
 #line 437
+        __cil_tmp___23 = strlen((char const   *)p___0->name);
+#line 437
+        if ((unsigned int )(nameend___0 - nextchar) == __cil_tmp___23) {
+#line 440
+          pfound___0 = p___0;
+#line 441
+          indfound___0 = option_index___0;
+#line 442
           exact___0 = 1;
-#line 438
+#line 443
           break;
         } else {
-#line 440
+#line 445
           if ((unsigned int )pfound___0 == (unsigned int )((void *)0)) {
-#line 443
+#line 448
             pfound___0 = p___0;
-#line 444
+#line 449
             indfound___0 = option_index___0;
           } else {
-#line 448
+#line 453
             ambig___0 = 1;
           }
         }
       }
-#line 429
+#line 434
       p___0 ++;
-#line 429
+#line 434
       option_index___0 ++;
     }
-#line 450
+#line 455
     if (ambig___0 && ! exact___0) {
-#line 452
+#line 457
       if (opterr) {
-#line 453
+#line 458
         __cil_tmp___25 = _("%s: option `-W %s\' is ambiguous\n");
-#line 453
+#line 458
         fprintf((FILE * __restrict  )stderr, (char const   * __restrict  )__cil_tmp___25,
                 *(argv + 0), *(argv + optind));
       }
-#line 455
-      __cil_tmp___26 = (int )strlen(nextchar);
-#line 455
+#line 460
+      __cil_tmp___26 = strlen((char const   *)nextchar);
+#line 460
       nextchar += __cil_tmp___26;
-#line 456
+#line 461
       optind ++;
-#line 457
+#line 462
       return ('?');
     }
-#line 459
+#line 464
     if ((unsigned int )pfound___0 != (unsigned int )((void *)0)) {
-#line 461
-      option_index___0 = indfound___0;
-#line 462
-      if (*nameend___0) {
 #line 466
-        if (pfound___0->has_arg) {
+      option_index___0 = indfound___0;
 #line 467
+      if (*nameend___0) {
+#line 471
+        if (pfound___0->has_arg) {
+#line 472
           optarg = nameend___0 + 1;
         } else {
-#line 470
+#line 475
           if (opterr) {
-#line 471
+#line 476
             __cil_tmp___27 = _("%s: option `-W %s\' doesn\'t allow an argument\n");
-#line 471
+#line 476
             fprintf((FILE * __restrict  )stderr, (char const   * __restrict  )__cil_tmp___27,
                     *(argv + 0), pfound___0->name);
           }
-#line 475
-          __cil_tmp___28 = (int )strlen(nextchar);
-#line 475
+#line 480
+          __cil_tmp___28 = strlen((char const   *)nextchar);
+#line 480
           nextchar += __cil_tmp___28;
-#line 476
+#line 481
           return ('?');
         }
       } else {
-#line 479
+#line 484
         if (pfound___0->has_arg == 1) {
-#line 481
+#line 486
           if (optind < argc) {
-#line 482
+#line 487
             __cil_tmp___29 = optind;
-#line 482
+#line 487
             optind ++;
-#line 482
+#line 487
             optarg = (char *)*(argv + __cil_tmp___29);
           } else {
-#line 485
+#line 490
             if (opterr) {
-#line 486
+#line 491
               __cil_tmp___30 = _("%s: option `%s\' requires an argument\n");
-#line 486
+#line 491
               fprintf((FILE * __restrict  )stderr, (char const   * __restrict  )__cil_tmp___30,
                       *(argv + 0), *(argv + (optind - 1)));
             }
-#line 489
-            __cil_tmp___31 = (int )strlen(nextchar);
-#line 489
+#line 494
+            __cil_tmp___31 = strlen((char const   *)nextchar);
+#line 494
             nextchar += __cil_tmp___31;
-#line 490
+#line 495
             if ((int const   )*(optstring + 0) == 58) {
-#line 490
+#line 495
               __cil_tmp___32 = ':';
             } else {
-#line 490
+#line 495
               __cil_tmp___32 = '?';
             }
-#line 490
+#line 495
             return (__cil_tmp___32);
           }
         }
       }
-#line 493
-      __cil_tmp___33 = (int )strlen(nextchar);
-#line 493
+#line 498
+      __cil_tmp___33 = strlen((char const   *)nextchar);
+#line 498
       nextchar += __cil_tmp___33;
-#line 494
+#line 499
       if ((unsigned int )longind != (unsigned int )((void *)0)) {
-#line 495
+#line 500
         *longind = option_index___0;
       }
-#line 496
+#line 501
       if (pfound___0->flag) {
-#line 498
+#line 503
         *(pfound___0->flag) = (int )pfound___0->val;
-#line 499
+#line 504
         return (0);
       }
-#line 501
+#line 506
       return ((int )pfound___0->val);
     }
-#line 503
+#line 508
     nextchar = (char *)((void *)0);
-#line 504
+#line 509
     return ('W');
   }
-#line 506
-  if ((int )*(temp + 1) == 58) {
-#line 508
-    if ((int )*(temp + 2) == 58) {
 #line 511
-      if ((int )*nextchar != 0) {
+  if ((int )*(temp + 1) == 58) {
 #line 513
+    if ((int )*(temp + 2) == 58) {
+#line 516
+      if ((int )*nextchar != 0) {
+#line 518
         optarg = nextchar;
-#line 514
+#line 519
         optind ++;
       } else {
-#line 517
+#line 522
         optarg = (char *)((void *)0);
       }
-#line 518
+#line 523
       nextchar = (char *)((void *)0);
     } else {
-#line 523
-      if ((int )*nextchar != 0) {
-#line 525
-        optarg = nextchar;
 #line 528
+      if ((int )*nextchar != 0) {
+#line 530
+        optarg = nextchar;
+#line 533
         optind ++;
       } else {
-#line 530
+#line 535
         if (optind == argc) {
-#line 532
+#line 537
           if (opterr) {
-#line 535
+#line 540
             __cil_tmp___34 = _("%s: option requires an argument -- %c\n");
-#line 535
+#line 540
             fprintf((FILE * __restrict  )stderr, (char const   * __restrict  )__cil_tmp___34,
                     *(argv + 0), c);
           }
-#line 539
+#line 544
           optopt = (int )c;
-#line 540
+#line 545
           if ((int const   )*(optstring + 0) == 58) {
-#line 541
+#line 546
             c = (char )':';
           } else {
-#line 543
+#line 548
             c = (char )'?';
           }
         } else {
-#line 548
+#line 553
           __cil_tmp___35 = optind;
-#line 548
+#line 553
           optind ++;
-#line 548
+#line 553
           optarg = (char *)*(argv + __cil_tmp___35);
         }
       }
-#line 549
+#line 554
       nextchar = (char *)((void *)0);
     }
   }
-#line 552
+#line 557
   return ((int )c);
 }
 }
-#line 1 "cil-rCD4eaRF.o"
-#pragma merger(0,"/tmp/cil-iELDvhNl.i","")
+#line 1 "cil-FSnwihMU.o"
+#pragma merger(0,"/tmp/cil-jAKUCz6K.i","")
 #line 1 "../../mockedFns/getpagesize.c"
  __attribute__((__nothrow__)) int getpagesize(void)  __attribute__((__const__)) ;
 #line 1 "../../mockedFns/getpagesize.c"
@@ -5579,48 +5774,48 @@ int getpagesize(void)
   return (4096);
 }
 }
-#line 1 "cil-LcEWixnX.o"
-#pragma merger(0,"/tmp/cil-bBPnAnkO.i","")
-#line 1 "./../../mockedFns/symexe.h"
+#line 1 "cil-maGe6juh.o"
+#pragma merger(0,"/tmp/cil-EzB9v18s.i","")
+#line 1 "../../mockedFns/symexe.h"
 extern long long __SYMBOLIC(void *var ) ;
 #line 128 "/usr/include/sys/socket.h"
  __attribute__((__nothrow__)) int getpeername(int socket___0 , struct sockaddr * __restrict  address ,
                                               socklen_t * __restrict  address_len ) ;
-#line 4 "../../mockedFns/getpeername.c"
+#line 5 "../../mockedFns/getpeername.c"
  __attribute__((__nothrow__)) int getpeername(int socket___0 , struct sockaddr * __restrict  address ,
                                               socklen_t * __restrict  address_len ) ;
-#line 4 "../../mockedFns/getpeername.c"
+#line 5 "../../mockedFns/getpeername.c"
 int getpeername(int socket___0 , struct sockaddr * __restrict  address , socklen_t * __restrict  address_len ) 
 { long long __cil_tmp ;
   long long __cil_tmp___0 ;
 
   {
-#line 6
+#line 7
   address->sa_family = (unsigned short)2;
-#line 8
+#line 9
   __cil_tmp = __SYMBOLIC((void *)0);
-#line 8
+#line 9
   address->sa_data[0] = (char )__cil_tmp;
-#line 9
+#line 10
   __cil_tmp___0 = __SYMBOLIC((void *)0);
-#line 9
+#line 10
   address->sa_data[1] = (char )__cil_tmp___0;
-#line 12
-  address->sa_data[2] = (char)10;
 #line 13
-  address->sa_data[3] = (char)20;
+  address->sa_data[2] = (char)10;
 #line 14
-  address->sa_data[4] = (char)30;
+  address->sa_data[3] = (char)20;
 #line 15
-  address->sa_data[5] = (char)40;
+  address->sa_data[4] = (char)30;
 #line 16
-  *address_len = 8U;
+  address->sa_data[5] = (char)40;
 #line 17
+  *address_len = 8U;
+#line 18
   return (0);
 }
 }
-#line 1 "cil-9hAx8CIw.o"
-#pragma merger(0,"/tmp/cil-gVeY1IjV.i","")
+#line 1 "cil-ed89G3XQ.o"
+#pragma merger(0,"/tmp/cil-ihsvlyMm.i","")
 #line 117 "/usr/include/pwd.h"
 struct passwd *getpwnam(char const   *__name ) ;
 #line 4 "../../mockedFns/getpwnam.c"
@@ -5639,8 +5834,8 @@ struct passwd *getpwnam(char const   *__name )
   return (x);
 }
 }
-#line 1 "cil-ERX4n5iO.o"
-#pragma merger(0,"/tmp/cil-iNGQMaOq.i","")
+#line 1 "cil-lOAZtouj.o"
+#pragma merger(0,"/tmp/cil-HWFHk8Oc.i","")
 #line 3 "../../mockedFns/gettext.c"
 char *gettext(char const   *text ) 
 { 
@@ -5650,8 +5845,8 @@ char *gettext(char const   *text )
   return ((char *)text);
 }
 }
-#line 1 "cil-CHBe91Bs.o"
-#pragma merger(0,"/tmp/cil-hLKAXtUI.i","")
+#line 1 "cil-8WOF8xOP.o"
+#pragma merger(0,"/tmp/cil-qcq1ejxc.i","")
 #line 2 "../../mockedFns/groups.c"
 int initgroups(char const   *user , __gid_t group ) 
 { 
@@ -5672,13 +5867,17 @@ int setgroups(size_t __n , __gid_t const   *__groups )
   return (0);
 }
 }
-#line 1 "cil-2lldQIkz.o"
-#pragma merger(0,"/tmp/cil-2fdmbVoY.i","")
-#line 54 "/usr/include/arpa/inet.h"
+#line 1 "cil-B6XUii0G.o"
+#pragma merger(0,"/tmp/cil-jqrkZ5xg.i","")
+#line 35 "/usr/include/arpa/inet.h"
+ __attribute__((__nothrow__)) in_addr_t inet_addr(char const   *cp ) ;
+#line 54
  __attribute__((__nothrow__)) char *inet_ntoa(struct in_addr in ) ;
 #line 65
  __attribute__((__nothrow__)) char const   *inet_ntop(int af , void const   * __restrict  src ,
                                                       char * __restrict  dst , socklen_t size ) ;
+#line 74
+ __attribute__((__nothrow__)) int inet_aton(char const   *cp , struct in_addr *pin ) ;
 #line 9 "../../mockedFns/inet.c"
 char *inet_nextint(char *s , char delim , int *n ) 
 { char *p ;
@@ -5706,6 +5905,40 @@ char *inet_nextint(char *s , char delim , int *n )
 #line 16
     return (p + 1);
   }
+}
+}
+#line 19
+ __attribute__((__nothrow__)) int inet_aton(char const   *cp , struct in_addr *pin ) ;
+#line 19 "../../mockedFns/inet.c"
+int inet_aton(char const   *cp , struct in_addr *pin ) 
+{ int r ;
+  int n ;
+  char cp2[1024] ;
+  char *s ;
+
+  {
+#line 20
+  r = 0;
+#line 22
+  strcpy((char * __restrict  )(cp2), (char const   * __restrict  )cp);
+#line 23
+  s = cp2;
+#line 24
+  while (1) {
+#line 24
+    s = inet_nextint(s, (char )'.', & n);
+#line 24
+    if (! ((unsigned int )s != (unsigned int )((char *)0))) {
+#line 24
+      break;
+    }
+#line 26
+    r = r * 256 + n;
+  }
+#line 28
+  pin->s_addr = (unsigned int )r;
+#line 33
+  return (1);
 }
 }
 #line 39 "../../mockedFns/inet.c"
@@ -5754,110 +5987,105 @@ char const   *inet_ntop(int af , void const   * __restrict  src , char * __restr
   return ((char const   *)dst);
 }
 }
-#line 1 "cil-pphRgU0B.o"
-#pragma merger(0,"/tmp/cil-qytWZmjv.i","")
-#line 2 "./../../mockedFns/symexe.h"
+#line 66
+ __attribute__((__nothrow__)) in_addr_t inet_addr(char const   *cp ) ;
+#line 66 "../../mockedFns/inet.c"
+in_addr_t inet_addr(char const   *cp ) 
+{ struct in_addr val ;
+  int __cil_tmp ;
+
+  {
+#line 70
+  __cil_tmp = inet_aton(cp, & val);
+#line 70
+  if (__cil_tmp) {
+#line 71
+    return (val.s_addr);
+  }
+#line 74
+  return (4294967295U);
+}
+}
+#line 1 "cil-siuR4k45.o"
+#pragma merger(0,"/tmp/cil-rIsCfW5P.i","")
+#line 2 "../../mockedFns/symexe.h"
 extern void __EVAL() ;
 #line 7
 extern void __EVALSTR(char *str , int len ) ;
-#line 8
-extern void __COMMENT(char *str ) ;
 #line 275 "/usr/include/sys/stat.h"
  __attribute__((__nothrow__)) __mode_t umask(__mode_t cmask ) ;
-#line 26 "../../mockedFns/iosim.h"
+#line 27 "../../mockedFns/iosim.h"
 sym_file_stream_t *IOSIM_fd[1024]  ;
-#line 27
+#line 28
 int IOSIM_num_fd ;
-#line 30
-sym_file_t *IOSIM_findfile(char const   *file ) ;
 #line 31
+sym_file_t *IOSIM_findfile(char const   *file ) ;
+#line 32
 sym_file_t *IOSIM_addfile(char const   *filename , mode_t mode ) ;
-#line 33
+#line 34
 char *IOSIM_toAbsolute(char const   *name ) ;
-#line 35
+#line 36
 int IOSIM_newfd(void) ;
-#line 37
-int IOSIM_ungetc(int c , int fildes ) ;
 #line 38
-int IOSIM_write(int fildes , void const   *buf , size_t nbyte ) ;
+int IOSIM_ungetc(int c , int fildes ) ;
 #line 39
+int IOSIM_write(int fildes , void const   *buf , size_t nbyte ) ;
+#line 40
 int IOSIM_close(int fildes ) ;
-#line 41
-int IOSIM_openWithMode(char const   *name , int flags , mode_t mode ) ;
 #line 42
-int IOSIM_open(char const   *name , int flags ) ;
+int IOSIM_openWithMode(char const   *name , int flags , mode_t mode ) ;
 #line 43
-sym_file_stream_t *IOSIM_getStream(int fd ) ;
+int IOSIM_open(char const   *name , int flags ) ;
 #line 44
-int IOSIM_rename(char const   *old , char const   *new ) ;
+sym_file_stream_t *IOSIM_getStream(int fd ) ;
 #line 45
+int IOSIM_rename(char const   *old , char const   *new ) ;
+#line 46
 int IOSIM_unlink(char const   *pathname ) ;
-#line 47
+#line 48
 char *IOSIM_getcwd(char *buf , size_t size ) ;
-#line 130 "/usr/include/string.h"
- __attribute__((__nothrow__)) char *strdup(char const   *p_str )  __attribute__((__nonnull__(1),
-__malloc__)) ;
-#line 170
+#line 170 "/usr/include/string.h"
  __attribute__((__nothrow__)) char *strrchr(char const   *s , int c )  __attribute__((__pure__,
 __nonnull__(1))) ;
 #line 595 "/usr/include/stdlib.h"
  __attribute__((__nothrow__)) void *realloc(void *ptr , size_t size )  __attribute__((__malloc__)) ;
-#line 597
-extern  __attribute__((__nothrow__)) void free(void *__ptr ) ;
 #line 749
  __attribute__((__nothrow__)) char *realpath(char const   * __restrict  path , char * __restrict  got_path ) ;
-#line 3 "../../mockedFns/umask.c"
-static int usermask  ;
-#line 4
- __attribute__((__nothrow__)) __mode_t umask(__mode_t cmask ) ;
-#line 4 "../../mockedFns/umask.c"
-__mode_t umask(__mode_t cmask ) 
-{ mode_t oldMask ;
-
-  {
-#line 5
-  oldMask = (mode_t )usermask;
-#line 6
-  usermask = (int )(cmask & 511U);
-#line 7
-  return (oldMask);
-}
-}
-#line 10 "../../mockedFns/iosim.c"
+#line 9 "../../mockedFns/iosim.c"
 int IOSIM_num_file  =    0;
-#line 11 "../../mockedFns/iosim.c"
+#line 10 "../../mockedFns/iosim.c"
 char *IOSIM_file_name[1024]  ;
-#line 12 "../../mockedFns/iosim.c"
+#line 11 "../../mockedFns/iosim.c"
 sym_file_t *IOSIM_file[1024]  ;
-#line 15 "../../mockedFns/iosim.c"
+#line 14 "../../mockedFns/iosim.c"
 char workingDir[4097]  = {      (char )'/',      (char )'\000'};
-#line 21 "../../mockedFns/iosim.c"
+#line 20 "../../mockedFns/iosim.c"
 int IOSIM_num_fd  =    3;
-#line 36 "../../mockedFns/iosim.c"
+#line 35 "../../mockedFns/iosim.c"
 sym_file_t *IOSIM_findfile(char const   *file ) 
 { int i ;
   int __cil_tmp ;
 
   {
-#line 37
+#line 36
   i = 0;
-#line 37
+#line 36
   while (i < IOSIM_num_file) {
-#line 38
+#line 37
     __cil_tmp = strcmp(file, (char const   *)IOSIM_file_name[i]);
-#line 38
+#line 37
     if (__cil_tmp == 0) {
-#line 39
+#line 38
       return (IOSIM_file[i]);
     }
-#line 37
+#line 36
     i ++;
   }
-#line 41
+#line 40
   return ((sym_file_t *)((void *)0));
 }
 }
-#line 45 "../../mockedFns/iosim.c"
+#line 44 "../../mockedFns/iosim.c"
 sym_file_t *IOSIM_addfile(char const   *filename , mode_t mode ) 
 { int *__cil_tmp ;
   int *__cil_tmp___0 ;
@@ -5865,83 +6093,83 @@ sym_file_t *IOSIM_addfile(char const   *filename , mode_t mode )
   void *__cil_tmp___1 ;
 
   {
-#line 46
+#line 45
   if (IOSIM_num_file >= 1024) {
-#line 47
+#line 46
     __cil_tmp = __errno_location();
-#line 47
+#line 46
     *__cil_tmp = 24;
-#line 48
+#line 47
     return ((sym_file_t *)-1);
   }
-#line 50
+#line 49
   if (IOSIM_num_fd >= 1024) {
-#line 51
+#line 50
     __cil_tmp___0 = __errno_location();
-#line 51
+#line 50
     *__cil_tmp___0 = 23;
-#line 52
+#line 51
     return ((sym_file_t *)-1);
   }
-#line 54
+#line 53
   __cil_tmp___1 = malloc(sizeof(sym_file_t ));
-#line 54
+#line 53
   file = (sym_file_t *)__cil_tmp___1;
-#line 59
+#line 58
   file->stat.st_size = 0LL;
-#line 60
+#line 59
   file->contents = (char *)((void *)0);
-#line 62
+#line 61
   file->stat.st_nlink = 1U;
-#line 65
+#line 64
   file->stat.st_mode = (32768U | mode) | (unsigned int )((256 >> 3) >> 3);
-#line 69
+#line 68
   file->stat.st_uid = 1234U;
-#line 70
+#line 69
   file->stat.st_gid = 5678U;
-#line 71
+#line 70
   file->stat.st_atim.tv_sec = 1L;
-#line 72
+#line 71
   file->stat.st_atim.tv_nsec = 2L;
-#line 73
+#line 72
   file->stat.st_mtim.tv_sec = 1L;
-#line 74
+#line 73
   file->stat.st_mtim.tv_nsec = 2L;
-#line 75
+#line 74
   file->stat.st_ctim.tv_sec = 1L;
-#line 76
+#line 75
   file->stat.st_ctim.tv_nsec = 2L;
-#line 78
+#line 77
   IOSIM_file_name[IOSIM_num_file] = strdup(filename);
-#line 79
+#line 78
   IOSIM_file[IOSIM_num_file] = file;
-#line 80
+#line 79
   IOSIM_num_file ++;
-#line 82
+#line 81
   return (file);
 }
 }
-#line 85 "../../mockedFns/iosim.c"
+#line 84 "../../mockedFns/iosim.c"
 int IOSIM_newfd(void) 
 { int ret___0 ;
 
   {
-#line 86
+#line 85
   if (IOSIM_num_fd >= 1024) {
-#line 87
+#line 86
     __COMMENT((char *)"Too many file descriptors");
-#line 88
+#line 87
     exit(1);
   }
-#line 90
+#line 89
   ret___0 = IOSIM_num_fd;
-#line 91
+#line 90
   IOSIM_num_fd ++;
-#line 92
+#line 91
   return (ret___0);
 }
 }
-#line 96 "../../mockedFns/iosim.c"
+#line 95 "../../mockedFns/iosim.c"
 char *IOSIM_toAbsolute(char const   *name ) 
 { char *absoluteName ;
   void *__cil_tmp ;
@@ -5956,71 +6184,88 @@ char *IOSIM_toAbsolute(char const   *name )
   char const   *__cil_tmp___5 ;
 
   {
-#line 97
+#line 96
   __cil_tmp = malloc(4097U);
-#line 97
+#line 96
   absoluteName = (char *)__cil_tmp;
-#line 98
+#line 97
   __cil_tmp___0 = strrchr(name, '/');
-#line 98
+#line 97
   lastSlash = __cil_tmp___0;
-#line 99
+#line 98
   if (lastSlash) {
-#line 100
+#line 99
     if ((unsigned int )lastSlash == (unsigned int )name) {
-#line 101
+#line 100
       strcpy((char * __restrict  )absoluteName, (char const   * __restrict  )"/");
     } else {
-#line 103
+#line 102
       __cil_tmp___1 = strdup(name);
-#line 103
+#line 102
       path = __cil_tmp___1;
-#line 104
+#line 103
       *(path + (lastSlash - (char *)name)) = (char)0;
-#line 105
+#line 104
       __cil_tmp___2 = realpath((char const   * __restrict  )path, (char * __restrict  )absoluteName);
-#line 105
+#line 104
       if (! __cil_tmp___2) {
-#line 106
+#line 105
         free((void *)path);
-#line 107
+#line 106
         return ((char *)((void *)0));
       }
-#line 109
+#line 108
       free((void *)path);
     }
   } else {
-#line 112
+#line 111
     strcpy((char * __restrict  )absoluteName, (char const   * __restrict  )(workingDir));
   }
-#line 115
+#line 114
   __cil_tmp___3 = strchr((char const   *)absoluteName, 0);
-#line 115
+#line 114
   end = __cil_tmp___3;
-#line 117
+#line 116
   if (*(absoluteName + 1)) {
-#line 118
+#line 117
     __cil_tmp___4 = end;
-#line 118
+#line 117
     end ++;
-#line 118
+#line 117
     *__cil_tmp___4 = (char )'/';
   }
-#line 120
+#line 119
   if (lastSlash) {
-#line 120
+#line 119
     __cil_tmp___5 = (char const   *)(lastSlash + 1);
   } else {
-#line 120
+#line 119
     __cil_tmp___5 = name;
   }
-#line 120
+#line 119
   strcpy((char * __restrict  )end, (char const   * __restrict  )__cil_tmp___5);
-#line 121
+#line 120
   return (absoluteName);
 }
 }
+#line 123 "../../mockedFns/iosim.c"
+static mode_t usermask  ;
+#line 124
+ __attribute__((__nothrow__)) __mode_t umask(__mode_t cmask ) ;
 #line 124 "../../mockedFns/iosim.c"
+__mode_t umask(__mode_t cmask ) 
+{ mode_t oldMask ;
+
+  {
+#line 125
+  oldMask = usermask;
+#line 126
+  usermask = cmask & 511U;
+#line 127
+  return (oldMask);
+}
+}
+#line 130 "../../mockedFns/iosim.c"
 int IOSIM_openWithMode(char const   *name , int flags , mode_t mode ) 
 { char *absoluteName ;
   char *__cil_tmp ;
@@ -6034,86 +6279,86 @@ int IOSIM_openWithMode(char const   *name , int flags , mode_t mode )
   int __cil_tmp___4 ;
 
   {
-#line 125
-  __cil_tmp = IOSIM_toAbsolute(name);
-#line 125
-  absoluteName = __cil_tmp;
-#line 126
-  __cil_tmp___0 = IOSIM_findfile((char const   *)absoluteName);
-#line 126
-  sym_file = __cil_tmp___0;
-#line 127
-  if (sym_file) {
-#line 129
-    if (flags & 64 && flags & 128) {
-#line 130
-      __cil_tmp___1 = __errno_location();
-#line 130
-      *__cil_tmp___1 = 17;
 #line 131
-      free((void *)absoluteName);
+  __cil_tmp = IOSIM_toAbsolute(name);
+#line 131
+  absoluteName = __cil_tmp;
 #line 132
+  __cil_tmp___0 = IOSIM_findfile((char const   *)absoluteName);
+#line 132
+  sym_file = __cil_tmp___0;
+#line 133
+  if (sym_file) {
+#line 135
+    if (flags & 64 && flags & 128) {
+#line 136
+      __cil_tmp___1 = __errno_location();
+#line 136
+      *__cil_tmp___1 = 17;
+#line 137
+      free((void *)absoluteName);
+#line 138
       return (-1);
     }
   } else {
-#line 134
+#line 140
     if (flags & 64) {
-#line 136
-      sym_file = IOSIM_addfile((char const   *)absoluteName, mode & (unsigned int )(~ usermask));
-#line 137
+#line 142
+      sym_file = IOSIM_addfile((char const   *)absoluteName, mode & ~ usermask);
+#line 143
       free((void *)absoluteName);
     } else {
-#line 140
+#line 146
       __cil_tmp___2 = __errno_location();
-#line 140
+#line 146
       *__cil_tmp___2 = 2;
-#line 141
+#line 147
       free((void *)absoluteName);
-#line 142
+#line 148
       return (-1);
     }
   }
-#line 146
+#line 152
   __cil_tmp___3 = malloc(sizeof(sym_file_stream_t ));
-#line 146
+#line 152
   sym_stream = (sym_file_stream_t *)__cil_tmp___3;
-#line 149
-  __cil_tmp___4 = IOSIM_newfd();
-#line 149
-  fd = __cil_tmp___4;
-#line 150
-  IOSIM_fd[fd] = sym_stream;
-#line 153
-  sym_stream->sym_file = sym_file;
-#line 154
-  sym_stream->offset = 0LL;
 #line 155
+  __cil_tmp___4 = IOSIM_newfd();
+#line 155
+  fd = __cil_tmp___4;
+#line 156
+  IOSIM_fd[fd] = sym_stream;
+#line 159
+  sym_stream->sym_file = sym_file;
+#line 160
+  sym_stream->offset = 0LL;
+#line 161
   sym_stream->fd = fd;
-#line 157
+#line 163
   return (fd);
 }
 }
-#line 160 "../../mockedFns/iosim.c"
+#line 166 "../../mockedFns/iosim.c"
 int IOSIM_open(char const   *name , int flags ) 
 { int __cil_tmp ;
 
   {
-#line 161
+#line 167
   __cil_tmp = IOSIM_openWithMode(name, flags, 511U);
-#line 161
+#line 167
   return (__cil_tmp);
 }
 }
-#line 164 "../../mockedFns/iosim.c"
+#line 170 "../../mockedFns/iosim.c"
 sym_file_stream_t *IOSIM_getStream(int fd ) 
 { 
 
   {
-#line 165
+#line 171
   return (IOSIM_fd[fd]);
 }
 }
-#line 168 "../../mockedFns/iosim.c"
+#line 174 "../../mockedFns/iosim.c"
 int IOSIM_rename(char const   *old , char const   *new ) 
 { char *absOld ;
   char *__cil_tmp ;
@@ -6125,64 +6370,64 @@ int IOSIM_rename(char const   *old , char const   *new )
   int *__cil_tmp___3 ;
 
   {
-#line 170
-  __cil_tmp = IOSIM_toAbsolute(old);
-#line 170
-  absOld = __cil_tmp;
-#line 171
-  if (! absOld) {
-#line 172
-    return (-1);
-  }
-#line 174
-  __cil_tmp___0 = IOSIM_toAbsolute(new);
-#line 174
-  absNew = __cil_tmp___0;
-#line 175
-  if (! absNew) {
 #line 176
-    free((void *)absOld);
+  __cil_tmp = IOSIM_toAbsolute(old);
+#line 176
+  absOld = __cil_tmp;
 #line 177
+  if (! absOld) {
+#line 178
     return (-1);
   }
-#line 179
+#line 180
+  __cil_tmp___0 = IOSIM_toAbsolute(new);
+#line 180
+  absNew = __cil_tmp___0;
+#line 181
+  if (! absNew) {
+#line 182
+    free((void *)absOld);
+#line 183
+    return (-1);
+  }
+#line 185
   i = 0;
-#line 179
+#line 185
   while (i < IOSIM_num_file) {
-#line 180
+#line 186
     __cil_tmp___2 = strcmp((char const   *)absOld, (char const   *)IOSIM_file_name[i]);
-#line 180
+#line 186
     if (__cil_tmp___2 == 0) {
-#line 182
+#line 188
       __cil_tmp___1 = IOSIM_findfile((char const   *)absNew);
-#line 182
+#line 188
       if (__cil_tmp___1) {
-#line 184
+#line 190
         IOSIM_unlink((char const   *)absNew);
       }
-#line 186
+#line 192
       free((void *)IOSIM_file_name[i]);
-#line 187
+#line 193
       free((void *)absOld);
-#line 188
+#line 194
       IOSIM_file_name[i] = absNew;
-#line 189
+#line 195
       return (0);
     }
-#line 179
+#line 185
     i ++;
   }
-#line 193
+#line 199
   free((void *)absOld);
-#line 194
+#line 200
   __cil_tmp___3 = __errno_location();
-#line 194
+#line 200
   *__cil_tmp___3 = 2;
-#line 195
+#line 201
   return (-1);
 }
 }
-#line 197 "../../mockedFns/iosim.c"
+#line 203 "../../mockedFns/iosim.c"
 int IOSIM_unlink(char const   *pathname ) 
 { char *absoluteName ;
   char *__cil_tmp ;
@@ -6192,79 +6437,79 @@ int IOSIM_unlink(char const   *pathname )
   int *__cil_tmp___1 ;
 
   {
-#line 198
+#line 204
   __cil_tmp = IOSIM_toAbsolute(pathname);
-#line 198
+#line 204
   absoluteName = __cil_tmp;
-#line 199
-  i = 0;
-#line 199
-  while (i < IOSIM_num_file) {
-#line 200
-    __cil_tmp___0 = strcmp((char const   *)absoluteName, (char const   *)IOSIM_file_name[i]);
-#line 200
-    if (__cil_tmp___0 == 0) {
-#line 201
-      free((void *)absoluteName);
-#line 202
-      free((void *)IOSIM_file_name[i]);
-#line 203
-      sym_file = IOSIM_file[i];
 #line 205
-      (sym_file->stat.st_nlink) --;
+  i = 0;
+#line 205
+  while (i < IOSIM_num_file) {
+#line 206
+    __cil_tmp___0 = strcmp((char const   *)absoluteName, (char const   *)IOSIM_file_name[i]);
+#line 206
+    if (__cil_tmp___0 == 0) {
 #line 207
-      if (sym_file->stat.st_nlink == 0U) {
+      free((void *)absoluteName);
 #line 208
-        free((void *)sym_file->contents);
+      free((void *)IOSIM_file_name[i]);
 #line 209
+      sym_file = IOSIM_file[i];
+#line 211
+      (sym_file->stat.st_nlink) --;
+#line 213
+      if (sym_file->stat.st_nlink == 0U) {
+#line 214
+        free((void *)sym_file->contents);
+#line 215
         free((void *)sym_file);
       }
-#line 213
+#line 219
       IOSIM_num_file --;
-#line 214
+#line 220
       while (i < IOSIM_num_file) {
-#line 215
+#line 221
         IOSIM_file[i] = IOSIM_file[i + 1];
-#line 216
+#line 222
         IOSIM_file_name[i] = IOSIM_file_name[i + 1];
-#line 214
+#line 220
         i ++;
       }
-#line 219
+#line 225
       return (0);
     }
-#line 199
+#line 205
     i ++;
   }
-#line 222
+#line 228
   __cil_tmp___1 = __errno_location();
-#line 222
+#line 228
   *__cil_tmp___1 = 2;
-#line 223
+#line 229
   return (-1);
 }
 }
-#line 226 "../../mockedFns/iosim.c"
+#line 232 "../../mockedFns/iosim.c"
 int IOSIM_close(int fildes ) 
 { int *__cil_tmp ;
 
   {
-#line 227
+#line 233
   if ((fildes < 0 || fildes >= IOSIM_num_fd) || (unsigned int )IOSIM_fd[fildes] == (unsigned int )((void *)0)) {
-#line 228
+#line 234
     __cil_tmp = __errno_location();
-#line 228
+#line 234
     *__cil_tmp = 9;
-#line 229
+#line 235
     return (-1);
   }
-#line 231
+#line 237
   IOSIM_fd[fildes] = (sym_file_stream_t *)((void *)0);
-#line 232
+#line 238
   return (0);
 }
 }
-#line 235 "../../mockedFns/iosim.c"
+#line 241 "../../mockedFns/iosim.c"
 int IOSIM_read(int fildes , void *buf , size_t nbyte ) 
 { size_t n ;
   int cur ;
@@ -6275,69 +6520,69 @@ int IOSIM_read(int fildes , void *buf , size_t nbyte )
   void *__cil_tmp___0 ;
 
   {
-#line 238
+#line 244
   cbuf = (char *)buf;
-#line 240
+#line 246
   if (nbyte == 0U) {
-#line 240
+#line 246
     return (0);
   }
-#line 244
+#line 250
   in = IOSIM_fd[fildes];
-#line 246
+#line 252
   cur = (int )in->offset;
-#line 247
+#line 253
   len = (int )(in->sym_file)->stat.st_size;
-#line 248
+#line 254
   if ((unsigned int )in->buffer == (unsigned int )((void *)0)) {
-#line 249
+#line 255
     __cil_tmp = malloc((unsigned int )len);
-#line 249
+#line 255
     __cil_tmp___0 = memcpy((void * __restrict  )__cil_tmp, (void const   * __restrict  )(in->sym_file)->contents,
                            (unsigned int )len);
-#line 249
+#line 255
     in->buffer = (char *)__cil_tmp___0;
   }
-#line 251
+#line 257
   n = 0U;
-#line 251
+#line 257
   while (n < nbyte) {
-#line 252
+#line 258
     if (cur >= len) {
-#line 253
+#line 259
       *(cbuf + n) = (char)-1;
-#line 254
+#line 260
       break;
     }
-#line 256
+#line 262
     *(cbuf + n) = *(in->buffer + cur);
-#line 258
+#line 264
     cur ++;
-#line 251
+#line 257
     n ++;
   }
-#line 260
+#line 266
   in->offset = (long long )cur;
-#line 261
+#line 267
   return ((int )n);
 }
 }
-#line 264 "../../mockedFns/iosim.c"
+#line 270 "../../mockedFns/iosim.c"
 int IOSIM_ungetc(int c , int fildes ) 
 { sym_file_stream_t *in ;
 
   {
-#line 266
+#line 272
   in = IOSIM_fd[fildes];
-#line 268
+#line 274
   (in->offset) --;
-#line 269
+#line 275
   *(in->buffer + in->offset) = (char )c;
-#line 271
+#line 277
   return (c);
 }
 }
-#line 274 "../../mockedFns/iosim.c"
+#line 280 "../../mockedFns/iosim.c"
 int IOSIM_write(int fildes , void const   *buf , size_t nbyte ) 
 { int cur ;
   int len ;
@@ -6346,114 +6591,114 @@ int IOSIM_write(int fildes , void const   *buf , size_t nbyte )
   void *__cil_tmp ;
 
   {
-#line 276
+#line 282
   cbuf = (char *)buf;
-#line 278
+#line 284
   if (nbyte == 0U) {
-#line 278
+#line 284
     return (0);
   }
-#line 279
+#line 285
   if (fildes == 0) {
-#line 280
+#line 286
     __COMMENT((char *)"Writing on fildes 0");
-#line 281
+#line 287
     __EVALSTR((char *)buf, (int )nbyte);
-#line 282
+#line 288
     return (-1);
   }
-#line 285
+#line 291
   out = IOSIM_fd[fildes];
-#line 286
-  cur = (int )out->offset;
-#line 287
-  len = (int )(out->sym_file)->stat.st_size;
-#line 290
-  if ((size_t )cur + nbyte > (size_t )len) {
-#line 291
-    __cil_tmp = realloc((void *)(out->sym_file)->contents, (size_t )cur + nbyte);
-#line 291
-    (out->sym_file)->contents = (char *)__cil_tmp;
 #line 292
-    (out->sym_file)->stat.st_size = (long long )((size_t )cur + nbyte);
+  cur = (int )out->offset;
 #line 293
+  len = (int )(out->sym_file)->stat.st_size;
+#line 296
+  if ((size_t )cur + nbyte > (size_t )len) {
+#line 297
+    __cil_tmp = realloc((void *)(out->sym_file)->contents, (size_t )cur + nbyte);
+#line 297
+    (out->sym_file)->contents = (char *)__cil_tmp;
+#line 298
+    (out->sym_file)->stat.st_size = (long long )((size_t )cur + nbyte);
+#line 299
     len = (int )((size_t )cur + nbyte);
   }
-#line 296
+#line 302
   memcpy((void * __restrict  )((out->sym_file)->contents + cur), (void const   * __restrict  )cbuf,
          nbyte);
-#line 303
-  __COMMENT((char *)"Writing on fildes");
-#line 304
-  __EVAL(fildes);
-#line 305
-  __EVALSTR((char *)buf, (int )nbyte);
-#line 306
-  __COMMENT((char *)"Done");
 #line 309
-  out->offset += (__quad_t )nbyte;
+  __COMMENT((char *)"Writing on fildes");
+#line 310
+  __EVAL(fildes);
 #line 311
+  __EVALSTR((char *)buf, (int )nbyte);
+#line 312
+  __COMMENT((char *)"Done");
+#line 315
+  out->offset += (__quad_t )nbyte;
+#line 317
   return ((int )nbyte);
 }
 }
-#line 314 "../../mockedFns/iosim.c"
+#line 320 "../../mockedFns/iosim.c"
 int IOSIM_eof(int fildes ) 
 { int cur ;
   int len ;
   sym_file_stream_t *in ;
 
   {
-#line 317
+#line 323
   in = IOSIM_fd[fildes];
-#line 319
+#line 325
   cur = (int )in->offset;
-#line 320
+#line 326
   len = (int )(in->sym_file)->stat.st_size;
-#line 322
+#line 328
   return (cur >= len);
 }
 }
-#line 326 "../../mockedFns/iosim.c"
+#line 332 "../../mockedFns/iosim.c"
 int IOSIM_chdir(char const   *path ) 
 { char newWorkingDir[4097] ;
   char *__cil_tmp ;
 
   {
-#line 330
+#line 336
   __cil_tmp = realpath((char const   * __restrict  )path, (char * __restrict  )(newWorkingDir));
-#line 330
+#line 336
   if (__cil_tmp) {
-#line 331
+#line 337
     strcpy((char * __restrict  )(workingDir), (char const   * __restrict  )(newWorkingDir));
-#line 332
+#line 338
     return (0);
   }
-#line 334
+#line 340
   return (-1);
 }
 }
-#line 353 "../../mockedFns/iosim.c"
+#line 359 "../../mockedFns/iosim.c"
 void initDir(DIR *dir , int i ) 
 { void *__cil_tmp ;
 
   {
-#line 354
+#line 360
   dir->index = i;
-#line 355
+#line 361
   dir->filestream.fd = IOSIM_newfd();
-#line 356
+#line 362
   __cil_tmp = malloc(sizeof(sym_file_t ));
-#line 356
+#line 362
   dir->filestream.sym_file = (sym_file_t *)__cil_tmp;
-#line 357
+#line 363
   (dir->filestream.sym_file)->stat.st_mode = (unsigned int )((256 >> 3) >> 3);
-#line 358
+#line 364
   IOSIM_fd[dir->filestream.fd] = & dir->filestream;
-#line 359
+#line 365
   return;
 }
 }
-#line 361 "../../mockedFns/iosim.c"
+#line 367 "../../mockedFns/iosim.c"
 DIR *IOSIM_opendir(char const   *dirname ) 
 { DIR *dir ;
   void *__cil_tmp ;
@@ -6466,81 +6711,81 @@ DIR *IOSIM_opendir(char const   *dirname )
   int *__cil_tmp___3 ;
 
   {
-#line 362
+#line 368
   __cil_tmp = malloc(sizeof(DIR ));
-#line 362
+#line 368
   dir = (DIR *)__cil_tmp;
-#line 363
+#line 369
   __cil_tmp___0 = realpath((char const   * __restrict  )dirname, (char * __restrict  )(dir->dirname));
-#line 363
+#line 369
   if (! __cil_tmp___0) {
-#line 364
+#line 370
     free((void *)dir);
-#line 365
+#line 371
     return ((DIR *)((void *)0));
   }
-#line 367
+#line 373
   __cil_tmp___1 = strlen((char const   *)(dir->dirname));
-#line 367
+#line 373
   length = (int )__cil_tmp___1;
-#line 368
+#line 374
   if (length == 1) {
-#line 369
+#line 375
     initDir(dir, 0);
-#line 370
+#line 376
     return (dir);
   }
-#line 372
+#line 378
   i = 0;
-#line 372
+#line 378
   while (i < IOSIM_num_file) {
-#line 373
+#line 379
     filename = IOSIM_file_name[i];
-#line 382
+#line 388
     __cil_tmp___2 = strncmp((char const   *)(dir->dirname), (char const   *)filename,
                             (unsigned int )length);
-#line 382
+#line 388
     if (__cil_tmp___2) {
       _L: /* CIL Label */ ;
     } else {
-#line 382
+#line 388
       if ((int )*(filename + length) == 47) {
-#line 385
+#line 391
         initDir(dir, i);
-#line 386
+#line 392
         return (dir);
       } else {
-#line 382
+#line 388
         goto _L;
       }
     }
-#line 372
+#line 378
     i ++;
   }
-#line 390
+#line 396
   __cil_tmp___3 = __errno_location();
-#line 390
+#line 396
   *__cil_tmp___3 = 2;
-#line 391
+#line 397
   free((void *)dir);
-#line 392
+#line 398
   return ((DIR *)((void *)0));
 }
 }
-#line 395 "../../mockedFns/iosim.c"
+#line 401 "../../mockedFns/iosim.c"
 int IOSIM_closedir(DIR *dir ) 
 { 
 
   {
-#line 396
+#line 402
   IOSIM_fd[dir->filestream.fd] = (sym_file_stream_t *)((void *)0);
-#line 397
+#line 403
   free((void *)dir);
-#line 398
+#line 404
   return (0);
 }
 }
-#line 401 "../../mockedFns/iosim.c"
+#line 407 "../../mockedFns/iosim.c"
 struct dirent *IOSIM_readdir(DIR *dir ) 
 { char *filename ;
   char *lastSlash ;
@@ -6554,72 +6799,72 @@ struct dirent *IOSIM_readdir(DIR *dir )
   size_t __cil_tmp___5 ;
 
   {
-#line 402
+#line 408
   while (dir->index < IOSIM_num_file) {
-#line 405
+#line 411
     filename = IOSIM_file_name[dir->index];
-#line 406
+#line 412
     (dir->index) ++;
-#line 407
+#line 413
     __cil_tmp = strrchr((char const   *)filename, '/');
-#line 407
+#line 413
     lastSlash = __cil_tmp;
-#line 409
+#line 415
     if ((unsigned int )lastSlash == (unsigned int )filename) {
-#line 410
+#line 416
       __cil_tmp___0 = strcmp("/", (char const   *)(dir->dirname));
-#line 410
+#line 416
       if (__cil_tmp___0) {
-#line 410
+#line 416
         __cil_tmp___1 = 0;
       } else {
-#line 410
+#line 416
         __cil_tmp___1 = 1;
       }
-#line 410
+#line 416
       dirContainsThisFile = __cil_tmp___1;
     } else {
-#line 412
+#line 418
       *lastSlash = (char)0;
-#line 413
+#line 419
       __cil_tmp___2 = strcmp((char const   *)filename, (char const   *)(dir->dirname));
-#line 413
+#line 419
       if (__cil_tmp___2) {
-#line 413
+#line 419
         __cil_tmp___3 = 0;
       } else {
-#line 413
+#line 419
         __cil_tmp___3 = 1;
       }
-#line 413
+#line 419
       dirContainsThisFile = __cil_tmp___3;
-#line 414
+#line 420
       *lastSlash = (char )'/';
     }
-#line 416
+#line 422
     if (dirContainsThisFile) {
-#line 417
+#line 423
       __cil_tmp___5 = strlen((char const   *)filename);
-#line 417
+#line 423
       if (__cil_tmp___5 >= sizeof(dir->readdirRetval.d_name)) {
-#line 418
+#line 424
         __cil_tmp___4 = __errno_location();
-#line 418
+#line 424
         *__cil_tmp___4 = 75;
-#line 419
+#line 425
         return ((struct dirent *)((void *)0));
       }
-#line 421
+#line 427
       strcpy((char * __restrict  )(dir->readdirRetval.d_name), (char const   * __restrict  )(lastSlash + 1));
-#line 422
+#line 428
       return (& dir->readdirRetval);
     }
   }
-#line 425
+#line 431
   return ((struct dirent *)((void *)0));
 }
 }
-#line 428 "../../mockedFns/iosim.c"
+#line 434 "../../mockedFns/iosim.c"
 char *IOSIM_getcwd(char *buf , size_t size ) 
 { int *__cil_tmp ;
   size_t __cil_tmp___0 ;
@@ -6631,78 +6876,72 @@ char *IOSIM_getcwd(char *buf , size_t size )
   char *__cil_tmp___6 ;
 
   {
-#line 429
+#line 435
   if (size == 0U) {
-#line 430
+#line 436
     if (buf) {
-#line 431
+#line 437
       __cil_tmp = __errno_location();
-#line 431
+#line 437
       *__cil_tmp = 22;
-#line 432
+#line 438
       return ((char *)((void *)0));
     }
-#line 434
+#line 440
     __cil_tmp___0 = strlen((char const   *)(workingDir));
-#line 434
+#line 440
     __cil_tmp___1 = malloc(__cil_tmp___0 + 1U);
-#line 434
+#line 440
     buf = (char *)__cil_tmp___1;
-#line 435
+#line 441
     __cil_tmp___2 = strcpy((char * __restrict  )buf, (char const   * __restrict  )(workingDir));
-#line 435
+#line 441
     return (__cil_tmp___2);
   }
-#line 437
+#line 443
   __cil_tmp___4 = strlen((char const   *)(workingDir));
-#line 437
+#line 443
   if (size <= __cil_tmp___4) {
-#line 438
+#line 444
     __cil_tmp___3 = __errno_location();
-#line 438
+#line 444
     *__cil_tmp___3 = 34;
-#line 439
+#line 445
     return ((char *)((void *)0));
   }
-#line 441
+#line 447
   if (! buf) {
-#line 442
+#line 448
     __cil_tmp___5 = malloc(size);
-#line 442
+#line 448
     buf = (char *)__cil_tmp___5;
   }
-#line 444
+#line 450
   __cil_tmp___6 = strcpy((char * __restrict  )buf, (char const   * __restrict  )(workingDir));
-#line 444
+#line 450
   return (__cil_tmp___6);
 }
 }
-#line 447 "../../mockedFns/iosim.c"
+#line 453 "../../mockedFns/iosim.c"
 int IOSIM_dirfd(DIR *dir ) 
 { 
 
   {
-#line 448
+#line 454
   return (dir->filestream.fd);
 }
 }
-#line 1 "cil-av28TMVW.o"
-#pragma merger(0,"/tmp/cil-rGBzLoyf.i","")
-#line 81 "/usr/include/libintl.h"
- __attribute__((__nothrow__)) char *textdomain(char const   *domainname ) ;
-#line 85
- __attribute__((__nothrow__)) char *bindtextdomain(char const   *domainname , char const   *dirname ) ;
+#line 1 "cil-yD1MsF1n.o"
+#pragma merger(0,"/tmp/cil-9xn3sRwq.i","")
 #line 4 "../../mockedFns/libintl.c"
 char *directory  ;
-#line 6
- __attribute__((__nothrow__)) char *bindtextdomain(char const   *domainname , char const   *dirname ) ;
 #line 6 "../../mockedFns/libintl.c"
 char *bindtextdomain(char const   *domainname , char const   *dirname ) 
-{ int __cil_tmp ;
+{ void *__cil_tmp ;
 
   {
 #line 8
-  __cil_tmp = (int )malloc(4112);
+  __cil_tmp = malloc(4112U);
 #line 8
   directory = (char *)__cil_tmp;
 #line 9
@@ -6711,8 +6950,6 @@ char *bindtextdomain(char const   *domainname , char const   *dirname )
   return ((char *)domainname);
 }
 }
-#line 14
- __attribute__((__nothrow__)) char *textdomain(char const   *domainname ) ;
 #line 14 "../../mockedFns/libintl.c"
 char *textdomain(char const   *domainname ) 
 { 
@@ -6722,8 +6959,8 @@ char *textdomain(char const   *domainname )
   return (directory);
 }
 }
-#line 1 "cil-vXsuWXzE.o"
-#pragma merger(0,"/tmp/cil-C99s8ybe.i","")
+#line 1 "cil-ZVvmfJl7.o"
+#pragma merger(0,"/tmp/cil-U3unF1aZ.i","")
 #line 66 "/usr/include/string.h"
  __attribute__((__nothrow__)) void *memchr(void const   *s , int c , size_t n )  __attribute__((__pure__,
 __nonnull__(1))) ;
@@ -6753,8 +6990,8 @@ void *memchr(void const   *s , int c , size_t n )
   return ((void *)0);
 }
 }
-#line 1 "cil-iTUna7bC.o"
-#pragma merger(0,"/tmp/cil-FtWKUIea.i","")
+#line 1 "cil-3GgafQQ2.o"
+#pragma merger(0,"/tmp/cil-Cn9ZETC4.i","")
 #line 12 "../../mockedFns/memswap.c"
 void memswap(void *m1 , void *m2 , size_t n ) 
 { char *p ;
@@ -6793,8 +7030,8 @@ void memswap(void *m1 , void *m2 , size_t n )
   return;
 }
 }
-#line 1 "cil-EB8NmXpJ.o"
-#pragma merger(0,"/tmp/cil-8NZHGqGV.i","")
+#line 1 "cil-p41pv4Rm.o"
+#pragma merger(0,"/tmp/cil-1XrNAyEo.i","")
 #line 7 "../../mockedFns/mmap.c"
  __attribute__((__nothrow__)) void *mmap(void *start , size_t length , int prot ,
                                          int flags , int fd , __quad_t offset )  __asm__("mmap64")  ;
@@ -6823,8 +7060,8 @@ int munmap(void *addr , size_t len )
   return (0);
 }
 }
-#line 1 "cil-Ys4HjWgG.o"
-#pragma merger(0,"/tmp/cil-hAyqNMin.i","")
+#line 1 "cil-aefgJSJ0.o"
+#pragma merger(0,"/tmp/cil-rohmPV6T.i","")
 #line 2 "../../mockedFns/mprotect.c"
  __attribute__((__nothrow__)) int mprotect(void *__addr , size_t __len , int __prot ) ;
 #line 2 "../../mockedFns/mprotect.c"
@@ -6836,8 +7073,8 @@ int mprotect(void *__addr , size_t __len , int __prot )
   return (0);
 }
 }
-#line 1 "cil-pIeXJDLA.o"
-#pragma merger(0,"/tmp/cil-zN0vijBe.i","")
+#line 1 "cil-w3sDEGZk.o"
+#pragma merger(0,"/tmp/cil-uWO5XMds.i","")
 #line 3 "../../mockedFns/my_index.c"
 char *my_index(char const   *s , int c ) 
 { char *__cil_tmp ;
@@ -6849,8 +7086,8 @@ char *my_index(char const   *s , int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-wJB6AWNA.o"
-#pragma merger(0,"/tmp/cil-S1wYvKvp.i","")
+#line 1 "cil-m2ZhjYdl.o"
+#pragma merger(0,"/tmp/cil-yFYiq2K3.i","")
 #line 354 "/usr/include/netinet/in.h"
  __attribute__((__nothrow__)) uint32_t ntohl(uint32_t netlong )  __attribute__((__const__)) ;
 #line 355
@@ -6951,8 +7188,8 @@ uint16_t ntohs(uint16_t netshort )
   return (retval);
 }
 }
-#line 1 "cil-ok02n5Fr.o"
-#pragma merger(0,"/tmp/cil-erMPv158.i","")
+#line 1 "cil-RzgObMdt.o"
+#pragma merger(0,"/tmp/cil-qmuEUeWF.i","")
 #line 7 "../../mockedFns/open.c"
 int open(char const   *pathname , int flags  , ...)  __asm__("open64") __attribute__((__nonnull__(1))) ;
 #line 7 "../../mockedFns/open.c"
@@ -6985,8 +7222,8 @@ int open(char const   *pathname , int flags  , ...)
   return (__cil_tmp___1);
 }
 }
-#line 1 "cil-593JHybH.o"
-#pragma merger(0,"/tmp/cil-w7St4Zhw.i","")
+#line 1 "cil-ozmRgqSG.o"
+#pragma merger(0,"/tmp/cil-MkK14G3f.i","")
 #line 27 "/usr/include/security/pam_appl.h"
 int pam_start(char const   *service_name , char const   *user , struct pam_conv  const  *pam_conversation ,
               pam_handle_t **pamh ) ;
@@ -7000,8 +7237,8 @@ int pam_start(char const   *service_name , char const   *user , struct pam_conv 
   return (-1);
 }
 }
-#line 1 "cil-vDjBpeeW.o"
-#pragma merger(0,"/tmp/cil-YTiPjW8h.i","")
+#line 1 "cil-q929JgaN.o"
+#pragma merger(0,"/tmp/cil-TWgv1ccW.i","")
 #line 1 "../../mockedFns/prctl.c"
  __attribute__((__nothrow__)) int prctl(int __option  , ...) ;
 #line 1 "../../mockedFns/prctl.c"
@@ -7013,8 +7250,8 @@ int prctl(int __option  , ...)
   return (0);
 }
 }
-#line 1 "cil-XS2Vcbgh.o"
-#pragma merger(0,"/tmp/cil-yKVnJ1O8.i","")
+#line 1 "cil-65Jah8Ol.o"
+#pragma merger(0,"/tmp/cil-3Yb9iHJc.i","")
 #line 480 "/usr/include/stdio.h"
 int putc(int c , FILE *stream ) ;
 #line 5 "../../mockedFns/putc.c"
@@ -7026,8 +7263,8 @@ int putc(int c , FILE *stream )
   return (0);
 }
 }
-#line 1 "cil-Gv6YgESN.o"
-#pragma merger(0,"/tmp/cil-Y5OGF9uy.i","")
+#line 1 "cil-FDWYiB0R.o"
+#pragma merger(0,"/tmp/cil-nfG5d9rT.i","")
 #line 15 "../../mockedFns/qsort.c"
 __inline static size_t newgap(size_t gap ) 
 { 
@@ -7111,8 +7348,8 @@ void qsort(void *base , size_t nmemb , size_t size , int (*compar)(void const   
   return;
 }
 }
-#line 1 "cil-VFa3tYvm.o"
-#pragma merger(0,"/tmp/cil-u4PtUQYl.i","")
+#line 1 "cil-kIrJLczN.o"
+#pragma merger(0,"/tmp/cil-BB3IKkeb.i","")
 #line 4 "../../mockedFns/realloc.c"
  __attribute__((__nothrow__)) void *realloc(void *ptr , size_t size )  __attribute__((__malloc__)) ;
 #line 4 "../../mockedFns/realloc.c"
@@ -7140,8 +7377,8 @@ void *realloc(void *ptr , size_t size )
   return (ptr);
 }
 }
-#line 1 "cil-rPlo6ddi.o"
-#pragma merger(0,"/tmp/cil-BEKyNuWi.i","")
+#line 1 "cil-8LbUfZKp.o"
+#pragma merger(0,"/tmp/cil-HopK2oLo.i","")
 #line 450 "/usr/include/unistd.h"
  __attribute__((__nothrow__)) char *getcwd(char *buf , size_t size ) ;
 #line 9 "../../mockedFns/realpath.c"
@@ -7321,8 +7558,8 @@ char *realpath(char const   * __restrict  path , char * __restrict  got_path )
   return ((char *)got_path);
 }
 }
-#line 1 "cil-Dn6jEKuY.o"
-#pragma merger(0,"/tmp/cil-druPrvdO.i","")
+#line 1 "cil-RuD5NWXC.o"
+#pragma merger(0,"/tmp/cil-4giRkGvH.i","")
 #line 143 "/usr/include/sys/socket.h"
 ssize_t recv(int sockfd , void *buf , size_t len , int flags ) ;
 #line 6 "../../mockedFns/recv.c"
@@ -7354,8 +7591,40 @@ ssize_t recv(int sockfd , void *buf , size_t len , int flags )
   return (num_chars_read);
 }
 }
-#line 1 "cil-XadNgGM6.o"
-#pragma merger(0,"/tmp/cil-puV8kGeU.i","")
+#line 1 "cil-zCOewJnn.o"
+#pragma merger(0,"/tmp/cil-P23HkGQs.i","")
+#line 161 "/usr/include/sys/socket.h"
+ssize_t recvfrom(int sockfd , void * __restrict  buffer , size_t len , int flags ,
+                 struct sockaddr * __restrict  to , socklen_t * __restrict  tolen ) ;
+#line 3 "../../mockedFns/recvfrom.c"
+ssize_t recvfrom(int sockfd , void * __restrict  buffer , size_t len , int flags ,
+                 struct sockaddr * __restrict  to , socklen_t * __restrict  tolen ) 
+{ ssize_t __cil_tmp ;
+
+  {
+#line 6
+  __cil_tmp = recv(sockfd, (void *)buffer, len, flags);
+#line 6
+  return (__cil_tmp);
+}
+}
+#line 1 "cil-Jfts8mcX.o"
+#pragma merger(0,"/tmp/cil-sDs3N7S8.i","")
+#line 154 "/usr/include/stdio.h"
+ __attribute__((__nothrow__)) int remove(char const   *filename ) ;
+#line 3 "../../mockedFns/remove.c"
+ __attribute__((__nothrow__)) int remove(char const   *filename ) ;
+#line 3 "../../mockedFns/remove.c"
+int remove(char const   *filename ) 
+{ 
+
+  {
+#line 5
+  return (0);
+}
+}
+#line 1 "cil-9AcDJDJc.o"
+#pragma merger(0,"/tmp/cil-9JmplKde.i","")
 #line 156 "/usr/include/stdio.h"
  __attribute__((__nothrow__)) int rename(char const   *old , char const   *new ) ;
 #line 4 "../../mockedFns/rename.c"
@@ -7371,8 +7640,8 @@ int rename(char const   *old , char const   *new )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-pYXQKJNu.o"
-#pragma merger(0,"/tmp/cil-YcVFFUiT.i","")
+#line 1 "cil-UP7PrU8h.o"
+#pragma merger(0,"/tmp/cil-UMKwtnFx.i","")
 #line 38 "/usr/include/sys/sendfile.h"
  __attribute__((__nothrow__)) ssize_t sendfile(int out_fd , int in_fd , __quad_t *offset ,
                                                size_t count )  __asm__("sendfile64")  ;
@@ -7445,8 +7714,23 @@ ssize_t sendfile(int out_fd , int in_fd , __quad_t *offset , size_t count )
   return (numSent);
 }
 }
-#line 1 "cil-RheJIBxY.o"
-#pragma merger(0,"/tmp/cil-FZjE2gcJ.i","")
+#line 1 "cil-TgSoeq9u.o"
+#pragma merger(0,"/tmp/cil-mvFjwCqy.i","")
+#line 150 "/usr/include/sys/socket.h"
+int sendto(int s , void const   *msg , size_t len , int flags , struct sockaddr  const  *to ,
+           socklen_t tolen ) ;
+#line 3 "../../mockedFns/sendto.c"
+int sendto(int s , void const   *msg , size_t len , int flags , struct sockaddr  const  *to ,
+           socklen_t tolen ) 
+{ 
+
+  {
+#line 5
+  return (0);
+}
+}
+#line 1 "cil-Qy92HT4y.o"
+#pragma merger(0,"/tmp/cil-wi6q2vij.i","")
 #line 125 "/usr/include/locale.h"
  __attribute__((__nothrow__)) char *setlocale(int category , char const   *locale ) ;
 #line 3 "../../mockedFns/setlocale.c"
@@ -7460,8 +7744,8 @@ char *setlocale(int category , char const   *locale )
   return ((char *)locale);
 }
 }
-#line 1 "cil-QJsPqThq.o"
-#pragma merger(0,"/tmp/cil-LINeTfn6.i","")
+#line 1 "cil-ElhKfQZE.o"
+#pragma merger(0,"/tmp/cil-gJ6Bg891.i","")
 #line 216 "/usr/include/signal.h"
  __attribute__((__nothrow__)) int sigemptyset(sigset_t *set )  __attribute__((__nonnull__(1))) ;
 #line 219
@@ -7531,8 +7815,25 @@ int sigprocmask(int how , sigset_t const   * __restrict  set , sigset_t * __rest
   return (0);
 }
 }
-#line 1 "cil-2dh3Efry.o"
-#pragma merger(0,"/tmp/cil-5MQsqhHm.i","")
+#line 1 "cil-0apZ3bm6.o"
+#pragma merger(0,"/tmp/cil-6FQ1hqK0.i","")
+#line 362 "/usr/include/signal.h"
+ __attribute__((__nothrow__)) int sigaltstack(struct sigaltstack  const  * __restrict  ss ,
+                                              struct sigaltstack * __restrict  oss ) ;
+#line 3 "../../mockedFns/signal.c"
+ __attribute__((__nothrow__)) int sigaltstack(struct sigaltstack  const  * __restrict  ss ,
+                                              struct sigaltstack * __restrict  oss ) ;
+#line 3 "../../mockedFns/signal.c"
+int sigaltstack(struct sigaltstack  const  * __restrict  ss , struct sigaltstack * __restrict  oss ) 
+{ 
+
+  {
+#line 5
+  return (0);
+}
+}
+#line 1 "cil-kWXyghBd.o"
+#pragma merger(0,"/tmp/cil-P0wnD9vv.i","")
 #line 109 "/usr/include/sys/select.h"
 int select(int nfds , fd_set * __restrict  readfds , fd_set * __restrict  writefds ,
            fd_set * __restrict  errorfds , struct timeval * __restrict  timeout ) ;
@@ -7556,136 +7857,133 @@ int connect(int socket___0 , struct sockaddr  const  *address , socklen_t addres
  __attribute__((__nothrow__)) int listen(int socket___0 , int backlog ) ;
 #line 209
 int accept(int sockfd , struct sockaddr * __restrict  address , socklen_t * __restrict  address_len ) ;
-#line 7 "../../mockedFns/socket.c"
+#line 9 "../../mockedFns/socket.c"
  __attribute__((__nothrow__)) int setsockopt(int socket___0 , int level , int option_name ,
                                              void const   *option_value , socklen_t option_len ) ;
-#line 7 "../../mockedFns/socket.c"
+#line 9 "../../mockedFns/socket.c"
 int setsockopt(int socket___0 , int level , int option_name , void const   *option_value ,
                socklen_t option_len ) 
 { 
 
   {
-#line 9
+#line 11
   return (0);
 }
 }
-#line 12
+#line 14
  __attribute__((__nothrow__)) int socket(int domain , int type , int protocol ) ;
-#line 12 "../../mockedFns/socket.c"
+#line 14 "../../mockedFns/socket.c"
 int socket(int domain , int type , int protocol ) 
 { int __cil_tmp ;
 
   {
-#line 13
+#line 15
   __cil_tmp = IOSIM_newfd();
-#line 13
+#line 15
   return (__cil_tmp);
 }
 }
-#line 27
+#line 29
  __attribute__((__nothrow__)) int bind(int socket___0 , struct sockaddr  const  *address ,
                                        socklen_t address_len ) ;
-#line 27 "../../mockedFns/socket.c"
+#line 29 "../../mockedFns/socket.c"
 int bind(int socket___0 , struct sockaddr  const  *address , socklen_t address_len ) 
 { 
 
   {
-#line 30
+#line 32
   return (0);
 }
 }
-#line 33
+#line 35
  __attribute__((__nothrow__)) int listen(int socket___0 , int backlog ) ;
-#line 33 "../../mockedFns/socket.c"
+#line 35 "../../mockedFns/socket.c"
 int listen(int socket___0 , int backlog ) 
 { 
 
   {
-#line 34
+#line 36
   return (0);
 }
 }
-#line 37
+#line 39
  __attribute__((__nothrow__)) int getsockname(int __fd , struct sockaddr * __restrict  __addr ,
                                               socklen_t * __restrict  __len ) ;
-#line 37 "../../mockedFns/socket.c"
+#line 39 "../../mockedFns/socket.c"
 int getsockname(int __fd , struct sockaddr * __restrict  __addr , socklen_t * __restrict  __len ) 
 { char fakeName[13] ;
-  size_t __cil_tmp ;
 
   {
-#line 38
-  fakeName[0] = (char )'s';
-#line 38
-  fakeName[1] = (char )'o';
-#line 38
-  fakeName[2] = (char )'m';
-#line 38
-  fakeName[3] = (char )'e';
-#line 38
-  fakeName[4] = (char )'s';
-#line 38
-  fakeName[5] = (char )'o';
-#line 38
-  fakeName[6] = (char )'c';
-#line 38
-  fakeName[7] = (char )'k';
-#line 38
-  fakeName[8] = (char )'n';
-#line 38
-  fakeName[9] = (char )'a';
-#line 38
-  fakeName[10] = (char )'m';
-#line 38
-  fakeName[11] = (char )'e';
-#line 38
-  fakeName[12] = (char )'\000';
-#line 39
-  strcpy((char * __restrict  )(__addr->sa_data), (char const   * __restrict  )(fakeName));
 #line 40
-  __addr->sa_family = (unsigned short)2;
+  fakeName[0] = (char )'s';
+#line 40
+  fakeName[1] = (char )'o';
+#line 40
+  fakeName[2] = (char )'m';
+#line 40
+  fakeName[3] = (char )'e';
+#line 40
+  fakeName[4] = (char )'s';
+#line 40
+  fakeName[5] = (char )'o';
+#line 40
+  fakeName[6] = (char )'c';
+#line 40
+  fakeName[7] = (char )'k';
+#line 40
+  fakeName[8] = (char )'n';
+#line 40
+  fakeName[9] = (char )'a';
+#line 40
+  fakeName[10] = (char )'m';
+#line 40
+  fakeName[11] = (char )'e';
+#line 40
+  fakeName[12] = (char )'\000';
 #line 41
-  __cil_tmp = strlen((char const   *)(fakeName));
-#line 41
-  *__len = (sizeof(__addr->sa_family) + __cil_tmp) + 1U;
+  strcpy((char * __restrict  )(__addr->sa_data), (char const   * __restrict  )(fakeName));
 #line 42
+  __addr->sa_family = iosim_ip_version;
+#line 43
+  *__len = sizeof(__addr->sa_family) + sizeof(fakeName);
+#line 44
   return (0);
 }
 }
-#line 45 "../../mockedFns/socket.c"
+#line 47 "../../mockedFns/socket.c"
 int connect(int socket___0 , struct sockaddr  const  *address , socklen_t address_len ) 
 { 
 
   {
-#line 47
+#line 49
   return (0);
 }
 }
-#line 50 "../../mockedFns/socket.c"
+#line 52 "../../mockedFns/socket.c"
 int accept(int sockfd , struct sockaddr * __restrict  address , socklen_t * __restrict  address_len ) 
 { int __cil_tmp ;
 
   {
-#line 52
-  address->sa_family = (unsigned short)2;
-#line 58
-  address->sa_data[2] = (char)10;
-#line 59
-  address->sa_data[3] = (char)20;
+#line 54
+  address->sa_family = iosim_ip_version;
 #line 60
-  address->sa_data[4] = (char)30;
+  address->sa_data[2] = (char)10;
 #line 61
+  address->sa_data[3] = (char)20;
+#line 62
+  address->sa_data[4] = (char)30;
+#line 63
   address->sa_data[5] = (char)40;
-#line 64
+#line 66
   __cil_tmp = IOSIM_newfd();
-#line 64
+#line 66
   return (__cil_tmp);
 }
 }
-#line 67
+#line 69
  __attribute__((__nothrow__)) int socketpair(int domain , int type , int protocol ,
                                              int *socket_vector ) ;
-#line 67 "../../mockedFns/socket.c"
+#line 69 "../../mockedFns/socket.c"
 int socketpair(int domain , int type , int protocol , int *socket_vector ) 
 { int fd0 ;
   int __cil_tmp ;
@@ -7696,58 +7994,1018 @@ int socketpair(int domain , int type , int protocol , int *socket_vector )
   void *__cil_tmp___3 ;
 
   {
-#line 69
-  __cil_tmp = IOSIM_newfd();
-#line 69
-  fd0 = __cil_tmp;
-#line 70
-  __cil_tmp___0 = malloc(sizeof(sym_file_stream_t ));
-#line 70
-  IOSIM_fd[fd0] = (sym_file_stream_t *)__cil_tmp___0;
 #line 71
+  __cil_tmp = IOSIM_newfd();
+#line 71
+  fd0 = __cil_tmp;
+#line 72
+  __cil_tmp___0 = malloc(sizeof(sym_file_stream_t ));
+#line 72
+  IOSIM_fd[fd0] = (sym_file_stream_t *)__cil_tmp___0;
+#line 73
   (IOSIM_fd[fd0])->offset = 0LL;
-#line 73
-  __cil_tmp___1 = malloc(sizeof(sym_file_t ));
-#line 73
-  (IOSIM_fd[fd0])->sym_file = (sym_file_t *)__cil_tmp___1;
-#line 74
-  ((IOSIM_fd[fd0])->sym_file)->contents = (char *)((void *)0);
 #line 75
-  ((IOSIM_fd[fd0])->sym_file)->stat.st_size = 0LL;
+  __cil_tmp___1 = malloc(sizeof(sym_file_t ));
+#line 75
+  (IOSIM_fd[fd0])->sym_file = (sym_file_t *)__cil_tmp___1;
 #line 76
+  ((IOSIM_fd[fd0])->sym_file)->contents = (char *)((void *)0);
+#line 77
+  ((IOSIM_fd[fd0])->sym_file)->stat.st_size = 0LL;
+#line 78
   ((IOSIM_fd[fd0])->sym_file)->stat.st_mode = 49152U;
-#line 79
-  __cil_tmp___2 = IOSIM_newfd();
-#line 79
-  fd1 = __cil_tmp___2;
-#line 80
-  __cil_tmp___3 = malloc(sizeof(sym_file_stream_t ));
-#line 80
-  IOSIM_fd[fd1] = (sym_file_stream_t *)__cil_tmp___3;
 #line 81
-  (IOSIM_fd[fd1])->offset = 0LL;
+  __cil_tmp___2 = IOSIM_newfd();
+#line 81
+  fd1 = __cil_tmp___2;
 #line 82
-  (IOSIM_fd[fd1])->sym_file = (IOSIM_fd[fd0])->sym_file;
+  __cil_tmp___3 = malloc(sizeof(sym_file_stream_t ));
+#line 82
+  IOSIM_fd[fd1] = (sym_file_stream_t *)__cil_tmp___3;
+#line 83
+  (IOSIM_fd[fd1])->offset = 0LL;
 #line 84
+  (IOSIM_fd[fd1])->sym_file = (IOSIM_fd[fd0])->sym_file;
+#line 86
   *(socket_vector + 0) = fd0;
-#line 85
-  *(socket_vector + 1) = fd1;
 #line 87
+  *(socket_vector + 1) = fd1;
+#line 89
   return (0);
 }
 }
-#line 90 "../../mockedFns/socket.c"
+#line 92 "../../mockedFns/socket.c"
 int select(int nfds , fd_set * __restrict  readfds , fd_set * __restrict  writefds ,
            fd_set * __restrict  errorfds , struct timeval * __restrict  timeout ) 
 { 
 
   {
-#line 93
+#line 95
   return (1);
 }
 }
-#line 1 "cil-LqFcfmwD.o"
-#pragma merger(0,"/tmp/cil-h6V5y4sd.i","")
+#line 1 "cil-QbQgYMxu.o"
+#pragma merger(0,"/tmp/cil-snSj7hoh.i","")
+#line 403 "/usr/include/stdio.h"
+ __attribute__((__nothrow__)) int sscanf(char const   * __restrict  s , char const   * __restrict  format 
+                                         , ...) ;
+#line 598
+int ungetc(int c , FILE *stream ) ;
+#line 23 "../../mockedFns/sscanf.c"
+static char Xtable[256]  ;
+#line 24 "../../mockedFns/sscanf.c"
+static char inp_buf[512]  ;
+#line 25 "../../mockedFns/sscanf.c"
+static int scanf_counter  =    33;
+#line 27 "../../mockedFns/sscanf.c"
+static char *o_collect(int c , sym_file_stream_t *stream , char type , unsigned int width ,
+                       int *basep ) 
+{ register char *bufp ;
+  register int base ;
+  char *__cil_tmp ;
+  char *__cil_tmp___0 ;
+  char *__cil_tmp___1 ;
+  char *__cil_tmp___2 ;
+  int __cil_tmp___3 ;
+  int __cil_tmp___4 ;
+  int __cil_tmp___5 ;
+  int __cil_tmp___6 ;
+
+  {
+#line 29
+  bufp = inp_buf;
+#line 32
+  switch ((int )type) {
+  case 105: 
+  case 112: 
+  case 120: 
+  case 88: 
+#line 36
+  base = 16;
+#line 36
+  break;
+  case 100: 
+  case 117: 
+#line 38
+  base = 10;
+#line 38
+  break;
+  case 111: 
+#line 39
+  base = 8;
+#line 39
+  break;
+  case 98: 
+#line 40
+  base = 2;
+#line 40
+  break;
+  }
+#line 43
+  if (c == 45 || c == 43) {
+#line 44
+    __cil_tmp = bufp;
+#line 44
+    bufp ++;
+#line 44
+    *__cil_tmp = (char )c;
+#line 45
+    width --;
+#line 45
+    if (width) {
+#line 46
+      c = _IO_getc((_IO_FILE *)stream);
+    }
+  }
+#line 49
+  if (((int )width && c == 48) && base == 16) {
+#line 50
+    __cil_tmp___0 = bufp;
+#line 50
+    bufp ++;
+#line 50
+    *__cil_tmp___0 = (char )c;
+#line 51
+    width --;
+#line 51
+    if (width) {
+#line 52
+      c = _IO_getc((_IO_FILE *)stream);
+    }
+#line 53
+    if (c != 120 && c != 88) {
+#line 54
+      if ((int )type == 105) {
+#line 54
+        base = 8;
+      }
+    } else {
+#line 56
+      if (width) {
+#line 57
+        __cil_tmp___1 = bufp;
+#line 57
+        bufp ++;
+#line 57
+        *__cil_tmp___1 = (char )c;
+#line 58
+        width --;
+#line 58
+        if (width) {
+#line 59
+          c = _IO_getc((_IO_FILE *)stream);
+        }
+      }
+    }
+  } else {
+#line 62
+    if ((int )type == 105) {
+#line 62
+      base = 10;
+    }
+  }
+#line 64
+  while (width) {
+#line 65
+    if (base == 10) {
+#line 65
+      __cil_tmp___3 = isdigit(c);
+#line 65
+      if (__cil_tmp___3) {
+#line 65
+        goto _L___5;
+      } else {
+#line 65
+        goto _L___7;
+      }
+    } else {
+      _L___7: /* CIL Label */ 
+#line 65
+      if (base == 16) {
+#line 65
+        __cil_tmp___4 = isxdigit(c);
+#line 65
+        if (__cil_tmp___4) {
+          _L___5: /* CIL Label */ 
+#line 65
+          goto _L___2;
+        } else {
+#line 65
+          goto _L___6;
+        }
+      } else {
+        _L___6: /* CIL Label */ 
+#line 65
+        if (base == 8) {
+#line 65
+          __cil_tmp___5 = isdigit(c);
+#line 65
+          if (__cil_tmp___5) {
+#line 65
+            if (c < 56) {
+              _L___2: /* CIL Label */ 
+#line 65
+              goto _L;
+            } else {
+#line 65
+              goto _L___4;
+            }
+          } else {
+#line 65
+            goto _L___4;
+          }
+        } else {
+          _L___4: /* CIL Label */ 
+#line 65
+          if (base == 2) {
+#line 65
+            __cil_tmp___6 = isdigit(c);
+#line 65
+            if (__cil_tmp___6) {
+#line 65
+              if (c < 50) {
+                _L: /* CIL Label */ 
+#line 69
+                __cil_tmp___2 = bufp;
+#line 69
+                bufp ++;
+#line 69
+                *__cil_tmp___2 = (char )c;
+#line 70
+                width --;
+#line 70
+                if (width) {
+#line 71
+                  c = _IO_getc((_IO_FILE *)stream);
+                }
+              } else {
+#line 65
+                goto _L___1;
+              }
+            } else {
+#line 65
+              goto _L___1;
+            }
+          } else {
+            _L___1: /* CIL Label */ 
+#line 73
+            break;
+          }
+        }
+      }
+    }
+  }
+#line 76
+  if ((int )width && c != -1) {
+#line 76
+    ungetc(c, (FILE *)stream);
+  }
+#line 77
+  if ((int )type == 105) {
+#line 77
+    base = 0;
+  }
+#line 78
+  *basep = base;
+#line 79
+  *bufp = (char )'\000';
+#line 80
+  return (bufp - 1);
+}
+}
+#line 178
+extern int ( /* missing proto */  set_pointer)() ;
+#line 205
+ __attribute__((__nothrow__)) long strtol(char const   * __restrict  nptr , char ** __restrict  endptr ,
+                                          int base )  __attribute__((__nonnull__(1))) ;
+#line 207
+ __attribute__((__nothrow__)) unsigned long strtoul(char const   * __restrict  nptr ,
+                                                    char ** __restrict  endptr , int base )  __attribute__((__nonnull__(1))) ;
+#line 332
+extern int ( /* missing proto */  f_collect)() ;
+#line 346
+extern int ( /* missing proto */  strtod)() ;
+#line 83 "../../mockedFns/sscanf.c"
+int _doscan(sym_file_stream_t *stream , char const   *format , va_list ap ) 
+{ int done ;
+  int nrchars ;
+  int conv ;
+  int base ;
+  unsigned long val ;
+  register char *str ;
+  char *tmp_string ;
+  unsigned int width ;
+  int flags ;
+  int reverse ;
+  int kind ;
+  register int ic ;
+  long double ld_val ;
+  int __cil_tmp ;
+  int __cil_tmp___0 ;
+  int __cil_tmp___1 ;
+  char const   *__cil_tmp___2 ;
+  char const   *__cil_tmp___3 ;
+  int __cil_tmp___4 ;
+  int __cil_tmp___5 ;
+  int __cil_tmp___6 ;
+  int __cil_tmp___7 ;
+  short *__cil_tmp___8 ;
+  long *__cil_tmp___9 ;
+  int *__cil_tmp___10 ;
+  int __cil_tmp___11 ;
+  int __cil_tmp___12 ;
+  unsigned long *__cil_tmp___13 ;
+  unsigned short *__cil_tmp___14 ;
+  unsigned int *__cil_tmp___15 ;
+  char *__cil_tmp___16 ;
+  char *__cil_tmp___17 ;
+  int __cil_tmp___18 ;
+  char const   *__cil_tmp___19 ;
+  char const   *__cil_tmp___20 ;
+  int c ;
+  char *__cil_tmp___21 ;
+  int __cil_tmp___22 ;
+  int __cil_tmp___23 ;
+  long double *__cil_tmp___24 ;
+  double *__cil_tmp___25 ;
+  float *__cil_tmp___26 ;
+  int __cil_tmp___27 ;
+
+  {
+#line 85
+  done = 0;
+#line 86
+  nrchars = 0;
+#line 87
+  conv = 0;
+#line 92
+  width = 0U;
+#line 96
+  ic = -1;
+#line 101
+  if (! *format) {
+#line 101
+    return (0);
+  }
+#line 103
+  while (1) {
+#line 104
+    __cil_tmp___1 = isspace(*format);
+#line 104
+    if (__cil_tmp___1) {
+#line 105
+      while (1) {
+#line 105
+        __cil_tmp = isspace(*format);
+#line 105
+        if (! __cil_tmp) {
+#line 105
+          break;
+        }
+#line 106
+        format ++;
+      }
+#line 107
+      ic = _IO_getc((_IO_FILE *)stream);
+#line 108
+      nrchars ++;
+#line 109
+      while (1) {
+#line 109
+        __cil_tmp___0 = isspace(ic);
+#line 109
+        if (! __cil_tmp___0) {
+#line 109
+          break;
+        }
+#line 110
+        ic = _IO_getc((_IO_FILE *)stream);
+#line 111
+        nrchars ++;
+      }
+#line 113
+      if (ic != -1) {
+#line 113
+        ungetc(ic, (FILE *)stream);
+      }
+#line 114
+      nrchars --;
+    }
+#line 116
+    if (! *format) {
+#line 116
+      break;
+    }
+#line 118
+    if ((int const   )*format != 37) {
+#line 119
+      ic = _IO_getc((_IO_FILE *)stream);
+#line 120
+      nrchars ++;
+#line 121
+      __cil_tmp___2 = format;
+#line 121
+      format ++;
+#line 121
+      if (ic != (int )*__cil_tmp___2) {
+#line 121
+        break;
+      }
+#line 122
+      continue;
+    }
+#line 124
+    format ++;
+#line 125
+    if ((int const   )*format == 37) {
+#line 126
+      ic = _IO_getc((_IO_FILE *)stream);
+#line 127
+      nrchars ++;
+#line 128
+      if (ic == 37) {
+#line 129
+        format ++;
+#line 130
+        continue;
+      } else {
+#line 132
+        break;
+      }
+    }
+#line 134
+    flags = 0;
+#line 135
+    if ((int const   )*format == 42) {
+#line 136
+      format ++;
+#line 137
+      flags |= 2048;
+    }
+#line 139
+    __cil_tmp___5 = isdigit(*format);
+#line 139
+    if (__cil_tmp___5) {
+#line 140
+      flags |= 256;
+#line 141
+      width = 0U;
+#line 141
+      while (1) {
+#line 141
+        __cil_tmp___4 = isdigit(*format);
+#line 141
+        if (! __cil_tmp___4) {
+#line 141
+          break;
+        }
+#line 142
+        __cil_tmp___3 = format;
+#line 142
+        format ++;
+#line 142
+        width = (width * 10U + (unsigned int )*__cil_tmp___3) - 48U;
+      }
+    }
+#line 145
+    switch ((int )*format) {
+    case 104: 
+#line 146
+    flags |= 32;
+#line 146
+    format ++;
+#line 146
+    break;
+    case 108: 
+#line 147
+    flags |= 64;
+#line 147
+    format ++;
+#line 147
+    break;
+    case 76: 
+#line 148
+    flags |= 128;
+#line 148
+    format ++;
+#line 148
+    break;
+    }
+#line 150
+    kind = (int )*format;
+#line 151
+    if ((kind != 99 && kind != 91) && kind != 110) {
+#line 152
+      while (1) {
+#line 153
+        ic = _IO_getc((_IO_FILE *)stream);
+#line 154
+        nrchars ++;
+#line 152
+        __cil_tmp___6 = isspace(ic);
+#line 152
+        if (! __cil_tmp___6) {
+#line 152
+          break;
+        }
+      }
+#line 156
+      if (ic == -1) {
+#line 156
+        break;
+      }
+    } else {
+#line 157
+      if (kind != 110) {
+#line 158
+        ic = _IO_getc((_IO_FILE *)stream);
+#line 159
+        if (ic == -1) {
+#line 159
+          break;
+        }
+#line 160
+        nrchars ++;
+      }
+    }
+#line 162
+    switch (kind) {
+    default: ;
+#line 165
+    if (conv || ic != -1) {
+#line 165
+      __cil_tmp___7 = done;
+    } else {
+#line 165
+      __cil_tmp___7 = -1;
+    }
+#line 165
+    return (__cil_tmp___7);
+#line 166
+    break;
+    case 110: 
+#line 168
+    if (! (flags & 2048)) {
+#line 169
+      if (flags & 32) {
+#line 170
+        __cil_tmp___8 = __builtin_va_arg(ap, short *);
+#line 170
+        *__cil_tmp___8 = (short )nrchars;
+      } else {
+#line 171
+        if (flags & 64) {
+#line 172
+          __cil_tmp___9 = __builtin_va_arg(ap, long *);
+#line 172
+          *__cil_tmp___9 = (long )nrchars;
+        } else {
+#line 174
+          __cil_tmp___10 = __builtin_va_arg(ap, int *);
+#line 174
+          *__cil_tmp___10 = nrchars;
+        }
+      }
+    }
+#line 176
+    break;
+    case 112: 
+#line 178
+    set_pointer(flags);
+    case 98: 
+    case 100: 
+    case 105: 
+    case 111: 
+    case 117: 
+    case 120: 
+    case 88: 
+#line 187
+    if (! (flags & 256) || width > 512U) {
+#line 188
+      width = 512U;
+    }
+#line 189
+    if (! width) {
+#line 189
+      return (done);
+    }
+#line 191
+    str = o_collect(ic, stream, (char )kind, width, & base);
+#line 192
+    if ((unsigned int )str < (unsigned int )(inp_buf) || ((unsigned int )str == (unsigned int )(inp_buf) && ((int )*str == 45 || (int )*str == 43))) {
+#line 195
+      return (done);
+    }
+#line 201
+    nrchars += str - inp_buf;
+#line 203
+    if (! (flags & 2048)) {
+#line 204
+      if (kind == 100 || kind == 105) {
+#line 205
+        __cil_tmp___11 = (int )strtol(inp_buf, & tmp_string, base);
+#line 205
+        val = (unsigned long )__cil_tmp___11;
+      } else {
+#line 207
+        __cil_tmp___12 = (int )strtoul(inp_buf, & tmp_string, base);
+#line 207
+        val = (unsigned long )__cil_tmp___12;
+      }
+#line 208
+      if (flags & 64) {
+#line 209
+        __cil_tmp___13 = __builtin_va_arg(ap, unsigned long *);
+#line 209
+        *__cil_tmp___13 = val;
+      } else {
+#line 210
+        if (flags & 32) {
+#line 211
+          __cil_tmp___14 = __builtin_va_arg(ap, unsigned short *);
+#line 211
+          *__cil_tmp___14 = (unsigned short )val;
+        } else {
+#line 213
+          __cil_tmp___15 = __builtin_va_arg(ap, unsigned int *);
+#line 213
+          *__cil_tmp___15 = (unsigned int )val;
+        }
+      }
+    }
+#line 215
+    break;
+    case 99: 
+#line 217
+    if (! (flags & 256)) {
+#line 218
+      width = 1U;
+    }
+#line 219
+    if (! (flags & 2048)) {
+#line 220
+      str = __builtin_va_arg(ap, char *);
+    }
+#line 221
+    if (! width) {
+#line 221
+      return (done);
+    }
+#line 223
+    while ((int )width && ic != -1) {
+#line 224
+      if (! (flags & 2048)) {
+#line 225
+        __cil_tmp___16 = str;
+#line 225
+        str ++;
+#line 225
+        *__cil_tmp___16 = (char )ic;
+      }
+#line 226
+      width --;
+#line 226
+      if (width) {
+#line 227
+        ic = _IO_getc((_IO_FILE *)stream);
+#line 228
+        nrchars ++;
+      }
+    }
+#line 232
+    if (width) {
+#line 233
+      if (ic != -1) {
+#line 233
+        ungetc(ic, (FILE *)stream);
+      }
+#line 234
+      nrchars --;
+    }
+#line 236
+    break;
+    case 115: 
+#line 238
+    if (! (flags & 256)) {
+#line 239
+      width = 65535U;
+    }
+#line 240
+    if (! (flags & 2048)) {
+#line 241
+      str = __builtin_va_arg(ap, char *);
+    }
+#line 242
+    if (! width) {
+#line 242
+      return (done);
+    }
+#line 244
+    while (1) {
+#line 244
+      if ((int )width && ic != -1) {
+#line 244
+        __cil_tmp___18 = isspace(ic);
+#line 244
+        if (__cil_tmp___18) {
+#line 244
+          goto _L;
+        }
+      } else {
+        _L: /* CIL Label */ 
+#line 244
+        break;
+      }
+#line 245
+      if (! (flags & 2048)) {
+#line 246
+        __cil_tmp___17 = str;
+#line 246
+        str ++;
+#line 246
+        *__cil_tmp___17 = (char )ic;
+      }
+#line 247
+      width --;
+#line 247
+      if (width) {
+#line 248
+        ic = _IO_getc((_IO_FILE *)stream);
+#line 249
+        nrchars ++;
+      }
+    }
+#line 253
+    if (! (flags & 2048)) {
+#line 254
+      *str = (char )'\000';
+    }
+#line 255
+    if (width) {
+#line 256
+      if (ic != -1) {
+#line 256
+        ungetc(ic, (FILE *)stream);
+      }
+#line 257
+      nrchars --;
+    }
+#line 259
+    break;
+    case 91: 
+#line 261
+    if (! (flags & 256)) {
+#line 262
+      width = 65535U;
+    }
+#line 263
+    if (! width) {
+#line 263
+      return (done);
+    }
+#line 265
+    format ++;
+#line 265
+    if ((int const   )*format == 94) {
+#line 266
+      reverse = 1;
+#line 267
+      format ++;
+    } else {
+#line 269
+      reverse = 0;
+    }
+#line 271
+    str = Xtable;
+#line 271
+    while ((unsigned int )str < (unsigned int )(& Xtable[256])) {
+#line 273
+      *str = (char)0;
+#line 271
+      str ++;
+    }
+#line 275
+    if ((int const   )*format == 93) {
+#line 275
+      __cil_tmp___19 = format;
+#line 275
+      format ++;
+#line 275
+      Xtable[*__cil_tmp___19] = (char)1;
+    }
+#line 277
+    while ((int )*format && (int const   )*format != 93) {
+#line 278
+      __cil_tmp___20 = format;
+#line 278
+      format ++;
+#line 278
+      Xtable[*__cil_tmp___20] = (char)1;
+#line 279
+      if ((int const   )*format == 45) {
+#line 280
+        format ++;
+#line 281
+        if (((int )*format && (int const   )*format != 93) && (int const   )*format >= (int const   )*(format - 2)) {
+#line 286
+          c = (int )((int const   )*(format - 2) + 1);
+#line 286
+          while (c <= (int )*format) {
+#line 288
+            Xtable[c] = (char)1;
+#line 286
+            c ++;
+          }
+#line 289
+          format ++;
+        } else {
+#line 291
+          Xtable['-'] = (char)1;
+        }
+      }
+    }
+#line 294
+    if (! *format) {
+#line 294
+      return (done);
+    }
+#line 296
+    if (! ((int )Xtable[ic] ^ reverse)) {
+#line 298
+      ungetc(ic, (FILE *)stream);
+#line 299
+      return (done);
+    }
+#line 302
+    if (! (flags & 2048)) {
+#line 303
+      str = __builtin_va_arg(ap, char *);
+    }
+#line 305
+    while (1) {
+#line 306
+      if (! (flags & 2048)) {
+#line 307
+        __cil_tmp___21 = str;
+#line 307
+        str ++;
+#line 307
+        *__cil_tmp___21 = (char )ic;
+      }
+#line 308
+      width --;
+#line 308
+      if (width) {
+#line 309
+        ic = _IO_getc((_IO_FILE *)stream);
+#line 310
+        nrchars ++;
+      }
+#line 305
+      if (! (((int )width && ic != -1) && (int )Xtable[ic] ^ reverse)) {
+#line 305
+        break;
+      }
+    }
+#line 314
+    if (width) {
+#line 315
+      if (ic != -1) {
+#line 315
+        ungetc(ic, (FILE *)stream);
+      }
+#line 316
+      nrchars --;
+    }
+#line 318
+    if (! (flags & 2048)) {
+#line 319
+      *str = (char )'\000';
+    }
+#line 321
+    break;
+    case 101: 
+    case 69: 
+    case 102: 
+    case 103: 
+    case 71: 
+#line 328
+    if (! (flags & 256) || width > 512U) {
+#line 329
+      width = 512U;
+    }
+#line 331
+    if (! width) {
+#line 331
+      return (done);
+    }
+#line 332
+    __cil_tmp___22 = f_collect(ic, stream, width);
+#line 332
+    str = (char *)__cil_tmp___22;
+#line 334
+    if ((unsigned int )str < (unsigned int )(inp_buf) || ((unsigned int )str == (unsigned int )(inp_buf) && ((int )*str == 45 || (int )*str == 43))) {
+#line 337
+      return (done);
+    }
+#line 343
+    nrchars += str - inp_buf;
+#line 345
+    if (! (flags & 2048)) {
+#line 346
+      __cil_tmp___23 = strtod(inp_buf, & tmp_string);
+#line 346
+      ld_val = (long double )__cil_tmp___23;
+#line 347
+      if (flags & 128) {
+#line 348
+        __cil_tmp___24 = __builtin_va_arg(ap, long double *);
+#line 348
+        *__cil_tmp___24 = ld_val;
+      } else {
+#line 350
+        if (flags & 64) {
+#line 351
+          __cil_tmp___25 = __builtin_va_arg(ap, double *);
+#line 351
+          *__cil_tmp___25 = (double )ld_val;
+        } else {
+#line 353
+          __cil_tmp___26 = __builtin_va_arg(ap, float *);
+#line 353
+          *__cil_tmp___26 = (float )ld_val;
+        }
+      }
+    }
+#line 355
+    break;
+    }
+#line 358
+    conv ++;
+#line 359
+    if (! (flags & 2048) && kind != 110) {
+#line 359
+      done ++;
+    }
+#line 360
+    format ++;
+  }
+#line 362
+  if (conv || ic != -1) {
+#line 362
+    __cil_tmp___27 = done;
+  } else {
+#line 362
+    __cil_tmp___27 = -1;
+  }
+#line 362
+  return (__cil_tmp___27);
+}
+}
+#line 365
+ __attribute__((__nothrow__)) int sscanf(char const   * __restrict  s , char const   * __restrict  format 
+                                         , ...) ;
+#line 365 "../../mockedFns/sscanf.c"
+int sscanf(char const   * __restrict  s , char const   * __restrict  format  , ...) 
+{ va_list ap ;
+  int retval ;
+  int __cil_tmp ;
+  int __cil_tmp___0 ;
+  size_t __cil_tmp___1 ;
+
+  {
+#line 370
+  __cil_tmp = (int )malloc(sizeof(sym_file_stream_t ));
+#line 370
+  IOSIM_fd[scanf_counter] = (sym_file_stream_t *)__cil_tmp;
+#line 371
+  (IOSIM_fd[scanf_counter])->offset = 0LL;
+#line 372
+  (IOSIM_fd[scanf_counter])->fd = scanf_counter;
+#line 373
+  __cil_tmp___0 = (int )malloc(sizeof(sym_file_t ));
+#line 373
+  (IOSIM_fd[scanf_counter])->sym_file = (sym_file_t *)__cil_tmp___0;
+#line 374
+  ((IOSIM_fd[scanf_counter])->sym_file)->contents = (char *)s;
+#line 375
+  __cil_tmp___1 = strlen((char const   *)s);
+#line 375
+  ((IOSIM_fd[scanf_counter])->sym_file)->stat.st_size = (long long )__cil_tmp___1;
+#line 377
+  __builtin_va_start(ap, format);
+#line 379
+  retval = _doscan(IOSIM_fd[scanf_counter], (char const   *)format, ap);
+#line 381
+  __builtin_va_end(ap);
+#line 383
+  scanf_counter ++;
+#line 385
+  return (retval);
+}
+}
+#line 1 "cil-Rwy52AOW.o"
+#pragma merger(0,"/tmp/cil-kylP9Til.i","")
 #line 332 "/usr/include/sys/stat.h"
  __attribute__((__nothrow__)) int __fxstat(int __ver , int __fildes , struct stat *__stat_buf )  __asm__("__fxstat64") __attribute__((__nonnull__(3))) ;
 #line 335
@@ -7755,9 +9013,9 @@ int select(int nfds , fd_set * __restrict  readfds , fd_set * __restrict  writef
 #line 338
  __attribute__((__nothrow__)) int __lxstat(int __ver , char const   *__filename ,
                                            struct stat *__stat_buf )  __asm__("__lxstat64") __attribute__((__nonnull__(2,3))) ;
-#line 7 "../../mockedFns/stat.c"
+#line 8 "../../mockedFns/stat.c"
  __attribute__((__nothrow__)) int __xstat(int __ver , char const   *__filename , struct stat *__stat_buf )  __asm__("__xstat64") __attribute__((__nonnull__(2,3))) ;
-#line 7 "../../mockedFns/stat.c"
+#line 8 "../../mockedFns/stat.c"
 int __xstat(int __ver , char const   *__filename , struct stat *__stat_buf ) 
 { char *absoluteName ;
   char *__cil_tmp ;
@@ -7766,74 +9024,74 @@ int __xstat(int __ver , char const   *__filename , struct stat *__stat_buf )
   int *__cil_tmp___1 ;
 
   {
-#line 8
+#line 9
   __cil_tmp = IOSIM_toAbsolute(__filename);
-#line 8
+#line 9
   absoluteName = __cil_tmp;
-#line 9
-  __cil_tmp___0 = IOSIM_findfile((char const   *)absoluteName);
-#line 9
-  file = __cil_tmp___0;
 #line 10
-  free((void *)absoluteName);
+  __cil_tmp___0 = IOSIM_findfile((char const   *)absoluteName);
+#line 10
+  file = __cil_tmp___0;
 #line 11
-  if (file) {
+  free((void *)absoluteName);
 #line 12
-    *__stat_buf = file->stat;
+  if (file) {
 #line 13
+    *__stat_buf = file->stat;
+#line 14
     return (0);
   }
-#line 15
-  __cil_tmp___1 = __errno_location();
-#line 15
-  *__cil_tmp___1 = 2;
 #line 16
+  __cil_tmp___1 = __errno_location();
+#line 16
+  *__cil_tmp___1 = 2;
+#line 17
   return (-1);
 }
 }
-#line 19
+#line 20
  __attribute__((__nothrow__)) int __fxstat(int __ver , int __fildes , struct stat *__stat_buf )  __asm__("__fxstat64") __attribute__((__nonnull__(3))) ;
-#line 19 "../../mockedFns/stat.c"
+#line 20 "../../mockedFns/stat.c"
 int __fxstat(int __ver , int __fildes , struct stat *__stat_buf ) 
 { sym_file_stream_t *sym_stream ;
   int *__cil_tmp ;
 
   {
-#line 26
-  sym_stream = IOSIM_fd[__fildes];
 #line 27
-  if ((unsigned int )sym_stream == (unsigned int )((void *)0)) {
+  sym_stream = IOSIM_fd[__fildes];
 #line 28
+  if ((unsigned int )sym_stream == (unsigned int )((void *)0)) {
+#line 29
     __COMMENT((char *)"Bad file descriptor in __fxstat");
-#line 29
-    __cil_tmp = __errno_location();
-#line 29
-    *__cil_tmp = 9;
 #line 30
+    __cil_tmp = __errno_location();
+#line 30
+    *__cil_tmp = 9;
+#line 31
     return (-1);
   }
-#line 34
-  *__stat_buf = (sym_stream->sym_file)->stat;
 #line 35
+  *__stat_buf = (sym_stream->sym_file)->stat;
+#line 36
   return (0);
 }
 }
-#line 38
+#line 39
  __attribute__((__nothrow__)) int __lxstat(int __ver , char const   *__filename ,
                                            struct stat *__stat_buf )  __asm__("__lxstat64") __attribute__((__nonnull__(2,3))) ;
-#line 38 "../../mockedFns/stat.c"
+#line 39 "../../mockedFns/stat.c"
 int __lxstat(int __ver , char const   *__filename , struct stat *__stat_buf ) 
 { int __cil_tmp ;
 
   {
-#line 41
+#line 42
   __cil_tmp = __xstat(__ver, __filename, __stat_buf);
-#line 41
+#line 42
   return (__cil_tmp);
 }
 }
-#line 1 "cil-aBZMEdAR.o"
-#pragma merger(0,"/tmp/cil-gfgQ03FA.i","")
+#line 1 "cil-pZuJQtAW.o"
+#pragma merger(0,"/tmp/cil-iW3eMBHW.i","")
 #line 106 "/usr/include/string.h"
  __attribute__((__nothrow__)) int strcoll(char const   *s1 , char const   *s2 )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
@@ -7851,8 +9109,8 @@ int strcoll(char const   *s1 , char const   *s2 )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-hk9Ubsfj.o"
-#pragma merger(0,"/tmp/cil-vAWqfInP.i","")
+#line 1 "cil-RgdJTJQK.o"
+#pragma merger(0,"/tmp/cil-A5lRisIV.i","")
 #line 4 "../../mockedFns/strdup.c"
  __attribute__((__nothrow__)) char *strdup(char const   *p_str )  __attribute__((__nonnull__(1),
 __malloc__)) ;
@@ -7881,8 +9139,8 @@ char *strdup(char const   *p_str )
   return (theCopy);
 }
 }
-#line 1 "cil-Ccv8EWOt.o"
-#pragma merger(0,"/tmp/cil-orTXFQe0.i","")
+#line 1 "cil-lhJcbV1g.o"
+#pragma merger(0,"/tmp/cil-YPL3xhrd.i","")
 #line 256 "/usr/include/string.h"
  __attribute__((__nothrow__)) char *strerror(int errnum ) ;
 #line 9 "../../mockedFns/strerror.c"
@@ -7925,8 +9183,8 @@ char *strerror(int errnum )
   return (message);
 }
 }
-#line 1 "cil-Mx3mkH7S.o"
-#pragma merger(0,"/tmp/cil-SodbxbmI.i","")
+#line 1 "cil-bBFTIKRZ.o"
+#pragma merger(0,"/tmp/cil-5zC2Dgaa.i","")
 #line 4 "../../mockedFns/strrchr.c"
  __attribute__((__nothrow__)) char *strrchr(char const   *s , int c )  __attribute__((__pure__,
 __nonnull__(1))) ;
@@ -7959,8 +9217,213 @@ char *strrchr(char const   *s , int c )
   return ((char *)p);
 }
 }
-#line 1 "cil-P6LSC9ld.o"
-#pragma merger(0,"/tmp/cil-oJ2CVBKc.i","")
+#line 1 "cil-Hnf10fwe.o"
+#pragma merger(0,"/tmp/cil-7eMCnIP2.i","")
+#line 6 "../../mockedFns/strtol.c"
+static unsigned long string2long(char const   *nptr , char **endptr , int base , int is_signed ) ;
+#line 10
+ __attribute__((__nothrow__)) long strtol(char const   * __restrict  nptr , char ** __restrict  endptr ,
+                                          int base )  __attribute__((__nonnull__(1))) ;
+#line 10 "../../mockedFns/strtol.c"
+long strtol(char const   * __restrict  nptr , char ** __restrict  endptr , int base ) 
+{ unsigned long __cil_tmp ;
+
+  {
+#line 13
+  __cil_tmp = string2long((char const   *)nptr, (char **)endptr, base, 1);
+#line 13
+  return ((long )__cil_tmp);
+}
+}
+#line 16
+ __attribute__((__nothrow__)) unsigned long strtoul(char const   * __restrict  nptr ,
+                                                    char ** __restrict  endptr , int base )  __attribute__((__nonnull__(1))) ;
+#line 16 "../../mockedFns/strtol.c"
+unsigned long strtoul(char const   * __restrict  nptr , char ** __restrict  endptr ,
+                      int base ) 
+{ unsigned long __cil_tmp ;
+
+  {
+#line 19
+  __cil_tmp = string2long((char const   *)nptr, (char **)endptr, base, 0);
+#line 19
+  return (__cil_tmp);
+}
+}
+#line 24 "../../mockedFns/strtol.c"
+static unsigned long string2long(char const   *nptr , char **endptr , int base , int is_signed ) 
+{ register unsigned int v ;
+  register unsigned long val ;
+  register int c ;
+  int ovfl ;
+  int sign ;
+  char const   *startnptr ;
+  char const   *nrstart ;
+  int __cil_tmp ;
+  int *__cil_tmp___0 ;
+
+  {
+#line 29
+  val = 0UL;
+#line 31
+  ovfl = 0;
+#line 31
+  sign = 1;
+#line 32
+  startnptr = nptr;
+#line 34
+  if (endptr) {
+#line 34
+    *endptr = (char *)nptr;
+  }
+#line 35
+  while (1) {
+#line 35
+    __cil_tmp = isspace((int )*nptr);
+#line 35
+    if (! __cil_tmp) {
+#line 35
+      break;
+    }
+#line 35
+    nptr ++;
+  }
+#line 36
+  c = (int )*nptr;
+#line 38
+  if (c == 45 || c == 43) {
+#line 39
+    if (c == 45) {
+#line 39
+      sign = -1;
+    }
+#line 40
+    nptr ++;
+  }
+#line 42
+  nrstart = nptr;
+#line 45
+  if (base == 0) {
+#line 46
+    if ((int const   )*nptr == 48) {
+#line 47
+      nptr ++;
+#line 47
+      if ((int const   )*nptr == 120 || (int const   )*nptr == 88) {
+#line 48
+        base = 16;
+#line 49
+        nptr ++;
+      } else {
+#line 51
+        base = 8;
+      }
+    } else {
+#line 52
+      base = 10;
+    }
+  } else {
+#line 53
+    if (base == 16 && (int const   )*nptr == 48) {
+#line 53
+      nptr ++;
+#line 53
+      if ((int const   )*nptr == 120 || (int const   )*nptr == 88) {
+#line 54
+        nptr ++;
+      } else {
+#line 53
+        goto _L;
+      }
+    } else {
+      _L: /* CIL Label */ ;
+    }
+  }
+#line 56
+  while (1) {
+#line 57
+    c = (int )*nptr;
+#line 58
+    if ((unsigned int )(c - 48) <= 9U) {
+#line 59
+      v = (unsigned int )(c - 48);
+    } else {
+#line 61
+      if ((unsigned int )(c - 97) <= 25U) {
+#line 62
+        v = (unsigned int )((c - 97) + 10);
+      } else {
+#line 64
+        if ((unsigned int )(c - 65) <= 25U) {
+#line 65
+          v = (unsigned int )((c - 65) + 10);
+        } else {
+#line 67
+          break;
+        }
+      }
+    }
+#line 69
+    if (v >= (unsigned int )base) {
+#line 69
+      break;
+    }
+#line 70
+    if (val > (4294967295UL - (unsigned long )v) / (unsigned long )base) {
+#line 70
+      ovfl ++;
+    }
+#line 71
+    val = val * (unsigned long )base + (unsigned long )v;
+#line 72
+    nptr ++;
+  }
+#line 74
+  if (endptr) {
+#line 75
+    if ((unsigned int )nrstart == (unsigned int )nptr) {
+#line 75
+      *endptr = (char *)startnptr;
+    } else {
+#line 76
+      *endptr = (char *)nptr;
+    }
+  }
+#line 79
+  if (! ovfl) {
+#line 81
+    if (is_signed && ((sign < 0 && val > 2147483648UL) || (sign > 0 && val > 2147483647UL))) {
+#line 84
+      ovfl ++;
+    }
+  }
+#line 87
+  if (ovfl) {
+#line 88
+    __cil_tmp___0 = __errno_location();
+#line 88
+    *__cil_tmp___0 = 34;
+#line 89
+    if (is_signed) {
+#line 90
+      if (sign < 0) {
+#line 90
+        return (2147483648UL);
+      } else {
+#line 91
+        return (2147483647UL);
+      }
+    } else {
+#line 92
+      return (4294967295UL);
+    }
+  }
+#line 94
+  return ((unsigned long )((long )sign) * val);
+}
+}
+#line 1 "cil-KbjoMaPj.o"
+#pragma merger(0,"/tmp/cil-d1adBoZD.i","")
 #line 184 "/usr/include/time.h"
  __attribute__((__nothrow__)) time_t time(time_t *__timer ) ;
 #line 191
@@ -7979,156 +9442,150 @@ char *strrchr(char const   *s , int c )
 int nanosleep(struct timespec  const  *__requested_time , struct timespec *__remaining ) ;
 #line 72 "/usr/include/sys/time.h"
  __attribute__((__nothrow__)) int gettimeofday(struct timeval * __restrict  tv , struct timezone * __restrict  tz ) ;
-#line 5 "../../mockedFns/time.c"
+#line 6 "../../mockedFns/time.c"
  __attribute__((__nothrow__)) time_t time(time_t *__timer ) ;
-#line 5 "../../mockedFns/time.c"
+#line 6 "../../mockedFns/time.c"
 time_t time(time_t *__timer ) 
 { 
 
   {
-#line 6
+#line 7
   return (0L);
 }
 }
-#line 9
+#line 10
  __attribute__((__nothrow__)) void tzset(void) ;
-#line 9 "../../mockedFns/time.c"
+#line 10 "../../mockedFns/time.c"
 void tzset(void) 
 { 
 
   {
-#line 10
+#line 11
   return;
 }
 }
-#line 12
+#line 13
  __attribute__((__nothrow__)) struct tm *localtime(time_t const   *timer ) ;
-#line 12 "../../mockedFns/time.c"
+#line 13 "../../mockedFns/time.c"
 struct tm *localtime(time_t const   *timer ) 
 { struct tm *x ;
   void *__cil_tmp ;
 
   {
-#line 13
-  __cil_tmp = malloc(sizeof(struct tm ));
-#line 13
-  x = (struct tm *)__cil_tmp;
 #line 14
-  x->tm_sec = 0;
+  __cil_tmp = malloc(sizeof(struct tm ));
+#line 14
+  x = (struct tm *)__cil_tmp;
 #line 15
-  x->tm_min = 1;
+  x->tm_sec = 0;
 #line 16
-  x->tm_hour = 2;
+  x->tm_min = 1;
 #line 17
-  x->tm_mday = 3;
+  x->tm_hour = 2;
 #line 18
-  x->tm_mon = 4;
+  x->tm_mday = 3;
 #line 19
-  x->tm_year = 5;
+  x->tm_mon = 4;
 #line 20
-  x->tm_wday = 6;
+  x->tm_year = 5;
 #line 21
-  x->tm_yday = 7;
+  x->tm_wday = 6;
 #line 22
-  x->tm_isdst = 8;
+  x->tm_yday = 7;
 #line 23
-  x->tm_gmtoff = 9L;
+  x->tm_isdst = 8;
 #line 24
-  x->tm_zone = "my tz";
+  x->tm_gmtoff = 9L;
 #line 25
+  x->tm_zone = "my tz";
+#line 26
   return (x);
 }
 }
-#line 28
+#line 29
  __attribute__((__nothrow__)) struct tm *gmtime(time_t const   *__timer ) ;
-#line 28 "../../mockedFns/time.c"
+#line 29 "../../mockedFns/time.c"
 struct tm *gmtime(time_t const   *__timer ) 
 { struct tm *__cil_tmp ;
 
   {
-#line 29
+#line 30
   __cil_tmp = localtime(__timer);
-#line 29
+#line 30
   return (__cil_tmp);
 }
 }
-#line 32
+#line 33
  __attribute__((__nothrow__)) size_t strftime(char * __restrict  s , size_t maxsize ,
                                               char const   * __restrict  format ,
                                               struct tm  const  * __restrict  timeptr ) ;
-#line 32 "../../mockedFns/time.c"
+#line 33 "../../mockedFns/time.c"
 size_t strftime(char * __restrict  s , size_t maxsize , char const   * __restrict  format ,
                 struct tm  const  * __restrict  timeptr ) 
 { 
 
   {
-#line 34
-  if (maxsize >= 6U) {
 #line 35
-    strcpy(s, (char const   * __restrict  )"+0123");
+  if (maxsize >= 6U) {
 #line 36
+    strcpy(s, (char const   * __restrict  )"+0123");
+#line 37
     return (5U);
   }
-#line 38
+#line 39
   return (0U);
 }
 }
-#line 41
+#line 42
  __attribute__((__nothrow__)) int gettimeofday(struct timeval * __restrict  tv , struct timezone * __restrict  tz ) ;
-#line 41 "../../mockedFns/time.c"
+#line 42 "../../mockedFns/time.c"
 int gettimeofday(struct timeval * __restrict  tv , struct timezone * __restrict  tz ) 
 { 
 
   {
-#line 42
-  tv->tv_sec = 123L;
 #line 43
-  tv->tv_usec = 456L;
+  tv->tv_sec = 123L;
 #line 44
+  tv->tv_usec = 456L;
+#line 45
   return (0);
 }
 }
-#line 47 "../../mockedFns/time.c"
+#line 48 "../../mockedFns/time.c"
 int nanosleep(struct timespec  const  *__requested_time , struct timespec *__remaining ) 
 { 
 
   {
-#line 48
-  __COMMENT((char *)"Sleeping");
 #line 49
+  __COMMENT((char *)"Sleeping");
+#line 50
   return (0);
 }
 }
-#line 52
+#line 53
  __attribute__((__nothrow__)) time_t mktime(struct tm *tm ) ;
-#line 52 "../../mockedFns/time.c"
+#line 53 "../../mockedFns/time.c"
 time_t mktime(struct tm *tm ) 
 { 
 
   {
-#line 53
+#line 54
   return (0L);
 }
 }
-#line 56
+#line 57
  __attribute__((__nothrow__)) int utime(char const   *path , struct utimbuf  const  *times )  __attribute__((__nonnull__(1))) ;
-#line 56 "../../mockedFns/time.c"
+#line 57 "../../mockedFns/time.c"
 int utime(char const   *path , struct utimbuf  const  *times ) 
 { 
 
   {
-#line 57
+#line 58
   return (0);
 }
 }
-#line 1 "cil-xMExGzJN.o"
-#pragma merger(0,"/tmp/cil-DAKtyqgK.i","")
-#line 3 "../../mockedFns/umask.c"
-static int usermask___0  ;
-#line 1 "cil-BeSRR0fA.o"
-#pragma merger(0,"/tmp/cil-ffOTTifA.i","")
-#line 598 "/usr/include/stdio.h"
-int ungetc(int c , FILE *stream ) ;
+#line 1 "cil-yRtgfJbD.o"
+#pragma merger(0,"/tmp/cil-kFPGBxX9.i","")
 #line 4 "../../mockedFns/unget.c"
 int ungetc(int c , FILE *stream ) 
 { sym_file_stream_t *streamAsSymStream ;
@@ -8143,8 +9600,8 @@ int ungetc(int c , FILE *stream )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-Mu2f0YTf.o"
-#pragma merger(0,"/tmp/cil-yWDX4M9F.i","")
+#line 1 "cil-UFWusqtX.o"
+#pragma merger(0,"/tmp/cil-EbmYlLFN.i","")
 #line 292 "/usr/include/unistd.h"
  __attribute__((__nothrow__)) __quad_t lseek(int fildes , __quad_t offset , int whence )  __asm__("lseek64")  ;
 #line 471
@@ -8161,6 +9618,8 @@ int ungetc(int c , FILE *stream )
  __attribute__((__nothrow__)) int setgid(__gid_t gid ) ;
 #line 697
  __attribute__((__nothrow__)) __pid_t fork(void) ;
+#line 719
+ __attribute__((__nothrow__)) int isatty(int fildes ) ;
 #line 22 "../../mockedFns/unistd.c"
  __attribute__((__nothrow__)) __pid_t fork(void) ;
 #line 22 "../../mockedFns/unistd.c"
@@ -8375,8 +9834,19 @@ __quad_t lseek(int fildes , __quad_t offset , int whence )
   return (newOffset);
 }
 }
-#line 1 "cil-bm1M7Pfw.o"
-#pragma merger(0,"/tmp/cil-NPBrsqfc.i","")
+#line 166
+ __attribute__((__nothrow__)) int isatty(int fildes ) ;
+#line 166 "../../mockedFns/unistd.c"
+int isatty(int fildes ) 
+{ 
+
+  {
+#line 168
+  return (1);
+}
+}
+#line 1 "cil-ccP5fjnH.o"
+#pragma merger(0,"/tmp/cil-LNdW8bnD.i","")
 #line 3 "../../mockedFns/unlink.c"
  __attribute__((__nothrow__)) int unlink(char const   *pathname )  __attribute__((__nonnull__(1))) ;
 #line 3 "../../mockedFns/unlink.c"
@@ -8390,12 +9860,10 @@ int unlink(char const   *pathname )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-F8FdSaH1.o"
-#pragma merger(0,"/tmp/cil-QtUtQ3C7.i","")
-#line 11 "./../../mockedFns/symexe.h"
-extern void symtest_initialize(void) ;
-#line 1 "cil-LEUaE9Ky.o"
-#pragma merger(0,"/tmp/cil-eYGi3kii.i","")
+#line 1 "cil-Jku394c2.o"
+#pragma merger(0,"/tmp/cil-ahaslEZg.i","")
+#line 1 "cil-Nei2ojKx.o"
+#pragma merger(0,"/tmp/cil-9WD5EZsn.i","")
 #line 27 "str.h"
 void str_alloc_text(struct mystr *p_str , char const   *p_src ) ;
 #line 13 "utility.h"
@@ -8508,6 +9976,8 @@ void vsf_sysutil_map_anon_pages_init(void) ;
 void vsf_parseconf_load_file(char const   *p_filename , int errs_fatal ) ;
 #line 14 "oneprocess.h"
 void vsf_one_process_start(struct vsf_session *p_sess ) ;
+#line 14 "twoprocess.h"
+void vsf_two_process_start(struct vsf_session *p_sess ) ;
 #line 20 "standalone.h"
 struct vsf_client_launch vsf_standalone_main(void) ;
 #line 4 "tcpwrap.h"
@@ -8522,7 +9992,62 @@ static void do_sanity_checks(void) ;
 static void session_init(struct vsf_session *p_sess ) ;
 #line 32
 static void env_init(void) ;
+#line 35
+extern void symtest_initialize(void) ;
+#line 38
+extern void addfile(char const   *filename , char const   *contents , unsigned int len ) ;
 #line 39 "main.c"
+char confFileContents[182]  = 
+#line 39
+  {      (char )'c',      (char )'h',      (char )'o',      (char )'w', 
+        (char )'n',      (char )'_',      (char )'u',      (char )'p', 
+        (char )'l',      (char )'o',      (char )'a',      (char )'d', 
+        (char )'_',      (char )'m',      (char )'o',      (char )'d', 
+        (char )'e',      (char )'=',      (char )'0',      (char )'0', 
+        (char )'4',      (char )'\n',      (char )'m',      (char )'a', 
+        (char )'x',      (char )'_',      (char )'p',      (char )'e', 
+        (char )'r',      (char )'_',      (char )'i',      (char )'p', 
+        (char )'=',      (char )'3',      (char )'\n',      (char )'\n', 
+        (char )'a',      (char )'n',      (char )'o',      (char )'n', 
+        (char )'y',      (char )'m',      (char )'o',      (char )'u', 
+        (char )'s',      (char )'_',      (char )'e',      (char )'n', 
+        (char )'a',      (char )'b',      (char )'l',      (char )'e', 
+        (char )'=',      (char )'1',      (char )'\n',      (char )'l', 
+        (char )'o',      (char )'c',      (char )'a',      (char )'l', 
+        (char )'_',      (char )'e',      (char )'n',      (char )'a', 
+        (char )'b',      (char )'l',      (char )'e',      (char )'=', 
+        (char )'T',      (char )'R',      (char )'U',      (char )'E', 
+        (char )'\n',      (char )'p',      (char )'a',      (char )'s', 
+        (char )'v',      (char )'_',      (char )'e',      (char )'n', 
+        (char )'a',      (char )'b',      (char )'l',      (char )'e', 
+        (char )'=',      (char )'Y',      (char )'E',      (char )'S', 
+        (char )'\n',      (char )'p',      (char )'o',      (char )'r', 
+        (char )'t',      (char )'_',      (char )'e',      (char )'n', 
+        (char )'a',      (char )'b',      (char )'l',      (char )'e', 
+        (char )'=',      (char )'0',      (char )'\n',      (char )'c', 
+        (char )'h',      (char )'r',      (char )'o',      (char )'o', 
+        (char )'t',      (char )'_',      (char )'l',      (char )'o', 
+        (char )'c',      (char )'a',      (char )'l',      (char )'_', 
+        (char )'u',      (char )'s',      (char )'e',      (char )'r', 
+        (char )'=',      (char )'F',      (char )'A',      (char )'L', 
+        (char )'S',      (char )'E',      (char )'\n',      (char )'w', 
+        (char )'r',      (char )'i',      (char )'t',      (char )'e', 
+        (char )'_',      (char )'e',      (char )'n',      (char )'a', 
+        (char )'b',      (char )'l',      (char )'e',      (char )'=', 
+        (char )'N',      (char )'O',      (char )'\n',      (char )'\n', 
+        (char )'u',      (char )'s',      (char )'e',      (char )'r', 
+        (char )'_',      (char )'c',      (char )'o',      (char )'n', 
+        (char )'f',      (char )'i',      (char )'g',      (char )'_', 
+        (char )'d',      (char )'i',      (char )'r',      (char )'=', 
+        (char )'a',      (char )'o',      (char )'w',      (char )'\n', 
+        (char )'l',      (char )'i',      (char )'s',      (char )'t', 
+        (char )'e',      (char )'n',      (char )'_',      (char )'a', 
+        (char )'d',      (char )'d',      (char )'r',      (char )'e', 
+        (char )'s',      (char )'s',      (char )'6',      (char )'=', 
+        (char )'\n',      (char )'\000'};
+#line 40 "main.c"
+unsigned int confFileSize  =    sizeof(confFileContents) - 1U;
+#line 42 "main.c"
 int main(int argc , char const   **argv ) 
 { struct vsf_session the_session ;
   int config_specified ;
@@ -8552,499 +10077,507 @@ int main(int argc , char const   **argv )
   int __cil_tmp___12 ;
 
   {
-#line 42
+#line 45
+  addfile("/etc/vsftpd.conf", (char const   *)(confFileContents), confFileSize);
+#line 46
   the_session.p_local_addr = (struct vsf_sysutil_sockaddr *)0;
-#line 42
+#line 46
   the_session.p_remote_addr = (struct vsf_sysutil_sockaddr *)0;
-#line 42
+#line 46
   the_session.p_control_line_buf = (char *)0;
-#line 42
+#line 46
   the_session.pasv_listen_fd = -1;
-#line 42
+#line 46
   the_session.p_port_sockaddr = (struct vsf_sysutil_sockaddr *)0;
-#line 42
+#line 46
   the_session.data_fd = -1;
-#line 42
+#line 46
   the_session.data_progress = 0;
-#line 42
+#line 46
   the_session.bw_rate_max = 0U;
-#line 42
+#line 46
   the_session.bw_send_start_sec = 0L;
-#line 42
+#line 46
   the_session.bw_send_start_usec = 0L;
-#line 42
+#line 46
   the_session.is_anonymous = 1;
-#line 42
+#line 46
   the_session.is_guest = 0;
-#line 42
+#line 46
   the_session.user_str.PRIVATE_HANDS_OFF_p_buf = (char *)((void *)0);
-#line 42
+#line 46
   the_session.user_str.PRIVATE_HANDS_OFF_len = 0U;
-#line 42
+#line 46
   the_session.user_str.PRIVATE_HANDS_OFF_alloc_bytes = 0U;
-#line 42
+#line 46
   the_session.anon_pass_str.PRIVATE_HANDS_OFF_p_buf = (char *)((void *)0);
-#line 42
+#line 46
   the_session.anon_pass_str.PRIVATE_HANDS_OFF_len = 0U;
-#line 42
+#line 46
   the_session.anon_pass_str.PRIVATE_HANDS_OFF_alloc_bytes = 0U;
-#line 42
+#line 46
   the_session.restart_pos = 0LL;
-#line 42
+#line 46
   the_session.is_ascii = 1;
-#line 42
+#line 46
   the_session.rnfr_filename_str.PRIVATE_HANDS_OFF_p_buf = (char *)((void *)0);
-#line 42
+#line 46
   the_session.rnfr_filename_str.PRIVATE_HANDS_OFF_len = 0U;
-#line 42
+#line 46
   the_session.rnfr_filename_str.PRIVATE_HANDS_OFF_alloc_bytes = 0U;
-#line 42
+#line 46
   the_session.abor_received = 0;
-#line 42
+#line 46
   the_session.epsv_all = 0;
-#line 42
+#line 46
   the_session.p_visited_dir_list = (struct mystr_list *)0;
-#line 42
+#line 46
   the_session.anon_ftp_uid = -1;
-#line 42
+#line 46
   the_session.guest_user_uid = -1;
-#line 42
+#line 46
   the_session.anon_upload_chown_uid = -1;
-#line 42
+#line 46
   the_session.banned_email_str.PRIVATE_HANDS_OFF_p_buf = (char *)((void *)0);
-#line 42
+#line 46
   the_session.banned_email_str.PRIVATE_HANDS_OFF_len = 0U;
-#line 42
+#line 46
   the_session.banned_email_str.PRIVATE_HANDS_OFF_alloc_bytes = 0U;
-#line 42
+#line 46
   the_session.email_passwords_str.PRIVATE_HANDS_OFF_p_buf = (char *)((void *)0);
-#line 42
+#line 46
   the_session.email_passwords_str.PRIVATE_HANDS_OFF_len = 0U;
-#line 42
+#line 46
   the_session.email_passwords_str.PRIVATE_HANDS_OFF_alloc_bytes = 0U;
-#line 42
+#line 46
   the_session.userlist_str.PRIVATE_HANDS_OFF_p_buf = (char *)((void *)0);
-#line 42
+#line 46
   the_session.userlist_str.PRIVATE_HANDS_OFF_len = 0U;
-#line 42
+#line 46
   the_session.userlist_str.PRIVATE_HANDS_OFF_alloc_bytes = 0U;
-#line 42
+#line 46
   the_session.banner_str.PRIVATE_HANDS_OFF_p_buf = (char *)((void *)0);
-#line 42
+#line 46
   the_session.banner_str.PRIVATE_HANDS_OFF_len = 0U;
-#line 42
+#line 46
   the_session.banner_str.PRIVATE_HANDS_OFF_alloc_bytes = 0U;
-#line 42
+#line 46
   the_session.tcp_wrapper_ok = 1;
-#line 42
+#line 46
   the_session.xferlog_fd = -1;
-#line 42
+#line 46
   the_session.vsftpd_log_fd = -1;
-#line 42
+#line 46
   the_session.remote_ip_str.PRIVATE_HANDS_OFF_p_buf = (char *)((void *)0);
-#line 42
+#line 46
   the_session.remote_ip_str.PRIVATE_HANDS_OFF_len = 0U;
-#line 42
+#line 46
   the_session.remote_ip_str.PRIVATE_HANDS_OFF_alloc_bytes = 0U;
-#line 42
+#line 46
   the_session.log_type = 0UL;
-#line 42
+#line 46
   the_session.log_start_sec = 0L;
-#line 42
+#line 46
   the_session.log_start_usec = 0L;
-#line 42
+#line 46
   the_session.log_str.PRIVATE_HANDS_OFF_p_buf = (char *)((void *)0);
-#line 42
+#line 46
   the_session.log_str.PRIVATE_HANDS_OFF_len = 0U;
-#line 42
+#line 46
   the_session.log_str.PRIVATE_HANDS_OFF_alloc_bytes = 0U;
-#line 42
+#line 46
   the_session.transfer_size = 0LL;
-#line 42
+#line 46
   the_session.ftp_cmd_str.PRIVATE_HANDS_OFF_p_buf = (char *)((void *)0);
-#line 42
+#line 46
   the_session.ftp_cmd_str.PRIVATE_HANDS_OFF_len = 0U;
-#line 42
+#line 46
   the_session.ftp_cmd_str.PRIVATE_HANDS_OFF_alloc_bytes = 0U;
-#line 42
+#line 46
   the_session.ftp_arg_str.PRIVATE_HANDS_OFF_p_buf = (char *)((void *)0);
-#line 42
+#line 46
   the_session.ftp_arg_str.PRIVATE_HANDS_OFF_len = 0U;
-#line 42
+#line 46
   the_session.ftp_arg_str.PRIVATE_HANDS_OFF_alloc_bytes = 0U;
-#line 42
+#line 46
   the_session.parent_fd = -1;
-#line 42
+#line 46
   the_session.child_fd = -1;
-#line 42
+#line 46
   the_session.num_clients = 0U;
-#line 42
+#line 46
   the_session.num_this_ip = 0U;
-#line 42
+#line 46
   the_session.home_str.PRIVATE_HANDS_OFF_p_buf = (char *)((void *)0);
-#line 42
+#line 46
   the_session.home_str.PRIVATE_HANDS_OFF_len = 0U;
-#line 42
+#line 46
   the_session.home_str.PRIVATE_HANDS_OFF_alloc_bytes = 0U;
-#line 42
+#line 46
   the_session.control_use_ssl = 0;
-#line 42
+#line 46
   the_session.data_use_ssl = 0;
-#line 42
+#line 46
   the_session.p_ssl_ctx = (void *)0;
-#line 42
+#line 46
   the_session.p_control_ssl = (void *)0;
-#line 42
+#line 46
   the_session.p_data_ssl = (void *)0;
-#line 42
+#line 46
   the_session.control_cert_digest.PRIVATE_HANDS_OFF_p_buf = (char *)((void *)0);
-#line 42
+#line 46
   the_session.control_cert_digest.PRIVATE_HANDS_OFF_len = 0U;
-#line 42
+#line 46
   the_session.control_cert_digest.PRIVATE_HANDS_OFF_alloc_bytes = 0U;
-#line 42
+#line 46
   the_session.ssl_slave_active = 0;
-#line 42
+#line 46
   the_session.ssl_slave_fd = -1;
-#line 42
+#line 46
   the_session.ssl_consumer_fd = -1;
-#line 42
+#line 46
   the_session.login_fails = 0U;
-#line 73
+#line 77
   config_specified = 0;
-#line 74
-  p_config_name = "/etc/vsftpd.conf";
 #line 78
+  p_config_name = "/etc/vsftpd.conf";
+#line 82
   if (argc > 2) {
-#line 80
+#line 84
     die("vsftpd: too many arguments (I take an optional config file only)");
   } else {
-#line 82
+#line 86
     if (argc == 0) {
-#line 84
+#line 88
       die("vsftpd: missing argv[0]");
     }
   }
-#line 86
-  if (argc == 2) {
-#line 88
-    __cil_tmp = vsf_sysutil_strcmp(*(argv + 1), "-v");
-#line 88
-    if (! __cil_tmp) {
 #line 90
+  if (argc == 2) {
+#line 92
+    __cil_tmp = vsf_sysutil_strcmp(*(argv + 1), "-v");
+#line 92
+    if (! __cil_tmp) {
+#line 94
       vsf_exit("vsftpd: version 2.0.7\n");
     }
-#line 92
+#line 96
     p_config_name = *(argv + 1);
-#line 93
+#line 97
     config_specified = 1;
   }
-#line 99
+#line 103
   vsf_sysutil_map_anon_pages_init();
-#line 102
+#line 106
   p_statbuf___0 = (struct vsf_sysutil_statbuf *)0;
-#line 103
+#line 107
   __cil_tmp___0 = vsf_sysutil_stat(p_config_name, & p_statbuf___0);
-#line 103
+#line 107
   retval = __cil_tmp___0;
-#line 104
-  __cil_tmp___1 = vsf_sysutil_retval_is_error(retval);
-#line 104
-  if (__cil_tmp___1) {
 #line 108
+  __cil_tmp___1 = vsf_sysutil_retval_is_error(retval);
+#line 108
+  if (__cil_tmp___1) {
+#line 112
     if (config_specified) {
-#line 110
+#line 114
       die2("vsftpd: cannot open config file:", p_config_name);
     }
   } else {
-#line 106
+#line 110
     vsf_parseconf_load_file(p_config_name, 1);
   }
-#line 112
+#line 116
   vsf_sysutil_free((void *)p_statbuf___0);
-#line 115
+#line 119
   symtest_initialize();
-#line 118
-  if (tunable_pasv_address) {
-#line 118
-    if (tunable_pasv_addr_resolve) {
-#line 120
-      p_addr = (struct vsf_sysutil_sockaddr *)0;
 #line 122
-      vsf_sysutil_dns_resolve(& p_addr, tunable_pasv_address);
-#line 123
-      vsf_sysutil_free((void *)((char *)tunable_pasv_address));
+  if (tunable_pasv_address) {
+#line 122
+    if (tunable_pasv_addr_resolve) {
 #line 124
-      p_numeric_addr = vsf_sysutil_inet_ntop((struct vsf_sysutil_sockaddr  const  *)p_addr);
-#line 125
-      __cil_tmp___2 = vsf_sysutil_strdup(p_numeric_addr);
-#line 125
-      tunable_pasv_address = (char const   *)__cil_tmp___2;
+      p_addr = (struct vsf_sysutil_sockaddr *)0;
 #line 126
+      vsf_sysutil_dns_resolve(& p_addr, tunable_pasv_address);
+#line 127
+      vsf_sysutil_free((void *)((char *)tunable_pasv_address));
+#line 128
+      p_numeric_addr = vsf_sysutil_inet_ntop((struct vsf_sysutil_sockaddr  const  *)p_addr);
+#line 129
+      __cil_tmp___2 = vsf_sysutil_strdup(p_numeric_addr);
+#line 129
+      tunable_pasv_address = (char const   *)__cil_tmp___2;
+#line 130
       vsf_sysutil_free((void *)p_addr);
     } else {
-#line 118
+#line 122
       goto _L;
     }
   } else {
     _L: ;
   }
-#line 128
+#line 132
   if (! tunable_run_as_launching_user) {
-#line 131
+#line 135
     die_unless_privileged();
   }
-#line 133
+#line 137
   if (tunable_setproctitle_enable) {
-#line 136
+#line 140
     vsf_sysutil_setproctitle_init(argc, argv);
   }
-#line 141
+#line 145
   if (tunable_ssl_enable) {
-#line 143
+#line 147
     ssl_init(& the_session);
   }
-#line 145
+#line 149
   if (tunable_listen) {
-#line 145
+#line 149
     goto _L___0;
   } else {
-#line 145
+#line 149
     if (tunable_listen_ipv6) {
       _L___0: 
-#line 148
+#line 152
       __cil_tmp___3 = vsf_standalone_main();
-#line 148
+#line 152
       ret___0 = __cil_tmp___3;
-#line 149
+#line 153
       the_session.num_clients = ret___0.num_children;
-#line 150
+#line 154
       the_session.num_this_ip = ret___0.num_this_ip;
     } else {
-#line 152
+#line 156
       socket(0, 0, 0);
-#line 152
+#line 156
       socket(0, 0, 0);
-#line 152
+#line 156
       dup2(4, 0);
     }
   }
-#line 153
+#line 157
   if (tunable_tcp_wrappers) {
-#line 155
+#line 159
     the_session.tcp_wrapper_ok = vsf_tcp_wrapper_ok(0);
   }
-#line 158
+#line 162
   __cil_tmp___4 = vsf_sysutil_getenv("VSFTPD_LOAD_CONF");
-#line 158
+#line 162
   p_load_conf = (char const   *)__cil_tmp___4;
-#line 159
+#line 163
   if (p_load_conf) {
-#line 161
+#line 165
     vsf_parseconf_load_file(p_load_conf, 1);
   }
-#line 167
-  do_sanity_checks();
-#line 169
-  session_init(& the_session);
 #line 171
-  env_init();
+  do_sanity_checks();
+#line 173
+  session_init(& the_session);
 #line 175
-  vsf_log_init(& the_session);
-#line 176
-  __cil_tmp___5 = vsf_sysutil_inet_ntop((struct vsf_sysutil_sockaddr  const  *)the_session.p_remote_addr);
-#line 176
-  str_alloc_text(& the_session.remote_ip_str, __cil_tmp___5);
+  env_init();
 #line 179
-  vsf_cmdio_sock_setup();
+  vsf_log_init(& the_session);
 #line 180
-  if (tunable_setproctitle_enable) {
-#line 182
-    vsf_sysutil_set_proctitle_prefix((struct mystr  const  *)(& the_session.remote_ip_str));
+  __cil_tmp___5 = vsf_sysutil_inet_ntop((struct vsf_sysutil_sockaddr  const  *)the_session.p_remote_addr);
+#line 180
+  str_alloc_text(& the_session.remote_ip_str, __cil_tmp___5);
 #line 183
+  vsf_cmdio_sock_setup();
+#line 184
+  if (tunable_setproctitle_enable) {
+#line 186
+    vsf_sysutil_set_proctitle_prefix((struct mystr  const  *)(& the_session.remote_ip_str));
+#line 187
     vsf_sysutil_setproctitle("connected");
   }
-#line 189
+#line 193
   if (tunable_ssl_enable) {
-#line 191
+#line 195
     ssl_init(& the_session);
   }
-#line 193
+#line 197
   if (tunable_deny_email_enable) {
-#line 195
+#line 199
     __cil_tmp___6 = str_fileread(& the_session.banned_email_str, tunable_banned_email_file,
                                  100000U);
-#line 195
-    retval___0 = __cil_tmp___6;
-#line 197
-    __cil_tmp___7 = vsf_sysutil_retval_is_error(retval___0);
-#line 197
-    if (__cil_tmp___7) {
 #line 199
+    retval___0 = __cil_tmp___6;
+#line 201
+    __cil_tmp___7 = vsf_sysutil_retval_is_error(retval___0);
+#line 201
+    if (__cil_tmp___7) {
+#line 203
       die2("cannot open anon e-mail list file:", tunable_banned_email_file);
     }
   }
-#line 202
+#line 206
   if (tunable_banner_file) {
-#line 204
-    __cil_tmp___8 = str_fileread(& the_session.banner_str, tunable_banner_file, 100000U);
-#line 204
-    retval___1 = __cil_tmp___8;
-#line 206
-    __cil_tmp___9 = vsf_sysutil_retval_is_error(retval___1);
-#line 206
-    if (__cil_tmp___9) {
 #line 208
+    __cil_tmp___8 = str_fileread(& the_session.banner_str, tunable_banner_file, 100000U);
+#line 208
+    retval___1 = __cil_tmp___8;
+#line 210
+    __cil_tmp___9 = vsf_sysutil_retval_is_error(retval___1);
+#line 210
+    if (__cil_tmp___9) {
+#line 212
       die2("cannot open banner file:", tunable_banner_file);
     }
   }
-#line 211
+#line 215
   if (tunable_secure_email_list_enable) {
-#line 213
+#line 217
     __cil_tmp___10 = str_fileread(& the_session.email_passwords_str, tunable_email_password_file,
                                   100000U);
-#line 213
+#line 217
     retval___2 = __cil_tmp___10;
-#line 216
+#line 220
     __cil_tmp___11 = vsf_sysutil_retval_is_error(retval___2);
-#line 216
+#line 220
     if (__cil_tmp___11) {
-#line 218
+#line 222
       die2("cannot open email passwords file:", tunable_email_password_file);
     }
   }
-#line 224
+#line 228
   if (! tunable_local_enable) {
-#line 224
+#line 228
     if (! tunable_connect_from_port_20) {
-#line 224
+#line 228
       if (! tunable_chown_uploads) {
-#line 227
+#line 231
         tunable_one_process_model = 1;
       } else {
-#line 224
+#line 228
         goto _L___2;
       }
     } else {
-#line 224
+#line 228
       goto _L___2;
     }
   } else {
     _L___2: ;
   }
-#line 229
+#line 233
   if (tunable_run_as_launching_user) {
-#line 231
-    tunable_one_process_model = 1;
-#line 232
-    __cil_tmp___12 = vsf_sysutil_running_as_root();
-#line 232
-    if (! __cil_tmp___12) {
-#line 234
-      tunable_connect_from_port_20 = 0;
 #line 235
+    tunable_one_process_model = 1;
+#line 236
+    __cil_tmp___12 = vsf_sysutil_running_as_root();
+#line 236
+    if (! __cil_tmp___12) {
+#line 238
+      tunable_connect_from_port_20 = 0;
+#line 239
       tunable_chown_uploads = 0;
     }
   }
-#line 240
-  vsf_one_process_start(& the_session);
-#line 247
-  bug("should not get here: main");
+#line 242
+  if (tunable_one_process_model) {
+#line 244
+    vsf_one_process_start(& the_session);
+  } else {
 #line 248
+    vsf_two_process_start(& the_session);
+  }
+#line 251
+  bug("should not get here: main");
+#line 252
   return (1);
 }
 }
-#line 251 "main.c"
+#line 255 "main.c"
 static void die_unless_privileged(void) 
 { int __cil_tmp ;
 
   {
-#line 254
+#line 258
   __cil_tmp = vsf_sysutil_running_as_root();
-#line 254
+#line 258
   if (! __cil_tmp) {
-#line 256
+#line 260
     die("vsftpd: must be started as root (see run_as_launching_user option)");
   }
-#line 258
+#line 262
   return;
 }
 }
-#line 260 "main.c"
+#line 264 "main.c"
 static void do_sanity_checks(void) 
 { struct vsf_sysutil_statbuf *p_statbuf___0 ;
   int __cil_tmp ;
   int __cil_tmp___0 ;
 
   {
-#line 264
-  p_statbuf___0 = (struct vsf_sysutil_statbuf *)0;
-#line 265
-  vsf_sysutil_fstat(0, & p_statbuf___0);
-#line 266
-  __cil_tmp = vsf_sysutil_statbuf_is_socket((struct vsf_sysutil_statbuf  const  *)p_statbuf___0);
-#line 266
-  if (! __cil_tmp) {
 #line 268
+  p_statbuf___0 = (struct vsf_sysutil_statbuf *)0;
+#line 269
+  vsf_sysutil_fstat(0, & p_statbuf___0);
+#line 270
+  __cil_tmp = vsf_sysutil_statbuf_is_socket((struct vsf_sysutil_statbuf  const  *)p_statbuf___0);
+#line 270
+  if (! __cil_tmp) {
+#line 272
     die("vsftpd: not configured for standalone, must be started from inetd");
   }
-#line 270
-  vsf_sysutil_free((void *)p_statbuf___0);
-#line 272
-  if (tunable_one_process_model) {
 #line 274
-    if (tunable_local_enable) {
+  vsf_sysutil_free((void *)p_statbuf___0);
 #line 276
+  if (tunable_one_process_model) {
+#line 278
+    if (tunable_local_enable) {
+#line 280
       die("vsftpd: security: \'one_process_model\' is anonymous only");
     }
-#line 278
+#line 282
     __cil_tmp___0 = vsf_sysdep_has_capabilities_as_non_root();
-#line 278
+#line 282
     if (! __cil_tmp___0) {
-#line 280
+#line 284
       die("vsftpd: security: \'one_process_model\' needs a better OS");
     }
-#line 282
+#line 286
     if (tunable_ssl_enable) {
-#line 284
+#line 288
       die("vsftpd: SSL mode not compatible with \'one_process_model\'");
     }
   }
-#line 287
+#line 291
   if (! tunable_local_enable) {
-#line 287
+#line 291
     if (! tunable_anonymous_enable) {
-#line 289
+#line 293
       die("vsftpd: both local and anonymous access disabled!");
     } else {
-#line 287
+#line 291
       goto _L;
     }
   } else {
     _L: ;
   }
-#line 291
+#line 295
   return;
 }
 }
-#line 293 "main.c"
+#line 297 "main.c"
 static void env_init(void) 
 { 
 
   {
-#line 296
-  vsf_sysutil_make_session_leader();
-#line 298
-  vsf_sysutil_set_umask(63U);
 #line 300
-  vsf_sysutil_tzset();
+  vsf_sysutil_make_session_leader();
 #line 302
+  vsf_sysutil_set_umask(63U);
+#line 304
+  vsf_sysutil_tzset();
+#line 306
   vsf_sysutil_install_null_sighandler((enum EVSFSysUtilSignal )4);
-#line 303
+#line 307
   return;
 }
 }
-#line 305 "main.c"
+#line 309 "main.c"
 static void session_init(struct vsf_session *p_sess ) 
 { struct vsf_sysutil_user  const  *p_user ;
   struct vsf_sysutil_user *__cil_tmp ;
@@ -9054,58 +10587,58 @@ static void session_init(struct vsf_session *p_sess )
   struct vsf_sysutil_user *__cil_tmp___1 ;
 
   {
-#line 309
+#line 313
   vsf_sysutil_getpeername(0, & p_sess->p_remote_addr);
-#line 310
+#line 314
   vsf_sysutil_getsockname(0, & p_sess->p_local_addr);
-#line 312
-  if (tunable_anonymous_enable) {
-#line 314
-    __cil_tmp = vsf_sysutil_getpwnam(tunable_ftp_username);
-#line 314
-    p_user = (struct vsf_sysutil_user  const  *)__cil_tmp;
 #line 316
-    if ((unsigned int )p_user == (unsigned int )((struct vsf_sysutil_user  const  *)0)) {
+  if (tunable_anonymous_enable) {
 #line 318
+    __cil_tmp = vsf_sysutil_getpwnam(tunable_ftp_username);
+#line 318
+    p_user = (struct vsf_sysutil_user  const  *)__cil_tmp;
+#line 320
+    if ((unsigned int )p_user == (unsigned int )((struct vsf_sysutil_user  const  *)0)) {
+#line 322
       die2("vsftpd: cannot locate user specified in \'ftp_username\':", tunable_ftp_username);
     }
-#line 321
+#line 325
     p_sess->anon_ftp_uid = vsf_sysutil_user_getuid(p_user);
   }
-#line 323
-  if (tunable_guest_enable) {
-#line 325
-    __cil_tmp___0 = vsf_sysutil_getpwnam(tunable_guest_username);
-#line 325
-    p_user___0 = (struct vsf_sysutil_user  const  *)__cil_tmp___0;
 #line 327
-    if ((unsigned int )p_user___0 == (unsigned int )((struct vsf_sysutil_user  const  *)0)) {
+  if (tunable_guest_enable) {
 #line 329
+    __cil_tmp___0 = vsf_sysutil_getpwnam(tunable_guest_username);
+#line 329
+    p_user___0 = (struct vsf_sysutil_user  const  *)__cil_tmp___0;
+#line 331
+    if ((unsigned int )p_user___0 == (unsigned int )((struct vsf_sysutil_user  const  *)0)) {
+#line 333
       die2("vsftpd: cannot locate user specified in \'guest_username\':", tunable_guest_username);
     }
-#line 332
+#line 336
     p_sess->guest_user_uid = vsf_sysutil_user_getuid(p_user___0);
   }
-#line 334
-  if (tunable_chown_uploads) {
-#line 336
-    __cil_tmp___1 = vsf_sysutil_getpwnam(tunable_chown_username);
-#line 336
-    p_user___1 = (struct vsf_sysutil_user  const  *)__cil_tmp___1;
 #line 338
-    if ((unsigned int )p_user___1 == (unsigned int )((struct vsf_sysutil_user  const  *)0)) {
+  if (tunable_chown_uploads) {
 #line 340
+    __cil_tmp___1 = vsf_sysutil_getpwnam(tunable_chown_username);
+#line 340
+    p_user___1 = (struct vsf_sysutil_user  const  *)__cil_tmp___1;
+#line 342
+    if ((unsigned int )p_user___1 == (unsigned int )((struct vsf_sysutil_user  const  *)0)) {
+#line 344
       die2("vsftpd: cannot locate user specified in \'chown_username\':", tunable_chown_username);
     }
-#line 343
+#line 347
     p_sess->anon_upload_chown_uid = vsf_sysutil_user_getuid(p_user___1);
   }
-#line 345
+#line 349
   return;
 }
 }
-#line 1 "cil-PIa8ljCo.o"
-#pragma merger(0,"/tmp/cil-GFwGtkpQ.i","")
+#line 1 "cil-Kwt6Zd9t.o"
+#pragma merger(0,"/tmp/cil-5J9pYO9W.i","")
 #line 104 "sysutil.h"
 int vsf_sysutil_write_loop(int fd , void const   *p_buf , unsigned int size ) ;
 #line 165
@@ -9191,8 +10724,8 @@ void vsf_exit(char const   *p_text )
   return;
 }
 }
-#line 1 "cil-AjlmQ4LB.o"
-#pragma merger(0,"/tmp/cil-GRiYVzbR.i","")
+#line 1 "cil-fAkjErhM.o"
+#pragma merger(0,"/tmp/cil-tAnBudCO.i","")
 #line 14 "prelogin.h"
 void init_connection(struct vsf_session *p_sess ) ;
 #line 22 "ftpcmdio.h"
@@ -9241,7 +10774,7 @@ char const   *tunable_ftpd_banner ;
 #line 24 "oneprocess.h"
 void vsf_one_process_login(struct vsf_session *p_sess , struct mystr  const  *p_pass_str ) ;
 #line 23 "twoprocess.h"
-extern void vsf_two_process_login(struct vsf_session *p_sess , struct mystr  const  *p_pass_str ) ;
+void vsf_two_process_login(struct vsf_session *p_sess , struct mystr  const  *p_pass_str ) ;
 #line 29 "banner.h"
 void vsf_banner_write(struct vsf_session *p_sess , struct mystr *p_str , int ftpcode ) ;
 #line 80 "logging.h"
@@ -9716,8 +11249,8 @@ static void handle_pass_command(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1 "cil-KD8P0bWg.o"
-#pragma merger(0,"/tmp/cil-t8YFqd3B.i","")
+#line 1 "cil-8a3Aduly.o"
+#pragma merger(0,"/tmp/cil-wQ8pXpa9.i","")
 #line 34 "ftpcmdio.h"
 void vsf_cmdio_write_hyphen(struct vsf_session *p_sess , int status , char const   *p_text ) ;
 #line 46
@@ -10085,8 +11618,8 @@ static void control_getline(struct mystr *p_str , struct vsf_session *p_sess )
   return;
 }
 }
-#line 1 "cil-E2XfXHmt.o"
-#pragma merger(0,"/tmp/cil-ezkcRxvH.i","")
+#line 1 "cil-ZkF3VdhG.o"
+#pragma merger(0,"/tmp/cil-m8xKMuMJ.i","")
 #line 12 "postlogin.h"
 void process_post_login(struct vsf_session *p_sess ) ;
 #line 31 "str.h"
@@ -10111,10 +11644,12 @@ void str_replace_unprintable(struct mystr *p_str , char new_char ) ;
 int str_atoi(struct mystr  const  *p_str ) ;
 #line 100
 filesize_t str_a_to_filesize_t(struct mystr  const  *p_str ) ;
+#line 101
+unsigned int str_octal_to_uint(struct mystr  const  *p_str ) ;
 #line 44 "oneprocess.h"
 void vsf_one_process_chown_upload(struct vsf_session *p_sess , int fd ) ;
 #line 43 "twoprocess.h"
-extern void vsf_two_process_chown_upload(struct vsf_session *p_sess , int fd ) ;
+void vsf_two_process_chown_upload(struct vsf_session *p_sess , int fd ) ;
 #line 22 "ftpdataio.h"
 int vsf_ftpdataio_dispose_transfer_fd(struct vsf_session *p_sess ) ;
 #line 33
@@ -10158,6 +11693,8 @@ int tunable_port_promiscuous ;
 int tunable_download_enable ;
 #line 52
 int tunable_dirlist_enable ;
+#line 53
+int tunable_chmod_enable ;
 #line 60
 int tunable_force_local_data_ssl ;
 #line 64
@@ -10204,6 +11741,8 @@ int str_create_append(struct mystr  const  *p_str ) ;
 int str_create(struct mystr  const  *p_str ) ;
 #line 26
 int str_create_overwrite(struct mystr  const  *p_str ) ;
+#line 27
+int str_chmod(struct mystr  const  *p_str , unsigned int mode ) ;
 #line 28
 int str_stat(struct mystr  const  *p_str , struct vsf_sysutil_statbuf **p_ptr ) ;
 #line 30
@@ -10245,6 +11784,8 @@ int vsf_sysutil_lock_file_read(int fd ) ;
 int vsf_sysutil_atoi(char const   *p_str ) ;
 #line 192
 char const   *vsf_sysutil_ulong_to_str(unsigned long the_ulong ) ;
+#line 195
+char const   *vsf_sysutil_uint_to_octal(unsigned int the_uint ) ;
 #line 201
 int vsf_sysutil_isdigit(int the_char ) ;
 #line 211
@@ -10287,6 +11828,8 @@ int vsf_sysutil_inet_aton(char const   *p_text , struct vsf_sysutil_sockaddr *p_
 char const   *vsf_sysutil_user_get_homedir(struct vsf_sysutil_user  const  *p_user ) ;
 #line 292
 unsigned char vsf_sysutil_get_random_byte(void) ;
+#line 293
+unsigned int vsf_sysutil_get_umask(void) ;
 #line 329
 long vsf_sysutil_parse_time(char const   *p_text ) ;
 #line 331
@@ -10345,10 +11888,16 @@ static void handle_rnto(struct vsf_session *p_sess ) ;
 static void handle_nlst(struct vsf_session *p_sess ) ;
 #line 48
 static void handle_size(struct vsf_session *p_sess ) ;
+#line 49
+static void handle_site(struct vsf_session *p_sess ) ;
 #line 50
 static void handle_appe(struct vsf_session *p_sess ) ;
 #line 51
 static void handle_mdtm(struct vsf_session *p_sess ) ;
+#line 52
+static void handle_site_chmod(struct vsf_session *p_sess , struct mystr *p_arg_str ) ;
+#line 54
+static void handle_site_umask(struct vsf_session *p_sess , struct mystr *p_arg_str ) ;
 #line 56
 static void handle_eprt(struct vsf_session *p_sess ) ;
 #line 57
@@ -10479,6 +12028,7 @@ void process_post_login(struct vsf_session *p_sess )
   int __cil_tmp___78 ;
   int __cil_tmp___79 ;
   int __cil_tmp___80 ;
+  int __cil_tmp___81 ;
 
   {
 #line 85
@@ -10579,63 +12129,63 @@ void process_post_login(struct vsf_session *p_sess )
       vsf_cmdio_write(p_sess, 550, "Permission denied.");
     } else {
 #line 153
-      __cil_tmp___79 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+      __cil_tmp___80 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                       "QUIT");
 #line 153
-      if (__cil_tmp___79) {
+      if (__cil_tmp___80) {
 #line 155
         vsf_cmdio_write(p_sess, 221, "Goodbye.");
 #line 156
         vsf_sysutil_exit(0);
       } else {
 #line 158
-        __cil_tmp___77 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+        __cil_tmp___78 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                         "PWD");
 #line 158
-        if (__cil_tmp___77) {
+        if (__cil_tmp___78) {
 #line 158
-          goto _L___65;
+          goto _L___66;
         } else {
 #line 158
-          __cil_tmp___78 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+          __cil_tmp___79 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                           "XPWD");
 #line 158
-          if (__cil_tmp___78) {
-            _L___65: 
+          if (__cil_tmp___79) {
+            _L___66: 
 #line 161
             handle_pwd(p_sess);
           } else {
 #line 163
-            __cil_tmp___75 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+            __cil_tmp___76 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                             "CWD");
 #line 163
-            if (__cil_tmp___75) {
+            if (__cil_tmp___76) {
 #line 163
-              goto _L___64;
+              goto _L___65;
             } else {
 #line 163
-              __cil_tmp___76 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+              __cil_tmp___77 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                               "XCWD");
 #line 163
-              if (__cil_tmp___76) {
-                _L___64: 
+              if (__cil_tmp___77) {
+                _L___65: 
 #line 166
                 handle_cwd(p_sess);
               } else {
 #line 168
-                __cil_tmp___73 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                __cil_tmp___74 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                                 "CDUP");
 #line 168
-                if (__cil_tmp___73) {
+                if (__cil_tmp___74) {
 #line 168
-                  goto _L___63;
+                  goto _L___64;
                 } else {
 #line 168
-                  __cil_tmp___74 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                  __cil_tmp___75 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                                   "XCUP");
 #line 168
-                  if (__cil_tmp___74) {
-                    _L___63: 
+                  if (__cil_tmp___75) {
+                    _L___64: 
 #line 171
                     handle_cdup(p_sess);
                   } else {
@@ -10644,106 +12194,106 @@ void process_post_login(struct vsf_session *p_sess )
 #line 173
                       if (! p_sess->epsv_all) {
 #line 173
-                        __cil_tmp___71 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                        __cil_tmp___72 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                                         "PASV");
 #line 173
-                        if (__cil_tmp___71) {
+                        if (__cil_tmp___72) {
 #line 173
-                          goto _L___61;
+                          goto _L___62;
                         } else {
 #line 173
-                          __cil_tmp___72 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                          __cil_tmp___73 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                                           "P@SW");
 #line 173
-                          if (__cil_tmp___72) {
-                            _L___61: 
+                          if (__cil_tmp___73) {
+                            _L___62: 
 #line 178
                             handle_pasv(p_sess, 0);
                           } else {
 #line 173
-                            goto _L___62;
+                            goto _L___63;
                           }
                         }
                       } else {
 #line 173
-                        goto _L___62;
+                        goto _L___63;
                       }
                     } else {
-                      _L___62: 
+                      _L___63: 
 #line 180
                       if (tunable_pasv_enable) {
 #line 180
-                        __cil_tmp___70 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                        __cil_tmp___71 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                                         "EPSV");
 #line 180
-                        if (__cil_tmp___70) {
+                        if (__cil_tmp___71) {
 #line 183
                           handle_pasv(p_sess, 1);
                         } else {
 #line 180
-                          goto _L___59;
+                          goto _L___60;
                         }
                       } else {
-                        _L___59: 
+                        _L___60: 
 #line 185
                         if (tunable_download_enable) {
 #line 185
-                          __cil_tmp___69 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                          __cil_tmp___70 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                                           "RETR");
 #line 185
-                          if (__cil_tmp___69) {
+                          if (__cil_tmp___70) {
 #line 188
                             handle_retr(p_sess);
                           } else {
 #line 185
-                            goto _L___58;
+                            goto _L___59;
                           }
                         } else {
-                          _L___58: 
+                          _L___59: 
 #line 190
-                          __cil_tmp___68 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                          __cil_tmp___69 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                                           "NOOP");
 #line 190
-                          if (__cil_tmp___68) {
+                          if (__cil_tmp___69) {
 #line 192
                             vsf_cmdio_write(p_sess, 200, "NOOP ok.");
                           } else {
 #line 194
-                            __cil_tmp___67 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                            __cil_tmp___68 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                                             "SYST");
 #line 194
-                            if (__cil_tmp___67) {
+                            if (__cil_tmp___68) {
 #line 196
                               vsf_cmdio_write(p_sess, 215, "UNIX Type: L8");
                             } else {
 #line 198
-                              __cil_tmp___66 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                              __cil_tmp___67 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                                               "HELP");
 #line 198
-                              if (__cil_tmp___66) {
+                              if (__cil_tmp___67) {
 #line 200
                                 handle_help(p_sess);
                               } else {
 #line 202
                                 if (tunable_dirlist_enable) {
 #line 202
-                                  __cil_tmp___65 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                  __cil_tmp___66 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                                                   "LIST");
 #line 202
-                                  if (__cil_tmp___65) {
+                                  if (__cil_tmp___66) {
 #line 205
                                     handle_list(p_sess);
                                   } else {
 #line 202
-                                    goto _L___57;
+                                    goto _L___58;
                                   }
                                 } else {
-                                  _L___57: 
+                                  _L___58: 
 #line 207
-                                  __cil_tmp___64 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                  __cil_tmp___65 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                                                   "TYPE");
 #line 207
-                                  if (__cil_tmp___64) {
+                                  if (__cil_tmp___65) {
 #line 209
                                     handle_type(p_sess);
                                   } else {
@@ -10752,159 +12302,159 @@ void process_post_login(struct vsf_session *p_sess )
 #line 211
                                       if (! p_sess->epsv_all) {
 #line 211
-                                        __cil_tmp___63 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                        __cil_tmp___64 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                                                         "PORT");
 #line 211
-                                        if (__cil_tmp___63) {
+                                        if (__cil_tmp___64) {
 #line 215
                                           handle_port(p_sess);
                                         } else {
 #line 211
-                                          goto _L___56;
+                                          goto _L___57;
                                         }
                                       } else {
 #line 211
-                                        goto _L___56;
+                                        goto _L___57;
                                       }
                                     } else {
-                                      _L___56: 
+                                      _L___57: 
 #line 217
                                       if (tunable_write_enable) {
 #line 217
                                         if (tunable_anon_upload_enable) {
 #line 217
-                                          goto _L___54;
+                                          goto _L___55;
                                         } else {
 #line 217
                                           if (! p_sess->is_anonymous) {
-                                            _L___54: 
+                                            _L___55: 
 #line 217
-                                            __cil_tmp___62 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                            __cil_tmp___63 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                                                             "STOR");
 #line 217
-                                            if (__cil_tmp___62) {
+                                            if (__cil_tmp___63) {
 #line 221
                                               handle_stor(p_sess);
                                             } else {
 #line 217
-                                              goto _L___53;
+                                              goto _L___54;
                                             }
                                           } else {
 #line 217
-                                            goto _L___53;
+                                            goto _L___54;
                                           }
                                         }
                                       } else {
-                                        _L___53: 
+                                        _L___54: 
 #line 223
                                         if (tunable_write_enable) {
 #line 223
                                           if (tunable_anon_mkdir_write_enable) {
 #line 223
-                                            goto _L___51;
+                                            goto _L___52;
                                           } else {
 #line 223
                                             if (! p_sess->is_anonymous) {
-                                              _L___51: 
+                                              _L___52: 
 #line 223
-                                              __cil_tmp___60 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                              __cil_tmp___61 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                                                               "MKD");
 #line 223
-                                              if (__cil_tmp___60) {
+                                              if (__cil_tmp___61) {
 #line 223
-                                                goto _L___49;
+                                                goto _L___50;
                                               } else {
 #line 223
-                                                __cil_tmp___61 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                __cil_tmp___62 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                                                                 "XMKD");
 #line 223
-                                                if (__cil_tmp___61) {
-                                                  _L___49: 
+                                                if (__cil_tmp___62) {
+                                                  _L___50: 
 #line 228
                                                   handle_mkd(p_sess);
                                                 } else {
 #line 223
-                                                  goto _L___50;
+                                                  goto _L___51;
                                                 }
                                               }
                                             } else {
 #line 223
-                                              goto _L___50;
+                                              goto _L___51;
                                             }
                                           }
                                         } else {
-                                          _L___50: 
+                                          _L___51: 
 #line 230
                                           if (tunable_write_enable) {
 #line 230
                                             if (tunable_anon_other_write_enable) {
 #line 230
-                                              goto _L___47;
+                                              goto _L___48;
                                             } else {
 #line 230
                                               if (! p_sess->is_anonymous) {
-                                                _L___47: 
+                                                _L___48: 
 #line 230
-                                                __cil_tmp___58 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                __cil_tmp___59 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                                                                 "RMD");
 #line 230
-                                                if (__cil_tmp___58) {
+                                                if (__cil_tmp___59) {
 #line 230
-                                                  goto _L___45;
+                                                  goto _L___46;
                                                 } else {
 #line 230
-                                                  __cil_tmp___59 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                  __cil_tmp___60 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                                                                   "XRMD");
 #line 230
-                                                  if (__cil_tmp___59) {
-                                                    _L___45: 
+                                                  if (__cil_tmp___60) {
+                                                    _L___46: 
 #line 235
                                                     handle_rmd(p_sess);
                                                   } else {
 #line 230
-                                                    goto _L___46;
+                                                    goto _L___47;
                                                   }
                                                 }
                                               } else {
 #line 230
-                                                goto _L___46;
+                                                goto _L___47;
                                               }
                                             }
                                           } else {
-                                            _L___46: 
+                                            _L___47: 
 #line 237
                                             if (tunable_write_enable) {
 #line 237
                                               if (tunable_anon_other_write_enable) {
 #line 237
-                                                goto _L___43;
+                                                goto _L___44;
                                               } else {
 #line 237
                                                 if (! p_sess->is_anonymous) {
-                                                  _L___43: 
+                                                  _L___44: 
 #line 237
-                                                  __cil_tmp___57 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                  __cil_tmp___58 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                                                                   "DELE");
 #line 237
-                                                  if (__cil_tmp___57) {
+                                                  if (__cil_tmp___58) {
 #line 241
                                                     handle_dele(p_sess);
                                                   } else {
 #line 237
-                                                    goto _L___42;
+                                                    goto _L___43;
                                                   }
                                                 } else {
 #line 237
-                                                  goto _L___42;
+                                                  goto _L___43;
                                                 }
                                               }
                                             } else {
-                                              _L___42: 
+                                              _L___43: 
 #line 243
-                                              __cil_tmp___56 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                              __cil_tmp___57 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                                                               "REST");
 #line 243
-                                              if (__cil_tmp___56) {
+                                              if (__cil_tmp___57) {
 #line 245
                                                 handle_rest(p_sess);
                                               } else {
@@ -10913,585 +12463,602 @@ void process_post_login(struct vsf_session *p_sess )
 #line 247
                                                   if (tunable_anon_other_write_enable) {
 #line 247
-                                                    goto _L___40;
+                                                    goto _L___41;
                                                   } else {
 #line 247
                                                     if (! p_sess->is_anonymous) {
-                                                      _L___40: 
+                                                      _L___41: 
 #line 247
-                                                      __cil_tmp___55 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                      __cil_tmp___56 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                                                                       "RNFR");
 #line 247
-                                                      if (__cil_tmp___55) {
+                                                      if (__cil_tmp___56) {
 #line 251
                                                         handle_rnfr(p_sess);
                                                       } else {
 #line 247
-                                                        goto _L___39;
+                                                        goto _L___40;
                                                       }
                                                     } else {
 #line 247
-                                                      goto _L___39;
+                                                      goto _L___40;
                                                     }
                                                   }
                                                 } else {
-                                                  _L___39: 
+                                                  _L___40: 
 #line 253
                                                   if (tunable_write_enable) {
 #line 253
                                                     if (tunable_anon_other_write_enable) {
 #line 253
-                                                      goto _L___37;
+                                                      goto _L___38;
                                                     } else {
 #line 253
                                                       if (! p_sess->is_anonymous) {
-                                                        _L___37: 
+                                                        _L___38: 
 #line 253
-                                                        __cil_tmp___54 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                        __cil_tmp___55 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                                                                         "RNTO");
 #line 253
-                                                        if (__cil_tmp___54) {
+                                                        if (__cil_tmp___55) {
 #line 257
                                                           handle_rnto(p_sess);
                                                         } else {
 #line 253
-                                                          goto _L___36;
+                                                          goto _L___37;
                                                         }
                                                       } else {
 #line 253
-                                                        goto _L___36;
+                                                        goto _L___37;
                                                       }
                                                     }
                                                   } else {
-                                                    _L___36: 
+                                                    _L___37: 
 #line 259
                                                     if (tunable_dirlist_enable) {
 #line 259
-                                                      __cil_tmp___53 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                      __cil_tmp___54 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                                                                       "NLST");
 #line 259
-                                                      if (__cil_tmp___53) {
+                                                      if (__cil_tmp___54) {
 #line 262
                                                         handle_nlst(p_sess);
                                                       } else {
 #line 259
-                                                        goto _L___34;
+                                                        goto _L___35;
                                                       }
                                                     } else {
-                                                      _L___34: 
+                                                      _L___35: 
 #line 264
-                                                      __cil_tmp___52 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                      __cil_tmp___53 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
                                                                                       "SIZE");
 #line 264
-                                                      if (__cil_tmp___52) {
+                                                      if (__cil_tmp___53) {
 #line 266
                                                         handle_size(p_sess);
                                                       } else {
-#line 276
-                                                        __cil_tmp___50 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                        "ABOR");
-#line 276
-                                                        if (__cil_tmp___50) {
-#line 276
-                                                          goto _L___33;
-                                                        } else {
-#line 276
-                                                          __cil_tmp___51 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                          "\377\364\377\362ABOR");
-#line 276
-                                                          if (__cil_tmp___51) {
-                                                            _L___33: 
-#line 279
-                                                            vsf_cmdio_write(p_sess,
-                                                                            225, "No transfer to ABOR.");
+#line 268
+                                                        if (! p_sess->is_anonymous) {
+#line 268
+                                                          __cil_tmp___52 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                          "SITE");
+#line 268
+                                                          if (__cil_tmp___52) {
+#line 271
+                                                            handle_site(p_sess);
                                                           } else {
+#line 268
+                                                            goto _L___34;
+                                                          }
+                                                        } else {
+                                                          _L___34: 
+#line 276
+                                                          __cil_tmp___50 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                          "ABOR");
+#line 276
+                                                          if (__cil_tmp___50) {
+#line 276
+                                                            goto _L___33;
+                                                          } else {
+#line 276
+                                                            __cil_tmp___51 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                            "\377\364\377\362ABOR");
+#line 276
+                                                            if (__cil_tmp___51) {
+                                                              _L___33: 
+#line 279
+                                                              vsf_cmdio_write(p_sess,
+                                                                              225,
+                                                                              "No transfer to ABOR.");
+                                                            } else {
 #line 281
-                                                            if (tunable_write_enable) {
+                                                              if (tunable_write_enable) {
 #line 281
-                                                              if (tunable_anon_other_write_enable) {
+                                                                if (tunable_anon_other_write_enable) {
 #line 281
-                                                                goto _L___32;
-                                                              } else {
+                                                                  goto _L___32;
+                                                                } else {
 #line 281
-                                                                if (! p_sess->is_anonymous) {
-                                                                  _L___32: 
+                                                                  if (! p_sess->is_anonymous) {
+                                                                    _L___32: 
 #line 281
-                                                                  __cil_tmp___49 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                  "APPE");
+                                                                    __cil_tmp___49 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                    "APPE");
 #line 281
-                                                                  if (__cil_tmp___49) {
+                                                                    if (__cil_tmp___49) {
 #line 285
-                                                                    handle_appe(p_sess);
+                                                                      handle_appe(p_sess);
+                                                                    } else {
+#line 281
+                                                                      goto _L___31;
+                                                                    }
                                                                   } else {
 #line 281
                                                                     goto _L___31;
                                                                   }
-                                                                } else {
-#line 281
-                                                                  goto _L___31;
                                                                 }
-                                                              }
-                                                            } else {
-                                                              _L___31: 
-#line 287
-                                                              __cil_tmp___48 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                              "MDTM");
-#line 287
-                                                              if (__cil_tmp___48) {
-#line 289
-                                                                handle_mdtm(p_sess);
                                                               } else {
-#line 291
-                                                                if (tunable_port_enable) {
-#line 291
-                                                                  __cil_tmp___47 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                  "EPRT");
-#line 291
-                                                                  if (__cil_tmp___47) {
-#line 294
-                                                                    handle_eprt(p_sess);
-                                                                  } else {
-#line 291
-                                                                    goto _L___29;
-                                                                  }
+                                                                _L___31: 
+#line 287
+                                                                __cil_tmp___48 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                "MDTM");
+#line 287
+                                                                if (__cil_tmp___48) {
+#line 289
+                                                                  handle_mdtm(p_sess);
                                                                 } else {
-                                                                  _L___29: 
-#line 296
-                                                                  __cil_tmp___46 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                  "STRU");
-#line 296
-                                                                  if (__cil_tmp___46) {
-#line 298
-                                                                    str_upper(& p_sess->ftp_arg_str);
-#line 299
-                                                                    __cil_tmp___2 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_arg_str),
-                                                                                                   "F");
-#line 299
-                                                                    if (__cil_tmp___2) {
-#line 301
-                                                                      vsf_cmdio_write(p_sess,
-                                                                                      200,
-                                                                                      "Structure set to F.");
+#line 291
+                                                                  if (tunable_port_enable) {
+#line 291
+                                                                    __cil_tmp___47 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                    "EPRT");
+#line 291
+                                                                    if (__cil_tmp___47) {
+#line 294
+                                                                      handle_eprt(p_sess);
                                                                     } else {
-#line 305
-                                                                      vsf_cmdio_write(p_sess,
-                                                                                      504,
-                                                                                      "Bad STRU command.");
+#line 291
+                                                                      goto _L___29;
                                                                     }
                                                                   } else {
-#line 308
-                                                                    __cil_tmp___45 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                    "MODE");
-#line 308
-                                                                    if (__cil_tmp___45) {
-#line 310
+                                                                    _L___29: 
+#line 296
+                                                                    __cil_tmp___46 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                    "STRU");
+#line 296
+                                                                    if (__cil_tmp___46) {
+#line 298
                                                                       str_upper(& p_sess->ftp_arg_str);
-#line 311
-                                                                      __cil_tmp___3 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_arg_str),
-                                                                                                     "S");
-#line 311
-                                                                      if (__cil_tmp___3) {
-#line 313
+#line 299
+                                                                      __cil_tmp___2 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_arg_str),
+                                                                                                     "F");
+#line 299
+                                                                      if (__cil_tmp___2) {
+#line 301
                                                                         vsf_cmdio_write(p_sess,
                                                                                         200,
-                                                                                        "Mode set to S.");
+                                                                                        "Structure set to F.");
                                                                       } else {
-#line 317
+#line 305
                                                                         vsf_cmdio_write(p_sess,
                                                                                         504,
-                                                                                        "Bad MODE command.");
+                                                                                        "Bad STRU command.");
                                                                       }
                                                                     } else {
-#line 320
-                                                                      __cil_tmp___44 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                      "STOU");
-#line 320
-                                                                      if (__cil_tmp___44) {
-#line 322
-                                                                        handle_stou(p_sess);
-                                                                      } else {
-#line 324
-                                                                        __cil_tmp___43 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                        "ALLO");
-#line 324
-                                                                        if (__cil_tmp___43) {
-#line 326
+#line 308
+                                                                      __cil_tmp___45 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                      "MODE");
+#line 308
+                                                                      if (__cil_tmp___45) {
+#line 310
+                                                                        str_upper(& p_sess->ftp_arg_str);
+#line 311
+                                                                        __cil_tmp___3 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_arg_str),
+                                                                                                       "S");
+#line 311
+                                                                        if (__cil_tmp___3) {
+#line 313
                                                                           vsf_cmdio_write(p_sess,
-                                                                                          202,
-                                                                                          "ALLO command ignored.");
+                                                                                          200,
+                                                                                          "Mode set to S.");
                                                                         } else {
-#line 328
-                                                                          __cil_tmp___42 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                          "REIN");
-#line 328
-                                                                          if (__cil_tmp___42) {
-#line 330
+#line 317
+                                                                          vsf_cmdio_write(p_sess,
+                                                                                          504,
+                                                                                          "Bad MODE command.");
+                                                                        }
+                                                                      } else {
+#line 320
+                                                                        __cil_tmp___44 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                        "STOU");
+#line 320
+                                                                        if (__cil_tmp___44) {
+#line 322
+                                                                          handle_stou(p_sess);
+                                                                        } else {
+#line 324
+                                                                          __cil_tmp___43 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                          "ALLO");
+#line 324
+                                                                          if (__cil_tmp___43) {
+#line 326
                                                                             vsf_cmdio_write(p_sess,
-                                                                                            502,
-                                                                                            "REIN not implemented.");
+                                                                                            202,
+                                                                                            "ALLO command ignored.");
                                                                           } else {
-#line 332
-                                                                            __cil_tmp___41 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                            "ACCT");
-#line 332
-                                                                            if (__cil_tmp___41) {
-#line 334
+#line 328
+                                                                            __cil_tmp___42 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                            "REIN");
+#line 328
+                                                                            if (__cil_tmp___42) {
+#line 330
                                                                               vsf_cmdio_write(p_sess,
                                                                                               502,
-                                                                                              "ACCT not implemented.");
+                                                                                              "REIN not implemented.");
                                                                             } else {
-#line 336
-                                                                              __cil_tmp___40 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                              "SMNT");
-#line 336
-                                                                              if (__cil_tmp___40) {
-#line 338
+#line 332
+                                                                              __cil_tmp___41 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                              "ACCT");
+#line 332
+                                                                              if (__cil_tmp___41) {
+#line 334
                                                                                 vsf_cmdio_write(p_sess,
                                                                                                 502,
-                                                                                                "SMNT not implemented.");
+                                                                                                "ACCT not implemented.");
                                                                               } else {
-#line 340
-                                                                                __cil_tmp___39 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                "FEAT");
-#line 340
-                                                                                if (__cil_tmp___39) {
-#line 342
-                                                                                  handle_feat(p_sess);
+#line 336
+                                                                                __cil_tmp___40 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                "SMNT");
+#line 336
+                                                                                if (__cil_tmp___40) {
+#line 338
+                                                                                  vsf_cmdio_write(p_sess,
+                                                                                                  502,
+                                                                                                  "SMNT not implemented.");
                                                                                 } else {
-#line 344
-                                                                                  __cil_tmp___38 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                  "OPTS");
-#line 344
-                                                                                  if (__cil_tmp___38) {
-#line 346
-                                                                                    handle_opts(p_sess);
+#line 340
+                                                                                  __cil_tmp___39 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                  "FEAT");
+#line 340
+                                                                                  if (__cil_tmp___39) {
+#line 342
+                                                                                    handle_feat(p_sess);
                                                                                   } else {
-#line 348
-                                                                                    __cil_tmp___36 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                    "STAT");
-#line 348
-                                                                                    if (__cil_tmp___36) {
-#line 348
-                                                                                      __cil_tmp___37 = str_isempty((struct mystr  const  *)(& p_sess->ftp_arg_str));
-#line 348
-                                                                                      if (__cil_tmp___37) {
-#line 351
-                                                                                        handle_stat(p_sess);
-                                                                                      } else {
-#line 348
-                                                                                        goto _L___28;
-                                                                                      }
+#line 344
+                                                                                    __cil_tmp___38 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                    "OPTS");
+#line 344
+                                                                                    if (__cil_tmp___38) {
+#line 346
+                                                                                      handle_opts(p_sess);
                                                                                     } else {
-                                                                                      _L___28: 
-#line 353
-                                                                                      if (tunable_dirlist_enable) {
-#line 353
-                                                                                        __cil_tmp___35 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                        "STAT");
-#line 353
-                                                                                        if (__cil_tmp___35) {
-#line 356
-                                                                                          handle_stat_file(p_sess);
+#line 348
+                                                                                      __cil_tmp___36 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                      "STAT");
+#line 348
+                                                                                      if (__cil_tmp___36) {
+#line 348
+                                                                                        __cil_tmp___37 = str_isempty((struct mystr  const  *)(& p_sess->ftp_arg_str));
+#line 348
+                                                                                        if (__cil_tmp___37) {
+#line 351
+                                                                                          handle_stat(p_sess);
                                                                                         } else {
-#line 353
-                                                                                          goto _L___27;
+#line 348
+                                                                                          goto _L___28;
                                                                                         }
                                                                                       } else {
-                                                                                        _L___27: 
-#line 358
-                                                                                        if (tunable_ssl_enable) {
-#line 358
-                                                                                          __cil_tmp___34 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                          "PBSZ");
-#line 358
-                                                                                          if (__cil_tmp___34) {
-#line 360
-                                                                                            handle_pbsz(p_sess);
+                                                                                        _L___28: 
+#line 353
+                                                                                        if (tunable_dirlist_enable) {
+#line 353
+                                                                                          __cil_tmp___35 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                          "STAT");
+#line 353
+                                                                                          if (__cil_tmp___35) {
+#line 356
+                                                                                            handle_stat_file(p_sess);
                                                                                           } else {
-#line 358
-                                                                                            goto _L___26;
+#line 353
+                                                                                            goto _L___27;
                                                                                           }
                                                                                         } else {
-                                                                                          _L___26: 
-#line 362
+                                                                                          _L___27: 
+#line 358
                                                                                           if (tunable_ssl_enable) {
-#line 362
-                                                                                            __cil_tmp___33 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                            "PROT");
-#line 362
-                                                                                            if (__cil_tmp___33) {
-#line 364
-                                                                                              handle_prot(p_sess);
+#line 358
+                                                                                            __cil_tmp___34 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                            "PBSZ");
+#line 358
+                                                                                            if (__cil_tmp___34) {
+#line 360
+                                                                                              handle_pbsz(p_sess);
                                                                                             } else {
-#line 362
-                                                                                              goto _L___25;
+#line 358
+                                                                                              goto _L___26;
                                                                                             }
                                                                                           } else {
-                                                                                            _L___25: 
-#line 366
-                                                                                            __cil_tmp___32 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                            "USER");
-#line 366
-                                                                                            if (__cil_tmp___32) {
-#line 368
-                                                                                              handle_logged_in_user(p_sess);
-                                                                                            } else {
-#line 370
-                                                                                              __cil_tmp___31 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                              "PASS");
-#line 370
-                                                                                              if (__cil_tmp___31) {
-#line 372
-                                                                                                handle_logged_in_pass(p_sess);
+                                                                                            _L___26: 
+#line 362
+                                                                                            if (tunable_ssl_enable) {
+#line 362
+                                                                                              __cil_tmp___33 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                              "PROT");
+#line 362
+                                                                                              if (__cil_tmp___33) {
+#line 364
+                                                                                                handle_prot(p_sess);
                                                                                               } else {
-#line 374
-                                                                                                __cil_tmp___4 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                               "PASV");
-#line 374
-                                                                                                if (__cil_tmp___4) {
-#line 374
-                                                                                                  goto _L___24;
+#line 362
+                                                                                                goto _L___25;
+                                                                                              }
+                                                                                            } else {
+                                                                                              _L___25: 
+#line 366
+                                                                                              __cil_tmp___32 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                              "USER");
+#line 366
+                                                                                              if (__cil_tmp___32) {
+#line 368
+                                                                                                handle_logged_in_user(p_sess);
+                                                                                              } else {
+#line 370
+                                                                                                __cil_tmp___31 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                                "PASS");
+#line 370
+                                                                                                if (__cil_tmp___31) {
+#line 372
+                                                                                                  handle_logged_in_pass(p_sess);
                                                                                                 } else {
 #line 374
-                                                                                                  __cil_tmp___5 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                                 "PORT");
+                                                                                                  __cil_tmp___4 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                                 "PASV");
 #line 374
-                                                                                                  if (__cil_tmp___5) {
-                                                                                                    _L___24: 
+                                                                                                  if (__cil_tmp___4) {
 #line 374
-                                                                                                    goto _L___23;
+                                                                                                    goto _L___24;
                                                                                                   } else {
 #line 374
-                                                                                                    __cil_tmp___6 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                                   "STOR");
+                                                                                                    __cil_tmp___5 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                                   "PORT");
 #line 374
-                                                                                                    if (__cil_tmp___6) {
-                                                                                                      _L___23: 
+                                                                                                    if (__cil_tmp___5) {
+                                                                                                      _L___24: 
 #line 374
-                                                                                                      goto _L___22;
+                                                                                                      goto _L___23;
                                                                                                     } else {
 #line 374
-                                                                                                      __cil_tmp___7 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                                     "MKD");
+                                                                                                      __cil_tmp___6 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                                     "STOR");
 #line 374
-                                                                                                      if (__cil_tmp___7) {
-                                                                                                        _L___22: 
+                                                                                                      if (__cil_tmp___6) {
+                                                                                                        _L___23: 
 #line 374
-                                                                                                        goto _L___21;
+                                                                                                        goto _L___22;
                                                                                                       } else {
 #line 374
-                                                                                                        __cil_tmp___8 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                                       "XMKD");
+                                                                                                        __cil_tmp___7 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                                       "MKD");
 #line 374
-                                                                                                        if (__cil_tmp___8) {
-                                                                                                          _L___21: 
+                                                                                                        if (__cil_tmp___7) {
+                                                                                                          _L___22: 
 #line 374
-                                                                                                          goto _L___20;
+                                                                                                          goto _L___21;
                                                                                                         } else {
 #line 374
-                                                                                                          __cil_tmp___9 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                                         "RMD");
+                                                                                                          __cil_tmp___8 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                                         "XMKD");
 #line 374
-                                                                                                          if (__cil_tmp___9) {
-                                                                                                            _L___20: 
+                                                                                                          if (__cil_tmp___8) {
+                                                                                                            _L___21: 
 #line 374
-                                                                                                            goto _L___19;
+                                                                                                            goto _L___20;
                                                                                                           } else {
 #line 374
-                                                                                                            __cil_tmp___10 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                                            "XRMD");
+                                                                                                            __cil_tmp___9 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                                           "RMD");
 #line 374
-                                                                                                            if (__cil_tmp___10) {
-                                                                                                              _L___19: 
+                                                                                                            if (__cil_tmp___9) {
+                                                                                                              _L___20: 
 #line 374
-                                                                                                              goto _L___18;
+                                                                                                              goto _L___19;
                                                                                                             } else {
 #line 374
-                                                                                                              __cil_tmp___11 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                                              "DELE");
+                                                                                                              __cil_tmp___10 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                                              "XRMD");
 #line 374
-                                                                                                              if (__cil_tmp___11) {
-                                                                                                                _L___18: 
+                                                                                                              if (__cil_tmp___10) {
+                                                                                                                _L___19: 
 #line 374
-                                                                                                                goto _L___17;
+                                                                                                                goto _L___18;
                                                                                                               } else {
 #line 374
-                                                                                                                __cil_tmp___12 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                                                "RNFR");
+                                                                                                                __cil_tmp___11 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                                                "DELE");
 #line 374
-                                                                                                                if (__cil_tmp___12) {
-                                                                                                                  _L___17: 
+                                                                                                                if (__cil_tmp___11) {
+                                                                                                                  _L___18: 
 #line 374
-                                                                                                                  goto _L___16;
+                                                                                                                  goto _L___17;
                                                                                                                 } else {
 #line 374
-                                                                                                                  __cil_tmp___13 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                                                  "RNTO");
+                                                                                                                  __cil_tmp___12 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                                                  "RNFR");
 #line 374
-                                                                                                                  if (__cil_tmp___13) {
-                                                                                                                    _L___16: 
+                                                                                                                  if (__cil_tmp___12) {
+                                                                                                                    _L___17: 
 #line 374
-                                                                                                                    goto _L___15;
+                                                                                                                    goto _L___16;
                                                                                                                   } else {
 #line 374
-                                                                                                                    __cil_tmp___14 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                                                    "SITE");
+                                                                                                                    __cil_tmp___13 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                                                    "RNTO");
 #line 374
-                                                                                                                    if (__cil_tmp___14) {
-                                                                                                                      _L___15: 
+                                                                                                                    if (__cil_tmp___13) {
+                                                                                                                      _L___16: 
 #line 374
-                                                                                                                      goto _L___14;
+                                                                                                                      goto _L___15;
                                                                                                                     } else {
 #line 374
-                                                                                                                      __cil_tmp___15 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                                                      "APPE");
+                                                                                                                      __cil_tmp___14 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                                                      "SITE");
 #line 374
-                                                                                                                      if (__cil_tmp___15) {
-                                                                                                                        _L___14: 
+                                                                                                                      if (__cil_tmp___14) {
+                                                                                                                        _L___15: 
 #line 374
-                                                                                                                        goto _L___13;
+                                                                                                                        goto _L___14;
                                                                                                                       } else {
 #line 374
-                                                                                                                        __cil_tmp___16 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                                                        "EPSV");
+                                                                                                                        __cil_tmp___15 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                                                        "APPE");
 #line 374
-                                                                                                                        if (__cil_tmp___16) {
-                                                                                                                          _L___13: 
+                                                                                                                        if (__cil_tmp___15) {
+                                                                                                                          _L___14: 
 #line 374
-                                                                                                                          goto _L___12;
+                                                                                                                          goto _L___13;
                                                                                                                         } else {
 #line 374
-                                                                                                                          __cil_tmp___17 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                                                          "EPRT");
+                                                                                                                          __cil_tmp___16 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                                                          "EPSV");
 #line 374
-                                                                                                                          if (__cil_tmp___17) {
-                                                                                                                            _L___12: 
+                                                                                                                          if (__cil_tmp___16) {
+                                                                                                                            _L___13: 
 #line 374
-                                                                                                                            goto _L___11;
+                                                                                                                            goto _L___12;
                                                                                                                           } else {
 #line 374
-                                                                                                                            __cil_tmp___18 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                                                            "RETR");
+                                                                                                                            __cil_tmp___17 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                                                            "EPRT");
 #line 374
-                                                                                                                            if (__cil_tmp___18) {
-                                                                                                                              _L___11: 
+                                                                                                                            if (__cil_tmp___17) {
+                                                                                                                              _L___12: 
 #line 374
-                                                                                                                              goto _L___10;
+                                                                                                                              goto _L___11;
                                                                                                                             } else {
 #line 374
-                                                                                                                              __cil_tmp___19 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                                                              "LIST");
+                                                                                                                              __cil_tmp___18 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                                                              "RETR");
 #line 374
-                                                                                                                              if (__cil_tmp___19) {
-                                                                                                                                _L___10: 
+                                                                                                                              if (__cil_tmp___18) {
+                                                                                                                                _L___11: 
 #line 374
-                                                                                                                                goto _L___9;
+                                                                                                                                goto _L___10;
                                                                                                                               } else {
 #line 374
-                                                                                                                                __cil_tmp___20 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                                                                "NLST");
+                                                                                                                                __cil_tmp___19 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                                                                "LIST");
 #line 374
-                                                                                                                                if (__cil_tmp___20) {
-                                                                                                                                  _L___9: 
+                                                                                                                                if (__cil_tmp___19) {
+                                                                                                                                  _L___10: 
 #line 374
-                                                                                                                                  goto _L___8;
+                                                                                                                                  goto _L___9;
                                                                                                                                 } else {
 #line 374
-                                                                                                                                  __cil_tmp___21 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                                                                  "STOU");
+                                                                                                                                  __cil_tmp___20 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                                                                  "NLST");
 #line 374
-                                                                                                                                  if (__cil_tmp___21) {
-                                                                                                                                    _L___8: 
+                                                                                                                                  if (__cil_tmp___20) {
+                                                                                                                                    _L___9: 
 #line 374
-                                                                                                                                    goto _L___7;
+                                                                                                                                    goto _L___8;
                                                                                                                                   } else {
 #line 374
-                                                                                                                                    __cil_tmp___22 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                                                                    "ALLO");
+                                                                                                                                    __cil_tmp___21 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                                                                    "STOU");
 #line 374
-                                                                                                                                    if (__cil_tmp___22) {
-                                                                                                                                      _L___7: 
+                                                                                                                                    if (__cil_tmp___21) {
+                                                                                                                                      _L___8: 
 #line 374
-                                                                                                                                      goto _L___6;
+                                                                                                                                      goto _L___7;
                                                                                                                                     } else {
 #line 374
-                                                                                                                                      __cil_tmp___23 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                                                                      "REIN");
+                                                                                                                                      __cil_tmp___22 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                                                                      "ALLO");
 #line 374
-                                                                                                                                      if (__cil_tmp___23) {
-                                                                                                                                        _L___6: 
+                                                                                                                                      if (__cil_tmp___22) {
+                                                                                                                                        _L___7: 
 #line 374
-                                                                                                                                        goto _L___5;
+                                                                                                                                        goto _L___6;
                                                                                                                                       } else {
 #line 374
-                                                                                                                                        __cil_tmp___24 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                                                                        "ACCT");
+                                                                                                                                        __cil_tmp___23 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                                                                        "REIN");
 #line 374
-                                                                                                                                        if (__cil_tmp___24) {
-                                                                                                                                          _L___5: 
+                                                                                                                                        if (__cil_tmp___23) {
+                                                                                                                                          _L___6: 
 #line 374
-                                                                                                                                          goto _L___4;
+                                                                                                                                          goto _L___5;
                                                                                                                                         } else {
 #line 374
-                                                                                                                                          __cil_tmp___25 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                                                                          "SMNT");
+                                                                                                                                          __cil_tmp___24 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                                                                          "ACCT");
 #line 374
-                                                                                                                                          if (__cil_tmp___25) {
-                                                                                                                                            _L___4: 
+                                                                                                                                          if (__cil_tmp___24) {
+                                                                                                                                            _L___5: 
 #line 374
-                                                                                                                                            goto _L___3;
+                                                                                                                                            goto _L___4;
                                                                                                                                           } else {
 #line 374
-                                                                                                                                            __cil_tmp___26 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                                                                            "FEAT");
+                                                                                                                                            __cil_tmp___25 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                                                                            "SMNT");
 #line 374
-                                                                                                                                            if (__cil_tmp___26) {
-                                                                                                                                              _L___3: 
+                                                                                                                                            if (__cil_tmp___25) {
+                                                                                                                                              _L___4: 
 #line 374
-                                                                                                                                              goto _L___2;
+                                                                                                                                              goto _L___3;
                                                                                                                                             } else {
 #line 374
-                                                                                                                                              __cil_tmp___27 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                                                                              "OPTS");
+                                                                                                                                              __cil_tmp___26 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                                                                              "FEAT");
 #line 374
-                                                                                                                                              if (__cil_tmp___27) {
-                                                                                                                                                _L___2: 
+                                                                                                                                              if (__cil_tmp___26) {
+                                                                                                                                                _L___3: 
 #line 374
-                                                                                                                                                goto _L___1;
+                                                                                                                                                goto _L___2;
                                                                                                                                               } else {
 #line 374
-                                                                                                                                                __cil_tmp___28 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                                                                                "STAT");
+                                                                                                                                                __cil_tmp___27 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                                                                                "OPTS");
 #line 374
-                                                                                                                                                if (__cil_tmp___28) {
-                                                                                                                                                  _L___1: 
+                                                                                                                                                if (__cil_tmp___27) {
+                                                                                                                                                  _L___2: 
 #line 374
-                                                                                                                                                  goto _L___0;
+                                                                                                                                                  goto _L___1;
                                                                                                                                                 } else {
 #line 374
-                                                                                                                                                  __cil_tmp___29 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                                                                                  "PBSZ");
+                                                                                                                                                  __cil_tmp___28 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                                                                                  "STAT");
 #line 374
-                                                                                                                                                  if (__cil_tmp___29) {
-                                                                                                                                                    _L___0: 
+                                                                                                                                                  if (__cil_tmp___28) {
+                                                                                                                                                    _L___1: 
 #line 374
-                                                                                                                                                    goto _L;
+                                                                                                                                                    goto _L___0;
                                                                                                                                                   } else {
 #line 374
-                                                                                                                                                    __cil_tmp___30 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
-                                                                                                                                                                                    "PROT");
+                                                                                                                                                    __cil_tmp___29 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                                                                                    "PBSZ");
 #line 374
-                                                                                                                                                    if (__cil_tmp___30) {
-                                                                                                                                                      _L: 
-#line 402
-                                                                                                                                                      vsf_cmdio_write(p_sess,
-                                                                                                                                                                      550,
-                                                                                                                                                                      "Permission denied.");
+                                                                                                                                                    if (__cil_tmp___29) {
+                                                                                                                                                      _L___0: 
+#line 374
+                                                                                                                                                      goto _L;
                                                                                                                                                     } else {
+#line 374
+                                                                                                                                                      __cil_tmp___30 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                                                                                                                                                                                      "PROT");
+#line 374
+                                                                                                                                                      if (__cil_tmp___30) {
+                                                                                                                                                        _L: 
+#line 402
+                                                                                                                                                        vsf_cmdio_write(p_sess,
+                                                                                                                                                                        550,
+                                                                                                                                                                        "Permission denied.");
+                                                                                                                                                      } else {
 #line 406
-                                                                                                                                                      vsf_cmdio_write(p_sess,
-                                                                                                                                                                      500,
-                                                                                                                                                                      "Unknown command.");
+                                                                                                                                                        vsf_cmdio_write(p_sess,
+                                                                                                                                                                        500,
+                                                                                                                                                                        "Unknown command.");
+                                                                                                                                                      }
                                                                                                                                                     }
                                                                                                                                                   }
                                                                                                                                                 }
@@ -11566,9 +13133,9 @@ void process_post_login(struct vsf_session *p_sess )
       }
     }
 #line 408
-    __cil_tmp___80 = vsf_log_entry_pending(p_sess);
+    __cil_tmp___81 = vsf_log_entry_pending(p_sess);
 #line 408
-    if (__cil_tmp___80) {
+    if (__cil_tmp___81) {
 #line 410
       vsf_log_do_log(p_sess, 0);
     }
@@ -13432,6 +14999,185 @@ static void handle_size(struct vsf_session *p_sess )
   return;
 }
 }
+#line 1449 "postlogin.c"
+static struct mystr s_site_args_str  ;
+#line 1446 "postlogin.c"
+static void handle_site(struct vsf_session *p_sess ) 
+{ int __cil_tmp ;
+  int __cil_tmp___0 ;
+  int __cil_tmp___1 ;
+
+  {
+#line 1451
+  str_split_char(& p_sess->ftp_arg_str, & s_site_args_str, (char )' ');
+#line 1452
+  str_upper(& p_sess->ftp_arg_str);
+#line 1453
+  if (tunable_write_enable) {
+#line 1453
+    if (tunable_chmod_enable) {
+#line 1453
+      __cil_tmp___1 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_arg_str),
+                                     "CHMOD");
+#line 1453
+      if (__cil_tmp___1) {
+#line 1457
+        handle_site_chmod(p_sess, & s_site_args_str);
+      } else {
+#line 1453
+        goto _L___0;
+      }
+    } else {
+#line 1453
+      goto _L___0;
+    }
+  } else {
+    _L___0: 
+#line 1459
+    __cil_tmp___0 = str_equal_text((struct mystr  const  *)(& p_sess->ftp_arg_str),
+                                   "UMASK");
+#line 1459
+    if (__cil_tmp___0) {
+#line 1461
+      handle_site_umask(p_sess, & s_site_args_str);
+    } else {
+#line 1463
+      __cil_tmp = str_equal_text((struct mystr  const  *)(& p_sess->ftp_arg_str),
+                                 "HELP");
+#line 1463
+      if (__cil_tmp) {
+#line 1465
+        vsf_cmdio_write(p_sess, 214, "CHMOD UMASK HELP");
+      } else {
+#line 1469
+        vsf_cmdio_write(p_sess, 500, "Unknown SITE command.");
+      }
+    }
+  }
+#line 1471
+  return;
+}
+}
+#line 1476 "postlogin.c"
+static struct mystr s_chmod_file_str  ;
+#line 1473 "postlogin.c"
+static void handle_site_chmod(struct vsf_session *p_sess , struct mystr *p_arg_str ) 
+{ unsigned int perms___0 ;
+  int retval ;
+  int __cil_tmp ;
+  int __cil_tmp___0 ;
+  int __cil_tmp___1 ;
+  int __cil_tmp___2 ;
+
+  {
+#line 1479
+  __cil_tmp = str_isempty((struct mystr  const  *)p_arg_str);
+#line 1479
+  if (__cil_tmp) {
+#line 1481
+    vsf_cmdio_write(p_sess, 500, "SITE CHMOD needs 2 arguments.");
+#line 1482
+    return;
+  }
+#line 1484
+  str_split_char(p_arg_str, & s_chmod_file_str, (char )' ');
+#line 1485
+  __cil_tmp___0 = str_isempty((struct mystr  const  *)(& s_chmod_file_str));
+#line 1485
+  if (__cil_tmp___0) {
+#line 1487
+    vsf_cmdio_write(p_sess, 500, "SITE CHMOD needs 2 arguments.");
+#line 1488
+    return;
+  }
+#line 1490
+  resolve_tilde(& s_chmod_file_str, p_sess);
+#line 1491
+  vsf_log_start_entry(p_sess, (enum EVSFLogEntryType )12);
+#line 1492
+  str_copy(& p_sess->log_str, (struct mystr  const  *)(& s_chmod_file_str));
+#line 1493
+  prepend_path_to_filename(& p_sess->log_str);
+#line 1494
+  str_append_char(& p_sess->log_str, (char )' ');
+#line 1495
+  str_append_str(& p_sess->log_str, (struct mystr  const  *)p_arg_str);
+#line 1496
+  __cil_tmp___1 = vsf_access_check_file((struct mystr  const  *)(& s_chmod_file_str));
+#line 1496
+  if (! __cil_tmp___1) {
+#line 1498
+    vsf_cmdio_write(p_sess, 550, "Permission denied.");
+#line 1499
+    return;
+  }
+#line 1502
+  perms___0 = str_octal_to_uint((struct mystr  const  *)p_arg_str);
+#line 1503
+  retval = str_chmod((struct mystr  const  *)(& s_chmod_file_str), perms___0);
+#line 1504
+  __cil_tmp___2 = vsf_sysutil_retval_is_error(retval);
+#line 1504
+  if (__cil_tmp___2) {
+#line 1506
+    vsf_cmdio_write(p_sess, 550, "SITE CHMOD command failed.");
+  } else {
+#line 1510
+    vsf_log_do_log(p_sess, 1);
+#line 1511
+    vsf_cmdio_write(p_sess, 200, "SITE CHMOD command ok.");
+  }
+#line 1513
+  return;
+}
+}
+#line 1518 "postlogin.c"
+static struct mystr s_umask_resp_str  ;
+#line 1515 "postlogin.c"
+static void handle_site_umask(struct vsf_session *p_sess , struct mystr *p_arg_str ) 
+{ unsigned int __cil_tmp ;
+  char const   *__cil_tmp___0 ;
+  unsigned int new_umask ;
+  unsigned int __cil_tmp___1 ;
+  unsigned int __cil_tmp___2 ;
+  char const   *__cil_tmp___3 ;
+  int __cil_tmp___4 ;
+
+  {
+#line 1519
+  __cil_tmp___4 = str_isempty((struct mystr  const  *)p_arg_str);
+#line 1519
+  if (__cil_tmp___4) {
+#line 1522
+    str_alloc_text(& s_umask_resp_str, "Your current UMASK is ");
+#line 1523
+    __cil_tmp = vsf_sysutil_get_umask();
+#line 1523
+    __cil_tmp___0 = vsf_sysutil_uint_to_octal(__cil_tmp);
+#line 1523
+    str_append_text(& s_umask_resp_str, __cil_tmp___0);
+  } else {
+#line 1529
+    __cil_tmp___1 = str_octal_to_uint((struct mystr  const  *)p_arg_str);
+#line 1529
+    new_umask = __cil_tmp___1;
+#line 1530
+    vsf_sysutil_set_umask(new_umask);
+#line 1531
+    str_alloc_text(& s_umask_resp_str, "UMASK set to ");
+#line 1532
+    __cil_tmp___2 = vsf_sysutil_get_umask();
+#line 1532
+    __cil_tmp___3 = vsf_sysutil_uint_to_octal(__cil_tmp___2);
+#line 1532
+    str_append_text(& s_umask_resp_str, __cil_tmp___3);
+  }
+#line 1535
+  vsf_cmdio_write_str(p_sess, 200, (struct mystr  const  *)(& s_umask_resp_str));
+#line 1536
+  return;
+}
+}
 #line 1538 "postlogin.c"
 static void handle_appe(struct vsf_session *p_sess ) 
 { 
@@ -14142,11 +15888,25 @@ static void resolve_tilde(struct mystr *p_str , struct vsf_session *p_sess )
 }
 #line 1871 "postlogin.c"
 static void handle_logged_in_user(struct vsf_session *p_sess ) 
-{ 
+{ int __cil_tmp ;
 
   {
+#line 1873
+  if (p_sess->is_anonymous) {
 #line 1875
-  vsf_cmdio_write(p_sess, 530, "Can\'t change from guest user.");
+    vsf_cmdio_write(p_sess, 530, "Can\'t change from guest user.");
+  } else {
+#line 1877
+    __cil_tmp = str_equal((struct mystr  const  *)(& p_sess->user_str), (struct mystr  const  *)(& p_sess->ftp_arg_str));
+#line 1877
+    if (__cil_tmp) {
+#line 1879
+      vsf_cmdio_write(p_sess, 331, "Any password will do.");
+    } else {
+#line 1883
+      vsf_cmdio_write(p_sess, 530, "Can\'t change to another user.");
+    }
+  }
 #line 1885
   return;
 }
@@ -14162,8 +15922,8 @@ static void handle_logged_in_pass(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1 "cil-Mktyd8qp.o"
-#pragma merger(0,"/tmp/cil-snrnnFOo.i","")
+#line 1 "cil-HywVpmmC.o"
+#pragma merger(0,"/tmp/cil-cVtEQDlB.i","")
 #line 13 "privsock.h"
 void priv_sock_init(struct vsf_session *p_sess ) ;
 #line 22
@@ -14411,8 +16171,8 @@ int priv_sock_get_int(int fd )
   return (the_int);
 }
 }
-#line 1 "cil-gaeTftmz.o"
-#pragma merger(0,"/tmp/cil-3EdNducx.i","")
+#line 1 "cil-TsE8xcuA.o"
+#pragma merger(0,"/tmp/cil-onDm8Qpi.i","")
 #line 10 "tunables.h"
 int tunable_chroot_local_user ;
 #line 17
@@ -14449,8 +16209,6 @@ int tunable_background ;
 int tunable_virtual_use_local_privs ;
 #line 50
 int tunable_session_support ;
-#line 53
-int tunable_chmod_enable ;
 #line 56
 int tunable_no_log_lock ;
 #line 61
@@ -14777,8 +16535,8 @@ char const   *tunable_rsa_private_key_file  =    (char const   *)0;
 char const   *tunable_dsa_private_key_file  =    (char const   *)0;
 #line 137 "tunables.c"
 char const   *tunable_ca_certs_file  =    (char const   *)0;
-#line 1 "cil-D4PhLX4X.o"
-#pragma merger(0,"/tmp/cil-vUQYk9eI.i","")
+#line 1 "cil-nwQZFWe8.o"
+#pragma merger(0,"/tmp/cil-lnL28SAd.i","")
 #line 37 "str.h"
 void str_reserve(struct mystr *p_str , unsigned int res_len ) ;
 #line 18 "strlist.h"
@@ -14834,7 +16592,7 @@ unsigned int vsf_ascii_bin_to_ascii(char const   *p_in , char *p_out , unsigned 
 #line 35 "oneprocess.h"
 int vsf_one_process_get_priv_data_sock(struct vsf_session *p_sess ) ;
 #line 34 "twoprocess.h"
-extern int vsf_two_process_get_priv_data_sock(struct vsf_session *p_sess ) ;
+int vsf_two_process_get_priv_data_sock(struct vsf_session *p_sess ) ;
 #line 22 "ls.h"
 void vsf_ls_populate_dir_list(struct mystr_list *p_list , struct mystr_list *p_subdir_list ,
                               struct vsf_sysutil_dir *p_dir , struct mystr  const  *p_base_dir_str ,
@@ -15845,8 +17603,8 @@ static unsigned int get_chunk_size(void)
   return (ret___0);
 }
 }
-#line 1 "cil-8ylzIdio.o"
-#pragma merger(0,"/tmp/cil-H7ywMtIl.i","")
+#line 1 "cil-RTnzZGPG.o"
+#pragma merger(0,"/tmp/cil-pkcebExY.i","")
 #line 24 "secbuf.h"
 void vsf_secbuf_free(char **p_ptr ) ;
 #line 152 "sysutil.h"
@@ -15957,8 +17715,8 @@ void vsf_secbuf_free(char **p_ptr )
   return;
 }
 }
-#line 1 "cil-4Qwxvt7p.o"
-#pragma merger(0,"/tmp/cil-itkNxgn4.i","")
+#line 1 "cil-ThIWIZBG.o"
+#pragma merger(0,"/tmp/cil-9Cbk8ccF.i","")
 #line 41 "ls.h"
 int vsf_filename_passes_filter(struct mystr  const  *p_filename_str , struct mystr  const  *p_filter_str ) ;
 #line 26 "access.h"
@@ -16812,8 +18570,8 @@ static void build_dir_line(struct mystr *p_str , struct mystr  const  *p_filenam
   return;
 }
 }
-#line 1 "cil-d8vcO5it.o"
-#pragma merger(0,"/tmp/cil-Amvc7hez.i","")
+#line 1 "cil-G0eT55HB.o"
+#pragma merger(0,"/tmp/cil-zy6WZQV2.i","")
 #line 13 "postprivparent.h"
 void vsf_priv_parent_postlogin(struct vsf_session *p_sess ) ;
 #line 15 "privops.h"
@@ -17017,8 +18775,8 @@ static void cmd_process_get_data_sock(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1 "cil-Ae36bQZg.o"
-#pragma merger(0,"/tmp/cil-fGycpNfr.i","")
+#line 1 "cil-ODup5jyI.o"
+#pragma merger(0,"/tmp/cil-eUgbF47H.i","")
 #line 52 "str.h"
 void str_append_double(struct mystr *p_str , double the_double ) ;
 #line 87 "sysutil.h"
@@ -17668,8 +19426,8 @@ static void vsf_log_do_log_vsftpd_format(struct vsf_session *p_sess , struct mys
   return;
 }
 }
-#line 1 "cil-NM1ec1nd.o"
-#pragma merger(0,"/tmp/cil-ad3rBpCJ.i","")
+#line 1 "cil-7aaX96lf.o"
+#pragma merger(0,"/tmp/cil-e2BKq0E2.i","")
 #line 24 "str.h"
 void private_str_alloc_memchunk(struct mystr *p_str , char const   *p_src , unsigned int len ) ;
 #line 29
@@ -17692,8 +19450,6 @@ struct str_locate_result str_locate_text_reverse(struct mystr  const  *p_str , c
 int str_contains_space(struct mystr  const  *p_str ) ;
 #line 97
 int str_contains_unprintable(struct mystr  const  *p_str ) ;
-#line 101
-unsigned int str_octal_to_uint(struct mystr  const  *p_str ) ;
 #line 112
 int str_getline(struct mystr  const  *p_str , struct mystr *p_line_str , unsigned int *p_pos ) ;
 #line 157 "sysutil.h"
@@ -18907,8 +20663,8 @@ void str_replace_unprintable(struct mystr *p_str , char new_char )
   return;
 }
 }
-#line 1 "cil-JkNjivw9.o"
-#pragma merger(0,"/tmp/cil-cqFteaGn.i","")
+#line 1 "cil-RzyN4duF.o"
+#pragma merger(0,"/tmp/cil-kepLTM3e.i","")
 #line 23 "netstr.h"
 void str_netfd_alloc(struct mystr *p_str , int fd , char term , char *p_readbuf___0 ,
                      unsigned int maxlen ) ;
@@ -19097,10 +20853,8 @@ int str_netfd_read(struct mystr *p_str , int fd , unsigned int len )
   return (retval);
 }
 }
-#line 1 "cil-giMM64AC.o"
-#pragma merger(0,"/tmp/cil-6Cq5Bwij.i","")
-#line 27 "sysstr.h"
-int str_chmod(struct mystr  const  *p_str , unsigned int mode ) ;
+#line 1 "cil-UL7Q9OVX.o"
+#pragma merger(0,"/tmp/cil-CnbGvPPv.i","")
 #line 60 "sysutil.h"
 char *vsf_sysutil_getcwd(char *p_dest , unsigned int buf_size ) ;
 #line 61
@@ -19472,8 +21226,8 @@ void str_syslog(struct mystr  const  *p_str , int severe )
   return;
 }
 }
-#line 1 "cil-qKtl9pZF.o"
-#pragma merger(0,"/tmp/cil-OzI9p1zB.i","")
+#line 1 "cil-MGkfXntO.o"
+#pragma merger(0,"/tmp/cil-B18IAZTi.i","")
 #line 25 "strlist.h"
 int str_list_contains_str(struct mystr_list  const  *p_list , struct mystr  const  *p_str ) ;
 #line 298 "sysutil.h"
@@ -19702,8 +21456,8 @@ struct mystr  const  *str_list_get_pstr(struct mystr_list  const  *p_list , unsi
   return ((struct mystr  const  *)(& (p_list->PRIVATE_HANDS_OFF_p_nodes + indexx)->str));
 }
 }
-#line 1 "cil-eJCLIL7S.o"
-#pragma merger(0,"/tmp/cil-Kiq0dWsN.i","")
+#line 1 "cil-0fvw2nWR.o"
+#pragma merger(0,"/tmp/cil-F7P2LAWW.i","")
 #line 26 "banner.c"
 void vsf_banner_dir_changed(struct vsf_session *p_sess , int ftpcode ) 
 { struct mystr dir_str ;
@@ -19807,8 +21561,8 @@ void vsf_banner_write(struct vsf_session *p_sess , struct mystr *p_str , int ftp
   return;
 }
 }
-#line 1 "cil-rrCAHY8t.o"
-#pragma merger(0,"/tmp/cil-EZaF5WOY.i","")
+#line 1 "cil-mTOVTyR7.o"
+#pragma merger(0,"/tmp/cil-LihyCCoI.i","")
 #line 18 "filestr.c"
 int str_fileread(struct mystr *p_str , char const   *p_filename , unsigned int maxsize ) 
 { int fd ;
@@ -19879,8 +21633,8 @@ int str_fileread(struct mystr *p_str , char const   *p_filename , unsigned int m
   return (0);
 }
 }
-#line 1 "cil-IwZkOdy0.o"
-#pragma merger(0,"/tmp/cil-sOfnOyis.i","")
+#line 1 "cil-Nvhgl149.o"
+#pragma merger(0,"/tmp/cil-i6u6HwZM.i","")
 #line 19 "parseconf.c"
 static char const   *s_p_saved_filename  ;
 #line 20 "parseconf.c"
@@ -20361,8 +22115,8 @@ static void copy_string_settings(void)
   return;
 }
 }
-#line 1 "cil-bpQiZUiQ.o"
-#pragma merger(0,"/tmp/cil-D8nt4fpR.i","")
+#line 1 "cil-oEohCAiT.o"
+#pragma merger(0,"/tmp/cil-im1xfkZR.i","")
 #line 311 "sysutil.h"
 void vsf_sysutil_setuid(struct vsf_sysutil_user  const  *p_user ) ;
 #line 312
@@ -20567,8 +22321,8 @@ void vsf_secutil_change_credentials(struct mystr  const  *p_user_str , struct my
   return;
 }
 }
-#line 1 "cil-DhlfsIkH.o"
-#pragma merger(0,"/tmp/cil-ydNc2sDd.i","")
+#line 1 "cil-C2ePohMP.o"
+#pragma merger(0,"/tmp/cil-LEB7uqr0.i","")
 #line 12 "ascii.c"
 struct ascii_to_bin_ret vsf_ascii_ascii_to_bin(char *p_buf , unsigned int in_len ,
                                                int prev_cr ) 
@@ -20700,8 +22454,8 @@ unsigned int vsf_ascii_bin_to_ascii(char const   *p_in , char *p_out , unsigned 
   return (written);
 }
 }
-#line 1 "cil-Cn8FZCdD.o"
-#pragma merger(0,"/tmp/cil-PHo2xokI.i","")
+#line 1 "cil-gadRQkMo.o"
+#pragma merger(0,"/tmp/cil-2Z6LSgbQ.i","")
 #line 46 "privops.h"
 enum EVSFPrivopLoginResult vsf_privop_do_login(struct vsf_session *p_sess , struct mystr  const  *p_pass_str ) ;
 #line 26 "oneprocess.c"
@@ -20823,8 +22577,796 @@ void vsf_one_process_chown_upload(struct vsf_session *p_sess , int fd )
   return;
 }
 }
-#line 1 "cil-kpJLcqnu.o"
-#pragma merger(0,"/tmp/cil-jjqEPmma.i","")
+#line 1 "cil-yGULHmES.o"
+#pragma merger(0,"/tmp/cil-3CLbrBGp.i","")
+#line 15 "ssl.h"
+void ssl_comm_channel_init(struct vsf_session *p_sess ) ;
+#line 45 "sysutil.h"
+void vsf_sysutil_install_async_sighandler(enum EVSFSysUtilSignal sig , void (*handler)(int  ) ) ;
+#line 92
+int vsf_sysutil_write_access(char const   *p_filename ) ;
+#line 163
+int vsf_sysutil_fork(void) ;
+#line 171
+struct vsf_sysutil_wait_retval vsf_sysutil_wait(void) ;
+#line 173
+int vsf_sysutil_wait_get_retval(struct vsf_sysutil_wait_retval  const  *p_waitret ) ;
+#line 175
+int vsf_sysutil_wait_exited_normally(struct vsf_sysutil_wait_retval  const  *p_waitret ) ;
+#line 177
+int vsf_sysutil_wait_get_exitcode(struct vsf_sysutil_wait_retval  const  *p_waitret ) ;
+#line 30 "twoprocess.c"
+static void drop_all_privs(void) ;
+#line 31
+static void handle_sigchld(int duff ) ;
+#line 32
+static void process_login_req(struct vsf_session *p_sess ) ;
+#line 33
+static void process_ssl_slave_req(struct vsf_session *p_sess ) ;
+#line 34
+static void common_do_login(struct vsf_session *p_sess , struct mystr  const  *p_user_str ,
+                            int do_chroot , int anon ) ;
+#line 37
+static void handle_per_user_config(struct mystr  const  *p_user_str ) ;
+#line 38
+static void calculate_chdir_dir(int anon_login , struct mystr *p_userdir_str , struct mystr *p_chroot_str ,
+                                struct mystr *p_chdir_str , struct mystr  const  *p_user_str ,
+                                struct mystr  const  *p_orig_user_str ) ;
+#line 44 "twoprocess.c"
+static void handle_sigchld(int duff ) 
+{ struct vsf_sysutil_wait_retval wait_retval ;
+  struct vsf_sysutil_wait_retval __cil_tmp ;
+  int __cil_tmp___0 ;
+  int __cil_tmp___1 ;
+  int __cil_tmp___2 ;
+  int __cil_tmp___3 ;
+
+  {
+#line 47
+  __cil_tmp = vsf_sysutil_wait();
+#line 47
+  wait_retval = __cil_tmp;
+#line 52
+  __cil_tmp___0 = vsf_sysutil_wait_get_retval((struct vsf_sysutil_wait_retval  const  *)(& wait_retval));
+#line 52
+  __cil_tmp___1 = vsf_sysutil_retval_is_error(__cil_tmp___0);
+#line 52
+  if (__cil_tmp___1) {
+#line 52
+    goto _L___0;
+  } else {
+#line 52
+    __cil_tmp___2 = vsf_sysutil_wait_exited_normally((struct vsf_sysutil_wait_retval  const  *)(& wait_retval));
+#line 52
+    if (__cil_tmp___2) {
+#line 52
+      __cil_tmp___3 = vsf_sysutil_wait_get_exitcode((struct vsf_sysutil_wait_retval  const  *)(& wait_retval));
+#line 52
+      if (__cil_tmp___3 != 0) {
+        _L: 
+#line 56
+        die("child died");
+      } else {
+#line 60
+        vsf_sysutil_exit(0);
+      }
+    } else {
+      _L___0: 
+#line 52
+      goto _L;
+    }
+  }
+#line 62
+  return;
+}
+}
+#line 64 "twoprocess.c"
+void vsf_two_process_start(struct vsf_session *p_sess ) 
+{ int newpid ;
+  int __cil_tmp ;
+  int retval ;
+  int __cil_tmp___0 ;
+  int __cil_tmp___1 ;
+
+  {
+#line 68
+  priv_sock_init(p_sess);
+#line 69
+  if (tunable_ssl_enable) {
+#line 74
+    ssl_comm_channel_init(p_sess);
+  }
+#line 76
+  vsf_sysutil_install_async_sighandler((enum EVSFSysUtilSignal )3, & handle_sigchld);
+#line 78
+  __cil_tmp = vsf_sysutil_fork();
+#line 78
+  newpid = __cil_tmp;
+#line 79
+  if (newpid != 0) {
+#line 82
+    while (1) {
+#line 84
+      process_login_req(p_sess);
+    }
+  }
+#line 91
+  vsf_sysutil_close(p_sess->parent_fd);
+#line 92
+  if (tunable_ssl_enable) {
+#line 94
+    vsf_sysutil_close(p_sess->ssl_consumer_fd);
+  }
+#line 96
+  if (tunable_local_enable) {
+#line 96
+    if (tunable_userlist_enable) {
+#line 98
+      __cil_tmp___0 = str_fileread(& p_sess->userlist_str, tunable_userlist_file,
+                                   100000U);
+#line 98
+      retval = __cil_tmp___0;
+#line 100
+      __cil_tmp___1 = vsf_sysutil_retval_is_error(retval);
+#line 100
+      if (__cil_tmp___1) {
+#line 102
+        die2("cannot open user list file:", tunable_userlist_file);
+      }
+    } else {
+#line 96
+      goto _L;
+    }
+  } else {
+    _L: ;
+  }
+#line 105
+  drop_all_privs();
+#line 106
+  init_connection(p_sess);
+#line 108
+  return;
+}
+}
+#line 110 "twoprocess.c"
+static void drop_all_privs(void) 
+{ struct mystr user_str ;
+  struct mystr dir_str ;
+  struct vsf_sysutil_statbuf *p_statbuf___0 ;
+  int __cil_tmp ;
+  int __cil_tmp___0 ;
+
+  {
+#line 113
+  user_str.PRIVATE_HANDS_OFF_p_buf = (char *)((void *)0);
+#line 113
+  user_str.PRIVATE_HANDS_OFF_len = 0U;
+#line 113
+  user_str.PRIVATE_HANDS_OFF_alloc_bytes = 0U;
+#line 114
+  dir_str.PRIVATE_HANDS_OFF_p_buf = (char *)((void *)0);
+#line 114
+  dir_str.PRIVATE_HANDS_OFF_len = 0U;
+#line 114
+  dir_str.PRIVATE_HANDS_OFF_alloc_bytes = 0U;
+#line 115
+  str_alloc_text(& user_str, tunable_nopriv_user);
+#line 116
+  str_alloc_text(& dir_str, tunable_secure_chroot_dir);
+#line 119
+  p_statbuf___0 = (struct vsf_sysutil_statbuf *)0;
+#line 120
+  __cil_tmp = str_lstat((struct mystr  const  *)(& dir_str), & p_statbuf___0);
+#line 120
+  __cil_tmp___0 = vsf_sysutil_retval_is_error(__cil_tmp);
+#line 120
+  if (__cil_tmp___0) {
+#line 122
+    die2("vsftpd: not found: directory given in \'secure_chroot_dir\':", tunable_secure_chroot_dir);
+  }
+#line 125
+  vsf_sysutil_free((void *)p_statbuf___0);
+#line 127
+  vsf_secutil_change_credentials((struct mystr  const  *)(& user_str), (struct mystr  const  *)(& dir_str),
+                                 (struct mystr  const  *)0, 0U, 1U);
+#line 129
+  str_free(& user_str);
+#line 130
+  str_free(& dir_str);
+#line 131
+  return;
+}
+}
+#line 133 "twoprocess.c"
+void vsf_two_process_login(struct vsf_session *p_sess , struct mystr  const  *p_pass_str ) 
+{ char result ;
+
+  {
+#line 138
+  priv_sock_send_cmd(p_sess->child_fd, (char)1);
+#line 139
+  priv_sock_send_str(p_sess->child_fd, (struct mystr  const  *)(& p_sess->user_str));
+#line 140
+  priv_sock_send_str(p_sess->child_fd, p_pass_str);
+#line 141
+  priv_sock_send_int(p_sess->child_fd, p_sess->control_use_ssl);
+#line 142
+  priv_sock_send_int(p_sess->child_fd, p_sess->data_use_ssl);
+#line 143
+  result = priv_sock_get_result(p_sess->child_fd);
+#line 144
+  if ((int )result == 1) {
+#line 150
+    if (! p_sess->control_use_ssl) {
+#line 152
+      vsf_sysutil_exit(0);
+    } else {
+#line 156
+      vsf_sysutil_clear_alarm();
+#line 157
+      vsf_sysutil_close(p_sess->child_fd);
+#line 158
+      if (tunable_setproctitle_enable) {
+#line 160
+        vsf_sysutil_setproctitle("SSL handler");
+      }
+#line 162
+      process_ssl_slave_req(p_sess);
+    }
+  } else {
+#line 166
+    if ((int )result == 2) {
+#line 169
+      return;
+    } else {
+#line 173
+      die("priv_sock_get_result");
+    }
+  }
+#line 175
+  return;
+}
+}
+#line 177 "twoprocess.c"
+int vsf_two_process_get_priv_data_sock(struct vsf_session *p_sess ) 
+{ char res ;
+  int __cil_tmp ;
+
+  {
+#line 181
+  priv_sock_send_cmd(p_sess->child_fd, (char)3);
+#line 182
+  res = priv_sock_get_result(p_sess->child_fd);
+#line 183
+  if ((int )res != 1) {
+#line 185
+    die("could not get privileged socket");
+  }
+#line 187
+  __cil_tmp = priv_sock_recv_fd(p_sess->child_fd);
+#line 187
+  return (__cil_tmp);
+}
+}
+#line 190 "twoprocess.c"
+void vsf_two_process_chown_upload(struct vsf_session *p_sess , int fd ) 
+{ char res ;
+
+  {
+#line 194
+  priv_sock_send_cmd(p_sess->child_fd, (char)2);
+#line 195
+  priv_sock_send_fd(p_sess->child_fd, fd);
+#line 196
+  res = priv_sock_get_result(p_sess->child_fd);
+#line 197
+  if ((int )res != 1) {
+#line 199
+    die("unexpected failure in vsf_two_process_chown_upload");
+  }
+#line 201
+  return;
+}
+}
+#line 203 "twoprocess.c"
+static void process_login_req(struct vsf_session *p_sess ) 
+{ enum EVSFPrivopLoginResult e_login_result ;
+  char cmd ;
+  struct mystr password_str ;
+  int do_chroot ;
+  struct mystr chroot_list_file ;
+  int retval ;
+  int __cil_tmp ;
+  int __cil_tmp___0 ;
+  int __cil_tmp___1 ;
+
+  {
+#line 206
+  e_login_result = (enum EVSFPrivopLoginResult )0;
+#line 208
+  vsf_sysutil_unblock_sig((enum EVSFSysUtilSignal )3);
+#line 210
+  cmd = priv_sock_get_cmd(p_sess->parent_fd);
+#line 211
+  vsf_sysutil_block_sig((enum EVSFSysUtilSignal )3);
+#line 212
+  if ((int )cmd != 1) {
+#line 214
+    die("bad request");
+  }
+#line 218
+  password_str.PRIVATE_HANDS_OFF_p_buf = (char *)((void *)0);
+#line 218
+  password_str.PRIVATE_HANDS_OFF_len = 0U;
+#line 218
+  password_str.PRIVATE_HANDS_OFF_alloc_bytes = 0U;
+#line 219
+  priv_sock_get_str(p_sess->parent_fd, & p_sess->user_str);
+#line 220
+  priv_sock_get_str(p_sess->parent_fd, & password_str);
+#line 221
+  p_sess->control_use_ssl = priv_sock_get_int(p_sess->parent_fd);
+#line 222
+  p_sess->data_use_ssl = priv_sock_get_int(p_sess->parent_fd);
+#line 223
+  if (! tunable_ssl_enable) {
+#line 225
+    p_sess->control_use_ssl = 0;
+#line 226
+    p_sess->data_use_ssl = 0;
+  }
+#line 228
+  e_login_result = vsf_privop_do_login(p_sess, (struct mystr  const  *)(& password_str));
+#line 229
+  str_free(& password_str);
+#line 231
+  switch ((int )e_login_result) {
+  case 1: 
+#line 234
+  priv_sock_send_result(p_sess->parent_fd, (char)2);
+#line 235
+  return;
+#line 236
+  break;
+  case 2: 
+#line 238
+  str_alloc_text(& p_sess->user_str, tunable_ftp_username);
+#line 239
+  common_do_login(p_sess, (struct mystr  const  *)(& p_sess->user_str), 1, 1);
+#line 240
+  break;
+  case 3: 
+#line 243
+  do_chroot = 0;
+#line 244
+  if (tunable_chroot_local_user) {
+#line 246
+    do_chroot = 1;
+  }
+#line 248
+  if (tunable_chroot_list_enable) {
+#line 250
+    chroot_list_file.PRIVATE_HANDS_OFF_p_buf = (char *)((void *)0);
+#line 250
+    chroot_list_file.PRIVATE_HANDS_OFF_len = 0U;
+#line 250
+    chroot_list_file.PRIVATE_HANDS_OFF_alloc_bytes = 0U;
+#line 251
+    __cil_tmp = str_fileread(& chroot_list_file, tunable_chroot_list_file, 100000U);
+#line 251
+    retval = __cil_tmp;
+#line 254
+    __cil_tmp___0 = vsf_sysutil_retval_is_error(retval);
+#line 254
+    if (__cil_tmp___0) {
+#line 256
+      die2("could not open chroot() list file:", tunable_chroot_list_file);
+    }
+#line 259
+    __cil_tmp___1 = str_contains_line((struct mystr  const  *)(& chroot_list_file),
+                                      (struct mystr  const  *)(& p_sess->user_str));
+#line 259
+    if (__cil_tmp___1) {
+#line 261
+      if (do_chroot) {
+#line 263
+        do_chroot = 0;
+      } else {
+#line 267
+        do_chroot = 1;
+      }
+    }
+#line 270
+    str_free(& chroot_list_file);
+  }
+#line 272
+  common_do_login(p_sess, (struct mystr  const  *)(& p_sess->user_str), do_chroot,
+                  0);
+#line 274
+  break;
+  default: 
+#line 276
+  bug("weird state in process_login_request");
+#line 277
+  break;
+  }
+#line 280
+  return;
+}
+}
+#line 282 "twoprocess.c"
+static void process_ssl_slave_req(struct vsf_session *p_sess ) 
+{ char cmd ;
+  char __cil_tmp ;
+  int retval ;
+
+  {
+#line 285
+  priv_sock_send_str(p_sess->ssl_slave_fd, (struct mystr  const  *)(& p_sess->control_cert_digest));
+#line 286
+  while (1) {
+#line 288
+    __cil_tmp = priv_sock_get_cmd(p_sess->ssl_slave_fd);
+#line 288
+    cmd = __cil_tmp;
+#line 290
+    if ((int )cmd == 4) {
+#line 292
+      ftp_getline((struct vsf_session  const  *)p_sess, & p_sess->ftp_cmd_str, p_sess->p_control_line_buf);
+#line 293
+      priv_sock_send_str(p_sess->ssl_slave_fd, (struct mystr  const  *)(& p_sess->ftp_cmd_str));
+    } else {
+#line 295
+      if ((int )cmd == 5) {
+#line 297
+        priv_sock_get_str(p_sess->ssl_slave_fd, & p_sess->ftp_cmd_str);
+#line 298
+        retval = ftp_write_str((struct vsf_session  const  *)p_sess, (struct mystr  const  *)(& p_sess->ftp_cmd_str),
+                               (enum EVSFRWTarget )1);
+#line 299
+        priv_sock_send_int(p_sess->ssl_slave_fd, retval);
+      } else {
+#line 303
+        die("bad request in process_ssl_slave_req");
+      }
+    }
+  }
+}
+}
+#line 308 "twoprocess.c"
+static void common_do_login(struct vsf_session *p_sess , struct mystr  const  *p_user_str ,
+                            int do_chroot , int anon ) 
+{ int was_anon ;
+  struct mystr  const  *p_orig_user_str ;
+  int newpid ;
+  struct mystr guest_user_str ;
+  struct mystr chroot_str ;
+  struct mystr chdir_str ;
+  struct mystr userdir_str ;
+  unsigned int secutil_option ;
+  int __cil_tmp ;
+  int __cil_tmp___0 ;
+
+  {
+#line 312
+  was_anon = anon;
+#line 313
+  p_orig_user_str = p_user_str;
+#line 315
+  vsf_sysutil_install_null_sighandler((enum EVSFSysUtilSignal )3);
+#line 317
+  priv_sock_send_result(p_sess->parent_fd, (char)1);
+#line 318
+  if (! p_sess->control_use_ssl) {
+#line 320
+    vsf_sysutil_wait();
+  } else {
+#line 324
+    p_sess->ssl_slave_active = 1;
+  }
+#line 327
+  vsf_sysutil_unblock_sig((enum EVSFSysUtilSignal )3);
+#line 329
+  handle_per_user_config(p_user_str);
+#line 331
+  p_sess->is_anonymous = anon;
+#line 332
+  vsf_sysutil_install_async_sighandler((enum EVSFSysUtilSignal )3, & handle_sigchld);
+#line 333
+  newpid = vsf_sysutil_fork();
+#line 334
+  if (newpid == 0) {
+#line 336
+    guest_user_str.PRIVATE_HANDS_OFF_p_buf = (char *)((void *)0);
+#line 336
+    guest_user_str.PRIVATE_HANDS_OFF_len = 0U;
+#line 336
+    guest_user_str.PRIVATE_HANDS_OFF_alloc_bytes = 0U;
+#line 337
+    chroot_str.PRIVATE_HANDS_OFF_p_buf = (char *)((void *)0);
+#line 337
+    chroot_str.PRIVATE_HANDS_OFF_len = 0U;
+#line 337
+    chroot_str.PRIVATE_HANDS_OFF_alloc_bytes = 0U;
+#line 338
+    chdir_str.PRIVATE_HANDS_OFF_p_buf = (char *)((void *)0);
+#line 338
+    chdir_str.PRIVATE_HANDS_OFF_len = 0U;
+#line 338
+    chdir_str.PRIVATE_HANDS_OFF_alloc_bytes = 0U;
+#line 339
+    userdir_str.PRIVATE_HANDS_OFF_p_buf = (char *)((void *)0);
+#line 339
+    userdir_str.PRIVATE_HANDS_OFF_len = 0U;
+#line 339
+    userdir_str.PRIVATE_HANDS_OFF_alloc_bytes = 0U;
+#line 340
+    secutil_option = 2U;
+#line 342
+    vsf_sysutil_close(p_sess->parent_fd);
+#line 343
+    if (tunable_ssl_enable) {
+#line 345
+      vsf_sysutil_close(p_sess->ssl_slave_fd);
+#line 346
+      if (p_sess->ssl_slave_active) {
+#line 348
+        priv_sock_get_str(p_sess->ssl_consumer_fd, & p_sess->control_cert_digest);
+      }
+    }
+#line 352
+    if (tunable_guest_enable) {
+#line 352
+      if (! anon) {
+#line 354
+        p_sess->is_guest = 1;
+#line 356
+        str_alloc_text(& guest_user_str, tunable_guest_username);
+#line 357
+        p_user_str = (struct mystr  const  *)(& guest_user_str);
+#line 358
+        if (! tunable_virtual_use_local_privs) {
+#line 360
+          anon = 1;
+#line 361
+          do_chroot = 1;
+        }
+      } else {
+#line 352
+        goto _L;
+      }
+    } else {
+      _L: ;
+    }
+#line 364
+    if (do_chroot) {
+#line 366
+      secutil_option |= 1U;
+    }
+#line 368
+    if (! anon) {
+#line 370
+      secutil_option |= 4U;
+    }
+#line 372
+    calculate_chdir_dir(was_anon, & userdir_str, & chroot_str, & chdir_str, p_user_str,
+                        p_orig_user_str);
+#line 374
+    vsf_secutil_change_credentials(p_user_str, (struct mystr  const  *)(& userdir_str),
+                                   (struct mystr  const  *)(& chroot_str), 0U, secutil_option);
+#line 376
+    __cil_tmp = str_isempty((struct mystr  const  *)(& chdir_str));
+#line 376
+    if (! __cil_tmp) {
+#line 378
+      str_chdir((struct mystr  const  *)(& chdir_str));
+    }
+#line 380
+    str_free(& guest_user_str);
+#line 381
+    str_free(& chroot_str);
+#line 382
+    str_free(& chdir_str);
+#line 383
+    str_free(& userdir_str);
+#line 387
+    if (was_anon) {
+#line 387
+      __cil_tmp___0 = vsf_sysutil_write_access("/");
+#line 387
+      if (__cil_tmp___0) {
+#line 389
+        die("vsftpd: refusing to run with writable anonymous root");
+      } else {
+#line 387
+        goto _L___0;
+      }
+    } else {
+      _L___0: ;
+    }
+#line 391
+    p_sess->is_anonymous = anon;
+#line 392
+    process_post_login(p_sess);
+#line 393
+    bug("should not get here: common_do_login");
+  }
+#line 396
+  if (tunable_ssl_enable) {
+#line 398
+    vsf_sysutil_close(p_sess->ssl_consumer_fd);
+  }
+#line 401
+  vsf_priv_parent_postlogin(p_sess);
+#line 402
+  bug("should not get here in common_do_login");
+#line 403
+  return;
+}
+}
+#line 405 "twoprocess.c"
+static void handle_per_user_config(struct mystr  const  *p_user_str ) 
+{ struct mystr filename_str ;
+  struct vsf_sysutil_statbuf *p_statbuf___0 ;
+  struct str_locate_result loc_result ;
+  int retval ;
+  char const   *__cil_tmp ;
+  int __cil_tmp___0 ;
+  int __cil_tmp___1 ;
+
+  {
+#line 408
+  filename_str.PRIVATE_HANDS_OFF_p_buf = (char *)((void *)0);
+#line 408
+  filename_str.PRIVATE_HANDS_OFF_len = 0U;
+#line 408
+  filename_str.PRIVATE_HANDS_OFF_alloc_bytes = 0U;
+#line 409
+  p_statbuf___0 = (struct vsf_sysutil_statbuf *)0;
+#line 412
+  if (! tunable_user_config_dir) {
+#line 414
+    return;
+  }
+#line 417
+  loc_result = str_locate_char(p_user_str, (char )'/');
+#line 418
+  if (loc_result.found) {
+#line 420
+    return;
+  }
+#line 422
+  str_alloc_text(& filename_str, tunable_user_config_dir);
+#line 423
+  str_append_char(& filename_str, (char )'/');
+#line 424
+  str_append_str(& filename_str, p_user_str);
+#line 425
+  retval = str_stat((struct mystr  const  *)(& filename_str), & p_statbuf___0);
+#line 427
+  __cil_tmp___0 = vsf_sysutil_retval_is_error(retval);
+#line 427
+  if (__cil_tmp___0) {
+    _L: ;
+  } else {
+#line 427
+    __cil_tmp___1 = vsf_sysutil_statbuf_get_uid((struct vsf_sysutil_statbuf  const  *)p_statbuf___0);
+#line 427
+    if (__cil_tmp___1 == 0) {
+#line 430
+      __cil_tmp = str_getbuf((struct mystr  const  *)(& filename_str));
+#line 430
+      vsf_parseconf_load_file(__cil_tmp, 1);
+    } else {
+#line 427
+      goto _L;
+    }
+  }
+#line 432
+  str_free(& filename_str);
+#line 433
+  vsf_sysutil_free((void *)p_statbuf___0);
+#line 434
+  return;
+}
+}
+#line 436 "twoprocess.c"
+static void calculate_chdir_dir(int anon_login , struct mystr *p_userdir_str , struct mystr *p_chroot_str ,
+                                struct mystr *p_chdir_str , struct mystr  const  *p_user_str ,
+                                struct mystr  const  *p_orig_user_str ) 
+{ struct vsf_sysutil_user  const  *p_user ;
+  struct vsf_sysutil_user *__cil_tmp ;
+  char const   *__cil_tmp___0 ;
+  char const   *__cil_tmp___1 ;
+  char const   *__cil_tmp___2 ;
+  char const   *__cil_tmp___3 ;
+  struct str_locate_result loc_result ;
+
+  {
+#line 443
+  if (! anon_login) {
+#line 445
+    __cil_tmp = str_getpwnam(p_user_str);
+#line 445
+    p_user = (struct vsf_sysutil_user  const  *)__cil_tmp;
+#line 446
+    if ((unsigned int )p_user == (unsigned int )((struct vsf_sysutil_user  const  *)0)) {
+#line 448
+      __cil_tmp___0 = str_getbuf(p_user_str);
+#line 448
+      die2("cannot locate user entry:", __cil_tmp___0);
+    }
+#line 450
+    __cil_tmp___1 = vsf_sysutil_user_get_homedir(p_user);
+#line 450
+    str_alloc_text(p_userdir_str, __cil_tmp___1);
+#line 451
+    if (tunable_user_sub_token) {
+#line 453
+      __cil_tmp___2 = str_getbuf(p_orig_user_str);
+#line 453
+      str_replace_text(p_userdir_str, tunable_user_sub_token, __cil_tmp___2);
+    }
+  }
+#line 457
+  if (anon_login) {
+#line 457
+    if (tunable_anon_root) {
+#line 459
+      str_alloc_text(p_chroot_str, tunable_anon_root);
+    } else {
+#line 457
+      goto _L___0;
+    }
+  } else {
+    _L___0: 
+#line 461
+    if (! anon_login) {
+#line 461
+      if (tunable_local_root) {
+#line 463
+        str_alloc_text(p_chroot_str, tunable_local_root);
+#line 464
+        if (tunable_user_sub_token) {
+#line 466
+          __cil_tmp___3 = str_getbuf(p_orig_user_str);
+#line 466
+          str_replace_text(p_chroot_str, tunable_user_sub_token, __cil_tmp___3);
+        }
+      } else {
+#line 461
+        goto _L;
+      }
+    } else {
+      _L: ;
+    }
+  }
+#line 473
+  if (! anon_login) {
+#line 473
+    if (tunable_passwd_chroot_enable) {
+#line 476
+      loc_result = str_locate_text((struct mystr  const  *)p_userdir_str, "/./");
+#line 477
+      if (loc_result.found) {
+#line 479
+        str_split_text(p_userdir_str, p_chdir_str, "/./");
+#line 480
+        str_copy(p_chroot_str, (struct mystr  const  *)p_userdir_str);
+      }
+    } else {
+#line 473
+      goto _L___1;
+    }
+  } else {
+    _L___1: ;
+  }
+#line 483
+  return;
+}
+}
+#line 1 "cil-pkcTzQhz.o"
+#pragma merger(0,"/tmp/cil-UukMHAFQ.i","")
 #line 18 "sysdeputil.h"
 int vsf_sysdep_check_auth(struct mystr  const  *p_user_str , struct mystr  const  *p_pass_str ,
                           struct mystr  const  *p_remote_host ) ;
@@ -21257,14 +23799,10 @@ static void setup_username_globals(struct vsf_session *p_sess , struct mystr  co
   return;
 }
 }
-#line 1 "cil-kJmvkHdt.o"
-#pragma merger(0,"/tmp/cil-5r1YWgqG.i","")
-#line 45 "sysutil.h"
-void vsf_sysutil_install_async_sighandler(enum EVSFSysUtilSignal sig , void (*handler)(int  ) ) ;
-#line 88
+#line 1 "cil-zBze8zU7.o"
+#pragma merger(0,"/tmp/cil-hXMlRKxm.i","")
+#line 88 "sysutil.h"
 void vsf_sysutil_dupfd2(int old_fd , int new_fd ) ;
-#line 163
-int vsf_sysutil_fork(void) ;
 #line 164
 int vsf_sysutil_fork_failok(void) ;
 #line 172
@@ -21297,7 +23835,7 @@ static struct hash *s_p_pid_ip_hash  ;
 #line 25 "standalone.c"
 static unsigned int s_ipaddr_size  ;
 #line 27
-static void handle_sigchld(int duff ) ;
+static void handle_sigchld___0(int duff ) ;
 #line 28
 static void handle_sighup(int duff ) ;
 #line 29
@@ -21391,7 +23929,7 @@ struct vsf_client_launch vsf_standalone_main(void)
     vsf_sysutil_setproctitle("LISTENER");
   }
 #line 79
-  vsf_sysutil_install_async_sighandler((enum EVSFSysUtilSignal )3, & handle_sigchld);
+  vsf_sysutil_install_async_sighandler((enum EVSFSysUtilSignal )3, & handle_sigchld___0);
 #line 80
   vsf_sysutil_install_async_sighandler((enum EVSFSysUtilSignal )6, & handle_sighup);
 #line 81
@@ -21594,7 +24132,7 @@ static void drop_ip_count(void *p_raw_addr )
 }
 }
 #line 226 "standalone.c"
-static void handle_sigchld(int duff ) 
+static void handle_sigchld___0(int duff ) 
 { unsigned int reap_one ;
   int __cil_tmp ;
   struct vsf_sysutil_ipaddr *p_ip ;
@@ -21712,8 +24250,8 @@ static unsigned int handle_ip_count(void *p_ipaddr )
   return (count);
 }
 }
-#line 1 "cil-fZZk2JFq.o"
-#pragma merger(0,"/tmp/cil-0bYolzm1.i","")
+#line 1 "cil-23C26Fqi.o"
+#pragma merger(0,"/tmp/cil-gWLlj91R.i","")
 #line 183 "sysutil.h"
 void vsf_sysutil_memclr(void *p_dest , unsigned int size ) ;
 #line 32 "hash.c"
@@ -21927,8 +24465,8 @@ struct hash_node *hash_get_node_by_key(struct hash *p_hash , void *p_key )
   return (p_node);
 }
 }
-#line 1 "cil-QlGCiSzf.o"
-#pragma merger(0,"/tmp/cil-jLGVAbl3.i","")
+#line 1 "cil-Mh7hqhNP.o"
+#pragma merger(0,"/tmp/cil-nsiK86iZ.i","")
 #line 40 "tcpwrap.c"
 int vsf_tcp_wrapper_ok(int remote_fd ) 
 { 
@@ -21940,8 +24478,8 @@ int vsf_tcp_wrapper_ok(int remote_fd )
   return (0);
 }
 }
-#line 1 "cil-NInqs5M1.o"
-#pragma merger(0,"/tmp/cil-00IrF5zk.i","")
+#line 1 "cil-7UZhJP7Q.o"
+#pragma merger(0,"/tmp/cil-iD6CfHJv.i","")
 #line 15 "ipaddrparse.c"
 static int ipv6_parse_main(struct mystr *p_out_str , struct mystr  const  *p_in_str ) ;
 #line 17
@@ -22369,8 +24907,8 @@ static int ipv4_parse_dotquad(struct mystr *p_out_str , struct mystr  const  *p_
   return (1);
 }
 }
-#line 1 "cil-C0yX6KxF.o"
-#pragma merger(0,"/tmp/cil-y2siKJka.i","")
+#line 1 "cil-sFfjLjaw.o"
+#pragma merger(0,"/tmp/cil-ZBcmeIYt.i","")
 #line 18 "access.c"
 static struct mystr s_access_str  ;
 #line 15 "access.c"
@@ -22457,8 +24995,8 @@ int vsf_access_check_file_visible(struct mystr  const  *p_filename_str )
   return (1);
 }
 }
-#line 1 "cil-hbt75ldg.o"
-#pragma merger(0,"/tmp/cil-PoEL0L8H.i","")
+#line 1 "cil-WQmnp9MI.o"
+#pragma merger(0,"/tmp/cil-mEmOj3Yi.i","")
 #line 15 "features.c"
 void handle_feat(struct vsf_session *p_sess ) 
 { 
@@ -22511,8 +25049,8 @@ void handle_feat(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1 "cil-Suuy0J2r.o"
-#pragma merger(0,"/tmp/cil-PSUjxApu.i","")
+#line 1 "cil-B7RARWUe.o"
+#pragma merger(0,"/tmp/cil-qVxXHi15.i","")
 #line 7 "ssl.h"
 void ssl_getline(struct vsf_session  const  *p_sess , struct mystr *p_str , char end_char ,
                  char *p_buf , unsigned int buflen ) ;
@@ -22654,8 +25192,8 @@ void ftp_getline(struct vsf_session  const  *p_sess , struct mystr *p_str , char
   return;
 }
 }
-#line 1 "cil-2lV4BMzA.o"
-#pragma merger(0,"/tmp/cil-Ig2tWlJX.i","")
+#line 1 "cil-fsSqfWdw.o"
+#pragma merger(0,"/tmp/cil-7VdPDvKY.i","")
 #line 14 "opts.c"
 void handle_opts(struct vsf_session *p_sess ) 
 { int __cil_tmp ;
@@ -22677,10 +25215,8 @@ void handle_opts(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1 "cil-ErPR4Mhr.o"
-#pragma merger(0,"/tmp/cil-LWzHOCwh.i","")
-#line 15 "ssl.h"
-void ssl_comm_channel_init(struct vsf_session *p_sess ) ;
+#line 1 "cil-bq8EIPtR.o"
+#pragma merger(0,"/tmp/cil-VgpRzItk.i","")
 #line 618 "ssl.c"
 void ssl_init(struct vsf_session *p_sess ) 
 { 
@@ -22783,35 +25319,21 @@ void ssl_comm_channel_init(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1 "cil-HyrkqSXX.o"
-#pragma merger(0,"/tmp/cil-UqKMgFRT.i","")
+#line 1 "cil-2ySZ95g1.o"
+#pragma merger(0,"/tmp/cil-S32dpX3w.i","")
 #line 47 "sysutil.h"
 void vsf_sysutil_default_sig(enum EVSFSysUtilSignal sig ) ;
 #line 50
 void vsf_sysutil_check_pending_actions(enum EVSFSysUtilInterruptContext context ,
                                        int retval , int fd ) ;
-#line 92
-int vsf_sysutil_write_access(char const   *p_filename ) ;
 #line 98
 int vsf_sysutil_write(int fd , void const   *p_buf , unsigned int size ) ;
-#line 171
-struct vsf_sysutil_wait_retval vsf_sysutil_wait(void) ;
-#line 173
-int vsf_sysutil_wait_get_retval(struct vsf_sysutil_wait_retval  const  *p_waitret ) ;
-#line 175
-int vsf_sysutil_wait_exited_normally(struct vsf_sysutil_wait_retval  const  *p_waitret ) ;
-#line 177
-int vsf_sysutil_wait_get_exitcode(struct vsf_sysutil_wait_retval  const  *p_waitret ) ;
 #line 186
 void vsf_sysutil_strcpy(char *p_dest , char const   *p_src , unsigned int maxsize ) ;
-#line 195
-char const   *vsf_sysutil_uint_to_octal(unsigned int the_uint ) ;
 #line 235
 void const   *vsf_sysutil_sockaddr_ipv4_v6(struct vsf_sysutil_sockaddr  const  *p_addr ) ;
 #line 285
 int vsf_sysutil_user_getgid(struct vsf_sysutil_user  const  *p_user ) ;
-#line 293
-unsigned int vsf_sysutil_get_umask(void) ;
 #line 303
 void vsf_sysutil_set_exit_func(void (*exitfunc)(void) ) ;
 #line 313
@@ -22892,14 +25414,10 @@ __inline static int fstat(int __fd , struct stat *__statbuf )
   return (__cil_tmp);
 }
 }
-#line 74 "/usr/include/arpa/inet.h"
-extern  __attribute__((__nothrow__)) int inet_aton(char const   *__cp , struct in_addr *__inp ) ;
 #line 111 "/usr/include/pwd.h"
 extern struct passwd *getpwuid(__uid_t __uid ) ;
 #line 103 "/usr/include/grp.h"
 extern struct group *getgrgid(__gid_t __gid ) ;
-#line 81 "/usr/include/ctype.h"
-extern unsigned short const   **__ctype_b_loc(void)  __attribute__((__const__)) ;
 #line 115 "/usr/include/sys/wait.h"
 extern __pid_t wait(union wait *__stat_loc ) ;
 #line 138
@@ -23712,7 +26230,7 @@ struct vsf_sysutil_wait_retval vsf_sysutil_wait(void)
 #line 564
   while (1) {
 #line 566
-    __cil_tmp = wait((union wait *)(& retval.exit_status));
+    __cil_tmp = wait((union wait *)(& retval.PRIVATE_HANDS_OFF_exit_status));
 #line 566
     sys_ret = __cil_tmp;
 #line 567
@@ -23734,7 +26252,7 @@ struct vsf_sysutil_wait_retval vsf_sysutil_wait(void)
       _L: ;
     }
 #line 572
-    retval.syscall_retval = sys_ret;
+    retval.PRIVATE_HANDS_OFF_syscall_retval = sys_ret;
 #line 573
     return (retval);
   }
@@ -23788,7 +26306,7 @@ int vsf_sysutil_wait_get_retval(struct vsf_sysutil_wait_retval  const  *p_waitre
 
   {
 #line 597
-  return ((int )p_waitret->syscall_retval);
+  return ((int )p_waitret->PRIVATE_HANDS_OFF_syscall_retval);
 }
 }
 #line 600 "sysutil.c"
@@ -23797,7 +26315,7 @@ int vsf_sysutil_wait_exited_normally(struct vsf_sysutil_wait_retval  const  *p_w
 
   {
 #line 604
-  __u.__in = (int )p_waitret->exit_status;
+  __u.__in = (int )p_waitret->PRIVATE_HANDS_OFF_exit_status;
 #line 604
   return ((__u.__i & 127) == 0);
 }
@@ -23816,7 +26334,7 @@ int vsf_sysutil_wait_get_exitcode(struct vsf_sysutil_wait_retval  const  *p_wait
     bug("not a normal exit in vsf_sysutil_wait_get_exitcode");
   }
 #line 614
-  __u.__in = (int )p_waitret->exit_status;
+  __u.__in = (int )p_waitret->PRIVATE_HANDS_OFF_exit_status;
 #line 614
   return ((__u.__i & 65280) >> 8);
 }
@@ -24229,7 +26747,7 @@ unsigned int vsf_sysutil_octal_to_uint(char const   *p_str )
 { unsigned int result ;
   int seen_non_zero_digit ;
   int digit ;
-  unsigned short const   **__cil_tmp ;
+  int __cil_tmp ;
 
   {
 #line 848
@@ -24241,9 +26759,9 @@ unsigned int vsf_sysutil_octal_to_uint(char const   *p_str )
 #line 852
     digit = (int )*p_str;
 #line 853
-    __cil_tmp = __ctype_b_loc();
+    __cil_tmp = isdigit(digit);
 #line 853
-    if ((int const   )*(*__cil_tmp + digit) & 2048) {
+    if (__cil_tmp) {
 #line 853
       if (digit > 55) {
         _L: 
@@ -24286,19 +26804,19 @@ int vsf_sysutil_toupper(int the_char )
 }
 #line 877 "sysutil.c"
 int vsf_sysutil_isspace(int the_char ) 
-{ unsigned short const   **__cil_tmp ;
+{ int __cil_tmp ;
 
   {
 #line 880
-  __cil_tmp = __ctype_b_loc();
+  __cil_tmp = isspace(the_char);
 #line 880
-  return ((int )((int const   )*(*__cil_tmp + the_char) & 8192));
+  return (__cil_tmp);
 }
 }
 #line 883 "sysutil.c"
 int vsf_sysutil_isprint(int the_char ) 
 { unsigned char uc ;
-  unsigned short const   **__cil_tmp ;
+  int __cil_tmp ;
 
   {
 #line 889
@@ -24327,31 +26845,31 @@ int vsf_sysutil_isprint(int the_char )
     _L: ;
   }
 #line 902
-  __cil_tmp = __ctype_b_loc();
+  __cil_tmp = isprint(the_char);
 #line 902
-  return ((int )((int const   )*(*__cil_tmp + the_char) & 16384));
+  return (__cil_tmp);
 }
 }
 #line 905 "sysutil.c"
 int vsf_sysutil_isalnum(int the_char ) 
-{ unsigned short const   **__cil_tmp ;
+{ int __cil_tmp ;
 
   {
 #line 908
-  __cil_tmp = __ctype_b_loc();
+  __cil_tmp = isalnum(the_char);
 #line 908
-  return ((int )((int const   )*(*__cil_tmp + the_char) & 8));
+  return (__cil_tmp);
 }
 }
 #line 911 "sysutil.c"
 int vsf_sysutil_isdigit(int the_char ) 
-{ unsigned short const   **__cil_tmp ;
+{ int __cil_tmp ;
 
   {
 #line 914
-  __cil_tmp = __ctype_b_loc();
+  __cil_tmp = isdigit(the_char);
 #line 914
-  return ((int )((int const   )*(*__cil_tmp + the_char) & 2048));
+  return (__cil_tmp);
 }
 }
 #line 917 "sysutil.c"
@@ -27366,8 +29884,8 @@ int vsf_sysutil_setmodtime(char const   *p_file , long the_time , int is_localti
   return (__cil_tmp);
 }
 }
-#line 1 "cil-R2lq1gsS.o"
-#pragma merger(0,"/tmp/cil-L093AQcC.i","")
+#line 1 "cil-NtTVVAw4.o"
+#pragma merger(0,"/tmp/cil-hcuFdmKt.i","")
 #line 171 "/usr/include/sys/socket.h"
 extern ssize_t sendmsg(int __fd , struct msghdr  const  *__message , int __flags ) ;
 #line 179
