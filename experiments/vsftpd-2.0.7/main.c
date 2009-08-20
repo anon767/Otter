@@ -31,14 +31,30 @@ static void do_sanity_checks(void);
 static void session_init(struct vsf_session* p_sess);
 static void env_init(void);
 
-// Inserted for symbolic execution
+ // ADDED FOR PURPOSES OF SYMBOLIC TESTING
 extern void symtest_initialize(void);
 extern int dup2(int,int);
 extern int socket(int,int,int);
+extern void addfile(const char *filename, const char *contents, unsigned int len);
+char confFileContents[] = "chown_upload_mode=004
+max_per_ip=3
+
+anonymous_enable=1
+local_enable=TRUE
+pasv_enable=YES
+port_enable=0
+chroot_local_user=FALSE
+write_enable=NO
+#
+user_config_dir=aow
+listen_address6=
+";
+unsigned int confFileSize = sizeof(confFileContents) - 1;
 
 int
 main(int argc, const char* argv[])
 {
+	addfile(VSFTP_DEFAULT_CONFIG,confFileContents,confFileSize); // ADDED FOR PURPOSES OF SYMBOLIC TESTING
   struct vsf_session the_session =
   {
     /* Control connection */
@@ -235,14 +251,14 @@ main(int argc, const char* argv[])
       tunable_chown_uploads = 0;
     }
   }
-//  if (tunable_one_process_model)
-//  {
+  if (tunable_one_process_model)
+  {
     vsf_one_process_start(&the_session);
-//  }
-//  else
-//  {
-//    vsf_two_process_start(&the_session);
-//  }
+  }
+  else
+  {
+    vsf_two_process_start(&the_session);
+  }
   /* NOTREACHED */
   bug("should not get here: main");
   return 1;
