@@ -39,8 +39,8 @@ int listen(int socket, int backlog) {
 int getsockname(int __fd, struct sockaddr *__addr, socklen_t * __restrict  __len ) {
 	char fakeName[] = "somesockname";
 	strcpy(__addr->sa_data, fakeName);
-	__addr->sa_family = AF_INET;
-	*__len = sizeof(__addr->sa_family) + strlen(fakeName) + 1;
+	__addr->sa_family = iosim_ip_version;
+	*__len = sizeof(__addr->sa_family) + sizeof(fakeName);
 	return 0;
 }
 
@@ -51,7 +51,7 @@ int connect(int socket, const struct sockaddr *address,
 
 int accept(int sockfd, struct sockaddr *restrict address,
 					 socklen_t *restrict address_len) {
-	address->sa_family = AF_INET;
+	address->sa_family = iosim_ip_version;
 
 //	address->sa_data[0] = __SYMBOLIC(0);
 //	address->sa_data[1] = __SYMBOLIC(0);

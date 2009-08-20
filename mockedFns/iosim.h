@@ -51,4 +51,9 @@ DIR *IOSIM_opendir(const char *dirname);
 int IOSIM_closedir(DIR *dir);
 struct dirent *IOSIM_readdir(DIR *dir);
 int IOSIM_dirfd(DIR *dir);
+
+// Ugly workaround to get ipv6 parsing for vsftpd.
+// Individual tests can set this to AF_INET6 if they want
+#include <sys/socket.h>
+unsigned short iosim_ip_version = AF_INET;
 #endif
