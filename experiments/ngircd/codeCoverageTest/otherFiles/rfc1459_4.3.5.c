@@ -12,10 +12,7 @@ int symtest(){
 	event_recv(client_fd1,"NICK nick1\r\n",t++);
 	event_recv(client_fd1,"USER user x x :user\r\n",t++);
 	event_recv(client_fd1,"OPER TheOper ThePwd\r\n",t++);
-	event_send(client_fd1,t++);
-	
-	event_recv(client_fd1,"CONNECT\r\n",t++);
-	event_send(client_fd1,t++);
+	event_recv(client_fd1,"CONNECT abc.org 6667\r\n",t++);
 
 	event_end(t++);
 }

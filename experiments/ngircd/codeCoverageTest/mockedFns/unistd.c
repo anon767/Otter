@@ -22,16 +22,17 @@ gid_t        getgid(void){
 
 //#if __HAVE_fork__
 pid_t fork(void){
-//	static pid_t new_pid = 0;
-//	if ((char)__SYMBOLIC()) {
-//		__COMMENT("Forking to parent");
-//		new_pid++;
-//		return new_pid; // child process id > 0
-//	}
-	//__COMMENT("Forking to child");
-	//return 0;
-	__COMMENT("Forking to parent");
-	return 1;
+	int tmp = __SYMBOLIC();	
+	if (tmp) {
+		__COMMENT("Forking to parent");
+		return 1; // child process id > 0
+	}
+	else{
+		__COMMENT("Forking to child");
+		return 0;
+	}
+	//__COMMENT("Forking to parent");
+	//return 1;
 }
 //#endif
 

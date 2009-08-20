@@ -1,3 +1,4 @@
+#include<string.h>
 // configtest
 // int   myargc 	 = 2;
 // char  myargstr[] = "ngircd\0-n\0--configtest\0          ";
@@ -11,6 +12,7 @@ int symtest(){
 	int t;
 
 	myargc = 3;
+	strcpy(myargstr+10,"--help");
 
 	return 0;
 }

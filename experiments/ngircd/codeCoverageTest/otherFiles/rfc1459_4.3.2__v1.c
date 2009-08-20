@@ -11,8 +11,8 @@ int symtest(){
 	event_accept(client_fd1,t++);
 	event_recv(client_fd1,"NICK nick1\r\n",t++);
 	event_recv(client_fd1,"USER user x x :user\r\n",t++);
-	
-	event_recv(client_fd1,"STATS du du\r\n",t++);
+	event_recv(client_fd1,"STATS M\r\n",t++);
+	event_recv(client_fd1,"STATS U\r\n",t++);
 
 	event_end(t++);
 }
