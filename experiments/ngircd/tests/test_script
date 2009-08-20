@@ -5,7 +5,9 @@ PROJ_DIR=/fs/skoll/symexe/trunk/experiments/ngircd/codeCoverageTest/otherFiles/
 echo \#BEGIN TEST_SCRIPT
 date
 
-./test_suite "$DATA_DIR/normal" "$PROJ_DIR/symtest_driver.c" "$1" 166 "--lineCov --edgeCov --condCov --listAllLines --listAllEdges --listAllConds"
+./test_suite "$DATA_DIR/normal" "$PROJ_DIR/symtest_driver.c" "$1"     166 "--lineCov --edgeCov --blockCov --listAllLines --listAllEdges --listAllBlocks"
+./test_suite "$DATA_DIR/normal" "$PROJ_DIR/symtest_driver.c" "$1__v1" 166 "--lineCov --edgeCov --blockCov --listAllLines --listAllEdges --listAllBlocks"
+./test_suite "$DATA_DIR/normal" "$PROJ_DIR/symtest_driver.c" "$1__v2" 166 "--lineCov --edgeCov --blockCov --listAllLines --listAllEdges --listAllBlocks"
 #./test_suite "$DATA_DIR/normal" "$PROJ_DIR/symtest_driver.c" "$1" 166 "--lineCov --edgeCov"
 #./test_suite "$DATA_DIR/normal_unfolded" "$PROJ_DIR/symtest_driver_unfolded.c" "$1" 166 "--lineCov --edgeCov --condCov"
 

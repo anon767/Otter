@@ -35,6 +35,8 @@ MACRO="\
 -DSYM_CONF_PINGTIMEOUT \
 -DSYM_CONF_PONGTIMEOUT"
 
+if [ -f $COVDIR/otherFiles/$TEST_NAME.c ]
+then
 
 echo \#BEGIN TEST_SYMBOLIC TEST_NAME=$TEST_NAME COVTYPE=\"$COVTYPE\" MACRO=\"$MACRO\"
 date
@@ -49,6 +51,7 @@ $TOPDIR/cil/bin/cilly \
 	-I $MOCKEDDIR \
 	--doexecute \
 	--disallowDuplication \
+	--printCallStack \
 	--printLittle \
 	--printNoEscapedString \
 	--covStats=$STATSFILE \
@@ -60,5 +63,7 @@ $TOPDIR/cil/bin/cilly \
 
 echo \#DONE TEST_SYMBOLIC TEST_NAME=$TEST_NAME COVTYPE=\"$COVTYPE\" MACRO=\"$MACRO\" 
 date
+
+fi
 
 #	--lineCov \
