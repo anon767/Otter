@@ -189,6 +189,7 @@ void symtest_Conf_Init_impl(){
 
 // Default configuration being read into ngircd
 // It will be overwritten by the symbolic configuration
+char* confString_return = 0;
 char* confString(){
 	static char confStr[] = "[Global]
 	Name = irc.the.net
@@ -254,8 +255,9 @@ char* confString(){
 	Key = Secret
 	MaxUsers = 23
 [Channel]";
-
-	return confStr;
+	if(confString_return==0)
+		return confStr;
+	else return confString_return;
 }
 
 int   myargc 	 = 2;
@@ -287,6 +289,8 @@ int main(){
 	stdout = IOSIM_fd[1];
 	stderr = IOSIM_fd[1];
 
+	symtest();
+
 	sym_file_t* motdFile = IOSIM_addfile(MOTDFILE,0);
 	motdFile->contents = strdup("This is the content of <motdFile>\n");
 	motdFile->stat.st_size = strlen(motdFile->contents);
@@ -296,7 +300,6 @@ int main(){
 	confFile->stat.st_size = strlen(confFile->contents);
 
 
-	symtest();
 
 
 	int ngircd_exit = main_ngircd(myargc,myargv);
