@@ -36,19 +36,7 @@ extern void symtest_initialize(void);
 extern int dup2(int,int);
 extern int socket(int,int,int);
 extern void addfile(const char *filename, const char *contents, unsigned int len);
-char confFileContents[] = "chown_upload_mode=00600
-max_login_fails=3
-
-anonymous_enable=1
-port_enable=TRUE
-pasv_enable=YES
-local_enable=0
-chroot_local_user=FALSE
-write_enable=NO
-#
-pam_service_name=ftp
-listen_address6=
-";
+char confFileContents[] = "chown_upload_mode=00600\nmax_login_fails=3\n\nanonymous_enable=1\nport_enable=TRUE\npasv_enable=YES\nlocal_enable=0\nchroot_local_user=FALSE\nwrite_enable=NO\n#\npam_service_name=ftp\nlisten_address6=\n";
 unsigned int confFileSize = sizeof(confFileContents) - 1;
 
 int
