@@ -15,8 +15,13 @@ quit
 	static char fileText[] = "something
  a bunch of text
 			and some more text!!!";
+	// We have to put the file on fds 7 *and* 9 because one or
+	// the other is correct, depending on whether logging happens.
 	IOSIM_fd[7]->sym_file->contents = fileText;
 	IOSIM_fd[7]->sym_file->stat.st_size = sizeof(fileText);
+	
+	IOSIM_fd[9]->sym_file->contents = fileText;
+	IOSIM_fd[9]->sym_file->stat.st_size = sizeof(fileText);
 
 	iosim_ip_version = AF_INET6;
 

@@ -17,8 +17,13 @@ quit
 	static char fileText[] = "something
  a bunch of text
 			and some more text!!!";
-	IOSIM_fd[7]->sym_file->contents = fileText;
-	IOSIM_fd[7]->sym_file->stat.st_size = sizeof(fileText);
+	// We have to put the file on fds 8 *and* 10 because one or
+	// the other is correct, depending on whether logging happens.
+	IOSIM_fd[8]->sym_file->contents = fileText;
+	IOSIM_fd[8]->sym_file->stat.st_size = sizeof(fileText);
+	
+	IOSIM_fd[10]->sym_file->contents = fileText;
+	IOSIM_fd[10]->sym_file->stat.st_size = sizeof(fileText);
 
 	return;
 }

@@ -35,18 +35,18 @@ void common_initialization(const char *commandString) {
 	newStream(1);
 	newStream(2);
 
-	// vsftpd reads its commands either from stdin (fd 0) or from fd 4,
+	// vsftpd reads its commands either from stdin (fd 0) or from fd 5,
 	// depending on the configuration. I modified it so that it always
-	// reads its commands from fd 4.
-	newStream(4);
+	// reads its commands from fd 5.
+	newStream(5);
 	int bufferLen = strlen(commandString); // No '1 +' because we don't need to include the terminating null
-	IOSIM_fd[4]->sym_file->contents = memcpy(malloc(bufferLen),commandString,bufferLen);
-	IOSIM_fd[4]->sym_file->stat.st_size = bufferLen;
-	IOSIM_fd[4]->sym_file->stat.st_mode = S_IFSOCK;
+	IOSIM_fd[5]->sym_file->contents = memcpy(malloc(bufferLen),commandString,bufferLen);
+	IOSIM_fd[5]->sym_file->stat.st_size = bufferLen;
+	IOSIM_fd[5]->sym_file->stat.st_mode = S_IFSOCK;
 
 	// From Otter's perspective, a PORT command increases the fd number by 2 and a PASV increases it by 3.
 	// Here, we just initialize a bunch of file descriptors.
-	for (int i = 6; i <= 15; ++i) {
+	for (int i = 6; i <= 25; ++i) {
 		newStream(i);
 	}
 

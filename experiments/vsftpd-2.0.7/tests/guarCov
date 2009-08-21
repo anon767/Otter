@@ -1,10 +1,21 @@
 # Requires 1 argument: name of test
 
-DIR=/fs/skoll/symexe/data/vsftpd-2.0.7/jun19Runs/partialRunsJun19
+TOP_DIR=../../..
 
-MARSHALLED_FILE=$DIR/data/marshalledData/${1}.data
-echo $MARSHALLED_FILE
+TEST_NAME=$1
+COV_TYPE=$2
+SUFFIX=$3
 
-../../../cil/src/se/postprocessing/guaranteedCoverage \
-  $MARSHALLED_FILE \
-  --fileWithPossibleValues $DIR/../../vsftpdPossibleValues
+DATA_DIR=/fs/skoll/symexe/data/vsftpd-2.0.7
+
+MARSHALLED_FILE=$DATA_DIR/$COV_TYPE$SUFFIX/marshalledData/$TEST_NAME.data
+
+echo \#BEGIN guarCov TEST_NAME=$TEST_NAME COV_TYPE=\"$COV_TYPE\" SUFFIX=\"$SUFFIX\"
+date
+
+$TOP_DIR/cil/src/se/postprocessing/guaranteedCoverage \
+  $MARSHALLED_FILE --type $COV_TYPE \
+  --fileWithPossibleValues $DATA_DIR/vsftpdPossibleValues
+
+date
+echo \#DONE guarCov TEST_NAME=$TEST_NAME COV_TYPE=\"$COV_TYPE\" SUFFIX=\"$SUFFIX\"
