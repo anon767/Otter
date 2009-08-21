@@ -10,7 +10,7 @@ option:
 -0 : don't do greedy algorithm (only print lines covered and scattered graph only)
 -1 : greedy algorithm, use method 1
 -2 : greedy algorithm, use method 2 
-<covtype> : line | edge | cond
+<covtype> : line | edge | condition | block
 <keyword> : only tests that contains <keyword> in the header will be processed (useful for distinguish t-way)'''
 	sys.exit(0)
 
@@ -19,7 +19,7 @@ coverage = []
 lines_covered = set()
 statistics = []
 
-counter=0
+totalNumPaths=0
 calculate = True
 
 def merge1(config1,config2):
@@ -42,7 +42,7 @@ def get_covtype(line):
 	if not line.endswith("coverage:\n"):
 		return "none"
 	else:
-		return  line[0:4].lower()
+		return  line.split(" ")[0].lower()
 
 
 
@@ -93,7 +93,6 @@ for zipfilename in os.listdir(dir):
 
 	while True: 
 		need_process = False
-		nPaths = 0
 		while line != '' and not line.startswith('STP was invoked'):
 			line = file.readline()
 			#if line.startswith("Running Test"):      #  Edit this and the line below to suit your need
@@ -105,7 +104,14 @@ for zipfilename in os.listdir(dir):
 			if line.find(keyword)>=0:
 				need_process = True
 		line_stp_invoked = line
-		line_time_spent = line = file.readline()	
+		line_time_spent = file.readline()
+		while not 'paths ran' in line:
+			line = file.readline()
+			assert line!='', "All paths had errors"
+		matchResult = re.match(r'(\d+).*(\d+) had errors',line)
+		assert matchResult.group(2) == '0', 'Test had errors!'+zipfilename
+		nPaths = int(matchResult.group(1))
+		totalNumPaths += nPaths
 		
 		# spot for <covtype> coverage
 		while(line!='' and not get_covtype(line)==(covtype)):
@@ -120,12 +126,13 @@ for zipfilename in os.listdir(dir):
 			if line.startswith('Sample value'):
 				if not need_process:
 					break
-				counter += 1
-				nPaths += 1
 				thisConfig = set() # A configuration is a set of (variable,value) pairs
 				# Read in the configuration
 				line = file.readline()
 				while line != '\n':
+					if line.startswith("but these"):
+						line = file.readline(); # the symbols
+						break
 					variable,value = line.split('=')
 					thisConfig.add((variable,int(value)))
 					line = file.readline()
@@ -185,7 +192,7 @@ for zipfilename in os.listdir(dir):
 
 
 
-print 'Total number of paths:',counter
+print 'Total number of paths:',totalNumPaths
 
 
 if calculate:
@@ -248,7 +255,7 @@ for x in sorted(statistics):
 	print '%s\t%d\t%d\t%0.2f' % x
 	
 
-print '\nHere are all',len(lines_covered),'stuff ever covered:'
+print '\nHere are all',len(lines_covered),covtype+'s ever covered:'
 #linesAsPairs = [str.split(':') for str in lines_covered]
 #for fileLinePair in sorted([(x[0],int(x[1])) for x in linesAsPairs]):
 #	print '%s:%d' % fileLinePair
