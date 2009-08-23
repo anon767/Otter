@@ -198,7 +198,7 @@ let findMatchingChild equal elt children : 'a tree * 'a tree list =
 				if equal elt otherElt
 				then x, List.rev_append acc t
 				else helper (x::acc) t
-		| _ -> raise Not_found
+		| [] -> raise Not_found
 	in
 	helper [] children
 
@@ -211,7 +211,7 @@ let rec add_aux lst cov tree : varDepTree =
 					let matchingChild,otherChildren =
 						findMatchingChild myEqual h children
 					in
-					(* Try to add the rest of lst to the child that matches *)
+					(* Add the rest of lst to the child that matches *)
 					let newTree = add_aux t cov matchingChild in
 					Node (value, newTree :: otherChildren)
 				with Not_found ->
@@ -238,6 +238,9 @@ let getLeavesWithCoverage tree = match tree with
 			(* Ignore the root of tree, which is just a placeholder *)
 			List.concat
 				(List.map (getLeavesWithCoverage_aux [] CovSet.empty) children)
+	| Node ((bytes,cov),[]) -> (* This can happen if the test never branches *)
+			assert (bytes == trueBytes);
+			[([],cov)]
 	| _ -> failwith "Impossible: bad root of tree"
 (*
 let rec countLeaves = function
