@@ -39,6 +39,16 @@ let rec simplifyLogicalOps bytes = match bytes with
 	 fine, but is there a better, more general way to map bytes to
 	 variables? *)
 let bytesToVars = ref []
+let allSymbolsInBytesToVars = ref SymbolSet.empty
+
+let isUntracked bytes =
+	let symbols = Stp.allSymbols bytes in
+	let trackedSymbols = SymbolSet.inter symbols !allSymbolsInBytesToVars in
+	if SymbolSet.is_empty trackedSymbols
+	then true (* No bytes are tracked *)
+	else if SymbolSet.equal symbols trackedSymbols
+	then false (* All bytes are tracked *)
+	else failwith (To_string.humanReadableBytes !bytesToVars bytes ^ " is partially tracked")
 
 let totalNumberOfPcs = ref 0
 
@@ -206,6 +216,13 @@ let rec add_aux lst cov tree : varDepTree =
 	match lst,tree with
 		| [], Node ((bytes, oldCov), children) -> (* lst is already represented in the tree *)
 				Node ((bytes, CovSet.union cov oldCov), children) (* Union in the coverage *)
+		| h::tl, _ when isUntracked h ->
+				(* This case is to handle the way we mocked fork() in ngIRCd.
+					 Since both branches are guaranteed to be covered, we want
+					 to consider path conditions equal if they differ only in
+					 fork conditions. So, we ignore elements of the path
+					 condition that are about untracked bytes. *)
+				add_aux tl cov tree
 		| h::t, Node (value, children) ->
 				try (* See if we can step to a child *)
 					let matchingChild,otherChildren =
@@ -490,7 +507,10 @@ let addCoverageFromFile filename =
 	(* Read in the coverage data structure *)
 	let jobResults = (Marshal.from_channel inChan : job_result list) in
 	close_in inChan;
-	if !bytesToVars = [] then bytesToVars := (List.hd jobResults).result_history.bytesToVars;
+	if !bytesToVars = [] then (
+		bytesToVars := (List.hd jobResults).result_history.bytesToVars;
+		allSymbolsInBytesToVars := Stp.allSymbolsInList (List.map fst !bytesToVars);
+	);
 	(* Add each path condition, with its coverage, to the tree of path conditions *)
 	List.iter
 		(fun { result_state = state ; result_history = hist } ->
