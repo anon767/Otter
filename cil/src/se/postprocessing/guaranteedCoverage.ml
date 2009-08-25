@@ -41,20 +41,6 @@ let rec simplifyLogicalOps bytes = match bytes with
 let bytesToVars = ref []
 let allSymbolsInBytesToVars = ref SymbolSet.empty
 
-(* This check is to handle the way we mocked fork() in ngIRCd. Since
-	 both branches are guaranteed to be covered, we want to consider
-	 path conditions equal if they differ only in fork conditions. So,
-	 we ignore elements of the path condition that are about untracked
-	 bytes. *)
-let isUntracked bytes =
-	let symbols = Stp.allSymbols bytes in
-	let trackedSymbols = SymbolSet.inter symbols !allSymbolsInBytesToVars in
-	if SymbolSet.is_empty trackedSymbols
-	then true (* No bytes are tracked *)
-	else if SymbolSet.equal symbols trackedSymbols
-	then false (* All bytes are tracked *)
-	else failwith (To_string.humanReadableBytes !bytesToVars bytes ^ " is partially tracked")
-
 let totalNumberOfPcs = ref 0
 
 type 'a tree =
@@ -200,11 +186,9 @@ let rootNodeData = (trueBytes, CovSet.empty)
 let rec lstToTree lst cov : varDepTree =
 	match lst with
 		| [] -> failwith "I don't think this should happen" (* Node ((trueBytes,cov), []) *)
-		| h::t when isUntracked h -> lstToTree t cov
 		| h::t ->
 				let rec helper acc = function
 					| [] -> Node (rootNodeData, acc)
-					| h::t when isUntracked h -> helper acc t
 					| h::t -> helper [Node ((h,CovSet.empty), acc)] t
 				in
 				helper [Node ((h,cov),[])] t
@@ -223,8 +207,6 @@ let rec add_aux lst cov tree : varDepTree =
 	match lst,tree with
 		| [], Node ((bytes, oldCov), children) -> (* lst is already represented in the tree *)
 				Node ((bytes, CovSet.union cov oldCov), children) (* Union in the coverage *)
-		| h::tl, _ when isUntracked h ->
-				add_aux tl cov tree
 		| h::t, Node (value, children) ->
 				try (* See if we can step to a child *)
 					let matchingChild,otherChildren =
@@ -491,15 +473,33 @@ let calculateDeps treeOfPcs toIgnoreFile configsToTry =
 		(Stats.lookupTime "filter subsets");
 	()
 
+(* This check is to handle the way we mocked fork() in ngIRCd. Since
+	 both branches are guaranteed to be covered, we want to consider
+	 path conditions equal if they differ only in fork conditions. So,
+	 we ignore elements of the path condition that are about untracked
+	 bytes. *)
+let isUntracked bytes =
+	let symbols = Stp.allSymbols bytes in
+	let trackedSymbols = SymbolSet.inter symbols !allSymbolsInBytesToVars in
+	if SymbolSet.is_empty trackedSymbols
+	then true (* No bytes are tracked *)
+	else if SymbolSet.equal symbols trackedSymbols
+	then false (* All bytes are tracked *)
+	else failwith (To_string.humanReadableBytes !bytesToVars bytes ^ " is partially tracked")
+
 (* Get rid of the __ASSUMEs from a path condition. The arguments are
 	 the path_condition and path_condition_tracked fields of a state
-	 structure. *)
-let rec eliminate_untracked apc apct =
-  match apc,apct with 
-    | [],[]->([],[])
-    | apch::apct,apcth::apctt -> 
-        let (apct1,apct2) = eliminate_untracked apct apctt in
-        if apcth then (apch::apct1,apct2) else  (apct1,apch::apct2)
+	 structure. This is not tail-recursive because we need to keep the
+	 path conditions in their original orders (because of the way we
+	 build and use the treeOfPcs, and because the path conditions tend
+	 to have common suffixes but differing prefixes). *)
+let rec eliminate_untracked pc isFromBranch =
+  match pc,isFromBranch with
+    | [],[] -> []
+    | bytes::tl1, fromBranch::tl2 when not fromBranch || isUntracked bytes ->
+				eliminate_untracked tl1 tl2
+		| bytes::tl1, _::tl2 ->
+				bytes :: eliminate_untracked tl1 tl2
     | _,_ -> failwith "Impossible: path_condition and path_condition_tracked must be of equal length"
 
 let treeOfPcs = ref (Node (rootNodeData, []))
@@ -520,13 +520,11 @@ let addCoverageFromFile filename =
 			 if hist.bytesToVars <> !bytesToVars then failwith "Not all bytesToVars are equal";
 			 incr totalNumberOfPcs;
 			 (* Remove __ASSUMEs from the path condition *)
-			 let pc = fst (eliminate_untracked
-											 state.path_condition
-											 state.path_condition_tracked)
-			 in
+			 let pc = eliminate_untracked state.path_condition state.path_condition_tracked in
 			 treeOfPcs := add (List.map simplifyLogicalOps pc) (CovSet.from_exHist hist) !treeOfPcs)
 		jobResults
-end
+
+end (* End module GuarCov *)
 
 let readInValues valuesFile =
 	let inChan = open_in valuesFile in
