@@ -41,6 +41,11 @@ let rec simplifyLogicalOps bytes = match bytes with
 let bytesToVars = ref []
 let allSymbolsInBytesToVars = ref SymbolSet.empty
 
+(* This check is to handle the way we mocked fork() in ngIRCd. Since
+	 both branches are guaranteed to be covered, we want to consider
+	 path conditions equal if they differ only in fork conditions. So,
+	 we ignore elements of the path condition that are about untracked
+	 bytes. *)
 let isUntracked bytes =
 	let symbols = Stp.allSymbols bytes in
 	let trackedSymbols = SymbolSet.inter symbols !allSymbolsInBytesToVars in
@@ -192,12 +197,14 @@ let rootNodeData = (trueBytes, CovSet.empty)
 	 from the bottom of the path, with trueBytes at the root. Also, the
 	 leaf gets cov as its coverage, while all internal nodes get
 	 CovSet.empty *)
-let lstToTree lst cov : varDepTree =
+let rec lstToTree lst cov : varDepTree =
 	match lst with
 		| [] -> failwith "I don't think this should happen" (* Node ((trueBytes,cov), []) *)
+		| h::t when isUntracked h -> lstToTree t cov
 		| h::t ->
 				let rec helper acc = function
 					| [] -> Node (rootNodeData, acc)
+					| h::t when isUntracked h -> helper acc t
 					| h::t -> helper [Node ((h,CovSet.empty), acc)] t
 				in
 				helper [Node ((h,cov),[])] t
@@ -217,11 +224,6 @@ let rec add_aux lst cov tree : varDepTree =
 		| [], Node ((bytes, oldCov), children) -> (* lst is already represented in the tree *)
 				Node ((bytes, CovSet.union cov oldCov), children) (* Union in the coverage *)
 		| h::tl, _ when isUntracked h ->
-				(* This case is to handle the way we mocked fork() in ngIRCd.
-					 Since both branches are guaranteed to be covered, we want
-					 to consider path conditions equal if they differ only in
-					 fork conditions. So, we ignore elements of the path
-					 condition that are about untracked bytes. *)
 				add_aux tl cov tree
 		| h::t, Node (value, children) ->
 				try (* See if we can step to a child *)
