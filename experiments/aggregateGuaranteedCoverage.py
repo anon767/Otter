@@ -9,6 +9,8 @@ count: how many executable items (-1 if not sure)
 dir: the directory that stores the output of calculateVarDeps'''
 	sys.exit(0)
 
+LINE_COMMAND_EXIT_CODE = "command exit code:"
+
 covtype  = sys.argv[1]
 count = int(sys.argv[2])
 dir   = sys.argv[3]
@@ -16,12 +18,16 @@ dir   = sys.argv[3]
 stat_coverage = defaultdict(set)
 stat_coverage_inherited = defaultdict(set)
 stat_touched = set()
+stat_assignment = set()
 
 def getlines(f):
 	s = set()
 	while True:
 		line = f.readline()
 		if line=="\n": break
+		elif LINE_COMMAND_EXIT_CODE in line: 
+			print "\tWarning: I see the line \"%s\"!" % LINE_COMMAND_EXIT_CODE
+			continue
 		else: s.add(line[:-1])
 	return s
 
@@ -46,6 +52,7 @@ for filename in os.listdir(dir):
 					break
 				else:
 					key.add(line[:-1])
+					stat_assignment.add(line[:-1])
 		# touched variables
 		elif "variables are mentioned in the path conditions:" in line:	
 			stat_touched |= getlines(file)
@@ -68,9 +75,9 @@ for v in sorted(stat_touched):
 print ""
 
 stat_total_numconf = 0
-stat_total_numline = 0
+stat_all_lines = set()
 stat_tway_numconf = defaultdict(int)
-stat_tway_numline = defaultdict(int)
+stat_tway_all_lines = defaultdict(set)
 stat_tway_max = defaultdict(int)
 stat_tway_min = defaultdict(lambda:sys.maxint)
 
@@ -84,9 +91,9 @@ for (key,val) in sorted(stat_coverage.items(),key=lambda (k,v):len(k)):
 	print ""
 
 	stat_total_numconf += 1
-	stat_total_numline += len(val)
+	stat_all_lines |= val
 	stat_tway_numconf[len(key)] += 1
-	stat_tway_numline[len(key)] += len(val)
+	stat_tway_all_lines[len(key)] |= val
 	stat_tway_max[len(key)] = max(stat_tway_max[len(key)],len(val))
 	stat_tway_min[len(key)] = min(stat_tway_min[len(key)],len(val))
 print ""
@@ -97,17 +104,32 @@ print "Summary"
 # The set of touched variables
 print "# touched variable: %d" % len(stat_touched)
 print "# configs: %d" % stat_total_numconf
-print "# %ss: %d (%0.2f%%)" % ((covtype,) + percentage(stat_total_numline))
+print "# %ss: %d (%0.2f%%)" % ((covtype,) + percentage(len(stat_all_lines)))
 # for each t,
 for t in sorted(stat_tway_numconf.keys()):
 	print "t: %d" % t
 	print "\t# configs: %d" % stat_tway_numconf[t]
-	print "\t# %ss: %d (%0.2f%%)" % ((covtype,) + percentage(stat_tway_numline[t]))
+	print "\t# %ss: %d (%0.2f%%)" % ((covtype,) + percentage(len(stat_tway_all_lines[t])))
 	print "\tmax: %d" % stat_tway_max[t]
 	print "\tmin: %d" % stat_tway_min[t]
-	print "\taverage: %.2f" % (float(stat_tway_numline[t])/stat_tway_numconf[t])
+	print "\taverage: %.2f" % (float(len(stat_tway_all_lines[t]))/stat_tway_numconf[t])
+print ""
+
+# check for redudant assignment
+for a0 in sorted(stat_assignment):
+	for a1 in sorted(stat_assignment):
+		if a0==a1: continue
+		if a0.split("=")[0]!=a1.split("=")[0]: continue
+		# check if replace a0 by a1 would not decrease any coverage
+		can_replace = True
+		for conf in stat_coverage.keys():
+			if a0 not in conf: continue
+			new_conf = (conf - set([a0])) | set([a1]) 
+			if new_conf not in stat_coverage or stat_coverage[conf]-stat_coverage[new_conf]!=set():
+				can_replace = False
+				break
+		if can_replace:
+			print "Can replace %s with %s" % (a0,a1)
 
 print "Done"
-
-
 
