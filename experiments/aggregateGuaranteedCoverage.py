@@ -2,8 +2,8 @@
 import sys,os
 from collections import defaultdict
 
-if len(sys.argv) != 4:
-	print '''Usage: python aggregateGuaranteedCoverage.py type count dir
+if len(sys.argv) < 4:
+	print '''Usage: python aggregateGuaranteedCoverage.py type count dir [possibleValues]
 type : line | edge | block | condition
 count: how many executable items (-1 if not sure)
 dir: the directory that stores the output of calculateVarDeps'''
@@ -31,11 +31,13 @@ def getlines(f):
 		else: s.add(line[:-1])
 	return s
 
-for filename in os.listdir(dir):
-	if not filename.endswith(".deps"):
-		continue
+def process_file(filename):
+	global stat_touched
+	global stat_coverage
+	global stat_assignment
+
 	print "Reading %s" % filename
-	file = open(dir + '/' + filename)
+	file = open(filename)
 	while True:
 		line = file.readline()
 		# t=0
@@ -58,6 +60,16 @@ for filename in os.listdir(dir):
 			stat_touched |= getlines(file)
 		elif line=="": 
 			break
+
+# single file
+if dir.endswith(".deps"):
+	process_file(dir)
+# multiple files in a dir
+else:
+	for filename in os.listdir(dir):
+		if not filename.endswith(".deps"):
+			continue
+		process_file(dir + '/' + filename)
 print ""
 
 # calculate stat_coverage_inherited 
@@ -131,5 +143,18 @@ for a0 in sorted(stat_assignment):
 		if can_replace:
 			print "Can replace %s with %s" % (a0,a1)
 
+# untouched variables are free to accept any values
+if len(sys.argv)==5:
+	possible_values = dict()
+	for line in open(sys.argv[4],"r"):
+		sline = line.split()
+		possible_values[sline[0]] = sline[1:]
+	for key in set(possible_values.keys())-stat_touched:
+		for v1 in possible_values[key]:
+			for v2 in possible_values[key]:
+				if v1==v2: continue
+				print "Can replace %s=%s with %s=%s" % (key, v1,key,v2)
+	
 print "Done"
+
 
