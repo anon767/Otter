@@ -1,25 +1,5 @@
 Have a non-directory at the top, so creating directory top_dir
-Adding /Users/kkma/t/experiments/grep/Makefile to top_dir
-Adding /Users/kkma/t/experiments/grep/acconfig.h to top_dir
-Adding /Users/kkma/t/experiments/grep/config.h to top_dir
-Adding /Users/kkma/t/experiments/grep/dfa.h to top_dir
-Adding /Users/kkma/t/experiments/grep/getopt.h to top_dir
-Adding /Users/kkma/t/experiments/grep/getpagesize.h to top_dir
 Adding /Users/kkma/t/experiments/grep/grep.c to top_dir
-Adding /Users/kkma/t/experiments/grep/grep.h to top_dir
-Adding /Users/kkma/t/experiments/grep/grep.stats to top_dir
-Adding /Users/kkma/t/experiments/grep/input to top_dir
-Adding /Users/kkma/t/experiments/grep/kwset.h to top_dir
-Adding /Users/kkma/t/experiments/grep/obstack.h to top_dir
-Creating filelist for otherFiles
-Adding /Users/kkma/t/experiments/grep/regex.h to top_dir
-Adding /Users/kkma/t/experiments/grep/run to top_dir
-Adding /Users/kkma/t/experiments/grep/savedir.h to top_dir
-Adding /Users/kkma/t/experiments/grep/system.h to top_dir
-Adding /Users/kkma/t/experiments/grep/test.rb to top_dir
-Creating filelist for tests
-Adding /Users/kkma/t/experiments/grep/tunables.h to top_dir
-Adding /Users/kkma/t/experiments/grep/vms_fab.h to top_dir
 Categorizing files.
 Finding a working MD5 command....
 Found a working MD5 command.
@@ -27,25 +7,22 @@ Computing results.
 
 
 SLOC	Directory	SLOC-by-Language (Sorted)
-10451   top_dir         ansic=10207,ruby=244
-7780    otherFiles      ansic=7780
-0       tests           (none)
+9138    top_dir         ansic=9138
 
 
 Totals grouped by language (dominant language first):
-ansic:        17987 (98.66%)
-ruby:           244 (1.34%)
+ansic:         9138 (100.00%)
 
 
 
 
-Total Physical Source Lines of Code (SLOC)                = 18,231
-Development Effort Estimate, Person-Years (Person-Months) = 4.22 (50.59)
+Total Physical Source Lines of Code (SLOC)                = 9,138
+Development Effort Estimate, Person-Years (Person-Months) = 2.04 (24.50)
  (Basic COCOMO model, Person-Months = 2.4 * (KSLOC**1.05))
-Schedule Estimate, Years (Months)                         = 0.93 (11.10)
+Schedule Estimate, Years (Months)                         = 0.70 (8.43)
  (Basic COCOMO model, Months = 2.5 * (person-months**0.38))
-Estimated Average Number of Developers (Effort/Schedule)  = 4.56
-Total Estimated Cost to Develop                           = $ 569,499
+Estimated Average Number of Developers (Effort/Schedule)  = 2.91
+Total Estimated Cost to Develop                           = $ 275,763
  (average salary = $56,286/year, overhead = 2.40).
 SLOCCount, Copyright (C) 2001-2004 David A. Wheeler
 SLOCCount is Open Source Software/Free Software, licensed under the GNU GPL.
