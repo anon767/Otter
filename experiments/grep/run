@@ -32,8 +32,7 @@ elif [ "$1" == stat ]; then
 	exit
 else
         echo "Doing symbolic execution"
-        $CILLY --merge --useLogicalOperators \
-		-I. -I $MOCKEDDIR \
-                grep_comb.c otherFiles/symtest.c \
-		--warnall --doexecute $*
+	$CILLY --merge --disallowDuplication --useLogicalOperators \
+	--timeout=1 \
+	grep_comb.c --covStats=$STATSFILE --doexecute $*
 fi

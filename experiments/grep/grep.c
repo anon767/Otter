@@ -23,7 +23,6 @@
 /*#define _FILE_OFFSET_BITS 32 */  /** I change this line in config.h from 64 to 32 **/
 
 /*** end of added for cfe ****/ 
-
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #define flag_config 1
@@ -51,7 +50,7 @@
 #include "grep.h"
 #include "savedir.h"
 
-
+#undef HAVE_MMAP
 #undef MAX
 #define MAX(A,B) ((A) > (B) ? (A) : (B))
 
@@ -1140,6 +1139,10 @@ main (int argc, char **argv)
   extern int optind;
   int exe_index;
 
+#ifndef CONCRETE
+  symtest_initialize();
+#endif
+
   initialize_main (&argc, &argv);
   /* added for diff target and target.int.exe */
   argv[0] = "target5";
@@ -1366,7 +1369,7 @@ main (int argc, char **argv)
       case 'z':
 	eolbyte = '\0';
 	break;
-      case BINARY_FILES_OPTION:
+      case BINARY_FILES_OPTION: case 'O':
 	if (strcmp (optarg, "binary") == 0)
 	  binary_files = BINARY_BINARY_FILES;
 	else if (strcmp (optarg, "text") == 0)
@@ -1384,126 +1387,107 @@ main (int argc, char **argv)
 	break;
       }
 
-#ifndef CONCRETE
-  symtest_initialize();
-#endif
-
 #ifdef SHOW_HELP
-  show_help = 0; /*show_help = SHOW_HELP;*/
+  show_help = SHOW_HELP;
 #else
-  show_help = 0; /*__SYMBOLIC(&show_help);  __ASSUME(show_help == 0 || show_help == 1);*/
+  __SYMBOLIC(&show_help);  __ASSUME(OR(show_help == 0, show_help == 1));
 #endif
 #ifdef SHOW_VERSION
-  show_version = 0; /*show_version = SHOW_VERSION;*/
+  show_version = SHOW_VERSION;
 #else
-  show_version = 0; /*__SYMBOLIC(&show_version);  __ASSUME(show_version == 0 || show_version == 1);*/
+  __SYMBOLIC(&show_version);  __ASSUME(OR(show_version == 0, show_version == 1));
 #endif
 #ifdef LIST_FILES
   list_files = LIST_FILES;
 #else
-  __SYMBOLIC(&list_files);  __ASSUME(list_files == -1 || list_files == 0 ||  list_files == 1);
+  __SYMBOLIC(&list_files);  __ASSUME(OR(list_files == -1, list_files == 0, list_files == 1));
 #endif
 #ifdef WITH_FILENAMES
   with_filenames = WITH_FILENAMES;
 #else
-  __SYMBOLIC(&with_filenames);  __ASSUME(with_filenames == 0 || with_filenames == 1);
+  __SYMBOLIC(&with_filenames);  __ASSUME(OR(with_filenames == 0, with_filenames == 1));
 #endif
 #ifdef FILENAME_MASK
   filename_mask = FILENAME_MASK;
 #else
-  __SYMBOLIC(&filename_mask);  __ASSUME(filename_mask == 0 || filename_mask == 1);
+  __SYMBOLIC(&filename_mask);  __ASSUME(OR(filename_mask == 0, filename_mask == 1));
 #endif
 #ifdef OUT_QUIET
   out_quiet = OUT_QUIET;
 #else
-  __SYMBOLIC(&out_quiet);  __ASSUME(out_quiet == 0 || out_quiet == 1);
+  __SYMBOLIC(&out_quiet);  __ASSUME(OR(out_quiet == 0, out_quiet == 1));
 #endif
 #ifdef OUT_INVERT
   out_invert = OUT_INVERT;
 #else
-  __SYMBOLIC(&out_invert);  __ASSUME(out_invert == 0 || out_invert == 1);
+  __SYMBOLIC(&out_invert);  __ASSUME(OR(out_invert == 0, out_invert == 1));
 #endif
 #ifdef OUT_FILE
   out_file = OUT_FILE;
 #else
-  __SYMBOLIC(&out_file);  __ASSUME(out_file == 0 || out_file == 1);
+  __SYMBOLIC(&out_file);  __ASSUME(OR(out_file == 0, out_file == 1));
 #endif
 #ifdef OUT_LINE
   out_line = OUT_LINE;
 #else
-  __SYMBOLIC(&out_line);  __ASSUME(out_line == 0 || out_line == 1);
+  __SYMBOLIC(&out_line);  __ASSUME(OR(out_line == 0, out_line == 1));
 #endif
 #ifdef OUT_BYTE
   out_byte = OUT_BYTE;
 #else
-  __SYMBOLIC(&out_byte);  __ASSUME(out_byte == 0 || out_byte == 1);
+  __SYMBOLIC(&out_byte);  __ASSUME(OR(out_byte == 0, out_byte == 1));
 #endif
 #ifdef MATCH_ICASE
   match_icase = MATCH_ICASE;
 #else
-  __SYMBOLIC(&match_icase);  __ASSUME(match_icase == 0 || match_icase == 1);
+  __SYMBOLIC(&match_icase);  __ASSUME(OR(match_icase == 0, match_icase == 1));
 #endif
 #ifdef MATCH_WORDS
   match_words = MATCH_WORDS;
 #else
-  __SYMBOLIC(&match_words);  __ASSUME(match_words == 0 || match_words == 1);
+  __SYMBOLIC(&match_words);  __ASSUME(OR(match_words == 0, match_words == 1));
 #endif
 #ifdef MATCH_LINES
   match_lines = MATCH_LINES;
 #else
-  __SYMBOLIC(&match_lines);  __ASSUME(match_lines == 0 || match_lines == 1);
-#endif
-#ifdef BINARY_FILES
-  binary_files = BINARY_FILES;
-#else
-  __SYMBOLIC(&binary_files);  __ASSUME(binary_files == BINARY_BINARY_FILES || binary_files == TEXT_BINARY_FILES || binary_files == WITHOUT_MATCH_BINARY_FILES);
+  __SYMBOLIC(&match_lines);  __ASSUME(OR(match_lines == 0, match_lines == 1));
 #endif
 #ifdef COUNT_MATCHES
   count_matches = COUNT_MATCHES;
 #else
-  __SYMBOLIC(&count_matches);  __ASSUME(count_matches == 0 || count_matches == 1);
+  __SYMBOLIC(&count_matches);  __ASSUME(OR(count_matches == 0, count_matches == 1));
 #endif
 #ifdef NO_FILENAMES
   no_filenames = NO_FILENAMES;
 #else
-  __SYMBOLIC(&no_filenames);  __ASSUME(no_filenames == 0 || no_filenames == 1);
+  __SYMBOLIC(&no_filenames);  __ASSUME(OR(no_filenames == 0, no_filenames == 1));
 #endif
 #ifdef SUPPRESS_ERRORS
   suppress_errors = SUPPRESS_ERRORS;
 #else
-  __SYMBOLIC(&suppress_errors);  __ASSUME(suppress_errors == 0 || suppress_errors == 1);
+  __SYMBOLIC(&suppress_errors);  __ASSUME(OR(suppress_errors == 0, suppress_errors == 1));
 #endif
 #ifdef DONE_ON_MATCH
   done_on_match = DONE_ON_MATCH;
 #else
-  __SYMBOLIC(&done_on_match);  __ASSUME(done_on_match == 0 || done_on_match == 1);
+  __SYMBOLIC(&done_on_match);  __ASSUME(OR(done_on_match == 0, done_on_match == 1));
 #endif
-#ifdef DEFAULT_CONTEXT
-  default_context = DEFAULT_CONTEXT;
-#else
-  __SYMBOLIC(&default_context);  __ASSUME(default_context == 0 || default_context == 1 || default_context == 2);
-#endif
+
 #ifdef OUT_BEFORE
   out_before = OUT_BEFORE;
 #else
-  __SYMBOLIC(&out_before);  __ASSUME(out_before == -1 || out_before == 0 || out_before == 1);
+  __SYMBOLIC(&out_before);  __ASSUME(OR(out_before = -1, out_before == 0, out_before == 1, out_before == 2, out_before == 3, out_before == 4, out_before == 5, out_before == 6, out_before == 7, out_before == 8, out_before == 9));
 #endif
 #ifdef OUT_AFTER
   out_after = OUT_AFTER;
 #else
-  __SYMBOLIC(&out_after);  __ASSUME(out_after == -1 || out_after == 0 || out_after == 1);
+  __SYMBOLIC(&out_after);  __ASSUME(OR(out_after = -1, out_after == 0, out_after == 1, out_after == 2, out_after == 3, out_after == 4, out_after == 5, out_after == 6, out_after == 7, out_after == 8, out_after == 9));
 #endif
-#ifdef DIRECTORIES
-  directories = DIRECTORIES;
-#else
-  __SYMBOLIC(&directories);  __ASSUME(directories == READ_DIRECTORIES || directories == SKIP_DIRECTORIES || directories == RECURSE_DIRECTORIES);
-#endif
-
 
 #ifdef EXE_INDEX
   exe_index = EXE_INDEX;
 #else
-  __SYMBOLIC(&exe_index); __ASSUME(exe_index == 0 || exe_index == 1 || exe_index == 2 || exe_index == 3);
+  __SYMBOLIC(&exe_index); __ASSUME(OR(exe_index == 0, exe_index == 1, exe_index == 2));
 #endif
 
   if (exe_index == 0)
@@ -1517,10 +1501,6 @@ main (int argc, char **argv)
   if (exe_index == 2)
   {
     setmatcher("fgrep");
-  }
-  if (exe_index == 3)
-  {
-    setmatcher("awk");
   }
 
   if (out_after < 0)
@@ -3639,7 +3619,7 @@ dfacomp (char *s, size_t len, struct dfa *d, int searchflag)
         dfaanalyze(d, searchflag);
     }
 }
-
+#ifdef KEEP_ALL
 /* Free the storage held by the components of a dfa. */
 void
 dfafree (struct dfa *d)
@@ -3672,7 +3652,7 @@ dfafree (struct dfa *d)
       free((ptr_t) dm);
     }
 }
-
+#endif KEEP_ALL
 /* Having found the postfix representation of the regular expression,
    try to find a long sequence of characters that must appear in any line
    containing the r.e.
@@ -7580,8 +7560,8 @@ weak_alias (__stpcpy, stpcpy)
 #ifdef _LIBC
 /* We have to keep the namespace clean.  */
 # define regfree(preg) __regfree (preg)
-# define regexec(pr, st, nm, pm, ef) __regexec (pr, st, nm, pm, ef)
-# define regcomp(preg, pattern, cflags) __regcomp (preg, pattern, cflags)
+/*# define regexec(pr, st, nm, pm, ef) __regexec (pr, st, nm, pm, ef)*/
+/*# define regcomp(preg, pattern, cflags) __regcomp (preg, pattern, cflags)*/
 # define regerror(errcode, preg, errbuf, errbuf_size) \
 	__regerror(errcode, preg, errbuf, errbuf_size)
 # define re_set_registers(bu, re, nu, st, en) \
@@ -7597,7 +7577,7 @@ weak_alias (__stpcpy, stpcpy)
 # define re_set_syntax(syntax) __re_set_syntax (syntax)
 # define re_search_2(bufp, st1, s1, st2, s2, startpos, range, regs, stop) \
 	__re_search_2 (bufp, st1, s1, st2, s2, startpos, range, regs, stop)
-# define re_compile_fastmap(bufp) __re_compile_fastmap (bufp)
+/*# define re_compile_fastmap(bufp) __re_compile_fastmap (bufp)*/
 
 #define btowc __btowc
 #endif
@@ -10739,7 +10719,7 @@ compile_range (p_ptr, pend, translate, syntax, b)
    the pattern buffer.
 
    Returns 0 if we succeed, -2 if an internal error.   */
-
+#ifdef KEEP_ALL
 int
 re_compile_fastmap (bufp)
      struct re_pattern_buffer *bufp;
@@ -11032,7 +11012,7 @@ re_compile_fastmap (bufp)
 #ifdef _LIBC
 weak_alias (__re_compile_fastmap, re_compile_fastmap)
 #endif
-
+#endif /* KEEP_ALL */
 /* Set REGS to hold NUM_REGS registers, storing them in STARTS and
    ENDS.  Subsequent matches using PATTERN_BUFFER and REGS will use
    this memory for recording register information.  STARTS and ENDS
@@ -11167,7 +11147,7 @@ re_search_2 (bufp, string1, size1, string2, size2, startpos, range, regs, stop)
 
   /* Update the fastmap now if not correct already.  */
   if (fastmap && !bufp->fastmap_accurate)
-    if (re_compile_fastmap (bufp) == -2)
+/*    if (re_compile_fastmap (bufp) == -2) KEEP_ALL */
       return -2;
 
   /* Loop through the string, looking for a place to start matching.  */
@@ -13199,7 +13179,7 @@ re_exec (s)
 
    It returns 0 if it succeeds, nonzero if it doesn't.  (See regex.h for
    the return codes and their meanings.)  */
-
+#ifdef KEEP_ALL
 int
 regcomp (preg, pattern, cflags)
     regex_t *preg;
@@ -13275,7 +13255,7 @@ regcomp (preg, pattern, cflags)
 #ifdef _LIBC
 weak_alias (__regcomp, regcomp)
 #endif
-
+#endif /* KEEP_ALL */
 
 /* regexec searches for a given pattern, specified by PREG, in the
    string STRING.
@@ -13290,7 +13270,7 @@ weak_alias (__regcomp, regcomp)
    string; if REG_NOTEOL is set, then $ does not match at the end.
 
    We return 0 if we find a match and REG_NOMATCH if not.  */
-
+#ifdef KEEP_ALL
 int
 regexec (preg, string, nmatch, pmatch, eflags)
     const regex_t *preg;
@@ -13353,7 +13333,7 @@ regexec (preg, string, nmatch, pmatch, eflags)
 #ifdef _LIBC
 weak_alias (__regexec, regexec)
 #endif
-
+#endif /* KEEP_ALL */
 
 /* Returns a message corresponding to an error code, ERRCODE, returned
    from either regcomp or regexec.   We don't use PREG here.  */
