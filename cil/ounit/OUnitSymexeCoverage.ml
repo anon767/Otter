@@ -13,7 +13,7 @@ let test_coverage content ?(label=content) tracked_fns test =
         Executeargs.print_args.Executeargs.arg_print_nothing <- true;
         (* enable coverage tracking *)
         Executeargs.run_args.Executeargs.arg_edge_coverage <- true;
-        Executeargs.run_args.Executeargs.arg_stmt_coverage <- true;
+        Executeargs.run_args.Executeargs.arg_block_coverage <- true;
         Executeargs.run_args.Executeargs.arg_line_coverage <- true;
         (* enable tracking on given functions *)
         Executeargs.run_args.Executeargs.arg_fns <-
@@ -29,41 +29,41 @@ let test_coverage content ?(label=content) tracked_fns test =
         let job = Executemain.job_for_file file ["OUnitSymexeCoverage"] in
         let results = Driver.main_loop job in
 
-        (* figure out the statements that were executed *)
-        let (all_edges, all_stmts, all_lines) = List.fold_left begin fun (edges, stmts, lines) result ->
+        (* figure out the coverage *)
+        let (all_edges, all_blocks, all_lines) = List.fold_left begin fun (edges, blocks, lines) result ->
             match result with
                 | Return (_, c)
                 | Exit (_, c) ->
                     let edges = EdgeSet.union edges c.result_history.coveredEdges in
-                    let stmts = IntSet.union stmts c.result_history.coveredStmts in
+                    let blocks = StmtInfoSet.union blocks c.result_history.coveredBlocks in
                     let lines = LineSet.union lines c.result_history.coveredLines in
-                    (edges, stmts, lines)
+                    (edges, blocks, lines)
                 | Truncated (c, d) ->
                     let edges = EdgeSet.union (EdgeSet.union edges c.result_history.coveredEdges)
                                              d.result_history.coveredEdges in
-                    let stmts = IntSet.union (IntSet.union stmts c.result_history.coveredStmts)
-                                             d.result_history.coveredStmts in
+                    let blocks = StmtInfoSet.union (StmtInfoSet.union blocks c.result_history.coveredBlocks)
+                                             d.result_history.coveredBlocks in
                     let lines = LineSet.union (LineSet.union lines c.result_history.coveredLines)
                                              d.result_history.coveredLines in
-                    (edges, stmts, lines)
+                    (edges, blocks, lines)
                 | Abandoned _ ->
-                    (edges, stmts, lines)
-        end (EdgeSet.empty, IntSet.empty, LineSet.empty) results in
+                    (edges, blocks, lines)
+        end (EdgeSet.empty, StmtInfoSet.empty, LineSet.empty) results in
         let all_edges_count = EdgeSet.cardinal all_edges in
-        let all_stmts_count = IntSet.cardinal all_stmts in
+        let all_blocks_count = StmtInfoSet.cardinal all_blocks in
         let all_lines_count = LineSet.cardinal all_lines in
 
         (* test that no assertions failed *)
         assert_string (Executedebug.get_log ());
 
         (* finally run the test *)
-        test file results all_edges all_edges_count all_stmts all_stmts_count all_lines all_lines_count
+        test file results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count
     end begin fun filename ->
         Unix.unlink filename
     end
 
 (* assert_equal helper with a descriptive error message *)
-let assert_stmts_count = assert_equal ~printer:(fun ff -> Format.fprintf ff "%d") ~msg:"Wrong number of statements"
+let assert_blocks_count = assert_equal ~printer:(fun ff -> Format.fprintf ff "%d") ~msg:"Wrong number of blocks"
 
 
 (*
@@ -71,24 +71,28 @@ let assert_stmts_count = assert_equal ~printer:(fun ff -> Format.fprintf ff "%d"
  *)
 
 let simple_coverage_testsuite = "Simple" >::: [
-    test_coverage ~label:"One statement" "
+    test_coverage ~label:"Single block" "
         int main(int argc, char *argv[]) {
             return 0; /* 1 */
         }
     " ["main"]
-    begin fun file results all_edges all_edges_count all_stmts all_stmts_count all_lines all_lines_count ->
-        assert_stmts_count 1 all_stmts_count
+    begin fun file results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
+        assert_blocks_count 1 all_blocks_count
     end;
 
-    test_coverage ~label:"Two statements" "
+    test_coverage ~label:"If-then-else block" "
         int main(int argc, char *argv[]) {
             int i;
-            i = 0;     /* 1 */
-            return i;  /* 2 */
+            if (argc) {
+                i = 0; /* 1 */
+            } else {
+                i = 1; /* 2 */
+            }
+            return i;  /* 3 */
         }
     " ["main"]
-    begin fun file results all_edges all_edges_count all_stmts all_stmts_count all_lines all_lines_count ->
-        assert_stmts_count 2 all_stmts_count
+    begin fun file results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
+        assert_blocks_count 3 all_blocks_count
     end;
 ]
 
@@ -100,21 +104,21 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
             return 0; /* 3 */
         }
     " ["main"; "foo"]
-    begin fun file results all_edges all_edges_count all_stmts all_stmts_count all_lines all_lines_count ->
-        assert_stmts_count 3 all_stmts_count
+    begin fun file results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
+        assert_blocks_count 3 all_blocks_count
     end;
 
     test_coverage ~label:"x = 1; foo();" "
-        void foo(void) { /* return:3 */ }
+        void foo(void) { /* return:2 */ }
         int main(int argc, char *argv[]) {
             int x;
-            x = 1;    /* 1 */
-            foo();    /* 2 */
-            return 0; /* 4 */
+            x = 1;
+            foo();    /* 1 */
+            return 0; /* 3 */
         }
     " ["main"; "foo"]
-    begin fun file results all_edges all_edges_count all_stmts all_stmts_count all_lines all_lines_count ->
-        assert_stmts_count 4 all_stmts_count
+    begin fun file results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
+        assert_blocks_count 3 all_blocks_count
     end;
 
     test_coverage ~label:"foo(); bar();" "
@@ -126,24 +130,24 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
             return 0; /* 5 */
         }
     " ["main"; "foo"; "bar"]
-    begin fun file results all_edges all_edges_count all_stmts all_stmts_count all_lines all_lines_count ->
-        assert_stmts_count 5 all_stmts_count
+    begin fun file results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
+        assert_blocks_count 5 all_blocks_count
     end;
 
     test_coverage ~label:"x = 1; foo(); y = 2; bar();" "
-        void foo(void) { /* return:3 */ }
-        void bar(void) { /* return:5 */ }
+        void foo(void) { /* return:2 */ }
+        void bar(void) { /* return:4 */ }
         int main(int argc, char *argv[]) {
             int x, y;
-            x = 1;    /* 1 */
-            foo();    /* 2 */
-            y = 2;    /* 4 */
-            bar();    /* 6 */
-            return 0; /* 7 */
+            x = 1;
+            foo();    /* 1 */
+            y = 2;
+            bar();    /* 3 */
+            return 0; /* 5 */
         }
     " ["main"; "foo"; "bar"]
-    begin fun file results all_edges all_edges_count all_stmts all_stmts_count all_lines all_lines_count ->
-        assert_stmts_count 7 all_stmts_count
+    begin fun file results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
+        assert_blocks_count 5 all_blocks_count
     end;
 
     test_coverage ~label:"foo() { bar(); };" "
@@ -154,8 +158,8 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
             return 0; /* 5 */
         }
     " ["main"; "foo"; "bar"]
-    begin fun file results all_edges all_edges_count all_stmts all_stmts_count all_lines all_lines_count ->
-        assert_stmts_count 5 all_stmts_count
+    begin fun file results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
+        assert_blocks_count 5 all_blocks_count
     end;
 ]
 
