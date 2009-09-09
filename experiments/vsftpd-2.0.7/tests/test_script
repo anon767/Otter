@@ -1,22 +1,11 @@
 # $1 is the name of the test
 
-#echo TEST_SCRIPT $1
-#echo \#BEGIN TEST_SCRIPT
-#date
-#	echo \#BEGIN TEST_SUITE restricted
-#	date
-#		./symbTest_restricted $1
-#		./concreteTest_restricted $1
-#	date
-#	echo \#DONE TEST_SUITE restricted
-#	echo \#BEGIN TEST_SUITE normal
-#	date
-		./symbTest $1 line
-		./symbTest $1 block
-		./symbTest $1 edge
-		./symbTest $1 cond _unfolded
-#		./concreteTest $1
-#	date
-#	echo \#DONE TEST_SUITE normal
-#date
-#echo \#DONE TEST_SCRIPT
+./symbTest $1 line
+./symbTest $1 block
+./symbTest $1 edge
+./symbTest $1 cond _unfolded
+
+#./guarCov $1 line
+#./guarCov $1 block
+#./guarCov $1 edge
+#./guarCov $1 cond _unfolded

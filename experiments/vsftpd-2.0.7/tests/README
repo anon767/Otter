@@ -1,43 +1,103 @@
-This is not perfectly laid out, and things require a bit of tinkering
-to change from one type of run to the next. Here's how it works:
+Here is the process for running things:
 
-The *.c files shouldn't have to be changed. These are the actual tests.
+First, in the vsftpd-2.0.7/ directory (the parent of this directory,
+tests/), invoke
+./run stats		# 1
+./run merge		# 2
+./run mergeUnfolded	# 3
+(The files produced are already in the repository, so these steps may
+not be necessary. I list them for completeness, and in case the files
+need to be updated or regenerated for any reason.)
 
-The *.test files just call './test_script' with their own name as an
-argument. They shouldn't have to be changed, either.
+Step 1 generates vsftpd.stats, which contains the names of all
+functions in vsftpd. This will be used later for coverage tracking.
 
-symbolic_values contains the ifdefs to allow configuration options to
-be symbolic or concrete based on preprocessor variables. Each *.c file
-#includes this file.
+Step 2 generates vsftpd_comb.c, which is the file which will be
+symbolically executed with each test for line, block, or edge
+coverage.
 
-test_script is the script that actually gets invoked by Skoll. It, in
-turn, invokes some other scripts, and it has to be changed
-appropriately, depending on what you want to run.
+Step 3 generates vsftpd_comb_unfolded.c, which is the file used for
+gathering condition coverage information (where logical operators are
+unfolded).
 
-The scripts that test_script invokes, run symbolic or concrete tests
-in the full or restricted configuration space, are:
-
-concreteTest
-concreteTest_restricted
-symbTest
-symbTest_restricted
-
-The latter two leave the marshalled data files in the directory
-/fs/skoll/symexe/data/vsftpd-2.0.7/marshalledData/ ,
-as <testname>.data and <testname>_restricted.data, respectively.
-
-In addition to these four scripts, there is one, guarCov, that computes
-guaranteed coverage. Like the others, if you want to run this, you
-should invoke it through test_script if you want Skoll to run it. For
-now, you have to specify within the script itself where the marshalled
-data is. Currently, the script reads
-MARSHALLED_FILE=$DIR/data/marshalledData/${1}.data
-where ${1} will be the test name. Given how symbTest_restricted names
-its outputs, this should be changed to
-MARSHALLED_FILE=$DIR/data/marshalledData/${1}_restricted.data
-in order to compute guaranteed coverage for that data.
-
-Invoking
+After this, invoking
 trunk/experiments/vsftpd-2.0.7/skoll_scheduler/schedulingCommands
 schedules all the tests in Skoll. Individual tests can be scheduled by
-picking out the corresponding lines from that script.
+picking out the corresponding lines from that script. (Right now,
+scheduling commands will run the 64 tests used in the ICSE2010
+submission. Plenty of other tests are commented out for various
+reasons (ran too long, didn't add much coverage, caused errors).
+
+Some details on the files in this directory (tests/):
+
+common_init.c is an initialization file for all symbolic tests. It
+defines a function
+void common_initialization(const char*);
+which initializes stdin, stdout, and stderr; adds a bunch of files to
+the IOSIM file system; and sets the configuration options. It sets
+tunable_one_process_model to 1, assigns values given by preprocessor
+variables for options, and assigns symbolic values to many options.
+
+The other *.c files are the actual tests. They get merged with the
+*_comb*.c files for symbolic execution.
+
+The *.test are the scripts called by Skoll. Each one just calls
+'./test_script' with its own name as an argument, and runs the tests
+of the same name.
+
+test_script has to be changed appropriately, depending on what you
+want to run. Right now, the only two scripts you might want to invoke
+are symbTest and guarCov. Both are run as
+./<script> <testname> <coverageType> <_unfolded (optional)>
+For example, these lines would run symbolic tests and guaranteed
+coverage for each coverage type, with condition coverage using
+unfolded logical operators:
+
+./symbTest $1 line
+./symbTest $1 block
+./symbTest $1 edge
+./symbTest $1 cond _unfolded
+./guarCov $1 line
+./guarCov $1 block
+./guarCov $1 edge
+./guarCov $1 cond _unfolded
+
+Whatever you run will be packaged up by Skoll into one big zip file
+and sent to
+/fs/skoll/symexe/data/vsftpd-2.0.7/
+with a timestamped (hence unique) filename. Each script marks its
+beginning and end with lines beginning with '#BEGIN' or '#END', which
+are used by a script in that data directory named
+distributeSkollOutput.py to split out the individual outputs and put
+them in the appropriate directories.
+
+The only caveats here are
+- you shouldn't run symbTest twice with the same arguments within a
+single invocation of test_script, because the second run will
+overwrite the marshalled data file of the first.
+- './guarCov x y z' requires the output of './symbTest x y z', so
+either symbTest has to have been run before, or you have to run
+symbTest earlier than guarCov within test_script.
+
+symbTest runs the symbolic tests, according to its arguments. It
+leaves creates a marshalled data file
+/fs/skoll/symexe/data/vsftpd-2.0.7/$2$3/marshalledData/$1.data . This
+directory will be created if it doesn't exist, but it will overwrite
+whatever is there if it does exist, so be careful. symbTest also does
+chgrp -R skoll $OUTPUT_DIR
+chmod -R g=u $OUTPUT_DIR
+where OUTPUT_DIR is that marshalledData/ directory.
+
+guarCov computes guaranteed coverage. Like the others, if you want to
+run this, you should invoke it through test_script if you want Skoll
+to run it. It assumes there is a marshalled data file as symbTest
+would have left it, so if you've moved or renamed the files, guarCov
+won't work. guarCov also requires a file containing the possible
+values for the configuration options. The file I've been using is
+/fs/skoll/symexe/data/vsftpd-2.0.7/vsftpdPossibleValues
+and that's currently hard-coded into guarCov. It's important that you
+have the right possible values; if the values aren't enough to cover
+everything that was covered during symbolic execution, the computation
+will not stop until it tries every combination of values for every
+subset of configuration options, and then it will die with an
+exception (if you let it run that long).
