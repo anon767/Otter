@@ -10,7 +10,7 @@ void symtest_initialize() {
 	IOSIM_fd[1]->sym_file->stat.st_size = 0;
 	stdout = IOSIM_fd[1];
 
-	sym_file_t* input = IOSIM_addfile("/charles_9.txt", 0);
-	input->contents = "123\nabc";
+	sym_file_t* input = IOSIM_addfile("/spencer2_v2_33.txt", 0);
+	input->contents = "ESUBREG";
 	input->stat.st_size = 7;
 }

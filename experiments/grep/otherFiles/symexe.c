@@ -9,8 +9,4 @@ void symtest_initialize() {
 	IOSIM_fd[1]->sym_file->contents = NULL;
 	IOSIM_fd[1]->sym_file->stat.st_size = 0;
 	stdout = IOSIM_fd[1];
-
-	sym_file_t* input = IOSIM_addfile("/charles_9.txt", 0);
-	input->contents = "123\nabc";
-	input->stat.st_size = 7;
 }
