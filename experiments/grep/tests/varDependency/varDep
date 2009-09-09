@@ -1,8 +1,0 @@
-grepDir=/fs/skoll/symexe/data/grep
-dataDir=$grepDir/marshalledData/restricted
-posVals=$grepDir/nWayFiles/grepPossibleValues
-
-../../../cil/bin/cilly --docalculateVarDeps \
-  --fileWithCovInfo=$dataDir/$1.data \
-  --fileWithPossibleValues=$posVals \
-  --numVars=2 ../../../cil/setest/test0.c
