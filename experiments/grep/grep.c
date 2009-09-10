@@ -1476,12 +1476,12 @@ main (int argc, char **argv)
 #ifdef OUT_BEFORE
   out_before = OUT_BEFORE;
 #else
-  __SYMBOLIC(&out_before);  __ASSUME(OR(out_before = -1, out_before == 0, out_before == 1, out_before == 2, out_before == 3, out_before == 4, out_before == 5, out_before == 6, out_before == 7, out_before == 8, out_before == 9));
+  __SYMBOLIC(&out_before);  __ASSUME(OR(out_before == -1, out_before == 0, out_before == 1, out_before == 2, out_before == 3, out_before == 4, out_before == 5, out_before == 6, out_before == 7, out_before == 8, out_before == 9));
 #endif
 #ifdef OUT_AFTER
   out_after = OUT_AFTER;
 #else
-  __SYMBOLIC(&out_after);  __ASSUME(OR(out_after = -1, out_after == 0, out_after == 1, out_after == 2, out_after == 3, out_after == 4, out_after == 5, out_after == 6, out_after == 7, out_after == 8, out_after == 9));
+  __SYMBOLIC(&out_after);  __ASSUME(OR(out_after == -1, out_after == 0, out_after == 1, out_after == 2, out_after == 3, out_after == 4, out_after == 5, out_after == 6, out_after == 7, out_after == 8, out_after == 9));
 #endif
 
 #ifdef EXE_INDEX

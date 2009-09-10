@@ -70,7 +70,6 @@ build_state_zero
 dfaexec
 dfainit
 dfacomp
-dfafree
 icatalloc
 icpyalloc
 istrstr
@@ -115,7 +114,6 @@ at_begline_loc_p
 at_endline_loc_p
 group_in_compile_stack
 compile_range
-re_compile_fastmap
 re_set_registers
 re_search
 re_search_2
@@ -127,7 +125,5 @@ alt_match_null_string_p
 common_op_match_null_string_p
 bcmp_translate
 re_compile_pattern
-regcomp
-regexec
 regerror
 regfree

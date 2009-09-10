@@ -1,0 +1,9 @@
+type=line
+grepDir=/fs/skoll/symexe/data/grep
+cov=Cov
+dataDir=$grepDir/marshalledData/$type$cov
+posVals=$grepDir/nWayFiles/grepPossibleValues
+
+../../../cil/src/se/postprocessing/guaranteedCoverage --type $type \
+  --fileWithPossibleValues $posVals $dataDir/$1.data
+
