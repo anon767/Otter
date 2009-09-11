@@ -568,8 +568,8 @@ struct _NUMERIC {
    void __builtin_va_copy(__builtin_va_list  , __builtin_va_list  ) ;  */
 /* compiler builtin: 
    void __builtin_va_start(__builtin_va_list  ) ;  */
-#line 1 "cil-sN8JtIdU.o"
-#pragma merger(0,"/tmp/cil-ZsOjIgO3.i","")
+#line 1 "cil-KmHLXh01.o"
+#pragma merger(0,"/tmp/cil-9yonAO9f.i","")
 #line 1 "cil-szE29gCN.o"
 #pragma merger(0,"/tmp/cil-is1BnJGN.i","")
 #line 640 "/usr/include/stdlib.h"
@@ -3155,8 +3155,8 @@ int vsprintf(char * __restrict  buffer , char const   * __restrict  format , __g
   return (__cil_tmp);
 }
 }
-#line 1 "cil-mMIf82DY.o"
-#pragma merger(0,"/tmp/cil-yfBsgRtU.i","")
+#line 1 "cil-zyK8qCbM.o"
+#pragma merger(0,"/tmp/cil-Q089EP5w.i","")
 #line 1 "./mockedFns/alarm.c"
 unsigned int alarm(unsigned int seconds ) 
 { 
@@ -3168,8 +3168,8 @@ unsigned int alarm(unsigned int seconds )
 }
 /* compiler builtin: 
    long __builtin_expect(long x , long expected_value ) ;  */
-#line 1 "cil-QhCyJyq7.o"
-#pragma merger(0,"/tmp/cil-ZvF4uRMu.i","")
+#line 1 "cil-9JzRP8eT.o"
+#pragma merger(0,"/tmp/cil-UiO8taqK.i","")
 #line 2 "./mockedFns/builtin.c"
 long __builtin_expect(long x , long expected_value ) 
 { 
@@ -3193,8 +3193,8 @@ size_t __ctype_get_mb_cur_max(void)
   return (1U);
 }
 }
-#line 1 "cil-7rSE7SgO.o"
-#pragma merger(0,"/tmp/cil-AGvnozPc.i","")
+#line 1 "cil-h6blafiv.o"
+#pragma merger(0,"/tmp/cil-CZivn65t.i","")
 #line 586 "/usr/include/stdlib.h"
  __attribute__((__nothrow__)) void *calloc(size_t nmemb , size_t size )  __attribute__((__malloc__)) ;
 #line 4 "./mockedFns/calloc.c"
@@ -3215,8 +3215,8 @@ void *calloc(size_t nmemb , size_t size )
   return (p);
 }
 }
-#line 1 "cil-KsBK04dz.o"
-#pragma merger(0,"/tmp/cil-TUsuWnxK.i","")
+#line 1 "cil-uNRKwbfk.o"
+#pragma merger(0,"/tmp/cil-3qOVnTse.i","")
 #line 722 "/usr/include/stdio.h"
  __attribute__((__nothrow__)) void clearerr(FILE *stream ) ;
 #line 3 "./mockedFns/clearerr.c"
@@ -3230,8 +3230,8 @@ void clearerr(FILE *stream )
   return;
 }
 }
-#line 1 "cil-N9qSsUzp.o"
-#pragma merger(0,"/tmp/cil-uJNE5IEa.i","")
+#line 1 "cil-5kNL0CLE.o"
+#pragma merger(0,"/tmp/cil-vNCyalct.i","")
 #line 135 "/usr/include/dirent.h"
 DIR *opendir(char const   *dirname )  __attribute__((__nonnull__(1))) ;
 #line 142
@@ -3326,8 +3326,8 @@ struct dirent *readdir(DIR *dir )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-5GmCTJPH.o"
-#pragma merger(0,"/tmp/cil-ASMNtoWh.i","")
+#line 1 "cil-G4XET4WC.o"
+#pragma merger(0,"/tmp/cil-hYMVFswF.i","")
 #line 79 "/usr/include/pwd.h"
 void endpwent(void) ;
 #line 3 "./mockedFns/endpwent.c"
@@ -3339,8 +3339,8 @@ void endpwent(void)
   return;
 }
 }
-#line 1 "cil-ckCT8r6e.o"
-#pragma merger(0,"/tmp/cil-aOB8xfOD.i","")
+#line 1 "cil-zHBVEt8M.o"
+#pragma merger(0,"/tmp/cil-aJLnIaj5.i","")
 #line 654 "/usr/include/stdlib.h"
  __attribute__((__nothrow__)) char *getenv(char const   *name )  __attribute__((__nonnull__(1))) ;
 #line 665
@@ -3367,8 +3367,8 @@ int putenv(char *str )
   return (0);
 }
 }
-#line 1 "cil-lH9FjqOx.o"
-#pragma merger(0,"/tmp/cil-AXcYKBhF.i","")
+#line 1 "cil-ffmT38kD.o"
+#pragma merger(0,"/tmp/cil-81vxNYIq.i","")
 #line 2 "./mockedFns/__errno_location.c"
 static int mock_errno  ;
 #line 1
@@ -3382,8 +3382,8 @@ int *__errno_location(void)
   return (& mock_errno);
 }
 }
-#line 1 "cil-Y5XBi1be.o"
-#pragma merger(0,"/tmp/cil-cITzIyd1.i","")
+#line 1 "cil-7B0vlkae.o"
+#pragma merger(0,"/tmp/cil-MpdlFdMc.i","")
 #line 1 "./mockedFns/_exit.c"
 void _exit(int status ) 
 { 
@@ -3393,8 +3393,8 @@ void _exit(int status )
   exit(status);
 }
 }
-#line 1 "cil-xON6KW7U.o"
-#pragma merger(0,"/tmp/cil-7Nm2Q8hW.i","")
+#line 1 "cil-KuwYUNSv.o"
+#pragma merger(0,"/tmp/cil-QeAPv03j.i","")
 #line 6 "./mockedFns/fcntl.c"
 int fcntl(int fildes , int cmd  , ...) 
 { 
@@ -3404,8 +3404,8 @@ int fcntl(int fildes , int cmd  , ...)
   return (0);
 }
 }
-#line 1 "cil-xyjpxKDt.o"
-#pragma merger(0,"/tmp/cil-GFc6777A.i","")
+#line 1 "cil-Va2qszcx.o"
+#pragma merger(0,"/tmp/cil-dz0CCADV.i","")
 #line 724 "/usr/include/stdio.h"
  __attribute__((__nothrow__)) int feof(FILE *stream ) ;
 #line 5 "./mockedFns/feof.c"
@@ -3423,8 +3423,8 @@ int feof(FILE *stream )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-PKvZb9cW.o"
-#pragma merger(0,"/tmp/cil-gkrtbQCo.i","")
+#line 1 "cil-utNPgZRv.o"
+#pragma merger(0,"/tmp/cil-yFK4eWxB.i","")
 #line 726 "/usr/include/stdio.h"
  __attribute__((__nothrow__)) int ferror(FILE *stream ) ;
 #line 3 "./mockedFns/ferror.c"
@@ -3438,8 +3438,8 @@ int ferror(FILE *stream )
   return (0);
 }
 }
-#line 1 "cil-DEHAMXGp.o"
-#pragma merger(0,"/tmp/cil-BDWLPbmV.i","")
+#line 1 "cil-4sJICSzn.o"
+#pragma merger(0,"/tmp/cil-MwDM6Pvj.i","")
 #line 759 "/usr/include/stdio.h"
  __attribute__((__nothrow__)) int fileno_unlocked(FILE *stream ) ;
 #line 4 "./mockedFns/fileno.c"
@@ -3473,8 +3473,8 @@ int fileno_unlocked(FILE *stream )
   return (-1);
 }
 }
-#line 1 "cil-3KFkLDcn.o"
-#pragma merger(0,"/tmp/cil-NKORkocy.i","")
+#line 1 "cil-SahZDRV7.o"
+#pragma merger(0,"/tmp/cil-CgPm2dqH.i","")
 #line 254 "/usr/include/stdio.h"
 FILE *fopen(char const   * __restrict  filename , char const   * __restrict  mode )  __asm__("fopen64")  ;
 #line 40 "./mockedFns/iosim.h"
@@ -3495,8 +3495,8 @@ FILE *fopen(char const   * __restrict  filename , char const   * __restrict  mod
   return ((FILE *)IOSIM_fd[fd]);
 }
 }
-#line 1 "cil-O4cc5rMC.o"
-#pragma merger(0,"/tmp/cil-B7ECK8SO.i","")
+#line 1 "cil-a30ELizC.o"
+#pragma merger(0,"/tmp/cil-wyOIMuM0.i","")
 #line 48 "./mockedFns/iosim.h"
 int IOSIM_read(int fildes , void *buf , int nbyte ) ;
 #line 4 "./mockedFns/getc.c"
@@ -3525,8 +3525,8 @@ int _IO_getc(struct _IO_FILE *stream )
   }
 }
 }
-#line 1 "cil-jWNPnZU2.o"
-#pragma merger(0,"/tmp/cil-jKZccduL.i","")
+#line 1 "cil-C2IPMHMd.o"
+#pragma merger(0,"/tmp/cil-siI9hjEs.i","")
 #line 103 "/usr/include/grp.h"
 struct group *getgrgid(__gid_t gid ) ;
 #line 3 "./mockedFns/getgrgid.c"
@@ -3538,8 +3538,8 @@ struct group *getgrgid(__gid_t gid )
   return ((struct group *)0);
 }
 }
-#line 1 "cil-FOKxnI6x.o"
-#pragma merger(0,"/tmp/cil-TE6SQKhj.i","")
+#line 1 "cil-s6lAbN9g.o"
+#pragma merger(0,"/tmp/cil-OxEbyUJo.i","")
 #line 59 "/usr/include/getopt.h"
 extern char *optarg ;
 #line 73
@@ -4346,8 +4346,8 @@ int ( /* missing proto */  _getopt_internal)(int argc , char * const  *argv , ch
   return ((int )c);
 }
 }
-#line 1 "cil-CYY9zRG2.o"
-#pragma merger(0,"/tmp/cil-Rk88R0r3.i","")
+#line 1 "cil-W68QS3Xy.o"
+#pragma merger(0,"/tmp/cil-64iqyCpo.i","")
 #line 1 "./mockedFns/getpagesize.c"
 int getpagesize(void) 
 { 
@@ -4357,8 +4357,8 @@ int getpagesize(void)
   return (4096);
 }
 }
-#line 1 "cil-rt73Je0m.o"
-#pragma merger(0,"/tmp/cil-CGHzCPUg.i","")
+#line 1 "cil-G3W1j3Ag.o"
+#pragma merger(0,"/tmp/cil-wVRGDjED.i","")
 #line 128 "/usr/include/sys/socket.h"
  __attribute__((__nothrow__)) int getpeername(int socket___0 , struct sockaddr * __restrict  address ,
                                               socklen_t * __restrict  address_len ) ;
@@ -4390,8 +4390,8 @@ int getpeername(int socket___0 , struct sockaddr * __restrict  address , socklen
   return (0);
 }
 }
-#line 1 "cil-t8xoJW8j.o"
-#pragma merger(0,"/tmp/cil-lZt0D2rM.i","")
+#line 1 "cil-lwEdPR5y.o"
+#pragma merger(0,"/tmp/cil-skg6Df8J.i","")
 #line 117 "/usr/include/pwd.h"
 struct passwd *getpwnam(char const   *__name ) ;
 #line 4 "./mockedFns/getpwnam.c"
@@ -4412,8 +4412,8 @@ struct passwd *getpwnam(char const   *__name )
   return (x);
 }
 }
-#line 1 "cil-DDfAbgOh.o"
-#pragma merger(0,"/tmp/cil-XpeGm4Qi.i","")
+#line 1 "cil-E5WJsenJ.o"
+#pragma merger(0,"/tmp/cil-4Lm393Tm.i","")
 #line 111 "/usr/include/pwd.h"
 struct passwd *getpwuid(__uid_t uid ) ;
 #line 3 "./mockedFns/getpwuid.c"
@@ -4425,8 +4425,8 @@ struct passwd *getpwuid(__uid_t uid )
   return ((struct passwd *)0);
 }
 }
-#line 1 "cil-0zVlZRIX.o"
-#pragma merger(0,"/tmp/cil-1V39FZEK.i","")
+#line 1 "cil-EvflpGDF.o"
+#pragma merger(0,"/tmp/cil-QiqIJmpi.i","")
 #line 3 "./mockedFns/gettext.c"
 char *gettext(char const   *text ) 
 { 
@@ -4436,8 +4436,8 @@ char *gettext(char const   *text )
   return ((char *)text);
 }
 }
-#line 1 "cil-Jl7Ge2aH.o"
-#pragma merger(0,"/tmp/cil-ybCxyKtH.i","")
+#line 1 "cil-XQfUP72S.o"
+#pragma merger(0,"/tmp/cil-rVJEqLQI.i","")
 #line 2 "./mockedFns/groups.c"
 int initgroups(char const   *user , gid_t group ) 
 { 
@@ -4456,8 +4456,23 @@ int setgroups(size_t __n , __gid_t const   *__groups )
   return (0);
 }
 }
-#line 1 "cil-IbXLC9CZ.o"
-#pragma merger(0,"/tmp/cil-EhvFK4qh.i","")
+#line 1 "cil-5VDnCxhI.o"
+#pragma merger(0,"/tmp/cil-zbFmv2OF.i","")
+#line 1 "./mockedFns/__h_errno_location.c"
+int __h_errno_location_number  =    0;
+#line 2
+ __attribute__((__nothrow__)) int *__h_errno_location(void)  __attribute__((__const__)) ;
+#line 2 "./mockedFns/__h_errno_location.c"
+int *__h_errno_location(void) 
+{ 
+
+  {
+#line 3
+  return (& __h_errno_location_number);
+}
+}
+#line 1 "cil-MC8n9cE8.o"
+#pragma merger(0,"/tmp/cil-okLrB6Fh.i","")
 #line 54 "/usr/include/arpa/inet.h"
  __attribute__((__nothrow__)) char *inet_ntoa(struct in_addr in ) ;
 #line 65
@@ -4559,8 +4574,8 @@ char const   *inet_ntop(int af , void const   * __restrict  src , char * __restr
   return ((char const   *)dst);
 }
 }
-#line 1 "cil-JbclZF03.o"
-#pragma merger(0,"/tmp/cil-CftJDXoe.i","")
+#line 1 "cil-MLHIeOIA.o"
+#pragma merger(0,"/tmp/cil-Xx3mtEXB.i","")
 #line 451 "/usr/include/libio.h"
  __attribute__((__nothrow__)) int _IO_putc(int __c , _IO_FILE *__fp ) ;
 #line 6 "./mockedFns/_IO_putc.c"
@@ -4574,8 +4589,8 @@ int _IO_putc(int __c , _IO_FILE *__fp )
   return (0);
 }
 }
-#line 1 "cil-9RrD3o1A.o"
-#pragma merger(0,"/tmp/cil-vwhXC2W2.i","")
+#line 1 "cil-y2P7HEVU.o"
+#pragma merger(0,"/tmp/cil-yfUGULVg.i","")
 #line 275 "/usr/include/sys/stat.h"
  __attribute__((__nothrow__)) __mode_t umask(__mode_t cmask ) ;
 #line 40 "./mockedFns/iosim.h"
@@ -5316,8 +5331,8 @@ void IOSIM_updatesize(int fildes , int t )
   return;
 }
 }
-#line 1 "cil-E2MZfaZJ.o"
-#pragma merger(0,"/tmp/cil-ClmW5GGi.i","")
+#line 1 "cil-pMlyngll.o"
+#pragma merger(0,"/tmp/cil-mUeaNuj7.i","")
 #line 719 "/usr/include/unistd.h"
  __attribute__((__nothrow__)) int isatty(int fildes ) ;
 #line 3 "./mockedFns/isatty.c"
@@ -5331,8 +5346,8 @@ int isatty(int fildes )
   return (0);
 }
 }
-#line 1 "cil-V0RvBYkL.o"
-#pragma merger(0,"/tmp/cil-6va7eVdw.i","")
+#line 1 "cil-NjOOix3e.o"
+#pragma merger(0,"/tmp/cil-bAU4tkNd.i","")
 #line 81 "/usr/include/libintl.h"
  __attribute__((__nothrow__)) char *textdomain(char const   *domainname ) ;
 #line 85
@@ -5367,8 +5382,8 @@ char *textdomain(char const   *domainname )
   return (directory);
 }
 }
-#line 1 "cil-YIlLgw5A.o"
-#pragma merger(0,"/tmp/cil-ugkwiZgi.i","")
+#line 1 "cil-BC7zBQ8g.o"
+#pragma merger(0,"/tmp/cil-7mhhCSab.i","")
 #line 66 "/usr/include/string.h"
  __attribute__((__nothrow__)) void *memchr(void const   *s , int c , size_t n )  __attribute__((__pure__,
 __nonnull__(1))) ;
@@ -5398,8 +5413,8 @@ void *memchr(void const   *s , int c , size_t n )
   return ((void *)0);
 }
 }
-#line 1 "cil-sFZGNlKU.o"
-#pragma merger(0,"/tmp/cil-E0k1u5Oi.i","")
+#line 1 "cil-XW65GLrX.o"
+#pragma merger(0,"/tmp/cil-2cAfCjmB.i","")
 #line 7 "./mockedFns/mmap.c"
 void *mmap(void *start , size_t length , int prot , int flags , int fd , off_t offset ) 
 { void *x ;
@@ -5423,8 +5438,8 @@ int munmap(void *addr , size_t len )
   return (0);
 }
 }
-#line 1 "cil-Uo22zWnD.o"
-#pragma merger(0,"/tmp/cil-4OWLixyu.i","")
+#line 1 "cil-sYChlsOl.o"
+#pragma merger(0,"/tmp/cil-41eNsDQm.i","")
 #line 2 "./mockedFns/mprotect.c"
 int mprotect(void *__addr , size_t __len , int __prot ) 
 { 
@@ -5434,8 +5449,8 @@ int mprotect(void *__addr , size_t __len , int __prot )
   return (0);
 }
 }
-#line 1 "cil-LujxWCS2.o"
-#pragma merger(0,"/tmp/cil-eqwpf4W0.i","")
+#line 1 "cil-bdPA7K9O.o"
+#pragma merger(0,"/tmp/cil-AH1xklzy.i","")
 #line 3 "./mockedFns/my_index.c"
 char *my_index(char const   *s , int c ) 
 { char *__cil_tmp ;
@@ -5447,8 +5462,8 @@ char *my_index(char const   *s , int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-Bk1r8d29.o"
-#pragma merger(0,"/tmp/cil-kZGpvhAM.i","")
+#line 1 "cil-JpV33YT0.o"
+#pragma merger(0,"/tmp/cil-TH59w7bS.i","")
 #line 354 "/usr/include/netinet/in.h"
  __attribute__((__nothrow__)) uint32_t ntohl(uint32_t netlong )  __attribute__((__const__)) ;
 #line 355
@@ -5549,8 +5564,8 @@ uint16_t ntohs(uint16_t netshort )
   return (retval);
 }
 }
-#line 1 "cil-gCl2qhVJ.o"
-#pragma merger(0,"/tmp/cil-hmm5J6Wv.i","")
+#line 1 "cil-bFH68jMC.o"
+#pragma merger(0,"/tmp/cil-2V1cgVJH.i","")
 #line 131 "/usr/include/netdb.h"
 struct hostent *gethostbyaddr(void const   *addr , __socklen_t len , int type ) ;
 #line 138
@@ -5575,8 +5590,8 @@ struct hostent *gethostbyname(char const   *name )
 }
 /* compiler builtin: 
    void __builtin_va_arg(__builtin_va_list  , unsigned int  , void * ) ;  */
-#line 1 "cil-OyQF2H2B.o"
-#pragma merger(0,"/tmp/cil-xdMyn55T.i","")
+#line 1 "cil-lj8KEqgS.o"
+#pragma merger(0,"/tmp/cil-5ibcmU5I.i","")
 #line 7 "./mockedFns/open.c"
 int open(char const   *pathname , int flags  , ...)  __asm__("open64") __attribute__((__nonnull__(1))) ;
 #line 7 "./mockedFns/open.c"
@@ -5609,8 +5624,8 @@ int open(char const   *pathname , int flags  , ...)
   return (__cil_tmp___1);
 }
 }
-#line 1 "cil-IOrfzf0P.o"
-#pragma merger(0,"/tmp/cil-TxeCuzC7.i","")
+#line 1 "cil-Gj6TZ1q2.o"
+#pragma merger(0,"/tmp/cil-D98lIK7i.i","")
 #line 27 "/usr/include/security/pam_appl.h"
 int pam_start(char const   *service_name , char const   *user , struct pam_conv  const  *pam_conversation ,
               pam_handle_t **pamh ) ;
@@ -5624,8 +5639,8 @@ int pam_start(char const   *service_name , char const   *user , struct pam_conv 
   return (-1);
 }
 }
-#line 1 "cil-LI7UoqkL.o"
-#pragma merger(0,"/tmp/cil-uMxYZqMl.i","")
+#line 1 "cil-dC7byyRG.o"
+#pragma merger(0,"/tmp/cil-DMXGwNhE.i","")
 #line 48 "/usr/include/sys/poll.h"
 int poll(struct pollfd *fds , nfds_t nfds , int timeout ) ;
 #line 5 "./mockedFns/poll.c"
@@ -5796,8 +5811,8 @@ int event_end_with_signal(int t )
   return (0);
 }
 }
-#line 1 "cil-OltVp5GL.o"
-#pragma merger(0,"/tmp/cil-L9QCMy4I.i","")
+#line 1 "cil-GXaSSi19.o"
+#pragma merger(0,"/tmp/cil-7nyvaZ3k.i","")
 #line 1 "./mockedFns/prctl.c"
 int prctl(int __option  , ...) 
 { 
@@ -5807,8 +5822,8 @@ int prctl(int __option  , ...)
   return (0);
 }
 }
-#line 1 "cil-wJ1I4UsX.o"
-#pragma merger(0,"/tmp/cil-SuZY5MeI.i","")
+#line 1 "cil-JJPcDyOh.o"
+#pragma merger(0,"/tmp/cil-brAgtrk9.i","")
 #line 591 "/usr/include/stdio.h"
 int puts(char const   *s ) ;
 #line 3 "./mockedFns/puts.c"
@@ -5822,8 +5837,8 @@ int puts(char const   *s )
   return (0);
 }
 }
-#line 1 "cil-2QReHXex.o"
-#pragma merger(0,"/tmp/cil-pWexL7kp.i","")
+#line 1 "cil-U4h2Z0Mw.o"
+#pragma merger(0,"/tmp/cil-885b38ZM.i","")
 #line 4 "./mockedFns/realloc.c"
  __attribute__((__nothrow__)) void *realloc(void *ptr , size_t size )  __attribute__((__malloc__)) ;
 #line 4 "./mockedFns/realloc.c"
@@ -5851,8 +5866,8 @@ void *realloc(void *ptr , size_t size )
   return (ptr);
 }
 }
-#line 1 "cil-5O4stnze.o"
-#pragma merger(0,"/tmp/cil-ANOcLP9T.i","")
+#line 1 "cil-YOOGf1rW.o"
+#pragma merger(0,"/tmp/cil-FjmcC4Ak.i","")
 #line 450 "/usr/include/unistd.h"
  __attribute__((__nothrow__)) char *getcwd(char *buf , size_t size ) ;
 #line 9 "./mockedFns/realpath.c"
@@ -6032,8 +6047,8 @@ char *realpath(char const   * __restrict  path , char * __restrict  got_path )
   return ((char *)got_path);
 }
 }
-#line 1 "cil-LVE7jSvJ.o"
-#pragma merger(0,"/tmp/cil-TohIGHMi.i","")
+#line 1 "cil-vH7Buzjk.o"
+#pragma merger(0,"/tmp/cil-pET4nwUV.i","")
 #line 143 "/usr/include/sys/socket.h"
 ssize_t recv(int sockfd , void *buf , size_t len , int flags ) ;
 #line 6 "./mockedFns/recv.c"
@@ -6065,8 +6080,8 @@ ssize_t recv(int sockfd , void *buf , size_t len , int flags )
   return (num_chars_read);
 }
 }
-#line 1 "cil-UCf8P2lE.o"
-#pragma merger(0,"/tmp/cil-VxrxhUBN.i","")
+#line 1 "cil-QA2YDpm6.o"
+#pragma merger(0,"/tmp/cil-abGWGD9c.i","")
 #line 38 "/usr/include/sys/sendfile.h"
  __attribute__((__nothrow__)) ssize_t sendfile(int out_fd , int in_fd , __off64_t *offset ,
                                                size_t count )  __asm__("sendfile64")  ;
@@ -6139,8 +6154,8 @@ ssize_t sendfile(int out_fd , int in_fd , __off64_t *offset , size_t count )
   return (numSent);
 }
 }
-#line 1 "cil-TIJlZcDs.o"
-#pragma merger(0,"/tmp/cil-4gBRB7wY.i","")
+#line 1 "cil-QSkRoDbe.o"
+#pragma merger(0,"/tmp/cil-lwqiXd7j.i","")
 #line 125 "/usr/include/locale.h"
  __attribute__((__nothrow__)) char *setlocale(int category , char const   *locale ) ;
 #line 3 "./mockedFns/setlocale.c"
@@ -6154,8 +6169,8 @@ char *setlocale(int category , char const   *locale )
   return ((char *)locale);
 }
 }
-#line 1 "cil-UPCOkeEH.o"
-#pragma merger(0,"/tmp/cil-lNpbtbJS.i","")
+#line 1 "cil-aEJC5Oj2.o"
+#pragma merger(0,"/tmp/cil-k3VzJ4Kd.i","")
 #line 216 "/usr/include/signal.h"
  __attribute__((__nothrow__)) int sigemptyset(sigset_t *set )  __attribute__((__nonnull__(1))) ;
 #line 219
@@ -6225,8 +6240,8 @@ int sigprocmask(int how , sigset_t const   * __restrict  set , sigset_t * __rest
   return (0);
 }
 }
-#line 1 "cil-wiWuCm32.o"
-#pragma merger(0,"/tmp/cil-jRaXkcmy.i","")
+#line 1 "cil-6Vrlhqco.o"
+#pragma merger(0,"/tmp/cil-Y9sdD9Fa.i","")
 #line 109 "/usr/include/sys/select.h"
 int select(int nfds , fd_set * __restrict  readfds , fd_set * __restrict  writefds ,
            fd_set * __restrict  errorfds , struct timeval * __restrict  timeout ) ;
@@ -6243,6 +6258,9 @@ int select(int nfds , fd_set * __restrict  readfds , fd_set * __restrict  writef
                                               socklen_t * __restrict  __len ) ;
 #line 124
 int connect(int socket___0 , struct sockaddr  const  *address , socklen_t address_len ) ;
+#line 185
+ __attribute__((__nothrow__)) int getsockopt(int socket___0 , int level , int option_name ,
+                                             void * __restrict  option_value , socklen_t * __restrict  option_len ) ;
 #line 192
  __attribute__((__nothrow__)) int setsockopt(int socket___0 , int level , int option_name ,
                                              void const   *option_value , socklen_t option_len ) ;
@@ -6424,63 +6442,78 @@ int getsockname(int __fd , struct sockaddr * __restrict  __addr , socklen_t * __
   return (0);
 }
 }
+#line 57
+ __attribute__((__nothrow__)) int getsockopt(int socket___0 , int level , int option_name ,
+                                             void * __restrict  option_value , socklen_t * __restrict  option_len ) ;
 #line 57 "./mockedFns/socket.c"
-int connect(int socket___0 , struct sockaddr  const  *address , socklen_t address_len ) 
+int getsockopt(int socket___0 , int level , int option_name , void * __restrict  option_value ,
+               socklen_t * __restrict  option_len ) 
 { 
 
   {
+#line 58
+  *((int *)option_value) = 0;
 #line 59
   return (0);
 }
 }
-#line 62 "./mockedFns/socket.c"
+#line 64 "./mockedFns/socket.c"
+int connect(int socket___0 , struct sockaddr  const  *address , socklen_t address_len ) 
+{ 
+
+  {
+#line 66
+  return (0);
+}
+}
+#line 69 "./mockedFns/socket.c"
 int accept(int sockfd , struct sockaddr * __restrict  address , socklen_t * __restrict  address_len ) 
 { sym_file_stream_t *sock ;
   int fd ;
 
   {
-#line 65
-  sock = IOSIM_fd[sockfd];
-#line 66
-  if (sock->fd_type != 2) {
-#line 67
-    __COMMENT("Error in accept(): a non-ssock is passed to accept().");
-#line 68
-    exit(1);
-  }
-#line 71
-  if (sock->offset >= (sock->sym_file)->stat.st_size) {
 #line 72
-    __COMMENT("Error in accept(): there\'s no socket available to be accepted (accept() called too early).");
+  sock = IOSIM_fd[sockfd];
 #line 73
+  if (sock->fd_type != 2) {
+#line 74
+    __COMMENT("Error in accept(): a non-ssock is passed to accept().");
+#line 75
     exit(1);
   }
-#line 75
-  fd = *((int *)(sock->sym_file)->contents + sock->offset);
-#line 76
-  (sock->offset) ++;
 #line 78
-  address->sa_family = (unsigned short)2;
+  if (sock->offset >= (sock->sym_file)->stat.st_size) {
+#line 79
+    __COMMENT("Error in accept(): there\'s no socket available to be accepted (accept() called too early).");
 #line 80
-  address->sa_data[0] = (char)0;
-#line 81
-  address->sa_data[1] = (char)0;
-#line 84
-  address->sa_data[2] = (char)10;
+    exit(1);
+  }
+#line 82
+  fd = *((int *)(sock->sym_file)->contents + sock->offset);
+#line 83
+  (sock->offset) ++;
 #line 85
-  address->sa_data[3] = (char)20;
-#line 86
-  address->sa_data[4] = (char)30;
+  address->sa_family = (unsigned short)2;
 #line 87
+  address->sa_data[0] = (char)0;
+#line 88
+  address->sa_data[1] = (char)0;
+#line 91
+  address->sa_data[2] = (char)10;
+#line 92
+  address->sa_data[3] = (char)20;
+#line 93
+  address->sa_data[4] = (char)30;
+#line 94
   address->sa_data[5] = (char)40;
-#line 90
+#line 97
   return (fd);
 }
 }
-#line 94
+#line 101
  __attribute__((__nothrow__)) int socketpair(int domain , int type , int protocol ,
                                              int *socket_vector ) ;
-#line 94 "./mockedFns/socket.c"
+#line 101 "./mockedFns/socket.c"
 int socketpair(int domain , int type , int protocol , int *socket_vector ) 
 { int fd0 ;
   int __cil_tmp ;
@@ -6491,58 +6524,58 @@ int socketpair(int domain , int type , int protocol , int *socket_vector )
   void *__cil_tmp___3 ;
 
   {
-#line 96
-  __cil_tmp = IOSIM_newfd();
-#line 96
-  fd0 = __cil_tmp;
-#line 97
-  __cil_tmp___0 = malloc(sizeof(sym_file_stream_t ));
-#line 97
-  IOSIM_fd[fd0] = (sym_file_stream_t *)__cil_tmp___0;
-#line 98
-  (IOSIM_fd[fd0])->offset = 0LL;
-#line 100
-  __cil_tmp___1 = malloc(sizeof(sym_file_t ));
-#line 100
-  (IOSIM_fd[fd0])->sym_file = (sym_file_t *)__cil_tmp___1;
-#line 101
-  ((IOSIM_fd[fd0])->sym_file)->contents = (char *)((void *)0);
-#line 102
-  ((IOSIM_fd[fd0])->sym_file)->stat.st_size = 0LL;
 #line 103
-  ((IOSIM_fd[fd0])->sym_file)->stat.st_mode = 49152U;
-#line 106
-  __cil_tmp___2 = IOSIM_newfd();
-#line 106
-  fd1 = __cil_tmp___2;
+  __cil_tmp = IOSIM_newfd();
+#line 103
+  fd0 = __cil_tmp;
+#line 104
+  __cil_tmp___0 = malloc(sizeof(sym_file_stream_t ));
+#line 104
+  IOSIM_fd[fd0] = (sym_file_stream_t *)__cil_tmp___0;
+#line 105
+  (IOSIM_fd[fd0])->offset = 0LL;
 #line 107
-  __cil_tmp___3 = malloc(sizeof(sym_file_stream_t ));
+  __cil_tmp___1 = malloc(sizeof(sym_file_t ));
 #line 107
-  IOSIM_fd[fd1] = (sym_file_stream_t *)__cil_tmp___3;
+  (IOSIM_fd[fd0])->sym_file = (sym_file_t *)__cil_tmp___1;
 #line 108
-  (IOSIM_fd[fd1])->offset = 0LL;
+  ((IOSIM_fd[fd0])->sym_file)->contents = (char *)((void *)0);
 #line 109
-  (IOSIM_fd[fd1])->sym_file = (IOSIM_fd[fd0])->sym_file;
-#line 111
-  *(socket_vector + 0) = fd0;
-#line 112
-  *(socket_vector + 1) = fd1;
+  ((IOSIM_fd[fd0])->sym_file)->stat.st_size = 0LL;
+#line 110
+  ((IOSIM_fd[fd0])->sym_file)->stat.st_mode = 49152U;
+#line 113
+  __cil_tmp___2 = IOSIM_newfd();
+#line 113
+  fd1 = __cil_tmp___2;
 #line 114
+  __cil_tmp___3 = malloc(sizeof(sym_file_stream_t ));
+#line 114
+  IOSIM_fd[fd1] = (sym_file_stream_t *)__cil_tmp___3;
+#line 115
+  (IOSIM_fd[fd1])->offset = 0LL;
+#line 116
+  (IOSIM_fd[fd1])->sym_file = (IOSIM_fd[fd0])->sym_file;
+#line 118
+  *(socket_vector + 0) = fd0;
+#line 119
+  *(socket_vector + 1) = fd1;
+#line 121
   return (0);
 }
 }
-#line 117 "./mockedFns/socket.c"
+#line 124 "./mockedFns/socket.c"
 int select(int nfds , fd_set * __restrict  readfds , fd_set * __restrict  writefds ,
            fd_set * __restrict  errorfds , struct timeval * __restrict  timeout ) 
 { 
 
   {
-#line 120
+#line 127
   return (1);
 }
 }
-#line 1 "cil-S9A4xTLg.o"
-#pragma merger(0,"/tmp/cil-x7s5fkLs.i","")
+#line 1 "cil-JLbW0gkR.o"
+#pragma merger(0,"/tmp/cil-uIKZ8kIP.i","")
 #line 332 "/usr/include/sys/stat.h"
  __attribute__((__nothrow__)) int __fxstat(int __ver , int __fildes , struct stat *__stat_buf )  __asm__("__fxstat64") __attribute__((__nonnull__(3))) ;
 #line 335
@@ -6619,8 +6652,8 @@ int __lxstat(int __ver , char const   *__filename , struct stat *__stat_buf )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-fZpFJRAX.o"
-#pragma merger(0,"/tmp/cil-TmzQssq5.i","")
+#line 1 "cil-hR8hI110.o"
+#pragma merger(0,"/tmp/cil-TAHqTbmC.i","")
 #line 106 "/usr/include/string.h"
  __attribute__((__nothrow__)) int strcoll(char const   *s1 , char const   *s2 )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
@@ -6638,8 +6671,8 @@ int strcoll(char const   *s1 , char const   *s2 )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-6LEx31Rd.o"
-#pragma merger(0,"/tmp/cil-XsPbAuvB.i","")
+#line 1 "cil-vEDGspzi.o"
+#pragma merger(0,"/tmp/cil-lUGTzpn9.i","")
 #line 4 "./mockedFns/strdup.c"
  __attribute__((__nothrow__)) char *strdup(char const   *p_str )  __attribute__((__nonnull__(1),
 __malloc__)) ;
@@ -6668,8 +6701,8 @@ char *strdup(char const   *p_str )
   return (theCopy);
 }
 }
-#line 1 "cil-KPucWz95.o"
-#pragma merger(0,"/tmp/cil-X9wMjBzO.i","")
+#line 1 "cil-TVSlUuXf.o"
+#pragma merger(0,"/tmp/cil-H12hbv9b.i","")
 #line 256 "/usr/include/string.h"
  __attribute__((__nothrow__)) char *strerror(int errnum ) ;
 #line 9 "./mockedFns/strerror.c"
@@ -6712,8 +6745,8 @@ char *strerror(int errnum )
   return (message);
 }
 }
-#line 1 "cil-RwzX2d2o.o"
-#pragma merger(0,"/tmp/cil-BnnPxa1W.i","")
+#line 1 "cil-m8oWjAIB.o"
+#pragma merger(0,"/tmp/cil-L2nnCeEY.i","")
 #line 4 "./mockedFns/strrchr.c"
  __attribute__((__nothrow__)) char *strrchr(char const   *s , int c )  __attribute__((__pure__,
 __nonnull__(1))) ;
@@ -6746,8 +6779,8 @@ char *strrchr(char const   *s , int c )
   return ((char *)p);
 }
 }
-#line 1 "cil-N2WyKp23.o"
-#pragma merger(0,"/tmp/cil-HukEGMWa.i","")
+#line 1 "cil-6NXDl0t9.o"
+#pragma merger(0,"/tmp/cil-aqHuRuTD.i","")
 #line 184 "/usr/include/time.h"
  __attribute__((__nothrow__)) time_t time(time_t *__timer ) ;
 #line 197
@@ -6832,12 +6865,12 @@ size_t strftime(char * __restrict  s , size_t maxsize , char const   * __restric
   return (0U);
 }
 }
-#line 1 "cil-e2coCgSV.o"
-#pragma merger(0,"/tmp/cil-CuLutwyD.i","")
+#line 1 "cil-do6Z3pas.o"
+#pragma merger(0,"/tmp/cil-hLWY0Fq9.i","")
 #line 3 "./mockedFns/umask.c"
 static int usermask___0  ;
-#line 1 "cil-TVCCOrgK.o"
-#pragma merger(0,"/tmp/cil-lEXc8bIw.i","")
+#line 1 "cil-B1HxFz0Q.o"
+#pragma merger(0,"/tmp/cil-VAJmm1RD.i","")
 #line 598 "/usr/include/stdio.h"
 int ungetc(int c , FILE *stream ) ;
 #line 4 "./mockedFns/unget.c"
@@ -6851,8 +6884,8 @@ int ungetc(int c , FILE *stream )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-WoFAHYuN.o"
-#pragma merger(0,"/tmp/cil-8MHoXWU4.i","")
+#line 1 "cil-sPJtHD8R.o"
+#pragma merger(0,"/tmp/cil-xblA368Y.i","")
 #line 292 "/usr/include/unistd.h"
  __attribute__((__nothrow__)) __off64_t lseek(int fildes , __off64_t offset , int whence )  __asm__("lseek64")  ;
 #line 371
@@ -6873,141 +6906,143 @@ int ungetc(int c , FILE *stream )
  __attribute__((__nothrow__)) int setgid(__gid_t gid ) ;
 #line 697
  __attribute__((__nothrow__)) __pid_t fork(void) ;
+#line 746
+ __attribute__((__nothrow__)) int unlink(char const   *path )  __attribute__((__nonnull__(1))) ;
 #line 793
  __attribute__((__nothrow__)) int gethostname(char *name , size_t namelen )  __attribute__((__nonnull__(1))) ;
-#line 10 "./mockedFns/unistd.c"
+#line 11 "./mockedFns/unistd.c"
  __attribute__((__nothrow__)) __pid_t getpid(void) ;
-#line 10 "./mockedFns/unistd.c"
+#line 11 "./mockedFns/unistd.c"
 __pid_t getpid(void) 
 { 
 
   {
-#line 12
+#line 13
   return (1);
 }
 }
-#line 17
+#line 18
  __attribute__((__nothrow__)) __gid_t getgid(void) ;
-#line 17 "./mockedFns/unistd.c"
+#line 18 "./mockedFns/unistd.c"
 __gid_t getgid(void) 
 { 
 
   {
-#line 18
+#line 19
   return (1U);
 }
 }
-#line 23
+#line 25
+extern int ( /* missing proto */  __SYMBOLIC)() ;
+#line 24
  __attribute__((__nothrow__)) __pid_t fork(void) ;
-#line 23 "./mockedFns/unistd.c"
+#line 24 "./mockedFns/unistd.c"
 __pid_t fork(void) 
-{ 
+{ int tmp ;
+  int __cil_tmp ;
 
   {
+#line 25
+  __cil_tmp = __SYMBOLIC();
+#line 25
+  tmp = __cil_tmp;
+#line 26
+  if (tmp) {
+#line 27
+    __COMMENT("Forking to parent");
+#line 28
+    return (1);
+  } else {
+#line 31
+    __COMMENT("Forking to child");
 #line 32
-  __COMMENT("Forking to parent");
-#line 33
-  return (1);
+    return (0);
+  }
 }
 }
-#line 38
+#line 40
  __attribute__((__nothrow__)) __uid_t getuid(void) ;
-#line 38 "./mockedFns/unistd.c"
+#line 40 "./mockedFns/unistd.c"
 __uid_t getuid(void) 
 { 
 
   {
-#line 39
+#line 41
   return (0U);
 }
 }
-#line 44
+#line 46
  __attribute__((__nothrow__)) int gethostname(char *name , size_t namelen )  __attribute__((__nonnull__(1))) ;
-#line 44 "./mockedFns/unistd.c"
+#line 46 "./mockedFns/unistd.c"
 int gethostname(char *name , size_t namelen ) 
 { 
 
   {
-#line 45
+#line 47
   strcpy((char * __restrict  )name, (char const   * __restrict  )"return@gethostname");
-#line 46
+#line 48
   return (0);
 }
 }
-#line 51
+#line 54 "./mockedFns/unistd.c"
+int (*pipe_fildes0_callback)(int  )  =    (int (*)(int  ))0;
+#line 55
  __attribute__((__nothrow__)) int pipe(int *fildes ) ;
-#line 51 "./mockedFns/unistd.c"
+#line 55 "./mockedFns/unistd.c"
 int pipe(int *fildes ) 
 { 
 
   {
-#line 52
+#line 56
   *(fildes + 0) = socket(0, 0, 0);
-#line 53
+#line 57
+  if ((unsigned int )pipe_fildes0_callback != (unsigned int )((int (*)(int  ))0)) {
+#line 58
+    (*pipe_fildes0_callback)(*(fildes + 0));
+  }
+#line 59
   *(fildes + 1) = socket(0, 0, 0);
-#line 54
+#line 60
   return (0);
 }
 }
-#line 59 "./mockedFns/unistd.c"
+#line 65 "./mockedFns/unistd.c"
 ssize_t read(int fildes , void *buf , size_t nbyte ) 
 { int __cil_tmp ;
 
   {
-#line 60
+#line 66
   __cil_tmp = IOSIM_read(fildes, buf, (int )nbyte);
-#line 60
+#line 66
   return (__cil_tmp);
 }
 }
-#line 82 "./mockedFns/unistd.c"
+#line 88 "./mockedFns/unistd.c"
 int close(int fildes ) 
 { 
 
   {
-#line 83
+#line 89
   IOSIM_close(fildes);
-#line 84
+#line 90
   return (0);
 }
 }
-#line 89 "./mockedFns/unistd.c"
+#line 95 "./mockedFns/unistd.c"
 ssize_t write(int fildes , void const   *buf , size_t nbyte ) 
 { 
 
   {
-#line 103
+#line 109
   IOSIM_write(fildes, buf, (int )nbyte);
-#line 104
+#line 110
   return ((int )nbyte);
 }
 }
-#line 109
- __attribute__((__nothrow__)) __pid_t setsid(void) ;
-#line 109 "./mockedFns/unistd.c"
-__pid_t setsid(void) 
-{ 
-
-  {
-#line 110
-  return (0);
-}
-}
-#line 112
- __attribute__((__nothrow__)) __pid_t getpgrp(void) ;
-#line 112 "./mockedFns/unistd.c"
-__pid_t getpgrp(void) 
-{ 
-
-  {
-#line 113
-  return (0);
-}
-}
 #line 115
- __attribute__((__nothrow__)) int setgid(__gid_t gid ) ;
+ __attribute__((__nothrow__)) __pid_t setsid(void) ;
 #line 115 "./mockedFns/unistd.c"
-int setgid(__gid_t gid ) 
+__pid_t setsid(void) 
 { 
 
   {
@@ -7016,9 +7051,9 @@ int setgid(__gid_t gid )
 }
 }
 #line 118
- __attribute__((__nothrow__)) int setuid(__uid_t uid ) ;
+ __attribute__((__nothrow__)) __pid_t getpgrp(void) ;
 #line 118 "./mockedFns/unistd.c"
-int setuid(__uid_t uid ) 
+__pid_t getpgrp(void) 
 { 
 
   {
@@ -7027,34 +7062,56 @@ int setuid(__uid_t uid )
 }
 }
 #line 121
- __attribute__((__nothrow__)) char *getcwd(char *buf , size_t size ) ;
+ __attribute__((__nothrow__)) int setgid(__gid_t gid ) ;
 #line 121 "./mockedFns/unistd.c"
-char *getcwd(char *buf , size_t size ) 
-{ char *__cil_tmp ;
+int setgid(__gid_t gid ) 
+{ 
 
   {
 #line 122
-  __cil_tmp = IOSIM_getcwd(buf, size);
-#line 122
-  return (__cil_tmp);
+  return (0);
 }
 }
 #line 124
- __attribute__((__nothrow__)) int dup2(int fildes , int fildes2 ) ;
+ __attribute__((__nothrow__)) int setuid(__uid_t uid ) ;
 #line 124 "./mockedFns/unistd.c"
-int dup2(int fildes , int fildes2 ) 
+int setuid(__uid_t uid ) 
 { 
 
   {
 #line 125
+  return (0);
+}
+}
+#line 127
+ __attribute__((__nothrow__)) char *getcwd(char *buf , size_t size ) ;
+#line 127 "./mockedFns/unistd.c"
+char *getcwd(char *buf , size_t size ) 
+{ char *__cil_tmp ;
+
+  {
+#line 128
+  __cil_tmp = IOSIM_getcwd(buf, size);
+#line 128
+  return (__cil_tmp);
+}
+}
+#line 130
+ __attribute__((__nothrow__)) int dup2(int fildes , int fildes2 ) ;
+#line 130 "./mockedFns/unistd.c"
+int dup2(int fildes , int fildes2 ) 
+{ 
+
+  {
+#line 131
   IOSIM_fd[fildes2] = IOSIM_fd[fildes];
-#line 126
+#line 132
   return (fildes2);
 }
 }
-#line 129
+#line 135
  __attribute__((__nothrow__)) __off64_t lseek(int fildes , __off64_t offset , int whence )  __asm__("lseek64")  ;
-#line 129 "./mockedFns/unistd.c"
+#line 135 "./mockedFns/unistd.c"
 __off64_t lseek(int fildes , __off64_t offset , int whence ) 
 { int *__cil_tmp ;
   sym_file_stream_t *sym_stream ;
@@ -7064,76 +7121,85 @@ __off64_t lseek(int fildes , __off64_t offset , int whence )
   int *__cil_tmp___2 ;
 
   {
-#line 130
-  if (fildes >= IOSIM_num_fd || fildes < 0) {
-#line 131
-    __cil_tmp = __errno_location();
-#line 131
-    *__cil_tmp = 9;
-#line 132
-    return (-1LL);
-  }
-#line 134
-  sym_stream = IOSIM_fd[fildes];
 #line 136
-  if (! sym_stream) {
+  if (fildes >= IOSIM_num_fd || fildes < 0) {
 #line 137
-    __cil_tmp___0 = __errno_location();
+    __cil_tmp = __errno_location();
 #line 137
-    *__cil_tmp___0 = 9;
+    *__cil_tmp = 9;
 #line 138
     return (-1LL);
   }
 #line 140
-  switch (whence) {
-  case 0: 
+  sym_stream = IOSIM_fd[fildes];
 #line 142
-  newOffset = offset;
+  if (! sym_stream) {
 #line 143
-  break;
-  case 1: 
-#line 145
-  newOffset = sym_stream->offset + offset;
-#line 146
-  break;
-  case 2: 
-#line 148
-  newOffset = (sym_stream->sym_file)->stat.st_size + offset;
-#line 149
-  break;
-  default: 
-#line 151
-  __cil_tmp___1 = __errno_location();
-#line 151
-  *__cil_tmp___1 = 22;
-#line 152
-  return (-1LL);
-  }
-#line 154
-  if (newOffset < 0LL) {
-#line 155
-    __cil_tmp___2 = __errno_location();
-#line 155
-    *__cil_tmp___2 = 22;
-#line 156
+    __cil_tmp___0 = __errno_location();
+#line 143
+    *__cil_tmp___0 = 9;
+#line 144
     return (-1LL);
   }
+#line 146
+  switch (whence) {
+  case 0: 
+#line 148
+  newOffset = offset;
+#line 149
+  break;
+  case 1: 
+#line 151
+  newOffset = sym_stream->offset + offset;
+#line 152
+  break;
+  case 2: 
+#line 154
+  newOffset = (sym_stream->sym_file)->stat.st_size + offset;
+#line 155
+  break;
+  default: 
+#line 157
+  __cil_tmp___1 = __errno_location();
+#line 157
+  *__cil_tmp___1 = 22;
 #line 158
-  sym_stream->offset = newOffset;
+  return (-1LL);
+  }
 #line 160
-  free(sym_stream->buffer);
+  if (newOffset < 0LL) {
 #line 161
+    __cil_tmp___2 = __errno_location();
+#line 161
+    *__cil_tmp___2 = 22;
+#line 162
+    return (-1LL);
+  }
+#line 164
+  sym_stream->offset = newOffset;
+#line 166
+  free(sym_stream->buffer);
+#line 167
   sym_stream->buffer = (char *)((void *)0);
-#line 163
+#line 169
   return (newOffset);
 }
 }
-#line 1 "cil-a1n88z48.o"
-#pragma merger(0,"/tmp/cil-xnuC8RDe.i","")
+#line 172
+ __attribute__((__nothrow__)) int unlink(char const   *path )  __attribute__((__nonnull__(1))) ;
+#line 172 "./mockedFns/unistd.c"
+int unlink(char const   *path ) 
+{ 
+
+  {
+#line 173
+  return (0);
+}
+}
+#line 1 "cil-Zl1vGwj3.o"
+#pragma merger(0,"/tmp/cil-qMQ2dYtv.i","")
 #line 1 "ngircd.o"
 #pragma merger(0,"/tmp/cil-BpEH6m2f.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 746 "/usr/include/unistd.h"
-extern  __attribute__((__nothrow__)) int unlink(char const   *__name )  __attribute__((__nonnull__(1))) ;
 #line 138 "/usr/include/sys/wait.h"
 extern __pid_t waitpid(__pid_t __pid , int *__stat_loc , int __options ) ;
 #line 75 "client.h"
@@ -14287,10 +14353,6 @@ int io_close(int fd ) ;
 int io_setnonblock(int fd ) ;
 #line 49
 int io_dispatch(struct timeval *tv ) ;
-#line 185 "/usr/include/sys/socket.h"
-extern  __attribute__((__nothrow__)) int getsockopt(int __fd , int __level , int __optname ,
-                                                    void * __restrict  __optval ,
-                                                    socklen_t * __restrict  __optlen ) ;
 #line 43 "./../ipaddr/ng_ipaddr.h"
 __inline static int ng_ipaddr_af(ng_ipaddr_t const   *a ) 
 { 
@@ -29675,8 +29737,6 @@ static int Handle_Request(CONN_ID Idx , REQUEST *Req )
 #pragma merger(0,"/tmp/cil-ggekCiKC.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
 #line 1 "resolve.o"
 #pragma merger(0,"/tmp/cil-uCcqnXkI.i","-fno-builtin,-fno-inline,-g,-O2,-pipe,-W,-Wall,-Wpointer-arith,-Wstrict-prototypes")
-#line 61 "/usr/include/netdb.h"
-extern  __attribute__((__nothrow__)) int *__h_errno_location(void)  __attribute__((__const__)) ;
 #line 44 "resolve.c"
 static void Do_ResolveAddr(ng_ipaddr_t const   *Addr , int identsock , int w_fd ) ;
 #line 45

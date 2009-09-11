@@ -9,7 +9,6 @@
 #define MOTDFILE "/usr/local/etc/ngircd.motd"
 #define CONFFILE "/usr/local/etc/ngircd.conf"
 
-int symtest_configtest = 0;
 
 // Defined in one of the symtest{i}.c
 extern int symtest();
@@ -190,6 +189,7 @@ void symtest_Conf_Init_impl(){
 
 // Default configuration being read into ngircd
 // It will be overwritten by the symbolic configuration
+char* confString_return = 0;
 char* confString(){
 	static char confStr[] = "[Global]
 	Name = irc.the.net
@@ -255,17 +255,19 @@ char* confString(){
 	Key = Secret
 	MaxUsers = 23
 [Channel]";
-
-	return confStr;
+	if(confString_return==0)
+		return confStr;
+	else return confString_return;
 }
+
+int   myargc 	 = 2;
+char  myargstr[] = "ngircd\0-n\0--configtest\0          ";
+char* myargv[]   = {myargstr,myargstr+7,myargstr+10};
 
 int main(){
 
 	symtest_Conf_Init = symtest_Conf_Init_impl;
 
-	int argc = 2;
-	char  argstr[] = "ngircd\0-n\0--configtest";
-	char* argv[]   = {argstr,argstr+7,argstr+10};
 
 	IOSIM_fd[0] = malloc(sizeof(sym_file_stream_t));
 	IOSIM_fd[0]->fd = 0;
@@ -287,6 +289,8 @@ int main(){
 	stdout = IOSIM_fd[1];
 	stderr = IOSIM_fd[1];
 
+	symtest();
+
 	sym_file_t* motdFile = IOSIM_addfile(MOTDFILE,0);
 	motdFile->contents = strdup("This is the content of <motdFile>\n");
 	motdFile->stat.st_size = strlen(motdFile->contents);
@@ -296,11 +300,9 @@ int main(){
 	confFile->stat.st_size = strlen(confFile->contents);
 
 
-	symtest();
-	if(symtest_configtest) argc = 3;
 
 
-	int ngircd_exit = main_ngircd(argc,argv);
+	int ngircd_exit = main_ngircd(myargc,myargv);
 
 	return 0;
 }

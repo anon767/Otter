@@ -168,3 +168,7 @@ off_t lseek(int fildes, off_t offset, int whence) {
 
 	return newOffset;
 }
+
+int unlink(const char *path){
+	return 0;
+}
