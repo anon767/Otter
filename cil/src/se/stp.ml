@@ -231,7 +231,7 @@ let rec eval pc bytes =
 		(* Comparison of (ptr+i) and (ptr+j) *)
 		| Bytes_Op(op,(Bytes_Address(Some(block1),offset1),_)::(Bytes_Address(Some(block2),offset2),_)::[]) 
 			when is_comparison op ->
-				if block1!=block2 then (if op==OP_EQ then False else if op==OP_NE then True else Unknown)
+				if block1!=block2 then (if op==OP_EQ then False else if op==OP_NE then True else nontrivial())
 				else  eval pc (Operation.run (operation_of op) [(offset1,Cil.intType);(offset2,Cil.intType)])
 		
 		(* Comparison of (ptr+i) and c (usually zero) *)
@@ -239,7 +239,7 @@ let rec eval pc bytes =
 			when is_comparison op  &&  Convert.isConcrete_bytes bytes2 ->
 				begin match blockopt with 
 					| None -> eval pc (Operation.run (operation_of op) [(offset1,Cil.intType);(bytes2,Cil.intType)])
-					| Some(_) -> (if op==OP_EQ then False else if op==OP_NE then True else Unknown)
+					| Some(_) -> (if op==OP_EQ then False else if op==OP_NE then True else nontrivial())
 				end
 		(* Function pointer is always true *)
 		| Bytes_FunPtr(_,_) -> True
