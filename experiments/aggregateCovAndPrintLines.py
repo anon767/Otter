@@ -130,6 +130,7 @@ for zipfilename in os.listdir(dir):
 				# Read in the configuration
 				line = file.readline()
 				while line != '\n':
+					assert line!='','Error: incomplete output'
 					if line.startswith("but these"):
 						line = file.readline(); # the symbols
 						break
@@ -143,6 +144,7 @@ for zipfilename in os.listdir(dir):
 				line = file.readline() # Skip past 'The lines hit were:'
 				line = file.readline()
 				while line != '\n':
+					assert line!='','Error: incomplete output'
 					if line.find("command exit code")<0:
 						coveredLines.add(line)
 					line = file.readline()
@@ -251,7 +253,7 @@ if calculate:
 
 print '\nStatistics:'
 print 'test name\t#paths\tstp\ttime'
-for x in sorted(statistics):
+for x in sorted(statistics,key=lambda (a,b,c,d):b):
 	print '%s\t%d\t%d\t%0.2f' % x
 	
 

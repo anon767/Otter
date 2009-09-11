@@ -36,7 +36,7 @@ def process_file(filename):
 	global stat_coverage
 	global stat_assignment
 
-	print "Reading %s" % filename
+	#print "Reading %s" % filename
 	file = open(filename)
 	while True:
 		line = file.readline()
@@ -70,7 +70,6 @@ else:
 		if not filename.endswith(".deps"):
 			continue
 		process_file(dir + '/' + filename)
-print ""
 
 # calculate stat_coverage_inherited 
 for (key,val) in sorted(stat_coverage.items(),key=lambda (k,v):len(k)):
@@ -78,17 +77,14 @@ for (key,val) in sorted(stat_coverage.items(),key=lambda (k,v):len(k)):
 		assert len(key0) <= len(key),"key0 can't be this long"
 		if len(key0) == len(key): break
 		if key0 < key: stat_coverage_inherited[key] |= (val0|stat_coverage_inherited[key0])
-#	for x in key:
-#		key0 = key-set([x])
-#		stat_coverage_inherited[key] |= (stat_coverage[key0]|stat_coverage_inherited[key0])
 	stat_coverage[key] -= stat_coverage_inherited[key]
 
 
 # present the results
-print "These %d variables are mentioned in the path conditions:" % len(stat_touched)
-for v in sorted(stat_touched):
-	print v
-print ""
+#print "These %d variables are mentioned in the path conditions:" % len(stat_touched)
+#for v in sorted(stat_touched):
+#	print v
+#print ""
 
 stat_total_numconf = 0
 stat_all_lines = set()
@@ -97,14 +93,11 @@ stat_tway_all_lines = defaultdict(set)
 stat_tway_max = defaultdict(int)
 stat_tway_min = defaultdict(lambda:sys.maxint)
 
-for (key,val) in sorted(stat_coverage.items(),key=lambda (k,v):(len(k),':'.join(sorted(k)))):
+for (key,val) in sorted(stat_coverage.items(),key=lambda (k,v):-len(v)):
 	if val==set(): continue
-	print "Under the condition"
-	for k in sorted(key): print k
-	print "these %d %ss are hit" % (len(val),covtype)
-	for v in sorted(val): print v
-
-	print ""
+	configstr = ""
+	for k in sorted(key): configstr+= k+","
+	print "%d\t%d\t%s" % (len(val),len(key),configstr[:-1])
 
 	stat_total_numconf += 1
 	stat_all_lines |= val
@@ -112,7 +105,7 @@ for (key,val) in sorted(stat_coverage.items(),key=lambda (k,v):(len(k),':'.join(
 	stat_tway_all_lines[len(key)] |= val
 	stat_tway_max[len(key)] = max(stat_tway_max[len(key)],len(val))
 	stat_tway_min[len(key)] = min(stat_tway_min[len(key)],len(val))
-print ""
+sys.exit(0)
 
 def percentage(n): return (n,n*100.0/count)
 
