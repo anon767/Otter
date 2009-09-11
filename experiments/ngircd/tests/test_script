@@ -5,10 +5,10 @@ PROJ_DIR=/fs/skoll/symexe/trunk/experiments/ngircd/codeCoverageTest/otherFiles/
 echo \#BEGIN TEST_SCRIPT
 date
 
-./test_suite "$DATA_DIR/normal" "$PROJ_DIR/symtest_driver.c" "$1"     166 "--printStmtLocs --lineCov --edgeCov --blockCov --listAllLines --listAllEdges --listAllBlocks"
-./test_suite "$DATA_DIR/normal" "$PROJ_DIR/symtest_driver.c" "$1__v1" 166 "--printStmtLocs --lineCov --edgeCov --blockCov --listAllLines --listAllEdges --listAllBlocks"
-#./test_suite "$DATA_DIR/unfolded" "$PROJ_DIR/symtest_driver_unfolded.c" "$1"     166 "--condCov --listAllConds"
-#./test_suite "$DATA_DIR/unfolded" "$PROJ_DIR/symtest_driver_unfolded.c" "$1__v1" 166 "--condCov --listAllConds"
+./test_suite "$DATA_DIR/normal" "$PROJ_DIR/symtest_driver.c" "$1"     166 "--printStmtLocs --lineCov --edgeCov --blockCov --listAllLines --listAllEdges --listAllBlocks" "line edge block"
+./test_suite "$DATA_DIR/normal" "$PROJ_DIR/symtest_driver.c" "$1__v1" 166 "--printStmtLocs --lineCov --edgeCov --blockCov --listAllLines --listAllEdges --listAllBlocks" "line edge block"
+./test_suite "$DATA_DIR/unfolded" "$PROJ_DIR/symtest_driver_unfolded.c" "$1"     166 "--condCov --listAllConds" "cond"
+./test_suite "$DATA_DIR/unfolded" "$PROJ_DIR/symtest_driver_unfolded.c" "$1__v1" 166 "--condCov --listAllConds" "cond"
 
 #./test_suite "$DATA_DIR/restricted3" "$PROJ_DIR/symtest_driver_restricted3.c" "$1" 154
 ##### ./test_suite "$DATA_DIR/restricted2" "$PROJ_DIR/symtest_driver_restricted2.c" "$1"
