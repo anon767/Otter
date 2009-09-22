@@ -1,6 +1,7 @@
 open Control.Data
 open Control.Monad
 open Control.Graph
+open Control.UnionFind
 
 open QualGraph
 open Qual
@@ -99,7 +100,7 @@ module type UnionQualTypeMonad = sig
     module UnionTable : sig
         type t
         val empty : t
-        val select : QualType.Qual.t -> QualType.t -> t -> QualType.t
+        (*val select_table : QualType.Qual.t -> QualType.t -> t -> QualType.t*)
     end
     module QualGraph : sig
         include QualGraphAutomatonType
@@ -227,18 +228,15 @@ module UnionQualTypeT (TypedQualVar : TypedQualVar)
 
     module UnionTable = struct
         module Table = Map.Make (QualType)
-        module Map = Map.Make (QualType.Qual)
+        module Union = UnionFindMap (QualType.Qual)
+        type t = QualType.t Table.t Union.t
 
-        type unified = Unified of QualType.Qual.t
-                     | Table of QualType.t Table.t
-        type t = unified Map.t
-
-        let empty = Map.empty
-        let rec select qv qt u = match Map.find qv u with
-            | Unified qv -> select qv qt u
-            | Table table -> Table.find qt table
+        open Union
+        let empty = empty
+        let find = find
+        let union = union
+        let add = add
     end
-
 
     (* monad stack *)
     module TableUnionTableT = struct
@@ -262,34 +260,35 @@ module UnionQualTypeT (TypedQualVar : TypedQualVar)
         let empty = empty
 
         let find_table qv = perform
-            unification <-- get;
-            (* path compression *)
-            let rec follow qv trail = match try Some (Map.find qv unification) with Not_found -> None with
-                | Some (Unified qx)   -> follow qx (qv::trail)
-                | Some (Table table) -> (qv, table, trail)
-                | None               -> (qv, Table.empty, trail)
-            in
-            let head, table, trail = follow qv [] in
-            match trail with
-                | [] ->
+            map <-- get;
+            try
+                let head, rank, table, map' = Union.find_compress qv map in
+                if map == map' then
                     return (head, table)
-                | ts -> perform
-                    put (List.fold_left (fun u qx -> Map.add qx (Unified head) u) unification trail);
+                else perform
+                    put map';
                     return (head, table)
+            with Not_found -> perform
+                put (Union.add qv Table.empty map);
+                return (qv, Table.empty)
 
-        let union_table qx qy = perform
-            (* TODO: implement union-by-rank *)
-            (qx, tx) <-- find_table qx;
-            (qy, ty) <-- find_table qy;
-            if QualType.Qual.compare qx qy == 0 then
-                return None
-            else perform
-                modify (fun unification -> Map.add qy (Unified qx) unification);
-                return (Some (tx, ty))
+        let rec union_table qx qy = perform
+            map <-- get;
+            try
+                let x, y, unified, map' = Union.union qx qy map in
+                if map == map' then
+                    return (x, y, unified)
+                else perform
+                    put map';
+                    return (x, y, unified)
+            with Not_found -> perform
+                (* initialize and try again *)
+                find_table qx;
+                find_table qy;
+                union_table qx qy
 
         let update_table qv table = perform
-            (head, _) <-- find_table qv;
-            modify (fun unification -> Map.add head (Table table) unification)
+            modify (fun map -> Union.add qv table map)
     end
     include TableUnionTableT
     module Ops = MonadOps (TableUnionTableT)
@@ -322,7 +321,7 @@ module UnionQualTypeT (TypedQualVar : TypedQualVar)
                 unify eq qx qy
             | _, _ -> failwith "Impossible!"
         and unify eq1 x y = perform
-            unified <-- union_table x y;
+            (x, y, unified) <-- union_table x y;
             match unified with
                 | None ->
                     return ()
@@ -341,19 +340,22 @@ module UnionQualTypeT (TypedQualVar : TypedQualVar)
         in
         unify (fun _ _ -> return ()) x y
 
-    let select qx y = perform
+
+    let select_table qx y = perform
         (_, tx) <-- find_table qx;
         try
             match UnionTable.Table.find y tx with
                 | QualType.Ref (_, qty)       -> return (QualType.Ref (qx, qty))
                 | QualType.Fn (_, qtry, qtpy) -> return (QualType.Fn (qx, qtry, qtpy))
-                | QualType.Base _             -> return (QualType.Base qx)
+                | QualType.Base _
                 | QualType.Empty              -> failwith "Impossible!"
         with Not_found -> perform
+            (* TODO: disallow QualType.Base to avoid infinite loop *)
             let x = QualType.create (QualType.clone y) qx in (* share common prefix of qualtypes *)
             (*x <-- fresh (QualType.clone y);*) (* discriminate by qualtypes *)
             update_table qx (UnionTable.Table.add x x tx);
             return x
+
 
     let rec assign_ref l v = match l, v with
         | QualType.Empty, _
@@ -374,12 +376,12 @@ module UnionQualTypeT (TypedQualVar : TypedQualVar)
         | QualType.Base ql, QualType.Ref (qv, _)
         | QualType.Base ql, QualType.Fn (qv, _, _) -> perform
             eq qv ql;
-            l <-- select ql v;
+            l <-- select_table ql v;
             assign_ref l v
         | QualType.Ref (ql, _), QualType.Base qv
         | QualType.Fn (ql, _, _), QualType.Base qv -> perform
             eq qv ql;
-            v <-- select qv l;
+            v <-- select_table qv l;
             assign_ref l v
         | _, _ ->
             failwith "TODO: report incompatible assign_ref"
@@ -401,12 +403,12 @@ module UnionQualTypeT (TypedQualVar : TypedQualVar)
         | QualType.Base ql, QualType.Ref (qv, _)
         | QualType.Base ql, QualType.Fn (qv, _, _) -> perform
             leq qv ql;
-            l <-- select ql v;
+            l <-- select_table ql v;
             assign l v
         | QualType.Ref (ql, _), QualType.Base qv
         | QualType.Fn (ql, _, _), QualType.Base qv -> perform
             leq qv ql;
-            v <-- select qv l;
+            v <-- select_table qv l;
             assign l v
         | _, _ ->
             failwith "TODO: report incompatible assign"
@@ -430,10 +432,10 @@ module UnionQualTypeT (TypedQualVar : TypedQualVar)
             unify qz qy;
             return (QualType.Base qz)
         | QualType.Base qx, _ -> perform
-            x <-- select qx y;
+            x <-- select_table qx y;
             join x y
         | _, QualType.Base qy -> perform
-            y <-- select qy x;
+            y <-- select_table qy x;
             join x y
         | _, _ ->
             failwith "TODO: report incompatible merge"
