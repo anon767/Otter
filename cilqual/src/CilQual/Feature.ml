@@ -9,7 +9,7 @@ module G =
     (Expression.InterpreterT
     (Environment.InterpreterT
     (Type.InterpreterT
-    (CilUnionQualType.CilUnionQualTypeT (Environment.CilFieldOrVar) (CilQualType.Context)
+    (CilUnionQualType.CilUnionQualTypeT (Environment.CilFieldOrVar) (CilUnionQualType.Context)
     (Identity)))))))
 
 (* setup CilQual solver *)
@@ -41,23 +41,23 @@ let opt_save_dot = ref ""
 
 
 (* timing helpers *)
-let timer = None
+let timer = (None, [])
 let tic s = function
-    | None ->
+    | (None, l) ->
         Format.eprintf "%s...@?" s;
-        Some (Sys.time (), s, [])
-    | Some (was, s', l) ->
+        (Some (Sys.time (), s), l)
+    | (Some (was, s'), l) ->
         let now = Sys.time () in
         let elapsed = now -. was in
         Format.eprintf "(%7.3fs)@.%s...@?" elapsed s;
-        Some (now, s, (s', elapsed)::l)
+        (Some (now, s), (s', elapsed)::l)
 let toc = function
-    | None -> []
-    | Some (was, s', l) ->
+    | (None, _) as t -> t
+    | (Some (was, s'), l) ->
         let now = Sys.time () in
         let elapsed = now -. was in
         Format.eprintf "(%7.3fs)@." elapsed;
-        (s', now -. was)::l
+        (None, (s', elapsed)::l)
 
 
 (* It's unclear to me how Cil handles interaction between features, especially since makeCFGFeature destructively
@@ -107,20 +107,23 @@ let doit file =
     let solution = DiscreteSolver.solve consts constraints in
     let has_error = DiscreteSolver.Solution.is_unsatisfiable solution in
 
-    let timing, explanation = if not has_error then (toc timing, DiscreteSolver.Explanation.empty) else begin
+    let timing, explanation = if has_error then begin
         let timing = tic "Explaining solution" timing in
         let explanation = DiscreteSolver.explain solution in
 
         let timing = toc timing in
         Format.eprintf "@[%a@]@\n" DiscreteSolver.Explanation.printer explanation;
         (timing, explanation)
-    end in
+    end else
+         (toc timing, DiscreteSolver.Explanation.empty)
+    in
 
     (* print statistics, if requested *)
     if !Errormsg.verboseFlag || !Cilutil.printStats then begin
+        let _, timinglist = timing in
         Format.eprintf "@[<v2>Timing:@\n%a@]@\n" begin fun ff ts ->
             ignore (List.fold_left (fun b (s, t) -> Format.fprintf ff "%(%)@[%-30s: %7.3fs@]" b s t; "@\n") "" ts)
-        end (List.rev timing);
+        end (List.rev timinglist);
         Format.eprintf "@[<v2>Constraint graph:@\n\
                           Vertex count: %7d@\n\
                           Edge count  : %7d@]@\n"
@@ -137,8 +140,20 @@ let doit file =
 
     (* finally, report the error *)
     if has_error then begin
-        Format.eprintf "Error: %d acyclic path(s) found between $null and $nonnull!@."
+        let unsolvables =
+            DiscreteSolver.Solution.Unsolvables.cardinal (DiscreteSolver.Solution.unsolvables solution)
+        in
+        let classes =
+            DiscreteSolver.Solution.EquivalenceClasses.cardinal
+                (DiscreteSolver.Solution.unsolvables_classes solution)
+        in
+        Format.eprintf "Error: @[";
+        Format.eprintf "%d unsolvable annotated qualifier variable%s found in %d equivalence class%s.@\n"
+            unsolvables (if unsolvables == 1 then "" else "s")
+            classes (if classes == 1 then "" else "es");
+        Format.eprintf "%d shortest path(s) between $null and $nonnull reported."
             (DiscreteSolver.Explanation.cardinal explanation);
+        Format.eprintf "@]@.";
         exit 1
     end else begin
         Format.eprintf "Safe: no path found between $null and $nonnull.@."
