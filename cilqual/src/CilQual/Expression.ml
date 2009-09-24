@@ -68,6 +68,10 @@ module InterpreterT (E : Environment.InterpreterMonad) = struct
             if CilType.is_cil_inserted_type t then
                 interpret_exp e (* ignore casts inserted by Cil *)
             else
+                (* TODO:
+                 * - if there are type qualifiers, need to mask the originally qualifiers appropriately;
+                 * - don't just replace e, but augment its qualtype with the typecast.
+                 *)
                 embed_rval t (* safe to ignore e since it's side-effect free *)
 
         | Cil.BinOp (u, e1, e2, t) -> perform

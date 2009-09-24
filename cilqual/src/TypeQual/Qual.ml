@@ -80,12 +80,16 @@ module QualT (Q : Qual) (C : Constraint)
         module Constraint = C
 
         module Automaton = struct
-            include Unit
-            let start = ()
-            let accept () = true
+            type t = Start | Walk of edge
+            let start = Start
+            let accept _ = true
+            let compare _ _ = 0
+            let printer ff = function
+                | Start -> ()
+                | Walk e -> E.printer ff e
         end
-        let fold_forward f g v automaton acc = fold_succ (fun v acc -> f v automaton acc) g v acc
-        let fold_backward f g v automaton acc = fold_pred (fun v acc -> f v automaton acc) g v acc
+        let fold_forward f g v automaton acc = fold_succ_e (fun e acc -> f (E.dst e) (Automaton.Walk e) acc) g v acc
+        let fold_backward f g v automaton acc = fold_pred_e (fun e acc -> f (E.src e) (Automaton.Walk e) acc) g v acc
     end
 
     (* qualifier constraints *)

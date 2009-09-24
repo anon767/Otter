@@ -54,7 +54,8 @@ module InterpreterT (S : Statement.InterpreterMonad) = struct
             return () (*failwith "TODO: read partial-order configuration"*)
 
         | Cil.GAsm (_, loc) ->
-            return () (*failwith "TODO: do something with asm"*)
+            Format.eprintf "%s:%d: warning:TODO: handle Cil.GAsm@." loc.Cil.file loc.Cil.line;
+            return ()
 
         (* nothing to do with variable declarations/definitions with no initializers/typedef/struct/enum, since the
          * same varinfo/compinfo/enuminfo is available at use sites, and the environment is initialized lazily *)

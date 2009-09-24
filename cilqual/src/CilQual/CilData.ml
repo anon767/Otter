@@ -25,7 +25,7 @@ module CilVar = struct
     let compare x y = if x == y then 0 else compare x.vid y.vid
     let hash x = x.vid
     let equal x y = compare x y = 0
-    let printer ff x = Format.fprintf ff "%s" x.vname
+    let printer ff x = Format.fprintf ff "%s:%s:%d" x.vname x.vdecl.file x.vdecl.line
 end
 
 module CilField = struct
@@ -33,7 +33,7 @@ module CilField = struct
     let compare x y = if x == y then 0 else compare (x.fcomp.ckey, x.fname) (y.fcomp.ckey, y.fname)
     let hash x = x.fcomp.ckey
     let equal x y = compare x y = 0
-    let printer ff x = Format.fprintf ff "%s.%s" x.fcomp.cname x.fname
+    let printer ff x = Format.fprintf ff "%s.%s:%s:%d" x.fcomp.cname x.fname x.floc.file x.floc.line
 end
 
 module CilFundec = struct
@@ -41,6 +41,6 @@ module CilFundec = struct
     let compare x y = if x == y then 0 else CilVar.compare x.svar y.svar
     let hash x = x.svar.vid
     let equal x y = compare x y = 0
-    let printer ff x = Format.fprintf ff "%s" x.svar.vname
+    let printer ff x = Format.fprintf ff "%s:%s:%d" x.svar.vname x.svar.vdecl.file x.svar.vdecl.line
 end
 

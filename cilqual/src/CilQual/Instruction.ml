@@ -54,7 +54,8 @@ module InterpreterT (E : Expression.InterpreterMonad) = struct
             end
         | Cil.Call (_, _, _, _) ->
             failwith "Does Cil generate other variations of function call expressions?"
-        | Cil.Asm _ ->
-            return () (*failwith "TODO: do something with asm"*)
+        | Cil.Asm (_, _, _, _, _, loc) ->
+            Format.eprintf "%s:%d: warning:TODO: handle Cil.Asm@." loc.Cil.file loc.Cil.line;
+            return ()
 end
 

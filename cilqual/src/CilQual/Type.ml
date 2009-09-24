@@ -98,6 +98,7 @@ module InterpreterT (C : CilUnionQualType.CilUnionQualTypeMonad) = struct
                 qta <-- args qt;
                 zipWithM_ annot_qt qta a;
                 annot_attr qt attrlist
+            (* TODO: also add attributes from compinfo *)
             | Cil.TSComp (_, _, attrlist)
             | Cil.TSEnum (_, attrlist) -> perform
                 annot_attr qt attrlist
