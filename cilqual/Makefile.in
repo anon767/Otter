@@ -12,7 +12,7 @@ OCAMLBUILD_PA_MONAD = -X pa_monad -tag syntax_camlp4o -tag pkg_pa_monad
 OCAMLBUILD_GRAPH = -X ocamlgraph -tag pkg_ocamlgraph
 OCAMLBUILD_OUNIT = -tag pkg_oUnit
 
-OCAMLBUILD_FLAGS = -j 0
+OCAMLBUILD_FLAGS = -j 0 -X experiments
 OCAMLBUILD_FLAGS += $(OCAMLBUILD_CIL) $(OCAMLBUILD_PA_MONAD) $(OCAMLBUILD_GRAPH)
 OCAMLBUILD_FLAGS += $(EXTRALIBDIRS:%=-lflags -I,%) $(OCAMLBUILD_EXTRAFLAGS)
 export OCAMLPATH:=$(CURDIR):$(OCAMLPATH)
