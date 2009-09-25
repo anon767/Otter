@@ -89,15 +89,7 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
                 | _, _ ->
                     failwith "TODO: handle function pointers? mismatched types?"
             in
-            qt_to_bytes expState state block_type typ (drop_qt qt)
-        in
-
-        let varinfo_to_bytes expState state block_type v =
-            (* force v to be initialized, since they may have type qualifiers *)
-            let (_, env) as expState = run (perform lookup_var v; return ()) expState in
-
-            let expState, state, bytes = qt_to_bytes expState state block_type v.Cil.vtype (Env.find (CilVar v) env) in
-            (expState, state, bytes)
+            qt_to_bytes expState state block_type typ qt
         in
 
         (* figure out the return value and arguments qualtype *)
@@ -115,7 +107,9 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
             | Cil.GVarDecl (v, _) | Cil.GVar (v, _, _)
                     when not (Types.VarinfoMap.mem v state.Types.global.Types.varinfo_to_block) ->
                 let expState, state, bytes =
-                    varinfo_to_bytes expState state Types.Block_type_Global v
+                    (* force v to be initialized, since they may have type qualifiers *)
+                    let (_, env) as expState = run (perform lookup_var v; return ()) expState in
+                    qt_to_bytes expState state Types.Block_type_Global v.Cil.vtype (drop_qt (Env.find (CilVar v) env))
                 in
                 let state = MemOp.state__add_global state v bytes in
                 (expState, state)
@@ -232,8 +226,14 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
                             let bytes = MemOp.state__get_bytes_from_block state block in
                             bytes_to_qt v.Cil.vtype bytes (drop_qt (Env.find (CilVar v) env))
                         end state.Types.global.Types.varinfo_to_block (return ())
-                | _ ->
-                    failwith "TODO: handle other completion values"
+
+                | Types.Abandoned (msg, loc, result) ->
+                    failwith (Format.sprintf "TODO: handle abandoned path @@ %s:%d (%s)" loc.Cil.file loc.Cil.line msg)
+
+                | Types.Exit _         (* a program that exits cannot possibly affect the outer context *)
+                | Types.Truncated _ -> (* truncated paths are those merged with other paths *)
+                    return ()
+
             end completed in
 
             (* update the constraints and return *)
