@@ -9,7 +9,7 @@ module G =
     (CilQual.Expression.InterpreterT
     (CilQual.Environment.InterpreterT
     (CilQual.Type.InterpreterT
-    (CilQual.CilUnionQualType.CilUnionQualTypeT (CilQual.Environment.CilFieldOrVar) (CilQual.CilQualType.Context)
+    (CilQual.CilUnionQualType.CilUnionQualTypeT (CilQual.Environment.CilFieldOrVar) (CilQual.CilUnionQualType.Context)
     (Identity)))))))
 module GOps = MonadOps (G)
 open G
@@ -70,12 +70,19 @@ module Interpreter (T : Config.BlockConfig) = struct
                                 let f = Cilutility.search_function v in
                                 if CallSet.mem f typed_calls || CallSet.mem f other_calls then
                                     (typed_calls, other_calls, fnwork)
+                                else if T.is_model_block v.Cil.vattr then
+                                    (* model functions are not interpreted *)
+                                    (typed_calls, other_calls, fnwork)
                                 else if T.should_enter_block v.Cil.vattr then
+                                    (* recurse into typed functions *)
                                     (CallSet.add f typed_calls, other_calls, f::fnwork)
                                 else
-                                    (typed_calls, CallSet.add f other_calls, f::fnwork)
-                            | Cil.Mem _, _ -> failwith "TODO: support calls through function pointers"
-                            | _, _ -> failwith "Does Cil generate calls through (_, offset)?"
+                                    (* other functions are delegated *)
+                                    (typed_calls, CallSet.add f other_calls, fnwork)
+                            | Cil.Mem _, _ ->
+                                failwith "TODO: support calls through function pointers"
+                            | _, _ ->
+                                failwith "Does Cil generate calls through (_, offset)?"
                     end (typed_calls, other_calls, fnwork) (calls_in_function fn)
                 in
                 find_calls typed_calls other_calls fnwork
