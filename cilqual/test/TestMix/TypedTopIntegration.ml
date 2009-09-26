@@ -33,10 +33,10 @@ let test_mix content ?(label=content) test =
  * OUnit test suite
  *)
 
-let typed_only_testsuite = "Typed-only" >::: [
-    test_mix "
-        int main(void) { return 0; }
-    " begin fun file solution ->
+let typed_only_testsuite = "Typed only" >::: [
+    test_mix
+        "int main(void) { return 0; }"
+    begin fun file solution ->
         assert_discrete_satisfiable solution
     end;
 
@@ -56,8 +56,8 @@ let typed_only_testsuite = "Typed-only" >::: [
     end;
 ]
 
-let leaf_symbolic_testsuite = "Leaf Symbolic" >::: [
-    test_mix ~label:"global variable set null locally" "
+let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
+    test_mix ~label:"non-null global variable set null locally" "
         int x = 0;
         int * $(nonnull) y = &x;
         void foo(void) MIX(symbolic) {
@@ -72,7 +72,7 @@ let leaf_symbolic_testsuite = "Leaf Symbolic" >::: [
         assert_discrete_satisfiable solution
     end;
 
-    test_mix ~label:"global variable set null" "
+    test_mix ~label:"non-null global variable set null" "
         int x = 0;
         int * $(nonnull) y = &x;
         void foo(void) MIX(symbolic) {
@@ -86,7 +86,7 @@ let leaf_symbolic_testsuite = "Leaf Symbolic" >::: [
         assert_discrete_unsatisfiable solution
     end;
 
-    test_mix ~label:"output argument set null locally" "
+    test_mix ~label:"non-null output argument set null locally" "
         int x = 0;
         void foo(void ** y) MIX(symbolic) {
             *y = NULL;
@@ -101,7 +101,7 @@ let leaf_symbolic_testsuite = "Leaf Symbolic" >::: [
         assert_discrete_satisfiable solution
     end;
 
-    test_mix ~label:"output argument set null" "
+    test_mix ~label:"non-null output argument set null" "
         int x = 0;
         void foo(void ** y) MIX(symbolic) {
             *y = NULL;
@@ -115,7 +115,7 @@ let leaf_symbolic_testsuite = "Leaf Symbolic" >::: [
         assert_discrete_unsatisfiable solution
     end;
 
-    test_mix ~label:"field set null locally" "
+    test_mix ~label:"non-null field set null locally" "
         int x = 0;
         struct a { int * $(nonnull) i; } y = { &x };
         void foo(void) MIX(symbolic) {
@@ -130,7 +130,7 @@ let leaf_symbolic_testsuite = "Leaf Symbolic" >::: [
         assert_discrete_satisfiable solution
     end;
 
-    test_mix ~label:"field set null" "
+    test_mix ~label:"non-null field set null" "
         int x = 0;
         struct a { int * $(nonnull) i; } y = { &x };
         void foo(void) MIX(symbolic) {
@@ -145,8 +145,120 @@ let leaf_symbolic_testsuite = "Leaf Symbolic" >::: [
     end;
 ]
 
+let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
+    test_mix ~label:"unannotated global variable set null on both branches" "
+        int x = 0;
+        int * y = &x;
+        void foo(void) MIX(symbolic) {
+            if (x) {
+                y = NULL;
+            } else {
+                y = NULL;
+            }
+        }
+        int main(void) {
+            foo();
+            return 0;
+        }
+    " begin fun file solution ->
+        assert_discrete_satisfiable solution
+    end;
+
+    test_mix ~label:"unannotated global variable set null on one branch, non-null on the other branch" "
+        int x = 0;
+        int * y = &x;
+        void foo(void) MIX(symbolic) {
+            if (x) {
+                y = NULL;
+            } else {
+                y = &x;
+            }
+        }
+        int main(void) {
+            foo();
+            return 0;
+        }
+    " begin fun file solution ->
+        assert_discrete_satisfiable solution
+    end;
+
+    test_mix ~label:"unannotated global variable set non-null on both branches" "
+        int x = 0;
+        int * y = &x;
+        void foo(void) MIX(symbolic) {
+            if (x) {
+                y = &x;
+            } else {
+                y = &x;
+            }
+        }
+        int main(void) {
+            foo();
+            return 0;
+        }
+    " begin fun file solution ->
+        assert_discrete_satisfiable solution
+    end;
+
+
+    test_mix ~label:"non-null global variable set null on both branches" "
+        int x = 0;
+        int * $(nonnull) y = &x;
+        void foo(void) MIX(symbolic) {
+            if (x) {
+                y = NULL;
+            } else {
+                y = NULL;
+            }
+        }
+        int main(void) {
+            foo();
+            return 0;
+        }
+    " begin fun file solution ->
+        assert_discrete_unsatisfiable solution
+    end;
+
+    test_mix ~label:"non-null global variable set null on one branch, non-null on the other branch" "
+        int x = 0;
+        int * $(nonnull) y = &x;
+        void foo(void) MIX(symbolic) {
+            if (x) {
+                y = NULL;
+            } else {
+                y = &x;
+            }
+        }
+        int main(void) {
+            foo();
+            return 0;
+        }
+    " begin fun file solution ->
+        assert_discrete_unsatisfiable solution
+    end;
+
+    test_mix ~label:"non-null global variable set non-null on both branches" "
+        int x = 0;
+        int * $(nonnull) y = &x;
+        void foo(void) MIX(symbolic) {
+            if (x) {
+                y = &x;
+            } else {
+                y = &x;
+            }
+        }
+        int main(void) {
+            foo();
+            return 0;
+        }
+    " begin fun file solution ->
+        assert_discrete_satisfiable solution
+    end;
+]
+
 let testsuite = "TypedTopIntegration" >::: [
     typed_only_testsuite;
-    leaf_symbolic_testsuite;
+    leaf_symbolic_simple_path_testsuite;
+    leaf_symbolic_one_branch_testsuite;
 ]
 
