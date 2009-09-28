@@ -99,6 +99,8 @@ module DiscreteOrder (G : sig include QualGraphAutomatonType module V : VertexTy
 
         let is_annotated v result = get_annotations v result <> []
 
+        let is_constrained v result = SolutionMap.mem v result.solution
+
         let is_unsolvable v result = try ConstSet.is_empty (find v result) with Not_found -> false
 
         let equal_const v c result = try ConstSet.equal (find v result) (const c) with Not_found -> false

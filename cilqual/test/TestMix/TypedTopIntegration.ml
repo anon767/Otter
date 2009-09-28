@@ -57,203 +57,713 @@ let typed_only_testsuite = "Typed only" >::: [
 ]
 
 let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
-    test_mix ~label:"non-null global variable set null locally" "
-        int x = 0;
-        int * $(nonnull) y = &x;
-        void foo(void) MIX(symbolic) {
-            y = NULL;
-            y = &x;
-        }
-        int main(void) {
-            foo();
-            return 0;
-        }
-    " begin fun file solution ->
-        assert_discrete_satisfiable solution
-    end;
+    "unannotated" >::: [
+        "global variable" >::: [
+            test_mix ~label:"set null locally" "
+                int x = 0;
+                int * y = &x;
+                void foo(void) MIX(symbolic) {
+                    y = NULL;
+                    y = &x;
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_satisfiable solution
+            end;
 
-    test_mix ~label:"non-null global variable set null" "
-        int x = 0;
-        int * $(nonnull) y = &x;
-        void foo(void) MIX(symbolic) {
-            y = NULL;
-        }
-        int main(void) {
-            foo();
-            return 0;
-        }
-    " begin fun file solution ->
-        assert_discrete_unsatisfiable solution
-    end;
+            test_mix ~label:"set null" "
+                int x = 0;
+                int * y = &x;
+                void foo(void) MIX(symbolic) {
+                    y = NULL;
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_satisfiable solution
+            end;
+        ];
 
-    test_mix ~label:"non-null output argument set null locally" "
-        int x = 0;
-        void foo(void ** y) MIX(symbolic) {
-            *y = NULL;
-            *y = &x;
-        }
-        int main(void) {
-            int * $(nonnull) z = &x;
-            foo(&z);
-            return 0;
-        }
-    " begin fun file solution ->
-        assert_discrete_satisfiable solution
-    end;
+        "output argument" >::: [
+            test_mix ~label:"set null locally" "
+                int x = 0;
+                void foo(int ** y) MIX(symbolic) {
+                    *y = NULL;
+                    *y = &x;
+                }
+                int main(void) {
+                    int * z = &x;
+                    foo(&z);
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_satisfiable solution
+            end;
 
-    test_mix ~label:"non-null output argument set null" "
-        int x = 0;
-        void foo(void ** y) MIX(symbolic) {
-            *y = NULL;
-        }
-        int main(void) {
-            int * $(nonnull) z = &x;
-            foo(&z);
-            return 0;
-        }
-    " begin fun file solution ->
-        assert_discrete_unsatisfiable solution
-    end;
+            test_mix ~label:"set null" "
+                int x = 0;
+                void foo(int ** y) MIX(symbolic) {
+                    *y = NULL;
+                }
+                int main(void) {
+                    int * z = &x;
+                    foo(&z);
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_satisfiable solution
+            end;
+        ];
 
-    test_mix ~label:"non-null field set null locally" "
-        int x = 0;
-        struct a { int * $(nonnull) i; } y = { &x };
-        void foo(void) MIX(symbolic) {
-            y.i = NULL;
-            y.i = &x;
-        }
-        int main(void) {
-            foo();
-            return 0;
-        }
-    " begin fun file solution ->
-        assert_discrete_satisfiable solution
-    end;
+        "(void *) output argument" >::: [
+            test_mix ~label:"set null locally" "
+                int x = 0;
+                void foo(void ** y) MIX(symbolic) {
+                    *y = NULL;
+                    *y = &x;
+                }
+                int main(void) {
+                    int * z = &x;
+                    foo(&z);
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_satisfiable solution
+            end;
 
-    test_mix ~label:"non-null field set null" "
-        int x = 0;
-        struct a { int * $(nonnull) i; } y = { &x };
-        void foo(void) MIX(symbolic) {
-            y.i = NULL;
-        }
-        int main(void) {
-            foo();
-            return 0;
-        }
-    " begin fun file solution ->
-        assert_discrete_unsatisfiable solution
-    end;
+            test_mix ~label:"set null" "
+                int x = 0;
+                void foo(void ** y) MIX(symbolic) {
+                    *y = NULL;
+                }
+                int main(void) {
+                    int * z = &x;
+                    foo(&z);
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_satisfiable solution
+            end;
+        ];
+
+        "field" >::: [
+            test_mix ~label:"set null locally" "
+                int x = 0;
+                struct a { int * i; } y = { &x };
+                void foo(void) MIX(symbolic) {
+                    y.i = NULL;
+                    y.i = &x;
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_satisfiable solution
+            end;
+
+            test_mix ~label:"set null" "
+                int x = 0;
+                struct a { int * i; } y = { &x };
+                void foo(void) MIX(symbolic) {
+                    y.i = NULL;
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_satisfiable solution
+            end;
+        ];
+    ];
+
+    "non-null annotated" >::: [
+        "global variable" >::: [
+            test_mix ~label:"set null locally" "
+                int x = 0;
+                int * $(nonnull) y = &x;
+                void foo(void) MIX(symbolic) {
+                    y = NULL;
+                    y = &x;
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_satisfiable solution
+            end;
+
+            test_mix ~label:"set null" "
+                int x = 0;
+                int * $(nonnull) y = &x;
+                void foo(void) MIX(symbolic) {
+                    y = NULL;
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_unsatisfiable solution
+            end;
+        ];
+
+        "output argument" >::: [
+            test_mix ~label:"set null locally" "
+                int x = 0;
+                void foo(int ** y) MIX(symbolic) {
+                    *y = NULL;
+                    *y = &x;
+                }
+                int main(void) {
+                    int * $(nonnull) z = &x;
+                    foo(&z);
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_satisfiable solution
+            end;
+
+            test_mix ~label:"set null" "
+                int x = 0;
+                void foo(int ** y) MIX(symbolic) {
+                    *y = NULL;
+                }
+                int main(void) {
+                    int * $(nonnull) z = &x;
+                    foo(&z);
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_unsatisfiable solution
+            end;
+        ];
+
+        "(void *) output argument" >::: [
+            test_mix ~label:"set null locally" "
+                int x = 0;
+                void foo(void ** y) MIX(symbolic) {
+                    *y = NULL;
+                    *y = &x;
+                }
+                int main(void) {
+                    int * $(nonnull) z = &x;
+                    foo(&z);
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_satisfiable solution
+            end;
+
+            test_mix ~label:"set null" "
+                int x = 0;
+                void foo(void ** y) MIX(symbolic) {
+                    *y = NULL;
+                }
+                int main(void) {
+                    int * $(nonnull) z = &x;
+                    foo(&z);
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_unsatisfiable solution
+            end;
+        ];
+
+        "field" >::: [
+            test_mix ~label:"set null locally" "
+                int x = 0;
+                struct a { int * $(nonnull) i; } y = { &x };
+                void foo(void) MIX(symbolic) {
+                    y.i = NULL;
+                    y.i = &x;
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_satisfiable solution
+            end;
+
+            test_mix ~label:"set null" "
+                int x = 0;
+                struct a { int * $(nonnull) i; } y = { &x };
+                void foo(void) MIX(symbolic) {
+                    y.i = NULL;
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_unsatisfiable solution
+            end;
+        ];
+    ];
 ]
 
 let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
-    test_mix ~label:"unannotated global variable set null on both branches" "
-        int x = 0;
-        int * y = &x;
-        void foo(void) MIX(symbolic) {
-            if (x) {
-                y = NULL;
-            } else {
-                y = NULL;
-            }
-        }
-        int main(void) {
-            foo();
-            return 0;
-        }
-    " begin fun file solution ->
-        assert_discrete_satisfiable solution
-    end;
+    "unannotated" >::: [
+        "global variable" >::: [
+            test_mix ~label:"set null on both branches" "
+                int x = 0;
+                int * y = &x;
+                void foo(void) MIX(symbolic) {
+                    if (x) {
+                        y = NULL;
+                    } else {
+                        y = NULL;
+                    }
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_satisfiable solution
+            end;
 
-    test_mix ~label:"unannotated global variable set null on one branch, non-null on the other branch" "
-        int x = 0;
-        int * y = &x;
-        void foo(void) MIX(symbolic) {
-            if (x) {
-                y = NULL;
-            } else {
-                y = &x;
-            }
-        }
-        int main(void) {
-            foo();
-            return 0;
-        }
-    " begin fun file solution ->
-        assert_discrete_satisfiable solution
-    end;
+            test_mix ~label:"set null on one branch, non-null on the other branch" "
+                int x = 0;
+                int * y = &x;
+                void foo(void) MIX(symbolic) {
+                    if (x) {
+                        y = NULL;
+                    } else {
+                        y = &x;
+                    }
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_satisfiable solution
+            end;
 
-    test_mix ~label:"unannotated global variable set non-null on both branches" "
-        int x = 0;
-        int * y = &x;
-        void foo(void) MIX(symbolic) {
-            if (x) {
-                y = &x;
-            } else {
-                y = &x;
-            }
-        }
-        int main(void) {
-            foo();
-            return 0;
-        }
-    " begin fun file solution ->
-        assert_discrete_satisfiable solution
-    end;
+            test_mix ~label:"set non-null on both branches" "
+                int x = 0;
+                int * y = &x;
+                void foo(void) MIX(symbolic) {
+                    if (x) {
+                        y = &x;
+                    } else {
+                        y = &x;
+                    }
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_satisfiable solution
+            end;
+        ];
 
+        "output argument" >::: [
+            test_mix ~label:"set null on both branches" "
+                int x = 0;
+                void foo(int ** y) MIX(symbolic) {
+                    if (x) {
+                        y = NULL;
+                    } else {
+                        y = NULL;
+                    }
+                }
+                int main(void) {
+                    int * z = &x;
+                    foo(&z);
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_satisfiable solution
+            end;
 
-    test_mix ~label:"non-null global variable set null on both branches" "
-        int x = 0;
-        int * $(nonnull) y = &x;
-        void foo(void) MIX(symbolic) {
-            if (x) {
-                y = NULL;
-            } else {
-                y = NULL;
-            }
-        }
-        int main(void) {
-            foo();
-            return 0;
-        }
-    " begin fun file solution ->
-        assert_discrete_unsatisfiable solution
-    end;
+            test_mix ~label:"set null on one branch, non-null on the other branch" "
+                int x = 0;
+                void foo(int ** y) MIX(symbolic) {
+                    if (x) {
+                        y = NULL;
+                    } else {
+                        y = &x;
+                    }
+                }
+                int main(void) {
+                    int * z = &x;
+                    foo(&z);
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_satisfiable solution
+            end;
 
-    test_mix ~label:"non-null global variable set null on one branch, non-null on the other branch" "
-        int x = 0;
-        int * $(nonnull) y = &x;
-        void foo(void) MIX(symbolic) {
-            if (x) {
-                y = NULL;
-            } else {
-                y = &x;
-            }
-        }
-        int main(void) {
-            foo();
-            return 0;
-        }
-    " begin fun file solution ->
-        assert_discrete_unsatisfiable solution
-    end;
+            test_mix ~label:"set non-null on both branches" "
+                int x = 0;
+                void foo(int ** y) MIX(symbolic) {
+                    if (x) {
+                        y = &x;
+                    } else {
+                        y = &x;
+                    }
+                }
+                int main(void) {
+                    int * z = &x;
+                    foo(&z);
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_satisfiable solution
+            end;
+        ];
 
-    test_mix ~label:"non-null global variable set non-null on both branches" "
-        int x = 0;
-        int * $(nonnull) y = &x;
-        void foo(void) MIX(symbolic) {
-            if (x) {
-                y = &x;
-            } else {
-                y = &x;
-            }
-        }
-        int main(void) {
-            foo();
-            return 0;
-        }
-    " begin fun file solution ->
-        assert_discrete_satisfiable solution
-    end;
+        "(void *) output argument" >::: [
+            test_mix ~label:"set null on both branches" "
+                int x = 0;
+                void foo(void ** y) MIX(symbolic) {
+                    if (x) {
+                        y = NULL;
+                    } else {
+                        y = NULL;
+                    }
+                }
+                int main(void) {
+                    int * z = &x;
+                    foo(&z);
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_satisfiable solution
+            end;
+
+            test_mix ~label:"set null on one branch, non-null on the other branch" "
+                int x = 0;
+                void foo(void ** y) MIX(symbolic) {
+                    if (x) {
+                        y = NULL;
+                    } else {
+                        y = &x;
+                    }
+                }
+                int main(void) {
+                    int * z = &x;
+                    foo(&z);
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_satisfiable solution
+            end;
+
+            test_mix ~label:"set non-null on both branches" "
+                int x = 0;
+                void foo(void ** y) MIX(symbolic) {
+                    if (x) {
+                        y = &x;
+                    } else {
+                        y = &x;
+                    }
+                }
+                int main(void) {
+                    int * z = &x;
+                    foo(&z);
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_satisfiable solution
+            end;
+        ];
+
+        "field" >::: [
+            test_mix ~label:"set null on both branches" "
+                int x = 0;
+                struct a { int * i; } y = { &x };
+                void foo(void) MIX(symbolic) {
+                    if (x) {
+                        y.i = NULL;
+                    } else {
+                        y.i = NULL;
+                    }
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+
+            " begin fun file solution ->
+                assert_discrete_satisfiable solution
+            end;
+
+            test_mix ~label:"set null on one branch, non-null on the other branch" "
+                int x = 0;
+                struct a { int * i; } y = { &x };
+                void foo(void) MIX(symbolic) {
+                    if (x) {
+                        y.i = NULL;
+                    } else {
+                        y.i = &x;
+                    }
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_satisfiable solution
+            end;
+
+            test_mix ~label:"set non-null on both branches" "
+                int x = 0;
+                struct a { int * i; } y = { &x };
+                void foo(void) MIX(symbolic) {
+                    if (x) {
+                        y.i = &x;
+                    } else {
+                        y.i = &x;
+                    }
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_satisfiable solution
+            end;
+        ];
+    ];
+
+    "non-null annotated" >::: [
+        "global variable" >::: [
+            test_mix ~label:"set null on both branches" "
+                int x = 0;
+                int * $(nonnull) y = &x;
+                void foo(void) MIX(symbolic) {
+                    if (x) {
+                        y = NULL;
+                    } else {
+                        y = NULL;
+                    }
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_unsatisfiable solution
+            end;
+
+            test_mix ~label:"set null on one branch, non-null on the other branch" "
+                int x = 0;
+                int * $(nonnull) y = &x;
+                void foo(void) MIX(symbolic) {
+                    if (x) {
+                        y = NULL;
+                    } else {
+                        y = &x;
+                    }
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_unsatisfiable solution
+            end;
+
+            test_mix ~label:"set non-null on both branches" "
+                int x = 0;
+                int * $(nonnull) y = &x;
+                void foo(void) MIX(symbolic) {
+                    if (x) {
+                        y = &x;
+                    } else {
+                        y = &x;
+                    }
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_satisfiable solution
+            end;
+        ];
+
+        "output argument" >::: [
+            test_mix ~label:"set null on both branches" "
+                int x = 0;
+                void foo(int ** y) MIX(symbolic) {
+                    if (x) {
+                        y = NULL;
+                    } else {
+                        y = NULL;
+                    }
+                }
+                int main(void) {
+                    int * $(nonnull) z = &x;
+                    foo(&z);
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_unsatisfiable solution
+            end;
+
+            test_mix ~label:"set null on one branch, non-null on the other branch" "
+                int x = 0;
+                void foo(int ** y) MIX(symbolic) {
+                    if (x) {
+                        y = NULL;
+                    } else {
+                        y = &x;
+                    }
+                }
+                int main(void) {
+                    int * $(nonnull) z = &x;
+                    foo(&z);
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_unsatisfiable solution
+            end;
+
+            test_mix ~label:"set non-null on both branches" "
+                int x = 0;
+                void foo(int ** y) MIX(symbolic) {
+                    if (x) {
+                        y = &x;
+                    } else {
+                        y = &x;
+                    }
+                }
+                int main(void) {
+                    int * $(nonnull) z = &x;
+                    foo(&z);
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_satisfiable solution
+            end;
+        ];
+
+        "(void *) output argument" >::: [
+            test_mix ~label:"set null on both branches" "
+                int x = 0;
+                void foo(void ** y) MIX(symbolic) {
+                    if (x) {
+                        y = NULL;
+                    } else {
+                        y = NULL;
+                    }
+                }
+                int main(void) {
+                    int * $(nonnull) z = &x;
+                    foo(&z);
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_unsatisfiable solution
+            end;
+
+            test_mix ~label:"set null on one branch, non-null on the other branch" "
+                int x = 0;
+                void foo(void ** y) MIX(symbolic) {
+                    if (x) {
+                        y = NULL;
+                    } else {
+                        y = &x;
+                    }
+                }
+                int main(void) {
+                    int * $(nonnull) z = &x;
+                    foo(&z);
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_unsatisfiable solution
+            end;
+
+            test_mix ~label:"set non-null on both branches" "
+                int x = 0;
+                void foo(void ** y) MIX(symbolic) {
+                    if (x) {
+                        y = &x;
+                    } else {
+                        y = &x;
+                    }
+                }
+                int main(void) {
+                    int * $(nonnull) z = &x;
+                    foo(&z);
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_satisfiable solution
+            end;
+        ];
+
+        "field" >::: [
+            test_mix ~label:"set null on both branches" "
+                int x = 0;
+                struct a { int * $(nonnull) i; } y = { &x };
+                void foo(void) MIX(symbolic) {
+                    if (x) {
+                        y.i = NULL;
+                    } else {
+                        y.i = NULL;
+                    }
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+
+            " begin fun file solution ->
+                assert_discrete_unsatisfiable solution
+            end;
+
+            test_mix ~label:"set null on one branch, non-null on the other branch" "
+                int x = 0;
+                struct a { int * $(nonnull) i; } y = { &x };
+                void foo(void) MIX(symbolic) {
+                    if (x) {
+                        y.i = NULL;
+                    } else {
+                        y.i = &x;
+                    }
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_unsatisfiable solution
+            end;
+
+            test_mix ~label:"set non-null on both branches" "
+                int x = 0;
+                struct a { int * $(nonnull) i; } y = { &x };
+                void foo(void) MIX(symbolic) {
+                    if (x) {
+                        y.i = &x;
+                    } else {
+                        y.i = &x;
+                    }
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_satisfiable solution
+            end;
+        ];
+    ];
 ]
 
 let testsuite = "TypedTopIntegration" >::: [

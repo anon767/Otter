@@ -111,7 +111,7 @@ module Interpreter (S : Config.BlockConfig) = struct
 
 
     let dispatch chain dispatch = function
-        |  `SymbolicBlock (file, job, k) when should_delegate_call job = None ->
+        | `SymbolicBlock (file, job, k) when should_delegate_call job = None ->
             call dispatch file job k
         | work ->
             chain work
