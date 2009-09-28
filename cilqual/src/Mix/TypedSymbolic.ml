@@ -129,16 +129,24 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
 
         (* finally, prepare the return continuation *)
         let return completed =
-            Format.eprintf "Returning from symbolic to typed...@.";
+            let completed_count = List.length completed in
+            Format.eprintf "Returning from symbolic to typed (%d execution%s returned)...@."
+                completed_count (if completed_count == 1 then "" else "s"); 
 
             (* prepare a monad that represents the symbolic result *)
             let expM = mapM_ begin function
                 | Types.Return (retvalopt, { Types.result_state=state; Types.result_history=history }) ->
-                    let rec bytes_to_qt typ bytes qt =
+                    let bytes_to_qt typ bytes qt =
                         let rec bytes_to_qt typ bytes qt = match typ, qt with
-                            (* first handle qualified types *)
-
-                            | Cil.TPtr (typtarget, _), Ref (qv, qtarget) ->
+                            | Cil.TPtr (typtarget, _), Ref (Var v, qtarget) ->
+                                (* unconstrained pointers should not be touched; pointers that are unannotated or are
+                                 * never assigned to/from annotated pointers are unconstrained and can accept any
+                                 * value. Roughly speaking, it's as if the solution for unconstrained pointers is top
+                                 * (nullable), which is implicitly added to the discrete partial order. *)
+                                let annot qt c =
+                                    if Solution.is_constrained v solution then perform annot qt c; return ()
+                                    else return ()
+                                in
                                 begin try perform
                                     let target_lvals = Eval.deref state bytes in
                                     (* didn't fail, so is not a null pointer *)
