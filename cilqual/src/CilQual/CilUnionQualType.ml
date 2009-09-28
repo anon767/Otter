@@ -13,19 +13,7 @@ module type CilQualContext = sig
 end
 
 
-module Context = struct
-    type t = Cil.location
-    let compare = Cil.compareLoc
-    let default = Cil.locUnknown
-    let file f = { Cil.file = f.Cil.fileName; Cil.line = -1; Cil.byte = -1 }
-    let printer ff loc =
-        if loc == Cil.locUnknown then
-            Format.fprintf ff ""
-        else if loc.Cil.line <= 0 then
-            Format.fprintf ff "%s:" loc.Cil.file
-        else
-            Format.fprintf ff "%s:%d:" loc.Cil.file loc.Cil.line
-end
+module Context = CilData.CilLocation
 
 
 module type CilUnionQualTypeMonad = sig
@@ -48,9 +36,12 @@ module CilUnionQualTypeT (QualVar : PrintableComparableType) (Context : CilQualC
             let super = printer in
             let rec printer ff = function
                 | Deref (Deref _ as v) -> Format.fprintf ff "*%a" printer v
+                | Deref (FnArg (i, Embed x)) -> Format.fprintf ff "arg%d(%a)" i Embed.printer x
+                | FnArg (i, Embed x) -> Format.fprintf ff "&arg%d(%a)" i Embed.printer x
                 | Deref (Embed x) -> Format.fprintf ff "%a" Embed.printer x
-                | Deref v -> Format.fprintf ff "<%a>" super v
                 | Embed x -> Format.fprintf ff "&%a" Embed.printer x
+                | FnRet (Embed x) -> Format.fprintf ff "return(%a)" Embed.printer x
+                | Deref v -> Format.fprintf ff "<%a>" super v
                 | v -> Format.fprintf ff "&<%a>" super v
             in
             printer

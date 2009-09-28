@@ -19,6 +19,27 @@ let preprocess str =
     in
     preprocess_mix (preprocess_cilqual (preprocess_null str))
 
+let strip_location_visitor = object
+    inherit Cil.nopCilVisitor
+    method vvdec v =
+        v.Cil.vdecl <- Cil.locUnknown;
+        Cil.SkipChildren
+    method vglob g =
+        let vcomp c = List.iter (fun f -> f.Cil.floc <- Cil.locUnknown) c.Cil.cfields; c in
+        match g with
+            | Cil.GType (typ, loc) -> Cil.ChangeTo [ Cil.GType (typ, Cil.locUnknown) ]
+            | Cil.GCompTag (comp, loc) -> Cil.ChangeTo [ Cil.GCompTag (vcomp comp, Cil.locUnknown) ]
+            | Cil.GCompTagDecl (comp, loc) -> Cil.ChangeTo [ Cil.GCompTagDecl (comp, Cil.locUnknown) ]
+            | _ -> Cil.DoChildren
+    method vinst i =
+        let i = match i with
+            | Cil.Set (lval, exp, loc) -> Cil.Set (lval, exp, Cil.locUnknown)
+            | Cil.Call (lval, fn, args, loc) -> Cil.Call (lval, fn, args, Cil.locUnknown)
+            | Cil.Asm (attrs, template, ci, dj, rk, loc) -> Cil.Asm (attrs, template, ci, dj, rk, Cil.locUnknown)
+        in
+        Cil.ChangeTo [ i ]
+end
+
 let constraints_printer ff solution =
     Mix.TypedBlock.G.QualGraph.printer ff (Mix.TypedBlock.DiscreteSolver.Solution.constraints solution)
 

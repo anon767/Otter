@@ -15,6 +15,7 @@ let test_mix content ?(label=content) test =
         Errormsg.hadErrors := false;
         let file = Frontc.parse filename () in
         assert_bool "Cil parse error" (not !Errormsg.hadErrors);
+        Cil.visitCilFileSameGlobals strip_location_visitor file;
         Rmtmps.removeUnusedTemps file;
 
         prepare_file file;
