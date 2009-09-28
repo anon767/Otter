@@ -27,15 +27,29 @@ let strip_location_visitor = object
     method vglob g =
         let vcomp c = List.iter (fun f -> f.Cil.floc <- Cil.locUnknown) c.Cil.cfields; c in
         match g with
-            | Cil.GType (typ, loc) -> Cil.ChangeTo [ Cil.GType (typ, Cil.locUnknown) ]
-            | Cil.GCompTag (comp, loc) -> Cil.ChangeTo [ Cil.GCompTag (vcomp comp, Cil.locUnknown) ]
-            | Cil.GCompTagDecl (comp, loc) -> Cil.ChangeTo [ Cil.GCompTagDecl (comp, Cil.locUnknown) ]
+            | Cil.GType (typ, _) -> Cil.ChangeTo [ Cil.GType (typ, Cil.locUnknown) ]
+            | Cil.GCompTag (comp, _) -> Cil.ChangeTo [ Cil.GCompTag (vcomp comp, Cil.locUnknown) ]
+            | Cil.GCompTagDecl (comp, _) -> Cil.ChangeTo [ Cil.GCompTagDecl (comp, Cil.locUnknown) ]
             | _ -> Cil.DoChildren
+    method vstmt s =
+        s.Cil.skind <- begin match s.Cil.skind with
+            | Cil.Return (exp, _) -> Cil.Return (exp, Cil.locUnknown)
+            | Cil.Goto (stmt, _) -> Cil.Goto (stmt, Cil.locUnknown)
+            | Cil.Break _ -> Cil.Break Cil.locUnknown
+            | Cil.Continue _ -> Cil.Continue Cil.locUnknown
+            | Cil.If (exp, t, f, _) -> Cil.If (exp, t, f, Cil.locUnknown)
+            | Cil.Switch (exp, block, stmts, _) -> Cil.Switch (exp, block, stmts, Cil.locUnknown)
+            | Cil.Loop (block, _, continue, break) -> Cil.Loop (block, Cil.locUnknown, continue, break)
+            | Cil.TryFinally (t, f, _) -> Cil.TryFinally (t, f, Cil.locUnknown)
+            | Cil.TryExcept (t, e, f, _) -> Cil.TryExcept (t, e, f, Cil.locUnknown)
+            | k -> k
+        end;
+        Cil.DoChildren
     method vinst i =
         let i = match i with
-            | Cil.Set (lval, exp, loc) -> Cil.Set (lval, exp, Cil.locUnknown)
-            | Cil.Call (lval, fn, args, loc) -> Cil.Call (lval, fn, args, Cil.locUnknown)
-            | Cil.Asm (attrs, template, ci, dj, rk, loc) -> Cil.Asm (attrs, template, ci, dj, rk, Cil.locUnknown)
+            | Cil.Set (lval, exp, _) -> Cil.Set (lval, exp, Cil.locUnknown)
+            | Cil.Call (lval, fn, args, _) -> Cil.Call (lval, fn, args, Cil.locUnknown)
+            | Cil.Asm (attrs, template, ci, dj, rk, _) -> Cil.Asm (attrs, template, ci, dj, rk, Cil.locUnknown)
         in
         Cil.ChangeTo [ i ]
 end

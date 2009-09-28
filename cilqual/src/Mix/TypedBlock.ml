@@ -106,7 +106,7 @@ module Interpreter (T : Config.BlockConfig) = struct
     let exec file =
         (* generate and evaluate everything before main *)
         let expM = interpret_init file in
-        let expState = G.run expM ((((((), G.QualGraph.empty), (G.fileContext file)), 0), G.emptyUnionTable), G.emptyEnv) in
+        let expState = G.run expM ((((((), G.QualGraph.empty), (G.emptyContext)), 0), G.emptyUnionTable), G.emptyEnv) in
 
         (* prepare the return continuation to perform the final check *)
         let return (((((_, constraints), _), _), _), _) =
