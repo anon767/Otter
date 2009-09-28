@@ -374,9 +374,9 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                 int x = 0;
                 void foo(int ** y) MIX(symbolic) {
                     if (x) {
-                        y = NULL;
+                        *y = NULL;
                     } else {
-                        y = NULL;
+                        *y = NULL;
                     }
                 }
                 int main(void) {
@@ -392,9 +392,9 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                 int x = 0;
                 void foo(int ** y) MIX(symbolic) {
                     if (x) {
-                        y = NULL;
+                        *y = NULL;
                     } else {
-                        y = &x;
+                        *y = &x;
                     }
                 }
                 int main(void) {
@@ -410,9 +410,9 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                 int x = 0;
                 void foo(int ** y) MIX(symbolic) {
                     if (x) {
-                        y = &x;
+                        *y = &x;
                     } else {
-                        y = &x;
+                        *y = &x;
                     }
                 }
                 int main(void) {
@@ -430,9 +430,9 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                 int x = 0;
                 void foo(void ** y) MIX(symbolic) {
                     if (x) {
-                        y = NULL;
+                        *y = NULL;
                     } else {
-                        y = NULL;
+                        *y = NULL;
                     }
                 }
                 int main(void) {
@@ -448,9 +448,9 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                 int x = 0;
                 void foo(void ** y) MIX(symbolic) {
                     if (x) {
-                        y = NULL;
+                        *y = NULL;
                     } else {
-                        y = &x;
+                        *y = &x;
                     }
                 }
                 int main(void) {
@@ -466,9 +466,9 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                 int x = 0;
                 void foo(void ** y) MIX(symbolic) {
                     if (x) {
-                        y = &x;
+                        *y = &x;
                     } else {
-                        y = &x;
+                        *y = &x;
                     }
                 }
                 int main(void) {
@@ -601,9 +601,9 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                 int x = 0;
                 void foo(int ** y) MIX(symbolic) {
                     if (x) {
-                        y = NULL;
+                        *y = NULL;
                     } else {
-                        y = NULL;
+                        *y = NULL;
                     }
                 }
                 int main(void) {
@@ -619,9 +619,9 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                 int x = 0;
                 void foo(int ** y) MIX(symbolic) {
                     if (x) {
-                        y = NULL;
+                        *y = NULL;
                     } else {
-                        y = &x;
+                        *y = &x;
                     }
                 }
                 int main(void) {
@@ -637,9 +637,9 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                 int x = 0;
                 void foo(int ** y) MIX(symbolic) {
                     if (x) {
-                        y = &x;
+                        *y = &x;
                     } else {
-                        y = &x;
+                        *y = &x;
                     }
                 }
                 int main(void) {
@@ -657,9 +657,9 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                 int x = 0;
                 void foo(void ** y) MIX(symbolic) {
                     if (x) {
-                        y = NULL;
+                        *y = NULL;
                     } else {
-                        y = NULL;
+                        *y = NULL;
                     }
                 }
                 int main(void) {
@@ -675,9 +675,9 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                 int x = 0;
                 void foo(void ** y) MIX(symbolic) {
                     if (x) {
-                        y = NULL;
+                        *y = NULL;
                     } else {
-                        y = &x;
+                        *y = &x;
                     }
                 }
                 int main(void) {
@@ -693,9 +693,9 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                 int x = 0;
                 void foo(void ** y) MIX(symbolic) {
                     if (x) {
-                        y = &x;
+                        *y = &x;
                     } else {
-                        y = &x;
+                        *y = &x;
                     }
                 }
                 int main(void) {
