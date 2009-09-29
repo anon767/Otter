@@ -188,6 +188,24 @@ let sequence_testsuite = "Instruction Sequence" >::: [
               (Const "g", Const "k"); (Const "k", Const "g") ] constraints
         end;
 
+    "int *** to void ** to void * to int ***" >::: test_permute_stmt
+        [ "void_ptr_ptr = x_ptr_ptr_ptr"; "void_ptr = void_ptr_ptr"; "y_ptr_ptr_ptr = void_ptr" ]
+        [ ("void_ptr_ptr", "void $a * $b * $c"); ("void_ptr", "void $d * $e");
+          ("x_ptr_ptr_ptr", "int $f * $g * $h * $i"); ("y_ptr_ptr_ptr", "int $j * $k * $l * $m") ]
+        begin fun env result constraints -> assert_only_paths
+            [ (Const "c", Const "e"); (* void_ptr/void_ptr_ptr *)
+              (Const "b", Const "h"); (Const "h", Const "b"); (* void_ptr_ptr/x_ptr_ptr_ptr *)
+              (Const "i", Const "c");
+              (Const "b", Const "l"); (Const "l", Const "b"); (* y_ptr_ptr_ptr/void_ptr_ptr *)
+              (Const "c", Const "m");
+              (Const "i", Const "e"); (* void_ptr/x_ptr_ptr_ptr *)
+              (Const "e", Const "m"); (* y_ptr_ptr_ptr/void_ptr *)
+              (Const "f", Const "j"); (Const "j", Const "f"); (* x_ptr_ptr_ptr/y_ptr_ptr_ptr *)
+              (Const "g", Const "k"); (Const "k", Const "g");
+              (Const "h", Const "l"); (Const "l", Const "h");
+              (Const "i", Const "m") ] constraints
+        end;
+
     "int *** to void * to int to void * to int ***" >::: test_permute_stmt
         [ "void_ptr1 = x_ptr_ptr_ptr"; "z = void_ptr1"; "void_ptr2 = z"; "y_ptr_ptr_ptr = void_ptr2" ]
         [ ("void_ptr1", "void $a * $b"); ("void_ptr2", "void $c * $d");
