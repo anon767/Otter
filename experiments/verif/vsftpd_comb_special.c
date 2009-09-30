@@ -5754,20 +5754,15 @@ char *strrchr(char const   *s , int c )
 #line 1 "cil-RmcyqOsM.o"
 #pragma merger(0,"/tmp/cil-HGVPi44G.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 81 "../../includes/usr/include/ctype.h"
-int table_inited = -1; 
 unsigned short const   **__ctype_b_loc(void)  __attribute__((__const__)) {
 	static unsigned short* table = 0;
-	__EVAL(table_inited);
-	if(__TRUTH_VALUE(table_inited)==0 || table_inited==-1) { // workaround
+	if(__TRUTH_VALUE(table)==0) {
 		table = malloc(sizeof(unsigned short)*256);
 		for(int i=0;i<256;i++)
 			table[i] = i;
-		table_inited = 1;
 	}
 	return &table;
-	// maybe there's a bug in Otter
 	// problem: to assert that addr returned by malloc != 0
-	// problem: global init
 }
 #line 6 "../../mockedFns/strtol.c"
 static unsigned long string2long(char const   *nptr , char **endptr , int base , int is_signed ) ;

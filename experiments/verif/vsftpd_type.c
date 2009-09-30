@@ -4,11 +4,83 @@
 //
 // Possible bugs in Otter:
 // 1. to assert that addr returned by malloc != 0
-// 2. global init
+// 2. global init (gone)
 //
 #define main vsftpd_main
 #include "vsftpd_comb_special.c"
 #undef main
+
+// Just a workaround, not mean to be the ultimate solution
+void init__ctypes(){
+	unsigned char const   my__ctypes[257]  = 
+	  {      (unsigned char const   )0,      (unsigned char const   )128,      (unsigned char const   )128,      (unsigned char const   )128, 
+	        (unsigned char const   )128,      (unsigned char const   )128,      (unsigned char const   )128,      (unsigned char const   )128, 
+	        (unsigned char const   )128,      (unsigned char const   )144,      (unsigned char const   )144,      (unsigned char const   )144, 
+	        (unsigned char const   )144,      (unsigned char const   )144,      (unsigned char const   )144,      (unsigned char const   )128, 
+	        (unsigned char const   )128,      (unsigned char const   )128,      (unsigned char const   )128,      (unsigned char const   )128, 
+	        (unsigned char const   )128,      (unsigned char const   )128,      (unsigned char const   )128,      (unsigned char const   )128, 
+	        (unsigned char const   )128,      (unsigned char const   )128,      (unsigned char const   )128,      (unsigned char const   )128, 
+	        (unsigned char const   )128,      (unsigned char const   )128,      (unsigned char const   )128,      (unsigned char const   )128, 
+	        (unsigned char const   )128,      (unsigned char const   )48,      (unsigned char const   )96,      (unsigned char const   )96, 
+	        (unsigned char const   )96,      (unsigned char const   )96,      (unsigned char const   )96,      (unsigned char const   )96, 
+	        (unsigned char const   )96,      (unsigned char const   )96,      (unsigned char const   )96,      (unsigned char const   )96, 
+	        (unsigned char const   )96,      (unsigned char const   )96,      (unsigned char const   )96,      (unsigned char const   )96, 
+	        (unsigned char const   )96,      (unsigned char const   )44,      (unsigned char const   )44,      (unsigned char const   )44, 
+	        (unsigned char const   )44,      (unsigned char const   )44,      (unsigned char const   )44,      (unsigned char const   )44, 
+	        (unsigned char const   )44,      (unsigned char const   )44,      (unsigned char const   )44,      (unsigned char const   )96, 
+	        (unsigned char const   )96,      (unsigned char const   )96,      (unsigned char const   )96,      (unsigned char const   )96, 
+	        (unsigned char const   )96,      (unsigned char const   )96,      (unsigned char const   )41,      (unsigned char const   )41, 
+	        (unsigned char const   )41,      (unsigned char const   )41,      (unsigned char const   )41,      (unsigned char const   )41, 
+	        (unsigned char const   )33,      (unsigned char const   )33,      (unsigned char const   )33,      (unsigned char const   )33, 
+	        (unsigned char const   )33,      (unsigned char const   )33,      (unsigned char const   )33,      (unsigned char const   )33, 
+	        (unsigned char const   )33,      (unsigned char const   )33,      (unsigned char const   )33,      (unsigned char const   )33, 
+	        (unsigned char const   )33,      (unsigned char const   )33,      (unsigned char const   )33,      (unsigned char const   )33, 
+	        (unsigned char const   )33,      (unsigned char const   )33,      (unsigned char const   )33,      (unsigned char const   )33, 
+	        (unsigned char const   )96,      (unsigned char const   )96,      (unsigned char const   )96,      (unsigned char const   )96, 
+	        (unsigned char const   )96,      (unsigned char const   )96,      (unsigned char const   )42,      (unsigned char const   )42, 
+	        (unsigned char const   )42,      (unsigned char const   )42,      (unsigned char const   )42,      (unsigned char const   )42, 
+	        (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34, 
+	        (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34, 
+	        (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34, 
+	        (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34, 
+	        (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34, 
+	        (unsigned char const   )96,      (unsigned char const   )96,      (unsigned char const   )96,      (unsigned char const   )96, 
+	        (unsigned char const   )128,      (unsigned char const   )128,      (unsigned char const   )128,      (unsigned char const   )128, 
+	        (unsigned char const   )128,      (unsigned char const   )128,      (unsigned char const   )128,      (unsigned char const   )128, 
+	        (unsigned char const   )128,      (unsigned char const   )128,      (unsigned char const   )128,      (unsigned char const   )128, 
+	        (unsigned char const   )128,      (unsigned char const   )128,      (unsigned char const   )128,      (unsigned char const   )128, 
+	        (unsigned char const   )128,      (unsigned char const   )128,      (unsigned char const   )128,      (unsigned char const   )128, 
+	        (unsigned char const   )128,      (unsigned char const   )128,      (unsigned char const   )128,      (unsigned char const   )128, 
+	        (unsigned char const   )128,      (unsigned char const   )128,      (unsigned char const   )128,      (unsigned char const   )128, 
+	        (unsigned char const   )128,      (unsigned char const   )128,      (unsigned char const   )128,      (unsigned char const   )128, 
+	        (unsigned char const   )128,      (unsigned char const   )48,      (unsigned char const   )96,      (unsigned char const   )96, 
+	        (unsigned char const   )96,      (unsigned char const   )96,      (unsigned char const   )96,      (unsigned char const   )96, 
+	        (unsigned char const   )96,      (unsigned char const   )96,      (unsigned char const   )96,      (unsigned char const   )96, 
+	        (unsigned char const   )96,      (unsigned char const   )96,      (unsigned char const   )96,      (unsigned char const   )96, 
+	        (unsigned char const   )96,      (unsigned char const   )96,      (unsigned char const   )96,      (unsigned char const   )96, 
+	        (unsigned char const   )96,      (unsigned char const   )96,      (unsigned char const   )96,      (unsigned char const   )96, 
+	        (unsigned char const   )96,      (unsigned char const   )96,      (unsigned char const   )96,      (unsigned char const   )96, 
+	        (unsigned char const   )96,      (unsigned char const   )96,      (unsigned char const   )96,      (unsigned char const   )96, 
+	        (unsigned char const   )96,      (unsigned char const   )33,      (unsigned char const   )33,      (unsigned char const   )33, 
+	        (unsigned char const   )33,      (unsigned char const   )33,      (unsigned char const   )33,      (unsigned char const   )33, 
+	        (unsigned char const   )33,      (unsigned char const   )33,      (unsigned char const   )33,      (unsigned char const   )33, 
+	        (unsigned char const   )33,      (unsigned char const   )33,      (unsigned char const   )33,      (unsigned char const   )33, 
+	        (unsigned char const   )33,      (unsigned char const   )33,      (unsigned char const   )33,      (unsigned char const   )33, 
+	        (unsigned char const   )33,      (unsigned char const   )33,      (unsigned char const   )33,      (unsigned char const   )33, 
+	        (unsigned char const   )96,      (unsigned char const   )33,      (unsigned char const   )33,      (unsigned char const   )33, 
+	        (unsigned char const   )33,      (unsigned char const   )33,      (unsigned char const   )33,      (unsigned char const   )33, 
+	        (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34, 
+	        (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34, 
+	        (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34, 
+	        (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34, 
+	        (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34, 
+	        (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34, 
+	        (unsigned char const   )96,      (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34, 
+	        (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34, 
+	        (unsigned char const   )34};
+ for(int i=0;i<257;i++)
+	 __ctypes[i] = my__ctypes[i];
+}
 
 // Create a new (empty) sym_file_stream_t. If fd >= 0, attach the
 // stream at file descriptor fd.
@@ -31,13 +103,25 @@ void initstr(struct mystr* s){
  s->PRIVATE_HANDS_OFF_len = 0;
 }
 
+char* symbolic_string(int size){
+	char* s = malloc(size+1);
+	for (int i=0;i<size;i++){
+		s[i] = __SYMBOLIC();
+		__ASSUME(s[i]!='\0');
+	}
+	s[size] = '\0';
+	return s;
+}
+
 int main(){
  struct vsf_session sess;
- char c[2];
+ char* c;
  int old_is_ascii;
 
  // ANY-state
  __SYMBOLIC_STATE();
+ // Oh yeah, it wipes out everything, INCLUDING the ctype table!!
+ init__ctypes();
 
  __SYMBOLIC(&sess);
  // a str is set up so that if alloc_bytes>0, p_buf!=0
@@ -47,7 +131,8 @@ int main(){
  // TODO: restrict ANY-state so that an inconsistent str does not exist
  // IDEA: report errors to the user, and let the user refine the ANY-state
 
- sess.vsftpd_log_fd = 0;
+ sess.vsftpd_log_fd = -1;
+ tunable_syslog_enable = 0; // important
 
  // IDEA: have to dereference symbolic values if not set these
  sess.ssl_consumer_fd = 0;
@@ -66,7 +151,7 @@ int main(){
 	 s_sig_details[i].pending = 0;
 
  // invariant?
- s_io_handler_running = 1;
+ s_io_handler = 0;
  s_exit_func = 0;
  
  // disabled vsnprintf
@@ -76,23 +161,27 @@ int main(){
  newStream(0);
 
  // *some* symbolic string input
- c[0] = __SYMBOLIC();
- c[1] = '\0';
+ c = symbolic_string(1);
 
  str_alloc_text(&sess.ftp_arg_str,c);
- str_alloc_text(&sess.user_str,c);
- str_alloc_text(&sess.remote_ip_str,c);
-
+ str_alloc_text(&sess.user_str,symbolic_string(1));
+ str_alloc_text(&sess.remote_ip_str,symbolic_string(1));
  old_is_ascii = sess.is_ascii;
 
  handle_type(&sess);
 
- if(c[0]=='A' || c[0]=='a')
+ if(c[0]=='A' || c[0]=='a'){
+	__COMMENT("A");
  	__ASSERT(sess.is_ascii!=0);
- else if(c[0]=='I' || c[0]=='i')
+ }
+ else if(c[0]=='I' || c[0]=='i'){
+	__COMMENT("I");
  	__ASSERT(sess.is_ascii==0);
- else
+ }
+ else{
+	__COMMENT("N");
  	__ASSERT(sess.is_ascii==old_is_ascii);
+ }
 
  return 0;
 }
