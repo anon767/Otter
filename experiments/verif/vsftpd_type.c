@@ -113,8 +113,9 @@ char* symbolic_string(int size){
 	return s;
 }
 
+struct vsf_session sess;
+
 int main(){
- struct vsf_session sess;
  char* c;
  int old_is_ascii;
 
@@ -168,7 +169,9 @@ int main(){
  str_alloc_text(&sess.remote_ip_str,symbolic_string(1));
  old_is_ascii = sess.is_ascii;
 
+ __CURRENT_STATE(0);
  handle_type(&sess);
+ __CURRENT_STATE(1);
 
  if(c[0]=='A' || c[0]=='a'){
 	__COMMENT("A");
@@ -182,6 +185,8 @@ int main(){
 	__COMMENT("N");
  	__ASSERT(sess.is_ascii==old_is_ascii);
  }
+
+ __COMPARE_STATE(0,1);
 
  return 0;
 }

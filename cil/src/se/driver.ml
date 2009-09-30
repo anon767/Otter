@@ -392,6 +392,9 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 									Executedebug.log "which becomes";
 									Executedebug.log (To_string.bytes post);
 									Executedebug.log "can be false with the path condition:";
+									(*let pc_str = To_string.humanReadablePc state.path_condition exHist.bytesToVars in *)
+									(*let pc_str = (Utility.print_list To_string.bytes state.path_condition " AND ") in*)
+									(*let pc_str = Utility.print_list To_string.bytes (Stp.getRelevantAssumptions state.path_condition post) " AND " in*)
 									let pc_str = (Utility.print_list To_string.bytes state.path_condition " AND ") in
 									Executedebug.log (if String.length pc_str = 0 then "(nil)" else pc_str);
 									Executedebug.log "****************************)";
@@ -437,7 +440,6 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 							Output.set_mode Output.MSG_MUSTPRINT;
 							Output.print_endline ("COMMENT:"^(To_string.exp exp));
 							state
-				(*			
 					| Function.CurrentState ->
 						let bytes = Eval.rval state (List.hd exps) in
 						let key = Convert.bytes_to_int_auto bytes in
@@ -475,7 +477,6 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 						   	Output.printf "Compare states fail\n";
                             state
                         end
-					*)
 					| Function.AssertEqualState ->
 						let bytes0 = Eval.rval state (List.nth exps 0) in
 						let key0 = Convert.bytes_to_int_auto bytes0 in
