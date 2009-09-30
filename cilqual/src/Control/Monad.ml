@@ -18,6 +18,8 @@ module MonadOps (M : Monad) = struct
     open List
     let bind_ m k = bind m (fun _ -> k)
 
+    let liftM f m = bind m (fun x -> return (f x))
+
     let mapM f xs =
         let rec mapM f xs acc = match xs with
             | x'::xs' -> bind (f x') (fun r -> mapM f xs' (r::acc))

@@ -186,29 +186,6 @@ module UnionQualTypeT (TypedQualVar : TypedQualVar)
             | Empty ->
                 return Empty
 
-        let rec compare x y = if x == y then 0 else match x, y with
-            | Ref (_, qtx), Ref (_, qty) -> compare qtx qty
-            | Fn (_, qtxr, qtxa), Fn (_, qtyr, qtya) ->
-                begin match compare qtxr qtyr with
-                    | 0 ->
-                        let rec compare_args xs ys = match xs, ys with
-                            | x::xs, y::ys ->
-                                begin match compare x y with
-                                    | 0 -> compare_args xs ys
-                                    | i -> i
-                                end
-                            | [], [] -> 0
-                            | [], _ -> -1
-                            | _, [] -> 1
-                        in
-                        compare_args qtxa qtya
-                    | i -> i
-                end
-            | Base _, Base _ -> 0
-            | Empty, Empty -> 0
-            | x, y ->
-                let rank = function Ref _ -> 0 | Fn _ -> 1 | Base _ -> 2 | Empty -> 3 in
-                Pervasives.compare (rank x) (rank y)
 
         let rec printer ff = function
             | Ref (q, qt) ->
@@ -226,8 +203,39 @@ module UnionQualTypeT (TypedQualVar : TypedQualVar)
         let create qt qv = let qt, _ = run qt ((), qv) in qt
     end
 
+
+    (* union-find based map from qualifier variables to tables of qualified types which make up a union type *)
     module UnionTable = struct
-        module Table = Map.Make (QualType)
+
+        (* module for comparing qualified types by structure, ignoring qualifier variables *)
+        module StructuralQualType = struct
+            include QualType
+            let rec compare x y = if x == y then 0 else match x, y with
+                | Ref (_, qtx), Ref (_, qty) -> compare qtx qty
+                | Fn (_, qtxr, qtxa), Fn (_, qtyr, qtya) ->
+                    begin match compare qtxr qtyr with
+                        | 0 ->
+                            let rec compare_args xs ys = match xs, ys with
+                                | x::xs, y::ys ->
+                                    begin match compare x y with
+                                        | 0 -> compare_args xs ys
+                                        | i -> i
+                                    end
+                                | [], [] -> 0
+                                | [], _ -> -1
+                                | _, [] -> 1
+                            in
+                            compare_args qtxa qtya
+                        | i -> i
+                    end
+                | Base _, Base _ -> 0
+                | Empty, Empty -> 0
+                | x, y ->
+                    let rank = function Ref _ -> 0 | Fn _ -> 1 | Base _ -> 2 | Empty -> 3 in
+                    Pervasives.compare (rank x) (rank y)
+        end
+
+        module Table = Map.Make (StructuralQualType)
         module Union = UnionFindMap (QualType.Qual)
         type t = QualType.t Table.t Union.t
 
@@ -238,8 +246,8 @@ module UnionQualTypeT (TypedQualVar : TypedQualVar)
         let add = add
     end
 
-    (* monad stack *)
-    module TableUnionTableT = struct
+    (* monad stack incorporating a unification table for unions *)
+    module UnionTableQM = struct
         module State = StateT (UnionTable) (QM)
         include State
 
@@ -255,7 +263,7 @@ module UnionQualTypeT (TypedQualVar : TypedQualVar)
         let glb x y = lift (QM.glb x y)
         let annot x c = lift (QM.annot x c)
 
-        (* union-find based unification operations *)
+        (* monadic interface to UnionTable *)
         open UnionTable
         let empty = empty
 
@@ -269,6 +277,7 @@ module UnionQualTypeT (TypedQualVar : TypedQualVar)
                     put map';
                     return (head, table)
             with Not_found -> perform
+                (* initialize a new table for qv *)
                 put (Union.add qv Table.empty map);
                 return (qv, Table.empty)
 
@@ -290,8 +299,8 @@ module UnionQualTypeT (TypedQualVar : TypedQualVar)
         let update_table qv table = perform
             modify (fun map -> Union.add qv table map)
     end
-    include TableUnionTableT
-    module Ops = MonadOps (TableUnionTableT)
+    include UnionTableQM
+    module Ops = MonadOps (UnionTableQM)
     open Ops
 
 
@@ -307,6 +316,8 @@ module UnionQualTypeT (TypedQualVar : TypedQualVar)
 
 
     (* qualified-type constraints *)
+
+    (* unify the union tables of two qualifier variables *)
     let unify x y =
         let rec unify_qt eq1 x y = match x, y with
             | QualType.Ref (qx, qtx), QualType.Ref (qy, qty) -> perform
@@ -326,35 +337,41 @@ module UnionQualTypeT (TypedQualVar : TypedQualVar)
                 | None ->
                     return ()
                 | Some (tx, ty) -> perform
-                    (* combine the two tables *)
+                    (* tx is now the representative table, so expand it to include and unify with all qualified
+                     * types in ty *)
                     tz <-- UnionTable.Table.fold begin fun k qty tzM ->
                         try
+                            (* just unify *)
                             let qtx = UnionTable.Table.find k tx in perform
                             unify_qt eq1 qtx qty;
                             tzM
-                        with Not_found -> perform
-                            tz <-- tzM;
-                            return (UnionTable.Table.add k qty tz)
+                        with Not_found ->
+                            (* expand tx first, then unify *)
+                            let qtx = QualType.create (QualType.clone k) x in perform
+                            unify_qt eq1 qtx qty;
+                            liftM (UnionTable.Table.add k qtx) tzM
                     end ty (return tx);
                     update_table x tz
         in
         unify (fun _ _ -> return ()) x y
 
 
+    (* select from the union table of qx the qualified type that structurally matches y, and splice the tail onto qx *)
     let select_table qx y = perform
-        (_, tx) <-- find_table qx;
+        let splice = function
+            | QualType.Ref (_, qty)       -> return (QualType.Ref (qx, qty))
+            | QualType.Fn (_, qtry, qtpy) -> return (QualType.Fn (qx, qtry, qtpy))
+            | QualType.Base _
+            | QualType.Empty              -> failwith "Impossible!"
+        in
+        (qx, tx) <-- find_table qx; (* also substitute qx with it's representative *)
         try
-            match UnionTable.Table.find y tx with
-                | QualType.Ref (_, qty)       -> return (QualType.Ref (qx, qty))
-                | QualType.Fn (_, qtry, qtpy) -> return (QualType.Fn (qx, qtry, qtpy))
-                | QualType.Base _
-                | QualType.Empty              -> failwith "Impossible!"
+            splice (UnionTable.Table.find y tx)
         with Not_found -> perform
-            (* TODO: disallow QualType.Base to avoid infinite loop *)
-            let x = QualType.create (QualType.clone y) qx in (* share common prefix of qualtypes *)
-            (*x <-- fresh (QualType.clone y);*) (* discriminate by qualtypes *)
+            (* expand tx to include a qualified type that matches y *)
+            let x = QualType.create (QualType.clone y) qx in
             update_table qx (UnionTable.Table.add x x tx);
-            return x
+            splice x
 
 
     let rec assign_ref l v = match l, v with
@@ -375,12 +392,10 @@ module UnionQualTypeT (TypedQualVar : TypedQualVar)
             unify ql qv
         | QualType.Base ql, QualType.Ref (qv, _)
         | QualType.Base ql, QualType.Fn (qv, _, _) -> perform
-            eq qv ql;
             l <-- select_table ql v;
             assign_ref l v
         | QualType.Ref (ql, _), QualType.Base qv
         | QualType.Fn (ql, _, _), QualType.Base qv -> perform
-            eq qv ql;
             v <-- select_table qv l;
             assign_ref l v
         | _, _ ->
@@ -402,12 +417,10 @@ module UnionQualTypeT (TypedQualVar : TypedQualVar)
             unify ql qv
         | QualType.Base ql, QualType.Ref (qv, _)
         | QualType.Base ql, QualType.Fn (qv, _, _) -> perform
-            leq qv ql;
             l <-- select_table ql v;
             assign l v
         | QualType.Ref (ql, _), QualType.Base qv
         | QualType.Fn (ql, _, _), QualType.Base qv -> perform
-            leq qv ql;
             v <-- select_table qv l;
             assign l v
         | _, _ ->
