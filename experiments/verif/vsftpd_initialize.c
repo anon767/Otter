@@ -45,11 +45,11 @@ char* symbolic_string(int size){
 }
 
 int init_state(){
+ __SYMBOLIC_STATE();
 
  // Oh yeah, __SYMBOLIC_STATE() wipes out everything, INCLUDING the ctype table!!
  init__ctypes();
 
- __SYMBOLIC(&sess);
  // a str is set up so that if alloc_bytes>0, p_buf!=0
  initstr(&sess.ftp_arg_str);
  initstr(&sess.user_str);
@@ -118,6 +118,13 @@ int init_state(){
  initstr(&s_access_str___0);
  initstr(&s_proctitle_prefix_str);
  initstr(&s_pword_str);
+
+ // Other static values that are zero until they are initialized
+ p_getcwd_buf = 0;
+ s_page_size = 0;
+
+ memcpy(lcdigits,"0123456789abcdef",sizeof(lcdigits));
+ memcpy(ucdigits,"0123456789ABCDEF",sizeof(ucdigits));
 
  // no signals
  for(int i=0;i<65;i++)
