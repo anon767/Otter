@@ -11211,8 +11211,7 @@ void vsf_cmdio_write_exit(struct vsf_session *p_sess , int status , char const  
 }
 }
 #line 94 "ftpcmdio.c"
-struct mystr s_the_str___0  ;
-//static struct mystr s_the_str___0  ;
+static struct mystr s_the_str___0  ;
 #line 89 "ftpcmdio.c"
 static void ftp_write_text_common(struct vsf_session *p_sess , int status , char const   *p_text ,
                                   int noblock , char sep ) 
@@ -11251,11 +11250,9 @@ void vsf_cmdio_write_str(struct vsf_session *p_sess , int status , struct mystr 
 }
 }
 #line 117 "ftpcmdio.c"
-struct mystr s_write_buf_str  ;
-//static struct mystr s_write_buf_str  ;
+static struct mystr s_write_buf_str  ;
 #line 118 "ftpcmdio.c"
-struct mystr s_text_mangle_str  ;
-//static struct mystr s_text_mangle_str  ;
+static struct mystr s_text_mangle_str  ;
 #line 113 "ftpcmdio.c"
 static void ftp_write_str_common(struct vsf_session *p_sess , int status , char sep ,
                                  struct mystr  const  *p_str , int noblock ) 
@@ -18224,8 +18221,7 @@ void vsf_log_do_log(struct vsf_session *p_sess , int succeeded )
 }
 }
 #line 126 "logging.c"
-struct mystr s_log_str___0  ;
-//static struct mystr s_log_str___0  ;
+static struct mystr s_log_str___0  ;
 #line 122 "logging.c"
 static void vsf_log_common(struct vsf_session *p_sess , int succeeded , enum EVSFLogEntryType what ,
                            struct mystr  const  *p_str ) 
@@ -19193,11 +19189,9 @@ void str_replace_char(struct mystr *p_str , char from , char to )
 }
 }
 #line 323 "str.c"
-struct mystr s_lhs_chunk_str  ;
-//static struct mystr s_lhs_chunk_str  ;
+static struct mystr s_lhs_chunk_str  ;
 #line 324 "str.c"
-struct mystr s_rhs_chunk_str  ;
-//static struct mystr s_rhs_chunk_str  ;
+static struct mystr s_rhs_chunk_str  ;
 #line 320 "str.c"
 void str_replace_text(struct mystr *p_str , char const   *p_from , char const   *p_to ) 
 { unsigned int lhs_len ;
@@ -24401,8 +24395,7 @@ static void (*s_exit_func)(void)  ;
 #line 67 "sysutil.c"
 static long s_timezone  ;
 #line 70 "sysutil.c"
-struct vsf_sysutil_sig_details s_sig_details[65]  ;
-//static struct vsf_sysutil_sig_details s_sig_details[65]  ;
+static struct vsf_sysutil_sig_details s_sig_details[65]  ;
 #line 78 "sysutil.c"
 static void (*s_io_handler)(int  , int  , void * )  ;
 #line 79 "sysutil.c"
