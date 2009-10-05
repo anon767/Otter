@@ -15,11 +15,10 @@
 
 int main(){
 
- // init state
  init_state();
 
  __CURRENT_STATE(0);
- handle_help(&sess);
+ handle_pass_command(&sess);
  __CURRENT_STATE(1);
 
  __COMPARE_STATE(0,1);

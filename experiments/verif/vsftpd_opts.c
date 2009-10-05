@@ -17,9 +17,13 @@ int main(){
 
  // init state
  init_state();
+ 
+ // IDEALLY: cover "UTF8 ON"
+ // run with --mergePaths
+ str_alloc_text(&sess.ftp_arg_str,symbolic_string(7));
 
  __CURRENT_STATE(0);
- handle_help(&sess);
+ handle_opts(&sess);
  __CURRENT_STATE(1);
 
  __COMPARE_STATE(0,1);

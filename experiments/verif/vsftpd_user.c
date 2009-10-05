@@ -15,11 +15,12 @@
 
 int main(){
 
- // init state
  init_state();
 
+ // in init_state(), ftp_arg_str has length 1, and therefore is_anon==0
+
  __CURRENT_STATE(0);
- handle_help(&sess);
+ handle_user_command(&sess);
  __CURRENT_STATE(1);
 
  __COMPARE_STATE(0,1);

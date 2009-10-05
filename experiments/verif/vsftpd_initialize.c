@@ -54,9 +54,11 @@ int init_state(){
  initstr(&sess.ftp_arg_str);
  initstr(&sess.user_str);
  initstr(&sess.remote_ip_str);
+ initstr(&sess.log_str);
 
  sess.vsftpd_log_fd = -1;
  tunable_syslog_enable = 0; // important
+ tunable_one_process_model = 1; // may require
 
  // IDEA: have to dereference symbolic values if not set these
  sess.ssl_consumer_fd = 0;
@@ -139,6 +141,7 @@ int init_state(){
 
  // *some* symbolic string input
  str_alloc_text(&sess.user_str,symbolic_string(1));
+ str_alloc_text(&sess.ftp_arg_str,symbolic_string(1));
  str_alloc_text(&sess.remote_ip_str,symbolic_string(1));
 
  return 0;

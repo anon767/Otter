@@ -15,11 +15,14 @@
 
 int main(){
 
- // init state
  init_state();
 
+ // made arg concrete for now
+ // problem: it first converts ascii to long, and last converts back to ascii
+ str_alloc_text(&sess.ftp_arg_str,"1");
+
  __CURRENT_STATE(0);
- handle_help(&sess);
+ handle_rest(&sess);
  __CURRENT_STATE(1);
 
  __COMPARE_STATE(0,1);
