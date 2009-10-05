@@ -108,8 +108,8 @@ module Interpreter (T : Config.BlockConfig) = struct
         let expM = interpret_init file in
         let expState = G.run expM ((((((), G.QualGraph.empty), (G.emptyContext)), 0), G.emptyUnionTable), G.emptyEnv) in
 
-        (* prepare the return continuation to perform the final check *)
-        let return (((((_, constraints), _), _), _), _) =
+        (* prepare the completion continuation to perform the final check *)
+        let completion (((((_, constraints), _), _), _), _) =
             let solution = DiscreteSolver.solve consts constraints in
 
             (* TODO: properly explain error *)
@@ -121,7 +121,7 @@ module Interpreter (T : Config.BlockConfig) = struct
 
         (* dispatch call to main *)
         let mainfn = Function.from_name_in_file "main" file in
-        `TypedBlock (file, mainfn, expState, return)
+        `TypedBlock (file, mainfn, expState, completion)
 
 
     let dispatch chain dispatch = function

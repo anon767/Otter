@@ -107,7 +107,9 @@ module Interpreter (S : Config.BlockConfig) = struct
 
     let exec file args =
         let job = Executemain.job_for_file file (file.Cil.fileName::args) in
-        `SymbolicBlock (file, job, (fun x -> x))
+        (* TODO: provide a completion function that checks the results *)
+        let completion x = x in
+        `SymbolicBlock (file, job, completion)
 
 
     let dispatch chain dispatch = function

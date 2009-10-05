@@ -78,16 +78,21 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
                         (expState, state, bytes)
                     end (expState, state, bytes) compinfo.Cil.cfields
 
-                | typ, Base (Var v) ->
+                | Cil.TComp (compinfo, _), Base (Var v) when not compinfo.Cil.cstruct ->
+                    failwith "TODO: handle unions"
+
+                | Cil.TPtr (typtarget, _), Base (Var v) when Cil.isVoidPtrType typ ->
+                    failwith "TODO: handle void *"
+
+                | typ, Base (Var v) when Cil.isArithmeticType typ ->
                     let size = (Cil.bitsSizeOf (typ)) / 8 in
                     let size = if size <= 0 then 1 else size in
                     let bytes = MemOp.bytes__symbolic size in
                     let state = constrain_bytes state bytes v typ in
                     expState, state, bytes
 
-                (* TODO: handle extended types, e.g., void * and unions *)
                 | _, _ ->
-                    failwith "TODO: handle function pointers? mismatched types?"
+                    failwith "TODO: handle other mismatched types?"
             in
             qt_to_bytes expState state block_type typ qt
         in
@@ -127,8 +132,8 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
         (* next, prepare the function call job *)
         let job = Executemain.job_for_function state fn args in
 
-        (* finally, prepare the return continuation *)
-        let return completed =
+        (* finally, prepare the completion continuation *)
+        let completion completed =
             let completed_count = List.length completed in
             Format.eprintf "Returning from symbolic to typed (%d execution%s returned)...@."
                 completed_count (if completed_count == 1 then "" else "s"); 
@@ -151,8 +156,8 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
                                     let target_lvals = Eval.deref state bytes in
                                     (* didn't fail, so is not a null pointer *)
                                     annot qt "nonnull";
-                                    begin match qtarget with
-                                        | Ref _ ->
+                                    begin match typtarget with
+                                        | Cil.TPtr _ ->
                                             let rec recurse = function
                                                 | Types.Lval_Block (block, offset) ->
                                                     let target_bytes = MemOp.state__get_bytes_from_lval state
@@ -195,12 +200,18 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
                                     expM;
                                 end compinfo.Cil.cfields (return ())
 
-                            | typ, Base (Var v) ->
+                            | Cil.TComp (compinfo, _), Base (Var v) when not compinfo.Cil.cstruct ->
+                                failwith "TODO: handle unions"
+
+                            | Cil.TPtr (typtarget, _), Base (Var v) when Cil.isVoidPtrType typ ->
+                                failwith "TODO: handle void *"
+
+                            | typ, Base (Var v) when Cil.isArithmeticType typ -> perform
+                                (* value types, nothing to dereference *)
                                 return ()
 
-                            (* TODO: handle extended types, e.g., void * and unions *)
                             | _, _ ->
-                                failwith "TODO: handle function pointers? mismatched types?"
+                                failwith "TODO: handle other mismatched types?"
                         in
                         bytes_to_qt typ bytes qt
                     in
@@ -222,7 +233,8 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
                         (* TODO: handle varargs *)
                         let rec args_bytes_to_qt vs bs qs = match vs, bs, qs with
                             | v::vs, b::bs, q::qs -> perform
-                                bytes_to_qt v.Cil.vtype b q; (args_bytes_to_qt vs bs qs)
+                                bytes_to_qt v.Cil.vtype b q;
+                                args_bytes_to_qt vs bs qs
                             | _, _, _ ->
                                 return ()
                         in
@@ -249,7 +261,7 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
         in
 
         (* dispatch *)
-        dispatch (`SymbolicBlock (file, job, return))
+        dispatch (`SymbolicBlock (file, job, completion))
 
 
     let dispatch chain dispatch = function
