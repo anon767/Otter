@@ -341,7 +341,10 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 							let sizeexp = List.nth exps 1 in
 							let str = match Eval.rval state exp with
 								| Bytes_Address(Some(block),offset) -> 
-									let size = Convert.bytes_to_int_auto (Eval.rval state sizeexp) in
+									let size = 
+                                      try Convert.bytes_to_int_auto (Eval.rval state sizeexp) with
+                                          Failure(s) -> Output.print_endline s; 32
+                                    in
 									let bytes = MemOp.state__get_bytes_from_lval state (block,offset,size) in
 									begin match bytes with
 										| Bytes_ByteArray(bytearray) -> To_string.bytestring bytearray
@@ -1003,7 +1006,9 @@ let mergeJobs job ((job_queue, merge_set) as job_pool) =
 					 cmp_memory j.state.block_to_bytes job.state.block_to_bytes in
 				 if diffShared = [] then (
 					 (* The memory is identical in [j] and [job] *)
-					 assert (inJOnly = [] && inJobOnly = []);
+                     if not (inJOnly = [] && inJobOnly = []) then
+                          failwith "there might be a memory leak"
+                     else ();
 					 Output.printf "Merging jobs %d and %d (identical memory)\n" j.jid job.jid;
 					 raise (MergeDone (j, { job.state with path_condition = mergedPC; }))
 				 ) else (
