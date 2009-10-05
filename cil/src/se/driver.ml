@@ -604,13 +604,6 @@ let exec_stmt job =
 		else job.exHist
 	in
 
-	if !Output.runningJobId <> job.jid then (
-		Output.set_mode Output.MSG_REG;
-		Output.print_endline "***** Changing running job *****";
-		Output.runningJobId := job.jid;
-	);
-	Output.runningJobDepth := (List.length job.state.path_condition);
-
 	Output.set_mode Output.MSG_STMT;
 	Output.set_cur_loc (Cil.get_stmtLoc stmt.skind);
 	Output.print_endline (To_string.stmt stmt);
@@ -625,7 +618,7 @@ let exec_stmt job =
 				 statement to its successor: the call might never return. So
 				 if there is a call, we postpone (by passing None as the next
 				 stmt) recording the edge until the return. (Line coverage for
-				 the instructions themselves are handled in exec_instr *)
+				 the instructions themselves are handled in exec_instr.) *)
 				let nextStmtOpt =
 					if List.exists (function Call _ -> true | _ -> false) instrs
 					then None
@@ -968,12 +961,20 @@ exception MergeDone of job * state
 exception TooDifferent
 
 
-(* Merge job states *)
+(* Merge job states. If we successfully merge job with a job j from merge_set,
+	 return Complete(Truncated(job,j)). If job is at a merge point but we don't
+	 merge, put job into the job_pool, pick a job j from job_pool, and return
+	 Active(j). (This effectively suspends job. It will eventually be reactivated
+	 when we run out of active jobs to run, or it will be merged with some other
+	 job that reaches the same program point.) Otherwise, return Active(job). In
+	 all cases, also return the updated job_pool. *)
 let mergeJobs job ((job_queue, merge_set) as job_pool) =
 	try
 		(* First test to see if the job should pause and/or merge *)
-		if run_args.arg_merge_paths
-		   && StmtInfoSet.mem (stmtInfo_of_job job) job.mergePoints then begin
+		if run_args.arg_merge_paths &&
+			StmtInfoSet.mem { siFuncName = (List.hd job.state.callstack).svar.vname;
+											  siStmt = job.stmt; }
+			job.mergePoints then begin
 		JobSet.iter
 			(fun j ->
 				if atSameProgramPoint job j then begin
@@ -1112,23 +1113,34 @@ let mergeJobs job ((job_queue, merge_set) as job_pool) =
 		in
 		(completed, (job_queue, merged_jobs))
 
+let setRunningJob job =
+	if !Output.runningJobId <> job.jid then (
+		Output.set_mode Output.MSG_REG;
+		Output.print_endline "***** Changing running job *****";
+		Output.runningJobId := job.jid;
+	);
+	Output.runningJobDepth := (List.length job.state.path_condition)
 
-(* advance the job by one step, merging if it arrives at a merge point *)
+(* Try to merge job with one that is waiting; then advance the resulting job by
+	 one step. (Note that the job that *actually* gets advances might not be
+	 step_job's argument; if the argument is at a merge point, mergeJobs places it
+	 into the job_pool and returns a different job.) *)
 let step_job job job_pool =
-	try let result = match job.instrList with
-			| [] -> exec_stmt job
-			| _ -> exec_instr job
-		in
-		match result with
-			| Active job ->
-				mergeJobs job job_pool
-			| Fork _
-			| Complete _ as result ->
-				(result, job_pool)
-	with Failure msg ->
-		let result = { result_state = job.state; result_history = job.exHist } in
-		let completed = Complete (Types.Abandoned (msg, !Output.cur_loc, result)) in
-		(completed, job_pool)
+	let job_state,job_pool = mergeJobs job job_pool in
+		match job_state with
+			| Active job -> (
+					setRunningJob job;
+					try let result = match job.instrList with
+						| [] -> exec_stmt job
+						| _ -> exec_instr job
+					in result,job_pool
+					with Failure msg ->
+						let result = { result_state = job.state; result_history = job.exHist } in
+						let completed = Complete (Types.Abandoned (msg, !Output.cur_loc, result)) in
+							(completed, job_pool)
+				)
+			| Complete _ -> (job_state, job_pool)
+			| Fork _ -> failwith "mergeJobs can't return a Fork"
 
 
 let main_loop job =
