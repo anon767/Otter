@@ -19,7 +19,7 @@ int main(){
 
  // made arg concrete for now
  // problem: it first converts ascii to long, and last converts back to ascii
- str_alloc_text(&sess.ftp_arg_str,"1");
+ //str_alloc_text(&sess.ftp_arg_str,"1");
 
  __CURRENT_STATE(0);
  handle_rest(&sess);

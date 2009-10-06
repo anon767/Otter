@@ -27,10 +27,12 @@ sym_file_stream_t *newStream(int fd) {
 void initstr(struct mystr* s){
 #ifdef TEST_CONCRETE_STRING
  s->PRIVATE_HANDS_OFF_alloc_bytes = 0;
+ s->PRIVATE_HANDS_OFF_p_buf = 0; 
 #else
  s->PRIVATE_HANDS_OFF_alloc_bytes = __SYMBOLIC();
-#endif
+ __ASSUME(s->PRIVATE_HANDS_OFF_alloc_bytes>0);
  s->PRIVATE_HANDS_OFF_p_buf = malloc(10); // arbitrary; right now memory is unbounded.
+#endif
  s->PRIVATE_HANDS_OFF_len = __SYMBOLIC();
 }
 

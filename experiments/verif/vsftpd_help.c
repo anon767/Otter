@@ -10,7 +10,7 @@
 #include "vsftpd_comb_special.c"
 #undef main
 
-#define TEST_CONCRETE_STRING
+//#define TEST_CONCRETE_STRING
 #include "vsftpd_initialize.c"
 
 int main(){
