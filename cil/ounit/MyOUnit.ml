@@ -63,6 +63,7 @@ let fork_test testfn = fun () ->
             | 0 -> false
             | n -> Buffer.add_substring message tmp 0 n; true
         do () done;
+        Unix.close fdin;
         (* get the child's exit status *)
         let _, status = Unix.waitpid [] child in
         match status with
