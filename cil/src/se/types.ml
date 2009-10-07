@@ -207,6 +207,7 @@ type callingContext =
 type state =
 	{
 		global : memory_frame;				(* Map global lvals to blocks *)
+		formals : memory_frame list;		(* Map formal lvals to blocks *)
 		locals : memory_frame list;		(* Map local lvals to blocks *)
 		(*heap : memory_heap;						(* Map a 4-byte thing to block *)*)
 		callstack : Cil.fundec list;	(* Function call stack *)

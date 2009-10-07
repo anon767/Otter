@@ -926,6 +926,7 @@ let atSameProgramPoint job1 job2 =
 		assert
 			(job1.exHist.bytesToVars == job2.exHist.bytesToVars &&
 				 state1.global         == state2.global &&
+			 	 state1.formals        == state2.formals &&
 			 	 state1.locals         == state2.locals &&
 				 state1.callstack      == state2.callstack &&
 				 state1.va_arg         == state2.va_arg &&

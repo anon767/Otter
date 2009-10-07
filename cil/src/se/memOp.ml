@@ -387,6 +387,7 @@ let loc_table__get state loc : bytes =
 let state__empty =
 	{
 		global = frame__empty;
+		formals = [frame__empty];
 		locals = [frame__empty]; (* permit global init with another global *)
 		(*heap = heap__empty;*)
 		callstack = [];
@@ -419,9 +420,12 @@ let state__add_global state varinfo init =
 	
 let state__varinfo_to_block state varinfo =
 	let local = List.hd state.locals in
+	let formal = List.hd state.formals in
 	let global = state.global in
 	if VarinfoMap.mem varinfo local.varinfo_to_block then
 		frame__varinfo_to_block local varinfo
+	else if VarinfoMap.mem varinfo formal.varinfo_to_block then
+		frame__varinfo_to_block formal varinfo
 	else if VarinfoMap.mem varinfo global.varinfo_to_block then
 		frame__varinfo_to_block global varinfo
 	else (* varinfo may be a function *)
@@ -485,13 +489,14 @@ let state__start_fcall state callContext fundec argvs =
     Output.print_endline (">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
     Output.print_endline ("Enter function " ^ (To_string.fundec fundec));
     (* set up the new stack frame *)
-	let frame, block_to_bytes = frame__empty, state.block_to_bytes in
-	let frame, block_to_bytes = frame__add_varinfos frame block_to_bytes fundec.Cil.sformals in
-	let frame, block_to_bytes = frame__add_varinfos frame block_to_bytes fundec.Cil.slocals in
-	let state = { state with locals = frame::state.locals;
+	let block_to_bytes = state.block_to_bytes in
+	let formal, block_to_bytes = frame__add_varinfos frame__empty block_to_bytes fundec.Cil.sformals in
+	let local, block_to_bytes = frame__add_varinfos frame__empty block_to_bytes fundec.Cil.slocals in
+	let state = { state with formals = formal::state.formals;
+	                         locals = local::state.locals;
 	                         callstack = fundec::state.callstack;
 	                         block_to_bytes = block_to_bytes;
-                             callContexts = callContext::state.callContexts } in
+	                         callContexts = callContext::state.callContexts } in
     (* assign arguments to parameters *)
 	let rec assign_argvs state pars argvs = match pars, argvs with
 		| par::pars, argv::argvs ->
@@ -514,11 +519,13 @@ let state__end_fcall state =
 	Output.print_endline ("Exit function "^(To_string.fundec (List.hd state.callstack)));
 	Output.print_endline ("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
 	let block_to_bytes = frame__clear_varinfos (List.hd state.locals) state.block_to_bytes in
-    { state with locals = List.tl state.locals;
+	let block_to_bytes = frame__clear_varinfos (List.hd state.formals) state.block_to_bytes in
+    { state with formals = List.tl state.formals; 
+                 locals = List.tl state.locals;
                  callstack = List.tl state.callstack;
                  block_to_bytes = block_to_bytes;
                  va_arg = List.tl state.va_arg;
-	             callContexts = List.tl state.callContexts }
+                 callContexts = List.tl state.callContexts }
 ;;
 
 let state__get_callContext state = List.hd state.callContexts;;
