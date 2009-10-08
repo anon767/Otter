@@ -645,7 +645,6 @@ let exec_stmt job =
 									| None -> None
 									| Some exp -> Some (Eval.rval state exp)
 								in
-								let state = MemOp.state__end_fcall state in                                                                    
 								Complete (Types.Return
 									(retval, { result_state = state; result_history = nextExHist None; })) 
 						| (Source (destOpt,callStmt,_,nextStmt))::_ ->
