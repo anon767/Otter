@@ -55,6 +55,64 @@ let typed_only_testsuite = "Typed only" >::: [
     " begin fun file solution ->
         assert_discrete_unsatisfiable solution
     end;
+
+    test_mix ~label:"output argument set null locally" "
+        int x = 0;
+        void foo(int ** y) {
+            *y = NULL;
+            *y = &x;
+        }
+        int main(void) {
+            int * $(nonnull) z = &x;
+            foo(&z);
+            return 0;
+        }
+    " begin fun file solution ->
+        assert_discrete_unsatisfiable solution
+    end;
+
+    test_mix ~label:"(void *) output argument set null locally" "
+        int x = 0;
+        void foo(void ** y) {
+            *y = NULL;
+            *y = &x;
+        }
+        int main(void) {
+            int * $(nonnull) z = &x;
+            foo(&z);
+            return 0;
+        }
+    " begin fun file solution ->
+        assert_discrete_unsatisfiable solution
+    end;
+
+    test_mix ~label:"field set null locally" "
+        int x = 0;
+        struct a { int * $(nonnull) i; } y = { &x };
+        void foo(void) {
+            y.i = NULL;
+            y.i = &x;
+        }
+        int main(void) {
+            foo();
+            return 0;
+        }
+    " begin fun file solution ->
+        assert_discrete_unsatisfiable solution
+    end;
+
+    test_mix ~label:"return null" "
+        int x = 0;
+        int * foo(void) {
+            return NULL;
+        }
+        int main(void) {
+            int * $(nonnull) y = foo();
+            return 0;
+        }
+    " begin fun file solution ->
+        assert_discrete_unsatisfiable solution
+    end;
 ]
 
 let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
@@ -182,6 +240,21 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                 assert_discrete_satisfiable solution
             end;
         ];
+
+        "return" >::: [
+            test_mix ~label:"null" "
+                int x = 0;
+                int * foo(void) MIX(symbolic) {
+                    return NULL;
+                }
+                int main(void) {
+                    int * y = foo();
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_satisfiable solution
+            end;
+        ];
     ];
 
     "non-null annotated" >::: [
@@ -302,6 +375,21 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                 }
                 int main(void) {
                     foo();
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_unsatisfiable solution
+            end;
+        ];
+
+        "return" >::: [
+            test_mix ~label:"null" "
+                int x = 0;
+                int * foo(void) MIX(symbolic) {
+                    return NULL;
+                }
+                int main(void) {
+                    int * $(nonnull) y = foo();
                     return 0;
                 }
             " begin fun file solution ->
@@ -537,6 +625,59 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                 assert_discrete_satisfiable solution
             end;
         ];
+
+        "return" >::: [
+            test_mix ~label:"null on both branches" "
+                int x = 0;
+                int * foo(void) MIX(symbolic) {
+                    if (x) {
+                        return NULL;
+                    } else {
+                        return NULL;
+                    }
+                }
+                int main(void) {
+                    int * y = foo();
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_satisfiable solution
+            end;
+
+            test_mix ~label:"null on one branch, non-null on the other branch" "
+                int x = 0;
+                int * foo(void) MIX(symbolic) {
+                    if (x) {
+                        return NULL;
+                    } else {
+                        return &x;
+                    }
+                }
+                int main(void) {
+                    int * y = foo();
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_satisfiable solution
+            end;
+
+            test_mix ~label:"non-null on both branches" "
+                int x = 0;
+                int * foo(void) MIX(symbolic) {
+                    if (x) {
+                        return &x;
+                    } else {
+                        return &x;
+                    }
+                }
+                int main(void) {
+                    int * y = foo();
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_satisfiable solution
+            end;
+        ];
     ];
 
     "non-null annotated" >::: [
@@ -758,6 +899,59 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                 }
                 int main(void) {
                     foo();
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_satisfiable solution
+            end;
+        ];
+
+        "return" >::: [
+            test_mix ~label:"null on both branches" "
+                int x = 0;
+                int * foo(void) MIX(symbolic) {
+                    if (x) {
+                        return NULL;
+                    } else {
+                        return NULL;
+                    }
+                }
+                int main(void) {
+                    int * $(nonnull) y = foo();
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_unsatisfiable solution
+            end;
+
+            test_mix ~label:"null on one branch, non-null on the other branch" "
+                int x = 0;
+                int * foo(void) MIX(symbolic) {
+                    if (x) {
+                        return NULL;
+                    } else {
+                        return &x;
+                    }
+                }
+                int main(void) {
+                    int * $(nonnull) y = foo();
+                    return 0;
+                }
+            " begin fun file solution ->
+                assert_discrete_unsatisfiable solution
+            end;
+
+            test_mix ~label:"non-null on both branches" "
+                int x = 0;
+                int * foo(void) MIX(symbolic) {
+                    if (x) {
+                        return &x;
+                    } else {
+                        return &x;
+                    }
+                }
+                int main(void) {
+                    int * $(nonnull) y = foo();
                     return 0;
                 }
             " begin fun file solution ->
