@@ -63,13 +63,11 @@ let qt_to_bytes solution state block_type typ qt =
 
             if Solution.equal_const v "null" solution then
                 (* if $null, there exists some null assignment to qt *)
-                let _ = Format.eprintf "$null %a@." QualType.printer qt in
                 let indicator = MemOp.indicator__next () in
                 let null_bytes = Types.make_Bytes_Address (None, MemOp.bytes__zero) in
                 let bytes = Types.make_Bytes_MayBytes (indicator, nonnull_bytes, null_bytes) in
                 return (state, bytes)
             else
-                let _ = Format.eprintf "$nonnull %a@." QualType.printer qt in
                 (* if $nonnull or unannotated, then there does not exist some null assignment to qt *)
                 return (state, nonnull_bytes)
 
@@ -138,7 +136,6 @@ let bytes_to_qt state typ bytes qt =
             begin try perform
                 let target_lvals = Eval.deref state bytes in
                 (* didn't fail, so is not a null pointer *)
-                let _ = Format.eprintf "$nonnull %a@." QualType.printer qt in
                 begin match typtarget with
                     | Cil.TPtr _ ->
                         let rec recurse = function
@@ -159,14 +156,12 @@ let bytes_to_qt state typ bytes qt =
             with
                 | Failure "Dereference a dangling pointer" -> perform
                     (* a null pointer *)
-                    let _ = Format.eprintf "$null %a@." QualType.printer qt in
                     annot qt "null";
                     return state
                 | Failure _ ->
                     (* uninitialized and unused pointer *)
                     if MemOp.same_bytes bytes MemOp.bytes__zero then perform
                         (* is definitely a null pointer *)
-                        let _ = Format.eprintf "$null %a@." QualType.printer qt in
                         annot qt "null";
                         return state
                     else
