@@ -32,6 +32,7 @@ let _ =
             TestCilQual.Integration.testsuite;
         ];
         "TestMix" >::: [
+            TestMix.SymbolicTopIntegration.testsuite;
             TestMix.TypedTopIntegration.testsuite;
         ];
     ] end

@@ -8,6 +8,7 @@ let opt_args = ref []
 module TypedInterpreter = TypedBlock.Interpreter (Config.TypedBlockConfig)
 module SymbolicInterpreter = SymbolicBlock.Interpreter (Config.SymbolicBlockConfig)
 module TypedSymbolicSwitcher = TypedSymbolic.Switcher (Config.TypedBlockConfig) (Config.SymbolicBlockConfig)
+module SymbolicTypedSwitcher = SymbolicTyped.Switcher (Config.SymbolicBlockConfig) (Config.TypedBlockConfig)
 
 let dispatcher x =
     let analysis_register = [
@@ -16,6 +17,7 @@ let dispatcher x =
     ] in
     let switch_register = [
         TypedSymbolicSwitcher.dispatch;
+        SymbolicTypedSwitcher.dispatch;
     ] in
     let terminal dispatch x = failwith "Can't dispatch call" in
 

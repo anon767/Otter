@@ -12,7 +12,7 @@ let preprocess str =
         global_replace (regexp "\\([ \t\r\n(]\\)\\$(\\([_a-zA-Z0-9]+\\))")
                        ("\\1__attribute__(("^CilQual.Config.annot_attribute_string^"(\\2)))")
     in
-    (* convert MIX(foo) to __attribute__((cilqual(foo))) *)
+    (* convert MIX(foo) to __attribute__((mix(foo))) *)
     let preprocess_mix =
         global_replace (regexp "\\([ \t\r\n(]\\)MIX(\\([_a-zA-Z0-9]+\\))")
                        ("\\1__attribute__(("^Mix.Config.annot_attribute_string^"(\\2)))")
@@ -64,4 +64,21 @@ let assert_discrete_satisfiable solution =
 let assert_discrete_unsatisfiable solution =
     if not (Mix.TypedBlock.DiscreteSolver.Solution.is_unsatisfiable solution) then
         assert_failure "@[<v2>Should be unsatisfiable:@\n%a@]" Mix.TypedBlock.DiscreteSolver.Solution.printer solution
+
+let assert_has_abandoned expected_count results = 
+    (* count jobs that were abandoned *)
+    let abandoned, actual_count = List.fold_left begin fun (abandoned, actual_count) result -> match result with
+        | Types.Abandoned (s, loc, _) -> ((loc.Cil.file, loc.Cil.line, s)::abandoned, (actual_count + 1))
+        | _ -> (abandoned, actual_count)
+    end ([], 0) results in
+    if actual_count <> expected_count then begin
+        let printer ff abandoned = ignore begin List.fold_left begin fun b (f, l, s) ->
+            Format.fprintf ff "%(%)@[%s:%d: %s@]" b f l s; "@\n"
+        end "" abandoned end in
+        assert_failure
+            "@[@[<2>expected: %d abandoned@]@ @[<2> but got:@ %d abandoned@]@\n@[<hv2>Abandoned paths:@\n%a@]@]"
+            expected_count actual_count printer abandoned
+    end
+
+let assert_no_abandoned results = assert_has_abandoned 0 results
 
