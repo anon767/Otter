@@ -1,5 +1,6 @@
 Mix/Config
 Mix/TypedBlock
 Mix/SymbolicBlock
+Mix/SwitchingUtil
 Mix/TypedSymbolic
 Mix/Feature
