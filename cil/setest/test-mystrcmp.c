@@ -1,4 +1,4 @@
-#define MAX	100
+#define MAX	10
 #include<string.h>
 
 void stuff_symbolic(char* s1){
@@ -19,7 +19,7 @@ void main(){
 	char s1[MAX],s2[MAX];
 	stuff_symbolic(s1);
 	stuff_symbolic(s2);
-	//__EVAL(strcmp(s1,s2));
+	//__EVAL(mystrcmp(s1,s2));
 	//__PATHCONDITION();
 	__ASSUME(mystrcmp(s1,s2)>0);
 	__ASSERT(mystrcmp(s2,s1)<0);
