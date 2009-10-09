@@ -9,6 +9,5 @@ void main(){
 	__ASSUME(n>=0,n<=100000);
 
 	sprintf(s,"%d",n);
-	sprintf(s,"%d",n);
-
+	__ASSERT(strlen(s)<=6);
 }

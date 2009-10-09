@@ -477,6 +477,9 @@ let state__assign state (lvals, size) bytes = (* have problem *)
 			let count, state = assign count state (Some ts) tlvals in
 			let count, state = assign count state (Some fs) flvals in
 			(count, state)
+        | Lval_IfThenElse (c,tlvals,flvals) ->
+            (* TODO: if c is unknown, has to branch *)
+            failwith "state__assign: assigning values to Lval_IfThenElse: not implemented"
 	in
 	let count, state = assign 0 state None lvals in
 	assert (count > 0);
@@ -611,6 +614,11 @@ let state__trace state: string =
  *    Let PC be the path condition. 
  *    Then newPC = PC && PC[$i->$i'] for all i
  *)
+(* 
+ * This function was introduced to implement abstract set. Maybe we don't need
+ * it anymore?
+ * *)
+(*
 let state__clone_bytes state bytes =
     let rec 
     traverse_bytes bytes process merge =
@@ -707,6 +715,7 @@ let state__clone_bytes state bytes =
     in
       (state2,cloned_bytes)
 ;;
+ *)
 
 (** map address to state (!) *)
 let index_to_state: state Utility.IndexMap.t ref = ref (Utility.IndexMap.empty);;

@@ -24,6 +24,8 @@ rval state exp : bytes =
 							MemOp.state__get_bytes_from_lval state (block, offset, size)
 						| Lval_May (indicator, lvals1, lvals2) ->
 							make_Bytes_MayBytes (indicator, get_bytes lvals1, get_bytes lvals2)
+						| Lval_IfThenElse (c, lvals1, lvals2) ->
+							make_Bytes_IfThenElse (c, get_bytes lvals1, get_bytes lvals2)
 					in
 					get_bytes lvals
 					
@@ -68,6 +70,8 @@ rval state exp : bytes =
 							make_Bytes_Address(Some(block), offset)
 						| Lval_May (indicator, lvals1, lvals2) ->
 							make_Bytes_MayBytes (indicator, get_addrof lvals1, get_addrof lvals2)
+						| Lval_IfThenElse (c, lvals1, lvals2) ->
+							make_Bytes_IfThenElse (c, get_addrof lvals1, get_addrof lvals2)
 					in
 					get_addrof lvals
 			|	CastE (typ, exp2) -> rval_cast typ (rval state exp2) (Cil.typeOf exp2)
@@ -160,6 +164,8 @@ lval state (lhost, offset_exp) = match lhost with
 				Lval_Block (block, Operation.plus [(offset,Cil.intType);(offset2,Cil.intType)])
 			| Lval_May (indicator, lvals1, lvals2) ->
 				Lval_May (indicator, add_offset lvals1, add_offset lvals2)
+			| Lval_IfThenElse (c, lvals1, lvals2) ->
+				Lval_IfThenElse (c, add_offset lvals1, add_offset lvals2)
 		in
 		add_offset lvals
 
@@ -197,6 +203,12 @@ deref state bytes =
 				| Stp.True -> deref state bytes1
 				| Stp.False -> deref state bytes2
 				| Stp.Unknown -> Lval_May (indicator, deref state bytes1, deref state bytes2)
+			end
+		| Bytes_IfThenElse (bytes0, bytes1, bytes2) ->
+			begin match Stp.consult_stp state.path_condition bytes0 with
+				| Stp.True -> deref state bytes1
+				| Stp.False -> deref state bytes2
+				| Stp.Unknown -> Lval_IfThenElse (bytes0, deref state bytes1, deref state bytes2)
 			end
 		| Bytes_Op(op, operands) -> failwith ("Dereference something not an address (op) "^(To_string.bytes bytes))
 		| Bytes_Read(bytes,off,len) ->failwith "Dereference: Not implemented"

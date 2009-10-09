@@ -53,6 +53,7 @@ bytes =
 | Bytes_ByteArray of byte ImmutableArray.t  (* content *) 
 | Bytes_Address of memory_block option * bytes (* offset *)
 | Bytes_MayBytes of indicator * bytes * bytes (* conditional value of the form: if indicator then bytes1 else bytes2 *)
+| Bytes_IfThenElse of bytes * bytes * bytes (* conditional value of the form: if bytes then bytes1 else bytes2 *)
 | Bytes_Op of operator * (bytes * Cil.typ) list
 | Bytes_Read of bytes * bytes * int						(* less preferrable type *)
 | Bytes_Write of bytes * bytes * int * bytes	(* least preferrable type*)
@@ -64,6 +65,7 @@ and
 
 lval_block = Lval_Block of memory_block * bytes
            | Lval_May of indicator * lval_block * lval_block
+           | Lval_IfThenElse of bytes * lval_block * lval_block
 
 and
 
@@ -126,6 +128,9 @@ make_Bytes_Address ( blockopt , bs ) =
 and
 make_Bytes_MayBytes ( indr , bs1 , bs2 ) =
 	hash_consing_bytes_create (Bytes_MayBytes ( indr , bs1 , bs2 ))
+and
+make_Bytes_IfThenElse ( bs0 , bs1 , bs2 ) =
+	hash_consing_bytes_create (Bytes_IfThenElse ( bs0 , bs1 , bs2 ))
 and
 make_Bytes_Op ( op , lst) =
 	hash_consing_bytes_create (Bytes_Op ( op , lst))

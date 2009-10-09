@@ -173,6 +173,12 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
                         
                         state
 
+                          
+(* 
+ * This function was introduced to implement abstract set. Maybe we don't need
+ * it anymore?
+ * *)
+                          (*
                     | Function.Clone ->
                         if List.length exps <> 3 then failwith "Clone takes 3 arguments" else
 				        let argvs = (List.map (fun exp -> Eval.rval state exp) exps) in
@@ -194,6 +200,7 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
                               end
                           | _ -> failwith "Clone error"
                        end
+                           *)
 
                     | Function.Given -> 
 						begin match blkOffSizeOpt with
@@ -407,6 +414,17 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 									
 							end;
 							state
+												
+					| Function.IfThenElse ->
+							begin match blkOffSizeOpt with
+								| None -> state
+								| Some dest ->
+                                    let bytes0 = Eval.rval state (List.nth exps 0) in
+                                    let bytes1 = Eval.rval state (List.nth exps 1) in
+                                    let bytes2 = Eval.rval state (List.nth exps 2) in
+									let rv= make_Bytes_IfThenElse (bytes0,bytes1,bytes2) in
+									MemOp.state__assign state dest rv
+							end
 												
 					| Function.BooleanOp (binop) ->
 							begin match blkOffSizeOpt with
@@ -1016,7 +1034,7 @@ let mergeJobs job ((job_queue, merge_set) as job_pool) =
 					 (* We have to fiddle with memory *)
 					 (* TODO: do we still want to have a limit on number of blocks merged? Should benchmark the burden
                       *       on STP using the MayBytes/Morris encoding. *)
-					 let indicator = MemOp.indicator__next () in
+					 (*let indicator = MemOp.indicator__next () in*)
 					 let numSymbolsCreated = ref 0 in
 					 let newSharedBlocks =
 						 (* Make a new symbolic bytes for each differing block *)
@@ -1029,14 +1047,16 @@ let mergeJobs job ((job_queue, merge_set) as job_pool) =
 									) else (
 										numSymbolsCreated := !numSymbolsCreated + size;
 										if !numSymbolsCreated > 100 then raise TooDifferent;
-										let symbBytes = make_Bytes_MayBytes (indicator, jobBytes, jBytes) in
+										let symbBytes = make_Bytes_IfThenElse (jobPCBytes, jobBytes, jBytes) in
 										(block, symbBytes)
 									)
 							 )
 							 diffShared
 					 in
-					 let finalMergedPC = (make_Bytes_MayBytes (indicator, jobPCBytes, jPCBytes))::mergedPC
-					 and mergedMemory =
+					 (*let finalMergedPC = (make_Bytes_MayBytes (indicator,
+                      jobPCBytes, jPCBytes))::mergedPC in*)
+                     let finalMergedPC = mergedPC in
+					 let mergedMemory =
 						 (* I think it's safe (if not optimal) to keep both
 								[inJOnly] and [inJobOnly] because [j]'s memory will be
 								unreachable from [job]'s path and vice versa. *)

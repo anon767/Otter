@@ -32,7 +32,7 @@ let features : C.featureDescr list =
     Marshal_feature.feature;
 		FindFns.feature;
 		TraceLines.feature;
-		CalculateDependencies.feature;
+		(*CalculateDependencies.feature;*)
   ] 
   @ Feature_config.features;;
 

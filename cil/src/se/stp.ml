@@ -35,6 +35,7 @@ let rec bytes_length bytes =
 		| Bytes_ByteArray (bytearray) -> ImmutableArray.length bytearray
 		| Bytes_Address (_,_)-> word__size
 		| Bytes_MayBytes (_,b,_) -> bytes_length b (* all bytes in MayBytes have the same length *)
+		| Bytes_IfThenElse (_,b,_) -> bytes_length b (* all bytes in IfThenElse have the same length *)
 		| Bytes_Op (op,(bytes2,typ)::tail) -> bytes_length bytes2
 		| Bytes_Op (op,[]) -> 0 (* reachable from diff_bytes *)
 		| Bytes_Write(bytes2,_,_,_) -> bytes_length bytes2
@@ -61,6 +62,8 @@ let rec allSymbols = function
 						SymbolSet.union partialAnswer (allSymbols memBlock.memory_block_addr)
 		)
 	| Bytes_MayBytes (_, bytes1, bytes2) ->
+			SymbolSet.union (allSymbols bytes1) (allSymbols bytes2)
+	| Bytes_IfThenElse (_, bytes1, bytes2) ->
 			SymbolSet.union (allSymbols bytes1) (allSymbols bytes2)
 	| Bytes_Op (_,bytes_typ_list) ->
 			List.fold_left
@@ -126,6 +129,10 @@ let rec allSymbolsAndIndicators = function
 		)
 	| Bytes_MayBytes (indicator, bytes1, bytes2) ->
 			SISet.union (allIndicators indicator)
+				(SISet.union (allSymbolsAndIndicators bytes1)
+					 (allSymbolsAndIndicators bytes2))
+	| Bytes_IfThenElse (bytes0, bytes1, bytes2) ->
+			SISet.union (allSymbolsAndIndicators bytes0)
 				(SISet.union (allSymbolsAndIndicators bytes1)
 					 (allSymbolsAndIndicators bytes2))
 	| Bytes_Op (_,bytes_typ_list) ->
@@ -412,6 +419,13 @@ to_stp_bv_impl vc bytes =
 			let bv2, len2 = to_stp_bv vc bytes2 in
 			assert (len1 = len2);
 			(Stpc.e_ite vc cond bv1 bv2, len1)
+
+		| Bytes_IfThenElse (bytes0, bytes1, bytes2) ->
+			let bv0, len0 = to_stp_bv vc bytes0 in
+			let bv1, len1 = to_stp_bv vc bytes1 in
+			let bv2, len2 = to_stp_bv vc bytes2 in
+			assert (len1 = len2);
+			(Stpc.e_ite vc (Stpc.e_eq vc bv0 (Stpc.e_bv_of_int vc len0 0)) bv2 bv1, len1)
 
 		| Bytes_Op(op, [(bytes1,typ1);(bytes2,typ2)]) -> (* BINOP *)
 				(* typ info maybe added to the stp formula later *)

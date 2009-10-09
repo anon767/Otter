@@ -176,6 +176,10 @@ and bytes_ff_named bytes_to_var ff =
 			fprintf ff "@[<hv>IF @[%a@] THEN@;<1 2>@[%a@]@ ELSE@;<1 2>@[%a@]@]"
 				indicator_ff indicator bytes_ff bytes1 bytes_ff bytes2
 
+		| Bytes_IfThenElse (bytes0, bytes1, bytes2) ->
+			fprintf ff "@[<hv>IF @[%a@] THEN@;<1 2>@[%a@]@ ELSE@;<1 2>@[%a@]@]"
+				bytes_ff bytes0 bytes_ff bytes1 bytes_ff bytes2
+
 		| Bytes_Op (op,(firstop,_)::[]) ->
 			fprintf ff "%s(@[<hov>%a@])"
 			(operation op)
