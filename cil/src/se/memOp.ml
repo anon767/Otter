@@ -518,8 +518,9 @@ let state__end_fcall state =
 	Output.set_mode Output.MSG_FUNC;
 	Output.print_endline ("Exit function "^(To_string.fundec (List.hd state.callstack)));
 	Output.print_endline ("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
-	let block_to_bytes = frame__clear_varinfos (List.hd state.locals) state.block_to_bytes in
-	let block_to_bytes = frame__clear_varinfos (List.hd state.formals) state.block_to_bytes in
+	let block_to_bytes = state.block_to_bytes in
+	let block_to_bytes = frame__clear_varinfos (List.hd state.locals) block_to_bytes in
+	let block_to_bytes = frame__clear_varinfos (List.hd state.formals) block_to_bytes in
     { state with formals = List.tl state.formals; 
                  locals = List.tl state.locals;
                  callstack = List.tl state.callstack;
