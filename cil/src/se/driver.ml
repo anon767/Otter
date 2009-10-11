@@ -1,6 +1,6 @@
 open Cil
 open Types
-open Path_merging
+open PathMerging
 open Executeargs
 
 

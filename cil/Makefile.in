@@ -107,7 +107,7 @@ CILLY_LIBRARY_MODULES = pretty inthash errormsg alpha trace stats util clist \
                 function \
                 calculateDependencies \
                 report \
-                path_merging \
+                pathMerging \
                 driver \
                 getProgInfo \
                 executemain \
