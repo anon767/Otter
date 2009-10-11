@@ -546,6 +546,13 @@ let state__get_bytes_from_block state block =
 		state__force state (MemoryBlockMap.find block state.block_to_bytes) 
 ;;
 
+let state__get_deferred_from_block state block =
+	if block.memory_block_type == Block_type_StringLiteral then
+		Immediate (string_table__get block)
+	else
+		MemoryBlockMap.find block state.block_to_bytes 
+;;	
+
 let state__get_bytes_from_lval state (block, offset, size) =
 	let state, source = state__get_bytes_from_block state block in
 	(state, bytes__read source offset size)
