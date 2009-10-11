@@ -28,11 +28,11 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
         (* setup global variables and function arguments *)
         (* TODO: handle varargs *)
         let expM = perform
-            frame_bytes_to_qt state state.Types.global;
-            frame_bytes_to_qt state (List.hd state.Types.formals);
-            return ()
+            state <-- frame_bytes_to_qt MemOp.state__empty state state.Types.global;
+            state <-- frame_bytes_to_qt MemOp.state__empty state (List.hd state.Types.formals);
+            return state
         in
-        let expState = run expM expState in
+        let (((((state, _), _), _), _), _ as expState) = run expM expState in
 
 
         (* prepare the completion continuation to perform the final check *)
@@ -43,34 +43,32 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
             if DiscreteSolver.Solution.is_unsatisfiable solution then
                 Format.eprintf "Unsatisfiable solution in SymbolicTyped.completion@.";
 
-            let expM = perform
-                (* first, the return value *)
-                (state, retopt) <-- begin match fn.Cil.svar.Cil.vtype with
-                    | Cil.TFun (rettyp, _, _, _) when Cil.isVoidType rettyp ->
-                        return (state, None)
+            (* first, the return value *)
+            let state, retopt = begin match fn.Cil.svar.Cil.vtype with
+                | Cil.TFun (rettyp, _, _, _) when Cil.isVoidType rettyp ->
+                    (state, None)
 
-                    | Cil.TFun (rettyp, _, _, _) -> perform
+                | Cil.TFun (rettyp, _, _, _) ->
+                    let (((((qtr, _), _), _), _), _) = run begin perform
                         qtf <-- lookup_var fn.Cil.svar;
-                        qtr <-- retval qtf;
-                        (state, retbytes) <-- qt_to_bytes solution state Types.Block_type_Local rettyp qtr;
-                        return (state, Some retbytes)
+                        retval qtf
+                    end expState in
+                    let state, retbytes = qt_to_bytes expState solution state Types.Block_type_Local rettyp qtr in
+                    (state, Some retbytes)
 
-                    | _ ->
-                        failwith "Impossible!"
-                end;
+                | _ ->
+                    failwith "Impossible!"
+            end in
 
-                (* then, the globals and call stack *)
-                state <-- foldM begin fun state frame ->
-                    frame_qt_to_bytes solution state frame Types.Block_type_Local
-                end state (state.Types.global::(state.Types.formals @ state.Types.locals));
-
-                return (state, retopt)
-            in
-            let ((((((state, retopt), _), _), _), _), _) = run expM expState in
+            (* then, the globals and call stack *)
+            let state = List.fold_left begin fun state frame ->
+                frame_qt_to_bytes expState solution state frame Types.Block_type_Local
+            end state (state.Types.global::(state.Types.formals @ state.Types.locals)) in
 
             k [ Types.Return (retopt, { Types.result_state=state; Types.result_history=Types.emptyHistory }) ]
         in
 
+        let expState = run (return ()) expState in (* TODO: fix the type *)
         dispatch (`TypedBlock (file, fn, expState, completion))
 
 

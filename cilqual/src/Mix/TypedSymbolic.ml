@@ -31,34 +31,33 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
 
         (* convert a typed environment into a symbolic environment *)
         let state = MemOp.state__empty in
-        let expM = perform
-            (* first, setup global variables *)
-            state <-- foldM begin fun state g -> match g with
-                | Cil.GVarDecl (v, _) | Cil.GVar (v, _, _)
-                        when not (Types.VarinfoMap.mem v state.Types.global.Types.varinfo_to_block) -> perform
-                    qt <-- lookup_var v;
-                    (state, bytes) <-- qt_to_bytes solution state Types.Block_type_Global v.Cil.vtype (drop_qt qt);
-                    let state = MemOp.state__add_global state v bytes in
-                    return state
-                | _ ->
-                    return state
-            end state file.Cil.globals;
 
-            (* then, setup function arguments *)
-            (* TODO: handle varargs *)
+        (* first, setup global variables *)
+        let state = List.fold_left begin fun state g -> match g with
+            | Cil.GVarDecl (v, _) | Cil.GVar (v, _, _)
+                    when not (Types.VarinfoMap.mem v state.Types.global.Types.varinfo_to_block) ->
+                let (((((qt, _), _), _), _), _) = run (lookup_var v) expState in
+                let state, bytes =
+                    qt_to_bytes expState solution state Types.Block_type_Global v.Cil.vtype (drop_qt qt)
+                in
+                MemOp.state__add_global state v bytes
+            | _ ->
+                state
+        end state file.Cil.globals in
+
+        (* then, setup function arguments *)
+        (* TODO: handle varargs *)
+        let (((((qta, _), _), _), _), _) = run begin perform
             qtf <-- lookup_var fn.Cil.svar;
-            qta <-- args qtf;
-            (state, args_bytes) <-- List.fold_left2 begin fun accM v qt -> perform
-                (state, args_bytes) <-- accM;
-                (state, bytes) <-- qt_to_bytes solution state Types.Block_type_Local v.Cil.vtype qt;
-                return (state, bytes::args_bytes)
-            end (return (state, [])) fn.Cil.sformals qta;
+            args qtf
+        end expState in
+        let state, args_bytes = List.fold_left2 begin fun (state, args_bytes) v qt ->
+            let state, bytes = qt_to_bytes expState solution state Types.Block_type_Local v.Cil.vtype qt in
+            (state, bytes::args_bytes)
+        end (state, []) fn.Cil.sformals qta in
 
-            (* next, prepare the function call job *)
-            let job = Executemain.job_for_function state fn args_bytes in
-            return job
-        in
-        let (((((job, _), _), _), _), _ as expState) = run expM expState in
+        (* next, prepare the function call job *)
+        let job = Executemain.job_for_function state fn args_bytes in
 
 
         (* finally, prepare the completion continuation *)
@@ -67,13 +66,15 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
             Format.eprintf "Returning from symbolic to typed (%d execution%s returned)...@."
                 completed_count (if completed_count == 1 then "" else "s");
 
+            let old_state = state in
+
             (* prepare a monad that represents the symbolic result *)
             let expM = mapM_ begin function
                 | Types.Return (retopt, { Types.result_state=state; Types.result_history=history }) -> perform
                     (* first, the return value *)
-                    begin match retopt with
+                    state <-- begin match retopt with
                         | None ->
-                            return ()
+                            return state
                         | Some ret -> perform
                             let rettyp = match fn.Cil.svar.Cil.vtype with
                                 | Cil.TFun (rettyp, _, _, _) -> rettyp
@@ -81,14 +82,14 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
                             in
                             qtf <-- lookup_var fn.Cil.svar;
                             qtr <-- retval qtf;
-                            bytes_to_qt state rettyp ret qtr;
-                            return ()
+                            bytes_to_qt old_state state rettyp ret qtr
                     end;
 
                     (* then, the global variables and call stack *)
-                    mapM_ begin fun frame ->
-                        frame_bytes_to_qt state frame
-                    end (state.Types.global::(state.Types.formals @ state.Types.locals))
+                    foldM begin fun state frame ->
+                        frame_bytes_to_qt old_state state frame
+                    end state (state.Types.global::(state.Types.formals @ state.Types.locals));
+                    return ()
 
                 | Types.Abandoned (msg, loc, result) ->
                     failwith (Format.sprintf "TODO: handle abandoned path @@ %s:%d (%s)" loc.Cil.file loc.Cil.line msg)

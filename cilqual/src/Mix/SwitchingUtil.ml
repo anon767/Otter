@@ -44,64 +44,68 @@ let drop_qt = function
     @param qt           the qualified type to convert
     @return [(state, bytes)]{i monad} the updated symbolic execution state and the converted result in the CilQual monad
 *)
-let qt_to_bytes solution state block_type typ qt =
-    let rec qt_to_bytes state block_type typ qt = match typ, qt with
-        (* first handle qualified types *)
+let qt_to_bytes expState solution state block_type typ qt =
 
-        | Cil.TPtr (typtarget, _), Ref (Var v, qtarget) -> perform
+    let make_pointer expState state block_type pointer target_deferred =
+        (* TODO: generate blocks according to aliasing *)
+        let target_block = MemOp.block__make
+            (Var.printer Format.str_formatter pointer; Format.flush_str_formatter ())
+            Types.word__size
+            block_type
+        in
+
+        let state = MemOp.state__add_deferred_block state target_block target_deferred in
+        let nonnull_bytes = Types.make_Bytes_Address (Some target_block, MemOp.bytes__zero) in
+
+        if Solution.equal_const pointer "null" solution then
+            (* if $null, there exists some null assignment to qt *)
+            let indicator = MemOp.indicator__next () in
+            let null_bytes = Types.make_Bytes_Address (None, MemOp.bytes__zero) in
+            let bytes = Types.make_Bytes_MayBytes (indicator, nonnull_bytes, null_bytes) in
+            (state, bytes)
+        else
+            (* if $nonnull or unannotated, then there does not exist some null assignment to qt *)
+            (state, nonnull_bytes)
+    in
+
+    let rec qt_to_bytes expState state block_type typ qt = match typ, qt with
+        | Cil.TPtr (typtarget, _), Ref (Var v, qtarget) ->
             (* for pointers, recursively deref and generate point-to blocks *)
-            (state, target_bytes) <-- qt_to_bytes state Types.Block_type_Global typtarget qtarget;
-
-            (* TODO: generate blocks according to aliasing *)
-            let target_block = MemOp.block__make
-                (Var.printer Format.str_formatter v; Format.flush_str_formatter ())
-                (MemOp.bytes__length target_bytes)
-                block_type
-            in
-            let state = MemOp.state__add_block state target_block target_bytes in
-            let nonnull_bytes = Types.make_Bytes_Address (Some target_block, MemOp.bytes__zero) in
-
-            if Solution.equal_const v "null" solution then
-                (* if $null, there exists some null assignment to qt *)
-                let indicator = MemOp.indicator__next () in
-                let null_bytes = Types.make_Bytes_Address (None, MemOp.bytes__zero) in
-                let bytes = Types.make_Bytes_MayBytes (indicator, nonnull_bytes, null_bytes) in
-                return (state, bytes)
-            else
-                (* if $nonnull or unannotated, then there does not exist some null assignment to qt *)
-                return (state, nonnull_bytes)
+            let target_deferred state = qt_to_bytes expState state Types.Block_type_Global typtarget qtarget in
+            make_pointer expState state block_type v target_deferred
 
         | Cil.TComp (compinfo, _), Base (Var v) when compinfo.Cil.cstruct ->
             (* for structs, initialize and iterate over the fields *)
-            let size = (Cil.bitsSizeOf (typ)) / 8 in
+            let size = (Cil.bitsSizeOf typ) / 8 in
             let size = if size <= 0 then 1 else size in
             let bytes = MemOp.bytes__symbolic size in
-            foldM begin fun (state, bytes) f -> perform
-                qtf <-- get_field qt f;
-                (state, field_bytes) <-- qt_to_bytes state block_type f.Cil.ftype (drop_qt qtf);
-                let offset = Convert.lazy_int_to_bytes (Eval.field_offset f) in
+            List.fold_left begin fun (state, bytes) field ->
+                let (((((qtfield, _), _), _), _), _) = run (get_field qt field) expState in
+                let state, field_bytes = qt_to_bytes expState state block_type field.Cil.ftype (drop_qt qtfield) in
+                let offset = Convert.lazy_int_to_bytes (Eval.field_offset field) in
                 let size = MemOp.bytes__length field_bytes in
                 let bytes = MemOp.bytes__write bytes offset size field_bytes in
-                return (state, bytes)
+                (state, bytes)
             end (state, bytes) compinfo.Cil.cfields
 
         | Cil.TComp (compinfo, _), Base (Var v) when not compinfo.Cil.cstruct ->
             failwith "TODO: qt_to_bytes: handle unions"
 
         | Cil.TPtr (typtarget, _), Base (Var v) when Cil.isVoidPtrType typ ->
-            failwith "TODO: qt_to_bytes: handle void *"
+            let target_deferred state = failwith "TODO: qt_to_bytes: handle void *" in
+            make_pointer expState state block_type v target_deferred
 
         | typ, Base (Var v) when Cil.isArithmeticType typ ->
             (* arithmetic values are just that *)
-            let size = (Cil.bitsSizeOf (typ)) / 8 in
+            let size = (Cil.bitsSizeOf typ) / 8 in
             let size = if size <= 0 then 1 else size in
             let bytes = MemOp.bytes__symbolic size in
-            return (state, bytes)
+            (state, bytes)
 
         | _, _ ->
             failwith "TODO: qt_to_bytes: handle other mismatched types?"
     in
-    qt_to_bytes state block_type typ qt
+    qt_to_bytes expState state block_type typ qt
 
 
 (** Re-initialize a symbolic memory frame by coverting all corresponding qualified types to new symbolic values in the
@@ -112,14 +116,12 @@ let qt_to_bytes solution state block_type typ qt =
     @param block_type   the symbolic memory block type to create pointers as
     @return [state]{i monad} the updated symbolic execution state in the CilQual monad
 *)
-let frame_qt_to_bytes solution state frame block_type =
-    Types.VarinfoMap.fold begin fun v block stateM -> perform
-        state <-- stateM;
-        qt <-- lookup_var v;
-        (state, bytes) <-- qt_to_bytes solution state block_type v.Cil.vtype (drop_qt qt);
-        let state = MemOp.state__add_block state block bytes in
-        return state
-    end frame.Types.varinfo_to_block (return state)
+let frame_qt_to_bytes expState solution state frame block_type =
+    Types.VarinfoMap.fold begin fun v block state ->
+        let (((((qt, _), _), _), _), _) = run (lookup_var v) expState in
+        let state, bytes = qt_to_bytes expState solution state block_type v.Cil.vtype (drop_qt qt) in
+        MemOp.state__add_block state block bytes
+    end frame.Types.varinfo_to_block state
 
 
 (** Convert a symbolic value to constaints on a qualified type.
@@ -129,48 +131,69 @@ let frame_qt_to_bytes solution state frame block_type =
     @param qt           the qualified type to add constraints to
     @return [(state)]{i monad} the symbolic execution state in the CilQual monad updated with additional constraints.
 *)
-let bytes_to_qt state typ bytes qt =
-    let rec bytes_to_qt state typ bytes qt = match typ, qt with
-        | Cil.TPtr (typtarget, _), Ref (Var v, qtarget) ->
-            (* $null is a source, $nonnull a sink, so only add $null annotations *)
-            begin try perform
-                let target_lvals = Eval.deref state bytes in
-                (* didn't fail, so is not a null pointer *)
-                begin match typtarget with
-                    | Cil.TPtr _ ->
-                        let rec recurse = function
-                            | Types.Lval_Block (block, offset) ->
-                                let target_bytes = MemOp.state__get_bytes_from_lval state
-                                    (block, offset, Types.word__size)
+let bytes_to_qt old_state state typ bytes qt =
+
+    (* check a given pointer bytes, adding $null annotations if it is a null pointer, and call check_target with
+     * the target bytes if it is a valid pointer *)
+    let check_pointer state bytes qt check_target = perform
+        (* first, try to deref the bytes; if it succeeds, then it's a valid pointer, otherwise it is invalid *)
+        target_lvals_opt <-- begin try
+            return (Some (Eval.deref state bytes))
+        with
+            | Failure "Dereference a dangling pointer" -> perform
+                (* a null pointer *)
+                annot qt "null";
+                return None
+            | Failure _ ->
+                (* uninitialized and unused pointer *)
+                if MemOp.same_bytes bytes MemOp.bytes__zero then perform
+                    (* is definitely a null pointer *)
+                    annot qt "null";
+                    return None
+                else
+                    (* TODO: otherwise, nonnull? *)
+                    return None
+        end;
+        begin match target_lvals_opt with
+            | Some target_lvals ->
+                (* valid pointer, so check what it points to *)
+                let rec recurse = function
+                    | Types.Lval_Block (block, offset) ->
+                        let old_deferred_opt =
+                            try Some (MemOp.state__get_deferred_from_block old_state block)
+                            with Not_found -> None
+                        in
+                        let deferred = MemOp.state__get_deferred_from_block state block in
+                        begin match old_deferred_opt, deferred with
+                            | Some old_deferred, deferred when old_deferred = deferred ->
+                                return state
+                            | _, _ ->
+                                let state, target_bytes =
+                                    MemOp.state__get_bytes_from_lval state (block, offset, Types.word__size)
                                 in
                                 (* not tail-recursive! *)
-                                bytes_to_qt state typtarget target_bytes qtarget
-                            | Types.Lval_May (indicator, lval1, lval2) -> perform
-                                recurse lval1;
-                                recurse lval2
-                            | Types.Lval_IfThenElse (condition, lval1, lval2) -> perform
-                                recurse lval1;
-                                recurse lval2
-                        in
-                        recurse target_lvals
-                    | _ ->
-                        return state
-                end
-            with
-                | Failure "Dereference a dangling pointer" -> perform
-                    (* a null pointer *)
-                    annot qt "null";
-                    return state
-                | Failure _ ->
-                    (* uninitialized and unused pointer *)
-                    if MemOp.same_bytes bytes MemOp.bytes__zero then perform
-                        (* is definitely a null pointer *)
-                        annot qt "null";
-                        return state
-                    else
-                        (* TODO: otherwise, nonnull? *)
-                        return state
-            end
+                                check_target state target_bytes
+                        end
+                    | Types.Lval_May (indicator, lval1, lval2) -> perform
+                        recurse lval1;
+                        recurse lval2
+                    | Types.Lval_IfThenElse (condition, lval1, lval2) -> perform
+                        recurse lval1;
+                        recurse lval2
+                in
+                recurse target_lvals
+
+            | _ ->
+                (* null pointer *)
+                return state
+        end
+    in
+
+    let rec bytes_to_qt state typ bytes qt =
+        match typ, qt with
+        | Cil.TPtr (typtarget, _), Ref (Var v, qtarget) ->
+            let check_target state target_bytes = bytes_to_qt state typtarget target_bytes qtarget in
+            check_pointer state bytes qt check_target
 
         | Cil.TComp (compinfo, _), Base (Var v) when compinfo.Cil.cstruct -> perform
             (* for structs, iterate over the fields *)
@@ -178,7 +201,7 @@ let bytes_to_qt state typ bytes qt =
                 state <-- stateM;
                 qtf <-- get_field qt f;
                 let offset = Convert.lazy_int_to_bytes (Eval.field_offset f) in
-                let size = (Cil.bitsSizeOf (f.Cil.ftype)) / 8 in
+                let size = (Cil.bitsSizeOf f.Cil.ftype) / 8 in
                 let field_bytes = MemOp.bytes__read bytes offset size in
                 bytes_to_qt state f.Cil.ftype field_bytes (drop_qt qtf);
                 stateM
@@ -188,7 +211,8 @@ let bytes_to_qt state typ bytes qt =
             failwith "TODO: bytes_to_qt: handle unions"
 
         | Cil.TPtr (typtarget, _), Base (Var v) when Cil.isVoidPtrType typ ->
-            failwith "TODO: bytes_to_qt: handle void *"
+            let check_target state target_bytes = failwith "TODO: bytes_to_qt: handle void *" in
+            check_pointer state bytes qt check_target
 
         | typ, Base (Var v) when Cil.isArithmeticType typ -> perform
             (* value types, nothing to dereference *)
@@ -206,12 +230,20 @@ let bytes_to_qt state typ bytes qt =
     @param frame        the symbolic memory frame to re-initialize
     @return [(state)]{i monad} the symbolic execution state in the CilQual monad updated with additional constraints.
 *)
-let frame_bytes_to_qt state frame =
+let frame_bytes_to_qt old_state state frame =
     Types.VarinfoMap.fold begin fun v block stateM -> perform
         state <-- stateM;
         x <-- lookup_var v;
-        let bytes = MemOp.state__get_bytes_from_block state block in
-        bytes_to_qt state v.Cil.vtype bytes (drop_qt x);
-        return state
+        let old_deferred_opt =
+            try Some (MemOp.state__get_deferred_from_block old_state block)
+            with Not_found -> None
+        in
+        let deferred = MemOp.state__get_deferred_from_block state block in
+        match old_deferred_opt, deferred with
+            | Some old_deferred, deferred when old_deferred = deferred ->
+                return state
+            | _, _ ->
+                let state, bytes = MemOp.state__force state deferred in
+                bytes_to_qt old_state state v.Cil.vtype bytes (drop_qt x)
     end frame.Types.varinfo_to_block (return state)
 
