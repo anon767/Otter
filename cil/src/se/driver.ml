@@ -1,5 +1,6 @@
 open Cil
 open Types
+open Path_merging
 open Executeargs
 
 
@@ -858,102 +859,6 @@ let printJob (state,stmt) =
 		 with Errormsg.Error -> "<error printing statement>")
 *)
 
-let cmp_memory blkToByt1 blkToByt2 =
-	(* Split the blocks in s1 into those which are in s2 but map to
-		 different bytes, those which map to the same bytes in s2, and
-		 those which are not in s2 at all. *)
-	let cmpSharedBlocks b2b1 b2b2 =
-		let f block bytes1 (diffShared,sameShared,in1ButNot2) =
-			try
-				let bytes2 = MemoryBlockMap.find block b2b2 in
-				if MemOp.diff_bytes bytes1 bytes2 then
-					((block,bytes1,bytes2) :: diffShared, sameShared, in1ButNot2)
-				else
-					(diffShared, (block,bytes1) :: sameShared, in1ButNot2)
-			with Not_found -> (diffShared, sameShared, (block,bytes1) :: in1ButNot2)
-		in
-		MemoryBlockMap.fold f b2b1 ([],[],[])
-	in
-	let sharedBlockDiffs,sharedBlockSames,blocksIn1ButNot2 =
-		cmpSharedBlocks blkToByt1 blkToByt2 in
-
-	(* List blocks (memory allocations) that are in s2 but not in s1 *)
-	let cmpUnsharedBlocks b2b1 b2b2 =
-	  let h b2b block bytes listOfDiffs =
-	    if MemoryBlockMap.mem block b2b then listOfDiffs else
-	      (block,bytes) :: listOfDiffs
-	  in
-	  MemoryBlockMap.fold (h b2b1) b2b2 []
-	in
-	let blocksIn2ButNot1 = cmpUnsharedBlocks blkToByt1 blkToByt2 in
-	sharedBlockDiffs,sharedBlockSames,blocksIn1ButNot2,blocksIn2ButNot1
-
-(** Find the common suffix of 2 lists l1 and l2, and return a triple
-		(a,b,c) such that l1 = a @ c and l2 = b @ c. *)
-let splitOutCommonSuffix l1 l2 =
-	let rec helper a b acc =
-		match a,b with
-				[],_ -> [], List.rev b, acc
-			| _,[] -> List.rev a, [], acc
-			| h1::t1,h2::t2 ->
-					if h1 == h2
-					then helper t1 t2 (h1 :: acc)
-					else List.rev a, List.rev b, acc
-	in helper (List.rev l1) (List.rev l2) []
-;;
-
-(* Essentially, union for maps. However, anything bound in both x and
-	 y in a call to [memoryMerge x y] will end up being mapped according
-	 to x. *)
-(*let memoryMerge : bytes MemoryBlockMap.t = MemoryBlockMap.fold MemoryBlockMap.add*)
-
-(* Transform an association list into a memory block map, preserving
-	 only the *last* binding for each key.
-	 Preserving the *first* instead (which is more natural for
-	 association lists) could be accomplished by reversing [lst] in the
-	 first call to [helper].
-	 I currently don't reverse [lst] because I currently only call this
-	 function on values of [lst] which have only one binding per key. *)
-let assocListToMemoryBlockMap lst =
-	let rec helper acc = function
-			[] -> acc
-		| (a,b)::t ->
-				helper (MemoryBlockMap.add a b acc) t
-	in helper MemoryBlockMap.empty lst
-
-let pcToBytes = function
-		[] -> failwith "pcToAND"
-	| [h] -> h
-	| pc -> make_Bytes_Op(OP_LAND, List.map (fun b -> (b,Cil.intType)) pc)
-
-
-let atSameProgramPoint job1 job2 =
-	let state1 = job1.state
-	and state2 = job2.state in
-	(* I'm trying to be conservative here by using physical equality
-		 because I haven't quite figured out what 'being at the same
-		 program point' means. But I'm pretty sure that if these 3 things
-		 are physically equal, then they really are at the same program
-		 point, whatever that's supposed to mean. *)
-	(* Actually, if the instrLists are equal, then the stmts have to be.
-		 Right? So the stmt equality can be moved into the assertion. *)
-	if job1.stmt == job2.stmt && job1.instrList == job2.instrList &&
-		state1.callContexts == state2.callContexts
-	then (
-		assert
-			(job1.exHist.bytesToVars == job2.exHist.bytesToVars &&
-				 state1.global         == state2.global &&
-			 	 state1.formals        == state2.formals &&
-			 	 state1.locals         == state2.locals &&
-				 state1.callstack      == state2.callstack &&
-				 state1.va_arg         == state2.va_arg &&
-				 state1.va_arg_map     == state2.va_arg_map &&
-				 state1.loc_map        == state2.loc_map);
-			true
-		) else (
-			false
-		)
-
 
 (* pick a job from the job_pool *)
 let pick_job (job_queue, merge_set) =
@@ -970,168 +875,8 @@ let pick_job (job_queue, merge_set) =
 
 (* queue a job into the job_pool *)
 let queue_job job (job_queue, merge_set) =
-	(job::job_queue,  merge_set)
+	(job::job_queue, merge_set)
 
-
-(* MergeDone includes the old job (which is swallowed by the current
-	 job) and the state for the merged job. *)
-exception MergeDone of job * state
-exception TooDifferent
-
-
-(* Merge job states. If we successfully merge job with a job j from merge_set,
-	 return Complete(Truncated(job,j)). If job is at a merge point but we don't
-	 merge, put job into the job_pool, pick a job j from job_pool, and return
-	 Active(j). (This effectively suspends job. It will eventually be reactivated
-	 when we run out of active jobs to run, or it will be merged with some other
-	 job that reaches the same program point.) Otherwise, return Active(job). In
-	 all cases, also return the updated job_pool. *)
-let mergeJobs job ((job_queue, merge_set) as job_pool) =
-	try
-		(* First test to see if the job should pause and/or merge *)
-		if run_args.arg_merge_paths &&
-			StmtInfoSet.mem { siFuncName = (List.hd job.state.callstack).svar.vname;
-											  siStmt = job.stmt; }
-			job.mergePoints then begin
-		JobSet.iter
-			(fun j ->
-				if atSameProgramPoint job j then begin
-				 try
-				 let jPC,jobPC,commonPC =
-					 splitOutCommonSuffix j.state.path_condition job.state.path_condition
-				 in
-				 let jobPCBytes = pcToBytes jobPC and
-						 jPCBytes = pcToBytes jPC in
-				 let mergedPC =
-					 match jPC,jobPC with
-							 (* Optimize the common case of P \/ ~P *)
-						 | [byts],[Bytes_Op(OP_LNOT,[(byts',_)])] when byts == byts' ->
-								 commonPC
-						 | [Bytes_Op(OP_LNOT,[(byts',_)])],[byts] when byts == byts' ->
-								 commonPC
-						 | _ ->
-								 (* General case: either one condition or the other is
-										true. We might sometimes be able to simplify the
-										pc, but right now we don't try to do so. *)
-								 make_Bytes_Op(OP_LOR, [(jPCBytes,Cil.intType);(jobPCBytes,Cil.intType)])
-								 :: commonPC
-				 in
-				 (* I'm assuming [j.state.locals == job.state.locals] for now
-						(due to the implementation of atSameProgramPoint),
-						so the varinfos always map to the same blocks. This means I
-						only need to mess with the [block_to_bytes]---I can leave
-						[locals] alone. *)
-				 let diffShared,sameShared,inJOnly,inJobOnly =
-					 cmp_memory j.state.block_to_bytes job.state.block_to_bytes in
-				 if diffShared = [] then (
-					 (* The memory is identical in [j] and [job] *)
-                     if not (inJOnly = [] && inJobOnly = []) then
-                          failwith "there might be a memory leak"
-                     else ();
-					 Output.printf "Merging jobs %d and %d (identical memory)\n" j.jid job.jid;
-					 raise (MergeDone (j, { job.state with path_condition = mergedPC; }))
-				 ) else (
-					 (* We have to fiddle with memory *)
-					 (* TODO: do we still want to have a limit on number of blocks merged? Should benchmark the burden
-                      *       on STP using the MayBytes/Morris encoding. *)
-					 (*let indicator = MemOp.indicator__next () in*)
-					 let numSymbolsCreated = ref 0 in
-					 let newSharedBlocks =
-						 (* Make a new symbolic bytes for each differing block *)
-						 List.map
-							 (fun (block,jBytes,jobBytes) ->
-									let size = MemOp.bytes__length jBytes in (* or should I just check block.memory_block_size? *)
-									if size <> MemOp.bytes__length jobBytes then (
-										Output.printf "Unimplemented: merging bytes with different lengths\n";
-										raise TooDifferent
-									) else (
-										numSymbolsCreated := !numSymbolsCreated + size;
-										if !numSymbolsCreated > 100 then raise TooDifferent;
-										let symbBytes = make_Bytes_IfThenElse (jobPCBytes, jobBytes, jBytes) in
-										(block, symbBytes)
-									)
-							 )
-							 diffShared
-					 in
-					 (*let finalMergedPC = (make_Bytes_MayBytes (indicator,
-                      jobPCBytes, jPCBytes))::mergedPC in*)
-                     let finalMergedPC = mergedPC in
-					 let mergedMemory =
-						 (* I think it's safe (if not optimal) to keep both
-								[inJOnly] and [inJobOnly] because [j]'s memory will be
-								unreachable from [job]'s path and vice versa. *)
-						 assocListToMemoryBlockMap
-							 (List.concat [newSharedBlocks; sameShared; inJOnly; inJobOnly])
-					 in
-					 Output.printf "Merging jobs %d and %d (differing memory)\n" j.jid job.jid;
-					 raise (MergeDone (j, { job.state with
-																		block_to_bytes = mergedMemory;
-																		path_condition = finalMergedPC;
-																}))
-				 )
-				 with TooDifferent -> Output.print_endline "Memory too different to merge"; ()
-				end
-			) (* End iteration function *)
-			merge_set;
-			(* Reaching here means we've iterated through all jobs, never
-			   being able to merge. So we just add the job to merge_set
-			   and return another job, if available *)
-			match pick_job job_pool with
-				| Some (job', (job_queue, merge_set)) ->
-					let merge_set = JobSet.add job merge_set in
-					(Active job', (job_queue, merge_set))
-				| None ->
-					(Active job, job_pool)
-		end else begin
-			(* not at merge point *)
-			(Active job, job_pool)
-		end;
-	with MergeDone (oldJob,mergedState) ->
-		(* This is a pretty stupid way of getting complete coverage information with
-			 merging, but it's something. It only credits a merged execution
-			 with the parts that *both* jobs covered. Things covered by only
-			 one side are attributed to truncated executions that end at the
-			 join point. *)
-		let jobOnlyLines = LineSet.diff job.exHist.coveredLines oldJob.exHist.coveredLines
-		and oldJobOnlyLines = LineSet.diff oldJob.exHist.coveredLines job.exHist.coveredLines
-		and jobOnlyBlocks = StmtInfoSet.diff job.exHist.coveredBlocks oldJob.exHist.coveredBlocks
-		and oldJobOnlyBlocks = StmtInfoSet.diff oldJob.exHist.coveredBlocks job.exHist.coveredBlocks
-		and jobOnlyEdges = EdgeSet.diff job.exHist.coveredEdges oldJob.exHist.coveredEdges
-		and oldJobOnlyEdges = EdgeSet.diff oldJob.exHist.coveredEdges job.exHist.coveredEdges
-		and jobOnlyConds = CondSet.diff job.exHist.coveredConds oldJob.exHist.coveredConds
-		and oldJobOnlyConds = CondSet.diff oldJob.exHist.coveredConds job.exHist.coveredConds
-		in
-		let completed = Complete (Types.Truncated
-			({ result_state = job.state;
-			   result_history = {job.exHist with
-														 coveredLines = jobOnlyLines;
-														 coveredBlocks = jobOnlyBlocks;
-														 coveredEdges = jobOnlyEdges;
-														 coveredConds = jobOnlyConds; } },
-			 { result_state = oldJob.state;
-			   result_history = {oldJob.exHist with
-														 coveredLines = oldJobOnlyLines;
-														 coveredBlocks = oldJobOnlyBlocks;
-														 coveredEdges = oldJobOnlyEdges;
-														 coveredConds = oldJobOnlyConds; } }))
-		in
-		(* Remove the old job and add the merged job *)
-		let merged_jobs = JobSet.add
-			{ job with
-					state = mergedState;
-					exHist =
-					{ job.exHist with
-							coveredLines = LineSet.inter job.exHist.coveredLines oldJob.exHist.coveredLines;
-							coveredBlocks = StmtInfoSet.inter job.exHist.coveredBlocks oldJob.exHist.coveredBlocks;
-							coveredEdges = EdgeSet.inter job.exHist.coveredEdges oldJob.exHist.coveredEdges;
-							coveredConds = CondSet.inter job.exHist.coveredConds oldJob.exHist.coveredConds;
-					};
-					mergePoints = StmtInfoSet.union job.mergePoints oldJob.mergePoints;
-					jid = min job.jid oldJob.jid; (* Keep the lower jid, just because *)
-			}
-			(JobSet.remove oldJob merge_set)
-		in
-		(completed, (job_queue, merged_jobs))
 
 let setRunningJob job =
 	if !Output.runningJobId <> job.jid then (
@@ -1141,30 +886,45 @@ let setRunningJob job =
 	);
 	Output.runningJobDepth := (List.length job.state.path_condition)
 
+
 (* Try to merge job with one that is waiting; then advance the resulting job by
 	 one step. (Note that the job that *actually* gets advances might not be
 	 step_job's argument; if the argument is at a merge point, mergeJobs places it
 	 into the job_pool and returns a different job.) *)
-let step_job job job_pool =
-	let job_state,job_pool = mergeJobs job job_pool in
-		match job_state with
-			| Active job -> (
-					setRunningJob job;
-					try let result = match job.instrList with
-						| [] -> exec_stmt job
-						| _ -> exec_instr job
-					in result,job_pool
-					with Failure msg ->
-						let result = { result_state = job.state; result_history = job.exHist } in
-						let completed = Complete (Types.Abandoned (msg, !Output.cur_loc, result)) in
-							(completed, job_pool)
-				)
-			| Complete _ -> (job_state, job_pool)
-			| Fork _ -> failwith "mergeJobs can't return a Fork"
+let step_job job =
+	setRunningJob job;
+	try
+		let result = match job.instrList with
+			| [] -> exec_stmt job
+			| _ -> exec_instr job
+		in
+		result
+	with Failure msg ->
+		let result = { result_state = job.state; result_history = job.exHist } in
+		let completed = Complete (Types.Abandoned (msg, !Output.cur_loc, result)) in
+		completed
+
+
+let at_merge_point job =
+	StmtInfoSet.mem
+		{ siFuncName=(List.hd job.state.callstack).Cil.svar.Cil.vname;
+		  siStmt=job.stmt; }
+		job.mergePoints
+
+
+let merge_or_step_job job (job_queue, merge_set) =
+	if run_args.arg_merge_paths
+			&& at_merge_point job
+			&& not (job_queue = [] && JobSet.is_empty merge_set) then
+		let result, merge_set = merge_job job merge_set in
+		(result, (job_queue, merge_set))
+	else
+		(Some (step_job job), (job_queue, merge_set))
 
 
 let main_loop job =
 	Random.init 226; (* TODO: move random into some local state *)
+
 	let rec main_loop completed job job_pool =
 		match !signalStringOpt with
 			| Some s ->
@@ -1173,14 +933,14 @@ let main_loop job =
 				Output.print_endline s;
 				completed
 			| None ->
-				let result, job_pool = step_job job job_pool in
+				let result, (job_queue, merge_set as job_pool) = merge_or_step_job job job_pool in
 				begin match result with
-					| Active job ->
+					| Some (Active job) ->
 						main_loop completed job job_pool
-					| Fork (j1, j2) ->
+					| Some (Fork (j1, j2)) ->
 						let job_pool = queue_job j1 job_pool in (* queue the true branch *)
 						main_loop completed j2 job_pool (* continue the false branch *)
-					| Complete completion ->
+					| Some (Complete completion) ->
 						(* log some interesting errors *)
 						begin match completion with
 							| Types.Abandoned (msg, loc, { result_state=state; result_history=hist }) ->
@@ -1205,16 +965,19 @@ let main_loop job =
 							| _ ->
 								()
 						end;
-						(* store the result and pick another job to continue, if available *)
-						let completed = completion::completed in
-						match pick_job job_pool with
-							| Some (job, job_pool) ->
-								main_loop completed job job_pool
-							| None ->
-								Output.set_mode Output.MSG_MUSTPRINT;
-								Output.print_endline "Done executing";
-								completed
+						next_job (completion::completed) job_pool
+					| None ->
+						next_job completed job_pool
 				end
+	and next_job completed job_pool =
+		(* pick another job to continue, if available *)
+		match pick_job job_pool with
+			| Some (job, job_pool) ->
+				main_loop completed job job_pool
+			| None ->
+				Output.set_mode Output.MSG_MUSTPRINT;
+				Output.print_endline "Done executing";
+				completed
 	in
 	main_loop [] job ([], JobSet.empty)
 
