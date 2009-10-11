@@ -25,10 +25,6 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
         let fn = List.hd state.Types.callstack in
 
 
-        (* TODO: eliminate the need for an empty solution *)
-        let solution = DiscreteSolver.solve consts G.QualGraph.empty in
-
-
         (* setup global variables and function arguments *)
         (* TODO: handle varargs *)
         let expM = perform
