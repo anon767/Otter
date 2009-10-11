@@ -148,6 +148,9 @@ let bytes_to_qt state typ bytes qt =
                             | Types.Lval_May (indicator, lval1, lval2) -> perform
                                 recurse lval1;
                                 recurse lval2
+                            | Types.Lval_IfThenElse (condition, lval1, lval2) -> perform
+                                recurse lval1;
+                                recurse lval2
                         in
                         recurse target_lvals
                     | _ ->
