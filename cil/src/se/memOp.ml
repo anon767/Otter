@@ -307,7 +307,7 @@ let frame__map_varinfo_to_block frame varinfo block =
 let frame__add_varinfo_initialized frame block_to_bytes varinfo init block =
 	let bytes = init in 
 	let frame2 = frame__map_varinfo_to_block frame varinfo block in
-	let block_to_bytes2 = MemoryBlockMap.add block bytes block_to_bytes in
+	let block_to_bytes2 = MemoryBlockMap.add block (Immediate bytes) block_to_bytes in
 	(frame2, block_to_bytes2)
 ;;
 
@@ -403,6 +403,11 @@ let state__empty =
 	}
 ;;
 
+let state__force state = function
+	| Immediate x -> (state, x)
+	| Deferred f -> f state
+;;
+
 let state__add_global state varinfo init = 
 	let size = (Cil.bitsSizeOf varinfo.vtype) / 8 in
 	let	block =
@@ -440,7 +445,7 @@ let state__assign state (lvals, size) bytes = (* have problem *)
 				failwith "Error: write to a constant string literal"
 			else
 
-			let oldbytes = MemoryBlockMap.find block state.block_to_bytes in
+			let state, oldbytes = state__force state (MemoryBlockMap.find block state.block_to_bytes) in
 
 			let newbytes =
 				(*Output.print_endline (To_string.bytes oldbytes);*)
@@ -466,7 +471,7 @@ let state__assign state (lvals, size) bytes = (* have problem *)
 				| Some newbytes ->
 					Output.set_mode Output.MSG_ASSIGN;
 					Output.print_endline ("    Assign "^(To_string.bytes bytes)^" to "^(To_string.memory_block block)^","^(To_string.bytes offset));
-					(count + 1, { state with block_to_bytes = MemoryBlockMap.add block newbytes state.block_to_bytes; })
+					(count + 1, { state with block_to_bytes = MemoryBlockMap.add block (Immediate newbytes) state.block_to_bytes; })
 			end
 
 		| Lval_May (j, tlvals, flvals) ->
@@ -535,20 +540,15 @@ let state__end_fcall state =
 let state__get_callContext state = List.hd state.callContexts;;
 
 let state__get_bytes_from_block state block =
-	let source = 
-		if block.memory_block_type == Block_type_StringLiteral 
-		then
-			string_table__get block
-		else
-			MemoryBlockMap.find block state.block_to_bytes 
-	in
-	source
+	if block.memory_block_type == Block_type_StringLiteral then
+		(state, string_table__get block)
+	else
+		state__force state (MemoryBlockMap.find block state.block_to_bytes) 
 ;;
 
 let state__get_bytes_from_lval state (block, offset, size) =
-	let source = state__get_bytes_from_block state block 
-	in
-		bytes__read source offset size
+	let state, source = state__get_bytes_from_block state block in
+	(state, bytes__read source offset size)
 ;;
 
 let state__add_path_condition state bytes tracked=
@@ -567,7 +567,12 @@ let state__return state bytesopt =
 *)
 let state__add_block state block bytes =
 	{ state with
-		block_to_bytes = MemoryBlockMap.add block bytes state.block_to_bytes;
+		block_to_bytes = MemoryBlockMap.add block (Immediate bytes) state.block_to_bytes;
+	}
+;;
+let state__add_deferred_block state block deferred =
+	{ state with
+		block_to_bytes = MemoryBlockMap.add block (Deferred deferred) state.block_to_bytes;
 	}
 ;;
 let state__remove_block state block=
@@ -730,12 +735,16 @@ let index_to_state__get index =
 (** Compare two states *)
 let cmp_states (s1:state) (s2:state) =
 	(* Compare blocks (memory allocations) that both states have *)
-	let cmpSharedBlocks b2b1 b2b2 =
-		let f block bytes1 str =
+	let sharedBlocksComparison =
+		let f block deferred1 str =
+			(* TODO: should the forced state of s1 be propagated? *)
+			let _, bytes1 = state__force s1 deferred1 in
 			let typ = block.memory_block_type in
 			if typ!=Block_type_Global && typ!=Block_type_Heap then str else (* only care about globals and heap content *)
 	          try
-	    		let bytes2 = MemoryBlockMap.find block b2b2 in
+	    		let deferred2 = MemoryBlockMap.find block s2.block_to_bytes in
+				(* TODO: should the forced state of s2 be propagated? *)
+				let _, bytes2 = state__force s2 deferred2 in
 	    		if  diff_bytes bytes1 bytes2 
 	    		then
 	    			let output1 = Printf.sprintf " >> %s = %s\n" (block.memory_block_name) (To_string.bytes bytes1) in
@@ -745,29 +754,31 @@ let cmp_states (s1:state) (s2:state) =
 				str
 	          with Not_found -> str
 		in
-		MemoryBlockMap.fold f b2b1 ""		
+		MemoryBlockMap.fold f s1.block_to_bytes ""		
 	in
 	(* List blocks (memory allocations) that only one of the states has *)
-	let cmpUnsharedBlocks b2b1 b2b2 =
-	  let h prefix b2b block bytes str =
-			let typ = block.memory_block_type in
+	let unsharedBlocksComparison =
+	  let h prefix state1 state2 block1 deferred1 str =
+			let _, bytes1 = state__force state1 deferred1 in
+			let typ = block1.memory_block_type in
 			if typ!=Block_type_Global && typ!=Block_type_Heap then str else (* only care about globals and heap content *)
-	        if MemoryBlockMap.mem block b2b then str else
-	    	let output = Printf.sprintf " %s %s = %s\n" prefix (block.memory_block_name) (To_string.bytes bytes) in
+	        if MemoryBlockMap.mem block1 state2.block_to_bytes then str else
+	    	let output = Printf.sprintf " %s %s = %s\n" prefix (block1.memory_block_name) (To_string.bytes bytes1) in
 	            str^output
 	      in
-	        (MemoryBlockMap.fold (h "(>>)" b2b2) b2b1 "")^
-	        (MemoryBlockMap.fold (h "(<<)" b2b1) b2b2 "")
+	        (MemoryBlockMap.fold (h "(>>)" s1 s2) s1.block_to_bytes "")^
+	        (MemoryBlockMap.fold (h "(<<)" s2 s1) s2.block_to_bytes "")
 	in
-	let rec cmpCallStack cs1 cs2 =
-		match cs1,cs2 with
-			| [],[] -> ""
-			| h1::cs1',h2::cs2' when h1==h2 -> cmpCallStack cs1' cs2'
-			| _ -> "Call stacks unequal"
+	let callStackComparison =
+		let rec cmpCallStack cs1 cs2 =
+			match cs1,cs2 with
+				| [],[] -> ""
+				| h1::cs1',h2::cs2' when h1==h2 -> cmpCallStack cs1' cs2'
+				| _ -> "Call stacks unequal"
+		in
+		cmpCallStack s1.callstack s2.callstack
 	in
-		(cmpSharedBlocks s1.block_to_bytes s2.block_to_bytes)^
-		(cmpUnsharedBlocks s1.block_to_bytes s2.block_to_bytes)^
-		(cmpCallStack s1.callstack s2.callstack)
+	sharedBlocksComparison^ unsharedBlocksComparison^ callStackComparison
 ;;
 	
 (*

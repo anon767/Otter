@@ -5,7 +5,7 @@ open Executeargs
 
 
 let eval_with_cache state pc bytes =
-    (Stp.eval pc bytes,state) 
+    (state, Stp.eval pc bytes) 
   (*
   match MemOp.state__get_bytes_eval_cache state bytes with
     | Some (boolval) -> ((if boolval then Stp.True else Stp.False), state)
@@ -100,7 +100,7 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 		Eval.rval state (impl exps)
 	in
 
-	let func = Function.from_exp state fexp exps in
+	let state, func = Function.from_exp state fexp exps in
 	begin match func with
 		| Function.Ordinary (fundec) ->					
 						(* TODO: do a casting if necessary: look at fundec.sformals, varinfo.vtype *)
@@ -125,7 +125,10 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 								in
 								Eval.rval state final_exp) exps exptyps) 
 							*)
-				let argvs = (List.map (fun exp -> Eval.rval state exp) exps) in
+				let state, argvs = List.fold_right begin fun exp (state, argvs) ->
+					let state, bytes = Eval.rval state exp in
+					(state, bytes::argvs)
+				end exps (state, []) in
 				(* [stmt] is an [Instr], so it can't have two successors. If
 					 [func] returns, then [stmt] has exactly one successor. If
 					 [func] is [exit] or has the [noreturn] attribute, [stmt]
@@ -182,7 +185,10 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
                           (*
                     | Function.Clone ->
                         if List.length exps <> 3 then failwith "Clone takes 3 arguments" else
-				        let argvs = (List.map (fun exp -> Eval.rval state exp) exps) in
+						let state, argvs = List.fold_right begin fun exp (state, argvs) ->
+							let state, bytes = Eval.rval state exp in
+							(state, bytes::argvs)
+						end exps (state, []) in
                         let target_ptr_bytes = List.nth argvs 0 in
                         let source_ptr_bytes = List.nth argvs 1 in
                         let length_int_bytes = List.nth argvs 2 in
@@ -192,13 +198,11 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
                             Bytes_Address(Some(source_block),source_offset),
                             Bytes_Constant(_)
                             ->
-                              begin
                               let length_int_val = Convert.bytes_to_int_auto length_int_bytes in
-                              let source_bytes = MemOp.state__get_bytes_from_lval state (source_block,source_offset,length_int_val) in
-                              let (state2,cloned_bytes) = MemOp.state__clone_bytes state source_bytes in
-                              let state3 = MemOp.state__assign state2 (Lval_Block (target_block, target_offset),length_int_val) cloned_bytes in
-                                state3
-                              end
+                              let state, source_bytes = MemOp.state__get_bytes_from_lval state (source_block,source_offset,length_int_val) in
+                              let state, cloned_bytes = MemOp.state__clone_bytes state source_bytes in
+                              let state = MemOp.state__assign state (Lval_Block (target_block, target_offset),length_int_val) cloned_bytes in
+                              state
                           | _ -> failwith "Clone error"
                        end
                            *)
@@ -212,9 +216,9 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
                                   if List.length exps <> 2 then 
                                     failwith "__GIVEN takes 2 arguments"
                                   else
-                                  let given = Eval.rval state (List.nth exps 0) in
-				                  let rv = Eval.rval state (List.nth exps 1 ) in
-				                  let (truth,state) = eval_with_cache state (given::state.path_condition) rv in
+                                  let state, given = Eval.rval state (List.nth exps 0) in
+				                  let state, rv = Eval.rval state (List.nth exps 1 ) in
+				                  let state, truth = eval_with_cache state (given::state.path_condition) rv in
 				                  if truth == Stp.True then Convert.lazy_int_to_bytes 1 
 				                  else if truth == Stp.False then Convert.lazy_int_to_bytes 0
 				                  else MemOp.bytes__symbolic 4
@@ -230,8 +234,8 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
                                   Convert.lazy_int_to_bytes
                                   begin
                                   if List.length exps = 0 then 0 else
-				                  let rv = Eval.rval state (List.hd exps) in
-				                  let (truth,state) = eval_with_cache state state.path_condition rv in
+				                  let state, rv = Eval.rval state (List.hd exps) in
+				                  let state, truth = eval_with_cache state state.path_condition rv in
 				                  if truth == Stp.True then 1
 				                  else if truth == Stp.False then -1
 				                  else 0
@@ -260,8 +264,8 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 											(Errormsg.error "Can't assign two tracked values to variable %s" varinf.vname);
 
 										let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
-										let lvals = Eval.lval state lval in
-										let symbBytes = (MemOp.bytes__symbolic size ) in
+										let state, lvals = Eval.lval state lval in
+										let symbBytes = MemOp.bytes__symbolic size in
 										Output.set_mode Output.MSG_MUSTPRINT;
 										Output.print_endline (varinf.vname ^ " = " ^ (To_string.bytes symbBytes));
 										nextExHist := { exHist with bytesToVars = (symbBytes,varinf) :: exHist.bytesToVars; };
@@ -273,12 +277,15 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 											| None ->
 													state
 											| Some (lvals, size) ->
-													let ssize = match exps with
-														| [] -> size
+													let state, ssize = match exps with
+														| [] ->
+															(state, size)
 														| [CastE (_, h)] | [h] ->
-																let newsize = Convert.bytes_to_int_auto (Eval.rval state h) in
-																if newsize <= 0 then size else newsize
-														| _ -> failwith "__SYMBOLIC takes at most one argument"
+															let state, bytes = Eval.rval state h in
+															let newsize = Convert.bytes_to_int_auto bytes in
+															(state, if newsize <= 0 then size else newsize)
+														| _ ->
+															failwith "__SYMBOLIC takes at most one argument"
 													in
 													MemOp.state__assign state (lvals, size (*ssize?*))
 														(MemOp.bytes__symbolic ssize )
@@ -289,9 +296,14 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
                         {state with
                              block_to_bytes = MemoryBlockMap.map 
                                 (fun b -> match b with
-                                     Bytes_FunPtr(_) -> b
-                                   (* TODO: handle pointers by generating MayBytes trees based on alias analysis *)
-                                   | _ -> MemOp.bytes__symbolic (MemOp.bytes__length b)
+                                    (* TODO: what about Deferred? *)
+                                    | Immediate (Bytes_FunPtr(_)) ->
+										b
+                                    (* TODO: handle pointers by generating MayBytes trees based on alias analysis *)
+                                    | _ ->
+										(* TODO: propagate state to avoid excessive recomputation *)
+										let state, b = MemOp.state__force state b in
+										Immediate (MemOp.bytes__symbolic (MemOp.bytes__length b))
                                 ) 
                                 state.block_to_bytes;
                         }
@@ -300,16 +312,20 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 								| None -> 
 									state
 								| Some (lvals, size as dest) ->
-									let key = 
-										if List.length exps == 0 then 0 else
-										let size_bytes = Eval.rval state (List.hd exps) in
-												Convert.bytes_to_int_auto size_bytes 
+									let state, key =
+										if List.length exps == 0 then
+											(state, 0)
+										else
+											let state, size_bytes = Eval.rval state (List.hd exps) in
+											(state, Convert.bytes_to_int_auto size_bytes) 
 									in
-									let state2 = if  MemOp.loc_table__has state (loc,key) then state
+									let state =
+										if MemOp.loc_table__has state (loc,key)
+										then state
 										else MemOp.loc_table__add state (loc,key) (MemOp.bytes__symbolic size)
 									in
-									let newbytes = MemOp.loc_table__get state2 (loc,key) in
-										MemOp.state__assign state2 dest newbytes
+									let newbytes = MemOp.loc_table__get state (loc,key) in
+									MemOp.state__assign state dest newbytes
 							end												
 (*
 					| Function.Fresh ->
@@ -333,13 +349,13 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 						
 					| Function.Exit ->
 						let exit_code = match exps with
-							| exp1::_ -> Some (Eval.rval state exp1)
+							| exp1::_ -> Some (snd (Eval.rval state exp1))
 							| [] -> None
 						in
 						raise (Function.Notification_Exit (exit_code))
 					
 					| Function.Evaluate ->
-						let pc = op_exps exps Cil.LAnd in
+						let state, pc = op_exps exps Cil.LAnd in
 							Output.set_mode Output.MSG_MUSTPRINT;
 							Output.print_endline ("    Evaluates to "^(To_string.bytes pc));
 							state
@@ -347,19 +363,23 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 					| Function.EvaluateString ->
 							let exp = List.hd exps in
 							let sizeexp = List.nth exps 1 in
-							let str = match Eval.rval state exp with
-								| Bytes_Address(Some(block),offset) -> 
-									let size = 
-                                      try Convert.bytes_to_int_auto (Eval.rval state sizeexp) with
+							let state, addr_bytes = Eval.rval state exp in
+							let state, str = match addr_bytes with
+								| Bytes_Address(Some(block),offset) ->
+									let state, size_bytes = Eval.rval state sizeexp in
+									let size =
+                                      try Convert.bytes_to_int_auto size_bytes with
                                           Failure(s) -> Output.print_endline s; 32
                                     in
-									let bytes = MemOp.state__get_bytes_from_lval state (block,offset,size) in
-									begin match bytes with
+									let state, bytes = MemOp.state__get_bytes_from_lval state (block,offset,size) in
+									let str = match bytes with
 										| Bytes_ByteArray(bytearray) -> To_string.bytestring bytearray
 										| Bytes_Constant(CInt64(i,_,_)) -> Int64.to_string i
 										| _ -> "(complicate)"
-									end
-								| _ -> "(nil)"
+									in
+									(state, str)
+								| _ ->
+									(state, "(nil)")
 							in
 							Output.set_mode Output.MSG_MUSTPRINT;
 							Output.print_endline ("Evaluates to string: \"" ^ (
@@ -373,7 +393,7 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 							state
 												
 					| Function.Assume ->
-						let pc = op_exps exps Cil.LAnd in
+						let state, pc = op_exps exps Cil.LAnd in
 							MemOp.state__add_path_condition state pc false
 					
 					| Function.PathCondition ->
@@ -383,8 +403,8 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 							state
 															
 					| Function.Assert -> 
-						let post = op_exps exps Cil.LAnd in
-							let (truth,state) = eval_with_cache state state.path_condition post in
+						let state, post = op_exps exps Cil.LAnd in
+						let state, truth = eval_with_cache state state.path_condition post in
 							begin
 								if truth == Stp.True then
 									begin
@@ -420,10 +440,10 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 							begin match blkOffSizeOpt with
 								| None -> state
 								| Some dest ->
-                                    let bytes0 = Eval.rval state (List.nth exps 0) in
-                                    let bytes1 = Eval.rval state (List.nth exps 1) in
-                                    let bytes2 = Eval.rval state (List.nth exps 2) in
-									let rv= make_Bytes_IfThenElse (bytes0,bytes1,bytes2) in
+                                    let state, bytes0 = Eval.rval state (List.nth exps 0) in
+                                    let state, bytes1 = Eval.rval state (List.nth exps 1) in
+                                    let state, bytes2 = Eval.rval state (List.nth exps 2) in
+									let rv = make_Bytes_IfThenElse (bytes0, bytes1, bytes2) in
 									MemOp.state__assign state dest rv
 							end
 												
@@ -431,7 +451,7 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 							begin match blkOffSizeOpt with
 								| None -> failwith "Unreachable BooleanOp"
 								| Some dest ->
-									let rv= op_exps exps binop in 
+									let state, rv = op_exps exps binop in
 									MemOp.state__assign state dest rv
 							end
 
@@ -439,13 +459,16 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 							begin match blkOffSizeOpt with
 								| None -> failwith "Unreachable BooleanNot"
 								| Some dest ->
-									let rv = Eval.rval state (UnOp(Cil.LNot, List.hd exps, Cil.voidType)) in
-										MemOp.state__assign state dest rv
+									let state, rv = Eval.rval state (UnOp(Cil.LNot, List.hd exps, Cil.voidType)) in
+									MemOp.state__assign state dest rv
 							end
 
 					| Function.Aspect(pointcut, advice) ->
-						let argvs = List.map (fun exp -> Eval.rval state exp) exps in
-							advice state argvs instr
+						let state, argvs = List.fold_right begin fun exp (state, argvs) ->
+							let state, bytes = Eval.rval state exp in
+							(state, bytes::argvs)
+						end exps (state, []) in
+						advice state argvs instr
 							
 					| Function.BreakPt ->
 						Output.set_mode Output.MSG_REG;
@@ -463,7 +486,7 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 							Output.print_endline ("COMMENT:"^(To_string.exp exp));
 							state
 					| Function.CurrentState ->
-						let bytes = Eval.rval state (List.hd exps) in
+						let state, bytes = Eval.rval state (List.hd exps) in
 						let key = Convert.bytes_to_int_auto bytes in
 							Output.set_mode Output.MSG_MUSTPRINT;
 							Output.printf "Record state %d\n" key;
@@ -471,8 +494,8 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 							state
 													
 					| Function.CompareState ->
-						let bytes0 = Eval.rval state (List.nth exps 0) in
-						let bytes1 = Eval.rval state (List.nth exps 1) in
+						let state, bytes0 = Eval.rval state (List.nth exps 0) in
+						let state, bytes1 = Eval.rval state (List.nth exps 1) in
 						let key0 = Convert.bytes_to_int_auto bytes0 in
 						let key1 = Convert.bytes_to_int_auto bytes1 in
 						Output.set_mode Output.MSG_MUSTPRINT;
@@ -500,7 +523,7 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
                             state
                         end
 					| Function.AssertEqualState ->
-						let bytes0 = Eval.rval state (List.nth exps 0) in
+						let state, bytes0 = Eval.rval state (List.nth exps 0) in
 						let key0 = Convert.bytes_to_int_auto bytes0 in
 						begin try 
 							let s0 = MemOp.index_to_state__get key0 in
@@ -587,23 +610,25 @@ let exec_instr job =
 	match instr with
 		| Set(lval,exp,loc) ->
 			printInstr instr;
-			let lvals = Eval.lval job.state lval in
+			let state, lvals = Eval.lval job.state lval in
 			let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
-			let rv = Eval.rval job.state exp in
+			let state, rv = Eval.rval job.state exp in
 			let state = MemOp.state__assign job.state (lvals,size) rv in
 			let nextStmt = if tail = [] then List.hd job.stmt.succs else job.stmt in
 			Active { job with state = state; stmt = nextStmt }
 		| Call(lvalopt, fexp, exps, loc) ->
 			assert (tail = []);
 			printInstr instr;
-			let destOpt =
-				match lvalopt with
-					| None -> None
-					| Some lval ->
-							let lvals = Eval.lval job.state lval in
-							let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
-							Some (lvals,size)
+			let state = job.state in
+			let state, destOpt = match lvalopt with
+				| None ->
+					(state, None)
+				| Some lval ->
+					let state, lvals = Eval.lval state lval in
+					let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
+					(state, Some (lvals,size))
 			in
+			let job = { job with state=state } in
 			exec_instr_call job instr destOpt fexp exps loc
 		| Asm _ ->
 			Output.set_mode Output.MSG_MUSTPRINT;
@@ -660,9 +685,12 @@ let exec_stmt job =
 									("Path condition:\n" ^
 										 (To_string.humanReadablePc state.path_condition job.exHist.bytesToVars));
 *)
-								let retval = match expopt with
-									| None -> None
-									| Some exp -> Some (Eval.rval state exp)
+								let state, retval = match expopt with
+									| None ->
+										(state, None)
+									| Some exp ->
+										let state, retval = Eval.rval state exp in
+										(state, Some retval)
 								in
 								Complete (Types.Return
 									(retval, { result_state = state; result_history = nextExHist None; })) 
@@ -670,7 +698,7 @@ let exec_stmt job =
 								let state2 =
 									match expopt, destOpt with
 										| Some exp, Some dest ->
-												let rv = Eval.rval state exp in
+												let state, rv = Eval.rval state exp in
 												let state = MemOp.state__end_fcall state in
 												MemOp.state__assign state dest rv
 										| _, _ ->
@@ -755,7 +783,7 @@ let exec_stmt job =
 						(nextState, nextStmt)
 					in
  
-					let rv = Eval.rval state exp in
+					let state, rv = Eval.rval state exp in
  
 					Output.set_mode Output.MSG_GUARD;
 					if(Output.need_print Output.MSG_GUARD) then
@@ -767,7 +795,7 @@ let exec_stmt job =
 							Output.print_endline (if String.length pc_str = 0 then "(nil)" else pc_str);
 						end;
  
-					let (truth,state) = eval_with_cache state state.path_condition rv in
+					let state, truth = eval_with_cache state state.path_condition rv in
  
 					Output.set_mode Output.MSG_REG;
 					if truth == Stp.True then

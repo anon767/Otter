@@ -11,8 +11,8 @@ let rec init_globalvars state globals =
 					let lhost_typ = varinfo.vtype in
 					let size = (Cil.bitsSizeOf (varinfo.vtype)) / 8 in
 					let zeros = MemOp.bytes__make size in
-					let init_bytes = match initinfo.init with
-						| None -> zeros
+					let state, init_bytes = match initinfo.init with
+						| None -> (state, zeros)
 						| Some(init) ->
 								(* make the offset argument "accumulative",
 								   i.e. not following the spec of Cil's offset in init type
@@ -23,20 +23,25 @@ let rec init_globalvars state globals =
 										| Field(f,offset2) -> Field(f,accumulate_offset offset2 off')
 										| Index(exp,offset2) -> Index(exp,accumulate_offset offset2 off')
 								in
-								let rec myInit  (offset:Cil.offset) (i:Cil.init) acc =
+								let rec myInit (offset:Cil.offset) (i:Cil.init) (state, acc) =
 									match i with 
 										| SingleInit(exp) -> 
-											let (off,typ) = Eval.flatten_offset state lhost_typ offset in
-											MemOp.bytes__write acc off (Cilutility.bitsSizeOfExp exp) (Eval.rval state exp)
+											let state, off, typ = Eval.flatten_offset state lhost_typ offset in
+											let state, off_bytes = Eval.rval state exp in
+											let init_bytes =
+												MemOp.bytes__write
+													acc off (Cilutility.bitsSizeOfExp exp) off_bytes
+											in
+											(state, init_bytes)
 										| CompoundInit(typ, list) ->          
-											foldLeftCompound 
+											foldLeftCompound
 												~implicit: false
-												~doinit: (fun off' i' t' acc ->	myInit  (accumulate_offset offset off') i' acc)
+												~doinit: (fun off' i' t' (state, acc) -> myInit (accumulate_offset offset off') i' (state, acc))
 												~ct: typ
 												~initl: list
-												~acc: acc
+												~acc: (state, acc)
 								in
-									myInit NoOffset init zeros
+									myInit NoOffset init (state, zeros)
 					in
 					Output.set_mode Output.MSG_REG;
 					Output.print_endline ("Initialize "^varinfo.vname^" to "

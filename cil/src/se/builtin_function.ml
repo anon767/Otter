@@ -1,58 +1,57 @@
 open Cil
 open Types
 
-let libc___builtin_va_arg state exps = 	
-	let key = Eval.rval state (List.hd exps) in
-	let (state2,ret) = MemOp.vargs_table__get state key in
+let libc___builtin_va_arg state exps =
+	let state, key = Eval.rval state (List.hd exps) in
+	let state, ret = MemOp.vargs_table__get state key in
 	let lastarg = List.nth exps 2 in
-		match lastarg with
-			| CastE(_,AddrOf(lval)) -> 
-					let lvals = Eval.lval state lval in
-					let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
-					(* cast ret to sth of typ sth *)
-					let ret2 = MemOp.bytes__resize ret size in
-					let state3 = MemOp.state__assign state2 (lvals,size) ret2 in
-						(state3,ret2)
-			| _ -> failwith "Last argument of __builtin_va_arg must be of the form CastE(_,AddrOf(lval))"
-		
-;;
-	
-let libc___builtin_va_copy state exps = 
-	let keyOfSource = Eval.rval state (List.nth exps 1) in
-	let srcList = MemOp.vargs_table__get_list state keyOfSource in
-	let (state2,key) = MemOp.vargs_table__add state srcList in
-	match List.hd exps with
-	|	Lval(lval) ->
-			let lvals = Eval.lval state lval in
+	match lastarg with
+		| CastE(_, AddrOf(lval)) ->
+			let state, lvals = Eval.lval state lval in
 			let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
-			let state3 = MemOp.state__assign state2 (lvals,size) key in
-			(state3,MemOp.bytes__zero)
-	|	_ -> failwith "First argument of va_copy must have lval"
+			(* cast ret to sth of typ sth *)
+			let ret = MemOp.bytes__resize ret size in
+			let state = MemOp.state__assign state (lvals, size) ret in
+			(state, ret)
+		| _ -> failwith "Last argument of __builtin_va_arg must be of the form CastE(_,AddrOf(lval))"
 ;;
 
-let libc___builtin_va_end state exps = 
-	let key = Eval.rval state (List.hd exps) in
-	let state2 = MemOp.vargs_table__remove state key in
-	(state2,MemOp.bytes__zero)
+let libc___builtin_va_copy state exps =
+	let state, keyOfSource = Eval.rval state (List.nth exps 1) in
+	let srcList = MemOp.vargs_table__get_list state keyOfSource in
+	let state, key = MemOp.vargs_table__add state srcList in
+	match List.hd exps with
+		| Lval(lval) ->
+			let state, lvals = Eval.lval state lval in
+			let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
+			let state = MemOp.state__assign state (lvals, size) key in
+			(state, MemOp.bytes__zero)
+		| _ -> failwith "First argument of va_copy must have lval"
+;;
+
+let libc___builtin_va_end state exps =
+	let state, key = Eval.rval state (List.hd exps) in
+	let state = MemOp.vargs_table__remove state key in
+	(state, MemOp.bytes__zero)
 ;;
 
 let libc___builtin_va_start state exps =
 	(* TODO: assign first arg with new bytes that maps to vargs *)
 	match List.hd exps with
-		| Lval(lval) -> 
-				let (state2,key) = MemOp.vargs_table__add state (List.hd state.va_arg) in
-				let lvals = Eval.lval state lval in
-				let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
-				let state3 = MemOp.state__assign state2 (lvals,size) key in
-					(state3,MemOp.bytes__zero)
+		| Lval(lval) ->
+			let state, key = MemOp.vargs_table__add state (List.hd state.va_arg) in
+			let state, lvals = Eval.lval state lval in
+			let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
+			let state = MemOp.state__assign state (lvals,size) key in
+			(state, MemOp.bytes__zero)
 		| _ -> failwith "First argument of va_start must have lval"
 ;;
 
 (* __builtin_alloca is used for local arrays with variable size; has the same semantics as malloc *)
 let libc___builtin_alloca__id = ref 1;;
 let libc___builtin_alloca state exps =
-	let b_size = Eval.rval state (List.hd exps) in
-	let size = 
+	let state, b_size = Eval.rval state (List.hd exps) in
+	let size =
 		if Convert.isConcrete_bytes b_size then
 			Convert.bytes_to_int_auto b_size (*safe to use bytes_to_int as arg should be small *)
 		else
@@ -62,7 +61,7 @@ let libc___builtin_alloca state exps =
 		(List.hd state.callstack).svar.vname
 		size
 		(Utility.next_id libc___builtin_alloca__id)
-		(To_string.location !Output.cur_loc) 
+		(To_string.location !Output.cur_loc)
 		(MemOp.state__trace state)
 	in
 	let block =  MemOp.block__make name size Block_type_Heap in
@@ -70,68 +69,76 @@ let libc___builtin_alloca state exps =
 (*	let bytes = MemOp.bytes__make_default size byte__undef in (* initially the symbolic 'undef' byte *) *)
 	let bytes = MemOp.bytes__make size in (* initially zero, as though malloc were calloc *)
 	let addrof_block = make_Bytes_Address (Some(block),MemOp.bytes__zero) in
-	let state2 = MemOp.state__add_block state block bytes in
-		(state2,addrof_block)	
+	let state = MemOp.state__add_block state block bytes in
+	(state, addrof_block)
 ;;
 
 (* share implementation with __builtin_alloca *)
 let libc_malloc = libc___builtin_alloca
 
-let libc_free state exps = 
-  (* What it does is to remove the mapping of (block,bytes) in the state.
-   *)
-	let ptr = Eval.rval state (List.hd exps) in
-      match ptr with
-        | Bytes_Address (Some(block),_) -> 
-            let state2 = MemOp.state__remove_block state block  in
-              (state2,MemOp.bytes__zero)
-        | _ ->
-            Output.set_mode Output.MSG_DEBUG;
-            Output.print_endline "Warning: memory leak!";
-              (state,MemOp.bytes__zero)
+let libc_free state exps =
+	(* What it does is to remove the mapping of (block,bytes) in the state. *)
+	let state, ptr = Eval.rval state (List.hd exps) in
+	match ptr with
+		| Bytes_Address (Some(block),_) ->
+			let state = MemOp.state__remove_block state block in
+			(state, MemOp.bytes__zero)
+		| _ ->
+			Output.set_mode Output.MSG_DEBUG;
+			Output.print_endline "Warning: memory leak!";
+			(state, MemOp.bytes__zero)
 ;;
 
-let libc_memset__concrete state exps = 
-	let bytes = Eval.rval state (List.hd exps) in
-	try
-		let (blockopt,offset) = Convert.bytes_to_address bytes in
-		match blockopt with None -> failwith "libc_memset: passed with null pointer" | Some(block) ->
-		let old_whole_bytes = MemOp.state__get_bytes_from_block state block in
-		let c = MemOp.bytes__get_byte (Eval.rval state (List.nth exps 1)) 0 (* little endian *) in
-		let n_bytes = Eval.rval state (List.nth exps 2) in
-		if Convert.isConcrete_bytes n_bytes then
-			let n = Convert.bytes_to_int_auto n_bytes in
-			let newbytes = MemOp.bytes__make_default n c in
-			let finalbytes = MemOp.bytes__write old_whole_bytes offset n newbytes in
-			let state2 = MemOp.state__add_block state block finalbytes  in
-  			(state2,bytes)
-		else failwith "libc_memset__concrete: n is symbolic (TODO)"
-	with x -> raise x
-;;
-let libc_memset state exps = 
-	let bytes = Eval.rval state (List.hd exps) in
-	try
-		let (blockopt,offset) = Convert.bytes_to_address bytes in
-		match blockopt with None -> failwith "libc_memset: passed with null pointer" | Some(block) ->
-		let old_whole_bytes = MemOp.state__get_bytes_from_block state block in
-		let c = MemOp.bytes__get_byte (Eval.rval state (List.nth exps 1)) 0 (* little endian *) in
-		let n_bytes = Eval.rval state (List.nth exps 2) in
-		if Convert.isConcrete_bytes n_bytes then
-			let n = Convert.bytes_to_int_auto n_bytes in
-			let newbytes = MemOp.bytes__make_default n c in
-			let finalbytes = MemOp.bytes__write old_whole_bytes offset n newbytes in
-			let state2 = MemOp.state__add_block state block finalbytes  in
-  			(state2,bytes)
-		else failwith "libc_memset: n is symbolic (TODO)"
-	with x -> raise x
+
+(* TODO: why are there two completely identical memset? *)
+let libc_memset__concrete state exps =
+	let state, bytes = Eval.rval state (List.hd exps) in
+	let blockopt, offset = Convert.bytes_to_address bytes in
+	match blockopt with
+		| Some(block) ->
+			let state, old_whole_bytes = MemOp.state__get_bytes_from_block state block in
+			let state, char_bytes = Eval.rval state (List.nth exps 1) in
+			let c = MemOp.bytes__get_byte char_bytes 0 (* little endian *) in
+			let state, n_bytes = Eval.rval state (List.nth exps 2) in
+			if Convert.isConcrete_bytes n_bytes then
+				let n = Convert.bytes_to_int_auto n_bytes in
+				let newbytes = MemOp.bytes__make_default n c in
+				let finalbytes = MemOp.bytes__write old_whole_bytes offset n newbytes in
+				let state = MemOp.state__add_block state block finalbytes in
+				(state, bytes)
+			else
+				failwith "libc_memset__concrete: n is symbolic (TODO)"
+		| None ->
+			failwith "libc_memset: passed with null pointer"
 ;;
 
-let libc_strlen state exps = 
+let libc_memset state exps =
+	let state, bytes = Eval.rval state (List.hd exps) in
+	let blockopt, offset = Convert.bytes_to_address bytes in
+	match blockopt with
+		| Some(block) ->
+			let state, old_whole_bytes = MemOp.state__get_bytes_from_block state block in
+			let state, char_bytes = Eval.rval state (List.nth exps 1) in
+			let c = MemOp.bytes__get_byte char_bytes 0 (* little endian *) in
+			let state, n_bytes = Eval.rval state (List.nth exps 2) in
+			if Convert.isConcrete_bytes n_bytes then
+				let n = Convert.bytes_to_int_auto n_bytes in
+				let newbytes = MemOp.bytes__make_default n c in
+				let finalbytes = MemOp.bytes__write old_whole_bytes offset n newbytes in
+				let state = MemOp.state__add_block state block finalbytes in
+				(state, bytes)
+			else
+				failwith "libc_memset: n is symbolic (TODO)"
+		| None ->
+			failwith "libc_memset: passed with null pointer"
+;;
+
+let libc_strlen state exps =
 	let gotoFail () = failwith "libc_strlen: can't run builtin" in
-	let bytes = Eval.rval state (List.hd exps) in
+	let state, bytes = Eval.rval state (List.hd exps) in
 	match bytes with
-		| Bytes_Address(Some(block),offset) when Convert.isConcrete_bytes offset ->
-			let bytes_str = MemOp.state__get_bytes_from_block state block in
+		| Bytes_Address(Some(block), offset) when Convert.isConcrete_bytes offset ->
+			let state, bytes_str = MemOp.state__get_bytes_from_block state block in
 			let strlen = match bytes_str with
 				| Bytes_ByteArray(ba) ->
 					let len = ImmutableArray.length ba in
@@ -142,15 +149,16 @@ let libc_strlen state exps =
 							| Byte_Concrete(c) -> if c='\000' then l else impl (i+1) (l+1)
 							| _ -> gotoFail ()
 					in
-						impl n_offset 0
-				| _ -> gotoFail ()
+					impl n_offset 0
+				| _ ->
+					gotoFail ()
 			in
-				(state,Convert.lazy_int_to_bytes strlen)
-		| _ -> gotoFail ()
-	
+			(state, Convert.lazy_int_to_bytes strlen)
+		| _ ->
+			gotoFail ()
 ;;
 
-	
+
 let libc___create_file state exps = (state,MemOp.bytes__zero);;
 let libc___error state exps = (state,MemOp.bytes__zero);;
 let libc___maskrune state exps = (state,MemOp.bytes__zero);;
@@ -184,73 +192,66 @@ let posix_syslog state exps = (state,MemOp.bytes__zero);;
 
 type t = state -> exp list -> state * bytes
 
-let get fname =
-	let f = 
-	match fname with
-		| "__builtin_va_arg_fixed" -> libc___builtin_va_arg
-		| "__builtin_va_arg" -> libc___builtin_va_arg
-		| "__builtin_va_copy" -> libc___builtin_va_copy
-		| "__builtin_va_end" -> libc___builtin_va_end
-		| "__builtin_va_start" -> libc___builtin_va_start
-		| "__builtin_alloca" -> libc___builtin_alloca
-(*		| "__create_file" -> libc___create_file *)
-(*		| "__error" -> libc___error *)
-(*		| "__maskrune" -> libc___maskrune*)
-(*		| "__toupper" -> libc___toupper *)
-(*		| "accept" -> libc_accept *)
-(*		| "bind" -> libc_bind *)
-(*		| "close" -> libc_close *)
-(*		| "dup2" -> libc_dup2 *)
-(*		| "execl" -> libc_execl *)
-(*		| "fclose" -> libc_fclose *)
-(*		| "feof" -> libc_feof *)
-(*		| "fileno" -> libc_fileno  (* write to file *) *)
-(*		| "fork" -> libc_fork *)
-		| "free" -> libc_free
-(*		| "getc" -> libc_getc *)
-(*		| "getsockname" -> libc_getsockname *)
-(*		| "listen" -> libc_listen *)
-		| "malloc" -> libc_malloc
-		| "memset" -> libc_memset
-		| "memset__concrete" -> libc_memset__concrete
-(*		| "strlen" -> libc_strlen *)
-(*		| "open" -> libc_open *)
-(*		| "pipe" -> libc_pipe *)
-(*		| "putenv" -> libc_putenv *)
-(*		| "read" -> libc_read *)
-(*		| "recv" -> libc_recv *)
-(*		| "send" -> libc_send *)
-(*		| "socket" -> libc_socket *)
-(*		| "stat" -> libc_stat *)
-(*		| "waitpid" -> libc_waitpid *)
-(*		| "write" -> libc_write *)
-		(* these are from posix *)
-(*		| "umask" -> posix_umask			*)
-(*		| "openlog" -> posix_openlog	*)
-(*		| "syslog" -> posix_syslog		*)
+let get = function
+	| "__builtin_va_arg_fixed" -> libc___builtin_va_arg
+	| "__builtin_va_arg" -> libc___builtin_va_arg
+	| "__builtin_va_copy" -> libc___builtin_va_copy
+	| "__builtin_va_end" -> libc___builtin_va_end
+	| "__builtin_va_start" -> libc___builtin_va_start
+	| "__builtin_alloca" -> libc___builtin_alloca
+(*	| "__create_file" -> libc___create_file *)
+(*	| "__error" -> libc___error *)
+(*	| "__maskrune" -> libc___maskrune*)
+(*	| "__toupper" -> libc___toupper *)
+(*	| "accept" -> libc_accept *)
+(*	| "bind" -> libc_bind *)
+(*	| "close" -> libc_close *)
+(*	| "dup2" -> libc_dup2 *)
+(*	| "execl" -> libc_execl *)
+(*	| "fclose" -> libc_fclose *)
+(*	| "feof" -> libc_feof *)
+(*	| "fileno" -> libc_fileno  (* write to file *) *)
+(*	| "fork" -> libc_fork *)
+	| "free" -> libc_free
+(*	| "getc" -> libc_getc *)
+(*	| "getsockname" -> libc_getsockname *)
+(*	| "listen" -> libc_listen *)
+	| "malloc" -> libc_malloc
+	| "memset" -> libc_memset
+	| "memset__concrete" -> libc_memset__concrete
+(*	| "strlen" -> libc_strlen *)
+(*	| "open" -> libc_open *)
+(*	| "pipe" -> libc_pipe *)
+(*	| "putenv" -> libc_putenv *)
+(*	| "read" -> libc_read *)
+(*	| "recv" -> libc_recv *)
+(*	| "send" -> libc_send *)
+(*	| "socket" -> libc_socket *)
+(*	| "stat" -> libc_stat *)
+(*	| "waitpid" -> libc_waitpid *)
+(*	| "write" -> libc_write *)
+	(* these are from posix *)
+(*	| "umask" -> posix_umask			*)
+(*	| "openlog" -> posix_openlog	*)
+(*	| "syslog" -> posix_syslog		*)
 
-		| _ -> failwith "No such builtin function"
-	in
-			f
+	| _ -> failwith "No such builtin function"
 ;;
 
 (* TODO: change this so that we don't call built-in functions twice
-	 when they work. *)
+ * when they work. *)
 let can_apply_builtin state fname args =
 	try
-		let _ = get fname in
-		match fname with
+		begin match fname with
 			| "memset" ->
-				(try
-					let (_,_) = libc_memset state args in 
-						true
-				with Failure(_) -> false)
-			| "strlen" ->
-				(try
-					let (_,_) = libc_strlen state args in 
-						true
-				with Failure(_) -> false)
-				
-			| _ -> true
-	with Failure(_) -> false
+				let _ = libc_memset state args in ()
+(* TODO: is this right? libc_strlen was never called before, because it's not in get *)
+(*			| "strlen" ->
+				ignore (libc_strlen state args) *)
+			| _ ->
+				let _ = get fname in ()
+		end;
+		true
+	with Failure(_) ->
+		false
 ;;

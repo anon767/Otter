@@ -94,13 +94,17 @@ let from_varinfo state varinfo args =
 						failwith ("Function "^varinfo.vname^" not found.")
 	end
 ;;
-let from_exp state exp args: function_type =
+
+let from_exp state exp args: state * function_type =
 	match exp with
-		| Lval(Var(varinfo), NoOffset) -> from_varinfo state varinfo args
-		| Lval(Mem(exp2),NoOffset) -> 
-			begin match Eval.rval state exp2 with
-				| Bytes_FunPtr(fundec,_) -> Ordinary (fundec)
+		| Lval(Var(varinfo), NoOffset) ->
+			(state, from_varinfo state varinfo args)
+		| Lval(Mem(exp2),NoOffset) ->
+			let state, bytes = Eval.rval state exp2 in
+			begin match bytes with
+				| Bytes_FunPtr(fundec,_) -> (state, Ordinary (fundec))
 				| _ -> failwith ("Non-constant function ptr not supported : "^(To_string.exp exp2))
 			end
-		| _ -> failwith ("Non-constant function ptr not supported : "^(To_string.exp exp))
+		| _ ->
+			failwith ("Non-constant function ptr not supported : "^(To_string.exp exp))
 ;;

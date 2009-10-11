@@ -4,50 +4,58 @@ open Operation
 
 let rec
 
-rval state exp : bytes =
+rval state exp : state * bytes =
 	(*try*)
 	let result =
 		match exp with
 			| Const (constant) -> 
-				begin match constant with
-					| CStr(str) ->
-						let bytes = Convert.constant_to_bytes constant in
-						let block = MemOp.string_table__add bytes in
-							make_Bytes_Address(Some(block),MemOp.bytes__zero)
-					| _ -> Convert.lazy_constant_to_bytes constant
-				end
+					begin match constant with
+						| CStr(str) ->
+							let bytes = Convert.constant_to_bytes constant in
+							let block = MemOp.string_table__add bytes in
+							(state, make_Bytes_Address(Some(block),MemOp.bytes__zero))
+						| _ ->
+							(state, Convert.lazy_constant_to_bytes constant)
+					end
+
 			| Lval (cil_lval) ->
-					let lvals = lval state cil_lval in
+					let state, lvals = lval state cil_lval in
 					let size = (Cil.bitsSizeOf (Cil.typeOfLval cil_lval))/8 in
-					let rec get_bytes = function
+					let rec get_bytes state = function
 						| Lval_Block (block, offset) ->
 							MemOp.state__get_bytes_from_lval state (block, offset, size)
 						| Lval_May (indicator, lvals1, lvals2) ->
-							make_Bytes_MayBytes (indicator, get_bytes lvals1, get_bytes lvals2)
+							let state, bytes1 = get_bytes state lvals1 in
+							let state, bytes2 = get_bytes state lvals2 in
+							state, make_Bytes_MayBytes (indicator, bytes1, bytes2)
 						| Lval_IfThenElse (c, lvals1, lvals2) ->
-							make_Bytes_IfThenElse (c, get_bytes lvals1, get_bytes lvals2)
+							let state, bytes1 = get_bytes state lvals1 in
+							let state, bytes2 = get_bytes state lvals2 in
+							state, make_Bytes_IfThenElse (c, bytes1, bytes2)
 					in
-					get_bytes lvals
+					get_bytes state lvals
 					
 			|	SizeOf (typ) ->
 					let exp2 = Cil.sizeOf typ in
 					begin match exp2 with
-						| SizeOf(_) -> failwith ("Cannot determine sizeof("^(To_string.typ typ)^")")
-						| _ -> let bytes = rval state exp2 in
-								begin
-									match bytes with
-										| Bytes_Constant(CInt64(n,_,stropt)) ->
-											make_Bytes_Constant(CInt64(n,!kindOfSizeOf,stropt))
-										| b -> b
-								end
+						| SizeOf(_) ->
+							failwith ("Cannot determine sizeof("^(To_string.typ typ)^")")
+						| _ ->
+							let state, bytes = rval state exp2 in
+							begin match bytes with
+								| Bytes_Constant(CInt64(n,_,stropt)) ->
+									state, make_Bytes_Constant(CInt64(n,!kindOfSizeOf,stropt))
+								| b ->
+									state, b
+							end
 					end
 					
 			|	SizeOfE (exp2) ->
 					rval state (SizeOf (Cil.typeOf exp2))
 					
 			|	SizeOfStr (str) ->
-				let len = (String.length str)+1  in
-				let exp2 = Cil.integer len in
+					let len = (String.length str)+1  in
+					let exp2 = Cil.integer len in
 					rval state  exp2			
 					
 			|	AlignOf (typ) ->
@@ -61,10 +69,10 @@ rval state exp : bytes =
 			|	AddrOf (Var varinfo, _) when Cil.isFunctionType (varinfo.Cil.vtype) ->
 					let fundec = Cilutility.search_function varinfo in
 					let f_addr = MemOp.bytes__random Types.word__size in (* TODO: assign an addr for each function ptr *)
-					make_Bytes_FunPtr(fundec,f_addr)
+					(state, make_Bytes_FunPtr(fundec,f_addr))
 			|	AddrOf (cil_lval)
 			|	StartOf (cil_lval) ->
-					let lvals = lval state cil_lval in
+					let state, lvals = lval state cil_lval in
 					let rec get_addrof = function
 						| Lval_Block (block, offset) ->
 							make_Bytes_Address(Some(block), offset)
@@ -73,8 +81,10 @@ rval state exp : bytes =
 						| Lval_IfThenElse (c, lvals1, lvals2) ->
 							make_Bytes_IfThenElse (c, get_addrof lvals1, get_addrof lvals2)
 					in
-					get_addrof lvals
-			|	CastE (typ, exp2) -> rval_cast typ (rval state exp2) (Cil.typeOf exp2)
+					(state, get_addrof lvals)
+			|	CastE (typ, exp2) ->
+					let state, bytes = rval state exp2 in
+					(state, rval_cast typ bytes (Cil.typeOf exp2))
 	in
 	result
 	
@@ -86,10 +96,10 @@ rval_cast typ rv rvtyp =
 	match rv,typ with
 		(* optimize for casting among int family *)
 		| Bytes_Constant(CInt64(n,ikind,_)),TInt(new_ikind,_) -> 
-        begin match Cil.kinteger64 new_ikind n with
-            Const (const) -> make_Bytes_Constant(const)
-          | _ -> failwith "rval_cast, const: unreachable"
-        end						
+			begin match Cil.kinteger64 new_ikind n with
+			    Const (const) -> make_Bytes_Constant(const)
+			  | _ -> failwith "rval_cast, const: unreachable"
+			end						
 		(* optimize for casting among float family *)
 		| Bytes_Constant(CReal(f,fkind,s)),TFloat(new_fkind,_) -> 
 			let const = CReal(f,new_fkind,s) in
@@ -153,12 +163,12 @@ and
 lval state (lhost, offset_exp) = match lhost with
 	| Var(varinfo) ->
 		let block = MemOp.state__varinfo_to_block state varinfo in
-		let offset, _ = flatten_offset state varinfo.vtype offset_exp in
-		Lval_Block (block, offset)
+		let state, offset, _ = flatten_offset state varinfo.vtype offset_exp in
+		(state, Lval_Block (block, offset))
 	| Mem(exp) ->
-		let rv = rval state exp in
+		let state, rv = rval state exp in
 		let lvals = deref state rv in
-		let offset, _ = flatten_offset state (Cil.typeOf exp) offset_exp in
+		let state, offset, _ = flatten_offset state (Cil.typeOf exp) offset_exp in
 		let rec add_offset = function
 			| Lval_Block (block, offset2) ->
 				Lval_Block (block, Operation.plus [(offset,Cil.intType);(offset2,Cil.intType)])
@@ -167,7 +177,7 @@ lval state (lhost, offset_exp) = match lhost with
 			| Lval_IfThenElse (c, lvals1, lvals2) ->
 				Lval_IfThenElse (c, add_offset lvals1, add_offset lvals2)
 		in
-		add_offset lvals
+		(state, add_offset lvals)
 
 and
 
@@ -220,34 +230,38 @@ deref state bytes =
 and
 
 (* Assume index's ikind is IInt *)
-flatten_offset state lhost_typ offset : bytes * typ (* type of (lhost,offset) *) =
-  let (final_bytes,final_typ) = 
+flatten_offset state lhost_typ offset : state * bytes * typ (* type of (lhost,offset) *) =
+  let (state, final_bytes,final_typ) = 
 	match offset with
-		| NoOffset -> (MemOp.bytes__zero, lhost_typ) (* TODO: bytes__zero should be defined in Convert *)
+		| NoOffset -> (state, MemOp.bytes__zero, lhost_typ) (* TODO: bytes__zero should be defined in Convert *)
 		| _ -> 
-			let (index, base_typ, offset2) =
+			let (state, index, base_typ, offset2) =
 				begin match offset with
 					| Field(fieldinfo, offset2) ->
 							let n = field_offset fieldinfo in
 							let index = Convert.lazy_int_to_bytes n in
 							let base_typ = fieldinfo.ftype in
-							(index, base_typ, offset2)
+							(state, index, base_typ, offset2)
 					| Index(exp, offset2) ->
-							let rv0 = rval state exp in
-								(* TODO: right thing to do?*)
-              	let rv = if MemOp.bytes__length rv0 <> word__size then rval_cast Cil.intType rv0 (Cil.typeOf exp) else rv0 in
+							let state, rv0 = rval state exp in
+							(* TODO: right thing to do?*)
+							let rv =
+								if MemOp.bytes__length rv0 <> word__size
+								then rval_cast Cil.intType rv0 (Cil.typeOf exp)
+								else rv0
+							in
 							let typ = Cil.typeOf exp in
 							let base_typ = match Cilutility.unrollType lhost_typ with TArray(typ2, _, _) -> typ2 | _ -> failwith "Must be array" in
 							let base_size = (Cil.bitsSizeOf base_typ) / 8 in (* must be known *)
 							(* TODO: if typ is not IInt, should we change it to? *)
-							let (index) = Operation.mult [(Convert.lazy_int_to_bytes base_size,Cil.intType);(rv,typ)] in 
-							(index, base_typ, offset2)
+							let index = Operation.mult [(Convert.lazy_int_to_bytes base_size,Cil.intType);(rv,typ)] in 
+							(state, index, base_typ, offset2)
 					| _ -> failwith "Unreachable"
 				end
 			in
-				let (index2, base_typ2) = flatten_offset state base_typ offset2 in
-				let (index3) = Operation.plus [(index,Cil.intType);(index2,Cil.intType)] in
-					(index3, base_typ2)
+				let (state, index2, base_typ2) = flatten_offset state base_typ offset2 in
+				let index3 = Operation.plus [(index,Cil.intType);(index2,Cil.intType)] in
+					(state, index3, base_typ2)
   in
     (* if typ is not IInt, fix it!   <---- this is WRONG
     
@@ -255,7 +269,7 @@ flatten_offset state lhost_typ offset : bytes * typ (* type of (lhost,offset) *)
         (rval_cast Cil.intType final_bytes, Cil.intType)
     else
      *)
-        (final_bytes,final_typ)
+        (state, final_bytes,final_typ)
 
 and
 
@@ -281,25 +295,25 @@ field_offset f : int =
 and
 
 rval_unop state unop exp =
-	let rv = rval state exp in
+	let state, rv = rval state exp in
 	let typ = Cil.typeOf exp in
-	let (result) = Operation.run (Operation.of_unop unop) [(rv,typ)] in
-		result
+	let result = Operation.run (Operation.of_unop unop) [(rv,typ)] in
+	(state, result)
 
 and
 
 rval_binop state binop exp1 exp2 =
 	let op = (Operation.of_binop binop) in
-	let rv1 = rval state exp1 in
+	let state, rv1 = rval state exp1 in
 	let typ1 = Cil.typeOf exp1 in
 	(* shortcircuiting *)
 	if op == Operation.logand && Convert.isConcrete_bytes rv1 && Convert.bytes_to_bool rv1 = false then
-			Convert.lazy_int_to_bytes 0
+		(state, Convert.lazy_int_to_bytes 0)
 	else if op == Operation.logor && Convert.isConcrete_bytes rv1 && Convert.bytes_to_bool rv1 = true then
-			Convert.lazy_int_to_bytes 1
+		(state, Convert.lazy_int_to_bytes 1)
 	else 
-		let rv2 = rval state exp2 in
+		let state, rv2 = rval state exp2 in
 		let typ2 = Cil.typeOf exp2 in
-			Operation.run op [(rv1,typ1);(rv2,typ2)]
+		(state, Operation.run op [(rv1,typ1);(rv2,typ2)])
 ;;
 	

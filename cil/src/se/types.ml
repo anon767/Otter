@@ -209,14 +209,18 @@ type callingContext =
 	| NoReturn of Cil.instr
 ;;
 
-type state =
+
+type 'a deferred =
+	| Immediate of 'a
+	| Deferred of (state -> (state * 'a))
+and state =
 	{
 		global : memory_frame;				(* Map global lvals to blocks *)
 		formals : memory_frame list;		(* Map formal lvals to blocks *)
 		locals : memory_frame list;		(* Map local lvals to blocks *)
 		(*heap : memory_heap;						(* Map a 4-byte thing to block *)*)
 		callstack : Cil.fundec list;	(* Function call stack *)
-		block_to_bytes : bytes MemoryBlockMap.t;
+		block_to_bytes : bytes deferred MemoryBlockMap.t;
 		path_condition : bytes list;
 		path_condition_tracked : bool list;
 		callContexts : callingContext list;

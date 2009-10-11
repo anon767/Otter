@@ -50,52 +50,6 @@ let at_same_program_point job1 job2 =
 		false
 
 
-(* Transform an association list into a memory block map, preserving
- * only the *last* binding for each key.
- * Preserving the *first* instead (which is more natural for
- * association lists) could be accomplished by reversing [lst] in the
- * first call to [helper].
- * I currently don't reverse [lst] because I currently only call this
- * function on values of [lst] which have only one binding per key. *)
-let assoc_list_to_memory_block_map lst =
-	let rec helper acc = function
-			[] -> acc
-		| (a,b)::t ->
-				helper (MemoryBlockMap.add a b acc) t
-	in helper MemoryBlockMap.empty lst
-
-
-let cmp_memory blkToByt1 blkToByt2 =
-	(* Split the blocks in s1 into those which are in s2 but map to
-	 * different bytes, those which map to the same bytes in s2, and
-	 * those which are not in s2 at all. *)
-	let cmpSharedBlocks b2b1 b2b2 =
-		let f block bytes1 (diffShared,sameShared,in1ButNot2) =
-			try
-				let bytes2 = MemoryBlockMap.find block b2b2 in
-				if MemOp.diff_bytes bytes1 bytes2 then
-					((block,bytes1,bytes2) :: diffShared, sameShared, in1ButNot2)
-				else
-					(diffShared, (block,bytes1) :: sameShared, in1ButNot2)
-			with Not_found -> (diffShared, sameShared, (block,bytes1) :: in1ButNot2)
-		in
-		MemoryBlockMap.fold f b2b1 ([],[],[])
-	in
-	let sharedBlockDiffs,sharedBlockSames,blocksIn1ButNot2 =
-		cmpSharedBlocks blkToByt1 blkToByt2 in
-
-	(* List blocks (memory allocations) that are in s2 but not in s1 *)
-	let cmpUnsharedBlocks b2b1 b2b2 =
-		let h b2b block bytes listOfDiffs =
-			if MemoryBlockMap.mem block b2b then listOfDiffs else
-			(block,bytes) :: listOfDiffs
-		in
-		MemoryBlockMap.fold (h b2b1) b2b2 []
-	in
-	let blocksIn2ButNot1 = cmpUnsharedBlocks blkToByt1 blkToByt2 in
-	sharedBlockDiffs,sharedBlockSames,blocksIn1ButNot2,blocksIn2ButNot1
-
-
 exception TooDifferent
 
 
@@ -121,51 +75,38 @@ let try_merge job other =
 					let combined_pc = make_Bytes_Op(OP_LOR, [ (job_pc_bytes, Cil.intType); (other_pc_bytes, Cil.intType) ]) in
 					combined_pc::common_pc
 			in
-			(* I'm assuming [j.state.locals == job.state.locals] for now
-				(due to the implementation of atSameProgramPoint),
-				so the varinfos always map to the same blocks. This means I
-				only need to mess with the [block_to_bytes]---I can leave
-				[locals] alone. *)
-			let diffShared,sameShared,inJobOnly,inOtherOnly =
-				cmp_memory job.state.block_to_bytes other.state.block_to_bytes in
-			let merged_memory = if diffShared = [] then begin
-				(* The memory is identical in [j] and [job] *)
-				if not (inJobOnly = [] && inOtherOnly = []) then
-					failwith "there might be a memory leak";
-				Output.printf "Merging jobs %d and %d (identical memory)\n" job.jid other.jid;
-				job.state.block_to_bytes
-			end else begin
-				(* We have to fiddle with memory *)
-				(* TODO: do we still want to have a limit on number of blocks merged? Should benchmark the burden
-				 *       on STP using the MayBytes/Morris encoding. *)
-				let numSymbolsCreated = ref 0 in
-				let newSharedBlocks =
-					(* Make a new symbolic bytes for each differing block *)
-					List.map
-						(fun (block,jobBytes,otherBytes) ->
-							let size = MemOp.bytes__length jobBytes in (* or should I just check block.memory_block_size? *)
-							if size <> MemOp.bytes__length otherBytes then (
-								Output.printf "Unimplemented: merging bytes with different lengths\n";
-								raise TooDifferent
-							) else (
-								numSymbolsCreated := !numSymbolsCreated + size;
-								if !numSymbolsCreated > 100 then raise TooDifferent;
-								let symbBytes = make_Bytes_IfThenElse (job_pc_bytes, jobBytes, otherBytes) in
-								(block, symbBytes)
-							)
-						)
-						diffShared
-				in
-				let mergedMemory =
-					(* I think it's safe (if not optimal) to keep both
-						[inJOnly] and [inJobOnly] because [j]'s memory will be
-						unreachable from [job]'s path and vice versa. *)
-					assoc_list_to_memory_block_map
-						(List.concat [newSharedBlocks; sameShared; inJobOnly; inOtherOnly])
-				in
-				Output.printf "Merging jobs %d and %d (differing memory)\n" job.jid other.jid;
-				mergedMemory
-			end in
+
+			(* TODO: do we want to have a limit on number of blocks merged? Should benchmark the burden
+			 *       on STP using the MayBytes/Morris encoding. *)
+			let merged_count = ref 0 in
+			let merged_memory = MemoryBlockMap.map2 begin function
+				| MemoryBlockMap.Both (deferred1, deferred2) ->
+					begin match deferred1, deferred2 with
+						| deferred1, deferred2 when deferred1 == deferred2 ->
+							deferred1
+						| Immediate bytes1, Immediate bytes2 when MemOp.same_bytes bytes1 bytes2 ->
+							deferred1
+						| deferred1, deferred2 ->
+							merged_count := !merged_count + 1;
+							if !merged_count > 100 then raise TooDifferent;
+							Deferred begin fun state ->
+								let state, bytes1 = MemOp.state__force state deferred1 in
+								let state, bytes2 = MemOp.state__force state deferred2 in
+								(* TODO: can bytes1 and bytes2 ever have different length? Aren't they supposed to
+								 *       have the size declared in the block? *)
+								assert (MemOp.bytes__length bytes1 == MemOp.bytes__length bytes2);
+								(* only job_pc_bytes, since NOT job_pc_bytes implies other_pc_bytes due to the added
+								 * path condition above *)
+								(state, make_Bytes_IfThenElse (job_pc_bytes, bytes1, bytes2))
+							end
+					end
+				| MemoryBlockMap.Left deferred
+				| MemoryBlockMap.Right deferred ->
+					deferred
+			end job.state.block_to_bytes other.state.block_to_bytes in
+
+			Output.printf "Merging jobs %d and %d (%s memory) \n"
+				job.jid other.jid (if !merged_count = 0 then "identical" else "differing");
 
 			(* This is a pretty stupid way of getting complete coverage information with
 			 * merging, but it's something. It only credits a merged execution
@@ -241,7 +182,7 @@ let merge_job job merge_set =
 					()
 		end merge_set;
 		(* Reaching here means we've iterated through all jobs, never being able to merge; so we add it to the
-         * merge_set. *)
+		 * merge_set. *)
 		(None, JobSet.add job merge_set)
 	with MergeDone x ->
 		x
