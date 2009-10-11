@@ -20,28 +20,28 @@ module Interpreter (S : Config.BlockConfig) = struct
     let call dispatch file job k =
         Format.eprintf "Evaluating symbolic block...@.";
 
-        let rec symbolic_loop completed job job_pool =
+        let rec symbolic_loop completed job job_queue =
 
             let complete_job result =
                 (* store the result and pick another job to continue, if available *)
                 let completed = result::completed in
-                match Driver.pick_job job_pool with
-                    | Some (job, job_pool) ->
-                        symbolic_loop completed job job_pool
-                    | None ->
+                match job_queue with
+                    | job::job_queue ->
+                        symbolic_loop completed job job_queue
+                    | [] ->
                         k completed
             in
 
             if S.should_enter_block (List.hd job.Types.state.Types.callstack).Cil.svar.Cil.vattr then begin
                 (* execute this function *)
 
-                let state, job_pool = Driver.step_job job job_pool in
+                let state = Driver.step_job job in
                 begin match state with
                     | Types.Active job ->
-                        symbolic_loop completed job job_pool
+                        symbolic_loop completed job job_queue
                     | Types.Fork (j1, j2) ->
-                        let job_pool = Driver.queue_job j1 job_pool in (* queue the true branch *)
-                        symbolic_loop completed j2 job_pool (* continue the false branch *)
+                        let job_queue = j1::job_queue in (* queue the true branch *)
+                        symbolic_loop completed j2 job_queue (* continue the false branch *)
                     | Types.Complete result ->
                         complete_job result
                 end
@@ -71,7 +71,7 @@ module Interpreter (S : Config.BlockConfig) = struct
                                     Types.stmt=nextstmt;
                                     Types.exHist=history;
                                     (* TODO: update inTrackFn and coverage? *)
-                                } job_pool
+                                } job_queue
 
                             | Types.NoReturn _ ->
                                 failwith "TODO: handle return from @noreturn"
@@ -82,7 +82,7 @@ module Interpreter (S : Config.BlockConfig) = struct
                 dispatch (`SymbolicBlock (file, job, completion))
             end
         in
-        symbolic_loop [] job ([], Types.JobSet.empty)
+        symbolic_loop [] job []
 
 
     let exec file args =
