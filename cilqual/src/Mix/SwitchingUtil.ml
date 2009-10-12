@@ -37,12 +37,13 @@ let drop_qt = function
 
 
 (** Convert a qualified type to symbolic value.
+    @param expState     the CilQual monad state
     @param solution     the qualifier constraints solution
     @param state        the symbolic execution state
     @param block_type   the symbolic memory block type to create pointers as
     @param typ          the corresponding C type of the qualified type
     @param qt           the qualified type to convert
-    @return [(state, bytes)]{i monad} the updated symbolic execution state and the converted result in the CilQual monad
+    @return [(state, bytes)] the updated symbolic execution state and the converted result
 *)
 let qt_to_bytes expState solution state block_type typ qt =
 
@@ -110,11 +111,12 @@ let qt_to_bytes expState solution state block_type typ qt =
 
 (** Re-initialize a symbolic memory frame by coverting all corresponding qualified types to new symbolic values in the
     the symbolic state.
+    @param expState     the CilQual monad state
     @param solution     the qualifier constraints solution
     @param state        the symbolic execution state
     @param frame        the symbolic memory frame to re-initialize
     @param block_type   the symbolic memory block type to create pointers as
-    @return [state]{i monad} the updated symbolic execution state in the CilQual monad
+    @return [state]     the updated symbolic execution state
 *)
 let frame_qt_to_bytes expState solution state frame block_type =
     Types.VarinfoMap.fold begin fun v block state ->
