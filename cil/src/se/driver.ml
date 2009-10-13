@@ -888,24 +888,6 @@ let printJob (state,stmt) =
 *)
 
 
-(* pick a job from the job_pool *)
-let pick_job (job_queue, merge_set) =
-	(* pick either from the job_queue, or from the merge_set *)
-	match job_queue with
-		| job::job_queue ->
-			Some (job, (job_queue, merge_set))
-		| [] ->
-			try let job = JobSet.choose merge_set in
-				let merge_set = JobSet.remove job merge_set in
-				Some (job, ([], merge_set))
-			with Not_found ->
-				None
-
-(* queue a job into the job_pool *)
-let queue_job job (job_queue, merge_set) =
-	(job::job_queue, merge_set)
-
-
 let setRunningJob job =
 	if !Output.runningJobId <> job.jid then (
 		Output.set_mode Output.MSG_REG;
@@ -940,20 +922,10 @@ let at_merge_point job =
 		job.mergePoints
 
 
-let merge_or_step_job job (job_queue, merge_set) =
-	if run_args.arg_merge_paths
-			&& at_merge_point job
-			&& not (job_queue = [] && JobSet.is_empty merge_set) then
-		let result, merge_set = merge_job job merge_set in
-		(result, (job_queue, merge_set))
-	else
-		(Some (step_job job), (job_queue, merge_set))
-
-
 let main_loop job =
 	Random.init 226; (* TODO: move random into some local state *)
 
-	let rec main_loop completed job job_pool =
+	let rec main_loop completed job_pool =
 		match !signalStringOpt with
 			| Some s ->
 				(* if we got a signal, stop and return the completed results *)
@@ -961,51 +933,63 @@ let main_loop job =
 				Output.print_endline s;
 				completed
 			| None ->
-				let result, (job_queue, merge_set as job_pool) = merge_or_step_job job job_pool in
-				begin match result with
-					| Some (Active job) ->
-						main_loop completed job job_pool
-					| Some (Fork (j1, j2)) ->
-						let job_pool = queue_job j1 job_pool in (* queue the true branch *)
-						main_loop completed j2 job_pool (* continue the false branch *)
-					| Some (Complete completion) ->
-						(* log some interesting errors *)
-						begin match completion with
-							| Types.Abandoned (msg, loc, { result_state=state; result_history=hist }) ->
-								Output.set_mode Output.MSG_MUSTPRINT;
-								Output.printf "Error \"%s\" occurs at %s\n%sAbandoning path\n"
-									msg (To_string.location loc)
-                                    (if Executeargs.print_args.arg_print_callstack then
-                                        "Call stack:\n"^
-								       (To_string.callstack state.callContexts)
-                                    else ""
-                                    )
-                                    ;
-(*
-								if run_args.arg_line_coverage then (
-									Report.printPath state hist;
-									Report.printLines hist.coveredLines
-								)
-								Output.set_mode Output.MSG_REG;
-								Output.printf "Path condition: %s\n"
-									(To_string.humanReadablePc state.path_condition hist.bytesToVars)
-*)
-							| _ ->
-								()
-						end;
-						next_job (completion::completed) job_pool
-					| None ->
-						next_job completed job_pool
+				begin match job_pool with
+					| job::job_queue, merge_set when run_args.arg_merge_paths && at_merge_point job ->
+						(* job is at a merge point and merging is enabled: try to merge it *)
+						begin match merge_job job merge_set with
+							| Some (merge_set, truncated) ->
+								(* merge was successful: process the result and continue *)
+								process_result completed (job_queue, merge_set) truncated
+							| None ->
+								(* merge was unsuccessful: keep the job at the merge point in the merge set in case
+								 * later jobs can merge; this leads to the invariant that no jobs in the merge set
+								 * can merge with each other *)
+								main_loop completed (job_queue, JobSet.add job merge_set)
+						end
+					| job::job_queue, merge_set ->
+						(* job is not at a merge point or merging is disabled: step the job *)
+						process_result completed (job_queue, merge_set) (step_job job)
+					| [], merge_set when not (JobSet.is_empty merge_set) ->
+						(* job queue is empty: take a job out of the merge set and step it, since it cannot merge
+                         * with any other jobs in the merge set (the merge set invariant) *)
+						let job = JobSet.choose merge_set in
+						process_result completed ([], JobSet.remove job merge_set) (step_job job)
+					| [], _ ->
+						Output.set_mode Output.MSG_MUSTPRINT;
+						Output.print_endline "Done executing";
+						completed
 				end
-	and next_job completed job_pool =
-		(* pick another job to continue, if available *)
-		match pick_job job_pool with
-			| Some (job, job_pool) ->
-				main_loop completed job job_pool
-			| None ->
-				Output.set_mode Output.MSG_MUSTPRINT;
-				Output.print_endline "Done executing";
-				completed
+
+	and process_result completed (job_queue, merge_set as job_pool) = function
+		| Active job ->
+			main_loop completed (job::job_queue, merge_set)
+		| Fork (j1, j2) ->
+			(* queue the true branch and continue the false branch *)
+			main_loop completed (j2::j1::job_queue, merge_set)
+		| Complete completion ->
+			(* log some interesting errors *)
+			begin match completion with
+				| Types.Abandoned (msg, loc, { result_state=state; result_history=hist }) ->
+					Output.set_mode Output.MSG_MUSTPRINT;
+					Output.printf "Error \"%s\" occurs at %s\n%sAbandoning path\n"
+						msg (To_string.location loc)
+						(if Executeargs.print_args.arg_print_callstack then
+							"Call stack:\n"^(To_string.callstack state.callContexts)
+						else
+							"");
+(*
+						if run_args.arg_line_coverage then (
+							Report.printPath state hist;
+							Report.printLines hist.coveredLines
+						)
+						Output.set_mode Output.MSG_REG;
+						Output.printf "Path condition: %s\n"
+							(To_string.humanReadablePc state.path_condition hist.bytesToVars)
+*)
+				| _ ->
+					()
+			end;
+			main_loop (completion::completed) job_pool
 	in
-	main_loop [] job ([], JobSet.empty)
+	main_loop [] (job::[], JobSet.empty)
 

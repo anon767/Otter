@@ -163,12 +163,12 @@ let try_merge job other =
 		None
 
 
-(* MergeDone contains the truncated job result if merging was successful, and the updated merge set. *)
-exception MergeDone of (job_state option * JobSet.t)
+(* MergeDone contains the updated merge set and the truncated job result. *)
+exception MergeDone of (JobSet.t * job_state)
 
 
-(* Merge a job with another job in a merge set. If the merge is successful, return the truncated job result and the
- * updated merge set; otherwise, just put the job into the merge set. *)
+(* Merge a job with another job in a merge set. If the merge is successful, return the updated merge set and the
+ * truncated job result; otherwise, return None. *)
 let merge_job job merge_set =
 	try
 		(* try to merge with some job in the merge_set *)
@@ -177,13 +177,12 @@ let merge_job job merge_set =
 				| Some (truncated, merged) ->
 					(* Remove the old job and add the merged job *)
 					let merge_set = JobSet.add merged (JobSet.remove other merge_set) in
-					raise (MergeDone (Some truncated, merge_set))
+					raise (MergeDone (merge_set, truncated))
 				| None ->
 					()
 		end merge_set;
-		(* Reaching here means we've iterated through all jobs, never being able to merge; so we add it to the
-		 * merge_set. *)
-		(None, JobSet.add job merge_set)
+		(* Reaching here means we've iterated through all jobs, never being able to merge *)
+		None
 	with MergeDone x ->
-		x
+		Some x
 
