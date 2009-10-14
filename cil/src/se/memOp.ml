@@ -461,8 +461,8 @@ let state__varinfo_to_block state varinfo =
 		failwith ("Varinfo "^(varinfo.vname)^" not found.")
 ;;
 
-let state__assign state (lvals, size) bytes = (* have problem *)
-	let rec assign count state indicator = function
+let rec state__assign state (lvals, size) bytes = (* have problem *)
+	let rec assign count state indicator condition = function
 		| Lval_Block (block, offset) ->
 			(* TODO: provide some way to report partial error *)
 			if block.memory_block_type == Block_type_StringLiteral then
@@ -480,7 +480,10 @@ let state__assign state (lvals, size) bytes = (* have problem *)
 					else		*)
 				match indicator with
 					| None ->
-						Some newbytes
+                        begin match condition with
+                          | None -> Some newbytes
+                          | Some c -> Some (make_Bytes_IfThenElse ( c, newbytes, oldbytes ))
+                        end
 					| Some i ->
 						begin match Stp.query_indicator state.path_condition i with
 							| Stp.True -> Some newbytes
@@ -503,14 +506,16 @@ let state__assign state (lvals, size) bytes = (* have problem *)
 				| None   -> (j, Indicator_Not j)
 				| Some i -> (Indicator_And (i, j), Indicator_And (i, Indicator_Not j))
 			end in
-			let count, state = assign count state (Some ts) tlvals in
-			let count, state = assign count state (Some fs) flvals in
+			let count, state = assign count state (Some ts) None tlvals in
+			let count, state = assign count state (Some fs) None flvals in
 			(count, state)
         | Lval_IfThenElse (c,tlvals,flvals) ->
-            (* TODO: if c is unknown, has to branch *)
-            failwith "state__assign: assigning values to Lval_IfThenElse: not implemented"
+            (* "Morris axiom" *)
+			let count,state = assign count state None (Some c)        tlvals in
+			let count,state = assign count state None (Some (Operation.lnot [(c,Cil.intType)])) flvals in (* typ doesn't matter *)
+              (count,state)
 	in
-	let count, state = assign 0 state None lvals in
+	let count, state = assign 0 state None None lvals in
 	assert (count > 0);
 	state
 ;;
