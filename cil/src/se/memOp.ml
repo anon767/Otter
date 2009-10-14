@@ -371,6 +371,10 @@ let string_table__get block =
 	MemoryBlockMap.find block (!string_table)
 ;;
 
+let string_table__mem block =
+	MemoryBlockMap.mem block (!string_table)
+;;
+
 (** Vargs table
  *)
 let vargs_table__add state byteslst : state*bytes =
@@ -432,6 +436,13 @@ let state__force state = function
 	| Deferred f -> f state
 ;;
 
+let state__has_block state block =
+	if block.memory_block_type == Block_type_StringLiteral then
+		string_table__mem block
+	else
+		MemoryBlockMap.mem block state.block_to_bytes
+;;
+
 let state__add_global state varinfo init = 
 	let size = (Cil.bitsSizeOf varinfo.vtype) / 8 in
 	let	block =
@@ -459,6 +470,25 @@ let state__varinfo_to_block state varinfo =
 		frame__varinfo_to_block global varinfo
 	else (* varinfo may be a function *)
 		failwith ("Varinfo "^(varinfo.vname)^" not found.")
+;;
+
+let state__get_bytes_from_block state block =
+	if block.memory_block_type == Block_type_StringLiteral then
+		(state, string_table__get block)
+	else
+		state__force state (MemoryBlockMap.find block state.block_to_bytes)
+;;
+
+let state__get_deferred_from_block state block =
+	if block.memory_block_type == Block_type_StringLiteral then
+		Immediate (string_table__get block)
+	else
+		MemoryBlockMap.find block state.block_to_bytes
+;;
+
+let state__get_bytes_from_lval state (block, offset, size) =
+	let state, source = state__get_bytes_from_block state block in
+	(state, bytes__read source offset size)
 ;;
 
 let rec state__assign state (lvals, size) bytes = (* have problem *)
@@ -567,25 +597,6 @@ let state__end_fcall state =
 ;;
 
 let state__get_callContext state = List.hd state.callContexts;;
-
-let state__get_bytes_from_block state block =
-	if block.memory_block_type == Block_type_StringLiteral then
-		(state, string_table__get block)
-	else
-		state__force state (MemoryBlockMap.find block state.block_to_bytes) 
-;;
-
-let state__get_deferred_from_block state block =
-	if block.memory_block_type == Block_type_StringLiteral then
-		Immediate (string_table__get block)
-	else
-		MemoryBlockMap.find block state.block_to_bytes 
-;;	
-
-let state__get_bytes_from_lval state (block, offset, size) =
-	let state, source = state__get_bytes_from_block state block in
-	(state, bytes__read source offset size)
-;;
 
 let state__add_path_condition state bytes tracked=
 	{ state with

@@ -205,7 +205,10 @@ deref state bytes =
               | _::pc' -> find_match pc'
             in
               find_match state.path_condition
-		| Bytes_Address(Some(block), offset) -> Lval_Block (block, offset) 
+		| Bytes_Address(Some(block), offset) ->
+			if MemOp.state__has_block state block
+			then Lval_Block (block, offset)
+			else failwith "Dereference into an expired stack frame"
 		| Bytes_Address(None, offset) -> failwith "Dereference a dangling pointer"
 		| Bytes_MayBytes (indicator, bytes1, bytes2) ->
 			(* TODO: update the pointer after the below pruning *)
