@@ -156,6 +156,16 @@ let rec bytes__read bytes off len =
 					newbytes (* being a bit tricky... *)
 				else (* CAUTION: assume [off2,len2] and [off,len] don't overlap.  *)
 					worst_case
+           (* TODO: abstract the unfolding of MayBytes/IfThenElse at similar
+            * places *)
+            | Bytes_IfThenElse(c,e1,e2),_ ->
+                make_Bytes_IfThenElse(c,bytes__read (e1) (off) len,bytes__read (e2) (off) len)
+            | _,Bytes_IfThenElse(c,e1,e2) ->
+                make_Bytes_IfThenElse(c,bytes__read (bytes) (e1) len,bytes__read (bytes) (e2) len)
+            | Bytes_MayBytes(ind,e1,e2),_ ->
+                make_Bytes_MayBytes(ind,bytes__read (e1) (off) len,bytes__read (e2) (off) len)
+            | _,Bytes_MayBytes(ind,e1,e2) ->
+            make_Bytes_MayBytes(ind,bytes__read (bytes) (e1) len,bytes__read (bytes) (e2) len)
 			| _ -> worst_case
 		end
 		in
@@ -227,6 +237,20 @@ let bytes__write bytes off len newbytes =
 				 a Bytes_Constant int to it). *)
 			| Bytes_Constant c,_,_ ->
 					do_write (Convert.constant_to_bytes c) off len newbytes
+
+
+
+           (* TODO: abstract the unfolding of MayBytes/IfThenElse at similar
+            * places *)
+            | Bytes_IfThenElse(c,e1,e2),_ ,_ ->
+                make_Bytes_IfThenElse(c,do_write (e1) (off) len newbytes,do_write (e2) (off) len newbytes)
+            | _,Bytes_IfThenElse(c,e1,e2) ,_ ->
+                make_Bytes_IfThenElse(c,do_write (bytes) (e1) len newbytes,do_write (bytes) (e2) len newbytes)
+            | Bytes_MayBytes(ind,e1,e2),_ ,_ ->
+                make_Bytes_MayBytes(ind,do_write (e1) (off) len newbytes,do_write (e2) (off) len newbytes)
+            | _,Bytes_MayBytes(ind,e1,e2) ,_ ->
+            make_Bytes_MayBytes(ind,do_write (bytes) (e1) len newbytes,do_write (bytes) (e2) len newbytes)
+
 
 			| _ -> make_Bytes_Write (bytes,off,len,newbytes)
 	in
