@@ -26,6 +26,14 @@ type operator =
 	| OP_LNOT
 ;;
 
+(** Does the operator return a boolean value (i.e., 0 or 1)? *)
+let returnsBoolean = function
+	| OP_LT | OP_GE
+	| OP_GT | OP_LE
+	| OP_EQ | OP_NE
+	| OP_LNOT | OP_LAND | OP_LOR -> true
+	| _ -> false
+
 
 type symbol =	
 	{ 
@@ -144,6 +152,31 @@ and
 make_Bytes_FunPtr ( f , bs ) =
 	hash_consing_bytes_create (Bytes_FunPtr ( f , bs ))
 ;;
+
+(** Is a bytes 0, 1, or an expression that must be 0 or 1? *)
+let isBoolean = function
+	| Bytes_Op(op,_) when returnsBoolean op -> true
+	| Bytes_Constant (Cil.CInt64 ((0L|1L),_,_)) -> true
+	(* Is it worth testing for a Bytes_ByteArray representing 0 or 1? *)
+	| _ -> false
+
+(** Returns a bytes equivalent to !!x, but only adds the double negation if
+	necessary to ensure a boolean value. *)
+let asBoolean bytes =
+	if isBoolean bytes
+	then bytes (* bytes is already boolean-valued *)
+	(* The result of a '!' is an int [Standard 6.5.3.3.5]; hence, the
+		[Cil.intType] below. The [Cil.voidType] is there just as a
+		placeholder, because LNOT doesn't actually care about its
+		argument's type. Actually, this means that we don't really need
+		the intType at all; we could be use voidType in both places. *)
+	else make_Bytes_Op(OP_LNOT,[(make_Bytes_Op(OP_LNOT,[(bytes,Cil.voidType)]),Cil.intType)])
+
+(** Remove a NOT from a bytes, if doing so leaves it boolean. Otherwise, add a
+	NOT. *)
+let logicalNot = function
+		Bytes_Op(OP_LNOT,[bytes,_]) when isBoolean bytes -> bytes
+	| bytes -> make_Bytes_Op(OP_LNOT,[(bytes, Cil.intType)])
 
 
 (* A single global byte representing uninitialized memory *)

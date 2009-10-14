@@ -16,12 +16,6 @@ let eval_with_cache state pc bytes =
           else (truth,state)
    *)
 
-(** Remove a NOT from a bytes, or add one. The type of the bytes may
-		be lost. *)
-let logicalNegateBytes = function
-		Bytes_Op(OP_LNOT,[bytes,_]) -> bytes
-	| bytes -> make_Bytes_Op(OP_LNOT,[(bytes, Cil.intType)])
-
 let stmtInfo_of_job job =
 	{ siFuncName = (List.hd job.state.callstack).svar.vname;
 		siStmt = Cilutility.stmtAtEndOfBlock job.stmt; }
@@ -817,7 +811,7 @@ let exec_stmt job =
 							Output.print_endline "Unknown\n";
 							
 							let nextStateT,nextStmtT = try_branch (Some rv) block1 in
-							let nextStateF,nextStmtF = try_branch (Some (logicalNegateBytes rv)) block2 in
+							let nextStateF,nextStmtF = try_branch (Some (logicalNot rv)) block2 in
 
 							let job' = 
 								if run_args.arg_merge_paths then (

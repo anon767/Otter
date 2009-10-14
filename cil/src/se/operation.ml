@@ -76,13 +76,6 @@ let lnot operands = (* should return int (32-bit) *)
 	unop op_conc OP_LNOT operands ;;
 
 
-let returnsInt op = match op with	
-	| OP_LT	| OP_GT
-	| OP_LE	| OP_GE
-	| OP_EQ	| OP_NE
-	| OP_LAND | OP_LOR -> true
-	| _ -> false
-
 (* TODO: each op must also have typ of par as arg.
 
  *)
@@ -94,18 +87,19 @@ let rec binop op_const op_symb operands : bytes (* * typ *)=
 	(* Maybe an error of ocaml: if ibytes? is replaced by bytes?, the scoping is messed up *)	
 	let rec impl (ibytes1,ibytes2) =
 	match (ibytes1, ibytes2) with
+		(* TODO: Use typ1 and typ2 instead of k1 and k2 *)
 		| (Bytes_Constant(CInt64(i1, k1, _)), Bytes_Constant(CInt64(i2, k2, _))) ->
 				let isSigned = 	if Cil.isSigned k1 <> Cil.isSigned k2 then true else Cil.isSigned k1 in
 				let n64 = op_const isSigned i1 i2 in
 				let (n64,_) = Cil.truncateInteger64 k1 n64 in
-				(* The type (Cil.ikind) of the result is int (IInt) if the
-					 operation is <, >, <=, >=, ==, !=, &&, or ||.
-					 Otherwise, the result's type is that of the first operand,
+				(* Some operators always result in ints---namely, relational, equality,
+					 and logical operators. For the others, the result's type is that of
+					 the first operand,
 					 either because both operands have the same type (and the
 					 result should have that type, too), or because this is a
 					 shift operation.
 					 (See 6.3.1.8.1 and much of 6.5 in the Standard.) *)
-				let resultType = if returnsInt op_symb then IInt else k1 in
+				let resultType = if returnsBoolean op_symb then IInt else k1 in
 				let const = CInt64(n64, resultType, None) in
 				(make_Bytes_Constant(const))
 		(* Allow a particular piece of pointer arithmetic: ptr % num. *)
@@ -129,7 +123,7 @@ let rec binop op_const op_symb operands : bytes (* * typ *)=
 
 		| (b1,b2)  ->
 			if not (Convert.isConcrete_bytes b1 & Convert.isConcrete_bytes b2) then
-				(make_Bytes_Op(op_symb, operands)) (* TODO: Check that STP treats make_Bytes_Ops as having the type of the first operand *)
+				(make_Bytes_Op(op_symb, operands)) (* TODO: Check that STP treats Bytes_Ops as having the type of the first operand *)
 			else
 			let c1 = Convert.bytes_to_constant b1 typ1 in (*TODO: look at typ1 to see if it's unsigned *)
 			let c2 = Convert.bytes_to_constant b2 typ2 in

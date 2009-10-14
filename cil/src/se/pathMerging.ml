@@ -18,7 +18,7 @@ let split_out_common_suffix l1 l2 =
 
 let pc_to_bytes = function
 	| [] -> failwith "pcToAND"
-	| [h] -> h
+	| [h] -> asBoolean h
 	| pc -> make_Bytes_Op(OP_LAND, List.map (fun b -> (b,Cil.intType)) pc)
 
 
@@ -65,8 +65,11 @@ let try_merge job other =
 
 			let merged_pc = match job_pc, other_pc with
 				| [byts],[Bytes_Op(OP_LNOT,[(byts',_)])]
-				| [Bytes_Op(OP_LNOT,[(byts',_)])],[byts] when byts == byts' ->
-					(* Optimize the common case of P \/ ~P *)
+				| [Bytes_Op(OP_LNOT,[(byts',_)])],[byts] when compare byts byts' = 0 ->
+					(* Optimize the common case of P \/ ~P. Use compare x y = 0 (instead
+							of x = y) to get short-circuiting in case of physical equality.
+							(See
+http://caml.inria.fr/pub/ml-archives/caml-list/2009/08/323bd4f55773e4a230d481aecce58770.en.html ) *)
 					common_pc
 				| _ ->
 					(* General case: either one condition or the other is
