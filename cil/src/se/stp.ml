@@ -61,17 +61,15 @@ let rec allSymbols = function
 				| Some memBlock ->
 						SymbolSet.union partialAnswer (allSymbols memBlock.memory_block_addr)
 		)
-	| Bytes_MayBytes (_, bytes1, bytes2) ->
-			SymbolSet.union (allSymbols bytes1) (allSymbols bytes2)
-	| Bytes_IfThenElse (_, bytes1, bytes2) ->
-			SymbolSet.union (allSymbols bytes1) (allSymbols bytes2)
 	| Bytes_Op (_,bytes_typ_list) ->
 			List.fold_left
 				(fun symbSet (b,_) -> SymbolSet.union symbSet (allSymbols b))
 				SymbolSet.empty
 				bytes_typ_list
+	| Bytes_MayBytes (_, bytes1, bytes2)
 	| Bytes_Read (bytes1,bytes2,_) ->
 			SymbolSet.union (allSymbols bytes1) (allSymbols bytes2)
+	| Bytes_IfThenElse (bytes1, bytes2, bytes3)
 	| Bytes_Write (bytes1,bytes2,_,bytes3) ->
 			SymbolSet.union
 				(allSymbols bytes3)

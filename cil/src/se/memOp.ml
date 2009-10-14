@@ -159,7 +159,7 @@ let rec bytes__read bytes off len =
 			| _ -> worst_case
 		end
 		in
-		(* try to inflate any Bytes_ByteArray of make_Byte_Bytes *)
+		(* try to inflate any Bytes_ByteArray of Byte_Bytes *)
 		match ret_bytes with
 			| Bytes_ByteArray(bytearray) ->
 					begin match ImmutableArray.get bytearray 0 with
@@ -218,13 +218,13 @@ let bytes__write bytes off len newbytes =
 					do_write bytes (make_Bytes_Constant(n_off)) len newbytes
 
 			(* Without this next case, writing to a constant would introduce
-				 a Bytes_Write. Aside from not wanting a make_Bytes_Write if we can
+				 a Bytes_Write. Aside from not wanting a Bytes_Write if we can
 				 avoid it (for example, writing a concrete byte to the first
 				 byte of a concrete int), this could cause problems. The
 				 potential problem has to do with writing past the end of an
-				 array that is represented as a make_Bytes_Constant (which could
-				 exist if, for example, you have a 4-byte make_ByteArray and write
-				 a make_Bytes_Constant int to it). *)
+				 array that is represented as a Bytes_Constant (which could
+				 exist if, for example, you have a 4-byte ByteArray and write
+				 a Bytes_Constant int to it). *)
 			| Bytes_Constant c,_,_ ->
 					do_write (Convert.constant_to_bytes c) off len newbytes
 
