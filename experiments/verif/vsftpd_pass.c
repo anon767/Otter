@@ -18,7 +18,7 @@ int main(){
  init_state();
 
  __CURRENT_STATE(0);
- handle_pass_command(&sess);
+ handle_logged_in_pass(&sess);
  __CURRENT_STATE(1);
 
  __COMPARE_STATE(0,1);
