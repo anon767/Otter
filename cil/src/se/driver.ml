@@ -604,10 +604,11 @@ let exec_instr job =
 	match instr with
 		| Set(lval,exp,loc) ->
 			printInstr instr;
-			let state, lvals = Eval.lval job.state lval in
+            let state = job.state in
+			let state, lvals = Eval.lval state lval in
 			let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
-			let state, rv = Eval.rval job.state exp in
-			let state = MemOp.state__assign job.state (lvals,size) rv in
+			let state, rv = Eval.rval state exp in
+			let state = MemOp.state__assign state (lvals,size) rv in
 			let nextStmt = if tail = [] then List.hd job.stmt.succs else job.stmt in
 			Active { job with state = state; stmt = nextStmt }
 		| Call(lvalopt, fexp, exps, loc) ->
