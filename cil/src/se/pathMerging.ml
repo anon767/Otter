@@ -82,17 +82,17 @@ http://caml.inria.fr/pub/ml-archives/caml-list/2009/08/323bd4f55773e4a230d481aec
 			(* TODO: do we want to have a limit on number of blocks merged? Should benchmark the burden
 			 *       on STP using the MayBytes/Morris encoding. *)
 			let merged_count = ref 0 in
-			let merged_memory = MemoryBlockMap.map2 begin function
+			let merged_memory = MemoryBlockMap.fold2 begin fun block deferreds merged_memory -> match deferreds with
 				| MemoryBlockMap.Both (deferred1, deferred2) ->
 					begin match deferred1, deferred2 with
 						| deferred1, deferred2 when deferred1 == deferred2 ->
-							deferred1
+							merged_memory
 						| Immediate bytes1, Immediate bytes2 when MemOp.same_bytes bytes1 bytes2 ->
-							deferred1
+							merged_memory
 						| deferred1, deferred2 ->
 							merged_count := !merged_count + 1;
 							if !merged_count > 100 then raise TooDifferent;
-							Deferred begin fun state ->
+							let deferred = Deferred begin fun state ->
 								let state, bytes1 = MemOp.state__force state deferred1 in
 								let state, bytes2 = MemOp.state__force state deferred2 in
 								(* TODO: can bytes1 and bytes2 ever have different length? Aren't they supposed to
@@ -101,12 +101,14 @@ http://caml.inria.fr/pub/ml-archives/caml-list/2009/08/323bd4f55773e4a230d481aec
 								(* only job_pc_bytes, since NOT job_pc_bytes implies other_pc_bytes due to the added
 								 * path condition above *)
 								(state, make_Bytes_IfThenElse (job_pc_bytes, bytes1, bytes2))
-							end
+							end in
+							MemoryBlockMap.add block deferred merged_memory
 					end
-				| MemoryBlockMap.Left deferred
+				| MemoryBlockMap.Left deferred ->
+					merged_memory
 				| MemoryBlockMap.Right deferred ->
-					deferred
-			end job.state.block_to_bytes other.state.block_to_bytes in
+					MemoryBlockMap.add block deferred merged_memory
+			end job.state.block_to_bytes other.state.block_to_bytes job.state.block_to_bytes in
 
 			Output.printf "Merging jobs %d and %d (%s memory) \n"
 				job.jid other.jid (if !merged_count = 0 then "identical" else "differing");

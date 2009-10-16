@@ -287,20 +287,17 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 						)
 
 					| Function.SymbolicState ->
-                        {state with
-                             block_to_bytes = MemoryBlockMap.map 
-                                (fun b -> match b with
-                                    (* TODO: what about Deferred? *)
-                                    | Immediate (Bytes_FunPtr(_)) ->
-										b
-                                    (* TODO: handle pointers by generating MayBytes trees based on alias analysis *)
-                                    | _ ->
-										(* TODO: propagate state to avoid excessive recomputation *)
-										let state, b = MemOp.state__force state b in
-										Immediate (MemOp.bytes__symbolic (MemOp.bytes__length b))
-                                ) 
-                                state.block_to_bytes;
-                        }
+						MemoryBlockMap.fold begin fun block _ state ->
+							(* TODO: what about deferred bytes? *)
+							(* TODO: handle pointers by generating MayBytes trees based on alias analysis *)
+							let state, bytes = MemOp.state__get_bytes_from_block state block in 
+							match bytes with
+								| Bytes_FunPtr(_) ->
+									state
+								| _ ->
+									MemOp.state__add_block state block (MemOp.bytes__symbolic (MemOp.bytes__length bytes))
+						end state.block_to_bytes state
+
 					| Function.SymbolicStatic ->
 							begin match blkOffSizeOpt with
 								| None -> 
