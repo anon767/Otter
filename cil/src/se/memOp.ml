@@ -472,11 +472,35 @@ let state__varinfo_to_block state varinfo =
 		failwith ("Varinfo "^(varinfo.vname)^" not found.")
 ;;
 
+let state__add_block state block bytes =
+	{ state with
+		block_to_bytes = MemoryBlockMap.add block (Immediate bytes) state.block_to_bytes;
+	}
+;;
+
+let state__add_deferred_block state block deferred =
+	{ state with
+		block_to_bytes = MemoryBlockMap.add block (Deferred deferred) state.block_to_bytes;
+	}
+;;
+
+let state__remove_block state block=
+	{ state with
+		block_to_bytes = MemoryBlockMap.remove block state.block_to_bytes;
+	}
+;;
+
 let state__get_bytes_from_block state block =
 	if block.memory_block_type == Block_type_StringLiteral then
 		(state, string_table__get block)
-	else
-		state__force state (MemoryBlockMap.find block state.block_to_bytes)
+	else match MemoryBlockMap.find block state.block_to_bytes with
+		| Immediate bytes ->
+			(state, bytes)
+		| Deferred deferred ->
+			(* update with the forced value *)
+			let state, bytes = deferred state in
+			let state = state__add_block state block bytes in
+			(state, bytes)
 ;;
 
 let state__get_deferred_from_block state block =
@@ -528,7 +552,7 @@ let rec state__assign state (lvals, size) bytes = (* have problem *)
 				| Some newbytes ->
 					Output.set_mode Output.MSG_ASSIGN;
 					Output.print_endline ("    Assign "^(To_string.bytes bytes)^" to "^(To_string.memory_block block)^","^(To_string.bytes offset));
-					(count + 1, { state with block_to_bytes = MemoryBlockMap.add block (Immediate newbytes) state.block_to_bytes; })
+					(count + 1, state__add_block state block newbytes)
 			end
 
 		| Lval_May (j, tlvals, flvals) ->
@@ -602,29 +626,6 @@ let state__add_path_condition state bytes tracked=
 	{ state with
 		path_condition = bytes::(state.path_condition);
 		path_condition_tracked = tracked::(state.path_condition_tracked);
-	}
-;;
-
-(*
-let state__return state bytesopt = 
-	{ state with
-		return = bytesopt;	(* TO BE DELETED *)
-	}
-;;
-*)
-let state__add_block state block bytes =
-	{ state with
-		block_to_bytes = MemoryBlockMap.add block (Immediate bytes) state.block_to_bytes;
-	}
-;;
-let state__add_deferred_block state block deferred =
-	{ state with
-		block_to_bytes = MemoryBlockMap.add block (Deferred deferred) state.block_to_bytes;
-	}
-;;
-let state__remove_block state block=
-	{ state with
-		block_to_bytes = MemoryBlockMap.remove block state.block_to_bytes;
 	}
 ;;
 
