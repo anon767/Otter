@@ -7432,7 +7432,8 @@ __inline static int __ctype_islower(int __c )
 
   {
 #line 72
-  return ((int )((int const   )__ctypes[__c + 1] & 2));
+  //return ((int )((int const   )__ctypes[__c + 1] & 2));
+  return OR(__c>='a' , __c<='z');
 }
 }
 #line 133
@@ -7657,7 +7658,7 @@ void *memcpy(void * __restrict  dst , void const   * __restrict  src , size_t___
 #line 13
     p ++;
 #line 13
-    *__cil_tmp = (char )*__cil_tmp;
+    *__cil_tmp = (char )*__cil_tmp; // dirty way of finding out which is "not an address"
     *__cil_tmp = (char )*__cil_tmp___0;
   }
 #line 15

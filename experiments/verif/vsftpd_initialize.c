@@ -1,3 +1,7 @@
+#define main vsftpd_main
+#include "vsftpd_comb_special.c"
+#undef main
+
 // In vsftpd_comb_special.c, we:
 // disabled vsnprintf
 // added __ctype_b_loc
@@ -28,12 +32,13 @@ void initstr(struct mystr* s){
 #ifdef TEST_CONCRETE_STRING
  s->PRIVATE_HANDS_OFF_alloc_bytes = 0;
  s->PRIVATE_HANDS_OFF_p_buf = 0; 
+ s->PRIVATE_HANDS_OFF_len = 0;
 #else
  s->PRIVATE_HANDS_OFF_alloc_bytes = __SYMBOLIC();
  __ASSUME(s->PRIVATE_HANDS_OFF_alloc_bytes>0);
  s->PRIVATE_HANDS_OFF_p_buf = malloc(10); // arbitrary; right now memory is unbounded.
-#endif
  s->PRIVATE_HANDS_OFF_len = __SYMBOLIC();
+#endif
 }
 
 char* symbolic_string(int size){
@@ -51,6 +56,9 @@ int init_state(){
 
  // Oh yeah, __SYMBOLIC_STATE() wipes out everything, INCLUDING the ctype table!!
  init__ctypes();
+ // recover some constants
+ IOSIM_num_file = 0;
+ IOSIM_num_fd = 3;
 
  // a str is set up so that if alloc_bytes>0, p_buf!=0
  initstr(&sess.ftp_arg_str);

@@ -6,10 +6,6 @@
 // 1. to assert that addr returned by malloc != 0
 // 2. global init (gone)
 //
-#define main vsftpd_main
-#include "vsftpd_comb_special.c"
-#undef main
-
 #define TEST_CONCRETE_STRING
 #include "vsftpd_initialize.c"
 

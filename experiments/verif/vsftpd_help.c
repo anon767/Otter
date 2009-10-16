@@ -6,11 +6,7 @@
 // 1. to assert that addr returned by malloc != 0
 // 2. global init (gone)
 //
-#define main vsftpd_main
-#include "vsftpd_comb_special.c"
-#undef main
-
-//#define TEST_CONCRETE_STRING
+#define TEST_CONCRETE_STRING
 #include "vsftpd_initialize.c"
 
 int main(){
@@ -18,11 +14,11 @@ int main(){
  // init state
  init_state();
 
- __CURRENT_STATE(0);
+ //__CURRENT_STATE(0);
  handle_help(&sess);
- __CURRENT_STATE(1);
+ //__CURRENT_STATE(1);
 
- __COMPARE_STATE(0,1);
+ //__COMPARE_STATE(0,1);
 
  return 0;
 }
