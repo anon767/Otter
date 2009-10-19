@@ -1,5 +1,6 @@
 #define main vsftpd_main
-#include "vsftpd_comb_special.c"
+//#include "vsftpd_comb_special.c"
+#include "vsftpd_comb.c"
 #undef main
 
 // In vsftpd_comb_special.c, we:
@@ -131,8 +132,30 @@ int init_state(){
  initstr(&s_proctitle_prefix_str);
  initstr(&s_pword_str);
 
+ // these are static char* :
+ // static struct vsf_sysutil_statbuf * 
+ s_p_statbuf  =0;
+ s_p_dirstat  =0;
+ s_p_statbuf___0  =0;
+ p_statbuf  =0;
+ s_p_statbuf___1  =0;
+ s_p_statbuf___2  =0;
+ s_p_statbuf___3  =0;
+ s_p_statbuf___4  =0;
+ s_p_statbuf___5  =0;
+ s_p_statbuf___6  =0;
+ // static char *
+ nextchar  =0;
+ posixly_correct  =0;
+ holder  =0;
+ p_readbuf  =0;
+ p_asciibuf  =0;
+ p_recvbuf  =0;
+ p_getcwd_buf  =0;
+ p_readlink_buf  =0;
+ p_recvbuf___0  =0;
+
  // Other static values that are zero until they are initialized
- p_getcwd_buf = 0;
  s_page_size = 0;
 
  memcpy(lcdigits,"0123456789abcdef",sizeof(lcdigits));

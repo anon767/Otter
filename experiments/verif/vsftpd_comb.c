@@ -370,19 +370,19 @@ enum __anonenum_state_11 {
     st_prec = 3,
     st_modifiers = 4
 } ;
-#line 4 "filesize.h"
+#line 4 "../../experiments/vsftpd-2.0.7/filesize.h"
 typedef long long filesize_t;
-#line 10 "str.h"
+#line 10 "../../experiments/vsftpd-2.0.7/str.h"
 struct mystr {
    char *PRIVATE_HANDS_OFF_p_buf ;
    unsigned int PRIVATE_HANDS_OFF_len ;
    unsigned int PRIVATE_HANDS_OFF_alloc_bytes ;
 };
-#line 12 "session.h"
+#line 12 "../../experiments/vsftpd-2.0.7/session.h"
 struct vsf_sysutil_sockaddr;
 #line 13
 struct mystr_list;
-#line 18 "session.h"
+#line 18 "../../experiments/vsftpd-2.0.7/session.h"
 struct vsf_session {
    struct vsf_sysutil_sockaddr *p_local_addr ;
    struct vsf_sysutil_sockaddr *p_remote_addr ;
@@ -438,7 +438,7 @@ struct vsf_session {
    int ssl_consumer_fd ;
    unsigned int login_fails ;
 };
-#line 24 "sysutil.h"
+#line 24 "../../experiments/vsftpd-2.0.7/sysutil.h"
 enum EVSFSysUtilSignal {
     kVSFSysUtilSigALRM = 1,
     kVSFSysUtilSigTERM = 2,
@@ -451,12 +451,12 @@ enum EVSFSysUtilSignal {
 struct vsf_sysutil_statbuf;
 #line 276
 struct vsf_sysutil_user;
-#line 4 "standalone.h"
+#line 4 "../../experiments/vsftpd-2.0.7/standalone.h"
 struct vsf_client_launch {
    unsigned int num_children ;
    unsigned int num_this_ip ;
 };
-#line 8 "logging.h"
+#line 8 "../../experiments/vsftpd-2.0.7/logging.h"
 enum EVSFLogEntryType {
     kVSFLogEntryNull = 1,
     kVSFLogEntryDownload = 2,
@@ -472,30 +472,30 @@ enum EVSFLogEntryType {
     kVSFLogEntryChmod = 12,
     kVSFLogEntryDebug = 13
 } ;
-#line 7 "readwrite.h"
+#line 7 "../../experiments/vsftpd-2.0.7/readwrite.h"
 enum EVSFRWTarget {
     kVSFRWControl = 1,
     kVSFRWData = 2
 } ;
-#line 68 "str.h"
+#line 68 "../../experiments/vsftpd-2.0.7/str.h"
 struct str_locate_result {
    int found ;
    unsigned int index ;
    char char_found ;
 };
-#line 8 "ftpdataio.h"
+#line 8 "../../experiments/vsftpd-2.0.7/ftpdataio.h"
 struct vsf_sysutil_dir;
-#line 72 "ftpdataio.h"
+#line 72 "../../experiments/vsftpd-2.0.7/ftpdataio.h"
 struct vsf_transfer_ret {
    int retval ;
    filesize_t transferred ;
 };
-#line 18 "sysstr.h"
+#line 18 "../../experiments/vsftpd-2.0.7/sysstr.h"
 enum EVSFSysStrOpenMode {
     kVSFSysStrOpenUnknown = 0,
     kVSFSysStrOpenReadOnly = 1
 } ;
-#line 12 "sysutil.h"
+#line 12 "../../experiments/vsftpd-2.0.7/sysutil.h"
 enum EVSFSysUtilError {
     kVSFSysUtilErrUnknown = 1,
     kVSFSysUtilErrADDRINUSE = 2,
@@ -504,26 +504,26 @@ enum EVSFSysUtilError {
     kVSFSysUtilErrINVAL = 5,
     kVSFSysUtilErrOPNOTSUPP = 6
 } ;
-#line 205 "sysutil.h"
+#line 205 "../../experiments/vsftpd-2.0.7/sysutil.h"
 struct vsf_sysutil_socketpair_retval {
    int socket_one ;
    int socket_two ;
 };
-#line 6 "strlist.h"
+#line 6 "../../experiments/vsftpd-2.0.7/strlist.h"
 struct mystr_list_node;
-#line 8 "strlist.h"
+#line 8 "../../experiments/vsftpd-2.0.7/strlist.h"
 struct mystr_list {
    unsigned int PRIVATE_HANDS_OFF_alloc_len ;
    unsigned int PRIVATE_HANDS_OFF_list_len ;
    struct mystr_list_node *PRIVATE_HANDS_OFF_p_nodes ;
 };
-#line 22 "ascii.h"
+#line 22 "../../experiments/vsftpd-2.0.7/ascii.h"
 struct ascii_to_bin_ret {
    unsigned int stored ;
    int last_was_cr ;
    char *p_buf ;
 };
-#line 147 "sysutil.h"
+#line 147 "../../experiments/vsftpd-2.0.7/sysutil.h"
 enum EVSFSysUtilMapPermission {
     kVSFSysUtilMapProtReadOnly = 1,
     kVSFSysUtilMapProtNone = 2
@@ -536,50 +536,50 @@ enum EVSFSysUtilOpenMode {
     kVSFSysUtilOpenWriteOnly = 2,
     kVSFSysUtilOpenReadWrite = 3
 } ;
-#line 18 "strlist.c"
+#line 18 "../../experiments/vsftpd-2.0.7/strlist.c"
 struct mystr_list_node {
    struct mystr str ;
    struct mystr sort_key_str ;
 };
-#line 31 "parseconf.c"
+#line 31 "../../experiments/vsftpd-2.0.7/parseconf.c"
 struct parseconf_bool_setting {
    char const   *p_setting_name ;
    int *p_variable ;
 };
-#line 112 "parseconf.c"
+#line 112 "../../experiments/vsftpd-2.0.7/parseconf.c"
 struct parseconf_uint_setting {
    char const   *p_setting_name ;
    unsigned int *p_variable ;
 };
-#line 142 "parseconf.c"
+#line 142 "../../experiments/vsftpd-2.0.7/parseconf.c"
 struct parseconf_str_setting {
    char const   *p_setting_name ;
    char const   **p_variable ;
 };
-#line 27 "privops.h"
+#line 27 "../../experiments/vsftpd-2.0.7/privops.h"
 enum EVSFPrivopLoginResult {
     kVSFLoginNull = 0,
     kVSFLoginFail = 1,
     kVSFLoginAnon = 2,
     kVSFLoginReal = 3
 } ;
-#line 166 "sysutil.h"
+#line 166 "../../experiments/vsftpd-2.0.7/sysutil.h"
 struct vsf_sysutil_wait_retval {
    int PRIVATE_HANDS_OFF_syscall_retval ;
    int PRIVATE_HANDS_OFF_exit_status ;
 };
-#line 4 "hash.h"
+#line 4 "../../experiments/vsftpd-2.0.7/hash.h"
 struct hash;
-#line 236 "standalone.c"
+#line 236 "../../experiments/vsftpd-2.0.7/standalone.c"
 struct vsf_sysutil_ipaddr;
-#line 14 "hash.c"
+#line 14 "../../experiments/vsftpd-2.0.7/hash.c"
 struct hash_node {
    void *p_key ;
    void *p_value ;
    struct hash_node *p_prev ;
    struct hash_node *p_next ;
 };
-#line 22 "hash.c"
+#line 22 "../../experiments/vsftpd-2.0.7/hash.c"
 struct hash {
    unsigned int buckets ;
    unsigned int key_size ;
@@ -587,7 +587,7 @@ struct hash {
    unsigned int (*hash_func)(unsigned int  , void * ) ;
    struct hash_node **p_nodes ;
 };
-#line 33 "sysutil.h"
+#line 33 "../../experiments/vsftpd-2.0.7/sysutil.h"
 enum EVSFSysUtilInterruptContext {
     kVSFSysUtilUnknown = 0,
     kVSFSysUtilIO = 1
@@ -677,29 +677,29 @@ struct hostent {
    int h_length ;
    char **h_addr_list ;
 };
-#line 70 "sysutil.c"
+#line 70 "../../experiments/vsftpd-2.0.7/sysutil.c"
 struct vsf_sysutil_sig_details {
    void (*sync_sig_handler)(void * ) ;
    void *p_private ;
    int pending ;
    int running ;
 };
-#line 82 "sysutil.c"
+#line 82 "../../experiments/vsftpd-2.0.7/sysutil.c"
 union __anonunion_u_54 {
    struct sockaddr u_sockaddr ;
    struct sockaddr_in u_sockaddr_in ;
    struct sockaddr_in6 u_sockaddr_in6 ;
 };
-#line 82 "sysutil.c"
+#line 82 "../../experiments/vsftpd-2.0.7/sysutil.c"
 struct vsf_sysutil_sockaddr {
    union __anonunion_u_54 u ;
 };
-#line 604 "sysutil.c"
+#line 604 "../../experiments/vsftpd-2.0.7/sysutil.c"
 union __anonunion___u_55 {
    int __in ;
    int __i ;
 };
-#line 614 "sysutil.c"
+#line 614 "../../experiments/vsftpd-2.0.7/sysutil.c"
 union __anonunion___u_56 {
    int __in ;
    int __i ;
@@ -764,8 +764,8 @@ enum __anonenum_cap_flag_value_t_16 {
 } ;
 #line 66 "../../includes/usr/include/sys/capability.h"
 typedef enum __anonenum_cap_flag_value_t_16 cap_flag_value_t;
-#line 1 "cil-GO3jYZ6W.o"
-#pragma merger(0,"/tmp/cil-j2jg2qd4.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-mt6rD91a.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-ikwD7EO5.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 16 "../../mockedFns/FD_MACROS.c"
 void FD_SET(int fd , fd_set___0 *fdset ) 
 { unsigned int __cil_tmp ;
@@ -846,8 +846,8 @@ void FD_ZERO(fd_set___0 *fdset )
   return;
 }
 }
-#line 1 "cil-nEpOtKzO.o"
-#pragma merger(0,"/tmp/cil-pH3rUzrM.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-F6DKIonT.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-AxpN0sBz.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 2 "../../mockedFns/__errno_location.c"
 static int mock_errno  ;
 #line 1
@@ -861,8 +861,8 @@ int *__errno_location(void)
   return (& mock_errno);
 }
 }
-#line 1 "cil-xWrhpAU6.o"
-#pragma merger(0,"/tmp/cil-yDCRQnYY.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-vsOy9ekQ.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-6kkZFBAE.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 640 "../../includes/usr/include/stdlib.h"
 extern  __attribute__((__nothrow__, __noreturn__)) void exit(int __status ) ;
 #line 2 "../../mockedFns/_exit.c"
@@ -876,8 +876,8 @@ void _exit(int status )
   exit(status);
 }
 }
-#line 1 "cil-vthUozkC.o"
-#pragma merger(0,"/tmp/cil-GSZi2jLz.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-T6rdvSLz.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-g5dJSKKw.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 1 "../../mockedFns/alarm.c"
  __attribute__((__nothrow__)) unsigned int alarm(unsigned int seconds ) ;
 #line 1 "../../mockedFns/alarm.c"
@@ -893,8 +893,8 @@ unsigned int alarm(unsigned int seconds )
    int __builtin_strcmp(char const   *s1 , char const   *s2 ) ;  */
 /* compiler builtin: 
    long __builtin_expect(long x , long expected_value ) ;  */
-#line 1 "cil-sL9EGPFc.o"
-#pragma merger(0,"/tmp/cil-QuQUzXgb.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-tY4VOacz.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-XLlup19L.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 2 "../../mockedFns/builtin.c"
 long __builtin_expect(long x , long expected_value ) 
 { 
@@ -927,8 +927,8 @@ int __builtin_strcmp(char const   *s1 , char const   *s2 )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-Lhe34F99.o"
-#pragma merger(0,"/tmp/cil-EGtKb8RB.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-xR78QOY7.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-GjpVNYNz.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 584 "../../includes/usr/include/stdlib.h"
 extern  __attribute__((__nothrow__)) void *malloc(size_t___0 __size )  __attribute__((__malloc__)) ;
 #line 586
@@ -953,8 +953,8 @@ void *calloc(size_t___0 nmemb , size_t___0 size )
   return (p);
 }
 }
-#line 1 "cil-fCfmWAzT.o"
-#pragma merger(0,"/tmp/cil-xji8DfX4.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-ewBSyvot.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-n6euHjWL.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 77 "../../includes/usr/include/sys/capability.h"
 int cap_free(void *obj_d ) ;
 #line 92
@@ -977,8 +977,8 @@ int cap_free(void *obj_d )
   return (-1);
 }
 }
-#line 1 "cil-UzORAGlI.o"
-#pragma merger(0,"/tmp/cil-LjrO4LnM.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-dk7NoTjo.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-WYmdjkmA.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 722 "../../includes/usr/include/stdio.h"
  __attribute__((__nothrow__)) void clearerr(FILE *stream ) ;
 #line 3 "../../mockedFns/clearerr.c"
@@ -992,8 +992,8 @@ void clearerr(FILE *stream )
   return;
 }
 }
-#line 1 "cil-w7Up9N30.o"
-#pragma merger(0,"/tmp/cil-UfBqZ7pv.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-R1KC3vVy.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-zH9gFttR.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 284 "../../includes/usr/include/sys/stat.h"
  __attribute__((__nothrow__)) int mkdir(char const   *pathname , __mode_t mode )  __attribute__((__nonnull__(1))) ;
 #line 135 "../../includes/usr/include/dirent.h"
@@ -1114,8 +1114,8 @@ int rmdir(char const   *pathname )
   return (0);
 }
 }
-#line 1 "cil-phquEcny.o"
-#pragma merger(0,"/tmp/cil-dqmOBqjo.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-gWR6yGzS.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-mPURYdrk.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 8 "../../mockedFns/symexe.h"
 extern void __COMMENT(char *str ) ;
 #line 597 "../../includes/usr/include/stdlib.h"
@@ -1232,8 +1232,8 @@ int putenv(char *str )
   return (0);
 }
 }
-#line 1 "cil-Gya0gM2I.o"
-#pragma merger(0,"/tmp/cil-XO2jE3rY.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-eoJM3XN1.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-z1KFMYhc.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 63 "../../includes/usr/include/fcntl.h"
 int fcntl(int fildes , int cmd  , ...) ;
 #line 6 "../../mockedFns/fcntl.c"
@@ -1245,8 +1245,8 @@ int fcntl(int fildes , int cmd  , ...)
   return (0);
 }
 }
-#line 1 "cil-LojLIXVr.o"
-#pragma merger(0,"/tmp/cil-Pf5iGlwg.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-2YjrwBp8.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-uTPpkuY0.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 724 "../../includes/usr/include/stdio.h"
  __attribute__((__nothrow__)) int feof(FILE *stream ) ;
 #line 41 "../../mockedFns/iosim.h"
@@ -1267,8 +1267,8 @@ int feof(FILE *stream )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-pUDIp8wj.o"
-#pragma merger(0,"/tmp/cil-2PMafoGL.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-aUQHpalP.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-QaMVmDw0.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 726 "../../includes/usr/include/stdio.h"
  __attribute__((__nothrow__)) int ferror(FILE *stream ) ;
 #line 3 "../../mockedFns/ferror.c"
@@ -1282,8 +1282,8 @@ int ferror(FILE *stream )
   return (0);
 }
 }
-#line 1 "cil-42LG1HeK.o"
-#pragma merger(0,"/tmp/cil-sjhb2amy.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-zdT7ayRm.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-segnrnlO.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 754 "../../includes/usr/include/stdio.h"
  __attribute__((__nothrow__)) int fileno(FILE *stream ) ;
 #line 759
@@ -1319,8 +1319,8 @@ int fileno_unlocked(FILE *stream )
   return (-1);
 }
 }
-#line 1 "cil-RcdAJ4S3.o"
-#pragma merger(0,"/tmp/cil-FkhfDQNN.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-NhE0RVv5.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-R0A6mJcl.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 254 "../../includes/usr/include/stdio.h"
 FILE *fopen(char const   * __restrict  filename , char const   * __restrict  mode )  __asm__("_fopen64")  ;
 #line 27 "../../mockedFns/iosim.h"
@@ -1417,8 +1417,8 @@ FILE *fopen(char const   * __restrict  filename , char const   * __restrict  mod
   return ((FILE *)IOSIM_fd[fd]);
 }
 }
-#line 1 "cil-A9p16GGA.o"
-#pragma merger(0,"/tmp/cil-lDc2tcUP.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-7nESAla2.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-QinLKeTF.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 645 "../../includes/usr/include/stdio.h"
 int fseek(FILE *stream , long offset , int origin ) ;
 #line 4 "../../mockedFns/fseek.c"
@@ -1430,8 +1430,8 @@ int fseek(FILE *stream , long offset , int origin )
   return (0);
 }
 }
-#line 1 "cil-EuVwdWo5.o"
-#pragma merger(0,"/tmp/cil-qi71YDyT.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-lvvg32wO.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-toQiEpQy.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 450 "../../includes/usr/include/libio.h"
  __attribute__((__nothrow__)) int _IO_getc(struct _IO_FILE *stream ) ;
 #line 37 "../../mockedFns/iosim.h"
@@ -1462,8 +1462,8 @@ int _IO_getc(struct _IO_FILE *stream )
   }
 }
 }
-#line 1 "cil-tJRbFQHX.o"
-#pragma merger(0,"/tmp/cil-fG8VwowP.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-TmvF7R8C.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-TjmCahbx.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 144 "../../includes/usr/include/stdio.h"
 extern struct _IO_FILE *stderr ;
 #line 323
@@ -2270,8 +2270,8 @@ int _getopt_internal(int argc , char * const  *argv , char const   *optstring , 
   return ((int )c);
 }
 }
-#line 1 "cil-i7lzZ0qz.o"
-#pragma merger(0,"/tmp/cil-75FcE0hN.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-63EiIGhC.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-THeD7S7w.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 1 "../../mockedFns/getpagesize.c"
  __attribute__((__nothrow__)) int getpagesize(void)  __attribute__((__const__)) ;
 #line 1 "../../mockedFns/getpagesize.c"
@@ -2283,8 +2283,8 @@ int getpagesize(void)
   return (4096);
 }
 }
-#line 1 "cil-K8TBi8UZ.o"
-#pragma merger(0,"/tmp/cil-YE9lnONs.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-11mQgZ6j.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-V9WeofeY.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 1 "../../mockedFns/symexe.h"
 extern long long __SYMBOLIC(void *var ) ;
 #line 128 "../../includes/usr/include/sys/socket.h"
@@ -2323,8 +2323,8 @@ int getpeername(int socket___0 , struct sockaddr * __restrict  address , socklen
   return (0);
 }
 }
-#line 1 "cil-Ui64e7VD.o"
-#pragma merger(0,"/tmp/cil-PIj04Cd7.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-53wEqdUv.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-AbYHvnBV.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 117 "../../includes/usr/include/pwd.h"
 struct passwd *getpwnam(char const   *__name ) ;
 #line 4 "../../mockedFns/getpwnam.c"
@@ -2343,8 +2343,8 @@ struct passwd *getpwnam(char const   *__name )
   return (x);
 }
 }
-#line 1 "cil-ou8ZMQQs.o"
-#pragma merger(0,"/tmp/cil-s2OM4mZC.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-OqAi0hTq.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-jEx0Qmtq.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 3 "../../mockedFns/gettext.c"
 char *gettext(char const   *text ) 
 { 
@@ -2354,8 +2354,8 @@ char *gettext(char const   *text )
   return ((char *)text);
 }
 }
-#line 1 "cil-MuwfK8dt.o"
-#pragma merger(0,"/tmp/cil-RBRjXimq.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-tmjHVTlw.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-dbOp77Fn.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 2 "../../mockedFns/groups.c"
 int initgroups(char const   *user , __gid_t group ) 
 { 
@@ -2376,8 +2376,8 @@ int setgroups(size_t___0 __n , __gid_t const   *__groups )
   return (0);
 }
 }
-#line 1 "cil-CL4PWtZs.o"
-#pragma merger(0,"/tmp/cil-mJVEUL5s.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-sG9zs5Pp.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-MGHCEPg1.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 35 "../../includes/usr/include/arpa/inet.h"
  __attribute__((__nothrow__)) in_addr_t inet_addr(char const   *cp ) ;
 #line 54
@@ -2523,8 +2523,8 @@ in_addr_t inet_addr(char const   *cp )
   return (4294967295U);
 }
 }
-#line 1 "cil-AL6S4HLz.o"
-#pragma merger(0,"/tmp/cil-DjQL7jbR.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-unzKPOQh.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-0Vo3JIg1.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 2 "../../mockedFns/symexe.h"
 extern void __EVAL() ;
 #line 7
@@ -2538,7 +2538,7 @@ int IOSIM_num_fd ;
 #line 31
 sym_file_t *IOSIM_findfile(char const   *file ) ;
 #line 32
-sym_file_t *IOSIM_addfile(char const   *filename , mode_t mode ) ;
+sym_file_t *IOSIM_addfile(char const   *filename , char const   *contents , mode_t mode ) ;
 #line 34
 char *IOSIM_toAbsolute(char const   *name ) ;
 #line 36
@@ -2606,11 +2606,12 @@ sym_file_t *IOSIM_findfile(char const   *file )
 }
 }
 #line 44 "../../mockedFns/iosim.c"
-sym_file_t *IOSIM_addfile(char const   *filename , mode_t mode ) 
+sym_file_t *IOSIM_addfile(char const   *filename , char const   *contents , mode_t mode ) 
 { int *__cil_tmp ;
   int *__cil_tmp___0 ;
   sym_file_t *file ;
   void *__cil_tmp___1 ;
+  size_t___0 __cil_tmp___2 ;
 
   {
 #line 45
@@ -2635,10 +2636,20 @@ sym_file_t *IOSIM_addfile(char const   *filename , mode_t mode )
   __cil_tmp___1 = malloc(sizeof(sym_file_t ));
 #line 53
   file = (sym_file_t *)__cil_tmp___1;
+#line 54
+  if (contents) {
+#line 55
+    __cil_tmp___2 = strlen(contents);
+#line 55
+    file->stat.st_size = (long long )__cil_tmp___2;
+#line 56
+    file->contents = strdup(contents);
+  } else {
 #line 58
-  file->stat.st_size = 0LL;
+    file->stat.st_size = 0LL;
 #line 59
-  file->contents = (char *)((void *)0);
+    file->contents = (char *)((void *)0);
+  }
 #line 61
   file->stat.st_nlink = 1U;
 #line 64
@@ -2824,7 +2835,8 @@ int IOSIM_openWithMode(char const   *name , int flags , mode_t mode )
 #line 140
     if (flags & 64) {
 #line 142
-      sym_file = IOSIM_addfile((char const   *)absoluteName, mode & ~ usermask);
+      sym_file = IOSIM_addfile((char const   *)absoluteName, (char const   *)((void *)0),
+                               mode & ~ usermask);
 #line 143
       free((void *)absoluteName);
     } else {
@@ -3451,8 +3463,8 @@ int IOSIM_dirfd(DIR *dir )
   return (dir->filestream.fd);
 }
 }
-#line 1 "cil-vVn44kP2.o"
-#pragma merger(0,"/tmp/cil-7q84tWtX.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-evx1ywNG.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-WsoAMHyc.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 4 "../../mockedFns/libintl.c"
 char *directory  ;
 #line 6 "../../mockedFns/libintl.c"
@@ -3479,8 +3491,8 @@ char *textdomain(char const   *domainname )
   return (directory);
 }
 }
-#line 1 "cil-mJjaDjMy.o"
-#pragma merger(0,"/tmp/cil-aFT8cBUr.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-scdbj7IN.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-Y8U9o70h.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 66 "../../includes/usr/include/string.h"
  __attribute__((__nothrow__)) void *memchr(void const   *s , int c , size_t___0 n )  __attribute__((__pure__,
 __nonnull__(1))) ;
@@ -3510,8 +3522,8 @@ void *memchr(void const   *s , int c , size_t___0 n )
   return ((void *)0);
 }
 }
-#line 1 "cil-iNtWUavr.o"
-#pragma merger(0,"/tmp/cil-Qjrjee5V.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-Ob3Uk3Zx.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-HIAJmGA6.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 12 "../../mockedFns/memswap.c"
 void memswap(void *m1 , void *m2 , size_t___0 n ) 
 { char *p ;
@@ -3550,8 +3562,8 @@ void memswap(void *m1 , void *m2 , size_t___0 n )
   return;
 }
 }
-#line 1 "cil-2r8HlJ97.o"
-#pragma merger(0,"/tmp/cil-KeJQPCEG.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-jg3gbKAE.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-i6EXcuRl.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 7 "../../mockedFns/mmap.c"
  __attribute__((__nothrow__)) void *mmap(void *start , size_t___0 length , int prot ,
                                          int flags , int fd , __quad_t offset )  __asm__("_mmap64")  ;
@@ -3580,8 +3592,8 @@ int munmap(void *addr , size_t___0 len )
   return (0);
 }
 }
-#line 1 "cil-Ca1hAJrp.o"
-#pragma merger(0,"/tmp/cil-dm9MBD3g.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-xyIJqn92.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-MizWgb9o.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 2 "../../mockedFns/mprotect.c"
  __attribute__((__nothrow__)) int mprotect(void *__addr , size_t___0 __len , int __prot ) ;
 #line 2 "../../mockedFns/mprotect.c"
@@ -3593,8 +3605,8 @@ int mprotect(void *__addr , size_t___0 __len , int __prot )
   return (0);
 }
 }
-#line 1 "cil-q9qCnj7H.o"
-#pragma merger(0,"/tmp/cil-A9dfeAXj.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-js5nWp2M.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-7f75rPHJ.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 3 "../../mockedFns/my_index.c"
 char *my_index(char const   *s , int c ) 
 { char *__cil_tmp ;
@@ -3606,8 +3618,8 @@ char *my_index(char const   *s , int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-Bde3arO3.o"
-#pragma merger(0,"/tmp/cil-yi9liraB.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-crZ5Fn1S.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-1TybOyTX.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 354 "../../includes/usr/include/netinet/in.h"
  __attribute__((__nothrow__)) uint32_t ntohl(uint32_t netlong )  __attribute__((__const__)) ;
 #line 355
@@ -3714,8 +3726,8 @@ uint16_t ntohs(uint16_t netshort )
    void __builtin_va_arg(__builtin_va_list  , unsigned long  , void * ) ;  */
 /* compiler builtin: 
    void __builtin_va_start(__builtin_va_list  ) ;  */
-#line 1 "cil-6qX92rKV.o"
-#pragma merger(0,"/tmp/cil-40a4RrRq.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-KkvWonmH.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-tJubp5UF.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 7 "../../mockedFns/open.c"
 int open(char const   *pathname , int flags  , ...)  __asm__("_open64") __attribute__((__nonnull__(1))) ;
 #line 7 "../../mockedFns/open.c"
@@ -3748,8 +3760,8 @@ int open(char const   *pathname , int flags  , ...)
   return (__cil_tmp___1);
 }
 }
-#line 1 "cil-nPmPlve1.o"
-#pragma merger(0,"/tmp/cil-MdPFHhX7.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-FhW7kkHo.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-SVN7Fl1H.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 27 "../../includes/usr/include/security/pam_appl.h"
 int pam_start(char const   *service_name , char const   *user , struct pam_conv  const  *pam_conversation ,
               pam_handle_t **pamh ) ;
@@ -3763,8 +3775,8 @@ int pam_start(char const   *service_name , char const   *user , struct pam_conv 
   return (-1);
 }
 }
-#line 1 "cil-mlBOxFRz.o"
-#pragma merger(0,"/tmp/cil-UpBw06jp.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-PJLFoO8v.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-v7RKBdzK.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 1 "../../mockedFns/prctl.c"
 int prctl(int __option  , ...) 
 { 
@@ -3774,8 +3786,8 @@ int prctl(int __option  , ...)
   return (0);
 }
 }
-#line 1 "cil-JDA4ccgp.o"
-#pragma merger(0,"/tmp/cil-85gkqVT6.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-4ctOEw9X.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-WWwYlHdp.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 480 "../../includes/usr/include/stdio.h"
 int putc(int c , FILE *stream ) ;
 #line 5 "../../mockedFns/putc.c"
@@ -3787,8 +3799,8 @@ int putc(int c , FILE *stream )
   return (0);
 }
 }
-#line 1 "cil-zR3WriEq.o"
-#pragma merger(0,"/tmp/cil-6h4ghXTf.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-8YfrxIEM.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-UwWlxsFI.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 15 "../../mockedFns/qsort.c"
 __inline static size_t___0 newgap(size_t___0 gap ) 
 { 
@@ -3872,8 +3884,8 @@ void qsort(void *base , size_t___0 nmemb , size_t___0 size , int (*compar)(void 
   return;
 }
 }
-#line 1 "cil-p1lLb48d.o"
-#pragma merger(0,"/tmp/cil-GcMegCl3.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-OblAQ0lP.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-0PH03DBW.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 4 "../../mockedFns/realloc.c"
  __attribute__((__nothrow__)) void *realloc(void *ptr , size_t___0 size )  __attribute__((__malloc__)) ;
 #line 4 "../../mockedFns/realloc.c"
@@ -3901,8 +3913,8 @@ void *realloc(void *ptr , size_t___0 size )
   return (ptr);
 }
 }
-#line 1 "cil-470qiOCG.o"
-#pragma merger(0,"/tmp/cil-B4OV9yJZ.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-CN3Fbg92.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-oDcVkzXS.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 450 "../../includes/usr/include/unistd.h"
  __attribute__((__nothrow__)) char *getcwd(char *buf , size_t___0 size ) ;
 #line 9 "../../mockedFns/realpath.c"
@@ -4082,8 +4094,8 @@ char *realpath(char const   * __restrict  path , char * __restrict  got_path )
   return ((char *)got_path);
 }
 }
-#line 1 "cil-aDR9DvMe.o"
-#pragma merger(0,"/tmp/cil-ou9g35ef.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-wORZIGAT.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-ySbEQthj.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 143 "../../includes/usr/include/sys/socket.h"
 ssize_t recv(int sockfd , void *buf , size_t___0 len , int flags ) ;
 #line 6 "../../mockedFns/recv.c"
@@ -4115,8 +4127,8 @@ ssize_t recv(int sockfd , void *buf , size_t___0 len , int flags )
   return (num_chars_read);
 }
 }
-#line 1 "cil-cYYE0eqV.o"
-#pragma merger(0,"/tmp/cil-iOrdBg0b.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-nUa8rIBg.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-1e4PWuV9.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 161 "../../includes/usr/include/sys/socket.h"
 ssize_t recvfrom(int sockfd , void * __restrict  buffer , size_t___0 len , int flags ,
                  struct sockaddr * __restrict  to , socklen_t * __restrict  tolen ) ;
@@ -4132,8 +4144,8 @@ ssize_t recvfrom(int sockfd , void * __restrict  buffer , size_t___0 len , int f
   return (__cil_tmp);
 }
 }
-#line 1 "cil-Gg46kuXE.o"
-#pragma merger(0,"/tmp/cil-wBPSpTw7.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-7OSexQUE.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-tn065uxW.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 154 "../../includes/usr/include/stdio.h"
  __attribute__((__nothrow__)) int remove(char const   *filename ) ;
 #line 3 "../../mockedFns/remove.c"
@@ -4147,8 +4159,8 @@ int remove(char const   *filename )
   return (0);
 }
 }
-#line 1 "cil-kGKk6SzE.o"
-#pragma merger(0,"/tmp/cil-4SvPnQhd.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-rZeayeGf.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-uVCjmJSl.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 156 "../../includes/usr/include/stdio.h"
  __attribute__((__nothrow__)) int rename(char const   *old , char const   *new ) ;
 #line 4 "../../mockedFns/rename.c"
@@ -4164,8 +4176,8 @@ int rename(char const   *old , char const   *new )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-kEsi27qd.o"
-#pragma merger(0,"/tmp/cil-FWeIgATR.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-nGzdCn6E.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-sb0SEY77.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 38 "../../includes/usr/include/sys/sendfile.h"
  __attribute__((__nothrow__)) ssize_t sendfile(int out_fd , int in_fd , __quad_t *offset ,
                                                size_t___0 count )  __asm__("_sendfile64")  ;
@@ -4242,8 +4254,8 @@ ssize_t sendfile(int out_fd , int in_fd , __quad_t *offset , size_t___0 count )
   return (numSent);
 }
 }
-#line 1 "cil-2Y9Onhie.o"
-#pragma merger(0,"/tmp/cil-KbKp5TQK.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-7MAzqWoC.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-DtpaGanm.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 150 "../../includes/usr/include/sys/socket.h"
 int sendto(int s , void const   *msg , size_t___0 len , int flags , struct sockaddr  const  *to ,
            socklen_t tolen ) ;
@@ -4257,8 +4269,8 @@ int sendto(int s , void const   *msg , size_t___0 len , int flags , struct socka
   return (0);
 }
 }
-#line 1 "cil-5T35PXmh.o"
-#pragma merger(0,"/tmp/cil-SCkZ73EG.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-CcNXapzz.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-SXfQDYeY.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 125 "../../includes/usr/include/locale.h"
  __attribute__((__nothrow__)) char *setlocale(int category , char const   *locale ) ;
 #line 3 "../../mockedFns/setlocale.c"
@@ -4272,8 +4284,8 @@ char *setlocale(int category , char const   *locale )
   return ((char *)locale);
 }
 }
-#line 1 "cil-s3frM3X9.o"
-#pragma merger(0,"/tmp/cil-MWSvA8Ma.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-GA2a9dtt.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-gTjO0TN7.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 216 "../../includes/usr/include/signal.h"
  __attribute__((__nothrow__)) int sigemptyset(sigset_t *set )  __attribute__((__nonnull__(1))) ;
 #line 219
@@ -4343,8 +4355,8 @@ int sigprocmask(int how , sigset_t const   * __restrict  set , sigset_t * __rest
   return (0);
 }
 }
-#line 1 "cil-g4mZQCiN.o"
-#pragma merger(0,"/tmp/cil-ZvFK2pQ7.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-FSFwDECF.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-eu330aZ1.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 362 "../../includes/usr/include/signal.h"
  __attribute__((__nothrow__)) int sigaltstack(struct sigaltstack  const  * __restrict  ss ,
                                               struct sigaltstack * __restrict  oss ) ;
@@ -4360,8 +4372,8 @@ int sigaltstack(struct sigaltstack  const  * __restrict  ss , struct sigaltstack
   return (0);
 }
 }
-#line 1 "cil-VzWQmY1Y.o"
-#pragma merger(0,"/tmp/cil-J2MerQLy.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-AATSUOu2.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-eKZj4dtd.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 109 "../../includes/usr/include/sys/select.h"
 int select(int nfds , fd_set * __restrict  readfds , fd_set * __restrict  writefds ,
            fd_set * __restrict  errorfds , struct timeval * __restrict  timeout ) ;
@@ -4572,8 +4584,8 @@ int select(int nfds , fd_set * __restrict  readfds , fd_set * __restrict  writef
   return (1);
 }
 }
-#line 1 "cil-oDQ99WK7.o"
-#pragma merger(0,"/tmp/cil-QLQSDk13.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-tWcGsSOZ.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-ZEAVgCoV.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 403 "../../includes/usr/include/stdio.h"
  __attribute__((__nothrow__)) int sscanf(char const   * __restrict  s , char const   * __restrict  format 
                                          , ...) ;
@@ -5538,8 +5550,8 @@ int sscanf(char const   * __restrict  s , char const   * __restrict  format  , .
   return (retval);
 }
 }
-#line 1 "cil-KyzeQrax.o"
-#pragma merger(0,"/tmp/cil-2JSZfL2a.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-19YH60OU.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-O7b3NwAz.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 332 "../../includes/usr/include/sys/stat.h"
  __attribute__((__nothrow__)) int __fxstat(int __ver , int __fildes , struct stat *__stat_buf )  __asm__("___fxstat64") __attribute__((__nonnull__(3))) ;
 #line 335
@@ -5624,8 +5636,8 @@ int __lxstat(int __ver , char const   *__filename , struct stat *__stat_buf )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-Pk8d1SOz.o"
-#pragma merger(0,"/tmp/cil-VBW7ILFw.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-5Uaz1aWP.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-FMERRRu2.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 106 "../../includes/usr/include/string.h"
  __attribute__((__nothrow__)) int strcoll(char const   *s1 , char const   *s2 )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
@@ -5643,8 +5655,8 @@ int strcoll(char const   *s1 , char const   *s2 )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-ydPSvH0E.o"
-#pragma merger(0,"/tmp/cil-vCp3K2Sw.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-c9eFleO3.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-uQ3rMjcU.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 4 "../../mockedFns/strdup.c"
  __attribute__((__nothrow__)) char *strdup(char const   *p_str )  __attribute__((__nonnull__(1),
 __malloc__)) ;
@@ -5673,8 +5685,8 @@ char *strdup(char const   *p_str )
   return (theCopy);
 }
 }
-#line 1 "cil-4RgXEdSu.o"
-#pragma merger(0,"/tmp/cil-NmZmdTe3.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-c84d7mbG.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-20X5SxtI.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 256 "../../includes/usr/include/string.h"
  __attribute__((__nothrow__)) char *strerror(int errnum ) ;
 #line 9 "../../mockedFns/strerror.c"
@@ -5717,8 +5729,8 @@ char *strerror(int errnum )
   return (message);
 }
 }
-#line 1 "cil-jTpoaLpz.o"
-#pragma merger(0,"/tmp/cil-WzMLim9M.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-XO8w8v5b.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-hX8moePS.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 4 "../../mockedFns/strrchr.c"
  __attribute__((__nothrow__)) char *strrchr(char const   *s , int c )  __attribute__((__pure__,
 __nonnull__(1))) ;
@@ -5751,19 +5763,10 @@ char *strrchr(char const   *s , int c )
   return ((char *)p);
 }
 }
-#line 1 "cil-RmcyqOsM.o"
-#pragma merger(0,"/tmp/cil-HGVPi44G.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-bH4Tg2hT.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-BuUQIgOo.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 81 "../../includes/usr/include/ctype.h"
-unsigned short const   **__ctype_b_loc(void)  __attribute__((__const__)) {
-	static unsigned short* table = 0;
-	if(__TRUTH_VALUE(table)==0) {
-		table = malloc(sizeof(unsigned short)*256);
-		for(int i=0;i<256;i++)
-			table[i] = i;
-	}
-	return &table;
-	// problem: to assert that addr returned by malloc != 0
-}
+extern unsigned short const   **__ctype_b_loc(void)  __attribute__((__const__)) ;
 #line 6 "../../mockedFns/strtol.c"
 static unsigned long string2long(char const   *nptr , char **endptr , int base , int is_signed ) ;
 #line 10
@@ -5967,8 +5970,8 @@ static unsigned long string2long(char const   *nptr , char **endptr , int base ,
   return ((unsigned long )((long )sign) * val);
 }
 }
-#line 1 "cil-brXtrFdK.o"
-#pragma merger(0,"/tmp/cil-hCJyHnbA.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-O9pLKNrh.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-mEj0OavY.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 184 "../../includes/usr/include/time.h"
  __attribute__((__nothrow__)) time_t time(time_t *__timer ) ;
 #line 191
@@ -6129,8 +6132,8 @@ int utime(char const   *path , struct utimbuf  const  *times )
   return (0);
 }
 }
-#line 1 "cil-dxi1GqgK.o"
-#pragma merger(0,"/tmp/cil-K1vMSJAa.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-tg11vUn8.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-7KP3A55W.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 4 "../../mockedFns/unget.c"
 int ungetc(int c , FILE *stream ) 
 { sym_file_stream_t *streamAsSymStream ;
@@ -6145,8 +6148,8 @@ int ungetc(int c , FILE *stream )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-kDpvTpDy.o"
-#pragma merger(0,"/tmp/cil-arrDslSZ.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-D1pktRan.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-e1tfO6zV.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 292 "../../includes/usr/include/unistd.h"
  __attribute__((__nothrow__)) __quad_t lseek(int fildes , __quad_t offset , int whence )  __asm__("_lseek64")  ;
 #line 307
@@ -6394,8 +6397,8 @@ int isatty(int fildes )
   return (1);
 }
 }
-#line 1 "cil-JanBYmtk.o"
-#pragma merger(0,"/tmp/cil-u0uN0atK.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-5jfVs55W.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-jLOGn6Cv.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 3 "../../mockedFns/unlink.c"
  __attribute__((__nothrow__)) int unlink(char const   *pathname )  __attribute__((__nonnull__(1))) ;
 #line 3 "../../mockedFns/unlink.c"
@@ -6411,10 +6414,10 @@ int unlink(char const   *pathname )
 }
 /* compiler builtin: 
    void __builtin_va_copy(__builtin_va_list  , __builtin_va_list  ) ;  */
-#line 1 "cil-e9dHWLTC.o"
-#pragma merger(0,"/tmp/cil-vq2r8OxN.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 1 "cil-D6lGTEQc.o"
-#pragma merger(0,"/tmp/cil-CZUxsAxO.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-Z45r6CWA.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-lWkh84Bv.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-hZvZMzGS.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-Z1T7NRxz.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 29 "../../libc/__random.c"
 long __random(void) ;
 #line 108 "../../libc/__random.c"
@@ -6674,8 +6677,8 @@ long __random(void)
   }
 }
 }
-#line 1 "cil-MG8QPSp3.o"
-#pragma merger(0,"/tmp/cil-dA0l6URD.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-UJ0RaN92.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-PDL2A3Lg.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 3 "../../libc/assert.c"
 int assert(int expression ) 
 { 
@@ -6691,8 +6694,8 @@ int assert(int expression )
   }
 }
 }
-#line 1 "cil-kiI4DrMc.o"
-#pragma merger(0,"/tmp/cil-bDYkLdZ1.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-FSuY83sX.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-lnNS3vfY.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 11 "../../libc/strntoumax.c"
 __inline static int digitval(int ch ) 
 { 
@@ -6865,8 +6868,8 @@ int atoi(char const   *nptr )
   return ((int )__cil_tmp);
 }
 }
-#line 1 "cil-2lCPDnV9.o"
-#pragma merger(0,"/tmp/cil-2KivpGZl.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-usdPUFhE.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-vddAHUQw.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 151 "../../includes/usr/include/stdlib.h"
  __attribute__((__nothrow__)) long atol(char const   *nptr )  __attribute__((__pure__,
 __nonnull__(1))) ;
@@ -6884,8 +6887,8 @@ long atol(char const   *nptr )
   return ((long )__cil_tmp);
 }
 }
-#line 1 "cil-Vy2hsu5N.o"
-#pragma merger(0,"/tmp/cil-4kqfCBP3.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-Ftno48hT.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-g6PBQbMZ.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 31 "../../libc/ctype.h"
 unsigned char const   __ctypes[257] ;
 #line 10 "../../libc/ctypes.c"
@@ -6956,8 +6959,8 @@ unsigned char const   __ctypes[257]  =
         (unsigned char const   )96,      (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34, 
         (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34,      (unsigned char const   )34, 
         (unsigned char const   )34};
-#line 1 "cil-LPU10RLF.o"
-#pragma merger(0,"/tmp/cil-FTsVbE41.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-Mv7zgG29.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-tWLwkW4g.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 208 "../../includes/usr/include/stdio.h"
 int fclose(FILE *f ) ;
 #line 11 "../../libc/fclose.c"
@@ -6974,8 +6977,8 @@ int fclose(FILE *f )
   return (__cil_tmp___0);
 }
 }
-#line 1 "cil-f0pzXZPe.o"
-#pragma merger(0,"/tmp/cil-ewlhgtwm.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-7vnQWDih.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-ly7yPufh.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 213 "../../includes/usr/include/stdio.h"
 int fflush(FILE *stream ) ;
 #line 3 "../../libc/fflush.c"
@@ -6987,8 +6990,8 @@ int fflush(FILE *stream )
   return (0);
 }
 }
-#line 1 "cil-yiK7xl5M.o"
-#pragma merger(0,"/tmp/cil-kDtzIvTP.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-b0BesCbL.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-yt5zPdYZ.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 437 "../../includes/usr/include/stdio.h"
 int fgetc(FILE *f ) ;
 #line 11 "../../libc/fgetc.c"
@@ -7002,8 +7005,8 @@ int fgetc(FILE *f )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-qMo2aplL.o"
-#pragma merger(0,"/tmp/cil-sjSDSsij.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-JJVYgKca.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-TtsgsaPe.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 528 "../../includes/usr/include/stdio.h"
 char *fgets(char * __restrict  s , int n , FILE * __restrict  f ) ;
 #line 11 "../../libc/fgets.c"
@@ -7049,8 +7052,8 @@ char *fgets(char * __restrict  s , int n , FILE * __restrict  f )
   return ((char *)s);
 }
 }
-#line 1 "cil-7R8fDCyu.o"
-#pragma merger(0,"/tmp/cil-sncp4qtQ.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-OFhsMDSf.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-GgrdvdoC.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 338 "../../includes/usr/include/stdio.h"
 int vfprintf(FILE * __restrict  file , char const   * __restrict  format , __gnuc_va_list ap ) ;
 #line 10 "../../libc/fprintf.c"
@@ -7069,8 +7072,8 @@ int fprintf(FILE * __restrict  file , char const   * __restrict  format  , ...)
   return (rv);
 }
 }
-#line 1 "cil-14xCqgoD.o"
-#pragma merger(0,"/tmp/cil-FNANNAo7.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-BaMRnsOE.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-ry7sTd1c.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 479 "../../includes/usr/include/stdio.h"
 int fputc(int c , FILE *f ) ;
 #line 9 "../../libc/fwrite.c"
@@ -7150,8 +7153,8 @@ int fputc(int c , FILE *f )
   return (__cil_tmp___0);
 }
 }
-#line 1 "cil-s57NMVJx.o"
-#pragma merger(0,"/tmp/cil-hDtZ8qma.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-1qPeL6kM.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-7usEY09z.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 585 "../../includes/usr/include/stdio.h"
 int fputs(char const   * __restrict  s , FILE * __restrict  file ) ;
 #line 13 "../../libc/fputs.c"
@@ -7168,8 +7171,8 @@ int fputs(char const   * __restrict  s , FILE * __restrict  file )
   return ((int )__cil_tmp___0);
 }
 }
-#line 1 "cil-FiSRlZXc.o"
-#pragma merger(0,"/tmp/cil-CgpFzgZF.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-kD9iFxN2.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-RBAg3EFi.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 9 "../../libc/fread.c"
 size_t___0 _fread(void *buf , size_t___0 count , FILE *f ) 
 { size_t___0 bytes ;
@@ -7224,8 +7227,8 @@ size_t___0 _fread(void *buf , size_t___0 count , FILE *f )
   return (bytes);
 }
 }
-#line 1 "cil-saxpxCoM.o"
-#pragma merger(0,"/tmp/cil-ce3nWnCR.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-plcdfk4H.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-o4nsxYWC.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 605 "../../includes/usr/include/stdio.h"
 size_t___0 fread(void * __restrict  ptr , size_t___0 size , size_t___0 nmemb , FILE * __restrict  f ) ;
 #line 11 "../../libc/fread2.c"
@@ -7239,10 +7242,10 @@ size_t___0 fread(void * __restrict  ptr , size_t___0 size , size_t___0 nmemb , F
   return (__cil_tmp / size);
 }
 }
-#line 1 "cil-cqQNEtYN.o"
-#pragma merger(0,"/tmp/cil-rgrW8i0N.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 1 "cil-Gb9e8cQa.o"
-#pragma merger(0,"/tmp/cil-xaQ2L80S.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-bsZWQ1dl.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-01onQGXq.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-GwQMD8Mj.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-6JMSQupp.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 611 "../../includes/usr/include/stdio.h"
 size_t___0 fwrite(void const   * __restrict  ptr , size_t___0 size , size_t___0 nmemb ,
                   FILE * __restrict  f ) ;
@@ -7258,8 +7261,8 @@ size_t___0 fwrite(void const   * __restrict  ptr , size_t___0 size , size_t___0 
   return (__cil_tmp / size);
 }
 }
-#line 1 "cil-1ELfKpyd.o"
-#pragma merger(0,"/tmp/cil-JJ9rTWVe.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-gopqWWoH.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-pFNefunZ.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 33 "../../libc/ctype.h"
 __inline static int __ctype_isalnum(int __c ) 
 { 
@@ -7282,8 +7285,8 @@ int isalnum(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-ntDCNIsj.o"
-#pragma merger(0,"/tmp/cil-PCWWtZf0.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-uj5vrlOR.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-ejaN2OWa.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 39 "../../libc/ctype.h"
 __inline static int __ctype_isalpha(int __c ) 
 { 
@@ -7306,8 +7309,8 @@ int isalpha(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-5YsBsJO0.o"
-#pragma merger(0,"/tmp/cil-Zh25xWEM.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-HUIdz22k.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-i6jcnllP.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 44 "../../libc/ctype.h"
 __inline static int __ctype_isascii(int __c ) 
 { 
@@ -7330,8 +7333,8 @@ int isascii(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-PLfIDtkx.o"
-#pragma merger(0,"/tmp/cil-QYUtPns6.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-81th3cq1.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-Vf8HIXUd.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 49 "../../libc/ctype.h"
 __inline static int __ctype_isblank(int __c ) 
 { 
@@ -7354,8 +7357,8 @@ int isblank(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-5uQQt6Wb.o"
-#pragma merger(0,"/tmp/cil-DKoiCSjG.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-r6DN3Jge.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-YTjdz6fC.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 54 "../../libc/ctype.h"
 __inline static int __ctype_iscntrl(int __c ) 
 { 
@@ -7378,8 +7381,8 @@ int iscntrl(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-mDrYDSGB.o"
-#pragma merger(0,"/tmp/cil-Nu9nZPuR.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-cH3brJ6e.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-7ySbm77d.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 59 "../../libc/ctype.h"
 __inline static int __ctype_isdigit(int __c ) 
 { 
@@ -7400,8 +7403,8 @@ int isdigit(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-qo1jjHtR.o"
-#pragma merger(0,"/tmp/cil-enzV0FPN.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-zXT9ocw8.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-egXeEgbo.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 64 "../../libc/ctype.h"
 __inline static int __ctype_isgraph(int __c ) 
 { 
@@ -7424,16 +7427,15 @@ int isgraph(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-XqWbpFZF.o"
-#pragma merger(0,"/tmp/cil-oyGTZbe2.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-TQCRi1VE.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-kEyB8pYN.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 70 "../../libc/ctype.h"
 __inline static int __ctype_islower(int __c ) 
 { 
 
   {
 #line 72
-  //return ((int )((int const   )__ctypes[__c + 1] & 2));
-  return OR(__c>='a' , __c<='z');
+  return ((int )((int const   )__ctypes[__c + 1] & 2));
 }
 }
 #line 133
@@ -7449,8 +7451,8 @@ int islower(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-gt2tEcCX.o"
-#pragma merger(0,"/tmp/cil-vS7OWm7g.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-JBNIRLHE.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-Z8OcOV9w.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 75 "../../libc/ctype.h"
 __inline static int __ctype_isprint(int __c ) 
 { 
@@ -7473,8 +7475,8 @@ int isprint(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-KeEzUpjG.o"
-#pragma merger(0,"/tmp/cil-NKS4BMPB.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-TjpkkXRm.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-GD1c7RQj.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 80 "../../libc/ctype.h"
 __inline static int __ctype_ispunct(int __c ) 
 { 
@@ -7497,8 +7499,8 @@ int ispunct(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-O87JUSka.o"
-#pragma merger(0,"/tmp/cil-RjVEjKTR.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-W2ZbxioN.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-feMEiMpI.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 85 "../../libc/ctype.h"
 __inline static int __ctype_isspace(int __c ) 
 { 
@@ -7519,8 +7521,8 @@ int isspace(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-TfV2hqFY.o"
-#pragma merger(0,"/tmp/cil-rUI79FX4.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-dPWba3kI.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-Gyyf2dQK.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 90 "../../libc/ctype.h"
 __inline static int __ctype_isupper(int __c ) 
 { 
@@ -7543,8 +7545,8 @@ int isupper(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-Ax0gjXUF.o"
-#pragma merger(0,"/tmp/cil-wLI5Y6XH.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-Fqry0cMt.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-KYPCyBYq.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 95 "../../libc/ctype.h"
 __inline static int __ctype_isxdigit(int __c ) 
 { 
@@ -7565,8 +7567,8 @@ int isxdigit(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-iBtGJwId.o"
-#pragma merger(0,"/tmp/cil-uQ4cgdch.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-tHw8o40o.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-kH0NEEZK.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 62 "../../includes/usr/include/string.h"
  __attribute__((__nothrow__)) int memcmp(void const   *s1 , void const   *s2 , size_t___0 n )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
@@ -7620,8 +7622,8 @@ int memcmp(void const   *s1 , void const   *s2 , size_t___0 n )
   return (d);
 }
 }
-#line 1 "cil-jZcJjBE0.o"
-#pragma merger(0,"/tmp/cil-ZxWNDE9t.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-DVGhOuge.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-oYSOoE7N.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 8 "../../libc/memcpy.c"
  __attribute__((__nothrow__)) void *memcpy(void * __restrict  dst , void const   * __restrict  src ,
                                            size_t___0 n )  __attribute__((__nonnull__(1,2))) ;
@@ -7658,15 +7660,14 @@ void *memcpy(void * __restrict  dst , void const   * __restrict  src , size_t___
 #line 13
     p ++;
 #line 13
-    *__cil_tmp = (char )*__cil_tmp; // dirty way of finding out which is "not an address"
     *__cil_tmp = (char )*__cil_tmp___0;
   }
 #line 15
   return ((void *)dst);
 }
 }
-#line 1 "cil-M7joeSSn.o"
-#pragma merger(0,"/tmp/cil-pfoOIlYO.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-L3Xt34Gx.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-yp1QsCE7.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 14 "../../libc/memmem.c"
 void *memmem(void const   *haystack , size_t___0 n , void const   *needle , size_t___0 m ) 
 { unsigned char const   *y ;
@@ -7752,8 +7753,8 @@ void *memmem(void const   *haystack , size_t___0 n , void const   *needle , size
   return ((void *)0);
 }
 }
-#line 1 "cil-BOuoKSPi.o"
-#pragma merger(0,"/tmp/cil-72cQFwSj.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-5MwDWVEj.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-cMuNh5iJ.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 43 "../../includes/usr/include/string.h"
  __attribute__((__nothrow__)) void *memmove(void *dst , void const   *src , size_t___0 n )  __attribute__((__nonnull__(1,2))) ;
 #line 7 "../../libc/memmove.c"
@@ -7824,8 +7825,8 @@ void *memmove(void *dst , void const   *src , size_t___0 n )
   return (dst);
 }
 }
-#line 1 "cil-WSmT5EEv.o"
-#pragma merger(0,"/tmp/cil-8noyd3Hi.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-SqIsYNZj.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-xeJ2uzw4.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 7 "../../libc/memset.c"
  __attribute__((__nothrow__)) void *memset(void *dst , int c , size_t___0 n )  __attribute__((__nonnull__(1))) ;
 #line 7 "../../libc/memset.c"
@@ -7859,8 +7860,8 @@ void *memset(void *dst , int c , size_t___0 n )
   return (dst);
 }
 }
-#line 1 "cil-Cd6WTuyY.o"
-#pragma merger(0,"/tmp/cil-M0oqnAG2.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-hwNSV22L.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-o2ztLQDb.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 143 "../../includes/usr/include/stdio.h"
 extern struct _IO_FILE *stdout ;
 #line 329
@@ -7881,8 +7882,8 @@ int printf(char const   * __restrict  format  , ...)
   return (rv);
 }
 }
-#line 1 "cil-pHXeH9sg.o"
-#pragma merger(0,"/tmp/cil-9bVkoEMt.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-mAzYOeml.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-3HN3Fkq5.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 493 "../../includes/usr/include/stdlib.h"
  __attribute__((__nothrow__)) int rand(void) ;
 #line 26 "../../libc/rand.c"
@@ -7898,8 +7899,8 @@ int rand(void)
   return ((int )__cil_tmp);
 }
 }
-#line 1 "cil-yzfAU1ym.o"
-#pragma merger(0,"/tmp/cil-cWyZWPd0.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-vWIdLQDe.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-Y8djUjo1.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 353 "../../includes/usr/include/stdio.h"
  __attribute__((__nothrow__)) int ( /* format attribute */  snprintf)(char * __restrict  buffer ,
                                                                       size_t___0 n ,
@@ -7930,8 +7931,8 @@ int ( /* format attribute */  snprintf)(char * __restrict  buffer , size_t___0 n
   return (rv);
 }
 }
-#line 1 "cil-C0YxspHz.o"
-#pragma merger(0,"/tmp/cil-HUvefs6f.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-jAWMCdQj.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-IDJk5guN.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 10 "../../libc/sprintf.c"
  __attribute__((__nothrow__)) int sprintf(char * __restrict  buffer , char const   * __restrict  format 
                                           , ...) ;
@@ -7951,8 +7952,8 @@ int sprintf(char * __restrict  buffer , char const   * __restrict  format  , ...
   return (rv);
 }
 }
-#line 1 "cil-PVZWkD3y.o"
-#pragma merger(0,"/tmp/cil-OEIUqu6H.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-v15khugp.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-jZCVEcHY.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 495 "../../includes/usr/include/stdlib.h"
  __attribute__((__nothrow__)) void srand(unsigned int seed ) ;
 #line 26 "../../libc/srand.c"
@@ -7968,8 +7969,8 @@ void srand(unsigned int seed )
   return;
 }
 }
-#line 1 "cil-BBLnz6w1.o"
-#pragma merger(0,"/tmp/cil-ShMCReei.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-qVoMdYlM.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-m5cjcR3s.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 325 "../../includes/usr/include/string.h"
  __attribute__((__nothrow__)) int strcasecmp(char const   *s1 , char const   *s2 )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
@@ -8024,8 +8025,8 @@ int strcasecmp(char const   *s1 , char const   *s2 )
   return (d);
 }
 }
-#line 1 "cil-5PO0Zsqt.o"
-#pragma merger(0,"/tmp/cil-DWZhnBHU.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-6xkIitFB.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-qFdpmDU3.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 92 "../../includes/usr/include/string.h"
  __attribute__((__nothrow__)) char *strcat(char * __restrict  dst , char const   * __restrict  src )  __attribute__((__nonnull__(1,2))) ;
 #line 7 "../../libc/strcat.c"
@@ -8043,8 +8044,8 @@ char *strcat(char * __restrict  dst , char const   * __restrict  src )
   return ((char *)dst);
 }
 }
-#line 1 "cil-6WHT2Y5H.o"
-#pragma merger(0,"/tmp/cil-Blg1RsaO.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-6EfLDimY.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-m6NXeie2.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 7 "../../libc/strchr.c"
  __attribute__((__nothrow__)) char *strchr(char const   *s , int c )  __attribute__((__pure__,
 __nonnull__(1))) ;
@@ -8067,8 +8068,8 @@ char *strchr(char const   *s , int c )
   return ((char *)s);
 }
 }
-#line 1 "cil-WQkSdhBy.o"
-#pragma merger(0,"/tmp/cil-WmDd1q6J.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-LVNySS7O.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-rPfSb8g8.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 7 "../../libc/strcmp.c"
  __attribute__((__nothrow__)) int strcmp(char const   *s1 , char const   *s2 )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
@@ -8112,8 +8113,8 @@ int strcmp(char const   *s1 , char const   *s2 )
   return (d);
 }
 }
-#line 1 "cil-3O3MJoxK.o"
-#pragma merger(0,"/tmp/cil-lfsYC5V9.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-iNLwvnY4.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-tIqOlZAC.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 9 "../../libc/strcpy.c"
  __attribute__((__nothrow__)) char *strcpy(char * __restrict  dst , char const   * __restrict  src )  __attribute__((__nonnull__(1,2))) ;
 #line 9 "../../libc/strcpy.c"
@@ -8153,8 +8154,8 @@ char *strcpy(char * __restrict  dst , char const   * __restrict  src )
   return ((char *)dst);
 }
 }
-#line 1 "cil-BhPpRyCK.o"
-#pragma merger(0,"/tmp/cil-pdrWijJL.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-5hLSNbmg.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-MtElDS2G.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 184 "../../includes/usr/include/string.h"
  __attribute__((__nothrow__)) size_t___0 strcspn(char const   *s , char const   *reject )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
@@ -8193,8 +8194,8 @@ size_t___0 strcspn(char const   *s , char const   *reject )
   return ((unsigned long )count);
 }
 }
-#line 1 "cil-bZGb67zW.o"
-#pragma merger(0,"/tmp/cil-9J9YWa78.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-1l1PGOSH.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-vsdXPJDE.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 4 "../../libc/strlcpy.c"
 size_t___0 strlcat(char *dst , char const   *src , size_t___0 size ) 
 { size_t___0 len1 ;
@@ -8259,8 +8260,8 @@ size_t___0 strlcpy(char *dst , char const   *src , size_t___0 size )
   return (ret___0);
 }
 }
-#line 1 "cil-jQrzSPHR.o"
-#pragma merger(0,"/tmp/cil-vlnqTPke.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-Usi4S24T.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-oo0D8Lq5.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 7 "../../libc/strlen.c"
  __attribute__((__nothrow__)) size_t___0 strlen(char const   *s )  __attribute__((__pure__,
 __nonnull__(1))) ;
@@ -8280,8 +8281,8 @@ size_t___0 strlen(char const   *s )
   return ((unsigned long )(ss - s));
 }
 }
-#line 1 "cil-CdQnMORV.o"
-#pragma merger(0,"/tmp/cil-xlOa38Gd.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-jGrG05ie.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-wY2wQucx.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 95 "../../includes/usr/include/string.h"
  __attribute__((__nothrow__)) char *strncat(char * __restrict  dst , char const   * __restrict  src ,
                                             size_t___0 n )  __attribute__((__nonnull__(1,2))) ;
@@ -8340,8 +8341,8 @@ char *strncat(char * __restrict  dst , char const   * __restrict  src , size_t__
   return ((char *)dst);
 }
 }
-#line 1 "cil-95aVErrS.o"
-#pragma merger(0,"/tmp/cil-JeqC8pr7.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-czfkLvwc.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-sSF7de1x.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 7 "../../libc/strncmp.c"
  __attribute__((__nothrow__)) int strncmp(char const   *s1 , char const   *s2 , size_t___0 n )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
@@ -8395,8 +8396,8 @@ int strncmp(char const   *s1 , char const   *s2 , size_t___0 n )
   return (d);
 }
 }
-#line 1 "cil-ZMBLwipd.o"
-#pragma merger(0,"/tmp/cil-4eAHloQd.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-PHDcMusA.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-nu3OVxxg.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 7 "../../libc/strncpy.c"
  __attribute__((__nothrow__)) char *strncpy(char * __restrict  dst , char const   * __restrict  src ,
                                             size_t___0 n )  __attribute__((__nonnull__(1,2))) ;
@@ -8441,10 +8442,10 @@ char *strncpy(char * __restrict  dst , char const   * __restrict  src , size_t__
   return ((char *)dst);
 }
 }
-#line 1 "cil-zFaVCOCv.o"
-#pragma merger(0,"/tmp/cil-cn9xYbpQ.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 1 "cil-WuufaIg3.o"
-#pragma merger(0,"/tmp/cil-TQrgtbN8.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-eMxi4yBE.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-1TdSeAPk.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-KsFQxNZQ.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-4egwDN5Z.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 10 "../../libc/strxspn.h"
 size_t___0 __strxspn(char const   *s , char const   *map , int parity ) ;
 #line 7 "../../libc/strpbrk.c"
@@ -8476,8 +8477,8 @@ char *strpbrk(char const   *s , char const   *accept___0 )
   return (__cil_tmp___0);
 }
 }
-#line 1 "cil-X5uZSUkP.o"
-#pragma merger(0,"/tmp/cil-R7SULEAm.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-2IRUzcuC.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-89T1Mx5k.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 348 "../../includes/usr/include/string.h"
  __attribute__((__nothrow__)) char *strsep(char ** __restrict  stringp , char const   * __restrict  delim )  __attribute__((__nonnull__(1,2))) ;
 #line 7 "../../libc/strsep.c"
@@ -8513,8 +8514,8 @@ char *strsep(char ** __restrict  stringp , char const   * __restrict  delim )
   return (s);
 }
 }
-#line 1 "cil-0wV78mIv.o"
-#pragma merger(0,"/tmp/cil-glhNrV5h.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-N1hNAjEr.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-M3hxrI9A.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 194 "../../includes/usr/include/string.h"
  __attribute__((__nothrow__)) char *strstr(char const   *haystack , char const   *needle )  __attribute__((__pure__,
 __nonnull__(1,2))) ;
@@ -8539,8 +8540,8 @@ char *strstr(char const   *haystack , char const   *needle )
   return ((char *)__cil_tmp___1);
 }
 }
-#line 1 "cil-5TCbDVnM.o"
-#pragma merger(0,"/tmp/cil-0cGEbxmN.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-s3ck3R4A.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-LFuO23k2.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 199 "../../includes/usr/include/string.h"
  __attribute__((__nothrow__)) char *strtok(char * __restrict  s , char const   * __restrict  delim )  __attribute__((__nonnull__(2))) ;
 #line 9 "../../libc/strtok.c"
@@ -8573,8 +8574,8 @@ char *strtok(char * __restrict  s , char const   * __restrict  delim )
   return ((char *)s);
 }
 }
-#line 1 "cil-Odemo8cB.o"
-#pragma merger(0,"/tmp/cil-JufbdJmj.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-TP8jFr3S.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-xDmHp1ba.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 12 "../../libc/strxspn.c"
 size_t___0 __strxspn(char const   *s , char const   *map , int parity ) 
 { char matchmap[257] ;
@@ -8616,8 +8617,8 @@ size_t___0 __strxspn(char const   *s , char const   *map , int parity )
   return (n);
 }
 }
-#line 1 "cil-8kJrI9Tv.o"
-#pragma merger(0,"/tmp/cil-FFN7XgYf.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-xgJHPkaF.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-4kQZaYyj.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 181 "../../includes/usr/include/sys/syslog.h"
 void openlog(char const   *ident , int option , int facility ) ;
 #line 190
@@ -8755,16 +8756,15 @@ void ( /* format attribute */  syslog)(int prio , char const   *format  , ...)
 #line 86
   __builtin_va_start(ap, format);
 #line 87
-  __COMMENT("Call vsyslog(prio, format, ap)");
-  //vsyslog(prio, format, ap);
+  vsyslog(prio, format, ap);
 #line 88
   __builtin_va_end(ap);
 #line 89
   return;
 }
 }
-#line 1 "cil-2X6tbsJT.o"
-#pragma merger(0,"/tmp/cil-GzMD5kQt.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-5SIglVzl.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-2VGCz4l9.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 109 "../../libc/ctype.h"
 __inline static int __ctype_tolower(int __c ) 
 { int __cil_tmp___0 ;
@@ -8798,8 +8798,8 @@ int tolower(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-m12oCSA3.o"
-#pragma merger(0,"/tmp/cil-o8Rx8UO7.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-HLGxRRdB.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-z9TBHyZn.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 104 "../../libc/ctype.h"
 __inline static int __ctype_toupper(int __c ) 
 { int __cil_tmp___0 ;
@@ -8833,8 +8833,8 @@ int toupper(int c )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-DEfJYprY.o"
-#pragma merger(0,"/tmp/cil-CPqbgPGO.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-8y1tz0rC.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-3nyMP9AR.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 9 "../../libc/vasprintf.c"
 int vasprintf(char **bufp , char const   *format , va_list ap ) 
 { va_list ap1 ;
@@ -8872,8 +8872,8 @@ int vasprintf(char **bufp , char const   *format , va_list ap )
   return (__cil_tmp___1);
 }
 }
-#line 1 "cil-qFiJFbGT.o"
-#pragma merger(0,"/tmp/cil-TvuKb8l1.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-6KvpwtUI.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-QmHRBqqq.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 13 "../../libc/vfprintf.c"
 int vfprintf(FILE * __restrict  file , char const   * __restrict  format , __gnuc_va_list ap ) 
 { int rv ;
@@ -8899,8 +8899,8 @@ int vfprintf(FILE * __restrict  file , char const   * __restrict  format , __gnu
   return ((int )__cil_tmp);
 }
 }
-#line 1 "cil-684VT8lt.o"
-#pragma merger(0,"/tmp/cil-QCCUM3gO.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-1q6QQNan.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-eztV7Sgp.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 344 "../../includes/usr/include/stdio.h"
 int vprintf(char const   * __restrict  format , __gnuc_va_list ap ) ;
 #line 8 "../../libc/vprintf.c"
@@ -8914,8 +8914,8 @@ int vprintf(char const   * __restrict  format , __gnuc_va_list ap )
   return (__cil_tmp);
 }
 }
-#line 1 "cil-OmBXMCCx.o"
-#pragma merger(0,"/tmp/cil-IYr85Clg.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-UcC3qEXn.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-cXqjqorG.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 48 "../../libc/vsnprintf.c"
 static size_t___0 format_int(char *q , size_t___0 n , uintmax_t val , enum flags flags ,
                              int base , int width , int prec ) ;
@@ -9798,8 +9798,8 @@ int vsnprintf(char * __restrict  buffer , size_t___0 n , char const   * __restri
   return ((int )o);
 }
 }
-#line 1 "cil-GmTVN02t.o"
-#pragma merger(0,"/tmp/cil-7JPgafI8.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-8QsgPzdF.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-z9tKGiNa.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 346 "../../includes/usr/include/stdio.h"
  __attribute__((__nothrow__)) int vsprintf(char * __restrict  buffer , char const   * __restrict  format ,
                                            __gnuc_va_list ap ) ;
@@ -9817,11 +9817,11 @@ int vsprintf(char * __restrict  buffer , char const   * __restrict  format , __g
   return (__cil_tmp);
 }
 }
-#line 1 "cil-XKgL5bW5.o"
-#pragma merger(0,"/tmp/cil-d7hKRlVc.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 27 "str.h"
+#line 1 "cil-WB0jAj5j.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-RCte5KUW.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 27 "../../experiments/vsftpd-2.0.7/str.h"
 void str_alloc_text(struct mystr *p_str , char const   *p_src ) ;
-#line 13 "utility.h"
+#line 13 "../../experiments/vsftpd-2.0.7/utility.h"
 void die(char const   *p_text ) ;
 #line 23
 void die2(char const   *p_text1 , char const   *p_text2 ) ;
@@ -9829,7 +9829,7 @@ void die2(char const   *p_text1 , char const   *p_text2 ) ;
 void bug(char const   *p_text ) ;
 #line 41
 void vsf_exit(char const   *p_text ) ;
-#line 6 "tunables.h"
+#line 6 "../../experiments/vsftpd-2.0.7/tunables.h"
 int tunable_anonymous_enable ;
 #line 7
 int tunable_local_enable ;
@@ -9873,13 +9873,13 @@ char const   *tunable_banner_file ;
 char const   *tunable_pasv_address ;
 #line 125
 char const   *tunable_email_password_file ;
-#line 32 "logging.h"
+#line 32 "../../experiments/vsftpd-2.0.7/logging.h"
 void vsf_log_init(struct vsf_session *p_sess ) ;
-#line 22 "filestr.h"
+#line 22 "../../experiments/vsftpd-2.0.7/filestr.h"
 int str_fileread(struct mystr *p_str , char const   *p_filename , unsigned int maxsize ) ;
-#line 12 "ftpcmdio.h"
+#line 12 "../../experiments/vsftpd-2.0.7/ftpcmdio.h"
 void vsf_cmdio_sock_setup(void) ;
-#line 11 "sysutil.h"
+#line 11 "../../experiments/vsftpd-2.0.7/sysutil.h"
 int vsf_sysutil_retval_is_error(int retval ) ;
 #line 42
 void vsf_sysutil_install_null_sighandler(enum EVSFSysUtilSignal sig ) ;
@@ -9917,7 +9917,7 @@ void vsf_sysutil_tzset(void) ;
 char *vsf_sysutil_getenv(char const   *p_var ) ;
 #line 310
 int vsf_sysutil_running_as_root(void) ;
-#line 24 "sysdeputil.h"
+#line 24 "../../experiments/vsftpd-2.0.7/sysdeputil.h"
 int vsf_sysdep_has_capabilities_as_non_root(void) ;
 #line 45
 void vsf_sysutil_setproctitle_init(int argc , char const   **argv ) ;
@@ -9927,19 +9927,19 @@ void vsf_sysutil_setproctitle(char const   *p_text ) ;
 void vsf_sysutil_set_proctitle_prefix(struct mystr  const  *p_str ) ;
 #line 51
 void vsf_sysutil_map_anon_pages_init(void) ;
-#line 18 "parseconf.h"
+#line 18 "../../experiments/vsftpd-2.0.7/parseconf.h"
 void vsf_parseconf_load_file(char const   *p_filename , int errs_fatal ) ;
-#line 14 "oneprocess.h"
+#line 14 "../../experiments/vsftpd-2.0.7/oneprocess.h"
 void vsf_one_process_start(struct vsf_session *p_sess ) ;
-#line 14 "twoprocess.h"
+#line 14 "../../experiments/vsftpd-2.0.7/twoprocess.h"
 void vsf_two_process_start(struct vsf_session *p_sess ) ;
-#line 20 "standalone.h"
+#line 20 "../../experiments/vsftpd-2.0.7/standalone.h"
 struct vsf_client_launch vsf_standalone_main(void) ;
-#line 4 "tcpwrap.h"
+#line 4 "../../experiments/vsftpd-2.0.7/tcpwrap.h"
 int vsf_tcp_wrapper_ok(int remote_fd ) ;
-#line 12 "ssl.h"
+#line 12 "../../experiments/vsftpd-2.0.7/ssl.h"
 void ssl_init(struct vsf_session *p_sess ) ;
-#line 29 "main.c"
+#line 29 "../../experiments/vsftpd-2.0.7/main.c"
 static void die_unless_privileged(void) ;
 #line 30
 static void do_sanity_checks(void) ;
@@ -9951,7 +9951,7 @@ static void env_init(void) ;
 extern void symtest_initialize(void) ;
 #line 38
 extern void addfile(char const   *filename , char const   *contents , unsigned int len ) ;
-#line 39 "main.c"
+#line 39 "../../experiments/vsftpd-2.0.7/main.c"
 char confFileContents[191]  = 
 #line 39
   {      (char )'c',      (char )'h',      (char )'o',      (char )'w', 
@@ -10002,9 +10002,9 @@ char confFileContents[191]  =
         (char )'a',      (char )'d',      (char )'d',      (char )'r', 
         (char )'e',      (char )'s',      (char )'s',      (char )'6', 
         (char )'=',      (char )'\n',      (char )'\000'};
-#line 40 "main.c"
+#line 40 "../../experiments/vsftpd-2.0.7/main.c"
 unsigned int confFileSize  =    (unsigned int )(sizeof(confFileContents) - 1UL);
-#line 42 "main.c"
+#line 42 "../../experiments/vsftpd-2.0.7/main.c"
 int main(int argc , char const   **argv ) 
 { struct vsf_session the_session ;
   int config_specified ;
@@ -10415,7 +10415,7 @@ int main(int argc , char const   **argv )
   return (1);
 }
 }
-#line 255 "main.c"
+#line 255 "../../experiments/vsftpd-2.0.7/main.c"
 static void die_unless_privileged(void) 
 { int __cil_tmp ;
 
@@ -10431,7 +10431,7 @@ static void die_unless_privileged(void)
   return;
 }
 }
-#line 264 "main.c"
+#line 264 "../../experiments/vsftpd-2.0.7/main.c"
 static void do_sanity_checks(void) 
 { struct vsf_sysutil_statbuf *p_statbuf___0 ;
   int __cil_tmp ;
@@ -10480,7 +10480,7 @@ static void do_sanity_checks(void)
   return;
 }
 }
-#line 297 "main.c"
+#line 297 "../../experiments/vsftpd-2.0.7/main.c"
 static void env_init(void) 
 { 
 
@@ -10497,7 +10497,7 @@ static void env_init(void)
   return;
 }
 }
-#line 309 "main.c"
+#line 309 "../../experiments/vsftpd-2.0.7/main.c"
 static void session_init(struct vsf_session *p_sess ) 
 { struct vsf_sysutil_user  const  *p_user ;
   struct vsf_sysutil_user *__cil_tmp ;
@@ -10557,9 +10557,9 @@ static void session_init(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1 "cil-YvMUGsSC.o"
-#pragma merger(0,"/tmp/cil-QbYuBV2F.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 104 "sysutil.h"
+#line 1 "cil-2EMlZnFD.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-jANTfh6U.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 104 "../../experiments/vsftpd-2.0.7/sysutil.h"
 int vsf_sysutil_write_loop(int fd , void const   *p_buf , unsigned int size ) ;
 #line 165
 void vsf_sysutil_exit(int exit_code ) ;
@@ -10567,11 +10567,11 @@ void vsf_sysutil_exit(int exit_code ) ;
 unsigned int vsf_sysutil_strlen(char const   *p_text ) ;
 #line 261
 void vsf_sysutil_activate_noblock(int fd ) ;
-#line 41 "str.h"
+#line 41 "../../experiments/vsftpd-2.0.7/str.h"
 char const   *str_getbuf(struct mystr  const  *p_str ) ;
 #line 48
 void str_append_text(struct mystr *p_str , char const   *p_src ) ;
-#line 15 "utility.c"
+#line 15 "../../experiments/vsftpd-2.0.7/utility.c"
 void die(char const   *p_text ) 
 { 
 
@@ -10584,7 +10584,7 @@ void die(char const   *p_text )
   return;
 }
 }
-#line 24 "utility.c"
+#line 24 "../../experiments/vsftpd-2.0.7/utility.c"
 void die2(char const   *p_text1 , char const   *p_text2 ) 
 { struct mystr die_str ;
   char const   *__cil_tmp ;
@@ -10608,7 +10608,7 @@ void die2(char const   *p_text1 , char const   *p_text2 )
   return;
 }
 }
-#line 33 "utility.c"
+#line 33 "../../experiments/vsftpd-2.0.7/utility.c"
 void bug(char const   *p_text ) 
 { unsigned int __cil_tmp ;
 
@@ -10629,7 +10629,7 @@ void bug(char const   *p_text )
   return;
 }
 }
-#line 45 "utility.c"
+#line 45 "../../experiments/vsftpd-2.0.7/utility.c"
 void vsf_exit(char const   *p_text ) 
 { unsigned int __cil_tmp ;
 
@@ -10644,11 +10644,11 @@ void vsf_exit(char const   *p_text )
   return;
 }
 }
-#line 1 "cil-PKhmz6BY.o"
-#pragma merger(0,"/tmp/cil-aUQ01CRP.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 14 "prelogin.h"
+#line 1 "cil-iSmCPu6n.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-MgX1LBAy.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 14 "../../experiments/vsftpd-2.0.7/prelogin.h"
 void init_connection(struct vsf_session *p_sess ) ;
-#line 22 "ftpcmdio.h"
+#line 22 "../../experiments/vsftpd-2.0.7/ftpcmdio.h"
 void vsf_cmdio_write(struct vsf_session *p_sess , int status , char const   *p_text ) ;
 #line 53
 void vsf_cmdio_write_exit(struct vsf_session *p_sess , int status , char const   *p_text ) ;
@@ -10657,7 +10657,7 @@ void vsf_cmdio_set_alarm(struct vsf_session *p_sess ) ;
 #line 92
 void vsf_cmdio_get_cmd_and_arg(struct vsf_session *p_sess , struct mystr *p_cmd_str ,
                                struct mystr *p_arg_str , int set_alarm ) ;
-#line 32 "str.h"
+#line 32 "../../experiments/vsftpd-2.0.7/str.h"
 void str_copy(struct mystr *p_dest , struct mystr  const  *p_src ) ;
 #line 34
 void str_empty(struct mystr *p_str ) ;
@@ -10671,7 +10671,7 @@ int str_equal_text(struct mystr  const  *p_str , char const   *p_text ) ;
 void str_upper(struct mystr *p_str ) ;
 #line 120
 int str_contains_line(struct mystr  const  *p_str , struct mystr  const  *p_line_str ) ;
-#line 33 "tunables.h"
+#line 33 "../../experiments/vsftpd-2.0.7/tunables.h"
 int tunable_userlist_enable ;
 #line 34
 int tunable_userlist_deny ;
@@ -10691,25 +10691,25 @@ unsigned int tunable_max_per_ip ;
 unsigned int tunable_max_login_fails ;
 #line 108
 char const   *tunable_ftpd_banner ;
-#line 24 "oneprocess.h"
+#line 24 "../../experiments/vsftpd-2.0.7/oneprocess.h"
 void vsf_one_process_login(struct vsf_session *p_sess , struct mystr  const  *p_pass_str ) ;
-#line 23 "twoprocess.h"
+#line 23 "../../experiments/vsftpd-2.0.7/twoprocess.h"
 void vsf_two_process_login(struct vsf_session *p_sess , struct mystr  const  *p_pass_str ) ;
-#line 29 "banner.h"
+#line 29 "../../experiments/vsftpd-2.0.7/banner.h"
 void vsf_banner_write(struct vsf_session *p_sess , struct mystr *p_str , int ftpcode ) ;
-#line 80 "logging.h"
+#line 80 "../../experiments/vsftpd-2.0.7/logging.h"
 void vsf_log_line(struct vsf_session *p_sess , enum EVSFLogEntryType what , struct mystr *p_str ) ;
-#line 16 "ssl.h"
+#line 16 "../../experiments/vsftpd-2.0.7/ssl.h"
 void handle_auth(struct vsf_session *p_sess ) ;
 #line 17
 void handle_pbsz(struct vsf_session *p_sess ) ;
 #line 18
 void handle_prot(struct vsf_session *p_sess ) ;
-#line 6 "features.h"
+#line 6 "../../experiments/vsftpd-2.0.7/features.h"
 void handle_feat(struct vsf_session *p_sess ) ;
-#line 6 "opts.h"
+#line 6 "../../experiments/vsftpd-2.0.7/opts.h"
 void handle_opts(struct vsf_session *p_sess ) ;
-#line 29 "prelogin.c"
+#line 29 "../../experiments/vsftpd-2.0.7/prelogin.c"
 static void emit_greeting(struct vsf_session *p_sess ) ;
 #line 30
 static void parse_username_password(struct vsf_session *p_sess ) ;
@@ -10717,7 +10717,7 @@ static void parse_username_password(struct vsf_session *p_sess ) ;
 static void handle_user_command(struct vsf_session *p_sess ) ;
 #line 32
 static void handle_pass_command(struct vsf_session *p_sess ) ;
-#line 34 "prelogin.c"
+#line 34 "../../experiments/vsftpd-2.0.7/prelogin.c"
 void init_connection(struct vsf_session *p_sess ) 
 { 
 
@@ -10737,7 +10737,7 @@ void init_connection(struct vsf_session *p_sess )
   return;
 }
 }
-#line 49 "prelogin.c"
+#line 49 "../../experiments/vsftpd-2.0.7/prelogin.c"
 static void emit_greeting(struct vsf_session *p_sess ) 
 { struct mystr str_log_line ;
   int __cil_tmp ;
@@ -10802,7 +10802,7 @@ static void emit_greeting(struct vsf_session *p_sess )
   return;
 }
 }
-#line 96 "prelogin.c"
+#line 96 "../../experiments/vsftpd-2.0.7/prelogin.c"
 static void parse_username_password(struct vsf_session *p_sess ) 
 { int __cil_tmp ;
   int __cil_tmp___0 ;
@@ -10919,7 +10919,7 @@ static void parse_username_password(struct vsf_session *p_sess )
   }
 }
 }
-#line 144 "prelogin.c"
+#line 144 "../../experiments/vsftpd-2.0.7/prelogin.c"
 static void handle_user_command(struct vsf_session *p_sess ) 
 { int is_anon ;
   int __cil_tmp ;
@@ -11019,7 +11019,7 @@ static void handle_user_command(struct vsf_session *p_sess )
   return;
 }
 }
-#line 213 "prelogin.c"
+#line 213 "../../experiments/vsftpd-2.0.7/prelogin.c"
 static void handle_pass_command(struct vsf_session *p_sess ) 
 { int __cil_tmp ;
 
@@ -11056,9 +11056,9 @@ static void handle_pass_command(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1 "cil-fuhOuRqF.o"
-#pragma merger(0,"/tmp/cil-N08gwDjq.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 34 "ftpcmdio.h"
+#line 1 "cil-Pmq89dJg.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-y68y7mhA.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 34 "../../experiments/vsftpd-2.0.7/ftpcmdio.h"
 void vsf_cmdio_write_hyphen(struct vsf_session *p_sess , int status , char const   *p_text ) ;
 #line 46
 void vsf_cmdio_write_raw(struct vsf_session *p_sess , char const   *p_text ) ;
@@ -11066,7 +11066,7 @@ void vsf_cmdio_write_raw(struct vsf_session *p_sess , char const   *p_text ) ;
 void vsf_cmdio_write_str(struct vsf_session *p_sess , int status , struct mystr  const  *p_str ) ;
 #line 70
 void vsf_cmdio_write_str_hyphen(struct vsf_session *p_sess , int status , struct mystr  const  *p_str ) ;
-#line 30 "str.h"
+#line 30 "../../experiments/vsftpd-2.0.7/str.h"
 void str_alloc_ulong(struct mystr *p_str , unsigned long the_long ) ;
 #line 36
 void str_trunc(struct mystr *p_str , unsigned int trunc_len ) ;
@@ -11084,7 +11084,7 @@ void str_replace_text(struct mystr *p_str , char const   *p_from , char const   
 void str_split_char(struct mystr *p_src , struct mystr *p_rhs , char c ) ;
 #line 95
 char str_get_char_at(struct mystr  const  *p_str , unsigned int indexx ) ;
-#line 43 "sysutil.h"
+#line 43 "../../experiments/vsftpd-2.0.7/sysutil.h"
 void vsf_sysutil_install_sighandler(enum EVSFSysUtilSignal sig , void (*handler)(void * ) ,
                                     void *p_private ) ;
 #line 56
@@ -11099,18 +11099,18 @@ void vsf_sysutil_activate_oobinline(int fd ) ;
 void vsf_sysutil_deactivate_noblock(int fd ) ;
 #line 266
 void vsf_sysutil_shutdown_read_failok(int fd ) ;
-#line 31 "tunables.h"
+#line 31 "../../experiments/vsftpd-2.0.7/tunables.h"
 int tunable_log_ftp_protocol ;
 #line 84
 unsigned int tunable_idle_session_timeout ;
-#line 15 "secbuf.h"
+#line 15 "../../experiments/vsftpd-2.0.7/secbuf.h"
 void vsf_secbuf_alloc(char **p_ptr , unsigned int size ) ;
-#line 13 "readwrite.h"
+#line 13 "../../experiments/vsftpd-2.0.7/readwrite.h"
 int ftp_write_str(struct vsf_session  const  *p_sess , struct mystr  const  *p_str ,
                   enum EVSFRWTarget target ) ;
 #line 18
 void ftp_getline(struct vsf_session  const  *p_sess , struct mystr *p_str , char *p_buf ) ;
-#line 24 "ftpcmdio.c"
+#line 24 "../../experiments/vsftpd-2.0.7/ftpcmdio.c"
 static void control_getline(struct mystr *p_str , struct vsf_session *p_sess ) ;
 #line 25
 static void ftp_write_text_common(struct vsf_session *p_sess , int status , char const   *p_text ,
@@ -11120,7 +11120,7 @@ static void ftp_write_str_common(struct vsf_session *p_sess , int status , char 
                                  struct mystr  const  *p_str , int noblock ) ;
 #line 30
 static void handle_alarm_timeout(void *p_private ) ;
-#line 32 "ftpcmdio.c"
+#line 32 "../../experiments/vsftpd-2.0.7/ftpcmdio.c"
 void vsf_cmdio_sock_setup(void) 
 { 
 
@@ -11135,7 +11135,7 @@ void vsf_cmdio_sock_setup(void)
   return;
 }
 }
-#line 40 "ftpcmdio.c"
+#line 40 "../../experiments/vsftpd-2.0.7/ftpcmdio.c"
 static void handle_alarm_timeout(void *p_private ) 
 { struct vsf_session *p_sess ;
 
@@ -11148,7 +11148,7 @@ static void handle_alarm_timeout(void *p_private )
   return;
 }
 }
-#line 47 "ftpcmdio.c"
+#line 47 "../../experiments/vsftpd-2.0.7/ftpcmdio.c"
 void vsf_cmdio_write(struct vsf_session *p_sess , int status , char const   *p_text ) 
 { 
 
@@ -11159,7 +11159,7 @@ void vsf_cmdio_write(struct vsf_session *p_sess , int status , char const   *p_t
   return;
 }
 }
-#line 53 "ftpcmdio.c"
+#line 53 "../../experiments/vsftpd-2.0.7/ftpcmdio.c"
 void vsf_cmdio_write_hyphen(struct vsf_session *p_sess , int status , char const   *p_text ) 
 { 
 
@@ -11170,9 +11170,9 @@ void vsf_cmdio_write_hyphen(struct vsf_session *p_sess , int status , char const
   return;
 }
 }
-#line 63 "ftpcmdio.c"
+#line 63 "../../experiments/vsftpd-2.0.7/ftpcmdio.c"
 static struct mystr s_the_str  ;
-#line 60 "ftpcmdio.c"
+#line 60 "../../experiments/vsftpd-2.0.7/ftpcmdio.c"
 void vsf_cmdio_write_raw(struct vsf_session *p_sess , char const   *p_text ) 
 { int retval ;
 
@@ -11196,7 +11196,7 @@ void vsf_cmdio_write_raw(struct vsf_session *p_sess , char const   *p_text )
   return;
 }
 }
-#line 77 "ftpcmdio.c"
+#line 77 "../../experiments/vsftpd-2.0.7/ftpcmdio.c"
 void vsf_cmdio_write_exit(struct vsf_session *p_sess , int status , char const   *p_text ) 
 { 
 
@@ -11211,9 +11211,9 @@ void vsf_cmdio_write_exit(struct vsf_session *p_sess , int status , char const  
   return;
 }
 }
-#line 94 "ftpcmdio.c"
+#line 94 "../../experiments/vsftpd-2.0.7/ftpcmdio.c"
 static struct mystr s_the_str___0  ;
-#line 89 "ftpcmdio.c"
+#line 89 "../../experiments/vsftpd-2.0.7/ftpcmdio.c"
 static void ftp_write_text_common(struct vsf_session *p_sess , int status , char const   *p_text ,
                                   int noblock , char sep ) 
 { 
@@ -11228,7 +11228,7 @@ static void ftp_write_text_common(struct vsf_session *p_sess , int status , char
   return;
 }
 }
-#line 99 "ftpcmdio.c"
+#line 99 "../../experiments/vsftpd-2.0.7/ftpcmdio.c"
 void vsf_cmdio_write_str_hyphen(struct vsf_session *p_sess , int status , struct mystr  const  *p_str ) 
 { 
 
@@ -11239,7 +11239,7 @@ void vsf_cmdio_write_str_hyphen(struct vsf_session *p_sess , int status , struct
   return;
 }
 }
-#line 106 "ftpcmdio.c"
+#line 106 "../../experiments/vsftpd-2.0.7/ftpcmdio.c"
 void vsf_cmdio_write_str(struct vsf_session *p_sess , int status , struct mystr  const  *p_str ) 
 { 
 
@@ -11250,11 +11250,11 @@ void vsf_cmdio_write_str(struct vsf_session *p_sess , int status , struct mystr 
   return;
 }
 }
-#line 117 "ftpcmdio.c"
+#line 117 "../../experiments/vsftpd-2.0.7/ftpcmdio.c"
 static struct mystr s_write_buf_str  ;
-#line 118 "ftpcmdio.c"
+#line 118 "../../experiments/vsftpd-2.0.7/ftpcmdio.c"
 static struct mystr s_text_mangle_str  ;
-#line 113 "ftpcmdio.c"
+#line 113 "../../experiments/vsftpd-2.0.7/ftpcmdio.c"
 static void ftp_write_str_common(struct vsf_session *p_sess , int status , char sep ,
                                  struct mystr  const  *p_str , int noblock ) 
 { int retval ;
@@ -11307,7 +11307,7 @@ static void ftp_write_str_common(struct vsf_session *p_sess , int status , char 
   return;
 }
 }
-#line 153 "ftpcmdio.c"
+#line 153 "../../experiments/vsftpd-2.0.7/ftpcmdio.c"
 void vsf_cmdio_set_alarm(struct vsf_session *p_sess ) 
 { 
 
@@ -11323,9 +11323,9 @@ void vsf_cmdio_set_alarm(struct vsf_session *p_sess )
   return;
 }
 }
-#line 179 "ftpcmdio.c"
+#line 179 "../../experiments/vsftpd-2.0.7/ftpcmdio.c"
 static struct mystr s_log_str  ;
-#line 164 "ftpcmdio.c"
+#line 164 "../../experiments/vsftpd-2.0.7/ftpcmdio.c"
 void vsf_cmdio_get_cmd_and_arg(struct vsf_session *p_sess , struct mystr *p_cmd_str ,
                                struct mystr *p_arg_str , int set_alarm ) 
 { int __cil_tmp ;
@@ -11371,7 +11371,7 @@ void vsf_cmdio_get_cmd_and_arg(struct vsf_session *p_sess , struct mystr *p_cmd_
   return;
 }
 }
-#line 197 "ftpcmdio.c"
+#line 197 "../../experiments/vsftpd-2.0.7/ftpcmdio.c"
 static void control_getline(struct mystr *p_str , struct vsf_session *p_sess ) 
 { unsigned int len ;
   unsigned int __cil_tmp ;
@@ -11416,11 +11416,11 @@ static void control_getline(struct mystr *p_str , struct vsf_session *p_sess )
   return;
 }
 }
-#line 1 "cil-WkAmwLLJ.o"
-#pragma merger(0,"/tmp/cil-30XeHHq0.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 12 "postlogin.h"
+#line 1 "cil-0Izc4eXz.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-3WVsPJOT.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 12 "../../experiments/vsftpd-2.0.7/postlogin.h"
 void process_post_login(struct vsf_session *p_sess ) ;
-#line 31 "str.h"
+#line 31 "../../experiments/vsftpd-2.0.7/str.h"
 void str_alloc_filesize_t(struct mystr *p_str , filesize_t the_filesize ) ;
 #line 44
 int str_equal(struct mystr  const  *p_str1 , struct mystr  const  *p_str2 ) ;
@@ -11444,11 +11444,11 @@ int str_atoi(struct mystr  const  *p_str ) ;
 filesize_t str_a_to_filesize_t(struct mystr  const  *p_str ) ;
 #line 101
 unsigned int str_octal_to_uint(struct mystr  const  *p_str ) ;
-#line 44 "oneprocess.h"
+#line 44 "../../experiments/vsftpd-2.0.7/oneprocess.h"
 void vsf_one_process_chown_upload(struct vsf_session *p_sess , int fd ) ;
-#line 43 "twoprocess.h"
+#line 43 "../../experiments/vsftpd-2.0.7/twoprocess.h"
 void vsf_two_process_chown_upload(struct vsf_session *p_sess , int fd ) ;
-#line 22 "ftpdataio.h"
+#line 22 "../../experiments/vsftpd-2.0.7/ftpdataio.h"
 int vsf_ftpdataio_dispose_transfer_fd(struct vsf_session *p_sess ) ;
 #line 33
 int vsf_ftpdataio_get_pasv_fd(struct vsf_session *p_sess ) ;
@@ -11463,7 +11463,7 @@ struct vsf_transfer_ret vsf_ftpdataio_transfer_file(struct vsf_session *p_sess ,
 int vsf_ftpdataio_transfer_dir(struct vsf_session *p_sess , int is_control , struct vsf_sysutil_dir *p_dir ,
                                struct mystr  const  *p_base_dir_str , struct mystr  const  *p_option_str ,
                                struct mystr  const  *p_filter_str , int is_verbose ) ;
-#line 8 "tunables.h"
+#line 8 "../../experiments/vsftpd-2.0.7/tunables.h"
 int tunable_pasv_enable ;
 #line 9
 int tunable_port_enable ;
@@ -11521,7 +11521,7 @@ unsigned int tunable_local_max_rate ;
 unsigned int tunable_chown_upload_mode ;
 #line 121
 char const   *tunable_cmds_allowed ;
-#line 10 "sysstr.h"
+#line 10 "../../experiments/vsftpd-2.0.7/sysstr.h"
 void str_getcwd(struct mystr *p_str ) ;
 #line 14
 int str_mkdir(struct mystr  const  *p_str , unsigned int mode ) ;
@@ -11549,9 +11549,9 @@ int str_rename(struct mystr  const  *p_from_str , struct mystr  const  *p_to_str
 struct vsf_sysutil_dir *str_opendir(struct mystr  const  *p_str ) ;
 #line 35
 struct vsf_sysutil_user *str_getpwnam(struct mystr  const  *p_user_str ) ;
-#line 18 "banner.h"
+#line 18 "../../experiments/vsftpd-2.0.7/banner.h"
 void vsf_banner_dir_changed(struct vsf_session *p_sess , int ftpcode ) ;
-#line 21 "sysutil.h"
+#line 21 "../../experiments/vsftpd-2.0.7/sysutil.h"
 enum EVSFSysUtilError vsf_sysutil_get_error(void) ;
 #line 68
 void vsf_sysutil_closedir(struct vsf_sysutil_dir *p_dir ) ;
@@ -11632,7 +11632,7 @@ unsigned int vsf_sysutil_get_umask(void) ;
 long vsf_sysutil_parse_time(char const   *p_text ) ;
 #line 331
 int vsf_sysutil_setmodtime(char const   *p_file , long the_time , int is_localtime ) ;
-#line 42 "logging.h"
+#line 42 "../../experiments/vsftpd-2.0.7/logging.h"
 void vsf_log_start_entry(struct vsf_session *p_sess , enum EVSFLogEntryType what ) ;
 #line 51
 int vsf_log_entry_pending(struct vsf_session *p_sess ) ;
@@ -11640,9 +11640,9 @@ int vsf_log_entry_pending(struct vsf_session *p_sess ) ;
 void vsf_log_clear_entry(struct vsf_session *p_sess ) ;
 #line 67
 void vsf_log_do_log(struct vsf_session *p_sess , int succeeded ) ;
-#line 47 "sysdeputil.h"
+#line 47 "../../experiments/vsftpd-2.0.7/sysdeputil.h"
 void vsf_sysutil_setproctitle_str(struct mystr  const  *p_str ) ;
-#line 11 "ipaddrparse.h"
+#line 11 "../../experiments/vsftpd-2.0.7/ipaddrparse.h"
 unsigned char const   *vsf_sysutil_parse_ipv6(struct mystr  const  *p_str ) ;
 #line 13
 unsigned char const   *vsf_sysutil_parse_ipv4(struct mystr  const  *p_str ) ;
@@ -11650,9 +11650,9 @@ unsigned char const   *vsf_sysutil_parse_ipv4(struct mystr  const  *p_str ) ;
 unsigned char const   *vsf_sysutil_parse_uchar_string_sep(struct mystr  const  *p_str ,
                                                           char sep , unsigned char *p_items ,
                                                           unsigned int items___0 ) ;
-#line 15 "access.h"
+#line 15 "../../experiments/vsftpd-2.0.7/access.h"
 int vsf_access_check_file(struct mystr  const  *p_filename_str ) ;
-#line 32 "postlogin.c"
+#line 32 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void handle_pwd(struct vsf_session *p_sess ) ;
 #line 33
 static void handle_cwd(struct vsf_session *p_sess ) ;
@@ -11736,11 +11736,11 @@ static void get_unique_filename(struct mystr *p_outstr , struct mystr  const  *p
 static int data_transfer_checks_ok(struct vsf_session *p_sess ) ;
 #line 80
 static void resolve_tilde(struct mystr *p_str , struct vsf_session *p_sess ) ;
-#line 131 "postlogin.c"
+#line 131 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static struct mystr s_src_str  ;
-#line 132 "postlogin.c"
+#line 132 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static struct mystr s_rhs_str  ;
-#line 82 "postlogin.c"
+#line 82 "../../experiments/vsftpd-2.0.7/postlogin.c"
 void process_post_login(struct vsf_session *p_sess ) 
 { int cmd_ok ;
   struct mystr proctitle_str ;
@@ -12837,11 +12837,11 @@ void process_post_login(struct vsf_session *p_sess )
   }
 }
 }
-#line 418 "postlogin.c"
+#line 418 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static struct mystr s_cwd_buf_mangle_str  ;
-#line 419 "postlogin.c"
+#line 419 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static struct mystr s_pwd_res_str  ;
-#line 415 "postlogin.c"
+#line 415 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void handle_pwd(struct vsf_session *p_sess ) 
 { 
 
@@ -12862,7 +12862,7 @@ static void handle_pwd(struct vsf_session *p_sess )
   return;
 }
 }
-#line 430 "postlogin.c"
+#line 430 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void handle_cwd(struct vsf_session *p_sess ) 
 { int retval ;
   int __cil_tmp ;
@@ -12895,7 +12895,7 @@ static void handle_cwd(struct vsf_session *p_sess )
   return;
 }
 }
-#line 453 "postlogin.c"
+#line 453 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void handle_cdup(struct vsf_session *p_sess ) 
 { 
 
@@ -12908,7 +12908,7 @@ static void handle_cdup(struct vsf_session *p_sess )
   return;
 }
 }
-#line 460 "postlogin.c"
+#line 460 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static int port_active(struct vsf_session *p_sess ) 
 { int ret___0 ;
   int __cil_tmp ;
@@ -12932,7 +12932,7 @@ static int port_active(struct vsf_session *p_sess )
   return (ret___0);
 }
 }
-#line 475 "postlogin.c"
+#line 475 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static int pasv_active(struct vsf_session *p_sess ) 
 { int ret___0 ;
   int __cil_tmp ;
@@ -12956,7 +12956,7 @@ static int pasv_active(struct vsf_session *p_sess )
   return (ret___0);
 }
 }
-#line 490 "postlogin.c"
+#line 490 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void port_cleanup(struct vsf_session *p_sess ) 
 { 
 
@@ -12967,7 +12967,7 @@ static void port_cleanup(struct vsf_session *p_sess )
   return;
 }
 }
-#line 496 "postlogin.c"
+#line 496 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void pasv_cleanup(struct vsf_session *p_sess ) 
 { 
 
@@ -12983,11 +12983,11 @@ static void pasv_cleanup(struct vsf_session *p_sess )
   return;
 }
 }
-#line 509 "postlogin.c"
+#line 509 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static struct mystr s_pasv_res_str  ;
-#line 510 "postlogin.c"
+#line 510 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static struct vsf_sysutil_sockaddr *s_p_sockaddr  ;
-#line 506 "postlogin.c"
+#line 506 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void handle_pasv(struct vsf_session *p_sess , int is_epsv ) 
 { int bind_retries ;
   unsigned short the_port ;
@@ -13212,11 +13212,11 @@ static void handle_pasv(struct vsf_session *p_sess , int is_epsv )
   return;
 }
 }
-#line 632 "postlogin.c"
+#line 632 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static struct mystr s_mark_str  ;
-#line 633 "postlogin.c"
+#line 633 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static struct vsf_sysutil_statbuf *s_p_statbuf  ;
-#line 629 "postlogin.c"
+#line 629 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void handle_retr(struct vsf_session *p_sess ) 
 { struct vsf_transfer_ret trans_ret ;
   int remote_fd ;
@@ -13276,7 +13276,6 @@ static void handle_retr(struct vsf_session *p_sess )
   opened_file = str_open((struct mystr  const  *)(& p_sess->ftp_arg_str), 1);
 #line 660
   __cil_tmp___1 = vsf_sysutil_retval_is_error(opened_file);
-  __EVAL(__cil_tmp___1);
 #line 660
   if (__cil_tmp___1) {
 #line 662
@@ -13284,7 +13283,6 @@ static void handle_retr(struct vsf_session *p_sess )
 #line 663
     return;
   }
-  __COMMENT("HERE");
 #line 666
   if (tunable_lock_upload_files) {
 #line 668
@@ -13359,6 +13357,7 @@ static void handle_retr(struct vsf_session *p_sess )
 #line 717
   __cil_tmp___6 = str_getbuf((struct mystr  const  *)(& s_mark_str));
 #line 717
+  exit(111);
   remote_fd = get_remote_transfer_fd(p_sess, __cil_tmp___6);
 #line 718
   __cil_tmp___7 = vsf_sysutil_retval_is_error(remote_fd);
@@ -13411,7 +13410,7 @@ static void handle_retr(struct vsf_session *p_sess )
   return;
 }
 }
-#line 757 "postlogin.c"
+#line 757 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void handle_list(struct vsf_session *p_sess ) 
 { 
 
@@ -13422,15 +13421,15 @@ static void handle_list(struct vsf_session *p_sess )
   return;
 }
 }
-#line 766 "postlogin.c"
+#line 766 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static struct mystr s_option_str  ;
-#line 767 "postlogin.c"
+#line 767 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static struct mystr s_filter_str  ;
-#line 768 "postlogin.c"
+#line 768 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static struct mystr s_dir_name_str  ;
-#line 769 "postlogin.c"
+#line 769 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static struct vsf_sysutil_statbuf *s_p_dirstat  ;
-#line 763 "postlogin.c"
+#line 763 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void handle_dir_common(struct vsf_session *p_sess , int full_details , int stat_cmd ) 
 { int dir_allow_read ;
   struct vsf_sysutil_dir *p_dir ;
@@ -13642,7 +13641,7 @@ static void handle_dir_common(struct vsf_session *p_sess , int full_details , in
   return;
 }
 }
-#line 907 "postlogin.c"
+#line 907 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void handle_type(struct vsf_session *p_sess ) 
 { int __cil_tmp ;
   int __cil_tmp___0 ;
@@ -13711,7 +13710,7 @@ static void handle_type(struct vsf_session *p_sess )
   return;
 }
 }
-#line 930 "postlogin.c"
+#line 930 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void handle_port(struct vsf_session *p_sess ) 
 { unsigned short the_port ;
   unsigned char vals[6] ;
@@ -13774,7 +13773,7 @@ static void handle_port(struct vsf_session *p_sess )
   return;
 }
 }
-#line 969 "postlogin.c"
+#line 969 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void handle_stor(struct vsf_session *p_sess ) 
 { 
 
@@ -13785,11 +13784,11 @@ static void handle_stor(struct vsf_session *p_sess )
   return;
 }
 }
-#line 978 "postlogin.c"
+#line 978 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static struct vsf_sysutil_statbuf *s_p_statbuf___0  ;
-#line 979 "postlogin.c"
+#line 979 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static struct mystr s_filename  ;
-#line 975 "postlogin.c"
+#line 975 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void handle_upload_common(struct vsf_session *p_sess , int is_append , int is_unique ) 
 { struct mystr *p_filename ;
   struct vsf_transfer_ret trans_ret ;
@@ -13991,11 +13990,11 @@ static void handle_upload_common(struct vsf_session *p_sess , int is_append , in
   return;
 }
 }
-#line 1146 "postlogin.c"
+#line 1146 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static struct mystr s_mkd_res  ;
-#line 1147 "postlogin.c"
+#line 1147 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static struct mystr s_tmp_str  ;
-#line 1123 "postlogin.c"
+#line 1123 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void handle_mkd(struct vsf_session *p_sess ) 
 { int retval ;
   int __cil_tmp ;
@@ -14047,7 +14046,7 @@ static void handle_mkd(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1160 "postlogin.c"
+#line 1160 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void handle_rmd(struct vsf_session *p_sess ) 
 { int retval ;
   int __cil_tmp ;
@@ -14086,7 +14085,7 @@ static void handle_rmd(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1187 "postlogin.c"
+#line 1187 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void handle_dele(struct vsf_session *p_sess ) 
 { int retval ;
   int __cil_tmp ;
@@ -14125,9 +14124,9 @@ static void handle_dele(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1215 "postlogin.c"
+#line 1215 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static struct mystr s_rest_str  ;
-#line 1212 "postlogin.c"
+#line 1212 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void handle_rest(struct vsf_session *p_sess ) 
 { filesize_t val ;
   filesize_t __cil_tmp ;
@@ -14156,9 +14155,9 @@ static void handle_rest(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1231 "postlogin.c"
+#line 1231 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static struct vsf_sysutil_statbuf *p_statbuf  ;
-#line 1228 "postlogin.c"
+#line 1228 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void handle_rnfr(struct vsf_session *p_sess ) 
 { int retval ;
   int __cil_tmp ;
@@ -14205,9 +14204,9 @@ static void handle_rnfr(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1264 "postlogin.c"
+#line 1264 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static struct mystr s_tmp_str___0  ;
-#line 1261 "postlogin.c"
+#line 1261 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void handle_rnto(struct vsf_session *p_sess ) 
 { int retval ;
   int __cil_tmp ;
@@ -14266,7 +14265,7 @@ static void handle_rnto(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1303 "postlogin.c"
+#line 1303 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void handle_nlst(struct vsf_session *p_sess ) 
 { 
 
@@ -14277,9 +14276,9 @@ static void handle_nlst(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1312 "postlogin.c"
+#line 1312 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static struct mystr s_tmp_str___1  ;
-#line 1309 "postlogin.c"
+#line 1309 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void prepend_path_to_filename(struct mystr *p_str ) 
 { int __cil_tmp ;
   unsigned int __cil_tmp___0 ;
@@ -14333,7 +14332,7 @@ static void prepend_path_to_filename(struct mystr *p_str )
   return;
 }
 }
-#line 1332 "postlogin.c"
+#line 1332 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void handle_sigurg(void *p_private ) 
 { struct mystr async_cmd_str ;
   struct mystr async_arg_str ;
@@ -14399,7 +14398,7 @@ static void handle_sigurg(void *p_private )
   return;
 }
 }
-#line 1375 "postlogin.c"
+#line 1375 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static int get_remote_transfer_fd(struct vsf_session *p_sess , char const   *p_status_msg ) 
 { int remote_fd ;
   int __cil_tmp ;
@@ -14460,7 +14459,7 @@ static int get_remote_transfer_fd(struct vsf_session *p_sess , char const   *p_s
   return (remote_fd);
 }
 }
-#line 1405 "postlogin.c"
+#line 1405 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void check_abor(struct vsf_session *p_sess ) 
 { 
 
@@ -14476,11 +14475,11 @@ static void check_abor(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1424 "postlogin.c"
+#line 1424 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static struct vsf_sysutil_statbuf *s_p_statbuf___1  ;
-#line 1439 "postlogin.c"
+#line 1439 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static struct mystr s_size_res_str  ;
-#line 1416 "postlogin.c"
+#line 1416 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void handle_size(struct vsf_session *p_sess ) 
 { int retval ;
   int __cil_tmp ;
@@ -14526,9 +14525,9 @@ static void handle_size(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1449 "postlogin.c"
+#line 1449 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static struct mystr s_site_args_str  ;
-#line 1446 "postlogin.c"
+#line 1446 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void handle_site(struct vsf_session *p_sess ) 
 { int __cil_tmp ;
   int __cil_tmp___0 ;
@@ -14579,9 +14578,9 @@ static void handle_site(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1476 "postlogin.c"
+#line 1476 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static struct mystr s_chmod_file_str  ;
-#line 1473 "postlogin.c"
+#line 1473 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void handle_site_chmod(struct vsf_session *p_sess , struct mystr *p_arg_str ) 
 { unsigned int perms___0 ;
   int retval ;
@@ -14652,9 +14651,9 @@ static void handle_site_chmod(struct vsf_session *p_sess , struct mystr *p_arg_s
   return;
 }
 }
-#line 1518 "postlogin.c"
+#line 1518 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static struct mystr s_umask_resp_str  ;
-#line 1515 "postlogin.c"
+#line 1515 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void handle_site_umask(struct vsf_session *p_sess , struct mystr *p_arg_str ) 
 { unsigned int __cil_tmp ;
   char const   *__cil_tmp___0 ;
@@ -14699,7 +14698,7 @@ static void handle_site_umask(struct vsf_session *p_sess , struct mystr *p_arg_s
   return;
 }
 }
-#line 1538 "postlogin.c"
+#line 1538 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void handle_appe(struct vsf_session *p_sess ) 
 { 
 
@@ -14710,13 +14709,13 @@ static void handle_appe(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1547 "postlogin.c"
+#line 1547 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static struct mystr s_filename_str  ;
-#line 1548 "postlogin.c"
+#line 1548 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static struct vsf_sysutil_statbuf *s_p_statbuf___2  ;
-#line 1608 "postlogin.c"
+#line 1608 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static struct mystr s_mdtm_res_str  ;
-#line 1544 "postlogin.c"
+#line 1544 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void handle_mdtm(struct vsf_session *p_sess ) 
 { int do_write ;
   long modtime ;
@@ -14867,11 +14866,11 @@ static void handle_mdtm(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1620 "postlogin.c"
+#line 1620 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static struct mystr s_part1_str  ;
-#line 1621 "postlogin.c"
+#line 1621 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static struct mystr s_part2_str  ;
-#line 1617 "postlogin.c"
+#line 1617 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void handle_eprt(struct vsf_session *p_sess ) 
 { int proto ;
   int port ;
@@ -15002,7 +15001,7 @@ static void handle_eprt(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1700 "postlogin.c"
+#line 1700 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void handle_help(struct vsf_session *p_sess ) 
 { 
 
@@ -15023,7 +15022,7 @@ static void handle_help(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1716 "postlogin.c"
+#line 1716 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void handle_stou(struct vsf_session *p_sess ) 
 { 
 
@@ -15034,9 +15033,9 @@ static void handle_stou(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1728 "postlogin.c"
+#line 1728 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static struct vsf_sysutil_statbuf *s_p_statbuf___3  ;
-#line 1722 "postlogin.c"
+#line 1722 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void get_unique_filename(struct mystr *p_outstr , struct mystr  const  *p_base_str ) 
 { unsigned int suffix ;
   int retval ;
@@ -15067,7 +15066,7 @@ static void get_unique_filename(struct mystr *p_outstr , struct mystr  const  *p
   }
 }
 }
-#line 1745 "postlogin.c"
+#line 1745 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void handle_stat(struct vsf_session *p_sess ) 
 { char const   *__cil_tmp ;
   char const   *__cil_tmp___0 ;
@@ -15167,7 +15166,7 @@ static void handle_stat(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1812 "postlogin.c"
+#line 1812 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void handle_stat_file(struct vsf_session *p_sess ) 
 { 
 
@@ -15178,7 +15177,7 @@ static void handle_stat_file(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1818 "postlogin.c"
+#line 1818 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static int data_transfer_checks_ok(struct vsf_session *p_sess ) 
 { int __cil_tmp ;
   int __cil_tmp___0 ;
@@ -15214,11 +15213,11 @@ static int data_transfer_checks_ok(struct vsf_session *p_sess )
   return (1);
 }
 }
-#line 1843 "postlogin.c"
+#line 1843 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static struct mystr s_rhs_str___0  ;
-#line 1852 "postlogin.c"
+#line 1852 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static struct mystr s_user_str  ;
-#line 1837 "postlogin.c"
+#line 1837 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void resolve_tilde(struct mystr *p_str , struct vsf_session *p_sess ) 
 { unsigned int len ;
   unsigned int __cil_tmp ;
@@ -15296,7 +15295,7 @@ static void resolve_tilde(struct mystr *p_str , struct vsf_session *p_sess )
   return;
 }
 }
-#line 1871 "postlogin.c"
+#line 1871 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void handle_logged_in_user(struct vsf_session *p_sess ) 
 { int __cil_tmp ;
 
@@ -15321,7 +15320,7 @@ static void handle_logged_in_user(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1887 "postlogin.c"
+#line 1887 "../../experiments/vsftpd-2.0.7/postlogin.c"
 static void handle_logged_in_pass(struct vsf_session *p_sess ) 
 { 
 
@@ -15332,9 +15331,9 @@ static void handle_logged_in_pass(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1 "cil-cEU84no8.o"
-#pragma merger(0,"/tmp/cil-DfjsliNZ.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 13 "privsock.h"
+#line 1 "cil-C3DCI1x6.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-LPnkGOQv.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 13 "../../experiments/vsftpd-2.0.7/privsock.h"
 void priv_sock_init(struct vsf_session *p_sess ) ;
 #line 22
 void priv_sock_send_cmd(int fd , char cmd ) ;
@@ -15356,19 +15355,19 @@ int priv_sock_recv_fd(int fd ) ;
 void priv_sock_send_int(int fd , int the_int ) ;
 #line 107
 int priv_sock_get_int(int fd ) ;
-#line 38 "netstr.h"
+#line 38 "../../experiments/vsftpd-2.0.7/netstr.h"
 int str_netfd_read(struct mystr *p_str , int fd , unsigned int len ) ;
 #line 51
 int str_netfd_write(struct mystr  const  *p_str , int fd ) ;
-#line 103 "sysutil.h"
+#line 103 "../../experiments/vsftpd-2.0.7/sysutil.h"
 int vsf_sysutil_read_loop(int fd , void *p_buf , unsigned int size ) ;
 #line 239
 struct vsf_sysutil_socketpair_retval vsf_sysutil_unix_stream_socketpair(void) ;
-#line 55 "sysdeputil.h"
+#line 55 "../../experiments/vsftpd-2.0.7/sysdeputil.h"
 void vsf_sysutil_send_fd(int sock_fd , int send_fd ) ;
 #line 56
 int vsf_sysutil_recv_fd(int sock_fd ) ;
-#line 23 "privsock.c"
+#line 23 "../../experiments/vsftpd-2.0.7/privsock.c"
 void priv_sock_init(struct vsf_session *p_sess ) 
 { struct vsf_sysutil_socketpair_retval retval ;
   struct vsf_sysutil_socketpair_retval __cil_tmp ;
@@ -15386,7 +15385,7 @@ void priv_sock_init(struct vsf_session *p_sess )
   return;
 }
 }
-#line 32 "privsock.c"
+#line 32 "../../experiments/vsftpd-2.0.7/privsock.c"
 void priv_sock_send_cmd(int fd , char cmd ) 
 { int retval ;
   int __cil_tmp ;
@@ -15405,7 +15404,7 @@ void priv_sock_send_cmd(int fd , char cmd )
   return;
 }
 }
-#line 42 "privsock.c"
+#line 42 "../../experiments/vsftpd-2.0.7/privsock.c"
 void priv_sock_send_str(int fd , struct mystr  const  *p_str ) 
 { unsigned int len ;
   unsigned int __cil_tmp ;
@@ -15426,7 +15425,7 @@ void priv_sock_send_str(int fd , struct mystr  const  *p_str )
   return;
 }
 }
-#line 53 "privsock.c"
+#line 53 "../../experiments/vsftpd-2.0.7/privsock.c"
 char priv_sock_get_result(int fd ) 
 { char res ;
   int retval ;
@@ -15446,7 +15445,7 @@ char priv_sock_get_result(int fd )
   return (res);
 }
 }
-#line 65 "privsock.c"
+#line 65 "../../experiments/vsftpd-2.0.7/privsock.c"
 char priv_sock_get_cmd(int fd ) 
 { char res ;
   int retval ;
@@ -15466,7 +15465,7 @@ char priv_sock_get_cmd(int fd )
   return (res);
 }
 }
-#line 77 "privsock.c"
+#line 77 "../../experiments/vsftpd-2.0.7/privsock.c"
 void priv_sock_get_str(int fd , struct mystr *p_dest ) 
 { unsigned int len ;
   int __cil_tmp ;
@@ -15501,7 +15500,7 @@ void priv_sock_get_str(int fd , struct mystr *p_dest )
   return;
 }
 }
-#line 96 "privsock.c"
+#line 96 "../../experiments/vsftpd-2.0.7/privsock.c"
 void priv_sock_send_result(int fd , char res ) 
 { int retval ;
   int __cil_tmp ;
@@ -15520,7 +15519,7 @@ void priv_sock_send_result(int fd , char res )
   return;
 }
 }
-#line 106 "privsock.c"
+#line 106 "../../experiments/vsftpd-2.0.7/privsock.c"
 void priv_sock_send_fd(int fd , int send_fd ) 
 { 
 
@@ -15531,7 +15530,7 @@ void priv_sock_send_fd(int fd , int send_fd )
   return;
 }
 }
-#line 112 "privsock.c"
+#line 112 "../../experiments/vsftpd-2.0.7/privsock.c"
 int priv_sock_recv_fd(int fd ) 
 { int __cil_tmp ;
 
@@ -15542,7 +15541,7 @@ int priv_sock_recv_fd(int fd )
   return (__cil_tmp);
 }
 }
-#line 118 "privsock.c"
+#line 118 "../../experiments/vsftpd-2.0.7/privsock.c"
 void priv_sock_send_int(int fd , int the_int ) 
 { int retval ;
   int __cil_tmp ;
@@ -15561,7 +15560,7 @@ void priv_sock_send_int(int fd , int the_int )
   return;
 }
 }
-#line 128 "privsock.c"
+#line 128 "../../experiments/vsftpd-2.0.7/privsock.c"
 int priv_sock_get_int(int fd ) 
 { int the_int ;
   int retval ;
@@ -15581,9 +15580,9 @@ int priv_sock_get_int(int fd )
   return (the_int);
 }
 }
-#line 1 "cil-2qY5qD7O.o"
-#pragma merger(0,"/tmp/cil-UTTbgW05.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 10 "tunables.h"
+#line 1 "cil-Wk1T23ih.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-VeE5Lkjs.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 10 "../../experiments/vsftpd-2.0.7/tunables.h"
 int tunable_chroot_local_user ;
 #line 17
 int tunable_xferlog_enable ;
@@ -15701,261 +15700,261 @@ char const   *tunable_rsa_private_key_file ;
 char const   *tunable_dsa_private_key_file ;
 #line 131
 char const   *tunable_ca_certs_file ;
-#line 10 "tunables.c"
+#line 10 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_anonymous_enable  =    1;
-#line 11 "tunables.c"
+#line 11 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_local_enable  =    0;
-#line 12 "tunables.c"
+#line 12 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_pasv_enable  =    1;
-#line 13 "tunables.c"
+#line 13 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_port_enable  =    1;
-#line 14 "tunables.c"
+#line 14 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_chroot_local_user  =    0;
-#line 15 "tunables.c"
+#line 15 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_write_enable  =    0;
-#line 16 "tunables.c"
+#line 16 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_anon_upload_enable  =    0;
-#line 17 "tunables.c"
+#line 17 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_anon_mkdir_write_enable  =    0;
-#line 18 "tunables.c"
+#line 18 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_anon_other_write_enable  =    0;
-#line 19 "tunables.c"
+#line 19 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_chown_uploads  =    0;
-#line 20 "tunables.c"
+#line 20 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_connect_from_port_20  =    0;
-#line 21 "tunables.c"
+#line 21 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_xferlog_enable  =    0;
-#line 22 "tunables.c"
+#line 22 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_dirmessage_enable  =    0;
-#line 23 "tunables.c"
+#line 23 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_anon_world_readable_only  =    1;
-#line 24 "tunables.c"
+#line 24 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_async_abor_enable  =    0;
-#line 25 "tunables.c"
+#line 25 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_ascii_upload_enable  =    0;
-#line 26 "tunables.c"
+#line 26 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_ascii_download_enable  =    0;
-#line 27 "tunables.c"
+#line 27 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_one_process_model  =    0;
-#line 28 "tunables.c"
+#line 28 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_xferlog_std_format  =    0;
-#line 29 "tunables.c"
+#line 29 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_pasv_promiscuous  =    0;
-#line 30 "tunables.c"
+#line 30 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_deny_email_enable  =    0;
-#line 31 "tunables.c"
+#line 31 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_chroot_list_enable  =    0;
-#line 32 "tunables.c"
+#line 32 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_setproctitle_enable  =    0;
-#line 33 "tunables.c"
+#line 33 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_text_userdb_names  =    0;
-#line 34 "tunables.c"
+#line 34 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_ls_recurse_enable  =    0;
-#line 35 "tunables.c"
+#line 35 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_log_ftp_protocol  =    0;
-#line 36 "tunables.c"
+#line 36 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_guest_enable  =    0;
-#line 37 "tunables.c"
+#line 37 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_userlist_enable  =    0;
-#line 38 "tunables.c"
+#line 38 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_userlist_deny  =    1;
-#line 39 "tunables.c"
+#line 39 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_use_localtime  =    0;
-#line 40 "tunables.c"
+#line 40 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_check_shell  =    1;
-#line 41 "tunables.c"
+#line 41 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_hide_ids  =    0;
-#line 42 "tunables.c"
+#line 42 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_listen  =    0;
-#line 43 "tunables.c"
+#line 43 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_port_promiscuous  =    0;
-#line 44 "tunables.c"
+#line 44 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_passwd_chroot_enable  =    0;
-#line 45 "tunables.c"
+#line 45 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_no_anon_password  =    0;
-#line 46 "tunables.c"
+#line 46 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_tcp_wrappers  =    0;
-#line 47 "tunables.c"
+#line 47 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_use_sendfile  =    1;
-#line 48 "tunables.c"
+#line 48 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_force_dot_files  =    0;
-#line 49 "tunables.c"
+#line 49 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_listen_ipv6  =    0;
-#line 50 "tunables.c"
+#line 50 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_dual_log_enable  =    0;
-#line 51 "tunables.c"
+#line 51 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_syslog_enable  =    0;
-#line 52 "tunables.c"
+#line 52 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_background  =    0;
-#line 53 "tunables.c"
+#line 53 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_virtual_use_local_privs  =    0;
-#line 54 "tunables.c"
+#line 54 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_session_support  =    0;
-#line 55 "tunables.c"
+#line 55 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_download_enable  =    1;
-#line 56 "tunables.c"
+#line 56 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_dirlist_enable  =    1;
-#line 57 "tunables.c"
+#line 57 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_chmod_enable  =    1;
-#line 58 "tunables.c"
+#line 58 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_secure_email_list_enable  =    0;
-#line 59 "tunables.c"
+#line 59 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_run_as_launching_user  =    0;
-#line 60 "tunables.c"
+#line 60 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_no_log_lock  =    0;
-#line 61 "tunables.c"
+#line 61 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_ssl_enable  =    0;
-#line 62 "tunables.c"
+#line 62 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_allow_anon_ssl  =    0;
-#line 63 "tunables.c"
+#line 63 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_force_local_logins_ssl  =    1;
-#line 64 "tunables.c"
+#line 64 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_force_local_data_ssl  =    1;
-#line 65 "tunables.c"
+#line 65 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_sslv2  =    0;
-#line 66 "tunables.c"
+#line 66 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_sslv3  =    0;
-#line 67 "tunables.c"
+#line 67 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_tlsv1  =    1;
-#line 68 "tunables.c"
+#line 68 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_tilde_user_enable  =    0;
-#line 69 "tunables.c"
+#line 69 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_force_anon_logins_ssl  =    0;
-#line 70 "tunables.c"
+#line 70 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_force_anon_data_ssl  =    0;
-#line 71 "tunables.c"
+#line 71 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_mdtm_write  =    1;
-#line 72 "tunables.c"
+#line 72 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_lock_upload_files  =    1;
-#line 73 "tunables.c"
+#line 73 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_pasv_addr_resolve  =    0;
-#line 74 "tunables.c"
+#line 74 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_debug_ssl  =    0;
-#line 75 "tunables.c"
+#line 75 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_require_cert  =    0;
-#line 76 "tunables.c"
+#line 76 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_validate_cert  =    0;
-#line 77 "tunables.c"
+#line 77 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_strict_ssl_read_eof  =    0;
-#line 78 "tunables.c"
+#line 78 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_strict_ssl_write_shutdown  =    0;
-#line 79 "tunables.c"
+#line 79 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_ssl_request_cert  =    1;
-#line 80 "tunables.c"
+#line 80 "../../experiments/vsftpd-2.0.7/tunables.c"
 int tunable_delete_failed_uploads  =    0;
-#line 82 "tunables.c"
+#line 82 "../../experiments/vsftpd-2.0.7/tunables.c"
 unsigned int tunable_accept_timeout  =    60U;
-#line 83 "tunables.c"
+#line 83 "../../experiments/vsftpd-2.0.7/tunables.c"
 unsigned int tunable_connect_timeout  =    60U;
-#line 84 "tunables.c"
+#line 84 "../../experiments/vsftpd-2.0.7/tunables.c"
 unsigned int tunable_local_umask  =    63U;
-#line 85 "tunables.c"
+#line 85 "../../experiments/vsftpd-2.0.7/tunables.c"
 unsigned int tunable_anon_umask  =    63U;
-#line 86 "tunables.c"
+#line 86 "../../experiments/vsftpd-2.0.7/tunables.c"
 unsigned int tunable_ftp_data_port  =    20U;
-#line 87 "tunables.c"
+#line 87 "../../experiments/vsftpd-2.0.7/tunables.c"
 unsigned int tunable_idle_session_timeout  =    300U;
-#line 88 "tunables.c"
+#line 88 "../../experiments/vsftpd-2.0.7/tunables.c"
 unsigned int tunable_data_connection_timeout  =    300U;
-#line 90 "tunables.c"
+#line 90 "../../experiments/vsftpd-2.0.7/tunables.c"
 unsigned int tunable_pasv_min_port  =    5001U;
-#line 91 "tunables.c"
+#line 91 "../../experiments/vsftpd-2.0.7/tunables.c"
 unsigned int tunable_pasv_max_port  =    0U;
-#line 92 "tunables.c"
+#line 92 "../../experiments/vsftpd-2.0.7/tunables.c"
 unsigned int tunable_anon_max_rate  =    0U;
-#line 93 "tunables.c"
+#line 93 "../../experiments/vsftpd-2.0.7/tunables.c"
 unsigned int tunable_local_max_rate  =    0U;
-#line 95 "tunables.c"
+#line 95 "../../experiments/vsftpd-2.0.7/tunables.c"
 unsigned int tunable_listen_port  =    21U;
-#line 96 "tunables.c"
+#line 96 "../../experiments/vsftpd-2.0.7/tunables.c"
 unsigned int tunable_max_clients  =    0U;
-#line 98 "tunables.c"
+#line 98 "../../experiments/vsftpd-2.0.7/tunables.c"
 unsigned int tunable_file_open_mode  =    438U;
-#line 99 "tunables.c"
+#line 99 "../../experiments/vsftpd-2.0.7/tunables.c"
 unsigned int tunable_max_per_ip  =    0U;
-#line 100 "tunables.c"
+#line 100 "../../experiments/vsftpd-2.0.7/tunables.c"
 unsigned int tunable_trans_chunk_size  =    0U;
-#line 101 "tunables.c"
+#line 101 "../../experiments/vsftpd-2.0.7/tunables.c"
 unsigned int tunable_delay_failed_login  =    1U;
-#line 102 "tunables.c"
+#line 102 "../../experiments/vsftpd-2.0.7/tunables.c"
 unsigned int tunable_delay_successful_login  =    0U;
-#line 103 "tunables.c"
+#line 103 "../../experiments/vsftpd-2.0.7/tunables.c"
 unsigned int tunable_max_login_fails  =    3U;
-#line 105 "tunables.c"
+#line 105 "../../experiments/vsftpd-2.0.7/tunables.c"
 unsigned int tunable_chown_upload_mode  =    384U;
-#line 107 "tunables.c"
+#line 107 "../../experiments/vsftpd-2.0.7/tunables.c"
 char const   *tunable_secure_chroot_dir  =    "/usr/share/empty";
-#line 108 "tunables.c"
+#line 108 "../../experiments/vsftpd-2.0.7/tunables.c"
 char const   *tunable_ftp_username  =    "ftp";
-#line 109 "tunables.c"
+#line 109 "../../experiments/vsftpd-2.0.7/tunables.c"
 char const   *tunable_chown_username  =    "root";
-#line 110 "tunables.c"
+#line 110 "../../experiments/vsftpd-2.0.7/tunables.c"
 char const   *tunable_xferlog_file  =    "/var/log/xferlog";
-#line 111 "tunables.c"
+#line 111 "../../experiments/vsftpd-2.0.7/tunables.c"
 char const   *tunable_vsftpd_log_file  =    "/var/log/vsftpd.log";
-#line 112 "tunables.c"
+#line 112 "../../experiments/vsftpd-2.0.7/tunables.c"
 char const   *tunable_message_file  =    ".message";
-#line 113 "tunables.c"
+#line 113 "../../experiments/vsftpd-2.0.7/tunables.c"
 char const   *tunable_nopriv_user  =    "nobody";
-#line 114 "tunables.c"
+#line 114 "../../experiments/vsftpd-2.0.7/tunables.c"
 char const   *tunable_ftpd_banner  =    (char const   *)0;
-#line 115 "tunables.c"
+#line 115 "../../experiments/vsftpd-2.0.7/tunables.c"
 char const   *tunable_banned_email_file  =    "/etc/vsftpd.banned_emails";
-#line 116 "tunables.c"
+#line 116 "../../experiments/vsftpd-2.0.7/tunables.c"
 char const   *tunable_chroot_list_file  =    "/etc/vsftpd.chroot_list";
-#line 117 "tunables.c"
+#line 117 "../../experiments/vsftpd-2.0.7/tunables.c"
 char const   *tunable_pam_service_name  =    "ftp";
-#line 118 "tunables.c"
+#line 118 "../../experiments/vsftpd-2.0.7/tunables.c"
 char const   *tunable_guest_username  =    "ftp";
-#line 119 "tunables.c"
+#line 119 "../../experiments/vsftpd-2.0.7/tunables.c"
 char const   *tunable_userlist_file  =    "/etc/vsftpd.user_list";
-#line 120 "tunables.c"
+#line 120 "../../experiments/vsftpd-2.0.7/tunables.c"
 char const   *tunable_anon_root  =    (char const   *)0;
-#line 121 "tunables.c"
+#line 121 "../../experiments/vsftpd-2.0.7/tunables.c"
 char const   *tunable_local_root  =    (char const   *)0;
-#line 122 "tunables.c"
+#line 122 "../../experiments/vsftpd-2.0.7/tunables.c"
 char const   *tunable_banner_file  =    (char const   *)0;
-#line 123 "tunables.c"
+#line 123 "../../experiments/vsftpd-2.0.7/tunables.c"
 char const   *tunable_pasv_address  =    (char const   *)0;
-#line 124 "tunables.c"
+#line 124 "../../experiments/vsftpd-2.0.7/tunables.c"
 char const   *tunable_listen_address  =    (char const   *)0;
-#line 125 "tunables.c"
+#line 125 "../../experiments/vsftpd-2.0.7/tunables.c"
 char const   *tunable_user_config_dir  =    (char const   *)0;
-#line 126 "tunables.c"
+#line 126 "../../experiments/vsftpd-2.0.7/tunables.c"
 char const   *tunable_listen_address6  =    (char const   *)0;
-#line 127 "tunables.c"
+#line 127 "../../experiments/vsftpd-2.0.7/tunables.c"
 char const   *tunable_cmds_allowed  =    (char const   *)0;
-#line 128 "tunables.c"
+#line 128 "../../experiments/vsftpd-2.0.7/tunables.c"
 char const   *tunable_hide_file  =    (char const   *)0;
-#line 129 "tunables.c"
+#line 129 "../../experiments/vsftpd-2.0.7/tunables.c"
 char const   *tunable_deny_file  =    (char const   *)0;
-#line 130 "tunables.c"
+#line 130 "../../experiments/vsftpd-2.0.7/tunables.c"
 char const   *tunable_user_sub_token  =    (char const   *)0;
-#line 131 "tunables.c"
+#line 131 "../../experiments/vsftpd-2.0.7/tunables.c"
 char const   *tunable_email_password_file  =    "/etc/vsftpd.email_passwords";
-#line 132 "tunables.c"
+#line 132 "../../experiments/vsftpd-2.0.7/tunables.c"
 char const   *tunable_rsa_cert_file  =    "/usr/share/ssl/certs/vsftpd.pem";
-#line 133 "tunables.c"
+#line 133 "../../experiments/vsftpd-2.0.7/tunables.c"
 char const   *tunable_dsa_cert_file  =    (char const   *)0;
-#line 134 "tunables.c"
+#line 134 "../../experiments/vsftpd-2.0.7/tunables.c"
 char const   *tunable_ssl_ciphers  =    "DES-CBC3-SHA";
-#line 135 "tunables.c"
+#line 135 "../../experiments/vsftpd-2.0.7/tunables.c"
 char const   *tunable_rsa_private_key_file  =    (char const   *)0;
-#line 136 "tunables.c"
+#line 136 "../../experiments/vsftpd-2.0.7/tunables.c"
 char const   *tunable_dsa_private_key_file  =    (char const   *)0;
-#line 137 "tunables.c"
+#line 137 "../../experiments/vsftpd-2.0.7/tunables.c"
 char const   *tunable_ca_certs_file  =    (char const   *)0;
-#line 1 "cil-mVeXD0Db.o"
-#pragma merger(0,"/tmp/cil-SA8xd2sC.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 37 "str.h"
+#line 1 "cil-q6P4dtMD.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-1QGQnjaH.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 37 "../../experiments/vsftpd-2.0.7/str.h"
 void str_reserve(struct mystr *p_str , unsigned int res_len ) ;
-#line 18 "strlist.h"
+#line 18 "../../experiments/vsftpd-2.0.7/strlist.h"
 void str_list_free(struct mystr_list *p_list ) ;
 #line 24
 int str_list_get_length(struct mystr_list  const  *p_list ) ;
 #line 28
 struct mystr  const  *str_list_get_pstr(struct mystr_list  const  *p_list , unsigned int indexx ) ;
-#line 48 "sysutil.h"
+#line 48 "../../experiments/vsftpd-2.0.7/sysutil.h"
 void vsf_sysutil_install_io_handler(void (*handler)(int  , int  , void * ) , void *p_private ) ;
 #line 49
 void vsf_sysutil_uninstall_io_handler(void) ;
@@ -15991,32 +15990,32 @@ long vsf_sysutil_get_cached_time_sec(void) ;
 long vsf_sysutil_get_cached_time_usec(void) ;
 #line 330
 void vsf_sysutil_sleep(double seconds ) ;
-#line 37 "sysdeputil.h"
+#line 37 "../../experiments/vsftpd-2.0.7/sysdeputil.h"
 int vsf_sysutil_sendfile(int out_fd , int in_fd , filesize_t *p_offset , filesize_t num_send ,
                          unsigned int max_chunk ) ;
-#line 28 "ascii.h"
+#line 28 "../../experiments/vsftpd-2.0.7/ascii.h"
 struct ascii_to_bin_ret vsf_ascii_ascii_to_bin(char *p_buf , unsigned int in_len ,
                                                int prev_cr ) ;
 #line 44
 unsigned int vsf_ascii_bin_to_ascii(char const   *p_in , char *p_out , unsigned int in_len ) ;
-#line 35 "oneprocess.h"
+#line 35 "../../experiments/vsftpd-2.0.7/oneprocess.h"
 int vsf_one_process_get_priv_data_sock(struct vsf_session *p_sess ) ;
-#line 34 "twoprocess.h"
+#line 34 "../../experiments/vsftpd-2.0.7/twoprocess.h"
 int vsf_two_process_get_priv_data_sock(struct vsf_session *p_sess ) ;
-#line 22 "ls.h"
+#line 22 "../../experiments/vsftpd-2.0.7/ls.h"
 void vsf_ls_populate_dir_list(struct mystr_list *p_list , struct mystr_list *p_subdir_list ,
                               struct vsf_sysutil_dir *p_dir , struct mystr  const  *p_base_dir_str ,
                               struct mystr  const  *p_option_str , struct mystr  const  *p_filter_str ,
                               int is_verbose ) ;
-#line 13 "ssl.h"
+#line 13 "../../experiments/vsftpd-2.0.7/ssl.h"
 int ssl_accept(struct vsf_session *p_sess , int fd ) ;
 #line 14
 int ssl_data_close(struct vsf_session *p_sess ) ;
-#line 15 "readwrite.h"
+#line 15 "../../experiments/vsftpd-2.0.7/readwrite.h"
 int ftp_read_data(struct vsf_session *p_sess , char *p_buf , unsigned int len ) ;
 #line 16
 int ftp_write_data(struct vsf_session  const  *p_sess , char const   *p_buf , unsigned int len ) ;
-#line 33 "ftpdataio.c"
+#line 33 "../../experiments/vsftpd-2.0.7/ftpdataio.c"
 static void init_data_sock_params(struct vsf_session *p_sess , int sock_fd ) ;
 #line 34
 static filesize_t calc_num_send(int file_fd , filesize_t init_offset ) ;
@@ -16045,7 +16044,7 @@ static int write_dir_list(struct vsf_session *p_sess , struct mystr_list *p_dir_
                           enum EVSFRWTarget target ) ;
 #line 52
 static unsigned int get_chunk_size(void) ;
-#line 54 "ftpdataio.c"
+#line 54 "../../experiments/vsftpd-2.0.7/ftpdataio.c"
 int vsf_ftpdataio_dispose_transfer_fd(struct vsf_session *p_sess ) 
 { int dispose_ret ;
   int retval ;
@@ -16087,7 +16086,7 @@ int vsf_ftpdataio_dispose_transfer_fd(struct vsf_session *p_sess )
   return (dispose_ret);
 }
 }
-#line 83 "ftpdataio.c"
+#line 83 "../../experiments/vsftpd-2.0.7/ftpdataio.c"
 int vsf_ftpdataio_get_pasv_fd(struct vsf_session *p_sess ) 
 { int remote_fd ;
   struct vsf_sysutil_sockaddr *p_accept_addr ;
@@ -16137,9 +16136,9 @@ int vsf_ftpdataio_get_pasv_fd(struct vsf_session *p_sess )
   return (remote_fd);
 }
 }
-#line 135 "ftpdataio.c"
+#line 135 "../../experiments/vsftpd-2.0.7/ftpdataio.c"
 static struct vsf_sysutil_sockaddr *s_p_addr  ;
-#line 117 "ftpdataio.c"
+#line 117 "../../experiments/vsftpd-2.0.7/ftpdataio.c"
 int vsf_ftpdataio_get_port_fd(struct vsf_session *p_sess ) 
 { int retval ;
   int remote_fd ;
@@ -16191,7 +16190,7 @@ int vsf_ftpdataio_get_port_fd(struct vsf_session *p_sess )
   return (remote_fd);
 }
 }
-#line 158 "ftpdataio.c"
+#line 158 "../../experiments/vsftpd-2.0.7/ftpdataio.c"
 int vsf_ftpdataio_post_mark_connect(struct vsf_session *p_sess ) 
 { int __cil_tmp ;
 
@@ -16212,7 +16211,7 @@ int vsf_ftpdataio_post_mark_connect(struct vsf_session *p_sess )
   return (1);
 }
 }
-#line 173 "ftpdataio.c"
+#line 173 "../../experiments/vsftpd-2.0.7/ftpdataio.c"
 static void handle_sigalrm(void *p_private ) 
 { struct vsf_session *p_sess ;
 
@@ -16232,7 +16231,7 @@ static void handle_sigalrm(void *p_private )
   return;
 }
 }
-#line 186 "ftpdataio.c"
+#line 186 "../../experiments/vsftpd-2.0.7/ftpdataio.c"
 static void start_data_alarm(struct vsf_session *p_sess ) 
 { 
 
@@ -16248,7 +16247,7 @@ static void start_data_alarm(struct vsf_session *p_sess )
   return;
 }
 }
-#line 196 "ftpdataio.c"
+#line 196 "../../experiments/vsftpd-2.0.7/ftpdataio.c"
 static void init_data_sock_params(struct vsf_session *p_sess , int sock_fd ) 
 { 
 
@@ -16276,7 +16275,7 @@ static void init_data_sock_params(struct vsf_session *p_sess , int sock_fd )
   return;
 }
 }
-#line 217 "ftpdataio.c"
+#line 217 "../../experiments/vsftpd-2.0.7/ftpdataio.c"
 static void handle_io(int retval , int fd , void *p_private ) 
 { long curr_sec ;
   long curr_usec ;
@@ -16360,7 +16359,7 @@ static void handle_io(int retval , int fd , void *p_private )
   return;
 }
 }
-#line 266 "ftpdataio.c"
+#line 266 "../../experiments/vsftpd-2.0.7/ftpdataio.c"
 int vsf_ftpdataio_transfer_dir(struct vsf_session *p_sess , int is_control , struct vsf_sysutil_dir *p_dir ,
                                struct mystr  const  *p_base_dir_str , struct mystr  const  *p_option_str ,
                                struct mystr  const  *p_filter_str , int is_verbose ) 
@@ -16374,7 +16373,7 @@ int vsf_ftpdataio_transfer_dir(struct vsf_session *p_sess , int is_control , str
   return (__cil_tmp);
 }
 }
-#line 278 "ftpdataio.c"
+#line 278 "../../experiments/vsftpd-2.0.7/ftpdataio.c"
 static int transfer_dir_internal(struct vsf_session *p_sess , int is_control , struct vsf_sysutil_dir *p_dir ,
                                  struct mystr  const  *p_base_dir_str , struct mystr  const  *p_option_str ,
                                  struct mystr  const  *p_filter_str , int is_verbose ) 
@@ -16557,7 +16556,7 @@ static int transfer_dir_internal(struct vsf_session *p_sess , int is_control , s
   }
 }
 }
-#line 376 "ftpdataio.c"
+#line 376 "../../experiments/vsftpd-2.0.7/ftpdataio.c"
 static int write_dir_list(struct vsf_session *p_sess , struct mystr_list *p_dir_list ,
                           enum EVSFRWTarget target ) 
 { int retval ;
@@ -16634,7 +16633,7 @@ static int write_dir_list(struct vsf_session *p_sess , struct mystr_list *p_dir_
   return (retval);
 }
 }
-#line 411 "ftpdataio.c"
+#line 411 "../../experiments/vsftpd-2.0.7/ftpdataio.c"
 struct vsf_transfer_ret vsf_ftpdataio_transfer_file(struct vsf_session *p_sess , int remote_fd ,
                                                     int file_fd , int is_recv , int is_ascii ) 
 { struct vsf_transfer_ret __cil_tmp ;
@@ -16677,11 +16676,11 @@ struct vsf_transfer_ret vsf_ftpdataio_transfer_file(struct vsf_session *p_sess ,
   }
 }
 }
-#line 438 "ftpdataio.c"
+#line 438 "../../experiments/vsftpd-2.0.7/ftpdataio.c"
 static char *p_readbuf  ;
-#line 439 "ftpdataio.c"
+#line 439 "../../experiments/vsftpd-2.0.7/ftpdataio.c"
 static char *p_asciibuf  ;
-#line 435 "ftpdataio.c"
+#line 435 "../../experiments/vsftpd-2.0.7/ftpdataio.c"
 static struct vsf_transfer_ret do_file_send_rwloop(struct vsf_session *p_sess , int file_fd ,
                                                    int is_ascii ) 
 { struct vsf_transfer_ret ret_struct ;
@@ -16771,7 +16770,7 @@ static struct vsf_transfer_ret do_file_send_rwloop(struct vsf_session *p_sess , 
   }
 }
 }
-#line 496 "ftpdataio.c"
+#line 496 "../../experiments/vsftpd-2.0.7/ftpdataio.c"
 static struct vsf_transfer_ret do_file_send_sendfile(struct vsf_session *p_sess ,
                                                      int net_fd , int file_fd , filesize_t curr_file_offset ,
                                                      filesize_t bytes_to_send ) 
@@ -16824,9 +16823,9 @@ static struct vsf_transfer_ret do_file_send_sendfile(struct vsf_session *p_sess 
   return (ret_struct);
 }
 }
-#line 530 "ftpdataio.c"
+#line 530 "../../experiments/vsftpd-2.0.7/ftpdataio.c"
 static struct vsf_sysutil_statbuf *s_p_statbuf___4  ;
-#line 527 "ftpdataio.c"
+#line 527 "../../experiments/vsftpd-2.0.7/ftpdataio.c"
 static filesize_t calc_num_send(int file_fd , filesize_t init_offset ) 
 { filesize_t bytes_to_send ;
 
@@ -16852,9 +16851,9 @@ static filesize_t calc_num_send(int file_fd , filesize_t init_offset )
   return (bytes_to_send);
 }
 }
-#line 554 "ftpdataio.c"
+#line 554 "../../experiments/vsftpd-2.0.7/ftpdataio.c"
 static char *p_recvbuf  ;
-#line 551 "ftpdataio.c"
+#line 551 "../../experiments/vsftpd-2.0.7/ftpdataio.c"
 static struct vsf_transfer_ret do_file_recv(struct vsf_session *p_sess , int file_fd ,
                                             int is_ascii ) 
 { unsigned int num_to_write ;
@@ -16940,7 +16939,7 @@ static struct vsf_transfer_ret do_file_recv(struct vsf_session *p_sess , int fil
   }
 }
 }
-#line 606 "ftpdataio.c"
+#line 606 "../../experiments/vsftpd-2.0.7/ftpdataio.c"
 static unsigned int get_chunk_size(void) 
 { unsigned int ret___0 ;
 
@@ -16961,19 +16960,19 @@ static unsigned int get_chunk_size(void)
   return (ret___0);
 }
 }
-#line 1 "cil-kFWAmFif.o"
-#pragma merger(0,"/tmp/cil-7CrgA7Dz.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 24 "secbuf.h"
+#line 1 "cil-HVj7d8KP.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-ikaCrV0w.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 24 "../../experiments/vsftpd-2.0.7/secbuf.h"
 void vsf_secbuf_free(char **p_ptr ) ;
-#line 152 "sysutil.h"
+#line 152 "../../experiments/vsftpd-2.0.7/sysutil.h"
 void vsf_sysutil_memprotect(void *p_addr , unsigned int len , enum EVSFSysUtilMapPermission perm ) ;
 #line 154
 void vsf_sysutil_memunmap(void *p_start , unsigned int length ) ;
 #line 291
 unsigned int vsf_sysutil_getpagesize(void) ;
-#line 52 "sysdeputil.h"
+#line 52 "../../experiments/vsftpd-2.0.7/sysdeputil.h"
 void *vsf_sysutil_map_anon_pages(unsigned int length ) ;
-#line 17 "secbuf.c"
+#line 17 "../../experiments/vsftpd-2.0.7/secbuf.c"
 void vsf_secbuf_alloc(char **p_ptr , unsigned int size ) 
 { unsigned int page_offset ;
   unsigned int round_up ;
@@ -17034,7 +17033,7 @@ void vsf_secbuf_alloc(char **p_ptr , unsigned int size )
   return;
 }
 }
-#line 64 "secbuf.c"
+#line 64 "../../experiments/vsftpd-2.0.7/secbuf.c"
 void vsf_secbuf_free(char **p_ptr ) 
 { unsigned int map_size ;
   unsigned long page_offset ;
@@ -17073,13 +17072,13 @@ void vsf_secbuf_free(char **p_ptr )
   return;
 }
 }
-#line 1 "cil-gpB3jW71.o"
-#pragma merger(0,"/tmp/cil-a0ZYgVux.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 41 "ls.h"
+#line 1 "cil-EgjoulCa.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-Qd91nUTW.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 41 "../../experiments/vsftpd-2.0.7/ls.h"
 int vsf_filename_passes_filter(struct mystr  const  *p_filename_str , struct mystr  const  *p_filter_str ) ;
-#line 26 "access.h"
+#line 26 "../../experiments/vsftpd-2.0.7/access.h"
 int vsf_access_check_file_visible(struct mystr  const  *p_filename_str ) ;
-#line 55 "str.h"
+#line 55 "../../experiments/vsftpd-2.0.7/str.h"
 void str_rpad(struct mystr *p_str , unsigned int min_width ) ;
 #line 56
 void str_lpad(struct mystr *p_str , unsigned int min_width ) ;
@@ -17089,17 +17088,17 @@ struct str_locate_result str_locate_str(struct mystr  const  *p_str , struct mys
 struct str_locate_result str_locate_chars(struct mystr  const  *p_str , char const   *p_chars ) ;
 #line 88
 void str_left(struct mystr  const  *p_str , struct mystr *p_out , unsigned int chars ) ;
-#line 20 "strlist.h"
+#line 20 "../../experiments/vsftpd-2.0.7/strlist.h"
 void str_list_add(struct mystr_list *p_list , struct mystr  const  *p_str , struct mystr  const  *p_sort_key_str ) ;
 #line 22
 void str_list_sort(struct mystr_list *p_list , int reverse ) ;
-#line 11 "sysstr.h"
+#line 11 "../../experiments/vsftpd-2.0.7/sysstr.h"
 int str_readlink(struct mystr *p_str , struct mystr  const  *p_filename_str ) ;
 #line 29
 int str_lstat(struct mystr  const  *p_str , struct vsf_sysutil_statbuf **p_ptr ) ;
 #line 32
 void str_next_dirent(struct mystr *p_filename_str , struct vsf_sysutil_dir *p_dir ) ;
-#line 113 "sysutil.h"
+#line 113 "../../experiments/vsftpd-2.0.7/sysutil.h"
 int vsf_sysutil_statbuf_is_symlink(struct vsf_sysutil_statbuf  const  *p_stat ) ;
 #line 118
 char const   *vsf_sysutil_statbuf_get_perms(struct vsf_sysutil_statbuf  const  *p_statbuf___0 ) ;
@@ -17122,22 +17121,22 @@ char const   *vsf_sysutil_user_getname(struct vsf_sysutil_user  const  *p_user )
 struct vsf_sysutil_group *vsf_sysutil_getgrgid(int gid ) ;
 #line 288
 char const   *vsf_sysutil_group_getname(struct vsf_sysutil_group  const  *p_group ) ;
-#line 18 "ls.c"
+#line 18 "../../experiments/vsftpd-2.0.7/ls.c"
 static void build_dir_line(struct mystr *p_str , struct mystr  const  *p_filename_str ,
                            struct vsf_sysutil_statbuf  const  *p_stat ) ;
-#line 89 "ls.c"
+#line 89 "../../experiments/vsftpd-2.0.7/ls.c"
 static struct mystr s_next_filename_str  ;
-#line 90 "ls.c"
+#line 90 "../../experiments/vsftpd-2.0.7/ls.c"
 static struct mystr s_next_path_and_filename_str  ;
-#line 91 "ls.c"
+#line 91 "../../experiments/vsftpd-2.0.7/ls.c"
 static struct vsf_sysutil_statbuf *s_p_statbuf___5  ;
-#line 143 "ls.c"
+#line 143 "../../experiments/vsftpd-2.0.7/ls.c"
 static struct mystr s_final_file_str  ;
-#line 148 "ls.c"
+#line 148 "../../experiments/vsftpd-2.0.7/ls.c"
 static struct mystr s_temp_str  ;
-#line 186 "ls.c"
+#line 186 "../../experiments/vsftpd-2.0.7/ls.c"
 static struct mystr s_temp_str___0  ;
-#line 22 "ls.c"
+#line 22 "../../experiments/vsftpd-2.0.7/ls.c"
 void vsf_ls_populate_dir_list(struct mystr_list *p_list , struct mystr_list *p_subdir_list ,
                               struct vsf_sysutil_dir *p_dir , struct mystr  const  *p_base_dir_str ,
                               struct mystr  const  *p_option_str , struct mystr  const  *p_filter_str ,
@@ -17501,9 +17500,9 @@ void vsf_ls_populate_dir_list(struct mystr_list *p_list , struct mystr_list *p_s
   return;
 }
 }
-#line 247 "ls.c"
+#line 247 "../../experiments/vsftpd-2.0.7/ls.c"
 static struct mystr s_match_needed_str  ;
-#line 216 "ls.c"
+#line 216 "../../experiments/vsftpd-2.0.7/ls.c"
 int vsf_filename_passes_filter(struct mystr  const  *p_filename_str , struct mystr  const  *p_filter_str ) 
 { struct mystr filter_remain_str ;
   struct mystr name_remain_str ;
@@ -17755,9 +17754,9 @@ int vsf_filename_passes_filter(struct mystr  const  *p_filename_str , struct mys
   return (ret___0);
 }
 }
-#line 363 "ls.c"
+#line 363 "../../experiments/vsftpd-2.0.7/ls.c"
 static struct mystr s_tmp_str___2  ;
-#line 359 "ls.c"
+#line 359 "../../experiments/vsftpd-2.0.7/ls.c"
 static void build_dir_line(struct mystr *p_str , struct mystr  const  *p_filename_str ,
                            struct vsf_sysutil_statbuf  const  *p_stat ) 
 { filesize_t size ;
@@ -17883,23 +17882,23 @@ static void build_dir_line(struct mystr *p_str , struct mystr  const  *p_filenam
   return;
 }
 }
-#line 1 "cil-gtjDm7WN.o"
-#pragma merger(0,"/tmp/cil-fC5c9Nnr.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 13 "postprivparent.h"
+#line 1 "cil-mnBzPFQC.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-TQPyTrFS.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 13 "../../experiments/vsftpd-2.0.7/postprivparent.h"
 void vsf_priv_parent_postlogin(struct vsf_session *p_sess ) ;
-#line 15 "privops.h"
+#line 15 "../../experiments/vsftpd-2.0.7/privops.h"
 int vsf_privop_get_ftp_port_sock(struct vsf_session *p_sess ) ;
 #line 25
 void vsf_privop_do_file_chown(struct vsf_session *p_sess , int fd ) ;
-#line 52 "sysutil.h"
+#line 52 "../../experiments/vsftpd-2.0.7/sysutil.h"
 void vsf_sysutil_block_sig(enum EVSFSysUtilSignal sig ) ;
 #line 53
 void vsf_sysutil_unblock_sig(enum EVSFSysUtilSignal sig ) ;
-#line 32 "secutil.h"
+#line 32 "../../experiments/vsftpd-2.0.7/secutil.h"
 void vsf_secutil_change_credentials(struct mystr  const  *p_user_str , struct mystr  const  *p_dir_str ,
                                     struct mystr  const  *p_ext_dir_str , unsigned int caps ,
                                     unsigned int options ) ;
-#line 25 "postprivparent.c"
+#line 25 "../../experiments/vsftpd-2.0.7/postprivparent.c"
 static void minimize_privilege(struct vsf_session *p_sess ) ;
 #line 26
 static void process_post_login_req(struct vsf_session *p_sess ) ;
@@ -17907,7 +17906,7 @@ static void process_post_login_req(struct vsf_session *p_sess ) ;
 static void cmd_process_chown(struct vsf_session *p_sess ) ;
 #line 28
 static void cmd_process_get_data_sock(struct vsf_session *p_sess ) ;
-#line 30 "postprivparent.c"
+#line 30 "../../experiments/vsftpd-2.0.7/postprivparent.c"
 void vsf_priv_parent_postlogin(struct vsf_session *p_sess ) 
 { 
 
@@ -17921,7 +17920,7 @@ void vsf_priv_parent_postlogin(struct vsf_session *p_sess )
   }
 }
 }
-#line 41 "postprivparent.c"
+#line 41 "../../experiments/vsftpd-2.0.7/postprivparent.c"
 static void process_post_login_req(struct vsf_session *p_sess ) 
 { char cmd ;
 
@@ -17950,7 +17949,7 @@ static void process_post_login_req(struct vsf_session *p_sess )
   return;
 }
 }
-#line 63 "postprivparent.c"
+#line 63 "../../experiments/vsftpd-2.0.7/postprivparent.c"
 static void minimize_privilege(struct vsf_session *p_sess ) 
 { unsigned int caps ;
   struct mystr user_str ;
@@ -18006,7 +18005,7 @@ static void minimize_privilege(struct vsf_session *p_sess )
   return;
 }
 }
-#line 106 "postprivparent.c"
+#line 106 "../../experiments/vsftpd-2.0.7/postprivparent.c"
 static void cmd_process_chown(struct vsf_session *p_sess ) 
 { int the_fd ;
   int __cil_tmp ;
@@ -18026,7 +18025,7 @@ static void cmd_process_chown(struct vsf_session *p_sess )
   return;
 }
 }
-#line 115 "postprivparent.c"
+#line 115 "../../experiments/vsftpd-2.0.7/postprivparent.c"
 static void cmd_process_get_data_sock(struct vsf_session *p_sess ) 
 { int sock_fd ;
   int __cil_tmp ;
@@ -18046,11 +18045,11 @@ static void cmd_process_get_data_sock(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1 "cil-Nd7D7Bpv.o"
-#pragma merger(0,"/tmp/cil-KHeBR5Ad.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 52 "str.h"
+#line 1 "cil-0AmkGnYE.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-NOgevIjk.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 52 "../../experiments/vsftpd-2.0.7/str.h"
 void str_append_double(struct mystr *p_str , double the_double ) ;
-#line 87 "sysutil.h"
+#line 87 "../../experiments/vsftpd-2.0.7/sysutil.h"
 int vsf_sysutil_create_or_open_file(char const   *p_filename , unsigned int mode ) ;
 #line 144
 void vsf_sysutil_unlock_file(int fd ) ;
@@ -18060,11 +18059,11 @@ unsigned int vsf_sysutil_getpid(void) ;
 char const   *vsf_sysutil_get_current_date(void) ;
 #line 306
 void vsf_sysutil_openlog(void) ;
-#line 12 "sysstr.h"
+#line 12 "../../experiments/vsftpd-2.0.7/sysstr.h"
 int str_write_loop(struct mystr  const  *p_str , int fd ) ;
 #line 37
 void str_syslog(struct mystr  const  *p_str , int severe ) ;
-#line 18 "logging.c"
+#line 18 "../../experiments/vsftpd-2.0.7/logging.c"
 static int vsf_log_type_is_transfer(enum EVSFLogEntryType type ) ;
 #line 19
 static void vsf_log_common(struct vsf_session *p_sess , int succeeded , enum EVSFLogEntryType what ,
@@ -18078,7 +18077,7 @@ static void vsf_log_do_log_wuftpd_format(struct vsf_session *p_sess , struct mys
                                          int succeeded ) ;
 #line 28
 static void vsf_log_do_log_to_file(int fd , struct mystr *p_str ) ;
-#line 30 "logging.c"
+#line 30 "../../experiments/vsftpd-2.0.7/logging.c"
 void vsf_log_init(struct vsf_session *p_sess ) 
 { int retval ;
   int __cil_tmp ;
@@ -18130,7 +18129,7 @@ void vsf_log_init(struct vsf_session *p_sess )
   return;
 }
 }
-#line 65 "logging.c"
+#line 65 "../../experiments/vsftpd-2.0.7/logging.c"
 static int vsf_log_type_is_transfer(enum EVSFLogEntryType type ) 
 { 
 
@@ -18139,7 +18138,7 @@ static int vsf_log_type_is_transfer(enum EVSFLogEntryType type )
   return ((int )type == 2 || (int )type == 3);
 }
 }
-#line 71 "logging.c"
+#line 71 "../../experiments/vsftpd-2.0.7/logging.c"
 void vsf_log_start_entry(struct vsf_session *p_sess , enum EVSFLogEntryType what ) 
 { int __cil_tmp ;
 
@@ -18174,7 +18173,7 @@ void vsf_log_start_entry(struct vsf_session *p_sess , enum EVSFLogEntryType what
   return;
 }
 }
-#line 91 "logging.c"
+#line 91 "../../experiments/vsftpd-2.0.7/logging.c"
 void vsf_log_line(struct vsf_session *p_sess , enum EVSFLogEntryType what , struct mystr *p_str ) 
 { 
 
@@ -18185,7 +18184,7 @@ void vsf_log_line(struct vsf_session *p_sess , enum EVSFLogEntryType what , stru
   return;
 }
 }
-#line 98 "logging.c"
+#line 98 "../../experiments/vsftpd-2.0.7/logging.c"
 int vsf_log_entry_pending(struct vsf_session *p_sess ) 
 { 
 
@@ -18199,7 +18198,7 @@ int vsf_log_entry_pending(struct vsf_session *p_sess )
   return (1);
 }
 }
-#line 108 "logging.c"
+#line 108 "../../experiments/vsftpd-2.0.7/logging.c"
 void vsf_log_clear_entry(struct vsf_session *p_sess ) 
 { 
 
@@ -18210,7 +18209,7 @@ void vsf_log_clear_entry(struct vsf_session *p_sess )
   return;
 }
 }
-#line 114 "logging.c"
+#line 114 "../../experiments/vsftpd-2.0.7/logging.c"
 void vsf_log_do_log(struct vsf_session *p_sess , int succeeded ) 
 { 
 
@@ -18223,9 +18222,9 @@ void vsf_log_do_log(struct vsf_session *p_sess , int succeeded )
   return;
 }
 }
-#line 126 "logging.c"
+#line 126 "../../experiments/vsftpd-2.0.7/logging.c"
 static struct mystr s_log_str___0  ;
-#line 122 "logging.c"
+#line 122 "../../experiments/vsftpd-2.0.7/logging.c"
 static void vsf_log_common(struct vsf_session *p_sess , int succeeded , enum EVSFLogEntryType what ,
                            struct mystr  const  *p_str ) 
 { int __cil_tmp ;
@@ -18274,7 +18273,7 @@ static void vsf_log_common(struct vsf_session *p_sess , int succeeded , enum EVS
   return;
 }
 }
-#line 152 "logging.c"
+#line 152 "../../experiments/vsftpd-2.0.7/logging.c"
 static void vsf_log_do_log_to_file(int fd , struct mystr *p_str ) 
 { int retval ;
   int __cil_tmp ;
@@ -18310,7 +18309,7 @@ static void vsf_log_do_log_to_file(int fd , struct mystr *p_str )
   return;
 }
 }
-#line 173 "logging.c"
+#line 173 "../../experiments/vsftpd-2.0.7/logging.c"
 static void vsf_log_do_log_wuftpd_format(struct vsf_session *p_sess , struct mystr *p_str ,
                                          int succeeded ) 
 { long delta_sec ;
@@ -18404,7 +18403,7 @@ static void vsf_log_do_log_wuftpd_format(struct vsf_session *p_sess , struct mys
   return;
 }
 }
-#line 251 "logging.c"
+#line 251 "../../experiments/vsftpd-2.0.7/logging.c"
 static void vsf_log_do_log_vsftpd_format(struct vsf_session *p_sess , struct mystr *p_str ,
                                          int succeeded , enum EVSFLogEntryType what ,
                                          struct mystr  const  *p_log_str ) 
@@ -18604,9 +18603,9 @@ static void vsf_log_do_log_vsftpd_format(struct vsf_session *p_sess , struct mys
   return;
 }
 }
-#line 1 "cil-hyUzzGko.o"
-#pragma merger(0,"/tmp/cil-ihLEZIMn.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 24 "str.h"
+#line 1 "cil-cPNGGoCU.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-cofUQ7AT.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 24 "../../experiments/vsftpd-2.0.7/str.h"
 void private_str_alloc_memchunk(struct mystr *p_str , char const   *p_src , unsigned int len ) ;
 #line 29
 void str_alloc_alt_term(struct mystr *p_str , char const   *p_src , char term ) ;
@@ -18630,7 +18629,7 @@ int str_contains_space(struct mystr  const  *p_str ) ;
 int str_contains_unprintable(struct mystr  const  *p_str ) ;
 #line 112
 int str_getline(struct mystr  const  *p_str , struct mystr *p_line_str , unsigned int *p_pos ) ;
-#line 157 "sysutil.h"
+#line 157 "../../experiments/vsftpd-2.0.7/sysutil.h"
 void *vsf_sysutil_malloc(unsigned int size ) ;
 #line 158
 void *vsf_sysutil_realloc(void *p_ptr , unsigned int size ) ;
@@ -18652,13 +18651,13 @@ int vsf_sysutil_toupper(int the_char ) ;
 int vsf_sysutil_isspace(int the_char ) ;
 #line 199
 int vsf_sysutil_isprint(int the_char ) ;
-#line 24 "str.c"
+#line 24 "../../experiments/vsftpd-2.0.7/str.c"
 static void str_split_text_common(struct mystr *p_src , struct mystr *p_rhs , char const   *p_text ,
                                   int is_reverse ) ;
 #line 26
 static int str_equal_internal(char const   *p_buf1 , unsigned int buf1_len , char const   *p_buf2 ,
                               unsigned int buf2_len ) ;
-#line 30 "str.c"
+#line 30 "../../experiments/vsftpd-2.0.7/str.c"
 static void s_setbuf(struct mystr *p_str , char *p_newbuf ) 
 { 
 
@@ -18674,7 +18673,7 @@ static void s_setbuf(struct mystr *p_str , char *p_newbuf )
   return;
 }
 }
-#line 40 "str.c"
+#line 40 "../../experiments/vsftpd-2.0.7/str.c"
 void private_str_alloc_memchunk(struct mystr *p_str , char const   *p_src , unsigned int len ) 
 { unsigned int buf_needed ;
   void *__cil_tmp ;
@@ -18704,7 +18703,7 @@ void private_str_alloc_memchunk(struct mystr *p_str , char const   *p_src , unsi
   return;
 }
 }
-#line 57 "str.c"
+#line 57 "../../experiments/vsftpd-2.0.7/str.c"
 void private_str_append_memchunk(struct mystr *p_str , char const   *p_src , unsigned int len ) 
 { unsigned int buf_needed ;
   void *__cil_tmp ;
@@ -18732,7 +18731,7 @@ void private_str_append_memchunk(struct mystr *p_str , char const   *p_src , uns
   return;
 }
 }
-#line 73 "str.c"
+#line 73 "../../experiments/vsftpd-2.0.7/str.c"
 void str_alloc_text(struct mystr *p_str , char const   *p_src ) 
 { unsigned int len ;
   unsigned int __cil_tmp ;
@@ -18748,7 +18747,7 @@ void str_alloc_text(struct mystr *p_str , char const   *p_src )
   return;
 }
 }
-#line 80 "str.c"
+#line 80 "../../experiments/vsftpd-2.0.7/str.c"
 void str_copy(struct mystr *p_dest , struct mystr  const  *p_src ) 
 { 
 
@@ -18760,7 +18759,7 @@ void str_copy(struct mystr *p_dest , struct mystr  const  *p_src )
   return;
 }
 }
-#line 86 "str.c"
+#line 86 "../../experiments/vsftpd-2.0.7/str.c"
 char const   *str_strdup(struct mystr  const  *p_str ) 
 { char const   *__cil_tmp ;
   char *__cil_tmp___0 ;
@@ -18774,7 +18773,7 @@ char const   *str_strdup(struct mystr  const  *p_str )
   return ((char const   *)__cil_tmp___0);
 }
 }
-#line 92 "str.c"
+#line 92 "../../experiments/vsftpd-2.0.7/str.c"
 void str_alloc_alt_term(struct mystr *p_str , char const   *p_src , char term ) 
 { char const   *p_search ;
   unsigned int len ;
@@ -18797,7 +18796,7 @@ void str_alloc_alt_term(struct mystr *p_str , char const   *p_src , char term )
   return;
 }
 }
-#line 105 "str.c"
+#line 105 "../../experiments/vsftpd-2.0.7/str.c"
 void str_alloc_ulong(struct mystr *p_str , unsigned long the_long ) 
 { char const   *__cil_tmp ;
 
@@ -18810,7 +18809,7 @@ void str_alloc_ulong(struct mystr *p_str , unsigned long the_long )
   return;
 }
 }
-#line 111 "str.c"
+#line 111 "../../experiments/vsftpd-2.0.7/str.c"
 void str_alloc_filesize_t(struct mystr *p_str , filesize_t the_filesize ) 
 { char const   *__cil_tmp ;
 
@@ -18823,7 +18822,7 @@ void str_alloc_filesize_t(struct mystr *p_str , filesize_t the_filesize )
   return;
 }
 }
-#line 117 "str.c"
+#line 117 "../../experiments/vsftpd-2.0.7/str.c"
 void str_free(struct mystr *p_str ) 
 { 
 
@@ -18843,7 +18842,7 @@ void str_free(struct mystr *p_str )
   return;
 }
 }
-#line 129 "str.c"
+#line 129 "../../experiments/vsftpd-2.0.7/str.c"
 void str_empty(struct mystr *p_str ) 
 { 
 
@@ -18856,7 +18855,7 @@ void str_empty(struct mystr *p_str )
   return;
 }
 }
-#line 137 "str.c"
+#line 137 "../../experiments/vsftpd-2.0.7/str.c"
 void str_trunc(struct mystr *p_str , unsigned int trunc_len ) 
 { 
 
@@ -18874,7 +18873,7 @@ void str_trunc(struct mystr *p_str , unsigned int trunc_len )
   return;
 }
 }
-#line 148 "str.c"
+#line 148 "../../experiments/vsftpd-2.0.7/str.c"
 void str_reserve(struct mystr *p_str , unsigned int res_len ) 
 { void *__cil_tmp ;
 
@@ -18896,7 +18895,7 @@ void str_reserve(struct mystr *p_str , unsigned int res_len )
   return;
 }
 }
-#line 161 "str.c"
+#line 161 "../../experiments/vsftpd-2.0.7/str.c"
 int str_isempty(struct mystr  const  *p_str ) 
 { 
 
@@ -18905,7 +18904,7 @@ int str_isempty(struct mystr  const  *p_str )
   return (p_str->PRIVATE_HANDS_OFF_len == 0U);
 }
 }
-#line 167 "str.c"
+#line 167 "../../experiments/vsftpd-2.0.7/str.c"
 unsigned int str_getlen(struct mystr  const  *p_str ) 
 { 
 
@@ -18914,7 +18913,7 @@ unsigned int str_getlen(struct mystr  const  *p_str )
   return ((unsigned int )p_str->PRIVATE_HANDS_OFF_len);
 }
 }
-#line 173 "str.c"
+#line 173 "../../experiments/vsftpd-2.0.7/str.c"
 char const   *str_getbuf(struct mystr  const  *p_str ) 
 { 
 
@@ -18933,7 +18932,7 @@ char const   *str_getbuf(struct mystr  const  *p_str )
   return ((char const   *)p_str->PRIVATE_HANDS_OFF_p_buf);
 }
 }
-#line 187 "str.c"
+#line 187 "../../experiments/vsftpd-2.0.7/str.c"
 int str_strcmp(struct mystr  const  *p_str1 , struct mystr  const  *p_str2 ) 
 { int __cil_tmp ;
 
@@ -18946,7 +18945,7 @@ int str_strcmp(struct mystr  const  *p_str1 , struct mystr  const  *p_str2 )
   return (__cil_tmp);
 }
 }
-#line 194 "str.c"
+#line 194 "../../experiments/vsftpd-2.0.7/str.c"
 static int str_equal_internal(char const   *p_buf1 , unsigned int buf1_len , char const   *p_buf2 ,
                               unsigned int buf2_len ) 
 { int retval ;
@@ -18971,7 +18970,7 @@ static int str_equal_internal(char const   *p_buf1 , unsigned int buf1_len , cha
   return ((int )(buf1_len - buf2_len));
 }
 }
-#line 213 "str.c"
+#line 213 "../../experiments/vsftpd-2.0.7/str.c"
 int str_equal(struct mystr  const  *p_str1 , struct mystr  const  *p_str2 ) 
 { int __cil_tmp ;
 
@@ -18982,7 +18981,7 @@ int str_equal(struct mystr  const  *p_str1 , struct mystr  const  *p_str2 )
   return (__cil_tmp == 0);
 }
 }
-#line 219 "str.c"
+#line 219 "../../experiments/vsftpd-2.0.7/str.c"
 int str_equal_text(struct mystr  const  *p_str , char const   *p_text ) 
 { unsigned int cmplen ;
   unsigned int __cil_tmp ;
@@ -19001,7 +19000,7 @@ int str_equal_text(struct mystr  const  *p_str , char const   *p_text )
   return (__cil_tmp___0 == 0);
 }
 }
-#line 226 "str.c"
+#line 226 "../../experiments/vsftpd-2.0.7/str.c"
 void str_append_str(struct mystr *p_str , struct mystr  const  *p_other ) 
 { 
 
@@ -19013,7 +19012,7 @@ void str_append_str(struct mystr *p_str , struct mystr  const  *p_other )
   return;
 }
 }
-#line 232 "str.c"
+#line 232 "../../experiments/vsftpd-2.0.7/str.c"
 void str_append_text(struct mystr *p_str , char const   *p_src ) 
 { unsigned int len ;
   unsigned int __cil_tmp ;
@@ -19029,7 +19028,7 @@ void str_append_text(struct mystr *p_str , char const   *p_src )
   return;
 }
 }
-#line 239 "str.c"
+#line 239 "../../experiments/vsftpd-2.0.7/str.c"
 void str_append_char(struct mystr *p_str , char the_char ) 
 { 
 
@@ -19040,7 +19039,7 @@ void str_append_char(struct mystr *p_str , char the_char )
   return;
 }
 }
-#line 245 "str.c"
+#line 245 "../../experiments/vsftpd-2.0.7/str.c"
 void str_append_ulong(struct mystr *p_str , unsigned long the_ulong ) 
 { char const   *__cil_tmp ;
 
@@ -19053,7 +19052,7 @@ void str_append_ulong(struct mystr *p_str , unsigned long the_ulong )
   return;
 }
 }
-#line 251 "str.c"
+#line 251 "../../experiments/vsftpd-2.0.7/str.c"
 void str_append_filesize_t(struct mystr *p_str , filesize_t the_filesize ) 
 { char const   *__cil_tmp ;
 
@@ -19066,7 +19065,7 @@ void str_append_filesize_t(struct mystr *p_str , filesize_t the_filesize )
   return;
 }
 }
-#line 257 "str.c"
+#line 257 "../../experiments/vsftpd-2.0.7/str.c"
 void str_append_double(struct mystr *p_str , double the_double ) 
 { char const   *__cil_tmp ;
 
@@ -19079,7 +19078,7 @@ void str_append_double(struct mystr *p_str , double the_double )
   return;
 }
 }
-#line 263 "str.c"
+#line 263 "../../experiments/vsftpd-2.0.7/str.c"
 void str_upper(struct mystr *p_str ) 
 { unsigned int i ;
   int __cil_tmp ;
@@ -19100,7 +19099,7 @@ void str_upper(struct mystr *p_str )
   return;
 }
 }
-#line 273 "str.c"
+#line 273 "../../experiments/vsftpd-2.0.7/str.c"
 void str_rpad(struct mystr *p_str , unsigned int min_width ) 
 { unsigned int to_pad ;
   unsigned int __cil_tmp ;
@@ -19131,9 +19130,9 @@ void str_rpad(struct mystr *p_str , unsigned int min_width )
   return;
 }
 }
-#line 291 "str.c"
+#line 291 "../../experiments/vsftpd-2.0.7/str.c"
 static struct mystr s_tmp_str___3  ;
-#line 288 "str.c"
+#line 288 "../../experiments/vsftpd-2.0.7/str.c"
 void str_lpad(struct mystr *p_str , unsigned int min_width ) 
 { unsigned int to_pad ;
   unsigned int __cil_tmp ;
@@ -19170,7 +19169,7 @@ void str_lpad(struct mystr *p_str , unsigned int min_width )
   return;
 }
 }
-#line 307 "str.c"
+#line 307 "../../experiments/vsftpd-2.0.7/str.c"
 void str_replace_char(struct mystr *p_str , char from , char to ) 
 { unsigned int i ;
 
@@ -19191,11 +19190,11 @@ void str_replace_char(struct mystr *p_str , char from , char to )
   return;
 }
 }
-#line 323 "str.c"
+#line 323 "../../experiments/vsftpd-2.0.7/str.c"
 static struct mystr s_lhs_chunk_str  ;
-#line 324 "str.c"
+#line 324 "../../experiments/vsftpd-2.0.7/str.c"
 static struct mystr s_rhs_chunk_str  ;
-#line 320 "str.c"
+#line 320 "../../experiments/vsftpd-2.0.7/str.c"
 void str_replace_text(struct mystr *p_str , char const   *p_from , char const   *p_to ) 
 { unsigned int lhs_len ;
   unsigned int __cil_tmp ;
@@ -19235,7 +19234,7 @@ void str_replace_text(struct mystr *p_str , char const   *p_from , char const   
   return;
 }
 }
-#line 344 "str.c"
+#line 344 "../../experiments/vsftpd-2.0.7/str.c"
 void str_split_char(struct mystr *p_src , struct mystr *p_rhs , char c ) 
 { char ministr[2] ;
 
@@ -19250,7 +19249,7 @@ void str_split_char(struct mystr *p_src , struct mystr *p_rhs , char c )
   return;
 }
 }
-#line 354 "str.c"
+#line 354 "../../experiments/vsftpd-2.0.7/str.c"
 void str_split_char_reverse(struct mystr *p_src , struct mystr *p_rhs , char c ) 
 { char ministr[2] ;
 
@@ -19265,7 +19264,7 @@ void str_split_char_reverse(struct mystr *p_src , struct mystr *p_rhs , char c )
   return;
 }
 }
-#line 364 "str.c"
+#line 364 "../../experiments/vsftpd-2.0.7/str.c"
 void str_split_text(struct mystr *p_src , struct mystr *p_rhs , char const   *p_text ) 
 { 
 
@@ -19276,7 +19275,7 @@ void str_split_text(struct mystr *p_src , struct mystr *p_rhs , char const   *p_
   return;
 }
 }
-#line 370 "str.c"
+#line 370 "../../experiments/vsftpd-2.0.7/str.c"
 void str_split_text_reverse(struct mystr *p_src , struct mystr *p_rhs , char const   *p_text ) 
 { 
 
@@ -19287,7 +19286,7 @@ void str_split_text_reverse(struct mystr *p_src , struct mystr *p_rhs , char con
   return;
 }
 }
-#line 377 "str.c"
+#line 377 "../../experiments/vsftpd-2.0.7/str.c"
 static void str_split_text_common(struct mystr *p_src , struct mystr *p_rhs , char const   *p_text ,
                                   int is_reverse ) 
 { struct str_locate_result locate_result ;
@@ -19331,7 +19330,7 @@ static void str_split_text_common(struct mystr *p_src , struct mystr *p_rhs , ch
   return;
 }
 }
-#line 410 "str.c"
+#line 410 "../../experiments/vsftpd-2.0.7/str.c"
 struct str_locate_result str_locate_str(struct mystr  const  *p_str , struct mystr  const  *p_look_str ) 
 { char const   *__cil_tmp ;
   struct str_locate_result __cil_tmp___0 ;
@@ -19345,7 +19344,7 @@ struct str_locate_result str_locate_str(struct mystr  const  *p_str , struct mys
   return (__cil_tmp___0);
 }
 }
-#line 416 "str.c"
+#line 416 "../../experiments/vsftpd-2.0.7/str.c"
 struct str_locate_result str_locate_str_reverse(struct mystr  const  *p_str , struct mystr  const  *p_look_str ) 
 { char const   *__cil_tmp ;
   struct str_locate_result __cil_tmp___0 ;
@@ -19359,7 +19358,7 @@ struct str_locate_result str_locate_str_reverse(struct mystr  const  *p_str , st
   return (__cil_tmp___0);
 }
 }
-#line 423 "str.c"
+#line 423 "../../experiments/vsftpd-2.0.7/str.c"
 struct str_locate_result str_locate_char(struct mystr  const  *p_str , char look_char ) 
 { char look_str[2] ;
   struct str_locate_result __cil_tmp ;
@@ -19375,7 +19374,7 @@ struct str_locate_result str_locate_char(struct mystr  const  *p_str , char look
   return (__cil_tmp);
 }
 }
-#line 432 "str.c"
+#line 432 "../../experiments/vsftpd-2.0.7/str.c"
 struct str_locate_result str_locate_chars(struct mystr  const  *p_str , char const   *p_chars ) 
 { struct str_locate_result retval ;
   unsigned int num_chars ;
@@ -19426,7 +19425,7 @@ struct str_locate_result str_locate_chars(struct mystr  const  *p_str , char con
   return (retval);
 }
 }
-#line 459 "str.c"
+#line 459 "../../experiments/vsftpd-2.0.7/str.c"
 struct str_locate_result str_locate_text(struct mystr  const  *p_str , char const   *p_text ) 
 { struct str_locate_result retval ;
   unsigned int i ;
@@ -19473,7 +19472,7 @@ struct str_locate_result str_locate_text(struct mystr  const  *p_str , char cons
   return (retval);
 }
 }
-#line 486 "str.c"
+#line 486 "../../experiments/vsftpd-2.0.7/str.c"
 struct str_locate_result str_locate_text_reverse(struct mystr  const  *p_str , char const   *p_text ) 
 { struct str_locate_result retval ;
   unsigned int i ;
@@ -19525,7 +19524,7 @@ struct str_locate_result str_locate_text_reverse(struct mystr  const  *p_str , c
   return (retval);
 }
 }
-#line 519 "str.c"
+#line 519 "../../experiments/vsftpd-2.0.7/str.c"
 void str_left(struct mystr  const  *p_str , struct mystr *p_out , unsigned int chars ) 
 { 
 
@@ -19542,7 +19541,7 @@ void str_left(struct mystr  const  *p_str , struct mystr *p_out , unsigned int c
   return;
 }
 }
-#line 529 "str.c"
+#line 529 "../../experiments/vsftpd-2.0.7/str.c"
 void str_right(struct mystr  const  *p_str , struct mystr *p_out , unsigned int chars ) 
 { unsigned int indexx ;
 
@@ -19561,7 +19560,7 @@ void str_right(struct mystr  const  *p_str , struct mystr *p_out , unsigned int 
   return;
 }
 }
-#line 540 "str.c"
+#line 540 "../../experiments/vsftpd-2.0.7/str.c"
 void str_mid_to_end(struct mystr  const  *p_str , struct mystr *p_out , unsigned int indexx ) 
 { 
 
@@ -19578,7 +19577,7 @@ void str_mid_to_end(struct mystr  const  *p_str , struct mystr *p_out , unsigned
   return;
 }
 }
-#line 552 "str.c"
+#line 552 "../../experiments/vsftpd-2.0.7/str.c"
 char str_get_char_at(struct mystr  const  *p_str , unsigned int indexx ) 
 { 
 
@@ -19592,7 +19591,7 @@ char str_get_char_at(struct mystr  const  *p_str , unsigned int indexx )
   return (*(p_str->PRIVATE_HANDS_OFF_p_buf + indexx));
 }
 }
-#line 562 "str.c"
+#line 562 "../../experiments/vsftpd-2.0.7/str.c"
 int str_contains_space(struct mystr  const  *p_str ) 
 { unsigned int i ;
   int __cil_tmp ;
@@ -19616,7 +19615,7 @@ int str_contains_space(struct mystr  const  *p_str )
   return (0);
 }
 }
-#line 576 "str.c"
+#line 576 "../../experiments/vsftpd-2.0.7/str.c"
 int str_contains_unprintable(struct mystr  const  *p_str ) 
 { unsigned int i ;
   int __cil_tmp ;
@@ -19640,7 +19639,7 @@ int str_contains_unprintable(struct mystr  const  *p_str )
   return (0);
 }
 }
-#line 590 "str.c"
+#line 590 "../../experiments/vsftpd-2.0.7/str.c"
 int str_atoi(struct mystr  const  *p_str ) 
 { char const   *__cil_tmp ;
   int __cil_tmp___0 ;
@@ -19654,7 +19653,7 @@ int str_atoi(struct mystr  const  *p_str )
   return (__cil_tmp___0);
 }
 }
-#line 596 "str.c"
+#line 596 "../../experiments/vsftpd-2.0.7/str.c"
 filesize_t str_a_to_filesize_t(struct mystr  const  *p_str ) 
 { char const   *__cil_tmp ;
   filesize_t __cil_tmp___0 ;
@@ -19668,7 +19667,7 @@ filesize_t str_a_to_filesize_t(struct mystr  const  *p_str )
   return (__cil_tmp___0);
 }
 }
-#line 602 "str.c"
+#line 602 "../../experiments/vsftpd-2.0.7/str.c"
 unsigned int str_octal_to_uint(struct mystr  const  *p_str ) 
 { char const   *__cil_tmp ;
   unsigned int __cil_tmp___0 ;
@@ -19682,7 +19681,7 @@ unsigned int str_octal_to_uint(struct mystr  const  *p_str )
   return (__cil_tmp___0);
 }
 }
-#line 608 "str.c"
+#line 608 "../../experiments/vsftpd-2.0.7/str.c"
 int str_getline(struct mystr  const  *p_str , struct mystr *p_line_str , unsigned int *p_pos ) 
 { unsigned int start_pos ;
   unsigned int curr_pos ;
@@ -19737,9 +19736,9 @@ int str_getline(struct mystr  const  *p_str , struct mystr *p_line_str , unsigne
   return (1);
 }
 }
-#line 644 "str.c"
+#line 644 "../../experiments/vsftpd-2.0.7/str.c"
 static struct mystr s_curr_line_str  ;
-#line 641 "str.c"
+#line 641 "../../experiments/vsftpd-2.0.7/str.c"
 int str_contains_line(struct mystr  const  *p_str , struct mystr  const  *p_line_str ) 
 { unsigned int pos ;
   int __cil_tmp ;
@@ -19769,7 +19768,7 @@ int str_contains_line(struct mystr  const  *p_str , struct mystr  const  *p_line
   return (0);
 }
 }
-#line 656 "str.c"
+#line 656 "../../experiments/vsftpd-2.0.7/str.c"
 void str_replace_unprintable(struct mystr *p_str , char new_char ) 
 { unsigned int i ;
   int __cil_tmp ;
@@ -19793,16 +19792,16 @@ void str_replace_unprintable(struct mystr *p_str , char new_char )
   return;
 }
 }
-#line 1 "cil-yzjjfe2x.o"
-#pragma merger(0,"/tmp/cil-h6Mt5TZB.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 23 "netstr.h"
+#line 1 "cil-7pbfrHFX.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-MIgHslOR.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 23 "../../experiments/vsftpd-2.0.7/netstr.h"
 void str_netfd_alloc(struct mystr *p_str , int fd , char term , char *p_readbuf___0 ,
                      unsigned int maxlen ) ;
-#line 13 "sysstr.h"
+#line 13 "../../experiments/vsftpd-2.0.7/sysstr.h"
 int str_read_loop(struct mystr *p_str , int fd ) ;
-#line 267 "sysutil.h"
+#line 267 "../../experiments/vsftpd-2.0.7/sysutil.h"
 int vsf_sysutil_recv_peek(int fd , void *p_buf , unsigned int len ) ;
-#line 18 "netstr.c"
+#line 18 "../../experiments/vsftpd-2.0.7/netstr.c"
 void str_netfd_alloc(struct mystr *p_str , int fd , char term , char *p_readbuf___0 ,
                      unsigned int maxlen ) 
 { int retval ;
@@ -19899,7 +19898,7 @@ void str_netfd_alloc(struct mystr *p_str , int fd , char term , char *p_readbuf_
   }
 }
 }
-#line 85 "netstr.c"
+#line 85 "../../experiments/vsftpd-2.0.7/netstr.c"
 int str_netfd_write(struct mystr  const  *p_str , int fd ) 
 { int ret___0 ;
   int retval ;
@@ -19932,7 +19931,7 @@ int str_netfd_write(struct mystr  const  *p_str , int fd )
   return (ret___0);
 }
 }
-#line 103 "netstr.c"
+#line 103 "../../experiments/vsftpd-2.0.7/netstr.c"
 int str_netfd_read(struct mystr *p_str , int fd , unsigned int len ) 
 { int retval ;
   int __cil_tmp ;
@@ -19955,9 +19954,9 @@ int str_netfd_read(struct mystr *p_str , int fd , unsigned int len )
   return (retval);
 }
 }
-#line 1 "cil-df6NcFjc.o"
-#pragma merger(0,"/tmp/cil-IP3jE5My.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 60 "sysutil.h"
+#line 1 "cil-YIVYNbCF.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-ijjS40QI.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 60 "../../experiments/vsftpd-2.0.7/sysutil.h"
 char *vsf_sysutil_getcwd(char *p_dest , unsigned int buf_size ) ;
 #line 61
 int vsf_sysutil_mkdir(char const   *p_dirname , unsigned int mode ) ;
@@ -19987,9 +19986,9 @@ int vsf_sysutil_chmod(char const   *p_filename , unsigned int mode ) ;
 int vsf_sysutil_readlink(char const   *p_filename , char *p_dest , unsigned int bufsiz ) ;
 #line 307
 void vsf_sysutil_syslog(char const   *p_text , int severe ) ;
-#line 22 "sysstr.c"
+#line 22 "../../experiments/vsftpd-2.0.7/sysstr.c"
 static char *p_getcwd_buf  ;
-#line 19 "sysstr.c"
+#line 19 "../../experiments/vsftpd-2.0.7/sysstr.c"
 void str_getcwd(struct mystr *p_str ) 
 { char *p_ret ;
 
@@ -20012,7 +20011,7 @@ void str_getcwd(struct mystr *p_str )
   return;
 }
 }
-#line 37 "sysstr.c"
+#line 37 "../../experiments/vsftpd-2.0.7/sysstr.c"
 int str_write_loop(struct mystr  const  *p_str , int fd ) 
 { unsigned int __cil_tmp ;
   char const   *__cil_tmp___0 ;
@@ -20029,7 +20028,7 @@ int str_write_loop(struct mystr  const  *p_str , int fd )
   return (__cil_tmp___1);
 }
 }
-#line 43 "sysstr.c"
+#line 43 "../../experiments/vsftpd-2.0.7/sysstr.c"
 int str_read_loop(struct mystr *p_str , int fd ) 
 { unsigned int __cil_tmp ;
   char const   *__cil_tmp___0 ;
@@ -20046,7 +20045,7 @@ int str_read_loop(struct mystr *p_str , int fd )
   return (__cil_tmp___1);
 }
 }
-#line 50 "sysstr.c"
+#line 50 "../../experiments/vsftpd-2.0.7/sysstr.c"
 int str_mkdir(struct mystr  const  *p_str , unsigned int mode ) 
 { char const   *__cil_tmp ;
   int __cil_tmp___0 ;
@@ -20060,7 +20059,7 @@ int str_mkdir(struct mystr  const  *p_str , unsigned int mode )
   return (__cil_tmp___0);
 }
 }
-#line 56 "sysstr.c"
+#line 56 "../../experiments/vsftpd-2.0.7/sysstr.c"
 int str_rmdir(struct mystr  const  *p_str ) 
 { char const   *__cil_tmp ;
   int __cil_tmp___0 ;
@@ -20074,7 +20073,7 @@ int str_rmdir(struct mystr  const  *p_str )
   return (__cil_tmp___0);
 }
 }
-#line 62 "sysstr.c"
+#line 62 "../../experiments/vsftpd-2.0.7/sysstr.c"
 int str_unlink(struct mystr  const  *p_str ) 
 { char const   *__cil_tmp ;
   int __cil_tmp___0 ;
@@ -20088,7 +20087,7 @@ int str_unlink(struct mystr  const  *p_str )
   return (__cil_tmp___0);
 }
 }
-#line 68 "sysstr.c"
+#line 68 "../../experiments/vsftpd-2.0.7/sysstr.c"
 int str_chdir(struct mystr  const  *p_str ) 
 { char const   *__cil_tmp ;
   int __cil_tmp___0 ;
@@ -20102,7 +20101,7 @@ int str_chdir(struct mystr  const  *p_str )
   return (__cil_tmp___0);
 }
 }
-#line 74 "sysstr.c"
+#line 74 "../../experiments/vsftpd-2.0.7/sysstr.c"
 int str_open(struct mystr  const  *p_str , enum EVSFSysStrOpenMode mode ) 
 { enum EVSFSysUtilOpenMode open_mode ;
   char const   *__cil_tmp ;
@@ -20132,7 +20131,7 @@ int str_open(struct mystr  const  *p_str , enum EVSFSysStrOpenMode mode )
   return (__cil_tmp___0);
 }
 }
-#line 90 "sysstr.c"
+#line 90 "../../experiments/vsftpd-2.0.7/sysstr.c"
 int str_stat(struct mystr  const  *p_str , struct vsf_sysutil_statbuf **p_ptr ) 
 { char const   *__cil_tmp ;
   int __cil_tmp___0 ;
@@ -20146,7 +20145,7 @@ int str_stat(struct mystr  const  *p_str , struct vsf_sysutil_statbuf **p_ptr )
   return (__cil_tmp___0);
 }
 }
-#line 96 "sysstr.c"
+#line 96 "../../experiments/vsftpd-2.0.7/sysstr.c"
 int str_lstat(struct mystr  const  *p_str , struct vsf_sysutil_statbuf **p_ptr ) 
 { char const   *__cil_tmp ;
   int __cil_tmp___0 ;
@@ -20160,7 +20159,7 @@ int str_lstat(struct mystr  const  *p_str , struct vsf_sysutil_statbuf **p_ptr )
   return (__cil_tmp___0);
 }
 }
-#line 102 "sysstr.c"
+#line 102 "../../experiments/vsftpd-2.0.7/sysstr.c"
 int str_create(struct mystr  const  *p_str ) 
 { char const   *__cil_tmp ;
   int __cil_tmp___0 ;
@@ -20174,7 +20173,7 @@ int str_create(struct mystr  const  *p_str )
   return (__cil_tmp___0);
 }
 }
-#line 108 "sysstr.c"
+#line 108 "../../experiments/vsftpd-2.0.7/sysstr.c"
 int str_create_overwrite(struct mystr  const  *p_str ) 
 { char const   *__cil_tmp ;
   int __cil_tmp___0 ;
@@ -20188,7 +20187,7 @@ int str_create_overwrite(struct mystr  const  *p_str )
   return (__cil_tmp___0);
 }
 }
-#line 114 "sysstr.c"
+#line 114 "../../experiments/vsftpd-2.0.7/sysstr.c"
 int str_create_append(struct mystr  const  *p_str ) 
 { char const   *__cil_tmp ;
   int __cil_tmp___0 ;
@@ -20202,7 +20201,7 @@ int str_create_append(struct mystr  const  *p_str )
   return (__cil_tmp___0);
 }
 }
-#line 121 "sysstr.c"
+#line 121 "../../experiments/vsftpd-2.0.7/sysstr.c"
 int str_chmod(struct mystr  const  *p_str , unsigned int mode ) 
 { char const   *__cil_tmp ;
   int __cil_tmp___0 ;
@@ -20216,7 +20215,7 @@ int str_chmod(struct mystr  const  *p_str , unsigned int mode )
   return (__cil_tmp___0);
 }
 }
-#line 127 "sysstr.c"
+#line 127 "../../experiments/vsftpd-2.0.7/sysstr.c"
 int str_rename(struct mystr  const  *p_from_str , struct mystr  const  *p_to_str ) 
 { char const   *__cil_tmp ;
   char const   *__cil_tmp___0 ;
@@ -20233,7 +20232,7 @@ int str_rename(struct mystr  const  *p_from_str , struct mystr  const  *p_to_str
   return (__cil_tmp___1);
 }
 }
-#line 133 "sysstr.c"
+#line 133 "../../experiments/vsftpd-2.0.7/sysstr.c"
 struct vsf_sysutil_dir *str_opendir(struct mystr  const  *p_str ) 
 { char const   *__cil_tmp ;
   struct vsf_sysutil_dir *__cil_tmp___0 ;
@@ -20247,7 +20246,7 @@ struct vsf_sysutil_dir *str_opendir(struct mystr  const  *p_str )
   return (__cil_tmp___0);
 }
 }
-#line 139 "sysstr.c"
+#line 139 "../../experiments/vsftpd-2.0.7/sysstr.c"
 void str_next_dirent(struct mystr *p_filename_str , struct vsf_sysutil_dir *p_dir ) 
 { char const   *p_filename ;
   char const   *__cil_tmp ;
@@ -20268,9 +20267,9 @@ void str_next_dirent(struct mystr *p_filename_str , struct vsf_sysutil_dir *p_di
   return;
 }
 }
-#line 153 "sysstr.c"
+#line 153 "../../experiments/vsftpd-2.0.7/sysstr.c"
 static char *p_readlink_buf  ;
-#line 150 "sysstr.c"
+#line 150 "../../experiments/vsftpd-2.0.7/sysstr.c"
 int str_readlink(struct mystr *p_str , struct mystr  const  *p_filename_str ) 
 { int retval ;
   char const   *__cil_tmp ;
@@ -20301,7 +20300,7 @@ int str_readlink(struct mystr *p_str , struct mystr  const  *p_filename_str )
   return (0);
 }
 }
-#line 172 "sysstr.c"
+#line 172 "../../experiments/vsftpd-2.0.7/sysstr.c"
 struct vsf_sysutil_user *str_getpwnam(struct mystr  const  *p_user_str ) 
 { char const   *__cil_tmp ;
   struct vsf_sysutil_user *__cil_tmp___0 ;
@@ -20315,7 +20314,7 @@ struct vsf_sysutil_user *str_getpwnam(struct mystr  const  *p_user_str )
   return (__cil_tmp___0);
 }
 }
-#line 178 "sysstr.c"
+#line 178 "../../experiments/vsftpd-2.0.7/sysstr.c"
 void str_syslog(struct mystr  const  *p_str , int severe ) 
 { char const   *__cil_tmp ;
 
@@ -20328,14 +20327,14 @@ void str_syslog(struct mystr  const  *p_str , int severe )
   return;
 }
 }
-#line 1 "cil-xlUuLqcX.o"
-#pragma merger(0,"/tmp/cil-brLPh8UE.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 25 "strlist.h"
+#line 1 "cil-9wkEnwTu.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-tSukNUD1.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 25 "../../experiments/vsftpd-2.0.7/strlist.h"
 int str_list_contains_str(struct mystr_list  const  *p_list , struct mystr  const  *p_str ) ;
-#line 298 "sysutil.h"
+#line 298 "../../experiments/vsftpd-2.0.7/sysutil.h"
 void vsf_sysutil_qsort(void *p_base , unsigned int num_elem , unsigned int elem_size ,
                        int (*p_compar)(void const   * , void const   * ) ) ;
-#line 25 "strlist.c"
+#line 25 "../../experiments/vsftpd-2.0.7/strlist.c"
 static struct mystr s_null_str  ;
 #line 27
 static int sort_compare_func(void const   *p1 , void const   *p2 ) ;
@@ -20343,7 +20342,7 @@ static int sort_compare_func(void const   *p1 , void const   *p2 ) ;
 static int sort_compare_func_reverse(void const   *p1 , void const   *p2 ) ;
 #line 29
 static int sort_compare_common(void const   *p1 , void const   *p2 , int reverse ) ;
-#line 31 "strlist.c"
+#line 31 "../../experiments/vsftpd-2.0.7/strlist.c"
 void str_list_free(struct mystr_list *p_list ) 
 { unsigned int i ;
 
@@ -20374,7 +20373,7 @@ void str_list_free(struct mystr_list *p_list )
   return;
 }
 }
-#line 49 "strlist.c"
+#line 49 "../../experiments/vsftpd-2.0.7/strlist.c"
 int str_list_get_length(struct mystr_list  const  *p_list ) 
 { 
 
@@ -20383,7 +20382,7 @@ int str_list_get_length(struct mystr_list  const  *p_list )
   return ((int )p_list->PRIVATE_HANDS_OFF_list_len);
 }
 }
-#line 55 "strlist.c"
+#line 55 "../../experiments/vsftpd-2.0.7/strlist.c"
 int str_list_contains_str(struct mystr_list  const  *p_list , struct mystr  const  *p_str ) 
 { unsigned int i ;
   int __cil_tmp ;
@@ -20407,7 +20406,7 @@ int str_list_contains_str(struct mystr_list  const  *p_list , struct mystr  cons
   return (0);
 }
 }
-#line 70 "strlist.c"
+#line 70 "../../experiments/vsftpd-2.0.7/strlist.c"
 void str_list_add(struct mystr_list *p_list , struct mystr  const  *p_str , struct mystr  const  *p_sort_key_str ) 
 { struct mystr_list_node *p_node ;
   void *__cil_tmp ;
@@ -20453,7 +20452,7 @@ void str_list_add(struct mystr_list *p_list , struct mystr  const  *p_str , stru
   return;
 }
 }
-#line 103 "strlist.c"
+#line 103 "../../experiments/vsftpd-2.0.7/strlist.c"
 void str_list_sort(struct mystr_list *p_list , int reverse ) 
 { 
 
@@ -20472,7 +20471,7 @@ void str_list_sort(struct mystr_list *p_list , int reverse )
   return;
 }
 }
-#line 119 "strlist.c"
+#line 119 "../../experiments/vsftpd-2.0.7/strlist.c"
 static int sort_compare_func(void const   *p1 , void const   *p2 ) 
 { int __cil_tmp ;
 
@@ -20483,7 +20482,7 @@ static int sort_compare_func(void const   *p1 , void const   *p2 )
   return (__cil_tmp);
 }
 }
-#line 125 "strlist.c"
+#line 125 "../../experiments/vsftpd-2.0.7/strlist.c"
 static int sort_compare_func_reverse(void const   *p1 , void const   *p2 ) 
 { int __cil_tmp ;
 
@@ -20494,7 +20493,7 @@ static int sort_compare_func_reverse(void const   *p1 , void const   *p2 )
   return (__cil_tmp);
 }
 }
-#line 131 "strlist.c"
+#line 131 "../../experiments/vsftpd-2.0.7/strlist.c"
 static int sort_compare_common(void const   *p1 , void const   *p2 , int reverse ) 
 { struct mystr  const  *p_cmp1 ;
   struct mystr  const  *p_cmp2 ;
@@ -20544,7 +20543,7 @@ static int sort_compare_common(void const   *p1 , void const   *p2 , int reverse
   }
 }
 }
-#line 165 "strlist.c"
+#line 165 "../../experiments/vsftpd-2.0.7/strlist.c"
 struct mystr  const  *str_list_get_pstr(struct mystr_list  const  *p_list , unsigned int indexx ) 
 { 
 
@@ -20558,9 +20557,9 @@ struct mystr  const  *str_list_get_pstr(struct mystr_list  const  *p_list , unsi
   return ((struct mystr  const  *)(& (p_list->PRIVATE_HANDS_OFF_p_nodes + indexx)->str));
 }
 }
-#line 1 "cil-PrAmEJr5.o"
-#pragma merger(0,"/tmp/cil-w4lhHwrh.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 26 "banner.c"
+#line 1 "cil-lONCbKEN.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-6GQDOVbf.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 26 "../../experiments/vsftpd-2.0.7/banner.c"
 void vsf_banner_dir_changed(struct vsf_session *p_sess , int ftpcode ) 
 { struct mystr dir_str ;
   struct mystr_list the_list ;
@@ -20630,7 +20629,7 @@ void vsf_banner_dir_changed(struct vsf_session *p_sess , int ftpcode )
   return;
 }
 }
-#line 65 "banner.c"
+#line 65 "../../experiments/vsftpd-2.0.7/banner.c"
 void vsf_banner_write(struct vsf_session *p_sess , struct mystr *p_str , int ftpcode ) 
 { struct mystr msg_line_str ;
   unsigned int str_pos ;
@@ -20663,9 +20662,9 @@ void vsf_banner_write(struct vsf_session *p_sess , struct mystr *p_str , int ftp
   return;
 }
 }
-#line 1 "cil-l9Qv9kY4.o"
-#pragma merger(0,"/tmp/cil-G4C2U0q5.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 18 "filestr.c"
+#line 1 "cil-tNW9Rrmx.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-8RLmapko.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 18 "../../experiments/vsftpd-2.0.7/filestr.c"
 int str_fileread(struct mystr *p_str , char const   *p_filename , unsigned int maxsize ) 
 { int fd ;
   int retval ;
@@ -20735,18 +20734,18 @@ int str_fileread(struct mystr *p_str , char const   *p_filename , unsigned int m
   return (0);
 }
 }
-#line 1 "cil-kZTMtgy8.o"
-#pragma merger(0,"/tmp/cil-8dMA2jPU.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 19 "parseconf.c"
+#line 1 "cil-R1CXUutf.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-G26plU3l.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 19 "../../experiments/vsftpd-2.0.7/parseconf.c"
 static char const   *s_p_saved_filename  ;
-#line 20 "parseconf.c"
+#line 20 "../../experiments/vsftpd-2.0.7/parseconf.c"
 static int s_strings_copied  ;
 #line 23
 static void handle_config_setting(struct mystr *p_setting_str , struct mystr *p_value_str ,
                                   int errs_fatal ) ;
 #line 27
 static void copy_string_settings(void) ;
-#line 31 "parseconf.c"
+#line 31 "../../experiments/vsftpd-2.0.7/parseconf.c"
 static struct parseconf_bool_setting parseconf_bool_array[72]  = 
 #line 31
   {      {"anonymous_enable", & tunable_anonymous_enable}, 
@@ -20821,7 +20820,7 @@ static struct parseconf_bool_setting parseconf_bool_array[72]  =
         {"ssl_request_cert", & tunable_ssl_request_cert}, 
         {"delete_failed_uploads", & tunable_delete_failed_uploads}, 
         {(char const   *)0, (int *)0}};
-#line 112 "parseconf.c"
+#line 112 "../../experiments/vsftpd-2.0.7/parseconf.c"
 static struct parseconf_uint_setting parseconf_uint_array[21]  = 
 #line 112
   {      {"accept_timeout", & tunable_accept_timeout}, 
@@ -20845,7 +20844,7 @@ static struct parseconf_uint_setting parseconf_uint_array[21]  =
         {"max_login_fails", & tunable_max_login_fails}, 
         {"chown_upload_mode", & tunable_chown_upload_mode}, 
         {(char const   *)0, (unsigned int *)0}};
-#line 142 "parseconf.c"
+#line 142 "../../experiments/vsftpd-2.0.7/parseconf.c"
 static struct parseconf_str_setting parseconf_str_array[32]  = 
 #line 142
   {      {"secure_chroot_dir", & tunable_secure_chroot_dir}, 
@@ -20880,7 +20879,7 @@ static struct parseconf_str_setting parseconf_str_array[32]  =
         {"dsa_private_key_file", & tunable_dsa_private_key_file}, 
         {"ca_certs_file", & tunable_ca_certs_file}, 
         {(char const   *)0, (char const   **)0}};
-#line 183 "parseconf.c"
+#line 183 "../../experiments/vsftpd-2.0.7/parseconf.c"
 void vsf_parseconf_load_file(char const   *p_filename , int errs_fatal ) 
 { struct mystr config_file_str ;
   struct mystr config_setting_str ;
@@ -20998,7 +20997,7 @@ void vsf_parseconf_load_file(char const   *p_filename , int errs_fatal )
   return;
 }
 }
-#line 244 "parseconf.c"
+#line 244 "../../experiments/vsftpd-2.0.7/parseconf.c"
 static void handle_config_setting(struct mystr *p_setting_str , struct mystr *p_value_str ,
                                   int errs_fatal ) 
 { struct parseconf_str_setting  const  *p_str_setting ;
@@ -21193,7 +21192,7 @@ static void handle_config_setting(struct mystr *p_setting_str , struct mystr *p_
   return;
 }
 }
-#line 345 "parseconf.c"
+#line 345 "../../experiments/vsftpd-2.0.7/parseconf.c"
 static void copy_string_settings(void) 
 { struct parseconf_str_setting  const  *p_str_setting ;
   char *__cil_tmp ;
@@ -21217,9 +21216,9 @@ static void copy_string_settings(void)
   return;
 }
 }
-#line 1 "cil-C4DFa9Nm.o"
-#pragma merger(0,"/tmp/cil-zGBAp7Pg.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 311 "sysutil.h"
+#line 1 "cil-k0AivBXO.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-YyqL3Rh4.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 311 "../../experiments/vsftpd-2.0.7/sysutil.h"
 void vsf_sysutil_setuid(struct vsf_sysutil_user  const  *p_user ) ;
 #line 312
 void vsf_sysutil_setgid(struct vsf_sysutil_user  const  *p_user ) ;
@@ -21241,13 +21240,13 @@ void vsf_sysutil_clear_supp_groups(void) ;
 void vsf_sysutil_initgroups(struct vsf_sysutil_user  const  *p_user ) ;
 #line 323
 void vsf_sysutil_chroot(char const   *p_root_path ) ;
-#line 23 "sysdeputil.h"
+#line 23 "../../experiments/vsftpd-2.0.7/sysdeputil.h"
 int vsf_sysdep_has_capabilities(void) ;
 #line 25
 void vsf_sysdep_keep_capabilities(void) ;
 #line 32
 void vsf_sysdep_adopt_capabilities(unsigned int caps ) ;
-#line 15 "secutil.c"
+#line 15 "../../experiments/vsftpd-2.0.7/secutil.c"
 void vsf_secutil_change_credentials(struct mystr  const  *p_user_str , struct mystr  const  *p_dir_str ,
                                     struct mystr  const  *p_ext_dir_str , unsigned int caps ,
                                     unsigned int options ) 
@@ -21415,9 +21414,9 @@ void vsf_secutil_change_credentials(struct mystr  const  *p_user_str , struct my
   return;
 }
 }
-#line 1 "cil-qT0qashO.o"
-#pragma merger(0,"/tmp/cil-9uxTkoS8.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 12 "ascii.c"
+#line 1 "cil-UScmmrip.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-nfbsjcEJ.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 12 "../../experiments/vsftpd-2.0.7/ascii.c"
 struct ascii_to_bin_ret vsf_ascii_ascii_to_bin(char *p_buf , unsigned int in_len ,
                                                int prev_cr ) 
 { struct ascii_to_bin_ret ret___0 ;
@@ -21491,7 +21490,7 @@ struct ascii_to_bin_ret vsf_ascii_ascii_to_bin(char *p_buf , unsigned int in_len
   return (ret___0);
 }
 }
-#line 56 "ascii.c"
+#line 56 "../../experiments/vsftpd-2.0.7/ascii.c"
 unsigned int vsf_ascii_bin_to_ascii(char const   *p_in , char *p_out , unsigned int in_len ) 
 { unsigned int indexx ;
   unsigned int written ;
@@ -21534,11 +21533,11 @@ unsigned int vsf_ascii_bin_to_ascii(char const   *p_in , char *p_out , unsigned 
   return (written);
 }
 }
-#line 1 "cil-3wZwjwp4.o"
-#pragma merger(0,"/tmp/cil-zEoQSxq9.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 46 "privops.h"
+#line 1 "cil-LQA4CMYL.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-kLm1yjpR.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 46 "../../experiments/vsftpd-2.0.7/privops.h"
 enum EVSFPrivopLoginResult vsf_privop_do_login(struct vsf_session *p_sess , struct mystr  const  *p_pass_str ) ;
-#line 26 "oneprocess.c"
+#line 26 "../../experiments/vsftpd-2.0.7/oneprocess.c"
 void vsf_one_process_start(struct vsf_session *p_sess ) 
 { unsigned int caps ;
   struct mystr user_name ;
@@ -21601,7 +21600,7 @@ void vsf_one_process_start(struct vsf_session *p_sess )
   return;
 }
 }
-#line 64 "oneprocess.c"
+#line 64 "../../experiments/vsftpd-2.0.7/oneprocess.c"
 void vsf_one_process_login(struct vsf_session *p_sess , struct mystr  const  *p_pass_str ) 
 { enum EVSFPrivopLoginResult login_result ;
   enum EVSFPrivopLoginResult __cil_tmp ;
@@ -21635,7 +21634,7 @@ void vsf_one_process_login(struct vsf_session *p_sess , struct mystr  const  *p_
   return;
 }
 }
-#line 85 "oneprocess.c"
+#line 85 "../../experiments/vsftpd-2.0.7/oneprocess.c"
 int vsf_one_process_get_priv_data_sock(struct vsf_session *p_sess ) 
 { int __cil_tmp ;
 
@@ -21646,7 +21645,7 @@ int vsf_one_process_get_priv_data_sock(struct vsf_session *p_sess )
   return (__cil_tmp);
 }
 }
-#line 91 "oneprocess.c"
+#line 91 "../../experiments/vsftpd-2.0.7/oneprocess.c"
 void vsf_one_process_chown_upload(struct vsf_session *p_sess , int fd ) 
 { 
 
@@ -21657,11 +21656,11 @@ void vsf_one_process_chown_upload(struct vsf_session *p_sess , int fd )
   return;
 }
 }
-#line 1 "cil-X6MPawvo.o"
-#pragma merger(0,"/tmp/cil-FjpCvvec.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 15 "ssl.h"
+#line 1 "cil-j09ljPoA.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-R8DSP64Q.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 15 "../../experiments/vsftpd-2.0.7/ssl.h"
 void ssl_comm_channel_init(struct vsf_session *p_sess ) ;
-#line 45 "sysutil.h"
+#line 45 "../../experiments/vsftpd-2.0.7/sysutil.h"
 void vsf_sysutil_install_async_sighandler(enum EVSFSysUtilSignal sig , void (*handler)(int  ) ) ;
 #line 92
 int vsf_sysutil_write_access(char const   *p_filename ) ;
@@ -21675,7 +21674,7 @@ int vsf_sysutil_wait_get_retval(struct vsf_sysutil_wait_retval  const  *p_waitre
 int vsf_sysutil_wait_exited_normally(struct vsf_sysutil_wait_retval  const  *p_waitret ) ;
 #line 177
 int vsf_sysutil_wait_get_exitcode(struct vsf_sysutil_wait_retval  const  *p_waitret ) ;
-#line 30 "twoprocess.c"
+#line 30 "../../experiments/vsftpd-2.0.7/twoprocess.c"
 static void drop_all_privs(void) ;
 #line 31
 static void handle_sigchld(int duff ) ;
@@ -21692,7 +21691,7 @@ static void handle_per_user_config(struct mystr  const  *p_user_str ) ;
 static void calculate_chdir_dir(int anon_login , struct mystr *p_userdir_str , struct mystr *p_chroot_str ,
                                 struct mystr *p_chdir_str , struct mystr  const  *p_user_str ,
                                 struct mystr  const  *p_orig_user_str ) ;
-#line 44 "twoprocess.c"
+#line 44 "../../experiments/vsftpd-2.0.7/twoprocess.c"
 static void handle_sigchld(int duff ) 
 { struct vsf_sysutil_wait_retval wait_retval ;
   struct vsf_sysutil_wait_retval __cil_tmp ;
@@ -21740,7 +21739,7 @@ static void handle_sigchld(int duff )
   return;
 }
 }
-#line 64 "twoprocess.c"
+#line 64 "../../experiments/vsftpd-2.0.7/twoprocess.c"
 void vsf_two_process_start(struct vsf_session *p_sess ) 
 { int newpid ;
   int __cil_tmp ;
@@ -21799,7 +21798,7 @@ void vsf_two_process_start(struct vsf_session *p_sess )
   return;
 }
 }
-#line 110 "twoprocess.c"
+#line 110 "../../experiments/vsftpd-2.0.7/twoprocess.c"
 static void drop_all_privs(void) 
 { struct mystr user_str ;
   struct mystr dir_str ;
@@ -21848,7 +21847,7 @@ static void drop_all_privs(void)
   return;
 }
 }
-#line 133 "twoprocess.c"
+#line 133 "../../experiments/vsftpd-2.0.7/twoprocess.c"
 void vsf_two_process_login(struct vsf_session *p_sess , struct mystr  const  *p_pass_str ) 
 { char result ;
 
@@ -21898,7 +21897,7 @@ void vsf_two_process_login(struct vsf_session *p_sess , struct mystr  const  *p_
   return;
 }
 }
-#line 177 "twoprocess.c"
+#line 177 "../../experiments/vsftpd-2.0.7/twoprocess.c"
 int vsf_two_process_get_priv_data_sock(struct vsf_session *p_sess ) 
 { char res ;
   int __cil_tmp ;
@@ -21919,7 +21918,7 @@ int vsf_two_process_get_priv_data_sock(struct vsf_session *p_sess )
   return (__cil_tmp);
 }
 }
-#line 190 "twoprocess.c"
+#line 190 "../../experiments/vsftpd-2.0.7/twoprocess.c"
 void vsf_two_process_chown_upload(struct vsf_session *p_sess , int fd ) 
 { char res ;
 
@@ -21939,7 +21938,7 @@ void vsf_two_process_chown_upload(struct vsf_session *p_sess , int fd )
   return;
 }
 }
-#line 203 "twoprocess.c"
+#line 203 "../../experiments/vsftpd-2.0.7/twoprocess.c"
 static void process_login_req(struct vsf_session *p_sess ) 
 { enum EVSFPrivopLoginResult e_login_result ;
   char cmd ;
@@ -22065,7 +22064,7 @@ static void process_login_req(struct vsf_session *p_sess )
   return;
 }
 }
-#line 282 "twoprocess.c"
+#line 282 "../../experiments/vsftpd-2.0.7/twoprocess.c"
 static void process_ssl_slave_req(struct vsf_session *p_sess ) 
 { char cmd ;
   char __cil_tmp ;
@@ -22104,7 +22103,7 @@ static void process_ssl_slave_req(struct vsf_session *p_sess )
   }
 }
 }
-#line 308 "twoprocess.c"
+#line 308 "../../experiments/vsftpd-2.0.7/twoprocess.c"
 static void common_do_login(struct vsf_session *p_sess , struct mystr  const  *p_user_str ,
                             int do_chroot , int anon ) 
 { int was_anon ;
@@ -22267,7 +22266,7 @@ static void common_do_login(struct vsf_session *p_sess , struct mystr  const  *p
   return;
 }
 }
-#line 405 "twoprocess.c"
+#line 405 "../../experiments/vsftpd-2.0.7/twoprocess.c"
 static void handle_per_user_config(struct mystr  const  *p_user_str ) 
 { struct mystr filename_str ;
   struct vsf_sysutil_statbuf *p_statbuf___0 ;
@@ -22333,7 +22332,7 @@ static void handle_per_user_config(struct mystr  const  *p_user_str )
   return;
 }
 }
-#line 436 "twoprocess.c"
+#line 436 "../../experiments/vsftpd-2.0.7/twoprocess.c"
 static void calculate_chdir_dir(int anon_login , struct mystr *p_userdir_str , struct mystr *p_chroot_str ,
                                 struct mystr *p_chdir_str , struct mystr  const  *p_user_str ,
                                 struct mystr  const  *p_orig_user_str ) 
@@ -22405,16 +22404,16 @@ static void calculate_chdir_dir(int anon_login , struct mystr *p_userdir_str , s
   return;
 }
 }
-#line 1 "cil-SORGQC5b.o"
-#pragma merger(0,"/tmp/cil-NPvZTly6.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 18 "sysdeputil.h"
+#line 1 "cil-tgXnFJNT.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-Vk6d85NM.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 18 "../../experiments/vsftpd-2.0.7/sysdeputil.h"
 int vsf_sysdep_check_auth(struct mystr  const  *p_user_str , struct mystr  const  *p_pass_str ,
                           struct mystr  const  *p_remote_host ) ;
-#line 134 "sysutil.h"
+#line 134 "../../experiments/vsftpd-2.0.7/sysutil.h"
 void vsf_sysutil_fchown(int fd , int uid , int gid ) ;
 #line 200
 int vsf_sysutil_isalnum(int the_char ) ;
-#line 23 "privops.c"
+#line 23 "../../experiments/vsftpd-2.0.7/privops.c"
 static enum EVSFPrivopLoginResult handle_anonymous_login(struct vsf_session *p_sess ,
                                                          struct mystr  const  *p_pass_str ) ;
 #line 25
@@ -22426,9 +22425,9 @@ static void setup_username_globals(struct vsf_session *p_sess , struct mystr  co
 #line 30
 static enum EVSFPrivopLoginResult handle_login(struct vsf_session *p_sess , struct mystr  const  *p_user_str ,
                                                struct mystr  const  *p_pass_str ) ;
-#line 37 "privops.c"
+#line 37 "../../experiments/vsftpd-2.0.7/privops.c"
 static struct vsf_sysutil_sockaddr *p_sockaddr  ;
-#line 34 "privops.c"
+#line 34 "../../experiments/vsftpd-2.0.7/privops.c"
 int vsf_privop_get_ftp_port_sock(struct vsf_session *p_sess ) 
 { int retval ;
   int i ;
@@ -22484,9 +22483,9 @@ int vsf_privop_get_ftp_port_sock(struct vsf_session *p_sess )
   return (s);
 }
 }
-#line 70 "privops.c"
+#line 70 "../../experiments/vsftpd-2.0.7/privops.c"
 static struct vsf_sysutil_statbuf *s_p_statbuf___6  ;
-#line 67 "privops.c"
+#line 67 "../../experiments/vsftpd-2.0.7/privops.c"
 void vsf_privop_do_file_chown(struct vsf_session *p_sess , int fd ) 
 { int __cil_tmp ;
   int __cil_tmp___0 ;
@@ -22542,7 +22541,7 @@ void vsf_privop_do_file_chown(struct vsf_session *p_sess , int fd )
   return;
 }
 }
-#line 95 "privops.c"
+#line 95 "../../experiments/vsftpd-2.0.7/privops.c"
 enum EVSFPrivopLoginResult vsf_privop_do_login(struct vsf_session *p_sess , struct mystr  const  *p_pass_str ) 
 { enum EVSFPrivopLoginResult result ;
   enum EVSFPrivopLoginResult __cil_tmp ;
@@ -22576,7 +22575,7 @@ enum EVSFPrivopLoginResult vsf_privop_do_login(struct vsf_session *p_sess , stru
   return (result);
 }
 }
-#line 121 "privops.c"
+#line 121 "../../experiments/vsftpd-2.0.7/privops.c"
 static enum EVSFPrivopLoginResult handle_login(struct vsf_session *p_sess , struct mystr  const  *p_user_str ,
                                                struct mystr  const  *p_pass_str ) 
 { int anonymous_login ;
@@ -22685,7 +22684,7 @@ static enum EVSFPrivopLoginResult handle_login(struct vsf_session *p_sess , stru
   return (result);
 }
 }
-#line 182 "privops.c"
+#line 182 "../../experiments/vsftpd-2.0.7/privops.c"
 static enum EVSFPrivopLoginResult handle_anonymous_login(struct vsf_session *p_sess ,
                                                          struct mystr  const  *p_pass_str ) 
 { int __cil_tmp ;
@@ -22775,7 +22774,7 @@ static enum EVSFPrivopLoginResult handle_anonymous_login(struct vsf_session *p_s
   return (2);
 }
 }
-#line 217 "privops.c"
+#line 217 "../../experiments/vsftpd-2.0.7/privops.c"
 static enum EVSFPrivopLoginResult handle_local_login(struct vsf_session *p_sess ,
                                                      struct mystr  const  *p_user_str ,
                                                      struct mystr  const  *p_pass_str ) 
@@ -22795,7 +22794,7 @@ static enum EVSFPrivopLoginResult handle_local_login(struct vsf_session *p_sess 
   return (3);
 }
 }
-#line 230 "privops.c"
+#line 230 "../../experiments/vsftpd-2.0.7/privops.c"
 static void setup_username_globals(struct vsf_session *p_sess , struct mystr  const  *p_str ) 
 { struct mystr prefix_str ;
 
@@ -22825,9 +22824,9 @@ static void setup_username_globals(struct vsf_session *p_sess , struct mystr  co
   return;
 }
 }
-#line 1 "cil-b7K5ygOP.o"
-#pragma merger(0,"/tmp/cil-LWCiX5jC.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 88 "sysutil.h"
+#line 1 "cil-9OmUhpPK.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-wEMgXolo.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 88 "../../experiments/vsftpd-2.0.7/sysutil.h"
 void vsf_sysutil_dupfd2(int old_fd , int new_fd ) ;
 #line 164
 int vsf_sysutil_fork_failok(void) ;
@@ -22843,7 +22842,7 @@ void vsf_sysutil_sockaddr_set_any(struct vsf_sysutil_sockaddr *p_sockaddr___0 ) 
 unsigned int vsf_sysutil_get_ipaddr_size(void) ;
 #line 231
 void *vsf_sysutil_sockaddr_get_raw_addr(struct vsf_sysutil_sockaddr *p_sockptr ) ;
-#line 8 "hash.h"
+#line 8 "../../experiments/vsftpd-2.0.7/hash.h"
 struct hash *hash_alloc(unsigned int buckets , unsigned int key_size , unsigned int value_size ,
                         unsigned int (*hash_func)(unsigned int  , void * ) ) ;
 #line 10
@@ -22852,13 +22851,13 @@ void *hash_lookup_entry(struct hash *p_hash , void *p_key ) ;
 void hash_add_entry(struct hash *p_hash , void *p_key , void *p_value ) ;
 #line 12
 void hash_free_entry(struct hash *p_hash , void *p_key ) ;
-#line 22 "standalone.c"
+#line 22 "../../experiments/vsftpd-2.0.7/standalone.c"
 static unsigned int s_children  ;
-#line 23 "standalone.c"
+#line 23 "../../experiments/vsftpd-2.0.7/standalone.c"
 static struct hash *s_p_ip_count_hash  ;
-#line 24 "standalone.c"
+#line 24 "../../experiments/vsftpd-2.0.7/standalone.c"
 static struct hash *s_p_pid_ip_hash  ;
-#line 25 "standalone.c"
+#line 25 "../../experiments/vsftpd-2.0.7/standalone.c"
 static unsigned int s_ipaddr_size  ;
 #line 27
 static void handle_sigchld___0(int duff ) ;
@@ -22874,7 +22873,7 @@ static void drop_ip_count(void *p_raw_addr ) ;
 static unsigned int hash_ip(unsigned int buckets , void *p_key ) ;
 #line 34
 static unsigned int hash_pid(unsigned int buckets , void *p_key ) ;
-#line 36 "standalone.c"
+#line 36 "../../experiments/vsftpd-2.0.7/standalone.c"
 struct vsf_client_launch vsf_standalone_main(void) 
 { struct vsf_sysutil_sockaddr *p_accept_addr ;
   int listen_sock ;
@@ -23094,7 +23093,7 @@ struct vsf_client_launch vsf_standalone_main(void)
   }
 }
 }
-#line 190 "standalone.c"
+#line 190 "../../experiments/vsftpd-2.0.7/standalone.c"
 static void prepare_child(int new_client_sock ) 
 { 
 
@@ -23114,7 +23113,7 @@ static void prepare_child(int new_client_sock )
   return;
 }
 }
-#line 203 "standalone.c"
+#line 203 "../../experiments/vsftpd-2.0.7/standalone.c"
 static void drop_ip_count(void *p_raw_addr ) 
 { unsigned int count ;
   unsigned int *p_count ;
@@ -23150,7 +23149,7 @@ static void drop_ip_count(void *p_raw_addr )
   return;
 }
 }
-#line 226 "standalone.c"
+#line 226 "../../experiments/vsftpd-2.0.7/standalone.c"
 static void handle_sigchld___0(int duff ) 
 { unsigned int reap_one ;
   int __cil_tmp ;
@@ -23184,7 +23183,7 @@ static void handle_sigchld___0(int duff )
   return;
 }
 }
-#line 248 "standalone.c"
+#line 248 "../../experiments/vsftpd-2.0.7/standalone.c"
 static void handle_sighup(int duff ) 
 { 
 
@@ -23195,7 +23194,7 @@ static void handle_sighup(int duff )
   return;
 }
 }
-#line 256 "standalone.c"
+#line 256 "../../experiments/vsftpd-2.0.7/standalone.c"
 static unsigned int hash_ip(unsigned int buckets , void *p_key ) 
 { unsigned char const   *p_raw_ip ;
   unsigned int val ;
@@ -23229,7 +23228,7 @@ static unsigned int hash_ip(unsigned int buckets , void *p_key )
   return (val % buckets);
 }
 }
-#line 275 "standalone.c"
+#line 275 "../../experiments/vsftpd-2.0.7/standalone.c"
 static unsigned int hash_pid(unsigned int buckets , void *p_key ) 
 { unsigned int *p_pid ;
 
@@ -23240,7 +23239,7 @@ static unsigned int hash_pid(unsigned int buckets , void *p_key )
   return (*p_pid % buckets);
 }
 }
-#line 282 "standalone.c"
+#line 282 "../../experiments/vsftpd-2.0.7/standalone.c"
 static unsigned int handle_ip_count(void *p_ipaddr ) 
 { unsigned int *p_count ;
   void *__cil_tmp ;
@@ -23269,15 +23268,15 @@ static unsigned int handle_ip_count(void *p_ipaddr )
   return (count);
 }
 }
-#line 1 "cil-cGZyvm7t.o"
-#pragma merger(0,"/tmp/cil-HidxPSne.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 183 "sysutil.h"
+#line 1 "cil-zKKFhzVU.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-q6Iy0ozx.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 183 "../../experiments/vsftpd-2.0.7/sysutil.h"
 void vsf_sysutil_memclr(void *p_dest , unsigned int size ) ;
-#line 32 "hash.c"
+#line 32 "../../experiments/vsftpd-2.0.7/hash.c"
 struct hash_node **hash_get_bucket(struct hash *p_hash , void *p_key ) ;
 #line 33
 struct hash_node *hash_get_node_by_key(struct hash *p_hash , void *p_key ) ;
-#line 35 "hash.c"
+#line 35 "../../experiments/vsftpd-2.0.7/hash.c"
 struct hash *hash_alloc(unsigned int buckets , unsigned int key_size , unsigned int value_size ,
                         unsigned int (*hash_func)(unsigned int  , void * ) ) 
 { unsigned int size ;
@@ -23310,7 +23309,7 @@ struct hash *hash_alloc(unsigned int buckets , unsigned int key_size , unsigned 
   return (p_hash);
 }
 }
-#line 51 "hash.c"
+#line 51 "../../experiments/vsftpd-2.0.7/hash.c"
 void *hash_lookup_entry(struct hash *p_hash , void *p_key ) 
 { struct hash_node *p_node ;
   struct hash_node *__cil_tmp ;
@@ -23329,7 +23328,7 @@ void *hash_lookup_entry(struct hash *p_hash , void *p_key )
   return (p_node->p_value);
 }
 }
-#line 62 "hash.c"
+#line 62 "../../experiments/vsftpd-2.0.7/hash.c"
 void hash_add_entry(struct hash *p_hash , void *p_key , void *p_value ) 
 { struct hash_node **p_bucket ;
   struct hash_node *p_new_node ;
@@ -23378,7 +23377,7 @@ void hash_add_entry(struct hash *p_hash , void *p_key , void *p_value )
   return;
 }
 }
-#line 92 "hash.c"
+#line 92 "../../experiments/vsftpd-2.0.7/hash.c"
 void hash_free_entry(struct hash *p_hash , void *p_key ) 
 { struct hash_node *p_node ;
   struct hash_node *__cil_tmp ;
@@ -23422,7 +23421,7 @@ void hash_free_entry(struct hash *p_hash , void *p_key )
   return;
 }
 }
-#line 120 "hash.c"
+#line 120 "../../experiments/vsftpd-2.0.7/hash.c"
 struct hash_node **hash_get_bucket(struct hash *p_hash , void *p_key ) 
 { unsigned int bucket ;
   unsigned int __cil_tmp ;
@@ -23441,7 +23440,7 @@ struct hash_node **hash_get_bucket(struct hash *p_hash , void *p_key )
   return (p_hash->p_nodes + bucket);
 }
 }
-#line 131 "hash.c"
+#line 131 "../../experiments/vsftpd-2.0.7/hash.c"
 struct hash_node *hash_get_node_by_key(struct hash *p_hash , void *p_key ) 
 { struct hash_node **p_bucket ;
   struct hash_node **__cil_tmp ;
@@ -23484,9 +23483,9 @@ struct hash_node *hash_get_node_by_key(struct hash *p_hash , void *p_key )
   return (p_node);
 }
 }
-#line 1 "cil-RDzAAkVg.o"
-#pragma merger(0,"/tmp/cil-xb23ffEI.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 40 "tcpwrap.c"
+#line 1 "cil-cczRbVZe.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-quXbJ5fW.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 40 "../../experiments/vsftpd-2.0.7/tcpwrap.c"
 int vsf_tcp_wrapper_ok(int remote_fd ) 
 { 
 
@@ -23497,23 +23496,23 @@ int vsf_tcp_wrapper_ok(int remote_fd )
   return (0);
 }
 }
-#line 1 "cil-Gbk1nvcU.o"
-#pragma merger(0,"/tmp/cil-7Rlg6ckD.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 15 "ipaddrparse.c"
+#line 1 "cil-uItBizUS.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-Nvnlb9yw.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 15 "../../experiments/vsftpd-2.0.7/ipaddrparse.c"
 static int ipv6_parse_main(struct mystr *p_out_str , struct mystr  const  *p_in_str ) ;
 #line 17
 static int ipv6_parse_hex(struct mystr *p_out_str , struct mystr  const  *p_in_str ) ;
 #line 19
 static int ipv4_parse_dotquad(struct mystr *p_out_str , struct mystr  const  *p_in_str ) ;
-#line 25 "ipaddrparse.c"
+#line 25 "../../experiments/vsftpd-2.0.7/ipaddrparse.c"
 static struct mystr s_ret  ;
-#line 26 "ipaddrparse.c"
+#line 26 "../../experiments/vsftpd-2.0.7/ipaddrparse.c"
 static struct mystr s_rhs_ret  ;
-#line 27 "ipaddrparse.c"
+#line 27 "../../experiments/vsftpd-2.0.7/ipaddrparse.c"
 static struct mystr s_lhs_str  ;
-#line 28 "ipaddrparse.c"
+#line 28 "../../experiments/vsftpd-2.0.7/ipaddrparse.c"
 static struct mystr s_rhs_str___1  ;
-#line 22 "ipaddrparse.c"
+#line 22 "../../experiments/vsftpd-2.0.7/ipaddrparse.c"
 unsigned char const   *vsf_sysutil_parse_ipv6(struct mystr  const  *p_str ) 
 { unsigned int lhs_len ;
   unsigned int rhs_len ;
@@ -23582,9 +23581,9 @@ unsigned char const   *vsf_sysutil_parse_ipv6(struct mystr  const  *p_str )
   return ((unsigned char const   *)__cil_tmp___2);
 }
 }
-#line 64 "ipaddrparse.c"
+#line 64 "../../experiments/vsftpd-2.0.7/ipaddrparse.c"
 static unsigned char items[4]  ;
-#line 61 "ipaddrparse.c"
+#line 61 "../../experiments/vsftpd-2.0.7/ipaddrparse.c"
 unsigned char const   *vsf_sysutil_parse_ipv4(struct mystr  const  *p_str ) 
 { unsigned char const   *__cil_tmp ;
 
@@ -23595,11 +23594,11 @@ unsigned char const   *vsf_sysutil_parse_ipv4(struct mystr  const  *p_str )
   return (__cil_tmp);
 }
 }
-#line 73 "ipaddrparse.c"
+#line 73 "../../experiments/vsftpd-2.0.7/ipaddrparse.c"
 static struct mystr s_tmp_str___4  ;
-#line 78 "ipaddrparse.c"
+#line 78 "../../experiments/vsftpd-2.0.7/ipaddrparse.c"
 static struct mystr s_rhs_sep_str  ;
-#line 68 "ipaddrparse.c"
+#line 68 "../../experiments/vsftpd-2.0.7/ipaddrparse.c"
 unsigned char const   *vsf_sysutil_parse_uchar_string_sep(struct mystr  const  *p_str ,
                                                           char sep , unsigned char *p_items ,
                                                           unsigned int items___0 ) 
@@ -23666,11 +23665,11 @@ unsigned char const   *vsf_sysutil_parse_uchar_string_sep(struct mystr  const  *
   return ((unsigned char const   *)p_items);
 }
 }
-#line 106 "ipaddrparse.c"
+#line 106 "../../experiments/vsftpd-2.0.7/ipaddrparse.c"
 static struct mystr s_lhs_str___0  ;
-#line 107 "ipaddrparse.c"
+#line 107 "../../experiments/vsftpd-2.0.7/ipaddrparse.c"
 static struct mystr s_rhs_str___2  ;
-#line 103 "ipaddrparse.c"
+#line 103 "../../experiments/vsftpd-2.0.7/ipaddrparse.c"
 static int ipv6_parse_main(struct mystr *p_out_str , struct mystr  const  *p_in_str ) 
 { struct str_locate_result loc_ret ;
   int __cil_tmp ;
@@ -23726,7 +23725,7 @@ static int ipv6_parse_main(struct mystr *p_out_str , struct mystr  const  *p_in_
   return (1);
 }
 }
-#line 134 "ipaddrparse.c"
+#line 134 "../../experiments/vsftpd-2.0.7/ipaddrparse.c"
 static int ipv6_parse_hex(struct mystr *p_out_str , struct mystr  const  *p_in_str ) 
 { unsigned int len ;
   unsigned int __cil_tmp ;
@@ -23789,7 +23788,7 @@ static int ipv6_parse_hex(struct mystr *p_out_str , struct mystr  const  *p_in_s
   return (1);
 }
 }
-#line 168 "ipaddrparse.c"
+#line 168 "../../experiments/vsftpd-2.0.7/ipaddrparse.c"
 static int ipv4_parse_dotquad(struct mystr *p_out_str , struct mystr  const  *p_in_str ) 
 { unsigned int len ;
   unsigned int __cil_tmp ;
@@ -23884,11 +23883,11 @@ static int ipv4_parse_dotquad(struct mystr *p_out_str , struct mystr  const  *p_
   return (1);
 }
 }
-#line 1 "cil-sEqDhl0z.o"
-#pragma merger(0,"/tmp/cil-jhfDCPvP.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 18 "access.c"
+#line 1 "cil-h5zciz0Z.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-3kmVsyZ0.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 18 "../../experiments/vsftpd-2.0.7/access.c"
 static struct mystr s_access_str  ;
-#line 15 "access.c"
+#line 15 "../../experiments/vsftpd-2.0.7/access.c"
 int vsf_access_check_file(struct mystr  const  *p_filename_str ) 
 { int __cil_tmp ;
   struct str_locate_result loc_res ;
@@ -23929,9 +23928,9 @@ int vsf_access_check_file(struct mystr  const  *p_filename_str )
   return (1);
 }
 }
-#line 47 "access.c"
+#line 47 "../../experiments/vsftpd-2.0.7/access.c"
 static struct mystr s_access_str___0  ;
-#line 44 "access.c"
+#line 44 "../../experiments/vsftpd-2.0.7/access.c"
 int vsf_access_check_file_visible(struct mystr  const  *p_filename_str ) 
 { int __cil_tmp ;
   struct str_locate_result loc_res ;
@@ -23972,9 +23971,9 @@ int vsf_access_check_file_visible(struct mystr  const  *p_filename_str )
   return (1);
 }
 }
-#line 1 "cil-GpTwCC8m.o"
-#pragma merger(0,"/tmp/cil-3VAVk1hr.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 15 "features.c"
+#line 1 "cil-OETANQwS.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-deIdYlLx.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 15 "../../experiments/vsftpd-2.0.7/features.c"
 void handle_feat(struct vsf_session *p_sess ) 
 { 
 
@@ -24026,9 +24025,9 @@ void handle_feat(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1 "cil-RkYzpE3a.o"
-#pragma merger(0,"/tmp/cil-6GTsrZ20.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 7 "ssl.h"
+#line 1 "cil-rAJVJ25j.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-XJSZYEwt.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 7 "../../experiments/vsftpd-2.0.7/ssl.h"
 void ssl_getline(struct vsf_session  const  *p_sess , struct mystr *p_str , char end_char ,
                  char *p_buf , unsigned int buflen ) ;
 #line 9
@@ -24037,7 +24036,7 @@ int ssl_read(struct vsf_session *p_sess , char *p_buf , unsigned int len ) ;
 int ssl_write(void *p_ssl , char const   *p_buf , unsigned int len ) ;
 #line 11
 int ssl_write_str(void *p_ssl , struct mystr  const  *p_str ) ;
-#line 19 "readwrite.c"
+#line 19 "../../experiments/vsftpd-2.0.7/readwrite.c"
 int ftp_write_str(struct vsf_session  const  *p_sess , struct mystr  const  *p_str ,
                   enum EVSFRWTarget target ) 
 { int __cil_tmp ;
@@ -24089,7 +24088,7 @@ int ftp_write_str(struct vsf_session  const  *p_sess , struct mystr  const  *p_s
   }
 }
 }
-#line 53 "readwrite.c"
+#line 53 "../../experiments/vsftpd-2.0.7/readwrite.c"
 int ftp_read_data(struct vsf_session *p_sess , char *p_buf , unsigned int len ) 
 { int __cil_tmp ;
   int __cil_tmp___0 ;
@@ -24109,7 +24108,7 @@ int ftp_read_data(struct vsf_session *p_sess , char *p_buf , unsigned int len )
   }
 }
 }
-#line 66 "readwrite.c"
+#line 66 "../../experiments/vsftpd-2.0.7/readwrite.c"
 int ftp_write_data(struct vsf_session  const  *p_sess , char const   *p_buf , unsigned int len ) 
 { int __cil_tmp ;
   int __cil_tmp___0 ;
@@ -24130,7 +24129,7 @@ int ftp_write_data(struct vsf_session  const  *p_sess , char const   *p_buf , un
   }
 }
 }
-#line 80 "readwrite.c"
+#line 80 "../../experiments/vsftpd-2.0.7/readwrite.c"
 void ftp_getline(struct vsf_session  const  *p_sess , struct mystr *p_str , char *p_buf ) 
 { 
 
@@ -24155,9 +24154,9 @@ void ftp_getline(struct vsf_session  const  *p_sess , struct mystr *p_str , char
   return;
 }
 }
-#line 1 "cil-F6IXTPdS.o"
-#pragma merger(0,"/tmp/cil-YwQBeF8i.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 14 "opts.c"
+#line 1 "cil-AgiN8yCC.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-l2VTtP0r.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 14 "../../experiments/vsftpd-2.0.7/opts.c"
 void handle_opts(struct vsf_session *p_sess ) 
 { int __cil_tmp ;
 
@@ -24178,9 +24177,9 @@ void handle_opts(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1 "cil-c0b7TfCp.o"
-#pragma merger(0,"/tmp/cil-bzIaIA4V.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 618 "ssl.c"
+#line 1 "cil-r9edXbo4.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-egd4ofpz.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 618 "../../experiments/vsftpd-2.0.7/ssl.c"
 void ssl_init(struct vsf_session *p_sess ) 
 { 
 
@@ -24191,7 +24190,7 @@ void ssl_init(struct vsf_session *p_sess )
   return;
 }
 }
-#line 625 "ssl.c"
+#line 625 "../../experiments/vsftpd-2.0.7/ssl.c"
 void handle_auth(struct vsf_session *p_sess ) 
 { 
 
@@ -24200,7 +24199,7 @@ void handle_auth(struct vsf_session *p_sess )
   return;
 }
 }
-#line 631 "ssl.c"
+#line 631 "../../experiments/vsftpd-2.0.7/ssl.c"
 void handle_pbsz(struct vsf_session *p_sess ) 
 { 
 
@@ -24209,7 +24208,7 @@ void handle_pbsz(struct vsf_session *p_sess )
   return;
 }
 }
-#line 637 "ssl.c"
+#line 637 "../../experiments/vsftpd-2.0.7/ssl.c"
 void handle_prot(struct vsf_session *p_sess ) 
 { 
 
@@ -24218,7 +24217,7 @@ void handle_prot(struct vsf_session *p_sess )
   return;
 }
 }
-#line 643 "ssl.c"
+#line 643 "../../experiments/vsftpd-2.0.7/ssl.c"
 void ssl_getline(struct vsf_session  const  *p_sess , struct mystr *p_str , char end_char ,
                  char *p_buf , unsigned int buflen ) 
 { 
@@ -24228,7 +24227,7 @@ void ssl_getline(struct vsf_session  const  *p_sess , struct mystr *p_str , char
   return;
 }
 }
-#line 654 "ssl.c"
+#line 654 "../../experiments/vsftpd-2.0.7/ssl.c"
 int ssl_read(struct vsf_session *p_sess , char *p_buf , unsigned int len ) 
 { 
 
@@ -24237,7 +24236,7 @@ int ssl_read(struct vsf_session *p_sess , char *p_buf , unsigned int len )
   return (-1);
 }
 }
-#line 663 "ssl.c"
+#line 663 "../../experiments/vsftpd-2.0.7/ssl.c"
 int ssl_write(void *p_ssl , char const   *p_buf , unsigned int len ) 
 { 
 
@@ -24246,7 +24245,7 @@ int ssl_write(void *p_ssl , char const   *p_buf , unsigned int len )
   return (-1);
 }
 }
-#line 672 "ssl.c"
+#line 672 "../../experiments/vsftpd-2.0.7/ssl.c"
 int ssl_write_str(void *p_ssl , struct mystr  const  *p_str ) 
 { 
 
@@ -24255,7 +24254,7 @@ int ssl_write_str(void *p_ssl , struct mystr  const  *p_str )
   return (-1);
 }
 }
-#line 680 "ssl.c"
+#line 680 "../../experiments/vsftpd-2.0.7/ssl.c"
 int ssl_accept(struct vsf_session *p_sess , int fd ) 
 { 
 
@@ -24264,7 +24263,7 @@ int ssl_accept(struct vsf_session *p_sess , int fd )
   return (-1);
 }
 }
-#line 688 "ssl.c"
+#line 688 "../../experiments/vsftpd-2.0.7/ssl.c"
 int ssl_data_close(struct vsf_session *p_sess ) 
 { 
 
@@ -24273,7 +24272,7 @@ int ssl_data_close(struct vsf_session *p_sess )
   return (1);
 }
 }
-#line 695 "ssl.c"
+#line 695 "../../experiments/vsftpd-2.0.7/ssl.c"
 void ssl_comm_channel_init(struct vsf_session *p_sess ) 
 { 
 
@@ -24282,9 +24281,9 @@ void ssl_comm_channel_init(struct vsf_session *p_sess )
   return;
 }
 }
-#line 1 "cil-FkbP8yUR.o"
-#pragma merger(0,"/tmp/cil-0dbkDrDb.i","-fno-builtin,-Werror-implicit-function-declaration")
-#line 47 "sysutil.h"
+#line 1 "cil-cgIyr8An.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-3yqhv3jZ.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 47 "../../experiments/vsftpd-2.0.7/sysutil.h"
 void vsf_sysutil_default_sig(enum EVSFSysUtilSignal sig ) ;
 #line 50
 void vsf_sysutil_check_pending_actions(enum EVSFSysUtilInterruptContext context ,
@@ -24387,23 +24386,23 @@ extern __pid_t wait(union wait *__stat_loc ) ;
 extern __pid_t waitpid(__pid_t __pid , int *__stat_loc , int __options ) ;
 #line 138 "../../includes/usr/include/netdb.h"
 extern struct hostent *gethostbyname(char const   *__name ) ;
-#line 59 "sysutil.c"
+#line 59 "../../experiments/vsftpd-2.0.7/sysutil.c"
 static unsigned int s_current_umask  ;
-#line 61 "sysutil.c"
+#line 61 "../../experiments/vsftpd-2.0.7/sysutil.c"
 static struct timeval s_current_time  ;
-#line 63 "sysutil.c"
+#line 63 "../../experiments/vsftpd-2.0.7/sysutil.c"
 static int s_current_pid  =    -1;
-#line 65 "sysutil.c"
+#line 65 "../../experiments/vsftpd-2.0.7/sysutil.c"
 static void (*s_exit_func)(void)  ;
-#line 67 "sysutil.c"
+#line 67 "../../experiments/vsftpd-2.0.7/sysutil.c"
 static long s_timezone  ;
-#line 70 "sysutil.c"
+#line 70 "../../experiments/vsftpd-2.0.7/sysutil.c"
 static struct vsf_sysutil_sig_details s_sig_details[65]  ;
-#line 78 "sysutil.c"
+#line 78 "../../experiments/vsftpd-2.0.7/sysutil.c"
 static void (*s_io_handler)(int  , int  , void * )  ;
-#line 79 "sysutil.c"
+#line 79 "../../experiments/vsftpd-2.0.7/sysutil.c"
 static void *s_p_io_handler_private  ;
-#line 80 "sysutil.c"
+#line 80 "../../experiments/vsftpd-2.0.7/sysutil.c"
 static int s_io_handler_running  ;
 #line 93
 static void vsf_sysutil_common_sighandler(int signum ) ;
@@ -24419,7 +24418,7 @@ static int vsf_sysutil_translate_openmode(enum EVSFSysUtilOpenMode mode ) ;
 static void vsf_sysutil_alloc_statbuf(struct vsf_sysutil_statbuf **p_ptr ) ;
 #line 102
 static int lock_internal(int fd , int lock_type ) ;
-#line 104 "sysutil.c"
+#line 104 "../../experiments/vsftpd-2.0.7/sysutil.c"
 static void vsf_sysutil_common_sighandler(int signum ) 
 { 
 
@@ -24438,7 +24437,7 @@ static void vsf_sysutil_common_sighandler(int signum )
   return;
 }
 }
-#line 129 "sysutil.c"
+#line 129 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_check_pending_actions(enum EVSFSysUtilInterruptContext context ,
                                        int retval , int fd ) 
 { unsigned int i ;
@@ -24478,7 +24477,7 @@ void vsf_sysutil_check_pending_actions(enum EVSFSysUtilInterruptContext context 
   return;
 }
 }
-#line 156 "sysutil.c"
+#line 156 "../../experiments/vsftpd-2.0.7/sysutil.c"
 static int vsf_sysutil_translate_sig(enum EVSFSysUtilSignal sig ) 
 { int realsig ;
 
@@ -24532,7 +24531,7 @@ static int vsf_sysutil_translate_sig(enum EVSFSysUtilSignal sig )
   return (realsig);
 }
 }
-#line 191 "sysutil.c"
+#line 191 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_install_sighandler(enum EVSFSysUtilSignal sig , void (*handler)(void * ) ,
                                     void *p_private ) 
 { int realsig ;
@@ -24553,7 +24552,7 @@ void vsf_sysutil_install_sighandler(enum EVSFSysUtilSignal sig , void (*handler)
   return;
 }
 }
-#line 201 "sysutil.c"
+#line 201 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_default_sig(enum EVSFSysUtilSignal sig ) 
 { int realsig ;
   int __cil_tmp ;
@@ -24573,7 +24572,7 @@ void vsf_sysutil_default_sig(enum EVSFSysUtilSignal sig )
   return;
 }
 }
-#line 210 "sysutil.c"
+#line 210 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_install_null_sighandler(enum EVSFSysUtilSignal sig ) 
 { int realsig ;
   int __cil_tmp ;
@@ -24593,7 +24592,7 @@ void vsf_sysutil_install_null_sighandler(enum EVSFSysUtilSignal sig )
   return;
 }
 }
-#line 219 "sysutil.c"
+#line 219 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_install_async_sighandler(enum EVSFSysUtilSignal sig , void (*handler)(int  ) ) 
 { int realsig ;
   int __cil_tmp ;
@@ -24615,7 +24614,7 @@ void vsf_sysutil_install_async_sighandler(enum EVSFSysUtilSignal sig , void (*ha
   return;
 }
 }
-#line 230 "sysutil.c"
+#line 230 "../../experiments/vsftpd-2.0.7/sysutil.c"
 static void vsf_sysutil_set_sighandler(int sig , void (*p_handlefunc)(int  ) ) 
 { int retval ;
   struct sigaction sigact ;
@@ -24643,7 +24642,7 @@ static void vsf_sysutil_set_sighandler(int sig , void (*p_handlefunc)(int  ) )
   return;
 }
 }
-#line 249 "sysutil.c"
+#line 249 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_block_sig(enum EVSFSysUtilSignal sig ) 
 { sigset_t sset ;
   int retval ;
@@ -24680,7 +24679,7 @@ void vsf_sysutil_block_sig(enum EVSFSysUtilSignal sig )
   return;
 }
 }
-#line 272 "sysutil.c"
+#line 272 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_unblock_sig(enum EVSFSysUtilSignal sig ) 
 { sigset_t sset ;
   int retval ;
@@ -24717,7 +24716,7 @@ void vsf_sysutil_unblock_sig(enum EVSFSysUtilSignal sig )
   return;
 }
 }
-#line 294 "sysutil.c"
+#line 294 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_install_io_handler(void (*handler)(int  , int  , void * ) , void *p_private ) 
 { 
 
@@ -24735,7 +24734,7 @@ void vsf_sysutil_install_io_handler(void (*handler)(int  , int  , void * ) , voi
   return;
 }
 }
-#line 305 "sysutil.c"
+#line 305 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_uninstall_io_handler(void) 
 { 
 
@@ -24753,7 +24752,7 @@ void vsf_sysutil_uninstall_io_handler(void)
   return;
 }
 }
-#line 316 "sysutil.c"
+#line 316 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_set_alarm(unsigned int trigger_seconds ) 
 { 
 
@@ -24764,7 +24763,7 @@ void vsf_sysutil_set_alarm(unsigned int trigger_seconds )
   return;
 }
 }
-#line 322 "sysutil.c"
+#line 322 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_clear_alarm(void) 
 { 
 
@@ -24775,7 +24774,7 @@ void vsf_sysutil_clear_alarm(void)
   return;
 }
 }
-#line 328 "sysutil.c"
+#line 328 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_read(int fd , void *p_buf , unsigned int size ) 
 { int retval ;
   ssize_t __cil_tmp ;
@@ -24805,7 +24804,7 @@ int vsf_sysutil_read(int fd , void *p_buf , unsigned int size )
   }
 }
 }
-#line 344 "sysutil.c"
+#line 344 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_write(int fd , void const   *p_buf , unsigned int size ) 
 { int retval ;
   ssize_t __cil_tmp ;
@@ -24835,7 +24834,7 @@ int vsf_sysutil_write(int fd , void const   *p_buf , unsigned int size )
   }
 }
 }
-#line 360 "sysutil.c"
+#line 360 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_read_loop(int fd , void *p_buf , unsigned int size ) 
 { int retval ;
   int num_read ;
@@ -24880,7 +24879,7 @@ int vsf_sysutil_read_loop(int fd , void *p_buf , unsigned int size )
   }
 }
 }
-#line 395 "sysutil.c"
+#line 395 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_write_loop(int fd , void const   *p_buf , unsigned int size ) 
 { int retval ;
   int num_written ;
@@ -24926,7 +24925,7 @@ int vsf_sysutil_write_loop(int fd , void const   *p_buf , unsigned int size )
   }
 }
 }
-#line 431 "sysutil.c"
+#line 431 "../../experiments/vsftpd-2.0.7/sysutil.c"
 filesize_t vsf_sysutil_get_file_offset(int file_fd ) 
 { filesize_t retval ;
   __quad_t __cil_tmp ;
@@ -24945,7 +24944,7 @@ filesize_t vsf_sysutil_get_file_offset(int file_fd )
   return (retval);
 }
 }
-#line 442 "sysutil.c"
+#line 442 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_lseek_to(int fd , filesize_t seek_pos ) 
 { filesize_t retval ;
 
@@ -24966,7 +24965,7 @@ void vsf_sysutil_lseek_to(int fd , filesize_t seek_pos )
   return;
 }
 }
-#line 457 "sysutil.c"
+#line 457 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void *vsf_sysutil_malloc(unsigned int size ) 
 { void *p_ret ;
 
@@ -24987,7 +24986,7 @@ void *vsf_sysutil_malloc(unsigned int size )
   return (p_ret);
 }
 }
-#line 474 "sysutil.c"
+#line 474 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void *vsf_sysutil_realloc(void *p_ptr , unsigned int size ) 
 { void *p_ret ;
 
@@ -25008,7 +25007,7 @@ void *vsf_sysutil_realloc(void *p_ptr , unsigned int size )
   return (p_ret);
 }
 }
-#line 490 "sysutil.c"
+#line 490 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_free(void *p_ptr ) 
 { 
 
@@ -25024,7 +25023,7 @@ void vsf_sysutil_free(void *p_ptr )
   return;
 }
 }
-#line 500 "sysutil.c"
+#line 500 "../../experiments/vsftpd-2.0.7/sysutil.c"
 unsigned int vsf_sysutil_getpid(void) 
 { 
 
@@ -25038,7 +25037,7 @@ unsigned int vsf_sysutil_getpid(void)
   return ((unsigned int )s_current_pid);
 }
 }
-#line 510 "sysutil.c"
+#line 510 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_fork(void) 
 { void (*curr_func)(void) ;
   int retval ;
@@ -25064,7 +25063,7 @@ int vsf_sysutil_fork(void)
   return (retval);
 }
 }
-#line 529 "sysutil.c"
+#line 529 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_fork_failok(void) 
 { int retval ;
   __pid_t __cil_tmp ;
@@ -25083,7 +25082,7 @@ int vsf_sysutil_fork_failok(void)
   return (retval);
 }
 }
-#line 540 "sysutil.c"
+#line 540 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_set_exit_func(void (*exitfunc)(void) ) 
 { 
 
@@ -25094,7 +25093,7 @@ void vsf_sysutil_set_exit_func(void (*exitfunc)(void) )
   return;
 }
 }
-#line 546 "sysutil.c"
+#line 546 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_exit(int exit_code ) 
 { void (*curr_func)(void) ;
 
@@ -25112,7 +25111,7 @@ void vsf_sysutil_exit(int exit_code )
   _exit(exit_code);
 }
 }
-#line 559 "sysutil.c"
+#line 559 "../../experiments/vsftpd-2.0.7/sysutil.c"
 struct vsf_sysutil_wait_retval vsf_sysutil_wait(void) 
 { struct vsf_sysutil_wait_retval retval ;
   int sys_ret ;
@@ -25152,7 +25151,7 @@ struct vsf_sysutil_wait_retval vsf_sysutil_wait(void)
   }
 }
 }
-#line 577 "sysutil.c"
+#line 577 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_wait_reap_one(void) 
 { int retval ;
   __pid_t __cil_tmp ;
@@ -25194,7 +25193,7 @@ int vsf_sysutil_wait_reap_one(void)
   return (retval);
 }
 }
-#line 594 "sysutil.c"
+#line 594 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_wait_get_retval(struct vsf_sysutil_wait_retval  const  *p_waitret ) 
 { 
 
@@ -25203,7 +25202,7 @@ int vsf_sysutil_wait_get_retval(struct vsf_sysutil_wait_retval  const  *p_waitre
   return ((int )p_waitret->PRIVATE_HANDS_OFF_syscall_retval);
 }
 }
-#line 600 "sysutil.c"
+#line 600 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_wait_exited_normally(struct vsf_sysutil_wait_retval  const  *p_waitret ) 
 { union __anonunion___u_55 __u ;
 
@@ -25214,7 +25213,7 @@ int vsf_sysutil_wait_exited_normally(struct vsf_sysutil_wait_retval  const  *p_w
   return ((__u.__i & 127) == 0);
 }
 }
-#line 607 "sysutil.c"
+#line 607 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_wait_get_exitcode(struct vsf_sysutil_wait_retval  const  *p_waitret ) 
 { int __cil_tmp ;
   union __anonunion___u_56 __u ;
@@ -25233,7 +25232,7 @@ int vsf_sysutil_wait_get_exitcode(struct vsf_sysutil_wait_retval  const  *p_wait
   return ((__u.__i & 65280) >> 8);
 }
 }
-#line 617 "sysutil.c"
+#line 617 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_activate_keepalive(int fd ) 
 { int keepalive ;
   int retval ;
@@ -25255,7 +25254,7 @@ void vsf_sysutil_activate_keepalive(int fd )
   return;
 }
 }
-#line 629 "sysutil.c"
+#line 629 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_activate_reuseaddr(int fd ) 
 { int reuseaddr ;
   int retval ;
@@ -25277,7 +25276,7 @@ void vsf_sysutil_activate_reuseaddr(int fd )
   return;
 }
 }
-#line 641 "sysutil.c"
+#line 641 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_set_nodelay(int fd ) 
 { int nodelay ;
   int retval ;
@@ -25299,7 +25298,7 @@ void vsf_sysutil_set_nodelay(int fd )
   return;
 }
 }
-#line 653 "sysutil.c"
+#line 653 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_activate_sigurg(int fd ) 
 { int retval ;
   __pid_t __cil_tmp ;
@@ -25321,7 +25320,7 @@ void vsf_sysutil_activate_sigurg(int fd )
   return;
 }
 }
-#line 663 "sysutil.c"
+#line 663 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_activate_oobinline(int fd ) 
 { int oob_inline ;
   int retval ;
@@ -25343,7 +25342,7 @@ void vsf_sysutil_activate_oobinline(int fd )
   return;
 }
 }
-#line 675 "sysutil.c"
+#line 675 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_set_iptos_throughput(int fd ) 
 { int tos ;
 
@@ -25356,7 +25355,7 @@ void vsf_sysutil_set_iptos_throughput(int fd )
   return;
 }
 }
-#line 683 "sysutil.c"
+#line 683 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_activate_linger(int fd ) 
 { int retval ;
   struct linger the_linger ;
@@ -25379,7 +25378,7 @@ void vsf_sysutil_activate_linger(int fd )
   return;
 }
 }
-#line 699 "sysutil.c"
+#line 699 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_deactivate_linger_failok(int fd ) 
 { struct linger the_linger ;
 
@@ -25394,7 +25393,7 @@ void vsf_sysutil_deactivate_linger_failok(int fd )
   return;
 }
 }
-#line 708 "sysutil.c"
+#line 708 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_activate_noblock(int fd ) 
 { int retval ;
   int curr_flags ;
@@ -25426,7 +25425,7 @@ void vsf_sysutil_activate_noblock(int fd )
   return;
 }
 }
-#line 725 "sysutil.c"
+#line 725 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_deactivate_noblock(int fd ) 
 { int retval ;
   int curr_flags ;
@@ -25458,7 +25457,7 @@ void vsf_sysutil_deactivate_noblock(int fd )
   return;
 }
 }
-#line 742 "sysutil.c"
+#line 742 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_recv_peek(int fd , void *p_buf , unsigned int len ) 
 { int retval ;
   ssize_t __cil_tmp ;
@@ -25488,7 +25487,7 @@ int vsf_sysutil_recv_peek(int fd , void *p_buf , unsigned int len )
   }
 }
 }
-#line 758 "sysutil.c"
+#line 758 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_atoi(char const   *p_str ) 
 { int __cil_tmp ;
 
@@ -25499,7 +25498,7 @@ int vsf_sysutil_atoi(char const   *p_str )
   return (__cil_tmp);
 }
 }
-#line 764 "sysutil.c"
+#line 764 "../../experiments/vsftpd-2.0.7/sysutil.c"
 filesize_t vsf_sysutil_a_to_filesize_t(char const   *p_str ) 
 { filesize_t result ;
   filesize_t mult ;
@@ -25549,9 +25548,9 @@ filesize_t vsf_sysutil_a_to_filesize_t(char const   *p_str )
   return (result);
 }
 }
-#line 798 "sysutil.c"
+#line 798 "../../experiments/vsftpd-2.0.7/sysutil.c"
 static char ulong_buf[32]  ;
-#line 795 "sysutil.c"
+#line 795 "../../experiments/vsftpd-2.0.7/sysutil.c"
 char const   *vsf_sysutil_ulong_to_str(unsigned long the_ulong ) 
 { 
 
@@ -25563,9 +25562,9 @@ char const   *vsf_sysutil_ulong_to_str(unsigned long the_ulong )
   return ((char const   *)(ulong_buf));
 }
 }
-#line 806 "sysutil.c"
+#line 806 "../../experiments/vsftpd-2.0.7/sysutil.c"
 static char filesize_buf[32]  ;
-#line 803 "sysutil.c"
+#line 803 "../../experiments/vsftpd-2.0.7/sysutil.c"
 char const   *vsf_sysutil_filesize_t_to_str(filesize_t the_filesize ) 
 { 
 
@@ -25584,9 +25583,9 @@ char const   *vsf_sysutil_filesize_t_to_str(filesize_t the_filesize )
   return ((char const   *)(filesize_buf));
 }
 }
-#line 823 "sysutil.c"
+#line 823 "../../experiments/vsftpd-2.0.7/sysutil.c"
 static char double_buf[32]  ;
-#line 820 "sysutil.c"
+#line 820 "../../experiments/vsftpd-2.0.7/sysutil.c"
 char const   *vsf_sysutil_double_to_str(double the_double ) 
 { 
 
@@ -25598,9 +25597,9 @@ char const   *vsf_sysutil_double_to_str(double the_double )
   return ((char const   *)(double_buf));
 }
 }
-#line 831 "sysutil.c"
+#line 831 "../../experiments/vsftpd-2.0.7/sysutil.c"
 static char octal_buf[32]  ;
-#line 828 "sysutil.c"
+#line 828 "../../experiments/vsftpd-2.0.7/sysutil.c"
 char const   *vsf_sysutil_uint_to_octal(unsigned int the_uint ) 
 { 
 
@@ -25620,7 +25619,7 @@ char const   *vsf_sysutil_uint_to_octal(unsigned int the_uint )
   return ((char const   *)(octal_buf));
 }
 }
-#line 844 "sysutil.c"
+#line 844 "../../experiments/vsftpd-2.0.7/sysutil.c"
 unsigned int vsf_sysutil_octal_to_uint(char const   *p_str ) 
 { unsigned int result ;
   int seen_non_zero_digit ;
@@ -25669,7 +25668,7 @@ unsigned int vsf_sysutil_octal_to_uint(char const   *p_str )
   return (result);
 }
 }
-#line 871 "sysutil.c"
+#line 871 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_toupper(int the_char ) 
 { int __cil_tmp ;
 
@@ -25680,7 +25679,7 @@ int vsf_sysutil_toupper(int the_char )
   return (__cil_tmp);
 }
 }
-#line 877 "sysutil.c"
+#line 877 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_isspace(int the_char ) 
 { unsigned short const   **__cil_tmp ;
 
@@ -25691,7 +25690,7 @@ int vsf_sysutil_isspace(int the_char )
   return ((int )((int const   )*(*__cil_tmp + the_char) & 8192));
 }
 }
-#line 883 "sysutil.c"
+#line 883 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_isprint(int the_char ) 
 { unsigned char uc ;
   unsigned short const   **__cil_tmp ;
@@ -25717,14 +25716,10 @@ int vsf_sysutil_isprint(int the_char )
 #line 902
   __cil_tmp = __ctype_b_loc();
 #line 902
-  // __EVAL(the_char);
-  // __EVAL(__cil_tmp);
-  // __EVAL(*__cil_tmp+the_char);
-  // __EVAL(*(*__cil_tmp+the_char));
   return ((int )((int const   )*(*__cil_tmp + the_char) & 16384));
 }
 }
-#line 905 "sysutil.c"
+#line 905 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_isalnum(int the_char ) 
 { unsigned short const   **__cil_tmp ;
 
@@ -25735,7 +25730,7 @@ int vsf_sysutil_isalnum(int the_char )
   return ((int )((int const   )*(*__cil_tmp + the_char) & 8));
 }
 }
-#line 911 "sysutil.c"
+#line 911 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_isdigit(int the_char ) 
 { unsigned short const   **__cil_tmp ;
 
@@ -25746,7 +25741,7 @@ int vsf_sysutil_isdigit(int the_char )
   return ((int )((int const   )*(*__cil_tmp + the_char) & 2048));
 }
 }
-#line 917 "sysutil.c"
+#line 917 "../../experiments/vsftpd-2.0.7/sysutil.c"
 char *vsf_sysutil_getcwd(char *p_dest , unsigned int buf_size ) 
 { char *p_retval ;
 
@@ -25764,7 +25759,7 @@ char *vsf_sysutil_getcwd(char *p_dest , unsigned int buf_size )
   return (p_retval);
 }
 }
-#line 929 "sysutil.c"
+#line 929 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_mkdir(char const   *p_dirname , unsigned int mode ) 
 { int __cil_tmp ;
 
@@ -25775,7 +25770,7 @@ int vsf_sysutil_mkdir(char const   *p_dirname , unsigned int mode )
   return (__cil_tmp);
 }
 }
-#line 935 "sysutil.c"
+#line 935 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_rmdir(char const   *p_dirname ) 
 { int __cil_tmp ;
 
@@ -25786,7 +25781,7 @@ int vsf_sysutil_rmdir(char const   *p_dirname )
   return (__cil_tmp);
 }
 }
-#line 941 "sysutil.c"
+#line 941 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_chdir(char const   *p_dirname ) 
 { int __cil_tmp ;
 
@@ -25797,7 +25792,7 @@ int vsf_sysutil_chdir(char const   *p_dirname )
   return (__cil_tmp);
 }
 }
-#line 947 "sysutil.c"
+#line 947 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_rename(char const   *p_from , char const   *p_to ) 
 { int __cil_tmp ;
 
@@ -25808,7 +25803,7 @@ int vsf_sysutil_rename(char const   *p_from , char const   *p_to )
   return (__cil_tmp);
 }
 }
-#line 953 "sysutil.c"
+#line 953 "../../experiments/vsftpd-2.0.7/sysutil.c"
 struct vsf_sysutil_dir *vsf_sysutil_opendir(char const   *p_dirname ) 
 { DIR *__cil_tmp ;
 
@@ -25819,7 +25814,7 @@ struct vsf_sysutil_dir *vsf_sysutil_opendir(char const   *p_dirname )
   return ((struct vsf_sysutil_dir *)__cil_tmp);
 }
 }
-#line 959 "sysutil.c"
+#line 959 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_closedir(struct vsf_sysutil_dir *p_dir ) 
 { DIR *p_real_dir ;
   int retval ;
@@ -25841,7 +25836,7 @@ void vsf_sysutil_closedir(struct vsf_sysutil_dir *p_dir )
   return;
 }
 }
-#line 970 "sysutil.c"
+#line 970 "../../experiments/vsftpd-2.0.7/sysutil.c"
 char const   *vsf_sysutil_next_dirent(struct vsf_sysutil_dir *p_dir ) 
 { DIR *p_real_dir ;
   struct dirent *p_dirent ;
@@ -25863,7 +25858,7 @@ char const   *vsf_sysutil_next_dirent(struct vsf_sysutil_dir *p_dir )
   return ((char const   *)(p_dirent->d_name));
 }
 }
-#line 982 "sysutil.c"
+#line 982 "../../experiments/vsftpd-2.0.7/sysutil.c"
 unsigned int vsf_sysutil_strlen(char const   *p_text ) 
 { unsigned int ret___0 ;
   size_t___0 __cil_tmp ;
@@ -25882,7 +25877,7 @@ unsigned int vsf_sysutil_strlen(char const   *p_text )
   return (ret___0);
 }
 }
-#line 994 "sysutil.c"
+#line 994 "../../experiments/vsftpd-2.0.7/sysutil.c"
 char *vsf_sysutil_strdup(char const   *p_str ) 
 { char *__cil_tmp ;
 
@@ -25893,7 +25888,7 @@ char *vsf_sysutil_strdup(char const   *p_str )
   return (__cil_tmp);
 }
 }
-#line 1000 "sysutil.c"
+#line 1000 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_memclr(void *p_dest , unsigned int size ) 
 { 
 
@@ -25909,7 +25904,7 @@ void vsf_sysutil_memclr(void *p_dest , unsigned int size )
   return;
 }
 }
-#line 1011 "sysutil.c"
+#line 1011 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_memcpy(void *p_dest , void const   *p_src , unsigned int size ) 
 { 
 
@@ -25930,7 +25925,7 @@ void vsf_sysutil_memcpy(void *p_dest , void const   *p_src , unsigned int size )
   return;
 }
 }
-#line 1027 "sysutil.c"
+#line 1027 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_strcpy(char *p_dest , char const   *p_src , unsigned int maxsize ) 
 { 
 
@@ -25948,7 +25943,7 @@ void vsf_sysutil_strcpy(char *p_dest , char const   *p_src , unsigned int maxsiz
   return;
 }
 }
-#line 1038 "sysutil.c"
+#line 1038 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_memcmp(void const   *p_src1 , void const   *p_src2 , unsigned int size ) 
 { int __cil_tmp ;
 
@@ -25964,7 +25959,7 @@ int vsf_sysutil_memcmp(void const   *p_src1 , void const   *p_src2 , unsigned in
   return (__cil_tmp);
 }
 }
-#line 1049 "sysutil.c"
+#line 1049 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_strcmp(char const   *p_src1 , char const   *p_src2 ) 
 { int __cil_tmp ;
 
@@ -25975,9 +25970,9 @@ int vsf_sysutil_strcmp(char const   *p_src1 , char const   *p_src2 )
   return (__cil_tmp);
 }
 }
-#line 1058 "sysutil.c"
+#line 1058 "../../experiments/vsftpd-2.0.7/sysutil.c"
 static unsigned int s_page_size  ;
-#line 1055 "sysutil.c"
+#line 1055 "../../experiments/vsftpd-2.0.7/sysutil.c"
 unsigned int vsf_sysutil_getpagesize(void) 
 { int __cil_tmp ;
 
@@ -25998,7 +25993,7 @@ unsigned int vsf_sysutil_getpagesize(void)
   return (s_page_size);
 }
 }
-#line 1070 "sysutil.c"
+#line 1070 "../../experiments/vsftpd-2.0.7/sysutil.c"
 static int vsf_sysutil_translate_memprot(enum EVSFSysUtilMapPermission perm ) 
 { int retval ;
 
@@ -26027,7 +26022,7 @@ static int vsf_sysutil_translate_memprot(enum EVSFSysUtilMapPermission perm )
   return (retval);
 }
 }
-#line 1089 "sysutil.c"
+#line 1089 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_memprotect(void *p_addr , unsigned int len , enum EVSFSysUtilMapPermission perm ) 
 { int prot ;
   int __cil_tmp ;
@@ -26052,7 +26047,7 @@ void vsf_sysutil_memprotect(void *p_addr , unsigned int len , enum EVSFSysUtilMa
   return;
 }
 }
-#line 1101 "sysutil.c"
+#line 1101 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_memunmap(void *p_start , unsigned int length ) 
 { int retval ;
   int __cil_tmp ;
@@ -26071,7 +26066,7 @@ void vsf_sysutil_memunmap(void *p_start , unsigned int length )
   return;
 }
 }
-#line 1111 "sysutil.c"
+#line 1111 "../../experiments/vsftpd-2.0.7/sysutil.c"
 static int vsf_sysutil_translate_openmode(enum EVSFSysUtilOpenMode mode ) 
 { int retval ;
 
@@ -26105,7 +26100,7 @@ static int vsf_sysutil_translate_openmode(enum EVSFSysUtilOpenMode mode )
   return (retval);
 }
 }
-#line 1133 "sysutil.c"
+#line 1133 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_open_file(char const   *p_filename , enum EVSFSysUtilOpenMode mode ) 
 { int __cil_tmp ;
   int __cil_tmp___0 ;
@@ -26119,7 +26114,7 @@ int vsf_sysutil_open_file(char const   *p_filename , enum EVSFSysUtilOpenMode mo
   return (__cil_tmp___0);
 }
 }
-#line 1140 "sysutil.c"
+#line 1140 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_create_file(char const   *p_filename ) 
 { int __cil_tmp ;
 
@@ -26130,7 +26125,7 @@ int vsf_sysutil_create_file(char const   *p_filename )
   return (__cil_tmp);
 }
 }
-#line 1148 "sysutil.c"
+#line 1148 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_create_overwrite_file(char const   *p_filename ) 
 { int __cil_tmp ;
 
@@ -26141,7 +26136,7 @@ int vsf_sysutil_create_overwrite_file(char const   *p_filename )
   return (__cil_tmp);
 }
 }
-#line 1156 "sysutil.c"
+#line 1156 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_create_or_open_file(char const   *p_filename , unsigned int mode ) 
 { int __cil_tmp ;
 
@@ -26152,7 +26147,7 @@ int vsf_sysutil_create_or_open_file(char const   *p_filename , unsigned int mode
   return (__cil_tmp);
 }
 }
-#line 1162 "sysutil.c"
+#line 1162 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_dupfd2(int old_fd , int new_fd ) 
 { int retval ;
 
@@ -26173,7 +26168,7 @@ void vsf_sysutil_dupfd2(int old_fd , int new_fd )
   return;
 }
 }
-#line 1177 "sysutil.c"
+#line 1177 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_close(int fd ) 
 { int retval ;
   int __cil_tmp ;
@@ -26205,7 +26200,7 @@ void vsf_sysutil_close(int fd )
   }
 }
 }
-#line 1196 "sysutil.c"
+#line 1196 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_close_failok(int fd ) 
 { int __cil_tmp ;
 
@@ -26216,7 +26211,7 @@ int vsf_sysutil_close_failok(int fd )
   return (__cil_tmp);
 }
 }
-#line 1202 "sysutil.c"
+#line 1202 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_unlink(char const   *p_dead ) 
 { int __cil_tmp ;
 
@@ -26227,7 +26222,7 @@ int vsf_sysutil_unlink(char const   *p_dead )
   return (__cil_tmp);
 }
 }
-#line 1208 "sysutil.c"
+#line 1208 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_write_access(char const   *p_filename ) 
 { int retval ;
   int __cil_tmp ;
@@ -26241,7 +26236,7 @@ int vsf_sysutil_write_access(char const   *p_filename )
   return (retval == 0);
 }
 }
-#line 1215 "sysutil.c"
+#line 1215 "../../experiments/vsftpd-2.0.7/sysutil.c"
 static void vsf_sysutil_alloc_statbuf(struct vsf_sysutil_statbuf **p_ptr ) 
 { void *__cil_tmp ;
 
@@ -26257,7 +26252,7 @@ static void vsf_sysutil_alloc_statbuf(struct vsf_sysutil_statbuf **p_ptr )
   return;
 }
 }
-#line 1224 "sysutil.c"
+#line 1224 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_fstat(int fd , struct vsf_sysutil_statbuf **p_ptr ) 
 { int retval ;
 
@@ -26275,7 +26270,7 @@ void vsf_sysutil_fstat(int fd , struct vsf_sysutil_statbuf **p_ptr )
   return;
 }
 }
-#line 1236 "sysutil.c"
+#line 1236 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_stat(char const   *p_name , struct vsf_sysutil_statbuf **p_ptr ) 
 { int __cil_tmp ;
 
@@ -26288,7 +26283,7 @@ int vsf_sysutil_stat(char const   *p_name , struct vsf_sysutil_statbuf **p_ptr )
   return (__cil_tmp);
 }
 }
-#line 1243 "sysutil.c"
+#line 1243 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_lstat(char const   *p_name , struct vsf_sysutil_statbuf **p_ptr ) 
 { int __cil_tmp ;
 
@@ -26301,7 +26296,7 @@ int vsf_sysutil_lstat(char const   *p_name , struct vsf_sysutil_statbuf **p_ptr 
   return (__cil_tmp);
 }
 }
-#line 1250 "sysutil.c"
+#line 1250 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_dir_stat(struct vsf_sysutil_dir  const  *p_dir , struct vsf_sysutil_statbuf **p_ptr ) 
 { int fd ;
   int __cil_tmp ;
@@ -26317,7 +26312,7 @@ void vsf_sysutil_dir_stat(struct vsf_sysutil_dir  const  *p_dir , struct vsf_sys
   return;
 }
 }
-#line 1258 "sysutil.c"
+#line 1258 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_statbuf_is_regfile(struct vsf_sysutil_statbuf  const  *p_stat ) 
 { struct stat  const  *p_realstat ;
 
@@ -26328,7 +26323,7 @@ int vsf_sysutil_statbuf_is_regfile(struct vsf_sysutil_statbuf  const  *p_stat )
   return ((p_realstat->st_mode & 61440U) == 32768U);
 }
 }
-#line 1265 "sysutil.c"
+#line 1265 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_statbuf_is_symlink(struct vsf_sysutil_statbuf  const  *p_stat ) 
 { struct stat  const  *p_realstat ;
 
@@ -26339,7 +26334,7 @@ int vsf_sysutil_statbuf_is_symlink(struct vsf_sysutil_statbuf  const  *p_stat )
   return ((p_realstat->st_mode & 61440U) == 40960U);
 }
 }
-#line 1272 "sysutil.c"
+#line 1272 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_statbuf_is_socket(struct vsf_sysutil_statbuf  const  *p_stat ) 
 { struct stat  const  *p_realstat ;
 
@@ -26350,7 +26345,7 @@ int vsf_sysutil_statbuf_is_socket(struct vsf_sysutil_statbuf  const  *p_stat )
   return ((p_realstat->st_mode & 61440U) == 49152U);
 }
 }
-#line 1279 "sysutil.c"
+#line 1279 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_statbuf_is_dir(struct vsf_sysutil_statbuf  const  *p_stat ) 
 { struct stat  const  *p_realstat ;
 
@@ -26361,9 +26356,9 @@ int vsf_sysutil_statbuf_is_dir(struct vsf_sysutil_statbuf  const  *p_stat )
   return ((p_realstat->st_mode & 61440U) == 16384U);
 }
 }
-#line 1289 "sysutil.c"
+#line 1289 "../../experiments/vsftpd-2.0.7/sysutil.c"
 static char perms[11]  ;
-#line 1286 "sysutil.c"
+#line 1286 "../../experiments/vsftpd-2.0.7/sysutil.c"
 char const   *vsf_sysutil_statbuf_get_perms(struct vsf_sysutil_statbuf  const  *p_statbuf___0 ) 
 { int i ;
   struct stat  const  *p_stat ;
@@ -26504,9 +26499,9 @@ char const   *vsf_sysutil_statbuf_get_perms(struct vsf_sysutil_statbuf  const  *
   return ((char const   *)(perms));
 }
 }
-#line 1327 "sysutil.c"
+#line 1327 "../../experiments/vsftpd-2.0.7/sysutil.c"
 static char datebuf[64]  ;
-#line 1323 "sysutil.c"
+#line 1323 "../../experiments/vsftpd-2.0.7/sysutil.c"
 char const   *vsf_sysutil_statbuf_get_date(struct vsf_sysutil_statbuf  const  *p_statbuf___0 ,
                                            int use_localtime ) 
 { int retval ;
@@ -26555,9 +26550,9 @@ char const   *vsf_sysutil_statbuf_get_date(struct vsf_sysutil_statbuf  const  *p
   return ((char const   *)(datebuf));
 }
 }
-#line 1361 "sysutil.c"
+#line 1361 "../../experiments/vsftpd-2.0.7/sysutil.c"
 static char datebuf___0[15]  ;
-#line 1356 "sysutil.c"
+#line 1356 "../../experiments/vsftpd-2.0.7/sysutil.c"
 char const   *vsf_sysutil_statbuf_get_numeric_date(struct vsf_sysutil_statbuf  const  *p_statbuf___0 ,
                                                    int use_localtime ) 
 { struct stat  const  *p_stat ;
@@ -26590,7 +26585,7 @@ char const   *vsf_sysutil_statbuf_get_numeric_date(struct vsf_sysutil_statbuf  c
   return ((char const   *)(datebuf___0));
 }
 }
-#line 1381 "sysutil.c"
+#line 1381 "../../experiments/vsftpd-2.0.7/sysutil.c"
 filesize_t vsf_sysutil_statbuf_get_size(struct vsf_sysutil_statbuf  const  *p_statbuf___0 ) 
 { struct stat  const  *p_stat ;
 
@@ -26606,7 +26601,7 @@ filesize_t vsf_sysutil_statbuf_get_size(struct vsf_sysutil_statbuf  const  *p_st
   return ((long long )p_stat->st_size);
 }
 }
-#line 1392 "sysutil.c"
+#line 1392 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_statbuf_get_uid(struct vsf_sysutil_statbuf  const  *p_statbuf___0 ) 
 { struct stat  const  *p_stat ;
 
@@ -26617,7 +26612,7 @@ int vsf_sysutil_statbuf_get_uid(struct vsf_sysutil_statbuf  const  *p_statbuf___
   return ((int )p_stat->st_uid);
 }
 }
-#line 1399 "sysutil.c"
+#line 1399 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_statbuf_get_gid(struct vsf_sysutil_statbuf  const  *p_statbuf___0 ) 
 { struct stat  const  *p_stat ;
 
@@ -26628,7 +26623,7 @@ int vsf_sysutil_statbuf_get_gid(struct vsf_sysutil_statbuf  const  *p_statbuf___
   return ((int )p_stat->st_gid);
 }
 }
-#line 1406 "sysutil.c"
+#line 1406 "../../experiments/vsftpd-2.0.7/sysutil.c"
 unsigned int vsf_sysutil_statbuf_get_links(struct vsf_sysutil_statbuf  const  *p_statbuf___0 ) 
 { struct stat  const  *p_stat ;
 
@@ -26639,7 +26634,7 @@ unsigned int vsf_sysutil_statbuf_get_links(struct vsf_sysutil_statbuf  const  *p
   return ((unsigned int )p_stat->st_nlink);
 }
 }
-#line 1413 "sysutil.c"
+#line 1413 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_statbuf_is_readable_other(struct vsf_sysutil_statbuf  const  *p_statbuf___0 ) 
 { struct stat  const  *p_stat ;
 
@@ -26655,9 +26650,9 @@ int vsf_sysutil_statbuf_is_readable_other(struct vsf_sysutil_statbuf  const  *p_
   return (0);
 }
 }
-#line 1429 "sysutil.c"
+#line 1429 "../../experiments/vsftpd-2.0.7/sysutil.c"
 static char intbuf[32]  ;
-#line 1425 "sysutil.c"
+#line 1425 "../../experiments/vsftpd-2.0.7/sysutil.c"
 char const   *vsf_sysutil_statbuf_get_sortkey_mtime(struct vsf_sysutil_statbuf  const  *p_statbuf___0 ) 
 { struct stat  const  *p_stat ;
 
@@ -26671,7 +26666,7 @@ char const   *vsf_sysutil_statbuf_get_sortkey_mtime(struct vsf_sysutil_statbuf  
   return ((char const   *)(intbuf));
 }
 }
-#line 1439 "sysutil.c"
+#line 1439 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_fchown(int fd , int uid , int gid ) 
 { int __cil_tmp ;
 
@@ -26687,7 +26682,7 @@ void vsf_sysutil_fchown(int fd , int uid , int gid )
   return;
 }
 }
-#line 1448 "sysutil.c"
+#line 1448 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_fchmod(int fd , unsigned int mode ) 
 { int __cil_tmp ;
 
@@ -26705,7 +26700,7 @@ void vsf_sysutil_fchmod(int fd , unsigned int mode )
   return;
 }
 }
-#line 1458 "sysutil.c"
+#line 1458 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_chmod(char const   *p_filename , unsigned int mode ) 
 { int __cil_tmp ;
 
@@ -26718,7 +26713,7 @@ int vsf_sysutil_chmod(char const   *p_filename , unsigned int mode )
   return (__cil_tmp);
 }
 }
-#line 1466 "sysutil.c"
+#line 1466 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_lock_file_write(int fd ) 
 { int __cil_tmp ;
 
@@ -26729,7 +26724,7 @@ int vsf_sysutil_lock_file_write(int fd )
   return (__cil_tmp);
 }
 }
-#line 1472 "sysutil.c"
+#line 1472 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_lock_file_read(int fd ) 
 { int __cil_tmp ;
 
@@ -26740,7 +26735,7 @@ int vsf_sysutil_lock_file_read(int fd )
   return (__cil_tmp);
 }
 }
-#line 1478 "sysutil.c"
+#line 1478 "../../experiments/vsftpd-2.0.7/sysutil.c"
 static int lock_internal(int fd , int lock_type ) 
 { struct flock the_lock ;
   int retval ;
@@ -26778,7 +26773,7 @@ static int lock_internal(int fd , int lock_type )
   return (retval);
 }
 }
-#line 1499 "sysutil.c"
+#line 1499 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_unlock_file(int fd ) 
 { int retval ;
   struct flock the_lock ;
@@ -26805,7 +26800,7 @@ void vsf_sysutil_unlock_file(int fd )
   return;
 }
 }
-#line 1516 "sysutil.c"
+#line 1516 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_readlink(char const   *p_filename , char *p_dest , unsigned int bufsiz ) 
 { int retval ;
 
@@ -26829,7 +26824,7 @@ int vsf_sysutil_readlink(char const   *p_filename , char *p_dest , unsigned int 
   return (retval);
 }
 }
-#line 1533 "sysutil.c"
+#line 1533 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_retval_is_error(int retval ) 
 { 
 
@@ -26843,7 +26838,7 @@ int vsf_sysutil_retval_is_error(int retval )
   return (0);
 }
 }
-#line 1543 "sysutil.c"
+#line 1543 "../../experiments/vsftpd-2.0.7/sysutil.c"
 enum EVSFSysUtilError vsf_sysutil_get_error(void) 
 { enum EVSFSysUtilError retval ;
   int *__cil_tmp ;
@@ -26885,7 +26880,7 @@ enum EVSFSysUtilError vsf_sysutil_get_error(void)
   return (retval);
 }
 }
-#line 1568 "sysutil.c"
+#line 1568 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_get_ipv4_sock(void) 
 { int retval ;
   int __cil_tmp ;
@@ -26904,7 +26899,7 @@ int vsf_sysutil_get_ipv4_sock(void)
   return (retval);
 }
 }
-#line 1579 "sysutil.c"
+#line 1579 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_get_ipv6_sock(void) 
 { int retval ;
   int __cil_tmp ;
@@ -26923,7 +26918,7 @@ int vsf_sysutil_get_ipv6_sock(void)
   return (retval);
 }
 }
-#line 1590 "sysutil.c"
+#line 1590 "../../experiments/vsftpd-2.0.7/sysutil.c"
 struct vsf_sysutil_socketpair_retval vsf_sysutil_unix_stream_socketpair(void) 
 { struct vsf_sysutil_socketpair_retval retval ;
   int the_sockets[2] ;
@@ -26948,7 +26943,7 @@ struct vsf_sysutil_socketpair_retval vsf_sysutil_unix_stream_socketpair(void)
   return (retval);
 }
 }
-#line 1605 "sysutil.c"
+#line 1605 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_bind(int fd , struct vsf_sysutil_sockaddr  const  *p_sockptr ) 
 { struct sockaddr  const  *p_sockaddr___0 ;
   int len ;
@@ -26979,7 +26974,7 @@ int vsf_sysutil_bind(int fd , struct vsf_sysutil_sockaddr  const  *p_sockptr )
   return (__cil_tmp);
 }
 }
-#line 1625 "sysutil.c"
+#line 1625 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_listen(int fd , unsigned int backlog ) 
 { int retval ;
   int __cil_tmp ;
@@ -27012,7 +27007,7 @@ int vsf_sysutil_listen(int fd , unsigned int backlog )
   return (retval);
 }
 }
-#line 1640 "sysutil.c"
+#line 1640 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_accept_timeout(int fd , struct vsf_sysutil_sockaddr *p_sockaddr___0 ,
                                unsigned int wait_seconds ) 
 { struct vsf_sysutil_sockaddr remote_addr ;
@@ -27117,7 +27112,7 @@ int vsf_sysutil_accept_timeout(int fd , struct vsf_sysutil_sockaddr *p_sockaddr_
   return (retval);
 }
 }
-#line 1706 "sysutil.c"
+#line 1706 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_connect_timeout(int fd , struct vsf_sysutil_sockaddr  const  *p_addr ,
                                 unsigned int wait_seconds ) 
 { struct sockaddr  const  *p_sockaddr___0 ;
@@ -27236,7 +27231,7 @@ int vsf_sysutil_connect_timeout(int fd , struct vsf_sysutil_sockaddr  const  *p_
   return (retval);
 }
 }
-#line 1768 "sysutil.c"
+#line 1768 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_getsockname(int fd , struct vsf_sysutil_sockaddr **p_sockptr ) 
 { struct vsf_sysutil_sockaddr the_addr ;
   int retval ;
@@ -27273,7 +27268,7 @@ void vsf_sysutil_getsockname(int fd , struct vsf_sysutil_sockaddr **p_sockptr )
   return;
 }
 }
-#line 1793 "sysutil.c"
+#line 1793 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_getpeername(int fd , struct vsf_sysutil_sockaddr **p_sockptr ) 
 { struct vsf_sysutil_sockaddr the_addr ;
   int retval ;
@@ -27310,7 +27305,7 @@ void vsf_sysutil_getpeername(int fd , struct vsf_sysutil_sockaddr **p_sockptr )
   return;
 }
 }
-#line 1818 "sysutil.c"
+#line 1818 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_shutdown_failok(int fd ) 
 { 
 
@@ -27321,7 +27316,7 @@ void vsf_sysutil_shutdown_failok(int fd )
   return;
 }
 }
-#line 1828 "sysutil.c"
+#line 1828 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_shutdown_read_failok(int fd ) 
 { 
 
@@ -27332,7 +27327,7 @@ void vsf_sysutil_shutdown_read_failok(int fd )
   return;
 }
 }
-#line 1838 "sysutil.c"
+#line 1838 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_sockaddr_clear(struct vsf_sysutil_sockaddr **p_sockptr ) 
 { 
 
@@ -27348,7 +27343,7 @@ void vsf_sysutil_sockaddr_clear(struct vsf_sysutil_sockaddr **p_sockptr )
   return;
 }
 }
-#line 1848 "sysutil.c"
+#line 1848 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_sockaddr_alloc(struct vsf_sysutil_sockaddr **p_sockptr ) 
 { void *__cil_tmp ;
 
@@ -27365,7 +27360,7 @@ void vsf_sysutil_sockaddr_alloc(struct vsf_sysutil_sockaddr **p_sockptr )
   return;
 }
 }
-#line 1856 "sysutil.c"
+#line 1856 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_sockaddr_alloc_ipv4(struct vsf_sysutil_sockaddr **p_sockptr ) 
 { 
 
@@ -27378,7 +27373,7 @@ void vsf_sysutil_sockaddr_alloc_ipv4(struct vsf_sysutil_sockaddr **p_sockptr )
   return;
 }
 }
-#line 1863 "sysutil.c"
+#line 1863 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_sockaddr_alloc_ipv6(struct vsf_sysutil_sockaddr **p_sockptr ) 
 { 
 
@@ -27391,7 +27386,7 @@ void vsf_sysutil_sockaddr_alloc_ipv6(struct vsf_sysutil_sockaddr **p_sockptr )
   return;
 }
 }
-#line 1870 "sysutil.c"
+#line 1870 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_sockaddr_clone(struct vsf_sysutil_sockaddr **p_sockptr , struct vsf_sysutil_sockaddr  const  *p_src ) 
 { struct vsf_sysutil_sockaddr *p_sockaddr___0 ;
 
@@ -27426,7 +27421,7 @@ void vsf_sysutil_sockaddr_clone(struct vsf_sysutil_sockaddr **p_sockptr , struct
   return;
 }
 }
-#line 1897 "sysutil.c"
+#line 1897 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_sockaddr_addr_equal(struct vsf_sysutil_sockaddr  const  *p1 , struct vsf_sysutil_sockaddr  const  *p2 ) 
 { int family1 ;
   int family2 ;
@@ -27525,7 +27520,7 @@ int vsf_sysutil_sockaddr_addr_equal(struct vsf_sysutil_sockaddr  const  *p1 , st
   return (0);
 }
 }
-#line 1948 "sysutil.c"
+#line 1948 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_sockaddr_is_ipv6(struct vsf_sysutil_sockaddr  const  *p_sockaddr___0 ) 
 { 
 
@@ -27539,9 +27534,9 @@ int vsf_sysutil_sockaddr_is_ipv6(struct vsf_sysutil_sockaddr  const  *p_sockaddr
   return (0);
 }
 }
-#line 1969 "sysutil.c"
+#line 1969 "../../experiments/vsftpd-2.0.7/sysutil.c"
 static struct vsf_sysutil_sockaddr *s_p_sockaddr___0  ;
-#line 1958 "sysutil.c"
+#line 1958 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_sockaddr_set_ipv4addr(struct vsf_sysutil_sockaddr *p_sockptr , unsigned char const   *p_raw ) 
 { void const   *__cil_tmp ;
 
@@ -27573,7 +27568,7 @@ void vsf_sysutil_sockaddr_set_ipv4addr(struct vsf_sysutil_sockaddr *p_sockptr , 
   return;
 }
 }
-#line 1983 "sysutil.c"
+#line 1983 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_sockaddr_set_ipv6addr(struct vsf_sysutil_sockaddr *p_sockptr , unsigned char const   *p_raw ) 
 { 
 
@@ -27591,13 +27586,13 @@ void vsf_sysutil_sockaddr_set_ipv6addr(struct vsf_sysutil_sockaddr *p_sockptr , 
   return;
 }
 }
-#line 2001 "sysutil.c"
+#line 2001 "../../experiments/vsftpd-2.0.7/sysutil.c"
 static char pattern[12]  = 
 #line 2001
   {      (char)0,      (char)0,      (char)0,      (char)0, 
         (char)0,      (char)0,      (char)0,      (char)0, 
         (char)0,      (char)0,      (char)-1,      (char)-1};
-#line 1998 "sysutil.c"
+#line 1998 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void const   *vsf_sysutil_sockaddr_ipv6_v4(struct vsf_sysutil_sockaddr  const  *p_addr ) 
 { unsigned char const   *p_addr_start ;
   int __cil_tmp ;
@@ -27622,14 +27617,14 @@ void const   *vsf_sysutil_sockaddr_ipv6_v4(struct vsf_sysutil_sockaddr  const  *
   return ((void const   *)(p_addr_start + 12));
 }
 }
-#line 2018 "sysutil.c"
+#line 2018 "../../experiments/vsftpd-2.0.7/sysutil.c"
 static char ret[16]  = 
 #line 2018
   {      (char)0,      (char)0,      (char)0,      (char)0, 
         (char)0,      (char)0,      (char)0,      (char)0, 
         (char)0,      (char)0,      (char)-1,      (char)-1, 
         (char)0,      (char)0,      (char)0,      (char)0};
-#line 2015 "sysutil.c"
+#line 2015 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void const   *vsf_sysutil_sockaddr_ipv4_v6(struct vsf_sysutil_sockaddr  const  *p_addr ) 
 { 
 
@@ -27646,7 +27641,7 @@ void const   *vsf_sysutil_sockaddr_ipv4_v6(struct vsf_sysutil_sockaddr  const  *
   return ((void const   *)(ret));
 }
 }
-#line 2027 "sysutil.c"
+#line 2027 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void *vsf_sysutil_sockaddr_get_raw_addr(struct vsf_sysutil_sockaddr *p_sockptr ) 
 { 
 
@@ -27669,7 +27664,7 @@ void *vsf_sysutil_sockaddr_get_raw_addr(struct vsf_sysutil_sockaddr *p_sockptr )
   return ((void *)0);
 }
 }
-#line 2045 "sysutil.c"
+#line 2045 "../../experiments/vsftpd-2.0.7/sysutil.c"
 unsigned int vsf_sysutil_get_ipaddr_size(void) 
 { struct vsf_sysutil_sockaddr addr ;
   unsigned int size ;
@@ -27689,7 +27684,7 @@ unsigned int vsf_sysutil_get_ipaddr_size(void)
   return (size);
 }
 }
-#line 2058 "sysutil.c"
+#line 2058 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_get_ipsock(struct vsf_sysutil_sockaddr  const  *p_addr ) 
 { int __cil_tmp ;
   int __cil_tmp___0 ;
@@ -27717,7 +27712,7 @@ int vsf_sysutil_get_ipsock(struct vsf_sysutil_sockaddr  const  *p_addr )
   return (-1);
 }
 }
-#line 2076 "sysutil.c"
+#line 2076 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_sockaddr_set_any(struct vsf_sysutil_sockaddr *p_sockaddr___0 ) 
 { 
 
@@ -27740,7 +27735,7 @@ void vsf_sysutil_sockaddr_set_any(struct vsf_sysutil_sockaddr *p_sockaddr___0 )
   return;
 }
 }
-#line 2095 "sysutil.c"
+#line 2095 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_sockaddr_set_port(struct vsf_sysutil_sockaddr *p_sockptr , unsigned short the_port ) 
 { 
 
@@ -27763,7 +27758,7 @@ void vsf_sysutil_sockaddr_set_port(struct vsf_sysutil_sockaddr *p_sockptr , unsi
   return;
 }
 }
-#line 2113 "sysutil.c"
+#line 2113 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_is_port_reserved(unsigned short the_port ) 
 { 
 
@@ -27777,9 +27772,9 @@ int vsf_sysutil_is_port_reserved(unsigned short the_port )
   return (0);
 }
 }
-#line 2133 "sysutil.c"
+#line 2133 "../../experiments/vsftpd-2.0.7/sysutil.c"
 static char inaddr_buf[64]  ;
-#line 2123 "sysutil.c"
+#line 2123 "../../experiments/vsftpd-2.0.7/sysutil.c"
 char const   *vsf_sysutil_inet_ntop(struct vsf_sysutil_sockaddr  const  *p_sockptr ) 
 { struct sockaddr  const  *p_sockaddr___0 ;
   char *__cil_tmp ;
@@ -27821,7 +27816,7 @@ char const   *vsf_sysutil_inet_ntop(struct vsf_sysutil_sockaddr  const  *p_sockp
   }
 }
 }
-#line 2151 "sysutil.c"
+#line 2151 "../../experiments/vsftpd-2.0.7/sysutil.c"
 char const   *vsf_sysutil_inet_ntoa(void const   *p_raw_addr ) 
 { char *__cil_tmp ;
 
@@ -27832,7 +27827,7 @@ char const   *vsf_sysutil_inet_ntoa(void const   *p_raw_addr )
   return ((char const   *)__cil_tmp);
 }
 }
-#line 2157 "sysutil.c"
+#line 2157 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_inet_aton(char const   *p_text , struct vsf_sysutil_sockaddr *p_addr ) 
 { struct in_addr sin_addr ;
   int __cil_tmp ;
@@ -27858,7 +27853,7 @@ int vsf_sysutil_inet_aton(char const   *p_text , struct vsf_sysutil_sockaddr *p_
   }
 }
 }
-#line 2177 "sysutil.c"
+#line 2177 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_dns_resolve(struct vsf_sysutil_sockaddr **p_sockptr , char const   *p_name ) 
 { struct hostent *hent ;
   struct hostent *__cil_tmp ;
@@ -27915,7 +27910,7 @@ void vsf_sysutil_dns_resolve(struct vsf_sysutil_sockaddr **p_sockptr , char cons
   return;
 }
 }
-#line 2215 "sysutil.c"
+#line 2215 "../../experiments/vsftpd-2.0.7/sysutil.c"
 struct vsf_sysutil_user *vsf_sysutil_getpwuid(int uid ) 
 { struct passwd *__cil_tmp ;
 
@@ -27931,7 +27926,7 @@ struct vsf_sysutil_user *vsf_sysutil_getpwuid(int uid )
   return ((struct vsf_sysutil_user *)__cil_tmp);
 }
 }
-#line 2225 "sysutil.c"
+#line 2225 "../../experiments/vsftpd-2.0.7/sysutil.c"
 struct vsf_sysutil_user *vsf_sysutil_getpwnam(char const   *p_user ) 
 { struct passwd *__cil_tmp ;
 
@@ -27942,7 +27937,7 @@ struct vsf_sysutil_user *vsf_sysutil_getpwnam(char const   *p_user )
   return ((struct vsf_sysutil_user *)__cil_tmp);
 }
 }
-#line 2231 "sysutil.c"
+#line 2231 "../../experiments/vsftpd-2.0.7/sysutil.c"
 char const   *vsf_sysutil_user_getname(struct vsf_sysutil_user  const  *p_user ) 
 { struct passwd  const  *p_passwd ;
 
@@ -27953,7 +27948,7 @@ char const   *vsf_sysutil_user_getname(struct vsf_sysutil_user  const  *p_user )
   return ((char const   *)p_passwd->pw_name);
 }
 }
-#line 2238 "sysutil.c"
+#line 2238 "../../experiments/vsftpd-2.0.7/sysutil.c"
 char const   *vsf_sysutil_user_get_homedir(struct vsf_sysutil_user  const  *p_user ) 
 { struct passwd  const  *p_passwd ;
 
@@ -27964,7 +27959,7 @@ char const   *vsf_sysutil_user_get_homedir(struct vsf_sysutil_user  const  *p_us
   return ((char const   *)p_passwd->pw_dir);
 }
 }
-#line 2245 "sysutil.c"
+#line 2245 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_user_getuid(struct vsf_sysutil_user  const  *p_user ) 
 { struct passwd  const  *p_passwd ;
 
@@ -27975,7 +27970,7 @@ int vsf_sysutil_user_getuid(struct vsf_sysutil_user  const  *p_user )
   return ((int )p_passwd->pw_uid);
 }
 }
-#line 2252 "sysutil.c"
+#line 2252 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_user_getgid(struct vsf_sysutil_user  const  *p_user ) 
 { struct passwd  const  *p_passwd ;
 
@@ -27986,7 +27981,7 @@ int vsf_sysutil_user_getgid(struct vsf_sysutil_user  const  *p_user )
   return ((int )p_passwd->pw_gid);
 }
 }
-#line 2259 "sysutil.c"
+#line 2259 "../../experiments/vsftpd-2.0.7/sysutil.c"
 struct vsf_sysutil_group *vsf_sysutil_getgrgid(int gid ) 
 { struct group *__cil_tmp ;
 
@@ -28002,7 +27997,7 @@ struct vsf_sysutil_group *vsf_sysutil_getgrgid(int gid )
   return ((struct vsf_sysutil_group *)__cil_tmp);
 }
 }
-#line 2269 "sysutil.c"
+#line 2269 "../../experiments/vsftpd-2.0.7/sysutil.c"
 char const   *vsf_sysutil_group_getname(struct vsf_sysutil_group  const  *p_group ) 
 { struct group  const  *p_grp ;
 
@@ -28013,9 +28008,9 @@ char const   *vsf_sysutil_group_getname(struct vsf_sysutil_group  const  *p_grou
   return ((char const   *)p_grp->gr_name);
 }
 }
-#line 2279 "sysutil.c"
+#line 2279 "../../experiments/vsftpd-2.0.7/sysutil.c"
 static int seeded  ;
-#line 2276 "sysutil.c"
+#line 2276 "../../experiments/vsftpd-2.0.7/sysutil.c"
 unsigned char vsf_sysutil_get_random_byte(void) 
 { unsigned int uint_res ;
   unsigned char c1 ;
@@ -28060,7 +28055,7 @@ unsigned char vsf_sysutil_get_random_byte(void)
   return ((unsigned char )((((int )c1 ^ (int )c2) ^ (int )c3) ^ (int )c4));
 }
 }
-#line 2301 "sysutil.c"
+#line 2301 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_running_as_root(void) 
 { __uid_t __cil_tmp ;
 
@@ -28071,7 +28066,7 @@ int vsf_sysutil_running_as_root(void)
   return (__cil_tmp == 0U);
 }
 }
-#line 2307 "sysutil.c"
+#line 2307 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_setuid(struct vsf_sysutil_user  const  *p_user ) 
 { struct passwd  const  *p_passwd ;
 
@@ -28084,7 +28079,7 @@ void vsf_sysutil_setuid(struct vsf_sysutil_user  const  *p_user )
   return;
 }
 }
-#line 2314 "sysutil.c"
+#line 2314 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_setuid_numeric(int uid ) 
 { int retval ;
   int __cil_tmp ;
@@ -28103,7 +28098,7 @@ void vsf_sysutil_setuid_numeric(int uid )
   return;
 }
 }
-#line 2324 "sysutil.c"
+#line 2324 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_setgid(struct vsf_sysutil_user  const  *p_user ) 
 { struct passwd  const  *p_passwd ;
 
@@ -28116,7 +28111,7 @@ void vsf_sysutil_setgid(struct vsf_sysutil_user  const  *p_user )
   return;
 }
 }
-#line 2331 "sysutil.c"
+#line 2331 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_setgid_numeric(int gid ) 
 { int retval ;
   int __cil_tmp ;
@@ -28135,7 +28130,7 @@ void vsf_sysutil_setgid_numeric(int gid )
   return;
 }
 }
-#line 2341 "sysutil.c"
+#line 2341 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_geteuid(void) 
 { int retval ;
   __uid_t __cil_tmp ;
@@ -28154,7 +28149,7 @@ int vsf_sysutil_geteuid(void)
   return (retval);
 }
 }
-#line 2352 "sysutil.c"
+#line 2352 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_getegid(void) 
 { int retval ;
   __gid_t __cil_tmp ;
@@ -28173,7 +28168,7 @@ int vsf_sysutil_getegid(void)
   return (retval);
 }
 }
-#line 2363 "sysutil.c"
+#line 2363 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_seteuid(struct vsf_sysutil_user  const  *p_user ) 
 { struct passwd  const  *p_passwd ;
 
@@ -28186,7 +28181,7 @@ void vsf_sysutil_seteuid(struct vsf_sysutil_user  const  *p_user )
   return;
 }
 }
-#line 2370 "sysutil.c"
+#line 2370 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_setegid(struct vsf_sysutil_user  const  *p_user ) 
 { struct passwd  const  *p_passwd ;
 
@@ -28199,7 +28194,7 @@ void vsf_sysutil_setegid(struct vsf_sysutil_user  const  *p_user )
   return;
 }
 }
-#line 2377 "sysutil.c"
+#line 2377 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_seteuid_numeric(int uid ) 
 { int retval ;
   int __cil_tmp ;
@@ -28218,7 +28213,7 @@ void vsf_sysutil_seteuid_numeric(int uid )
   return;
 }
 }
-#line 2388 "sysutil.c"
+#line 2388 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_setegid_numeric(int gid ) 
 { int retval ;
   int __cil_tmp ;
@@ -28237,7 +28232,7 @@ void vsf_sysutil_setegid_numeric(int gid )
   return;
 }
 }
-#line 2399 "sysutil.c"
+#line 2399 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_clear_supp_groups(void) 
 { int retval ;
   int __cil_tmp ;
@@ -28256,7 +28251,7 @@ void vsf_sysutil_clear_supp_groups(void)
   return;
 }
 }
-#line 2409 "sysutil.c"
+#line 2409 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_initgroups(struct vsf_sysutil_user  const  *p_user ) 
 { struct passwd  const  *p_passwd ;
   int retval ;
@@ -28278,7 +28273,7 @@ void vsf_sysutil_initgroups(struct vsf_sysutil_user  const  *p_user )
   return;
 }
 }
-#line 2420 "sysutil.c"
+#line 2420 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_chroot(char const   *p_root_path ) 
 { int retval ;
   int __cil_tmp ;
@@ -28297,7 +28292,7 @@ void vsf_sysutil_chroot(char const   *p_root_path )
   return;
 }
 }
-#line 2430 "sysutil.c"
+#line 2430 "../../experiments/vsftpd-2.0.7/sysutil.c"
 unsigned int vsf_sysutil_get_umask(void) 
 { 
 
@@ -28306,7 +28301,7 @@ unsigned int vsf_sysutil_get_umask(void)
   return (s_current_umask);
 }
 }
-#line 2436 "sysutil.c"
+#line 2436 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_set_umask(unsigned int new_umask ) 
 { 
 
@@ -28319,7 +28314,7 @@ void vsf_sysutil_set_umask(unsigned int new_umask )
   return;
 }
 }
-#line 2443 "sysutil.c"
+#line 2443 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_make_session_leader(void) 
 { __pid_t __cil_tmp ;
   __pid_t __cil_tmp___0 ;
@@ -28340,9 +28335,9 @@ void vsf_sysutil_make_session_leader(void)
   return;
 }
 }
-#line 2477 "sysutil.c"
+#line 2477 "../../experiments/vsftpd-2.0.7/sysutil.c"
 static char envtz[13UL]  ;
-#line 2455 "sysutil.c"
+#line 2455 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_tzset(void) 
 { int retval ;
   char tzbuf[sizeof("+HHMM!")] ;
@@ -28407,9 +28402,9 @@ void vsf_sysutil_tzset(void)
   return;
 }
 }
-#line 2507 "sysutil.c"
+#line 2507 "../../experiments/vsftpd-2.0.7/sysutil.c"
 static char datebuf___1[64]  ;
-#line 2504 "sysutil.c"
+#line 2504 "../../experiments/vsftpd-2.0.7/sysutil.c"
 char const   *vsf_sysutil_get_current_date(void) 
 { time_t curr_time ;
   struct tm  const  *p_tm ;
@@ -28457,7 +28452,7 @@ char const   *vsf_sysutil_get_current_date(void)
   return ((char const   *)(datebuf___1));
 }
 }
-#line 2535 "sysutil.c"
+#line 2535 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_update_cached_time(void) 
 { int __cil_tmp ;
 
@@ -28473,7 +28468,7 @@ void vsf_sysutil_update_cached_time(void)
   return;
 }
 }
-#line 2544 "sysutil.c"
+#line 2544 "../../experiments/vsftpd-2.0.7/sysutil.c"
 long vsf_sysutil_get_cached_time_sec(void) 
 { 
 
@@ -28482,7 +28477,7 @@ long vsf_sysutil_get_cached_time_sec(void)
   return (s_current_time.tv_sec);
 }
 }
-#line 2550 "sysutil.c"
+#line 2550 "../../experiments/vsftpd-2.0.7/sysutil.c"
 long vsf_sysutil_get_cached_time_usec(void) 
 { 
 
@@ -28491,7 +28486,7 @@ long vsf_sysutil_get_cached_time_usec(void)
   return (s_current_time.tv_usec);
 }
 }
-#line 2556 "sysutil.c"
+#line 2556 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_qsort(void *p_base , unsigned int num_elem , unsigned int elem_size ,
                        int (*p_compar)(void const   * , void const   * ) ) 
 { 
@@ -28503,7 +28498,7 @@ void vsf_sysutil_qsort(void *p_base , unsigned int num_elem , unsigned int elem_
   return;
 }
 }
-#line 2563 "sysutil.c"
+#line 2563 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_sleep(double seconds ) 
 { int retval ;
   int saved_errno ;
@@ -28541,7 +28536,7 @@ void vsf_sysutil_sleep(double seconds )
   return;
 }
 }
-#line 2583 "sysutil.c"
+#line 2583 "../../experiments/vsftpd-2.0.7/sysutil.c"
 char *vsf_sysutil_getenv(char const   *p_var ) 
 { char *__cil_tmp ;
 
@@ -28552,7 +28547,7 @@ char *vsf_sysutil_getenv(char const   *p_var )
   return (__cil_tmp);
 }
 }
-#line 2589 "sysutil.c"
+#line 2589 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_openlog(void) 
 { int facility ;
 
@@ -28567,7 +28562,7 @@ void vsf_sysutil_openlog(void)
   return;
 }
 }
-#line 2599 "sysutil.c"
+#line 2599 "../../experiments/vsftpd-2.0.7/sysutil.c"
 void vsf_sysutil_syslog(char const   *p_text , int severe ) 
 { int prio ;
 
@@ -28585,7 +28580,7 @@ void vsf_sysutil_syslog(char const   *p_text , int severe )
   return;
 }
 }
-#line 2610 "sysutil.c"
+#line 2610 "../../experiments/vsftpd-2.0.7/sysutil.c"
 long vsf_sysutil_parse_time(char const   *p_text ) 
 { struct tm the_time ;
   unsigned int len ;
@@ -28647,7 +28642,7 @@ long vsf_sysutil_parse_time(char const   *p_text )
   return (__cil_tmp___2);
 }
 }
-#line 2643 "sysutil.c"
+#line 2643 "../../experiments/vsftpd-2.0.7/sysutil.c"
 int vsf_sysutil_setmodtime(char const   *p_file , long the_time , int is_localtime ) 
 { struct utimbuf new_times ;
   int __cil_tmp ;
@@ -28670,8 +28665,8 @@ int vsf_sysutil_setmodtime(char const   *p_file , long the_time , int is_localti
   return (__cil_tmp);
 }
 }
-#line 1 "cil-nCiU1Iaq.o"
-#pragma merger(0,"/tmp/cil-O8yAaBZt.i","-fno-builtin,-Werror-implicit-function-declaration")
+#line 1 "cil-VZ89Jc3a.o"
+#pragma merger(0,"/var/folders/4u/4unNC1vxGsycmylQ4BTTVk+++TI/-Tmp-/cil-YigqmIVz.i","-fno-builtin,-Werror-implicit-function-declaration")
 #line 171 "../../includes/usr/include/sys/socket.h"
 extern ssize_t sendmsg(int __fd , struct msghdr  const  *__message , int __flags ) ;
 #line 179
@@ -28704,26 +28699,26 @@ extern cap_t cap_init(void) ;
 extern int cap_set_flag(cap_t  , cap_flag_t  , int  , cap_value_t * , cap_flag_value_t  ) ;
 #line 93
 extern int cap_set_proc(cap_t  ) ;
-#line 200 "sysdeputil.c"
+#line 200 "../../experiments/vsftpd-2.0.7/sysdeputil.c"
 static int do_sendfile(int out_fd , int in_fd , unsigned int num_send , filesize_t start_pos ) ;
 #line 202
 static void vsf_sysutil_setproctitle_internal(char const   *p_buf ) ;
-#line 203 "sysdeputil.c"
+#line 203 "../../experiments/vsftpd-2.0.7/sysdeputil.c"
 static struct mystr s_proctitle_prefix_str  ;
 #line 206
 void vsf_insert_uwtmp(struct mystr  const  *p_user_str , struct mystr  const  *p_host_str ) ;
 #line 208
 void vsf_remove_uwtmp(void) ;
-#line 278 "sysdeputil.c"
+#line 278 "../../experiments/vsftpd-2.0.7/sysdeputil.c"
 static pam_handle_t *s_pamh  ;
-#line 279 "sysdeputil.c"
+#line 279 "../../experiments/vsftpd-2.0.7/sysdeputil.c"
 static struct mystr s_pword_str  ;
 #line 280
 static int pam_conv_func(int nmsg , struct pam_message  const  **p_msg , struct pam_response **p_reply ,
                          void *p_addata ) ;
 #line 282
 static void vsf_auth_shutdown(void) ;
-#line 284 "sysdeputil.c"
+#line 284 "../../experiments/vsftpd-2.0.7/sysdeputil.c"
 int vsf_sysdep_check_auth(struct mystr  const  *p_user_str , struct mystr  const  *p_pass_str ,
                           struct mystr  const  *p_remote_host ) 
 { int retval ;
@@ -28858,7 +28853,7 @@ int vsf_sysdep_check_auth(struct mystr  const  *p_user_str , struct mystr  const
   return (1);
 }
 }
-#line 381 "sysdeputil.c"
+#line 381 "../../experiments/vsftpd-2.0.7/sysdeputil.c"
 static void vsf_auth_shutdown(void) 
 { 
 
@@ -28882,7 +28877,7 @@ static void vsf_auth_shutdown(void)
   return;
 }
 }
-#line 395 "sysdeputil.c"
+#line 395 "../../experiments/vsftpd-2.0.7/sysdeputil.c"
 static int pam_conv_func(int nmsg , struct pam_message  const  **p_msg , struct pam_response **p_reply ,
                          void *p_addata ) 
 { int i ;
@@ -28943,7 +28938,7 @@ static int pam_conv_func(int nmsg , struct pam_message  const  **p_msg , struct 
   return (0);
 }
 }
-#line 434 "sysdeputil.c"
+#line 434 "../../experiments/vsftpd-2.0.7/sysdeputil.c"
 void vsf_sysdep_keep_capabilities(void) 
 { int __cil_tmp ;
 
@@ -28961,11 +28956,11 @@ void vsf_sysdep_keep_capabilities(void)
 }
 #line 474
 static int do_checkcap(void) ;
-#line 479 "sysdeputil.c"
+#line 479 "../../experiments/vsftpd-2.0.7/sysdeputil.c"
 static int s_prctl_checked  ;
-#line 480 "sysdeputil.c"
+#line 480 "../../experiments/vsftpd-2.0.7/sysdeputil.c"
 static int s_runtime_prctl_works  ;
-#line 476 "sysdeputil.c"
+#line 476 "../../experiments/vsftpd-2.0.7/sysdeputil.c"
 int vsf_sysdep_has_capabilities_as_non_root(void) 
 { 
 
@@ -28979,11 +28974,11 @@ int vsf_sysdep_has_capabilities_as_non_root(void)
   return (s_runtime_prctl_works);
 }
 }
-#line 501 "sysdeputil.c"
+#line 501 "../../experiments/vsftpd-2.0.7/sysdeputil.c"
 static int s_caps_checked  ;
-#line 502 "sysdeputil.c"
+#line 502 "../../experiments/vsftpd-2.0.7/sysdeputil.c"
 static int s_runtime_has_caps  ;
-#line 495 "sysdeputil.c"
+#line 495 "../../experiments/vsftpd-2.0.7/sysdeputil.c"
 int vsf_sysdep_has_capabilities(void) 
 { 
 
@@ -28999,7 +28994,7 @@ int vsf_sysdep_has_capabilities(void)
   return (s_runtime_has_caps);
 }
 }
-#line 559 "sysdeputil.c"
+#line 559 "../../experiments/vsftpd-2.0.7/sysdeputil.c"
 static int do_checkcap(void) 
 { cap_t current_caps ;
   cap_t __cil_tmp ;
@@ -29020,7 +29015,7 @@ static int do_checkcap(void)
   return (0);
 }
 }
-#line 571 "sysdeputil.c"
+#line 571 "../../experiments/vsftpd-2.0.7/sysdeputil.c"
 void vsf_sysdep_adopt_capabilities(unsigned int caps ) 
 { int retval ;
   cap_value_t cap_value ;
@@ -29063,7 +29058,7 @@ void vsf_sysdep_adopt_capabilities(unsigned int caps )
   return;
 }
 }
-#line 600 "sysdeputil.c"
+#line 600 "../../experiments/vsftpd-2.0.7/sysdeputil.c"
 int vsf_sysutil_sendfile(int out_fd , int in_fd , filesize_t *p_offset , filesize_t num_send ,
                          unsigned int max_chunk ) 
 { int retval ;
@@ -29111,9 +29106,9 @@ int vsf_sysutil_sendfile(int out_fd , int in_fd , filesize_t *p_offset , filesiz
   return (0);
 }
 }
-#line 643 "sysdeputil.c"
+#line 643 "../../experiments/vsftpd-2.0.7/sysdeputil.c"
 static char *p_recvbuf___0  ;
-#line 639 "sysdeputil.c"
+#line 639 "../../experiments/vsftpd-2.0.7/sysdeputil.c"
 static int do_sendfile(int out_fd , int in_fd , unsigned int num_send , filesize_t start_pos ) 
 { unsigned int total_written ;
   int retval ;
@@ -29184,7 +29179,7 @@ static int do_sendfile(int out_fd , int in_fd , unsigned int num_send , filesize
   }
 }
 }
-#line 794 "sysdeputil.c"
+#line 794 "../../experiments/vsftpd-2.0.7/sysdeputil.c"
 void vsf_sysutil_set_proctitle_prefix(struct mystr  const  *p_str ) 
 { 
 
@@ -29195,7 +29190,7 @@ void vsf_sysutil_set_proctitle_prefix(struct mystr  const  *p_str )
   return;
 }
 }
-#line 801 "sysdeputil.c"
+#line 801 "../../experiments/vsftpd-2.0.7/sysdeputil.c"
 void vsf_sysutil_setproctitle_str(struct mystr  const  *p_str ) 
 { char const   *__cil_tmp ;
 
@@ -29208,7 +29203,7 @@ void vsf_sysutil_setproctitle_str(struct mystr  const  *p_str )
   return;
 }
 }
-#line 807 "sysdeputil.c"
+#line 807 "../../experiments/vsftpd-2.0.7/sysdeputil.c"
 void vsf_sysutil_setproctitle(char const   *p_text ) 
 { struct mystr proctitle_str ;
   int __cil_tmp ;
@@ -29242,7 +29237,7 @@ void vsf_sysutil_setproctitle(char const   *p_text )
   return;
 }
 }
-#line 913 "sysdeputil.c"
+#line 913 "../../experiments/vsftpd-2.0.7/sysdeputil.c"
 void vsf_sysutil_setproctitle_init(int argc , char const   **argv ) 
 { 
 
@@ -29251,7 +29246,7 @@ void vsf_sysutil_setproctitle_init(int argc , char const   **argv )
   return;
 }
 }
-#line 920 "sysdeputil.c"
+#line 920 "../../experiments/vsftpd-2.0.7/sysdeputil.c"
 static void vsf_sysutil_setproctitle_internal(char const   *p_buf ) 
 { 
 
@@ -29260,7 +29255,7 @@ static void vsf_sysutil_setproctitle_internal(char const   *p_buf )
   return;
 }
 }
-#line 928 "sysdeputil.c"
+#line 928 "../../experiments/vsftpd-2.0.7/sysdeputil.c"
 void vsf_sysutil_map_anon_pages_init(void) 
 { 
 
@@ -29269,7 +29264,7 @@ void vsf_sysutil_map_anon_pages_init(void)
   return;
 }
 }
-#line 933 "sysdeputil.c"
+#line 933 "../../experiments/vsftpd-2.0.7/sysdeputil.c"
 void *vsf_sysutil_map_anon_pages(unsigned int length ) 
 { char *retval ;
   void *__cil_tmp ;
@@ -29288,7 +29283,7 @@ void *vsf_sysutil_map_anon_pages(unsigned int length )
   return ((void *)retval);
 }
 }
-#line 974 "sysdeputil.c"
+#line 974 "../../experiments/vsftpd-2.0.7/sysdeputil.c"
 void vsf_sysutil_send_fd(int sock_fd , int send_fd ) 
 { int retval ;
   struct msghdr msg ;
@@ -29350,7 +29345,7 @@ void vsf_sysutil_send_fd(int sock_fd , int send_fd )
   return;
 }
 }
-#line 1010 "sysdeputil.c"
+#line 1010 "../../experiments/vsftpd-2.0.7/sysdeputil.c"
 int vsf_sysutil_recv_fd(int sock_fd ) 
 { int retval ;
   struct msghdr msg ;
@@ -29426,11 +29421,11 @@ int vsf_sysutil_recv_fd(int sock_fd )
   return (recv_fd);
 }
 }
-#line 1128 "sysdeputil.c"
+#line 1128 "../../experiments/vsftpd-2.0.7/sysdeputil.c"
 static int s_uwtmp_inserted  ;
-#line 1129 "sysdeputil.c"
+#line 1129 "../../experiments/vsftpd-2.0.7/sysdeputil.c"
 static struct utmpx s_utent  ;
-#line 1131 "sysdeputil.c"
+#line 1131 "../../experiments/vsftpd-2.0.7/sysdeputil.c"
 void vsf_insert_uwtmp(struct mystr  const  *p_user_str , struct mystr  const  *p_host_str ) 
 { struct mystr line_str ;
   unsigned int __cil_tmp ;
@@ -29510,7 +29505,7 @@ void vsf_insert_uwtmp(struct mystr  const  *p_user_str , struct mystr  const  *p
   return;
 }
 }
-#line 1171 "sysdeputil.c"
+#line 1171 "../../experiments/vsftpd-2.0.7/sysdeputil.c"
 void vsf_remove_uwtmp(void) 
 { 
 

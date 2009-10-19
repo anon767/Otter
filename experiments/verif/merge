@@ -1,0 +1,49 @@
+STATSFILE=vsftpd.stats
+
+## if [[ "$1" == stats ]]; then
+## 	CILLY_DONT_COMPILE_AFTER_MERGE= \
+## 	../../cil/bin/cilly --merge --dofindFns \
+## 		--fnOutfile=$STATSFILE $VSFTPDFILES
+## 	exit
+## fi
+
+TRUNK=../..
+INCLUDEDIR="-nostdinc -fno-builtin -Werror-implicit-function-declaration -I $TRUNK/includes/usr/include -I $TRUNK/includes/usr/local/gcc-4.0.1/lib/gcc/i686-pc-linux-gnu/4.0.1/include"
+LIBCDIR=$TRUNK/libc
+MOCKEDDIR=$TRUNK/mockedFns
+CILLY="$TRUNK/cil/bin/cilly --merge --warnall --disallowDuplication -D_FILE_OFFSET_BITS=64"
+VSFTPDDIR=$TRUNK/experiments/vsftpd-2.0.7
+
+for f in main.c utility.c prelogin.c ftpcmdio.c postlogin.c privsock.c tunables.c ftpdataio.c secbuf.c ls.c postprivparent.c logging.c str.c netstr.c sysstr.c strlist.c banner.c filestr.c parseconf.c secutil.c ascii.c oneprocess.c twoprocess.c privops.c standalone.c hash.c tcpwrap.c ipaddrparse.c access.c features.c readwrite.c opts.c ssl.c sysutil.c sysdeputil.c
+do
+	VSFTPDFILES="$VSFTPDFILES $VSFTPDDIR/$f"
+done 
+
+## if [[ "$1" == merge ]]; then
+##	shift
+	# split into two; cannot do one pass on mac
+	$CILLY --useLogicalOperators \
+		$INCLUDEDIR \
+		-I $LIBCDIR $LIBCDIR/*.c \
+		--out=vsftpd_libc.c $*
+	$CILLY --useLogicalOperators \
+		$INCLUDEDIR \
+		-I $MOCKEDDIR $MOCKEDDIR/*.c \
+		vsftpd_libc.c $VSFTPDFILES --out=vsftpd_comb.c $*
+	rm vsftpd_libc.c
+	rm ___extra_files
+## elif [[ "$1" == mergeUnfolded ]]; then
+## 	shift
+## 	echo 'Merging vsftpd alone (without logical operators)'
+## 	$CILLY -I $LIBCDIR $VSFTPDFILES --out=vsftpdAlone_unfolded.c
+## 	echo 'Now merging in libc and mocked functions (with logical operators)'
+## 	$CILLY --useLogicalOperators \
+## 		$INCLUDEDIR \
+## 		-I $LIBCDIR $LIBCDIR/*.c \
+## 		-I $MOCKEDDIR $MOCKEDDIR/*.c \
+## 		vsftpdAlone_unfolded.c --out=vsftpd_comb_unfolded.c $*
+## 	rm vsftpdAlone_unfolded.c
+## else
+## 	$CILLY -I $MOCKEDDIR \
+## 		vsftpd_comb.c --covStats=$STATSFILE --doexecute $*
+## fi

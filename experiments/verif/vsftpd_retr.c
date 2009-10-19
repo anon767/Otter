@@ -14,9 +14,6 @@ int main(){
  // init state
  init_state();
  
- // IDEALLY: cover "UTF8 ON"
- // run with --mergePaths
- 
  // On every call to PASV/PORT, these fields are cleared at the beginning.
  // Therefore they are never active at the same time.
  // IF they were both active at the same time, the function call
@@ -31,14 +28,24 @@ int main(){
  str_alloc_text(&sess.home_str,symbolic_string(1));
  strcpy(workingDir,"/");
  strcpy(workingDir+1,symbolic_string(1));
+
  tunable_deny_file = strdup("tunable_deny_file");
 
- // retr file "tmp"
- char file[10];
- strcpy(file,"tmp");
+ // retr file 
+ char abfile[10];
+ strcpy(abfile,workingDir);
+ char* file = abfile+2;
+ //strcpy(file,"tmp");
  //strcpy(file,"/");
  //strcpy(file+1,symbolic_string(1));
- IOSIM_addfile(file,0);
+ file[0] = '/';
+ file[1] = 'a';
+ //file[1] = __SYMBOLIC();
+ file[2] = '\0';
+
+ __EVALSTR(abfile,20);
+ IOSIM_addfile(file,"test",0); 
+
  str_alloc_text(&sess.ftp_arg_str,file);
 
  //__CURRENT_STATE(0);
