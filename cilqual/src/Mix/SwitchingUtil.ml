@@ -167,7 +167,7 @@ let bytes_to_qt old_state state typ bytes qt =
                         in
                         let deferred = MemOp.state__get_deferred_from_block state block in
                         begin match old_deferred_opt, deferred with
-                            | Some old_deferred, deferred when old_deferred = deferred ->
+                            | Some old_deferred, deferred when old_deferred == deferred ->
                                 return state
                             | _, _ ->
                                 let state, target_bytes =
