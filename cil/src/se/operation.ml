@@ -84,8 +84,78 @@ let rec binop op_const op_symb operands : bytes (* * typ *)=
 	let (bytes1, typ1) = List.nth operands 0 in
 	let (bytes2, typ2) = List.nth operands 1 in
 
+    let rec atLeastOneConstant = function
+      | [] -> false
+      | (Bytes_Constant(_),_)::_ -> true
+      | _::t -> atLeastOneConstant t
+    in
+    let rec 
+    reducedArithmetic (b1:bytes) (op,args) normal =
+	    let (rab1, rat1) = List.nth args 0 in
+	    let (rab2, rat2) = List.nth args 1 in
+          assert(typ1=typ2);
+          assert(typ1=rat1);
+          assert(typ1=rat2);
+        match op_symb,op with   (* normal: b1 op_symb (rab1 op rab2) , reversed: (rab1 op rab2) op_symb b1  *)
+          | OP_PLUS,OP_PLUS ->
+              begin
+                match rab1,rab2 with
+                  | Bytes_Constant(_),_ -> plus ((plus ((b1,typ1)::(rab1,rat1)::[]),typ1)::(rab2,rat2)::[])
+                  | _,Bytes_Constant(_) -> plus ((plus ((b1,typ1)::(rab2,rat2)::[]),typ1)::(rab1,rat1)::[])
+                  | _,_ -> failwith "unreachable"
+              end
+          | OP_PLUS,OP_SUB ->
+              begin
+                match rab1,rab2 with
+                  | Bytes_Constant(_),_ -> minus ((plus ((b1,typ1)::(rab1,rat1)::[]),typ1)::(rab2,rat2)::[])
+                  | _,Bytes_Constant(_) -> minus ((rab1,rat1)::(minus ((rab2,rat2)::(b1,typ1)::[]),rat2)::[])
+                  | _,_ -> failwith "unreachable"
+              end
+          | OP_PLUS,OP_MULT ->
+              begin
+                failwith "not yet implemented"
+              end
+          | OP_SUB,OP_PLUS ->
+              begin
+                failwith "not yet implemented"
+              end
+          | OP_SUB,OP_SUB ->
+              begin
+                failwith "not yet implemented"
+              end
+          | OP_SUB,OP_MULT ->
+              begin
+                failwith "not yet implemented"
+              end
+          | OP_MULT,OP_PLUS ->
+              begin
+                failwith "not yet implemented"
+              end
+          | OP_MULT,OP_SUB ->
+              begin
+                failwith "not yet implemented"
+              end
+          | OP_MULT,OP_MULT ->
+              begin
+                failwith "not yet implemented"
+              end
+          | _ -> failwith "unreachable"
+    and
+    worstCase b1 b2 = 
+			if not (Convert.isConcrete_bytes b1 & Convert.isConcrete_bytes b2) then
+				(make_Bytes_Op(op_symb, operands)) (* TODO: Check that STP treats Bytes_Ops as having the type of the first operand *)
+			else
+			let c1 = Convert.bytes_to_constant b1 typ1 in (*TODO: look at typ1 to see if it's unsigned *)
+			let c2 = Convert.bytes_to_constant b2 typ2 in
+			begin match (c1,c2) with
+			| (CInt64(i1,k1,s1),CInt64(i2,k2,s2)) ->
+				impl (make_Bytes_Constant c1, make_Bytes_Constant c2)
+			| (CReal(i1,k1,s1),CReal(i2,k2,s2)) -> (*TMP*) bytes1
+			| _ -> failwith "Match error"
+			end
+    and
 	(* Maybe an error of ocaml: if ibytes? is replaced by bytes?, the scoping is messed up *)	
-	let rec impl (ibytes1,ibytes2) =
+	impl (ibytes1,ibytes2) =
 	match (ibytes1, ibytes2) with
 		(* TODO: Use typ1 and typ2 instead of k1 and k2 *)
 		| (Bytes_Constant(CInt64(i1, k1, _)), Bytes_Constant(CInt64(i2, k2, _))) ->
@@ -102,6 +172,10 @@ let rec binop op_const op_symb operands : bytes (* * typ *)=
 				let resultType = if returnsBoolean op_symb then IInt else k1 in
 				let const = CInt64(n64, resultType, None) in
 				(make_Bytes_Constant(const))
+        | (Bytes_Constant(CInt64(i1,k1,_)), Bytes_Op (op, args)) when ((isReducableArithmetic op) && (isReducableArithmetic op_symb) && (atLeastOneConstant args))
+          -> reducedArithmetic ibytes1 (op,args) true
+        | (Bytes_Op (op, args) , Bytes_Constant(CInt64(i1,k1,_))) when ((isReducableArithmetic op) && (isReducableArithmetic op_symb) && (atLeastOneConstant args))
+          -> reducedArithmetic ibytes2 (op,args) false
 		(* Allow a particular piece of pointer arithmetic: ptr % num. *)
 		| Bytes_Address(Some blk, offset), op2
 				when op_symb = OP_MOD &&
@@ -122,23 +196,17 @@ let rec binop op_const op_symb operands : bytes (* * typ *)=
 				end
 
 		| (b1,b2)  ->
-			if not (Convert.isConcrete_bytes b1 & Convert.isConcrete_bytes b2) then
-				(make_Bytes_Op(op_symb, operands)) (* TODO: Check that STP treats Bytes_Ops as having the type of the first operand *)
-			else
-			let c1 = Convert.bytes_to_constant b1 typ1 in (*TODO: look at typ1 to see if it's unsigned *)
-			let c2 = Convert.bytes_to_constant b2 typ2 in
-			begin match (c1,c2) with
-			| (CInt64(i1,k1,s1),CInt64(i2,k2,s2)) ->
-				impl (make_Bytes_Constant c1, make_Bytes_Constant c2)
-			| (CReal(i1,k1,s1),CReal(i2,k2,s2)) -> (*TMP*) bytes1
-			| _ -> failwith "Match error"
-			end
+            worstCase b1 b2
 	in
 		impl (bytes1,bytes2)
 
-and
+(* Fix sign problem! *)
+and plus operands  = binop (fun s x y -> Int64.add x y) OP_PLUS operands
+and minus operands = binop (fun s x y -> Int64.sub x y) OP_SUB operands	
+and mult operands  = binop (fun s x y -> Int64.mul x y) OP_MULT operands 
+;;
 
-plus operands  = binop (fun s x y -> Int64.add x y) OP_PLUS operands ;;
+
 (*
 let signextend operands = 
 	let nativeop n1 n2 =
@@ -148,8 +216,6 @@ let signextend operands =
 ;;*)
 
 (* Fix sign problem! *)
-let minus operands = binop (fun s x y -> Int64.sub x y) OP_SUB operands ;;	
-let mult operands  = binop (fun s x y -> Int64.mul x y) OP_MULT operands ;;
 let div operands   = binop (fun s x y -> Int64.div x y) OP_DIV operands ;;
 let rem operands   = binop (fun s x y -> Int64.rem x y) OP_MOD operands ;;
 
