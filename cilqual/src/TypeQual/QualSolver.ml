@@ -20,6 +20,52 @@ module Reachability = struct
     end
 end
 
+
+module Traversal (G : sig include QualGraphAutomatonType module V : VertexType with type t = vertex end) = struct
+    module AutomatonState = struct
+        type t = G.Qual.Var.t * G.Automaton.t
+        let compare (x1, x2) (y1, y2) = match G.Qual.Var.compare x1 y1 with
+            | 0 -> G.Automaton.compare x2 y2
+            | i -> i
+    end
+
+    module VisitedSet = Set.Make (AutomatonState)
+
+    (* find all adjacent, accepted quals *)
+    (* TODO: replace find_adjacent_accept with CFL-reachability *)
+    let fold_adjacent_accept fold f node constraints acc =
+        let rec fold_adjacent_accept visited acc = function
+            | (part, automaton)::partwork ->
+                (* traverse adjacents of part *)
+                let visited, acc, partwork =
+                    fold begin fun v automaton (visited, acc, partwork) -> match v with
+                        | G.Qual.Var a when not (VisitedSet.mem (a, automaton) visited) ->
+                            let visited = VisitedSet.add (a, automaton) visited in
+                            if G.Automaton.accept automaton then
+                                (* could have duplicates, but the result is usually added to sets anyway *)
+                                (visited, f a acc, partwork)
+                            else
+                                (* not visited and not accepted yet; so add to work list *)
+                                (visited, acc, (v, automaton)::partwork)
+                        | _ ->
+                            (visited, acc, partwork)
+                    end constraints part automaton (visited, acc, partwork)
+                in
+
+                (* and recurse *)
+                fold_adjacent_accept visited acc partwork
+
+            | [] ->
+                (* done *)
+                acc
+        in
+        fold_adjacent_accept VisitedSet.empty acc [(node, G.Automaton.start)]
+
+    let fold_forward_accept f node constraints acc = fold_adjacent_accept G.fold_forward f node constraints acc
+    let fold_backward_accept f node constraints acc = fold_adjacent_accept G.fold_backward f node constraints acc
+end
+
+
 (*
 upper-closure(a) = {b | a <= b}
 upper-closure(S) = \union_{s \in S} upper-closure(s)
@@ -44,17 +90,10 @@ Qual-solve(C) =
 *)
 
 module DiscreteOrder (G : sig include QualGraphAutomatonType module V : VertexType with type t = vertex end) = struct
+    include Traversal (G)
+
     module ConstSet = Set.Make (G.Qual.Const)
     module VarSet = Set.Make (G.Qual.Var)
-
-    module AutomatonState = struct
-        type t = G.Qual.Var.t * G.Automaton.t
-        let compare (x1, x2) (y1, y2) = match G.Qual.Var.compare x1 y1 with
-            | 0 -> G.Automaton.compare x2 y2
-            | i -> i
-    end
-
-    module VisitedSet = Set.Make (AutomatonState)
 
     module Solution = struct
         module SolutionMap = Map.Make (G.Qual.Var)
@@ -175,38 +214,8 @@ module DiscreteOrder (G : sig include QualGraphAutomatonType module V : VertexTy
         (* TODO: the below assumes that the accepting state is the same as the start state *)
         let rec solve solution = function
             | qual::qualwork ->
-                (* find all adjacent, accepted quals *)
-                (* TODO: replace find_adjacent_accept with CFL-reachability *)
-                let find_adjacent_accept fold =
-                    let rec find_adjacent_accept visited accepts = function
-                        | (part, automaton)::partwork ->
-                            (* traverse adjacents of part *)
-                            let visited, accepts, partwork =
-                                fold begin fun v automaton (visited, accepts, partwork) -> match v with
-                                    | G.Qual.Var a when not (VisitedSet.mem (a, automaton) visited) ->
-                                        let visited = VisitedSet.add (a, automaton) visited in
-                                        if G.Automaton.accept automaton then
-                                            (* could have duplicates, but the result is usually added to sets anyway *)
-                                            (visited, a::accepts, partwork)
-                                        else
-                                            (* not visited and not accepted yet; so add to work list *)
-                                            (visited, accepts, (v, automaton)::partwork)
-                                    | _ ->
-                                        (visited, accepts, partwork)
-                                end g part automaton (visited, accepts, partwork)
-                            in
-
-                            (* and recurse *)
-                            find_adjacent_accept visited accepts partwork
-
-                        | [] ->
-                            (* done *)
-                            accepts
-                    in
-                    find_adjacent_accept VisitedSet.empty [] [(qual, G.Automaton.start)]
-                in
-                let forwards = find_adjacent_accept G.fold_forward in
-                let backwards = find_adjacent_accept G.fold_backward in
+                let forwards = fold_forward_accept (fun a acc -> a::acc) qual g [] in
+                let backwards = fold_backward_accept (fun a acc -> a::acc) qual g [] in
 
                 (* find the solutions for qual, and update equivalence classes if necessary *)
                 let solution, qual_consts = match qual with
@@ -386,5 +395,32 @@ module DiscreteOrder (G : sig include QualGraphAutomatonType module V : VertexTy
             | Some (explanation, _) -> Explanation.add explanation explanations
             | None -> explanations
         end Explanation.empty worklist
+end
+
+
+module Aliasing (G : sig include QualGraphAutomatonType module V : VertexType with type t = vertex end) = struct
+    include Traversal (G)
+    module VarSet = Set.Make (G.Qual.Var)
+
+    let alias v constraints =
+        (* alias := flow-backward* flow-forward* *)
+        let rec collect fold solution = function
+            | v::worklist ->
+                let solution, worklist = fold begin fun u (solution, worklist) ->
+                    if VarSet.mem u solution then
+                        (solution, worklist)
+                    else
+                        (VarSet.add u solution, u::worklist)
+                end (G.Qual.Var v) constraints (solution, worklist) in
+                collect fold solution worklist
+            | [] ->
+                solution
+        in
+        if G.mem_vertex constraints (G.Qual.Var v) then
+            let solution = collect fold_backward_accept VarSet.empty [ v ] in
+            let solution = collect fold_forward_accept solution (v::(VarSet.elements solution)) in
+            solution
+        else
+            VarSet.empty
 end
 
