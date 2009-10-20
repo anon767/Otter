@@ -159,9 +159,15 @@ let rec bytes__read bytes off len =
            (* TODO: abstract the unfolding of MayBytes/IfThenElse at similar
             * places *)
             | Bytes_IfThenElse(c,e1,e2),_ ->
-                make_Bytes_IfThenElse(c,bytes__read (e1) (off) len,bytes__read (e2) (off) len)
+								let e1' = bytes__read e1 off len in
+								let e2' = bytes__read e2 off len in
+								if diff_bytes e1' e2' then
+									make_Bytes_IfThenElse(c,e1',e2')
+								else
+									e1'
             | _,Bytes_IfThenElse(c,e1,e2) ->
-                make_Bytes_IfThenElse(c,bytes__read (bytes) (e1) len,bytes__read (bytes) (e2) len)
+								failwith "bytes__read: if-then-else offset doesn't happen"
+(*                make_Bytes_IfThenElse(c,bytes__read (bytes) (e1) len,bytes__read (bytes) (e2) len)*)
             | Bytes_MayBytes(ind,e1,e2),_ ->
                 make_Bytes_MayBytes(ind,bytes__read (e1) (off) len,bytes__read (e2) (off) len)
             | _,Bytes_MayBytes(ind,e1,e2) ->
@@ -243,9 +249,15 @@ let bytes__write bytes off len newbytes =
            (* TODO: abstract the unfolding of MayBytes/IfThenElse at similar
             * places *)
             | Bytes_IfThenElse(c,e1,e2),_ ,_ ->
-                make_Bytes_IfThenElse(c,do_write (e1) (off) len newbytes,do_write (e2) (off) len newbytes)
+								let e1' = do_write (e1) (off) len newbytes in
+								let e2' = do_write (e2) (off) len newbytes in
+								if diff_bytes e1' e2' then
+									make_Bytes_IfThenElse(c,e1',e2')
+								else
+									e1'
             | _,Bytes_IfThenElse(c,e1,e2) ,_ ->
-                make_Bytes_IfThenElse(c,do_write (bytes) (e1) len newbytes,do_write (bytes) (e2) len newbytes)
+								failwith "bytes__write: if-then-else offset doesn't happen"
+(*                make_Bytes_IfThenElse(c,do_write (bytes) (e1) len newbytes,do_write (bytes) (e2) len newbytes)*)
             | Bytes_MayBytes(ind,e1,e2),_ ,_ ->
                 make_Bytes_MayBytes(ind,do_write (e1) (off) len newbytes,do_write (e2) (off) len newbytes)
             | _,Bytes_MayBytes(ind,e1,e2) ,_ ->
