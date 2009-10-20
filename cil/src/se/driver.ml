@@ -504,9 +504,8 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 						   	Output.printf "Warning: snapshot %d is absent\n" key1;
 						   	    raise Not_found )
                           in
-						    let output = MemOp.cmp_states s0 s1 in
 						    	Output.set_mode Output.MSG_MUSTPRINT;
-						    	Output.print_endline output;			
+						    	ignore (MemOp.cmp_states s0 s1);
 						    	state
                         with Not_found -> 
 						   	Output.set_mode Output.MSG_MUSTPRINT;
@@ -519,10 +518,7 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 						begin try 
 							let s0 = MemOp.index_to_state__get key0 in
 							Output.set_mode Output.MSG_MUSTPRINT;
-							let output = MemOp.cmp_states s0 state in
-							let output = if String.length output = 0 then "AssertEqualState satisfied" else output in
-						    	Output.set_mode Output.MSG_MUSTPRINT;
-						    	Output.print_endline output;			
+						    	if MemOp.cmp_states s0 state then Output.print_endline "AssertEqualState satisfied";
 						    	MemOp.index_to_state__add key0 state; 
 									state
 						with Not_found -> 

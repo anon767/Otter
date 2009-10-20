@@ -792,53 +792,53 @@ let index_to_state__get index =
 ;;
 
 
-(** Compare two states *)
+(** Compare two states. Return true if they are the same; false otherwise. *)
 let cmp_states (s1:state) (s2:state) =
 	(* Compare blocks (memory allocations) that both states have *)
 	let sharedBlocksComparison =
-		let f block deferred1 str =
+		let f block deferred1 result =
 			(* TODO: should the forced state of s1 be propagated? *)
 			let _, bytes1 = state__force s1 deferred1 in
 			let typ = block.memory_block_type in
-			if typ!=Block_type_Global && typ!=Block_type_Heap then str else (* only care about globals and heap content *)
+			if typ!=Block_type_Global && typ!=Block_type_Heap then result else (* only care about globals and heap content *)
 	          try
 	    		let deferred2 = MemoryBlockMap.find block s2.block_to_bytes in
 				(* TODO: should the forced state of s2 be propagated? *)
 				let _, bytes2 = state__force s2 deferred2 in
 	    		if  diff_bytes bytes1 bytes2 
-	    		then
-	    			let output1 = Printf.sprintf " >> %s = %s\n" (block.memory_block_name) (To_string.bytes bytes1) in
-	    			let output2 = Printf.sprintf " << %s = %s\n" (block.memory_block_name) (To_string.bytes bytes2) in
-	    				 str^(output1^output2)
-	    		else
-				str
-	          with Not_found -> str
+	    		then (
+	    			Output.print_endline (Format.sprintf " >> %s = %s" (block.memory_block_name) (To_string.bytes bytes1));
+	    			Output.print_endline (Format.sprintf " << %s = %s" (block.memory_block_name) (To_string.bytes bytes2));
+						false
+					) else result
+	          with Not_found -> result
 		in
-		MemoryBlockMap.fold f s1.block_to_bytes ""		
+		MemoryBlockMap.fold f s1.block_to_bytes true
 	in
 	(* List blocks (memory allocations) that only one of the states has *)
 	let unsharedBlocksComparison =
-	  let h prefix state1 state2 block1 deferred1 str =
+	  let h prefix state1 state2 block1 deferred1 result =
 			let _, bytes1 = state__force state1 deferred1 in
 			let typ = block1.memory_block_type in
-			if typ!=Block_type_Global && typ!=Block_type_Heap then str else (* only care about globals and heap content *)
-	        if MemoryBlockMap.mem block1 state2.block_to_bytes then str else
-	    	let output = Printf.sprintf " %s %s = %s\n" prefix (block1.memory_block_name) (To_string.bytes bytes1) in
-	            str^output
-	      in
-	        (MemoryBlockMap.fold (h "(>>)" s1 s2) s1.block_to_bytes "")^
-	        (MemoryBlockMap.fold (h "(<<)" s2 s1) s2.block_to_bytes "")
+				if typ!=Block_type_Global && typ!=Block_type_Heap then result else (* only care about globals and heap content *)
+	        if MemoryBlockMap.mem block1 state2.block_to_bytes then result else (
+	    			Output.print_endline (Format.sprintf " %s %s = %s" prefix (block1.memory_block_name) (To_string.bytes bytes1));
+						false
+					)
+	  in
+	  MemoryBlockMap.fold (h "(>>)" s1 s2) s1.block_to_bytes true &&
+			MemoryBlockMap.fold (h "(<<)" s2 s1) s2.block_to_bytes true
 	in
 	let callStackComparison =
 		let rec cmpCallStack cs1 cs2 =
 			match cs1,cs2 with
-				| [],[] -> ""
+				| [],[] -> true
 				| h1::cs1',h2::cs2' when h1==h2 -> cmpCallStack cs1' cs2'
-				| _ -> "Call stacks unequal"
+				| _ -> false
 		in
 		cmpCallStack s1.callstack s2.callstack
 	in
-	sharedBlocksComparison^ unsharedBlocksComparison^ callStackComparison
+	sharedBlocksComparison && unsharedBlocksComparison && callStackComparison
 ;;
 	
 (*
