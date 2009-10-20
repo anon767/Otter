@@ -48,21 +48,32 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
                 | Cil.TFun (rettyp, _, _, _) when Cil.isVoidType rettyp ->
                     (state, None)
 
-                | Cil.TFun (rettyp, _, _, _) ->
+                | Cil.TFun (_, _, _, _) ->
                     let (((((qtr, _), _), _), _), _) = run begin perform
                         qtf <-- lookup_var fn.Cil.svar;
                         retval qtf
                     end expState in
-                    let state, retbytes = qt_to_bytes expState solution state Types.Block_type_Local rettyp qtr in
-                    (state, Some retbytes)
-
+                    (* Ptranal has no query for function return values; instead, query all the expressions in
+                     * function returns, and merge them *)
+                    let state, retbytes_list = List.fold_left begin fun (state, retbytes_list) retstmt ->
+                        match retstmt.Cil.skind with
+                            | Cil.Return (Some retexp, _) ->
+                                let state, retbytes = qt_to_bytes file expState solution state retexp qtr in
+                                (state, (retbytes::retbytes_list))
+                            | _ ->
+                                (state, retbytes_list)
+                    end (state, []) fn.Cil.sallstmts in (* sallstmts is computed by Cil.computeCFGInfo *)
+                    begin match retbytes_list with
+                        | [] -> (state, None)
+                        | _  -> (state, Some (MemOp.bytes__maybytes_from_list retbytes_list))
+                    end
                 | _ ->
                     failwith "Impossible!"
             end in
 
             (* then, the globals and call stack *)
             let state = List.fold_left begin fun state frame ->
-                frame_qt_to_bytes expState solution state frame Types.Block_type_Local
+                frame_qt_to_bytes file expState solution state frame
             end state (state.Types.global::(state.Types.formals @ state.Types.locals)) in
 
             k [ Types.Return (retopt, { Types.result_state=state; Types.result_history=Types.emptyHistory }) ]

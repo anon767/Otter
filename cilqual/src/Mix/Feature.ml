@@ -34,7 +34,8 @@ let init_cil () =
 
 let prepare_file file =
     TypedInterpreter.prepare_file file;
-    SymbolicInterpreter.prepare_file file
+    SymbolicInterpreter.prepare_file file;
+    SwitchingUtil.prepare_file file
 
 
 (* mix dispatch loop *)

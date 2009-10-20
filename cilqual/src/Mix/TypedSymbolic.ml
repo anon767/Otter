@@ -38,7 +38,7 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
                     when not (Types.VarinfoMap.mem v state.Types.global.Types.varinfo_to_block) ->
                 let (((((qt, _), _), _), _), _) = run (lookup_var v) expState in
                 let state, bytes =
-                    qt_to_bytes expState solution state Types.Block_type_Global v.Cil.vtype (drop_qt qt)
+                    qt_to_bytes file expState solution state (Cil.Lval (Cil.Var v, Cil.NoOffset)) (drop_qt qt)
                 in
                 MemOp.state__add_global state v bytes
             | _ ->
@@ -52,7 +52,7 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
             args qtf
         end expState in
         let state, args_bytes = List.fold_left2 begin fun (state, args_bytes) v qt ->
-            let state, bytes = qt_to_bytes expState solution state Types.Block_type_Local v.Cil.vtype qt in
+            let state, bytes = qt_to_bytes file expState solution state (Cil.Lval (Cil.Var v, Cil.NoOffset)) qt in
             (state, bytes::args_bytes)
         end (state, []) fn.Cil.sformals qta in
 
