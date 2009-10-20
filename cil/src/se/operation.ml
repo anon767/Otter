@@ -84,6 +84,14 @@ let rec binop op_const op_symb operands : bytes (* * typ *)=
 	let (bytes1, typ1) = List.nth operands 0 in
 	let (bytes2, typ2) = List.nth operands 1 in
 
+    let isReducableArithmetic opout opin = match opout,opin with
+      | OP_PLUS,OP_PLUS | OP_PLUS,OP_SUB 
+      | OP_SUB,OP_PLUS | OP_SUB,OP_SUB
+      | OP_MULT,OP_MULT
+      (*| OP_MULT,OP_PLUS | OP_MULT,OP_SUB*)
+        -> true
+      | _,_ -> false
+    in 
     let rec atLeastOneConstant = function
       | [] -> false
       | (Bytes_Constant(_),_)::_ -> true
@@ -97,48 +105,64 @@ let rec binop op_const op_symb operands : bytes (* * typ *)=
           assert(typ1=rat1);
           assert(typ1=rat2);
         match op_symb,op with   (* normal: b1 op_symb (rab1 op rab2) , reversed: (rab1 op rab2) op_symb b1  *)
-          | OP_PLUS,OP_PLUS ->
+          | OP_PLUS,OP_PLUS -> (* a+(b+c) *)
               begin
                 match rab1,rab2 with
                   | Bytes_Constant(_),_ -> plus ((plus ((b1,typ1)::(rab1,rat1)::[]),typ1)::(rab2,rat2)::[])
                   | _,Bytes_Constant(_) -> plus ((plus ((b1,typ1)::(rab2,rat2)::[]),typ1)::(rab1,rat1)::[])
                   | _,_ -> failwith "unreachable"
               end
-          | OP_PLUS,OP_SUB ->
+          | OP_PLUS,OP_SUB ->(* a+(b-c) *)
               begin
                 match rab1,rab2 with
                   | Bytes_Constant(_),_ -> minus ((plus ((b1,typ1)::(rab1,rat1)::[]),typ1)::(rab2,rat2)::[])
                   | _,Bytes_Constant(_) -> minus ((rab1,rat1)::(minus ((rab2,rat2)::(b1,typ1)::[]),rat2)::[])
                   | _,_ -> failwith "unreachable"
               end
-          | OP_PLUS,OP_MULT ->
+          | OP_SUB,OP_PLUS when normal ->(* a-(b+c) *)
               begin
-                failwith "not yet implemented"
+                match rab1,rab2 with
+                  | Bytes_Constant(_),_ -> minus ((minus ((b1,typ1)::(rab1,rat1)::[]),typ1)::(rab2,rat2)::[])
+                  | _,Bytes_Constant(_) -> minus ((minus ((b1,typ1)::(rab2,rat2)::[]),typ1)::(rab1,rat1)::[]) 
+                  | _,_ -> failwith "unreachable"
               end
-          | OP_SUB,OP_PLUS ->
+          | OP_SUB,OP_SUB when normal ->(* a-(b-c) *)
               begin
-                failwith "not yet implemented"
+                match rab1,rab2 with
+                  | Bytes_Constant(_),_ -> plus ((minus ((b1,typ1)::(rab1,rat1)::[]),typ1)::(rab2,rat2)::[])
+                  | _,Bytes_Constant(_) -> minus ((plus ((b1,typ1)::(rab2,rat2)::[]),typ1)::(rab1,rat1)::[]) 
+                  | _,_ -> failwith "unreachable"
               end
-          | OP_SUB,OP_SUB ->
+          | OP_SUB,OP_PLUS ->(* (b+c)-a *)
               begin
-                failwith "not yet implemented"
+                match rab1,rab2 with
+                  | Bytes_Constant(_),_ -> plus ((minus ((rab1,rat1)::(b1,typ1)::[]),typ1)::(rab2,rat2)::[])
+                  | _,Bytes_Constant(_) -> plus ((minus ((rab2,rat2)::(b1,typ1)::[]),typ1)::(rab1,rat1)::[]) 
+                  | _,_ -> failwith "unreachable"
               end
-          | OP_SUB,OP_MULT ->
+          | OP_SUB,OP_SUB ->(* (b-c)-a *)
               begin
-                failwith "not yet implemented"
+                match rab1,rab2 with
+                  | Bytes_Constant(_),_ -> minus ((minus ((rab1,rat1)::(b1,typ1)::[]),typ1)::(rab2,rat2)::[])
+                  | _,Bytes_Constant(_) -> minus ((rab1,rat1)::(plus ((rab2,rat2)::(b1,typ1)::[]),rat2)::[])
+                  | _,_ -> failwith "unreachable"
               end
-          | OP_MULT,OP_PLUS ->
+          | OP_MULT,OP_MULT ->(* a*(b*c) *)
+              begin
+                match rab1,rab2 with
+                  | Bytes_Constant(_),_ -> mult ((mult ((b1,typ1)::(rab1,rat1)::[]),typ1)::(rab2,rat2)::[])
+                  | _,Bytes_Constant(_) -> mult ((mult ((b1,typ1)::(rab2,rat2)::[]),typ1)::(rab1,rat1)::[])
+                  | _,_ -> failwith "unreachable"
+              end
+          (* dunno if these are helpful *)
+          (*| OP_MULT,OP_PLUS ->
               begin
                 failwith "not yet implemented"
               end
           | OP_MULT,OP_SUB ->
               begin
                 failwith "not yet implemented"
-              end
-          | OP_MULT,OP_MULT ->
-              begin
-                failwith "not yet implemented"
-              end
+              end*)
           | _ -> failwith "unreachable"
     and
     worstCase b1 b2 = 
@@ -172,9 +196,9 @@ let rec binop op_const op_symb operands : bytes (* * typ *)=
 				let resultType = if returnsBoolean op_symb then IInt else k1 in
 				let const = CInt64(n64, resultType, None) in
 				(make_Bytes_Constant(const))
-        | (Bytes_Constant(CInt64(i1,k1,_)), Bytes_Op (op, args)) when ((isReducableArithmetic op) && (isReducableArithmetic op_symb) && (atLeastOneConstant args))
+        | (Bytes_Constant(CInt64(i1,k1,_)), Bytes_Op (op, args)) when ((isReducableArithmetic op_symb op) && (atLeastOneConstant args))
           -> reducedArithmetic ibytes1 (op,args) true
-        | (Bytes_Op (op, args) , Bytes_Constant(CInt64(i1,k1,_))) when ((isReducableArithmetic op) && (isReducableArithmetic op_symb) && (atLeastOneConstant args))
+        | (Bytes_Op (op, args) , Bytes_Constant(CInt64(i1,k1,_))) when ((isReducableArithmetic op_symb op) && (atLeastOneConstant args))
           -> reducedArithmetic ibytes2 (op,args) false
 		(* Allow a particular piece of pointer arithmetic: ptr % num. *)
 		| Bytes_Address(Some blk, offset), op2

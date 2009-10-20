@@ -34,10 +34,6 @@ let returnsBoolean = function
 	| OP_LNOT | OP_LAND | OP_LOR -> true
 	| _ -> false
 
-let isReducableArithmetic = function
-  | OP_PLUS | OP_SUB | OP_MULT -> true
-  | _ -> false
-
 
 type symbol =	
 	{ 
