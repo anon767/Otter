@@ -94,30 +94,30 @@ let bytes__symbolic n =
  *       the (partial) dependency chain is state__* -> Stp.* -> bytes__* *)
 let rec bytes__length = Stp.bytes_length
 
-let rec diff_bytes bytes1 bytes2 = 
-	if (bytes__length bytes1 <> bytes__length bytes2) then true else
+let rec diff_bytes bytes1 bytes2 =
 	match bytes1,bytes2 with
 		| Bytes_Constant(c1),_ -> diff_bytes (Convert.constant_to_bytes c1) bytes2
 		| _,Bytes_Constant(c2) -> diff_bytes bytes1 (Convert.constant_to_bytes c2)
 		| Bytes_ByteArray(a1),Bytes_ByteArray(a2) -> 
-			ImmutableArray.fold2_left 
-			(fun t e1 e2 -> let t' = match e1,e2 with
+			ImmutableArray.length a1 <> ImmutableArray.length a2 ||
+			ImmutableArray.exists2
+			(fun e1 e2 -> match e1,e2 with
 				| Byte_Concrete(c1),Byte_Concrete(c2) -> c1<>c2
 				| Byte_Symbolic(s1),Byte_Symbolic(s2) -> s1.symbol_id<>s2.symbol_id (* Don't try to do hard compare *)
-				| Byte_Bytes(b1,off1),Byte_Bytes(b2,off2) -> (diff_bytes b1 b2) || (off1<>off2)
+				| Byte_Bytes(b1,off1),Byte_Bytes(b2,off2) -> (off1<>off2) || (diff_bytes b1 b2)
 				| _,_ -> true
-				in t || t'
 			) 
-			false a1 a2
+			a1 a2
 		| Bytes_Address(Some(b1),off1),Bytes_Address(Some(b2),off2) -> 
 			(b1!=b2) || (diff_bytes off1 off2)
 		| Bytes_Address(None,off1),Bytes_Address(None,off2) -> 
 			(diff_bytes off1 off2)
 		| Bytes_MayBytes (ix, tx, fx), Bytes_MayBytes (iy, ty, fy) ->
 			(Pervasives.compare ix iy <> 0) || (diff_bytes tx ty) || (diff_bytes fx fy)
-		| Bytes_Op(op1,[]),Bytes_Op(op2,[]) -> false
-		| Bytes_Op(op1,(b1,_)::operands1),Bytes_Op(op2,(b2,_)::operands2) -> 
-			(op1!=op2) || (diff_bytes b1 b2) ||	(diff_bytes (make_Bytes_Op(op1,operands1)) (make_Bytes_Op(op2,operands2)))
+		| Bytes_IfThenElse (cx, tx, fx), Bytes_IfThenElse (cy, ty, fy) ->
+			(diff_bytes cx cy) || (diff_bytes tx ty) || (diff_bytes fx fy)
+		| Bytes_Op(op1,operands1),Bytes_Op(op2,operands2) ->
+			(op1!=op2) || List.exists2 (fun (b1,_) (b2,_) -> diff_bytes b1 b2) operands1 operands2
 		| Bytes_Read(b1,off1,s1),Bytes_Read(b2,off2,s2) -> 
 			(diff_bytes b1 b2) || (diff_bytes off1 off2) || (s1<>s2)
 		| Bytes_Write(old1,off1,s1,new1),Bytes_Write(old2,off2,s2,new2) -> 

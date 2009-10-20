@@ -108,12 +108,23 @@ let fold2_left ff a bs1 bs2 =
 ;;
 
 let exists p arr =
+	let len = length arr in
 	let rec exists_aux i =
-		if i >= length arr
+		if i >= len
 		then false
 		else p (get arr i) || exists_aux (succ i)
 	in
 	exists_aux 0
+
+let exists2 p arr arr' =
+	let len = length arr in
+	if len <> length arr' then failwith "exists2: input arrays are of unequal length";
+	let rec exists2_aux i =
+		if i >= len
+		then false
+		else p (get arr i) (get arr' i) || exists2_aux (succ i)
+	in
+	exists2_aux 0
 
 let for_all p arr =
 	let rec for_all_aux i =
