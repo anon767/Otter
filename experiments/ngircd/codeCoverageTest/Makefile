@@ -2,6 +2,7 @@
 
 VERSION=ngircd-0.12.0
 NGIRCD_DIR=./$(VERSION)
+TOPDIR=$(CURDIR)/../../..
 
 CILLY_OPT= --merge \
            --disallowDuplication \
@@ -9,8 +10,9 @@ CILLY_OPT= --merge \
 	 -fno-inline \
 	 --keepmerged \
 
-CILLY:= $(CURDIR)/../../../cil/bin/cilly $(CILLY_OPT)
-LIBC:= $(CURDIR)/../../../libc
+CILLY:= $(TOPDIR)/cil/bin/cilly $(CILLY_OPT) -nostdinc -Werror-implicit-function-declaration -I $(TOPDIR)/includes/usr/include -I $(TOPDIR)/includes/usr/local/gcc-4.0.1/lib/gcc/i686-pc-linux-gnu/4.0.1/include
+CILLYAR:= $(TOPDIR)/cil/bin/cilly $(CILLY_OPT) --useLogicalOperators --mode=AR
+LIBC:= $(TOPDIR)/libc
 
 CONFIG_OPT= \
 		--without-epoll \
@@ -21,7 +23,7 @@ CONFIG_OPT= \
 		#--without-poll \   # Need at least one of these. I chose poll.
 
 merge: 
-	make -C $(NGIRCD_DIR) AR="$(CILLY) --useLogicalOperators --mode=AR"
+	-make -C $(NGIRCD_DIR) AR="$(CILLYAR)"
 	cp $(NGIRCD_DIR)/src/ngircd/ngircd_comb.c ngircd.c
 
 conf: 
