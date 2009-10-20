@@ -248,11 +248,11 @@ type 'a deferred =
 	| Deferred of (state -> (state * 'a))
 and state =
 	{
-		global : memory_frame;				(* Map global lvals to blocks *)
-		formals : memory_frame list;		(* Map formal lvals to blocks *)
-		locals : memory_frame list;		(* Map local lvals to blocks *)
-		(*heap : memory_heap;						(* Map a 4-byte thing to block *)*)
-		callstack : Cil.fundec list;	(* Function call stack *)
+		global : memory_frame;                  (* Map global lvals to blocks *)
+		formals : memory_frame list;            (* Map formal lvals to blocks *)
+		locals : memory_frame list;             (* Map local lvals to blocks *)
+		extra_locals : memory_block list VarinfoMap.t; (* Map for extra locals from unknown call stack recursion *)
+		callstack : Cil.fundec list;            (* Function call stack *)
 		block_to_bytes : bytes deferred MemoryBlockMap.t;
 		path_condition : bytes list;
 		path_condition_tracked : bool list;

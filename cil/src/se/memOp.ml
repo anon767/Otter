@@ -82,6 +82,20 @@ let bytes__random n =
 	make_Bytes_ByteArray(impl 0 (ImmutableArray.make n byte__zero))
 ;;
 
+(* given a list of bytes of length n, return a MayBytes tree of height log(n) containing all the bytes in the list *)
+let bytes__maybytes_from_list bytes_list =
+	let rec bytes__make_tree outs = function
+		| x::y::rest -> bytes__make_tree (make_Bytes_MayBytes (indicator__next (), x, y)::outs) rest
+		| x::[]      -> bytes__make_tree_next (x::outs)
+		| []         -> bytes__make_tree_next outs
+	and bytes__make_tree_next = function
+		| [ x ] -> x
+        | []    -> failwith "No bytes in bytes_list!"
+		| outs  -> bytes__make_tree outs []
+	in
+	bytes__make_tree [] bytes_list
+;;
+
 let bytes__symbolic n =
 	let rec impl len = 
 		if len <= 0 then [] else (byte__symbolic ())::(impl (len-1))
@@ -429,7 +443,7 @@ let state__empty =
 		global = frame__empty;
 		formals = [frame__empty];
 		locals = [frame__empty]; (* permit global init with another global *)
-		(*heap = heap__empty;*)
+		extra_locals = VarinfoMap.empty;
 		callstack = [];
 		block_to_bytes = MemoryBlockMap.empty;
 		path_condition = [];
