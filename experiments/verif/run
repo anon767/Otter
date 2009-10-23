@@ -1,1 +1,1 @@
-../../cil/bin/cilly --doexecute $*
+../../cil/bin/cilly --doexecute --useLogicalOperators $*
