@@ -157,8 +157,10 @@ off_t lseek(int fildes, off_t offset, int whence) {
 	}
 	sym_stream->offset = newOffset;
 
-	free(sym_stream->buffer);
-	sym_stream->buffer = NULL;
+	if (sym_stream->buffer) {
+		free(sym_stream->buffer);
+		sym_stream->buffer = NULL;
+	}
 
 	return newOffset;
 }

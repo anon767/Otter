@@ -41,23 +41,20 @@ sym_file_t *IOSIM_findfile(const char *file){
 }
 
 // This creates the file and returns it
-sym_file_t *IOSIM_addfile(const char *filename, /*const char *contents,*/ mode_t mode){
+sym_file_t *IOSIM_addfile(const char *filename, const char *contents, mode_t mode){
 	if (IOSIM_num_file >= IOSIM_MAX_FILE) {
-		errno = EMFILE;
-		return -1;
-	}
-	if (IOSIM_num_fd >= IOSIM_MAX_FD) {
 		errno = ENFILE;
 		return -1;
 	}
 	sym_file_t *file = malloc(sizeof(sym_file_t));
-//	if (contents) {
-//		file->stat.st_size = strlen(contents);
-//		file->contents = strdup(contents);
-//	} else {
+	if (contents) {
+		size_t n = strlen(contents);
+		file->stat.st_size = n;
+		memcpy(file->contents,contents,n);
+	} else {
 		file->stat.st_size = 0;
 		file->contents = NULL;
-//	}
+	}
 	file->stat.st_nlink = 1; // Only one hard link
 
 	// For now, I'm only making regular files (S_IFREG) which are readable by others (S_IROTH)
@@ -131,15 +128,15 @@ int IOSIM_openWithMode(const char *name, int flags, mode_t mode) {
 	char *absoluteName = IOSIM_toAbsolute(name);
 	sym_file_t *sym_file = IOSIM_findfile(absoluteName);
 	if (sym_file) {
+		free(absoluteName);
 		// If the file exists, then return an error if it shouldn't
 		if ((flags & O_CREAT) && (flags & O_EXCL)) {
 			errno = EEXIST;
-			free(absoluteName);
 			return -1;
 		}
 	} else if (flags & O_CREAT) {
 		// File doesn't exist and we should create it
-		sym_file = IOSIM_addfile(absoluteName, /*NULL,*/ mode & ~usermask);
+		sym_file = IOSIM_addfile(absoluteName, NULL, mode & ~usermask);
 		free(absoluteName);
 	} else {
 		// File doesn't exist, and we shouldn't create it.
@@ -175,11 +172,13 @@ int IOSIM_rename(const char *old, const char *new) {
 	// Compute the absolute path names, returning -1 if there is a problem
 	char *absOld = IOSIM_toAbsolute(old);
 	if (!absOld) {
+		free(absOld);
 		return -1;
 	}
 	char *absNew = IOSIM_toAbsolute(new);
 	if (!absNew) {
 		free(absOld);
+		free(absNew);
 		return -1;
 	}
 	for(int i=0;i<IOSIM_num_file;i++){
@@ -191,12 +190,14 @@ int IOSIM_rename(const char *old, const char *new) {
 			}
 			free(IOSIM_file_name[i]);
 			free(absOld);
+			// Don't free absNew in this case
 			IOSIM_file_name[i] = absNew;
 			return 0;
 		}
 	}
 	// The file "old" doesn't exist
 	free(absOld);
+	free(absNew);
 	errno = ENOENT;
 	return -1;
 }
@@ -225,6 +226,7 @@ int IOSIM_unlink(const char *pathname) {
 			return 0;
 		}
 	}
+	free(absoluteName);
 	errno = ENOENT;
 	return -1;
 }
@@ -296,15 +298,9 @@ int IOSIM_write(int fildes, const void *buf, size_t nbyte){
 	if (cur + nbyte > len) {
 		out->sym_file->contents = realloc(out->sym_file->contents, cur + nbyte);
 		out->sym_file->stat.st_size = cur + nbyte;
-		len = cur + nbyte;
 	}
 
 	memcpy(out->sym_file->contents + cur, cbuf, nbyte);
-//	for(n=0;n<nbyte;n++){
-//		if(cur>=len) break; // I don't think this ever happens
-//		out->sym_file->contents[cur] = cbuf[n];
-//		cur++;
-//	}
 
 	__COMMENT("Writing on fildes");
 	__EVAL(fildes);
@@ -444,7 +440,7 @@ char *IOSIM_getcwd(char *buf, size_t size) {
 		errno = ERANGE;
 		return NULL;
 	}
-	if (!buf) { // We know size > 0, so if buf is NULL, call malloc
+	if (!buf) { // We know size > strlen(workingDir), so if buf is NULL, call malloc
 		buf = malloc(size);
 	}
 	return strcpy(buf,workingDir);
@@ -452,4 +448,17 @@ char *IOSIM_getcwd(char *buf, size_t size) {
 
 int IOSIM_dirfd(DIR *dir) {
 	return dir->filestream.fd;
+}
+
+int IOSIM_socket(int domain, int type, int protocol) {
+	// I guess we need a socket table, like we have a file table
+	sym_file_stream_t *stream = malloc(sizeof(sym_file_stream_t));
+	stream->offset = 0;
+	stream->sym_file = malloc(sizeof(sym_file_t));
+	stream->sym_file->contents = NULL;
+	stream->sym_file->stat.st_mode = S_IFSOCK;
+	int fd = IOSIM_newfd();
+	stream->fd = fd;
+	IOSIM_fd[fd] = stream;
+	return fd;
 }

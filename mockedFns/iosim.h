@@ -19,17 +19,17 @@ typedef struct {
 	int fd; // The fd for this stream
 	//	unsigned flags; // I'm not sure what these are
 	off_t offset; // The offset into the file
-  sym_file_t* sym_file;   /* ptr to the file on disk */
-  char* buffer;
+	sym_file_t* sym_file;   /* ptr to the file on disk */
+	char* buffer; // 
 } sym_file_stream_t;
 
 #define	IOSIM_MAX_FD	1024
 extern sym_file_stream_t* IOSIM_fd[IOSIM_MAX_FD];
 extern int		IOSIM_num_fd;
 
-sym_file_t* IOSIM_newbuf(int len, char* buf);
+//sym_file_t* IOSIM_newbuf(int len, char* buf);
 sym_file_t* IOSIM_findfile(const char *file);
-sym_file_t* IOSIM_addfile(const char *file, /*const char *contents,*/ mode_t mode);
+sym_file_t* IOSIM_addfile(const char *file, const char *contents, mode_t mode);
 
 char *IOSIM_toAbsolute(const char *name);
 
@@ -51,6 +51,8 @@ DIR *IOSIM_opendir(const char *dirname);
 int IOSIM_closedir(DIR *dir);
 struct dirent *IOSIM_readdir(DIR *dir);
 int IOSIM_dirfd(DIR *dir);
+
+int IOSIM_socket(int domain,int type,int protocol);
 
 // Ugly workaround to get ipv6 parsing for vsftpd.
 // Individual tests can set this to AF_INET6 if they want

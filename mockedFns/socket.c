@@ -12,7 +12,7 @@ int setsockopt(int socket, int level, int option_name,
 }
 
 int socket(int domain, int type, int protocol) {
-	return IOSIM_newfd();
+	return IOSIM_socket(domain,type,protocol);
 //#define DEFAULT_BUF_SIZE 1024
 //	IO_BUF* new_buffer = IOSIM_newbuf(DEFAULT_BUF_SIZE,malloc(DEFAULT_BUF_SIZE));
 //	int fd = IOSIM_newfd();
@@ -63,7 +63,7 @@ int accept(int sockfd, struct sockaddr *restrict address,
 	address->sa_data[5] = 40;
 //	*address_len = 8;
 
-	return IOSIM_newfd();
+	return socket(iosim_ip_version,SOCK_STREAM,PF_INET);
 }
 
 int socketpair(int domain, int type, int protocol, int socket_vector[2]) {
