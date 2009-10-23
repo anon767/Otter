@@ -77,16 +77,19 @@ let libc___builtin_alloca state exps =
 let libc_malloc = libc___builtin_alloca
 
 let libc_free state exps =
-	(* What it does is to remove the mapping of (block,bytes) in the state. *)
+	(* Remove the mapping of (block,bytes) in the state. *)
 	let state, ptr = Eval.rval state (List.hd exps) in
 	match ptr with
 		| Bytes_Address (Some(block),_) ->
+			if block.memory_block_type != Block_type_Heap
+			then failwith ("Freeing a non-malloced pointer:" ^ (To_string.exp (List.hd exps)) ^ " = " ^ (To_string.bytes ptr));
+			if not (MemOp.state__has_block state block)
+			then failwith ("Double-free:" ^ (To_string.exp (List.hd exps)) ^ " = " ^ (To_string.bytes ptr));
 			let state = MemOp.state__remove_block state block in
 			(state, MemOp.bytes__zero)
 		| _ ->
-			Output.set_mode Output.MSG_DEBUG;
-			Output.print_endline "Warning: memory leak!";
-			(state, MemOp.bytes__zero)
+			Output.set_mode Output.MSG_MUSTPRINT;
+			failwith ("Freeing something that is not a valid pointer: " ^ (To_string.exp (List.hd exps)) ^ " = " ^ (To_string.bytes ptr));
 ;;
 
 
