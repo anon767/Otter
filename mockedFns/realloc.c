@@ -16,7 +16,7 @@ void* realloc(void* ptr, size_t size) {
 		 is that long now. If we prohibit out-of-bounds writes, then we
 		 will have to do realloc the obvious (but slightly less efficient)
 		 way, using malloc and memcpy, below. */
-	((char*)ptr)[size-1] = 0;
+	((char*)ptr)[size-1] = ((char*)ptr)[size-1];
 	return ptr;
 //	void* result = malloc(size);
 //	memcpy(result, ptr, size);
