@@ -101,9 +101,8 @@ let rec binop op_const op_symb operands : bytes (* * typ *)=
     reducedArithmetic (b1:bytes) (op,args) normal =
 	    let (rab1, rat1) = List.nth args 0 in
 	    let (rab2, rat2) = List.nth args 1 in
-          assert(typ1=typ2);
-          assert(typ1=rat1);
-          assert(typ1=rat2);
+			let size1 = sizeOf typ1 in
+			assert(size1 = sizeOf typ2 && size1 = sizeOf rat1 && size1 = sizeOf rat2);
         match op_symb,op with   (* normal: b1 op_symb (rab1 op rab2) , reversed: (rab1 op rab2) op_symb b1  *)
           | OP_PLUS,OP_PLUS -> (* a+(b+c) *)
               begin
