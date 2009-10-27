@@ -50,6 +50,7 @@ sym_file_t *IOSIM_addfile(const char *filename, const char *contents, mode_t mod
 	if (contents) {
 		size_t n = strlen(contents);
 		file->stat.st_size = n;
+		file->contents = malloc(n);
 		memcpy(file->contents,contents,n);
 	} else {
 		file->stat.st_size = 0;
