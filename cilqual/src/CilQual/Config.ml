@@ -18,6 +18,10 @@ let init_cil () =
     let prev_typeForInsertedCast = !Cabs2cil.typeForInsertedCast in
     Cabs2cil.typeForInsertedCast := begin fun t ->
         Cil.typeAddAttributes [ Cil.Attr (cil_inserted_attribute_string, []) ] (prev_typeForInsertedCast t)
+    end;
+    let prev_constFoldCastFilter = !Cil.constFoldCastFilter in
+    Cil.constFoldCastFilter := begin fun t ->
+        Cil.typeRemoveAttributes [ cil_inserted_attribute_string ] (prev_constFoldCastFilter t)
     end
 
 
