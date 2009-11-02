@@ -1620,6 +1620,8 @@ val isZero: exp -> bool
   Returns CInt64(sign-extened c, IInt, None) *)
 val charConstToInt: char -> constant
 
+val constFoldCastFilter: (typ -> typ) ref
+
 (** Do constant folding on an expression. If the first argument is true then 
     will also compute compiler-dependent expressions such as sizeof.
     See also {!Cil.constFoldVisitor}, which will run constFold on all

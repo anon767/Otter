@@ -2371,6 +2371,7 @@ and bitsOffset (baset: typ) (off: offset) : int * int =
   loopOff baset (bitsSizeOf baset) 0 off
         
 
+and constFoldCastFilter: (typ -> typ) ref = ref (fun t -> t)
 
 
 (** Do constant folding on an expression. If the first argument is true then 
@@ -2433,7 +2434,7 @@ and constFold (machdep: bool) (e: exp) : exp =
 
  
   | CastE (t, e) -> begin
-      match constFold machdep e, unrollType t with 
+      match constFold machdep e, unrollType (!constFoldCastFilter t) with 
         (* Might truncate silently *)
         Const(CInt64(i,k,_)), TInt(nk,a)
           (* It's okay to drop a cast to const.
