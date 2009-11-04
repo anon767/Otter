@@ -17,16 +17,10 @@ CILLY="$TRUNK/cil/bin/cilly --merge --warnall --disallowDuplication -D_FILE_OFFS
 
 if [[ "$1" == merge ]]; then
 	shift
-	# split into two; cannot do one pass on mac
 	$CILLY --useLogicalOperators \
-		$INCLUDEDIR \
 		-I $LIBCDIR $LIBCDIR/*.c \
-		--out=vsftpd_libc.c $*
-	$CILLY --useLogicalOperators \
-		$INCLUDEDIR \
 		-I $MOCKEDDIR $MOCKEDDIR/*.c \
-		vsftpd_libc.c $VSFTPDFILES --out=vsftpd_comb.c $*
-	rm vsftpd_libc.c
+		$VSFTPDFILES --out=vsftpd_comb.c $INCLUDEDIR $*
 elif [[ "$1" == mergeUnfolded ]]; then
 	shift
 	echo 'Merging vsftpd alone (without logical operators)'
@@ -39,6 +33,6 @@ elif [[ "$1" == mergeUnfolded ]]; then
 		vsftpdAlone_unfolded.c --out=vsftpd_comb_unfolded.c $*
 	rm vsftpdAlone_unfolded.c
 else
-	$CILLY -I $MOCKEDDIR \
+	$CILLY -I $MOCKEDDIR $INCLUDEDIR \
 		vsftpd_comb.c --covStats=$STATSFILE --doexecute $*
 fi
