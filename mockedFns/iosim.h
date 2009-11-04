@@ -29,7 +29,7 @@ extern int		IOSIM_num_fd;
 
 //sym_file_t* IOSIM_newbuf(int len, char* buf);
 sym_file_t* IOSIM_findfile(const char *file);
-sym_file_t* IOSIM_addfile(const char *file, const char *contents, mode_t mode);
+sym_file_t* IOSIM_addfile(const char *file, const char *contents, size_t len, mode_t mode);
 
 char *IOSIM_toAbsolute(const char *name);
 
