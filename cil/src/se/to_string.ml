@@ -336,3 +336,7 @@ let stmtInfo si =
 	if Executeargs.print_args.Executeargs.arg_print_stmt_locs
 	then str ^ " (" ^ (location (get_stmtLoc si.siStmt.skind)) ^ ")"
 	else str
+
+let deferred = function
+	| Immediate b -> bytes b
+	| Deferred _ -> "<deferred>"

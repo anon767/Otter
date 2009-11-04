@@ -483,7 +483,32 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 							Output.printf "Record state %d\n" key;
 							MemOp.index_to_state__add key state;
 							state
-													
+
+					| Function.PrintState ->
+						let module MemBlockSet = Set.Make(struct
+							type t = memory_block
+							let compare a b = Pervasives.compare a.memory_block_id b.memory_block_id
+							end)
+						in
+						let blocksAlreadyPrinted = ref MemBlockSet.empty in
+						let printVar var block =
+							blocksAlreadyPrinted := MemBlockSet.add block !blocksAlreadyPrinted;
+							Output.print_endline (var.vname ^ " = " ^ (To_string.deferred (MemoryBlockMap.find block state.block_to_bytes)))
+						in
+						Output.print_endline "Globals:";
+						VarinfoMap.iter printVar state.global.varinfo_to_block;
+						Output.print_endline "Locals:";
+						VarinfoMap.iter printVar (List.hd state.locals).varinfo_to_block;
+						Output.print_endline "Formals:";
+						VarinfoMap.iter printVar (List.hd state.formals).varinfo_to_block;
+						Output.print_endline "Memory:";
+						MemoryBlockMap.iter (fun block deferred ->
+							if not (MemBlockSet.mem block !blocksAlreadyPrinted) then (
+								Output.print_endline (To_string.memory_block block ^ " -> " ^ (To_string.deferred deferred))
+							))
+							state.block_to_bytes;
+						state
+
 					| Function.CompareState ->
 						let state, bytes0 = Eval.rval state (List.nth exps 0) in
 						let state, bytes1 = Eval.rval state (List.nth exps 1) in

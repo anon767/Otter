@@ -37,6 +37,7 @@ type function_type =
     | IfThenElse
 (*    | DataStructureOp of Data_structure.ds_op*) 
 (*	| Fresh *)
+	| PrintState
 ;;
 
 let aspect_tbl : (pointcut, advice) Hashtbl.t = Hashtbl.create 8;;
@@ -83,6 +84,7 @@ let from_varinfo state varinfo args =
 		| "AND" -> BooleanOp(Cil.LAnd)
 		| "OR" -> BooleanOp(Cil.LOr)
 		| "NOT" -> BooleanNot
+		| "__PRINT_STATE" -> PrintState
 		| f ->
 				try
 					Ordinary(Cilutility.search_function varinfo)
