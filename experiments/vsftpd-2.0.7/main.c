@@ -35,14 +35,14 @@ static void env_init(void);
 extern void symtest_initialize(void);
 extern int dup2(int,int);
 extern int socket(int,int,int);
-extern void addfile(const char *filename, const char *contents, unsigned int len);
 char confFileContents[] = "chown_upload_mode=00600\nmax_login_fails=3\n\nanonymous_enable=1\nport_enable=TRUE\npasv_enable=YES\nlocal_enable=0\nchroot_local_user=FALSE\nwrite_enable=NO\n#\npam_service_name=ftp\nlisten_address6=\n";
 unsigned int confFileSize = sizeof(confFileContents) - 1;
+#include "iosim.h"
 
 int
 main(int argc, const char* argv[])
 {
-	addfile(VSFTP_DEFAULT_CONFIG,confFileContents,confFileSize); // ADDED FOR PURPOSES OF SYMBOLIC TESTING
+	IOSIM_addfile(VSFTP_DEFAULT_CONFIG,confFileContents,confFileSize,0); // ADDED FOR PURPOSES OF SYMBOLIC TESTING
   struct vsf_session the_session =
   {
     /* Control connection */

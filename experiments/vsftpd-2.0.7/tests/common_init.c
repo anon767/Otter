@@ -23,13 +23,6 @@ sym_file_stream_t *newStream(int fd) {
 	return stream;
 }
 
-void addfile(const char *filename, const char *contents, size_t len) {
-	sym_file_t *file = IOSIM_addfile(filename,0);
-	file->contents = memcpy(malloc(len), contents, len);
-	file->stat.st_size = len;
-	return;
-}
-
 void common_initialization(const char *commandString) {
 	// Make stdout and stderr
 	newStream(1);
@@ -51,7 +44,7 @@ void common_initialization(const char *commandString) {
 	}
 
 	// For files, we don't include the terminating null, so we just copy strlen() bytes (not 1+strlen())
-#define ADDFILE(filename,contents) addfile((filename),(contents),strlen((contents)))
+#define ADDFILE(filename,contents) IOSIM_addfile((filename),(contents),strlen((contents)),0)
 
 	// Create some files in the file system
 	ADDFILE("/file1","abc");
@@ -59,11 +52,11 @@ void common_initialization(const char *commandString) {
 	ADDFILE("/file3","def");
 	ADDFILE("/ftp/file4","jfwoeifj\nweofjaiwe");
 	char x[] = {6,2,78,250,9,100,17,0,111};
-	addfile("/ftp/file5",x,sizeof(x));
+	IOSIM_addfile("/ftp/file5",x,sizeof(x),0);
 	ADDFILE("/ftp/file6","junk");
 	ADDFILE("/ftp/.hidden","boo!");
 	char y[0];
-	addfile("/ftp/emptyFile",y,0);
+	IOSIM_addfile("/ftp/emptyFile",y,0,0);
 	ADDFILE("/ftp/123/456","");
 	ADDFILE("/ftp/123/654","\b\b\b\b\b\t");
 	ADDFILE("/ftp/123/.hidden","this file is hidden\n");
