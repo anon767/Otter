@@ -41,6 +41,9 @@ let rec bytes_length bytes =
 		| Bytes_Write(bytes2,_,_,_) -> bytes_length bytes2
 		| Bytes_Read(_,_,len) -> len
 		| Bytes_FunPtr(_) -> word__size
+        | Bytes_Unbounded (_,_,size) ->
+            if Convert.isConcrete_bytes bytes then Convert.bytes_to_int_auto size
+            else  max_bytes_size
 ;;
 
 (** Return a SymbolSet of all symbols in the given Bytes *)
@@ -75,6 +78,7 @@ let rec allSymbols = function
 				(allSymbols bytes3)
 				(SymbolSet.union (allSymbols bytes1) (allSymbols bytes2))
 	| Bytes_FunPtr (_,bytes) -> allSymbols bytes
+	| Bytes_Unbounded (_,_,_) -> SymbolSet.empty
 
 (** Return a SymbolSet of all symbols in the given list of Bytes *)
 let allSymbolsInList byteslist =
@@ -145,6 +149,7 @@ let rec allSymbolsAndIndicators = function
 				(allSymbolsAndIndicators bytes3)
 				(SISet.union (allSymbolsAndIndicators bytes1) (allSymbolsAndIndicators bytes2))
 	| Bytes_FunPtr (_,bytes) -> allSymbolsAndIndicators bytes
+	| Bytes_Unbounded (_,_,_) -> SISet.empty
 
 (** Return a SISet of all symbols in the given list of Bytes *)
 let allSymbolsAndIndicatorsInList byteslist =
@@ -547,6 +552,9 @@ to_stp_bv_impl vc bytes =
 					(Stpc.e_bvconcat vc bv_head bv_tail,len_head+len_tail) 
 			in
 				flatten (Stpc.e_bv_of_int vc 32 0) len 			
+
+		| Bytes_Unbounded (name,id,size) ->
+            failwith "Oh no!"
 						
 and
 

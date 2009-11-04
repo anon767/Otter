@@ -227,6 +227,7 @@ deref state bytes =
 		| Bytes_Read(bytes,off,len) ->failwith "Dereference: Not implemented"
 		| Bytes_Write(bytes,off,len,newbytes) ->failwith "Dereference: Not implemented"
 		| Bytes_FunPtr(_) -> failwith "Dereference funptr not support"
+		| Bytes_Unbounded(_,_,_) ->failwith "Dereference: Not implemented"
 (*		| Bytes_PtrToConstantBytes (content,off) ->failwith "Dereference: Can't dereference constant array in lval."*)
 			
 

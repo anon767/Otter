@@ -66,6 +66,7 @@ bytes =
 | Bytes_Read of bytes * bytes * int						(* less preferrable type *)
 | Bytes_Write of bytes * bytes * int * bytes	(* least preferrable type*)
 | Bytes_FunPtr of Cil.fundec * bytes (* bytes is the "imaginary address" of the funptr *)
+| Bytes_Unbounded of string * int * bytes (* name, id, size *)
 (*| Bytes_DS of data_structure*)
 (* | Bytes_Concat  (* allow this to make things more efficient *) *)
 
@@ -271,6 +272,8 @@ and state =
 ;;
 
 let word__size = 4
+;;
+let max_bytes_size = 0xffff
 ;;
 
 (* http://www.c-faq.com/decl/strlitinit.html *)
