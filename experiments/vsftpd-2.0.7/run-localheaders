@@ -15,12 +15,24 @@ LIBCDIR=$TRUNK/libc
 MOCKEDDIR=$TRUNK/mockedFns
 CILLY="$TRUNK/cil/bin/cilly --merge --warnall --disallowDuplication -D_FILE_OFFSET_BITS=64"
 
+# Unfortunately, I need to tell vsftpd that it's running on Linux (even when it
+# isn't). Otherwise, it won't allow one-process mode. This is just a temporary fix.
+CILLY="$CILLY -D__linux__ -DLINUX_VERSION=1 -DKERNEL_VERSION(a,b,c)=0"
+
+# I need to specify a local temp directory, or merging fails on Mac OS X
+CILTEMPSDIR=`mktemp -d cilTempsXXXX`
+if [[ $? -ne 0 ]]; then
+	 echo "$0: can't create temp file; exiting"
+	 exit 1
+fi
+
 if [[ "$1" == merge ]]; then
 	shift
-	$CILLY --useLogicalOperators \
+	$CILLY --useLogicalOperators --save-temps=$CILTEMPSDIR \
 		-I $LIBCDIR $LIBCDIR/*.c \
 		-I $MOCKEDDIR $MOCKEDDIR/*.c \
 		$VSFTPDFILES --out=vsftpd_comb.c $INCLUDEDIR $*
+	rm -r $CILTEMPSDIR
 elif [[ "$1" == mergeUnfolded ]]; then
 	shift
 	echo 'Merging vsftpd alone (without logical operators)'
