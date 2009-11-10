@@ -501,7 +501,7 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
                           match typ with
                             | TComp (compinfo,_) -> 
                                 List.iter 
-                                  (fun fieldinfo -> printVarFieldsBytes (varname^"."^fieldinfo.fname) fieldinfo.ftype bytes (off+fst(Cil.bitsOffset typ (Field(fieldinfo,NoOffset)))))
+                                  (fun fieldinfo -> printVarFieldsBytes (varname^"."^fieldinfo.fname) fieldinfo.ftype bytes (off+fst(Cil.bitsOffset typ (Field(fieldinfo,NoOffset)))/8))
                                   compinfo.cfields
                             | _ -> 
                                 let rec p b= match b with
