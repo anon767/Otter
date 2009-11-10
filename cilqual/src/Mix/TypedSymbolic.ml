@@ -35,7 +35,8 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
         (* first, setup global variables *)
         let state = List.fold_left begin fun state g -> match g with
             | Cil.GVarDecl (v, _) | Cil.GVar (v, _, _)
-                    when not (Types.VarinfoMap.mem v state.Types.global.Types.varinfo_to_block) ->
+                    when not (Cil.isFunctionType v.Cil.vtype (* skip function prototypes; they're not variables *)
+                              || Types.VarinfoMap.mem v state.Types.global.Types.varinfo_to_block) ->
                 let (((((qt, _), _), _), _), _) = run (lookup_var v) expState in
                 let state, bytes =
                     qt_to_bytes file expState solution state (Cil.Lval (Cil.Var v, Cil.NoOffset)) (drop_qt qt)

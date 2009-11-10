@@ -115,6 +115,20 @@ let typed_only_testsuite = "Typed only" >::: [
     end;
 ]
 
+let leaf_symbolic_switching_only_testsuite = "Leaf Symbolic, Switching Only" >::: [
+    test_mix ~label:"program with function prototypes" "
+        void foo(void);
+        void foo(void) MIX(symbolic) {
+        }
+        int main(void) {
+            foo();
+            return 0;
+        }
+    " begin fun file solution ->
+        assert_discrete_satisfiable solution
+    end;
+]
+
 let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
     "unannotated" >::: [
         "global variable" >::: [
@@ -963,6 +977,7 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
 
 let testsuite = "TypedTopIntegration" >::: [
     typed_only_testsuite;
+    leaf_symbolic_switching_only_testsuite;
     leaf_symbolic_simple_path_testsuite;
     leaf_symbolic_one_branch_testsuite;
 ]
