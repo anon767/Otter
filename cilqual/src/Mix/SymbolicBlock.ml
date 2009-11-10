@@ -76,6 +76,10 @@ module Interpreter (S : Config.BlockConfig) = struct
                             | Types.NoReturn _ ->
                                 failwith "TODO: handle return from @noreturn"
                         end
+
+                    | [ Types.Abandoned (_, _, _) as result ] ->
+                        complete_job result
+
                     | _ ->
                         failwith "TODO: handle other completion values"
                 in
@@ -87,8 +91,28 @@ module Interpreter (S : Config.BlockConfig) = struct
 
     let exec file args =
         let job = Executemain.job_for_file file (file.Cil.fileName::args) in
-        (* TODO: provide a completion function that checks the results *)
-        let completion results = (file, results) in
+
+        let completion results =
+            (* report jobs that were abandoned *)
+            let abandoned, count = List.fold_left begin fun (abandoned, count) result -> match result with
+                | Types.Abandoned (s, loc, _) -> ((loc.Cil.file, loc.Cil.line, s)::abandoned, (count + 1))
+                | _ -> (abandoned, count)
+            end ([], 0) results in
+
+            if count > 0 then begin
+                let printer ff abandoned = ignore begin List.iter begin fun (f, l, s) ->
+                    Format.fprintf ff "@[%s:%d: %s@]@\n" f l s;
+                end abandoned end in
+
+                Format.eprintf "@\n";
+                Format.eprintf "%d path%s abandoned in SymbolicBlock.exec:@\n"
+                    count (if count == 1 then "" else "s");
+                Format.eprintf "  @[%a@]@\n"
+                    printer abandoned;
+            end;
+
+            (file, results)
+        in
         `SymbolicBlock (file, job, completion)
 
 

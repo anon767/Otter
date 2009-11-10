@@ -147,12 +147,15 @@ let doit file =
             DiscreteSolver.Solution.EquivalenceClasses.cardinal
                 (DiscreteSolver.Solution.unsolvables_classes solution)
         in
+        let paths =
+            DiscreteSolver.Explanation.cardinal explanation
+        in
         Format.eprintf "Error: @[";
         Format.eprintf "%d unsolvable annotated qualifier variable%s found in %d equivalence class%s.@\n"
             unsolvables (if unsolvables == 1 then "" else "s")
             classes (if classes == 1 then "" else "es");
-        Format.eprintf "%d shortest path(s) between $null and $nonnull reported."
-            (DiscreteSolver.Explanation.cardinal explanation);
+        Format.eprintf "%d shortest path%s between $null and $nonnull reported."
+            paths (if paths == 1 then "" else "s");
         Format.eprintf "@]@.";
         exit 1
     end else begin

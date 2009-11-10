@@ -113,8 +113,28 @@ module Interpreter (T : Config.BlockConfig) = struct
             let solution = DiscreteSolver.solve consts constraints in
 
             (* TODO: properly explain error *)
-            if DiscreteSolver.Solution.is_unsatisfiable solution then
-                Format.eprintf "Unsatisfiable solution in TypedBlock.exec@.";
+            if DiscreteSolver.Solution.is_unsatisfiable solution then begin
+                let explanation = DiscreteSolver.explain solution in
+                Format.eprintf "@\n";
+                Format.eprintf "@[%a@]@\n@\n" DiscreteSolver.Explanation.printer explanation;
+                let unsolvables =
+                    DiscreteSolver.Solution.Unsolvables.cardinal (DiscreteSolver.Solution.unsolvables solution)
+                in
+                let classes =
+                    DiscreteSolver.Solution.EquivalenceClasses.cardinal
+                        (DiscreteSolver.Solution.unsolvables_classes solution)
+                in
+                let paths =
+                    DiscreteSolver.Explanation.cardinal explanation
+                in
+                Format.eprintf "Unsatisfiable solution in TypedBlock.exec:@\n  @[";
+                Format.eprintf "%d unsolvable annotated qualifier variable%s found in %d equivalence class%s.@\n"
+                    unsolvables (if unsolvables == 1 then "" else "s")
+                    classes (if classes == 1 then "" else "es");
+                Format.eprintf "%d shortest path%s between $null and $nonnull reported.@\n"
+                    paths (if paths == 1 then "" else "s");
+                Format.eprintf "@]@\n";
+            end;
 
             (file, solution)
         in

@@ -14,6 +14,8 @@ open SwitchingUtil
 module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
 
     let switch dispatch file job k =
+        Format.eprintf "Switching from symbolic to typed...@.";
+
         (* 1. convert globals and formals to type constraints
          * 2. type-check fn
          * 3. kill memory and reinitialize globals, formals and return value from type constraints
@@ -37,46 +39,56 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
 
         (* prepare the completion continuation to perform the final check *)
         let completion (((((_, constraints), _), _), _), _ as expState) =
+            Format.eprintf "Returning from typed to symbolic...@.";
             let solution = DiscreteSolver.solve consts constraints in
 
             (* TODO: properly explain error *)
-            if DiscreteSolver.Solution.is_unsatisfiable solution then
-                Format.eprintf "Unsatisfiable solution in SymbolicTyped.completion@.";
+            if DiscreteSolver.Solution.is_unsatisfiable solution then begin
+                let loc = match List.hd job.Types.state.Types.callContexts with
+                    | Types.Runtime                 -> Cil.locUnknown
+                    | Types.Source (_, _, instr, _)
+                    | Types.NoReturn instr          -> Cil.get_instrLoc instr
+                in
+                let result = { Types.result_state = job.Types.state; Types.result_history = job.Types.exHist } in
+                k [ Types.Abandoned ("Unsatisfiable solution returning from SymbolicTyped", loc, result) ]
 
-            (* first, the return value *)
-            let state, retopt = begin match fn.Cil.svar.Cil.vtype with
-                | Cil.TFun (rettyp, _, _, _) when Cil.isVoidType rettyp ->
-                    (state, None)
+            end else begin
 
-                | Cil.TFun (_, _, _, _) ->
-                    let (((((qtr, _), _), _), _), _) = run begin perform
-                        qtf <-- lookup_var fn.Cil.svar;
-                        retval qtf
-                    end expState in
-                    (* Ptranal has no query for function return values; instead, query all the expressions in
-                     * function returns, and merge them *)
-                    let state, retbytes_list = List.fold_left begin fun (state, retbytes_list) retstmt ->
-                        match retstmt.Cil.skind with
-                            | Cil.Return (Some retexp, _) ->
-                                let state, retbytes = qt_to_bytes file expState solution state retexp qtr in
-                                (state, (retbytes::retbytes_list))
-                            | _ ->
-                                (state, retbytes_list)
-                    end (state, []) fn.Cil.sallstmts in (* sallstmts is computed by Cil.computeCFGInfo *)
-                    begin match retbytes_list with
-                        | [] -> (state, None)
-                        | _  -> (state, Some (MemOp.bytes__maybytes_from_list retbytes_list))
-                    end
-                | _ ->
-                    failwith "Impossible!"
-            end in
+                (* first, the return value *)
+                let state, retopt = begin match fn.Cil.svar.Cil.vtype with
+                    | Cil.TFun (rettyp, _, _, _) when Cil.isVoidType rettyp ->
+                        (state, None)
 
-            (* then, the globals and call stack *)
-            let state = List.fold_left begin fun state frame ->
-                frame_qt_to_bytes file expState solution state frame
-            end state (state.Types.global::(state.Types.formals @ state.Types.locals)) in
+                    | Cil.TFun (_, _, _, _) ->
+                        let (((((qtr, _), _), _), _), _) = run begin perform
+                            qtf <-- lookup_var fn.Cil.svar;
+                            retval qtf
+                        end expState in
+                        (* Ptranal has no query for function return values; instead, query all the expressions in
+                         * function returns, and merge them *)
+                        let state, retbytes_list = List.fold_left begin fun (state, retbytes_list) retstmt ->
+                            match retstmt.Cil.skind with
+                                | Cil.Return (Some retexp, _) ->
+                                    let state, retbytes = qt_to_bytes file expState solution state retexp qtr in
+                                    (state, (retbytes::retbytes_list))
+                                | _ ->
+                                    (state, retbytes_list)
+                        end (state, []) fn.Cil.sallstmts in (* sallstmts is computed by Cil.computeCFGInfo *)
+                        begin match retbytes_list with
+                            | [] -> (state, None)
+                            | _  -> (state, Some (MemOp.bytes__maybytes_from_list retbytes_list))
+                        end
+                    | _ ->
+                        failwith "Impossible!"
+                end in
 
-            k [ Types.Return (retopt, { Types.result_state=state; Types.result_history=Types.emptyHistory }) ]
+                (* then, the globals and call stack *)
+                let state = List.fold_left begin fun state frame ->
+                    frame_qt_to_bytes file expState solution state frame
+                end state (state.Types.global::(state.Types.formals @ state.Types.locals)) in
+
+                k [ Types.Return (retopt, { Types.result_state=state; Types.result_history=Types.emptyHistory }) ]
+            end
         in
 
         let expState = run (return ()) expState in (* TODO: fix the type *)

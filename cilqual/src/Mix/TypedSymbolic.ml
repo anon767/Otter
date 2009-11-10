@@ -71,26 +71,28 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
 
             (* prepare a monad that represents the symbolic result *)
             let expM = mapM_ begin function
-                | Types.Return (retopt, { Types.result_state=state; Types.result_history=history }) -> perform
-                    (* first, the return value *)
-                    state <-- begin match retopt with
-                        | None ->
-                            return state
-                        | Some ret -> perform
-                            let rettyp = match fn.Cil.svar.Cil.vtype with
-                                | Cil.TFun (rettyp, _, _, _) -> rettyp
-                                | _ -> failwith "Impossible!"
-                            in
-                            qtf <-- lookup_var fn.Cil.svar;
-                            qtr <-- retval qtf;
-                            bytes_to_qt old_state state rettyp ret qtr
-                    end;
+                | Types.Return (retopt, { Types.result_state=state; Types.result_history=history }) ->
+                    inContext (fun _ -> fn.Cil.svar.Cil.vdecl) begin perform
+                        (* first, the return value *)
+                        state <-- begin match retopt with
+                            | None ->
+                                return state
+                            | Some ret -> perform
+                                let rettyp = match fn.Cil.svar.Cil.vtype with
+                                    | Cil.TFun (rettyp, _, _, _) -> rettyp
+                                    | _ -> failwith "Impossible!"
+                                in
+                                qtf <-- lookup_var fn.Cil.svar;
+                                qtr <-- retval qtf;
+                                bytes_to_qt old_state state rettyp ret qtr
+                        end;
 
-                    (* then, the global variables and call stack *)
-                    foldM begin fun state frame ->
-                        frame_bytes_to_qt old_state state frame
-                    end state (state.Types.global::(state.Types.formals @ state.Types.locals));
-                    return ()
+                        (* then, the global variables and call stack *)
+                        foldM begin fun state frame ->
+                            frame_bytes_to_qt old_state state frame
+                        end state (state.Types.global::(state.Types.formals @ state.Types.locals));
+                        return ()
+                    end
 
                 | Types.Abandoned (msg, loc, result) ->
                     failwith (Format.sprintf "TODO: handle abandoned path @@ %s:%d (%s)" loc.Cil.file loc.Cil.line msg)
