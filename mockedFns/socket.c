@@ -12,7 +12,7 @@ int setsockopt(int socket, int level, int option_name,
 }
 
 int socket(int domain, int type, int protocol) {
-	return IOSIM_socket(domain,type,protocol);
+	return IOSIM_newfd();//IOSIM_socket(domain,type,protocol);
 //#define DEFAULT_BUF_SIZE 1024
 //	IO_BUF* new_buffer = IOSIM_newbuf(DEFAULT_BUF_SIZE,malloc(DEFAULT_BUF_SIZE));
 //	int fd = IOSIM_newfd();
