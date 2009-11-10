@@ -45,6 +45,10 @@ module MonadOps (M : Monad) = struct
     let rec foldM f a = function
         | x::xs -> bind (f a x) (fun y -> foldM f y xs)
         | []    -> return a
+
+    let rec existsM f = function
+        | x::xs -> bind (f x) (fun y -> if y then return true else existsM f xs)
+        | []    -> return false
 end
 
 

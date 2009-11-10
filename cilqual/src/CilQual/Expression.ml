@@ -64,15 +64,23 @@ module InterpreterT (E : Environment.InterpreterMonad) = struct
         | Cil.BinOp (Cil.MinusPI, e, _, _) ->
             interpret_exp e
 
-        | Cil.CastE (t, e) ->
+        | Cil.CastE (t, e) as c ->
             if CilType.is_cil_inserted_type t then
                 interpret_exp e (* ignore casts inserted by Cil *)
-            else
-                (* TODO:
-                 * - if there are type qualifiers, need to mask the originally qualifiers appropriately;
-                 * - don't just replace e, but augment its qualtype with the typecast.
-                 *)
-                embed_rval t (* safe to ignore e since it's side-effect free *)
+            else perform
+                loc <-- askContext;
+                cast <-- embed_cast (c, loc);
+                cast_has_annot <-- has_annot cast;
+                if cast_has_annot then
+                    (* if the cast has annotations, use it *)
+                    (* TODO: don't just replace e, but mask/augment its qualtype with the typecast. *)
+                    return cast
+                else perform
+                    (* otherwise, join the expression with the cast; rather than just using the cast,
+                     * joining the cast also forces the expression's qualified type to be extended
+                     * with the cast, as well as handle the empty case *)
+                    qt <-- interpret_exp e;
+                    join qt cast
 
         | Cil.BinOp (u, e1, e2, t) -> perform
             (* least-upper-bound of the operands *)

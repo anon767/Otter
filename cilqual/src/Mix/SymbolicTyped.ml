@@ -1,4 +1,4 @@
-open CilQual.Environment.CilFieldOrVar
+open CilQual.Environment.CilFieldOrVarOrCast
 
 open TypedBlock.G.QualType.Qual
 open TypedBlock.G.QualType

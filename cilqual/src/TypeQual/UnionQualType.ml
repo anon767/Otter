@@ -121,6 +121,8 @@ module type UnionQualTypeMonad = sig
     val app    : QualType.t -> QualType.t list -> QualType.t monad
     val retval : QualType.t -> QualType.t monad
     val args   : QualType.t -> QualType.t list monad
+
+    val has_annot : QualType.t -> bool monad
 end
 
 
@@ -261,7 +263,8 @@ module UnionQualTypeT (TypedQualVar : TypedQualVar)
         let leq x y = lift (QM.leq x y)
         let lub x y = lift (QM.lub x y)
         let glb x y = lift (QM.glb x y)
-        let annot x c = lift (QM.annot x c)
+        let annot_qual x c = lift (QM.annot x c)
+        let has_annot_qual x = lift (QM.has_annot x)
 
         (* monadic interface to UnionTable *)
         open UnionTable
@@ -461,7 +464,7 @@ module UnionQualTypeT (TypedQualVar : TypedQualVar)
         | QualType.Ref (v, _)
         | QualType.Fn (v, _, _)
         | QualType.Base v -> perform
-            annot v s;
+            annot_qual v s;
             return qt
         | QualType.Empty -> failwith "TODO: report invalid annot"
 
@@ -493,5 +496,27 @@ module UnionQualTypeT (TypedQualVar : TypedQualVar)
         | QualType.Ref _
         | QualType.Base _
         | QualType.Empty -> failwith "TODO: report invalid args"
+
+    let rec has_annot = function
+        | QualType.Ref (v, qt) -> perform
+            result <-- has_annot_qual v;
+            if result then
+                return true
+            else
+                has_annot qt
+        | QualType.Fn (v, qtr, qtp) -> perform
+            result <-- has_annot_qual v;
+            if result then
+                return true
+            else perform
+                result <-- has_annot qtr;
+                if result then
+                    return true
+                else
+                    existsM (fun x -> has_annot x) qtp
+        | QualType.Base v ->
+            has_annot_qual v
+        | QualType.Empty ->
+            failwith "TODO: report invalid has_annot"
 end
 

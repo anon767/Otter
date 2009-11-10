@@ -9,7 +9,7 @@ module G =
     (Expression.InterpreterT
     (Environment.InterpreterT
     (Type.InterpreterT
-    (CilUnionQualType.CilUnionQualTypeT (Environment.CilFieldOrVar) (CilUnionQualType.Context)
+    (CilUnionQualType.CilUnionQualTypeT (Environment.CilFieldOrVarOrCast) (CilUnionQualType.Context)
     (Identity)))))))
 
 (* setup CilQual solver *)

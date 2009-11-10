@@ -65,3 +65,15 @@ module CilFundec = struct
     let equal x y = compare x y = 0
     let printer ff x = CilVar.printer ff x.svar
 end
+
+module CilExp = struct
+    type t = exp * CilLocation.t
+    let compare (xexp, xloc as x) (yexp, yloc as y) = if x == y then 0 else
+        match CilLocation.compare xloc yloc with
+            | 0 -> Pervasives.compare xexp yexp
+            | i -> i
+    let hash (_, loc) = Hashtbl.hash loc
+    let equal x y = compare x y = 0
+    let printer ff (exp, loc) =
+        Format.fprintf ff "%s:%a" (Pretty.sprint 0 (d_exp () exp)) CilLocation.printer loc
+end

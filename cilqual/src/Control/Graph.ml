@@ -88,6 +88,8 @@ module type GraphMonad = sig
 
     include Monad
     val add_edge : ?label:Graph.E.label -> Graph.V.t -> Graph.V.t -> unit monad
+    val succ : Graph.V.t -> Graph.E.t list monad
+    val pred : Graph.V.t -> Graph.E.t list monad
 end
 
 
@@ -118,6 +120,14 @@ module BidirectionalGraphT (VertexLabel : VertexLabel) (EdgeLabel : EdgeLabel) (
     let add_edge ?label x y = match label with
         | Some l -> modify (fun g -> Graph.add_edge_e g (Graph.E.create x l y))
         | None -> modify (fun g -> Graph.add_edge g x y)
+
+    let succ x = perform
+        g <-- get;
+        return (if Graph.mem_vertex g x && Graph.out_degree g x > 0 then Graph.succ_e g x else [])
+
+    let pred x = perform
+        g <-- get;
+        return (if Graph.mem_vertex g x && Graph.in_degree g x > 0 then Graph.pred_e g x else [])
 end
 
 
@@ -178,5 +188,8 @@ module ContextualEdgeGraphT (CE : ContextualEdge)
         match label with
             | Some l -> lift (G.add_edge ~label:(context, l) x y)
             | None -> lift (G.add_edge ~label:(context, CE.Data.default) x y)
+
+    let succ x = lift (G.succ x)
+    let pred x = lift (G.pred x)
 end
 

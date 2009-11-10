@@ -9,7 +9,7 @@ module type InterpreterMonad = sig
 
     val annot_attr : QualType.t -> Cil.attributes -> QualType.t monad
     val embed_lval : QualType.Var.Embed.t -> Cil.typ -> QualType.t monad
-    val embed_rval : Cil.typ -> QualType.t monad
+    val embed_rval : QualType.Var.Embed.t -> Cil.typ -> QualType.t monad
 end
 
 
@@ -114,8 +114,8 @@ module InterpreterT (C : CilUnionQualType.CilUnionQualTypeMonad) = struct
         qt <-- embed v (embed_type t);
         annot_qt qt t
 
-    let embed_rval t = perform
-        qt <-- fresh (embed_type t);
+    let embed_rval e t = perform
+        qt <-- embed e (embed_type t);
         annot_qt qt t
 end
 

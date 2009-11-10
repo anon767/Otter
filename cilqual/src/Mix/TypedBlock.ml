@@ -9,7 +9,7 @@ module G =
     (CilQual.Expression.InterpreterT
     (CilQual.Environment.InterpreterT
     (CilQual.Type.InterpreterT
-    (CilQual.CilUnionQualType.CilUnionQualTypeT (CilQual.Environment.CilFieldOrVar) (CilQual.CilUnionQualType.Context)
+    (CilQual.CilUnionQualType.CilUnionQualTypeT (CilQual.Environment.CilFieldOrVarOrCast) (CilQual.CilUnionQualType.Context)
     (Identity)))))))
 module GOps = MonadOps (G)
 open G

@@ -7,7 +7,7 @@ module I =
     (CilQual.Expression.InterpreterT
     (CilQual.Environment.InterpreterT
     (CilQual.Type.InterpreterT
-    (CilQual.CilUnionQualType.CilUnionQualTypeT (CilQual.Environment.CilFieldOrVar) (TestUtil.CilQualUtil.DummyContext)
+    (CilQual.CilUnionQualType.CilUnionQualTypeT (CilQual.Environment.CilFieldOrVarOrCast) (TestUtil.CilQualUtil.DummyContext)
     (Identity)))))
 open I.QualType.Qual
 open I.QualType

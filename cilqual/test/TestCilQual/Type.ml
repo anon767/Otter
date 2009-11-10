@@ -4,7 +4,7 @@ open Control.Monad
 (* setup CilQual interpreter monad stack *)
 module T =
     CilQual.Type.InterpreterT
-    (CilQual.CilUnionQualType.CilUnionQualTypeT (CilQual.Environment.CilFieldOrVar) (TestUtil.CilQualUtil.DummyContext)
+    (CilQual.CilUnionQualType.CilUnionQualTypeT (Control.Data.String) (TestUtil.CilQualUtil.DummyContext)
     (Identity))
 open T.QualType.Var
 open T.QualType.Qual
@@ -22,7 +22,7 @@ let test_type typestr ?(label=typestr) test =
     label >:: begin fun () ->
         (* create and embed CilQual type *)
         let typ = create_type typestr in
-        let typM = embed_rval typ in
+        let typM = embed_rval "foo" typ in
 
         (* run interpreter *)
         let ((((result, constraints), _), _), _) =
@@ -50,7 +50,7 @@ let functions_testsuite = "Functions" >::: [
     test_type "void ($r * $s)(void)"
         begin fun result constraints ->
             assert_qualtype_match begin
-                fun (Fn (Var (Fresh x1) as qvr, Base (Var (FnRet (Fresh x2))), [])) ->
+                fun (Fn (Var (Embed x1) as qvr, Base (Var (FnRet (Embed x2))), [])) ->
                     assert_equal x1 x2;
                     assert_only_paths [ (Const "r", qvr); (qvr, Const "r") ] constraints;
             end result
@@ -59,9 +59,9 @@ let functions_testsuite = "Functions" >::: [
     test_type "void ($r * $s)(int $a)"
         begin fun result constraints ->
             assert_qualtype_match begin
-                fun (Fn (Var (Fresh x1) as qvr,
-                         Base (Var (FnRet (Fresh x2))),
-                         [ Base (Var (FnArg (0, Fresh x3)) as qva) ])) ->
+                fun (Fn (Var (Embed x1) as qvr,
+                         Base (Var (FnRet (Embed x2))),
+                         [ Base (Var (FnArg (0, Embed x3)) as qva) ])) ->
                     assert_equal x1 x2;
                     assert_equal x1 x3;
                     assert_only_paths [ (Const "r", qvr); (qvr, Const "r");
@@ -72,10 +72,10 @@ let functions_testsuite = "Functions" >::: [
     test_type "void ($r * $s)(int $b * $a)"
         begin fun result constraints ->
             assert_qualtype_match begin
-                fun (Fn (Var (Fresh x1) as qvr,
-                         Base (Var (FnRet (Fresh x2))),
-                         [ Ref (Var (FnArg (0, Fresh x3)) as qva,
-                                Base (Var (Deref (FnArg (0, Fresh x4))) as qvb)) ])) ->
+                fun (Fn (Var (Embed x1) as qvr,
+                         Base (Var (FnRet (Embed x2))),
+                         [ Ref (Var (FnArg (0, Embed x3)) as qva,
+                                Base (Var (Deref (FnArg (0, Embed x4))) as qvb)) ])) ->
                     assert_equal x1 x2;
                     assert_equal x1 x3;
                     assert_equal x1 x4;
@@ -88,11 +88,11 @@ let functions_testsuite = "Functions" >::: [
     test_type "void ($r * $s)(int $c * $b * $a)"
         begin fun result constraints ->
             assert_qualtype_match begin
-                fun (Fn (Var (Fresh x1) as qvr,
-                         Base (Var (FnRet (Fresh x2))),
-                         [ Ref (Var (FnArg (0, Fresh x3)) as qva,
-                                Ref (Var (Deref (FnArg (0, Fresh x4))) as qvb,
-                                     Base (Var (Deref (Deref (FnArg (0, Fresh x5)))) as qvc))) ])) ->
+                fun (Fn (Var (Embed x1) as qvr,
+                         Base (Var (FnRet (Embed x2))),
+                         [ Ref (Var (FnArg (0, Embed x3)) as qva,
+                                Ref (Var (Deref (FnArg (0, Embed x4))) as qvb,
+                                     Base (Var (Deref (Deref (FnArg (0, Embed x5)))) as qvc))) ])) ->
                     assert_equal x1 x2;
                     assert_equal x1 x3;
                     assert_equal x1 x4;
@@ -107,10 +107,10 @@ let functions_testsuite = "Functions" >::: [
     test_type "void ($r * $s)(void ($t * $u)(void))"
         begin fun result constraints ->
             assert_qualtype_match begin
-                fun (Fn (Var (Fresh x1) as qvr,
-                         Base (Var (FnRet (Fresh x2))),
-                         [ Fn (Var (FnArg (0, Fresh x3)) as qvt,
-                               Base (Var (FnRet (FnArg (0, Fresh x4)))),
+                fun (Fn (Var (Embed x1) as qvr,
+                         Base (Var (FnRet (Embed x2))),
+                         [ Fn (Var (FnArg (0, Embed x3)) as qvt,
+                               Base (Var (FnRet (FnArg (0, Embed x4)))),
                                []) ])) ->
                     assert_equal x1 x2;
                     assert_equal x1 x3;

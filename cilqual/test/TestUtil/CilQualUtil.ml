@@ -1,6 +1,6 @@
 open Str
 open Control.Monad
-open CilQual.Environment.CilFieldOrVar
+open CilQual.Environment.CilFieldOrVarOrCast
 
 
 module DummyContext = struct

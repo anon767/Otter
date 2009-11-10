@@ -60,6 +60,7 @@ module type QualMonad = sig
     val glb : Qual.t -> Qual.t -> Qual.t monad
 
     val annot : Qual.t -> Qual.Const.t -> Qual.t monad
+    val has_annot : Qual.t -> bool monad
 end
 
 
@@ -71,8 +72,12 @@ module QualT (Q : Qual) (C : Constraint)
         include FreshT (Qual) (G)
         (* lift monad operations *)
         let add_edge ?label x y = lift (G.add_edge ?label x y)
+        let succ x = lift (G.succ x)
+        let pred x = lift (G.pred x)
     end
     include FreshM
+    module Ops = MonadOps (FreshM)
+    open Ops
 
     module QualGraph = struct
         include G.Graph
@@ -113,5 +118,18 @@ module QualT (Q : Qual) (C : Constraint)
     let annot qv c = perform
         eq qv (Qual.Const c);
         return qv
+
+    let has_annot qv = perform
+        let is_constM dir e = match dir e with
+            | Qual.Const _ -> return true
+            | Qual.Var _ -> return false
+        in
+        nodes <-- succ qv;
+        result <-- existsM (is_constM QualGraph.E.dst) nodes;
+        if result then
+            return true
+        else perform
+            nodes <-- pred qv;
+            existsM (is_constM QualGraph.E.src) nodes 
 end
 
