@@ -485,28 +485,56 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 							state
 
 					| Function.PrintState ->
+						Output.set_mode Output.MSG_MUSTPRINT;
 						let module MemBlockSet = Set.Make(struct
 							type t = memory_block
 							let compare a b = Pervasives.compare a.memory_block_id b.memory_block_id
 							end)
 						in
 						let blocksAlreadyPrinted = ref MemBlockSet.empty in
+                        let printStringString s1 s2 =
+                            Output.print_endline (s1 ^ " = " ^ s2)
+                        in
+                        let rec printVarFieldsBytes varname typ bytes off =
+                            (* break down each local by its fields *)
+                            (* canonicalize concrete values by their array rep*)
+                          match typ with
+                            | TComp (compinfo,_) -> 
+                                List.iter 
+                                  (fun fieldinfo -> printVarFieldsBytes (varname^"."^fieldinfo.fname) fieldinfo.ftype bytes (off+fst(Cil.bitsOffset typ (Field(fieldinfo,NoOffset)))))
+                                  compinfo.cfields
+                            | _ -> 
+                                let rec p b= match b with
+                                | Bytes_Constant const ->  p (Convert.constant_to_bytes const)
+                                | Bytes_ByteArray ba -> To_string.bytes (Bytes_ByteArray(ImmutableArray.sub ba off (Cil.bitsSizeOf typ/8)))
+                                | _ -> "("^(To_string.bytes b)^","^(string_of_int off)^","^(string_of_int (Cil.bitsSizeOf typ/8))^")"
+                                in 
+                                let rhs = p bytes
+                                in printStringString varname rhs
+                        in
+                        let printVarBytes var bytes =
+                            printVarFieldsBytes var.vname var.vtype bytes 0 
+                        in
 						let printVar var block =
 							blocksAlreadyPrinted := MemBlockSet.add block !blocksAlreadyPrinted;
-							Output.print_endline (var.vname ^ " = " ^ (To_string.deferred (MemoryBlockMap.find block state.block_to_bytes)))
+                            match (MemoryBlockMap.find block state.block_to_bytes) with
+                              | Immediate bytes -> printVarBytes var bytes
+                              | Deferred _ -> printStringString var.vname "(deferred)"
 						in
-						Output.print_endline "Globals:";
+						Output.print_endline "#BEGIN PRINTSTATE";
+						Output.print_endline "#Globals:";
 						VarinfoMap.iter printVar state.global.varinfo_to_block;
-						Output.print_endline "Locals:";
+						Output.print_endline "#Locals:";
 						VarinfoMap.iter printVar (List.hd state.locals).varinfo_to_block;
-						Output.print_endline "Formals:";
+						Output.print_endline "#Formals:";
 						VarinfoMap.iter printVar (List.hd state.formals).varinfo_to_block;
-						Output.print_endline "Memory:";
+						Output.print_endline "#Memory:";
 						MemoryBlockMap.iter (fun block deferred ->
 							if not (MemBlockSet.mem block !blocksAlreadyPrinted) then (
 								Output.print_endline (To_string.memory_block block ^ " -> " ^ (To_string.deferred deferred))
 							))
 							state.block_to_bytes;
+						Output.print_endline "#END PRINTSTATE";
 						state
 
 					| Function.CompareState ->
