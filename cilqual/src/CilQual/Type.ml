@@ -59,11 +59,7 @@ module InterpreterT (C : CilUnionQualType.CilUnionQualTypeMonad) = struct
                 (* treat n-d arrays as a single cell;
                  * fortunately, Cil makes conversion to pointer explicit with Cil.StartOf *)
                 embed_type typ
-            | Cil.TSPtr (Cil.TSBase t, _) when Cil.isVoidType t -> perform with module QualType in
-                QualType.base
-            | Cil.TSPtr (pointsTo, _) -> perform with module QualType in
-                qtarget <-- embed_type pointsTo;
-                QualType.ref qtarget
+            | Cil.TSPtr (Cil.TSFun (r, a, is_vararg, _), _) (* C'ism: function pointers are already lvals *)
             | Cil.TSFun (r, a, is_vararg, _) -> perform with module QualType in
                 qtr <-- embed_type r;
                 qta <-- QualTypeOps.mapM embed_type a;
@@ -73,6 +69,11 @@ module InterpreterT (C : CilUnionQualType.CilUnionQualTypeMonad) = struct
                     QualType.fn qtr (qta @ [ qtva ])
                 else
                     QualType.fn qtr qta
+            | Cil.TSPtr (Cil.TSBase t, _) when Cil.isVoidType t -> perform with module QualType in
+                QualType.base
+            | Cil.TSPtr (pointsTo, _) -> perform with module QualType in
+                qtarget <-- embed_type pointsTo;
+                QualType.ref qtarget
             | Cil.TSComp _ (* structs are field-based, unions are untyped *)
             | Cil.TSEnum _
             | Cil.TSBase _ -> perform with module QualType in
@@ -85,18 +86,19 @@ module InterpreterT (C : CilUnionQualType.CilUnionQualTypeMonad) = struct
             | Cil.TSArray (typ, _, attrlist) -> perform
                 annot_qt qt typ;
                 annot_attr qt attrlist
+            | Cil.TSPtr (Cil.TSFun (r, a, is_vararg, attrlist), _)
+            | Cil.TSFun (r, a, is_vararg, attrlist) -> perform
+                qtr <-- retval qt;
+                annot_qt qtr r;
+                qta <-- args qt;
+                zipWithM_ annot_qt qta a;
+                annot_attr qt attrlist
             | Cil.TSPtr (Cil.TSBase t, attrlist) when Cil.isVoidType t -> perform
                 (* TODO: warn about qualifiers in t *)
                 annot_attr qt attrlist
             | Cil.TSPtr (pointsTo, attrlist) -> perform
                 qtarget <-- deref qt;
                 annot_qt qtarget pointsTo;
-                annot_attr qt attrlist
-            | Cil.TSFun (r, a, is_vararg, attrlist) -> perform
-                qtr <-- retval qt;
-                annot_qt qtr r;
-                qta <-- args qt;
-                zipWithM_ annot_qt qta a;
                 annot_attr qt attrlist
             (* TODO: also add attributes from compinfo *)
             | Cil.TSComp (_, _, attrlist)
@@ -108,18 +110,11 @@ module InterpreterT (C : CilUnionQualType.CilUnionQualTypeMonad) = struct
         annot_qt qt (Cil.typeSig t)
 
     let embed_lval v t = perform
-        let t = if CilType.is_or_points_to_function t
-            then t               (* C'ism: function pointers are already lvals, so do not need an extra ref *)
-            else (CilType.ref t) (* but other variables need an extra ref to become lvals *)
-        in
+        let t = CilType.ref t in (* add an extra ref to make lvals *)
         qt <-- embed v (embed_type t);
         annot_qt qt t
 
     let embed_rval t = perform
-        let t = if CilType.is_or_points_to_function t
-            then (CilType.deref t) (* C'ism: deref cast to function pointers to become rvals *)
-            else t                 (* but casts to other types are already rvals *)
-        in
         qt <-- fresh (embed_type t);
         annot_qt qt t
 end

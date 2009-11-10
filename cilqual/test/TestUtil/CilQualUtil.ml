@@ -20,10 +20,15 @@ module SetupType (T : CilQual.Type.InterpreterMonad) = struct
                        ("\\1__attribute__(("^CilQual.Config.annot_attribute_string^"(\\2)))")
 
     (* helper to patch some limitations of Formatcil *)
-    let rec patchtype = function
-        | Cil.TFun (t, Some [ (s, Cil.TVoid _, _) ], b, a) -> Cil.TFun (t, Some [], b, a)
-        | Cil.TPtr (t, a) -> Cil.TPtr (patchtype t, a)
-        | t -> t
+    let patchtype =
+        Cil.visitCilType begin object
+            inherit Cil.nopCilVisitor
+            method vtype t = match t with
+                | Cil.TFun (r, Some [ (s, Cil.TVoid _, _) ], b, a) ->
+                    Cil.ChangeDoChildrenPost (Cil.TFun (r, Some [], b, a), fun x -> x)
+                | _ ->
+                    Cil.DoChildren
+        end end
 
     let create_type typestr = patchtype (Formatcil.cType (preprocess typestr) [])
 
