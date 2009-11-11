@@ -104,10 +104,10 @@ module Interpreter (S : Config.BlockConfig) = struct
                     Format.fprintf ff "@[%s:%d: %s@]@\n" f l s;
                 end abandoned end in
 
-                Format.eprintf "@\n";
+                Format.eprintf "@.";
                 Format.eprintf "%d path%s abandoned in SymbolicBlock.exec:@\n"
                     count (if count == 1 then "" else "s");
-                Format.eprintf "  @[%a@]@\n"
+                Format.eprintf "  @[%a@]@."
                     printer abandoned;
             end;
 

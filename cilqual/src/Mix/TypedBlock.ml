@@ -115,8 +115,8 @@ module Interpreter (T : Config.BlockConfig) = struct
             (* TODO: properly explain error *)
             if DiscreteSolver.Solution.is_unsatisfiable solution then begin
                 let explanation = DiscreteSolver.explain solution in
-                Format.eprintf "@\n";
-                Format.eprintf "@[%a@]@\n@\n" DiscreteSolver.Explanation.printer explanation;
+                Format.eprintf "@.";
+                Format.eprintf "@[%a@]@\n@." DiscreteSolver.Explanation.printer explanation;
                 let unsolvables =
                     DiscreteSolver.Solution.Unsolvables.cardinal (DiscreteSolver.Solution.unsolvables solution)
                 in
@@ -133,7 +133,7 @@ module Interpreter (T : Config.BlockConfig) = struct
                     classes (if classes == 1 then "" else "es");
                 Format.eprintf "%d shortest path%s between $null and $nonnull reported.@\n"
                     paths (if paths == 1 then "" else "s");
-                Format.eprintf "@]@\n";
+                Format.eprintf "@]@.";
             end;
 
             (file, solution)
