@@ -28,8 +28,18 @@ for file in sys.argv[1:]:
 				(key,val) = (key.strip(),val.strip())
 				t[curtype][key].add(val)
 
+print "COUNT:"
 for type in types:
 	print type, ":"
-	for (key,val) in t[type].items():
-		print "%s : %d" % (key,len(val)) # or print the set
+	for (key,val) in sorted(t[type].items(),key=lambda (x,y):(len(y),x)):
+		print "\t%s : %d" % (key,len(val))
+
+print ""
+print "CONTENT:"
+for type in types:
+	print type, ":"
+	for (key,val) in sorted(t[type].items(),key=lambda (x,y):(len(y),x)):
+		print "\t%s" % key
+		for v in val:
+			print "\t\t%s" % v
 
