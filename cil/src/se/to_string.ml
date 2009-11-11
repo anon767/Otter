@@ -340,3 +340,42 @@ let stmtInfo si =
 let deferred = function
 	| Immediate b -> bytes b
 	| Deferred _ -> "<deferred>"
+
+let rec typedBytes b typ =
+	match b,typ with
+		| Bytes_ByteArray arr, TComp({cstruct=true;cfields=fields},_) ->
+				string_of_struct arr typ fields
+		| Bytes_ByteArray arr, TArray(baseType,_,_) ->
+				string_of_array arr baseType
+		| _ -> bytes b
+
+and
+
+string_of_struct bytearray structTyp fields =
+	String.concat "\n"
+		["{";
+		 String.concat "\n"
+			 (List.map
+					(fun field -> field.fname ^ " = " ^
+						 let offset,width = bitsOffset structTyp (Field (field,NoOffset)) in
+						 let offset = offset/8 and width = width/8 in (* Convert bit sizes to bytes *)
+						 let subarray = ImmutableArray.sub bytearray offset width in
+						 typedBytes (Bytes_ByteArray subarray) field.ftype
+					)
+					fields);
+		 "}"]
+
+and
+
+string_of_array arr baseTyp =
+	let sizeOfBaseType = (bitsSizeOf baseTyp) / 8 in
+	"[" ^ (String.concat ", " (strings_of_array_elts arr baseTyp sizeOfBaseType)) ^ "]"
+
+and
+
+strings_of_array_elts arr typ sizeOfTyp =
+	if ImmutableArray.length arr = 0
+	then []
+	else
+		typedBytes (Bytes_ByteArray (ImmutableArray.sub arr 0 sizeOfTyp)) typ ::
+			(strings_of_array_elts (ImmutableArray.sub arr sizeOfTyp (ImmutableArray.length arr - sizeOfTyp)) typ sizeOfTyp)
