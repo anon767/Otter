@@ -68,8 +68,8 @@ let assert_discrete_unsatisfiable solution =
 let assert_has_block_errors expected_count block_errors =
     let actual_count = List.length block_errors in
     if actual_count <> expected_count then begin
-        let printer ff block_errors = ignore begin List.iter begin fun (f, l, s) ->
-            Format.fprintf ff "@[%s:%d: %s@]@\n" f l s;
+        let printer ff block_errors = ignore begin List.iter begin fun (s, l, b) ->
+            Format.fprintf ff "@[%s:%d: %s@]@\n" l.Cil.file l.Cil.line s;
         end block_errors end in
         assert_failure
             "@[@[<2>expected: %d block errors@]@ @[<2> but got:@ %d block errors@]@\n@[<2>Block errors:@\n%a@]@]"
@@ -81,12 +81,12 @@ let assert_no_block_errors block_errors = assert_has_block_errors 0 block_errors
 let assert_has_abandoned expected_count results =
     (* count jobs that were abandoned *)
     let abandoned = List.fold_left begin fun abandoned result -> match result with
-        | Types.Abandoned (s, loc, _), _ -> (loc, s)::abandoned
+        | Types.Abandoned (s, loc, _), block_errors -> (s, loc, block_errors)::abandoned
         | _, _ -> abandoned
     end [] results in
     let actual_count = List.length abandoned in
     if actual_count <> expected_count then begin
-        let printer ff abandoned = ignore begin List.iter begin fun (l, s) ->
+        let printer ff abandoned = ignore begin List.iter begin fun (s, l, b) ->
             Format.fprintf ff "@[%s:%d: %s@]@\n" l.Cil.file l.Cil.line s;
         end abandoned end in
         assert_failure

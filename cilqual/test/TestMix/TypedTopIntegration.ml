@@ -53,7 +53,8 @@ let typed_only_testsuite = "Typed only" >::: [
             return 0;
         }
     " begin fun file solution block_errors ->
-        assert_discrete_unsatisfiable solution
+        assert_discrete_unsatisfiable solution;
+        assert_no_block_errors block_errors
     end;
 
     test_mix ~label:"output argument set null locally" "
@@ -68,7 +69,8 @@ let typed_only_testsuite = "Typed only" >::: [
             return 0;
         }
     " begin fun file solution block_errors ->
-        assert_discrete_unsatisfiable solution
+        assert_discrete_unsatisfiable solution;
+        assert_no_block_errors block_errors
     end;
 
     test_mix ~label:"(void *) output argument set null locally" "
@@ -83,7 +85,8 @@ let typed_only_testsuite = "Typed only" >::: [
             return 0;
         }
     " begin fun file solution block_errors ->
-        assert_discrete_unsatisfiable solution
+        assert_discrete_unsatisfiable solution;
+        assert_no_block_errors block_errors
     end;
 
     test_mix ~label:"field set null locally" "
@@ -98,7 +101,8 @@ let typed_only_testsuite = "Typed only" >::: [
             return 0;
         }
     " begin fun file solution block_errors ->
-        assert_discrete_unsatisfiable solution
+        assert_discrete_unsatisfiable solution;
+        assert_no_block_errors block_errors
     end;
 
     test_mix ~label:"return null" "
@@ -111,7 +115,8 @@ let typed_only_testsuite = "Typed only" >::: [
             return 0;
         }
     " begin fun file solution block_errors ->
-        assert_discrete_unsatisfiable solution
+        assert_discrete_unsatisfiable solution;
+        assert_no_block_errors block_errors
     end;
 ]
 
@@ -125,7 +130,8 @@ let leaf_symbolic_switching_only_testsuite = "Leaf Symbolic, Switching Only" >::
             return 0;
         }
     " begin fun file solution block_errors ->
-        assert_discrete_satisfiable solution
+        assert_discrete_satisfiable solution;
+        assert_no_block_errors block_errors
     end;
 ]
 
@@ -144,7 +150,8 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_satisfiable solution
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
             end;
 
             test_mix ~label:"set null" "
@@ -158,7 +165,8 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_satisfiable solution
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
             end;
         ];
 
@@ -175,7 +183,8 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_satisfiable solution
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
             end;
 
             test_mix ~label:"set null" "
@@ -189,7 +198,8 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_satisfiable solution
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
             end;
         ];
 
@@ -206,7 +216,8 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_satisfiable solution
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
             end;
 
             test_mix ~label:"set null" "
@@ -220,7 +231,8 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_satisfiable solution
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
             end;
         ];
 
@@ -237,7 +249,8 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_satisfiable solution
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
             end;
 
             test_mix ~label:"set null" "
@@ -251,7 +264,8 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_satisfiable solution
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
             end;
         ];
 
@@ -266,7 +280,8 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_satisfiable solution
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
             end;
         ];
     ];
@@ -285,7 +300,8 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_satisfiable solution
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
             end;
 
             test_mix ~label:"set null" "
@@ -299,7 +315,8 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_unsatisfiable solution
+                assert_discrete_unsatisfiable solution;
+                assert_no_block_errors block_errors
             end;
         ];
 
@@ -316,7 +333,8 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_satisfiable solution
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
             end;
 
             test_mix ~label:"set null" "
@@ -330,7 +348,8 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_unsatisfiable solution
+                assert_discrete_unsatisfiable solution;
+                assert_no_block_errors block_errors
             end;
         ];
 
@@ -347,7 +366,8 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_satisfiable solution
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
             end;
 
             test_mix ~label:"set null" "
@@ -361,7 +381,8 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_unsatisfiable solution
+                assert_discrete_unsatisfiable solution;
+                assert_no_block_errors block_errors
             end;
         ];
 
@@ -378,7 +399,8 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_satisfiable solution
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
             end;
 
             test_mix ~label:"set null" "
@@ -392,7 +414,8 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_unsatisfiable solution
+                assert_discrete_unsatisfiable solution;
+                assert_no_block_errors block_errors
             end;
         ];
 
@@ -407,7 +430,8 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_unsatisfiable solution
+                assert_discrete_unsatisfiable solution;
+                assert_no_block_errors block_errors
             end;
         ];
     ];
@@ -431,7 +455,8 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_satisfiable solution
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
             end;
 
             test_mix ~label:"set null on one branch, non-null on the other branch" "
@@ -449,7 +474,8 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_satisfiable solution
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
             end;
 
             test_mix ~label:"set non-null on both branches" "
@@ -467,7 +493,8 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_satisfiable solution
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
             end;
         ];
 
@@ -487,7 +514,8 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_satisfiable solution
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
             end;
 
             test_mix ~label:"set null on one branch, non-null on the other branch" "
@@ -505,7 +533,8 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_satisfiable solution
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
             end;
 
             test_mix ~label:"set non-null on both branches" "
@@ -523,7 +552,8 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_satisfiable solution
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
             end;
         ];
 
@@ -543,7 +573,8 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_satisfiable solution
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
             end;
 
             test_mix ~label:"set null on one branch, non-null on the other branch" "
@@ -561,7 +592,8 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_satisfiable solution
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
             end;
 
             test_mix ~label:"set non-null on both branches" "
@@ -579,7 +611,8 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_satisfiable solution
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
             end;
         ];
 
@@ -600,7 +633,8 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                 }
 
             " begin fun file solution block_errors ->
-                assert_discrete_satisfiable solution
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
             end;
 
             test_mix ~label:"set null on one branch, non-null on the other branch" "
@@ -618,7 +652,8 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_satisfiable solution
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
             end;
 
             test_mix ~label:"set non-null on both branches" "
@@ -636,7 +671,8 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_satisfiable solution
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
             end;
         ];
 
@@ -655,7 +691,8 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_satisfiable solution
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
             end;
 
             test_mix ~label:"null on one branch, non-null on the other branch" "
@@ -672,7 +709,8 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_satisfiable solution
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
             end;
 
             test_mix ~label:"non-null on both branches" "
@@ -689,7 +727,8 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_satisfiable solution
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
             end;
         ];
     ];
@@ -711,7 +750,8 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_unsatisfiable solution
+                assert_discrete_unsatisfiable solution;
+                assert_no_block_errors block_errors
             end;
 
             test_mix ~label:"set null on one branch, non-null on the other branch" "
@@ -729,7 +769,8 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_unsatisfiable solution
+                assert_discrete_unsatisfiable solution;
+                assert_no_block_errors block_errors
             end;
 
             test_mix ~label:"set non-null on both branches" "
@@ -747,7 +788,8 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_satisfiable solution
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
             end;
         ];
 
@@ -767,7 +809,8 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_unsatisfiable solution
+                assert_discrete_unsatisfiable solution;
+                assert_no_block_errors block_errors
             end;
 
             test_mix ~label:"set null on one branch, non-null on the other branch" "
@@ -785,7 +828,8 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_unsatisfiable solution
+                assert_discrete_unsatisfiable solution;
+                assert_no_block_errors block_errors
             end;
 
             test_mix ~label:"set non-null on both branches" "
@@ -803,7 +847,8 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_satisfiable solution
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
             end;
         ];
 
@@ -823,7 +868,8 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_unsatisfiable solution
+                assert_discrete_unsatisfiable solution;
+                assert_no_block_errors block_errors
             end;
 
             test_mix ~label:"set null on one branch, non-null on the other branch" "
@@ -841,7 +887,8 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_unsatisfiable solution
+                assert_discrete_unsatisfiable solution;
+                assert_no_block_errors block_errors
             end;
 
             test_mix ~label:"set non-null on both branches" "
@@ -859,7 +906,8 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_satisfiable solution
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
             end;
         ];
 
@@ -880,7 +928,8 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                 }
 
             " begin fun file solution block_errors ->
-                assert_discrete_unsatisfiable solution
+                assert_discrete_unsatisfiable solution;
+                assert_no_block_errors block_errors
             end;
 
             test_mix ~label:"set null on one branch, non-null on the other branch" "
@@ -898,7 +947,8 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_unsatisfiable solution
+                assert_discrete_unsatisfiable solution;
+                assert_no_block_errors block_errors
             end;
 
             test_mix ~label:"set non-null on both branches" "
@@ -916,7 +966,8 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_satisfiable solution
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
             end;
         ];
 
@@ -935,7 +986,8 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_unsatisfiable solution
+                assert_discrete_unsatisfiable solution;
+                assert_no_block_errors block_errors
             end;
 
             test_mix ~label:"null on one branch, non-null on the other branch" "
@@ -952,7 +1004,8 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_unsatisfiable solution
+                assert_discrete_unsatisfiable solution;
+                assert_no_block_errors block_errors
             end;
 
             test_mix ~label:"non-null on both branches" "
@@ -969,7 +1022,8 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     return 0;
                 }
             " begin fun file solution block_errors ->
-                assert_discrete_satisfiable solution
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
             end;
         ];
     ];
