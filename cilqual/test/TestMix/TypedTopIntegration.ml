@@ -20,12 +20,12 @@ let test_mix content ?(label=content) test =
 
         prepare_file file;
 
-        let file, solution = dispatch_loop (TypedInterpreter.exec file) in
+        let file, solution, block_errors = dispatch_loop (TypedInterpreter.exec file) in
         assert_log "@[<v>";
         assert_log "@[<v2>Constraints:@ %a@]@\n" constraints_printer solution;
         assert_log "@]";
 
-        test file solution
+        test file solution block_errors
     end begin fun filename ->
         Unix.unlink filename
     end
@@ -37,7 +37,7 @@ let test_mix content ?(label=content) test =
 let typed_only_testsuite = "Typed only" >::: [
     test_mix
         "int main(void) { return 0; }"
-    begin fun file solution ->
+    begin fun file solution block_errors ->
         assert_discrete_satisfiable solution
     end;
 
@@ -52,7 +52,7 @@ let typed_only_testsuite = "Typed only" >::: [
             foo();
             return 0;
         }
-    " begin fun file solution ->
+    " begin fun file solution block_errors ->
         assert_discrete_unsatisfiable solution
     end;
 
@@ -67,7 +67,7 @@ let typed_only_testsuite = "Typed only" >::: [
             foo(&z);
             return 0;
         }
-    " begin fun file solution ->
+    " begin fun file solution block_errors ->
         assert_discrete_unsatisfiable solution
     end;
 
@@ -82,7 +82,7 @@ let typed_only_testsuite = "Typed only" >::: [
             foo(&z);
             return 0;
         }
-    " begin fun file solution ->
+    " begin fun file solution block_errors ->
         assert_discrete_unsatisfiable solution
     end;
 
@@ -97,7 +97,7 @@ let typed_only_testsuite = "Typed only" >::: [
             foo();
             return 0;
         }
-    " begin fun file solution ->
+    " begin fun file solution block_errors ->
         assert_discrete_unsatisfiable solution
     end;
 
@@ -110,7 +110,7 @@ let typed_only_testsuite = "Typed only" >::: [
             int * $(nonnull) y = foo();
             return 0;
         }
-    " begin fun file solution ->
+    " begin fun file solution block_errors ->
         assert_discrete_unsatisfiable solution
     end;
 ]
@@ -124,7 +124,7 @@ let leaf_symbolic_switching_only_testsuite = "Leaf Symbolic, Switching Only" >::
             foo();
             return 0;
         }
-    " begin fun file solution ->
+    " begin fun file solution block_errors ->
         assert_discrete_satisfiable solution
     end;
 ]
@@ -143,7 +143,7 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     foo();
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_satisfiable solution
             end;
 
@@ -157,7 +157,7 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     foo();
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_satisfiable solution
             end;
         ];
@@ -174,7 +174,7 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     foo(&z);
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_satisfiable solution
             end;
 
@@ -188,7 +188,7 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     foo(&z);
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_satisfiable solution
             end;
         ];
@@ -205,7 +205,7 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     foo(&z);
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_satisfiable solution
             end;
 
@@ -219,7 +219,7 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     foo(&z);
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_satisfiable solution
             end;
         ];
@@ -236,7 +236,7 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     foo();
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_satisfiable solution
             end;
 
@@ -250,7 +250,7 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     foo();
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_satisfiable solution
             end;
         ];
@@ -265,7 +265,7 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     int * y = foo();
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_satisfiable solution
             end;
         ];
@@ -284,7 +284,7 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     foo();
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_satisfiable solution
             end;
 
@@ -298,7 +298,7 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     foo();
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_unsatisfiable solution
             end;
         ];
@@ -315,7 +315,7 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     foo(&z);
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_satisfiable solution
             end;
 
@@ -329,7 +329,7 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     foo(&z);
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_unsatisfiable solution
             end;
         ];
@@ -346,7 +346,7 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     foo(&z);
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_satisfiable solution
             end;
 
@@ -360,7 +360,7 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     foo(&z);
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_unsatisfiable solution
             end;
         ];
@@ -377,7 +377,7 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     foo();
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_satisfiable solution
             end;
 
@@ -391,7 +391,7 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     foo();
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_unsatisfiable solution
             end;
         ];
@@ -406,7 +406,7 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
                     int * $(nonnull) y = foo();
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_unsatisfiable solution
             end;
         ];
@@ -430,7 +430,7 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     foo();
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_satisfiable solution
             end;
 
@@ -448,7 +448,7 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     foo();
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_satisfiable solution
             end;
 
@@ -466,7 +466,7 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     foo();
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_satisfiable solution
             end;
         ];
@@ -486,7 +486,7 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     foo(&z);
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_satisfiable solution
             end;
 
@@ -504,7 +504,7 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     foo(&z);
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_satisfiable solution
             end;
 
@@ -522,7 +522,7 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     foo(&z);
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_satisfiable solution
             end;
         ];
@@ -542,7 +542,7 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     foo(&z);
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_satisfiable solution
             end;
 
@@ -560,7 +560,7 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     foo(&z);
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_satisfiable solution
             end;
 
@@ -578,7 +578,7 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     foo(&z);
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_satisfiable solution
             end;
         ];
@@ -599,7 +599,7 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     return 0;
                 }
 
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_satisfiable solution
             end;
 
@@ -617,7 +617,7 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     foo();
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_satisfiable solution
             end;
 
@@ -635,7 +635,7 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     foo();
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_satisfiable solution
             end;
         ];
@@ -654,7 +654,7 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     int * y = foo();
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_satisfiable solution
             end;
 
@@ -671,7 +671,7 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     int * y = foo();
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_satisfiable solution
             end;
 
@@ -688,7 +688,7 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     int * y = foo();
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_satisfiable solution
             end;
         ];
@@ -710,7 +710,7 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     foo();
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_unsatisfiable solution
             end;
 
@@ -728,7 +728,7 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     foo();
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_unsatisfiable solution
             end;
 
@@ -746,7 +746,7 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     foo();
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_satisfiable solution
             end;
         ];
@@ -766,7 +766,7 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     foo(&z);
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_unsatisfiable solution
             end;
 
@@ -784,7 +784,7 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     foo(&z);
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_unsatisfiable solution
             end;
 
@@ -802,7 +802,7 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     foo(&z);
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_satisfiable solution
             end;
         ];
@@ -822,7 +822,7 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     foo(&z);
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_unsatisfiable solution
             end;
 
@@ -840,7 +840,7 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     foo(&z);
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_unsatisfiable solution
             end;
 
@@ -858,7 +858,7 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     foo(&z);
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_satisfiable solution
             end;
         ];
@@ -879,7 +879,7 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     return 0;
                 }
 
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_unsatisfiable solution
             end;
 
@@ -897,7 +897,7 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     foo();
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_unsatisfiable solution
             end;
 
@@ -915,7 +915,7 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     foo();
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_satisfiable solution
             end;
         ];
@@ -934,7 +934,7 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     int * $(nonnull) y = foo();
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_unsatisfiable solution
             end;
 
@@ -951,7 +951,7 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     int * $(nonnull) y = foo();
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_unsatisfiable solution
             end;
 
@@ -968,7 +968,7 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
                     int * $(nonnull) y = foo();
                     return 0;
                 }
-            " begin fun file solution ->
+            " begin fun file solution block_errors ->
                 assert_discrete_satisfiable solution
             end;
         ];

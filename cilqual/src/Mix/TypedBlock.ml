@@ -96,11 +96,11 @@ module Interpreter (T : Config.BlockConfig) = struct
         let expM = mapM_ interpret_function (fn::(CallSet.elements typed_calls)) in
         let expState = G.run expM expState in
 
-        let rec call_others others expState = match others with
-            | [] -> k expState
+        let rec call_others others expState block_errors = match others with
+            | [] -> k expState block_errors
             | call::callwork -> dispatch (`TypedBlock (file, call, expState, call_others callwork))
         in
-        call_others (CallSet.elements other_calls) expState
+        call_others (CallSet.elements other_calls) expState []
 
 
     let exec file =
@@ -109,34 +109,60 @@ module Interpreter (T : Config.BlockConfig) = struct
         let expState = G.run expM ((((((), G.QualGraph.empty), (G.emptyContext)), 0), G.emptyUnionTable), G.emptyEnv) in
 
         (* prepare the completion continuation to perform the final check *)
-        let completion (((((_, constraints), _), _), _), _) =
+        let completion (((((_, constraints), _), _), _), _) block_errors =
             let solution = DiscreteSolver.solve consts constraints in
 
-            (* TODO: properly explain error *)
-            if DiscreteSolver.Solution.is_unsatisfiable solution then begin
-                let explanation = DiscreteSolver.explain solution in
+            let explanation = if DiscreteSolver.Solution.is_unsatisfiable solution then
+                Some (DiscreteSolver.explain solution)
+            else
+                None
+            in
+            begin match explanation with
+                | Some explanation ->
+                    Format.eprintf "@.";
+                    Format.eprintf "Shortest paths between $null and $nonnull:@\n  @[%a@]@."
+                        DiscreteSolver.Explanation.printer explanation
+                | None ->
+                    ()
+            end;
+            if block_errors != [] then begin
+                let printer ff block_errors = ignore begin List.iter begin fun (s, l, b) ->
+                    Format.fprintf ff "@[%s:%d: %s@]@\n" l.Cil.file l.Cil.line s;
+                end block_errors end in
                 Format.eprintf "@.";
-                Format.eprintf "@[%a@]@\n@." DiscreteSolver.Explanation.printer explanation;
-                let unsolvables =
-                    DiscreteSolver.Solution.Unsolvables.cardinal (DiscreteSolver.Solution.unsolvables solution)
-                in
-                let classes =
-                    DiscreteSolver.Solution.EquivalenceClasses.cardinal
-                        (DiscreteSolver.Solution.unsolvables_classes solution)
-                in
-                let paths =
-                    DiscreteSolver.Explanation.cardinal explanation
-                in
-                Format.eprintf "Unsatisfiable solution in TypedBlock.exec:@\n  @[";
-                Format.eprintf "%d unsolvable annotated qualifier variable%s found in %d equivalence class%s.@\n"
-                    unsolvables (if unsolvables == 1 then "" else "s")
-                    classes (if classes == 1 then "" else "es");
-                Format.eprintf "%d shortest path%s between $null and $nonnull reported.@\n"
-                    paths (if paths == 1 then "" else "s");
-                Format.eprintf "@]@.";
+                Format.eprintf "Block errors:@\n  @[%a@]@." printer block_errors;
             end;
 
-            (file, solution)
+            (* summary *)
+            begin match explanation with
+                | Some explanation ->
+                    let unsolvables =
+                        DiscreteSolver.Solution.Unsolvables.cardinal (DiscreteSolver.Solution.unsolvables solution)
+                    in
+                    let classes =
+                        DiscreteSolver.Solution.EquivalenceClasses.cardinal
+                            (DiscreteSolver.Solution.unsolvables_classes solution)
+                    in
+                    let paths =
+                        DiscreteSolver.Explanation.cardinal explanation
+                    in
+                    Format.eprintf "Unsatisfiable solution in TypedBlock.exec:@\n  @[";
+                    Format.eprintf "%d unsolvable annotated qualifier variable%s found in %d equivalence class%s.@\n"
+                        unsolvables (if unsolvables == 1 then "" else "s")
+                        classes (if classes == 1 then "" else "es");
+                    Format.eprintf "%d shortest path%s between $null and $nonnull reported.@\n"
+                        paths (if paths == 1 then "" else "s");
+                    Format.eprintf "@]@.";
+                | None ->
+                    ()
+            end;
+            if block_errors != [] then begin
+                let count = List.length block_errors in
+                Format.eprintf "%d block error%s in TypedBlock.exec@\n@."
+                    count (if count == 1 then "" else "s");
+            end;
+
+            (file, solution, block_errors)
         in
 
         (* dispatch call to main *)

@@ -43,7 +43,7 @@ module Interpreter (S : Config.BlockConfig) = struct
                         let job_queue = j1::job_queue in (* queue the true branch *)
                         symbolic_loop completed j2 job_queue (* continue the false branch *)
                     | Types.Complete result ->
-                        complete_job result
+                        complete_job (result, None)
                 end
 
             end else begin
@@ -51,7 +51,8 @@ module Interpreter (S : Config.BlockConfig) = struct
 
                 (* prepare the completion continuation *)
                 let completion = function
-                    | [ Types.Return (retopt, { Types.result_state=state; Types.result_history=history }) as result ] ->
+                    | [ (Types.Return (retopt, { Types.result_state=state; Types.result_history=history }),
+                         None) as result ] ->
                         begin match List.hd state.Types.callContexts with
                             | Types.Runtime ->
                                 (* occurs when main() is not symbolic, so there's nothing left to execute *)
@@ -77,7 +78,7 @@ module Interpreter (S : Config.BlockConfig) = struct
                                 failwith "TODO: handle return from @noreturn"
                         end
 
-                    | [ Types.Abandoned (_, _, _) as result ] ->
+                    | [ (Types.Abandoned _, _) as result ] ->
                         complete_job result
 
                     | _ ->
@@ -94,21 +95,24 @@ module Interpreter (S : Config.BlockConfig) = struct
 
         let completion results =
             (* report jobs that were abandoned *)
-            let abandoned, count = List.fold_left begin fun (abandoned, count) result -> match result with
-                | Types.Abandoned (s, loc, _) -> ((loc.Cil.file, loc.Cil.line, s)::abandoned, (count + 1))
-                | _ -> (abandoned, count)
-            end ([], 0) results in
+            let abandoned = List.fold_left begin fun abandoned result -> match result with
+                | Types.Abandoned (s, loc, _), block_errors ->
+                    (s, loc, block_errors)::abandoned
+                | _, _ ->
+                    abandoned
+            end [] results in
 
-            if count > 0 then begin
-                let printer ff abandoned = ignore begin List.iter begin fun (f, l, s) ->
-                    Format.fprintf ff "@[%s:%d: %s@]@\n" f l s;
+            if abandoned != [] then begin
+                let printer ff abandoned = ignore begin List.iter begin fun (s, l, b) ->
+                    Format.fprintf ff "@[%s:%d: %s@]@\n" l.Cil.file l.Cil.line s;
                 end abandoned end in
 
                 Format.eprintf "@.";
-                Format.eprintf "%d path%s abandoned in SymbolicBlock.exec:@\n"
+                Format.eprintf "Abandoned paths:@\n  @[%a@]@." printer abandoned;
+
+                let count = List.length abandoned in
+                Format.eprintf "%d path%s abandoned in SymbolicBlock.exec:@."
                     count (if count == 1 then "" else "s");
-                Format.eprintf "  @[%a@]@."
-                    printer abandoned;
             end;
 
             (file, results)

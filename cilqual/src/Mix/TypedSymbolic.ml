@@ -70,8 +70,8 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
             let old_state = state in
 
             (* prepare a monad that represents the symbolic result *)
-            let expM = mapM_ begin function
-                | Types.Return (retopt, { Types.result_state=state; Types.result_history=history }) ->
+            let expM = foldM begin fun block_errors results -> match results with
+                | Types.Return (retopt, { Types.result_state=state; Types.result_history=history }), _ ->
                     inContext (fun _ -> fn.Cil.svar.Cil.vdecl) begin perform
                         (* first, the return value *)
                         state <-- begin match retopt with
@@ -91,24 +91,32 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
                         foldM begin fun state frame ->
                             frame_bytes_to_qt old_state state frame
                         end state (state.Types.global::(state.Types.formals @ state.Types.locals));
-                        return ()
+
+                        return block_errors
                     end
 
-                | Types.Abandoned (msg, loc, result) ->
-                    failwith (Format.sprintf "TODO: handle abandoned path @@ %s:%d (%s)" loc.Cil.file loc.Cil.line msg)
+                | Types.Abandoned (msg, loc, result), None ->
+                    return (("Block errors returning from TypedSymbolic.switch", loc,
+                             `TypedSymbolicError (result, msg))::block_errors)
 
-                | Types.Exit _         (* a program that exits cannot possibly affect the outer context *)
-                | Types.Truncated _ -> (* truncated paths are those merged with other paths *)
-                    return ()
+                | Types.Abandoned _, Some e ->
+                    return (e::block_errors)
 
-            end completed in
+                | Types.Exit _, _         (* a program that exits cannot possibly affect the outer context *)
+                | Types.Truncated _, _ -> (* truncated paths are those merged with other paths *)
+                    return block_errors
+
+            end [] completed in
+
+            let (((((block_errors, _), _), _), _), _) as expState = run expM expState in
+            let expState = run (return ()) expState in
 
             (* update the constraints and return *)
-            k (run expM expState)
+            k expState block_errors
         in
 
         (* dispatch *)
-        dispatch (`SymbolicBlock (file, job, completion))
+        dispatch (`SymbolicBlock (file, job, (completion : (Types.job_completion * (string * Cil.location * [> ]) option) list -> 'd)))
 
 
     let dispatch chain dispatch = function

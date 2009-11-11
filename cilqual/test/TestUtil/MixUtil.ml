@@ -65,15 +65,29 @@ let assert_discrete_unsatisfiable solution =
     if not (Mix.TypedBlock.DiscreteSolver.Solution.is_unsatisfiable solution) then
         assert_failure "@[<v2>Should be unsatisfiable:@\n%a@]" Mix.TypedBlock.DiscreteSolver.Solution.printer solution
 
+let assert_has_block_errors expected_count block_errors =
+    let actual_count = List.length block_errors in
+    if actual_count <> expected_count then begin
+        let printer ff block_errors = ignore begin List.iter begin fun (f, l, s) ->
+            Format.fprintf ff "@[%s:%d: %s@]@\n" f l s;
+        end block_errors end in
+        assert_failure
+            "@[@[<2>expected: %d block errors@]@ @[<2> but got:@ %d block errors@]@\n@[<2>Block errors:@\n%a@]@]"
+            expected_count actual_count printer block_errors
+    end
+
+let assert_no_block_errors block_errors = assert_has_block_errors 0 block_errors
+
 let assert_has_abandoned expected_count results =
     (* count jobs that were abandoned *)
-    let abandoned, actual_count = List.fold_left begin fun (abandoned, actual_count) result -> match result with
-        | Types.Abandoned (s, loc, _) -> ((loc.Cil.file, loc.Cil.line, s)::abandoned, (actual_count + 1))
-        | _ -> (abandoned, actual_count)
-    end ([], 0) results in
+    let abandoned = List.fold_left begin fun abandoned result -> match result with
+        | Types.Abandoned (s, loc, _), _ -> (loc, s)::abandoned
+        | _, _ -> abandoned
+    end [] results in
+    let actual_count = List.length abandoned in
     if actual_count <> expected_count then begin
-        let printer ff abandoned = ignore begin List.iter begin fun (f, l, s) ->
-            Format.fprintf ff "@[%s:%d: %s@]@\n" f l s;
+        let printer ff abandoned = ignore begin List.iter begin fun (l, s) ->
+            Format.fprintf ff "@[%s:%d: %s@]@\n" l.Cil.file l.Cil.line s;
         end abandoned end in
         assert_failure
             "@[@[<2>expected: %d abandoned@]@ @[<2> but got:@ %d abandoned@]@\n@[<2>Abandoned paths:@\n%a@]@]"
