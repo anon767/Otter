@@ -91,7 +91,7 @@ let bytes__maybytes_from_list bytes_list =
 	and bytes__make_tree_next = function
 		| [ x ] -> x
         | []    -> failwith "No bytes in bytes_list!"
-		| outs  -> bytes__make_tree outs []
+		| outs  -> bytes__make_tree [] outs
 	in
 	bytes__make_tree [] bytes_list
 ;;
