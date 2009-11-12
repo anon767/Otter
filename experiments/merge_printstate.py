@@ -2,6 +2,7 @@ import sys
 from collections import defaultdict
 
 t = dict()
+fs = defaultdict(int)
 types = ["Globals","Locals","Formals","Memory"]
 for type in types:
 	t[type] = defaultdict(set)
@@ -12,6 +13,7 @@ isPrintState = False
 for file in sys.argv[1:]:
 	for line in open(file,"r"):
 		if "#BEGIN PRINTSTATE" in line:
+			fs[file] += 1
 			isPrintState = True
 			continue
 		elif "#END PRINTSTATE" in line:
@@ -28,6 +30,11 @@ for file in sys.argv[1:]:
 				(key,val) = (key.strip(),val.strip())
 				t[curtype][key].add(val)
 
+print "STATES PER FILE:"
+for (file,count) in sorted(fs.items(),key=lambda (x,y): -y):
+	print "%s : %d" % (file,count)
+
+print ""
 print "COUNT:"
 for type in types:
 	print type, ":"
