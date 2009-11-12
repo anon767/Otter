@@ -105,6 +105,8 @@ char_ff ff c =
 		fprintf ff "/%02X" (Char.code c)
 	else if c = '/'
 	then fprintf ff "//"
+	else if c = '\\'
+	then fprintf ff "/\\"
 	else
 		fprintf ff "%c" (c)
 
@@ -146,9 +148,9 @@ byte_ff ff = function
 (*
 and char c = char_ff str_formatter c; flush_str_formatter ()
 and symbol s = symbol_ff str_formatter s; flush_str_formatter ()
-and byte b = byte_ff str_formatter b; flush_str_formatter ()
 *)
 
+and byte b = byte_ff str_formatter b; flush_str_formatter ()
 
 (* format entire bytes structure in function-like syntax: op(operand1, ...) *)
 (* TODO: convert all formatting to use Format (exp, operation, string_of_int, ...) *)
@@ -163,9 +165,16 @@ and bytes_ff_named bytes_to_var ff =
 				let var = List.assoc bytes bytes_to_var in
 				fprintf ff "%s" var.vname
 			with Not_found ->
-				fprintf ff "Bytearray(%a)" begin fun ff ->
-					ImmutableArray.fold_left (fun _ -> byte_ff ff) ()
-				end bytearray
+				(*fprintf ff "Bytearray(%a)" begin fun ff ->
+					ImmutableArray.fold_left (fun _ -> byte_ff ff) ()*)
+              let helper str b c = str^(byte b)^(if c=1 then "" else "\\{"^(string_of_int c)^"}") in
+				fprintf ff "Bytearray(%s)" 
+					(let (str,last,count) = (ImmutableArray.fold_left (fun a b -> 
+                       match a with (str,None,_) -> (str,Some b,1) |
+                        (str,Some b',count) ->
+                        if (match b with Byte_Bytes _ -> false | _ -> b' = b) then (str,Some b',count+1) else
+                           (helper str b' count,Some b,1) )
+                        ("",None,0) bytearray) in match last with Some b -> helper str b count | None -> failwith "unreachable")
 			end
 
 		| Bytes_Address (Some(block), offset) -> fprintf ff "(addrOf(%s) [%a] + %a)" (memory_block block) bytes_ff block.memory_block_addr bytes_ff offset
