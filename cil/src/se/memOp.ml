@@ -96,6 +96,15 @@ let bytes__maybytes_from_list bytes_list =
 	bytes__make_tree [] bytes_list
 ;;
 
+let rec bytes__maybytes_from_lvals = function
+	| Lval_Block (block, offset) ->
+		make_Bytes_Address (Some block, offset)
+	| Lval_May (indicator, lvals1, lvals2) ->
+		make_Bytes_MayBytes (indicator, bytes__maybytes_from_lvals lvals1, bytes__maybytes_from_lvals lvals2)
+	| Lval_IfThenElse (c, lvals1, lvals2) ->
+		make_Bytes_IfThenElse (c, bytes__maybytes_from_lvals lvals1, bytes__maybytes_from_lvals lvals2)
+;;
+
 let bytes__symbolic n =
 	let rec impl len = 
 		if len <= 0 then [] else (byte__symbolic ())::(impl (len-1))
@@ -344,44 +353,51 @@ let heap__remove_address heap block_to_bytes address =
 (**
  *	memory frame
  *)
-let frame__empty = { varinfo_to_block = VarinfoMap.empty;} ;;
 
-let frame__varinfo_to_block frame varinfo =
-	VarinfoMap.find varinfo frame.varinfo_to_block
+let frame__empty = VarinfoMap.empty;;
+
+let frame__varinfo_to_lval_block frame varinfo =
+	VarinfoMap.find varinfo frame
 ;;
 
-let frame__map_varinfo_to_block frame varinfo block =
-	{	varinfo_to_block = VarinfoMap.add varinfo block frame.varinfo_to_block;}
-;;
-
-let frame__add_varinfo_initialized frame block_to_bytes varinfo init block =
-	let bytes = init in 
-	let frame2 = frame__map_varinfo_to_block frame varinfo block in
-	let block_to_bytes2 = MemoryBlockMap.add block (Immediate bytes) block_to_bytes in
-	(frame2, block_to_bytes2)
-;;
-
-let frame__add_varinfo frame block_to_bytes varinfo =
+let frame__add_varinfo frame block_to_bytes varinfo bytes_opt block_type =
 	let size = (Cil.bitsSizeOf varinfo.vtype) / 8 in
-	(* This is only called for local variables. Globals are handled by state__add_global. *)
-	let fresh_block = block__make (To_string.varinfo varinfo) size Block_type_Local in
-(*	let bytes = make_Bytes_ByteArray ({ImmutableArray.empty with ImmutableArray.length = size}) in (* initially undefined (so any accesses will crash the executor) *) *)
-	let bytes = bytes__make_default size byte__undef in (* initially the symbolic 'undef' byte *)
-(*	let bytes = bytes__symbolic size in (* initially symbolic *) *)
-		frame__add_varinfo_initialized frame block_to_bytes varinfo bytes fresh_block
+	let block = block__make (To_string.varinfo varinfo) size block_type in
+	let bytes = match bytes_opt with
+		| Some bytes -> bytes
+		| None -> bytes__make_default size byte__undef (* initially the symbolic 'undef' byte *)
+(*		| None -> make_Bytes_ByteArray ({ImmutableArray.empty with ImmutableArray.length = size}) in (* initially undefined (so any accesses will crash the executor) *) *)
+(*		| None -> bytes__symbolic size in (* initially symbolic *) *)
+	in
+	let frame = VarinfoMap.add varinfo (Immediate (Lval_Block (block, bytes__zero))) frame in
+	let block_to_bytes = MemoryBlockMap.add block (Immediate bytes) block_to_bytes in
+	(frame, block_to_bytes)
 ;;
 
-let rec frame__add_varinfos frame block_to_bytes varinfos =
-	match varinfos with
-		| [] -> (frame, block_to_bytes)
-		| varinfo:: tail ->
-			let (frame2, block_to_bytes2) = frame__add_varinfo frame block_to_bytes varinfo in
-			frame__add_varinfos frame2 block_to_bytes2 tail
+let frame__add_varinfos frame block_to_bytes varinfos block_type =
+	List.fold_left begin fun (frame, block_to_bytes) varinfo ->
+		frame__add_varinfo frame block_to_bytes varinfo None block_type
+	end (frame, block_to_bytes) varinfos
 ;;
 
 let frame__clear_varinfos frame block_to_bytes =
-	VarinfoMap.fold (fun varinfo -> MemoryBlockMap.remove) frame.varinfo_to_block block_to_bytes
-
+	(* only de-allocate stack variables allocated during symbolic execution *)
+	let rec remove_locals block_to_bytes = function
+		| Lval_Block ({ memory_block_type=Block_type_Local } as block, _) ->
+			MemoryBlockMap.remove block block_to_bytes
+		| Lval_Block _ ->
+			block_to_bytes
+		| Lval_May (_, lvals1, lvals2)
+		| Lval_IfThenElse (_, lvals1, lvals2) ->
+			let block_to_bytes = remove_locals block_to_bytes lvals1 in
+			let block_to_bytes = remove_locals block_to_bytes lvals2 in
+			block_to_bytes
+	in
+	VarinfoMap.fold begin fun varinfo deferred block_to_bytes -> match deferred with
+		| Immediate lvals -> remove_locals block_to_bytes lvals
+		| _ -> block_to_bytes
+	end frame block_to_bytes
+;;
 
 (**
  *	string table
@@ -443,7 +459,7 @@ let state__empty =
 		global = frame__empty;
 		formals = [frame__empty];
 		locals = [frame__empty]; (* permit global init with another global *)
-		extra_locals = VarinfoMap.empty;
+		extra = VarinfoMap.empty;
 		callstack = [];
 		block_to_bytes = MemoryBlockMap.empty;
 		path_condition = [];
@@ -462,6 +478,15 @@ let state__force state = function
 	| Deferred f -> f state
 ;;
 
+let state__force_with_update state update = function
+	| Immediate x ->
+		(state, x)
+	| Deferred f ->
+		(* update with the forced value *)
+		let state, x = f state in
+		(update state x, x)
+;;
+
 let state__has_block state block =
 	if block.memory_block_type == Block_type_StringLiteral then
 		string_table__mem block
@@ -470,32 +495,44 @@ let state__has_block state block =
 ;;
 
 let state__add_global state varinfo init = 
-	let size = (Cil.bitsSizeOf varinfo.vtype) / 8 in
-	let	block =
-		try
-			VarinfoMap.find varinfo state.global.varinfo_to_block
-		with Not_found ->
-			block__make (To_string.varinfo varinfo) size Block_type_Global
+	let new_global, new_block_to_bytes =
+		frame__add_varinfo state.global state.block_to_bytes varinfo (Some init) Block_type_Global
 	in
-	let (new_global,new_block_to_bytes) = frame__add_varinfo_initialized state.global state.block_to_bytes varinfo init block in
 	{	state with
 		global = new_global;
 		block_to_bytes = new_block_to_bytes;
 	}
 ;;
 	
-let state__varinfo_to_block state varinfo =
+let state__varinfo_to_lval_block state varinfo =
 	let local = List.hd state.locals in
-	let formal = List.hd state.formals in
-	let global = state.global in
-	if VarinfoMap.mem varinfo local.varinfo_to_block then
-		frame__varinfo_to_block local varinfo
-	else if VarinfoMap.mem varinfo formal.varinfo_to_block then
-		frame__varinfo_to_block formal varinfo
-	else if VarinfoMap.mem varinfo global.varinfo_to_block then
-		frame__varinfo_to_block global varinfo
-	else (* varinfo may be a function *)
-		failwith ("Varinfo "^(varinfo.vname)^" not found.")
+	if VarinfoMap.mem varinfo local then
+		let deferred = frame__varinfo_to_lval_block local varinfo in
+		let update state lval =
+			let local = VarinfoMap.add varinfo (Immediate lval) local in
+			{ state with locals=local::List.tl state.locals }
+		in
+		state__force_with_update state update deferred
+	else
+		let formal = List.hd state.formals in
+		if VarinfoMap.mem varinfo formal then
+			let deferred = frame__varinfo_to_lval_block formal varinfo in
+			let update state lval =
+				let formal = VarinfoMap.add varinfo (Immediate lval) formal in
+				{ state with formals=formal::List.tl state.formals }
+			in
+			state__force_with_update state update deferred
+		else
+			let global = state.global in
+			if VarinfoMap.mem varinfo global then
+				let deferred = frame__varinfo_to_lval_block global varinfo in
+				let update state lval =
+					let global = VarinfoMap.add varinfo (Immediate lval) global in
+					{ state with global=global }
+				in
+				state__force_with_update state update deferred
+			else (* varinfo may be a function *)
+				failwith ("Varinfo "^(varinfo.vname)^" not found.")
 ;;
 
 let state__add_block state block bytes =
@@ -519,14 +556,9 @@ let state__remove_block state block=
 let state__get_bytes_from_block state block =
 	if block.memory_block_type == Block_type_StringLiteral then
 		(state, string_table__get block)
-	else match MemoryBlockMap.find block state.block_to_bytes with
-		| Immediate bytes ->
-			(state, bytes)
-		| Deferred deferred ->
-			(* update with the forced value *)
-			let state, bytes = deferred state in
-			let state = state__add_block state block bytes in
-			(state, bytes)
+	else
+		let deferred = MemoryBlockMap.find block state.block_to_bytes in
+		state__force_with_update state (fun state bytes -> state__add_block state block bytes) deferred
 ;;
 
 let state__get_deferred_from_block state block =
@@ -607,8 +639,8 @@ let state__start_fcall state callContext fundec argvs =
     Output.print_endline ("Enter function " ^ (To_string.fundec fundec));
     (* set up the new stack frame *)
 	let block_to_bytes = state.block_to_bytes in
-	let formal, block_to_bytes = frame__add_varinfos frame__empty block_to_bytes fundec.Cil.sformals in
-	let local, block_to_bytes = frame__add_varinfos frame__empty block_to_bytes fundec.Cil.slocals in
+	let formal, block_to_bytes = frame__add_varinfos frame__empty block_to_bytes fundec.Cil.sformals Block_type_Local in
+	let local, block_to_bytes = frame__add_varinfos frame__empty block_to_bytes fundec.Cil.slocals Block_type_Local in
 	let state = { state with formals = formal::state.formals;
 	                         locals = local::state.locals;
 	                         callstack = fundec::state.callstack;
@@ -617,9 +649,9 @@ let state__start_fcall state callContext fundec argvs =
     (* assign arguments to parameters *)
 	let rec assign_argvs state pars argvs = match pars, argvs with
 		| par::pars, argv::argvs ->
-			let block = state__varinfo_to_block state par in
+			let state, lval_block = state__varinfo_to_lval_block state par in
 			let size = (Cil.bitsSizeOf par.Cil.vtype)/8 in
-			let state = state__assign state (Lval_Block (block, bytes__zero), size) argv in
+			let state = state__assign state (lval_block, size) argv in
 			assign_argvs state pars argvs
 		| [], va_arg ->
 			Output.set_mode Output.MSG_FUNC;

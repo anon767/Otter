@@ -72,22 +72,12 @@ bytes =
 
 and
 
-lval_block = Lval_Block of memory_block * bytes
-           | Lval_May of indicator * lval_block * lval_block
-           | Lval_IfThenElse of bytes * lval_block * lval_block
-
-and
-
-data_structure = 
-    | DS_Set of  bytes list * bytes    (* items and rest *)
-
-and
-
 memory_block_type = 
 	| Block_type_StringLiteral
 	| Block_type_Global
 	| Block_type_Local
 	| Block_type_Heap
+	| Block_type_Aliased (* for blocks allocated prior to symbolic execution, below the call stack *)
 
 and
 
@@ -99,6 +89,12 @@ memory_block =
 		memory_block_addr : bytes;
 		memory_block_type : memory_block_type; 
 	}
+
+and
+
+lval_block = Lval_Block of memory_block * bytes
+           | Lval_May of indicator * lval_block * lval_block
+           | Lval_IfThenElse of bytes * lval_block * lval_block
 ;;
 
 let hash_consing_bytes_enabled = ref false;;
@@ -185,12 +181,6 @@ let byte__undef = Byte_Symbolic({symbol_id = 0}) ;;
 
 module VarinfoMap = Cilutility.VarinfoMap
 
-type memory_frame = 
-	{
-		varinfo_to_block: memory_block VarinfoMap.t;
-	}
-;;
-
 type operator_action = (bytes*Cil.typ) list -> (bytes (* *Cil.typ*))
 ;;
 
@@ -247,12 +237,14 @@ type callingContext =
 type 'a deferred =
 	| Immediate of 'a
 	| Deferred of (state -> (state * 'a))
+and memory_frame = 
+	lval_block deferred VarinfoMap.t
 and state =
 	{
 		global : memory_frame;                  (* Map global lvals to blocks *)
 		formals : memory_frame list;            (* Map formal lvals to blocks *)
 		locals : memory_frame list;             (* Map local lvals to blocks *)
-		extra_locals : memory_block list VarinfoMap.t; (* Map for extra locals from unknown call stack recursion *)
+		extra : memory_block list VarinfoMap.t; (* Map for extra blocks, e.g., from unknown call stack recursion *)
 		callstack : Cil.fundec list;            (* Function call stack *)
 		block_to_bytes : bytes deferred MemoryBlockMap.t;
 		path_condition : bytes list;

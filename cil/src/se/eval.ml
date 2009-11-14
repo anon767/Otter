@@ -160,24 +160,25 @@ rval_cast typ rv rvtyp =
 *)
 and
 
-lval state (lhost, offset_exp) = match lhost with
-	| Var(varinfo) ->
-		let block = MemOp.state__varinfo_to_block state varinfo in
-		let state, offset, _ = flatten_offset state varinfo.vtype offset_exp in
-		(state, Lval_Block (block, offset))
-	| Mem(exp) ->
-		let state, rv = rval state exp in
-		let lvals = deref state rv in
-		let state, offset, _ = flatten_offset state (Cil.typeOf exp) offset_exp in
-		let rec add_offset = function
-			| Lval_Block (block, offset2) ->
-				Lval_Block (block, Operation.plus [(offset,Cil.intType);(offset2,Cil.intType)])
-			| Lval_May (indicator, lvals1, lvals2) ->
-				Lval_May (indicator, add_offset lvals1, add_offset lvals2)
-			| Lval_IfThenElse (c, lvals1, lvals2) ->
-				Lval_IfThenElse (c, add_offset lvals1, add_offset lvals2)
-		in
-		(state, add_offset lvals)
+lval state (lhost, offset_exp) =
+	let rec add_offset offset = function
+		| Lval_Block (block, offset2) ->
+			Lval_Block (block, Operation.plus [(offset,Cil.intType);(offset2,Cil.intType)])
+		| Lval_May (indicator, lvals1, lvals2) ->
+			Lval_May (indicator, add_offset offset lvals1, add_offset offset lvals2)
+		| Lval_IfThenElse (c, lvals1, lvals2) ->
+			Lval_IfThenElse (c, add_offset offset lvals1, add_offset offset lvals2)
+	in
+	match lhost with
+		| Var(varinfo) ->
+			let state, lvals = MemOp.state__varinfo_to_lval_block state varinfo in
+			let state, offset, _ = flatten_offset state varinfo.vtype offset_exp in
+			(state, add_offset offset lvals)
+		| Mem(exp) ->
+			let state, rv = rval state exp in
+			let lvals = deref state rv in
+			let state, offset, _ = flatten_offset state (Cil.typeOf exp) offset_exp in
+			(state, add_offset offset lvals)
 
 and
 

@@ -584,18 +584,29 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
                         let printVarBytes var bytes =
                             printVarFieldsBytes var.vname var.vtype bytes 0 
                         in
-						let printVar var block =
-                            match (MemoryBlockMap.find block state.block_to_bytes) with
-                              | Immediate bytes -> printVarBytes var bytes
-                              | Deferred _ -> printStringString var.vname "(deferred)"
+						let printVar var lval_block =
+							match lval_block with
+								| Immediate (Lval_Block (block, _)) ->
+									begin match (MemoryBlockMap.find block state.block_to_bytes) with
+										| Immediate bytes -> printVarBytes var bytes
+										| Deferred _ -> printStringString var.vname "(deferred)"
+									end
+
+								(* TODO: print something useful *)
+								| Immediate (Lval_May _) ->
+									printStringString var.vname "(Lval_May)"
+								| Immediate (Lval_IfThenElse _) ->
+									printStringString var.vname "(Lval_IfThenElse)"
+								| Deferred _ ->
+									printStringString var.vname "(deferred)"
 						in
 						Output.print_endline "#BEGIN PRINTSTATE";
 						Output.print_endline "#Globals:";
-						VarinfoMap.iter printVar state.global.varinfo_to_block;
+						VarinfoMap.iter printVar state.global;
 						Output.print_endline "#Locals:";
-						VarinfoMap.iter printVar (List.hd state.locals).varinfo_to_block;
+						VarinfoMap.iter printVar (List.hd state.locals);
 						Output.print_endline "#Formals:";
-						VarinfoMap.iter printVar (List.hd state.formals).varinfo_to_block;
+						VarinfoMap.iter printVar (List.hd state.formals);
                         let rec explore_memory bmap =  (* only one level *)
                           let bmap = BOSMap.mapi (fun (block,off,size) des -> match des with
                                                       | Some _ -> des
