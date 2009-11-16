@@ -165,16 +165,22 @@ and bytes_ff_named bytes_to_var ff =
 				let var = List.assoc bytes bytes_to_var in
 				fprintf ff "%s" var.vname
 			with Not_found ->
-				(*fprintf ff "Bytearray(%a)" begin fun ff ->
-					ImmutableArray.fold_left (fun _ -> byte_ff ff) ()*)
-              let helper str b c = str^(byte b)^(if c=1 then "" else "\\{"^(string_of_int c)^"}") in
-				fprintf ff "Bytearray(%s)" 
-					(let (str,last,count) = (ImmutableArray.fold_left (fun a b -> 
-                       match a with (str,None,_) -> (str,Some b,1) |
-                        (str,Some b',count) ->
-                        if (match b with Byte_Bytes _ -> false | _ -> b' = b) then (str,Some b',count+1) else
-                           (helper str b' count,Some b,1) )
-                        ("",None,0) bytearray) in match last with Some b -> helper str b count | None -> failwith "unreachable")
+              let helper ff b c = fprintf ff "%a" byte_ff b; if c=1 then () else fprintf ff "\\{%d}" c 
+              in
+              fprintf ff "Bytearray(";
+              let (last,count) = 
+                 (ImmutableArray.fold_left 
+                    (fun a b -> match a with 
+                       | (None,_) -> (Some b,1) 
+                       | (Some b',count) -> 
+                           if (match b with Byte_Bytes _ -> false | _ -> b' = b) 
+                           then (Some b',count+1) else (helper ff b' count ;(Some b,1))
+                    )
+                    (None,0) bytearray) 
+               in 
+                 match last with 
+                   | Some b -> (helper ff b count); fprintf ff ")"
+                   | None -> failwith "Unreachable"
 			end
 
 		| Bytes_Address (Some(block), offset) -> fprintf ff "(addrOf(%s) [%a] + %a)" (memory_block block) bytes_ff block.memory_block_addr bytes_ff offset
