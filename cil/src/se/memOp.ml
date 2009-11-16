@@ -324,32 +324,22 @@ let block__make_string_literal name n =
 	}
 ;;
 
-(*
-(**
- *  memory heap
- *)
-let heap__empty = { address_to_block = AddressMap.empty;} ;;
 
-let heap__address_to_block heap address = 
-	AddressMap.find address heap.address_to_block
+(* given a list of lval_block of length n, return a Lval_May tree of height log(n) containing all the lvals in the list *)
+let lval_block__from_list lval_list =
+    let rec lval_block__make_tree outs = function
+        | x::y::rest -> lval_block__make_tree ((Lval_May (indicator__next (), x, y))::outs) rest
+        | x::[]      -> lval_block__make_tree_next (x::outs)
+        | []         -> lval_block__make_tree_next outs
+    and lval_block__make_tree_next = function
+        | [ x ] -> x
+        | []    -> failwith "No lvals in lval_list!"
+        | outs  -> lval_block__make_tree [] outs
+    in
+    lval_block__make_tree [] lval_list
 ;;
 
-let heap__map_address_to_block heap address block = 
-	{ address_to_block = AddressMap.add address block heap.address_to_block; }
-;;
 
-let heap__add_address heap block_to_bytes address size =
-	let	block = block__make ("@"^(To_string.bytes address)) size in
-	let bytes = bytes__symbolic size in (* initially symbolic *)
-	let heap2 = heap__map_address_to_block heap address block in
-	let block_to_bytes2 = MemoryBlockMap.add block bytes block_to_bytes in
-	(heap2, block_to_bytes2)
-;;	
-
-let heap__remove_address heap block_to_bytes address =
-	()(* TODO *)
-;;
-*)
 (**
  *	memory frame
  *)
@@ -572,6 +562,101 @@ let state__get_bytes_from_lval state (block, offset, size) =
 	let state, source = state__get_bytes_from_block state block in
 	(state, bytes__read source offset size)
 ;;
+
+(* TODO: Yit:
+ * - Merge Lval_May/Lval_IfThenElse, Bytes_MayBytes/Bytes_IfThenElse by replacing indicator with Bytes_Boolean.
+ *
+ * - Maybe lift May/IfThenElse out of lval_block and bytes into a type 'a conditional = Base of 'a | IfThenElse of
+ *   'a conditional; this would make it possible to merge state__fold_lval_block and state__fold_bytes.
+ *
+ * - Fix handling of Bytes_MayBytes/Bytes_IfThenElse in many places; they don't correctly propagate the condition
+ *   recursively, and so, the Stp.query check is partial, and could lead to false warnings; could probably use
+ *   state__fold_bytes below.
+ *
+ * - Some functions implicit assume that Lval_May/Bytes_MayBytes and Lval_IfThenElse/Bytes_IfThenElse cannot occur
+ *   together, so indicator/condition aren't combined correctly; this problem would probably go away by
+ *   merging *_May/*_IfThenElse above.
+ *
+ * - Could also replace handling of lval_block in many places with state__fold_lval_block.
+ *)
+
+(** Fold over the leaves of lval_block which are consistent with the state, i.e., the indicator path is true under
+    the path condition.
+    @param f            the fold function : 'a -> (block * offset) -> 'a
+    @param state        the state which to fold lval_block in
+    @param acc          the accumulator
+    @param lval_block   the lval_block to fold over
+    @return [(acc, lval_block)]
+                        the accumulator and lval_block with infeasible leaves pruned
+*)
+let state__fold_lval_block state f acc lval_block =
+    let rec fold acc indicator = function
+        | Lval_May (j, tlvals, flvals) ->
+            let ti, fi = begin match indicator with
+                | None   -> (j, Indicator_Not j)
+                | Some i -> (Indicator_And (i, j), Indicator_And (i, Indicator_Not j))
+            end in
+            let ts = Stp.query_indicator state.path_condition ti in
+            let fs = Stp.query_indicator state.path_condition fi in
+            begin match ts, fs with
+                | (Stp.True | Stp.Unknown), Stp.False ->
+                    fold acc (Some ti) tlvals
+                | Stp.False, (Stp.True | Stp.Unknown) ->
+                    fold acc (Some fi) flvals
+                | (Stp.True | Stp.Unknown), (Stp.True | Stp.Unknown) ->
+                    let acc, tlvals = fold acc (Some ti) tlvals in
+                    let acc, flvals = fold acc (Some fi) flvals in
+                    let lval_block = Lval_May (j, tlvals, flvals) in
+                    (acc, lval_block)
+                | Stp.False, Stp.False ->
+                    failwith "state__fold_lval_block of an impossible Lval_May that contradicts the path condition"
+            end
+        | Lval_IfThenElse _ ->
+            failwith "TODO: state__fold_lval_block of Lval_IfThenElse"
+        | Lval_Block (block, offset) as lval_block ->
+            (f acc (block, offset), lval_block)
+    in
+    fold acc None lval_block
+
+
+(** Fold over the leaves of bytes which are consistent with the state, i.e., the indicator path is true under
+    the path condition.
+    @param f            the fold function : 'a -> bytes -> 'a
+    @param state        the state which to fold bytes in
+    @param acc          the accumulator
+    @param bytes        the bytes to fold over
+    @return [(acc, bytes)]
+                        the accumulator and bytes with infeasible leaves pruned
+*)
+let state__fold_bytes state f acc bytes =
+    let rec fold acc indicator = function
+        | Bytes_MayBytes (j, tbytes, fbytes) ->
+            let ti, fi = begin match indicator with
+                | None   -> (j, Indicator_Not j)
+                | Some i -> (Indicator_And (i, j), Indicator_And (i, Indicator_Not j))
+            end in
+            let ts = Stp.query_indicator state.path_condition ti in
+            let fs = Stp.query_indicator state.path_condition fi in
+            begin match ts, fs with
+                | (Stp.True | Stp.Unknown), Stp.False ->
+                    fold acc (Some ti) tbytes
+                | Stp.False, (Stp.True | Stp.Unknown) ->
+                    fold acc (Some fi) fbytes
+                | (Stp.True | Stp.Unknown), (Stp.True | Stp.Unknown) ->
+                    let acc, tbytes = fold acc (Some ti) tbytes in
+                    let acc, fbytes = fold acc (Some fi) fbytes in
+                    let bytes = Bytes_MayBytes (j, tbytes, fbytes) in
+                    (acc, bytes)
+                | Stp.False, Stp.False ->
+                    failwith "state__fold_bytes of an impossible Bytes_MayBytes that contradicts the path condition"
+            end
+        | Bytes_IfThenElse _ ->
+            failwith "TODO: state__fold_bytes of Bytes_IfThenElse"
+        | bytes ->
+            (f acc bytes, bytes)
+    in
+    fold acc None bytes
+        
 
 let rec state__assign state (lvals, size) bytes = (* have problem *)
 	let rec assign count state indicator condition = function

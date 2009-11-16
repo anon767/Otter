@@ -283,7 +283,20 @@ and
 memory_block block =
 	"\""^block.memory_block_name^"\""
 
+and
 
+lval_block_ff ff =
+    let rec lval_block_ff ff = function
+        | Lval_Block (block, offset) ->
+            fprintf ff "Lval_Block (@[%s@],@ @[%a@]@,)" (memory_block block) bytes_ff offset
+        | Lval_May (indicator, tlvals, flvals) ->
+            fprintf ff "Lval_May (@[%a@],@ @[%a@],@ @[%a@]@,)"
+                indicator_ff indicator lval_block_ff tlvals lval_block_ff flvals
+        | Lval_IfThenElse (bytes, tlvals, flvals) ->
+            fprintf ff "Lval_IfThenElse (@[%a@],@ @[%a@],@ @[%a@]@,)"
+                bytes_ff bytes lval_block_ff tlvals lval_block_ff flvals
+    in
+    lval_block_ff ff
 ;;
 
 (*
