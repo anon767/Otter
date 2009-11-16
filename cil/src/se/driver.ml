@@ -829,10 +829,12 @@ let exec_stmt job =
 								let state2 =
 									match expopt, destOpt with
 										| Some exp, Some dest ->
-												let state, lvals = Eval.lval state dest in
-												let size = (Cil.bitsSizeOf (Cil.typeOfLval dest))/8 in
+												(* evaluate the return expression in the callee frame *)
 												let state, rv = Eval.rval state exp in
 												let state = MemOp.state__end_fcall state in
+												(* evaluate the assignment in the caller frame *)
+												let state, lvals = Eval.lval state dest in
+												let size = (Cil.bitsSizeOf (Cil.typeOfLval dest))/8 in
 												MemOp.state__assign state (lvals, size) rv
 										| _, _ ->
 												(* If we are not returning a value, or if we
