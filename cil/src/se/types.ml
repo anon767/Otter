@@ -226,10 +226,10 @@ module BytesMap =
 		[nextStmt] is the [stmt] to execute after the call returns; [callStmt]
 		and [callInstr] are the function call statement and instruction;
 		and [destOpt] is [None] if we ignore the result of the call, or it is
-		[Some (lval_block,size)], which means we should assign the result there. *)
+		[Some Cil.lval], which means we should assign the result there. *)
 type callingContext =
     | Runtime
-    | Source of ((lval_block * int) option * Cil.stmt * Cil.instr * Cil.stmt)
+    | Source of (Cil.lval option * Cil.stmt * Cil.instr * Cil.stmt)
 	| NoReturn of Cil.instr
 ;;
 

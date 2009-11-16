@@ -81,7 +81,7 @@ let addInstrCoverage job instr =
 	{ job.exHist with coveredLines =
 			LineSet.add (instrLoc.file,instrLoc.line) job.exHist.coveredLines; }
 
-let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
+let exec_instr_call job instr lvalopt fexp exps loc =
 	let state,exHist,stmt = job.state,job.exHist,job.stmt in
 
 	let op_exps exps binop =
@@ -129,7 +129,7 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 					 has no successor. *)
 				let callContext = match stmt.succs with
 					| []  -> NoReturn instr
-					| [h] -> Source (blkOffSizeOpt,stmt,instr,h)
+					| [h] -> Source (lvalopt,stmt,instr,h)
 					| _   -> assert false
 				in
 				let state = MemOp.state__start_fcall state callContext fundec argvs in
@@ -140,6 +140,14 @@ let exec_instr_call job instr blkOffSizeOpt fexp exps loc =
 									 stmt = List.hd fundec.sallstmts;
 									 inTrackedFn = StringSet.mem fundec.svar.vname run_args.arg_fns; }
 		| _ ->
+				let blkOffSizeOpt = match lvalopt with
+					| None -> None
+					| Some lval ->
+						let state, lvals = Eval.lval state lval in
+						let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
+						Some (lvals,size)
+				in
+
 				try (
 					let nextExHist = ref exHist in
 				let state_end = begin match func with
@@ -752,17 +760,7 @@ let exec_instr job =
 		| Call(lvalopt, fexp, exps, loc) ->
 			assert (tail = []);
 			printInstr instr;
-			let state = job.state in
-			let state, destOpt = match lvalopt with
-				| None ->
-					(state, None)
-				| Some lval ->
-					let state, lvals = Eval.lval state lval in
-					let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
-					(state, Some (lvals,size))
-			in
-			let job = { job with state=state } in
-			exec_instr_call job instr destOpt fexp exps loc
+			exec_instr_call job instr lvalopt fexp exps loc
 		| Asm _ ->
 			Output.set_mode Output.MSG_MUSTPRINT;
 			Output.print_endline "Warning: ASM unsupported";
@@ -831,9 +829,11 @@ let exec_stmt job =
 								let state2 =
 									match expopt, destOpt with
 										| Some exp, Some dest ->
+												let state, lvals = Eval.lval state dest in
+												let size = (Cil.bitsSizeOf (Cil.typeOfLval dest))/8 in
 												let state, rv = Eval.rval state exp in
 												let state = MemOp.state__end_fcall state in
-												MemOp.state__assign state dest rv
+												MemOp.state__assign state (lvals, size) rv
 										| _, _ ->
 												(* If we are not returning a value, or if we
 													 ignore the result, just end the call *)
