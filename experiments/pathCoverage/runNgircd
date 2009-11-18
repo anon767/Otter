@@ -1,0 +1,8 @@
+DATADIR=/fs/skoll/symexe/data
+time for i in $DATADIR/ICSE_Backup/ngircd/normal/marshal/*l ; do
+	j=${i##*/}
+	# ngircd_08 wasn't used in our final data set, so skip it
+	if [[ $j != ngircd_08.marshal ]]; then
+		{ time $DATADIR/Python-2.6.2/python -u pathCov.py $i $DATADIR/ICSE_Backup/ngircd/normal/ngircdPossibleValues ; } &> ngircd/${j%.marshal}.deps
+	fi
+done

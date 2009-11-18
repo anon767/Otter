@@ -1,0 +1,5 @@
+DATADIR=/fs/skoll/symexe/data
+time for i in $DATADIR/ICSE_Backup/vsftpd/line/marshalledData/* ; do
+	j=${i##*/}
+	{ time $DATADIR/Python-2.6.2/python -u pathCov.py $i $DATADIR/ICSE_Backup/vsftpd/vsftpdPossibleValues ; } &> vsftpd/${j%.data}.deps
+done
