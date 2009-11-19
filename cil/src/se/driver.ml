@@ -2,7 +2,7 @@ open Cil
 open Types
 open PathMerging
 open Executeargs
-
+open Cilutility
 
 let eval_with_cache state pc bytes =
     (state, Stp.eval pc bytes) 

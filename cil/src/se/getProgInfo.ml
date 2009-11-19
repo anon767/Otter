@@ -1,5 +1,9 @@
 open Cil
 open Types
+open Cilutility
+
+let reachable_functions: (fundec list) FundecMap.t ref = ref FundecMap.empty
+let reachable_globals: VarinfoSet.t ref = ref VarinfoSet.empty
 
 class getStatsVisitor = object (self)
 	val lines = ref LineSet.empty
@@ -53,6 +57,43 @@ class getStatsVisitor = object (self)
 	method vfunc fundec = currFuncName := fundec.svar.vname; DoChildren
 end
 
+class getCallerVisitor = object (self)
+	val callee_list : fundec list ref= ref []
+	val varinfo_set : VarinfoSet.t ref= ref VarinfoSet.empty
+
+	val currFuncName = ref ""
+
+	method callee_list = !callee_list
+	method varinfo_set = !varinfo_set
+
+	inherit nopCilVisitor
+
+	method vlval lval = (match lval with
+      | (Var(varinfo),_) -> (
+          match varinfo.vtype with
+            | TFun _ -> (try callee_list := (Cilutility.search_function varinfo)::(!callee_list) with Not_found -> ())
+            | _ -> if varinfo.vglob then varinfo_set := VarinfoSet.add varinfo (!varinfo_set) else ()
+        )
+      | _ -> ()
+    );
+		SkipChildren 
+
+end
+class getGlobalInitVisitor = object (self)
+	val varinfo_set : VarinfoSet.t ref= ref VarinfoSet.empty
+	method varinfo_set = !varinfo_set
+
+	inherit nopCilVisitor
+
+	method vlval lval = 
+      (match lval with
+      | (Var(varinfo),_) -> varinfo_set := VarinfoSet.add varinfo (!varinfo_set) 
+      | _ -> ()
+    );
+		DoChildren 
+
+end
+
 let getProgInfo (file : Cil.file) fnNameSet =
 	let vis = new getStatsVisitor in
 	iterGlobals
@@ -64,3 +105,43 @@ let getProgInfo (file : Cil.file) fnNameSet =
 			 | _ -> ()
 		);
 	(vis#lines,vis#blocks,vis#edges,vis#conds)
+
+(* TODO: a global can be reachable by another global init! *)
+let computeReachableCode file = 
+  (* compute reachable globals from main *)
+  let main_func =
+  	try Function.from_name_in_file "main" file
+  	with Not_found -> failwith "No main function found!"
+  in
+  let rec computeReachableCodeThroughFunCall queue = 
+    if List.length queue = 0 then () else
+      let vis = new getCallerVisitor in
+      let fn = List.hd queue in
+      let queue = List.tl queue in
+      (*  Printf.printf "Exploring function %s\n" (To_string.fundec fn); *)
+      let fnMap = (!reachable_functions) in
+        if FundecMap.mem fn fnMap then computeReachableCodeThroughFunCall queue else
+        (
+          ignore (visitCilFunction (vis:>cilVisitor) fn);
+          reachable_functions := FundecMap.add fn (vis#callee_list) fnMap;
+          reachable_globals := VarinfoSet.union (vis#varinfo_set) (!reachable_globals);
+          let queue' = List.append queue (vis#callee_list) in
+            computeReachableCodeThroughFunCall queue'
+        )
+  in
+  let rec computeReachableCodeThroughGlobalInit globals =
+    match globals with
+      | [] -> ()
+      | g::globals -> 
+          (match (Cilutility.search_varinit g).init with
+             | None -> computeReachableCodeThroughGlobalInit globals
+             | Some init ->
+                let vis = new getGlobalInitVisitor in
+                ignore (visitCilInit (vis:>cilVisitor) g NoOffset init);
+                reachable_globals := VarinfoSet.union (vis#varinfo_set) (!reachable_globals);
+                computeReachableCodeThroughGlobalInit (globals@(VarinfoSet.elements (vis#varinfo_set)))
+          )
+  in
+    computeReachableCodeThroughFunCall [main_func];
+    computeReachableCodeThroughGlobalInit (VarinfoSet.elements (!reachable_globals))
+

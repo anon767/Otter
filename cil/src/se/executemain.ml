@@ -2,54 +2,58 @@ open Cil
 open Types
 open Executeargs
 
+let unreachable_global varinfo = not (Cilutility.VarinfoSet.mem varinfo (!GetProgInfo.reachable_globals));;
+
 let rec init_globalvars state globals =
 	match globals with
 		| [] -> state
 		| GVar(varinfo, initinfo, loc):: tail ->
-				Output.set_mode Output.MSG_MUSTPRINT;
-					begin
-					let lhost_typ = varinfo.vtype in
-					let size = (Cil.bitsSizeOf (varinfo.vtype)) / 8 in
-					let zeros = MemOp.bytes__make size in
-					let state, init_bytes = match initinfo.init with
-						| None -> (state, zeros)
-						| Some(init) ->
-								(* make the offset argument "accumulative",
-								   i.e. not following the spec of Cil's offset in init type
-								 *)
-								let rec accumulate_offset offset off' =
-									match offset with
-										| NoOffset -> off'
-										| Field(f,offset2) -> Field(f,accumulate_offset offset2 off')
-										| Index(exp,offset2) -> Index(exp,accumulate_offset offset2 off')
-								in
-								let rec myInit (offset:Cil.offset) (i:Cil.init) (state, acc) =
-									match i with 
-										| SingleInit(exp) -> 
-											let state, off, typ = Eval.flatten_offset state lhost_typ offset in
-											let state, off_bytes = Eval.rval state exp in
-											let init_bytes =
-												MemOp.bytes__write
-													acc off (Cilutility.bitsSizeOfExp exp) off_bytes
-											in
-											(state, init_bytes)
-										| CompoundInit(typ, list) ->          
-											foldLeftCompound
-												~implicit: false
-												~doinit: (fun off' i' t' (state, acc) -> myInit (accumulate_offset offset off') i' (state, acc))
-												~ct: typ
-												~initl: list
-												~acc: (state, acc)
-								in
-									myInit NoOffset init (state, zeros)
-					in
-					Output.set_mode Output.MSG_REG;
-					Output.print_endline ("Initialize "^varinfo.vname^" to "
-						^(if init_bytes == zeros then "zeros" else To_string.bytes init_bytes)
-					);					
-					let state2 = MemOp.state__add_global state varinfo init_bytes in
-					init_globalvars state2 tail
-				end
+            let state2 = if Executeargs.run_args.arg_noinit_unreachable_globals && unreachable_global varinfo then state else
+              (
+              Output.set_mode Output.MSG_MUSTPRINT;
+              let lhost_typ = varinfo.vtype in
+              let size = (Cil.bitsSizeOf (varinfo.vtype)) / 8 in
+              let zeros = MemOp.bytes__make size in
+              let state, init_bytes = match initinfo.init with
+                | None -> (state, zeros)
+                | Some(init) ->
+                    (* make the offset argument "accumulative",
+                     i.e. not following the spec of Cil's offset in init type
+                     *)
+                    let rec accumulate_offset offset off' =
+                      match offset with
+                        | NoOffset -> off'
+                        | Field(f,offset2) -> Field(f,accumulate_offset offset2 off')
+                        | Index(exp,offset2) -> Index(exp,accumulate_offset offset2 off')
+                    in
+                    let rec myInit (offset:Cil.offset) (i:Cil.init) (state, acc) =
+                      match i with 
+                        | SingleInit(exp) -> 
+                            let state, off, typ = Eval.flatten_offset state lhost_typ offset in
+                            let state, off_bytes = Eval.rval state exp in
+                            let init_bytes =
+                              MemOp.bytes__write
+                                acc off (Cilutility.bitsSizeOfExp exp) off_bytes
+                            in
+                              (state, init_bytes)
+                        | CompoundInit(typ, list) ->          
+                            foldLeftCompound
+                              ~implicit: false
+                              ~doinit: (fun off' i' t' (state, acc) -> myInit (accumulate_offset offset off') i' (state, acc))
+                              ~ct: typ 
+                              ~initl: list 
+                              ~acc: (state, acc)
+                    in
+                      myInit NoOffset init (state, zeros)
+              in
+                Output.set_mode Output.MSG_REG;
+                Output.print_endline ("Initialize "^varinfo.vname^" to "
+                                      ^(if init_bytes == zeros then "zeros" else To_string.bytes init_bytes)
+                );					
+                MemOp.state__add_global state varinfo init_bytes 
+              )
+            in
+                init_globalvars state2 tail
 		| GVarDecl(varinfo, loc):: tail when (not(Cil.isFunctionType varinfo.vtype)) ->
 				(* I think the list of globals is always in the same order as in the source
 					 code. In particular, I think there will never be a declaration of a
@@ -57,6 +61,8 @@ let rec init_globalvars state globals =
 					 such extra declarations. If this is true, then this should work fine. If
 					 not, a declaration occuring *after* a definition will wipe out the
 					 definition, replacing the value with zeros. *)
+            let state2 = if Executeargs.run_args.arg_noinit_unreachable_globals && unreachable_global varinfo then state else
+              (
 				Output.set_mode Output.MSG_REG;
 				Output.print_endline ("Initialize "^varinfo.vname^" without initial value"
 					(*^(To_string.bytes init)*)
@@ -65,7 +71,9 @@ let rec init_globalvars state globals =
 				let size = if size <= 0 then 1 else size in
 				let init_bytes = MemOp.bytes__make size (* zeros *)
 				in
-				let state2 = MemOp.state__add_global state varinfo init_bytes in
+				    MemOp.state__add_global state varinfo init_bytes 
+              )
+            in
 				init_globalvars state2 tail
 		| _:: tail -> init_globalvars state tail
 ;;
@@ -172,6 +180,7 @@ let prepare_file file =
 	Cilly.makeCFGFeature.fd_doit file;
 
 	(* TODO: move this out of global variable *)
+    (* TODO: move this to somewhere (maybe getProgInfo.ml) *)
 	(* - Hash all of the fundecs by their varinfos
 		 - Reset sids to be unique only within a function (not globally)
 		 - Compute the join points which each [If] dominates *)
@@ -180,8 +189,17 @@ let prepare_file file =
 			Hashtbl.add Cilutility.fundecHashtbl fundec.svar fundec;
 			ignore (List.fold_left (fun n stmt -> stmt.sid <- n; succ n) 0 fundec.sallstmts);
 			computeJoinPointsForIfs fundec
+		| GVar(varinfo,initinfo,_) ->
+			Hashtbl.add Cilutility.varinitHashtbl varinfo initinfo;
+		| GVarDecl(varinfo,_) ->
+			Hashtbl.add Cilutility.varinitHashtbl varinfo { init=None };
 		| _ -> ()
 	end file.globals;
+
+    if Executeargs.run_args.arg_noinit_unreachable_globals then (
+        GetProgInfo.computeReachableCode file 
+    ) else ();
+    (* Output.print_endline "(* computed reachable globals from main *)"; *)
 
 	(* Find all lines, blocks, edges, and conditions. *)
 	(* TODO: wrap the listings of Lines,Edges,etc... *)
@@ -436,6 +454,10 @@ let feature : featureDescr =
 			("--calculateDepsDuringExecution",
 			 Arg.Unit (fun () -> run_args.arg_calculate_dependencies <- true),
 			 " Calculate (at the end of symbolic execution) what lines depend on what symbolic variables\n");
+
+			("--noinitUnreachableGlobals",
+			 Arg.Unit (fun () -> run_args.arg_noinit_unreachable_globals <- true),
+			 " Do NOT initialize unreachable globals\n");
 
 			("--marshalFrom",
 			 Arg.String

@@ -12,16 +12,34 @@ module VarinfoMap =
 			c
 	end
 	)
+module VarinfoSet =
+	Utility.MakeSet (
+	struct
+		type t = Cil.varinfo
+		let compare a b =
+			let c = Pervasives.compare a.Cil.vid b.Cil.vid in c
+	end
+	)
 
 let bitsSizeOfExp exp =
 	(Cil.bitsSizeOf (Cil.typeOf exp)) / 8;;
 
 let fundecHashtbl : (varinfo, fundec) Hashtbl.t = Hashtbl.create 100;;
+let varinitHashtbl : (varinfo, initinfo) Hashtbl.t = Hashtbl.create 100;;
 
 let search_function varinfo = Hashtbl.find fundecHashtbl varinfo;;
+let search_varinit varinfo = Hashtbl.find varinitHashtbl varinfo;;
 
 module FundecMap =
 	Utility.MakeMap (
+	struct
+		type t = Cil.fundec
+		let compare a b = let id x = x.svar.vid in Pervasives.compare (id a) (id b)
+	end
+	)
+
+module FundecSet =
+	Utility.MakeSet (
 	struct
 		type t = Cil.fundec
 		let compare a b = let id x = x.svar.vid in Pervasives.compare (id a) (id b)
