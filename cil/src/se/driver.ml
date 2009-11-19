@@ -593,6 +593,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
                             printVarFieldsBytes var.vname var.vtype bytes 0 
                         in
 						let printVar var lval_block =
+                          if Cilutility.isConstType var.vtype then () else
 							match lval_block with
 								| Immediate (Lval_Block (block, _)) ->
 									begin match (MemoryBlockMap.find block state.block_to_bytes) with
