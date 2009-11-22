@@ -19,8 +19,7 @@ rval state exp : state * bytes =
 					end
 
 			| Lval (cil_lval) ->
-					let state, lvals = lval state cil_lval in
-					let size = (Cil.bitsSizeOf (Cil.typeOfLval cil_lval))/8 in
+					let state, (lvals, size) = lval state cil_lval in
 					let rec get_bytes state = function
 						| Lval_Block (block, offset) ->
 							MemOp.state__get_bytes_from_lval state (block, offset, size)
@@ -72,7 +71,7 @@ rval state exp : state * bytes =
 					(state, make_Bytes_FunPtr(fundec,f_addr))
 			|	AddrOf (cil_lval)
 			|	StartOf (cil_lval) ->
-					let state, lvals = lval state cil_lval in
+					let state, (lvals, _) = lval state cil_lval in
 					let rec get_addrof = function
 						| Lval_Block (block, offset) ->
 							make_Bytes_Address(Some(block), offset)
@@ -160,7 +159,8 @@ rval_cast typ rv rvtyp =
 *)
 and
 
-lval state (lhost, offset_exp) =
+lval state (lhost, offset_exp as cil_lval) =
+	let size = (Cil.bitsSizeOf (Cil.typeOfLval cil_lval))/8 in
 	let rec add_offset offset = function
 		| Lval_Block (block, offset2) ->
 			Lval_Block (block, Operation.plus [(offset,Cil.intType);(offset2,Cil.intType)])
@@ -173,12 +173,12 @@ lval state (lhost, offset_exp) =
 		| Var(varinfo) ->
 			let state, lvals = MemOp.state__varinfo_to_lval_block state varinfo in
 			let state, offset, _ = flatten_offset state varinfo.vtype offset_exp in
-			(state, add_offset offset lvals)
+			(state, (add_offset offset lvals, size))
 		| Mem(exp) ->
 			let state, rv = rval state exp in
 			let lvals = deref state rv in
 			let state, offset, _ = flatten_offset state (Cil.typeOf exp) offset_exp in
-			(state, add_offset offset lvals)
+			(state, (add_offset offset lvals, size))
 
 and
 

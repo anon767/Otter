@@ -148,10 +148,9 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 						begin match lvalopt with
 							| None ->
 								state
-							| Some lval ->
-								let state, lvals = Eval.lval state lval in
-								let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
-								MemOp.state__assign state (lvals, size) bytes
+							| Some cil_lval ->
+								let state, lval = Eval.lval state cil_lval in
+								MemOp.state__assign state lval bytes
 						end
 
 (*
@@ -206,9 +205,8 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 						begin match lvalopt with
 							| None ->
 								state
-							| Some lval ->
-								let state, lvals = Eval.lval state lval in
-								let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
+							| Some cil_lval ->
+								let state, lval = Eval.lval state cil_lval in
                                 let truthvalue = 
                                   begin
                                   if List.length exps <> 2 then 
@@ -222,14 +220,13 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 				                  else MemOp.bytes__symbolic 4
                                   end
                                 in
-								MemOp.state__assign state (lvals, size) truthvalue
+								MemOp.state__assign state lval truthvalue
 						end
                     | Function.TruthValue -> 
 						begin match lvalopt with
 							| None -> state 
-							| Some lval ->
-								let state, lvals = Eval.lval state lval in
-								let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
+							| Some cil_lval ->
+								let state, lval = Eval.lval state cil_lval in
                                 let truthvalue = 
                                   Convert.lazy_int_to_bytes
                                   begin
@@ -241,7 +238,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 				                  else 0
                                   end
                                 in
-								MemOp.state__assign state (lvals, size) truthvalue
+								MemOp.state__assign state lval truthvalue
 						end
 
 					| Function.Symbolic -> (
@@ -255,21 +252,20 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 	 'x = __SYMBOLIC();' past CIL despite the disagreement in the number
 	 of arguments, this behaves like the n <= 0 case.) *)
 							match exps with
-								| [AddrOf (Var varinf, NoOffset as lval)]
-								| [CastE (_, AddrOf (Var varinf, NoOffset as lval))] ->
+								| [AddrOf (Var varinf, NoOffset as cil_lval)]
+								| [CastE (_, AddrOf (Var varinf, NoOffset as cil_lval))] ->
 										(* If we are given a variable's address, we track the symbolic value.
 											 But make sure we don't give the same variable two different values. *)
 										if List.exists (fun (_,v) -> v == varinf) exHist.bytesToVars
 										then Errormsg.s
 											(Errormsg.error "Can't assign two tracked values to variable %s" varinf.vname);
 
-										let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
-										let state, lvals = Eval.lval state lval in
+										let state, (_, size as lval) = Eval.lval state cil_lval in
 										let symbBytes = MemOp.bytes__symbolic size in
 										Output.set_mode Output.MSG_MUSTPRINT;
 										Output.print_endline (varinf.vname ^ " = " ^ (To_string.bytes symbBytes));
 										nextExHist := { exHist with bytesToVars = (symbBytes,varinf) :: exHist.bytesToVars; };
-										MemOp.state__assign state (lvals,size) symbBytes
+										MemOp.state__assign state lval symbBytes
 								| _ ->
 										(* Any symbolic value not directly given to a variable by a call to
 											 __SYMBOLIC(&<var>) does not get tracked. *)
@@ -277,8 +273,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 											| None ->
 													state
 											| Some lval ->
-													let state, lvals = Eval.lval state lval in
-													let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
+													let state, (_, size as lval) = Eval.lval state lval in
 													let state, ssize = match exps with
 														| [] ->
 															(state, size)
@@ -289,8 +284,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 														| _ ->
 															failwith "__SYMBOLIC takes at most one argument"
 													in
-													MemOp.state__assign state (lvals, size (*ssize?*))
-														(MemOp.bytes__symbolic ssize )
+													MemOp.state__assign state lval (MemOp.bytes__symbolic ssize)
 										end
 						)
 
@@ -310,9 +304,8 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 							begin match lvalopt with
 								| None -> 
 									state
-								| Some lval ->
-									let state, lvals = Eval.lval state lval in
-									let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
+								| Some cil_lval ->
+									let state, (_, size as lval) = Eval.lval state cil_lval in
 									let state, key =
 										if List.length exps == 0 then
 											(state, 0)
@@ -326,7 +319,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 										else MemOp.loc_table__add state (loc,key) (MemOp.bytes__symbolic size)
 									in
 									let newbytes = MemOp.loc_table__get state (loc,key) in
-									MemOp.state__assign state (lvals, size) newbytes
+									MemOp.state__assign state lval newbytes
 							end												
 (*
 					| Function.Fresh ->
@@ -343,10 +336,9 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 							begin match lvalopt with
 								| None -> 
 									state
-								| Some lval ->
-									let state, lvals = Eval.lval state lval in
-									let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
-									MemOp.state__assign state (lvals, size) (MemOp.bytes__symbolic size)
+								| Some cil_lval ->
+									let state, (_, size as lval) = Eval.lval state cil_lval in
+									MemOp.state__assign state lval (MemOp.bytes__symbolic size)
 							end
 						
 					| Function.Exit ->
@@ -441,34 +433,31 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 					| Function.IfThenElse ->
 							begin match lvalopt with
 								| None -> state
-								| Some lval ->
-									let state, lvals = Eval.lval state lval in
-									let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
+								| Some cil_lval ->
+									let state, lval = Eval.lval state cil_lval in
                                     let state, bytes0 = Eval.rval state (List.nth exps 0) in
                                     let state, bytes1 = Eval.rval state (List.nth exps 1) in
                                     let state, bytes2 = Eval.rval state (List.nth exps 2) in
 									let rv = make_Bytes_IfThenElse (bytes0, bytes1, bytes2) in
-									MemOp.state__assign state (lvals, size) rv
+									MemOp.state__assign state lval rv
 							end
 												
 					| Function.BooleanOp (binop) ->
 							begin match lvalopt with
 								| None -> failwith "Unreachable BooleanOp"
-								| Some lval ->
-									let state, lvals = Eval.lval state lval in
-									let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
+								| Some cil_lval ->
+									let state, lval = Eval.lval state cil_lval in
 									let state, rv = op_exps state exps binop in
-									MemOp.state__assign state (lvals, size) rv
+									MemOp.state__assign state lval rv
 							end
 
 					| Function.BooleanNot ->
 							begin match lvalopt with
 								| None -> failwith "Unreachable BooleanNot"
-								| Some lval ->
-									let state, lvals = Eval.lval state lval in
-									let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
+								| Some cil_lval ->
+									let state, lval = Eval.lval state cil_lval in
 									let state, rv = Eval.rval state (UnOp(Cil.LNot, List.hd exps, Cil.voidType)) in
-									MemOp.state__assign state (lvals, size) rv
+									MemOp.state__assign state lval rv
 							end
 
 					| Function.Aspect(pointcut, advice) ->
@@ -758,13 +747,12 @@ let exec_instr job =
 	(* Since we've used the makeCFGFeature, an [Instr] is a series of
 	   [Set]s and [Asm]s, possibly terminated with a [Call]. *)
 	match instr with
-		| Set(lval,exp,loc) ->
+		| Set(cil_lval, exp, loc) ->
 			printInstr instr;
             let state = job.state in
-			let state, lvals = Eval.lval state lval in
-			let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
+			let state, lval = Eval.lval state cil_lval in
 			let state, rv = Eval.rval state exp in
-			let state = MemOp.state__assign state (lvals,size) rv in
+			let state = MemOp.state__assign state lval rv in
 			let nextStmt = if tail = [] then List.hd job.stmt.succs else job.stmt in
 			Active { job with state = state; stmt = nextStmt }
 		| Call(lvalopt, fexp, exps, loc) ->
@@ -843,9 +831,8 @@ let exec_stmt job =
 												let state, rv = Eval.rval state exp in
 												let state = MemOp.state__end_fcall state in
 												(* evaluate the assignment in the caller frame *)
-												let state, lvals = Eval.lval state dest in
-												let size = (Cil.bitsSizeOf (Cil.typeOfLval dest))/8 in
-												MemOp.state__assign state (lvals, size) rv
+												let state, lval = Eval.lval state dest in
+												MemOp.state__assign state lval rv
 										| _, _ ->
 												(* If we are not returning a value, or if we
 													 ignore the result, just end the call *)
