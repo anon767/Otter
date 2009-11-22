@@ -84,7 +84,7 @@ let addInstrCoverage job instr =
 let exec_instr_call job instr lvalopt fexp exps loc =
 	let state,exHist,stmt = job.state,job.exHist,job.stmt in
 
-	let op_exps exps binop =
+	let op_exps state exps binop =
 		let rec impl exps =
 			match exps with
 				| [] -> failwith "AND/OR must take at least 1 argument"
@@ -140,25 +140,18 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 									 stmt = List.hd fundec.sallstmts;
 									 inTrackedFn = StringSet.mem fundec.svar.vname run_args.arg_fns; }
 		| _ ->
-				let blkOffSizeOpt = match lvalopt with
-					| None -> None
-					| Some lval ->
-						let state, lvals = Eval.lval state lval in
-						let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
-						Some (lvals,size)
-				in
-
 				try (
 					let nextExHist = ref exHist in
 				let state_end = begin match func with
 					| Function.Builtin (builtin) ->
-						let (state2,bytes) = builtin state exps in
-						begin
-							match blkOffSizeOpt with
-								| None ->
-									state2
-								| Some dest ->
-									MemOp.state__assign state2 dest bytes
+						let (state,bytes) = builtin state exps in
+						begin match lvalopt with
+							| None ->
+								state
+							| Some lval ->
+								let state, lvals = Eval.lval state lval in
+								let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
+								MemOp.state__assign state (lvals, size) bytes
 						end
 
 (*
@@ -210,9 +203,12 @@ let exec_instr_call job instr lvalopt fexp exps loc =
                            *)
 
                     | Function.Given -> 
-						begin match blkOffSizeOpt with
-							| None -> state 
-							| Some dest ->
+						begin match lvalopt with
+							| None ->
+								state
+							| Some lval ->
+								let state, lvals = Eval.lval state lval in
+								let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
                                 let truthvalue = 
                                   begin
                                   if List.length exps <> 2 then 
@@ -226,12 +222,14 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 				                  else MemOp.bytes__symbolic 4
                                   end
                                 in
-								MemOp.state__assign state dest truthvalue
+								MemOp.state__assign state (lvals, size) truthvalue
 						end
                     | Function.TruthValue -> 
-						begin match blkOffSizeOpt with
+						begin match lvalopt with
 							| None -> state 
-							| Some dest ->
+							| Some lval ->
+								let state, lvals = Eval.lval state lval in
+								let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
                                 let truthvalue = 
                                   Convert.lazy_int_to_bytes
                                   begin
@@ -243,7 +241,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 				                  else 0
                                   end
                                 in
-								MemOp.state__assign state dest truthvalue
+								MemOp.state__assign state (lvals, size) truthvalue
 						end
 
 					| Function.Symbolic -> (
@@ -275,10 +273,12 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 								| _ ->
 										(* Any symbolic value not directly given to a variable by a call to
 											 __SYMBOLIC(&<var>) does not get tracked. *)
-										begin match blkOffSizeOpt with
+										begin match lvalopt with
 											| None ->
 													state
-											| Some (lvals, size) ->
+											| Some lval ->
+													let state, lvals = Eval.lval state lval in
+													let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
 													let state, ssize = match exps with
 														| [] ->
 															(state, size)
@@ -307,10 +307,12 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 						end state.block_to_bytes state
 
 					| Function.SymbolicStatic ->
-							begin match blkOffSizeOpt with
+							begin match lvalopt with
 								| None -> 
 									state
-								| Some (lvals, size as dest) ->
+								| Some lval ->
+									let state, lvals = Eval.lval state lval in
+									let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
 									let state, key =
 										if List.length exps == 0 then
 											(state, 0)
@@ -324,7 +326,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 										else MemOp.loc_table__add state (loc,key) (MemOp.bytes__symbolic size)
 									in
 									let newbytes = MemOp.loc_table__get state (loc,key) in
-									MemOp.state__assign state dest newbytes
+									MemOp.state__assign state (lvals, size) newbytes
 							end												
 (*
 					| Function.Fresh ->
@@ -338,12 +340,13 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 							end				
 *)												
 					| Function.NotFound ->
-							begin
-								match blkOffSizeOpt with
+							begin match lvalopt with
 								| None -> 
-										state
-								| Some (lvals, size as dest) ->
-										MemOp.state__assign state dest (MemOp.bytes__symbolic size)
+									state
+								| Some lval ->
+									let state, lvals = Eval.lval state lval in
+									let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
+									MemOp.state__assign state (lvals, size) (MemOp.bytes__symbolic size)
 							end
 						
 					| Function.Exit ->
@@ -354,7 +357,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 						raise (Function.Notification_Exit (exit_code))
 					
 					| Function.Evaluate ->
-						let state, pc = op_exps exps Cil.LAnd in
+						let state, pc = op_exps state exps Cil.LAnd in
 							Output.set_mode Output.MSG_MUSTPRINT;
 							Output.print_endline ("    Evaluates to "^(To_string.bytes pc));
 							state
@@ -392,7 +395,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 							state
 												
 					| Function.Assume ->
-						let state, pc = op_exps exps Cil.LAnd in
+						let state, pc = op_exps state exps Cil.LAnd in
 							MemOp.state__add_path_condition state pc false
 					
 					| Function.PathCondition ->
@@ -402,7 +405,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 							state
 															
 					| Function.Assert -> 
-						let state, post = op_exps exps Cil.LAnd in
+						let state, post = op_exps state exps Cil.LAnd in
 						let state, truth = eval_with_cache state state.path_condition post in
 							begin
 								if truth == Stp.True then
@@ -436,30 +439,36 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 							state
 												
 					| Function.IfThenElse ->
-							begin match blkOffSizeOpt with
+							begin match lvalopt with
 								| None -> state
-								| Some dest ->
+								| Some lval ->
+									let state, lvals = Eval.lval state lval in
+									let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
                                     let state, bytes0 = Eval.rval state (List.nth exps 0) in
                                     let state, bytes1 = Eval.rval state (List.nth exps 1) in
                                     let state, bytes2 = Eval.rval state (List.nth exps 2) in
 									let rv = make_Bytes_IfThenElse (bytes0, bytes1, bytes2) in
-									MemOp.state__assign state dest rv
+									MemOp.state__assign state (lvals, size) rv
 							end
 												
 					| Function.BooleanOp (binop) ->
-							begin match blkOffSizeOpt with
+							begin match lvalopt with
 								| None -> failwith "Unreachable BooleanOp"
-								| Some dest ->
-									let state, rv = op_exps exps binop in
-									MemOp.state__assign state dest rv
+								| Some lval ->
+									let state, lvals = Eval.lval state lval in
+									let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
+									let state, rv = op_exps state exps binop in
+									MemOp.state__assign state (lvals, size) rv
 							end
 
 					| Function.BooleanNot ->
-							begin match blkOffSizeOpt with
+							begin match lvalopt with
 								| None -> failwith "Unreachable BooleanNot"
-								| Some dest ->
+								| Some lval ->
+									let state, lvals = Eval.lval state lval in
+									let size = (Cil.bitsSizeOf (Cil.typeOfLval lval))/8 in
 									let state, rv = Eval.rval state (UnOp(Cil.LNot, List.hd exps, Cil.voidType)) in
-									MemOp.state__assign state dest rv
+									MemOp.state__assign state (lvals, size) rv
 							end
 
 					| Function.Aspect(pointcut, advice) ->
@@ -884,7 +893,7 @@ let exec_stmt job =
 		| If (exp, block1, block2, loc) ->
 				begin
 				(* try a branch *)
-					let try_branch pcopt block =
+					let try_branch state pcopt block =
 						let nextState = match pcopt with
 							| Some(pc) -> MemOp.state__add_path_condition state pc true
 							| None -> state
@@ -937,14 +946,14 @@ let exec_stmt job =
 					if truth == Stp.True then
 						begin
 							Output.print_endline "True";
-							let nextState,nextStmt = try_branch None block1 in
+							let nextState,nextStmt = try_branch state None block1 in
 							let job' = { job with state = nextState; stmt = nextStmt; } in
 							Active { job' with exHist = nextExHist (Some nextStmt) ~whichBranch:true; }
 						end
 					else if truth == Stp.False then
 						begin
 							Output.print_endline "False";
-							let nextState,nextStmt = try_branch None block2 in
+							let nextState,nextStmt = try_branch state None block2 in
 							let job' = { job with state = nextState; stmt = nextStmt; } in
 							Active { job' with exHist = nextExHist (Some nextStmt) ~whichBranch:false; }
 						end
@@ -952,8 +961,8 @@ let exec_stmt job =
 						begin
 							Output.print_endline "Unknown\n";
 							
-							let nextStateT,nextStmtT = try_branch (Some rv) block1 in
-							let nextStateF,nextStmtF = try_branch (Some (logicalNot rv)) block2 in
+							let nextStateT,nextStmtT = try_branch state (Some rv) block1 in
+							let nextStateF,nextStmtF = try_branch state (Some (logicalNot rv)) block2 in
 
 							let job' = 
 								if run_args.arg_merge_paths then (
