@@ -127,7 +127,7 @@ MODULES     += $(CILLY_MODULES) libmaincil
 
 EXTRALIBDIRS = @EXTRALIBDIRS@
 LIBFLAGS += $(foreach lib,$(EXTRALIBDIRS),-I $(lib))
-COMPILEFLAGS += $(LIBFLAGS) -warn-error P
+COMPILEFLAGS += $(LIBFLAGS) -warn-error A
 LINKFLAGS    += $(LIBFLAGS)
 
 BEFOREDEPS += $(OBJDIR)/machdep.ml
