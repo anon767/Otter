@@ -80,7 +80,7 @@ http://caml.inria.fr/pub/ml-archives/caml-list/2009/08/323bd4f55773e4a230d481aec
 			in
 
 			(* TODO: do we want to have a limit on number of blocks merged? Should benchmark the burden
-			 *       on STP using the MayBytes/Morris encoding. *)
+			 *       on STP using the Morris encoding. *)
 			let merged_count = ref 0 in
 			let merged_memory = MemoryBlockMap.fold2 begin fun block deferreds merged_memory -> match deferreds with
 				| MemoryBlockMap.Both (deferred1, deferred2) ->
@@ -100,7 +100,7 @@ http://caml.inria.fr/pub/ml-archives/caml-list/2009/08/323bd4f55773e4a230d481aec
 								assert (MemOp.bytes__length bytes1 == MemOp.bytes__length bytes2);
 								(* only job_pc_bytes, since NOT job_pc_bytes implies other_pc_bytes due to the added
 								 * path condition above *)
-								(state, make_Bytes_IfThenElse (job_pc_bytes, bytes1, bytes2))
+								(state, make_Bytes_IfThenElse (MemOp.guard__bytes job_pc_bytes, bytes1, bytes2))
 							end in
 							MemoryBlockMap.add block deferred merged_memory
 					end

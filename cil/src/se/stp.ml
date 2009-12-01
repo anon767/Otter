@@ -34,7 +34,6 @@ let rec bytes_length bytes =
 		| Bytes_Constant (constant) -> (Cil.bitsSizeOf (Cil.typeOf (Const(constant))))/8
 		| Bytes_ByteArray (bytearray) -> ImmutableArray.length bytearray
 		| Bytes_Address (_,_)-> word__size
-		| Bytes_MayBytes (_,b,_) -> bytes_length b (* all bytes in MayBytes have the same length *)
 		| Bytes_IfThenElse (_,b,_) -> bytes_length b (* all bytes in IfThenElse have the same length *)
 		| Bytes_Op (op,(bytes2,typ)::tail) -> bytes_length bytes2
 		| Bytes_Op (op,[]) -> 0 (* reachable from diff_bytes *)
@@ -47,7 +46,19 @@ let rec bytes_length bytes =
 ;;
 
 (** Return a SymbolSet of all symbols in the given Bytes *)
-let rec allSymbols = function
+let rec allSymbolsInGuard = function
+	| Guard_True ->
+		SymbolSet.empty
+	| Guard_Not g ->
+		allSymbolsInGuard g
+	| Guard_And (g1, g2) ->
+		SymbolSet.union (allSymbolsInGuard g1) (allSymbolsInGuard g2)
+	| Guard_Symbolic s ->
+		SymbolSet.singleton s
+	| Guard_Bytes b ->
+		allSymbols b
+
+and allSymbols = function
 	| Bytes_Constant const -> SymbolSet.empty
 	| Bytes_ByteArray bytearray ->
 			ImmutableArray.fold_left
@@ -69,10 +80,12 @@ let rec allSymbols = function
 				(fun symbSet (b,_) -> SymbolSet.union symbSet (allSymbols b))
 				SymbolSet.empty
 				bytes_typ_list
-	| Bytes_MayBytes (_, bytes1, bytes2)
 	| Bytes_Read (bytes1,bytes2,_) ->
 			SymbolSet.union (allSymbols bytes1) (allSymbols bytes2)
-	| Bytes_IfThenElse (bytes1, bytes2, bytes3)
+	| Bytes_IfThenElse (guard, bytes1, bytes2) ->
+			SymbolSet.union
+				(allSymbolsInGuard guard)
+				(SymbolSet.union (allSymbols bytes1) (allSymbols bytes2))
 	| Bytes_Write (bytes1,bytes2,_,bytes3) ->
 			SymbolSet.union
 				(allSymbols bytes3)
@@ -87,77 +100,6 @@ let allSymbolsInList byteslist =
 		SymbolSet.empty
 		byteslist
 
-type symbolOrIndicator = Symb of symbol | Indic of int
-
-module SymbolAndIndicatorSet = Set.Make
-	(struct
-		 type t = symbolOrIndicator
-		 (* I arbitrarily chose to make symbols less than indicators *)
-		 let compare x y = match x,y with
-			 | Symb s1, Symb s2 -> Pervasives.compare s1.symbol_id s2.symbol_id
-			 | Indic i1, Indic i2 -> Pervasives.compare i1 i2
-			 | Symb _, Indic _ -> -1
-			 | Indic _, Symb _ -> 1
-	 end)
-(* Abbreviating the name *)
-module SISet = SymbolAndIndicatorSet
-
-let rec allIndicators = function
-	| Indicator i -> SISet.singleton (Indic i)
-	| Indicator_Not i -> allIndicators i
-	| Indicator_And (i1,i2) ->
-			SISet.union (allIndicators i1) (allIndicators i2)
-
-(** Return an SISet of all symbols and indicators in the given Bytes *)
-let rec allSymbolsAndIndicators = function
-	| Bytes_Constant const -> SISet.empty
-	| Bytes_ByteArray bytearray ->
-			ImmutableArray.fold_left
-				(fun symbSet byte -> match byte with
-					 | Byte_Concrete _ -> symbSet
-					 | Byte_Symbolic symb ->
-							 SISet.add (Symb symb) symbSet
-					 | Byte_Bytes (bytes,_) ->
-							 SISet.union symbSet (allSymbolsAndIndicators bytes))
-				SISet.empty
-				bytearray
-	| Bytes_Address (memBlockOpt,bytes) -> (
-			let partialAnswer = allSymbolsAndIndicators bytes in
-			match memBlockOpt with
-					None -> partialAnswer
-				| Some memBlock ->
-						SISet.union partialAnswer
-							(allSymbolsAndIndicators memBlock.memory_block_addr)
-		)
-	| Bytes_MayBytes (indicator, bytes1, bytes2) ->
-			SISet.union (allIndicators indicator)
-				(SISet.union (allSymbolsAndIndicators bytes1)
-					 (allSymbolsAndIndicators bytes2))
-	| Bytes_IfThenElse (bytes0, bytes1, bytes2) ->
-			SISet.union (allSymbolsAndIndicators bytes0)
-				(SISet.union (allSymbolsAndIndicators bytes1)
-					 (allSymbolsAndIndicators bytes2))
-	| Bytes_Op (_,bytes_typ_list) ->
-			List.fold_left
-				(fun symbSet (b,_) -> SISet.union symbSet (allSymbolsAndIndicators b))
-				SISet.empty
-				bytes_typ_list
-	| Bytes_Read (bytes1,bytes2,_) ->
-			SISet.union (allSymbolsAndIndicators bytes1) (allSymbolsAndIndicators bytes2)
-	| Bytes_Write (bytes1,bytes2,_,bytes3) ->
-			SISet.union
-				(allSymbolsAndIndicators bytes3)
-				(SISet.union (allSymbolsAndIndicators bytes1) (allSymbolsAndIndicators bytes2))
-	| Bytes_FunPtr (_,bytes) -> allSymbolsAndIndicators bytes
-	| Bytes_Unbounded (_,_,_) -> SISet.empty
-
-(** Return a SISet of all symbols in the given list of Bytes *)
-let allSymbolsAndIndicatorsInList byteslist =
-	List.fold_left
-		(fun symbSet b -> SISet.union symbSet (allSymbolsAndIndicators b))
-		SISet.empty
-		byteslist
-
 (* This implements 'constraint independence': it picks out only those
 	 clauses from the pc which can have an influence on the given
 	 symbols. It grabs the clauses that mention any of the symbols, and
@@ -166,18 +108,18 @@ let allSymbolsAndIndicatorsInList byteslist =
 	 will happen eventually, because eventually pc will become empty.) *)
 let rec getRelevantAssumptions_aux acc symbols pc =
 	match List.partition (* See what clauses mention any of the symbols *)
-		(fun b -> SISet.is_empty (SISet.inter symbols (allSymbolsAndIndicators b)))
+		(fun b -> SymbolSet.is_empty (SymbolSet.inter symbols (allSymbols b)))
 		pc
 	with
 		| _,[] -> acc (* Nothing else is relevant *)
 		| subPC,relevant ->
 				getRelevantAssumptions_aux
 					(List.rev_append relevant acc) (* Does using rev_append, rather than (@), mess with the order in a way that's bad for the cache? I think not, but I'm not sure. *)
-					(allSymbolsAndIndicatorsInList relevant)
+					(allSymbolsInList relevant)
 					subPC
 
 let getRelevantAssumptions pc query =
-	getRelevantAssumptions_aux [] (allSymbolsAndIndicators query) pc
+	getRelevantAssumptions_aux [] (allSymbols query) pc
 
 (* Map a pc and a query *)
 module StpCache = Map.Make
@@ -196,6 +138,43 @@ let cacheHits = ref 0
 let cacheMisses = ref 0
 let stpCacheRef = ref StpCache.empty
 
+(* TODO: Yit: refactor eval/consult_stp/doassert/query/query_guard, since currently, the division of responsibility
+   isn't very clear, there's some weird redundancy, the cache isn't always used, and the names are somewhat misleadiing.
+   Here's how I see it:
+   - Merge consult_stp/query/query_guard into query_stp : [ bytes ] -> guard -> truth; as far as I can tell, the only
+     difference between consult_stp and query_guard is that consult_stp asks b != 0, whereas query_guard takes guard
+     which is more general.
+   - The way doassert returns global_vc feels dangerous to me, since it hides the fact that there's a single, shared,
+     stateful vc. Is it that costly to create a new vc? The "pop; push" pattern is also very strange and unintuitive.
+   - Refactor eval into query : [ bytes ] -> guard -> truth; it uses a cache, evaluates the query by itself if possible,
+     or calls stp if not.
+   - Add a new function query_bytes : [ bytes ] -> bytes -> truth; that just calls query with the second argument
+     wrapped in a guard.
+
+   There also seems to be a few optimization opportunities: rather than always converting every C boolean expression
+   into a bitvector of zero or one and then comparing b != 0, why not represent it as an STP boolean, and convert it
+   only when necessary? That would cut down really verbose STP expressions, and turn something like
+   ((b1 != 0 && (IF (b2 != 0 || b3 != 0) != 0 THEN 0 ELSE 1)) != 0) into ((b != 0) && !(b2 != 0 || b3 != 0)), saving
+   a whole bunch of extraneous bitvectors. I think this can be done by special-casing the handling of LAND/LOR/LNOT
+   with a new Bytes_Guard variant.
+
+   I'd also suggest splitting Bytes_Op into Bytes_UnOp and Bytes_BinOp so that the number of arguments can be statically
+   typed, rather than asserting at runtime. All operators can be classified as unary or binary anyway, so there's no
+   loss of expressiveness. It would make pattern-matching a lot less annoying too.
+
+   It may not be such a bad idea to put all boolean operators into the guard type and not in the bytes type. It would
+   modularize boolean operations and optimizations, putting it all in one place rather than all over as it is now.
+
+   Maybe the type of the path condition should be changed from [ bytes ] to guard, which may present more opportunity
+   to filter relevant clauses (by traversing the operands of Guard_And).
+
+   Another thing to look into: is it possible to eliminate the byte type using an interval-tree, or some variant of it
+   (http://en.wikipedia.org/wiki/Interval_tree)? My understanding is that, basically, the bytes type is an overlay on
+   top of an STP bitvector that is built one byte at a time (e.g., WRITE (b0, 0, (WRITE b1, 1, ...))), leading to long
+   STP expressions, and requiring the odd Byte_Bytes variant. I think an interval-tree can be used essentially to
+   implement Bytes_Read/Bytes_Write directly without the byte type, which maps directly to STP's read/write to operate
+   on a whole bitvector at once.
+*)
 let rec eval pc bytes =
 	(*
 	if not Executeargs.args.Executeargs.arg_print_queries then () else
@@ -261,7 +240,6 @@ let rec eval pc bytes =
 						
 and
 
-(* TODO: refactor consult_stp/doassert/query/query_indicator, since query_indicator similar in purpose to consult_stp *)
 consult_stp pc bytes =
 	let pc = getRelevantAssumptions pc bytes in
 	try
@@ -328,32 +306,45 @@ query vc bytes equal_zero =
 
 and
 
-query_indicator pc indicator =
+query_guard pc pre guard =
     let vc = doassert pc in
-	let indicator_exp = Stats.time "convert conditional" (to_stp_indicator vc) indicator in
 
+	if pre != Guard_True then begin
+    	let pre_exp = Stats.time "convert pre-condition" (to_stp_guard vc) pre in
+		Stats.time "STP.do_assert pre-condition" (Stpc.do_assert vc) pre_exp
+	end;
+
+	let guard_exp = Stats.time "convert guard" (to_stp_guard vc) guard in
 	Output.set_mode Output.MSG_STP;
 	let query exp =
 		Stpc.e_push vc;
-		let result = Stats.time "STP query_indicator" (Stpc.query vc) exp in
+		let result = Stats.time "STP query_guard" (Stpc.query vc) exp in
 		Stpc.e_pop vc;
 		result
 	in
-	if query indicator_exp then
+	if query guard_exp then
 		True
-	else if query (Stpc.e_not vc indicator_exp) then
+	else if query (Stpc.e_not vc guard_exp) then
 		False
 	else
 		Unknown
 and
 
-to_stp_indicator vc = function
-	| Indicator i -> Stpc.e_var vc (Format.sprintf "indicator(%d)" i) (Stpc.bool_t vc)
-	| Indicator_Not s -> Stpc.e_not vc (to_stp_indicator vc s)
-	| Indicator_And (s1, s2) -> Stpc.e_and vc (to_stp_indicator vc s1) (to_stp_indicator vc s2)
+to_stp_guard vc = function
+	| Guard_Not g ->
+		Stpc.e_not vc (to_stp_guard vc g)
+	| Guard_And (g1, g2) ->
+		Stpc.e_and vc (to_stp_guard vc g1) (to_stp_guard vc g2)
+	| Guard_Symbolic s ->
+		Stpc.e_var vc (make_var s) (Stpc.bool_t vc)
+	| Guard_Bytes b ->
+		let bv, len = to_stp_bv vc b in
+		Stpc.e_ctrue vc len bv
+	| Guard_True ->
+		(* Guard_True can and should be optimized away *)
+		failwith "to_stp_guard: cannot convert Guard_True"
 
 and
-
                              
 to_stp_bv vc bytes =
   (*if false then to_stp_bv_impl vc bytes else*)
@@ -377,6 +368,7 @@ to_stp_bv_impl vc bytes =
 		| Bytes_Constant (constant) ->
 			let bytes2 = Convert.constant_to_bytes constant in
 			to_stp_bv vc bytes2
+
 		| Bytes_ByteArray (bytearray) ->
 				let len = ImmutableArray.length bytearray in
 				let bv8 = begin match ImmutableArray.get bytearray 0 with
@@ -415,20 +407,13 @@ to_stp_bv_impl vc bytes =
 			let len = l_blockaddr in
 				(Stpc.e_bvplus vc len bv_blockaddr bv_offset,len)
 
-		| Bytes_MayBytes (indicator, bytes1, bytes2) ->
-			(* TODO: should check for indicator.symbol_id = 0? *)
-			let cond = to_stp_indicator vc indicator in
+		| Bytes_IfThenElse (guard, bytes1, bytes2) ->
+			let cond = to_stp_guard vc guard in
 			let bv1, len1 = to_stp_bv vc bytes1 in
 			let bv2, len2 = to_stp_bv vc bytes2 in
 			assert (len1 = len2);
+			(* if cond then bv1 else bv2 *)
 			(Stpc.e_ite vc cond bv1 bv2, len1)
-
-		| Bytes_IfThenElse (bytes0, bytes1, bytes2) ->
-			let bv0, len0 = to_stp_bv vc bytes0 in
-			let bv1, len1 = to_stp_bv vc bytes1 in
-			let bv2, len2 = to_stp_bv vc bytes2 in
-			assert (len1 = len2);
-			(Stpc.e_ite vc (Stpc.e_eq vc bv0 (Stpc.e_bv_of_int vc len0 0)) bv2 bv1, len1)
 
 		| Bytes_Op(op, [(bytes1,typ1);(bytes2,typ2)]) -> (* BINOP *)
 				(* typ info maybe added to the stp formula later *)

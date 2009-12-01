@@ -12,9 +12,6 @@ let symbol__next () =
 		symbol_id = Utility.next_id symbol__currentID; 
 	} ;;
 
-let indicator__currentID = ref 0
-let indicator__next () = Indicator (Utility.next_id indicator__currentID)
-
 let char__random () = Char.chr ((Random.int 255)+1);;
 
 (**
@@ -67,6 +64,26 @@ bytes__get_concrete bytes i : char =
 *)
 
 (**
+ *  guard
+ *)
+let guard__true = Guard_True
+
+let guard__not = function
+	| Guard_Not g -> g
+	| g -> Guard_Not g
+
+let guard__and g1 g2 = match g1, g2 with
+	| Guard_True, g
+    | g, Guard_True -> g
+	| _, _          -> Guard_And (g1, g2)
+
+let guard__and_not g1 g2 = guard__and g1 (guard__not g2)
+
+let guard__symbolic () = Guard_Symbolic (symbol__next ())
+
+let guard__bytes b = Guard_Bytes b
+
+(**
  *	bytes
  *)
 (*let bytes__zero n = make_Bytes_ByteArray (ImmutableArray.make n byte__zero) ;;*)
@@ -82,10 +99,10 @@ let bytes__random n =
 	make_Bytes_ByteArray(impl 0 (ImmutableArray.make n byte__zero))
 ;;
 
-(* given a list of bytes of length n, return a MayBytes tree of height log(n) containing all the bytes in the list *)
-let bytes__maybytes_from_list bytes_list =
+(* given a list of bytes of length n, return a IfThenElse tree of height log(n) containing all the bytes in the list *)
+let bytes__ifthenelse_from_list bytes_list =
 	let rec bytes__make_tree outs = function
-		| x::y::rest -> bytes__make_tree (make_Bytes_MayBytes (indicator__next (), x, y)::outs) rest
+		| x::y::rest -> bytes__make_tree (make_Bytes_IfThenElse (guard__symbolic (), x, y)::outs) rest
 		| x::[]      -> bytes__make_tree_next (x::outs)
 		| []         -> bytes__make_tree_next outs
 	and bytes__make_tree_next = function
@@ -96,13 +113,11 @@ let bytes__maybytes_from_list bytes_list =
 	bytes__make_tree [] bytes_list
 ;;
 
-let rec bytes__maybytes_from_lvals = function
+let rec bytes__ifthenelse_from_lvals = function
 	| Lval_Block (block, offset) ->
 		make_Bytes_Address (Some block, offset)
-	| Lval_May (indicator, lvals1, lvals2) ->
-		make_Bytes_MayBytes (indicator, bytes__maybytes_from_lvals lvals1, bytes__maybytes_from_lvals lvals2)
 	| Lval_IfThenElse (c, lvals1, lvals2) ->
-		make_Bytes_IfThenElse (c, bytes__maybytes_from_lvals lvals1, bytes__maybytes_from_lvals lvals2)
+		make_Bytes_IfThenElse (c, bytes__ifthenelse_from_lvals lvals1, bytes__ifthenelse_from_lvals lvals2)
 ;;
 
 let bytes__symbolic n =
@@ -117,7 +132,15 @@ let bytes__symbolic n =
  *       the (partial) dependency chain is state__* -> Stp.* -> bytes__* *)
 let rec bytes__length = Stp.bytes_length
 
-let rec diff_bytes bytes1 bytes2 =
+let rec diff_guard guard1 guard2 =
+	match guard1, guard2 with
+		| Guard_True, Guard_True                   -> false
+		| Guard_Not g1, Guard_Not g2               -> diff_guard g1 g2
+		| Guard_And (g1, g2), Guard_And (g1', g2') -> diff_guard g1 g1' || diff_guard g2 g2'
+		| Guard_Symbolic s1, Guard_Symbolic s2     -> s1 <> s2
+		| Guard_Bytes b1, Guard_Bytes b2           -> diff_bytes b1 b2
+		| _, _                                     -> true
+and diff_bytes bytes1 bytes2 =
 	match bytes1,bytes2 with
 		| Bytes_Constant(c1),_ -> diff_bytes (Convert.constant_to_bytes c1) bytes2
 		| _,Bytes_Constant(c2) -> diff_bytes bytes1 (Convert.constant_to_bytes c2)
@@ -135,10 +158,8 @@ let rec diff_bytes bytes1 bytes2 =
 			(b1!=b2) || (diff_bytes off1 off2)
 		| Bytes_Address(None,off1),Bytes_Address(None,off2) -> 
 			(diff_bytes off1 off2)
-		| Bytes_MayBytes (ix, tx, fx), Bytes_MayBytes (iy, ty, fy) ->
-			(Pervasives.compare ix iy <> 0) || (diff_bytes tx ty) || (diff_bytes fx fy)
-		| Bytes_IfThenElse (cx, tx, fx), Bytes_IfThenElse (cy, ty, fy) ->
-			(diff_bytes cx cy) || (diff_bytes tx ty) || (diff_bytes fx fy)
+		| Bytes_IfThenElse (gx, tx, fx), Bytes_IfThenElse (gy, ty, fy) ->
+			(diff_guard gx gy) || (diff_bytes tx ty) || (diff_bytes fx fy)
 		| Bytes_Op(op1,operands1),Bytes_Op(op2,operands2) ->
 			(op1!=op2) || List.exists2 (fun (b1,_) (b2,_) -> diff_bytes b1 b2) operands1 operands2
 		| Bytes_Read(b1,off1,s1),Bytes_Read(b2,off2,s2) -> 
@@ -179,8 +200,6 @@ let rec bytes__read bytes off len =
 					newbytes (* being a bit tricky... *)
 				else (* CAUTION: assume [off2,len2] and [off,len] don't overlap.  *)
 					worst_case
-           (* TODO: abstract the unfolding of MayBytes/IfThenElse at similar
-            * places *)
             | Bytes_IfThenElse(c,e1,e2),_ ->
 								let e1' = bytes__read e1 off len in
 								let e2' = bytes__read e2 off len in
@@ -191,10 +210,6 @@ let rec bytes__read bytes off len =
             | _,Bytes_IfThenElse(c,e1,e2) ->
 								failwith "bytes__read: if-then-else offset doesn't happen"
 (*                make_Bytes_IfThenElse(c,bytes__read (bytes) (e1) len,bytes__read (bytes) (e2) len)*)
-            | Bytes_MayBytes(ind,e1,e2),_ ->
-                make_Bytes_MayBytes(ind,bytes__read (e1) (off) len,bytes__read (e2) (off) len)
-            | _,Bytes_MayBytes(ind,e1,e2) ->
-            make_Bytes_MayBytes(ind,bytes__read (bytes) (e1) len,bytes__read (bytes) (e2) len)
 			| _ -> worst_case
 		end
 		in
@@ -269,8 +284,6 @@ let bytes__write bytes off len newbytes =
 
 
 
-           (* TODO: abstract the unfolding of MayBytes/IfThenElse at similar
-            * places *)
             | Bytes_IfThenElse(c,e1,e2),_ ,_ ->
 								let e1' = do_write (e1) (off) len newbytes in
 								let e2' = do_write (e2) (off) len newbytes in
@@ -281,10 +294,6 @@ let bytes__write bytes off len newbytes =
             | _,Bytes_IfThenElse(c,e1,e2) ,_ ->
 								failwith "bytes__write: if-then-else offset doesn't happen"
 (*                make_Bytes_IfThenElse(c,do_write (bytes) (e1) len newbytes,do_write (bytes) (e2) len newbytes)*)
-            | Bytes_MayBytes(ind,e1,e2),_ ,_ ->
-                make_Bytes_MayBytes(ind,do_write (e1) (off) len newbytes,do_write (e2) (off) len newbytes)
-            | _,Bytes_MayBytes(ind,e1,e2) ,_ ->
-            make_Bytes_MayBytes(ind,do_write (bytes) (e1) len newbytes,do_write (bytes) (e2) len newbytes)
 
 
 			| _ -> make_Bytes_Write (bytes,off,len,newbytes)
@@ -328,7 +337,7 @@ let block__make_string_literal name n =
 (* given a list of lval_block of length n, return a Lval_May tree of height log(n) containing all the lvals in the list *)
 let lval_block__from_list lval_list =
     let rec lval_block__make_tree outs = function
-        | x::y::rest -> lval_block__make_tree ((Lval_May (indicator__next (), x, y))::outs) rest
+        | x::y::rest -> lval_block__make_tree ((Lval_IfThenElse (guard__symbolic (), x, y))::outs) rest
         | x::[]      -> lval_block__make_tree_next (x::outs)
         | []         -> lval_block__make_tree_next outs
     and lval_block__make_tree_next = function
@@ -377,7 +386,6 @@ let frame__clear_varinfos frame block_to_bytes =
 			MemoryBlockMap.remove block block_to_bytes
 		| Lval_Block _ ->
 			block_to_bytes
-		| Lval_May (_, lvals1, lvals2)
 		| Lval_IfThenElse (_, lvals1, lvals2) ->
 			let block_to_bytes = remove_locals block_to_bytes lvals1 in
 			let block_to_bytes = remove_locals block_to_bytes lvals2 in
@@ -564,20 +572,10 @@ let state__get_bytes_from_lval state (block, offset, size) =
 ;;
 
 (* TODO: Yit:
- * - Merge Lval_May/Lval_IfThenElse, Bytes_MayBytes/Bytes_IfThenElse by replacing indicator with Bytes_Boolean.
- *
- * - Maybe lift May/IfThenElse out of lval_block and bytes into a type 'a conditional = Base of 'a | IfThenElse of
- *   'a conditional; this would make it possible to merge state__fold_lval_block and state__fold_bytes.
- *
- * - Fix handling of Bytes_MayBytes/Bytes_IfThenElse in many places; they don't correctly propagate the condition
- *   recursively, and so, the Stp.query check is partial, and could lead to false warnings; could probably use
- *   state__fold_bytes below.
- *
- * - Some functions implicit assume that Lval_May/Bytes_MayBytes and Lval_IfThenElse/Bytes_IfThenElse cannot occur
- *   together, so indicator/condition aren't combined correctly; this problem would probably go away by
- *   merging *_May/*_IfThenElse above.
- *
- * - Could also replace handling of lval_block in many places with state__fold_lval_block.
+ * Lift IfThenElse out of lval_block and bytes into a type 'a conditional = Unconditional of 'a | IfThenElse of
+ * 'a conditional; this would make it possible to merge state__fold_lval_block and state__fold_bytes into
+ * state__fold_conditional. Also implement state__map_conditional; map and fold should generalize all interpretations of
+ * Bytes_IfThenElse/Lval_IfThenElse.
  *)
 
 (** Fold over the leaves of lval_block which are consistent with the state, i.e., the indicator path is true under
@@ -590,33 +588,26 @@ let state__get_bytes_from_lval state (block, offset, size) =
                         the accumulator and lval_block with infeasible leaves pruned
 *)
 let state__fold_lval_block state f acc lval_block =
-    let rec fold acc indicator = function
-        | Lval_May (j, tlvals, flvals) ->
-            let ti, fi = begin match indicator with
-                | None   -> (j, Indicator_Not j)
-                | Some i -> (Indicator_And (i, j), Indicator_And (i, Indicator_Not j))
-            end in
-            let ts = Stp.query_indicator state.path_condition ti in
-            let fs = Stp.query_indicator state.path_condition fi in
-            begin match ts, fs with
-                | (Stp.True | Stp.Unknown), Stp.False ->
-                    fold acc (Some ti) tlvals
-                | Stp.False, (Stp.True | Stp.Unknown) ->
-                    fold acc (Some fi) flvals
-                | (Stp.True | Stp.Unknown), (Stp.True | Stp.Unknown) ->
-                    let acc, tlvals = fold acc (Some ti) tlvals in
-                    let acc, flvals = fold acc (Some fi) flvals in
-                    let lval_block = Lval_May (j, tlvals, flvals) in
-                    (acc, lval_block)
-                | Stp.False, Stp.False ->
-                    failwith "state__fold_lval_block of an impossible Lval_May that contradicts the path condition"
-            end
-        | Lval_IfThenElse _ ->
-            failwith "TODO: state__fold_lval_block of Lval_IfThenElse"
-        | Lval_Block (block, offset) as lval_block ->
-            (f acc (block, offset), lval_block)
-    in
-    fold acc None lval_block
+	let rec fold acc pre = function
+		| Lval_IfThenElse (guard, tlvals, flvals) ->
+			begin match Stp.query_guard state.path_condition pre guard with
+				| Stp.True ->
+					(* pc && pre ==> guard *)
+					fold acc pre tlvals
+				| Stp.False ->
+					(* pc && pre ==> !guard *)
+					fold acc (guard__not pre) flvals
+				| Stp.Unknown ->
+					(* pc && pre ==> guard || !guard *)
+					let acc, tlvals = fold acc (guard__and pre guard) tlvals in
+					let acc, flvals = fold acc (guard__and_not pre guard) flvals in
+					let lval_block = Lval_IfThenElse (guard, tlvals, flvals) in
+					(acc, lval_block)
+			end
+		| Lval_Block (block, offset) as lval_block ->
+			(f acc (block, offset), lval_block)
+	in
+	fold acc Guard_True lval_block
 
 
 (** Fold over the leaves of bytes which are consistent with the state, i.e., the indicator path is true under
@@ -629,37 +620,29 @@ let state__fold_lval_block state f acc lval_block =
                         the accumulator and bytes with infeasible leaves pruned
 *)
 let state__fold_bytes state f acc bytes =
-    let rec fold acc indicator = function
-        | Bytes_MayBytes (j, tbytes, fbytes) ->
-            let ti, fi = begin match indicator with
-                | None   -> (j, Indicator_Not j)
-                | Some i -> (Indicator_And (i, j), Indicator_And (i, Indicator_Not j))
-            end in
-            let ts = Stp.query_indicator state.path_condition ti in
-            let fs = Stp.query_indicator state.path_condition fi in
-            begin match ts, fs with
-                | (Stp.True | Stp.Unknown), Stp.False ->
-                    fold acc (Some ti) tbytes
-                | Stp.False, (Stp.True | Stp.Unknown) ->
-                    fold acc (Some fi) fbytes
-                | (Stp.True | Stp.Unknown), (Stp.True | Stp.Unknown) ->
-                    let acc, tbytes = fold acc (Some ti) tbytes in
-                    let acc, fbytes = fold acc (Some fi) fbytes in
-                    let bytes = Bytes_MayBytes (j, tbytes, fbytes) in
-                    (acc, bytes)
-                | Stp.False, Stp.False ->
-                    failwith "state__fold_bytes of an impossible Bytes_MayBytes that contradicts the path condition"
-            end
-        | Bytes_IfThenElse _ ->
-            failwith "TODO: state__fold_bytes of Bytes_IfThenElse"
-        | bytes ->
-            (f acc bytes, bytes)
-    in
-    fold acc None bytes
+	let rec fold acc pre = function
+		| Bytes_IfThenElse (guard, tbytes, fbytes) ->
+			begin match Stp.query_guard state.path_condition pre guard with
+				| Stp.True ->
+					(* pc && pre ==> guard *)
+					fold acc pre tbytes
+				| Stp.False ->
+					(* pc && pre ==> !guard *)
+					fold acc (guard__not pre) fbytes
+				| Stp.Unknown ->
+					let acc, tlvals = fold acc (guard__and pre guard) tbytes in
+					let acc, flvals = fold acc (guard__and_not pre guard) fbytes in
+					let bytes = make_Bytes_IfThenElse (guard, tbytes, fbytes) in
+					(acc, bytes)
+			end
+		| bytes ->
+			(f acc bytes, bytes)
+	in
+	fold acc Guard_True bytes
         
 
 let rec state__assign state (lvals, size) bytes = (* have problem *)
-	let rec assign count state indicator condition = function
+	let rec assign state pre = function
 		| Lval_Block (block, offset) ->
 			(* TODO: provide some way to report partial error *)
 			if block.memory_block_type == Block_type_StringLiteral then
@@ -668,53 +651,27 @@ let rec state__assign state (lvals, size) bytes = (* have problem *)
 
 			let state, oldbytes = state__force state (MemoryBlockMap.find block state.block_to_bytes) in
 
-			let newbytes =
-				(*Output.print_endline (To_string.bytes oldbytes);*)
-				let newbytes = bytes__write oldbytes offset size bytes in
-				(*Output.print_endline (To_string.bytes newbytes);*)
-				(*(*TMP*) (if block.memory_block_type = 3 then
-					Output.set_mode Output.MSG_MUSTPRINT
-					else		*)
-				match indicator with
-					| None ->
-                        begin match condition with
-                          | None -> Some newbytes
-                          | Some c -> Some (make_Bytes_IfThenElse ( c, newbytes, oldbytes ))
-                        end
-					| Some i ->
-						begin match Stp.query_indicator state.path_condition i with
-							| Stp.True -> Some newbytes
-							| Stp.False -> None
-							| Stp.Unknown -> Some (make_Bytes_MayBytes (i, newbytes, oldbytes))
-						end
+			(*Output.print_endline (To_string.bytes oldbytes);*)
+			let newbytes = bytes__write oldbytes offset size bytes in
+			(*Output.print_endline (To_string.bytes newbytes);*)
+			(*(*TMP*) (if block.memory_block_type = 3 then
+				Output.set_mode Output.MSG_MUSTPRINT
+				else		*)
+			let newbytes = match pre with
+				| Guard_True -> newbytes
+				| _          -> make_Bytes_IfThenElse ( pre, newbytes, oldbytes )
 			in
+			Output.set_mode Output.MSG_ASSIGN;
+			Output.print_endline ("    Assign "^(To_string.bytes bytes)^" to "^(To_string.memory_block block)^","^(To_string.bytes offset));
+			state__add_block state block newbytes
 
-			begin match newbytes with
-				| None ->
-					(count, state)
-				| Some newbytes ->
-					Output.set_mode Output.MSG_ASSIGN;
-					Output.print_endline ("    Assign "^(To_string.bytes bytes)^" to "^(To_string.memory_block block)^","^(To_string.bytes offset));
-					(count + 1, state__add_block state block newbytes)
-			end
-
-		| Lval_May (j, tlvals, flvals) ->
-			let ts, fs = begin match indicator with
-				| None   -> (j, Indicator_Not j)
-				| Some i -> (Indicator_And (i, j), Indicator_And (i, Indicator_Not j))
-			end in
-			let count, state = assign count state (Some ts) None tlvals in
-			let count, state = assign count state (Some fs) None flvals in
-			(count, state)
-        | Lval_IfThenElse (c,tlvals,flvals) ->
+        | Lval_IfThenElse (guard, tlvals, flvals) ->
             (* "Morris axiom" *)
-			let count,state = assign count state None (Some c)        tlvals in
-			let count,state = assign count state None (Some (Operation.lnot [(c,Cil.intType)])) flvals in (* typ doesn't matter *)
-              (count,state)
+			let state = assign state (guard__and pre guard) tlvals in
+			let state = assign state (guard__and_not pre guard) flvals in
+            state
 	in
-	let count, state = assign 0 state None None lvals in
-	assert (count > 0);
-	state
+	assign state Guard_True lvals
 ;;
 
 (* start a new function call frame *)
@@ -826,9 +783,6 @@ let state__clone_bytes state bytes =
         | Bytes_Address(blkOpt,offset) ->
             let (fact,offset') = traverse_bytes offset process merge in
               (fact,make_Bytes_Address(blkOpt,offset'))
-		| Bytes_MayBytes _ ->
-			(* what exactly does state__clone_bytes do? *)
-			failwith "TODO: implement make_Bytes_MayBytes for state__clone_bytes"
         | Bytes_Op(op,lst) -> 
             let (fact,lst') = traverse_bytes_list lst process merge in
               (fact,make_Bytes_Op(op,lst'))

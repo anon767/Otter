@@ -23,10 +23,6 @@ rval state exp : state * bytes =
 					let rec get_bytes state = function
 						| Lval_Block (block, offset) ->
 							MemOp.state__get_bytes_from_lval state (block, offset, size)
-						| Lval_May (indicator, lvals1, lvals2) ->
-							let state, bytes1 = get_bytes state lvals1 in
-							let state, bytes2 = get_bytes state lvals2 in
-							state, make_Bytes_MayBytes (indicator, bytes1, bytes2)
 						| Lval_IfThenElse (c, lvals1, lvals2) ->
 							let state, bytes1 = get_bytes state lvals1 in
 							let state, bytes2 = get_bytes state lvals2 in
@@ -75,8 +71,6 @@ rval state exp : state * bytes =
 					let rec get_addrof = function
 						| Lval_Block (block, offset) ->
 							make_Bytes_Address(Some(block), offset)
-						| Lval_May (indicator, lvals1, lvals2) ->
-							make_Bytes_MayBytes (indicator, get_addrof lvals1, get_addrof lvals2)
 						| Lval_IfThenElse (c, lvals1, lvals2) ->
 							make_Bytes_IfThenElse (c, get_addrof lvals1, get_addrof lvals2)
 					in
@@ -164,8 +158,6 @@ lval state (lhost, offset_exp as cil_lval) =
 	let rec add_offset offset = function
 		| Lval_Block (block, offset2) ->
 			Lval_Block (block, Operation.plus [(offset,Cil.intType);(offset2,Cil.intType)])
-		| Lval_May (indicator, lvals1, lvals2) ->
-			Lval_May (indicator, add_offset offset lvals1, add_offset offset lvals2)
 		| Lval_IfThenElse (c, lvals1, lvals2) ->
 			Lval_IfThenElse (c, add_offset offset lvals1, add_offset offset lvals2)
 	in
@@ -211,19 +203,10 @@ deref state bytes =
 			then Lval_Block (block, offset)
 			else failwith "Dereference into an expired stack frame"
 		| Bytes_Address(None, offset) -> failwith "Dereference a dangling pointer"
-		| Bytes_MayBytes (indicator, bytes1, bytes2) ->
-			(* TODO: update the pointer after the below pruning *)
-			begin match Stp.query_indicator state.path_condition indicator with
-				| Stp.True -> deref state bytes1
-				| Stp.False -> deref state bytes2
-				| Stp.Unknown -> Lval_May (indicator, deref state bytes1, deref state bytes2)
-			end
-		| Bytes_IfThenElse (bytes0, bytes1, bytes2) ->
-			begin match Stp.consult_stp state.path_condition bytes0 with
-				| Stp.True -> deref state bytes1
-				| Stp.False -> deref state bytes2
-				| Stp.Unknown -> Lval_IfThenElse (bytes0, deref state bytes1, deref state bytes2)
-			end
+		| Bytes_IfThenElse (guard, bytes1, bytes2) ->
+			(* TODO: This is too conservative! It will fail to dereference any NULL, even if the guard is not
+             *       satisfiable. Other operations have similar issues. *)
+			Lval_IfThenElse (guard, deref state bytes1, deref state bytes2)
 		| Bytes_Op(op, operands) -> failwith ("Dereference something not an address (op) "^(To_string.bytes bytes))
 		| Bytes_Read(bytes,off,len) ->failwith "Dereference: Not implemented"
 		| Bytes_Write(bytes,off,len,newbytes) ->failwith "Dereference: Not implemented"

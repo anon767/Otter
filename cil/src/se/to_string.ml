@@ -126,13 +126,6 @@ symbol_ff ff s = fprintf ff "\\%d" (*if s.symbol_writable then "" else "u"*) s.s
 
 and
 
-indicator_ff ff = function
-	(* TODO: print something more meaningful for indicator *)
-	| Indicator i -> Format.fprintf ff "indicator(%d)" i
-	| Indicator_Not s -> Format.fprintf ff "NOT @[%a@]" indicator_ff s
-	| Indicator_And (s1, s2) -> Format.fprintf ff "(@[%a@]@ AND @[%a@])" indicator_ff s1 indicator_ff s2
-and
-
 byte_ff ff = function
 		| Byte_Concrete (c) -> char_ff ff c
 		| Byte_Symbolic (s) -> symbol_ff ff s
@@ -150,12 +143,28 @@ and char c = char_ff str_formatter c; flush_str_formatter ()
 and symbol s = symbol_ff str_formatter s; flush_str_formatter ()
 *)
 
-and byte b = byte_ff str_formatter b; flush_str_formatter ()
+and
+
+byte b = byte_ff str_formatter b; flush_str_formatter ()
+
+and
+
+guard_ff ff = function
+	| Guard_True -> Format.fprintf ff "TRUE"
+	| Guard_Not g -> Format.fprintf ff "NOT @[%a@]" guard_ff g
+	| Guard_And (g1, g2) -> Format.fprintf ff "(@[%a@]@ AND @[%a@]@,)" guard_ff g1 guard_ff g2
+	| Guard_Symbolic s -> symbol_ff ff s
+	| Guard_Bytes b -> bytes_ff ff b
 
 (* format entire bytes structure in function-like syntax: op(operand1, ...) *)
 (* TODO: convert all formatting to use Format (exp, operation, string_of_int, ...) *)
-and bytes_ff ff = bytes_ff_named [] ff
-and bytes_ff_named bytes_to_var ff =
+and
+
+bytes_ff ff = bytes_ff_named [] ff
+
+and
+
+bytes_ff_named bytes_to_var ff =
 	let rec bytes_ff ff = function
 		| Bytes_Constant (CInt64(n,ikind,_)) -> fprintf ff "Bytes(%s)" (exp (Const(CInt64(n,ikind,None))))
 		| Bytes_Constant (n) -> fprintf ff "Bytes(%s)" (exp (Const(n)))
@@ -187,13 +196,9 @@ and bytes_ff_named bytes_to_var ff =
 		(*| Bytes_Address (Some(block), offset) -> fprintf ff "addrOf(%s,%a)" (memory_block block) bytes_ff offset*)
 		| Bytes_Address (None, offset) -> fprintf ff "addrOf(@[<hov>null,@,%a])" bytes_ff offset
 
-		| Bytes_MayBytes (indicator, bytes1, bytes2) ->
-			fprintf ff "@[<hv>IF @[%a@] THEN@;<1 2>@[%a@]@ ELSE@;<1 2>@[%a@]@]"
-				indicator_ff indicator bytes_ff bytes1 bytes_ff bytes2
-
-		| Bytes_IfThenElse (bytes0, bytes1, bytes2) ->
-			fprintf ff "@[<hv>IF @[%a@] THEN@;<1 2>@[%a@]@ ELSE@;<1 2>@[%a@]@]"
-				bytes_ff bytes0 bytes_ff bytes1 bytes_ff bytes2
+		| Bytes_IfThenElse (guard, bytes1, bytes2) ->
+			fprintf ff "(IF @[%a@]@ THEN @[%a@]@ ELSE @[%a@]@,)"
+				guard_ff guard bytes_ff bytes1 bytes_ff bytes2
 
 		| Bytes_Op (op,(firstop,_)::[]) ->
 			fprintf ff "%s(@[<hov>%a@])"
@@ -295,62 +300,13 @@ lval_block_ff ff =
     let rec lval_block_ff ff = function
         | Lval_Block (block, offset) ->
             fprintf ff "Lval_Block (@[%s@],@ @[%a@]@,)" (memory_block block) bytes_ff offset
-        | Lval_May (indicator, tlvals, flvals) ->
-            fprintf ff "Lval_May (@[%a@],@ @[%a@],@ @[%a@]@,)"
-                indicator_ff indicator lval_block_ff tlvals lval_block_ff flvals
-        | Lval_IfThenElse (bytes, tlvals, flvals) ->
+        | Lval_IfThenElse (guard, tlvals, flvals) ->
             fprintf ff "Lval_IfThenElse (@[%a@],@ @[%a@],@ @[%a@]@,)"
-                bytes_ff bytes lval_block_ff tlvals lval_block_ff flvals
+                guard_ff guard lval_block_ff tlvals lval_block_ff flvals
     in
     lval_block_ff ff
 ;;
 
-(*
-let humanReadableBytes bytesToVars bytes =
-	let rec helper bytes =
-		match bytes with
-			| Bytes_Constant _ -> bytes_ff str_formatter bytes; flush_str_formatter ()
-			| Bytes_ByteArray arr -> (
-					try (List.assoc bytes bytesToVars).vname
-					with Not_found -> bytes_ff str_formatter bytes; flush_str_formatter ()
-				)
-			| Bytes_Address (memBlockOpt,offsetBytes) -> (
-					Printf.sprintf "addrOf(%s,%s)"
-						(match memBlockOpt with None -> "null" | Some blk -> memory_block blk)
-						(helper offsetBytes)
-				)
-(*
-			| Bytes_Op (OP_LNOT,[(byts,_)]) ->
-					"!" ^ helper byts
-			| Bytes_Op (OP_LAND,bytes_typ_list) ->
-					Printf.sprintf "(%s)"
-						(String.concat " /\\ " (List.map (fun (a,_) -> helper a) bytes_typ_list))
-			| Bytes_Op (OP_LOR,bytes_typ_list) ->
-					Printf.sprintf "(%s)"
-						(String.concat " \\/ " (List.map (fun (a,_) -> helper a) bytes_typ_list))
-*)
-			| Bytes_Op (op,bytes_typ_list) ->
-					Printf.sprintf "%s(%s)"
-						(operation op)
-						(String.concat "," (List.map (fun (a,_) -> helper a) bytes_typ_list))
-			| Bytes_Read (srcBytes,offsetBytes,len) ->
-					Printf.sprintf "READ(%s,%s,%d)"
-						(helper srcBytes)
-						(helper offsetBytes)
-						len
-			| Bytes_Write (writeToTheseBytes,offsetBytes,len,writeTheseBytes) ->
-					Printf.sprintf "WRITE(%s,%s,%d,%s)"
-						(helper writeToTheseBytes)
-						(helper offsetBytes)
-						len
-						(helper writeTheseBytes)
-			| Bytes_FunPtr (fundec,_) ->
-					Printf.sprintf "funptr(%s:%s)"
-						fundec.svar.vname
-						(typ fundec.svar.vtype)
-	in
-	helper bytes
-*)
 let humanReadableBytes bytes_to_var bytes =
 	bytes_ff_named bytes_to_var str_formatter bytes;
 	flush_str_formatter ()

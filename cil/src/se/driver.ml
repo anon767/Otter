@@ -291,7 +291,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 					| Function.SymbolicState ->
 						MemoryBlockMap.fold begin fun block _ state ->
 							(* TODO: what about deferred bytes? *)
-							(* TODO: handle pointers by generating MayBytes trees based on alias analysis *)
+							(* TODO: handle pointers with an alias analysis *)
 							let state, bytes = MemOp.state__get_bytes_from_block state block in 
 							match bytes with
 								| Bytes_FunPtr(_) ->
@@ -438,7 +438,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
                                     let state, bytes0 = Eval.rval state (List.nth exps 0) in
                                     let state, bytes1 = Eval.rval state (List.nth exps 1) in
                                     let state, bytes2 = Eval.rval state (List.nth exps 2) in
-									let rv = make_Bytes_IfThenElse (bytes0, bytes1, bytes2) in
+									let rv = make_Bytes_IfThenElse (MemOp.guard__bytes bytes0, bytes1, bytes2) in
 									MemOp.state__assign state lval rv
 							end
 												
@@ -600,8 +600,6 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 									end
 
 								(* TODO: print something useful *)
-								| Immediate (Lval_May _) ->
-									printStringString var.vname "(Lval_May)"
 								| Immediate (Lval_IfThenElse _) ->
 									printStringString var.vname "(Lval_IfThenElse)"
 								| Deferred _ ->

@@ -303,10 +303,6 @@ let rec opPI op operands =
             make_Bytes_IfThenElse(c,opPI op [(e1,typ1);(bytes2,typ2)],opPI op [(e2,typ1);(bytes2,typ2)])
         | _,Bytes_IfThenElse(c,e1,e2) ->
             make_Bytes_IfThenElse(c,opPI op [(bytes1,typ1);(e1,typ2)],opPI op [(bytes1,typ1);(e2,typ2)])
-        | Bytes_MayBytes(ind,e1,e2),_ ->
-            make_Bytes_MayBytes(ind,opPI op [(e1,typ1);(bytes2,typ2)],opPI op [(e2,typ1);(bytes2,typ2)])
-        | _,Bytes_MayBytes(ind,e1,e2) ->
-            make_Bytes_MayBytes(ind,opPI op [(bytes1,typ1);(e1,typ2)],opPI op [(bytes1,typ1);(e2,typ2)])
 		| _ ->
 			Output.set_mode Output.MSG_MUSTPRINT;
 			Output.print_endline ("make_Bytes1: "^(To_string.bytes bytes1)); 
