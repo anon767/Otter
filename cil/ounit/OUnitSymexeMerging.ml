@@ -278,7 +278,7 @@ let aliasing_testsuite = "Aliasing" >::: [
         ()
     end;
 
-    test_merging ~label:"x == (&a + 2) || x == (NULL + 2)" "
+    test_merging ~label:"if (b) then x == (&a + 2) else x == 0" "
         int main(void) {
             int *x, a[3], b;
             __SYMBOLIC(&a);
@@ -290,15 +290,13 @@ let aliasing_testsuite = "Aliasing" >::: [
                 x = 0;
             }
 
-            x++;
-            x++;
-
             if (b) {
+	            x++;
+    	        x++;
                 __ASSERT(*x == a[2]);
             } else {
-                __ASSERT(x == 2 * sizeof(*x));
-            }
-
+				__ASSERT(x == 0);
+			}
             return 0;
         }
     " begin fun file truncated truncated_count other other_count ->
