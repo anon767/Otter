@@ -578,8 +578,8 @@ let state__get_bytes_from_lval state (block, offset, size) =
  * Bytes_IfThenElse/Lval_IfThenElse.
  *)
 
-(** Fold over the leaves of lval_block which are consistent with the state, i.e., the indicator path is true under
-    the path condition.
+(** Fold over the leaves of lval_block which are consistent with the state, i.e., the guard is true under the path
+    condition.
     @param f            the fold function : 'a -> (block * offset) -> 'a
     @param state        the state which to fold lval_block in
     @param acc          the accumulator
@@ -596,9 +596,8 @@ let state__fold_lval_block state f acc lval_block =
 					fold acc pre tlvals
 				| Stp.False ->
 					(* pc && pre ==> !guard *)
-					fold acc (guard__not pre) flvals
+					fold acc pre flvals
 				| Stp.Unknown ->
-					(* pc && pre ==> guard || !guard *)
 					let acc, tlvals = fold acc (guard__and pre guard) tlvals in
 					let acc, flvals = fold acc (guard__and_not pre guard) flvals in
 					let lval_block = Lval_IfThenElse (guard, tlvals, flvals) in
@@ -610,8 +609,7 @@ let state__fold_lval_block state f acc lval_block =
 	fold acc Guard_True lval_block
 
 
-(** Fold over the leaves of bytes which are consistent with the state, i.e., the indicator path is true under
-    the path condition.
+(** Fold over the leaves of bytes which are consistent with the state, i.e., the guard is true under the path condition.
     @param f            the fold function : 'a -> bytes -> 'a
     @param state        the state which to fold bytes in
     @param acc          the accumulator
@@ -628,10 +626,10 @@ let state__fold_bytes state f acc bytes =
 					fold acc pre tbytes
 				| Stp.False ->
 					(* pc && pre ==> !guard *)
-					fold acc (guard__not pre) fbytes
+					fold acc pre fbytes
 				| Stp.Unknown ->
-					let acc, tlvals = fold acc (guard__and pre guard) tbytes in
-					let acc, flvals = fold acc (guard__and_not pre guard) fbytes in
+					let acc, tbytes = fold acc (guard__and pre guard) tbytes in
+					let acc, fbytes = fold acc (guard__and_not pre guard) fbytes in
 					let bytes = make_Bytes_IfThenElse (guard, tbytes, fbytes) in
 					(acc, bytes)
 			end
