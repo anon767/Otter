@@ -283,6 +283,7 @@ let aliasing_testsuite = "Aliasing" >::: [
             int *x, a[3], b[3], c;
             __SYMBOLIC(&a);
             __SYMBOLIC(&b);
+            __SYMBOLIC(&c);
 
             if (c) {
                 x = a;
