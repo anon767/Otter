@@ -93,7 +93,6 @@ CILLY_LIBRARY_MODULES = pretty inthash errormsg alpha trace stats util clist \
                 executeargs \
                 output \
                 executedebug \
-                scfg \
                 to_string \
                 convert \
                 operation \
