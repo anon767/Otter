@@ -1,4 +1,5 @@
 open Cil
+open Bytes
 open Types
 
 let falseBytes = Bytes_Constant (Cil.CInt64 (0L,IInt,None))
@@ -28,7 +29,7 @@ let rec simplifyLogicalOps bytes = match bytes with
 			end
 	| _ ->
 			try
-				if Convert.bytes_to_bool bytes
+				if bytes_to_bool bytes
 				then trueBytes
 				else falseBytes
 			with Failure _ -> bytes
@@ -46,7 +47,7 @@ let totalNumberOfPcs = ref 0
 type 'a tree =
 	| Node of 'a * 'a tree list (* (data, children) *)
 
-let myEqual bytes1 (bytes2,_) = MemOp.same_bytes bytes1 bytes2
+let myEqual bytes1 (bytes2,_) = same_bytes bytes1 bytes2
 
 (* Map variable names to possible values *)
 let varToVals = Hashtbl.create 20
@@ -54,7 +55,7 @@ let varToVals = Hashtbl.create 20
 let makeEquality bytes value =
 	(* Is intType okay here? *)
 	Bytes_Op(OP_EQ,[(bytes,intType);
-									(Convert.lazy_int_to_bytes value, intType)])
+									(lazy_int_to_bytes value, intType)])
 
 (* CAUTION: Requires exponential amount of memory! *)
 let rec allPossibleValues localBytesToVars =
