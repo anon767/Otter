@@ -1,4 +1,5 @@
 open Cil
+open Ternary
 open Bytes
 open Types
 
@@ -244,13 +245,13 @@ let state__fold_lval_block state f acc lval_block =
 	let rec fold acc pre = function
 		| Lval_IfThenElse (guard, tlvals, flvals) ->
 			begin match Stp.query_guard state.path_condition pre guard with
-				| Stp.True ->
+				| True ->
 					(* pc && pre ==> guard *)
 					fold acc pre tlvals
-				| Stp.False ->
+				| False ->
 					(* pc && pre ==> !guard *)
 					fold acc pre flvals
-				| Stp.Unknown ->
+				| Unknown ->
 					let acc, tlvals = fold acc (guard__and pre guard) tlvals in
 					let acc, flvals = fold acc (guard__and_not pre guard) flvals in
 					let lval_block = Lval_IfThenElse (guard, tlvals, flvals) in
@@ -274,13 +275,13 @@ let state__fold_bytes state f acc bytes =
 	let rec fold acc pre = function
 		| Bytes_IfThenElse (guard, tbytes, fbytes) ->
 			begin match Stp.query_guard state.path_condition pre guard with
-				| Stp.True ->
+				| True ->
 					(* pc && pre ==> guard *)
 					fold acc pre tbytes
-				| Stp.False ->
+				| False ->
 					(* pc && pre ==> !guard *)
 					fold acc pre fbytes
-				| Stp.Unknown ->
+				| Unknown ->
 					let acc, tbytes = fold acc (guard__and pre guard) tbytes in
 					let acc, fbytes = fold acc (guard__and_not pre guard) fbytes in
 					let bytes = make_Bytes_IfThenElse (guard, tbytes, fbytes) in

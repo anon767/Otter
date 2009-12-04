@@ -1,4 +1,5 @@
 open Cil
+open Ternary
 open Bytes
 open Types
 
@@ -59,15 +60,13 @@ let rec subsetsOfSize n set =
 				subsetsWithoutX
 				(List.map (fun subset -> BytesSet.add x subset) smallerSubsets)
 
-type truthValue = True | False | Either
-
 (* Memoization table recording whether a path condition implies a
 	 proposition, implies its negation, or neither *)
 let implicationHash = Hashtbl.create 1000
 
 (* If q is essentially prop, return the truthValue corresponding to t_or_f.
 	 If q is essentially NOT(prop), return the truthValue corresponding to (not t_or_f).
-	 Othwerise, return Either. *)
+	 Othwerise, return Unknown. *)
 let rec saysPropIs t_or_f q prop =
 	match q with
 		| Bytes_Op(OP_LNOT,[(q',_)]) -> saysPropIs (not t_or_f) q' prop
@@ -81,7 +80,7 @@ let rec saysPropIs t_or_f q prop =
 		| _ ->
 				if q = prop then (
 					if t_or_f then True else False
-				) else Either
+				) else Unknown
 
 (* Is pc consistent with prop being t_or_f? *)
 let isConsistentWithProp pc (prop,t_or_f) =
@@ -89,7 +88,7 @@ let isConsistentWithProp pc (prop,t_or_f) =
 		match tv with
 			| True -> t_or_f (* Consistent with prop being true, but not false *)
 			| False -> not t_or_f (* Consistent with prop being false, but not true *)
-			| Either -> true (* Consistent in either case *)
+			| Unknown -> true (* Consistent in either case *)
 	in
 	try (* See if the answer is memoized *)
 		returnResult (Hashtbl.find implicationHash (pc,prop))
@@ -100,7 +99,7 @@ let isConsistentWithProp pc (prop,t_or_f) =
 						(match saysPropIs t_or_f clause prop with
 							 | True -> if t_or_f then True else False
 							 | False -> if t_or_f then False else True
-							 | Either -> helper t
+							 | Unknown -> helper t
 						)
 				| [] ->
 						(* The pc didn't explicitly include prop or not-prop, so ask STP *)
@@ -108,10 +107,7 @@ let isConsistentWithProp pc (prop,t_or_f) =
 						let stpResult = Stp.eval pc prop in
 						Executeargs.print_args.Executeargs.arg_print_nothing <- false;
 						Output.set_mode Output.MSG_MUSTPRINT;
-						match stpResult with
-							| Stp.True -> True
-							| Stp.False -> False
-							| Stp.Unknown -> Either
+						stpResult
 		in
 		let result = helper pc in (* See whether pc implies prop, not-prop, or neither *)
 		Hashtbl.add implicationHash (pc,prop) result; (* Memoize the answer *)

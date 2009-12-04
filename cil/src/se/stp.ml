@@ -1,4 +1,5 @@
 open Cil
+open Ternary
 open Bytes
 open Types
 
@@ -21,14 +22,6 @@ let bytes_stpbv_add bytes bv len =
 let bytes_stpbv_get bytes =
   if not Executeargs.run_args.Executeargs.arg_opt_stpbv_cache then raise Not_found else
   BytesMagicMap.find (bytes,Utility.next_id bytes_stpbv_id) (!bytes_stpbv_map);; (* raise Not_found *)
-
-type truth = True | False | Unknown;;
-
-let not truth = match truth with
-	| True -> False
-	| False -> True
-	| Unknown -> Unknown
-;;
 
 (** Return a SymbolSet of all symbols in the given Bytes *)
 let rec allSymbolsInGuard = function
@@ -200,7 +193,7 @@ let rec eval pc bytes =
 			eval pc offset
 		| Bytes_Address (Some(_),_) -> True
 		(* nullity check *)
-		| Bytes_Op(OP_LNOT,(b1,_)::[]) -> not (eval pc b1)
+		| Bytes_Op(OP_LNOT,(b1,_)::[]) -> ternary_not (eval pc b1)
 		
 		(* Comparison of (ptr+i) and (ptr+j) *)
 		| Bytes_Op(op,(Bytes_Address(Some(block1),offset1),_)::(Bytes_Address(Some(block2),offset2),_)::[]) 

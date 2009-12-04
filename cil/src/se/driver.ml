@@ -1,4 +1,5 @@
 open Cil
+open Ternary
 open Bytes
 open Types
 open PathMerging
@@ -9,11 +10,11 @@ let eval_with_cache state pc bytes =
     (state, Stp.eval pc bytes) 
   (*
   match MemOp.state__get_bytes_eval_cache state bytes with
-    | Some (boolval) -> ((if boolval then Stp.True else Stp.False), state)
+    | Some (boolval) -> ((if boolval then True else False), state)
     | None ->
         let truth = Stp.eval pc bytes in
-          if truth = Stp.True then (truth,MemOp.state__add_bytes_eval_cache state bytes true)
-          else if truth = Stp.False then (truth,MemOp.state__add_bytes_eval_cache state bytes false)
+          if truth = True then (truth,MemOp.state__add_bytes_eval_cache state bytes true)
+          else if truth = False then (truth,MemOp.state__add_bytes_eval_cache state bytes false)
           else (truth,state)
    *)
 
@@ -216,8 +217,8 @@ let exec_instr_call job instr lvalopt fexp exps loc =
                                   let state, given = Eval.rval state (List.nth exps 0) in
 				                  let state, rv = Eval.rval state (List.nth exps 1 ) in
 				                  let state, truth = eval_with_cache state (given::state.path_condition) rv in
-				                  if truth == Stp.True then lazy_int_to_bytes 1 
-				                  else if truth == Stp.False then lazy_int_to_bytes 0
+				                  if truth == True then lazy_int_to_bytes 1 
+				                  else if truth == False then lazy_int_to_bytes 0
 				                  else bytes__symbolic 4
                                   end
                                 in
@@ -234,8 +235,8 @@ let exec_instr_call job instr lvalopt fexp exps loc =
                                   if List.length exps = 0 then 0 else
 				                  let state, rv = Eval.rval state (List.hd exps) in
 				                  let state, truth = eval_with_cache state state.path_condition rv in
-				                  if truth == Stp.True then 1
-				                  else if truth == Stp.False then -1
+				                  if truth == True then 1
+				                  else if truth == False then -1
 				                  else 0
                                   end
                                 in
@@ -401,7 +402,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 						let state, post = op_exps state exps Cil.LAnd in
 						let state, truth = eval_with_cache state state.path_condition post in
 							begin
-								if truth == Stp.True then
+								if truth == True then
 									begin
 									Output.set_mode Output.MSG_REG;
 									Output.print_endline "Assertion satisfied."
@@ -929,14 +930,14 @@ let exec_stmt job =
 					let state, truth = eval_with_cache state state.path_condition rv in
  
 					Output.set_mode Output.MSG_REG;
-					if truth == Stp.True then
+					if truth == True then
 						begin
 							Output.print_endline "True";
 							let nextState,nextStmt = try_branch state None block1 in
 							let job' = { job with state = nextState; stmt = nextStmt; } in
 							Active { job' with exHist = nextExHist (Some nextStmt) ~whichBranch:true; }
 						end
-					else if truth == Stp.False then
+					else if truth == False then
 						begin
 							Output.print_endline "False";
 							let nextState,nextStmt = try_branch state None block2 in
