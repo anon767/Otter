@@ -47,7 +47,7 @@ let totalNumberOfPcs = ref 0
 type 'a tree =
 	| Node of 'a * 'a tree list (* (data, children) *)
 
-let myEqual bytes1 (bytes2,_) = same_bytes bytes1 bytes2
+let myEqual bytes1 (bytes2,_) = bytes__equal bytes1 bytes2
 
 (* Map variable names to possible values *)
 let varToVals = Hashtbl.create 20

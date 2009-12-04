@@ -88,7 +88,7 @@ http://caml.inria.fr/pub/ml-archives/caml-list/2009/08/323bd4f55773e4a230d481aec
 					begin match deferred1, deferred2 with
 						| deferred1, deferred2 when deferred1 == deferred2 ->
 							merged_memory
-						| Immediate bytes1, Immediate bytes2 when same_bytes bytes1 bytes2 ->
+						| Immediate bytes1, Immediate bytes2 when bytes__equal bytes1 bytes2 ->
 							merged_memory
 						| deferred1, deferred2 ->
 							merged_count := !merged_count + 1;

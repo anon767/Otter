@@ -17,9 +17,9 @@ module BytesSet = Set.Make
 	(struct
 		 type t = bytes
 		 let compare a b =
-			 if diff_bytes a b
-			 then compare a b
-			 else 0
+			 if bytes__equal a b
+			 then 0
+			 else compare a b
 	 end)
 
 (* CAUTION: Requires exponential amount of memory! *)

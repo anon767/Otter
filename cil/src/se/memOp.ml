@@ -541,12 +541,13 @@ let cmp_states (s1:state) (s2:state) =
 	    		let deferred2 = MemoryBlockMap.find block s2.block_to_bytes in
 				(* TODO: should the forced state of s2 be propagated? *)
 				let _, bytes2 = state__force s2 deferred2 in
-	    		if  diff_bytes bytes1 bytes2 
-	    		then (
+	    		if bytes__equal bytes1 bytes2 then
+					result
+				else begin
 	    			Output.print_endline (Format.sprintf " >> %s = %s" (block.memory_block_name) (To_string.bytes bytes1));
 	    			Output.print_endline (Format.sprintf " << %s = %s" (block.memory_block_name) (To_string.bytes bytes2));
-						false
-					) else result
+					false
+				end
 	          with Not_found -> result
 		in
 		MemoryBlockMap.fold f s1.block_to_bytes true

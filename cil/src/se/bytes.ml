@@ -373,6 +373,47 @@ let rec isConcrete_bytes (bytes : bytes) =
 
 
 (**
+ *  equality for byte/guards/conditionals/bytes
+ *)
+
+let rec byte__equal byte1 byte2 = if byte1 == byte2 then true else match byte1, byte2 with
+	| Byte_Concrete x, Byte_Concrete y            -> x = y
+	| Byte_Symbolic x, Byte_Symbolic y            -> x = y
+	| Byte_Bytes (b1, off1), Byte_Bytes(b2, off2) -> off1 = off2 && bytes__equal b1 b2
+	| _, _                                        -> false
+
+and guard__equal guard1 guard2 = if guard1 == guard2 then true else match guard1, guard2 with
+	| Guard_Not g1, Guard_Not g2               -> guard__equal g1 g2
+	| Guard_And (g1, g2), Guard_And (g1', g2') -> guard__equal g1 g1' && guard__equal g2 g2'
+	| Guard_Symbolic s1, Guard_Symbolic s2     -> s1 = s2
+	| Guard_Bytes b1, Guard_Bytes b2           -> bytes__equal b1 b2
+	| _, _                                     -> false
+
+and bytes__equal bytes1 bytes2 = if bytes1 == bytes2 then true else match bytes1, bytes2 with
+	| Bytes_Constant c, b
+	| b, Bytes_Constant c ->
+		bytes__equal b (constant_to_bytes c)
+	| Bytes_ByteArray a1, Bytes_ByteArray a2 ->
+		ImmutableArray.length a1 = ImmutableArray.length a2 && ImmutableArray.for_all2 byte__equal a1 a2
+	| Bytes_Address(Some b1, off1),Bytes_Address(Some b2, off2) ->
+		b1 = b2 && bytes__equal off1 off2
+	| Bytes_Address(None, off1),Bytes_Address(None, off2) ->
+		bytes__equal off1 off2
+	| Bytes_IfThenElse (gx, tx, fx), Bytes_IfThenElse (gy, ty, fy) ->
+		(guard__equal gx gy) || (bytes__equal tx ty) || (bytes__equal fx fy)
+	| Bytes_Op (op1, operands1), Bytes_Op (op2, operands2) ->
+		op1 = op2 && List.for_all2 (fun (b1, _) (b2, _) -> bytes__equal b1 b2) operands1 operands2
+	| Bytes_Read (b1, off1, s1), Bytes_Read (b2, off2, s2) ->
+		s1 = s2 && bytes__equal b1 b2 && bytes__equal off1 off2
+	| Bytes_Write (old1, off1, s1, new1), Bytes_Write (old2, off2, s2, new2) ->
+		s1 = s2 && bytes__equal old1 old2 && bytes__equal off1 off2 && bytes__equal new1 new2
+	| Bytes_FunPtr (f1, addr1), Bytes_FunPtr (f2, addr2) ->
+		f1 = f2
+	| _, _ ->
+		false
+
+
+(**
  *  Symbol
  *)
 (* negative id is used as special symbolic values.
@@ -476,46 +517,6 @@ let rec bytes__length bytes =
             else  max_bytes_size
 ;;
 
-let rec diff_guard guard1 guard2 =
-	match guard1, guard2 with
-		| Guard_True, Guard_True                   -> false
-		| Guard_Not g1, Guard_Not g2               -> diff_guard g1 g2
-		| Guard_And (g1, g2), Guard_And (g1', g2') -> diff_guard g1 g1' || diff_guard g2 g2'
-		| Guard_Symbolic s1, Guard_Symbolic s2     -> s1 <> s2
-		| Guard_Bytes b1, Guard_Bytes b2           -> diff_bytes b1 b2
-		| _, _                                     -> true
-and diff_bytes bytes1 bytes2 =
-	match bytes1,bytes2 with
-		| Bytes_Constant(c1),_ -> diff_bytes (constant_to_bytes c1) bytes2
-		| _,Bytes_Constant(c2) -> diff_bytes bytes1 (constant_to_bytes c2)
-		| Bytes_ByteArray(a1),Bytes_ByteArray(a2) -> 
-			ImmutableArray.length a1 <> ImmutableArray.length a2 ||
-			ImmutableArray.exists2
-			(fun e1 e2 -> match e1,e2 with
-				| Byte_Concrete(c1),Byte_Concrete(c2) -> c1<>c2
-				| Byte_Symbolic(s1),Byte_Symbolic(s2) -> s1.symbol_id<>s2.symbol_id (* Don't try to do hard compare *)
-				| Byte_Bytes(b1,off1),Byte_Bytes(b2,off2) -> (off1<>off2) || (diff_bytes b1 b2)
-				| _,_ -> true
-			) 
-			a1 a2
-		| Bytes_Address(Some(b1),off1),Bytes_Address(Some(b2),off2) -> 
-			(b1!=b2) || (diff_bytes off1 off2)
-		| Bytes_Address(None,off1),Bytes_Address(None,off2) -> 
-			(diff_bytes off1 off2)
-		| Bytes_IfThenElse (gx, tx, fx), Bytes_IfThenElse (gy, ty, fy) ->
-			(diff_guard gx gy) || (diff_bytes tx ty) || (diff_bytes fx fy)
-		| Bytes_Op(op1,operands1),Bytes_Op(op2,operands2) ->
-			(op1!=op2) || List.exists2 (fun (b1,_) (b2,_) -> diff_bytes b1 b2) operands1 operands2
-		| Bytes_Read(b1,off1,s1),Bytes_Read(b2,off2,s2) -> 
-			(diff_bytes b1 b2) || (diff_bytes off1 off2) || (s1<>s2)
-		| Bytes_Write(old1,off1,s1,new1),Bytes_Write(old2,off2,s2,new2) -> 
-			(diff_bytes old1 old2) || (diff_bytes off1 off2) || (s1<>s2) || (diff_bytes new1 new2)
-		| Bytes_FunPtr(f1,addr1),Bytes_FunPtr(f2,addr2) -> 
-			(f1!=f2)
-		| _,_ ->  true
-;;
-let same_bytes b1 b2 = not (diff_bytes b1 b2);;
-
 let rec bytes__get_byte bytes i : byte =
 	match bytes with
 		| Bytes_Constant (constant) ->  bytes__get_byte (constant_to_bytes constant) i
@@ -547,10 +548,10 @@ let rec bytes__read bytes off len =
             | Bytes_IfThenElse(c,e1,e2),_ ->
 								let e1' = bytes__read e1 off len in
 								let e2' = bytes__read e2 off len in
-								if diff_bytes e1' e2' then
-									make_Bytes_IfThenElse(c,e1',e2')
-								else
+								if bytes__equal e1' e2' then
 									e1'
+								else
+									make_Bytes_IfThenElse(c,e1',e2')
             | _,Bytes_IfThenElse(c,e1,e2) ->
 								failwith "bytes__read: if-then-else offset doesn't happen"
 (*                make_Bytes_IfThenElse(c,bytes__read (bytes) (e1) len,bytes__read (bytes) (e2) len)*)
@@ -631,10 +632,10 @@ let bytes__write bytes off len newbytes =
             | Bytes_IfThenElse(c,e1,e2),_ ,_ ->
 								let e1' = do_write (e1) (off) len newbytes in
 								let e2' = do_write (e2) (off) len newbytes in
-								if diff_bytes e1' e2' then
-									make_Bytes_IfThenElse(c,e1',e2')
-								else
+								if bytes__equal e1' e2' then
 									e1'
+								else
+									make_Bytes_IfThenElse(c,e1',e2')
             | _,Bytes_IfThenElse(c,e1,e2) ,_ ->
 								failwith "bytes__write: if-then-else offset doesn't happen"
 (*                make_Bytes_IfThenElse(c,do_write (bytes) (e1) len newbytes,do_write (bytes) (e2) len newbytes)*)
