@@ -101,7 +101,10 @@ http://caml.inria.fr/pub/ml-archives/caml-list/2009/08/323bd4f55773e4a230d481aec
 								assert (bytes__length bytes1 == bytes__length bytes2);
 								(* only job_pc_bytes, since NOT job_pc_bytes implies other_pc_bytes due to the added
 								 * path condition above *)
-								(state, make_Bytes_IfThenElse (guard__bytes job_pc_bytes, bytes1, bytes2))
+								let c = IfThenElse (
+									guard__bytes job_pc_bytes, conditional__bytes bytes1, conditional__bytes bytes2
+								) in
+								(state, make_Bytes_Conditional c)
 							end in
 							MemoryBlockMap.add block deferred merged_memory
 					end

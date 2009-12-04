@@ -1,4 +1,5 @@
 open Cil
+open Ternary
 
 type operator = 
 	(* binop *)
@@ -49,23 +50,27 @@ type byte = (* corresponds to BV *)
 
 and guard =
 	| Guard_True
-    | Guard_Not of guard 
-    | Guard_And of guard * guard
-    | Guard_Symbolic of symbol
-    | Guard_Bytes of bytes
+	| Guard_Not of guard
+	| Guard_And of guard * guard
+	| Guard_Symbolic of symbol
+	| Guard_Bytes of bytes
+
+and 'a conditional =
+	| IfThenElse of guard * 'a conditional * 'a conditional  (* if guard then a else b *)
+	| Unconditional of 'a
 
 and bytes =
-	| Bytes_Constant of Cil.constant (* length=Cil.sizeOf (Cil.typeOf (Const(constant))) *)
-	| Bytes_ByteArray of byte ImmutableArray.t  (* content *) 
-	| Bytes_Address of memory_block option * bytes (* offset *)
-	| Bytes_IfThenElse of guard * bytes * bytes (* conditional value of the form: if guard then bytes1 else bytes2 *)
+	| Bytes_Constant of Cil.constant                (* length=Cil.sizeOf (Cil.typeOf (Const(constant))) *)
+	| Bytes_ByteArray of byte ImmutableArray.t      (* content *)
+	| Bytes_Address of memory_block option * bytes  (* block, offset *)
 	| Bytes_Op of operator * (bytes * Cil.typ) list
-	| Bytes_Read of bytes * bytes * int						(* less preferrable type *)
-	| Bytes_Write of bytes * bytes * int * bytes	(* least preferrable type*)
-	| Bytes_FunPtr of Cil.fundec * bytes (* bytes is the "imaginary address" of the funptr *)
-	| Bytes_Unbounded of string * int * bytes (* name, id, size *)
+	| Bytes_Read of bytes * bytes * int             (* less preferrable type *)
+	| Bytes_Write of bytes * bytes * int * bytes    (* least preferrable type*)
+	| Bytes_FunPtr of Cil.fundec * bytes            (* bytes is the "imaginary address" of the funptr *)
+	| Bytes_Unbounded of string * int * bytes       (* name, id, size *)
+	| Bytes_Conditional of bytes conditional
 
-and memory_block_type = 
+and memory_block_type =
 	| Block_type_StringLiteral
 	| Block_type_Global
 	| Block_type_Local
@@ -81,10 +86,8 @@ and memory_block =
 		memory_block_type : memory_block_type; 
 	}
 
-and lval_block =
-	| Lval_Block of memory_block * bytes
-	| Lval_IfThenElse of guard * lval_block * lval_block
-;;
+and lval_block = (memory_block * bytes) conditional
+
 
 let hash_consing_bytes_enabled = ref false;;
 let hash_consing_bytes_hits = ref 0;;
@@ -120,9 +123,6 @@ and
 make_Bytes_Address ( blockopt , bs ) =
 	hash_consing_bytes_create (Bytes_Address ( blockopt , bs ))
 and
-make_Bytes_IfThenElse ( g , bs1 , bs2 ) =
-	hash_consing_bytes_create (Bytes_IfThenElse ( g , bs1 , bs2 ))
-and
 make_Bytes_Op ( op , lst) =
 	hash_consing_bytes_create (Bytes_Op ( op , lst))
 and
@@ -134,6 +134,10 @@ make_Bytes_Write ( des , off , n , src ) =
 and
 make_Bytes_FunPtr ( f , bs ) =
 	hash_consing_bytes_create (Bytes_FunPtr ( f , bs ))
+and
+make_Bytes_Conditional = function
+	| Unconditional b -> b
+	| c -> hash_consing_bytes_create (Bytes_Conditional ( c ))
 ;;
 
 (** Is a bytes 0, 1, or an expression that must be 0 or 1? *)
@@ -389,6 +393,14 @@ and guard__equal guard1 guard2 = if guard1 == guard2 then true else match guard1
 	| Guard_Bytes b1, Guard_Bytes b2           -> bytes__equal b1 b2
 	| _, _                                     -> false
 
+and conditional__equal eq c1 c2 = if c1 == c2 then true else match c1, c2 with
+	| Unconditional x1, Unconditional x2 ->
+		eq x1 x2
+	| IfThenElse (g1, x1, y1), IfThenElse (g2, x2, y2) ->
+		guard__equal g1 g2 && conditional__equal eq x1 x2 && conditional__equal eq y1 y2
+	| _, _ ->
+		false
+
 and bytes__equal bytes1 bytes2 = if bytes1 == bytes2 then true else match bytes1, bytes2 with
 	| Bytes_Constant c, b
 	| b, Bytes_Constant c ->
@@ -399,8 +411,6 @@ and bytes__equal bytes1 bytes2 = if bytes1 == bytes2 then true else match bytes1
 		b1 = b2 && bytes__equal off1 off2
 	| Bytes_Address(None, off1),Bytes_Address(None, off2) ->
 		bytes__equal off1 off2
-	| Bytes_IfThenElse (gx, tx, fx), Bytes_IfThenElse (gy, ty, fy) ->
-		(guard__equal gx gy) || (bytes__equal tx ty) || (bytes__equal fx fy)
 	| Bytes_Op (op1, operands1), Bytes_Op (op2, operands2) ->
 		op1 = op2 && List.for_all2 (fun (b1, _) (b2, _) -> bytes__equal b1 b2) operands1 operands2
 	| Bytes_Read (b1, off1, s1), Bytes_Read (b2, off2, s2) ->
@@ -409,12 +419,23 @@ and bytes__equal bytes1 bytes2 = if bytes1 == bytes2 then true else match bytes1
 		s1 = s2 && bytes__equal old1 old2 && bytes__equal off1 off2 && bytes__equal new1 new2
 	| Bytes_FunPtr (f1, addr1), Bytes_FunPtr (f2, addr2) ->
 		f1 = f2
+	| Bytes_Conditional c1, Bytes_Conditional c2 ->
+		(* using conditional__equal will make it not polymorphic *)
+		let rec bytes_conditional_equal c1 c2 = if c1 == c2 then true else match c1, c2 with
+			| Unconditional x1, Unconditional x2 ->
+				bytes__equal x1 x2
+			| IfThenElse (g1, x1, y1), IfThenElse (g2, x2, y2) ->
+				guard__equal g1 g2 && bytes_conditional_equal x1 x2 && bytes_conditional_equal y1 y2
+			| _, _ ->
+				false
+		in
+		bytes_conditional_equal c1 c2
 	| _, _ ->
 		false
 
 
 (**
- *  Symbol
+ *  symbol
  *)
 (* negative id is used as special symbolic values.
    0 is used for the symbolic byte representing uninitialized memory *)
@@ -459,6 +480,97 @@ let guard__bytes b = Guard_Bytes b
 
 
 (**
+ *  conditional
+ *)
+
+(** Map and fold simultaneously over the leaves of conditionals.
+    @param ?test        an optional test function to filter by the guard condition : guard -> guard -> Ternary.t
+    @param ?eq          an optional equality function to prune identical leaves : 'target -> 'target -> bool
+    @param ?pre         an optional precondition
+    @param map_fold     the map and fold function : 'acc -> guard -> 'source -> 'acc * 'target conditional
+    @param acc          the initial accumulator
+    @param source       the original conditional to map from
+    @return [(acc, 'target conditional)]
+                        the final accumulator and mapped conditional
+*)
+let conditional__map_fold ?(test=fun _ _ -> Unknown) ?(eq=(==)) ?(pre=Guard_True) map_fold acc source =
+	let rec conditional__map_fold acc pre = function
+		| IfThenElse (guard, x, y) ->
+			begin match test pre guard with
+				| True ->
+					(* test pre ==> guard *)
+					conditional__map_fold acc pre x
+				| False ->
+					(* test pre ==> !guard *)
+					conditional__map_fold acc pre y
+				| Unknown ->
+					let acc, x = conditional__map_fold acc (guard__and pre guard) x in
+					let acc, y = conditional__map_fold acc (guard__and_not pre guard) y in
+					(* prune away unnecessary IfThenElse *)
+					if conditional__equal eq x y then
+						(acc, x)
+					else
+						(acc, IfThenElse (guard, x, y))
+			end
+		| Unconditional x ->
+			map_fold acc pre x
+	in
+	conditional__map_fold acc pre source
+
+
+(** Map over the leaves of conditionals.
+    @param ?test        an optional test function to filter by the guard condition : guard -> guard -> Ternary.t
+    @param ?eq          an optional equality function to prune identical leaves : 'target -> 'target -> bool
+    @param ?pre         an optional precondition
+    @param map          the map function : 'source -> 'target conditional
+    @param source       the original conditional to map from
+    @return ['target conditional]
+                        the mapped conditional
+*)
+let conditional__map ?test ?eq ?pre map source =
+	snd (conditional__map_fold ?test ?eq ?pre (fun () _ x -> ((), map x)) () source)
+
+
+(** Fold over the leaves of conditionals.
+    @param ?test    an optional function to test the conditional guard : guard -> guard -> Ternary.t
+    @param ?pre     an optional precondition
+    @param fold     the fold function : 'acc -> guard -> 'source -> 'acc
+    @param acc      the initial accumulator
+    @param source   the conditional to fold over
+    @return [acc]   the final accumulator
+*)
+let conditional__fold ?test ?pre fold acc source =
+	fst (conditional__map_fold ?test ?pre (fun acc pre x -> (fold acc pre x, Unconditional x)) acc source)
+
+
+(** Given a list of length n, return a conditional tree of height log(n) containing all items in the list.
+    @param list     a list of items : 'item
+    @return ['item conditional]
+                    a conditional tree of items
+*)
+let conditional__from_list list =
+	let rec conditional__make_tree outs = function
+		| x::y::rest -> conditional__make_tree ((IfThenElse (guard__symbolic (), x, y))::outs) rest
+		| x::[]      -> conditional__make_tree_next (x::outs)
+		| []         -> conditional__make_tree_next outs
+	and conditional__make_tree_next = function
+		| [ x ] -> x
+		| []    -> failwith "No items in list!"
+		| outs  -> conditional__make_tree [] outs
+	in
+	conditional__make_tree [] list
+
+
+let conditional__bytes = function
+	| Bytes_Conditional c -> c
+	| b -> Unconditional b
+
+
+let conditional__lval_block l =
+	Unconditional l
+
+
+(**
  *	bytes
  *)
 let bytes__zero = make_Bytes_Constant(Cil.CInt64(0L,IInt,None));;
@@ -480,41 +592,26 @@ let bytes__symbolic n =
 		bytes__of_list (impl n)
 ;;
 
-(* given a list of bytes of length n, return a IfThenElse tree of height log(n) containing all the bytes in the list *)
-let bytes__ifthenelse_from_list bytes_list =
-	let rec bytes__make_tree outs = function
-		| x::y::rest -> bytes__make_tree (make_Bytes_IfThenElse (guard__symbolic (), x, y)::outs) rest
-		| x::[]      -> bytes__make_tree_next (x::outs)
-		| []         -> bytes__make_tree_next outs
-	and bytes__make_tree_next = function
-		| [ x ] -> x
-        | []    -> failwith "No bytes in bytes_list!"
-		| outs  -> bytes__make_tree [] outs
-	in
-	bytes__make_tree [] bytes_list
-;;
-
-let rec bytes__ifthenelse_from_lvals = function
-	| Lval_Block (block, offset) ->
-		make_Bytes_Address (Some block, offset)
-	| Lval_IfThenElse (c, lvals1, lvals2) ->
-		make_Bytes_IfThenElse (c, bytes__ifthenelse_from_lvals lvals1, bytes__ifthenelse_from_lvals lvals2)
-;;
-
 let rec bytes__length bytes =
 	match bytes with
 		| Bytes_Constant (constant) -> (Cil.bitsSizeOf (Cil.typeOf (Const(constant))))/8
 		| Bytes_ByteArray (bytearray) -> ImmutableArray.length bytearray
 		| Bytes_Address (_,_)-> word__size
-		| Bytes_IfThenElse (_,b,_) -> bytes__length b (* all bytes in IfThenElse have the same length *)
 		| Bytes_Op (op,(bytes2,typ)::tail) -> bytes__length bytes2
 		| Bytes_Op (op,[]) -> 0 (* reachable from diff_bytes *)
 		| Bytes_Write(bytes2,_,_,_) -> bytes__length bytes2
 		| Bytes_Read(_,_,len) -> len
 		| Bytes_FunPtr(_) -> word__size
-        | Bytes_Unbounded (_,_,size) ->
-            if isConcrete_bytes bytes then bytes_to_int_auto size
-            else  max_bytes_size
+		| Bytes_Unbounded (_,_,size) ->
+			if isConcrete_bytes bytes then bytes_to_int_auto size
+			else  max_bytes_size
+		| Bytes_Conditional c ->
+			(* all bytes in Bytes_Conditional have the same length *)
+			let rec find_one = function
+				| IfThenElse (_, c, _) -> find_one c
+				| Unconditional b -> bytes__length b
+			in
+			find_one c
 ;;
 
 let rec bytes__get_byte bytes i : byte =
@@ -545,16 +642,11 @@ let rec bytes__read bytes off len =
 					newbytes (* being a bit tricky... *)
 				else (* CAUTION: assume [off2,len2] and [off,len] don't overlap.  *)
 					worst_case
-            | Bytes_IfThenElse(c,e1,e2),_ ->
-								let e1' = bytes__read e1 off len in
-								let e2' = bytes__read e2 off len in
-								if bytes__equal e1' e2' then
-									e1'
-								else
-									make_Bytes_IfThenElse(c,e1',e2')
-            | _,Bytes_IfThenElse(c,e1,e2) ->
-								failwith "bytes__read: if-then-else offset doesn't happen"
-(*                make_Bytes_IfThenElse(c,bytes__read (bytes) (e1) len,bytes__read (bytes) (e2) len)*)
+			| Bytes_Conditional c, _ ->
+				let c = conditional__map ~eq:bytes__equal (fun e -> conditional__bytes (bytes__read e off len)) c in
+				make_Bytes_Conditional c
+			| _, Bytes_Conditional c ->
+				failwith "bytes__read: if-then-else offset doesn't happen"
 			| _ -> worst_case
 		end
 		in
@@ -627,19 +719,11 @@ let bytes__write bytes off len newbytes =
 			| Bytes_Constant c,_,_ ->
 					do_write (constant_to_bytes c) off len newbytes
 
-
-
-            | Bytes_IfThenElse(c,e1,e2),_ ,_ ->
-								let e1' = do_write (e1) (off) len newbytes in
-								let e2' = do_write (e2) (off) len newbytes in
-								if bytes__equal e1' e2' then
-									e1'
-								else
-									make_Bytes_IfThenElse(c,e1',e2')
-            | _,Bytes_IfThenElse(c,e1,e2) ,_ ->
-								failwith "bytes__write: if-then-else offset doesn't happen"
-(*                make_Bytes_IfThenElse(c,do_write (bytes) (e1) len newbytes,do_write (bytes) (e2) len newbytes)*)
-
+			| Bytes_Conditional c, _, _ ->
+				let c = conditional__map ~eq:bytes__equal (fun e -> conditional__bytes (do_write e off len newbytes)) c in
+				make_Bytes_Conditional c
+			| _, Bytes_Conditional c, _ ->
+				failwith "bytes__write: if-then-else offset doesn't happen"
 
 			| _ -> make_Bytes_Write (bytes,off,len,newbytes)
 	in
@@ -676,20 +760,5 @@ let block__make_string_literal name n =
 	{block with
 		memory_block_type = Block_type_StringLiteral;
 	}
-;;
-
-
-(* given a list of lval_block of length n, return a Lval_May tree of height log(n) containing all the lvals in the list *)
-let lval_block__from_list lval_list =
-    let rec lval_block__make_tree outs = function
-        | x::y::rest -> lval_block__make_tree ((Lval_IfThenElse (guard__symbolic (), x, y))::outs) rest
-        | x::[]      -> lval_block__make_tree_next (x::outs)
-        | []         -> lval_block__make_tree_next outs
-    and lval_block__make_tree_next = function
-        | [ x ] -> x
-        | []    -> failwith "No lvals in lval_list!"
-        | outs  -> lval_block__make_tree [] outs
-    in
-    lval_block__make_tree [] lval_list
 ;;
 

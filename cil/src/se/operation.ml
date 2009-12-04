@@ -297,12 +297,10 @@ let rec opPI op operands =
 					op [(bytes1,!Cil.upointType);(offset3,Cil.intType)] (* TODO: make typing of offset more accurate? *)
 				| _ -> failwith "type of Bytes_ByteArray (used as a pointer) not TPtr"
 			end
-           (* TODO: abstract the unfolding of MayBytes/IfThenElse at similar
-            * places *)
-        | Bytes_IfThenElse(c,e1,e2),_ ->
-            make_Bytes_IfThenElse(c,opPI op [(e1,typ1);(bytes2,typ2)],opPI op [(e2,typ1);(bytes2,typ2)])
-        | _,Bytes_IfThenElse(c,e1,e2) ->
-            make_Bytes_IfThenElse(c,opPI op [(bytes1,typ1);(e1,typ2)],opPI op [(bytes1,typ1);(e2,typ2)])
+		| Bytes_Conditional c, _ ->
+			Bytes_Conditional (conditional__map (fun e -> conditional__bytes (opPI op [(e,typ1);(bytes2,typ2)])) c)
+		| _, Bytes_Conditional c ->
+			Bytes_Conditional (conditional__map (fun e -> conditional__bytes (opPI op [(bytes1,typ1);(e,typ2)])) c)
 		| _ ->
 			Output.set_mode Output.MSG_MUSTPRINT;
 			Output.print_endline ("make_Bytes1: "^(To_string.bytes bytes1)); 

@@ -437,10 +437,13 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 								| None -> state
 								| Some cil_lval ->
 									let state, lval = Eval.lval state cil_lval in
-                                    let state, bytes0 = Eval.rval state (List.nth exps 0) in
-                                    let state, bytes1 = Eval.rval state (List.nth exps 1) in
-                                    let state, bytes2 = Eval.rval state (List.nth exps 2) in
-									let rv = make_Bytes_IfThenElse (guard__bytes bytes0, bytes1, bytes2) in
+									let state, bytes0 = Eval.rval state (List.nth exps 0) in
+									let state, bytes1 = Eval.rval state (List.nth exps 1) in
+									let state, bytes2 = Eval.rval state (List.nth exps 2) in
+									let c = IfThenElse (
+										guard__bytes bytes0, conditional__bytes bytes1, conditional__bytes bytes2
+									) in
+									let rv = make_Bytes_Conditional c in
 									MemOp.state__assign state lval rv
 							end
 												
@@ -595,15 +598,15 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 						let printVar var lval_block =
                           if Cilutility.isConstType var.vtype then () else
 							match lval_block with
-								| Immediate (Lval_Block (block, _)) ->
+								| Immediate (Unconditional (block, _)) ->
 									begin match (MemoryBlockMap.find block state.block_to_bytes) with
 										| Immediate bytes -> printVarBytes var bytes
 										| Deferred _ -> printStringString var.vname "(deferred)"
 									end
 
 								(* TODO: print something useful *)
-								| Immediate (Lval_IfThenElse _) ->
-									printStringString var.vname "(Lval_IfThenElse)"
+								| Immediate (IfThenElse _) ->
+									printStringString var.vname "(IfThenElse)"
 								| Deferred _ ->
 									printStringString var.vname "(deferred)"
 						in
@@ -614,14 +617,11 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 						VarinfoMap.iter printVar (List.hd state.locals);
 						Output.print_endline "#Formals:";
 						VarinfoMap.iter printVar (List.hd state.formals);
-                        let rec explore_memory bmap =  (* only one level *)
-                          let bmap = BOSMap.mapi (fun (block,off,size) des -> match des with
-                                                      | Some _ -> des
-                                                      | None -> Some (snd(MemOp.state__get_bytes_from_lval state (block,off,size)))
-                          ) bmap in
-                            bmap (* only one level *)
-                        in
-                        bosmap := explore_memory (!bosmap);
+						(* explore only one level of memory *)
+						bosmap := BOSMap.mapi begin fun (block,off,size) des -> match des with
+							| Some _ -> des
+							| None -> Some (snd(MemOp.state__get_bytes_from_lval state (block,off,size)))
+						end (!bosmap);
 						Output.print_endline "#Memory: (one level)";
                         BOSMap.iter (fun (block,off,size) des -> 
                               let sdes =

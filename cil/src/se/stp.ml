@@ -60,16 +60,21 @@ and allSymbols = function
 				bytes_typ_list
 	| Bytes_Read (bytes1,bytes2,_) ->
 			SymbolSet.union (allSymbols bytes1) (allSymbols bytes2)
-	| Bytes_IfThenElse (guard, bytes1, bytes2) ->
-			SymbolSet.union
-				(allSymbolsInGuard guard)
-				(SymbolSet.union (allSymbols bytes1) (allSymbols bytes2))
 	| Bytes_Write (bytes1,bytes2,_,bytes3) ->
 			SymbolSet.union
 				(allSymbols bytes3)
 				(SymbolSet.union (allSymbols bytes1) (allSymbols bytes2))
 	| Bytes_FunPtr (_,bytes) -> allSymbols bytes
 	| Bytes_Unbounded (_,_,_) -> SymbolSet.empty
+	| Bytes_Conditional c ->
+			let rec allSymbolsInConditional = function
+				| IfThenElse (guard, c1, c2) ->
+					SymbolSet.union (allSymbolsInGuard guard)
+						(SymbolSet.union (allSymbolsInConditional c1) (allSymbolsInConditional c2))
+				| Unconditional b ->
+					allSymbols b
+			in
+			allSymbolsInConditional c
 
 (** Return a SymbolSet of all symbols in the given list of Bytes *)
 let allSymbolsInList byteslist =
@@ -385,13 +390,19 @@ to_stp_bv_impl vc bytes =
 			let len = l_blockaddr in
 				(Stpc.e_bvplus vc len bv_blockaddr bv_offset,len)
 
-		| Bytes_IfThenElse (guard, bytes1, bytes2) ->
-			let cond = to_stp_guard vc guard in
-			let bv1, len1 = to_stp_bv vc bytes1 in
-			let bv2, len2 = to_stp_bv vc bytes2 in
-			assert (len1 = len2);
-			(* if cond then bv1 else bv2 *)
-			(Stpc.e_ite vc cond bv1 bv2, len1)
+		| Bytes_Conditional c ->
+			let rec to_stp_bv_conditional = function
+				| Unconditional b ->
+					to_stp_bv vc b
+				| IfThenElse (guard, c1, c2) ->
+					let cond = to_stp_guard vc guard in
+					let bv1, len1 = to_stp_bv_conditional c1 in
+					let bv2, len2 = to_stp_bv_conditional c2 in
+					assert (len1 = len2);
+					(* if cond then bv1 else bv2 *)
+					(Stpc.e_ite vc cond bv1 bv2, len1)
+			in
+			to_stp_bv_conditional c
 
 		| Bytes_Op(op, [(bytes1,typ1);(bytes2,typ2)]) -> (* BINOP *)
 				(* typ info maybe added to the stp formula later *)

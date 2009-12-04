@@ -197,9 +197,8 @@ bytes_ff_named bytes_to_var ff =
 		(*| Bytes_Address (Some(block), offset) -> fprintf ff "addrOf(%s,%a)" (memory_block block) bytes_ff offset*)
 		| Bytes_Address (None, offset) -> fprintf ff "addrOf(@[<hov>null,@,%a])" bytes_ff offset
 
-		| Bytes_IfThenElse (guard, bytes1, bytes2) ->
-			fprintf ff "(IF @[%a@]@ THEN @[%a@]@ ELSE @[%a@]@,)"
-				guard_ff guard bytes_ff bytes1 bytes_ff bytes2
+		| Bytes_Conditional c ->
+			conditional_ff bytes_ff ff c
 
 		| Bytes_Op (op,(firstop,_)::[]) ->
 			fprintf ff "%s(@[<hov>%a@])"
@@ -297,15 +296,19 @@ memory_block block =
 
 and
 
-lval_block_ff ff =
-    let rec lval_block_ff ff = function
-        | Lval_Block (block, offset) ->
-            fprintf ff "Lval_Block (@[%s@],@ @[%a@]@,)" (memory_block block) bytes_ff offset
-        | Lval_IfThenElse (guard, tlvals, flvals) ->
-            fprintf ff "Lval_IfThenElse (@[%a@],@ @[%a@],@ @[%a@]@,)"
-                guard_ff guard lval_block_ff tlvals lval_block_ff flvals
-    in
-    lval_block_ff ff
+lval_block_ff ff (block, offset) =
+	fprintf ff "(@[%s@],@ @[%a@]@,)" (memory_block block) bytes_ff offset
+
+and
+
+conditional_ff unconditional_ff ff =
+	let rec conditional_ff ff = function
+		| IfThenElse (guard, t, f) ->
+			fprintf ff "(IF @[%a@]@ THEN @[%a@]@ ELSE @[%a@]@,)" guard_ff guard conditional_ff t conditional_ff f
+		| Unconditional x ->
+			unconditional_ff ff x
+	in
+	conditional_ff ff
 ;;
 
 let humanReadableBytes bytes_to_var bytes =

@@ -1,5 +1,4 @@
 open Cil
-open Ternary
 open Bytes
 open Types
 
@@ -22,7 +21,7 @@ let frame__add_varinfo frame block_to_bytes varinfo bytes_opt block_type =
 (*		| None -> make_Bytes_ByteArray ({ImmutableArray.empty with ImmutableArray.length = size}) in (* initially undefined (so any accesses will crash the executor) *) *)
 (*		| None -> bytes__symbolic size in (* initially symbolic *) *)
 	in
-	let frame = VarinfoMap.add varinfo (Immediate (Lval_Block (block, bytes__zero))) frame in
+	let frame = VarinfoMap.add varinfo (Immediate (conditional__lval_block (block, bytes__zero))) frame in
 	let block_to_bytes = MemoryBlockMap.add block (Immediate bytes) block_to_bytes in
 	(frame, block_to_bytes)
 ;;
@@ -35,16 +34,11 @@ let frame__add_varinfos frame block_to_bytes varinfos block_type =
 
 let frame__clear_varinfos frame block_to_bytes =
 	(* only de-allocate stack variables allocated during symbolic execution *)
-	let rec remove_locals block_to_bytes = function
-		| Lval_Block ({ memory_block_type=Block_type_Local } as block, _) ->
-			MemoryBlockMap.remove block block_to_bytes
-		| Lval_Block _ ->
-			block_to_bytes
-		| Lval_IfThenElse (_, lvals1, lvals2) ->
-			let block_to_bytes = remove_locals block_to_bytes lvals1 in
-			let block_to_bytes = remove_locals block_to_bytes lvals2 in
-			block_to_bytes
-	in
+	let remove_locals = conditional__fold begin fun block_to_bytes _ (block, _) ->
+		match block.memory_block_type with
+			| Block_type_Local -> MemoryBlockMap.remove block block_to_bytes
+			| _                -> block_to_bytes
+	end in
 	VarinfoMap.fold begin fun varinfo deferred block_to_bytes -> match deferred with
 		| Immediate lvals -> remove_locals block_to_bytes lvals
 		| _ -> block_to_bytes
@@ -225,105 +219,26 @@ let state__get_bytes_from_lval state (block, offset, size) =
 	(state, bytes__read source offset size)
 ;;
 
-(* TODO: Yit:
- * Lift IfThenElse out of lval_block and bytes into a type 'a conditional = Unconditional of 'a | IfThenElse of
- * 'a conditional; this would make it possible to merge state__fold_lval_block and state__fold_bytes into
- * state__fold_conditional. Also implement state__map_conditional; map and fold should generalize all interpretations of
- * Bytes_IfThenElse/Lval_IfThenElse.
- *)
+let rec state__assign state (lvals, size) bytes =
+	let assign state pre (block, offset) =
+		(* TODO: provide some way to report partial error *)
+		if block.memory_block_type == Block_type_StringLiteral then
+			failwith "Error: write to a constant string literal"
+		else
 
-(** Fold over the leaves of lval_block which are consistent with the state, i.e., the guard is true under the path
-    condition.
-    @param f            the fold function : 'a -> (block * offset) -> 'a
-    @param state        the state which to fold lval_block in
-    @param acc          the accumulator
-    @param lval_block   the lval_block to fold over
-    @return [(acc, lval_block)]
-                        the accumulator and lval_block with infeasible leaves pruned
-*)
-let state__fold_lval_block state f acc lval_block =
-	let rec fold acc pre = function
-		| Lval_IfThenElse (guard, tlvals, flvals) ->
-			begin match Stp.query_guard state.path_condition pre guard with
-				| True ->
-					(* pc && pre ==> guard *)
-					fold acc pre tlvals
-				| False ->
-					(* pc && pre ==> !guard *)
-					fold acc pre flvals
-				| Unknown ->
-					let acc, tlvals = fold acc (guard__and pre guard) tlvals in
-					let acc, flvals = fold acc (guard__and_not pre guard) flvals in
-					let lval_block = Lval_IfThenElse (guard, tlvals, flvals) in
-					(acc, lval_block)
-			end
-		| Lval_Block (block, offset) as lval_block ->
-			(f acc (block, offset), lval_block)
+		let state, oldbytes = state__force state (MemoryBlockMap.find block state.block_to_bytes) in
+
+		let newbytes = bytes__write oldbytes offset size bytes in
+		(* Morris' axiom of assignment *)
+		let newbytes = match pre with
+			| Guard_True -> newbytes
+			| _          -> make_Bytes_Conditional ( IfThenElse (pre, conditional__bytes newbytes, conditional__bytes oldbytes) )
+		in
+		Output.set_mode Output.MSG_ASSIGN;
+		Output.print_endline ("    Assign "^(To_string.bytes bytes)^" to "^(To_string.memory_block block)^","^(To_string.bytes offset));
+		state__add_block state block newbytes
 	in
-	fold acc Guard_True lval_block
-
-
-(** Fold over the leaves of bytes which are consistent with the state, i.e., the guard is true under the path condition.
-    @param f            the fold function : 'a -> bytes -> 'a
-    @param state        the state which to fold bytes in
-    @param acc          the accumulator
-    @param bytes        the bytes to fold over
-    @return [(acc, bytes)]
-                        the accumulator and bytes with infeasible leaves pruned
-*)
-let state__fold_bytes state f acc bytes =
-	let rec fold acc pre = function
-		| Bytes_IfThenElse (guard, tbytes, fbytes) ->
-			begin match Stp.query_guard state.path_condition pre guard with
-				| True ->
-					(* pc && pre ==> guard *)
-					fold acc pre tbytes
-				| False ->
-					(* pc && pre ==> !guard *)
-					fold acc pre fbytes
-				| Unknown ->
-					let acc, tbytes = fold acc (guard__and pre guard) tbytes in
-					let acc, fbytes = fold acc (guard__and_not pre guard) fbytes in
-					let bytes = make_Bytes_IfThenElse (guard, tbytes, fbytes) in
-					(acc, bytes)
-			end
-		| bytes ->
-			(f acc bytes, bytes)
-	in
-	fold acc Guard_True bytes
-        
-
-let rec state__assign state (lvals, size) bytes = (* have problem *)
-	let rec assign state pre = function
-		| Lval_Block (block, offset) ->
-			(* TODO: provide some way to report partial error *)
-			if block.memory_block_type == Block_type_StringLiteral then
-				failwith "Error: write to a constant string literal"
-			else
-
-			let state, oldbytes = state__force state (MemoryBlockMap.find block state.block_to_bytes) in
-
-			(*Output.print_endline (To_string.bytes oldbytes);*)
-			let newbytes = bytes__write oldbytes offset size bytes in
-			(*Output.print_endline (To_string.bytes newbytes);*)
-			(*(*TMP*) (if block.memory_block_type = 3 then
-				Output.set_mode Output.MSG_MUSTPRINT
-				else		*)
-			let newbytes = match pre with
-				| Guard_True -> newbytes
-				| _          -> make_Bytes_IfThenElse ( pre, newbytes, oldbytes )
-			in
-			Output.set_mode Output.MSG_ASSIGN;
-			Output.print_endline ("    Assign "^(To_string.bytes bytes)^" to "^(To_string.memory_block block)^","^(To_string.bytes offset));
-			state__add_block state block newbytes
-
-        | Lval_IfThenElse (guard, tlvals, flvals) ->
-            (* "Morris axiom" *)
-			let state = assign state (guard__and pre guard) tlvals in
-			let state = assign state (guard__and_not pre guard) flvals in
-            state
-	in
-	assign state Guard_True lvals
+	conditional__fold assign state lvals
 ;;
 
 (* start a new function call frame *)

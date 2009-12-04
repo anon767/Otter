@@ -21,16 +21,13 @@ rval state exp : state * bytes =
 
 			| Lval (cil_lval) ->
 					let state, (lvals, size) = lval state cil_lval in
-					let rec get_bytes state = function
-						| Lval_Block (block, offset) ->
-							MemOp.state__get_bytes_from_lval state (block, offset, size)
-						| Lval_IfThenElse (c, lvals1, lvals2) ->
-							let state, bytes1 = get_bytes state lvals1 in
-							let state, bytes2 = get_bytes state lvals2 in
-							state, make_Bytes_IfThenElse (c, bytes1, bytes2)
-					in
-					get_bytes state lvals
-					
+					(* TODO: This is too conservative! It'll return bytes that may be infeasible. *)
+					let state, c = conditional__map_fold begin fun state _ (block, offset) ->
+						let state, bytes = MemOp.state__get_bytes_from_lval state (block, offset, size) in
+						(state, conditional__bytes bytes)
+					end state lvals in
+					(state, make_Bytes_Conditional c)
+
 			|	SizeOf (typ) ->
 					let exp2 = Cil.sizeOf typ in
 					begin match exp2 with
@@ -69,13 +66,10 @@ rval state exp : state * bytes =
 			|	AddrOf (cil_lval)
 			|	StartOf (cil_lval) ->
 					let state, (lvals, _) = lval state cil_lval in
-					let rec get_addrof = function
-						| Lval_Block (block, offset) ->
-							make_Bytes_Address(Some(block), offset)
-						| Lval_IfThenElse (c, lvals1, lvals2) ->
-							make_Bytes_IfThenElse (c, get_addrof lvals1, get_addrof lvals2)
-					in
-					(state, get_addrof lvals)
+					let c = conditional__map begin fun (block, offset) ->
+						conditional__bytes (make_Bytes_Address(Some(block), offset))
+					end lvals in
+					(state, make_Bytes_Conditional c)
 			|	CastE (typ, exp2) ->
 					let state, bytes = rval state exp2 in
 					(state, rval_cast typ bytes (Cil.typeOf exp2))
@@ -156,12 +150,9 @@ and
 
 lval state (lhost, offset_exp as cil_lval) =
 	let size = (Cil.bitsSizeOf (Cil.typeOfLval cil_lval))/8 in
-	let rec add_offset offset = function
-		| Lval_Block (block, offset2) ->
-			Lval_Block (block, Operation.plus [(offset,Cil.intType);(offset2,Cil.intType)])
-		| Lval_IfThenElse (c, lvals1, lvals2) ->
-			Lval_IfThenElse (c, add_offset offset lvals1, add_offset offset lvals2)
-	in
+	let add_offset offset = conditional__map begin fun (block, offset2) ->
+		conditional__lval_block (block, Operation.plus [(offset, Cil.intType); (offset2, Cil.intType)])
+	end in
 	match lhost with
 		| Var(varinfo) ->
 			let state, lvals = MemOp.state__varinfo_to_lval_block state varinfo in
@@ -201,13 +192,11 @@ deref state bytes =
               find_match state.path_condition
 		| Bytes_Address(Some(block), offset) ->
 			if MemOp.state__has_block state block
-			then Lval_Block (block, offset)
+			then conditional__lval_block (block, offset)
 			else failwith "Dereference into an expired stack frame"
 		| Bytes_Address(None, offset) -> failwith "Dereference a dangling pointer"
-		| Bytes_IfThenElse (guard, bytes1, bytes2) ->
-			(* TODO: This is too conservative! It will fail to dereference any NULL, even if the guard is not
-             *       satisfiable. Other operations have similar issues. *)
-			Lval_IfThenElse (guard, deref state bytes1, deref state bytes2)
+		| Bytes_Conditional c ->
+			conditional__map (deref state) c
 		| Bytes_Op(op, operands) -> failwith ("Dereference something not an address (op) "^(To_string.bytes bytes))
 		| Bytes_Read(bytes,off,len) ->failwith "Dereference: Not implemented"
 		| Bytes_Write(bytes,off,len,newbytes) ->failwith "Dereference: Not implemented"
