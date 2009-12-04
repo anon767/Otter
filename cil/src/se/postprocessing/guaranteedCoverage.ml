@@ -1,4 +1,5 @@
 open Cil
+open Ternary
 open Bytes
 open Types
 
@@ -89,7 +90,7 @@ let rec subsetsOfSize n lst =
 let rec isConsistentWithList pc = function
 		[] -> true (* The pc is consistent with the set of assignments *)
 	| assignment::assignments ->
-			if Stp.consult_stp pc assignment = Stp.False
+			if Stp.consult_stp pc assignment = False
 			then false
 			else isConsistentWithList (assignment::pc) assignments
 
