@@ -100,7 +100,6 @@ CILLY_LIBRARY_MODULES = pretty inthash errormsg alpha trace stats util clist \
                 stp \
                 memOp \
                 eval \
-                stmt \
                 builtin_function \
                 function \
                 calculateDependencies \
