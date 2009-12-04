@@ -1,4 +1,5 @@
 open Cil
+open Bytes
 open Types
 open Executeargs
 
@@ -13,7 +14,7 @@ let rec init_globalvars state globals =
               Output.set_mode Output.MSG_MUSTPRINT;
               let lhost_typ = varinfo.vtype in
               let size = (Cil.bitsSizeOf (varinfo.vtype)) / 8 in
-              let zeros = MemOp.bytes__make size in
+              let zeros = bytes__make size in
               let state, init_bytes = match initinfo.init with
                 | None -> (state, zeros)
                 | Some(init) ->
@@ -32,7 +33,7 @@ let rec init_globalvars state globals =
                             let state, off, typ = Eval.flatten_offset state lhost_typ offset in
                             let state, off_bytes = Eval.rval state exp in
                             let init_bytes =
-                              MemOp.bytes__write
+                              bytes__write
                                 acc off (Cilutility.bitsSizeOfExp exp) off_bytes
                             in
                               (state, init_bytes)
@@ -69,7 +70,7 @@ let rec init_globalvars state globals =
 				);
 				let size = (Cil.bitsSizeOf (varinfo.vtype)) / 8 in
 				let size = if size <= 0 then 1 else size in
-				let init_bytes = MemOp.bytes__make size (* zeros *)
+				let init_bytes = bytes__make size (* zeros *)
 				in
 				    MemOp.state__add_global state varinfo init_bytes 
               )
@@ -91,7 +92,7 @@ let init_cmdline_argvs state argstr =
 	let num_args = List.length argstr in
 
 	(* Convert the number of arguments into a 'bytes' *)
-	let argc = Convert.lazy_int_to_bytes num_args in
+	let argc = lazy_int_to_bytes num_args in
 
 	(* C's standard is to have the arguments be consecutive strings. For example, if the
 		 executed code were "./run abc de fgh", this would lead to the following chunk of
@@ -102,19 +103,19 @@ let init_cmdline_argvs state argstr =
 	let argv_strings = String.concat "\000" argstr in
 
 	(* Then we make a bytes (specifically, a make_Bytes_ByteArray) out of this string *)
-	let argv_strings_bytes = Convert.string_to_bytes argv_strings in
+	let argv_strings_bytes = string_to_bytes argv_strings in
 
 	(* Make a block to point to this bytes. *)
 	(* The block's size will be one more than the length of argv_strings (because of the
 		 terminating null byte). *)
-	let argv_strings_block = MemOp.block__make "argv_strings" ((String.length argv_strings) + 1) Block_type_Local in
+	let argv_strings_block = block__make "argv_strings" ((String.length argv_strings) + 1) Block_type_Local in
 
 	(* Map the block we just made to the bytes we just made *)
 	let state' = MemOp.state__add_block state argv_strings_block argv_strings_bytes in
 
 (* TODO: argv[argc] is supposed to be a null pointer. [Standard 5.1.2.2.1] *)
 	(* Now, make a block for the array of pointers, with room for a pointer for each argument *)
-	let argv_ptrs_block = MemOp.block__make "argv_pointers" (num_args * word__size) Block_type_Local in
+	let argv_ptrs_block = block__make "argv_pointers" (num_args * word__size) Block_type_Local in
 
 	(* Make the byteArray of pointers by making each individual pointer and putting them
 		 into the array using MemOp's bytes__write function. *)
@@ -126,13 +127,13 @@ let init_cmdline_argvs state argstr =
 				Output.set_mode Output.MSG_DEBUG;
 				Output.print_endline ("With arguments: \""^h^"\"");
 				let h_bytes =
-					make_Bytes_Address (Some argv_strings_block, Convert.lazy_int_to_bytes charsSoFar) in
+					make_Bytes_Address (Some argv_strings_block, lazy_int_to_bytes charsSoFar) in
 				impl t (ptrsSoFar + 1)
 					(charsSoFar + String.length h + 1 (* '+ 1' for the null character *))
-					(MemOp.bytes__write bytes (Convert.lazy_int_to_bytes (ptrsSoFar * word__size)) word__size h_bytes)
+					(bytes__write bytes (lazy_int_to_bytes (ptrsSoFar * word__size)) word__size h_bytes)
 	in
 	let argv_ptrs_bytes =
-		impl argstr 0 0 (make_Bytes_ByteArray (ImmutableArray.make (num_args * word__size) MemOp.byte__zero)) in
+		impl argstr 0 0 (make_Bytes_ByteArray (ImmutableArray.make (num_args * word__size) byte__zero)) in
 
 	(* Map the pointers block to its bytes *)
 	let state'' = MemOp.state__add_block state' argv_ptrs_block argv_ptrs_bytes in
@@ -140,7 +141,7 @@ let init_cmdline_argvs state argstr =
 	(* Make the top-level address that is the actual argv. It is the address of
 		 argv_ptrs_bytes. We do not have to map this to anything; we just pass it as the
 		 argument to main. *)
-	let argv = make_Bytes_Address (Some argv_ptrs_block, MemOp.bytes__zero) in
+	let argv = make_Bytes_Address (Some argv_ptrs_block, bytes__zero) in
 
 	(* Finally, return the updated state and the list of arguments *)
 	(state'', [argc; argv])
@@ -323,7 +324,7 @@ let doExecute (f: file) =
 		(Stats.lookupTime "STP construct")
 		(Stats.lookupTime "STP doassert")
 		(Stats.lookupTime "STP query");
-    Output.printf "Hash-consing: hits=%d misses=%d\n" (!Types.hash_consing_bytes_hits) (!Types.hash_consing_bytes_misses);
+    Output.printf "Hash-consing: hits=%d misses=%d\n" (!hash_consing_bytes_hits) (!hash_consing_bytes_misses);
     Output.printf "Bytes eval caching: hits=%d misses=%d\n\n" (!MemOp.bytes_eval_cache_hits) (!MemOp.bytes_eval_cache_misses);
     (*
     Hashtbl.iter (fun a b -> print_endline (To_string.bytes b)) Types.hash_consing_bytes_tbl; 

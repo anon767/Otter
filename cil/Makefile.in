@@ -89,12 +89,12 @@ CILLY_LIBRARY_MODULES = pretty inthash errormsg alpha trace stats util clist \
 	      ciloptions feature_config cilly \
                 utility \
                 immutableArray cilutility \
+                bytes \
                 types \
                 executeargs \
                 output \
                 executedebug \
                 to_string \
-                convert \
                 operation \
                 stpc \
                 stp \

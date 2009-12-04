@@ -1,4 +1,5 @@
 open Cil
+open Bytes
 open Types
 open PathMerging
 open Executeargs
@@ -192,7 +193,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
                             Bytes_Address(Some(source_block),source_offset),
                             Bytes_Constant(_)
                             ->
-                              let length_int_val = Convert.bytes_to_int_auto length_int_bytes in
+                              let length_int_val = bytes_to_int_auto length_int_bytes in
                               let state, source_bytes = MemOp.state__get_bytes_from_lval state (source_block,source_offset,length_int_val) in
                               let state, cloned_bytes = MemOp.state__clone_bytes state source_bytes in
                               let state = MemOp.state__assign state (Lval_Block (target_block, target_offset),length_int_val) cloned_bytes in
@@ -215,9 +216,9 @@ let exec_instr_call job instr lvalopt fexp exps loc =
                                   let state, given = Eval.rval state (List.nth exps 0) in
 				                  let state, rv = Eval.rval state (List.nth exps 1 ) in
 				                  let state, truth = eval_with_cache state (given::state.path_condition) rv in
-				                  if truth == Stp.True then Convert.lazy_int_to_bytes 1 
-				                  else if truth == Stp.False then Convert.lazy_int_to_bytes 0
-				                  else MemOp.bytes__symbolic 4
+				                  if truth == Stp.True then lazy_int_to_bytes 1 
+				                  else if truth == Stp.False then lazy_int_to_bytes 0
+				                  else bytes__symbolic 4
                                   end
                                 in
 								MemOp.state__assign state lval truthvalue
@@ -228,7 +229,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 							| Some cil_lval ->
 								let state, lval = Eval.lval state cil_lval in
                                 let truthvalue = 
-                                  Convert.lazy_int_to_bytes
+                                  lazy_int_to_bytes
                                   begin
                                   if List.length exps = 0 then 0 else
 				                  let state, rv = Eval.rval state (List.hd exps) in
@@ -261,7 +262,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 											(Errormsg.error "Can't assign two tracked values to variable %s" varinf.vname);
 
 										let state, (_, size as lval) = Eval.lval state cil_lval in
-										let symbBytes = MemOp.bytes__symbolic size in
+										let symbBytes = bytes__symbolic size in
 										Output.set_mode Output.MSG_MUSTPRINT;
 										Output.print_endline (varinf.vname ^ " = " ^ (To_string.bytes symbBytes));
 										nextExHist := { exHist with bytesToVars = (symbBytes,varinf) :: exHist.bytesToVars; };
@@ -279,12 +280,12 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 															(state, size)
 														| [CastE (_, h)] | [h] ->
 															let state, bytes = Eval.rval state h in
-															let newsize = Convert.bytes_to_int_auto bytes in
+															let newsize = bytes_to_int_auto bytes in
 															(state, if newsize <= 0 then size else newsize)
 														| _ ->
 															failwith "__SYMBOLIC takes at most one argument"
 													in
-													MemOp.state__assign state lval (MemOp.bytes__symbolic ssize)
+													MemOp.state__assign state lval (bytes__symbolic ssize)
 										end
 						)
 
@@ -297,7 +298,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 								| Bytes_FunPtr(_) ->
 									state
 								| _ ->
-									MemOp.state__add_block state block (MemOp.bytes__symbolic (MemOp.bytes__length bytes))
+									MemOp.state__add_block state block (bytes__symbolic (bytes__length bytes))
 						end state.block_to_bytes state
 
 					| Function.SymbolicStatic ->
@@ -311,12 +312,12 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 											(state, 0)
 										else
 											let state, size_bytes = Eval.rval state (List.hd exps) in
-											(state, Convert.bytes_to_int_auto size_bytes) 
+											(state, bytes_to_int_auto size_bytes) 
 									in
 									let state =
 										if MemOp.loc_table__has state (loc,key)
 										then state
-										else MemOp.loc_table__add state (loc,key) (MemOp.bytes__symbolic size)
+										else MemOp.loc_table__add state (loc,key) (bytes__symbolic size)
 									in
 									let newbytes = MemOp.loc_table__get state (loc,key) in
 									MemOp.state__assign state lval newbytes
@@ -327,9 +328,9 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 								| None -> 
 									state
 								| Some (block,offset,_) ->
-									let id = Convert.bytes_to_int_auto (Eval.rval state (List.hd exps)) in
+									let id = bytes_to_int_auto (Eval.rval state (List.hd exps)) in
 									let size = 1 in
-										MemOp.state__assign state (block,offset,size) (MemOp.bytes__of_list [(MemOp.byte__symbolic_with_id id true)])
+										MemOp.state__assign state (block,offset,size) (bytes__of_list [(MemOp.byte__symbolic_with_id id true)])
 							end				
 *)												
 					| Function.NotFound ->
@@ -338,7 +339,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 									state
 								| Some cil_lval ->
 									let state, (_, size as lval) = Eval.lval state cil_lval in
-									MemOp.state__assign state lval (MemOp.bytes__symbolic size)
+									MemOp.state__assign state lval (bytes__symbolic size)
 							end
 						
 					| Function.Exit ->
@@ -362,7 +363,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 								| Bytes_Address(Some(block),offset) ->
 									let state, size_bytes = Eval.rval state sizeexp in
 									let size =
-                                      try Convert.bytes_to_int_auto size_bytes with
+                                      try bytes_to_int_auto size_bytes with
                                           Failure(s) -> Output.print_endline s; 32
                                     in
 									let state, bytes = MemOp.state__get_bytes_from_lval state (block,offset,size) in
@@ -438,7 +439,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
                                     let state, bytes0 = Eval.rval state (List.nth exps 0) in
                                     let state, bytes1 = Eval.rval state (List.nth exps 1) in
                                     let state, bytes2 = Eval.rval state (List.nth exps 2) in
-									let rv = make_Bytes_IfThenElse (MemOp.guard__bytes bytes0, bytes1, bytes2) in
+									let rv = make_Bytes_IfThenElse (guard__bytes bytes0, bytes1, bytes2) in
 									MemOp.state__assign state lval rv
 							end
 												
@@ -484,7 +485,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 							state
 					| Function.CurrentState ->
 						let state, bytes = Eval.rval state (List.hd exps) in
-						let key = Convert.bytes_to_int_auto bytes in
+						let key = bytes_to_int_auto bytes in
 							Output.set_mode Output.MSG_MUSTPRINT;
 							Output.printf "Record state %d\n" key;
 							MemOp.index_to_state__add key state;
@@ -512,7 +513,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
                                   compinfo.cfields
                             | _ -> 
                                 let rec p b= match b with
-                                | Bytes_Constant const ->  p (Convert.constant_to_bytes const)
+                                | Bytes_Constant const ->  p (constant_to_bytes const)
                                 | Bytes_ByteArray ba -> To_string.bytes (Bytes_ByteArray(ImmutableArray.sub ba off (Cil.bitsSizeOf typ/8)))
                                 | _ -> "("^(To_string.bytes b)^","^(string_of_int off)^","^(string_of_int (Cil.bitsSizeOf typ/8))^")"
                                 in 
@@ -572,10 +573,10 @@ let exec_instr_call job instr lvalopt fexp exps loc =
                             | _ -> 
                                 let size = (Cil.bitsSizeOf typ/8) in
                                 let rec p b= match b with
-                                | Bytes_Constant const ->  p (Convert.constant_to_bytes const)
+                                | Bytes_Constant const ->  p (constant_to_bytes const)
                                 | Bytes_ByteArray ba -> To_string.bytes (Bytes_ByteArray(ImmutableArray.sub ba off size))
                                 | Bytes_Address (blockopt,boff) -> 
-                                    if off = 0 && size = Types.word__size then 
+                                    if off = 0 && size = word__size then 
                                       (( match blockopt with
                                         | None -> ()
                                         | Some block -> (* sth can be dereferenced *) bosmap := BOSMap.add (block,boff,size) None (!bosmap)
@@ -637,8 +638,8 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 					| Function.CompareState ->
 						let state, bytes0 = Eval.rval state (List.nth exps 0) in
 						let state, bytes1 = Eval.rval state (List.nth exps 1) in
-						let key0 = Convert.bytes_to_int_auto bytes0 in
-						let key1 = Convert.bytes_to_int_auto bytes1 in
+						let key0 = bytes_to_int_auto bytes0 in
+						let key1 = bytes_to_int_auto bytes1 in
 						Output.set_mode Output.MSG_MUSTPRINT;
 						Output.printf "Compare states %d and %d\n" key0 key1;
 						begin try
@@ -664,7 +665,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
                         end
 					| Function.AssertEqualState ->
 						let state, bytes0 = Eval.rval state (List.nth exps 0) in
-						let key0 = Convert.bytes_to_int_auto bytes0 in
+						let key0 = bytes_to_int_auto bytes0 in
 						begin try 
 							let s0 = MemOp.index_to_state__get key0 in
 							Output.set_mode Output.MSG_MUSTPRINT;

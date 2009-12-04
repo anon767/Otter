@@ -1,4 +1,5 @@
 open Cil
+open Bytes
 open Types
 open Operation
 
@@ -11,11 +12,11 @@ rval state exp : state * bytes =
 			| Const (constant) -> 
 					begin match constant with
 						| CStr(str) ->
-							let bytes = Convert.constant_to_bytes constant in
+							let bytes = constant_to_bytes constant in
 							let block = MemOp.string_table__add bytes in
-							(state, make_Bytes_Address(Some(block),MemOp.bytes__zero))
+							(state, make_Bytes_Address(Some(block),bytes__zero))
 						| _ ->
-							(state, Convert.lazy_constant_to_bytes constant)
+							(state, lazy_constant_to_bytes constant)
 					end
 
 			| Lval (cil_lval) ->
@@ -63,7 +64,7 @@ rval state exp : state * bytes =
 					rval_binop state binop exp1 exp2
 			|	AddrOf (Var varinfo, _) when Cil.isFunctionType (varinfo.Cil.vtype) ->
 					let fundec = Cilutility.search_function varinfo in
-					let f_addr = MemOp.bytes__random Types.word__size in (* TODO: assign an addr for each function ptr *)
+					let f_addr = bytes__random word__size in (* TODO: assign an addr for each function ptr *)
 					(state, make_Bytes_FunPtr(fundec,f_addr))
 			|	AddrOf (cil_lval)
 			|	StartOf (cil_lval) ->
@@ -99,18 +100,18 @@ rval_cast typ rv rvtyp =
          make_Bytes_Constant(const)
 		(* added so that from now on there'll be no make_Bytes_Constant *)
 		| Bytes_Constant(const),_ ->
-			rval_cast typ (Convert.constant_to_bytes const) rvtyp
+			rval_cast typ (constant_to_bytes const) rvtyp
 			
 		| _ ->	
 			begin
-			let old_len = MemOp.bytes__length rv in
+			let old_len = bytes__length rv in
 			let new_len = (Cil.bitsSizeOf typ) / 8 in
 			let worst_case () = (* as function so that it's not always evaluated *)
 					if new_len < old_len 
-					then MemOp.bytes__read rv (Convert.lazy_int_to_bytes 0) new_len
+					then bytes__read rv (lazy_int_to_bytes 0) new_len
 					else 
 						(* TODO: should call STP's sign extension operation *)
-						MemOp.bytes__write (MemOp.bytes__make new_len) (Convert.lazy_int_to_bytes 0) old_len rv 
+						bytes__write (bytes__make new_len) (lazy_int_to_bytes 0) old_len rv 
 
 			in
 			if new_len = old_len then rv (* do nothing *)
@@ -118,7 +119,7 @@ rval_cast typ rv rvtyp =
 				| Bytes_ByteArray(bytearray) ->	
 					if new_len > old_len 
 					then
-						if Convert.isConcrete_bytearray bytearray 
+						if isConcrete_bytearray bytearray 
 						then 
 							begin			
 								let newbytes = (ImmutableArray.sub bytearray 0 new_len) in
@@ -129,8 +130,8 @@ rval_cast typ rv rvtyp =
 										| _ -> failwith "unreachable (bytearray is concrete)"
 								in
 								let sth = if isSigned && leftmost_is_one 
-										then MemOp.byte__111 (* For some reason, this seems not to happen in practice *)
-										else MemOp.byte__zero
+										then byte__111 (* For some reason, this seems not to happen in practice *)
+										else byte__zero
 								in
 								let rec pack_sth newbytes old_len new_len =
 									if old_len>=new_len then newbytes else
@@ -190,7 +191,7 @@ deref state bytes =
                 failwith ("Dereference something not an address (bytearray) "^(To_string.bytes bytes))
               | Bytes_Op(OP_EQ,(bytes1,_)::(bytes2,_)::[])::pc' -> 
                   begin
-                    let bytes_tentative = if bytes1=bytes then bytes2 else if bytes2=bytes then bytes1 else MemOp.bytes__zero in 
+                    let bytes_tentative = if bytes1=bytes then bytes2 else if bytes2=bytes then bytes1 else bytes__zero in 
                       match bytes_tentative with Bytes_Address(_,_) -> deref state bytes_tentative | _ -> find_match pc'
                   end
               | Bytes_Op(OP_LAND,btlist)::pc' ->
@@ -221,20 +222,20 @@ and
 flatten_offset state lhost_typ offset : state * bytes * typ (* type of (lhost,offset) *) =
   let (state, final_bytes,final_typ) = 
 	match offset with
-		| NoOffset -> (state, MemOp.bytes__zero, lhost_typ) (* TODO: bytes__zero should be defined in Convert *)
+		| NoOffset -> (state, bytes__zero, lhost_typ) (* TODO: bytes__zero should be defined in Convert *)
 		| _ -> 
 			let (state, index, base_typ, offset2) =
 				begin match offset with
 					| Field(fieldinfo, offset2) ->
 							let n = field_offset fieldinfo in
-							let index = Convert.lazy_int_to_bytes n in
+							let index = lazy_int_to_bytes n in
 							let base_typ = fieldinfo.ftype in
 							(state, index, base_typ, offset2)
 					| Index(exp, offset2) ->
 							let state, rv0 = rval state exp in
 							(* TODO: right thing to do?*)
 							let rv =
-								if MemOp.bytes__length rv0 <> word__size
+								if bytes__length rv0 <> word__size
 								then rval_cast Cil.intType rv0 (Cil.typeOf exp)
 								else rv0
 							in
@@ -242,7 +243,7 @@ flatten_offset state lhost_typ offset : state * bytes * typ (* type of (lhost,of
 							let base_typ = match Cilutility.unrollType lhost_typ with TArray(typ2, _, _) -> typ2 | _ -> failwith "Must be array" in
 							let base_size = (Cil.bitsSizeOf base_typ) / 8 in (* must be known *)
 							(* TODO: if typ is not IInt, should we change it to? *)
-							let index = Operation.mult [(Convert.lazy_int_to_bytes base_size,Cil.intType);(rv,typ)] in 
+							let index = Operation.mult [(lazy_int_to_bytes base_size,Cil.intType);(rv,typ)] in 
 							(state, index, base_typ, offset2)
 					| _ -> failwith "Unreachable"
 				end
@@ -253,7 +254,7 @@ flatten_offset state lhost_typ offset : state * bytes * typ (* type of (lhost,of
   in
     (* if typ is not IInt, fix it!   <---- this is WRONG
     
-    if MemOp.bytes__length final_bytes <> word__size then
+    if bytes__length final_bytes <> word__size then
         (rval_cast Cil.intType final_bytes, Cil.intType)
     else
      *)
@@ -295,10 +296,10 @@ rval_binop state binop exp1 exp2 =
 	let state, rv1 = rval state exp1 in
 	let typ1 = Cil.typeOf exp1 in
 	(* shortcircuiting *)
-	if op == Operation.logand && Convert.isConcrete_bytes rv1 && Convert.bytes_to_bool rv1 = false then
-		(state, Convert.lazy_int_to_bytes 0)
-	else if op == Operation.logor && Convert.isConcrete_bytes rv1 && Convert.bytes_to_bool rv1 = true then
-		(state, Convert.lazy_int_to_bytes 1)
+	if op == Operation.logand && isConcrete_bytes rv1 && bytes_to_bool rv1 = false then
+		(state, lazy_int_to_bytes 0)
+	else if op == Operation.logor && isConcrete_bytes rv1 && bytes_to_bool rv1 = true then
+		(state, lazy_int_to_bytes 1)
 	else 
 		let state, rv2 = rval state exp2 in
 		let typ2 = Cil.typeOf exp2 in

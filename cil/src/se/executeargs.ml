@@ -116,7 +116,7 @@ let run_args =
 	} ;;
 
 (* This is bad---I know *)
-Types.hash_consing_bytes_enabled := run_args.arg_opt_hash_consing
+Bytes.hash_consing_bytes_enabled := run_args.arg_opt_hash_consing
 
 let readCovStatsFromFile filename =
 	let inChan = open_in filename in

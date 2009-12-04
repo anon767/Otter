@@ -1,4 +1,5 @@
 open Cil
+open Bytes
 open Types
 
 exception Notification_Exit of bytes option

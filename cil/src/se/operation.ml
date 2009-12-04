@@ -5,7 +5,7 @@
 		... 
  *)
 open Cil
-open Types
+open Bytes
 
 
 
@@ -18,9 +18,9 @@ let unop op_conc (*bytearray->bytearray*) op_symb operands : bytes  =
 	let (bytes1, typ1) = List.nth operands 0 in
 	let rec impl bytes typ =
 		match bytes with
-			| Bytes_Constant(const) -> impl (Convert.constant_to_bytes const) typ
+			| Bytes_Constant(const) -> impl (constant_to_bytes const) typ
 			| Bytes_ByteArray(bytearray) -> 
-				if Convert.isConcrete_bytearray bytearray 
+				if isConcrete_bytearray bytearray 
 				then
 					make_Bytes_ByteArray(op_conc bytearray typ)
 				else 
@@ -165,11 +165,11 @@ let rec binop op_const op_symb operands : bytes (* * typ *)=
           | _ -> failwith "unreachable"
     and
     worstCase b1 b2 = 
-			if not (Convert.isConcrete_bytes b1 & Convert.isConcrete_bytes b2) then
+			if not (isConcrete_bytes b1 & isConcrete_bytes b2) then
 				(make_Bytes_Op(op_symb, operands)) (* TODO: Check that STP treats Bytes_Ops as having the type of the first operand *)
 			else
-			let c1 = Convert.bytes_to_constant b1 typ1 in (*TODO: look at typ1 to see if it's unsigned *)
-			let c2 = Convert.bytes_to_constant b2 typ2 in
+			let c1 = bytes_to_constant b1 typ1 in (*TODO: look at typ1 to see if it's unsigned *)
+			let c2 = bytes_to_constant b2 typ2 in
 			begin match (c1,c2) with
 			| (CInt64(i1,k1,s1),CInt64(i2,k2,s2)) ->
 				impl (make_Bytes_Constant c1, make_Bytes_Constant c2)
@@ -202,15 +202,15 @@ let rec binop op_const op_symb operands : bytes (* * typ *)=
 		(* Allow a particular piece of pointer arithmetic: ptr % num. *)
 		| Bytes_Address(Some blk, offset), op2
 				when op_symb = OP_MOD &&
-					Convert.isConcrete_bytes offset &&
-					Convert.isConcrete_bytes op2 ->
+					isConcrete_bytes offset &&
+					isConcrete_bytes op2 ->
 				(* Are these types right? *)
-				let offsetConstant = Convert.bytes_to_constant offset Cil.intType in
-				let op2Constant = Convert.bytes_to_constant op2 Cil.intType in
+				let offsetConstant = bytes_to_constant offset Cil.intType in
+				let op2Constant = bytes_to_constant op2 Cil.intType in
 				begin match offsetConstant,op2Constant with
 					| CInt64 _,CInt64 _ ->
 							let ptrAsNum = plus [(make_Bytes_Constant
-																			(Convert.bytes_to_constant blk.memory_block_addr !Cil.upointType),
+																			(bytes_to_constant blk.memory_block_addr !Cil.upointType),
 																		!Cil.upointType);
 																	 (make_Bytes_Constant offsetConstant, typ2)]
 							in
@@ -284,7 +284,7 @@ let rec opPI op operands =
 			begin match typ1 with
 				| TPtr(basetyp,_) ->
 					let base_size = (Cil.bitsSizeOf basetyp)/8 in
-					let (offset3) = mult [(Convert.lazy_int_to_bytes base_size,Cil.intType);(offset2,typ2)] in
+					let (offset3) = mult [(lazy_int_to_bytes base_size,Cil.intType);(offset2,typ2)] in
 					let (offset4) = op [(offset,Cil.intType);(offset3,Cil.intType)] in (* TODO: make typing of offset more accurate? *)
 					(make_Bytes_Address(blockopt,offset4))
 				| _ -> failwith "type of Bytes_Address not TPtr"
@@ -293,7 +293,7 @@ let rec opPI op operands =
 			begin match typ1 with
 				| TPtr(basetyp,_) ->
 					let base_size = (Cil.bitsSizeOf basetyp)/8 in
-					let (offset3) = mult [(bytes2,typ2);(Convert.lazy_int_to_bytes base_size,Cil.intType)] in
+					let (offset3) = mult [(bytes2,typ2);(lazy_int_to_bytes base_size,Cil.intType)] in
 					op [(bytes1,!Cil.upointType);(offset3,Cil.intType)] (* TODO: make typing of offset more accurate? *)
 				| _ -> failwith "type of Bytes_ByteArray (used as a pointer) not TPtr"
 			end
@@ -329,7 +329,7 @@ let minusPP operands : bytes =
 				| TPtr(basetyp,_) ->
 					let base_size = (Cil.bitsSizeOf basetyp)/8 in
 					let (offset3) = minus [(offset1,Cil.intType);(offset2,Cil.intType)] in (* TODO: make typing of offset more accurate? *)
-					let (offset4) = div [(offset3,Cil.intType);(Convert.lazy_int_to_bytes base_size,Cil.intType)] in
+					let (offset4) = div [(offset3,Cil.intType);(lazy_int_to_bytes base_size,Cil.intType)] in
 						(offset4)
 				| _ -> failwith "type of Bytes_Address not TPtr"
 			end

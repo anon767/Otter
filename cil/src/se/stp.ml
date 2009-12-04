@@ -1,5 +1,6 @@
-open Types
 open Cil
+open Bytes
+open Types
 
 let global_vc = Stpc.create_validity_checker ();;
 
@@ -27,22 +28,6 @@ let not truth = match truth with
 	| True -> False
 	| False -> True
 	| Unknown -> Unknown
-;;
-
-let rec bytes_length bytes =
-	match bytes with
-		| Bytes_Constant (constant) -> (Cil.bitsSizeOf (Cil.typeOf (Const(constant))))/8
-		| Bytes_ByteArray (bytearray) -> ImmutableArray.length bytearray
-		| Bytes_Address (_,_)-> word__size
-		| Bytes_IfThenElse (_,b,_) -> bytes_length b (* all bytes in IfThenElse have the same length *)
-		| Bytes_Op (op,(bytes2,typ)::tail) -> bytes_length bytes2
-		| Bytes_Op (op,[]) -> 0 (* reachable from diff_bytes *)
-		| Bytes_Write(bytes2,_,_,_) -> bytes_length bytes2
-		| Bytes_Read(_,_,len) -> len
-		| Bytes_FunPtr(_) -> word__size
-        | Bytes_Unbounded (_,_,size) ->
-            if Convert.isConcrete_bytes bytes then Convert.bytes_to_int_auto size
-            else  max_bytes_size
 ;;
 
 (** Return a SymbolSet of all symbols in the given Bytes *)
@@ -207,7 +192,7 @@ let rec eval pc bytes =
 		| Bytes_Constant (CInt64(n,_,_)) -> if n = 0L then False else True			
 		| Bytes_ByteArray (bytearray) ->
 				begin try
-					let b = Convert.bytes_to_bool bytes in  (* TODO:need to use int64 *)
+					let b = bytes_to_bool bytes in  (* TODO:need to use int64 *)
 						if b = false then False else True
 				with Failure(_) -> nontrivial()
 				end
@@ -225,7 +210,7 @@ let rec eval pc bytes =
 		
 		(* Comparison of (ptr+i) and c (usually zero) *)
 		| Bytes_Op(op,(Bytes_Address(blockopt,offset1),_)::(bytes2,_)::[]) 
-			when is_comparison op  &&  Convert.isConcrete_bytes bytes2 ->
+			when is_comparison op  &&  isConcrete_bytes bytes2 ->
 				begin match blockopt with 
 					| None -> eval pc (Operation.run (operation_of op) [(offset1,Cil.intType);(bytes2,Cil.intType)])
 					| Some(_) -> (if op==OP_EQ then False else if op==OP_NE then True else nontrivial())
@@ -366,7 +351,7 @@ and
 to_stp_bv_impl vc bytes =
 	match bytes with
 		| Bytes_Constant (constant) ->
-			let bytes2 = Convert.constant_to_bytes constant in
+			let bytes2 = constant_to_bytes constant in
 			to_stp_bv vc bytes2
 
 		| Bytes_ByteArray (bytearray) ->
@@ -527,7 +512,7 @@ to_stp_bv_impl vc bytes =
 			to_stp_bv vc f_addr
 		
 		| Bytes_Write _ ->
-			let len = bytes_length bytes in
+			let len = bytes__length bytes in
 			let arr = to_stp_array vc (new_array vc bytes) bytes in
 			let rec flatten bv_offset len =
 			  if len = 1 then (Stpc.e_read vc arr bv_offset,8) 
@@ -546,7 +531,7 @@ and
 to_stp_array vc arr bytes =	
 	match bytes with
 		| Bytes_Constant(constant) ->
-			let bytes2 = Convert.constant_to_bytes constant in
+			let bytes2 = constant_to_bytes constant in
 				to_stp_array vc arr bytes2
 		| Bytes_ByteArray(bytearray)->
 

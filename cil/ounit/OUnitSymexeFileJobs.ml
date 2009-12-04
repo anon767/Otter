@@ -1,4 +1,5 @@
 open MyOUnit
+open Bytes
 open Types
 
 (* test helper that runs the symbolic executor on a file given a source code as a string *)
@@ -69,7 +70,7 @@ let exit_code_testsuite = "Exit Code" >::: [
         }
     " begin fun file results ->
         assert_match begin fun [ Return (Some actual, _) ] ->
-            assert_equal ~cmp:MemOp.same_bytes MemOp.bytes__zero actual
+            assert_equal ~cmp:same_bytes bytes__zero actual
         end results
     end;
 
@@ -81,7 +82,7 @@ let exit_code_testsuite = "Exit Code" >::: [
         }
     " begin fun file results ->
         assert_match begin fun [ Exit (Some actual, _) ] ->
-            assert_equal ~cmp:MemOp.same_bytes MemOp.bytes__zero actual
+            assert_equal ~cmp:same_bytes bytes__zero actual
         end results
     end;
 

@@ -1,4 +1,5 @@
 open Cil
+open Bytes
 open Types
 
 let fileToRead = ref ""
@@ -16,7 +17,7 @@ module BytesSet = Set.Make
 	(struct
 		 type t = bytes
 		 let compare a b =
-			 if MemOp.diff_bytes a b
+			 if diff_bytes a b
 			 then compare a b
 			 else 0
 	 end)

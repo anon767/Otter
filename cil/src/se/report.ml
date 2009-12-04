@@ -1,6 +1,7 @@
-open Types
 open Cil
 open Executeargs
+open Bytes
+open Types
 
 type coverageType = Line | Block | Edge | Cond
 
@@ -112,7 +113,7 @@ let printPath state hist =
 						 unconstrained bytes with 0. *)
 					Some (make_Bytes_ByteArray
 									(ImmutableArray.map
-										 (function Some b -> b | None -> MemOp.byte__zero)
+										 (function Some b -> b | None -> byte__zero)
 										 byteOptArray))
 				) else (
 					(* Return None for a totally unconstrained value *)
@@ -127,7 +128,7 @@ let printPath state hist =
 			 match getVal bytes with
 				 | None -> () (* Don't print anything for an unconstrained value *)
 				 | Some concreteByteArray ->
-						 match Convert.bytes_to_constant concreteByteArray varinf.vtype with
+						 match bytes_to_constant concreteByteArray varinf.vtype with
 							 | CInt64 (n,_,_) ->
 									 (* Is it okay to ignore the type? Or might we have to truncate? *)
 									 Output.printf "%s=%Ld\n" varinf.vname n

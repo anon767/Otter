@@ -1,5 +1,6 @@
-open Types
 open Executeargs
+open Bytes
+open Types
 
 (** Find the common suffix of 2 lists l1 and l2, and return a triple
 		(a,b,c) such that l1 = a @ c and l2 = b @ c. *)
@@ -87,7 +88,7 @@ http://caml.inria.fr/pub/ml-archives/caml-list/2009/08/323bd4f55773e4a230d481aec
 					begin match deferred1, deferred2 with
 						| deferred1, deferred2 when deferred1 == deferred2 ->
 							merged_memory
-						| Immediate bytes1, Immediate bytes2 when MemOp.same_bytes bytes1 bytes2 ->
+						| Immediate bytes1, Immediate bytes2 when same_bytes bytes1 bytes2 ->
 							merged_memory
 						| deferred1, deferred2 ->
 							merged_count := !merged_count + 1;
@@ -97,10 +98,10 @@ http://caml.inria.fr/pub/ml-archives/caml-list/2009/08/323bd4f55773e4a230d481aec
 								let state, bytes2 = MemOp.state__force state deferred2 in
 								(* TODO: can bytes1 and bytes2 ever have different length? Aren't they supposed to
 								 *       have the size declared in the block? *)
-								assert (MemOp.bytes__length bytes1 == MemOp.bytes__length bytes2);
+								assert (bytes__length bytes1 == bytes__length bytes2);
 								(* only job_pc_bytes, since NOT job_pc_bytes implies other_pc_bytes due to the added
 								 * path condition above *)
-								(state, make_Bytes_IfThenElse (MemOp.guard__bytes job_pc_bytes, bytes1, bytes2))
+								(state, make_Bytes_IfThenElse (guard__bytes job_pc_bytes, bytes1, bytes2))
 							end in
 							MemoryBlockMap.add block deferred merged_memory
 					end
