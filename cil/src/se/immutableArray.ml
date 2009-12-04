@@ -127,9 +127,20 @@ let exists2 p arr arr' =
 	exists2_aux 0
 
 let for_all p arr =
+	let len = length arr in
 	let rec for_all_aux i =
-		if i >= length arr
+		if i >= len
 		then true
 		else p (get arr i) && for_all_aux (succ i)
 	in
 	for_all_aux 0
+
+let for_all2 p arr arr' =
+	let len = length arr in
+	if len <> length arr' then failwith "for_all2: input arrays are of unequal length";
+	let rec for_all2_aux i =
+		if i >= len
+		then true
+		else p (get arr i) (get arr' i) && for_all2_aux (succ i)
+	in
+	for_all2_aux 0
