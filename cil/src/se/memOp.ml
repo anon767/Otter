@@ -106,6 +106,7 @@ let state__empty =
 		formals = [frame__empty];
 		locals = [frame__empty]; (* permit global init with another global *)
 		extra = VarinfoMap.empty;
+		malloc = VarinfoMap.empty;
 		callstack = [];
 		block_to_bytes = MemoryBlockMap.empty;
 		path_condition = [];

@@ -21,6 +21,13 @@ module VarinfoSet =
 	end
 	)
 
+module TypeMap = Utility.MakeMap (struct
+	type t = typ
+	let compare x y =
+		let canonicalize t = typeSigWithAttrs (fun _ -> []) t in
+		Pervasives.compare (canonicalize x) (canonicalize y)
+end)
+
 let bitsSizeOfExp exp =
 	(Cil.bitsSizeOf (Cil.typeOf exp)) / 8;;
 

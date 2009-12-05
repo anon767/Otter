@@ -1,6 +1,7 @@
 open Bytes
 
 module VarinfoMap = Cilutility.VarinfoMap
+module TypeMap = Cilutility.TypeMap
 
 type operator_action = (bytes*Cil.typ) list -> (bytes (* *Cil.typ*))
 ;;
@@ -66,6 +67,7 @@ and state =
 		formals : memory_frame list;            (* Map formal lvals to blocks *)
 		locals : memory_frame list;             (* Map local lvals to blocks *)
 		extra : memory_block list VarinfoMap.t; (* Map for extra blocks, e.g., from unknown call stack recursion *)
+		malloc : memory_block list TypeMap.t VarinfoMap.t; (* Map for malloc blocks from unknown allocation *)
 		callstack : Cil.fundec list;            (* Function call stack *)
 		block_to_bytes : bytes deferred MemoryBlockMap.t;
 		path_condition : bytes list;
