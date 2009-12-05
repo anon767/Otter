@@ -25,6 +25,7 @@ all:
 	$(MAKE) -C c_interface
 	$(MAKE) -C constantbv
 	$(MAKE) -C parser
+	$(RM) libstp.a
 	$(AR) rc libstp.a  AST/*.o sat/*.o simplifier/*.o bitvec/*.o constantbv/*.o c_interface/*.o
 	$(RANLIB) libstp.a
 	@mkdir -p lib
