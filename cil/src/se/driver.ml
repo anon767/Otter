@@ -367,7 +367,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
                                       try bytes_to_int_auto size_bytes with
                                           Failure(s) -> Output.print_endline s; 32
                                     in
-									let state, bytes = MemOp.state__get_bytes_from_lval state (block,offset,size) in
+									let state, bytes = MemOp.state__deref state (conditional__lval_block (block, offset), size) in
 									let str = match bytes with
 										| Bytes_ByteArray(bytearray) -> To_string.bytestring bytearray
 										| Bytes_Constant(CInt64(i,_,_)) -> Int64.to_string i
@@ -620,7 +620,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 						(* explore only one level of memory *)
 						bosmap := BOSMap.mapi begin fun (block,off,size) des -> match des with
 							| Some _ -> des
-							| None -> Some (snd(MemOp.state__get_bytes_from_lval state (block,off,size)))
+							| None -> Some (snd(MemOp.state__deref state (conditional__lval_block (block, off), size)))
 						end (!bosmap);
 						Output.print_endline "#Memory: (one level)";
                         BOSMap.iter (fun (block,off,size) des -> 

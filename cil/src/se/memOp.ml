@@ -214,9 +214,13 @@ let state__get_deferred_from_block state block =
 		MemoryBlockMap.find block state.block_to_bytes
 ;;
 
-let state__get_bytes_from_lval state (block, offset, size) =
-	let state, source = state__get_bytes_from_block state block in
-	(state, bytes__read source offset size)
+let state__deref ?pre state (lvals, size) =
+	let deref state pre (block, offset) =
+		let state, bytes = state__get_bytes_from_block state block in
+		(state, conditional__bytes (bytes__read ~test:(Stp.query_guard state.path_condition) ~pre bytes offset size))
+	in
+	let state, c = conditional__map_fold ?pre deref state lvals in
+	(state, make_Bytes_Conditional c)
 ;;
 
 let rec state__assign state (lvals, size) bytes =

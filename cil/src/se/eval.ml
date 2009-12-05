@@ -20,13 +20,8 @@ rval state exp : state * bytes =
 					end
 
 			| Lval (cil_lval) ->
-					let state, (lvals, size) = lval state cil_lval in
-					(* TODO: This is too conservative! It'll return bytes that may be infeasible. *)
-					let state, c = conditional__map_fold begin fun state _ (block, offset) ->
-						let state, bytes = MemOp.state__get_bytes_from_lval state (block, offset, size) in
-						(state, conditional__bytes bytes)
-					end state lvals in
-					(state, make_Bytes_Conditional c)
+					let state, lvals = lval state cil_lval in
+					MemOp.state__deref state lvals
 
 			|	SizeOf (typ) ->
 					let exp2 = Cil.sizeOf typ in

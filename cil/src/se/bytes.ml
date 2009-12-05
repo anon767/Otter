@@ -621,7 +621,7 @@ let rec bytes__get_byte bytes i : byte =
 		| _ -> make_Byte_Bytes(bytes,i)
 ;;
 
-let rec bytes__read bytes off len =
+let rec bytes__read ?test ?pre bytes off len =
 	let worst_case = make_Bytes_Read (bytes,off,len) in
 	let ret_bytes = 
 		begin match bytes,off with
@@ -642,7 +642,7 @@ let rec bytes__read bytes off len =
 				else (* CAUTION: assume [off2,len2] and [off,len] don't overlap.  *)
 					worst_case
 			| Bytes_Conditional c, _ ->
-				let c = conditional__map ~eq:bytes__equal (fun e -> conditional__bytes (bytes__read e off len)) c in
+				let c = conditional__map ?test ~eq:bytes__equal ?pre (fun e -> conditional__bytes (bytes__read e off len)) c in
 				make_Bytes_Conditional c
 			| _, Bytes_Conditional c ->
 				failwith "bytes__read: if-then-else offset doesn't happen"
