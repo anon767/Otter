@@ -622,7 +622,6 @@ let rec bytes__get_byte bytes i : byte =
 ;;
 
 let rec bytes__read bytes off len =
-	if (bytes__length bytes) = len then bytes else
 	let worst_case = make_Bytes_Read (bytes,off,len) in
 	let ret_bytes = 
 		begin match bytes,off with
@@ -647,6 +646,8 @@ let rec bytes__read bytes off len =
 				make_Bytes_Conditional c
 			| _, Bytes_Conditional c ->
 				failwith "bytes__read: if-then-else offset doesn't happen"
+			| _, _ when (isConcrete_bytes off) && (bytes_to_int_auto off = 0) ->
+				bytes
 			| _ -> worst_case
 		end
 		in
