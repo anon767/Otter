@@ -325,25 +325,15 @@ module DiscreteOrder (G : sig include QualGraphAutomatonType module V : VertexTy
                             Some (explanation, List.rev_append frontier advanced)
 
                         | (G.Qual.Var v, automaton)::rest when not (VisitedSet.mem (v, automaton) visited) ->
-                            (* optimization to short-circuit one level of search *)
-                            begin match Solution.get_annotations v solution with
-                                | [ sink ] when G.Qual.Const.compare source sink = 0
-                                             && (match path with _::_::_ -> true | _ -> false) ->
-                                    (* one of the nodes in this front makes a cycle back to the source,
-                                     * so abandon this front but continue searching the rest *)
-                                    explain_one (frontier, advanced)
+                            let visited = VisitedSet.add (v, automaton) visited in
+                            let path = (G.Qual.Var v, automaton)::path in
 
-                                | _ ->
-                                    let visited = VisitedSet.add (v, automaton) visited in
-                                    let path = (G.Qual.Var v, automaton)::path in
+                            (* yet to reach sink: tentitavely advance the frontier and search the rest *)
+                            let collect v automaton adj = (v, automaton)::adj in
+                            let front = G.fold_forward collect constraints (G.Qual.Var v) automaton [] in
+                            let front = G.fold_backward collect constraints (G.Qual.Var v) automaton front in
 
-                                    (* yet to reach sink: tentitavely advance the frontier and search the rest *)
-                                    let collect v automaton adj = (v, automaton)::adj in
-                                    let front = G.fold_forward collect constraints (G.Qual.Var v) automaton [] in
-                                    let front = G.fold_backward collect constraints (G.Qual.Var v) automaton front in
-
-                                    search_front visited ((front, path, visited)::newadvanced) rest
-                            end
+                            search_front visited ((front, path, visited)::newadvanced) rest
 
                         | (G.Qual.Var _, _)::rest      (* never revisit *)
                         | (G.Qual.Const _, _)::rest -> (* never traverse across annotations *)
