@@ -44,7 +44,7 @@ module Unit = struct
     let compare () () = 0
     let hash () = 0
     let equal () () = true
-    let printer ff _ = Format.fprintf ff "()"
+    let printer ff () = Format.fprintf ff "()"
 end
 
 module String = struct
