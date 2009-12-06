@@ -118,13 +118,19 @@ module Setup (QT : TypeQual.UnionQualType.UnionQualTypeMonad) = struct
             ~msg:"Wrong number of edges"
             expected (QualGraph.nb_edges graph)
 
-    let assert_discrete_satisfiable solution =
+    let assert_discrete_satisfiable solution explanation =
         if DiscreteSolver.Solution.is_unsatisfiable solution then
-            assert_failure "@[<v2>Should be satisfiable:@\n%a@]" DiscreteSolver.Solution.printer solution
+            assert_failure "@[<v2>Should be satisfiable:@\n%a@]" DiscreteSolver.Solution.printer solution;
+        let explanation_count = DiscreteSolver.Explanation.cardinal explanation in
+        if explanation_count != 0 then
+            assert_failure "@[<v2>Should not report errors:@\n%a@]" DiscreteSolver.Explanation.printer explanation
 
-    let assert_discrete_unsatisfiable solution =
+    let assert_discrete_unsatisfiable solution explanation =
         if not (DiscreteSolver.Solution.is_unsatisfiable solution) then
-            assert_failure "@[<v2>Should be unsatisfiable:@\n%a@]" DiscreteSolver.Solution.printer solution
+            assert_failure "@[<v2>Should be unsatisfiable:@\n%a@]" DiscreteSolver.Solution.printer solution;
+        let explanation_count = DiscreteSolver.Explanation.cardinal explanation in
+        if explanation_count == 0 then
+            assert_failure "No errors reported despite unsatisfiable solution"
 
 
     (*
