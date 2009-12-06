@@ -9,7 +9,7 @@ open TypeQual.UnionQualType
 
 
 (* setup CilQual constraint graph *)
-module TQV = TypedQualVar (Unit)
+module TQV = TypedQualVar (String)
 module QT = Qual (TQV) (String)
 module QC = Constraint (struct include Unit let default = () let printer ff () = () end)
 

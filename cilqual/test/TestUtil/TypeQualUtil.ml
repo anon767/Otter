@@ -132,7 +132,8 @@ module Setup (QT : TypeQual.UnionQualType.UnionQualTypeMonad) = struct
      *)
 
     module Programming = struct
-        module ProgrammingQualTypeM = EnvT (String) (QualType) (QT)
+        module Embed = QualType.Var.Embed
+        module ProgrammingQualTypeM = EnvT (Embed) (QualType) (QT)
         include ProgrammingQualTypeM
         module Ops = MonadOps (ProgrammingQualTypeM)
         open Ops
@@ -144,6 +145,7 @@ module Setup (QT : TypeQual.UnionQualType.UnionQualTypeMonad) = struct
         let assign x y = lift (QT.assign x y)
         let join x y = lift (QT.join x y)
         let meet x y = lift (QT.meet x y)
+        let embed x qt = lift (QT.embed x qt)
         let fresh qt = lift (QT.fresh qt)
         let annot qt clist = lift (QT.annot qt clist)
         let deref qt = lift (QT.deref qt)
@@ -153,7 +155,7 @@ module Setup (QT : TypeQual.UnionQualType.UnionQualTypeMonad) = struct
 
         (* printers *)
         let env_printer ff env = ignore begin
-            let kvprinter ff (k, v) = Format.fprintf ff "@[\"%s\"@]@ => @[%a@]" k QualType.printer v in
+            let kvprinter ff (k, v) = Format.fprintf ff "@[\"%a\"@]@ => @[%a@]" Embed.printer k QualType.printer v in
             Env.fold (fun k v b -> Format.fprintf ff "%(%)@[%a@]" b kvprinter (k, v); "@\n") env ""
         end
 
@@ -187,7 +189,7 @@ module Setup (QT : TypeQual.UnionQualType.UnionQualTypeMonad) = struct
                     annot qt c;
                     annot_qt qt v
             in
-            qt <-- fresh (embed_t t);
+            qt <-- embed x (embed_t t);
             annot_qt qt t;
             update x qt
 
@@ -195,10 +197,14 @@ module Setup (QT : TypeQual.UnionQualType.UnionQualTypeMonad) = struct
             vx <-- lookup x;
             vy <-- lookup y;
             match vx, vy with
-                | Some vx, Some vy -> assign vx vy
-                | None _, None _ -> assert_failure "\"%s\" and \"%s\" have not been declared" x y
-                | None _, _ -> assert_failure "\"%s\" has not been declared" x
-                | _, None _ -> assert_failure "\"%s\" has not been declared" y
+                | Some vx, Some vy ->
+                    assign vx vy
+                | None _, None _ ->
+                    assert_failure "\"%a\" and \"%a\" have not been declared" Embed.printer x Embed.printer y
+                | None _, _ ->
+                    assert_failure "\"%a\" has not been declared" Embed.printer x
+                | _, None _ ->
+                    assert_failure "\"%a\" has not been declared" Embed.printer y
     end
 end
 
