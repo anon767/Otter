@@ -646,7 +646,7 @@ let rec bytes__read ?test ?pre bytes off len =
 				make_Bytes_Conditional c
 			| _, Bytes_Conditional c ->
 				failwith "bytes__read: if-then-else offset doesn't happen"
-			| _, _ when (isConcrete_bytes off) && (bytes_to_int_auto off = 0) ->
+			| _, _ when (bytes__length bytes = len) && (isConcrete_bytes off) && (bytes_to_int_auto off = 0) ->
 				bytes
 			| _ -> worst_case
 		end
