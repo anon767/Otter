@@ -44,6 +44,9 @@ sub collectOneArgument {
     if($arg =~ /^--do/) {
         $self->{DOCOMMAND} = $arg;
     }
+    if($arg =~ /^--merge/) {
+        $self->{DOMERGE} = 1;
+    }
     return $self->SUPER::collectOneArgument($arg, $pargs);
 }
 
@@ -71,7 +74,7 @@ sub CillyCommand {
     my $aftercil;
     my @cmd = ($CilCompiler::cil_native);
 
-    if(not defined $self->{DOCOMMAND}) {
+    if((not defined $self->{DOCOMMAND}) && (not defined $self->{DOMERGE})) {
         @cmd = ($CilCompiler::cil_native, $CilCompiler::do_default);
     }
     if(defined $self->{CILLY_OUT}) {
