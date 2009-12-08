@@ -13,13 +13,15 @@ OCAMLBUILD_GRAPH = -X ocamlgraph -tag pkg_ocamlgraph
 OCAMLBUILD_OUNIT = -tag pkg_oUnit
 
 OCAMLBUILD_FLAGS = -j 0 -cflags -warn-error,A -X experiments
-OCAMLBUILD_FLAGS += $(OCAMLBUILD_CIL) $(OCAMLBUILD_PA_MONAD) $(OCAMLBUILD_GRAPH)
+OCAMLBUILD_FLAGS += $(OCAMLBUILD_CIL) $(OCAMLBUILD_PA_MONAD) $(OCAMLBUILD_GRAPH) $(OCAMLBUILD_OUNIT)
 OCAMLBUILD_FLAGS += $(EXTRALIBDIRS:%=-lflags -I,%) $(OCAMLBUILD_EXTRAFLAGS)
 export OCAMLPATH:=$(CURDIR):$(OCAMLPATH)
 
 OCAMLBUILD_DEPS = pa_monad ocamlgraph
 
-VPATH = src
+OUNIT_FLAGS = -verbose
+
+VPATH = src test
 
 .PHONY : all native debug config test
 
@@ -29,10 +31,6 @@ native : ocamlbuild//runcilqual.native config
 debug : ocamlbuild//runcilqual.d.byte config
 config : cilqual.pl.config
 test : ounit//runtestcilqual.d.byte
-
-ounit//runtestcilqual.d.byte : OCAMLBUILD_FLAGS += $(OCAMLBUILD_OUNIT)
-ounit//runtestcilqual.d.byte : OUNIT_FLAGS = -verbose
-ounit//runtestcilqual.d.byte : VPATH += test
 
 pa_monad : pa_monad/pa_monad.cmo
 pa_monad/pa_monad.cmo : make//pa_monad
