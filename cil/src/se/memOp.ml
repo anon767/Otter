@@ -352,9 +352,9 @@ let state__clone_bytes state bytes =
         | Bytes_ByteArray(arr) -> 
             let (fact,arr') = process arr in
               (fact,make_Bytes_ByteArray(arr'))
-        | Bytes_Address(blkOpt,offset) ->
+        | Bytes_Address(blk,offset) ->
             let (fact,offset') = traverse_bytes offset process merge in
-              (fact,make_Bytes_Address(blkOpt,offset'))
+              (fact,make_Bytes_Address(blk,offset'))
         | Bytes_Op(op,lst) -> 
             let (fact,lst') = traverse_bytes_list lst process merge in
               (fact,make_Bytes_Op(op,lst'))

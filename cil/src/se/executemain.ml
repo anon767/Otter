@@ -127,7 +127,7 @@ let init_cmdline_argvs state argstr =
 				Output.set_mode Output.MSG_DEBUG;
 				Output.print_endline ("With arguments: \""^h^"\"");
 				let h_bytes =
-					make_Bytes_Address (Some argv_strings_block, lazy_int_to_bytes charsSoFar) in
+					make_Bytes_Address (argv_strings_block, lazy_int_to_bytes charsSoFar) in
 				impl t (ptrsSoFar + 1)
 					(charsSoFar + String.length h + 1 (* '+ 1' for the null character *))
 					(bytes__write bytes (lazy_int_to_bytes (ptrsSoFar * word__size)) word__size h_bytes)
@@ -141,7 +141,7 @@ let init_cmdline_argvs state argstr =
 	(* Make the top-level address that is the actual argv. It is the address of
 		 argv_ptrs_bytes. We do not have to map this to anything; we just pass it as the
 		 argument to main. *)
-	let argv = make_Bytes_Address (Some argv_ptrs_block, bytes__zero) in
+	let argv = make_Bytes_Address (argv_ptrs_block, bytes__zero) in
 
 	(* Finally, return the updated state and the list of arguments *)
 	(state'', [argc; argv])

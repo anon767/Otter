@@ -200,7 +200,7 @@ let rec binop op_const op_symb operands : bytes (* * typ *)=
         | (Bytes_Op (op, args) , Bytes_Constant(CInt64(i1,k1,_))) when ((isReducableArithmetic op_symb op) && (atLeastOneConstant args))
           -> reducedArithmetic ibytes2 (op,args) false
 		(* Allow a particular piece of pointer arithmetic: ptr % num. *)
-		| Bytes_Address(Some blk, offset), op2
+		| Bytes_Address(blk, offset), op2
 				when op_symb = OP_MOD &&
 					isConcrete_bytes offset &&
 					isConcrete_bytes op2 ->
@@ -280,13 +280,13 @@ let rec opPI op operands =
 	let (bytes1, typ1) = List.nth operands 0 in
 	let (bytes2, typ2) = List.nth operands 1 in
 	match (bytes1, bytes2) with
-		| (Bytes_Address(blockopt,offset), offset2) ->
+		| (Bytes_Address(block, offset), offset2) ->
 			begin match typ1 with
 				| TPtr(basetyp,_) ->
 					let base_size = (Cil.bitsSizeOf basetyp)/8 in
 					let (offset3) = mult [(lazy_int_to_bytes base_size,Cil.intType);(offset2,typ2)] in
 					let (offset4) = op [(offset,Cil.intType);(offset3,Cil.intType)] in (* TODO: make typing of offset more accurate? *)
-					(make_Bytes_Address(blockopt,offset4))
+					(make_Bytes_Address(block, offset4))
 				| _ -> failwith "type of Bytes_Address not TPtr"
 			end
 		| Bytes_ByteArray(_),_ -> (* Doing pointer arithmetic off of a non-pointer, probably NULL *)
@@ -319,8 +319,8 @@ let minusPP operands : bytes =
 	let (bytes1, typ1) = List.nth operands 0 in
 	let (bytes2, typ2) = List.nth operands 1 in
 	match (bytes1, bytes2) with
-		| (Bytes_Address(blockopt1,offset1),Bytes_Address(blockopt2,offset2)) ->
-			if blockopt1 <> blockopt2 then 
+		| (Bytes_Address(block1, offset1), Bytes_Address(block2, offset2)) ->
+			if block1 <> block2 then 
 				failwith "minusPP: different base addresss"
 			else
 			begin match typ1 with

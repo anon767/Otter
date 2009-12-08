@@ -66,7 +66,7 @@ let libc___builtin_alloca state exps =
 (*	let bytes = make_Bytes_ByteArray ({ImmutableArray.empty with ImmutableArray.length = size}) in*)
 (*	let bytes = bytes__make_default size byte__undef in (* initially the symbolic 'undef' byte *) *)
 	let bytes = bytes__make size in (* initially zero, as though malloc were calloc *)
-	let addrof_block = make_Bytes_Address (Some(block),bytes__zero) in
+	let addrof_block = make_Bytes_Address (block, bytes__zero) in
 	let state = MemOp.state__add_block state block bytes in
 	(state, addrof_block)
 ;;
@@ -78,7 +78,7 @@ let libc_free state exps =
 	(* Remove the mapping of (block,bytes) in the state. *)
 	let state, ptr = Eval.rval state (List.hd exps) in
 	match ptr with
-		| Bytes_Address (Some(block),_) ->
+		| Bytes_Address (block, _) ->
 			if block.memory_block_type != Block_type_Heap
 			then failwith ("Freeing a non-malloced pointer:" ^ (To_string.exp (List.hd exps)) ^ " = " ^ (To_string.bytes ptr));
 			if not (MemOp.state__has_block state block)
@@ -94,51 +94,43 @@ let libc_free state exps =
 (* TODO: why are there two completely identical memset? *)
 let libc_memset__concrete state exps =
 	let state, bytes = Eval.rval state (List.hd exps) in
-	let blockopt, offset = bytes_to_address bytes in
-	match blockopt with
-		| Some(block) ->
-			let state, old_whole_bytes = MemOp.state__get_bytes_from_block state block in
-			let state, char_bytes = Eval.rval state (List.nth exps 1) in
-			let c = bytes__get_byte char_bytes 0 (* little endian *) in
-			let state, n_bytes = Eval.rval state (List.nth exps 2) in
-			if isConcrete_bytes n_bytes then
-				let n = bytes_to_int_auto n_bytes in
-				let newbytes = bytes__make_default n c in
-				let finalbytes = bytes__write old_whole_bytes offset n newbytes in
-				let state = MemOp.state__add_block state block finalbytes in
-				(state, bytes)
-			else
-				failwith "libc_memset__concrete: n is symbolic (TODO)"
-		| None ->
-			failwith "libc_memset: passed with null pointer"
+	let block, offset = bytes_to_address bytes in
+	let state, old_whole_bytes = MemOp.state__get_bytes_from_block state block in
+	let state, char_bytes = Eval.rval state (List.nth exps 1) in
+	let c = bytes__get_byte char_bytes 0 (* little endian *) in
+	let state, n_bytes = Eval.rval state (List.nth exps 2) in
+	if isConcrete_bytes n_bytes then
+		let n = bytes_to_int_auto n_bytes in
+		let newbytes = bytes__make_default n c in
+		let finalbytes = bytes__write old_whole_bytes offset n newbytes in
+		let state = MemOp.state__add_block state block finalbytes in
+		(state, bytes)
+	else
+		failwith "libc_memset__concrete: n is symbolic (TODO)"
 ;;
 
 let libc_memset state exps =
 	let state, bytes = Eval.rval state (List.hd exps) in
-	let blockopt, offset = bytes_to_address bytes in
-	match blockopt with
-		| Some(block) ->
-			let state, old_whole_bytes = MemOp.state__get_bytes_from_block state block in
-			let state, char_bytes = Eval.rval state (List.nth exps 1) in
-			let c = bytes__get_byte char_bytes 0 (* little endian *) in
-			let state, n_bytes = Eval.rval state (List.nth exps 2) in
-			if isConcrete_bytes n_bytes then
-				let n = bytes_to_int_auto n_bytes in
-				let newbytes = bytes__make_default n c in
-				let finalbytes = bytes__write old_whole_bytes offset n newbytes in
-				let state = MemOp.state__add_block state block finalbytes in
-				(state, bytes)
-			else
-				failwith "libc_memset: n is symbolic (TODO)"
-		| None ->
-			failwith "libc_memset: passed with null pointer"
+	let block, offset = bytes_to_address bytes in
+	let state, old_whole_bytes = MemOp.state__get_bytes_from_block state block in
+	let state, char_bytes = Eval.rval state (List.nth exps 1) in
+	let c = bytes__get_byte char_bytes 0 (* little endian *) in
+	let state, n_bytes = Eval.rval state (List.nth exps 2) in
+	if isConcrete_bytes n_bytes then
+		let n = bytes_to_int_auto n_bytes in
+		let newbytes = bytes__make_default n c in
+		let finalbytes = bytes__write old_whole_bytes offset n newbytes in
+		let state = MemOp.state__add_block state block finalbytes in
+		(state, bytes)
+	else
+		failwith "libc_memset: n is symbolic (TODO)"
 ;;
 
 let libc_strlen state exps =
 	let gotoFail () = failwith "libc_strlen: can't run builtin" in
 	let state, bytes = Eval.rval state (List.hd exps) in
 	match bytes with
-		| Bytes_Address(Some(block), offset) when isConcrete_bytes offset ->
+		| Bytes_Address(block, offset) when isConcrete_bytes offset ->
 			let state, bytes_str = MemOp.state__get_bytes_from_block state block in
 			let strlen = match bytes_str with
 				| Bytes_ByteArray(ba) ->

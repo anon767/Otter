@@ -62,7 +62,7 @@ and 'a conditional =
 and bytes =
 	| Bytes_Constant of Cil.constant                (* length=Cil.sizeOf (Cil.typeOf (Const(constant))) *)
 	| Bytes_ByteArray of byte ImmutableArray.t      (* content *)
-	| Bytes_Address of memory_block option * bytes  (* block, offset *)
+	| Bytes_Address of memory_block * bytes  (* block, offset *)
 	| Bytes_Op of operator * (bytes * Cil.typ) list
 	| Bytes_Read of bytes * bytes * int             (* less preferrable type *)
 	| Bytes_Write of bytes * bytes * int * bytes    (* least preferrable type*)
@@ -120,8 +120,8 @@ and
 make_Bytes_ByteArray ( bytearray ) =
 	hash_consing_bytes_create (Bytes_ByteArray ( bytearray ))
 and
-make_Bytes_Address ( blockopt , bs ) =
-	hash_consing_bytes_create (Bytes_Address ( blockopt , bs ))
+make_Bytes_Address ( block , bs ) =
+	hash_consing_bytes_create (Bytes_Address ( block , bs ))
 and
 make_Bytes_Op ( op , lst) =
 	hash_consing_bytes_create (Bytes_Op ( op , lst))
@@ -344,10 +344,10 @@ let rec bytes_to_constant bytes typ : Cil.constant =
 	;;
 
 (** Convert a possibly-address bytes to make_Bytes_Address *)
-let rec bytes_to_address bytes : memory_block option*bytes =
+let rec bytes_to_address bytes : memory_block * bytes =
 	let fail () = failwith "bytes_to_address: not an address" in
 	match bytes with
-		| Bytes_Address(blockopt,offset) -> (blockopt,offset)
+		| Bytes_Address(block,offset) -> (block,offset)
 		| Bytes_ByteArray(ba) ->
 			if ImmutableArray.length ba <> word__size then fail ()
 			else let g = ImmutableArray.get ba in
@@ -407,10 +407,8 @@ and bytes__equal bytes1 bytes2 = if bytes1 == bytes2 then true else match bytes1
 		bytes__equal b (constant_to_bytes c)
 	| Bytes_ByteArray a1, Bytes_ByteArray a2 ->
 		ImmutableArray.length a1 = ImmutableArray.length a2 && ImmutableArray.for_all2 byte__equal a1 a2
-	| Bytes_Address(Some b1, off1),Bytes_Address(Some b2, off2) ->
+	| Bytes_Address(b1, off1),Bytes_Address(b2, off2) ->
 		b1 = b2 && bytes__equal off1 off2
-	| Bytes_Address(None, off1),Bytes_Address(None, off2) ->
-		bytes__equal off1 off2
 	| Bytes_Op (op1, operands1), Bytes_Op (op2, operands2) ->
 		op1 = op2 && List.for_all2 (fun (b1, _) (b2, _) -> bytes__equal b1 b2) operands1 operands2
 	| Bytes_Read (b1, off1, s1), Bytes_Read (b2, off2, s2) ->

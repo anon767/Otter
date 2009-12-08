@@ -193,9 +193,8 @@ bytes_ff_named bytes_to_var ff =
                    | None -> failwith "Unreachable"
 			end
 
-		| Bytes_Address (Some(block), offset) -> fprintf ff "(addrOf(%s) [%a] + %a)" (memory_block block) bytes_ff block.memory_block_addr bytes_ff offset
-		(*| Bytes_Address (Some(block), offset) -> fprintf ff "addrOf(%s,%a)" (memory_block block) bytes_ff offset*)
-		| Bytes_Address (None, offset) -> fprintf ff "addrOf(@[<hov>null,@,%a])" bytes_ff offset
+		| Bytes_Address (block, offset) -> fprintf ff "(addrOf(%s) [%a] + %a)" (memory_block block) bytes_ff block.memory_block_addr bytes_ff offset
+		(*| Bytes_Address (block, offset) -> fprintf ff "addrOf(%s,%a)" (memory_block block) bytes_ff offset*)
 
 		| Bytes_Conditional c ->
 			conditional_ff bytes_ff ff c

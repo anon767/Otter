@@ -14,7 +14,7 @@ rval state exp : state * bytes =
 						| CStr(str) ->
 							let bytes = constant_to_bytes constant in
 							let block = MemOp.string_table__add bytes in
-							(state, make_Bytes_Address(Some(block),bytes__zero))
+							(state, make_Bytes_Address(block, bytes__zero))
 						| _ ->
 							(state, lazy_constant_to_bytes constant)
 					end
@@ -62,7 +62,7 @@ rval state exp : state * bytes =
 			|	StartOf (cil_lval) ->
 					let state, (lvals, _) = lval state cil_lval in
 					let c = conditional__map begin fun (block, offset) ->
-						conditional__bytes (make_Bytes_Address(Some(block), offset))
+						conditional__bytes (make_Bytes_Address(block, offset))
 					end lvals in
 					(state, make_Bytes_Conditional c)
 			|	CastE (typ, exp2) ->
@@ -185,11 +185,10 @@ deref state bytes =
               | _::pc' -> find_match pc'
             in
               find_match state.path_condition
-		| Bytes_Address(Some(block), offset) ->
+		| Bytes_Address(block, offset) ->
 			if MemOp.state__has_block state block
 			then conditional__lval_block (block, offset)
 			else failwith "Dereference into an expired stack frame"
-		| Bytes_Address(None, offset) -> failwith "Dereference a dangling pointer"
 		| Bytes_Conditional c ->
 			conditional__map (deref state) c
 		| Bytes_Op(op, operands) -> failwith ("Dereference something not an address (op) "^(To_string.bytes bytes))

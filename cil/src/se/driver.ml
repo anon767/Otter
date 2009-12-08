@@ -190,8 +190,8 @@ let exec_instr_call job instr lvalopt fexp exps loc =
                         let length_int_bytes = List.nth argvs 2 in
                         begin
                         match target_ptr_bytes,source_ptr_bytes,length_int_bytes with
-                          | Bytes_Address(Some(target_block),target_offset),
-                            Bytes_Address(Some(source_block),source_offset),
+                          | Bytes_Address(target_block, target_offset),
+                            Bytes_Address(source_block, source_offset),
                             Bytes_Constant(_)
                             ->
                               let length_int_val = bytes_to_int_auto length_int_bytes in
@@ -361,7 +361,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 							let sizeexp = List.nth exps 1 in
 							let state, addr_bytes = Eval.rval state exp in
 							let state, str = match addr_bytes with
-								| Bytes_Address(Some(block),offset) ->
+								| Bytes_Address(block, offset) ->
 									let state, size_bytes = Eval.rval state sizeexp in
 									let size =
                                       try bytes_to_int_auto size_bytes with
@@ -579,14 +579,12 @@ let exec_instr_call job instr lvalopt fexp exps loc =
                                 let rec p b= match b with
                                 | Bytes_Constant const ->  p (constant_to_bytes const)
                                 | Bytes_ByteArray ba -> To_string.bytes (Bytes_ByteArray(ImmutableArray.sub ba off size))
-                                | Bytes_Address (blockopt,boff) -> 
-                                    if off = 0 && size = word__size then 
-                                      (( match blockopt with
-                                        | None -> ()
-                                        | Some block -> (* sth can be dereferenced *) bosmap := BOSMap.add (block,boff,size) None (!bosmap)
-                                      );
-                                      To_string.bytes b)
-                                    else failwith (Printf.sprintf "PRINT STATE: Reading part of a Bytes_Address: %s %d %d" (To_string.bytes b) off size)
+                                | Bytes_Address (block, boff) -> 
+                                    if off = 0 && size = word__size then begin
+                                        bosmap := BOSMap.add (block,boff,size) None (!bosmap);
+                                        To_string.bytes b
+                                    end else
+                                        failwith (Printf.sprintf "PRINT STATE: Reading part of a Bytes_Address: %s %d %d" (To_string.bytes b) off size)
                                 | _ -> "("^(To_string.bytes b)^","^(string_of_int off)^","^(string_of_int size)^")"
                                 in 
                                 let rhs = p bytes
@@ -629,7 +627,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
                                 | None -> "None"
                                 | Some b -> To_string.bytes b
                               in
-                                Output.print_endline ((To_string.bytes (Bytes_Address(Some block,off))) ^ " -> " ^ sdes)
+                                Output.print_endline ((To_string.bytes (Bytes_Address(block, off))) ^ " -> " ^ sdes)
                                 )
                              (!bosmap);
 						Output.print_endline "#END PRINTSTATE";

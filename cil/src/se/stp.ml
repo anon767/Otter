@@ -46,13 +46,8 @@ and allSymbols = function
 					 | Byte_Bytes (bytes,_) -> SymbolSet.union symbSet (allSymbols bytes))
 				SymbolSet.empty
 				bytearray
-	| Bytes_Address (memBlockOpt,bytes) -> (
-			let partialAnswer = allSymbols bytes in
-			match memBlockOpt with
-					None -> partialAnswer
-				| Some memBlock ->
-						SymbolSet.union partialAnswer (allSymbols memBlock.memory_block_addr)
-		)
+	| Bytes_Address (memBlock, bytes) ->
+			SymbolSet.union (allSymbols bytes) (allSymbols memBlock.memory_block_addr)
 	| Bytes_Op (_,bytes_typ_list) ->
 			List.fold_left
 				(fun symbSet (b,_) -> SymbolSet.union symbSet (allSymbols b))
@@ -194,25 +189,20 @@ let rec eval pc bytes =
 						if b = false then False else True
 				with Failure(_) -> nontrivial()
 				end
-		| Bytes_Address (None, offset) -> 
-			eval pc offset
-		| Bytes_Address (Some(_),_) -> True
+		| Bytes_Address (_,_) -> True
 		(* nullity check *)
 		| Bytes_Op(OP_LNOT,(b1,_)::[]) -> ternary_not (eval pc b1)
 		
 		(* Comparison of (ptr+i) and (ptr+j) *)
-		| Bytes_Op(op,(Bytes_Address(Some(block1),offset1),_)::(Bytes_Address(Some(block2),offset2),_)::[]) 
+		| Bytes_Op(op,(Bytes_Address(block1,offset1),_)::(Bytes_Address(block2,offset2),_)::[]) 
 			when is_comparison op ->
 				if block1!=block2 then (if op==OP_EQ then False else if op==OP_NE then True else nontrivial())
 				else  eval pc (Operation.run (operation_of op) [(offset1,Cil.intType);(offset2,Cil.intType)])
 		
 		(* Comparison of (ptr+i) and c (usually zero) *)
-		| Bytes_Op(op,(Bytes_Address(blockopt,offset1),_)::(bytes2,_)::[]) 
+		| Bytes_Op(op,(Bytes_Address(block,offset1),_)::(bytes2,_)::[]) 
 			when is_comparison op  &&  isConcrete_bytes bytes2 ->
-				begin match blockopt with 
-					| None -> eval pc (Operation.run (operation_of op) [(offset1,Cil.intType);(bytes2,Cil.intType)])
-					| Some(_) -> (if op==OP_EQ then False else if op==OP_NE then True else nontrivial())
-				end
+				if op==OP_EQ then False else if op==OP_NE then True else nontrivial()
 		(* Function pointer is always true *)
 		| Bytes_FunPtr(_,_) -> True
 		(* Consult STP *)
@@ -374,19 +364,9 @@ to_stp_bv_impl vc bytes =
 					(*(Stpc.e_bvconcat vc bv bv8, l + 8) (* reversed orientation *)*)
 					(Stpc.e_bvconcat vc bv8 bv, l + 8) (* same orientation *)
  
-		| Bytes_Address (blockopt, offset) ->
+		| Bytes_Address (block, offset) ->
 			let (bv_offset,l_offset) = to_stp_bv vc offset in
-			let (bv_blockaddr,l_blockaddr) = 
-			match blockopt with
-				| None -> 
-					(Stpc.e_bv_of_int vc 32 0, 32)
-				| Some (block) -> 
-					(*
-					Output.set_mode Output.MSG_DEBUG;
-					Output.print_endline ("STP encodes addr of "^ block.memory_block_name ^ " to :"^(To_string.bytes block.memory_block_addr));
-					*)
-					to_stp_bv vc block.memory_block_addr 
-			in
+			let (bv_blockaddr,l_blockaddr) = to_stp_bv vc block.memory_block_addr in
 			let len = l_blockaddr in
 				(Stpc.e_bvplus vc len bv_blockaddr bv_offset,len)
 
