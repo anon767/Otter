@@ -24,11 +24,14 @@ static int next_state();
 static get_actual_token(char token_str[],int token_ind);
 
 char* __SYMBOLIC_STRING(int size){
-	char* s = malloc(size+1);
+	char* s = malloc(size+3);
 	int i;
-	for(i=0;i<size;++i)
+	for(i=0;i<size;++i){
 		s[i] = __SYMBOLIC();
-	s[size] = 0;
+	}
+	s[size+0] = '\r';
+	s[size+1] = '\n';
+	s[size+2] = 0;
 	return s;
 }
 
@@ -39,13 +42,8 @@ char *argv[];
       token token_ptr;
       token_stream stream_ptr;
 
-	  // set up stdin
-	  sym_file_stream_t fs;
-	  fs.fd = 0;
-	  fs.offset = 0;
-	  fs.sym_file = IOSIM_addfile("/input",__SYMBOLIC_STRING(3),3,0);
-	  fs.buffer = NULL;
-	  IOSIM_fd[0] = &fs;
+	  IOSIM_addfile("/input",__SYMBOLIC_STRING(2),4,0);
+
 	  // set up stdout
 	  sym_file_stream_t fo;
 	  fo.fd = 1;
@@ -92,7 +90,7 @@ string FILENAME;
       stream_ptr->stream_ind=START;
       stream_ptr->stream[START]='\0';
       if(FILENAME == NULL)
-          stream_ptr->fp=stdin; /////////////////////////////////// the old fp/fd mixing problem!!!!!
+          stream_ptr->fp=stdin; 
       else if((stream_ptr->fp=fopen(FILENAME,"r"))==NULL)
            {
                fprintf(stdout, "The file %s doesn't exists\n",FILENAME);

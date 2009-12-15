@@ -10,24 +10,24 @@ CILLY=CILLY_DONT_COMPILE_AFTER_MERGE= $(TRUNK)/cil/bin/cilly --merge --warnall -
 CILTEMPSDIR=CILTEMPSDIR
 CILEXTRAFILE=___extra_files
 
-run: lib_comb.c print_token_comb.c
-	$(CILLY) $(INCLUDEDIR) print_token_comb.c --doexecute
+run: print_tokens_comb.c
+	$(CILLY) $(INCLUDEDIR) print_tokens_comb.c --doexecute $(XARG)
 
 lib_comb.c: 
 	mkdir -p $(CILTEMPSDIR)
 	$(CILLY) --useLogicalOperators --save-temps=$(CILTEMPSDIR) \
 		-I $(LIBCDIR) -I $(MOCKEDDIR) \
 		$(LIBCDIR)/*.c  $(MOCKEDDIR)/*.c \
-		--out=lib_comb.c $(INCLUDEDIR) 
+		--out=lib_comb.c $(INCLUDEDIR)
 	rm -rf $(CILEXTRAFILE) $(CILTEMPSDIR)
 
-print_token_comb.c:
+print_tokens_comb.c: lib_comb.c print_tokens_sym.c
 	mkdir -p $(CILTEMPSDIR)
 	$(CILLY) --useLogicalOperators --save-temps=$(CILTEMPSDIR) \
 		-I $(LIBCDIR) -I $(MOCKEDDIR) \
 		lib_comb.c print_tokens_sym.c \
-		 --out=print_token_comb.c $(INCLUDEDIR) 
+		 --out=print_tokens_comb.c $(INCLUDEDIR)
 	rm -rf $(CILEXTRAFILE) $(CILTEMPSDIR)
 
 clean:
-	rm -rf lib_comb.c print_token_comb.c $(CILEXTRAFILE) $(CILTEMPSDIR)
+	rm -rf lib_comb.c print_tokens_comb.c $(CILEXTRAFILE) $(CILTEMPSDIR)
