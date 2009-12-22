@@ -135,7 +135,7 @@ let leaf_symbolic_switching_only_testsuite = "Leaf Symbolic, Switching Only" >::
     end;
 ]
 
-let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
+let leaf_symbolic_source_simple_path_testsuite = "Leaf Symbolic Source, Simple Path" >::: [
     "unannotated" >::: [
         "global variable" >::: [
             test_mix ~label:"set null locally" "
@@ -437,7 +437,65 @@ let leaf_symbolic_simple_path_testsuite = "Leaf Symbolic, Simple Path" >::: [
     ];
 ]
 
-let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
+let leaf_symbolic_sink_simple_path_testsuite = "Leaf Symbolic Sink, Simple Path" >::: [
+    "non-null" >::: [
+        "global variable" >::: [
+            test_mix ~label:"set null" "
+                int r = 0, s = 0;
+                int * x = &r;
+                void foo(void) MIX(symbolic) {
+                    *x = 1;
+                }
+                int main(void) {
+                    x = NULL;
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution block_errors ->
+                assert_discrete_satisfiable solution;
+                assert_has_block_errors 1 block_errors
+            end;
+
+            test_mix ~label:"set non-null" "
+                int r = 0, s = 0;
+                int * x = &r;
+                void foo(void) MIX(symbolic) {
+                    *x = 1;
+                }
+                int main(void) {
+                    x = &s;
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution block_errors ->
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
+            end;
+
+            test_mix ~label:"set null and non-null" "
+                int r = 0, s = 0;
+                int * x = &r;
+                void foo(void) MIX(symbolic) {
+                    *x = 1;
+                }
+                int main(void) {
+                    if (r) {
+                        x = NULL;
+                    } else {
+                        x = &s;
+                    }
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution block_errors ->
+                assert_discrete_satisfiable solution;
+                assert_has_block_errors 1 block_errors
+            end;
+        ];
+    ];
+]
+
+let leaf_symbolic_source_one_branch_testsuite = "Leaf Symbolic Source, One Branch" >::: [
     "unannotated" >::: [
         "global variable" >::: [
             test_mix ~label:"set null on both branches" "
@@ -1028,11 +1086,227 @@ let leaf_symbolic_one_branch_testsuite = "Leaf Symbolic, One Branch" >::: [
         ];
     ];
 ]
+
+(* exercises aliasing from symbolic blocks entering typed blocks *)
+let two_leaf_symbolic_sources_simple_path_testsuite = "Two Leaf Symbolic Sources, Simple Path" >::: [
+    "non-null annotated" >::: [
+        "global variable" >::: [
+            test_mix ~label:"set null transitively forward" "
+                int x = 0;
+                int * y = &x;
+                int * $(nonnull) z = &x;
+                void foo(void) MIX(symbolic) {
+                    y = NULL;
+                }
+                void bar(void) MIX(symbolic) {
+                    z = y;
+                }
+                int main(void) {
+                    foo();
+                    bar();
+                    return 0;
+                }
+            " begin fun file solution block_errors ->
+                assert_discrete_unsatisfiable solution;
+                assert_no_block_errors block_errors
+            end;
+
+            test_mix ~label:"set null transitively reversed" "
+                int x = 0;
+                int * y = &x;
+                int * $(nonnull) z = &x;
+                void foo(void) MIX(symbolic) {
+                    z = y;
+                }
+                void bar(void) MIX(symbolic) {
+                    y = NULL;
+                }
+                int main(void) {
+                    foo();
+                    bar();
+                    return 0;
+                }
+            " begin fun file solution block_errors ->
+                assert_discrete_unsatisfiable solution;
+                assert_no_block_errors block_errors
+            end;
+        ];
+    ];
+]
+
+(* exercises fixpoint computation in typed blocks *)
+let two_leaf_symbolic_source_sink_simple_path_testsuite = "Two Leaf Symbolic Source/Sink, Simple Path" >::: [
+    "unannotated" >::: [
+        "global variable" >::: [
+            test_mix ~label:"set null transitively forward" "
+                int x = 0;
+                int * y = &x;
+                void foo(void) MIX(symbolic) {
+                    y = NULL;
+                }
+                void bar(void) MIX(symbolic) {
+                    *y = 1;
+                }
+                int main(void) {
+                    foo();
+                    bar();
+                    return 0;
+                }
+            " begin fun file solution block_errors ->
+                assert_has_block_errors 1 block_errors
+            end;
+
+            test_mix ~label:"set null transitively reversed" "
+                int x = 0;
+                int * y = &x;
+                void foo(void) MIX(symbolic) {
+                    *y = 1;
+                }
+                void bar(void) MIX(symbolic) {
+                    y = NULL;
+                }
+                int main(void) {
+                    foo();
+                    bar();
+                    return 0;
+                }
+            " begin fun file solution block_errors ->
+                assert_has_block_errors 1 block_errors
+            end;
+        ];
+    ];
+]
+
+(* exercises transitive conversion from an outer typed block through a symbolic block to an inner typed block *)
+let nested_typed_source_symbolic_typed_sink_simple_path_testsuite
+        = "Nested Typed-Source to Symbolic to Typed-Sink, Simple Path" >::: [
+    "null" >::: [
+        "global variable" >::: [
+            test_mix ~label:"assigned to non-null" "
+                int x = 0;
+                int * y = &x;
+                void bar(void) MIX(typed) {
+                    int * $(nonnull) z = y;
+                }
+                void foo(void) MIX(symbolic) {
+                    bar();
+                }
+                int main(void) {
+                    y = NULL;
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution block_errors ->
+                assert_discrete_satisfiable solution;
+                assert_has_block_errors 1 block_errors
+            end;
+        ];
+    ];
+]
+
+(* exercises transitive conversion from an inner typed block through a symbolic block to an outer typed block *)
+let nested_typed_sink_symbolic_typed_source_simple_path_testsuite
+        = "Nested Typed-Sink to Symbolic to Typed-Source, Simple Path" >::: [
+    "null" >::: [
+        "global variable" >::: [
+            test_mix ~label:"assigned to non-null" "
+                int x = 0;
+                int * y = &x;
+                void bar(void) MIX(typed) {
+                    y = NULL;
+                }
+                void foo(void) MIX(symbolic) {
+                    bar();
+                }
+                int main(void) {
+                    int * $(nonnull) z = y;
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution block_errors ->
+                assert_discrete_unsatisfiable solution;
+                assert_no_block_errors block_errors
+            end;
+        ];
+    ];
+]
+
+(* exercises transitive conversion from an outer typed block through a symbolic block to an inner typed block,
+ * and conversion of maybe-null pointers to qualified types *)
+let nested_typed_source_one_branch_symbolic_typed_sink_testsuite
+        = "Nested Typed-Source with One Branch to Symbolic to Typed-Sink" >::: [
+    "pointer to null" >::: [
+        "global variable" >::: [
+            test_mix ~label:"assigned to pointer to non-null" "
+                int * x = NULL;
+                int r, * s = &r, ** y = &s;
+                void bar(void) MIX(typed) {
+                    int * $(nonnull) * z = y;
+                }
+                void foo(void) MIX(symbolic) {
+                    bar();
+                }
+                int main(void) {
+                    if (x) {
+                        y = NULL;
+                    } else {
+                        y = &x;
+                    }
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution block_errors ->
+                assert_discrete_satisfiable solution;
+                assert_has_block_errors 1 block_errors
+            end;
+        ];
+    ];
+]
+
+(* exercises transitive conversion from an inner typed block through a symbolic block to an outer typed block,
+ * and conversion of maybe-null pointers to qualified types *)
+let nested_typed_sink_symbolic_typed_source_one_branch_testsuite
+        = "Nested Typed-Sink to Symbolic to Typed-Source with One Branch" >::: [
+    "pointer to null" >::: [
+        "global variable" >::: [
+            test_mix ~label:"assigned to pointer to non-null" "
+                int * x = NULL;
+                int r, * s = &r, ** y = &s;
+                void bar(void) MIX(typed) {
+                    if (x) {
+                        y = NULL;
+                    } else {
+                        y = &x;
+                    }
+                }
+                void foo(void) MIX(symbolic) {
+                    bar();
+                }
+                int main(void) {
+                    int * $(nonnull) * z = y;
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution block_errors ->
+                assert_discrete_unsatisfiable solution;
+                assert_no_block_errors block_errors
+            end;
+        ];
+    ];
+]
+
 
 let testsuite = "TypedTopIntegration" >::: [
     typed_only_testsuite;
     leaf_symbolic_switching_only_testsuite;
-    leaf_symbolic_simple_path_testsuite;
-    leaf_symbolic_one_branch_testsuite;
+    leaf_symbolic_source_simple_path_testsuite;
+    leaf_symbolic_sink_simple_path_testsuite;
+    leaf_symbolic_source_one_branch_testsuite;
+    two_leaf_symbolic_sources_simple_path_testsuite;
+    two_leaf_symbolic_source_sink_simple_path_testsuite;
+    nested_typed_source_symbolic_typed_sink_simple_path_testsuite;
+    nested_typed_sink_symbolic_typed_source_simple_path_testsuite;
+    nested_typed_source_one_branch_symbolic_typed_sink_testsuite;
+    nested_typed_sink_symbolic_typed_source_one_branch_testsuite;
 ]
 

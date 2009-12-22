@@ -120,7 +120,7 @@ let symbolic_only_testsuite = "Symbolic only" >::: [
     end;
 ]
 
-let leaf_typed_testsuite = "Leaf Typed" >::: [
+let leaf_typed_source_testsuite = "Leaf Typed Source" >::: [
     "non-null" >::: [
         "global variable" >::: [
             test_mix ~label:"set null" "
@@ -579,8 +579,148 @@ let leaf_typed_testsuite = "Leaf Typed" >::: [
     ];
 ]
 
+let leaf_typed_sink_testsuite = "Leaf Typed Sink" >::: [
+    "non-null" >::: [
+        "global variable" >::: [
+            test_mix ~label:"set null" "
+                int r = 0, s = 0;
+                int * x = &r;
+                void foo(void) MIX(typed) {
+                    int * $(nonnull) y = x;
+                }
+                int main(void) {
+                    x = NULL;
+                    foo();
+                    return 0;
+                }
+            " begin fun file results ->
+                assert_has_abandoned 1 results
+            end;
+
+            test_mix ~label:"set non-null" "
+                int r = 0, s = 0;
+                int * x = &r;
+                void foo(void) MIX(typed) {
+                    int * $(nonnull) y = x;
+                }
+                int main(void) {
+                    x = &s;
+                    foo();
+                    return 0;
+                }
+            " begin fun file results ->
+                assert_no_abandoned results
+            end;
+
+            test_mix ~label:"null on one branch, non-null on the other branch" "
+                int r = 0, s = 0;
+                int * x = &r;
+                void foo(void) MIX(typed) {
+                    int * $(nonnull) y = x;
+                }
+                int main(void) {
+                    if (__SYMBOLIC()) {
+                        x = NULL;
+                    } else {
+                        x = &s;
+                    }
+                    foo();
+                    return 0;
+                }
+            " begin fun file results ->
+                assert_has_abandoned 1 results
+            end;
+        ];
+    ];
+]
+
+(* exercises aliasing from symbolic blocks entering typed blocks *)
+let leaf_typed_using_aliasing_testsuite = "Leaf Typed Using Aliasing" >::: [
+    "non-null" >::: [
+        "global variable" >::: [
+            test_mix ~label:"set null" "
+                int r = 0, s = 0;
+                int * x = &r;
+                int * $(nonnull) y = &s;
+                int ** z = &x;
+                void foo(void) MIX(typed) {
+                    *z = NULL;
+                    y = x;
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file results ->
+                assert_has_abandoned 1 results
+            end;
+
+            test_mix ~label:"set non-null" "
+                int r = 0, s = 0, t = 0;
+                int * x = &r;
+                int * $(nonnull) y = &s;
+                int ** z = &x;
+                void foo(void) MIX(typed) {
+                    *z = &t;
+                    y = x;
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file results ->
+                assert_has_abandoned 0 results
+            end;
+        ];
+    ];
+]
+
+(* exercises aliasing from typed blocks entering symbolic blocks *)
+let leaf_typed_introducing_aliasing_testsuite = "Leaf Typed Introducing Aliasing" >::: [
+    "non-null" >::: [
+        "global variable" >::: [
+            test_mix ~label:"set null" "
+                int r = 0, s = 0, * t = &r;
+                int * x = &r;
+                int ** y = &t;
+                void foo(void) MIX(typed) {
+                    y = &x;
+                }
+                int main(void) {
+                    foo();
+                    *y = NULL;
+                    *x = 1;
+                    return 0;
+                }
+            " begin fun file results ->
+                assert_has_abandoned 1 results
+            end;
+
+            test_mix ~label:"set non-null" "
+                int r = 0, s = 0, * t = &r;
+                int * x = &r;
+                int ** y = &t;
+                void foo(void) MIX(typed) {
+                    y = &x;
+                }
+                int main(void) {
+                    foo();
+                    *y = &s;
+                    *x = 1;
+                    return 0;
+                }
+            " begin fun file results ->
+                assert_has_abandoned 0 results
+            end;
+        ];
+    ];
+]
+
 let testsuite = "SymbolicTopIntegration" >::: [
     symbolic_only_testsuite;
-    leaf_typed_testsuite;
+    leaf_typed_source_testsuite;
+    leaf_typed_sink_testsuite;
+    leaf_typed_using_aliasing_testsuite;
+    leaf_typed_introducing_aliasing_testsuite;
 ]
 
