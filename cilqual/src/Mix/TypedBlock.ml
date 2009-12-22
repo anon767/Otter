@@ -33,7 +33,7 @@ module Interpreter (T : Config.BlockConfig) = struct
     let calls_in_function fn =
         let rec calls_in_instr calls = function
             | Cil.Call (lopt, Cil.Lval f, a, loc) ->
-                f::calls
+                (f, loc)::calls
             | Cil.Call (_, _, _, _) ->
                 failwith "Does Cil generate other variations of function call expressions?"
             | _ ->
@@ -64,23 +64,42 @@ module Interpreter (T : Config.BlockConfig) = struct
         let rec find_calls typed_calls other_calls = function
             | fn::fnwork ->
                 let typed_calls, other_calls, fnwork =
-                    List.fold_left begin fun (typed_calls, other_calls, fnwork) call ->
+                    let categorize_call (typed_calls, other_calls, fnwork) f =
+                        if CallSet.mem f typed_calls || CallSet.mem f other_calls then
+                            (typed_calls, other_calls, fnwork)
+                        else if T.is_model_block f.Cil.svar.Cil.vattr then
+                            (* model functions are not interpreted *)
+                            (typed_calls, other_calls, fnwork)
+                        else if T.should_enter_block f.Cil.svar.Cil.vattr then
+                            (* recurse into typed functions *)
+                            (CallSet.add f typed_calls, other_calls, f::fnwork)
+                        else
+                            (* other functions are delegated *)
+                            (typed_calls, CallSet.add f other_calls, fnwork)
+                    in
+                    List.fold_left begin fun calls (call, loc) ->
                         match call with
                             | Cil.Var v, Cil.NoOffset ->
-                                let f = Cilutility.search_function v in
-                                if CallSet.mem f typed_calls || CallSet.mem f other_calls then
-                                    (typed_calls, other_calls, fnwork)
-                                else if T.is_model_block v.Cil.vattr then
-                                    (* model functions are not interpreted *)
-                                    (typed_calls, other_calls, fnwork)
-                                else if T.should_enter_block v.Cil.vattr then
-                                    (* recurse into typed functions *)
-                                    (CallSet.add f typed_calls, other_calls, f::fnwork)
-                                else
-                                    (* other functions are delegated *)
-                                    (typed_calls, CallSet.add f other_calls, fnwork)
-                            | Cil.Mem _, _ ->
-                                failwith "TODO: support calls through function pointers"
+                                begin try
+                                    let f = Cilutility.search_function v in
+                                    categorize_call calls f
+                                with Not_found ->
+                                    (* is an external function *)
+                                    calls
+                                end
+                            | Cil.Mem exp, _ ->
+                                (* handle function pointers using Cil's pointer analysis *)
+                                let points_to = Ptranal.resolve_funptr exp in
+                                Format.eprintf "%s:%d: warning:@[Function pointer call %s:@ @[%t@]@]@\n"
+                                    loc.Cil.file loc.Cil.line
+                                    (Pretty.sprint 0 (Cil.d_exp () (Cil.Lval call)))
+                                    begin fun ff -> ignore begin List.fold_left begin fun b f ->
+                                        Format.fprintf ff "%(%)%s"
+                                            b
+                                            (Pretty.sprint 0 (Cil.d_lval () (Cil.var f.Cil.svar)));
+                                        ", "
+                                    end "" points_to end end;
+                                List.fold_left categorize_call calls points_to
                             | _, _ ->
                                 failwith "Does Cil generate calls through (_, offset)?"
                     end (typed_calls, other_calls, fnwork) (calls_in_function fn)
@@ -96,11 +115,25 @@ module Interpreter (T : Config.BlockConfig) = struct
         let expM = mapM_ interpret_function (fn::(CallSet.elements typed_calls)) in
         let expState = G.run expM expState in
 
-        let rec call_others others expState block_errors = match others with
-            | [] -> k expState block_errors
-            | call::callwork -> dispatch (`TypedBlock (file, call, expState, call_others callwork))
+        (* evaluate other_calls repeatedly until the constraint graph reaches a fixpoint *)
+        let rec do_fixpoint other_calls (((((_, old_constraints), _), _), _), _ as expState) =
+            let rec call_others work block_errors (((((_, constraints), _), _), _), _ as expState) more_block_errors =
+                let block_errors = more_block_errors @ block_errors in
+                match work with
+                    | call::work ->
+                        dispatch (`TypedBlock (file, call, expState, call_others work block_errors))
+                    | [] ->
+                        (* ocamlgraph has no graph equality operation? *)
+                        if block_errors != []
+                                || (G.QualGraph.nb_vertex constraints == G.QualGraph.nb_vertex old_constraints
+                                    && G.QualGraph.nb_edges constraints == G.QualGraph.nb_edges old_constraints) then
+                            k expState block_errors
+                        else
+                            do_fixpoint other_calls expState
+            in
+            call_others other_calls [] expState []
         in
-        call_others (CallSet.elements other_calls) expState []
+        do_fixpoint (CallSet.elements other_calls) expState
 
 
     let exec file =
