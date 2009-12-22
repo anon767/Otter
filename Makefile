@@ -45,17 +45,17 @@ distclean :
 
 .PRECIOUS : %/Makefile
 %/Makefile : %/Makefile.in %/configure Makefile
-	cd $(@D) && ./configure $(CONFIGURE_FLAGS) $(CONFIGURE_EXTRAFLAGS)
+	cd $* && ./configure $(CONFIGURE_FLAGS) $(CONFIGURE_EXTRAFLAGS)
 
 %/Makefile : %/configure Makefile
-	cd $(@D) && ./configure $(CONFIGURE_FLAGS) $(CONFIGURE_EXTRAFLAGS)
+	cd $* && ./configure $(CONFIGURE_FLAGS) $(CONFIGURE_EXTRAFLAGS)
 
 .PRECIOUS : %/configure
 %/configure : %/configure.ac
-	cd $(@D) && autoreconf
+	cd $* && autoreconf
 
 %/configure : %/configure.in
-	cd $(@D) && autoreconf
+	cd $* && autoreconf
 
 make//% : %/Makefile
-	$(MAKE) -C $(@F) $(MAKEGOALS)
+	$(MAKE) -C $* $(MAKEGOALS)
