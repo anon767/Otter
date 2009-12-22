@@ -668,40 +668,34 @@ let bytes_to_qt file expState state pre bytes exp qt = perform
     end;
 
 
-    (* check a given pointer bytes, adding $null annotations if it is a null pointer, and call check_target with
-     * the target bytes if it is a valid pointer *)
+    (* check a given pointer bytes, adding $null annotations if it may be null, and returning the non-null targets *)
     let check_pointer state pre bytes qt typtarget = perform
-        (* first, try to deref the bytes; if it succeeds, then it's a valid pointer, otherwise it is invalid *)
-        target_lvals_opt <-- begin try
-            return (Some (Eval.deref state bytes))
-        with
-            | Failure "Dereference a dangling pointer" -> perform
-                (* a null pointer *)
-                annot qt "null";
-                return None
-            | Failure _ ->
-                (* uninitialized and unused pointer *)
-                if Bytes.bytes__equal bytes Bytes.bytes__zero then perform
-                    (* is definitely a null pointer *)
+        (* try to deref each pointer in the conditional bytes that is consistent with the path condition, adding null
+         * constraints if there are null pointers, and recording all valid targets. *)
+        let target_lval_listM = Bytes.conditional__fold ~pre begin fun target_lval_listM pre bytes -> perform
+            target_lval_list <-- target_lval_listM;
+            match bytes with
+                | Bytes.Bytes_Address (block, offset) ->
+                    return ((pre, Bytes.conditional__lval_block (block, offset))::target_lval_list)
+                | Bytes.Bytes_Conditional _ ->
+                    (* should be impossible if conditional__bytes and make_Bytes_Conditional are used consistently *)
+                    failwith "Impossible!"
+                | _ when Bytes.bytes__equal bytes Bytes.bytes__zero -> perform
+                    (* null pointer *)
                     annot qt "null";
-                    return None
-                else
-                    (* TODO: otherwise, nonnull? *)
-                    return None
-        end;
-        begin match target_lvals_opt with
-            | Some target_lvals ->
-                (* valid pointer, so check what it points to *)
-                let state, target_bytes_list = Bytes.conditional__fold ~pre begin fun (state, target_bytes_list) pre lval_block ->
-                    match attempt_deref ~pre state lval_block typtarget with
-                        | Some (state, target_bytes) -> (state, (pre, target_bytes)::target_bytes_list)
-                        | None                       -> (state, target_bytes_list)
-                end (state, []) (Bytes.conditional__lval_block target_lvals) in
-                return (state, target_bytes_list)
-            | _ ->
-                (* null pointer *)
-                return (state, [])
-        end
+                    return target_lval_list
+                | _ ->
+                    (* everything else, we don't know; could be due to assignment from void *, e.g., from malloc *)
+                    return target_lval_list
+        end (return []) (Bytes.conditional__bytes bytes) in
+        target_lval_list <-- target_lval_listM;
+
+        (* return valid pointer targets *)
+        foldM begin fun (state, target_bytes_list) (pre, lval_block) ->
+            match attempt_deref ~pre state lval_block typtarget with
+                | Some (state, target_bytes) -> return (state, (pre, target_bytes)::target_bytes_list)
+                | None                       -> return (state, target_bytes_list)
+        end (state, []) target_lval_list
     in
 
     let rec bytes_to_qt state pre bytes exp qt = perform
