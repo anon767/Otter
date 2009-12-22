@@ -44,7 +44,7 @@ sym_file_t *IOSIM_findfile(const char *file){
 sym_file_t *IOSIM_addfile(const char *filename, const char *contents, size_t len, mode_t mode){
 	if (IOSIM_num_file >= IOSIM_MAX_FILE) {
 		errno = ENFILE;
-		return -1;
+		return NULL;
 	}
 	sym_file_t *file = malloc(sizeof(sym_file_t));
 	if (contents) {
@@ -138,6 +138,7 @@ int IOSIM_openWithMode(const char *name, int flags, mode_t mode) {
 		// File doesn't exist and we should create it
 		sym_file = IOSIM_addfile(absoluteName, NULL, 0, mode & ~usermask);
 		free(absoluteName);
+		if (!sym_file) return -1;
 	} else {
 		// File doesn't exist, and we shouldn't create it.
 		errno = ENOENT;

@@ -273,7 +273,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 											 __SYMBOLIC(&<var>) does not get tracked. *)
 										begin match lvalopt with
 											| None ->
-													state
+													failwith "Incorrect usage of __SYMBOLIC(): symbolic value generated and ignored"
 											| Some lval ->
 													let state, (_, size as lval) = Eval.lval state lval in
 													let state, ssize = match exps with
@@ -393,8 +393,8 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 							MemOp.state__add_path_condition state pc false
 					
 					| Function.PathCondition ->
-						let pc_str = (Utility.print_list To_string.bytes state.path_condition " AND ") in
 						Output.set_mode Output.MSG_MUSTPRINT;
+						let pc_str = (Utility.print_list To_string.bytes state.path_condition " AND ") in
 						Output.print_endline (if String.length pc_str = 0 then "(nil)" else pc_str);
 							state
 															

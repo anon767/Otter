@@ -549,7 +549,7 @@ let conditional__fold ?test ?pre fold acc source =
 let conditional__from_list list =
 	let rec conditional__make_tree outs = function
 		| x::y::rest -> conditional__make_tree ((IfThenElse (guard__symbolic (), x, y))::outs) rest
-		| x::[]      -> conditional__make_tree_next (x::outs)
+		| [x]      -> conditional__make_tree_next (x::outs)
 		| []         -> conditional__make_tree_next outs
 	and conditional__make_tree_next = function
 		| [ x ] -> x

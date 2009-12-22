@@ -303,8 +303,8 @@ let rec opPI op operands =
 			Bytes_Conditional (conditional__map (fun e -> conditional__bytes (opPI op [(bytes1,typ1);(e,typ2)])) c)
 		| _ ->
 			Output.set_mode Output.MSG_MUSTPRINT;
-			Output.print_endline ("make_Bytes1: "^(To_string.bytes bytes1)); 
-			Output.print_endline ("make_Bytes2: "^(To_string.bytes bytes2));
+			Output.print_endline ("bytes1: "^(To_string.bytes bytes1)); 
+			Output.print_endline ("bytes2: "^(To_string.bytes bytes2));
 			failwith "plusPI (p1,p2) not of type (addr,int)"
 ;;
 
