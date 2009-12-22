@@ -58,7 +58,7 @@ module Interpreter (T : Config.BlockConfig) = struct
 
 
     let call dispatch file fn expState k =
-        Format.eprintf "Evaluating typed block...@.";
+        Format.eprintf "Evaluating typed block at %s...@." fn.Cil.svar.Cil.vname;
 
         (* first, determine the call graph inside the typed-block *)
         let rec find_calls typed_calls other_calls = function
@@ -112,7 +112,9 @@ module Interpreter (T : Config.BlockConfig) = struct
         let typed_calls, other_calls = find_calls CallSet.empty CallSet.empty [ fn ] in
 
         (* generate the interpreter monad and evaluate *)
-        let expM = mapM_ interpret_function (fn::(CallSet.elements typed_calls)) in
+        let expM = mapM_ begin fun fn ->
+            inContext (fun _ -> fn.Cil.svar.Cil.vdecl) (interpret_function fn)
+        end (fn::(CallSet.elements typed_calls)) in
         let expState = G.run expM expState in
 
         (* evaluate other_calls repeatedly until the constraint graph reaches a fixpoint *)
@@ -143,6 +145,8 @@ module Interpreter (T : Config.BlockConfig) = struct
 
         (* prepare the completion continuation to perform the final check *)
         let completion (((((_, constraints), _), _), _), _) block_errors =
+            Format.eprintf "Completing typed block...@.";
+
             let solution = DiscreteSolver.solve consts constraints in
 
             let explanation = if DiscreteSolver.Solution.is_unsatisfiable solution then
@@ -160,10 +164,10 @@ module Interpreter (T : Config.BlockConfig) = struct
             end;
             if block_errors != [] then begin
                 let printer ff block_errors = ignore begin List.iter begin fun (s, l, b) ->
-                    Format.fprintf ff "@[%s:%d: %s@]@\n" l.Cil.file l.Cil.line s;
+                    Format.fprintf ff "@[%s:%d: %s@]@\n@\n" l.Cil.file l.Cil.line s;
                 end block_errors end in
                 Format.eprintf "@.";
-                Format.eprintf "Block errors:@\n  @[%a@]@." printer block_errors;
+                Format.eprintf "Block errors:@\n  @[%a@]@\n@." printer block_errors;
             end;
 
             (* summary *)

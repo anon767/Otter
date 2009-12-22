@@ -18,7 +18,8 @@ module Interpreter (S : Config.BlockConfig) = struct
 
 
     let call dispatch file job k =
-        Format.eprintf "Evaluating symbolic block...@.";
+        let fn = List.hd job.Types.state.Types.callstack in
+        Format.eprintf "Evaluating symbolic block %s...@." fn.Cil.svar.Cil.vname;
 
         let rec symbolic_loop completed job job_queue =
 
@@ -95,6 +96,8 @@ module Interpreter (S : Config.BlockConfig) = struct
         let job = Executemain.job_for_file file (file.Cil.fileName::args) in
 
         let completion results =
+            Format.eprintf "Completing symbolic block...@.";
+
             (* report jobs that were abandoned *)
             let abandoned = List.fold_left begin fun abandoned result -> match result with
                 | Types.Abandoned (s, loc, _), block_errors ->

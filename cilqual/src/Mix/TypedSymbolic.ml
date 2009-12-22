@@ -13,7 +13,7 @@ open SwitchingUtil
 module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
 
     let switch dispatch file fn expState k =
-        Format.eprintf "Switching from typed to symbolic...@.";
+        Format.eprintf "Switching from typed to symbolic at %s...@." fn.Cil.svar.Cil.vname;
 
         (* solve the typed constraints, needed to setup the symbolic constraints;
          * but first, connect the function prototype to the formal arguments *)
@@ -27,7 +27,7 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
 
         (* TODO: properly explain error *)
         if Solution.is_unsatisfiable solution then
-            Format.eprintf "Unsatisfiable solution entering TypedSymbolic.switch@.";
+            Format.eprintf "Unsatisfiable solution entering TypedSymbolic.switch at %s@." fn.Cil.svar.Cil.vname;
 
         (* convert a typed environment into a symbolic environment *)
         let state = MemOp.state__empty in
@@ -52,18 +52,18 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
             args qtf
         end expState in
         let state, args_bytes = List.fold_left2 begin fun (state, args_bytes) v qt ->
-            let state, bytes = qt_to_bytes file expState solution state (Cil.Lval (Cil.Var v, Cil.NoOffset)) qt in
+            let state, bytes = qt_to_bytes file expState solution state (Cil.Lval (Cil.var v)) qt in
             (state, bytes::args_bytes)
         end (state, []) fn.Cil.sformals qta in
 
         (* next, prepare the function call job *)
         let job = Executemain.job_for_function state fn args_bytes in
 
-
         (* finally, prepare the completion continuation *)
         let completion completed =
             let completed_count = List.length completed in
-            Format.eprintf "Returning from symbolic to typed (%d execution%s returned)...@."
+            Format.eprintf "Returning from symbolic to typed at %s (%d execution%s returned)...@."
+                fn.Cil.svar.Cil.vname
                 completed_count (if completed_count == 1 then "" else "s");
 
             (* prepare a monad that represents the symbolic result *)
@@ -99,8 +99,13 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
                     end
 
                 | Types.Abandoned (msg, loc, result), None ->
-                    return (("Block errors returning from TypedSymbolic.switch", loc,
-                             `TypedSymbolicError (result, msg))::block_errors)
+                    let block_msg = begin
+                        Format.fprintf Format.str_formatter
+                            "Block errors returning from TypedSymbolic.switch at %s: %s"
+                            fn.Cil.svar.Cil.vname msg;
+                        Format.flush_str_formatter ()
+                    end in
+                    return ((block_msg, loc, `TypedSymbolicError (result, msg))::block_errors)
 
                 | Types.Abandoned _, Some e ->
                     return (e::block_errors)
@@ -111,7 +116,7 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
 
             end [] completed in
 
-            let (((((block_errors, _), _), _), _), _) as expState = run expM expState in
+            let (((((block_errors, _), _), _), _), _ as expState) = run expM expState in
             let expState = run (return ()) expState in
 
             (* update the constraints and return *)
@@ -119,7 +124,7 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
         in
 
         (* dispatch *)
-        dispatch (`SymbolicBlock (file, job, (completion : (Types.job_completion * (string * Cil.location * [> ]) option) list -> 'd)))
+        dispatch (`SymbolicBlock (file, job, completion))
 
 
     let dispatch chain dispatch = function
