@@ -562,6 +562,112 @@ let attempt_deref ?pre state lval_block typ =
 *)
 let bytes_to_qt file expState state pre bytes exp qt = perform
 
+    (* establish transitive aliasing constraints that may come from the symbolic block *)
+    (* TODO: avoid re-visiting aliasing that was established for previous qt arguments *)
+    let do_aliasing exp qt =
+        let targets_map, malloc_list = points_to file exp in perform
+
+        (* point to mallocs *)
+        targets <-- if malloc_list == [] then
+            return []
+        else begin perform
+            foldM begin fun targets malloc -> perform
+                qtmalloc <-- lookup_var malloc;
+                qtmalloc_return <-- retval qtmalloc;
+                assign qt qtmalloc_return;
+                match qt with
+                    | QualType.Ref _ -> perform
+                        qtarget <-- deref qt;
+                        return ((Cil.Lval (Cil.Mem exp, Cil.NoOffset), qtarget)::targets)
+                    | _ ->
+                        (* void *? *)
+                        return targets
+            end [] malloc_list;
+        end;
+
+        (* and point to all targets *)
+        CilTypeMap.fold begin fun typ (vars, offsets) targetsM -> perform
+            targets <-- targetsM;
+            foldM begin fun targets v ->
+                foldM begin fun targets offset -> perform
+                    let lval = (Cil.Var v, offset) in
+                    qtv <-- access_lval lval;
+
+                    (* ignore incompatible aliasing: if such an assignment exists in the program,
+                     * CilQual would fail anyway *)
+                    begin try assign qt qtv
+                          with Failure _ -> return ()
+                    end;
+                    match qtv with
+                        | QualType.Ref _ -> perform
+                            qtarget <-- deref qtv;
+                            return ((Cil.Lval lval, qtarget)::targets)
+                        | _ ->
+                            (* void *? *)
+                            return targets
+                end targets offsets
+            end targets vars
+        end targets_map (return targets)
+    in
+    inContext (fun _ -> { Cil.locUnknown with Cil.file="<aliasing>" }) begin perform
+        let module ExpSet = Set.Make (struct
+            type t = Cil.exp
+            let compare = Pervasives.compare
+        end) in
+        (* recurse over pointers found *)
+        let rec traverse_points_to visited = function
+            | (exp, qt)::rest when ExpSet.mem exp visited ->
+                traverse_points_to visited rest
+            | (exp, qt)::rest when Cil.isFunctionType (Cil.typeOf exp) ->
+                traverse_points_to (ExpSet.add exp visited) rest
+            | (exp, qt)::rest -> perform
+                targets <-- do_aliasing exp qt;
+                (* also iterate over structs/arrays *)
+                (visited, targets) <-- begin match Cil.unrollType (Cil.typeOf exp) with
+                    | Cil.TComp (compinfo, _) ->
+                        begin match exp with
+                            | Cil.Lval lval ->
+                                fold_struct begin fun monad field -> perform
+                                    let exp = Cil.Lval (Cil.addOffsetLval (Cil.Field (field, Cil.NoOffset)) lval) in
+                                    monad;
+                                    qtf <-- if compinfo.Cil.cstruct then perform
+                                        qtf <-- get_field qt field;
+                                        deref qtf
+                                    else
+                                        get_field qt field;
+                                    targets <-- do_aliasing exp qtf;
+                                    return (ExpSet.add exp visited, targets)
+                                end (return (visited, targets)) compinfo
+                            | _ ->
+                                failwith "are there any other Cil.exp that can have type Cil.TComp?"
+                        end
+                    | Cil.TArray (_, len_opt, _) ->
+                        begin match exp with
+                            | Cil.Lval lval ->
+                                let monad_opt = fold_array begin fun monad index -> perform
+                                    let exp = Cil.Lval (Cil.addOffsetLval (Cil.Index (index, Cil.NoOffset)) lval) in
+                                    monad;
+                                    targets <-- do_aliasing exp qt;
+                                    return (ExpSet.add exp visited, targets)
+                                end (return (visited, targets)) len_opt in
+                                begin match monad_opt with
+                                    | Some monad -> monad
+                                    | None       -> return (visited, targets)
+                                end
+                            | _ ->
+                                failwith "are there any other Cil.exp that can have type Cil.TArray?"
+                        end
+                    | _ ->
+                        return (visited, targets)
+                end;
+                traverse_points_to (ExpSet.add exp visited) (targets @ rest)
+            | [] ->
+                return ()
+        in
+        traverse_points_to ExpSet.empty [ (exp, qt) ]
+    end;
+
+
     (* check a given pointer bytes, adding $null annotations if it is a null pointer, and call check_target with
      * the target bytes if it is a valid pointer *)
     let check_pointer state pre bytes qt typtarget = perform
