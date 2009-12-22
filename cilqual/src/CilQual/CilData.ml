@@ -20,6 +20,14 @@ module CilType = struct
     let is_cil_inserted_type typ = Cil.hasAttribute Config.cil_inserted_attribute_string (Cil.typeAttrs typ)
 end
 
+module CilCanonicalType = struct
+    type t = typ
+    let compare x y =
+        let canonicalize t = typeSigWithAttrs (fun _ -> []) t in
+        Pervasives.compare (canonicalize x) (canonicalize y)
+    let equal x y = compare x y = 0
+end
+
 module CilLocation = struct
     type t = location
     let compare = Cil.compareLoc

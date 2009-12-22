@@ -30,8 +30,8 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
         (* setup global variables and function arguments *)
         (* TODO: handle varargs *)
         let expM = perform
-            state <-- frame_bytes_to_qt MemOp.state__empty state state.Types.global;
-            state <-- frame_bytes_to_qt MemOp.state__empty state (List.hd state.Types.formals);
+            state <-- frame_to_qt file expState state state.Types.global;
+            state <-- frame_to_qt file expState state (List.hd state.Types.formals);
             return state
         in
         let (((((state, _), _), _), _), _ as expState) = run expM expState in
@@ -81,24 +81,40 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
                                 match retstmt.Cil.skind with
                                     | Cil.Return (Some retexp, _) ->
                                         let state, retbytes = qt_to_bytes file expState solution state retexp qtr in
-                                        (state, (retbytes::retbytes_list))
+                                        (state, ((Bytes.conditional__bytes retbytes)::retbytes_list))
                                     | _ ->
                                         (state, retbytes_list)
                             end (state, []) fn.Cil.sallstmts in (* sallstmts is computed by Cil.computeCFGInfo *)
                             begin match retbytes_list with
                                 | [] -> (state, None)
-                                | _  -> (state, Some (MemOp.bytes__maybytes_from_list retbytes_list))
+                                | _  -> (state, Some (Bytes.make_Bytes_Conditional (Bytes.conditional__from_list retbytes_list)))
                             end
                         | _ ->
                             failwith "Impossible!"
                     end in
 
                     (* then, the globals and call stack *)
-                    let state = List.fold_left begin fun state frame ->
-                        frame_qt_to_bytes file expState solution state frame
-                    end state (state.Types.global::(state.Types.formals @ state.Types.locals)) in
+                    let state, global = qt_to_frame file expState solution state state.Types.global in
 
-                    k [ (Types.Return (retopt, { Types.result_state=state; Types.result_history=Types.emptyHistory }),
+                    let state, formals = List.fold_right begin fun formal (state, formals) ->
+                        let state, formal = qt_to_frame file expState solution state formal in
+                        (state, (formal::formals))
+                    end state.Types.formals (state, []) in
+
+                    let state, locals = List.fold_right begin fun local (state, locals) ->
+                        let state, local = qt_to_frame file expState solution state local in
+                        (state, (local::locals))
+                    end state.Types.locals (state, []) in
+
+                    let state = { state with
+                        Types.global=global;
+                        Types.locals=locals;
+                        Types.formals=formals;
+                        Types.extra=Types.VarinfoMap.empty;
+                        Types.malloc=Types.VarinfoMap.empty;
+                    } in
+
+                    k [ (Types.Return (retopt, { Types.result_state=state; Types.result_history=job.Types.exHist }),
                          None) ]
                 end
             end

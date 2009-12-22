@@ -63,7 +63,8 @@ module Interpreter (S : Config.BlockConfig) = struct
                                 let state = MemOp.state__end_fcall state in
                                 let state = match destopt, retopt with
                                     | Some dest, Some ret ->
-                                        MemOp.state__assign state dest ret
+                                        let state, lval = Eval.lval state dest in
+                                        MemOp.state__assign state lval ret
                                     | _, _ ->
                                         state
                                 in
