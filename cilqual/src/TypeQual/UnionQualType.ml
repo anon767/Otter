@@ -100,7 +100,6 @@ module type UnionQualTypeMonad = sig
     module UnionTable : sig
         type t
         val empty : t
-        (*val select_table : QualType.Qual.t -> QualType.t -> t -> QualType.t*)
     end
     module QualGraph : sig
         include QualGraphAutomatonType
@@ -213,7 +212,7 @@ module UnionQualTypeT (TypedQualVar : TypedQualVar)
         module StructuralQualType = struct
             include QualType
             let rec compare x y = if x == y then 0 else match x, y with
-                | Ref (_, qtx), Ref (_, qty) -> compare qtx qty
+                | Ref (_, qtx), Ref (_, qty) -> 0
                 | Fn (_, qtxr, qtxa), Fn (_, qtyr, qtya) ->
                     begin match compare qtxr qtyr with
                         | 0 ->
@@ -320,6 +319,36 @@ module UnionQualTypeT (TypedQualVar : TypedQualVar)
 
     (* qualified-type constraints *)
 
+    let splice qx = function
+        | QualType.Ref (_, qty)       -> QualType.Ref (qx, qty)
+        | QualType.Fn (_, qtry, qtpy) -> QualType.Fn (qx, qtry, qtpy)
+        | QualType.Base _
+        | QualType.Empty              -> failwith "Impossible!"
+
+
+    (* select from the union table of qx the qualified type that structurally matches y, and splice the tail onto qx *)
+    let select qx y = perform
+        (_, tx) <-- find_table qx;
+        try
+            return (Some (splice qx (UnionTable.Table.find y tx)))
+        with Not_found ->
+            return None
+
+
+    (* like select qx y, but augments the union table of qx if it fails *)
+    let cast qx y = perform
+        x_opt <-- select qx y;
+        match x_opt with
+            | Some x ->
+                return x
+            | None -> perform
+                (* expand tx to include a qualified type that matches y *)
+                (qx', tx) <-- find_table qx;
+                let x = QualType.create (QualType.clone y) qx' in
+                update_table qx' (UnionTable.Table.add x x tx);
+                return (splice qx x)
+
+
     (* unify the union tables of two qualifier variables *)
     let unify x y =
         let rec unify_qt eq1 x y = match x, y with
@@ -333,6 +362,12 @@ module UnionQualTypeT (TypedQualVar : TypedQualVar)
             | QualType.Base qx, QualType.Base qy -> perform
                 eq1 qx qy;
                 unify eq qx qy
+            | QualType.Base qx, _ -> perform
+                x <-- cast qx y;
+                unify_qt eq x y
+            | _, QualType.Base qy -> perform
+                y <-- cast qy x;
+                unify_qt eq x y
             | _, _ -> failwith "Impossible!"
         and unify eq1 x y = perform
             (x, y, unified) <-- union_table x y;
@@ -359,24 +394,6 @@ module UnionQualTypeT (TypedQualVar : TypedQualVar)
         unify (fun _ _ -> return ()) x y
 
 
-    (* select from the union table of qx the qualified type that structurally matches y, and splice the tail onto qx *)
-    let select_table qx y = perform
-        let splice = function
-            | QualType.Ref (_, qty)       -> return (QualType.Ref (qx, qty))
-            | QualType.Fn (_, qtry, qtpy) -> return (QualType.Fn (qx, qtry, qtpy))
-            | QualType.Base _
-            | QualType.Empty              -> failwith "Impossible!"
-        in
-        (qx, tx) <-- find_table qx; (* also substitute qx with it's representative *)
-        try
-            splice (UnionTable.Table.find y tx)
-        with Not_found -> perform
-            (* expand tx to include a qualified type that matches y *)
-            let x = QualType.create (QualType.clone y) qx in
-            update_table qx (UnionTable.Table.add x x tx);
-            splice x
-
-
     let rec assign_ref l v = match l, v with
         | QualType.Empty, _
         | _, QualType.Empty ->
@@ -395,11 +412,11 @@ module UnionQualTypeT (TypedQualVar : TypedQualVar)
             unify ql qv
         | QualType.Base ql, QualType.Ref (qv, _)
         | QualType.Base ql, QualType.Fn (qv, _, _) -> perform
-            l <-- select_table ql v;
+            l <-- cast ql v;
             assign_ref l v
         | QualType.Ref (ql, _), QualType.Base qv
         | QualType.Fn (ql, _, _), QualType.Base qv -> perform
-            v <-- select_table qv l;
+            v <-- cast qv l;
             assign_ref l v
         | _, _ ->
             failwith "TODO: report incompatible assign_ref"
@@ -420,11 +437,11 @@ module UnionQualTypeT (TypedQualVar : TypedQualVar)
             unify ql qv
         | QualType.Base ql, QualType.Ref (qv, _)
         | QualType.Base ql, QualType.Fn (qv, _, _) -> perform
-            l <-- select_table ql v;
+            l <-- cast ql v;
             assign l v
         | QualType.Ref (ql, _), QualType.Base qv
         | QualType.Fn (ql, _, _), QualType.Base qv -> perform
-            v <-- select_table qv l;
+            v <-- cast qv l;
             assign l v
         | _, _ ->
             failwith "TODO: report incompatible assign"
@@ -448,10 +465,10 @@ module UnionQualTypeT (TypedQualVar : TypedQualVar)
             unify qz qy;
             return (QualType.Base qz)
         | QualType.Base qx, _ -> perform
-            x <-- select_table qx y;
+            x <-- cast qx y;
             join x y
         | _, QualType.Base qy -> perform
-            y <-- select_table qy x;
+            y <-- cast qy x;
             join x y
         | _, _ ->
             failwith "TODO: report incompatible merge"
@@ -468,11 +485,16 @@ module UnionQualTypeT (TypedQualVar : TypedQualVar)
             return qt
         | QualType.Empty -> failwith "TODO: report invalid annot"
 
-    let deref = function
+    let rec deref = function
         | QualType.Ref (_, qt) ->
             return qt
+        | QualType.Base qx -> perform
+            x_opt <-- select qx (QualType.Ref (qx, QualType.Empty));
+            begin match x_opt with
+                | Some x -> deref x
+                | None -> failwith "TODO: report invalid deref"
+            end
         | QualType.Fn _
-        | QualType.Base _
         | QualType.Empty -> failwith "TODO: report invalid deref"
 
     let app qtf qta = match qtf with
