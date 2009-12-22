@@ -104,6 +104,8 @@ open TypedBlock.GOps
 open TypedBlock.DiscreteSolver
 open TypedBlock
 
+module Aliasing = TypeQual.QualSolver.Aliasing (G.QualGraph)
+
 
 (** Prepare a Cil file for block switching
     @param file the Cil file to prepare
@@ -112,6 +114,75 @@ let prepare_file file =
     (* set up to use Cil's pointer analysis *)
     Ptranal.analyze_file file;
     Ptranal.compute_results false
+
+
+let cilqual_aliasing_file = Hashtbl.create 0
+let cilqual_aliasing = Hashtbl.create 0
+
+let cilqual_get_aliasing file =
+    try Hashtbl.find cilqual_aliasing_file file with Not_found -> begin
+        let expM = interpret_file file in
+        let ((((((), constraints), _), _), _), _ as expState) =
+            run expM ((((((), QualGraph.empty), emptyContext), 0), emptyUnionTable), emptyEnv) in
+        Hashtbl.add cilqual_aliasing_file file expState;
+        expState
+    end
+
+let cilqual_alias ((((((), constraints), _), _), _), _) pointer =
+    (* use CilQual as a type-directed alias analysis *)
+    try Hashtbl.find cilqual_aliasing (constraints, pointer) with Not_found -> begin
+        let aliases = Aliasing.alias pointer constraints in
+        Hashtbl.add cilqual_aliasing (constraints, pointer) aliases;
+        aliases
+    end
+
+let cilqual_check_alias expState x y =
+    begin match x with
+        | Base (Var v)
+        | Ref (Var v, _)
+        | Fn (Var v, _, _) ->
+            begin match y with
+                | Base (Var w)
+                | Ref (Var w, _)
+                | Fn (Var w, _, _) ->
+                    Aliasing.VarSet.mem v (cilqual_alias expState w)
+                | _ ->
+                failwith "Invalid argument to cilqual_check_alias!"
+            end
+        | _ ->
+            failwith "Invalid argument to cilqual_check_alias!"
+    end
+
+let cilqual_check_points_to_qt expState pointer qtarget = perform
+    derefed <-- deref pointer;
+    target <-- deref qtarget;
+    return (cilqual_check_alias expState derefed target)
+
+
+let cilqual_check_points_to expState exp target_lval =
+    let expM = perform
+        pointer <-- interpret_exp exp;
+        qtarget <-- access_lval target_lval;
+        cilqual_check_points_to_qt expState pointer qtarget
+    in
+    try
+        let (((((result, _), _), _), _), _) = run expM expState in
+        result
+    with Not_found | Failure _ ->
+        false
+
+
+let cilqual_check_points_to_field expState exp field = perform
+    let expM = perform
+        pointer <-- interpret_exp exp;
+        qfield <-- get_field QualType.Empty field;
+        cilqual_check_points_to_qt expState pointer qfield
+    in
+    try
+        let (((((result, _), _), _), _), _) = run expM expState in
+        result
+    with Not_found | Failure _ ->
+        false
 
 
 (** Take off one Ref from qualified types, useful for matching the representation of symbolic values. *)
@@ -208,7 +279,13 @@ let points_to file exp =
                 let rec to_offsets offsets typ base =
                     let offset_type = Cil.typeOffset typ base in
                     let offsets = if accept_type offset_type then
-                        base::offsets
+                        (* filter targets through CilQual, since CilQual is field-based *)
+                        match base with
+                            | Cil.Field (field, _)
+                                    when not (cilqual_check_points_to_field (cilqual_get_aliasing file) exp field) ->
+                                offsets
+                            | _ ->
+                                base::offsets
                     else
                         offsets
                     in
@@ -242,7 +319,13 @@ let points_to file exp =
                     try CilTypeMap.find v.Cil.vtype targets_map
                     with Not_found -> ([], to_offsets v.Cil.vtype)
                 in
-                CilTypeMap.add v.Cil.vtype ((v::target_vars), offsets) targets_map
+                (* filter targets through CilQual *)
+                match offsets with
+                    | [ Cil.NoOffset ]
+                            when not (cilqual_check_points_to (cilqual_get_aliasing file) exp (Cil.var v)) ->
+                        targets_map
+                    | _ ->
+                        CilTypeMap.add v.Cil.vtype ((v::target_vars), offsets) targets_map
             end targets_map targets in
 
             (targets_map, malloc_list)
@@ -589,22 +672,32 @@ let bytes_to_qt file expState state pre bytes exp qt = perform
         CilTypeMap.fold begin fun typ (vars, offsets) targetsM -> perform
             targets <-- targetsM;
             foldM begin fun targets v ->
-                foldM begin fun targets offset -> perform
+                foldM begin fun targets offset ->
                     let lval = (Cil.Var v, offset) in
-                    qtv <-- access_lval lval;
 
-                    (* ignore incompatible aliasing: if such an assignment exists in the program,
-                     * CilQual would fail anyway *)
-                    begin try assign qt qtv
-                          with Failure _ -> return ()
-                    end;
-                    match qtv with
-                        | QualType.Ref _ -> perform
-                            qtarget <-- deref qtv;
-                            return ((Cil.Lval lval, qtarget)::targets)
-                        | _ ->
-                            (* void *? *)
+                    (* filter targets through CilQual, since CilQual is field-based *)
+                    if cilqual_check_points_to (cilqual_get_aliasing file) exp lval then begin perform
+                        qtv <-- access_lval lval;
+
+                        (* don't add aliasing that already existed *)
+                        if cilqual_check_alias expState qt qtv then
                             return targets
+                        else begin perform
+                            (* ignore incompatible aliasing: if such an assignment exists in the program,
+                             * CilQual would fail anyway *)
+                            begin try assign qt qtv
+                                  with Failure _ -> return ()
+                            end;
+                            match qtv with
+                                | QualType.Ref _ -> perform
+                                    qtarget <-- deref qtv;
+                                    return ((Cil.Lval lval, qtarget)::targets)
+                                | _ ->
+                                    (* void *? *)
+                                    return targets
+                        end
+                    end else
+                        return targets
                 end targets offsets
             end targets vars
         end targets_map (return targets)
