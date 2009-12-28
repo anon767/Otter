@@ -67,6 +67,7 @@ type run_args =
 		mutable arg_edge_coverage : bool;
 		mutable arg_block_coverage : bool;
 		mutable arg_line_coverage : bool;
+		mutable arg_path_coverage : bool;
 		mutable arg_num_lines : int;
 		mutable arg_num_blocks : int;
 		mutable arg_num_edges : int;
@@ -85,6 +86,7 @@ type run_args =
 		mutable arg_opt_hash_consing : bool;
 		mutable arg_opt_bytes_eval_cache : bool;
 		mutable arg_opt_stpbv_cache : bool;
+		mutable arg_failfast : bool;
 	};;
 
 let run_args = 
@@ -96,6 +98,7 @@ let run_args =
 		arg_edge_coverage = false;
 		arg_block_coverage = false;
 		arg_line_coverage = false;
+		arg_path_coverage = false;
 		arg_num_lines = -1;
 		arg_num_blocks = -1;
 		arg_num_edges = -1;
@@ -113,6 +116,7 @@ let run_args =
 		arg_opt_hash_consing = false;  (* This module depends on Types!!! *)
 		arg_opt_bytes_eval_cache = false;
 		arg_opt_stpbv_cache = false;
+		arg_failfast = false;
 	} ;;
 
 (* This is bad---I know *)

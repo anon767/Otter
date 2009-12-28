@@ -157,6 +157,7 @@ int IOSIM_openWithMode(const char *name, int flags, mode_t mode) {
 	sym_stream->sym_file = sym_file;
 	sym_stream->offset = 0;
 	sym_stream->fd = fd;
+	sym_stream->buffer = NULL;
 
 	return fd;
 }

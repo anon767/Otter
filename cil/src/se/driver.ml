@@ -57,16 +57,13 @@ let addStmtCoverage job whichBranch nextStmtOpt =
 				if run_args.arg_edge_coverage
 				then (
 					match nextStmtOpt with
-							Some nextStmt ->
-								if job.stmt == Cilutility.stmtAtEndOfBlock job.stmt
-								then
+							Some nextStmt when job.stmt == Cilutility.stmtAtEndOfBlock job.stmt ->
 									let funcName = (List.hd job.state.callstack).svar.vname in
 									EdgeSet.add
 										({ siFuncName = funcName; siStmt = job.stmt; },
 										 { siFuncName = funcName;
 											 siStmt = Cilutility.stmtAtEndOfBlock nextStmt; })
 										job.exHist.coveredEdges
-								else job.exHist.coveredEdges
 						| _ -> job.exHist.coveredEdges
 				) else EdgeSet.empty;
 			coveredConds =
@@ -76,6 +73,13 @@ let addStmtCoverage job whichBranch nextStmtOpt =
                                                 If _ -> CondSet.add (stmtInfo_of_job job,whichBranch) job.exHist.coveredConds
                                         | _ -> job.exHist.coveredConds
                                 ) else CondSet.empty;
+			executionPath =
+				if run_args.arg_path_coverage && job.stmt == Cilutility.stmtAtEndOfBlock job.stmt
+				then (
+					{ siFuncName = (List.hd job.state.callstack).svar.vname; siStmt = job.stmt; } :: job.exHist.executionPath
+				) else (
+					job.exHist.executionPath
+				)
 	}
 
 let addInstrCoverage job instr =
@@ -883,24 +887,6 @@ let exec_stmt job =
 							| Some(pc) -> MemOp.state__add_path_condition state pc true
 							| None -> state
 						in
-						if run_args.arg_edge_coverage && job.inTrackedFn then
-							begin
-								let which = (if block == block1 then fst else snd) in
-								try
-									let pcSet_ref = which (Hashtbl.find branches_taken (exp,loc)) in
-									(* Add the path condition to the list of ways we take this branch *)
-									pcSet_ref := PcHistSet.add (state.path_condition,job.exHist) !pcSet_ref
-								with Not_found ->
-									(* We haven't hit this conditional before. Initialize its entry in
-										 the edge coverage table with the current path condition (and
-										 an empty set for the other direction of the branch). *)
-									Hashtbl.add
-										branches_taken
-										(exp,loc)
-										(let res = (ref PcHistSet.empty, ref PcHistSet.empty) in
-										which res := PcHistSet.singleton (state.path_condition,job.exHist);
-										res)
-							end;
 						let nextStmt = match stmt.succs with
 								[succ] -> succ (* This happens for 'if (...);', with nothing on either branch *)
 							| [succF;succT] -> (* The successors are in reverse order: false then true *)
@@ -1040,6 +1026,7 @@ let step_job job =
 		in
 		result
 	with Failure msg ->
+		if run_args.arg_failfast then failwith msg;
 		let result = { result_state = job.state; result_history = job.exHist } in
 		let completed = Complete (Types.Abandoned (msg, !Output.cur_loc, result)) in
 		completed

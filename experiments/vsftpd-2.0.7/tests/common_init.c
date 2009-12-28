@@ -16,6 +16,7 @@ sym_file_stream_t *newStream(int fd) {
 	stream->sym_file = malloc(sizeof(sym_file_t));
 	stream->sym_file->contents = NULL;
 	stream->sym_file->stat.st_size = 0;
+	stream->buffer = NULL;
 	if (fd >= 0) {
 		stream->fd = fd;
 		IOSIM_fd[fd] = stream;
@@ -57,7 +58,6 @@ void common_initialization(const char *commandString) {
 	ADDFILE("/ftp/.hidden","boo!");
 	char y[0];
 	IOSIM_addfile("/ftp/emptyFile",y,0,0);
-	ADDFILE("/ftp/123/456","");
 	ADDFILE("/ftp/123/654","\b\b\b\b\b\t");
 	ADDFILE("/ftp/123/.hidden","this file is hidden\n");
 	ADDFILE("/dir/file1","38 2qu938 30r9 u3");

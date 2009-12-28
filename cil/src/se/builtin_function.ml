@@ -63,9 +63,8 @@ let libc___builtin_alloca state exps =
 		(MemOp.state__trace state)
 	in
 	let block =  block__make name size Block_type_Heap in
-(*	let bytes = make_Bytes_ByteArray ({ImmutableArray.empty with ImmutableArray.length = size}) in*)
-(*	let bytes = bytes__make_default size byte__undef in (* initially the symbolic 'undef' byte *) *)
-	let bytes = bytes__make size in (* initially zero, as though malloc were calloc *)
+	let bytes = bytes__make_default size byte__undef in (* initially the symbolic 'undef' byte *)
+(*	let bytes = bytes__make size in (* initially zero, as though malloc were calloc *) *)
 	let addrof_block = make_Bytes_Address (block, bytes__zero) in
 	let state = MemOp.state__add_block state block bytes in
 	(state, addrof_block)

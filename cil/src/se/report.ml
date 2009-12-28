@@ -3,25 +3,28 @@ open Executeargs
 open Bytes
 open Types
 
-type coverageType = Line | Block | Edge | Cond
+type coverageType = Line | Block | Edge | Cond | Path
 
 let covTypeToStr = function
 	| Line -> "lines"
 	| Block -> "blocks"
 	| Edge -> "edges"
 	| Cond -> "conditions"
+	| Path -> "paths"
 
 let getTotal = function
 	| Line -> run_args.arg_num_lines
 	| Block -> run_args.arg_num_blocks
 	| Edge -> run_args.arg_num_edges
 	| Cond -> run_args.arg_num_conds
+	| Path -> invalid_arg "Cannot compute the total number of paths"
 
 let getNumCovered covType hist = match covType with
 	| Line -> LineSet.cardinal hist.coveredLines
 	| Block -> StmtInfoSet.cardinal hist.coveredBlocks
 	| Edge -> EdgeSet.cardinal hist.coveredEdges
 	| Cond -> CondSet.cardinal hist.coveredConds
+	| Path -> invalid_arg "Should not compute number of paths covered"
 
 (** Compute set cover greedily.
 		[greedySetCover emptyCheck scoreFn setdiff setList universe]
@@ -168,11 +171,11 @@ let printEdges edgeset =
 	EdgeSet.iter printEdge edgeset;
 	Output.printf "\n"
 	
-let printBlock stmtInfo =
+let printStmtInfo stmtInfo =
 	Output.printf "%s\n" (To_string.stmtInfo stmtInfo)
 let printBlocks blockset =
 	Output.printf "The blocks hit were:\n";
-	StmtInfoSet.iter printBlock blockset;
+	StmtInfoSet.iter printStmtInfo blockset;
 	Output.printf "\n"
 	
 let printCondition (stmtInfo, truth) =
@@ -183,7 +186,7 @@ let printConditions condset =
 	Output.printf "The conditions hit were:\n";
 	CondSet.iter printCondition condset;
 	Output.printf "\n"
-	
+
 let printCoveringConfigs coveringSet covType =
 	let name = covTypeToStr covType in
 	if coveringSet = [] then Output.printf "No constraints: any run covers all %s\n" name
@@ -198,7 +201,8 @@ let printCoveringConfigs coveringSet covType =
 							Line -> printLines hist.coveredLines
 						| Block -> printBlocks hist.coveredBlocks
 						| Edge -> printEdges hist.coveredEdges
-						| Cond -> printConditions hist.coveredConds);
+						| Cond -> printConditions hist.coveredConds
+						| Path -> failwith "printCoveringConfigs called for path coverage");
 				 Output.printf "-------------\n\n")
 			 coveringSet
 	end
@@ -286,46 +290,25 @@ let printCoverageInfo resultList =
 			allCondsCovered
 		in
 		printCoveringConfigs coveringSet Cond
+	);
+
+	if run_args.arg_path_coverage then (
+		(* I don't compute covering sets here because I assume each path
+			 is unique. However, if two paths x and y differ only within
+			 untracked functions, [x.executionPath = y.executionPath] will
+			 be true. *)
+		Output.printf "Path coverage:\n\n";
+		List.iter
+			(fun result ->
+				 printPath result.result_state result.result_history;
+				 Output.printf "The path contains %d statements\n\n" (List.length result.result_history.executionPath);
+				 Output.printf "-------------\n\n")
+			resultList
 	)
+;;
 
 
 let print_report results =
-(*
-	if run_args.arg_edge_coverage then
-		begin
-			Output.print_endline "Edge coverage:";
-			let hashtblAsList =
-				Hashtbl.fold
-					(fun a b acc -> (a,b) :: acc)
-					branches_taken
-					[]
-			and cmpByLoc ((_,loc1),_) ((_,loc2),_) = compareLoc loc1 loc2
-			in
-			let sortedList = List.sort cmpByLoc hashtblAsList and
-					printPcHistSet pcHistSet =
-						let counter = ref 0 in
-						PcHistSet.iter
-							(fun (pc,hist) ->
-								let str = To_string.humanReadablePc pc hist.bytesToVars in
-								counter := !counter + 1;
-								Output.print_endline ("Condition " ^ (string_of_int !counter) ^ ":");
-								Output.print_endline (if str = "" then "true" else str);
-								Output.print_newline ())
-							pcHistSet
-			in
-			List.iter
-				(fun ((exp,loc), (true_pcHistSet_ref,false_pcHistSet_ref)) ->
-					Output.print_endline ((To_string.location loc) ^ ", " ^ (To_string.exp exp));
-					if not (PcHistSet.is_empty !true_pcHistSet_ref) then
-						(Output.print_endline "True branch taken under the following conditions:";
-						 printPcHistSet !true_pcHistSet_ref);
-					if not (PcHistSet.is_empty !false_pcHistSet_ref) then
-						(Output.print_endline "False branch taken under the following conditions:";
-						 printPcHistSet !false_pcHistSet_ref);
-					Output.print_newline ())
-				sortedList
-		end;
-*)
 	let coverage, completed, truncated, abandoned =
 		List.fold_left begin fun (coverage, completed, truncated, abandoned) result ->
 			match result with
@@ -334,54 +317,33 @@ let print_report results =
 				| Types.Truncated (c, d) -> (c::d::coverage, completed, truncated + 2, abandoned)
 				| Types.Abandoned _      -> (coverage, completed, truncated, abandoned + 1)
 		end ([], 0, 0, 0) results in
-	if completed = 0 then (
-		Output.printf "All %d paths had errors.\n" abandoned
-			(* Program execution ends. *)
+		if completed = 0 then (
+			Output.printf "All %d paths had errors.\n" abandoned
+				(* Program execution ends. *)
 	) else (
-	(* If there were successful runs *)
-	Output.printf "%d paths ran to completion; %d had errors.\n" completed abandoned;
-	Output.printf "There are %d truncated paths.\n" truncated;
+		(* If there were successful runs *)
+		Output.printf "%d paths ran to completion; %d had errors.\n" completed abandoned;
+		Output.printf "There are %d truncated paths.\n" truncated;
 
-	if run_args.arg_line_coverage || run_args.arg_block_coverage || run_args.arg_edge_coverage || run_args.arg_cond_coverage
-	then begin
-		(* Print coverage information, if it was gathered, regardless of anything else.*)
-		print_args.arg_print_nothing <- false;
-		Output.set_mode Output.MSG_MUSTPRINT;
-		printCoverageInfo coverage;
-(*
-	let (alwaysExecuted,everExecuted) =
-		match coverage with
-			|  hd::tl ->
-					 let first_edges = hd.result_history.coveredEdges in
-					 List.fold_left
-						 (fun (interAcc,unionAcc) { result_history=hist } ->
-								EdgeSet.inter interAcc hist.coveredEdges,
-								EdgeSet.union unionAcc hist.coveredEdges)
-						 (first_edges, first_edges)
-						 tl
-			| [] -> assert false (* there has to be at least one execution *)
-	in
+		if run_args.arg_line_coverage || run_args.arg_block_coverage || run_args.arg_edge_coverage || run_args.arg_cond_coverage || run_args.arg_path_coverage
+		then begin
+			(* Print coverage information, if it was gathered, regardless of anything else.*)
+			print_args.arg_print_nothing <- false;
+			Output.set_mode Output.MSG_MUSTPRINT;
+			printCoverageInfo coverage;
 
-	Output.printf "\nIn all, %d edges were executed, of which %d were always executed.\n"
-		(EdgeSet.cardinal everExecuted) (EdgeSet.cardinal alwaysExecuted);
-*)
+			(* Marshal out (coverage : Types.job_result list) so that we can
+				 read it back in later. *)
+			if run_args.arg_marshal_file <> ""
+			then (
+				Output.printf "Marshalling results to %s\n" run_args.arg_marshal_file;
+				let outChan = open_out_bin run_args.arg_marshal_file in
+					Marshal.to_channel outChan coverage [];
+					close_out outChan
+			);
 
-		if run_args.arg_calculate_dependencies then (
-			CalculateDependencies.calculateDeps coverage
-		);
+			Output.printf "Finished.\n";
 
-		Output.printf "Finished.\n";
-
-		(* Marshal out (coverage : Types.job_result list) so that we can
-			 read it back in later. *)
-		if run_args.arg_marshal_file <> ""
-		then (
-			Output.printf "Coverage data is in %s.\n" run_args.arg_marshal_file;
-			let outChan = open_out_bin run_args.arg_marshal_file in
-			Marshal.to_channel outChan coverage [];
-			close_out outChan
-		)
-
-	end
+		end
 	)
 ;;

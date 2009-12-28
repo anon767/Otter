@@ -149,6 +149,7 @@ type executionHistory = {
 	coveredBlocks : StmtInfoSet.t; (** Which basic blocks we've hit. We identify a block by the last stmt within it. *)
 	coveredEdges : EdgeSet.t; (** Which edges we've traversed on this execution *)
 	coveredConds : CondSet.t; (** Which conditions we've hit *)
+	executionPath : stmtInfo list; (** The execution path (list of stmts) so far, most recent stmt first. *)
 	bytesToVars : (bytes * Cil.varinfo) list;
 		(** List associating symbolic bytes to the variable that was
 				assigned this value by a call to __SYMBOLIC(&<variable>). *)
@@ -159,25 +160,9 @@ let emptyHistory = {
 	coveredBlocks = StmtInfoSet.empty;
 	coveredEdges = EdgeSet.empty;
 	coveredConds = CondSet.empty;
+	executionPath = [];
 	bytesToVars = [];
 }
-
-(** A set of (path condition, execution history) pairs *)
-module PcHistSet = Set.Make
-	(struct
-		type t = bytes list * executionHistory
-		let compare ((bl1,eh1):t) (bl2,eh2) =
-			let bytesListCmp = Pervasives.compare bl1 bl2 in
-			if bytesListCmp = 0
-			then Pervasives.compare eh1.bytesToVars eh2.bytesToVars
-			else bytesListCmp
-	end)
-
-(** This maps (Cil.exp,Cil.location) pairs to a pair (T_set,F_set) of
-	PcHistSet refs, which are the sets of path conditions under which we
-	took the true branch and false branch, respectively, of this condition. *)
-let branches_taken : (Cil.exp * Cil.location, PcHistSet.t ref * PcHistSet.t ref) Hashtbl.t =
-	Hashtbl.create 100
 
 module SymbolSet = Set.Make
 	(struct

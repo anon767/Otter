@@ -347,6 +347,10 @@ let feature : featureDescr =
 			Arg.Unit (fun () -> Executeargs.run_args.arg_run_regression <- true),
 			" Output for regression test \n");
 
+			("--failfast",
+			Arg.Unit (fun () -> Executeargs.run_args.arg_failfast <- true),
+			" Abort execution if any path encounters an error\n");
+
 			(**
 					Printing options
 			 *)
@@ -354,25 +358,25 @@ let feature : featureDescr =
 			(* STP *)
 			("--printSTP",
 			Arg.Unit (fun () -> Executeargs.print_args.arg_print_stp <- true),
-			" Print STP programs \n");
+			" Print STP programs");
 			(* Assignment in the form lval = rval *)
 			("--printAssign",
 			Arg.Unit (fun () -> Executeargs.print_args.arg_print_assign <- true),
-			" Print assignments (from rval to lval) \n");
+			" Print assignments (from rval to lval)");
 
 			("--printFunctionCall",
 			Arg.Unit (fun () -> Executeargs.print_args.arg_print_func <- true),
-			" Print function calls \n");
+			" Print function calls");
 			(* Print the guard of an if statement *)
 			("--printIf",
 			Arg.Unit (fun () -> Executeargs.print_args.arg_print_guard <- true),
-			" Print the guard of an if statement \n");
+			" Print the guard of an if statement");
 			("--printNoEscapedString",
 			Arg.Unit (fun () -> Executeargs.print_args.arg_print_no_escaped_string <- true),
-			" Print strings without escaped characters \n");
+			" Print strings without escaped characters");
 			("--printCallStack",
 			Arg.Unit (fun () -> Executeargs.print_args.arg_print_callstack <- true),
-			" Print call stack (when branching)\n");
+			" Print call stack (when branching)");
 			(* Sparse printing *)
 			("--printLittle",
 			Arg.Unit (fun () -> 
@@ -384,15 +388,15 @@ let feature : featureDescr =
 				Executeargs.print_args.arg_print_assign <- false;
 				()
 			),
-			" Suppress most output \n");
+			" Suppress most output");
 
 			("--printNothing",
 			 Arg.Unit (fun () -> print_args.arg_print_nothing <- true),
-			" Suppress (pretty much) all output. This trumps all other --print* options\n");
+			" Suppress (pretty much) all output. This trumps all other --print* options");
 
 			("--printCharAsInt",
 			Arg.Unit (fun () -> Executeargs.print_args.arg_print_char_as_int <- true),
-			" Print char as int \n");
+			" Print char as int");
 
 			("--printStmtLocs",
 			Arg.Unit (fun () -> Executeargs.print_args.arg_print_stmt_locs <- true),
@@ -413,29 +417,32 @@ let feature : featureDescr =
 
 			("--condCov",
 			 Arg.Unit (fun () -> run_args.arg_cond_coverage <- true),
-			 " Track condition coverage\n");
+			 " Track condition coverage");
 			("--edgeCov",
 			 Arg.Unit (fun () -> run_args.arg_edge_coverage <- true),
-			 " Track edge coverage\n");
+			 " Track edge coverage");
 			("--blockCov",
 			 Arg.Unit (fun () -> run_args.arg_block_coverage <- true),
-			 " Track statement coverage\n");
+			 " Track statement coverage");
 			("--lineCov",
 			 Arg.Unit (fun () -> run_args.arg_line_coverage <- true),
-			 " Track line coverage\n");
+			 " Track line coverage");
+			("--pathCov",
+			 Arg.Unit (fun () -> run_args.arg_path_coverage <- true),
+			 " Track path coverage");
 			("--covStats",
 			 Arg.String readCovStatsFromFile,
 			 "<filename> File containing coverage statistics\n");
 
 			("--listAllLines",
 			 Arg.Unit (fun () -> run_args.arg_list_lines <- true),
-			 " Before execution, print out all of the lines in the program.\n");
+			 " Before execution, print out all of the lines in the program.");
 			("--listAllBlocks",
 			 Arg.Unit (fun () -> run_args.arg_list_blocks <- true),
-			 " Before execution, print out all of the basic blocks in the program.\n");
+			 " Before execution, print out all of the basic blocks in the program.");
 			("--listAllEdges",
 			 Arg.Unit (fun () -> run_args.arg_list_edges <- true),
-			 " Before execution, print out all of the intraprodecural edges in the program.\n");
+			 " Before execution, print out all of the intraprodecural edges in the program.");
 			("--listAllConds",
 			 Arg.Unit (fun () -> run_args.arg_list_conds <- true),
 			 " Before execution, print out all of the conditions in the program.\n");
@@ -452,14 +459,11 @@ let feature : featureDescr =
 			 Arg.String (fun str -> run_args.arg_marshal_file <- str),
 			 "<file> Marshal coverage information to <file>.\n");
 
-			("--calculateDepsDuringExecution",
-			 Arg.Unit (fun () -> run_args.arg_calculate_dependencies <- true),
-			 " Calculate (at the end of symbolic execution) what lines depend on what symbolic variables\n");
-
 			("--noinitUnreachableGlobals",
 			 Arg.Unit (fun () -> run_args.arg_noinit_unreachable_globals <- true),
 			 " Do NOT initialize unreachable globals\n");
 
+(*
 			("--marshalFrom",
 			 Arg.String
 				 (fun filename ->
@@ -468,6 +472,7 @@ let feature : featureDescr =
 						ignore coverage (* Do something with the coverage information *)
 				 ),
 			 "<filename> Read coverage information from an output file.");
+*)
 		];
 		fd_post_check = true;
     fd_doit = doExecute
