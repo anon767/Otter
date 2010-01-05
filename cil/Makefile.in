@@ -117,7 +117,7 @@ CILLY_MODULES = $(CILLY_LIBRARY_MODULES) main
 CILLY_CMODULES = perfcount
 CILLY_LIBS     = unix str stpvc
 
-SOURCEDIRS  += src src/frontc src/ext src/ext/pta ocamlutil @EXTRASRCDIRS@ src/se src/common
+SOURCEDIRS  += src src/frontc src/ext src/ext/pta ocamlutil @EXTRASRCDIRS@ src/se
 MLLS        += clexer.mll formatlex.mll
 MLYS        += cparser.mly formatparse.mly
 MODULES     += $(CILLY_MODULES) libmaincil
