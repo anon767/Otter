@@ -6334,6 +6334,11 @@ and succpred_stmt s fallthrough =
  *  (3) remove "default"
  *  (4) remove "continue"
  *)
+
+(* This alphaTable is used to prevent collision of label names when
+   transforming switch statements and loops. It uses a *unit*
+   alphaTableData ref because there isn't any information we need to
+   carry around. *)
 let labelAlphaTable : (string, unit A.alphaTableData ref) H.t =
   H.create 11
 
@@ -6485,7 +6490,7 @@ end and xform_switch_block b break_dest cont_dest label_index =
 (* Enter all the labels in a function into an alpha renaming table to
    prevent duplicate labels when transforming loops and switch
    statements. *)
-class registerLabelNamesVisitor : cilVisitor = object
+class registerLabelsVisitor : cilVisitor = object
   inherit nopCilVisitor
   method vstmt { labels = labels } = begin
     List.iter
@@ -6507,7 +6512,7 @@ let prepareCFG (fd : fundec) : unit =
   (* Labels are local to a function, so start with a clean slate by
      clearing labelAlphaTable. Then register all labels. *)
   H.clear labelAlphaTable;
-  ignore (visitCilFunction (new registerLabelNamesVisitor) fd);
+  ignore (visitCilFunction (new registerLabelsVisitor) fd);
   xform_switch_block fd.sbody 
       (fun () -> failwith "prepareCFG: break with no enclosing loop") 
       (fun () -> failwith "prepareCFG: continue with no enclosing loop") (-1)
