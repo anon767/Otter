@@ -172,6 +172,9 @@ CAMLLEX = ocamllex
 CAMLYACC= ocamlyacc -v
 CAMLDEP = ocamldep
 
+ifdef ANNOTATE
+  COMPILEFLAGS += -annot
+endif
 COMPILEFLAGS += -g -I $(OBJDIR)
 
 # sm: two styles for echoing compilation progress:
