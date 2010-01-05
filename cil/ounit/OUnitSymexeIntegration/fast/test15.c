@@ -10,6 +10,12 @@ int main(){
 	int MAX = 40;
 	char dst[MAX],str[MAX];
 	int i;
+
+	for (i=0;i<MAX;i++) {
+		str[i] = __SYMBOLIC();
+	}
+	str[MAX-1] = '\0';
+
 	for(i=0;i<MAX && str[i]!='\0';i++)
 		dst[i] = str[i];
 
