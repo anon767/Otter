@@ -29,9 +29,10 @@ char* __SYMBOLIC_STRING(int size){
 	for(i=0;i<size;++i){
 		s[i] = __SYMBOLIC();
 	}
-	s[size+0] = '\r';
-	s[size+1] = '\n';
-	s[size+2] = 0;
+	s[size] = 0;
+	//s[size+0] = '\r';
+	//s[size+1] = '\n';
+	//s[size+2] = 0;
 	return s;
 }
 
@@ -42,7 +43,7 @@ char *argv[];
       token token_ptr;
       token_stream stream_ptr;
 
-	  IOSIM_addfile("/input",__SYMBOLIC_STRING(2),4,0);
+	  IOSIM_addfile("/input",__SYMBOLIC_STRING(2),2,0);
 
 	  // set up stdout
 	  sym_file_stream_t fo;
@@ -79,7 +80,8 @@ char *argv[];
                        START gives the first character available in
                        the stream. It ckecks whether the filename is
                        empty string. If it is it assigns file pointer
-                       to stdin else it opens the respective file as input.                   * ******************************************************************* */
+                       to stdin else it opens the respective file as input.                  
+ * ******************************************************************* */
 
 character_stream open_character_stream(FILENAME)
 string FILENAME;
@@ -223,6 +225,8 @@ token_stream tstream_ptr;
 	  {
 	      next_st = -1; /* - hf */
 	  }
+	  __EVAL(next_st);
+	  __PATHCONDITION();
 	  if (next_st == -1) { /* ERROR or EOF case */
 	      return(error_or_eof_case(tstream_ptr, 
 				       token_ptr,cu_state,token_str,token_ind,ch));
@@ -475,6 +479,7 @@ char token_str[];
                    state state and the inpu character ch.
  * ****************************************************************** */
               
+// PRE-CONDITION: state \in {-3,-2,-1,6,9,11,...,27,29} (constants defined in tokens.h) - kkma
 static int next_state(state,ch)
 int state;
 char ch;
@@ -486,11 +491,12 @@ char ch;
         if(check[base[state]+ch] == state) /* Check for the right state */
              return(next[base[state]+ch]);
         else
-              return(next_state(default1[state],ch));
+             return(next_state(default1[state],ch));
     }
     else
         return(next_state(default1[state],ch));
 }
+// POST-CONDITION: state \in {-3,-2,-1,6,9,11,...,27,29} (constants defined in tokens.h) - kkma
 
 /* *********************************************************************
    Function name : is_eof_token
