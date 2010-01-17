@@ -87,6 +87,7 @@ type run_args =
 		mutable arg_opt_bytes_eval_cache : bool;
 		mutable arg_opt_stpbv_cache : bool;
 		mutable arg_failfast : bool;
+		mutable arg_init_malloc_zero : bool;
 	};;
 
 let run_args = 
@@ -117,6 +118,7 @@ let run_args =
 		arg_opt_bytes_eval_cache = false;
 		arg_opt_stpbv_cache = false;
 		arg_failfast = false;
+		arg_init_malloc_zero = false;
 	} ;;
 
 (* This is bad---I know *)

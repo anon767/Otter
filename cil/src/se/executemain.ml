@@ -451,6 +451,12 @@ let feature : featureDescr =
 			 Arg.Unit (fun () -> run_args.arg_merge_paths <- true),
 			 " Merge similar execution paths\n");
 
+			("--initMallocZero",
+			 Arg.Unit (fun () -> run_args.arg_init_malloc_zero <- true),
+			 " Initialize memory allocated by malloc() to zero.
+\t\t\t(By default, such memory contains undefined values which
+\t\t\tcause an error if they ever get passed to the SMT solver.)\n");
+
 			("--timeout",
 			 Arg.Int (fun n -> run_args.arg_timeout <- n),
 			 "<numSeconds> Set a timeout for the executor\n");
