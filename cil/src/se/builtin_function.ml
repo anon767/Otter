@@ -78,18 +78,26 @@ let libc_malloc = libc___builtin_alloca
 
 let libc_free state exps =
 	(* Remove the mapping of (block,bytes) in the state. *)
+	(* From opengroup: The free() function causes the space pointed to by
+	ptr to be deallocated; that is, made available for further allocation. If ptr
+	is a null pointer, no action occurs. Otherwise, if the argument does not match
+	a pointer earlier returned by the calloc(), malloc(), realloc() or valloc()
+	function, or if the space is deallocated by a call to free() or realloc(), the
+	behaviour is undefined.  Any use of a pointer that refers to freed space causes
+	undefined behaviour.  *)
+	let warning msg = Output.print_endline msg; (state,bytes__zero) in
 	let state, ptr = Eval.rval state (List.hd exps) in
 	match ptr with
 		| Bytes_Address (block, _) ->
 			if block.memory_block_type != Block_type_Heap
-			then failwith ("Freeing a non-malloced pointer:" ^ (To_string.exp (List.hd exps)) ^ " = " ^ (To_string.bytes ptr));
+			then warning ("Freeing a non-malloced pointer:" ^ (To_string.exp (List.hd exps)) ^ " = " ^ (To_string.bytes ptr)) else 
 			if not (MemOp.state__has_block state block)
-			then failwith ("Double-free:" ^ (To_string.exp (List.hd exps)) ^ " = " ^ (To_string.bytes ptr));
+			then warning ("Double-free:" ^ (To_string.exp (List.hd exps)) ^ " = " ^ (To_string.bytes ptr)) else 
 			let state = MemOp.state__remove_block state block in
 			(state, bytes__zero)
 		| _ ->
 			Output.set_mode Output.MSG_MUSTPRINT;
-			failwith ("Freeing something that is not a valid pointer: " ^ (To_string.exp (List.hd exps)) ^ " = " ^ (To_string.bytes ptr));
+			warning ("Freeing something that is not a valid pointer: " ^ (To_string.exp (List.hd exps)) ^ " = " ^ (To_string.bytes ptr))
 ;;
 
 
