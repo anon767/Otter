@@ -36,6 +36,8 @@ namespace MINISAT {
 //=================================================================================================
 // Basic Types & Minor Things:
 
+typedef unsigned int       uint;
+
 #ifdef _MSC_VER
 
 typedef INT64              int64;
