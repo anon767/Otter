@@ -876,10 +876,10 @@ let bytes_to_qt file expState state pre bytes exp qt = perform
         end
     in
 
-    (* Update qt with bytes and discard the extended state, since the memory model has only been extended -- no
-     * existing memory locations has been modified -- so the extended state is equivalent to the original state.
-     * Furthermore, it's usually cheaper to work with a less elaborate state as it tends to lead to simpler
-     * symbolic expressions to be solved by the SMT solver *)
+    (* Update qt with bytes and discard the new state, since the only difference is that some lazy memory locations
+     * have been forced, and so the new state is equivalent to the original state. Furthermore, it's usually cheaper
+     * to work with a less elaborate state as it tends to lead to simpler symbolic expressions to be solved by the SMT
+     * solver, due to the less elaborate aliasing relationship between memory locations. *)
     bytes_to_qt state pre bytes exp qt;
     return ()
 
