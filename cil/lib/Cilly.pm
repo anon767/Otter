@@ -1957,10 +1957,10 @@ sub new {
       MODENAME => 'GNUCC',  # do not change this since it is used in code
       # sm: added -O since it's needed for inlines to be merged instead of causing link errors
       # sm: removed -O to ease debugging; will address "inline extern" elsewhere
-      CC => [@native_cc, '-D_GNUCC', '-c'],
-      LD => [@native_cc, '-D_GNUCC'],
+      CC => [@native_cc, '-D_GNUCC', '-U__BLOCKS__', '-c'],
+      LD => [@native_cc, '-D_GNUCC', '-U__BLOCKS__'],
       LDLIB => ['ld', '-r', '-o'],
-      CPP =>  [@native_cc, '-D_GNUCC', '-E'],
+      CPP =>  [@native_cc, '-D_GNUCC', '-U__BLOCKS__', '-E'],
       DEFARG  => "-D",
       INCARG => "-I",
       DEBUGARG => ['-g', '-ggdb'],
