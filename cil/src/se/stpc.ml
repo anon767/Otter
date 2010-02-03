@@ -41,6 +41,7 @@ let e_bvsle ()= failwith "Stpc: unused bvsxx functions" ;;
 let e_bvsgt ()= failwith "Stpc: unused bvsxx functions" ;;
 let e_bvsge ()= failwith "Stpc: unused bvsxx functions" ;;
 
+let e_bvneg vc bv len = reverse_bytes vc len (Stpvc.e_bvneg vc (reverse_bytes vc len bv)) ;;
 
 (** TODO *)
 let e_bvsextend = Stpvc.e_bvsextend ;;

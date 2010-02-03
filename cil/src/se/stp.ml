@@ -444,7 +444,7 @@ to_stp_bv_impl vc bytes =
 				let bv_0 = (Stpc.e_bv_of_int vc len_of_1_0 0) in
 				let op_func = fun bv1 len1 ->
 					begin match op with 
-						| OP_UMINUS -> (Stpc.e_bvneg vc bv1, len1)
+						| OP_UMINUS -> (Stpc.e_bvneg vc bv1 len1, len1)
 						| OP_BNOT ->(Stpc.e_bvnot vc bv1, len1)
 						| OP_LNOT ->
 							(Stpc.e_ite vc 
