@@ -640,8 +640,7 @@ let attempt_deref ?pre state lval_block typ =
     @param bytes        the symbolic value to convert
     @param exp          the C expression from which bytes was derived
     @param qt           the qualified type to add constraints to
-    @return             [state]{i monad} the symbolic execution state in the CilQual monad updated with additional
-                        constraints.
+    @return             [()]{i monad} the CilQual monad updated with additional constraints.
 *)
 let bytes_to_qt file expState state pre bytes exp qt = perform
 
@@ -876,7 +875,13 @@ let bytes_to_qt file expState state pre bytes exp qt = perform
                 end
         end
     in
-    bytes_to_qt state pre bytes exp qt
+
+    (* Update qt with bytes and discard the extended state, since the memory model has only been extended -- no
+     * existing memory locations has been modified -- so the extended state is equivalent to the original state.
+     * Furthermore, it's usually cheaper to work with a less elaborate state as it tends to lead to simpler
+     * symbolic expressions to be solved by the SMT solver *)
+    bytes_to_qt state pre bytes exp qt;
+    return ()
 
 
 (** Convert a symbolic memory frame to qualifier constraints on all qualified types corresponding to variables in the
@@ -885,18 +890,17 @@ let bytes_to_qt file expState state pre bytes exp qt = perform
     @param expState     the original CilQual state
     @param state        the symbolic execution state to update the constraints with
     @param frame        the symbolic memory frame to re-initialize
-    @return             [state]{i monad} the symbolic execution state in the CilQual monad updated with additional
-                        constraints.
+    @return             [()]{i monad} the CilQual monad updated with additional constraints.
 *)
 let frame_to_qt file expState state frame =
-    Types.VarinfoMap.fold begin fun v deferred_lval stateM -> perform
-        state <-- stateM;
+    Types.VarinfoMap.fold begin fun v deferred_lval expM -> perform
+        expM;
         let state, lval_block = MemOp.state__force state deferred_lval in
         let lval = Cil.var v in
         let exp = Cil.Lval lval in
         qtl <-- access_rval lval;
         match attempt_deref state lval_block v.Cil.vtype with
             | Some (state, bytes) -> bytes_to_qt file expState state Bytes.Guard_True bytes exp qtl
-            | None -> return state
-    end frame (return state)
+            | None -> return ()
+    end frame (return ())
 

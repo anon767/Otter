@@ -36,11 +36,10 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
         (* setup global variables and function arguments *)
         (* TODO: handle varargs *)
         let expM = perform
-            state <-- frame_to_qt file expState state state.Types.global;
-            state <-- frame_to_qt file expState state (List.hd state.Types.formals);
-            return state
+            frame_to_qt file expState state state.Types.global;
+            frame_to_qt file expState state (List.hd state.Types.formals);
         in
-        let (((((state, constraints), _), _), _), _ as expState) = run expM expState in
+        let (((((_, constraints), _), _), _), _ as expState) = run expM expState in
 
         let solution = DiscreteSolver.solve consts constraints in
 
