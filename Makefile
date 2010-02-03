@@ -10,7 +10,7 @@ cil : make//cil
 cil : MAKEGOALS=
 test-cil : make//cil
 test-cil : MAKEGOALS=ounit
-make//cil : CONFIGURE_FLAGS=EXTRALIBDIRS='$(EXTRALIBDIRS)'
+make//cil : CONFIGURE_FLAGS=EXTRALIBDIRS='$(EXTRALIBDIRS)' CC='gcc -m32'
 make//cil : ocamlstp
 
 
