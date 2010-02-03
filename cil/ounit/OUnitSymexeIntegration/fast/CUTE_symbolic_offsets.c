@@ -1,6 +1,8 @@
 // from EXE paper, related work about CUTE
 
-#include<stdlib.h>
+typedef unsigned long size_t;
+void * memset(void *b, int c, size_t len);
+
 int main(){
 	int a[100];
 	int i,j; //symbolic
