@@ -244,24 +244,11 @@ flatten_offset state lhost_typ offset : state * bytes * typ (* type of (lhost,of
 
 and
 
-(* This does not align fields based on their type. For example, a
-	 struct { char c; int n; } would have n at offset 1, whereas gcc has
-	 ints 4-byte aligned, so it is at offset 4. I'm not exactly sure
-	 what gcc does generally, though. Also, the C specification seems to
-	 leave alignment implementation-defined [6.7.2.1.12], so not
-	 padding for alignment should be okay. *)
+(* Calculate field offsets according to Cil, which should mimic the underlying compiler (e.g., gcc).
+   The C specification leave alignment implementation-defined [6.7.2.1.12]. *)
 field_offset f : int =
-	if not f.fcomp.cstruct
-	then 0 (* This is a field in a union, so the offset is 0. *)
-	else (* For structs, we have to actually figure out the offset *)
-		let rec helper fields acc =
-			match fields with
-			| [] -> failwith "unreachable: field doesn't appear in struct!"
-			| head:: tail ->
-					if head == f then acc
-					else helper tail (acc + (Cil.bitsSizeOf head.ftype) / 8)
-		in
-		helper f.fcomp.cfields 0
+    let offset, _ = bitsOffset (TComp (f.fcomp, [])) (Field (f, NoOffset)) in
+    offset / 8
  
 and
 
