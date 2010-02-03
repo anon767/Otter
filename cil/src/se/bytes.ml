@@ -733,14 +733,6 @@ let bytes__write bytes off len newbytes =
 
 ;;
 
-let bytes__resize bytes newlen = 
-	let oldlen = bytes__length bytes in
-		if oldlen=newlen then bytes 
-		else if oldlen>newlen then bytes (* don't care if longer *)
-		else
-			bytes__write (bytes__make newlen) bytes__zero oldlen bytes
-;;
-
 (**
  *	memory block
  *)

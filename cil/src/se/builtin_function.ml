@@ -8,9 +8,7 @@ let libc___builtin_va_arg state exps =
 	let lastarg = List.nth exps 2 in
 	match lastarg with
 		| CastE(_, AddrOf(cil_lval)) ->
-			let state, (_, size as lval) = Eval.lval state cil_lval in
-			(* cast ret to sth of typ sth *)
-			let ret = bytes__resize ret size in
+			let state, lval = Eval.lval state cil_lval in
 			let state = MemOp.state__assign state lval ret in
 			(state, ret)
 		| _ -> failwith "Last argument of __builtin_va_arg must be of the form CastE(_,AddrOf(lval))"
