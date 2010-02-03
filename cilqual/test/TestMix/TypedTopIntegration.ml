@@ -236,7 +236,7 @@ let leaf_symbolic_source_simple_path_testsuite = "Leaf Symbolic Source, Simple P
             end;
         ];
 
-        "field" >::: [
+        "{ int * i; } field" >::: [
             test_mix ~label:"set null locally" "
                 int x = 0;
                 struct a { int * i; } y = { &x };
@@ -268,6 +268,40 @@ let leaf_symbolic_source_simple_path_testsuite = "Leaf Symbolic Source, Simple P
                 assert_no_block_errors block_errors
             end;
         ];
+
+        "{ char c; int * i; } single field" >::: [
+            test_mix ~label:"set null locally" "
+                int x = 0;
+                struct a { char c; int * i; } y = { 'a', &x };
+                void foo(void) MIX(symbolic) {
+                    y.i = NULL;
+                    y.i = &x;
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution block_errors ->
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
+            end;
+
+            test_mix ~label:"set null" "
+                int x = 0;
+                struct a { char c; int * i; } y = { 'a', &x };
+                void foo(void) MIX(symbolic) {
+                    y.i = NULL;
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution block_errors ->
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
+            end;
+        ];
+
 
         "return" >::: [
             test_mix ~label:"null" "
@@ -386,7 +420,7 @@ let leaf_symbolic_source_simple_path_testsuite = "Leaf Symbolic Source, Simple P
             end;
         ];
 
-        "field" >::: [
+        "{ int * i; } field" >::: [
             test_mix ~label:"set null locally" "
                 int x = 0;
                 struct a { int * $(nonnull) i; } y = { &x };
@@ -406,6 +440,39 @@ let leaf_symbolic_source_simple_path_testsuite = "Leaf Symbolic Source, Simple P
             test_mix ~label:"set null" "
                 int x = 0;
                 struct a { int * $(nonnull) i; } y = { &x };
+                void foo(void) MIX(symbolic) {
+                    y.i = NULL;
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution block_errors ->
+                assert_discrete_unsatisfiable solution;
+                assert_no_block_errors block_errors
+            end;
+        ];
+
+        "{ char c; int * i; } field" >::: [
+            test_mix ~label:"set null locally" "
+                int x = 0;
+                struct a { char c; int * $(nonnull) i; } y = { 'a', &x };
+                void foo(void) MIX(symbolic) {
+                    y.i = NULL;
+                    y.i = &x;
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution block_errors ->
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
+            end;
+
+            test_mix ~label:"set null" "
+                int x = 0;
+                struct a { char c; int * $(nonnull) i; } y = { 'a', &x };
                 void foo(void) MIX(symbolic) {
                     y.i = NULL;
                 }
@@ -483,6 +550,114 @@ let leaf_symbolic_sink_simple_path_testsuite = "Leaf Symbolic Sink, Simple Path"
                         x = NULL;
                     } else {
                         x = &s;
+                    }
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution block_errors ->
+                assert_discrete_satisfiable solution;
+                assert_has_block_errors 1 block_errors
+            end;
+        ];
+
+        "{ int * i; } field" >::: [
+            test_mix ~label:"set null" "
+                int r = 0, s = 0;
+                struct a { int * i; } x = { &r };
+                void foo(void) MIX(symbolic) {
+                    *x.i = 1;
+                }
+                int main(void) {
+                    x.i = NULL;
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution block_errors ->
+                assert_discrete_satisfiable solution;
+                assert_has_block_errors 1 block_errors
+            end;
+
+            test_mix ~label:"set non-null" "
+                int r = 0, s = 0;
+                struct a { int * i; } x = { &r };
+                void foo(void) MIX(symbolic) {
+                    *x.i = 1;
+                }
+                int main(void) {
+                    x.i = &s;
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution block_errors ->
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
+            end;
+
+            test_mix ~label:"set null and non-null" "
+                int r = 0, s = 0;
+                struct a { int * i; } x = { &r };
+                void foo(void) MIX(symbolic) {
+                    *x.i = 1;
+                }
+                int main(void) {
+                    if (r) {
+                        x.i = NULL;
+                    } else {
+                        x.i = &s;
+                    }
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution block_errors ->
+                assert_discrete_satisfiable solution;
+                assert_has_block_errors 1 block_errors
+            end;
+        ];
+
+        "{ char c; int * i; } field" >::: [
+            test_mix ~label:"set null" "
+                int r = 0, s = 0;
+                struct a { char c; int * i; } x = { 'a', &r };
+                void foo(void) MIX(symbolic) {
+                    *x.i = 1;
+                }
+                int main(void) {
+                    x.i = NULL;
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution block_errors ->
+                assert_discrete_satisfiable solution;
+                assert_has_block_errors 1 block_errors
+            end;
+
+            test_mix ~label:"set non-null" "
+                int r = 0, s = 0;
+                struct a { char c; int * i; } x = { 'a', &r };
+                void foo(void) MIX(symbolic) {
+                    *x.i = 1;
+                }
+                int main(void) {
+                    x.i = &s;
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution block_errors ->
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
+            end;
+
+            test_mix ~label:"set null and non-null" "
+                int r = 0, s = 0;
+                struct a { char c; int * i; } x = { 'a', &r };
+                void foo(void) MIX(symbolic) {
+                    *x.i = 1;
+                }
+                int main(void) {
+                    if (r) {
+                        x.i = NULL;
+                    } else {
+                        x.i = &s;
                     }
                     foo();
                     return 0;
@@ -674,7 +849,7 @@ let leaf_symbolic_source_one_branch_testsuite = "Leaf Symbolic Source, One Branc
             end;
         ];
 
-        "field" >::: [
+        "{ int * i; } field" >::: [
             test_mix ~label:"set null on both branches" "
                 int x = 0;
                 struct a { int * i; } y = { &x };
@@ -717,6 +892,66 @@ let leaf_symbolic_source_one_branch_testsuite = "Leaf Symbolic Source, One Branc
             test_mix ~label:"set non-null on both branches" "
                 int x = 0;
                 struct a { int * i; } y = { &x };
+                void foo(void) MIX(symbolic) {
+                    if (x) {
+                        y.i = &x;
+                    } else {
+                        y.i = &x;
+                    }
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution block_errors ->
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
+            end;
+        ];
+
+        "{ char c; int * i; } field" >::: [
+            test_mix ~label:"set null on both branches" "
+                int x = 0;
+                struct a { char c; int * i; } y = { 'a', &x };
+                void foo(void) MIX(symbolic) {
+                    if (x) {
+                        y.i = NULL;
+                    } else {
+                        y.i = NULL;
+                    }
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+
+            " begin fun file solution block_errors ->
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
+            end;
+
+            test_mix ~label:"set null on one branch, non-null on the other branch" "
+                int x = 0;
+                struct a { char c; int * i; } y = { 'a', &x };
+                void foo(void) MIX(symbolic) {
+                    if (x) {
+                        y.i = NULL;
+                    } else {
+                        y.i = &x;
+                    }
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution block_errors ->
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
+            end;
+
+            test_mix ~label:"set non-null on both branches" "
+                int x = 0;
+                struct a { char c; int * i; } y = { 'a', &x };
                 void foo(void) MIX(symbolic) {
                     if (x) {
                         y.i = &x;
@@ -969,7 +1204,7 @@ let leaf_symbolic_source_one_branch_testsuite = "Leaf Symbolic Source, One Branc
             end;
         ];
 
-        "field" >::: [
+        "{ int * i; } field" >::: [
             test_mix ~label:"set null on both branches" "
                 int x = 0;
                 struct a { int * $(nonnull) i; } y = { &x };
@@ -1012,6 +1247,66 @@ let leaf_symbolic_source_one_branch_testsuite = "Leaf Symbolic Source, One Branc
             test_mix ~label:"set non-null on both branches" "
                 int x = 0;
                 struct a { int * $(nonnull) i; } y = { &x };
+                void foo(void) MIX(symbolic) {
+                    if (x) {
+                        y.i = &x;
+                    } else {
+                        y.i = &x;
+                    }
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution block_errors ->
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
+            end;
+        ];
+
+        "{ char * c; int * i; } field" >::: [
+            test_mix ~label:"set null on both branches" "
+                int x = 0;
+                struct a { char * c; int * $(nonnull) i; } y = { 'a', &x };
+                void foo(void) MIX(symbolic) {
+                    if (x) {
+                        y.i = NULL;
+                    } else {
+                        y.i = NULL;
+                    }
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+
+            " begin fun file solution block_errors ->
+                assert_discrete_unsatisfiable solution;
+                assert_no_block_errors block_errors
+            end;
+
+            test_mix ~label:"set null on one branch, non-null on the other branch" "
+                int x = 0;
+                struct a { char * c; int * $(nonnull) i; } y = { 'a', &x };
+                void foo(void) MIX(symbolic) {
+                    if (x) {
+                        y.i = NULL;
+                    } else {
+                        y.i = &x;
+                    }
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution block_errors ->
+                assert_discrete_unsatisfiable solution;
+                assert_no_block_errors block_errors
+            end;
+
+            test_mix ~label:"set non-null on both branches" "
+                int x = 0;
+                struct a { char * c; int * $(nonnull) i; } y = { 'a', &x };
                 void foo(void) MIX(symbolic) {
                     if (x) {
                         y.i = &x;
