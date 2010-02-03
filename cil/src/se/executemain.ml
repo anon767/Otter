@@ -113,9 +113,11 @@ let init_cmdline_argvs state argstr =
 	(* Map the block we just made to the bytes we just made *)
 	let state' = MemOp.state__add_block state argv_strings_block argv_strings_bytes in
 
+    let charPtrSize = bitsSizeOf charPtrType / 8 in
+
 (* TODO: argv[argc] is supposed to be a null pointer. [Standard 5.1.2.2.1] *)
 	(* Now, make a block for the array of pointers, with room for a pointer for each argument *)
-	let argv_ptrs_block = block__make "argv_pointers" (num_args * word__size) Block_type_Local in
+	let argv_ptrs_block = block__make "argv_pointers" (num_args * charPtrSize) Block_type_Local in
 
 	(* Make the byteArray of pointers by making each individual pointer and putting them
 		 into the array using MemOp's bytes__write function. *)
@@ -130,10 +132,10 @@ let init_cmdline_argvs state argstr =
 					make_Bytes_Address (argv_strings_block, lazy_int_to_bytes charsSoFar) in
 				impl t (ptrsSoFar + 1)
 					(charsSoFar + String.length h + 1 (* '+ 1' for the null character *))
-					(bytes__write bytes (lazy_int_to_bytes (ptrsSoFar * word__size)) word__size h_bytes)
+					(bytes__write bytes (lazy_int_to_bytes (ptrsSoFar * charPtrSize)) charPtrSize h_bytes)
 	in
 	let argv_ptrs_bytes =
-		impl argstr 0 0 (make_Bytes_ByteArray (ImmutableArray.make (num_args * word__size) byte__zero)) in
+		impl argstr 0 0 (make_Bytes_ByteArray (ImmutableArray.make (num_args * charPtrSize) byte__zero)) in
 
 	(* Map the pointers block to its bytes *)
 	let state'' = MemOp.state__add_block state' argv_ptrs_block argv_ptrs_bytes in

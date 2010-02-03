@@ -56,7 +56,7 @@ rval state exp : state * bytes =
 					rval_binop state binop exp1 exp2
 			|	AddrOf (Var varinfo, _) when Cil.isFunctionType (varinfo.Cil.vtype) ->
 					let fundec = Cilutility.search_function varinfo in
-					let f_addr = bytes__random word__size in (* TODO: assign an addr for each function ptr *)
+					let f_addr = bytes__random (Cil.bitsSizeOf Cil.voidPtrType / 8) in (* TODO: assign an addr for each function ptr *)
 					(state, make_Bytes_FunPtr(fundec,f_addr))
 			|	AddrOf (cil_lval)
 			|	StartOf (cil_lval) ->
@@ -196,7 +196,6 @@ deref state bytes =
 		| Bytes_Write(bytes,off,len,newbytes) ->failwith "Dereference: Not implemented"
 		| Bytes_FunPtr(_) -> failwith "Dereference funptr not support"
 		| Bytes_Unbounded(_,_,_) ->failwith "Dereference: Not implemented"
-(*		| Bytes_PtrToConstantBytes (content,off) ->failwith "Dereference: Can't dereference constant array in lval."*)
 			
 
 and
@@ -205,7 +204,7 @@ and
 flatten_offset state lhost_typ offset : state * bytes * typ (* type of (lhost,offset) *) =
   let (state, final_bytes,final_typ) = 
 	match offset with
-		| NoOffset -> (state, bytes__zero, lhost_typ) (* TODO: bytes__zero should be defined in Convert *)
+		| NoOffset -> (state, bytes__zero, lhost_typ)
 		| _ -> 
 			let (state, index, base_typ, offset2) =
 				begin match offset with
@@ -218,7 +217,7 @@ flatten_offset state lhost_typ offset : state * bytes * typ (* type of (lhost,of
 							let state, rv0 = rval state exp in
 							(* TODO: right thing to do?*)
 							let rv =
-								if bytes__length rv0 <> word__size
+								if bytes__length rv0 <> (Cil.bitsSizeOf Cil.intType / 8) 
 								then rval_cast Cil.intType rv0 (Cil.typeOf exp)
 								else rv0
 							in

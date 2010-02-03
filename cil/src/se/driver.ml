@@ -223,7 +223,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 				                  let state, truth = eval_with_cache state (given::state.path_condition) rv in
 				                  if truth == True then lazy_int_to_bytes 1 
 				                  else if truth == False then lazy_int_to_bytes 0
-				                  else bytes__symbolic 4
+				                  else bytes__symbolic (bitsSizeOf intType / 8)
                                   end
                                 in
 								MemOp.state__assign state lval truthvalue
@@ -584,7 +584,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
                                 | Bytes_Constant const ->  p (constant_to_bytes const)
                                 | Bytes_ByteArray ba -> To_string.bytes (Bytes_ByteArray(ImmutableArray.sub ba off size))
                                 | Bytes_Address (block, boff) -> 
-                                    if off = 0 && size = word__size then begin
+                                    if off = 0 && size = (bitsSizeOf voidPtrType / 8) then begin
                                         bosmap := BOSMap.add (block,boff,size) None (!bosmap);
                                         To_string.bytes b
                                     end else

@@ -66,7 +66,7 @@ let string_table__mem block =
 (** Vargs table
  *)
 let vargs_table__add state byteslst : state*bytes =
-	let key = bytes__symbolic 4 in
+	let key = bytes__symbolic (bitsSizeOf (TBuiltin_va_list []) / 8) in
 	let va_arg_map2 = VargsMap.add key byteslst state.va_arg_map in
 		({state with va_arg_map = va_arg_map2;},key)
 ;;

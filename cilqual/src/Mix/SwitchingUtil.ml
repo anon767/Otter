@@ -365,7 +365,7 @@ let qt_to_bytes file expState solution state exp qt =
 
                 (* make an extra block *)
                 let state, extra, target_bytes_list =
-                    let size = (Cil.bitsSizeOf typ) / 8 in
+                    let size = Cil.bitsSizeOf typ / 8 in
                     let extra = Bytes.block__make
                         (Format.fprintf Format.str_formatter "%a" Var.printer pointer; Format.flush_str_formatter ())
                         size
@@ -434,7 +434,7 @@ let qt_to_bytes file expState solution state exp qt =
         in
         (* finally, return a MayBytes pointing to the targets *)
         let target_bytes = match target_bytes_list with
-            | [] -> Bytes.conditional__bytes (Bytes.bytes__symbolic Bytes.word__size) (* uninitialized pointer *)
+            | [] -> Bytes.conditional__bytes (Bytes.bytes__symbolic (Cil.bitsSizeOf Cil.voidPtrType / 8)) (* uninitialized pointer *)
             | _  -> Bytes.conditional__from_list (List.map Bytes.conditional__bytes target_bytes_list)
         in
         (state, Bytes.make_Bytes_Conditional target_bytes)
@@ -450,7 +450,7 @@ let qt_to_bytes file expState solution state exp qt =
 
         | Cil.TComp (compinfo, _) as typ, Base (Var v) when compinfo.Cil.cstruct ->
             (* for structs, initialize and iterate over the fields *)
-            let size = (Cil.bitsSizeOf typ) / 8 in
+            let size = Cil.bitsSizeOf typ / 8 in
             let bytes = Bytes.bytes__symbolic size in
             begin match exp with
                 | Cil.Lval lval ->
@@ -471,7 +471,7 @@ let qt_to_bytes file expState solution state exp qt =
 
         | Cil.TArray (_, len_opt, _) as typ, qt ->
             (* for arrays, initialize each element of the array *)
-            let size = (Cil.bitsSizeOf typ) / 8 in
+            let size = Cil.bitsSizeOf typ / 8 in
             let bytes = Bytes.bytes__symbolic size in
             begin match exp with
                 | Cil.Lval lval ->
@@ -517,11 +517,11 @@ let qt_to_bytes file expState solution state exp qt =
             end in
             make_pointer expState state exp v extra_deferred
 
-        | Cil.TPtr (Cil.TFun _, _), Fn (Var fnptr, _, _) ->
+        | Cil.TPtr (Cil.TFun _, _) as typ, Fn (Var fnptr, _, _) ->
             (* for function pointers, check to see if there exists a null assignment to this pointer *)
             let has_null = Solution.equal_const fnptr "null" solution in
             (* uninitialized pointer, since Otter doesn't yet handle conditional function pointers *)
-            let bytes = Bytes.bytes__symbolic Bytes.word__size in
+            let bytes = Bytes.bytes__symbolic (Cil.bitsSizeOf typ / 8) in
             let bytes = if has_null then
                 let null_bytes = Bytes.bytes__zero in
                 Bytes.make_Bytes_Conditional (Bytes.IfThenElse (
@@ -533,7 +533,7 @@ let qt_to_bytes file expState solution state exp qt =
 
         | typ, Base (Var v) when Cil.isArithmeticType typ ->
             (* arithmetic values are just that *)
-            let size = (Cil.bitsSizeOf typ) / 8 in
+            let size = Cil.bitsSizeOf typ / 8 in
             let bytes = Bytes.bytes__symbolic size in
             (state, bytes)
 
@@ -564,7 +564,7 @@ let qt_to_lval_block file expState solution state v qt =
         (* make an extra block; for the case where the variable is not-aliased *)
         let extra = Bytes.block__make
             (Format.fprintf Format.str_formatter "%s" v.Cil.vname; Format.flush_str_formatter ())
-            ((Cil.bitsSizeOf v.Cil.vtype) / 8)
+            (Cil.bitsSizeOf v.Cil.vtype / 8)
             Bytes.Block_type_Aliased
         in
         let extra_deferred state =
@@ -619,7 +619,7 @@ let qt_to_frame file expState solution state frame =
 *)
 let attempt_deref ?pre state lval_block typ =
     try
-        Some (MemOp.state__deref ?pre state (lval_block, (Cil.bitsSizeOf typ) / 8))
+        Some (MemOp.state__deref ?pre state (lval_block, Cil.bitsSizeOf typ / 8))
     with
         | Cil.SizeOfError ("abstract type", _) ->
             (* ignore abstract types, they can't have values that come from the program (that is visible) *)

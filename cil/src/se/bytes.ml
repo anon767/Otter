@@ -169,8 +169,6 @@ let logicalNot = function
 (* A single global byte representing uninitialized memory *)
 let byte__undef = Byte_Symbolic({symbol_id = 0}) ;;
 
-let word__size = 4
-
 let max_bytes_size = 0xffff
 
 
@@ -180,19 +178,7 @@ let max_bytes_size = 0xffff
  *)
 
 let ikind_to_len_isSigned ikind =
-	let len,isSigned = match ikind with
-			|	IChar	-> 1,true
-			|	ISChar	-> 1,true
-			|	IUChar	-> 1,false
-			|	IInt	-> 4,true
-			|	IUInt	-> 4,false
-			|	IShort	-> 2,true
-			|	IUShort	-> 2,false
-			|	ILong	-> 4,true
-			|	IULong	-> 4,false
-			|	ILongLong	-> 8,true
-			|	IULongLong	-> 8,false
-	in (len,isSigned)
+	(bitsSizeOf (TInt (ikind, [])) / 8, isSigned ikind)
 ;;
 
 
@@ -243,12 +229,8 @@ let string_to_bytes (s : string) : bytes =
 (** Coonvert real numbers to make_Bytes *)
 (* TODO: actually represent the numbers *)
 let float_to_bytes f fkind =
-	let length = match fkind with
-		| FFloat			(*	float	*) -> 1
-		| FDouble			(*	double	*) -> 2
-		| FLongDouble	(*	long double	*) -> 3
-	in
-	make_Bytes_ByteArray (ImmutableArray.make (length * word__size) (make_Byte_Concrete '\000'))
+	let length = bitsSizeOf (TFloat (fkind, [])) / 8 in
+	make_Bytes_ByteArray (ImmutableArray.make length (make_Byte_Concrete '\000'))
 
 (** Convert constant to make_Bytes_ByteArray *)
 let rec constant_to_bytes constant : bytes =
@@ -349,7 +331,7 @@ let rec bytes_to_address bytes : memory_block * bytes =
 	match bytes with
 		| Bytes_Address(block,offset) -> (block,offset)
 		| Bytes_ByteArray(ba) ->
-			if ImmutableArray.length ba <> word__size then fail ()
+			if ImmutableArray.length ba <> (bitsSizeOf voidPtrType / 8) then fail ()
 			else let g = ImmutableArray.get ba in
 			begin match g 0,g 1,g 2,g 3 with
 				| Byte_Bytes(b0,0),Byte_Bytes(b1,1),Byte_Bytes(b2,2),Byte_Bytes(b3,3)
@@ -594,12 +576,12 @@ let rec bytes__length bytes =
 	match bytes with
 		| Bytes_Constant (constant) -> (Cil.bitsSizeOf (Cil.typeOf (Const(constant))))/8
 		| Bytes_ByteArray (bytearray) -> ImmutableArray.length bytearray
-		| Bytes_Address (_,_)-> word__size
+		| Bytes_Address (_,_)-> bitsSizeOf voidPtrType / 8
 		| Bytes_Op (op,(bytes2,typ)::tail) -> bytes__length bytes2
 		| Bytes_Op (op,[]) -> 0 (* reachable from diff_bytes *)
 		| Bytes_Write(bytes2,_,_,_) -> bytes__length bytes2
 		| Bytes_Read(_,_,len) -> len
-		| Bytes_FunPtr(_) -> word__size
+		| Bytes_FunPtr(_) -> bitsSizeOf voidPtrType / 8
 		| Bytes_Unbounded (_,_,size) ->
 			if isConcrete_bytes bytes then bytes_to_int_auto size
 			else  max_bytes_size
@@ -742,7 +724,7 @@ let block__make name n t =
 		memory_block_name = name;
 		memory_block_id = Utility.next_id block__current_id;
 		memory_block_size = n;
-		memory_block_addr = bytes__random word__size;
+		memory_block_addr = bytes__random (bitsSizeOf voidPtrType / 8);
 		memory_block_type = t;
 	}
 ;;
