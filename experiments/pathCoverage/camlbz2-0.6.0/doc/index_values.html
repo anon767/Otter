@@ -1,0 +1,75 @@
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Bz2" rel="Chapter" href="Bz2.html"><title>Index of values</title>
+</head>
+<body>
+<center><h1>Index of values</h1></center>
+<table>
+<tr><td align="left"><br>C</td></tr>
+<tr><td><a href="Bz2.html#VALclose_in">close_in</a> [<a href="Bz2.html">Bz2</a>]</td>
+<td></td></tr>
+<tr><td><a href="Bz2.html#VALclose_out">close_out</a> [<a href="Bz2.html">Bz2</a>]</td>
+<td></td></tr>
+<tr><td><a href="Bz2.html#VALcompress">compress</a> [<a href="Bz2.html">Bz2</a>]</td>
+<td><div class="info">
+<code class="code">compress buf pos len</code> compress a data chunk coming from <code class="code">buf</code>,
+    <code class="code">len</code> character long, and starting at <code class="code">pos</code>.
+</div>
+</td></tr>
+<tr><td align="left"><br>O</td></tr>
+<tr><td><a href="Bz2.html#VALopen_in">open_in</a> [<a href="Bz2.html">Bz2</a>]</td>
+<td><div class="info">
+<code class="code">open_in ic</code> opens a compressed stream reading from the
+    <code class="code">Pervasives</code> input channel <code class="code">ic</code>.
+</div>
+</td></tr>
+<tr><td><a href="Bz2.html#VALopen_out">open_out</a> [<a href="Bz2.html">Bz2</a>]</td>
+<td><div class="info">
+<code class="code">open_out oc</code> creates an <code class="code">out_channel</code> writing to the <code class="code">Pervasives</code>
+    output channel <code class="code">oc</code>.
+</div>
+</td></tr>
+<tr><td align="left"><br>R</td></tr>
+<tr><td><a href="Bz2.html#VALread">read</a> [<a href="Bz2.html">Bz2</a>]</td>
+<td><div class="info">
+<code class="code">read buf pos len</code> reads up to <code class="code">len</code> characters and store them in
+    the string buffer <code class="code">buf</code>, starting at position <code class="code">pos</code>.
+</div>
+</td></tr>
+<tr><td><a href="Bz2.html#VALread_get_unused">read_get_unused</a> [<a href="Bz2.html">Bz2</a>]</td>
+<td><div class="info">
+If there's some data after the compressed stream that you want to
+    read from the same <code class="code">Pervasives</code> <code class="code">in_channel</code>, use
+    <code class="code">read_get_unused</code>.
+</div>
+</td></tr>
+<tr><td align="left"><br>U</td></tr>
+<tr><td><a href="Bz2.html#VALuncompress">uncompress</a> [<a href="Bz2.html">Bz2</a>]</td>
+<td><div class="info">
+<code class="code">uncompress buf pos len</code> uncompress a data chunk comfing from
+    <code class="code">buf</code>, <code class="code">len</code> character long, and starting at <code class="code">pos</code>.
+</div>
+</td></tr>
+<tr><td align="left"><br>V</td></tr>
+<tr><td><a href="Bz2.html#VALversion">version</a> [<a href="Bz2.html">Bz2</a>]</td>
+<td><div class="info">
+Version of the underlying <code class="code">bzip2</code> library.
+</div>
+</td></tr>
+<tr><td align="left"><br>W</td></tr>
+<tr><td><a href="Bz2.html#VALwrite">write</a> [<a href="Bz2.html">Bz2</a>]</td>
+<td><div class="info">
+<code class="code">write oc buf pos len</code> writes <code class="code">len</code> characters, coming from <code class="code">buf</code>
+    and starting at position <code class="code">pos</code>, to <code class="code">oc</code>
+</div>
+</td></tr>
+</table><br>
+</body>
+</html>

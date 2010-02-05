@@ -1,8 +1,9 @@
 DATADIR=/fs/skoll/symexe/data
-time for i in $DATADIR/ICSE_Backup/ngircd/normal/marshal/*l ; do
+
+OUTDIR=$DATADIR/pathCoverage/ngircd
+mkdir $OUTDIR
+
+time for i in $DATADIR/ngircd/normal/marshal/*.marshal ; do
 	j=${i##*/}
-	# ngircd_08 wasn't used in our final data set, so skip it
-	if [[ $j != ngircd_08.marshal ]]; then
-		{ time $DATADIR/Python-2.6.2/python -u pathCov.py $i $DATADIR/ICSE_Backup/ngircd/normal/ngircdPossibleValues ; } &> ngircd/${j%.marshal}.deps
-	fi
+	{ time ./guaranteedPathCoverage $i --fileWithPossibleValues $DATADIR/ICSE_Backup/ngircd/normal/ngircdPossibleValues ; } &> $OUTDIR/${j%.marshal}.deps
 done

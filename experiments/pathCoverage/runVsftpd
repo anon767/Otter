@@ -1,5 +1,9 @@
 DATADIR=/fs/skoll/symexe/data
-time for i in $DATADIR/ICSE_Backup/vsftpd/line/marshalledData/* ; do
+
+OUTDIR=$DATADIR/pathCoverage/vsftpd
+mkdir $OUTDIR
+
+time for i in $DATADIR/vsftpd-2.0.7/path/marshalledData/* ; do
 	j=${i##*/}
-	{ time $DATADIR/Python-2.6.2/python -u pathCov.py $i $DATADIR/ICSE_Backup/vsftpd/vsftpdPossibleValues ; } &> vsftpd/${j%.data}.deps
+	{ time ./guaranteedPathCoverage $i --fileWithPossibleValues $DATADIR/ICSE_Backup/vsftpd/vsftpdPossibleValues ; } &> $OUTDIR/${j%.data}.deps
 done

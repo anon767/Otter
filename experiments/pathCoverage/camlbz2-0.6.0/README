@@ -1,0 +1,42 @@
+
+CamlBZ2
+=======
+
+This is CamlBZ2, OCaml bindings for the libbz2 (AKA, bzip2)
+(de)compression library.
+
+DOWNLOAD
+--------
+
+You can download the latest version of CamlBZ2 from the OCaml forge
+(http://forge.ocamlcore.org), where CamlBZ2 is hosted. Have a look at
+the CamlBZ2 homepage for more info:
+
+  http://camlbz2.forge.ocamlcore.org
+
+or jump directly to the download section:
+http://forge.ocamlcore.org/frs/?group_id=63
+
+LICENSING
+---------
+
+GNU LGPL, version 2.1 or above, with the usual OCaml linking exception
+(see COPYING).
+
+The file io.h comes from the OCaml compiler source tree, hence it is
+GPL, with the same linking exception as above.
+
+AUTHORS
+-------
+
+This library descends from "gz", a library which used to ship both
+gzip and bzip2 bindings. The authors of "gz" where:
+
+- Olivier Andrieu    <oandrieu@gmail.com>
+- Nicolas George     <nicolas.george@ens.fr>
+
+CamlBZ2 is now copyright and maintained by:
+
+- Stefano Zacchiroli <zack@upsilon.cc>
+- Olivier Andrieu    <oandrieu@gmail.com>
+

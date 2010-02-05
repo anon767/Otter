@@ -1,0 +1,3 @@
+version           = "x.y.z"
+archive(byte)     = "bz2.cma"
+archive(native)   = "bz2.cmxa"

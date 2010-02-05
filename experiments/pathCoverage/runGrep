@@ -1,5 +1,9 @@
 DATADIR=/fs/skoll/symexe/data
-time for i in $DATADIR/ICSE_Backup/grep/data/marshalledData/lineCov/* ; do
+
+OUTDIR=$DATADIR/pathCoverage/grep
+mkdir $OUTDIR
+
+time for i in $DATADIR/grep/marshalledData/pathCov/* ; do
 	j=${i##*/}
-	{ time $DATADIR/fs/skoll/symexe/data/Python-2.6.2/python -u pathCov.py $i $DATADIR/ICSE_Backup/grep/grepPossibleValues ; } &> grep/${j%.data}.deps
+	{ time ./guaranteedPathCoverage $i --fileWithPossibleValues $DATADIR/ICSE_Backup/grep/grepPossibleValues ; } &> $OUTDIR/${j%.data}.deps
 done
