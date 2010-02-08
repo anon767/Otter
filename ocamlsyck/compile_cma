@@ -1,0 +1,8 @@
+cd yaml
+OCAMLPATH=.. ocamlfind ocamldep yamlNode.ml yamlParser.ml yamlNode.mli yamlParser.mli | sed -e 's|./||g' > .depend
+OCAMLPATH=.. ocamlfind ocamlc -ccopt -Wp,$CPPFLAGS -ccopt -g -ccopt -O2 -c parser.c
+OCAMLPATH=.. ocamlfind ocamlc -o yamlNode.cmi -c ./yamlNode.mli
+OCAMLPATH=.. ocamlfind ocamlc -o yamlNode.cmo -c ./yamlNode.ml
+OCAMLPATH=.. ocamlfind ocamlc -o yamlParser.cmi -c ./yamlParser.mli
+OCAMLPATH=.. ocamlfind ocamlc -o yamlParser.cmo -c ./yamlParser.ml
+ocamlmklib -o yaml parser.o yamlNode.cmo yamlParser.cmo $LDFLAGS -lsyck

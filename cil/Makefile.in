@@ -115,7 +115,7 @@ CILLY_LIBRARY_MODULES = pretty inthash errormsg alpha trace stats util clist \
 # main's argument checking and whatnot ...
 CILLY_MODULES = $(CILLY_LIBRARY_MODULES) main
 CILLY_CMODULES = perfcount
-CILLY_LIBS     = unix str stpvc
+CILLY_LIBS     = unix str stpvc yaml
 
 SOURCEDIRS  += src src/frontc src/ext src/ext/pta ocamlutil @EXTRASRCDIRS@ src/se
 MLLS        += clexer.mll formatlex.mll

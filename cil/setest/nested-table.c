@@ -12,5 +12,6 @@ void main(){
 	for(k=0;k<MAX;++k)
 		f[k]=k;
 
-	__ASSERT(f[f[f[f[i]]]] >=0);
+	__ASSERT(f[(i+(-1))*4+0]==0);
+	//__ASSERT(f[f[f[f[i]]]] >=0);
 }

@@ -1,6 +1,6 @@
 
-SUBDIRS=cilqual cil ocamlstp stp camlidl
-EXTRALIBDIRS = $(addprefix $(CURDIR)/,camlidl/runtime stp/lib ocamlstp)
+SUBDIRS=cilqual cil ocamlstp stp camlidl syck ocamlsyck
+EXTRALIBDIRS = $(addprefix $(CURDIR)/,camlidl/runtime stp/lib ocamlstp ocamlsyck/yaml)
 
 
 all : cil
@@ -11,7 +11,7 @@ cil : MAKEGOALS=
 test-cil : make//cil
 test-cil : MAKEGOALS=ounit
 make//cil : CONFIGURE_FLAGS=EXTRALIBDIRS='$(EXTRALIBDIRS)' CC='gcc -m32'
-make//cil : ocamlstp
+make//cil : ocamlstp ocamlsyck
 
 
 cilqual : make//cilqual
@@ -32,6 +32,20 @@ make//ocamlstp : stp camlidl
 stp : make//stp
 make//stp : MAKEGOALS=
 make//stp : CONFIGURE_FLAGS=--with-prefix=.
+
+
+ocamlsyck : SYCKLIB=$(CURDIR)/syck/lib
+ocamlsyck : CONFIGURE_FLAGS=LDFLAGS=-L$(SYCKLIB) CPPFLAGS=-I$(SYCKLIB)
+ocamlsyck : make//ocamlsyck
+	cd ocamlsyck && $(CONFIGURE_FLAGS) ./compile_cma
+make//ocamlsyck : MAKEGOALS=
+make//ocamlsyck : SYCKLIB=$(CURDIR)/syck/lib
+make//ocamlsyck : CONFIGURE_FLAGS=LDFLAGS=-L$(SYCKLIB) CPPFLAGS=-I$(SYCKLIB)
+make//ocamlsyck : syck 
+
+
+syck : make//syck
+make//syck : MAKEGOALS=all check
 
 
 camlidl : make//camlidl
