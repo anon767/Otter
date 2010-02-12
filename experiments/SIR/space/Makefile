@@ -2,8 +2,8 @@ all:
 	echo "(No default)"
 
 # SOURCE and EXECUTABLE
-PROG_SRC=print_tokens_original.c
-PROG_EXE=print_tokens.exe
+PROG_SRC=space.c
+PROG_EXE=space.exe
 
 #
 # DAIKON TEST
@@ -20,7 +20,7 @@ DAIKON_INVFILE=$(PROG_EXE).inv.gz
 KVASIR_DTRACE=DAIKONDIR=$(DAIKON_DIR) $(DAIKON_DIR)/bin/kvasir-dtrace 
 
 $(PROG_EXE): $(PROG_SRC)
-	gcc -gdwarf-2 -O0 $(PROG_SRC) -o $(PROG_EXE)
+	gcc -gdwarf-2 -O0 -lm $(PROG_SRC) -o $(PROG_EXE)
 
 run_kvasir_dump_ppt_file: $(PROG_EXE)
 	if [ ! -f $(DAIKON_PPT_LIST_FILE) ]; then \
@@ -34,7 +34,7 @@ run_kvasir_dump_var_file: $(PROG_EXE)
 
 run_kvasir: $(PROG_EXE) run_kvasir_dump_ppt_file run_kvasir_dump_var_file
 	mkdir -p $(KVASIR_OUTPUT)
-	for f in `ls inputs/*`; \
+	for f in `ls inputs/*.adl`; \
 		do \
 			echo $$f ; \
 			if [ -f $(KVASIR_OUTPUT)/`basename $$f`.dtrace ]; then \
@@ -46,7 +46,7 @@ run_kvasir: $(PROG_EXE) run_kvasir_dump_ppt_file run_kvasir_dump_var_file
 				--var-list-file=$(DAIKON_VAR_LIST_FILE) \
 				--dtrace-file=$(KVASIR_OUTPUT)/`basename $$f`.dtrace \
 				--decls-file=$(KVASIR_OUTPUT)/`basename $$f`.decls \
-				./$(PROG_EXE) $$f ; \
+				./$(PROG_EXE) inputs/`basename $$f .adl` ; \
 			fi \
 		done
 

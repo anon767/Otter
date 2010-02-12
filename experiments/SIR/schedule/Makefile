@@ -2,8 +2,8 @@ all:
 	echo "(No default)"
 
 # SOURCE and EXECUTABLE
-PROG_SRC=print_tokens_original.c
-PROG_EXE=print_tokens.exe
+PROG_SRC=schedule.c
+PROG_EXE=schedule.exe
 
 #
 # DAIKON TEST
@@ -34,19 +34,25 @@ run_kvasir_dump_var_file: $(PROG_EXE)
 
 run_kvasir: $(PROG_EXE) run_kvasir_dump_ppt_file run_kvasir_dump_var_file
 	mkdir -p $(KVASIR_OUTPUT)
-	for f in `ls inputs/*`; \
+	for f in `find inputs`; \
 		do \
 			echo $$f ; \
-			if [ -f $(KVASIR_OUTPUT)/`basename $$f`.dtrace ]; then \
+			if [ -f $(KVASIR_OUTPUT)/$$f.dtrace ]; then \
 				echo "(skipped)" ; \
+			elif [ -d $$f ]; then \
+				echo "(dir)" ;\
 			else \
+			mkdir -p `dirname $(KVASIR_OUTPUT)/$$f.dtrace`; \
 			$(KVASIR_DTRACE) \
 				--with-dyncomp \
 				--ppt-list-file=$(DAIKON_PPT_LIST_FILE) \
 				--var-list-file=$(DAIKON_VAR_LIST_FILE) \
-				--dtrace-file=$(KVASIR_OUTPUT)/`basename $$f`.dtrace \
-				--decls-file=$(KVASIR_OUTPUT)/`basename $$f`.decls \
-				./$(PROG_EXE) $$f ; \
+				--dtrace-file=$(KVASIR_OUTPUT)/$$f.dtrace \
+				--decls-file=$(KVASIR_OUTPUT)/$$f.decls \
+				--nesting-depth=30 \
+				--struct-depth=30 \
+				--output-struct-vars \
+				./$(PROG_EXE) `cat argv-$$f` < $$f ; \
 			fi \
 		done
 
@@ -54,7 +60,7 @@ run_kvasir: $(PROG_EXE) run_kvasir_dump_ppt_file run_kvasir_dump_var_file
 run_daikon: 
 	java -classpath $(DAIKON_CLASSPATH) daikon.Daikon \
 		-o $(DAIKON_INVFILE) \
-		$(KVASIR_OUTPUT)/* > $(DAIKON_OUTPUT) 2>&1
+		`find $(KVASIR_OUTPUT) -name "*.dtrace"` `find $(KVASIR_OUTPUT) -name "*.decls"` > $(DAIKON_OUTPUT) 2>&1
 
 		#--format YAML \
 
