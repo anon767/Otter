@@ -45,7 +45,8 @@ make//ocamlsyck : syck
 
 
 syck : make//syck
-make//syck : MAKEGOALS=all check
+make//syck : MAKEGOALS=
+#make//syck : MAKEGOALS=all check
 
 
 camlidl : make//camlidl
