@@ -24,10 +24,6 @@
 
 #include <unistd.h>
 
-#ifdef EXT_HASH_MAP
-  using namespace __gnu_cxx;
-#endif
-
 /* GLOBAL FUNCTION: parser
  */
 extern int yyparse();

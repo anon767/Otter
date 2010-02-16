@@ -1044,9 +1044,6 @@ namespace BEEV {
     if (bm) {
       bm->_symbol_unique_table.erase(this);
     }
-    //FIXME This is a HUGE free to invoke.
-    //TEST IT!
-    free((char*) this->_name);
     delete this;
   }
   

@@ -10,13 +10,8 @@
 #ifndef AST_H
 #define AST_H
 #include <vector>
-#ifdef EXT_HASH_MAP
-#include <ext/hash_set>
-#include <ext/hash_map>
-#else
-#include <hash_set>
-#include <hash_map>
-#endif
+#include <tr1/unordered_set>
+#include <tr1/unordered_map>
 #include <tr1/memory>
 #include <iostream>
 #include <sstream>
@@ -45,9 +40,6 @@ namespace BEEV {
   using namespace std; 
   using namespace MINISAT;
   using namespace std::tr1;
-#ifdef EXT_HASH_MAP
-  using namespace __gnu_cxx;
-#endif
 
   //return types for the GetType() function in ASTNode class
   enum types {
@@ -518,12 +510,12 @@ namespace BEEV {
 
   private:
     // The name of the symbol
-    const char * const _name;
+    const string _name;
     
     class ASTSymbolHasher{
     public:
       size_t operator() (const ASTSymbol *sym_ptr) const{ 
-	hash<char*> h; 
+	hash<string> h;
 	return h(sym_ptr->_name); 
       };
     };
@@ -537,10 +529,10 @@ namespace BEEV {
     };
 
     friend bool operator==(const ASTSymbol &sym1, const ASTSymbol &sym2){
-      return (strcmp(sym1._name, sym2._name) == 0);
+      return (sym1._name.compare(sym2._name) == 0);
     }
 
-    const char * const GetName() const{return _name;}  
+    const char * const GetName() const{return _name.c_str();}
 
     // Print function for symbol -- return name */
     virtual void nodeprint(ostream& os) { os << _name;}
@@ -552,7 +544,7 @@ namespace BEEV {
     public:
 
     // Default constructor
-    ASTSymbol(weak_ptr<BeevMgr> bm) : ASTInternal(bm), _name(NULL) { }
+    ASTSymbol(weak_ptr<BeevMgr> bm) : ASTInternal(bm), _name() { }
 
     // Constructor.  This does NOT copy its argument.
     ASTSymbol(const char * const name, weak_ptr<BeevMgr> bm) : ASTInternal(SYMBOL, bm), 
@@ -857,7 +849,7 @@ namespace BEEV {
    **************************************************************************/
   // These are generally useful for storing ASTNodes or attributes thereof
   // Hash table from ASTNodes to ASTNodes
-  typedef hash_map<ASTNode, ASTNode, 
+  typedef unordered_map<ASTNode, ASTNode,
 		   ASTNode::ASTNodeHasher, 
 		   ASTNode::ASTNodeEqual> ASTNodeMap;
 
@@ -868,11 +860,11 @@ namespace BEEV {
    Typedef ASTNodeSet:  This is a hash set of ASTNodes.  Very useful
    for representing things like "visited nodes"
   ***************************************************************************/
-  typedef hash_set<ASTNode, 
+  typedef unordered_set<ASTNode,
 		   ASTNode::ASTNodeHasher, 
 		   ASTNode::ASTNodeEqual> ASTNodeSet;
 
-  typedef hash_multiset<ASTNode, 
+  typedef unordered_multiset<ASTNode,
 			ASTNode::ASTNodeHasher, 
 			ASTNode::ASTNodeEqual> ASTNodeMultiSet;
 
@@ -1098,12 +1090,12 @@ namespace BEEV {
     shared_ptr<BeevMgr> _self;
 
     // Typedef for unique Interior node table. 
-    typedef hash_set<ASTInterior *, 
+    typedef unordered_set<ASTInterior *,
 		     ASTInterior::ASTInteriorHasher, 
 		     ASTInterior::ASTInteriorEqual> ASTInteriorSet;
 
     // Typedef for unique Symbol node (leaf) table.
-    typedef hash_set<ASTSymbol *, 
+    typedef unordered_set<ASTSymbol *,
 		     ASTSymbol::ASTSymbolHasher, 
 		     ASTSymbol::ASTSymbolEqual> ASTSymbolSet;
 
@@ -1114,7 +1106,7 @@ namespace BEEV {
     ASTSymbolSet _symbol_unique_table;
     
     //Typedef for unique BVConst node (leaf) table.
-    typedef hash_set<ASTBVConst *, 
+    typedef unordered_set<ASTBVConst *,
 		     ASTBVConst::ASTBVConstHasher,
 		     ASTBVConst::ASTBVConstEqual> ASTBVConstSet;
 
@@ -1122,11 +1114,11 @@ namespace BEEV {
     ASTBVConstSet _bvconst_unique_table;
 
     // type of memo table.
-    typedef hash_map<ASTNode, ASTVec,
+    typedef unordered_map<ASTNode, ASTVec,
 		     ASTNode::ASTNodeHasher, 
 		     ASTNode::ASTNodeEqual> ASTNodeToVecMap;
 
-    typedef hash_map<ASTNode,ASTNodeSet,
+    typedef unordered_map<ASTNode,ASTNodeSet,
 		     ASTNode::ASTNodeHasher,
 		     ASTNode::ASTNodeEqual> ASTNodeToSetMap;
     
@@ -1481,7 +1473,7 @@ namespace BEEV {
      * variable in ASTClause a new MINISAT::Var is created (these vars
      * typedefs for ints)
      */
-    typedef hash_map<ASTNode, MINISAT::Var, 
+    typedef unordered_map<ASTNode, MINISAT::Var,
 		     ASTNode::ASTNodeHasher, 
 		     ASTNode::ASTNodeEqual> ASTtoSATMap;        
     ASTtoSATMap _ASTNode_to_SATVar;
@@ -1611,8 +1603,8 @@ namespace BEEV {
      * BVGETBIT Node), and this maps allows us to assemble the bits
      * into bitvectors.
      */    
-    typedef shared_ptr<hash_map<unsigned int, bool> > BoolVecPtr;
-    typedef hash_map<ASTNode, BoolVecPtr, 
+    typedef shared_ptr<unordered_map<unsigned int, bool> > BoolVecPtr;
+    typedef unordered_map<ASTNode, BoolVecPtr,
 		     ASTNode::ASTNodeHasher, 
 		     ASTNode::ASTNodeEqual> ASTtoBitvectorMap;        
     ASTtoBitvectorMap _ASTNode_to_Bitvector;

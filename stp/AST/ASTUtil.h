@@ -12,19 +12,12 @@
 
 #include <iostream>
 #include <vector>
-#ifdef EXT_HASH_MAP
-#include <ext/hash_set>
-#include <ext/hash_map>
-#else
-#include <hash_set>
-#include <hash_map>
-#endif
+#include <tr1/unordered_set>
+#include <tr1/unordered_map>
 
-using namespace std; 
+using namespace std;
+using namespace std::tr1;
 namespace BEEV {
-#ifdef EXT_HASH_MAP
-  using namespace __gnu_cxx;
-#endif
   //some global variables that are set through commandline options. it
   //is best that these variables remain global. Default values set
   //here
@@ -95,8 +88,8 @@ namespace BEEV {
   };
 
   // Table for storing function count stats.
-  typedef hash_map<const char*,int, 
-		   hash<char *>,eqstr> function_counters;
+  typedef unordered_map<const char*,int,
+		   hash<const char *>,eqstr> function_counters;
 
   void CountersAndStats(const char * functionname);
 

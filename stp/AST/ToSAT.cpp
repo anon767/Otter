@@ -10,6 +10,7 @@
 #include "ASTUtil.h"
 #include "../simplifier/bvsolver.h"
 #include <math.h>
+#include <list>
 
 
 namespace BEEV {
@@ -307,7 +308,7 @@ namespace BEEV {
 	  //'v' is the map from bit-index to bit-value
 	  BoolVecPtr v;	
 	  if(_ASTNode_to_Bitvector.find(symbol) == _ASTNode_to_Bitvector.end())
-	    _ASTNode_to_Bitvector[symbol] = BoolVecPtr(new hash_map<unsigned,bool>(symbolWidth));	
+	    _ASTNode_to_Bitvector[symbol] = BoolVecPtr(new unordered_map<unsigned,bool>(symbolWidth));
 	  
 	  //v holds the map from bit-index to bit-value
 	  v = _ASTNode_to_Bitvector[symbol];
@@ -834,9 +835,28 @@ namespace BEEV {
     }
 
     //os << "\nCOUNTEREXAMPLE: \n" << endl;
-    ASTNodeMap::iterator it  = CounterExampleMap.begin();
-    ASTNodeMap::iterator itend = CounterExampleMap.end();
-    for(;it!=itend;it++) {
+
+    // first, copy nodes to print into a list, to avoid problems with pointer invalidation
+    // that may occur because TermToConstTermUsingModel modifies CounterExampleMap
+    std::list<ASTNodeMap::value_type> nodelist;
+    for (ASTNodeMap::iterator it = CounterExampleMap.begin();
+         it != CounterExampleMap.end();
+         it++)
+      {
+        ASTNode f = it->first;
+        //skip over introduced variables
+        if ((f.GetKind() == SYMBOL && (_introduced_symbols.find(f) == _introduced_symbols.end())) ||
+            (f.GetKind() == READ      &&
+             f[0].GetKind() == SYMBOL &&
+             f[1].GetKind() == BVCONST))
+          {
+            nodelist.push_back(*it);
+          }
+      }
+
+    for (std::list<ASTNodeMap::value_type>::iterator it = nodelist.begin();
+         it != nodelist.end();
+         it++) {
       ASTNode f = it->first;
       ASTNode se = it->second;
       
@@ -844,11 +864,6 @@ namespace BEEV {
 	FatalError("TermToConstTermUsingModel: entry in counterexample is an arraytype. bogus:",se);
       }
 
-      //skip over introduced variables
-      if(f.GetKind() == SYMBOL && (_introduced_symbols.find(f) != _introduced_symbols.end())) 
-	continue;
-      if(f.GetKind() == SYMBOL || 
-	 (f.GetKind() == READ && f[0].GetKind() == SYMBOL && f[1].GetKind() == BVCONST)) {
 	os << "ASSERT( ";
 	f.PL_Print(os,0);
 	os << " = ";	
@@ -859,7 +874,6 @@ namespace BEEV {
 	  se.PL_Print(os,0);
 	}
 	os << " );" << endl;
-      }
     }	      
     //os << "\nEND OF COUNTEREXAMPLE" << endl;
   } //End of PrintCounterExample
