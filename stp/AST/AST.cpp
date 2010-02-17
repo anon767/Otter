@@ -97,9 +97,9 @@ namespace BEEV {
   // change.
   
   ASTInterior *BeevMgr::LookupOrCreateInterior(ASTInterior *n_ptr) {
-    ASTInteriorSet::iterator it;
+    ASTInteriorSet::iterator it = _interior_unique_table.find(n_ptr);
     
-    if ((it = _interior_unique_table.find(n_ptr)) == _interior_unique_table.end()) {
+    if (it == _interior_unique_table.end()) {
       // Make a new ASTInterior node
       // We want (NOT alpha) always to have alpha.nodenum + 1.
       if (n_ptr->GetKind() == NOT) {
@@ -856,8 +856,8 @@ namespace BEEV {
     ASTBVConst *s_ptr = &s;  // it's a temporary key.
     
     // Do an explicit lookup to see if we need to create a copy of the string.    
-    ASTBVConstSet::const_iterator it;
-    if ((it = _bvconst_unique_table.find(s_ptr)) == _bvconst_unique_table.end()) {
+    ASTBVConstSet::const_iterator it = _bvconst_unique_table.find(s_ptr);
+    if (it == _bvconst_unique_table.end()) {
       // Make a new ASTBVConst with duplicated string (can't assign
       // _name because it's const).  Can cast the iterator to
       // non-const -- carefully.
@@ -1011,8 +1011,8 @@ namespace BEEV {
     ASTSymbol *s_ptr = &s;  // it's a temporary key.
     
     // Do an explicit lookup to see if we need to create a copy of the string.    
-    ASTSymbolSet::const_iterator it;
-    if ((it = _symbol_unique_table.find(s_ptr)) == _symbol_unique_table.end()) {
+    ASTSymbolSet::const_iterator it = _symbol_unique_table.find(s_ptr);
+    if (it == _symbol_unique_table.end()) {
       // Make a new ASTSymbol with duplicated string (can't assign
       // _name because it's const).  Can cast the iterator to
       // non-const -- carefully.
@@ -1390,8 +1390,8 @@ namespace BEEV {
     if(clearStatInfo)
       StatInfoSet.clear();
 
-    ASTNodeSet::iterator it;
-    if((it = StatInfoSet.find(a)) != StatInfoSet.end())
+    ASTNodeSet::iterator it = StatInfoSet.find(a);
+    if(it != StatInfoSet.end())
       //has already been counted
       return 0;
 
