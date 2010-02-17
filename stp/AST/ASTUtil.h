@@ -12,8 +12,18 @@
 
 #include <iostream>
 #include <vector>
-#include <tr1/unordered_set>
-#include <tr1/unordered_map>
+#ifdef __APPLE_CC__
+  #if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ > 1060
+    #include <ext/hash_map>
+    #define unordered_map hash_map
+    using namespace __gnu_cxx;
+    // also need std::tr1::hash<string>, and avoid conflict with __gnu_cxx::hash
+    #include <tr1/functional>
+    #define hash std::tr1::hash
+  #endif
+#else
+  #include <tr1/unordered_map>
+#endif
 #include <cstring>
 
 using namespace std;
