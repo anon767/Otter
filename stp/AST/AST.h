@@ -13,6 +13,7 @@
 #include <tr1/unordered_set>
 #include <tr1/unordered_map>
 #include <tr1/memory>
+#include <algorithm>
 #include <iostream>
 #include <sstream>
 #include <string>

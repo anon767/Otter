@@ -14,6 +14,7 @@
 #include <vector>
 #include <tr1/unordered_set>
 #include <tr1/unordered_map>
+#include <cstring>
 
 using namespace std;
 using namespace std::tr1;
