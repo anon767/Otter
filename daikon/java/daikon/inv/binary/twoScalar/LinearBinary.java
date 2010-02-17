@@ -99,9 +99,6 @@ public class LinearBinary
   }
 
   public String format_using(OutputFormat format) {
-    if (format == OutputFormat.YAML) {
-      return format_unimplemented(format);
-    }
     return core.format_using(format, var1().name_using(format),
                              var2().name_using(format));
   }

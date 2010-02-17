@@ -960,8 +960,6 @@ public final class PrintInvariants {
           return;
         }
       }
-    } else if (Daikon.output_format == OutputFormat.YAML) {
-      inv_rep = inv.format_using(Daikon.output_format);
 
     } else {
       throw new IllegalStateException("Unknown output mode");

@@ -2763,17 +2763,8 @@ public final /*@Interned*/ class VarInfo implements Cloneable, Serializable {
     if (format == OutputFormat.JAVA) return java_name();
     if (format == OutputFormat.JML) return jml_name();
     if (format == OutputFormat.DBCJAVA) return dbc_name();
-    if (format == OutputFormat.YAML) return yaml_name();
     throw new UnsupportedOperationException
       ("Unknown format requested: " + format);
-  }
-
-  /** Returns the name in yaml format.  This is the same as JML (for now) **/
-  public String yaml_name() {
-    if (!FileIO.new_decl_format)
-      return var_info_name.java_name (this); // vin ok
-
-    return jml_name();
   }
 
   /** Returns the name in java format.  This is the same as JML **/

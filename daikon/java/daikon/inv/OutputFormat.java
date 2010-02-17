@@ -23,9 +23,7 @@ public enum OutputFormat {
   /** Java Modeling Language */
   JML("JML"),
   /** Simplify theorem prover */
-  SIMPLIFY("Simplify"),
-  /** YAML */
-  YAML("YAML");
+  SIMPLIFY("Simplify");
 
   String name;
 
@@ -53,7 +51,6 @@ public enum OutputFormat {
     if (name.compareToIgnoreCase(JAVA.name) == 0) { return JAVA; }
     if (name.compareToIgnoreCase(JML.name) == 0) { return JML; }
     if (name.compareToIgnoreCase(SIMPLIFY.name) == 0) { return SIMPLIFY; }
-    if (name.compareToIgnoreCase(YAML.name) == 0) { return YAML; }
     // return null;
     throw new Error("Unknown OutputFormat " + name);
   }

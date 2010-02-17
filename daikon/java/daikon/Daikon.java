@@ -56,6 +56,8 @@ import daikon.suppress.NIS;
 import daikon.suppress.NIS.SuppressionProcessor;
 import daikon.util.Pair;
 
+import org.ho.yaml.Yaml;
+import java.util.LinkedList;
 
 /**
  * The "main" method is the main entry point for the Daikon invariant detector.
@@ -724,11 +726,89 @@ public final class Daikon {
       }
     }
 
+    // Martin: Export PptMap in YAML format
+    YamlPrinter.printInvariants(all_ppts);
+
     // Done
     if (!Daikon.dkconfig_quiet) {
       System.out.println("Exiting Daikon.");
     }
   }
+
+  /**
+   * Export PptMap in YAML format
+   *
+   * @author  Martin
+   */
+  public static class YamlPrinter{
+
+    public static String convertVarInfo(VarInfo varinfo){
+      return varinfo.old_var_name();
+    }
+
+    public static List convertVarInfos(VarInfo[] varinfos){
+      List list = new LinkedList();
+      for(int i=0;i<varinfos.length;i++)
+        list.add(convertVarInfo(varinfos[i]));
+      return list;
+    }
+
+    public static Map makeInvariant(
+        String name,
+        List vars,
+        List pars,
+        String print
+      ){
+      Map inv = new LinkedHashMap();
+      inv.put("InvType",name);
+      inv.put("InvVars",vars);
+      inv.put("InvPars",pars);
+      inv.put("InvPrint",print);
+      return inv;
+    }
+
+    public static Map convertInvariant(Invariant inv){
+
+      if(!inv.isWorthPrinting()) return null; // Better filter?
+
+      return makeInvariant(
+          inv.getClass().getName(),
+          convertVarInfos(inv.ppt.var_infos),
+          new LinkedList(),
+          inv.format()
+        );
+    }
+
+    public static List convertPptTopLevel(PptTopLevel ppt){
+      List list = new LinkedList();
+      for (Iterator<Invariant> itor = ppt.getInvariants().iterator(); itor.hasNext();){
+        Invariant inv = itor.next();
+        Map map = convertInvariant(inv);
+        if(map!=null) list.add(map);
+      }
+      return list;
+    }
+
+    public static Map convertPptMap(PptMap pptmap){
+      Map map = new LinkedHashMap();
+      for (Iterator<PptTopLevel> itor = all_ppts.ppt_all_iterator(); itor.hasNext();){
+          PptTopLevel ppt = itor.next();
+          if (ppt.is_enter())
+            map.put(ppt.toString(),convertPptTopLevel(ppt));
+      }
+      return map;
+    }
+    
+    public static void printInvariants(PptMap all_ppts){
+      Map map = convertPptMap(all_ppts);
+      try{
+        Yaml.dump(map, new File("pptmap.yml"),true);
+      }catch(java.io.FileNotFoundException e){}
+    }
+
+  }
+
+
 
   @SuppressWarnings("nullness") // use with care!
   private static void nullOutMaps() {

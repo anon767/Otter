@@ -772,11 +772,6 @@ public abstract class Invariant
    * requested format.  Made public so cores can call it.
    **/
   public String format_unimplemented(OutputFormat request) /*@NonPrototype*/ {
-    // YAML temp code
-    if(request == OutputFormat.YAML){
-      return "";
-    }
-    // end YAML temp code
     String classname = this.getClass().getName();
     return "warning: method " + classname + ".format(" + request + ")"
       + " needs to be implemented: " + format();
