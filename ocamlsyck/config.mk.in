@@ -4,14 +4,12 @@
 # Various programs
 OCAMLFIND	:= @OCAMLFIND@
 OCAMLDEP	:= @OCAMLDEP@
-OCAMLC		:= @OCAMLC@
-OCAMLMKLIB      := @OCAMLMKLIB@
+OCAMLC		:= @OCAMLC@ @OCAMLDEBUGFLAGS@ @OCAMLPROFFLAGS@
+OCAMLOPT    := @OCAMLOPT@
+OCAMLMKLIB  := @OCAMLMKLIB@
 
 # Flags for compiling C executables with ocamlc
 OCAMLCFLAGS	:= @OCAMLCFLAGS@
-
-# General flags for ocamlc
-OCAMLFLAGS	:= @OCAMLDEBUGFLAGS@ @OCAMLPROFFLAGS@
 
 # Flags for linking Ocaml libraries and executables
 OCAMLLDFLAGS	:= @OCAMLLDFLAGS@
@@ -20,8 +18,3 @@ OCAMLLDFLAGS	:= @OCAMLLDFLAGS@
 CPPFLAGS	:= @CPPFLAGS@
 CFLAGS		:= @CFLAGS@
 LDFLAGS		:= @LDFLAGS@
-
-# Appropriate suffixes for Ocaml object files.
-LIB		:= @LIB@
-OBJ		:= @OBJ@
-

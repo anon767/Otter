@@ -7,16 +7,12 @@ topsrcdir	:= @top_srcdir@
 
 include $(DEPTH)/config.mk
 
-TARGETS		:= yaml.$(LIB)
+TARGETS		:= yaml.cma yaml.cmxa
 LDFLAGS		+= -lsyck
 DISTGARBAGE	:= META config.h
 
 include $(topsrcdir)/rules.mk
 
-yaml.$(LIB):			\
-	parser.o		\
-	yamlNode.$(OBJ)		\
-	yamlParser.$(OBJ)	\
-	$(NULL)
-
+yaml.cma : parser.o yamlNode.cmo yamlParser.cmo
+yaml.cmxa : parser.o yamlNode.cmx yamlParser.cmx
 

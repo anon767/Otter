@@ -31,7 +31,7 @@ space		:= $(empty) $(empty)
 OCAMLPKGS	:= -package $(subst $(space),$(comma),$(PACKAGES))
 PKGDEPS		:= $(foreach pkg,$(PACKAGES),\
 			$(shell OCAMLPATH=$(DEPTH) $(OCAMLFIND) query \
-			-format %d/%p.$(LIB) $(pkg)))
+			-predicates byte -format %d/%a $(pkg)))
 endif
 
 # Be noisy about the build if VERBOSE is set.
@@ -49,8 +49,11 @@ endif
 	-linkpkg $(OCAMLFLAGS) -o $@ $(filter %.$(OBJ),$^) \
 	$(srcdir)/$*.ml
 
-%: %.$(OBJ)
+%: %.cmo
 	OCAMLPATH=$(DEPTH) $(OCAMLFIND) $(OCAMLC) $(OCAMLFLAGS) -o $@ $^
+
+%: %.cmx
+	OCAMLPATH=$(DEPTH) $(OCAMLFIND) $(OCAMLOPT) $(OCAMLFLAGS) -o $@ $^
 
 %.cmi: $(srcdir)/%.mli
 	OCAMLPATH=$(DEPTH) $(OCAMLFIND) $(OCAMLC) $(OCAMLPKGS) \
@@ -59,15 +62,18 @@ endif
 %.o: $(srcdir)/%.c
 	OCAMLPATH=$(DEPTH) $(OCAMLFIND) $(OCAMLC) $(OCAMLCFLAGS) -c $^
 
-%.$(OBJ): $(srcdir)/%.ml
+%.cmo: $(srcdir)/%.ml
 	OCAMLPATH=$(DEPTH) $(OCAMLFIND) $(OCAMLC) $(OCAMLPKGS) \
 	$(OCAMLFLAGS) -o $@ -c $(srcdir)/$*.ml
 
-# %.$(LIB):
-# 	OCAMLPATH=$(DEPTH) $(OCAMLFIND) $(OCAMLC) -linkpkg -a \
-# 	$(OCAMLFLAGS) $(OCAMLLDFLAGS) -o $@ $(filter %.ml %.$(OBJ),$^)
+%.cmx: $(srcdir)/%.ml
+	OCAMLPATH=$(DEPTH) $(OCAMLFIND) $(OCAMLOPT) $(OCAMLPKGS) \
+	$(OCAMLFLAGS) -o $@ -c $(srcdir)/$*.ml
 
-%.$(LIB):
+%.cma:
+	$(OCAMLMKLIB) -o $* $^ $(LDFLAGS)
+
+%.cmxa:
 	$(OCAMLMKLIB) -o $* $^ $(LDFLAGS)
 
 .PRECIOUS: %.ml
@@ -84,11 +90,11 @@ all: $(DEPFILE) $(TARGETS) subdirs
 depend: $(DEPFILE) subdirs
 
 clean: subdirs
-	rm -rf *.cma *.cmxa *.cmx *.cmi *.cmx *.cmo *.o *.a *.so *.annot \
+	$(RM) *.cma *.cmxa *.cmx *.cmi *.cmx *.cmo *.o *.a *.so *.annot \
 	$(TARGETS) $(DEPFILE) $(GARBAGE)
 
 distclean: clean
-	rm -rf Makefile $(DISTGARBAGE) *~
+	$(RM) Makefile $(DISTGARBAGE) *~
 
 subdirs: $(SUBDIRS)
 

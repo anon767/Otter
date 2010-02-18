@@ -18,9 +18,9 @@ if test "x$OCAMLC" = x ; then
    AC_MSG_ERROR(Cannot find ocamlc.)
 fi
 
-AC_CHECK_PROG(ocamlopt,ocamlopt,ocamlopt,ocamlc)
-if test "$ocamlopt" != "ocamlopt" ; then
-   AC_MSG_WARN(Cannot find ocamlopt; bytecode compilation only.)
+AC_CHECK_PROG(OCAMLOPT,ocamlopt,ocamlopt)
+if test "x$OCAMLOPT" = x ; then
+   AC_MSG_ERROR(Cannot find ocamlopt.)
 fi
 
 AC_CHECK_PROG(OCAMLMKLIB,ocamlmklib,ocamlmklib)
@@ -28,30 +28,9 @@ if test "x$OCAMLMKLIB" = x ; then
    AC_MSG_ERROR(Cannot find ocamlmklib.)
 fi
 
-# Turn on debugging?
-OCAMLC=ocamlopt
-OCAMLDEBUGFLAGS=
-OCAMLCFLAGS=
-OCAMLLDFLAGS=
-LIB=cmxa
-OBJ=cmx
-AC_ARG_ENABLE([debug],
-              AS_HELP_STRING([--enable-debug],
-                             [build bytecode with debugging information]))
-if test "${enable_debug}" = "yes" || \
-   test "x$ocamlopt" = x
-then
-   if test "$ocamlopt" = "ocamlc" ; then
-      AC_MSG_WARN([Building bytecode with debugging information since there is no native compiler])
-   fi
-
-   OCAMLC=ocamlc
-   OCAMLDEBUGFLAGS="-g -dtypes"
-   OCAMLCFLAGS="-ccopt -g"
-   OCAMLLDFLAGS="-cclib -g"
-   LIB=cma
-   OBJ=cmo
-fi
+OCAMLDEBUGFLAGS="-g -dtypes"
+OCAMLCFLAGS="-ccopt -g"
+OCAMLLDFLAGS="-cclib -g"
 
 # Allow the location for syck.h and libsyck.a to be specified using a
 # single "--with-syck" option, which just twiddles the CPPFLAGS and
@@ -77,11 +56,10 @@ AC_SUBST(CPPFLAGS)
 AC_SUBST(CFLAGS)
 AC_SUBST(LDFLAGS)
 AC_SUBST(OCAMLC)
+AC_SUBST(OCAMLOPT)
 AC_SUBST(OCAMLDEBUGFLAGS)
 AC_SUBST(OCAMLCFLAGS)
 AC_SUBST(OCAMLLDFLAGS)
-AC_SUBST(LIB)
-AC_SUBST(OBJ)
 AC_SUBST(HAVE_SNPRINTF)
 
 # Turn on profiling?

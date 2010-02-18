@@ -34,10 +34,7 @@ make//stp : MAKEGOALS=
 make//stp : CONFIGURE_FLAGS=--with-prefix=.
 
 
-ocamlsyck : SYCKLIB=$(CURDIR)/syck/lib
-ocamlsyck : CONFIGURE_FLAGS=LDFLAGS=-L$(SYCKLIB) CPPFLAGS=-I$(SYCKLIB)
 ocamlsyck : make//ocamlsyck
-	cd ocamlsyck && $(CONFIGURE_FLAGS) ./compile_cma
 make//ocamlsyck : MAKEGOALS=
 make//ocamlsyck : SYCKLIB=$(CURDIR)/syck/lib
 make//ocamlsyck : CONFIGURE_FLAGS=LDFLAGS=-L$(SYCKLIB) CPPFLAGS=-I$(SYCKLIB)
