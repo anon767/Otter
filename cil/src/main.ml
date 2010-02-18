@@ -6,7 +6,6 @@ module C = Cil
 let features : C.featureDescr list = 
   [ 
     (*
-    Randommod.feature;
     Epicenter.feature;
     Simplify.feature;
     Canonicalize.feature;
@@ -25,8 +24,6 @@ let features : C.featureDescr list =
     Logcalls.feature;
     Ptranal.feature;
     Liveness.feature;
-    Inconsistency.feature;
-    Randomrepair.feature;
      *)
     Executemain.feature;
     Marshal_feature.feature;
