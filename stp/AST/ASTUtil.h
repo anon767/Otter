@@ -12,7 +12,7 @@
 
 #include <iostream>
 #include <vector>
-#ifdef __APPLE_CC__ <= 5577
+#if __APPLE_CC__ <= 5577 // OS X 10.5's (Xcode 3.1.4) gcc-4.2
   #include <ext/hash_map>
   #define unordered_map hash_map
   using namespace __gnu_cxx;
