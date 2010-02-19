@@ -10,37 +10,35 @@ open Command (* no longer needed for OCaml >= 3.10.2 *)
    {1 OCamlFind}
 *)
 
-module OCamlFind =
-struct
-  (* these functions are not really officially exported *)
-  let run_and_read      = Ocamlbuild_pack.My_unix.run_and_read
+module OCamlFind = struct
+    (* these functions are not really officially exported *)
+    let run_and_read      = Ocamlbuild_pack.My_unix.run_and_read
+    let blank_sep_strings = Ocamlbuild_pack.Lexers.blank_sep_strings
 
-  let blank_sep_strings = Ocamlbuild_pack.Lexers.blank_sep_strings
+    (* this lists all supported packages *)
+    let find_packages () =
+        blank_sep_strings &
+            Lexing.from_string &
+            run_and_read "ocamlfind list | cut -d' ' -f1"
 
-  (* this lists all supported packages *)
-  let find_packages () =
-    blank_sep_strings &
-      Lexing.from_string &
-      run_and_read "ocamlfind list | cut -d' ' -f1"
+    (* this is supposed to list available syntaxes, but I don't know how to do it. *)
+    let find_syntaxes () = ["camlp4o"; "camlp4r"]
 
-  (* this is supposed to list available syntaxes, but I don't know how to do it. *)
-  let find_syntaxes () = ["camlp4o"; "camlp4r"]
+    (* ocamlfind command *)
+    let ocamlfind x = S[A"ocamlfind"; x]
 
-  (* ocamlfind command *)
-  let ocamlfind x = S[A"ocamlfind"; x]
+    let before_options () =
+        (* by using Before_options, command line options have higher priority *)
+        (* on the contrary using After_options will guarantee higher priority *)
 
-  let before_options () =
-    (* by using Before_options, command line options have higher priority *)
-    (* on the contrary using After_options will guarantee higher priority *)
+        (* override default commands by ocamlfind ones *)
+        Options.ocamlc     := ocamlfind & A"ocamlc";
+        Options.ocamlopt   := ocamlfind & A"ocamlopt";
+        Options.ocamldep   := ocamlfind & A"ocamldep";
+        Options.ocamldoc   := ocamlfind & A"ocamldoc";
+        Options.ocamlmktop := ocamlfind & A"ocamlmktop"
 
-    (* override default commands by ocamlfind ones *)
-    Options.ocamlc     := ocamlfind & A"ocamlc";
-    Options.ocamlopt   := ocamlfind & A"ocamlopt";
-    Options.ocamldep   := ocamlfind & A"ocamldep";
-    Options.ocamldoc   := ocamlfind & A"ocamldoc";
-    Options.ocamlmktop := ocamlfind & A"ocamlmktop"
-
-  let after_rules () =
+    let after_rules () =
        (* When one link an OCaml library/binary/package, one should use -linkpkg *)
        flag ["ocaml"; "link"] & A"-linkpkg";
 
