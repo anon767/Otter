@@ -40,7 +40,8 @@ module OCamlFind = struct
 
     let after_rules () =
        (* When one link an OCaml library/binary/package, one should use -linkpkg *)
-       flag ["ocaml"; "link"] & A"-linkpkg";
+       flag ["ocaml"; "link"; "byte"] & A"-linkpkg";
+       flag ["ocaml"; "link"; "native"; "program"] & A"-linkpkg";
 
        (* For each ocamlfind package one inject the -package option when
         * compiling, computing dependencies, generating documentation and
@@ -74,10 +75,31 @@ module OCamlFind = struct
 end
 
 
+(**
+   {1 Patches to fix up misbehaviors in Ocamlbuild (as of version 3.11.2)}
+*)
+
+module Ocamlbuild_patches = struct
+    let before_rules () =
+        (* override the -libs option processing, since it's broken in ocamlbuild *)
+        flag ["ocaml"; "link"; "byte"] begin
+            S (List.map (fun x -> A (x^".cma")) !Options.ocaml_libs)
+        end;
+        flag ["ocaml"; "link"; "native"; "program"] begin
+            (* only link libraries for programs, not libraries *)
+            S (List.map (fun x -> A (x^".cmxa")) !Options.ocaml_libs)
+        end;
+        Options.ocaml_libs := []
+end
+
+
 let _ = dispatch begin function
-   | Before_options ->
-       OCamlFind.before_options ();
-   | After_rules ->
-       OCamlFind.after_rules ();
-   | _ -> ()
+    | Before_options ->
+        OCamlFind.before_options ()
+    | Before_rules ->
+        Ocamlbuild_patches.before_rules ()
+    | After_rules ->
+        OCamlFind.after_rules ()
+    | _ ->
+        ()
 end
