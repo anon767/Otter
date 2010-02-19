@@ -17,13 +17,9 @@ HEADERS=c_interface/*.h
 # NB: the TAGS target is a hack to get around this recursive make nonsense
 # we want all the source and header files generated before we make tags
 .PHONY: all
-all:
-	$(MAKE) -C AST
-	$(MAKE) -C sat
-	$(MAKE) -C simplifier
-	$(MAKE) -C bitvec
-	$(MAKE) -C c_interface
-	$(MAKE) -C constantbv
+all: lib/libstp.a
+
+lib/libstp.a : AST/libast.a sat/libsatsolver.a simplifier/libsimplifier.a bitvec/libconsteval.a constantbv/libconstantbv.a c_interface/libcinterface.a
 	$(MAKE) -C parser
 	$(RM) libstp.a
 	$(AR) rc libstp.a  AST/*.o sat/*.o simplifier/*.o bitvec/*.o constantbv/*.o c_interface/*.o
@@ -34,6 +30,14 @@ all:
 	@echo ""
 	@echo "Compilation successful."
 	@echo "Type 'make install' to install STP."
+
+RECURSE_SUBDIR = $(1) : $(filter-out $(1),$(wildcard $(dir $(1))*)) ; $(MAKE) -C $(dir $(1))
+$(call RECURSE_SUBDIR,AST/libast.a)
+$(call RECURSE_SUBDIR,sat/libsatsolver.a)
+$(call RECURSE_SUBDIR,simplifier/libsimplifier.a)
+$(call RECURSE_SUBDIR,bitvec/libconsteval.a)
+$(call RECURSE_SUBDIR,constantbv/libconstantbv.a)
+$(call RECURSE_SUBDIR,c_interface/libcinterface.a)
 
 .PHONY: install
 install: all
