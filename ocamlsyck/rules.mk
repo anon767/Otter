@@ -90,11 +90,11 @@ all: $(DEPFILE) $(TARGETS) subdirs
 depend: $(DEPFILE) subdirs
 
 clean: subdirs
-	$(RM) *.cma *.cmxa *.cmx *.cmi *.cmx *.cmo *.o *.a *.so *.annot \
+	$(RM) -r *.cma *.cmxa *.cmx *.cmi *.cmx *.cmo *.o *.a *.so *.annot \
 	$(TARGETS) $(DEPFILE) $(GARBAGE)
 
 distclean: clean
-	$(RM) Makefile $(DISTGARBAGE) *~
+	$(RM) -r Makefile $(DISTGARBAGE) *~
 
 subdirs: $(SUBDIRS)
 
