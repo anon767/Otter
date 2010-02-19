@@ -5,7 +5,7 @@ OCAMLFIND ?= ocamlfind
 OCAMLBUILD_BUILDDIR ?= _build
 
 # ocamlbuild helper to build and copy the product into the base of the build directory
-# $(call OCAMLBUILD.build,<ocamlbuild targets>,<install directory>)
+# $(call OCAMLBUILD.build,<ocamlbuild targets>)
 define OCAMLBUILD.build
 	@echo "Building $(1)..." && \
 	$(RM) $(1) && \
@@ -55,5 +55,8 @@ make//% : %/Makefile
 	cd $* && ./configure $(CONFIGURE_FLAGS)
 
 # autoconf
-Makefile : Makefile.in
+Makefile : Makefile.in configure
 	./config.status
+
+configure : configure.ac
+	autoreconf

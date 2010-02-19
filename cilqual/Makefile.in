@@ -15,7 +15,7 @@ OCAMLBUILD_FLAGS += $(OCAMLBUILD_CIL) $(OCAMLBUILD_PA_MONAD) $(OCAMLBUILD_GRAPH)
 OCAMLBUILD_FLAGS += $(EXTRALIBDIRS:%=-lflags -I,%) $(OCAMLBUILD_EXTRAFLAGS)
 export OCAMLPATH:=$(CURDIR):$(OCAMLPATH)
 
-OCAMLBUILD_DEPS = pa_monad ocamlgraph
+OCAMLBUILD_DEPS = pa_monad ocamlgraph configure Makefile Makefile.rules
 
 OUNIT_FLAGS = -verbose
 
