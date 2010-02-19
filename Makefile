@@ -38,7 +38,7 @@ ocamlsyck : make//ocamlsyck
 make//ocamlsyck : MAKEGOALS=
 make//ocamlsyck : SYCKLIB=$(CURDIR)/syck/lib
 make//ocamlsyck : CONFIGURE_FLAGS=LDFLAGS=-L$(SYCKLIB) CPPFLAGS=-I$(SYCKLIB)
-make//ocamlsyck : syck 
+make//ocamlsyck ocamlsyck/configure : syck 
 
 
 syck : make//syck
