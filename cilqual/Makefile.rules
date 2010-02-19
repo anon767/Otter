@@ -2,27 +2,48 @@
 
 OCAMLBUILD ?= ocamlbuild
 OCAMLFIND ?= ocamlfind
+OCAMLBUILD_BUILDDIR ?= _build
 
-OCAMLBUILD.build = $(OCAMLBUILD) $(OCAMLBUILD_FLAGS) $(VPATH:%=-I %) $(OCAMLBUILD_EXTRATARGETS) $*
-
-# ocamlbuild places a symbolic link to the product in the project root, but deletes all such links prior to
-# the next build; so the following copies the actual product in place of the link.
-define OCAMLBUILD.exe
-	$(RM) $* && \
-	$(OCAMLBUILD.build) && \
-	TMPCIL=`mktemp $*.tmpXXXXXX` && \
-	mv $* $$TMPCIL && \
-	cp $$TMPCIL $* && \
-	$(RM) $$TMPCIL
+# ocamlbuild helper to build and copy the product into the base of the build directory
+# $(call OCAMLBUILD.build,<ocamlbuild targets>,<install directory>)
+define OCAMLBUILD.build
+	@echo "Building $(1)..." && \
+	$(RM) $(1) && \
+	$(OCAMLBUILD) -build-dir $(OCAMLBUILD_BUILDDIR) -no-links \
+		$(OCAMLBUILD_FLAGS) $(VPATH:%=-I %) $(OCAMLBUILD_EXTRATARGETS) $(1) && \
+	for foo in $(1); do \
+		for v in $(VPATH); do \
+			target=$(OCAMLBUILD_BUILDDIR)/$$v/$$foo; \
+			if [ -e $$target ]; then \
+				cp $$target $(OCAMLBUILD_BUILDDIR); \
+				break; \
+			fi; \
+		done; \
+	done
 endef
 
-# for executables, move the product; everything else, leave it as is
-ocamlbuild//% : $(OCAMLBUILD_DEPS)
-	$(if $(filter %.native %.byte,$*),$(OCAMLBUILD.exe),$(OCAMLBUILD.build))
+
+# ocamlbuild: build and install into the appropriate directory
+ocamlbuild//%.native : $(OCAMLBUILD_BUILDDIR)
+	$(call OCAMLBUILD.build,$*.native)
+
+ocamlbuild//%.byte : $(OCAMLBUILD_BUILDDIR)
+	$(call OCAMLBUILD.build,$*.byte)
+
+ocamlbuild//%.cmxa ocamlbuild//%.cma ocamlbuild//%.cmi : $(OCAMLBUILD_BUILDDIR)
+	$(call OCAMLBUILD.build,$*.cmxa $*.cma $*.cmi)
+
+# recompile everything if an external dependency is newer than the build directory
+$(OCAMLBUILD_BUILDDIR) : $(OCAMLBUILD_DEPS)
+	$(OCAMLBUILD) -clean
+
+clean-ocamlbuild :
+	$(OCAMLBUILD) -clean
+
 
 # ounit: build and run
 ounit//% : ocamlbuild//%
-	./$* $(OUNIT_FLAGS)
+	$(OCAMLBUILD_BUILDDIR)/$* $(OUNIT_FLAGS)
 
 
 # recursive Makefile build

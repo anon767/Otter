@@ -1,6 +1,4 @@
 CIL_SRCDIR = @CIL_SRCDIR@
-OCAMLBUILD = @OCAMLBUILD@
-OCAMLFIND = @OCAMLFIND@
 EXTRALIBDIRS = @EXTRALIBDIRS@
 
 include $(CIL_SRCDIR)/config.mk
@@ -44,8 +42,8 @@ cilqual.pl.config : Makefile $(CIL_SRCDIR)/config.mk
 	$$::cilhome = '$(CILHOME)';\n\
 	$$::cc  = '$(CC)';\n\
 	$$::default_mode = '$(DEFAULT_CIL_MODE)';\n\
-	$$::native = 'runcilqual.native';\n\
-	$$::byte = 'runcilqual.d.byte';\n\
+	$$::native = '$(OCAMLBUILD_BUILDDIR)/runcilqual.native';\n\
+	$$::byte = '$(OCAMLBUILD_BUILDDIR)/runcilqual.d.byte';\n\
 	$$::do_default = '--docilqual';\n\
 	$$::compile_after_merge = 0;\n\
 	1;" > $@
@@ -54,8 +52,7 @@ clean : clean-cilqual
 	$(MAKE) -C pa_monad clean
 	$(MAKE) -C ocamlgraph clean
 
-clean-cilqual :
-	$(OCAMLBUILD) -clean
+clean-cilqual : clean-ocamlbuild
 	$(RM) cilqual.pl.config *.native *.byte
 
 distclean : clean-cilqual
