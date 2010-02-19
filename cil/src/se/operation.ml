@@ -205,8 +205,8 @@ let rec binop op_const op_symb operands : bytes (* * typ *)=
 					isConcrete_bytes offset &&
 					isConcrete_bytes op2 ->
 				(* Are these types right? *)
-				let offsetConstant = bytes_to_constant offset Cil.intType in
-				let op2Constant = bytes_to_constant op2 Cil.intType in
+				let offsetConstant = bytes_to_constant offset !Cil.upointType in
+				let op2Constant = bytes_to_constant op2 !Cil.upointType in
 				begin match offsetConstant,op2Constant with
 					| CInt64 _,CInt64 _ ->
 							let ptrAsNum = plus [(make_Bytes_Constant
@@ -284,8 +284,8 @@ let rec opPI op operands =
 			begin match typ1 with
 				| TPtr(basetyp,_) ->
 					let base_size = (Cil.bitsSizeOf basetyp)/8 in
-					let (offset3) = mult [(lazy_int_to_bytes base_size,Cil.intType);(offset2,typ2)] in
-					let (offset4) = op [(offset,Cil.intType);(offset3,Cil.intType)] in (* TODO: make typing of offset more accurate? *)
+					let (offset3) = mult [(lazy_int_to_bytes base_size,!Cil.upointType);(offset2,typ2)] in
+					let (offset4) = op [(offset,!Cil.upointType);(offset3,!Cil.upointType)] in (* TODO: do we need to cast the offsets? *)
 					(make_Bytes_Address(block, offset4))
 				| _ -> failwith "type of Bytes_Address not TPtr"
 			end
@@ -293,8 +293,8 @@ let rec opPI op operands =
 			begin match typ1 with
 				| TPtr(basetyp,_) ->
 					let base_size = (Cil.bitsSizeOf basetyp)/8 in
-					let (offset3) = mult [(bytes2,typ2);(lazy_int_to_bytes base_size,Cil.intType)] in
-					op [(bytes1,!Cil.upointType);(offset3,Cil.intType)] (* TODO: make typing of offset more accurate? *)
+					let (offset3) = mult [(bytes2,typ2);(lazy_int_to_bytes base_size,!Cil.upointType)] in
+					op [(bytes1,!Cil.upointType);(offset3,!Cil.upointType)] (* TODO: do we need to cast the offsets? *)
 				| _ -> failwith "type of Bytes_ByteArray (used as a pointer) not TPtr"
 			end
 		| Bytes_Conditional c, _ ->
@@ -326,8 +326,8 @@ let minusPP operands : bytes =
 			begin match typ1 with
 				| TPtr(basetyp,_) ->
 					let base_size = (Cil.bitsSizeOf basetyp)/8 in
-					let (offset3) = minus [(offset1,Cil.intType);(offset2,Cil.intType)] in (* TODO: make typing of offset more accurate? *)
-					let (offset4) = div [(offset3,Cil.intType);(lazy_int_to_bytes base_size,Cil.intType)] in
+					let (offset3) = minus [(offset1,!Cil.upointType);(offset2,!Cil.upointType)] in (* TODO: do we need to cast the offsets? *)
+					let (offset4) = div [(offset3,!Cil.upointType);(lazy_int_to_bytes base_size,!Cil.upointType)] in
 						(offset4)
 				| _ -> failwith "type of Bytes_Address not TPtr"
 			end

@@ -201,6 +201,17 @@ let lazy_int_to_bytes n : bytes =
 	lazy_int64_to_bytes (Int64.of_int n) IInt
 	;;
 
+(* Make this lazy so that upointType is set correctly (by initCIL) before it is evaluated *)
+let kindOfUpointType = lazy (match !upointType with
+		TInt (kind, _) -> kind
+	| _ -> failwith "upointType is not set properly")
+;;
+
+(* Convert an int n to [Bytes_Constant (CInt64 (Int64.of_int n, kindOfUpointType, None))] *)
+let int64_to_offset_bytes (n : int) : bytes =
+	make_Bytes_Constant (CInt64 (Int64.of_int n, Lazy.force kindOfUpointType, None))
+;;
+
 (** Convert in64 of ikind to make_Bytes_ByteArray. Truncate if needed.  *)
 let int64_to_bytes n64 ikind : bytes =
 	let (len,isSigned) = ikind_to_len_isSigned ikind in

@@ -6,5 +6,6 @@ let _ =
         OUnitSymexeCoverage.testsuite;
         OUnitSymexeMerging.testsuite;
         OUnitSymexeIntegration.testsuite;
+        OUnitSymexeBoundsChecking.testsuite;
     ] end
 

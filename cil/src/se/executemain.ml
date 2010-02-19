@@ -268,8 +268,12 @@ let job_for_file file cmdline =
 	let state = MemOp.state__empty in
 	let state = init_globalvars state file.globals in
 
-	(* prepare the command line arguments *)
-	let state, main_args = init_cmdline_argvs state cmdline in
+	(* prepare the command line arguments, if needed *)
+	let state, main_args =
+		match main_func.svar.vtype with
+				TFun (_, Some [], _, _) -> state, [] (* main has no arguments *)
+			| _ -> init_cmdline_argvs state cmdline
+	in
 
 	(* create a job starting at main *)
 	job_for_function state main_func main_args
@@ -352,6 +356,10 @@ let feature : featureDescr =
 			("--failfast",
 			Arg.Unit (fun () -> Executeargs.run_args.arg_failfast <- true),
 			" Abort execution if any path encounters an error\n");
+
+			("--noboundsChecking",
+			 Arg.Unit (fun () -> run_args.arg_bounds_checking <- false),
+			 " Disable bounds checking on memory accesses\n");
 
 			(**
 					Printing options

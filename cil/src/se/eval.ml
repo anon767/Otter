@@ -1,7 +1,99 @@
+open Executeargs
 open Cil
 open Bytes
 open Types
 open Operation
+
+(* Print an error message saying that the assertion [bytes] failed in
+	 state [state]. [exps] is the expression representing [bytes].
+	 [isUnknown] specifies whether the assertion returned
+	 Ternary.Unknown (rather than Ternary.False). *)
+let print_failed_assertion state bytes exps ~isUnknown =
+	Output.set_mode Output.MSG_MUSTPRINT;
+	Output.print_endline "Assertion not-satisfied (see error log).";
+	let oldPrintNothingVal = print_args.arg_print_nothing in
+	Output.set_mode Output.MSG_MUSTPRINT;
+	print_args.arg_print_nothing <- false; (* Allow printing for the log *)
+	Executedebug.log "\n(****************************";
+	Executedebug.log "Assertion:";
+	Executedebug.log (Utility.print_list To_string.exp exps " and "); 
+	Executedebug.log "which becomes";
+	Executedebug.log (To_string.bytes bytes);
+	Executedebug.log ((if isUnknown then "can be" else "is") ^ " false with the path condition:");
+	(*let pc_str = To_string.humanReadablePc state.path_condition exHist.bytesToVars in *)
+	(*let pc_str = (Utility.print_list To_string.bytes state.path_condition " AND ") in*)
+	(*let pc_str = Utility.print_list To_string.bytes (Stp.getRelevantAssumptions state.path_condition post) " AND " in*)
+	let pc_str = (Utility.print_list To_string.bytes state.path_condition " AND ") in
+	Executedebug.log (if pc_str = "" then "true" else pc_str);
+	Executedebug.log "****************************)";
+	print_args.arg_print_nothing <- oldPrintNothingVal
+;;
+
+(** Check an assertion in a given state
+    @param state            the state in which to check the assertion : state
+    @param bytes            the assertion : bytes
+    @param exps             the expressions being asserted (used for printing a readable error message) : exp list
+    @raise Failure          if the assertion is always false
+    @return state           if the assertion is always true, this is the input state; otherwise, an error message is printed and the return value is the input state with [bytes] added to the path condition
+*)
+let check state bytes exps =
+	match Stp.eval state.path_condition bytes with
+		Ternary.True -> (* The assertion is true *)
+			Output.set_mode Output.MSG_REG;
+			Output.print_endline "Assertion satisfied.";
+			state
+	| Ternary.False -> (* The assertion is definitely false *)
+			print_failed_assertion state bytes exps ~isUnknown:false;
+			failwith "Assertion was false"
+	| Ternary.Unknown -> (* The assertion is false in some states but not all *)
+			print_failed_assertion state bytes exps ~isUnknown:true;
+			(* Assume the assertion *)
+			MemOp.state__add_path_condition state bytes true (* This [true] marks the assumption as though it came from an actual branch in the code *)
+;;
+
+(* We can't check each leaf of {lvals}'s conditional tree on its own,
+	 because we don't want to completely fail just because *some*
+	 possibility can be out of bounds. (We only want to do that if *all*
+	 possibilities are out of bounds.) So instead, we compute two
+	 conditional trees, {sizes} and {offsets}, with the same shape and
+	 guards as {lvals} and which contain at the leaves, respectively,
+	 the size of the memory block and the offset of the Bytes_Address at
+	 the correpond leaf in {lvals}. The bounds check then becomes
+	 {offsets < sizes}. *)
+(* TODO: Should we prune the resulting conditional trees, removing
+	 infeasible subtrees, when a bounds check fails? This question
+	 applies both to {lvals} itself and to the bytes representing the
+	 assertion being checked (which will then be assumed into the path
+	 condition). *)
+let rec getBlockSizesAndOffsets lvals = match lvals with
+		| IfThenElse (guard, x, y) ->
+				let blockSizesX, offsetsX = getBlockSizesAndOffsets x
+				and blockSizesY, offsetsY = getBlockSizesAndOffsets y in
+				IfThenElse (guard, blockSizesX, blockSizesY),
+				IfThenElse (guard, offsetsX, offsetsY)
+		| Unconditional (block,offset) ->
+				Unconditional (int64_to_offset_bytes block.memory_block_size),
+				Unconditional offset
+;;
+
+(* offsets are treated as values of type !upointType, so it is
+	 impossible for them to be negative. This means we only need to
+	 check for overflow, not underflow. *)
+let checkBounds state lvals cil_lval =
+	let blockSizeTree, offsetTree = getBlockSizesAndOffsets lvals in
+	let offsetLtBlockSize =
+		make_Bytes_Op (OP_LT, [(make_Bytes_Conditional offsetTree, !Cil.upointType);
+													 (make_Bytes_Conditional blockSizeTree, !Cil.upointType)])
+	and expRepresentingBoundsCheck = BinOp (Eq, Lval cil_lval, SizeOfStr "is in bounds", voidType) in
+	check state offsetLtBlockSize [expRepresentingBoundsCheck]
+;;
+
+let add_offset state offset lvals : state * (Types.MemoryBlockMap.key * Bytes.bytes) Bytes.conditional =
+	conditional__map_fold begin fun newState _ (block, offset2) ->
+		let newOffset = Operation.plus [(offset, !Cil.upointType); (offset2, !Cil.upointType)] in
+		(newState, conditional__lval_block (block, newOffset))
+	end state lvals
+;;
 
 let rec
 
@@ -60,7 +152,7 @@ rval state exp : state * bytes =
 					(state, make_Bytes_FunPtr(fundec,f_addr))
 			|	AddrOf (cil_lval)
 			|	StartOf (cil_lval) ->
-					let state, (lvals, _) = lval state cil_lval in
+					let state, (lvals, _) = lval ~justGetAddr:true state cil_lval in
 					let c = conditional__map begin fun (block, offset) ->
 						conditional__bytes (make_Bytes_Address(block, offset))
 					end lvals in
@@ -143,21 +235,43 @@ rval_cast typ rv rvtyp =
 *)
 and
 
-lval state (lhost, offset_exp as cil_lval) =
+(* justGetAddr is set to true when the lval is the operand of the
+	 address-of operator, '&'. For example, &x[i] is legal even if i is
+	 not in bounds. (Sort of. The spec (6.5.6.8) implies that this is
+	 only defined if i is *one* past the end of x.) *)
+lval ?(justGetAddr=false) state (lhost, offset_exp as cil_lval) =
 	let size = (Cil.bitsSizeOf (Cil.typeOfLval cil_lval))/8 in
-	let add_offset offset = conditional__map begin fun (block, offset2) ->
-		conditional__lval_block (block, Operation.plus [(offset, Cil.intType); (offset2, Cil.intType)])
-	end in
+	let state, lvals, lhost_type =
 	match lhost with
 		| Var(varinfo) ->
 			let state, lvals = MemOp.state__varinfo_to_lval_block state varinfo in
-			let state, offset, _ = flatten_offset state varinfo.vtype offset_exp in
-			(state, (add_offset offset lvals, size))
+			(state, lvals, varinfo.vtype)
 		| Mem(exp) ->
 			let state, rv = rval state exp in
 			let lvals = deref state rv in
-			let state, offset, _ = flatten_offset state (Cil.typeOf exp) offset_exp in
-			(state, (add_offset offset lvals, size))
+			(state, lvals, Cil.typeOf exp)
+	in
+	let state, offset, _ = flatten_offset state lhost_type offset_exp in
+	(* Add the offset, then see if it was in bounds *)
+	let state, lvals = add_offset state offset lvals in
+	(* Omit the bounds check if we're only getting the address of the
+		 lval---not actually reading from or writing to it---or if bounds
+		 checking is turned off *)
+	if justGetAddr || not run_args.arg_bounds_checking
+	then state, (lvals, size)
+	else (
+		(* Optimization: An offset of 0 is always in bounds. We could do a
+			 full check of {lvals} to see if every leaf of the tree is zero,
+			 but that might be expensive. Instead, do a quick check to see if
+			 {lvals} has the form {Unconditional (_,bytes__zero)}. This comes
+			 up, for example, on *every* variable lookup, so it is probably
+			 worth optimizing. *)
+		match lvals with
+				Unconditional (_, offset) when offset = bytes__zero ->
+					state, (lvals, size)
+			| _ ->
+					checkBounds state lvals cil_lval, (lvals, size)
+	)
 
 and
 
@@ -202,7 +316,6 @@ and
 
 (* Assume index's ikind is IInt *)
 flatten_offset state lhost_typ offset : state * bytes * typ (* type of (lhost,offset) *) =
-  let (state, final_bytes,final_typ) = 
 	match offset with
 		| NoOffset -> (state, bytes__zero, lhost_typ)
 		| _ -> 
@@ -210,37 +323,27 @@ flatten_offset state lhost_typ offset : state * bytes * typ (* type of (lhost,of
 				begin match offset with
 					| Field(fieldinfo, offset2) ->
 							let n = field_offset fieldinfo in
-							let index = lazy_int_to_bytes n in
+							let index = int64_to_offset_bytes n in
 							let base_typ = fieldinfo.ftype in
 							(state, index, base_typ, offset2)
 					| Index(exp, offset2) ->
 							let state, rv0 = rval state exp in
-							(* TODO: right thing to do?*)
+							(* We require that offsets be values of type !upointType *)
 							let rv =
-								if bytes__length rv0 <> (Cil.bitsSizeOf Cil.intType / 8) 
-								then rval_cast Cil.intType rv0 (Cil.typeOf exp)
+								if bytes__length rv0 <> (Cil.bitsSizeOf !Cil.upointType / 8) 
+								then rval_cast !Cil.upointType rv0 (Cil.typeOf exp)
 								else rv0
 							in
-							let typ = Cil.typeOf exp in
 							let base_typ = match Cilutility.unrollType lhost_typ with TArray(typ2, _, _) -> typ2 | _ -> failwith "Must be array" in
 							let base_size = (Cil.bitsSizeOf base_typ) / 8 in (* must be known *)
-							(* TODO: if typ is not IInt, should we change it to? *)
-							let index = Operation.mult [(lazy_int_to_bytes base_size,Cil.intType);(rv,typ)] in 
+							let index = Operation.mult [(int64_to_offset_bytes base_size,!Cil.upointType);(rv,!Cil.upointType)] in 
 							(state, index, base_typ, offset2)
 					| _ -> failwith "Unreachable"
 				end
 			in
 				let (state, index2, base_typ2) = flatten_offset state base_typ offset2 in
-				let index3 = Operation.plus [(index,Cil.intType);(index2,Cil.intType)] in
+				let index3 = Operation.plus [(index,!Cil.upointType);(index2,!Cil.upointType)] in
 					(state, index3, base_typ2)
-  in
-    (* if typ is not IInt, fix it!   <---- this is WRONG
-    
-    if bytes__length final_bytes <> word__size then
-        (rval_cast Cil.intType final_bytes, Cil.intType)
-    else
-     *)
-        (state, final_bytes,final_typ)
 
 and
 

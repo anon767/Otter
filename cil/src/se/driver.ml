@@ -403,38 +403,8 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 							state
 															
 					| Function.Assert -> 
-						let state, post = op_exps state exps Cil.LAnd in
-						let state, truth = eval_with_cache state state.path_condition post in
-							begin
-								if truth == True then
-									begin
-									Output.set_mode Output.MSG_REG;
-									Output.print_endline "Assertion satisfied."
-									end
-								else
-									begin
-									Output.set_mode Output.MSG_MUSTPRINT;
-									Output.print_endline "Assertion not-satisfied (see error log).";
-									let oldPrintNothingVal = print_args.arg_print_nothing in
-									print_args.arg_print_nothing <- false; (* Allow printing for the log *)
-									Executedebug.log "\n(****************************";
-									Executedebug.log "Assertion:";
-									Executedebug.log (Utility.print_list To_string.exp exps " and "); 
-									Executedebug.log "which becomes";
-									Executedebug.log (To_string.bytes post);
-									Executedebug.log "can be false with the path condition:";
-									(*let pc_str = To_string.humanReadablePc state.path_condition exHist.bytesToVars in *)
-									(*let pc_str = (Utility.print_list To_string.bytes state.path_condition " AND ") in*)
-									(*let pc_str = Utility.print_list To_string.bytes (Stp.getRelevantAssumptions state.path_condition post) " AND " in*)
-									let pc_str = (Utility.print_list To_string.bytes state.path_condition " AND ") in
-									Executedebug.log (if String.length pc_str = 0 then "(nil)" else pc_str);
-									Executedebug.log "****************************)";
-									print_args.arg_print_nothing <- oldPrintNothingVal;
-									()
-									end									
-									
-							end;
-							state
+						let state, assertion = op_exps state exps Cil.LAnd in
+						Eval.check state assertion exps
 												
 					| Function.IfThenElse ->
 							begin match lvalopt with

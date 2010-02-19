@@ -271,9 +271,7 @@ let state__start_fcall state callContext fundec argvs =
 			if va_arg <> [] then (
 				(* If there are extra arguments but the function is not a vararg function, raise an error *)
 				if (match fundec.svar.vtype with TFun(_, _, false, _) -> true | _ -> false) then (
-					if fundec.svar.vname = "main"
-					then Output.print_endline "main is ignoring its arguments"
-					else failwith ("Too many arguments to non-vararg function " ^ fundec.svar.vname)
+					failwith ("Too many arguments to non-vararg function " ^ fundec.svar.vname)
 				);
 				Output.set_mode Output.MSG_FUNC;
 				Output.print_endline ("Rest of args: "^(Utility.print_list To_string.bytes va_arg " , "));

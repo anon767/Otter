@@ -154,7 +154,7 @@ quickbuild: cilversion machdep cilly
 # The rules for building and running the ounit-cilly tests.
 #
 
-OUNIT_CILLY_TEST_MODULES = OUnitSymexeFileJobs OUnitSymexeCoverage OUnitSymexeMerging OUnitSymexeIntegration
+OUNIT_CILLY_TEST_MODULES = OUnitSymexeFileJobs OUnitSymexeCoverage OUnitSymexeMerging OUnitSymexeIntegration OUnitSymexeBoundsChecking
 OUNIT_CILLY_MODULES = MyPrintexc MyOUnit $(OUNIT_CILLY_TEST_MODULES) OUnitMain
 OUNIT_CILLY_LIBC = $(CILLY_LIBS) cil oUnit
 OUNIT_CILLY_SOURCEDIRS = ounit
