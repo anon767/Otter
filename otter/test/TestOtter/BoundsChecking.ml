@@ -1,10 +1,11 @@
-open MyOUnit
+open TestUtil.MyOUnit
+open Otter
 open Types
 
 (* test helper that runs the symbolic executor on a file given a source code as a string *)
 let test_bounds content ?(label=content) ?(mergePaths=false) testFn =
     label >:: bracket begin fun () ->
-        let filename, fileout = Filename.open_temp_file "OUnitSymexeBoundsChecking." ".c" in
+        let filename, fileout = Filename.open_temp_file "BoundsChecking." ".c" in
         output_string fileout content;
         close_out fileout;
         filename
@@ -20,7 +21,7 @@ let test_bounds content ?(label=content) ?(mergePaths=false) testFn =
 
       (* prepare the file and run the symbolic executor *)
       Executemain.prepare_file file;
-      let job = Executemain.job_for_file file ["OUnitSymexeBoundsChecking"] in
+      let job = Executemain.job_for_file file ["BoundsChecking"] in
       let results = Driver.main_loop job in
 
 			(* Turn off path merging, in case the test asked for it to be turned on *)
@@ -288,6 +289,6 @@ let simple_testsuite = "Simple" >::: [
 
 ]
 
-let testsuite = "OUnitSymexeBoundsChecking" >::: [
+let testsuite = "BoundsChecking" >::: [
     simple_testsuite;
 ]

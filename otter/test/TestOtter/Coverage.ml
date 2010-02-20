@@ -1,10 +1,11 @@
-open MyOUnit
+open TestUtil.MyOUnit
+open Otter
 open Types
 
 (* test helper that runs the symbolic executor on a file given a source code as a string, and calculates coverage *)
 let test_coverage content ?(label=content) tracked_fns test =
     label >:: bracket begin fun () ->
-        let filename, fileout = Filename.open_temp_file "OUnitSymexeCoverage." ".c" in
+        let filename, fileout = Filename.open_temp_file "Coverage." ".c" in
         output_string fileout content;
         close_out fileout;
         filename
@@ -26,7 +27,7 @@ let test_coverage content ?(label=content) tracked_fns test =
 
         (* prepare the file and run the symbolic executor *)
         Executemain.prepare_file file;
-        let job = Executemain.job_for_file file ["OUnitSymexeCoverage"] in
+        let job = Executemain.job_for_file file ["Coverage"] in
         let results = Driver.main_loop job in
 
         (* figure out the coverage *)
@@ -163,7 +164,7 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
     end;
 ]
 
-let testsuite = "OUnitSymexeCoverage" >::: [
+let testsuite = "Coverage" >::: [
     simple_coverage_testsuite;
     function_calls_coverage_testsuite;
 ]

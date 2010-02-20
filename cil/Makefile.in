@@ -86,38 +86,15 @@ CILLY_LIBRARY_MODULES = pretty inthash errormsg alpha trace stats util clist \
               availexpslv predabst marshal_feature\
               testcil \
 	      $(CILLY_FEATURES) \
-	      ciloptions feature_config cilly \
-                utility \
-                immutableArray cilutility \
-                ternary \
-                bytes \
-                types \
-                executeargs \
-                output \
-                executedebug \
-                to_string \
-                operation \
-                stpc \
-                stp \
-                memOp \
-                eval \
-                builtin_function \
-                function \
-                report \
-                pathMerging \
-                driver \
-                getProgInfo \
-                executemain \
-                findFns \
-                traceLines
+	      ciloptions feature_config cilly
 # ww: we don't want "main" in an external cil library (cil.cma),
 # otherwise every program that links against that library will get
 # main's argument checking and whatnot ...
 CILLY_MODULES = $(CILLY_LIBRARY_MODULES) main
 CILLY_CMODULES = perfcount
-CILLY_LIBS     = unix str stpvc yaml
+CILLY_LIBS     = unix str
 
-SOURCEDIRS  += src src/frontc src/ext src/ext/pta ocamlutil @EXTRASRCDIRS@ src/se
+SOURCEDIRS  += src src/frontc src/ext src/ext/pta ocamlutil @EXTRASRCDIRS@
 MLLS        += clexer.mll formatlex.mll
 MLYS        += cparser.mly formatparse.mly
 MODULES     += $(CILLY_MODULES) libmaincil
@@ -148,50 +125,6 @@ $(OBJDIR)/cilly$(EXE) : $(CILLY_MODULES:%=$(OBJDIR)/%.$(CMO)) \
 
 
 quickbuild: cilversion machdep cilly
-
-
-#
-# The rules for building and running the ounit-cilly tests.
-#
-
-OUNIT_CILLY_TEST_MODULES = OUnitSymexeFileJobs OUnitSymexeCoverage OUnitSymexeMerging OUnitSymexeIntegration OUnitSymexeBoundsChecking
-OUNIT_CILLY_MODULES = MyPrintexc MyOUnit $(OUNIT_CILLY_TEST_MODULES) OUnitMain
-OUNIT_CILLY_LIBC = $(CILLY_LIBS) cil oUnit
-OUNIT_CILLY_SOURCEDIRS = ounit
-
-.PHONY : ounit ounit-cilly
-
-ounit : ounit-cilly
-
-# To reduce the risk of naming conflicts, build Cil as a library first, then do a sub-make to compile and run the
-# OUnit testsuite in a different directory.
-define OUNIT_MAKE_COMMAND
-	mkdir -p $(OBJDIR)/ounit && \
-	$(MAKE) OBJDIR=$(OBJDIR)/ounit \
-			EXTRALIBDIRS="$(EXTRALIBDIRS) $(OBJDIR)" \
-	        LIBFLAGS="$(LIBFLAGS) -I $(OBJDIR)" \
-			SOURCEDIRS="$(OUNIT_CILLY_SOURCEDIRS)" \
-	        MODULES="$(OUNIT_CILLY_MODULES)" \
-	        BEFOREDEPS=""
-endef
-
-# ounit-cilly modules also depends on cil.$(CMXA)
-$(OUNIT_CILLY_MODULES:%=$(OBJDIR)/%.$(CMO)) : $(OUNIT_CILLY_LIBC:%=%.$(CMXA))
-# disable pattern-match warnings for tests
-$(OUNIT_CILLY_MODULES:%=$(OBJDIR)/%.$(CMO)) : COMPILEFLAGS+=-w p
-
-ounit-cilly : cillib
-	$(AT)$(OUNIT_MAKE_COMMAND) $(OBJDIR)/ounit/ounit-cilly$(EXE) && \
-	$(NARRATIVE) "Running $@" && \
-	./$(OBJDIR)/ounit/ounit-cilly$(EXE) -verbose
-
-$(OBJDIR)/ounit-cilly$(EXE) : $(OUNIT_CILLY_MODULES:%=$(OBJDIR)/%.$(CMO))
-	@$(NARRATIVE) "Linking $(COMPILETOWHAT) $@ $(LINKMSG)"
-	$(AT)$(CAMLLINK) -verbose -o $@ $(OUNIT_CILLY_LIBC:%=%.$(CMXA)) $^
-
-clean-ounit :
-	$(AT)$(OUNIT_MAKE_COMMAND) CLEANING=1 cleancaml
-
 
 # Setup also makes the native code versions
 #
@@ -598,7 +531,7 @@ cleancheck:
 	rm -f test/small1/vararg1
 	rm -f test/small1/wchar1
 
-clean: cleancaml cleancheck clean-ounit
+clean: cleancaml cleancheck
 
 
 # Now include the compiler specific stuff

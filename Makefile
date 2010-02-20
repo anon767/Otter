@@ -3,15 +3,20 @@ SUBDIRS=cilqual cil ocamlstp stp camlidl syck ocamlsyck
 EXTRALIBDIRS = $(addprefix $(CURDIR)/,camlidl/runtime stp/lib ocamlstp ocamlsyck/yaml)
 
 
-all : cil
+all : otter
 
 
 cil : make//cil
 cil : MAKEGOALS=
-test-cil : make//cil
-test-cil : MAKEGOALS=ounit
 make//cil : CONFIGURE_FLAGS=EXTRALIBDIRS='$(EXTRALIBDIRS)' CC='gcc -m32'
-make//cil : ocamlstp ocamlsyck
+
+
+otter : make//otter
+otter : MAKEGOALS=
+test-otter : make//otter
+test-otter : MAKEGOALS=test
+make//otter : CONFIGURE_FLAGS=EXTRALIBDIRS='$(EXTRALIBDIRS)' --with-cil='$(CURDIR)/cil'
+make//otter : cil ocamlstp ocamlsyck
 
 
 cilqual : make//cilqual

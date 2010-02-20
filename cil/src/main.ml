@@ -25,11 +25,7 @@ let features : C.featureDescr list =
     Ptranal.feature;
     Liveness.feature;
      *)
-    Executemain.feature;
-    Marshal_feature.feature;
-		FindFns.feature;
-		TraceLines.feature;
-  ] 
+  ]
   @ Feature_config.features;;
 
 Cilly.run features ()

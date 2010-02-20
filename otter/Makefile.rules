@@ -1,0 +1,63 @@
+# Makefile implicit rules
+
+OCAMLBUILD ?= ocamlbuild
+OCAMLFIND ?= ocamlfind
+OCAMLBUILD_BUILDDIR ?= _build
+
+# ocamlbuild helper to build and copy the product into the base of the build directory
+# $(call OCAMLBUILD.build,<ocamlbuild targets>)
+define OCAMLBUILD.build
+	@echo "Building $(1)..." && \
+	$(RM) $(1) && \
+	OCAMLFIND_IGNORE_DUPS_IN=$(abspath $(OCAMLBUILD_BUILDDIR)) \
+		$(OCAMLBUILD) -build-dir $(OCAMLBUILD_BUILDDIR) -no-links \
+			$(OCAMLBUILD_FLAGS) $(VPATH:%=-I %) $(OCAMLBUILD_EXTRATARGETS) $(1) && \
+	for foo in $(1); do \
+		for v in $(VPATH); do \
+			target=$(OCAMLBUILD_BUILDDIR)/$$v/$$foo; \
+			if [ -e $$target ]; then \
+				cp $$target $(OCAMLBUILD_BUILDDIR); \
+				break; \
+			fi; \
+		done; \
+	done
+endef
+
+
+# ocamlbuild: build and install into the appropriate directory
+ocamlbuild//%.native : $(OCAMLBUILD_BUILDDIR)
+	$(call OCAMLBUILD.build,$*.native)
+
+ocamlbuild//%.byte : $(OCAMLBUILD_BUILDDIR)
+	$(call OCAMLBUILD.build,$*.byte)
+
+ocamlbuild//%.cmxa ocamlbuild//%.cma ocamlbuild//%.cmi : $(OCAMLBUILD_BUILDDIR)
+	$(call OCAMLBUILD.build,$*.cmxa $*.cma $*.cmi)
+
+# recompile everything if an external dependency is newer than the build directory
+$(OCAMLBUILD_BUILDDIR) : $(OCAMLBUILD_DEPS)
+	$(OCAMLBUILD) -clean
+
+clean-ocamlbuild :
+	$(OCAMLBUILD) -clean
+
+
+# ounit: build and run
+ounit//% : ocamlbuild//%
+	$(OCAMLBUILD_BUILDDIR)/$* $(OUNIT_FLAGS)
+
+
+# recursive Makefile build
+make//% : %/Makefile
+	$(MAKE) -C $* $(MAKEGOALS)
+
+.PRECIOUS : %/Makefile
+%/Makefile : %/Makefile.in
+	cd $* && ./configure $(CONFIGURE_FLAGS)
+
+# autoconf
+Makefile : Makefile.in configure
+	./config.status
+
+configure : configure.ac
+	autoreconf

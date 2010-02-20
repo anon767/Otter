@@ -182,45 +182,6 @@ else
   ])
 fi
 
-
-# find OUnit
-
-# first try commandline option
-AC_ARG_WITH(ounit,
-    [AS_HELP_STRING([--with-ounit=DIR], [the directory to the OUnit library])],
-    [OUNITLIBDIR="$withval"
-        AC_CHECK_FILE("$OUNITLIBDIR/oUnit.mli",, [
-            AC_MSG_ERROR([OUnit was not found in directory given by --with-ounit=$OUNITLIBDIR])])])
-
-if test "x$OUNITLIBDIR" = x; then
-    # then try ocamlfind
-    AC_CHECK_PROG(OCAMLFIND,ocamlfind,ocamlfind,no)
-    if test "$OCAMLFIND" != no; then
-        OUNITLIBDIR=`$OCAMLFIND query oUnit`
-    fi
-    # else try ocamlopt -where
-    if test "x$OUNITLIBDIR" = x; then
-        OUNITLIBDIR=`ocamlopt -where`
-    fi
-    AC_CHECK_FILE("$OUNITLIBDIR/oUnit.mli",, [
-        AC_MSG_WARN([OUnit was not found with ocamlfind or in the ocaml library
-                    path. Without it, you will not be able to run the OUnit
-                    tests. It is available at
-                    <http://www.xs4all.nl/~mmzeeman/ocaml/>.])])
-fi
-EXTRALIBDIRS="$EXTRALIBDIRS $OUNITLIBDIR"
-
-
-# set conditional macros for MyPrintexc
-if test $minor -ge 11; then
-    MYPRINTEXC_ENABLE_COMMENT='(*'
-    MYPRINTEXC_ENABLE_UNCOMMENT='*)'
-else
-    MYPRINTEXC_ENABLE_COMMENT=''
-    MYPRINTEXC_ENABLE_UNCOMMENT=''
-fi
-
-
 #
 # ------------------- Perl ----------------
 #
@@ -608,8 +569,6 @@ AC_SUBST(UNDERSCORE_NAME)
 AC_SUBST(EXTRAFEATURES)
 AC_SUBST(EXTRASRCDIRS)
 AC_SUBST(EXTRALIBDIRS)
-AC_SUBST(MYPRINTEXC_ENABLE_COMMENT)
-AC_SUBST(MYPRINTEXC_ENABLE_UNCOMMENT)
 
 # finish the configure script and generate various files; ./configure
 # will apply variable substitutions to <filename>.in to generate <filename>;
@@ -649,7 +608,6 @@ MY_AC_CONFIG_FILES(bin/CilConfig.pm)
 MY_AC_CONFIG_FILES(doc/index.html)
 MY_AC_CONFIG_FILES(doc/header.html)
 MY_AC_CONFIG_FILES(ocamlutil/perfcount.c)
-MY_AC_CONFIG_FILES(ounit/MyPrintexc.ml)
 
 AC_OUTPUT()
 

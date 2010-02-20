@@ -1,8 +1,9 @@
-open MyOUnit
+open TestUtil.MyOUnit
+open Otter
 open Executeargs
 
-(* directory containing tests for OUnitSymexeIntegration *)
-let dir_prefix = Filename.concat "ounit" "OUnitSymexeIntegration"
+(* directory containing tests for IntegrationTests *)
+let dir_prefix = Filename.concat (Filename.concat "test" "TestOtterIntegration") "IntegrationTests"
 
 (* test helper that runs the symbolic executor on a file relative to dir_prefix *)
 let test_file path =
@@ -17,7 +18,7 @@ let test_file path =
 
         (* run the symbolic executor *)
         Executemain.prepare_file file;
-        let job = Executemain.job_for_file file ["OUnitSymexeIntegration"] in
+        let job = Executemain.job_for_file file ["Integration"] in
         let results = Driver.main_loop job in
 
         (* count jobs that were abandoned *)
@@ -40,7 +41,7 @@ let test_file path =
  * OUnit test suite
  *)
 
-let testsuite = "OUnitSymexeIntegration" >:
+let testsuite = "Integration" >:
     let rec test_dir dirname =
         let dir = Sys.readdir (Filename.concat dir_prefix dirname) in
         (* first, sort up *)

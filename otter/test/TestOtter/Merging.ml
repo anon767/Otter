@@ -1,11 +1,12 @@
-open MyOUnit
+open TestUtil.MyOUnit
+open Otter
 open Types
 
 (* test helper that runs the symbolic executor on a file given a source code as a string, and counts jobs that were
    merged *)
 let test_merging content ?(label=content) test =
     label >:: bracket begin fun () ->
-        let filename, fileout = Filename.open_temp_file "OUnitSymexeMerging." ".c" in
+        let filename, fileout = Filename.open_temp_file "Merging." ".c" in
         output_string fileout content;
         close_out fileout;
         filename
@@ -22,7 +23,7 @@ let test_merging content ?(label=content) test =
 
         (* prepare the file and run the symbolic executor *)
         Executemain.prepare_file file;
-        let job = Executemain.job_for_file file ["OUnitSymexeMerging"] in
+        let job = Executemain.job_for_file file ["Merging"] in
         let results = Driver.main_loop job in
 
         (* count jobs that were merged *)
@@ -407,7 +408,7 @@ let aliasing_testsuite = "Aliasing" >::: [
     end;
 ]
 
-let testsuite = "OUnitSymexeMerging" >::: [
+let testsuite = "Merging" >::: [
     one_branch_testsuite;
     two_branches_testsuite;
     many_branches_testsuite;

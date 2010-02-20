@@ -1,0 +1,55 @@
+CIL_SRCDIR = @CIL_SRCDIR@
+EXTRALIBDIRS = @EXTRALIBDIRS@
+
+include $(CIL_SRCDIR)/config.mk
+
+CIL_OBJDIR = $(CILHOME)/obj/$(ARCHOS)
+
+OCAMLBUILD_CIL = -cflags -I,$(CIL_OBJDIR) -lflags -I,$(CIL_OBJDIR) -tags pkg_unix,pkg_str -libs yaml,stpvc,cil
+OCAMLBUILD_OUNIT = -tag pkg_oUnit
+
+OCAMLBUILD_FLAGS = -j 0 -cflags -warn-error,A -Xs doc,examples,libc,util
+OCAMLBUILD_FLAGS += $(OCAMLBUILD_CIL) $(OCAMLBUILD_OUNIT)
+OCAMLBUILD_FLAGS += $(EXTRALIBDIRS:%=-cflags -I,%) $(EXTRALIBDIRS:%=-lflags -I,%) $(OCAMLBUILD_EXTRAFLAGS)
+export OCAMLPATH:=$(CURDIR):$(OCAMLPATH)
+
+OCAMLBUILD_DEPS = $(EXTRALIBDIRS)/* configure Makefile Makefile.rules
+
+OUNIT_FLAGS = -verbose
+
+VPATH = src test
+
+.PHONY : all native debug config test experiments
+
+all : native libs
+
+native : ocamlbuild//runotter.native config
+debug : ocamlbuild//runotter.d.byte config
+
+libs : ocamlbuild//Otter.cmxa ocamlbuild//Otter.cma ocamlbuild//Otter.cmi
+
+test : ounit//runtestotter.d.byte
+
+config : otter.pl.config
+otter.pl.config : Makefile $(CIL_SRCDIR)/config.mk
+	printf "\
+	$$::cilhome = '$(CILHOME)';\n\
+	$$::cc  = '$(CC)';\n\
+	$$::default_mode = '$(DEFAULT_CIL_MODE)';\n\
+	$$::native = '$(OCAMLBUILD_BUILDDIR)/runotter.native';\n\
+	$$::byte = '$(OCAMLBUILD_BUILDDIR)/runotter.d.byte';\n\
+	$$::do_default = '--doexecute';\n\
+	$$::compile_after_merge = 0;\n\
+	1;" > $@
+
+clean : clean-ocamlbuild
+	$(RM) otter.pl.config
+
+distclean : clean
+	$(RM) config.cache config.log config.status
+
+maintainer-clean : distclean
+	$(RM) Makefile
+	$(RM) -r auto4mate.cache
+
+include Makefile.rules

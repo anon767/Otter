@@ -1,11 +1,12 @@
-open MyOUnit
+open TestUtil.MyOUnit
+open Otter
 open Bytes
 open Types
 
 (* test helper that runs the symbolic executor on a file given a source code as a string *)
 let test_file_job cmdline content ?(label=content) test =
     label >:: bracket begin fun () ->
-        let filename, fileout = Filename.open_temp_file "OUnitSymexeFileJobs." ".c" in
+        let filename, fileout = Filename.open_temp_file "FileJobs." ".c" in
         output_string fileout content;
         close_out fileout;
         filename
@@ -99,7 +100,7 @@ let exit_code_testsuite = "Exit Code" >::: [
     end;
 ]
 
-let testsuite = "OUnitSymexeFileJobs" >::: [
+let testsuite = "FileJobs" >::: [
     command_line_testsuite;
     exit_code_testsuite;
 ]

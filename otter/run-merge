@@ -1,0 +1,9 @@
+#!/bin/sh
+OCAMLRUNPARAM=b exec ./otter.pl \
+	-Ilibc \
+	-fno-builtin \
+	--domakeCFG \
+	--merge \
+	--keepmerged \
+	--noPrintLn \
+		$*

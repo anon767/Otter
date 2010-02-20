@@ -1,6 +1,6 @@
+#!/bin/sh
 ./run-merge \
 	--useLogicalOperators \
-	--doexecute \
 		$*
 
 	# --printQueries \

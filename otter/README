@@ -1,0 +1,181 @@
+Quick-start Guide
+=================
+
+* Configure, build and test:
+
+        (In the top directory)
+        make otter
+        make test-otter
+
+* Build and test only Otter (after configuring):
+
+        (In the top/otter directory)
+        make
+        make test
+
+* Running Otter (after building):
+
+        (In the top/otter directory)
+        ./otter.pl [flags] <some c file>
+
+* Adding a new module to Otter:
+
+    1. Add your module `MyModule.ml` to `src/Otter`
+    2. Edit `src/Otter.mlpack` and add a line `Otter/MyModule`
+
+* Adding a new test module to Otter:
+
+    1. Add your test module `TestMyModule.ml` to `test/TestOtter`
+    2. Edit `test/TestOtter.mlpack and add a line `TestOtter/TestMyModule`
+    3. Edit `test/runtestotter.ml` and add your test module's testsuite to the
+       list of tests to run:
+
+            run_test_tt_main begin TestList [
+                ...
+                TestOtter.TestMyModule.testsuite;
+                ...
+            ] end
+
+
+Building Otter
+==============
+
+The easiest way of building Otter is from the top directory (i.e., the directory
+above the one this README file is in). From the top directory, type:
+
+    make otter
+
+This will configure and build Otter as well as the required libraries such as
+Cil and STP. Subsequently, the above command will also automatically rebuild
+libraries that are updated (e.g., from the code repository) and, for the most
+part, it will also properly rebuild the dependent libraries as well as Otter.
+So, this is the recommended way to build Otter.
+
+After building, you should also run Otter's test suite:
+
+    make test-otter
+
+After the first build, which will configure Otter appropriately, Otter itself
+may also be rebuilt locally in the `otter` directory:
+
+    cd otter
+    make
+
+Likewise, the test suite may also be run locally:
+
+    cd otter
+    make test
+
+
+Where are the build products?
+-----------------------------
+
+Otter is built using [Ocamlbuild][] that is driven by a Makefile. This build
+system is set up to put all build products in the `_build` directory, and the
+actual Otter native code executable itself will be built and copied to
+`_build/runotter.native`. Instead of running this executable directly however,
+it is more convenient to run the wrapper script `otter.pl` described in the next
+section.
+
+A debug bytecode version of the Otter executable can also be built with the
+command:
+
+    make debug
+
+It will be copied to `_build/runotter.d.byte`.
+
+
+Running Otter
+=============
+
+Otter includes a convenient wrapper script `otter.pl` that provides a `gcc`-like
+interface to Otter. The basic usage syntax is:
+
+    ./otter.pl [flags] <input files>
+
+For example:
+
+    ./otter.pl --printLittle examples/test-mystrcmp.c
+
+`otter.pl` will first run the input files through the C preprocessor (like
+`gcc`), merge all input files, then call the Otter executable on the result.
+
+By default, `otter.pl` will run the newer of the native code executable or the
+bytecode executable. Alternatively, the bytecode executable may be invoked by:
+
+    ./otter.pl --bytecode [other flags] <input files>
+
+Additional options to Otter can be listed with:
+
+    ./otter.pl --help
+
+Furthermore, many `gcc`-style flags are also supported (although not listed in
+the command line help), e.g.:
+
+    ./otter.pl -DSOME_MACRO -include somefile.h -Isomedir
+
+
+Developing Otter
+================
+
+The source code to Otter is organized into two directories:
+
+* the `src` directory contains the source code to Otter;
+* the `test` directory contains the source code to Otter's test suite.
+
+Both these directories contain one or more directories of library modules to be
+compiled into module packs (i.e., module of modules), as well as a driver module
+to be compiled into an executable. For example:
+
+* `src`
+    * `Otter`
+        * `_tags`
+        * `Module1.ml`
+        * `Module2.ml`
+    * `Otter.mlpack`
+    * `runotter.ml`
+
+The `Otter` directory contains the source code to various Otter modules, and
+`runotter.ml` is the driver module. In addition to the source files, there are
+two meta files---`_tags` and `Otter.mlpack`---that instruct Ocamlbuild to
+compile the directory into a module pack (e.g., `Otter.cma`). The `_tags` file
+contain compilation directives for each `.ml` file in the directory, while the
+`Otter.mlpack` file contains a list of modules to compile into a module pack.
+(Unfortunately, these files are not very well documented in the [Ocamlbuild][]
+user guide).
+
+When writing a new module, e.g., `NewModule.ml`, put the file into a module pack
+directory, and add a reference to it in the corresponding `.mlpack` file.
+Additionally, when writing a new test module in the `test` directory, a
+reference to the new module's test suite should also be added to the
+`runtestotter.ml` driver:
+
+    (* in test/runtestotter.ml *)
+    run_test_tt_main begin TestList [
+        ...
+        TestOtter.TestNewModule.testsuite;
+        ...
+    ] end
+
+
+Note that when writing a module, references to module in the same directory
+should be unqualified:
+
+    (* in Module1.ml *)
+    let foo = Module2.bar;;
+
+Whereas references to modules in other directories must be qualified:
+
+    (* in Module1.ml *)
+    let foo = OtherDirectory.Module.bar;;
+
+New module packs may also be created by following the above guidelines.
+
+
+References
+==========
+
+[Ocamlbuild]: <http://nicolaspouillard.fr/ocamlbuild/ocamlbuild-user-guide.html>
+              "Ocamlbuild User Guide"
+
+

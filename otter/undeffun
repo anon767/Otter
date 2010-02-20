@@ -1,5 +1,5 @@
-OCAMLRUNPARAM=b bin/cilly --domakeCFG --merge --noPrintLn \
-	--doexecute \
+#!/bin/sh
+OCAMLRUNPARAM=b ./otter.pl --domakeCFG --merge --noPrintLn \
 	--debug-mode \
 	--printUndefined \
 	$@
