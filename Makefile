@@ -23,8 +23,8 @@ cilqual : make//cilqual
 cilqual : MAKEGOALS=
 test-cilqual : make//cilqual
 test-cilqual : MAKEGOALS=test
-make//cilqual : CONFIGURE_FLAGS=EXTRALIBDIRS='$(EXTRALIBDIRS)' --with-cil='$(CURDIR)/cil'
-make//cilqual : cil
+make//cilqual : CONFIGURE_FLAGS=EXTRALIBDIRS='$(EXTRALIBDIRS)' --with-cil='$(CURDIR)/cil' --with-otter='$(CURDIR)/otter'
+make//cilqual : otter
 
 
 ocamlstp : make//ocamlstp

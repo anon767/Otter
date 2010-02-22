@@ -1,6 +1,9 @@
 open Str
 open MyOUnit
 
+open Otter
+
+
 let preprocess str =
     (* convert NULL to ((void * $(null))0) *)
     let preprocess_null =

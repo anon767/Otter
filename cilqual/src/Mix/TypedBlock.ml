@@ -15,6 +15,8 @@ module GOps = MonadOps (G)
 open G
 open GOps
 
+open Otter
+
 
 (* setup CilQual solver *)
 let consts = [ "null"; "nonnull" ]

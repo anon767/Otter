@@ -1,21 +1,24 @@
 CIL_SRCDIR = @CIL_SRCDIR@
+OTTER_SRCDIR = @OTTER_SRCDIR@
 EXTRALIBDIRS = @EXTRALIBDIRS@
 
 include $(CIL_SRCDIR)/config.mk
-
 CIL_OBJDIR = $(CILHOME)/obj/$(ARCHOS)
 
-OCAMLBUILD_CIL = -cflags -I,$(CIL_OBJDIR) -lflags -I,$(CIL_OBJDIR) -tags pkg_unix,pkg_str -libs stpvc,cil
+OTTER_OBJDIR = $(OTTER_SRCDIR)/_build
+
+OCAMLBUILD_CIL = -cflags -I,$(CIL_OBJDIR) -lflags -I,$(CIL_OBJDIR) -tags pkg_unix,pkg_str -libs cil
+OCAMLBUILD_OTTER = -cflags -I,$(OTTER_OBJDIR) -lflags -I,$(OTTER_OBJDIR) -libs otter
 OCAMLBUILD_PA_MONAD = -X pa_monad -tag syntax_camlp4o -tag pkg_pa_monad
 OCAMLBUILD_GRAPH = -X ocamlgraph -tag pkg_ocamlgraph
 OCAMLBUILD_OUNIT = -tag pkg_oUnit
 
 OCAMLBUILD_FLAGS = -j 0 -cflags -warn-error,A -X experiments
-OCAMLBUILD_FLAGS += $(OCAMLBUILD_CIL) $(OCAMLBUILD_PA_MONAD) $(OCAMLBUILD_GRAPH) $(OCAMLBUILD_OUNIT)
-OCAMLBUILD_FLAGS += $(EXTRALIBDIRS:%=-lflags -I,%) $(OCAMLBUILD_EXTRAFLAGS)
+OCAMLBUILD_FLAGS += $(OCAMLBUILD_CIL) $(OCAMLBUILD_OTTER) $(OCAMLBUILD_PA_MONAD) $(OCAMLBUILD_GRAPH) $(OCAMLBUILD_OUNIT)
+OCAMLBUILD_FLAGS += $(EXTRALIBDIRS:%=-cflags -I,%) $(EXTRALIBDIRS:%=-lflags -I,%) $(OCAMLBUILD_EXTRAFLAGS)
 export OCAMLPATH:=$(CURDIR):$(OCAMLPATH)
 
-OCAMLBUILD_DEPS = pa_monad ocamlgraph configure Makefile Makefile.rules
+OCAMLBUILD_DEPS = pa_monad ocamlgraph configure Makefile Makefile.rules $(EXTRALIBDIRS)/*
 
 OUNIT_FLAGS = -verbose
 

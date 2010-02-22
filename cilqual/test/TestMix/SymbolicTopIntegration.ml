@@ -4,6 +4,9 @@ open TestUtil.MixUtil
 
 open Mix.Feature
 
+open Otter
+
+
 (* test helper for compilation units (files) *)
 let test_mix content ?(label=content) test =
     label >:: bracket begin fun () ->
