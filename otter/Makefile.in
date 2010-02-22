@@ -13,7 +13,9 @@ OCAMLBUILD_FLAGS += $(OCAMLBUILD_CIL) $(OCAMLBUILD_OUNIT)
 OCAMLBUILD_FLAGS += $(EXTRALIBDIRS:%=-cflags -I,%) $(EXTRALIBDIRS:%=-lflags -I,%) $(OCAMLBUILD_EXTRAFLAGS)
 export OCAMLPATH:=$(CURDIR):$(OCAMLPATH)
 
-OCAMLBUILD_DEPS = $(EXTRALIBDIRS)/* configure Makefile Makefile.rules
+OCAMLBUILD_DEPS = \
+	configure Makefile Makefile.rules \
+	$(EXTRALIBDIRS)/* $(CIL_OBJDIR)
 
 OUNIT_FLAGS = -verbose
 
@@ -26,7 +28,7 @@ all : native libs
 native : ocamlbuild//runotter.native config
 debug : ocamlbuild//runotter.d.byte config
 
-libs : ocamlbuild//Otter.cmxa ocamlbuild//Otter.cma ocamlbuild//Otter.cmi
+libs : ocamlbuild//Otter.cmxa ocamlbuild//Otter.a ocamlbuild//Otter.cma ocamlbuild//Otter.cmi
 
 test : ounit//runtestotter.d.byte
 
@@ -36,8 +38,8 @@ otter.pl.config : Makefile $(CIL_SRCDIR)/config.mk
 	$$::cilhome = '$(CILHOME)';\n\
 	$$::cc  = '$(CC)';\n\
 	$$::default_mode = '$(DEFAULT_CIL_MODE)';\n\
-	$$::native = '$(OCAMLBUILD_BUILDDIR)/runotter.native';\n\
-	$$::byte = '$(OCAMLBUILD_BUILDDIR)/runotter.d.byte';\n\
+	$$::native = '$(OCAMLBUILD_PRODUCTDIR)/runotter.native';\n\
+	$$::byte = '$(OCAMLBUILD_PRODUCTDIR)/runotter.d.byte';\n\
 	$$::do_default = '--doexecute';\n\
 	$$::compile_after_merge = 0;\n\
 	1;" > $@

@@ -71,9 +71,9 @@ Where are the build products?
 -----------------------------
 
 Otter is built using [Ocamlbuild][] that is driven by a Makefile. This build
-system is set up to put all build products in the `_build` directory, and the
-actual Otter native code executable itself will be built and copied to
-`_build/runotter.native`. Instead of running this executable directly however,
+system is set up to compile the source code in the `_build` directory, and
+additionally, the actual Otter native code executable itself will be copied to
+`_product/runotter.native`. Instead of running this executable directly however,
 it is more convenient to run the wrapper script `otter.pl` described in the next
 section.
 
@@ -82,7 +82,7 @@ command:
 
     make debug
 
-It will be copied to `_build/runotter.d.byte`.
+It will be copied to `_product/runotter.d.byte`.
 
 
 Running Otter

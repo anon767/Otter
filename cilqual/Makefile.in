@@ -5,10 +5,10 @@ EXTRALIBDIRS = @EXTRALIBDIRS@
 include $(CIL_SRCDIR)/config.mk
 CIL_OBJDIR = $(CILHOME)/obj/$(ARCHOS)
 
-OTTER_OBJDIR = $(OTTER_SRCDIR)/_build
+OTTER_OBJDIR = $(OTTER_SRCDIR)/_product
 
 OCAMLBUILD_CIL = -cflags -I,$(CIL_OBJDIR) -lflags -I,$(CIL_OBJDIR) -tags pkg_unix,pkg_str -libs cil
-OCAMLBUILD_OTTER = -cflags -I,$(OTTER_OBJDIR) -lflags -I,$(OTTER_OBJDIR) -libs otter
+OCAMLBUILD_OTTER = -cflags -I,$(OTTER_OBJDIR) -lflags -I,$(OTTER_OBJDIR) -libs yaml,stpvc,Otter
 OCAMLBUILD_PA_MONAD = -X pa_monad -tag syntax_camlp4o -tag pkg_pa_monad
 OCAMLBUILD_GRAPH = -X ocamlgraph -tag pkg_ocamlgraph
 OCAMLBUILD_OUNIT = -tag pkg_oUnit
@@ -18,7 +18,9 @@ OCAMLBUILD_FLAGS += $(OCAMLBUILD_CIL) $(OCAMLBUILD_OTTER) $(OCAMLBUILD_PA_MONAD)
 OCAMLBUILD_FLAGS += $(EXTRALIBDIRS:%=-cflags -I,%) $(EXTRALIBDIRS:%=-lflags -I,%) $(OCAMLBUILD_EXTRAFLAGS)
 export OCAMLPATH:=$(CURDIR):$(OCAMLPATH)
 
-OCAMLBUILD_DEPS = pa_monad ocamlgraph configure Makefile Makefile.rules $(EXTRALIBDIRS)/*
+OCAMLBUILD_DEPS = \
+	pa_monad ocamlgraph configure Makefile Makefile.rules \
+	$(EXTRALIBDIRS)/* $(CIL_OBJDIR)/* $(OTTER_OBJDIR)/*
 
 OUNIT_FLAGS = -verbose
 
@@ -45,8 +47,8 @@ cilqual.pl.config : Makefile $(CIL_SRCDIR)/config.mk
 	$$::cilhome = '$(CILHOME)';\n\
 	$$::cc  = '$(CC)';\n\
 	$$::default_mode = '$(DEFAULT_CIL_MODE)';\n\
-	$$::native = '$(OCAMLBUILD_BUILDDIR)/runcilqual.native';\n\
-	$$::byte = '$(OCAMLBUILD_BUILDDIR)/runcilqual.d.byte';\n\
+	$$::native = '$(OCAMLBUILD_PRODUCTDIR)/runcilqual.native';\n\
+	$$::byte = '$(OCAMLBUILD_PRODUCTDIR)/runcilqual.d.byte';\n\
 	$$::do_default = '--docilqual';\n\
 	$$::compile_after_merge = 0;\n\
 	1;" > $@

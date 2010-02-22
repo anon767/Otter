@@ -3,19 +3,21 @@
 OCAMLBUILD ?= ocamlbuild
 OCAMLFIND ?= ocamlfind
 OCAMLBUILD_BUILDDIR ?= _build
+OCAMLBUILD_PRODUCTDIR ?= _product
 
-# ocamlbuild helper to build and copy the product into the base of the build directory
+# ocamlbuild helper to build and copy the product into the product directory
 # $(call OCAMLBUILD.build,<ocamlbuild targets>)
 define OCAMLBUILD.build
-	@echo "Building $(1)..." && \
+	@echo "ocamlbuild $(1)..." && \
 	$(RM) $(1) && \
 	$(OCAMLBUILD) -build-dir $(OCAMLBUILD_BUILDDIR) -no-links \
 		$(OCAMLBUILD_FLAGS) $(VPATH:%=-I %) $(OCAMLBUILD_EXTRATARGETS) $(1) && \
+	mkdir -p $(OCAMLBUILD_PRODUCTDIR) && \
 	for foo in $(1); do \
 		for v in $(VPATH); do \
 			target=$(OCAMLBUILD_BUILDDIR)/$$v/$$foo; \
 			if [ -e $$target ]; then \
-				cp $$target $(OCAMLBUILD_BUILDDIR); \
+				cp $$target $(OCAMLBUILD_PRODUCTDIR); \
 				break; \
 			fi; \
 		done; \
@@ -30,8 +32,8 @@ ocamlbuild//%.native : $(OCAMLBUILD_BUILDDIR)
 ocamlbuild//%.byte : $(OCAMLBUILD_BUILDDIR)
 	$(call OCAMLBUILD.build,$*.byte)
 
-ocamlbuild//%.cmxa ocamlbuild//%.cma ocamlbuild//%.cmi : $(OCAMLBUILD_BUILDDIR)
-	$(call OCAMLBUILD.build,$*.cmxa $*.cma $*.cmi)
+ocamlbuild//%.cmxa ocamlbuild//%.a ocamlbuild//%.cma ocamlbuild//%.cmi : $(OCAMLBUILD_BUILDDIR)
+	$(call OCAMLBUILD.build,$*.cmxa $*.a $*.cma $*.cmi)
 
 # recompile everything if an external dependency is newer than the build directory
 $(OCAMLBUILD_BUILDDIR) : $(OCAMLBUILD_DEPS)
@@ -39,11 +41,12 @@ $(OCAMLBUILD_BUILDDIR) : $(OCAMLBUILD_DEPS)
 
 clean-ocamlbuild :
 	$(OCAMLBUILD) -clean
+	$(RM) -r $(OCAMLBUILD_PRODUCTDIR)
 
 
 # ounit: build and run
 ounit//% : ocamlbuild//%
-	$(OCAMLBUILD_BUILDDIR)/$* $(OUNIT_FLAGS)
+	$(OCAMLBUILD_PRODUCTDIR)/$* $(OUNIT_FLAGS)
 
 
 # recursive Makefile build
