@@ -21,6 +21,8 @@ let rec init_globalvars state globals (is_symbolic:bool) =
               let state, init_bytes = match initinfo.init with
                 | None -> (state, zeros)
                 | Some(init) ->
+                    if is_symbolic then (state,zeros) else
+                    begin
                     (* make the offset argument "accumulative",
                      i.e. not following the spec of Cil's offset in init type
                      *)
@@ -49,10 +51,12 @@ let rec init_globalvars state globals (is_symbolic:bool) =
                               ~acc: (state, acc)
                     in
                       myInit NoOffset init (state, zeros)
+                    end
               in
                 Output.set_mode Output.MSG_REG;
                 Output.print_endline ("Initialize "^varinfo.vname^" to "
-                                      ^(if init_bytes == zeros then "zeros" else To_string.bytes init_bytes)
+                                      ^(if init_bytes == zeros &&
+                                      is_symbolic=false then "zeros" else To_string.bytes init_bytes)
                 );					
                 MemOp.state__add_global state varinfo init_bytes 
               )
@@ -411,6 +415,10 @@ let feature : featureDescr =
 			("--failfast",
 			Arg.Unit (fun () -> Executeargs.run_args.arg_failfast <- true),
 			" Abort execution if any path encounters an error\n");
+
+      ("--noboundsChecking",
+      Arg.Unit (fun () -> run_args.arg_bounds_checking <- false),
+      " Disable bounds checking on memory accesses\n");
 
 			(**
 					Printing options
