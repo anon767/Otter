@@ -2,10 +2,13 @@ open Cil
 open Bytes
 open Types
 open Executeargs
+open YamlParser
+open MemOp
 
 let unreachable_global varinfo = not (Cilutility.VarinfoSet.mem varinfo (!GetProgInfo.reachable_globals));;
 
-let rec init_globalvars state globals =
+let rec init_globalvars state globals (is_symbolic:bool) =
+  let bytes__make'' = if is_symbolic then bytes__symbolic else bytes__make in
 	match globals with
 		| [] -> state
 		| GVar(varinfo, initinfo, loc):: tail ->
@@ -14,7 +17,7 @@ let rec init_globalvars state globals =
               Output.set_mode Output.MSG_MUSTPRINT;
               let lhost_typ = varinfo.vtype in
               let size = (Cil.bitsSizeOf (varinfo.vtype)) / 8 in
-              let zeros = bytes__make size in
+              let zeros = bytes__make'' size in
               let state, init_bytes = match initinfo.init with
                 | None -> (state, zeros)
                 | Some(init) ->
@@ -54,7 +57,7 @@ let rec init_globalvars state globals =
                 MemOp.state__add_global state varinfo init_bytes 
               )
             in
-                init_globalvars state2 tail
+                init_globalvars state2 tail is_symbolic
 		| GVarDecl(varinfo, loc):: tail when (not(Cil.isFunctionType varinfo.vtype)) ->
 				(* I think the list of globals is always in the same order as in the source
 					 code. In particular, I think there will never be a declaration of a
@@ -70,13 +73,32 @@ let rec init_globalvars state globals =
 				);
 				let size = (Cil.bitsSizeOf (varinfo.vtype)) / 8 in
 				let size = if size <= 0 then 1 else size in
-				let init_bytes = bytes__make size (* zeros *)
+				let init_bytes = bytes__make'' size (* zeros *)
 				in
 				    MemOp.state__add_global state varinfo init_bytes 
               )
             in
-				init_globalvars state2 tail
-		| _:: tail -> init_globalvars state tail
+				init_globalvars state2 tail is_symbolic
+		| _:: tail -> init_globalvars state tail is_symbolic
+;;
+
+(* Initialize arguments to the entry function to purely symbolic
+ * TODO: merge this with init_cmdline_argvs
+ * TODO: init globals to symbolic
+ *)
+let init_entryfn_argvs state (entryfn:fundec) : (state*bytes list) =
+  let state = state__add_frame state in
+  let state,args = 
+    List.fold_right  (* TODO: Does ordering matter? *)
+      (fun varinfo (state,args) ->
+        let size = (Cil.bitsSizeOf varinfo.vtype) / 8 in
+        let init = bytes__symbolic size in 
+        (state__add_formal state varinfo init,init::args)
+      ) 
+      entryfn.sformals
+      (state,[])
+  in
+  (state,args)
 ;;
 
 (* To initialize the arguments, we need to create a bytes which represents argc and
@@ -259,29 +281,62 @@ let job_for_function state fn argvs =
 
 (* create a job that begins at the main function of a file, with the initial state set up for the file *)
 let job_for_file file cmdline =
-	let main_func =
-		try Function.from_name_in_file "main" file
-		with Not_found -> failwith "No main function found!"
-	in
 
 	(* Initialize the state *)
 	let state = MemOp.state__empty in
-	let state = init_globalvars state file.globals in
 
-	(* prepare the command line arguments, if needed *)
-	let state, main_args =
-		match main_func.svar.vtype with
-				TFun (_, Some [], _, _) -> state, [] (* main has no arguments *)
-			| _ -> init_cmdline_argvs state cmdline
-	in
+  let entryfn = 
+    try Function.from_name_in_file 
+      (if Executeargs.run_args.arg_entryfn = "" then "main" 
+      else Executeargs.run_args.arg_entryfn)
+        file
+    with Not_found -> failwith "No entry function found!"
+  in
+
+  let state,entryargs =
+    if Executeargs.run_args.arg_entryfn = "" then
+      begin
+	    let state = init_globalvars state file.globals false in
+	    (* prepare the command line arguments *)
+	    let state, main_args = 
+        match entryfn.svar.vtype with
+        | TFun (_,Some [],_,_)-> state, [] (* main has no arguments *)
+        | _ -> init_cmdline_argvs state cmdline 
+      in
+        (state, main_args)
+      end
+    else 
+	    let state = init_globalvars state file.globals true in
+	    let state, entryargs = init_entryfn_argvs state entryfn in
+      (state,entryargs)
+  in
 
 	(* create a job starting at main *)
-	job_for_function state main_func main_args
+	job_for_function state entryfn entryargs 
 
 
 let doExecute (f: file) =
+
+  (*
+  (if Executeargs.run_args.arg_yaml == "" then () else
+    let parser = YamlParser.make () in
+    let rec yamlread x =
+      match x with
+      | YamlNode.SCALAR(t,s) -> print_endline ("SCALAR: "^s)
+      | YamlNode.SEQUENCE(t,ss) -> print_endline ("SEQUENCE"); List.iter (fun a -> yamlread a) ss
+      | YamlNode.MAPPING(t,a) -> print_endline ("MAPPING"); List.iter (fun (a,b)
+      -> yamlread a; yamlread b) a
+    in
+    let yaml = YamlParser.parse_string parser Executeargs.run_args.arg_yaml in
+      yamlread yaml;
+      ignore (exit 0);
+    ()
+  );
+  *)
 	Output.set_mode Output.MSG_MUSTPRINT;
-	Output.print_endline "\nA (symbolic) executor for C\n";
+	Output.print_endline "\n";
+	Output.print_endline "Otter, a symbolic executor for C";
+	Output.print_endline "\n";
 
 	(* Keep track of how long we run *)
 	let startTime = Unix.gettimeofday () in
@@ -356,10 +411,6 @@ let feature : featureDescr =
 			("--failfast",
 			Arg.Unit (fun () -> Executeargs.run_args.arg_failfast <- true),
 			" Abort execution if any path encounters an error\n");
-
-			("--noboundsChecking",
-			 Arg.Unit (fun () -> run_args.arg_bounds_checking <- false),
-			 " Disable bounds checking on memory accesses\n");
 
 			(**
 					Printing options
@@ -478,6 +529,15 @@ let feature : featureDescr =
 			("--noinitUnreachableGlobals",
 			 Arg.Unit (fun () -> run_args.arg_noinit_unreachable_globals <- true),
 			 " Do NOT initialize unreachable globals\n");
+
+			("--yaml",
+			 Arg.String readYamlFromFile,
+			 "<filename> File containing Yaml output\n");
+
+			("--entryfn",
+			Arg.String (fun fname -> Executeargs.run_args.arg_entryfn <- fname),
+			"<fname> Entry function (default: main) \n");
+
 
 (*
 			("--marshalFrom",

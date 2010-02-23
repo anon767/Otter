@@ -73,6 +73,8 @@ type run_args =
 		mutable arg_num_edges : int;
 		mutable arg_num_conds : int;
 		mutable arg_fns : Types.StringSet.t;
+		mutable arg_yaml : string;
+		mutable arg_entryfn : string;
 		mutable arg_timeout : int;
 		(** How many seconds to allow the executor to run. *)
 		mutable arg_merge_paths : bool;
@@ -88,7 +90,7 @@ type run_args =
 		mutable arg_opt_stpbv_cache : bool;
 		mutable arg_failfast : bool;
 		mutable arg_init_malloc_zero : bool;
-		mutable arg_bounds_checking : bool;
+    mutable arg_bounds_checking : bool;
 	};;
 
 let run_args = 
@@ -106,6 +108,8 @@ let run_args =
 		arg_num_edges = -1;
 		arg_num_conds = -1;
 		arg_fns = Types.StringSet.empty;
+		arg_yaml = "";
+		arg_entryfn = ""; (* == main *)
 		arg_timeout = 0;
 		arg_merge_paths = false;
 		arg_marshal_file = ""; (* File to which to marshal coverage information *)
@@ -120,7 +124,7 @@ let run_args =
 		arg_opt_stpbv_cache = false;
 		arg_failfast = false;
 		arg_init_malloc_zero = false;
-		arg_bounds_checking = true;
+    arg_bounds_checking = true;
 	} ;;
 
 (* This is bad---I know *)
@@ -133,3 +137,12 @@ let readCovStatsFromFile filename =
 			run_args.arg_fns <- Types.StringSet.add (input_line inChan) run_args.arg_fns
 		done
 	with End_of_file -> close_in inChan
+  
+let readYamlFromFile filename =
+	let inChan = open_in filename in
+	try
+		while true do
+			run_args.arg_yaml <- run_args.arg_yaml^(input_line inChan)^"\n"
+		done
+	with End_of_file -> close_in inChan
+
