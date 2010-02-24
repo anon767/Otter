@@ -46,7 +46,7 @@ endif
 
 JAVAC ?= javac
 JAVAC_TARGET ?= -target 5 -source 5
-JAVAC_ARGS ?= -g ${JAVAC_TARGET}
+JAVAC_ARGS ?= -g -nowarn ${JAVAC_TARGET}
 
 JAR ?= jar
 ifeq (cygwin,$(OSTYPE))
