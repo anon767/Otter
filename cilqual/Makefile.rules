@@ -17,7 +17,7 @@ define OCAMLBUILD.build
 		for v in $(VPATH); do \
 			target=$(OCAMLBUILD_BUILDDIR)/$$v/$$foo; \
 			if [ -e $$target ]; then \
-				cp $$target $(OCAMLBUILD_PRODUCTDIR); \
+				cp -p $$target $(OCAMLBUILD_PRODUCTDIR); \
 				break; \
 			fi; \
 		done; \
