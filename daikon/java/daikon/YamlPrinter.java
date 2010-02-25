@@ -4,9 +4,7 @@
  *
  * Schema:
  *
- * - 
- *   PptName : [name]
- *   PptInv :
+ * [name]
  *     -
  *       InvType : [type, in Daikon's java class name]
  *       InvData :
@@ -111,8 +109,7 @@ public class YamlPrinter{
         PptTopLevel ppt = itor.next();
         // Only export invariants for function entries
         if (ppt.is_enter()){
-          map.put("PptName",ppt.toString());
-          map.put("PptInv",convertPptTopLevel(ppt));
+          map.put(ppt.toString(),convertPptTopLevel(ppt));
         }
     }
     return map;
