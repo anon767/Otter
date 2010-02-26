@@ -1,5 +1,6 @@
 open YamlParser
-   
+open Types
+open MemOp
 open Cilutility
 
 module StringMap = Map.Make (String);;
@@ -64,17 +65,19 @@ let parse yaml_str file  =
     ()
 ;;
 
-
-let constrain bytes varinfo fundec_opt state =
-  (* TODO *)
-  (match fundec_opt with
-    | None -> () (* Global *)
-    | Some fundec -> () (* Local (formal) *)
-  );
-  bytes,state
+let constrain_inv state (invname,invattr)  =
+  match invname with
+    | "daikon.inv.unary.scalar.OneOfScalar" ->
+        Printf.printf "daikon.inv.unary.scalar.OneOfScalar\n";
+        StringMap.iter (fun k v -> Printf.printf "    %s=%s\n" k
+        (List.fold_left (fun s elm -> s^" "^elm) "" v)) invattr;
+        state
+    | _ -> state
 ;;
 
-
-
+let constrain state fundec =
+  let invlst = FundecMap.find fundec (!__map) in
+    List.fold_left constrain_inv state invlst
+;;
 
 

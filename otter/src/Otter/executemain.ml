@@ -8,12 +8,7 @@ open InvInput
 let unreachable_global varinfo = not (Cilutility.VarinfoSet.mem varinfo (!GetProgInfo.reachable_globals));;
 
 let rec init_globalvars state globals (is_symbolic:bool) =
-  let create_new_bytes size varinfo state = 
-    if is_symbolic then 
-      let bytes = bytes__symbolic size in
-        InvInput.constrain bytes varinfo None state 
-    else bytes__make size, state
-  in
+  let bytes__make'' = if is_symbolic then bytes__symbolic else bytes__make in
 	match globals with
 		| [] -> state
 		| GVar(varinfo, initinfo, loc):: tail ->
@@ -22,7 +17,7 @@ let rec init_globalvars state globals (is_symbolic:bool) =
               Output.set_mode Output.MSG_MUSTPRINT;
               let lhost_typ = varinfo.vtype in
               let size = (Cil.bitsSizeOf (varinfo.vtype)) / 8 in
-              let zeros,state = create_new_bytes size varinfo state in
+              let zeros = bytes__make'' size in
               let state, init_bytes = match initinfo.init with
                 | None -> (state, zeros)
                 | Some(init) ->
@@ -84,7 +79,7 @@ let rec init_globalvars state globals (is_symbolic:bool) =
 				);
 				let size = (Cil.bitsSizeOf (varinfo.vtype)) / 8 in
 				let size = if size <= 0 then 1 else size in
-				let init_bytes,state = create_new_bytes size varinfo state 
+				let init_bytes = bytes__make'' size (* zeros *)
 				in
 				    MemOp.state__add_global state varinfo init_bytes 
               )
@@ -95,6 +90,7 @@ let rec init_globalvars state globals (is_symbolic:bool) =
 
 (* Initialize arguments to the entry function to purely symbolic
  * TODO: merge this with init_cmdline_argvs
+ * TODO: init globals to symbolic
  *)
 let init_entryfn_argvs state (entryfn:fundec) : (state*bytes list) =
   let state = state__add_frame state in
@@ -103,9 +99,7 @@ let init_entryfn_argvs state (entryfn:fundec) : (state*bytes list) =
       (fun varinfo (state,args) ->
         let size = (Cil.bitsSizeOf varinfo.vtype) / 8 in
         let init = bytes__symbolic size in 
-        (* TODO: add invariant constraints here *)
-        let init,state = InvInput.constrain init varinfo (Some entryfn) state in 
-          (state__add_formal state varinfo init,init::args)
+        (state__add_formal state varinfo init,init::args)
       ) 
       entryfn.sformals
       (state,[])
@@ -279,8 +273,12 @@ let prepare_file file =
 	)
 
 (* create a job that begins at a function, given an initial state *)
-let job_for_function state fn argvs =
+let job_for_function state fn argvs isMain =
 	let state = MemOp.state__start_fcall state Runtime fn argvs in
+  (* Here is the point where we insert constraints from invariants *)
+  let state = if isMain then state else
+    InvInput.constrain state fn
+  in
 	(* create a new job *)
 	{ state = state;
 	  exHist = emptyHistory;
@@ -297,16 +295,17 @@ let job_for_file file cmdline =
 	(* Initialize the state *)
 	let state = MemOp.state__empty in
 
+  let isMain = Executeargs.run_args.arg_entryfn = "" in
+
   let entryfn = 
     try Function.from_name_in_file 
-      (if Executeargs.run_args.arg_entryfn = "" then "main" 
-      else Executeargs.run_args.arg_entryfn)
+      (if isMain then "main" else Executeargs.run_args.arg_entryfn)
         file
     with Not_found -> failwith "No entry function found!"
   in
 
   let state,entryargs =
-    if Executeargs.run_args.arg_entryfn = "" then
+    if isMain then
       begin
 	    let state = init_globalvars state file.globals false in
 	    (* prepare the command line arguments *)
@@ -324,7 +323,7 @@ let job_for_file file cmdline =
   in
 
 	(* create a job starting at main *)
-	job_for_function state entryfn entryargs 
+	job_for_function state entryfn entryargs isMain
 
 
 let doExecute (f: file) =
