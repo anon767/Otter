@@ -23,15 +23,6 @@ let rec init_globalvars state globals (is_symbolic:bool) =
                 | Some(init) ->
                     if is_symbolic then (state,zeros) else
                     begin
-                    (* make the offset argument "accumulative",
-                     i.e. not following the spec of Cil's offset in init type
-                     *)
-                    let rec accumulate_offset offset off' =
-                      match offset with
-                        | NoOffset -> off'
-                        | Field(f,offset2) -> Field(f,accumulate_offset offset2 off')
-                        | Index(exp,offset2) -> Index(exp,accumulate_offset offset2 off')
-                    in
                     let rec myInit (offset:Cil.offset) (i:Cil.init) (state, acc) =
                       match i with 
                         | SingleInit(exp) -> 
@@ -45,7 +36,7 @@ let rec init_globalvars state globals (is_symbolic:bool) =
                         | CompoundInit(typ, list) ->          
                             foldLeftCompound
                               ~implicit: false
-                              ~doinit: (fun off' i' t' (state, acc) -> myInit (accumulate_offset offset off') i' (state, acc))
+                              ~doinit: (fun off' i' t' (state, acc) -> myInit (addOffset off' offset) i' (state, acc))
                               ~ct: typ 
                               ~initl: list 
                               ~acc: (state, acc)
