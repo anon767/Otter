@@ -1,11 +1,4 @@
 open YamlParser
-
-(* TODO: 
-  * 1. Generate a schema from Daikon's Java classes.
-  * 2. Generate java code to extract Daikon's pptmap structure to YAML. (can use
-  * reflection)
-  * 3. Generate ocaml types and code to read in the YAML.
-  *)
    
 open Cilutility
 
@@ -68,6 +61,20 @@ let parse yaml_str file  =
   in
   let yaml = YamlParser.parse_string (YamlParser.make ()) yaml_str in
     __map := read_pptmap yaml;
-    ignore yaml
+    ()
 ;;
+
+
+let constrain bytes varinfo fundec_opt state =
+  (* TODO *)
+  (match fundec_opt with
+    | None -> () (* Global *)
+    | Some fundec -> () (* Local (formal) *)
+  );
+  bytes,state
+;;
+
+
+
+
 

@@ -8,7 +8,12 @@ open InvInput
 let unreachable_global varinfo = not (Cilutility.VarinfoSet.mem varinfo (!GetProgInfo.reachable_globals));;
 
 let rec init_globalvars state globals (is_symbolic:bool) =
-  let bytes__make'' = if is_symbolic then bytes__symbolic else bytes__make in
+  let create_new_bytes size varinfo state = 
+    if is_symbolic then 
+      let bytes = bytes__symbolic size in
+        InvInput.constrain bytes varinfo None state 
+    else bytes__make size, state
+  in
 	match globals with
 		| [] -> state
 		| GVar(varinfo, initinfo, loc):: tail ->
@@ -17,7 +22,7 @@ let rec init_globalvars state globals (is_symbolic:bool) =
               Output.set_mode Output.MSG_MUSTPRINT;
               let lhost_typ = varinfo.vtype in
               let size = (Cil.bitsSizeOf (varinfo.vtype)) / 8 in
-              let zeros = bytes__make'' size in
+              let zeros,state = create_new_bytes size varinfo state in
               let state, init_bytes = match initinfo.init with
                 | None -> (state, zeros)
                 | Some(init) ->
@@ -79,7 +84,7 @@ let rec init_globalvars state globals (is_symbolic:bool) =
 				);
 				let size = (Cil.bitsSizeOf (varinfo.vtype)) / 8 in
 				let size = if size <= 0 then 1 else size in
-				let init_bytes = bytes__make'' size (* zeros *)
+				let init_bytes,state = create_new_bytes size varinfo state 
 				in
 				    MemOp.state__add_global state varinfo init_bytes 
               )
@@ -90,7 +95,6 @@ let rec init_globalvars state globals (is_symbolic:bool) =
 
 (* Initialize arguments to the entry function to purely symbolic
  * TODO: merge this with init_cmdline_argvs
- * TODO: init globals to symbolic
  *)
 let init_entryfn_argvs state (entryfn:fundec) : (state*bytes list) =
   let state = state__add_frame state in
@@ -99,7 +103,9 @@ let init_entryfn_argvs state (entryfn:fundec) : (state*bytes list) =
       (fun varinfo (state,args) ->
         let size = (Cil.bitsSizeOf varinfo.vtype) / 8 in
         let init = bytes__symbolic size in 
-        (state__add_formal state varinfo init,init::args)
+        (* TODO: add invariant constraints here *)
+        let init,state = InvInput.constrain init varinfo (Some entryfn) state in 
+          (state__add_formal state varinfo init,init::args)
       ) 
       entryfn.sformals
       (state,[])
