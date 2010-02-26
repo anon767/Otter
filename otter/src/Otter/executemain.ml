@@ -2,8 +2,8 @@ open Cil
 open Bytes
 open Types
 open Executeargs
-open YamlParser
 open MemOp
+open InvInput
 
 let unreachable_global varinfo = not (Cilutility.VarinfoSet.mem varinfo (!GetProgInfo.reachable_globals));;
 
@@ -54,9 +54,11 @@ let rec init_globalvars state globals (is_symbolic:bool) =
                     end
               in
                 Output.set_mode Output.MSG_REG;
-                Output.print_endline ("Initialize "^varinfo.vname^" to "
-                                      ^(if init_bytes == zeros &&
-                                      is_symbolic=false then "zeros" else To_string.bytes init_bytes)
+                Output.print_endline 
+                  ("Initialize "^varinfo.vname^" to "
+                   ^(if init_bytes == zeros then
+                       (if is_symbolic=false then "zeros" else "purely symbolic values")
+                     else To_string.bytes init_bytes)
                 );					
                 MemOp.state__add_global state varinfo init_bytes 
               )
@@ -321,22 +323,6 @@ let job_for_file file cmdline =
 
 let doExecute (f: file) =
 
-  (*
-  (if Executeargs.run_args.arg_yaml == "" then () else
-    let parser = YamlParser.make () in
-    let rec yamlread x =
-      match x with
-      | YamlNode.SCALAR(t,s) -> print_endline ("SCALAR: "^s)
-      | YamlNode.SEQUENCE(t,ss) -> print_endline ("SEQUENCE"); List.iter (fun a -> yamlread a) ss
-      | YamlNode.MAPPING(t,a) -> print_endline ("MAPPING"); List.iter (fun (a,b)
-      -> yamlread a; yamlread b) a
-    in
-    let yaml = YamlParser.parse_string parser Executeargs.run_args.arg_yaml in
-      yamlread yaml;
-      ignore (exit 0);
-    ()
-  );
-  *)
 	Output.set_mode Output.MSG_MUSTPRINT;
 	Output.print_endline "\n";
 	Output.print_endline "Otter, a symbolic executor for C";
@@ -358,6 +344,12 @@ let doExecute (f: file) =
 
 	(* prepare the file for symbolic execution *)
 	prepare_file f;
+
+  (* Prepare the invariant input *)
+  (let arg_yaml = Executeargs.run_args.arg_yaml in
+    if arg_yaml == "" then () else
+    InvInput.parse arg_yaml f (* TODO: the file is used only for finding fundec *)
+  );
 
 	(* create a job for the file, with the commandline arguments set to the file name and the arguments from the
 	   '--arg' option *)

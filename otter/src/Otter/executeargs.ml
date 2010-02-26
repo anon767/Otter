@@ -139,10 +139,11 @@ let readCovStatsFromFile filename =
 	with End_of_file -> close_in inChan
   
 let readYamlFromFile filename =
-	let inChan = open_in filename in
-	try
-		while true do
-			run_args.arg_yaml <- run_args.arg_yaml^(input_line inChan)^"\n"
-		done
-	with End_of_file -> close_in inChan
+	let inChan = open_in filename in 
+  let len = in_channel_length inChan in
+  let str = String.create len in
+    really_input inChan str 0 len;
+    run_args.arg_yaml <- str;
+    close_in inChan
+
 
