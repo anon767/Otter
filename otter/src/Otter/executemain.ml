@@ -7,83 +7,86 @@ open InvInput
 
 let unreachable_global varinfo = not (Cilutility.VarinfoSet.mem varinfo (!GetProgInfo.reachable_globals));;
 
-let rec init_globalvars state globals (is_symbolic:bool) =
-  let bytes__make'' = if is_symbolic then bytes__symbolic else bytes__make in
-	match globals with
-		| [] -> state
-		| GVar(varinfo, initinfo, loc):: tail ->
-            let state2 = if Executeargs.run_args.arg_noinit_unreachable_globals && unreachable_global varinfo then state else
-              (
-              Output.set_mode Output.MSG_MUSTPRINT;
-              let lhost_typ = varinfo.vtype in
-              let size = (Cil.bitsSizeOf (varinfo.vtype)) / 8 in
-              let zeros = bytes__make'' size in
-              let state, init_bytes = match initinfo.init with
-                | None -> (state, zeros)
-                | Some(init) ->
-                    if is_symbolic then (state,zeros) else
-                    begin
-                    let rec myInit (offset:Cil.offset) (i:Cil.init) (state, acc) =
-                      match i with 
-                        | SingleInit(exp) -> 
-                            let state, off, typ = Eval.flatten_offset state lhost_typ offset in
-                            let state, off_bytes = Eval.rval state exp in
-                            let init_bytes =
-                              bytes__write
-                                acc off (Cilutility.bitsSizeOfExp exp) off_bytes
-                            in
-                              (state, init_bytes)
-                        | CompoundInit(typ, list) ->          
-                            foldLeftCompound
-                              ~implicit: false
-                              ~doinit: (fun off' i' t' (state, acc) -> myInit (addOffset off' offset) i' (state, acc))
-                              ~ct: typ 
-                              ~initl: list 
-                              ~acc: (state, acc)
-                    in
-                      myInit NoOffset init (state, zeros)
-                    end
-              in
-                Output.set_mode Output.MSG_REG;
-                Output.print_endline 
-                  ("Initialize "^varinfo.vname^" to "
-                   ^(if init_bytes == zeros then
-                       (if is_symbolic=false then "zeros" else "purely symbolic values")
-                     else To_string.bytes init_bytes)
-                );					
-                MemOp.state__add_global state varinfo init_bytes 
-              )
-            in
-                init_globalvars state2 tail is_symbolic
-		| GVarDecl(varinfo, loc):: tail when (not(Cil.isFunctionType varinfo.vtype)) ->
+let init_symbolic_globalvars state globals =
+	List.fold_left begin fun state g -> match g with
+		| GVar (varinfo, _, _)
+		| GVarDecl (varinfo, _)
+				when not (Cil.isFunctionType varinfo.vtype)
+					 && not (Executeargs.run_args.arg_noinit_unreachable_globals && unreachable_global varinfo) ->
+			let size = (Cil.bitsSizeOf (varinfo.vtype)) / 8 in
+			let size = if size <= 0 then 1 else size in
+			let init_bytes = bytes__symbolic size in
+
+			Output.set_mode Output.MSG_REG;
+			Output.printf "Initialize %s to symbolic\n" varinfo.vname;
+
+		    MemOp.state__add_global state varinfo init_bytes
+
+		| _ ->
+			state
+	end state globals
+;;
+
+
+let init_globalvars state globals =
+	List.fold_left begin fun state g -> match g with
+		| GVar(varinfo, { init=Some init }, _)
+				when not (Executeargs.run_args.arg_noinit_unreachable_globals && unreachable_global varinfo) ->
+			Output.set_mode Output.MSG_MUSTPRINT;
+			let lhost_typ = varinfo.vtype in
+			let size = (Cil.bitsSizeOf (varinfo.vtype)) / 8 in
+			let zeros = bytes__make size in
+			let rec myInit (offset:Cil.offset) (i:Cil.init) (state, acc) =
+				match i with
+					| SingleInit(exp) ->
+						let state, off, typ = Eval.flatten_offset state lhost_typ offset in
+						let state, off_bytes = Eval.rval state exp in
+						let size = (Cil.bitsSizeOf typ) / 8 in
+						let init_bytes = bytes__write acc off size off_bytes in
+						(state, init_bytes)
+					| CompoundInit(typ, list) ->
+						foldLeftCompound
+							~implicit: false
+							~doinit: (fun off' i' t' (state, acc) -> myInit (addOffset off' offset) i' (state, acc))
+							~ct: typ
+							~initl: list
+							~acc: (state, acc)
+			in
+            let state, init_bytes = myInit NoOffset init (state, zeros) in
+
+			Output.set_mode Output.MSG_REG;
+			Output.printf "Initialize %s to %s\n" varinfo.vname
+				(if init_bytes == zeros then "zeros" else To_string.bytes init_bytes);
+
+            MemOp.state__add_global state varinfo init_bytes
+
+		| GVar(varinfo, _, _)
+		| GVarDecl(varinfo, _)
+				when not (Cil.isFunctionType varinfo.vtype)
+					 && not (Executeargs.run_args.arg_noinit_unreachable_globals && unreachable_global varinfo) ->
 				(* I think the list of globals is always in the same order as in the source
 					 code. In particular, I think there will never be a declaration of a
 					 variable after that variable has been defined, since CIL gets rid of
 					 such extra declarations. If this is true, then this should work fine. If
 					 not, a declaration occuring *after* a definition will wipe out the
 					 definition, replacing the value with zeros. *)
-            let state2 = if Executeargs.run_args.arg_noinit_unreachable_globals && unreachable_global varinfo then state else
-              (
-				Output.set_mode Output.MSG_REG;
-				Output.print_endline ("Initialize "^varinfo.vname^" without initial value"
-					(*^(To_string.bytes init)*)
-				);
-				let size = (Cil.bitsSizeOf (varinfo.vtype)) / 8 in
-				let size = if size <= 0 then 1 else size in
-				let init_bytes = bytes__make'' size (* zeros *)
-				in
-				    MemOp.state__add_global state varinfo init_bytes 
-              )
-            in
-				init_globalvars state2 tail is_symbolic
-		| _:: tail -> init_globalvars state tail is_symbolic
+			let size = (Cil.bitsSizeOf (varinfo.vtype)) / 8 in
+			let size = if size <= 0 then 1 else size in
+			let init_bytes = bytes__make size (* zeros *) in
+
+			Output.set_mode Output.MSG_REG;
+			Output.printf "Initialize %s to zeros\n" varinfo.vname;
+
+			MemOp.state__add_global state varinfo init_bytes
+
+		| _ ->
+			state
+	end state globals
 ;;
 
-(* Initialize arguments to the entry function to purely symbolic
- * TODO: merge this with init_cmdline_argvs
- * TODO: init globals to symbolic
- *)
-let init_entryfn_argvs state (entryfn:fundec) : (state*bytes list) =
+
+(* Initialize arguments for an entry function to purely symbolic *)
+let init_symbolic_argvs state (entryfn:fundec) : (state*bytes list) =
   let state = state__add_frame state in
   let state,args = 
     List.fold_right  (* TODO: Does ordering matter? *)
@@ -264,12 +267,8 @@ let prepare_file file =
 	)
 
 (* create a job that begins at a function, given an initial state *)
-let job_for_function state fn argvs isMain =
+let job_for_function state fn argvs =
 	let state = MemOp.state__start_fcall state Runtime fn argvs in
-  (* Here is the point where we insert constraints from invariants *)
-  let state = if isMain then state else
-    InvInput.constrain state fn
-  in
 	(* create a new job *)
 	{ state = state;
 	  exHist = emptyHistory;
@@ -280,41 +279,53 @@ let job_for_function state fn argvs isMain =
 	  jid = Utility.next_id Output.jidCounter }
 
 
+(* create a job that begins in the middle of a file at some entry function with some optional constraints *)
+let job_for_middle file entryfn yamlconstraints =
+    let entryfn =
+        try Function.from_name_in_file entryfn file
+        with Not_found -> failwith "No entry function found!"
+    in
+
+    (* Initialize the state with symbolic globals *)
+    let state = MemOp.state__empty in
+    let state = init_symbolic_globalvars state file.globals in
+
+    let state, entryargs = init_symbolic_argvs state entryfn in
+
+    (* create a job starting at entryfn *)
+    let job = job_for_function state entryfn entryargs in
+
+    (* apply constraints if provided *)
+    if yamlconstraints = "" then
+        job
+    else begin
+        (* TODO: InvInput should return the parsed constraint map, not store it in a global *)
+        (* Prepare the invariant input *)
+        InvInput.parse yamlconstraints file; (* TODO: the file is used only for finding fundec *)
+        { job with state = InvInput.constrain job.state entryfn }
+    end
+    
+
 (* create a job that begins at the main function of a file, with the initial state set up for the file *)
 let job_for_file file cmdline =
+	let main_func =
+		try Function.from_name_in_file "main" file
+		with Not_found -> failwith "No main function found!"
+	in
 
-	(* Initialize the state *)
+	(* Initialize the state with zeroed globals *)
 	let state = MemOp.state__empty in
+	let state = init_globalvars state file.globals in
 
-  let isMain = Executeargs.run_args.arg_entryfn = "" in
-
-  let entryfn = 
-    try Function.from_name_in_file 
-      (if isMain then "main" else Executeargs.run_args.arg_entryfn)
-        file
-    with Not_found -> failwith "No entry function found!"
-  in
-
-  let state,entryargs =
-    if isMain then
-      begin
-	    let state = init_globalvars state file.globals false in
-	    (* prepare the command line arguments *)
-	    let state, main_args = 
-        match entryfn.svar.vtype with
-        | TFun (_,Some [],_,_)-> state, [] (* main has no arguments *)
-        | _ -> init_cmdline_argvs state cmdline 
-      in
-        (state, main_args)
-      end
-    else 
-	    let state = init_globalvars state file.globals true in
-	    let state, entryargs = init_entryfn_argvs state entryfn in
-      (state,entryargs)
-  in
+	(* prepare the command line arguments, if needed *)
+	let state, main_args =
+		match main_func.svar.vtype with
+			| TFun (_, Some [], _, _) -> state, [] (* main has no arguments *)
+			| _ -> init_cmdline_argvs state cmdline
+	in
 
 	(* create a job starting at main *)
-	job_for_function state entryfn entryargs isMain
+	job_for_function state main_func main_args
 
 
 let doExecute (f: file) =
@@ -341,18 +352,20 @@ let doExecute (f: file) =
 	(* prepare the file for symbolic execution *)
 	prepare_file f;
 
-  (* Prepare the invariant input *)
-  (let arg_yaml = Executeargs.run_args.arg_yaml in
-    if arg_yaml == "" then () else
-    InvInput.parse arg_yaml f (* TODO: the file is used only for finding fundec *)
-  );
 
-	(* create a job for the file, with the commandline arguments set to the file name and the arguments from the
-	   '--arg' option *)
-	let file_job = job_for_file f (f.fileName::Executeargs.run_args.arg_cmdline_argvs) in
+    let job = match Executeargs.run_args.arg_entryfn with
+        | "" ->
+            (* create a job for the file, with the commandline arguments set to the file name
+             * and the arguments from the '--arg' option *)
+            job_for_file f (f.fileName::Executeargs.run_args.arg_cmdline_argvs)
+
+        | entryfn ->
+            (* create a job to start in the middle of entryfn *)
+            job_for_middle f entryfn Executeargs.run_args.arg_yaml
+    in
 
 	(* run the job *)
-	let results = Driver.main_loop file_job in
+	let results = Driver.main_loop job in
 
 	(* Turn off the alarm and reset the signal handlers *)
 	ignore (Unix.alarm 0);

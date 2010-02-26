@@ -28,9 +28,6 @@ module TypeMap = Utility.MakeMap (struct
 		Pervasives.compare (canonicalize x) (canonicalize y)
 end)
 
-let bitsSizeOfExp exp =
-	(Cil.bitsSizeOf (Cil.typeOf exp)) / 8;;
-
 let fundecHashtbl : (varinfo, fundec) Hashtbl.t = Hashtbl.create 100;;
 let varinitHashtbl : (varinfo, initinfo) Hashtbl.t = Hashtbl.create 100;;
 
