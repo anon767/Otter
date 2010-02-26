@@ -663,7 +663,7 @@ let rec bytes__read ?test ?pre bytes off len =
 			| _ -> ret_bytes
 ;;
 
-let bytes__write bytes off len newbytes =
+let bytes__write ?test ?pre bytes off len newbytes =
 	let rec do_write bytes off len newbytes =
 		match bytes,off,newbytes with
 			(* Optimize for memset 
@@ -712,7 +712,7 @@ let bytes__write bytes off len newbytes =
 					do_write (constant_to_bytes c) off len newbytes
 
 			| Bytes_Conditional c, _, _ ->
-				let c = conditional__map ~eq:bytes__equal (fun e -> conditional__bytes (do_write e off len newbytes)) c in
+				let c = conditional__map ?test ~eq:bytes__equal ?pre (fun e -> conditional__bytes (do_write e off len newbytes)) c in
 				make_Bytes_Conditional c
 			| _, Bytes_Conditional c, _ ->
 				failwith "bytes__write: if-then-else offset doesn't happen"

@@ -251,7 +251,10 @@ let rec state__assign state (lvals, size) bytes =
 
 		let state, oldbytes = state__force state (MemoryBlockMap.find block state.block_to_bytes) in
 
-		let newbytes = bytes__write oldbytes offset size bytes in
+		(* TODO: pruning the conditional bytes here leads to repeated work if it is subsequently read via state__deref;
+		 * however, not pruning leads to O(k^(2^n)) leaves in the conditional bytes for n consecutive assignments. *)
+		let newbytes = bytes__write ~test:(Stp.query_guard state.path_condition) ~pre oldbytes offset size bytes in
+
 		(* Morris' axiom of assignment *)
 		let newbytes = match pre with
 			| Guard_True -> newbytes
