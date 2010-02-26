@@ -46,7 +46,7 @@ public class YamlPrinter{
     else if (obj.getClass().isArray()){
       int len = Array.getLength(obj);
       for(int i=0;i<len;i++)
-        list.add(convertObject(Array.get(obj,i)));
+        list.addAll(convertObject(Array.get(obj,i)));
     }else {
       list.add(obj.toString());
     }
@@ -109,7 +109,7 @@ public class YamlPrinter{
         PptTopLevel ppt = itor.next();
         // Only export invariants for function entries
         if (ppt.is_enter()){
-          map.put(ppt.toString(),convertPptTopLevel(ppt));
+          map.put(ppt.ppt_name.getMethodName(),convertPptTopLevel(ppt));
         }
     }
     return map;
