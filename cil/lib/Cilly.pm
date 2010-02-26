@@ -2000,6 +2000,7 @@ sub new {
 	    '.*-MD.*' => { TYPE => 'EARLY_PREPROC' },
 	    '-MMD$' => { TYPE => 'EARLY_PREPROC' }, 
             "-include" => { ONEMORE => 1, TYPE => "PREPROC" },  # sm
+            "-idirafter" => { ONEMORE => 1, TYPE => "PREPROC" },  # sm
             "-iwithprefix" => { ONEMORE => 1, TYPE => "PREPROC" },
 	    '-Wp,' => { TYPE => 'PREPROC' },
             "-ansi" => { TYPE => 'ALLARGS' },
