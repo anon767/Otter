@@ -98,14 +98,49 @@ let from_varinfo state varinfo args =
 	end
 ;;
 
-let from_exp state exp args: state * function_type =
+(*
+let rec simplify_bytes_conditional state bytes =
+	match bytes with
+		let truth = Stp.eval state.path_condition (make_Bytes_Op (OP_EQ, [(symIndex, Cil.intType); (Bytes_Constant(index), Cil.intType)])) in
+		if truth != Ternary.False then
+			make_Bytes_Conditional IfThenElse(
+				Guard_Bytes(make_Bytes_Op (
+					OP_EQ,
+					[(symIndex, Cil.intType); (Bytes_Constant(index), Cil.intType)]
+					)),
+				Eval.deref state (make_Bytes_Read (bytes Bytes_Constant(index), len)),
+				(expand_read_to_conditional state bytes (index+1) len symIndex)
+				)
+		else
+			(expand_read_to_conditional state bytes (index+1) len symIndex)
+*)
+
+let from_exp state exp args: (state * function_type) list =
 	match exp with
 		| Lval(Var(varinfo), NoOffset) ->
-			(state, from_varinfo state varinfo args)
-		| Lval(Mem(exp2),NoOffset) ->
+			[(state, from_varinfo state varinfo args)]
+		| Lval(Mem(exp2), NoOffset) ->
 			let state, bytes = Eval.rval state exp2 in
 			begin match bytes with
-				| Bytes_FunPtr(fundec,_) -> (state, Ordinary (fundec))
+				| Bytes_FunPtr(fundec,_) -> [(state, Ordinary (fundec))]
+				| Bytes_Read(bytes2, offset, len) -> 
+					(*Output.printf "exp    : %s\n" (To_string.exp exp);
+					Output.printf "exp2   : %s\n" (To_string.exp exp2);
+					Output.printf "offset : %s\n" (To_string.bytes offset);
+					Output.printf "len    : %i\n" (len);
+					Output.printf "bytes2 : %s\n" (To_string.bytes bytes2);*)
+
+					let fp = (Eval.expand_read_to_conditional state bytes2 len offset) in
+					let rec getall fp =
+						match fp with
+							| Bytes.IfThenElse (g, x, y) -> (getall x)@(getall y)
+							| Bytes.Unconditional x -> 
+								match x with
+									| Bytes_FunPtr(fundec,_) -> [(state, Ordinary(fundec))]
+									| _ -> []
+					in
+					(getall fp)
+
 				| _ -> failwith ("Non-constant function ptr not supported : "^(To_string.exp exp2))
 			end
 		| _ ->
