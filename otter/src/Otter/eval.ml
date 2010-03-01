@@ -112,6 +112,7 @@ let rec expand_read_to_conditional2 state bytes index len symIndex =
                 | Bytes_Conditional(c) -> getMaxBlockSizes c len
                 | _ -> failwith ("Not a valid array. : "^(To_string.bytes bytes))
         in
+	Output.printf "Array Max: %i, index : %i\n" max index;
         if (index < max - 1) then
                 IfThenElse(
                         Guard_Bytes(make_Bytes_Op (
@@ -120,16 +121,16 @@ let rec expand_read_to_conditional2 state bytes index len symIndex =
                         )),
                         (*deref state (make_Bytes_Read (bytes, Bytes_Constant(index), len)),*)
                         (
-                                match bytes__read bytes (lazy_int_to_bytes index) len with
+                                match bytes__read bytes (lazy_int_to_bytes (index*len)) len with
                                         | Bytes_Conditional(c) -> c
                                         | b -> Unconditional(b)
                         ),
-                        (expand_read_to_conditional2 state bytes (index+len) len symIndex)
+                        (expand_read_to_conditional2 state bytes (index+1) len symIndex)
                 )
         else
                 (*deref state (make_Bytes_Read (bytes, Bytes_Constant(index), len))*)
                 (
-                        match bytes__read bytes (lazy_int_to_bytes index) len with
+                        match bytes__read bytes (lazy_int_to_bytes (index*len)) len with
                                 | Bytes_Conditional c -> c
                                 | b -> Unconditional(b)
                 )
@@ -139,6 +140,7 @@ let rec expand_read_to_conditional state bytes len symIndex =
                 | Bytes_Read(a, x, l) -> Bytes_Conditional(expand_read_to_conditional state a l x)
                 | _ -> bytes
         in
+		Output.print_endline (To_string.bytes bytes);
                 expand_read_to_conditional2 state bytes 0 len symIndex
 ;;
 
