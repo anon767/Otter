@@ -197,7 +197,6 @@ type job_completion =
 type job_state =
 	| Active of job
 	| Fork of job * job
-	| Big_Fork of job_state list
 	| Complete of job_completion
 
 module JobSet = Set.Make
