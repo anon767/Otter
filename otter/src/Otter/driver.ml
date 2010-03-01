@@ -100,7 +100,9 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 		Eval.rval state (impl exps)
 	in
 
-	let state, func = Function.from_exp state fexp exps in
+       (*let state, func funList = Function.from_exp state fexp exps in*)
+
+       let process_func state func = 
 	begin match func with
 		| Function.Ordinary (fundec) ->					
 						(* TODO: do a casting if necessary: look at fundec.sformals, varinfo.vtype *)
@@ -695,6 +697,13 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 					Complete (Types.Exit (exit_code, { result_state = state; result_history = exHist; }))
 
 	end (* outer [match func] *)
+       in
+       let rec process_func_list func_list =
+	      match func_list with
+	      | [] -> []
+	      | (state, func)::t -> (process_func state func)::(process_func_list t)
+       in
+       Big_Fork(process_func_list (Function.from_exp state fexp exps))
 ;;
 
 let exec_instr job =
@@ -1047,35 +1056,62 @@ let main_loop job =
 						completed
 				end
 
+	and output_completion_info completion =
+		     (* log some interesting errors *)
+		     begin match completion with
+			    | Types.Abandoned (msg, loc, { result_state=state; result_history=hist }) ->
+				   Output.set_mode Output.MSG_MUSTPRINT;
+				   Output.printf "Error \"%s\" occurs at %s\n%sAbandoning path\n"
+					  msg (To_string.location loc)
+					  (if Executeargs.print_args.arg_print_callstack then
+						 "Call stack:\n"^(To_string.callstack state.callContexts)
+					  else
+						 "");
+(*
+					  if run_args.arg_line_coverage then (
+						 Report.printPath state hist;
+						 Report.printLines hist.coveredLines
+					  )
+					  Output.set_mode Output.MSG_REG;
+					  Output.printf "Path condition: %s\n"
+						 (To_string.humanReadablePc state.path_condition hist.bytesToVars)
+*)
+			    | _ ->
+				   ()
+		     end
+
 	and process_result completed (job_queue, merge_set as job_pool) = function
 		| Active job ->
 			main_loop completed (job::job_queue, merge_set)
 		| Fork (j1, j2) ->
 			(* queue the true branch and continue the false branch *)
 			main_loop completed (j2::j1::job_queue, merge_set)
-		| Complete completion ->
-			(* log some interesting errors *)
-			begin match completion with
-				| Types.Abandoned (msg, loc, { result_state=state; result_history=hist }) ->
-					Output.set_mode Output.MSG_MUSTPRINT;
-					Output.printf "Error \"%s\" occurs at %s\n%sAbandoning path\n"
-						msg (To_string.location loc)
-						(if Executeargs.print_args.arg_print_callstack then
-							"Call stack:\n"^(To_string.callstack state.callContexts)
-						else
-							"");
-(*
-						if run_args.arg_line_coverage then (
-							Report.printPath state hist;
-							Report.printLines hist.coveredLines
-						)
-						Output.set_mode Output.MSG_REG;
-						Output.printf "Path condition: %s\n"
-							(To_string.humanReadablePc state.path_condition hist.bytesToVars)
-*)
-				| _ ->
-					()
-			end;
+	      | Big_Fork job_list -> 
+			let rec process_job_list job_list =
+				match job_list with
+					| [] -> []
+					| (job_state::t) ->
+						match job_state with
+							| Active job -> job::(process_job_list t)
+							| Fork (j1, j2) -> j1::j2::(process_job_list t)
+							| Big_Fork l -> failwith "Unexpected nested Big_Fork."(*(process_job_list l)@(process_job_list t)*)
+							| Complete completion-> 
+								(output_completion_info completion);
+								(process_job_list t)
+			in
+			let rec process_completion_list job_list =
+				match job_list with
+					| [] -> []
+					| (job_state::t) ->
+						match job_state with
+							| Active job -> (process_completion_list t)
+							| Fork (j1, j2) -> (process_completion_list t)
+							| Big_Fork l -> failwith "Unexpected nested Big_Fork."(*(process_completion_list l)@(process_completion_list t)*)
+							| Complete completion-> completion::(process_completion_list t)
+			in
+			main_loop ((process_completion_list job_list)@completed) ((process_job_list job_list)@job_queue, merge_set)
+	      | Complete completion ->
+			(output_completion_info completion);
 			main_loop (completion::completed) job_pool
 	in
 	main_loop [] (job::[], JobSet.empty)

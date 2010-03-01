@@ -95,6 +95,53 @@ let add_offset state offset lvals : state * (Types.MemoryBlockMap.key * Bytes.by
 	end state lvals
 ;;
 
+let rec getMaxBlockSizes cond len = 
+        match cond with
+                | IfThenElse (guard, x, y) -> max (getMaxBlockSizes x len) (getMaxBlockSizes y len)
+                | Unconditional bytes -> 
+                        match bytes with
+                                | Bytes_Address(block, offset) -> (block.memory_block_size/len)
+                                | Bytes_Conditional(c) -> getMaxBlockSizes c len
+                                | Bytes_ByteArray(a) -> (ImmutableArray.length a/len)
+                                | _ -> failwith ("Not a valid array.  : "^(To_string.bytes bytes))
+;;
+let rec expand_read_to_conditional2 state bytes index len symIndex = 
+        let max = match bytes with
+                | Bytes_Address(block, offset) -> (block.memory_block_size/len)
+                | Bytes_ByteArray(a) -> (ImmutableArray.length a/len)
+                | Bytes_Conditional(c) -> getMaxBlockSizes c len
+                | _ -> failwith ("Not a valid array. : "^(To_string.bytes bytes))
+        in
+        if (index < max - 1) then
+                IfThenElse(
+                        Guard_Bytes(make_Bytes_Op (
+                                OP_EQ,
+                                [(symIndex, Cil.intType); ((lazy_int_to_bytes index), Cil.intType)]
+                        )),
+                        (*deref state (make_Bytes_Read (bytes, Bytes_Constant(index), len)),*)
+                        (
+                                match bytes__read bytes (lazy_int_to_bytes index) len with
+                                        | Bytes_Conditional(c) -> c
+                                        | b -> Unconditional(b)
+                        ),
+                        (expand_read_to_conditional2 state bytes (index+len) len symIndex)
+                )
+        else
+                (*deref state (make_Bytes_Read (bytes, Bytes_Constant(index), len))*)
+                (
+                        match bytes__read bytes (lazy_int_to_bytes index) len with
+                                | Bytes_Conditional c -> c
+                                | b -> Unconditional(b)
+                )
+;;
+let rec expand_read_to_conditional state bytes len symIndex = 
+        let bytes = match bytes with
+                | Bytes_Read(a, x, l) -> Bytes_Conditional(expand_read_to_conditional state a l x)
+                | _ -> bytes
+        in
+                expand_read_to_conditional2 state bytes 0 len symIndex
+;;
+
 let rec
 
 rval state exp : state * bytes =
