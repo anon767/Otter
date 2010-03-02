@@ -14,7 +14,7 @@ open SwitchingUtil
 
 module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
 
-    let switch dispatch file fn expState k =
+    let switch dispatch stack file fn expState k =
         Format.eprintf "Switching from typed to symbolic at %s...@." fn.Cil.svar.Cil.vname;
 
         (* solve the typed constraints, needed to setup the symbolic constraints;
@@ -62,7 +62,7 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
         let job = Executemain.job_for_function state fn args_bytes in
 
         (* finally, prepare the completion continuation *)
-        let completion completed =
+        let completion stack completed =
             let completed_count = List.length completed in
             Format.eprintf "Returning from symbolic to typed at %s (%d execution%s returned)...@."
                 fn.Cil.svar.Cil.vname
@@ -122,17 +122,17 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
             let expState = run (return ()) expState in
 
             (* update the constraints and return *)
-            k expState block_errors
+            k stack expState block_errors
         in
 
         (* dispatch *)
-        dispatch (`SymbolicBlock (file, job, completion))
+        dispatch stack (`SymbolicBlock (file, job, completion))
 
 
-    let dispatch chain dispatch = function
+    let dispatch chain dispatch stack = function
         | `TypedBlock (file, fn, expState, k) when S.should_enter_block fn.Cil.svar.Cil.vattr ->
-            switch dispatch file fn expState k
+            switch dispatch stack file fn expState k
         | work ->
-            chain work
+            chain stack work
 end
 
