@@ -14,7 +14,7 @@ open SwitchingUtil
 
 module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
 
-    let switch dispatch file job k =
+    let switch dispatch stack file job k =
         (* 1. convert globals and formals to type constraints
          * 2. type-check fn
          * 3. kill memory and reinitialize globals, formals and return value from type constraints
@@ -58,20 +58,20 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
                 "Unsatisfiable solution entering SymbolicTyped.switch at %s:@\n  @[%a@]@."
                 fn.Cil.svar.Cil.vname
                 DiscreteSolver.Explanation.printer explanation;
-            k [ (Types.Abandoned (Format.flush_str_formatter (), loc, result),
-                 None) ]
+            k stack [ (Types.Abandoned (Format.flush_str_formatter (), loc, result),
+                       None) ]
 
         end else begin
 
             (* prepare the completion continuation to perform the final check *)
-            let completion (((((_, constraints), _), _), _), _ as expState) block_errors =
+            let completion stack (((((_, constraints), _), _), _), _ as expState) block_errors =
                 Format.eprintf "Returning from typed to symbolic at %s...@." fn.Cil.svar.Cil.vname;
 
                 if block_errors != [] then begin
                     let result = { Types.result_state = job.Types.state; Types.result_history = job.Types.exHist } in
                     let msg = "Block errors returning from SymbolicTyped.switch at " ^ fn.Cil.svar.Cil.vname in
-                    k [ (Types.Abandoned (msg, loc, result),
-                         Some (msg, loc, `SymbolicTypedError (result, block_errors))) ]
+                    k stack [ (Types.Abandoned (msg, loc, result),
+                               Some (msg, loc, `SymbolicTypedError (result, block_errors))) ]
 
                 end else begin
                     let solution = DiscreteSolver.solve consts constraints in
@@ -88,8 +88,8 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
                             "Unsatisfiable solution returning from SymbolicTyped.switch at %s:@\n  @[%a@]"
                             fn.Cil.svar.Cil.vname
                             DiscreteSolver.Explanation.printer explanation;
-                        k [ (Types.Abandoned (Format.flush_str_formatter (), loc, result),
-                             None) ]
+                        k stack [ (Types.Abandoned (Format.flush_str_formatter (), loc, result),
+                                   None) ]
 
                     end else begin
                         (* re-initialize the memory according to the returned type constraints *)
@@ -144,22 +144,22 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
                             Types.malloc=Types.VarinfoMap.empty;
                         } in
 
-                        k [ (Types.Return (retopt, { Types.result_state=state; Types.result_history=job.Types.exHist }),
-                             None) ]
+                        k stack [ (Types.Return (retopt, { Types.result_state=state; Types.result_history=job.Types.exHist }),
+                                   None) ]
                     end
                 end
             in
 
             let expState = run (return ()) expState in (* TODO: fix the type *)
-            dispatch (`TypedBlock (file, fn, expState, completion))
+            dispatch stack (`TypedBlock (file, fn, expState, completion))
         end
 
 
-    let dispatch chain dispatch work = match work with
+    let dispatch chain dispatch stack = function
         | `SymbolicBlock (file, job, k)
                 when T.should_enter_block (List.hd job.Types.state.Types.callstack).Cil.svar.Cil.vattr ->
-            switch dispatch file job k
+            switch dispatch stack file job k
         | work ->
-            chain work
+            chain stack work
 end
 

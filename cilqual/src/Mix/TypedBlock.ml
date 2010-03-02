@@ -59,7 +59,7 @@ module Interpreter (T : Config.BlockConfig) = struct
         calls_in_block [] fn.Cil.sbody
 
 
-    let call dispatch file fn expState k =
+    let call dispatch stack file fn expState k =
         Format.eprintf "Evaluating typed block at %s...@." fn.Cil.svar.Cil.vname;
 
         (* first, determine the call graph inside the typed-block *)
@@ -120,24 +120,24 @@ module Interpreter (T : Config.BlockConfig) = struct
         let expState = G.run expM expState in
 
         (* evaluate other_calls repeatedly until the constraint graph reaches a fixpoint *)
-        let rec do_fixpoint other_calls (((((_, old_constraints), _), _), _), _ as expState) =
-            let rec call_others work block_errors (((((_, constraints), _), _), _), _ as expState) more_block_errors =
+        let rec do_fixpoint other_calls stack (((((_, old_constraints), _), _), _), _ as expState) =
+            let rec call_others work block_errors stack (((((_, constraints), _), _), _), _ as expState) more_block_errors =
                 let block_errors = more_block_errors @ block_errors in
                 match work with
                     | call::work ->
-                        dispatch (`TypedBlock (file, call, expState, call_others work block_errors))
+                        dispatch stack (`TypedBlock (file, call, expState, call_others work block_errors))
                     | [] ->
                         (* ocamlgraph has no graph equality operation? *)
                         if block_errors != []
                                 || (G.QualGraph.nb_vertex constraints == G.QualGraph.nb_vertex old_constraints
                                     && G.QualGraph.nb_edges constraints == G.QualGraph.nb_edges old_constraints) then
-                            k expState block_errors
+                            k stack expState block_errors
                         else
-                            do_fixpoint other_calls expState
+                            do_fixpoint other_calls stack expState
             in
-            call_others other_calls [] expState []
+            call_others other_calls [] stack expState []
         in
-        do_fixpoint (CallSet.elements other_calls) expState
+        do_fixpoint (CallSet.elements other_calls) stack expState
 
 
     let exec file =
@@ -146,7 +146,7 @@ module Interpreter (T : Config.BlockConfig) = struct
         let expState = G.run expM ((((((), G.QualGraph.empty), (G.emptyContext)), 0), G.emptyUnionTable), G.emptyEnv) in
 
         (* prepare the completion continuation to perform the final check *)
-        let completion (((((_, constraints), _), _), _), _) block_errors =
+        let completion stack (((((_, constraints), _), _), _), _) block_errors =
             Format.eprintf "Completing typed block...@.";
 
             let solution = DiscreteSolver.solve consts constraints in
@@ -209,10 +209,10 @@ module Interpreter (T : Config.BlockConfig) = struct
         `TypedBlock (file, mainfn, expState, completion)
 
 
-    let dispatch chain dispatch = function
+    let dispatch chain dispatch stack = function
         | `TypedBlock (file, fn, expState, k) when T.should_enter_block fn.Cil.svar.Cil.vattr ->
-            call dispatch file fn expState k
+            call dispatch stack file fn expState k
         | work ->
-            chain work
+            chain stack work
 end
 

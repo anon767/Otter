@@ -10,7 +10,38 @@ module SymbolicInterpreter = SymbolicBlock.Interpreter (Config.SymbolicBlockConf
 module TypedSymbolicSwitcher = TypedSymbolic.Switcher (Config.TypedBlockConfig) (Config.SymbolicBlockConfig)
 module SymbolicTypedSwitcher = SymbolicTyped.Switcher (Config.SymbolicBlockConfig) (Config.TypedBlockConfig)
 
-let dispatcher x =
+let dispatcher s x =
+    (*
+     * This function composes a list of X.dispatch functions into a delegation chain.
+     *
+     * X.dispatch functions have the type : chain -> dispatch -> stack -> work -> result
+     *
+     *     - chain and dispatch are functions with the type : stack -> work -> result
+     *         - chain may be called by the X.dispatch function to delegate to the next X.dispatch function,
+     *           e.g., if it cannot handle the next work block
+     *         - dispatch may be called by the X.dispatch function to delegate to the first X.dispatch function,
+     *           e.g., if it needs to analyze a new work block
+     *
+     *     - stack is an explicit stack of open polymorphic variants with the type : [> ] list
+     *         - it is mainly used for operations requiring stack inspection
+     *         - the X.dispatch functions are responsible to pushing/popping the stack when creating/completing the
+     *           analysis of new work blocks 
+     *
+     *     - work is an continuation-based implicit stack of open polymorphic variants with the type : [> ]
+     *         - typically the polymorphic variants of the form `X (block_input, k) where k is a continuation with the
+     *           type : block_result -> result
+     *         - work as parameter passed as input to X.dispatch which decides whether to analyze it or to delegate to
+     *           the next X.dispatch
+     *
+     *     - block_input/block_result are specific to each X.dispatch since different analysis consume or produce
+     *       different data
+     *
+     *     - result is a the final result of the analysis, and is specific to the very first work block
+     *)
+
+    (* TODO: merge work into stack, since an explicit stack is required for analysis such as recursion detection,
+     *       and two stacks is more hassle to maintain *)
+
     let analysis_register = [
         TypedInterpreter.dispatch;
         SymbolicInterpreter.dispatch;
@@ -21,10 +52,10 @@ let dispatcher x =
     ] in
     let terminal dispatch x = failwith "Can't dispatch call" in
 
-    (* chained in reverse to ensure that analysis occurs before switch *)
-    let switcher = List.fold_left (fun f g d -> g (f d) d) terminal switch_register in
-    let dispatcher = List.fold_left (fun f g d -> g (f d) d) switcher analysis_register in
-    dispatcher x
+    (* compose analyzers and switchers into a chain *)
+    let dispatcher = List.fold_left (fun f g d -> g (f d) d) terminal switch_register in
+    let dispatcher = List.fold_left (fun f g d -> g (f d) d) dispatcher analysis_register in
+    dispatcher s x
 
 
 (* Cil setup *)
@@ -40,8 +71,8 @@ let prepare_file file =
 
 (* mix dispatch loop *)
 let dispatch_loop x =
-    let rec fix f x = f (fix f) x in
-    fix dispatcher x
+    let rec fix f s x = f (fix f) s x in
+    fix dispatcher [] x
 
 
 (* mix driver *)

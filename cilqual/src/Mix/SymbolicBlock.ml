@@ -18,20 +18,20 @@ module Interpreter (S : Config.BlockConfig) = struct
         Executemain.prepare_file file
 
 
-    let call dispatch file job k =
+    let call dispatch stack file job k =
         let fn = List.hd job.Types.state.Types.callstack in
         Format.eprintf "Evaluating symbolic block %s...@." fn.Cil.svar.Cil.vname;
 
-        let rec symbolic_loop completed job job_queue =
+        let rec symbolic_loop stack completed job job_queue =
 
-            let complete_job result =
+            let complete_job stack result =
                 (* store the result and pick another job to continue, if available *)
                 let completed = result::completed in
                 match job_queue with
                     | job::job_queue ->
-                        symbolic_loop completed job job_queue
+                        symbolic_loop stack completed job job_queue
                     | [] ->
-                        k completed
+                        k stack completed
             in
 
             if S.should_enter_block (List.hd job.Types.state.Types.callstack).Cil.svar.Cil.vattr then begin
@@ -40,25 +40,25 @@ module Interpreter (S : Config.BlockConfig) = struct
                 let state = Driver.step_job job in
                 begin match state with
                     | Types.Active job ->
-                        symbolic_loop completed job job_queue
+                        symbolic_loop stack completed job job_queue
                     | Types.Fork (j1, j2) ->
                         let job_queue = j1::job_queue in (* queue the true branch *)
-                        symbolic_loop completed j2 job_queue (* continue the false branch *)
+                        symbolic_loop stack completed j2 job_queue (* continue the false branch *)
                     | Types.Complete result ->
-                        complete_job (result, None)
+                        complete_job stack (result, None)
                 end
 
             end else begin
                 (* delegate this function *)
 
                 (* prepare the completion continuation *)
-                let completion = function
+                let completion stack = function 
                     | [ (Types.Return (retopt, { Types.result_state=state; Types.result_history=history }),
                          None) as result ] ->
                         begin match List.hd state.Types.callContexts with
                             | Types.Runtime ->
                                 (* occurs when main() is not symbolic, so there's nothing left to execute *)
-                                complete_job result
+                                complete_job stack result
 
                             | Types.Source (destopt, _, _, nextstmt) ->
                                 (* end the function call and continue executing *)
@@ -70,7 +70,7 @@ module Interpreter (S : Config.BlockConfig) = struct
                                     | _, _ ->
                                         state
                                 in
-                                symbolic_loop completed { job with
+                                symbolic_loop stack completed { job with
                                     Types.state=state;
                                     Types.stmt=nextstmt;
                                     Types.exHist=history;
@@ -82,21 +82,21 @@ module Interpreter (S : Config.BlockConfig) = struct
                         end
 
                     | [ (Types.Abandoned _, _) as result ] ->
-                        complete_job result
+                        complete_job stack result
 
                     | _ ->
                         failwith "TODO: handle other completion values"
                 in
-                dispatch (`SymbolicBlock (file, job, completion))
+                dispatch stack (`SymbolicBlock (file, job, completion))
             end
         in
-        symbolic_loop [] job []
+        symbolic_loop stack [] job []
 
 
     let exec file args =
         let job = Executemain.job_for_file file (file.Cil.fileName::args) in
 
-        let completion results =
+        let completion stack results =
             Format.eprintf "Completing symbolic block...@.";
 
             (* report jobs that were abandoned *)
@@ -125,11 +125,11 @@ module Interpreter (S : Config.BlockConfig) = struct
         `SymbolicBlock (file, job, completion)
 
 
-    let dispatch chain dispatch = function
+    let dispatch chain dispatch stack = function
         | `SymbolicBlock (file, job, k)
                 when S.should_enter_block (List.hd job.Types.state.Types.callstack).Cil.svar.Cil.vattr ->
-            call dispatch file job k
+            call dispatch stack file job k
         | work ->
-            chain work
+            chain stack work
 end
 
