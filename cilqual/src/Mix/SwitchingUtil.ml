@@ -194,16 +194,16 @@ let drop_qt = function
     | _ -> failwith "TODO: report drop_qt of non-variable"
 
 
-(** map from Cil.typ *)
+(** Map from Cil.typ *)
 module CilTypeMap = Map.Make (CilCanonicalType)
 
 
-(** fold helper for Cil.TComp *)
+(** Fold helper for Cil.TComp *)
 let fold_struct f acc compinfo =
     List.fold_left f acc compinfo.Cil.cfields
 
 
-(** fold helper for Cil.TArray *)
+(** Fold helper for Cil.TArray *)
 let fold_array f acc len_opt =
     begin match len_opt with
         | Some len ->
@@ -228,7 +228,7 @@ let fold_array f acc len_opt =
 
 
 (** Wrapper for Ptranal that resolves to fields conservatively and filters by type, and groups by struct type.
-    @param file     the file begin analyzed
+    @param file     the file being analyzed
     @param exp      the expression to resolve
     @return         [(targets_map, mallocs)] where [target_maps] contains the points to targets, grouped by type, and
                     split into variables and offsets such that the targets are the cross product :
@@ -337,7 +337,7 @@ let points_to file exp =
 
 
 (** Convert a qualified type to symbolic value.
-    @param file         the file begin analyzed
+    @param file         the file being analyzed
     @param expState     the CilQual monad state
     @param solution     the qualifier constraints solution
     @param state        the symbolic execution state
@@ -553,7 +553,7 @@ let qt_to_bytes file expState solution state exp qt =
 
 
 (** Convert a qualified type to a variable.
-    @param file         the file begin analyzed
+    @param file         the file being analyzed
     @param expState     the CilQual monad state
     @param solution     the qualifier constraints solution
     @param state        the symbolic execution state
@@ -595,7 +595,7 @@ let qt_to_lval_block file expState solution state v qt =
 
 (** Re-initialize a symbolic memory frame by coverting all corresponding qualified types to new symbolic values in the
     the symbolic state.
-    @param file                 the file begin analyzed
+    @param file                 the file being analyzed
     @param expState             the CilQual monad state
     @param solution             the qualifier constraints solution
     @param state                the symbolic execution state
@@ -635,7 +635,7 @@ let attempt_deref ?pre state lval_block typ =
 
 
 (** Convert a symbolic value to constraints on a qualified type.
-    @param file         the file begin analyzed
+    @param file         the file being analyzed
     @param expState     the original CilQual state
     @param state        the symbolic execution state
     @param pre          an optional precondition under which the pointer holds
@@ -888,7 +888,7 @@ let bytes_to_qt file expState state pre bytes exp qt = perform
 
 (** Convert a symbolic memory frame to qualifier constraints on all qualified types corresponding to variables in the
     memory frame.
-    @param file         the file begin analyzed
+    @param file         the file being analyzed
     @param expState     the original CilQual state
     @param state        the symbolic execution state to update the constraints with
     @param frame        the symbolic memory frame to re-initialize
