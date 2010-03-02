@@ -809,96 +809,94 @@ let bytes_to_qt file expState state pre bytes exp qt = perform
             | i -> i
     end) in
 
-    let rec bytes_to_qt visited state pre bytes exp qt = perform
-        begin match Cil.unrollType (Cil.typeOf exp), qt with
-            | _, (Ref (Var v, _) | Fn (Var v, _, _) | Base (Var v)) when VisitedSet.mem (bytes, v) visited ->
-                return state
+    let rec bytes_to_qt visited state pre bytes exp qt = match Cil.unrollType (Cil.typeOf exp), qt with
+        | _, (Ref (Var v, _) | Fn (Var v, _, _) | Base (Var v)) when VisitedSet.mem (bytes, v) visited ->
+            return state
 
-            | Cil.TPtr (typtarget, _), Ref (Var v, qtarget) -> perform
-                let visited = VisitedSet.add (bytes, v) visited in
-                (state, target_bytes_list) <-- check_pointer state pre bytes qt typtarget;
-                foldM begin fun state (pre, target_bytes) ->
-                    bytes_to_qt visited state pre target_bytes (Cil.Lval (Cil.Mem exp, Cil.NoOffset)) qtarget
-                end state target_bytes_list
+        | Cil.TPtr (typtarget, _), Ref (Var v, qtarget) -> perform
+            let visited = VisitedSet.add (bytes, v) visited in
+            (state, target_bytes_list) <-- check_pointer state pre bytes qt typtarget;
+            foldM begin fun state (pre, target_bytes) ->
+                bytes_to_qt visited state pre target_bytes (Cil.Lval (Cil.Mem exp, Cil.NoOffset)) qtarget
+            end state target_bytes_list
 
-            | Cil.TComp (compinfo, _) as typ, Base (Var v) -> perform
-                (* for structs and unions, iterate over the fields *)
-                let visited = VisitedSet.add (bytes, v) visited in
-                begin match exp with
-                    | Cil.Lval lval ->
-                        fold_struct begin fun stateM field -> perform
-                            let field_offset = Cil.Field (field, Cil.NoOffset) in
-                            let field_lval = Cil.addOffsetLval field_offset lval in
+        | Cil.TComp (compinfo, _) as typ, Base (Var v) -> perform
+            (* for structs and unions, iterate over the fields *)
+            let visited = VisitedSet.add (bytes, v) visited in
+            begin match exp with
+                | Cil.Lval lval ->
+                    fold_struct begin fun stateM field -> perform
+                        let field_offset = Cil.Field (field, Cil.NoOffset) in
+                        let field_lval = Cil.addOffsetLval field_offset lval in
 
-                            let offset, size = Cil.bitsOffset typ field_offset in
-                            let offset = Bytes.lazy_int_to_bytes (offset / 8) in
-                            let size = size / 8 in
-                            let field_bytes = Bytes.bytes__read bytes offset size in
+                        let offset, size = Cil.bitsOffset typ field_offset in
+                        let offset = Bytes.lazy_int_to_bytes (offset / 8) in
+                        let size = size / 8 in
+                        let field_bytes = Bytes.bytes__read bytes offset size in
 
-                            state <-- stateM;
+                        state <-- stateM;
 
-                            (* TODO: temporary hack, qt is off by one ref, but getfield doesn't look at qt *)
-                            qtf <-- begin if compinfo.Cil.cstruct then perform
-                                qtf <-- get_field qt field;
-                                deref qtf
-                            else
-                                (* unions should really be the same as structs, but qt is off by one *)
-                                return qt
-                            end;
+                        (* TODO: temporary hack, qt is off by one ref, but getfield doesn't look at qt *)
+                        qtf <-- begin if compinfo.Cil.cstruct then perform
+                            qtf <-- get_field qt field;
+                            deref qtf
+                        else
+                            (* unions should really be the same as structs, but qt is off by one *)
+                            return qt
+                        end;
 
-                            bytes_to_qt visited state pre field_bytes (Cil.Lval field_lval) qtf
-                        end (return state) compinfo
-                    | _ ->
-                        failwith "are there any other Cil.exp that can have type Cil.TComp?"
-                end
+                        bytes_to_qt visited state pre field_bytes (Cil.Lval field_lval) qtf
+                    end (return state) compinfo
+                | _ ->
+                    failwith "are there any other Cil.exp that can have type Cil.TComp?"
+            end
 
-            | Cil.TArray (el_type, len_opt, _) as typ, (Ref (Var v, _) | Fn (Var v, _, _) | Base (Var v)) ->
-                (* for arrays, iterate over the elements *)
-                let visited = VisitedSet.add (bytes, v) visited in
-                begin match exp with
-                    | Cil.Lval lval ->
-                        let result_opt = fold_array begin fun stateM index -> perform
-                            let el_offset = Cil.Index (index, Cil.NoOffset) in
-                            let el_lval = Cil.addOffsetLval el_offset lval in
+        | Cil.TArray (el_type, len_opt, _) as typ, (Ref (Var v, _) | Fn (Var v, _, _) | Base (Var v)) ->
+            (* for arrays, iterate over the elements *)
+            let visited = VisitedSet.add (bytes, v) visited in
+            begin match exp with
+                | Cil.Lval lval ->
+                    let result_opt = fold_array begin fun stateM index -> perform
+                        let el_offset = Cil.Index (index, Cil.NoOffset) in
+                        let el_lval = Cil.addOffsetLval el_offset lval in
 
-                            let offset, size = Cil.bitsOffset typ el_offset in
-                            let offset = Bytes.lazy_int_to_bytes (offset / 8) in
-                            let size = size / 8 in
-                            let el_bytes = Bytes.bytes__read bytes offset size in
+                        let offset, size = Cil.bitsOffset typ el_offset in
+                        let offset = Bytes.lazy_int_to_bytes (offset / 8) in
+                        let size = size / 8 in
+                        let el_bytes = Bytes.bytes__read bytes offset size in
 
-                            state <-- stateM;
-                            bytes_to_qt visited state pre el_bytes (Cil.Lval el_lval) qt
-                        end (return state) len_opt in
-                        begin match result_opt with
-                            | Some result -> result
-                            | None        -> return state
-                        end
-                    | _ ->
-                        failwith "are there any other Cil.exp that can have type Cil.TArray?"
-                end
+                        state <-- stateM;
+                        bytes_to_qt visited state pre el_bytes (Cil.Lval el_lval) qt
+                    end (return state) len_opt in
+                    begin match result_opt with
+                        | Some result -> result
+                        | None        -> return state
+                    end
+                | _ ->
+                    failwith "are there any other Cil.exp that can have type Cil.TArray?"
+            end
 
-            | Cil.TPtr (typtarget, _) as typ, Base (Var v) when Cil.isVoidPtrType typ -> perform
-                (* void *, ignore the targets, since they can't correspond to any annotations *)
-                (state, target_bytes_list) <-- check_pointer state pre bytes qt typtarget;
-                return state
+        | Cil.TPtr (typtarget, _) as typ, Base (Var v) when Cil.isVoidPtrType typ -> perform
+            (* void *, ignore the targets, since they can't correspond to any annotations *)
+            (state, target_bytes_list) <-- check_pointer state pre bytes qt typtarget;
+            return state
 
-            | Cil.TPtr (typ, _), Fn _ when Cil.isFunctionType typ ->
-                (* function pointers can't be dereferenced *)
-                return state
+        | Cil.TPtr (typ, _), Fn _ when Cil.isFunctionType typ ->
+            (* function pointers can't be dereferenced *)
+            return state
 
-            | typ, Base (Var v) when Cil.isArithmeticType typ ->
-                (* value types, nothing to dereference too *)
-                return state
+        | typ, Base (Var v) when Cil.isArithmeticType typ ->
+            (* value types, nothing to dereference too *)
+            return state
 
-            | typ, qt ->
-                failwith begin
-                    Format.fprintf Format.str_formatter
-                        "TODO: bytes_to_qt: handle mismatched types: %s <=> %a"
-                        (Pretty.sprint 0 (Cil.d_type () typ))
-                        QualType.printer qt;
-                    Format.flush_str_formatter ()
-                end
-        end
+        | typ, qt ->
+            failwith begin
+                Format.fprintf Format.str_formatter
+                    "TODO: bytes_to_qt: handle mismatched types: %s <=> %a"
+                    (Pretty.sprint 0 (Cil.d_type () typ))
+                    QualType.printer qt;
+                Format.flush_str_formatter ()
+            end
     in
 
     (* Update qt with bytes and discard the new state, since the only difference is that some lazy memory locations
