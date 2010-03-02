@@ -610,43 +610,14 @@ let qt_to_frame file expState solution state frame =
     end frame (state, MemOp.frame__empty)
 
 
-(** Attempt to dereference an lval, ignoring cases that are uninteresting to Mix:
-    - abstract types, since they cannot be read or written by Otter;
-    - void * and unions that were initialized by Mix, since they also cannot be read or written by Otter.
-    @param ?pre         an optional precondition under which to dereference lval_block
-    @param state        the symbolic execution state
-    @param lval_block   the lval to dereference
-    @param typ          the type to dereference as
-    @return             [(state, bytes) option] the updated state and dereferenced value if successful
-*)
-let attempt_deref ?pre state lval_block typ =
-    try
-        Some (MemOp.state__deref ?pre state (lval_block, Cil.bitsSizeOf typ / 8))
-    with
-        | Cil.SizeOfError ("abstract type", _) ->
-            (* ignore abstract types, they can't have values that come from the program (that is visible) *)
-            None
-        | Failure s when Str.string_match
-                            (Str.regexp "^TODO: qt_to_bytes: handle \\(void \\*\\|union\\)")
-                            s 0 ->
-            (* don't care if we may alias void */unions, it can't be read/written by the symbolic executor
-             * according to our set up in bytes_to_qt, and so can't be assigned any values anyway *)
-            None
-
-
-(** Convert a symbolic value to constraints on a qualified type.
+(** Establish all transitive aliasing constraints for a qualified type variable based on Cil's points-to analysis
     @param file         the file being analyzed
     @param expState     the original CilQual state
-    @param state        the symbolic execution state
-    @param pre          an optional precondition under which the pointer holds
-    @param bytes        the symbolic value to convert
     @param exp          the C expression from which bytes was derived
     @param qt           the qualified type to add constraints to
     @return             [()]{i monad} the CilQual monad updated with additional constraints.
 *)
-let bytes_to_qt file expState state pre bytes exp qt = perform
-
-    (* establish transitive aliasing constraints that may come from the symbolic block *)
+let aliasing_to_qt file expState exp qt = perform
     (* TODO: avoid re-visiting aliasing that was established for previous qt arguments *)
     let do_aliasing exp qt =
         let targets_map, malloc_list = points_to file exp in perform
@@ -759,8 +730,47 @@ let bytes_to_qt file expState state pre bytes exp qt = perform
                 return ()
         in
         traverse_points_to ExpSet.empty [ (exp, qt) ]
-    end;
+    end
 
+
+(** Attempt to dereference an lval, ignoring cases that are uninteresting to Mix:
+    - abstract types, since they cannot be read or written by Otter;
+    - void * and unions that were initialized by Mix, since they also cannot be read or written by Otter.
+    @param ?pre         an optional precondition under which to dereference lval_block
+    @param state        the symbolic execution state
+    @param lval_block   the lval to dereference
+    @param typ          the type to dereference as
+    @return             [(state, bytes) option] the updated state and dereferenced value if successful
+*)
+let attempt_deref ?pre state lval_block typ =
+    try
+        Some (MemOp.state__deref ?pre state (lval_block, Cil.bitsSizeOf typ / 8))
+    with
+        | Cil.SizeOfError ("abstract type", _) ->
+            (* ignore abstract types, they can't have values that come from the program (that is visible) *)
+            None
+        | Failure s when Str.string_match
+                            (Str.regexp "^TODO: qt_to_bytes: handle \\(void \\*\\|union\\)")
+                            s 0 ->
+            (* don't care if we may alias void */unions, it can't be read/written by the symbolic executor
+             * according to our set up in bytes_to_qt, and so can't be assigned any values anyway *)
+            None
+
+
+(** Convert a symbolic value to constraints on a qualified type.
+    @param file         the file being analyzed
+    @param expState     the original CilQual state
+    @param state        the symbolic execution state
+    @param pre          an optional precondition under which the pointer holds
+    @param bytes        the symbolic value to convert
+    @param exp          the C expression from which bytes was derived
+    @param qt           the qualified type to add constraints to
+    @return             [()]{i monad} the CilQual monad updated with additional constraints.
+*)
+let bytes_to_qt file expState state pre bytes exp qt = perform
+
+    (* establish transitive aliasing constraints that may come from the symbolic block *)
+    aliasing_to_qt file expState exp qt;
 
     (* check a given pointer bytes, adding $null annotations if it may be null, and returning the non-null targets *)
     let check_pointer state pre bytes qt typtarget = perform
