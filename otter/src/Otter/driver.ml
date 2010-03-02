@@ -701,7 +701,17 @@ let exec_instr_call job instr lvalopt fexp exps loc =
        let rec process_func_list func_list =
 	      match func_list with
 	      | [] -> []
-	      | (state, func)::t -> (process_func state func)::(process_func_list t)
+	      | (state, func)::t -> 
+			let job_state =
+				try
+					(process_func state func)
+				with Failure msg ->
+					if run_args.arg_failfast then failwith msg;
+					let result = { result_state = job.state; result_history = job.exHist } in
+					let completed = Complete (Types.Abandoned (msg, !Output.cur_loc, result)) in
+					completed
+			in
+			job_state::(process_func_list t)
        in
        Big_Fork(process_func_list (Function.from_exp state fexp exps))
 ;;

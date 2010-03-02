@@ -214,7 +214,56 @@ let function_pointers_coverage_testsuite = "Function pointers" >::: [
     " ["main"; "foo0"; "foo1"; "foo2"; "foo3"]
     begin fun file results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
         assert_blocks_count 7 all_blocks_count
-    end
+    end;
+
+   test_coverage ~label:"Call on subset" "
+        int foo0() {return 0;}
+	int foo1() {return 1;}
+	int foo2() {return 2;}
+	int foo3() {return 3;}
+
+	typedef int (*FP)();
+
+	int main()
+	{
+		FP a[4];
+		a[0] = foo0;
+		a[1] = foo1;
+		a[2] = foo2;
+		a[3] = foo3;
+	
+		FP x = a[__SYMBOLIC() % 3];
+		x();
+
+		return 0;
+	}
+    " ["main"; "foo0"; "foo1"; "foo2"; "foo3"]
+    begin fun file results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
+        assert_blocks_count 6 all_blocks_count
+    end;
+
+   test_coverage ~label:"Call with broken functions." "
+	int foo0(int a) {return 1;}
+	int foo1(int a) {return 1;}
+
+	typedef int (*FP)(int);
+
+	int main()
+	{
+		FP a[4];
+		a[0] = foo0;
+		a[1] = 0;
+		a[2] = foo1;
+	
+		FP x = a[__SYMBOLIC() % 4];
+		x(0);
+
+		return 0;
+	}
+    " ["main"; "foo0"; "foo1"]
+    begin fun file results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
+        assert_blocks_count 5 all_blocks_count
+    end;
 ]
 
 let testsuite = "Coverage" >::: [

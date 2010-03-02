@@ -95,25 +95,24 @@ let add_offset state offset lvals : state * (Types.MemoryBlockMap.key * Bytes.by
 	end state lvals
 ;;
 
-let rec getMaxBlockSizes cond len = 
+let rec getMaxBlockSizes cond = 
         match cond with
-                | IfThenElse (guard, x, y) -> max (getMaxBlockSizes x len) (getMaxBlockSizes y len)
+                | IfThenElse (guard, x, y) -> max (getMaxBlockSizes x) (getMaxBlockSizes y)
                 | Unconditional bytes -> 
                         match bytes with
-                                | Bytes_Address(block, offset) -> (block.memory_block_size/len)
-                                | Bytes_Conditional(c) -> getMaxBlockSizes c len
-                                | Bytes_ByteArray(a) -> (ImmutableArray.length a/len)
+                                | Bytes_Address(block, offset) -> (block.memory_block_size)
+                                | Bytes_Conditional(c) -> getMaxBlockSizes c
+                                | Bytes_ByteArray(a) -> (ImmutableArray.length a)
                                 | _ -> failwith ("Not a valid array.  : "^(To_string.bytes bytes))
 ;;
 let rec expand_read_to_conditional2 state bytes index len symIndex = 
         let max = match bytes with
-                | Bytes_Address(block, offset) -> (block.memory_block_size/len)
-                | Bytes_ByteArray(a) -> (ImmutableArray.length a/len)
-                | Bytes_Conditional(c) -> getMaxBlockSizes c len
+                | Bytes_Address(block, offset) -> (block.memory_block_size)
+                | Bytes_ByteArray(a) -> (ImmutableArray.length a)
+                | Bytes_Conditional(c) -> getMaxBlockSizes c
                 | _ -> failwith ("Not a valid array. : "^(To_string.bytes bytes))
         in
-	Output.printf "Array Max: %i, index : %i\n" max index;
-        if (index < max - 1) then
+        if (index < max - len) then
                 IfThenElse(
                         Guard_Bytes(make_Bytes_Op (
                                 OP_EQ,
@@ -121,16 +120,16 @@ let rec expand_read_to_conditional2 state bytes index len symIndex =
                         )),
                         (*deref state (make_Bytes_Read (bytes, Bytes_Constant(index), len)),*)
                         (
-                                match bytes__read bytes (lazy_int_to_bytes (index*len)) len with
+                                match bytes__read bytes (lazy_int_to_bytes (index)) len with
                                         | Bytes_Conditional(c) -> c
                                         | b -> Unconditional(b)
                         ),
-                        (expand_read_to_conditional2 state bytes (index+1) len symIndex)
+                        (expand_read_to_conditional2 state bytes (index+len) len symIndex)
                 )
         else
                 (*deref state (make_Bytes_Read (bytes, Bytes_Constant(index), len))*)
                 (
-                        match bytes__read bytes (lazy_int_to_bytes (index*len)) len with
+                        match bytes__read bytes (lazy_int_to_bytes (index)) len with
                                 | Bytes_Conditional c -> c
                                 | b -> Unconditional(b)
                 )
@@ -140,7 +139,6 @@ let rec expand_read_to_conditional state bytes len symIndex =
                 | Bytes_Read(a, x, l) -> Bytes_Conditional(expand_read_to_conditional state a l x)
                 | _ -> bytes
         in
-		Output.print_endline (To_string.bytes bytes);
                 expand_read_to_conditional2 state bytes 0 len symIndex
 ;;
 

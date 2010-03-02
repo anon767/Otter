@@ -105,12 +105,29 @@ let from_exp state exp args: (state * function_type) list =
 		| Lval(Mem(exp2), NoOffset) ->
 			let state, bytes = Eval.rval state exp2 in
 			let rec getall fp =
+				let fold_func acc pre leaf =
+					let acc =
+						match leaf with
+							| Bytes_FunPtr(fundec,_) -> 
+								(MemOp.state__add_path_condition state (Bytes_Conditional(Bytes.IfThenElse(pre, Unconditional(lazy_int_to_bytes 1), Unconditional(lazy_int_to_bytes 0)))) true, Ordinary(fundec))::acc (*big hack*)
+							| _ -> acc
+					in
+					(acc, Unconditional(leaf))
+				in
+				let acc, fp = Bytes.conditional__map_fold ~test:(Stp.query_guard state.path_condition) fold_func [] fp in
+				Output.set_mode Output.MSG_MUSTPRINT;				
+				Output.print_endline (To_string.bytes (Bytes_Conditional(fp)));
+				acc
+				
+				(*let fp = Bytes.conditional__map ~test:(Stp.query_guard state.path_condition) (fun x -> Unconditional(x)) fp in
+				Output.print_endline (To_string.bytes (Bytes_Conditional(fp)));
 				match fp with
 					| Bytes.IfThenElse (g, x, y) -> (getall x)@(getall y)
 					| Bytes.Unconditional x -> 
 						match x with
 							| Bytes_FunPtr(fundec,_) -> [(state, Ordinary(fundec))]
-							| _ -> []
+							| _ -> [] (*should warn that it could be not a function*)
+				*)
 			in
 			begin match bytes with
 				| Bytes_FunPtr(fundec,_) -> [(state, Ordinary (fundec))]
