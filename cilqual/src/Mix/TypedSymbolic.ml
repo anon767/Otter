@@ -92,10 +92,10 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
                                 end fn.Cil.sallstmts (* sallstmts is computed by Cil.computeCFGInfo *)
                         end;
 
-                        (* then, the global variables and call stack *)
+                        (* then, the global variables and function arguments *)
                         mapM_ begin fun frame ->
                             frame_to_qt file expState state frame
-                        end (state.Types.global::(state.Types.formals @ state.Types.locals));
+                        end (state.Types.global::state.Types.formals);
 
                         return block_errors
                     end
