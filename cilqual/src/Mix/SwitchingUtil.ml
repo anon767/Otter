@@ -802,16 +802,28 @@ let bytes_to_qt file expState state pre bytes exp qt = perform
         end (state, []) target_lval_list
     in
 
-    let rec bytes_to_qt state pre bytes exp qt = perform
+    let module VisitedSet = Set.Make (struct
+        type t = Bytes.bytes * Qual.Var.t
+        let compare (bx, qx) (by, qy) = match Qual.Var.compare qx qy with
+            | 0 -> Pervasives.compare bx by
+            | i -> i
+    end) in
+
+    let rec bytes_to_qt visited state pre bytes exp qt = perform
         begin match Cil.unrollType (Cil.typeOf exp), qt with
+            | _, (Ref (Var v, _) | Fn (Var v, _, _) | Base (Var v)) when VisitedSet.mem (bytes, v) visited ->
+                return state
+
             | Cil.TPtr (typtarget, _), Ref (Var v, qtarget) -> perform
+                let visited = VisitedSet.add (bytes, v) visited in
                 (state, target_bytes_list) <-- check_pointer state pre bytes qt typtarget;
                 foldM begin fun state (pre, target_bytes) ->
-                    bytes_to_qt state pre target_bytes (Cil.Lval (Cil.Mem exp, Cil.NoOffset)) qtarget
+                    bytes_to_qt visited state pre target_bytes (Cil.Lval (Cil.Mem exp, Cil.NoOffset)) qtarget
                 end state target_bytes_list
 
             | Cil.TComp (compinfo, _) as typ, Base (Var v) -> perform
                 (* for structs and unions, iterate over the fields *)
+                let visited = VisitedSet.add (bytes, v) visited in
                 begin match exp with
                     | Cil.Lval lval ->
                         fold_struct begin fun stateM field -> perform
@@ -834,14 +846,15 @@ let bytes_to_qt file expState state pre bytes exp qt = perform
                                 return qt
                             end;
 
-                            bytes_to_qt state pre field_bytes (Cil.Lval field_lval) qtf
+                            bytes_to_qt visited state pre field_bytes (Cil.Lval field_lval) qtf
                         end (return state) compinfo
                     | _ ->
                         failwith "are there any other Cil.exp that can have type Cil.TComp?"
                 end
 
-            | Cil.TArray (el_type, len_opt, _) as typ, qt ->
+            | Cil.TArray (el_type, len_opt, _) as typ, (Ref (Var v, _) | Fn (Var v, _, _) | Base (Var v)) ->
                 (* for arrays, iterate over the elements *)
+                let visited = VisitedSet.add (bytes, v) visited in
                 begin match exp with
                     | Cil.Lval lval ->
                         let result_opt = fold_array begin fun stateM index -> perform
@@ -854,7 +867,7 @@ let bytes_to_qt file expState state pre bytes exp qt = perform
                             let el_bytes = Bytes.bytes__read bytes offset size in
 
                             state <-- stateM;
-                            bytes_to_qt state pre el_bytes (Cil.Lval el_lval) qt
+                            bytes_to_qt visited state pre el_bytes (Cil.Lval el_lval) qt
                         end (return state) len_opt in
                         begin match result_opt with
                             | Some result -> result
@@ -892,7 +905,7 @@ let bytes_to_qt file expState state pre bytes exp qt = perform
      * have been forced, and so the new state is equivalent to the original state. Furthermore, it's usually cheaper
      * to work with a less elaborate state as it tends to lead to simpler symbolic expressions to be solved by the SMT
      * solver, due to the less elaborate aliasing relationship between memory locations. *)
-    bytes_to_qt state pre bytes exp qt;
+    bytes_to_qt VisitedSet.empty state pre bytes exp qt;
     return ()
 
 
