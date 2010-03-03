@@ -3,81 +3,139 @@ open Types
 open MemOp
 open Cilutility
 
+module ObjectMap = Map.Make (Int64);;
 module StringMap = Map.Make (String);;
 
-type pptattr = string list StringMap.t;;
-type pptinv = string * pptattr;;
-type pptmap = pptinv list FundecMap.t;;
+let null = "0";;
 
-let (__map : pptinv list FundecMap.t ref) = ref FundecMap.empty;;
+(* Globals *)
+let (objectMap : YamlNode.t ObjectMap.t ref) = ref ObjectMap.empty;;
+let file = ref Cil.dummyFile;;
 
-let parse yaml_str file  = 
-  let rec read_string a =
-    match a with
-      | YamlNode.SCALAR (_,s) -> s
-      | _ -> failwith "YamlParser: wrong format (read_string)"
-  in 
-  let retrieve_fundec fundec_str =
-    let s = read_string fundec_str in 
-      Function.from_name_in_file s file
+
+(*
+ * Extract {SCALAR,SEQUENCE,MAPPING} from the YamlNode constructors
+ *)
+let getYamlScalar (node:YamlNode.t) : string =
+  match node with
+    | YamlNode.SCALAR (_,s) -> s
+    | _ -> failwith "Error: input node is not SCALAR"
+;;
+let getYamlSequence (node:YamlNode.t) : YamlNode.t list =
+  match node with
+    | YamlNode.SEQUENCE (_,t) -> t
+    | _ -> failwith "Error: input node is not SEQUENCE"
+;;
+let getYamlMapping (node:YamlNode.t) : (YamlNode.t*YamlNode.t) list =
+  match node with
+    | YamlNode.MAPPING (_,t) -> t
+    | _ -> failwith "Error: input node is not MAPPING"
+;;
+
+(* 
+ * value is the untyped (either primitive or pointer)
+ * typ is {@SCALAR,@SEQUENCE,@MAPPING}
+ *)
+let get (value:string) : (string*YamlNode.t) =
+  let getObject (hashcode:int64) : YamlNode.t =
+    ObjectMap.find hashcode (!objectMap) 
   in
-  let read_pptpair a b =
-    (read_string a,
-    match b with
-      | YamlNode.SEQUENCE(_,lst) -> List.map (fun s -> read_string s) lst
-      | YamlNode.SCALAR(_,s) -> [s]
-      | _ -> failwith "YamlParser: wrong format (read_pptpair)"
-    )
+  let getContent (obj:YamlNode.t) : (string*YamlNode.t) =
+    match obj with
+      | YamlNode.MAPPING ("daikon.JavaObject",lst) ->
+          let (k,v) = List.find 
+                        (fun (tk,v) -> 
+                           let k=getYamlScalar tk in 
+                             k="@SCALAR"||k="@MAPPING"||k="@SEQUENCE") lst 
+          in (getYamlScalar k,v)
+      | _ -> failwith "Error in getContent"
   in
-  let read_pptinv doc =
-    match doc with
-      | YamlNode.MAPPING(_,lst)-> (
-          match snd(List.nth lst 0) with YamlNode.SCALAR(_,name) -> (
-          match snd(List.nth lst 1) with YamlNode.MAPPING(_,pairlst) -> (
-            (name,
-             List.fold_left 
-               (fun map (a,b) -> 
-                  let sa,sb = read_pptpair a b in
-                    StringMap.add sa sb map
-               )
-               StringMap.empty pairlst)
-          ) | _ -> failwith "YamlParser: wrong format (read_pptinv MAPPING)"
-          ) | _ -> failwith "YamlParser: wrong format (read_pptinv SCALAR)"
-          ) | _ -> failwith "YamlParser: wrong format (read_pptinv)"
-  in
-  let read_pptinvs doc =
-    match doc with
-      | YamlNode.SEQUENCE(_,lst) -> List.map read_pptinv lst
-      | _ -> failwith "YamlParser: wrong format (read_pptinvs)"
-  in
-  let rec read_pptmap doc=
-    match doc with
-      | YamlNode.MAPPING(_,lst) -> 
+  let hashcode = Int64.of_string value in
+  let obj = getObject hashcode in
+  let (typ,content) = getContent obj in
+    (typ,content)
+;;
+
+let getType (value:string) : string =
+  let (typ,content) = get value in
+    typ
+;;
+
+(*
+ *  Functions that traverse the java data structure
+ *  the string type acts as untyped
+ *)
+let getAttribute (value:string) (attrName:string) : string =
+  let (typ,content) = get value in
+    match typ with
+      | "@SCALAR" -> 
+          let (k,v) = List.find 
+                        (fun (k,v) -> (getYamlScalar k)=attrName) 
+                        (getYamlMapping content)
+          in (getYamlScalar v) 
+      | _ -> failwith "Error: non-SCALAR has no attributes"
+;;
+
+let getSequence (value:string) : string list =
+  let (typ,content) = get value in
+    match typ with
+      | "@SEQUENCE" -> List.map getYamlScalar (getYamlSequence content)
+      | _ -> failwith "Error: getSequence invoked with non-SEQUENCE"
+;;
+
+let getMapping (value:string) : string StringMap.t =
+  let (typ,content) = get value in
+    match typ with
+      | "@MAPPING" -> List.fold_left 
+                        (fun map (k,v) -> StringMap.add (getYamlScalar k) (getYamlScalar v) map) 
+                        StringMap.empty (getYamlMapping content)
+      | _ -> failwith "Error: getMapping invoked with non-MAPPING"
+;;
+
+let findInMapping (key:string) (value:string) : string =
+  let map = getMapping value in
+  try StringMap.find key map
+  with Not_found -> "0"
+;;
+
+(* 
+ * Parse *.yml files
+ *)
+let parse yaml_str (file':Cil.file) : unit =
+  let mapHashcodesToObjects yamlnode =
+    match yamlnode with
+      | YamlNode.MAPPING(_,hashCode2ObjectList) ->
           List.fold_left 
-            (fun map (fundec_str,subdoc) ->
-               let f = (retrieve_fundec fundec_str) in
-               FundecMap.add f (read_pptinvs subdoc) map)
-            FundecMap.empty lst 
-      | _ -> failwith "YamlParser: wrong format (read_pptmap)"
+            begin fun map (h,o) -> ObjectMap.add (Int64.of_string (getYamlScalar h)) o map end
+            ObjectMap.empty hashCode2ObjectList
+      | _ -> failwith "Error in mapping hashcodes to objects"
   in
-  let yaml = YamlParser.parse_string (YamlParser.make ()) yaml_str in
-    __map := read_pptmap yaml;
+  file := file';
+  if yaml_str = "" then () else
+    let yamlnode = YamlParser.parse_string (YamlParser.make ()) yaml_str in
+      objectMap := mapHashcodesToObjects yamlnode
+;;
+
+(* 
+ * Test function
+ *)
+let test_function () =
+  let pptmap = "14454885" (* Think of this as a pointer *) in
+  let serialVersionUID = getAttribute pptmap "serialVersionUID" in
+  let nameToPpt = getAttribute pptmap "nameToPpt" in
+  let pptTopLevel = findInMapping "..addstr():::ENTER" nameToPpt in
+    Printf.printf "serialVersionUID=%s\n" serialVersionUID;
+    Printf.printf "pptTopLevel=%s\n" pptTopLevel;
     ()
 ;;
 
-let constrain_inv state (invname,invattr)  =
-  match invname with
-    | "daikon.inv.unary.scalar.OneOfScalar" ->
-        Printf.printf "daikon.inv.unary.scalar.OneOfScalar\n";
-        StringMap.iter (fun k v -> Printf.printf "    %s=%s\n" k
-        (List.fold_left (fun s elm -> s^" "^elm) "" v)) invattr;
-        state
-    | _ -> state
-;;
-
+(*
+ * Put constraints to fundec into state
+ *)
 let constrain state fundec =
-  let invlst = FundecMap.find fundec (!__map) in
-    List.fold_left constrain_inv state invlst
+  test_function () ;
+  (* "daikon.inv.unary.scalar.OneOfScalar" *)
+  state
 ;;
 
 
