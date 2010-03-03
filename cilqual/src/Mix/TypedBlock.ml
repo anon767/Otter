@@ -160,7 +160,26 @@ module Interpreter (T : Config.BlockConfig) = struct
                 | Some explanation ->
                     Format.eprintf "@.";
                     Format.eprintf "Shortest paths between $null and $nonnull:@\n  @[%a@]@."
-                        DiscreteSolver.Explanation.printer explanation
+                        DiscreteSolver.Explanation.printer explanation;
+
+                    (*
+                     * temporary workaround to report warnings that are easier to understand, by removing aliasing edges
+                     * that carry no file or line number as explanation.
+                     *)
+                    let no_aliasing_graph = G.QualGraph.fold_edges_e begin fun edge no_aliasing_graph ->
+                        Format.fprintf Format.str_formatter "%a" G.QualGraph.edge_printer edge;
+                        if Format.flush_str_formatter () = "<aliasing>" then
+                            G.QualGraph.remove_edge_e no_aliasing_graph edge
+                        else
+                            no_aliasing_graph
+                    end constraints constraints in
+                    let no_aliasing_solution = DiscreteSolver.solve consts no_aliasing_graph in
+                    if DiscreteSolver.Solution.is_unsatisfiable no_aliasing_solution then begin
+                        Format.eprintf "@.";
+                        Format.eprintf "Shortest no-aliasing paths between $null and $nonnull:@\n  @[%a@]@."
+                            DiscreteSolver.Explanation.printer (DiscreteSolver.explain no_aliasing_solution)
+                    end;
+                    ()
                 | None ->
                     ()
             end;
