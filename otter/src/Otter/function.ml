@@ -109,31 +109,21 @@ let from_exp state exp args: (state * function_type) list =
 					let acc =
 						match leaf with
 							| Bytes_FunPtr(fundec,_) -> 
-								(MemOp.state__add_path_condition state (Bytes_Conditional(Bytes.IfThenElse(pre, Unconditional(lazy_int_to_bytes 1), Unconditional(lazy_int_to_bytes 0)))) true, Ordinary(fundec))::acc (*big hack*)
-							| _ -> acc
+								(Eval.add_guard_to_state state pre, Ordinary(fundec))::acc
+							| _ -> acc (* should give a warning here about a non-valid function pointer*)
 					in
 					(acc, Unconditional(leaf))
 				in
 				let acc, fp = Bytes.conditional__map_fold ~test:(Stp.query_guard state.path_condition) fold_func [] fp in
-				Output.set_mode Output.MSG_MUSTPRINT;				
-				Output.print_endline (To_string.bytes (Bytes_Conditional(fp)));
+				(*Output.set_mode Output.MSG_MUSTPRINT;				
+				Output.print_endline (To_string.bytes (Bytes_Conditional(fp)));*)
 				acc
-				
-				(*let fp = Bytes.conditional__map ~test:(Stp.query_guard state.path_condition) (fun x -> Unconditional(x)) fp in
-				Output.print_endline (To_string.bytes (Bytes_Conditional(fp)));
-				match fp with
-					| Bytes.IfThenElse (g, x, y) -> (getall x)@(getall y)
-					| Bytes.Unconditional x -> 
-						match x with
-							| Bytes_FunPtr(fundec,_) -> [(state, Ordinary(fundec))]
-							| _ -> [] (*should warn that it could be not a function*)
-				*)
 			in
 			begin match bytes with
 				| Bytes_FunPtr(fundec,_) -> [(state, Ordinary (fundec))]
 				| Bytes_Read(bytes2, offset, len) -> 
-					let fp = (Eval.expand_read_to_conditional state bytes2 len offset) in
-					Output.print_endline (To_string.bytes (Bytes_Conditional(fp)));
+					let fp = (Eval.expand_read_to_conditional bytes2 offset len) in
+					(*Output.print_endline (To_string.bytes (Bytes_Conditional(fp)));*)
 					(getall fp)
 				| Bytes_Conditional(c) ->
 					(getall c)

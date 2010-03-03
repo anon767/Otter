@@ -713,7 +713,11 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 			in
 			job_state::(process_func_list t)
        in
-       Big_Fork(process_func_list (Function.from_exp state fexp exps))
+	let f = (process_func_list (Function.from_exp state fexp exps)) in
+	match f with
+		| a::b::t -> Big_Fork(f)
+		| [a] -> a
+		| [] -> failwith "No valid function found!"
 ;;
 
 let exec_instr job =
