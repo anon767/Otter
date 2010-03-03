@@ -1,15 +1,14 @@
 /**
  * Export PptMap in YAML format
  *
- *
- * Schema:
- *
- * [name]
- *     -
- *       InvType : [type, in Daikon's java class name]
- *       InvData :
- *         [One mapping per field/method call]
- *   
+ *   Schema
+ *   [object ID]:
+ *     @CLASS: [java class name]
+ *     @TYPE: {@SCALAR,@SEQUENCE,@MAPPING}
+ *     @CONTENT:
+ *        [SCALAR: mapping from field:String to value:(primitive or object ID)]
+ *        [SEQUENCE: list of object IDs]
+ *        [MAPPING: mapping from object IDs to object IDs]
  *
  * @author  Martin
  */
@@ -42,10 +41,10 @@ class Attributes extends LinkedHashMap<String,Object> {}
 
 class JavaObject extends LinkedHashMap<String,Object> {
 
-  private static Set<Object> objectSet = new HashSet<Object>();
+  private static Map<Object,Integer> objectTable = new HashMap<Object,Integer>();
   private static List<Object> objectList = new LinkedList<Object>();
 
-  public static boolean isInteresting(Class c){
+  public static boolean isGenerallyPrimitive(Class c){
     return c.isPrimitive()
       || c.getName() == "java.lang.Boolean"
      // || c.getName() == "java.lang.Byte" // A bug in JYaml that forbids this
@@ -59,15 +58,26 @@ class JavaObject extends LinkedHashMap<String,Object> {
       ;
   }
 
-  public static Object simplify(Object x) {
-    if(x==null) return "0"; // Assumed null===0, no objects have hashCode 0
-    if(isInteresting(x.getClass())) return x; 
+  // 0 is null
+  public static int nextNumber_n = 1;
+  public static int nextNumber(){
+    return nextNumber_n++;
+  }
+  public static String hash(Object c){
+    if(c==null) return "0";
+    if(!objectTable.containsKey(c)) return "-1";
+    return objectTable.get(c).toString();
+  }
+
+  public static Object hashadd(Object x) {
+    if(x==null) return hash(x);
+    if(isGenerallyPrimitive(x.getClass())) return x.toString(); 
     else {
-      if(!objectSet.contains(x)){
-        objectSet.add(x);
+      if(!objectTable.containsKey(x)){
+        objectTable.put(x,nextNumber());
         objectList.add(x);
       }
-      return x.hashCode();
+      return hash(x);
     }
   }
 
@@ -94,18 +104,27 @@ class JavaObject extends LinkedHashMap<String,Object> {
 
       for(Object key: map.keySet()){
         Object val = map.get(key);
-        mapping.put(simplify(key),simplify(val));
+        mapping.put(hashadd(key),hashadd(val));
       }
       type = "@MAPPING";
       content = mapping;
     }
-    else if(obj instanceof Collection || obj.getClass().isArray()){
+    else if(obj instanceof Collection){
       YamlList list = new YamlList();
-      if(obj instanceof Collection) obj = ((Collection)obj).toArray();
-      int len = Array.getLength(obj);
+      Collection c = (Collection)obj;
+      for(Object x: c){
+        // Funny. x!=c, but they have the same hash code
+        list.add(hashadd(x));
+      }
+      type = "@SEQUENCE";
+      content = list;
+    }
+    else if(obj.getClass().isArray()){
+      YamlList list = new YamlList();
+      int len = Array.getLength(obj); // use Array because obj may be an array of primitive type
       for(int i=0;i<len;i++){
         Object x = Array.get(obj,i);
-        list.add(simplify(x));
+        list.add(hashadd(x));
       }
       type = "@SEQUENCE";
       content = list;
@@ -116,7 +135,7 @@ class JavaObject extends LinkedHashMap<String,Object> {
         try{
           f.setAccessible(true);
           Object fobj = f.get(obj);
-          attributes.put(f.getName(),simplify(fobj));
+          attributes.put(f.getName(),hashadd(fobj));
         }catch(Exception e){
           attributes.put(f.getName(),e.toString());
         }
@@ -132,29 +151,27 @@ class JavaObject extends LinkedHashMap<String,Object> {
     return jobj;
   }
 
-  public static Map<Integer,JavaObject> getInstances(Object obj){
-    objectSet = new HashSet<Object>();
+  public static Map<String,JavaObject> getInstances(Object obj){
+    objectTable = new HashMap<Object,Integer>();
     objectList = new LinkedList<Object>();
-    Map<Integer,JavaObject> map = new LinkedHashMap<Integer,JavaObject>();
+    Map<String,JavaObject> map = new LinkedHashMap<String,JavaObject>();
 
-    objectSet.add(obj);
+    objectTable.put(obj,nextNumber());
     objectList.add(obj);
 
     while(objectList.size()>0){
       Object x = objectList.remove(0);
-      map.put(x.hashCode(),getInstance(x));
+      map.put(hash(x),getInstance(x));
     }
-
     return map;
   }
-
-
 }
+
 public class YamlPrinter{
 
   public static void printInvariants(PptMap all_ppts){
     try{
-      Yaml.dump(JavaObject.getInstances(all_ppts), new java.io.File("pptmap.yml"),false);
+      Yaml.dump(JavaObject.getInstances(all_ppts), new java.io.File("pptmap.yml"),true);
     }catch(java.io.FileNotFoundException e){}
   }
 
