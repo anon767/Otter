@@ -6,12 +6,10 @@ open Cilutility
 module ObjectMap = Map.Make (Int64);;
 module StringMap = Map.Make (String);;
 
+type objectmap = YamlNode.t ObjectMap.t;;
+type untyped   = string*objectmap;;
+
 let null = "0";;
-
-(* Globals *)
-let (objectMap : YamlNode.t ObjectMap.t ref) = ref ObjectMap.empty;;
-let file = ref Cil.dummyFile;;
-
 
 (*
  * Extract {SCALAR,SEQUENCE,MAPPING} from the YamlNode constructors
@@ -32,59 +30,66 @@ let getYamlMapping (node:YamlNode.t) : (YamlNode.t*YamlNode.t) list =
     | _ -> failwith "Error: input node is not MAPPING"
 ;;
 
+(* Functions that extract values from untyped *)
+let getString (value:untyped) : string =
+  fst value
+;;
+let getObjectMap (value:untyped) : objectmap =
+  snd value
+;;
+(* getInteger, getBoolean, ... *)
+
 (* 
- * value is the untyped (either primitive or pointer)
- * typ is {@SCALAR,@SEQUENCE,@MAPPING}
+ * (@CLASS,@TYPE,@CONTENT)
+ * @CLASS is java class name
+ * @TYPE is {@SCALAR,@SEQUENCE,@MAPPING}
  *)
-let get (value:string) : (string*YamlNode.t) =
-  let getObject (hashcode:int64) : YamlNode.t =
-    ObjectMap.find hashcode (!objectMap) 
+let getInfo (value:untyped) : (string*string*YamlNode.t) =
+  let getObject (hashcode:int64) (map:objectmap) : YamlNode.t =
+    ObjectMap.find hashcode map 
   in
-  let getContent (obj:YamlNode.t) : (string*YamlNode.t) =
+  let hashcode = Int64.of_string (getString value) in
+  let obj = getObject hashcode (getObjectMap value) in
     match obj with
       | YamlNode.MAPPING ("daikon.JavaObject",lst) ->
-          let (k,v) = List.find 
-                        (fun (tk,v) -> 
-                           let k=getYamlScalar tk in 
-                             k="@SCALAR"||k="@MAPPING"||k="@SEQUENCE") lst 
-          in (getYamlScalar k,v)
-      | _ -> failwith "Error in getContent"
-  in
-  let hashcode = Int64.of_string value in
-  let obj = getObject hashcode in
-  let (typ,content) = getContent obj in
-    (typ,content)
-;;
-
-let getType (value:string) : string =
-  let (typ,content) = get value in
-    typ
+          let lookup key =
+            let predicate key (yk,v) =
+              let k = getYamlScalar yk in k = key
+            in
+            let (_,v) = List.find (predicate key) lst in v
+          in
+            ( 
+              (getYamlScalar (lookup "@CLASS")),
+              (getYamlScalar (lookup "@TYPE")),
+              (lookup "@CONTENT")
+            )
+      | _ -> failwith "Error in getInfo"
 ;;
 
 (*
  *  Functions that traverse the java data structure
  *  the string type acts as untyped
  *)
-let getAttribute (value:string) (attrName:string) : string =
-  let (typ,content) = get value in
+let getAttribute (value:untyped) (attrName:string) : untyped =
+  let (_,typ,content) = getInfo value in
     match typ with
       | "@SCALAR" -> 
           let (k,v) = List.find 
                         (fun (k,v) -> (getYamlScalar k)=attrName) 
                         (getYamlMapping content)
-          in (getYamlScalar v) 
+          in (getYamlScalar v) , (getObjectMap value)
       | _ -> failwith "Error: non-SCALAR has no attributes"
 ;;
 
-let getSequence (value:string) : string list =
-  let (typ,content) = get value in
+let getSequence (value:untyped) : string list =
+  let (_,typ,content) = getInfo value in
     match typ with
       | "@SEQUENCE" -> List.map getYamlScalar (getYamlSequence content)
       | _ -> failwith "Error: getSequence invoked with non-SEQUENCE"
 ;;
 
-let getMapping (value:string) : string StringMap.t =
-  let (typ,content) = get value in
+let getMapping (value:untyped) : string StringMap.t =
+  let (_,typ,content) = getInfo value in
     match typ with
       | "@MAPPING" -> List.fold_left 
                         (fun map (k,v) -> StringMap.add (getYamlScalar k) (getYamlScalar v) map) 
@@ -92,16 +97,16 @@ let getMapping (value:string) : string StringMap.t =
       | _ -> failwith "Error: getMapping invoked with non-MAPPING"
 ;;
 
-let findInMapping (key:string) (value:string) : string =
+let findInMapping (key:string) (value:untyped) : untyped =
   let map = getMapping value in
-  try StringMap.find key map
-  with Not_found -> "0"
+    ( (try StringMap.find key map with Not_found -> null) , getObjectMap value)
 ;;
 
+
 (* 
- * Parse *.yml files
+ * Parse *.yml files into an objectmap
  *)
-let parse yaml_str (file':Cil.file) : unit =
+let parse yaml_str : objectmap =
   let mapHashcodesToObjects yamlnode =
     match yamlnode with
       | YamlNode.MAPPING(_,hashCode2ObjectList) ->
@@ -110,30 +115,34 @@ let parse yaml_str (file':Cil.file) : unit =
             ObjectMap.empty hashCode2ObjectList
       | _ -> failwith "Error in mapping hashcodes to objects"
   in
-  file := file';
-  if yaml_str = "" then () else
-    let yamlnode = YamlParser.parse_string (YamlParser.make ()) yaml_str in
-      objectMap := mapHashcodesToObjects yamlnode
+    if yaml_str = "" then ObjectMap.empty
+    else
+      let yamlnode = YamlParser.parse_string (YamlParser.make ()) yaml_str in
+        mapHashcodesToObjects yamlnode
 ;;
 
 (* 
  * Test function
  *)
-let test_function () =
-  let pptmap = "14454885" (* Think of this as a pointer *) in
+let findPptMap objectMap =
+  "446196",objectMap (* Think of this as a pointer *) 
+;;
+
+let test_function objectMap =
+  let pptmap = findPptMap objectMap in
   let serialVersionUID = getAttribute pptmap "serialVersionUID" in
   let nameToPpt = getAttribute pptmap "nameToPpt" in
   let pptTopLevel = findInMapping "..addstr():::ENTER" nameToPpt in
-    Printf.printf "serialVersionUID=%s\n" serialVersionUID;
-    Printf.printf "pptTopLevel=%s\n" pptTopLevel;
+    Printf.printf "serialVersionUID=%s\n" (getString serialVersionUID);
+    Printf.printf "pptTopLevel=%s\n" (getString pptTopLevel);
     ()
 ;;
 
 (*
  * Put constraints to fundec into state
  *)
-let constrain state fundec =
-  test_function () ;
+let constrain state fundec objectMap =
+  test_function objectMap;
   (* "daikon.inv.unary.scalar.OneOfScalar" *)
   state
 ;;

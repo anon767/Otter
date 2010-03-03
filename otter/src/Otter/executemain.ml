@@ -301,8 +301,8 @@ let job_for_middle file entryfn yamlconstraints =
     else begin
         (* TODO: InvInput should return the parsed constraint map, not store it in a global *)
         (* Prepare the invariant input *)
-        InvInput.parse yamlconstraints file; (* TODO: the file is used only for finding fundec *)
-        { job with state = InvInput.constrain job.state entryfn }
+      let objectMap = InvInput.parse yamlconstraints in
+        { job with state = InvInput.constrain job.state entryfn objectMap }
     end
     
 
