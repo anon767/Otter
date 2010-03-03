@@ -2,6 +2,7 @@ open YamlParser
 open Types
 open MemOp
 open Cilutility
+open Cil
 
 module ObjectMap = Map.Make (Int64);;
 module StringMap = Map.Make (String);;
@@ -141,16 +142,53 @@ let test_function objectMap =
     ()
 ;;
 
+let isSubstring a b (* a is substring of b *) =
+  try ignore (Str.search_forward (Str.regexp_string a) b 0); true with Not_found -> false 
+;;
+
+let constrain_invariant state (fundec:Cil.fundec) (inv:string) objectMap =
+  (* TODO *)
+  (* "daikon.inv.unary.scalar.OneOfScalar" *)
+  let (c,t,content) = getInfo objectMap inv in
+    Printf.printf "%s\n" c;
+  state
+;;
+
+let constrain_pptslice state (fundec:Cil.fundec) (pptslice:string) objectMap =
+  let invs = getAttribute objectMap pptslice "invs" in
+  let invs_list = getSequence objectMap invs in
+    List.fold_left (
+      fun state inv ->
+        constrain_invariant state fundec inv objectMap
+    ) state invs_list
+;;
+
 (*
  * Put constraints to fundec into state
  *)
-let constrain state fundec objectMap =
+let constrain state (fundec:Cil.fundec) objectMap =
   let pptmap = findPptMap objectMap in
   let nameToPpt = getAttribute objectMap pptmap "nameToPpt" in
   let nameToPpt_mapping = getMapping objectMap nameToPpt in 
-    ignore nameToPpt_mapping;
-  (* "daikon.inv.unary.scalar.OneOfScalar" *)
-  state
+  let pptTopLevel_opt = 
+    StringMap.fold (
+      fun k v target ->
+        match target with
+          | Some _ -> target
+          | None -> if isSubstring fundec.svar.vname k && isSubstring ":::ENTER" k 
+            then Some v else None
+    ) nameToPpt_mapping None
+  in
+    begin match pptTopLevel_opt with
+      | None -> state
+      | Some pptTopLevel ->
+          let views = getAttribute objectMap pptTopLevel "views" in
+          let views_mapping = getMapping objectMap views in
+            StringMap.fold (
+              fun _ pptslice state ->
+                constrain_pptslice state fundec pptslice objectMap
+            ) views_mapping state
+    end 
 ;;
 
 
