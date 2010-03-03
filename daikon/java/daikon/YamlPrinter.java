@@ -36,89 +36,116 @@ import java.util.*;
 import java.lang.reflect.*;
 
 
-public class YamlPrinter{
+class YamlMap extends LinkedHashMap<Object,Object> {}
+class YamlList extends LinkedList<Object> {}
+class Attributes extends LinkedHashMap<String,Object> {}
 
-  public static List convertObject(Object obj){
-    List list = new LinkedList();
-    if (obj==null){
-      list.add(null);
-    }
-    else if (obj.getClass().isArray()){
-      int len = Array.getLength(obj);
-      for(int i=0;i<len;i++)
-        list.addAll(convertObject(Array.get(obj,i)));
-    }else {
-      list.add(obj.toString());
-    }
-    return list;
+class JavaObject extends LinkedHashMap<String,Object> {
+
+  private static Set<Object> objectSet = new HashSet<Object>();
+  private static List<Object> objectList = new LinkedList<Object>();
+
+  public static boolean isInteresting(Class c){
+    return c.isPrimitive()
+      || c.getName() == "java.lang.Boolean"
+     // || c.getName() == "java.lang.Byte"
+      || c.getName() == "java.lang.Character"
+      || c.getName() == "java.lang.Double"
+      || c.getName() == "java.lang.Float"
+      || c.getName() == "java.lang.Integer"
+      || c.getName() == "java.lang.Long"
+      || c.getName() == "java.lang.Short"
+      || c.getName() == "java.lang.String"
+      ;
   }
 
-  private static boolean interestingReturnType(Class c){
-    if (c.isArray()) return interestingReturnType(c.getComponentType());
-    return c.isPrimitive() || c.getName()=="java.lang.String";
-  }
-
-  public static Map convertInvariant(Invariant inv){
-    Class c = inv.getClass();
-
-    Map map = new LinkedHashMap();
-
-    Field[] f = c.getFields();
-    for(int i=0;i<f.length;i++)
-      try{
-        map.put(f[i].getName(),convertObject(f[i].get(inv)));
-      }catch(java.lang.IllegalAccessException e){
-        System.out.println(e);
+  public static Object simplify(Object x) {
+    if(x==null) return "0"; // Assumed null===0, no objects have hashCode 0
+    if(isInteresting(x.getClass())) return x; 
+    else {
+      if(!objectSet.contains(x)){
+        objectSet.add(x);
+        objectList.add(x);
       }
-
-    // I assumed that any method with zero arguments and primitive/array return types
-    // are getter methods and have no side effects.
-    Method[] m = c.getMethods();
-    for(int i=0;i<m.length;i++)
-      if(m[i].getParameterTypes().length==0 
-          &&  interestingReturnType(m[i].getReturnType()))
-        try{
-          Object ret = m[i].invoke(inv,null);
-          if (ret!=null) map.put(m[i].getName(),convertObject(ret));
-        }catch(java.lang.IllegalAccessException e){
-          System.out.println(e);
-        }catch(java.lang.reflect.InvocationTargetException e){
-          System.out.println(e);
-        }
-
-    Map top = new LinkedHashMap();
-    top.put("InvType",c.getName());
-    top.put("InvData",map);
-
-    return top;
+      return x.hashCode();
+    }
   }
 
-  public static List convertPptTopLevel(PptTopLevel ppt){
-    List list = new LinkedList();
-    for (Iterator<Invariant> itor = ppt.getInvariants().iterator(); itor.hasNext();){
-      Invariant inv = itor.next();
-      Map map = convertInvariant(inv);
-      list.add(map);
-    }
+  // Get all (including inherited) fields (except from java.lang.Object)
+  public static List<Field> getAllFields(Class c){
+    List<Field> list = new LinkedList<Field>();
+
+    if(c.getName()=="java.lang.Object") return list;
+    else list.addAll(getAllFields(c.getSuperclass()));
+    for(Field f: c.getDeclaredFields()) list.add(f);
+
     return list;
   }
 
-  public static Map convertPptMap(PptMap pptmap){
-    Map map = new LinkedHashMap();
-    for (Iterator<PptTopLevel> itor = pptmap.ppt_all_iterator(); itor.hasNext();){
-        PptTopLevel ppt = itor.next();
-        // Only export invariants for function entries
-        if (ppt.is_enter()){
-          map.put(ppt.ppt_name.getMethodName(),convertPptTopLevel(ppt));
-        }
+  public static JavaObject getInstance(Object obj){
+    JavaObject jobj = new JavaObject();
+
+    jobj.put("@CLASS",obj.getClass().getName());
+
+    if(obj instanceof Map){
+      Map map = (Map)obj;
+      YamlMap mapping = new YamlMap();
+
+      for(Object key: map.keySet()){
+        Object val = map.get(key);
+        mapping.put(simplify(key),simplify(val));
+      }
+      jobj.put("@MAPPING",mapping);
     }
+    else if(obj instanceof Collection || obj.getClass().isArray()){
+      YamlList list = new YamlList();
+      if(obj instanceof Collection) obj = ((Collection)obj).toArray();
+      int len = Array.getLength(obj);
+      for(int i=0;i<len;i++){
+        Object x = Array.get(obj,i);
+        list.add(simplify(x));
+      }
+      jobj.put("@SEQUENCE",list);
+    }
+    else {
+      Attributes attributes = new Attributes();
+      for(Field f: getAllFields(obj.getClass())){
+        try{
+          f.setAccessible(true);
+          Object fobj = f.get(obj);
+          attributes.put(f.getName(),simplify(fobj));
+        }catch(Exception e){
+          attributes.put(f.getName(),e.toString());
+        }
+      }
+      jobj.put("@SCALAR",attributes);
+    }
+    return jobj;
+  }
+
+  public static Map<Integer,JavaObject> getInstances(Object obj){
+    objectSet = new HashSet<Object>();
+    objectList = new LinkedList<Object>();
+    Map<Integer,JavaObject> map = new LinkedHashMap<Integer,JavaObject>();
+
+    objectSet.add(obj);
+    objectList.add(obj);
+
+    while(objectList.size()>0){
+      Object x = objectList.remove(0);
+      map.put(x.hashCode(),getInstance(x));
+    }
+
     return map;
   }
-  
+
+
+}
+public class YamlPrinter{
+
   public static void printInvariants(PptMap all_ppts){
-    Map map = convertPptMap(all_ppts);
     try{
-      Yaml.dump(map, new java.io.File("pptmap.yml"),true);
+      Yaml.dump(JavaObject.getInstances(all_ppts), new java.io.File("pptmap.yml"),false);
     }catch(java.io.FileNotFoundException e){}
   }
 
