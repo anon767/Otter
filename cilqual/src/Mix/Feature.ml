@@ -17,30 +17,33 @@ let dispatcher s x =
      * X.dispatch functions have the type : chain -> dispatch -> stack -> work -> result
      *
      *     - chain and dispatch are functions with the type : stack -> work -> result
-     *         - chain may be called by the X.dispatch function to delegate to the next X.dispatch function,
-     *           e.g., if it cannot handle the next work block
-     *         - dispatch may be called by the X.dispatch function to delegate to the first X.dispatch function,
-     *           e.g., if it needs to analyze a new work block
+     *         - chain may be called by the X.dispatch function to delegate to the next X.dispatch function in the
+     *           chain, e.g., if it cannot handle the next work block
+     *         - dispatch may be called by the X.dispatch function to delegate to the first X.dispatch function in the
+     *           chain, e.g., if it needs to analyze a new work block
      *
      *     - stack is an explicit stack of open polymorphic variants with the type : [> ] list
-     *         - it is mainly used for operations requiring stack inspection
-     *         - the X.dispatch functions are responsible to pushing/popping the stack when creating/completing the
-     *           analysis of new work blocks 
+     *         - it is mainly used for operations that require stack inspection, e.g., to detect recursion
+     *         - the X.dispatch functions are responsible for pushing/popping the stack when creating/completing work
+     *           blocks
      *
-     *     - work is an continuation-based implicit stack of open polymorphic variants with the type : [> ]
-     *         - typically the polymorphic variants of the form `X (block_input, k) where k is a continuation with the
-     *           type : block_result -> result
-     *         - work as parameter passed as input to X.dispatch which decides whether to analyze it or to delegate to
-     *           the next X.dispatch
+     *     - work is a continuation-based implicit stack with an open polymorphic variants type : [> ]
+     *         - typically, the polymorphic variants are of the form `X (block_input, k) where k is a continuation with
+     *           the type : block_result -> result
+     *         - the X.dispatch functions can "push" the stack by creating a new work `X (block_input', k') where k'
+     *           is a continuation function that eventually calls k to "pop" the stack, and calling chain or dispatch
+     *           with the new work block
+     *         - work is passed as input to X.dispatch which can decide whether to analyze it or to delegate to another
+     *           X.dispatch by pattern matching the variant tag `X
+     *         - `X/block_input/block_result are specific to each X.dispatch since different analysis consume or
+     *           produce different data
      *
-     *     - block_input/block_result are specific to each X.dispatch since different analysis consume or produce
-     *       different data
-     *
-     *     - result is a the final result of the analysis, and is specific to the very first work block
+     *     - result is the final result of the analysis and is determined by the analysis that generated the very
+     *       first work block
      *)
 
     (* TODO: merge work into stack, since an explicit stack is required for analysis such as recursion detection,
-     *       and two stacks is more hassle to maintain *)
+     *       and having two stacks to pass around is more hassle *)
 
     let analysis_register = [
         TypedInterpreter.dispatch;
