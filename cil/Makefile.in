@@ -79,7 +79,7 @@ CILLY_LIBRARY_MODULES = pretty inthash errormsg alpha trace stats util clist \
               dataflow dominators bitmap ssa ciltools \
               usedef logcalls logwrites rmtmps \
 	      callgraph epicenter heapify \
-              setp uref olf ptranal \
+              setp uref olf golf ptranal \
               canonicalize heap oneret partial simplemem simplify \
 	      dataslicing sfi expcompare\
               cfg liveness reachingdefs deadcodeelim availexps \

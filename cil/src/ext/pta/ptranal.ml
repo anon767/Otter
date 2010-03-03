@@ -41,7 +41,7 @@ open Cil
 
 module H = Hashtbl
 
-module A = Olf
+module A = Golf
 exception UnknownLocation = A.UnknownLocation
 
 type access = A.lvalue * bool
