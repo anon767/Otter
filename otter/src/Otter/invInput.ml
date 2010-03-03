@@ -7,7 +7,6 @@ module ObjectMap = Map.Make (Int64);;
 module StringMap = Map.Make (String);;
 
 type objectmap = YamlNode.t ObjectMap.t;;
-type untyped   = string*objectmap;;
 
 let null = "0";;
 
@@ -30,26 +29,17 @@ let getYamlMapping (node:YamlNode.t) : (YamlNode.t*YamlNode.t) list =
     | _ -> failwith "Error: input node is not MAPPING"
 ;;
 
-(* Functions that extract values from untyped *)
-let getString (value:untyped) : string =
-  fst value
-;;
-let getObjectMap (value:untyped) : objectmap =
-  snd value
-;;
-(* getInteger, getBoolean, ... *)
-
 (* 
  * (@CLASS,@TYPE,@CONTENT)
  * @CLASS is java class name
  * @TYPE is {@SCALAR,@SEQUENCE,@MAPPING}
  *)
-let getInfo (value:untyped) : (string*string*YamlNode.t) =
+let getInfo (objectMap:objectmap) (value:string) : (string*string*YamlNode.t) =
   let getObject (hashcode:int64) (map:objectmap) : YamlNode.t =
     ObjectMap.find hashcode map 
   in
-  let hashcode = Int64.of_string (getString value) in
-  let obj = getObject hashcode (getObjectMap value) in
+  let hashcode = Int64.of_string value in
+  let obj = getObject hashcode objectMap in
     match obj with
       | YamlNode.MAPPING ("daikon.JavaObject",lst) ->
           let lookup key =
@@ -70,26 +60,26 @@ let getInfo (value:untyped) : (string*string*YamlNode.t) =
  *  Functions that traverse the java data structure
  *  the string type acts as untyped
  *)
-let getAttribute (value:untyped) (attrName:string) : untyped =
-  let (_,typ,content) = getInfo value in
+let getAttribute (objectMap:objectmap) (value:string) (attrName:string) : string =
+  let (_,typ,content) = getInfo objectMap value in
     match typ with
       | "@SCALAR" -> 
           let (k,v) = List.find 
                         (fun (k,v) -> (getYamlScalar k)=attrName) 
                         (getYamlMapping content)
-          in (getYamlScalar v) , (getObjectMap value)
+          in (getYamlScalar v) 
       | _ -> failwith "Error: non-SCALAR has no attributes"
 ;;
 
-let getSequence (value:untyped) : string list =
-  let (_,typ,content) = getInfo value in
+let getSequence (objectMap:objectmap) (value:string) : string list =
+  let (_,typ,content) = getInfo objectMap value in
     match typ with
       | "@SEQUENCE" -> List.map getYamlScalar (getYamlSequence content)
       | _ -> failwith "Error: getSequence invoked with non-SEQUENCE"
 ;;
 
-let getMapping (value:untyped) : string StringMap.t =
-  let (_,typ,content) = getInfo value in
+let getMapping (objectMap:objectmap) (value:string) : string StringMap.t =
+  let (_,typ,content) = getInfo objectMap value in
     match typ with
       | "@MAPPING" -> List.fold_left 
                         (fun map (k,v) -> StringMap.add (getYamlScalar k) (getYamlScalar v) map) 
@@ -97,9 +87,9 @@ let getMapping (value:untyped) : string StringMap.t =
       | _ -> failwith "Error: getMapping invoked with non-MAPPING"
 ;;
 
-let findInMapping (key:string) (value:untyped) : untyped =
-  let map = getMapping value in
-    ( (try StringMap.find key map with Not_found -> null) , getObjectMap value)
+let findInMapping (objectMap:objectmap) (key:string) (value:string) : string =
+  let map = getMapping objectMap value in
+    try StringMap.find key map with Not_found -> null
 ;;
 
 
@@ -122,19 +112,32 @@ let parse yaml_str : objectmap =
 ;;
 
 (* 
- * Test function
+ * Locate the only PptMap instance and return its address (as untyped) 
  *)
 let findPptMap objectMap =
-  "446196",objectMap (* Think of this as a pointer *) 
+  let pptmaps = ObjectMap.fold 
+    begin
+      fun k v acc ->
+        let k_str = Int64.to_string k in
+        let (c,t,content) = getInfo objectMap k_str in
+          if c="daikon.PptMap" then k_str::acc else acc
+    end
+    objectMap []
+  in
+    assert (List.length pptmaps = 1);
+    List.hd pptmaps
 ;;
 
+(* 
+ * Test function
+ *)
 let test_function objectMap =
   let pptmap = findPptMap objectMap in
-  let serialVersionUID = getAttribute pptmap "serialVersionUID" in
-  let nameToPpt = getAttribute pptmap "nameToPpt" in
-  let pptTopLevel = findInMapping "..addstr():::ENTER" nameToPpt in
-    Printf.printf "serialVersionUID=%s\n" (getString serialVersionUID);
-    Printf.printf "pptTopLevel=%s\n" (getString pptTopLevel);
+  let serialVersionUID = getAttribute objectMap pptmap "serialVersionUID" in
+  let nameToPpt = getAttribute objectMap pptmap "nameToPpt" in
+  let pptTopLevel = findInMapping objectMap "..addstr():::ENTER" nameToPpt in
+    Printf.printf "serialVersionUID=%s\n" serialVersionUID;
+    Printf.printf "pptTopLevel=%s\n" pptTopLevel;
     ()
 ;;
 
@@ -142,7 +145,10 @@ let test_function objectMap =
  * Put constraints to fundec into state
  *)
 let constrain state fundec objectMap =
-  test_function objectMap;
+  let pptmap = findPptMap objectMap in
+  let nameToPpt = getAttribute objectMap pptmap "nameToPpt" in
+  let nameToPpt_mapping = getMapping objectMap nameToPpt in 
+    ignore nameToPpt_mapping;
   (* "daikon.inv.unary.scalar.OneOfScalar" *)
   state
 ;;
