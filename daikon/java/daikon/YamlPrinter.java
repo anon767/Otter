@@ -48,7 +48,7 @@ class JavaObject extends LinkedHashMap<String,Object> {
   public static boolean isInteresting(Class c){
     return c.isPrimitive()
       || c.getName() == "java.lang.Boolean"
-     // || c.getName() == "java.lang.Byte"
+     // || c.getName() == "java.lang.Byte" // A bug in JYaml that forbids this
       || c.getName() == "java.lang.Character"
       || c.getName() == "java.lang.Double"
       || c.getName() == "java.lang.Float"
@@ -85,7 +85,8 @@ class JavaObject extends LinkedHashMap<String,Object> {
   public static JavaObject getInstance(Object obj){
     JavaObject jobj = new JavaObject();
 
-    jobj.put("@CLASS",obj.getClass().getName());
+    String type = null;
+    Object content = null;
 
     if(obj instanceof Map){
       Map map = (Map)obj;
@@ -95,7 +96,8 @@ class JavaObject extends LinkedHashMap<String,Object> {
         Object val = map.get(key);
         mapping.put(simplify(key),simplify(val));
       }
-      jobj.put("@MAPPING",mapping);
+      type = "@MAPPING";
+      content = mapping;
     }
     else if(obj instanceof Collection || obj.getClass().isArray()){
       YamlList list = new YamlList();
@@ -105,7 +107,8 @@ class JavaObject extends LinkedHashMap<String,Object> {
         Object x = Array.get(obj,i);
         list.add(simplify(x));
       }
-      jobj.put("@SEQUENCE",list);
+      type = "@SEQUENCE";
+      content = list;
     }
     else {
       Attributes attributes = new Attributes();
@@ -118,8 +121,14 @@ class JavaObject extends LinkedHashMap<String,Object> {
           attributes.put(f.getName(),e.toString());
         }
       }
-      jobj.put("@SCALAR",attributes);
+      type = "@SCALAR";
+      content = attributes;
     }
+
+    jobj.put("@CLASS",obj.getClass().getName());
+    jobj.put("@TYPE",type);
+    jobj.put("@CONTENT",content);
+
     return jobj;
   }
 
