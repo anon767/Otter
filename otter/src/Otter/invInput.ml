@@ -37,12 +37,15 @@ let getYamlMapping (node:YamlNode.t) : (YamlNode.t*YamlNode.t) list =
  *)
 let getInfo (objectMap:objectmap) (value:string) : (string*string*YamlNode.t) =
   let getObject (hashcode:int64) (map:objectmap) : YamlNode.t =
+    try
     ObjectMap.find hashcode map 
+    with Not_found -> 
+      failwith (Printf.sprintf "Error in getObject: %s not found" (Int64.to_string(hashcode)))
   in
   let hashcode = Int64.of_string value in
   let obj = getObject hashcode objectMap in
     match obj with
-      | YamlNode.MAPPING ("daikon.JavaObject",lst) ->
+      | YamlNode.MAPPING (_,lst) ->
           let lookup key =
             let predicate key (yk,v) =
               let k = getYamlScalar yk in k = key
@@ -65,9 +68,10 @@ let getAttribute (objectMap:objectmap) (value:string) (attrName:string) : string
   let (_,typ,content) = getInfo objectMap value in
     match typ with
       | "@SCALAR" -> 
-          let (k,v) = List.find 
-                        (fun (k,v) -> (getYamlScalar k)=attrName) 
-                        (getYamlMapping content)
+          let (k,v) = 
+            try
+              List.find (fun (k,v) -> (getYamlScalar k)=attrName) (getYamlMapping content)
+            with Not_found -> failwith (Printf.sprintf "Error in getAttribute: %s not found" attrName)
           in (getYamlScalar v) 
       | _ -> failwith "Error: non-SCALAR has no attributes"
 ;;
@@ -92,7 +96,6 @@ let findInMapping (objectMap:objectmap) (key:string) (value:string) : string =
   let map = getMapping objectMap value in
     try StringMap.find key map with Not_found -> null
 ;;
-
 
 (* 
  * Parse *.yml files into an objectmap
@@ -146,12 +149,66 @@ let isSubstring a b (* a is substring of b *) =
   try ignore (Str.search_forward (Str.regexp_string a) b 0); true with Not_found -> false 
 ;;
 
+
+(*
+ *  Structure of Daikon's VarInfo
+ *
+ *  VarInfo 
+ *    .vardef.name: original name of the variable, or null if it's derived
+ *    .derived: e.g., SizeOf. null if not derived
+ *
+ *)
+
+let findCilFormal state (str_formal:string) : Cil.varinfo =
+  try
+    let fundec = List.hd state.callstack in
+    let formal = List.find (fun formal -> formal.vname=str_formal) fundec.sformals in
+      formal
+  with Not_found ->
+    failwith (Printf.sprintf "Error in findCilFormal: %s not found" str_formal)
+;;
+
 let constrain_invariant state (fundec:Cil.fundec) (inv:string) objectMap =
-  (* TODO *)
-  (* "daikon.inv.unary.scalar.OneOfScalar" *)
   let (c,t,content) = getInfo objectMap inv in
-    Printf.printf "%s\n" c;
-  state
+    match c with
+      | "daikon.inv.unary.scalar.OneOfScalar" ->
+          let ppt = getAttribute objectMap inv "ppt" in
+          let var_infos = getAttribute objectMap ppt "var_infos" in
+          let var_infos_list = getSequence objectMap var_infos in
+          let var_info = List.hd var_infos_list in
+
+          let derived = getAttribute objectMap var_info "derived" in
+          let num_elts = int_of_string (getAttribute objectMap inv "num_elts") in
+          let elts = getAttribute objectMap inv "elts" in
+          let elts_list = getSequence objectMap elts in
+
+          let vardef = getAttribute objectMap var_info "vardef" in
+            if vardef <> null then
+              begin (* Non-derived variable *)
+                let var_name = getAttribute objectMap vardef "name" in
+                let formal = findCilFormal state var_name in
+                let values,_ = List.fold_left 
+                                 (fun (lst,n) s ->
+                                    (if n<=0 then lst else (int_of_string s)::lst) (* TODO: overflow? *) , n-1
+                                 ) ([],num_elts) elts_list in
+                let state,formal_bytes = Eval.rval state (Lval (Var(formal),NoOffset)) in
+                let typ = formal.vtype in
+                let eqExps = List.map (fun v -> (Operation.eq [(formal_bytes,typ);(Bytes.lazy_int_to_bytes v,typ)],typ) ) values in
+                let pc,_ = List.fold_left 
+                           (fun pc (exp,typ) -> 
+                              let bs = (Bytes.make_Bytes_Op (Bytes.OP_LOR, [pc;(exp,typ)])) in
+                                (bs,typ)
+                           ) (Bytes.bytes__zero,Cil.intType) eqExps in
+                let state = {state with path_condition=pc::state.path_condition; } in
+                  state
+              end
+            else (* Derived variable *)
+              begin
+                Printf.printf "derived=%s\n" derived; 
+                state
+              end
+
+      | _ -> state
 ;;
 
 let constrain_pptslice state (fundec:Cil.fundec) (pptslice:string) objectMap =
@@ -166,6 +223,7 @@ let constrain_pptslice state (fundec:Cil.fundec) (pptslice:string) objectMap =
 (*
  * Put constraints to fundec into state
  *)
+(* TODO: omit fundec, since it's already in List.hd state.callstack *)
 let constrain state (fundec:Cil.fundec) objectMap =
   let pptmap = findPptMap objectMap in
   let nameToPpt = getAttribute objectMap pptmap "nameToPpt" in
