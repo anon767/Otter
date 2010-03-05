@@ -76,6 +76,16 @@ let getAttribute (objectMap:objectmap) (value:string) (attrName:string) : string
       | _ -> failwith "Error: non-SCALAR has no attributes"
 ;;
 
+let getAttributes (objectMap:objectmap) (value:string) : string StringMap.t =
+  let (_,typ,content) = getInfo objectMap value in
+    match typ with
+      | "@SCALAR" -> List.fold_left 
+                        (fun map (k,v) -> StringMap.add (getYamlScalar k) (getYamlScalar v) map) 
+                        StringMap.empty (getYamlMapping content)
+      | _ -> failwith "Error in getAttributes"
+;;
+
+
 let getSequence (objectMap:objectmap) (value:string) : string list =
   let (_,typ,content) = getInfo objectMap value in
     match typ with
@@ -204,8 +214,30 @@ let constrain_invariant state (fundec:Cil.fundec) (inv:string) objectMap =
               end
             else (* Derived variable *)
               begin
-                Printf.printf "derived=%s\n" derived; 
-                state
+                let (c,_,_) = getInfo objectMap derived in
+                match c with
+                  | "daikon.derive.unary.SequenceLength" -> 
+                      let base = getAttribute objectMap derived "base" in
+                      let vardef = getAttribute objectMap base "vardef" in
+                        if vardef <> null then 
+                          begin
+                            let shift = int_of_string (getAttribute objectMap derived "shift") in
+                            let enclosing_var = getAttribute objectMap vardef "enclosing_var" in
+                            let formal = findCilFormal state enclosing_var in 
+                              (* TODO: init formal with array of length n *)
+                              Printf.printf "Size of %s is one of (%d) " (To_string.varinfo formal) num_elts; 
+                              List.iter (Printf.printf " %s ") elts_list;
+                              Printf.printf "\n";
+                              Printf.printf "Shift = %d\n" shift;
+                              (*
+                              let map = getAttributes objectMap inv in
+                              StringMap.iter (fun key a -> Printf.printf "   %s -> %s\n" key a ) map;
+                               *)
+                              state
+                          end
+                        else
+                          failwith "Error in constrain_invariant: derived of derived variable?"
+                  | _ -> state
               end
 
       | _ -> state
