@@ -45,14 +45,7 @@ let libc___builtin_va_start state exps =
 
 (* __builtin_alloca is used for local arrays with variable size; has the same semantics as malloc *)
 let libc___builtin_alloca__id = ref 1;;
-let libc___builtin_alloca state exps =
-	let state, b_size = Eval.rval state (List.hd exps) in
-	let size =
-		if isConcrete_bytes b_size then
-			bytes_to_int_auto b_size (*safe to use bytes_to_int as arg should be small *)
-		else
-			1 (* currently bytearray have unbounded length *)
-	in
+let libc___builtin_alloca_size state size bytes =
 	let name = Printf.sprintf "%s(%d)#%d/%s%s"
 		(List.hd state.callstack).svar.vname
 		size
@@ -61,14 +54,24 @@ let libc___builtin_alloca state exps =
 		(MemOp.state__trace state)
 	in
 	let block =  block__make name size Block_type_Heap in
+	let addrof_block = make_Bytes_Address (block, bytes__zero) in
+	let state = MemOp.state__add_block state block bytes in
+	(state, addrof_block)
+;;
+let libc___builtin_alloca state exps =
+	let state, b_size = Eval.rval state (List.hd exps) in
+	let size =
+		if isConcrete_bytes b_size then
+			bytes_to_int_auto b_size (*safe to use bytes_to_int as arg should be small *)
+		else
+			1 (* currently bytearray have unbounded length *)
+  in
 	let bytes =
 	  if Executeargs.run_args.Executeargs.arg_init_malloc_zero
 	  then bytes__make size (* initially zero, as though malloc were calloc *)
 	  else bytes__make_default size byte__undef (* initially the symbolic 'undef' byte *)
 	in
-	let addrof_block = make_Bytes_Address (block, bytes__zero) in
-	let state = MemOp.state__add_block state block bytes in
-	(state, addrof_block)
+    libc___builtin_alloca_size state size bytes
 ;;
 
 (* share implementation with __builtin_alloca *)
