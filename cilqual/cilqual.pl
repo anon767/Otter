@@ -44,7 +44,7 @@ sub collectOneArgument {
     if($arg =~ /^--do/) {
         $self->{DOCOMMAND} = $arg;
     }
-    if($arg =~ /^--merge/) {
+    if($arg =~ /^--merge$/) {
         $self->{DOMERGE} = 1;
     }
     return $self->SUPER::collectOneArgument($arg, $pargs);
