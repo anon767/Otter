@@ -65,8 +65,7 @@ class JavaObject extends LinkedHashMap<String,Object> {
   }
   public static String hash(Object c){
     if(c==null) return "0";
-    if(!objectTable.containsKey(c)) return "-1";
-    return objectTable.get(c).toString();
+    return objectTable.get(c).toString(); // throws exception if not found
   }
 
   public static Object hashadd(Object x) {
