@@ -141,7 +141,8 @@ showvars:
 ### Automatically generated files
 ###
 
-JAVA_CPP_PL ?= ../../scripts/java-cpp.pl
+JAVA_CPP_PL ?= ../../bin/java-cpp.pl
+#JAVA_CPP_PL ?= ../../scripts/java-cpp.pl
 # JAVA_CPP = java-cpp.pl $< -DDEFINEDVAR > $@
 # This rule does not work with make 3.77, but does work with make 3.78.
 JAVA_CPP ?= (rm -f $@; ${JAVA_CPP_PL} -DDEFINEDVAR $< 2>&1 > $@ && chmod -w $@)
