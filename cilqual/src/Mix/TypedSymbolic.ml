@@ -49,17 +49,14 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
 
         (* then, setup function arguments *)
         (* TODO: handle varargs *)
-        let (((((qta, _), _), _), _), _) = run begin perform
-            qtf <-- lookup_var fn.Cil.svar;
-            args qtf
-        end expState in
-        let state, args_bytes = List.fold_left2 begin fun (state, args_bytes) v qt ->
-            let state, bytes = qt_to_bytes file expState solution state (Cil.Lval (Cil.var v)) qt in
+        let state, rev_args_bytes = List.fold_left begin fun (state, args_bytes) v ->
+            let (((((qt, _), _), _), _), _) = run (lookup_var v) expState in
+            let state, bytes = qt_to_bytes file expState solution state (Cil.Lval (Cil.var v)) (drop_qt qt) in
             (state, bytes::args_bytes)
-        end (state, []) fn.Cil.sformals qta in
+        end (state, []) fn.Cil.sformals in
 
         (* next, prepare the function call job *)
-        let job = Executemain.job_for_function state fn args_bytes in
+        let job = Executemain.job_for_function state fn (List.rev rev_args_bytes) in
 
         (* finally, prepare the completion continuation *)
         let completion stack completed =
