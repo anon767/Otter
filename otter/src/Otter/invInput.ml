@@ -143,6 +143,18 @@ let findPptMap objectMap =
 ;;
 
 
+(* helpers *)
+let tru = Bytes.lazy_int_to_bytes 1;;
+let fls = Bytes.lazy_int_to_bytes 0;;
+let bytes_or b1 b2 = 
+  if b1=fls then b2 else if b2=fls then b1 else
+  Bytes.make_Bytes_Op (Bytes.OP_LOR, [(b1,Cil.intType);(b2,intType)]);;
+let bytes_and b1 b2 = 
+  if b1=tru then b2 else if b2=tru then b1 else
+  Bytes.make_Bytes_Op (Bytes.OP_LAND, [(b1,Cil.intType);(b2,intType)]);;
+let bytes_not b = 
+  if b=tru then fls else if b=fls then tru else 
+  Bytes.make_Bytes_Op (Bytes.OP_LNOT, [b,Cil.intType])
 
 (*
  *  Structure of Daikon's VarInfo
@@ -152,6 +164,7 @@ let findPptMap objectMap =
  *    .derived: e.g., SizeOf. null if not derived
  *
  *)
+
 
 type condition =
   | OneOfScalar of Cil.varinfo * int list
@@ -175,7 +188,7 @@ let findCilFormal state (str_formal:string) : Cil.varinfo =
     failwith (Printf.sprintf "Error in findCilFormal: %s not found" str_formal)
 ;;
 
-let constrain_invariant state (fundec:Cil.fundec) (inv:string) objectMap =
+let constrain_invariant state (fundec:Cil.fundec) (inv:string) objectMap : task list =
   let (c,t,content) = getInfo objectMap inv in
     match c with
       | "daikon.inv.unary.scalar.NonZero" ->
@@ -188,18 +201,10 @@ let constrain_invariant state (fundec:Cil.fundec) (inv:string) objectMap =
               begin (* Non-derived variable *)
                 let var_name = getAttribute objectMap vardef "name" in
                 let formal = findCilFormal state var_name in
-                  Condition (Negation (OneOfScalar (formal,[0])))
-                    (*
-
-                let state,formal_bytes = Eval.rval state (Lval (Var(formal),NoOffset)) in
-                let typ = formal.vtype in
-                let pc = Operation.ne [(formal_bytes,typ);(Bytes.bytes__zero,typ)] in
-                let state = {state with path_condition=pc::state.path_condition; } in
-                  state
-                     *)
+                  [Condition (Negation (OneOfScalar (formal,[0])))]
               end
             else (* Derived variable *)
-              Nothing
+              []
 
       | "daikon.inv.unary.scalar.OneOfScalar"  ->
           let ppt = getAttribute objectMap inv "ppt" in
@@ -221,7 +226,7 @@ let constrain_invariant state (fundec:Cil.fundec) (inv:string) objectMap =
               begin (* Non-derived variable *)
                 let var_name = getAttribute objectMap vardef "name" in
                 let formal = findCilFormal state var_name in
-                  Condition (OneOfScalar (formal,values))
+                  [Condition (OneOfScalar (formal,values))]
               end
             else (* Derived variable *)
               begin
@@ -236,33 +241,32 @@ let constrain_invariant state (fundec:Cil.fundec) (inv:string) objectMap =
                             let enclosing_var = getAttribute objectMap vardef "enclosing_var" in
                             let formal = findCilFormal state enclosing_var in 
                               if shift = 0 then (
-                                Creation ( TypedMalloc (formal,values) )
+                                [Creation ( TypedMalloc (formal,values) )]
                               )
-                              else Nothing
+                              else []
                           end
                         else
                           failwith "Error in constrain_invariant: derived of derived variable?"
-                  | _ -> Nothing
+                  | _ -> []
               end
 
-      | _ -> Nothing
+      | _ -> []
 ;;
 
 let constrain_task state task =
   let rec constrain_task_condition state c =
     match c with
       | OneOfScalar (formal,values) ->
-          let state,formal_bytes = Eval.rval state (Lval (Var(formal),NoOffset)) in
+          let _,formal_bytes = Eval.rval state (Lval (Var(formal),NoOffset)) in (* TODO: assert that state is unchanged? *)
           let typ = formal.vtype in
           let eqExps = List.map (fun v -> (Operation.eq [(formal_bytes,typ);(Bytes.lazy_int_to_bytes v,typ)],typ) ) values in
-          let pc,_ = List.fold_left 
-                       (fun pc (exp,typ) -> 
-                          let bs = (Bytes.make_Bytes_Op (Bytes.OP_LOR, [pc;(exp,typ)])) in
-                            (bs,typ)
-                       ) (Bytes.bytes__zero,Cil.intType) eqExps in
+          let pc = List.fold_left 
+                       (fun pc (exp,_) -> 
+                          let bs = bytes_or pc exp in bs
+                       ) fls eqExps in
             pc
       | Negation (c) -> let pc = constrain_task_condition state c in
-          Bytes.make_Bytes_Op (Bytes.OP_LNOT, [pc,Cil.intType])
+          bytes_not pc
 
   in
   let constrain_task_creation state c =
@@ -301,7 +305,7 @@ let constrain_pptslice state (fundec:Cil.fundec) (pptslice:string) objectMap =
   let task_list = 
     List.fold_left (
       fun tasks inv ->
-        (constrain_invariant state fundec inv objectMap)::tasks
+        List.rev_append (constrain_invariant state fundec inv objectMap)  tasks
     ) [] invs_list 
   in
   let task_list = List.stable_sort (fun a b -> (task_rank a) - (task_rank b)) task_list in
@@ -340,4 +344,135 @@ let constrain state (fundec:Cil.fundec) objectMap =
     end 
 ;;
 
+
+(* COPIES for now *)
+(* Manipulate this function to add invariants *)
+let constrain_task' state task =
+  let rec constrain_task_condition state c =
+    match c with
+      | OneOfScalar (formal,values) ->
+          let _,formal_bytes = Eval.rval state (Lval (Var(formal),NoOffset)) in (* TODO: assert that state is unchanged? *)
+          let typ = formal.vtype in
+          let eqExps = List.map (fun v -> (Operation.eq [(formal_bytes,typ);(Bytes.lazy_int_to_bytes v,typ)],typ) ) values in
+          let pc = List.fold_left 
+                       (fun pc (exp,_) -> 
+                          let bs = bytes_or pc exp in bs
+                       ) fls eqExps in
+            pc
+      | Negation (c) -> let pc = constrain_task_condition state c in
+          bytes_not pc
+
+  in
+  let constrain_task_creation state c =
+    match c with
+      | TypedMalloc (formal,values) ->
+          (* Instead of allocating memory and assign to formal,
+           * check if formal points to something of the right size.
+           * For now, just check if formal is non-null if such task exists
+           * (such task exists only if formal is non-null)
+           *)
+			    let size = (Cil.bitsSizeOf formal.Cil.vtype)/8 in
+          let lstsize = List.fold_left max 0 values in (* preliminary *)
+          let overallsize = size* lstsize in
+            ignore overallsize;
+            let _,formal_bytes = Eval.rval state (Lval (Var(formal),NoOffset)) in (* TODO: assert that state is unchanged? *)
+              (* TODO: currently there're at least two ways of generating bytes.
+               * Not Good
+               *)
+              Bytes.make_Bytes_Op (Bytes.OP_NE, [(formal_bytes,Cil.intType);(fls(*zero*),intType)])
+  in
+  match task with
+    | Condition (c) ->
+        constrain_task_condition state c 
+    | Creation (c) ->
+        constrain_task_creation state c
+    | Nothing -> tru
+;;
+
+let constrain_pptslice' state (fundec:Cil.fundec) (pptslice:string) objectMap : Bytes.bytes =
+  let invs = getAttribute objectMap pptslice "invs" in
+  let invs_list = getSequence objectMap invs in
+  let task_list = 
+    List.fold_left (
+      fun tasks inv ->
+        List.rev_append (constrain_invariant state fundec inv objectMap)  tasks
+    ) [] invs_list 
+  in
+  let task_list = List.stable_sort (fun a b -> (task_rank a) - (task_rank b)) task_list in
+    List.fold_left (fun ct task -> let ct' = constrain_task' state task in bytes_and ct ct') tru task_list
+;;
+
+(*
+ * Put constraints to fundec into state
+ *)
+(* TODO: omit fundec, since it's already in List.hd state.callstack *)
+let constrain' state (fundec:Cil.fundec) objectMap =
+  let isSubstring a b (* a is substring of b *) =
+    try ignore (Str.search_forward (Str.regexp_string a) b 0); true with Not_found -> false 
+  in
+  let pptmap = findPptMap objectMap in
+  let nameToPpt = getAttribute objectMap pptmap "nameToPpt" in
+  let nameToPpt_mapping = getMapping objectMap nameToPpt in 
+  let pptTopLevel_opt = 
+    StringMap.fold (
+      fun k v target ->
+        match target with
+          | Some _ -> target
+          | None -> if isSubstring fundec.svar.vname k && isSubstring ":::ENTER" k 
+            then Some v else None
+    ) nameToPpt_mapping None
+  in
+    begin match pptTopLevel_opt with
+      | None -> tru
+      | Some pptTopLevel ->
+          let views = getAttribute objectMap pptTopLevel "views" in
+          let views_mapping = getMapping objectMap views in
+            StringMap.fold (
+              fun _ pptslice ct ->
+                let ct' = constrain_pptslice' state fundec pptslice objectMap in
+                  bytes_and ct ct'
+            ) views_mapping tru
+    end 
+;;
+let global_objectMap = ref ObjectMap.empty;;
+
+type record = { numTrue:int; numFalse:int; numUnknown:int };;
+let incr_record r t = match t with
+  | Ternary.True -> r:={!r with numTrue=(!r).numTrue+1}
+  | Ternary.False -> r:={!r with numFalse=(!r).numFalse+1}
+  | Ternary.Unknown -> r:={!r with numUnknown=(!r).numUnknown+1}
+;;
+
+let pc2ct = ref {numTrue=0;numFalse=0;numUnknown=0};;
+let ct2pc = ref {numTrue=0;numFalse=0;numUnknown=0};;
+
+let examine state fundec = 
+  (
+  if global_objectMap = ref ObjectMap.empty then
+    global_objectMap := parse Executeargs.run_args.Executeargs.arg_yaml
+  else
+    ()
+  );
+  let ct = constrain' state fundec (!global_objectMap) in
+  let pc = state.path_condition in
+    begin
+      Printf.printf "pc |- ct: ";
+      let truth = Stp.eval pc ct in
+        incr_record pc2ct truth;
+        match truth with
+          | Ternary.True -> Printf.printf "True\n"
+          | Ternary.False -> Printf.printf "False\n"
+          | _ -> Printf.printf "Unknown\n"
+    end;
+    begin
+      Printf.printf "ct |- pc: ";
+      let truth = Stp.eval [ct] (List.fold_left bytes_and tru pc) in
+        incr_record ct2pc truth;
+        match truth with
+          | Ternary.True -> Printf.printf "True\n"
+          | Ternary.False -> Printf.printf "False\n"
+          | _ -> Printf.printf "Unknown\n"
+    end;
+    ()
+;;
 

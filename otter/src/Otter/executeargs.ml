@@ -75,6 +75,7 @@ type run_args =
 		mutable arg_fns : Types.StringSet.t;
 		mutable arg_yaml : string;
 		mutable arg_entryfn : string;
+		mutable arg_examfn : string;
 		mutable arg_timeout : int;
 		(** How many seconds to allow the executor to run. *)
 		mutable arg_merge_paths : bool;
@@ -110,6 +111,7 @@ let run_args =
 		arg_fns = Types.StringSet.empty;
 		arg_yaml = "";
 		arg_entryfn = ""; (* == main *)
+		arg_examfn = ""; (* none *)
 		arg_timeout = 0;
 		arg_merge_paths = false;
 		arg_marshal_file = ""; (* File to which to marshal coverage information *)

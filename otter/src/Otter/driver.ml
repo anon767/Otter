@@ -141,6 +141,14 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 					| _   -> assert false
 				in
 				let state = MemOp.state__start_fcall state callContext fundec argvs in
+        (* If fundec is the function to be examined *)
+        begin
+        let examfn = Executeargs.run_args.arg_examfn in
+          if examfn = fundec.svar.vname  then
+            InvInput.examine state fundec
+          else ()
+        end;
+
 				(* Update the state, the next stmt to execute, and whether or
 					 not we're in a tracked function. *)
 				Active { job with

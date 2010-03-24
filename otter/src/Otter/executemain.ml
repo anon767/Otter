@@ -299,7 +299,6 @@ let job_for_middle file entryfn yamlconstraints =
     if yamlconstraints = "" then
         job
     else begin
-        (* TODO: InvInput should return the parsed constraint map, not store it in a global *)
         (* Prepare the invariant input *)
       let objectMap = InvInput.parse yamlconstraints in
         { job with state = InvInput.constrain job.state entryfn objectMap }
@@ -396,6 +395,15 @@ let doExecute (f: file) =
     Hashtbl.iter (fun a b -> print_endline (To_string.bytes b)) Types.hash_consing_bytes_tbl; 
      *)
 
+  begin
+    if Executeargs.run_args.arg_examfn = "" then () else
+      let print_record r = Printf.printf "#true:%d\n#false:%d\n#unknown:%d\n" r.numTrue r.numFalse r.numUnknown in
+        Printf.printf "pc |- ct:\n";
+        print_record (!InvInput.pc2ct);
+        Printf.printf "ct |- pc:\n";
+        print_record (!InvInput.ct2pc);
+        ()
+  end;
 	Report.print_report results
 ;;
 
@@ -546,6 +554,10 @@ let feature : featureDescr =
 			("--entryfn",
 			Arg.String (fun fname -> Executeargs.run_args.arg_entryfn <- fname),
 			"<fname> Entry function (default: main) \n");
+
+			("--examfn",
+			Arg.String (fun fname -> Executeargs.run_args.arg_examfn <- fname),
+			"<fname> Function to be examined (default: none) \n");
 
 
 (*
