@@ -1,7 +1,21 @@
 /*  -*- Last-Edit:  Mon Dec  7 10:31:51 1992 by Tarak S. Goradia; -*- */
 
+
 extern void	exit();
 # include <stdio.h>
+
+#ifdef CIL
+#define fprintf   (void)
+#define fputc   (void)
+#define ARGV 3
+#define GETLINE 5
+void __SYMBOLIC_STRING(char* s,int size){
+  int i;
+  for(i=0;i<size;i++)
+    s[i] = __SYMBOLIC();
+  s[size] = 0;
+}
+#endif
 
 void	Caseerror();
 
@@ -41,7 +55,18 @@ char	*s;
 int	maxsize;
 {
     char *result;
+#ifdef CIL
+    static int called = 0;
+    if(called)
+    result = NULL;
+    else{
+      called = 1;
+      __SYMBOLIC_STRING(s,GETLINE);
+      result = s;
+    }
+#else
     result = fgets(s, maxsize, stdin);
+#endif
     return (result != NULL);
 }
 int
@@ -517,12 +542,26 @@ char *pat, *sub;
     }
 }
 
+#ifdef CIL
+main()
+{
+  int argc = 2;
+  char* argv[2];
+  argv[0] = "replace";
+  argv[1] = malloc(ARGV+1);
+  __SYMBOLIC_STRING(argv[1],ARGV);
+
+#else
 main(argc, argv)
 int	argc;
 char	*argv[];
 {
+#endif
+
+
    string pat, sub;
    bool result;
+
 
    if (argc < 2) 
    {
