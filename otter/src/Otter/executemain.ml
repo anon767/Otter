@@ -301,7 +301,8 @@ let job_for_middle file entryfn yamlconstraints =
     else begin
         (* Prepare the invariant input *)
       let objectMap = InvInput.parse yamlconstraints in
-        { job with state = InvInput.constrain job.state entryfn objectMap }
+      let _,new_state = InvInput.constrain job.state entryfn objectMap in
+        { job with state = new_state }
     end
     
 
@@ -398,9 +399,9 @@ let doExecute (f: file) =
   begin
     if Executeargs.run_args.arg_examfn = "" then () else
       let print_record r = Printf.printf "#true:%d\n#false:%d\n#unknown:%d\n" r.numTrue r.numFalse r.numUnknown in
-        Printf.printf "pc |- ct:\n";
+        Printf.printf "pc -> ct:\n";
         print_record (!InvInput.pc2ct);
-        Printf.printf "ct |- pc:\n";
+        Printf.printf "ct -> pc:\n";
         print_record (!InvInput.ct2pc);
         ()
   end;

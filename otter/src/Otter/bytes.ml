@@ -424,6 +424,23 @@ and bytes__equal bytes1 bytes2 = if bytes1 == bytes2 then true else match bytes1
 	| _, _ ->
 		false
 
+;;
+
+(* boolean *)
+let tru = lazy_int_to_bytes 1;;
+let fls = lazy_int_to_bytes 0;;
+
+let bytes_or b1 b2 = 
+  if b1=fls then b2 else if b2=fls then b1 else
+  make_Bytes_Op (OP_LOR, [(b1,Cil.intType);(b2,Cil.intType)]);;
+let bytes_and b1 b2 = 
+  if b1=tru then b2 else if b2=tru then b1 else
+  make_Bytes_Op (OP_LAND, [(b1,Cil.intType);(b2,Cil.intType)]);;
+let bytes_not b = 
+  if b=tru then fls else if b=fls then tru else 
+  make_Bytes_Op (OP_LNOT, [b,Cil.intType])
+
+
 
 (**
  *  symbol
