@@ -138,12 +138,31 @@ let rec expand_read_to_conditional (bytes:bytes) (symIndex:bytes) (len:int) =
                 | _ -> bytes
         in
 	match bytes with
+		| Bytes_Write(a, x, l, v) -> 
+				IfThenElse(
+					Guard_Bytes(make_Bytes_Op (
+						OP_EQ,
+						[(symIndex, Cil.intType); (x, Cil.intType)]
+					)),	
+					(Unconditional v),	
+					(expand_read_to_conditional a symIndex len)
+				)
+			
 		| Bytes_Conditional c -> 
 			let map_func leaf =
 				match leaf with
 					| Bytes_Read(a, x, l) -> expand_read_to_conditional a x l
 					| Bytes_Conditional c -> expand_read_to_conditional leaf symIndex len
 						(* ^^ someone hid another conditional tree in here*)
+					(*| Bytes_Write(a, x, l, v) -> 
+						IfThenElse(
+							Guard_Bytes(make_Bytes_Op (
+								OP_EQ,
+								[(symIndex, Cil.intType); (x, Cil.intType)]
+							)),	
+							(Unconditional v),	
+							(expand_read_to_conditional a symIndex len)
+						)*)
 	                                | _ -> expand_read_to_conditional2 bytes 0 len symIndex
 			in
 			conditional__map map_func c
@@ -162,7 +181,7 @@ let rec prune_conditional_bytes state cond =
 		in
 		((), new_leaf)
 	in
-	snd (Bytes.conditional__map_fold ~test:(Stp.query_guard state.path_condition) fold_func () cond)
+	snd (Bytes.conditional__map_fold ~test:(fun a b -> Stp.query_guard state.path_condition a b) fold_func () cond)
 ;;
 let prune_bytes_conditional state bytes = 
 	match bytes with
