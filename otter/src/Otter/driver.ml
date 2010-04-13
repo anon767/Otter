@@ -1,13 +1,14 @@
 open Cil
 open Ternary
 open Bytes
+open BytesUtility
 open Types
 open PathMerging
 open Executeargs
 open Cilutility
 
 let eval_with_cache state pc bytes =
-    (state, Stp.eval pc bytes) 
+    (state, Operation.eval pc bytes) 
   (*
   match MemOp.state__get_bytes_eval_cache state bytes with
     | Some (boolval) -> ((if boolval then True else False), state)

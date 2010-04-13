@@ -1,6 +1,7 @@
 open Executeargs
 open Cil
 open Bytes
+open BytesUtility
 open Types
 open Operation
 
@@ -37,7 +38,7 @@ let print_failed_assertion state bytes exps ~isUnknown =
     @return state           if the assertion is always true, this is the input state; otherwise, an error message is printed and the return value is the input state with [bytes] added to the path condition
 *)
 let check state bytes exps =
-	match Stp.eval state.path_condition bytes with
+	match Operation.eval state.path_condition bytes with
 		Ternary.True -> (* The assertion is true *)
 			Output.set_mode Output.MSG_REG;
 			Output.print_endline "Assertion satisfied.";
@@ -94,100 +95,6 @@ let add_offset state offset lvals : state * (Types.MemoryBlockMap.key * Bytes.by
 		(newState, conditional__lval_block (block, newOffset))
 	end state lvals
 ;;	
-
-(*let rec getMaxBlockSizes cond = 
-        match cond with
-                | IfThenElse (guard, x, y) -> max (getMaxBlockSizes x) (getMaxBlockSizes y)
-                | Unconditional bytes -> 
-                        match bytes with
-                                | Bytes_Address(block, offset) -> (block.memory_block_size)
-                                | Bytes_Conditional(c) -> getMaxBlockSizes c
-                                | Bytes_ByteArray(a) -> (ImmutableArray.length a)
-                                | _ -> failwith ("Not a valid array.  : "^(To_string.bytes bytes))
-;;*)
-let rec expand_read_to_conditional2 bytes index len symIndex = 
-        let max = match bytes with
-                | Bytes_Address(block, offset) -> (block.memory_block_size)
-                | Bytes_ByteArray(a) -> (ImmutableArray.length a)
-                | Bytes_Conditional(c) -> failwith "Unexpected Bytes_Conditional"(*getMaxBlockSizes c*)
-                | _ -> failwith ("Not a valid array. : "^(To_string.bytes bytes))
-        in
-        if (index < max - len) then (*don't read past the end of the array*)
-                IfThenElse(
-                        Guard_Bytes(make_Bytes_Op (
-                                OP_EQ,
-                                [(symIndex, Cil.intType); ((lazy_int_to_bytes index), Cil.intType)]
-                        )),
-                        (
-                                match bytes__read bytes (lazy_int_to_bytes (index)) len with
-                                        | Bytes_Conditional(c) -> c
-                                        | b -> Unconditional(b)
-                        ),
-                        (expand_read_to_conditional2 bytes (index+1(*len*)) len symIndex)
-                )
-        else (*last read that fits in the memory block*)
-                (
-                        match bytes__read bytes (lazy_int_to_bytes (index)) len with
-                                | Bytes_Conditional c -> c
-                                | b -> Unconditional(b)
-                )
-;;
-let rec expand_read_to_conditional (bytes:bytes) (symIndex:bytes) (len:int) = 
-        let bytes = match bytes with
-                | Bytes_Read(a, x, l) -> Bytes_Conditional(expand_read_to_conditional a x l)
-                | _ -> bytes
-        in
-	match bytes with
-		| Bytes_Write(a, x, l, v) -> 
-				IfThenElse(
-					Guard_Bytes(make_Bytes_Op (
-						OP_EQ,
-						[(symIndex, Cil.intType); (x, Cil.intType)]
-					)),	
-					(Unconditional v),	
-					(expand_read_to_conditional a symIndex len)
-				)
-			
-		| Bytes_Conditional c -> 
-			let map_func leaf =
-				match leaf with
-					| Bytes_Read(a, x, l) -> expand_read_to_conditional a x l
-					| Bytes_Conditional c -> expand_read_to_conditional leaf symIndex len
-						(* ^^ someone hid another conditional tree in here*)
-					(*| Bytes_Write(a, x, l, v) -> 
-						IfThenElse(
-							Guard_Bytes(make_Bytes_Op (
-								OP_EQ,
-								[(symIndex, Cil.intType); (x, Cil.intType)]
-							)),	
-							(Unconditional v),	
-							(expand_read_to_conditional a symIndex len)
-						)*)
-	                                | _ -> expand_read_to_conditional2 bytes 0 len symIndex
-			in
-			conditional__map map_func c
-		| _ -> expand_read_to_conditional2 bytes 0 len symIndex
-;;
-
-let add_guard_to_state state guard = (*big hack; there should be a nicer way to do this*)
-	MemOp.state__add_path_condition state (Bytes_Conditional(Bytes.IfThenElse(guard, Unconditional(lazy_int_to_bytes 1), Unconditional(lazy_int_to_bytes 0)))) true
-
-let rec prune_conditional_bytes state cond =
-	let fold_func acc pre leaf =
-		let new_leaf =
-			match leaf with
-				| Bytes_Conditional c -> prune_conditional_bytes (add_guard_to_state state pre) c
-				| x -> Unconditional(x)
-		in
-		((), new_leaf)
-	in
-	snd (Bytes.conditional__map_fold ~test:(fun a b -> Stp.query_guard state.path_condition a b) fold_func () cond)
-;;
-let prune_bytes_conditional state bytes = 
-	match bytes with
-		| Bytes_Conditional c -> prune_conditional_bytes state c
-		| _ -> failwith "prune_bytes_conditional : not a Bytes_Conditional"
-;;
 
 let rec
 
@@ -400,7 +307,8 @@ deref state bytes =
 		| Bytes_Conditional c ->
 			conditional__map (deref state) c
 		| Bytes_Op(op, operands) -> failwith ("Dereference something not an address (op) "^(To_string.bytes bytes))
-		| Bytes_Read(bytes,off,len) -> conditional__map (deref state) (prune_conditional_bytes state (expand_read_to_conditional bytes off len))
+		| Bytes_Read(bytes,off,len) -> conditional__map (deref state) 
+			(prune_conditional_bytes state (expand_read_to_conditional bytes off len))
 		| Bytes_Write(bytes,off,len,newbytes) ->failwith "Dereference: Not implemented"
 		| Bytes_FunPtr(_) -> failwith "Dereference funptr not support"
 		| Bytes_Unbounded(_,_,_) ->failwith "Dereference: Not implemented"

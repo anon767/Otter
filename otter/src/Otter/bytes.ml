@@ -140,47 +140,11 @@ make_Bytes_Conditional = function
 	| c -> hash_consing_bytes_create (Bytes_Conditional ( c ))
 ;;
 
-(** Is a bytes 0, 1, or an expression that must be 0 or 1? *)
-let isBoolean = function
-	| Bytes_Op(op,_) when returnsBoolean op -> true
-	| Bytes_Constant (Cil.CInt64 ((0L|1L),_,_)) -> true
-	(* Is it worth testing for a Bytes_ByteArray representing 0 or 1? *)
-	| _ -> false
 
-(** Returns a bytes equivalent to !!x, but only adds the double negation if
-	necessary to ensure a boolean value. *)
-let asBoolean bytes =
-	if isBoolean bytes
-	then bytes (* bytes is already boolean-valued *)
-	(* The result of a '!' is an int [Standard 6.5.3.3.5]; hence, the
-		[Cil.intType] below. The [Cil.voidType] is there just as a
-		placeholder, because LNOT doesn't actually care about its
-		argument's type. Actually, this means that we don't really need
-		the intType at all; we could be use voidType in both places. *)
-	else make_Bytes_Op(OP_LNOT,[(make_Bytes_Op(OP_LNOT,[(bytes,Cil.voidType)]),Cil.intType)])
-
-(** Remove a NOT from a bytes, if doing so leaves it boolean. Otherwise, add a
-	NOT. *)
-let logicalNot = function
-		Bytes_Op(OP_LNOT,[bytes,_]) when isBoolean bytes -> bytes
-	| bytes -> make_Bytes_Op(OP_LNOT,[(bytes, Cil.intType)])
-
-
-(* A single global byte representing uninitialized memory *)
-let byte__undef = Byte_Symbolic({symbol_id = 0}) ;;
-
-let max_bytes_size = 0xffff
-
-
-
-(**
- *	utilities
- *)
 
 let ikind_to_len_isSigned ikind =
 	(bitsSizeOf (TInt (ikind, [])) / 8, isSigned ikind)
 ;;
-
 
 (**
  *	to bytes
@@ -440,7 +404,33 @@ let bytes_not b =
   if b=tru then fls else if b=fls then tru else 
   make_Bytes_Op (OP_LNOT, [b,Cil.intType])
 
+(* A single global byte representing uninitialized memory *)
+let byte__undef = Byte_Symbolic({symbol_id = 0}) ;;
 
+let max_bytes_size = 0xffff
+
+
+let rec bytes__length bytes =
+	match bytes with
+		| Bytes_Constant (constant) -> (Cil.bitsSizeOf (Cil.typeOf (Const(constant))))/8
+		| Bytes_ByteArray (bytearray) -> ImmutableArray.length bytearray
+		| Bytes_Address (_,_)-> bitsSizeOf voidPtrType / 8
+		| Bytes_Op (op,(bytes2,typ)::tail) -> bytes__length bytes2
+		| Bytes_Op (op,[]) -> 0 (* reachable from diff_bytes *)
+		| Bytes_Write(bytes2,_,_,_) -> bytes__length bytes2
+		| Bytes_Read(_,_,len) -> len
+		| Bytes_FunPtr(_) -> bitsSizeOf voidPtrType / 8
+		| Bytes_Unbounded (_,_,size) ->
+			if isConcrete_bytes bytes then bytes_to_int_auto size
+			else  max_bytes_size
+		| Bytes_Conditional c ->
+			(* all bytes in Bytes_Conditional have the same length *)
+			let rec find_one = function
+				| IfThenElse (_, c, _) -> find_one c
+				| Unconditional b -> bytes__length b
+			in
+			find_one c
+;;
 
 (**
  *  symbol
@@ -455,7 +445,6 @@ let symbol__next () =
 
 let char__random () = Char.chr ((Random.int 255)+1);;
 
-
 (**
  *	byte 
  *)
@@ -465,6 +454,74 @@ let byte__111 = byte__make ('\255');;
 let byte__random () = byte__make (char__random ());;
 let byte__symbolic () = make_Byte_Symbolic (symbol__next ());;
 
+
+(**
+ *	bytes
+ *)
+let bytes__zero = make_Bytes_Constant(Cil.CInt64(0L,IInt,None));;
+let bytes__of_list (lst: byte list) =	make_Bytes_ByteArray (ImmutableArray.of_list lst) ;;
+let bytes__make_default n byte = make_Bytes_ByteArray(ImmutableArray.make n byte);;
+let bytes__make n = bytes__make_default n byte__zero;;
+let bytes__random n =
+	let rec impl i arr =
+		if i>=n then arr else
+			impl (i+1) (ImmutableArray.set arr i (byte__random ()))
+		in
+	make_Bytes_ByteArray(impl 0 (ImmutableArray.make n byte__zero))
+;;
+
+let bytes__symbolic n =
+	let rec impl len = 
+		if len <= 0 then [] else (byte__symbolic ())::(impl (len-1))
+	in
+		bytes__of_list (impl n)
+;;
+
+(**
+ *	memory block
+ *)
+let block__current_id = ref 1;;
+let block__make name n t =
+	{
+		memory_block_name = name;
+		memory_block_id = Utility.next_id block__current_id;
+		memory_block_size = n;
+		memory_block_addr = bytes__random (bitsSizeOf voidPtrType / 8);
+		memory_block_type = t;
+	}
+;;
+let block__make_string_literal name n =
+	let block = block__make name n Block_type_StringLiteral in
+	{block with
+		memory_block_type = Block_type_StringLiteral;
+	}
+;;
+
+
+(** Is a bytes 0, 1, or an expression that must be 0 or 1? *)
+let isBoolean = function
+	| Bytes_Op(op,_) when returnsBoolean op -> true
+	| Bytes_Constant (Cil.CInt64 ((0L|1L),_,_)) -> true
+	(* Is it worth testing for a Bytes_ByteArray representing 0 or 1? *)
+	| _ -> false
+
+(** Returns a bytes equivalent to !!x, but only adds the double negation if
+	necessary to ensure a boolean value. *)
+let asBoolean bytes =
+	if isBoolean bytes
+	then bytes (* bytes is already boolean-valued *)
+	(* The result of a '!' is an int [Standard 6.5.3.3.5]; hence, the
+		[Cil.intType] below. The [Cil.voidType] is there just as a
+		placeholder, because LNOT doesn't actually care about its
+		argument's type. Actually, this means that we don't really need
+		the intType at all; we could be use voidType in both places. *)
+	else make_Bytes_Op(OP_LNOT,[(make_Bytes_Op(OP_LNOT,[(bytes,Cil.voidType)]),Cil.intType)])
+
+(** Remove a NOT from a bytes, if doing so leaves it boolean. Otherwise, add a
+	NOT. *)
+let logicalNot = function
+		Bytes_Op(OP_LNOT,[bytes,_]) when isBoolean bytes -> bytes
+	| bytes -> make_Bytes_Op(OP_LNOT,[(bytes, Cil.intType)])
 
 (**
  *  guard
@@ -568,7 +625,6 @@ let conditional__from_list list =
 	in
 	conditional__make_tree [] list
 
-
 let conditional__bytes = function
 	| Bytes_Conditional c -> c
 	| b -> Unconditional b
@@ -578,188 +634,10 @@ let conditional__lval_block l =
 	Unconditional l
 
 
-(**
- *	bytes
- *)
-let bytes__zero = make_Bytes_Constant(Cil.CInt64(0L,IInt,None));;
-let bytes__of_list (lst: byte list) =	make_Bytes_ByteArray (ImmutableArray.of_list lst) ;;
-let bytes__make_default n byte = make_Bytes_ByteArray(ImmutableArray.make n byte);;
-let bytes__make n = bytes__make_default n byte__zero;;
-let bytes__random n =
-	let rec impl i arr =
-		if i>=n then arr else
-			impl (i+1) (ImmutableArray.set arr i (byte__random ()))
-		in
-	make_Bytes_ByteArray(impl 0 (ImmutableArray.make n byte__zero))
-;;
-
-let bytes__symbolic n =
-	let rec impl len = 
-		if len <= 0 then [] else (byte__symbolic ())::(impl (len-1))
-	in
-		bytes__of_list (impl n)
-;;
-
-let rec bytes__length bytes =
-	match bytes with
-		| Bytes_Constant (constant) -> (Cil.bitsSizeOf (Cil.typeOf (Const(constant))))/8
-		| Bytes_ByteArray (bytearray) -> ImmutableArray.length bytearray
-		| Bytes_Address (_,_)-> bitsSizeOf voidPtrType / 8
-		| Bytes_Op (op,(bytes2,typ)::tail) -> bytes__length bytes2
-		| Bytes_Op (op,[]) -> 0 (* reachable from diff_bytes *)
-		| Bytes_Write(bytes2,_,_,_) -> bytes__length bytes2
-		| Bytes_Read(_,_,len) -> len
-		| Bytes_FunPtr(_) -> bitsSizeOf voidPtrType / 8
-		| Bytes_Unbounded (_,_,size) ->
-			if isConcrete_bytes bytes then bytes_to_int_auto size
-			else  max_bytes_size
-		| Bytes_Conditional c ->
-			(* all bytes in Bytes_Conditional have the same length *)
-			let rec find_one = function
-				| IfThenElse (_, c, _) -> find_one c
-				| Unconditional b -> bytes__length b
-			in
-			find_one c
-;;
-
 let rec bytes__get_byte bytes i : byte =
 	match bytes with
 		| Bytes_Constant (constant) ->  bytes__get_byte (constant_to_bytes constant) i
 		| Bytes_ByteArray (bytearray) -> ImmutableArray.get bytearray i 
 		| _ -> make_Byte_Bytes(bytes,i)
-;;
-
-let rec bytes__read ?test ?pre bytes off len =
-	let worst_case = make_Bytes_Read (bytes,off,len) in
-	let ret_bytes = 
-		begin match bytes,off with
-			| Bytes_ByteArray(array),Bytes_Constant(CInt64(i64,k,_)) -> 
-					let i = Int64.to_int i64 in
-					make_Bytes_ByteArray (ImmutableArray.sub array i len)
-			| Bytes_Constant(constant),Bytes_Constant(CInt64(i64,k,_)) -> 
-                    let converted_bytes = constant_to_bytes constant in
-                      begin match converted_bytes with
-                        | Bytes_ByteArray(array) ->
-					        let i = Int64.to_int i64 in
-					        make_Bytes_ByteArray (ImmutableArray.sub array i len)
-                        | _ -> worst_case
-                      end
-			| Bytes_Write (bytes2,off2,len2,newbytes),_ -> 
-				if off2 = off && len2 = len then
-					newbytes (* being a bit tricky... *)
-				else (* CAUTION: assume [off2,len2] and [off,len] don't overlap.  *)
-					worst_case
-			| Bytes_Conditional c, _ ->
-				let c = conditional__map ?test ~eq:bytes__equal ?pre (fun e -> conditional__bytes (bytes__read e off len)) c in
-				make_Bytes_Conditional c
-			| _, Bytes_Conditional c ->
-				failwith "bytes__read: if-then-else offset doesn't happen"
-			| _, _ when (bytes__length bytes = len) && (isConcrete_bytes off) && (bytes_to_int_auto off = 0) ->
-				bytes
-			| _ -> worst_case
-		end
-		in
-		(* try to inflate any Bytes_ByteArray of Byte_Bytes *)
-		match ret_bytes with
-			| Bytes_ByteArray(bytearray) ->
-					begin match ImmutableArray.get bytearray 0 with
-						| Byte_Bytes(condensed_bytes,0) when
-								(* Make sure length agrees, and that bytes 1 through
-									 len-1 match up. *)
-								bytes__length condensed_bytes = len &&
-								(let rec fn n =
-									 if n >= len then true
-									 else
-										 match ImmutableArray.get bytearray n with
-											 | Byte_Bytes(b,i) when i = n && b == condensed_bytes -> fn (succ n)
-											 | _ -> false
-								 in fn 1)
-								-> condensed_bytes
-						| _ -> ret_bytes
-					end
-			| _ -> ret_bytes
-;;
-
-let bytes__write ?test ?pre bytes off len newbytes =
-	let rec do_write bytes off len newbytes =
-		match bytes,off,newbytes with
-			(* Optimize for memset 
-			*)
-			| Bytes_ByteArray(oldarray),Bytes_Constant(CInt64(i64,k,_)),Bytes_ByteArray(newarray) ->
-				(* from j = 0 to len-1 do oldarray[i+j] = newarray[j] *)
-				(* EXPERIMENT: if contents from oldarray is unwritable, then pass *)
-				let i = Int64.to_int i64 in
-				let rec impl j array =
-					if j<0 then array else
-						let array2 = impl (j-1) array in
-						(*
-						let oldbyte = ImmutableArray.get array2 (i+j) in
-						match oldbyte with
-							| Byte_Symbolic(s) when s.symbol_writable=false -> warning();array2
-							| _ ->	
-						*)
-							ImmutableArray.set array2 (i+j) (ImmutableArray.get newarray j)
-				in
-					make_Bytes_ByteArray(impl (len-1) oldarray)
-					
-			| Bytes_ByteArray(oldarray),Bytes_Constant(CInt64(i64,k,_)),Bytes_Constant(const) ->
-				do_write bytes off len (constant_to_bytes const)
-				
-			| Bytes_ByteArray(oldarray),Bytes_Constant(CInt64(i64,k,_)),_(* anything *) ->
-				let rec impl arr i =
-					if i>=len then arr else
-						impl (ImmutableArray.set arr i (make_Byte_Bytes(newbytes,i))) (i+1)
-				in
-					do_write bytes off len (make_Bytes_ByteArray(impl (ImmutableArray.make len byte__zero) 0))			
-			
-			| Bytes_ByteArray(oldarray),_,_
-				when isConcrete_bytes off ->
-					let n_off = bytes_to_constant off Cil.intType in
-					do_write bytes (make_Bytes_Constant(n_off)) len newbytes
-
-			(* Without this next case, writing to a constant would introduce
-				 a Bytes_Write. Aside from not wanting a Bytes_Write if we can
-				 avoid it (for example, writing a concrete byte to the first
-				 byte of a concrete int), this could cause problems. The
-				 potential problem has to do with writing past the end of an
-				 array that is represented as a Bytes_Constant (which could
-				 exist if, for example, you have a 4-byte ByteArray and write
-				 a Bytes_Constant int to it). *)
-			| Bytes_Constant c,_,_ ->
-					do_write (constant_to_bytes c) off len newbytes
-
-			| Bytes_Conditional c, _, _ ->
-				let c = conditional__map ?test ~eq:bytes__equal ?pre (fun e -> conditional__bytes (do_write e off len newbytes)) c in
-				make_Bytes_Conditional c
-			| _, Bytes_Conditional c, _ ->
-				failwith "bytes__write: if-then-else offset doesn't happen"
-
-			| _ -> make_Bytes_Write (bytes,off,len,newbytes)
-	in
-	if (bytes__length bytes)=len && (isConcrete_bytes off) && (bytes_to_int_auto off = 0) then 
-      newbytes 
-	else
-		do_write bytes off len newbytes
-
-;;
-
-(**
- *	memory block
- *)
-let block__current_id = ref 1;;
-let block__make name n t =
-	{
-		memory_block_name = name;
-		memory_block_id = Utility.next_id block__current_id;
-		memory_block_size = n;
-		memory_block_addr = bytes__random (bitsSizeOf voidPtrType / 8);
-		memory_block_type = t;
-	}
-;;
-let block__make_string_literal name n =
-	let block = block__make name n Block_type_StringLiteral in
-	{block with
-		memory_block_type = Block_type_StringLiteral;
-	}
 ;;
 

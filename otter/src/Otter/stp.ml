@@ -153,154 +153,86 @@ let stpCacheRef = ref StpCache.empty
    implement Bytes_Read/Bytes_Write directly without the byte type, which maps directly to STP's read/write to operate
    on a whole bitvector at once.
 *)
-let rec eval pc bytes =
-	(*
-	if not Executeargs.args.Executeargs.arg_print_queries then () else
-	Output.print_endline ("Is the following not equal to zero? \n"^(To_string.bytes bytes));*)
-	let nontrivial () = 
-			Output.set_mode Output.MSG_REG;
-			Output.print_endline "Ask STP...";
-			Stats.time "STP" (consult_stp pc) bytes
+
+let new_array vc bytes = 
+	let name = 
+		("bytes_"^(string_of_int (Hashtbl.hash bytes))) (* may clash *)
 	in
-	let is_comparison op = match op with	
-		| OP_LT -> true
-		| OP_GT -> true
-		| OP_LE -> true
-		| OP_GE -> true
-		| OP_EQ -> true
-		| OP_NE -> true
-		| _ -> false
-	in
-	let operation_of op = match op with	
-		| OP_LT -> Operation.lt
-		| OP_GT -> Operation.gt
-		| OP_LE -> Operation.le
-		| OP_GE -> Operation.ge
-		| OP_EQ -> Operation.eq
-		| OP_NE -> Operation.ne
-		| _ -> failwith "operation_of: operation is not comparison"
-	in
+	let arr_typ = Stpc.array_t vc (Stpc.bitvector_t vc 32) (Stpc.bitvector_t vc 8) in
+		Stpc.e_var vc name arr_typ
+;;
+
+let make_var symbol =
+	"symbol_"^(string_of_int symbol.symbol_id)
+;;
+
+
+let rec to_stp_array vc arr bytes =	
 	match bytes with
-		(* The following cases are simple enough to not consult STP *)
-		| Bytes_Constant (CInt64(n,_,_)) -> if n = 0L then False else True			
-		| Bytes_ByteArray (bytearray) ->
-				begin try
-					let b = bytes_to_bool bytes in  (* TODO:need to use int64 *)
-						if b = false then False else True
-				with Failure(_) -> nontrivial()
-				end
-		| Bytes_Address (_,_) -> True
-		(* nullity check *)
-		| Bytes_Op(OP_LNOT,(b1,_)::[]) -> ternary_not (eval pc b1)
+		| Bytes_Constant(constant) ->
+			let bytes2 = constant_to_bytes constant in
+				to_stp_array vc arr bytes2
+		| Bytes_ByteArray(bytearray)->
+
+			let len = ImmutableArray.length bytearray in
+			
+				(*	Output.print_endline ("bytearray "^(string_of_int len)); *)
+
+				let bv8 = begin match ImmutableArray.get bytearray (len-1) with
+					| Byte_Concrete(c) -> Stpc.e_bv_of_int vc 8 (Char.code c)
+					| Byte_Symbolic(_) as b when b = byte__undef -> (* Here is where we catch attempts to use the undefined symbolic byte *)
+						failwith "Conditional depends on undefined value"
+					| Byte_Symbolic(s) ->
+						Stpc.e_var vc (make_var s) (Stpc.bitvector_t vc 8)
+					| Byte_Bytes(b,i) -> 
+						let (bv_condensed,l_condensed) = to_stp_bv vc b in
+						let right_i = l_condensed * 8 in (* This differs from the parallel case in to_stp_bv, and is independent of i. How can this be right? *)
+						let left_i = right_i+7 in
+							Stpc.e_bvextract vc bv_condensed left_i right_i 
+				end in
+				if len = 1 then
+					Stpc.e_write vc arr (Stpc.e_bv_of_int vc 32 0) bv8
+				else
+					let arr2 = to_stp_array vc arr (make_Bytes_ByteArray (ImmutableArray.sub bytearray 0 (len - 1))) in
+						Stpc.e_write vc arr2 (Stpc.e_bv_of_int vc 32 (len-1)) bv8
 		
-		(* Comparison of (ptr+i) and (ptr+j) *)
-		| Bytes_Op(op,(Bytes_Address(block1,offset1),_)::(Bytes_Address(block2,offset2),_)::[]) 
-			when is_comparison op ->
-				if block1!=block2 then (if op==OP_EQ then False else if op==OP_NE then True else nontrivial())
-				else  eval pc (Operation.run (operation_of op) [(offset1,Cil.intType);(offset2,Cil.intType)])
-		
-		(* Comparison of (ptr+i) and c (usually zero) *)
-		| Bytes_Op(op,(Bytes_Address(block,offset1),_)::(bytes2,_)::[]) 
-			when is_comparison op  &&  isConcrete_bytes bytes2 ->
-				if op==OP_EQ then False else if op==OP_NE then True else nontrivial()
-		(* Function pointer is always true *)
-		| Bytes_FunPtr(_,_) -> True
-		(* Consult STP *)
+		| Bytes_Read (content,offset,len) -> 
+			let array_content = to_stp_array vc (new_array vc content) content in
+			let (bv_offset,len_offset) = to_stp_bv vc offset in 
+
+			let rec read bv_offset len array =
+				if len < 1 then failwith "Bytes_Read len < 1" 
+				else if len = 1 then Stpc.e_write vc array (Stpc.e_bv_of_int vc 32 0) (Stpc.e_read vc array_content bv_offset)
+				else
+					let array2 = read bv_offset (len-1) array in
+					let bv_offset2 = Stpc.e_bv_of_int vc 32 (len-1) in
+						Stpc.e_write vc array2 bv_offset2 (Stpc.e_read vc array_content (Stpc.e_bvplus vc 32 bv_offset bv_offset2))
+			in
+				read bv_offset len (new_array vc bytes)			
+				
+		| Bytes_Write (content,offset,len,newbytes) -> 
+			let (bv_offset,len_offset) = to_stp_bv vc offset in 
+			let array_source = to_stp_array vc (new_array vc newbytes) newbytes in
+			let rec write array_target bv_offset len  =
+				if len < 1 then failwith "Bytes_Write len < 1" 
+				else if len = 1 then Stpc.e_write vc array_target bv_offset (Stpc.e_read vc array_source (Stpc.e_bv_of_int vc 32 0))
+				else
+					let array_target2 = write array_target bv_offset (len-1)  in
+					let bv_offset2 = Stpc.e_bv_of_int vc 32 (len-1) in
+						Stpc.e_write vc array_target2 (Stpc.e_bvplus vc 32 bv_offset bv_offset2) (Stpc.e_read vc array_source bv_offset2)
+			in
+				write (to_stp_array vc  (new_array vc content) content) bv_offset len 			
+					
 		| _ -> 
-			nontrivial()
+			let (bv,len) = to_stp_bv vc bytes in
+			let rec write array arr_len index = (* arr[index:(index-7)] *)
+				if index<0 then array 
+				else
+					let array2 = Stpc.e_write vc array (Stpc.e_bv_of_int vc 32 arr_len) (Stpc.e_bvextract vc bv index (index-7)) in
+						write array2 (arr_len+1) (index-8)	
+			in
+				write (new_array vc bytes) 0 (len-1)
 
-
-						
-and
-
-consult_stp pc bytes =
-	let pc = getRelevantAssumptions pc bytes in
-	try
-		let ans = StpCache.find (pc,bytes) !stpCacheRef in
-		incr cacheHits;
-		ans
-	with Not_found ->
-		incr cacheMisses;
-    let vc = doassert pc in
-		let answer =
-			if query vc bytes true then
-				False
-			else if query vc bytes false then
-				True
-			else
-				Unknown
-		in
-		stpCacheRef := StpCache.add (pc,bytes) answer !stpCacheRef;
-		answer
-
-and
-
-(** return (True) False if bytes (not) evaluates to all zeros. Unknown otherwise.
- *) 
-
-
-doassert pc =
-	let vc = global_vc in
-    Stpc.e_pop vc;
-    Stpc.e_push vc;
-	
-	Output.set_mode Output.MSG_STP;
-	Output.print_endline "%%%%%%%%%%%%%%%%%%";
-	Output.print_endline "%% STP Program: %%";
-	Output.print_endline "%%%%%%%%%%%%%%%%%%";
-		
-	let rec do_assert pc = match pc with
-		| [] -> ()
-		| head::tail -> 
-			let (bv, len) = Stats.time "STP construct" (fun ()-> to_stp_bv vc head) () in (* 1 *)
-			Stats.time "STP doassert" (fun () -> Stpc.assert_ctrue vc len bv) () ; (* 2 *)
-			Output.set_mode Output.MSG_STP;
-			Output.print_endline ("ASSERT("^(Stpc.to_string bv)^"!=0);");
-			do_assert tail
-	in
-	(*Stats.time "STP assert" do_assert relevantAssumptions;*)
-	Stats.time "STP assert" do_assert pc;
-	vc
-and
-
-query vc bytes equal_zero =
-    Stpc.e_push vc;
-		
-	let (bv, len) = Stats.time "convert conditional" (to_stp_bv vc) bytes in
-	let q = Stpc.e_eq vc bv (Stpc.e_bv_of_int vc len 0) in
-	let q = if equal_zero then q else Stpc.e_not vc q in
-	
-	Output.set_mode Output.MSG_STP;
-	Output.print_endline ("QUERY("^(Stpc.to_string q)^");");
-	incr Types.stp_count;
-	let return = Stats.time "STP query" (Stpc.query vc) q in
-      Stpc.e_pop vc;
-      return
-
-and
-
-query_guard pc pre guard =
-    let vc = doassert pc in
-
-	if pre != Guard_True then begin
-    	let pre_exp = Stats.time "convert pre-condition" (to_stp_guard vc) pre in
-		Stats.time "STP.do_assert pre-condition" (Stpc.do_assert vc) pre_exp
-	end;
-
-	let guard_exp = Stats.time "convert guard" (to_stp_guard vc) guard in
-	Output.set_mode Output.MSG_STP;
-	let query exp =
-		Stpc.e_push vc;
-		let result = Stats.time "STP query_guard" (Stpc.query vc) exp in
-		Stpc.e_pop vc;
-		result
-	in
-	if query guard_exp then
-		True
-	else if query (Stpc.e_not vc guard_exp) then
-		False
-	else
-		Unknown
 and
 
 to_stp_guard vc = function
@@ -318,7 +250,7 @@ to_stp_guard vc = function
 		failwith "to_stp_guard: cannot convert Guard_True"
 
 and
-                             
+
 to_stp_bv vc bytes =
   (*if false then to_stp_bv_impl vc bytes else*)
   try
@@ -509,89 +441,94 @@ to_stp_bv_impl vc bytes =
 
 		| Bytes_Unbounded (name,id,size) ->
             failwith "Oh no!"
-						
-and
+;;
 
-to_stp_array vc arr bytes =	
-	match bytes with
-		| Bytes_Constant(constant) ->
-			let bytes2 = constant_to_bytes constant in
-				to_stp_array vc arr bytes2
-		| Bytes_ByteArray(bytearray)->
+(** return (True) False if bytes (not) evaluates to all zeros. Unknown otherwise.
+ *) 
 
-			let len = ImmutableArray.length bytearray in
-			
-				(*	Output.print_endline ("bytearray "^(string_of_int len)); *)
-
-				let bv8 = begin match ImmutableArray.get bytearray (len-1) with
-					| Byte_Concrete(c) -> Stpc.e_bv_of_int vc 8 (Char.code c)
-					| Byte_Symbolic(_) as b when b = byte__undef -> (* Here is where we catch attempts to use the undefined symbolic byte *)
-						failwith "Conditional depends on undefined value"
-					| Byte_Symbolic(s) ->
-						Stpc.e_var vc (make_var s) (Stpc.bitvector_t vc 8)
-					| Byte_Bytes(b,i) -> 
-						let (bv_condensed,l_condensed) = to_stp_bv vc b in
-						let right_i = l_condensed * 8 in (* This differs from the parallel case in to_stp_bv, and is independent of i. How can this be right? *)
-						let left_i = right_i+7 in
-							Stpc.e_bvextract vc bv_condensed left_i right_i 
-				end in
-				if len = 1 then
-					Stpc.e_write vc arr (Stpc.e_bv_of_int vc 32 0) bv8
-				else
-					let arr2 = to_stp_array vc arr (make_Bytes_ByteArray (ImmutableArray.sub bytearray 0 (len - 1))) in
-						Stpc.e_write vc arr2 (Stpc.e_bv_of_int vc 32 (len-1)) bv8
+let doassert pc =
+	let vc = global_vc in
+    Stpc.e_pop vc;
+    Stpc.e_push vc;
+	
+	Output.set_mode Output.MSG_STP;
+	Output.print_endline "%%%%%%%%%%%%%%%%%%";
+	Output.print_endline "%% STP Program: %%";
+	Output.print_endline "%%%%%%%%%%%%%%%%%%";
 		
-		| Bytes_Read (content,offset,len) -> 
-			let array_content = to_stp_array vc (new_array vc content) content in
-			let (bv_offset,len_offset) = to_stp_bv vc offset in 
-
-			let rec read bv_offset len array =
-				if len < 1 then failwith "Bytes_Read len < 1" 
-				else if len = 1 then Stpc.e_write vc array (Stpc.e_bv_of_int vc 32 0) (Stpc.e_read vc array_content bv_offset)
-				else
-					let array2 = read bv_offset (len-1) array in
-					let bv_offset2 = Stpc.e_bv_of_int vc 32 (len-1) in
-						Stpc.e_write vc array2 bv_offset2 (Stpc.e_read vc array_content (Stpc.e_bvplus vc 32 bv_offset bv_offset2))
-			in
-				read bv_offset len (new_array vc bytes)			
-				
-		| Bytes_Write (content,offset,len,newbytes) -> 
-			let (bv_offset,len_offset) = to_stp_bv vc offset in 
-			let array_source = to_stp_array vc (new_array vc newbytes) newbytes in
-			let rec write array_target bv_offset len  =
-				if len < 1 then failwith "Bytes_Write len < 1" 
-				else if len = 1 then Stpc.e_write vc array_target bv_offset (Stpc.e_read vc array_source (Stpc.e_bv_of_int vc 32 0))
-				else
-					let array_target2 = write array_target bv_offset (len-1)  in
-					let bv_offset2 = Stpc.e_bv_of_int vc 32 (len-1) in
-						Stpc.e_write vc array_target2 (Stpc.e_bvplus vc 32 bv_offset bv_offset2) (Stpc.e_read vc array_source bv_offset2)
-			in
-				write (to_stp_array vc  (new_array vc content) content) bv_offset len 			
-					
-		| _ -> 
-			let (bv,len) = to_stp_bv vc bytes in
-			let rec write array arr_len index = (* arr[index:(index-7)] *)
-				if index<0 then array 
-				else
-					let array2 = Stpc.e_write vc array (Stpc.e_bv_of_int vc 32 arr_len) (Stpc.e_bvextract vc bv index (index-7)) in
-						write array2 (arr_len+1) (index-8)	
-			in
-				write (new_array vc bytes) 0 (len-1)
-			
-			
-and
-
-new_array vc bytes = 
-	let name = 
-		("bytes_"^(string_of_int (Hashtbl.hash bytes))) (* may clash *)
+	let rec do_assert pc = match pc with
+		| [] -> ()
+		| head::tail -> 
+			let (bv, len) = Stats.time "STP construct" (fun ()-> to_stp_bv vc head) () in (* 1 *)
+			Stats.time "STP doassert" (fun () -> Stpc.assert_ctrue vc len bv) () ; (* 2 *)
+			Output.set_mode Output.MSG_STP;
+			Output.print_endline ("ASSERT("^(Stpc.to_string bv)^"!=0);");
+			do_assert tail
 	in
-	let arr_typ = Stpc.array_t vc (Stpc.bitvector_t vc 32) (Stpc.bitvector_t vc 8) in
-		Stpc.e_var vc name arr_typ
-		
-and
+	(*Stats.time "STP assert" do_assert relevantAssumptions;*)
+	Stats.time "STP assert" do_assert pc;
+	vc
+;;
 
-make_var symbol =
-	"symbol_"^(string_of_int symbol.symbol_id)
+let query vc bytes equal_zero =
+    Stpc.e_push vc;
+		
+	let (bv, len) = Stats.time "convert conditional" (to_stp_bv vc) bytes in
+	let q = Stpc.e_eq vc bv (Stpc.e_bv_of_int vc len 0) in
+	let q = if equal_zero then q else Stpc.e_not vc q in
+	
+	Output.set_mode Output.MSG_STP;
+	Output.print_endline ("QUERY("^(Stpc.to_string q)^");");
+	incr Types.stp_count;
+	let return = Stats.time "STP query" (Stpc.query vc) q in
+      Stpc.e_pop vc;
+      return
+;;
+
+let consult_stp pc bytes =
+	let pc = getRelevantAssumptions pc bytes in
+	try
+		let ans = StpCache.find (pc,bytes) !stpCacheRef in
+		incr cacheHits;
+		ans
+	with Not_found ->
+		incr cacheMisses;
+    		let vc = doassert pc in
+		let answer =
+			if query vc bytes true then
+				False
+			else if query vc bytes false then
+				True
+			else
+				Unknown
+		in
+		stpCacheRef := StpCache.add (pc,bytes) answer !stpCacheRef;
+		answer
+;;
+
+let query_guard pc pre guard =
+    let vc = doassert pc in
+
+	if pre != Guard_True then begin
+    	let pre_exp = Stats.time "convert pre-condition" (to_stp_guard vc) pre in
+		Stats.time "STP.do_assert pre-condition" (Stpc.do_assert vc) pre_exp
+	end;
+
+	let guard_exp = Stats.time "convert guard" (to_stp_guard vc) guard in
+	Output.set_mode Output.MSG_STP;
+	let query exp =
+		Stpc.e_push vc;
+		let result = Stats.time "STP query_guard" (Stpc.query vc) exp in
+		Stpc.e_pop vc;
+		result
+	in
+	if query guard_exp then
+		True
+	else if query (Stpc.e_not vc guard_exp) then
+		False
+	else
+		Unknown	
+			
 ;;
 
 (** Given a path condition and a list of symbols, return an
@@ -633,3 +570,4 @@ let getValues pathCondition symbolList =
 	in
 	List.map getOneVal symbolList
 ;;
+

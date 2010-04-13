@@ -378,7 +378,7 @@ let examine state fundec =
   let pc = state.path_condition in
     begin
       Printf.printf "state |- pc -> ct: ";
-      let truth = Stp.eval pc ct in
+      let truth = Operation.eval pc ct in
         incr_record pc2ct truth;
         match truth with
           | Ternary.True -> Printf.printf "True\n"
@@ -387,7 +387,7 @@ let examine state fundec =
     end;
     begin
       Printf.printf "state |- ct -> pc: ";
-      let truth = Stp.eval [ct] (List.fold_left bytes_and tru pc) in
+      let truth = Operation.eval [ct] (List.fold_left bytes_and tru pc) in
         incr_record ct2pc truth;
         match truth with
           | Ternary.True -> Printf.printf "True\n"

@@ -1,5 +1,6 @@
 open Cil
 open Bytes
+open BytesUtility
 open Types
 
 (**

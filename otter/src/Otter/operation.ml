@@ -6,10 +6,7 @@
  *)
 open Cil
 open Bytes
-
-
-
-
+open Ternary
 
 let run op operands = op operands;;
 
@@ -301,6 +298,16 @@ let rec opPI op operands =
 			Bytes_Conditional (conditional__map (fun e -> conditional__bytes (opPI op [(e,typ1);(bytes2,typ2)])) c)
 		| _, Bytes_Conditional c ->
 			Bytes_Conditional (conditional__map (fun e -> conditional__bytes (opPI op [(bytes1,typ1);(e,typ2)])) c)
+		| (Bytes_Read(a, x, l)), _ ->
+			Bytes_Conditional (
+				conditional__map (fun e -> conditional__bytes (opPI op [(e,typ1);(bytes2,typ2)])) 
+					(BytesUtility.expand_read_to_conditional a x l) 
+			)
+		| _, (Bytes_Read(a, x, l)) ->
+			Bytes_Conditional (
+				conditional__map (fun e -> conditional__bytes (opPI op [(bytes1,typ1);(e,typ2)])) 
+					(BytesUtility.expand_read_to_conditional a x l)
+			)
 		| _ ->
 			Output.set_mode Output.MSG_MUSTPRINT;
 			Output.print_endline ("bytes1: "^(To_string.bytes bytes1)); 
@@ -371,5 +378,62 @@ let of_binop binop =
 		| IndexPI -> plusPI
 		| MinusPI -> minusPI
 		| MinusPP -> minusPP
+;;
+
+let rec eval pc bytes =
+	(*
+	if not Executeargs.args.Executeargs.arg_print_queries then () else
+	Output.print_endline ("Is the following not equal to zero? \n"^(To_string.bytes bytes));*)
+	let nontrivial () = 
+			Output.set_mode Output.MSG_REG;
+			Output.print_endline "Ask STP...";
+			Stats.time "STP" (Stp.consult_stp pc) bytes
+	in
+	let is_comparison op = match op with	
+		| OP_LT -> true
+		| OP_GT -> true
+		| OP_LE -> true
+		| OP_GE -> true
+		| OP_EQ -> true
+		| OP_NE -> true
+		| _ -> false
+	in
+	let operation_of op = match op with	
+		| OP_LT -> lt
+		| OP_GT -> gt
+		| OP_LE -> le
+		| OP_GE -> ge
+		| OP_EQ -> eq
+		| OP_NE -> ne
+		| _ -> failwith "operation_of: operation is not comparison"
+	in
+	match bytes with
+		(* The following cases are simple enough to not consult STP *)
+		| Bytes_Constant (CInt64(n,_,_)) -> if n = 0L then False else True			
+		| Bytes_ByteArray (bytearray) ->
+				begin try
+					let b = bytes_to_bool bytes in  (* TODO:need to use int64 *)
+						if b = false then False else True
+				with Failure(_) -> nontrivial()
+				end
+		| Bytes_Address (_,_) -> True
+		(* nullity check *)
+		| Bytes_Op(OP_LNOT,(b1,_)::[]) -> ternary_not (eval pc b1)
+		
+		(* Comparison of (ptr+i) and (ptr+j) *)
+		| Bytes_Op(op,(Bytes_Address(block1,offset1),_)::(Bytes_Address(block2,offset2),_)::[]) 
+			when is_comparison op ->
+				if block1!=block2 then (if op==OP_EQ then False else if op==OP_NE then True else nontrivial())
+				else  eval pc (run (operation_of op) [(offset1,Cil.intType);(offset2,Cil.intType)])
+		
+		(* Comparison of (ptr+i) and c (usually zero) *)
+		| Bytes_Op(op,(Bytes_Address(block,offset1),_)::(bytes2,_)::[]) 
+			when is_comparison op  &&  isConcrete_bytes bytes2 ->
+				if op==OP_EQ then False else if op==OP_NE then True else nontrivial()
+		(* Function pointer is always true *)
+		| Bytes_FunPtr(_,_) -> True
+		(* Consult STP *)
+		| _ -> 
+			nontrivial()
 ;;
 

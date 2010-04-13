@@ -1,5 +1,6 @@
 open Cil
 open Bytes
+open BytesUtility
 open Types
 
 exception Notification_Exit of bytes option
@@ -98,6 +99,9 @@ let from_varinfo state varinfo args =
 	end
 ;;
 
+let add_guard_to_state state guard = (*big hack; there should be a nicer way to do this*)
+	MemOp.state__add_path_condition state (Bytes_Conditional(Bytes.IfThenElse(guard, Unconditional(lazy_int_to_bytes 1), Unconditional(lazy_int_to_bytes 0)))) true
+
 let from_exp state exp args: (state * function_type) list =
 	match exp with
 		| Lval(Var(varinfo), NoOffset) ->
@@ -109,7 +113,7 @@ let from_exp state exp args: (state * function_type) list =
 					let acc =
 						match leaf with
 							| Bytes_FunPtr(fundec,_) -> 
-								(Eval.add_guard_to_state state pre, Ordinary(fundec))::acc
+								(add_guard_to_state state pre, Ordinary(fundec))::acc
 							| _ -> acc (* should give a warning here about a non-valid function pointer*)
 					in
 					(acc, Unconditional(leaf))
@@ -122,7 +126,7 @@ let from_exp state exp args: (state * function_type) list =
 			begin match bytes with
 				| Bytes_FunPtr(fundec,_) -> [(state, Ordinary (fundec))]
 				| Bytes_Read(bytes2, offset, len) -> 
-					let fp = (Eval.expand_read_to_conditional bytes2 offset len) in
+					let fp = (BytesUtility.expand_read_to_conditional bytes2 offset len) in
 					(*Output.print_endline (To_string.bytes (Bytes_Conditional(fp)));*)
 					(getall fp)
 				| Bytes_Conditional(c) ->
