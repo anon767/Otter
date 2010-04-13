@@ -360,7 +360,7 @@ and
 rval_unop state unop exp =
 	let state, rv = rval state exp in
 	let typ = Cil.typeOf exp in
-	let result = Operation.run (Operation.of_unop unop) [(rv,typ)] in
+	let result = BytesUtility.prune_bytes_conditional state (Operation.run (Operation.of_unop unop) [(rv,typ)]) in
 	(state, result)
 
 and
@@ -377,6 +377,6 @@ rval_binop state binop exp1 exp2 =
 	else 
 		let state, rv2 = rval state exp2 in
 		let typ2 = Cil.typeOf exp2 in
-		(state, Operation.run op [(rv1,typ1);(rv2,typ2)])
+		(state, BytesUtility.prune_bytes_conditional state (Operation.run op [(rv1,typ1);(rv2,typ2)]))
 ;;
 	

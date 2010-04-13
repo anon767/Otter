@@ -301,7 +301,7 @@ let rec opPI op operands =
 		| (Bytes_Read(a, x, l)), _ ->
 			Bytes_Conditional (
 				conditional__map (fun e -> conditional__bytes (opPI op [(e,typ1);(bytes2,typ2)])) 
-					(BytesUtility.expand_read_to_conditional a x l) 
+					(BytesUtility.expand_read_to_conditional a x l)
 			)
 		| _, (Bytes_Read(a, x, l)) ->
 			Bytes_Conditional (

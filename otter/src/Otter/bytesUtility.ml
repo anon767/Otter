@@ -204,7 +204,7 @@ let rec prune_conditional_bytes state cond =
 ;;
 let prune_bytes_conditional state bytes = 
 	match bytes with
-		| Bytes_Conditional c -> prune_conditional_bytes state c
-		| _ -> failwith "prune_bytes_conditional : not a Bytes_Conditional"
+		| Bytes_Conditional c -> Bytes_Conditional (prune_conditional_bytes state c)
+		| _ -> bytes (*failwith "prune_bytes_conditional : not a Bytes_Conditional"*)
 ;;	
 
