@@ -96,7 +96,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 			match exps with
 				| [] -> failwith "AND/OR must take at least 1 argument"
 				| h::[] -> h
-				| h:: tail -> let t = impl tail in BinOp(binop, h, t, Cil.voidType)
+				| h:: tail -> let t = impl tail in BinOp(binop, h, t, Cil.intType)
 		in
 		Eval.rval state (impl exps)
 	in

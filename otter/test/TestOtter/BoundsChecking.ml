@@ -255,7 +255,7 @@ let simple_testsuite = "Simple" >::: [
 				 | _ -> assert false
 		);
 
-  (* The __ASSUME here fails to constrain x[i] to be in bounds
+  (* The __ASSUME here fails to constrain x[i] to be in bounds because the
 		 inequality check is done in signed arithmetic. If i is big enough
 		 that the multiplication overflows and the product is negative,
 		 the inequality is satisfied. This means that, with 32-bit ints,
@@ -287,6 +287,22 @@ let simple_testsuite = "Simple" >::: [
 }"
 		(fun res -> expectedResultCounts 1 0 0 0 res; allAssertionsPassed ());
 
+  test_bounds ~label:"Offset in bounds but offset+length out of bounds on read"
+"int main() {
+  char x[2];
+  int *p = (int*)x;
+  return *p;
+}"
+    (fun res -> expectedResultCounts 0 0 1 0 res);
+
+  test_bounds ~label:"Offset in bounds but offset+length out of bounds on write"
+"int main() {
+  char x[6];
+  int *p = (int*)x;
+  p[1] = 0;
+  return 0;
+}"
+    (fun res -> expectedResultCounts 0 0 1 0 res);
 ]
 
 let testsuite = "BoundsChecking" >::: [

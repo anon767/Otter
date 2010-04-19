@@ -172,7 +172,7 @@ let kindOfUpointType = lazy (match !upointType with
 ;;
 
 (* Convert an int n to [Bytes_Constant (CInt64 (Int64.of_int n, kindOfUpointType, None))] *)
-let int64_to_offset_bytes (n : int) : bytes =
+let int_to_offset_bytes (n : int) : bytes =
 	make_Bytes_Constant (CInt64 (Int64.of_int n, Lazy.force kindOfUpointType, None))
 ;;
 
@@ -549,9 +549,9 @@ let guard__bytes b = Guard_Bytes b
  *)
 
 (** Map and fold simultaneously over the leaves of conditionals.
-    @param ?test        an optional test function to filter by the guard condition : guard -> guard -> Ternary.t
-    @param ?eq          an optional equality function to prune identical leaves : 'target -> 'target -> bool
-    @param ?pre         an optional precondition
+    @param test        an optional test function to filter by the guard condition : guard -> guard -> Ternary.t
+    @param eq          an optional equality function to prune identical leaves : 'target -> 'target -> bool
+    @param pre         an optional precondition
     @param map_fold     the map and fold function : 'acc -> guard -> 'source -> 'acc * 'target conditional
     @param acc          the initial accumulator
     @param source       the original conditional to map from
@@ -584,9 +584,9 @@ let conditional__map_fold ?(test=fun _ _ -> Unknown) ?(eq=(==)) ?(pre=Guard_True
 
 
 (** Map over the leaves of conditionals.
-    @param ?test        an optional test function to filter by the guard condition : guard -> guard -> Ternary.t
-    @param ?eq          an optional equality function to prune identical leaves : 'target -> 'target -> bool
-    @param ?pre         an optional precondition
+    @param test        an optional test function to filter by the guard condition : guard -> guard -> Ternary.t
+    @param eq          an optional equality function to prune identical leaves : 'target -> 'target -> bool
+    @param pre         an optional precondition
     @param map          the map function : 'source -> 'target conditional
     @param source       the original conditional to map from
     @return ['target conditional]
@@ -597,8 +597,8 @@ let conditional__map ?test ?eq ?pre map source =
 
 
 (** Fold over the leaves of conditionals.
-    @param ?test    an optional function to test the conditional guard : guard -> guard -> Ternary.t
-    @param ?pre     an optional precondition
+    @param test    an optional function to test the conditional guard : guard -> guard -> Ternary.t
+    @param pre     an optional precondition
     @param fold     the fold function : 'acc -> guard -> 'source -> 'acc
     @param acc      the initial accumulator
     @param source   the conditional to fold over

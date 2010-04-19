@@ -52,15 +52,55 @@ let check state bytes exps =
 			MemOp.state__add_path_condition state bytes true (* This [true] marks the assumption as though it came from an actual branch in the code *)
 ;;
 
-(* We can't check each leaf of {lvals}'s conditional tree on its own,
+(* Bounds-checking *)
+(* The next two function are used for bounds-checking. Here are some
+	 comments:
+
+	 Offsets are treated as values of type !upointType, which is
+	 unsigned, so it is impossible for them to be negative. This means
+	 we only need to check for overflow, not underflow.
+
+	 We can't check the bounds for each leaf of a conditional tree on its own,
 	 because we don't want to completely fail just because *some*
-	 possibility can be out of bounds. (We only want to do that if *all*
+	 possibility can be out of bounds. (We only want to fail if *all*
 	 possibilities are out of bounds.) So instead, we compute two
 	 conditional trees, {sizes} and {offsets}, with the same shape and
-	 guards as {lvals} and which contain at the leaves, respectively,
+	 guards as the input {lvals} and which contain at the leaves, respectively,
 	 the size of the memory block and the offset of the Bytes_Address at
-	 the correpond leaf in {lvals}. The bounds check then becomes
-	 {offsets < sizes}. *)
+	 the correpond leaf in {lvals}.
+
+	 You might think that you only need to check
+	 {offsets + useSize <= sizes}, where {useSize} is the size with
+	 which {lvals} is about to be read or written). But this isn't
+	 enough because of possible overflow (e.g., if {offsets} contains
+	 the value -1 == 0xffffffff). To catch overflow, you need to
+	 additionally check that {offsets < offsets + useSize}.
+
+	 Interestingly, a different but seemingly equivalent pair of checks,
+	 {offsets < sizes} and {offsets + useSize <= sizes}, actually does
+	 not work properly, because it does not catch the possible overflow
+	 of the addition. This pair of checks would fail to catch an error
+	 in a case where {offsets + size < offsets < sizes}. This can only
+	 happen if {useSize} or {sizes} is very large, which is quite
+	 unlikely---{useSize} is the size of a type, so it is almost
+	 certainly small; and {sizes} holds the sizes of allocated regions,
+	 which are also not likely to be close to the maximum pointer value.
+	 However, if we can catch even this, why not? Also, if we eventually
+	 allow symbolic sized allocations, {sizes} could in fact be this
+	 large.
+
+	 Alternatively, here's another way to do it. Rewrite
+	 {offsets + useSize <= sizes} to {offsets <= sizes - useSize}. As
+	 before, this gets the job done unless there is overflow---well, in
+	 this case, underflow. Now, to catch underflow, the additional check
+	 is {useSize <= sizes}. (This has to be non-strict because it is
+	 okay if they are equal.) This seems to be simpler than the second
+	 check above, {offsets < offsets + useSize}, in two ways: first,
+	 there is only one conditional tree in this check instead of two.
+	 Second, {size} is concrete, and each leaf of {sizes} is concrete;
+	 and even if we allow symbolic sized allocations in the future, most
+	 allocations will probably still be concrete. *)
+
 (* TODO: Should we prune the resulting conditional trees, removing
 	 infeasible subtrees, when a bounds check fails? This question
 	 applies both to {lvals} itself and to the bytes representing the
@@ -73,20 +113,38 @@ let rec getBlockSizesAndOffsets lvals = match lvals with
 				IfThenElse (guard, blockSizesX, blockSizesY),
 				IfThenElse (guard, offsetsX, offsetsY)
 		| Unconditional (block,offset) ->
-				Unconditional (int64_to_offset_bytes block.memory_block_size),
+				Unconditional (int_to_offset_bytes block.memory_block_size),
 				Unconditional offset
 ;;
 
-(* offsets are treated as values of type !upointType, so it is
-	 impossible for them to be negative. This means we only need to
-	 check for overflow, not underflow. *)
-let checkBounds state lvals cil_lval =
-	let blockSizeTree, offsetTree = getBlockSizesAndOffsets lvals in
-	let offsetLtBlockSize =
-		make_Bytes_Op (OP_LT, [(make_Bytes_Conditional offsetTree, !Cil.upointType);
-													 (make_Bytes_Conditional blockSizeTree, !Cil.upointType)])
-	and expRepresentingBoundsCheck = BinOp (Eq, Lval cil_lval, SizeOfStr "is in bounds", voidType) in
-	check state offsetLtBlockSize [expRepresentingBoundsCheck]
+let checkBounds state lvals cil_lval useSize =
+	(* Get the block sizes and offsets *)
+	let sizesTree, offsetsTree = getBlockSizesAndOffsets lvals in
+
+	(* Make the relevant Bytes *)
+	let offsetsBytes = make_Bytes_Conditional offsetsTree
+	and sizesBytes = make_Bytes_Conditional sizesTree
+	and useSizeBytes = int_to_offset_bytes useSize in
+
+	(* Prepare the first bounds check: {offsets <= sizes - useSize} *)
+	let sizesMinusUseSize = Operation.minus [(sizesBytes, !Cil.upointType); (useSizeBytes, !Cil.upointType)] in
+	let offsetsLeSizesMinusUseSize = Operation.le [(offsetsBytes, !Cil.upointType); (sizesMinusUseSize, !Cil.upointType)]
+	and expRepresentingBoundsCheck1 = BinOp (Eq, Lval cil_lval, SizeOfStr "Checking that offset is in bounds", voidType) in
+
+	(* Do the check and keep the resulting state *)
+	let state = check state offsetsLeSizesMinusUseSize [expRepresentingBoundsCheck1] in
+
+	(* Prepare the second bounds check: {useSize <= sizes} *)
+	(* TODO: If {sizes} is a conditional tree (rather than a single
+		 value), we may want to call conditional__map (with the identity
+		 function) to simplify {useSizeLeSizes}. It will almost always
+		 have concrete 'true's at every leaf. If we don't simplify, we'll
+		 end up calling the solver. *)
+	let useSizeLeSizes = Operation.le [(useSizeBytes, !Cil.upointType); (sizesBytes, !Cil.upointType)]
+	and expRepresentingBoundsCheck2 = BinOp (Eq, Lval cil_lval, SizeOfStr "Checking that size of type does not exceed allocated size", voidType) in
+
+	(* Do the second check *)
+	check state useSizeLeSizes [expRepresentingBoundsCheck2]
 ;;
 
 let add_offset state offset lvals : state * (Types.MemoryBlockMap.key * Bytes.bytes) Bytes.conditional =
@@ -260,19 +318,7 @@ lval ?(justGetAddr=false) state (lhost, offset_exp as cil_lval) =
 		 checking is turned off *)
 	if justGetAddr || not run_args.arg_bounds_checking
 	then state, (lvals, size)
-	else (
-		(* Optimization: An offset of 0 is always in bounds. We could do a
-			 full check of {lvals} to see if every leaf of the tree is zero,
-			 but that might be expensive. Instead, do a quick check to see if
-			 {lvals} has the form {Unconditional (_,bytes__zero)}. This comes
-			 up, for example, on *every* variable lookup, so it is probably
-			 worth optimizing. *)
-		match lvals with
-				Unconditional (_, offset) when offset = bytes__zero ->
-					state, (lvals, size)
-			| _ ->
-					checkBounds state lvals cil_lval, (lvals, size)
-	)
+	else (checkBounds state lvals cil_lval size), (lvals, size)
 
 and
 
@@ -325,7 +371,7 @@ flatten_offset state lhost_typ offset : state * bytes * typ (* type of (lhost,of
 				begin match offset with
 					| Field(fieldinfo, offset2) ->
 							let n = field_offset fieldinfo in
-							let index = int64_to_offset_bytes n in
+							let index = int_to_offset_bytes n in
 							let base_typ = fieldinfo.ftype in
 							(state, index, base_typ, offset2)
 					| Index(exp, offset2) ->
@@ -338,7 +384,7 @@ flatten_offset state lhost_typ offset : state * bytes * typ (* type of (lhost,of
 							in
 							let base_typ = match Cilutility.unrollType lhost_typ with TArray(typ2, _, _) -> typ2 | _ -> failwith "Must be array" in
 							let base_size = (Cil.bitsSizeOf base_typ) / 8 in (* must be known *)
-							let index = Operation.mult [(int64_to_offset_bytes base_size,!Cil.upointType);(rv,!Cil.upointType)] in 
+							let index = Operation.mult [(int_to_offset_bytes base_size,!Cil.upointType);(rv,!Cil.upointType)] in 
 							(state, index, base_typ, offset2)
 					| _ -> failwith "Unreachable"
 				end

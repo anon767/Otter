@@ -72,6 +72,9 @@ let lnot operands = (* should return int (32-bit) *)
 	in
 	unop op_conc OP_LNOT operands ;;
 
+let ikind_of_TInt = function
+		TInt (ikind,_) -> ikind
+	| t -> invalid_arg ("Trying to get ikind from something other than a TInt: " ^ (Pretty.sprint 50 (d_type()t)))
 
 (* TODO: each op must also have typ of par as arg.
 
@@ -177,11 +180,12 @@ let rec binop op_const op_symb operands : bytes (* * typ *)=
 	(* Maybe an error of ocaml: if ibytes? is replaced by bytes?, the scoping is messed up *)	
 	impl (ibytes1,ibytes2) =
 	match (ibytes1, ibytes2) with
-		(* TODO: Use typ1 and typ2 instead of k1 and k2 *)
-		| (Bytes_Constant(CInt64(i1, k1, _)), Bytes_Constant(CInt64(i2, k2, _))) ->
-				let isSigned = 	if Cil.isSigned k1 <> Cil.isSigned k2 then true else Cil.isSigned k1 in
+		| (Bytes_Constant(CInt64(i1, _, _)), Bytes_Constant(CInt64(i2, _, _))) ->
+				let kind1 = ikind_of_TInt typ1
+				and kind2 = ikind_of_TInt typ2 in
+				let isSigned = 	Cil.isSigned kind1 || Cil.isSigned kind2 in
 				let n64 = op_const isSigned i1 i2 in
-				let (n64,_) = Cil.truncateInteger64 k1 n64 in
+				let (n64,_) = Cil.truncateInteger64 kind1 n64 in
 				(* Some operators always result in ints---namely, relational, equality,
 					 and logical operators. For the others, the result's type is that of
 					 the first operand,
@@ -189,19 +193,18 @@ let rec binop op_const op_symb operands : bytes (* * typ *)=
 					 result should have that type, too), or because this is a
 					 shift operation.
 					 (See 6.3.1.8.1 and much of 6.5 in the Standard.) *)
-				let resultType = if returnsBoolean op_symb then IInt else k1 in
+				let resultType = if returnsBoolean op_symb then IInt else kind1 in
 				let const = CInt64(n64, resultType, None) in
 				(make_Bytes_Constant(const))
-        | (Bytes_Constant(CInt64(i1,k1,_)), Bytes_Op (op, args)) when ((isReducableArithmetic op_symb op) && (atLeastOneConstant args))
+        | (Bytes_Constant(CInt64 _), Bytes_Op (op, args)) when ((isReducableArithmetic op_symb op) && (atLeastOneConstant args))
           -> reducedArithmetic ibytes1 (op,args) true
-        | (Bytes_Op (op, args) , Bytes_Constant(CInt64(i1,k1,_))) when ((isReducableArithmetic op_symb op) && (atLeastOneConstant args))
+        | (Bytes_Op (op, args) , Bytes_Constant(CInt64 _)) when ((isReducableArithmetic op_symb op) && (atLeastOneConstant args))
           -> reducedArithmetic ibytes2 (op,args) false
 		(* Allow a particular piece of pointer arithmetic: ptr % num. *)
 		| Bytes_Address(blk, offset), op2
 				when op_symb = OP_MOD &&
 					isConcrete_bytes offset &&
 					isConcrete_bytes op2 ->
-				(* Are these types right? *)
 				let offsetConstant = bytes_to_constant offset !Cil.upointType in
 				let op2Constant = bytes_to_constant op2 !Cil.upointType in
 				begin match offsetConstant,op2Constant with
