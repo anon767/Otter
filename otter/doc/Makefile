@@ -5,7 +5,7 @@ OBJ= \
 	-I $(TRUNK)/ocamlsyck/yaml/  \
 	-I $(TRUNK)/otter/_build/src/Otter/ \
 
-all: html
+all: html dot
 
 html:
 	mkdir -p html; \
@@ -13,7 +13,9 @@ html:
 
 dot:
 	mkdir -p dot; \
-	ocamldoc -v -dot -o dot/ocamldoc.out $(OBJ) $(TRUNK)/otter/src/Otter/*.ml; \
+	ocamldoc -v -dot \
+		-dot-reduce \
+		-o dot/ocamldoc.out $(OBJ) $(TRUNK)/otter/src/Otter/*.ml; \
 	dot -v -Tpdf dot/ocamldoc.out -o dot/ocamldoc.pdf
 
 clean:
