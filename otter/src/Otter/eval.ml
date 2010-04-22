@@ -118,6 +118,8 @@ let rec getBlockSizesAndOffsets lvals = match lvals with
 ;;
 
 let checkBounds state lvals cil_lval useSize =
+	Output.print_endline ("Checking bounds of " ^ Pretty.sprint 50 (Cil.d_lval () cil_lval));
+
 	(* Get the block sizes and offsets *)
 	let sizesTree, offsetsTree = getBlockSizesAndOffsets lvals in
 
