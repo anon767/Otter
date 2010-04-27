@@ -306,6 +306,9 @@ conditional_ff unconditional_ff ff =
 			fprintf ff "(IF @[%a@]@ THEN @[%a@]@ ELSE @[%a@]@,)" guard_ff guard conditional_ff t conditional_ff f
 		| Unconditional x ->
 			unconditional_ff ff x
+     | ConditionalException e ->
+			fprintf ff "(Exn @[%s@]@ @,)" "(Exception)" (* TODO: get the exception description *)
+
 	in
 	conditional_ff ff
 ;;

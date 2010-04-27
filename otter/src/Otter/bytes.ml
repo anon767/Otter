@@ -58,6 +58,7 @@ and guard =
 and 'a conditional =
 	| IfThenElse of guard * 'a conditional * 'a conditional  (* if guard then a else b *)
 	| Unconditional of 'a
+   | ConditionalException of exn
 
 and bytes =
 	| Bytes_Constant of Cil.constant                (* length=Cil.sizeOf (Cil.typeOf (Const(constant))) *)
@@ -426,8 +427,9 @@ let rec bytes__length bytes =
 		| Bytes_Conditional c ->
 			(* all bytes in Bytes_Conditional have the same length *)
 			let rec find_one = function
-				| IfThenElse (_, c, _) -> find_one c
+				| IfThenElse (_, c1, c2) -> max (find_one c1) (find_one c2)
 				| Unconditional b -> bytes__length b
+           | ConditionalException _ -> -1
 			in
 			find_one c
 ;;
@@ -579,6 +581,7 @@ let conditional__map_fold ?(test=fun _ _ -> Unknown) ?(eq=(==)) ?(pre=Guard_True
 			end
 		| Unconditional x ->
 			map_fold acc pre x
+     | ConditionalException e -> acc, ConditionalException e
 	in
 	conditional__map_fold acc pre source
 

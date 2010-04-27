@@ -68,6 +68,7 @@ and allSymbols = function
 						(SymbolSet.union (allSymbolsInConditional c1) (allSymbolsInConditional c2))
 				| Unconditional b ->
 					allSymbols b
+           | ConditionalException _ -> SymbolSet.empty
 			in
 			allSymbolsInConditional c
 
@@ -304,6 +305,9 @@ to_stp_bv_impl vc bytes =
 
 		| Bytes_Conditional c ->
 			let rec to_stp_bv_conditional = function
+           | ConditionalException e ->
+             (*  raise e *)
+               failwith "to_stp_bv_conditional: ConditionalException not handled"
 				| Unconditional b ->
 					to_stp_bv vc b
 				| IfThenElse (guard, c1, c2) ->

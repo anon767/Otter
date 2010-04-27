@@ -115,6 +115,9 @@ let rec getBlockSizesAndOffsets lvals = match lvals with
 		| Unconditional (block,offset) ->
 				Unconditional (int_to_offset_bytes block.memory_block_size),
 				Unconditional offset
+		| ConditionalException e ->
+            ConditionalException e,
+            ConditionalException e
 ;;
 
 let checkBounds state lvals cil_lval useSize =
@@ -324,43 +327,60 @@ lval ?(justGetAddr=false) state (lhost, offset_exp as cil_lval) =
 
 and
 
-(* harder than I thought! *)
-deref state bytes =
-	(*Output.set_mode Output.MSG_MUSTPRINT;  tmp *)
+
+deref ?(wrap_exn=false) state bytes =
+   try
 	match bytes with
-		| Bytes_Constant (c) -> failwith ("Dereference something not an address (constant) "^(To_string.bytes bytes))
-		| Bytes_ByteArray(bytearray) -> 
-            (* 
-            * Special treatment: look for
-             * "==(Bytearray(bytearray),make_Bytes_Address(b,f))" in PC.
-             * If found, return deref state make_Bytes_Address(b,f).
-             * Otherwise, throw exception
-            * *)
-            let rec find_match pc = match pc with [] -> 
-                failwith ("Dereference something not an address (bytearray) "^(To_string.bytes bytes))
-              | Bytes_Op(OP_EQ,(bytes1,_)::(bytes2,_)::[])::pc' -> 
-                  begin
-                    let bytes_tentative = if bytes1=bytes then bytes2 else if bytes2=bytes then bytes1 else bytes__zero in 
-                      match bytes_tentative with Bytes_Address(_,_) -> deref state bytes_tentative | _ -> find_match pc'
-                  end
-              | Bytes_Op(OP_LAND,btlist)::pc' ->
-                  find_match (List.rev_append (List.fold_left (fun a (b,_) -> b::a) [] btlist) pc')
-              | _::pc' -> find_match pc'
-            in
-              find_match state.path_condition
+		| Bytes_Constant (c) -> 
+          failwith ("Dereference something not an address: constant "^(To_string.bytes bytes))
+
+     | Bytes_ByteArray(bytearray) -> 
+         (* 
+          * Special treatment: look for
+          * "==(Bytearray(bytearray),make_Bytes_Address(b,f))" in PC.
+          * If found, return deref state make_Bytes_Address(b,f).
+          * Otherwise, throw exception
+          * *)
+         let rec find_match pc = match pc with 
+           | [] -> 
+               failwith ("Dereference something not an address (bytearray) "^(To_string.bytes bytes))
+           | Bytes_Op(OP_EQ,(bytes1,_)::(bytes2,_)::[])::pc' -> 
+               begin
+                 let bytes_tentative = if bytes1=bytes then bytes2 else if bytes2=bytes then bytes1 else bytes__zero in 
+                   match bytes_tentative with Bytes_Address(_,_) -> deref state bytes_tentative | _ -> find_match pc'
+               end
+           | Bytes_Op(OP_LAND,btlist)::pc' ->
+               find_match (List.rev_append (List.fold_left (fun a (b,_) -> b::a) [] btlist) pc')
+           | _::pc' -> find_match pc'
+         in
+             find_match state.path_condition
+
 		| Bytes_Address(block, offset) ->
-			if MemOp.state__has_block state block
-			then conditional__lval_block (block, offset)
-			else failwith "Dereference into an expired stack frame"
+			if MemOp.state__has_block state block then 
+           conditional__lval_block (block, offset)
+			else 
+           failwith "Dereference into an expired stack frame"
+
 		| Bytes_Conditional c ->
-			conditional__map (deref state) c
-		| Bytes_Op(op, operands) -> failwith ("Dereference something not an address (op) "^(To_string.bytes bytes))
-		| Bytes_Read(bytes,off,len) -> conditional__map (deref state) 
-			(prune_conditional_bytes state (expand_read_to_conditional bytes off len))
-		| Bytes_Write(bytes,off,len,newbytes) ->failwith "Dereference: Not implemented"
-		| Bytes_FunPtr(_) -> failwith "Dereference funptr not support"
-		| Bytes_Unbounded(_,_,_) ->failwith "Dereference: Not implemented"
+			conditional__map (deref ~wrap_exn:true state) c
+
+		| Bytes_Op(op, operands) -> 
+          failwith ("Dereference something not an address: operation "^(To_string.bytes bytes))
+
+		| Bytes_Read(bytes,off,len) -> 
+          conditional__map (deref state) (prune_conditional_bytes state (expand_read_to_conditional bytes off len))
+
+		| Bytes_Write(bytes,off,len,newbytes) ->
+          failwith "Dereference of Bytes_Write not implemented"
+
+		| Bytes_FunPtr(_) -> 
+          failwith "Dereference of Bytes_FunPtr not implemented"
+
+		| Bytes_Unbounded(_,_,_) ->
+          failwith "Dereference of Bytes_Unbounded not implemented"
 			
+   with e -> 
+     if wrap_exn then ConditionalException e else raise e
 
 and
 

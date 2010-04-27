@@ -6,7 +6,33 @@ open Executeargs
 open MemOp
 open InvInput
 
+let maxSize = 0xffff;;
+
 let unreachable_global varinfo = not (Cilutility.VarinfoSet.mem varinfo (!GetProgInfo.reachable_globals));;
+
+let init_symbolic_pointer state varinfo =
+  let name = Printf.sprintf "Two-fold Sym Ptr (%s)" varinfo.vname in
+  let block =  block__make name maxSize Block_type_Aliased in
+  let addrof_block = make_Bytes_Address (block, bytes__zero) in
+  let state = MemOp.state__add_block state block (bytes__symbolic maxSize) in
+    state,make_Bytes_Conditional (conditional__from_list [Unconditional bytes__zero; Unconditional addrof_block])
+;;
+
+let init_symbolic_varinfo state varinfo =
+  let typ = varinfo.vtype in
+  let size = (Cil.bitsSizeOf (typ)) / 8 in
+  let size = if size <= 0 then 1 else size in
+    match typ with
+      | TPtr (basetyp,_) -> 
+          assert (size==4);
+          Output.set_mode Output.MSG_REG;
+          Output.printf "Initialize %s to ITE(?,null,non-null)\n" varinfo.vname;
+          init_symbolic_pointer state varinfo
+      | _ ->
+          Output.set_mode Output.MSG_REG;
+          Output.printf "Initialize %s to symbolic\n" varinfo.vname;
+          state,bytes__symbolic size 
+;;
 
 let init_symbolic_globalvars state globals =
 	List.fold_left begin fun state g -> match g with
@@ -14,15 +40,8 @@ let init_symbolic_globalvars state globals =
 		| GVarDecl (varinfo, _)
 				when not (Cil.isFunctionType varinfo.vtype)
 					 && not (Executeargs.run_args.arg_noinit_unreachable_globals && unreachable_global varinfo) ->
-			let size = (Cil.bitsSizeOf (varinfo.vtype)) / 8 in
-			let size = if size <= 0 then 1 else size in
-			let init_bytes = bytes__symbolic size in
-
-			Output.set_mode Output.MSG_REG;
-			Output.printf "Initialize %s to symbolic\n" varinfo.vname;
-
-		    MemOp.state__add_global state varinfo init_bytes
-
+         let state,init_bytes = init_symbolic_varinfo state varinfo in
+           MemOp.state__add_global state varinfo init_bytes
 		| _ ->
 			state
 	end state globals
@@ -92,8 +111,7 @@ let init_symbolic_argvs state (entryfn:fundec) : (state*bytes list) =
   let state,args = 
     List.fold_right  (* TODO: Does ordering matter? *)
       (fun varinfo (state,args) ->
-        let size = (Cil.bitsSizeOf varinfo.vtype) / 8 in
-        let init = bytes__symbolic size in 
+        let state,init = init_symbolic_varinfo state varinfo in
         (state__add_formal state varinfo init,init::args)
       ) 
       entryfn.sformals

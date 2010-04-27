@@ -590,6 +590,8 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 								(* TODO: print something useful *)
 								| Immediate (IfThenElse _) ->
 									printStringString var.vname "(IfThenElse)"
+								| Immediate (ConditionalException _) ->
+									printStringString var.vname "(ConditionalException)"
 								| Deferred _ ->
 									printStringString var.vname "(deferred)"
 						in
@@ -751,14 +753,14 @@ let exec_instr job =
 	(* Since we've used the makeCFGFeature, an [Instr] is a series of
 	   [Set]s and [Asm]s, possibly terminated with a [Call]. *)
 	match instr with
-		| Set(cil_lval, exp, loc) ->
-			printInstr instr;
-            let state = job.state in
-			let state, lval = Eval.lval state cil_lval in
-			let state, rv = Eval.rval state exp in
-			let state = MemOp.state__assign state lval rv in
-			let nextStmt = if tail = [] then List.hd job.stmt.succs else job.stmt in
-			Active { job with state = state; stmt = nextStmt }
+     | Set(cil_lval, exp, loc) ->
+         printInstr instr;
+         let state = job.state in
+         let state, lval = Eval.lval state cil_lval in
+         let state, rv = Eval.rval state exp in
+         let state = MemOp.state__assign state lval rv in
+         let nextStmt = if tail = [] then List.hd job.stmt.succs else job.stmt in
+           Active { job with state = state; stmt = nextStmt }
 		| Call(lvalopt, fexp, exps, loc) ->
 			assert (tail = []);
 			printInstr instr;
@@ -1104,16 +1106,16 @@ let main_loop job =
 		     end
 
 	and process_result completed (job_queue, merge_set as job_pool) = function
-		| Active job ->
-			main_loop completed (job::job_queue, merge_set)
-		| Fork (j1, j2) ->
-			(* queue the true branch and continue the false branch *)
-			main_loop completed (j2::j1::job_queue, merge_set)
-	      | Big_Fork job_list -> 
-			let rec process_job_list job_list =
-				match job_list with
-					| [] -> []
-					| (job_state::t) ->
+     | Active job ->
+         main_loop completed (job::job_queue, merge_set)
+     | Fork (j1, j2) ->
+         (* queue the true branch and continue the false branch *)  (* CCBSE *)
+         main_loop completed (j2::j1::job_queue, merge_set)
+     | Big_Fork job_list -> 
+         let rec process_job_list job_list =
+           match job_list with
+             | [] -> []
+             | (job_state::t) ->
 						match job_state with
 							| Active job -> job::(process_job_list t)
 							| Fork (j1, j2) -> j1::j2::(process_job_list t)
@@ -1133,7 +1135,7 @@ let main_loop job =
 							| Complete completion-> completion::(process_completion_list t)
 			in
 			main_loop ((process_completion_list job_list)@completed) ((process_job_list job_list)@job_queue, merge_set)
-	      | Complete completion ->
+     | Complete completion ->
 			(output_completion_info completion);
 			main_loop (completion::completed) job_pool
 	in
