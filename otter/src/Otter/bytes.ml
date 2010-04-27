@@ -52,6 +52,7 @@ and guard =
 	| Guard_True
 	| Guard_Not of guard
 	| Guard_And of guard * guard
+	| Guard_Or of guard * guard
 	| Guard_Symbolic of symbol
 	| Guard_Bytes of bytes
 
@@ -88,7 +89,7 @@ and memory_block =
 	}
 
 and lval_block = (memory_block * bytes) conditional
-
+;;
 
 let hash_consing_bytes_enabled = ref false;;
 let hash_consing_bytes_hits = ref 0;;
@@ -461,6 +462,7 @@ let byte__symbolic () = make_Byte_Symbolic (symbol__next ());;
  *	bytes
  *)
 let bytes__zero = make_Bytes_Constant(Cil.CInt64(0L,IInt,None));;
+let bytes__one = make_Bytes_Constant(Cil.CInt64(1L,IInt,None));;
 let bytes__of_list (lst: byte list) =	make_Bytes_ByteArray (ImmutableArray.of_list lst) ;;
 let bytes__make_default n byte = make_Bytes_ByteArray(ImmutableArray.make n byte);;
 let bytes__make n = bytes__make_default n byte__zero;;
@@ -544,6 +546,15 @@ let guard__and_not g1 g2 = guard__and g1 (guard__not g2)
 let guard__symbolic () = Guard_Symbolic (symbol__next ())
 
 let guard__bytes b = Guard_Bytes b
+
+let rec guard__to_bytes g = match g with
+  | Guard_Or(g1,g2) -> Bytes_Op (OP_LOR,[guard__to_bytes g1,Cil.intType;guard__to_bytes g2,Cil.intType])
+  | Guard_And(g1,g2) -> Bytes_Op (OP_LAND,[guard__to_bytes g1,Cil.intType;guard__to_bytes g2,Cil.intType])
+  | Guard_Not(g1) -> Bytes_Op (OP_LNOT,[guard__to_bytes g1,Cil.intType])
+  | Guard_Bytes(b) -> b
+  | Guard_Symbolic(s) -> bytes__make_default 1 (Byte_Symbolic s) 
+  | Guard_True -> bytes__one
+;;
 
 
 (**
@@ -636,6 +647,19 @@ let conditional__bytes = function
 let conditional__lval_block l =
 	Unconditional l
 
+let rec conditional__remove_exceptions c =
+   match c with
+     | IfThenElse (g,x,y) ->
+         let px,x = conditional__remove_exceptions x in
+         let py,y = conditional__remove_exceptions y in
+         let pxy,xy = match x,y with
+           | ConditionalException _,ConditionalException _ -> Guard_Not(Guard_True),x
+           | ConditionalException _,_ -> Guard_And(Guard_Not(g),py),y
+           | _,ConditionalException _ -> Guard_And(g,px),x
+           | _,_ -> Guard_Or(Guard_And(g,px),Guard_And(Guard_Not(g),py)),IfThenElse(g,x,y)
+         in pxy,xy
+     | Unconditional _ -> Guard_True,c
+     | ConditionalException _ -> Guard_Not(Guard_True),c
 
 let rec bytes__get_byte bytes i : byte =
 	match bytes with
@@ -643,4 +667,42 @@ let rec bytes__get_byte bytes i : byte =
 		| Bytes_ByteArray (bytearray) -> ImmutableArray.get bytearray i 
 		| _ -> make_Byte_Bytes(bytes,i)
 ;;
+
+let rec bytes__remove_exceptions bytes =
+  match bytes with
+    | Bytes_Conditional (c) -> 
+        let g,c = conditional__remove_exceptions c in g,Bytes_Conditional(c)
+    | Bytes_ByteArray (bytearray) -> 
+        let g = ref Guard_True in
+        let bytearray = ImmutableArray.map (fun byte -> match byte with 
+                              | Byte_Bytes (bs,n) -> 
+                                  let g',bs = bytes__remove_exceptions bs in 
+                                    g := Guard_And(g',(!g));
+                                    Byte_Bytes (bs,n)
+                              | _ -> byte
+                           ) bytearray
+        in (!g),Bytes_ByteArray(bytearray)
+    | Bytes_Address (block,offset) -> 
+        let g,offset = bytes__remove_exceptions offset in g, Bytes_Address(block,offset)
+    | Bytes_Op (op,operands) -> 
+        let g,oplst = List.fold_right 
+                    (fun (operand,typ) (g,oplst) -> 
+                       let g',opr = bytes__remove_exceptions operand in 
+                         Guard_And(g,g'),(opr,typ)::oplst) 
+                    operands (Guard_True,[])
+        in g,Bytes_Op(op,oplst)
+    | Bytes_Read (b1,b2,n) -> 
+        let g1,b1 = bytes__remove_exceptions b1 in
+        let g2,b2 = bytes__remove_exceptions b2 in
+         Guard_And(g1,g2),Bytes_Read(b1,b2,n)
+    | Bytes_Write (b1,b2,n,b3) -> 
+        let g1,b1 = bytes__remove_exceptions b1 in
+        let g2,b2 = bytes__remove_exceptions b2 in
+        let g3,b3 = bytes__remove_exceptions b3 in
+         Guard_And(g3,Guard_And(g1,g2)),Bytes_Write (b1,b2,n,b3)
+    | _ -> Guard_True,bytes
+;;
+
+
+
 

@@ -154,6 +154,7 @@ guard_ff ff = function
 	| Guard_True -> Format.fprintf ff "TRUE"
 	| Guard_Not g -> Format.fprintf ff "NOT @[%a@]" guard_ff g
 	| Guard_And (g1, g2) -> Format.fprintf ff "(@[%a@]@ AND @[%a@]@,)" guard_ff g1 guard_ff g2
+	| Guard_Or (g1, g2) -> Format.fprintf ff "(@[%a@]@ OR @[%a@]@,)" guard_ff g1 guard_ff g2
 	| Guard_Symbolic s -> symbol_ff ff s
 	| Guard_Bytes b -> bytes_ff ff b
 

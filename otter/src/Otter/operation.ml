@@ -387,11 +387,13 @@ let rec eval pc bytes =
 	(*
 	if not Executeargs.args.Executeargs.arg_print_queries then () else
 	Output.print_endline ("Is the following not equal to zero? \n"^(To_string.bytes bytes));*)
-	let nontrivial () = 
-			Output.set_mode Output.MSG_REG;
-			Output.print_endline "Ask STP...";
-			Stats.time "STP" (Stp.consult_stp pc) bytes
-	in
+  let nontrivial () = 
+    Output.set_mode Output.MSG_REG;
+    Output.print_endline "Ask STP...";
+    (* Remove exceptions in bytes (warning: may make queries slow) *)
+    let guard,bytes = bytes__remove_exceptions bytes in
+      Stats.time "STP" (Stp.consult_stp ((guard__to_bytes guard)::pc)) bytes
+  in
 	let is_comparison op = match op with	
 		| OP_LT -> true
 		| OP_GT -> true

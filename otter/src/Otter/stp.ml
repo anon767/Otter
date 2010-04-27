@@ -29,7 +29,8 @@ let rec allSymbolsInGuard = function
 		SymbolSet.empty
 	| Guard_Not g ->
 		allSymbolsInGuard g
-	| Guard_And (g1, g2) ->
+	| Guard_And (g1, g2)
+	| Guard_Or (g1, g2) ->
 		SymbolSet.union (allSymbolsInGuard g1) (allSymbolsInGuard g2)
 	| Guard_Symbolic s ->
 		SymbolSet.singleton s
@@ -241,6 +242,8 @@ to_stp_guard vc = function
 		Stpc.e_not vc (to_stp_guard vc g)
 	| Guard_And (g1, g2) ->
 		Stpc.e_and vc (to_stp_guard vc g1) (to_stp_guard vc g2)
+	| Guard_Or (g1, g2) ->
+		Stpc.e_or vc (to_stp_guard vc g1) (to_stp_guard vc g2)
 	| Guard_Symbolic s ->
 		Stpc.e_var vc (make_var s) (Stpc.bool_t vc)
 	| Guard_Bytes b ->
@@ -306,8 +309,10 @@ to_stp_bv_impl vc bytes =
 		| Bytes_Conditional c ->
 			let rec to_stp_bv_conditional = function
            | ConditionalException e ->
-             (*  raise e *)
-               failwith "to_stp_bv_conditional: ConditionalException not handled"
+               let msg = match e with
+                  | Failure s -> s
+                  | _ -> "(unknown exception)"
+               in failwith (Printf.sprintf "to_stp_bv_conditional: %s" msg)
 				| Unconditional b ->
 					to_stp_bv vc b
 				| IfThenElse (guard, c1, c2) ->
