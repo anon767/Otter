@@ -38,7 +38,8 @@ let print_failed_assertion state bytes exps ~isUnknown =
     @return state           if the assertion is always true, this is the input state; otherwise, an error message is printed and the return value is the input state with [bytes] added to the path condition
 *)
 let check state bytes exps =
-	match Operation.eval state.path_condition bytes with
+  let state,result =  MemOp.state__eval state state.path_condition bytes in
+	match result with
 		Ternary.True -> (* The assertion is true *)
 			Output.set_mode Output.MSG_REG;
 			Output.print_endline "Assertion satisfied.";

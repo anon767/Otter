@@ -2,6 +2,8 @@ open Cil
 open Bytes
 open BytesUtility
 open Types
+open Operation
+open Ternary
 
 (**
  *	memory frame
@@ -541,3 +543,80 @@ let function_stat_increment fundec =
 
 let function_stat_get fundec = Cilutility.FundecMap.find fundec (!function_stat);;
 *)
+
+let rec state__eval state pc bytes =
+	(*
+	if not Executeargs.args.Executeargs.arg_print_queries then () else
+	Output.print_endline ("Is the following not equal to zero? \n"^(To_string.bytes bytes));*)
+  let nontrivial () = 
+    Output.set_mode Output.MSG_REG;
+    Output.print_endline "Ask STP...";
+    (* Remove exceptions in bytes (warning: may make queries slow) *)
+    let guard,bytes = bytes__remove_exceptions bytes in
+    let guard_bytes = guard__to_bytes guard in
+    let result =
+      Stats.time "STP" (Stp.consult_stp (guard_bytes::pc)) bytes
+    in
+      (* The following will crash some of the ounit tests
+      {state with path_condition=guard_bytes::state.path_condition},result
+       *)
+      state,result
+  in
+	let is_comparison op = match op with	
+		| OP_LT -> true
+		| OP_GT -> true
+		| OP_LE -> true
+		| OP_GE -> true
+		| OP_EQ -> true
+		| OP_NE -> true
+		| _ -> false
+	in
+	let operation_of op = match op with	
+		| OP_LT -> lt
+		| OP_GT -> gt
+		| OP_LE -> le
+		| OP_GE -> ge
+		| OP_EQ -> eq
+		| OP_NE -> ne
+		| _ -> failwith "operation_of: operation is not comparison"
+	in
+   let state,return_bytes = 
+     match bytes with
+       (* The following cases are simple enough to not consult STP *)
+       | Bytes_Constant (CInt64(n,_,_)) -> state,if n = 0L then False else True			
+
+       | Bytes_ByteArray (bytearray) ->
+           begin try
+             let b = bytes_to_bool bytes in  (* TODO:need to use int64 *)
+               state,
+                                             if b = false then False else True
+           with Failure(_) -> nontrivial()
+           end
+         | Bytes_Address (_,_) -> state,True
+
+             (* nullity check *)
+             | Bytes_Op(OP_LNOT,(b1,_)::[]) -> 
+                 let state,bb = state__eval state pc b1 in
+                   state,ternary_not bb
+
+             (* Comparison of (ptr+i) and (ptr+j) *)
+             | Bytes_Op(op,(Bytes_Address(block1,offset1),_)::(Bytes_Address(block2,offset2),_)::[]) 
+                 when is_comparison op ->
+                 if block1!=block2 then 
+                   (if op==OP_EQ then state,False else if op==OP_NE then state,True else nontrivial())
+                 else  
+                   state__eval state pc (run (operation_of op) [(offset1,Cil.intType);(offset2,Cil.intType)])
+
+             (* Comparison of (ptr+i) and c (usually zero) *)
+             | Bytes_Op(op,(Bytes_Address(block,offset1),_)::(bytes2,_)::[]) 
+                 when is_comparison op  &&  isConcrete_bytes bytes2 ->
+                 if op==OP_EQ then state,False else if op==OP_NE then state,True else nontrivial()
+             (* Function pointer is always true *)
+             | Bytes_FunPtr(_,_) -> state,True
+	   	(* Consult STP *)
+	   	| _ -> 
+	   		nontrivial()
+   in
+     state,return_bytes
+;;
+

@@ -8,7 +8,7 @@ open Executeargs
 open Cilutility
 
 let eval_with_cache state pc bytes =
-    (state, Operation.eval pc bytes) 
+    MemOp.state__eval state pc bytes
   (*
   match MemOp.state__get_bytes_eval_cache state bytes with
     | Some (boolval) -> ((if boolval then True else False), state)
