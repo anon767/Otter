@@ -63,3 +63,7 @@ let rec print_list print list delim =
 let pause () =
 	Scanf.scanf "%c" (fun x->())
 ;;	
+
+
+module StringSet = Set.Make(String)
+

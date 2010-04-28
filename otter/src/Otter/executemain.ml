@@ -293,7 +293,7 @@ let job_for_function state fn argvs =
 	  exHist = emptyHistory;
 	  instrList = [];
 	  stmt = List.hd fn.sallstmts;
-	  inTrackedFn = StringSet.mem fn.svar.vname run_args.arg_fns;
+	  inTrackedFn = Utility.StringSet.mem fn.svar.vname run_args.arg_fns;
 	  mergePoints = StmtInfoSet.empty;
 	  jid = Utility.next_id Output.jidCounter }
 
@@ -566,6 +566,10 @@ let feature : featureDescr =
 			("--noinitUnreachableGlobals",
 			 Arg.Unit (fun () -> run_args.arg_noinit_unreachable_globals <- true),
 			 " Do NOT initialize unreachable globals\n");
+
+			("--useConditionalExceptions",
+			 Arg.Unit (fun () -> run_args.arg_use_conditional_exceptions <- true),
+			 " Use conditional exceptions when processing 'a conditional\n");
 
 			("--yaml",
 			 Arg.String readYamlFromFile,

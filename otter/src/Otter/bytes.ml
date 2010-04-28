@@ -591,7 +591,15 @@ let conditional__map_fold ?(test=fun _ _ -> Unknown) ?(eq=(==)) ?(pre=Guard_True
 						(acc, IfThenElse (guard, x, y))
 			end
 		| Unconditional x ->
-			map_fold acc pre x
+          (
+          try
+			   map_fold acc pre x
+          with e -> 
+            if (Executeargs.run_args.Executeargs.arg_use_conditional_exceptions) then
+              acc, ConditionalException e
+            else
+              raise e
+          )
      | ConditionalException e -> acc, ConditionalException e
 	in
 	conditional__map_fold acc pre source

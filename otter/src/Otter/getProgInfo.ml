@@ -100,7 +100,7 @@ let getProgInfo (file : Cil.file) fnNameSet =
 		file
 		(function (* Visit the bodies of the functions we care about *)
 				 GFun(fundec,_) ->
-					 if Types.StringSet.mem fundec.svar.vname fnNameSet
+					 if Utility.StringSet.mem fundec.svar.vname fnNameSet
 					 then ignore (visitCilFunction (vis:>cilVisitor) fundec)
 			 | _ -> ()
 		);

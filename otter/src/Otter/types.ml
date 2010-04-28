@@ -215,4 +215,3 @@ module JobSet = Set.Make
 		This will allow us to know where we should expect to merge paths. *)
 let ifToJoinPointsHash : (stmtInfo,stmtInfo) Hashtbl.t = Hashtbl.create 500
 
-module StringSet = Set.Make(String)

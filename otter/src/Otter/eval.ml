@@ -329,8 +329,7 @@ lval ?(justGetAddr=false) state (lhost, offset_exp as cil_lval) =
 and
 
 
-deref ?(wrap_exn=false) state bytes =
-   try
+deref state bytes =
 	match bytes with
 		| Bytes_Constant (c) -> 
           failwith ("Dereference something not an address: constant "^(To_string.bytes bytes))
@@ -363,7 +362,7 @@ deref ?(wrap_exn=false) state bytes =
            failwith "Dereference into an expired stack frame"
 
 		| Bytes_Conditional c ->
-			conditional__map (deref ~wrap_exn:true state) c
+			conditional__map (deref state) c
 
 		| Bytes_Op(op, operands) -> 
           failwith ("Dereference something not an address: operation "^(To_string.bytes bytes))
@@ -380,9 +379,6 @@ deref ?(wrap_exn=false) state bytes =
 		| Bytes_Unbounded(_,_,_) ->
           failwith "Dereference of Bytes_Unbounded not implemented"
 			
-   with e -> 
-     if wrap_exn then ConditionalException e else raise e
-
 and
 
 (* Assume index's ikind is IInt *)

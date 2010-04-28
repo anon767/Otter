@@ -72,7 +72,7 @@ type run_args =
 		mutable arg_num_blocks : int;
 		mutable arg_num_edges : int;
 		mutable arg_num_conds : int;
-		mutable arg_fns : Types.StringSet.t;
+		mutable arg_fns : Utility.StringSet.t;
 		mutable arg_yaml : string;
 		mutable arg_entryfn : string;
 		mutable arg_examfn : string;
@@ -82,6 +82,7 @@ type run_args =
 		mutable arg_marshal_file : string;
 		mutable arg_calculate_dependencies : bool;
 		mutable arg_noinit_unreachable_globals : bool;
+		mutable arg_use_conditional_exceptions : bool;
 		mutable arg_list_lines : bool;
 		mutable arg_list_blocks : bool;
 		mutable arg_list_edges : bool;
@@ -108,7 +109,7 @@ let run_args =
 		arg_num_blocks = -1;
 		arg_num_edges = -1;
 		arg_num_conds = -1;
-		arg_fns = Types.StringSet.empty;
+		arg_fns = Utility.StringSet.empty;
 		arg_yaml = "";
 		arg_entryfn = ""; (* == main *)
 		arg_examfn = ""; (* none *)
@@ -116,12 +117,13 @@ let run_args =
 		arg_merge_paths = false;
 		arg_marshal_file = ""; (* File to which to marshal coverage information *)
 		arg_calculate_dependencies = false;
-        arg_noinit_unreachable_globals = false;
+      arg_noinit_unreachable_globals = false;
+      arg_use_conditional_exceptions = false;
 		arg_list_lines = false;
 		arg_list_blocks = false;
 		arg_list_edges = false;
 		arg_list_conds = false;
-		arg_opt_hash_consing = false;  (* This module depends on Types!!! *)
+		arg_opt_hash_consing = false;  (* This module depends on Utility!!! *)
 		arg_opt_bytes_eval_cache = false;
 		arg_opt_stpbv_cache = false;
 		arg_failfast = false;
@@ -129,14 +131,12 @@ let run_args =
     arg_bounds_checking = true;
 	} ;;
 
-(* This is bad---I know *)
-Bytes.hash_consing_bytes_enabled := run_args.arg_opt_hash_consing
 
 let readCovStatsFromFile filename =
 	let inChan = open_in filename in
 	try
 		while true do
-			run_args.arg_fns <- Types.StringSet.add (input_line inChan) run_args.arg_fns
+			run_args.arg_fns <- Utility.StringSet.add (input_line inChan) run_args.arg_fns
 		done
 	with End_of_file -> close_in inChan
   

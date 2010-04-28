@@ -1,6 +1,7 @@
 open TestUtil.MyOUnit
 open Otter
 open Types
+open Utility
 
 (* test helper that runs the symbolic executor on a file given a source code as a string, and calculates coverage *)
 let test_coverage content ?(label=content) tracked_fns test =

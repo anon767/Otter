@@ -6,6 +6,7 @@ open Types
 open PathMerging
 open Executeargs
 open Cilutility
+open Utility
 
 let eval_with_cache state pc bytes =
     MemOp.state__eval state pc bytes

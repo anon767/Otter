@@ -551,16 +551,16 @@ let rec state__eval state pc bytes =
   let nontrivial () = 
     Output.set_mode Output.MSG_REG;
     Output.print_endline "Ask STP...";
-    (* Remove exceptions in bytes (warning: may make queries slow) *)
-    let guard,bytes = bytes__remove_exceptions bytes in
-    let guard_bytes = guard__to_bytes guard in
-    let result =
-      Stats.time "STP" (Stp.consult_stp (guard_bytes::pc)) bytes
-    in
-      (* The following will crash some of the ounit tests
-      {state with path_condition=guard_bytes::state.path_condition},result
-       *)
-      state,result
+    if (Executeargs.run_args.Executeargs.arg_use_conditional_exceptions) then
+      (* Remove exceptions in bytes (warning: may make queries slow) *)
+      let guard,bytes = bytes__remove_exceptions bytes in
+      let guard_bytes = guard__to_bytes guard in
+      let result = Stats.time "STP" (Stp.consult_stp (guard_bytes::pc)) bytes in
+        (* The following will crash some of the ounit tests *)
+        ({state with path_condition=guard_bytes::state.path_condition},result)
+    else
+      (state,Stats.time "STP" (Stp.consult_stp pc) bytes)
+
   in
 	let is_comparison op = match op with	
 		| OP_LT -> true
