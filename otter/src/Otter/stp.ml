@@ -307,21 +307,36 @@ to_stp_bv_impl vc bytes =
 				(Stpc.e_bvplus vc len bv_blockaddr bv_offset,len)
 
 		| Bytes_Conditional c ->
-			let rec to_stp_bv_conditional = function
+			let rec to_stp_bv_conditional c = 
+           match c with
            | ConditionalException e ->
-               let msg = match e with
-                  | Failure s -> s
-                  | _ -> "(unknown exception)"
-               in failwith (Printf.sprintf "to_stp_bv_conditional: %s" msg)
+               (* Note: by this point PC should have constraints that avoids
+               * reaching this branch. So we simply return some garbage *)
+               raise e
 				| Unconditional b ->
 					to_stp_bv vc b
 				| IfThenElse (guard, c1, c2) ->
 					let cond = to_stp_guard vc guard in
-					let bv1, len1 = to_stp_bv_conditional c1 in
-					let bv2, len2 = to_stp_bv_conditional c2 in
-					assert (len1 = len2);
-					(* if cond then bv1 else bv2 *)
-					(Stpc.e_ite vc cond bv1 bv2, len1)
+					let bv1, len1 = 
+                 try to_stp_bv_conditional c1 
+                 with e -> (Stpc.e_bv_of_int vc 8 0 (* some garbage *), -1)
+               in
+					let bv2, len2 = 
+                 try to_stp_bv_conditional c2
+                 with e -> (Stpc.e_bv_of_int vc 8 0 (* some garbage *), -1)
+               in
+                 if len1 = -1 && len2 = -1 then
+                   failwith "to_stp_bv_conditional: both branches are exceptions!"
+                 else if len1 = -1 then
+                   (bv2,len2)
+                 else if len2 = -1 then
+                   (bv1,len1)
+                 else 
+                   begin
+                     assert (len1 = len2);
+                     (* if cond then bv1 else bv2 *)
+                     (Stpc.e_ite vc cond bv1 bv2, len1)
+                   end
 			in
 			to_stp_bv_conditional c
 

@@ -552,12 +552,15 @@ let rec state__eval state pc bytes =
     Output.set_mode Output.MSG_REG;
     Output.print_endline "Ask STP...";
     if (Executeargs.run_args.Executeargs.arg_use_conditional_exceptions) then
+      begin
       (* Remove exceptions in bytes (warning: may make queries slow) *)
       let guard,bytes = bytes__remove_exceptions bytes in
       let guard_bytes = guard__to_bytes guard in
+      Printf.printf "Guard to Bytes: %s\n" (To_string.bytes guard_bytes);
       let result = Stats.time "STP" (Stp.consult_stp (guard_bytes::pc)) bytes in
         (* The following will crash some of the ounit tests *)
         ({state with path_condition=guard_bytes::state.path_condition},result)
+      end
     else
       (state,Stats.time "STP" (Stp.consult_stp pc) bytes)
 

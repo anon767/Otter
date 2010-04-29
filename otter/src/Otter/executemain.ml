@@ -10,11 +10,11 @@ let maxSize = 0xffff;;
 
 let unreachable_global varinfo = not (Cilutility.VarinfoSet.mem varinfo (!GetProgInfo.reachable_globals));;
 
-let init_symbolic_pointer state varinfo =
+let init_symbolic_pointer state varinfo size =
   let name = Printf.sprintf "Two-fold Sym Ptr (%s)" varinfo.vname in
-  let block =  block__make name maxSize Block_type_Aliased in
+  let block =  block__make name size Block_type_Aliased in
   let addrof_block = make_Bytes_Address (block, bytes__zero) in
-  let state = MemOp.state__add_block state block (bytes__symbolic maxSize) in
+  let state = MemOp.state__add_block state block (bytes__symbolic size) in
     state,make_Bytes_Conditional (conditional__from_list [Unconditional bytes__zero; Unconditional addrof_block])
 ;;
 
@@ -27,7 +27,7 @@ let init_symbolic_varinfo state varinfo =
           assert (size==4);
           Output.set_mode Output.MSG_REG;
           Output.printf "Initialize %s to ITE(?,null,non-null)\n" varinfo.vname;
-          init_symbolic_pointer state varinfo
+          init_symbolic_pointer state varinfo size
       | _ ->
           Output.set_mode Output.MSG_REG;
           Output.printf "Initialize %s to symbolic\n" varinfo.vname;

@@ -481,6 +481,14 @@ let bytes__symbolic n =
 		bytes__of_list (impl n)
 ;;
 
+let rec bytes__get_byte bytes i : byte =
+	match bytes with
+		| Bytes_Constant (constant) ->  bytes__get_byte (constant_to_bytes constant) i
+		| Bytes_ByteArray (bytearray) -> ImmutableArray.get bytearray i 
+		| _ -> make_Byte_Bytes(bytes,i)
+;;
+
+
 (**
  *	memory block
  *)
@@ -533,17 +541,26 @@ let logicalNot = function
 let guard__true = Guard_True
 
 let guard__not = function
-	| Guard_Not g -> g
-	| g -> Guard_Not g
+  | Guard_Not g -> g
+  | g -> Guard_Not g
+
+let guard__false = guard__not guard__true
 
 let guard__and g1 g2 = match g1, g2 with
-	| Guard_True, g
-    | g, Guard_True -> g
-	| _, _          -> Guard_And (g1, g2)
+  | Guard_True, g
+  | g, Guard_True -> g
+  | _, _          -> Guard_And (g1, g2)
+
+let guard__or g1 g2 = match g1, g2 with
+  | Guard_Not Guard_True, g
+  | g, Guard_Not Guard_True -> g
+  | _, _          -> Guard_Or (g1, g2)
 
 let guard__and_not g1 g2 = guard__and g1 (guard__not g2)
 
 let guard__symbolic () = Guard_Symbolic (symbol__next ())
+
+let guard__symbolics () = Guard_Bytes (bytes__symbolic 4)
 
 let guard__bytes b = Guard_Bytes b
 
@@ -552,7 +569,13 @@ let rec guard__to_bytes g = match g with
   | Guard_And(g1,g2) -> Bytes_Op (OP_LAND,[guard__to_bytes g1,Cil.intType;guard__to_bytes g2,Cil.intType])
   | Guard_Not(g1) -> Bytes_Op (OP_LNOT,[guard__to_bytes g1,Cil.intType])
   | Guard_Bytes(b) -> b
-  | Guard_Symbolic(s) -> bytes__make_default 1 (Byte_Symbolic s) 
+  | Guard_Symbolic(s) -> 
+      (* The below doesn't work! why???
+      bytes__make_default 4 (Byte_Symbolic s) 
+      bytes__of_list [(Byte_Symbolic s);byte__zero;byte__zero;byte__zero]
+       *)
+      failwith "guard__to_bytes: Guard_Symbolic doesn't work"
+
   | Guard_True -> bytes__one
 ;;
 
@@ -596,7 +619,11 @@ let conditional__map_fold ?(test=fun _ _ -> Unknown) ?(eq=(==)) ?(pre=Guard_True
 			   map_fold acc pre x
           with e -> 
             if (Executeargs.run_args.Executeargs.arg_use_conditional_exceptions) then
+              begin
+              Output.set_mode Output.MSG_REG;
+              Output.print_endline ("(Exception caught in conditional__map_fold)");
               acc, ConditionalException e
+              end
             else
               raise e
           )
@@ -637,7 +664,7 @@ let conditional__fold ?test ?pre fold acc source =
 *)
 let conditional__from_list list =
 	let rec conditional__make_tree outs = function
-		| x::y::rest -> conditional__make_tree ((IfThenElse (guard__symbolic (), x, y))::outs) rest
+		| x::y::rest -> conditional__make_tree ((IfThenElse (guard__symbolics (), x, y))::outs) rest
 		| [x]      -> conditional__make_tree_next (x::outs)
 		| []         -> conditional__make_tree_next outs
 	and conditional__make_tree_next = function
@@ -661,31 +688,24 @@ let rec conditional__remove_exceptions c =
          let px,x = conditional__remove_exceptions x in
          let py,y = conditional__remove_exceptions y in
          let pxy,xy = match x,y with
-           | ConditionalException _,ConditionalException _ -> Guard_Not(Guard_True),x
-           | ConditionalException _,_ -> Guard_And(Guard_Not(g),py),y
-           | _,ConditionalException _ -> Guard_And(g,px),x
-           | _,_ -> Guard_Or(Guard_And(g,px),Guard_And(Guard_Not(g),py)),IfThenElse(g,x,y)
+           | ConditionalException _,ConditionalException _ -> guard__false,x
+           | ConditionalException _,_ -> (guard__and (guard__not g) py),y
+           | _,ConditionalException _ -> (guard__and g px),x
+           | _,_ -> (guard__or (guard__and g px) (guard__and (guard__not g) py)),IfThenElse(g,x,y)
          in pxy,xy
-     | Unconditional _ -> Guard_True,c
-     | ConditionalException _ -> Guard_Not(Guard_True),c
-
-let rec bytes__get_byte bytes i : byte =
-	match bytes with
-		| Bytes_Constant (constant) ->  bytes__get_byte (constant_to_bytes constant) i
-		| Bytes_ByteArray (bytearray) -> ImmutableArray.get bytearray i 
-		| _ -> make_Byte_Bytes(bytes,i)
-;;
+     | Unconditional something -> guard__true,c (* TODO: something may contain exceptions, but its type is 'a *)
+     | ConditionalException _ -> guard__false,c
 
 let rec bytes__remove_exceptions bytes =
   match bytes with
     | Bytes_Conditional (c) -> 
         let g,c = conditional__remove_exceptions c in g,Bytes_Conditional(c)
     | Bytes_ByteArray (bytearray) -> 
-        let g = ref Guard_True in
+        let g = ref guard__true in
         let bytearray = ImmutableArray.map (fun byte -> match byte with 
                               | Byte_Bytes (bs,n) -> 
                                   let g',bs = bytes__remove_exceptions bs in 
-                                    g := Guard_And(g',(!g));
+                                    g := (guard__and g' (!g));
                                     Byte_Bytes (bs,n)
                               | _ -> byte
                            ) bytearray
@@ -696,19 +716,20 @@ let rec bytes__remove_exceptions bytes =
         let g,oplst = List.fold_right 
                     (fun (operand,typ) (g,oplst) -> 
                        let g',opr = bytes__remove_exceptions operand in 
-                         Guard_And(g,g'),(opr,typ)::oplst) 
-                    operands (Guard_True,[])
-        in g,Bytes_Op(op,oplst)
+                         (guard__and g g'),(opr,typ)::oplst) 
+                    operands (guard__true,[])
+        in 
+          g,Bytes_Op(op,oplst)
     | Bytes_Read (b1,b2,n) -> 
         let g1,b1 = bytes__remove_exceptions b1 in
         let g2,b2 = bytes__remove_exceptions b2 in
-         Guard_And(g1,g2),Bytes_Read(b1,b2,n)
+         (guard__and g1 g2),Bytes_Read(b1,b2,n)
     | Bytes_Write (b1,b2,n,b3) -> 
         let g1,b1 = bytes__remove_exceptions b1 in
         let g2,b2 = bytes__remove_exceptions b2 in
         let g3,b3 = bytes__remove_exceptions b3 in
-         Guard_And(g3,Guard_And(g1,g2)),Bytes_Write (b1,b2,n,b3)
-    | _ -> Guard_True,bytes
+         (guard__and g3 (guard__and g1 g2)),Bytes_Write (b1,b2,n,b3)
+    | _ -> guard__true,bytes
 ;;
 
 

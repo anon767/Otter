@@ -158,6 +158,13 @@ guard_ff ff = function
 	| Guard_Symbolic s -> symbol_ff ff s
 	| Guard_Bytes b -> bytes_ff ff b
 
+		
+and guard g = 
+  if donotprint() then "" else
+  (guard_ff str_formatter g; flush_str_formatter ())
+
+
+
 (* format entire bytes structure in function-like syntax: op(operand1, ...) *)
 (* TODO: convert all formatting to use Format (exp, operation, string_of_int, ...) *)
 and
@@ -301,6 +308,10 @@ lval_block_ff ff (block, offset) =
 
 and
 
+errormsg e = match e with Failure s -> s | _ -> "Unknown error"
+
+and
+
 conditional_ff unconditional_ff ff =
 	let rec conditional_ff ff = function
 		| IfThenElse (guard, t, f) ->
@@ -308,11 +319,19 @@ conditional_ff unconditional_ff ff =
 		| Unconditional x ->
 			unconditional_ff ff x
      | ConditionalException e ->
-			fprintf ff "(Exn @[%s@]@ @,)" "(Exception)" (* TODO: get the exception description *)
+			fprintf ff "(Exn @[%s@]@ @,)" (errormsg e) (* TODO: get the exception description *)
 
 	in
 	conditional_ff ff
+
+and
+
+conditional  unconditional_ff c = 
+  if donotprint() then "" else
+  (conditional_ff unconditional_ff str_formatter c; flush_str_formatter ())
 ;;
+
+
 
 let humanReadableBytes bytes_to_var bytes =
 	bytes_ff_named bytes_to_var str_formatter bytes;
