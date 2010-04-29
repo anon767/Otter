@@ -410,7 +410,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 					
 					| Function.PathCondition ->
 						Output.set_mode Output.MSG_MUSTPRINT;
-						let pc_str = (Utility.print_list To_string.bytes state.path_condition " AND ") in
+						let pc_str = (Utility.print_list To_string.bytes state.path_condition "\n AND \n") in
 						Output.print_endline (if String.length pc_str = 0 then "(nil)" else pc_str);
 							state
 															
@@ -976,8 +976,7 @@ let exec_stmt job =
 																 stmt = nextStmtF;
 																 exHist =  nextExHist (Some nextStmtF) ~whichBranch:false; } in
 							Output.set_mode Output.MSG_MUSTPRINT;
-							Output.printf "Branching on %s at %s. %s
-Job %d is the true branch and job %d is the false branch.\n\n"
+							Output.printf "Branching on %s at %s. %s\nJob %d is the true branch and job %d is the false branch.\n\n"
 								 (To_string.exp exp)
 								 (To_string.location loc)
                                  (if Executeargs.print_args.arg_print_callstack then
@@ -1044,8 +1043,9 @@ let at_merge_point job =
 		job.mergePoints
 
 
+(** The main loop
+  *)
 let main_loop job =
-	Random.init 226; (* TODO: move random into some local state *)
 
 	let rec main_loop completed job_pool =
 		match !signalStringOpt with

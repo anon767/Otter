@@ -6,13 +6,14 @@ open Executeargs
 open MemOp
 open InvInput
 
-let maxSize = 0xffff;;
-
 let unreachable_global varinfo = not (Cilutility.VarinfoSet.mem varinfo (!GetProgInfo.reachable_globals));;
 
 let init_symbolic_pointer state varinfo size =
+  (* TODO: what's the right size?
+   * For now, assume that each pointer points to an array of size 1.
+   *)
   let name = Printf.sprintf "Two-fold Sym Ptr (%s)" varinfo.vname in
-  let block =  block__make name size Block_type_Aliased in
+  let block =  block__make name size Block_type_Aliased in 
   let addrof_block = make_Bytes_Address (block, bytes__zero) in
   let state = MemOp.state__add_block state block (bytes__symbolic size) in
     state,make_Bytes_Conditional (conditional__from_list [Unconditional bytes__zero; Unconditional addrof_block])
@@ -349,6 +350,8 @@ let job_for_file file cmdline =
 
 let doExecute (f: file) =
 
+	Random.init 226; (* Random is used in Bytes *)
+
 	Output.set_mode Output.MSG_MUSTPRINT;
 	Output.print_endline "\n";
 	Output.print_endline "Otter, a symbolic executor for C";
@@ -409,6 +412,15 @@ let doExecute (f: file) =
 		(Stats.lookupTime "STP construct")
 		(Stats.lookupTime "STP doassert")
 		(Stats.lookupTime "STP query");
+   (if Executeargs.run_args.arg_use_conditional_exceptions then
+      Output.printf "It took %.2f s to remove conditonal exceptions in Bytes_Conditional's.\n"
+         (Stats.lookupTime "Remove exceptions")
+    else ());
+   (if Executeargs.run_args.arg_simplify_path_condition then
+      Output.printf "It took %.2f s to simplify path conditions.\n"
+         (Stats.lookupTime "Simplify PC")
+    else ());
+   
     Output.printf "Hash-consing: hits=%d misses=%d\n" (!hash_consing_bytes_hits) (!hash_consing_bytes_misses);
     Output.printf "Bytes eval caching: hits=%d misses=%d\n\n" (!MemOp.bytes_eval_cache_hits) (!MemOp.bytes_eval_cache_misses);
     (*

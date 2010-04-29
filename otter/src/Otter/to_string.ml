@@ -306,9 +306,6 @@ and
 lval_block_ff ff (block, offset) =
 	fprintf ff "(@[%s@],@ @[%a@]@,)" (memory_block block) bytes_ff offset
 
-and
-
-errormsg e = match e with Failure s -> s | _ -> "Unknown error"
 
 and
 
@@ -319,7 +316,7 @@ conditional_ff unconditional_ff ff =
 		| Unconditional x ->
 			unconditional_ff ff x
      | ConditionalException e ->
-			fprintf ff "(Exn @[%s@]@ @,)" (errormsg e) (* TODO: get the exception description *)
+			fprintf ff "(Exn @[%s@]@ @,)" (Utility.errormsg e) (* TODO: get the exception description *)
 
 	in
 	conditional_ff ff

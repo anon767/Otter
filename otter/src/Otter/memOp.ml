@@ -328,6 +328,9 @@ let state__get_callContext state = List.hd state.callContexts;;
 let state__extract_path_condition state bytes = 
 (**
   *   remove pc \in PC if bytes -> pc
+  *   This should be faster
+  *)
+  (*
   let bytes_implies_pc bytes pc =
     match Stp.consult_stp [bytes] pc with
       | Ternary.True -> true
@@ -336,6 +339,9 @@ let state__extract_path_condition state bytes =
   *)
 (**
   *   remove pc \in PC if bytes&&(PC\pc) -> pc
+  *   This can be very slow in some situations
+  *
+  *   TODO: maybe we can have a combination of these 2 methods?
   *)
   let bytes_and_others_implies_pc bytes_lst pc =
     match Stp.consult_stp bytes_lst pc with
@@ -359,7 +365,7 @@ let state__extract_path_condition state bytes =
 let state__add_path_condition state bytes tracked=
   let path_condition,path_condition_tracked =
     if Executeargs.run_args.Executeargs.arg_simplify_path_condition then
-      state__extract_path_condition state bytes
+      Stats.time "Simplify PC" (state__extract_path_condition state) bytes
     else
       state.path_condition,state.path_condition_tracked
   in
@@ -596,12 +602,16 @@ let rec state__eval state pc bytes =
   let state,pc,bytes = 
    if (Executeargs.run_args.Executeargs.arg_use_conditional_exceptions) then
      (* Remove exceptions in bytes (warning: may make queries slow) *)
-     let guard,bytes = bytes__remove_exceptions bytes in
-     let guard_bytes = guard__to_bytes guard in
-     (state__add_path_condition state guard_bytes false , guard_bytes::pc , bytes) 
-       (* Potential problem: bytes are immutable, therefore the same conditional
-        * bytes will emit a guard each time this is called
-        *)
+     let impl () = 
+      let guard,bytes = bytes__remove_exceptions bytes in
+      let guard_bytes = guard__to_bytes guard in
+      (state__add_path_condition state guard_bytes false , guard_bytes::pc , bytes) 
+        (* Potential problem: bytes are immutable, therefore the same conditional
+         * bytes will emit a guard each time this is called
+         * This problem will go away if we do --simplifyPathCondition
+         *)
+     in 
+       Stats.time "Remove exceptions" impl ()
    else
      (state,pc,bytes)
   in

@@ -67,3 +67,5 @@ let pause () =
 
 module StringSet = Set.Make(String)
 
+let errormsg e = match e with Failure s -> s | _ -> "Unknown error"
+

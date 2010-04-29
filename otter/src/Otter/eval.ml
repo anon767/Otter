@@ -24,7 +24,7 @@ let print_failed_assertion state bytes exps ~isUnknown =
 	(*let pc_str = To_string.humanReadablePc state.path_condition exHist.bytesToVars in *)
 	(*let pc_str = (Utility.print_list To_string.bytes state.path_condition " AND ") in*)
 	(*let pc_str = Utility.print_list To_string.bytes (Stp.getRelevantAssumptions state.path_condition post) " AND " in*)
-	let pc_str = (Utility.print_list To_string.bytes state.path_condition " AND ") in
+	let pc_str = (Utility.print_list To_string.bytes state.path_condition "\n AND \n") in
 	Executedebug.log (if pc_str = "" then "true" else pc_str);
 	Executedebug.log "****************************)";
 	print_args.arg_print_nothing <- oldPrintNothingVal
@@ -51,6 +51,7 @@ let check state bytes exps =
 			print_failed_assertion state bytes exps ~isUnknown:true;
 			(* Assume the assertion *)
 			MemOp.state__add_path_condition state bytes true (* This [true] marks the assumption as though it came from an actual branch in the code *)
+   (* CCBSE: we can collect failing conditions here *)
 ;;
 
 (* Bounds-checking *)

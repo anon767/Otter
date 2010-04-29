@@ -621,7 +621,7 @@ let conditional__map_fold ?(test=fun _ _ -> Unknown) ?(eq=(==)) ?(pre=Guard_True
             if (Executeargs.run_args.Executeargs.arg_use_conditional_exceptions) then
               begin
               Output.set_mode Output.MSG_REG;
-              Output.print_endline ("(Exception caught in conditional__map_fold)");
+              Output.print_endline (Printf.sprintf "(Exception \"%s\" caught in conditional__map_fold)" (Utility.errormsg e));
               acc, ConditionalException e
               end
             else
