@@ -325,22 +325,31 @@ let state__end_fcall state =
 
 let state__get_callContext state = List.hd state.callContexts;;
 
-(**
-  *  
-  *)
 let state__extract_path_condition state bytes = 
+(**
+  *   remove pc \in PC if bytes -> pc
   let bytes_implies_pc bytes pc =
     match Stp.consult_stp [bytes] pc with
+      | Ternary.True -> true
+      | _ -> false
+  in
+  *)
+(**
+  *   remove pc \in PC if bytes&&(PC\pc) -> pc
+  *)
+  let bytes_and_others_implies_pc bytes_lst pc =
+    match Stp.consult_stp bytes_lst pc with
       | Ternary.True -> true
       | _ -> false
   in
   let rec impl pc_lst pct_lst = match pc_lst,pct_lst with
     | pc::pc_lst' , pct::pct_lst' ->
         let pc_lst'',pct_lst'' = impl pc_lst' pct_lst' in
-          if bytes_implies_pc bytes pc then
-            pc::pc_lst'',pct::pct_lst''
-          else
+          (*if bytes_implies_pc bytes pc then*)
+          if bytes_and_others_implies_pc (bytes::pc_lst'') pc then
             pc_lst'',pct_lst''
+          else
+            pc::pc_lst'',pct::pct_lst''
     | [] , [] -> [],[]
     | _ -> failwith "Error in state__extract_path_condition"
   in
