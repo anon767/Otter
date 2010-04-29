@@ -571,6 +571,10 @@ let feature : featureDescr =
 			 Arg.Unit (fun () -> run_args.arg_use_conditional_exceptions <- true),
 			 " Use conditional exceptions when processing 'a conditional\n");
 
+			("--simplifyPathCondition",
+			 Arg.Unit (fun () -> run_args.arg_simplify_path_condition <- true),
+			 " Check if a newly added constraint implies any previous ones\n");
+
 			("--yaml",
 			 Arg.String readYamlFromFile,
 			 "<filename> File containing Yaml output\n");

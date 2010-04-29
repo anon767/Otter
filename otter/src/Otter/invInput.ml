@@ -285,9 +285,6 @@ let constrain_task state task : bytes (* constraints *) * state=
   match task with
     | Condition (c) ->
         let pc = constrain_task_condition state c in
-        (* let state = {state with path_condition=pc::state.path_condition; } in
-          state
-         *)
           (pc,state)
     | Creation (c) ->
         constrain_task_creation state c
@@ -347,7 +344,7 @@ let constrain state (fundec:Cil.fundec) objectMap : bytes * state =
 
   let (lst,state') = constrain_helper state fundec objectMap in
   let pc = List.fold_left bytes_and tru lst in
-  let state'' = {state' with path_condition = pc::state'.path_condition} in
+  let state'' = MemOp.state__add_path_condition state' pc false in
     (pc,state'')
 ;;
 

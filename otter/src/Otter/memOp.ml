@@ -325,10 +325,38 @@ let state__end_fcall state =
 
 let state__get_callContext state = List.hd state.callContexts;;
 
+(**
+  *  
+  *)
+let state__extract_path_condition state bytes = 
+  let bytes_implies_pc bytes pc =
+    match Stp.consult_stp [bytes] pc with
+      | Ternary.True -> true
+      | _ -> false
+  in
+  let rec impl pc_lst pct_lst = match pc_lst,pct_lst with
+    | pc::pc_lst' , pct::pct_lst' ->
+        let pc_lst'',pct_lst'' = impl pc_lst' pct_lst' in
+          if bytes_implies_pc bytes pc then
+            pc::pc_lst'',pct::pct_lst''
+          else
+            pc_lst'',pct_lst''
+    | [] , [] -> [],[]
+    | _ -> failwith "Error in state__extract_path_condition"
+  in
+    impl state.path_condition state.path_condition_tracked
+;;
+
 let state__add_path_condition state bytes tracked=
+  let path_condition,path_condition_tracked =
+    if Executeargs.run_args.Executeargs.arg_simplify_path_condition then
+      state__extract_path_condition state bytes
+    else
+      state.path_condition,state.path_condition_tracked
+  in
 	{ state with
-		path_condition = bytes::(state.path_condition);
-		path_condition_tracked = tracked::(state.path_condition_tracked);
+		path_condition = bytes::path_condition;
+		path_condition_tracked = tracked::path_condition_tracked;
 	}
 ;;
 
@@ -362,6 +390,10 @@ let state__trace state: string =
 		| Source (_,_,instr,_) -> Format.sprintf "%s/%s" str (To_string.location (Cil.get_instrLoc instr))
 		| NoReturn instr     -> Format.sprintf "%s/NoReturn@%s" str (To_string.location (Cil.get_instrLoc instr))
 	end "" state.callContexts
+;;
+
+let state__print_path_condition state : string = 
+  List.fold_left (fun str bytes -> Printf.sprintf "%s AND %s\n" str (To_string.bytes bytes)) "" state.path_condition
 ;;
 
 (* 
@@ -548,26 +580,33 @@ let rec state__eval state pc bytes =
 	(*
 	if not Executeargs.args.Executeargs.arg_print_queries then () else
 	Output.print_endline ("Is the following not equal to zero? \n"^(To_string.bytes bytes));*)
+  (*
+  Output.set_mode Output.MSG_REG;
+  Printf.printf "Path condition:\n%s%!" (state__print_path_condition state);
+   *)
+  let state,pc,bytes = 
+   if (Executeargs.run_args.Executeargs.arg_use_conditional_exceptions) then
+     (* Remove exceptions in bytes (warning: may make queries slow) *)
+     let guard,bytes = bytes__remove_exceptions bytes in
+     let guard_bytes = guard__to_bytes guard in
+     (state__add_path_condition state guard_bytes false , guard_bytes::pc , bytes) 
+       (* Potential problem: bytes are immutable, therefore the same conditional
+        * bytes will emit a guard each time this is called
+        *)
+   else
+     (state,pc,bytes)
+  in
+
   let nontrivial () = 
     Output.set_mode Output.MSG_REG;
     Output.print_endline "Ask STP...";
-    if (Executeargs.run_args.Executeargs.arg_use_conditional_exceptions) then
-      begin
-      (* Remove exceptions in bytes (warning: may make queries slow) *)
-      let guard,bytes = bytes__remove_exceptions bytes in
-      let guard_bytes = guard__to_bytes guard in
-      Printf.printf "Guard to Bytes: %s\n" (To_string.bytes guard_bytes);
-      let result = Stats.time "STP" (Stp.consult_stp (guard_bytes::pc)) bytes in
-        (* The following will crash some of the ounit tests *)
-        ({state with path_condition=guard_bytes::state.path_condition},result)
-      end
-    else
-      (state,Stats.time "STP" (Stp.consult_stp pc) bytes)
+    (state,Stats.time "STP" (Stp.consult_stp pc) bytes)
 
   in
 	let is_comparison op = match op with	
 		| OP_LT -> true
 		| OP_GT -> true
+
 		| OP_LE -> true
 		| OP_GE -> true
 		| OP_EQ -> true

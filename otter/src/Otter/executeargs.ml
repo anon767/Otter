@@ -83,6 +83,7 @@ type run_args =
 		mutable arg_calculate_dependencies : bool;
 		mutable arg_noinit_unreachable_globals : bool;
 		mutable arg_use_conditional_exceptions : bool;
+		mutable arg_simplify_path_condition : bool;
 		mutable arg_list_lines : bool;
 		mutable arg_list_blocks : bool;
 		mutable arg_list_edges : bool;
@@ -119,6 +120,7 @@ let run_args =
 		arg_calculate_dependencies = false;
       arg_noinit_unreachable_globals = false;
       arg_use_conditional_exceptions = false;
+      arg_simplify_path_condition = false;
 		arg_list_lines = false;
 		arg_list_blocks = false;
 		arg_list_edges = false;
