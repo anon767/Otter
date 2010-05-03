@@ -1045,73 +1045,73 @@ let at_merge_point job =
 
 (** The main loop
   *)
-let main_loop job =
+let main_loop job : job_completion list =
 
-	let rec main_loop completed job_pool =
+	let rec main_loop (completed: job_completion list) (jobs: Jobs.t) : job_completion list =
 		match !signalStringOpt with
 			| Some s ->
 				(* if we got a signal, stop and return the completed results *)
 				Output.set_mode Output.MSG_MUSTPRINT;
 				Output.print_endline s;
 				completed
-			| None ->
-				begin match job_pool with
-					| job::job_queue, merge_set when run_args.arg_merge_paths && at_merge_point job ->
-						(* job is at a merge point and merging is enabled: try to merge it *)
-						begin match merge_job job merge_set with
-							| Some (merge_set, truncated) ->
-								(* merge was successful: process the result and continue *)
-								process_result completed (job_queue, merge_set) truncated
-							| None ->
-								(* merge was unsuccessful: keep the job at the merge point in the merge set in case
-								 * later jobs can merge; this leads to the invariant that no jobs in the merge set
-								 * can merge with each other *)
-								main_loop completed (job_queue, JobSet.add job merge_set)
-						end
-					| job::job_queue, merge_set ->
-						(* job is not at a merge point or merging is disabled: step the job *)
-						process_result completed (job_queue, merge_set) (step_job job)
-					| [], merge_set when not (JobSet.is_empty merge_set) ->
-						(* job queue is empty: take a job out of the merge set and step it, since it cannot merge
-                         * with any other jobs in the merge set (the merge set invariant) *)
-						let job = JobSet.choose merge_set in
-						process_result completed ([], JobSet.remove job merge_set) (step_job job)
-					| [], _ ->
-						Output.set_mode Output.MSG_MUSTPRINT;
-						Output.print_endline "Done executing";
-						completed
-				end
+        | None ->
+            begin
+              if Jobs.has_next_runnable jobs then
+                begin
+                  let job,jobs' = Jobs.take_next_runnable jobs in
+                    if run_args.arg_merge_paths && at_merge_point job then
+                      (* job is at a merge point and merging is enabled: try to merge it *)
+                      begin match Jobs.merge jobs' job with
+                        | Some (truncated),jobs'' ->
+                            (* merge was successful: process the result and continue *)
+                            process_result completed jobs'' truncated
+                        | None, jobs''->
+                            (* merge was unsuccessful: keep the job at the merge point in the merge set in case
+                             * later jobs can merge; this leads to the invariant that no jobs in the merge set
+                             * can merge with each other *)
+                            main_loop completed jobs''
+                      end
+                    else
+                      (* job is not at a merge point or merging is disabled: step the job *)
+                      (* process_result completed (job_queue, merge_set) (step_job job) *)
+                      process_result completed jobs' (step_job job)
+                end
+              else if Jobs.has_next_mergable jobs then
+                (* job queue is empty: take a job out of the merge set and step it, since it cannot merge
+                 * with any other jobs in the merge set (the merge set invariant) *)
+                let job,jobs' = Jobs.take_next_mergable jobs in
+                  process_result completed jobs' (step_job job)
+              else
+                (
+                  Output.set_mode Output.MSG_MUSTPRINT;
+                  Output.print_endline "Done executing";
+                  completed
+                )
+            end
 
-	and output_completion_info completion =
-		     (* log some interesting errors *)
-		     begin match completion with
-			    | Types.Abandoned (msg, loc, { result_state=state; result_history=hist }) ->
-				   Output.set_mode Output.MSG_MUSTPRINT;
-				   Output.printf "Error \"%s\" occurs at %s\n%sAbandoning path\n"
-					  msg (To_string.location loc)
-					  (if Executeargs.print_args.arg_print_callstack then
-						 "Call stack:\n"^(To_string.callstack state.callContexts)
-					  else
-						 "");
-(*
-					  if run_args.arg_line_coverage then (
-						 Report.printPath state hist;
-						 Report.printLines hist.coveredLines
-					  )
-					  Output.set_mode Output.MSG_REG;
-					  Output.printf "Path condition: %s\n"
-						 (To_string.humanReadablePc state.path_condition hist.bytesToVars)
-*)
-			    | _ ->
-				   ()
-		     end
+   and output_completion_info completion =
+     (* log some interesting errors *)
+     begin match completion with
+       | Types.Abandoned (msg, loc, { result_state=state; result_history=hist }) ->
+           Output.set_mode Output.MSG_MUSTPRINT;
+           Output.printf "Error \"%s\" occurs at %s\n%sAbandoning path\n"
+             msg (To_string.location loc)
+             (if Executeargs.print_args.arg_print_callstack then
+                "Call stack:\n"^(To_string.callstack state.callContexts)
+              else
+                "");
+       | _ ->
+           ()
+     end
 
-	and process_result completed (job_queue, merge_set as job_pool) = function
+	and process_result completed jobs = function
      | Active job ->
-         main_loop completed (job::job_queue, merge_set)
+         main_loop completed (Jobs.add_runnable jobs job)
+
      | Fork (j1, j2) ->
          (* queue the true branch and continue the false branch *)  (* CCBSE *)
-         main_loop completed (j2::j1::job_queue, merge_set)
+         main_loop completed (Jobs.add_runnables jobs [j1;j2])
+
      | Big_Fork job_list -> 
          let rec process_job_list job_list =
            match job_list with
@@ -1135,10 +1135,12 @@ let main_loop job =
 							| Big_Fork l -> failwith "Unexpected nested Big_Fork."(*(process_completion_list l)@(process_completion_list t)*)
 							| Complete completion-> completion::(process_completion_list t)
 			in
-			main_loop ((process_completion_list job_list)@completed) ((process_job_list job_list)@job_queue, merge_set)
+			main_loop ((process_completion_list job_list)@completed) (Jobs.add_runnables jobs (process_job_list job_list))
+
      | Complete completion ->
 			(output_completion_info completion);
-			main_loop (completion::completed) job_pool
+			main_loop (completion::completed) jobs
 	in
-	main_loop [] (job::[], JobSet.empty)
+	main_loop [] (Jobs.add_runnable Jobs.empty job)
+
 
