@@ -1049,7 +1049,7 @@ let at_merge_point job =
 
 (** The main loop
   *)
-let main_loop job : job_completion list =
+let main_loop file job : job_completion list =
 
   let rec main_loop (completed: job_completion list) (jobs: Jobs.t) : job_completion list =
     match !signalStringOpt with
@@ -1152,7 +1152,7 @@ let main_loop job : job_completion list =
 			(output_completion_info completion);
 			main_loop (completion::completed) jobs
 	in
-  let jobs = Jobs.create () in
+  let jobs = Jobs.create file in
   let _ = Jobs.add_runnable jobs job in
 	main_loop [] jobs
 ;;

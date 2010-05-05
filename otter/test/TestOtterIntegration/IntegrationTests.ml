@@ -19,7 +19,7 @@ let test_file path =
         (* run the symbolic executor *)
         Executemain.prepare_file file;
         let job = Executemain.job_for_file file ["Integration"] in
-        let results = Driver.main_loop job in
+        let results = Driver.main_loop file job in
 
         (* count jobs that were abandoned *)
         let abandoned = List.fold_left begin fun abandoned result -> match result with

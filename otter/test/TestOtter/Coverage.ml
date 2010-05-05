@@ -29,7 +29,7 @@ let test_coverage content ?(label=content) tracked_fns test =
         (* prepare the file and run the symbolic executor *)
         Executemain.prepare_file file;
         let job = Executemain.job_for_file file ["Coverage"] in
-        let results = Driver.main_loop job in
+        let results = Driver.main_loop file job in
 
         (* figure out the coverage *)
         let (all_edges, all_blocks, all_lines) = List.fold_left begin fun (edges, blocks, lines) result ->

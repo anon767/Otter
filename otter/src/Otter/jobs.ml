@@ -1,31 +1,35 @@
+(**
+  * Job manager
+  * Uses a priority queue.
+  * Prioritization from module Prioritizer
+  *)
 open Cil
 open Types
 
-type 'a ranked = {
-  obj: 'a;
-  mutable rank: float;
-}
+(**
+  * Change this function to use a different prioritizer 
+  *)
+let the_prioritize = Prioritizer.prioritize ;;
 
+type 'a prioritized = {
+  obj: 'a;
+  mutable priority: float;
+}
 type t =
     {
       mutable current_job: job option;
-      mutable job_queue: job ranked PriorityQueue.t;
+      mutable job_queue: job prioritized PriorityQueue.t;
       mutable merge_set: JobSet.t;
+      prioritize: job -> float;
     }
 ;;
 
-let create () = 
+let create file = 
   {
     current_job = None;
-    job_queue = PriorityQueue.make (fun j1 j2 -> j1.rank -. j2.rank >= 0.0 );
+    job_queue = PriorityQueue.make (fun j1 j2 -> j1.priority >= j2.priority);
     merge_set = JobSet.empty;
-  }
-;;
-
-let ranking = ref 0.0;;
-let rank_job job =
-  { obj = job;
-    rank = (ranking:=(!ranking+.1.0);!ranking);
+    prioritize = the_prioritize;
   }
 ;;
 
@@ -38,7 +42,7 @@ let has_next_mergable jobs =
 ;;
 
 let add_runnable jobs job =
-  PriorityQueue.add jobs.job_queue (rank_job job)
+  PriorityQueue.add jobs.job_queue { obj=job; priority=jobs.prioritize job }
 ;;
 
 let add_runnables jobs joblist =

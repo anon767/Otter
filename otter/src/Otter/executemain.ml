@@ -390,7 +390,7 @@ let doExecute (f: file) =
     in
 
 	(* run the job *)
-	let results = Driver.main_loop job in
+	let results = Driver.main_loop f job in
 
 	(* Turn off the alarm and reset the signal handlers *)
 	ignore (Unix.alarm 0);
