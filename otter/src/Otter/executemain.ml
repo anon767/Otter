@@ -296,7 +296,10 @@ let job_for_function state fn argvs =
 	  stmt = List.hd fn.sallstmts;
 	  inTrackedFn = Utility.StringSet.mem fn.svar.vname run_args.arg_fns;
 	  mergePoints = StmtInfoSet.empty;
-	  jid = Utility.next_id Output.jidCounter }
+	  jid = Utility.next_id Output.jidCounter;
+      (* parent = None;
+       *)
+    }
 
 
 (* create a job that begins in the middle of a file at some entry function with some optional constraints *)

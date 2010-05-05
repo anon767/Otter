@@ -181,6 +181,7 @@ type job = {
 	inTrackedFn : bool;         (** Is stmt in a function in the original program (as opposed to in a library or system call)? *)
 	mergePoints : StmtInfoSet.t;     (** A list of potential merge points *)
 	jid : int; (** A unique identifier for the job *)
+    (* parent : job option; (** The parent that leads to this; None for the first job *) *)
 }
 
 type job_result = {

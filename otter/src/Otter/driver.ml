@@ -970,10 +970,14 @@ let exec_stmt job =
 																state = nextStateT;
 																stmt = nextStmtT;
 																exHist = nextExHist (Some nextStmtT) ~whichBranch:true;
+                                                                (*parent = Some job';
+                                                                 *)
 														 		jid = Utility.next_id Output.jidCounter; } in
 							let falseJob = { job' with
 																 state = nextStateF;
 																 stmt = nextStmtF;
+                                                                 (* parent = Some job';
+                                                                  *)
 																 exHist =  nextExHist (Some nextStmtF) ~whichBranch:false; } in
 							Output.set_mode Output.MSG_MUSTPRINT;
 							Output.printf "Branching on %s at %s. %s\nJob %d is the true branch and job %d is the false branch.\n\n"
@@ -1047,47 +1051,51 @@ let at_merge_point job =
   *)
 let main_loop job : job_completion list =
 
-	let rec main_loop (completed: job_completion list) (jobs: Jobs.t) : job_completion list =
-		match !signalStringOpt with
-			| Some s ->
-				(* if we got a signal, stop and return the completed results *)
-				Output.set_mode Output.MSG_MUSTPRINT;
-				Output.print_endline s;
-				completed
-        | None ->
-            begin
-              if Jobs.has_next_runnable jobs then
-                begin
-                  let job,jobs' = Jobs.take_next_runnable jobs in
-                    if run_args.arg_merge_paths && at_merge_point job then
-                      (* job is at a merge point and merging is enabled: try to merge it *)
-                      begin match Jobs.merge jobs' job with
-                        | Some (truncated),jobs'' ->
-                            (* merge was successful: process the result and continue *)
-                            process_result completed jobs'' truncated
-                        | None, jobs''->
-                            (* merge was unsuccessful: keep the job at the merge point in the merge set in case
-                             * later jobs can merge; this leads to the invariant that no jobs in the merge set
-                             * can merge with each other *)
-                            main_loop completed jobs''
-                      end
-                    else
+  let rec main_loop (completed: job_completion list) (jobs: Jobs.t) : job_completion list =
+    match !signalStringOpt with
+      | Some s ->
+          (* if we got a signal, stop and return the completed results *)
+          Output.set_mode Output.MSG_MUSTPRINT;
+          Output.print_endline s;
+          completed
+      | None ->
+          begin
+            if Jobs.has_next_runnable jobs then
+              begin
+                let job = Jobs.take_next_runnable jobs in
+                  if run_args.arg_merge_paths && at_merge_point job then
+                    (* job is at a merge point and merging is enabled: try to merge it *)
+                    begin match Jobs.merge jobs job with
+                      | Some (truncated) ->
+                          (* merge was successful: process the result and continue *)
+                          process_result completed jobs truncated
+                      | None ->
+                          (* merge was unsuccessful: keep the job at the merge point in the merge set in case
+                           * later jobs can merge; this leads to the invariant that no jobs in the merge set
+                           * can merge with each other *)
+                          main_loop completed jobs
+                    end
+                  else
                       (* job is not at a merge point or merging is disabled: step the job *)
                       (* process_result completed (job_queue, merge_set) (step_job job) *)
-                      process_result completed jobs' (step_job job)
-                end
-              else if Jobs.has_next_mergable jobs then
+                      let _ = Jobs.running jobs job in (* set current job *)
+                      process_result completed jobs (step_job job)
+              end
+            else if Jobs.has_next_mergable jobs then
+              begin
                 (* job queue is empty: take a job out of the merge set and step it, since it cannot merge
                  * with any other jobs in the merge set (the merge set invariant) *)
-                let job,jobs' = Jobs.take_next_mergable jobs in
-                  process_result completed jobs' (step_job job)
-              else
-                (
-                  Output.set_mode Output.MSG_MUSTPRINT;
-                  Output.print_endline "Done executing";
-                  completed
-                )
-            end
+                let job = Jobs.take_next_mergable jobs in
+                let _ = Jobs.running jobs job in (* set current job *)
+                  process_result completed jobs (step_job job)
+              end
+            else
+              begin
+                Output.set_mode Output.MSG_MUSTPRINT;
+                Output.print_endline "Done executing";
+                completed
+              end
+          end
 
    and output_completion_info completion =
      (* log some interesting errors *)
@@ -1106,11 +1114,13 @@ let main_loop job : job_completion list =
 
 	and process_result completed jobs = function
      | Active job ->
-         main_loop completed (Jobs.add_runnable jobs job)
+         Jobs.add_runnable jobs job;
+         main_loop completed jobs 
 
      | Fork (j1, j2) ->
          (* queue the true branch and continue the false branch *)  (* CCBSE *)
-         main_loop completed (Jobs.add_runnables jobs [j1;j2])
+         Jobs.add_runnables jobs [j1;j2];
+         main_loop completed jobs
 
      | Big_Fork job_list -> 
          let rec process_job_list job_list =
@@ -1135,12 +1145,16 @@ let main_loop job : job_completion list =
 							| Big_Fork l -> failwith "Unexpected nested Big_Fork."(*(process_completion_list l)@(process_completion_list t)*)
 							| Complete completion-> completion::(process_completion_list t)
 			in
-			main_loop ((process_completion_list job_list)@completed) (Jobs.add_runnables jobs (process_job_list job_list))
+            let _ = Jobs.add_runnables jobs (process_job_list job_list) in
+			main_loop ((process_completion_list job_list)@completed) jobs
 
      | Complete completion ->
 			(output_completion_info completion);
 			main_loop (completion::completed) jobs
 	in
-	main_loop [] (Jobs.add_runnable Jobs.empty job)
+  let jobs = Jobs.create () in
+  let _ = Jobs.add_runnable jobs job in
+	main_loop [] jobs
+;;
 
 

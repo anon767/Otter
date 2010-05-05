@@ -1,22 +1,36 @@
 open Cil
 open Types
 
+type 'a ranked = {
+  obj: 'a;
+  mutable rank: float;
+}
+
 type t =
     {
-      job_queue: job list;
-      merge_set: JobSet.t;
+      mutable current_job: job option;
+      mutable job_queue: job ranked PriorityQueue.t;
+      mutable merge_set: JobSet.t;
     }
 ;;
 
-let empty = 
+let create () = 
   {
-    job_queue = [];
+    current_job = None;
+    job_queue = PriorityQueue.make (fun j1 j2 -> j1.rank -. j2.rank >= 0.0 );
     merge_set = JobSet.empty;
   }
 ;;
 
+let ranking = ref 0.0;;
+let rank_job job =
+  { obj = job;
+    rank = (ranking:=(!ranking+.1.0);!ranking);
+  }
+;;
+
 let has_next_runnable jobs =
-   List.length jobs.job_queue > 0
+   PriorityQueue.length jobs.job_queue > 0
 ;;
 
 let has_next_mergable jobs =
@@ -24,30 +38,31 @@ let has_next_mergable jobs =
 ;;
 
 let add_runnable jobs job =
-  {jobs with
-       job_queue = job::(jobs.job_queue);
-  }
+  PriorityQueue.add jobs.job_queue (rank_job job)
 ;;
 
 let add_runnables jobs joblist =
-  List.fold_left add_runnable jobs joblist
+  List.iter (fun job -> add_runnable jobs job) joblist
 ;;
 
 let add_mergable jobs job =
-   {jobs with merge_set=JobSet.add job jobs.merge_set;}
+   jobs.merge_set <- JobSet.add job jobs.merge_set
 ;;
 
 let take_next_runnable jobs =
-  match jobs.job_queue with
-    | [] -> failwith "Jobs: no more runnable jobs"
-    | j::js -> j,{jobs with job_queue=js;}
+  try 
+    let first = PriorityQueue.first jobs.job_queue in
+      PriorityQueue.remove_first jobs.job_queue;
+      first.obj
+  with _ -> failwith "Jobs: no more runnable jobs"
 ;;
 
 let take_next_mergable jobs =
   try
     let j = JobSet.choose jobs.merge_set in
     let js = JobSet.remove j jobs.merge_set in
-      j,{jobs with merge_set=js;}
+      jobs.merge_set <- js;
+      j
   with e -> failwith "Jobs: no more mergable jobs"
 ;;
 
@@ -55,19 +70,25 @@ let merge jobs job =
   let result = PathMerging.merge_job job jobs.merge_set in
     match result with
       | Some (merge_set,truncated) ->
-          (Some truncated),{jobs with merge_set=merge_set;}
+          jobs.merge_set <- merge_set;
+          (Some truncated)
       | None ->
-          None, add_mergable jobs job
+          add_mergable jobs job;
+          None
+;;
+
+let running jobs job =
+  jobs.current_job <- Some job
 ;;
 
 
 (*
 let bias guide j1 j2 =
   let position j = 
-    if j.instrList = [] then 
+    if j.instrPriorityQueue = [] then 
       To_string.stmt j.stmt
     else
-      To_string.instr (List.hd j.instrList)
+      To_string.instr (PriorityQueue.hd j.instrPriorityQueue)
   in
   let rec get_choice () =
     Output.printf "Enter choice (1/2):\n%!";
