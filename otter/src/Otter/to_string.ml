@@ -5,7 +5,8 @@ open Bytes
 open Types
 
 let strlen = 1000;;
-let donotprint() = not (Output.need_print (!Output.current_msg_type));;
+let force_print = ref false;;
+let donotprint() = (not (!force_print)) && (not (Output.need_print (!Output.current_msg_type)));;
 
 (** Print out a bytearray as though it were a string, stopping at the
 		first (concrete) null byte. *)

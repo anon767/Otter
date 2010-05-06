@@ -390,7 +390,7 @@ let doExecute (f: file) =
     in
 
 	(* run the job *)
-	let results = Driver.main_loop f job in
+	let results = Driver.main_loop job in
 
 	(* Turn off the alarm and reset the signal handlers *)
 	ignore (Unix.alarm 0);
@@ -463,6 +463,10 @@ let feature : featureDescr =
       ("--noboundsChecking",
       Arg.Unit (fun () -> run_args.arg_bounds_checking <- false),
       " Disable bounds checking on memory accesses\n");
+
+      ("--cfgPruning",
+      Arg.Unit (fun () -> run_args.arg_cfg_pruning <- true),
+      " Enable CFG pruning\n");
 
 			(**
 					Printing options

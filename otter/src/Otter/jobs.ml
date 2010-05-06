@@ -24,7 +24,7 @@ type t =
     }
 ;;
 
-let create file = 
+let create () = 
   {
     current_job = None;
     job_queue = PriorityQueue.make (fun j1 j2 -> j1.priority >= j2.priority);

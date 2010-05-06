@@ -22,7 +22,7 @@ let test_bounds content ?(label=content) ?(mergePaths=false) testFn =
       (* prepare the file and run the symbolic executor *)
       Executemain.prepare_file file;
       let job = Executemain.job_for_file file ["BoundsChecking"] in
-      let results = Driver.main_loop file job in
+      let results = Driver.main_loop job in
 
 			(* Turn off path merging, in case the test asked for it to be turned on *)
 			Executeargs.run_args.Executeargs.arg_merge_paths <- false;
