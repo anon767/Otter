@@ -42,7 +42,11 @@ let has_next_mergable jobs =
 ;;
 
 let add_runnable jobs job =
-  PriorityQueue.add jobs.job_queue { obj=job; priority=jobs.prioritize job }
+  let priority = jobs.prioritize job in
+    if priority = neg_infinity then
+      Output.printf "Warning: job %d not continued\n" job.jid
+    else
+      PriorityQueue.add jobs.job_queue { obj=job; priority=priority }
 ;;
 
 let add_runnables jobs joblist =
