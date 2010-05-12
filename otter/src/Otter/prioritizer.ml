@@ -38,10 +38,25 @@ struct
           make_instr_stmt_Instr (job.instrList,List.hd job.stmt.preds)
       | [] -> make_instr_stmt_Stmt (job.stmt)
   ;;
-  let print_instr_stmt instr_stmt =
+  let print_instr_stmt ?(obj=None) instr_stmt =
+    let location_special loc = 
+      let v = if loc.line > 0 then loc.line else -(abs ((Hashtbl.hash obj) mod 256))
+      in
+        Printf.sprintf "%0.3d" v
+    in
+    let s = 
+        match instr_stmt with
+          | Instr ([],stmt)     -> Printf.sprintf "%s(%s,%s)" (location_special (Cil.get_stmtLoc stmt.skind)) "[]" (To_string.stmtkind stmt.skind)
+          | Instr (instrs,stmt) -> Printf.sprintf "%s(%s,%s)" (location_special (Cil.get_instrLoc (List.hd instrs))) "instrs" (To_string.stmtkind stmt.skind)
+          | Stmt (stmt)         -> Printf.sprintf "%s(%s,%s)" (location_special (Cil.get_stmtLoc stmt.skind)) "stmt" (To_string.stmtkind stmt.skind)
+        in 
+    let _ =
     match instr_stmt with
-      | Instr (instrs,stmt) -> "(Instr:"^(List.fold_right (fun instr str -> (To_string.instr instr)^"::"^str) instrs "[]" )^","^(To_string.stmt stmt)^")"
+      | Instr (instrs,stmt) -> 
+          "(Instr:"^(List.fold_right (fun instr str -> (To_string.instr instr)^"::"^str) instrs "[]" )^","^(To_string.stmt stmt)^")"
       | Stmt (stmt) -> "(Stmt:"^(To_string.stmt stmt)^")"
+    in
+      s
   ;;
 end;;
 
@@ -59,20 +74,33 @@ type graph_node =
 ;;
 
 type graph = (instr_stmt,graph_node) Hashtbl.t ;;
-let print_node node =
-  let s = Printf.sprintf "Node: %s\n" (print_instr_stmt node.obj) in
-    List.fold_left 
+let print_node node = 
+  let s = Printf.sprintf "Node: \x1b[34m%s\x1b[m Color: \x1b[31m%s\x1b[m\n" (print_instr_stmt ~obj:(Some node) node.obj) (if node.color = max_int then "inf" else string_of_int node.color)
+  in
+  let s = List.fold_left 
       begin
         fun str next -> 
-          let s = Printf.sprintf "\tNext: %s\n" (print_instr_stmt next.obj) in
+          let s = Printf.sprintf "\tNext: %s\n" (print_instr_stmt ~obj:(Some next) next.obj) in
             str^s
       end
       s node.nexts
+  in
+  let s = List.fold_left 
+      begin
+        fun str next -> 
+          let s = Printf.sprintf "\tPrev: %s\n" (print_instr_stmt ~obj:(Some next) next.obj) in
+            str^s
+      end
+      s node.prevs
+  in
+    s
 ;;
 let print_graph graph =
   To_string.force_print := true;
-  Hashtbl.iter (fun k v -> Printf.printf "%s" (print_node v)) graph;
-  To_string.force_print := true;
+  let lst = Hashtbl.fold (fun k v lst -> (print_node v)::lst) graph [] in
+  let lst = List.sort String.compare lst in
+    List.iter (fun s -> Printf.printf "%s" s) lst;
+  To_string.force_print := false;
   ()
 ;;
 let graph__set_color graph color =
@@ -107,9 +135,26 @@ let make_graph fundec =
                 | Cil.Instr (instrs) -> 
                     let succ = make_instr_stmt_Instr (instrs,stmt) in
                       explore_succ graph node succ
-                | Cil.Loop _ ->
-                    assert(List.length stmt.succs = 1);
+                | Cil.Switch _ 
+                | Cil.Break _ 
+                | Cil.Continue _ -> failwith "Cil programs after prepareCFG should not contain switches, breaks or continues"
+                | Cil.Goto (stmtref,_) ->
+                    (*
+                    Output.set_mode Output.MSG_MUSTPRINT;
+                    let succ = List.hd stmt.succs in
+                    let goto = !stmtref in
+                    Output.printf "I see a goto stmt: its succ is %s at loc %s with id %d \n%!" (To_string.stmt goto) (To_string.location (Cil.get_stmtLoc (goto).skind)) goto.sid;
+                    Output.printf "I see a goto stmt: its succ is %s at loc %s with id %d \n%!" (To_string.stmt succ) (To_string.location (Cil.get_stmtLoc (succ).skind)) succ.sid;
+                     *)
+                    assert( !stmtref == List.hd stmt.succs);
                     List.iter (explore_succ graph node) (List.map make_instr_stmt_Stmt stmt.succs)
+                | Cil.Block (block)
+                | Cil.Loop (block,_,_,_) ->
+                    (* From driver.ml, it seems that Loop's succs is bogus.
+                     * We have to look at block.bstmts
+                     *)
+				    let nextStmt = List.hd block.bstmts in
+                    explore_succ graph node (make_instr_stmt_Stmt nextStmt)
                 | _ -> 
                     List.iter (explore_succ graph node) (List.map make_instr_stmt_Stmt stmt.succs)
               end
@@ -129,7 +174,7 @@ let make_graph fundec =
     Hashtbl.iter
       begin
         fun _ node ->
-          node.color <- 0;
+          node.color <- max_int;
           List.iter 
             begin
               fun node' ->
@@ -153,7 +198,7 @@ let graph__get_nodes_satisfying graph predicate =
     end
     graph []
 ;;
-
+(*
 let backward_reachable graph src tar =
   let rec dfs tar =
     if tar == src then true
@@ -170,24 +215,42 @@ let backward_reachable graph src tar =
     graph__set_color graph 0;
     dfs tar 
 ;;
+ *)
 let backward_distance graph src tar =
   let rec bfs tars =
-    let tars',srcdist = List.fold_left 
-      begin
-        fun (lst,dist) tar ->
+    let tars' = 
+      List.fold_left 
+      (
+        fun (lst) tar ->
           List.fold_left
-            begin
-              fun (lst,dist) prev ->
-                if dist < max_int then ([],dist) else
-                let _ = if prev.color = max_int then
-                  prev.color <- tar.color + 1
-                else () in
-                  if prev == src then ([],src.color) else (prev::lst,dist)
-            end
-            (lst,dist) tar.prevs
-      end
-      ([],max_int) tars
+            (
+              (* prev is one of the previous nodes of tar
+               * see if we want to explore prev
+               *)
+              fun (lst) prev ->
+                let rec impl lst prev = 
+                  if prev.color < max_int (* explored *) then (lst) else
+                  let prev_outdeg = List.length prev.nexts in
+                  if prev_outdeg = 1 then
+                    ( 
+                      prev.color <- tar.color;
+                      (* if prev==src then ([],src.color) else impl (List.hd prev.nexts) *)
+                      if List.length prev.prevs = 0 then (lst)
+                      else List.fold_left impl lst prev.prevs
+                    )
+                  else (* if prev_outdeg > 1 then *)
+                    (
+                      prev.color <- tar.color + 1;
+                      prev::lst
+                    )
+                in
+                  impl lst prev
+            )
+            (lst) tar.prevs
+      )
+      ([]) tars
     in
+    let srcdist = src.color in
       if srcdist < max_int then srcdist 
       else if tars' = [] then max_int 
       else bfs tars'
@@ -196,6 +259,7 @@ let backward_distance graph src tar =
     tar.color <- 0;
     bfs [tar] 
 ;;
+
 end;;
 
 open Graph
@@ -234,12 +298,15 @@ let prioritize job =
         else 
           neg_infinity
      *)
+      graph__set_color graph max_int;
       let backward_distance_from_targets = List.fold_left
                                              (fun d tar -> 
                                                 let d' = backward_distance graph source tar in
                                                   min d d'
                                              )
                                              max_int targets
+      (* in let _ = if Scanf.scanf "%c" (fun x->x) = 't' then print_graph graph else ()
+       *)
       in -. (float_of_int backward_distance_from_targets)
     end
   else 

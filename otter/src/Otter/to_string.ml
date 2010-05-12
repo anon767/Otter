@@ -68,6 +68,22 @@ stmt s =
 		| _ ->	Pretty.sprint strlen (Cil.d_stmt () s)
 and
 
+stmtkind skind =
+  match skind with
+    | Cil.Instr _ -> "instr"
+    | Cil.Return _ -> "return"
+    | Cil.Goto _ -> "goto"
+    | Cil.Break _ -> "break"
+    | Cil.Continue _ -> "continue"
+    | Cil.If _ -> "if"
+    | Cil.Switch  _ -> "switch"
+    | Cil.Loop  _ -> "loop"
+    | Cil.Block  _ -> "block"
+    | Cil.TryFinally  _ -> "tryfinally"
+    | Cil.TryExcept  _ -> "tryexcept"
+
+and
+
 instr i = 
   if donotprint() then "" else
 	try
