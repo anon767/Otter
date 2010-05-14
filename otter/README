@@ -52,7 +52,7 @@ Quick-start Guide
             directory src/Otter
             set socket debugsocket
             set loadingmode manual
-            run
+            step 0
 
     3. Start Otter in debug mode:
 
@@ -196,12 +196,11 @@ Whereas references to modules in other directories must be qualified:
 New module packs may also be created by following the above guidelines.
 
 
-Debugging Otter using `ocamldebug`
-==================================
+Debugging Otter using the Ocaml debugger
+========================================
 
-Since Otter is typically launched using the `otter.pl` wrapper script, it takes
-few steps to take to debug Otter using the Ocaml debugger. First, build a debug
-version of Otter:
+It takes a few steps to use the Ocaml debugger to debug Otter when using the
+`otter.pl` wrapper script. First, build a debug version of Otter:
 
     make debug
 
@@ -209,14 +208,14 @@ Then, start the Ocaml debugger, giving it the bytecode binary of Otter:
 
     ocamldebug _product/runotter.d.byte
 
-Before debugging, it's useful to provide the debugger a list of directories
-(e.g., `src/Otter`) to find source code files, by giving the following command
+Before debugging, it's useful to provide the debugger with a list of directories
+to find source code files (e.g., `src/Otter`), by typing the following command
 to the debugger:
 
     directory src/Otter [... list of other directories ...]
 
-To allow Otter to be started separately using the `otter.pl` script, set up set
-up the debugger in remote debugging mode with the commands: 
+To allow Otter to be started separately using the `otter.pl` script, set up the
+debugger in remote debugging mode with the commands: 
 
     set socket <debug socket>
     set loadingmode manual
