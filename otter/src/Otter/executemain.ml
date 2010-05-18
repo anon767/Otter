@@ -390,7 +390,18 @@ let doExecute (f: file) =
     in
 
 	(* run the job *)
-	let results = Driver.main_loop job in
+    let results = 
+      if Executeargs.run_args.arg_callchain_backward then
+        (
+          let toplevel_func =
+            try Function.from_name_in_file "main" f
+            with Not_found -> failwith "No main function found!"
+          in
+            Driver.callchain_bacward_main_loop job (Cilutility.make_callergraph f) toplevel_func
+        )
+      else
+        Driver.main_loop job 
+    in
 
 	(* Turn off the alarm and reset the signal handlers *)
 	ignore (Unix.alarm 0);
@@ -426,16 +437,13 @@ let doExecute (f: file) =
    
     Output.printf "Hash-consing: hits=%d misses=%d\n" (!hash_consing_bytes_hits) (!hash_consing_bytes_misses);
     Output.printf "Bytes eval caching: hits=%d misses=%d\n\n" (!MemOp.bytes_eval_cache_hits) (!MemOp.bytes_eval_cache_misses);
-    (*
-    Hashtbl.iter (fun a b -> print_endline (To_string.bytes b)) Types.hash_consing_bytes_tbl; 
-     *)
 
   begin
     if Executeargs.run_args.arg_examfn = "" then () else
-      let print_record r = Printf.printf "#true:%d\n#false:%d\n#unknown:%d\n" r.numTrue r.numFalse r.numUnknown in
-        Printf.printf "pc -> ct:\n";
+      let print_record r = Output.printf "#true:%d\n#false:%d\n#unknown:%d\n" r.numTrue r.numFalse r.numUnknown in
+        Output.printf "pc -> ct:\n";
         print_record (!InvInput.pc2ct);
-        Printf.printf "ct -> pc:\n";
+        Output.printf "ct -> pc:\n";
         print_record (!InvInput.ct2pc);
         ()
   end;
@@ -467,6 +475,10 @@ let feature : featureDescr =
       ("--cfgPruning",
       Arg.Unit (fun () -> run_args.arg_cfg_pruning <- true),
       " Enable CFG pruning\n");
+
+      ("--callchainBackward",
+      Arg.Unit (fun () -> run_args.arg_cfg_pruning <- true;run_args.arg_callchain_backward <- true),
+      " Enable call-chain backward symbolic execution (will enable CFG pruning)\n");
 
 			(**
 					Printing options

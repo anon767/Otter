@@ -118,7 +118,6 @@ let computeReachableCode file =
       let vis = new getCallerVisitor in
       let fn = List.hd queue in
       let queue = List.tl queue in
-      (*  Printf.printf "Exploring function %s\n" (To_string.fundec fn); *)
       let fnMap = (!reachable_functions) in
         if FundecMap.mem fn fnMap then computeReachableCodeThroughFunCall queue else
         (

@@ -49,12 +49,7 @@ let with_aspect (pointcut, advice) fn =
         Hashtbl.remove aspect_tbl pointcut;
         res
 
-let from_name_in_file vname file =
-	let rec search = function
-		| GFun (fundec, _)::_ when fundec.svar.vname = vname -> fundec
-		| _::t -> search t
-		| [] -> raise Not_found
-	in search file.globals
+let from_name_in_file = Cilutility.get_fundec;;
 
 let from_varinfo state varinfo args =
 	begin match varinfo.vname with

@@ -99,7 +99,7 @@ let print_graph graph =
   To_string.force_print := true;
   let lst = Hashtbl.fold (fun k v lst -> (print_node v)::lst) graph [] in
   let lst = List.sort String.compare lst in
-    List.iter (fun s -> Printf.printf "%s" s) lst;
+    List.iter (fun s -> Output.printf "%s" s) lst;
   To_string.force_print := false;
   ()
 ;;
@@ -139,13 +139,6 @@ let make_graph fundec =
                 | Cil.Break _ 
                 | Cil.Continue _ -> failwith "Cil programs after prepareCFG should not contain switches, breaks or continues"
                 | Cil.Goto (stmtref,_) ->
-                    (*
-                    Output.set_mode Output.MSG_MUSTPRINT;
-                    let succ = List.hd stmt.succs in
-                    let goto = !stmtref in
-                    Output.printf "I see a goto stmt: its succ is %s at loc %s with id %d \n%!" (To_string.stmt goto) (To_string.location (Cil.get_stmtLoc (goto).skind)) goto.sid;
-                    Output.printf "I see a goto stmt: its succ is %s at loc %s with id %d \n%!" (To_string.stmt succ) (To_string.location (Cil.get_stmtLoc (succ).skind)) succ.sid;
-                     *)
                     assert( !stmtref == List.hd stmt.succs);
                     List.iter (explore_succ graph node) (List.map make_instr_stmt_Stmt stmt.succs)
                 | Cil.Block (block)

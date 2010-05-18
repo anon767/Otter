@@ -595,10 +595,6 @@ let rec state__eval state pc bytes =
 	(*
 	if not Executeargs.args.Executeargs.arg_print_queries then () else
 	Output.print_endline ("Is the following not equal to zero? \n"^(To_string.bytes bytes));*)
-  (*
-  Output.set_mode Output.MSG_REG;
-  Printf.printf "Path condition:\n%s%!" (state__print_path_condition state);
-   *)
   let state,pc,bytes = 
    if (Executeargs.run_args.Executeargs.arg_use_conditional_exceptions) then
      (* Remove exceptions in bytes (warning: may make queries slow) *)

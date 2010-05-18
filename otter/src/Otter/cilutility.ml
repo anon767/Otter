@@ -94,3 +94,65 @@ let rec isConstType typ =
    | TArray(t,_,a) 
    | TPtr(t, a) -> isConstType t
 
+;;
+
+
+let get_fundec vname file =
+	let rec search = function
+		| GFun (fundec, _)::_ when fundec.svar.vname = vname -> fundec
+		| _::t -> search t
+		| [] -> failwith (Printf.sprintf "Function %s not found\n" vname)
+	in search file.globals
+;;
+
+let make_callgraph file : Cil.fundec list FundecMap.t =
+  let get_callees fundec =
+    List.fold_left 
+      begin
+        fun lst stmt -> 
+          match stmt.skind with
+            | Instr (instrs) -> 
+                List.fold_left 
+                  begin
+                    fun lst instr -> 
+                      match instr with
+                        | Call (_,Lval(Var(varinfo),NoOffset),_,_) -> 
+                            (try (get_fundec varinfo.vname file)::lst with Failure _ -> lst)
+                        | _ -> lst
+                  end
+                  lst instrs
+            | _ -> lst
+      end
+      [] fundec.sallstmts
+  in
+  List.fold_left 
+    begin
+      fun cg -> function
+        | GFun(fundec,_) -> FundecMap.add fundec (get_callees fundec) cg
+        | _ -> cg
+    end
+    (FundecMap.empty) file.globals
+;;
+
+let make_callergraph file : Cil.fundec list FundecMap.t =
+  let callgraph = make_callgraph file in
+    FundecMap.fold
+      begin
+        fun caller callees cg ->
+          List.fold_left
+            begin
+              fun cg callee ->
+                let callers = if FundecMap.mem callee cg then FundecMap.find callee cg else [] in
+                  FundecMap.add callee (caller::callers) cg
+            end
+            cg callees
+      end
+      callgraph FundecMap.empty
+;;
+
+let get_callers callergraph func =
+  try 
+    FundecMap.find func callergraph
+  with Not_found -> []
+;;
+

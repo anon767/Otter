@@ -1014,8 +1014,11 @@ let printJob (state,stmt) =
 
 let setRunningJob job =
 	if !Output.runningJobId <> job.jid then (
+      if not Executeargs.run_args.arg_cfg_pruning then
+        (
 		Output.set_mode Output.MSG_REG;
-		Output.print_endline "***** Changing running job *****";
+		Output.print_endline "***** Changing running job *****"
+        );
 		Output.runningJobId := job.jid;
 	);
 	Output.runningJobDepth := (List.length job.state.path_condition)
@@ -1028,11 +1031,12 @@ let setRunningJob job =
 let step_job job =
 	setRunningJob job;
 	try
+        (* let _ = Output.printf "Step into Job %d\n%!" job.jid in *)
 		let result = match job.instrList with
 			| [] -> exec_stmt job
 			| _ -> exec_instr job
 		in
-		result
+          result
 	with Failure msg ->
 		if run_args.arg_failfast then failwith msg;
 		let result = { result_state = job.state; result_history = job.exHist } in
@@ -1049,7 +1053,9 @@ let at_merge_point job =
 
 (** The main loop
   *)
-let main_loop job : job_completion list =
+(* TODO: change it to allow partial execution (stop when a failure exists) *)
+(* TODO: look at targets *)
+let main_loop ?targets:(t=[]) job : job_completion list =
 
   let rec main_loop (completed: job_completion list) (jobs: Jobs.t) : job_completion list =
     match !signalStringOpt with
@@ -1112,7 +1118,8 @@ let main_loop job : job_completion list =
            ()
      end
 
-	and process_result completed jobs = function
+	and process_result completed jobs job = 
+      match job with
      | Active job ->
          Jobs.add_runnable jobs job;
          main_loop completed jobs 
@@ -1155,6 +1162,72 @@ let main_loop job : job_completion list =
   let jobs = Jobs.create () in
   let _ = Jobs.add_runnable jobs job in
 	main_loop [] jobs
+;;
+
+type target = {
+  func: Cil.fundec;
+  entry_state: state;
+  failing_condition: bytes;
+}
+
+let bytes__binop op b1 b2 =
+  op [ (b1,Cil.intType); (b2,Cil.intType) ]
+;;
+
+let bytes__lor b1 b2 =
+  bytes__binop Operation.logor b1 b2
+;;
+
+let bytes__land b1 b2 =
+  bytes__binop Operation.logand b1 b2
+;;
+
+
+
+let callchain_bacward_main_loop job callergraph toplevel_func : job_completion list =
+  let get_failing_condition result = 
+    List.fold_left 
+      ( fun b job_completion ->
+          match job_completion with
+            | Abandoned (_,_,job_result) ->
+                let this_fc = List.fold_left bytes__land Bytes.bytes__one job_result.result_state.path_condition in
+                  bytes__lor b this_fc 
+            | _ -> b
+      )
+      Bytes.bytes__zero result
+  in
+
+  (* The implementation of main loop *)
+  let rec callchain_bacward_main_loop job targets =
+    (* Assume we start at f *)
+    let f = List.hd job.state.callstack in
+    (* Run forward SE based on the targets *)
+    let result = main_loop ~targets:targets job in (* TODO: make main_loop partial *)
+    (* result is a (may not be completed) list of finished jobs.
+     * A job is either successful, if no assertion failure, or unsuccessful.
+     *)
+    (* Get a failing condition *)
+    let failing_condition = get_failing_condition result in
+      if f == toplevel_func then 
+        (* If f is main(), we are done *)
+        result (* TODO *)
+      else
+        let new_target = {
+          func = f;
+          entry_state = job.state;
+          failing_condition = failing_condition;
+        } in
+        let callers = Cilutility.get_callers callergraph f in
+        (* for each caller f' of f, do callchain_bacward_main_loop job' f::targets where job' is the job for running f' *)
+          List.fold_left 
+          (
+            fun lst caller -> 
+              let _ = callchain_bacward_main_loop job (new_target::targets) in
+              lst
+          ) 
+          [] callers
+  in
+    callchain_bacward_main_loop job []
 ;;
 
 

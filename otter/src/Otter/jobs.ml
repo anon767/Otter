@@ -43,10 +43,8 @@ let has_next_mergable jobs =
 
 let add_runnable jobs job =
   let priority = jobs.prioritize job in
-    if priority = neg_infinity then
-      Output.printf "Warning: job %d not continued\n" job.jid
-    else
-      PriorityQueue.add jobs.job_queue { obj=job; priority=priority }
+    (* Output.printf "Add Job %d with priority %0.1f\n%!" job.jid priority; *)
+    PriorityQueue.add jobs.job_queue { obj=job; priority=priority }
 ;;
 
 let add_runnables jobs joblist =
@@ -61,6 +59,7 @@ let take_next_runnable jobs =
   try 
     let first = PriorityQueue.first jobs.job_queue in
       PriorityQueue.remove_first jobs.job_queue;
+      (* Output.printf "Take Job %d with priority %0.1f\n%!" first.obj.jid first.priority; *)
       first.obj
   with _ -> failwith "Jobs: no more runnable jobs"
 ;;
@@ -90,26 +89,3 @@ let running jobs job =
 ;;
 
 
-(*
-let bias guide j1 j2 =
-  let position j = 
-    if j.instrPriorityQueue = [] then 
-      To_string.stmt j.stmt
-    else
-      To_string.instr (PriorityQueue.hd j.instrPriorityQueue)
-  in
-  let rec get_choice () =
-    Output.printf "Enter choice (1/2):\n%!";
-    try
-      Scanf.scanf "%d\n" (fun i->i)
-    with e -> get_choice ()
-  in
-    Output.printf "Position of j1: %s\n%!" (position j1);
-    Output.printf "Position of j2: %s\n%!" (position j2);
-  let choice = get_choice () in
-    if choice = 1 then 
-      j1,j2
-    else
-      j2,j1
-;;
- *)

@@ -60,8 +60,8 @@ let rec print_list print list delim =
 	String.concat delim (List.map print list)
 ;;
 
-let pause () =
-	Scanf.scanf "%c" (fun x->())
+let getchar () =
+	Scanf.scanf "%c" (fun x->x)
 ;;	
 
 

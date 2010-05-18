@@ -374,22 +374,22 @@ let examine state fundec =
   let ct,_ = constrain state fundec (!global_objectMap) in
   let pc = state.path_condition in
     begin
-      Printf.printf "state |- pc -> ct: ";
+      Output.printf "state |- pc -> ct: ";
       let _,truth = MemOp.state__eval state pc ct in
         incr_record pc2ct truth;
         match truth with
-          | Ternary.True -> Printf.printf "True\n"
-          | Ternary.False -> Printf.printf "False\n"
-          | _ -> Printf.printf "Unknown\n"
+          | Ternary.True -> Output.printf "True\n"
+          | Ternary.False -> Output.printf "False\n"
+          | _ -> Output.printf "Unknown\n"
     end;
     begin
-      Printf.printf "state |- ct -> pc: ";
+      Output.printf "state |- ct -> pc: ";
       let _,truth = MemOp.state__eval state [ct] (List.fold_left bytes_and tru pc) in
         incr_record ct2pc truth;
         match truth with
-          | Ternary.True -> Printf.printf "True\n"
-          | Ternary.False -> Printf.printf "False\n"
-          | _ -> Printf.printf "Unknown\n"
+          | Ternary.True -> Output.printf "True\n"
+          | Ternary.False -> Output.printf "False\n"
+          | _ -> Output.printf "Unknown\n"
     end;
     ()
 ;;

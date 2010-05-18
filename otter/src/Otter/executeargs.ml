@@ -95,6 +95,7 @@ type run_args =
 		mutable arg_init_malloc_zero : bool;
     mutable arg_bounds_checking : bool;
     mutable arg_cfg_pruning : bool;
+    mutable arg_callchain_backward : bool;
 	};;
 
 let run_args = 
@@ -133,6 +134,7 @@ let run_args =
 		arg_init_malloc_zero = false;
     arg_bounds_checking = true;
     arg_cfg_pruning = false;
+    arg_callchain_backward = false;
 	} ;;
 
 

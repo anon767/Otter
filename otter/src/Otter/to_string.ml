@@ -62,9 +62,9 @@ stmt s =
   if donotprint() then "" else
 	match s.skind with
 		| If(e,_,_,_) -> "IF ("^(exp e)^")"
-		| Instr(_) -> ""
-		| Loop(_,_,_,_) -> "LOOP:"
-		| Block(_) -> "BLOCK:"
+		| Instr(_) -> "(INSTRS)"
+		| Loop(_,_,_,_) -> "(LOOP)"
+		| Block(_) -> "(BLOCK)"
 		| _ ->	Pretty.sprint strlen (Cil.d_stmt () s)
 and
 
