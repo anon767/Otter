@@ -397,7 +397,10 @@ let doExecute (f: file) =
             try Function.from_name_in_file "main" f
             with Not_found -> failwith "No main function found!"
           in
-            Driver.callchain_bacward_main_loop job (Cilutility.make_callergraph f) toplevel_func
+          let job_init = 
+            function entryfn -> job_for_middle f entryfn Executeargs.run_args.arg_yaml
+          in
+            Driver.callchain_bacward_main_loop job (Cilutility.make_callergraph f) toplevel_func job_init
         )
       else
         Driver.main_loop job 

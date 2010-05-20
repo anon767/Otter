@@ -214,5 +214,12 @@ module JobSet = Set.Make
 (** Map [stmtInfo]s of [If] statements to the [stmtInfo]s of join
 		points which the [If]s dominate.
 		This will allow us to know where we should expect to merge paths. *)
-let ifToJoinPointsHash : (stmtInfo,stmtInfo) Hashtbl.t = Hashtbl.create 500
+let ifToJoinPointsHash : (stmtInfo,stmtInfo) Hashtbl.t = Hashtbl.create 500;;
+
+(* target to be used in prioritizer *)
+type target = {
+  func: Cil.fundec;
+  entry_state: state;
+  failing_condition: bytes;
+}
 

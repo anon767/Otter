@@ -382,3 +382,34 @@ let of_binop binop =
 		| MinusPP -> minusPP
 ;;
 
+(* shortcuts *)
+
+let bytes__unop op b1 =
+  op [ (b1,Cil.intType) ]
+;;
+
+let bytes__not b1 =
+  if b1==bytes__zero then bytes__one
+  else if b1==bytes__one then bytes__zero 
+  else bytes__unop lnot b1
+;;
+
+let bytes__binop op b1 b2 =
+  op [ (b1,Cil.intType); (b2,Cil.intType) ]
+;;
+
+let bytes__lor b1 b2 =
+  if b1==bytes__one || b2==bytes__one then bytes__one 
+  else if b1==bytes__zero then b2 
+  else if b2==bytes__zero then b1 
+  else bytes__binop logor b1 b2
+;;
+
+let bytes__land b1 b2 =
+  if b1==bytes__zero || b2==bytes__zero then bytes__zero
+  else if b1==bytes__one then b2 
+  else if b2==bytes__one then b1 
+  else bytes__binop logand b1 b2
+;;
+
+

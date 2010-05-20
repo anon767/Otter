@@ -257,17 +257,19 @@ end;;
 
 open Graph
 
-let prioritize job = 
+let prioritize targets job = 
   if (Executeargs.run_args.Executeargs.arg_cfg_pruning) then
     begin
       let graph,root = make_graph (List.hd job.state.callstack) in
-      let targets = graph__get_nodes_satisfying graph 
-                      begin
-                        fun node -> match node.obj with
-                          | Instr((Call(_,Lval(Var(varinfo),_),exps,_))::_,_) 
-                              when varinfo.vname = "__ASSERT" -> true
-                          | _ -> false
-                      end
+      let target_nodes = 
+        graph__get_nodes_satisfying graph 
+          begin
+            fun node -> match node.obj with
+              | Instr((Call(_,Lval(Var(varinfo),_),exps,_))::_,_)  ->
+                  if varinfo.vname = "__ASSERT" then true else
+                    List.fold_left (fun b t -> if t.func.svar == varinfo then true else b) false targets
+              | _ -> false
+          end
       in
       (*let source = graph__get_node graph (get_instr_stmt job) in*)
       let get_predicate job node = 
@@ -284,7 +286,7 @@ let prioritize job =
       let backward_reachable_from_targets = List.fold_left
                                         (fun t tar -> if t then true else
                                            backward_reachable graph source tar)
-                                     false targets
+                                     false target_nodes
       in
         if backward_reachable_from_targets then
           lifo job
@@ -297,9 +299,7 @@ let prioritize job =
                                                 let d' = backward_distance graph source tar in
                                                   min d d'
                                              )
-                                             max_int targets
-      (* in let _ = if Scanf.scanf "%c" (fun x->x) = 't' then print_graph graph else ()
-       *)
+                                             max_int target_nodes
       in -. (float_of_int backward_distance_from_targets)
     end
   else 

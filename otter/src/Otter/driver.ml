@@ -1022,18 +1022,98 @@ let setRunningJob job =
 		Output.runningJobId := job.jid;
 	);
 	Output.runningJobDepth := (List.length job.state.path_condition)
-
+;;
 
 (* Try to merge job with one that is waiting; then advance the resulting job by
 	 one step. (Note that the job that *actually* gets advances might not be
 	 step_job's argument; if the argument is at a merge point, mergeJobs places it
 	 into the job_pool and returns a different job.) *)
-let step_job job =
+
+let pass_targets targets state fexp exps =
+  (* convert fexp to fundec *) 
+  let fundecs = 
+    List.fold_left 
+      ( fun lst (_,ft) -> match ft with Function.Ordinary (f) -> f::lst | _ -> lst
+      ) [] (Function.from_exp state fexp exps) in
+  (* convert args to bytes. argvs are from left to right *)
+  let _, argvs = 
+    List.fold_right 
+      ( fun exp (state, argvs) ->
+          let state, bytes = Eval.rval state exp in
+            (state, bytes::argvs)
+      ) exps (state, []) 
+  in
+  (* check if all fundecs pass target *)
+  let pass_target target =
+    List.fold_left 
+      ( fun b fundec -> 
+          if fundec != target.func then true 
+          else
+            (
+              (* caller's input values to callee: argvs
+               * callee's input values from caller: target.state 
+               * at the end, use caller's state as the state of quirying 
+               *)
+              Output.printf "Check if the failing condition is hit\n";
+              let connecting_bytes = 
+                List.fold_left2
+                  ( fun b argv formal ->
+                      let _,fargv = Eval.rval target.entry_state (Lval(Var(formal),NoOffset)) in
+                      let equation = Operation.eq [(fargv,formal.vtype);(argv,formal.vtype)] in
+                        Operation.bytes__land equation b 
+                  ) bytes__one argvs fundec.sformals
+              in
+                (*
+                 *)
+              let _, truth = eval_with_cache state (connecting_bytes::state.path_condition)  (Operation.bytes__not target.failing_condition) in
+              let print_failed_assertion isUnknown =
+                let mustmay = (if isUnknown then "may" else "must") in
+	            Output.set_mode Output.MSG_MUSTPRINT;
+	            Output.printf "Failing condition %s be hit (see error log).\n" mustmay;
+	            let oldPrintNothingVal = print_args.arg_print_nothing in
+	            Output.set_mode Output.MSG_MUSTPRINT;
+	            print_args.arg_print_nothing <- false; (* Allow printing for the log *)
+	            Executedebug.log "(****************************\n";
+	            Executedebug.log (Printf.sprintf "The following failure %s happen: \n" mustmay);
+                Executedebug.log (Printf.sprintf "Failing condition: %s\n" (To_string.bytes target.failing_condition));
+                Executedebug.log (Printf.sprintf "Path condition: %s\n" (String.concat "&&" (List.map To_string.bytes state.path_condition)));
+                Executedebug.log (Printf.sprintf "Connection : %s\n" (To_string.bytes connecting_bytes));
+	            Executedebug.log "****************************)\n";
+	            print_args.arg_print_nothing <- oldPrintNothingVal
+              in
+                match truth with 
+                  | Ternary.True -> true
+                  | Ternary.Unknown -> 
+                      print_failed_assertion true; false
+                  | Ternary.False -> 
+                      print_failed_assertion false; false
+            )
+      ) true fundecs
+  in
+  let rec pass_targets targets =
+    match targets with 
+      | [] -> true
+      | t::ts -> 
+          if pass_target t then pass_targets ts 
+          else false
+  in
+    pass_targets targets
+;;
+
+let step_job_with_targets targets job =
+  (* if job meets one of the targets, do checking *)
+  (* if fails, return Complete Abandoned
+   * else step_job job *)
 	setRunningJob job;
 	try
         (* let _ = Output.printf "Step into Job %d\n%!" job.jid in *)
 		let result = match job.instrList with
 			| [] -> exec_stmt job
+			| Call(_,fexp,exps,_)::_-> 
+                if not Executeargs.run_args.arg_callchain_backward || pass_targets targets job.state fexp exps then
+                  exec_instr job
+                else 
+                  failwith (Printf.sprintf "Job %d hits the failing condition" job.jid )
 			| _ -> exec_instr job
 		in
           result
@@ -1042,6 +1122,8 @@ let step_job job =
 		let result = { result_state = job.state; result_history = job.exHist } in
 		let completed = Complete (Types.Abandoned (msg, !Output.cur_loc, result)) in
 		completed
+;;
+
 
 
 let at_merge_point job =
@@ -1049,14 +1131,13 @@ let at_merge_point job =
 		{ siFuncName=(List.hd job.state.callstack).Cil.svar.Cil.vname;
 		  siStmt=job.stmt; }
 		job.mergePoints
+;;
 
 
 (** The main loop
   *)
-(* TODO: change it to allow partial execution (stop when a failure exists) *)
-(* TODO: look at targets *)
-let main_loop ?targets:(t=[]) job : job_completion list =
-
+let main_loop ?targets:(targets=[]) job : job_completion list =
+  let step_job = step_job_with_targets targets in
   let rec main_loop (completed: job_completion list) (jobs: Jobs.t) : job_completion list =
     match !signalStringOpt with
       | Some s ->
@@ -1085,7 +1166,7 @@ let main_loop ?targets:(t=[]) job : job_completion list =
                       (* job is not at a merge point or merging is disabled: step the job *)
                       (* process_result completed (job_queue, merge_set) (step_job job) *)
                       let _ = Jobs.running jobs job in (* set current job *)
-                      process_result completed jobs (step_job job)
+                      process_result completed jobs (step_job job )
               end
             else if Jobs.has_next_mergable jobs then
               begin
@@ -1159,39 +1240,21 @@ let main_loop ?targets:(t=[]) job : job_completion list =
 			(output_completion_info completion);
 			main_loop (completion::completed) jobs
 	in
-  let jobs = Jobs.create () in
+  let jobs = Jobs.create targets in
   let _ = Jobs.add_runnable jobs job in
 	main_loop [] jobs
 ;;
 
-type target = {
-  func: Cil.fundec;
-  entry_state: state;
-  failing_condition: bytes;
-}
-
-let bytes__binop op b1 b2 =
-  op [ (b1,Cil.intType); (b2,Cil.intType) ]
-;;
-
-let bytes__lor b1 b2 =
-  bytes__binop Operation.logor b1 b2
-;;
-
-let bytes__land b1 b2 =
-  bytes__binop Operation.logand b1 b2
-;;
 
 
-
-let callchain_bacward_main_loop job callergraph toplevel_func : job_completion list =
+let callchain_bacward_main_loop job callergraph toplevel_func job_init : job_completion list =
   let get_failing_condition result = 
     List.fold_left 
       ( fun b job_completion ->
           match job_completion with
             | Abandoned (_,_,job_result) ->
-                let this_fc = List.fold_left bytes__land Bytes.bytes__one job_result.result_state.path_condition in
-                  bytes__lor b this_fc 
+                let this_fc = List.fold_left Operation.bytes__land Bytes.bytes__one job_result.result_state.path_condition in
+                  Operation.bytes__lor b this_fc 
             | _ -> b
       )
       Bytes.bytes__zero result
@@ -1199,15 +1262,18 @@ let callchain_bacward_main_loop job callergraph toplevel_func : job_completion l
 
   (* The implementation of main loop *)
   let rec callchain_bacward_main_loop job targets =
+    let c = Utility.getchar () in
+      if c = 'q' then [] else
     (* Assume we start at f *)
     let f = List.hd job.state.callstack in
     (* Run forward SE based on the targets *)
-    let result = main_loop ~targets:targets job in (* TODO: make main_loop partial *)
+    let result = main_loop ~targets:targets job in 
     (* result is a (may not be completed) list of finished jobs.
      * A job is either successful, if no assertion failure, or unsuccessful.
      *)
     (* Get a failing condition *)
     let failing_condition = get_failing_condition result in
+    let _ = Output.printf "Failing condition: %s\n" (To_string.bytes failing_condition) in
       if f == toplevel_func then 
         (* If f is main(), we are done *)
         result (* TODO *)
@@ -1218,12 +1284,15 @@ let callchain_bacward_main_loop job callergraph toplevel_func : job_completion l
           failing_condition = failing_condition;
         } in
         let callers = Cilutility.get_callers callergraph f in
+          Printf.printf "%s's caller:\n" f.svar.vname;
+          List.iter (fun caller -> Printf.printf "\t%s\n" caller.svar.vname) callers;
         (* for each caller f' of f, do callchain_bacward_main_loop job' f::targets where job' is the job for running f' *)
           List.fold_left 
           (
             fun lst caller -> 
-              let _ = callchain_bacward_main_loop job (new_target::targets) in
-              lst
+              let newjob = job_init caller.svar.vname in
+              let newlst = callchain_bacward_main_loop newjob (new_target::targets) in
+                List.rev_append newlst lst
           ) 
           [] callers
   in

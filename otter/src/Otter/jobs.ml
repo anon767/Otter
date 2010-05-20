@@ -9,7 +9,7 @@ open Types
 (**
   * Change this function to use a different prioritizer 
   *)
-let the_prioritize = Prioritizer.prioritize ;;
+let prioritize_wrt_targets = Prioritizer.prioritize ;;
 
 type 'a prioritized = {
   obj: 'a;
@@ -21,15 +21,17 @@ type t =
       mutable job_queue: job prioritized PriorityQueue.t;
       mutable merge_set: JobSet.t;
       prioritize: job -> float;
+      targets: target list;
     }
 ;;
 
-let create () = 
+let create targets = 
   {
     current_job = None;
     job_queue = PriorityQueue.make (fun j1 j2 -> j1.priority >= j2.priority);
     merge_set = JobSet.empty;
-    prioritize = the_prioritize;
+    prioritize = prioritize_wrt_targets targets;
+    targets = targets;
   }
 ;;
 
@@ -43,6 +45,10 @@ let has_next_mergable jobs =
 
 let add_runnable jobs job =
   let priority = jobs.prioritize job in
+  let _ = if priority < -.(float_of_int (max_int - 1)) then
+    Output.printf "Warning: job %d not continued\n" job.jid
+  else ()
+  in
     (* Output.printf "Add Job %d with priority %0.1f\n%!" job.jid priority; *)
     PriorityQueue.add jobs.job_queue { obj=job; priority=priority }
 ;;
