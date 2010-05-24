@@ -310,8 +310,16 @@ module DiscreteOrder (G : sig include QualGraphAutomatonType module V : VertexTy
         let unsolvables = Solution.unsolvables solution in
 
         (* breadth-first-search to a sink, and return the remaining frontier *)
-        let explain_one (source, frontier) =
-            let rec explain_one = function
+        let explain_one (source, frontier, max_depth) =
+            let rec explain_one max_depth = function
+                | _, _ when max_depth <= 0 ->
+                    (* reached the maximum depth *)
+                    None
+
+                | [], [] ->
+                    (* no more nodes to search *)
+                    None
+
                 | (front, path, visited)::frontier, advanced ->
                     let rec search_front visited newadvanced = function
                         | (G.Qual.Const sink, _)::rest when not (ConstSet.mem sink consts) ->
@@ -322,7 +330,7 @@ module DiscreteOrder (G : sig include QualGraphAutomatonType module V : VertexTy
                             (* one of the nodes in this front is a sink, so abandon this front and
                              * return this source-to-sink path and the rest of the frontier *)
                             let explanation = (source, List.rev ((G.Qual.Const sink, automaton)::path), sink) in
-                            Some (explanation, List.rev_append frontier advanced)
+                            Some (explanation, (source, List.rev_append frontier advanced, max_depth))
 
                         | (G.Qual.Var v, automaton)::rest when not (VisitedSet.mem (v, automaton) visited) ->
                             let visited = VisitedSet.add (v, automaton) visited in
@@ -341,23 +349,19 @@ module DiscreteOrder (G : sig include QualGraphAutomatonType module V : VertexTy
 
                         | [] ->
                             (* none of the nodes in this front is a sink, move on to the next front *)
-                            explain_one (frontier, newadvanced)
+                            explain_one max_depth (frontier, newadvanced)
                     in
                     search_front visited advanced front
 
                 | [], (_::_ as advanced) ->
                     (* done searching this depth, advance to the next depth *)
-                    explain_one ((List.rev advanced), [])
-
-                | [], [] ->
-                    (* no more nodes to search *)
-                    None
+                    explain_one (max_depth - 1) (List.rev advanced, [])
             in
-            explain_one (frontier, [])
+            explain_one max_depth (frontier, [])
         in
 
 
-        (* work list of (source qualifier constant, path); the work list is derived via the graph walking
+        (* work list of (source qualifier constant, path, maximum depth); the work list is derived via the graph walking
          * automaton to maintain a consistent description of the path *)
         let worklist = ConstSet.fold begin fun source worklist ->
             let collect node automaton (worklist, visited) = match node with
@@ -366,7 +370,7 @@ module DiscreteOrder (G : sig include QualGraphAutomatonType module V : VertexTy
                     let start = [ (node, automaton) ] in
                     let path = [ (G.Qual.Const source, G.Automaton.start) ] in
                     (* list of source terminals -> list of fronts (the frontier) -> list of open nodes *)
-                    let worklist = (source, [ (start, path, VisitedSet.empty) ])::worklist in
+                    let worklist = (source, [ (start, path, VisitedSet.empty) ], max_int)::worklist in
                     let visited = VisitedSet.add (v, automaton) visited in
                     (worklist, visited)
                 | _ ->
@@ -379,12 +383,27 @@ module DiscreteOrder (G : sig include QualGraphAutomatonType module V : VertexTy
         end consts [] in
 
 
-        (* find exactly one explanation for each source *)
-        (* TODO: find up to N explanations for each source *)
-        List.fold_left begin fun explanations work -> match explain_one work with
-            | Some (explanation, _) -> Explanation.add explanation explanations
-            | None -> explanations
-        end Explanation.empty worklist
+        (* find as many explanations as feasible for each source *)
+        let rec explain_many explanations = function
+            | _::_ as worklist ->
+                let explanations, worklist =
+                    List.fold_left begin fun (explanations, worklist) (_, _, max_depth as work) ->
+                        match explain_one work with
+                            | Some (explanation, (source, frontier, max_depth')) ->
+                                (* find more paths to sinks, but limit the incremental path length to
+                                 * half the length to the previous sink *)
+                                let work = (source, frontier, (max_depth - max_depth') / 2) in
+                                (Explanation.add explanation explanations, work::worklist)
+                            | None ->
+                                (explanations, worklist)
+                    end (explanations, []) worklist
+                in
+                explain_many explanations worklist
+            | [] ->
+                explanations
+        in
+        explain_many Explanation.empty worklist
+
 end
 
 
