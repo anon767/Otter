@@ -24,14 +24,12 @@ module Interpreter (S : Config.BlockConfig) = struct
 
         let rec symbolic_loop stack completed job job_queue =
 
-            let complete_job stack result =
-                (* store the result and pick another job to continue, if available *)
-                let completed = result::completed in
-                match job_queue with
-                    | job::job_queue ->
-                        symbolic_loop stack completed job job_queue
-                    | [] ->
-                        k stack completed
+            let next_job stack completed = function
+                | job::job_queue ->
+                    (* pick another job to continue, if available *)
+                    symbolic_loop stack completed job job_queue
+                | [] ->
+                    k stack completed
             in
 
             if S.should_enter_block (List.hd job.Types.state.Types.callstack).Cil.svar.Cil.vattr then begin
@@ -40,52 +38,56 @@ module Interpreter (S : Config.BlockConfig) = struct
                 let state = Driver.step_job job in
                 begin match state with
                     | Types.Active job ->
-                        symbolic_loop stack completed job job_queue
+                        next_job stack completed (job::job_queue)
                     | Types.Fork (j1, j2) ->
-                        let job_queue = j1::job_queue in (* queue the true branch *)
-                        symbolic_loop stack completed j2 job_queue (* continue the false branch *)
+                        next_job stack completed (j2::j1::job_queue)
                     | Types.Complete result ->
-                        complete_job stack (result, None)
+                        next_job stack ((result, None)::completed) job_queue
                 end
 
             end else begin
                 (* delegate this function *)
 
                 (* prepare the completion continuation *)
-                let completion stack = function 
-                    | [ (Types.Return (retopt, { Types.result_state=state; Types.result_history=history }),
-                         None) as result ] ->
-                        begin match List.hd state.Types.callContexts with
-                            | Types.Runtime ->
-                                (* occurs when main() is not symbolic, so there's nothing left to execute *)
-                                complete_job stack result
+                let completion stack results =
 
-                            | Types.Source (destopt, _, _, nextstmt) ->
-                                (* end the function call and continue executing *)
-                                let state = MemOp.state__end_fcall state in
-                                let state = match destopt, retopt with
-                                    | Some dest, Some ret ->
-                                        let state, lval = Eval.lval state dest in
-                                        MemOp.state__assign state lval ret
-                                    | _, _ ->
-                                        state
-                                in
-                                symbolic_loop stack completed { job with
-                                    Types.state=state;
-                                    Types.stmt=nextstmt;
-                                    Types.exHist=history;
-                                    (* TODO: update inTrackFn and coverage? *)
-                                } job_queue
+                    let completed, job_queue = List.fold_left begin fun (completed, job_queue) result -> match result with
+                        | (Types.Return (retopt, { Types.result_state=state; Types.result_history=history }), None) ->
+                            begin match List.hd state.Types.callContexts with
+                                | Types.Runtime ->
+                                    (* occurs when main() is not symbolic, so there's nothing left to execute *)
+                                    (result::completed, job_queue)
 
-                            | Types.NoReturn _ ->
-                                failwith "TODO: handle return from @noreturn"
-                        end
+                                | Types.Source (destopt, _, _, nextstmt) ->
+                                    (* end the function call and continue executing *)
+                                    let state = MemOp.state__end_fcall state in
+                                    let state = match destopt, retopt with
+                                        | Some dest, Some ret ->
+                                            let state, lval = Eval.lval state dest in
+                                            MemOp.state__assign state lval ret
+                                        | _, _ ->
+                                            state
+                                    in
+                                    let job = { job with
+                                        Types.state=state;
+                                        Types.stmt=nextstmt;
+                                        Types.exHist=history;
+                                        (* TODO: update inTrackFn and coverage? *)
+                                    } in
+                                    (completed, job::job_queue)
 
-                    | [ (Types.Abandoned _, _) as result ] ->
-                        complete_job stack result
+                                | Types.NoReturn _ ->
+                                    failwith "TODO: handle return from @noreturn"
+                            end
 
-                    | _ ->
-                        failwith "TODO: handle other completion values"
+                        | (Types.Abandoned _, _) ->
+                            (result::completed, job_queue)
+
+                        | _ ->
+                            failwith "TODO: handle other completion values"
+                    end (completed, job_queue) results in
+
+                    next_job stack completed job_queue
                 in
                 dispatch stack (`SymbolicBlock (file, job, completion))
             end
