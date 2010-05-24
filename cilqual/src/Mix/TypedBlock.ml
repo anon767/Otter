@@ -121,22 +121,32 @@ module Interpreter (T : Config.BlockConfig) = struct
 
         (* evaluate other_calls repeatedly until the constraint graph reaches a fixpoint *)
         let rec do_fixpoint other_calls stack (((((_, old_constraints), _), _), _), _ as expState) =
+
+            let old_solution = DiscreteSolver.solve consts old_constraints in
+
             let rec call_others work block_errors stack (((((_, constraints), _), _), _), _ as expState) more_block_errors =
+
+                let solution = DiscreteSolver.solve consts constraints in
                 let block_errors = more_block_errors @ block_errors in
+
                 match work with
                     | call::work ->
                         dispatch stack (`TypedBlock (file, call, expState, call_others work block_errors))
                     | [] ->
-                        (* ocamlgraph has no graph equality operation? *)
+                        (* TODO: CilQual should really solve the constraints in an on-demand, incremental manner
+                         *       (i.e., compositionally) *)
                         if block_errors != []
-                                || (G.QualGraph.nb_vertex constraints == G.QualGraph.nb_vertex old_constraints
-                                    && G.QualGraph.nb_edges constraints == G.QualGraph.nb_edges old_constraints) then
+                                || DiscreteSolver.Solution.includes old_solution solution then
                             k stack expState block_errors
-                        else
+                        else begin
+                            Format.eprintf "Reevaluating fixpoint for %s due to added constraints...@."
+                                fn.Cil.svar.Cil.vname;
                             do_fixpoint other_calls stack expState
+                        end
             in
             call_others other_calls [] stack expState []
         in
+        Format.eprintf "Doing fixpoint for %s...@." fn.Cil.svar.Cil.vname;
         do_fixpoint (CallSet.elements other_calls) stack expState
 
 

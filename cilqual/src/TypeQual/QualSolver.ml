@@ -144,6 +144,19 @@ module DiscreteOrder (G : sig include QualGraphAutomatonType module V : VertexTy
 
         let equal_const v c result = try ConstSet.equal (find v result) (const c) with Not_found -> false
 
+        let equal x y = SolutionMap.equal ConstSet.equal x.solution y.solution
+
+        let includes x y =
+            try
+                SolutionMap.iter begin fun v c ->
+                    if not (ConstSet.equal (SolutionMap.find v x.solution) c) then raise Not_found
+                end y.solution;
+                true
+            with Not_found -> begin
+                false
+            end
+
+
         let equate_class x y result =
             (* only bother to update for unsolvables *)
             if not (is_unsolvable x result && is_unsolvable y result) then
