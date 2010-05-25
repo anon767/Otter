@@ -107,18 +107,23 @@ let init_globalvars state globals =
 
 
 (* Initialize arguments for an entry function to purely symbolic *)
-let init_symbolic_argvs state (entryfn:fundec) : (state*bytes list) =
+let init_symbolic_argvs state (entryfn:fundec) : (state*bytes list*executionHistory) =
   let state = state__add_frame state in
-  let state,args = 
+  let state,args,bytesToVars = 
     List.fold_right  (* TODO: Does ordering matter? *)
-      (fun varinfo (state,args) ->
+      (fun varinfo (state,args,bytesToVars) ->
         let state,init = init_symbolic_varinfo state varinfo in
-        (state__add_formal state varinfo init,init::args)
+        (state__add_formal state varinfo init,init::args,(init,varinfo)::bytesToVars)
       ) 
       entryfn.sformals
-      (state,[])
+      (state,[],[])
   in
-  (state,args)
+  let exHist = 
+    {emptyHistory with
+         bytesToVars = bytesToVars
+    }
+  in
+  (state,args,exHist)
 ;;
 
 (* To initialize the arguments, we need to create a bytes which represents argc and
@@ -287,11 +292,11 @@ let prepare_file file =
 	)
 
 (* create a job that begins at a function, given an initial state *)
-let job_for_function state fn argvs =
+let job_for_function ?(exHist=emptyHistory) state fn argvs =
 	let state = MemOp.state__start_fcall state Runtime fn argvs in
 	(* create a new job *)
 	{ state = state;
-	  exHist = emptyHistory;
+	  exHist = exHist;
 	  instrList = [];
 	  stmt = List.hd fn.sallstmts;
 	  inTrackedFn = Utility.StringSet.mem fn.svar.vname run_args.arg_fns;
@@ -309,10 +314,10 @@ let job_for_middle file entryfn yamlconstraints =
     let state = MemOp.state__empty in
     let state = init_symbolic_globalvars state file.globals in
 
-    let state, entryargs = init_symbolic_argvs state entryfn in
+    let state, entryargs, exHist = init_symbolic_argvs state entryfn in
 
     (* create a job starting at entryfn *)
-    let job = job_for_function state entryfn entryargs in
+    let job = job_for_function ~exHist:exHist state entryfn entryargs in
 
     (* apply constraints if provided *)
     if yamlconstraints = "" then
