@@ -126,7 +126,9 @@ let banner_flush () =
 ;;
 
 let banner_formatter = Format.make_formatter banner_out banner_flush;;
-let banner_printf level format = Format.fprintf banner_formatter format;;
+let banner_printf level format = 
+  if level == 0 then Format.ifprintf banner_formatter format
+  else Format.fprintf banner_formatter format;;
 
 let print_string str = 
 	if (need_print (!current_msg_type)) then

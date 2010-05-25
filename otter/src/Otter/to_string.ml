@@ -158,8 +158,8 @@ byte_ff ff = function
 			*)
 (*
 and char c = char_ff str_formatter c; flush_str_formatter ()
-and symbol s = symbol_ff str_formatter s; flush_str_formatter ()
 *)
+and symbol s = symbol_ff str_formatter s; flush_str_formatter ()
 
 and
 

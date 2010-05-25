@@ -595,3 +595,7 @@ let getValues pathCondition symbolList =
 	List.map getOneVal symbolList
 ;;
 
+let getAllValues pathCondition =
+  getValues pathCondition (SymbolSet.elements (allSymbolsInList pathCondition))
+;;
+

@@ -282,6 +282,10 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 										let symbBytes = bytes__symbolic size in
 										Output.set_mode Output.MSG_MUSTPRINT;
 										Output.print_endline (varinf.vname ^ " = " ^ (To_string.bytes symbBytes));
+                                        (* TODO: do something like this for
+                                         * argument initialization when start SE
+                                         * in the middle 
+                                         *)
 										nextExHist := { exHist with bytesToVars = (symbBytes,varinf) :: exHist.bytesToVars; };
 										MemOp.state__assign state lval symbBytes
 								| _ ->
@@ -1029,8 +1033,10 @@ let setRunningJob job =
 	 step_job's argument; if the argument is at a merge point, mergeJobs places it
 	 into the job_pool and returns a different job.) *)
 
-let pass_targets targets state fexp exps =
+let pass_targets targets job fexp exps =
   (* convert fexp to fundec *) 
+  let state = job.state in
+  let hist = job.exHist in
   let fundecs = 
     List.fold_left 
       ( fun lst (_,ft) -> match ft with Function.Ordinary (f) -> f::lst | _ -> lst
@@ -1054,7 +1060,7 @@ let pass_targets targets state fexp exps =
                * callee's input values from caller: target.state 
                * at the end, use caller's state as the state of quirying 
                *)
-              Output.banner_printf 1  "Check if the failing condition is hit\n";
+              Output.banner_printf 0  "Check if the failing condition is hit\n";
               (* TODO: add globals *)
               let connecting_bytes = 
                 List.fold_left2
@@ -1064,27 +1070,70 @@ let pass_targets targets state fexp exps =
                         Operation.bytes__land equation b 
                   ) bytes__one argvs fundec.sformals
               in
-                 (Output.banner_printf 1  "Failing condition: %s\n" (To_string.bytes target.failing_condition));
-                 (Output.banner_printf 1  "Path condition: %s\n" (String.concat "&&" (List.map To_string.bytes state.path_condition)));
-                 (*TODO: path condition needs to be accumulated *)
-                 (Output.banner_printf 1  "Connection : %s\n" (To_string.bytes connecting_bytes));
+                (*
+                 (Output.banner_printf 0  "Failing condition: %s\n" (To_string.bytes target.failing_condition));
+                 (Output.banner_printf 0  "Path condition: %s\n" (String.concat "&&" (List.map To_string.bytes state.path_condition)));
+                 (Output.banner_printf 0  "Connection : %s\n" (To_string.bytes connecting_bytes));
+                 *)
               let _, truth = eval_with_cache state (connecting_bytes::state.path_condition)  (Operation.bytes__not target.failing_condition) in
               let total_failing_condition = Operation.bytes__land target.failing_condition connecting_bytes in
               let total_failing_condition = Operation.bytes__lor total_failing_condition fc in
+
               let print_failed_assertion isUnknown =
+                let _ = Output.set_mode Output.MSG_MUSTPRINT in
+                let caller = List.hd state.callstack in
                 let mustmay = (if isUnknown then "may" else "must") in
-	            Output.set_mode Output.MSG_MUSTPRINT;
-	            Output.banner_printf 1  "Failing condition %s be hit (see error log).\n%!" mustmay;
-	            let oldPrintNothingVal = print_args.arg_print_nothing in
-	            Output.set_mode Output.MSG_MUSTPRINT;
-	            print_args.arg_print_nothing <- false; (* Allow printing for the log *)
-	            Executedebug.log "(****************************\n";
-	            Executedebug.log (Printf.sprintf "The following failure %s happen: \n" mustmay);
-                Executedebug.log (Printf.sprintf "Failing condition: %s\n" (To_string.bytes target.failing_condition));
-                Executedebug.log (Printf.sprintf "Path condition: %s\n" (String.concat "&&" (List.map To_string.bytes state.path_condition)));
-                Executedebug.log (Printf.sprintf "Connection : %s\n" (To_string.bytes connecting_bytes));
-	            Executedebug.log "****************************)\n";
-	            print_args.arg_print_nothing <- oldPrintNothingVal
+                let log = Executedebug.log in
+                let _ = Output.banner_printf 1  "Failing condition %s be hit (see error log).\n%!" mustmay in
+                let _ = log "(****************************\n" in
+	            let _ = log (Printf.sprintf "The following failure %s happen in function %s: \n" mustmay caller.svar.vname) in
+                let _ = log (Printf.sprintf "Failing condition: %s\n" (To_string.bytes target.failing_condition)) in
+                let _ = log (Printf.sprintf "Path condition: %s\n" (String.concat "&&" (List.map To_string.bytes state.path_condition))) in
+                let _ = log (Printf.sprintf "Connection : %s\n" (To_string.bytes connecting_bytes)) in
+                let _ = log (Printf.sprintf "Consult STP for an example...\n") in
+                let valuesForSymbols = Stp.getAllValues (target.failing_condition::connecting_bytes::state.path_condition) in
+                let getVal = function
+                  | Bytes_ByteArray bytArr ->
+                      let byteOptArray =
+                        ImmutableArray.map
+                          (function
+                             | Byte_Symbolic s ->
+                                 (try
+                                    let valueForS = List.assq s valuesForSymbols in
+                                      Some (make_Byte_Concrete valueForS)
+                                  with Not_found -> None
+                                 )
+                             | _ -> failwith "Impossible: tracked symbolic value must be fully symbolic"
+                          )
+                          bytArr
+                      in
+                        if ImmutableArray.exists (* Check if any byte is constrained *)
+                             (function Some _ -> true | _ -> false)
+                             byteOptArray
+                        then (Some (make_Bytes_ByteArray
+                                  (ImmutableArray.map
+                                     (function Some b -> b | None -> byte__zero)
+                                     byteOptArray))
+                        ) 
+                        else None
+                  | _ -> failwith "Impossible: symbolic bytes must be a ByteArray"
+                in
+                let _ = List.iter 
+                          ( fun (bytes,varinf) -> 
+                              match getVal bytes with 
+                                | None -> () 
+                                | Some concreteByteArray -> 
+                                    (
+                                      match bytes_to_constant concreteByteArray varinf.vtype with
+                                        | CInt64 (n,_,_) ->
+                                            log (Printf.sprintf "%s=%Ld\n" varinf.vname n)
+                                        | _ -> failwith "Unimplemented: non-integer symbolic"
+                                    )
+                          )
+                          hist.bytesToVars
+                in
+                let _ = log "(****************************\n" in
+                  ()
               in
                 match truth with 
                   | Ternary.True -> true,Bytes.bytes__zero
@@ -1101,7 +1150,7 @@ let pass_targets targets state fexp exps =
       | t::ts -> 
           let truth,failing_condition = pass_target t in
           if truth then pass_targets ts 
-          else false,failing_condition
+          else false,failing_condition (* TODO: can proceed, to find more failing targets *)
   in
     pass_targets targets
 ;;
@@ -1121,7 +1170,7 @@ let step_job_with_targets targets job =
 			| Call(_,fexp,exps,_)::_-> 
                 if Executeargs.run_args.arg_callchain_backward then
                   begin
-                    let truth,failing_condition = pass_targets targets job.state fexp exps in
+                    let truth,failing_condition = pass_targets targets job fexp exps in
                       if truth then exec_instr job 
                       else failwith_wc (Printf.sprintf "Job %d hits the failing condition" job.jid ) failing_condition
                   end
@@ -1295,7 +1344,6 @@ let callchain_bacward_se callergraph entryfn assertfn job_init : job_completion 
      *)
     (* Get a failing condition *)
     let failing_condition = get_failing_condition result in
-    let _ = Output.banner_printf 1 "Failing condition: \n%s\n" (To_string.bytes failing_condition) in
       if f == entryfn then 
         (* If f is main(), we are done *)
         result 
