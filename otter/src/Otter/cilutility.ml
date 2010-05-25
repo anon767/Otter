@@ -101,7 +101,7 @@ let get_fundec vname file =
 	let rec search = function
 		| GFun (fundec, _)::_ when fundec.svar.vname = vname -> fundec
 		| _::t -> search t
-		| [] -> failwith (Printf.sprintf "Function %s not found\n" vname)
+		| [] -> raise Not_found
 	in search file.globals
 ;;
 
@@ -155,4 +155,6 @@ let get_callers callergraph func =
     FundecMap.find func callergraph
   with Not_found -> []
 ;;
+
+
 

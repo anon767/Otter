@@ -45,10 +45,9 @@ let has_next_mergable jobs =
 
 let add_runnable jobs job =
   let priority = jobs.prioritize job in
-  let _ = if priority < -.(float_of_int (max_int - 1)) then
+  if priority < -.(float_of_int (max_int - 1)) then
     Output.printf "Warning: job %d not continued\n" job.jid
-  else ()
-  in
+  else 
     (* Output.printf "Add Job %d with priority %0.1f\n%!" job.jid priority; *)
     PriorityQueue.add jobs.job_queue { obj=job; priority=priority }
 ;;

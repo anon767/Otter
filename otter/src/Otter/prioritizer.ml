@@ -266,7 +266,7 @@ let prioritize targets job =
           begin
             fun node -> match node.obj with
               | Instr((Call(_,Lval(Var(varinfo),_),exps,_))::_,_)  ->
-                  if varinfo.vname = "__ASSERT" then true else
+                  if varinfo.vname = Executeargs.run_args.Executeargs.arg_assertfn then true else (* TODO: make this as arugment *)
                     List.fold_left (fun b t -> if t.func.svar == varinfo then true else b) false targets
               | _ -> false
           end

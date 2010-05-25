@@ -274,7 +274,9 @@ let rec state__assign state (lvals, size) bytes =
 let state__start_fcall state callContext fundec argvs =
 
     Output.set_mode Output.MSG_FUNC;
-    Output.print_endline (">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+    (* Output.print_endline (">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+     *)
+
     Output.print_endline ("Enter function " ^ (To_string.fundec fundec));
     (* set up the new stack frame *)
 	let block_to_bytes = state.block_to_bytes in
@@ -311,7 +313,8 @@ let state__start_fcall state callContext fundec argvs =
 let state__end_fcall state =
 	Output.set_mode Output.MSG_FUNC;
 	Output.print_endline ("Exit function "^(To_string.fundec (List.hd state.callstack)));
-	Output.print_endline ("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
+	(* Output.print_endline ("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
+     *)
 	let block_to_bytes = state.block_to_bytes in
 	let block_to_bytes = frame__clear_varinfos (List.hd state.locals) block_to_bytes in
 	let block_to_bytes = frame__clear_varinfos (List.hd state.formals) block_to_bytes in

@@ -75,6 +75,7 @@ type run_args =
 		mutable arg_fns : Utility.StringSet.t;
 		mutable arg_yaml : string;
 		mutable arg_entryfn : string;
+		mutable arg_assertfn : string;
 		mutable arg_examfn : string;
 		mutable arg_timeout : int;
 		(** How many seconds to allow the executor to run. *)
@@ -114,7 +115,8 @@ let run_args =
 		arg_num_conds = -1;
 		arg_fns = Utility.StringSet.empty;
 		arg_yaml = "";
-		arg_entryfn = ""; (* == main *)
+		arg_entryfn = "main"; 
+		arg_assertfn = "__ASSERT"; 
 		arg_examfn = ""; (* none *)
 		arg_timeout = 0;
 		arg_merge_paths = false;

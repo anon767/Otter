@@ -304,10 +304,6 @@ let job_for_function state fn argvs =
 
 (* create a job that begins in the middle of a file at some entry function with some optional constraints *)
 let job_for_middle file entryfn yamlconstraints =
-    let entryfn =
-        try Function.from_name_in_file entryfn file
-        with Not_found -> failwith "No entry function found!"
-    in
 
     (* Initialize the state with symbolic globals *)
     let state = MemOp.state__empty in
@@ -355,10 +351,10 @@ let doExecute (f: file) =
 
 	Random.init 226; (* Random is used in Bytes *)
 
-	Output.set_mode Output.MSG_MUSTPRINT;
-	Output.print_endline "\n";
-	Output.print_endline "Otter, a symbolic executor for C";
-	Output.print_endline "\n";
+	Output.banner_printf 3 "Otter, a symbolic executor for C\n%!";
+    let _ = if Executeargs.run_args.arg_callchain_backward then
+      Output.printf "\n* Call-chain-backward Symbolic Execution mode is on.\n\n"
+    in
 
 	(* Keep track of how long we run *)
 	let startTime = Unix.gettimeofday () in
@@ -377,33 +373,38 @@ let doExecute (f: file) =
 	(* prepare the file for symbolic execution *)
 	prepare_file f;
 
-
-    let job = match Executeargs.run_args.arg_entryfn with
-        | "" ->
-            (* create a job for the file, with the commandline arguments set to the file name
-             * and the arguments from the '--arg' option *)
-            job_for_file f (f.fileName::Executeargs.run_args.arg_cmdline_argvs)
-
-        | entryfn ->
-            (* create a job to start in the middle of entryfn *)
-            job_for_middle f entryfn Executeargs.run_args.arg_yaml
+    (* Entry function (default: main) *)
+    let entryfn =
+      let fname = Executeargs.run_args.arg_entryfn in
+        try Function.from_name_in_file fname f 
+        with Not_found -> failwith (Printf.sprintf "Entry function %s not found" fname )
     in
 
-	(* run the job *)
     let results = 
       if Executeargs.run_args.arg_callchain_backward then
         (
-          let toplevel_func =
-            try Function.from_name_in_file "main" f
-            with Not_found -> failwith "No main function found!"
+          let assertfn =
+            let fname = Executeargs.run_args.arg_assertfn in
+            try Function.from_name_in_file fname f  
+            with Not_found -> failwith (Printf.sprintf "Assserton function %s not found" fname )
           in
-          let job_init = 
-            function entryfn -> job_for_middle f entryfn Executeargs.run_args.arg_yaml
+          let job_init = function entryfn -> job_for_middle f entryfn ""(* no yaml file *)
           in
-            Driver.callchain_bacward_main_loop job (Cilutility.make_callergraph f) toplevel_func job_init
+            Driver.callchain_bacward_se (Cilutility.make_callergraph f) entryfn assertfn job_init
         )
       else
-        Driver.main_loop job 
+        let job = 
+          if Executeargs.run_args.arg_entryfn = "main" then
+            (* create a job for the file, with the commandline arguments set to the file name
+             * and the arguments from the '--arg' option *)
+            job_for_file f (f.fileName::Executeargs.run_args.arg_cmdline_argvs)
+          else
+              (* create a job to start in the middle of entryfn *)
+              job_for_middle f entryfn Executeargs.run_args.arg_yaml
+        in
+	    (* run the job *)
+        let result = Driver.main_loop job in
+          [result]
     in
 
 	(* Turn off the alarm and reset the signal handlers *)
@@ -450,7 +451,7 @@ let doExecute (f: file) =
         print_record (!InvInput.ct2pc);
         ()
   end;
-	Report.print_report results
+	List.iter (fun result -> Report.print_report result) results
 ;;
 
 let feature : featureDescr = 
@@ -616,6 +617,10 @@ let feature : featureDescr =
 			("--entryfn",
 			Arg.String (fun fname -> Executeargs.run_args.arg_entryfn <- fname),
 			"<fname> Entry function (default: main) \n");
+
+			("--assertfn",
+			Arg.String (fun fname -> Executeargs.run_args.arg_assertfn <- fname),
+			"<fname> Assertion function to look for in the call-chain-backward mode (default: __ASSERT) \n");
 
 			("--examfn",
 			Arg.String (fun fname -> Executeargs.run_args.arg_examfn <- fname),
