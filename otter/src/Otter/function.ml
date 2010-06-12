@@ -40,16 +40,16 @@ type function_type =
 (*    | DataStructureOp of Data_structure.ds_op*) 
 (*	| Fresh *)
 	| PrintState
-;;
 
-let aspect_tbl : (pointcut, advice) Hashtbl.t = Hashtbl.create 8;;
+
+let aspect_tbl : (pointcut, advice) Hashtbl.t = Hashtbl.create 8
 let with_aspect (pointcut, advice) fn =
     Hashtbl.add aspect_tbl pointcut advice;
     let res = fn () in
         Hashtbl.remove aspect_tbl pointcut;
         res
 
-let from_name_in_file = Cilutility.get_fundec;;
+let from_name_in_file = Cilutility.get_fundec
 
 let from_varinfo state varinfo args =
 	begin match varinfo.vname with
@@ -92,7 +92,7 @@ let from_varinfo state varinfo args =
 					else*)
 						failwith ("Function "^varinfo.vname^" not found.")
 	end
-;;
+
 
 let add_guard_to_state state guard = (*big hack; there should be a nicer way to do this*)
 	MemOp.state__add_path_condition state (Bytes_Conditional(Bytes.IfThenElse(guard, Unconditional(lazy_int_to_bytes 1), Unconditional(lazy_int_to_bytes 0)))) true
@@ -131,4 +131,4 @@ let from_exp state exp args: (state * function_type) list =
 			end
 		| _ ->
 			failwith ("Non-constant function ptr not supported : "^(To_string.exp exp))
-;;
+

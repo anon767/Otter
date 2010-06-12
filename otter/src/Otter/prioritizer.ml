@@ -5,13 +5,13 @@ open Hashtbl
 (** 
   * Simple prioritizer
   *)
-let time = ref 0.0;;
+let time = ref 0.0
 let timer () =
     (time:=(!time+.1.0);!time)
-;;
 
-let lifo job = timer () ;;
-let fifo job = -. (timer ()) ;;
+
+let lifo job = timer () 
+let fifo job = -. (timer ()) 
 
 
 
@@ -20,24 +20,24 @@ struct
   type instr_stmt =
     | Instr of Cil.instr list * Cil.stmt (* stmt: stmt that contains instr *)
     | Stmt of Cil.stmt
-  ;;
+  
   let instr_stmt_length instr_stmt =
     match instr_stmt with
       | Stmt (stmt) -> List.length stmt.succs
       | _ -> 1
-  ;;
+  
   let make_instr_stmt_Stmt stmt =
     Stmt (stmt)
-  ;;
+  
   let make_instr_stmt_Instr (instrs,stmt) =
     Instr (instrs,stmt)
-  ;;
+  
   let get_instr_stmt job =
     match job.instrList with
       | instr::instrs -> 
           make_instr_stmt_Instr (job.instrList,List.hd job.stmt.preds)
       | [] -> make_instr_stmt_Stmt (job.stmt)
-  ;;
+  
   let print_instr_stmt ?(obj=None) instr_stmt =
     let location_special loc = 
       let v = if loc.line > 0 then loc.line else -(abs ((Hashtbl.hash obj) mod 256))
@@ -57,8 +57,8 @@ struct
       | Stmt (stmt) -> "(Stmt:"^(To_string.stmt stmt)^")"
     in
       s
-  ;;
-end;;
+  
+end
 
 open InstrStmt
 
@@ -71,9 +71,9 @@ type graph_node =
         mutable nexts: graph_node list;
         mutable color: int;
     }
-;;
 
-type graph = (instr_stmt,graph_node) Hashtbl.t ;;
+
+type graph = (instr_stmt,graph_node) Hashtbl.t 
 let print_node node = 
   let s = Printf.sprintf "Node: \x1b[34m%s\x1b[m Color: \x1b[31m%s\x1b[m\n" (print_instr_stmt ~obj:(Some node) node.obj) (if node.color = max_int then "inf" else string_of_int node.color)
   in
@@ -94,7 +94,7 @@ let print_node node =
       s node.prevs
   in
     s
-;;
+
 let print_graph graph =
   To_string.force_print := true;
   let lst = Hashtbl.fold (fun k v lst -> (print_node v)::lst) graph [] in
@@ -102,10 +102,10 @@ let print_graph graph =
     List.iter (fun s -> Output.printf "%s" s) lst;
   To_string.force_print := false;
   ()
-;;
+
 let graph__set_color graph color =
   Hashtbl.iter (fun _ node -> node.color <-color) graph
-;;
+
 let make_graph_node graph instr_stmt =
   (* memoization *)
   if Hashtbl.mem graph instr_stmt then
@@ -121,7 +121,7 @@ let make_graph_node graph instr_stmt =
     in
       Hashtbl.replace graph instr_stmt node;
       node
-;;
+
 
 let make_graph fundec =
   let rec make_graph_forward graph node =
@@ -181,7 +181,7 @@ let make_graph fundec =
     make_graph_forward graph root;
     make_graph_backward graph ;
     graph,root
-;;
+
 
 let graph__get_nodes_satisfying graph predicate =
   Hashtbl.fold 
@@ -190,7 +190,7 @@ let graph__get_nodes_satisfying graph predicate =
         if predicate node then node::lst else lst
     end
     graph []
-;;
+
 (*
 let backward_reachable graph src tar =
   let rec dfs tar =
@@ -207,7 +207,7 @@ let backward_reachable graph src tar =
   in
     graph__set_color graph 0;
     dfs tar 
-;;
+
  *)
 let backward_distance graph src tar =
   let rec bfs tars =
@@ -251,9 +251,9 @@ let backward_distance graph src tar =
     graph__set_color graph max_int;
     tar.color <- 0;
     bfs [tar] 
-;;
 
-end;;
+
+end
 
 open Graph
 
@@ -304,5 +304,5 @@ let prioritize targets job =
     end
   else 
     lifo job
-;;
+
 

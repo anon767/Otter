@@ -3,12 +3,12 @@ open Types
 open Bytes
 open Cil
 
-module ObjectMap = Map.Make (Int64);;
-module StringMap = Map.Make (String);;
+module ObjectMap = Map.Make (Int64)
+module StringMap = Map.Make (String)
 
-type objectmap = YamlNode.t ObjectMap.t;;
+type objectmap = YamlNode.t ObjectMap.t
 
-let null = "0";;
+let null = "0"
 
 (*
  * Extract {SCALAR,SEQUENCE,MAPPING} from the YamlNode constructors
@@ -17,17 +17,17 @@ let getYamlScalar (node:YamlNode.t) : string =
   match node with
     | YamlNode.SCALAR (_,s) -> s
     | _ -> failwith "Error: input node is not SCALAR"
-;;
+
 let getYamlSequence (node:YamlNode.t) : YamlNode.t list =
   match node with
     | YamlNode.SEQUENCE (_,t) -> t
     | _ -> failwith "Error: input node is not SEQUENCE"
-;;
+
 let getYamlMapping (node:YamlNode.t) : (YamlNode.t*YamlNode.t) list =
   match node with
     | YamlNode.MAPPING (_,t) -> t
     | _ -> failwith "Error: input node is not MAPPING"
-;;
+
 
 (* 
  * (@CLASS,@TYPE,@CONTENT)
@@ -57,7 +57,7 @@ let getInfo (objectMap:objectmap) (value:string) : (string*string*YamlNode.t) =
               (lookup "@CONTENT")
             )
       | _ -> failwith "Error in getInfo"
-;;
+
 
 (*
  *  Functions that traverse the java data structure
@@ -73,7 +73,7 @@ let getAttribute (objectMap:objectmap) (value:string) (attrName:string) : string
             with Not_found -> failwith (Printf.sprintf "Error in getAttribute: %s not found" attrName)
           in (getYamlScalar v) 
       | _ -> failwith "Error: non-SCALAR has no attributes"
-;;
+
 
 let getAttributes (objectMap:objectmap) (value:string) : string StringMap.t =
   let (_,typ,content) = getInfo objectMap value in
@@ -82,7 +82,7 @@ let getAttributes (objectMap:objectmap) (value:string) : string StringMap.t =
                         (fun map (k,v) -> StringMap.add (getYamlScalar k) (getYamlScalar v) map) 
                         StringMap.empty (getYamlMapping content)
       | _ -> failwith "Error in getAttributes"
-;;
+
 
 
 let getSequence (objectMap:objectmap) (value:string) : string list =
@@ -90,7 +90,7 @@ let getSequence (objectMap:objectmap) (value:string) : string list =
     match typ with
       | "@SEQUENCE" -> List.map getYamlScalar (getYamlSequence content)
       | _ -> failwith "Error: getSequence invoked with non-SEQUENCE"
-;;
+
 
 let getMapping (objectMap:objectmap) (value:string) : string StringMap.t =
   let (_,typ,content) = getInfo objectMap value in
@@ -99,12 +99,12 @@ let getMapping (objectMap:objectmap) (value:string) : string StringMap.t =
                         (fun map (k,v) -> StringMap.add (getYamlScalar k) (getYamlScalar v) map) 
                         StringMap.empty (getYamlMapping content)
       | _ -> failwith "Error: getMapping invoked with non-MAPPING"
-;;
+
 
 let findInMapping (objectMap:objectmap) (key:string) (value:string) : string =
   let map = getMapping objectMap value in
     try StringMap.find key map with Not_found -> null
-;;
+
 
 (* 
  * Parse *.yml files into an objectmap
@@ -122,7 +122,7 @@ let parse yaml_str : objectmap =
     else
       let yamlnode = YamlParser.parse_string (YamlParser.make ()) yaml_str in
         mapHashcodesToObjects yamlnode
-;;
+
 
 (* TODO: split the file into two *)
 
@@ -141,7 +141,7 @@ let findPptMap objectMap =
   in
     assert (List.length pptmaps = 1);
     List.hd pptmaps
-;;
+
 
 (*
  *  Structure of Daikon's VarInfo
@@ -155,15 +155,15 @@ let findPptMap objectMap =
 type condition =
   | OneOfScalar of Cil.varinfo * int list
   | Negation of condition
-;;
+
 type creation =
   | TypedMalloc of Cil.varinfo * int list (* size *)
-;;
+
 type task =
   | Condition of condition
   | Creation of creation
   | Nothing
-;;
+
 
 let findCilFormal state (str_formal:string) : Cil.varinfo =
   try
@@ -172,7 +172,7 @@ let findCilFormal state (str_formal:string) : Cil.varinfo =
       formal
   with Not_found ->
     failwith (Printf.sprintf "Error in findCilFormal: %s not found" str_formal)
-;;
+
 
 let constrain_invariant state (fundec:Cil.fundec) (inv:string) objectMap : task list =
   let (c,t,content) = getInfo objectMap inv in
@@ -237,7 +237,7 @@ let constrain_invariant state (fundec:Cil.fundec) (inv:string) objectMap : task 
               end
 
       | _ -> []
-;;
+
 
 (* Transform a task into
  * 1. a constraint
@@ -289,14 +289,14 @@ let constrain_task state task : bytes (* constraints *) * state=
     | Creation (c) ->
         constrain_task_creation state c
     | Nothing -> (tru,state)
-;;
+
 
 let task_rank task =
   match task with
     | Creation (c) -> 0
     | Condition (c) -> 1
     | Nothing -> 2
-;;
+
 
 let constrain_pptslice state (fundec:Cil.fundec) (pptslice:string) objectMap : bytes list (* list of constraints *) * state =
   let invs = getAttribute objectMap pptslice "invs" in
@@ -309,7 +309,7 @@ let constrain_pptslice state (fundec:Cil.fundec) (pptslice:string) objectMap : b
   in
   let task_list = List.stable_sort (fun a b -> (task_rank a) - (task_rank b)) task_list in
     List.fold_left (fun (lst,s) t -> let (pc,s') = constrain_task s t in (pc::lst,s')) ([],state) task_list
-;;
+
 
 let constrain state (fundec:Cil.fundec) objectMap : bytes * state =
   (* TODO: omit fundec, since it's already in List.hd state.callstack *)
@@ -346,23 +346,23 @@ let constrain state (fundec:Cil.fundec) objectMap : bytes * state =
   let pc = List.fold_left bytes_and tru lst in
   let state'' = MemOp.state__add_path_condition state' pc false in
     (pc,state'')
-;;
+
 
 
 (* ******************* *)
 
 
-let global_objectMap = ref ObjectMap.empty;;
+let global_objectMap = ref ObjectMap.empty
 
-type record = { numTrue:int; numFalse:int; numUnknown:int };;
+type record = { numTrue:int; numFalse:int; numUnknown:int }
 let incr_record r t = match t with
   | Ternary.True -> r:={!r with numTrue=(!r).numTrue+1}
   | Ternary.False -> r:={!r with numFalse=(!r).numFalse+1}
   | Ternary.Unknown -> r:={!r with numUnknown=(!r).numUnknown+1}
-;;
 
-let pc2ct = ref {numTrue=0;numFalse=0;numUnknown=0};;
-let ct2pc = ref {numTrue=0;numFalse=0;numUnknown=0};;
+
+let pc2ct = ref {numTrue=0;numFalse=0;numUnknown=0}
+let ct2pc = ref {numTrue=0;numFalse=0;numUnknown=0}
 
 let examine state fundec = 
   (
@@ -392,5 +392,5 @@ let examine state fundec =
           | _ -> Output.printf "Unknown\n"
     end;
     ()
-;;
+
 

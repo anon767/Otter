@@ -7,7 +7,7 @@
 open Cil
 open Bytes
 
-let run op operands = op operands;;
+let run op operands = op operands
 
 
 let unop op_conc (*bytearray->bytearray*) op_symb operands : bytes  = 
@@ -24,7 +24,7 @@ let unop op_conc (*bytearray->bytearray*) op_symb operands : bytes  =
 			| _ -> (make_Bytes_Op(op_symb, operands))
 	in 
 		impl bytes1 typ1
-;;
+
 
 let neg operands =
 	let op_conc arr typ = 
@@ -44,7 +44,7 @@ let neg operands =
 		) arr 
 	in
 	unop op_conc OP_UMINUS operands 
-;;
+
 
 let bnot operands =
 	let op_conc arr typ = 
@@ -56,7 +56,7 @@ let bnot operands =
 		) arr 
 	in
 	unop op_conc OP_BNOT operands 
-;;
+
 
 let lnot operands = (* should return int (32-bit) *)
 	let op_conc arr typ = 
@@ -69,7 +69,7 @@ let lnot operands = (* should return int (32-bit) *)
 		else (* 1 *)
 			ImmutableArray.of_list [make_Byte_Concrete('\001');make_Byte_Concrete('\000');make_Byte_Concrete('\000');make_Byte_Concrete('\000')]
 	in
-	unop op_conc OP_LNOT operands ;;
+	unop op_conc OP_LNOT operands 
 
 let ikind_of_TInt = function
 		TInt (ikind,_) -> ikind
@@ -226,7 +226,7 @@ let rec binop op_const op_symb operands : bytes (* * typ *)=
 and plus operands  = binop (fun s x y -> Int64.add x y) OP_PLUS operands
 and minus operands = binop (fun s x y -> Int64.sub x y) OP_SUB operands	
 and mult operands  = binop (fun s x y -> Int64.mul x y) OP_MULT operands 
-;;
+
 
 
 (*
@@ -235,14 +235,14 @@ let signextend operands =
 		n1
 	in
 		binop nativeop OP_SX operands 
-;;*)
+*)
 
 (* Fix sign problem! *)
-let div operands   = binop (fun s x y -> Int64.div x y) OP_DIV operands ;;
-let rem operands   = binop (fun s x y -> Int64.rem x y) OP_MOD operands ;;
+let div operands   = binop (fun s x y -> Int64.div x y) OP_DIV operands 
+let rem operands   = binop (fun s x y -> Int64.rem x y) OP_MOD operands 
 
-let shiftlt operands = 	binop (fun s x y -> Int64.shift_left x (Int64.to_int y)) OP_LSL operands;;
-let shiftrt operands = 	binop (fun s x y -> Int64.shift_right x (Int64.to_int y)) OP_LSR operands;;
+let shiftlt operands = 	binop (fun s x y -> Int64.shift_left x (Int64.to_int y)) OP_LSL operands
+let shiftrt operands = 	binop (fun s x y -> Int64.shift_right x (Int64.to_int y)) OP_LSR operands
 
 let signed_compare s x y =
 	if s then Int64.compare x y else
@@ -251,29 +251,29 @@ let signed_compare s x y =
 		| (true,false) -> -1
 		| (false,true) -> 1
 		| (false,false) -> Int64.compare y x
-;;
 
-let lt operands =	binop (fun s x y -> if signed_compare s x y < 0 then 1L else 0L) OP_LT operands ;;
-let gt operands =	binop (fun s x y -> if signed_compare s x y > 0 then 1L else 0L) OP_GT operands ;;
-let le operands =	binop (fun s x y -> if signed_compare s x y <= 0 then 1L else 0L) OP_LE operands ;;
-let ge operands =	binop (fun s x y -> if signed_compare s x y >= 0 then 1L else 0L) OP_GE operands ;;
+
+let lt operands =	binop (fun s x y -> if signed_compare s x y < 0 then 1L else 0L) OP_LT operands 
+let gt operands =	binop (fun s x y -> if signed_compare s x y > 0 then 1L else 0L) OP_GT operands 
+let le operands =	binop (fun s x y -> if signed_compare s x y <= 0 then 1L else 0L) OP_LE operands 
+let ge operands =	binop (fun s x y -> if signed_compare s x y >= 0 then 1L else 0L) OP_GE operands 
 
 let eq operands =	
-	binop (fun s x y -> if x = y then 1L else 0L) OP_EQ operands ;;
+	binop (fun s x y -> if x = y then 1L else 0L) OP_EQ operands 
 
 let ne operands =	
-	binop (fun s x y -> if x <> y then 1L else 0L) OP_NE operands ;;
+	binop (fun s x y -> if x <> y then 1L else 0L) OP_NE operands 
 
-let band operands = binop (fun s x y -> Int64.logand x y ) OP_BAND operands ;;
-let bxor operands = binop (fun s x y -> Int64.logxor x y ) OP_BXOR operands ;;
-let bor operands  = binop (fun s x y -> Int64.logor x y )  OP_BOR operands ;;
+let band operands = binop (fun s x y -> Int64.logand x y ) OP_BAND operands 
+let bxor operands = binop (fun s x y -> Int64.logxor x y ) OP_BXOR operands 
+let bor operands  = binop (fun s x y -> Int64.logor x y )  OP_BOR operands 
 
 let logand operands =  (* should return int (32-bit) *)
 	binop (fun s x y -> if x = 0L || y = 0L
-	then 0L else 1L) OP_LAND operands ;;
+	then 0L else 1L) OP_LAND operands 
 let logor operands =  (* should return int (32-bit) *)
 	binop (fun s x y -> if x = 0L && y = 0L
-	then 0L else 1L) OP_LOR operands ;;
+	then 0L else 1L) OP_LOR operands 
 
 let rec opPI op operands =
 	let (bytes1, typ1) = List.nth operands 0 in
@@ -315,15 +315,15 @@ let rec opPI op operands =
 			Output.print_endline ("bytes1: "^(To_string.bytes bytes1)); 
 			Output.print_endline ("bytes2: "^(To_string.bytes bytes2));
 			failwith "plusPI (p1,p2) not of type (addr,int)"
-;;
+
 
 let plusPI operands =
 	opPI plus operands
-;;
+
 
 let minusPI operands =
 	opPI minus operands
-;;
+
 let minusPP operands : bytes =
 	let (bytes1, typ1) = List.nth operands 0 in
 	let (bytes2, typ2) = List.nth operands 1 in
@@ -345,7 +345,7 @@ let minusPP operands : bytes =
 				Output.print_endline ("make_Bytes1: "^(To_string.bytes bytes1));
 				Output.print_endline ("make_Bytes2: "^(To_string.bytes bytes2));
 				failwith "minusPP (p1,p2) not of type (addr,addr)"
-;;
+
 
 
 
@@ -354,7 +354,7 @@ let of_unop unop =
 		|	Neg -> neg
 		|	BNot	-> bnot
 		|	LNot	-> lnot
-;;
+
 
 let of_binop binop =
 	match binop with
@@ -380,36 +380,36 @@ let of_binop binop =
 		| IndexPI -> plusPI
 		| MinusPI -> minusPI
 		| MinusPP -> minusPP
-;;
+
 
 (* shortcuts *)
 
 let bytes__unop op b1 =
   op [ (b1,Cil.intType) ]
-;;
+
 
 let bytes__not b1 =
   if b1==bytes__zero then bytes__one
   else if b1==bytes__one then bytes__zero 
   else bytes__unop lnot b1
-;;
+
 
 let bytes__binop op b1 b2 =
   op [ (b1,Cil.intType); (b2,Cil.intType) ]
-;;
+
 
 let bytes__lor b1 b2 =
   if b1==bytes__one || b2==bytes__one then bytes__one 
   else if b1==bytes__zero then b2 
   else if b2==bytes__zero then b1 
   else bytes__binop logor b1 b2
-;;
+
 
 let bytes__land b1 b2 =
   if b1==bytes__zero || b2==bytes__zero then bytes__zero
   else if b1==bytes__one then b2 
   else if b2==bytes__one then b1 
   else bytes__binop logand b1 b2
-;;
+
 
 

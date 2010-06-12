@@ -4,7 +4,7 @@ module VarinfoMap = Cilutility.VarinfoMap
 module TypeMap = Cilutility.TypeMap
 
 type operator_action = (bytes*Cil.typ) list -> (bytes (* *Cil.typ*))
-;;
+
 
 module MemoryBlockMap =
 	Utility.MakeMap (
@@ -53,7 +53,7 @@ type callingContext =
     | Runtime
     | Source of (Cil.lval option * Cil.stmt * Cil.instr * Cil.stmt)
 	| NoReturn of Cil.instr
-;;
+
 
 
 type 'a deferred =
@@ -84,17 +84,17 @@ and state =
 		loc_map : bytes LocMap.t;     (* Map loc to symbolic bytes *)
         bytes_eval_cache : bool BytesMap.t; (* Map bytes to boolean value, if exists *) 
 	}
-;;
+
 
 
 (* http://www.c-faq.com/decl/strlitinit.html *)
 
-let (string_table : bytes MemoryBlockMap.t ref) = ref MemoryBlockMap.empty;;
+let (string_table : bytes MemoryBlockMap.t ref) = ref MemoryBlockMap.empty
 
-(*let (vargs_table : bytes list VargsMap.t ref) = ref VargsMap.empty;;*)
+(*let (vargs_table : bytes list VargsMap.t ref) = ref VargsMap.empty*)
 
 (* some globals that are helpful *)
-let stp_count = ref 0;;
+let stp_count = ref 0
 
 (* With statement ids which are unique only within functions, we need
 	 to know the function's name in addition to the sid to uniquely
@@ -214,7 +214,7 @@ module JobSet = Set.Make
 (** Map [stmtInfo]s of [If] statements to the [stmtInfo]s of join
 		points which the [If]s dominate.
 		This will allow us to know where we should expect to merge paths. *)
-let ifToJoinPointsHash : (stmtInfo,stmtInfo) Hashtbl.t = Hashtbl.create 500;;
+let ifToJoinPointsHash : (stmtInfo,stmtInfo) Hashtbl.t = Hashtbl.create 500
 
 (* target to be used in prioritizer *)
 type target = {

@@ -7,13 +7,13 @@ type 'a t =
 		offset: int;
 		default: 'a option;
 	}
-;;
+
 
 let length array =
 	let len = array.length-array.offset in
 		if(len<0) then failwith "Array length can't be less than zero" else
 		len
-;;
+
 
 let get array i =
 	try
@@ -22,7 +22,7 @@ let get array i =
 		match array.default with
 			| None -> failwith "Array element not initialized" (* error occurs when someone declares an array of size 0, and read from it *)
 			| Some(elm) -> elm
-;;
+
 
 let set array i elm =
 	let ii = i+array.offset in
@@ -33,11 +33,11 @@ let set array i elm =
 			else array.length; (*should expand? *)
 		map = IndexMap.add ii elm array.map;
 	}
-;;
+
 
 let add array elm =
 	set array (length array) elm
-;;
+
 
 let sub array offset2 size = 
 	let offset3 = array.offset+offset2 in
@@ -45,7 +45,7 @@ let sub array offset2 size =
 		length = size+offset3;
 		offset = offset3;
 	}
-;;
+
 	
 let empty =
 	{
@@ -54,14 +54,14 @@ let empty =
 		map = IndexMap.empty;
 		default = None;
 	}
-;;
+
 
 let make n initval =
 	{ empty with
 		length = n;
 		default = Some(initval);
 	}
-;;
+
 
 let of_list (lst: 'a list) : 'a t =
 	if lst=[] then empty 
@@ -75,7 +75,7 @@ let of_list (lst: 'a list) : 'a t =
 					set array n head
 	in
 	impl lst 0 
-;;
+
 
 let fold_left ff a bs =
 	let len = length bs in
@@ -85,7 +85,7 @@ let fold_left ff a bs =
 			impl ff aa bs (i+1)
 	in
 		impl ff a bs 0
-;;
+
  
 let map ff bs =
 	let fff lst bb =
@@ -94,7 +94,7 @@ let map ff bs =
 	let l1 = fold_left fff [] bs in
 	let l2 = List.rev_append l1 [] in
 		of_list l2
-;;
+
 
 let fold2_left ff a bs1 bs2 =
 	let len = length bs1 in
@@ -105,7 +105,7 @@ let fold2_left ff a bs1 bs2 =
 			impl ff aa bs1 bs2 (i+1)
 	in
 		impl ff a bs1 bs2 0
-;;
+
 
 let exists p arr =
 	let len = length arr in

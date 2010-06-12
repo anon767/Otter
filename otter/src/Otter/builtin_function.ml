@@ -13,7 +13,7 @@ let libc___builtin_va_arg state exps =
 			let state = MemOp.state__assign state lval ret in
 			(state, ret)
 		| _ -> failwith "Last argument of __builtin_va_arg must be of the form CastE(_,AddrOf(lval))"
-;;
+
 
 let libc___builtin_va_copy state exps =
 	let state, keyOfSource = Eval.rval state (List.nth exps 1) in
@@ -25,13 +25,13 @@ let libc___builtin_va_copy state exps =
 			let state = MemOp.state__assign state lval key in
 			(state, bytes__zero)
 		| _ -> failwith "First argument of va_copy must have lval"
-;;
+
 
 let libc___builtin_va_end state exps =
 	let state, key = Eval.rval state (List.hd exps) in
 	let state = MemOp.vargs_table__remove state key in
 	(state, bytes__zero)
-;;
+
 
 let libc___builtin_va_start state exps =
 	(* TODO: assign first arg with new bytes that maps to vargs *)
@@ -42,10 +42,10 @@ let libc___builtin_va_start state exps =
 			let state = MemOp.state__assign state lval key in
 			(state, bytes__zero)
 		| _ -> failwith "First argument of va_start must have lval"
-;;
+
 
 (* __builtin_alloca is used for local arrays with variable size; has the same semantics as malloc *)
-let libc___builtin_alloca__id = ref 1;;
+let libc___builtin_alloca__id = ref 1
 let libc___builtin_alloca_size state size bytes =
 	let name = Printf.sprintf "%s(%d)#%d/%s%s"
 		(List.hd state.callstack).svar.vname
@@ -58,7 +58,7 @@ let libc___builtin_alloca_size state size bytes =
 	let addrof_block = make_Bytes_Address (block, bytes__zero) in
 	let state = MemOp.state__add_block state block bytes in
 	(state, addrof_block)
-;;
+
 let libc___builtin_alloca state exps =
 	let state, b_size = Eval.rval state (List.hd exps) in
 	let size =
@@ -73,7 +73,7 @@ let libc___builtin_alloca state exps =
 	  else bytes__make_default size byte__undef (* initially the symbolic 'undef' byte *)
 	in
     libc___builtin_alloca_size state size bytes
-;;
+
 
 (* share implementation with __builtin_alloca *)
 let libc_malloc = libc___builtin_alloca
@@ -100,7 +100,7 @@ let libc_free state exps =
 		| _ ->
 			Output.set_mode Output.MSG_MUSTPRINT;
 			warning ("Freeing something that is not a valid pointer: " ^ (To_string.exp (List.hd exps)) ^ " = " ^ (To_string.bytes ptr))
-;;
+
 
 
 (* TODO: why are there two completely identical memset? *)
@@ -119,7 +119,7 @@ let libc_memset__concrete state exps =
 		(state, bytes)
 	else
 		failwith "libc_memset__concrete: n is symbolic (TODO)"
-;;
+
 
 let libc_memset state exps =
 	let state, bytes = Eval.rval state (List.hd exps) in
@@ -136,7 +136,7 @@ let libc_memset state exps =
 		(state, bytes)
 	else
 		failwith "libc_memset: n is symbolic (TODO)"
-;;
+
 
 let libc_strlen state exps =
 	let gotoFail () = failwith "libc_strlen: can't run builtin" in
@@ -161,39 +161,39 @@ let libc_strlen state exps =
 			(state, lazy_int_to_bytes strlen)
 		| _ ->
 			gotoFail ()
-;;
 
 
-let libc___create_file state exps = (state,bytes__zero);;
-let libc___error state exps = (state,bytes__zero);;
-let libc___maskrune state exps = (state,bytes__zero);;
-let libc___toupper state exps = (state,bytes__zero);;
-let libc_accept state exps = (state,bytes__zero);;
-let libc_bind state exps = (state,bytes__zero);;
-let libc_close state exps = (state,bytes__zero);;
-let libc_dup2 state exps = (state,bytes__zero);;
-let libc_execl state exps = (state,bytes__zero);;
-let libc_fclose state exps = (state,bytes__zero);;
-let libc_feof state exps = (state,bytes__zero);;
-let libc_fileno state exps = (state,bytes__zero);;
-let libc_fork state exps = (state,bytes__zero);;
-let libc_getc state exps = (state,bytes__zero);;
-let libc_getsockname state exps = (state,bytes__zero);;
-let libc_listen state exps = (state,bytes__zero);;
-let libc_open state exps = (state,bytes__zero);;
-let libc_pipe state exps = (state,bytes__zero);;
-let libc_putenv state exps = (state,bytes__zero);;
-let libc_read state exps = (state,bytes__zero);;
-let libc_recv state exps = (state,bytes__zero);;
-let libc_send state exps = (state,bytes__zero);;
-let libc_socket state exps = (state,bytes__zero);;
-let libc_stat state exps = (state,bytes__zero);;
-let libc_waitpid state exps = (state,bytes__zero);;
-let libc_write state exps = (state,bytes__zero);;
 
-let posix_umask state exps = (state,bytes__zero);;
-let posix_openlog state exps = (state,bytes__zero);;
-let posix_syslog state exps = (state,bytes__zero);;
+let libc___create_file state exps = (state,bytes__zero)
+let libc___error state exps = (state,bytes__zero)
+let libc___maskrune state exps = (state,bytes__zero)
+let libc___toupper state exps = (state,bytes__zero)
+let libc_accept state exps = (state,bytes__zero)
+let libc_bind state exps = (state,bytes__zero)
+let libc_close state exps = (state,bytes__zero)
+let libc_dup2 state exps = (state,bytes__zero)
+let libc_execl state exps = (state,bytes__zero)
+let libc_fclose state exps = (state,bytes__zero)
+let libc_feof state exps = (state,bytes__zero)
+let libc_fileno state exps = (state,bytes__zero)
+let libc_fork state exps = (state,bytes__zero)
+let libc_getc state exps = (state,bytes__zero)
+let libc_getsockname state exps = (state,bytes__zero)
+let libc_listen state exps = (state,bytes__zero)
+let libc_open state exps = (state,bytes__zero)
+let libc_pipe state exps = (state,bytes__zero)
+let libc_putenv state exps = (state,bytes__zero)
+let libc_read state exps = (state,bytes__zero)
+let libc_recv state exps = (state,bytes__zero)
+let libc_send state exps = (state,bytes__zero)
+let libc_socket state exps = (state,bytes__zero)
+let libc_stat state exps = (state,bytes__zero)
+let libc_waitpid state exps = (state,bytes__zero)
+let libc_write state exps = (state,bytes__zero)
+
+let posix_umask state exps = (state,bytes__zero)
+let posix_openlog state exps = (state,bytes__zero)
+let posix_syslog state exps = (state,bytes__zero)
 
 type t = state -> exp list -> state * bytes
 
@@ -241,7 +241,7 @@ let get = function
 (*	| "syslog" -> posix_syslog		*)
 
 	| _ -> failwith "No such builtin function"
-;;
+
 
 (* TODO: change this so that we don't call built-in functions twice
  * when they work. *)
@@ -259,4 +259,4 @@ let can_apply_builtin state fname args =
 		true
 	with Failure(_) ->
 		false
-;;
+

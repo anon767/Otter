@@ -28,7 +28,7 @@ let print_failed_assertion state bytes exps ~isUnknown =
 	Executedebug.log (if pc_str = "" then "true" else pc_str);
 	Executedebug.log "****************************)";
 	print_args.arg_print_nothing <- oldPrintNothingVal
-;;
+
 
 (** Check an assertion in a given state
     @param state            the state in which to check the assertion : state
@@ -52,7 +52,7 @@ let check state bytes exps =
 			(* Assume the assertion *)
 			MemOp.state__add_path_condition state bytes true (* This [true] marks the assumption as though it came from an actual branch in the code *)
    (* CCBSE: we can collect failing conditions here *)
-;;
+
 
 (* Bounds-checking *)
 (* The next two function are used for bounds-checking. Here are some
@@ -120,7 +120,7 @@ let rec getBlockSizesAndOffsets lvals = match lvals with
 		| ConditionalException e ->
             ConditionalException e,
             ConditionalException e
-;;
+
 
 let checkBounds state lvals cil_lval useSize =
 	Output.print_endline ("Checking bounds of " ^ Pretty.sprint 50 (Cil.d_lval () cil_lval));
@@ -152,14 +152,14 @@ let checkBounds state lvals cil_lval useSize =
 
 	(* Do the second check *)
 	check state useSizeLeSizes [expRepresentingBoundsCheck2]
-;;
+
 
 let add_offset state offset lvals : state * (Types.MemoryBlockMap.key * Bytes.bytes) Bytes.conditional =
 	conditional__map_fold begin fun newState _ (block, offset2) ->
 		let newOffset = Operation.plus [(offset, !Cil.upointType); (offset2, !Cil.upointType)] in
 		(newState, conditional__lval_block (block, newOffset))
 	end state lvals
-;;	
+	
 
 let rec
 
@@ -444,5 +444,5 @@ rval_binop state binop exp1 exp2 =
 		let state, rv2 = rval state exp2 in
 		let typ2 = Cil.typeOf exp2 in
 		(state, BytesUtility.prune_bytes_conditional state (Operation.run op [(rv1,typ1);(rv2,typ2)]))
-;;
+
 	

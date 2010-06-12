@@ -4,9 +4,9 @@ open Cil
 open Bytes
 open Types
 
-let strlen = 1000;;
-let force_print = ref false;;
-let donotprint() = (not (!force_print)) && (not (Output.need_print (!Output.current_msg_type)));;
+let strlen = 1000
+let force_print = ref false
+let donotprint() = (not (!force_print)) && (not (Output.need_print (!Output.current_msg_type)))
 
 (** Print out a bytearray as though it were a string, stopping at the
 		first (concrete) null byte. *)
@@ -30,15 +30,15 @@ let bytestring arr =
 		)
 	in
 	helper 0 ""
-;;
+
 
 let location loc = 
 	loc.file^":"^(string_of_int loc.line)
-	;;
+	
 
 let varinfo v =
 	(v.vname)^"@"^(location v.vdecl)
-	;;
+	
 
 (* TODO: avoid rec *)
 let rec
@@ -343,7 +343,7 @@ and
 conditional  unconditional_ff c = 
   if donotprint() then "" else
   (conditional_ff unconditional_ff str_formatter c; flush_str_formatter ())
-;;
+
 
 
 

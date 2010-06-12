@@ -28,11 +28,11 @@ module TypeMap = Utility.MakeMap (struct
 		Pervasives.compare (canonicalize x) (canonicalize y)
 end)
 
-let fundecHashtbl : (varinfo, fundec) Hashtbl.t = Hashtbl.create 100;;
-let varinitHashtbl : (varinfo, initinfo) Hashtbl.t = Hashtbl.create 100;;
+let fundecHashtbl : (varinfo, fundec) Hashtbl.t = Hashtbl.create 100
+let varinitHashtbl : (varinfo, initinfo) Hashtbl.t = Hashtbl.create 100
 
-let search_function varinfo = Hashtbl.find fundecHashtbl varinfo;;
-let search_varinit varinfo = Hashtbl.find varinitHashtbl varinfo;;
+let search_function varinfo = Hashtbl.find fundecHashtbl varinfo
+let search_varinit varinfo = Hashtbl.find varinitHashtbl varinfo
 
 module FundecMap =
 	Utility.MakeMap (
@@ -94,7 +94,7 @@ let rec isConstType typ =
    | TArray(t,_,a) 
    | TPtr(t, a) -> isConstType t
 
-;;
+
 
 
 let get_fundec vname file =
@@ -103,7 +103,7 @@ let get_fundec vname file =
 		| _::t -> search t
 		| [] -> raise Not_found
 	in search file.globals
-;;
+
 
 let make_callgraph file : Cil.fundec list FundecMap.t =
   let get_callees fundec =
@@ -132,7 +132,7 @@ let make_callgraph file : Cil.fundec list FundecMap.t =
         | _ -> cg
     end
     (FundecMap.empty) file.globals
-;;
+
 
 let make_callergraph file : Cil.fundec list FundecMap.t =
   let callgraph = make_callgraph file in
@@ -148,13 +148,13 @@ let make_callergraph file : Cil.fundec list FundecMap.t =
             cg callees
       end
       callgraph FundecMap.empty
-;;
+
 
 let get_callers callergraph func =
   try 
     FundecMap.find func callergraph
   with Not_found -> []
-;;
+
 
 
 

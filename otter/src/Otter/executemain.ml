@@ -6,7 +6,7 @@ open Executeargs
 open MemOp
 open InvInput
 
-let unreachable_global varinfo = not (Cilutility.VarinfoSet.mem varinfo (!GetProgInfo.reachable_globals));;
+let unreachable_global varinfo = not (Cilutility.VarinfoSet.mem varinfo (!GetProgInfo.reachable_globals))
 
 let init_symbolic_pointer state varinfo size =
   (* TODO: what's the right size?
@@ -17,7 +17,7 @@ let init_symbolic_pointer state varinfo size =
   let addrof_block = make_Bytes_Address (block, bytes__zero) in
   let state = MemOp.state__add_block state block (bytes__symbolic size) in
     state,make_Bytes_Conditional (conditional__from_list [Unconditional bytes__zero; Unconditional addrof_block])
-;;
+
 
 let init_symbolic_varinfo state varinfo =
   let typ = varinfo.vtype in
@@ -33,7 +33,7 @@ let init_symbolic_varinfo state varinfo =
           Output.set_mode Output.MSG_REG;
           Output.printf "Initialize %s to symbolic\n" varinfo.vname;
           state,bytes__symbolic size 
-;;
+
 
 let init_symbolic_globalvars state globals =
 	List.fold_left begin fun state g -> match g with
@@ -46,7 +46,7 @@ let init_symbolic_globalvars state globals =
 		| _ ->
 			state
 	end state globals
-;;
+
 
 
 let init_globalvars state globals =
@@ -103,7 +103,7 @@ let init_globalvars state globals =
 		| _ ->
 			state
 	end state globals
-;;
+
 
 
 (* Initialize arguments for an entry function to purely symbolic *)
@@ -124,7 +124,7 @@ let init_symbolic_argvs state (entryfn:fundec) : (state*bytes list*executionHist
     }
   in
   (state,args,exHist)
-;;
+
 
 (* To initialize the arguments, we need to create a bytes which represents argc and
 	 one which represents argv. The one for argc is simple: count how many arguments
@@ -194,7 +194,7 @@ let init_cmdline_argvs state argstr =
 
 	(* Finally, return the updated state and the list of arguments *)
 	(state'', [argc; argv])
-;;
+
 
 let computeJoinPointsForIfs fundec =
 	(* Compute the dominators for the function *)
@@ -222,7 +222,7 @@ let computeJoinPointsForIfs fundec =
 										 { siFuncName = fundec.svar.vname ; siStmt = ifDom }
 										 { siFuncName = fundec.svar.vname ; siStmt = s })
 		fundec.sallstmts
-;;
+
 
 (* set up the file for symbolic execution *)
 let prepare_file file =
@@ -457,7 +457,7 @@ let doExecute (f: file) =
         ()
   end;
 	List.iter (fun result -> Report.print_report result) results
-;;
+
 
 let feature : featureDescr = 
   { fd_name = "execute";              
@@ -646,4 +646,4 @@ let feature : featureDescr =
 		fd_post_check = true;
     fd_doit = doExecute
   } 
-	;;
+	

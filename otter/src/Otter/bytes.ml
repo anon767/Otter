@@ -26,7 +26,7 @@ type operator =
 	| OP_UMINUS
 	| OP_BNOT
 	| OP_LNOT
-;;
+
 
 (** Does the operator return a boolean value (i.e., 0 or 1)? *)
 let returnsBoolean = function
@@ -89,17 +89,17 @@ and memory_block =
 	}
 
 and lval_block = (memory_block * bytes) conditional
-;;
 
-let hash_consing_bytes_enabled = ref false;;
-let hash_consing_bytes_hits = ref 0;;
-let hash_consing_bytes_misses = ref 0;;
-let hash_consing_bytes_init_size = 1000000;;
-let hash_consing_bytes_tbl : (bytes,bytes) Hashtbl.t = Hashtbl.create hash_consing_bytes_init_size;;
+
+let hash_consing_bytes_enabled = ref false
+let hash_consing_bytes_hits = ref 0
+let hash_consing_bytes_misses = ref 0
+let hash_consing_bytes_init_size = 1000000
+let hash_consing_bytes_tbl : (bytes,bytes) Hashtbl.t = Hashtbl.create hash_consing_bytes_init_size
 let hash_consing_bytes_create bs = 
   if not (!hash_consing_bytes_enabled) then bs else
   try let rv = Hashtbl.find hash_consing_bytes_tbl bs in Utility.increment hash_consing_bytes_hits; rv
-  with Not_found -> Hashtbl.add hash_consing_bytes_tbl bs bs; Utility.increment hash_consing_bytes_misses; bs;;
+  with Not_found -> Hashtbl.add hash_consing_bytes_tbl bs bs; Utility.increment hash_consing_bytes_misses; bs
 
 
 (*
@@ -140,13 +140,13 @@ and
 make_Bytes_Conditional = function
 	| Unconditional b -> b
 	| c -> hash_consing_bytes_create (Bytes_Conditional ( c ))
-;;
+
 
 
 
 let ikind_to_len_isSigned ikind =
 	(bitsSizeOf (TInt (ikind, [])) / 8, isSigned ikind)
-;;
+
 
 (**
  *	to bytes
@@ -155,28 +155,28 @@ let ikind_to_len_isSigned ikind =
 (** Convert constant to make_Bytes_Constant *)
 let lazy_constant_to_bytes constant : bytes =
 	make_Bytes_Constant(constant)
-	;;
+	
 
 (** Convert an (int64 of ikind) to make_Bytes_Constant(CInt64(int64,ikind,None)) *)
 let lazy_int64_to_bytes n ikind : bytes =
 	lazy_constant_to_bytes (CInt64(n,ikind,None))
-	;;
+	
 
 (** Convert an ocaml (signed) int to make_Bytes_Constant(CInt64(int64,IInt,None)) *)
 let lazy_int_to_bytes n : bytes =
 	lazy_int64_to_bytes (Int64.of_int n) IInt
-	;;
+	
 
 (* Make this lazy so that upointType is set correctly (by initCIL) before it is evaluated *)
 let kindOfUpointType = lazy (match !upointType with
 		TInt (kind, _) -> kind
 	| _ -> failwith "upointType is not set properly")
-;;
+
 
 (* Convert an int n to [Bytes_Constant (CInt64 (Int64.of_int n, kindOfUpointType, None))] *)
 let int_to_offset_bytes (n : int) : bytes =
 	make_Bytes_Constant (CInt64 (Int64.of_int n, Lazy.force kindOfUpointType, None))
-;;
+
 
 (** Convert in64 of ikind to make_Bytes_ByteArray. Truncate if needed.  *)
 let int64_to_bytes n64 ikind : bytes =
@@ -188,7 +188,7 @@ let int64_to_bytes n64 ikind : bytes =
 				(succ count)
 	in
 	make_Bytes_ByteArray(ImmutableArray.of_list (List.rev (helper n64 [] 0))) (* Reverse because we are little-endian *)
-	;;
+	
 
 let string_map f s =
 	let rec helper i acc =
@@ -201,7 +201,7 @@ let string_map f s =
 (** Convert CString to make_Bytes_ByteArray.  *)
 let string_to_bytes (s : string) : bytes =
 	make_Bytes_ByteArray (ImmutableArray.of_list (string_map (fun ch -> make_Byte_Concrete ch) (s^"\000")))
-;;
+
 
 (** Coonvert real numbers to make_Bytes *)
 (* TODO: actually represent the numbers *)
@@ -225,13 +225,13 @@ let rec constant_to_bytes constant : bytes =
 				constant_to_bytes (Cil.charConstToInt char)
 		| CReal (f,fkind,_) -> float_to_bytes f fkind
 		| _ -> failwith "constant_to_bytes: unsupported constant type"
-	;;
+	
 
 let constant_to_bytearray constant : byte ImmutableArray.t =
 	match constant_to_bytes constant with
 		| Bytes_ByteArray(ba) -> ba
 		| _ -> failwith "constant_to_bytearray: error"
-;;
+
 
 
 (**
@@ -257,12 +257,12 @@ let rec bytes_to_int64 bytes isSigned : int64 =
 				in
 				bytearray_to_int64_helper ((ImmutableArray.length bytearray) - 1) 0L
 		| _ -> failwith "bytes_to_int64: not concrete int"
-	;;
+	
 
 (** Convert a bytes to (signed) int64. Exception if bytes is not concrete int *)
 let bytes_to_int64_auto bytes : int64 =
 	bytes_to_int64 bytes true
-	;;
+	
 
 (** Convert a bytes to (signed) ocaml int.
 	Warning if bytes represents number out of int's range.
@@ -273,13 +273,13 @@ let bytes_to_int_auto bytes : int =
 	if n64 <> Int64.of_int res then
 		Errormsg.warn "Int64 %Ld is being truncated to an int" n64;
 	res
-	;;
+	
 
 (** Convert a bytes to boolean. Exception if bytes is not concrete *int* *)
 let bytes_to_bool bytes : bool =
 	let n64 = bytes_to_int64_auto bytes in
 		n64 <> 0L
-	;;
+	
 
 (** Convert a bytes of typ to Cil constant. Exception if bytes is not concrete *)
 let rec bytes_to_constant bytes typ : Cil.constant =
@@ -300,7 +300,7 @@ let rec bytes_to_constant bytes typ : Cil.constant =
 				| _ ->
 				failwith ("bytes_to_constant: "^(Pretty.sprint 50 (Cil.d_type () t)))
 			end
-	;;
+	
 
 (** Convert a possibly-address bytes to make_Bytes_Address *)
 let rec bytes_to_address bytes : memory_block * bytes =
@@ -317,14 +317,14 @@ let rec bytes_to_address bytes : memory_block * bytes =
 				| _ -> fail ()
 			end
 		| _ -> fail ()
-;;
+
 
 
 (** True if bytearray is concrete *)
 (* Shouldn't a make_Byte_Bytes with concrete values be considered concrete, too? *)
 let isConcrete_bytearray (bytearray : byte ImmutableArray.t) =
 	ImmutableArray.for_all (function Byte_Concrete _ -> true | _ -> false) bytearray
-	;;
+	
 
 (** True if bytes is concrete *)
 let rec isConcrete_bytes (bytes : bytes) =
@@ -332,7 +332,7 @@ let rec isConcrete_bytes (bytes : bytes) =
 		| Bytes_Constant (_) -> true
 		| Bytes_ByteArray (bytearray) -> isConcrete_bytearray bytearray
 		| _ -> false
-	;;
+	
 
 
 (**
@@ -390,24 +390,24 @@ and bytes__equal bytes1 bytes2 = if bytes1 == bytes2 then true else match bytes1
 	| _, _ ->
 		false
 
-;;
+
 
 (* boolean *)
-let tru = lazy_int_to_bytes 1;;
-let fls = lazy_int_to_bytes 0;;
+let tru = lazy_int_to_bytes 1
+let fls = lazy_int_to_bytes 0
 
 let bytes_or b1 b2 = 
   if b1=fls then b2 else if b2=fls then b1 else
-  make_Bytes_Op (OP_LOR, [(b1,Cil.intType);(b2,Cil.intType)]);;
+  make_Bytes_Op (OP_LOR, [(b1,Cil.intType);(b2,Cil.intType)])
 let bytes_and b1 b2 = 
   if b1=tru then b2 else if b2=tru then b1 else
-  make_Bytes_Op (OP_LAND, [(b1,Cil.intType);(b2,Cil.intType)]);;
+  make_Bytes_Op (OP_LAND, [(b1,Cil.intType);(b2,Cil.intType)])
 let bytes_not b = 
   if b=tru then fls else if b=fls then tru else 
   make_Bytes_Op (OP_LNOT, [b,Cil.intType])
 
 (* A single global byte representing uninitialized memory *)
-let byte__undef = Byte_Symbolic({symbol_id = 0}) ;;
+let byte__undef = Byte_Symbolic({symbol_id = 0}) 
 
 let max_bytes_size = 0xffff
 
@@ -433,66 +433,66 @@ let rec bytes__length bytes =
            | ConditionalException _ -> -1
 			in
 			find_one c
-;;
+
 
 (**
  *  symbol
  *)
 (* negative id is used as special symbolic values.
    0 is used for the symbolic byte representing uninitialized memory *)
-let symbol__currentID = ref 1;;
+let symbol__currentID = ref 1
 let symbol__next () = 
 	{	
 		symbol_id = Utility.next_id symbol__currentID; 
-	} ;;
+	} 
 
-let char__random () = Char.chr ((Random.int 255)+1);;
+let char__random () = Char.chr ((Random.int 255)+1)
 
 (**
  *	byte 
  *)
-let byte__make c = make_Byte_Concrete c;;
-let byte__zero = byte__make ('\000');;
-let byte__111 = byte__make ('\255');;
-let byte__random () = byte__make (char__random ());;
-let byte__symbolic () = make_Byte_Symbolic (symbol__next ());;
+let byte__make c = make_Byte_Concrete c
+let byte__zero = byte__make ('\000')
+let byte__111 = byte__make ('\255')
+let byte__random () = byte__make (char__random ())
+let byte__symbolic () = make_Byte_Symbolic (symbol__next ())
 
 
 (**
  *	bytes
  *)
-let bytes__zero = make_Bytes_Constant(Cil.CInt64(0L,IInt,None));;
-let bytes__one = make_Bytes_Constant(Cil.CInt64(1L,IInt,None));;
-let bytes__of_list (lst: byte list) =	make_Bytes_ByteArray (ImmutableArray.of_list lst) ;;
-let bytes__make_default n byte = make_Bytes_ByteArray(ImmutableArray.make n byte);;
-let bytes__make n = bytes__make_default n byte__zero;;
+let bytes__zero = make_Bytes_Constant(Cil.CInt64(0L,IInt,None))
+let bytes__one = make_Bytes_Constant(Cil.CInt64(1L,IInt,None))
+let bytes__of_list (lst: byte list) =	make_Bytes_ByteArray (ImmutableArray.of_list lst) 
+let bytes__make_default n byte = make_Bytes_ByteArray(ImmutableArray.make n byte)
+let bytes__make n = bytes__make_default n byte__zero
 let bytes__random n =
 	let rec impl i arr =
 		if i>=n then arr else
 			impl (i+1) (ImmutableArray.set arr i (byte__random ()))
 		in
 	make_Bytes_ByteArray(impl 0 (ImmutableArray.make n byte__zero))
-;;
+
 
 let bytes__symbolic n =
 	let rec impl len = 
 		if len <= 0 then [] else (byte__symbolic ())::(impl (len-1))
 	in
 		bytes__of_list (impl n)
-;;
+
 
 let rec bytes__get_byte bytes i : byte =
 	match bytes with
 		| Bytes_Constant (constant) ->  bytes__get_byte (constant_to_bytes constant) i
 		| Bytes_ByteArray (bytearray) -> ImmutableArray.get bytearray i 
 		| _ -> make_Byte_Bytes(bytes,i)
-;;
+
 
 
 (**
  *	memory block
  *)
-let block__current_id = ref 1;;
+let block__current_id = ref 1
 let block__make name n t =
 	{
 		memory_block_name = name;
@@ -501,13 +501,13 @@ let block__make name n t =
 		memory_block_addr = bytes__random (bitsSizeOf voidPtrType / 8);
 		memory_block_type = t;
 	}
-;;
+
 let block__make_string_literal name n =
 	let block = block__make name n Block_type_StringLiteral in
 	{block with
 		memory_block_type = Block_type_StringLiteral;
 	}
-;;
+
 
 
 (** Is a bytes 0, 1, or an expression that must be 0 or 1? *)
@@ -577,7 +577,7 @@ let rec guard__to_bytes g = match g with
       failwith "guard__to_bytes: Guard_Symbolic doesn't work"
 
   | Guard_True -> bytes__one
-;;
+
 
 
 (**
@@ -730,5 +730,5 @@ let rec bytes__remove_exceptions bytes =
         let g3,b3 = bytes__remove_exceptions b3 in
          (guard__and g3 (guard__and g1 g2)),Bytes_Write (b1,b2,n,b3)
     | _ -> guard__true,bytes
-;;
+
 

@@ -21,7 +21,7 @@ type print_args =
 		mutable arg_print_char_as_int : bool;
 		mutable arg_print_nothing : bool; (* If true, overrides all other flags *)
 		mutable arg_print_stmt_locs : bool;
-	}	;;
+	}	
 (*let print_args =
 	{
 		arg_print_reg = false;
@@ -37,7 +37,7 @@ type print_args =
 		arg_print_debug = false;
 		arg_print_mustprint = true;
 		arg_print_char_as_int = false;
-	}	;;*)
+	}	*)
 let print_args =
 	{
 		arg_print_reg = true;
@@ -57,7 +57,7 @@ let print_args =
 		arg_print_char_as_int = false;
 		arg_print_nothing = false;
 		arg_print_stmt_locs = false;
-	}	;;
+	}	
 type run_args = 
 	{
 		mutable arg_run_regression : bool;
@@ -97,7 +97,7 @@ type run_args =
     mutable arg_bounds_checking : bool;
     mutable arg_cfg_pruning : bool;
     mutable arg_callchain_backward : bool;
-	};;
+	}
 
 let run_args = 
 	{
@@ -137,7 +137,7 @@ let run_args =
     arg_bounds_checking = true;
     arg_cfg_pruning = false;
     arg_callchain_backward = false;
-	} ;;
+	} 
 
 
 let readCovStatsFromFile filename =

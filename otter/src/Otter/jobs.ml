@@ -9,7 +9,7 @@ open Types
 (**
   * Change this function to use a different prioritizer 
   *)
-let prioritize_wrt_targets = Prioritizer.prioritize ;;
+let prioritize_wrt_targets = Prioritizer.prioritize 
 
 type 'a prioritized = {
   obj: 'a;
@@ -23,7 +23,7 @@ type t =
       prioritize: job -> float;
       targets: target list;
     }
-;;
+
 
 let create targets = 
   {
@@ -33,15 +33,15 @@ let create targets =
     prioritize = prioritize_wrt_targets targets;
     targets = targets;
   }
-;;
+
 
 let has_next_runnable jobs =
    PriorityQueue.length jobs.job_queue > 0
-;;
+
 
 let has_next_mergable jobs =
   not (JobSet.is_empty jobs.merge_set)
-;;
+
 
 let add_runnable jobs job =
   let priority = jobs.prioritize job in
@@ -50,15 +50,15 @@ let add_runnable jobs job =
   else 
     (* Output.printf "Add Job %d with priority %0.1f\n%!" job.jid priority; *)
     PriorityQueue.add jobs.job_queue { obj=job; priority=priority }
-;;
+
 
 let add_runnables jobs joblist =
   List.iter (fun job -> add_runnable jobs job) joblist
-;;
+
 
 let add_mergable jobs job =
    jobs.merge_set <- JobSet.add job jobs.merge_set
-;;
+
 
 let take_next_runnable jobs =
   try 
@@ -67,7 +67,7 @@ let take_next_runnable jobs =
       (* Output.printf "Take Job %d with priority %0.1f\n%!" first.obj.jid first.priority; *)
       first.obj
   with _ -> failwith "Jobs: no more runnable jobs"
-;;
+
 
 let take_next_mergable jobs =
   try
@@ -76,7 +76,7 @@ let take_next_mergable jobs =
       jobs.merge_set <- js;
       j
   with e -> failwith "Jobs: no more mergable jobs"
-;;
+
 
 let merge jobs job =
   let result = PathMerging.merge_job job jobs.merge_set in
@@ -87,10 +87,10 @@ let merge jobs job =
       | None ->
           add_mergable jobs job;
           None
-;;
+
 
 let running jobs job =
   jobs.current_job <- Some job
-;;
+
 
 

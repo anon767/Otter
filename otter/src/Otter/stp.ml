@@ -3,7 +3,7 @@ open Ternary
 open Bytes
 open Types
 
-let global_vc = Stpc.create_validity_checker ();;
+let global_vc = Stpc.create_validity_checker ()
 
 module BytesMagicMap =
 	Utility.MakeMap (
@@ -15,13 +15,13 @@ module BytesMagicMap =
 	end
 	)
 
-let bytes_stpbv_id = ref 0;;
-let bytes_stpbv_map : (Stpvc.exp*int) BytesMagicMap.t ref = ref BytesMagicMap.empty;;
+let bytes_stpbv_id = ref 0
+let bytes_stpbv_map : (Stpvc.exp*int) BytesMagicMap.t ref = ref BytesMagicMap.empty
 let bytes_stpbv_add bytes bv len =
-  bytes_stpbv_map := BytesMagicMap.add (bytes,Utility.next_id bytes_stpbv_id) (bv,len) (!bytes_stpbv_map);;
+  bytes_stpbv_map := BytesMagicMap.add (bytes,Utility.next_id bytes_stpbv_id) (bv,len) (!bytes_stpbv_map)
 let bytes_stpbv_get bytes =
   if not Executeargs.run_args.Executeargs.arg_opt_stpbv_cache then raise Not_found else
-  BytesMagicMap.find (bytes,Utility.next_id bytes_stpbv_id) (!bytes_stpbv_map);; (* raise Not_found *)
+  BytesMagicMap.find (bytes,Utility.next_id bytes_stpbv_id) (!bytes_stpbv_map) (* raise Not_found *)
 
 (** Return a SymbolSet of all symbols in the given Bytes *)
 let rec allSymbolsInGuard = function
@@ -162,11 +162,11 @@ let new_array vc bytes =
 	in
 	let arr_typ = Stpc.array_t vc (Stpc.bitvector_t vc 32) (Stpc.bitvector_t vc 8) in
 		Stpc.e_var vc name arr_typ
-;;
+
 
 let make_var symbol =
 	"symbol_"^(string_of_int symbol.symbol_id)
-;;
+
 
 
 let rec to_stp_array vc arr bytes =	
@@ -465,7 +465,7 @@ to_stp_bv_impl vc bytes =
 
 		| Bytes_Unbounded (name,id,size) ->
             failwith "Oh no!"
-;;
+
 
 (** return (True) False if bytes (not) evaluates to all zeros. Unknown otherwise.
  *) 
@@ -492,7 +492,7 @@ let doassert pc =
 	(*Stats.time "STP assert" do_assert relevantAssumptions;*)
 	Stats.time "STP assert" do_assert pc;
 	vc
-;;
+
 
 let query vc bytes equal_zero =
     Stpc.e_push vc;
@@ -507,7 +507,7 @@ let query vc bytes equal_zero =
 	let return = Stats.time "STP query" (Stpc.query vc) q in
       Stpc.e_pop vc;
       return
-;;
+
 
 let consult_stp pc bytes =
 	let pc = getRelevantAssumptions pc bytes in
@@ -528,7 +528,7 @@ let consult_stp pc bytes =
 		in
 		stpCacheRef := StpCache.add (pc,bytes) answer !stpCacheRef;
 		answer
-;;
+
 
 let query_guard pc pre guard =
     let vc = doassert pc in
@@ -553,7 +553,7 @@ let query_guard pc pre guard =
 	else
 		Unknown	
 			
-;;
+
 
 (** Given a path condition and a list of symbols, return an
 		association list of (symbol,char)s, where each char is the value
@@ -593,9 +593,9 @@ let getValues pathCondition symbolList =
 		(s, Char.chr (Stpc.int_of_e (Stpc.get_counterexample vc bv)))
 	in
 	List.map getOneVal symbolList
-;;
+
 
 let getAllValues pathCondition =
   getValues pathCondition (SymbolSet.elements (allSymbolsInList pathCondition))
-;;
+
 

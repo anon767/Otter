@@ -9,11 +9,11 @@ open Ternary
  *	memory frame
  *)
 
-let frame__empty = VarinfoMap.empty;;
+let frame__empty = VarinfoMap.empty
 
 let frame__varinfo_to_lval_block frame varinfo =
 	VarinfoMap.find varinfo frame
-;;
+
 
 let frame__add_varinfo frame block_to_bytes varinfo bytes_opt block_type =
 	let size = (Cil.bitsSizeOf varinfo.vtype) / 8 in
@@ -27,13 +27,13 @@ let frame__add_varinfo frame block_to_bytes varinfo bytes_opt block_type =
 	let frame = VarinfoMap.add varinfo (Immediate (conditional__lval_block (block, bytes__zero))) frame in
 	let block_to_bytes = MemoryBlockMap.add block (Immediate bytes) block_to_bytes in
 	(frame, block_to_bytes)
-;;
+
 
 let frame__add_varinfos frame block_to_bytes varinfos block_type =
 	List.fold_left begin fun (frame, block_to_bytes) varinfo ->
 		frame__add_varinfo frame block_to_bytes varinfo None block_type
 	end (frame, block_to_bytes) varinfos
-;;
+
 
 let frame__clear_varinfos frame block_to_bytes =
 	(* only de-allocate stack variables allocated during symbolic execution *)
@@ -46,7 +46,7 @@ let frame__clear_varinfos frame block_to_bytes =
 		| Immediate lvals -> remove_locals block_to_bytes lvals
 		| _ -> block_to_bytes
 	end frame block_to_bytes
-;;
+
 
 (**
  *	string table
@@ -56,15 +56,15 @@ let string_table__add bytes : memory_block =
 	let string_table2 = MemoryBlockMap.add block bytes (!string_table) in
 		string_table := string_table2;
 		block
-;;
+
 
 let string_table__get block =
 	MemoryBlockMap.find block (!string_table)
-;;
+
 
 let string_table__mem block =
 	MemoryBlockMap.mem block (!string_table)
-;;
+
 
 (** Vargs table
  *)
@@ -72,11 +72,11 @@ let vargs_table__add state byteslst : state*bytes =
 	let key = bytes__symbolic (bitsSizeOf (TBuiltin_va_list []) / 8) in
 	let va_arg_map2 = VargsMap.add key byteslst state.va_arg_map in
 		({state with va_arg_map = va_arg_map2;},key)
-;;
+
 
 let vargs_table__get_list state key : bytes list =
 	VargsMap.find key state.va_arg_map
-;;
+
 
 let vargs_table__get state key : state*bytes =
 	let byteslst = vargs_table__get_list state key in
@@ -84,21 +84,21 @@ let vargs_table__get state key : state*bytes =
 		| [] -> failwith "va_list has run to the end"
 		| hd::tl ->
 			({state with va_arg_map = (VargsMap.add key tl state.va_arg_map);},	hd)
-;;
+
 
 let vargs_table__remove state key : state =
 	{state with va_arg_map = (VargsMap.remove key state.va_arg_map);}
-;;
+
 
 let loc_table__has state loc =
 	LocMap.mem loc state.loc_map
-;;
+
 let loc_table__add state loc bytes : state =
 	{state with loc_map = LocMap.add loc bytes state.loc_map;}
-;;
+
 let loc_table__get state loc : bytes =
 	LocMap.find loc state.loc_map
-;;
+
 
 (**
  *	state
@@ -121,12 +121,12 @@ let state__empty =
 		loc_map = LocMap.empty;
         bytes_eval_cache = BytesMap.empty;
 	}
-;;
+
 
 let state__force state = function
 	| Immediate x -> (state, x)
 	| Deferred f -> f state
-;;
+
 
 let state__force_with_update state update = function
 	| Immediate x ->
@@ -135,14 +135,14 @@ let state__force_with_update state update = function
 		(* update with the forced value *)
 		let state, x = f state in
 		(update state x, x)
-;;
+
 
 let state__has_block state block =
 	if block.memory_block_type == Block_type_StringLiteral then
 		string_table__mem block
 	else
 		MemoryBlockMap.mem block state.block_to_bytes
-;;
+
 
 let state__add_global state varinfo init = 
 	let new_global, new_block_to_bytes =
@@ -152,7 +152,7 @@ let state__add_global state varinfo init =
 		global = new_global;
 		block_to_bytes = new_block_to_bytes;
 	}
-;;
+
 
 let state__add_formal state varinfo init = 
 	let new_formal, new_block_to_bytes =
@@ -162,14 +162,14 @@ let state__add_formal state varinfo init =
 		formals = new_formal::(List.tl state.formals);
 		block_to_bytes = new_block_to_bytes;
 	}
-;;
+
 
 let state__add_frame state =
   {state with
     formals = frame__empty::(state.formals);
     locals = frame__empty::(state.locals);
   }
-;;
+
 
 	
 let state__varinfo_to_lval_block state varinfo =
@@ -201,25 +201,25 @@ let state__varinfo_to_lval_block state varinfo =
 				state__force_with_update state update deferred
 			else (* varinfo may be a function *)
 				failwith ("Varinfo "^(varinfo.vname)^" not found.")
-;;
+
 
 let state__add_block state block bytes =
 	{ state with
 		block_to_bytes = MemoryBlockMap.add block (Immediate bytes) state.block_to_bytes;
 	}
-;;
+
 
 let state__add_deferred_block state block deferred =
 	{ state with
 		block_to_bytes = MemoryBlockMap.add block (Deferred deferred) state.block_to_bytes;
 	}
-;;
+
 
 let state__remove_block state block=
 	{ state with
 		block_to_bytes = MemoryBlockMap.remove block state.block_to_bytes;
 	}
-;;
+
 
 let state__get_bytes_from_block state block =
 	if block.memory_block_type == Block_type_StringLiteral then
@@ -227,14 +227,14 @@ let state__get_bytes_from_block state block =
 	else
 		let deferred = MemoryBlockMap.find block state.block_to_bytes in
 		state__force_with_update state (fun state bytes -> state__add_block state block bytes) deferred
-;;
+
 
 let state__get_deferred_from_block state block =
 	if block.memory_block_type == Block_type_StringLiteral then
 		Immediate (string_table__get block)
 	else
 		MemoryBlockMap.find block state.block_to_bytes
-;;
+
 
 let state__deref ?pre state (lvals, size) =
 	let deref state pre (block, offset) =
@@ -243,7 +243,7 @@ let state__deref ?pre state (lvals, size) =
 	in
 	let state, c = conditional__map_fold ?pre deref state lvals in
 	(state, make_Bytes_Conditional c)
-;;
+
 
 let rec state__assign state (lvals, size) bytes =
 	let assign state pre (block, offset) =
@@ -268,7 +268,7 @@ let rec state__assign state (lvals, size) bytes =
 		state__add_block state block newbytes
 	in
 	conditional__fold assign state lvals
-;;
+
 
 (* start a new function call frame *)
 let state__start_fcall state callContext fundec argvs =
@@ -308,7 +308,7 @@ let state__start_fcall state callContext fundec argvs =
 			failwith ("Not enough arguments to function " ^ fundec.svar.vname)
 	in
 	assign_argvs state fundec.Cil.sformals argvs
-;;
+
 
 let state__end_fcall state =
 	Output.set_mode Output.MSG_FUNC;
@@ -324,9 +324,9 @@ let state__end_fcall state =
                  block_to_bytes = block_to_bytes;
                  va_arg = List.tl state.va_arg;
                  callContexts = List.tl state.callContexts }
-;;
 
-let state__get_callContext state = List.hd state.callContexts;;
+
+let state__get_callContext state = List.hd state.callContexts
 
 let state__extract_path_condition state bytes = 
 (**
@@ -363,7 +363,7 @@ let state__extract_path_condition state bytes =
     | _ -> failwith "Error in state__extract_path_condition"
   in
     impl state.path_condition state.path_condition_tracked
-;;
+
 
 let state__add_path_condition state bytes tracked=
   let path_condition,path_condition_tracked =
@@ -376,7 +376,7 @@ let state__add_path_condition state bytes tracked=
 		path_condition = bytes::path_condition;
 		path_condition_tracked = tracked::path_condition_tracked;
 	}
-;;
+
 
 let state__add_bytes_eval_cache state bytes boolval =
   if true then state else
@@ -386,10 +386,10 @@ let state__add_bytes_eval_cache state bytes boolval =
 	{ state with
        bytes_eval_cache = BytesMap.add bytes boolval state.bytes_eval_cache;
 	}
-;;
 
-let bytes_eval_cache_hits = ref 0;;
-let bytes_eval_cache_misses = ref 0;;
+
+let bytes_eval_cache_hits = ref 0
+let bytes_eval_cache_misses = ref 0
 
 let state__get_bytes_eval_cache state bytes =
   if not Executeargs.run_args.Executeargs.arg_opt_bytes_eval_cache then None else
@@ -400,7 +400,7 @@ let state__get_bytes_eval_cache state bytes =
       with Not_found -> 
         Utility.increment bytes_eval_cache_misses; None
     end
-;;
+
 
 let state__trace state: string = 
 	List.fold_left begin fun str context -> match context with
@@ -408,11 +408,11 @@ let state__trace state: string =
 		| Source (_,_,instr,_) -> Format.sprintf "%s/%s" str (To_string.location (Cil.get_instrLoc instr))
 		| NoReturn instr     -> Format.sprintf "%s/NoReturn@%s" str (To_string.location (Cil.get_instrLoc instr))
 	end "" state.callContexts
-;;
+
 
 let state__print_path_condition state : string = 
   List.fold_left (fun str bytes -> Printf.sprintf "%s AND %s\n" str (To_string.bytes bytes)) "" state.path_condition
-;;
+
 
 (* 
  *    clone the structure of bytes
@@ -517,17 +517,17 @@ let state__clone_bytes state bytes =
       }
     in
       (state2,cloned_bytes)
-;;
+
  *)
 
 (** map address to state (!) *)
-let index_to_state: state Utility.IndexMap.t ref = ref (Utility.IndexMap.empty);;
+let index_to_state: state Utility.IndexMap.t ref = ref (Utility.IndexMap.empty)
 let index_to_state__add index state = 
 	index_to_state := Utility.IndexMap.add index state (!index_to_state)
-;;
+
 let index_to_state__get index = 
 	Utility.IndexMap.find index (!index_to_state)
-;;
+
 
 
 (** Compare two states. Return true if they are the same; false otherwise. *)
@@ -578,10 +578,10 @@ let cmp_states (s1:state) (s2:state) =
 		cmpCallStack s1.callstack s2.callstack
 	in
 	sharedBlocksComparison && unsharedBlocksComparison && callStackComparison
-;;
+
 	
 (*
-let function_stat: int Cilutility.FundecMap.t ref = ref Cilutility.FundecMap.empty;;
+let function_stat: int Cilutility.FundecMap.t ref = ref Cilutility.FundecMap.empty
 let function_stat_increment fundec =
 	let count = if Cilutility.FundecMap.mem fundec (!function_stat) 
 	then
@@ -589,9 +589,9 @@ let function_stat_increment fundec =
 	else 0
 	in
 		function_stat := Cilutility.FundecMap.add fundec (count+1) (!function_stat)
-;;
 
-let function_stat_get fundec = Cilutility.FundecMap.find fundec (!function_stat);;
+
+let function_stat_get fundec = Cilutility.FundecMap.find fundec (!function_stat)
 *)
 
 let rec state__eval state pc bytes =
@@ -678,5 +678,5 @@ let rec state__eval state pc bytes =
 	   		nontrivial()
    in
      state,return_bytes
-;;
+
 

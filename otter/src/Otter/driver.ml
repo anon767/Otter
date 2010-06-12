@@ -734,7 +734,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 		| _::_::_ -> Big_Fork(f)
 		| [a] -> a
 		| [] -> failwith "No valid function found!"
-;;
+
 
 let exec_instr job =
 	assert (job.instrList <> []);
@@ -1005,7 +1005,7 @@ let exec_stmt job =
 				let nextStmt = List.hd block.bstmts in
 				Active { job with stmt = nextStmt; exHist = nextExHist (Some nextStmt); }
 		| _ -> failwith "Not implemented yet"
-;;
+
 
 (*
 let printJob (state,stmt) =
@@ -1026,7 +1026,7 @@ let setRunningJob job =
 		Output.runningJobId := job.jid;
 	);
 	Output.runningJobDepth := (List.length job.state.path_condition)
-;;
+
 
 (* Try to merge job with one that is waiting; then advance the resulting job by
 	 one step. (Note that the job that *actually* gets advances might not be
@@ -1153,7 +1153,7 @@ let pass_targets targets job fexp exps =
           else false,failing_condition (* TODO: can proceed, to find more failing targets *)
   in
     pass_targets targets
-;;
+
 
 exception Failure_wc of string * bytes
 let failwith_wc str cond = raise (Failure_wc (str,cond))
@@ -1190,7 +1190,7 @@ let step_job_with_targets targets job =
 		let result = { result_state = state; result_history = job.exHist } in
 		let completed = Complete (Types.Abandoned (msg, !Output.cur_loc, result)) in
 		completed
-;;
+
 
 
 
@@ -1199,7 +1199,7 @@ let at_merge_point job =
 		{ siFuncName=(List.hd job.state.callstack).Cil.svar.Cil.vname;
 		  siStmt=job.stmt; }
 		job.mergePoints
-;;
+
 
 
 (** The main loop
@@ -1311,7 +1311,7 @@ let main_loop ?targets:(targets=[]) job : job_completion list =
   let jobs = Jobs.create targets in
   let _ = Jobs.add_runnable jobs job in
 	main_loop [] jobs
-;;
+
 
 
 let callchain_bacward_se callergraph entryfn assertfn job_init : job_completion list list =
@@ -1375,6 +1375,6 @@ let callchain_bacward_se callergraph entryfn assertfn job_init : job_completion 
          let new_result = callchain_bacward_main_loop job [] in
            new_result::results
       ) [] callers
-;;
+
 
 

@@ -55,7 +55,7 @@ let rec bytes__read ?test ?pre bytes off len =
 						| _ -> ret_bytes
 					end
 			| _ -> ret_bytes
-;;
+
 
 let bytes__write ?test ?pre bytes off len newbytes =
 	let rec do_write bytes off len newbytes =
@@ -118,7 +118,7 @@ let bytes__write ?test ?pre bytes off len newbytes =
 	else
 		do_write bytes off len newbytes
 
-;;
+
 
 (*let rec getMaxBlockSizes cond = 
         match cond with
@@ -129,7 +129,7 @@ let bytes__write ?test ?pre bytes off len newbytes =
                                 | Bytes_Conditional(c) -> getMaxBlockSizes c
                                 | Bytes_ByteArray(a) -> (ImmutableArray.length a)
                                 | _ -> failwith ("Not a valid array.  : "^(To_string.bytes bytes))
-;;*)
+*)
 let rec expand_read_to_conditional2 bytes index len symIndex = 
         let max = match bytes with
                 | Bytes_Address(block, offset) -> (block.memory_block_size)
@@ -156,7 +156,7 @@ let rec expand_read_to_conditional2 bytes index len symIndex =
                                 | Bytes_Conditional c -> c
                                 | b -> Unconditional(b)
                 )
-;;
+
 let rec expand_read_to_conditional (bytes:bytes) (symIndex:bytes) (len:int) = 
         let bytes = match bytes with
                 | Bytes_Read(a, x, l) -> Bytes_Conditional(expand_read_to_conditional a x l)
@@ -192,7 +192,7 @@ let rec expand_read_to_conditional (bytes:bytes) (symIndex:bytes) (len:int) =
 			in
 			conditional__map map_func c
 		| _ -> expand_read_to_conditional2 bytes 0 len symIndex
-;;
+
 
 
 
@@ -201,10 +201,10 @@ let rec prune_conditional_bytes state cond =
 		((), Unconditional(leaf))
 	in
 	snd (conditional__map_fold ~test:(fun a b -> Stp.query_guard state.path_condition a b) fold_func () cond)
-;;
+
 let prune_bytes_conditional state bytes = 
 	match bytes with
 		| Bytes_Conditional c -> Bytes_Conditional (prune_conditional_bytes state c)
 		| _ -> bytes (*failwith "prune_bytes_conditional : not a Bytes_Conditional"*)
-;;	
+	
 

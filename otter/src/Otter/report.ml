@@ -305,7 +305,7 @@ let printCoverageInfo resultList =
 				 Output.printf "-------------\n\n")
 			resultList
 	)
-;;
+
 
 
 let print_report results =
@@ -346,4 +346,4 @@ let print_report results =
 
 		end
 	)
-;;
+
