@@ -167,7 +167,7 @@ type task =
 
 let findCilFormal state (str_formal:string) : Cil.varinfo =
   try
-    let fundec = List.hd state.callstack in
+    let fundec = List.hd (get_callstack state) in
     let formal = List.find (fun formal -> formal.vname=str_formal) fundec.sformals in
       formal
   with Not_found ->

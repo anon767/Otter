@@ -110,16 +110,17 @@ let state__empty =
 		locals = [frame__empty]; (* permit global init with another global *)
 		extra = VarinfoMap.empty;
 		malloc = VarinfoMap.empty;
-		callstack = [];
+		callstack = [[]];
 		block_to_bytes = MemoryBlockMap.empty;
 		path_condition = [];
 		path_condition_tracked = [];
 		(*return = None;*)
-		callContexts = [];
+		callContexts = [[]];
 		va_arg = [];
 		va_arg_map = VargsMap.empty;
 		loc_map = LocMap.empty;
-        bytes_eval_cache = BytesMap.empty;
+	        bytes_eval_cache = BytesMap.empty;
+		proc_index = 0;
 	}
 
 
@@ -282,11 +283,17 @@ let state__start_fcall state callContext fundec argvs =
 	let block_to_bytes = state.block_to_bytes in
 	let formal, block_to_bytes = frame__add_varinfos frame__empty block_to_bytes fundec.Cil.sformals Block_type_Local in
 	let local, block_to_bytes = frame__add_varinfos frame__empty block_to_bytes fundec.Cil.slocals Block_type_Local in
+	let rec append_nth hh tt v n = 
+		match n,tt with
+			| 0,h::t -> hh@((v::h)::t)
+                        | _,h::t -> append_nth (hh@[h]) t v (n-1)
+			| _,[] -> failwith "index out of bounds append_nth"
+	in
 	let state = { state with formals = formal::state.formals;
 	                         locals = local::state.locals;
-	                         callstack = fundec::state.callstack;
+	                         callstack = append_nth [] state.callstack fundec state.proc_index;
 	                         block_to_bytes = block_to_bytes;
-	                         callContexts = callContext::state.callContexts } in
+	                         callContexts = append_nth [] state.callContexts callContext state.proc_index} in
     (* assign arguments to parameters *)
 	let rec assign_argvs state pars argvs = match pars, argvs with
 		| par::pars, argv::argvs ->
@@ -312,7 +319,7 @@ let state__start_fcall state callContext fundec argvs =
 
 let state__end_fcall state =
 	Output.set_mode Output.MSG_FUNC;
-	Output.print_endline ("Exit function "^(To_string.fundec (List.hd state.callstack)));
+	Output.print_endline ("Exit function "^(To_string.fundec (List.hd (get_callstack state))));
 	(* Output.print_endline ("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
      *)
 	let block_to_bytes = state.block_to_bytes in
@@ -320,10 +327,11 @@ let state__end_fcall state =
 	let block_to_bytes = frame__clear_varinfos (List.hd state.formals) block_to_bytes in
     { state with formals = List.tl state.formals; 
                  locals = List.tl state.locals;
-                 callstack = List.tl state.callstack;
+                 callstack = set_nth state.callstack (List.tl (get_callstack state)) state.proc_index;
                  block_to_bytes = block_to_bytes;
                  va_arg = List.tl state.va_arg;
-                 callContexts = List.tl state.callContexts }
+                 callContexts = set_nth state.callContexts (List.tl (get_callContexts state)) state.proc_index;
+    }
 
 
 let state__get_callContext state = List.hd state.callContexts
@@ -401,13 +409,12 @@ let state__get_bytes_eval_cache state bytes =
         Utility.increment bytes_eval_cache_misses; None
     end
 
-
-let state__trace state: string = 
+let state__trace state : string = 
 	List.fold_left begin fun str context -> match context with
 		| Runtime            -> Format.sprintf "%s/Runtime" str
 		| Source (_,_,instr,_) -> Format.sprintf "%s/%s" str (To_string.location (Cil.get_instrLoc instr))
 		| NoReturn instr     -> Format.sprintf "%s/NoReturn@%s" str (To_string.location (Cil.get_instrLoc instr))
-	end "" state.callContexts
+	end "" (get_callContexts state)
 
 
 let state__print_path_condition state : string = 

@@ -260,7 +260,7 @@ open Graph
 let prioritize targets job = 
   if (Executeargs.run_args.Executeargs.arg_cfg_pruning) then
     begin
-      let graph,root = make_graph (List.hd job.state.callstack) in
+      let graph,root = make_graph (List.hd (get_callstack job.state)) in
       let target_nodes = 
         graph__get_nodes_satisfying graph 
           begin
@@ -273,7 +273,7 @@ let prioritize targets job =
       in
       (*let source = graph__get_node graph (get_instr_stmt job) in*)
       let get_predicate job node = 
-        match job.instrList,job.stmt,node.obj with
+        match (get_proc_info job).instrList, (get_proc_info job).stmt, node.obj with
           | [],stmt,Stmt(stmt') when stmt==stmt' -> true
           | [],_,_ -> false
           | instrs,_,Instr(instrs',_) when instrs==instrs' -> true

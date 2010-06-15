@@ -295,16 +295,19 @@ let prepare_file file =
 let job_for_function ?(exHist=emptyHistory) state fn argvs =
 	let state = MemOp.state__start_fcall state Runtime fn argvs in
 	(* create a new job *)
-	{ state = state;
-	  exHist = exHist;
-	  instrList = [];
-	  stmt = List.hd fn.sallstmts;
-	  inTrackedFn = Utility.StringSet.mem fn.svar.vname run_args.arg_fns;
-	  mergePoints = StmtInfoSet.empty;
-	  jid = Utility.next_id Output.jidCounter;
-      (* parent = None;
-       *)
-    }
+	{ 
+		state = state;
+		exHist = exHist;
+		proc_info = [{	  
+			instrList = [];
+			stmt = List.hd fn.sallstmts;
+			inTrackedFn = Utility.StringSet.mem fn.svar.vname run_args.arg_fns;
+			pid = 0;
+		}];
+		mergePoints = StmtInfoSet.empty;
+		jid = Utility.next_id Output.jidCounter;
+		num_procs = 1;
+	}
 
 
 (* create a job that begins in the middle of a file at some entry function with some optional constraints *)

@@ -68,11 +68,30 @@ and state =
 		locals : memory_frame list;             (* Map local lvals to blocks *)
 		extra : memory_block list VarinfoMap.t; (* Map for extra blocks, e.g., from unknown call stack recursion *)
 		malloc : memory_block list TypeMap.t VarinfoMap.t; (* Map for malloc blocks from unknown allocation *)
-		callstack : Cil.fundec list;            (* Function call stack *)
+		callstack : Cil.fundec list list;            (* Function call stack *)
 		block_to_bytes : bytes deferred MemoryBlockMap.t;
 		path_condition : bytes list;
 		path_condition_tracked : bool list;
-		callContexts : callingContext list;
+		callContexts : callingContext list list;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 		(** The last element of callstack is the function at which the
 				executor started execution. The last element of callContexts
 				is [Runtime]. Other than that, the nth element of callstack is
@@ -82,8 +101,17 @@ and state =
 		va_arg : bytes list list;			(* A stack of va_arg *)
 		va_arg_map : bytes list VargsMap.t;
 		loc_map : bytes LocMap.t;     (* Map loc to symbolic bytes *)
-        bytes_eval_cache : bool BytesMap.t; (* Map bytes to boolean value, if exists *) 
+        	bytes_eval_cache : bool BytesMap.t; (* Map bytes to boolean value, if exists *) 
+		proc_index : int; (* Current process context *)
 	}
+
+
+let get_callstack state =
+	List.nth state.callstack state.proc_index
+
+
+let get_callContexts state =
+	List.nth state.callContexts state.proc_index
 
 
 
@@ -173,27 +201,79 @@ module SymbolSet = Set.Make
 let signalStringOpt : string option ref = ref None
 exception SignalException
 
-type job = {
-	state : state;
-	exHist : executionHistory;
+type proc_job = {
 	instrList : Cil.instr list; (** [instr]s to execute before moving to the next [stmt] *)
 	stmt : Cil.stmt;            (** The next statement the job should execute *)
 	inTrackedFn : bool;         (** Is stmt in a function in the original program (as opposed to in a library or system call)? *)
+	pid : int; (** process id **)
+}
+
+type job = {
+	state : state;
+	exHist : executionHistory;
+	proc_info : proc_job list;
 	mergePoints : StmtInfoSet.t;     (** A list of potential merge points *)
 	jid : int; (** A unique identifier for the job *)
-    (* parent : job option; (** The parent that leads to this; None for the first job *) *)
+	num_procs : int;
 }
+
+let get_proc_info job =
+	List.nth job.proc_info job.state.proc_index
+
+
+let rec set_nth l v n = 
+	match n,l with
+		| 0,h::t -> v::t
+		| _,h::t -> h::(set_nth t v (n-1))
+		| _,[] -> failwith "index out of bounds set_nth"
+
+
+let set_proc_info job info =
+	set_nth job.proc_info info job.state.proc_index
+
+
+let next_proc job =
+	{job with
+		state = {job.state with
+			proc_index = ((job.state.proc_index + 1) mod (job.num_procs));
+		};
+	}
+
+
+let rec del_nth l n =
+	match n,l with
+		| 0,h::t -> t
+		| _,h::t -> h::(del_nth t (n-1))
+		| _,[] -> failwith "index out of bounds del_nth"
+
+
+let kill_proc job =
+	{job with
+		num_procs = job.num_procs - 1;
+		proc_info = del_nth job.proc_info job.state.proc_index;
+		state = {job.state with
+				callstack = del_nth job.state.callstack job.state.proc_index;
+				callContexts = del_nth job.state.callContexts job.state.proc_index;
+				proc_index = job.state.proc_index mod (job.num_procs - 1);
+			};
+	}
+
 
 type job_result = {
 	result_state : state;
 	result_history : executionHistory;
 }
 
-type job_completion =
+type job_completion_reason =
 	| Return of bytes option * job_result
 	| Exit of bytes option * job_result
 	| Abandoned of string * Cil.location * job_result
 	| Truncated of job_result * job_result
+
+type job_completion = {
+	job : job;
+	reason : job_completion_reason;
+}
 
 type job_state =
 	| Active of job
@@ -206,7 +286,7 @@ module JobSet = Set.Make
 		 type t = job
 		 let compare (job1:t) job2 =
 			 (* I want the job with earliest stmt.sid to be first in the ordering *)
-			 let c = Pervasives.compare job1.stmt.Cil.sid job2.stmt.Cil.sid in
+			 let c = Pervasives.compare (get_proc_info job1).stmt.Cil.sid (get_proc_info job2).stmt.Cil.sid in
 			 if c = 0 then Pervasives.compare job1.jid job2.jid
 			 else c
 	 end)

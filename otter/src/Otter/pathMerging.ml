@@ -33,9 +33,18 @@ let at_same_program_point job1 job2 =
 	 * point, whatever that's supposed to mean. *)
 	(* Actually, if the instrLists are equal, then the stmts have to be.
 	 * Right? So the stmt equality can be moved into the assertion. *)
-	if job1.stmt == job2.stmt
-			&& job1.instrList == job2.instrList
-			&& state1.callContexts == state2.callContexts then begin
+	let rec jobmatch p1 p2 = 
+		match p1, p2 with
+			| [], [] -> true
+			| h1::t1, h2::t2 ->
+				h1.stmt == h2.stmt && 
+				h1.instrList == h2.instrList &&
+				jobmatch t1 t2
+			| _, _ -> false (* jobs have different numbers of processes *)
+		
+	in
+	if jobmatch job1.proc_info job2.proc_info 
+		&& state1.callContexts == state2.callContexts then begin
 		assert (
 			job1.exHist.bytesToVars == job2.exHist.bytesToVars &&
 			state1.global           == state2.global &&
@@ -144,26 +153,31 @@ http://caml.inria.fr/pub/ml-archives/caml-list/2009/08/323bd4f55773e4a230d481aec
 				};
 				mergePoints = StmtInfoSet.union job.mergePoints other.mergePoints;
 			} in
-			let truncated = Complete (Truncated (
-				{
-					result_state = job.state;
-					result_history = { job.exHist with
-						coveredLines = jobOnlyLines;
-						coveredBlocks = jobOnlyBlocks;
-						coveredEdges = jobOnlyEdges;
-						coveredConds = jobOnlyConds;
+			let truncated = Complete (
+			{
+				job = job; 
+				reason = Truncated (
+					{
+						result_state = job.state;
+						result_history = { job.exHist with
+							coveredLines = jobOnlyLines;
+							coveredBlocks = jobOnlyBlocks;
+							coveredEdges = jobOnlyEdges;
+							coveredConds = jobOnlyConds;
+						}
+					},
+					{
+						result_state = other.state;
+						result_history = { other.exHist with
+							coveredLines = otherOnlyLines;
+							coveredBlocks = otherOnlyBlocks;
+							coveredEdges = otherOnlyEdges;
+							coveredConds = otherOnlyConds;
+						}
 					}
-				},
-				{
-					result_state = other.state;
-					result_history = { other.exHist with
-						coveredLines = otherOnlyLines;
-						coveredBlocks = otherOnlyBlocks;
-						coveredEdges = otherOnlyEdges;
-						coveredConds = otherOnlyConds;
-					}
-				}
-			)) in
+				);
+			}
+			) in
 			Some (truncated, merged)
 		with TooDifferent ->
 			Output.print_endline "Memory too different to merge";

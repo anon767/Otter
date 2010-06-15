@@ -48,7 +48,7 @@ let libc___builtin_va_start state exps =
 let libc___builtin_alloca__id = ref 1
 let libc___builtin_alloca_size state size bytes =
 	let name = Printf.sprintf "%s(%d)#%d/%s%s"
-		(List.hd state.callstack).svar.vname
+		(List.hd (get_callstack state)).svar.vname
 		size
 		(Utility.next_id libc___builtin_alloca__id)
 		(To_string.location !Output.cur_loc)
