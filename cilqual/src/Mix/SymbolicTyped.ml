@@ -14,6 +14,61 @@ open SwitchingUtil
 
 module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
 
+    let typed_to_symbolic file job fn state expState solution =
+        (* re-initialize the memory according to the given type constraints *)
+
+        (* first, the return value *)
+        let state, retopt = begin match fn.Cil.svar.Cil.vtype with
+            | Cil.TFun (rettyp, _, _, _) when Cil.isVoidType rettyp ->
+                (state, None)
+
+            | Cil.TFun (_, _, _, _) ->
+                let (((((qtr, _), _), _), _), _) = run begin perform
+                    qtf <-- lookup_var fn.Cil.svar;
+                    retval qtf
+                end expState in
+
+                (* Ptranal has no query for function return values; instead, query all the expressions in
+                 * function returns, and merge them *)
+                let state, retbytes_list = List.fold_left begin fun (state, retbytes_list) retstmt ->
+                    match retstmt.Cil.skind with
+                        | Cil.Return (Some retexp, _) ->
+                            let state, retbytes = qt_to_bytes file expState solution state retexp qtr in
+                            (state, ((Bytes.conditional__bytes retbytes)::retbytes_list))
+                        | _ ->
+                            (state, retbytes_list)
+                end (state, []) fn.Cil.sallstmts in (* sallstmts is computed by Cil.computeCFGInfo *)
+                begin match retbytes_list with
+                    | [] -> (state, None)
+                    | _  -> (state, Some (Bytes.make_Bytes_Conditional (Bytes.conditional__from_list retbytes_list)))
+                end
+            | _ ->
+                failwith "Impossible!"
+        end in
+
+        (* then, the globals and call stack *)
+        let state, global = qt_to_frame file expState solution state state.Types.global in
+
+        let state, formals = List.fold_right begin fun formal (state, formals) ->
+            let state, formal = qt_to_frame file expState solution state formal in
+            (state, (formal::formals))
+        end state.Types.formals (state, []) in
+
+        let state, locals = List.fold_right begin fun local (state, locals) ->
+            let state, local = qt_to_frame file expState solution state local in
+            (state, (local::locals))
+        end state.Types.locals (state, []) in
+
+        let state = { state with
+            Types.global=global;
+            Types.locals=locals;
+            Types.formals=formals;
+            Types.extra=Types.VarinfoMap.empty;
+            Types.malloc=Types.VarinfoMap.empty;
+        } in
+
+        [ (Types.Return (retopt, { Types.result_state=state; Types.result_history=job.Types.exHist }), None) ]
+
     let switch dispatch stack file job k =
         (* 1. convert globals and formals to type constraints
          * 2. type-check fn
@@ -92,60 +147,9 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
                                    None) ]
 
                     end else begin
-                        (* re-initialize the memory according to the returned type constraints *)
+                        let completed = typed_to_symbolic file job fn state expState solution in
+                        k stack completed
 
-                        (* first, the return value *)
-                        let state, retopt = begin match fn.Cil.svar.Cil.vtype with
-                            | Cil.TFun (rettyp, _, _, _) when Cil.isVoidType rettyp ->
-                                (state, None)
-
-                            | Cil.TFun (_, _, _, _) ->
-                                let (((((qtr, _), _), _), _), _) = run begin perform
-                                    qtf <-- lookup_var fn.Cil.svar;
-                                    retval qtf
-                                end expState in
-
-                                (* Ptranal has no query for function return values; instead, query all the expressions in
-                                 * function returns, and merge them *)
-                                let state, retbytes_list = List.fold_left begin fun (state, retbytes_list) retstmt ->
-                                    match retstmt.Cil.skind with
-                                        | Cil.Return (Some retexp, _) ->
-                                            let state, retbytes = qt_to_bytes file expState solution state retexp qtr in
-                                            (state, ((Bytes.conditional__bytes retbytes)::retbytes_list))
-                                        | _ ->
-                                            (state, retbytes_list)
-                                end (state, []) fn.Cil.sallstmts in (* sallstmts is computed by Cil.computeCFGInfo *)
-                                begin match retbytes_list with
-                                    | [] -> (state, None)
-                                    | _  -> (state, Some (Bytes.make_Bytes_Conditional (Bytes.conditional__from_list retbytes_list)))
-                                end
-                            | _ ->
-                                failwith "Impossible!"
-                        end in
-
-                        (* then, the globals and call stack *)
-                        let state, global = qt_to_frame file expState solution state state.Types.global in
-
-                        let state, formals = List.fold_right begin fun formal (state, formals) ->
-                            let state, formal = qt_to_frame file expState solution state formal in
-                            (state, (formal::formals))
-                        end state.Types.formals (state, []) in
-
-                        let state, locals = List.fold_right begin fun local (state, locals) ->
-                            let state, local = qt_to_frame file expState solution state local in
-                            (state, (local::locals))
-                        end state.Types.locals (state, []) in
-
-                        let state = { state with
-                            Types.global=global;
-                            Types.locals=locals;
-                            Types.formals=formals;
-                            Types.extra=Types.VarinfoMap.empty;
-                            Types.malloc=Types.VarinfoMap.empty;
-                        } in
-
-                        k stack [ (Types.Return (retopt, { Types.result_state=state; Types.result_history=job.Types.exHist }),
-                                   None) ]
                     end
                 end
             in

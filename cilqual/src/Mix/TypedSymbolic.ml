@@ -25,11 +25,11 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
             zipWithM_ (fun v a -> assign_lval (Cil.var v) a) fn.Cil.sformals qta
         in
         let ((((((), constraints), _), _), _), _ as expState) = run expM expState in
-        let solution = DiscreteSolver.solve consts constraints in
+        let context = DiscreteSolver.solve consts constraints in
 
         (* TODO: properly explain error *)
-        if Solution.is_unsatisfiable solution then
-            Format.eprintf "Unsatisfiable solution entering TypedSymbolic.switch at %s@." fn.Cil.svar.Cil.vname;
+        if Solution.is_unsatisfiable context then
+            Format.eprintf "Unsatisfiable solution to context entering TypedSymbolic.switch at %s@." fn.Cil.svar.Cil.vname;
 
         (* convert a typed environment into a symbolic environment *)
         let state = MemOp.state__empty in
@@ -40,7 +40,7 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
                     when not (Cil.isFunctionType v.Cil.vtype (* skip function prototypes; they're not variables *)
                               || Types.VarinfoMap.mem v state.Types.global) ->
                 let (((((qt, _), _), _), _), _) = run (lookup_var v) expState in
-                let state, lval_block = qt_to_lval_block file expState solution state v qt in
+                let state, lval_block = qt_to_lval_block file expState context state v qt in
                 (state, Types.VarinfoMap.add v lval_block global)
             | _ ->
                 (state, global)
@@ -51,7 +51,7 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
         (* TODO: handle varargs *)
         let state, rev_args_bytes = List.fold_left begin fun (state, args_bytes) v ->
             let (((((qt, _), _), _), _), _) = run (lookup_var v) expState in
-            let state, bytes = qt_to_bytes file expState solution state (Cil.Lval (Cil.var v)) (drop_qt qt) in
+            let state, bytes = qt_to_bytes file expState context state (Cil.Lval (Cil.var v)) (drop_qt qt) in
             (state, bytes::args_bytes)
         end (state, []) fn.Cil.sformals in
 
@@ -98,13 +98,13 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
                     end
 
                 | Types.Abandoned (msg, loc, result), None ->
-                    let block_msg = begin
-                        Format.fprintf Format.str_formatter
-                            "Block errors returning from TypedSymbolic.switch at %s: %s"
-                            fn.Cil.svar.Cil.vname msg;
-                        Format.flush_str_formatter ()
-                    end in
-                    return ((block_msg, loc, `TypedSymbolicError (result, msg))::block_errors)
+                    Format.fprintf Format.str_formatter
+                        "Block errors returning from TypedSymbolic at %s: %s"
+                        fn.Cil.svar.Cil.vname msg;
+                    Format.eprintf
+                        "Block errors returning from TypedSymbolic at %s: %s@."
+                        fn.Cil.svar.Cil.vname msg;
+                    return ((Format.flush_str_formatter (), loc, `TypedSymbolicError (result, msg))::block_errors)
 
                 | Types.Abandoned _, Some e ->
                     return (e::block_errors)
