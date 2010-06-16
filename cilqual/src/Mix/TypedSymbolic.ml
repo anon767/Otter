@@ -29,7 +29,7 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
 
         (* TODO: properly explain error *)
         if Solution.is_unsatisfiable context then
-            Format.eprintf "Unsatisfiable solution to context entering TypedSymbolic.switch at %s@." fn.Cil.svar.Cil.vname;
+            Format.eprintf "Unsatisfiable solution for context entering TypedSymbolic at %s@." fn.Cil.svar.Cil.vname;
 
         (* convert a typed environment into a symbolic environment *)
         let state = MemOp.state__empty in

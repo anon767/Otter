@@ -97,27 +97,25 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
         in
         let (((((_, constraints), _), _), _), _ as expState) = run expM expState in
 
-        let solution = DiscreteSolver.solve consts constraints in
+        let context = DiscreteSolver.solve consts constraints in
 
         (* TODO: need a better mechanism for explaining errors *)
-        if DiscreteSolver.Solution.is_unsatisfiable solution then begin
-
+        if DiscreteSolver.Solution.is_unsatisfiable context then begin
             (* don't switch; it'll return an error anyway *)
             let result = { Types.result_state = job.Types.state; Types.result_history = job.Types.exHist } in
-            let explanation = DiscreteSolver.explain solution in
+            let explanation = DiscreteSolver.explain context in
             Format.fprintf Format.str_formatter
-                "Unsatisfiable solution entering SymbolicTyped.switch at %s:@\n  @[%a@]@."
+                "Unsatisfiable solution for context entering SymbolicTyped at %s:@\n  @[%a@]"
                 fn.Cil.svar.Cil.vname
                 DiscreteSolver.Explanation.printer explanation;
             Format.eprintf
-                "Unsatisfiable solution entering SymbolicTyped.switch at %s:@\n  @[%a@]@."
+                "Unsatisfiable solution for context entering SymbolicTyped at %s:@\n  @[%a@]@."
                 fn.Cil.svar.Cil.vname
                 DiscreteSolver.Explanation.printer explanation;
             k stack [ (Types.Abandoned (Format.flush_str_formatter (), loc, result),
                        None) ]
 
         end else begin
-
             (* prepare the completion continuation to perform the final check *)
             let completion stack (((((_, constraints), _), _), _), _ as expState) block_errors =
                 Format.eprintf "Returning from typed to symbolic at %s...@." fn.Cil.svar.Cil.vname;
@@ -129,25 +127,25 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
                                Some (msg, loc, `SymbolicTypedError (result, block_errors))) ]
 
                 end else begin
-                    let solution = DiscreteSolver.solve consts constraints in
+                    let context = DiscreteSolver.solve consts constraints in
 
                     (* TODO: need a better mechanism for explaining errors *)
-                    if DiscreteSolver.Solution.is_unsatisfiable solution then begin
+                    if DiscreteSolver.Solution.is_unsatisfiable context then begin
                         let result = { Types.result_state = job.Types.state; Types.result_history = job.Types.exHist } in
-                        let explanation = DiscreteSolver.explain solution in
+                        let explanation = DiscreteSolver.explain context in
                         Format.fprintf Format.str_formatter
-                            "Unsatisfiable solution returning from SymbolicTyped.switch at %s:@\n  @[%a@]"
+                            "Unsatisfiable solution for context returning from SymbolicTyped at %s:@\n  @[%a@]"
                             fn.Cil.svar.Cil.vname
                             DiscreteSolver.Explanation.printer explanation;
                         Format.eprintf
-                            "Unsatisfiable solution returning from SymbolicTyped.switch at %s:@\n  @[%a@]"
+                            "Unsatisfiable solution for context returning from SymbolicTyped at %s:@\n  @[%a@]@."
                             fn.Cil.svar.Cil.vname
                             DiscreteSolver.Explanation.printer explanation;
                         k stack [ (Types.Abandoned (Format.flush_str_formatter (), loc, result),
                                    None) ]
 
                     end else begin
-                        let completed = typed_to_symbolic file job fn state expState solution in
+                        let completed = typed_to_symbolic file job fn state expState context in
                         k stack completed
 
                     end
