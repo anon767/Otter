@@ -89,11 +89,14 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
 
         Format.eprintf "Switching from symbolic to typed at %s...@." fn.Cil.svar.Cil.vname;
 
-        (* setup global variables and function arguments *)
+        (* setup memory *)
         (* TODO: handle varargs *)
         let expM = perform
+            (* convert the entire memory to types; although only the topmost formals (i.e., the arguments) are
+             * visible to the nested typed block, other formals and local variables must also be converted to
+             * correctly re-initialize the symbolic memory (from types) when returning from the typed block. *)
             frame_to_qt file expState state state.Types.global;
-            frame_to_qt file expState state (List.hd state.Types.formals);
+            mapM_ (frame_to_qt file expState state) (state.Types.formals @ state.Types.locals);
         in
         let (((((_, constraints), _), _), _), _ as expState) = run expM expState in
 

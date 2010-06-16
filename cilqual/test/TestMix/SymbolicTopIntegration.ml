@@ -123,6 +123,198 @@ let symbolic_only_testsuite = "Symbolic only" >::: [
     end;
 ]
 
+let leaf_typed_transitive_testsuite = "Leaf Typed Transitive" >::: [
+    "non-null" >::: [
+        "global variable" >::: [
+            test_mix ~label:"as-is" "
+                int x = 0;
+                int * y = &x;
+                void foo(void) MIX(typed) {
+                }
+                int main(void) {
+                    foo();
+                    *y = 1;
+                    return 0;
+                }
+            " begin fun file results ->
+                assert_no_abandoned results
+            end;
+
+            test_mix ~label:"set null" "
+                int x = 0;
+                int * y = &x;
+                void foo(void) MIX(typed) {
+                }
+                int main(void) {
+                    y = NULL;
+                    foo();
+                    *y = 1;
+                    return 0;
+                }
+            " begin fun file results ->
+                assert_has_abandoned 1 results
+            end;
+        ];
+
+        "local variable" >::: [
+            test_mix ~label:"as-is" "
+                void foo(void) MIX(typed) {
+                }
+                int main(void) {
+                    int x = 0;
+                    int * y = &x;
+                    foo();
+                    *y = 1;
+                    return 0;
+                }
+            " begin fun file results ->
+                assert_no_abandoned results
+            end;
+
+            test_mix ~label:"set null" "
+                void foo(void) MIX(typed) {
+                }
+                int main(void) {
+                    int x = 0;
+                    int * y = &x;
+                    y = NULL;
+                    foo();
+                    *y = 1;
+                    return 0;
+                }
+            " begin fun file results ->
+                assert_has_abandoned 1 results
+            end;
+        ];
+
+        "output argument" >::: [
+            test_mix ~label:"as-is" "
+                void foo(void * x) MIX(typed) {
+                }
+                int main(void) {
+                    int x = 0;
+                    int * y = &x;
+                    foo(y);
+                    *y = 1;
+                    return 0;
+                }
+            " begin fun file results ->
+                assert_no_abandoned results
+            end;
+
+            test_mix ~label:"set null" "
+                void foo(void) MIX(typed) {
+                }
+                int main(void) {
+                    int x = 0;
+                    int * y = &x;
+                    y = NULL;
+                    foo(y);
+                    *y = 1;
+                    return 0;
+                }
+            " begin fun file results ->
+                assert_has_abandoned 1 results
+            end;
+        ];
+    ];
+
+    "null" >::: [
+        "global variable" >::: [
+            test_mix ~label:"as-is" "
+                int x = 0;
+                int * y = NULL;
+                void foo(void) MIX(typed) {
+                }
+                int main(void) {
+                    foo();
+                    *y = 1;
+                    return 0;
+                }
+            " begin fun file results ->
+                assert_has_abandoned 1 results
+            end;
+
+            test_mix ~label:"set non-null" "
+                int x = 0;
+                int * y = NULL;
+                void foo(void) MIX(typed) {
+                }
+                int main(void) {
+                    y = &x;
+                    foo();
+                    *y = 1;
+                    return 0;
+                }
+            " begin fun file results ->
+                assert_no_abandoned results
+            end;
+        ];
+
+        "local variable" >::: [
+            test_mix ~label:"as-is" "
+                void foo(void) MIX(typed) {
+                }
+                int main(void) {
+                    int x = 0;
+                    int * y = NULL;
+                    foo();
+                    *y = 1;
+                    return 0;
+                }
+            " begin fun file results ->
+                assert_has_abandoned 1 results
+            end;
+
+            test_mix ~label:"set non-null" "
+                void foo(void) MIX(typed) {
+                }
+                int main(void) {
+                    int x = 0;
+                    int * y = NULL;
+                    y = &x;
+                    foo();
+                    *y = 1;
+                    return 0;
+                }
+            " begin fun file results ->
+                assert_no_abandoned results
+            end;
+        ];
+
+        "output argument" >::: [
+            test_mix ~label:"as-is" "
+                void foo(void * x) MIX(typed) {
+                }
+                int main(void) {
+                    int x = 0;
+                    int * y = NULL;
+                    foo(y);
+                    *y = 1;
+                    return 0;
+                }
+            " begin fun file results ->
+                assert_has_abandoned 1 results
+            end;
+
+            test_mix ~label:"set non-null" "
+                void foo(void * x) MIX(typed) {
+                }
+                int main(void) {
+                    int x = 0;
+                    int * y = NULL;
+                    y = &x;
+                    foo(y);
+                    *y = 1;
+                    return 0;
+                }
+            " begin fun file results ->
+                assert_no_abandoned results
+            end;
+        ];
+    ];
+]
+
 let leaf_typed_source_testsuite = "Leaf Typed Source" >::: [
     "non-null" >::: [
         "global variable" >::: [
@@ -721,6 +913,7 @@ let leaf_typed_introducing_aliasing_testsuite = "Leaf Typed Introducing Aliasing
 
 let testsuite = "SymbolicTopIntegration" >::: [
     symbolic_only_testsuite;
+    leaf_typed_transitive_testsuite;
     leaf_typed_source_testsuite;
     leaf_typed_sink_testsuite;
     leaf_typed_using_aliasing_testsuite;
