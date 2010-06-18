@@ -9,15 +9,15 @@ open Cilutility
 open Utility
 
 let eval_with_cache state pc bytes =
-    MemOp.state__eval state pc bytes
+	MemOp.state__eval state pc bytes
   (*
   match MemOp.state__get_bytes_eval_cache state bytes with
-    | Some (boolval) -> ((if boolval then True else False), state)
-    | None ->
-        let truth = Stp.eval pc bytes in
-          if truth = True then (truth,MemOp.state__add_bytes_eval_cache state bytes true)
-          else if truth = False then (truth,MemOp.state__add_bytes_eval_cache state bytes false)
-          else (truth,state)
+	| Some (boolval) -> ((if boolval then True else False), state)
+	| None ->
+		let truth = Stp.eval pc bytes in
+		  if truth = True then (truth,MemOp.state__add_bytes_eval_cache state bytes true)
+		  else if truth = False then (truth,MemOp.state__add_bytes_eval_cache state bytes false)
+		  else (truth,state)
    *)
 
 let stmtInfo_of_job job =
@@ -70,12 +70,12 @@ let addStmtCoverage job whichBranch nextStmtOpt =
 						| _ -> job.exHist.coveredEdges
 				) else EdgeSet.empty;
 			coveredConds =
-                                if run_args.arg_cond_coverage
-                                then (
-                                        match (get_proc_info job).stmt.skind with
-                                                If _ -> CondSet.add (stmtInfo_of_job job,whichBranch) job.exHist.coveredConds
-                                        | _ -> job.exHist.coveredConds
-                                ) else CondSet.empty;
+								if run_args.arg_cond_coverage
+								then (
+										match (get_proc_info job).stmt.skind with
+												If _ -> CondSet.add (stmtInfo_of_job job,whichBranch) job.exHist.coveredConds
+										| _ -> job.exHist.coveredConds
+								) else CondSet.empty;
 			executionPath =
 				if run_args.arg_path_coverage && (get_proc_info job).stmt == Cilutility.stmtAtEndOfBlock (get_proc_info job).stmt
 				then (
@@ -104,9 +104,9 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 		Eval.rval state (impl exps)
 	in
 
-       (*let state, func funList = Function.from_exp state fexp exps in*)
+	   (*let state, func funList = Function.from_exp state fexp exps in*)
 
-       let process_func state func = 
+	   let process_func state func = 
 	begin match func with
 		| Function.Ordinary (fundec) ->					
 						(* TODO: do a casting if necessary: look at fundec.sformals, varinfo.vtype *)
@@ -145,13 +145,13 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 					| _   -> assert false
 				in
 				let state = MemOp.state__start_fcall state callContext fundec argvs in
-        (* If fundec is the function to be examined *)
-        begin
-        let examfn = Executeargs.run_args.arg_examfn in
-          if examfn = fundec.svar.vname  then
-            InvInput.examine state fundec
-          else ()
-        end;
+		(* If fundec is the function to be examined *)
+		begin
+		let examfn = Executeargs.run_args.arg_examfn in
+		  if examfn = fundec.svar.vname  then
+			InvInput.examine state fundec
+		  else ()
+		end;
 
 				(* Update the state, the next stmt to execute, and whether or
 					 not we're in a tracked function. *)
@@ -168,99 +168,99 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 				let state_end = begin match func with
 					| Function.Builtin (builtin) ->
 						let (state,bytes) = builtin state exps in
-                                               begin match lvalopt with
-                                                       | None ->
-                                                               state
-                                                       | Some cil_lval ->
-                                                               let state, lval = Eval.lval state cil_lval in
-                                                               MemOp.state__assign state lval bytes
-                                               end
+											   begin match lvalopt with
+													   | None ->
+															   state
+													   | Some cil_lval ->
+															   let state, lval = Eval.lval state cil_lval in
+															   MemOp.state__assign state lval bytes
+											   end
 
 (*
-                    | Function.DataStructureOp (dsop) -> 
-                        dsop state blkOffSizeOpt exps
+					| Function.DataStructureOp (dsop) -> 
+						dsop state blkOffSizeOpt exps
 *)
 
-                    | Function.StringEqual -> 
-                        (* The function evaluates to a (symbolic) integer value.
-                         * 1 - Equal
-                         * 0 - Not equal
-                         * symbolic - depends *)
+					| Function.StringEqual -> 
+						(* The function evaluates to a (symbolic) integer value.
+						 * 1 - Equal
+						 * 0 - Not equal
+						 * symbolic - depends *)
 
-                        (* Maybe instead write a function that returns whether
-                         * an expression is true, false or unknown
-                         *)
-                        
-                        
-                        state
+						(* Maybe instead write a function that returns whether
+						 * an expression is true, false or unknown
+						 *)
+						
+						
+						state
 
-                          
+						  
 (* 
  * This function was introduced to implement abstract set. Maybe we don't need
  * it anymore?
  * *)
-                          (*
-                    | Function.Clone ->
-                        if List.length exps <> 3 then failwith "Clone takes 3 arguments" else
+						  (*
+					| Function.Clone ->
+						if List.length exps <> 3 then failwith "Clone takes 3 arguments" else
 						let state, argvs = List.fold_right begin fun exp (state, argvs) ->
 							let state, bytes = Eval.rval state exp in
 							(state, bytes::argvs)
 						end exps (state, []) in
-                        let target_ptr_bytes = List.nth argvs 0 in
-                        let source_ptr_bytes = List.nth argvs 1 in
-                        let length_int_bytes = List.nth argvs 2 in
-                        begin
-                        match target_ptr_bytes,source_ptr_bytes,length_int_bytes with
-                          | Bytes_Address(target_block, target_offset),
-                            Bytes_Address(source_block, source_offset),
-                            Bytes_Constant(_)
-                            ->
-                              let length_int_val = bytes_to_int_auto length_int_bytes in
-                              let state, source_bytes = MemOp.state__get_bytes_from_lval state (source_block,source_offset,length_int_val) in
-                              let state, cloned_bytes = MemOp.state__clone_bytes state source_bytes in
-                              let state = MemOp.state__assign state (Lval_Block (target_block, target_offset),length_int_val) cloned_bytes in
-                              state
-                          | _ -> failwith "Clone error"
-                       end
-                           *)
+						let target_ptr_bytes = List.nth argvs 0 in
+						let source_ptr_bytes = List.nth argvs 1 in
+						let length_int_bytes = List.nth argvs 2 in
+						begin
+						match target_ptr_bytes,source_ptr_bytes,length_int_bytes with
+						  | Bytes_Address(target_block, target_offset),
+							Bytes_Address(source_block, source_offset),
+							Bytes_Constant(_)
+							->
+							  let length_int_val = bytes_to_int_auto length_int_bytes in
+							  let state, source_bytes = MemOp.state__get_bytes_from_lval state (source_block,source_offset,length_int_val) in
+							  let state, cloned_bytes = MemOp.state__clone_bytes state source_bytes in
+							  let state = MemOp.state__assign state (Lval_Block (target_block, target_offset),length_int_val) cloned_bytes in
+							  state
+						  | _ -> failwith "Clone error"
+					   end
+						   *)
 
-                    | Function.Given -> 
+					| Function.Given -> 
 						begin match lvalopt with
 							| None ->
 								state
 							| Some cil_lval ->
 								let state, lval = Eval.lval state cil_lval in
-                                let truthvalue = 
-                                  begin
-                                  if List.length exps <> 2 then 
-                                    failwith "__GIVEN takes 2 arguments"
-                                  else
-                                  let state, given = Eval.rval state (List.nth exps 0) in
-				                  let state, rv = Eval.rval state (List.nth exps 1 ) in
-				                  let state, truth = eval_with_cache state (given::state.path_condition) rv in
-				                  if truth == True then lazy_int_to_bytes 1 
-				                  else if truth == False then lazy_int_to_bytes 0
-				                  else bytes__symbolic (bitsSizeOf intType / 8)
-                                  end
-                                in
+								let truthvalue = 
+								  begin
+								  if List.length exps <> 2 then 
+									failwith "__GIVEN takes 2 arguments"
+								  else
+								  let state, given = Eval.rval state (List.nth exps 0) in
+								  let state, rv = Eval.rval state (List.nth exps 1 ) in
+								  let state, truth = eval_with_cache state (given::state.path_condition) rv in
+								  if truth == True then lazy_int_to_bytes 1 
+								  else if truth == False then lazy_int_to_bytes 0
+								  else bytes__symbolic (bitsSizeOf intType / 8)
+								  end
+								in
 								MemOp.state__assign state lval truthvalue
 						end
-                    | Function.TruthValue -> 
+					| Function.TruthValue -> 
 						begin match lvalopt with
 							| None -> state 
 							| Some cil_lval ->
 								let state, lval = Eval.lval state cil_lval in
-                                let truthvalue = 
-                                  lazy_int_to_bytes
-                                  begin
-                                  if List.length exps = 0 then 0 else
-				                  let state, rv = Eval.rval state (List.hd exps) in
-				                  let state, truth = eval_with_cache state state.path_condition rv in
-				                  if truth == True then 1
-				                  else if truth == False then -1
-				                  else 0
-                                  end
-                                in
+								let truthvalue = 
+								  lazy_int_to_bytes
+								  begin
+								  if List.length exps = 0 then 0 else
+								  let state, rv = Eval.rval state (List.hd exps) in
+								  let state, truth = eval_with_cache state state.path_condition rv in
+								  if truth == True then 1
+								  else if truth == False then -1
+								  else 0
+								  end
+								in
 								MemOp.state__assign state lval truthvalue
 						end
 
@@ -287,10 +287,10 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 										let symbBytes = bytes__symbolic size in
 										Output.set_mode Output.MSG_MUSTPRINT;
 										Output.print_endline (varinf.vname ^ " = " ^ (To_string.bytes symbBytes));
-                                        (* TODO: do something like this for
-                                         * argument initialization when start SE
-                                         * in the middle 
-                                         *)
+										(* TODO: do something like this for
+										 * argument initialization when start SE
+										 * in the middle 
+										 *)
 										nextExHist := { exHist with bytesToVars = (symbBytes,varinf) :: exHist.bytesToVars; };
 										MemOp.state__assign state lval symbBytes
 								| _ ->
@@ -378,7 +378,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 					| Function.Evaluate ->
 						let state, pc = op_exps state exps Cil.LAnd in
 							Output.set_mode Output.MSG_MUSTPRINT;
-							Output.print_endline ("    Evaluates to "^(To_string.bytes pc));
+							Output.print_endline ("	Evaluates to "^(To_string.bytes pc));
 							state
 							
 					| Function.EvaluateString ->
@@ -389,9 +389,9 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 								| Bytes_Address(block, offset) ->
 									let state, size_bytes = Eval.rval state sizeexp in
 									let size =
-                                      try bytes_to_int_auto size_bytes with
-                                          Failure(s) -> Output.print_endline s; 32
-                                    in
+									  try bytes_to_int_auto size_bytes with
+										  Failure(s) -> Output.print_endline s; 32
+									in
 									let state, bytes = MemOp.state__deref state (conditional__lval_block (block, offset), size) in
 									let str = match bytes with
 										| Bytes_ByteArray(bytearray) -> To_string.bytestring bytearray
@@ -404,13 +404,13 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 							in
 							Output.set_mode Output.MSG_MUSTPRINT;
 							Output.print_endline ("Evaluates to string: \"" ^ (
-                                if
-                                    Executeargs.print_args.arg_print_no_escaped_string
-                                then
-                                    str
-                                else
-                                    String.escaped str
-                                ) ^ "\"");
+								if
+									Executeargs.print_args.arg_print_no_escaped_string
+								then
+									str
+								else
+									String.escaped str
+								) ^ "\"");
 							state
 												
 					| Function.Assume ->
@@ -490,7 +490,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 							MemOp.index_to_state__add key state;
 							state
 
-         (*
+		 (*
 					| Function.PrintState ->
 						Output.set_mode Output.MSG_MUSTPRINT;
 						let module MemBlockSet = Set.Make(struct
@@ -499,34 +499,34 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 							end)
 						in
 						let blocksAlreadyPrinted = ref MemBlockSet.empty in
-                        let printStringString s1 s2 =
-                            Output.print_endline (s1 ^ " = " ^ s2)
-                        in
-                        let rec printVarFieldsBytes varname typ bytes off =
-                            (* break down each local by its fields *)
-                            (* canonicalize concrete values by their array rep*)
-                          match typ with
-                            | TComp (compinfo,_) -> 
-                                List.iter 
-                                  (fun fieldinfo -> printVarFieldsBytes (varname^"."^fieldinfo.fname) fieldinfo.ftype bytes (off+fst(Cil.bitsOffset typ (Field(fieldinfo,NoOffset)))/8))
-                                  compinfo.cfields
-                            | _ -> 
-                                let rec p b= match b with
-                                | Bytes_Constant const ->  p (constant_to_bytes const)
-                                | Bytes_ByteArray ba -> To_string.bytes (Bytes_ByteArray(ImmutableArray.sub ba off (Cil.bitsSizeOf typ/8)))
-                                | _ -> "("^(To_string.bytes b)^","^(string_of_int off)^","^(string_of_int (Cil.bitsSizeOf typ/8))^")"
-                                in 
-                                let rhs = p bytes
-                                in printStringString varname rhs
-                        in
-                        let printVarBytes var bytes =
-                            printVarFieldsBytes var.vname var.vtype bytes 0 
-                        in
+						let printStringString s1 s2 =
+							Output.print_endline (s1 ^ " = " ^ s2)
+						in
+						let rec printVarFieldsBytes varname typ bytes off =
+							(* break down each local by its fields *)
+							(* canonicalize concrete values by their array rep*)
+						  match typ with
+							| TComp (compinfo,_) -> 
+								List.iter 
+								  (fun fieldinfo -> printVarFieldsBytes (varname^"."^fieldinfo.fname) fieldinfo.ftype bytes (off+fst(Cil.bitsOffset typ (Field(fieldinfo,NoOffset)))/8))
+								  compinfo.cfields
+							| _ -> 
+								let rec p b= match b with
+								| Bytes_Constant const ->  p (constant_to_bytes const)
+								| Bytes_ByteArray ba -> To_string.bytes (Bytes_ByteArray(ImmutableArray.sub ba off (Cil.bitsSizeOf typ/8)))
+								| _ -> "("^(To_string.bytes b)^","^(string_of_int off)^","^(string_of_int (Cil.bitsSizeOf typ/8))^")"
+								in 
+								let rhs = p bytes
+								in printStringString varname rhs
+						in
+						let printVarBytes var bytes =
+							printVarFieldsBytes var.vname var.vtype bytes 0 
+						in
 						let printVar var block =
 							blocksAlreadyPrinted := MemBlockSet.add block !blocksAlreadyPrinted;
-                            match (MemoryBlockMap.find block state.block_to_bytes) with
-                              | Immediate bytes -> printVarBytes var bytes
-                              | Deferred _ -> printStringString var.vname "(deferred)"
+							match (MemoryBlockMap.find block state.block_to_bytes) with
+							  | Immediate bytes -> printVarBytes var bytes
+							  | Deferred _ -> printStringString var.vname "(deferred)"
 						in
 						Output.print_endline "#BEGIN PRINTSTATE";
 						Output.print_endline "#Globals:";
@@ -543,53 +543,53 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 							state.block_to_bytes;
 						Output.print_endline "#END PRINTSTATE";
 						state
-          *)
+		  *)
 
 					| Function.PrintState ->
 						Output.set_mode Output.MSG_MUSTPRINT;
-	                    let arg_print_char_as_int = Executeargs.print_args.Executeargs.arg_print_char_as_int in
-	                    Executeargs.print_args.Executeargs.arg_print_char_as_int <- true;
+						let arg_print_char_as_int = Executeargs.print_args.Executeargs.arg_print_char_as_int in
+						Executeargs.print_args.Executeargs.arg_print_char_as_int <- true;
 
 						let module BOSMap = Utility.MakeMap (
-	                        struct
-	                        	type t = memory_block * bytes * int  (* block, offset, size *)
-	                        	let compare = Pervasives.compare				
-	                        end)	
+							struct
+								type t = memory_block * bytes * int  (* block, offset, size *)
+								let compare = Pervasives.compare				
+							end)	
 						in
-                        let bosmap = ref BOSMap.empty in
+						let bosmap = ref BOSMap.empty in
 
-                        let printStringString s1 s2 =
-                            Output.print_endline (s1 ^ " = " ^ s2)
-                        in
-                        let rec printVarFieldsBytes varname typ bytes off =
-                            (* break down each local by its fields *)
-                            (* canonicalize concrete values by their array rep*)
-                          match typ with
-                            | TComp (compinfo,_) -> 
-                                List.iter 
-                                  (fun fieldinfo -> printVarFieldsBytes (varname^"."^fieldinfo.fname) fieldinfo.ftype bytes (off+fst(Cil.bitsOffset typ (Field(fieldinfo,NoOffset)))/8))
-                                  compinfo.cfields
-                            | _ -> 
-                                let size = (Cil.bitsSizeOf typ/8) in
-                                let rec p b= match b with
-                                | Bytes_Constant const ->  p (constant_to_bytes const)
-                                | Bytes_ByteArray ba -> To_string.bytes (Bytes_ByteArray(ImmutableArray.sub ba off size))
-                                | Bytes_Address (block, boff) -> 
-                                    if off = 0 && size = (bitsSizeOf voidPtrType / 8) then begin
-                                        bosmap := BOSMap.add (block,boff,size) None (!bosmap);
-                                        To_string.bytes b
-                                    end else
-                                        failwith (Printf.sprintf "PRINT STATE: Reading part of a Bytes_Address: %s %d %d" (To_string.bytes b) off size)
-                                | _ -> "("^(To_string.bytes b)^","^(string_of_int off)^","^(string_of_int size)^")"
-                                in 
-                                let rhs = p bytes
-                                in printStringString varname rhs
-                        in
-                        let printVarBytes var bytes =
-                            printVarFieldsBytes var.vname var.vtype bytes 0 
-                        in
+						let printStringString s1 s2 =
+							Output.print_endline (s1 ^ " = " ^ s2)
+						in
+						let rec printVarFieldsBytes varname typ bytes off =
+							(* break down each local by its fields *)
+							(* canonicalize concrete values by their array rep*)
+						  match typ with
+							| TComp (compinfo,_) -> 
+								List.iter 
+								  (fun fieldinfo -> printVarFieldsBytes (varname^"."^fieldinfo.fname) fieldinfo.ftype bytes (off+fst(Cil.bitsOffset typ (Field(fieldinfo,NoOffset)))/8))
+								  compinfo.cfields
+							| _ -> 
+								let size = (Cil.bitsSizeOf typ/8) in
+								let rec p b= match b with
+								| Bytes_Constant const ->  p (constant_to_bytes const)
+								| Bytes_ByteArray ba -> To_string.bytes (Bytes_ByteArray(ImmutableArray.sub ba off size))
+								| Bytes_Address (block, boff) -> 
+									if off = 0 && size = (bitsSizeOf voidPtrType / 8) then begin
+										bosmap := BOSMap.add (block,boff,size) None (!bosmap);
+										To_string.bytes b
+									end else
+										failwith (Printf.sprintf "PRINT STATE: Reading part of a Bytes_Address: %s %d %d" (To_string.bytes b) off size)
+								| _ -> "("^(To_string.bytes b)^","^(string_of_int off)^","^(string_of_int size)^")"
+								in 
+								let rhs = p bytes
+								in printStringString varname rhs
+						in
+						let printVarBytes var bytes =
+							printVarFieldsBytes var.vname var.vtype bytes 0 
+						in
 						let printVar var lval_block =
-                          if Cilutility.isConstType var.vtype then () else
+						  if Cilutility.isConstType var.vtype then () else
 							match lval_block with
 								| Immediate (Unconditional (block, _)) ->
 									begin match (MemoryBlockMap.find block state.block_to_bytes) with
@@ -618,17 +618,17 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 							| None -> Some (snd(MemOp.state__deref state (conditional__lval_block (block, off), size)))
 						end (!bosmap);
 						Output.print_endline "#Memory: (one level)";
-                        BOSMap.iter (fun (block,off,size) des -> 
-                              let sdes =
-                              match des with 
-                                | None -> "None"
-                                | Some b -> To_string.bytes b
-                              in
-                                Output.print_endline ((To_string.bytes (Bytes_Address(block, off))) ^ " -> " ^ sdes)
-                                )
-                             (!bosmap);
+						BOSMap.iter (fun (block,off,size) des -> 
+							  let sdes =
+							  match des with 
+								| None -> "None"
+								| Some b -> To_string.bytes b
+							  in
+								Output.print_endline ((To_string.bytes (Bytes_Address(block, off))) ^ " -> " ^ sdes)
+								)
+							 (!bosmap);
 						Output.print_endline "#END PRINTSTATE";
-	                    Executeargs.print_args.Executeargs.arg_print_char_as_int <- arg_print_char_as_int;
+						Executeargs.print_args.Executeargs.arg_print_char_as_int <- arg_print_char_as_int;
 						state
 
 					| Function.CompareState ->
@@ -643,30 +643,30 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 						  with Not_found -> (
 						   	Output.set_mode Output.MSG_MUSTPRINT;
 						   	Output.printf "Warning: snapshot %d is absent\n" key0;
-						   	    raise Not_found )
-                          in
+						   		raise Not_found )
+						  in
 						  let s1 = try MemOp.index_to_state__get key1
 						  with Not_found -> (
 						   	Output.set_mode Output.MSG_MUSTPRINT;
 						   	Output.printf "Warning: snapshot %d is absent\n" key1;
-						   	    raise Not_found )
-                          in
-						    	Output.set_mode Output.MSG_MUSTPRINT;
-						    	ignore (MemOp.cmp_states s0 s1);
-						    	state
-                        with Not_found -> 
+						   		raise Not_found )
+						  in
+								Output.set_mode Output.MSG_MUSTPRINT;
+								ignore (MemOp.cmp_states s0 s1);
+								state
+						with Not_found -> 
 						   	Output.set_mode Output.MSG_MUSTPRINT;
 						   	Output.printf "Compare states fail\n";
-                            state
-                        end
+							state
+						end
 					| Function.AssertEqualState ->
 						let state, bytes0 = Eval.rval state (List.nth exps 0) in
 						let key0 = bytes_to_int_auto bytes0 in
 						begin try 
 							let s0 = MemOp.index_to_state__get key0 in
 							Output.set_mode Output.MSG_MUSTPRINT;
-						    	if MemOp.cmp_states s0 state then Output.print_endline "AssertEqualState satisfied";
-						    	MemOp.index_to_state__add key0 state; 
+								if MemOp.cmp_states s0 state then Output.print_endline "AssertEqualState satisfied";
+								MemOp.index_to_state__add key0 state; 
 									state
 						with Not_found -> 
 							MemOp.index_to_state__add key0 state; 
@@ -709,7 +709,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 					(* If it was [Exit], there is no job to return *)
 					Output.set_mode Output.MSG_MUSTPRINT;
 					Output.print_endline ("exit() called with code "^(
-                        match exit_code with None-> "(NONE)" | Some(code) -> To_string.bytes code));
+						match exit_code with None-> "(NONE)" | Some(code) -> To_string.bytes code));
 (*
 					if run_args.arg_line_coverage then (
 						Report.printPath state exHist;
@@ -727,11 +727,11 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 					})
 
 	end (* outer [match func] *)
-       in
-       let rec process_func_list func_list =
-	      match func_list with
-	      | [] -> []
-	      | (state, func)::t -> 
+	   in
+	   let rec process_func_list func_list =
+		  match func_list with
+		  | [] -> []
+		  | (state, func)::t -> 
 			let job_state =
 				try
 					(process_func state func)
@@ -747,7 +747,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 					completed
 			in
 			job_state::(process_func_list t)
-       in
+	   in
 	let f = (process_func_list (Function.from_exp state fexp exps)) in
 	match f with
 		| _::_::_ -> Big_Fork(f)
@@ -770,7 +770,7 @@ let exec_instr job =
 	let job = { job with 
 			proc_info = set_proc_info job {(get_proc_info job) with 
 				instrList = tail; };
-		    }; in
+			}; in
 
 	(* Within instructions, we have to update line coverage (but not
 		 statement or edge coverage). *)
@@ -783,19 +783,19 @@ let exec_instr job =
 	(* Since we've used the makeCFGFeature, an [Instr] is a series of
 	   [Set]s and [Asm]s, possibly terminated with a [Call]. *)
 	match instr with
-     | Set(cil_lval, exp, loc) ->
-         printInstr instr;
-         let state = job.state in
-         let state, lval = Eval.lval state cil_lval in
-         let state, rv = Eval.rval state exp in
-         let state = MemOp.state__assign state lval rv in
-         let nextStmt = if tail = [] then List.hd (get_proc_info job).stmt.succs else (get_proc_info job).stmt in
-           Active { job with 
+	 | Set(cil_lval, exp, loc) ->
+		 printInstr instr;
+		 let state = job.state in
+		 let state, lval = Eval.lval state cil_lval in
+		 let state, rv = Eval.rval state exp in
+		 let state = MemOp.state__assign state lval rv in
+		 let nextStmt = if tail = [] then List.hd (get_proc_info job).stmt.succs else (get_proc_info job).stmt in
+		   Active { job with 
 			state = state; 
 			proc_info = set_proc_info job {(get_proc_info job) with
 				stmt = nextStmt;
 			};
-		    }
+			}
 		| Call(lvalopt, fexp, exps, loc) ->
 			assert (tail = []);
 			printInstr instr;
@@ -809,7 +809,7 @@ let exec_instr job =
 								proc_info = set_proc_info job {(get_proc_info job) with
 									stmt = List.hd (get_proc_info job).stmt.succs; 
 								};
-							      }
+								  }
 							else job)
 
 let exec_stmt job =
@@ -902,7 +902,7 @@ let exec_stmt job =
 											stmt = nextStmt;
 											inTrackedFn =
 											StringSet.mem callingFuncName run_args.arg_fns; };
-									      }
+										  }
 								in
 								(* When a function returns, we have to record the
 									 coverage within the returning function and also the
@@ -1049,11 +1049,11 @@ let exec_stmt job =
 							Output.printf "Branching on %s at %s. %s\nJob %d is the true branch and job %d is the false branch.\n\n"
 								 (To_string.exp exp)
 								 (To_string.location loc)
-                                 (if Executeargs.print_args.arg_print_callstack then
-                                     "Call stack:\n"^
-								    (To_string.callstack (get_callContexts state))
-                                 else ""
-                                 )
+								 (if Executeargs.print_args.arg_print_callstack then
+									 "Call stack:\n"^
+									(To_string.callstack (get_callContexts state))
+								 else ""
+								 )
 								 trueJob.jid falseJob.jid;
 							Fork (trueJob, falseJob)	
 						end
@@ -1085,11 +1085,11 @@ let printJob (state,stmt) =
 
 let setRunningJob job =
 	if !Output.runningJobId <> job.jid then (
-      if not Executeargs.run_args.arg_cfg_pruning then
-        (
+	  if not Executeargs.run_args.arg_cfg_pruning then
+		(
 		Output.set_mode Output.MSG_REG;
 		Output.print_endline "***** Changing running job *****"
-        );
+		);
 		Output.runningJobId := job.jid;
 	);
 	Output.runningJobDepth := (List.length job.state.path_condition)
@@ -1105,121 +1105,121 @@ let pass_targets targets job fexp exps =
   let state = job.state in
   let hist = job.exHist in
   let fundecs = 
-    List.fold_left 
-      ( fun lst (_,ft) -> match ft with Function.Ordinary (f) -> f::lst | _ -> lst
-      ) [] (Function.from_exp state fexp exps) in
+	List.fold_left 
+	  ( fun lst (_,ft) -> match ft with Function.Ordinary (f) -> f::lst | _ -> lst
+	  ) [] (Function.from_exp state fexp exps) in
   (* convert args to bytes. argvs are from left to right *)
   let _, argvs = 
-    List.fold_right 
-      ( fun exp (state, argvs) ->
-          let state, bytes = Eval.rval state exp in
-            (state, bytes::argvs)
-      ) exps (state, []) 
+	List.fold_right 
+	  ( fun exp (state, argvs) ->
+		  let state, bytes = Eval.rval state exp in
+			(state, bytes::argvs)
+	  ) exps (state, []) 
   in
   (* check if all fundecs pass target *)
   let pass_target target : bool*bytes =
-    List.fold_left 
-      ( fun (b,fc) fundec -> 
-          if fundec != target.func then true,Bytes.bytes__zero
-          else
-            (
-              (* caller's input values to callee: argvs
-               * callee's input values from caller: target.state 
-               * at the end, use caller's state as the state of quirying 
-               *)
-              Output.banner_printf 0  "Check if the failing condition is hit\n";
-              (* TODO: add globals *)
-              let connecting_bytes = 
-                List.fold_left2
-                  ( fun b argv formal ->
-                      let _,fargv = Eval.rval target.entry_state (Lval(Var(formal),NoOffset)) in
-                      let equation = Operation.eq [(fargv,formal.vtype);(argv,formal.vtype)] in
-                        Operation.bytes__land equation b 
-                  ) bytes__one argvs fundec.sformals
-              in
-                (*
-                 (Output.banner_printf 0  "Failing condition: %s\n" (To_string.bytes target.failing_condition));
-                 (Output.banner_printf 0  "Path condition: %s\n" (String.concat "&&" (List.map To_string.bytes state.path_condition)));
-                 (Output.banner_printf 0  "Connection : %s\n" (To_string.bytes connecting_bytes));
-                 *)
-              let _, truth = eval_with_cache state (connecting_bytes::state.path_condition)  (Operation.bytes__not target.failing_condition) in
-              let total_failing_condition = Operation.bytes__land target.failing_condition connecting_bytes in
-              let total_failing_condition = Operation.bytes__lor total_failing_condition fc in
+	List.fold_left 
+	  ( fun (b,fc) fundec -> 
+		  if fundec != target.func then true,Bytes.bytes__zero
+		  else
+			(
+			  (* caller's input values to callee: argvs
+			   * callee's input values from caller: target.state 
+			   * at the end, use caller's state as the state of quirying 
+			   *)
+			  Output.banner_printf 0  "Check if the failing condition is hit\n";
+			  (* TODO: add globals *)
+			  let connecting_bytes = 
+				List.fold_left2
+				  ( fun b argv formal ->
+					  let _,fargv = Eval.rval target.entry_state (Lval(Var(formal),NoOffset)) in
+					  let equation = Operation.eq [(fargv,formal.vtype);(argv,formal.vtype)] in
+						Operation.bytes__land equation b 
+				  ) bytes__one argvs fundec.sformals
+			  in
+				(*
+				 (Output.banner_printf 0  "Failing condition: %s\n" (To_string.bytes target.failing_condition));
+				 (Output.banner_printf 0  "Path condition: %s\n" (String.concat "&&" (List.map To_string.bytes state.path_condition)));
+				 (Output.banner_printf 0  "Connection : %s\n" (To_string.bytes connecting_bytes));
+				 *)
+			  let _, truth = eval_with_cache state (connecting_bytes::state.path_condition)  (Operation.bytes__not target.failing_condition) in
+			  let total_failing_condition = Operation.bytes__land target.failing_condition connecting_bytes in
+			  let total_failing_condition = Operation.bytes__lor total_failing_condition fc in
 
-              let print_failed_assertion isUnknown =
-                let _ = Output.set_mode Output.MSG_MUSTPRINT in
-                let caller = List.hd (get_callstack state) in
-                let mustmay = (if isUnknown then "may" else "must") in
-                let log = Executedebug.log in
-                let _ = Output.banner_printf 1  "Failing condition %s be hit (see error log).\n%!" mustmay in
-                let _ = log "(****************************\n" in
-	        let _ = log (Printf.sprintf "The following failure %s happen in function %s: \n" mustmay caller.svar.vname) in
-                let _ = log (Printf.sprintf "Failing condition: %s\n" (To_string.bytes target.failing_condition)) in
-                let _ = log (Printf.sprintf "Path condition: %s\n" (String.concat "&&" (List.map To_string.bytes state.path_condition))) in
-                let _ = log (Printf.sprintf "Connection : %s\n" (To_string.bytes connecting_bytes)) in
-                let _ = log (Printf.sprintf "Consult STP for an example...\n") in
-                let valuesForSymbols = Stp.getAllValues (target.failing_condition::connecting_bytes::state.path_condition) in
-                let getVal = function
-                  | Bytes_ByteArray bytArr ->
-                      let byteOptArray =
-                        ImmutableArray.map
-                          (function
-                             | Byte_Symbolic s ->
-                                 (try
-                                    let valueForS = List.assq s valuesForSymbols in
-                                      Some (make_Byte_Concrete valueForS)
-                                  with Not_found -> None
-                                 )
-                             | _ -> failwith "Impossible: tracked symbolic value must be fully symbolic"
-                          )
-                          bytArr
-                      in
-                        if ImmutableArray.exists (* Check if any byte is constrained *)
-                             (function Some _ -> true | _ -> false)
-                             byteOptArray
-                        then (Some (make_Bytes_ByteArray
-                                  (ImmutableArray.map
-                                     (function Some b -> b | None -> byte__zero)
-                                     byteOptArray))
-                        ) 
-                        else None
-                  | _ -> failwith "Impossible: symbolic bytes must be a ByteArray"
-                in
-                let _ = List.iter 
-                          ( fun (bytes,varinf) -> 
-                              match getVal bytes with 
-                                | None -> () 
-                                | Some concreteByteArray -> 
-                                    (
-                                      match bytes_to_constant concreteByteArray varinf.vtype with
-                                        | CInt64 (n,_,_) ->
-                                            log (Printf.sprintf "%s=%Ld\n" varinf.vname n)
-                                        | _ -> failwith "Unimplemented: non-integer symbolic"
-                                    )
-                          )
-                          hist.bytesToVars
-                in
-                let _ = log "(****************************\n" in
-                  ()
-              in
-                match truth with 
-                  | Ternary.True -> true,Bytes.bytes__zero
-                  | Ternary.Unknown -> 
-                      print_failed_assertion true; false,total_failing_condition
-                  | Ternary.False -> 
-                      print_failed_assertion false; false,total_failing_condition
-            )
-      ) (true,Bytes.bytes__zero) fundecs
+			  let print_failed_assertion isUnknown =
+				let _ = Output.set_mode Output.MSG_MUSTPRINT in
+				let caller = List.hd (get_callstack state) in
+				let mustmay = (if isUnknown then "may" else "must") in
+				let log = Executedebug.log in
+				let _ = Output.banner_printf 1  "Failing condition %s be hit (see error log).\n%!" mustmay in
+				let _ = log "(****************************\n" in
+			let _ = log (Printf.sprintf "The following failure %s happen in function %s: \n" mustmay caller.svar.vname) in
+				let _ = log (Printf.sprintf "Failing condition: %s\n" (To_string.bytes target.failing_condition)) in
+				let _ = log (Printf.sprintf "Path condition: %s\n" (String.concat "&&" (List.map To_string.bytes state.path_condition))) in
+				let _ = log (Printf.sprintf "Connection : %s\n" (To_string.bytes connecting_bytes)) in
+				let _ = log (Printf.sprintf "Consult STP for an example...\n") in
+				let valuesForSymbols = Stp.getAllValues (target.failing_condition::connecting_bytes::state.path_condition) in
+				let getVal = function
+				  | Bytes_ByteArray bytArr ->
+					  let byteOptArray =
+						ImmutableArray.map
+						  (function
+							 | Byte_Symbolic s ->
+								 (try
+									let valueForS = List.assq s valuesForSymbols in
+									  Some (make_Byte_Concrete valueForS)
+								  with Not_found -> None
+								 )
+							 | _ -> failwith "Impossible: tracked symbolic value must be fully symbolic"
+						  )
+						  bytArr
+					  in
+						if ImmutableArray.exists (* Check if any byte is constrained *)
+							 (function Some _ -> true | _ -> false)
+							 byteOptArray
+						then (Some (make_Bytes_ByteArray
+								  (ImmutableArray.map
+									 (function Some b -> b | None -> byte__zero)
+									 byteOptArray))
+						) 
+						else None
+				  | _ -> failwith "Impossible: symbolic bytes must be a ByteArray"
+				in
+				let _ = List.iter 
+						  ( fun (bytes,varinf) -> 
+							  match getVal bytes with 
+								| None -> () 
+								| Some concreteByteArray -> 
+									(
+									  match bytes_to_constant concreteByteArray varinf.vtype with
+										| CInt64 (n,_,_) ->
+											log (Printf.sprintf "%s=%Ld\n" varinf.vname n)
+										| _ -> failwith "Unimplemented: non-integer symbolic"
+									)
+						  )
+						  hist.bytesToVars
+				in
+				let _ = log "(****************************\n" in
+				  ()
+			  in
+				match truth with 
+				  | Ternary.True -> true,Bytes.bytes__zero
+				  | Ternary.Unknown -> 
+					  print_failed_assertion true; false,total_failing_condition
+				  | Ternary.False -> 
+					  print_failed_assertion false; false,total_failing_condition
+			)
+	  ) (true,Bytes.bytes__zero) fundecs
   in
   let rec pass_targets targets =
-    match targets with 
-      | [] -> true,Bytes.bytes__zero
-      | t::ts -> 
-          let truth,failing_condition = pass_target t in
-          if truth then pass_targets ts 
-          else false,failing_condition (* TODO: can proceed, to find more failing targets *)
+	match targets with 
+	  | [] -> true,Bytes.bytes__zero
+	  | t::ts -> 
+		  let truth,failing_condition = pass_target t in
+		  if truth then pass_targets ts 
+		  else false,failing_condition (* TODO: can proceed, to find more failing targets *)
   in
-    pass_targets targets
+	pass_targets targets
 
 
 exception Failure_wc of string * bytes
@@ -1231,22 +1231,22 @@ let step_job_with_targets targets job =
    * else step_job job *)
 	setRunningJob job;
 	try
-        (* let _ = Output.printf "Step into Job %d\n" job.jid in *)
+		(* let _ = Output.printf "Step into Job %d\n" job.jid in *)
 		let result = match (get_proc_info job).instrList with
 			| [] -> exec_stmt job
 			| Call(_,fexp,exps,_)::_-> 
-                if Executeargs.run_args.arg_callchain_backward then
-                  begin
-                    let truth,failing_condition = pass_targets targets job fexp exps in
-                      if truth then exec_instr job 
-                      else failwith_wc (Printf.sprintf "Job %d hits the failing condition" job.jid ) failing_condition
-                  end
-                else exec_instr job
+				if Executeargs.run_args.arg_callchain_backward then
+				  begin
+					let truth,failing_condition = pass_targets targets job fexp exps in
+					  if truth then exec_instr job 
+					  else failwith_wc (Printf.sprintf "Job %d hits the failing condition" job.jid ) failing_condition
+				  end
+				else exec_instr job
 			| _ -> exec_instr job
 		in
-          result
+		  result
 	with 
-      | Failure msg ->
+	  | Failure msg ->
 		if run_args.arg_failfast then failwith msg;
 		let result = { result_state = job.state; result_history = job.exHist } in
 		let completed = Complete (
@@ -1256,9 +1256,9 @@ let step_job_with_targets targets job =
 			}) 
 		in
 		completed
-      | Failure_wc (msg,failing_condition) ->
+	  | Failure_wc (msg,failing_condition) ->
 		if run_args.arg_failfast then failwith msg;
-        let state = {job.state with path_condition = failing_condition::job.state.path_condition} in
+		let state = {job.state with path_condition = failing_condition::job.state.path_condition} in
 		let result = { result_state = state; result_history = job.exHist } in
 		let completed = Complete (
 			{
@@ -1284,78 +1284,78 @@ let at_merge_point job =
 let main_loop ?targets:(targets=[]) job : job_completion_reason list =
   let step_job = step_job_with_targets targets in
   let rec main_loop (completed: job_completion_reason list) (jobs: Jobs.t) : job_completion_reason list =
-    match !signalStringOpt with
-      | Some s ->
-          (* if we got a signal, stop and return the completed results *)
-          Output.set_mode Output.MSG_MUSTPRINT;
-          Output.print_endline s;
-          completed
-      | None ->
-          begin
-            if Jobs.has_next_runnable jobs then
-              begin
-                let job = Jobs.take_next_runnable jobs in
-                  if run_args.arg_merge_paths && at_merge_point job then
-                    (* job is at a merge point and merging is enabled: try to merge it *)
-                    begin match Jobs.merge jobs job with
-                      | Some (truncated) ->
-                          (* merge was successful: process the result and continue *)
-                          process_result completed jobs truncated
-                      | None ->
-                          (* merge was unsuccessful: keep the job at the merge point in the merge set in case
-                           * later jobs can merge; this leads to the invariant that no jobs in the merge set
-                           * can merge with each other *)
-                          main_loop completed jobs
-                    end
-                  else
-                      (* job is not at a merge point or merging is disabled: step the job *)
-                      (* process_result completed (job_queue, merge_set) (step_job job) *)
-                      let _ = Jobs.running jobs job in (* set current job *)
-                      process_result completed jobs (step_job job )
-              end
-            else if Jobs.has_next_mergable jobs then
-              begin
-                (* job queue is empty: take a job out of the merge set and step it, since it cannot merge
-                 * with any other jobs in the merge set (the merge set invariant) *)
-                let job = Jobs.take_next_mergable jobs in
-                let _ = Jobs.running jobs job in (* set current job *)
-                  process_result completed jobs (step_job job)
-              end
-            else
-              begin
-                Output.set_mode Output.MSG_MUSTPRINT;
-                Output.print_endline "Done executing";
-                completed
-              end
-          end
+	match !signalStringOpt with
+	  | Some s ->
+		  (* if we got a signal, stop and return the completed results *)
+		  Output.set_mode Output.MSG_MUSTPRINT;
+		  Output.print_endline s;
+		  completed
+	  | None ->
+		  begin
+			if Jobs.has_next_runnable jobs then
+			  begin
+				let job = Jobs.take_next_runnable jobs in
+				  if run_args.arg_merge_paths && at_merge_point job then
+					(* job is at a merge point and merging is enabled: try to merge it *)
+					begin match Jobs.merge jobs job with
+					  | Some (truncated) ->
+						  (* merge was successful: process the result and continue *)
+						  process_result completed jobs truncated
+					  | None ->
+						  (* merge was unsuccessful: keep the job at the merge point in the merge set in case
+						   * later jobs can merge; this leads to the invariant that no jobs in the merge set
+						   * can merge with each other *)
+						  main_loop completed jobs
+					end
+				  else
+					  (* job is not at a merge point or merging is disabled: step the job *)
+					  (* process_result completed (job_queue, merge_set) (step_job job) *)
+					  let _ = Jobs.running jobs job in (* set current job *)
+					  process_result completed jobs (step_job job )
+			  end
+			else if Jobs.has_next_mergable jobs then
+			  begin
+				(* job queue is empty: take a job out of the merge set and step it, since it cannot merge
+				 * with any other jobs in the merge set (the merge set invariant) *)
+				let job = Jobs.take_next_mergable jobs in
+				let _ = Jobs.running jobs job in (* set current job *)
+				  process_result completed jobs (step_job job)
+			  end
+			else
+			  begin
+				Output.set_mode Output.MSG_MUSTPRINT;
+				Output.print_endline "Done executing";
+				completed
+			  end
+		  end
 
    and output_completion_info completion =
-     (* log some interesting errors *)
-     begin match completion with
-       | Types.Abandoned (msg, loc, { result_state=state; result_history=hist }) ->
-           Output.set_mode Output.MSG_MUSTPRINT;
-           Output.printf "Error \"%s\" occurs at %s\n%sAbandoning path\n"
-             msg (To_string.location loc)
-             (if Executeargs.print_args.arg_print_callstack then
-                "Call stack:\n"^(To_string.callstack (get_callContexts state))
-              else
-                "");
-       | _ ->
-           ()
-     end
+	 (* log some interesting errors *)
+	 begin match completion with
+	   | Types.Abandoned (msg, loc, { result_state=state; result_history=hist }) ->
+		   Output.set_mode Output.MSG_MUSTPRINT;
+		   Output.printf "Error \"%s\" occurs at %s\n%sAbandoning path\n"
+			 msg (To_string.location loc)
+			 (if Executeargs.print_args.arg_print_callstack then
+				"Call stack:\n"^(To_string.callstack (get_callContexts state))
+			  else
+				"");
+	   | _ ->
+		   ()
+	 end
 
 	and process_result completed jobs job = 
-      match job with
-     | Active job ->
-         Jobs.add_runnable jobs (next_proc job);
-         main_loop completed jobs 
+	  match job with
+	 | Active job ->
+		 Jobs.add_runnable jobs (next_proc job);
+		 main_loop completed jobs 
 
-     | Fork (j1, j2) ->
-         (* queue the true branch and continue the false branch *)  (* CCBSE *)
-         Jobs.add_runnables jobs [(next_proc j1);(next_proc j2)];
-         main_loop completed jobs
+	 | Fork (j1, j2) ->
+		 (* queue the true branch and continue the false branch *)  (* CCBSE *)
+		 Jobs.add_runnables jobs [(next_proc j1);(next_proc j2)];
+		 main_loop completed jobs
 
-     | Big_Fork job_list -> 
+	 | Big_Fork job_list -> 
 		let rec process_job_list job_list =
 			match job_list with
 				| [] -> []
@@ -1385,10 +1385,10 @@ let main_loop ?targets:(targets=[]) job : job_completion_reason list =
 							else
 								completion.reason::(process_completion_list t))
 		in
-            	let _ = Jobs.add_runnables jobs (process_job_list job_list) in
+				let _ = Jobs.add_runnables jobs (process_job_list job_list) in
 		main_loop ((process_completion_list job_list)@completed) jobs
 
-     | Complete completion ->
+	 | Complete completion ->
 			(output_completion_info completion.reason);
 			(if (completion.job.num_procs > 1) then
 				let _ = Jobs.add_runnable jobs (kill_proc completion.job) in
@@ -1403,65 +1403,65 @@ let main_loop ?targets:(targets=[]) job : job_completion_reason list =
 
 let callchain_bacward_se callergraph entryfn assertfn job_init : job_completion_reason list list =
   let job_init fn ts =
-    let _ = Output.banner_printf 1 "Start forward SE on function %s with target(s)\n%s\n%!"
-            (fn.svar.vname) (let s=(String.concat "," (List.map (fun t -> t.func.svar.vname) ts)) in if s="" then "(none)" else s)
-    in
-    job_init fn
+	let _ = Output.banner_printf 1 "Start forward SE on function %s with target(s)\n%s\n%!"
+			(fn.svar.vname) (let s=(String.concat "," (List.map (fun t -> t.func.svar.vname) ts)) in if s="" then "(none)" else s)
+	in
+	job_init fn
   in
   let get_failing_condition result = 
-    List.fold_left 
-      ( fun b job_completion ->
-          match job_completion with
-            | Abandoned (_,_,job_result) ->
-                let this_fc = List.fold_left Operation.bytes__land Bytes.bytes__one job_result.result_state.path_condition in
-                  Operation.bytes__lor b this_fc 
-            | _ -> b
-      )
-      Bytes.bytes__zero result
+	List.fold_left 
+	  ( fun b job_completion ->
+		  match job_completion with
+			| Abandoned (_,_,job_result) ->
+				let this_fc = List.fold_left Operation.bytes__land Bytes.bytes__one job_result.result_state.path_condition in
+				  Operation.bytes__lor b this_fc 
+			| _ -> b
+	  )
+	  Bytes.bytes__zero result
   in
 
   (* The implementation of main loop *)
   let rec callchain_bacward_main_loop job targets =
-    (* Assume we start at f *)
-    let f = List.hd (get_callstack job.state) in
-    (* Run forward SE based on the targets *)
-    let result = main_loop ~targets:targets job in 
-    (* result is a (may not be completed) list of finished jobs.
-     * A job is either successful, if no assertion failure, or unsuccessful.
-     *)
-    (* Get a failing condition *)
-    let failing_condition = get_failing_condition result in
-      if f == entryfn then 
-        (* If f is main(), we are done *)
-        result 
-      else
-        let new_target = {
-          func = f;
-          entry_state = job.state;
-          failing_condition = failing_condition;
-        } in
-        let callers = Cilutility.get_callers callergraph f in
-          Output.banner_printf 1 "Function %s's caller(s): " f.svar.vname;
-          List.iter (fun caller -> Output.banner_printf 1 " %s\n" caller.svar.vname) callers;
-          Output.banner_printf 1 "%!";
-          List.fold_left 
-          (
-            fun lst caller -> 
-              let targets = (new_target::targets) in
-              let newjob = job_init caller targets in
-              let newlst = callchain_bacward_main_loop newjob targets  in
-                List.rev_append newlst lst
-          ) 
-          [] callers
+	(* Assume we start at f *)
+	let f = List.hd (get_callstack job.state) in
+	(* Run forward SE based on the targets *)
+	let result = main_loop ~targets:targets job in 
+	(* result is a (may not be completed) list of finished jobs.
+	 * A job is either successful, if no assertion failure, or unsuccessful.
+	 *)
+	(* Get a failing condition *)
+	let failing_condition = get_failing_condition result in
+	  if f == entryfn then 
+		(* If f is main(), we are done *)
+		result 
+	  else
+		let new_target = {
+		  func = f;
+		  entry_state = job.state;
+		  failing_condition = failing_condition;
+		} in
+		let callers = Cilutility.get_callers callergraph f in
+		  Output.banner_printf 1 "Function %s's caller(s): " f.svar.vname;
+		  List.iter (fun caller -> Output.banner_printf 1 " %s\n" caller.svar.vname) callers;
+		  Output.banner_printf 1 "%!";
+		  List.fold_left 
+		  (
+			fun lst caller -> 
+			  let targets = (new_target::targets) in
+			  let newjob = job_init caller targets in
+			  let newlst = callchain_bacward_main_loop newjob targets  in
+				List.rev_append newlst lst
+		  ) 
+		  [] callers
   in
   let callers = Cilutility.get_callers callergraph assertfn in
-    List.fold_left 
-      (fun results caller ->
-         Output.banner_printf 2 "Call-chain backward Symbolic Execution of target function %s\n%!" caller.svar.vname;
-         let job = job_init caller [] in 
-         let new_result = callchain_bacward_main_loop job [] in
-           new_result::results
-      ) [] callers
+	List.fold_left 
+	  (fun results caller ->
+		 Output.banner_printf 2 "Call-chain backward Symbolic Execution of target function %s\n%!" caller.svar.vname;
+		 let job = job_init caller [] in 
+		 let new_result = callchain_bacward_main_loop job [] in
+		   new_result::results
+	  ) [] callers
 
 
 
