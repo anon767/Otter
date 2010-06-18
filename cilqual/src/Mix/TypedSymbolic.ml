@@ -14,6 +14,11 @@ open SwitchingUtil
 
 module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
 
+    let cache stack fn context solution block_errors =
+        (* cache the result at the end of the stack *)
+        List.rev (`TypedSymbolicCached (fn, context, solution, block_errors)::(List.rev stack))
+
+
     let typed_to_typed file fn expState solution =
         (* prepare a monad that represents the result *)
         let expM = perform
@@ -174,7 +179,8 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
                     do_fixpoint stack solution
 
                 end else begin
-                    (* there was no recursion or the tentative solution was correct *)
+                    (* there was no recursion or the tentative solution was correct; cache the result and return *)
+                    let stack = cache stack fn context solution block_errors in
                     k stack expState block_errors
                 end
             in
@@ -204,9 +210,10 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
         if Solution.is_unsatisfiable context then
             Format.eprintf "Unsatisfiable solution entering TypedSymbolic at %s@." fn.Cil.svar.Cil.vname;
 
-        (* inspect the stack to determine if this call is recursive, by finding the same function in the stack and
-         * comparing the context; the domain of context' and context may differ, since the enclosing typed block may
-         * be different and thus may contain different local variables *)
+        (* inspect the stack to determine if this call is recursive, or if there's a suitable cached solution,
+         * by finding the same function in the stack and comparing the context; the domain of context' and context
+         * may differ, since the enclosing typed block may be different and thus may contain different local
+         * variables *)
         let rec inspect_stack inspected = function
             | `TypedSymbolic (fn', context', solution, _)::tail
                     when fn' == fn && Solution.equal context' context ->
@@ -214,6 +221,13 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
                 Format.eprintf "Recursion detected for %s...@." fn.Cil.svar.Cil.vname;
                 let stack = List.rev_append inspected ((`TypedSymbolic (fn', context', solution, true))::tail) in
                 k stack (typed_to_typed file fn expState solution) []
+
+            | `TypedSymbolicCached (fn', context', solution, block_errors)::_ as tail
+                    when fn' == fn && Solution.equal context' context ->
+                (* use the cached solution *)
+                Format.eprintf "Using cached solution for %s...@." fn.Cil.svar.Cil.vname;
+                let stack = List.rev_append inspected tail in
+                k stack (typed_to_typed file fn expState solution) block_errors
 
             | head::tail ->
                 inspect_stack (head::inspected) tail
