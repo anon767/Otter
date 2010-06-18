@@ -911,6 +911,182 @@ let leaf_typed_introducing_aliasing_testsuite = "Leaf Typed Introducing Aliasing
     ];
 ]
 
+(* Exercises recursion handling for typed blocks nested in symbolic blocks:
+ *
+ * The basic structure of the test code leads to the call chain: main -> foo -> bar -> (foo -> bar -> foo);
+ * where the parenthesized section is recursive.
+ *
+ * There is a pointer y that, in the first call to foo, is not null, and will be not null in the first call to bar.
+ * It will be set not null again by bar before bar calls foo, so y will be not null for the second and all subsequent
+ * calls to foo. However, foo calls bar again which, in some tests, then sets y to null before returning to foo.
+ * After the second bar and the second foo return, y is null in the first bar after the foo call-site. The first bar
+ * then dereferences y, which leads to a null-pointer dereference error.
+ *
+ * The recursion handling (e.g., a fixpoint computation) must achieve two things: it must terminate and not recurse
+ * infinitely; and it must detect that if the pointer y is null upon return from the recursive call to foo, it will lead to
+ * a null-pointer dereference.
+ *)
+let symbolic_typed_symbolic_sink_source_recursive_typed_testsuite
+        = "Symbolic to Typed to Symbolic-Sink-Source to Recursive Typed" >::: [
+    "non-null" >::: [
+        "global variable" >::: [
+            test_mix ~label:"set null" "
+                int w = 0;
+                int x = 0;
+                int * y = &x;
+                void foo(void) MIX(typed);
+                void bar(void) MIX(symbolic) {
+                    y = &x;
+                    foo();
+                    *y = 1;
+                    y = NULL;
+                }
+                void foo(void) {
+                    if (w++ < 2) {
+                        bar();
+                    }
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file results ->
+                assert_has_abandoned 1 results
+            end;
+
+            test_mix ~label:"set non-null" "
+                int w = 0;
+                int x = 0;
+                int * y = &x;
+                void foo(void) MIX(typed);
+                void bar(void) MIX(symbolic) {
+                    y = &x;
+                    foo();
+                    *y = 1;
+                    y = &x;
+                }
+                void foo(void) {
+                    if (w++ < 2) {
+                        bar();
+                    }
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file results ->
+                assert_no_abandoned results
+            end;
+
+            test_mix ~label:"set null and non-null" "
+                int w = 0;
+                int x = 0;
+                int * y = &x;
+                void foo(void) MIX(typed);
+                void bar(void) MIX(symbolic) {
+                    y = &x;
+                    foo();
+                    *y = 1;
+                    if (x) {
+                        y = NULL;
+                    } else {
+                        y = &x;
+                    }
+                }
+                void foo(void) {
+                    if (w++ < 2) {
+                        bar();
+                    }
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file results ->
+                assert_has_abandoned 1 results
+            end;
+        ];
+
+        "output argument" >::: [
+            test_mix ~label:"set null" "
+                int w = 0;
+                int x = 0;
+                void foo(int ** y) MIX(typed);
+                void bar(int ** y) MIX(symbolic) {
+                    *y = &x;
+                    foo(y);
+                    **y = 1;
+                    *y = NULL;
+                }
+                void foo(int ** y) {
+                    if (w++ < 2) {
+                        bar(y);
+                    }
+                }
+                int main(void) {
+                    int * z = &x;
+                    foo(&z);
+                    return 0;
+                }
+            " begin fun file results ->
+                assert_has_abandoned 1 results
+            end;
+
+            test_mix ~label:"set non-null" "
+                int w = 0;
+                int x = 0;
+                void foo(int ** y) MIX(typed);
+                void bar(int ** y) MIX(symbolic) {
+                    *y = &x;
+                    foo(y);
+                    **y = 1;
+                    *y = &x;
+                }
+                void foo(int ** y) {
+                    if (w++ < 2) {
+                        bar(y);
+                    }
+                }
+                int main(void) {
+                    int * z = &x;
+                    foo(&z);
+                    return 0;
+                }
+            " begin fun file results ->
+                assert_no_abandoned results
+            end;
+
+            test_mix ~label:"set null and non-null" "
+                int w = 0;
+                int x = 0;
+                void foo(int ** y) MIX(typed);
+                void bar(int ** y) MIX(symbolic) {
+                    *y = &x;
+                    foo(y);
+                    **y = 1;
+                    if (x) {
+                        *y = NULL;
+                    } else {
+                        *y = &x;
+                    }
+                }
+                void foo(int ** y) {
+                    if (w++ < 2) {
+                        bar(y);
+                    }
+                }
+                int main(void) {
+                    int * z = &x;
+                    foo(&z);
+                    return 0;
+                }
+            " begin fun file results ->
+                assert_has_abandoned 1 results
+            end;
+        ];
+    ];
+]
+
 let testsuite = "SymbolicTopIntegration" >::: [
     symbolic_only_testsuite;
     leaf_typed_transitive_testsuite;
@@ -918,5 +1094,6 @@ let testsuite = "SymbolicTopIntegration" >::: [
     leaf_typed_sink_testsuite;
     leaf_typed_using_aliasing_testsuite;
     leaf_typed_introducing_aliasing_testsuite;
+    symbolic_typed_symbolic_sink_source_recursive_typed_testsuite;
 ]
 

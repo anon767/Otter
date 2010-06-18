@@ -69,7 +69,76 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
 
         [ (Types.Return (retopt, { Types.result_state=state; Types.result_history=job.Types.exHist }), None) ]
 
-    let switch dispatch stack file job k =
+
+    let switch dispatch stack file job fn loc state expState context k =
+
+        (* set up the recursion fixpoint operation *)
+        let rec do_fixpoint stack tentative =
+
+            (* push our tentative solution onto the stack for use by recursive calls *)
+            let stack = (`SymbolicTyped (fn, context, tentative, false))::stack in
+
+            (* prepare the completion continuation to perform the final check *)
+            let completion stack (((((_, constraints), _), _), _), _ as expState) block_errors =
+                Format.eprintf "Returning from typed to symbolic at %s...@." fn.Cil.svar.Cil.vname;
+
+                (* pop the stack *)
+                let recursion_detected, stack = match stack with
+                    | (`SymbolicTyped (_, _, _, recursion_detected))::tail -> (recursion_detected, tail)
+                    | _ -> failwith "Impossible!"
+                in
+
+                if block_errors != [] then begin
+                    let result = { Types.result_state = job.Types.state; Types.result_history = job.Types.exHist } in
+                    let msg = "Block errors returning from SymbolicTyped at " ^ fn.Cil.svar.Cil.vname in
+                    k stack [ (Types.Abandoned (msg, loc, result),
+                               Some (msg, loc, `SymbolicTypedError (result, block_errors))) ]
+
+                end else begin
+                    let solution = DiscreteSolver.solve consts constraints in
+
+                    if recursion_detected && not (Solution.includes tentative solution) then begin
+                        (* the tentative solution was used by a recursive call, but it was too optimistic;
+                         * retry with new solution *)
+                        Format.eprintf "Reevaluating fixpoint for %s due to recursion...@." fn.Cil.svar.Cil.vname;
+                        do_fixpoint stack solution
+
+                    end else if DiscreteSolver.Solution.is_unsatisfiable solution then begin
+                        (* there was no recursion or the tentative solution was correct, but the constraints were
+                         * unsatisfiable; report as block errors and bail *)
+
+                        (* TODO: need a better mechanism for explaining errors *)
+                        let result = { Types.result_state = job.Types.state; Types.result_history = job.Types.exHist } in
+                        let explanation = DiscreteSolver.explain solution in
+                        Format.fprintf Format.str_formatter
+                            "Unsatisfiable solution returning from SymbolicTyped at %s:@\n  @[%a@]"
+                            fn.Cil.svar.Cil.vname
+                            DiscreteSolver.Explanation.printer explanation;
+                        Format.eprintf
+                            "Unsatisfiable solution returning from SymbolicTyped at %s:@\n  @[%a@]@."
+                            fn.Cil.svar.Cil.vname
+                            DiscreteSolver.Explanation.printer explanation;
+
+                        let msg = Format.flush_str_formatter () in
+                        let completed loc = [ (Types.Abandoned (msg, loc, result), None) ] in
+
+                        k stack (completed loc)
+
+                    end else
+                        (* there was no recursion or the tentative solution was correct *)
+                        let completed = typed_to_symbolic file job fn state expState solution in
+                        k stack completed
+                end
+            in
+            let expState = run (return ()) expState in (* TODO: fix the type *)
+            dispatch stack (`TypedBlock (file, fn, expState, completion))
+        in
+
+        (* kick off the fixpoint computation *)
+        do_fixpoint stack context
+
+
+    let inspect_stack dispatch stack file job k =
         (* 1. convert globals and formals to type constraints
          * 2. type-check fn
          * 3. kill memory and reinitialize globals, formals and return value from type constraints
@@ -119,51 +188,32 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
                        None) ]
 
         end else begin
-            (* prepare the completion continuation to perform the final check *)
-            let completion stack (((((_, constraints), _), _), _), _ as expState) block_errors =
-                Format.eprintf "Returning from typed to symbolic at %s...@." fn.Cil.svar.Cil.vname;
+            (* inspect the stack to determine if this call is recursive by finding the same function in the stack and
+             * comparing the context *)
+            let rec inspect_stack inspected = function
+                | `SymbolicTyped (fn', context', solution, _)::tail
+                        when fn' == fn && Solution.equal context' context ->
+                    (* recursion detected: mark the stack and use the tentative solution *)
+                    Format.eprintf "Recursion detected in SymbolicTyped for %s...@." fn.Cil.svar.Cil.vname;
+                    let stack = List.rev_append inspected ((`SymbolicTyped (fn', context', solution, true))::tail) in
+                    k stack (typed_to_symbolic file job fn state expState solution)
 
-                if block_errors != [] then begin
-                    let result = { Types.result_state = job.Types.state; Types.result_history = job.Types.exHist } in
-                    let msg = "Block errors returning from SymbolicTyped.switch at " ^ fn.Cil.svar.Cil.vname in
-                    k stack [ (Types.Abandoned (msg, loc, result),
-                               Some (msg, loc, `SymbolicTypedError (result, block_errors))) ]
+                | head::tail ->
+                    inspect_stack (head::inspected) tail
 
-                end else begin
-                    let context = DiscreteSolver.solve consts constraints in
-
-                    (* TODO: need a better mechanism for explaining errors *)
-                    if DiscreteSolver.Solution.is_unsatisfiable context then begin
-                        let result = { Types.result_state = job.Types.state; Types.result_history = job.Types.exHist } in
-                        let explanation = DiscreteSolver.explain context in
-                        Format.fprintf Format.str_formatter
-                            "Unsatisfiable solution for context returning from SymbolicTyped at %s:@\n  @[%a@]"
-                            fn.Cil.svar.Cil.vname
-                            DiscreteSolver.Explanation.printer explanation;
-                        Format.eprintf
-                            "Unsatisfiable solution for context returning from SymbolicTyped at %s:@\n  @[%a@]@."
-                            fn.Cil.svar.Cil.vname
-                            DiscreteSolver.Explanation.printer explanation;
-                        k stack [ (Types.Abandoned (Format.flush_str_formatter (), loc, result),
-                                   None) ]
-
-                    end else begin
-                        let completed = typed_to_symbolic file job fn state expState context in
-                        k stack completed
-
-                    end
-                end
+                | [] ->
+                    (* regular call: switch into the typed block *)
+                    switch dispatch stack file job fn loc state expState context k
             in
+            inspect_stack [] stack
 
-            let expState = run (return ()) expState in (* TODO: fix the type *)
-            dispatch stack (`TypedBlock (file, fn, expState, completion))
         end
 
 
     let dispatch chain dispatch stack = function
         | `SymbolicBlock (file, job, k)
                 when T.should_enter_block (List.hd job.Types.state.Types.callstack).Cil.svar.Cil.vattr ->
-            switch dispatch stack file job k
+            inspect_stack dispatch stack file job k
         | work ->
             chain stack work
 end
