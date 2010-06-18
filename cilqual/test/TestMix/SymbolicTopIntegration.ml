@@ -7,7 +7,7 @@ open Mix.Feature
 open Otter
 
 
-(* test helper for compilation units (files) *)
+(* Test helper for compilation units (files) *)
 let test_mix content ?(label=content) test =
     label >:: bracket begin fun () ->
         let filename, fileout = Filename.open_temp_file "test_mix_symbolictopintegration." ".c" in
@@ -46,7 +46,7 @@ let symbolic_only_testsuite = "Symbolic only" >::: [
 
     test_mix ~label:"global variable set null locally" "
         int x = 0;
-        int * $(nonnull) y = &x;
+        int * y = &x;
         void foo(void) {
             y = NULL;
             y = &x;
@@ -829,7 +829,7 @@ let leaf_typed_sink_testsuite = "Leaf Typed Sink" >::: [
     ];
 ]
 
-(* exercises aliasing from symbolic blocks entering typed blocks *)
+(* Exercises aliasing from symbolic blocks entering typed blocks *)
 let leaf_typed_using_aliasing_testsuite = "Leaf Typed Using Aliasing" >::: [
     "non-null" >::: [
         "global variable" >::: [
@@ -870,7 +870,7 @@ let leaf_typed_using_aliasing_testsuite = "Leaf Typed Using Aliasing" >::: [
     ];
 ]
 
-(* exercises aliasing from typed blocks entering symbolic blocks *)
+(* Exercises aliasing from typed blocks entering symbolic blocks *)
 let leaf_typed_introducing_aliasing_testsuite = "Leaf Typed Introducing Aliasing" >::: [
     "non-null" >::: [
         "global variable" >::: [

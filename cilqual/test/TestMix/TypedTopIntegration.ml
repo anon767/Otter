@@ -7,7 +7,7 @@ open Mix.Feature
 open Otter
 
 
-(* test helper for compilation units (files) *)
+(* Test helper for compilation units (files) *)
 let test_mix content ?(label=content) test =
     label >:: bracket begin fun () ->
         let filename, fileout = Filename.open_temp_file "test_mix_typedtopintegration." ".c" in
@@ -1385,7 +1385,7 @@ let leaf_symbolic_source_one_branch_testsuite = "Leaf Symbolic Source, One Branc
     ];
 ]
 
-(* exercises aliasing from symbolic blocks entering typed blocks *)
+(* Exercises aliasing from symbolic blocks entering typed blocks *)
 let two_leaf_symbolic_sources_simple_path_testsuite = "Two Leaf Symbolic Sources, Simple Path" >::: [
     "non-null annotated" >::: [
         "global variable" >::: [
@@ -1432,7 +1432,7 @@ let two_leaf_symbolic_sources_simple_path_testsuite = "Two Leaf Symbolic Sources
     ];
 ]
 
-(* exercises fixpoint computation in typed blocks *)
+(* Exercises fixpoint computation in typed blocks *)
 let two_leaf_symbolic_source_sink_simple_path_testsuite = "Two Leaf Symbolic Source/Sink, Simple Path" >::: [
     "unannotated" >::: [
         "global variable" >::: [
@@ -1475,7 +1475,7 @@ let two_leaf_symbolic_source_sink_simple_path_testsuite = "Two Leaf Symbolic Sou
     ];
 ]
 
-(* exercises transitive conversion from an outer typed block through a symbolic block to an inner typed block *)
+(* Exercises transitive conversion from an outer typed block through a symbolic block to an inner typed block *)
 let nested_typed_source_symbolic_typed_sink_simple_path_testsuite
         = "Nested Typed-Source to Symbolic to Typed-Sink, Simple Path" >::: [
     "null" >::: [
@@ -1502,7 +1502,7 @@ let nested_typed_source_symbolic_typed_sink_simple_path_testsuite
     ];
 ]
 
-(* exercises transitive conversion from an inner typed block through a symbolic block to an outer typed block *)
+(* Exercises transitive conversion from an inner typed block through a symbolic block to an outer typed block *)
 let nested_typed_sink_symbolic_typed_source_simple_path_testsuite
         = "Nested Typed-Sink to Symbolic to Typed-Source, Simple Path" >::: [
     "null" >::: [
@@ -1529,7 +1529,7 @@ let nested_typed_sink_symbolic_typed_source_simple_path_testsuite
     ];
 ]
 
-(* exercises transitive conversion from an outer typed block through a symbolic block to an inner typed block,
+(* Exercises transitive conversion from an outer typed block through a symbolic block to an inner typed block,
  * and conversion of maybe-null pointers to qualified types *)
 let nested_typed_source_one_branch_symbolic_typed_sink_testsuite
         = "Nested Typed-Source with One Branch to Symbolic to Typed-Sink" >::: [
@@ -1561,7 +1561,7 @@ let nested_typed_source_one_branch_symbolic_typed_sink_testsuite
     ];
 ]
 
-(* exercises transitive conversion from an inner typed block through a symbolic block to an outer typed block,
+(* Exercises transitive conversion from an inner typed block through a symbolic block to an outer typed block,
  * and conversion of maybe-null pointers to qualified types *)
 let nested_typed_sink_symbolic_typed_source_one_branch_testsuite
         = "Nested Typed-Sink to Symbolic to Typed-Source with One Branch" >::: [
