@@ -1593,6 +1593,186 @@ let nested_typed_sink_symbolic_typed_source_one_branch_testsuite
     ];
 ]
 
+(* Exercises recursion handling for symbolic blocks nested in typed blocks:
+ *
+ * The basic structure of the test code leads to the call chain: main -> foo -> bar -> (foo -> bar -> foo);
+ * where the parenthesized section is recursive.
+ *
+ * There is a pointer y that, in the first call to foo, is not null. It will be set not null again by foo before foo
+ * calls bar, which in turn calls foo recursively, so y will be not null for all calls to foo or bar. Eventually, foo
+ * sets y to null before returning via bar to an earlier call to foo, which y is then dereferenced, which leads
+ * to a null-pointer dereference error.
+ *
+ * The recursion handling (e.g., a fixpoint computation) must achieve two things: it must terminate and not recurse
+ * infinitely; and it must detect that if the pointer y is null upon return from the recursive call to foo, it will lead to
+ * a null-pointer dereference.
+ *)
+let typed_symbolic_typed_sink_source_recursive_symbolic_testsuite
+        = "Typed to Symbolic to Typed-Sink-Source to Recursive Symbolic" >::: [
+    "non-null" >::: [
+        "global variable" >::: [
+            test_mix ~label:"set null" "
+                int w = 0;
+                int x = 0;
+                int * y = &x;
+                void foo(void) MIX(symbolic);
+                void bar(void) MIX(typed) {
+                    foo();
+                }
+                void foo(void) {
+                    if (w++ < 2) {
+                        y = &x;
+                        bar();
+                        *y = 1;
+                    }
+                    y = NULL;
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution block_errors ->
+                assert_discrete_satisfiable solution;
+                assert_has_block_errors 1 block_errors
+            end;
+
+            test_mix ~label:"set non-null" "
+                int w = 0;
+                int x = 0;
+                int * y = &x;
+                void foo(void) MIX(symbolic);
+                void bar(void) MIX(typed) {
+                    foo();
+                }
+                void foo(void) {
+                    if (w++ < 2) {
+                        y = &x;
+                        bar();
+                        *y = 1;
+                    }
+                    y = &x;
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution block_errors ->
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
+            end;
+
+            test_mix ~label:"set null and non-null" "
+                int w = 0;
+                int x = 0;
+                int * y = &x;
+                void foo(void) MIX(symbolic);
+                void bar(void) MIX(typed) {
+                    foo();
+                }
+                void foo(void) {
+                    if (w++ < 2) {
+                        y = &x;
+                        bar();
+                        *y = 1;
+                    }
+                    if (x) {
+                        y = NULL;
+                    } else {
+                        y = &x;
+                    }
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            " begin fun file solution block_errors ->
+                assert_discrete_satisfiable solution;
+                assert_has_block_errors 1 block_errors
+            end;
+        ];
+
+        "output argument" >::: [
+            test_mix ~label:"set null" "
+                int w = 0;
+                int x = 0;
+                void foo(int ** y) MIX(symbolic);
+                void bar(int ** y) MIX(typed) {
+                    foo(y);
+                }
+                void foo(int ** y) {
+                    if (w++ < 2) {
+                        *y = &x;
+                        bar(y);
+                        **y = 1;
+                    }
+                    *y = NULL;
+                }
+                int main(void) {
+                    int * z = &x;
+                    foo(&z);
+                    return 0;
+                }
+            " begin fun file solution block_errors ->
+                assert_discrete_satisfiable solution;
+                assert_has_block_errors 1 block_errors
+            end;
+
+            test_mix ~label:"set non-null" "
+                int w = 0;
+                int x = 0;
+                void foo(int ** y) MIX(symbolic);
+                void bar(int ** y) MIX(typed) {
+                    foo(y);
+                }
+                void foo(int ** y) {
+                    if (w++ < 2) {
+                        *y = &x;
+                        bar(y);
+                        **y = 1;
+                    }
+                    *y = &x;
+                }
+                int main(void) {
+                    int * z = &x;
+                    foo(&z);
+                    return 0;
+                }
+            " begin fun file solution block_errors ->
+                assert_discrete_satisfiable solution;
+                assert_no_block_errors block_errors
+            end;
+
+            test_mix ~label:"set null and non-null" "
+                int w = 0;
+                int x = 0;
+                void foo(int ** y) MIX(symbolic);
+                void bar(int ** y) MIX(typed) {
+                    foo(y);
+                }
+                void foo(int ** y) {
+                    if (w++ < 2) {
+                        *y = &x;
+                        bar(y);
+                        **y = 1;
+                    }
+                    if (x) {
+                        *y = NULL;
+                    } else {
+                        *y = &x;
+                    }
+                }
+                int main(void) {
+                    int * z = &x;
+                    foo(&z);
+                    return 0;
+                }
+            " begin fun file solution block_errors ->
+                assert_discrete_satisfiable solution;
+                assert_has_block_errors 1 block_errors
+            end;
+        ];
+    ];
+]
 
 let testsuite = "TypedTopIntegration" >::: [
     typed_only_testsuite;
@@ -1606,5 +1786,6 @@ let testsuite = "TypedTopIntegration" >::: [
     nested_typed_sink_symbolic_typed_source_simple_path_testsuite;
     nested_typed_source_one_branch_symbolic_typed_sink_testsuite;
     nested_typed_sink_symbolic_typed_source_one_branch_testsuite;
+    typed_symbolic_typed_sink_source_recursive_symbolic_testsuite;
 ]
 

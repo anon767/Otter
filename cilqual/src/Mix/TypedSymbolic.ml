@@ -14,22 +14,56 @@ open SwitchingUtil
 
 module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
 
-    let switch dispatch stack file fn expState k =
-        Format.eprintf "Switching from typed to symbolic at %s...@." fn.Cil.svar.Cil.vname;
-
-        (* solve the typed constraints, needed to setup the symbolic constraints;
-         * but first, connect the function prototype to the formal arguments *)
+    let typed_to_typed file fn expState solution =
+        (* prepare a monad that represents the result *)
         let expM = perform
-            qtf <-- lookup_var fn.Cil.svar;
-            qta <-- args qtf;
-            zipWithM_ (fun v a -> assign_lval (Cil.var v) a) fn.Cil.sformals qta
-        in
-        let ((((((), constraints), _), _), _), _ as expState) = run expM expState in
-        let context = DiscreteSolver.solve consts constraints in
+            inContext (fun _ -> fn.Cil.svar.Cil.vdecl) begin perform
+                (* first, the return value *)
+                begin match fn.Cil.svar.Cil.vtype with
+                    | Cil.TFun (rettyp, _, _, _) ->
+                        if Cil.isVoidType rettyp then
+                            return ()
+                        else perform
+                            qtf <-- lookup_var fn.Cil.svar;
+                            qtr <-- retval qtf;
+                            (* solution_to_qt requires the expression from which the value was evaluated, but
+                             * Otter doesn't tell us which return expression generated this value; so, the below
+                             * calls solution_to_qt with every return expression and merges the results *)
+                            mapM_ begin fun retstmt ->
+                                match retstmt.Cil.skind with
+                                    | Cil.Return (Some retexp, _) ->
+                                        solution_to_qt file expState solution retexp qtr
+                                    | _ ->
+                                        return ()
+                            end fn.Cil.sallstmts (* sallstmts is computed by Cil.computeCFGInfo *)
+                    | _ ->
+                        failwith "Impossible!"
+                end;
 
-        (* TODO: properly explain error *)
-        if Solution.is_unsatisfiable context then
-            Format.eprintf "Unsatisfiable solution for context entering TypedSymbolic at %s@." fn.Cil.svar.Cil.vname;
+                (* then, the global variables *)
+                mapM_ begin function
+                    | Cil.GVarDecl (v, _) | Cil.GVar (v, _, _)
+                            when not (Cil.isFunctionType v.Cil.vtype) -> perform
+                                 (* skip function prototypes; they're not variables *)
+                        qtl <-- access_rval (Cil.var v);
+                        solution_to_qt file expState solution (Cil.Lval (Cil.var v)) qtl
+                    | _ ->
+                        return ()
+                end file.Cil.globals;
+
+                (* finally, the formals *)
+                mapM_ begin fun v -> perform
+                    qta <-- access_rval (Cil.var v);
+                    solution_to_qt file expState solution (Cil.Lval (Cil.var v)) qta
+                end fn.Cil.sformals
+            end
+        in
+
+        (* return the updated constraints *)
+        run expM expState
+
+
+    let switch dispatch stack file fn expState context k =
 
         (* convert a typed environment into a symbolic environment *)
         let state = MemOp.state__empty in
@@ -58,77 +92,142 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
         (* next, prepare the function call job *)
         let job = Executemain.job_for_function state fn (List.rev rev_args_bytes) in
 
-        (* finally, prepare the completion continuation *)
-        let completion stack completed =
-            let completed_count = List.length completed in
-            Format.eprintf "Returning from symbolic to typed at %s (%d execution%s returned)...@."
-                fn.Cil.svar.Cil.vname
-                completed_count (if completed_count == 1 then "" else "s");
+        (* finally, set up the recursion fixpoint operation *)
+        let rec do_fixpoint stack tentative =
 
-            (* prepare a monad that represents the symbolic result *)
-            let expM = foldM begin fun block_errors results -> match results with
-                | Types.Return (retopt, { Types.result_state=state; Types.result_history=history }), _ ->
-                    inContext (fun _ -> fn.Cil.svar.Cil.vdecl) begin perform
-                        (* first, the return value *)
-                        begin match retopt with
-                            | None ->
-                                return ()
-                            | Some ret -> perform
-                                qtf <-- lookup_var fn.Cil.svar;
-                                qtr <-- retval qtf;
+            (* push our tentative solution onto the stack for use by recursive calls *)
+            let stack = (`TypedSymbolic (fn, context, tentative, false))::stack in
 
-                                (* bytes_to_qt requires the expression from which the value was evaluated, but Otter
-                                 * doesn't tell us which return expression generated this value; so, the below calls
-                                 * bytes_to_qt with every return expression and merges the results *)
-                                mapM_ begin fun retstmt ->
-                                    match retstmt.Cil.skind with
-                                        | Cil.Return (Some retexp, _) ->
-                                            bytes_to_qt file expState state Bytes.Guard_True ret retexp qtr
-                                        | _ ->
-                                            return ()
-                                end fn.Cil.sallstmts (* sallstmts is computed by Cil.computeCFGInfo *)
-                        end;
+            (* prepare the completion continuation *)
+            let completion stack completed =
+                let completed_count = List.length completed in
+                Format.eprintf "Returning from symbolic to typed at %s (%d execution%s returned)...@."
+                    fn.Cil.svar.Cil.vname
+                    completed_count (if completed_count == 1 then "" else "s");
 
-                        (* then, the global variables and function arguments *)
-                        mapM_ begin fun frame ->
-                            frame_to_qt file expState state frame
-                        end (state.Types.global::state.Types.formals);
+                (* pop the stack *)
+                let recursion_detected, stack = match stack with
+                    | (`TypedSymbolic (_, _, _, recursion_detected))::tail -> (recursion_detected, tail)
+                    | _ -> failwith "Impossible!"
+                in
 
+                (* prepare a monad that represents the symbolic result *)
+                let expM = foldM begin fun block_errors results -> match results with
+                    | Types.Return (retopt, { Types.result_state=state; Types.result_history=history }), _ ->
+                        inContext (fun _ -> fn.Cil.svar.Cil.vdecl) begin perform
+                            (* first, the return value *)
+                            begin match retopt with
+                                | None ->
+                                    return ()
+                                | Some ret -> perform
+                                    qtf <-- lookup_var fn.Cil.svar;
+                                    qtr <-- retval qtf;
+
+                                    (* bytes_to_qt requires the expression from which the value was evaluated, but Otter
+                                     * doesn't tell us which return expression generated this value; so, the below calls
+                                     * bytes_to_qt with every return expression and merges the results *)
+                                    mapM_ begin fun retstmt ->
+                                        match retstmt.Cil.skind with
+                                            | Cil.Return (Some retexp, _) ->
+                                                bytes_to_qt file expState state Bytes.Guard_True ret retexp qtr
+                                            | _ ->
+                                                return ()
+                                    end fn.Cil.sallstmts (* sallstmts is computed by Cil.computeCFGInfo *)
+                            end;
+
+                            (* then, the global variables and function arguments *)
+                            mapM_ begin fun frame ->
+                                frame_to_qt file expState state frame
+                            end (state.Types.global::state.Types.formals);
+
+                            return block_errors
+                        end
+
+                    | Types.Abandoned (msg, loc, result), None ->
+                        Format.fprintf Format.str_formatter
+                            "Block errors returning from TypedSymbolic at %s: %s"
+                            fn.Cil.svar.Cil.vname msg;
+                        Format.eprintf
+                            "Block errors returning from TypedSymbolic at %s: %s@."
+                            fn.Cil.svar.Cil.vname msg;
+                        return ((Format.flush_str_formatter (), loc, `TypedSymbolicError (result, msg))::block_errors)
+
+                    | Types.Abandoned _, Some e ->
+                        return (e::block_errors)
+
+                    | Types.Exit _, _         (* a program that exits cannot possibly affect the outer context *)
+                    | Types.Truncated _, _ -> (* truncated paths are those merged with other paths *)
                         return block_errors
-                    end
 
-                | Types.Abandoned (msg, loc, result), None ->
-                    Format.fprintf Format.str_formatter
-                        "Block errors returning from TypedSymbolic at %s: %s"
-                        fn.Cil.svar.Cil.vname msg;
-                    Format.eprintf
-                        "Block errors returning from TypedSymbolic at %s: %s@."
-                        fn.Cil.svar.Cil.vname msg;
-                    return ((Format.flush_str_formatter (), loc, `TypedSymbolicError (result, msg))::block_errors)
+                end [] completed in
 
-                | Types.Abandoned _, Some e ->
-                    return (e::block_errors)
+                (* update the constraints and solve *)
+                let (((((block_errors, constraints), _), _), _), _ as expState) = run expM expState in
+                let expState = run (return ()) expState in
 
-                | Types.Exit _, _         (* a program that exits cannot possibly affect the outer context *)
-                | Types.Truncated _, _ -> (* truncated paths are those merged with other paths *)
-                    return block_errors
+                let solution = DiscreteSolver.solve consts constraints in
 
-            end [] completed in
+                if recursion_detected && not (Solution.includes tentative solution) then begin
+                    (* the tentative solution was used by a recursive call, but it was too optimistic;
+                     * retry with new solution *)
+                    Format.eprintf "Reevaluating fixpoint for %s due to recursion...@." fn.Cil.svar.Cil.vname;
+                    do_fixpoint stack solution
 
-            let (((((block_errors, _), _), _), _), _ as expState) = run expM expState in
-            let expState = run (return ()) expState in
+                end else begin
+                    (* there was no recursion or the tentative solution was correct *)
+                    k stack expState block_errors
+                end
+            in
 
-            (* update the constraints and return *)
-            k stack expState block_errors
+            (* dispatch *)
+            dispatch stack (`SymbolicBlock (file, job, completion))
         in
 
-        (* dispatch *)
-        dispatch stack (`SymbolicBlock (file, job, completion))
+        (* kick off the fixpoint computation *)
+        do_fixpoint stack context
+
+
+    let inspect_stack dispatch stack file fn expState k =
+        Format.eprintf "Switching from typed to symbolic at %s...@." fn.Cil.svar.Cil.vname;
+
+        (* solve the typed constraints, needed to setup the symbolic constraints;
+         * but first, connect the function prototype to the formal arguments *)
+        let expM = perform
+            qtf <-- lookup_var fn.Cil.svar;
+            qta <-- args qtf;
+            zipWithM_ (fun v a -> assign_lval (Cil.var v) a) fn.Cil.sformals qta
+        in
+        let ((((((), constraints), _), _), _), _ as expState) = run expM expState in
+        let context = DiscreteSolver.solve consts constraints in
+
+        (* TODO: properly explain error *)
+        if Solution.is_unsatisfiable context then
+            Format.eprintf "Unsatisfiable solution entering TypedSymbolic at %s@." fn.Cil.svar.Cil.vname;
+
+        (* inspect the stack to determine if this call is recursive, by finding the same function in the stack and
+         * comparing the context; the domain of context' and context may differ, since the enclosing typed block may
+         * be different and thus may contain different local variables *)
+        let rec inspect_stack inspected = function
+            | `TypedSymbolic (fn', context', solution, _)::tail
+                    when fn' == fn && Solution.equal context' context ->
+                (* recursion detected: mark the stack and use the tentative solution *)
+                Format.eprintf "Recursion detected for %s...@." fn.Cil.svar.Cil.vname;
+                let stack = List.rev_append inspected ((`TypedSymbolic (fn', context', solution, true))::tail) in
+                k stack (typed_to_typed file fn expState solution) []
+
+            | head::tail ->
+                inspect_stack (head::inspected) tail
+
+            | [] ->
+                (* regular call: switch into the symbolic block *)
+                switch dispatch stack file fn expState context k
+        in
+        inspect_stack [] stack
 
 
     let dispatch chain dispatch stack = function
         | `TypedBlock (file, fn, expState, k) when S.should_enter_block fn.Cil.svar.Cil.vattr ->
-            switch dispatch stack file fn expState k
+            inspect_stack dispatch stack file fn expState k
         | work ->
             chain stack work
 end

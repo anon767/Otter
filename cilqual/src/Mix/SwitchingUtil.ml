@@ -927,3 +927,79 @@ let frame_to_qt file expState state frame =
             | None -> return ()
     end frame (return ())
 
+
+(** Augment a qualified type to be consistent with a given solution in a manner equivalent to qt_to_bytes followed by
+    bytes_to_qt.
+    @param file         the file being analyzed
+    @param expState     the CilQual monad state
+    @param solution     the qualifier constraints solution
+    @param exp          the C expression from which bytes was derived
+    @param qt           the qualified type to add constraints to
+    @return             [()]{i monad} the CilQual monad updated with additional constraints.
+*)
+let solution_to_qt file expState solution exp qt = perform
+
+    (* re-establish transitive aliasing constraints that may be in the solution *)
+    aliasing_to_qt file expState exp qt;
+
+    let module VisitedSet = Set.Make (Qual.Var) in
+
+    let rec solution_to_qt visited typ qt = match Cil.unrollType typ, qt with
+        | _, (Ref (Var v, _) | Fn (Var v, _, _) | Base (Var v)) when VisitedSet.mem v visited ->
+            return ()
+
+        | Cil.TPtr (typtarget, _), Ref (Var v, qtarget) -> perform
+            let visited = VisitedSet.add v visited in
+            if Solution.equal_const v "null" solution then perform
+                annot qt "null";
+                solution_to_qt visited typtarget qtarget
+            else
+                solution_to_qt visited typtarget qtarget
+
+        | Cil.TComp (compinfo, _), Base (Var v) ->
+            (* for structs and unions, iterate over the fields *)
+            let visited = VisitedSet.add v visited in
+            fold_struct begin fun expM field -> perform
+                expM;
+                (* TODO: temporary hack, qt is off by one ref, but getfield doesn't look at qt *)
+                qtf <-- begin if compinfo.Cil.cstruct then perform
+                    qtf <-- get_field qt field;
+                    deref qtf
+                else
+                    (* unions should really be the same as structs, but qt is off by one *)
+                    return qt
+                end;
+                solution_to_qt visited field.Cil.ftype qtf
+            end (return ()) compinfo
+
+        | Cil.TArray (el_type, _, _), qt ->
+            (* for arrays, evaluate the element type *)
+            solution_to_qt visited el_type qt
+
+        | Cil.TPtr (typtarget, _), Base (Var v) when Cil.isVoidPtrType typ ->
+            (* void *, ignore the targets, since they can't correspond to any annotations *)
+            if Solution.equal_const v "null" solution then perform
+                annot qt "null";
+                return ()
+            else
+                return ()
+
+        | Cil.TPtr (typ, _), Fn _ when Cil.isFunctionType typ ->
+            (* function pointers can't be dereferenced *)
+            return ()
+
+        | typ, Base (Var v) when Cil.isArithmeticType typ ->
+            (* value types, nothing to dereference too *)
+            return ()
+
+        | typ, qt ->
+            failwith begin
+                Format.fprintf Format.str_formatter
+                    "TODO: solution_to_qt: handle mismatched types: %s <=> %a"
+                    (Pretty.sprint 0 (Cil.d_type () typ))
+                    QualType.printer qt;
+                Format.flush_str_formatter ()
+            end
+    in
+    solution_to_qt VisitedSet.empty (Cil.typeOf exp) qt
+
