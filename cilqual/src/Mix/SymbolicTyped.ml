@@ -14,6 +14,11 @@ open SwitchingUtil
 
 module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
 
+    let cache stack fn context completed =
+        (* cache the result at the end of the stack *)
+        List.rev (`SymbolicTypedCached (fn, context, completed)::(List.rev stack))
+
+
     let typed_to_symbolic file job fn state expState solution =
         (* re-initialize the memory according to the given type constraints *)
 
@@ -122,11 +127,14 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
                         let msg = Format.flush_str_formatter () in
                         let completed loc = [ (Types.Abandoned (msg, loc, result), None) ] in
 
+                        (* cache the result and return *)
+                        let stack = cache stack fn context completed in
                         k stack (completed loc)
 
                     end else
-                        (* there was no recursion or the tentative solution was correct *)
+                        (* there was no recursion or the tentative solution was correct; cache the result and return *)
                         let completed = typed_to_symbolic file job fn state expState solution in
+                        let stack = cache stack fn context (fun _ -> completed) in
                         k stack completed
                 end
             in
@@ -188,8 +196,10 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
                        None) ]
 
         end else begin
-            (* inspect the stack to determine if this call is recursive by finding the same function in the stack and
-             * comparing the context *)
+            (* inspect the stack to determine if this call is recursive, or if there's a suitable cached solution,
+             * by finding the same function in the stack and comparing the context; the domain of context' and context
+             * may differ, since the enclosing symbolic  block may be different and thus may contain different local variables
+             *)
             let rec inspect_stack inspected = function
                 | `SymbolicTyped (fn', context', solution, _)::tail
                         when fn' == fn && Solution.equal context' context ->
@@ -197,6 +207,13 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
                     Format.eprintf "Recursion detected in SymbolicTyped for %s...@." fn.Cil.svar.Cil.vname;
                     let stack = List.rev_append inspected ((`SymbolicTyped (fn', context', solution, true))::tail) in
                     k stack (typed_to_symbolic file job fn state expState solution)
+
+                | `SymbolicTypedCached (fn', context', completed)::_ as tail
+                        when fn' == fn && Solution.equal context' context ->
+                    (* use the cached solution *)
+                    Format.eprintf "Using cached solution for %s...@." fn.Cil.svar.Cil.vname;
+                    let stack = List.rev_append inspected tail in
+                    k stack (completed loc)
 
                 | head::tail ->
                     inspect_stack (head::inspected) tail
