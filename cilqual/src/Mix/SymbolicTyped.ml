@@ -198,8 +198,8 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
         end else begin
             (* inspect the stack to determine if this call is recursive, or if there's a suitable cached solution,
              * by finding the same function in the stack and comparing the context; the domain of context' and context
-             * may differ, since the enclosing symbolic  block may be different and thus may contain different local variables
-             *)
+             * may differ, since the enclosing symbolic block may be different and thus may contain different local
+             * variables *)
             let rec inspect_stack inspected = function
                 | `SymbolicTyped (fn', context', solution, _)::tail
                         when fn' == fn && Solution.equal context' context ->
