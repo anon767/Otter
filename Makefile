@@ -1,6 +1,6 @@
 
-SUBDIRS=cilqual cil ocamlstp stp camlidl syck ocamlsyck
-EXTRALIBDIRS = $(addprefix $(CURDIR)/,camlidl/runtime stp/lib ocamlstp ocamlsyck/yaml)
+SUBDIRS=cilqual cil ocamlstp stp camlidl 
+EXTRALIBDIRS = $(addprefix $(CURDIR)/,camlidl/runtime stp/lib ocamlstp)
 
 
 all : otter
@@ -37,18 +37,6 @@ make//ocamlstp : stp camlidl
 stp : make//stp
 make//stp : MAKEGOALS=
 make//stp : CONFIGURE_FLAGS=--with-prefix=.
-
-
-ocamlsyck : make//ocamlsyck
-make//ocamlsyck : MAKEGOALS=
-make//ocamlsyck : SYCKLIB=$(CURDIR)/syck/lib
-make//ocamlsyck : CONFIGURE_FLAGS=LDFLAGS=-L$(SYCKLIB) CPPFLAGS=-I$(SYCKLIB)
-make//ocamlsyck ocamlsyck/Makefile : syck 
-
-
-syck : make//syck
-make//syck : MAKEGOALS=
-#make//syck : MAKEGOALS=all check
 
 
 camlidl : make//camlidl

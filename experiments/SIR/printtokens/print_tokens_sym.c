@@ -28,6 +28,7 @@ char* __SYMBOLIC_STRING(int size){
 	int i;
 	for(i=0;i<size;++i){
 		s[i] = __SYMBOLIC();
+		__ASSUME(s[i]=='=');
 	}
 	s[size] = 0;
 	//s[size+0] = '\r';

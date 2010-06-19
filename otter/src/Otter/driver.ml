@@ -548,7 +548,8 @@ let exec_func state func job instr lvalopt exps loc op_exps =
 			begin
 				let examfn = Executeargs.run_args.arg_examfn in
 					if examfn = fundec.svar.vname  then
-						InvInput.examine state fundec
+            failwith "YAML not supported"
+						(*InvInput.examine state fundec*)
 					else ()
 			end;
 

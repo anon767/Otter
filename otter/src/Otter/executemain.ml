@@ -4,7 +4,7 @@ open BytesUtility
 open Types
 open Executeargs
 open MemOp
-open InvInput
+(*open InvInput*)
 
 let unreachable_global varinfo = not (Cilutility.VarinfoSet.mem varinfo (!GetProgInfo.reachable_globals))
 
@@ -327,9 +327,12 @@ let job_for_middle file entryfn yamlconstraints =
         job
     else begin
         (* Prepare the invariant input *)
+      (*
       let objectMap = InvInput.parse yamlconstraints in
       let _,new_state = InvInput.constrain job.state entryfn objectMap in
         { job with state = new_state }
+       *)
+      failwith "YAML input not supported"
     end
     
 
@@ -450,6 +453,7 @@ let doExecute (f: file) =
     Output.printf "Hash-consing: hits=%d misses=%d\n" (!hash_consing_bytes_hits) (!hash_consing_bytes_misses);
     Output.printf "Bytes eval caching: hits=%d misses=%d\n\n" (!MemOp.bytes_eval_cache_hits) (!MemOp.bytes_eval_cache_misses);
 
+    (*
   begin
     if Executeargs.run_args.arg_examfn = "" then () else
       let print_record r = Output.printf "#true:%d\n#false:%d\n#unknown:%d\n" r.numTrue r.numFalse r.numUnknown in
@@ -459,6 +463,7 @@ let doExecute (f: file) =
         print_record (!InvInput.ct2pc);
         ()
   end;
+     *)
 	List.iter (fun result -> Report.print_report result) results
 
 

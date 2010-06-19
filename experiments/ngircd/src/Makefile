@@ -1,8 +1,7 @@
 # Remember to change the DIRs for your system!
-DOT=.
 
 VERSION=ngircd-0.12.0
-NGIRCD_DIR=$(DOT)/$(VERSION)
+NGIRCD_DIR=./$(VERSION)
 
 CILLY_OPT= --merge \
 		  -fno-builtin \
@@ -22,8 +21,7 @@ CONFIG_OPT= \
 
 merge: 
 	make -C $(NGIRCD_DIR) AR="$(CILLY) --mode=AR"
-	cp $(NGIRCD_DIR)/src/ngircd/ngircd_comb.c linux/$(VERSION).c
-	#cp $(NGIRCD_DIR)/src/ngircd/ngircd_comb.c $(OSTYPE)/$(VERSION).c
+	cp $(NGIRCD_DIR)/src/ngircd/ngircd_comb.c ngircd.c
 
 conf: 
 	cd $(NGIRCD_DIR) && \
