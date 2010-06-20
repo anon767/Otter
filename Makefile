@@ -16,7 +16,7 @@ otter : MAKEGOALS=
 test-otter : make//otter
 test-otter : MAKEGOALS=test
 make//otter : CONFIGURE_FLAGS=EXTRALIBDIRS='$(EXTRALIBDIRS)' --with-cil='$(CURDIR)/cil'
-make//otter : cil ocamlstp ocamlsyck
+make//otter : cil ocamlstp 
 
 
 cilqual : make//cilqual
