@@ -1,0 +1,253 @@
+diff -urb -x '*.o' -x vsftpd_comb.c -x ___extra_files vsftpd-2.0.7.orig/main.c vsftpd-2.0.7.pldi2010.experiment/main.c
+--- vsftpd-2.0.7.orig/main.c	2008-02-12 00:22:53.000000000 -0500
++++ vsftpd-2.0.7.pldi2010.experiment/main.c	2010-06-22 01:27:36.000000000 -0400
+@@ -31,6 +31,13 @@
+ static void session_init(struct vsf_session* p_sess);
+ static void env_init(void);
+ 
++#ifdef ENABLE_MIX4
++void main_BLOCK1(struct vsf_sysutil_sockaddr** p_sockptr) MIX4(symbolic) {
++    *p_sockptr = NULL;
++    vsf_sysutil_dns_resolve(p_sockptr, tunable_pasv_address);
++}
++#endif
++
+ int
+ main(int argc, const char* argv[])
+ {
+@@ -109,9 +116,15 @@
+   /* Resolve pasv_address if required */
+   if (tunable_pasv_address && tunable_pasv_addr_resolve)
+   {
++#ifdef ENABLE_MIX4
++    struct vsf_sysutil_sockaddr* p_addr;
++    const char* p_numeric_addr;
++    main_BLOCK1(&p_addr, tunable_pasv_address);
++#else
+     struct vsf_sysutil_sockaddr* p_addr = 0;
+     const char* p_numeric_addr;
+     vsf_sysutil_dns_resolve(&p_addr, tunable_pasv_address);
++#endif
+     vsf_sysutil_free((char*) tunable_pasv_address);
+     p_numeric_addr = vsf_sysutil_inet_ntop(p_addr);
+     tunable_pasv_address = vsf_sysutil_strdup(p_numeric_addr);
+diff -urb -x '*.o' -x vsftpd_comb.c -x ___extra_files vsftpd-2.0.7.orig/port/cmsg_extras.h vsftpd-2.0.7.pldi2010.experiment/port/cmsg_extras.h
+--- vsftpd-2.0.7.orig/port/cmsg_extras.h	2008-02-01 20:30:39.000000000 -0500
++++ vsftpd-2.0.7.pldi2010.experiment/port/cmsg_extras.h	2010-06-22 01:27:36.000000000 -0400
+@@ -19,5 +19,15 @@
+ #define CMSG_LEN(len)   (CMSG_ALIGN (sizeof (struct cmsghdr)) + (len))
+ #endif
+ 
++/* redefine to remove the extra (char *) cast that confuses Cil's constant folding */
++#ifdef __DARWIN_ALIGN
++#undef __DARWIN_ALIGN
++#define __DARWIN_ALIGN(p)   ((__darwin_size_t)((p) + __DARWIN_ALIGNBYTES) &~ __DARWIN_ALIGNBYTES)
++#endif
++#ifdef __DARWIN_ALIGN32
++#undef __DARWIN_ALIGN32
++#define __DARWIN_ALIGN32(p)   ((__darwin_size_t)((p) + __DARWIN_ALIGNBYTES32) &~ __DARWIN_ALIGNBYTES32)
++#endif
++
+ #endif /* VSF_CMSG_EXTRAS_H */
+ 
+diff -urb -x '*.o' -x vsftpd_comb.c -x ___extra_files vsftpd-2.0.7.orig/str.c vsftpd-2.0.7.pldi2010.experiment/str.c
+--- vsftpd-2.0.7.orig/str.c	2008-02-01 20:30:39.000000000 -0500
++++ vsftpd-2.0.7.pldi2010.experiment/str.c	2010-06-22 01:27:36.000000000 -0400
+@@ -71,7 +71,7 @@
+ 
+ /* Public functions */
+ void
+-str_alloc_text(struct mystr* p_str, const char* p_src)
++str_alloc_text(struct mystr* p_str, const char* p_src) MIX2(typed) // str_next_dirent
+ {
+   unsigned int len = vsf_sysutil_strlen(p_src);
+   private_str_alloc_memchunk(p_str, p_src, len);
+@@ -127,7 +127,7 @@
+ }
+ 
+ void
+-str_empty(struct mystr* p_str)
++str_empty(struct mystr* p_str) MIX2(typed) // str_next_dirent
+ {
+   /* Ensure a buffer is allocated. */
+   (void) str_getbuf(p_str);
+diff -urb -x '*.o' -x vsftpd_comb.c -x ___extra_files vsftpd-2.0.7.orig/sysdeputil.c vsftpd-2.0.7.pldi2010.experiment/sysdeputil.c
+--- vsftpd-2.0.7.orig/sysdeputil.c	2008-02-03 14:02:01.000000000 -0500
++++ vsftpd-2.0.7.pldi2010.experiment/sysdeputil.c	2010-06-22 01:27:36.000000000 -0400
+@@ -58,6 +58,10 @@
+ #define __USE_GNU
+ #include <utmpx.h>
+ 
++#if defined(__APPLE__)
++  #undef VSF_SYSDEP_HAVE_UTMPX
++#endif
++
+ /* BEGIN config */
+ #if defined(__linux__) && !defined(__ia64__) && !defined(__s390__)
+   #define VSF_SYSDEP_TRY_LINUX_SETPROCTITLE_HACK
+@@ -140,7 +144,15 @@
+ /* END config */
+ 
+ /* PAM support - we include our own dummy version if the system lacks this */
+-#include <security/pam_appl.h>
++#ifdef __MAC_OS_X_VERSION_MIN_REQUIRED
++    #if __MAC_OS_X_VERSION_MIN_REQUIRED < 1050
++        #include <pam/pam_appl.h>
++    #else
++        #include <security/pam_appl.h>
++    #endif
++#else
++    #include <security/pam_appl.h>
++#endif
+ 
+ /* No PAM? Try getspnam() with a getpwnam() fallback */
+ #ifndef VSF_SYSDEP_HAVE_PAM
+diff -urb -x '*.o' -x vsftpd_comb.c -x ___extra_files vsftpd-2.0.7.orig/sysstr.c vsftpd-2.0.7.pldi2010.experiment/sysstr.c
+--- vsftpd-2.0.7.orig/sysstr.c	2008-02-01 20:30:41.000000000 -0500
++++ vsftpd-2.0.7.pldi2010.experiment/sysstr.c	2010-06-22 01:27:36.000000000 -0400
+@@ -137,7 +137,7 @@
+ }
+ 
+ void
+-str_next_dirent(struct mystr* p_filename_str, struct vsf_sysutil_dir* p_dir)
++str_next_dirent(struct mystr* p_filename_str, struct vsf_sysutil_dir* p_dir) MIX2(symbolic) // str_next_dirent
+ {
+   const char* p_filename = vsf_sysutil_next_dirent(p_dir);
+   str_empty(p_filename_str);
+diff -urb -x '*.o' -x vsftpd_comb.c -x ___extra_files vsftpd-2.0.7.orig/sysutil.c vsftpd-2.0.7.pldi2010.experiment/sysutil.c
+--- vsftpd-2.0.7.orig/sysutil.c	2008-07-28 23:21:02.000000000 -0400
++++ vsftpd-2.0.7.pldi2010.experiment/sysutil.c	2010-06-22 01:31:56.000000000 -0400
+@@ -488,7 +488,7 @@
+ }
+ 
+ void
+-vsf_sysutil_free(void* p_ptr)
++vsf_sysutil_free(void* $(nonnull) p_ptr) MIX(typed)
+ {
+   if (p_ptr == NULL)
+   {
+@@ -544,7 +544,7 @@
+ }
+ 
+ void
+-vsf_sysutil_exit(int exit_code)
++vsf_sysutil_exit_BLOCK(void) MIX(typed)
+ {
+   if (s_exit_func)
+   {
+@@ -553,7 +553,15 @@
+     s_exit_func = 0;
+     (*curr_func)();
+   }
+-  _exit(exit_code);
++}
++
++static void _exit_MODEL(int code) { exit(code); }
++
++void
++vsf_sysutil_exit(int exit_code)
++{
++  vsf_sysutil_exit_BLOCK();
++  _exit_MODEL(exit_code);
+ }
+ 
+ struct vsf_sysutil_wait_retval
+@@ -968,7 +976,7 @@
+ }
+ 
+ const char*
+-vsf_sysutil_next_dirent(struct vsf_sysutil_dir* p_dir)
++vsf_sysutil_next_dirent(struct vsf_sysutil_dir* p_dir) MIX2(typed) // str_next_dirent
+ {
+   DIR* p_real_dir = (DIR*) p_dir;
+   struct dirent* p_dirent = readdir(p_real_dir);
+@@ -1008,6 +1016,15 @@
+   memset(p_dest, '\0', size);
+ }
+ 
++static void * memcpy_MODEL(void * dst, const void * src, size_t n) MIX(model) {
++    char *d = dst, *s = src;
++    size_t i;
++    for (i = 0; i < n; i++) {
++        d[i] = s[i];
++    }
++    return dst;
++}
++
+ void
+ vsf_sysutil_memcpy(void* p_dest, const void* p_src, const unsigned int size)
+ {
+@@ -1021,7 +1038,7 @@
+   {
+     die("possible negative value to memcpy?");
+   }
+-  memcpy(p_dest, p_src, size);
++  memcpy_MODEL(p_dest, p_src, size);
+ }
+ 
+ void
+@@ -1836,7 +1853,7 @@
+ }
+ 
+ void
+-vsf_sysutil_sockaddr_clear(struct vsf_sysutil_sockaddr** p_sockptr)
++vsf_sysutil_sockaddr_clear(struct vsf_sysutil_sockaddr** p_sockptr) MIX1(symbolic) // sockaddr_clear
+ {
+   if (*p_sockptr != NULL)
+   {
+@@ -1846,7 +1863,7 @@
+ }
+ 
+ void
+-vsf_sysutil_sockaddr_alloc(struct vsf_sysutil_sockaddr** p_sockptr)
++vsf_sysutil_sockaddr_alloc(struct vsf_sysutil_sockaddr** p_sockptr) MIX3(symbolic)
+ {
+   vsf_sysutil_sockaddr_clear(p_sockptr);
+   *p_sockptr = vsf_sysutil_malloc(sizeof(**p_sockptr));
+@@ -2174,11 +2191,34 @@
+   }
+ }
+ 
++#ifdef ENABLE_MIX4
++static struct hostent * gethostbyname_MODEL(const char *p_name) MIX(model) {
++    static char haddr[] = "haddr";
++    static char hname[] = "hname";
++    static char *aliases[1];
++    static char *addr_list[2];
++    static struct hostent hostent;
++    aliases[0] = NULL;
++    addr_list[0] = haddr;
++    addr_list[1] = NULL;
++    hostent.h_name = hname;
++    hostent.h_aliases = aliases;
++    hostent.h_addrtype = __ITE(__SYMBOLIC(), AF_INET, AF_INET6);
++    hostent.h_length = 5;
++    hostent.h_addr_list = addr_list;
++    return &hostent;
++}
++#endif
++
+ void
+ vsf_sysutil_dns_resolve(struct vsf_sysutil_sockaddr** p_sockptr,
+                         const char* p_name)
+ {
++#ifdef ENABLE_MIX4
++  struct hostent* hent = gethostbyname_MODEL(p_name);
++#else
+   struct hostent* hent = gethostbyname(p_name);
++#endif
+   if (hent == NULL)
+   {
+     die2("cannot resolve host:", p_name);
+diff -urb -x '*.o' -x vsftpd_comb.c -x ___extra_files vsftpd-2.0.7.orig/utility.c vsftpd-2.0.7.pldi2010.experiment/utility.c
+--- vsftpd-2.0.7.orig/utility.c	2008-02-01 20:30:39.000000000 -0500
++++ vsftpd-2.0.7.pldi2010.experiment/utility.c	2010-06-22 01:27:36.000000000 -0400
+@@ -31,7 +31,7 @@
+ }
+ 
+ void
+-bug(const char* p_text)
++bug(const char* p_text) MIX3(typed)
+ {
+   /* Rats. Try and write the reason to the network for diagnostics */
+   vsf_sysutil_activate_noblock(VSFTP_COMMAND_FD);

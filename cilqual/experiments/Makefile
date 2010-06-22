@@ -1,43 +1,94 @@
-TOP=$(PWD)/../..
-CILQUALDIR=$(TOP)/cilqual
+MIXDIR=$(CURDIR)/..
 
-PRELUDE=$(PWD)/null_prelude.c
+MIX=env OCAMLRUNPARAM=b $(MIXDIR)/cilqual.pl \
+		--domix --merge --keepmerged -D_FORTIFY_SOURCE=0 \
+		$(MIX_FLAGS) $(MIX_EXTRAFLAGS) $(MIX_PRELUDE)
+MIX_FLAGS=--stats
 
-CILQUAL=$(CILQUALDIR)/cilqual.pl
-CILQUAL_FLAGS=--merge --keepmerged --stats
-CILQUAL.merge="env CILLY_DONT_COMPILE_AFTER_MERGE=1 $(CILQUAL) $(CILQUAL_FLAGS) $(CILQUAL_EXTRAFLAGS)"
+all : vsftpd
 
-all : muh-2.2a_comb.c
+vsftpd : experiment//vsftpd-2.0.7.pldi2010
+experiment//vsftpd-2.0.7.pldi2010 : MIX_GOAL=vsftpd
 
-muh-2.2a_comb.c : muh-2.2a/src/muh_comb.c
-	ln -s $< $@
+clean : clean-experiment//vsftpd-2.0.7.pldi2010
 
-muh-2.2a/src/muh_comb.c : make//muh-2.2a
-make//muh-2.2a : MAKEGOALS=CC=$(CILQUAL.merge)
-make//muh-2.2a : CILQUAL_FLAGS+=--cilqual-save-dot=$(PWD)/muh.dot -include $(PRELUDE)
-make//muh-2.2a : cilqual clean//muh-2.2a
-clean//muh-2.2a : $(PRELUDE)
-	$(MAKE) -C muh-2.2a clean
-	$(RM) muh-2.2a_comb.c
+# Set up the directory containing the experiment by unarchiving an archive and applying a patch.
+# An experiment is indicated by the existance of a patch file named $(TARGET).$(TAG).experiment.patch. This rule will
+# extract the file $(TARGET).tar.gz into the directory $(TARGET).$(TAG).experiment and apply the patch. $(TAG) may
+# be any string to distinguish different experiments for the same target.
+.PRECIOUS : %.experiment
+%.experiment : %.experiment.patch
+	mkdir -p $*.experiment \
+	&& tar xzvf $(basename $*).tar.gz --strip-components 1 -C $*.experiment \
+	&& patch -p1 -d $*.experiment < $*.experiment.patch
 
-clean : clean//muh-2.2a
+# Set up the directory to put the results.
+.PRECIOUS : %.results
+%.results :
+	mkdir -p $@
 
-cilqual :
-	$(MAKE) -C $(TOP) cilqual
 
-.PRECIOUS : %/Makefile cilqual
+# Run the experiment by building the target repeatedly. The file %.experiment.h, along with a macro counter named
+# EXPERIMENT_CONDITION is used to customize the build. EXPERIMENT_CONDITION starts with 0, and is incremented for
+# each build. The file %.experiment.h must signal the final build by returning an error using the compiler directive
+# "#error No more experiment conditions.".
+experiment//% : %.experiment %.experiment.h | %.results
+	# First, take a snapshot of the system profile
+	(uname -a; \
+			which -s system_profiler && system_profiler -detailLevel mini SPHardwareDataType;) \
+		| tee $*.results/system_profile.log; \
+	# Then, run the experiment
+	for ((EXPERIMENT_CONDITION=0; ; EXPERIMENT_CONDITION++)); do \
+		if $(CC) -DEXPERIMENT_CONDITION=$$EXPERIMENT_CONDITION -E $(CURDIR)/$*.experiment.h 2>&1 \
+				| grep -q "No more experiment conditions."; then \
+			exit; \
+		fi; \
+		$(MAKE) \
+			MIX_GOAL=$(MIX_GOAL) \
+			MIX_EXTRAFLAGS="-DEXPERIMENT_CONDITION=$$EXPERIMENT_CONDITION -include $(CURDIR)/$*.experiment.h" \
+			mix//$*.experiment 2>&1 | tee $*.results/$*.$$EXPERIMENT_CONDITION.log; \
+	done;
+
+# Update the patch for the experiment.
+update-experiment//% :
+	if [ ! -d $*.experiment ]; then \
+		echo "Experiment directory $*.experiment not found."; \
+		exit 1; \
+	fi; \
+	mkdir -p $(basename $*).orig \
+	&& tar xzvf $(basename $*).tar.gz --strip-components 1 -C $(basename $*).orig \
+	&& diff -urb -x *.o -x *_comb.c -x ___extra_files $(basename $*).orig $*.experiment | tee $*.experiment.patch; \
+	ERROR=$${PIPESTATUS[0]}; \
+	$(RM) -r $(basename $*).orig \
+	exit $$ERROR
+
+# Delete the experiment directory.
+clean-experiment//% : %.experiment.patch %.experiment.h
+	$(RM) -r $*.experiment $*.results
+
+
+# Rebuild and run Mix on the target.
+mix//% : MAKEGOALS=CC="$(MIX)" clean $(MIX_GOAL)
+mix//% : make//% ;
+
+
+.PRECIOUS : %/Makefile
 %/Makefile : %/Makefile.in %/configure Makefile
-	cd $(@D) && ./configure $(CONFIGURE_FLAGS) $(CONFIGURE_EXTRAFLAGS)
+	cd $* && ./configure $(CONFIGURE_FLAGS) $(CONFIGURE_EXTRAFLAGS)
 
 %/Makefile : %/configure Makefile
-	cd $(@D) && ./configure $(CONFIGURE_FLAGS) $(CONFIGURE_EXTRAFLAGS)
+	cd $* && ./configure $(CONFIGURE_FLAGS) $(CONFIGURE_EXTRAFLAGS)
 
 .PRECIOUS : %/configure
 %/configure : %/configure.ac
-	cd $(@D) && autoreconf
+	cd $* && autoreconf
 
 %/configure : %/configure.in
-	cd $(@D) && autoreconf
+	cd $* && autoreconf
 
-make//% : %/Makefile
-	-$(MAKE) -C $(@F) $(MAKEGOALS)
+make//% : %/Makefile $(PRELUDE)
+	$(MAKE) -C $* $(MAKEGOALS)
+
+clean//% :
+	$(MAKE) -C $* clean
+
