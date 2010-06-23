@@ -26,7 +26,3 @@ Otter/to_string
 Otter/traceLines
 Otter/types
 Otter/utility
-Otter/dynArray
-Otter/extList
-Otter/fun
-Otter/priorityQueue

@@ -5,6 +5,7 @@
   *)
 open Cil
 open Types
+open OcamlBase
 
 (**
   * Change this function to use a different prioritizer 

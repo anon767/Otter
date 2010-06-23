@@ -1,6 +1,7 @@
 
-SUBDIRS=cilqual cil ocamlstp stp camlidl 
-EXTRALIBDIRS = $(addprefix $(CURDIR)/,camlidl/runtime stp/lib ocamlstp)
+SUBDIRS=cilqual cil ocamlstp stp camlidl ocaml-base-noparser
+EXTRALIBDIRS=$(addprefix $(CURDIR)/,camlidl/runtime stp/lib ocamlstp)
+EXTRAOCAMLPATH=$(CURDIR)/ocaml-base-noparser
 
 
 all : otter
@@ -8,29 +9,44 @@ all : otter
 
 cil : make//cil
 cil : MAKEGOALS=
-make//cil : CONFIGURE_FLAGS=EXTRALIBDIRS='$(EXTRALIBDIRS)' CC='gcc -m32'
+make//cil : \
+	CONFIGURE_FLAGS= \
+		EXTRALIBDIRS='$(EXTRALIBDIRS)' \
+		EXTRAOCAMLPATH='$(EXTRAOCAMLPATH)' \
+		CC='gcc -m32'
 
 
 otter : make//otter
 otter : MAKEGOALS=
 test-otter : make//otter
 test-otter : MAKEGOALS=test
-make//otter : CONFIGURE_FLAGS=EXTRALIBDIRS='$(EXTRALIBDIRS)' --with-cil='$(CURDIR)/cil'
-make//otter : cil ocamlstp 
+make//otter : \
+	CONFIGURE_FLAGS= \
+		EXTRALIBDIRS='$(EXTRALIBDIRS)' \
+		EXTRAOCAMLPATH='$(EXTRAOCAMLPATH)' \
+		--with-cil='$(CURDIR)/cil'
+make//otter : cil ocamlstp ocaml-base-noparser
 
 
 cilqual : make//cilqual
 cilqual : MAKEGOALS=
 test-cilqual : make//cilqual
 test-cilqual : MAKEGOALS=test
-make//cilqual : CONFIGURE_FLAGS=EXTRALIBDIRS='$(EXTRALIBDIRS)' --with-cil='$(CURDIR)/cil' --with-otter='$(CURDIR)/otter'
+make//cilqual : \
+	CONFIGURE_FLAGS=\
+		EXTRALIBDIRS='$(EXTRALIBDIRS)' \
+		EXTRAOCAMLPATH='$(EXTRAOCAMLPATH)' \
+		--with-cil='$(CURDIR)/cil' \
+		--with-otter='$(CURDIR)/otter'
 make//cilqual : otter
 
 
 ocamlstp : make//ocamlstp
-make//ocamlstp : MAKEGOALS=CAMLIDL='../camlidl/compiler/camlidl' \
-	                      LIBDIRS='../camlidl/runtime ../stp/lib' \
-					      INCDIRS='../camlidl/runtime ../stp/c_interface'
+make//ocamlstp : \
+	MAKEGOALS= \
+		CAMLIDL='../camlidl/compiler/camlidl' \
+		LIBDIRS='../camlidl/runtime ../stp/lib' \
+		INCDIRS='../camlidl/runtime ../stp/c_interface'
 make//ocamlstp : stp camlidl
 
 
@@ -40,6 +56,11 @@ make//stp : CONFIGURE_FLAGS=--with-prefix=.
 
 
 camlidl : make//camlidl
+make//camlidl : MAKEGOALS=
+
+
+ocaml-base-noparser : make//ocaml-base-noparser
+make//ocaml-base-noparser : MAKEGOALS=
 
 
 clean :

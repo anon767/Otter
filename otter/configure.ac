@@ -46,6 +46,7 @@ AC_ARG_WITH(cil,
 # Options from environment.
 
 AC_ARG_VAR(EXTRALIBDIRS, [additional directories to search for libraries (space-separated)])
+AC_ARG_VAR(EXTRAOCAMLPATH, [additional search directories for ocamlfind (colon-separated)])
 
 
 # Finish.
