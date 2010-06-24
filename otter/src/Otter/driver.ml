@@ -1061,7 +1061,7 @@ let exec_stmt job =
 								 else ""
 								 )
 								 trueJob.jid falseJob.jid;
-							Fork (trueJob, falseJob)	
+							Big_Fork [Active trueJob; Active falseJob]
 						end
 				end
 		| Block(block)
@@ -1357,11 +1357,6 @@ let main_loop ?targets:(targets=[]) job : job_completion_reason list =
 		 Jobs.add_runnable jobs (next_proc job);
 		 main_loop completed jobs 
 
-	 | Fork (j1, j2) ->
-		 (* queue the true branch and continue the false branch *)  (* CCBSE *)
-		 Jobs.add_runnables jobs [(next_proc j1);(next_proc j2)];
-		 main_loop completed jobs
-
 	 | Big_Fork job_list -> 
 		let rec process_job_list job_list =
 			match job_list with
@@ -1369,8 +1364,7 @@ let main_loop ?targets:(targets=[]) job : job_completion_reason list =
 				| (job_state::t) ->
 					match job_state with
 						| Active job -> (next_proc job)::(process_job_list t)
-						| Fork (j1, j2) -> (next_proc j1)::(next_proc j2)::(process_job_list t)
-						| Big_Fork l -> failwith "Unexpected nested Big_Fork."(*(process_job_list l)@(process_job_list t)*)
+						| Big_Fork l -> (process_job_list l)@(process_job_list t)
 						| Complete completion -> 
 							(if (completion.job.num_procs > 1) then
 								(kill_proc completion.job)::(process_job_list t) (*attempt to continue executing other processes*)
@@ -1383,8 +1377,7 @@ let main_loop ?targets:(targets=[]) job : job_completion_reason list =
 				| (job_state::t) ->
 					match job_state with
 						| Active job -> (process_completion_list t)
-						| Fork (j1, j2) -> (process_completion_list t)
-						| Big_Fork l -> failwith "Unexpected nested Big_Fork."(*(process_completion_list l)@(process_completion_list t)*)
+						| Big_Fork l -> (process_completion_list l)@(process_completion_list t)
 						| Complete completion ->
 							(output_completion_info completion.reason);
 							(if (completion.job.num_procs > 1) then
