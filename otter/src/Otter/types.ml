@@ -63,34 +63,16 @@ and memory_frame =
 	lval_block deferred VarinfoMap.t
 and state =
 	{
-		global : memory_frame;                  (* Map global lvals to blocks *)
-		formals : memory_frame list;            (* Map formal lvals to blocks *)
-		locals : memory_frame list;             (* Map local lvals to blocks *)
+		global : memory_frame list;                  (* Map global lvals to blocks *)
+		formals : memory_frame list list;            (* Map formal lvals to blocks *)
+		locals : memory_frame list list;             (* Map local lvals to blocks *)
 		extra : memory_block list VarinfoMap.t; (* Map for extra blocks, e.g., from unknown call stack recursion *)
 		malloc : memory_block list TypeMap.t VarinfoMap.t; (* Map for malloc blocks from unknown allocation *)
 		callstack : Cil.fundec list list;            (* Function call stack *)
-		block_to_bytes : bytes deferred MemoryBlockMap.t;
+		block_to_bytes : bytes deferred MemoryBlockMap.t list;
 		path_condition : bytes list;
 		path_condition_tracked : bool list;
 		callContexts : callingContext list list;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 		(** The last element of callstack is the function at which the
 				executor started execution. The last element of callContexts
@@ -109,11 +91,8 @@ and state =
 let get_callstack state =
 	List.nth state.callstack state.proc_index
 
-
 let get_callContexts state =
 	List.nth state.callContexts state.proc_index
-
-
 
 (* http://www.c-faq.com/decl/strlitinit.html *)
 
@@ -215,6 +194,7 @@ type job = {
 	mergePoints : StmtInfoSet.t;     (** A list of potential merge points *)
 	jid : int; (** A unique identifier for the job *)
 	num_procs : int;
+	next_pid : int;
 }
 
 let get_proc_info job =
@@ -252,7 +232,11 @@ let kill_proc job =
 		num_procs = job.num_procs - 1;
 		proc_info = del_nth job.proc_info job.state.proc_index;
 		state = {job.state with
+				global = del_nth job.state.global job.state.proc_index;
+				formals = del_nth job.state.formals job.state.proc_index;
+				locals = del_nth job.state.locals job.state.proc_index;
 				callstack = del_nth job.state.callstack job.state.proc_index;
+				block_to_bytes = del_nth job.state.block_to_bytes job.state.proc_index;
 				callContexts = del_nth job.state.callContexts job.state.proc_index;
 				proc_index = job.state.proc_index mod (job.num_procs - 1);
 			};

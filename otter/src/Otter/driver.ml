@@ -98,7 +98,7 @@ let exec_builtin state lvalopt exps builtin =
 				state
 			| Some cil_lval ->
 				let state, lval = Eval.lval state cil_lval in
-				MemOp.state__assign state lval bytes
+				MemOp.state__assign state lval bytes state.proc_index
 		end
 
 let exec_given state lvalopt exps =
@@ -120,7 +120,7 @@ let exec_given state lvalopt exps =
 						else bytes__symbolic (bitsSizeOf intType / 8)
 				end
 			in
-			MemOp.state__assign state lval truthvalue
+			MemOp.state__assign state lval truthvalue state.proc_index
 	end
 
 let exec_truth_value state lvalopt exps =
@@ -140,7 +140,7 @@ let exec_truth_value state lvalopt exps =
 						else 0
 				end
 			in
-			MemOp.state__assign state lval truthvalue
+			MemOp.state__assign state lval truthvalue state.proc_index
 	end
 
 let exec_symbolic state lvalopt exps exHist nextExHist =
@@ -171,7 +171,7 @@ let exec_symbolic state lvalopt exps exHist nextExHist =
 			 * in the middle 
 			 *)
 			nextExHist := { exHist with bytesToVars = (symbBytes,varinf) :: exHist.bytesToVars; };
-			MemOp.state__assign state lval symbBytes
+			MemOp.state__assign state lval symbBytes state.proc_index
 		| _ ->
 			(* Any symbolic value not directly given to a variable by a call to
 				 __SYMBOLIC(&<var>) does not get tracked. *)
@@ -187,7 +187,7 @@ let exec_symbolic state lvalopt exps exHist nextExHist =
 							(state, if newsize <= 0 then size else newsize)
 						| _ -> failwith "__SYMBOLIC takes at most one argument"
 					in
-					MemOp.state__assign state lval (bytes__symbolic ssize)
+					MemOp.state__assign state lval (bytes__symbolic ssize) state.proc_index
 			end
 	end
 
@@ -196,14 +196,14 @@ let exec_symbolic_state state =
 		begin fun block _ state ->
 			(* TODO: what about deferred bytes? *)
 			(* TODO: handle pointers with an alias analysis *)
-			let state, bytes = MemOp.state__get_bytes_from_block state block in 
+			let state, bytes = MemOp.state__get_bytes_from_block state block state.proc_index in 
 				match bytes with
 					| Bytes_FunPtr(_) ->
 						state
 					| _ ->
-						MemOp.state__add_block state block (bytes__symbolic (bytes__length bytes))
+						MemOp.state__add_block state block (bytes__symbolic (bytes__length bytes)) state.proc_index
 		end 
-		state.block_to_bytes
+		(List.nth state.block_to_bytes state.proc_index)
 		state
 
 let exec_symbolic_static state lvalopt exps loc =
@@ -225,7 +225,7 @@ let exec_symbolic_static state lvalopt exps loc =
 				else MemOp.loc_table__add state (loc,key) (bytes__symbolic size)
 			in
 			let newbytes = MemOp.loc_table__get state (loc,key) in
-			MemOp.state__assign state lval newbytes
+			MemOp.state__assign state lval newbytes state.proc_index
 	end
 
 let exec_not_found state lvalopt =
@@ -234,7 +234,7 @@ let exec_not_found state lvalopt =
 			state
 		| Some cil_lval ->
 			let state, (_, size as lval) = Eval.lval state cil_lval in
-			MemOp.state__assign state lval (bytes__symbolic size)
+			MemOp.state__assign state lval (bytes__symbolic size) state.proc_index
 	end
 
 let exec_exit state exps =
@@ -263,7 +263,7 @@ let exec_evaluate_string state exps =
 					try bytes_to_int_auto size_bytes with
 					  Failure(s) -> Output.print_endline s; 32
 				in
-				let state, bytes = MemOp.state__deref state (conditional__lval_block (block, offset), size) in
+				let state, bytes = MemOp.state__deref state (conditional__lval_block (block, offset), size) state.proc_index in
 				let str = 
 					match bytes with
 						| Bytes_ByteArray(bytearray) -> To_string.bytestring bytearray
@@ -312,7 +312,7 @@ let exec_if_then_else state lvalopt exps =
 				guard__bytes bytes0, conditional__bytes bytes1, conditional__bytes bytes2
 			) in
 			let rv = make_Bytes_Conditional c in
-			MemOp.state__assign state lval rv
+			MemOp.state__assign state lval rv state.proc_index
 	end
 
 let exec_boolean_op state lvalopt exps op_exps binop =
@@ -321,7 +321,7 @@ let exec_boolean_op state lvalopt exps op_exps binop =
 		| Some cil_lval ->
 			let state, lval = Eval.lval state cil_lval in
 			let state, rv = op_exps state exps binop in
-			MemOp.state__assign state lval rv
+			MemOp.state__assign state lval rv state.proc_index
 	end
 
 let exec_boolean_not state lvalopt exps =
@@ -330,7 +330,7 @@ let exec_boolean_not state lvalopt exps =
 		| Some cil_lval ->
 			let state, lval = Eval.lval state cil_lval in
 			let state, rv = Eval.rval state (UnOp(Cil.LNot, List.hd exps, Cil.voidType)) in
-			MemOp.state__assign state lval rv
+			MemOp.state__assign state lval rv state.proc_index
 	end
 
 let exec_aspect state instr exps advice =
@@ -419,7 +419,7 @@ let exec_print_state state =
 		else
 			match lval_block with
 				| Immediate (Unconditional (block, _)) ->
-					begin match (MemoryBlockMap.find block state.block_to_bytes) with
+					begin match (MemoryBlockMap.find block (List.nth state.block_to_bytes state.proc_index)) with
 						| Immediate bytes -> printVarBytes var bytes
 						| Deferred _ -> printStringString var.vname "(deferred)"
 					end
@@ -434,15 +434,15 @@ let exec_print_state state =
 	
 	Output.print_endline "#BEGIN PRINTSTATE";
 	Output.print_endline "#Globals:";
-	VarinfoMap.iter printVar state.global;
+	VarinfoMap.iter printVar (List.nth state.global state.proc_index);
 	Output.print_endline "#Locals:";
-	VarinfoMap.iter printVar (List.hd state.locals);
+	VarinfoMap.iter printVar (List.hd (List.nth state.locals state.proc_index));
 	Output.print_endline "#Formals:";
-	VarinfoMap.iter printVar (List.hd state.formals);
+	VarinfoMap.iter printVar (List.hd (List.nth state.formals state.proc_index));
 	(* explore only one level of memory *)
 	bosmap := BOSMap.mapi begin fun (block,off,size) des -> match des with
 		| Some _ -> des
-		| None -> Some (snd(MemOp.state__deref state (conditional__lval_block (block, off), size)))
+		| None -> Some (snd(MemOp.state__deref state (conditional__lval_block (block, off), size) state.proc_index))
 	end (!bosmap);
 	Output.print_endline "#Memory: (one level)";
 	BOSMap.iter (fun (block,off,size) des -> 
@@ -543,7 +543,7 @@ let exec_func state func job instr lvalopt exps loc op_exps =
 				| [h] -> Source (lvalopt,stmt,instr,h)
 				| _   -> assert false
 			in
-			let state = MemOp.state__start_fcall state callContext fundec argvs in
+			let state = MemOp.state__start_fcall state callContext fundec argvs state.proc_index in
 			(* If fundec is the function to be examined *)
 			begin
 				let examfn = Executeargs.run_args.arg_examfn in
@@ -562,6 +562,82 @@ let exec_func state func job instr lvalopt exps loc op_exps =
 								inTrackedFn = StringSet.mem fundec.svar.vname run_args.arg_fns; 
 						};
 				};
+
+		| Function.ForkJob ->
+
+			let job =
+				{job with
+					num_procs = job.num_procs + 1;
+					proc_info = {(List.nth job.proc_info job.state.proc_index) with 
+						pid = job.next_pid;
+					}::job.proc_info;
+				}
+			in
+			let state = 
+				{state with
+					global = (List.nth job.state.global job.state.proc_index)::job.state.global;
+					formals = (List.nth job.state.formals job.state.proc_index)::job.state.formals;
+					locals = (List.nth job.state.locals job.state.proc_index)::job.state.locals;
+					callstack = (List.nth job.state.callstack job.state.proc_index)::job.state.callstack;
+					block_to_bytes = (List.nth job.state.block_to_bytes job.state.proc_index)::job.state.block_to_bytes;
+					callContexts = (List.nth job.state.callContexts job.state.proc_index)::job.state.callContexts;
+					proc_index = state.proc_index + 1;
+				}
+			in
+			let old_index = state.proc_index in
+			let new_index = 0 in
+
+			let state =
+				 match lvalopt with
+					| None ->
+						state
+					| Some cil_lval ->
+						let state, lval = Eval.lval {state with proc_index = new_index} cil_lval in
+						let state = MemOp.state__assign state lval (Bytes.lazy_int_to_bytes 0) new_index in
+						let state, lval = Eval.lval {state with proc_index = old_index} cil_lval in
+						let state = MemOp.state__assign state lval (Bytes.lazy_int_to_bytes job.next_pid) old_index in
+						state
+			in
+
+			let nextStmt =
+			(* [stmt] is an [Instr] which doesn't end with a call to a
+				 [noreturn] function, so it has exactly one successor. *)
+				match stmt.succs with
+					| [h] -> h
+					| _ -> assert false
+			in
+
+			(* We didn't add the outgoing edge in exec_stmt because the
+				 call might have never returned. Since there isn't an
+				 explicit return (because we handle the call internally), we
+				 have to add the edge now. *)
+			let nextExHist =
+				if (get_proc_info job).inTrackedFn && run_args.arg_edge_coverage then
+					{ exHist with coveredEdges =
+						EdgeSet.add (stmtInfo_of_job job,
+								{ siFuncName = (List.hd (get_callstack job.state)).svar.vname;
+								  siStmt = Cilutility.stmtAtEndOfBlock nextStmt; })
+						exHist.coveredEdges; }
+				else
+					exHist
+			in
+		
+			let proc_info = set_nth job.proc_info {(List.nth job.proc_info old_index) with stmt = nextStmt;} old_index in
+			let proc_info = {(List.hd proc_info) with stmt = nextStmt;}::(List.tl proc_info) in
+
+			(* Update state, the stmt to execute, and exHist (which may
+				 have gotten an extra bytesToVar mapping added to it). *)
+			let job = { job with 
+				state = state; 
+				proc_info = proc_info;
+				exHist = nextExHist;
+				next_pid = job.next_pid + 1;
+			}
+			in
+			Output.set_mode Output.MSG_MUSTPRINT;
+			Output.print_endline ("fork() :: Parent pid:" ^ (string_of_int (get_proc_info job).pid) ^ " Child pid:" 
+				^ (string_of_int (List.hd job.proc_info).pid));
+			Active job
 		| _ ->
 			try (
 				let nextExHist = ref exHist in
@@ -597,7 +673,7 @@ let exec_func state func job instr lvalopt exps loc op_exps =
 					| Function.CurrentState -> exec_current_state state exps
 					| Function.PrintState -> exec_print_state state
 					| Function.CompareState -> exec_compare_state state exps
-					| Function.AssertEqualState -> exec_assert_equal_state state exps	
+					| Function.AssertEqualState -> exec_assert_equal_state state exps
 					| _ -> failwith "unreachable exec_instr_call"
 						
 				end in (* inner [match func] *)
@@ -688,6 +764,7 @@ let exec_instr job =
 	let printInstr instr =
 		Output.set_mode Output.MSG_STMT;
 		Output.set_cur_loc (Cil.get_instrLoc instr);
+		Output.set_pid (List.nth job.proc_info job.state.proc_index).pid;
 		Output.print_endline (To_string.instr instr)
 	in
 
@@ -716,7 +793,7 @@ let exec_instr job =
 		 let state = job.state in
 		 let state, lval = Eval.lval state cil_lval in
 		 let state, rv = Eval.rval state exp in
-		 let state = MemOp.state__assign state lval rv in
+		 let state = MemOp.state__assign state lval rv state.proc_index in
 		 let nextStmt = if tail = [] then List.hd (get_proc_info job).stmt.succs else (get_proc_info job).stmt in
 		   Active { job with 
 			state = state; 
@@ -752,6 +829,7 @@ let exec_stmt job =
 
 	Output.set_mode Output.MSG_STMT;
 	Output.set_cur_loc (Cil.get_stmtLoc stmt.skind);
+	Output.set_pid (List.nth job.proc_info job.state.proc_index).pid;
 	Output.print_endline (To_string.stmt stmt);
 	match stmt.skind with
 		| Instr [] ->
@@ -812,14 +890,14 @@ let exec_stmt job =
 										| Some exp, Some dest ->
 												(* evaluate the return expression in the callee frame *)
 												let state, rv = Eval.rval state exp in
-												let state = MemOp.state__end_fcall state in
+												let state = MemOp.state__end_fcall state state.proc_index in
 												(* evaluate the assignment in the caller frame *)
 												let state, lval = Eval.lval state dest in
-												MemOp.state__assign state lval rv
+												MemOp.state__assign state lval rv state.proc_index
 										| _, _ ->
 												(* If we are not returning a value, or if we
 													 ignore the result, just end the call *)
-												MemOp.state__end_fcall state
+												MemOp.state__end_fcall state state.proc_index
 								in
 								let callingFuncName = (List.hd (get_callstack state2)).svar.vname in
 								(* Update the state, stmt, exHist, and whether or not
@@ -1019,6 +1097,7 @@ let setRunningJob job =
 		Output.print_endline "***** Changing running job *****"
 		);
 		Output.runningJobId := job.jid;
+		Output.set_pid (get_proc_info job).pid;
 	);
 	Output.runningJobDepth := (List.length job.state.path_condition)
 

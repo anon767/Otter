@@ -15,11 +15,11 @@ let init_symbolic_pointer state varinfo size =
   let name = Printf.sprintf "Two-fold Sym Ptr (%s)" varinfo.vname in
   let block =  block__make name size Block_type_Aliased in 
   let addrof_block = make_Bytes_Address (block, bytes__zero) in
-  let state = MemOp.state__add_block state block (bytes__symbolic size) in
+  let state = MemOp.state__add_block state block (bytes__symbolic size) state.proc_index in
     state,make_Bytes_Conditional (conditional__from_list [Unconditional bytes__zero; Unconditional addrof_block])
 
 
-let init_symbolic_varinfo state varinfo =
+let init_symbolic_varinfo (state:state) varinfo =
   let typ = varinfo.vtype in
   let size = (Cil.bitsSizeOf (typ)) / 8 in
   let size = if size <= 0 then 1 else size in
@@ -42,7 +42,7 @@ let init_symbolic_globalvars state globals =
 				when not (Cil.isFunctionType varinfo.vtype)
 					 && not (Executeargs.run_args.arg_noinit_unreachable_globals && unreachable_global varinfo) ->
          let state,init_bytes = init_symbolic_varinfo state varinfo in
-           MemOp.state__add_global state varinfo init_bytes
+           MemOp.state__add_global state varinfo init_bytes state.proc_index
 		| _ ->
 			state
 	end state globals
@@ -79,7 +79,7 @@ let init_globalvars state globals =
 			Output.printf "Initialize %s to %s\n" varinfo.vname
 				(if init_bytes == zeros then "zeros" else To_string.bytes init_bytes);
 
-            MemOp.state__add_global state varinfo init_bytes
+            MemOp.state__add_global state varinfo init_bytes state.proc_index
 
 		| GVar(varinfo, _, _)
 		| GVarDecl(varinfo, _)
@@ -98,7 +98,7 @@ let init_globalvars state globals =
 			Output.set_mode Output.MSG_REG;
 			Output.printf "Initialize %s to zeros\n" varinfo.vname;
 
-			MemOp.state__add_global state varinfo init_bytes
+			MemOp.state__add_global state varinfo init_bytes state.proc_index
 
 		| _ ->
 			state
@@ -107,13 +107,13 @@ let init_globalvars state globals =
 
 
 (* Initialize arguments for an entry function to purely symbolic *)
-let init_symbolic_argvs state (entryfn:fundec) : (state*bytes list*executionHistory) =
-  let state = state__add_frame state in
+let init_symbolic_argvs (state:state) (entryfn:fundec) : (state*bytes list*executionHistory) =
+  let state = MemOp.state__add_frame state state.proc_index in
   let state,args,bytesToVars = 
     List.fold_right  (* TODO: Does ordering matter? *)
       (fun varinfo (state,args,bytesToVars) ->
         let state,init = init_symbolic_varinfo state varinfo in
-        (state__add_formal state varinfo init,init::args,(init,varinfo)::bytesToVars)
+        (MemOp.state__add_formal state varinfo init state.proc_index,init::args,(init,varinfo)::bytesToVars)
       ) 
       entryfn.sformals
       (state,[],[])
@@ -158,7 +158,7 @@ let init_cmdline_argvs state argstr =
 	let argv_strings_block = block__make "argv_strings" ((String.length argv_strings) + 1) Block_type_Local in
 
 	(* Map the block we just made to the bytes we just made *)
-	let state' = MemOp.state__add_block state argv_strings_block argv_strings_bytes in
+	let state' = MemOp.state__add_block state argv_strings_block argv_strings_bytes state.proc_index in
 
     let charPtrSize = bitsSizeOf charPtrType / 8 in
 
@@ -185,7 +185,7 @@ let init_cmdline_argvs state argstr =
 		impl argstr 0 0 (make_Bytes_ByteArray (ImmutableArray.make (num_args * charPtrSize) byte__zero)) in
 
 	(* Map the pointers block to its bytes *)
-	let state'' = MemOp.state__add_block state' argv_ptrs_block argv_ptrs_bytes in
+	let state'' = MemOp.state__add_block state' argv_ptrs_block argv_ptrs_bytes state.proc_index in
 
 	(* Make the top-level address that is the actual argv. It is the address of
 		 argv_ptrs_bytes. We do not have to map this to anything; we just pass it as the
@@ -293,7 +293,7 @@ let prepare_file file =
 
 (* create a job that begins at a function, given an initial state *)
 let job_for_function ?(exHist=emptyHistory) state fn argvs =
-	let state = MemOp.state__start_fcall state Runtime fn argvs in
+	let state = MemOp.state__start_fcall state Runtime fn argvs state.proc_index in
 	(* create a new job *)
 	{ 
 		state = state;
@@ -307,6 +307,7 @@ let job_for_function ?(exHist=emptyHistory) state fn argvs =
 		mergePoints = StmtInfoSet.empty;
 		jid = Utility.next_id Output.jidCounter;
 		num_procs = 1;
+		next_pid = 1;
 	}
 
 

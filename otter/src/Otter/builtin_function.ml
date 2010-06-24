@@ -10,7 +10,7 @@ let libc___builtin_va_arg state exps =
 	match lastarg with
 		| CastE(_, AddrOf(cil_lval)) ->
 			let state, lval = Eval.lval state cil_lval in
-			let state = MemOp.state__assign state lval ret in
+			let state = MemOp.state__assign state lval ret state.proc_index in
 			(state, ret)
 		| _ -> failwith "Last argument of __builtin_va_arg must be of the form CastE(_,AddrOf(lval))"
 
@@ -22,7 +22,7 @@ let libc___builtin_va_copy state exps =
 	match List.hd exps with
 		| Lval(cil_lval) ->
 			let state, lval = Eval.lval state cil_lval in
-			let state = MemOp.state__assign state lval key in
+			let state = MemOp.state__assign state lval key state.proc_index in
 			(state, bytes__zero)
 		| _ -> failwith "First argument of va_copy must have lval"
 
@@ -39,7 +39,7 @@ let libc___builtin_va_start state exps =
 		| Lval(cil_lval) ->
 			let state, key = MemOp.vargs_table__add state (List.hd state.va_arg) in
 			let state, lval = Eval.lval state cil_lval in
-			let state = MemOp.state__assign state lval key in
+			let state = MemOp.state__assign state lval key state.proc_index in
 			(state, bytes__zero)
 		| _ -> failwith "First argument of va_start must have lval"
 
@@ -56,7 +56,7 @@ let libc___builtin_alloca_size state size bytes =
 	in
 	let block =  block__make name size Block_type_Heap in
 	let addrof_block = make_Bytes_Address (block, bytes__zero) in
-	let state = MemOp.state__add_block state block bytes in
+	let state = MemOp.state__add_block state block bytes state.proc_index in
 	(state, addrof_block)
 
 let libc___builtin_alloca state exps =
@@ -93,9 +93,9 @@ let libc_free state exps =
 		| Bytes_Address (block, _) ->
 			if block.memory_block_type != Block_type_Heap
 			then warning ("Freeing a non-malloced pointer:" ^ (To_string.exp (List.hd exps)) ^ " = " ^ (To_string.bytes ptr)) else 
-			if not (MemOp.state__has_block state block)
+			if not (MemOp.state__has_block state block state.proc_index)
 			then warning ("Double-free:" ^ (To_string.exp (List.hd exps)) ^ " = " ^ (To_string.bytes ptr)) else 
-			let state = MemOp.state__remove_block state block in
+			let state = MemOp.state__remove_block state block state.proc_index in
 			(state, bytes__zero)
 		| _ ->
 			Output.set_mode Output.MSG_MUSTPRINT;
@@ -107,7 +107,7 @@ let libc_free state exps =
 let libc_memset__concrete state exps =
 	let state, bytes = Eval.rval state (List.hd exps) in
 	let block, offset = bytes_to_address bytes in
-	let state, old_whole_bytes = MemOp.state__get_bytes_from_block state block in
+	let state, old_whole_bytes = MemOp.state__get_bytes_from_block state block state.proc_index in
 	let state, char_bytes = Eval.rval state (List.nth exps 1) in
 	let c = bytes__get_byte char_bytes 0 (* little endian *) in
 	let state, n_bytes = Eval.rval state (List.nth exps 2) in
@@ -115,7 +115,7 @@ let libc_memset__concrete state exps =
 		let n = bytes_to_int_auto n_bytes in
 		let newbytes = bytes__make_default n c in
 		let finalbytes = bytes__write old_whole_bytes offset n newbytes in
-		let state = MemOp.state__add_block state block finalbytes in
+		let state = MemOp.state__add_block state block finalbytes state.proc_index in
 		(state, bytes)
 	else
 		failwith "libc_memset__concrete: n is symbolic (TODO)"
@@ -124,7 +124,7 @@ let libc_memset__concrete state exps =
 let libc_memset state exps =
 	let state, bytes = Eval.rval state (List.hd exps) in
 	let block, offset = bytes_to_address bytes in
-	let state, old_whole_bytes = MemOp.state__get_bytes_from_block state block in
+	let state, old_whole_bytes = MemOp.state__get_bytes_from_block state block state.proc_index in
 	let state, char_bytes = Eval.rval state (List.nth exps 1) in
 	let c = bytes__get_byte char_bytes 0 (* little endian *) in
 	let state, n_bytes = Eval.rval state (List.nth exps 2) in
@@ -132,7 +132,7 @@ let libc_memset state exps =
 		let n = bytes_to_int_auto n_bytes in
 		let newbytes = bytes__make_default n c in
 		let finalbytes = bytes__write old_whole_bytes offset n newbytes in
-		let state = MemOp.state__add_block state block finalbytes in
+		let state = MemOp.state__add_block state block finalbytes state.proc_index in
 		(state, bytes)
 	else
 		failwith "libc_memset: n is symbolic (TODO)"
@@ -143,7 +143,7 @@ let libc_strlen state exps =
 	let state, bytes = Eval.rval state (List.hd exps) in
 	match bytes with
 		| Bytes_Address(block, offset) when isConcrete_bytes offset ->
-			let state, bytes_str = MemOp.state__get_bytes_from_block state block in
+			let state, bytes_str = MemOp.state__get_bytes_from_block state block state.proc_index in
 			let strlen = match bytes_str with
 				| Bytes_ByteArray(ba) ->
 					let len = ImmutableArray.length ba in

@@ -24,11 +24,14 @@ let runningJobId = ref 0
 let runningJobDepth = ref 0
 let jidCounter = ref 0
 
+let pid = ref 0
+let set_pid id = pid := id
+
 (*let internalIndent = ref 0*)
 
 let print_loc loc = 
   if loc==Cil.locUnknown then "" else
-  loc.Cil.file^":"^(string_of_int loc.Cil.line)^" : "
+  loc.Cil.file^":"^(string_of_int loc.Cil.line)^" pid:"^(string_of_int !pid)^" : "
 
 let getIndent () = 
 	Format.sprintf "[%d,%d] %s" !runningJobId !runningJobDepth (print_loc (!cur_loc))
