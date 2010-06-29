@@ -1102,10 +1102,6 @@ let setRunningJob job =
 	Output.runningJobDepth := (List.length job.state.path_condition)
 
 
-(* Try to merge job with one that is waiting; then advance the resulting job by
-	 one step. (Note that the job that *actually* gets advances might not be
-	 step_job's argument; if the argument is at a merge point, mergeJobs places it
-	 into the job_pool and returns a different job.) *)
 
 let pass_targets targets job fexp exps =
   (* convert fexp to fundec *) 
@@ -1229,52 +1225,55 @@ let pass_targets targets job fexp exps =
 	pass_targets targets
 
 
-exception Failure_wc of string * bytes
-let failwith_wc str cond = raise (Failure_wc (str,cond))
 
-let step_job_with_targets targets job =
-  (* if job meets one of the targets, do checking *)
-  (* if fails, return Complete Abandoned
-   * else step_job job *)
+(* Try to merge job with one that is waiting; then advance the resulting job by
+     one step. (Note that the job that *actually* gets advances might not be
+     step_job's argument; if the argument is at a merge point, mergeJobs places it
+     into the job_pool and returns a different job.) *)
+let step_job job =
 	setRunningJob job;
 	try
 		(* let _ = Output.printf "Step into Job %d\n" job.jid in *)
-		let result = match (get_proc_info job).instrList with
+		match (get_proc_info job).instrList with
 			| [] -> exec_stmt job
-			| Call(_,fexp,exps,_)::_-> 
-				if Executeargs.run_args.arg_callchain_backward then
-				  begin
-					let truth,failing_condition = pass_targets targets job fexp exps in
-					  if truth then exec_instr job 
-					  else failwith_wc (Printf.sprintf "Job %d hits the failing condition" job.jid ) failing_condition
-				  end
-				else exec_instr job
 			| _ -> exec_instr job
-		in
-		  result
-	with 
-	  | Failure msg ->
-		if run_args.arg_failfast then failwith msg;
-		let result = { result_state = job.state; result_history = job.exHist } in
-		let completed = Complete (
-			{
-				job = job;
-				reason = Types.Abandoned (msg, !Output.cur_loc, result);
-			}) 
-		in
-		completed
-	  | Failure_wc (msg,failing_condition) ->
-		if run_args.arg_failfast then failwith msg;
-		let state = {job.state with path_condition = failing_condition::job.state.path_condition} in
-		let result = { result_state = state; result_history = job.exHist } in
-		let completed = Complete (
-			{
-				job = job;
-				reason = Types.Abandoned (msg, !Output.cur_loc, result); 
-			}) 
-		in
-		completed
+	with
+		| Failure msg ->
+			if run_args.arg_failfast then failwith msg;
+			let result = { result_state = job.state; result_history = job.exHist } in
+			Complete { job = job; reason = Types.Abandoned (msg, !Output.cur_loc, result); }
 
+
+
+let terminate_job_at_targets targets job =
+	(* if job meets one of the targets, do checking *)
+	(* if fails, return Some (Complete Abandoned) *)
+	match (get_proc_info job).instrList with
+		| Call(_,fexp,exps,_)::_ ->
+			let truth, failing_condition = pass_targets targets job fexp exps in
+			if truth then
+				None
+			else begin
+				let msg = Printf.sprintf "Job %d hits the failing condition" job.jid in
+				if run_args.arg_failfast then failwith msg;
+				let state = { job.state with path_condition = failing_condition::job.state.path_condition } in
+				let result = { result_state = state; result_history = job.exHist } in
+				Some (Complete { job = job; reason = Types.Abandoned (msg, !Output.cur_loc, result); })
+			end
+		| _ ->
+			None
+
+
+
+let step_job_with_targets targets job =
+	if Executeargs.run_args.arg_callchain_backward then
+		match terminate_job_at_targets targets job with
+			| Some result ->
+				result
+			| None ->
+				step_job job
+	else
+		step_job job
 
 
 
@@ -1289,7 +1288,6 @@ let at_merge_point job =
 (** The main loop
   *)
 let main_loop ?targets:(targets=[]) job : job_completion_reason list =
-  let step_job = step_job_with_targets targets in
   let rec main_loop (completed: job_completion_reason list) (jobs: Jobs.t) : job_completion_reason list =
 	match !signalStringOpt with
 	  | Some s ->
@@ -1316,9 +1314,8 @@ let main_loop ?targets:(targets=[]) job : job_completion_reason list =
 					end
 				  else
 					  (* job is not at a merge point or merging is disabled: step the job *)
-					  (* process_result completed (job_queue, merge_set) (step_job job) *)
 					  let _ = Jobs.running jobs job in (* set current job *)
-					  process_result completed jobs (step_job job )
+					  process_result completed jobs (step_job_with_targets targets job)
 			  end
 			else if Jobs.has_next_mergable jobs then
 			  begin
@@ -1326,7 +1323,7 @@ let main_loop ?targets:(targets=[]) job : job_completion_reason list =
 				 * with any other jobs in the merge set (the merge set invariant) *)
 				let job = Jobs.take_next_mergable jobs in
 				let _ = Jobs.running jobs job in (* set current job *)
-				  process_result completed jobs (step_job job)
+				  process_result completed jobs (step_job_with_targets targets job)
 			  end
 			else
 			  begin
