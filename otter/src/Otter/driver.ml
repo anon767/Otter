@@ -1300,7 +1300,7 @@ let main_loop ?targets:(targets=[]) job : job_completion_reason list =
 			if Jobs.has_next_runnable jobs then
 			  begin
 				let job = Jobs.take_next_runnable jobs in
-				  if run_args.arg_merge_paths && at_merge_point job then
+				  let completed, jobs = if run_args.arg_merge_paths && at_merge_point job then
 					(* job is at a merge point and merging is enabled: try to merge it *)
 					begin match Jobs.merge jobs job with
 					  | Some (truncated) ->
@@ -1310,12 +1310,14 @@ let main_loop ?targets:(targets=[]) job : job_completion_reason list =
 						  (* merge was unsuccessful: keep the job at the merge point in the merge set in case
 						   * later jobs can merge; this leads to the invariant that no jobs in the merge set
 						   * can merge with each other *)
-						  main_loop completed jobs
+						  (completed, jobs)
 					end
 				  else
 					  (* job is not at a merge point or merging is disabled: step the job *)
 					  let _ = Jobs.running jobs job in (* set current job *)
 					  process_result completed jobs (step_job_with_targets targets job)
+				  in
+				  main_loop completed jobs
 			  end
 			else if Jobs.has_next_mergable jobs then
 			  begin
@@ -1323,7 +1325,8 @@ let main_loop ?targets:(targets=[]) job : job_completion_reason list =
 				 * with any other jobs in the merge set (the merge set invariant) *)
 				let job = Jobs.take_next_mergable jobs in
 				let _ = Jobs.running jobs job in (* set current job *)
-				  process_result completed jobs (step_job_with_targets targets job)
+				let completed, jobs = process_result completed jobs (step_job_with_targets targets job) in
+				main_loop completed jobs
 			  end
 			else
 			  begin
@@ -1348,50 +1351,21 @@ let main_loop ?targets:(targets=[]) job : job_completion_reason list =
 		   ()
 	 end
 
-	and process_result completed jobs job = 
-	  match job with
-	 | Active job ->
-		 Jobs.add_runnable jobs (next_proc job);
-		 main_loop completed jobs 
+	and process_result completed jobs = function
+		| Active job ->
+			Jobs.add_runnable jobs (next_proc job);
+			(completed, jobs)
 
-	 | Big_Fork job_list -> 
-		let rec process_job_list job_list =
-			match job_list with
-				| [] -> []
-				| (job_state::t) ->
-					match job_state with
-						| Active job -> (next_proc job)::(process_job_list t)
-						| Big_Fork l -> (process_job_list l)@(process_job_list t)
-						| Complete completion -> 
-							(if (completion.job.num_procs > 1) then
-								(kill_proc completion.job)::(process_job_list t) (*attempt to continue executing other processes*)
-							else
-								(process_job_list t))
-		in
-		let rec process_completion_list job_list =
-			match job_list with
-				| [] -> []
-				| (job_state::t) ->
-					match job_state with
-						| Active job -> (process_completion_list t)
-						| Big_Fork l -> (process_completion_list l)@(process_completion_list t)
-						| Complete completion ->
-							(output_completion_info completion.reason);
-							(if (completion.job.num_procs > 1) then
-								(process_completion_list t)
-							else
-								completion.reason::(process_completion_list t))
-		in
-				let _ = Jobs.add_runnables jobs (process_job_list job_list) in
-		main_loop ((process_completion_list job_list)@completed) jobs
+		| Big_Fork states ->
+			List.fold_left (fun (completed, jobs) state -> process_result completed jobs state) (completed, jobs) states
 
-	 | Complete completion ->
-			(output_completion_info completion.reason);
-			(if (completion.job.num_procs > 1) then
-				let _ = Jobs.add_runnable jobs (kill_proc completion.job) in
-				main_loop completed jobs (*attempt to continue executing other processes*)
-			else
-				main_loop (completion.reason::completed) jobs)
+		| Complete completion ->
+			output_completion_info completion.reason;
+			if completion.job.num_procs > 1 then begin
+				Jobs.add_runnable jobs (kill_proc completion.job);
+				(completed, jobs)
+			end else
+				((completion.reason::completed), jobs)
 	in
   let jobs = Jobs.create targets in
   let _ = Jobs.add_runnable jobs job in
