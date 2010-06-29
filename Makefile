@@ -4,6 +4,10 @@ EXTRALIBDIRS=$(addprefix $(CURDIR)/,camlidl/runtime stp/lib ocamlstp)
 EXTRAOCAMLPATH=$(CURDIR)/ocaml-base-noparser
 
 
+# augment configuration from Makefile.local, if it exists
+-include Makefile.local
+
+
 all : otter
 
 
@@ -32,6 +36,10 @@ cilqual : make//cilqual
 cilqual : MAKEGOALS=
 test-cilqual : make//cilqual
 test-cilqual : MAKEGOALS=test
+debug-cilqual : make//cilqual
+debug-cilqual : MAKEGOALS=debug
+experiments-cilqual : make//cilqual
+experiments-cilqual : MAKEGOALS=experiments
 make//cilqual : \
 	CONFIGURE_FLAGS=\
 		EXTRALIBDIRS='$(EXTRALIBDIRS)' \

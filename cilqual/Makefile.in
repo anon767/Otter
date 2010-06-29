@@ -26,7 +26,7 @@ OUNIT_FLAGS = -verbose
 
 VPATH = src test
 
-.PHONY : all native debug config test
+.PHONY : all native debug config test experiments
 
 all : native
 
@@ -34,6 +34,9 @@ native : ocamlbuild//runcilqual.native config
 debug : ocamlbuild//runcilqual.d.byte config
 config : cilqual.pl.config
 test : ounit//runtestcilqual.d.byte
+
+experiments : make//experiments
+make//experiments : native
 
 pa_monad : pa_monad/pa_monad.cmo
 pa_monad/pa_monad.cmo : make//pa_monad
@@ -54,15 +57,15 @@ cilqual.pl.config : Makefile $(CIL_SRCDIR)/config.mk
 	1;" > $@
 
 clean : clean-cilqual
-	$(MAKE) -C pa_monad clean
-	$(MAKE) -C ocamlgraph clean
+	[ -e pa_monad/Makefile ] && $(MAKE) -C pa_monad clean
+	[ -e ocamlgraph/Makefile ] && $(MAKE) -C ocamlgraph clean
 
 clean-cilqual : clean-ocamlbuild
 	$(RM) cilqual.pl.config *.native *.byte
 
 distclean : clean-cilqual
-	$(MAKE) -C pa_monad distclean
-	$(MAKE) -C ocamlgraph distclean
+	[ -e pa_monad/Makefile ] && $(MAKE) -C pa_monad distclean
+	[ -e ocamlgraph/Makefile ] && $(MAKE) -C ocamlgraph distclean
 	$(RM) config.cache config.log config.status
 
 maintainer-clean : distclean
