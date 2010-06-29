@@ -8,7 +8,7 @@ CIL_OBJDIR = $(CILHOME)/obj/$(ARCHOS)
 OTTER_OBJDIR = $(OTTER_SRCDIR)/_product
 
 OCAMLBUILD_CIL = -cflags -I,$(CIL_OBJDIR) -lflags -I,$(CIL_OBJDIR) -tags pkg_unix,pkg_str -libs cil
-OCAMLBUILD_OTTER = -cflags -I,$(OTTER_OBJDIR) -lflags -I,$(OTTER_OBJDIR) -libs yaml,stpvc,Otter
+OCAMLBUILD_OTTER = -cflags -I,$(OTTER_OBJDIR) -lflags -I,$(OTTER_OBJDIR) -libs stpvc,Otter
 OCAMLBUILD_PA_MONAD = -X pa_monad -tag syntax_camlp4o -tag pkg_pa_monad
 OCAMLBUILD_GRAPH = -X ocamlgraph -tag pkg_ocamlgraph
 OCAMLBUILD_OUNIT = -tag pkg_oUnit
