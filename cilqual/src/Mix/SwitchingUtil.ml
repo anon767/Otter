@@ -380,11 +380,11 @@ let qt_to_bytes file expState solution state exp qt =
                             let offset = Bytes.lazy_int_to_bytes (offset / 8) in
                             let size = size / 8 in
                             let (state, offset_bytes) = extra_deferred state in
-                            let bytes = Bytes.bytes__write bytes offset size offset_bytes in
+                            let bytes = BytesUtility.bytes__write bytes offset size offset_bytes in
                             (state, bytes)
                         end (state, bytes) offsets
                     in
-                    let state = MemOp.state__add_deferred_block state extra deferred in
+                    let state = MemOp.state__add_deferred_block state extra deferred state.Types.proc_index in
                     (state, extra, map_offsets target_bytes_list extra)
                 in
 
@@ -464,7 +464,7 @@ let qt_to_bytes file expState solution state exp qt =
                         let offset, size = Cil.bitsOffset typ field_offset in
                         let offset = Bytes.lazy_int_to_bytes (offset / 8) in
                         let size = size / 8 in
-                        let bytes = Bytes.bytes__write bytes offset size field_bytes in
+                        let bytes = BytesUtility.bytes__write bytes offset size field_bytes in
                         (state, bytes)
                     end (state, bytes) compinfo
                 | _ ->
@@ -484,7 +484,7 @@ let qt_to_bytes file expState solution state exp qt =
                         let offset, size = Cil.bitsOffset typ el_offset in
                         let offset = Bytes.lazy_int_to_bytes (offset / 8) in
                         let size = size / 8 in
-                        let bytes = Bytes.bytes__write bytes offset size el_bytes in
+                        let bytes = BytesUtility.bytes__write bytes offset size el_bytes in
                         (state, bytes)
                     end (state, bytes) len_opt in
                     begin match result_opt with
@@ -572,7 +572,7 @@ let qt_to_lval_block file expState solution state v qt =
         let extra_deferred state =
             qt_to_bytes file expState solution state (Cil.Lval (Cil.var v)) (drop_qt qt)
         in
-        let state = MemOp.state__add_deferred_block state extra extra_deferred in
+        let state = MemOp.state__add_deferred_block state extra extra_deferred state.Types.proc_index in
 
         let extras = try Types.VarinfoMap.find v state.Types.extra
                      with Not_found -> []
@@ -744,7 +744,7 @@ let aliasing_to_qt file expState exp qt = perform
 *)
 let attempt_deref ?pre state lval_block typ =
     try
-        Some (MemOp.state__deref ?pre state (lval_block, Cil.bitsSizeOf typ / 8))
+        Some (MemOp.state__deref ?pre state (lval_block, Cil.bitsSizeOf typ / 8) state.Types.proc_index)
     with
         | Cil.SizeOfError ("abstract type", _) ->
             (* ignore abstract types, they can't have values that come from the program (that is visible) *)
@@ -832,7 +832,7 @@ let bytes_to_qt file expState state pre bytes exp qt = perform
                         let offset, size = Cil.bitsOffset typ field_offset in
                         let offset = Bytes.lazy_int_to_bytes (offset / 8) in
                         let size = size / 8 in
-                        let field_bytes = Bytes.bytes__read bytes offset size in
+                        let field_bytes = BytesUtility.bytes__read bytes offset size in
 
                         state <-- stateM;
 
@@ -863,7 +863,7 @@ let bytes_to_qt file expState state pre bytes exp qt = perform
                         let offset, size = Cil.bitsOffset typ el_offset in
                         let offset = Bytes.lazy_int_to_bytes (offset / 8) in
                         let size = size / 8 in
-                        let el_bytes = Bytes.bytes__read bytes offset size in
+                        let el_bytes = BytesUtility.bytes__read bytes offset size in
 
                         state <-- stateM;
                         bytes_to_qt visited state pre el_bytes (Cil.Lval el_lval) qt

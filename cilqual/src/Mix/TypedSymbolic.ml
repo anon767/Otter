@@ -77,14 +77,14 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
         let (state, global) = List.fold_left begin fun (state, global) g -> match g with
             | Cil.GVarDecl (v, _) | Cil.GVar (v, _, _)
                     when not (Cil.isFunctionType v.Cil.vtype (* skip function prototypes; they're not variables *)
-                              || Types.VarinfoMap.mem v state.Types.global) ->
+                              || Types.VarinfoMap.mem v (List.nth state.Types.global state.Types.proc_index)) ->
                 let (((((qt, _), _), _), _), _) = run (lookup_var v) expState in
                 let state, lval_block = qt_to_lval_block file expState context state v qt in
                 (state, Types.VarinfoMap.add v lval_block global)
             | _ ->
                 (state, global)
         end (state, MemOp.frame__empty) file.Cil.globals in
-        let state = { state with Types.global=global } in
+        let state = { state with Types.global=Types.set_nth state.Types.global global state.Types.proc_index } in
 
         (* then, setup function arguments *)
         (* TODO: handle varargs *)
@@ -141,9 +141,11 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
                             end;
 
                             (* then, the global variables and function arguments *)
+                            let global = List.nth state.Types.global state.Types.proc_index in
+                            let formals = List.nth state.Types.formals state.Types.proc_index in
                             mapM_ begin fun frame ->
                                 frame_to_qt file expState state frame
-                            end (state.Types.global::state.Types.formals);
+                            end (global::formals);
 
                             return block_errors
                         end
