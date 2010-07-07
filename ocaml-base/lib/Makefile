@@ -24,14 +24,14 @@ SOURCES = \
   caml.ml \
   std.ml
 
-LIB_PACK_NAME = base
+LIB_PACK_NAME = OcamlBase
 
 LIBINSTALL_FILES = \
-  base.cmi base.cma base.cmxa base.a
+  OcamlBase.cmi OcamlBase.cma OcamlBase.cmxa OcamlBase.a
 
-RESULT = base
+RESULT = OcamlBase
 
-OCAMLFLAGS = -for-pack Base
+OCAMLFLAGS = -for-pack OcamlBase
 
 OCAMLNCFLAGS = -noassert -unsafe
 
