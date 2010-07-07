@@ -6,7 +6,7 @@ include $(CIL_SRCDIR)/config.mk
 CIL_OBJDIR = $(CILHOME)/obj/$(ARCHOS)
 
 OCAMLBUILD_CIL = -cflags -I,$(CIL_OBJDIR) -lflags -I,$(CIL_OBJDIR) -tags pkg_unix,pkg_str -libs cil
-OCAMLBUILD_OTTER = -tags pkg_OcamlBase -libs stpvc
+OCAMLBUILD_OTTER = -tags pkg_ocaml-base-noparser -libs stpvc
 OCAMLBUILD_OUNIT = -tag pkg_oUnit
 
 OCAMLBUILD_FLAGS = -j 0 -cflags -warn-error,A -Xs doc,examples,libc,util

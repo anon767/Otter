@@ -1,7 +1,7 @@
 
 SUBDIRS=cilqual cil ocamlstp stp camlidl ocaml-base-noparser
 EXTRALIBDIRS=$(addprefix $(CURDIR)/,camlidl/runtime stp/lib ocamlstp)
-EXTRAOCAMLPATH=$(CURDIR)/ocaml-base-noparser
+EXTRAOCAMLPATH=$(CURDIR)
 
 
 # augment configuration from Makefile.local, if it exists
