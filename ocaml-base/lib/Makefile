@@ -21,10 +21,6 @@ SOURCES = \
   dynArray.ml \
   priorityQueue.mli \
   priorityQueue.ml \
-  charStream.mli \
-  charStream.ml \
-  mParser.mli \
-  mParser.ml \
   caml.ml \
   std.ml
 
@@ -33,13 +29,11 @@ LIB_PACK_NAME = base
 LIBINSTALL_FILES = \
   base.cmi base.cma base.cmxa base.a
 
-PACKS = pcre
-
 RESULT = base
 
 OCAMLFLAGS = -for-pack Base
 
-OCAMLNCFLAGS = -noassert -ffast-math -unsafe
+OCAMLNCFLAGS = -noassert -unsafe
 
 OCAMLDOCFLAGS = -sort -colorize-code -t "The ocaml-base library"
 
