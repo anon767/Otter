@@ -1,0 +1,7 @@
+name = "ocaml-base"
+version = "08.10"
+description = "ocaml-base standard library extension"
+directory = "lib"
+
+archive(byte) = "OcamlBase.cma"
+archive(native) = "OcamlBase.cmxa"
