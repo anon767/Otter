@@ -3,10 +3,10 @@ open Otter
 open Executeargs
 
 (* directory containing tests for IntegrationTests *)
-let dir_prefix = Filename.concat (Filename.concat "test" "TestOtterIntegration") "IntegrationTests"
+let dir_prefix = Filename.concat "test" "TestOtterIntegration"
 
 (* test helper that runs the symbolic executor on a file relative to dir_prefix *)
-let test_file path =
+let test_file main_loop path =
     path >:: fun () ->
         (* Suppress all output from the symbolic executor *)
         print_args.arg_print_nothing <- true;
@@ -19,7 +19,7 @@ let test_file path =
         (* run the symbolic executor *)
         Executemain.prepare_file file;
         let job = Executemain.job_for_file file ["Integration"] in
-        let results = Driver.main_loop job in
+        let results = main_loop job in
 
         (* count jobs that were abandoned *)
         let abandoned = List.fold_left begin fun abandoned result -> match result with
@@ -36,28 +36,31 @@ let test_file path =
         (* test that no assertions failed *)
         assert_string (Executedebug.get_log ())
 
+(* test helper that runs the symbolic executor on all files recursively in a directory relative to dir_prefix *)
+let rec test_dir main_loop dirname =
+	let dir = Sys.readdir (Filename.concat dir_prefix dirname) in
+	(* first, sort up *)
+	Array.sort String.compare dir;
+	(* then, iterate right-to-left, so output list will stay sorted up *)
+	let tests = Array.fold_right begin fun filename tests ->
+		if filename.[0] = '.' then (* skip hidden files *)
+			tests
+		else begin
+			let path = Filename.concat dirname filename in
+			if Sys.is_directory (Filename.concat dir_prefix path) then
+				(test_dir main_loop path)::tests (* recurse into directories *)
+			else
+				(test_file main_loop path)::tests (* add files *)
+		end
+	end dir [] in
+	TestList tests
+
 
 (*
  * OUnit test suite
  *)
 
-let testsuite = "Integration" >:
-    let rec test_dir dirname =
-        let dir = Sys.readdir (Filename.concat dir_prefix dirname) in
-        (* first, sort up *)
-        Array.sort String.compare dir;
-        (* then, iterate right-to-left, so output list will stay sorted up *)
-        let tests = Array.fold_right begin fun filename tests ->
-            if filename.[0] = '.' then (* skip hidden files *)
-                tests
-            else begin
-                let path = Filename.concat dirname filename in
-                if Sys.is_directory (Filename.concat dir_prefix path) then
-                    (test_dir path)::tests (* recurse into directories *)
-                else
-                    (test_file path)::tests (* add files *)
-            end
-        end dir [] in
-        TestList tests
-    in test_dir ""
+let testsuite = "Integration" >::: [
+	"Otter Core" >: test_dir Driver.main_loop "OtterCore"
+]
 
