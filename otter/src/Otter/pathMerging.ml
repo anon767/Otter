@@ -33,27 +33,18 @@ let at_same_program_point job1 job2 =
 	 * point, whatever that's supposed to mean. *)
 	(* Actually, if the instrLists are equal, then the stmts have to be.
 	 * Right? So the stmt equality can be moved into the assertion. *)
-	let rec jobmatch p1 p2 = 
-		match p1, p2 with
-			| [], [] -> true
-			| h1::t1, h2::t2 ->
-				h1.stmt == h2.stmt && 
-				h1.instrList == h2.instrList &&
-				jobmatch t1 t2
-			| _, _ -> false (* jobs have different numbers of processes *)
-		
-	in
-	if jobmatch job1.proc_info job2.proc_info 
-		&& state1.callContexts == state2.callContexts then begin
+	if job1.stmt == job2.stmt
+			&& job1.instrList == job2.instrList
+			&& state1.callContexts == state2.callContexts then begin
 		assert (
 			job1.exHist.bytesToVars == job2.exHist.bytesToVars &&
-			state1.global		== state2.global &&
-			state1.formals		== state2.formals &&
-			state1.locals		== state2.locals &&
-			state1.callstack	== state2.callstack &&
-			state1.va_arg		== state2.va_arg &&
-			state1.va_arg_map	== state2.va_arg_map &&
-			state1.loc_map		== state2.loc_map
+			state1.global           == state2.global &&
+			state1.formals          == state2.formals &&
+			state1.locals           == state2.locals &&
+			state1.callstack        == state2.callstack &&
+			state1.va_arg           == state2.va_arg &&
+			state1.va_arg_map       == state2.va_arg_map &&
+			state1.loc_map          == state2.loc_map
 		);
 		true
 	end else
@@ -92,51 +83,36 @@ http://caml.inria.fr/pub/ml-archives/caml-list/2009/08/323bd4f55773e4a230d481aec
 			(* TODO: do we want to have a limit on number of blocks merged? Should benchmark the burden
 			 *       on STP using the Morris encoding. *)
 			let merged_count = ref 0 in
-			let merged_memory = 
-				List.fold_left2
-					(fun v b1 b2 ->
-						let h = 
-							MemoryBlockMap.fold2 
-								begin fun block deferreds merged_memory -> match deferreds with
-									| MemoryBlockMap.Both (deferred1, deferred2) ->
-										begin match deferred1, deferred2 with
-											| deferred1, deferred2 when deferred1 == deferred2 ->
-												merged_memory
-											| Immediate bytes1, Immediate bytes2 when bytes__equal bytes1 bytes2 ->
-												merged_memory
-											| deferred1, deferred2 ->
-												merged_count := !merged_count + 1;
-												if !merged_count > 100 then raise TooDifferent;
-												let deferred = Deferred begin fun state ->
-													let state, bytes1 = MemOp.state__force state deferred1 in
-													let state, bytes2 = MemOp.state__force state deferred2 in
-													(* TODO: can bytes1 and bytes2 ever have different length? Aren't they supposed to
-													 *		have the size declared in the block? *)
-													assert (bytes__length bytes1 == bytes__length bytes2);
-													(* only job_pc_bytes, since NOT job_pc_bytes implies other_pc_bytes due to the added
-													 * path condition above *)
-													let c = IfThenElse (
-														guard__bytes job_pc_bytes, conditional__bytes bytes1, conditional__bytes bytes2
-													) in
-													(state, make_Bytes_Conditional c)
-												end in
-												MemoryBlockMap.add block deferred merged_memory
-										end
-									| MemoryBlockMap.Left deferred ->
-										merged_memory
-									| MemoryBlockMap.Right deferred ->
-										MemoryBlockMap.add block deferred merged_memory
-									end
-							b1
-							b2
-							b1
-						in
-						h::v
-					)
-					[]
-					job.state.block_to_bytes 
-					other.state.block_to_bytes 
-			in
+			let merged_memory = MemoryBlockMap.fold2 begin fun block deferreds merged_memory -> match deferreds with
+				| MemoryBlockMap.Both (deferred1, deferred2) ->
+					begin match deferred1, deferred2 with
+						| deferred1, deferred2 when deferred1 == deferred2 ->
+							merged_memory
+						| Immediate bytes1, Immediate bytes2 when bytes__equal bytes1 bytes2 ->
+							merged_memory
+						| deferred1, deferred2 ->
+							merged_count := !merged_count + 1;
+							if !merged_count > 100 then raise TooDifferent;
+							let deferred = Deferred begin fun state ->
+								let state, bytes1 = MemOp.state__force state deferred1 in
+								let state, bytes2 = MemOp.state__force state deferred2 in
+								(* TODO: can bytes1 and bytes2 ever have different length? Aren't they supposed to
+								 *       have the size declared in the block? *)
+								assert (bytes__length bytes1 == bytes__length bytes2);
+								(* only job_pc_bytes, since NOT job_pc_bytes implies other_pc_bytes due to the added
+								 * path condition above *)
+								let c = IfThenElse (
+									guard__bytes job_pc_bytes, conditional__bytes bytes1, conditional__bytes bytes2
+								) in
+								(state, make_Bytes_Conditional c)
+							end in
+							MemoryBlockMap.add block deferred merged_memory
+					end
+				| MemoryBlockMap.Left deferred ->
+					merged_memory
+				| MemoryBlockMap.Right deferred ->
+					MemoryBlockMap.add block deferred merged_memory
+			end job.state.block_to_bytes other.state.block_to_bytes job.state.block_to_bytes in
 
 			Output.printf "Merging jobs %d and %d (%s memory) \n"
 				job.jid other.jid (if !merged_count = 0 then "identical" else "differing");
@@ -168,31 +144,26 @@ http://caml.inria.fr/pub/ml-archives/caml-list/2009/08/323bd4f55773e4a230d481aec
 				};
 				mergePoints = StmtInfoSet.union job.mergePoints other.mergePoints;
 			} in
-			let truncated = Complete (
-			{
-				job = job; 
-				reason = Truncated (
-					{
-						result_state = job.state;
-						result_history = { job.exHist with
-							coveredLines = jobOnlyLines;
-							coveredBlocks = jobOnlyBlocks;
-							coveredEdges = jobOnlyEdges;
-							coveredConds = jobOnlyConds;
-						}
-					},
-					{
-						result_state = other.state;
-						result_history = { other.exHist with
-							coveredLines = otherOnlyLines;
-							coveredBlocks = otherOnlyBlocks;
-							coveredEdges = otherOnlyEdges;
-							coveredConds = otherOnlyConds;
-						}
+			let truncated = Complete (Truncated (
+				{
+					result_state = job.state;
+					result_history = { job.exHist with
+						coveredLines = jobOnlyLines;
+						coveredBlocks = jobOnlyBlocks;
+						coveredEdges = jobOnlyEdges;
+						coveredConds = jobOnlyConds;
 					}
-				);
-			}
-			) in
+				},
+				{
+					result_state = other.state;
+					result_history = { other.exHist with
+						coveredLines = otherOnlyLines;
+						coveredBlocks = otherOnlyBlocks;
+						coveredEdges = otherOnlyEdges;
+						coveredConds = otherOnlyConds;
+					}
+				}
+			)) in
 			Some (truncated, merged)
 		with TooDifferent ->
 			Output.print_endline "Memory too different to merge";

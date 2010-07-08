@@ -63,17 +63,16 @@ and memory_frame =
 	lval_block deferred VarinfoMap.t
 and state =
 	{
-		global : memory_frame list;                  (* Map global lvals to blocks *)
-		formals : memory_frame list list;            (* Map formal lvals to blocks *)
-		locals : memory_frame list list;             (* Map local lvals to blocks *)
+		global : memory_frame;                  (* Map global lvals to blocks *)
+		formals : memory_frame list;            (* Map formal lvals to blocks *)
+		locals : memory_frame list;             (* Map local lvals to blocks *)
 		extra : memory_block list VarinfoMap.t; (* Map for extra blocks, e.g., from unknown call stack recursion *)
 		malloc : memory_block list TypeMap.t VarinfoMap.t; (* Map for malloc blocks from unknown allocation *)
-		callstack : Cil.fundec list list;            (* Function call stack *)
-		block_to_bytes : bytes deferred MemoryBlockMap.t list;
+		callstack : Cil.fundec list;            (* Function call stack *)
+		block_to_bytes : bytes deferred MemoryBlockMap.t;
 		path_condition : bytes list;
 		path_condition_tracked : bool list;
-		callContexts : callingContext list list;
-
+		callContexts : callingContext list;
 		(** The last element of callstack is the function at which the
 				executor started execution. The last element of callContexts
 				is [Runtime]. Other than that, the nth element of callstack is
@@ -83,16 +82,10 @@ and state =
 		va_arg : bytes list list;			(* A stack of va_arg *)
 		va_arg_map : bytes list VargsMap.t;
 		loc_map : bytes LocMap.t;     (* Map loc to symbolic bytes *)
-        	bytes_eval_cache : bool BytesMap.t; (* Map bytes to boolean value, if exists *) 
-		proc_index : int; (* Current process context *)
+        bytes_eval_cache : bool BytesMap.t; (* Map bytes to boolean value, if exists *)
 	}
 
 
-let get_callstack state =
-	List.nth state.callstack state.proc_index
-
-let get_callContexts state =
-	List.nth state.callContexts state.proc_index
 
 (* http://www.c-faq.com/decl/strlitinit.html *)
 
@@ -180,84 +173,27 @@ module SymbolSet = Set.Make
 let signalStringOpt : string option ref = ref None
 exception SignalException
 
-type proc_job = {
-	instrList : Cil.instr list; (** [instr]s to execute before moving to the next [stmt] *)
-	stmt : Cil.stmt;            (** The next statement the job should execute *)
-	inTrackedFn : bool;         (** Is stmt in a function in the original program (as opposed to in a library or system call)? *)
-	pid : int; (** process id **)
-}
-
 type job = {
 	state : state;
 	exHist : executionHistory;
-	proc_info : proc_job list;
+	instrList : Cil.instr list; (** [instr]s to execute before moving to the next [stmt] *)
+	stmt : Cil.stmt;            (** The next statement the job should execute *)
+	inTrackedFn : bool;         (** Is stmt in a function in the original program (as opposed to in a library or system call)? *)
 	mergePoints : StmtInfoSet.t;     (** A list of potential merge points *)
 	jid : int; (** A unique identifier for the job *)
-	num_procs : int;
-	next_pid : int;
+    (* parent : job option; (** The parent that leads to this; None for the first job *) *)
 }
-
-let get_proc_info job =
-	List.nth job.proc_info job.state.proc_index
-
-
-let rec set_nth l v n = 
-	match n,l with
-		| 0,h::t -> v::t
-		| _,h::t -> h::(set_nth t v (n-1))
-		| _,[] -> failwith "index out of bounds set_nth"
-
-
-let set_proc_info job info =
-	set_nth job.proc_info info job.state.proc_index
-
-
-let next_proc job =
-	{job with
-		state = {job.state with
-			proc_index = ((job.state.proc_index + 1) mod (job.num_procs));
-		};
-	}
-
-
-let rec del_nth l n =
-	match n,l with
-		| 0,h::t -> t
-		| _,h::t -> h::(del_nth t (n-1))
-		| _,[] -> failwith "index out of bounds del_nth"
-
-
-let kill_proc job =
-	{job with
-		num_procs = job.num_procs - 1;
-		proc_info = del_nth job.proc_info job.state.proc_index;
-		state = {job.state with
-				global = del_nth job.state.global job.state.proc_index;
-				formals = del_nth job.state.formals job.state.proc_index;
-				locals = del_nth job.state.locals job.state.proc_index;
-				callstack = del_nth job.state.callstack job.state.proc_index;
-				block_to_bytes = del_nth job.state.block_to_bytes job.state.proc_index;
-				callContexts = del_nth job.state.callContexts job.state.proc_index;
-				proc_index = job.state.proc_index mod (job.num_procs - 1);
-			};
-	}
-
 
 type job_result = {
 	result_state : state;
 	result_history : executionHistory;
 }
 
-type job_completion_reason =
+type job_completion =
 	| Return of bytes option * job_result
 	| Exit of bytes option * job_result
 	| Abandoned of string * Cil.location * job_result
 	| Truncated of job_result * job_result
-
-type job_completion = {
-	job : job;
-	reason : job_completion_reason;
-}
 
 type job_state =
 	| Active of job
@@ -269,7 +205,7 @@ module JobSet = Set.Make
 		 type t = job
 		 let compare (job1:t) job2 =
 			 (* I want the job with earliest stmt.sid to be first in the ordering *)
-			 let c = Pervasives.compare (get_proc_info job1).stmt.Cil.sid (get_proc_info job2).stmt.Cil.sid in
+			 let c = Pervasives.compare job1.stmt.Cil.sid job2.stmt.Cil.sid in
 			 if c = 0 then Pervasives.compare job1.jid job2.jid
 			 else c
 	 end)

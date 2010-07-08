@@ -40,7 +40,6 @@ type function_type =
 (*    | DataStructureOp of Data_structure.ds_op*) 
 (*	| Fresh *)
 	| PrintState
-	| ForkJob
 
 
 let aspect_tbl : (pointcut, advice) Hashtbl.t = Hashtbl.create 8
@@ -83,7 +82,6 @@ let from_varinfo state varinfo args =
 		| "OR" -> BooleanOp(Cil.LOr)
 		| "NOT" -> BooleanNot
 		| "__PRINT_STATE" -> PrintState
-		| "fork" -> ForkJob
 		| f ->
 				try
 					Ordinary(Cilutility.search_function varinfo)

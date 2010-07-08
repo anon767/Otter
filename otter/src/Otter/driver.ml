@@ -21,8 +21,8 @@ let eval_with_cache state pc bytes =
    *)
 
 let stmtInfo_of_job job =
-	{ siFuncName = (List.hd (get_callstack job.state)).svar.vname;
-		siStmt = Cilutility.stmtAtEndOfBlock (get_proc_info job).stmt; }
+	{ siFuncName = (List.hd job.state.callstack).svar.vname;
+		siStmt = Cilutility.stmtAtEndOfBlock job.stmt; }
 
 (** Return a new exHist with
 		- block coverage updated by the addition of the statement at the
@@ -43,7 +43,7 @@ let addStmtCoverage job whichBranch nextStmtOpt =
 	{ job.exHist with
 			coveredLines =
 				if run_args.arg_line_coverage
-				then match (get_proc_info job).stmt.skind with
+				then match job.stmt.skind with
 						If(_,_,_,loc)
 					| Cil.Return(_,loc)
 					| Goto(_,loc)
@@ -59,28 +59,26 @@ let addStmtCoverage job whichBranch nextStmtOpt =
 				if run_args.arg_edge_coverage
 				then (
 					match nextStmtOpt with
-							Some nextStmt when (get_proc_info job).stmt
-								 == Cilutility.stmtAtEndOfBlock (get_proc_info job).stmt ->
-									let funcName = (List.hd (get_callstack job.state)).svar.vname in
+							Some nextStmt when job.stmt == Cilutility.stmtAtEndOfBlock job.stmt ->
+									let funcName = (List.hd job.state.callstack).svar.vname in
 									EdgeSet.add
-										({ siFuncName = funcName; siStmt = (get_proc_info job).stmt; },
+										({ siFuncName = funcName; siStmt = job.stmt; },
 										 { siFuncName = funcName;
 											 siStmt = Cilutility.stmtAtEndOfBlock nextStmt; })
 										job.exHist.coveredEdges
 						| _ -> job.exHist.coveredEdges
 				) else EdgeSet.empty;
 			coveredConds =
-								if run_args.arg_cond_coverage
-								then (
-										match (get_proc_info job).stmt.skind with
-												If _ -> CondSet.add (stmtInfo_of_job job,whichBranch) job.exHist.coveredConds
-										| _ -> job.exHist.coveredConds
-								) else CondSet.empty;
-			executionPath =
-				if run_args.arg_path_coverage && (get_proc_info job).stmt == Cilutility.stmtAtEndOfBlock (get_proc_info job).stmt
+				if run_args.arg_cond_coverage
 				then (
-					{ siFuncName = (List.hd (get_callstack job.state)).svar.vname; 
-						siStmt = (get_proc_info job).stmt; } :: job.exHist.executionPath
+						match job.stmt.skind with
+								If _ -> CondSet.add (stmtInfo_of_job job,whichBranch) job.exHist.coveredConds
+						| _ -> job.exHist.coveredConds
+				) else CondSet.empty;
+			executionPath =
+				if run_args.arg_path_coverage && job.stmt == Cilutility.stmtAtEndOfBlock job.stmt
+				then (
+					{ siFuncName = (List.hd job.state.callstack).svar.vname; siStmt = job.stmt; } :: job.exHist.executionPath
 				) else (
 					job.exHist.executionPath
 				)
@@ -98,7 +96,7 @@ let exec_builtin state lvalopt exps builtin =
 				state
 			| Some cil_lval ->
 				let state, lval = Eval.lval state cil_lval in
-				MemOp.state__assign state lval bytes state.proc_index
+				MemOp.state__assign state lval bytes
 		end
 
 let exec_given state lvalopt exps =
@@ -120,7 +118,7 @@ let exec_given state lvalopt exps =
 						else bytes__symbolic (bitsSizeOf intType / 8)
 				end
 			in
-			MemOp.state__assign state lval truthvalue state.proc_index
+			MemOp.state__assign state lval truthvalue
 	end
 
 let exec_truth_value state lvalopt exps =
@@ -140,7 +138,7 @@ let exec_truth_value state lvalopt exps =
 						else 0
 				end
 			in
-			MemOp.state__assign state lval truthvalue state.proc_index
+			MemOp.state__assign state lval truthvalue
 	end
 
 let exec_symbolic state lvalopt exps exHist nextExHist =
@@ -171,7 +169,7 @@ let exec_symbolic state lvalopt exps exHist nextExHist =
 			 * in the middle 
 			 *)
 			nextExHist := { exHist with bytesToVars = (symbBytes,varinf) :: exHist.bytesToVars; };
-			MemOp.state__assign state lval symbBytes state.proc_index
+			MemOp.state__assign state lval symbBytes
 		| _ ->
 			(* Any symbolic value not directly given to a variable by a call to
 				 __SYMBOLIC(&<var>) does not get tracked. *)
@@ -187,7 +185,7 @@ let exec_symbolic state lvalopt exps exHist nextExHist =
 							(state, if newsize <= 0 then size else newsize)
 						| _ -> failwith "__SYMBOLIC takes at most one argument"
 					in
-					MemOp.state__assign state lval (bytes__symbolic ssize) state.proc_index
+					MemOp.state__assign state lval (bytes__symbolic ssize)
 			end
 	end
 
@@ -196,14 +194,14 @@ let exec_symbolic_state state =
 		begin fun block _ state ->
 			(* TODO: what about deferred bytes? *)
 			(* TODO: handle pointers with an alias analysis *)
-			let state, bytes = MemOp.state__get_bytes_from_block state block state.proc_index in 
+			let state, bytes = MemOp.state__get_bytes_from_block state block in
 				match bytes with
 					| Bytes_FunPtr(_) ->
 						state
 					| _ ->
-						MemOp.state__add_block state block (bytes__symbolic (bytes__length bytes)) state.proc_index
+						MemOp.state__add_block state block (bytes__symbolic (bytes__length bytes))
 		end 
-		(List.nth state.block_to_bytes state.proc_index)
+		state.block_to_bytes
 		state
 
 let exec_symbolic_static state lvalopt exps loc =
@@ -225,7 +223,7 @@ let exec_symbolic_static state lvalopt exps loc =
 				else MemOp.loc_table__add state (loc,key) (bytes__symbolic size)
 			in
 			let newbytes = MemOp.loc_table__get state (loc,key) in
-			MemOp.state__assign state lval newbytes state.proc_index
+			MemOp.state__assign state lval newbytes
 	end
 
 let exec_not_found state lvalopt =
@@ -234,7 +232,7 @@ let exec_not_found state lvalopt =
 			state
 		| Some cil_lval ->
 			let state, (_, size as lval) = Eval.lval state cil_lval in
-			MemOp.state__assign state lval (bytes__symbolic size) state.proc_index
+			MemOp.state__assign state lval (bytes__symbolic size)
 	end
 
 let exec_exit state exps =
@@ -263,7 +261,7 @@ let exec_evaluate_string state exps =
 					try bytes_to_int_auto size_bytes with
 					  Failure(s) -> Output.print_endline s; 32
 				in
-				let state, bytes = MemOp.state__deref state (conditional__lval_block (block, offset), size) state.proc_index in
+				let state, bytes = MemOp.state__deref state (conditional__lval_block (block, offset), size) in
 				let str = 
 					match bytes with
 						| Bytes_ByteArray(bytearray) -> To_string.bytestring bytearray
@@ -312,7 +310,7 @@ let exec_if_then_else state lvalopt exps =
 				guard__bytes bytes0, conditional__bytes bytes1, conditional__bytes bytes2
 			) in
 			let rv = make_Bytes_Conditional c in
-			MemOp.state__assign state lval rv state.proc_index
+			MemOp.state__assign state lval rv
 	end
 
 let exec_boolean_op state lvalopt exps op_exps binop =
@@ -321,7 +319,7 @@ let exec_boolean_op state lvalopt exps op_exps binop =
 		| Some cil_lval ->
 			let state, lval = Eval.lval state cil_lval in
 			let state, rv = op_exps state exps binop in
-			MemOp.state__assign state lval rv state.proc_index
+			MemOp.state__assign state lval rv
 	end
 
 let exec_boolean_not state lvalopt exps =
@@ -330,7 +328,7 @@ let exec_boolean_not state lvalopt exps =
 		| Some cil_lval ->
 			let state, lval = Eval.lval state cil_lval in
 			let state, rv = Eval.rval state (UnOp(Cil.LNot, List.hd exps, Cil.voidType)) in
-			MemOp.state__assign state lval rv state.proc_index
+			MemOp.state__assign state lval rv
 	end
 
 let exec_aspect state instr exps advice =
@@ -419,7 +417,7 @@ let exec_print_state state =
 		else
 			match lval_block with
 				| Immediate (Unconditional (block, _)) ->
-					begin match (MemoryBlockMap.find block (List.nth state.block_to_bytes state.proc_index)) with
+					begin match (MemoryBlockMap.find block state.block_to_bytes) with
 						| Immediate bytes -> printVarBytes var bytes
 						| Deferred _ -> printStringString var.vname "(deferred)"
 					end
@@ -434,15 +432,15 @@ let exec_print_state state =
 	
 	Output.print_endline "#BEGIN PRINTSTATE";
 	Output.print_endline "#Globals:";
-	VarinfoMap.iter printVar (List.nth state.global state.proc_index);
+	VarinfoMap.iter printVar state.global;
 	Output.print_endline "#Locals:";
-	VarinfoMap.iter printVar (List.hd (List.nth state.locals state.proc_index));
+	VarinfoMap.iter printVar (List.hd state.locals);
 	Output.print_endline "#Formals:";
-	VarinfoMap.iter printVar (List.hd (List.nth state.formals state.proc_index));
+	VarinfoMap.iter printVar (List.hd state.formals);
 	(* explore only one level of memory *)
 	bosmap := BOSMap.mapi begin fun (block,off,size) des -> match des with
 		| Some _ -> des
-		| None -> Some (snd(MemOp.state__deref state (conditional__lval_block (block, off), size) state.proc_index))
+		| None -> Some (snd(MemOp.state__deref state (conditional__lval_block (block, off), size)))
 	end (!bosmap);
 	Output.print_endline "#Memory: (one level)";
 	BOSMap.iter (fun (block,off,size) des -> 
@@ -505,7 +503,7 @@ let exec_assert_equal_state state exps =
 	end
 
 let exec_func state func job instr lvalopt exps loc op_exps = 
-	let exHist,stmt = job.exHist,(get_proc_info job).stmt in
+	let exHist,stmt = job.exHist,job.stmt in
 	begin match func with
 		| Function.Ordinary (fundec) ->					
 					(* TODO: do a casting if necessary: look at fundec.sformals, varinfo.vtype *)
@@ -543,7 +541,7 @@ let exec_func state func job instr lvalopt exps loc op_exps =
 				| [h] -> Source (lvalopt,stmt,instr,h)
 				| _   -> assert false
 			in
-			let state = MemOp.state__start_fcall state callContext fundec argvs state.proc_index in
+			let state = MemOp.state__start_fcall state callContext fundec argvs in
 			(* If fundec is the function to be examined *)
 			begin
 				let examfn = Executeargs.run_args.arg_examfn in
@@ -557,87 +555,8 @@ let exec_func state func job instr lvalopt exps loc op_exps =
 				 not we're in a tracked function. *)
 			Active { job with
 						state = state;
-						proc_info = set_proc_info job {(get_proc_info job) with
-								stmt = List.hd fundec.sallstmts; 
-								inTrackedFn = StringSet.mem fundec.svar.vname run_args.arg_fns; 
-						};
-				};
-
-		| Function.ForkJob ->
-
-			let job =
-				{job with
-					num_procs = job.num_procs + 1;
-					proc_info = {(List.nth job.proc_info job.state.proc_index) with 
-						pid = job.next_pid;
-					}::job.proc_info;
-				}
-			in
-			let state = 
-				{state with
-					global = (List.nth job.state.global job.state.proc_index)::job.state.global;
-					formals = (List.nth job.state.formals job.state.proc_index)::job.state.formals;
-					locals = (List.nth job.state.locals job.state.proc_index)::job.state.locals;
-					callstack = (List.nth job.state.callstack job.state.proc_index)::job.state.callstack;
-					block_to_bytes = (List.nth job.state.block_to_bytes job.state.proc_index)::job.state.block_to_bytes;
-					callContexts = (List.nth job.state.callContexts job.state.proc_index)::job.state.callContexts;
-					proc_index = state.proc_index + 1;
-				}
-			in
-			let old_index = state.proc_index in
-			let new_index = 0 in
-
-			let state =
-				 match lvalopt with
-					| None ->
-						state
-					| Some cil_lval ->
-						let state, lval = Eval.lval {state with proc_index = new_index} cil_lval in
-						let state = MemOp.state__assign state lval (Bytes.lazy_int_to_bytes 0) new_index in
-						let state, lval = Eval.lval {state with proc_index = old_index} cil_lval in
-						let state = MemOp.state__assign state lval (Bytes.lazy_int_to_bytes job.next_pid) old_index in
-						state
-			in
-
-			let nextStmt =
-			(* [stmt] is an [Instr] which doesn't end with a call to a
-				 [noreturn] function, so it has exactly one successor. *)
-				match stmt.succs with
-					| [h] -> h
-					| _ -> assert false
-			in
-
-			(* We didn't add the outgoing edge in exec_stmt because the
-				 call might have never returned. Since there isn't an
-				 explicit return (because we handle the call internally), we
-				 have to add the edge now. *)
-			let nextExHist =
-				if (get_proc_info job).inTrackedFn && run_args.arg_edge_coverage then
-					{ exHist with coveredEdges =
-						EdgeSet.add (stmtInfo_of_job job,
-								{ siFuncName = (List.hd (get_callstack job.state)).svar.vname;
-								  siStmt = Cilutility.stmtAtEndOfBlock nextStmt; })
-						exHist.coveredEdges; }
-				else
-					exHist
-			in
-		
-			let proc_info = set_nth job.proc_info {(List.nth job.proc_info old_index) with stmt = nextStmt;} old_index in
-			let proc_info = {(List.hd proc_info) with stmt = nextStmt;}::(List.tl proc_info) in
-
-			(* Update state, the stmt to execute, and exHist (which may
-				 have gotten an extra bytesToVar mapping added to it). *)
-			let job = { job with 
-				state = state; 
-				proc_info = proc_info;
-				exHist = nextExHist;
-				next_pid = job.next_pid + 1;
-			}
-			in
-			Output.set_mode Output.MSG_MUSTPRINT;
-			Output.print_endline ("fork() :: Parent pid:" ^ (string_of_int (get_proc_info job).pid) ^ " Child pid:" 
-				^ (string_of_int (List.hd job.proc_info).pid));
-			Active job
+						stmt = List.hd fundec.sallstmts;
+						inTrackedFn = StringSet.mem fundec.svar.vname run_args.arg_fns; }
 		| _ ->
 			try (
 				let nextExHist = ref exHist in
@@ -690,37 +609,27 @@ let exec_func state func job instr lvalopt exps loc op_exps =
 					 call might have never returned. Since there isn't an
 					 explicit return (because we handle the call internally), we
 					 have to add the edge now. *)
-				if (get_proc_info job).inTrackedFn && run_args.arg_edge_coverage then
+				if job.inTrackedFn && run_args.arg_edge_coverage then
 					nextExHist := { !nextExHist with coveredEdges =
 							EdgeSet.add (stmtInfo_of_job job,
-									{ siFuncName = (List.hd (get_callstack job.state)).svar.vname;
-									  siStmt = Cilutility.stmtAtEndOfBlock nextStmt; })
+													 { siFuncName = (List.hd job.state.callstack).svar.vname;
+														 siStmt = Cilutility.stmtAtEndOfBlock nextStmt; })
 							!nextExHist.coveredEdges; };
 
 				(* Update state, the stmt to execute, and exHist (which may
 					 have gotten an extra bytesToVar mapping added to it). *)
-				Active { job with 
-					state = state_end; 
-					proc_info = set_proc_info job {(get_proc_info job) with 
-						stmt = nextStmt; };
-					exHist = !nextExHist; }
-	
+				Active { job with state = state_end; stmt = nextStmt; exHist = !nextExHist; }
 			) with Function.Notification_Exit exit_code ->
 				(* If it was [Exit], there is no job to return *)
 				Output.set_mode Output.MSG_MUSTPRINT;
 				Output.print_endline ("exit() called with code "^(
 					match exit_code with None-> "(NONE)" | Some(code) -> To_string.bytes code));
 
-				Complete (
-				{
-					job = job;
-					reason = Types.Exit (exit_code, { result_state = state; result_history = exHist; });
-				})
-
+				Complete (Types.Exit (exit_code, { result_state = state; result_history = exHist; }))
 	end (* outer [match func] *)
 
 let exec_instr_call job instr lvalopt fexp exps loc =
-	let state,exHist,stmt = job.state,job.exHist,(get_proc_info job).stmt in
+	let state,exHist,stmt = job.state,job.exHist,job.stmt in
 
 	let op_exps state exps binop =
 		let rec impl exps =
@@ -741,14 +650,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 					with Failure msg ->
 						if run_args.arg_failfast then failwith msg;
 						let result = { result_state = job.state; result_history = job.exHist } in
-						let completed = Complete (
-							{
-								job = job;
-								reason = Types.Abandoned (msg, !Output.cur_loc, result);
-							}
-						) 
-						in
-						completed
+						Complete (Types.Abandoned (msg, !Output.cur_loc, result))
 				in
 				job_state::(process_func_list t)
 	in
@@ -760,27 +662,20 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 
 
 let exec_instr job =
-	assert ((get_proc_info job).instrList <> []);
+	assert (job.instrList <> []);
 	let printInstr instr =
 		Output.set_mode Output.MSG_STMT;
 		Output.set_cur_loc (Cil.get_instrLoc instr);
-		Output.set_pid (List.nth job.proc_info job.state.proc_index).pid;
 		Output.print_endline (To_string.instr instr)
 	in
 
-	let instr,tail = match ((get_proc_info job).instrList) with 
-		| i::tl -> i,tl 
-		| _ -> assert false 
-	in
-	let job = { job with 
-			proc_info = set_proc_info job {(get_proc_info job) with 
-				instrList = tail; };
-			}; in
+	let instr,tail = match job.instrList with i::tl -> i,tl | _ -> assert false in
+	let job = { job with instrList = tail; } in
 
 	(* Within instructions, we have to update line coverage (but not
 		 statement or edge coverage). *)
 	let job =
-		if (get_proc_info job).inTrackedFn && run_args.arg_line_coverage
+		if job.inTrackedFn && run_args.arg_line_coverage
 		then { job with exHist = addInstrCoverage job instr; }
 		else job
 	in
@@ -788,19 +683,14 @@ let exec_instr job =
 	(* Since we've used the makeCFGFeature, an [Instr] is a series of
 	   [Set]s and [Asm]s, possibly terminated with a [Call]. *)
 	match instr with
-	 | Set(cil_lval, exp, loc) ->
-		 printInstr instr;
-		 let state = job.state in
-		 let state, lval = Eval.lval state cil_lval in
-		 let state, rv = Eval.rval state exp in
-		 let state = MemOp.state__assign state lval rv state.proc_index in
-		 let nextStmt = if tail = [] then List.hd (get_proc_info job).stmt.succs else (get_proc_info job).stmt in
-		   Active { job with 
-			state = state; 
-			proc_info = set_proc_info job {(get_proc_info job) with
-				stmt = nextStmt;
-			};
-			}
+		 | Set(cil_lval, exp, loc) ->
+			printInstr instr;
+			let state = job.state in
+			let state, lval = Eval.lval state cil_lval in
+			let state, rv = Eval.rval state exp in
+			let state = MemOp.state__assign state lval rv in
+			let nextStmt = if tail = [] then List.hd job.stmt.succs else job.stmt in
+			Active { job with state = state; stmt = nextStmt }
 		| Call(lvalopt, fexp, exps, loc) ->
 			assert (tail = []);
 			printInstr instr;
@@ -810,34 +700,26 @@ let exec_instr job =
 			Output.print_endline "Warning: ASM unsupported";
 			printInstr instr;
 			Active (if tail = [] (* Update job.stmt if this instr ends this stmt *)
-							then { job with 
-								proc_info = set_proc_info job {(get_proc_info job) with
-									stmt = List.hd (get_proc_info job).stmt.succs; 
-								};
-								  }
+							then { job with stmt = List.hd job.stmt.succs }
 							else job)
 
 let exec_stmt job =
-	assert ((get_proc_info job).instrList = []);
-	let state,stmt = job.state,(get_proc_info job).stmt in
+	assert (job.instrList = []);
+	let state,stmt = job.state,job.stmt in
 
 	let nextExHist ?(whichBranch=false) nextStmtOpt =
-		if (get_proc_info job).inTrackedFn
+		if job.inTrackedFn
 		then addStmtCoverage job whichBranch nextStmtOpt
 		else job.exHist
 	in
 
 	Output.set_mode Output.MSG_STMT;
 	Output.set_cur_loc (Cil.get_stmtLoc stmt.skind);
-	Output.set_pid (List.nth job.proc_info job.state.proc_index).pid;
 	Output.print_endline (To_string.stmt stmt);
 	match stmt.skind with
 		| Instr [] ->
 				let nextStmt = match stmt.succs with [x] -> x | _ -> assert false in
-				Active { job with 
-						proc_info = set_proc_info job {(get_proc_info job) with
-							stmt = nextStmt; };
-						exHist = nextExHist (Some nextStmt); }
+				Active { job with stmt = nextStmt; exHist = nextExHist (Some nextStmt); }
 		| Instr (instrs) ->
 			(* We can certainly update block coverage here, but not
 				 necessarily edge coverage. If instrs contains a call, we
@@ -851,13 +733,10 @@ let exec_stmt job =
 					then None
 					else Some (match stmt.succs with [x] -> x | _ -> assert false)
 				in
-			Active { job with 
-					proc_info = set_proc_info job {(get_proc_info job) with
-						instrList = instrs; };
-					exHist = nextExHist nextStmtOpt; }
+			Active { job with instrList = instrs; exHist = nextExHist nextStmtOpt; }
 		| Cil.Return (expopt, loc) ->
 				begin
-					match (get_callContexts state) with
+					match state.callContexts with
 						| Runtime::_ -> (* completed symbolic execution (e.g., return from main) *)
 								Output.set_mode Output.MSG_MUSTPRINT;
 								Output.print_endline "Program execution finished";
@@ -878,38 +757,31 @@ let exec_stmt job =
 										let state, retval = Eval.rval state exp in
 										(state, Some retval)
 								in
-								Complete (
-								{
-									job = job;
-									reason = Types.Return
-										(retval, { result_state = state; result_history = nextExHist None; })
-								}) 
+								Complete (Types.Return
+									(retval, { result_state = state; result_history = nextExHist None; }))
 						| (Source (destOpt,callStmt,_,nextStmt))::_ ->
 								let state2 =
 									match expopt, destOpt with
 										| Some exp, Some dest ->
 												(* evaluate the return expression in the callee frame *)
 												let state, rv = Eval.rval state exp in
-												let state = MemOp.state__end_fcall state state.proc_index in
+												let state = MemOp.state__end_fcall state in
 												(* evaluate the assignment in the caller frame *)
 												let state, lval = Eval.lval state dest in
-												MemOp.state__assign state lval rv state.proc_index
+												MemOp.state__assign state lval rv
 										| _, _ ->
 												(* If we are not returning a value, or if we
 													 ignore the result, just end the call *)
-												MemOp.state__end_fcall state state.proc_index
+												MemOp.state__end_fcall state
 								in
-								let callingFuncName = (List.hd (get_callstack state2)).svar.vname in
+								let callingFuncName = (List.hd state2.callstack).svar.vname in
 								(* Update the state, stmt, exHist, and whether or not
 									 we're in a tracked function *)
 								let job' = { job with
-										state = state2;
-										proc_info = set_proc_info job {(get_proc_info job) with
-											stmt = nextStmt;
-											inTrackedFn =
-											StringSet.mem callingFuncName run_args.arg_fns; };
-										  }
-								in
+									state = state2;
+									stmt = nextStmt;
+									inTrackedFn = StringSet.mem callingFuncName run_args.arg_fns;
+								} in
 								(* When a function returns, we have to record the
 									 coverage within the returning function and also the
 									 *edge* in the calling function from the call
@@ -923,7 +795,7 @@ let exec_stmt job =
 											 future'; so we have to check whether we should
 											 in fact record coverage. (We have to use job'
 											 (not job) here and in a few lines.) *)
-										if (get_proc_info job').inTrackedFn && run_args.arg_edge_coverage
+										if job'.inTrackedFn && run_args.arg_edge_coverage
 										then { exHist with coveredEdges =
 												EdgeSet.add
 													({ siFuncName = callingFuncName; siStmt = callStmt; }, (* A call ends a block, so use callStmt directly *)
@@ -939,11 +811,7 @@ let exec_stmt job =
 								assert false
 				end
 		| Goto (stmtref, loc) ->
-				Active { job with 
-					proc_info = set_proc_info job {(get_proc_info job) with
-						stmt = !stmtref;
-					};
-					exHist = nextExHist (Some !stmtref); }
+				Active { job with stmt = !stmtref; exHist = nextExHist (Some !stmtref); }
 		| If (exp, block1, block2, loc) ->
 				begin
 				(* try a branch *)
@@ -983,24 +851,14 @@ let exec_stmt job =
 						begin
 							Output.print_endline "True";
 							let nextState,nextStmt = try_branch state None block1 in
-							let job' = { job with 
-								state = nextState; 
-								proc_info = set_proc_info job {(get_proc_info job) with
-									stmt = nextStmt; 
-								};
-							} in
+							let job' = { job with state = nextState; stmt = nextStmt; } in
 							Active { job' with exHist = nextExHist (Some nextStmt) ~whichBranch:true; }
 						end
 					else if truth == False then
 						begin
 							Output.print_endline "False";
 							let nextState,nextStmt = try_branch state None block2 in
-							let job' = { job with 
-								state = nextState; 
-								proc_info = set_proc_info job {(get_proc_info job) with
-									stmt = nextStmt; 
-								};
-							} in
+							let job' = { job with state = nextState; stmt = nextStmt; } in
 							Active { job' with exHist = nextExHist (Some nextStmt) ~whichBranch:false; }
 						end
 					else
@@ -1017,12 +875,12 @@ let exec_stmt job =
 											List.fold_left (fun set s -> StmtInfoSet.add s set) job.mergePoints
 												begin match Hashtbl.find_all ifToJoinPointsHash (stmtInfo_of_job job) with
 													| [] ->
-															begin match (get_callContexts state) with
+															begin match state.callContexts with
 																| (Source (_,_,_,nextStmt))::_ ->
 																		Output.print_endline "Will merge upon function return";
 																		(* nextStmt is in the calling function, not the current function,
 																			 so we call (nth _ 1). *)
-																		[{ siFuncName = (List.nth (get_callstack state) 1).svar.vname ; siStmt = nextStmt }]
+																		[{ siFuncName = (List.nth state.callstack 1).svar.vname ; siStmt = nextStmt }]
 																| _ ->
 																		[]
 															end
@@ -1037,27 +895,25 @@ let exec_stmt job =
 								 that job inherit the old jid. Give the true job a new
 								 jid. *)
 							let trueJob = { job' with
-										state = nextStateT;
-										proc_info = set_proc_info job {(get_proc_info job) with
-											stmt = nextStmtT;
-										};
-										exHist = nextExHist (Some nextStmtT) ~whichBranch:true;
-										jid = Utility.next_id Output.jidCounter; 
-							} in
+																state = nextStateT;
+																stmt = nextStmtT;
+																exHist = nextExHist (Some nextStmtT) ~whichBranch:true;
+                                                                (*parent = Some job';
+                                                                 *)
+														 		jid = Utility.next_id Output.jidCounter; } in
 							let falseJob = { job' with
-										state = nextStateF;
-										proc_info = set_proc_info job {(get_proc_info job) with
-											stmt = nextStmtF;
-										};
-										exHist =  nextExHist (Some nextStmtF) ~whichBranch:false; 
-							} in
+																 state = nextStateF;
+																 stmt = nextStmtF;
+                                                                 (* parent = Some job';
+                                                                  *)
+																 exHist =  nextExHist (Some nextStmtF) ~whichBranch:false; } in
 							Output.set_mode Output.MSG_MUSTPRINT;
 							Output.printf "Branching on %s at %s. %s\nJob %d is the true branch and job %d is the false branch.\n\n"
 								 (To_string.exp exp)
 								 (To_string.location loc)
 								 (if Executeargs.print_args.arg_print_callstack then
 									 "Call stack:\n"^
-									(To_string.callstack (get_callContexts state))
+									(To_string.callstack state.callContexts)
 								 else ""
 								 )
 								 trueJob.jid falseJob.jid;
@@ -1071,12 +927,7 @@ let exec_stmt job =
 					 This is not true for [Block]s, but it *does* seem to be
 					 true for [Block]s which are not under [If]s, so we're okay. *)
 				let nextStmt = List.hd block.bstmts in
-				Active { job with 
-						proc_info = set_proc_info job {(get_proc_info job) with
-							stmt = nextStmt; 
-						};
-						exHist = nextExHist (Some nextStmt); 
-					}
+				Active { job with stmt = nextStmt; exHist = nextExHist (Some nextStmt); }
 		| _ -> failwith "Not implemented yet"
 
 
@@ -1097,7 +948,6 @@ let setRunningJob job =
 		Output.print_endline "***** Changing running job *****"
 		);
 		Output.runningJobId := job.jid;
-		Output.set_pid (get_proc_info job).pid;
 	);
 	Output.runningJobDepth := (List.length job.state.path_condition)
 
@@ -1151,7 +1001,7 @@ let pass_targets targets job fexp exps =
 
 			  let print_failed_assertion isUnknown =
 				let _ = Output.set_mode Output.MSG_MUSTPRINT in
-				let caller = List.hd (get_callstack state) in
+				let caller = List.hd state.callstack in
 				let mustmay = (if isUnknown then "may" else "must") in
 				let log = Executedebug.log in
 				let _ = Output.banner_printf 1  "Failing condition %s be hit (see error log).\n%!" mustmay in
@@ -1234,21 +1084,21 @@ let step_job job =
 	setRunningJob job;
 	try
 		(* let _ = Output.printf "Step into Job %d\n" job.jid in *)
-		match (get_proc_info job).instrList with
+		match job.instrList with
 			| [] -> exec_stmt job
 			| _ -> exec_instr job
 	with
 		| Failure msg ->
 			if run_args.arg_failfast then failwith msg;
 			let result = { result_state = job.state; result_history = job.exHist } in
-			Complete { job = job; reason = Types.Abandoned (msg, !Output.cur_loc, result); }
+			Complete (Types.Abandoned (msg, !Output.cur_loc, result))
 
 
 
 let terminate_job_at_targets targets job =
 	(* if job meets one of the targets, do checking *)
 	(* if fails, return Some (Complete Abandoned) *)
-	match (get_proc_info job).instrList with
+	match job.instrList with
 		| Call(_,fexp,exps,_)::_ ->
 			let truth, failing_condition = pass_targets targets job fexp exps in
 			if truth then
@@ -1258,7 +1108,7 @@ let terminate_job_at_targets targets job =
 				if run_args.arg_failfast then failwith msg;
 				let state = { job.state with path_condition = failing_condition::job.state.path_condition } in
 				let result = { result_state = state; result_history = job.exHist } in
-				Some (Complete { job = job; reason = Types.Abandoned (msg, !Output.cur_loc, result); })
+				Some (Complete (Types.Abandoned (msg, !Output.cur_loc, result)))
 			end
 		| _ ->
 			None
@@ -1279,16 +1129,16 @@ let step_job_with_targets targets job =
 
 let at_merge_point job =
 	StmtInfoSet.mem
-		{ siFuncName=(List.hd (get_callstack job.state)).Cil.svar.Cil.vname;
-		  siStmt=(get_proc_info job).stmt; }
+		{ siFuncName=(List.hd job.state.callstack).Cil.svar.Cil.vname;
+		  siStmt=job.stmt; }
 		job.mergePoints
 
 
 
 (** The main loop
   *)
-let main_loop ?targets:(targets=[]) job : job_completion_reason list =
-  let rec main_loop (completed: job_completion_reason list) (jobs: Jobs.t) : job_completion_reason list =
+let main_loop ?targets:(targets=[]) job : job_completion list =
+  let rec main_loop (completed: job_completion list) (jobs: Jobs.t) : job_completion list =
 	match !signalStringOpt with
 	  | Some s ->
 		  (* if we got a signal, stop and return the completed results *)
@@ -1344,7 +1194,7 @@ let main_loop ?targets:(targets=[]) job : job_completion_reason list =
 		   Output.printf "Error \"%s\" occurs at %s\n%sAbandoning path\n"
 			 msg (To_string.location loc)
 			 (if Executeargs.print_args.arg_print_callstack then
-				"Call stack:\n"^(To_string.callstack (get_callContexts state))
+				"Call stack:\n"^(To_string.callstack state.callContexts)
 			  else
 				"");
 	   | _ ->
@@ -1353,26 +1203,23 @@ let main_loop ?targets:(targets=[]) job : job_completion_reason list =
 
 	and process_result completed jobs = function
 		| Active job ->
-			Jobs.add_runnable jobs (next_proc job);
+			Jobs.add_runnable jobs job;
 			(completed, jobs)
 
 		| Big_Fork states ->
 			List.fold_left (fun (completed, jobs) state -> process_result completed jobs state) (completed, jobs) states
 
 		| Complete completion ->
-			output_completion_info completion.reason;
-			if completion.job.num_procs > 1 then begin
-				Jobs.add_runnable jobs (kill_proc completion.job);
-				(completed, jobs)
-			end else
-				((completion.reason::completed), jobs)
+			output_completion_info completion;
+			((completion::completed), jobs)
 	in
   let jobs = Jobs.create targets in
   let _ = Jobs.add_runnable jobs job in
 	main_loop [] jobs
 
 
-let callchain_bacward_se callergraph entryfn assertfn job_init : job_completion_reason list list =
+
+let callchain_bacward_se callergraph entryfn assertfn job_init : job_completion list list =
   let job_init fn ts =
 	let _ = Output.banner_printf 1 "Start forward SE on function %s with target(s)\n%s\n%!"
 			(fn.svar.vname) (let s=(String.concat "," (List.map (fun t -> t.func.svar.vname) ts)) in if s="" then "(none)" else s)
@@ -1394,7 +1241,7 @@ let callchain_bacward_se callergraph entryfn assertfn job_init : job_completion_
   (* The implementation of main loop *)
   let rec callchain_bacward_main_loop job targets =
 	(* Assume we start at f *)
-	let f = List.hd (get_callstack job.state) in
+	let f = List.hd job.state.callstack in
 	(* Run forward SE based on the targets *)
 	let result = main_loop ~targets:targets job in 
 	(* result is a (may not be completed) list of finished jobs.

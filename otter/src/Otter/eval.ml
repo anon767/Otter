@@ -179,7 +179,7 @@ rval state exp : state * bytes =
 
 			| Lval (cil_lval) ->
 					let state, lvals = lval state cil_lval in
-					MemOp.state__deref state lvals state.proc_index
+					MemOp.state__deref state lvals
 
 			|	SizeOf (typ) ->
 					let exp2 = Cil.sizeOf typ in
@@ -310,7 +310,7 @@ lval ?(justGetAddr=false) state (lhost, offset_exp as cil_lval) =
 	let state, lvals, lhost_type =
 	match lhost with
 		| Var(varinfo) ->
-			let state, lvals = MemOp.state__varinfo_to_lval_block state varinfo state.proc_index in
+			let state, lvals = MemOp.state__varinfo_to_lval_block state varinfo in
 			(state, lvals, varinfo.vtype)
 		| Mem(exp) ->
 			let state, rv = rval state exp in
@@ -357,7 +357,7 @@ deref state bytes =
              find_match state.path_condition
 
 		| Bytes_Address(block, offset) ->
-			if MemOp.state__has_block state block state.proc_index then 
+			if MemOp.state__has_block state block then
            conditional__lval_block (block, offset)
 			else 
            failwith "Dereference into an expired stack frame"
