@@ -8,6 +8,7 @@ let _ =
     (* setup and run CilQual *)
     Cilly.run [
         Otter.Executemain.feature;
+        Otter.Multiprocess.feature;
         Marshal_feature.feature;
         Otter.FindFns.feature;
         Otter.TraceLines.feature;

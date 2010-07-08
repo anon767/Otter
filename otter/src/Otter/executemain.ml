@@ -355,6 +355,14 @@ let job_for_file file cmdline =
 	job_for_function state main_func main_args
 
 
+let find_entryfn file =
+	let fname = Executeargs.run_args.arg_entryfn in
+	try
+		Function.from_name_in_file fname file
+	with Not_found ->
+		failwith (Printf.sprintf "Entry function %s not found" fname)
+
+
 let doExecute (f: file) =
 
 	Random.init 226; (* Random is used in Bytes *)
@@ -381,12 +389,7 @@ let doExecute (f: file) =
 	(* prepare the file for symbolic execution *)
 	prepare_file f;
 
-    (* Entry function (default: main) *)
-    let entryfn =
-      let fname = Executeargs.run_args.arg_entryfn in
-        try Function.from_name_in_file fname f 
-        with Not_found -> failwith (Printf.sprintf "Entry function %s not found" fname )
-    in
+    let entryfn = find_entryfn f in
 
     let results = 
       if Executeargs.run_args.arg_callchain_backward then
