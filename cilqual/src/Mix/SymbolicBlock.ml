@@ -19,7 +19,7 @@ module Interpreter (S : Config.BlockConfig) = struct
 
 
     let call dispatch stack file job k =
-        let fn = List.hd (Types.get_callstack job.Types.state) in
+        let fn = List.hd job.Types.state.Types.callstack in
         Format.eprintf "Evaluating symbolic block %s...@." fn.Cil.svar.Cil.vname;
 
         let rec symbolic_loop stack completed job job_queue =
@@ -32,7 +32,7 @@ module Interpreter (S : Config.BlockConfig) = struct
                     k stack completed
             in
 
-            if S.should_enter_block (List.hd (Types.get_callstack job.Types.state)).Cil.svar.Cil.vattr then begin
+            if S.should_enter_block (List.hd job.Types.state.Types.callstack).Cil.svar.Cil.vattr then begin
                 (* execute this function *)
 
                 let state = Driver.step_job job in
@@ -42,7 +42,7 @@ module Interpreter (S : Config.BlockConfig) = struct
                     | Types.Big_Fork states ->
                         List.fold_left (fun (completed, job_queue) state -> process_job_states completed job_queue state) (completed, job_queue) states
                     | Types.Complete result ->
-                        (((result.Types.reason, None)::completed), job_queue)
+                        (((result, None)::completed), job_queue)
                 in
                 let completed, job_queue = process_job_states completed job_queue state in
                 next_job stack completed job_queue
@@ -55,28 +55,26 @@ module Interpreter (S : Config.BlockConfig) = struct
 
                     let completed, job_queue = List.fold_left begin fun (completed, job_queue) result -> match result with
                         | (Types.Return (retopt, { Types.result_state=state; Types.result_history=history }), None) ->
-                            begin match List.hd (Types.get_callContexts state) with
+                            begin match List.hd state.Types.callContexts with
                                 | Types.Runtime ->
                                     (* occurs when main() is not symbolic, so there's nothing left to execute *)
                                     (result::completed, job_queue)
 
                                 | Types.Source (destopt, _, _, nextstmt) ->
                                     (* end the function call and continue executing *)
-                                    let state = MemOp.state__end_fcall state state.Types.proc_index in
+                                    let state = MemOp.state__end_fcall state in
                                     let state = match destopt, retopt with
                                         | Some dest, Some ret ->
                                             let state, lval = Eval.lval state dest in
-                                            MemOp.state__assign state lval ret state.Types.proc_index
+                                            MemOp.state__assign state lval ret
                                         | _, _ ->
                                             state
                                     in
                                     let job = { job with
                                         Types.state=state;
+                                        Types.stmt=nextstmt;
                                         Types.exHist=history;
                                         (* TODO: update inTrackFn and coverage? *)
-                                    } in
-                                    let job = { job with
-                                        Types.proc_info=Types.set_proc_info job { Types.get_proc_info job with Types.stmt = nextstmt }
                                     } in
                                     (completed, job::job_queue)
 
@@ -133,7 +131,7 @@ module Interpreter (S : Config.BlockConfig) = struct
 
     let dispatch chain dispatch stack = function
         | `SymbolicBlock (file, job, k)
-                when S.should_enter_block (List.hd (Types.get_callstack job.Types.state)).Cil.svar.Cil.vattr ->
+                when S.should_enter_block (List.hd job.Types.state.Types.callstack).Cil.svar.Cil.vattr ->
             call dispatch stack file job k
         | work ->
             chain stack work

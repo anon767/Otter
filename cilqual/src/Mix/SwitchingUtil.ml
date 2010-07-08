@@ -384,7 +384,7 @@ let qt_to_bytes file expState solution state exp qt =
                             (state, bytes)
                         end (state, bytes) offsets
                     in
-                    let state = MemOp.state__add_deferred_block state extra deferred state.Types.proc_index in
+                    let state = MemOp.state__add_deferred_block state extra deferred in
                     (state, extra, map_offsets target_bytes_list extra)
                 in
 
@@ -572,7 +572,7 @@ let qt_to_lval_block file expState solution state v qt =
         let extra_deferred state =
             qt_to_bytes file expState solution state (Cil.Lval (Cil.var v)) (drop_qt qt)
         in
-        let state = MemOp.state__add_deferred_block state extra extra_deferred state.Types.proc_index in
+        let state = MemOp.state__add_deferred_block state extra extra_deferred in
 
         let extras = try Types.VarinfoMap.find v state.Types.extra
                      with Not_found -> []
@@ -744,7 +744,7 @@ let aliasing_to_qt file expState exp qt = perform
 *)
 let attempt_deref ?pre state lval_block typ =
     try
-        Some (MemOp.state__deref ?pre state (lval_block, Cil.bitsSizeOf typ / 8) state.Types.proc_index)
+        Some (MemOp.state__deref ?pre state (lval_block, Cil.bitsSizeOf typ / 8))
     with
         | Cil.SizeOfError ("abstract type", _) ->
             (* ignore abstract types, they can't have values that come from the program (that is visible) *)

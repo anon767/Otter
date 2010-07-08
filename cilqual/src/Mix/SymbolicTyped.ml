@@ -52,22 +52,22 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
         end in
 
         (* then, the globals and call stack *)
-        let state, global = qt_to_frame file expState solution state (List.nth state.Types.global state.Types.proc_index) in
+        let state, global = qt_to_frame file expState solution state state.Types.global in
 
         let state, formals = List.fold_right begin fun formal (state, formals) ->
             let state, formal = qt_to_frame file expState solution state formal in
             (state, (formal::formals))
-        end (List.nth state.Types.formals state.Types.proc_index) (state, []) in
+        end state.Types.formals (state, []) in
 
         let state, locals = List.fold_right begin fun local (state, locals) ->
             let state, local = qt_to_frame file expState solution state local in
             (state, (local::locals))
-        end (List.nth state.Types.locals state.Types.proc_index) (state, []) in
+        end state.Types.locals (state, []) in
 
         let state = { state with
-            Types.global=(Types.set_nth state.Types.global global state.Types.proc_index);
-            Types.locals=(Types.set_nth state.Types.locals locals state.Types.proc_index);
-            Types.formals=(Types.set_nth state.Types.formals formals state.Types.proc_index);
+            Types.global=global;
+            Types.locals=locals;
+            Types.formals=formals;
             Types.extra=Types.VarinfoMap.empty;
             Types.malloc=Types.VarinfoMap.empty;
         } in
@@ -155,10 +155,10 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
         (* initialize state *)
         let expState = ((((((), G.QualGraph.empty), (G.emptyContext)), 0), G.emptyUnionTable), G.emptyEnv) in
         let state = job.Types.state in
-        let fn = List.hd (Types.get_callstack state) in
+        let fn = List.hd state.Types.callstack in
 
         (* get the location of the caller statement, for error reporting purposes *)
-        let loc = match List.hd (Types.get_callContexts job.Types.state) with
+        let loc = match List.hd job.Types.state.Types.callContexts with
             | Types.Runtime                 -> Cil.locUnknown
             | Types.Source (_, _, instr, _)
             | Types.NoReturn instr          -> Cil.get_instrLoc instr
@@ -172,11 +172,8 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
             (* convert the entire memory to types; although only the topmost formals (i.e., the arguments) are
              * visible to the nested typed block, other formals and local variables must also be converted to
              * correctly re-initialize the symbolic memory (from types) when returning from the typed block. *)
-            let global = List.nth state.Types.global state.Types.proc_index in
-            let formals = List.nth state.Types.formals state.Types.proc_index in
-            let locals = List.nth state.Types.locals state.Types.proc_index in
-            frame_to_qt file expState state global;
-            mapM_ (frame_to_qt file expState state) (formals @ locals);
+            frame_to_qt file expState state state.Types.global;
+            mapM_ (frame_to_qt file expState state) (state.Types.formals @ state.Types.locals);
         in
         let (((((_, constraints), _), _), _), _ as expState) = run expM expState in
 
@@ -232,7 +229,7 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
 
     let dispatch chain dispatch stack = function
         | `SymbolicBlock (file, job, k)
-                when T.should_enter_block (List.hd (Types.get_callstack job.Types.state)).Cil.svar.Cil.vattr ->
+                when T.should_enter_block (List.hd job.Types.state.Types.callstack).Cil.svar.Cil.vattr ->
             inspect_stack dispatch stack file job k
         | work ->
             chain stack work
