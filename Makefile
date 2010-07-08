@@ -52,9 +52,9 @@ make//cilqual : otter
 ocamlstp : make//ocamlstp
 make//ocamlstp : \
 	MAKEGOALS= \
-		CAMLIDL='../camlidl/compiler/camlidl' \
-		LIBDIRS='../camlidl/runtime ../stp/lib' \
-		INCDIRS='../camlidl/runtime ../stp/c_interface'
+		CAMLIDL='$(CURDIR)/camlidl/compiler/camlidl' \
+		LIBDIRS='$(CURDIR)/camlidl/runtime $(CURDIR)/stp/lib' \
+		INCDIRS='$(CURDIR)/camlidl/runtime $(CURDIR)/stp/c_interface'
 make//ocamlstp : stp camlidl
 
 
