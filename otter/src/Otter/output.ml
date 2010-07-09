@@ -1,12 +1,5 @@
 open Executeargs
 
-(*
-let do_print_flag = ref true
-let set_print flag = do_print_flag := flag
-let do_print () = !do_print_flag
-let toggle_print () = do_print_flag := not (!do_print_flag)
-*)
-
 let last_time = ref 0.0
 let cur_time_elapsed = ref 0.0
 let time_elapsed () =
@@ -17,49 +10,68 @@ let time_elapsed () =
 		time
 
 
-let cur_loc = ref Cil.locUnknown
-let set_cur_loc loc = cur_loc := loc
+class formatter_base =
+	object
+		method format_str (str:string) = str
+	end
 
-let runningJobId = ref 0
-let runningJobDepth = ref 0
-let jidCounter = ref 0
+class basic_formatter = fun runningJobId runningJobDepth cur_loc ->
+	object (this)
+		inherit formatter_base
 
-(*let internalIndent = ref 0*)
+		val runningJobId : int = runningJobId
+		val runningJobDepth : int = runningJobDepth
+		val cur_loc : Cil.location = cur_loc
 
-let print_loc loc = 
-  if loc==Cil.locUnknown then "" else
-  loc.Cil.file^":"^(string_of_int loc.Cil.line)^" : "
+		method set_runningJobId id = {<runningJobId = id>}
+		method set_runningJobDepth depth = {<runningJobDepth = depth>}
+		method set_cur_loc loc = {<cur_loc = loc>}
 
-let getIndent () = 
-	Format.sprintf "[%d,%d] %s" !runningJobId !runningJobDepth (print_loc (!cur_loc))
+		(* temporary until funtions are refactored; please don't use them*)
+		method get_cur_loc () = cur_loc
+		method get_runningJobId () = runningJobId
+		
+		method private print_loc loc = 
+			if loc==Cil.locUnknown then "" else
+			loc.Cil.file^":"^(string_of_int loc.Cil.line)^" : "
+		method private label () = 
+			Format.sprintf "[%d,%d] %s" runningJobId runningJobDepth (this#print_loc (cur_loc))
+		method format_str str = 
+			let rec impl str = 
+				if String.length str = 0 then
+					""
+				else if String.contains str '\n' then
+				  	let i = String.index str '\n' in
+				  	let s1 = String.sub str 0 i in
+				  	let s2 = String.sub str (i+1) ((String.length str) - i - 1) in
+				    	(this#label())^s1^"\n"^(impl s2)
+				else
+					(this#label())^str
+			in
+			impl str
+	end
 
-	(*
-  let rec f x = if x<=0 then "" else "    "^(f (x-1)) in
-    (f (!internalIndent))^"~ "
-  *)
-	
-	
-let insertIndent str = 
-	let rec impl str = 
-		if String.length str = 0 then ""
-		else if String.contains str '\n' then
-	  	let i = String.index str '\n' in
-	  	let s1 = String.sub str 0 i in
-	  	let s2 = String.sub str (i+1) ((String.length str) - i - 1) in
-	    	(getIndent())^s1^"\n"^(impl s2)
-    else (getIndent())^str
-	in
-		impl str
+class ['a] indent_formatter = fun (f:'a) ->
+	object
+		inherit formatter_base
+		val f = f
+		method set_formatter f = {<f = f>}
+		method format_str str = 
+			let rec impl str label = 
+				if String.length str = 0 then
+					""
+				else if String.contains str '\n' then
+				  	let i = String.index str '\n' in
+				  	let s1 = String.sub str 0 i in
+				  	let s2 = String.sub str (i+1) ((String.length str) - i - 1) in
+				    	Format.sprintf "%s%s\n%s" label s1 (impl s2 (String.make (String.length label) ' '))
+				else
+					Format.sprintf "%s%s" label str
+			in
+			impl str (f#format_str " ")
+	end
 
-(*
-let increase () =
-	internalIndent := (!internalIndent)+1
-
-
-let decrease () =
-	internalIndent := (!internalIndent)-1
-
-*)
+let formatter = ref (new basic_formatter 0 0 Cil.locUnknown)
 
 type msg_type = 
 	| MSG_REG
@@ -133,7 +145,7 @@ let banner_printf level format =
 let print_string str = 
 	if (need_print (!current_msg_type)) then
 		(
-		Pervasives.print_string (insertIndent str);
+		Pervasives.print_string (!formatter#format_str str);
 		Pervasives.flush_all ()
 		)
 	else

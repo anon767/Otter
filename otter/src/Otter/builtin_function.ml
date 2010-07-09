@@ -51,7 +51,7 @@ let libc___builtin_alloca_size state size bytes =
 		(List.hd state.callstack).svar.vname
 		size
 		(Utility.next_id libc___builtin_alloca__id)
-		(To_string.location !Output.cur_loc)
+		(To_string.location (!Output.formatter#get_cur_loc()))
 		(MemOp.state__trace state)
 	in
 	let block =  block__make name size Block_type_Heap in

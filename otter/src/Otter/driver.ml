@@ -650,7 +650,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 					with Failure msg ->
 						if run_args.arg_failfast then failwith msg;
 						let result = { result_state = job.state; result_history = job.exHist } in
-						Complete (Types.Abandoned (msg, !Output.cur_loc, result))
+						Complete (Types.Abandoned (msg, loc, result))
 				in
 				job_state::(process_func_list t)
 	in
@@ -664,8 +664,9 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 let exec_instr job =
 	assert (job.instrList <> []);
 	let printInstr instr =
+		(*TODO: refactor formatting settings into a interceptor*)
 		Output.set_mode Output.MSG_STMT;
-		Output.set_cur_loc (Cil.get_instrLoc instr);
+		Output.formatter := !Output.formatter#set_cur_loc (Cil.get_instrLoc instr);
 		Output.print_endline (To_string.instr instr)
 	in
 
@@ -713,8 +714,9 @@ let exec_stmt job =
 		else job.exHist
 	in
 
+	(*TODO: refactor formatting settings into an interceptor*)
 	Output.set_mode Output.MSG_STMT;
-	Output.set_cur_loc (Cil.get_stmtLoc stmt.skind);
+	Output.formatter := !Output.formatter#set_cur_loc (Cil.get_stmtLoc stmt.skind);
 	Output.print_endline (To_string.stmt stmt);
 	match stmt.skind with
 		| Instr [] ->
@@ -900,7 +902,7 @@ let exec_stmt job =
 																exHist = nextExHist (Some nextStmtT) ~whichBranch:true;
                                                                 (*parent = Some job';
                                                                  *)
-														 		jid = Utility.next_id Output.jidCounter; } in
+														 		jid = Utility.next_jid; } in
 							let falseJob = { job' with
 																 state = nextStateF;
 																 stmt = nextStmtF;
@@ -940,16 +942,17 @@ let printJob (state,stmt) =
 *)
 
 
+(*TODO: refactor formatting settings and fix dependance on reading from the formatter*)
 let setRunningJob job =
-	if !Output.runningJobId <> job.jid then (
+	if !Output.formatter#get_runningJobId() <> job.jid then (
 	  if not Executeargs.run_args.arg_cfg_pruning then
 		(
 		Output.set_mode Output.MSG_REG;
 		Output.print_endline "***** Changing running job *****"
 		);
-		Output.runningJobId := job.jid;
+		Output.formatter := !Output.formatter#set_runningJobId job.jid;
 	);
-	Output.runningJobDepth := (List.length job.state.path_condition)
+	Output.formatter := !Output.formatter#set_runningJobDepth (List.length job.state.path_condition)
 
 
 
@@ -1091,7 +1094,8 @@ let step_job job =
 		| Failure msg ->
 			if run_args.arg_failfast then failwith msg;
 			let result = { result_state = job.state; result_history = job.exHist } in
-			Complete (Types.Abandoned (msg, !Output.cur_loc, result))
+			(*TODO: find another way to get the location here*)
+			Complete (Types.Abandoned (msg, !Output.formatter#get_cur_loc(), result))
 
 
 
@@ -1099,7 +1103,7 @@ let terminate_job_at_targets targets job =
 	(* if job meets one of the targets, do checking *)
 	(* if fails, return Some (Complete Abandoned) *)
 	match job.instrList with
-		| Call(_,fexp,exps,_)::_ ->
+		| Call(_,fexp,exps,loc)::_ ->
 			let truth, failing_condition = pass_targets targets job fexp exps in
 			if truth then
 				None
@@ -1108,7 +1112,7 @@ let terminate_job_at_targets targets job =
 				if run_args.arg_failfast then failwith msg;
 				let state = { job.state with path_condition = failing_condition::job.state.path_condition } in
 				let result = { result_state = state; result_history = job.exHist } in
-				Some (Complete (Types.Abandoned (msg, !Output.cur_loc, result)))
+				Some (Complete (Types.Abandoned (msg, loc, result)))
 			end
 		| _ ->
 			None

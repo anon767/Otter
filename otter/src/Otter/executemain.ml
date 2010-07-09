@@ -301,7 +301,7 @@ let job_for_function ?(exHist=emptyHistory) state fn argvs =
 	  stmt = List.hd fn.sallstmts;
 	  inTrackedFn = Utility.StringSet.mem fn.svar.vname run_args.arg_fns;
 	  mergePoints = StmtInfoSet.empty;
-	  jid = Utility.next_id Output.jidCounter;
+	  jid = Utility.next_jid;
       (* parent = None;
        *)
     }

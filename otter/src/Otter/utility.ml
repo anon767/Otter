@@ -56,6 +56,10 @@ let next_id idref =
       increment idref; id
 
 
+(* TODO: decide where these actually belong*)
+let jidCounter = ref 0
+let next_jid = next_id jidCounter
+
 let rec print_list print list delim =
 	String.concat delim (List.map print list)
 
