@@ -476,11 +476,6 @@ let feature : featureDescr =
 			(**
 					Running options
 			 *)
-			(* Regression test output *)
-			("--regression",
-			Arg.Unit (fun () -> Executeargs.run_args.arg_run_regression <- true),
-			" Output for regression test \n");
-
 			("--failfast",
 			Arg.Unit (fun () -> Executeargs.run_args.arg_failfast <- true),
 			" Abort execution if any path encounters an error\n");

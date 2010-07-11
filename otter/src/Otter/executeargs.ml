@@ -60,7 +60,6 @@ let print_args =
 	}
 type run_args =
 	{
-		mutable arg_run_regression : bool;
 		mutable arg_cmdline_argvs : string list;
 (*		mutable arg_symbolic_extern_fns : bool;*)
 		mutable arg_cond_coverage : bool;
@@ -101,7 +100,6 @@ type run_args =
 
 let run_args =
 	{
-		arg_run_regression = false;
 		arg_cmdline_argvs = [];
 (*		arg_symbolic_extern_fns = false;*)
 		arg_cond_coverage = false;
