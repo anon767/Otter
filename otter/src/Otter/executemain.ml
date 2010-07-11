@@ -485,17 +485,17 @@ let feature : featureDescr =
 			Arg.Unit (fun () -> Executeargs.run_args.arg_failfast <- true),
 			" Abort execution if any path encounters an error\n");
 
-      ("--noboundsChecking",
-      Arg.Unit (fun () -> run_args.arg_bounds_checking <- false),
-      " Disable bounds checking on memory accesses\n");
+			("--noboundsChecking",
+			Arg.Unit (fun () -> run_args.arg_bounds_checking <- false),
+			" Disable bounds checking on memory accesses\n");
 
-      ("--cfgPruning",
-      Arg.Unit (fun () -> run_args.arg_cfg_pruning <- true),
-      " Enable CFG pruning\n");
+			("--cfgPruning",
+			Arg.Unit (fun () -> run_args.arg_cfg_pruning <- true),
+			" Enable CFG pruning\n");
 
-      ("--callchainBackward",
-      Arg.Unit (fun () -> run_args.arg_cfg_pruning <- true;run_args.arg_callchain_backward <- true),
-      " Enable call-chain backward symbolic execution (will enable CFG pruning)\n");
+			("--callchainBackward",
+			Arg.Unit (fun () -> run_args.arg_cfg_pruning <- true;run_args.arg_callchain_backward <- true),
+			" Enable call-chain backward symbolic execution (will enable CFG pruning)\n");
 
 			(**
 					Printing options
