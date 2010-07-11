@@ -21,7 +21,7 @@ type print_args =
 		mutable arg_print_char_as_int : bool;
 		mutable arg_print_nothing : bool; (* If true, overrides all other flags *)
 		mutable arg_print_stmt_locs : bool;
-	}	
+	}
 (*let print_args =
 	{
 		arg_print_reg = false;
@@ -57,8 +57,8 @@ let print_args =
 		arg_print_char_as_int = false;
 		arg_print_nothing = false;
 		arg_print_stmt_locs = false;
-	}	
-type run_args = 
+	}
+type run_args =
 	{
 		mutable arg_run_regression : bool;
 		mutable arg_cmdline_argvs : string list;
@@ -94,12 +94,12 @@ type run_args =
 		mutable arg_opt_stpbv_cache : bool;
 		mutable arg_failfast : bool;
 		mutable arg_init_malloc_zero : bool;
-    mutable arg_bounds_checking : bool;
-    mutable arg_cfg_pruning : bool;
-    mutable arg_callchain_backward : bool;
+		mutable arg_bounds_checking : bool;
+		mutable arg_cfg_pruning : bool;
+		mutable arg_callchain_backward : bool;
 	}
 
-let run_args = 
+let run_args =
 	{
 		arg_run_regression = false;
 		arg_cmdline_argvs = [];
@@ -115,16 +115,16 @@ let run_args =
 		arg_num_conds = -1;
 		arg_fns = Utility.StringSet.empty;
 		arg_yaml = "";
-		arg_entryfn = "main"; 
-		arg_assertfn = "__ASSERT"; 
+		arg_entryfn = "main";
+		arg_assertfn = "__ASSERT";
 		arg_examfn = ""; (* none *)
 		arg_timeout = 0;
 		arg_merge_paths = false;
 		arg_marshal_file = ""; (* File to which to marshal coverage information *)
 		arg_calculate_dependencies = false;
-      arg_noinit_unreachable_globals = false;
-      arg_use_conditional_exceptions = false;
-      arg_simplify_path_condition = false;
+		arg_noinit_unreachable_globals = false;
+		arg_use_conditional_exceptions = false;
+		arg_simplify_path_condition = false;
 		arg_list_lines = false;
 		arg_list_blocks = false;
 		arg_list_edges = false;
@@ -134,10 +134,10 @@ let run_args =
 		arg_opt_stpbv_cache = false;
 		arg_failfast = false;
 		arg_init_malloc_zero = false;
-    arg_bounds_checking = true;
-    arg_cfg_pruning = false;
-    arg_callchain_backward = false;
-	} 
+		arg_bounds_checking = true;
+		arg_cfg_pruning = false;
+		arg_callchain_backward = false;
+	}
 
 
 let readCovStatsFromFile filename =
@@ -149,11 +149,11 @@ let readCovStatsFromFile filename =
 	with End_of_file -> close_in inChan
   
 let readYamlFromFile filename =
-	let inChan = open_in filename in 
-  let len = in_channel_length inChan in
-  let str = String.create len in
-    really_input inChan str 0 len;
-    run_args.arg_yaml <- str;
-    close_in inChan
+	let inChan = open_in filename in
+	let len = in_channel_length inChan in
+	let str = String.create len in
+	really_input inChan str 0 len;
+	run_args.arg_yaml <- str;
+	close_in inChan
 
 
