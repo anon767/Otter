@@ -1453,7 +1453,7 @@ let test4 (job : job) (targets : target list)  =
 
 (***********************************************************)
 
-let callchain_bacward_se callergraph entryfn assertfn job_init : job_completion list list =
+let callchain_backward_se callergraph entryfn assertfn job_init : job_completion list list =
   let job_init fn ts =
 	let _ = Output.banner_printf 1 "Start forward SE on function %s with target(s)\n%s\n%!"
 			(fn.svar.vname) (let s=(String.concat "," (List.map (fun t -> t.func.svar.vname) ts)) in if s="" then "(none)" else s)
@@ -1483,7 +1483,7 @@ let callchain_bacward_se callergraph entryfn assertfn job_init : job_completion 
 	in
 
   (* The implementation of main loop *)
-  let rec callchain_bacward_main_loop job targets =
+  let rec callchain_backward_main_loop job targets =
 	(* Assume we start at f *)
 	let f = List.hd job.state.callstack in
 	(* Run forward SE based on the targets *)
@@ -1511,7 +1511,7 @@ let callchain_bacward_se callergraph entryfn assertfn job_init : job_completion 
 			fun lst caller -> 
 			  let targets = (new_target::targets) in
 			  let newjob = job_init caller targets in
-			  let newlst = callchain_bacward_main_loop newjob targets  in
+			  let newlst = callchain_backward_main_loop newjob targets  in
 				List.rev_append newlst lst
 		  ) 
 		  [] callers
@@ -1521,7 +1521,7 @@ let callchain_bacward_se callergraph entryfn assertfn job_init : job_completion 
 	  (fun results caller ->
 		 Output.banner_printf 2 "Call-chain backward Symbolic Execution of target function %s\n%!" caller.svar.vname;
 		 let job = job_init caller [] in 
-		 let new_result = callchain_bacward_main_loop job [] in
+		 let new_result = callchain_backward_main_loop job [] in
 		   new_result::results
 	  ) [] callers
 
