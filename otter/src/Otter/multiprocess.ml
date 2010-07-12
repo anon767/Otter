@@ -110,7 +110,47 @@ let get_job multijob = match multijob.processes with
 		} in
 		Some (job, multijob)
 
+let intercept_fork job job_queue interceptor =
+	let job, multijob = job in
+	match job.Types.instrList with
+		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), _, _)::_ when varinfo.Cil.vname = "fork" -> 
+			(* update the program counter *)
+			assert(List.length job.Types.instrList = 1);
+			let next_stmt = match job.Types.stmt.Cil.succs with
+				| [ h ] -> h
+				| _ -> failwith "Impossible!"
+			in
+			let job = { job with Types.instrList = []; Types.stmt = next_stmt; } in
 
+			(* TODO:
+			 * - keep track of pids symbolically
+			 * - be careful to aquire the pid *before* cloning the job, so that the states are consistent
+			 *)
+
+			(* clone the job *)
+			let job, child_job = match retopt with
+				| None ->
+					(job, job)
+				| Some cil_lval ->
+					let child_job = { job with
+						(* TODO: make the pid symbolic *)
+						Types.state =
+							let state, lval = Eval.lval job.Types.state cil_lval in
+							MemOp.state__assign state lval (Bytes.bytes__one)
+					} in
+					let job = { job with
+						Types.state =
+							let state, lval = Eval.lval job.Types.state cil_lval in
+							MemOp.state__assign state lval (Bytes.bytes__zero)
+					} in
+					(job, child_job)
+			in
+			let multijob = (put_job child_job multijob) in
+			interceptor (job, multijob) job_queue
+		| _ -> 
+			interceptor (job, multijob) job_queue
+
+(** TO BE REMOVED
 (* step multijob, intercepting fork *)
 let step_multijob job multijob = match job.Types.instrList with
 	| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), _, _)::_ when varinfo.Cil.vname = "fork" ->
@@ -150,7 +190,6 @@ let step_multijob job multijob = match job.Types.instrList with
 	| _ ->
 		(Driver.step_job job, multijob)
 
-
 let main_loop job =
 	Printexc.record_backtrace true;
 
@@ -185,6 +224,9 @@ let main_loop job =
 									completion
 							in
 							((completion::completed), (multijob::multijob_queue))
+
+						| _ ->
+							(completion, multijob_queue)
 					in
 					let completed, multijob_queue = process_job_states completed multijob_queue job_states in
 					main_loop completed multijob_queue
@@ -205,7 +247,69 @@ let main_loop job =
 
 	(* start executing *)
 	main_loop [] [ multijob ]
+**)
 
+let rec get_job_multijob job_queue = 
+	match job_queue with
+		| [] -> (None, [])
+		| multijob::t ->
+			match get_job multijob with
+				| None -> get_job_multijob t
+				| Some job -> (Some job, t)
+
+(* process the results *)
+let rec process_job_states result multijob multijob_queue completed =
+	match result with
+		| Types.Active job ->
+			(* put the job back into the multijob and queue it *)
+			let multijob = put_job job multijob in
+			(completed, (multijob::multijob_queue))
+		| Types.Big_Fork states ->
+			(* process all forks *)
+			List.fold_left begin fun (completed, multijob_queue) state ->
+				process_job_states state multijob multijob_queue completed
+			end (completed, multijob_queue) states
+		| Types.Complete completion ->
+			(* store the results *)
+			let multijob = put_completion completion multijob in
+			let completion = match completion with
+				| Types.Abandoned (msg, loc, job_result) ->
+					Types.Abandoned (msg ^ (Printexc.get_backtrace ()), loc, job_result)
+				| _ ->
+					completion
+			in
+			((completion::completed), (multijob::multijob_queue))
+
+		| _ ->
+			(completed, multijob_queue)
+
+let repack_job_interceptor job job_queue interceptor =
+	let job, multijob = job in
+	interceptor job (multijob, job_queue)
+
+let process_result result job_queue completed =
+	let multijob, multijob_queue = job_queue in
+	process_job_states result multijob multijob_queue completed
+
+let (@@) i1 i2 = 
+	fun a b -> i1 a b i2
+
+let init job = 
+	let multijob = {
+		processes = [];
+		shared = {
+			path_condition = [];
+		};
+		jid = job.Types.jid;
+	} in
+	let multijob = put_job job multijob in
+
+	(* start executing *)
+	Driver.main_loop 
+		get_job_multijob
+		(intercept_fork @@ repack_job_interceptor @@ Driver.otter_core_interceptor)
+		process_result
+		[ multijob ]
 
 let doit file =
 	(* TODO: do something about signal handlers/run statistics from Executemain.doExecute *)
@@ -223,7 +327,7 @@ let doit file =
 	in
 
 	(* run the job *)
-	let result = main_loop job in
+	let result = init job in
 
 	(* print the results *)
 	Output.print_endline (Executedebug.get_log ());

@@ -1078,7 +1078,7 @@ let pass_targets targets job fexp exps =
 	pass_targets targets
 
 
-
+(** TO BE REMOVED
 (* Try to merge job with one that is waiting; then advance the resulting job by
      one step. (Note that the job that *actually* gets advances might not be
      step_job's argument; if the argument is at a merge point, mergeJobs places it
@@ -1096,7 +1096,7 @@ let step_job job =
 			let result = { result_state = job.state; result_history = job.exHist } in
 			(*TODO: find another way to get the location here*)
 			Complete (Types.Abandoned (msg, !Output.formatter#get_cur_loc(), result))
-
+**)
 
 
 let terminate_job_at_targets targets job =
@@ -1118,7 +1118,7 @@ let terminate_job_at_targets targets job =
 			None
 
 
-
+(** TO BE REMOVED
 let step_job_with_targets targets job =
 	if Executeargs.run_args.arg_callchain_backward then
 		match terminate_job_at_targets targets job with
@@ -1128,6 +1128,7 @@ let step_job_with_targets targets job =
 				step_job job
 	else
 		step_job job
+**)
 
 
 
@@ -1138,7 +1139,7 @@ let at_merge_point job =
 		job.mergePoints
 
 
-
+(** TO BE REMOVED
 (** The main loop
   *)
 let main_loop ?targets:(targets=[]) job : job_completion list =
@@ -1216,12 +1217,241 @@ let main_loop ?targets:(targets=[]) job : job_completion list =
 		| Complete completion ->
 			output_completion_info completion;
 			((completion::completed), jobs)
+
+		| _ ->
+			(completed, jobs)
+
 	in
   let jobs = Jobs.create targets in
   let _ = Jobs.add_runnable jobs job in
 	main_loop [] jobs
 
+**)
 
+(****************************************************************************************************)
+
+(** GET JOB **)
+
+let get_job_loc job =
+	match job.instrList with
+		| [] -> (Cil.get_stmtLoc job.stmt.skind)
+		| _ -> 
+			let instr = match job.instrList with 
+				| i::tl -> i 
+				| _ -> assert false 
+			in
+			(Cil.get_instrLoc instr)
+
+let get_job_list job_queue =
+	match job_queue with
+		| [] -> (None, [])
+		| h::t -> ((Some h), t)
+
+let get_job_priority_queue job_queue = 
+	if Jobs.has_next_runnable job_queue then
+		(Some (Jobs.take_next_runnable job_queue), job_queue)
+	else
+		(None, job_queue)
+
+let get_job_priority_queue_with_merge job_queue = 
+	if Jobs.has_next_runnable job_queue then
+		(Some ((Jobs.take_next_runnable job_queue), true), job_queue)
+	else if Jobs.has_next_mergable job_queue then
+		begin
+			(* job queue is empty: take a job out of the merge set and step it, since it cannot merge
+			 * with any other jobs in the merge set (the merge set invariant) *)
+			let job = Jobs.take_next_mergable job_queue in
+			let _ = Jobs.running job_queue job in (* set current job *)
+			(Some (job, false), job_queue)
+		end
+	else
+		(None, job_queue)
+
+(** INTERCEPTORS **)
+
+let (@@) i1 i2 = 
+	fun a b -> i1 a b i2
+
+let identity_interceptor job job_queue interceptor =
+	interceptor job job_queue
+
+let otter_core_interceptor job job_queue =
+	setRunningJob job;  (*TODO: get rid of this here*)
+	try
+		match job.instrList with
+			| [] -> (exec_stmt job, job_queue)
+			| _ -> (exec_instr job, job_queue)
+	with
+		| Failure msg ->
+			if run_args.arg_failfast then failwith msg;
+			let result = { result_state = job.state; result_history = job.exHist } in
+			(Complete (Types.Abandoned (msg, get_job_loc job, result)), job_queue)
+
+let terminate_job_at_targets_interceptor targets job job_queue interceptor =
+	match terminate_job_at_targets targets job with
+		| Some result ->
+			(result, job_queue)
+		| None ->
+			interceptor job job_queue
+
+let merge_job_interceptor job job_queue interceptor = 
+	let job, mergeable = job in
+	if mergeable && at_merge_point job then
+		(* job is at a merge point and merging is enabled: try to merge it *)
+		begin match Jobs.merge job_queue job with
+			| Some (truncated) ->
+				(* merge was successful: process the result and continue *)
+				(truncated, job_queue)
+			| None ->
+				(* merge was unsuccessful: keep the job at the merge point in the merge set in case
+				 * later jobs can merge; this leads to the invariant that no jobs in the merge set
+				 * can merge with each other *)
+				(Paused job, job_queue)
+		end
+	else
+		(* job is not at a merge point: step the job *)
+		let _ = Jobs.running job_queue job in (* set current job *)
+		interceptor job job_queue
+
+let intercept_function_by_name_internal target_name replace_func job job_queue interceptor =
+	match job.instrList with
+		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), _, _)::_ when varinfo.Cil.vname = target_name ->
+			replace_func retopt varinfo
+		| _ -> 
+			interceptor job job_queue
+
+let intercept_function_by_name_external target_name replace_name job job_queue interceptor =
+	match job.instrList with
+		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), x, y)::t when varinfo.Cil.vname = target_name ->
+			let varinfo = 
+				{varinfo with
+					vname = replace_name;
+				}	
+			in		
+			let job = 
+				{job with
+					instrList = Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), x, y)::t;
+				}
+			in			
+			otter_core_interceptor job job_queue
+		| _ -> 
+			interceptor job job_queue
+
+(** PROCESS RESULT **)
+
+let output_completion_info completion =
+(* log some interesting errors *)
+	match completion with
+		| Types.Abandoned (msg, loc, { result_state=state; result_history=hist }) ->
+			Output.set_mode Output.MSG_MUSTPRINT;
+			Output.printf "Error \"%s\" occurs at %s\n%sAbandoning path\n"
+			msg (To_string.location loc)
+			(
+				if Executeargs.print_args.arg_print_callstack then
+					"Call stack:\n"^(To_string.callstack state.callContexts)
+				else
+					""
+			);
+		| _ ->
+			()
+
+let rec process_result result job_queue completed = 
+	match result with
+		| Active job ->
+			(completed, job::job_queue)
+
+		| Big_Fork states ->
+			List.fold_left (fun (completed, job_queue) state -> process_result state job_queue completed) (completed, job_queue) states
+
+		| Complete completion ->
+			output_completion_info completion;
+			((completion::completed), job_queue)
+
+		| _ -> 
+			(completed, job_queue)
+
+let rec process_result_priority_queue result job_queue completed =
+	match result with
+		| Active job ->
+			Jobs.add_runnable job_queue job;
+			(completed, job_queue)
+
+		| Big_Fork states ->
+			List.fold_left (fun (completed, job_queue) state -> process_result_priority_queue state job_queue completed) (completed, job_queue) states
+
+		| Complete completion ->
+			output_completion_info completion;
+			((completion::completed), job_queue)
+
+		| _ ->
+			(completed, job_queue)
+
+(** MAIN LOOP **)
+
+let main_loop get_job interceptor process_result job_queue : job_completion list =
+	let rec main_loop job_queue completed : job_completion list =
+		match !signalStringOpt with
+			| Some s ->
+				(* if we got a signal, stop and return the completed results *)
+				Output.set_mode Output.MSG_MUSTPRINT;
+				Output.print_endline s;
+				completed
+			| None ->
+				let job, job_queue = get_job job_queue in
+				match job with
+					| None -> completed
+					| Some job ->
+						let result, job_queue = interceptor job job_queue in
+						let completed, job_queue = process_result result job_queue completed in
+						main_loop job_queue completed
+	in
+	main_loop job_queue []
+
+let init job = 
+	if run_args.arg_merge_paths then
+		begin
+			let jobs = Jobs.create [] in
+			let _ = Jobs.add_runnable jobs job in
+			main_loop 
+				get_job_priority_queue_with_merge
+				(merge_job_interceptor @@ otter_core_interceptor)
+				process_result_priority_queue
+				jobs
+		end
+	else
+		begin
+			main_loop
+				get_job_list
+				otter_core_interceptor
+				process_result
+				[job]
+		end
+
+(** TO BE REMOVED
+(* Tests of different main loops that impliment existing functionality *)
+
+let test1 = main_loop (fun jq -> (None, jq)) (identity_interceptor @@ otter_core_interceptor) (process_result) []
+let test2 = main_loop (fun jq -> (None, jq)) (otter_core_interceptor) (process_result) []
+let test3 (job:job) = 
+	let jobs = Jobs.create [] in
+	let _ = Jobs.add_runnable jobs job in
+	main_loop 
+		(get_job_priority_queue_with_merge) 
+		(merge_job_interceptor @@ otter_core_interceptor)
+		(process_result_priority_queue) 
+		jobs
+let test4 (job : job) (targets : target list)  = 
+	let jobs = Jobs.create targets in
+	let _ = Jobs.add_runnable jobs job in
+	main_loop 
+		(get_job_priority_queue) 
+		((terminate_job_at_targets_interceptor targets) @@ otter_core_interceptor)
+		(process_result_priority_queue) 
+		jobs
+**)
+
+
+(***********************************************************)
 
 let callchain_bacward_se callergraph entryfn assertfn job_init : job_completion list list =
   let job_init fn ts =
@@ -1242,12 +1472,22 @@ let callchain_bacward_se callergraph entryfn assertfn job_init : job_completion 
 	  Bytes.bytes__zero result
   in
 
+	let call_Otter_main_loop targets job =
+		let jobs = Jobs.create targets in
+		let _ = Jobs.add_runnable jobs job in
+		main_loop 
+			(get_job_priority_queue) 
+			((terminate_job_at_targets_interceptor targets) @@ otter_core_interceptor)
+			(process_result_priority_queue) 
+			jobs
+	in
+
   (* The implementation of main loop *)
   let rec callchain_bacward_main_loop job targets =
 	(* Assume we start at f *)
 	let f = List.hd job.state.callstack in
 	(* Run forward SE based on the targets *)
-	let result = main_loop ~targets:targets job in 
+	let result = call_Otter_main_loop targets job in
 	(* result is a (may not be completed) list of finished jobs.
 	 * A job is either successful, if no assertion failure, or unsuccessful.
 	 *)

@@ -199,6 +199,7 @@ type job_state =
 	| Active of job
 	| Big_Fork of job_state list
 	| Complete of job_completion
+	| Paused of job
 
 module JobSet = Set.Make
 	(struct

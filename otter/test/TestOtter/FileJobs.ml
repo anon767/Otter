@@ -22,7 +22,7 @@ let test_file_job cmdline content ?(label=content) test =
         (* prepare the file and run the symbolic executor *)
         Executemain.prepare_file file;
         let job = Executemain.job_for_file file cmdline in
-        let results = Driver.main_loop job in
+        let results = Driver.init job in
 
         (* test that no assertions failed *)
         assert_string (Executedebug.get_log ());

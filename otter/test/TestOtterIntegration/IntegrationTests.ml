@@ -61,7 +61,7 @@ let rec test_dir main_loop dirname =
  *)
 
 let testsuite = "Integration" >::: [
-	test_dir Driver.main_loop "OtterCore";
-	test_dir Multiprocess.main_loop "MultiprocessOtter";
+	test_dir Driver.init "OtterCore";
+	test_dir Multiprocess.init "MultiprocessOtter";
 ]
 

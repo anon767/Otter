@@ -414,7 +414,7 @@ let doExecute (f: file) =
               job_for_middle f entryfn Executeargs.run_args.arg_yaml
         in
 	    (* run the job *)
-        let result = Driver.main_loop job in
+        let result = Driver.init job in
           [result]
     in
 
