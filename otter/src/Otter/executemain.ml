@@ -401,7 +401,7 @@ let doExecute (f: file) =
           in
           let job_init = function entryfn -> job_for_middle f entryfn ""(* no yaml file *)
           in
-            Driver.callchain_backward_se (Cilutility.make_callergraph f) entryfn assertfn job_init
+            Callchain_backward.callchain_backward_se (Cilutility.make_callergraph f) entryfn assertfn job_init
         )
       else
         let job = 
