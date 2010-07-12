@@ -35,7 +35,7 @@ module Interpreter (S : Config.BlockConfig) = struct
             if S.should_enter_block (List.hd job.Types.state.Types.callstack).Cil.svar.Cil.vattr then begin
                 (* execute this function *)
 
-                let state = Driver.step_job job in
+                let state, job_queue = Driver.otter_core_interceptor job job_queue in
                 let rec process_job_states completed job_queue = function
                     | Types.Active job ->
                         (completed, (job::job_queue))
@@ -43,6 +43,8 @@ module Interpreter (S : Config.BlockConfig) = struct
                         List.fold_left (fun (completed, job_queue) state -> process_job_states completed job_queue state) (completed, job_queue) states
                     | Types.Complete result ->
                         (((result, None)::completed), job_queue)
+                    | _ ->
+                        failwith "TODO: handle other results"
                 in
                 let completed, job_queue = process_job_states completed job_queue state in
                 next_job stack completed job_queue
