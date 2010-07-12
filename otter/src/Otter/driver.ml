@@ -3,7 +3,6 @@ open Ternary
 open Bytes
 open BytesUtility
 open Types
-open PathMerging
 open Executeargs
 open Cilutility
 open Utility
