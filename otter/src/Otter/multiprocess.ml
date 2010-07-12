@@ -152,11 +152,11 @@ let intercept_fork job job_queue interceptor =
 
 let rec get_job_multijob job_queue = 
 	match job_queue with
-		| [] -> (None, [])
+		| [] -> None
 		| multijob::t ->
 			match get_job multijob with
 				| None -> get_job_multijob t
-				| Some job -> (Some job, t)
+				| Some job -> Some (job, t)
 
 (* process the results *)
 let rec process_job_states result multijob multijob_queue completed =

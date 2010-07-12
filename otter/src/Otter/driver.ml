@@ -967,16 +967,15 @@ let get_job_loc job =
 			in
 			(Cil.get_instrLoc instr)
 
-let get_job_list job_queue =
-	match job_queue with
-		| [] -> (None, [])
-		| h::t -> ((Some h), t)
+let get_job_list = function
+	| [] -> None
+	| h::t -> Some (h, t)
 
 let get_job_priority_queue job_queue = 
 	if Jobs.has_next_runnable job_queue then
-		(Some (Jobs.take_next_runnable job_queue), job_queue)
+		Some ((Jobs.take_next_runnable job_queue), job_queue)
 	else
-		(None, job_queue)
+		None
 
 
 (** INTERCEPTORS **)
@@ -1109,10 +1108,9 @@ let main_loop get_job interceptor process_result job_queue : job_completion list
 				Output.print_endline s;
 				completed
 			| None ->
-				let job, job_queue = get_job job_queue in
-				match job with
+				match get_job job_queue with
 					| None -> completed
-					| Some job ->
+					| Some (job, job_queue) ->
 						let result, job_queue = interceptor job job_queue in
 						let completed, job_queue = process_result result job_queue completed in
 						main_loop job_queue completed

@@ -213,17 +213,17 @@ let at_merge_point job =
 
 let get_job_priority_queue_with_merge job_queue = 
 	if Jobs.has_next_runnable job_queue then
-		(Some ((Jobs.take_next_runnable job_queue), true), job_queue)
+		Some (((Jobs.take_next_runnable job_queue), true), job_queue)
 	else if Jobs.has_next_mergable job_queue then
 		begin
 			(* job queue is empty: take a job out of the merge set and step it, since it cannot merge
 			 * with any other jobs in the merge set (the merge set invariant) *)
 			let job = Jobs.take_next_mergable job_queue in
 			let _ = Jobs.running job_queue job in (* set current job *)
-			(Some (job, false), job_queue)
+			Some ((job, false), job_queue)
 		end
 	else
-		(None, job_queue)
+		None
 
 let merge_job_interceptor job job_queue interceptor = 
 	let job, mergeable = job in
