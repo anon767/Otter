@@ -24,7 +24,7 @@ let test_merging content ?(label=content) test =
         (* prepare the file and run the symbolic executor *)
         Executemain.prepare_file file;
         let job = Executemain.job_for_file file ["Merging"] in
-        let results = Driver.init job in
+        let results = PathMerging.init job in
 
         (* count jobs that were merged *)
         let truncated, other =

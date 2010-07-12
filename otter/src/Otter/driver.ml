@@ -870,7 +870,8 @@ let exec_stmt job =
 							let nextStateT,nextStmtT = try_branch state (Some rv) block1 in
 							let nextStateF,nextStmtF = try_branch state (Some (logicalNot rv)) block2 in
 
-							let job' = 
+							let job' =
+								(* TODO: move the below into an interceptor in PathMerging *)
 								if run_args.arg_merge_paths then (
 									(* Add in the new merge points *)
 									{ job with mergePoints =

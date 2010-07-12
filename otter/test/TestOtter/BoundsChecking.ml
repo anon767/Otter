@@ -12,7 +12,7 @@ let test_bounds content ?(label=content) ?(mergePaths=false) testFn =
     end begin fun filename ->
       (* suppress all output from the symbolic executor *)
       Executeargs.print_args.Executeargs.arg_print_nothing <- true;
-			if mergePaths then Executeargs.run_args.Executeargs.arg_merge_paths <- true;
+      Executeargs.run_args.Executeargs.arg_merge_paths <- mergePaths;
 
       (* reset error flag *)
       Errormsg.hadErrors := false;
@@ -22,13 +22,14 @@ let test_bounds content ?(label=content) ?(mergePaths=false) testFn =
       (* prepare the file and run the symbolic executor *)
       Executemain.prepare_file file;
       let job = Executemain.job_for_file file ["BoundsChecking"] in
-      let results = Driver.init job in
+      let results = if mergePaths then
+        PathMerging.init job
+      else
+        Driver.init job
+      in
 
-			(* Turn off path merging, in case the test asked for it to be turned on *)
-			Executeargs.run_args.Executeargs.arg_merge_paths <- false;
-
-			(* Check the assertions provided by the test *)
-			testFn results
+      (* Check the assertions provided by the test *)
+      testFn results
     end begin fun filename ->
       Unix.unlink filename
     end
