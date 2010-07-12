@@ -1065,13 +1065,13 @@ let output_completion_info completion =
 		| _ ->
 			()
 
-let rec process_result result job_queue completed = 
+let rec process_result result completed job_queue = 
 	match result with
 		| Active job ->
 			(completed, job::job_queue)
 
 		| Big_Fork states ->
-			List.fold_left (fun (completed, job_queue) state -> process_result state job_queue completed) (completed, job_queue) states
+			List.fold_left (fun (completed, job_queue) state -> process_result state completed job_queue) (completed, job_queue) states
 
 		| Complete completion ->
 			output_completion_info completion;
@@ -1080,14 +1080,14 @@ let rec process_result result job_queue completed =
 		| _ -> 
 			(completed, job_queue)
 
-let rec process_result_priority_queue result job_queue completed =
+let rec process_result_priority_queue result completed job_queue =
 	match result with
 		| Active job ->
 			Jobs.add_runnable job_queue job;
 			(completed, job_queue)
 
 		| Big_Fork states ->
-			List.fold_left (fun (completed, job_queue) state -> process_result_priority_queue state job_queue completed) (completed, job_queue) states
+			List.fold_left (fun (completed, job_queue) state -> process_result_priority_queue state completed job_queue) (completed, job_queue) states
 
 		| Complete completion ->
 			output_completion_info completion;
@@ -1112,7 +1112,7 @@ let main_loop get_job interceptor process_result job_queue : job_completion list
 					| None -> completed
 					| Some (job, job_queue) ->
 						let result, job_queue = interceptor job job_queue in
-						let completed, job_queue = process_result result job_queue completed in
+						let completed, job_queue = process_result result completed job_queue in
 						main_loop job_queue completed
 	in
 	main_loop job_queue []

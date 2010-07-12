@@ -159,7 +159,7 @@ let rec get_job_multijob job_queue =
 				| Some job -> Some (job, t)
 
 (* process the results *)
-let rec process_job_states result multijob multijob_queue completed =
+let rec process_job_states result multijob completed multijob_queue =
 	match result with
 		| Types.Active job ->
 			(* put the job back into the multijob and queue it *)
@@ -168,7 +168,7 @@ let rec process_job_states result multijob multijob_queue completed =
 		| Types.Big_Fork states ->
 			(* process all forks *)
 			List.fold_left begin fun (completed, multijob_queue) state ->
-				process_job_states state multijob multijob_queue completed
+				process_job_states state multijob completed multijob_queue
 			end (completed, multijob_queue) states
 		| Types.Complete completion ->
 			(* store the results *)
@@ -188,9 +188,9 @@ let repack_job_interceptor job job_queue interceptor =
 	let job, multijob = job in
 	interceptor job (multijob, job_queue)
 
-let process_result result job_queue completed =
+let process_result result completed job_queue =
 	let multijob, multijob_queue = job_queue in
-	process_job_states result multijob multijob_queue completed
+	process_job_states result multijob completed multijob_queue
 
 let (@@) i1 i2 = 
 	fun a b -> i1 a b i2
