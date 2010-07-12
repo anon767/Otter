@@ -19,6 +19,7 @@ let eval_with_cache state pc bytes =
 		  else (truth,state)
    *)
 
+(*TODO: eventually this function won't be needed in Driver *)
 let stmtInfo_of_job job =
 	{ siFuncName = (List.hd job.state.callstack).svar.vname;
 		siStmt = Cilutility.stmtAtEndOfBlock job.stmt; }
@@ -979,7 +980,7 @@ let get_job_priority_queue job_queue =
 
 (** INTERCEPTORS **)
 
-(* TODO: find a good place to this definition instead of duplicating it *)
+(* TODO: find a good place to put this definition instead of duplicating it *)
 let (@@) i1 i2 = 
 	fun a b -> i1 a b i2
 
@@ -999,15 +1000,18 @@ let otter_core_interceptor job job_queue =
 			(Complete (Types.Abandoned (msg, get_job_loc job, result)), job_queue)
 
 let intercept_function_by_name_internal target_name replace_func job job_queue interceptor =
+	(* Replace a C function with Otter code *)
+	(* replace_func retopt exps loc job job_queue *)
 	match job.instrList with
-		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), _, _)::_ when varinfo.Cil.vname = target_name ->
-			replace_func retopt varinfo
+		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::_ when varinfo.Cil.vname = target_name ->
+			replace_func retopt exps loc job job_queue
 		| _ -> 
 			interceptor job job_queue
 
 let intercept_function_by_name_external target_name replace_name job job_queue interceptor =
+	(* Replace a C function with another C function *)
 	match job.instrList with
-		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), x, y)::t when varinfo.Cil.vname = target_name ->
+		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::t when varinfo.Cil.vname = target_name ->
 			let varinfo = 
 				{varinfo with
 					vname = replace_name;
@@ -1015,10 +1019,30 @@ let intercept_function_by_name_external target_name replace_name job job_queue i
 			in		
 			let job = 
 				{job with
-					instrList = Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), x, y)::t;
+					instrList = Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::t;
 				}
-			in			
-			otter_core_interceptor job job_queue
+			in
+			(* Don't allow any other intercepters to transform the name again *)
+			otter_core_interceptor job job_queue 
+		| _ -> 
+			interceptor job job_queue
+
+let intercept_function_by_name_external_cascading target_name replace_name job job_queue interceptor =
+	(* Replace a C function with another C function *)
+	match job.instrList with
+		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::t when varinfo.Cil.vname = target_name ->
+			let varinfo = 
+				{varinfo with
+					vname = replace_name;
+				}	
+			in		
+			let job = 
+				{job with
+					instrList = Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::t;
+				}
+			in
+			(* allow any intercepters to transform the name again *)
+			(Active job, job_queue) 
 		| _ -> 
 			interceptor job job_queue
 
@@ -1100,6 +1124,4 @@ let init job =
 		otter_core_interceptor
 		process_result
 		[job]
-
-(***********************************************************)
 

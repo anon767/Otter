@@ -260,3 +260,69 @@ let can_apply_builtin state fname args =
 	with Failure(_) ->
 		false
 
+
+
+(*********************************)
+(* replace_func retopt exps loc job job_queue *)
+
+let op_exps state exps binop =
+	let rec impl exps =
+		match exps with
+			| [] -> failwith "AND/OR must take at least 1 argument"
+			| h::[] -> h
+			| h:: tail -> let t = impl tail in BinOp(binop, h, t, Cil.intType)
+	in
+	Eval.rval state (impl exps)
+
+let stmtInfo_of_job job =
+	{ siFuncName = (List.hd job.state.callstack).svar.vname;
+		siStmt = Cilutility.stmtAtEndOfBlock job.stmt; }
+
+let call_wrapper replace_func retopt exps loc job job_queue =
+	(* Wrapper for calling an Otter function and advancing the execution to the next statement *)
+	(* replace_func retopt exps loc -> state *)
+
+	let nextExHist = ref job.exHist in
+
+	let state_end = replace_func retopt exps loc job in
+	let nextStmt =
+		(* [stmt] is an [Instr] which doesn't end with a call to a
+			 [noreturn] function, so it has exactly one successor. *)
+		match job.stmt.succs with
+			| [h] -> h
+			| _ -> assert false
+	in
+	
+	(* We didn't add the outgoing edge in exec_stmt because the
+		 call might have never returned. Since there isn't an
+		 explicit return (because we handle the call internally), we
+		 have to add the edge now. *)
+	if job.inTrackedFn && Executeargs.run_args.Executeargs.arg_edge_coverage then
+		nextExHist := { !nextExHist with coveredEdges =
+		EdgeSet.add (stmtInfo_of_job job,
+			{ 
+				siFuncName = (List.hd job.state.callstack).svar.vname;
+				siStmt = Cilutility.stmtAtEndOfBlock nextStmt; })
+				!nextExHist.coveredEdges; 
+			};
+
+	(* Update state, the stmt to execute, and exHist (which may
+		 have gotten an extra bytesToVar mapping added to it). *)
+	(Active { job with state = state_end; stmt = nextStmt; exHist = !nextExHist; }, job_queue)
+
+let simple_call_wrapper replace_func retopt exps loc job job_queue =
+	(* wrapper for simple non-side effecting functions *)
+	(* replace_func state exps -> bytes *)
+	let wrapper retopt exps loc job = 
+		let (state, bytes) = replace_func job.state exps in
+			begin match retopt with
+				| None ->
+					(* No need to call the function if it is not used *)
+					state
+				| Some cil_lval ->
+					let state, lval = Eval.lval job.state cil_lval in
+					MemOp.state__assign job.state lval bytes
+			end
+	in
+	call_wrapper wrapper retopt exps loc job job_queue
+	
