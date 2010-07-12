@@ -414,8 +414,12 @@ let doExecute (f: file) =
               job_for_middle f entryfn Executeargs.run_args.arg_yaml
         in
 	    (* run the job *)
-        let result = Driver.init job in
-          [result]
+	if run_args.arg_merge_paths then
+		let result = PathMerging.init job in
+          	[result]
+	else 
+        	let result = Driver.init job in
+          	[result]
     in
 
 	(* Turn off the alarm and reset the signal handlers *)

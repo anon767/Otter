@@ -79,17 +79,6 @@ let take_next_mergable jobs =
   with e -> failwith "Jobs: no more mergable jobs"
 
 
-let merge jobs job =
-  let result = PathMerging.merge_job job jobs.merge_set in
-    match result with
-      | Some (merge_set,truncated) ->
-          jobs.merge_set <- merge_set;
-          (Some truncated)
-      | None ->
-          add_mergable jobs job;
-          None
-
-
 let running jobs job =
   jobs.current_job <- Some job
 

@@ -195,3 +195,64 @@ let merge_job job merge_set =
 	with MergeDone x ->
 		Some x
 
+let merge jobs job =
+  let result = merge_job job jobs.Jobs.merge_set in
+    match result with
+      | Some (merge_set,truncated) ->
+          jobs.Jobs.merge_set <- merge_set;
+          (Some truncated)
+      | None ->
+          Jobs.add_mergable jobs job;
+          None
+
+let at_merge_point job =
+	StmtInfoSet.mem
+		{ siFuncName=(List.hd job.state.callstack).Cil.svar.Cil.vname;
+		  siStmt=job.stmt; }
+		job.mergePoints
+
+let get_job_priority_queue_with_merge job_queue = 
+	if Jobs.has_next_runnable job_queue then
+		(Some ((Jobs.take_next_runnable job_queue), true), job_queue)
+	else if Jobs.has_next_mergable job_queue then
+		begin
+			(* job queue is empty: take a job out of the merge set and step it, since it cannot merge
+			 * with any other jobs in the merge set (the merge set invariant) *)
+			let job = Jobs.take_next_mergable job_queue in
+			let _ = Jobs.running job_queue job in (* set current job *)
+			(Some (job, false), job_queue)
+		end
+	else
+		(None, job_queue)
+
+let merge_job_interceptor job job_queue interceptor = 
+	let job, mergeable = job in
+	if mergeable && at_merge_point job then
+		(* job is at a merge point and merging is enabled: try to merge it *)
+		begin match merge job_queue job with
+			| Some (truncated) ->
+				(* merge was successful: process the result and continue *)
+				(truncated, job_queue)
+			| None ->
+				(* merge was unsuccessful: keep the job at the merge point in the merge set in case
+				 * later jobs can merge; this leads to the invariant that no jobs in the merge set
+				 * can merge with each other *)
+				(Paused job, job_queue)
+		end
+	else
+		(* job is not at a merge point: step the job *)
+		let _ = Jobs.running job_queue job in (* set current job *)
+		interceptor job job_queue
+
+let (@@) i1 i2 = 
+	fun a b -> i1 a b i2
+
+let init job =
+	let jobs = Jobs.create [] in
+	let _ = Jobs.add_runnable jobs job in
+	Driver.main_loop 
+		get_job_priority_queue_with_merge
+		(merge_job_interceptor @@ Driver.otter_core_interceptor)
+		Driver.process_result_priority_queue
+		jobs
+

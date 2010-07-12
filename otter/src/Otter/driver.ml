@@ -985,12 +985,6 @@ let step_job_with_targets targets job =
 		step_job job
 **)
 
-let at_merge_point job =
-	StmtInfoSet.mem
-		{ siFuncName=(List.hd job.state.callstack).Cil.svar.Cil.vname;
-		  siStmt=job.stmt; }
-		job.mergePoints
-
 (** TO BE REMOVED
 (** The main loop
   *)
@@ -1105,19 +1099,6 @@ let get_job_priority_queue job_queue =
 	else
 		(None, job_queue)
 
-let get_job_priority_queue_with_merge job_queue = 
-	if Jobs.has_next_runnable job_queue then
-		(Some ((Jobs.take_next_runnable job_queue), true), job_queue)
-	else if Jobs.has_next_mergable job_queue then
-		begin
-			(* job queue is empty: take a job out of the merge set and step it, since it cannot merge
-			 * with any other jobs in the merge set (the merge set invariant) *)
-			let job = Jobs.take_next_mergable job_queue in
-			let _ = Jobs.running job_queue job in (* set current job *)
-			(Some (job, false), job_queue)
-		end
-	else
-		(None, job_queue)
 
 (** INTERCEPTORS **)
 
@@ -1139,25 +1120,6 @@ let otter_core_interceptor job job_queue =
 			if run_args.arg_failfast then failwith msg;
 			let result = { result_state = job.state; result_history = job.exHist } in
 			(Complete (Types.Abandoned (msg, get_job_loc job, result)), job_queue)
-
-let merge_job_interceptor job job_queue interceptor = 
-	let job, mergeable = job in
-	if mergeable && at_merge_point job then
-		(* job is at a merge point and merging is enabled: try to merge it *)
-		begin match Jobs.merge job_queue job with
-			| Some (truncated) ->
-				(* merge was successful: process the result and continue *)
-				(truncated, job_queue)
-			| None ->
-				(* merge was unsuccessful: keep the job at the merge point in the merge set in case
-				 * later jobs can merge; this leads to the invariant that no jobs in the merge set
-				 * can merge with each other *)
-				(Paused job, job_queue)
-		end
-	else
-		(* job is not at a merge point: step the job *)
-		let _ = Jobs.running job_queue job in (* set current job *)
-		interceptor job job_queue
 
 let intercept_function_by_name_internal target_name replace_func job job_queue interceptor =
 	match job.instrList with
@@ -1182,6 +1144,7 @@ let intercept_function_by_name_external target_name replace_name job job_queue i
 			otter_core_interceptor job job_queue
 		| _ -> 
 			interceptor job job_queue
+
 
 (** PROCESS RESULT **)
 
@@ -1232,6 +1195,7 @@ let rec process_result_priority_queue result job_queue completed =
 		| _ ->
 			(completed, job_queue)
 
+
 (** MAIN LOOP **)
 
 let main_loop get_job interceptor process_result job_queue : job_completion list =
@@ -1254,24 +1218,11 @@ let main_loop get_job interceptor process_result job_queue : job_completion list
 	main_loop job_queue []
 
 let init job = 
-	if run_args.arg_merge_paths then
-		begin
-			let jobs = Jobs.create [] in
-			let _ = Jobs.add_runnable jobs job in
-			main_loop 
-				get_job_priority_queue_with_merge
-				(merge_job_interceptor @@ otter_core_interceptor)
-				process_result_priority_queue
-				jobs
-		end
-	else
-		begin
-			main_loop
-				get_job_list
-				otter_core_interceptor
-				process_result
-				[job]
-		end
+	main_loop
+		get_job_list
+		otter_core_interceptor
+		process_result
+		[job]
 
 (** TO BE REMOVED
 (* Tests of different main loops that impliment existing functionality *)
