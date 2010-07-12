@@ -172,13 +172,30 @@ let callchain_backward_se callergraph entryfn assertfn job_init : job_completion
   in
 
 	let call_Otter_main_loop targets job =
-		let jobs = Jobs.create targets in
-		let _ = Jobs.add_runnable jobs job in
-		Driver.main_loop 
-			(Driver.get_job_priority_queue) 
-			((terminate_job_at_targets_interceptor targets) @@ Driver.otter_core_interceptor)
-			(Driver.process_result_priority_queue) 
-			jobs
+		if run_args.arg_merge_paths then
+			begin
+				let jobs = Jobs.create targets in
+				let _ = Jobs.add_runnable jobs job in
+				Driver.main_loop 
+					(PathMerging.get_job_priority_queue_with_merge) 
+					(
+						PathMerging.merge_job_interceptor @@ 
+						(terminate_job_at_targets_interceptor targets) @@
+						Driver.otter_core_interceptor
+					)
+					(Driver.process_result_priority_queue) 
+					jobs
+			end
+		else
+			begin
+				let jobs = Jobs.create targets in
+				let _ = Jobs.add_runnable jobs job in
+				Driver.main_loop 
+					(Driver.get_job_priority_queue) 
+					((terminate_job_at_targets_interceptor targets) @@ Driver.otter_core_interceptor)
+					(Driver.process_result_priority_queue) 
+					jobs
+			end
 	in
 
   (* The implementation of main loop *)
