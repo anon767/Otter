@@ -995,7 +995,7 @@ let intercept_function_by_name_internal target_name replace_func job job_queue i
 
 let intercept_function_by_name_external target_name replace_name job job_queue interceptor =
 	(* Replace a C function with another C function *)
-	(* requires running Cilutility.init_funt_table *)
+	(* requires running Cilutility.init_func_table *)
 	match job.instrList with
 		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::t when varinfo.Cil.vname = target_name ->
 			let job = 
@@ -1012,7 +1012,7 @@ let intercept_function_by_name_external target_name replace_name job job_queue i
 
 let intercept_function_by_name_external_cascading target_name replace_name job job_queue interceptor =
 	(* Replace a C function with another C function *)
-	(* requires running Cilutility.init_funt_table *)
+	(* requires running Cilutility.init_func_table *)
 	match job.instrList with
 		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::t when varinfo.Cil.vname = target_name ->
 			let job = 

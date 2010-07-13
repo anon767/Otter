@@ -96,7 +96,7 @@ let rec isConstType typ =
 
 
 let func_table : (string, fundec) Hashtbl.t = Hashtbl.create 20
-let init_funt_table file = 
+let init_func_table file = 
 	let rec search = function
 		| GFun (fundec, _)::t ->
 			Hashtbl.add func_table (fundec.svar.vname) fundec;
