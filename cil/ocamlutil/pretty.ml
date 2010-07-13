@@ -792,9 +792,9 @@ let gprintf (finish : doc -> 'b)
           | '?' ->                        (* soft line break *)
               collect (dconcat acc (break)) (i + 2)
           | '<' -> 
-              collect (dconcat acc mark) (i +1)
+              collect (dconcat acc mark) (i + 2)
           | '>' -> 
-              collect (dconcat acc unmark) (i +1)
+              collect (dconcat acc unmark) (i + 2)
 	  | '^' ->                        (* left-flushed *)
 	      collect (dconcat acc (leftflush)) (i + 2)
           | '@' -> 
@@ -857,3 +857,52 @@ let getAboutString () : string =
 (************************************************)
 let auto_printer (typ: string) = 
   failwith ("Pretty.auto_printer \"" ^ typ ^ "\" only works with you use -pp \"camlp4o pa_prtype.cmo\" when you compile")
+
+
+(** Adaptor to convert Pretty-styled formatters of type [unit -> 'a -> doc] to Format-styled formatters
+        @return a Format-styled %a formatter of type [Format.formatter -> 'a -> unit]
+*)
+let format_adaptor doc_a = fun ff x ->
+  let rec convert ff mark d k = match d with
+    | Nil ->
+      k ff mark
+    | Text s ->
+      Format.pp_print_string ff s; k ff mark
+    | Concat (d1, d2) ->
+      convert ff mark d1 (fun ff mark -> convert ff mark d2 k)
+    | CText (d, s) ->
+      convert ff mark d (fun ff mark -> Format.pp_print_string ff s; k ff mark)
+    | Break ->
+      Format.pp_print_space ff (); k ff mark
+    | Line ->
+      Format.pp_force_newline ff (); k ff mark
+    | LeftFlush ->
+      k ff mark (* no equivalent in Format *)
+    | Align ->
+      Format.pp_open_box ff 1; k ff mark
+    | Unalign ->
+      Format.pp_close_box ff (); k ff mark
+    | Mark ->
+      begin match mark with
+        | Some (old_ff, buf, n) ->
+          k ff (Some (old_ff, buf, n+1))
+        | None ->
+          let buf = Buffer.create 16 in
+          let buf_ff = Format.formatter_of_buffer buf in
+          k buf_ff (Some (ff, buf, 0))
+      end
+    | Unmark ->
+      begin match mark with
+        | Some (old_ff, buf, 0) ->
+          if Format.pp_get_print_tags old_ff () then begin
+            Format.pp_print_flush ff ();
+            Format.pp_print_as old_ff 0 (Buffer.contents buf)
+          end;
+          k old_ff None
+        | Some (old_ff, buf, n) ->
+          k ff (Some (old_ff, buf, n-1))
+        | _ ->
+          failwith "Too many unmark"
+      end
+  in
+  convert ff None (doc_a () x) (fun _ _ -> ())

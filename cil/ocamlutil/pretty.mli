@@ -314,3 +314,9 @@ val countNewLines : int ref
  * the pa_prtype module generate automatically the printing functions for a 
  * type *)
 val auto_printer: string -> 'b
+
+
+(** Adaptor to convert Pretty-styled formatters of type [unit -> 'a -> doc] to Format-styled formatters
+        @return a Format-styled formatter of type [Format.formatter -> 'a -> unit]
+*)
+val format_adaptor : (unit -> 'a -> doc) -> (Format.formatter -> 'a -> unit)
