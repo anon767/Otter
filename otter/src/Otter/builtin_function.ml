@@ -1,9 +1,10 @@
 open Cil
+open Ternary
 open Bytes
 open BytesUtility
 open Types
 
-(** Functioncall wrappers for intercept_function_by_name_internal **)
+(** Function call wrappers for intercept_function_by_name_internal **)
 
 let op_exps state exps binop =
 	let rec impl exps =
@@ -236,7 +237,6 @@ let libc_socket state exps = (state,bytes__zero)
 let libc_stat state exps = (state,bytes__zero)
 let libc_waitpid state exps = (state,bytes__zero)
 let libc_write state exps = (state,bytes__zero)
-
 let posix_umask state exps = (state,bytes__zero)
 let posix_openlog state exps = (state,bytes__zero)
 let posix_syslog state exps = (state,bytes__zero)
@@ -273,4 +273,45 @@ let libc___builtin_alloca retopt exps loc job =
 	state_update_return_value retopt state bytes
 
 
-	
+let otter_given retopt exps loc job =
+	begin match retopt with
+		| None ->
+			job.state
+		| Some cil_lval ->
+			let state, lval = Eval.lval job.state cil_lval in
+			let truthvalue = 
+				begin
+					if List.length exps <> 2 then 
+						failwith "__GIVEN takes 2 arguments"
+					else
+						let state, given = Eval.rval state (List.nth exps 0) in
+						let state, rv = Eval.rval state (List.nth exps 1 ) in
+						let state, truth = MemOp.eval_with_cache state (given::state.path_condition) rv in
+						if truth == True then lazy_int_to_bytes 1 
+						else if truth == False then lazy_int_to_bytes 0
+						else bytes__symbolic (bitsSizeOf intType / 8)
+				end
+			in
+			MemOp.state__assign state lval truthvalue
+	end
+
+let otter_truth_value retopt exps loc job =
+	begin match retopt with
+		| None -> job.state 
+		| Some cil_lval ->
+			let state, lval = Eval.lval job.state cil_lval in
+			let truthvalue = 
+				lazy_int_to_bytes
+				begin
+					if List.length exps = 0 then 0 
+					else
+						let state, rv = Eval.rval state (List.hd exps) in
+						let state, truth = MemOp.eval_with_cache state state.path_condition rv in
+						if truth == True then 1
+						else if truth == False then -1
+						else 0
+				end
+			in
+			MemOp.state__assign state lval truthvalue
+	end
+

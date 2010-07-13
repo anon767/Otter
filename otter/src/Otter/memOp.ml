@@ -679,4 +679,6 @@ let rec state__eval state pc bytes =
    in
      state,return_bytes
 
+let eval_with_cache state pc bytes =
+	state__eval state pc bytes
 

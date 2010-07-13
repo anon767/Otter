@@ -48,7 +48,7 @@ let pass_targets targets job fexp exps =
 				 (Output.banner_printf 0  "Path condition: %s\n" (String.concat "&&" (List.map To_string.bytes state.path_condition)));
 				 (Output.banner_printf 0  "Connection : %s\n" (To_string.bytes connecting_bytes));
 				 *)
-			  let _, truth = Driver.eval_with_cache state (connecting_bytes::state.path_condition)  (Operation.bytes__not target.failing_condition) in
+			  let _, truth = MemOp.eval_with_cache state (connecting_bytes::state.path_condition)  (Operation.bytes__not target.failing_condition) in
 			  let total_failing_condition = Operation.bytes__land target.failing_condition connecting_bytes in
 			  let total_failing_condition = Operation.bytes__lor total_failing_condition fc in
 

@@ -32,9 +32,7 @@ type function_type =
 	| IsConcrete
 	| PathCondition
     | StringEqual
-    | TruthValue
     | Clone
-    | Given
     | IfThenElse
 (*    | DataStructureOp of Data_structure.ds_op*) 
 (*	| Fresh *)
@@ -69,9 +67,7 @@ let from_varinfo state varinfo args =
 		| "__ISCONCRETE" -> IsConcrete
 		| "__PATHCONDITION" -> PathCondition
 (*      | "__STRING_EQUAL" -> StringEqual *)
-        | "__TRUTH_VALUE" -> TruthValue
         | "__CLONE" -> Clone
-        | "__GIVEN" -> Given
         | "__ITE" -> IfThenElse
 (*        | "__SET_INIT" -> DataStructureOp (Data_structure.op__SET_INIT) *)
 (*        | "__SET_FIND" -> DataStructureOp (Data_structure.op__SET_FIND) *)

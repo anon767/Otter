@@ -7,18 +7,6 @@ open Executeargs
 open Cilutility
 open Utility
 
-let eval_with_cache state pc bytes =
-	MemOp.state__eval state pc bytes
-  (*
-  match MemOp.state__get_bytes_eval_cache state bytes with
-	| Some (boolval) -> ((if boolval then True else False), state)
-	| None ->
-		let truth = Stp.eval pc bytes in
-		  if truth = True then (truth,MemOp.state__add_bytes_eval_cache state bytes true)
-		  else if truth = False then (truth,MemOp.state__add_bytes_eval_cache state bytes false)
-		  else (truth,state)
-   *)
-
 (*TODO: eventually this function won't be needed in Driver *)
 let stmtInfo_of_job job =
 	{ siFuncName = (List.hd job.state.callstack).svar.vname;
@@ -88,48 +76,6 @@ let addInstrCoverage job instr =
 	let instrLoc = get_instrLoc instr in
 	{ job.exHist with coveredLines =
 			LineSet.add (instrLoc.file,instrLoc.line) job.exHist.coveredLines; }
-
-let exec_given state lvalopt exps =
-	begin match lvalopt with
-		| None ->
-			state
-		| Some cil_lval ->
-			let state, lval = Eval.lval state cil_lval in
-			let truthvalue = 
-				begin
-					if List.length exps <> 2 then 
-						failwith "__GIVEN takes 2 arguments"
-					else
-						let state, given = Eval.rval state (List.nth exps 0) in
-						let state, rv = Eval.rval state (List.nth exps 1 ) in
-						let state, truth = eval_with_cache state (given::state.path_condition) rv in
-						if truth == True then lazy_int_to_bytes 1 
-						else if truth == False then lazy_int_to_bytes 0
-						else bytes__symbolic (bitsSizeOf intType / 8)
-				end
-			in
-			MemOp.state__assign state lval truthvalue
-	end
-
-let exec_truth_value state lvalopt exps =
-	begin match lvalopt with
-		| None -> state 
-		| Some cil_lval ->
-			let state, lval = Eval.lval state cil_lval in
-			let truthvalue = 
-				lazy_int_to_bytes
-				begin
-					if List.length exps = 0 then 0 
-					else
-						let state, rv = Eval.rval state (List.hd exps) in
-						let state, truth = eval_with_cache state state.path_condition rv in
-						if truth == True then 1
-						else if truth == False then -1
-						else 0
-				end
-			in
-			MemOp.state__assign state lval truthvalue
-	end
 
 let exec_symbolic state lvalopt exps exHist nextExHist =
 (* There are 2 ways to use __SYMBOLIC:
@@ -560,8 +506,6 @@ let exec_func state func job instr lvalopt exps loc op_exps =
 						(* Maybe instead write a function that returns whether
 						 * an expression is true, false or unknown
 						 *)
-					| Function.Given -> exec_given state lvalopt exps
-					| Function.TruthValue -> exec_truth_value state lvalopt exps
 					| Function.Symbolic -> exec_symbolic state lvalopt exps exHist nextExHist
 					| Function.SymbolicState -> exec_symbolic_state state
 					| Function.SymbolicStatic -> exec_symbolic_static state lvalopt exps loc
@@ -831,7 +775,7 @@ let exec_stmt job =
 							Output.print_endline (if String.length pc_str = 0 then "(nil)" else pc_str);
 						end;
  
-					let state, truth = eval_with_cache state state.path_condition rv in
+					let state, truth = MemOp.eval_with_cache state state.path_condition rv in
  
 					Output.set_mode Output.MSG_REG;
 					if truth == True then
@@ -1050,6 +994,8 @@ let intercept_extended_otter_functions job job_queue interceptor =
 	(cascade_call_on_failure_interceptor 
 	(intercept_function_by_name_internal "memset"                  (call Builtin_function.libc_memset))) @@
 	(intercept_function_by_name_internal "memset__concrete"        (call Builtin_function.libc_memset__concrete)) @@
+	(intercept_function_by_name_internal "__TRUTH_VALUE"           (exec Builtin_function.otter_truth_value)) @@
+	(intercept_function_by_name_internal "__GIVEN"                 (exec Builtin_function.otter_given)) @@
 	
 	(* pass on the job when none of those match *)
 	interceptor
