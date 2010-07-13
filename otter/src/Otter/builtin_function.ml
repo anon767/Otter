@@ -3,6 +3,87 @@ open Bytes
 open BytesUtility
 open Types
 
+(** Functioncall wrappers for intercept_function_by_name_internal **)
+
+let op_exps state exps binop =
+	let rec impl exps =
+		match exps with
+			| [] -> failwith "AND/OR must take at least 1 argument"
+			| h::[] -> h
+			| h:: tail -> let t = impl tail in BinOp(binop, h, t, Cil.intType)
+	in
+	Eval.rval state (impl exps)
+
+let stmtInfo_of_job job =
+	{ siFuncName = (List.hd job.state.callstack).svar.vname;
+		siStmt = Cilutility.stmtAtEndOfBlock job.stmt; }
+
+let call_wrapper replace_func retopt exps loc job job_queue =
+	(* Wrapper for calling an Otter function and advancing the execution to the next statement *)
+	(* replace_func retopt exps loc job -> state *)
+
+	let instr = List.hd job.instrList in
+	let job = { job with instrList = []; } in
+
+	let state_end = replace_func retopt exps loc job in
+
+	let nextStmt =
+		(* [stmt] is an [Instr] which doesn't end with a call to a
+			 [noreturn] function, so it has exactly one successor. *)
+		match job.stmt.succs with
+			| [h] -> h
+			| _ -> assert false
+	in
+	
+	(* We didn't add the outgoing edge in exec_stmt because the
+		 call might have never returned. Since there isn't an
+		 explicit return (because we handle the call internally), we
+		 have to add the edge now. *)
+	let job =
+		if job.inTrackedFn && Executeargs.run_args.Executeargs.arg_line_coverage
+		then { job with 
+				exHist = 
+					(let instrLoc = get_instrLoc instr in
+					{ job.exHist with coveredLines = LineSet.add (instrLoc.file, instrLoc.line) job.exHist.coveredLines; }
+					);
+			}
+		else job
+	in
+	let nextExHist = ref job.exHist in
+	if job.inTrackedFn && Executeargs.run_args.Executeargs.arg_edge_coverage then
+		nextExHist := { !nextExHist with coveredEdges =
+		EdgeSet.add (stmtInfo_of_job job,
+			{ 
+				siFuncName = (List.hd job.state.callstack).svar.vname;
+				siStmt = Cilutility.stmtAtEndOfBlock nextStmt; })
+				!nextExHist.coveredEdges; 
+			};
+
+	(* Update state, the stmt to execute, and exHist (which may
+		 have gotten an extra bytesToVar mapping added to it). *)
+	(Active { job with state = state_end; stmt = nextStmt; exHist = !nextExHist; }, job_queue)
+
+let state_update_return_value retopt state bytes = 
+	match retopt with
+		| None ->
+			state
+		| Some cil_lval ->
+			let state, lval = Eval.lval state cil_lval in
+			MemOp.state__assign state lval bytes
+
+let simple_call_wrapper replace_func retopt exps loc job job_queue =
+	(* wrapper for simple functions *)
+	(* replace_func state exps -> bytes *)
+	let wrapper retopt exps loc job = 
+		let (state, bytes) = replace_func job.state exps in
+		state_update_return_value retopt state bytes
+	in
+	call_wrapper wrapper retopt exps loc job job_queue
+
+
+
+(** Function Implimentations **)
+
 let libc___builtin_va_arg state exps =
 	let state, key = Eval.rval state (List.hd exps) in
 	let state, ret = MemOp.vargs_table__get state key in
@@ -163,45 +244,7 @@ let posix_syslog state exps = (state,bytes__zero)
 type t = state -> exp list -> state * bytes
 
 let get = function
-	| "__builtin_va_arg_fixed" -> libc___builtin_va_arg
-	| "__builtin_va_arg" -> libc___builtin_va_arg
-	| "__builtin_va_copy" -> libc___builtin_va_copy
-	| "__builtin_va_end" -> libc___builtin_va_end
-	| "__builtin_va_start" -> libc___builtin_va_start
-(*	| "__create_file" -> libc___create_file *)
-(*	| "__error" -> libc___error *)
-(*	| "__maskrune" -> libc___maskrune*)
-(*	| "__toupper" -> libc___toupper *)
-(*	| "accept" -> libc_accept *)
-(*	| "bind" -> libc_bind *)
-(*	| "close" -> libc_close *)
-(*	| "dup2" -> libc_dup2 *)
-(*	| "execl" -> libc_execl *)
-(*	| "fclose" -> libc_fclose *)
-(*	| "feof" -> libc_feof *)
-(*	| "fileno" -> libc_fileno  (* write to file *) *)
-(*	| "fork" -> libc_fork *)
-	| "free" -> libc_free
-(*	| "getc" -> libc_getc *)
-(*	| "getsockname" -> libc_getsockname *)
-(*	| "listen" -> libc_listen *)
-	| "memset" -> libc_memset
-	| "memset__concrete" -> libc_memset__concrete
-(*	| "strlen" -> libc_strlen *)
-(*	| "open" -> libc_open *)
-(*	| "pipe" -> libc_pipe *)
-(*	| "putenv" -> libc_putenv *)
-(*	| "read" -> libc_read *)
-(*	| "recv" -> libc_recv *)
-(*	| "send" -> libc_send *)
-(*	| "socket" -> libc_socket *)
-(*	| "stat" -> libc_stat *)
-(*	| "waitpid" -> libc_waitpid *)
-(*	| "write" -> libc_write *)
-	(* these are from posix *)
-(*	| "umask" -> posix_umask			*)
-(*	| "openlog" -> posix_openlog	*)
-(*	| "syslog" -> posix_syslog		*)
+ 	| "memset" -> libc_memset
 
 	| _ -> failwith "No such builtin function"
 
@@ -222,86 +265,6 @@ let can_apply_builtin state fname args =
 		true
 	with Failure(_) ->
 		false
-
-
-
-(*********************************)
-(* replace_func retopt exps loc job job_queue *)
-
-let op_exps state exps binop =
-	let rec impl exps =
-		match exps with
-			| [] -> failwith "AND/OR must take at least 1 argument"
-			| h::[] -> h
-			| h:: tail -> let t = impl tail in BinOp(binop, h, t, Cil.intType)
-	in
-	Eval.rval state (impl exps)
-
-let stmtInfo_of_job job =
-	{ siFuncName = (List.hd job.state.callstack).svar.vname;
-		siStmt = Cilutility.stmtAtEndOfBlock job.stmt; }
-
-let call_wrapper replace_func retopt exps loc job job_queue =
-	(* Wrapper for calling an Otter function and advancing the execution to the next statement *)
-	(* replace_func retopt exps loc job -> state *)
-
-	let instr = List.hd job.instrList in
-
-	let state_end = replace_func retopt exps loc job in
-
-	let nextStmt =
-		(* [stmt] is an [Instr] which doesn't end with a call to a
-			 [noreturn] function, so it has exactly one successor. *)
-		match job.stmt.succs with
-			| [h] -> h
-			| _ -> assert false
-	in
-	
-	(* We didn't add the outgoing edge in exec_stmt because the
-		 call might have never returned. Since there isn't an
-		 explicit return (because we handle the call internally), we
-		 have to add the edge now. *)
-	let job =
-		if job.inTrackedFn && Executeargs.run_args.Executeargs.arg_line_coverage
-		then { job with 
-				exHist = 
-					(let instrLoc = get_instrLoc instr in
-					{ job.exHist with coveredLines = LineSet.add (instrLoc.file, instrLoc.line) job.exHist.coveredLines; }
-					); 
-				instrList = [];
-			}
-		else {job with instrList = [];}
-	in
-	let nextExHist = ref job.exHist in
-	if job.inTrackedFn && Executeargs.run_args.Executeargs.arg_edge_coverage then
-		nextExHist := { !nextExHist with coveredEdges =
-		EdgeSet.add (stmtInfo_of_job job,
-			{ 
-				siFuncName = (List.hd job.state.callstack).svar.vname;
-				siStmt = Cilutility.stmtAtEndOfBlock nextStmt; })
-				!nextExHist.coveredEdges; 
-			};
-
-	(* Update state, the stmt to execute, and exHist (which may
-		 have gotten an extra bytesToVar mapping added to it). *)
-	(Active { job with state = state_end; stmt = nextStmt; exHist = !nextExHist; }, job_queue)
-
-let state_update_return_value retopt state bytes = 
-	match retopt with
-		| None ->
-			state
-		| Some cil_lval ->
-			let state, lval = Eval.lval state cil_lval in
-			MemOp.state__assign state lval bytes
-
-let simple_call_wrapper replace_func retopt exps loc job job_queue =
-	(* wrapper for simple non-side effecting functions *)
-	(* replace_func state exps -> bytes *)
-	let wrapper retopt exps loc job = 
-		let (state, bytes) = replace_func job.state exps in
-		state_update_return_value retopt state bytes
-	in
-	call_wrapper wrapper retopt exps loc job job_queue
 
 (* __builtin_alloca is used for local arrays with variable size; has the same semantics as malloc *)
 let libc___builtin_alloca__id = ref 1
@@ -335,6 +298,4 @@ let libc___builtin_alloca retopt exps loc job =
 	state_update_return_value retopt state bytes
 
 
-(* share implementation with __builtin_alloca *)
-let libc_malloc = libc___builtin_alloca
 	
