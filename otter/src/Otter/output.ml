@@ -23,14 +23,6 @@ class basic_formatter = fun runningJobId runningJobDepth cur_loc ->
 		val runningJobDepth : int = runningJobDepth
 		val cur_loc : Cil.location = cur_loc
 
-		method set_runningJobId id = {<runningJobId = id>}
-		method set_runningJobDepth depth = {<runningJobDepth = depth>}
-		method set_cur_loc loc = {<cur_loc = loc>}
-
-		(* temporary until funtions are refactored; please don't use them*)
-		method get_cur_loc () = cur_loc
-		method get_runningJobId () = runningJobId
-		
 		method private print_loc loc = 
 			if loc==Cil.locUnknown then "" else
 			loc.Cil.file^":"^(string_of_int loc.Cil.line)^" : "
@@ -71,7 +63,7 @@ class ['a] indent_formatter = fun (f:'a) ->
 			impl str (f#format_str " ")
 	end
 
-let formatter = ref (new basic_formatter 0 0 Cil.locUnknown)
+let formatter = ref (new formatter_base)(*new basic_formatter 0 0 Cil.locUnknown*)
 
 type msg_type = 
 	| MSG_REG

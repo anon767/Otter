@@ -653,9 +653,7 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 let exec_instr job =
 	assert (job.instrList <> []);
 	let printInstr instr =
-		(*TODO: refactor formatting settings into a interceptor*)
 		Output.set_mode Output.MSG_STMT;
-		Output.formatter := !Output.formatter#set_cur_loc (Cil.get_instrLoc instr);
 		Output.print_endline (To_string.instr instr)
 	in
 
@@ -703,9 +701,7 @@ let exec_stmt job =
 		else job.exHist
 	in
 
-	(*TODO: refactor formatting settings into an interceptor*)
 	Output.set_mode Output.MSG_STMT;
-	Output.formatter := !Output.formatter#set_cur_loc (Cil.get_stmtLoc stmt.skind);
 	Output.print_endline (To_string.stmt stmt);
 	match stmt.skind with
 		| Instr [] ->
@@ -932,18 +928,6 @@ let printJob (state,stmt) =
 *)
 
 
-(*TODO: refactor formatting settings and fix dependance on reading from the formatter*)
-let setRunningJob job =
-	if !Output.formatter#get_runningJobId() <> job.jid then (
-	  if not Executeargs.run_args.arg_cfg_pruning then
-		(
-		Output.set_mode Output.MSG_REG;
-		Output.print_endline "***** Changing running job *****"
-		);
-		Output.formatter := !Output.formatter#set_runningJobId job.jid;
-	);
-	Output.formatter := !Output.formatter#set_runningJobDepth (List.length job.state.path_condition)
-
 (** GET JOB **)
 
 let get_job_loc job =
@@ -975,8 +959,21 @@ let (@@) i1 i2 = fun a b -> i1 a b i2
 let identity_interceptor job job_queue interceptor =
 	interceptor job job_queue
 
+let old_job_id = ref 0
+let set_output_formatter_interceptor job job_queue interceptor = 
+	if !old_job_id <> job.jid then (
+		if not Executeargs.run_args.arg_cfg_pruning then
+		(
+			Output.set_mode Output.MSG_REG;
+			Output.print_endline "***** Changing running job *****"
+		);
+		old_job_id := job.jid
+	);
+	Output.formatter := ((new Output.basic_formatter job.jid (List.length job.state.path_condition) (get_job_loc job)) 
+		:> Output.formatter_base);
+	interceptor job job_queue
+
 let otter_core_interceptor job job_queue =
-	setRunningJob job;  (*TODO: get rid of this here*)
 	try
 		match job.instrList with
 			| [] -> (exec_stmt job, job_queue)
@@ -998,6 +995,7 @@ let intercept_function_by_name_internal target_name replace_func job job_queue i
 
 let intercept_function_by_name_external target_name replace_name job job_queue interceptor =
 	(* Replace a C function with another C function *)
+	(* requires running Cilutility.init_funt_table *)
 	match job.instrList with
 		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::t when varinfo.Cil.vname = target_name ->
 			let job = 
@@ -1005,7 +1003,7 @@ let intercept_function_by_name_external target_name replace_name job job_queue i
 					instrList = Cil.Call(retopt, Cil.Lval(Cil.Var((Hashtbl.find Cilutility.func_table replace_name).Cil.svar), Cil.NoOffset), exps, loc)::t;
 				}
 			in
-			Output.set_mode Output.MSG_MUSTPRINT;
+			Output.set_mode Output.MSG_REG;
 			Output.print_endline (Format.sprintf "Transformed Call %s to Call %s" target_name replace_name);
 			(* Don't allow any other intercepters to transform the name again *)
 			otter_core_interceptor job job_queue 
@@ -1014,6 +1012,7 @@ let intercept_function_by_name_external target_name replace_name job job_queue i
 
 let intercept_function_by_name_external_cascading target_name replace_name job job_queue interceptor =
 	(* Replace a C function with another C function *)
+	(* requires running Cilutility.init_funt_table *)
 	match job.instrList with
 		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::t when varinfo.Cil.vname = target_name ->
 			let job = 
@@ -1021,7 +1020,7 @@ let intercept_function_by_name_external_cascading target_name replace_name job j
 					instrList = Cil.Call(retopt, Cil.Lval(Cil.Var((Hashtbl.find Cilutility.func_table replace_name).Cil.svar), Cil.NoOffset), exps, loc)::t;
 				}
 			in
-			Output.set_mode Output.MSG_MUSTPRINT;
+			Output.set_mode Output.MSG_REG;
 			Output.print_endline (Format.sprintf "Transformed Call %s to Call %s" target_name replace_name);
 			(* allow any intercepters to transform the name again *)
 			(Active job, job_queue) 
@@ -1047,6 +1046,7 @@ let intercept_extended_otter_functions job job_queue interceptor =
 	(intercept_function_by_name_internal "__builtin_va_copy"       (call Builtin_function.libc___builtin_va_copy)) @@
 	(intercept_function_by_name_internal "__builtin_va_end"        (call Builtin_function.libc___builtin_va_end)) @@
 	(intercept_function_by_name_internal "__builtin_va_start"      (call Builtin_function.libc___builtin_va_start)) @@
+	(* memset defaults to the C implimentation on failure *)
 	(cascade_call_on_failure_interceptor 
 	(intercept_function_by_name_internal "memset"                  (call Builtin_function.libc_memset))) @@
 	(intercept_function_by_name_internal "memset__concrete"        (call Builtin_function.libc_memset__concrete)) @@
@@ -1130,7 +1130,11 @@ let main_loop get_job interceptor process_result job_queue : job_completion list
 let init job = 
 	main_loop
 		get_job_list
-		(intercept_extended_otter_functions @@ otter_core_interceptor)
+		(
+			set_output_formatter_interceptor @@
+			intercept_extended_otter_functions @@ 
+			otter_core_interceptor
+		)
 		process_result
 		[job]
 
