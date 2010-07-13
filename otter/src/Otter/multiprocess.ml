@@ -212,8 +212,7 @@ let init job =
 	(* start executing *)
 	Driver.main_loop 
 		get_job_multijob
-		(intercept_fork @@ repack_job_interceptor @@ (Driver.intercept_function_by_name_external "foo" "bar") @@ Driver.otter_core_interceptor)
-		(*intercept_fork @@ repack_job_interceptor @@ Driver.otter_core_interceptor*)
+		intercept_fork @@ repack_job_interceptor @@ Driver.otter_core_interceptor
 		process_result
 		[ multijob ]
 
