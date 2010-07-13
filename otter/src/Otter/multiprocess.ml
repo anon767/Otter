@@ -18,6 +18,7 @@ type local_state = {
 	va_arg : Bytes.bytes list list;
 	va_arg_map : Bytes.bytes list Types.VargsMap.t;
 	block_to_bytes : Bytes.bytes Types.deferred Types.MemoryBlockMap.t;
+	pid : int;
 }
 
 type shared_state = {
@@ -28,11 +29,13 @@ type multijob = {
 	processes : (program_counter * local_state) list;
 	shared : shared_state;
 	jid : int;
+	next_pid : int;
+	current_pid : int;
 }
 
 
 (* put a job back into the multijob and update the shared state *)
-let put_job job multijob =
+let put_job job multijob pid =
 	let program_counter = {
 		instrList = job.Types.instrList;
 		stmt = job.Types.stmt;
@@ -46,6 +49,7 @@ let put_job job multijob =
 		va_arg = job.Types.state.Types.va_arg;
 		va_arg_map = job.Types.state.Types.va_arg_map;
 		block_to_bytes = job.Types.state.Types.block_to_bytes;
+		pid = pid;
 	} in
 	let shared = {
 		path_condition = job.Types.state.Types.path_condition;
@@ -54,6 +58,8 @@ let put_job job multijob =
 		processes = List.append multijob.processes [ (program_counter, process) ];
 		shared = shared;
 		jid = job.Types.jid;
+		next_pid = multijob.next_pid;
+		current_pid = multijob.current_pid;
 	}
 
 
@@ -107,6 +113,7 @@ let get_job multijob = match multijob.processes with
 		} in
 		let multijob = { multijob with
 			processes = processes;
+			current_pid = process.pid;
 		} in
 		Some (job, multijob)
 
@@ -141,7 +148,7 @@ class multiprocess_formatter = fun jid pid cur_loc ->
 
 let multi_set_output_formatter_interceptor job job_queue interceptor = 
 	let j, m = job in
-Output.formatter := ((new multiprocess_formatter m.jid 1 (Driver.get_job_loc j)) 
+	Output.formatter := ((new multiprocess_formatter m.jid m.current_pid (Driver.get_job_loc j)) 
 		:> Output.formatter_base);
 	interceptor job job_queue
 
@@ -149,6 +156,7 @@ let intercept_fork job job_queue interceptor =
 	let job, multijob = job in
 	match job.Types.instrList with
 		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), _, _)::_ when varinfo.Cil.vname = "fork" -> 
+
 			(* update the program counter *)
 			assert(List.length job.Types.instrList = 1);
 			let next_stmt = match job.Types.stmt.Cil.succs with
@@ -157,21 +165,20 @@ let intercept_fork job job_queue interceptor =
 			in
 			let job = { job with Types.instrList = []; Types.stmt = next_stmt; } in
 
-			(* TODO:
-			 * - keep track of pids symbolically
-			 * - be careful to aquire the pid *before* cloning the job, so that the states are consistent
-			 *)
+			Output.set_mode Output.MSG_REG;
+			Output.print_endline (Format.sprintf "fork(): parent: %d, child: %d" multijob.current_pid multijob.next_pid);
 
 			(* clone the job *)
 			let job, child_job = match retopt with
 				| None ->
 					(job, job)
 				| Some cil_lval ->
+
 					let child_job = { job with
 						(* TODO: make the pid symbolic *)
 						Types.state =
 							let state, lval = Eval.lval job.Types.state cil_lval in
-							MemOp.state__assign state lval (Bytes.bytes__one)
+							MemOp.state__assign state lval (Bytes.lazy_int_to_bytes multijob.next_pid)
 					} in
 					let job = { job with
 						Types.state =
@@ -180,7 +187,8 @@ let intercept_fork job job_queue interceptor =
 					} in
 					(job, child_job)
 			in
-			let multijob = (put_job child_job multijob) in
+			let multijob = (put_job child_job multijob multijob.next_pid) in
+			let multijob = {multijob with next_pid = multijob.next_pid + 1 } in
 			interceptor (job, multijob) job_queue
 		| _ -> 
 			interceptor (job, multijob) job_queue
@@ -198,7 +206,7 @@ let rec process_job_states result multijob completed multijob_queue =
 	match result with
 		| Types.Active job ->
 			(* put the job back into the multijob and queue it *)
-			let multijob = put_job job multijob in
+			let multijob = put_job job multijob multijob.current_pid in
 			(completed, (multijob::multijob_queue))
 		| Types.Big_Fork states ->
 			(* process all forks *)
@@ -241,8 +249,10 @@ let init job =
 			path_condition = [];
 		};
 		jid = job.Types.jid;
+		next_pid = 1;
+		current_pid = 0;
 	} in
-	let multijob = put_job job multijob in
+	let multijob = put_job job multijob 0 in
 
 	(* start executing *)
 	Driver.main_loop 
