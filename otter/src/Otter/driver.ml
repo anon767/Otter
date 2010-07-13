@@ -1012,16 +1012,13 @@ let intercept_function_by_name_external target_name replace_name job job_queue i
 	(* Replace a C function with another C function *)
 	match job.instrList with
 		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::t when varinfo.Cil.vname = target_name ->
-			let varinfo = 
-				{varinfo with
-					vname = replace_name;
-				}	
-			in		
 			let job = 
 				{job with
-					instrList = Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::t;
+					instrList = Cil.Call(retopt, Cil.Lval(Cil.Var((Hashtbl.find Cilutility.func_table replace_name).Cil.svar), Cil.NoOffset), exps, loc)::t;
 				}
 			in
+			Output.set_mode Output.MSG_MUSTPRINT;
+			Output.print_endline (Format.sprintf "Transformed Call %s to Call %s" target_name replace_name);
 			(* Don't allow any other intercepters to transform the name again *)
 			otter_core_interceptor job job_queue 
 		| _ -> 
@@ -1031,16 +1028,13 @@ let intercept_function_by_name_external_cascading target_name replace_name job j
 	(* Replace a C function with another C function *)
 	match job.instrList with
 		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::t when varinfo.Cil.vname = target_name ->
-			let varinfo = 
-				{varinfo with
-					vname = replace_name;
-				}	
-			in		
 			let job = 
 				{job with
-					instrList = Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::t;
+					instrList = Cil.Call(retopt, Cil.Lval(Cil.Var((Hashtbl.find Cilutility.func_table replace_name).Cil.svar), Cil.NoOffset), exps, loc)::t;
 				}
 			in
+			Output.set_mode Output.MSG_MUSTPRINT;
+			Output.print_endline (Format.sprintf "Transformed Call %s to Call %s" target_name replace_name);
 			(* allow any intercepters to transform the name again *)
 			(Active job, job_queue) 
 		| _ -> 

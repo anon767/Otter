@@ -175,6 +175,10 @@ let rec process_job_states result multijob completed multijob_queue =
 			let multijob = put_completion completion multijob in
 			let completion = match completion with
 				| Types.Abandoned (msg, loc, job_result) ->
+					Output.set_mode Output.MSG_MUSTPRINT;
+					(Output.printf 
+						"Error \"%s\" occurs at %s\nAbandoning path\n"
+						msg (To_string.location loc));
 					Types.Abandoned (msg ^ (Printexc.get_backtrace ()), loc, job_result)
 				| _ ->
 					completion
@@ -208,7 +212,8 @@ let init job =
 	(* start executing *)
 	Driver.main_loop 
 		get_job_multijob
-		(intercept_fork @@ repack_job_interceptor @@ Driver.otter_core_interceptor)
+		(intercept_fork @@ repack_job_interceptor @@ (Driver.intercept_function_by_name_external "foo" "bar") @@ Driver.otter_core_interceptor)
+		(*intercept_fork @@ repack_job_interceptor @@ Driver.otter_core_interceptor*)
 		process_result
 		[ multijob ]
 
@@ -227,6 +232,7 @@ let doit file =
 			Executemain.job_for_middle file entryfn Executeargs.run_args.Executeargs.arg_yaml
 	in
 
+	Cilutility.init_funt_table file;
 	(* run the job *)
 	let result = init job in
 
