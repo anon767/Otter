@@ -245,9 +245,10 @@ let call_wrapper replace_func retopt exps loc job job_queue =
 	(* Wrapper for calling an Otter function and advancing the execution to the next statement *)
 	(* replace_func retopt exps loc job -> state *)
 
-	let nextExHist = ref job.exHist in
+	let instr = List.hd job.instrList in
 
 	let state_end = replace_func retopt exps loc job in
+
 	let nextStmt =
 		(* [stmt] is an [Instr] which doesn't end with a call to a
 			 [noreturn] function, so it has exactly one successor. *)
@@ -260,6 +261,18 @@ let call_wrapper replace_func retopt exps loc job job_queue =
 		 call might have never returned. Since there isn't an
 		 explicit return (because we handle the call internally), we
 		 have to add the edge now. *)
+	let job =
+		if job.inTrackedFn && Executeargs.run_args.Executeargs.arg_line_coverage
+		then { job with 
+				exHist = 
+					(let instrLoc = get_instrLoc instr in
+					{ job.exHist with coveredLines = LineSet.add (instrLoc.file, instrLoc.line) job.exHist.coveredLines; }
+					); 
+				instrList = [];
+			}
+		else {job with instrList = [];}
+	in
+	let nextExHist = ref job.exHist in
 	if job.inTrackedFn && Executeargs.run_args.Executeargs.arg_edge_coverage then
 		nextExHist := { !nextExHist with coveredEdges =
 		EdgeSet.add (stmtInfo_of_job job,
