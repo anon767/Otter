@@ -1039,6 +1039,34 @@ let intercept_function_by_name_external_cascading target_name replace_name job j
 		| _ -> 
 			interceptor job job_queue
 
+let cascade_call_on_failure_interceptor try_interceptor job job_queue interceptor =
+	try
+		try_interceptor job job_queue interceptor
+	with
+		_ -> interceptor job job_queue
+
+let intercept_extended_otter_functions job job_queue interceptor = 
+	let exec = Builtin_function.call_wrapper in
+	let call = Builtin_function.simple_call_wrapper in
+	(
+
+	(* intercept builtin functions *)
+	(intercept_function_by_name_internal "__builtin_alloca"        (exec Builtin_function.libc___builtin_alloca)) @@
+	(intercept_function_by_name_internal "malloc"                  (exec Builtin_function.libc___builtin_alloca)) @@
+	(intercept_function_by_name_internal "__builtin_va_arg_fixed"  (call Builtin_function.libc___builtin_va_arg)) @@
+	(intercept_function_by_name_internal "__builtin_va_arg"        (call Builtin_function.libc___builtin_va_arg)) @@
+	(intercept_function_by_name_internal "__builtin_va_copy"       (call Builtin_function.libc___builtin_va_copy)) @@
+	(intercept_function_by_name_internal "__builtin_va_end"        (call Builtin_function.libc___builtin_va_end)) @@
+	(intercept_function_by_name_internal "__builtin_va_start"      (call Builtin_function.libc___builtin_va_start)) @@
+	(cascade_call_on_failure_interceptor 
+	(intercept_function_by_name_internal "memset"                  (call Builtin_function.libc_memset))) @@
+	(intercept_function_by_name_internal "memset__concrete"        (call Builtin_function.libc_memset__concrete)) @@
+	
+	(* pass on the job when none of those match *)
+	interceptor
+
+	) job job_queue
+
 
 (** PROCESS RESULT **)
 
@@ -1088,28 +1116,6 @@ let rec process_result_priority_queue result completed job_queue =
 
 		| _ ->
 			(completed, job_queue)
-
-let intercept_extended_otter_functions job job_queue interceptor = 
-	let exec = Builtin_function.call_wrapper in
-	let call = Builtin_function.simple_call_wrapper in
-	(
-
-	(* intercept builtin functions *)
-	(intercept_function_by_name_internal "__builtin_alloca"        (exec Builtin_function.libc___builtin_alloca)) @@
-	(intercept_function_by_name_internal "malloc"                  (exec Builtin_function.libc___builtin_alloca)) @@
-	(intercept_function_by_name_internal "__builtin_va_arg_fixed"  (call Builtin_function.libc___builtin_va_arg)) @@
-	(intercept_function_by_name_internal "__builtin_va_arg"        (call Builtin_function.libc___builtin_va_arg)) @@
-	(intercept_function_by_name_internal "__builtin_va_copy"       (call Builtin_function.libc___builtin_va_copy)) @@
-	(intercept_function_by_name_internal "__builtin_va_end"        (call Builtin_function.libc___builtin_va_end)) @@
-	(intercept_function_by_name_internal "__builtin_va_start"      (call Builtin_function.libc___builtin_va_start)) @@
-	(* need to impliment library redirect on failure for memset
-	(intercept_function_by_name_internal "memset"                  (call Builtin_function.libc_memset)) @@*)
-	(intercept_function_by_name_internal "memset__concrete"        (call Builtin_function.libc_memset__concrete)) @@
-	
-	(* pass on the job when none of those match *)
-	interceptor
-
-	) job job_queue
 
 
 (** MAIN LOOP **)
