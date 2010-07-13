@@ -43,41 +43,6 @@ let libc___builtin_va_start state exps =
 			(state, bytes__zero)
 		| _ -> failwith "First argument of va_start must have lval"
 
-
-(* __builtin_alloca is used for local arrays with variable size; has the same semantics as malloc *)
-let libc___builtin_alloca__id = ref 1
-let libc___builtin_alloca_size state size bytes =
-	let name = Printf.sprintf "%s(%d)#%d/%s%s"
-		(List.hd state.callstack).svar.vname
-		size
-		(Utility.next_id libc___builtin_alloca__id)
-		(To_string.location (!Output.formatter#get_cur_loc()))
-		(MemOp.state__trace state)
-	in
-	let block =  block__make name size Block_type_Heap in
-	let addrof_block = make_Bytes_Address (block, bytes__zero) in
-	let state = MemOp.state__add_block state block bytes in
-	(state, addrof_block)
-
-let libc___builtin_alloca state exps =
-	let state, b_size = Eval.rval state (List.hd exps) in
-	let size =
-		if isConcrete_bytes b_size then
-			bytes_to_int_auto b_size (*safe to use bytes_to_int as arg should be small *)
-		else
-			1 (* currently bytearray have unbounded length *)
-  in
-	let bytes =
-	  if Executeargs.run_args.Executeargs.arg_init_malloc_zero
-	  then bytes__make size (* initially zero, as though malloc were calloc *)
-	  else bytes__make_default size byte__undef (* initially the symbolic 'undef' byte *)
-	in
-    libc___builtin_alloca_size state size bytes
-
-
-(* share implementation with __builtin_alloca *)
-let libc_malloc = libc___builtin_alloca
-
 let libc_free state exps =
 	(* Remove the mapping of (block,bytes) in the state. *)
 	(* From opengroup: The free() function causes the space pointed to by
@@ -203,7 +168,6 @@ let get = function
 	| "__builtin_va_copy" -> libc___builtin_va_copy
 	| "__builtin_va_end" -> libc___builtin_va_end
 	| "__builtin_va_start" -> libc___builtin_va_start
-	| "__builtin_alloca" -> libc___builtin_alloca
 (*	| "__create_file" -> libc___create_file *)
 (*	| "__error" -> libc___error *)
 (*	| "__maskrune" -> libc___maskrune*)
@@ -221,7 +185,6 @@ let get = function
 (*	| "getc" -> libc_getc *)
 (*	| "getsockname" -> libc_getsockname *)
 (*	| "listen" -> libc_listen *)
-	| "malloc" -> libc_malloc
 	| "memset" -> libc_memset
 	| "memset__concrete" -> libc_memset__concrete
 (*	| "strlen" -> libc_strlen *)
@@ -280,7 +243,7 @@ let stmtInfo_of_job job =
 
 let call_wrapper replace_func retopt exps loc job job_queue =
 	(* Wrapper for calling an Otter function and advancing the execution to the next statement *)
-	(* replace_func retopt exps loc -> state *)
+	(* replace_func retopt exps loc job -> state *)
 
 	let nextExHist = ref job.exHist in
 
@@ -310,19 +273,55 @@ let call_wrapper replace_func retopt exps loc job job_queue =
 		 have gotten an extra bytesToVar mapping added to it). *)
 	(Active { job with state = state_end; stmt = nextStmt; exHist = !nextExHist; }, job_queue)
 
+let state_update_return_value retopt state bytes = 
+	match retopt with
+		| None ->
+			state
+		| Some cil_lval ->
+			let state, lval = Eval.lval state cil_lval in
+			MemOp.state__assign state lval bytes
+
 let simple_call_wrapper replace_func retopt exps loc job job_queue =
 	(* wrapper for simple non-side effecting functions *)
 	(* replace_func state exps -> bytes *)
 	let wrapper retopt exps loc job = 
 		let (state, bytes) = replace_func job.state exps in
-			begin match retopt with
-				| None ->
-					(* No need to call the function if it is not used *)
-					state
-				| Some cil_lval ->
-					let state, lval = Eval.lval job.state cil_lval in
-					MemOp.state__assign job.state lval bytes
-			end
+		state_update_return_value retopt state bytes
 	in
 	call_wrapper wrapper retopt exps loc job job_queue
+
+(* __builtin_alloca is used for local arrays with variable size; has the same semantics as malloc *)
+let libc___builtin_alloca__id = ref 1
+let libc___builtin_alloca_size state size bytes loc =
+	let name = Printf.sprintf "%s(%d)#%d/%s%s"
+		(List.hd state.callstack).svar.vname
+		size
+		(Utility.next_id libc___builtin_alloca__id)
+		(To_string.location loc)
+		(MemOp.state__trace state)
+	in
+	let block = block__make name size Block_type_Heap in
+	let addrof_block = make_Bytes_Address (block, bytes__zero) in
+	let state = MemOp.state__add_block state block bytes in
+	(state, addrof_block)
+
+let libc___builtin_alloca retopt exps loc job =
+	let state, b_size = Eval.rval job.state (List.hd exps) in
+	let size =
+		if isConcrete_bytes b_size then
+			bytes_to_int_auto b_size (*safe to use bytes_to_int as arg should be small *)
+		else
+			1 (* currently bytearray have unbounded length *)
+	in
+	let bytes =
+	  if Executeargs.run_args.Executeargs.arg_init_malloc_zero
+	  then bytes__make size (* initially zero, as though malloc were calloc *)
+	  else bytes__make_default size byte__undef (* initially the symbolic 'undef' byte *)
+	in
+    let (state, bytes) = libc___builtin_alloca_size state size bytes loc in
+	state_update_return_value retopt state bytes
+
+
+(* share implementation with __builtin_alloca *)
+let libc_malloc = libc___builtin_alloca
 	

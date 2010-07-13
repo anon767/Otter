@@ -252,7 +252,11 @@ let init job =
 	let _ = Jobs.add_runnable jobs job in
 	Driver.main_loop 
 		get_job_priority_queue_with_merge
-		(merge_job_interceptor @@ Driver.otter_core_interceptor)
+		(
+			merge_job_interceptor @@
+			Driver.intercept_extended_otter_functions @@
+			Driver.otter_core_interceptor
+		)
 		Driver.process_result_priority_queue
 		jobs
 

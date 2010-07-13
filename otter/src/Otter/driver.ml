@@ -981,8 +981,7 @@ let get_job_priority_queue job_queue =
 (** INTERCEPTORS **)
 
 (* TODO: find a good place to put this definition instead of duplicating it *)
-let (@@) i1 i2 = 
-	fun a b -> i1 a b i2
+let (@@) i1 i2 = fun a b -> i1 a b i2
 
 let identity_interceptor job job_queue interceptor =
 	interceptor job job_queue
@@ -1090,6 +1089,19 @@ let rec process_result_priority_queue result completed job_queue =
 		| _ ->
 			(completed, job_queue)
 
+let intercept_extended_otter_functions job job_queue interceptor = 
+	let call = Builtin_function.call_wrapper in
+	(
+
+	(* intercept builtin functions *)
+	(intercept_function_by_name_internal "__builtin_alloca"        (call Builtin_function.libc___builtin_alloca)) @@
+	(intercept_function_by_name_internal "malloc"                  (call Builtin_function.libc___builtin_alloca)) @@
+	
+	(* pass on the job when none of those match *)
+	interceptor
+
+	) job job_queue
+
 
 (** MAIN LOOP **)
 
@@ -1114,7 +1126,7 @@ let main_loop get_job interceptor process_result job_queue : job_completion list
 let init job = 
 	main_loop
 		get_job_list
-		otter_core_interceptor
+		(intercept_extended_otter_functions @@ otter_core_interceptor)
 		process_result
 		[job]
 

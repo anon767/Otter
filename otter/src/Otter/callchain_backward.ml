@@ -192,7 +192,11 @@ let callchain_backward_se callergraph entryfn assertfn job_init : job_completion
 				let _ = Jobs.add_runnable jobs job in
 				Driver.main_loop 
 					(Driver.get_job_priority_queue) 
-					((terminate_job_at_targets_interceptor targets) @@ Driver.otter_core_interceptor)
+					(
+						(terminate_job_at_targets_interceptor targets) @@
+						Driver.intercept_extended_otter_functions @@
+						Driver.otter_core_interceptor
+					)
 					(Driver.process_result_priority_queue) 
 					jobs
 			end
