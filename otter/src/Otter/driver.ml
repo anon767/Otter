@@ -89,16 +89,6 @@ let addInstrCoverage job instr =
 	{ job.exHist with coveredLines =
 			LineSet.add (instrLoc.file,instrLoc.line) job.exHist.coveredLines; }
 
-let exec_builtin state lvalopt exps builtin =
-	let (state,bytes) = builtin state exps in
-		begin match lvalopt with
-			| None ->
-				state
-			| Some cil_lval ->
-				let state, lval = Eval.lval state cil_lval in
-				MemOp.state__assign state lval bytes
-		end
-
 let exec_given state lvalopt exps =
 	begin match lvalopt with
 		| None ->
@@ -561,7 +551,6 @@ let exec_func state func job instr lvalopt exps loc op_exps =
 			try (
 				let nextExHist = ref exHist in
 				let state_end = begin match func with
-					| Function.Builtin (builtin) -> exec_builtin state lvalopt exps builtin
 					| Function.StringEqual -> state
 						(* The function evaluates to a (symbolic) integer value.
 						 * 1 - Equal

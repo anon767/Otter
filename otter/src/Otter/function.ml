@@ -19,7 +19,6 @@ type function_type =
 	| BooleanOp of Cil.binop
 	| BooleanNot
 	| Aspect of aspect
-	| Builtin of Builtin_function.t
 	| BreakPt
 	| Evaluate
 	| EvaluateString
@@ -54,7 +53,6 @@ let from_name_in_file = Cilutility.get_fundec
 let from_varinfo state varinfo args =
 	begin match varinfo.vname with
 		| f when (Hashtbl.mem aspect_tbl f) -> Aspect(f, Hashtbl.find aspect_tbl f)
-		| f when (Builtin_function.can_apply_builtin state f args) -> Builtin(Builtin_function.get f)
 		| "__ASSUME" -> Assume
 		| "__ASSERT" -> Assert
 		| "__EVAL" -> Evaluate

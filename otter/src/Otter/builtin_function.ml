@@ -241,31 +241,6 @@ let posix_umask state exps = (state,bytes__zero)
 let posix_openlog state exps = (state,bytes__zero)
 let posix_syslog state exps = (state,bytes__zero)
 
-type t = state -> exp list -> state * bytes
-
-let get = function
- 	| "memset" -> libc_memset
-
-	| _ -> failwith "No such builtin function"
-
-
-(* TODO: change this so that we don't call built-in functions twice
- * when they work. *)
-let can_apply_builtin state fname args =
-	try
-		begin match fname with
-			| "memset" ->
-				let _ = libc_memset state args in ()
-(* TODO: is this right? libc_strlen was never called before, because it's not in get *)
-(*			| "strlen" ->
-				ignore (libc_strlen state args) *)
-			| _ ->
-				let _ = get fname in ()
-		end;
-		true
-	with Failure(_) ->
-		false
-
 (* __builtin_alloca is used for local arrays with variable size; has the same semantics as malloc *)
 let libc___builtin_alloca__id = ref 1
 let libc___builtin_alloca_size state size bytes loc =
