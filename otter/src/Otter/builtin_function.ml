@@ -315,3 +315,16 @@ let otter_truth_value retopt exps loc job =
 			MemOp.state__assign state lval truthvalue
 	end
 
+let libc_exit retopt exps loc job job_queue =
+	Output.set_mode Output.MSG_MUSTPRINT;
+	let exit_code = 
+		match exps with
+			| exp1::_ -> 
+				Output.print_endline ("exit() called with code "^(To_string.bytes (snd (Eval.rval job.state exp1))));
+				Some ((snd (Eval.rval job.state exp1)))
+			| [] -> 
+				Output.print_endline ("exit() called with code (NONE)");
+				None
+	in
+	(Complete (Types.Exit (exit_code, { result_state = job.state; result_history = job.exHist; })), job_queue)
+

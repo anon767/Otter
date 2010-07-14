@@ -170,14 +170,6 @@ let exec_not_found state lvalopt =
 			let state, (_, size as lval) = Eval.lval state cil_lval in
 			MemOp.state__assign state lval (bytes__symbolic size)
 	end
-
-let exec_exit state exps =
-	let exit_code = 
-		match exps with
-			| exp1::_ -> Some (snd (Eval.rval state exp1))
-			| [] -> None
-	in
-	raise (Function.Notification_Exit (exit_code))
 					
 let exec_evaluate state exps op_exps =
 	let state, pc = op_exps state exps Cil.LAnd in
@@ -494,7 +486,6 @@ let exec_func state func job instr lvalopt exps loc op_exps =
 						stmt = List.hd fundec.sallstmts;
 						inTrackedFn = StringSet.mem fundec.svar.vname run_args.arg_fns; }
 		| _ ->
-			try (
 				let nextExHist = ref exHist in
 				let state_end = begin match func with
 					| Function.StringEqual -> state
@@ -510,7 +501,6 @@ let exec_func state func job instr lvalopt exps loc op_exps =
 					| Function.SymbolicState -> exec_symbolic_state state
 					| Function.SymbolicStatic -> exec_symbolic_static state lvalopt exps loc
 					| Function.NotFound -> exec_not_found state lvalopt
-					| Function.Exit -> exec_exit state exps
 					| Function.Evaluate -> exec_evaluate state exps op_exps
 					| Function.EvaluateString -> exec_evaluate_string state exps	
 					| Function.Assume -> exec_assume state exps op_exps
@@ -552,13 +542,7 @@ let exec_func state func job instr lvalopt exps loc op_exps =
 				(* Update state, the stmt to execute, and exHist (which may
 					 have gotten an extra bytesToVar mapping added to it). *)
 				Active { job with state = state_end; stmt = nextStmt; exHist = !nextExHist; }
-			) with Function.Notification_Exit exit_code ->
-				(* If it was [Exit], there is no job to return *)
-				Output.set_mode Output.MSG_MUSTPRINT;
-				Output.print_endline ("exit() called with code "^(
-					match exit_code with None-> "(NONE)" | Some(code) -> To_string.bytes code));
 
-				Complete (Types.Exit (exit_code, { result_state = state; result_history = exHist; }))
 	end (* outer [match func] *)
 
 let exec_instr_call job instr lvalopt fexp exps loc =
@@ -994,6 +978,7 @@ let intercept_extended_otter_functions job job_queue interceptor =
 	(cascade_call_on_failure_interceptor 
 	(intercept_function_by_name_internal "memset"                  (call Builtin_function.libc_memset))) @@
 	(intercept_function_by_name_internal "memset__concrete"        (call Builtin_function.libc_memset__concrete)) @@
+	(intercept_function_by_name_internal "exit"                    (Builtin_function.libc_exit)) @@
 	(intercept_function_by_name_internal "__TRUTH_VALUE"           (exec Builtin_function.otter_truth_value)) @@
 	(intercept_function_by_name_internal "__GIVEN"                 (exec Builtin_function.otter_given)) @@
 	

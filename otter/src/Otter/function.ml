@@ -14,7 +14,6 @@ type function_type =
 	| Assume
 	| Assert
 	| Ordinary of Cil.fundec
-	| Exit
 	| NotFound
 	| BooleanOp of Cil.binop
 	| BooleanNot
@@ -71,7 +70,6 @@ let from_varinfo state varinfo args =
         | "__ITE" -> IfThenElse
 (*        | "__SET_INIT" -> DataStructureOp (Data_structure.op__SET_INIT) *)
 (*        | "__SET_FIND" -> DataStructureOp (Data_structure.op__SET_FIND) *)
-		| "exit" -> Exit			(* exit is so special that can't be put in builtin *)
 		| "AND" -> BooleanOp(Cil.LAnd)
 		| "OR" -> BooleanOp(Cil.LOr)
 		| "NOT" -> BooleanNot
