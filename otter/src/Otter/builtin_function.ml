@@ -23,6 +23,7 @@ let call_wrapper replace_func retopt exps loc job job_queue =
 	(* Wrapper for calling an Otter function and advancing the execution to the next statement *)
 	(* replace_func retopt exps loc job -> state *)
 
+	try
 	let instr = List.hd job.instrList in
 	let job = { job with instrList = []; } in
 
@@ -63,6 +64,10 @@ let call_wrapper replace_func retopt exps loc job job_queue =
 	(* Update state, the stmt to execute, and exHist (which may
 		 have gotten an extra bytesToVar mapping added to it). *)
 	(Active { job with state = state_end; stmt = nextStmt; exHist = !nextExHist; }, job_queue)
+	with Failure msg ->
+		if Executeargs.run_args.Executeargs.arg_failfast then failwith msg;
+		let result = { result_state = job.state; result_history = job.exHist } in
+		(Complete (Types.Abandoned (msg, loc, result)), job_queue)
 
 let state_update_return_value retopt state bytes = 
 	match retopt with
