@@ -46,21 +46,16 @@ let from_name_in_file = Cilutility.get_fundec
 let from_varinfo state varinfo args =
 	begin match varinfo.vname with
 		| f when (Hashtbl.mem aspect_tbl f) -> Aspect(f, Hashtbl.find aspect_tbl f)
-		| "__ASSUME" -> Assume
-		| "__ASSERT" -> Assert
 		| "__BREAKPT" -> BreakPt
 		| "__SYMBOLIC" -> Symbolic
 (*		| "__FRESH" -> Fresh *)
 		| "__COMMENT" -> Comment
 		| "__CURRENT_STATE" -> CurrentState
 		| "__COMPARE_STATE" -> CompareState
-		| "__SYMBOLIC_STATE" -> SymbolicState
 		| "__ASSERT_EQUAL_STATE" -> AssertEqualState
 		| "__ISCONCRETE" -> IsConcrete
-		| "__PATHCONDITION" -> PathCondition
 (*      | "__STRING_EQUAL" -> StringEqual *)
         | "__CLONE" -> Clone
-        | "__ITE" -> IfThenElse
 (*        | "__SET_INIT" -> DataStructureOp (Data_structure.op__SET_INIT) *)
 (*        | "__SET_FIND" -> DataStructureOp (Data_structure.op__SET_FIND) *)
 		| "AND" -> BooleanOp(Cil.LAnd)

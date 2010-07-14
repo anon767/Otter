@@ -402,3 +402,49 @@ let otter_evaluate_string retopt exps loc job =
 	);
 	state
 
+let otter_symbolic_state retopt exps loc job =
+	let state = job.state in
+	MemoryBlockMap.fold 
+		begin fun block _ state ->
+			(* TODO: what about deferred bytes? *)
+			(* TODO: handle pointers with an alias analysis *)
+			let state, bytes = MemOp.state__get_bytes_from_block state block in
+				match bytes with
+					| Bytes_FunPtr(_) ->
+						state
+					| _ ->
+						MemOp.state__add_block state block (bytes__symbolic (bytes__length bytes))
+		end 
+		state.block_to_bytes
+		state
+
+let otter_assume retopt exps loc job =
+	let state, pc = op_exps job.state exps Cil.LAnd in
+	MemOp.state__add_path_condition state pc false
+
+let otter_path_condition retopt exps loc job =
+	let state = job.state in
+	let pc_str = (Utility.print_list To_string.bytes state.path_condition "\n AND \n") in
+	Output.set_mode Output.MSG_MUSTPRINT;
+	Output.print_endline (if String.length pc_str = 0 then "(nil)" else pc_str);
+	state
+	
+let otter_assert retopt exps loc job =
+	let state, assertion = op_exps job.state exps Cil.LAnd in
+	Eval.check state assertion exps
+
+let otter_if_then_else retopt exps loc job =
+	begin match retopt with
+		| None -> job.state
+		| Some cil_lval ->
+			let state, lval = Eval.lval job.state cil_lval in
+			let state, bytes0 = Eval.rval state (List.nth exps 0) in
+			let state, bytes1 = Eval.rval state (List.nth exps 1) in
+			let state, bytes2 = Eval.rval state (List.nth exps 2) in
+			let c = IfThenElse (
+				guard__bytes bytes0, conditional__bytes bytes1, conditional__bytes bytes2
+			) in
+			let rv = make_Bytes_Conditional c in
+			MemOp.state__assign state lval rv
+	end
+

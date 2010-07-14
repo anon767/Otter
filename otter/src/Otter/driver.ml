@@ -125,50 +125,6 @@ let exec_symbolic state lvalopt exps exHist nextExHist =
 			end
 	end
 
-let exec_symbolic_state state =
-	MemoryBlockMap.fold 
-		begin fun block _ state ->
-			(* TODO: what about deferred bytes? *)
-			(* TODO: handle pointers with an alias analysis *)
-			let state, bytes = MemOp.state__get_bytes_from_block state block in
-				match bytes with
-					| Bytes_FunPtr(_) ->
-						state
-					| _ ->
-						MemOp.state__add_block state block (bytes__symbolic (bytes__length bytes))
-		end 
-		state.block_to_bytes
-		state
-
-let exec_assume state exps op_exps =
-	let state, pc = op_exps state exps Cil.LAnd in
-	MemOp.state__add_path_condition state pc false
-
-let exec_path_condition state =
-	let pc_str = (Utility.print_list To_string.bytes state.path_condition "\n AND \n") in
-	Output.set_mode Output.MSG_MUSTPRINT;
-	Output.print_endline (if String.length pc_str = 0 then "(nil)" else pc_str);
-	state
-	
-let exec_assert state exps op_exps =
-	let state, assertion = op_exps state exps Cil.LAnd in
-	Eval.check state assertion exps
-
-let exec_if_then_else state lvalopt exps =
-	begin match lvalopt with
-		| None -> state
-		| Some cil_lval ->
-			let state, lval = Eval.lval state cil_lval in
-			let state, bytes0 = Eval.rval state (List.nth exps 0) in
-			let state, bytes1 = Eval.rval state (List.nth exps 1) in
-			let state, bytes2 = Eval.rval state (List.nth exps 2) in
-			let c = IfThenElse (
-				guard__bytes bytes0, conditional__bytes bytes1, conditional__bytes bytes2
-			) in
-			let rv = make_Bytes_Conditional c in
-			MemOp.state__assign state lval rv
-	end
-
 let exec_boolean_op state lvalopt exps op_exps binop =
 	begin match lvalopt with
 		| None -> failwith "Unreachable BooleanOp"
@@ -425,12 +381,7 @@ let exec_func state func job instr lvalopt exps loc op_exps =
 						(* Maybe instead write a function that returns whether
 						 * an expression is true, false or unknown
 						 *)
-					| Function.Symbolic -> exec_symbolic state lvalopt exps exHist nextExHist
-					| Function.SymbolicState -> exec_symbolic_state state	
-					| Function.Assume -> exec_assume state exps op_exps
-					| Function.PathCondition -> exec_path_condition state
-					| Function.Assert -> exec_assert state exps op_exps
-					| Function.IfThenElse -> exec_if_then_else state lvalopt exps
+					| Function.Symbolic -> exec_symbolic state lvalopt exps exHist nextExHist	
 					| Function.BooleanOp (binop) -> exec_boolean_op state lvalopt exps op_exps binop
 					| Function.BooleanNot -> exec_boolean_not state lvalopt exps
 					| Function.Aspect(pointcut, advice) -> exec_aspect state instr exps advice
@@ -908,6 +859,11 @@ let intercept_extended_otter_functions job job_queue interceptor =
 	(intercept_function_by_name_internal "__SYMBOLIC_STATIC"       (exec Builtin_function.otter_symbolic_static)) @@
 	(intercept_function_by_name_internal "__EVAL"                  (exec Builtin_function.otter_evaluate)) @@
 	(intercept_function_by_name_internal "__EVALSTR"               (exec Builtin_function.otter_evaluate_string)) @@
+	(intercept_function_by_name_internal "__SYMBOLIC_STATE"        (exec Builtin_function.otter_symbolic_state)) @@
+	(intercept_function_by_name_internal "__ASSUME"                (exec Builtin_function.otter_assume)) @@
+	(intercept_function_by_name_internal "__PATHCONDITION"         (exec Builtin_function.otter_path_condition)) @@
+	(intercept_function_by_name_internal "__ASSERT"                (exec Builtin_function.otter_assert)) @@
+	(intercept_function_by_name_internal "__ITE"                   (exec Builtin_function.otter_if_then_else)) @@
 	
 	(* pass on the job when none of those match *)
 	interceptor
