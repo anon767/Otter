@@ -140,78 +140,6 @@ let exec_symbolic_state state =
 		state.block_to_bytes
 		state
 
-let exec_symbolic_static state lvalopt exps loc =
-	begin match lvalopt with
-		| None -> 
-			state
-		| Some cil_lval ->
-			let state, (_, size as lval) = Eval.lval state cil_lval in
-			let state, key =
-				if List.length exps == 0 then
-					(state, 0)
-				else
-					let state, size_bytes = Eval.rval state (List.hd exps) in
-					(state, bytes_to_int_auto size_bytes) 
-			in
-			let state =
-				if MemOp.loc_table__has state (loc,key)
-				then state
-				else MemOp.loc_table__add state (loc,key) (bytes__symbolic size)
-			in
-			let newbytes = MemOp.loc_table__get state (loc,key) in
-			MemOp.state__assign state lval newbytes
-	end
-
-let exec_not_found state lvalopt =
-	begin match lvalopt with
-		| None -> 
-			state
-		| Some cil_lval ->
-			let state, (_, size as lval) = Eval.lval state cil_lval in
-			MemOp.state__assign state lval (bytes__symbolic size)
-	end
-					
-let exec_evaluate state exps op_exps =
-	let state, pc = op_exps state exps Cil.LAnd in
-	Output.set_mode Output.MSG_MUSTPRINT;
-	Output.print_endline ("	Evaluates to "^(To_string.bytes pc));
-	state
-
-let exec_evaluate_string state exps =
-	let exp = List.hd exps in
-	let sizeexp = List.nth exps 1 in
-	let state, addr_bytes = Eval.rval state exp in
-	let state, str = 
-		match addr_bytes with
-			| Bytes_Address(block, offset) ->
-				let state, size_bytes = Eval.rval state sizeexp in
-				let size =
-					try bytes_to_int_auto size_bytes with
-					  Failure(s) -> Output.print_endline s; 32
-				in
-				let state, bytes = MemOp.state__deref state (conditional__lval_block (block, offset), size) in
-				let str = 
-					match bytes with
-						| Bytes_ByteArray(bytearray) -> To_string.bytestring bytearray
-						| Bytes_Constant(CInt64(i,_,_)) -> Int64.to_string i
-						| _ -> "(complicate)"
-				in
-					(state, str)
-			| _ ->
-				(state, "(nil)")
-	in
-	Output.set_mode Output.MSG_MUSTPRINT;
-	Output.print_endline (
-		"Evaluates to string: \"" ^ (
-			if (Executeargs.print_args.arg_print_no_escaped_string)
-			then
-				str
-			else
-				String.escaped str
-			) ^ "\""
-	);
-	state				
-
 let exec_assume state exps op_exps =
 	let state, pc = op_exps state exps Cil.LAnd in
 	MemOp.state__add_path_condition state pc false
@@ -498,11 +426,7 @@ let exec_func state func job instr lvalopt exps loc op_exps =
 						 * an expression is true, false or unknown
 						 *)
 					| Function.Symbolic -> exec_symbolic state lvalopt exps exHist nextExHist
-					| Function.SymbolicState -> exec_symbolic_state state
-					| Function.SymbolicStatic -> exec_symbolic_static state lvalopt exps loc
-					| Function.NotFound -> exec_not_found state lvalopt
-					| Function.Evaluate -> exec_evaluate state exps op_exps
-					| Function.EvaluateString -> exec_evaluate_string state exps	
+					| Function.SymbolicState -> exec_symbolic_state state	
 					| Function.Assume -> exec_assume state exps op_exps
 					| Function.PathCondition -> exec_path_condition state
 					| Function.Assert -> exec_assert state exps op_exps
@@ -981,6 +905,9 @@ let intercept_extended_otter_functions job job_queue interceptor =
 	(intercept_function_by_name_internal "exit"                    (Builtin_function.libc_exit)) @@
 	(intercept_function_by_name_internal "__TRUTH_VALUE"           (exec Builtin_function.otter_truth_value)) @@
 	(intercept_function_by_name_internal "__GIVEN"                 (exec Builtin_function.otter_given)) @@
+	(intercept_function_by_name_internal "__SYMBOLIC_STATIC"       (exec Builtin_function.otter_symbolic_static)) @@
+	(intercept_function_by_name_internal "__EVAL"                  (exec Builtin_function.otter_evaluate)) @@
+	(intercept_function_by_name_internal "__EVALSTR"               (exec Builtin_function.otter_evaluate_string)) @@
 	
 	(* pass on the job when none of those match *)
 	interceptor

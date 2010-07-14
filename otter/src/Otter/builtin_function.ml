@@ -328,3 +328,77 @@ let libc_exit retopt exps loc job job_queue =
 	in
 	(Complete (Types.Exit (exit_code, { result_state = job.state; result_history = job.exHist; })), job_queue)
 
+let otter_symbolic_static retopt exps loc job =
+	let state = job.state in
+	begin match retopt with
+		| None -> 
+			state
+		| Some cil_lval ->
+			let state, (_, size as lval) = Eval.lval state cil_lval in
+			let state, key =
+				if List.length exps == 0 then
+					(state, 0)
+				else
+					let state, size_bytes = Eval.rval state (List.hd exps) in
+					(state, bytes_to_int_auto size_bytes) 
+			in
+			let state =
+				if MemOp.loc_table__has state (loc,key)
+				then state
+				else MemOp.loc_table__add state (loc,key) (bytes__symbolic size)
+			in
+			let newbytes = MemOp.loc_table__get state (loc,key) in
+			MemOp.state__assign state lval newbytes
+	end
+
+let otter_not_found retopt exps loc job =
+	let state = job.state in
+	begin match retopt with
+		| None -> 
+			state
+		| Some cil_lval ->
+			let state, (_, size as lval) = Eval.lval state cil_lval in
+			MemOp.state__assign state lval (bytes__symbolic size)
+	end
+					
+let otter_evaluate retopt exps loc job =
+	let state, pc = op_exps job.state exps Cil.LAnd in
+	Output.set_mode Output.MSG_MUSTPRINT;
+	Output.print_endline ("	Evaluates to "^(To_string.bytes pc));
+	state
+
+let otter_evaluate_string retopt exps loc job =
+	let exp = List.hd exps in
+	let sizeexp = List.nth exps 1 in
+	let state, addr_bytes = Eval.rval job.state exp in
+	let state, str = 
+		match addr_bytes with
+			| Bytes_Address(block, offset) ->
+				let state, size_bytes = Eval.rval state sizeexp in
+				let size =
+					try bytes_to_int_auto size_bytes with
+					  Failure(s) -> Output.print_endline s; 32
+				in
+				let state, bytes = MemOp.state__deref state (conditional__lval_block (block, offset), size) in
+				let str = 
+					match bytes with
+						| Bytes_ByteArray(bytearray) -> To_string.bytestring bytearray
+						| Bytes_Constant(CInt64(i,_,_)) -> Int64.to_string i
+						| _ -> "(complicate)"
+				in
+					(state, str)
+			| _ ->
+				(state, "(nil)")
+	in
+	Output.set_mode Output.MSG_MUSTPRINT;
+	Output.print_endline (
+		"Evaluates to string: \"" ^ (
+			if (Executeargs.print_args.Executeargs.arg_print_no_escaped_string)
+			then
+				str
+			else
+				String.escaped str
+			) ^ "\""
+	);
+	state
+

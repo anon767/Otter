@@ -14,15 +14,11 @@ type function_type =
 	| Assume
 	| Assert
 	| Ordinary of Cil.fundec
-	| NotFound
 	| BooleanOp of Cil.binop
 	| BooleanNot
 	| Aspect of aspect
 	| BreakPt
-	| Evaluate
-	| EvaluateString
 	| Symbolic
-	| SymbolicStatic
 	| Comment
 	| CurrentState
 	| CompareState
@@ -52,11 +48,8 @@ let from_varinfo state varinfo args =
 		| f when (Hashtbl.mem aspect_tbl f) -> Aspect(f, Hashtbl.find aspect_tbl f)
 		| "__ASSUME" -> Assume
 		| "__ASSERT" -> Assert
-		| "__EVAL" -> Evaluate
-		| "__EVALSTR" -> EvaluateString
 		| "__BREAKPT" -> BreakPt
 		| "__SYMBOLIC" -> Symbolic
-		| "__SYMBOLIC_STATIC" -> SymbolicStatic
 (*		| "__FRESH" -> Fresh *)
 		| "__COMMENT" -> Comment
 		| "__CURRENT_STATE" -> CurrentState
