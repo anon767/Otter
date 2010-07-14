@@ -277,48 +277,34 @@ let libc___builtin_alloca retopt exps loc job =
     let (state, bytes) = libc___builtin_alloca_size state size bytes loc in
 	state_update_return_value retopt state bytes
 
+let otter_given state exps =
+	if List.length exps <> 2 then 
+		failwith "__GIVEN takes 2 arguments"
+	else
+		let truthvalue =
+			let state, given = Eval.rval state (List.nth exps 0) in
+			let state, rv = Eval.rval state (List.nth exps 1 ) in
+			let state, truth = MemOp.eval_with_cache state (given::state.path_condition) rv in
+			if truth == True then lazy_int_to_bytes 1
+			else if truth == False then lazy_int_to_bytes 0
+			else bytes__symbolic (bitsSizeOf intType / 8)
+		in
+		(state, truthvalue)
 
-let otter_given retopt exps loc job =
-	begin match retopt with
-		| None ->
-			job.state
-		| Some cil_lval ->
-			let state, lval = Eval.lval job.state cil_lval in
-			let truthvalue = 
-				begin
-					if List.length exps <> 2 then 
-						failwith "__GIVEN takes 2 arguments"
-					else
-						let state, given = Eval.rval state (List.nth exps 0) in
-						let state, rv = Eval.rval state (List.nth exps 1 ) in
-						let state, truth = MemOp.eval_with_cache state (given::state.path_condition) rv in
-						if truth == True then lazy_int_to_bytes 1 
-						else if truth == False then lazy_int_to_bytes 0
-						else bytes__symbolic (bitsSizeOf intType / 8)
-				end
-			in
-			MemOp.state__assign state lval truthvalue
-	end
-
-let otter_truth_value retopt exps loc job =
-	begin match retopt with
-		| None -> job.state 
-		| Some cil_lval ->
-			let state, lval = Eval.lval job.state cil_lval in
-			let truthvalue = 
-				lazy_int_to_bytes
-				begin
-					if List.length exps = 0 then 0 
-					else
-						let state, rv = Eval.rval state (List.hd exps) in
-						let state, truth = MemOp.eval_with_cache state state.path_condition rv in
-						if truth == True then 1
-						else if truth == False then -1
-						else 0
-				end
-			in
-			MemOp.state__assign state lval truthvalue
-	end
+let otter_truth_value state exps =
+	let truthvalue = 
+		lazy_int_to_bytes
+		begin
+			if List.length exps = 0 then 0 
+			else
+				let state, rv = Eval.rval state (List.hd exps) in
+				let state, truth = MemOp.eval_with_cache state state.path_condition rv in
+				if truth == True then 1
+				else if truth == False then -1
+				else 0
+		end
+	in
+	(state, truthvalue)
 
 let libc_exit retopt exps loc job job_queue =
 	Output.set_mode Output.MSG_MUSTPRINT;
@@ -438,18 +424,13 @@ let otter_assert retopt exps loc job =
 	let state, assertion = op_exps job.state exps Cil.LAnd in
 	Eval.check state assertion exps
 
-let otter_if_then_else retopt exps loc job =
-	begin match retopt with
-		| None -> job.state
-		| Some cil_lval ->
-			let state, lval = Eval.lval job.state cil_lval in
-			let state, bytes0 = Eval.rval state (List.nth exps 0) in
-			let state, bytes1 = Eval.rval state (List.nth exps 1) in
-			let state, bytes2 = Eval.rval state (List.nth exps 2) in
-			let c = IfThenElse (
-				guard__bytes bytes0, conditional__bytes bytes1, conditional__bytes bytes2
-			) in
-			let rv = make_Bytes_Conditional c in
-			MemOp.state__assign state lval rv
-	end
+let otter_if_then_else state exps =
+	let state, bytes0 = Eval.rval state (List.nth exps 0) in
+	let state, bytes1 = Eval.rval state (List.nth exps 1) in
+	let state, bytes2 = Eval.rval state (List.nth exps 2) in
+	let c = IfThenElse (
+		guard__bytes bytes0, conditional__bytes bytes1, conditional__bytes bytes2
+	) in
+	let rv = make_Bytes_Conditional c in
+	(state, rv)
 

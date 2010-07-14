@@ -854,8 +854,8 @@ let intercept_extended_otter_functions job job_queue interceptor =
 	(intercept_function_by_name_internal "memset"                  (call Builtin_function.libc_memset))) @@
 	(intercept_function_by_name_internal "memset__concrete"        (call Builtin_function.libc_memset__concrete)) @@
 	(intercept_function_by_name_internal "exit"                    (Builtin_function.libc_exit)) @@
-	(intercept_function_by_name_internal "__TRUTH_VALUE"           (exec Builtin_function.otter_truth_value)) @@
-	(intercept_function_by_name_internal "__GIVEN"                 (exec Builtin_function.otter_given)) @@
+	(intercept_function_by_name_internal "__TRUTH_VALUE"           (call Builtin_function.otter_truth_value)) @@
+	(intercept_function_by_name_internal "__GIVEN"                 (call Builtin_function.otter_given)) @@
 	(intercept_function_by_name_internal "__SYMBOLIC_STATIC"       (exec Builtin_function.otter_symbolic_static)) @@
 	(intercept_function_by_name_internal "__EVAL"                  (exec Builtin_function.otter_evaluate)) @@
 	(intercept_function_by_name_internal "__EVALSTR"               (exec Builtin_function.otter_evaluate_string)) @@
@@ -863,7 +863,7 @@ let intercept_extended_otter_functions job job_queue interceptor =
 	(intercept_function_by_name_internal "__ASSUME"                (exec Builtin_function.otter_assume)) @@
 	(intercept_function_by_name_internal "__PATHCONDITION"         (exec Builtin_function.otter_path_condition)) @@
 	(intercept_function_by_name_internal "__ASSERT"                (exec Builtin_function.otter_assert)) @@
-	(intercept_function_by_name_internal "__ITE"                   (exec Builtin_function.otter_if_then_else)) @@
+	(intercept_function_by_name_internal "__ITE"                   (call Builtin_function.otter_if_then_else)) @@
 	
 	(* pass on the job when none of those match *)
 	interceptor
