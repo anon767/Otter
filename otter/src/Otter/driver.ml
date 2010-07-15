@@ -338,15 +338,6 @@ let exec_func state func job instr lvalopt exps loc op_exps =
 		| _ ->
 				let nextExHist = ref exHist in
 				let state_end = begin match func with
-					| Function.StringEqual -> state
-						(* The function evaluates to a (symbolic) integer value.
-						 * 1 - Equal
-						 * 0 - Not equal
-						 * symbolic - depends *)
-
-						(* Maybe instead write a function that returns whether
-						 * an expression is true, false or unknown
-						 *)
 					| Function.Symbolic -> exec_symbolic state lvalopt exps exHist nextExHist	
 					| Function.Aspect(pointcut, advice) -> exec_aspect state instr exps advice
 					| Function.CurrentState -> exec_current_state state exps

@@ -189,33 +189,6 @@ let libc_memset state exps =
 	else
 		failwith "libc_memset: n is symbolic (TODO)"
 
-
-let libc_strlen state exps =
-	let gotoFail () = failwith "libc_strlen: can't run builtin" in
-	let state, bytes = Eval.rval state (List.hd exps) in
-	match bytes with
-		| Bytes_Address(block, offset) when isConcrete_bytes offset ->
-			let state, bytes_str = MemOp.state__get_bytes_from_block state block in
-			let strlen = match bytes_str with
-				| Bytes_ByteArray(ba) ->
-					let len = ImmutableArray.length ba in
-					let n_offset = bytes_to_int_auto offset in
-					let rec impl i l =
-						if i>=len then l else
-						match ImmutableArray.get ba i with
-							| Byte_Concrete(c) -> if c='\000' then l else impl (i+1) (l+1)
-							| _ -> gotoFail ()
-					in
-					impl n_offset 0
-				| _ ->
-					gotoFail ()
-			in
-			(state, lazy_int_to_bytes strlen)
-		| _ ->
-			gotoFail ()
-
-
-
 let libc___create_file state exps = (state,bytes__zero)
 let libc___error state exps = (state,bytes__zero)
 let libc___maskrune state exps = (state,bytes__zero)

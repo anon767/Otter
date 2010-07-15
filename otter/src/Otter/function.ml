@@ -11,22 +11,12 @@ type advice = state -> bytes list -> Cil.instr -> state
 type aspect = pointcut * advice
 
 type function_type =
-	| Assume
-	| Assert
 	| Ordinary of Cil.fundec
 	| Aspect of aspect
 	| Symbolic
 	| CurrentState
 	| CompareState
-    | SymbolicState
 	| AssertEqualState
-	| IsConcrete
-	| PathCondition
-    | StringEqual
-    | Clone
-    | IfThenElse
-(*    | DataStructureOp of Data_structure.ds_op*) 
-(*	| Fresh *)
 	| PrintState
 
 
@@ -43,25 +33,15 @@ let from_varinfo state varinfo args =
 	begin match varinfo.vname with
 		| f when (Hashtbl.mem aspect_tbl f) -> Aspect(f, Hashtbl.find aspect_tbl f)
 		| "__SYMBOLIC" -> Symbolic
-(*		| "__FRESH" -> Fresh *)
 		| "__CURRENT_STATE" -> CurrentState
 		| "__COMPARE_STATE" -> CompareState
 		| "__ASSERT_EQUAL_STATE" -> AssertEqualState
-		| "__ISCONCRETE" -> IsConcrete
-(*      | "__STRING_EQUAL" -> StringEqual *)
-        | "__CLONE" -> Clone
-(*        | "__SET_INIT" -> DataStructureOp (Data_structure.op__SET_INIT) *)
-(*        | "__SET_FIND" -> DataStructureOp (Data_structure.op__SET_FIND) *)
 		| "__PRINT_STATE" -> PrintState
 		| f ->
 				try
 					Ordinary(Cilutility.search_function varinfo)
 				with Not_found ->
-(*					if Executeargs.run_args.arg_symbolic_extern_fns then
-						(Output.print_endline(varinfo.vname^" is undefined; returning fresh symbolic value.");
-						 NotFound)
-					else*)
-						failwith ("Function "^varinfo.vname^" not found.")
+					failwith ("Function "^varinfo.vname^" not found.")
 	end
 
 
