@@ -135,22 +135,6 @@ let exec_aspect state instr exps advice =
 	in
 	advice state argvs instr
 
-let exec_break_pt state =
-	Output.set_mode Output.MSG_REG;
-	Output.print_endline "Option (h for help):";
-	Scanf.scanf "%d\n" 
-	begin
-		fun p1->
-			Output.printf "sth\n";	
-			state
-	end
-
-let exec_comment state exps =
-	let exp = List.hd exps in
-	Output.set_mode Output.MSG_MUSTPRINT;
-	Output.print_endline ("COMMENT:"^(To_string.exp exp));
-	state
-
 let exec_current_state state exps =
 	let state, bytes = Eval.rval state (List.hd exps) in
 	let key = bytes_to_int_auto bytes in
@@ -365,8 +349,6 @@ let exec_func state func job instr lvalopt exps loc op_exps =
 						 *)
 					| Function.Symbolic -> exec_symbolic state lvalopt exps exHist nextExHist	
 					| Function.Aspect(pointcut, advice) -> exec_aspect state instr exps advice
-					| Function.BreakPt -> exec_break_pt state
-					| Function.Comment -> exec_comment state exps
 					| Function.CurrentState -> exec_current_state state exps
 					| Function.PrintState -> exec_print_state state
 					| Function.CompareState -> exec_compare_state state exps
@@ -848,6 +830,8 @@ let intercept_extended_otter_functions job job_queue interceptor =
 	(intercept_function_by_name_internal "AND"                     (call (Builtin_function.otter_boolean_op Cil.LAnd))) @@
 	(intercept_function_by_name_internal "OR"                      (call (Builtin_function.otter_boolean_op Cil.LOr))) @@
 	(intercept_function_by_name_internal "NOT"                     (call Builtin_function.otter_boolean_not)) @@
+	(intercept_function_by_name_internal "__COMMENT"               (exec Builtin_function.otter_comment)) @@
+	(intercept_function_by_name_internal "__BREAKPT"               (exec Builtin_function.otter_break_pt)) @@
 	
 	(* pass on the job when none of those match *)
 	interceptor

@@ -15,9 +15,7 @@ type function_type =
 	| Assert
 	| Ordinary of Cil.fundec
 	| Aspect of aspect
-	| BreakPt
 	| Symbolic
-	| Comment
 	| CurrentState
 	| CompareState
     | SymbolicState
@@ -44,10 +42,8 @@ let from_name_in_file = Cilutility.get_fundec
 let from_varinfo state varinfo args =
 	begin match varinfo.vname with
 		| f when (Hashtbl.mem aspect_tbl f) -> Aspect(f, Hashtbl.find aspect_tbl f)
-		| "__BREAKPT" -> BreakPt
 		| "__SYMBOLIC" -> Symbolic
 (*		| "__FRESH" -> Fresh *)
-		| "__COMMENT" -> Comment
 		| "__CURRENT_STATE" -> CurrentState
 		| "__COMPARE_STATE" -> CompareState
 		| "__ASSERT_EQUAL_STATE" -> AssertEqualState

@@ -442,3 +442,18 @@ let otter_boolean_not state exps =
 	let state, rv = Eval.rval state (UnOp(Cil.LNot, List.hd exps, Cil.voidType)) in
 	(state, rv)
 
+let otter_comment retopt exps loc job =
+	let exp = List.hd exps in
+	Output.set_mode Output.MSG_MUSTPRINT;
+	Output.print_endline ("COMMENT:"^(To_string.exp exp));
+	job.state
+
+let otter_break_pt retopt exps loc job =
+	Output.set_mode Output.MSG_REG;
+	Output.print_endline "Option (h for help):";
+	Scanf.scanf "%d\n" 
+	begin
+		fun p1->
+			Output.printf "sth\n";	
+			job.state
+	end
