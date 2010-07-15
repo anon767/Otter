@@ -1,68 +1,49 @@
 open TestUtil.MyOUnit
+open TestUtil.OtterUtil
 open Otter
 open Types
 open Utility
 
 (* test helper that runs the symbolic executor on a file given a source code as a string, and calculates coverage *)
-let test_coverage content ?(label=content) tracked_fns test =
-    label >:: bracket begin fun () ->
-        let filename, fileout = Filename.open_temp_file "Coverage." ".c" in
-        output_string fileout content;
-        close_out fileout;
-        filename
-    end begin fun filename ->
-        (* Suppress all output from the symbolic executor *)
-        Executeargs.print_args.Executeargs.arg_print_nothing <- true;
-        (* enable coverage tracking *)
-        Executeargs.run_args.Executeargs.arg_edge_coverage <- true;
-        Executeargs.run_args.Executeargs.arg_block_coverage <- true;
-        Executeargs.run_args.Executeargs.arg_line_coverage <- true;
-        (* enable tracking on given functions *)
-        Executeargs.run_args.Executeargs.arg_fns <-
-            List.fold_left (fun a f -> StringSet.add f a) Executeargs.run_args.Executeargs.arg_fns tracked_fns;
+let test_coverage content ?label tracked_fns test =
+	test_otter content ?label
+		~setup:begin fun _ ->
+			(* enable coverage tracking *)
+			Executeargs.run_args.Executeargs.arg_edge_coverage <- true;
+			Executeargs.run_args.Executeargs.arg_block_coverage <- true;
+			Executeargs.run_args.Executeargs.arg_line_coverage <- true;
+			(* enable tracking on given functions *)
+			Executeargs.run_args.Executeargs.arg_fns <-
+				List.fold_left (fun a f -> StringSet.add f a) Executeargs.run_args.Executeargs.arg_fns tracked_fns;
+		end
+		begin fun file results ->
+			(* figure out the coverage *)
+			let (all_edges, all_blocks, all_lines) = List.fold_left begin fun (edges, blocks, lines) result ->
+				match result with
+					| Return (_, c)
+					| Exit (_, c) ->
+						let edges = EdgeSet.union edges c.result_history.coveredEdges in
+						let blocks = StmtInfoSet.union blocks c.result_history.coveredBlocks in
+						let lines = LineSet.union lines c.result_history.coveredLines in
+						(edges, blocks, lines)
+					| Truncated (c, d) ->
+						let edges = EdgeSet.union (EdgeSet.union edges c.result_history.coveredEdges)
+												 d.result_history.coveredEdges in
+						let blocks = StmtInfoSet.union (StmtInfoSet.union blocks c.result_history.coveredBlocks)
+												 d.result_history.coveredBlocks in
+						let lines = LineSet.union (LineSet.union lines c.result_history.coveredLines)
+												 d.result_history.coveredLines in
+						(edges, blocks, lines)
+					| Abandoned _ ->
+						(edges, blocks, lines)
+			end (EdgeSet.empty, StmtInfoSet.empty, LineSet.empty) results in
+			let all_edges_count = EdgeSet.cardinal all_edges in
+			let all_blocks_count = StmtInfoSet.cardinal all_blocks in
+			let all_lines_count = LineSet.cardinal all_lines in
 
-        (* reset error flag *)
-        Errormsg.hadErrors := false;
-        let file = Frontc.parse filename () in
-        assert_bool "Cil parse error" (not !Errormsg.hadErrors);
-
-        (* prepare the file and run the symbolic executor *)
-        Executemain.prepare_file file;
-        let job = Executemain.job_for_file file ["Coverage"] in
-        let results = Driver.init job in
-
-        (* figure out the coverage *)
-        let (all_edges, all_blocks, all_lines) = List.fold_left begin fun (edges, blocks, lines) result ->
-            match result with
-                | Return (_, c)
-                | Exit (_, c) ->
-                    let edges = EdgeSet.union edges c.result_history.coveredEdges in
-                    let blocks = StmtInfoSet.union blocks c.result_history.coveredBlocks in
-                    let lines = LineSet.union lines c.result_history.coveredLines in
-                    (edges, blocks, lines)
-                | Truncated (c, d) ->
-                    let edges = EdgeSet.union (EdgeSet.union edges c.result_history.coveredEdges)
-                                             d.result_history.coveredEdges in
-                    let blocks = StmtInfoSet.union (StmtInfoSet.union blocks c.result_history.coveredBlocks)
-                                             d.result_history.coveredBlocks in
-                    let lines = LineSet.union (LineSet.union lines c.result_history.coveredLines)
-                                             d.result_history.coveredLines in
-                    (edges, blocks, lines)
-                | Abandoned _ ->
-                    (edges, blocks, lines)
-        end (EdgeSet.empty, StmtInfoSet.empty, LineSet.empty) results in
-        let all_edges_count = EdgeSet.cardinal all_edges in
-        let all_blocks_count = StmtInfoSet.cardinal all_blocks in
-        let all_lines_count = LineSet.cardinal all_lines in
-
-        (* test that no assertions failed *)
-        assert_string (Executedebug.get_log ());
-
-        (* finally run the test *)
-        test file results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count
-    end begin fun filename ->
-        Unix.unlink filename
-    end
+			(* finally run the test *)
+			test file results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count
+		end
 
 (* assert_equal helper with a descriptive error message *)
 let assert_blocks_count = assert_equal ~printer:(fun ff -> Format.fprintf ff "%d") ~msg:"Wrong number of blocks"

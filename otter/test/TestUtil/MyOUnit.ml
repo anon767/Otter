@@ -79,6 +79,16 @@ let fork_test testfn = fun () ->
     end
 
 
+(* test wrapper that creates a temporary file, fills it some content, and passes it to the test *)
+let test_string_as_file base ext content test =
+    OUnit.bracket begin fun () ->
+        let filename, fileout = Filename.open_temp_file base ext in
+        output_string fileout content;
+        close_out fileout;
+        filename
+    end test Unix.unlink
+
+
 (* redefine OUnit functions to use the above buffer, test wrapper, and Format-based printer *)
 let (>:) = OUnit.(>:)
 let (>::) label testfn = OUnit.(>::) label (fork_test testfn)

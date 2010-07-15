@@ -1,38 +1,16 @@
 open TestUtil.MyOUnit
+open TestUtil.OtterUtil
 open Otter
 open Types
 
 (* test helper that runs the symbolic executor on a file given a source code as a string *)
-let test_bounds content ?(label=content) ?(mergePaths=false) testFn =
-    label >:: bracket begin fun () ->
-        let filename, fileout = Filename.open_temp_file "BoundsChecking." ".c" in
-        output_string fileout content;
-        close_out fileout;
-        filename
-    end begin fun filename ->
-      (* suppress all output from the symbolic executor *)
-      Executeargs.print_args.Executeargs.arg_print_nothing <- true;
-      Executeargs.run_args.Executeargs.arg_merge_paths <- mergePaths;
+let test_bounds content ?label ?(mergePaths=false) ?has_failing_assertions test =
+    test_otter content ?label
+        ~setup:(fun _ -> Executeargs.run_args.Executeargs.arg_merge_paths <- mergePaths)
+        ?main_loop:(if mergePaths then Some PathMerging.init else None)
+        ?has_failing_assertions
+        (fun _ results -> test results)
 
-      (* reset error flag *)
-      Errormsg.hadErrors := false;
-      let file = Frontc.parse filename () in
-      assert_bool "Cil parse error" (not !Errormsg.hadErrors);
-
-      (* prepare the file and run the symbolic executor *)
-      Executemain.prepare_file file;
-      let job = Executemain.job_for_file file ["BoundsChecking"] in
-      let results = if mergePaths then
-        PathMerging.init job
-      else
-        Driver.init job
-      in
-
-      (* Check the assertions provided by the test *)
-      testFn results
-    end begin fun filename ->
-      Unix.unlink filename
-    end
 
 (* Baseline testing function *)
 let expectedResultCounts r e a t results =
@@ -42,24 +20,13 @@ let expectedResultCounts r e a t results =
 		(r,e,a,t)
 		(List.fold_left
 			 (fun (r,e,a,t) -> function
-						Return _ -> succ r, e, a, t
+					| Return _ -> succ r, e, a, t
 					| Exit _ -> r, succ e, a, t
 					| Abandoned _ -> r, e, succ a, t
 					| Truncated _ -> r, e, a, succ t)
 			 (0,0,0,0)
 			 results)
-;;
 
-(* Some helper functions *)
-
-let allAssertionsPassed () = assert_string (Executedebug.get_log ())
-;;
-(* For tests with abandoned paths, we know the error log won't be
-	 empty, so we don't need to check. However, some tests don't have
-	 abandoned paths, but still fail some assertions; this function lets
-	 us check in those cases. *)
-let someAssertionFailed () = assert_match (function s when s <> "" -> ()) (Executedebug.get_log ())
-;;
 
 (*
  * OUnit test suite
@@ -74,7 +41,7 @@ let simple_testsuite = "Simple" >::: [
   p = &x[10];
   return 0;
 }"
-    (fun res -> expectedResultCounts 1 0 0 0 res; allAssertionsPassed ());
+	(fun res -> expectedResultCounts 1 0 0 0 res);
 
   test_bounds ~label:"Acceptable negative offset"
 "int main() {
@@ -82,35 +49,39 @@ let simple_testsuite = "Simple" >::: [
   p[-1] = 1;
   return 0;
 }"
-    (fun res -> expectedResultCounts 1 0 0 0 res; allAssertionsPassed ());
+	(fun res -> expectedResultCounts 1 0 0 0 res);
 
   test_bounds ~label:"Explicit buffer overrun"
 "int main() {
   int x[2];
   return x[2];
 }"
-    (fun res -> expectedResultCounts 0 0 1 0 res);
+	~has_failing_assertions:true
+	(fun res -> expectedResultCounts 0 0 1 0 res);
 
   test_bounds ~label:"Explicit buffer underrun"
 "int main() {
   int x[2];
   return x[-1];
 }"
-    (fun res -> expectedResultCounts 0 0 1 0 res);
+	~has_failing_assertions:true
+	(fun res -> expectedResultCounts 0 0 1 0 res);
 
   test_bounds ~label:"Explicit malloc overrun"
 "int main() {
   char *x = malloc(2);
   return x[3];
 }"
-    (fun res -> expectedResultCounts 0 0 1 0 res);
+	~has_failing_assertions:true
+	(fun res -> expectedResultCounts 0 0 1 0 res);
 
   test_bounds ~label:"Explicit malloc underrun"
 "int main() {
   char *x = malloc(1);
   return x[-1];
 }"
-    (fun res -> expectedResultCounts 0 0 1 0 res);
+	~has_failing_assertions:true
+	(fun res -> expectedResultCounts 0 0 1 0 res);
 
   (* This test is barely different from the next one, because we treat offsets as unsigned anyway *)
   test_bounds ~label:"Possible buffer over- or underrun"
@@ -119,10 +90,9 @@ let simple_testsuite = "Simple" >::: [
   __SYMBOLIC(&i);
   return x[i];
 }"
-    (fun res ->
+	~has_failing_assertions:true (* Warnings printed for over- and underrun *)
+	(fun res ->
 			 expectedResultCounts 1 0 0 0 res;
-			 (* Warnings printed for over- and underrun *)
-			 someAssertionFailed ();
 			 (* Make sure the path condition is the right length *)
 			 match res with
 					 [Return (_,res)] ->
@@ -138,10 +108,9 @@ let simple_testsuite = "Simple" >::: [
   __SYMBOLIC(&i);
   return x[i];
 }"
-    (fun res ->
+	~has_failing_assertions:true (* Warnings printed for overrun *)
+	(fun res ->
 			 expectedResultCounts 1 0 0 0 res;
-			 (* Warnings printed for over- and underrun *)
-			 someAssertionFailed ();
 			 (* Make sure the path condition is the right length *)
 			 match res with
 					 [Return (_,res)] ->
@@ -157,7 +126,7 @@ let simple_testsuite = "Simple" >::: [
 	*p = 9;
   return 0;
 }"
-		(fun res -> expectedResultCounts 1 0 0 0 res; allAssertionsPassed ());
+	(fun res -> expectedResultCounts 1 0 0 0 res);
 
 	test_bounds ~label:"Underrun on then branch; overrun on else branch"
 "int main() {
@@ -168,7 +137,9 @@ let simple_testsuite = "Simple" >::: [
 	p[-1] = 12;
   return 0;
 }"
-		(fun res -> expectedResultCounts 0 0 2 0 res;
+	~has_failing_assertions:true (* Warnings printed for over- and underrun *)
+	(fun res ->
+			 expectedResultCounts 0 0 2 0 res;
 			 (* Make sure the path conditions are each length 1 *)
 			 match res with
 					 [Abandoned (_,_,res1); Abandoned (_,_,res2)] ->
@@ -189,7 +160,7 @@ let simple_testsuite = "Simple" >::: [
 	p[-1] = 12;
   return 0;
 }"
-		(fun res -> expectedResultCounts 1 0 0 1 res; allAssertionsPassed ());
+	(fun res -> expectedResultCounts 1 0 0 1 res);
 
 	test_bounds ~label:"Underrun on then branch; overrun on else branch (overrun first)---with merging"
 		~mergePaths:true
@@ -201,7 +172,8 @@ let simple_testsuite = "Simple" >::: [
 	p[-1] = 12;
   return 0;
 }"
-		(fun res -> expectedResultCounts 0 0 1 1 res;
+	~has_failing_assertions:true (* Warnings printed for over- and underrun *)
+	(fun res -> expectedResultCounts 0 0 1 1 res;
 			 (* The test should fail at the second dereference, because the
 			 first one can be in bounds. This is meant to check that the
 			 abandoned path has the assumption that p[1] was in bounds. *)
@@ -222,7 +194,8 @@ let simple_testsuite = "Simple" >::: [
 	p[1] = 7;
   return 0;
 }"
-		(fun res -> expectedResultCounts 0 0 1 1 res;
+	~has_failing_assertions:true (* Warnings printed for over- and underrun *)
+	(fun res -> expectedResultCounts 0 0 1 1 res;
 			 (* The test should fail at the second dereference, because the
 			 first one can be in bounds. This is meant to check that the
 			 abandoned path has the assumption that p[-1] was in bounds. *)
@@ -244,9 +217,8 @@ let simple_testsuite = "Simple" >::: [
 	p[2] = 12;
   return 0;
 }"
-		(fun res -> expectedResultCounts 1 0 0 1 res;
-			 (* Make sure a warning was printed for overrun *)
-			 someAssertionFailed ();
+	~has_failing_assertions:true (* Warnings printed for overrun *)
+	(fun res -> expectedResultCounts 1 0 0 1 res;
 			 (* And that we assumed that we are actually in the 'then' case
 			 (because the 'else' had an overrun) *)
 			 match res with
@@ -271,10 +243,8 @@ let simple_testsuite = "Simple" >::: [
   __ASSUME(0 <= i, i*4 < 8);
   return x[i];
 }"
-		(fun res -> expectedResultCounts 1 0 0 0 res;
-			 (* Make sure a warning was printed for possible overrun *)
-			 someAssertionFailed ();
-		);
+	~has_failing_assertions:true (* Warnings printed for overrun *)
+	(fun res -> expectedResultCounts 1 0 0 0 res);
 
 	(* This __ASSUME works because the cast to unsigned makes the
 		 inequality function in unsigned arithmetic, so it successfully
@@ -286,7 +256,7 @@ let simple_testsuite = "Simple" >::: [
   __ASSUME(0 <= i, (unsigned)i*sizeof(x[0]) < sizeof(x));
   return x[i];
 }"
-		(fun res -> expectedResultCounts 1 0 0 0 res; allAssertionsPassed ());
+	(fun res -> expectedResultCounts 1 0 0 0 res);
 
   test_bounds ~label:"Offset in bounds but offset+length out of bounds on read"
 "int main() {
@@ -294,7 +264,8 @@ let simple_testsuite = "Simple" >::: [
   int *p = (int*)x;
   return *p;
 }"
-    (fun res -> expectedResultCounts 0 0 1 0 res);
+	~has_failing_assertions:true (* Warnings printed for overrun *)
+	(fun res -> expectedResultCounts 0 0 1 0 res);
 
   test_bounds ~label:"Offset in bounds but offset+length out of bounds on write"
 "int main() {
@@ -303,7 +274,8 @@ let simple_testsuite = "Simple" >::: [
   p[1] = 0;
   return 0;
 }"
-    (fun res -> expectedResultCounts 0 0 1 0 res);
+	~has_failing_assertions:true (* Warnings printed for overrun *)
+	(fun res -> expectedResultCounts 0 0 1 0 res);
 ]
 
 let testsuite = "BoundsChecking" >::: [
