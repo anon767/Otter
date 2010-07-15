@@ -784,10 +784,11 @@ let intercept_function_by_name_external_cascading target_name replace_name job j
 			interceptor job job_queue
 
 let try_with_job_abandoned_interceptor try_interceptor job job_queue interceptor =
-	let result, jq = try_interceptor job job_queue interceptor in
+	let result, jq = try_interceptor job job_queue (fun j jq -> (Paused j, jq)) in
 	match result with
-		| Complete (Abandoned (_, _, _)) -> interceptor job job_queue
-		| _ -> (result, jq)
+		| Complete (Abandoned (_, _, _)) -> interceptor job job_queue (* try_interceptor failed; move on *)
+		| Paused j -> interceptor j jq (* try_interceptor passed on control *)
+		| _ -> (result, jq) (* try_interceptor did not fail and did not pass on control *)
 
 let intercept_extended_otter_functions job job_queue interceptor = 
 	let exec = Builtin_function.call_wrapper in
