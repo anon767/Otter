@@ -844,6 +844,7 @@ let intercept_extended_otter_functions job job_queue interceptor =
 	(* intercept builtin functions *)
 	(intercept_function_by_name_internal "__builtin_alloca"        (exec Builtin_function.libc___builtin_alloca)) @@
 	(intercept_function_by_name_internal "malloc"                  (exec Builtin_function.libc___builtin_alloca)) @@
+	(intercept_function_by_name_internal "free"                    (call Builtin_function.libc_free)) @@
 	(intercept_function_by_name_internal "__builtin_va_arg_fixed"  (call Builtin_function.libc___builtin_va_arg)) @@
 	(intercept_function_by_name_internal "__builtin_va_arg"        (call Builtin_function.libc___builtin_va_arg)) @@
 	(intercept_function_by_name_internal "__builtin_va_copy"       (call Builtin_function.libc___builtin_va_copy)) @@
