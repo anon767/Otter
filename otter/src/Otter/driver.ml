@@ -830,11 +830,11 @@ let intercept_function_by_name_external_cascading target_name replace_name job j
 		| _ -> 
 			interceptor job job_queue
 
-let cascade_call_on_failure_interceptor try_interceptor job job_queue interceptor =
-	try
-		try_interceptor job job_queue interceptor
-	with
-		_ -> interceptor job job_queue
+let try_with_job_abandoned_interceptor try_interceptor job job_queue interceptor =
+	let result, jq = try_interceptor job job_queue interceptor in
+	match result with
+		| Complete (Abandoned (_, _, _)) -> interceptor job job_queue
+		| _ -> (result, jq)
 
 let intercept_extended_otter_functions job job_queue interceptor = 
 	let exec = Builtin_function.call_wrapper in
@@ -851,10 +851,10 @@ let intercept_extended_otter_functions job job_queue interceptor =
 	(intercept_function_by_name_internal "__builtin_va_end"        (call Builtin_function.libc___builtin_va_end)) @@
 	(intercept_function_by_name_internal "__builtin_va_start"      (call Builtin_function.libc___builtin_va_start)) @@
 	(* memset defaults to the C implimentation on failure *)
-	(cascade_call_on_failure_interceptor 
+	(try_with_job_abandoned_interceptor 
 	(intercept_function_by_name_internal "memset"                  (call Builtin_function.libc_memset))) @@
 	(intercept_function_by_name_internal "memset__concrete"        (call Builtin_function.libc_memset__concrete)) @@
-	(intercept_function_by_name_internal "exit"                    (Builtin_function.libc_exit)) @@
+	(intercept_function_by_name_internal "exit"                    (     Builtin_function.libc_exit)) @@
 	(intercept_function_by_name_internal "__TRUTH_VALUE"           (call Builtin_function.otter_truth_value)) @@
 	(intercept_function_by_name_internal "__GIVEN"                 (call Builtin_function.otter_given)) @@
 	(intercept_function_by_name_internal "__SYMBOLIC_STATIC"       (exec Builtin_function.otter_symbolic_static)) @@
