@@ -125,24 +125,6 @@ let exec_symbolic state lvalopt exps exHist nextExHist =
 			end
 	end
 
-let exec_boolean_op state lvalopt exps op_exps binop =
-	begin match lvalopt with
-		| None -> failwith "Unreachable BooleanOp"
-		| Some cil_lval ->
-			let state, lval = Eval.lval state cil_lval in
-			let state, rv = op_exps state exps binop in
-			MemOp.state__assign state lval rv
-	end
-
-let exec_boolean_not state lvalopt exps =
-	begin match lvalopt with
-		| None -> failwith "Unreachable BooleanNot"
-		| Some cil_lval ->
-			let state, lval = Eval.lval state cil_lval in
-			let state, rv = Eval.rval state (UnOp(Cil.LNot, List.hd exps, Cil.voidType)) in
-			MemOp.state__assign state lval rv
-	end
-
 let exec_aspect state instr exps advice =
 	let state, argvs = 
 		List.fold_right 
@@ -382,8 +364,6 @@ let exec_func state func job instr lvalopt exps loc op_exps =
 						 * an expression is true, false or unknown
 						 *)
 					| Function.Symbolic -> exec_symbolic state lvalopt exps exHist nextExHist	
-					| Function.BooleanOp (binop) -> exec_boolean_op state lvalopt exps op_exps binop
-					| Function.BooleanNot -> exec_boolean_not state lvalopt exps
 					| Function.Aspect(pointcut, advice) -> exec_aspect state instr exps advice
 					| Function.BreakPt -> exec_break_pt state
 					| Function.Comment -> exec_comment state exps
@@ -865,6 +845,9 @@ let intercept_extended_otter_functions job job_queue interceptor =
 	(intercept_function_by_name_internal "__PATHCONDITION"         (exec Builtin_function.otter_path_condition)) @@
 	(intercept_function_by_name_internal "__ASSERT"                (exec Builtin_function.otter_assert)) @@
 	(intercept_function_by_name_internal "__ITE"                   (call Builtin_function.otter_if_then_else)) @@
+	(intercept_function_by_name_internal "AND"                     (call (Builtin_function.otter_boolean_op Cil.LAnd))) @@
+	(intercept_function_by_name_internal "OR"                      (call (Builtin_function.otter_boolean_op Cil.LOr))) @@
+	(intercept_function_by_name_internal "NOT"                     (call Builtin_function.otter_boolean_not)) @@
 	
 	(* pass on the job when none of those match *)
 	interceptor

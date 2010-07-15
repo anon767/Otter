@@ -14,8 +14,6 @@ type function_type =
 	| Assume
 	| Assert
 	| Ordinary of Cil.fundec
-	| BooleanOp of Cil.binop
-	| BooleanNot
 	| Aspect of aspect
 	| BreakPt
 	| Symbolic
@@ -58,9 +56,6 @@ let from_varinfo state varinfo args =
         | "__CLONE" -> Clone
 (*        | "__SET_INIT" -> DataStructureOp (Data_structure.op__SET_INIT) *)
 (*        | "__SET_FIND" -> DataStructureOp (Data_structure.op__SET_FIND) *)
-		| "AND" -> BooleanOp(Cil.LAnd)
-		| "OR" -> BooleanOp(Cil.LOr)
-		| "NOT" -> BooleanNot
 		| "__PRINT_STATE" -> PrintState
 		| f ->
 				try

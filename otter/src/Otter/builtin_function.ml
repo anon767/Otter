@@ -434,3 +434,11 @@ let otter_if_then_else state exps =
 	let rv = make_Bytes_Conditional c in
 	(state, rv)
 
+let otter_boolean_op binop state exps =
+	let state, rv = op_exps state exps binop in
+	(state, rv)
+
+let otter_boolean_not state exps =
+	let state, rv = Eval.rval state (UnOp(Cil.LNot, List.hd exps, Cil.voidType)) in
+	(state, rv)
+
