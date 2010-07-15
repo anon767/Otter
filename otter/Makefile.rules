@@ -4,36 +4,52 @@ OCAMLBUILD ?= ocamlbuild
 OCAMLFIND ?= ocamlfind
 OCAMLBUILD_BUILDDIR ?= _build
 OCAMLBUILD_PRODUCTDIR ?= _product
+OCAMLBUILD_DOCDIR ?= doc/api
 
-# ocamlbuild helper to build and copy the product into the product directory
-# $(call OCAMLBUILD.build,<ocamlbuild targets>)
+# helper to find where $(1) is in . or $(VPATH)
+vpath_for = $(foreach foo,$(1),$(firstword $(wildcard $(addsuffix /$(foo),. $(VPATH)))))
+
+# ocamlbuild helper to build a target $(1), and copy the product into a directory $(2) if given;
+# if the $(3) is also given, then it will be copied instead of $(1).
+# $(call OCAMLBUILD.build,<ocamlbuild targets>,<target directory>)
 define OCAMLBUILD.build
 	@echo "ocamlbuild $(1)..." && \
-	$(RM) $(1) && \
 	$(OCAMLBUILD) -build-dir $(OCAMLBUILD_BUILDDIR) -no-links \
 		$(OCAMLBUILD_FLAGS) $(VPATH:%=-I %) $(OCAMLBUILD_EXTRATARGETS) $(1) && \
-	mkdir -p $(OCAMLBUILD_PRODUCTDIR) && \
-	for foo in $(1); do \
-		for v in $(VPATH); do \
-			target=$(OCAMLBUILD_BUILDDIR)/$$v/$$foo; \
-			if [ -e $$target ]; then \
-				cp -p $$target $(OCAMLBUILD_PRODUCTDIR); \
-				break; \
-			fi; \
+	if [ -n "$(2)" ]; then \
+		mkdir -p $(2) && \
+		for foo in $(or $(3),$(1)); do \
+			for v in . $(VPATH); do \
+				target=$(OCAMLBUILD_BUILDDIR)/$$v/$$foo; \
+				if [ -e "$$target" ]; then \
+					cp -R "$$target" "$(2)"; \
+					break; \
+				fi; \
+			done; \
 		done; \
-	done
+	fi
 endef
 
 
 # ocamlbuild: build and install into the appropriate directory
 ocamlbuild//%.native : $(OCAMLBUILD_BUILDDIR)
-	$(call OCAMLBUILD.build,$*.native)
+	$(call OCAMLBUILD.build,$*.native,$(OCAMLBUILD_PRODUCTDIR))
 
 ocamlbuild//%.byte : $(OCAMLBUILD_BUILDDIR)
-	$(call OCAMLBUILD.build,$*.byte)
+	$(call OCAMLBUILD.build,$*.byte,$(OCAMLBUILD_PRODUCTDIR))
 
 ocamlbuild//%.cmxa ocamlbuild//%.a ocamlbuild//%.cma ocamlbuild//%.cmi : $(OCAMLBUILD_BUILDDIR)
-	$(call OCAMLBUILD.build,$*.cmxa $*.a $*.cma $*.cmi)
+	$(call OCAMLBUILD.build,$*.cmxa $*.a $*.cma $*.cmi,$(OCAMLBUILD_PRODUCTDIR))
+
+
+# %.docdir requires a workaround because:
+# - ocamlbuild will not search -I include paths for targets with directory components such as %.docdir/html.stamp;
+# - the ocamlbuild rule for %.docdir/html.stamp deletes %.docdir, which means that %.docdir/$*.dot has to be built
+#   after %.docdir/html.stamp.
+ocamlbuild//%.docdir : DOCDIR = $(patsubst %.odocl,%.docdir,$(call vpath_for,$*.odocl))
+ocamlbuild//%.docdir : $(OCAMLBUILD_BUILDDIR)
+	$(call OCAMLBUILD.build,$(addprefix $(DOCDIR)/,html.stamp $*.dot),$(OCAMLBUILD_DOCDIR),$(DOCDIR))
+
 
 # recompile everything if an external dependency is newer than the build directory
 $(OCAMLBUILD_BUILDDIR) : $(OCAMLBUILD_DEPS)
@@ -41,7 +57,7 @@ $(OCAMLBUILD_BUILDDIR) : $(OCAMLBUILD_DEPS)
 
 clean-ocamlbuild :
 	$(OCAMLBUILD) -clean
-	$(RM) -r $(OCAMLBUILD_PRODUCTDIR)
+	$(RM) -r $(OCAMLBUILD_PRODUCTDIR) $(OCAMLBUILD_DOCDIR)
 
 
 # ounit: build and run

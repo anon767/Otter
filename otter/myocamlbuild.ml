@@ -71,7 +71,11 @@ module OCamlFind = struct
          *)
         flag ["ocaml"; "pkg_threads"; "compile"] (S[A "-thread"]);
         flag ["ocaml"; "pkg_threads"; "link"]    (S[A "-thread"]);
-        flag ["ocaml"; "pkg_threads"; "doc"]     (S[A "-I"; A "+threads"])
+        flag ["ocaml"; "pkg_threads"; "doc"]     (S[A "-I"; A "+threads"]);
+
+        (* Provide flags for ocamldoc *)
+        flag ["ocaml"; "doc"; "quiet"]          (S[A "-hide-warnings"]);
+        flag ["ocaml"; "doc"; "dot_reduce"]     (S[A "-dot-reduce"]);
 end
 
 
@@ -81,7 +85,9 @@ end
 
 module Ocamlbuild_patches = struct
     let before_rules () =
-        (* override the -libs option processing, since it's broken in ocamlbuild *)
+        (* override the -libs option processing, since it's broken in ocamlbuild.
+           related to: http://caml.inria.fr/mantis/view.php?id=4943
+         *)
         flag ["ocaml"; "link"; "byte"] begin
             S (List.map (fun x -> A (x^".cma")) !Options.ocaml_libs)
         end;
@@ -89,7 +95,17 @@ module Ocamlbuild_patches = struct
             (* only link libraries for programs, not libraries *)
             S (List.map (fun x -> A (x^".cmxa")) !Options.ocaml_libs)
         end;
-        Options.ocaml_libs := []
+        Options.ocaml_libs := [];
+
+        (* Workaround to add -I include directories to ocamldoc, taking it
+           from the linker flags.
+         *)
+        let rec scan_include_dirs spec = function
+            | "-I"::dir::tail -> scan_include_dirs (S[spec; A "-I"; P dir]) tail
+            | _::tail -> scan_include_dirs spec tail
+            | [] -> spec
+        in
+        flag ["ocaml"; "doc"] (scan_include_dirs N !Options.ocaml_lflags);
 end
 
 

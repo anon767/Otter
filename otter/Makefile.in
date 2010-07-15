@@ -7,9 +7,9 @@ CIL_OBJDIR = $(CILHOME)/obj/$(ARCHOS)
 
 OCAMLBUILD_CIL = -cflags -I,$(CIL_OBJDIR) -lflags -I,$(CIL_OBJDIR) -tags pkg_unix,pkg_str -libs cil
 OCAMLBUILD_OTTER = -tags pkg_ocaml-base-noparser -libs stpvc
-OCAMLBUILD_OUNIT = -tag pkg_oUnit
+OCAMLBUILD_OUNIT = -tags pkg_oUnit
 
-OCAMLBUILD_FLAGS = -j 0 -cflags -warn-error,A -Xs doc,examples,libc,util
+OCAMLBUILD_FLAGS = -j 0 -cflags -warn-error,A -Xs doc,examples,libc,util -tags quiet,dot_reduce
 OCAMLBUILD_FLAGS += $(OCAMLBUILD_CIL) $(OCAMLBUILD_OTTER) $(OCAMLBUILD_OUNIT)
 OCAMLBUILD_FLAGS += $(EXTRALIBDIRS:%=-cflags -I,%) $(EXTRALIBDIRS:%=-lflags -I,%) $(OCAMLBUILD_EXTRAFLAGS)
 export OCAMLPATH:=$(CURDIR):@EXTRAOCAMLPATH@
@@ -26,12 +26,12 @@ VPATH = src test
 
 all : native libs
 
-native : ocamlbuild//runotter.native config
-debug : ocamlbuild//runotter.d.byte config
+native : ocamlbuild//runotter.native config doc
+debug : ocamlbuild//runotter.d.byte config doc
 
-libs : ocamlbuild//Otter.cmxa ocamlbuild//Otter.a ocamlbuild//Otter.cma ocamlbuild//Otter.cmi
+libs : ocamlbuild//Otter.cmxa ocamlbuild//Otter.a ocamlbuild//Otter.cma ocamlbuild//Otter.cmi doc
 
-test : ounit//runtestotter.d.byte
+test : ounit//runtestotter.d.byte doc
 
 config : otter.pl.config
 otter.pl.config : Makefile $(CIL_SRCDIR)/config.mk
@@ -44,6 +44,8 @@ otter.pl.config : Makefile $(CIL_SRCDIR)/config.mk
 	$$::do_default = '--doexecute';\n\
 	$$::compile_after_merge = 0;\n\
 	1;" > $@
+
+doc : ocamlbuild//Otter.docdir
 
 clean : clean-ocamlbuild
 	$(RM) otter.pl.config
