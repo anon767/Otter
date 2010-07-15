@@ -24,14 +24,14 @@ VPATH = src test
 
 .PHONY : all native debug config test experiments
 
-all : native libs
+all : native libs doc
 
-native : ocamlbuild//runotter.native config doc
-debug : ocamlbuild//runotter.d.byte config doc
+native : ocamlbuild//runotter.native config
+debug : ocamlbuild//runotter.d.byte config
 
-libs : ocamlbuild//Otter.cmxa ocamlbuild//Otter.a ocamlbuild//Otter.cma ocamlbuild//Otter.cmi doc
+libs : ocamlbuild//Otter.cmxa ocamlbuild//Otter.a ocamlbuild//Otter.cma ocamlbuild//Otter.cmi
 
-test : ounit//runtestotter.d.byte doc
+test : ounit//runtestotter.d.byte
 
 config : otter.pl.config
 otter.pl.config : Makefile $(CIL_SRCDIR)/config.mk
