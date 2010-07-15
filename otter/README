@@ -36,6 +36,17 @@ Quick-start Guide
                 ...
             ] end
 
+* Adding an integration test case to Otter:
+
+    1. Add your C file test case (that should not fail any assertions) to one
+       of the directories under `test/TestOtterIntegration`:
+
+        * For single-process test cases, add it under `OtterCore`
+        * For multi-process test cases, add it under `MultiprocessOtter`
+
+    2. You may create additional directories under `OtterCore` or
+       `MultiprocessOtter` to group your test cases.
+
 * Debugging Otter:
 
     1. Build a debug version of Otter:
@@ -194,6 +205,27 @@ Whereas references to modules in other directories must be qualified:
     let foo = OtherDirectory.Module.bar;;
 
 New module packs may also be created by following the above guidelines.
+
+
+Adding Integration Tests to Otter
+=================================
+
+Otter also contains a integration testing framework that may also be used
+for testing in `test/TestOtterIntegration`. The framework is currently limited
+to testing C files that should not fail any assertions in Otter.
+
+To add a new integration test case, simply add a C file to one of the
+directories under `test/TestOtterIntegration`:
+
+    * for test cases that are single-process, add the file to `OtterCore`;
+    * for test cases that require multi-process capability, such as calling
+      `fork()`, add the file to `MultiprocessOtter`.
+
+You may also create additional directories under `OtterCore` or
+`MultiprocessOtter` to group your test cases; the directories may even be
+nested in other directories for convenience. The framework will recursively
+traverse the entire directory structure to find test cases, and will label the
+test cases by their path.
 
 
 Debugging Otter using the Ocaml debugger
