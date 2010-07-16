@@ -262,7 +262,7 @@ let init job =
 			intercept_fork @@
 			repack_job_interceptor @@
 			Driver.intercept_extended_otter_functions @@ 
-			Driver.otter_core_interceptor
+			Core.step
 		)
 		process_result
 		[ multijob ]

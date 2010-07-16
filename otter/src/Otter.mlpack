@@ -2,6 +2,7 @@ Otter/builtin_function
 Otter/bytes
 Otter/bytesUtility
 Otter/cilutility
+Otter/core
 Otter/driver
 Otter/eval
 Otter/executeargs

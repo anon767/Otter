@@ -256,7 +256,7 @@ let init job =
 			merge_job_interceptor @@
 			Driver.set_output_formatter_interceptor @@
 			Driver.intercept_extended_otter_functions @@
-			Driver.otter_core_interceptor
+			Core.step
 		)
 		Driver.process_result_priority_queue
 		jobs
