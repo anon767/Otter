@@ -182,6 +182,7 @@ let callchain_backward_se callergraph entryfn assertfn job_init : job_completion
 						PathMerging.merge_job_interceptor @@ 
 						Interceptors.set_output_formatter_interceptor @@
 						(terminate_job_at_targets_interceptor targets) @@
+						Interceptors.otter_functions_interceptor @@
 						Core.step
 					)
 					(Driver.process_result_priority_queue) 
