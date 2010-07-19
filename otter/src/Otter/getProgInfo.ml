@@ -110,7 +110,7 @@ let getProgInfo (file : Cil.file) fnNameSet =
 let computeReachableCode file = 
   (* compute reachable globals from main *)
   let main_func =
-  	try Function.from_name_in_file "main" file
+  	try Cilutility.get_fundec "main" file
   	with Not_found -> failwith "No main function found!"
   in
   let rec computeReachableCodeThroughFunCall queue = 

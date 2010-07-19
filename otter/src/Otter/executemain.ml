@@ -336,7 +336,7 @@ let job_for_middle file entryfn yamlconstraints =
 (* create a job that begins at the main function of a file, with the initial state set up for the file *)
 let job_for_file file cmdline =
 	let main_func =
-		try Function.from_name_in_file "main" file
+		try Cilutility.get_fundec "main" file
 		with Not_found -> failwith "No main function found!"
 	in
 
@@ -358,7 +358,7 @@ let job_for_file file cmdline =
 let find_entryfn file =
 	let fname = Executeargs.run_args.arg_entryfn in
 	try
-		Function.from_name_in_file fname file
+		Cilutility.get_fundec fname file
 	with Not_found ->
 		failwith (Printf.sprintf "Entry function %s not found" fname)
 
@@ -396,7 +396,7 @@ let doExecute (f: file) =
         (
           let assertfn =
             let fname = Executeargs.run_args.arg_assertfn in
-            try Function.from_name_in_file fname f  
+            try Cilutility.get_fundec fname f  
             with Not_found -> failwith (Printf.sprintf "Assserton function %s not found" fname )
           in
           let job_init = function entryfn -> job_for_middle f entryfn ""(* no yaml file *)

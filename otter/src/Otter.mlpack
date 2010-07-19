@@ -9,7 +9,6 @@ Otter/executeargs
 Otter/executedebug
 Otter/executemain
 Otter/findFns
-Otter/function
 Otter/getProgInfo
 Otter/immutableArray
 Otter/interceptors
