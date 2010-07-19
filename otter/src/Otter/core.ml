@@ -7,7 +7,6 @@ open Executeargs
 open Cilutility
 open Utility
 
-(*TODO: eventually this function won't be needed in Driver *)
 let stmtInfo_of_job job =
 	{ siFuncName = (List.hd job.state.callstack).svar.vname;
 		siStmt = Cilutility.stmtAtEndOfBlock job.stmt; }
@@ -77,92 +76,60 @@ let addInstrCoverage job instr =
 	{ job.exHist with coveredLines =
 			LineSet.add (instrLoc.file,instrLoc.line) job.exHist.coveredLines; }
 
-let exec_func state func job instr lvalopt exps loc op_exps = 
+let exec_func state fundec job instr lvalopt exps loc op_exps = 
 	let exHist,stmt = job.exHist,job.stmt in
-	begin match func with
-		| Function.Ordinary (fundec) ->					
-					(* TODO: do a casting if necessary: look at fundec.sformals, varinfo.vtype *)
-					(* exps may be longer than fundec.sformals *)
-					(* goal: create a list of targetted types:
-						for regular arguments - look at fundec.sformals
-						for vargs - same as the expressions *)
-						(* NECESSARY? *)
-						(*
-						let rec exptyps_f lefts rights = match lefts,rights with
-							| vh::vt,ah::at -> vh.vtype::(exptyps_f vt at)
-							| [],ah::at -> (Cil.typeOf ah)::(exptyps_f [] at)
-							| vh::vt,[] -> failwith "unreachable"
-							| [],[] -> []
-						in
-						let exptyps = exptyps_f fundec.sformals exps in
-						let argvs = (List.map2 (fun exp typ -> 
-							let targetted_typ = Cil.typeOf exp in
-							let final_exp = if targetted_typ == typ 
-								then exp 
-								else exp (*CastE(targetted_typ,exp) *)
-							in
-							Eval.rval state final_exp) exps exptyps) 
-						*)
-			let state, argvs = List.fold_right begin fun exp (state, argvs) ->
-				let state, bytes = Eval.rval state exp in
-				(state, bytes::argvs)
-			end exps (state, []) in
-			(* [stmt] is an [Instr], so it can't have two successors. If
-				 [func] returns, then [stmt] has exactly one successor. If
-				 [func] is [exit] or has the [noreturn] attribute, [stmt]
-				 has no successor. *)
-			let callContext = match stmt.succs with
-				| []  -> NoReturn instr
-				| [h] -> Source (lvalopt,stmt,instr,h)
-				| _   -> assert false
+		
+	(* TODO: do a casting if necessary: look at fundec.sformals, varinfo.vtype *)
+	(* exps may be longer than fundec.sformals *)
+	(* goal: create a list of targetted types:
+		for regular arguments - look at fundec.sformals
+		for vargs - same as the expressions *)
+		(* NECESSARY? *)
+		(*
+		let rec exptyps_f lefts rights = match lefts,rights with
+			| vh::vt,ah::at -> vh.vtype::(exptyps_f vt at)
+			| [],ah::at -> (Cil.typeOf ah)::(exptyps_f [] at)
+			| vh::vt,[] -> failwith "unreachable"
+			| [],[] -> []
+		in
+		let exptyps = exptyps_f fundec.sformals exps in
+		let argvs = (List.map2 (fun exp typ -> 
+			let targetted_typ = Cil.typeOf exp in
+			let final_exp = if targetted_typ == typ 
+				then exp 
+				else exp (*CastE(targetted_typ,exp) *)
 			in
-			let state = MemOp.state__start_fcall state callContext fundec argvs in
-			(* If fundec is the function to be examined *)
-			begin
-				let examfn = Executeargs.run_args.arg_examfn in
-					if examfn = fundec.svar.vname  then
-            failwith "YAML not supported"
-						(*InvInput.examine state fundec*)
-					else ()
-			end;
+			Eval.rval state final_exp) exps exptyps) 
+		*)
+let state, argvs = List.fold_right begin fun exp (state, argvs) ->
+let state, bytes = Eval.rval state exp in
+(state, bytes::argvs)
+end exps (state, []) in
+(* [stmt] is an [Instr], so it can't have two successors. If
+ [func] returns, then [stmt] has exactly one successor. If
+ [func] is [exit] or has the [noreturn] attribute, [stmt]
+ has no successor. *)
+let callContext = match stmt.succs with
+| []  -> NoReturn instr
+| [h] -> Source (lvalopt,stmt,instr,h)
+| _   -> assert false
+in
+let state = MemOp.state__start_fcall state callContext fundec argvs in
+(* If fundec is the function to be examined *)
+begin
+let examfn = Executeargs.run_args.arg_examfn in
+	if examfn = fundec.svar.vname  then
+failwith "YAML not supported"
+		(*InvInput.examine state fundec*)
+	else ()
+end;
 
-			(* Update the state, the next stmt to execute, and whether or
-				 not we're in a tracked function. *)
-			Active { job with
-						state = state;
-						stmt = List.hd fundec.sallstmts;
-						inTrackedFn = StringSet.mem fundec.svar.vname run_args.arg_fns; }
-		| _ ->
-				let nextExHist = ref exHist in
-				let state_end = begin match func with	
-					| _ -> failwith "unreachable exec_instr_call"
-						
-				end in (* inner [match func] *)
-
-				let nextStmt =
-					(* [stmt] is an [Instr] which doesn't end with a call to a
-						 [noreturn] function, so it has exactly one successor. *)
-					match stmt.succs with
-							[h] -> h
-						| _ -> assert false
-				in
-
-				(* We didn't add the outgoing edge in exec_stmt because the
-					 call might have never returned. Since there isn't an
-					 explicit return (because we handle the call internally), we
-					 have to add the edge now. *)
-				if job.inTrackedFn && run_args.arg_edge_coverage then
-					nextExHist := { !nextExHist with coveredEdges =
-							EdgeSet.add (stmtInfo_of_job job,
-													 { siFuncName = (List.hd job.state.callstack).svar.vname;
-														 siStmt = Cilutility.stmtAtEndOfBlock nextStmt; })
-							!nextExHist.coveredEdges; };
-
-				(* Update state, the stmt to execute, and exHist (which may
-					 have gotten an extra bytesToVar mapping added to it). *)
-				Active { job with state = state_end; stmt = nextStmt; exHist = !nextExHist; }
-
-	end (* outer [match func] *)
+(* Update the state, the next stmt to execute, and whether or
+ not we're in a tracked function. *)
+Active { job with
+		state = state;
+		stmt = List.hd fundec.sallstmts;
+		inTrackedFn = StringSet.mem fundec.svar.vname run_args.arg_fns; }
 
 let exec_instr_call job instr lvalopt fexp exps loc =
 	let state,exHist,stmt = job.state,job.exHist,job.stmt in

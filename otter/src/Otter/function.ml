@@ -3,29 +3,18 @@ open Bytes
 open BytesUtility
 open Types
 
-exception Notification_Exit of bytes option
-
-type function_type =
-	| Ordinary of Cil.fundec
-	| Symbolic
-
 let from_name_in_file = Cilutility.get_fundec
 
 let from_varinfo state varinfo args =
-	begin match varinfo.vname with
-		| "__SYMBOLIC" -> Symbolic
-		| f ->
-				try
-					Ordinary(Cilutility.search_function varinfo)
-				with Not_found ->
-					failwith ("Function "^varinfo.vname^" not found.")
-	end
-
+	try
+		Cilutility.search_function varinfo
+	with Not_found ->
+		failwith ("Function "^varinfo.vname^" not found.")
 
 let add_guard_to_state state guard = (*big hack; there should be a nicer way to do this*)
 	MemOp.state__add_path_condition state (Bytes_Conditional(Bytes.IfThenElse(guard, Unconditional(lazy_int_to_bytes 1), Unconditional(lazy_int_to_bytes 0)))) true
 
-let from_exp state exp args: (state * function_type) list =
+let from_exp state exp args: (state * fundec) list =
 	match exp with
 		| Lval(Var(varinfo), NoOffset) ->
 			[(state, from_varinfo state varinfo args)]
@@ -36,7 +25,7 @@ let from_exp state exp args: (state * function_type) list =
 					let acc =
 						match leaf with
 							| Bytes_FunPtr(fundec,_) -> 
-								(add_guard_to_state state pre, Ordinary(fundec))::acc
+								(add_guard_to_state state pre, fundec)::acc
 							| _ -> acc (* should give a warning here about a non-valid function pointer*)
 					in
 					(acc, Unconditional(leaf))
@@ -47,7 +36,7 @@ let from_exp state exp args: (state * function_type) list =
 				acc
 			in
 			begin match bytes with
-				| Bytes_FunPtr(fundec,_) -> [(state, Ordinary (fundec))]
+				| Bytes_FunPtr(fundec,_) -> [(state, fundec)]
 				| Bytes_Read(bytes2, offset, len) -> 
 					let fp = (BytesUtility.expand_read_to_conditional bytes2 offset len) in
 					(*Output.print_endline (To_string.bytes (Bytes_Conditional(fp)));*)

@@ -12,7 +12,7 @@ let pass_targets targets job fexp exps =
   let hist = job.exHist in
   let fundecs = 
 	List.fold_left 
-	  ( fun lst (_,ft) -> match ft with Function.Ordinary (f) -> f::lst | _ -> lst
+	  ( fun lst (_,ft) -> ft::lst
 	  ) [] (Function.from_exp state fexp exps) in
   (* convert args to bytes. argvs are from left to right *)
   let _, argvs = 
