@@ -148,7 +148,7 @@ class multiprocess_formatter = fun jid pid cur_loc ->
 
 let multi_set_output_formatter_interceptor job job_queue interceptor = 
 	let j, m = job in
-	Output.formatter := ((new multiprocess_formatter m.jid m.current_pid (Driver.get_job_loc j)) 
+	Output.formatter := ((new multiprocess_formatter m.jid m.current_pid (Interceptors.get_job_loc j)) 
 		:> Output.formatter_base);
 	interceptor job job_queue
 
@@ -261,7 +261,7 @@ let init job =
 			multi_set_output_formatter_interceptor @@
 			intercept_fork @@
 			repack_job_interceptor @@
-			Driver.intercept_extended_otter_functions @@ 
+			Interceptors.otter_functions_interceptor @@ 
 			Core.step
 		)
 		process_result

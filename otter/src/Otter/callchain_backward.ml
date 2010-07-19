@@ -180,7 +180,7 @@ let callchain_backward_se callergraph entryfn assertfn job_init : job_completion
 					(PathMerging.get_job_priority_queue_with_merge) 
 					(
 						PathMerging.merge_job_interceptor @@ 
-						Driver.set_output_formatter_interceptor @@
+						Interceptors.set_output_formatter_interceptor @@
 						(terminate_job_at_targets_interceptor targets) @@
 						Core.step
 					)
@@ -194,9 +194,9 @@ let callchain_backward_se callergraph entryfn assertfn job_init : job_completion
 				Driver.main_loop 
 					(Driver.get_job_priority_queue) 
 					(
-						Driver.set_output_formatter_interceptor @@
+						Interceptors.set_output_formatter_interceptor @@
 						(terminate_job_at_targets_interceptor targets) @@
-						Driver.intercept_extended_otter_functions @@
+						Interceptors.otter_functions_interceptor @@
 						Core.step
 					)
 					(Driver.process_result_priority_queue) 

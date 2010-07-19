@@ -254,8 +254,8 @@ let init job =
 		get_job_priority_queue_with_merge
 		(
 			merge_job_interceptor @@
-			Driver.set_output_formatter_interceptor @@
-			Driver.intercept_extended_otter_functions @@
+			Interceptors.set_output_formatter_interceptor @@
+			Interceptors.otter_functions_interceptor @@
 			Core.step
 		)
 		Driver.process_result_priority_queue
