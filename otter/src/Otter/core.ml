@@ -125,16 +125,6 @@ let exec_symbolic state lvalopt exps exHist nextExHist =
 			end
 	end
 
-let exec_aspect state instr exps advice =
-	let state, argvs = 
-		List.fold_right 
-			begin fun exp (state, argvs) ->
-				let state, bytes = Eval.rval state exp in
-				(state, bytes::argvs)
-			end exps (state, [])
-	in
-	advice state argvs instr
-
 let exec_func state func job instr lvalopt exps loc op_exps = 
 	let exHist,stmt = job.exHist,job.stmt in
 	begin match func with
@@ -194,7 +184,6 @@ let exec_func state func job instr lvalopt exps loc op_exps =
 				let nextExHist = ref exHist in
 				let state_end = begin match func with
 					| Function.Symbolic -> exec_symbolic state lvalopt exps exHist nextExHist	
-					| Function.Aspect(pointcut, advice) -> exec_aspect state instr exps advice
 					| _ -> failwith "unreachable exec_instr_call"
 						
 				end in (* inner [match func] *)

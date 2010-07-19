@@ -5,28 +5,14 @@ open Types
 
 exception Notification_Exit of bytes option
 
-(* borrow aspect-oriented programming terminology *)
-type pointcut = string
-type advice = state -> bytes list -> Cil.instr -> state
-type aspect = pointcut * advice
-
 type function_type =
 	| Ordinary of Cil.fundec
-	| Aspect of aspect
 	| Symbolic
-
-let aspect_tbl : (pointcut, advice) Hashtbl.t = Hashtbl.create 8
-let with_aspect (pointcut, advice) fn =
-    Hashtbl.add aspect_tbl pointcut advice;
-    let res = fn () in
-        Hashtbl.remove aspect_tbl pointcut;
-        res
 
 let from_name_in_file = Cilutility.get_fundec
 
 let from_varinfo state varinfo args =
 	begin match varinfo.vname with
-		| f when (Hashtbl.mem aspect_tbl f) -> Aspect(f, Hashtbl.find aspect_tbl f)
 		| "__SYMBOLIC" -> Symbolic
 		| f ->
 				try
