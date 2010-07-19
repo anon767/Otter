@@ -77,54 +77,6 @@ let addInstrCoverage job instr =
 	{ job.exHist with coveredLines =
 			LineSet.add (instrLoc.file,instrLoc.line) job.exHist.coveredLines; }
 
-let exec_symbolic state lvalopt exps exHist nextExHist =
-(* There are 2 ways to use __SYMBOLIC:
-	 (1) '__SYMBOLIC(&x);' gives x a fresh symbolic value and associates
-	 that value with the variable x.
-	 (2) 'x = __SYMBOLIC(n);' assigns to x a fresh symbolic value which
-	 is not associated to any variable. If n > 0, n is the number of
-	 symbolic bytes desired; if n <= 0, a number of symbolic bytes equal
-	 to the size of x is returned. (If you manage to get something like
-	 'x = __SYMBOLIC();' past CIL despite the disagreement in the number
-	 of arguments, this behaves like the n <= 0 case.) *)
-	begin match exps with
-		| [AddrOf (Var varinf, NoOffset as cil_lval)]
-		| [CastE (_, AddrOf (Var varinf, NoOffset as cil_lval))] ->
-			(* If we are given a variable's address, we track the symbolic value.
-				 But make sure we don't give the same variable two different values. *)
-			if List.exists (fun (_,v) -> v == varinf) exHist.bytesToVars
-			then Errormsg.s
-				(Errormsg.error "Can't assign two tracked values to variable %s" varinf.vname);
-
-			let state, (_, size as lval) = Eval.lval state cil_lval in
-			let symbBytes = bytes__symbolic size in
-			Output.set_mode Output.MSG_MUSTPRINT;
-			Output.print_endline (varinf.vname ^ " = " ^ (To_string.bytes symbBytes));
-			(* TODO: do something like this for
-			 * argument initialization when start SE
-			 * in the middle 
-			 *)
-			nextExHist := { exHist with bytesToVars = (symbBytes,varinf) :: exHist.bytesToVars; };
-			MemOp.state__assign state lval symbBytes
-		| _ ->
-			(* Any symbolic value not directly given to a variable by a call to
-				 __SYMBOLIC(&<var>) does not get tracked. *)
-			begin match lvalopt with
-				| None -> failwith "Incorrect usage of __SYMBOLIC(): symbolic value generated and ignored"
-				| Some lval ->
-					let state, (_, size as lval) = Eval.lval state lval in
-					let state, ssize = match exps with
-						| [] -> (state, size)
-						| [CastE (_, h)] | [h] ->
-							let state, bytes = Eval.rval state h in
-							let newsize = bytes_to_int_auto bytes in
-							(state, if newsize <= 0 then size else newsize)
-						| _ -> failwith "__SYMBOLIC takes at most one argument"
-					in
-					MemOp.state__assign state lval (bytes__symbolic ssize)
-			end
-	end
-
 let exec_func state func job instr lvalopt exps loc op_exps = 
 	let exHist,stmt = job.exHist,job.stmt in
 	begin match func with
@@ -182,8 +134,7 @@ let exec_func state func job instr lvalopt exps loc op_exps =
 						inTrackedFn = StringSet.mem fundec.svar.vname run_args.arg_fns; }
 		| _ ->
 				let nextExHist = ref exHist in
-				let state_end = begin match func with
-					| Function.Symbolic -> exec_symbolic state lvalopt exps exHist nextExHist	
+				let state_end = begin match func with	
 					| _ -> failwith "unreachable exec_instr_call"
 						
 				end in (* inner [match func] *)

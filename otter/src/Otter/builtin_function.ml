@@ -615,3 +615,83 @@ let intercept_aspect job job_queue interceptor =
 			call_wrapper exec_aspect retopt exps loc job job_queue
 		| _ -> 
 			interceptor job job_queue
+
+
+(* There are 2 ways to use __SYMBOLIC:
+	 (1) '__SYMBOLIC(&x);' gives x a fresh symbolic value and associates
+	 that value with the variable x.
+	 (2) 'x = __SYMBOLIC(n);' assigns to x a fresh symbolic value which
+	 is not associated to any variable. If n > 0, n is the number of
+	 symbolic bytes desired; if n <= 0, a number of symbolic bytes equal
+	 to the size of x is returned. (If you manage to get something like
+	 'x = __SYMBOLIC();' past CIL despite the disagreement in the number
+	 of arguments, this behaves like the n <= 0 case.) *)
+let intercept_symbolic job job_queue interceptor =
+	match job.Types.instrList with
+		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::_ when varinfo.vname = "__SYMBOLIC" -> 
+
+			begin match exps with
+				| [AddrOf (Var varinf, NoOffset as cil_lval)]
+				| [CastE (_, AddrOf (Var varinf, NoOffset as cil_lval))] ->
+
+					let nextBytesToVars = ref [] in
+					let exec_symbolic_no_return retopt exps loc job =
+
+						let state = job.state in
+						let exHist = job.exHist in
+
+						(* If we are given a variable's address, we track the symbolic value.
+							 But make sure we don't give the same variable two different values. *)
+						if List.exists (fun (_,v) -> v == varinf) exHist.bytesToVars
+						then Errormsg.s
+							(Errormsg.error "Can't assign two tracked values to variable %s" varinf.vname);
+
+						let state, (_, size as lval) = Eval.lval state cil_lval in
+						let symbBytes = bytes__symbolic size in
+						Output.set_mode Output.MSG_MUSTPRINT;
+						Output.print_endline (varinf.vname ^ " = " ^ (To_string.bytes symbBytes));
+						(* TODO: do something like this for
+						 * argument initialization when start SE
+						 * in the middle 
+						 *)
+						nextBytesToVars := (symbBytes,varinf)::exHist.bytesToVars;
+						MemOp.state__assign state lval symbBytes
+					
+					in
+					let result, job_queue = call_wrapper exec_symbolic_no_return retopt exps loc job job_queue in
+					let result =
+						(*The call will either be sucessful and the history is updated with a new tracked variable, 
+						  or it will fail at some point before the history is updated.*)
+						match result with
+							| Active job -> Active {job with exHist = {job.exHist with bytesToVars = !nextBytesToVars;};}
+							| Complete (Abandoned (_, _, _)) -> result
+							| _ -> failwith "Impossible"
+					in
+					(result, job_queue)
+
+				| _ ->
+
+					let exec_symbolic_return retopt exps loc job =
+						let state = job.state in
+						begin match retopt with
+							| None -> failwith "Incorrect usage of __SYMBOLIC(): symbolic value generated and ignored"
+							| Some lval ->
+								let state, (_, size as lval) = Eval.lval state lval in
+								let state, size = match exps with
+									| [] -> (state, size)
+									| [CastE (_, h)] | [h] ->
+										let state, bytes = Eval.rval state h in
+										let newsize = bytes_to_int_auto bytes in
+										(state, if newsize <= 0 then size else newsize)
+									| _ -> failwith "__SYMBOLIC takes at most one argument"
+								in
+								MemOp.state__assign state lval (bytes__symbolic size)
+						end
+					in
+					call_wrapper exec_symbolic_return retopt exps loc job job_queue
+			end
+
+		| _ -> 
+			interceptor job job_queue
+
+
