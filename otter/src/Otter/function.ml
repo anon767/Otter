@@ -14,10 +14,6 @@ type function_type =
 	| Ordinary of Cil.fundec
 	| Aspect of aspect
 	| Symbolic
-	| CurrentState
-	| CompareState
-	| AssertEqualState
-
 
 let aspect_tbl : (pointcut, advice) Hashtbl.t = Hashtbl.create 8
 let with_aspect (pointcut, advice) fn =
@@ -32,9 +28,6 @@ let from_varinfo state varinfo args =
 	begin match varinfo.vname with
 		| f when (Hashtbl.mem aspect_tbl f) -> Aspect(f, Hashtbl.find aspect_tbl f)
 		| "__SYMBOLIC" -> Symbolic
-		| "__CURRENT_STATE" -> CurrentState
-		| "__COMPARE_STATE" -> CompareState
-		| "__ASSERT_EQUAL_STATE" -> AssertEqualState
 		| f ->
 				try
 					Ordinary(Cilutility.search_function varinfo)

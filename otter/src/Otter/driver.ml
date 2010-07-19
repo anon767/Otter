@@ -138,6 +138,9 @@ let intercept_extended_otter_functions job job_queue interceptor =
 	(intercept_function_by_name_internal "__COMMENT"               (exec Builtin_function.otter_comment)) @@
 	(intercept_function_by_name_internal "__BREAKPT"               (exec Builtin_function.otter_break_pt)) @@
 	(intercept_function_by_name_internal "__PRINT_STATE"           (exec Builtin_function.otter_print_state)) @@
+	(intercept_function_by_name_internal "__CURRENT_STATE"         (exec Builtin_function.otter_current_state)) @@
+	(intercept_function_by_name_internal "__COMPARE_STATE"         (exec Builtin_function.otter_compare_state)) @@
+	(intercept_function_by_name_internal "__ASSERT_EQUAL_STATE"    (exec Builtin_function.otter_assert_equal_state)) @@
 
 	(* pass on the job when none of those match *)
 	interceptor

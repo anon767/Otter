@@ -522,3 +522,58 @@ let otter_print_state retopt exps loc job =
 	Output.print_endline "#END PRINTSTATE";
 	Executeargs.print_args.Executeargs.arg_print_char_as_int <- arg_print_char_as_int;
 	state
+
+let otter_current_state retopt exps loc job =
+	let state, bytes = Eval.rval job.state (List.hd exps) in
+	let key = bytes_to_int_auto bytes in
+	Output.set_mode Output.MSG_MUSTPRINT;
+	Output.printf "Record state %d\n" key;
+	MemOp.index_to_state__add key state;
+	state
+
+let otter_compare_state retopt exps loc job =
+	let state = job.state in
+	let state, bytes0 = Eval.rval state (List.nth exps 0) in
+	let state, bytes1 = Eval.rval state (List.nth exps 1) in
+	let key0 = bytes_to_int_auto bytes0 in
+	let key1 = bytes_to_int_auto bytes1 in
+	Output.set_mode Output.MSG_MUSTPRINT;
+	Output.printf "Compare states %d and %d\n" key0 key1;
+	begin try
+		let s0 = try MemOp.index_to_state__get key0 
+		with Not_found -> (
+		   	Output.set_mode Output.MSG_MUSTPRINT;
+		   	Output.printf "Warning: snapshot %d is absent\n" key0;
+			raise Not_found
+		)
+		in
+		let s1 = try MemOp.index_to_state__get key1
+			with Not_found -> (
+			Output.set_mode Output.MSG_MUSTPRINT;
+			Output.printf "Warning: snapshot %d is absent\n" key1;
+			raise Not_found
+		)
+		in
+		Output.set_mode Output.MSG_MUSTPRINT;
+		ignore (MemOp.cmp_states s0 s1);
+		state
+	with Not_found -> 
+	   	Output.set_mode Output.MSG_MUSTPRINT;
+	   	Output.printf "Compare states fail\n";
+		state
+	end
+
+let otter_assert_equal_state retopt exps loc job =
+	let state, bytes0 = Eval.rval job.state (List.nth exps 0) in
+	let key0 = bytes_to_int_auto bytes0 in
+	begin try 
+		let s0 = MemOp.index_to_state__get key0 in
+		Output.set_mode Output.MSG_MUSTPRINT;
+		if MemOp.cmp_states s0 state then
+			Output.print_endline "AssertEqualState satisfied";
+			MemOp.index_to_state__add key0 state; 
+			state
+	with Not_found -> 
+		MemOp.index_to_state__add key0 state; 
+		state
+	end

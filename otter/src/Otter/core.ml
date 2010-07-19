@@ -135,60 +135,6 @@ let exec_aspect state instr exps advice =
 	in
 	advice state argvs instr
 
-let exec_current_state state exps =
-	let state, bytes = Eval.rval state (List.hd exps) in
-	let key = bytes_to_int_auto bytes in
-	Output.set_mode Output.MSG_MUSTPRINT;
-	Output.printf "Record state %d\n" key;
-	MemOp.index_to_state__add key state;
-	state
-
-let exec_compare_state state exps =
-	let state, bytes0 = Eval.rval state (List.nth exps 0) in
-	let state, bytes1 = Eval.rval state (List.nth exps 1) in
-	let key0 = bytes_to_int_auto bytes0 in
-	let key1 = bytes_to_int_auto bytes1 in
-	Output.set_mode Output.MSG_MUSTPRINT;
-	Output.printf "Compare states %d and %d\n" key0 key1;
-	begin try
-		let s0 = try MemOp.index_to_state__get key0 
-		with Not_found -> (
-		   	Output.set_mode Output.MSG_MUSTPRINT;
-		   	Output.printf "Warning: snapshot %d is absent\n" key0;
-			raise Not_found
-		)
-		in
-		let s1 = try MemOp.index_to_state__get key1
-			with Not_found -> (
-			Output.set_mode Output.MSG_MUSTPRINT;
-			Output.printf "Warning: snapshot %d is absent\n" key1;
-			raise Not_found
-		)
-		in
-		Output.set_mode Output.MSG_MUSTPRINT;
-		ignore (MemOp.cmp_states s0 s1);
-		state
-	with Not_found -> 
-	   	Output.set_mode Output.MSG_MUSTPRINT;
-	   	Output.printf "Compare states fail\n";
-		state
-	end
-
-let exec_assert_equal_state state exps =
-	let state, bytes0 = Eval.rval state (List.nth exps 0) in
-	let key0 = bytes_to_int_auto bytes0 in
-	begin try 
-		let s0 = MemOp.index_to_state__get key0 in
-		Output.set_mode Output.MSG_MUSTPRINT;
-		if MemOp.cmp_states s0 state then
-			Output.print_endline "AssertEqualState satisfied";
-			MemOp.index_to_state__add key0 state; 
-			state
-	with Not_found -> 
-		MemOp.index_to_state__add key0 state; 
-		state
-	end
-
 let exec_func state func job instr lvalopt exps loc op_exps = 
 	let exHist,stmt = job.exHist,job.stmt in
 	begin match func with
@@ -249,9 +195,6 @@ let exec_func state func job instr lvalopt exps loc op_exps =
 				let state_end = begin match func with
 					| Function.Symbolic -> exec_symbolic state lvalopt exps exHist nextExHist	
 					| Function.Aspect(pointcut, advice) -> exec_aspect state instr exps advice
-					| Function.CurrentState -> exec_current_state state exps
-					| Function.CompareState -> exec_compare_state state exps
-					| Function.AssertEqualState -> exec_assert_equal_state state exps
 					| _ -> failwith "unreachable exec_instr_call"
 						
 				end in (* inner [match func] *)
