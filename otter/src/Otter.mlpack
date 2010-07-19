@@ -12,6 +12,7 @@ Otter/findFns
 Otter/function
 Otter/getProgInfo
 Otter/immutableArray
+Otter/interceptors
 Otter/invInput
 Otter/jobs
 Otter/memOp
