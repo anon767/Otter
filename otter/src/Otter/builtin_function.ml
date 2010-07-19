@@ -19,51 +19,53 @@ let stmtInfo_of_job job =
 	{ siFuncName = (List.hd job.state.callstack).svar.vname;
 		siStmt = Cilutility.stmtAtEndOfBlock job.stmt; }
 
-let call_wrapper replace_func retopt exps loc job job_queue =
+let call_wrapper_with_exceptions replace_func retopt exps loc job job_queue =
 	(* Wrapper for calling an Otter function and advancing the execution to the next statement *)
 	(* replace_func retopt exps loc job -> state *)
 
-	try
-		let instr = List.hd job.instrList in
-		let job = { job with instrList = []; } in
+	let state_end = replace_func retopt exps loc job in
 
-		let state_end = replace_func retopt exps loc job in
-
-		let nextStmt =
-			(* [stmt] is an [Instr] which doesn't end with a call to a
-				 [noreturn] function, so it has exactly one successor. *)
-			match job.stmt.succs with
-				| [h] -> h
-				| _ -> assert false
-		in
-		
-		(* We didn't add the outgoing edge in exec_stmt because the
-			 call might have never returned. Since there isn't an
-			 explicit return (because we handle the call internally), we
-			 have to add the edge now. *)
-		let job =
-			if job.inTrackedFn && Executeargs.run_args.Executeargs.arg_line_coverage
-			then { job with 
-					exHist = 
-						(let instrLoc = get_instrLoc instr in
-						{ job.exHist with coveredLines = LineSet.add (instrLoc.file, instrLoc.line) job.exHist.coveredLines; }
-						);
-				}
-			else job
-		in
-		let nextExHist = ref job.exHist in
+	let nextStmt =
+		(* [stmt] is an [Instr] which doesn't end with a call to a
+			 [noreturn] function, so it has exactly one successor. *)
+		match job.stmt.succs with
+			| [h] -> h
+			| _ -> assert false
+	in
+	
+	(* We didn't add the outgoing edge in exec_stmt because the
+		 call might have never returned. Since there isn't an
+		 explicit return (because we handle the call internally), we
+		 have to add the edge now. *)
+	let job =
+		if job.inTrackedFn && Executeargs.run_args.Executeargs.arg_line_coverage
+		then { job with 
+				exHist = 
+					(let instrLoc = get_instrLoc (List.hd job.instrList) in
+					{ job.exHist with coveredLines = LineSet.add (instrLoc.file, instrLoc.line) job.exHist.coveredLines; }
+					);
+			}
+		else job
+	in
+	let nextExHist = 
 		if job.inTrackedFn && Executeargs.run_args.Executeargs.arg_edge_coverage then
-			nextExHist := { !nextExHist with coveredEdges =
-			EdgeSet.add (stmtInfo_of_job job,
-				{ 
-					siFuncName = (List.hd job.state.callstack).svar.vname;
-					siStmt = Cilutility.stmtAtEndOfBlock nextStmt; })
-					!nextExHist.coveredEdges; 
-				};
+			{ job.exHist with coveredEdges =
+				EdgeSet.add (stmtInfo_of_job job,
+					{		siFuncName = (List.hd job.state.callstack).svar.vname;
+							siStmt = Cilutility.stmtAtEndOfBlock nextStmt; })
+					job.exHist.coveredEdges; 
+			}
+		else
+			job.exHist
+	in
 
-		(* Update state, the stmt to execute, and exHist (which may
-			 have gotten an extra bytesToVar mapping added to it). *)
-		(Active { job with state = state_end; stmt = nextStmt; exHist = !nextExHist; }, job_queue)
+	(* Update state, the stmt to execute, and exHist (which may
+		 have gotten an extra bytesToVar mapping added to it). *)
+	(Active { job with state = state_end; stmt = nextStmt; exHist = nextExHist; instrList = []; }, job_queue)
+
+let call_wrapper replace_func retopt exps loc job job_queue =
+	try
+		call_wrapper_with_exceptions replace_func retopt exps loc job job_queue
 	with Failure msg ->
 		if Executeargs.run_args.Executeargs.arg_failfast then failwith msg;
 		let result = { result_state = job.state; result_history = job.exHist } in
