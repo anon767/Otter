@@ -2,15 +2,16 @@ Otter/builtin_function
 Otter/bytes
 Otter/bytesUtility
 Otter/cilutility
+Otter/core
 Otter/driver
 Otter/eval
 Otter/executeargs
 Otter/executedebug
 Otter/executemain
 Otter/findFns
-Otter/function
 Otter/getProgInfo
 Otter/immutableArray
+Otter/interceptors
 Otter/invInput
 Otter/jobs
 Otter/memOp
