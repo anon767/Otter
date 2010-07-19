@@ -88,6 +88,7 @@ let otter_functions_interceptor job job_queue interceptor =
 	(
 
 	(* intercept builtin functions *)
+	(                                                                    Builtin_function.intercept_aspect) @@
 	(intercept_function_by_name_internal "__builtin_alloca"        (exec Builtin_function.libc___builtin_alloca)) @@
 	(intercept_function_by_name_internal "malloc"                  (exec Builtin_function.libc___builtin_alloca)) @@
 	(intercept_function_by_name_internal "free"                    (call Builtin_function.libc_free)) @@
