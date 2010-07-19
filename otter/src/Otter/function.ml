@@ -17,7 +17,6 @@ type function_type =
 	| CurrentState
 	| CompareState
 	| AssertEqualState
-	| PrintState
 
 
 let aspect_tbl : (pointcut, advice) Hashtbl.t = Hashtbl.create 8
@@ -36,7 +35,6 @@ let from_varinfo state varinfo args =
 		| "__CURRENT_STATE" -> CurrentState
 		| "__COMPARE_STATE" -> CompareState
 		| "__ASSERT_EQUAL_STATE" -> AssertEqualState
-		| "__PRINT_STATE" -> PrintState
 		| f ->
 				try
 					Ordinary(Cilutility.search_function varinfo)

@@ -137,7 +137,8 @@ let intercept_extended_otter_functions job job_queue interceptor =
 	(intercept_function_by_name_internal "NOT"                     (call Builtin_function.otter_boolean_not)) @@
 	(intercept_function_by_name_internal "__COMMENT"               (exec Builtin_function.otter_comment)) @@
 	(intercept_function_by_name_internal "__BREAKPT"               (exec Builtin_function.otter_break_pt)) @@
-	
+	(intercept_function_by_name_internal "__PRINT_STATE"           (exec Builtin_function.otter_print_state)) @@
+
 	(* pass on the job when none of those match *)
 	interceptor
 

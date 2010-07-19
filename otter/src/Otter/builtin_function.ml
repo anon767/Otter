@@ -430,3 +430,95 @@ let otter_break_pt retopt exps loc job =
 			Output.printf "sth\n";	
 			job.state
 	end
+
+let otter_print_state retopt exps loc job =
+	let state = job.state in
+	Output.set_mode Output.MSG_MUSTPRINT;
+	let arg_print_char_as_int = Executeargs.print_args.Executeargs.arg_print_char_as_int in
+	Executeargs.print_args.Executeargs.arg_print_char_as_int <- true;
+	let module BOSMap = Utility.MakeMap (
+		struct
+		type t = memory_block * bytes * int  (* block, offset, size *)
+		let compare = Pervasives.compare				
+		end)	
+	in
+	let bosmap = ref BOSMap.empty in
+	let printStringString s1 s2 =
+		Output.print_endline (s1 ^ " = " ^ s2)
+	in
+	let rec printVarFieldsBytes varname typ bytes off =
+		(* break down each local by its fields *)
+		(* canonicalize concrete values by their array rep*)
+		match typ with
+			| TComp (compinfo,_) -> 
+				List.iter 
+					(fun fieldinfo -> 
+						printVarFieldsBytes 
+							(varname^"."^fieldinfo.fname) 
+							fieldinfo.ftype bytes 
+							(off + fst(Cil.bitsOffset typ (Field(fieldinfo,NoOffset)))/8)
+					)
+				  compinfo.cfields
+			| _ -> 
+				let size = (Cil.bitsSizeOf typ/8) in
+				let rec p b = 
+					match b with
+						| Bytes_Constant const ->  p (constant_to_bytes const)
+						| Bytes_ByteArray ba -> To_string.bytes (Bytes_ByteArray(ImmutableArray.sub ba off size))
+						| Bytes_Address (block, boff) -> 
+							if off = 0 && size = (bitsSizeOf voidPtrType / 8) then begin
+								bosmap := BOSMap.add (block,boff,size) None (!bosmap);
+								To_string.bytes b
+							end else
+								failwith (Printf.sprintf "PRINT STATE: Reading part of a Bytes_Address: %s %d %d" (To_string.bytes b) off size)
+						| _ -> "("^(To_string.bytes b)^","^(string_of_int off)^","^(string_of_int size)^")"
+				in 
+				let rhs = p bytes in 
+				printStringString varname rhs
+	in
+	let printVarBytes var bytes =
+		printVarFieldsBytes var.vname var.vtype bytes 0 
+	in
+	let printVar var lval_block =
+		if Cilutility.isConstType var.vtype then () 
+		else
+			match lval_block with
+				| Immediate (Unconditional (block, _)) ->
+					begin match (MemoryBlockMap.find block state.block_to_bytes) with
+						| Immediate bytes -> printVarBytes var bytes
+						| Deferred _ -> printStringString var.vname "(deferred)"
+					end
+				(* TODO: print something useful *)
+				| Immediate (IfThenElse _) ->
+					printStringString var.vname "(IfThenElse)"
+				| Immediate (ConditionalException _) ->
+					printStringString var.vname "(ConditionalException)"
+				| Deferred _ ->
+					printStringString var.vname "(deferred)"
+	in
+	
+	Output.print_endline "#BEGIN PRINTSTATE";
+	Output.print_endline "#Globals:";
+	VarinfoMap.iter printVar state.global;
+	Output.print_endline "#Locals:";
+	VarinfoMap.iter printVar (List.hd state.locals);
+	Output.print_endline "#Formals:";
+	VarinfoMap.iter printVar (List.hd state.formals);
+	(* explore only one level of memory *)
+	bosmap := BOSMap.mapi begin fun (block,off,size) des -> match des with
+		| Some _ -> des
+		| None -> Some (snd(MemOp.state__deref state (conditional__lval_block (block, off), size)))
+	end (!bosmap);
+	Output.print_endline "#Memory: (one level)";
+	BOSMap.iter (fun (block,off,size) des -> 
+		let sdes =
+			match des with 
+				| None -> "None"
+				| Some b -> To_string.bytes b
+		in
+		Output.print_endline ((To_string.bytes (Bytes_Address(block, off))) ^ " -> " ^ sdes)
+	)
+	(!bosmap);
+	Output.print_endline "#END PRINTSTATE";
+	Executeargs.print_args.Executeargs.arg_print_char_as_int <- arg_print_char_as_int;
+	state
