@@ -122,58 +122,36 @@ let function_from_exp state exp args: (state * fundec) list =
 
 let exec_func state fundec job instr lvalopt exps loc op_exps = 
 	let exHist,stmt = job.exHist,job.stmt in
-		
-	(* TODO: do a casting if necessary: look at fundec.sformals, varinfo.vtype *)
-	(* exps may be longer than fundec.sformals *)
-	(* goal: create a list of targetted types:
-		for regular arguments - look at fundec.sformals
-		for vargs - same as the expressions *)
-		(* NECESSARY? *)
-		(*
-		let rec exptyps_f lefts rights = match lefts,rights with
-			| vh::vt,ah::at -> vh.vtype::(exptyps_f vt at)
-			| [],ah::at -> (Cil.typeOf ah)::(exptyps_f [] at)
-			| vh::vt,[] -> failwith "unreachable"
-			| [],[] -> []
-		in
-		let exptyps = exptyps_f fundec.sformals exps in
-		let argvs = (List.map2 (fun exp typ -> 
-			let targetted_typ = Cil.typeOf exp in
-			let final_exp = if targetted_typ == typ 
-				then exp 
-				else exp (*CastE(targetted_typ,exp) *)
-			in
-			Eval.rval state final_exp) exps exptyps) 
-		*)
-let state, argvs = List.fold_right begin fun exp (state, argvs) ->
-let state, bytes = Eval.rval state exp in
-(state, bytes::argvs)
-end exps (state, []) in
-(* [stmt] is an [Instr], so it can't have two successors. If
- [func] returns, then [stmt] has exactly one successor. If
- [func] is [exit] or has the [noreturn] attribute, [stmt]
- has no successor. *)
-let callContext = match stmt.succs with
-| []  -> NoReturn instr
-| [h] -> Source (lvalopt,stmt,instr,h)
-| _   -> assert false
-in
-let state = MemOp.state__start_fcall state callContext fundec argvs in
-(* If fundec is the function to be examined *)
-begin
-let examfn = Executeargs.run_args.arg_examfn in
-	if examfn = fundec.svar.vname  then
-failwith "YAML not supported"
-		(*InvInput.examine state fundec*)
-	else ()
-end;
 
-(* Update the state, the next stmt to execute, and whether or
- not we're in a tracked function. *)
-Active { job with
-		state = state;
-		stmt = List.hd fundec.sallstmts;
-		inTrackedFn = StringSet.mem fundec.svar.vname run_args.arg_fns; }
+	(* evaluate the arguments *)
+	let state, argvs = List.fold_right begin fun exp (state, argvs) ->
+		let state, bytes = Eval.rval state exp in
+		(state, bytes::argvs)
+	end exps (state, []) in
+
+	(* [stmt] is an [Instr], so it can't have two successors. If
+	 [func] returns, then [stmt] has exactly one successor. If
+	 [func] is [exit] or has the [noreturn] attribute, [stmt]
+	 has no successor. *)
+	let callContext = match stmt.succs with
+		| []  -> NoReturn instr
+		| [h] -> Source (lvalopt,stmt,instr,h)
+		| _   -> assert false
+	in
+	let state = MemOp.state__start_fcall state callContext fundec argvs in
+
+	(*
+	(* If fundec is the function to be examined *)
+	if Executeargs.run_args.arg_examfn = fundec.svar.vname then
+		InvInput.examine state fundec;
+	*)
+
+	(* Update the state, the next stmt to execute, and whether or
+	 not we're in a tracked function. *)
+	Active { job with
+			state = state;
+			stmt = List.hd fundec.sallstmts;
+			inTrackedFn = StringSet.mem fundec.svar.vname run_args.arg_fns; }
 
 let exec_instr_call job instr lvalopt fexp exps loc =
 	let state,exHist,stmt = job.state,job.exHist,job.stmt in
