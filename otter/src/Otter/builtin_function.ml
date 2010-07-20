@@ -581,43 +581,6 @@ let otter_assert_equal_state retopt exps loc job =
 		state
 	end
 
-
-
-(* borrow aspect-oriented programming terminology *)
-type pointcut = string
-type advice = state -> bytes list -> Cil.instr -> state
-type aspect = pointcut * advice
-
-let aspect_tbl : (pointcut, advice) Hashtbl.t = Hashtbl.create 8
-let with_aspect (pointcut, advice) fn =
-    Hashtbl.add aspect_tbl pointcut advice;
-    let res = fn () in
-        Hashtbl.remove aspect_tbl pointcut;
-        res
-
-let intercept_aspect job job_queue interceptor =
-	match job.Types.instrList with
-		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::_ when (Hashtbl.mem aspect_tbl varinfo.vname) -> 
-
-			let exec_aspect retopt exps loc job =
-				let advice = Hashtbl.find aspect_tbl varinfo.vname in
-				let instr = List.hd job.instrList in
-				let state = job.state in
-				let state, argvs = 
-					List.fold_right 
-						begin fun exp (state, exps) ->
-							let state, bytes = Eval.rval state exp in
-							(state, bytes::exps)
-						end exps (state, [])
-				in
-				advice state argvs instr
-			in
-
-			call_wrapper exec_aspect retopt exps loc job job_queue
-		| _ -> 
-			interceptor job job_queue
-
-
 (* There are 2 ways to use __SYMBOLIC:
 	 (1) '__SYMBOLIC(&x);' gives x a fresh symbolic value and associates
 	 that value with the variable x.
@@ -702,7 +665,6 @@ let interceptor job job_queue interceptor =
 	(
 
 	(* intercept builtin functions *)
-	(                                  (*function in aspect table*)      intercept_aspect) @@
 	(                                  (*"__SYMBOLIC"*)                  intercept_symbolic) @@
 	(intercept_function_by_name_internal "__builtin_alloca"        (exec libc___builtin_alloca)) @@
 	(intercept_function_by_name_internal "malloc"                  (exec libc___builtin_alloca)) @@
