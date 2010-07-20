@@ -16,10 +16,6 @@ let op_exps state exps binop =
 	in
 	Eval.rval state (impl exps)
 
-let stmtInfo_of_job job =
-	{ siFuncName = (List.hd job.state.callstack).svar.vname;
-		siStmt = Cilutility.stmtAtEndOfBlock job.stmt; }
-
 let call_wrapper_with_exceptions replace_func retopt exps loc job job_queue =
 	(* Wrapper for calling an Otter function and advancing the execution to the next statement *)
 	(* replace_func retopt exps loc job -> state *)
@@ -48,14 +44,16 @@ let call_wrapper_with_exceptions replace_func retopt exps loc job job_queue =
 			}
 		else job
 	in
-	let nextExHist = 
+
+	(* update edge coverage *)
+	let nextExHist =
 		if job.inTrackedFn && Executeargs.run_args.Executeargs.arg_edge_coverage then
-			{ job.exHist with coveredEdges =
-				EdgeSet.add (stmtInfo_of_job job,
-					{		siFuncName = (List.hd job.state.callstack).svar.vname;
-							siStmt = Cilutility.stmtAtEndOfBlock nextStmt; })
-					job.exHist.coveredEdges; 
-			}
+			let fn = (List.hd job.state.callstack).svar.vname in
+			let edge = (
+				{ siFuncName = fn; siStmt = Cilutility.stmtAtEndOfBlock job.stmt; },
+				{ siFuncName = fn; siStmt = Cilutility.stmtAtEndOfBlock nextStmt; }
+			) in
+			{ job.exHist with coveredEdges = EdgeSet.add edge job.exHist.coveredEdges }
 		else
 			job.exHist
 	in
