@@ -1,3 +1,9 @@
+(**
+
+This module contains a library of built-in functions for Otter.
+
+*)
+
 open Cil
 open Ternary
 open Bytes
@@ -5,16 +11,23 @@ open BytesUtility
 open Types
 open Interceptors
 
-(** Function call wrappers for intercept_function_by_name_internal **)
 
-let op_exps state exps binop =
-	let rec impl exps =
-		match exps with
-			| [] -> failwith "AND/OR must take at least 1 argument"
-			| h::[] -> h
-			| h:: tail -> let t = impl tail in BinOp(binop, h, t, Cil.intType)
+(** Convenience function to join a list of expressions using a binary operator and evaluate it.
+		@param state is the symbolic executor state in which to evaluate the list of expressions
+		@param exps is the list of expressions to join and evaluate
+		@param binop is the binary operator used to join the list of expressions
+		@return the updated state and the evaluated, joined expression
+*)
+let eval_join_exps state exps binop =
+	let rec join_exps = function
+		| x::[] -> x
+		| x::xs -> BinOp(binop, x, join_exps xs, Cil.intType)
+		| [] -> failwith "AND/OR must take at least 1 argument"
 	in
-	Eval.rval state (impl exps)
+	Eval.rval state (join_exps exps)
+
+
+(** Function call wrappers for intercept_function_by_name_internal **)
 
 let call_wrapper_with_exceptions replace_func retopt exps job job_queue =
 	(* Wrapper for calling an Otter function and advancing the execution to the next statement *)
@@ -318,9 +331,9 @@ let otter_symbolic_static retopt exps job =
 	end
 	
 let otter_evaluate retopt exps job =
-	let state, pc = op_exps job.state exps Cil.LAnd in
+	let state, bytes = eval_join_exps job.state exps Cil.LAnd in
 	Output.set_mode Output.MSG_MUSTPRINT;
-	Output.print_endline ("	Evaluates to "^(To_string.bytes pc));
+	Output.print_endline ("	Evaluates to "^(To_string.bytes bytes));
 	state
 
 let otter_evaluate_string retopt exps job =
@@ -375,7 +388,7 @@ let otter_symbolic_state retopt exps job =
 		state
 
 let otter_assume retopt exps job =
-	let state, pc = op_exps job.state exps Cil.LAnd in
+	let state, pc = eval_join_exps job.state exps Cil.LAnd in
 	MemOp.state__add_path_condition state pc false
 
 let otter_path_condition retopt exps job =
@@ -386,7 +399,7 @@ let otter_path_condition retopt exps job =
 	state
 	
 let otter_assert retopt exps job =
-	let state, assertion = op_exps job.state exps Cil.LAnd in
+	let state, assertion = eval_join_exps job.state exps Cil.LAnd in
 	Eval.check state assertion exps
 
 let otter_if_then_else state exps =
@@ -400,7 +413,7 @@ let otter_if_then_else state exps =
 	(state, rv)
 
 let otter_boolean_op binop state exps =
-	let state, rv = op_exps state exps binop in
+	let state, rv = eval_join_exps state exps binop in
 	(state, rv)
 
 let otter_boolean_not state exps =
