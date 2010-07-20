@@ -316,17 +316,7 @@ let otter_symbolic_static retopt exps job =
 			let newbytes = MemOp.loc_table__get state (loc,key) in
 			MemOp.state__assign state lval newbytes
 	end
-
-let otter_not_found retopt exps job =
-	let state = job.state in
-	begin match retopt with
-		| None -> 
-			state
-		| Some cil_lval ->
-			let state, (_, size as lval) = Eval.lval state cil_lval in
-			MemOp.state__assign state lval (bytes__symbolic size)
-	end
-					
+	
 let otter_evaluate retopt exps job =
 	let state, pc = op_exps job.state exps Cil.LAnd in
 	Output.set_mode Output.MSG_MUSTPRINT;
