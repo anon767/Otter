@@ -234,7 +234,7 @@ module Interpreter (T : Config.BlockConfig) = struct
         in
 
         (* dispatch call to main *)
-        let mainfn = Function.from_name_in_file "main" file in
+        let mainfn = Cilutility.get_fundec "main" file in
         `TypedBlock (file, mainfn, expState, completion)
 
 
