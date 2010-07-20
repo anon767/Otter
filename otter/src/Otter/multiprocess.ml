@@ -239,9 +239,6 @@ let process_result result completed job_queue =
 	let multijob, multijob_queue = job_queue in
 	process_job_states result multijob completed multijob_queue
 
-let (@@) i1 i2 = 
-	fun a b -> i1 a b i2
-
 let init job = 
 	let multijob = {
 		processes = [];
@@ -255,6 +252,7 @@ let init job =
 	let multijob = put_job job multijob 0 in
 
 	(* start executing *)
+	let (@@) = Interceptors.(@@) in
 	Driver.main_loop 
 		get_job_multijob
 		(

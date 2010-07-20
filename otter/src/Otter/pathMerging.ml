@@ -244,12 +244,10 @@ let merge_job_interceptor job job_queue interceptor =
 		let _ = Jobs.running job_queue job in (* set current job *)
 		interceptor job job_queue
 
-let (@@) i1 i2 = 
-	fun a b -> i1 a b i2
-
 let init job =
 	let jobs = Jobs.create [] in
 	let _ = Jobs.add_runnable jobs job in
+	let (@@) = Interceptors.(@@) in
 	Driver.main_loop 
 		get_job_priority_queue_with_merge
 		(

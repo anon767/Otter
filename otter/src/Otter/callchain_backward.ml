@@ -3,8 +3,6 @@ open Bytes
 open Cil
 open Executeargs
 
-let (@@) i1 i2 = 
-	fun a b -> i1 a b i2
 
 let pass_targets targets job fexp exps =
   (* convert fexp to fundec *) 
@@ -171,6 +169,7 @@ let callchain_backward_se callergraph entryfn assertfn job_init : job_completion
 	  Bytes.bytes__zero result
   in
 
+	let (@@) = Interceptors.(@@) in
 	let call_Otter_main_loop targets job =
 		if run_args.arg_merge_paths then
 			begin
