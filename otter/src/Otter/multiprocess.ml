@@ -261,7 +261,7 @@ let init job =
 			multi_set_output_formatter_interceptor @@
 			intercept_fork @@
 			repack_job_interceptor @@
-			Interceptors.otter_functions_interceptor @@ 
+			Builtin_function.interceptor @@ 
 			Core.step
 		)
 		process_result

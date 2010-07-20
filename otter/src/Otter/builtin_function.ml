@@ -3,6 +3,7 @@ open Ternary
 open Bytes
 open BytesUtility
 open Types
+open Interceptors
 
 (** Function call wrappers for intercept_function_by_name_internal **)
 
@@ -695,3 +696,48 @@ let intercept_symbolic job job_queue interceptor =
 			interceptor job job_queue
 
 
+let interceptor job job_queue interceptor = 
+	let exec = call_wrapper in
+	let call = simple_call_wrapper in
+	(
+
+	(* intercept builtin functions *)
+	(                                  (*function in aspect table*)      intercept_aspect) @@
+	(                                  (*"__SYMBOLIC"*)                  intercept_symbolic) @@
+	(intercept_function_by_name_internal "__builtin_alloca"        (exec libc___builtin_alloca)) @@
+	(intercept_function_by_name_internal "malloc"                  (exec libc___builtin_alloca)) @@
+	(intercept_function_by_name_internal "free"                    (call libc_free)) @@
+	(intercept_function_by_name_internal "__builtin_va_arg_fixed"  (call libc___builtin_va_arg)) @@
+	(intercept_function_by_name_internal "__builtin_va_arg"        (call libc___builtin_va_arg)) @@
+	(intercept_function_by_name_internal "__builtin_va_copy"       (call libc___builtin_va_copy)) @@
+	(intercept_function_by_name_internal "__builtin_va_end"        (call libc___builtin_va_end)) @@
+	(intercept_function_by_name_internal "__builtin_va_start"      (call libc___builtin_va_start)) @@
+	(* memset defaults to the C implimentation on failure *)
+	(try_with_job_abandoned_interceptor 
+	(intercept_function_by_name_internal "memset"                  (call libc_memset))) @@
+	(intercept_function_by_name_internal "memset__concrete"        (call libc_memset__concrete)) @@
+	(intercept_function_by_name_internal "exit"                    (     libc_exit)) @@
+	(intercept_function_by_name_internal "__TRUTH_VALUE"           (call otter_truth_value)) @@
+	(intercept_function_by_name_internal "__GIVEN"                 (call otter_given)) @@
+	(intercept_function_by_name_internal "__SYMBOLIC_STATIC"       (exec otter_symbolic_static)) @@
+	(intercept_function_by_name_internal "__EVAL"                  (exec otter_evaluate)) @@
+	(intercept_function_by_name_internal "__EVALSTR"               (exec otter_evaluate_string)) @@
+	(intercept_function_by_name_internal "__SYMBOLIC_STATE"        (exec otter_symbolic_state)) @@
+	(intercept_function_by_name_internal "__ASSUME"                (exec otter_assume)) @@
+	(intercept_function_by_name_internal "__PATHCONDITION"         (exec otter_path_condition)) @@
+	(intercept_function_by_name_internal "__ASSERT"                (exec otter_assert)) @@
+	(intercept_function_by_name_internal "__ITE"                   (call otter_if_then_else)) @@
+	(intercept_function_by_name_internal "AND"                     (call (otter_boolean_op Cil.LAnd))) @@
+	(intercept_function_by_name_internal "OR"                      (call (otter_boolean_op Cil.LOr))) @@
+	(intercept_function_by_name_internal "NOT"                     (call otter_boolean_not)) @@
+	(intercept_function_by_name_internal "__COMMENT"               (exec otter_comment)) @@
+	(intercept_function_by_name_internal "__BREAKPT"               (exec otter_break_pt)) @@
+	(intercept_function_by_name_internal "__PRINT_STATE"           (exec otter_print_state)) @@
+	(intercept_function_by_name_internal "__CURRENT_STATE"         (exec otter_current_state)) @@
+	(intercept_function_by_name_internal "__COMPARE_STATE"         (exec otter_compare_state)) @@
+	(intercept_function_by_name_internal "__ASSERT_EQUAL_STATE"    (exec otter_assert_equal_state)) @@
+
+	(* pass on the job when none of those match *)
+	interceptor
+
+	) job job_queue

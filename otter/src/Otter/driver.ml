@@ -91,7 +91,7 @@ let init job =
 		get_job_list
 		(
 			set_output_formatter_interceptor @@
-			otter_functions_interceptor @@ 
+			Builtin_function.interceptor @@ 
 			Core.step
 		)
 		process_result

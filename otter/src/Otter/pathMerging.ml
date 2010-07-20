@@ -255,7 +255,7 @@ let init job =
 		(
 			merge_job_interceptor @@
 			Interceptors.set_output_formatter_interceptor @@
-			Interceptors.otter_functions_interceptor @@
+			Builtin_function.interceptor @@
 			Core.step
 		)
 		Driver.process_result_priority_queue
