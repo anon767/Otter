@@ -23,6 +23,7 @@ type local_state = {
 
 type shared_state = {
 	path_condition : Bytes.bytes list;
+	shared_block_to_bytes : Bytes.bytes Types.deferred Types.MemoryBlockMap.t;
 }
 
 type multijob = {
@@ -34,6 +35,23 @@ type multijob = {
 	current_pid : int;
 }
 
+let update_to_shared_memory shared_block_to_bytes local_block_to_bytes =
+	let map_func key value =
+		if Types.MemoryBlockMap.mem key local_block_to_bytes then
+			Types.MemoryBlockMap.find key local_block_to_bytes
+		else
+			value (* process lost the shared memory binding *)
+	in
+	Types.MemoryBlockMap.mapi map_func shared_block_to_bytes
+
+let update_from_shared_memory shared_block_to_bytes local_block_to_bytes =
+	let map_func key value =
+		if Types.MemoryBlockMap.mem key shared_block_to_bytes then
+			Types.MemoryBlockMap.find key shared_block_to_bytes
+		else
+			value (* not shared memory *)
+	in
+	Types.MemoryBlockMap.mapi map_func local_block_to_bytes
 
 (* put a job back into the multijob and update the shared state *)
 let put_job job multijob pid =
@@ -54,6 +72,7 @@ let put_job job multijob pid =
 	} in
 	let shared = {
 		path_condition = job.Types.state.Types.path_condition;
+		shared_block_to_bytes = update_to_shared_memory multijob.shared.shared_block_to_bytes job.Types.state.Types.block_to_bytes;
 	} in
 	{
 		file = job.Types.file;
@@ -72,6 +91,9 @@ let put_completion completion multijob = match completion with
 	| Types.Abandoned (_, _, job_result) ->
 		let shared = {
 			path_condition = job_result.Types.result_state.Types.path_condition;
+			shared_block_to_bytes = update_to_shared_memory 
+				multijob.shared.shared_block_to_bytes 
+				job_result.Types.result_state.Types.block_to_bytes;
 		} in
 		{ multijob with
 			shared = shared;
@@ -94,7 +116,7 @@ let get_job multijob = match multijob.processes with
 			Types.callContexts = process.callContexts;
 			Types.va_arg = process.va_arg;
 			Types.va_arg_map = process.va_arg_map;
-			Types.block_to_bytes = process.block_to_bytes;
+			Types.block_to_bytes = update_from_shared_memory multijob.shared.shared_block_to_bytes process.block_to_bytes;
 			Types.path_condition = multijob.shared.path_condition;
 			(* TODO *)
 			Types.extra = Types.VarinfoMap.empty;
@@ -248,6 +270,7 @@ let init job =
 		processes = [];
 		shared = {
 			path_condition = [];
+			shared_block_to_bytes = Types.MemoryBlockMap.empty;
 		};
 		jid = job.Types.jid;
 		next_pid = 1;
