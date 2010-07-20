@@ -35,7 +35,7 @@ module Interpreter (S : Config.BlockConfig) = struct
             if S.should_enter_block (List.hd job.Types.state.Types.callstack).Cil.svar.Cil.vattr then begin
                 (* execute this function *)
 
-                let state, job_queue = Core.step job job_queue in
+                let state, job_queue = Builtin_function.interceptor job job_queue Core.step in
                 let rec process_job_states completed job_queue = function
                     | Types.Active job ->
                         (completed, (job::job_queue))
