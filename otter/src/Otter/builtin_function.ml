@@ -16,11 +16,11 @@ let op_exps state exps binop =
 	in
 	Eval.rval state (impl exps)
 
-let call_wrapper_with_exceptions replace_func retopt exps loc job job_queue =
+let call_wrapper_with_exceptions replace_func retopt exps job job_queue =
 	(* Wrapper for calling an Otter function and advancing the execution to the next statement *)
-	(* replace_func retopt exps loc job -> state *)
+	(* replace_func retopt exps job -> state *)
 
-	let state_end = replace_func retopt exps loc job in
+	let state_end = replace_func retopt exps job in
 
 	let nextStmt =
 		(* [stmt] is an [Instr] which doesn't end with a call to a
@@ -62,13 +62,13 @@ let call_wrapper_with_exceptions replace_func retopt exps loc job job_queue =
 		 have gotten an extra bytesToVar mapping added to it). *)
 	(Active { job with state = state_end; stmt = nextStmt; exHist = nextExHist; instrList = []; }, job_queue)
 
-let call_wrapper replace_func retopt exps loc job job_queue =
+let call_wrapper replace_func retopt exps job job_queue =
 	try
-		call_wrapper_with_exceptions replace_func retopt exps loc job job_queue
+		call_wrapper_with_exceptions replace_func retopt exps job job_queue
 	with Failure msg ->
 		if Executeargs.run_args.Executeargs.arg_failfast then failwith msg;
 		let result = { result_state = job.state; result_history = job.exHist } in
-		(Complete (Types.Abandoned (msg, loc, result)), job_queue)
+		(Complete (Types.Abandoned (msg, Core.get_job_loc job, result)), job_queue)
 
 let state_update_return_value retopt state bytes = 
 	match retopt with
@@ -78,14 +78,14 @@ let state_update_return_value retopt state bytes =
 			let state, lval = Eval.lval state cil_lval in
 			MemOp.state__assign state lval bytes
 
-let simple_call_wrapper replace_func retopt exps loc job job_queue =
+let simple_call_wrapper replace_func retopt exps job job_queue =
 	(* wrapper for simple functions *)
 	(* replace_func state exps -> bytes *)
-	let wrapper retopt exps loc job = 
+	let wrapper retopt exps job = 
 		let (state, bytes) = replace_func job.state exps in
 		state_update_return_value retopt state bytes
 	in
-	call_wrapper wrapper retopt exps loc job job_queue
+	call_wrapper wrapper retopt exps job job_queue
 
 
 
@@ -235,7 +235,7 @@ let libc___builtin_alloca_size state size bytes loc =
 	let state = MemOp.state__add_block state block bytes in
 	(state, addrof_block)
 
-let libc___builtin_alloca retopt exps loc job =
+let libc___builtin_alloca retopt exps job =
 	let state, b_size = Eval.rval job.state (List.hd exps) in
 	let size =
 		if isConcrete_bytes b_size then
@@ -248,7 +248,7 @@ let libc___builtin_alloca retopt exps loc job =
 	  then bytes__make size (* initially zero, as though malloc were calloc *)
 	  else bytes__make_default size byte__undef (* initially the symbolic 'undef' byte *)
 	in
-    let (state, bytes) = libc___builtin_alloca_size state size bytes loc in
+	let (state, bytes) = libc___builtin_alloca_size state size bytes (Core.get_job_loc job) in
 	state_update_return_value retopt state bytes
 
 let otter_given state exps =
@@ -280,7 +280,7 @@ let otter_truth_value state exps =
 	in
 	(state, truthvalue)
 
-let libc_exit retopt exps loc job job_queue =
+let libc_exit retopt exps job job_queue =
 	Output.set_mode Output.MSG_MUSTPRINT;
 	let exit_code = 
 		match exps with
@@ -293,7 +293,7 @@ let libc_exit retopt exps loc job job_queue =
 	in
 	(Complete (Types.Exit (exit_code, { result_state = job.state; result_history = job.exHist; })), job_queue)
 
-let otter_symbolic_static retopt exps loc job =
+let otter_symbolic_static retopt exps job =
 	let state = job.state in
 	begin match retopt with
 		| None -> 
@@ -307,6 +307,7 @@ let otter_symbolic_static retopt exps loc job =
 					let state, size_bytes = Eval.rval state (List.hd exps) in
 					(state, bytes_to_int_auto size_bytes) 
 			in
+			let loc = Core.get_job_loc job in
 			let state =
 				if MemOp.loc_table__has state (loc,key)
 				then state
@@ -316,7 +317,7 @@ let otter_symbolic_static retopt exps loc job =
 			MemOp.state__assign state lval newbytes
 	end
 
-let otter_not_found retopt exps loc job =
+let otter_not_found retopt exps job =
 	let state = job.state in
 	begin match retopt with
 		| None -> 
@@ -326,13 +327,13 @@ let otter_not_found retopt exps loc job =
 			MemOp.state__assign state lval (bytes__symbolic size)
 	end
 					
-let otter_evaluate retopt exps loc job =
+let otter_evaluate retopt exps job =
 	let state, pc = op_exps job.state exps Cil.LAnd in
 	Output.set_mode Output.MSG_MUSTPRINT;
 	Output.print_endline ("	Evaluates to "^(To_string.bytes pc));
 	state
 
-let otter_evaluate_string retopt exps loc job =
+let otter_evaluate_string retopt exps job =
 	let exp = List.hd exps in
 	let sizeexp = List.nth exps 1 in
 	let state, addr_bytes = Eval.rval job.state exp in
@@ -367,7 +368,7 @@ let otter_evaluate_string retopt exps loc job =
 	);
 	state
 
-let otter_symbolic_state retopt exps loc job =
+let otter_symbolic_state retopt exps job =
 	let state = job.state in
 	MemoryBlockMap.fold 
 		begin fun block _ state ->
@@ -383,18 +384,18 @@ let otter_symbolic_state retopt exps loc job =
 		state.block_to_bytes
 		state
 
-let otter_assume retopt exps loc job =
+let otter_assume retopt exps job =
 	let state, pc = op_exps job.state exps Cil.LAnd in
 	MemOp.state__add_path_condition state pc false
 
-let otter_path_condition retopt exps loc job =
+let otter_path_condition retopt exps job =
 	let state = job.state in
 	let pc_str = (Utility.print_list To_string.bytes state.path_condition "\n AND \n") in
 	Output.set_mode Output.MSG_MUSTPRINT;
 	Output.print_endline (if String.length pc_str = 0 then "(nil)" else pc_str);
 	state
 	
-let otter_assert retopt exps loc job =
+let otter_assert retopt exps job =
 	let state, assertion = op_exps job.state exps Cil.LAnd in
 	Eval.check state assertion exps
 
@@ -416,13 +417,13 @@ let otter_boolean_not state exps =
 	let state, rv = Eval.rval state (UnOp(Cil.LNot, List.hd exps, Cil.voidType)) in
 	(state, rv)
 
-let otter_comment retopt exps loc job =
+let otter_comment retopt exps job =
 	let exp = List.hd exps in
 	Output.set_mode Output.MSG_MUSTPRINT;
 	Output.print_endline ("COMMENT:"^(To_string.exp exp));
 	job.state
 
-let otter_break_pt retopt exps loc job =
+let otter_break_pt retopt exps job =
 	Output.set_mode Output.MSG_REG;
 	Output.print_endline "Option (h for help):";
 	Scanf.scanf "%d\n" 
@@ -432,7 +433,7 @@ let otter_break_pt retopt exps loc job =
 			job.state
 	end
 
-let otter_print_state retopt exps loc job =
+let otter_print_state retopt exps job =
 	let state = job.state in
 	Output.set_mode Output.MSG_MUSTPRINT;
 	let arg_print_char_as_int = Executeargs.print_args.Executeargs.arg_print_char_as_int in
@@ -524,7 +525,7 @@ let otter_print_state retopt exps loc job =
 	Executeargs.print_args.Executeargs.arg_print_char_as_int <- arg_print_char_as_int;
 	state
 
-let otter_current_state retopt exps loc job =
+let otter_current_state retopt exps job =
 	let state, bytes = Eval.rval job.state (List.hd exps) in
 	let key = bytes_to_int_auto bytes in
 	Output.set_mode Output.MSG_MUSTPRINT;
@@ -532,7 +533,7 @@ let otter_current_state retopt exps loc job =
 	MemOp.index_to_state__add key state;
 	state
 
-let otter_compare_state retopt exps loc job =
+let otter_compare_state retopt exps job =
 	let state = job.state in
 	let state, bytes0 = Eval.rval state (List.nth exps 0) in
 	let state, bytes1 = Eval.rval state (List.nth exps 1) in
@@ -564,7 +565,7 @@ let otter_compare_state retopt exps loc job =
 		state
 	end
 
-let otter_assert_equal_state retopt exps loc job =
+let otter_assert_equal_state retopt exps job =
 	let state, bytes0 = Eval.rval job.state (List.nth exps 0) in
 	let key0 = bytes_to_int_auto bytes0 in
 	begin try 
@@ -597,7 +598,7 @@ let intercept_symbolic job job_queue interceptor =
 				| [CastE (_, AddrOf (Var varinf, NoOffset as cil_lval))] ->
 
 					let nextBytesToVars = ref [] in
-					let exec_symbolic_no_return retopt exps loc job =
+					let exec_symbolic_no_return retopt exps job =
 
 						let state = job.state in
 						let exHist = job.exHist in
@@ -620,7 +621,7 @@ let intercept_symbolic job job_queue interceptor =
 						MemOp.state__assign state lval symbBytes
 					
 					in
-					let result, job_queue = call_wrapper exec_symbolic_no_return retopt exps loc job job_queue in
+					let result, job_queue = call_wrapper exec_symbolic_no_return retopt exps job job_queue in
 					let result =
 						(*The call will either be sucessful and the history is updated with a new tracked variable, 
 						  or it will fail at some point before the history is updated.*)
@@ -633,7 +634,7 @@ let intercept_symbolic job job_queue interceptor =
 
 				| _ ->
 
-					let exec_symbolic_return retopt exps loc job =
+					let exec_symbolic_return retopt exps job =
 						let state = job.state in
 						begin match retopt with
 							| None -> failwith "Incorrect usage of __SYMBOLIC(): symbolic value generated and ignored"
@@ -650,7 +651,7 @@ let intercept_symbolic job job_queue interceptor =
 								MemOp.state__assign state lval (bytes__symbolic size)
 						end
 					in
-					call_wrapper exec_symbolic_return retopt exps loc job job_queue
+					call_wrapper exec_symbolic_return retopt exps job job_queue
 			end
 
 		| _ -> 

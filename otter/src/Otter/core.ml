@@ -7,6 +7,20 @@ open Executeargs
 open Cilutility
 open Utility
 
+(** Get the file location for the current job instruction.
+		@param job the job to get the current location from
+		@return the file location
+*)
+let get_job_loc job =
+	match job.instrList with
+		| [] -> (Cil.get_stmtLoc job.stmt.skind)
+		| _ -> 
+			let instr = match job.instrList with 
+				| i::tl -> i 
+				| _ -> assert false 
+			in
+			(Cil.get_instrLoc instr)
+
 let stmtInfo_of_job job =
 	{ siFuncName = (List.hd job.state.callstack).svar.vname;
 		siStmt = Cilutility.stmtAtEndOfBlock job.stmt; }
@@ -120,7 +134,7 @@ let function_from_exp state exp args: (state * fundec) list =
 		| _ ->
 			failwith ("Non-constant function ptr not supported : "^(To_string.exp exp))
 
-let exec_func state fundec job instr lvalopt exps loc op_exps = 
+let exec_func state fundec job instr lvalopt exps op_exps = 
 	let exHist,stmt = job.exHist,job.stmt in
 
 	(* evaluate the arguments *)
@@ -153,7 +167,7 @@ let exec_func state fundec job instr lvalopt exps loc op_exps =
 			stmt = List.hd fundec.sallstmts;
 			inTrackedFn = StringSet.mem fundec.svar.vname run_args.arg_fns; }
 
-let exec_instr_call job instr lvalopt fexp exps loc =
+let exec_instr_call job instr lvalopt fexp exps =
 	let state,exHist,stmt = job.state,job.exHist,job.stmt in
 
 	let op_exps state exps binop =
@@ -171,11 +185,11 @@ let exec_instr_call job instr lvalopt fexp exps loc =
 			| (state, func)::t -> 
 				let job_state =
 					try
-						(exec_func state func job instr lvalopt exps loc op_exps)
+						(exec_func state func job instr lvalopt exps op_exps)
 					with Failure msg ->
 						if run_args.arg_failfast then failwith msg;
 						let result = { result_state = job.state; result_history = job.exHist } in
-						Complete (Types.Abandoned (msg, loc, result))
+						Complete (Types.Abandoned (msg, get_job_loc job, result))
 				in
 				job_state::(process_func_list t)
 	in
@@ -218,7 +232,7 @@ let exec_instr job =
 		| Call(lvalopt, fexp, exps, loc) ->
 			assert (tail = []);
 			printInstr instr;
-			exec_instr_call job instr lvalopt fexp exps loc
+			exec_instr_call job instr lvalopt fexp exps
 		| Asm _ ->
 			Output.set_mode Output.MSG_MUSTPRINT;
 			Output.print_endline "Warning: ASM unsupported";
@@ -453,18 +467,6 @@ let exec_stmt job =
 				let nextStmt = List.hd block.bstmts in
 				Active { job with stmt = nextStmt; exHist = nextExHist (Some nextStmt); }
 		| _ -> failwith "Not implemented yet"
-
-
-(* TODO: figure out how to get rid of get_job_loc that's here and duplicated in driver *)
-let get_job_loc job =
-	match job.instrList with
-		| [] -> (Cil.get_stmtLoc job.stmt.skind)
-		| _ -> 
-			let instr = match job.instrList with 
-				| i::tl -> i 
-				| _ -> assert false 
-			in
-			(Cil.get_instrLoc instr)
 
 
 let step job job_queue =
