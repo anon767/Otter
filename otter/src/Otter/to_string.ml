@@ -236,7 +236,7 @@ bytes_ff_named bytes_to_var ff =
 		| Bytes_Op (op,[]) -> fprintf ff "%s()" (operation op)
 		| Bytes_Read (content,off,len) -> fprintf ff "READ(@[<hov>%a,@,%a,@,%d@])" bytes_ff content bytes_ff off len
 		| Bytes_Write (content,off,len,newbytes) -> fprintf ff "WRITE(@[<hov>%a,@,%a,@,%d,@,%a@])" bytes_ff content bytes_ff off len bytes_ff newbytes
-		| Bytes_FunPtr (f,_) -> fprintf ff "funptr(%s)" (fundec f)
+		| Bytes_FunPtr (v,_) -> fprintf ff "funptr(%s)" (varinfo v)
         | Bytes_Unbounded (name,id,size) -> fprintf ff "Unbounded(%s,%s,%a)" name (string_of_int id) bytes_ff size
 	in
 	bytes_ff ff

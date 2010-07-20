@@ -213,9 +213,8 @@ rval state exp : state * bytes =
 			|	BinOp (binop, exp1, exp2, _) ->
 					rval_binop state binop exp1 exp2
 			|	AddrOf (Var varinfo, _) when Cil.isFunctionType (varinfo.Cil.vtype) ->
-					let fundec = Cilutility.search_function varinfo in
 					let f_addr = bytes__random (Cil.bitsSizeOf Cil.voidPtrType / 8) in (* TODO: assign an addr for each function ptr *)
-					(state, make_Bytes_FunPtr(fundec,f_addr))
+					(state, make_Bytes_FunPtr(varinfo,f_addr))
 			|	AddrOf (cil_lval)
 			|	StartOf (cil_lval) ->
 					let state, (lvals, _) = lval ~justGetAddr:true state cil_lval in

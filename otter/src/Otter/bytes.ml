@@ -68,7 +68,7 @@ and bytes =
 	| Bytes_Op of operator * (bytes * Cil.typ) list
 	| Bytes_Read of bytes * bytes * int             (* less preferrable type *)
 	| Bytes_Write of bytes * bytes * int * bytes    (* least preferrable type*)
-	| Bytes_FunPtr of Cil.fundec * bytes            (* bytes is the "imaginary address" of the funptr *)
+	| Bytes_FunPtr of Cil.varinfo * bytes            (* bytes is the "imaginary address" of the funptr *)
 	| Bytes_Unbounded of string * int * bytes       (* name, id, size *)
 	| Bytes_Conditional of bytes conditional
 

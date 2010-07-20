@@ -96,12 +96,8 @@ let add_guard_to_state state guard = (*big hack; there should be a nicer way to 
 let function_from_exp state exp args: (state * fundec) list =
 	match exp with
 		| Lval(Var(varinfo), NoOffset) ->
-			begin			
-				try
-					[(state, Cilutility.search_function varinfo)]
-				with Not_found ->
-					failwith ("Function "^varinfo.vname^" not found.")
-			end
+			(* the varinfo should always map to a valid fundec (if the file was parsed by Cil) *)
+			[(state, Cilutility.search_function varinfo)]
 
 		| Lval(Mem(exp2), NoOffset) ->
 			let state, bytes = Eval.rval state exp2 in
@@ -109,7 +105,8 @@ let function_from_exp state exp args: (state * fundec) list =
 				let fold_func acc pre leaf =
 					let acc =
 						match leaf with
-							| Bytes_FunPtr(fundec,_) -> 
+							| Bytes_FunPtr(varinfo,_) -> 
+								let fundec = Cilutility.search_function varinfo in
 								(add_guard_to_state state pre, fundec)::acc
 							| _ -> acc (* should give a warning here about a non-valid function pointer*)
 					in
@@ -121,7 +118,9 @@ let function_from_exp state exp args: (state * fundec) list =
 				acc
 			in
 			begin match bytes with
-				| Bytes_FunPtr(fundec,_) -> [(state, fundec)]
+				| Bytes_FunPtr(varinfo,_) ->
+					let fundec = Cilutility.search_function varinfo in
+					[(state, fundec)]
 				| Bytes_Read(bytes2, offset, len) -> 
 					let fp = (BytesUtility.expand_read_to_conditional bytes2 offset len) in
 					(*Output.print_endline (To_string.bytes (Bytes_Conditional(fp)));*)
