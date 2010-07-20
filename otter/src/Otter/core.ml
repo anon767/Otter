@@ -134,8 +134,8 @@ let function_from_exp state exp args: (state * fundec) list =
 		| _ ->
 			failwith ("Non-constant function ptr not supported : "^(To_string.exp exp))
 
-let exec_func state fundec job instr lvalopt exps op_exps = 
-	let exHist,stmt = job.exHist,job.stmt in
+let exec_fundec job state instr fundec lvalopt exps = 
+	let stmt = job.stmt in
 
 	(* evaluate the arguments *)
 	let state, argvs = List.fold_right begin fun exp (state, argvs) ->
@@ -168,27 +168,18 @@ let exec_func state fundec job instr lvalopt exps op_exps =
 			inTrackedFn = StringSet.mem fundec.svar.vname run_args.arg_fns; }
 
 let exec_instr_call job instr lvalopt fexp exps =
-	let state,exHist,stmt = job.state,job.exHist,job.stmt in
+	let state, exHist = job.state, job.exHist in
 
-	let op_exps state exps binop =
-		let rec impl exps =
-			match exps with
-				| [] -> failwith "AND/OR must take at least 1 argument"
-				| h::[] -> h
-				| h:: tail -> let t = impl tail in BinOp(binop, h, t, Cil.intType)
-		in
-		Eval.rval state (impl exps)
-	in
 	let rec process_func_list func_list =
 		match func_list with
 			| [] -> []
-			| (state, func)::t -> 
+			| (state, fundec)::t -> 
 				let job_state =
 					try
-						(exec_func state func job instr lvalopt exps op_exps)
+						(exec_fundec job state instr fundec lvalopt exps)
 					with Failure msg ->
 						if run_args.arg_failfast then failwith msg;
-						let result = { result_state = job.state; result_history = job.exHist } in
+						let result = { result_state = state; result_history = exHist } in
 						Complete (Types.Abandoned (msg, get_job_loc job, result))
 				in
 				job_state::(process_func_list t)
