@@ -306,30 +306,6 @@ let libc_exit retopt exps job job_queue =
 	in
 	(Complete (Types.Exit (exit_code, { result_state = job.state; result_history = job.exHist; })), job_queue)
 
-let otter_symbolic_static retopt exps job =
-	let state = job.state in
-	begin match retopt with
-		| None -> 
-			state
-		| Some cil_lval ->
-			let state, (_, size as lval) = Eval.lval state cil_lval in
-			let state, key =
-				if List.length exps == 0 then
-					(state, 0)
-				else
-					let state, size_bytes = Eval.rval state (List.hd exps) in
-					(state, bytes_to_int_auto size_bytes) 
-			in
-			let loc = Core.get_job_loc job in
-			let state =
-				if MemOp.loc_table__has state (loc,key)
-				then state
-				else MemOp.loc_table__add state (loc,key) (bytes__symbolic size)
-			in
-			let newbytes = MemOp.loc_table__get state (loc,key) in
-			MemOp.state__assign state lval newbytes
-	end
-	
 let otter_evaluate retopt exps job =
 	let state, bytes = eval_join_exps job.state exps Cil.LAnd in
 	Output.set_mode Output.MSG_MUSTPRINT;
@@ -683,7 +659,6 @@ let interceptor job job_queue interceptor =
 	(intercept_function_by_name_internal "exit"                    (     libc_exit)) @@
 	(intercept_function_by_name_internal "__TRUTH_VALUE"           (call otter_truth_value)) @@
 	(intercept_function_by_name_internal "__GIVEN"                 (call otter_given)) @@
-	(intercept_function_by_name_internal "__SYMBOLIC_STATIC"       (exec otter_symbolic_static)) @@
 	(intercept_function_by_name_internal "__EVAL"                  (exec otter_evaluate)) @@
 	(intercept_function_by_name_internal "__EVALSTR"               (exec otter_evaluate_string)) @@
 	(intercept_function_by_name_internal "__SYMBOLIC_STATE"        (exec otter_symbolic_state)) @@

@@ -22,16 +22,6 @@ module VargsMap =
 	end
 	)	
 
-module LocMap =
-	Utility.MakeMap (
-	struct
-		type t = Cil.location*int 
-		let compare ((a,ai):t) (b,bi) =
-			if ai<>bi then Pervasives.compare ai bi else
-				Cil.compareLoc a b
-	end
-	)	
-
 module BytesMap =
 	Utility.MakeMap (
 	struct
@@ -81,8 +71,7 @@ and state =
 		
 		va_arg : bytes list list;			(* A stack of va_arg *)
 		va_arg_map : bytes list VargsMap.t;
-		loc_map : bytes LocMap.t;     (* Map loc to symbolic bytes *)
-        bytes_eval_cache : bool BytesMap.t; (* Map bytes to boolean value, if exists *)
+		bytes_eval_cache : bool BytesMap.t; (* Map bytes to boolean value, if exists *)
 	}
 
 

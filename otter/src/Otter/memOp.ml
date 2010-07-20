@@ -90,16 +90,6 @@ let vargs_table__remove state key : state =
 	{state with va_arg_map = (VargsMap.remove key state.va_arg_map);}
 
 
-let loc_table__has state loc =
-	LocMap.mem loc state.loc_map
-
-let loc_table__add state loc bytes : state =
-	{state with loc_map = LocMap.add loc bytes state.loc_map;}
-
-let loc_table__get state loc : bytes =
-	LocMap.find loc state.loc_map
-
-
 (**
  *	state
  *)
@@ -118,8 +108,7 @@ let state__empty =
 		callContexts = [];
 		va_arg = [];
 		va_arg_map = VargsMap.empty;
-		loc_map = LocMap.empty;
-        bytes_eval_cache = BytesMap.empty;
+		bytes_eval_cache = BytesMap.empty;
 	}
 
 

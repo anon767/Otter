@@ -122,7 +122,6 @@ let get_job multijob = match multijob.processes with
 			Types.extra = Types.VarinfoMap.empty;
 			Types.malloc = Types.VarinfoMap.empty;
 			Types.path_condition_tracked = [];
-			Types.loc_map = Types.LocMap.empty;
 			Types.bytes_eval_cache = Types.BytesMap.empty;
 		} in
 		let job = {

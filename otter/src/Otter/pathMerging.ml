@@ -43,8 +43,7 @@ let at_same_program_point job1 job2 =
 			state1.locals           == state2.locals &&
 			state1.callstack        == state2.callstack &&
 			state1.va_arg           == state2.va_arg &&
-			state1.va_arg_map       == state2.va_arg_map &&
-			state1.loc_map          == state2.loc_map
+			state1.va_arg_map       == state2.va_arg_map
 		);
 		true
 	end else
