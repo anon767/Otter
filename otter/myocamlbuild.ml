@@ -76,6 +76,7 @@ module OCamlFind = struct
         (* Provide flags for ocamldoc *)
         flag ["ocaml"; "doc"; "quiet"]          (S[A "-hide-warnings"]);
         flag ["ocaml"; "doc"; "dot_reduce"]     (S[A "-dot-reduce"]);
+        flag ["ocaml"; "doc"; "colorize_code"]  (S[A "-colorize-code"]);
 end
 
 
