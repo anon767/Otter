@@ -1,3 +1,5 @@
+(** Built-in functions for Otter *)
+
 open Cil
 open Ternary
 open Bytes
@@ -5,20 +7,32 @@ open BytesUtility
 open Types
 open Interceptors
 
+(** Convenience function to evaluate a list of expressions and join them using a binary operator.
+	@param state is the symbolic executor state to evaluate the expressions in
+	@param exps is the list of expressions to join
+	@param binop is the binary operator to join using
+	@return [exp] is the updated state and joined expression
+*)
+let eval_join_exps exps binop =
+	let rec eval_join_exps = function
+		| x::[] -> x
+		| x::xs -> BinOp(binop, x, eval_join_exps xs, Cil.intType)
+		| [] -> failwith "AND/OR must take at least 1 argument"
+	in
+	eval_join_exps exps
+
+
 (** Function call wrappers for intercept_function_by_name_internal **)
 
-let op_exps state exps binop =
-	let rec impl exps =
-		match exps with
-			| [] -> failwith "AND/OR must take at least 1 argument"
-			| h::[] -> h
-			| h:: tail -> let t = impl tail in BinOp(binop, h, t, Cil.intType)
-	in
-	Eval.rval state (impl exps)
 
-let stmtInfo_of_job job =
-	{ siFuncName = (List.hd job.state.callstack).svar.vname;
-		siStmt = Cilutility.stmtAtEndOfBlock job.stmt; }
+let set_return_value state retopt bytes = 
+	match retopt with
+		| None ->
+			state
+		| Some cil_lval ->
+			let state, lval = Eval.lval state cil_lval in
+			MemOp.state__assign state lval bytes
+
 
 let call_wrapper_with_exceptions replace_func retopt exps loc job job_queue =
 	(* Wrapper for calling an Otter function and advancing the execution to the next statement *)
@@ -48,14 +62,15 @@ let call_wrapper_with_exceptions replace_func retopt exps loc job job_queue =
 			}
 		else job
 	in
-	let nextExHist = 
+
+	(* update edge coverage *)
+	let nextExHist =
 		if job.inTrackedFn && Executeargs.run_args.Executeargs.arg_edge_coverage then
-			{ job.exHist with coveredEdges =
-				EdgeSet.add (stmtInfo_of_job job,
-					{		siFuncName = (List.hd job.state.callstack).svar.vname;
-							siStmt = Cilutility.stmtAtEndOfBlock nextStmt; })
-					job.exHist.coveredEdges; 
-			}
+			let fn = (List.hd job.state.callstack).svar.vname in
+			let edge = ({ siFuncName = fn; siStmt = Cilutility.stmtAtEndOfBlock job.stmt; },
+						{ siFuncName = fn; siStmt = Cilutility.stmtAtEndOfBlock nextStmt; })
+			in
+			{ job.exHist with coveredEdges = EdgeSet.add edge job.exHist.coveredEdges }
 		else
 			job.exHist
 	in
@@ -72,26 +87,46 @@ let call_wrapper replace_func retopt exps loc job job_queue =
 		let result = { result_state = job.state; result_history = job.exHist } in
 		(Complete (Types.Abandoned (msg, loc, result)), job_queue)
 
-let state_update_return_value retopt state bytes = 
-	match retopt with
-		| None ->
-			state
-		| Some cil_lval ->
-			let state, lval = Eval.lval state cil_lval in
-			MemOp.state__assign state lval bytes
 
 let simple_call_wrapper replace_func retopt exps loc job job_queue =
 	(* wrapper for simple functions *)
 	(* replace_func state exps -> bytes *)
 	let wrapper retopt exps loc job = 
 		let (state, bytes) = replace_func job.state exps in
-		state_update_return_value retopt state bytes
+		set_return_value state retopt bytes
 	in
 	call_wrapper wrapper retopt exps loc job job_queue
 
 
 
-(** Function Implimentations **)
+(**
+	{0 Function Implementations}
+*)
+
+
+(** Built-in function that checks if an expression is always true (non-zero).
+	@param state is the state in which to check the assertion
+	@param bytes is the assertion
+	@param exps are the expressions being asserted (used for printing a readable error message)
+	@raise Failure if the assertion is always false
+	@return state the input state; otherwise, an error message is printed and the return value is the input state with [bytes] added to the path condition
+*)
+let __otter_assert retopt exps loc job =
+	let state, assertion = Eval.rval job.state (eval_join_exps exps Cil.LAnd) in
+	let state, result =  MemOp.state__eval state state.path_condition assertion in
+	match result with
+		| Ternary.True -> (* The assertion is true *)
+			Output.set_mode Output.MSG_REG;
+			Output.print_endline "Assertion satisfied.";
+			state
+		| Ternary.False -> (* The assertion is definitely false *)
+			Eval.print_failed_assertion state assertion exps ~isUnknown:false;
+			failwith "Assertion was false"
+		| Ternary.Unknown -> (* The assertion is false in some states but not all *)
+			Eval.print_failed_assertion state assertion exps ~isUnknown:true;
+			(* Assume the assertion *)
+			MemOp.state__add_path_condition state assertion true (* This [true] marks the assumption as though it came from an actual branch in the code *)
+
 
 let libc___builtin_va_arg state exps =
 	let state, key = Eval.rval state (List.hd exps) in
@@ -251,7 +286,7 @@ let libc___builtin_alloca retopt exps loc job =
 	  else bytes__make_default size byte__undef (* initially the symbolic 'undef' byte *)
 	in
     let (state, bytes) = libc___builtin_alloca_size state size bytes loc in
-	state_update_return_value retopt state bytes
+	set_return_value state retopt bytes
 
 let otter_given state exps =
 	if List.length exps <> 2 then 
@@ -329,9 +364,9 @@ let otter_not_found retopt exps loc job =
 	end
 					
 let otter_evaluate retopt exps loc job =
-	let state, pc = op_exps job.state exps Cil.LAnd in
+	let state, bytes = Eval.rval job.state (eval_join_exps exps Cil.LAnd) in
 	Output.set_mode Output.MSG_MUSTPRINT;
-	Output.print_endline ("	Evaluates to "^(To_string.bytes pc));
+	Output.print_endline ("	Evaluates to "^(To_string.bytes bytes));
 	state
 
 let otter_evaluate_string retopt exps loc job =
@@ -386,7 +421,7 @@ let otter_symbolic_state retopt exps loc job =
 		state
 
 let otter_assume retopt exps loc job =
-	let state, pc = op_exps job.state exps Cil.LAnd in
+	let state, pc = Eval.rval job.state (eval_join_exps exps Cil.LAnd) in
 	MemOp.state__add_path_condition state pc false
 
 let otter_path_condition retopt exps loc job =
@@ -396,10 +431,6 @@ let otter_path_condition retopt exps loc job =
 	Output.print_endline (if String.length pc_str = 0 then "(nil)" else pc_str);
 	state
 	
-let otter_assert retopt exps loc job =
-	let state, assertion = op_exps job.state exps Cil.LAnd in
-	Eval.check state assertion exps
-
 let otter_if_then_else state exps =
 	let state, bytes0 = Eval.rval state (List.nth exps 0) in
 	let state, bytes1 = Eval.rval state (List.nth exps 1) in
@@ -411,7 +442,7 @@ let otter_if_then_else state exps =
 	(state, rv)
 
 let otter_boolean_op binop state exps =
-	let state, rv = op_exps state exps binop in
+	let state, rv = Eval.rval state (eval_join_exps exps Cil.LAnd) in
 	(state, rv)
 
 let otter_boolean_not state exps =
@@ -687,7 +718,7 @@ let interceptor job job_queue interceptor =
 	(intercept_function_by_name_internal "__SYMBOLIC_STATE"        (exec otter_symbolic_state)) @@
 	(intercept_function_by_name_internal "__ASSUME"                (exec otter_assume)) @@
 	(intercept_function_by_name_internal "__PATHCONDITION"         (exec otter_path_condition)) @@
-	(intercept_function_by_name_internal "__ASSERT"                (exec otter_assert)) @@
+	(intercept_function_by_name_internal "__ASSERT"                (exec __otter_assert)) @@
 	(intercept_function_by_name_internal "__ITE"                   (call otter_if_then_else)) @@
 	(intercept_function_by_name_internal "AND"                     (call (otter_boolean_op Cil.LAnd))) @@
 	(intercept_function_by_name_internal "OR"                      (call (otter_boolean_op Cil.LOr))) @@
