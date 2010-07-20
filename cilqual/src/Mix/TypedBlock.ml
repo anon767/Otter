@@ -83,7 +83,7 @@ module Interpreter (T : Config.BlockConfig) = struct
                         match call with
                             | Cil.Var v, Cil.NoOffset ->
                                 begin try
-                                    let f = Cilutility.search_function v in
+                                    let f = Cilutility.find_fundec_by_varinfo file v in
                                     categorize_call calls f
                                 with Not_found ->
                                     (* is an external function *)
@@ -234,7 +234,7 @@ module Interpreter (T : Config.BlockConfig) = struct
         in
 
         (* dispatch call to main *)
-        let mainfn = Cilutility.get_fundec "main" file in
+        let mainfn = Cilutility.find_fundec_by_name file "main" in
         `TypedBlock (file, mainfn, expState, completion)
 
 

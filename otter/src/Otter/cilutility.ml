@@ -28,12 +28,6 @@ module TypeMap = Utility.MakeMap (struct
 		Pervasives.compare (canonicalize x) (canonicalize y)
 end)
 
-let fundecHashtbl : (varinfo, fundec) Hashtbl.t = Hashtbl.create 100
-let varinitHashtbl : (varinfo, initinfo) Hashtbl.t = Hashtbl.create 100
-
-let search_function varinfo = Hashtbl.find fundecHashtbl varinfo
-let search_varinit varinfo = Hashtbl.find varinitHashtbl varinfo
-
 module FundecMap =
 	Utility.MakeMap (
 	struct
@@ -95,22 +89,70 @@ let rec isConstType typ =
    | TPtr(t, a) -> isConstType t
 
 
-let func_table : (string, fundec) Hashtbl.t = Hashtbl.create 20
-let init_func_table file = 
-	let rec search = function
-		| GFun (fundec, _)::t ->
-			Hashtbl.add func_table (fundec.svar.vname) fundec;
-			search t
-		| _::t -> search t
-		| [] -> ()
-	in search file.globals
+(** Memoization tables for searching files. *)
+let file_memotables = Hashtbl.create 0
 
-let get_fundec vname file =
-	let rec search = function
-		| GFun (fundec, _)::_ when fundec.svar.vname = vname -> fundec
-		| _::t -> search t
-		| [] -> raise Not_found
-	in search file.globals
+
+(** Get the memoization tables for searching in a file, initializing them if necessary.
+		@param file the file to get the memoization tables for
+		@return [(vafinfo_to_fundec, varinfo_to_varinit, name_to_fundec)] a tuple containing the memoization
+				tables for searching the file
+*)
+let get_file_memotables file =
+	try
+		Hashtbl.find file_memotables file
+	with Not_found ->
+		let varinfo_to_fundec = Hashtbl.create 100 in
+		let varinfo_to_varinit = Hashtbl.create 100 in
+		let name_to_fundec = Hashtbl.create 100 in
+
+		Cil.iterGlobals file begin function
+			| GFun(fundec,_) ->
+				Hashtbl.add varinfo_to_fundec fundec.svar fundec;
+				Hashtbl.add name_to_fundec fundec.svar.vname fundec;
+			| GVar(varinfo,initinfo,_) ->
+				Hashtbl.add varinfo_to_varinit varinfo initinfo;
+			| GVarDecl(varinfo,_) ->
+				Hashtbl.add varinfo_to_varinit varinfo { init=None };
+			| _ -> ()
+		end;
+
+		let memotables = (varinfo_to_fundec, varinfo_to_varinit, name_to_fundec) in
+		Hashtbl.add file_memotables file memotables;
+		memotables
+
+
+(** Find a [Cil.fundec] by [Cil.varinfo] from a [Cil.file].
+		@param file the [Cil.file] to find the [Cil.fundec] in
+		@param varinfo the [Cil.varinfo] of the [Cil.fundec] to find
+		@return the [Cil.fundec]
+		@raise Not_found if a [Cil.fundec] for [varinfo] does not exist in [file]
+*)
+let find_fundec_by_varinfo file varinfo =
+	let varinfo_to_fundec, _, _ = get_file_memotables file in
+	Hashtbl.find varinfo_to_fundec varinfo
+
+
+(** Find the [Cil.initinfo] for a [Cil.varinfo] from a [Cil.file].
+		@param file the [Cil.file] to find the [Cil.initinfo] in
+		@param varinfo the [Cil.varinfo] of the [Cil.initinfo] to find
+		@return the [Cil.initinfo]
+		@raise Not_found if [varinfo] does not exist in [file]
+*)
+let find_varinit file varinfo =
+	let _, varinfo_to_varinit, _ = get_file_memotables file in
+	Hashtbl.find varinfo_to_varinit varinfo
+
+
+(** Find a [Cil.fundec] by name from a [Cil.file].
+		@param file the [Cil.file] to find the [Cil.fundec] in
+		@param name the name of the [Cil.fundec] to find
+		@return the [Cil.fundec]
+		@raise Not_found if a [Cil.fundec] named [name] does not exist in [file]
+*)
+let find_fundec_by_name file name =
+	let _, _, name_to_fundec = get_file_memotables file in
+	Hashtbl.find name_to_fundec name
 
 
 let make_callgraph file : Cil.fundec list FundecMap.t =
@@ -125,7 +167,7 @@ let make_callgraph file : Cil.fundec list FundecMap.t =
                     fun lst instr -> 
                       match instr with
                         | Call (_,Lval(Var(varinfo),NoOffset),_,_) -> 
-                            (try (get_fundec varinfo.vname file)::lst with Failure _ -> lst)
+                            (try (find_fundec_by_name file varinfo.vname)::lst with Failure _ -> lst)
                         | _ -> lst
                   end
                   lst instrs

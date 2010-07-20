@@ -11,7 +11,7 @@ let pass_targets targets job fexp exps =
   let fundecs = 
 	List.fold_left 
 	  ( fun lst (_,ft) -> ft::lst
-	  ) [] (Core.function_from_exp state fexp exps) in
+	  ) [] (Core.function_from_exp job state fexp exps) in
   (* convert args to bytes. argvs are from left to right *)
   let _, argvs = 
 	List.fold_right 

@@ -43,12 +43,11 @@ let intercept_function_by_name_internal target_name replace_func job job_queue i
 
 let intercept_function_by_name_external target_name replace_name job job_queue interceptor =
 	(* Replace a C function with another C function *)
-	(* requires running Cilutility.init_func_table *)
 	match job.instrList with
 		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::t when varinfo.Cil.vname = target_name ->
 			let job = 
 				{job with
-					instrList = Cil.Call(retopt, Cil.Lval(Cil.Var((Hashtbl.find Cilutility.func_table replace_name).Cil.svar), Cil.NoOffset), exps, loc)::t;
+					instrList = Cil.Call(retopt, Cil.Lval(Cil.Var((Cilutility.find_fundec_by_name job.file replace_name).Cil.svar), Cil.NoOffset), exps, loc)::t;
 				}
 			in
 			Output.set_mode Output.MSG_REG;
@@ -60,12 +59,11 @@ let intercept_function_by_name_external target_name replace_name job job_queue i
 
 let intercept_function_by_name_external_cascading target_name replace_name job job_queue interceptor =
 	(* Replace a C function with another C function *)
-	(* requires running Cilutility.init_func_table *)
 	match job.instrList with
 		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::t when varinfo.Cil.vname = target_name ->
 			let job = 
 				{job with
-					instrList = Cil.Call(retopt, Cil.Lval(Cil.Var((Hashtbl.find Cilutility.func_table replace_name).Cil.svar), Cil.NoOffset), exps, loc)::t;
+					instrList = Cil.Call(retopt, Cil.Lval(Cil.Var((Cilutility.find_fundec_by_name job.file replace_name).Cil.svar), Cil.NoOffset), exps, loc)::t;
 				}
 			in
 			Output.set_mode Output.MSG_REG;

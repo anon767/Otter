@@ -284,7 +284,6 @@ let doit file =
 			Executemain.job_for_middle file entryfn Executeargs.run_args.Executeargs.arg_yaml
 	in
 
-	Cilutility.init_func_table file;
 	(* run the job *)
 	let result = init job in
 

@@ -229,22 +229,19 @@ let prepare_file file =
 	(* makeCFGFeature must precede the call to getProgInfo. *)
 	Cilly.makeCFGFeature.fd_doit file;
 
-	(* TODO: move this out of global variable *)
-    (* TODO: move this to somewhere (maybe getProgInfo.ml) *)
-	(* - Hash all of the fundecs by their varinfos
-		 - Reset sids to be unique only within a function (not globally)
-		 - Compute the join points which each [If] dominates *)
-	List.iter begin function
+	Cil.iterGlobals file begin function
 		| GFun(fundec,_) ->
-			Hashtbl.add Cilutility.fundecHashtbl fundec.svar fundec;
+			(* Reset sids to be unique only within a function, rather than globally, so that they will be given
+			   consistent sids across different analysis runs even if different files are merged
+			 *)
 			ignore (List.fold_left (fun n stmt -> stmt.sid <- n; succ n) 0 fundec.sallstmts);
+
+			(* Compute the join points which each [If] dominates *)
 			computeJoinPointsForIfs fundec
-		| GVar(varinfo,initinfo,_) ->
-			Hashtbl.add Cilutility.varinitHashtbl varinfo initinfo;
-		| GVarDecl(varinfo,_) ->
-			Hashtbl.add Cilutility.varinitHashtbl varinfo { init=None };
-		| _ -> ()
-	end file.globals;
+
+		| _ ->
+			()
+	end;
 
     if Executeargs.run_args.arg_noinit_unreachable_globals then (
         GetProgInfo.computeReachableCode file 
@@ -336,7 +333,7 @@ let job_for_middle file entryfn yamlconstraints =
 (* create a job that begins at the main function of a file, with the initial state set up for the file *)
 let job_for_file file cmdline =
 	let main_func =
-		try Cilutility.get_fundec "main" file
+		try Cilutility.find_fundec_by_name file "main"
 		with Not_found -> failwith "No main function found!"
 	in
 
@@ -358,7 +355,7 @@ let job_for_file file cmdline =
 let find_entryfn file =
 	let fname = Executeargs.run_args.arg_entryfn in
 	try
-		Cilutility.get_fundec fname file
+		Cilutility.find_fundec_by_name file fname
 	with Not_found ->
 		failwith (Printf.sprintf "Entry function %s not found" fname)
 
@@ -396,7 +393,7 @@ let doExecute (f: file) =
         (
           let assertfn =
             let fname = Executeargs.run_args.arg_assertfn in
-            try Cilutility.get_fundec fname f  
+            try Cilutility.find_fundec_by_name f fname
             with Not_found -> failwith (Printf.sprintf "Assserton function %s not found" fname )
           in
           let job_init = function entryfn -> job_for_middle f entryfn ""(* no yaml file *)

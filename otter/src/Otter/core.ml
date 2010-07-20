@@ -93,11 +93,12 @@ let addInstrCoverage job instr =
 let add_guard_to_state state guard = (*big hack; there should be a nicer way to do this*)
 	MemOp.state__add_path_condition state (Bytes_Conditional(Bytes.IfThenElse(guard, Unconditional(lazy_int_to_bytes 1), Unconditional(lazy_int_to_bytes 0)))) true
 
-let function_from_exp state exp args: (state * fundec) list =
+let function_from_exp job state exp args: (state * fundec) list =
 	match exp with
 		| Lval(Var(varinfo), NoOffset) ->
 			(* the varinfo should always map to a valid fundec (if the file was parsed by Cil) *)
-			[(state, Cilutility.search_function varinfo)]
+			let fundec = Cilutility.find_fundec_by_varinfo job.file varinfo in
+			[(state, fundec)]
 
 		| Lval(Mem(exp2), NoOffset) ->
 			let state, bytes = Eval.rval state exp2 in
@@ -105,9 +106,11 @@ let function_from_exp state exp args: (state * fundec) list =
 				let fold_func acc pre leaf =
 					let acc =
 						match leaf with
-							| Bytes_FunPtr(varinfo,_) -> 
-								let fundec = Cilutility.search_function varinfo in
-								(add_guard_to_state state pre, fundec)::acc
+							| Bytes_FunPtr(varinfo,_) ->
+								(* the varinfo should always map to a valid fundec (if the file was parsed by Cil) *)
+								let state = add_guard_to_state state pre in
+								let fundec = Cilutility.find_fundec_by_varinfo job.file varinfo in
+								(state, fundec)::acc
 							| _ -> acc (* should give a warning here about a non-valid function pointer*)
 					in
 					(acc, Unconditional(leaf))
@@ -119,7 +122,8 @@ let function_from_exp state exp args: (state * fundec) list =
 			in
 			begin match bytes with
 				| Bytes_FunPtr(varinfo,_) ->
-					let fundec = Cilutility.search_function varinfo in
+					(* the varinfo should always map to a valid fundec (if the file was parsed by Cil) *)
+					let fundec = Cilutility.find_fundec_by_varinfo job.file varinfo in
 					[(state, fundec)]
 				| Bytes_Read(bytes2, offset, len) -> 
 					let fp = (BytesUtility.expand_read_to_conditional bytes2 offset len) in
@@ -183,7 +187,7 @@ let exec_instr_call job instr lvalopt fexp exps =
 				in
 				job_state::(process_func_list t)
 	in
-	let f = (process_func_list (function_from_exp state fexp exps)) in
+	let f = (process_func_list (function_from_exp job state fexp exps)) in
 	match f with
 		| _::_::_ -> Big_Fork(f)
 		| [a] -> a

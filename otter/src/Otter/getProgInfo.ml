@@ -57,7 +57,7 @@ class getStatsVisitor = object (self)
 	method vfunc fundec = currFuncName := fundec.svar.vname; DoChildren
 end
 
-class getCallerVisitor = object (self)
+class getCallerVisitor file = object (self)
 	val callee_list : fundec list ref= ref []
 	val varinfo_set : VarinfoSet.t ref= ref VarinfoSet.empty
 
@@ -71,7 +71,7 @@ class getCallerVisitor = object (self)
 	method vlval lval = (match lval with
       | (Var(varinfo),_) -> (
           match varinfo.vtype with
-            | TFun _ -> (try callee_list := (Cilutility.search_function varinfo)::(!callee_list) with Not_found -> ())
+            | TFun _ -> (try callee_list := (Cilutility.find_fundec_by_varinfo file varinfo)::(!callee_list) with Not_found -> ())
             | _ -> if varinfo.vglob then varinfo_set := VarinfoSet.add varinfo (!varinfo_set) else ()
         )
       | _ -> ()
@@ -110,12 +110,12 @@ let getProgInfo (file : Cil.file) fnNameSet =
 let computeReachableCode file = 
   (* compute reachable globals from main *)
   let main_func =
-  	try Cilutility.get_fundec "main" file
+  	try Cilutility.find_fundec_by_name file "main"
   	with Not_found -> failwith "No main function found!"
   in
   let rec computeReachableCodeThroughFunCall queue = 
     if List.length queue = 0 then () else
-      let vis = new getCallerVisitor in
+      let vis = new getCallerVisitor file in
       let fn = List.hd queue in
       let queue = List.tl queue in
       let fnMap = (!reachable_functions) in
@@ -132,7 +132,7 @@ let computeReachableCode file =
     match globals with
       | [] -> ()
       | g::globals -> 
-          (match (Cilutility.search_varinit g).init with
+          (match (Cilutility.find_varinit file g).init with
              | None -> computeReachableCodeThroughGlobalInit globals
              | Some init ->
                 let vis = new getGlobalInitVisitor in
