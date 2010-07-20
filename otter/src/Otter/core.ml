@@ -49,7 +49,7 @@ let addStmtCoverage job whichBranch nextStmtOpt =
 					| Cil.Return(_,loc)
 					| Goto(_,loc)
 					| Loop(_,loc,_,_) ->
-							LineSet.add (loc.file,loc.line) job.exHist.coveredLines
+							LineSet.add (loc.Cil.file,loc.Cil.line) job.exHist.coveredLines
 					| _ -> job.exHist.coveredLines
 				else LineSet.empty;
 			coveredBlocks =
@@ -88,7 +88,7 @@ let addStmtCoverage job whichBranch nextStmtOpt =
 let addInstrCoverage job instr =
 	let instrLoc = get_instrLoc instr in
 	{ job.exHist with coveredLines =
-			LineSet.add (instrLoc.file,instrLoc.line) job.exHist.coveredLines; }
+			LineSet.add (instrLoc.Cil.file,instrLoc.Cil.line) job.exHist.coveredLines; }
 
 let add_guard_to_state state guard = (*big hack; there should be a nicer way to do this*)
 	MemOp.state__add_path_condition state (Bytes_Conditional(Bytes.IfThenElse(guard, Unconditional(lazy_int_to_bytes 1), Unconditional(lazy_int_to_bytes 0)))) true

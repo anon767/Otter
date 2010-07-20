@@ -292,19 +292,19 @@ let prepare_file file =
 	)
 
 (* create a job that begins at a function, given an initial state *)
-let job_for_function ?(exHist=emptyHistory) state fn argvs =
+let job_for_function ?(exHist=emptyHistory) file state fn argvs =
 	let state = MemOp.state__start_fcall state Runtime fn argvs in
 	(* create a new job *)
-	{ state = state;
-	  exHist = exHist;
-	  instrList = [];
-	  stmt = List.hd fn.sallstmts;
-	  inTrackedFn = Utility.StringSet.mem fn.svar.vname run_args.arg_fns;
-	  mergePoints = StmtInfoSet.empty;
-	  jid = Utility.next_jid;
-      (* parent = None;
-       *)
-    }
+	{
+		file = file;
+		state = state;
+		exHist = exHist;
+		instrList = [];
+		stmt = List.hd fn.sallstmts;
+		inTrackedFn = Utility.StringSet.mem fn.svar.vname run_args.arg_fns;
+		mergePoints = StmtInfoSet.empty;
+		jid = Utility.next_jid;
+	}
 
 
 (* create a job that begins in the middle of a file at some entry function with some optional constraints *)
@@ -317,7 +317,7 @@ let job_for_middle file entryfn yamlconstraints =
     let state, entryargs, exHist = init_symbolic_argvs state entryfn in
 
     (* create a job starting at entryfn *)
-    let job = job_for_function ~exHist:exHist state entryfn entryargs in
+    let job = job_for_function ~exHist:exHist file state entryfn entryargs in
 
     (* apply constraints if provided *)
     if yamlconstraints = "" then
@@ -352,7 +352,7 @@ let job_for_file file cmdline =
 	in
 
 	(* create a job starting at main *)
-	job_for_function state main_func main_args
+	job_for_function file state main_func main_args
 
 
 let find_entryfn file =

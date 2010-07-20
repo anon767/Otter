@@ -95,7 +95,7 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
         end (state, []) fn.Cil.sformals in
 
         (* next, prepare the function call job *)
-        let job = Executemain.job_for_function state fn (List.rev rev_args_bytes) in
+        let job = Executemain.job_for_function file state fn (List.rev rev_args_bytes) in
 
         (* finally, set up the recursion fixpoint operation *)
         let rec do_fixpoint stack tentative =

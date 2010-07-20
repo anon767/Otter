@@ -26,6 +26,7 @@ type shared_state = {
 }
 
 type multijob = {
+	file : Cil.file;
 	processes : (program_counter * local_state) list;
 	shared : shared_state;
 	jid : int;
@@ -55,6 +56,7 @@ let put_job job multijob pid =
 		path_condition = job.Types.state.Types.path_condition;
 	} in
 	{
+		file = job.Types.file;
 		processes = List.append multijob.processes [ (program_counter, process) ];
 		shared = shared;
 		jid = job.Types.jid;
@@ -102,6 +104,7 @@ let get_job multijob = match multijob.processes with
 			Types.bytes_eval_cache = Types.BytesMap.empty;
 		} in
 		let job = {
+			Types.file = multijob.file;
 			Types.state = state;
 			Types.exHist = Types.emptyHistory;
 			Types.instrList = program_counter.instrList;
@@ -241,6 +244,7 @@ let process_result result completed job_queue =
 
 let init job = 
 	let multijob = {
+		file = job.Types.file;
 		processes = [];
 		shared = {
 			path_condition = [];

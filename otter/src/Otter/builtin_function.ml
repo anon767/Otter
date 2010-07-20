@@ -39,7 +39,7 @@ let call_wrapper_with_exceptions replace_func retopt exps job job_queue =
 		then { job with 
 				exHist = 
 					(let instrLoc = get_instrLoc (List.hd job.instrList) in
-					{ job.exHist with coveredLines = LineSet.add (instrLoc.file, instrLoc.line) job.exHist.coveredLines; }
+					{ job.exHist with coveredLines = LineSet.add (instrLoc.Cil.file, instrLoc.Cil.line) job.exHist.coveredLines; }
 					);
 			}
 		else job

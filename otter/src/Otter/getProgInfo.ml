@@ -25,7 +25,7 @@ class getStatsVisitor = object (self)
 
 	method vinst instr =
 		let loc = get_instrLoc instr in
-		lines := LineSet.add (loc.file,loc.line) !lines;
+		lines := LineSet.add (loc.Cil.file,loc.Cil.line) !lines;
 		SkipChildren (* There's nothing interesting under an [instr] *)
 
 	method vstmt stmt =
@@ -34,11 +34,11 @@ class getStatsVisitor = object (self)
 		(match stmt.skind with
 				 If(_,_,_,loc) ->
 						conds := CondSet.add (stmtInfo,true) (CondSet.add (stmtInfo,false) !conds);
-						lines := LineSet.add (loc.file,loc.line) !lines;
+						lines := LineSet.add (loc.Cil.file,loc.Cil.line) !lines;
 			 | Cil.Return(_,loc)
 			 | Goto(_,loc)
 			 | Loop (_,loc,_,_) ->
-					 lines := LineSet.add (loc.file,loc.line) !lines;
+					 lines := LineSet.add (loc.Cil.file,loc.Cil.line) !lines;
 			 | _ -> ()
 		);
 		(* We represent basic blocks by their final statements, so if stmt

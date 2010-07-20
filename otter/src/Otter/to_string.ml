@@ -33,7 +33,7 @@ let bytestring arr =
 
 
 let location loc = 
-	loc.file^":"^(string_of_int loc.line)
+	loc.Cil.file^":"^(string_of_int loc.Cil.line)
 	
 
 let varinfo v =

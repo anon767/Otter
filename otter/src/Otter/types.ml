@@ -174,6 +174,7 @@ let signalStringOpt : string option ref = ref None
 exception SignalException
 
 type job = {
+	file : Cil.file;
 	state : state;
 	exHist : executionHistory;
 	instrList : Cil.instr list; (** [instr]s to execute before moving to the next [stmt] *)
