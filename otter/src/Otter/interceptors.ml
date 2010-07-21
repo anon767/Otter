@@ -1,18 +1,6 @@
 open Executeargs
 open Types
 
-let get_job_loc job =
-	match job.instrList with
-		| [] -> (Cil.get_stmtLoc job.stmt.Cil.skind)
-		| _ -> 
-			let instr = match job.instrList with 
-				| i::tl -> i 
-				| _ -> assert false 
-			in
-			(Cil.get_instrLoc instr)
-
-
-(* TODO: find a good place to put this definition instead of duplicating it *)
 let (@@) i1 i2 = fun a b -> i1 a b i2
 
 let identity_interceptor job job_queue interceptor =
@@ -28,7 +16,7 @@ let set_output_formatter_interceptor job job_queue interceptor =
 		);
 		old_job_id := job.jid
 	);
-	Output.formatter := ((new Output.basic_formatter job.jid (List.length job.state.path_condition) (get_job_loc job)) 
+	Output.formatter := ((new Output.basic_formatter job.jid (List.length job.state.path_condition) (Core.get_job_loc job)) 
 		:> Output.formatter_base);
 	interceptor job job_queue
 

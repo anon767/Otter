@@ -172,7 +172,7 @@ class multiprocess_formatter = fun jid pid cur_loc ->
 
 let multi_set_output_formatter_interceptor job job_queue interceptor = 
 	let j, m = job in
-	Output.formatter := ((new multiprocess_formatter m.jid m.current_pid (Interceptors.get_job_loc j)) 
+	Output.formatter := ((new multiprocess_formatter m.jid m.current_pid (Core.get_job_loc j)) 
 		:> Output.formatter_base);
 	interceptor job job_queue
 
