@@ -1,9 +1,7 @@
 
 (*
- * TODO: use something else other than (ocaml)syck
+ * TODO: use something else other than (ocaml)syck; currently disabled in Otter.mlpack
  *)
-
-(*
 
 open YamlParser
 open Types
@@ -399,6 +397,3 @@ let examine state fundec =
           | _ -> Output.printf "Unknown\n"
     end;
     ()
-
-
-    *)
