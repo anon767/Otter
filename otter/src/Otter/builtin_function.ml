@@ -11,6 +11,25 @@ open BytesUtility
 open Types
 open Interceptors
 
+(*
+
+Implementation notes:
+
+A function call operates on a job and returns one or more job results:
+	- for a successful function call:
+		- update state in job
+			- evaluate the arguments
+			- perform the function
+			- assign the return value
+		- update program counter in job
+		- update coverage in job
+		- return an Active job result
+	- for an unsuccessful function call:
+		- return a Complete job result
+	- return the job result (if only one), or Fork of job results (more than one)
+
+*)
+
 
 (** Convenience function to join a list of expressions using a binary operator and evaluate it.
 		@param state is the symbolic executor state in which to evaluate the list of expressions
@@ -27,63 +46,16 @@ let eval_join_exps state exps binop =
 	Eval.rval state (join_exps exps)
 
 
-(** Function call wrappers for intercept_function_by_name_internal **)
-
-let call_wrapper_with_exceptions replace_func retopt exps job job_queue =
-	(* Wrapper for calling an Otter function and advancing the execution to the next statement *)
-	(* replace_func retopt exps job -> state *)
-
-	let state_end = replace_func retopt exps job in
-
-	let nextStmt =
-		(* [stmt] is an [Instr] which doesn't end with a call to a
-			 [noreturn] function, so it has exactly one successor. *)
-		match job.stmt.succs with
-			| [h] -> h
-			| _ -> assert false
-	in
-	
-	(* We didn't add the outgoing edge in exec_stmt because the
-		 call might have never returned. Since there isn't an
-		 explicit return (because we handle the call internally), we
-		 have to add the edge now. *)
-	let job =
-		if job.inTrackedFn && Executeargs.run_args.Executeargs.arg_line_coverage
-		then { job with 
-				exHist = 
-					(let instrLoc = get_instrLoc (List.hd job.instrList) in
-					{ job.exHist with coveredLines = LineSet.add (instrLoc.Cil.file, instrLoc.Cil.line) job.exHist.coveredLines; }
-					);
-			}
-		else job
-	in
-
-	(* update edge coverage *)
-	let nextExHist =
-		if job.inTrackedFn && Executeargs.run_args.Executeargs.arg_edge_coverage then
-			let fn = (List.hd job.state.callstack).svar.vname in
-			let edge = (
-				{ siFuncName = fn; siStmt = Cilutility.stmtAtEndOfBlock job.stmt; },
-				{ siFuncName = fn; siStmt = Cilutility.stmtAtEndOfBlock nextStmt; }
-			) in
-			{ job.exHist with coveredEdges = EdgeSet.add edge job.exHist.coveredEdges }
-		else
-			job.exHist
-	in
-
-	(* Update state, the stmt to execute, and exHist (which may
-		 have gotten an extra bytesToVar mapping added to it). *)
-	(Active { job with state = state_end; stmt = nextStmt; exHist = nextExHist; instrList = []; }, job_queue)
-
-let call_wrapper replace_func retopt exps job job_queue =
-	try
-		call_wrapper_with_exceptions replace_func retopt exps job job_queue
-	with Failure msg ->
-		if Executeargs.run_args.Executeargs.arg_failfast then failwith msg;
-		let result = { result_state = job.state; result_history = job.exHist } in
-		(Complete (Types.Abandoned (msg, Core.get_job_loc job, result)), job_queue)
-
-let state_update_return_value retopt state bytes = 
+(** Convenience function to assign a value to an optional return lvalue.
+		@param state is the symbolic executor state in which to evaluate the return lvalue
+		@param retopt is the optional return lvalue
+		@param bytes is the value to assign to the return lvalue
+		@return the updated state
+*)
+let set_return_value state retopt bytes =
+	(* TODO: also cast bytes to the expected return type of the function, since, according to
+	   cil/doc/api/Cil.html#TYPEinstr, the return lvalue may not match the return type of the
+	   function *)
 	match retopt with
 		| None ->
 			state
@@ -91,20 +63,67 @@ let state_update_return_value retopt state bytes =
 			let state, lval = Eval.lval state cil_lval in
 			MemOp.state__assign state lval bytes
 
-let simple_call_wrapper replace_func retopt exps job job_queue =
-	(* wrapper for simple functions *)
-	(* replace_func state exps -> bytes *)
-	let wrapper retopt exps job = 
-		let (state, bytes) = replace_func job.state exps in
-		state_update_return_value retopt state bytes
-	in
-	call_wrapper wrapper retopt exps job job_queue
 
+(** Convenience function to end a function call in a symbolic executor job with the standard epilogue of incrementing
+	the program counter and updating coverage information.
+		@param job is the symbolic executor job in which to end a function call
+		@return the updated job
+*)
+let end_function_call job =
+	(* Increment the program counter. *)
+	let stmt =
+		(* [stmt] is an [Instr] which doesn't end with a call to a
+			 [noreturn] function, so it has exactly one successor. *)
+		match job.stmt.succs with
+			| [h] -> h
+			| _ -> assert false
+	in
+
+	(* Update coverage. *)
+	let exHist = job.exHist in
+	let exHist =
+		(* We didn't add the outgoing edge in exec_stmt because the
+			 call might have never returned. Since there isn't an
+			 explicit return (because we handle the call internally), we
+			 have to add the edge now. *)
+		if job.inTrackedFn && Executeargs.run_args.Executeargs.arg_line_coverage then
+			let loc = Core.get_job_loc job in
+			{ exHist with coveredLines = LineSet.add (loc.Cil.file, loc.Cil.line) exHist.coveredLines; }
+		else
+			exHist
+	in
+	let exHist =
+		(* Update edge coverage. *)
+		if job.inTrackedFn && Executeargs.run_args.Executeargs.arg_edge_coverage then
+			let fn = (List.hd job.state.callstack).svar.vname in
+			let edge = (
+				{ siFuncName = fn; siStmt = Cilutility.stmtAtEndOfBlock job.stmt; },
+				{ siFuncName = fn; siStmt = Cilutility.stmtAtEndOfBlock stmt; }
+			) in
+			{ exHist with coveredEdges = EdgeSet.add edge exHist.coveredEdges; }
+		else
+			exHist
+	in
+
+	(* Update the state, program counter, and coverage  *)
+	{ job with stmt = stmt; exHist = exHist; instrList = []; }
+
+
+(** Convenience wrapper for creating function call handlers that works on symbolic executor jobs from simplified
+	function call handlers that works on the symbolic executor states in the jobs.
+		@param fn is the simplified function call handler to wrap
+		@return a function call handler
+*)
+let wrap_state_function fn =
+	fun retopt exps job job_queue ->
+		let job = { job with state = fn job.state retopt exps } in
+		let job = end_function_call job in
+		(Active job, job_queue)
 
 
 (** Function Implimentations **)
 
-let libc___builtin_va_arg state exps =
+let libc___builtin_va_arg state retopt exps =
 	let state, key = Eval.rval state (List.hd exps) in
 	let state, ret = MemOp.vargs_table__get state key in
 	let lastarg = List.nth exps 2 in
@@ -112,11 +131,11 @@ let libc___builtin_va_arg state exps =
 		| CastE(_, AddrOf(cil_lval)) ->
 			let state, lval = Eval.lval state cil_lval in
 			let state = MemOp.state__assign state lval ret in
-			(state, ret)
+			set_return_value state retopt ret
 		| _ -> failwith "Last argument of __builtin_va_arg must be of the form CastE(_,AddrOf(lval))"
 
 
-let libc___builtin_va_copy state exps =
+let libc___builtin_va_copy state retopt exps =
 	let state, keyOfSource = Eval.rval state (List.nth exps 1) in
 	let srcList = MemOp.vargs_table__get_list state keyOfSource in
 	let state, key = MemOp.vargs_table__add state srcList in
@@ -124,27 +143,27 @@ let libc___builtin_va_copy state exps =
 		| Lval(cil_lval) ->
 			let state, lval = Eval.lval state cil_lval in
 			let state = MemOp.state__assign state lval key in
-			(state, bytes__zero)
+			set_return_value state retopt bytes__zero
 		| _ -> failwith "First argument of va_copy must have lval"
 
 
-let libc___builtin_va_end state exps =
+let libc___builtin_va_end state retopt exps =
 	let state, key = Eval.rval state (List.hd exps) in
 	let state = MemOp.vargs_table__remove state key in
-	(state, bytes__zero)
+	set_return_value state retopt bytes__zero
 
 
-let libc___builtin_va_start state exps =
+let libc___builtin_va_start state retopt exps =
 	(* TODO: assign first arg with new bytes that maps to vargs *)
 	match List.hd exps with
 		| Lval(cil_lval) ->
 			let state, key = MemOp.vargs_table__add state (List.hd state.va_arg) in
 			let state, lval = Eval.lval state cil_lval in
 			let state = MemOp.state__assign state lval key in
-			(state, bytes__zero)
+			set_return_value state retopt bytes__zero
 		| _ -> failwith "First argument of va_start must have lval"
 
-let libc_free state exps =
+let libc_free state retopt exps =
 	(* Remove the mapping of (block,bytes) in the state. *)
 	(* From opengroup: The free() function causes the space pointed to by
 	ptr to be deallocated; that is, made available for further allocation. If ptr
@@ -153,7 +172,7 @@ let libc_free state exps =
 	function, or if the space is deallocated by a call to free() or realloc(), the
 	behaviour is undefined.  Any use of a pointer that refers to freed space causes
 	undefined behaviour.  *)
-	let warning msg = Output.print_endline msg; (state,bytes__zero) in
+	let warning msg = Output.print_endline msg; set_return_value state retopt bytes__zero in
 	let state, ptr = Eval.rval state (List.hd exps) in
 	match ptr with
 		| Bytes_Address (block, _) ->
@@ -162,7 +181,7 @@ let libc_free state exps =
 			if not (MemOp.state__has_block state block)
 			then warning ("Double-free:" ^ (To_string.exp (List.hd exps)) ^ " = " ^ (To_string.bytes ptr)) else 
 			let state = MemOp.state__remove_block state block in
-			(state, bytes__zero)
+			set_return_value state retopt bytes__zero
 		| _ ->
 			Output.set_mode Output.MSG_MUSTPRINT;
 			warning ("Freeing something that is not a valid pointer: " ^ (To_string.exp (List.hd exps)) ^ " = " ^ (To_string.bytes ptr))
@@ -170,7 +189,7 @@ let libc_free state exps =
 
 
 (* TODO: why are there two completely identical memset? *)
-let libc_memset__concrete state exps =
+let libc_memset__concrete state retopt exps =
 	let state, bytes = Eval.rval state (List.hd exps) in
 	let block, offset = bytes_to_address bytes in
 	let state, old_whole_bytes = MemOp.state__get_bytes_from_block state block in
@@ -182,12 +201,12 @@ let libc_memset__concrete state exps =
 		let newbytes = bytes__make_default n c in
 		let finalbytes = bytes__write old_whole_bytes offset n newbytes in
 		let state = MemOp.state__add_block state block finalbytes in
-		(state, bytes)
+		set_return_value state retopt bytes
 	else
 		failwith "libc_memset__concrete: n is symbolic (TODO)"
 
 
-let libc_memset state exps =
+let libc_memset state retopt exps =
 	let state, bytes = Eval.rval state (List.hd exps) in
 	let block, offset = bytes_to_address bytes in
 	let state, old_whole_bytes = MemOp.state__get_bytes_from_block state block in
@@ -199,7 +218,7 @@ let libc_memset state exps =
 		let newbytes = bytes__make_default n c in
 		let finalbytes = bytes__write old_whole_bytes offset n newbytes in
 		let state = MemOp.state__add_block state block finalbytes in
-		(state, bytes)
+		set_return_value state retopt bytes
 	else
 		failwith "libc_memset: n is symbolic (TODO)"
 
@@ -248,7 +267,7 @@ let libc___builtin_alloca_size state size bytes loc =
 	let state = MemOp.state__add_block state block bytes in
 	(state, addrof_block)
 
-let libc___builtin_alloca retopt exps job =
+let libc___builtin_alloca retopt exps job job_queue =
 	let state, b_size = Eval.rval job.state (List.hd exps) in
 	let size =
 		if isConcrete_bytes b_size then
@@ -261,10 +280,11 @@ let libc___builtin_alloca retopt exps job =
 	  then bytes__make size (* initially zero, as though malloc were calloc *)
 	  else bytes__make_default size byte__undef (* initially the symbolic 'undef' byte *)
 	in
-	let (state, bytes) = libc___builtin_alloca_size state size bytes (Core.get_job_loc job) in
-	state_update_return_value retopt state bytes
+	let state, bytes = libc___builtin_alloca_size state size bytes (Core.get_job_loc job) in
+	let job = end_function_call { job with state = set_return_value state retopt bytes } in
+	(Active job, job_queue)
 
-let otter_given state exps =
+let otter_given state retopt exps =
 	if List.length exps <> 2 then 
 		failwith "__GIVEN takes 2 arguments"
 	else
@@ -276,9 +296,9 @@ let otter_given state exps =
 			else if truth == False then lazy_int_to_bytes 0
 			else bytes__symbolic (bitsSizeOf intType / 8)
 		in
-		(state, truthvalue)
+		set_return_value state retopt truthvalue
 
-let otter_truth_value state exps =
+let otter_truth_value state retopt exps =
 	let truthvalue = 
 		lazy_int_to_bytes
 		begin
@@ -291,7 +311,7 @@ let otter_truth_value state exps =
 				else 0
 		end
 	in
-	(state, truthvalue)
+	set_return_value state retopt truthvalue
 
 let libc_exit retopt exps job job_queue =
 	Output.set_mode Output.MSG_MUSTPRINT;
@@ -306,16 +326,16 @@ let libc_exit retopt exps job job_queue =
 	in
 	(Complete (Types.Exit (exit_code, { result_state = job.state; result_history = job.exHist; })), job_queue)
 
-let otter_evaluate retopt exps job =
-	let state, bytes = eval_join_exps job.state exps Cil.LAnd in
+let otter_evaluate state retopt exps =
+	let state, bytes = eval_join_exps state exps Cil.LAnd in
 	Output.set_mode Output.MSG_MUSTPRINT;
 	Output.print_endline ("	Evaluates to "^(To_string.bytes bytes));
 	state
 
-let otter_evaluate_string retopt exps job =
+let otter_evaluate_string state retopt exps =
 	let exp = List.hd exps in
 	let sizeexp = List.nth exps 1 in
-	let state, addr_bytes = Eval.rval job.state exp in
+	let state, addr_bytes = Eval.rval state exp in
 	let state, str = 
 		match addr_bytes with
 			| Bytes_Address(block, offset) ->
@@ -347,8 +367,7 @@ let otter_evaluate_string retopt exps job =
 	);
 	state
 
-let otter_symbolic_state retopt exps job =
-	let state = job.state in
+let otter_symbolic_state state retopt exps =
 	MemoryBlockMap.fold 
 		begin fun block _ state ->
 			(* TODO: what about deferred bytes? *)
@@ -363,22 +382,21 @@ let otter_symbolic_state retopt exps job =
 		state.block_to_bytes
 		state
 
-let otter_assume retopt exps job =
-	let state, pc = eval_join_exps job.state exps Cil.LAnd in
+let otter_assume state retopt exps =
+	let state, pc = eval_join_exps state exps Cil.LAnd in
 	MemOp.state__add_path_condition state pc false
 
-let otter_path_condition retopt exps job =
-	let state = job.state in
+let otter_path_condition state retopt exps =
 	let pc_str = (Utility.print_list To_string.bytes state.path_condition "\n AND \n") in
 	Output.set_mode Output.MSG_MUSTPRINT;
 	Output.print_endline (if String.length pc_str = 0 then "(nil)" else pc_str);
 	state
 	
-let otter_assert retopt exps job =
-	let state, assertion = eval_join_exps job.state exps Cil.LAnd in
+let otter_assert state retopt exps =
+	let state, assertion = eval_join_exps state exps Cil.LAnd in
 	Eval.check state assertion exps
 
-let otter_if_then_else state exps =
+let otter_if_then_else state retopt exps =
 	let state, bytes0 = Eval.rval state (List.nth exps 0) in
 	let state, bytes1 = Eval.rval state (List.nth exps 1) in
 	let state, bytes2 = Eval.rval state (List.nth exps 2) in
@@ -386,34 +404,33 @@ let otter_if_then_else state exps =
 		guard__bytes bytes0, conditional__bytes bytes1, conditional__bytes bytes2
 	) in
 	let rv = make_Bytes_Conditional c in
-	(state, rv)
+	set_return_value state retopt rv
 
-let otter_boolean_op binop state exps =
+let otter_boolean_op binop state retopt exps =
 	let state, rv = eval_join_exps state exps binop in
-	(state, rv)
+	set_return_value state retopt rv
 
-let otter_boolean_not state exps =
+let otter_boolean_not state retopt exps =
 	let state, rv = Eval.rval state (UnOp(Cil.LNot, List.hd exps, Cil.voidType)) in
-	(state, rv)
+	set_return_value state retopt rv
 
-let otter_comment retopt exps job =
+let otter_comment state retopt exps =
 	let exp = List.hd exps in
 	Output.set_mode Output.MSG_MUSTPRINT;
 	Output.print_endline ("COMMENT:"^(To_string.exp exp));
-	job.state
+	state
 
-let otter_break_pt retopt exps job =
+let otter_break_pt state retopt exps =
 	Output.set_mode Output.MSG_REG;
 	Output.print_endline "Option (h for help):";
 	Scanf.scanf "%d\n" 
 	begin
 		fun p1->
 			Output.printf "sth\n";	
-			job.state
+			state
 	end
 
-let otter_print_state retopt exps job =
-	let state = job.state in
+let otter_print_state state retopt exps =
 	Output.set_mode Output.MSG_MUSTPRINT;
 	let arg_print_char_as_int = Executeargs.print_args.Executeargs.arg_print_char_as_int in
 	Executeargs.print_args.Executeargs.arg_print_char_as_int <- true;
@@ -504,16 +521,15 @@ let otter_print_state retopt exps job =
 	Executeargs.print_args.Executeargs.arg_print_char_as_int <- arg_print_char_as_int;
 	state
 
-let otter_current_state retopt exps job =
-	let state, bytes = Eval.rval job.state (List.hd exps) in
+let otter_current_state state retopt exps =
+	let state, bytes = Eval.rval state (List.hd exps) in
 	let key = bytes_to_int_auto bytes in
 	Output.set_mode Output.MSG_MUSTPRINT;
 	Output.printf "Record state %d\n" key;
 	MemOp.index_to_state__add key state;
 	state
 
-let otter_compare_state retopt exps job =
-	let state = job.state in
+let otter_compare_state state retopt exps =
 	let state, bytes0 = Eval.rval state (List.nth exps 0) in
 	let state, bytes1 = Eval.rval state (List.nth exps 1) in
 	let key0 = bytes_to_int_auto bytes0 in
@@ -544,8 +560,8 @@ let otter_compare_state retopt exps job =
 		state
 	end
 
-let otter_assert_equal_state retopt exps job =
-	let state, bytes0 = Eval.rval job.state (List.nth exps 0) in
+let otter_assert_equal_state state retopt exps =
+	let state, bytes0 = Eval.rval state (List.nth exps 0) in
 	let key0 = bytes_to_int_auto bytes0 in
 	begin try 
 		let s0 = MemOp.index_to_state__get key0 in
@@ -559,6 +575,7 @@ let otter_assert_equal_state retopt exps job =
 		state
 	end
 
+
 (* There are 2 ways to use __SYMBOLIC:
 	 (1) '__SYMBOLIC(&x);' gives x a fresh symbolic value and associates
 	 that value with the variable x.
@@ -570,113 +587,98 @@ let otter_assert_equal_state retopt exps job =
 	 of arguments, this behaves like the n <= 0 case.) *)
 let intercept_symbolic job job_queue interceptor =
 	match job.Types.instrList with
-		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::_ when varinfo.vname = "__SYMBOLIC" -> 
+		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::_ when varinfo.vname = "__SYMBOLIC" ->
 
-			begin match exps with
+			let job = match exps with
 				| [AddrOf (Var varinf, NoOffset as cil_lval)]
 				| [CastE (_, AddrOf (Var varinf, NoOffset as cil_lval))] ->
 
-					let nextBytesToVars = ref [] in
-					let exec_symbolic_no_return retopt exps job =
+					let state = job.state in
+					let exHist = job.exHist in
 
-						let state = job.state in
-						let exHist = job.exHist in
+					(* If we are given a variable's address, we track the symbolic value.
+						 But make sure we don't give the same variable two different values. *)
+					if List.exists (fun (_,v) -> v == varinf) exHist.bytesToVars
+					then Errormsg.s
+						(Errormsg.error "Can't assign two tracked values to variable %s" varinf.vname);
 
-						(* If we are given a variable's address, we track the symbolic value.
-							 But make sure we don't give the same variable two different values. *)
-						if List.exists (fun (_,v) -> v == varinf) exHist.bytesToVars
-						then Errormsg.s
-							(Errormsg.error "Can't assign two tracked values to variable %s" varinf.vname);
+					let state, (_, size as lval) = Eval.lval state cil_lval in
+					let symbBytes = bytes__symbolic size in
+					Output.set_mode Output.MSG_MUSTPRINT;
+					Output.print_endline (varinf.vname ^ " = " ^ (To_string.bytes symbBytes));
 
-						let state, (_, size as lval) = Eval.lval state cil_lval in
-						let symbBytes = bytes__symbolic size in
-						Output.set_mode Output.MSG_MUSTPRINT;
-						Output.print_endline (varinf.vname ^ " = " ^ (To_string.bytes symbBytes));
-						(* TODO: do something like this for
-						 * argument initialization when start SE
-						 * in the middle 
-						 *)
-						nextBytesToVars := (symbBytes,varinf)::exHist.bytesToVars;
-						MemOp.state__assign state lval symbBytes
-					
-					in
-					let result, job_queue = call_wrapper exec_symbolic_no_return retopt exps job job_queue in
-					let result =
-						(*The call will either be sucessful and the history is updated with a new tracked variable, 
-						  or it will fail at some point before the history is updated.*)
-						match result with
-							| Active job -> Active {job with exHist = {job.exHist with bytesToVars = !nextBytesToVars;};}
-							| Complete (Abandoned (_, _, _)) -> result
-							| _ -> failwith "Impossible"
-					in
-					(result, job_queue)
+					let exHist = { exHist with bytesToVars = (symbBytes,varinf)::exHist.bytesToVars } in
+					let state = MemOp.state__assign state lval symbBytes in
+
+					end_function_call { job with state = state; exHist = exHist }
 
 				| _ ->
 
-					let exec_symbolic_return retopt exps job =
-						let state = job.state in
-						begin match retopt with
-							| None -> failwith "Incorrect usage of __SYMBOLIC(): symbolic value generated and ignored"
-							| Some lval ->
-								let state, (_, size as lval) = Eval.lval state lval in
-								let state, size = match exps with
-									| [] -> (state, size)
-									| [CastE (_, h)] | [h] ->
-										let state, bytes = Eval.rval state h in
-										let newsize = bytes_to_int_auto bytes in
-										(state, if newsize <= 0 then size else newsize)
-									| _ -> failwith "__SYMBOLIC takes at most one argument"
-								in
-								MemOp.state__assign state lval (bytes__symbolic size)
-						end
-					in
-					call_wrapper exec_symbolic_return retopt exps job job_queue
-			end
+					let state = job.state in
+					begin match retopt with
+						| None -> failwith "Incorrect usage of __SYMBOLIC(): symbolic value generated and ignored"
+						| Some lval ->
+							let state, (_, size as lval) = Eval.lval state lval in
+							let state, size = match exps with
+								| [] -> (state, size)
+								| [CastE (_, h)] | [h] ->
+									let state, bytes = Eval.rval state h in
+									let newsize = bytes_to_int_auto bytes in
+									(state, if newsize <= 0 then size else newsize)
+								| _ -> failwith "__SYMBOLIC takes at most one argument"
+							in
+							let state = MemOp.state__assign state lval (bytes__symbolic size) in
+							end_function_call { job with state = state }
+					end
+			in
+			(Active job, job_queue)
 
 		| _ -> 
 			interceptor job job_queue
 
 
-let interceptor job job_queue interceptor = 
-	let exec = call_wrapper in
-	let call = simple_call_wrapper in
-	(
+let interceptor job job_queue interceptor =
+	try
+		(
+		(* intercept builtin functions *)
+		(                                  (*"__SYMBOLIC"*)                  intercept_symbolic) @@
+		(intercept_function_by_name_internal "__builtin_alloca"        libc___builtin_alloca) @@
+		(intercept_function_by_name_internal "malloc"                  libc___builtin_alloca) @@
+		(intercept_function_by_name_internal "free"                    (wrap_state_function libc_free)) @@
+		(intercept_function_by_name_internal "__builtin_va_arg_fixed"  (wrap_state_function libc___builtin_va_arg)) @@
+		(intercept_function_by_name_internal "__builtin_va_arg"        (wrap_state_function libc___builtin_va_arg)) @@
+		(intercept_function_by_name_internal "__builtin_va_copy"       (wrap_state_function libc___builtin_va_copy)) @@
+		(intercept_function_by_name_internal "__builtin_va_end"        (wrap_state_function libc___builtin_va_end)) @@
+		(intercept_function_by_name_internal "__builtin_va_start"      (wrap_state_function libc___builtin_va_start)) @@
+		(* memset defaults to the C implimentation on failure *)
+		(try_with_job_abandoned_interceptor
+		(intercept_function_by_name_internal "memset"                  (wrap_state_function libc_memset))) @@
+		(intercept_function_by_name_internal "memset__concrete"        (wrap_state_function libc_memset__concrete)) @@
+		(intercept_function_by_name_internal "exit"                    (     libc_exit)) @@
+		(intercept_function_by_name_internal "__TRUTH_VALUE"           (wrap_state_function otter_truth_value)) @@
+		(intercept_function_by_name_internal "__GIVEN"                 (wrap_state_function otter_given)) @@
+		(intercept_function_by_name_internal "__EVAL"                  (wrap_state_function otter_evaluate)) @@
+		(intercept_function_by_name_internal "__EVALSTR"               (wrap_state_function otter_evaluate_string)) @@
+		(intercept_function_by_name_internal "__SYMBOLIC_STATE"        (wrap_state_function otter_symbolic_state)) @@
+		(intercept_function_by_name_internal "__ASSUME"                (wrap_state_function otter_assume)) @@
+		(intercept_function_by_name_internal "__PATHCONDITION"         (wrap_state_function otter_path_condition)) @@
+		(intercept_function_by_name_internal "__ASSERT"                (wrap_state_function otter_assert)) @@
+		(intercept_function_by_name_internal "__ITE"                   (wrap_state_function otter_if_then_else)) @@
+		(intercept_function_by_name_internal "AND"                     (wrap_state_function (otter_boolean_op Cil.LAnd))) @@
+		(intercept_function_by_name_internal "OR"                      (wrap_state_function (otter_boolean_op Cil.LOr))) @@
+		(intercept_function_by_name_internal "NOT"                     (wrap_state_function otter_boolean_not)) @@
+		(intercept_function_by_name_internal "__COMMENT"               (wrap_state_function otter_comment)) @@
+		(intercept_function_by_name_internal "__BREAKPT"               (wrap_state_function otter_break_pt)) @@
+		(intercept_function_by_name_internal "__PRINT_STATE"           (wrap_state_function otter_print_state)) @@
+		(intercept_function_by_name_internal "__CURRENT_STATE"         (wrap_state_function otter_current_state)) @@
+		(intercept_function_by_name_internal "__COMPARE_STATE"         (wrap_state_function otter_compare_state)) @@
+		(intercept_function_by_name_internal "__ASSERT_EQUAL_STATE"    (wrap_state_function otter_assert_equal_state)) @@
 
-	(* intercept builtin functions *)
-	(                                  (*"__SYMBOLIC"*)                  intercept_symbolic) @@
-	(intercept_function_by_name_internal "__builtin_alloca"        (exec libc___builtin_alloca)) @@
-	(intercept_function_by_name_internal "malloc"                  (exec libc___builtin_alloca)) @@
-	(intercept_function_by_name_internal "free"                    (call libc_free)) @@
-	(intercept_function_by_name_internal "__builtin_va_arg_fixed"  (call libc___builtin_va_arg)) @@
-	(intercept_function_by_name_internal "__builtin_va_arg"        (call libc___builtin_va_arg)) @@
-	(intercept_function_by_name_internal "__builtin_va_copy"       (call libc___builtin_va_copy)) @@
-	(intercept_function_by_name_internal "__builtin_va_end"        (call libc___builtin_va_end)) @@
-	(intercept_function_by_name_internal "__builtin_va_start"      (call libc___builtin_va_start)) @@
-	(* memset defaults to the C implimentation on failure *)
-	(try_with_job_abandoned_interceptor 
-	(intercept_function_by_name_internal "memset"                  (call libc_memset))) @@
-	(intercept_function_by_name_internal "memset__concrete"        (call libc_memset__concrete)) @@
-	(intercept_function_by_name_internal "exit"                    (     libc_exit)) @@
-	(intercept_function_by_name_internal "__TRUTH_VALUE"           (call otter_truth_value)) @@
-	(intercept_function_by_name_internal "__GIVEN"                 (call otter_given)) @@
-	(intercept_function_by_name_internal "__EVAL"                  (exec otter_evaluate)) @@
-	(intercept_function_by_name_internal "__EVALSTR"               (exec otter_evaluate_string)) @@
-	(intercept_function_by_name_internal "__SYMBOLIC_STATE"        (exec otter_symbolic_state)) @@
-	(intercept_function_by_name_internal "__ASSUME"                (exec otter_assume)) @@
-	(intercept_function_by_name_internal "__PATHCONDITION"         (exec otter_path_condition)) @@
-	(intercept_function_by_name_internal "__ASSERT"                (exec otter_assert)) @@
-	(intercept_function_by_name_internal "__ITE"                   (call otter_if_then_else)) @@
-	(intercept_function_by_name_internal "AND"                     (call (otter_boolean_op Cil.LAnd))) @@
-	(intercept_function_by_name_internal "OR"                      (call (otter_boolean_op Cil.LOr))) @@
-	(intercept_function_by_name_internal "NOT"                     (call otter_boolean_not)) @@
-	(intercept_function_by_name_internal "__COMMENT"               (exec otter_comment)) @@
-	(intercept_function_by_name_internal "__BREAKPT"               (exec otter_break_pt)) @@
-	(intercept_function_by_name_internal "__PRINT_STATE"           (exec otter_print_state)) @@
-	(intercept_function_by_name_internal "__CURRENT_STATE"         (exec otter_current_state)) @@
-	(intercept_function_by_name_internal "__COMPARE_STATE"         (exec otter_compare_state)) @@
-	(intercept_function_by_name_internal "__ASSERT_EQUAL_STATE"    (exec otter_assert_equal_state)) @@
+		(* pass on the job when none of those match *)
+		interceptor
 
-	(* pass on the job when none of those match *)
-	interceptor
-
-	) job job_queue
+		) job job_queue
+	with Failure msg ->
+		if Executeargs.run_args.Executeargs.arg_failfast then failwith msg;
+		let result = { result_state = job.state; result_history = job.exHist } in
+		(Complete (Types.Abandoned (msg, Core.get_job_loc job, result)), job_queue)
