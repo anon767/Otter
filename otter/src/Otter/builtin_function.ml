@@ -115,15 +115,15 @@ let end_function_call job =
 		@return a function call handler
 *)
 let wrap_state_function fn =
-	fun retopt exps job job_queue ->
+	fun job retopt exps ->
 		let job = { job with state = fn job.state retopt exps } in
 		let job = end_function_call job in
-		(Active job, job_queue)
+		Active job
 
 
 (** Function Implimentations **)
 
-let libc___builtin_va_arg state retopt exps =
+let libc___builtin_va_arg = wrap_state_function begin fun state retopt exps ->
 	let state, key = Eval.rval state (List.hd exps) in
 	let state, ret = MemOp.vargs_table__get state key in
 	let lastarg = List.nth exps 2 in
@@ -133,9 +133,10 @@ let libc___builtin_va_arg state retopt exps =
 			let state = MemOp.state__assign state lval ret in
 			set_return_value state retopt ret
 		| _ -> failwith "Last argument of __builtin_va_arg must be of the form CastE(_,AddrOf(lval))"
+end
 
 
-let libc___builtin_va_copy state retopt exps =
+let libc___builtin_va_copy = wrap_state_function begin fun state retopt exps ->
 	let state, keyOfSource = Eval.rval state (List.nth exps 1) in
 	let srcList = MemOp.vargs_table__get_list state keyOfSource in
 	let state, key = MemOp.vargs_table__add state srcList in
@@ -145,15 +146,17 @@ let libc___builtin_va_copy state retopt exps =
 			let state = MemOp.state__assign state lval key in
 			set_return_value state retopt bytes__zero
 		| _ -> failwith "First argument of va_copy must have lval"
+end
 
 
-let libc___builtin_va_end state retopt exps =
+let libc___builtin_va_end = wrap_state_function begin fun state retopt exps ->
 	let state, key = Eval.rval state (List.hd exps) in
 	let state = MemOp.vargs_table__remove state key in
 	set_return_value state retopt bytes__zero
+end
 
 
-let libc___builtin_va_start state retopt exps =
+let libc___builtin_va_start = wrap_state_function begin fun state retopt exps ->
 	(* TODO: assign first arg with new bytes that maps to vargs *)
 	match List.hd exps with
 		| Lval(cil_lval) ->
@@ -162,8 +165,10 @@ let libc___builtin_va_start state retopt exps =
 			let state = MemOp.state__assign state lval key in
 			set_return_value state retopt bytes__zero
 		| _ -> failwith "First argument of va_start must have lval"
+end
 
-let libc_free state retopt exps =
+
+let libc_free = wrap_state_function begin fun state retopt exps ->
 	(* Remove the mapping of (block,bytes) in the state. *)
 	(* From opengroup: The free() function causes the space pointed to by
 	ptr to be deallocated; that is, made available for further allocation. If ptr
@@ -185,9 +190,10 @@ let libc_free state retopt exps =
 		| _ ->
 			Output.set_mode Output.MSG_MUSTPRINT;
 			warning ("Freeing something that is not a valid pointer: " ^ (To_string.exp (List.hd exps)) ^ " = " ^ (To_string.bytes ptr))
+end
 
 
-let libc_memset state retopt exps =
+let libc_memset = wrap_state_function begin fun state retopt exps ->
 	let state, bytes = Eval.rval state (List.hd exps) in
 	let block, offset = bytes_to_address bytes in
 	let state, old_whole_bytes = MemOp.state__get_bytes_from_block state block in
@@ -202,6 +208,7 @@ let libc_memset state retopt exps =
 		set_return_value state retopt bytes
 	else
 		failwith "libc_memset: n is symbolic (TODO)"
+end
 
 
 (* __builtin_alloca is used for local arrays with variable size; has the same semantics as malloc *)
@@ -219,7 +226,7 @@ let libc___builtin_alloca_size state size bytes loc =
 	let state = MemOp.state__add_block state block bytes in
 	(state, addrof_block)
 
-let libc___builtin_alloca retopt exps job job_queue =
+let libc___builtin_alloca job retopt exps =
 	let state, b_size = Eval.rval job.state (List.hd exps) in
 	let size =
 		if isConcrete_bytes b_size then
@@ -234,9 +241,10 @@ let libc___builtin_alloca retopt exps job job_queue =
 	in
 	let state, bytes = libc___builtin_alloca_size state size bytes (Core.get_job_loc job) in
 	let job = end_function_call { job with state = set_return_value state retopt bytes } in
-	(Active job, job_queue)
+	Active job
 
-let otter_given state retopt exps =
+
+let otter_given = wrap_state_function begin fun state retopt exps ->
 	if List.length exps <> 2 then 
 		failwith "__GIVEN takes 2 arguments"
 	else
@@ -249,8 +257,10 @@ let otter_given state retopt exps =
 			else bytes__symbolic (bitsSizeOf intType / 8)
 		in
 		set_return_value state retopt truthvalue
+end
 
-let otter_truth_value state retopt exps =
+
+let otter_truth_value = wrap_state_function begin fun state retopt exps ->
 	let truthvalue = 
 		lazy_int_to_bytes
 		begin
@@ -264,8 +274,10 @@ let otter_truth_value state retopt exps =
 		end
 	in
 	set_return_value state retopt truthvalue
+end
 
-let libc_exit retopt exps job job_queue =
+
+let libc_exit job retopt exps =
 	Output.set_mode Output.MSG_MUSTPRINT;
 	let exit_code = 
 		match exps with
@@ -276,15 +288,17 @@ let libc_exit retopt exps job job_queue =
 				Output.print_endline ("exit() called with code (NONE)");
 				None
 	in
-	(Complete (Types.Exit (exit_code, { result_state = job.state; result_history = job.exHist; })), job_queue)
+	Complete (Types.Exit (exit_code, { result_state = job.state; result_history = job.exHist; }))
 
-let otter_evaluate state retopt exps =
+let otter_evaluate = wrap_state_function begin fun state retopt exps ->
 	let state, bytes = eval_join_exps state exps Cil.LAnd in
 	Output.set_mode Output.MSG_MUSTPRINT;
 	Output.print_endline ("	Evaluates to "^(To_string.bytes bytes));
 	state
+end
 
-let otter_evaluate_string state retopt exps =
+
+let otter_evaluate_string = wrap_state_function begin fun state retopt exps ->
 	let exp = List.hd exps in
 	let sizeexp = List.nth exps 1 in
 	let state, addr_bytes = Eval.rval state exp in
@@ -318,8 +332,10 @@ let otter_evaluate_string state retopt exps =
 			) ^ "\""
 	);
 	state
+end
 
-let otter_symbolic_state state retopt exps =
+
+let otter_symbolic_state = wrap_state_function begin fun state retopt exps ->
 	MemoryBlockMap.fold 
 		begin fun block _ state ->
 			(* TODO: what about deferred bytes? *)
@@ -333,22 +349,30 @@ let otter_symbolic_state state retopt exps =
 		end 
 		state.block_to_bytes
 		state
+end
 
-let otter_assume state retopt exps =
+
+let otter_assume = wrap_state_function begin fun state retopt exps ->
 	let state, pc = eval_join_exps state exps Cil.LAnd in
 	MemOp.state__add_path_condition state pc false
+end
 
-let otter_path_condition state retopt exps =
+
+let otter_path_condition = wrap_state_function begin fun state retopt exps ->
 	let pc_str = (Utility.print_list To_string.bytes state.path_condition "\n AND \n") in
 	Output.set_mode Output.MSG_MUSTPRINT;
 	Output.print_endline (if String.length pc_str = 0 then "(nil)" else pc_str);
 	state
-	
-let otter_assert state retopt exps =
+end
+
+
+let otter_assert = wrap_state_function begin fun state retopt exps ->
 	let state, assertion = eval_join_exps state exps Cil.LAnd in
 	Eval.check state assertion exps
+end
 
-let otter_if_then_else state retopt exps =
+
+let otter_if_then_else = wrap_state_function begin fun state retopt exps ->
 	let state, bytes0 = Eval.rval state (List.nth exps 0) in
 	let state, bytes1 = Eval.rval state (List.nth exps 1) in
 	let state, bytes2 = Eval.rval state (List.nth exps 2) in
@@ -357,22 +381,30 @@ let otter_if_then_else state retopt exps =
 	) in
 	let rv = make_Bytes_Conditional c in
 	set_return_value state retopt rv
+end
 
-let otter_boolean_op binop state retopt exps =
+
+let otter_boolean_op binop = wrap_state_function begin fun state retopt exps ->
 	let state, rv = eval_join_exps state exps binop in
 	set_return_value state retopt rv
+end
 
-let otter_boolean_not state retopt exps =
+
+let otter_boolean_not = wrap_state_function begin fun state retopt exps ->
 	let state, rv = Eval.rval state (UnOp(Cil.LNot, List.hd exps, Cil.voidType)) in
 	set_return_value state retopt rv
+end
 
-let otter_comment state retopt exps =
+
+let otter_comment = wrap_state_function begin fun state retopt exps ->
 	let exp = List.hd exps in
 	Output.set_mode Output.MSG_MUSTPRINT;
 	Output.print_endline ("COMMENT:"^(To_string.exp exp));
 	state
+end
 
-let otter_break_pt state retopt exps =
+
+let otter_break_pt = wrap_state_function begin fun state retopt exps ->
 	Output.set_mode Output.MSG_REG;
 	Output.print_endline "Option (h for help):";
 	Scanf.scanf "%d\n" 
@@ -381,8 +413,10 @@ let otter_break_pt state retopt exps =
 			Output.printf "sth\n";	
 			state
 	end
+end
 
-let otter_print_state state retopt exps =
+
+let otter_print_state = wrap_state_function begin fun state retopt exps ->
 	Output.set_mode Output.MSG_MUSTPRINT;
 	let arg_print_char_as_int = Executeargs.print_args.Executeargs.arg_print_char_as_int in
 	Executeargs.print_args.Executeargs.arg_print_char_as_int <- true;
@@ -472,16 +506,20 @@ let otter_print_state state retopt exps =
 	Output.print_endline "#END PRINTSTATE";
 	Executeargs.print_args.Executeargs.arg_print_char_as_int <- arg_print_char_as_int;
 	state
+end
 
-let otter_current_state state retopt exps =
+
+let otter_current_state = wrap_state_function begin fun state retopt exps ->
 	let state, bytes = Eval.rval state (List.hd exps) in
 	let key = bytes_to_int_auto bytes in
 	Output.set_mode Output.MSG_MUSTPRINT;
 	Output.printf "Record state %d\n" key;
 	MemOp.index_to_state__add key state;
 	state
+end
 
-let otter_compare_state state retopt exps =
+
+let otter_compare_state = wrap_state_function begin fun state retopt exps ->
 	let state, bytes0 = Eval.rval state (List.nth exps 0) in
 	let state, bytes1 = Eval.rval state (List.nth exps 1) in
 	let key0 = bytes_to_int_auto bytes0 in
@@ -511,8 +549,10 @@ let otter_compare_state state retopt exps =
 	   	Output.printf "Compare states fail\n";
 		state
 	end
+end
 
-let otter_assert_equal_state state retopt exps =
+
+let otter_assert_equal_state = wrap_state_function begin fun state retopt exps ->
 	let state, bytes0 = Eval.rval state (List.nth exps 0) in
 	let key0 = bytes_to_int_auto bytes0 in
 	begin try 
@@ -526,6 +566,7 @@ let otter_assert_equal_state state retopt exps =
 		MemOp.index_to_state__add key0 state; 
 		state
 	end
+end
 
 
 (* There are 2 ways to use __SYMBOLIC:
@@ -596,36 +637,35 @@ let interceptor job job_queue interceptor =
 		(                                  (*"__SYMBOLIC"*)                  intercept_symbolic) @@
 		(intercept_function_by_name_internal "__builtin_alloca"        libc___builtin_alloca) @@
 		(intercept_function_by_name_internal "malloc"                  libc___builtin_alloca) @@
-		(intercept_function_by_name_internal "free"                    (wrap_state_function libc_free)) @@
-		(intercept_function_by_name_internal "__builtin_va_arg_fixed"  (wrap_state_function libc___builtin_va_arg)) @@
-		(intercept_function_by_name_internal "__builtin_va_arg"        (wrap_state_function libc___builtin_va_arg)) @@
-		(intercept_function_by_name_internal "__builtin_va_copy"       (wrap_state_function libc___builtin_va_copy)) @@
-		(intercept_function_by_name_internal "__builtin_va_end"        (wrap_state_function libc___builtin_va_end)) @@
-		(intercept_function_by_name_internal "__builtin_va_start"      (wrap_state_function libc___builtin_va_start)) @@
+		(intercept_function_by_name_internal "free"                    libc_free) @@
+		(intercept_function_by_name_internal "__builtin_va_arg_fixed"  libc___builtin_va_arg) @@
+		(intercept_function_by_name_internal "__builtin_va_arg"        libc___builtin_va_arg) @@
+		(intercept_function_by_name_internal "__builtin_va_copy"       libc___builtin_va_copy) @@
+		(intercept_function_by_name_internal "__builtin_va_end"        libc___builtin_va_end) @@
+		(intercept_function_by_name_internal "__builtin_va_start"      libc___builtin_va_start) @@
 		(* memset defaults to the C implimentation on failure *)
 		(try_with_job_abandoned_interceptor
-		(intercept_function_by_name_internal "memset"                  (wrap_state_function libc_memset))) @@
-		(intercept_function_by_name_internal "memset__concrete"        (wrap_state_function libc_memset)) @@
-		(intercept_function_by_name_internal "exit"                    (     libc_exit)) @@
-		(intercept_function_by_name_internal "__TRUTH_VALUE"           (wrap_state_function otter_truth_value)) @@
-		(intercept_function_by_name_internal "__GIVEN"                 (wrap_state_function otter_given)) @@
-		(intercept_function_by_name_internal "__EVAL"                  (wrap_state_function otter_evaluate)) @@
-		(intercept_function_by_name_internal "__EVALSTR"               (wrap_state_function otter_evaluate_string)) @@
-		(intercept_function_by_name_internal "__SYMBOLIC_STATE"        (wrap_state_function otter_symbolic_state)) @@
-		(intercept_function_by_name_internal "__ASSUME"                (wrap_state_function otter_assume)) @@
-		(intercept_function_by_name_internal "__PATHCONDITION"         (wrap_state_function otter_path_condition)) @@
-		(intercept_function_by_name_internal "__ASSERT"                (wrap_state_function otter_assert)) @@
-		(intercept_function_by_name_internal "__ITE"                   (wrap_state_function otter_if_then_else)) @@
-		(intercept_function_by_name_internal "AND"                     (wrap_state_function (otter_boolean_op Cil.LAnd))) @@
-		(intercept_function_by_name_internal "OR"                      (wrap_state_function (otter_boolean_op Cil.LOr))) @@
-		(intercept_function_by_name_internal "NOT"                     (wrap_state_function otter_boolean_not)) @@
-		(intercept_function_by_name_internal "__COMMENT"               (wrap_state_function otter_comment)) @@
-		(intercept_function_by_name_internal "__BREAKPT"               (wrap_state_function otter_break_pt)) @@
-		(intercept_function_by_name_internal "__PRINT_STATE"           (wrap_state_function otter_print_state)) @@
-		(intercept_function_by_name_internal "__CURRENT_STATE"         (wrap_state_function otter_current_state)) @@
-		(intercept_function_by_name_internal "__COMPARE_STATE"         (wrap_state_function otter_compare_state)) @@
-		(intercept_function_by_name_internal "__ASSERT_EQUAL_STATE"    (wrap_state_function otter_assert_equal_state)) @@
-
+		(intercept_function_by_name_internal "memset"                  libc_memset)) @@
+		(intercept_function_by_name_internal "memset__concrete"        libc_memset) @@
+		(intercept_function_by_name_internal "exit"                    libc_exit) @@
+		(intercept_function_by_name_internal "__TRUTH_VALUE"           otter_truth_value) @@
+		(intercept_function_by_name_internal "__GIVEN"                 otter_given) @@
+		(intercept_function_by_name_internal "__EVAL"                  otter_evaluate) @@
+		(intercept_function_by_name_internal "__EVALSTR"               otter_evaluate_string) @@
+		(intercept_function_by_name_internal "__SYMBOLIC_STATE"        otter_symbolic_state) @@
+		(intercept_function_by_name_internal "__ASSUME"                otter_assume) @@
+		(intercept_function_by_name_internal "__PATHCONDITION"         otter_path_condition) @@
+		(intercept_function_by_name_internal "__ASSERT"                otter_assert) @@
+		(intercept_function_by_name_internal "__ITE"                   otter_if_then_else) @@
+		(intercept_function_by_name_internal "AND"                     (otter_boolean_op Cil.LAnd)) @@
+		(intercept_function_by_name_internal "OR"                      (otter_boolean_op Cil.LOr)) @@
+		(intercept_function_by_name_internal "NOT"                     otter_boolean_not) @@
+		(intercept_function_by_name_internal "__COMMENT"               otter_comment) @@
+		(intercept_function_by_name_internal "__BREAKPT"               otter_break_pt) @@
+		(intercept_function_by_name_internal "__PRINT_STATE"           otter_print_state) @@
+		(intercept_function_by_name_internal "__CURRENT_STATE"         otter_current_state) @@
+		(intercept_function_by_name_internal "__COMPARE_STATE"         otter_compare_state) @@
+		(intercept_function_by_name_internal "__ASSERT_EQUAL_STATE"    otter_assert_equal_state) @@
 		(* pass on the job when none of those match *)
 		interceptor
 
