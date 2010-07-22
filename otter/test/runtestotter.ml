@@ -8,6 +8,7 @@ end
 let _ =
     run_test_tt_main begin TestList [
         TestOtter.FileJobs.testsuite;
+        TestOtter.FunctionCalls.testsuite;
         TestOtter.Coverage.testsuite;
         TestOtter.Merging.testsuite;
         TestOtter.BoundsChecking.testsuite;
