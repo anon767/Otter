@@ -128,3 +128,25 @@ let assert_mem ?printer mem list collection =
         | None -> assert_failure "Not in collection"
     end
 
+
+(*
+ * Convenience functions comparing as well as printing option and list types
+ *)
+
+let option_equal eq x y = match x, y with
+    | Some x, Some y -> eq x y
+    | None, None -> true
+    | _ -> false
+
+let option_printer printer ff = function
+    | Some x -> Format.fprintf ff "Some (@[%a@]@,)" printer x
+    | None -> Format.fprintf ff "None"
+
+let rec list_equal eq x y = match x, y with
+    | x::xs, y::ys when eq x y -> list_equal eq xs ys
+    | [], [] -> true
+    | _ -> false
+
+let list_printer printer sep ff list =
+    ignore (List.fold_left (fun sep x -> Format.fprintf ff "%(%)@[%a@]" sep printer x; sep) "" list)
+
