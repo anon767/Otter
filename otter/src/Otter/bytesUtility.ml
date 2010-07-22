@@ -141,10 +141,10 @@ let rec expand_read_to_conditional2 bytes index len symIndex =
                 IfThenElse(
                         Guard_Bytes(make_Bytes_Op (
                                 OP_EQ,
-                                [(symIndex, Cil.intType); ((lazy_int_to_bytes index), Cil.intType)]
+                                [(symIndex, Cil.intType); ((int_to_bytes index), Cil.intType)]
                         )),
                         (
-                                match bytes__read bytes (lazy_int_to_bytes (index)) len with
+                                match bytes__read bytes (int_to_bytes (index)) len with
                                         | Bytes_Conditional(c) -> c
                                         | b -> Unconditional(b)
                         ),
@@ -152,7 +152,7 @@ let rec expand_read_to_conditional2 bytes index len symIndex =
                 )
         else (*last read that fits in the memory block*)
                 (
-                        match bytes__read bytes (lazy_int_to_bytes (index)) len with
+                        match bytes__read bytes (int_to_bytes (index)) len with
                                 | Bytes_Conditional c -> c
                                 | b -> Unconditional(b)
                 )

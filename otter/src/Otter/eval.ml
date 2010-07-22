@@ -174,7 +174,7 @@ rval state exp : state * bytes =
 							let block = MemOp.string_table__add bytes in
 							(state, make_Bytes_Address(block, bytes__zero))
 						| _ ->
-							(state, lazy_constant_to_bytes constant)
+							(state, constant_to_bytes constant)
 					end
 
 			| Lval (cil_lval) ->
@@ -254,10 +254,10 @@ rval_cast typ rv rvtyp =
 			let new_len = (Cil.bitsSizeOf typ) / 8 in
 			let worst_case () = (* as function so that it's not always evaluated *)
 					if new_len < old_len 
-					then bytes__read rv (lazy_int_to_bytes 0) new_len
+					then bytes__read rv (int_to_bytes 0) new_len
 					else 
 						(* TODO: should call STP's sign extension operation *)
-						bytes__write (bytes__make new_len) (lazy_int_to_bytes 0) old_len rv 
+						bytes__write (bytes__make new_len) (int_to_bytes 0) old_len rv 
 
 			in
 			if new_len = old_len then rv (* do nothing *)
@@ -436,9 +436,9 @@ rval_binop state binop exp1 exp2 =
 	let typ1 = Cil.typeOf exp1 in
 	(* shortcircuiting *)
 	if op == Operation.logand && isConcrete_bytes rv1 && bytes_to_bool rv1 = false then
-		(state, lazy_int_to_bytes 0)
+		(state, int_to_bytes 0)
 	else if op == Operation.logor && isConcrete_bytes rv1 && bytes_to_bool rv1 = true then
-		(state, lazy_int_to_bytes 1)
+		(state, int_to_bytes 1)
 	else 
 		let state, rv2 = rval state exp2 in
 		let typ2 = Cil.typeOf exp2 in

@@ -283,7 +283,7 @@ let rec opPI op operands =
 			begin match typ1 with
 				| TPtr(basetyp,_) ->
 					let base_size = (Cil.bitsSizeOf basetyp)/8 in
-					let (offset3) = mult [(lazy_int_to_bytes base_size,!Cil.upointType);(offset2,typ2)] in
+					let (offset3) = mult [(int_to_bytes base_size,!Cil.upointType);(offset2,typ2)] in
 					let (offset4) = op [(offset,!Cil.upointType);(offset3,!Cil.upointType)] in (* TODO: do we need to cast the offsets? *)
 					(make_Bytes_Address(block, offset4))
 				| _ -> failwith "type of Bytes_Address not TPtr"
@@ -292,7 +292,7 @@ let rec opPI op operands =
 			begin match typ1 with
 				| TPtr(basetyp,_) ->
 					let base_size = (Cil.bitsSizeOf basetyp)/8 in
-					let (offset3) = mult [(bytes2,typ2);(lazy_int_to_bytes base_size,!Cil.upointType)] in
+					let (offset3) = mult [(bytes2,typ2);(int_to_bytes base_size,!Cil.upointType)] in
 					op [(bytes1,!Cil.upointType);(offset3,!Cil.upointType)] (* TODO: do we need to cast the offsets? *)
 				| _ -> failwith "type of Bytes_ByteArray (used as a pointer) not TPtr"
 			end
@@ -336,7 +336,7 @@ let minusPP operands : bytes =
 				| TPtr(basetyp,_) ->
 					let base_size = (Cil.bitsSizeOf basetyp)/8 in
 					let (offset3) = minus [(offset1,!Cil.upointType);(offset2,!Cil.upointType)] in (* TODO: do we need to cast the offsets? *)
-					let (offset4) = div [(offset3,!Cil.upointType);(lazy_int_to_bytes base_size,!Cil.upointType)] in
+					let (offset4) = div [(offset3,!Cil.upointType);(int_to_bytes base_size,!Cil.upointType)] in
 						(offset4)
 				| _ -> failwith "type of Bytes_Address not TPtr"
 			end

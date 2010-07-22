@@ -254,7 +254,7 @@ let constrain_task state task : bytes (* constraints *) * state=
       | OneOfScalar (formal,values) ->
           let _,formal_bytes = Eval.rval state (Lval (Var(formal),NoOffset)) in (* TODO: assert that state is unchanged? *)
           let typ = formal.vtype in
-          let eqExps = List.map (fun v -> (Operation.eq [(formal_bytes,typ);(Bytes.lazy_int_to_bytes v,typ)],typ) ) values in
+          let eqExps = List.map (fun v -> (Operation.eq [(formal_bytes,typ);(Bytes.int_to_bytes v,typ)],typ) ) values in
           let pc = List.fold_left 
                        (fun pc (exp,_) -> 
                           let bs = bytes_or pc exp in bs

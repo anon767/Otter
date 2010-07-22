@@ -91,7 +91,7 @@ let addInstrCoverage job instr =
 			LineSet.add (instrLoc.Cil.file,instrLoc.Cil.line) job.exHist.coveredLines; }
 
 let add_guard_to_state state guard = (*big hack; there should be a nicer way to do this*)
-	MemOp.state__add_path_condition state (Bytes_Conditional(Bytes.IfThenElse(guard, Unconditional(lazy_int_to_bytes 1), Unconditional(lazy_int_to_bytes 0)))) true
+	MemOp.state__add_path_condition state (Bytes_Conditional(Bytes.IfThenElse(guard, Unconditional(int_to_bytes 1), Unconditional(int_to_bytes 0)))) true
 
 let function_from_exp job state exp args: (state * fundec) list =
 	match exp with

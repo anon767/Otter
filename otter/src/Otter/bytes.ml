@@ -153,18 +153,18 @@ let ikind_to_len_isSigned ikind =
  *)
 
 (** Convert constant to make_Bytes_Constant *)
-let lazy_constant_to_bytes constant : bytes =
+let constant_to_bytes constant : bytes =
 	make_Bytes_Constant(constant)
 	
 
 (** Convert an (int64 of ikind) to make_Bytes_Constant(CInt64(int64,ikind,None)) *)
-let lazy_int64_to_bytes n ikind : bytes =
-	lazy_constant_to_bytes (CInt64(n,ikind,None))
+let int64_to_bytes n ikind : bytes =
+	constant_to_bytes (CInt64(n,ikind,None))
 	
 
 (** Convert an ocaml (signed) int to make_Bytes_Constant(CInt64(int64,IInt,None)) *)
-let lazy_int_to_bytes n : bytes =
-	lazy_int64_to_bytes (Int64.of_int n) IInt
+let int_to_bytes n : bytes =
+	int64_to_bytes (Int64.of_int n) IInt
 	
 
 (* Make this lazy so that upointType is set correctly (by initCIL) before it is evaluated *)
@@ -393,8 +393,8 @@ and bytes__equal bytes1 bytes2 = if bytes1 == bytes2 then true else match bytes1
 
 
 (* boolean *)
-let tru = lazy_int_to_bytes 1
-let fls = lazy_int_to_bytes 0
+let tru = int_to_bytes 1
+let fls = int_to_bytes 0
 
 let bytes_or b1 b2 = 
   if b1=fls then b2 else if b2=fls then b1 else

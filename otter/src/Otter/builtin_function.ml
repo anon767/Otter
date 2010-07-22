@@ -252,8 +252,8 @@ let otter_given = wrap_state_function begin fun state retopt exps ->
 			let state, given = Eval.rval state (List.nth exps 0) in
 			let state, rv = Eval.rval state (List.nth exps 1 ) in
 			let state, truth = MemOp.eval_with_cache state (given::state.path_condition) rv in
-			if truth == True then lazy_int_to_bytes 1
-			else if truth == False then lazy_int_to_bytes 0
+			if truth == True then int_to_bytes 1
+			else if truth == False then int_to_bytes 0
 			else bytes__symbolic (bitsSizeOf intType / 8)
 		in
 		set_return_value state retopt truthvalue
@@ -262,7 +262,7 @@ end
 
 let otter_truth_value = wrap_state_function begin fun state retopt exps ->
 	let truthvalue = 
-		lazy_int_to_bytes
+		int_to_bytes
 		begin
 			if List.length exps = 0 then 0 
 			else

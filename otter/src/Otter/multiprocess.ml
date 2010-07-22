@@ -202,7 +202,7 @@ let intercept_fork job job_queue interceptor =
 						(* TODO: make the pid symbolic *)
 						Types.state =
 							let state, lval = Eval.lval job.Types.state cil_lval in
-							MemOp.state__assign state lval (Bytes.lazy_int_to_bytes multijob.next_pid)
+							MemOp.state__assign state lval (Bytes.int_to_bytes multijob.next_pid)
 					} in
 					let job = { job with
 						Types.state =

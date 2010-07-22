@@ -359,7 +359,7 @@ let qt_to_bytes file expState solution state exp qt =
                     List.fold_left begin fun target_bytes_list offset ->
                         (* for every offset, generate bytes pointing to each offset *)
                         let offset_bits, _ = Cil.bitsOffset typ offset in
-                        let offset_bytes = Bytes.lazy_int_to_bytes (offset_bits / 8) in
+                        let offset_bytes = Bytes.int_to_bytes (offset_bits / 8) in
                         let target_bytes = Bytes.make_Bytes_Address (block, offset_bytes) in
                         target_bytes::target_bytes_list
                     end target_bytes_list offsets
@@ -377,7 +377,7 @@ let qt_to_bytes file expState solution state exp qt =
                         let bytes = Bytes.bytes__symbolic size in
                         List.fold_left begin fun (state, bytes) extra_offset ->
                             let offset, size = Cil.bitsOffset typ extra_offset in
-                            let offset = Bytes.lazy_int_to_bytes (offset / 8) in
+                            let offset = Bytes.int_to_bytes (offset / 8) in
                             let size = size / 8 in
                             let (state, offset_bytes) = extra_deferred state in
                             let bytes = BytesUtility.bytes__write bytes offset size offset_bytes in
@@ -462,7 +462,7 @@ let qt_to_bytes file expState solution state exp qt =
                         let field_lval = Cil.addOffsetLval field_offset lval in
                         let state, field_bytes = qt_to_bytes expState state (Cil.Lval field_lval) (drop_qt qtfield) in
                         let offset, size = Cil.bitsOffset typ field_offset in
-                        let offset = Bytes.lazy_int_to_bytes (offset / 8) in
+                        let offset = Bytes.int_to_bytes (offset / 8) in
                         let size = size / 8 in
                         let bytes = BytesUtility.bytes__write bytes offset size field_bytes in
                         (state, bytes)
@@ -482,7 +482,7 @@ let qt_to_bytes file expState solution state exp qt =
                         let el_lval = Cil.addOffsetLval el_offset lval in
                         let state, el_bytes = qt_to_bytes expState state (Cil.Lval el_lval) qt in
                         let offset, size = Cil.bitsOffset typ el_offset in
-                        let offset = Bytes.lazy_int_to_bytes (offset / 8) in
+                        let offset = Bytes.int_to_bytes (offset / 8) in
                         let size = size / 8 in
                         let bytes = BytesUtility.bytes__write bytes offset size el_bytes in
                         (state, bytes)
@@ -830,7 +830,7 @@ let bytes_to_qt file expState state pre bytes exp qt = perform
                         let field_lval = Cil.addOffsetLval field_offset lval in
 
                         let offset, size = Cil.bitsOffset typ field_offset in
-                        let offset = Bytes.lazy_int_to_bytes (offset / 8) in
+                        let offset = Bytes.int_to_bytes (offset / 8) in
                         let size = size / 8 in
                         let field_bytes = BytesUtility.bytes__read bytes offset size in
 
@@ -861,7 +861,7 @@ let bytes_to_qt file expState state pre bytes exp qt = perform
                         let el_lval = Cil.addOffsetLval el_offset lval in
 
                         let offset, size = Cil.bitsOffset typ el_offset in
-                        let offset = Bytes.lazy_int_to_bytes (offset / 8) in
+                        let offset = Bytes.int_to_bytes (offset / 8) in
                         let size = size / 8 in
                         let el_bytes = BytesUtility.bytes__read bytes offset size in
 

@@ -139,7 +139,7 @@ let init_cmdline_argvs state argstr =
 	let num_args = List.length argstr in
 
 	(* Convert the number of arguments into a 'bytes' *)
-	let argc = lazy_int_to_bytes num_args in
+	let argc = int_to_bytes num_args in
 
 	(* C's standard is to have the arguments be consecutive strings. For example, if the
 		 executed code were "./run abc de fgh", this would lead to the following chunk of
@@ -176,10 +176,10 @@ let init_cmdline_argvs state argstr =
 				Output.set_mode Output.MSG_DEBUG;
 				Output.print_endline ("With arguments: \""^h^"\"");
 				let h_bytes =
-					make_Bytes_Address (argv_strings_block, lazy_int_to_bytes charsSoFar) in
+					make_Bytes_Address (argv_strings_block, int_to_bytes charsSoFar) in
 				impl t (ptrsSoFar + 1)
 					(charsSoFar + String.length h + 1 (* '+ 1' for the null character *))
-					(bytes__write bytes (lazy_int_to_bytes (ptrsSoFar * charPtrSize)) charPtrSize h_bytes)
+					(bytes__write bytes (int_to_bytes (ptrsSoFar * charPtrSize)) charPtrSize h_bytes)
 	in
 	let argv_ptrs_bytes =
 		impl argstr 0 0 (make_Bytes_ByteArray (ImmutableArray.make (num_args * charPtrSize) byte__zero)) in
