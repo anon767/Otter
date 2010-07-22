@@ -187,25 +187,6 @@ let libc_free state retopt exps =
 			warning ("Freeing something that is not a valid pointer: " ^ (To_string.exp (List.hd exps)) ^ " = " ^ (To_string.bytes ptr))
 
 
-
-(* TODO: why are there two completely identical memset? *)
-let libc_memset__concrete state retopt exps =
-	let state, bytes = Eval.rval state (List.hd exps) in
-	let block, offset = bytes_to_address bytes in
-	let state, old_whole_bytes = MemOp.state__get_bytes_from_block state block in
-	let state, char_bytes = Eval.rval state (List.nth exps 1) in
-	let c = bytes__get_byte char_bytes 0 (* little endian *) in
-	let state, n_bytes = Eval.rval state (List.nth exps 2) in
-	if isConcrete_bytes n_bytes then
-		let n = bytes_to_int_auto n_bytes in
-		let newbytes = bytes__make_default n c in
-		let finalbytes = bytes__write old_whole_bytes offset n newbytes in
-		let state = MemOp.state__add_block state block finalbytes in
-		set_return_value state retopt bytes
-	else
-		failwith "libc_memset__concrete: n is symbolic (TODO)"
-
-
 let libc_memset state retopt exps =
 	let state, bytes = Eval.rval state (List.hd exps) in
 	let block, offset = bytes_to_address bytes in
@@ -222,35 +203,6 @@ let libc_memset state retopt exps =
 	else
 		failwith "libc_memset: n is symbolic (TODO)"
 
-let libc___create_file state exps = (state,bytes__zero)
-let libc___error state exps = (state,bytes__zero)
-let libc___maskrune state exps = (state,bytes__zero)
-let libc___toupper state exps = (state,bytes__zero)
-let libc_accept state exps = (state,bytes__zero)
-let libc_bind state exps = (state,bytes__zero)
-let libc_close state exps = (state,bytes__zero)
-let libc_dup2 state exps = (state,bytes__zero)
-let libc_execl state exps = (state,bytes__zero)
-let libc_fclose state exps = (state,bytes__zero)
-let libc_feof state exps = (state,bytes__zero)
-let libc_fileno state exps = (state,bytes__zero)
-let libc_fork state exps = (state,bytes__zero)
-let libc_getc state exps = (state,bytes__zero)
-let libc_getsockname state exps = (state,bytes__zero)
-let libc_listen state exps = (state,bytes__zero)
-let libc_open state exps = (state,bytes__zero)
-let libc_pipe state exps = (state,bytes__zero)
-let libc_putenv state exps = (state,bytes__zero)
-let libc_read state exps = (state,bytes__zero)
-let libc_recv state exps = (state,bytes__zero)
-let libc_send state exps = (state,bytes__zero)
-let libc_socket state exps = (state,bytes__zero)
-let libc_stat state exps = (state,bytes__zero)
-let libc_waitpid state exps = (state,bytes__zero)
-let libc_write state exps = (state,bytes__zero)
-let posix_umask state exps = (state,bytes__zero)
-let posix_openlog state exps = (state,bytes__zero)
-let posix_syslog state exps = (state,bytes__zero)
 
 (* __builtin_alloca is used for local arrays with variable size; has the same semantics as malloc *)
 let libc___builtin_alloca__id = ref 1
@@ -653,7 +605,7 @@ let interceptor job job_queue interceptor =
 		(* memset defaults to the C implimentation on failure *)
 		(try_with_job_abandoned_interceptor
 		(intercept_function_by_name_internal "memset"                  (wrap_state_function libc_memset))) @@
-		(intercept_function_by_name_internal "memset__concrete"        (wrap_state_function libc_memset__concrete)) @@
+		(intercept_function_by_name_internal "memset__concrete"        (wrap_state_function libc_memset)) @@
 		(intercept_function_by_name_internal "exit"                    (     libc_exit)) @@
 		(intercept_function_by_name_internal "__TRUTH_VALUE"           (wrap_state_function otter_truth_value)) @@
 		(intercept_function_by_name_internal "__GIVEN"                 (wrap_state_function otter_given)) @@
