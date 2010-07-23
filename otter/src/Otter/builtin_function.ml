@@ -211,7 +211,7 @@ let libc_memset = wrap_state_function begin fun state retopt exps ->
 end
 
 
-(* __builtin_alloca is used for local arrays with variable size; has the same semantics as malloc *)
+(* __builtin_alloca is used for local arrays with variable size; creates a dummy local variable so that the memory is deallocated on return *)
 let libc___builtin_alloca__id = ref 1
 let libc___builtin_alloca_size state size bytes loc =
 	let name = Printf.sprintf "%s(%d)#%d/%s%s"
@@ -221,9 +221,12 @@ let libc___builtin_alloca_size state size bytes loc =
 		(To_string.location loc)
 		(MemOp.state__trace state)
 	in
-	let block = block__make name size Block_type_Heap in
+	let block = block__make name size Block_type_Local in
 	let addrof_block = make_Bytes_Address (block, bytes__zero) in
 	let state = MemOp.state__add_block state block bytes in
+	let local = (List.hd state.locals) in
+	let local = VarinfoMap.add (Cil.makeVarinfo false "alloca" Cil.voidType) (Immediate (conditional__lval_block (block, bytes__zero))) local in
+	let state = {state with locals = local::(List.tl state.locals); } in
 	(state, addrof_block)
 
 let libc___builtin_alloca job retopt exps =
@@ -240,6 +243,37 @@ let libc___builtin_alloca job retopt exps =
 	  else bytes__make_default size byte__undef (* initially the symbolic 'undef' byte *)
 	in
 	let state, bytes = libc___builtin_alloca_size state size bytes (Core.get_job_loc job) in
+	let job = end_function_call { job with state = set_return_value state retopt bytes } in
+	Active job
+
+(* allocates on the heap *)
+let libc_malloc_size state size bytes loc =
+	let name = Printf.sprintf "%s(%d)#%d/%s%s"
+		(List.hd state.callstack).svar.vname
+		size
+		(Utility.next_id libc___builtin_alloca__id)
+		(To_string.location loc)
+		(MemOp.state__trace state)
+	in
+	let block = block__make name size Block_type_Heap in
+	let addrof_block = make_Bytes_Address (block, bytes__zero) in
+	let state = MemOp.state__add_block state block bytes in
+	(state, addrof_block)
+
+let libc_malloc job retopt exps =
+	let state, b_size = Eval.rval job.state (List.hd exps) in
+	let size =
+		if isConcrete_bytes b_size then
+			bytes_to_int_auto b_size (*safe to use bytes_to_int as arg should be small *)
+		else
+			1 (* currently bytearray have unbounded length *)
+	in
+	let bytes =
+	  if Executeargs.run_args.Executeargs.arg_init_malloc_zero
+	  then bytes__make size (* initially zero, as though malloc were calloc *)
+	  else bytes__make_default size byte__undef (* initially the symbolic 'undef' byte *)
+	in
+	let state, bytes = libc_malloc_size state size bytes (Core.get_job_loc job) in
 	let job = end_function_call { job with state = set_return_value state retopt bytes } in
 	Active job
 
@@ -634,9 +668,9 @@ let interceptor job job_queue interceptor =
 	try
 		(
 		(* intercept builtin functions *)
-		(                                  (*"__SYMBOLIC"*)                  intercept_symbolic) @@
+		(                                  (*"__SYMBOLIC"*)            intercept_symbolic) @@
 		(intercept_function_by_name_internal "__builtin_alloca"        libc___builtin_alloca) @@
-		(intercept_function_by_name_internal "malloc"                  libc___builtin_alloca) @@
+		(intercept_function_by_name_internal "malloc"                  libc_malloc) @@
 		(intercept_function_by_name_internal "free"                    libc_free) @@
 		(intercept_function_by_name_internal "__builtin_va_arg_fixed"  libc___builtin_va_arg) @@
 		(intercept_function_by_name_internal "__builtin_va_arg"        libc___builtin_va_arg) @@
@@ -666,6 +700,7 @@ let interceptor job job_queue interceptor =
 		(intercept_function_by_name_internal "__CURRENT_STATE"         otter_current_state) @@
 		(intercept_function_by_name_internal "__COMPARE_STATE"         otter_compare_state) @@
 		(intercept_function_by_name_internal "__ASSERT_EQUAL_STATE"    otter_assert_equal_state) @@
+
 		(* pass on the job when none of those match *)
 		interceptor
 
