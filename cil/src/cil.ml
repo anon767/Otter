@@ -1091,9 +1091,6 @@ let d_loc (_: unit) (loc: location) : doc =
 
 let d_thisloc (_: unit) : doc = d_loc () !currentLoc
 
-(* Format-compatible versions of the above printers *)
-let f_loc = format_adaptor d_loc
-
 let error (fmt : ('a,unit,doc) format) : 'a = 
   let f d = 
     E.hadErrors := true; 
@@ -1624,25 +1621,16 @@ let d_ikind () = function
       if !msvcMode then text "unsigned __int64" 
       else text "unsigned long long"
 
-(* Format-compatible versions of the above printers *)
-let f_ikind = format_adaptor d_ikind
-
 let d_fkind () = function
     FFloat -> text "float"
   | FDouble -> text "double"
   | FLongDouble -> text "long double"
-
-(* Format-compatible versions of the above printers *)
-let f_fkind = format_adaptor d_fkind
 
 let d_storage () = function
     NoStorage -> nil
   | Static -> text "static "
   | Extern -> text "extern "
   | Register -> text "register "
-
-(* Format-compatible versions of the above printers *)
-let f_storage = format_adaptor d_storage
 
 (* sm: need this value below *)
 let mostNeg32BitInt : int64 = (Int64.of_string "-0x80000000")
@@ -1723,8 +1711,6 @@ let d_const () c =
        | FLongDouble -> chr 'L')
   | CEnum(_, s, ei) -> text s
 
-(* Format-compatible versions of the above printers *)
-let f_const = format_adaptor d_const
 
 (* Parentheses/precedence level. An expression "a op b" is printed 
  * parenthesized if its parentheses level is >= that that of its context. 
@@ -2754,10 +2740,6 @@ let d_binop () b =
   | BOr -> text "|"
   | LAnd -> text "&&"
   | LOr -> text "||"
-
-(* Format-compatible versions of the above printers *)
-let f_unop = format_adaptor d_unop
-let f_binop = format_adaptor d_binop
 
 let invalidStmt = mkStmt (Instr [])
 
@@ -4333,21 +4315,6 @@ let d_shortglobal () = function
   | GText _ -> text "GText"
   | GAsm _ -> text "GAsm"
 
-(* Format-compatible versions of the above printers *)
-let f_exp = format_adaptor d_exp
-let f_lval = format_adaptor d_lval
-let f_offset base = format_adaptor (d_offset base)
-let f_init = format_adaptor d_init
-let f_type = format_adaptor d_type
-let f_global = format_adaptor d_global
-let f_attrlist = format_adaptor d_attrlist
-let f_attr = format_adaptor d_attr
-let f_attrparam = format_adaptor d_attrparam
-let f_label = format_adaptor d_label
-let f_stmt = format_adaptor d_stmt
-let f_block = format_adaptor d_block
-let f_instr = format_adaptor d_instr
-let f_shortglobal = format_adaptor d_shortglobal
 
 (* sm: given an ordinary CIL object printer, yield one which
  * behaves the same, except it never prints #line directives
@@ -4380,17 +4347,6 @@ let dn_attrparam = (dn_obj d_attrparam)
 let dn_stmt      = (dn_obj d_stmt)
 let dn_instr     = (dn_obj d_instr)
 
-(* Format-compatible versions of the above printers *)
-let fn_exp = format_adaptor dn_exp
-let fn_lval = format_adaptor dn_lval
-let fn_init = format_adaptor dn_init
-let fn_type = format_adaptor dn_type
-let fn_global = format_adaptor dn_global
-let fn_attrlist = format_adaptor dn_attrlist
-let fn_attr = format_adaptor dn_attr
-let fn_attrparam = format_adaptor dn_attrparam
-let fn_stmt = format_adaptor dn_stmt
-let fn_instr = format_adaptor dn_instr
 
 (* Now define a cilPlainPrinter *)
 class plainCilPrinterClass =
@@ -4564,12 +4520,6 @@ let d_plaintype () t = plainCilPrinter#pType None () t
 let d_plaininit () i = plainCilPrinter#pInit () i
 let d_plainlval () l = plainCilPrinter#pLval () l
 
-(* Format-compatible versions of the above printers *)
-let f_plainexp = format_adaptor d_plainexp
-let f_plaintype = format_adaptor d_plaintype
-let f_plaininit = format_adaptor d_plaininit
-let f_plainlval = format_adaptor d_plainlval
-
 class type descriptiveCilPrinter = object
   inherit cilPrinter
 
@@ -4641,9 +4591,6 @@ let descriptiveCilPrinter: descriptiveCilPrinter =
 
 let dd_exp = descriptiveCilPrinter#pExp
 
-(* Format-compatible versions of the above printers *)
-let fd_exp = format_adaptor dd_exp
-
 (* zra: this allows pretty printers not in cil.ml to
    be exposed to cilmain.ml *)
 let printerForMaincil = ref defaultCilPrinter
@@ -4672,8 +4619,6 @@ let rec d_typsig () = function
         n d_attrlist al
   | TSBase t -> dprintf "TSBase(%a)" d_type t
 
-(* Format-compatible versions of the above printers *)
-let f_typsig = format_adaptor d_typsig
 
 let newVID () = 
   let t = !nextGlobalVID in 
@@ -6774,6 +6719,4 @@ let d_formatarg () = function
 
   | FX _ -> dprintf "FX()"
 
-(* Format-compatible versions of the above printers *)
-let f_formatarg = format_adaptor d_formatarg
 
