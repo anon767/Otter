@@ -96,9 +96,13 @@ let add_guard_to_state state guard = (*big hack; there should be a nicer way to 
 let function_from_exp job state exp args: (state * fundec) list =
 	match exp with
 		| Lval(Var(varinfo), NoOffset) ->
-			(* the varinfo should always map to a valid fundec (if the file was parsed by Cil) *)
-			let fundec = Cilutility.find_fundec_by_varinfo job.file varinfo in
-			[(state, fundec)]
+			begin			
+				try
+					[(state, Cilutility.find_fundec_by_varinfo job.file varinfo)]
+				with Not_found ->
+					failwith ("Function "^varinfo.vname^" not found.")
+			end
+
 
 		| Lval(Mem(exp2), NoOffset) ->
 			let state, bytes = Eval.rval state exp2 in
