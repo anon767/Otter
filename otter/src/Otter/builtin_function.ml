@@ -709,3 +709,33 @@ let interceptor job job_queue interceptor =
 		if Executeargs.run_args.Executeargs.arg_failfast then failwith msg;
 		let result = { result_state = job.state; result_history = job.exHist } in
 		(Complete (Types.Abandoned (msg, Core.get_job_loc job, result)), job_queue)
+
+let libc_interceptor job job_queue interceptor =
+	try
+		(
+		(* assert.h *)
+		(intercept_function_by_name_external "__libc_failwith"         "__otter_libc_failwith") @@
+
+		(* ctype.h *)
+		(intercept_function_by_name_external "isalnum"                 "__otter_libc_isalnum") @@
+		(intercept_function_by_name_external "isalpha"                 "__otter_libc_isalpha") @@
+		(intercept_function_by_name_external "iscntrl"                 "__otter_libc_iscntrl") @@
+		(intercept_function_by_name_external "isdigit"                 "__otter_libc_isdigit") @@
+		(intercept_function_by_name_external "isgraph"                 "__otter_libc_isgraph") @@
+		(intercept_function_by_name_external "islower"                 "__otter_libc_islower") @@
+		(intercept_function_by_name_external "isprint"                 "__otter_libc_isprint") @@
+		(intercept_function_by_name_external "ispunct"                 "__otter_libc_ispunct") @@
+		(intercept_function_by_name_external "isspace"                 "__otter_libc_isspace") @@
+		(intercept_function_by_name_external "isupper"                 "__otter_libc_isupper") @@
+		(intercept_function_by_name_external "isxdigit"                "__otter_libc_isxdigit") @@
+		(intercept_function_by_name_external "tolower"                 "__otter_libc_tolower") @@
+		(intercept_function_by_name_external "toupper"                 "__otter_libc_toupper") @@
+
+		(* pass on the job when none of those match *)
+		interceptor
+
+		) job job_queue
+	with Failure msg ->
+		if Executeargs.run_args.Executeargs.arg_failfast then failwith msg;
+		let result = { result_state = job.state; result_history = job.exHist } in
+		(Complete (Types.Abandoned (msg, Core.get_job_loc job, result)), job_queue)

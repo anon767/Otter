@@ -97,3 +97,15 @@ let init job =
 		process_result
 		[job]
 
+let init_with_libc job = 
+	main_loop
+		get_job_list
+		(
+			set_output_formatter_interceptor @@
+			Builtin_function.interceptor @@ 
+			Builtin_function.libc_interceptor @@
+			Core.step
+		)
+		process_result
+		[job]
+
