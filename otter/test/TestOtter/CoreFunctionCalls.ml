@@ -36,7 +36,7 @@ let direct_calls_testsuite = "Direct calls" >:::
             - specific global variables and variables in main() have the expected values (to probe other behaviors).
     *)
     let test_function_calls content ?label match_globals =
-        test_otter content ?label
+        test_otter_core content ?label
             begin fun file results -> match results with
                 | [ Return (exit_opt, result) ] ->
                     (* make sure that the call stack has only main() on it *)
@@ -352,7 +352,7 @@ let undefined_calls_testsuite = "Undefined calls" >:::
         undefined functions are unavoidable and will be reported as errors.
     *)
     let test_undefined_calls content ?label name =
-        test_otter content ?label
+        test_otter_core content ?label
             begin fun file completed -> match completed with
                 | [ Abandoned (msg, loc, result) ] when msg = "Function "^name^" not found." ->
                     ()

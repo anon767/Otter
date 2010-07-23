@@ -40,3 +40,7 @@ let test_otter
         if has_failing_assertions then
             assert_bool "Expected some failing assertions but got none." (log <> "");
     end
+
+
+(* test helper that runs just the core symbolic executor on a file given a source code as a string *)
+let test_otter_core = test_otter ~main_loop:(fun job -> Driver.main_loop Driver.get_job_list Core.step Driver.process_result [job])
