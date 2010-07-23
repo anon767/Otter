@@ -386,7 +386,7 @@ let undefined_calls_testsuite = "Undefined calls" >:::
     ]
 
 
-let testsuite = "Functions" >::: [
+let testsuite = "CoreFunctionCalls" >::: [
     direct_calls_testsuite;
     undefined_calls_testsuite;
     (* TODO: calls through function pointers testsuite *)
