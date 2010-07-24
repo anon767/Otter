@@ -13,5 +13,6 @@ let _ =
         TestOtter.Merging.testsuite;
         TestOtter.BoundsChecking.testsuite;
         TestOtterIntegration.IntegrationTests.testsuite;
+        TestOtterSystem.SystemTests.testsuite;
     ] end
 
