@@ -79,19 +79,39 @@ let fork_test testfn = fun () ->
     end
 
 
-(* test wrapper that creates a temporary file, fills it some content, and passes it to the test *)
-let test_string_as_file base ext content test =
+(** Test wrapper that creates a temporary file and passes it to the test. The temporary file will be automatically
+    deleted after the test.
+        @param base is the base name to use for the temporary file
+        @param ext is the extension to use for the temporary file
+        @param test is the test to apply to the file, given as a tuple of the full path and an out channel
+        @return a [TestCase] applied to the file
+*)
+
+let test_with_temp_file base ext test =
     OUnit.bracket begin fun () ->
-        let filename, fileout = Filename.open_temp_file base ext in
-        output_string fileout content;
-        close_out fileout;
-        filename
-    end test Unix.unlink
+        Filename.open_temp_file base ext
+    end test (fun (filename, _) -> Unix.unlink filename)
+
+
+(** Test wrapper that creates a temporary file, fills it some content, and passes it to the test. The temporary file
+    will be automatically deleted after the test.
+        @param base is the base name to use for the temporary file
+        @param ext is the extension to use for the temporary file
+        @param content is a string to fill the file with
+        @param test is the test to apply to the file, given as a full path
+        @return a [TestCase] applied to the file
+*)
+let test_string_as_file base ext content test =
+    test_with_temp_file base ext begin fun (path, out) ->
+        output_string out content;
+        close_out out;
+        test path
+    end
 
 
 (** Convenience test helper for testing all files in a directory recursively.
         @param path is the path to the directory in which find files
-        @param test is the test to apply to each file found, given as path relative from the original directory
+        @param test is the test to apply to each file found, given as a path relative from the original directory
         @return a [TestList] of tests applied to files found
  *)
 let test_dir path test =
