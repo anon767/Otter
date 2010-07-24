@@ -150,3 +150,29 @@ let rec list_equal eq x y = match x, y with
 let list_printer printer sep ff list =
     ignore (List.fold_left (fun sep x -> Format.fprintf ff "%(%)@[%a@]" sep printer x; sep) "" list)
 
+
+(** Convenience test helper for testing all files in a directory recursively.
+        @param path is the path to the directory in which find files
+        @param test is the test to apply to each file found, given as path relative from the original directory
+        @return a [TestList] of tests applied to files found
+ *)
+let test_dir path test =
+    let rec test_dir relpath dir tests =
+        (* first, sort down *)
+        Array.sort (fun x y -> -(String.compare x y)) dir;
+        (* then, iterate left-to-right, so output list will become sorted up *)
+        Array.fold_left begin fun tests filename ->
+            if filename.[0] = '.' then (* skip hidden files *)
+                tests
+            else begin
+                let relpath = Filename.concat relpath filename in
+                let fullpath = Filename.concat path relpath in
+                if Sys.is_directory fullpath then
+                    test_dir relpath (Sys.readdir fullpath) tests (* recurse into directories *)
+                else
+                    (test relpath)::tests (* add files *)
+            end
+        end tests dir
+    in
+    TestList (test_dir "" (Sys.readdir path) [])
+
