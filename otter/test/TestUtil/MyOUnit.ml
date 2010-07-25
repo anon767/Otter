@@ -1,6 +1,9 @@
 (* include the test type *)
 type test = OUnit.test = TestCase of (unit -> unit) | TestList of test list | TestLabel of string * test
 
+(* redefine the type of OUnit.bracket to catch some errors *)
+let bracket : (unit -> 'a) -> ('a -> unit) -> ('a -> unit) -> unit -> unit = OUnit.bracket
+
 exception MyOUnitFailure
 
 (* error message buffer *)
@@ -88,7 +91,7 @@ let fork_test testfn = fun () ->
 *)
 
 let test_with_temp_file base ext test =
-    OUnit.bracket begin fun () ->
+    bracket begin fun () ->
         Filename.open_temp_file base ext
     end test (fun (filename, _) -> Unix.unlink filename)
 
@@ -139,7 +142,6 @@ let test_dir path test =
 let (>:) = OUnit.(>:)
 let (>::) label testfn = OUnit.(>::) label (fork_test testfn)
 let (>:::) = OUnit.(>:::)
-let bracket = OUnit.bracket
 let run_test_tt_main = OUnit.run_test_tt_main
 
 let assert_failure format =

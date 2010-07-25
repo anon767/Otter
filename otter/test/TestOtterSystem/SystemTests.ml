@@ -21,7 +21,7 @@ let test_integration main_loop dir =
             if (Sys.command ("./otter.pl -nostdlib -I./libc/ -include./libc/__otter/all.h -E -o"^temppath^" "^fullpath^" 2>/dev/null")) <> 0 then
                 assert_failure "Preprocessor parse error.";
 
-            (test_otter_on_file temppath ~main_loop begin fun file results -> 
+            test_otter_on_file temppath ~main_loop begin fun file results -> 
                 (* count jobs that were abandoned *)
                 let abandoned = List.fold_left begin fun abandoned result -> match result with
                     | Types.Abandoned (s, loc, _) -> (loc.Cil.file, loc.Cil.line, s)::abandoned
@@ -30,7 +30,7 @@ let test_integration main_loop dir =
                 if abandoned <> [] then
                     let printer = list_printer (fun ff (f, l, s) -> Format.fprintf ff "@[%s:%d: %s@]" f l s) "@\n" in
                     assert_failure "@[<hv2>Abandoned paths:@\n%a@]" printer abandoned
-            end) ()
+            end ()
 
         end
 

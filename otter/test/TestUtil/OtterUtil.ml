@@ -70,7 +70,7 @@ let test_otter
         ?has_failing_assertions
         test =
     label >:: test_string_as_file "OtterTest." ".c" code begin fun filename ->
-        test_otter_on_file filename ?setup ?main_loop ?command_line ?has_failing_assertions test
+        test_otter_on_file filename ?setup ?main_loop ?command_line ?has_failing_assertions test ()
     end
 
 
