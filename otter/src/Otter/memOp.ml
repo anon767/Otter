@@ -106,6 +106,7 @@ let state__empty =
 		path_condition_tracked = [];
 		(*return = None;*)
 		callContexts = [];
+		stmtPtrs = Utility.IndexMap.empty;
 		va_arg = [];
 		va_arg_map = VargsMap.empty;
 		bytes_eval_cache = BytesMap.empty;

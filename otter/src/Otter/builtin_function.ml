@@ -663,6 +663,134 @@ let intercept_symbolic job job_queue interceptor =
 		| _ -> 
 			interceptor job job_queue
 
+let libc_setjmp job retopt exps =
+	Output.print_endline (To_string.exp (List.hd exps));
+	match exps with
+		| [Lval cil_lval]
+		| [CastE (_, Lval cil_lval)] ->
+			let state = job.state in
+	
+			(* assign value to the environment argument *)
+			let state, (_, size as lval) = Eval.lval state cil_lval in
+			let stmtPtrAddr = (Utility.next_id libc___builtin_alloca__id) in
+			let state = MemOp.state__assign state lval (int_to_bytes stmtPtrAddr) in
+
+			(* create statemet pointer to the set_jmp call *)
+			let nextStmt =
+				(* [stmt] is an [Instr] which doesn't end with a call to a
+					 [noreturn] function, so it has exactly one successor. *)
+				match job.stmt.succs with
+					| [h] -> h
+					| _ -> assert false
+			in
+			let stmtPtr = Source (retopt, job.stmt, (List.hd job.Types.instrList), nextStmt) in
+			let state = {state with stmtPtrs = Utility.IndexMap.add stmtPtrAddr stmtPtr state.stmtPtrs; } in
+
+			let job = end_function_call { job with state = set_return_value state retopt bytes__zero } in
+			Active job
+		| _ -> failwith "setjmp invalid arguments"
+
+let libc_longjmp job retopt exps =
+	Output.print_endline (To_string.exp (List.hd exps));
+	match exps with
+		| [Lval cil_lval; value]
+		| [CastE (_, Lval cil_lval); value] ->
+		begin
+			let state = job.state in
+
+			(* get the return value to send to setjmp *)
+			let state, bytes =
+				match value with
+					| CastE (_, v) | v -> Eval.rval state v
+			in
+			
+			(* get the statment pointer *)
+			let state, lval = 
+				try
+					Eval.lval state cil_lval
+				with
+					| _ -> failwith "longjmp with invalid statement pointer"
+			in
+			let state, stmtPtrAddrBytes = MemOp.state__deref state lval in
+			let fold_func acc pre leaf =
+				((bytes_to_int_auto leaf)::acc, Unconditional(leaf))
+			in
+			let stmtPtrAddrs = 
+				match stmtPtrAddrBytes with
+					| Bytes_Constant _
+					| Bytes_ByteArray _ -> [bytes_to_int_auto stmtPtrAddrBytes]
+					| Bytes_Read(bytes2, offset, len) -> 
+						let sp = (BytesUtility.expand_read_to_conditional bytes2 offset len) in
+						fst (conditional__map_fold ~test:(fun a b -> Stp.query_guard state.path_condition a b) fold_func [] sp)
+					| Bytes_Conditional(c) ->
+						fst (conditional__map_fold ~test:(fun a b -> Stp.query_guard state.path_condition a b) fold_func [] c)
+					| _ -> failwith "Non-constant statement ptr not supported"
+			in
+
+			let process_stmtPtr stmtPtrAddr =
+				let stmtPtr = Utility.IndexMap.find stmtPtrAddr state.stmtPtrs in
+				let retopt, stmt =
+					match stmtPtr with
+						| Source (r, _, _, s) -> r, s
+						| Runtime
+						| NoReturn _ -> failwith "Impossible"
+				in
+
+				(* find correct stack frame to jump to *)
+				let rec unwind_stack state =
+					try
+						let state, _ = Eval.lval state cil_lval in
+						unwind_stack (MemOp.state__end_fcall state)
+					with
+						| _ -> state
+				in
+				let state = unwind_stack state in
+
+				(* Update coverage. *)
+				let exHist = job.exHist in
+				let exHist =
+					(* We didn't add the outgoing edge in exec_stmt because the
+						 call might have never returned. Since there isn't an
+						 explicit return (because we handle the call internally), we
+						 have to add the edge now. *)
+					if job.inTrackedFn && Executeargs.run_args.Executeargs.arg_line_coverage then
+						let loc = Core.get_job_loc job in
+						{ exHist with coveredLines = LineSet.add (loc.Cil.file, loc.Cil.line) exHist.coveredLines; }
+					else
+						exHist
+				in
+				let exHist =
+					(* Update edge coverage. *)
+					if job.inTrackedFn && Executeargs.run_args.Executeargs.arg_edge_coverage then
+						let fn = (List.hd job.state.callstack).svar.vname in
+						let edge = (
+							{ siFuncName = fn; siStmt = Cilutility.stmtAtEndOfBlock job.stmt; },
+							{ siFuncName = fn; siStmt = Cilutility.stmtAtEndOfBlock stmt; }
+						) in
+						{ exHist with coveredEdges = EdgeSet.add edge exHist.coveredEdges; }
+					else
+						exHist
+				in
+
+				(* Update the state, program counter, and coverage  *)
+				let job = { 
+					job with stmt = stmt; 
+					exHist = exHist; 
+					instrList = []; 
+					state = set_return_value state retopt bytes; } 
+				in
+				Active job
+			in
+
+			let jobs = List.map process_stmtPtr stmtPtrAddrs in
+			match jobs with
+				| _::_::_ -> Big_Fork(jobs)
+				| [a] -> a
+				| [] -> failwith "No valid jongjmp target found!"
+		end
+
+		| _ -> failwith "longjmp invalid arguments"
+
 
 let interceptor job job_queue interceptor =
 	try
@@ -710,7 +838,7 @@ let interceptor job job_queue interceptor =
 		let result = { result_state = job.state; result_history = job.exHist } in
 		(Complete (Types.Abandoned (msg, Core.get_job_loc job, result)), job_queue)
 
-let libc_interceptor job job_queue interceptor =
+let libc_interceptor job job_queue interceptor = 
 	try
 		(
 		(* assert.h *)
@@ -730,6 +858,10 @@ let libc_interceptor job job_queue interceptor =
 		(intercept_function_by_name_external "isxdigit"                "__otter_libc_isxdigit") @@
 		(intercept_function_by_name_external "tolower"                 "__otter_libc_tolower") @@
 		(intercept_function_by_name_external "toupper"                 "__otter_libc_toupper") @@
+
+		(* setjmp.h *)
+		(intercept_function_by_name_internal "__libc_setjmp"           libc_setjmp) @@		
+		(intercept_function_by_name_internal "__libc_longjmp"          libc_setjmp) @@
 
 		(* pass on the job when none of those match *)
 		interceptor

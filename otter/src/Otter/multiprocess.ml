@@ -15,6 +15,7 @@ type local_state = {
 	locals : Types.memory_frame list;
 	callstack : Cil.fundec list;
 	callContexts : Types.callingContext list;
+	stmtPtrs : Types.callingContext Utility.IndexMap.t;
 	va_arg : Bytes.bytes list list;
 	va_arg_map : Bytes.bytes list Types.VargsMap.t;
 	block_to_bytes : Bytes.bytes Types.deferred Types.MemoryBlockMap.t;
@@ -65,6 +66,7 @@ let put_job job multijob pid =
 		locals = job.Types.state.Types.locals;
 		callstack = job.Types.state.Types.callstack;
 		callContexts = job.Types.state.Types.callContexts;
+		stmtPtrs = job.Types.state.Types.stmtPtrs;
 		va_arg = job.Types.state.Types.va_arg;
 		va_arg_map = job.Types.state.Types.va_arg_map;
 		block_to_bytes = job.Types.state.Types.block_to_bytes;
@@ -114,6 +116,7 @@ let get_job multijob = match multijob.processes with
 			Types.locals = process.locals;
 			Types.callstack = process.callstack;
 			Types.callContexts = process.callContexts;
+			Types.stmtPtrs = process.stmtPtrs;
 			Types.va_arg = process.va_arg;
 			Types.va_arg_map = process.va_arg_map;
 			Types.block_to_bytes = update_from_shared_memory multijob.shared.shared_block_to_bytes process.block_to_bytes;

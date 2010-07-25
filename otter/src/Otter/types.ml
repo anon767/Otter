@@ -68,6 +68,7 @@ and state =
 				is [Runtime]. Other than that, the nth element of callstack is
 				the fundec called by the [Instr] at the nth position in
 				callContexts. *)
+		stmtPtrs : callingContext Utility.IndexMap.t;     (* Pointers into code.  Used for longjump. *)
 		
 		va_arg : bytes list list;			(* A stack of va_arg *)
 		va_arg_map : bytes list VargsMap.t;
