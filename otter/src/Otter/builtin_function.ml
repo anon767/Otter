@@ -694,7 +694,6 @@ let libc_longjmp job retopt exps =
 		| [Lval cil_lval; value]
 		| [CastE (_, Lval cil_lval); value] ->
 		begin
-			Output.print_endline (To_string.exp (Lval cil_lval));
 			let state = job.state in
 
 			(* get the return value to send to setjmp *)
@@ -832,9 +831,6 @@ let interceptor job job_queue interceptor =
 		(intercept_function_by_name_internal "__CURRENT_STATE"         otter_current_state) @@
 		(intercept_function_by_name_internal "__COMPARE_STATE"         otter_compare_state) @@
 		(intercept_function_by_name_internal "__ASSERT_EQUAL_STATE"    otter_assert_equal_state) @@
-
-		(intercept_function_by_name_internal "__libc_setjmp"           libc_setjmp) @@		
-		(intercept_function_by_name_internal "__libc_longjmp"          libc_longjmp) @@
 
 		(* pass on the job when none of those match *)
 		interceptor
