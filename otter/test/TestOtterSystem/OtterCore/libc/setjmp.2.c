@@ -1,6 +1,6 @@
 #include <setjmp.h>
 
-void foo()
+void foo(jmp_buf ev)
 {
 	longjmp(ev, 1);
 }
@@ -8,10 +8,11 @@ void foo()
 int main()
 {
 	jmp_buf ev;
-	if (setjmp(ev))
+	int i = setjmp(ev);
+	if (i)
 		return (0);
 	else
-		foo();
+		foo(ev);
 	
 	__ASSERT(0); /* should jump away from this */
 	return (0);

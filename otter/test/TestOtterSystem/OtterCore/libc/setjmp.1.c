@@ -7,7 +7,7 @@ int main()
 		return (0);
 	else
 		longjmp(ev, 1);
-	
+
 	__ASSERT(0); /* should jump away from this */
 	return (0);
 }

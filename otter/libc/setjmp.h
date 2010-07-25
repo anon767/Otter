@@ -14,8 +14,8 @@
  * Cil structures necessary to complete to jump.
  */
 
-#define setjmp(e) (e)[0].s = __builtin_alloca(sizeof(int)); \
-	__libc_setjmp((e)[0].s)
+#define setjmp(e) ((e)[0].s = __builtin_alloca(sizeof(int)), \
+	__libc_setjmp((e)[0].s))
 
 struct __libc_jup_buf
 {
@@ -30,6 +30,7 @@ void __libc_longjmp(jmp_buf environment, int value);
 void longjmp(jmp_buf environment, int value)
 {
 	__libc_longjmp(environment[0].s, value ? value : 1);
+	exit();
 }
 
 #endif

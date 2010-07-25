@@ -10,9 +10,9 @@ int main()
 	else
 	{
 		if(setjmp(ev[1]))
-			longjmp(ev[i%2]);
-		else
 			i = 0;
+		else
+			longjmp(ev[__SYMBOLIC()%2], 1);
 	}
 	
 	__ASSERT(i == 0);

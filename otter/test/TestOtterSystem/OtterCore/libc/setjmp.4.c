@@ -1,6 +1,7 @@
 #include <setjmp.h>
 
 int i;
+jmp_buf ev;
 
 void bar()
 {
@@ -16,7 +17,6 @@ void foo()
 int main()
 {
 	i = __SYMBOLIC();
-	jmp_buf ev;
 	if (setjmp(ev))
 		i = 0;
 	else

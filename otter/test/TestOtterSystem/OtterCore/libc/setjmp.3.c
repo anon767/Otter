@@ -1,6 +1,7 @@
 #include <setjmp.h>
 
 int i;
+jmp_buf ev;
 
 int bar(int i)
 {
@@ -16,10 +17,11 @@ void foo()
 int main()
 {
 	i = 0;
-	jmp_buf ev;
 	if (setjmp(ev))
+	{
 		__ASSERT(i == 0);
 		return (0);
+	}
 	else
 		foo();
 	

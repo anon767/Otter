@@ -664,7 +664,6 @@ let intercept_symbolic job job_queue interceptor =
 			interceptor job job_queue
 
 let libc_setjmp job retopt exps =
-	Output.print_endline (To_string.exp (List.hd exps));
 	match exps with
 		| [Lval cil_lval]
 		| [CastE (_, Lval cil_lval)] ->
@@ -691,11 +690,11 @@ let libc_setjmp job retopt exps =
 		| _ -> failwith "setjmp invalid arguments"
 
 let libc_longjmp job retopt exps =
-	Output.print_endline (To_string.exp (List.hd exps));
 	match exps with
 		| [Lval cil_lval; value]
 		| [CastE (_, Lval cil_lval); value] ->
 		begin
+			Output.print_endline (To_string.exp (Lval cil_lval));
 			let state = job.state in
 
 			(* get the return value to send to setjmp *)
@@ -738,11 +737,16 @@ let libc_longjmp job retopt exps =
 
 				(* find correct stack frame to jump to *)
 				let rec unwind_stack state =
-					try
-						let state, _ = Eval.lval state cil_lval in
-						unwind_stack (MemOp.state__end_fcall state)
-					with
-						| _ -> state
+					match retopt with
+						| None -> (* try to use sentinal value to find stack fram by detecting when it is missing *)
+							(try
+								let state, _ = MemOp.state__deref state lval in
+								unwind_stack (MemOp.state__end_fcall state)
+							with | _ -> state)
+						| Some _ -> (* try to use return lval to find stack frame by detecting when it appears *)
+							(try
+								set_return_value state retopt bytes__zero
+							with | _ -> unwind_stack (MemOp.state__end_fcall state))
 				in
 				let state = unwind_stack state in
 
@@ -829,6 +833,9 @@ let interceptor job job_queue interceptor =
 		(intercept_function_by_name_internal "__COMPARE_STATE"         otter_compare_state) @@
 		(intercept_function_by_name_internal "__ASSERT_EQUAL_STATE"    otter_assert_equal_state) @@
 
+		(intercept_function_by_name_internal "__libc_setjmp"           libc_setjmp) @@		
+		(intercept_function_by_name_internal "__libc_longjmp"          libc_longjmp) @@
+
 		(* pass on the job when none of those match *)
 		interceptor
 
@@ -861,7 +868,7 @@ let libc_interceptor job job_queue interceptor =
 
 		(* setjmp.h *)
 		(intercept_function_by_name_internal "__libc_setjmp"           libc_setjmp) @@		
-		(intercept_function_by_name_internal "__libc_longjmp"          libc_setjmp) @@
+		(intercept_function_by_name_internal "__libc_longjmp"          libc_longjmp) @@
 
 		(* pass on the job when none of those match *)
 		interceptor
