@@ -30,5 +30,10 @@ int main()
 
 	__ASSERT(((unsigned long) (ULONG_MAX + 1)) < (unsigned long) ULONG_MAX);
 
+	__ASSERT(((long long) (LLONG_MAX + 1)) < (long long) LLONG_MAX);
+	__ASSERT(((long long) (LLONG_MIN - 1)) > (long long) LLONG_MIN);
+
+	__ASSERT(((unsigned long long) (ULONG_MAX + 1)) < (unsigned long long) ULONG_MAX);
+
 	return (0);
 }
