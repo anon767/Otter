@@ -16,7 +16,7 @@ let test_coverage content ?label tracked_fns test =
 			Executeargs.run_args.Executeargs.arg_fns <-
 				List.fold_left (fun a f -> StringSet.add f a) Executeargs.run_args.Executeargs.arg_fns tracked_fns;
 		end
-		begin fun file results ->
+		begin fun results ->
 			(* figure out the coverage *)
 			let (all_edges, all_blocks, all_lines) = List.fold_left begin fun (edges, blocks, lines) result ->
 				match result with
@@ -42,7 +42,7 @@ let test_coverage content ?label tracked_fns test =
 			let all_lines_count = LineSet.cardinal all_lines in
 
 			(* finally run the test *)
-			test file results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count
+			test results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count
 		end
 
 (* assert_equal helper with a descriptive error message *)
@@ -59,7 +59,7 @@ let simple_coverage_testsuite = "Simple" >::: [
             return 0; /* 1 */
         }
     " ["main"]
-    begin fun file results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
+    begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
         assert_blocks_count 1 all_blocks_count
     end;
 
@@ -74,7 +74,7 @@ let simple_coverage_testsuite = "Simple" >::: [
             return i;  /* 3 */
         }
     " ["main"]
-    begin fun file results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
+    begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
         assert_blocks_count 3 all_blocks_count
     end;
 ]
@@ -87,7 +87,7 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
             return 0; /* 3 */
         }
     " ["main"; "foo"]
-    begin fun file results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
+    begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
         assert_blocks_count 3 all_blocks_count
     end;
 
@@ -100,7 +100,7 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
             return 0; /* 3 */
         }
     " ["main"; "foo"]
-    begin fun file results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
+    begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
         assert_blocks_count 3 all_blocks_count
     end;
 
@@ -113,7 +113,7 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
             return 0; /* 5 */
         }
     " ["main"; "foo"; "bar"]
-    begin fun file results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
+    begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
         assert_blocks_count 5 all_blocks_count
     end;
 
@@ -129,7 +129,7 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
             return 0; /* 5 */
         }
     " ["main"; "foo"; "bar"]
-    begin fun file results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
+    begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
         assert_blocks_count 5 all_blocks_count
     end;
 
@@ -141,7 +141,7 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
             return 0; /* 5 */
         }
     " ["main"; "foo"; "bar"]
-    begin fun file results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
+    begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
         assert_blocks_count 5 all_blocks_count
     end;
 ]
@@ -168,7 +168,7 @@ let function_pointers_coverage_testsuite = "Function pointers" >::: [
 		return 0;
 	}
     " ["main"; "foo0"; "foo1"; "foo2"; "foo3"]
-    begin fun file results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
+    begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
         assert_blocks_count 7 all_blocks_count
     end;
 
@@ -194,7 +194,7 @@ let function_pointers_coverage_testsuite = "Function pointers" >::: [
 		return 0;
 	}
     " ["main"; "foo0"; "foo1"; "foo2"; "foo3"]
-    begin fun file results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
+    begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
         assert_blocks_count 7 all_blocks_count
     end;
 
@@ -220,7 +220,7 @@ let function_pointers_coverage_testsuite = "Function pointers" >::: [
 		return 0;
 	}
     " ["main"; "foo0"; "foo1"; "foo2"; "foo3"]
-    begin fun file results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
+    begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
         assert_blocks_count 6 all_blocks_count
     end;
 
@@ -243,7 +243,7 @@ let function_pointers_coverage_testsuite = "Function pointers" >::: [
 		return 0;
 	}
     " ["main"; "foo0"; "foo1"]
-    begin fun file results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
+    begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
         assert_blocks_count 5 all_blocks_count
     end;
 ]

@@ -18,7 +18,7 @@ let command_line_testsuite = "Command Line" >::: [
             __ASSERT(argv[0][0] == 'a');
             return 0;
         }"
-        begin fun file results ->
+        begin fun results ->
             ()
         end;
 
@@ -31,7 +31,7 @@ let command_line_testsuite = "Command Line" >::: [
             __ASSERT(argv[1][0] == 'b');
             return 0;
         }"
-        begin fun file results ->
+        begin fun results ->
             ()
         end;
 ]
@@ -42,7 +42,7 @@ let exit_code_testsuite = "Exit Code" >::: [
         "int main(void) {
             return 0;
         }"
-        begin fun file results ->
+        begin fun results ->
             assert_match begin fun [ Return (Some actual, _) ] ->
                 assert_equal ~cmp:bytes__equal bytes__zero actual
             end results
@@ -54,7 +54,7 @@ let exit_code_testsuite = "Exit Code" >::: [
             exit(0);
             return 1;
         }"
-        begin fun file results ->
+        begin fun results ->
             assert_match begin fun [ Exit (Some actual, _) ] ->
                 assert_equal ~cmp:bytes__equal bytes__zero actual
             end results
@@ -66,7 +66,7 @@ let exit_code_testsuite = "Exit Code" >::: [
             exit();
             return 1;
         }"
-        begin fun file results ->
+        begin fun results ->
             assert_match begin fun [ Exit (None, _) ] ->
                 ()
             end results

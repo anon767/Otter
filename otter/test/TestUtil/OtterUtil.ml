@@ -19,7 +19,7 @@ let test_otter_on_file
         ?(main_loop=Driver.init)
         ?(command_line=[])
         ?(has_failing_assertions=false)
-        test =
+        (test : Types.job_completion list -> unit) =
     fun () ->
         (* reset the error flag and suppress all output from the symbolic executor *)
         Errormsg.hadErrors := false;
@@ -44,7 +44,7 @@ let test_otter_on_file
             assert_string log;
 
         (* then, run the given test *)
-        test file results;
+        test results;
 
         (* finally, test if assertions passed *)
         if has_failing_assertions then

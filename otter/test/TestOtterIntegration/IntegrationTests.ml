@@ -14,7 +14,7 @@ let test_integration main_loop dir =
     dir >: test_dir fulldir begin fun path ->
         let fullpath = Filename.concat fulldir path in
 
-        path >:: test_otter_on_file fullpath ~main_loop begin fun file results ->
+        path >:: test_otter_on_file fullpath ~main_loop begin fun results ->
             (* count jobs that were abandoned *)
             let abandoned = List.fold_left begin fun abandoned result -> match result with
                 | Types.Abandoned (s, loc, _) -> (loc.Cil.file, loc.Cil.line, s)::abandoned

@@ -37,7 +37,7 @@ let direct_calls_testsuite = "Direct calls" >:::
     *)
     let test_function_calls content ?label match_globals =
         test_otter_core content ?label
-            begin fun file results -> match results with
+            begin function
                 | [ Return (exit_opt, result) ] ->
                     (* make sure that the call stack has only main() on it *)
                     assert_equal
@@ -62,7 +62,7 @@ let direct_calls_testsuite = "Direct calls" >:::
                             | _::tail ->
                                 find tail
                         in
-                        find file.Cil.globals
+                        find result.Types.result_file.Cil.globals
                     end ([], []) match_globals in
 
                     if not_found <> [] then
@@ -82,7 +82,7 @@ let direct_calls_testsuite = "Direct calls" >:::
 
                     (* check that the right number of global variables and variables in main() are allocated *)
                     let module VarInfoSet = Set.Make (struct type t = Cil.varinfo let compare = Pervasives.compare end) in
-                    let var_set = Cil.foldGlobals file begin fun var_set global -> match global with
+                    let var_set = Cil.foldGlobals result.Types.result_file begin fun var_set global -> match global with
                         | Cil.GVarDecl (v, _)
                         | Cil.GVar (v, _, _) when not (Cil.isFunctionType v.Cil.vtype) ->
                             VarInfoSet.add v var_set
@@ -353,7 +353,7 @@ let undefined_calls_testsuite = "Undefined calls" >:::
     *)
     let test_undefined_calls content ?label name =
         test_otter_core content ?label
-            begin fun file completed -> match completed with
+            begin function
                 | [ Abandoned (msg, loc, result) ] when msg = "Function "^name^" not found." ->
                     ()
                 | [ Abandoned (msg, loc, result) ] ->

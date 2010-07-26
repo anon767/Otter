@@ -9,7 +9,7 @@ let test_bounds content ?label ?(mergePaths=false) ?has_failing_assertions test 
         ~setup:(fun _ -> Executeargs.run_args.Executeargs.arg_merge_paths <- mergePaths)
         ?main_loop:(if mergePaths then Some PathMerging.init else None)
         ?has_failing_assertions
-        (fun _ results -> test results)
+        test
 
 
 (* Baseline testing function *)

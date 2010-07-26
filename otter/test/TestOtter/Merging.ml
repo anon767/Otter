@@ -9,7 +9,7 @@ let test_merging content ?label test =
     test_otter content ?label
         ~setup:(fun _ -> Executeargs.run_args.Executeargs.arg_merge_paths <- true)
         ~main_loop:PathMerging.init
-        begin fun file results ->
+        begin fun results ->
             (* count jobs that were merged *)
             let truncated, other = List.partition (function Types.Truncated _ -> true | _ -> false) results in
             let truncated_count = List.length truncated in
@@ -29,7 +29,7 @@ let test_merging content ?label test =
             end;
 
             (* finally run the test *)
-            test file truncated truncated_count other other_count
+            test truncated truncated_count other other_count
         end
 
 (* assert_equal helper with a descriptive error message *)
@@ -55,7 +55,7 @@ let one_branch_testsuite = "One branch" >::: [
             } /* merge:1 */
             return 0;
         }
-    " begin fun file truncated truncated_count other other_count ->
+    " begin fun truncated truncated_count other other_count ->
         assert_job_count (1, 1) (truncated_count, other_count)
     end;
 ]
@@ -80,7 +80,7 @@ let two_branches_testsuite = "Two branches" >::: [
             } /* merge:2 */
             return 0;
         }
-    " begin fun file truncated truncated_count other other_count ->
+    " begin fun truncated truncated_count other other_count ->
         assert_job_count (2, 1) (truncated_count, other_count)
     end;
 
@@ -102,7 +102,7 @@ let two_branches_testsuite = "Two branches" >::: [
             } /* merge:2 */
             return 0;
         }
-    " begin fun file truncated truncated_count other other_count ->
+    " begin fun truncated truncated_count other other_count ->
         assert_job_count (2, 1) (truncated_count, other_count)
     end;
 
@@ -124,7 +124,7 @@ let two_branches_testsuite = "Two branches" >::: [
             } /* merge:2 */
             return 0;
         }
-    " begin fun file truncated truncated_count other other_count ->
+    " begin fun truncated truncated_count other other_count ->
         assert_job_count (2, 1) (truncated_count, other_count)
     end;
 
@@ -146,7 +146,7 @@ let two_branches_testsuite = "Two branches" >::: [
             } /* merge:2 */
             return 0;
         }
-    " begin fun file truncated truncated_count other other_count ->
+    " begin fun truncated truncated_count other other_count ->
         assert_job_count (2, 1) (truncated_count, other_count)
     end;
 ]
@@ -186,7 +186,7 @@ let many_branches_testsuite = "Many branches" >::: [
             }
             return 0;
         }
-    " begin fun file truncated truncated_count other other_count ->
+    " begin fun truncated truncated_count other other_count ->
         assert_job_count (5, 1) (truncated_count, other_count)
     end;
 ]
@@ -223,7 +223,7 @@ let aliasing_testsuite = "Aliasing" >::: [
 
             return 0;
         }
-    " begin fun file truncated truncated_count other other_count ->
+    " begin fun truncated truncated_count other other_count ->
         ()
     end;
 
@@ -253,7 +253,7 @@ let aliasing_testsuite = "Aliasing" >::: [
 
             return 0;
         }
-    " begin fun file truncated truncated_count other other_count ->
+    " begin fun truncated truncated_count other other_count ->
         ()
     end;
 
@@ -280,7 +280,7 @@ let aliasing_testsuite = "Aliasing" >::: [
             }
             return 0;
         }
-    " begin fun file truncated truncated_count other other_count ->
+    " begin fun truncated truncated_count other other_count ->
         ()
     end;
 
@@ -305,7 +305,7 @@ let aliasing_testsuite = "Aliasing" >::: [
 			}
             return 0;
         }
-    " begin fun file truncated truncated_count other other_count ->
+    " begin fun truncated truncated_count other other_count ->
         ()
     end;
 
@@ -341,7 +341,7 @@ let aliasing_testsuite = "Aliasing" >::: [
 
             return 0;
         }
-    " begin fun file truncated truncated_count other other_count ->
+    " begin fun truncated truncated_count other other_count ->
         ()
     end;
 
@@ -381,7 +381,7 @@ let aliasing_testsuite = "Aliasing" >::: [
 
             return 0;
         }
-    " begin fun file truncated truncated_count other other_count ->
+    " begin fun truncated truncated_count other other_count ->
         ()
     end;
 ]
@@ -390,6 +390,6 @@ let testsuite = "Merging" >::: [
     one_branch_testsuite;
     two_branches_testsuite;
     many_branches_testsuite;
-	aliasing_testsuite
+    aliasing_testsuite;
 ]
 
