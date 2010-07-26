@@ -795,6 +795,24 @@ let libc_longjmp job retopt exps =
 		| _ -> failwith "longjmp invalid arguments"
 
 
+let libc_get_block_size = wrap_state_function begin fun state retopt exps ->
+	match exps with
+		| [Lval cil_lval]
+		| [CastE (_, Lval cil_lval)] 
+		| [AddrOf (_, NoOffset as cil_lval)]
+		| [CastE (_, AddrOf (_, NoOffset as cil_lval))]->
+			let state, bytes = Eval.rval state (Lval cil_lval) in
+			let lvals = Eval.deref state bytes in
+			let size = make_Bytes_Conditional (conditional__map 
+				~test:(Stp.query_guard state.path_condition) 
+				(fun (x, y) -> Unconditional (int_to_bytes x.memory_block_size)) 
+				lvals)
+			in
+			set_return_value state retopt size
+		| _ -> failwith "libc_get_block_size invalid arguments"
+end
+
+
 let interceptor job job_queue interceptor =
 	try
 		(
@@ -812,7 +830,7 @@ let interceptor job job_queue interceptor =
 		(try_with_job_abandoned_interceptor
 		(intercept_function_by_name_internal "memset"                  libc_memset)) @@
 		(intercept_function_by_name_internal "memset__concrete"        libc_memset) @@
-		(intercept_function_by_name_internal "exit"                    libc_exit) @@
+		(intercept_function_by_name_internal "_exit"                   libc_exit) @@
 		(intercept_function_by_name_internal "__TRUTH_VALUE"           otter_truth_value) @@
 		(intercept_function_by_name_internal "__GIVEN"                 otter_given) @@
 		(intercept_function_by_name_internal "__EVAL"                  otter_evaluate) @@
@@ -831,6 +849,27 @@ let interceptor job job_queue interceptor =
 		(intercept_function_by_name_internal "__CURRENT_STATE"         otter_current_state) @@
 		(intercept_function_by_name_internal "__COMPARE_STATE"         otter_compare_state) @@
 		(intercept_function_by_name_internal "__ASSERT_EQUAL_STATE"    otter_assert_equal_state) @@
+
+		(intercept_function_by_name_external "isspace"                 "__otter_libc_isspace") @@
+		(intercept_function_by_name_external "calloc"                  "__otter_libc_calloc") @@
+		(intercept_function_by_name_external "realloc"                 "__otter_libc_realloc") @@
+		(intercept_function_by_name_internal "__libc_get_block_size"   libc_get_block_size) @@
+		(intercept_function_by_name_external "atoi"                    "__otter_libc_atoi") @@
+		(intercept_function_by_name_external "atol"                    "__otter_libc_atol") @@
+		(intercept_function_by_name_external "atoll"                   "__otter_libc_atoll") @@
+		(intercept_function_by_name_external "strtol"                  "__otter_libc_strtol") @@
+		(intercept_function_by_name_external "strtoll"                 "__otter_libc_strtoll") @@
+		(intercept_function_by_name_external "strtoul"                 "__otter_libc_strtoul") @@
+		(intercept_function_by_name_external "strtoull"                "__otter_libc_strtoull") @@
+		(intercept_function_by_name_external "rand"                    "__otter_libc_rand") @@
+		(intercept_function_by_name_external "srand"                   "__otter_libc_srand") @@
+		(intercept_function_by_name_external "abort"                   "__otter_libc_abort") @@
+		(intercept_function_by_name_external "atexit"                  "__otter_libc_atexit") @@
+		(intercept_function_by_name_external "exit"                    "__otter_libc_exit") @@
+		(intercept_function_by_name_external "_Exit"                   "__otter_libc__Exit") @@
+		(intercept_function_by_name_external "getenv"                   "__otter_libc_getenv") @@
+		(intercept_function_by_name_external "system"                   "__otter_libc_system") @@
+		(intercept_function_by_name_external "__libc_failwith"         "__otter_libc_failwith") @@
 
 		(* pass on the job when none of those match *)
 		interceptor
@@ -865,6 +904,28 @@ let libc_interceptor job job_queue interceptor =
 		(* setjmp.h *)
 		(intercept_function_by_name_internal "__libc_setjmp"           libc_setjmp) @@		
 		(intercept_function_by_name_internal "__libc_longjmp"          libc_longjmp) @@
+
+		(* stdlib.h *)
+		(intercept_function_by_name_external "atoi"                    "__otter_libc_atoi") @@
+		(intercept_function_by_name_external "atol"                    "__otter_libc_atol") @@
+		(intercept_function_by_name_external "atoll"                   "__otter_libc_atoll") @@
+		(intercept_function_by_name_external "strtol"                  "__otter_libc_strtol") @@
+		(intercept_function_by_name_external "strtoll"                 "__otter_libc_strtoll") @@
+		(intercept_function_by_name_external "strtoul"                 "__otter_libc_strtoul") @@
+		(intercept_function_by_name_external "strtoull"                "__otter_libc_strtoull") @@
+		(intercept_function_by_name_external "rand"                    "__otter_libc_rand") @@
+		(intercept_function_by_name_external "srand"                   "__otter_libc_srand") @@
+		(intercept_function_by_name_internal "malloc"                  libc_malloc) @@
+		(intercept_function_by_name_external "calloc"                  "__otter_libc_calloc") @@
+		(intercept_function_by_name_external "realloc"                 "__otter_libc_realloc") @@
+		(intercept_function_by_name_internal "free"                    libc_free) @@
+		(intercept_function_by_name_internal "__libc_get_block_size"   libc_get_block_size) @@
+		(intercept_function_by_name_external "abort"                   "__otter_libc_abort") @@
+		(intercept_function_by_name_external "atexit"                  "__otter_libc_atexit") @@
+		(intercept_function_by_name_external "exit"                    "__otter_libc_exit") @@
+		(intercept_function_by_name_external "_Exit"                   "__otter_libc__Exit") @@
+		(intercept_function_by_name_external "getenv"                   "__otter_libc_getenv") @@
+		(intercept_function_by_name_external "system"                   "__otter_libc_system") @@
 
 		(* pass on the job when none of those match *)
 		interceptor

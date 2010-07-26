@@ -1,5 +1,5 @@
-#ifndef _STDARG_H
-#define _STDARG_H
+#ifndef _STDDEF_H
+#define _STDDEF_H
 
 #define NULL 0
 #define offsetof(x, y) offsetof(x, y)

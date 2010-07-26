@@ -51,7 +51,7 @@ let exit_code_testsuite = "Exit Code" >::: [
     test_otter
         ~label:"exit(0) from main"
         "int main(void) {
-            exit(0);
+            _exit(0);
             return 1;
         }"
         begin fun results ->
@@ -63,7 +63,7 @@ let exit_code_testsuite = "Exit Code" >::: [
     test_otter
         ~label:"exit() from main"
         "int main(void) {
-            exit();
+            _exit();
             return 1;
         }"
         begin fun results ->
