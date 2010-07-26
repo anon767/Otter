@@ -176,6 +176,7 @@ type job = {
 }
 
 type job_result = {
+	result_file : Cil.file;
 	result_state : state;
 	result_history : executionHistory;
 }

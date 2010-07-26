@@ -137,7 +137,7 @@ let terminate_job_at_targets targets job =
 				let msg = Printf.sprintf "Job %d hits the failing condition" job.jid in
 				if run_args.arg_failfast then failwith msg;
 				let state = { job.state with path_condition = failing_condition::job.state.path_condition } in
-				let result = { result_state = state; result_history = job.exHist } in
+				let result = { result_file = job.Types.file; result_state = state; result_history = job.exHist } in
 				Some (Complete (Types.Abandoned (msg, loc, result)))
 			end
 		| _ ->

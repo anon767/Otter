@@ -145,6 +145,7 @@ http://caml.inria.fr/pub/ml-archives/caml-list/2009/08/323bd4f55773e4a230d481aec
 			} in
 			let truncated = Complete (Truncated (
 				{
+					result_file = job.file;
 					result_state = job.state;
 					result_history = { job.exHist with
 						coveredLines = jobOnlyLines;
@@ -154,6 +155,7 @@ http://caml.inria.fr/pub/ml-archives/caml-list/2009/08/323bd4f55773e4a230d481aec
 					}
 				},
 				{
+					result_file = job.file;
 					result_state = other.state;
 					result_history = { other.exHist with
 						coveredLines = otherOnlyLines;

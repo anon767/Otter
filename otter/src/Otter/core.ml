@@ -186,7 +186,7 @@ let exec_instr_call job instr lvalopt fexp exps =
 						(exec_fundec job state instr fundec lvalopt exps)
 					with Failure msg ->
 						if run_args.arg_failfast then failwith msg;
-						let result = { result_state = state; result_history = exHist } in
+						let result = { result_file = job.file; result_state = state; result_history = exHist } in
 						Complete (Types.Abandoned (msg, get_job_loc job, result))
 				in
 				job_state::(process_func_list t)
@@ -293,7 +293,7 @@ let exec_stmt job =
 										(state, Some retval)
 								in
 								Complete (Types.Return
-									(retval, { result_state = state; result_history = nextExHist None; }))
+									(retval, { result_file = job.file; result_state = state; result_history = nextExHist None; }))
 						| (Source (destOpt,callStmt,_,nextStmt))::_ ->
 								let state2 =
 									match expopt, destOpt with
@@ -475,5 +475,5 @@ let step job job_queue =
 	with
 		| Failure msg ->
 			if run_args.arg_failfast then failwith msg;
-			let result = { result_state = job.state; result_history = job.exHist } in
+			let result = { result_file = job.file; result_state = job.state; result_history = job.exHist } in
 			(Complete (Types.Abandoned (msg, get_job_loc job, result)), job_queue)

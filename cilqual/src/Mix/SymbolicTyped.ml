@@ -72,7 +72,11 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
             Types.malloc=Types.VarinfoMap.empty;
         } in
 
-        [ (Types.Return (retopt, { Types.result_state=state; Types.result_history=job.Types.exHist }), None) ]
+        [ (Types.Return (retopt, {
+                Types.result_file=job.Types.file;
+                Types.result_state=state;
+                Types.result_history=job.Types.exHist;
+            }), None) ]
 
 
     let switch dispatch stack file job fn loc state expState context k =
@@ -94,7 +98,11 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
                 in
 
                 if block_errors != [] then begin
-                    let result = { Types.result_state = job.Types.state; Types.result_history = job.Types.exHist } in
+                    let result = {
+                        Types.result_file=job.Types.file;
+                        Types.result_state = job.Types.state;
+                        Types.result_history = job.Types.exHist;
+                    } in
                     let msg = "Block errors returning from SymbolicTyped at " ^ fn.Cil.svar.Cil.vname in
                     k stack [ (Types.Abandoned (msg, loc, result),
                                Some (msg, loc, `SymbolicTypedError (result, block_errors))) ]
@@ -113,7 +121,11 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
                          * unsatisfiable; report as block errors and bail *)
 
                         (* TODO: need a better mechanism for explaining errors *)
-                        let result = { Types.result_state = job.Types.state; Types.result_history = job.Types.exHist } in
+                        let result = {
+                            Types.result_file=job.Types.file;
+                            Types.result_state = job.Types.state;
+                            Types.result_history = job.Types.exHist;
+                        } in
                         let explanation = DiscreteSolver.explain solution in
                         Format.fprintf Format.str_formatter
                             "Unsatisfiable solution returning from SymbolicTyped at %s:@\n  @[%a@]"
@@ -182,7 +194,11 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
         (* TODO: need a better mechanism for explaining errors *)
         if DiscreteSolver.Solution.is_unsatisfiable context then begin
             (* don't switch; it'll return an error anyway *)
-            let result = { Types.result_state = job.Types.state; Types.result_history = job.Types.exHist } in
+            let result = {
+                Types.result_file=job.Types.file;
+                Types.result_state = job.Types.state;
+                Types.result_history = job.Types.exHist;
+            } in
             let explanation = DiscreteSolver.explain context in
             Format.fprintf Format.str_formatter
                 "Unsatisfiable solution for context entering SymbolicTyped at %s:@\n  @[%a@]"
