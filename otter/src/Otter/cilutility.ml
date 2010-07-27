@@ -105,6 +105,7 @@ let get_file_memotables file =
 		let varinfo_to_fundec = Hashtbl.create 100 in
 		let varinfo_to_varinit = Hashtbl.create 100 in
 		let name_to_fundec = Hashtbl.create 100 in
+		let name_to_global_varinfo = Hashtbl.create 100 in
 
 		Cil.iterGlobals file begin function
 			| GFun(fundec,_) ->
@@ -112,47 +113,61 @@ let get_file_memotables file =
 				Hashtbl.add name_to_fundec fundec.svar.vname fundec;
 			| GVar(varinfo,initinfo,_) ->
 				Hashtbl.add varinfo_to_varinit varinfo initinfo;
+				Hashtbl.add name_to_global_varinfo varinfo.vname varinfo;
 			| GVarDecl(varinfo,_) ->
 				Hashtbl.add varinfo_to_varinit varinfo { init=None };
+				Hashtbl.add name_to_global_varinfo varinfo.vname varinfo;
 			| _ -> ()
 		end;
 
-		let memotables = (varinfo_to_fundec, varinfo_to_varinit, name_to_fundec) in
+		let memotables = object
+			method varinfo_to_fundec = varinfo_to_fundec
+			method varinfo_to_varinit = varinfo_to_varinit
+			method name_to_fundec = name_to_fundec
+			method name_to_global_varinfo = name_to_global_varinfo
+		end in
 		Hashtbl.add file_memotables file memotables;
 		memotables
 
 
-(** Find a [Cil.fundec] by [Cil.varinfo] from a [Cil.file].
-		@param file the [Cil.file] to find the [Cil.fundec] in
-		@param varinfo the [Cil.varinfo] of the [Cil.fundec] to find
-		@return the [Cil.fundec]
-		@raise Not_found if a [Cil.fundec] for [varinfo] does not exist in [file]
+(** Find a {!Cil.fundec} by {!Cil.varinfo} from a {!Cil.file}.
+		@param file the {!Cil.file} to find the {!Cil.fundec} in
+		@param varinfo the {!Cil.varinfo} of the {!Cil.fundec} to find
+		@return the {!Cil.fundec}
+		@raise Not_found if a {!Cil.fundec} for [varinfo] does not exist in [file]
 *)
 let find_fundec_by_varinfo file varinfo =
-	let varinfo_to_fundec, _, _ = get_file_memotables file in
-	Hashtbl.find varinfo_to_fundec varinfo
+	Hashtbl.find (get_file_memotables file)#varinfo_to_fundec varinfo
 
 
-(** Find the [Cil.initinfo] for a [Cil.varinfo] from a [Cil.file].
-		@param file the [Cil.file] to find the [Cil.initinfo] in
-		@param varinfo the [Cil.varinfo] of the [Cil.initinfo] to find
-		@return the [Cil.initinfo]
+(** Find the {!Cil.initinfo} for a {!Cil.varinfo} from a {!Cil.file}.
+		@param file the {!Cil.file} to find the {!Cil.initinfo} in
+		@param varinfo the {!Cil.varinfo} of the {!Cil.initinfo} to find
+		@return the {!Cil.initinfo}
 		@raise Not_found if [varinfo] does not exist in [file]
 *)
 let find_varinit file varinfo =
-	let _, varinfo_to_varinit, _ = get_file_memotables file in
-	Hashtbl.find varinfo_to_varinit varinfo
+	Hashtbl.find (get_file_memotables file)#varinfo_to_varinit varinfo
 
 
-(** Find a [Cil.fundec] by name from a [Cil.file].
-		@param file the [Cil.file] to find the [Cil.fundec] in
-		@param name the name of the [Cil.fundec] to find
-		@return the [Cil.fundec]
-		@raise Not_found if a [Cil.fundec] named [name] does not exist in [file]
+(** Find a {!Cil.fundec} by name from a {!Cil.file}.
+		@param file the {!Cil.file} to find the {!Cil.fundec} in
+		@param name the name of the {!Cil.fundec} to find
+		@return the {!Cil.fundec}
+		@raise Not_found if a {!Cil.fundec} named [name] does not exist in [file]
 *)
 let find_fundec_by_name file name =
-	let _, _, name_to_fundec = get_file_memotables file in
-	Hashtbl.find name_to_fundec name
+	Hashtbl.find (get_file_memotables file)#name_to_fundec name
+
+
+(** Find a {!Cil.varinfo} by name from a {!Cil.file}.
+		@param file the {!Cil.file} to find the {!Cil.fundec} in
+		@param name the name of the {!Cil.fundec} to find
+		@return the {!Cil.varinfo}
+		@raise Not_found if a {!Cil.varinfo} named [name] does not exist in [file]
+*)
+let find_global_varinfo_by_name file name =
+	Hashtbl.find (get_file_memotables file)#name_to_global_varinfo name
 
 
 let make_callgraph file : Cil.fundec list FundecMap.t =
