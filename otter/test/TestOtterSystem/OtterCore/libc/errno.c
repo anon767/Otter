@@ -1,3 +1,5 @@
+#pragma no_other_abandoned
+
 #include <errno.h>
 
 int main()

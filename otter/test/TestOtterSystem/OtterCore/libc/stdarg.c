@@ -1,3 +1,5 @@
+#pragma no_other_abandoned
+
 #include <stdarg.h>
 
 int is_sorted(int arg0, ...)
@@ -8,7 +10,7 @@ int is_sorted(int arg0, ...)
 	int i = arg0;
 	int j = -1;
 	int r = 1;
-	
+
 	while(i > -1)
 	{
 		r = r & (i > j);

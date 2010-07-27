@@ -1,3 +1,5 @@
+#pragma no_other_abandoned
+
 #include <ctype.h>
 
 int main()

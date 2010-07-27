@@ -1,3 +1,5 @@
+#pragma no_other_abandoned
+
 #include <setjmp.h>
 
 int i;
@@ -21,7 +23,7 @@ int main()
 		i = 0;
 	else
 		foo();
-	
+
 	__ASSERT(i == 0);
 	return (0);
 }

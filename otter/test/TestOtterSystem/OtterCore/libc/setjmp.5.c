@@ -1,3 +1,5 @@
+#pragma no_other_abandoned
+
 #include <setjmp.h>
 
 int main()
@@ -14,7 +16,7 @@ int main()
 		else
 			longjmp(ev[__SYMBOLIC()%2], 1);
 	}
-	
+
 	__ASSERT(i == 0);
 	return (0);
 }

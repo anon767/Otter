@@ -1,3 +1,5 @@
+#pragma no_other_abandoned
+
 #include <setjmp.h>
 
 int i;
@@ -24,7 +26,7 @@ int main()
 	}
 	else
 		foo();
-	
+
 	__ASSERT(0); /* should jump away from this */
 	return (0);
 }

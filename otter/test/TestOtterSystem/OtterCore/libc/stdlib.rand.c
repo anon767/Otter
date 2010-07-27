@@ -1,3 +1,5 @@
+#pragma no_other_abandoned
+
 #include <stdlib.h>
 
 int main()
@@ -7,6 +9,6 @@ int main()
 
 	__ASSERT(i >= 0);
 	__ASSERT(i < RAND_MAX);
-	
+
 	return(0);
 }
