@@ -196,5 +196,5 @@ let rec list_equal eq x y = match x, y with
     | _ -> false
 
 let list_printer printer sep ff list =
-    ignore (List.fold_left (fun sep x -> Format.fprintf ff "%(%)@[%a@]" sep printer x; sep) "" list)
+    ignore (List.fold_left (fun b x -> Format.fprintf ff "%(%)@[%a@]" b printer x; sep) "" list)
 
