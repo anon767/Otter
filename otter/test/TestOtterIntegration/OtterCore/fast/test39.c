@@ -1,3 +1,4 @@
+#pragma no_other_abandoned
 
 typedef void(*EventHandler)();
 

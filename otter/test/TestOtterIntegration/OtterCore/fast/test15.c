@@ -1,3 +1,5 @@
+#pragma no_other_abandoned
+
 int strlen(char *s) {
 	char *ss = s;
 	while (*ss) {

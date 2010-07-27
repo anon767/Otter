@@ -1,3 +1,5 @@
+#pragma no_other_abandoned
+
 int main(){
 	char c;
 	int i = 2561;

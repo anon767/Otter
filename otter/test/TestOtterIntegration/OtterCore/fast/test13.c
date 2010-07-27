@@ -1,3 +1,5 @@
+#pragma no_other_abandoned
+
 int main(){
 
 	int input1,input2;

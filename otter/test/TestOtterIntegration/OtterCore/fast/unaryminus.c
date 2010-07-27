@@ -1,3 +1,5 @@
+#pragma no_other_abandoned
+
 int main(void) {
     int i, j, k;
     __SYMBOLIC(&i);

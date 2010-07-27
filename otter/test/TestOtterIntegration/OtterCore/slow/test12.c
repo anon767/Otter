@@ -1,3 +1,5 @@
+#pragma no_other_abandoned
+
 int main(){
 	int MAX = 10;
 	int x; //symbolic

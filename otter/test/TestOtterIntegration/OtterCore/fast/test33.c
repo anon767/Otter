@@ -1,3 +1,5 @@
+#pragma no_other_abandoned
+
 void my_sprintf(char *dest, const char *ignored, int n) {
 	if (n == 0) {
 		dest[0] = '0';

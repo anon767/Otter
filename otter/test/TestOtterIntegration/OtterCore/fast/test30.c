@@ -1,3 +1,5 @@
+#pragma no_other_abandoned
+
 int impl(int num,__builtin_va_list s){
 
 	int i;

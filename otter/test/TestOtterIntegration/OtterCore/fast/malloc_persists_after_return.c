@@ -1,4 +1,4 @@
-
+#pragma no_other_abandoned
 
 int* foo() 
 { 

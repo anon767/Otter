@@ -1,3 +1,4 @@
+#pragma no_other_abandoned
 
 int absdiff(int x,int y){
 	if(x<y)

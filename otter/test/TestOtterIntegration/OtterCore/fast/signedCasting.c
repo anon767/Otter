@@ -1,3 +1,5 @@
+#pragma no_other_abandoned
+
 int main() {
 	int x = -1;
 	long long y = x;

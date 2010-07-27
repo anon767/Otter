@@ -1,5 +1,7 @@
 // from EXE paper, related work about CUTE
 
+#pragma no_other_abandoned
+
 typedef unsigned long size_t;
 void * memset(void *b, int c, size_t len);
 

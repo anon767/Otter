@@ -1,3 +1,5 @@
+#pragma no_other_abandoned
+
 struct s
 {
 	int n;

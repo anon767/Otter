@@ -1,3 +1,5 @@
+#pragma no_other_abandoned
+
 int foo0() {return 0;}
 int foo1() {return 1;}
 int foo2() {return 2;}

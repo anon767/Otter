@@ -1,3 +1,5 @@
+#pragma no_other_abandoned
+
 int main(){
 
 	int x,y[100],*z1,*z2;

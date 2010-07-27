@@ -1,3 +1,5 @@
+#pragma no_other_abandoned
+
 typedef unsigned long size_t;
 void * malloc(size_t size);
 void * memset(void *b, int c, size_t len);
