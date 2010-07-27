@@ -963,7 +963,7 @@ let no_other_results_testsuite = "no_other_results" >::: [
             return 0;
         }";
 
-    should_fail_pragma_tests ~label:"Expected no other results before one exit"
+    should_fail_pragma_tests ~label:"Expected no other results before one return"
         "#pragma no_other_results
         #pragma expect_return()
         int main(void) {

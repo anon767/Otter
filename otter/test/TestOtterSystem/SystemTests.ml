@@ -3,7 +3,7 @@ open TestUtil.OtterUtil
 open Otter
 
 
-(* directory containing tests for IntegrationTests *)
+(* directory containing tests for SystemTests *)
 let dir_prefix = Filename.concat "test" "TestOtterSystem"
 
 
