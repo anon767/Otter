@@ -12,6 +12,7 @@ let _ =
         TestOtter.Coverage.testsuite;
         TestOtter.Merging.testsuite;
         TestOtter.BoundsChecking.testsuite;
+        TestOtterPragmaTests.OtterPragmaTestsTests.testsuite;
         TestOtterIntegration.IntegrationTests.testsuite;
         TestOtterSystem.SystemTests.testsuite;
     ] end
