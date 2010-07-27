@@ -260,3 +260,207 @@ int __otter_libc_system(const char* command)
 	else /* report that there is no shell*/
 		return 0;
 }
+
+int __otter_libc_abs(int i)
+{
+	__ASSERT(i != INT_MIN); /* behavior is undefined if the result can't be stored */
+	return (i < 0 ? -i : i);
+}
+
+long __otter_libc_labs(long i)
+{
+	__ASSERT(i != LONG_MIN); /* behavior is undefined if the result can't be stored */
+	return (i < 0 ? -i : i);
+}
+
+long long __otter_libc_llabs(long long i)
+{
+	__ASSERT(i != LLONG_MIN); /* behavior is undefined if the result can't be stored */
+	return (i < 0 ? -i : i);
+}
+
+div_t __otter_libc_div(int p, int q)
+{
+	__ASSERT(q != 0); /* behavior is undefined if the result can't be stored */
+	div_t r;
+	r.quot = p/q;
+	r.rem = p%q;
+	return r;
+}
+
+ldiv_t __otter_libc_ldiv(long p, long q)
+{
+	__ASSERT(q != 0); /* behavior is undefined if the result can't be stored */
+	ldiv_t r;
+	r.quot = p/q;
+	r.rem = p%q;
+	return r;
+}
+
+lldiv_t __otter_libc_lldiv(long long p, long long q)
+{
+	__ASSERT(q != 0); /* behavior is undefined if the result can't be stored */
+	lldiv_t r;
+	r.quot = p/q;
+	r.rem = p%q;
+	return r;
+}
+
+/*********************************************
+ * bsearch and qsort are taken from uclibc with some modifications
+ */
+
+/* the compar(a,b) > 0 iff a > b, < 0 iff a < b, and == 0 iff a == b */
+void* __otter_libc_bsearch(const void* key, const void* base, int nmemb, int size, int (*compar)(const void*, const void*))
+{
+	if(size <= 0) /* Standard says to return NULL if the objects have no size */
+	{
+		return 0;
+	}
+
+	char *p;
+	int high = nmemb;
+	int low = 0;
+	int mid;
+	int r;
+	while (low < high)
+	{
+		mid = low + ((high - low) / 2);
+		p = ((char*)(base)) + (mid * size);
+		r = (*compar)(key, p);
+		if (r > 0) /* search upper half */
+		{
+			low = mid + 1;
+		}
+		else if (r < 0) /* search lower half */
+		{
+			high = mid;
+		}
+		else /* found key */
+		{
+			return p;
+		}
+	}
+
+	return (0); /* didn't find key */
+}
+
+void __otter_libc_qsort(void  *base,
+           int nel,
+           int width,
+           int (*comp)(const void *, const void *))
+{
+	int wgap, i, j, k;
+	char tmp;
+
+	if ((nel > 1) && (width > 0)) {
+		__ASSERT(nel <= ((size_t)(-1)) / width); /* check for overflow */
+		wgap = 0;
+		do {
+			wgap = 3 * wgap + 1;
+		} while (wgap < (nel-1)/3);
+		/* From the above, we know that either wgap == 1 < nel or */
+		/* ((wgap-1)/3 < (int) ((nel-1)/3) <= (nel-1)/3 ==> wgap <  nel. */
+		wgap *= width;			/* So this can not overflow if wnel doesn't. */
+		nel *= width;			/* Convert nel to 'wnel' */
+		do {
+			i = wgap;
+			do {
+				j = i;
+				do {
+					register char *a;
+					register char *b;
+
+					j -= wgap;
+					a = j + ((char *)base);
+					b = a + wgap;
+					if ((*comp)(a, b) <= 0) {
+						break;
+					}
+					k = width;
+					do {
+						tmp = *a;
+						*a++ = *b;
+						*b++ = tmp;
+					} while (--k);
+				} while (j >= wgap);
+				i += width;
+			} while (i < nel);
+			wgap = (wgap - width)/3;
+		} while (wgap);
+	}
+}
+
+/********************************************/
+
+int __otter_libc_mblen(const char* s, int n)
+{
+	if(!s || n <= 0) 
+		return(0); /* encoding is not state dependent; need atleast one character to look at */
+
+	return (*s != 0); /* 0 if end of string, 1 for size of the next multichar */
+}
+
+int __otter_libc_mbtowc(int* pwc, const char* s, int n)
+{
+	if(!s || n <= 0) 
+		return(0); /* encoding is not state dependent; need atleast one character to look at */
+
+	if(pwc)
+		*pwc = (int)(*s);
+
+	return (*s != 0);
+}
+
+int __otter_libc_wctomb(char* s, int wc)
+{
+	if(!s) 
+		return(0); /* encoding is not state dependent */
+
+	if(wc > UCHAR_MAX)
+	{
+		*s = (unsigned char)wc;
+		return(-1); /* not big enough to store wide char */
+	}
+	else
+	{
+		*s = (unsigned char)wc;
+		return(wc != 0); /* stored one byte */
+	}
+}
+
+int __otter_libc_mbstowcs(int* pwcs, const char* s, int n)
+{
+	int r;
+	for(int i = 0; i < n; i++)
+	{
+		r = mbtowc(pwcs, s);
+		if(r == -1)
+			return (-1);
+		else if (r == 0);
+			return (i);
+		
+		pwcs += r;
+		s += r;
+	}
+
+	return (n);
+}
+
+int __otter_libc_wcstombs(char* s, const int* pwcs, int n)
+{
+	int r;
+	for(int i = 0; i < n; i++)
+	{
+		r = wctomb(s, *pwcs);
+		if(r == -1)
+			return (-1);
+		else if (r == 0);
+			return (i);
+		
+		pwcs += r;
+		s += r;
+	}
+
+	return (n);
+}

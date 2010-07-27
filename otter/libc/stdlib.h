@@ -59,5 +59,25 @@ void _Exit(int status);
 char* getenv(const char* name);
 int system(const char* command);
 
+/* Search and Sort (7.20.5) */
+void* bsearch(const void* key, const void* base, int nmemb, int size, int (*compar)(const void*, const void*));
+void qsort(void* base, int nmemb, int size, int (*compar)(const void*, const void*));
+
+/* Integer arithmatic (7.20.6) */
+int abs(int i);
+long labs(long i);
+long long llabs(long long i);
+/* compute p/q and p%q */
+div_t div(int p, int q);
+ldiv_t ldiv(long p, long q);
+lldiv_t lldiv(long long p, long long q);
+
+/* Multibyte <-> wide char conversion functions (7.20.7, 7.20.8) */
+/* No multibyte character codes are defined so these are fancy type casts*/
+int mblen(const char* s, int n);
+int mbtowc(int* pwc, const char* s, int n);
+int wctomb(char* s, int wc);
+int mbstowcs(int* pwcs, const char* s, int n);
+int wcstombs(char* s, const int* pwcs, int n);
 
 #endif

@@ -850,27 +850,6 @@ let interceptor job job_queue interceptor =
 		(intercept_function_by_name_internal "__COMPARE_STATE"         otter_compare_state) @@
 		(intercept_function_by_name_internal "__ASSERT_EQUAL_STATE"    otter_assert_equal_state) @@
 
-		(intercept_function_by_name_external "isspace"                 "__otter_libc_isspace") @@
-		(intercept_function_by_name_external "calloc"                  "__otter_libc_calloc") @@
-		(intercept_function_by_name_external "realloc"                 "__otter_libc_realloc") @@
-		(intercept_function_by_name_internal "__libc_get_block_size"   libc_get_block_size) @@
-		(intercept_function_by_name_external "atoi"                    "__otter_libc_atoi") @@
-		(intercept_function_by_name_external "atol"                    "__otter_libc_atol") @@
-		(intercept_function_by_name_external "atoll"                   "__otter_libc_atoll") @@
-		(intercept_function_by_name_external "strtol"                  "__otter_libc_strtol") @@
-		(intercept_function_by_name_external "strtoll"                 "__otter_libc_strtoll") @@
-		(intercept_function_by_name_external "strtoul"                 "__otter_libc_strtoul") @@
-		(intercept_function_by_name_external "strtoull"                "__otter_libc_strtoull") @@
-		(intercept_function_by_name_external "rand"                    "__otter_libc_rand") @@
-		(intercept_function_by_name_external "srand"                   "__otter_libc_srand") @@
-		(intercept_function_by_name_external "abort"                   "__otter_libc_abort") @@
-		(intercept_function_by_name_external "atexit"                  "__otter_libc_atexit") @@
-		(intercept_function_by_name_external "exit"                    "__otter_libc_exit") @@
-		(intercept_function_by_name_external "_Exit"                   "__otter_libc__Exit") @@
-		(intercept_function_by_name_external "getenv"                   "__otter_libc_getenv") @@
-		(intercept_function_by_name_external "system"                   "__otter_libc_system") @@
-		(intercept_function_by_name_external "__libc_failwith"         "__otter_libc_failwith") @@
-
 		(* pass on the job when none of those match *)
 		interceptor
 
@@ -924,8 +903,19 @@ let libc_interceptor job job_queue interceptor =
 		(intercept_function_by_name_external "atexit"                  "__otter_libc_atexit") @@
 		(intercept_function_by_name_external "exit"                    "__otter_libc_exit") @@
 		(intercept_function_by_name_external "_Exit"                   "__otter_libc__Exit") @@
-		(intercept_function_by_name_external "getenv"                   "__otter_libc_getenv") @@
-		(intercept_function_by_name_external "system"                   "__otter_libc_system") @@
+		(intercept_function_by_name_external "getenv"                  "__otter_libc_getenv") @@
+		(intercept_function_by_name_external "system"                  "__otter_libc_system") @@
+		(intercept_function_by_name_external "bsearch"                 "__otter_libc_bsearch") @@
+		(intercept_function_by_name_external "qsort"                   "__otter_libc_qsort") @@
+		(intercept_function_by_name_external "abs"                     "__otter_libc_abs") @@
+		(intercept_function_by_name_external "labs"                    "__otter_libc_labs") @@
+		(intercept_function_by_name_external "llabs"                   "__otter_libc_llabs") @@
+		(intercept_function_by_name_external "div"                     "__otter_libc_div") @@
+		(intercept_function_by_name_external "ldiv"                    "__otter_libc_ldiv") @@
+		(intercept_function_by_name_external "lldiv"                   "__otter_libc_lldiv") @@
+		(intercept_function_by_name_external "mblen"                   "__otter_libc_mblen") @@
+		(intercept_function_by_name_external "mbtowc"                  "__otter_libc_mbtowc") @@
+		(intercept_function_by_name_external "wctomb"                  "__otter_libc_wctomb") @@
 
 		(* pass on the job when none of those match *)
 		interceptor
