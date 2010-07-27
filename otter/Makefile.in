@@ -9,7 +9,7 @@ OCAMLBUILD_CIL = -cflags -I,$(CIL_OBJDIR) -lflags -I,$(CIL_OBJDIR) -tags pkg_uni
 OCAMLBUILD_OTTER = -tags pkg_ocaml-base-noparser -libs stpvc
 OCAMLBUILD_OUNIT = -tags pkg_oUnit
 
-OCAMLBUILD_FLAGS = -j 0 -cflags -warn-error,A -Xs doc,examples,libc,util -tags quiet,dot_reduce,colorize_code
+OCAMLBUILD_FLAGS = -j 0 -Xs doc,examples,libc,util -tags warn_error_A,quiet,dot_reduce
 OCAMLBUILD_FLAGS += $(OCAMLBUILD_CIL) $(OCAMLBUILD_OTTER) $(OCAMLBUILD_OUNIT)
 OCAMLBUILD_FLAGS += $(EXTRALIBDIRS:%=-cflags -I,%) $(EXTRALIBDIRS:%=-lflags -I,%) $(OCAMLBUILD_EXTRAFLAGS)
 export OCAMLPATH:=$(CURDIR):@EXTRAOCAMLPATH@
