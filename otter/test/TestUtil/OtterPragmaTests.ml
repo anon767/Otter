@@ -224,10 +224,8 @@ let no_other_results = no_other_x (fun _ -> true) "results"
 (** Parse [#pragma] directives in a {!Cil.file} for test flags and expectations, and generate a test function. *)
 let parse_pragmas file =
     (* get test configuration from pragmas *)
-    let filename = Filename.basename file.Cil.fileName in
     let flags, test = Cil.foldGlobals file begin fun (flags, test as config) global -> match global with
-        (* extract only pragmas in the test file *)
-        | Cil.GPragma (Cil.Attr (name, params), loc) when loc.Cil.file = filename ->
+        | Cil.GPragma (Cil.Attr (name, params), loc) ->
             begin match name, params with
                 | "command_line", args ->
                     if flags.command_line <> [] then assert_loc_failure file loc "Command line already defined.";
