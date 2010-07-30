@@ -170,7 +170,6 @@ type job = {
 	instrList : Cil.instr list; (** [instr]s to execute before moving to the next [stmt] *)
 	stmt : Cil.stmt;            (** The next statement the job should execute *)
 	inTrackedFn : bool;         (** Is stmt in a function in the original program (as opposed to in a library or system call)? *)
-	mergePoints : StmtInfoSet.t;     (** A list of potential merge points *)
 	jid : int; (** A unique identifier for the job *)
     (* parent : job option; (** The parent that leads to this; None for the first job *) *)
 }
@@ -202,11 +201,6 @@ module JobSet = Set.Make
 			 if c = 0 then Pervasives.compare job1.jid job2.jid
 			 else c
 	 end)
-
-(** Map [stmtInfo]s of [If] statements to the [stmtInfo]s of join
-		points which the [If]s dominate.
-		This will allow us to know where we should expect to merge paths. *)
-let ifToJoinPointsHash : (stmtInfo,stmtInfo) Hashtbl.t = Hashtbl.create 500
 
 (* target to be used in prioritizer *)
 type target = {

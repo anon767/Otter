@@ -136,7 +136,6 @@ let get_job multijob = match multijob.processes with
 			Types.jid = multijob.jid;
 			(* TODO *)
 			Types.inTrackedFn = false;
-			Types.mergePoints = Types.StmtInfoSet.empty;
 		} in
 		let multijob = { multijob with
 			processes = processes;

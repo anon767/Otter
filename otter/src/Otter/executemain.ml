@@ -196,34 +196,6 @@ let init_cmdline_argvs state argstr =
 	(state'', [argc; argv])
 
 
-let computeJoinPointsForIfs fundec =
-	(* Compute the dominators for the function *)
-	let idomHashtbl = Dominators.computeIDom ~doCFG:false fundec in
-	(* Iterate through all statements in the function *)
-	List.iter
-		(fun s ->
-			 (* For each statement, see if it is a join-point (i.e., has > 1 pred) *)
-			 match s.preds with
-					 [] | [_] -> () (* Ignore non-join points *)
-				 | _ ->
-						 let rec getClosestDominatingIf stmt =
-							 match Dominators.getIdom idomHashtbl stmt with
-									 None -> None (* s is not dominated by any [If]s *)
-								 | Some dom ->
-										 (match dom.skind with
-												| If _ -> Some dom (* Aha! [dom] is the closest dominating [If] *)
-												| _ -> getClosestDominatingIf dom) (* Not an [If]; get its dominator *)
-						 in
-						 match getClosestDominatingIf s with
-								 None -> () (* No dominating [If]; do nothing *)
-							 | Some ifDom ->
-									 (* Add this join point to the dominating [If]'s list *)
-									 Hashtbl.add ifToJoinPointsHash
-										 { siFuncName = fundec.svar.vname ; siStmt = ifDom }
-										 { siFuncName = fundec.svar.vname ; siStmt = s })
-		fundec.sallstmts
-
-
 (* set up the file for symbolic execution *)
 let prepare_file file =
 	(* makeCFGFeature must precede the call to getProgInfo. *)
@@ -235,9 +207,6 @@ let prepare_file file =
 			   consistent sids across different analysis runs even if different files are merged
 			 *)
 			ignore (List.fold_left (fun n stmt -> stmt.sid <- n; succ n) 0 fundec.sallstmts);
-
-			(* Compute the join points which each [If] dominates *)
-			computeJoinPointsForIfs fundec
 
 		| _ ->
 			()
@@ -299,7 +268,6 @@ let job_for_function ?(exHist=emptyHistory) file state fn argvs =
 		instrList = [];
 		stmt = List.hd fn.sallstmts;
 		inTrackedFn = Utility.StringSet.mem fn.svar.vname run_args.arg_fns;
-		mergePoints = StmtInfoSet.empty;
 		jid = Utility.next_jid;
 	}
 
@@ -388,7 +356,7 @@ let doExecute (f: file) =
 
     let entryfn = find_entryfn f in
 
-    let results = 
+    let results =
       if Executeargs.run_args.arg_callchain_backward then
         (
           let assertfn =
@@ -411,12 +379,7 @@ let doExecute (f: file) =
               job_for_middle f entryfn Executeargs.run_args.arg_yaml
         in
 	    (* run the job *)
-	if run_args.arg_merge_paths then
-		let result = PathMerging.init job in
-          	[result]
-	else 
-        	let result = Driver.init job in
-          	[result]
+        	[ Driver.init job ]
     in
 
 	(* Turn off the alarm and reset the signal handlers *)
@@ -588,10 +551,6 @@ let feature : featureDescr =
 			("--listAllConds",
 			 Arg.Unit (fun () -> run_args.arg_list_conds <- true),
 			 " Before execution, print out all of the conditions in the program.\n");
-
-			("--mergePaths",
-			 Arg.Unit (fun () -> run_args.arg_merge_paths <- true),
-			 " Merge similar execution paths\n");
 
 			("--initMallocZero",
 			 Arg.Unit (fun () -> run_args.arg_init_malloc_zero <- true),

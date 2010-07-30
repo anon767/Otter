@@ -403,46 +403,19 @@ let exec_stmt job =
 							let nextStateT,nextStmtT = try_branch state (Some rv) block1 in
 							let nextStateF,nextStmtF = try_branch state (Some (logicalNot rv)) block2 in
 
-							let job' =
-								(* TODO: move the below into an interceptor in PathMerging *)
-								if run_args.arg_merge_paths then (
-									(* Add in the new merge points *)
-									{ job with mergePoints =
-											List.fold_left (fun set s -> StmtInfoSet.add s set) job.mergePoints
-												begin match Hashtbl.find_all ifToJoinPointsHash (stmtInfo_of_job job) with
-													| [] ->
-															begin match state.callContexts with
-																| (Source (_,_,_,nextStmt))::_ ->
-																		Output.print_endline "Will merge upon function return";
-																		(* nextStmt is in the calling function, not the current function,
-																			 so we call (nth _ 1). *)
-																		[{ siFuncName = (List.nth state.callstack 1).svar.vname ; siStmt = nextStmt }]
-																| _ ->
-																		[]
-															end
-													| x -> x
-												end; }
-								) else ( (* We aren't merging paths, so job' is just job *)
-									job
-								)
-							in
 							(* Create two jobs, one for each branch. Since we
 								 continue executing the false branch immediately, let
 								 that job inherit the old jid. Give the true job a new
 								 jid. *)
-							let trueJob = { job' with
-																state = nextStateT;
-																stmt = nextStmtT;
-																exHist = nextExHist (Some nextStmtT) ~whichBranch:true;
-                                                                (*parent = Some job';
-                                                                 *)
-														 		jid = Utility.next_jid; } in
-							let falseJob = { job' with
-																 state = nextStateF;
-																 stmt = nextStmtF;
-                                                                 (* parent = Some job';
-                                                                  *)
-																 exHist =  nextExHist (Some nextStmtF) ~whichBranch:false; } in
+							let trueJob = { job with
+								state = nextStateT;
+								stmt = nextStmtT;
+								exHist = nextExHist (Some nextStmtT) ~whichBranch:true;
+								jid = Utility.next_jid; } in
+							let falseJob = { job with
+								 state = nextStateF;
+								 stmt = nextStmtF;
+								 exHist =  nextExHist (Some nextStmtF) ~whichBranch:false; } in
 							Output.set_mode Output.MSG_MUSTPRINT;
 							Output.printf "Branching on %s at %s. %s\nJob %d is the true branch and job %d is the false branch.\n\n"
 								 (To_string.exp exp)

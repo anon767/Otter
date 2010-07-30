@@ -4,10 +4,8 @@ open Otter
 open Types
 
 (* test helper that runs the symbolic executor on a file given a source code as a string *)
-let test_bounds content ?label ?(mergePaths=false) ?has_failing_assertions test =
+let test_bounds content ?label ?has_failing_assertions test =
     test_otter content ?label
-        ~setup:(fun _ -> Executeargs.run_args.Executeargs.arg_merge_paths <- mergePaths)
-        ?main_loop:(if mergePaths then Some PathMerging.init else None)
         ?has_failing_assertions
         test
 
@@ -147,84 +145,6 @@ let simple_testsuite = "Simple" >::: [
 							 ~msg:"Incorrect path condition";
 						 assert_equal (List.length res2.result_state.path_condition) 1
 							 ~msg:"Incorrect path condition"
-				 | _ -> assert false
-		);
-
-	test_bounds ~label:"Merging with no problems"
-		~mergePaths:true
-"int main() {
-  char *x = malloc(4), *p;
-  if (__SYMBOLIC()) { p = x + 1; }
-  else { p = x + 2; }
-	p[1] = 7;
-	p[-1] = 12;
-  return 0;
-}"
-	(fun res -> expectedResultCounts 1 0 0 1 res);
-
-	test_bounds ~label:"Underrun on then branch; overrun on else branch (overrun first)---with merging"
-		~mergePaths:true
-"int main() {
-  char *x = malloc(4), *p;
-  if (__SYMBOLIC()) { p = x; }
-  else { p = x + 3; }
-	p[1] = 7;
-	p[-1] = 12;
-  return 0;
-}"
-	~has_failing_assertions:true (* Warnings printed for over- and underrun *)
-	(fun res -> expectedResultCounts 0 0 1 1 res;
-			 (* The test should fail at the second dereference, because the
-			 first one can be in bounds. This is meant to check that the
-			 abandoned path has the assumption that p[1] was in bounds. *)
-			 match res with
-					 [Abandoned (_,_,res1); Truncated _] ->
-						 assert_equal (List.length res1.result_state.path_condition) 1
-							 ~msg:"Incorrect path condition";
-				 | _ -> assert false
-		);
-
-	test_bounds ~label:"Underrun on then branch; overrun on else branch (underrun first)---with merging"
-		~mergePaths:true
-"int main() {
-  char *x = malloc(4), *p;
-  if (__SYMBOLIC()) { p = x; }
-  else { p = x + 3; }
-	p[-1] = 12;
-	p[1] = 7;
-  return 0;
-}"
-	~has_failing_assertions:true (* Warnings printed for over- and underrun *)
-	(fun res -> expectedResultCounts 0 0 1 1 res;
-			 (* The test should fail at the second dereference, because the
-			 first one can be in bounds. This is meant to check that the
-			 abandoned path has the assumption that p[-1] was in bounds. *)
-			 match res with
-					 [Abandoned (_,_,res1); Truncated _] ->
-						 assert_equal (List.length res1.result_state.path_condition) 1
-							 ~msg:"Incorrect path condition";
-				 | _ -> assert false
-		);
-
-	test_bounds ~label:"Overrun on else branch; then branch is fine---with merging"
-		~mergePaths:true
-"int main() {
-  char *x = malloc(4), *p;
-  if (__SYMBOLIC()) { p = x; }
-  else { p = x + 3; }
-  p[0] = -3;
-	p[1] = 7;
-	p[2] = 12;
-  return 0;
-}"
-	~has_failing_assertions:true (* Warnings printed for overrun *)
-	(fun res -> expectedResultCounts 1 0 0 1 res;
-			 (* And that we assumed that we are actually in the 'then' case
-			 (because the 'else' had an overrun) *)
-			 match res with
-					 [Return (_,res1); Truncated _] ->
-						 assert_equal (List.length res1.result_state.path_condition) 1
-							 ~msg:"Incorrect path condition";
 				 | _ -> assert false
 		);
 

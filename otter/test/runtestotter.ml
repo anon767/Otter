@@ -10,7 +10,6 @@ let _ =
         TestOtter.FileJobs.testsuite;
         TestOtter.CoreFunctionCalls.testsuite;
         TestOtter.Coverage.testsuite;
-        TestOtter.Merging.testsuite;
         TestOtter.BoundsChecking.testsuite;
         TestOtterPragmaTests.OtterPragmaTestsTests.testsuite;
         TestOtterIntegration.IntegrationTests.testsuite;

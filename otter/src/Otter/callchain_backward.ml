@@ -169,40 +169,21 @@ let callchain_backward_se callergraph entryfn assertfn job_init : job_completion
 	  Bytes.bytes__zero result
   in
 
-	let (@@) = Interceptors.(@@) in
-	let call_Otter_main_loop targets job =
-		if run_args.arg_merge_paths then
-			begin
-				let jobs = Jobs.create targets in
-				let _ = Jobs.add_runnable jobs job in
-				Driver.main_loop 
-					(PathMerging.get_job_priority_queue_with_merge) 
-					(
-						PathMerging.merge_job_interceptor @@ 
-						Interceptors.set_output_formatter_interceptor @@
-						(terminate_job_at_targets_interceptor targets) @@
-						Builtin_function.interceptor @@
-						Core.step
-					)
-					(Driver.process_result_priority_queue) 
-					jobs
-			end
-		else
-			begin
-				let jobs = Jobs.create targets in
-				let _ = Jobs.add_runnable jobs job in
-				Driver.main_loop 
-					(Driver.get_job_priority_queue) 
-					(
-						Interceptors.set_output_formatter_interceptor @@
-						(terminate_job_at_targets_interceptor targets) @@
-						Builtin_function.interceptor @@
-						Core.step
-					)
-					(Driver.process_result_priority_queue) 
-					jobs
-			end
-	in
+  let (@@) = Interceptors.(@@) in
+  let call_Otter_main_loop targets job =
+	let jobs = Jobs.create targets in
+	let _ = Jobs.add_runnable jobs job in
+	Driver.main_loop
+	  (Driver.get_job_priority_queue)
+	  (
+		Interceptors.set_output_formatter_interceptor @@
+		(terminate_job_at_targets_interceptor targets) @@
+		Builtin_function.interceptor @@
+		Core.step
+	  )
+	  (Driver.process_result_priority_queue)
+	  jobs
+  in
 
   (* The implementation of main loop *)
   let rec callchain_backward_main_loop job targets =
