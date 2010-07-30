@@ -10,7 +10,7 @@ let _ =
         Otter.Executemain.feature;
         Otter.Multiprocess.feature;
         Marshal_feature.feature;
-        Otter.FindFns.feature;
-        Otter.TraceLines.feature;
+        CilUtilities.FindFns.feature;
+        CilUtilities.TraceLines.feature;
     ] ()
 

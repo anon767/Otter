@@ -8,7 +8,6 @@ Otter/eval
 Otter/executeargs
 Otter/executedebug
 Otter/executemain
-Otter/findFns
 Otter/getProgInfo
 Otter/immutableArray
 Otter/interceptors
@@ -23,7 +22,6 @@ Otter/stp
 Otter/stpc
 Otter/ternary
 Otter/to_string
-Otter/traceLines
 Otter/types
 Otter/utility
 Otter/multiprocess
