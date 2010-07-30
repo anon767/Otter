@@ -3,29 +3,20 @@ open Bytes
 module VarinfoMap = Cilutility.VarinfoMap
 module TypeMap = Cilutility.TypeMap
 
-module MemoryBlockMap =
-	Utility.MakeMap (
-	struct
-		type t = memory_block
-		let compare (a:t) b = Pervasives.compare a.memory_block_id b.memory_block_id
-	end
-	)
+module MemoryBlockMap = Map.Make (struct
+	type t = memory_block
+	let compare (a:t) b = Pervasives.compare a.memory_block_id b.memory_block_id
+end)
 
-module VargsMap =
-	Utility.MakeMap (
-	struct
-		type t = bytes 
-		let compare : t -> t -> int = Pervasives.compare				
-	end
-	)	
+module VargsMap = Map.Make (struct
+	type t = bytes
+	let compare : t -> t -> int = Pervasives.compare
+end)
 
-module BytesMap =
-	Utility.MakeMap (
-	struct
-		type t = bytes 
-		let compare = Pervasives.compare				
-	end
-	)	
+module BytesMap = Map.Make (struct
+	type t = bytes
+	let compare = Pervasives.compare
+end)
 
 	
 (** A calling context may either be the symbolic executor, represented by

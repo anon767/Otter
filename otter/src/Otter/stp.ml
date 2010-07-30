@@ -5,15 +5,12 @@ open Types
 
 let global_vc = Stpc.create_validity_checker ()
 
-module BytesMagicMap =
-	Utility.MakeMap (
-	struct
-		type t = bytes*int
-		let compare (bs1,id1) (bs2,id2) = 
-          if true then compare (Obj.magic bs1:int) (Obj.magic bs2) else
-          if (bs1=bs2) then 0 else compare id1 id2
-	end
-	)
+module BytesMagicMap = Map.Make (struct
+	type t = bytes*int
+	let compare (bs1,id1) (bs2,id2) =
+		if true then compare (Obj.magic bs1:int) (Obj.magic bs2) else
+		if (bs1=bs2) then 0 else compare id1 id2
+end)
 
 let bytes_stpbv_id = ref 0
 let bytes_stpbv_map : (Stpvc.exp*int) BytesMagicMap.t ref = ref BytesMagicMap.empty

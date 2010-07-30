@@ -454,12 +454,10 @@ let otter_print_state = wrap_state_function begin fun state retopt exps ->
 	Output.set_mode Output.MSG_MUSTPRINT;
 	let arg_print_char_as_int = Executeargs.print_args.Executeargs.arg_print_char_as_int in
 	Executeargs.print_args.Executeargs.arg_print_char_as_int <- true;
-	let module BOSMap = Utility.MakeMap (
-		struct
+	let module BOSMap = Map.Make (struct
 		type t = memory_block * bytes * int  (* block, offset, size *)
 		let compare = Pervasives.compare				
-		end)	
-	in
+	end)	 in
 	let bosmap = ref BOSMap.empty in
 	let printStringString s1 s2 =
 		Output.print_endline (s1 ^ " = " ^ s2)
