@@ -3,9 +3,6 @@ open Bytes
 module VarinfoMap = Cilutility.VarinfoMap
 module TypeMap = Cilutility.TypeMap
 
-type operator_action = (bytes*Cil.typ) list -> (bytes (* *Cil.typ*))
-
-
 module MemoryBlockMap =
 	Utility.MakeMap (
 	struct
