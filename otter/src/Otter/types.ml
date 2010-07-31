@@ -151,6 +151,8 @@ module SymbolSet = Set.Make
 let signalStringOpt : string option ref = ref None
 exception SignalException
 
+let job_counter = Counter.make ()
+
 type job = {
 	file : Cil.file;
 	state : state;

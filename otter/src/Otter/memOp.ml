@@ -386,9 +386,9 @@ let state__get_bytes_eval_cache state bytes =
     begin
       try
         let ret = Some (BytesMap.find bytes state.bytes_eval_cache) in
-          Utility.increment bytes_eval_cache_hits; ret
+          incr bytes_eval_cache_hits; ret
       with Not_found -> 
-        Utility.increment bytes_eval_cache_misses; None
+        incr bytes_eval_cache_misses; None
     end
 
 

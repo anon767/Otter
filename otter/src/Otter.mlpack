@@ -3,6 +3,7 @@ Otter/bytes
 Otter/bytesUtility
 Otter/cilutility
 Otter/core
+Otter/counter
 Otter/driver
 Otter/eval
 Otter/executeargs

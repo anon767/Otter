@@ -12,13 +12,13 @@ module BytesMagicMap = Map.Make (struct
 		if (bs1=bs2) then 0 else compare id1 id2
 end)
 
-let bytes_stpbv_id = ref 0
+let bytes_stpbv_id = Counter.make ()
 let bytes_stpbv_map : (Stpvc.exp*int) BytesMagicMap.t ref = ref BytesMagicMap.empty
 let bytes_stpbv_add bytes bv len =
-  bytes_stpbv_map := BytesMagicMap.add (bytes,Utility.next_id bytes_stpbv_id) (bv,len) (!bytes_stpbv_map)
+  bytes_stpbv_map := BytesMagicMap.add (bytes,Counter.next bytes_stpbv_id) (bv,len) (!bytes_stpbv_map)
 let bytes_stpbv_get bytes =
   if not Executeargs.run_args.Executeargs.arg_opt_stpbv_cache then raise Not_found else
-  BytesMagicMap.find (bytes,Utility.next_id bytes_stpbv_id) (!bytes_stpbv_map) (* raise Not_found *)
+  BytesMagicMap.find (bytes,Counter.next bytes_stpbv_id) (!bytes_stpbv_map) (* raise Not_found *)
 
 (** Return a SymbolSet of all symbols in the given Bytes *)
 let rec allSymbolsInGuard = function

@@ -98,8 +98,8 @@ let hash_consing_bytes_init_size = 1000000
 let hash_consing_bytes_tbl : (bytes,bytes) Hashtbl.t = Hashtbl.create hash_consing_bytes_init_size
 let hash_consing_bytes_create bs = 
   if not (!hash_consing_bytes_enabled) then bs else
-  try let rv = Hashtbl.find hash_consing_bytes_tbl bs in Utility.increment hash_consing_bytes_hits; rv
-  with Not_found -> Hashtbl.add hash_consing_bytes_tbl bs bs; Utility.increment hash_consing_bytes_misses; bs
+  try let rv = Hashtbl.find hash_consing_bytes_tbl bs in incr hash_consing_bytes_hits; rv
+  with Not_found -> Hashtbl.add hash_consing_bytes_tbl bs bs; incr hash_consing_bytes_misses; bs
 
 
 (*
@@ -440,10 +440,10 @@ let rec bytes__length bytes =
  *)
 (* negative id is used as special symbolic values.
    0 is used for the symbolic byte representing uninitialized memory *)
-let symbol__currentID = ref 1
+let symbol__currentID = Counter.make ~start:1 ()
 let symbol__next () = 
 	{	
-		symbol_id = Utility.next_id symbol__currentID; 
+		symbol_id = Counter.next symbol__currentID;
 	} 
 
 let char__random () = Char.chr ((Random.int 255)+1)
@@ -492,11 +492,11 @@ let rec bytes__get_byte bytes i : byte =
 (**
  *	memory block
  *)
-let block__current_id = ref 1
+let block__current_id = Counter.make ~start:1 ()
 let block__make name n t =
 	{
 		memory_block_name = name;
-		memory_block_id = Utility.next_id block__current_id;
+		memory_block_id = Counter.next block__current_id;
 		memory_block_size = n;
 		memory_block_addr = bytes__random (bitsSizeOf voidPtrType / 8);
 		memory_block_type = t;

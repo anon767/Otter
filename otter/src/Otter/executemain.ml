@@ -268,7 +268,7 @@ let job_for_function ?(exHist=emptyHistory) file state fn argvs =
 		instrList = [];
 		stmt = List.hd fn.sallstmts;
 		inTrackedFn = Utility.StringSet.mem fn.svar.vname run_args.arg_fns;
-		jid = Utility.next_jid;
+		jid = Counter.next Types.job_counter;
 	}
 
 

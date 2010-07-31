@@ -212,12 +212,12 @@ end
 
 
 (* __builtin_alloca is used for local arrays with variable size; creates a dummy local variable so that the memory is deallocated on return *)
-let libc___builtin_alloca__id = ref 1
+let libc___builtin_alloca__id = Counter.make ()
 let libc___builtin_alloca_size state size bytes loc =
 	let name = Printf.sprintf "%s(%d)#%d/%s%s"
 		(List.hd state.callstack).svar.vname
 		size
-		(Utility.next_id libc___builtin_alloca__id)
+		(Counter.next libc___builtin_alloca__id)
 		(To_string.location loc)
 		(MemOp.state__trace state)
 	in
@@ -251,7 +251,7 @@ let libc_malloc_size state size bytes loc =
 	let name = Printf.sprintf "%s(%d)#%d/%s%s"
 		(List.hd state.callstack).svar.vname
 		size
-		(Utility.next_id libc___builtin_alloca__id)
+		(Counter.next libc___builtin_alloca__id)
 		(To_string.location loc)
 		(MemOp.state__trace state)
 	in
@@ -669,7 +669,7 @@ let libc_setjmp job retopt exps =
 	
 			(* assign value to the environment argument *)
 			let state, (_, size as lval) = Eval.lval state cil_lval in
-			let stmtPtrAddr = (Utility.next_id libc___builtin_alloca__id) in
+			let stmtPtrAddr = (Counter.next libc___builtin_alloca__id) in
 			let state = MemOp.state__assign state lval (int_to_bytes stmtPtrAddr) in
 
 			(* create statemet pointer to the set_jmp call *)
