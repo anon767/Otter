@@ -17,14 +17,14 @@ let print_failed_assertion state bytes exps ~isUnknown =
 	print_args.arg_print_nothing <- false; (* Allow printing for the log *)
 	Executedebug.log "\n(****************************";
 	Executedebug.log "Assertion:";
-	Executedebug.log (Utility.print_list To_string.exp exps " and "); 
+	Executedebug.log (To_string.list To_string.exp_ff "@ and " exps);
 	Executedebug.log "which becomes";
 	Executedebug.log (To_string.bytes bytes);
 	Executedebug.log ((if isUnknown then "can be" else "is") ^ " false with the path condition:");
 	(*let pc_str = To_string.humanReadablePc state.path_condition exHist.bytesToVars in *)
 	(*let pc_str = (Utility.print_list To_string.bytes state.path_condition " AND ") in*)
 	(*let pc_str = Utility.print_list To_string.bytes (Stp.getRelevantAssumptions state.path_condition post) " AND " in*)
-	let pc_str = (Utility.print_list To_string.bytes state.path_condition "\n AND \n") in
+	let pc_str = (To_string.list To_string.bytes_ff "@\n  AND@\n" state.path_condition) in
 	Executedebug.log (if pc_str = "" then "true" else pc_str);
 	Executedebug.log "****************************)";
 	print_args.arg_print_nothing <- oldPrintNothingVal

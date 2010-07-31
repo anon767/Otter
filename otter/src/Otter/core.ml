@@ -375,7 +375,7 @@ let exec_stmt job =
 							Output.print_endline ("Check if the following holds:");
 							Output.print_endline (To_string.bytes rv);
 							Output.print_endline ("Under the path condition:");
-							let pc_str = (Utility.print_list To_string.bytes state.path_condition " AND ") in
+							let pc_str = (To_string.list To_string.bytes_ff "@ AND " state.path_condition) in
 							Output.print_endline (if String.length pc_str = 0 then "(nil)" else pc_str);
 						end;
  

@@ -101,12 +101,19 @@ lval l = Pretty.sprint strlen (Cil.d_lval () l)
 
 and
 
-exp e = 
-  if donotprint() then "" else
-	let str = Pretty.sprint strlen (Cil.d_exp () e) in
-	match e with
-		| StartOf (_) -> "StartOf("^str^")"
-		| _ -> str
+exp_ff ff = function
+	| StartOf _ as e -> fprintf ff "StartOf(%a)" Printcil.f_exp e
+	| e -> Printcil.f_exp ff e
+
+and
+
+exp e =
+	if donotprint () then
+		""
+	else begin
+		exp_ff str_formatter e;
+		flush_str_formatter ()
+	end
 
 and
 
@@ -403,3 +410,9 @@ strings_of_array_elts arr typ sizeOfTyp =
 	else
 		typedBytes (Bytes_ByteArray (ImmutableArray.sub arr 0 sizeOfTyp)) typ ::
 			(strings_of_array_elts (ImmutableArray.sub arr sizeOfTyp (ImmutableArray.length arr - sizeOfTyp)) typ sizeOfTyp)
+
+let list_ff printer sep ff list =
+	ignore (List.fold_left (fun b x -> Format.fprintf ff "%(%)@[%a@]" b printer x; sep) "" list)
+
+let list printer sep list =
+	list_ff printer sep str_formatter list; flush_str_formatter ()

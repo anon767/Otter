@@ -291,7 +291,7 @@ let state__start_fcall state callContext fundec argvs =
 					failwith ("Too many arguments to non-vararg function " ^ fundec.svar.vname)
 				);
 				Output.set_mode Output.MSG_FUNC;
-				Output.print_endline ("Rest of args: "^(Utility.print_list To_string.bytes va_arg " , "));
+				Output.print_endline ("Rest of args: "^(To_string.list To_string.bytes_ff ",@ " va_arg));
 			);
 			{ state with va_arg = va_arg::state.va_arg }
 		| _, [] ->

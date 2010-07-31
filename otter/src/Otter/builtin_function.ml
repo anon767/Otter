@@ -393,7 +393,7 @@ end
 
 
 let otter_path_condition = wrap_state_function begin fun state retopt exps ->
-	let pc_str = (Utility.print_list To_string.bytes state.path_condition "\n AND \n") in
+	let pc_str = (To_string.list To_string.bytes_ff "@\n  AND@\n" state.path_condition) in
 	Output.set_mode Output.MSG_MUSTPRINT;
 	Output.print_endline (if String.length pc_str = 0 then "(nil)" else pc_str);
 	state
