@@ -681,7 +681,7 @@ let libc_setjmp job retopt exps =
 					| _ -> assert false
 			in
 			let stmtPtr = Source (retopt, job.stmt, (List.hd job.Types.instrList), nextStmt) in
-			let state = {state with stmtPtrs = Utility.IndexMap.add stmtPtrAddr stmtPtr state.stmtPtrs; } in
+			let state = {state with stmtPtrs = Types.IndexMap.add stmtPtrAddr stmtPtr state.stmtPtrs; } in
 
 			let job = end_function_call { job with state = set_return_value state retopt bytes__zero } in
 			Active job
@@ -724,7 +724,7 @@ let libc_longjmp job retopt exps =
 			in
 
 			let process_stmtPtr stmtPtrAddr =
-				let stmtPtr = Utility.IndexMap.find stmtPtrAddr state.stmtPtrs in
+				let stmtPtr = Types.IndexMap.find stmtPtrAddr state.stmtPtrs in
 				let retopt, stmt =
 					match stmtPtr with
 						| Source (r, _, _, s) -> r, s

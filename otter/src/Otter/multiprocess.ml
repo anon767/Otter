@@ -15,7 +15,7 @@ type local_state = {
 	locals : Types.memory_frame list;
 	callstack : Cil.fundec list;
 	callContexts : Types.callingContext list;
-	stmtPtrs : Types.callingContext Utility.IndexMap.t;
+	stmtPtrs : Types.callingContext Types.IndexMap.t;
 	va_arg : Bytes.bytes list list;
 	va_arg_map : Bytes.bytes list Types.VargsMap.t;
 	block_to_bytes : Bytes.bytes Types.deferred Types.MemoryBlockMap.t;

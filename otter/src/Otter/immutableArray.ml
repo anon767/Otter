@@ -1,4 +1,9 @@
-module IndexMap = Utility.IndexMap
+
+module IndexMap = Map.Make (struct
+	type t = int
+	let compare (a : int) (b : int) = Pervasives.compare a b
+end)
+
 
 type 'a t =
 	{

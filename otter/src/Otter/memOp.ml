@@ -106,7 +106,7 @@ let state__empty =
 		path_condition_tracked = [];
 		(*return = None;*)
 		callContexts = [];
-		stmtPtrs = Utility.IndexMap.empty;
+		stmtPtrs = Types.IndexMap.empty;
 		va_arg = [];
 		va_arg_map = VargsMap.empty;
 		bytes_eval_cache = BytesMap.empty;
@@ -405,12 +405,12 @@ let state__print_path_condition state : string =
 
 
 (** map address to state (!) *)
-let index_to_state: state Utility.IndexMap.t ref = ref (Utility.IndexMap.empty)
+let index_to_state: state Types.IndexMap.t ref = ref (Types.IndexMap.empty)
 let index_to_state__add index state = 
-	index_to_state := Utility.IndexMap.add index state (!index_to_state)
+	index_to_state := Types.IndexMap.add index state (!index_to_state)
 
 let index_to_state__get index = 
-	Utility.IndexMap.find index (!index_to_state)
+	Types.IndexMap.find index (!index_to_state)
 
 
 

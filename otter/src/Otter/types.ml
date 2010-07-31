@@ -3,6 +3,11 @@ open Bytes
 module VarinfoMap = Cilutility.VarinfoMap
 module TypeMap = Cilutility.TypeMap
 
+module IndexMap = Map.Make (struct
+	type t = int
+	let compare (a : int) (b : int) = Pervasives.compare a b
+end)
+
 module MemoryBlockMap = Map.Make (struct
 	type t = memory_block
 	let compare (a:t) b = Pervasives.compare a.memory_block_id b.memory_block_id
@@ -56,7 +61,7 @@ and state =
 				is [Runtime]. Other than that, the nth element of callstack is
 				the fundec called by the [Instr] at the nth position in
 				callContexts. *)
-		stmtPtrs : callingContext Utility.IndexMap.t;     (* Pointers into code.  Used for longjump. *)
+		stmtPtrs : callingContext IndexMap.t;     (* Pointers into code.  Used for longjump. *)
 		
 		va_arg : bytes list list;			(* A stack of va_arg *)
 		va_arg_map : bytes list VargsMap.t;
