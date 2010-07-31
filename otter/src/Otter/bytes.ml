@@ -564,7 +564,10 @@ let guard__symbolics () = Guard_Bytes (bytes__symbolic 4)
 
 let guard__bytes b = Guard_Bytes b
 
-let guard__to_bytes g = make_Bytes_Conditional (IfThenElse (g, Unconditional bytes__one, Unconditional bytes__zero))
+let guard__to_bytes = function
+	| Guard_True -> bytes__one
+	| Guard_Not Guard_True -> bytes__zero
+	| g -> make_Bytes_Conditional (IfThenElse (g, Unconditional bytes__one, Unconditional bytes__zero))
 
 
 (**
