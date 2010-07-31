@@ -78,9 +78,6 @@ let (string_table : bytes MemoryBlockMap.t ref) = ref MemoryBlockMap.empty
 
 (*let (vargs_table : bytes list VargsMap.t ref) = ref VargsMap.empty*)
 
-(* some globals that are helpful *)
-let stp_count = ref 0
-
 (* With statement ids which are unique only within functions, we need
 	 to know the function's name in addition to the sid to uniquely
 	 identify a stmt. *)
@@ -148,12 +145,6 @@ let emptyHistory = {
 	executionPath = [];
 	bytesToVars = [];
 }
-
-module SymbolSet = Set.Make
-	(struct
-		 type t = symbol
-		 let compare (x:t) y = Pervasives.compare x.symbol_id y.symbol_id
-	 end)
 
 let signalStringOpt : string option ref = ref None
 exception SignalException

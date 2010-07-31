@@ -1,7 +1,14 @@
 open Cil
 open Ternary
 open Bytes
-open Types
+
+module SymbolSet = Set.Make
+	(struct
+		 type t = symbol
+		 let compare (x:t) y = Pervasives.compare x.symbol_id y.symbol_id
+	 end)
+
+let stp_count = ref 0
 
 let global_vc = Stpc.create_validity_checker ()
 
@@ -500,7 +507,7 @@ let query vc bytes equal_zero =
 	
 	Output.set_mode Output.MSG_STP;
 	Output.print_endline ("QUERY("^(Stpc.to_string q)^");");
-	incr Types.stp_count;
+	incr stp_count;
 	let return = Stats.time "STP query" (Stpc.query vc) q in
       Stpc.e_pop vc;
       return

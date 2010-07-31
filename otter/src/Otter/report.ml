@@ -85,7 +85,7 @@ let printPath state hist =
 		(To_string.humanReadablePc pc_assume hist.bytesToVars);
 
 	let mentionedSymbols = Stp.allSymbolsInList pc_branch in
-	let valuesForSymbols = Stp.getValues pc_all (SymbolSet.elements mentionedSymbols) in
+	let valuesForSymbols = Stp.getValues pc_all (Stp.SymbolSet.elements mentionedSymbols) in
 
 	(* Keep track of which symbols we haven't given values to.
 		 This would happen if there are untracked symbolic values in the
@@ -102,7 +102,7 @@ let printPath state hist =
 									 (try
 											let valueForS = List.assq s valuesForSymbols in
 											(* Now s is bound *)
-											unboundSymbols := SymbolSet.remove s !unboundSymbols;
+											unboundSymbols := Stp.SymbolSet.remove s !unboundSymbols;
 											Some (make_Byte_Concrete valueForS)
 										with Not_found -> None)
 							 | _ -> failwith "Impossible: tracked symbolic value must be fully symbolic")
@@ -139,10 +139,10 @@ let printPath state hist =
 		hist.bytesToVars;
 
 	(* Check to see if we've bound all of the symbols in the path condition *)
-	if not (SymbolSet.is_empty !unboundSymbols)
+	if not (Stp.SymbolSet.is_empty !unboundSymbols)
 	then (
 		Output.printf "but these symbolic values are unaccounted for by tracked variables:\n";
-		SymbolSet.iter
+		Stp.SymbolSet.iter
 			(fun s -> Output.printf "%d " s.symbol_id)
 			!unboundSymbols
 	);
