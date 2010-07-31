@@ -234,7 +234,7 @@ let rec process_job_states result multijob completed multijob_queue =
 			(* put the job back into the multijob and queue it *)
 			let multijob = put_job job multijob multijob.current_pid in
 			(completed, (multijob::multijob_queue))
-		| Types.Big_Fork states ->
+		| Types.Fork states ->
 			(* process all forks *)
 			List.fold_left begin fun (completed, multijob_queue) state ->
 				process_job_states state multijob completed multijob_queue

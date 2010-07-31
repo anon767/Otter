@@ -33,7 +33,7 @@ let rec process_result result completed job_queue =
 		| Active job ->
 			(completed, job::job_queue)
 
-		| Big_Fork states ->
+		| Fork states ->
 			List.fold_left (fun (completed, job_queue) state -> process_result state completed job_queue) (completed, job_queue) states
 
 		| Complete completion ->

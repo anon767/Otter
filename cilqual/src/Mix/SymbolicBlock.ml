@@ -39,7 +39,7 @@ module Interpreter (S : Config.BlockConfig) = struct
                 let rec process_job_states completed job_queue = function
                     | Types.Active job ->
                         (completed, (job::job_queue))
-                    | Types.Big_Fork states ->
+                    | Types.Fork states ->
                         List.fold_left (fun (completed, job_queue) state -> process_job_states completed job_queue state) (completed, job_queue) states
                     | Types.Complete result ->
                         (((result, None)::completed), job_queue)

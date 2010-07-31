@@ -785,7 +785,7 @@ let libc_longjmp job retopt exps =
 
 			let jobs = List.map process_stmtPtr stmtPtrAddrs in
 			match jobs with
-				| _::_::_ -> Big_Fork(jobs)
+				| _::_::_ -> Fork(jobs)
 				| [a] -> a
 				| [] -> failwith "No valid jongjmp target found!"
 		end

@@ -193,7 +193,7 @@ let exec_instr_call job instr lvalopt fexp exps =
 	in
 	let f = (process_func_list (function_from_exp job state fexp exps)) in
 	match f with
-		| _::_::_ -> Big_Fork(f)
+		| _::_::_ -> Fork(f)
 		| [a] -> a
 		| [] -> failwith "No valid function found!"
 
@@ -426,7 +426,7 @@ let exec_stmt job =
 								 else ""
 								 )
 								 trueJob.jid falseJob.jid;
-							Big_Fork [Active trueJob; Active falseJob]
+							Fork [Active trueJob; Active falseJob]
 						end
 				end
 		| Block(block)

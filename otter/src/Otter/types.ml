@@ -178,7 +178,7 @@ type job_completion =
 
 type job_state =
 	| Active of job
-	| Big_Fork of job_state list
+	| Fork of job_state list
 	| Complete of job_completion
 	| Paused of job
 
