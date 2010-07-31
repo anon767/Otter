@@ -560,8 +560,6 @@ let guard__and_not g1 g2 = guard__and g1 (guard__not g2)
 
 let guard__symbolic () = Guard_Symbolic (symbol__next ())
 
-let guard__symbolics () = Guard_Bytes (bytes__symbolic 4)
-
 let guard__bytes b = Guard_Bytes b
 
 let guard__to_bytes = function
@@ -654,7 +652,7 @@ let conditional__fold ?test ?pre fold acc source =
 *)
 let conditional__from_list list =
 	let rec conditional__make_tree outs = function
-		| x::y::rest -> conditional__make_tree ((IfThenElse (guard__symbolics (), x, y))::outs) rest
+		| x::y::rest -> conditional__make_tree ((IfThenElse (guard__symbolic (), x, y))::outs) rest
 		| [x]      -> conditional__make_tree_next (x::outs)
 		| []         -> conditional__make_tree_next outs
 	and conditional__make_tree_next = function
