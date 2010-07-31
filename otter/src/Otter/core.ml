@@ -5,7 +5,6 @@ open BytesUtility
 open Types
 open Executeargs
 open Cilutility
-open Utility
 
 (** Get the file location for the current job instruction.
 		@param job the job to get the current location from
@@ -169,7 +168,7 @@ let exec_fundec job state instr fundec lvalopt exps =
 	Active { job with
 			state = state;
 			stmt = List.hd fundec.sallstmts;
-			inTrackedFn = StringSet.mem fundec.svar.vname run_args.arg_fns; }
+			inTrackedFn = StringSet.mem fundec.svar.vname job.trackedFns; }
 
 let exec_instr_call job instr lvalopt fexp exps =
 	let state, exHist = job.state, job.exHist in
@@ -312,7 +311,7 @@ let exec_stmt job =
 								let job' = { job with
 									state = state2;
 									stmt = nextStmt;
-									inTrackedFn = StringSet.mem callingFuncName run_args.arg_fns;
+									inTrackedFn = StringSet.mem callingFuncName job.trackedFns;
 								} in
 								(* When a function returns, we have to record the
 									 coverage within the returning function and also the

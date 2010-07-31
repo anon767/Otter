@@ -135,6 +135,7 @@ let get_job multijob = match multijob.processes with
 			Types.stmt = program_counter.stmt;
 			Types.jid = multijob.jid;
 			(* TODO *)
+			Types.trackedFns = Types.StringSet.empty;
 			Types.inTrackedFn = false;
 		} in
 		let multijob = { multijob with

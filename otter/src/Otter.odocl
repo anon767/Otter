@@ -22,6 +22,5 @@ Otter/stpc
 Otter/ternary
 Otter/to_string
 Otter/types
-Otter/utility
 Otter/multiprocess
 Otter/callchain_backward

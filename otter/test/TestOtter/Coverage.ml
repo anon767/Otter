@@ -2,7 +2,6 @@ open TestUtil.MyOUnit
 open TestUtil.OtterUtil
 open Otter
 open Types
-open Utility
 
 (* test helper that runs the symbolic executor on a file given a source code as a string, and calculates coverage *)
 let test_coverage content ?label tracked_fns test =
@@ -13,8 +12,7 @@ let test_coverage content ?label tracked_fns test =
 			Executeargs.run_args.Executeargs.arg_block_coverage <- true;
 			Executeargs.run_args.Executeargs.arg_line_coverage <- true;
 			(* enable tracking on given functions *)
-			Executeargs.run_args.Executeargs.arg_fns <-
-				List.fold_left (fun a f -> StringSet.add f a) Executeargs.run_args.Executeargs.arg_fns tracked_fns;
+			Executeargs.run_args.Executeargs.arg_fns <- tracked_fns;
 		end
 		begin fun results ->
 			(* figure out the coverage *)

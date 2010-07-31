@@ -3,6 +3,8 @@ open Bytes
 module VarinfoMap = Cilutility.VarinfoMap
 module TypeMap = Cilutility.TypeMap
 
+module StringSet = Set.Make(String)
+
 module IndexMap = Map.Make (struct
 	type t = int
 	let compare (a : int) (b : int) = Pervasives.compare a b
@@ -164,6 +166,7 @@ type job = {
 	exHist : executionHistory;
 	instrList : Cil.instr list; (** [instr]s to execute before moving to the next [stmt] *)
 	stmt : Cil.stmt;            (** The next statement the job should execute *)
+	trackedFns : StringSet.t;	(** The set of functions (names) in which to track coverage *)
 	inTrackedFn : bool;         (** Is stmt in a function in the original program (as opposed to in a library or system call)? *)
 	jid : int; (** A unique identifier for the job *)
     (* parent : job option; (** The parent that leads to this; None for the first job *) *)

@@ -71,7 +71,7 @@ type run_args =
 		mutable arg_num_blocks : int;
 		mutable arg_num_edges : int;
 		mutable arg_num_conds : int;
-		mutable arg_fns : Utility.StringSet.t;
+		mutable arg_fns : string list;
 		mutable arg_yaml : string;
 		mutable arg_entryfn : string;
 		mutable arg_assertfn : string;
@@ -110,7 +110,7 @@ let run_args =
 		arg_num_blocks = -1;
 		arg_num_edges = -1;
 		arg_num_conds = -1;
-		arg_fns = Utility.StringSet.empty;
+		arg_fns = [];
 		arg_yaml = "";
 		arg_entryfn = "main";
 		arg_assertfn = "__ASSERT";
@@ -140,7 +140,7 @@ let readCovStatsFromFile filename =
 	let inChan = open_in filename in
 	try
 		while true do
-			run_args.arg_fns <- Utility.StringSet.add (input_line inChan) run_args.arg_fns
+			run_args.arg_fns <- (input_line inChan)::run_args.arg_fns
 		done
 	with End_of_file -> close_in inChan
   

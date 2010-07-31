@@ -260,6 +260,7 @@ let prepare_file file =
 (* create a job that begins at a function, given an initial state *)
 let job_for_function ?(exHist=emptyHistory) file state fn argvs =
 	let state = MemOp.state__start_fcall state Runtime fn argvs in
+	let trackedFns = List.fold_left (fun set elt -> StringSet.add elt set) StringSet.empty run_args.arg_fns in
 	(* create a new job *)
 	{
 		file = file;
@@ -267,7 +268,8 @@ let job_for_function ?(exHist=emptyHistory) file state fn argvs =
 		exHist = exHist;
 		instrList = [];
 		stmt = List.hd fn.sallstmts;
-		inTrackedFn = Utility.StringSet.mem fn.svar.vname run_args.arg_fns;
+		trackedFns = trackedFns;
+		inTrackedFn = StringSet.mem fn.svar.vname trackedFns;
 		jid = Counter.next Types.job_counter;
 	}
 

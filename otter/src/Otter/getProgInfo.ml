@@ -94,13 +94,13 @@ class getGlobalInitVisitor = object (self)
 
 end
 
-let getProgInfo (file : Cil.file) fnNameSet =
+let getProgInfo (file : Cil.file) fnNames =
 	let vis = new getStatsVisitor in
 	iterGlobals
 		file
 		(function (* Visit the bodies of the functions we care about *)
 				 GFun(fundec,_) ->
-					 if Utility.StringSet.mem fundec.svar.vname fnNameSet
+					 if List.mem fundec.svar.vname fnNames
 					 then ignore (visitCilFunction (vis:>cilVisitor) fundec)
 			 | _ -> ()
 		);
