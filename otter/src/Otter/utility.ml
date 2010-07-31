@@ -19,11 +19,5 @@ let next_jid = next_id jidCounter
 let rec print_list print list delim =
 	String.concat delim (List.map print list)
 
-
-let getchar () =
-	Scanf.scanf "%c" (fun x->x)
-	
-
-
 module StringSet = Set.Make(String)
 
