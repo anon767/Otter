@@ -11,7 +11,6 @@ Otter/executemain
 Otter/getProgInfo
 Otter/immutableArray
 Otter/interceptors
-Otter/jobs
 Otter/memOp
 Otter/operation
 Otter/output

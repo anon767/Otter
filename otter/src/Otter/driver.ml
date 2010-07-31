@@ -9,12 +9,6 @@ let get_job_list = function
 	| [] -> None
 	| h::t -> Some (h, t)
 
-let get_job_priority_queue job_queue = 
-	if Jobs.has_next_runnable job_queue then
-		Some ((Jobs.take_next_runnable job_queue), job_queue)
-	else
-		None
-
 
 (** PROCESS RESULT **)
 
@@ -47,22 +41,6 @@ let rec process_result result completed job_queue =
 			((completion::completed), job_queue)
 
 		| _ -> 
-			(completed, job_queue)
-
-let rec process_result_priority_queue result completed job_queue =
-	match result with
-		| Active job ->
-			Jobs.add_runnable job_queue job;
-			(completed, job_queue)
-
-		| Big_Fork states ->
-			List.fold_left (fun (completed, job_queue) state -> process_result_priority_queue state completed job_queue) (completed, job_queue) states
-
-		| Complete completion ->
-			output_completion_info completion;
-			((completion::completed), job_queue)
-
-		| _ ->
 			(completed, job_queue)
 
 

@@ -1,7 +1,47 @@
+open OcamlBase
 open Types
 open Bytes
 open Cil
 open Executeargs
+
+
+class prioritized_job_queue targets = object (self)
+	val get_priority = Prioritizer.prioritize targets
+	val queue = PriorityQueue.make (fun j1 j2 -> j1#priority >= j2#priority)
+
+	method get =
+		try
+			let first = PriorityQueue.first queue in
+			PriorityQueue.remove_first queue;
+			Some (first#job, self)
+		with Not_found ->
+			None
+
+	method queue job =
+		let priority = get_priority job in
+		if priority < -.(float_of_int (max_int - 1)) then
+			Output.printf "Warning: job %d not continued\n" job.jid
+		else
+			(* Output.printf "Add Job %d with priority %0.1f\n%!" job.jid priority; *)
+			PriorityQueue.add queue (object method job=job method priority=priority end)
+end
+
+
+let rec process_result result completed job_queue =
+	match result with
+		| Active job ->
+			job_queue#queue job;
+			(completed, job_queue)
+
+		| Big_Fork states ->
+			List.fold_left (fun (completed, job_queue) state -> process_result state completed job_queue) (completed, job_queue) states
+
+		| Complete completion ->
+			Driver.output_completion_info completion;
+			((completion::completed), job_queue)
+
+		| _ ->
+			(completed, job_queue)
 
 
 let pass_targets targets job fexp exps =
@@ -171,17 +211,17 @@ let callchain_backward_se callergraph entryfn assertfn job_init : job_completion
 
   let (@@) = Interceptors.(@@) in
   let call_Otter_main_loop targets job =
-	let jobs = Jobs.create targets in
-	let _ = Jobs.add_runnable jobs job in
+	let jobs = new prioritized_job_queue targets in
+	jobs#queue job;
 	Driver.main_loop
-	  (Driver.get_job_priority_queue)
+	  (fun jobs -> jobs#get)
 	  (
 		Interceptors.set_output_formatter_interceptor @@
 		(terminate_job_at_targets_interceptor targets) @@
 		Builtin_function.interceptor @@
 		Core.step
 	  )
-	  (Driver.process_result_priority_queue)
+	  process_result
 	  jobs
   in
 
