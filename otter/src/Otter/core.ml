@@ -90,9 +90,6 @@ let addInstrCoverage job instr =
 	{ job.exHist with coveredLines =
 			LineSet.add (instrLoc.Cil.file,instrLoc.Cil.line) job.exHist.coveredLines; }
 
-let add_guard_to_state state guard = (*big hack; there should be a nicer way to do this*)
-	MemOp.state__add_path_condition state (Bytes_Conditional(Bytes.IfThenElse(guard, Unconditional(int_to_bytes 1), Unconditional(int_to_bytes 0)))) true
-
 let function_from_exp job state exp args: (state * fundec) list =
 	match exp with
 		| Lval(Var(varinfo), NoOffset) ->
@@ -112,7 +109,7 @@ let function_from_exp job state exp args: (state * fundec) list =
 						match leaf with
 							| Bytes_FunPtr(varinfo,_) ->
 								(* the varinfo should always map to a valid fundec (if the file was parsed by Cil) *)
-								let state = add_guard_to_state state pre in
+								let state = MemOp.state__add_path_condition state (Bytes.guard__to_bytes pre) true in
 								let fundec = Cilutility.find_fundec_by_varinfo job.file varinfo in
 								(state, fundec)::acc
 							| _ -> acc (* should give a warning here about a non-valid function pointer*)
