@@ -564,20 +564,7 @@ let guard__symbolics () = Guard_Bytes (bytes__symbolic 4)
 
 let guard__bytes b = Guard_Bytes b
 
-let rec guard__to_bytes g = match g with
-  | Guard_Or(g1,g2) -> Bytes_Op (OP_LOR,[guard__to_bytes g1,Cil.intType;guard__to_bytes g2,Cil.intType])
-  | Guard_And(g1,g2) -> Bytes_Op (OP_LAND,[guard__to_bytes g1,Cil.intType;guard__to_bytes g2,Cil.intType])
-  | Guard_Not(g1) -> Bytes_Op (OP_LNOT,[guard__to_bytes g1,Cil.intType])
-  | Guard_Bytes(b) -> b
-  | Guard_Symbolic(s) -> 
-      (* The below doesn't work! why???
-      bytes__make_default 4 (Byte_Symbolic s) 
-      bytes__of_list [(Byte_Symbolic s);byte__zero;byte__zero;byte__zero]
-       *)
-      failwith "guard__to_bytes: Guard_Symbolic doesn't work"
-
-  | Guard_True -> bytes__one
-
+let guard__to_bytes g = make_Bytes_Conditional (IfThenElse (g, Unconditional bytes__one, Unconditional bytes__zero))
 
 
 (**
