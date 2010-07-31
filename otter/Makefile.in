@@ -32,6 +32,7 @@ debug : ocamlbuild//runotter.d.byte config
 libs : ocamlbuild//Otter.cmxa ocamlbuild//Otter.a ocamlbuild//Otter.cma ocamlbuild//Otter.cmi
 
 test : ounit//runtestotter.d.byte
+ounit//runtestotter.d.byte : debug
 
 config : otter.pl.config
 otter.pl.config : Makefile $(CIL_SRCDIR)/config.mk
