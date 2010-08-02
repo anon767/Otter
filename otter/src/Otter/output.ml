@@ -1,15 +1,5 @@
 open Executeargs
 
-let last_time = ref 0.0
-let cur_time_elapsed = ref 0.0
-let time_elapsed () =
-	let cur_time = Sys.time () in
-	let time = cur_time -. (!last_time) in
-		last_time := cur_time;
-		cur_time_elapsed := time;
-		time
-
-
 class formatter_base =
 	object
 		method format_str (str:string) = str
