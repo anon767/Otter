@@ -33,26 +33,6 @@ class basic_formatter = fun runningJobId runningJobDepth cur_loc ->
 			impl str
 	end
 
-class ['a] indent_formatter = fun (f:'a) ->
-	object
-		inherit formatter_base
-		val f = f
-		method set_formatter f = {<f = f>}
-		method format_str str = 
-			let rec impl str label = 
-				if String.length str = 0 then
-					""
-				else if String.contains str '\n' then
-				  	let i = String.index str '\n' in
-				  	let s1 = String.sub str 0 i in
-				  	let s2 = String.sub str (i+1) ((String.length str) - i - 1) in
-				    	Format.sprintf "%s%s\n%s" label s1 (impl s2 (String.make (String.length label) ' '))
-				else
-					Format.sprintf "%s%s" label str
-			in
-			impl str (f#format_str " ")
-	end
-
 let formatter = ref (new formatter_base)(*new basic_formatter 0 0 Cil.locUnknown*)
 
 type msg_type = 
