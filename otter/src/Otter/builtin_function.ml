@@ -915,6 +915,29 @@ let libc_interceptor job job_queue interceptor =
 		(intercept_function_by_name_external "mbtowc"                  "__otter_libc_mbtowc") @@
 		(intercept_function_by_name_external "wctomb"                  "__otter_libc_wctomb") @@
 
+		(* string.h *)
+		(intercept_function_by_name_external "memcpy"                  "__otter_libc_memcpy") @@
+		(intercept_function_by_name_external "memmove"                 "__otter_libc_memmove") @@
+		(intercept_function_by_name_external "strcpy"                  "__otter_libc_strcpy") @@
+		(intercept_function_by_name_external "strncpy"                 "__otter_libc_strncpy") @@
+		(intercept_function_by_name_external "strcat"                  "__otter_libc_strcat") @@
+		(intercept_function_by_name_external "strncat"                 "__otter_libc_strncat") @@
+		(intercept_function_by_name_external "memcmp"                  "__otter_libc_memcmp") @@
+		(intercept_function_by_name_external "strcmp"                  "__otter_libc_strcmp") @@
+		(intercept_function_by_name_external "strcoll"                 "__otter_libc_strcoll") @@
+		(intercept_function_by_name_external "strxfrm"                 "__otter_libc_strxfrm") @@
+		(intercept_function_by_name_external "memchr"                  "__otter_libc_memchr") @@
+		(intercept_function_by_name_external "strchr"                  "__otter_libc_strchr") @@
+		(intercept_function_by_name_external "strcspn"                 "__otter_libc_strcspn") @@
+		(intercept_function_by_name_external "strpbrk"                 "__otter_libc_strpbrk") @@
+		(intercept_function_by_name_external "strrchr"                 "__otter_libc_strrchr") @@
+		(intercept_function_by_name_external "strspn"                  "__otter_libc_strspn") @@
+		(intercept_function_by_name_external "strstr"                  "__otter_libc_strstr") @@
+		(intercept_function_by_name_external "strtok"                  "__otter_libc_strtok") @@
+		(intercept_function_by_name_external "memset"                  "__otter_libc_memset") @@
+		(intercept_function_by_name_external "strerror"                "__otter_libc_strerror") @@
+		(intercept_function_by_name_external "strlen"                  "__otter_libc_strlen") @@
+
 		(* pass on the job when none of those match *)
 		interceptor
 
