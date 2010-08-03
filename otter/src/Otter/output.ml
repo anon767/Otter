@@ -77,14 +77,24 @@ let fprintf ff format =
 	else
 		Format.ifprintf ff format
 
+let kfprintf k ff format =
+	if (need_print (!current_msg_type)) then
+		 Format.kfprintf k ff format
+ 	else
+		(* From http://caml.inria.fr/cgi-bin/viewcvs.cgi/ocaml/trunk/stdlib/format.ml?r2=9327&r1=9308 *)
+		let module Tformat = Printf.CamlinternalPr.Tformat in
+		let ikfprintf k ppf = Tformat.kapr (fun _ _ -> Obj.magic (k ppf)) in
+		ikfprintf k Format.std_formatter format
+
 
 let std_alwaysflush_formatter = 
   Format.make_formatter 
     (fun  str pos len -> output stdout str pos len; flush stdout) 
     (fun () -> ())
 
-let printf format = fprintf std_alwaysflush_formatter format 
-let mprintf format = Format.fprintf std_alwaysflush_formatter format 
+let printf format = fprintf std_alwaysflush_formatter format
+let kprintf k format = kfprintf k std_alwaysflush_formatter format
+let mprintf format = Format.fprintf std_alwaysflush_formatter format
 
 
 let banner_buffer = Buffer.create 100
