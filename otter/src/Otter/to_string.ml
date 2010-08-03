@@ -15,7 +15,7 @@ let bytestring arr =
   match b with
 	| Byte_Concrete (c) -> 
         if Char.code c >=32 && Char.code c <= 126 then sprintf "%c" c
-				else if c = '\n' then "\n"
+				else if c = '\n' then "\\n\n"
         else sprintf "/%d" (Char.code c)
 	| Byte_Symbolic (s) -> sprintf "\\%d" (s.symbol_id)
 	| Byte_Bytes (b,i) ->  "."

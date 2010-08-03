@@ -356,15 +356,7 @@ let otter_evaluate_string = wrap_state_function begin fun state retopt exps ->
 				(state, "(nil)")
 	in
 	Output.set_mode Output.MSG_MUSTPRINT;
-	Output.print_endline (
-		"Evaluates to string: \"" ^ (
-			if (Executeargs.print_args.Executeargs.arg_print_no_escaped_string)
-			then
-				str
-			else
-				String.escaped str
-			) ^ "\""
-	);
+	Output.printf "Evaluates to string: \"%s\"@\n" (String.escaped str);
 	state
 end
 
