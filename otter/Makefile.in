@@ -46,7 +46,7 @@ otter.pl.config : Makefile $(CIL_SRCDIR)/config.mk
 	$$::compile_after_merge = 0;\n\
 	1;" > $@
 
-doc : ocamlbuild//Otter.docdir ocamlbuild//TestUtil.docdir
+doc : ocamlbuild//OcamlUtilities.docdir ocamlbuild//Otter.docdir ocamlbuild//TestUtil.docdir
 
 clean : clean-ocamlbuild
 	$(RM) otter.pl.config

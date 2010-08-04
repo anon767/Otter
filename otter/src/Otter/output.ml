@@ -79,12 +79,9 @@ let fprintf ff format =
 
 let kfprintf k ff format =
 	if (need_print (!current_msg_type)) then
-		 Format.kfprintf k ff format
+		Format.kfprintf k ff format
  	else
-		(* From http://caml.inria.fr/cgi-bin/viewcvs.cgi/ocaml/trunk/stdlib/format.ml?r2=9327&r1=9308 *)
-		let module Tformat = Printf.CamlinternalPr.Tformat in
-		let ikfprintf k ppf = Tformat.kapr (fun _ _ -> Obj.magic (k ppf)) in
-		ikfprintf k Format.std_formatter format
+		OcamlUtilities.FormatPlus.ikfprintf k ff format
 
 
 let std_alwaysflush_formatter = 
