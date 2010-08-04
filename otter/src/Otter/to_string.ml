@@ -94,33 +94,6 @@ fundec f =
   if donotprint() then "" else
   f.svar.vname^" : "^(typ f.svar.vtype)
 
-and
-
-operation op =
-		match op with
-	| OP_PLUS -> "BVPLUS"
-	| OP_SUB -> "BVSUB"
-	| OP_MULT -> "BVMULT"
-	| OP_DIV -> "BVDIV"
-	| OP_MOD -> "BVMOD"
-	| OP_LSL -> "<<"
-	| OP_LSR -> ">>"
-	| OP_LT -> "BVLT"
-	| OP_GT -> "BVGT"
-	| OP_LE -> "BVLE"
-	| OP_GE -> "BVGE"
-	| OP_EQ -> "=="
-	| OP_NE -> "NE"
-	| OP_BAND -> "&"
-	| OP_BXOR -> "BVXOR"
-	| OP_BOR -> "|"
-	| OP_LAND -> "AND"
-	| OP_LOR -> "OR"
-	| OP_UMINUS -> "BVUMINUS"
-	| OP_BNOT -> "~"
-	| OP_LNOT -> "NOT"
-	| OP_SX -> "BVSX"
-
 
 let stmtInfo si =
 	let str = si.siFuncName ^ " " ^ (string_of_int si.siStmt.sid) in

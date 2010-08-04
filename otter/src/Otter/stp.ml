@@ -394,7 +394,8 @@ to_stp_bv_impl vc bytes =
 							bv_0 bv_1 , len_of_1_0)
 						| OP_SX -> (* here bv2 must be constant *)
 							failwith "not implemented"
-						| _ -> failwith ((To_string.operation op) ^ " is not a binary operator")
+						| _ ->
+							FormatPlus.failwith "%a is not a binary operator" BytesPrinter.operator op
 					end 
                 in
 					op_func bv1 len1 bv2 len2
@@ -413,7 +414,8 @@ to_stp_bv_impl vc bytes =
 									(Stpc.e_eq vc bv1 (Stpc.e_bv_of_int vc len1 0)) 
 								) 
 							bv_0 bv_1 , len_of_1_0)
-						| _ -> failwith ((To_string.operation op) ^ " is not a unary operator")
+						| _ ->
+							FormatPlus.failwith "%a is not a unary operator" BytesPrinter.operator op
 					end in
 					op_func bv1 len1 
 		| Bytes_Op(OP_LAND, bytesTypList) -> (* Let AND be variadic *)
@@ -433,7 +435,7 @@ to_stp_bv_impl vc bytes =
 							bvLenList)
 					 bv_0 bv_1 , len_of_1_0)
 		| Bytes_Op(op, _) ->
-				failwith ("Invalid number of operands for " ^ (To_string.operation op))
+				FormatPlus.failwith "Invalid number of operands for %a" BytesPrinter.operator op
 
 		| Bytes_Read (content,offset,len) ->
 			let arr = new_array vc content in
