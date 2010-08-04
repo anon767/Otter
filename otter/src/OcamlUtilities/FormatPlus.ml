@@ -36,3 +36,13 @@ let as_string printer item =
 
 (** Alternative to {!Pervasives.failwith} that has a {!Format.printf}-like interface. *)
 let failwith format = ksprintf Pervasives.failwith format
+
+
+(** Print a list of elements, given a printer for the element type and a separator.
+		@param printer is the element printer
+		@param sep is the separator string, which may include \@ control operators of {!Format.fprintf}
+		@return the element list printer
+*)
+let pp_print_list printer sep = fun ff list ->
+	ignore (List.fold_left (fun sep' x -> fprintf ff "%(%)@[%a@]" sep' printer x; sep) "" list)
+
