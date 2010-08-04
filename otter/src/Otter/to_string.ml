@@ -97,10 +97,6 @@ typ t = Pretty.sprint strlen (Cil.d_type () t)
 
 and
 
-lval l = Pretty.sprint strlen (Cil.d_lval () l)
-
-and
-
 exp_ff ff = function
 	| StartOf _ as e -> fprintf ff "StartOf(%a)" Printcil.f_exp e
 	| e -> Printcil.f_exp ff e
@@ -327,12 +323,6 @@ memory_block block =
 
 and
 
-lval_block_ff ff (block, offset) =
-	fprintf ff "(@[%s@],@ @[%a@]@,)" (memory_block block) bytes_ff offset
-
-
-and
-
 conditional_ff unconditional_ff ff =
 	let rec conditional_ff ff = function
 		| IfThenElse (guard, t, f) ->
@@ -344,14 +334,6 @@ conditional_ff unconditional_ff ff =
 
 	in
 	conditional_ff ff
-
-and
-
-conditional  unconditional_ff c = 
-  if donotprint() then "" else
-  (conditional_ff unconditional_ff str_formatter c; flush_str_formatter ())
-
-
 
 
 let humanReadableBytes bytes_to_var bytes =
@@ -368,48 +350,6 @@ let stmtInfo si =
 	then str ^ " (" ^ (location (get_stmtLoc si.siStmt.skind)) ^ ")"
 	else str
 
-let deferred = function
-	| Immediate b -> bytes b
-	| Deferred _ -> "<deferred>"
-
-let rec typedBytes b typ =
-	match b,typ with
-		| Bytes_ByteArray arr, TComp({cstruct=true;cfields=fields},_) ->
-				string_of_struct arr typ fields
-		| Bytes_ByteArray arr, TArray(baseType,_,_) ->
-				string_of_array arr baseType
-		| _ -> bytes b
-
-and
-
-string_of_struct bytearray structTyp fields =
-	String.concat "\n"
-		["{";
-		 String.concat "\n"
-			 (List.map
-					(fun field -> field.fname ^ " = " ^
-						 let offset,width = bitsOffset structTyp (Field (field,NoOffset)) in
-						 let offset = offset/8 and width = width/8 in (* Convert bit sizes to bytes *)
-						 let subarray = ImmutableArray.sub bytearray offset width in
-						 typedBytes (Bytes_ByteArray subarray) field.ftype
-					)
-					fields);
-		 "}"]
-
-and
-
-string_of_array arr baseTyp =
-	let sizeOfBaseType = (bitsSizeOf baseTyp) / 8 in
-	"[" ^ (String.concat ", " (strings_of_array_elts arr baseTyp sizeOfBaseType)) ^ "]"
-
-and
-
-strings_of_array_elts arr typ sizeOfTyp =
-	if ImmutableArray.length arr = 0
-	then []
-	else
-		typedBytes (Bytes_ByteArray (ImmutableArray.sub arr 0 sizeOfTyp)) typ ::
-			(strings_of_array_elts (ImmutableArray.sub arr sizeOfTyp (ImmutableArray.length arr - sizeOfTyp)) typ sizeOfTyp)
 
 let list_ff printer sep ff list =
 	ignore (List.fold_left (fun b x -> Format.fprintf ff "%(%)@[%a@]" b printer x; sep) "" list)
