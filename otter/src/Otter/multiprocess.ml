@@ -145,38 +145,16 @@ let get_job multijob = match multijob.processes with
 		Some (job, multijob)
 
 
-class multiprocess_formatter = fun jid pid cur_loc ->
-	object (this)
-		inherit Output.formatter_base
-
-		val jid : int = jid
-		val pid : int = pid
-		val cur_loc : Cil.location = cur_loc
-
-		method private print_loc loc = 
-			if loc==Cil.locUnknown then "" else
-			loc.Cil.file^":"^(string_of_int loc.Cil.line)^" : "
-		method private label () = 
-			Format.sprintf "[jid: %d, pid: %d] %s" jid pid (this#print_loc (cur_loc))
-		method format_str str = 
-			let rec impl str = 
-				if String.length str = 0 then
-					""
-				else if String.contains str '\n' then
-				  	let i = String.index str '\n' in
-				  	let s1 = String.sub str 0 i in
-				  	let s2 = String.sub str (i+1) ((String.length str) - i - 1) in
-				    	(this#label())^s1^"\n"^(impl s2)
-				else
-					(this#label())^str
-			in
-			impl str
-	end
-
 let multi_set_output_formatter_interceptor job job_queue interceptor = 
 	let j, m = job in
-	Output.formatter := ((new multiprocess_formatter m.jid m.current_pid (Core.get_job_loc j)) 
-		:> Output.formatter_base);
+	let loc = Core.get_job_loc j in
+	let label =
+		if loc = Cil.locUnknown then
+			Format.sprintf "[jid: %d, pid: %d] : " m.jid m.current_pid
+		else
+			Format.sprintf "[jid: %d, pid: %d] %s:%d : " m.jid m.current_pid loc.Cil.file loc.Cil.line
+	in
+	Output.formatter := new Output.labeled label;
 	interceptor job job_queue
 
 let intercept_fork job job_queue interceptor =

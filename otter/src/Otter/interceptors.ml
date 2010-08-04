@@ -16,8 +16,15 @@ let set_output_formatter_interceptor job job_queue interceptor =
 		);
 		old_job_id := job.jid
 	);
-	Output.formatter := ((new Output.basic_formatter job.jid (List.length job.state.path_condition) (Core.get_job_loc job)) 
-		:> Output.formatter_base);
+	let depth = List.length job.state.path_condition in
+	let loc = Core.get_job_loc job in
+	let label =
+		if loc = Cil.locUnknown then
+			Format.sprintf "[%d,%d] : " job.jid depth
+		else
+			Format.sprintf "[%d,%d] %s:%d : " job.jid depth loc.Cil.file loc.Cil.line
+	in
+	Output.formatter := new Output.labeled label;
 	interceptor job job_queue
 
 let intercept_function_by_name_internal target_name replace_func job job_queue interceptor =

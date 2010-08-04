@@ -1,39 +1,54 @@
 open Executeargs
 
-class formatter_base =
+class virtual t =
+	object (self : 'self)
+		val virtual formatter : Format.formatter
+
+		method printf : 'a . ('a, Format.formatter, unit) format -> 'a =
+			Format.fprintf formatter
+
+		method kprintf : 'a 'b . ('self -> 'a) -> ('b, Format.formatter, unit, 'a) format4 -> 'b = fun k ->
+			Format.kfprintf (fun _ -> k self) formatter
+	end
+
+class plain =
 	object
-		method format_str (str:string) = str
+		inherit t
+		val formatter =
+			(* flush after every write *)
+			Format.make_formatter (fun str pos len -> output stdout str pos len; flush stdout) (fun () -> ())
 	end
 
-class basic_formatter = fun runningJobId runningJobDepth cur_loc ->
-	object (this)
-		inherit formatter_base
-
-		val runningJobId : int = runningJobId
-		val runningJobDepth : int = runningJobDepth
-		val cur_loc : Cil.location = cur_loc
-
-		method private print_loc loc = 
-			if loc==Cil.locUnknown then "" else
-			loc.Cil.file^":"^(string_of_int loc.Cil.line)^" : "
-		method private label () = 
-			Format.sprintf "[%d,%d] %s" runningJobId runningJobDepth (this#print_loc (cur_loc))
-		method format_str str = 
-			let rec impl str = 
-				if String.length str = 0 then
-					""
-				else if String.contains str '\n' then
-				  	let i = String.index str '\n' in
-				  	let s1 = String.sub str 0 i in
-				  	let s2 = String.sub str (i+1) ((String.length str) - i - 1) in
-				    	(this#label())^s1^"\n"^(impl s2)
-				else
-					(this#label())^str
+class labeled label =
+	object
+		inherit t
+		val formatter =
+			(* flush after every line, prefixing each line with a label *)
+			let buffer = Buffer.create 80 in
+			let rec labeled_output str pos len =
+				let newline_index = 1 + try String.index_from str pos '\n' - pos with Not_found -> len in
+				if newline_index <= len then begin
+					(* print the label *)
+					Pervasives.output_string stdout label;
+					(* print the buffer *)
+					Buffer.output_buffer stdout buffer;
+					Buffer.clear buffer;
+					(* print the new string up to the end of the line *)
+					Pervasives.output stdout str pos newline_index;
+					Pervasives.flush stdout;
+					(* recurse on the remainder *)
+					labeled_output str (newline_index + pos) (len - newline_index)
+				end else begin
+					Buffer.add_substring buffer str pos len;
+				end
 			in
-			impl str
+			let formatter = Format.make_formatter labeled_output (fun () -> ()) in
+			(* adjust the margin to account for the length of the label *)
+			Format.pp_set_margin formatter (Format.pp_get_margin formatter () - (String.length label));
+			formatter
 	end
 
-let formatter = ref (new formatter_base)(*new basic_formatter 0 0 Cil.locUnknown*)
+let formatter = ref (new plain)
 
 type msg_type = 
 	| MSG_REG
@@ -71,27 +86,24 @@ let need_print msg_type =
 	| MSG_MUSTPRINT -> Executeargs.print_args.arg_print_mustprint
 
 
-let fprintf ff format =
+let printf format =
 	if (need_print (!current_msg_type)) then
-		Format.fprintf ff format
+		!formatter#printf format
 	else
-		Format.ifprintf ff format
+		Format.ifprintf Format.std_formatter format
 
-let kfprintf k ff format =
+let kprintf k format =
 	if (need_print (!current_msg_type)) then
-		Format.kfprintf k ff format
+		 !formatter#kprintf k format
  	else
-		OcamlUtilities.FormatPlus.ikfprintf k ff format
+		OcamlUtilities.FormatPlus.ikfprintf (fun _ -> k !formatter) Format.std_formatter format
 
 
-let std_alwaysflush_formatter = 
+let mprint_formatter =
   Format.make_formatter 
     (fun  str pos len -> output stdout str pos len; flush stdout) 
     (fun () -> ())
-
-let printf format = fprintf std_alwaysflush_formatter format
-let kprintf k format = kfprintf k std_alwaysflush_formatter format
-let mprintf format = Format.fprintf std_alwaysflush_formatter format
+let mprintf format = Format.fprintf mprint_formatter format
 
 
 let banner_buffer = Buffer.create 100
@@ -111,14 +123,9 @@ let banner_printf level format =
   if level == 0 then Format.ifprintf banner_formatter format
   else Format.fprintf banner_formatter format
 
-let print_string str = 
+let print_string str =
 	if (need_print (!current_msg_type)) then
-		(
-		Pervasives.print_string (!formatter#format_str str);
-		Pervasives.flush_all ()
-		)
-	else
-		()
+		!formatter#printf "%s" str
 	
 
 let print_endline str = 
