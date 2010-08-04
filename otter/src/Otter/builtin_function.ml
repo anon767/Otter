@@ -177,19 +177,19 @@ let libc_free = wrap_state_function begin fun state retopt exps ->
 	function, or if the space is deallocated by a call to free() or realloc(), the
 	behaviour is undefined.  Any use of a pointer that refers to freed space causes
 	undefined behaviour.  *)
-	let warning msg = Output.print_endline msg; set_return_value state retopt bytes__zero in
+	let warning format = Output.kprintf (fun _ -> set_return_value state retopt bytes__zero) format in
 	let state, ptr = Eval.rval state (List.hd exps) in
 	match ptr with
 		| Bytes_Address (block, _) ->
 			if block.memory_block_type != Block_type_Heap
-			then warning ("Freeing a non-malloced pointer:" ^ (To_string.exp (List.hd exps)) ^ " = " ^ (To_string.bytes ptr)) else 
+			then warning "Freeing a non-malloced pointer:@ @[%a@]@ = @[%a@]@\n" To_string.exp_ff (List.hd exps) To_string.bytes_ff ptr else
 			if not (MemOp.state__has_block state block)
-			then warning ("Double-free:" ^ (To_string.exp (List.hd exps)) ^ " = " ^ (To_string.bytes ptr)) else 
+			then warning "Double-free:@ @[%a@]@ = @[%a@]@\n" To_string.exp_ff (List.hd exps) To_string.bytes_ff ptr else
 			let state = MemOp.state__remove_block state block in
 			set_return_value state retopt bytes__zero
 		| _ ->
 			Output.set_mode Output.MSG_MUSTPRINT;
-			warning ("Freeing something that is not a valid pointer: " ^ (To_string.exp (List.hd exps)) ^ " = " ^ (To_string.bytes ptr))
+			warning "Freeing something that is not a valid pointer:@ @[%a@]@ = @[%a@]@\n" To_string.exp_ff (List.hd exps) To_string.bytes_ff ptr
 end
 
 
@@ -316,10 +316,10 @@ let libc_exit job retopt exps =
 	let exit_code = 
 		match exps with
 			| exp1::_ -> 
-				Output.print_endline ("exit() called with code "^(To_string.bytes (snd (Eval.rval job.state exp1))));
+				Output.printf "exit() called with code@ @[%a@]@\n" To_string.bytes_ff (snd (Eval.rval job.state exp1));
 				Some ((snd (Eval.rval job.state exp1)))
 			| [] -> 
-				Output.print_endline ("exit() called with code (NONE)");
+				Output.printf "exit() called with code (NONE)@\n";
 				None
 	in
 	Complete (Types.Exit (exit_code, { result_file = job.file; result_state = job.state; result_history = job.exHist; }))
@@ -327,7 +327,7 @@ let libc_exit job retopt exps =
 let otter_evaluate = wrap_state_function begin fun state retopt exps ->
 	let state, bytes = eval_join_exps state exps Cil.LAnd in
 	Output.set_mode Output.MSG_MUSTPRINT;
-	Output.print_endline ("	Evaluates to "^(To_string.bytes bytes));
+	Output.printf "Evaluates to@ @[%a@]@\n" To_string.bytes_ff bytes;
 	state
 end
 
@@ -342,7 +342,7 @@ let otter_evaluate_string = wrap_state_function begin fun state retopt exps ->
 				let state, size_bytes = Eval.rval state sizeexp in
 				let size =
 					try bytes_to_int_auto size_bytes with
-					  Failure(s) -> Output.print_endline s; 32
+					  Failure(s) -> Output.printf "%s@\n" s; 32
 				in
 				let state, bytes = MemOp.state__deref state (conditional__lval_block (block, offset), size) in
 				let str = 
@@ -385,9 +385,11 @@ end
 
 
 let otter_path_condition = wrap_state_function begin fun state retopt exps ->
-	let pc_str = (To_string.list To_string.bytes_ff "@\n  AND@\n" state.path_condition) in
 	Output.set_mode Output.MSG_MUSTPRINT;
-	Output.print_endline (if String.length pc_str = 0 then "(nil)" else pc_str);
+	if state.path_condition = [] then
+		Output.printf "(nil)@\n"
+	else
+		Output.printf "@[%a@]@\n" (To_string.list_ff To_string.bytes_ff "@\n  AND@\n") state.path_condition;
 	state
 end
 
@@ -425,14 +427,14 @@ end
 let otter_comment = wrap_state_function begin fun state retopt exps ->
 	let exp = List.hd exps in
 	Output.set_mode Output.MSG_MUSTPRINT;
-	Output.print_endline ("COMMENT:"^(To_string.exp exp));
+	Output.printf "COMMENT:@ @[%a@]@\n" To_string.exp_ff exp;
 	state
 end
 
 
 let otter_break_pt = wrap_state_function begin fun state retopt exps ->
 	Output.set_mode Output.MSG_REG;
-	Output.print_endline "Option (h for help):";
+	Output.printf "Option (h for help):@\n";
 	Scanf.scanf "%d\n" 
 	begin
 		fun p1->
@@ -451,9 +453,6 @@ let otter_print_state = wrap_state_function begin fun state retopt exps ->
 		let compare = Pervasives.compare				
 	end)	 in
 	let bosmap = ref BOSMap.empty in
-	let printStringString s1 s2 =
-		Output.print_endline (s1 ^ " = " ^ s2)
-	in
 	let rec printVarFieldsBytes varname typ bytes off =
 		(* break down each local by its fields *)
 		(* canonicalize concrete values by their array rep*)
@@ -469,20 +468,19 @@ let otter_print_state = wrap_state_function begin fun state retopt exps ->
 				  compinfo.cfields
 			| _ -> 
 				let size = (Cil.bitsSizeOf typ/8) in
-				let rec p b = 
+				let rec p ff b =
 					match b with
-						| Bytes_Constant const ->  p (constant_to_bytes const)
-						| Bytes_ByteArray ba -> To_string.bytes (Bytes_ByteArray(ImmutableArray.sub ba off size))
+						| Bytes_Constant const ->  p ff (constant_to_bytes const)
+						| Bytes_ByteArray ba -> To_string.bytes_ff ff (Bytes_ByteArray(ImmutableArray.sub ba off size))
 						| Bytes_Address (block, boff) -> 
 							if off = 0 && size = (bitsSizeOf voidPtrType / 8) then begin
 								bosmap := BOSMap.add (block,boff,size) None (!bosmap);
-								To_string.bytes b
+								To_string.bytes_ff ff b
 							end else
 								failwith (Printf.sprintf "PRINT STATE: Reading part of a Bytes_Address: %s %d %d" (To_string.bytes b) off size)
-						| _ -> "("^(To_string.bytes b)^","^(string_of_int off)^","^(string_of_int size)^")"
+						| _ -> Format.fprintf ff "(@[%a@],@ %d,@ %d@,)" To_string.bytes_ff b off size
 				in 
-				let rhs = p bytes in 
-				printStringString varname rhs
+				Output.printf "%s@ = @[%a@]@\n" varname p bytes
 	in
 	let printVarBytes var bytes =
 		printVarFieldsBytes var.vname var.vtype bytes 0 
@@ -494,40 +492,37 @@ let otter_print_state = wrap_state_function begin fun state retopt exps ->
 				| Immediate (Unconditional (block, _)) ->
 					begin match (MemoryBlockMap.find block state.block_to_bytes) with
 						| Immediate bytes -> printVarBytes var bytes
-						| Deferred _ -> printStringString var.vname "(deferred)"
+						| Deferred _ -> Output.printf "%s@ = (Deferred)@\n" var.vname
 					end
 				(* TODO: print something useful *)
 				| Immediate (IfThenElse _) ->
-					printStringString var.vname "(IfThenElse)"
+					Output.printf "%s@ = (IfThenElse)@\n" var.vname
 				| Immediate (ConditionalException _) ->
-					printStringString var.vname "(ConditionalException)"
+					Output.printf "%s@ = (ConditionalException)@\n" var.vname
 				| Deferred _ ->
-					printStringString var.vname "(deferred)"
+					Output.printf "%s@ = (Deferred)@\n" var.vname
 	in
 	
-	Output.print_endline "#BEGIN PRINTSTATE";
-	Output.print_endline "#Globals:";
+	Output.printf "#BEGIN PRINTSTATE@\n";
+	Output.printf "#Globals:@\n";
 	VarinfoMap.iter printVar state.global;
-	Output.print_endline "#Locals:";
+	Output.printf "#Locals:@\n";
 	VarinfoMap.iter printVar (List.hd state.locals);
-	Output.print_endline "#Formals:";
+	Output.printf "#Formals:@\n";
 	VarinfoMap.iter printVar (List.hd state.formals);
 	(* explore only one level of memory *)
 	bosmap := BOSMap.mapi begin fun (block,off,size) des -> match des with
 		| Some _ -> des
 		| None -> Some (snd(MemOp.state__deref state (conditional__lval_block (block, off), size)))
 	end (!bosmap);
-	Output.print_endline "#Memory: (one level)";
+	Output.printf "#Memory: (one level)@\n";
 	BOSMap.iter (fun (block,off,size) des -> 
-		let sdes =
-			match des with 
-				| None -> "None"
-				| Some b -> To_string.bytes b
-		in
-		Output.print_endline ((To_string.bytes (Bytes_Address(block, off))) ^ " -> " ^ sdes)
+		match des with
+			| None -> Output.printf "@[%a@]@ -> None@\n" To_string.bytes_ff (Bytes_Address(block, off))
+			| Some b -> Output.printf "@[%a@]@ -> @[%a@]@\n" To_string.bytes_ff (Bytes_Address(block, off)) To_string.bytes_ff b
 	)
 	(!bosmap);
-	Output.print_endline "#END PRINTSTATE";
+	Output.printf "#END PRINTSTATE@\n";
 	Executeargs.print_args.Executeargs.arg_print_char_as_int <- arg_print_char_as_int;
 	state
 end
@@ -583,7 +578,7 @@ let otter_assert_equal_state = wrap_state_function begin fun state retopt exps -
 		let s0 = MemOp.index_to_state__get key0 in
 		Output.set_mode Output.MSG_MUSTPRINT;
 		if MemOp.cmp_states s0 state then
-			Output.print_endline "AssertEqualState satisfied";
+			Output.printf "AssertEqualState satisfied@\n";
 			MemOp.index_to_state__add key0 state; 
 			state
 	with Not_found -> 
@@ -622,7 +617,7 @@ let intercept_symbolic job job_queue interceptor =
 					let state, (_, size as lval) = Eval.lval state cil_lval in
 					let symbBytes = bytes__symbolic size in
 					Output.set_mode Output.MSG_MUSTPRINT;
-					Output.print_endline (varinf.vname ^ " = " ^ (To_string.bytes symbBytes));
+					Output.printf "%s@ = @[%a@]@\n" varinf.vname To_string.bytes_ff symbBytes;
 
 					let exHist = { exHist with bytesToVars = (symbBytes,varinf)::exHist.bytesToVars } in
 					let state = MemOp.state__assign state lval symbBytes in

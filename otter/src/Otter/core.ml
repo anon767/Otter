@@ -198,7 +198,7 @@ let exec_instr job =
 	assert (job.instrList <> []);
 	let printInstr instr =
 		Output.set_mode Output.MSG_STMT;
-		Output.print_endline (To_string.instr instr)
+		Output.printf "%s@\n" (To_string.instr instr)
 	in
 
 	let instr,tail = match job.instrList with i::tl -> i,tl | _ -> assert false in
@@ -229,7 +229,7 @@ let exec_instr job =
 			exec_instr_call job instr lvalopt fexp exps
 		| Asm _ ->
 			Output.set_mode Output.MSG_MUSTPRINT;
-			Output.print_endline "Warning: ASM unsupported";
+			Output.printf "Warning: ASM unsupported@\n";
 			printInstr instr;
 			Active (if tail = [] (* Update job.stmt if this instr ends this stmt *)
 							then { job with stmt = List.hd job.stmt.succs }
@@ -246,7 +246,7 @@ let exec_stmt job =
 	in
 
 	Output.set_mode Output.MSG_STMT;
-	Output.print_endline (To_string.stmt stmt);
+	Output.printf "%s@\n" (To_string.stmt stmt);
 	match stmt.skind with
 		| Instr [] ->
 				let nextStmt = match stmt.succs with [x] -> x | _ -> assert false in
@@ -270,7 +270,7 @@ let exec_stmt job =
 					match state.callContexts with
 						| Runtime::_ -> (* completed symbolic execution (e.g., return from main) *)
 								Output.set_mode Output.MSG_MUSTPRINT;
-								Output.print_endline "Program execution finished";
+								Output.printf "Program execution finished.@\n";
 (*
 								if run_args.arg_line_coverage then (
 									Report.printPath state job.exHist;
@@ -368,11 +368,12 @@ let exec_stmt job =
 					Output.set_mode Output.MSG_GUARD;
 					if(Output.need_print Output.MSG_GUARD) then
 						begin
-							Output.print_endline ("Check if the following holds:");
-							Output.print_endline (To_string.bytes rv);
-							Output.print_endline ("Under the path condition:");
-							let pc_str = (To_string.list To_string.bytes_ff "@ AND " state.path_condition) in
-							Output.print_endline (if String.length pc_str = 0 then "(nil)" else pc_str);
+							Output.printf "Check if the following holds:@\n  @[%a@]@\n" To_string.bytes_ff rv;
+							Output.printf "Under the path condition:@\n";
+							if state.path_condition = [] then
+								Output.printf "  (nil)@\n"
+							else
+								Output.printf "  @[%a@]@\n" (To_string.list_ff To_string.bytes_ff "@ AND ") state.path_condition;
 						end;
  
 					let state, truth = MemOp.eval_with_cache state state.path_condition rv in
@@ -380,21 +381,21 @@ let exec_stmt job =
 					Output.set_mode Output.MSG_REG;
 					if truth == True then
 						begin
-							Output.print_endline "True";
+							Output.printf "True@\n";
 							let nextState,nextStmt = try_branch state None block1 in
 							let job' = { job with state = nextState; stmt = nextStmt; } in
 							Active { job' with exHist = nextExHist (Some nextStmt) ~whichBranch:true; }
 						end
 					else if truth == False then
 						begin
-							Output.print_endline "False";
+							Output.printf "False@\n";
 							let nextState,nextStmt = try_branch state None block2 in
 							let job' = { job with state = nextState; stmt = nextStmt; } in
 							Active { job' with exHist = nextExHist (Some nextStmt) ~whichBranch:false; }
 						end
 					else
 						begin
-							Output.print_endline "Unknown\n";
+							Output.printf "Unknown@\n";
 							
 							let nextStateT,nextStmtT = try_branch state (Some rv) block1 in
 							let nextStateF,nextStmtF = try_branch state (Some (logicalNot rv)) block2 in

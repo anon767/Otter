@@ -123,15 +123,3 @@ let banner_printf level format =
   if level == 0 then Format.ifprintf banner_formatter format
   else Format.fprintf banner_formatter format
 
-let print_string str =
-	if (need_print (!current_msg_type)) then
-		!formatter#printf "%s" str
-	
-
-let print_endline str = 
-	if str <> "" then print_string (str^"\n")
-	
-
-let print_newline () =
-	print_string "\n"
-	

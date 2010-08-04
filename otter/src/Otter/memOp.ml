@@ -254,7 +254,7 @@ let rec state__assign state (lvals, size) bytes =
 			| _          -> make_Bytes_Conditional ( IfThenElse (pre, conditional__bytes newbytes, conditional__bytes oldbytes) )
 		in
 		Output.set_mode Output.MSG_ASSIGN;
-		Output.print_endline ("    Assign "^(To_string.bytes bytes)^" to "^(To_string.memory_block block)^","^(To_string.bytes offset));
+		Output.printf "Assign@ @[%a@]@ to @[%s, %a@]@\n" To_string.bytes_ff bytes (To_string.memory_block block) To_string.bytes_ff offset;
 		state__add_block state block newbytes
 	in
 	conditional__fold assign state lvals
@@ -267,7 +267,7 @@ let state__start_fcall state callContext fundec argvs =
     (* Output.print_endline (">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
      *)
 
-    Output.print_endline ("Enter function " ^ (To_string.fundec fundec));
+    Output.printf "Enter function %s@\n" (To_string.fundec fundec);
     (* set up the new stack frame *)
 	let block_to_bytes = state.block_to_bytes in
 	let formal, block_to_bytes = frame__add_varinfos frame__empty block_to_bytes fundec.Cil.sformals Block_type_Local in
@@ -291,7 +291,7 @@ let state__start_fcall state callContext fundec argvs =
 					failwith ("Too many arguments to non-vararg function " ^ fundec.svar.vname)
 				);
 				Output.set_mode Output.MSG_FUNC;
-				Output.print_endline ("Rest of args: "^(To_string.list To_string.bytes_ff ",@ " va_arg));
+				Output.printf "Rest of args:@ @[%a@]@\n" (To_string.list_ff To_string.bytes_ff ",@ ") va_arg;
 			);
 			{ state with va_arg = va_arg::state.va_arg }
 		| _, [] ->
@@ -302,7 +302,7 @@ let state__start_fcall state callContext fundec argvs =
 
 let state__end_fcall state =
 	Output.set_mode Output.MSG_FUNC;
-	Output.print_endline ("Exit function "^(To_string.fundec (List.hd state.callstack)));
+	Output.printf "Exit function %s@\n" (To_string.fundec (List.hd state.callstack));
 	(* Output.print_endline ("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
      *)
 	let block_to_bytes = state.block_to_bytes in
@@ -396,7 +396,7 @@ let state__trace state: string =
 	List.fold_left begin fun str context -> match context with
 		| Runtime            -> Format.sprintf "%s/Runtime" str
 		| Source (_,_,instr,_) -> Format.sprintf "%s/%s" str (To_string.location (Cil.get_instrLoc instr))
-		| NoReturn instr     -> Format.sprintf "%s/NoReturn@%s" str (To_string.location (Cil.get_instrLoc instr))
+		| NoReturn instr     -> Format.sprintf "%s/NoReturn@@%s" str (To_string.location (Cil.get_instrLoc instr))
 	end "" state.callContexts
 
 
@@ -430,8 +430,8 @@ let cmp_states (s1:state) (s2:state) =
 	    		if bytes__equal bytes1 bytes2 then
 					result
 				else begin
-	    			Output.print_endline (Format.sprintf " >> %s = %s" (block.memory_block_name) (To_string.bytes bytes1));
-	    			Output.print_endline (Format.sprintf " << %s = %s" (block.memory_block_name) (To_string.bytes bytes2));
+	    			Output.printf " >> %s@ = @[%a@]@\n" (block.memory_block_name) To_string.bytes_ff bytes1;
+	    			Output.printf " << %s@ = @[%a@]@\n" (block.memory_block_name) To_string.bytes_ff bytes2;
 					false
 				end
 	          with Not_found -> result
@@ -445,7 +445,7 @@ let cmp_states (s1:state) (s2:state) =
 			let typ = block1.memory_block_type in
 				if typ!=Block_type_Global && typ!=Block_type_Heap then result else (* only care about globals and heap content *)
 	        if MemoryBlockMap.mem block1 state2.block_to_bytes then result else (
-	    			Output.print_endline (Format.sprintf " %s %s = %s" prefix (block1.memory_block_name) (To_string.bytes bytes1));
+	    			Output.printf " %s %s@ = @[%a@]@\n" prefix (block1.memory_block_name) To_string.bytes_ff bytes1;
 						false
 					)
 	  in
@@ -501,7 +501,7 @@ let rec state__eval state pc bytes =
 
   let nontrivial () = 
     Output.set_mode Output.MSG_REG;
-    Output.print_endline "Ask STP...";
+    Output.printf "Ask STP...@\n";
     (state,Stats.time "STP" (Stp.consult_stp pc) bytes)
 
   in

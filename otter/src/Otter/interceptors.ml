@@ -12,7 +12,7 @@ let set_output_formatter_interceptor job job_queue interceptor =
 		if not Executeargs.run_args.arg_cfg_pruning then
 		(
 			Output.set_mode Output.MSG_REG;
-			Output.print_endline "***** Changing running job *****"
+			Output.printf "***** Changing running job *****@\n"
 		);
 		old_job_id := job.jid
 	);
@@ -46,7 +46,7 @@ let intercept_function_by_name_external target_name replace_name job job_queue i
 				}
 			in
 			Output.set_mode Output.MSG_REG;
-			Output.print_endline (Format.sprintf "Transformed Call %s to Call %s" target_name replace_name);
+			Output.printf "Transformed Call %s to Call %s@\n" target_name replace_name;
 			(* Don't allow any other intercepters to transform the name again *)
 			Core.step job job_queue 
 		| _ -> 
@@ -62,7 +62,7 @@ let intercept_function_by_name_external_cascading target_name replace_name job j
 				}
 			in
 			Output.set_mode Output.MSG_REG;
-			Output.print_endline (Format.sprintf "Transformed Call %s to Call %s" target_name replace_name);
+			Output.printf "Transformed Call %s to Call %s@\n" target_name replace_name;
 			(* allow any intercepters to transform the name again *)
 			(Active job, job_queue) 
 		| _ -> 

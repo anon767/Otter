@@ -171,7 +171,7 @@ let intercept_fork job job_queue interceptor =
 			let job = { job with Types.instrList = []; Types.stmt = next_stmt; } in
 
 			Output.set_mode Output.MSG_REG;
-			Output.print_endline (Format.sprintf "fork(): parent: %d, child: %d" multijob.current_pid multijob.next_pid);
+			Output.printf "fork(): parent: %d, child: %d@\n" multijob.current_pid multijob.next_pid;
 
 			(* clone the job *)
 			let job, child_job = match retopt with
@@ -291,7 +291,7 @@ let doit file =
 	let result = init job in
 
 	(* print the results *)
-	Output.print_endline (Executedebug.get_log ());
+	Output.printf "%s@\n" (Executedebug.get_log ());
 	Report.print_report result
 
 

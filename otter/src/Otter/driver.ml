@@ -52,7 +52,7 @@ let main_loop get_job interceptor process_result job_queue : job_completion list
 			| Some s ->
 				(* if we got a signal, stop and return the completed results *)
 				Output.set_mode Output.MSG_MUSTPRINT;
-				Output.print_endline s;
+				Output.printf "%s@\n" s;
 				completed
 			| None ->
 				match get_job job_queue with

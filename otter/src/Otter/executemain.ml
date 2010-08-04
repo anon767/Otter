@@ -174,7 +174,7 @@ let init_cmdline_argvs state argstr =
 		| h::t ->
 				(* Print out each argument *)
 				Output.set_mode Output.MSG_DEBUG;
-				Output.print_endline ("With arguments: \""^h^"\"");
+				Output.printf "With arguments: \"%s\"@\n" h;
 				let h_bytes =
 					make_Bytes_Address (argv_strings_block, int_to_bytes charsSoFar) in
 				impl t (ptrsSoFar + 1)
@@ -390,7 +390,7 @@ let doExecute (f: file) =
 	Sys.set_signal Sys.sigint old_INT_handler;
 
 	Output.formatter := new Output.plain;
-	Output.print_endline (Executedebug.get_log ());
+	Output.printf "%s@\n" (Executedebug.get_log ());
 		(* function stat 
 		Output.print_endline "\nFunction call stat:";
 		Cilutility.FundecMap.iter (fun f c -> Output.print_endline ((To_string.fundec f)^" : "^(string_of_int c))) (!MemOp.function_stat);	

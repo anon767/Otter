@@ -480,9 +480,9 @@ let doassert pc =
     Stpc.e_push vc;
 	
 	Output.set_mode Output.MSG_STP;
-	Output.print_endline "%%%%%%%%%%%%%%%%%%";
-	Output.print_endline "%% STP Program: %%";
-	Output.print_endline "%%%%%%%%%%%%%%%%%%";
+	Output.printf "%%%%%%%%%%%%%%%%%%@\n";
+	Output.printf "%% STP Program: %%@\n";
+	Output.printf "%%%%%%%%%%%%%%%%%%@\n";
 		
 	let rec do_assert pc = match pc with
 		| [] -> ()
@@ -490,7 +490,7 @@ let doassert pc =
 			let (bv, len) = Stats.time "STP construct" (fun ()-> to_stp_bv vc head) () in (* 1 *)
 			Stats.time "STP doassert" (fun () -> Stpc.assert_ctrue vc len bv) () ; (* 2 *)
 			Output.set_mode Output.MSG_STP;
-			Output.print_endline ("ASSERT("^(Stpc.to_string bv)^"!=0);");
+			Output.printf "ASSERT(%s@ != 0);@\n" (Stpc.to_string bv);
 			do_assert tail
 	in
 	(*Stats.time "STP assert" do_assert relevantAssumptions;*)
@@ -506,7 +506,7 @@ let query vc bytes equal_zero =
 	let q = if equal_zero then q else Stpc.e_not vc q in
 	
 	Output.set_mode Output.MSG_STP;
-	Output.print_endline ("QUERY("^(Stpc.to_string q)^");");
+	Output.printf "QUERY(%s);@\n" (Stpc.to_string q);
 	incr stp_count;
 	let return = Stats.time "STP query" (Stpc.query vc) q in
       Stpc.e_pop vc;

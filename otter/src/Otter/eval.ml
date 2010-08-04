@@ -11,7 +11,7 @@ open Operation
 	 Ternary.Unknown (rather than Ternary.False). *)
 let print_failed_assertion state bytes exps ~isUnknown =
 	Output.set_mode Output.MSG_MUSTPRINT;
-	Output.print_endline "Assertion not-satisfied (see error log).";
+	Output.printf "Assertion not-satisfied (see error log).@\n";
 	let oldPrintNothingVal = print_args.arg_print_nothing in
 	Output.set_mode Output.MSG_MUSTPRINT;
 	print_args.arg_print_nothing <- false; (* Allow printing for the log *)
@@ -42,7 +42,7 @@ let check state bytes exps =
 	match result with
 		Ternary.True -> (* The assertion is true *)
 			Output.set_mode Output.MSG_REG;
-			Output.print_endline "Assertion satisfied.";
+			Output.printf "Assertion satisfied.@\n";
 			state
 	| Ternary.False -> (* The assertion is definitely false *)
 			print_failed_assertion state bytes exps ~isUnknown:false;
@@ -123,7 +123,7 @@ let rec getBlockSizesAndOffsets lvals = match lvals with
 
 
 let checkBounds state lvals cil_lval useSize =
-	Output.print_endline ("Checking bounds of " ^ Pretty.sprint 50 (Cil.d_lval () cil_lval));
+	Output.printf "Checking bounds of @[%a@]@\n" Printcil.f_lval cil_lval;
 
 	(* Get the block sizes and offsets *)
 	let sizesTree, offsetsTree = getBlockSizesAndOffsets lvals in
