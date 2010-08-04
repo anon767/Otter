@@ -4,6 +4,7 @@ This module contains a library of built-in functions for Otter.
 
 *)
 
+open OcamlUtilities
 open Cil
 open Ternary
 open Bytes
@@ -336,28 +337,29 @@ let otter_evaluate_string = wrap_state_function begin fun state retopt exps ->
 	let exp = List.hd exps in
 	let sizeexp = List.nth exps 1 in
 	let state, addr_bytes = Eval.rval state exp in
-	let state, str = 
-		match addr_bytes with
-			| Bytes_Address(block, offset) ->
-				let state, size_bytes = Eval.rval state sizeexp in
-				let size =
-					try bytes_to_int_auto size_bytes with
-					  Failure(s) -> Output.printf "%s@\n" s; 32
-				in
-				let state, bytes = MemOp.state__deref state (conditional__lval_block (block, offset), size) in
-				let str = 
-					match bytes with
-						| Bytes_ByteArray(bytearray) -> To_string.bytestring bytearray
-						| Bytes_Constant(CInt64(i,_,_)) -> Int64.to_string i
-						| _ -> "(complicate)"
-				in
-					(state, str)
-			| _ ->
-				(state, "(nil)")
-	in
 	Output.set_mode Output.MSG_MUSTPRINT;
-	Output.printf "Evaluates to string: \"%s\"@\n" str;
-	state
+	match addr_bytes with
+		| Bytes_Address(block, offset) ->
+			let state, size_bytes = Eval.rval state sizeexp in
+			let size =
+				try
+					bytes_to_int_auto size_bytes
+				with Failure s ->
+					Output.printf "%s@\n" s; 32
+			in
+			let state, bytes = MemOp.state__deref state (conditional__lval_block (block, offset), size) in
+			begin match bytes with
+				| Bytes_ByteArray bytearray ->
+					Output.printf "Evaluates to string:@ \"@[%a@]\"@\n" BytesPrinter.bytestring bytearray
+				| Bytes_Constant (CInt64 (i, _, _)) ->
+					Output.printf "Evaluates to non-string constant: %Ld@\n" i
+				| _ ->
+					Output.printf "Evaluates to a complicated string.@\n"
+			end;
+			state
+		| _ ->
+			Output.printf "Evaluates to an invalid string.@\n";
+			state
 end
 
 
@@ -477,7 +479,7 @@ let otter_print_state = wrap_state_function begin fun state retopt exps ->
 								bosmap := BOSMap.add (block,boff,size) None (!bosmap);
 								To_string.bytes_ff ff b
 							end else
-								failwith (Printf.sprintf "PRINT STATE: Reading part of a Bytes_Address: %s %d %d" (To_string.bytes b) off size)
+								FormatPlus.failwith "PRINT STATE: Reading part of a Bytes_Address: %a %d %d" To_string.bytes_ff b off size
 						| _ -> Format.fprintf ff "(@[%a@],@ %d,@ %d@,)" To_string.bytes_ff b off size
 				in 
 				Output.printf "%s@ = @[%a@]@\n" varname p bytes

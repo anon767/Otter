@@ -8,29 +8,6 @@ let strlen = 1000
 let force_print = ref false
 let donotprint() = (not (!force_print)) && (not (Output.need_print (!Output.current_msg_type)))
 
-(** Print out a bytearray as though it were a string, stopping at the
-		first (concrete) null byte. *)
-let bytestring arr =
-	let byte b = 
-  match b with
-	| Byte_Concrete (c) -> 
-        if Char.code c >=32 && Char.code c <= 126 then sprintf "%c" c
-				else if c = '\n' then "\\n\n"
-        else sprintf "/%d" (Char.code c)
-	| Byte_Symbolic (s) -> sprintf "\\%d" (s.symbol_id)
-	| Byte_Bytes (b,i) ->  "."
-	in
-	let rec helper n result =
-		if n = ImmutableArray.length arr
-		then result
-		else (
-			match byte (ImmutableArray.get arr n) with
-				| "/0" -> result
-				| s -> helper (succ n) (result ^ s)
-		)
-	in
-	helper 0 ""
-
 
 let location loc = 
 	loc.Cil.file^":"^(string_of_int loc.Cil.line)
