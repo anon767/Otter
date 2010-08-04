@@ -18,7 +18,7 @@ let ikfprintf k ppf =
 let ksprintf k format =
 	let buffer = Buffer.create 80 in
 	let buffer_formatter = Format.formatter_of_buffer buffer in
-	Format.kfprintf (fun ff -> k (Buffer.contents buffer)) buffer_formatter format
+	Format.kfprintf (fun ff -> pp_print_flush buffer_formatter (); k (Buffer.contents buffer)) buffer_formatter format
 
 
 (** Alternative to {!Format.sprintf} that takes {!Format}-style printers. *)
@@ -30,6 +30,7 @@ let as_string printer item =
 	let buffer = Buffer.create 80 in
 	let buffer_formatter = Format.formatter_of_buffer buffer in
 	printer buffer_formatter item;
+	pp_print_flush buffer_formatter ();
 	Buffer.contents buffer
 
 
