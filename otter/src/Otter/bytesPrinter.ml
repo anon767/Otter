@@ -81,24 +81,25 @@ let rec byte ff = function
 		@param arr is the {!type:Bytes.byte ImmutableArray.t} to print
 *)
 and bytearray ff arr =
-	let byte_n ff b c =
-		fprintf ff "%a" byte b;
-		if c <> 1 then fprintf ff "\\{%d}" c
+	let byte_n b c =
+		byte ff b;
+		if c <> 1 then fprintf ff "\\{%d}" c;
+		pp_print_cut ff ()
 	in
-	fprintf ff "Bytearray(";
+	pp_print_string ff "Bytearray(";
 	let last = ImmutableArray.fold_left begin fun b' b -> match b' with
 		| Some (b', n) when match b with Byte_Bytes _ -> false | _ -> b = b' ->
 			Some (b', n + 1)
 		| Some (b', n) ->
-			byte_n ff b' n;
+			byte_n b' n;
 			Some (b, 1)
 		| None ->
 			Some (b, 1)
 	end None arr in
 	match last with
 		| Some (b, n) ->
-			byte_n ff b n;
-			fprintf ff ")"
+			byte_n b n;
+			pp_print_string ff ")"
 		| None ->
 			failwith "Unreachable"
 
@@ -124,6 +125,7 @@ and bytestring ff arr =
 					()
 				| s ->
 					byte s;
+					pp_print_cut ff ();
 					bytestring (n + 1)
 	in
 	bytestring 0
@@ -239,7 +241,7 @@ let rec bytes_tree ff = function
 	 *)
 	| Bytes_Op(op, [ not_op, _ ]) ->
 		let op_tree ff x = match not_op with
-			| Bytes_Op(op', _) when op = op' -> fprintf ff "%a" bytes_tree x
+			| Bytes_Op(op', _) when op = op' -> bytes_tree ff x
 			| _ -> fprintf ff "@[<hov>%a@]" bytes_tree x
 		in
 		fprintf ff "%a@ %a" operator op op_tree not_op

@@ -502,7 +502,7 @@ let feature : featureDescr =
 			" Suppress (pretty much) all output. This trumps all other --print* options");
 
 			("--printCharAsInt",
-			Arg.Unit (fun () -> Executeargs.print_args.arg_print_char_as_int <- true),
+			Arg.Set BytesPrinter.print_char_as_int,
 			" Print char as int");
 
 			("--printStmtLocs",
