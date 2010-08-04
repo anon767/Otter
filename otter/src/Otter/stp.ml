@@ -1,3 +1,4 @@
+open OcamlUtilities
 open Cil
 open Ternary
 open Bytes
@@ -589,8 +590,7 @@ let getValues pathCondition symbolList =
 			pathCondition
 	in
 	if Stpc.query vc negatedPcExpr
-	then failwith ("The path condition is unsatisfiable!\n" ^
-									 (To_string.bytes_list pathCondition));
+	then FormatPlus.failwith "The path condition is unsatisfiable!@\n@[  %a@]" (FormatPlus.pp_print_list BytesPrinter.bytes "@\nAND@\n  ") pathCondition;
 	(* Extract the value of a symbol from STP's counterexample *)
 	let getOneVal s =
 		let bv = Stpc.e_var vc (make_var s) (Stpc.bitvector_t vc 8) in

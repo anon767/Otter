@@ -1,3 +1,4 @@
+open OcamlUtilities
 open Cil
 open Bytes
 open BytesUtility
@@ -52,7 +53,7 @@ let frame__clear_varinfos frame block_to_bytes =
  *	string table
  *)
 let string_table__add bytes : memory_block =
-	let block = block__make_string_literal ("@literal:"^(To_string.bytes bytes)) (bytes__length bytes) in
+	let block = block__make_string_literal (FormatPlus.sprintf "@@literal:%a" BytesPrinter.bytes bytes) (bytes__length bytes) in
 	let string_table2 = MemoryBlockMap.add block bytes (!string_table) in
 		string_table := string_table2;
 		block
@@ -254,7 +255,7 @@ let rec state__assign state (lvals, size) bytes =
 			| _          -> make_Bytes_Conditional ( IfThenElse (pre, conditional__bytes newbytes, conditional__bytes oldbytes) )
 		in
 		Output.set_mode Output.MSG_ASSIGN;
-		Output.printf "Assign@ @[%a@]@ to @[%s, %a@]@\n" To_string.bytes_ff bytes (To_string.memory_block block) To_string.bytes_ff offset;
+		Output.printf "Assign@ @[%a@]@ to @[%a, %a@]@\n" BytesPrinter.bytes bytes BytesPrinter.memory_block block BytesPrinter.bytes offset;
 		state__add_block state block newbytes
 	in
 	conditional__fold assign state lvals
@@ -291,7 +292,7 @@ let state__start_fcall state callContext fundec argvs =
 					failwith ("Too many arguments to non-vararg function " ^ fundec.svar.vname)
 				);
 				Output.set_mode Output.MSG_FUNC;
-				Output.printf "Rest of args:@ @[%a@]@\n" (To_string.list_ff To_string.bytes_ff ",@ ") va_arg;
+				Output.printf "Rest of args:@ @[%a@]@\n" (FormatPlus.pp_print_list BytesPrinter.bytes ",@ ") va_arg;
 			);
 			{ state with va_arg = va_arg::state.va_arg }
 		| _, [] ->
@@ -400,10 +401,6 @@ let state__trace state: string =
 	end "" state.callContexts
 
 
-let state__print_path_condition state : string = 
-  List.fold_left (fun str bytes -> Printf.sprintf "%s AND %s\n" str (To_string.bytes bytes)) "" state.path_condition
-
-
 (** map address to state (!) *)
 let index_to_state: state Types.IndexMap.t ref = ref (Types.IndexMap.empty)
 let index_to_state__add index state = 
@@ -430,8 +427,8 @@ let cmp_states (s1:state) (s2:state) =
 	    		if bytes__equal bytes1 bytes2 then
 					result
 				else begin
-	    			Output.printf " >> %s@ = @[%a@]@\n" (block.memory_block_name) To_string.bytes_ff bytes1;
-	    			Output.printf " << %s@ = @[%a@]@\n" (block.memory_block_name) To_string.bytes_ff bytes2;
+	    			Output.printf " >> %s@ = @[%a@]@\n" (block.memory_block_name) BytesPrinter.bytes bytes1;
+	    			Output.printf " << %s@ = @[%a@]@\n" (block.memory_block_name) BytesPrinter.bytes bytes2;
 					false
 				end
 	          with Not_found -> result
@@ -445,7 +442,7 @@ let cmp_states (s1:state) (s2:state) =
 			let typ = block1.memory_block_type in
 				if typ!=Block_type_Global && typ!=Block_type_Heap then result else (* only care about globals and heap content *)
 	        if MemoryBlockMap.mem block1 state2.block_to_bytes then result else (
-	    			Output.printf " %s %s@ = @[%a@]@\n" prefix (block1.memory_block_name) To_string.bytes_ff bytes1;
+	    			Output.printf " %s %s@ = @[%a@]@\n" prefix (block1.memory_block_name) BytesPrinter.bytes bytes1;
 						false
 					)
 	  in

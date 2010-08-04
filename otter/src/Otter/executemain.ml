@@ -76,8 +76,10 @@ let init_globalvars state globals =
             let state, init_bytes = myInit NoOffset init (state, zeros) in
 
 			Output.set_mode Output.MSG_REG;
-			Output.printf "Initialize %s to %s\n" varinfo.vname
-				(if init_bytes == zeros then "zeros" else To_string.bytes init_bytes);
+			if init_bytes == zeros then
+				Output.printf "Initialize %s to zeros@\n" varinfo.vname
+			else
+				Output.printf "Initialize %s to@ @[%a@]@\n" varinfo.vname BytesPrinter.bytes init_bytes;
 
             MemOp.state__add_global state varinfo init_bytes
 

@@ -1,3 +1,4 @@
+open OcamlUtilities
 open Executeargs
 open Cil
 open Bytes
@@ -12,22 +13,27 @@ open Operation
 let print_failed_assertion state bytes exps ~isUnknown =
 	Output.set_mode Output.MSG_MUSTPRINT;
 	Output.printf "Assertion not-satisfied (see error log).@\n";
-	let oldPrintNothingVal = print_args.arg_print_nothing in
 	Output.set_mode Output.MSG_MUSTPRINT;
-	print_args.arg_print_nothing <- false; (* Allow printing for the log *)
-	Executedebug.log "\n(****************************";
-	Executedebug.log "Assertion:";
-	Executedebug.log (To_string.list To_string.exp_ff "@ and " exps);
-	Executedebug.log "which becomes";
-	Executedebug.log (To_string.bytes bytes);
-	Executedebug.log ((if isUnknown then "can be" else "is") ^ " false with the path condition:");
-	(*let pc_str = To_string.humanReadablePc state.path_condition exHist.bytesToVars in *)
-	(*let pc_str = (Utility.print_list To_string.bytes state.path_condition " AND ") in*)
-	(*let pc_str = Utility.print_list To_string.bytes (Stp.getRelevantAssumptions state.path_condition post) " AND " in*)
-	let pc_str = (To_string.list To_string.bytes_ff "@\n  AND@\n" state.path_condition) in
-	Executedebug.log (if pc_str = "" then "true" else pc_str);
-	Executedebug.log "****************************)";
-	print_args.arg_print_nothing <- oldPrintNothingVal
+	FormatPlus.ksprintf Executedebug.log
+		"\
+		(****************************@\n\
+		Assertion:@\n\
+		\  @[%a@]@\n\
+		which becomes
+		\  @[%a@]@\n\
+		%s false with the path condition:@\n\
+		\  @[  %t@]@\n\
+		****************************)@\n\
+		"
+		(FormatPlus.pp_print_list To_string.exp_ff "@ and ") exps
+		BytesPrinter.bytes bytes
+		(if isUnknown then "can be" else "is")
+		begin fun ff ->
+			if state.path_condition = [] then
+				Format.pp_print_string ff "true"
+			else
+				FormatPlus.pp_print_list BytesPrinter.bytes "@\nAND  @\n" ff state.path_condition
+		end
 
 
 (** Check an assertion in a given state
@@ -332,9 +338,9 @@ and
 deref state bytes =
 	match bytes with
 		| Bytes_Constant (c) -> 
-          failwith ("Dereference something not an address: constant "^(To_string.bytes bytes))
+			FormatPlus.failwith "Dereference something not an address:@ constant @[%a@]" BytesPrinter.bytes bytes
 
-     | Bytes_ByteArray(bytearray) -> 
+		| Bytes_ByteArray(bytearray) ->
          (* 
           * Special treatment: look for
           * "==(Bytearray(bytearray),make_Bytes_Address(b,f))" in PC.
@@ -343,7 +349,7 @@ deref state bytes =
           * *)
          let rec find_match pc = match pc with 
            | [] -> 
-               failwith ("Dereference something not an address (bytearray) "^(To_string.bytes bytes))
+               FormatPlus.failwith "Dereference something not an address (bytearray)@ @[%a@]@." BytesPrinter.bytes bytes
            | Bytes_Op(OP_EQ,(bytes1,_)::(bytes2,_)::[])::pc' -> 
                begin
                  let bytes_tentative = if bytes1=bytes then bytes2 else if bytes2=bytes then bytes1 else bytes__zero in 
@@ -365,7 +371,7 @@ deref state bytes =
 			conditional__map (deref state) c
 
 		| Bytes_Op(op, operands) -> 
-          failwith ("Dereference something not an address: operation "^(To_string.bytes bytes))
+          FormatPlus.failwith "Dereference something not an address:@ operation @[%a@]" BytesPrinter.bytes bytes
 
 		| Bytes_Read(bytes,off,len) -> 
           conditional__map (deref state) (prune_conditional_bytes state (expand_read_to_conditional bytes off len))

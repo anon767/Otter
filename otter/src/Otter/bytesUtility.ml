@@ -1,3 +1,4 @@
+open OcamlUtilities
 open Cil
 open Bytes
 open Types
@@ -135,7 +136,7 @@ let rec expand_read_to_conditional2 bytes index len symIndex =
                 | Bytes_Address(block, offset) -> (block.memory_block_size)
                 | Bytes_ByteArray(a) -> (ImmutableArray.length a)
                 | Bytes_Conditional(c) -> failwith "Unexpected Bytes_Conditional"(*getMaxBlockSizes c*)
-                | _ -> failwith ("Not a valid array. : "^(To_string.bytes bytes))
+                | _ -> FormatPlus.failwith "Not a valid array:@ @[%a@]" BytesPrinter.bytes bytes
         in
         if (index < max - len) then (*don't read past the end of the array*)
                 IfThenElse(

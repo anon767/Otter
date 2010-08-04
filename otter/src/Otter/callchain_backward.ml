@@ -1,3 +1,4 @@
+open OcamlUtilities
 open OcamlBase
 open Types
 open Bytes
@@ -94,14 +95,14 @@ let pass_targets targets job fexp exps =
 				let _ = Output.set_mode Output.MSG_MUSTPRINT in
 				let caller = List.hd state.callstack in
 				let mustmay = (if isUnknown then "may" else "must") in
-				let log = Executedebug.log in
+				let log format = FormatPlus.ksprintf Executedebug.log format in
 				let _ = Output.banner_printf 1  "Failing condition %s be hit (see error log).\n%!" mustmay in
-				let _ = log "(****************************\n" in
-			let _ = log (Printf.sprintf "The following failure %s happen in function %s: \n" mustmay caller.svar.vname) in
-				let _ = log (Printf.sprintf "Failing condition: %s\n" (To_string.bytes target.failing_condition)) in
-				let _ = log (Printf.sprintf "Path condition: %s\n" (String.concat "&&" (List.map To_string.bytes state.path_condition))) in
-				let _ = log (Printf.sprintf "Connection : %s\n" (To_string.bytes connecting_bytes)) in
-				let _ = log (Printf.sprintf "Consult STP for an example...\n") in
+				let _ = log "(****************************@\n" in
+				let _ = log "The following failure %s happen in function %s:@\n" mustmay caller.svar.vname in
+				let _ = log "Failing condition:@;<1 2>@[%a@]@\n" BytesPrinter.bytes target.failing_condition in
+				let _ = log "Path condition:@;<1 2>@[  %a@]@\n" (FormatPlus.pp_print_list BytesPrinter.bytes "@\nAND@\n  ") state.path_condition in
+				let _ = log "Connection:@;<1 2>@[%a@]@\n" BytesPrinter.bytes connecting_bytes in
+				let _ = log "Consult STP for an example...@\n" in
 				let valuesForSymbols = Stp.getAllValues (target.failing_condition::connecting_bytes::state.path_condition) in
 				let getVal = function
 				  | Bytes_ByteArray bytArr ->
@@ -137,13 +138,13 @@ let pass_targets targets job fexp exps =
 									(
 									  match bytes_to_constant concreteByteArray varinf.vtype with
 										| CInt64 (n,_,_) ->
-											log (Printf.sprintf "%s=%Ld\n" varinf.vname n)
+											log "%s=%Ld@\n" varinf.vname n
 										| _ -> failwith "Unimplemented: non-integer symbolic"
 									)
 						  )
 						  hist.bytesToVars
 				in
-				let _ = log "(****************************\n" in
+				let _ = log "(****************************@\n" in
 				  ()
 			  in
 				match truth with 

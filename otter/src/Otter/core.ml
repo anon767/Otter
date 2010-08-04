@@ -1,3 +1,4 @@
+open OcamlUtilities
 open Cil
 open Ternary
 open Bytes
@@ -368,12 +369,12 @@ let exec_stmt job =
 					Output.set_mode Output.MSG_GUARD;
 					if(Output.need_print Output.MSG_GUARD) then
 						begin
-							Output.printf "Check if the following holds:@\n  @[%a@]@\n" To_string.bytes_ff rv;
+							Output.printf "Check if the following holds:@\n  @[%a@]@\n" BytesPrinter.bytes rv;
 							Output.printf "Under the path condition:@\n";
 							if state.path_condition = [] then
 								Output.printf "  (nil)@\n"
 							else
-								Output.printf "  @[%a@]@\n" (To_string.list_ff To_string.bytes_ff "@ AND ") state.path_condition;
+								Output.printf "  @[%a@]@\n" (FormatPlus.pp_print_list BytesPrinter.bytes "@ AND ") state.path_condition;
 						end;
  
 					let state, truth = MemOp.eval_with_cache state state.path_condition rv in

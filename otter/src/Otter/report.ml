@@ -1,3 +1,4 @@
+open OcamlUtilities
 open Cil
 open Executeargs
 open Bytes
@@ -79,10 +80,10 @@ let printPath state hist =
     let pc_all = state.path_condition in
     let (pc_branch,pc_assume) = eliminate_untracked (state.path_condition) (state.path_condition_tracked) in
 
-	Output.printf "Path condition:\n%s\n\n"
-		(To_string.humanReadablePc pc_branch hist.bytesToVars);
-	Output.printf "Path condition (ASSUMEs):\n%s\n\n"
-		(To_string.humanReadablePc pc_assume hist.bytesToVars);
+	Output.printf "Path condition:@\n  @[%a@]@\n@\n"
+		(FormatPlus.pp_print_list (BytesPrinter.bytes_named hist.bytesToVars) "@\n") pc_branch;
+	Output.printf "Path condition (ASSUMEs):@\n  @[%a@]@\n@\n"
+		(FormatPlus.pp_print_list (BytesPrinter.bytes_named hist.bytesToVars) "@\n") pc_assume;
 
 	let mentionedSymbols = Stp.allSymbolsInList pc_branch in
 	let valuesForSymbols = Stp.getValues pc_all (Stp.SymbolSet.elements mentionedSymbols) in
