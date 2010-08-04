@@ -1,5 +1,6 @@
 Otter/builtin_function
 Otter/bytes
+Otter/bytesPrinter
 Otter/bytesUtility
 Otter/cilutility
 Otter/core
