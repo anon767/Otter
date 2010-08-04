@@ -73,7 +73,7 @@ let direct_calls_testsuite = "Direct calls" >:::
                             begin list_printer begin fun ff (name, bytes, actual) ->
                                 Format.fprintf ff
                                     "%s: @[@[<2>expected:@ %a@]@ @[<2>but got:@ %a@]@]@\n"
-                                    name To_string.bytes_ff bytes To_string.bytes_ff actual
+                                    name BytesPrinter.bytes bytes BytesPrinter.bytes actual
                             end "@\n" end
                             unequal;
 

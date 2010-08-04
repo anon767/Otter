@@ -80,8 +80,8 @@ let attrparams_printer = list_printer Printcil.f_attrparam ",@ "
 (** Helper to print Otter.Types.job_completion list. *)
 let results_printer =
     let completion_printer ff = function
-        | Types.Exit (exit_opt, _) -> Format.fprintf ff "Exit(@[%a@])" (option_printer To_string.bytes_ff) exit_opt
-        | Types.Return (return_opt, _) -> Format.fprintf ff "Return(@[%a@])" (option_printer To_string.bytes_ff) return_opt
+        | Types.Exit (exit_opt, _) -> Format.fprintf ff "Exit(@[%a@])" (option_printer BytesPrinter.bytes) exit_opt
+        | Types.Return (return_opt, _) -> Format.fprintf ff "Return(@[%a@])" (option_printer BytesPrinter.bytes) return_opt
         | Types.Abandoned (msg, loc, _) -> Format.fprintf ff "Abandoned(\"@[%s@@%d: %s@]\")" loc.Cil.file loc.Cil.line msg
         | Types.Truncated (left, right) -> Format.fprintf ff "Truncated(...)"
     in
