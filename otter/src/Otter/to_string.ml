@@ -1,7 +1,6 @@
 (* TODO: perhaps introduce laziness? *) 
 open Format
 open Cil
-open Bytes
 open Types
 
 let strlen = 1000
