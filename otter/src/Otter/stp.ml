@@ -25,7 +25,6 @@ let bytes_stpbv_map : (Stpvc.exp*int) BytesMagicMap.t ref = ref BytesMagicMap.em
 let bytes_stpbv_add bytes bv len =
   bytes_stpbv_map := BytesMagicMap.add (bytes,Counter.next bytes_stpbv_id) (bv,len) (!bytes_stpbv_map)
 let bytes_stpbv_get bytes =
-  if not Executeargs.run_args.Executeargs.arg_opt_stpbv_cache then raise Not_found else
   BytesMagicMap.find (bytes,Counter.next bytes_stpbv_id) (!bytes_stpbv_map) (* raise Not_found *)
 
 (** Return a SymbolSet of all symbols in the given Bytes *)

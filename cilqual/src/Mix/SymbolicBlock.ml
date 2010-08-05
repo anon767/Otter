@@ -10,8 +10,6 @@ module Interpreter (S : Config.BlockConfig) = struct
         let verbose = !Errormsg.verboseFlag in
         (* Suppress most output from the symbolic executor *)
         Executeargs.print_args.Executeargs.arg_print_reg <- verbose;
-        Executeargs.print_args.Executeargs.arg_print_ifstmt <- verbose;
-        Executeargs.print_args.Executeargs.arg_print_misc <- verbose;
         Executeargs.print_args.Executeargs.arg_print_stmt <- verbose;
         Executeargs.print_args.Executeargs.arg_print_func <- verbose;
         Executeargs.print_args.Executeargs.arg_print_assign <- verbose;

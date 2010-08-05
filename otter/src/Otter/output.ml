@@ -53,14 +53,10 @@ let formatter = ref (new plain)
 type msg_type = 
 	| MSG_REG
 	| MSG_STMT
-	| MSG_RVAL
-	| MSG_LVAL
 	| MSG_ASSIGN
 	| MSG_FUNC
 	| MSG_STP
 	| MSG_GUARD
-	| MSG_IFSTMT
-	| MSG_MISC
 	| MSG_DEBUG
 	| MSG_MUSTPRINT
 
@@ -74,14 +70,10 @@ let need_print msg_type =
 	match msg_type with
 	| MSG_REG 		-> Executeargs.print_args.arg_print_reg
 	| MSG_STMT		-> Executeargs.print_args.arg_print_stmt
-	| MSG_RVAL		-> Executeargs.print_args.arg_print_rval
-	| MSG_LVAL		-> Executeargs.print_args.arg_print_lval
 	| MSG_ASSIGN	-> Executeargs.print_args.arg_print_assign
 	| MSG_FUNC		-> Executeargs.print_args.arg_print_func
 	| MSG_STP			-> Executeargs.print_args.arg_print_stp
 	| MSG_GUARD		-> Executeargs.print_args.arg_print_guard
-	| MSG_IFSTMT	-> Executeargs.print_args.arg_print_ifstmt
-	| MSG_MISC		-> Executeargs.print_args.arg_print_misc
 	| MSG_DEBUG		-> Executeargs.print_args.arg_print_debug
 	| MSG_MUSTPRINT -> Executeargs.print_args.arg_print_mustprint
 

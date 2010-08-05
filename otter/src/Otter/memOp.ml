@@ -383,7 +383,6 @@ let bytes_eval_cache_hits = ref 0
 let bytes_eval_cache_misses = ref 0
 
 let state__get_bytes_eval_cache state bytes =
-  if not Executeargs.run_args.Executeargs.arg_opt_bytes_eval_cache then None else
     begin
       try
         let ret = Some (BytesMap.find bytes state.bytes_eval_cache) in

@@ -488,8 +488,6 @@ let feature : featureDescr =
 			("--printLittle",
 			Arg.Unit (fun () -> 
 				Executeargs.print_args.arg_print_reg <- false;
-				Executeargs.print_args.arg_print_ifstmt <- false;
-				Executeargs.print_args.arg_print_misc <- false;
 				Executeargs.print_args.arg_print_stmt <- false;
 				Executeargs.print_args.arg_print_func <- false;
 				Executeargs.print_args.arg_print_assign <- false;
