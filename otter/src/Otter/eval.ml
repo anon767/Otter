@@ -374,7 +374,8 @@ deref state bytes =
           FormatPlus.failwith "Dereference something not an address:@ operation @[%a@]" BytesPrinter.bytes bytes
 
 		| Bytes_Read(bytes,off,len) -> 
-          conditional__map (deref state) (prune_conditional_bytes state (expand_read_to_conditional bytes off len))
+			conditional__map ~test:(Stp.query_guard state.path_condition)
+				(deref state) (expand_read_to_conditional bytes off len)
 
 		| Bytes_Write(bytes,off,len,newbytes) ->
           failwith "Dereference of Bytes_Write not implemented"
@@ -431,8 +432,9 @@ and
 rval_unop state unop exp =
 	let state, rv = rval state exp in
 	let typ = Cil.typeOf exp in
-	let result = BytesUtility.prune_bytes_conditional state (Operation.run (Operation.of_unop unop) [(rv,typ)]) in
-	(state, result)
+	let conditional = conditional__bytes (Operation.run (Operation.of_unop unop) [(rv,typ)]) in
+	let conditional = conditional__prune ~test:(Stp.query_guard state.path_condition) ~eq:bytes__equal conditional in
+	(state, make_Bytes_Conditional conditional)
 
 and
 
@@ -448,6 +450,8 @@ rval_binop state binop exp1 exp2 =
 	else 
 		let state, rv2 = rval state exp2 in
 		let typ2 = Cil.typeOf exp2 in
-		(state, BytesUtility.prune_bytes_conditional state (Operation.run op [(rv1,typ1);(rv2,typ2)]))
+		let conditional = conditional__bytes (Operation.run op [(rv1,typ1);(rv2,typ2)]) in
+		let conditional = conditional__prune ~test:(Stp.query_guard state.path_condition) ~eq:bytes__equal conditional in
+		(state, make_Bytes_Conditional conditional)
 
 	

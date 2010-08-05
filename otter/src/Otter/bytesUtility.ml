@@ -1,7 +1,6 @@
 open OcamlUtilities
 open Cil
 open Bytes
-open Types
 
 (**
  *	bytes
@@ -193,19 +192,4 @@ let rec expand_read_to_conditional (bytes:bytes) (symIndex:bytes) (len:int) =
 			in
 			conditional__map map_func c
 		| _ -> expand_read_to_conditional2 bytes 0 len symIndex
-
-
-
-
-let rec prune_conditional_bytes state cond =
-	let fold_func acc pre leaf =
-		((), Unconditional(leaf))
-	in
-	snd (conditional__map_fold ~test:(fun a b -> Stp.query_guard state.path_condition a b) fold_func () cond)
-
-let prune_bytes_conditional state bytes = 
-	match bytes with
-		| Bytes_Conditional c -> Bytes_Conditional (prune_conditional_bytes state c)
-		| _ -> bytes (*failwith "prune_bytes_conditional : not a Bytes_Conditional"*)
-	
 

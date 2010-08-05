@@ -573,14 +573,13 @@ let guard__to_bytes = function
  *)
 
 (** Map and fold simultaneously over the leaves of conditionals.
-    @param test        an optional test function to filter by the guard condition : guard -> guard -> Ternary.t
-    @param eq          an optional equality function to prune identical leaves : 'target -> 'target -> bool
-    @param pre         an optional precondition
-    @param map_fold     the map and fold function : 'acc -> guard -> 'source -> 'acc * 'target conditional
-    @param acc          the initial accumulator
-    @param source       the original conditional to map from
-    @return [(acc, 'target conditional)]
-                        the final accumulator and mapped conditional
+    @param test is an optional test function to filter by the guard condition : [guard -> guard -> Ternary.t]
+    @param eq is an optional equality function to prune identical leaves : ['target -> 'target -> bool]
+    @param pre is an optional precondition
+    @param map_fold is the map and fold function : ['acc -> guard -> 'source -> 'acc * 'target conditional]
+    @param acc is the initial accumulator
+    @param source is the original conditional to map from
+    @return [(acc, 'target conditional)] the final accumulator and mapped conditional
 *)
 let conditional__map_fold ?(test=fun _ _ -> Unknown) ?(eq=(==)) ?(pre=Guard_True) map_fold acc source =
 	let rec conditional__map_fold acc pre = function
@@ -621,34 +620,43 @@ let conditional__map_fold ?(test=fun _ _ -> Unknown) ?(eq=(==)) ?(pre=Guard_True
 
 
 (** Map over the leaves of conditionals.
-    @param test        an optional test function to filter by the guard condition : guard -> guard -> Ternary.t
-    @param eq          an optional equality function to prune identical leaves : 'target -> 'target -> bool
-    @param pre         an optional precondition
-    @param map          the map function : 'source -> 'target conditional
-    @param source       the original conditional to map from
-    @return ['target conditional]
-                        the mapped conditional
+    @param test is an optional test function to filter by the guard condition : [guard -> guard -> Ternary.t]
+    @param eq is an optional equality function to prune identical leaves : ['target -> 'target -> bool]
+    @param pre is an optional precondition
+    @param map is the map function : ['source -> 'target conditional]
+    @param source is the original conditional to map from
+    @return ['target conditional] the mapped conditional
 *)
 let conditional__map ?test ?eq ?pre map source =
 	snd (conditional__map_fold ?test ?eq ?pre (fun () _ x -> ((), map x)) () source)
 
 
 (** Fold over the leaves of conditionals.
-    @param test    an optional function to test the conditional guard : guard -> guard -> Ternary.t
-    @param pre     an optional precondition
-    @param fold     the fold function : 'acc -> guard -> 'source -> 'acc
-    @param acc      the initial accumulator
-    @param source   the conditional to fold over
-    @return [acc]   the final accumulator
+    @param test is an optional test function to filter by the guard condition : [guard -> guard -> Ternary.t]
+    @param pre is an optional precondition
+    @param fold is the fold function : ['acc -> guard -> 'source -> 'acc]
+    @param acc is the initial accumulator
+    @param source is the conditional to fold over
+    @return ['acc] the final accumulator
 *)
 let conditional__fold ?test ?pre fold acc source =
 	fst (conditional__map_fold ?test ?pre (fun acc pre x -> (fold acc pre x, Unconditional x)) acc source)
 
 
+(** Prune the leaves of conditionals.
+    @param test is the function to filter by the guard condition : [guard -> guard -> Ternary.t]
+    @param eq is an optional equality function to prune identical leaves : ['target -> 'target -> bool]
+    @param pre is an optional precondition
+    @param source is the conditional to fold over
+    @return ['acc] the pruned conditional
+*)
+let conditional__prune ~test ?eq ?pre source =
+	snd (conditional__map_fold ~test ?eq ?pre (fun () _ x -> ((), Unconditional x)) () source)
+
+
 (** Given a list of length n, return a conditional tree of height log(n) containing all items in the list.
-    @param list     a list of items : 'item
-    @return ['item conditional]
-                    a conditional tree of items
+    @param list is a list of items : ['item]
+    @return ['item conditional] a conditional tree of items
 *)
 let conditional__from_list list =
 	let rec conditional__make_tree outs = function
