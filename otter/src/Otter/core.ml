@@ -116,7 +116,7 @@ let function_from_exp job state exp args: (state * fundec) list =
 					in
 					(acc, Unconditional(leaf))
 				in
-				let acc, fp = Bytes.conditional__map_fold ~test:(Stp.query_guard state.path_condition) fold_func [] fp in
+				let acc, fp = Bytes.conditional__fold_map ~test:(Stp.query_guard state.path_condition) fold_func [] fp in
 				(*Output.set_mode Output.MSG_MUSTPRINT;				
 				Output.print_endline (To_string.bytes (Bytes_Conditional(fp)));*)
 				acc

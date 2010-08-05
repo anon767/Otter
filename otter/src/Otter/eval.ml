@@ -158,7 +158,7 @@ let checkBounds state lvals cil_lval useSize =
 
 
 let add_offset state offset lvals : state * (Types.MemoryBlockMap.key * Bytes.bytes) Bytes.conditional =
-	conditional__map_fold begin fun newState _ (block, offset2) ->
+	conditional__fold_map begin fun newState _ (block, offset2) ->
 		let newOffset = Operation.plus [(offset, !Cil.upointType); (offset2, !Cil.upointType)] in
 		(newState, conditional__lval_block (block, newOffset))
 	end state lvals

@@ -232,7 +232,7 @@ let state__deref ?pre state (lvals, size) =
 		let state, bytes = state__get_bytes_from_block state block in
 		(state, conditional__bytes (bytes__read ~test:(Stp.query_guard state.path_condition) ~pre bytes offset size))
 	in
-	let state, c = conditional__map_fold ?pre deref state lvals in
+	let state, c = conditional__fold_map ?pre deref state lvals in
 	(state, make_Bytes_Conditional c)
 
 

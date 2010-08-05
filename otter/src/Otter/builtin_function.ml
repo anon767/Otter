@@ -701,9 +701,9 @@ let libc_longjmp job retopt exps =
 					| Bytes_ByteArray _ -> [bytes_to_int_auto stmtPtrAddrBytes]
 					| Bytes_Read(bytes2, offset, len) -> 
 						let sp = (BytesUtility.expand_read_to_conditional bytes2 offset len) in
-						fst (conditional__map_fold ~test:(fun a b -> Stp.query_guard state.path_condition a b) fold_func [] sp)
+						fst (conditional__fold_map ~test:(fun a b -> Stp.query_guard state.path_condition a b) fold_func [] sp)
 					| Bytes_Conditional(c) ->
-						fst (conditional__map_fold ~test:(fun a b -> Stp.query_guard state.path_condition a b) fold_func [] c)
+						fst (conditional__fold_map ~test:(fun a b -> Stp.query_guard state.path_condition a b) fold_func [] c)
 					| _ -> failwith "Non-constant statement ptr not supported"
 			in
 

@@ -569,21 +569,21 @@ let guard__to_bytes = function
     @param map_fold is the map and fold function : ['acc -> guard -> 'source -> 'acc * 'target conditional]
     @param acc is the initial accumulator
     @param source is the original conditional to map from
-    @return [(acc, 'target conditional)] the final accumulator and mapped conditional
+    @return [('acc, 'target conditional)] the final accumulator and mapped conditional
 *)
-let conditional__map_fold ?(test=fun _ _ -> Unknown) ?(eq=(==)) ?(pre=Guard_True) map_fold acc source =
-	let rec conditional__map_fold acc pre = function
+let conditional__fold_map ?(test=fun _ _ -> Unknown) ?(eq=(==)) ?(pre=Guard_True) map_fold acc source =
+	let rec conditional__fold_map acc pre = function
 		| IfThenElse (guard, x, y) ->
 			begin match test pre guard with
 				| True ->
 					(* test pre ==> guard *)
-					conditional__map_fold acc pre x
+					conditional__fold_map acc pre x
 				| False ->
 					(* test pre ==> !guard *)
-					conditional__map_fold acc pre y
+					conditional__fold_map acc pre y
 				| Unknown ->
-					let acc, x = conditional__map_fold acc (guard__and pre guard) x in
-					let acc, y = conditional__map_fold acc (guard__and_not pre guard) y in
+					let acc, x = conditional__fold_map acc (guard__and pre guard) x in
+					let acc, y = conditional__fold_map acc (guard__and_not pre guard) y in
 					(* prune away unnecessary IfThenElse *)
 					if conditional__equal eq x y then
 						(acc, x)
@@ -593,19 +593,7 @@ let conditional__map_fold ?(test=fun _ _ -> Unknown) ?(eq=(==)) ?(pre=Guard_True
 		| Unconditional x ->
 			map_fold acc pre x
 	in
-	conditional__map_fold acc pre source
-
-
-(** Map over the leaves of conditionals.
-    @param test is an optional test function to filter by the guard condition : [guard -> guard -> Ternary.t]
-    @param eq is an optional equality function to prune identical leaves : ['target -> 'target -> bool]
-    @param pre is an optional precondition
-    @param map is the map function : ['source -> 'target conditional]
-    @param source is the original conditional to map from
-    @return ['target conditional] the mapped conditional
-*)
-let conditional__map ?test ?eq ?pre map source =
-	snd (conditional__map_fold ?test ?eq ?pre (fun () _ x -> ((), map x)) () source)
+	conditional__fold_map acc pre source
 
 
 (** Fold over the leaves of conditionals.
@@ -617,7 +605,19 @@ let conditional__map ?test ?eq ?pre map source =
     @return ['acc] the final accumulator
 *)
 let conditional__fold ?test ?pre fold acc source =
-	fst (conditional__map_fold ?test ?pre (fun acc pre x -> (fold acc pre x, Unconditional x)) acc source)
+	fst (conditional__fold_map ?test ?pre (fun acc pre x -> (fold acc pre x, Unconditional x)) acc source)
+
+
+(** Map over the leaves of conditionals.
+    @param test is an optional test function to filter by the guard condition : [guard -> guard -> Ternary.t]
+    @param eq is an optional equality function to prune identical leaves : ['target -> 'target -> bool]
+    @param pre is an optional precondition
+    @param map is the map function : ['source -> 'target conditional]
+    @param source is the original conditional to map from
+    @return ['target conditional] the mapped conditional
+*)
+let conditional__map ?test ?eq ?pre map source =
+	snd (conditional__fold_map ?test ?eq ?pre (fun () _ x -> ((), map x)) () source)
 
 
 (** Prune the leaves of conditionals.
@@ -628,7 +628,7 @@ let conditional__fold ?test ?pre fold acc source =
     @return ['acc] the pruned conditional
 *)
 let conditional__prune ~test ?eq ?pre source =
-	snd (conditional__map_fold ~test ?eq ?pre (fun () _ x -> ((), Unconditional x)) () source)
+	snd (conditional__fold_map ~test ?eq ?pre (fun () _ x -> ((), Unconditional x)) () source)
 
 
 (** Given a list of length n, return a conditional tree of height log(n) containing all items in the list.
