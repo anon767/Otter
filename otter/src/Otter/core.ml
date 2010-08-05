@@ -105,21 +105,15 @@ let function_from_exp job state exp args: (state * fundec) list =
 			let state, bytes = Eval.rval state exp2 in
 			let rec getall fp =
 				let fold_func acc pre leaf =
-					let acc =
-						match leaf with
-							| Bytes_FunPtr(varinfo,_) ->
-								(* the varinfo should always map to a valid fundec (if the file was parsed by Cil) *)
-								let state = MemOp.state__add_path_condition state (Bytes.guard__to_bytes pre) true in
-								let fundec = Cilutility.find_fundec_by_varinfo job.file varinfo in
-								(state, fundec)::acc
-							| _ -> acc (* should give a warning here about a non-valid function pointer*)
-					in
-					(acc, Unconditional(leaf))
+					match leaf with
+						| Bytes_FunPtr(varinfo,_) ->
+							(* the varinfo should always map to a valid fundec (if the file was parsed by Cil) *)
+							let state = MemOp.state__add_path_condition state (Bytes.guard__to_bytes pre) true in
+							let fundec = Cilutility.find_fundec_by_varinfo job.file varinfo in
+							(state, fundec)::acc
+						| _ -> acc (* should give a warning here about a non-valid function pointer*)
 				in
-				let acc, fp = Bytes.conditional__fold_map ~test:(Stp.query_guard state.path_condition) fold_func [] fp in
-				(*Output.set_mode Output.MSG_MUSTPRINT;				
-				Output.print_endline (To_string.bytes (Bytes_Conditional(fp)));*)
-				acc
+				Bytes.conditional__fold ~test:(Stp.query_guard state.path_condition) fold_func [] fp
 			in
 			begin match bytes with
 				| Bytes_FunPtr(varinfo,_) ->

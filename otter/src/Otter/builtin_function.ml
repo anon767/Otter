@@ -693,17 +693,17 @@ let libc_longjmp job retopt exps =
 			in
 			let state, stmtPtrAddrBytes = MemOp.state__deref state lval in
 			let fold_func acc pre leaf =
-				((bytes_to_int_auto leaf)::acc, Unconditional(leaf))
+				(bytes_to_int_auto leaf)::acc
 			in
 			let stmtPtrAddrs = 
 				match stmtPtrAddrBytes with
 					| Bytes_Constant _
 					| Bytes_ByteArray _ -> [bytes_to_int_auto stmtPtrAddrBytes]
 					| Bytes_Read(bytes2, offset, len) -> 
-						let sp = (BytesUtility.expand_read_to_conditional bytes2 offset len) in
-						fst (conditional__fold_map ~test:(fun a b -> Stp.query_guard state.path_condition a b) fold_func [] sp)
+						let sp = BytesUtility.expand_read_to_conditional bytes2 offset len in
+						conditional__fold ~test:(Stp.query_guard state.path_condition) fold_func [] sp
 					| Bytes_Conditional(c) ->
-						fst (conditional__fold_map ~test:(fun a b -> Stp.query_guard state.path_condition a b) fold_func [] c)
+						conditional__fold ~test:(Stp.query_guard state.path_condition) fold_func [] c
 					| _ -> failwith "Non-constant statement ptr not supported"
 			in
 
