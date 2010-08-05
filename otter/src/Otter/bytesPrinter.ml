@@ -1,3 +1,4 @@
+open DataStructures
 open Format
 open OcamlUtilities.FormatPlus
 open Bytes

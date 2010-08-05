@@ -4,14 +4,12 @@ Otter/bytesPrinter
 Otter/bytesUtility
 Otter/cilutility
 Otter/core
-Otter/counter
 Otter/driver
 Otter/eval
 Otter/executeargs
 Otter/executedebug
 Otter/executemain
 Otter/getProgInfo
-Otter/immutableArray
 Otter/interceptors
 Otter/memOp
 Otter/operation
@@ -20,7 +18,6 @@ Otter/prioritizer
 Otter/report
 Otter/stp
 Otter/stpc
-Otter/ternary
 Otter/to_string
 Otter/types
 Otter/multiprocess

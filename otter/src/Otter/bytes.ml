@@ -1,5 +1,5 @@
+open DataStructures
 open Cil
-open Ternary
 
 type operator = 
 	(* binop *)
@@ -571,17 +571,17 @@ let guard__to_bytes = function
     @param source is the original conditional to map from
     @return [('acc, 'target conditional)] the final accumulator and mapped conditional
 *)
-let conditional__fold_map ?(test=fun _ _ -> Unknown) ?(eq=(==)) ?(pre=Guard_True) map_fold acc source =
+let conditional__fold_map ?(test=fun _ _ -> Ternary.Unknown) ?(eq=(==)) ?(pre=Guard_True) map_fold acc source =
 	let rec conditional__fold_map acc pre = function
 		| IfThenElse (guard, x, y) ->
 			begin match test pre guard with
-				| True ->
+				| Ternary.True ->
 					(* test pre ==> guard *)
 					conditional__fold_map acc pre x
-				| False ->
+				| Ternary.False ->
 					(* test pre ==> !guard *)
 					conditional__fold_map acc pre y
-				| Unknown ->
+				| Ternary.Unknown ->
 					let acc, x = conditional__fold_map acc (guard__and pre guard) x in
 					let acc, y = conditional__fold_map acc (guard__and_not pre guard) y in
 					(* prune away unnecessary IfThenElse *)

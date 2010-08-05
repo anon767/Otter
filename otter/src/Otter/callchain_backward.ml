@@ -1,3 +1,4 @@
+open DataStructures
 open OcamlUtilities
 open OcamlBase
 open Types

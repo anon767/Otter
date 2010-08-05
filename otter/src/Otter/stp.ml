@@ -1,6 +1,6 @@
+open DataStructures
 open OcamlUtilities
 open Cil
-open Ternary
 open Bytes
 
 module SymbolSet = Set.Make
@@ -502,11 +502,11 @@ let consult_stp pc bytes =
     		let vc = doassert pc in
 		let answer =
 			if query vc bytes true then
-				False
+				Ternary.False
 			else if query vc bytes false then
-				True
+				Ternary.True
 			else
-				Unknown
+				Ternary.Unknown
 		in
 		stpCacheRef := StpCache.add (pc,bytes) answer !stpCacheRef;
 		answer
@@ -529,11 +529,11 @@ let query_guard pc pre guard =
 		result
 	in
 	if query guard_exp then
-		True
+		Ternary.True
 	else if query (Stpc.e_not vc guard_exp) then
-		False
+		Ternary.False
 	else
-		Unknown	
+		Ternary.Unknown
 			
 
 

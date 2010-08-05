@@ -4,9 +4,9 @@ This module contains a library of built-in functions for Otter.
 
 *)
 
+open DataStructures
 open OcamlUtilities
 open Cil
-open Ternary
 open Bytes
 open BytesUtility
 open Types
@@ -287,9 +287,10 @@ let otter_given = wrap_state_function begin fun state retopt exps ->
 			let state, given = Eval.rval state (List.nth exps 0) in
 			let state, rv = Eval.rval state (List.nth exps 1 ) in
 			let state, truth = MemOp.eval_with_cache state (given::state.path_condition) rv in
-			if truth == True then int_to_bytes 1
-			else if truth == False then int_to_bytes 0
-			else bytes__symbolic (bitsSizeOf intType / 8)
+			match truth with
+				| Ternary.True -> int_to_bytes 1
+				| Ternary.False -> int_to_bytes 0
+				| Ternary.Unknown ->bytes__symbolic (bitsSizeOf intType / 8)
 		in
 		set_return_value state retopt truthvalue
 end
@@ -303,9 +304,10 @@ let otter_truth_value = wrap_state_function begin fun state retopt exps ->
 			else
 				let state, rv = Eval.rval state (List.hd exps) in
 				let state, truth = MemOp.eval_with_cache state state.path_condition rv in
-				if truth == True then 1
-				else if truth == False then -1
-				else 0
+				match truth with
+					| Ternary.True -> 1
+					| Ternary.False -> -1
+					| Ternary.Unknown -> 0
 		end
 	in
 	set_return_value state retopt truthvalue

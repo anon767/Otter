@@ -1,3 +1,4 @@
+open DataStructures
 open Bytes
 
 module VarinfoMap = Cilutility.VarinfoMap

@@ -1,10 +1,10 @@
+open DataStructures
 open OcamlUtilities
 open Cil
 open Bytes
 open BytesUtility
 open Types
 open Operation
-open Ternary
 
 (**
  *	memory frame
@@ -503,44 +503,44 @@ let rec state__eval state pc bytes =
 		| OP_NE -> ne
 		| _ -> failwith "operation_of: operation is not comparison"
 	in
-   let state,return_bytes = 
+   let state,truth = 
      match bytes with
        (* The following cases are simple enough to not consult STP *)
-       | Bytes_Constant (CInt64(n,_,_)) -> state,if n = 0L then False else True			
+       | Bytes_Constant (CInt64(n,_,_)) -> state,if n = 0L then Ternary.False else Ternary.True			
 
        | Bytes_ByteArray (bytearray) ->
            begin try
              let b = bytes_to_bool bytes in  (* TODO:need to use int64 *)
                state,
-                                             if b = false then False else True
+                                             if b = false then Ternary.False else Ternary.True
            with Failure(_) -> nontrivial()
            end
-         | Bytes_Address (_,_) -> state,True
+         | Bytes_Address (_,_) -> state,Ternary.True
 
              (* nullity check *)
              | Bytes_Op(OP_LNOT,(b1,_)::[]) -> 
                  let state,bb = state__eval state pc b1 in
-                   state,ternary_not bb
+                   state,Ternary.not bb
 
              (* Comparison of (ptr+i) and (ptr+j) *)
              | Bytes_Op(op,(Bytes_Address(block1,offset1),_)::(Bytes_Address(block2,offset2),_)::[]) 
                  when is_comparison op ->
                  if block1!=block2 then 
-                   (if op==OP_EQ then state,False else if op==OP_NE then state,True else nontrivial())
+                   (if op==OP_EQ then state,Ternary.False else if op==OP_NE then state,Ternary.True else nontrivial())
                  else  
                    state__eval state pc (run (operation_of op) [(offset1,Cil.intType);(offset2,Cil.intType)])
 
              (* Comparison of (ptr+i) and c (usually zero) *)
              | Bytes_Op(op,(Bytes_Address(block,offset1),_)::(bytes2,_)::[]) 
                  when is_comparison op  &&  isConcrete_bytes bytes2 ->
-                 if op==OP_EQ then state,False else if op==OP_NE then state,True else nontrivial()
+                 if op==OP_EQ then state,Ternary.False else if op==OP_NE then state,Ternary.True else nontrivial()
              (* Function pointer is always true *)
-             | Bytes_FunPtr(_,_) -> state,True
+             | Bytes_FunPtr(_,_) -> state,Ternary.True
 	   	(* Consult STP *)
 	   	| _ -> 
 	   		nontrivial()
    in
-     state,return_bytes
+     state,truth
 
 let eval_with_cache state pc bytes =
 	state__eval state pc bytes

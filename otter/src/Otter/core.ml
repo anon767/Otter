@@ -1,6 +1,6 @@
+open DataStructures
 open OcamlUtilities
 open Cil
-open Ternary
 open Bytes
 open BytesUtility
 open Types
@@ -374,22 +374,20 @@ let exec_stmt job =
 					let state, truth = MemOp.eval_with_cache state state.path_condition rv in
  
 					Output.set_mode Output.MSG_REG;
-					if truth == True then
-						begin
+					match truth with
+						| Ternary.True ->
 							Output.printf "True@\n";
 							let nextState,nextStmt = try_branch state None block1 in
 							let job' = { job with state = nextState; stmt = nextStmt; } in
 							Active { job' with exHist = nextExHist (Some nextStmt) ~whichBranch:true; }
-						end
-					else if truth == False then
-						begin
+
+						| Ternary.False ->
 							Output.printf "False@\n";
 							let nextState,nextStmt = try_branch state None block2 in
 							let job' = { job with state = nextState; stmt = nextStmt; } in
 							Active { job' with exHist = nextExHist (Some nextStmt) ~whichBranch:false; }
-						end
-					else
-						begin
+
+						| Ternary.Unknown ->
 							Output.printf "Unknown@\n";
 							
 							let nextStateT,nextStmtT = try_branch state (Some rv) block1 in
@@ -419,7 +417,6 @@ let exec_stmt job =
 								 )
 								 trueJob.jid falseJob.jid;
 							Fork [Active trueJob; Active falseJob]
-						end
 				end
 		| Block(block)
 		| Loop (block, _, _, _) ->

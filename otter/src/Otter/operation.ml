@@ -4,6 +4,7 @@
 	let plus (operands: (bytes*typ) list) : bytes =
 		... 
  *)
+open DataStructures
 open Cil
 open Bytes
 

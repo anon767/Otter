@@ -32,6 +32,7 @@
 *)
 
 open MyOUnit
+open DataStructures
 open Otter
 
 

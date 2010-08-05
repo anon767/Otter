@@ -4,8 +4,9 @@ open TestUtil.MyOUnit
     from one mlpack to another mlpack. A workaround is to make sure all mlpacks are listed somewhere in this file:
     either in working code, or in the dummy module below. *)
 module OcamlbuildDependencies = struct
-    open Otter
+    open DataStructures
     open OcamlUtilities
+    open Otter
 end
 
 let _ =
