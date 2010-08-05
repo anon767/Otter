@@ -4,30 +4,12 @@
 
 type print_args =
 	{
-		mutable arg_print_reg : bool;
-		mutable arg_print_assign : bool;
-		mutable arg_print_guard : bool;
 		mutable arg_print_callstack : bool;
-		mutable arg_print_stp : bool;
-		mutable arg_print_stmt : bool;
-		mutable arg_print_func : bool;
-		mutable arg_print_debug : bool;
-		mutable arg_print_mustprint : bool;
-		mutable arg_print_nothing : bool; (* If true, overrides all other flags *)
 		mutable arg_print_stmt_locs : bool;
 	}
 let print_args =
 	{
-		arg_print_reg = true;
-		arg_print_assign = false;
-		arg_print_guard = false;
 		arg_print_callstack = false;
-		arg_print_stp = false;
-		arg_print_stmt = true;
-		arg_print_func = true;
-		arg_print_debug = false;
-		arg_print_mustprint = true;
-		arg_print_nothing = false;
 		arg_print_stmt_locs = false;
 	}
 type run_args =

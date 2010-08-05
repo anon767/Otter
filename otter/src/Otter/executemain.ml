@@ -467,19 +467,19 @@ let feature : featureDescr =
 			(* TODO: for each msg type, a --print and --noprint option*)
 			(* STP *)
 			("--printSTP",
-			Arg.Unit (fun () -> Executeargs.print_args.arg_print_stp <- true),
+			Arg.Set Output.arg_print_stp,
 			" Print STP programs");
 			(* Assignment in the form lval = rval *)
 			("--printAssign",
-			Arg.Unit (fun () -> Executeargs.print_args.arg_print_assign <- true),
+			Arg.Set Output.arg_print_assign,
 			" Print assignments (from rval to lval)");
 
 			("--printFunctionCall",
-			Arg.Unit (fun () -> Executeargs.print_args.arg_print_func <- true),
+			Arg.Set Output.arg_print_func,
 			" Print function calls");
 			(* Print the guard of an if statement *)
 			("--printIf",
-			Arg.Unit (fun () -> Executeargs.print_args.arg_print_guard <- true),
+			Arg.Set Output.arg_print_guard,
 			" Print the guard of an if statement");
 			("--printCallStack",
 			Arg.Unit (fun () -> Executeargs.print_args.arg_print_callstack <- true),
@@ -487,16 +487,15 @@ let feature : featureDescr =
 			(* Sparse printing *)
 			("--printLittle",
 			Arg.Unit (fun () -> 
-				Executeargs.print_args.arg_print_reg <- false;
-				Executeargs.print_args.arg_print_stmt <- false;
-				Executeargs.print_args.arg_print_func <- false;
-				Executeargs.print_args.arg_print_assign <- false;
-				()
+				Output.arg_print_reg := false;
+				Output.arg_print_stmt := false;
+				Output.arg_print_func := false;
+				Output.arg_print_assign := false;
 			),
 			" Suppress most output");
 
 			("--printNothing",
-			 Arg.Unit (fun () -> print_args.arg_print_nothing <- true),
+			 Arg.Set Output.arg_print_nothing,
 			" Suppress (pretty much) all output. This trumps all other --print* options");
 
 			("--printCharAsInt",

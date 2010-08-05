@@ -329,7 +329,7 @@ let print_report results =
 		if run_args.arg_line_coverage || run_args.arg_block_coverage || run_args.arg_edge_coverage || run_args.arg_cond_coverage || run_args.arg_path_coverage
 		then begin
 			(* Print coverage information, if it was gathered, regardless of anything else.*)
-			print_args.arg_print_nothing <- false;
+			Output.arg_print_nothing := false;
 			Output.set_mode Output.MSG_MUSTPRINT;
 			printCoverageInfo coverage;
 

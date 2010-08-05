@@ -9,10 +9,10 @@ module Interpreter (S : Config.BlockConfig) = struct
     let prepare_file file =
         let verbose = !Errormsg.verboseFlag in
         (* Suppress most output from the symbolic executor *)
-        Executeargs.print_args.Executeargs.arg_print_reg <- verbose;
-        Executeargs.print_args.Executeargs.arg_print_stmt <- verbose;
-        Executeargs.print_args.Executeargs.arg_print_func <- verbose;
-        Executeargs.print_args.Executeargs.arg_print_assign <- verbose;
+        Output.arg_print_reg := verbose;
+        Output.arg_print_stmt := verbose;
+        Output.arg_print_func := verbose;
+        Output.arg_print_assign := verbose;
         Executemain.prepare_file file
 
 

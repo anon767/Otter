@@ -1,4 +1,14 @@
-open Executeargs
+
+let arg_print_nothing = ref false
+let arg_print_reg = ref true
+let arg_print_stmt = ref true
+let arg_print_assign = ref false
+let arg_print_func = ref true
+let arg_print_stp = ref false
+let arg_print_guard = ref false
+let arg_print_debug = ref false
+let arg_print_mustprint = ref true
+
 
 class virtual t =
 	object (self : 'self)
@@ -66,16 +76,16 @@ let set_mode msg_type = current_msg_type := msg_type
 let get_mode () = !current_msg_type 
 
 let need_print msg_type =
-	if Executeargs.print_args.arg_print_nothing then false else
+	if !arg_print_nothing then false else
 	match msg_type with
-	| MSG_REG 		-> Executeargs.print_args.arg_print_reg
-	| MSG_STMT		-> Executeargs.print_args.arg_print_stmt
-	| MSG_ASSIGN	-> Executeargs.print_args.arg_print_assign
-	| MSG_FUNC		-> Executeargs.print_args.arg_print_func
-	| MSG_STP			-> Executeargs.print_args.arg_print_stp
-	| MSG_GUARD		-> Executeargs.print_args.arg_print_guard
-	| MSG_DEBUG		-> Executeargs.print_args.arg_print_debug
-	| MSG_MUSTPRINT -> Executeargs.print_args.arg_print_mustprint
+		| MSG_REG 		-> !arg_print_reg
+		| MSG_STMT		-> !arg_print_stmt
+		| MSG_ASSIGN	-> !arg_print_assign
+		| MSG_FUNC		-> !arg_print_func
+		| MSG_STP		-> !arg_print_stp
+		| MSG_GUARD		-> !arg_print_guard
+		| MSG_DEBUG		-> !arg_print_debug
+		| MSG_MUSTPRINT -> !arg_print_mustprint
 
 
 let printf format =
