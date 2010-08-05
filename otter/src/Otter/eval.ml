@@ -408,7 +408,7 @@ flatten_offset state lhost_typ offset : state * bytes * typ (* type of (lhost,of
 								then rval_cast !Cil.upointType rv0 (Cil.typeOf exp)
 								else rv0
 							in
-							let base_typ = match Cilutility.unrollType lhost_typ with TArray(typ2, _, _) -> typ2 | _ -> failwith "Must be array" in
+							let base_typ = match Cil.unrollType lhost_typ with TArray(typ2, _, _) -> typ2 | _ -> failwith "Must be array" in
 							let base_size = (Cil.bitsSizeOf base_typ) / 8 in (* must be known *)
 							let index = Operation.mult [(int_to_offset_bytes base_size,!Cil.upointType);(rv,!Cil.upointType)] in 
 							(state, index, base_typ, offset2)

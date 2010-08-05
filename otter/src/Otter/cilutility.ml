@@ -27,12 +27,6 @@ module FundecSet = Set.Make (struct
 	let compare a b = let id x = x.svar.vid in Pervasives.compare (id a) (id b)
 end)
 
-(** This is like {!Cil.unrollType} except that it only keeps the
-		attributes in the base (unnamed) type. *)
-let unrollType = function
-	| TNamed (typInfo,_) -> unrollType typInfo.ttype
-	| x -> x
-
 (* Implicit definition of basic block *)
 
 (* A statement ends a basic block if

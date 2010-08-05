@@ -351,7 +351,7 @@ to_stp_bv_impl vc bytes =
 				let len_of_1_0 = 32 in
 				let bv_1 = (Stpc.e_bv_of_int vc len_of_1_0 1) in
 				let bv_0 = (Stpc.e_bv_of_int vc len_of_1_0 0) in
-				let isSigned = match Cilutility.unrollType typ1 with
+				let isSigned = match Cil.unrollType typ1 with
 					| TInt (ikind,_) -> Cil.isSigned ikind
 					| _ -> false
 				in
