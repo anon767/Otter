@@ -23,7 +23,7 @@ let test_otter_on_file
     fun () ->
         (* reset the error flag and suppress all output from the symbolic executor *)
         Errormsg.hadErrors := false;
-        Executeargs.print_args.Executeargs.arg_print_nothing <- true;
+        Output.arg_print_nothing := true;
 
         (* additional setup before parsing *)
         setup path;
