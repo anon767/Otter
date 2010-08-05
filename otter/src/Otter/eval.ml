@@ -20,8 +20,10 @@ let print_failed_assertion state bytes exps ~isUnknown =
 		(****************************@\n\
 		Assertion:@\n\
 		\  @[%a@]@\n\
-		which becomes
+		@\n\
+		which becomes@\n\
 		\  @[%a@]@\n\
+		@\n\
 		%s false with the path condition:@\n\
 		\  @[  %t@]@\n\
 		****************************)@\n\
@@ -33,7 +35,7 @@ let print_failed_assertion state bytes exps ~isUnknown =
 			if state.path_condition = [] then
 				Format.pp_print_string ff "true"
 			else
-				FormatPlus.pp_print_list BytesPrinter.bytes "@\nAND  @\n" ff state.path_condition
+				FormatPlus.pp_print_list BytesPrinter.bytes "@\nAND@\n  " ff state.path_condition
 		end
 
 
