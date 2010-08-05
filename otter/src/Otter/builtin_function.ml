@@ -183,14 +183,14 @@ let libc_free = wrap_state_function begin fun state retopt exps ->
 	match ptr with
 		| Bytes_Address (block, _) ->
 			if block.memory_block_type != Block_type_Heap
-			then warning "Freeing a non-malloced pointer:@ @[%a@]@ = @[%a@]@\n" To_string.exp_ff (List.hd exps) BytesPrinter.bytes ptr else
+			then warning "Freeing a non-malloced pointer:@ @[%a@]@ = @[%a@]@\n" TypesPrinter.exp (List.hd exps) BytesPrinter.bytes ptr else
 			if not (MemOp.state__has_block state block)
-			then warning "Double-free:@ @[%a@]@ = @[%a@]@\n" To_string.exp_ff (List.hd exps) BytesPrinter.bytes ptr else
+			then warning "Double-free:@ @[%a@]@ = @[%a@]@\n" TypesPrinter.exp (List.hd exps) BytesPrinter.bytes ptr else
 			let state = MemOp.state__remove_block state block in
 			set_return_value state retopt bytes__zero
 		| _ ->
 			Output.set_mode Output.MSG_MUSTPRINT;
-			warning "Freeing something that is not a valid pointer:@ @[%a@]@ = @[%a@]@\n" To_string.exp_ff (List.hd exps) BytesPrinter.bytes ptr
+			warning "Freeing something that is not a valid pointer:@ @[%a@]@ = @[%a@]@\n" TypesPrinter.exp (List.hd exps) BytesPrinter.bytes ptr
 end
 
 
@@ -215,11 +215,11 @@ end
 (* __builtin_alloca is used for local arrays with variable size; creates a dummy local variable so that the memory is deallocated on return *)
 let libc___builtin_alloca__id = Counter.make ()
 let libc___builtin_alloca_size state size bytes loc =
-	let name = Printf.sprintf "%s(%d)#%d/%s%s"
+	let name = FormatPlus.sprintf "%s(%d)#%d/%a%s"
 		(List.hd state.callstack).svar.vname
 		size
 		(Counter.next libc___builtin_alloca__id)
-		(To_string.location loc)
+		Printcil.f_loc loc
 		(MemOp.state__trace state)
 	in
 	let block = block__make name size Block_type_Local in
@@ -249,11 +249,11 @@ let libc___builtin_alloca job retopt exps =
 
 (* allocates on the heap *)
 let libc_malloc_size state size bytes loc =
-	let name = Printf.sprintf "%s(%d)#%d/%s%s"
+	let name = FormatPlus.sprintf "%s(%d)#%d/%a%s"
 		(List.hd state.callstack).svar.vname
 		size
 		(Counter.next libc___builtin_alloca__id)
-		(To_string.location loc)
+		Printcil.f_loc loc
 		(MemOp.state__trace state)
 	in
 	let block = block__make name size Block_type_Heap in
@@ -431,7 +431,7 @@ end
 let otter_comment = wrap_state_function begin fun state retopt exps ->
 	let exp = List.hd exps in
 	Output.set_mode Output.MSG_MUSTPRINT;
-	Output.printf "COMMENT:@ @[%a@]@\n" To_string.exp_ff exp;
+	Output.printf "COMMENT:@ @[%a@]@\n" TypesPrinter.exp exp;
 	state
 end
 

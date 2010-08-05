@@ -127,10 +127,11 @@ let function_from_exp job state exp args: (state * fundec) list =
 				| Bytes_Conditional(c) ->
 					(getall c)
 
-				| _ -> failwith ("Non-constant function ptr not supported : "^(To_string.exp exp2))
+				| _ ->
+					FormatPlus.failwith "Non-constant function ptr not supported :@ @[%a@]" TypesPrinter.exp exp2
 			end
 		| _ ->
-			failwith ("Non-constant function ptr not supported : "^(To_string.exp exp))
+			FormatPlus.failwith "Non-constant function ptr not supported :@ @[%a@]" TypesPrinter.exp exp
 
 let exec_fundec job state instr fundec lvalopt exps = 
 	let stmt = job.stmt in
@@ -193,7 +194,7 @@ let exec_instr job =
 	assert (job.instrList <> []);
 	let printInstr instr =
 		Output.set_mode Output.MSG_STMT;
-		Output.printf "%s@\n" (To_string.instr instr)
+		Output.printf "%a@\n" Printcil.f_instr instr
 	in
 
 	let instr,tail = match job.instrList with i::tl -> i,tl | _ -> assert false in
@@ -241,7 +242,7 @@ let exec_stmt job =
 	in
 
 	Output.set_mode Output.MSG_STMT;
-	Output.printf "%s@\n" (To_string.stmt stmt);
+	Output.printf "%a@\n" TypesPrinter.stmt_abbr stmt;
 	match stmt.skind with
 		| Instr [] ->
 				let nextStmt = match stmt.succs with [x] -> x | _ -> assert false in
@@ -407,15 +408,13 @@ let exec_stmt job =
 								 stmt = nextStmtF;
 								 exHist =  nextExHist (Some nextStmtF) ~whichBranch:false; } in
 							Output.set_mode Output.MSG_MUSTPRINT;
-							Output.printf "Branching on %s at %s. %s\nJob %d is the true branch and job %d is the false branch.\n\n"
-								 (To_string.exp exp)
-								 (To_string.location loc)
-								 (if Executeargs.print_args.arg_print_callstack then
-									 "Call stack:\n"^
-									(To_string.callstack state.callContexts)
-								 else ""
-								 )
-								 trueJob.jid falseJob.jid;
+							Output.printf "Branching on @[%a@]@ at %a.@\n"
+								 TypesPrinter.exp exp
+								 Printcil.f_loc loc;
+							if Executeargs.print_args.arg_print_callstack then
+								Output.printf "Call stack:@\n  @[%a@]@\n" (TypesPrinter.callingContext_list "@\n") state.callContexts;
+							Output.printf "Job %d is the true branch and job %d is the false branch.@\n@\n"
+								trueJob.jid falseJob.jid;
 							Fork [Active trueJob; Active falseJob]
 				end
 		| Block(block)

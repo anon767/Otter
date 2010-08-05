@@ -26,7 +26,7 @@ let print_failed_assertion state bytes exps ~isUnknown =
 		\  @[  %t@]@\n\
 		****************************)@\n\
 		"
-		(FormatPlus.pp_print_list To_string.exp_ff "@ and ") exps
+		(FormatPlus.pp_print_list TypesPrinter.exp "@ and ") exps
 		BytesPrinter.bytes bytes
 		(if isUnknown then "can be" else "is")
 		begin fun ff ->
@@ -189,7 +189,7 @@ rval state exp : state * bytes =
 					let exp2 = Cil.sizeOf typ in
 					begin match exp2 with
 						| SizeOf(_) ->
-							failwith ("Cannot determine sizeof("^(To_string.typ typ)^")")
+							FormatPlus.failwith "Cannot determine sizeof(%a)" Printcil.f_type typ
 						| _ ->
 							let state, bytes = rval state exp2 in
 							begin match bytes with

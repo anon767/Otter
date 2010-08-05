@@ -1,3 +1,5 @@
+(** {!Format}-style printers for types in the {!Bytes} module *)
+
 open DataStructures
 open Format
 open OcamlUtilities.FormatPlus

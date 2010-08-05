@@ -17,14 +17,12 @@ let output_completion_info completion =
 	match completion with
 		| Types.Abandoned (msg, loc, { result_state=state; result_history=hist }) ->
 			Output.set_mode Output.MSG_MUSTPRINT;
-			Output.printf "Error \"%s\" occurs at %s\n%sAbandoning path\n"
-			msg (To_string.location loc)
-			(
-				if Executeargs.print_args.arg_print_callstack then
-					"Call stack:\n"^(To_string.callstack state.callContexts)
-				else
-					""
-			);
+			Output.printf "Error \"%s\"@ occurs at %a.@\n"
+				msg Printcil.f_loc loc;
+			if Executeargs.print_args.arg_print_callstack then
+				Output.printf "Call stack:@\n  @[%a@]@\n" (TypesPrinter.callingContext_list "@\n") state.callContexts;
+			Output.printf "Abandoning path.@\n"
+
 		| _ ->
 			()
 

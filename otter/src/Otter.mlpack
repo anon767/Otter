@@ -18,7 +18,7 @@ Otter/prioritizer
 Otter/report
 Otter/stp
 Otter/stpc
-Otter/to_string
 Otter/types
+Otter/typesPrinter
 Otter/multiprocess
 Otter/callchain_backward

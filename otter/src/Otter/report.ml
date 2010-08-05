@@ -165,24 +165,24 @@ let printLines lineset =
 	Output.printf "\n"
 
 let printEdge (srcStmtInfo,destStmtInfo) =
-	Output.printf "%s -> %s\n"
-		(To_string.stmtInfo srcStmtInfo)
-		(To_string.stmtInfo destStmtInfo)
+	Output.printf "%a -> %a\n"
+		TypesPrinter.stmtInfo srcStmtInfo
+		TypesPrinter.stmtInfo destStmtInfo
 let printEdges edgeset =
 	Output.printf "The edges hit were:\n";
 	EdgeSet.iter printEdge edgeset;
 	Output.printf "\n"
 	
 let printStmtInfo stmtInfo =
-	Output.printf "%s\n" (To_string.stmtInfo stmtInfo)
+	Output.printf "%a\n" TypesPrinter.stmtInfo stmtInfo
 let printBlocks blockset =
 	Output.printf "The blocks hit were:\n";
 	StmtInfoSet.iter printStmtInfo blockset;
 	Output.printf "\n"
 	
 let printCondition (stmtInfo, truth) =
-	Output.printf "%s %c\n"
-		(To_string.stmtInfo stmtInfo)
+	Output.printf "%a %c\n"
+		TypesPrinter.stmtInfo stmtInfo
 		(if truth then 'T' else 'F')
 let printConditions condset =
 	Output.printf "The conditions hit were:\n";

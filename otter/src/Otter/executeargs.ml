@@ -5,12 +5,10 @@
 type print_args =
 	{
 		mutable arg_print_callstack : bool;
-		mutable arg_print_stmt_locs : bool;
 	}
 let print_args =
 	{
 		arg_print_callstack = false;
-		arg_print_stmt_locs = false;
 	}
 type run_args =
 	{

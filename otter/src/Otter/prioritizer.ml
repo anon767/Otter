@@ -1,3 +1,4 @@
+open OcamlUtilities
 open Types
 open Cil
 open Hashtbl
@@ -39,24 +40,15 @@ struct
       | [] -> make_instr_stmt_Stmt (job.stmt)
   
   let print_instr_stmt ?(obj=None) instr_stmt =
-    let location_special loc = 
+    let location_special ff loc =
       let v = if loc.line > 0 then loc.line else -(abs ((Hashtbl.hash obj) mod 256))
       in
-        Printf.sprintf "%0.3d" v
+        Format.fprintf ff "%0.3d" v
     in
-    let s = 
-        match instr_stmt with
-          | Instr ([],stmt)     -> Printf.sprintf "%s(%s,%s)" (location_special (Cil.get_stmtLoc stmt.skind)) "[]" (To_string.stmtkind stmt.skind)
-          | Instr (instrs,stmt) -> Printf.sprintf "%s(%s,%s)" (location_special (Cil.get_instrLoc (List.hd instrs))) "instrs" (To_string.stmtkind stmt.skind)
-          | Stmt (stmt)         -> Printf.sprintf "%s(%s,%s)" (location_special (Cil.get_stmtLoc stmt.skind)) "stmt" (To_string.stmtkind stmt.skind)
-        in 
-    let _ =
     match instr_stmt with
-      | Instr (instrs,stmt) -> 
-          "(Instr:"^(List.fold_right (fun instr str -> (To_string.instr instr)^"::"^str) instrs "[]" )^","^(To_string.stmt stmt)^")"
-      | Stmt (stmt) -> "(Stmt:"^(To_string.stmt stmt)^")"
-    in
-      s
+      | Instr ([],stmt)     -> FormatPlus.sprintf "%a(%s,%a)" location_special (Cil.get_stmtLoc stmt.skind) "[]" TypesPrinter.stmt_kind stmt
+      | Instr (instrs,stmt) -> FormatPlus.sprintf "%a(%s,%a)" location_special (Cil.get_instrLoc (List.hd instrs)) "instrs" TypesPrinter.stmt_kind stmt
+      | Stmt (stmt)         -> FormatPlus.sprintf "%a(%s,%a)" location_special (Cil.get_stmtLoc stmt.skind) "stmt" TypesPrinter.stmt_kind stmt
   
 end
 
@@ -96,11 +88,9 @@ let print_node node =
     s
 
 let print_graph graph =
-  To_string.force_print := true;
   let lst = Hashtbl.fold (fun k v lst -> (print_node v)::lst) graph [] in
   let lst = List.sort String.compare lst in
     List.iter (fun s -> Output.printf "%s" s) lst;
-  To_string.force_print := false;
   ()
 
 let graph__set_color graph color =

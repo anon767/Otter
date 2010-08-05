@@ -238,7 +238,7 @@ let prepare_file file =
 		Output.printf "Total number of %s: %d\n" "Blocks" run_args.arg_num_blocks;
 		StmtInfoSet.iter
 			(fun stmtInfo ->
-				 Output.printf "%s\n" (To_string.stmtInfo stmtInfo))
+				 Output.printf "%a\n" TypesPrinter.stmtInfo stmtInfo)
 		setOfBlocks
 		;Output.printf "\n"
 	);
@@ -246,16 +246,16 @@ let prepare_file file =
 		Output.printf "Total number of %s: %d\n" "Edges" run_args.arg_num_edges;
 		EdgeSet.iter
 			(fun (srcStmtInfo,destStmtInfo) ->
-				 Output.printf "%s -> %s\n"
-					 (To_string.stmtInfo srcStmtInfo)
-					 (To_string.stmtInfo destStmtInfo))
+				 Output.printf "%a -> %a\n"
+					 TypesPrinter.stmtInfo srcStmtInfo
+					 TypesPrinter.stmtInfo destStmtInfo)
 		setOfEdges
 		;Output.printf "\n"
 	);
 	if run_args.arg_list_conds then (
 		Output.printf "Total number of %s: %d\n" "Conditions" run_args.arg_num_conds;
 		CondSet.iter
-			(fun (stmtInfo, truth) -> Output.printf "%s %c\n" (To_string.stmtInfo stmtInfo) (if truth then 'T' else 'F'))
+			(fun (stmtInfo, truth) -> Output.printf "%a %c\n" TypesPrinter.stmtInfo stmtInfo (if truth then 'T' else 'F'))
 		setOfConds
 		;Output.printf "\n"
 	)
@@ -500,7 +500,7 @@ let feature : featureDescr =
 			" Print char as int");
 
 			("--printStmtLocs",
-			Arg.Unit (fun () -> Executeargs.print_args.arg_print_stmt_locs <- true),
+			Arg.Set TypesPrinter.print_stmtInfo_locs,
 			" Print file and line number for statements, in addition to function name an id number, for block and edge coverage\n");
 
 			(** 
