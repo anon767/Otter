@@ -52,14 +52,12 @@ and guard =
 	| Guard_True
 	| Guard_Not of guard
 	| Guard_And of guard * guard
-	| Guard_Or of guard * guard
 	| Guard_Symbolic of symbol
 	| Guard_Bytes of bytes
 
 and 'a conditional =
 	| IfThenElse of guard * 'a conditional * 'a conditional  (* if guard then a else b *)
 	| Unconditional of 'a
-   | ConditionalException of exn
 
 and bytes =
 	| Bytes_Constant of Cil.constant                (* length=Cil.sizeOf (Cil.typeOf (Const(constant))) *)
@@ -430,7 +428,6 @@ let rec bytes__length bytes =
 			let rec find_one = function
 				| IfThenElse (_, c1, c2) -> max (find_one c1) (find_one c2)
 				| Unconditional b -> bytes__length b
-           | ConditionalException _ -> -1
 			in
 			find_one c
 
@@ -541,20 +538,13 @@ let logicalNot = function
 let guard__true = Guard_True
 
 let guard__not = function
-  | Guard_Not g -> g
-  | g -> Guard_Not g
-
-let guard__false = guard__not guard__true
+	| Guard_Not g -> g
+	| g -> Guard_Not g
 
 let guard__and g1 g2 = match g1, g2 with
-  | Guard_True, g
-  | g, Guard_True -> g
-  | _, _          -> Guard_And (g1, g2)
-
-let guard__or g1 g2 = match g1, g2 with
-  | Guard_Not Guard_True, g
-  | g, Guard_Not Guard_True -> g
-  | _, _          -> Guard_Or (g1, g2)
+	| Guard_True, g
+	| g, Guard_True -> g
+	| _, _ -> Guard_And (g1, g2)
 
 let guard__and_not g1 g2 = guard__and g1 (guard__not g2)
 
@@ -601,20 +591,7 @@ let conditional__map_fold ?(test=fun _ _ -> Unknown) ?(eq=(==)) ?(pre=Guard_True
 						(acc, IfThenElse (guard, x, y))
 			end
 		| Unconditional x ->
-          (
-          try
-			   map_fold acc pre x
-          with e -> 
-            if (Executeargs.run_args.Executeargs.arg_use_conditional_exceptions) then
-              begin
-              Output.set_mode Output.MSG_REG;
-              Output.printf "(Exception \"%s\" caught in conditional__map_fold)" (Printexc.to_string e);
-              acc, ConditionalException e
-              end
-            else
-              raise e
-          )
-     | ConditionalException e -> acc, ConditionalException e
+			map_fold acc pre x
 	in
 	conditional__map_fold acc pre source
 
@@ -677,54 +654,4 @@ let conditional__bytes = function
 
 let conditional__lval_block l =
 	Unconditional l
-
-let rec conditional__remove_exceptions c =
-   match c with
-     | IfThenElse (g,x,y) ->
-         let px,x = conditional__remove_exceptions x in
-         let py,y = conditional__remove_exceptions y in
-         let pxy,xy = match x,y with
-           | ConditionalException _,ConditionalException _ -> guard__false,x
-           | ConditionalException _,_ -> (guard__and (guard__not g) py),y
-           | _,ConditionalException _ -> (guard__and g px),x
-           | _,_ -> (guard__or (guard__and g px) (guard__and (guard__not g) py)),IfThenElse(g,x,y)
-         in pxy,xy
-     | Unconditional something -> guard__true,c (* TODO: something may contain exceptions, but its type is 'a *)
-     | ConditionalException _ -> guard__false,c
-
-let rec bytes__remove_exceptions bytes =
-  match bytes with
-    | Bytes_Conditional (c) -> 
-        let g,c = conditional__remove_exceptions c in g,Bytes_Conditional(c)
-    | Bytes_ByteArray (bytearray) -> 
-        let g = ref guard__true in
-        let bytearray = ImmutableArray.map (fun byte -> match byte with 
-                              | Byte_Bytes (bs,n) -> 
-                                  let g',bs = bytes__remove_exceptions bs in 
-                                    g := (guard__and g' (!g));
-                                    Byte_Bytes (bs,n)
-                              | _ -> byte
-                           ) bytearray
-        in (!g),Bytes_ByteArray(bytearray)
-    | Bytes_Address (block,offset) -> 
-        let g,offset = bytes__remove_exceptions offset in g, Bytes_Address(block,offset)
-    | Bytes_Op (op,operands) -> 
-        let g,oplst = List.fold_right 
-                    (fun (operand,typ) (g,oplst) -> 
-                       let g',opr = bytes__remove_exceptions operand in 
-                         (guard__and g g'),(opr,typ)::oplst) 
-                    operands (guard__true,[])
-        in 
-          g,Bytes_Op(op,oplst)
-    | Bytes_Read (b1,b2,n) -> 
-        let g1,b1 = bytes__remove_exceptions b1 in
-        let g2,b2 = bytes__remove_exceptions b2 in
-         (guard__and g1 g2),Bytes_Read(b1,b2,n)
-    | Bytes_Write (b1,b2,n,b3) -> 
-        let g1,b1 = bytes__remove_exceptions b1 in
-        let g2,b2 = bytes__remove_exceptions b2 in
-        let g3,b3 = bytes__remove_exceptions b3 in
-         (guard__and g3 (guard__and g1 g2)),Bytes_Write (b1,b2,n,b3)
-    | _ -> guard__true,bytes
-
 

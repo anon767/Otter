@@ -34,7 +34,6 @@ type run_args =
 		(** How many seconds to allow the executor to run. *)
 		mutable arg_marshal_file : string;
 		mutable arg_noinit_unreachable_globals : bool;
-		mutable arg_use_conditional_exceptions : bool;
 		mutable arg_simplify_path_condition : bool;
 		mutable arg_list_lines : bool;
 		mutable arg_list_blocks : bool;
@@ -68,7 +67,6 @@ let run_args =
 		arg_timeout = 0;
 		arg_marshal_file = ""; (* File to which to marshal coverage information *)
 		arg_noinit_unreachable_globals = false;
-		arg_use_conditional_exceptions = false;
 		arg_simplify_path_condition = false;
 		arg_list_lines = false;
 		arg_list_blocks = false;

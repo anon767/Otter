@@ -478,23 +478,6 @@ let rec state__eval state pc bytes =
 	(*
 	if not Executeargs.args.Executeargs.arg_print_queries then () else
 	Output.print_endline ("Is the following not equal to zero? \n"^(To_string.bytes bytes));*)
-  let state,pc,bytes = 
-   if (Executeargs.run_args.Executeargs.arg_use_conditional_exceptions) then
-     (* Remove exceptions in bytes (warning: may make queries slow) *)
-     let impl () = 
-      let guard,bytes = bytes__remove_exceptions bytes in
-      let guard_bytes = guard__to_bytes guard in
-      (state__add_path_condition state guard_bytes false , guard_bytes::pc , bytes) 
-        (* Potential problem: bytes are immutable, therefore the same conditional
-         * bytes will emit a guard each time this is called
-         * This problem will go away if we do --simplifyPathCondition
-         *)
-     in 
-       Stats.time "Remove exceptions" impl ()
-   else
-     (state,pc,bytes)
-  in
-
   let nontrivial () = 
     Output.set_mode Output.MSG_REG;
     Output.printf "Ask STP...@\n";

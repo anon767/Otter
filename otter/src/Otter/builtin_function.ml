@@ -497,8 +497,6 @@ let otter_print_state = wrap_state_function begin fun state retopt exps ->
 				(* TODO: print something useful *)
 				| Immediate (IfThenElse _) ->
 					Output.printf "%s@ = (IfThenElse)@\n" var.vname
-				| Immediate (ConditionalException _) ->
-					Output.printf "%s@ = (ConditionalException)@\n" var.vname
 				| Deferred _ ->
 					Output.printf "%s@ = (Deferred)@\n" var.vname
 	in

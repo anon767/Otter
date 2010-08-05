@@ -123,9 +123,6 @@ let rec getBlockSizesAndOffsets lvals = match lvals with
 		| Unconditional (block,offset) ->
 				Unconditional (int_to_offset_bytes block.memory_block_size),
 				Unconditional offset
-		| ConditionalException e ->
-            ConditionalException e,
-            ConditionalException e
 
 
 let checkBounds state lvals cil_lval useSize =

@@ -410,10 +410,6 @@ let doExecute (f: file) =
 		(Stats.lookupTime "STP construct")
 		(Stats.lookupTime "STP doassert")
 		(Stats.lookupTime "STP query");
-   (if Executeargs.run_args.arg_use_conditional_exceptions then
-      Output.printf "It took %.2f s to remove conditonal exceptions in Bytes_Conditional's.\n"
-         (Stats.lookupTime "Remove exceptions")
-    else ());
    (if Executeargs.run_args.arg_simplify_path_condition then
       Output.printf "It took %.2f s to simplify path conditions.\n"
          (Stats.lookupTime "Simplify PC")
@@ -568,10 +564,6 @@ let feature : featureDescr =
 			("--noinitUnreachableGlobals",
 			 Arg.Unit (fun () -> run_args.arg_noinit_unreachable_globals <- true),
 			 " Do NOT initialize unreachable globals\n");
-
-			("--useConditionalExceptions",
-			 Arg.Unit (fun () -> run_args.arg_use_conditional_exceptions <- true),
-			 " Use conditional exceptions when processing 'a conditional\n");
 
 			("--simplifyPathCondition",
 			 Arg.Unit (fun () -> run_args.arg_simplify_path_condition <- true),

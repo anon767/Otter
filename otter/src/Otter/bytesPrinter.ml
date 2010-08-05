@@ -139,7 +139,6 @@ and guard ff = function
 	| Guard_True -> pp_print_string ff "TRUE"
 	| Guard_Not g -> fprintf ff "NOT @[<hov>%a@]" guard g
 	| Guard_And (g1, g2) -> fprintf ff "(@[<hov>%a@]@ AND @[<hov>%a@]@,)" guard g1 guard g2
-	| Guard_Or (g1, g2) -> fprintf ff "(@[<hov>%a@]@ OR @[<hov>%a@]@,)" guard g1 guard g2
 	| Guard_Symbolic s -> symbol ff s
 	| Guard_Bytes b -> bytes ff b
 
@@ -158,8 +157,6 @@ and conditional (* : 'a . (Format.formatter -> 'a -> unit) -> Format.formatter -
 			fprintf ff "If @[<hov>%a@]@ Then @[<hov>%a@]@ Else @[<hov>%a@]" guard g conditional t conditional f
 		| Unconditional x ->
 			unconditional ff x
-		| ConditionalException e ->
-			fprintf ff "Exn %s" (Printexc.to_string e)
 	in
 	conditional ff
 
