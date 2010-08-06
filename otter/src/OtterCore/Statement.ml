@@ -1,6 +1,7 @@
 open DataStructures
 open OcamlUtilities
 open Cil
+open CilUtilities
 open OtterBytes
 open Bytes
 open BytesUtility
@@ -96,7 +97,7 @@ let function_from_exp job state exp args: (state * fundec) list =
 		| Lval(Var(varinfo), NoOffset) ->
 			begin			
 				try
-					[(state, Cilutility.find_fundec_by_varinfo job.file varinfo)]
+					[(state, FindCil.fundec_by_varinfo job.file varinfo)]
 				with Not_found ->
 					failwith ("Function "^varinfo.vname^" not found.")
 			end
@@ -110,7 +111,7 @@ let function_from_exp job state exp args: (state * fundec) list =
 						| Bytes_FunPtr(varinfo,_) ->
 							(* the varinfo should always map to a valid fundec (if the file was parsed by Cil) *)
 							let state = MemOp.state__add_path_condition state (Bytes.guard__to_bytes pre) true in
-							let fundec = Cilutility.find_fundec_by_varinfo job.file varinfo in
+							let fundec = FindCil.fundec_by_varinfo job.file varinfo in
 							(state, fundec)::acc
 						| _ -> acc (* should give a warning here about a non-valid function pointer*)
 				in
@@ -119,7 +120,7 @@ let function_from_exp job state exp args: (state * fundec) list =
 			begin match bytes with
 				| Bytes_FunPtr(varinfo,_) ->
 					(* the varinfo should always map to a valid fundec (if the file was parsed by Cil) *)
-					let fundec = Cilutility.find_fundec_by_varinfo job.file varinfo in
+					let fundec = FindCil.fundec_by_varinfo job.file varinfo in
 					[(state, fundec)]
 				| Bytes_Read(bytes2, offset, len) -> 
 					let fp = (BytesUtility.expand_read_to_conditional bytes2 offset len) in

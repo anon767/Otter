@@ -34,6 +34,7 @@
 open MyOUnit
 open DataStructures
 open OcamlUtilities
+open CilUtilities
 open OtterBytes
 open OtterCore
 
@@ -114,7 +115,7 @@ let assert_exp file loc exp result return_opt exit_opt =
             end
 
         | Cil.ACons (name, []) ->
-            let varinfo_opt = try Some (Cilutility.find_global_varinfo_by_name file name) with Not_found -> None in
+            let varinfo_opt = try Some (FindCil.global_varinfo_by_name file name) with Not_found -> None in
             begin match varinfo_opt with
                 | Some varinfo ->
                     if varinfo.Cil.vtype <> Cil.intType then

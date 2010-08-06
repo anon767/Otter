@@ -1,6 +1,7 @@
 open DataStructures
 open OcamlUtilities
 open Cil
+open CilUtilities
 open OtterBytes
 open OtterCore
 open Bytes
@@ -41,7 +42,7 @@ let doExecute (f: file) =
         (
           let assertfn =
             let fname = Executeargs.run_args.arg_assertfn in
-            try Cilutility.find_fundec_by_name f fname
+            try FindCil.fundec_by_name f fname
             with Not_found -> failwith (Printf.sprintf "Assserton function %s not found" fname )
           in
           let job_init = function entryfn -> Driver.job_for_middle f entryfn

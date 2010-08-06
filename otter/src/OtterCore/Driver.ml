@@ -1,5 +1,6 @@
 open DataStructures
 open OcamlUtilities
+open CilUtilities
 open Executeargs
 open OtterBytes
 open Bytes
@@ -285,7 +286,7 @@ let job_for_middle file entryfn =
 (* create a job that begins at the main function of a file, with the initial state set up for the file *)
 let job_for_file file cmdline =
 	let main_func =
-		try Cilutility.find_fundec_by_name file "main"
+		try FindCil.fundec_by_name file "main"
 		with Not_found -> failwith "No main function found!"
 	in
 
@@ -307,7 +308,7 @@ let job_for_file file cmdline =
 let find_entryfn file =
 	let fname = Executeargs.run_args.arg_entryfn in
 	try
-		Cilutility.find_fundec_by_name file fname
+		FindCil.fundec_by_name file fname
 	with Not_found ->
 		FormatPlus.failwith "Entry function %s not found" fname
 

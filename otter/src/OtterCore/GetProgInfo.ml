@@ -1,4 +1,5 @@
 open Cil
+open CilUtilities
 open Types
 open Cilutility
 
@@ -71,7 +72,7 @@ class getCallerVisitor file = object (self)
 	method vlval lval = (match lval with
       | (Var(varinfo),_) -> (
           match varinfo.vtype with
-            | TFun _ -> (try callee_list := (Cilutility.find_fundec_by_varinfo file varinfo)::(!callee_list) with Not_found -> ())
+            | TFun _ -> (try callee_list := (FindCil.fundec_by_varinfo file varinfo)::(!callee_list) with Not_found -> ())
             | _ -> if varinfo.vglob then varinfo_set := VarinfoSet.add varinfo (!varinfo_set) else ()
         )
       | _ -> ()
@@ -110,7 +111,7 @@ let getProgInfo (file : Cil.file) fnNames =
 let computeReachableCode file = 
   (* compute reachable globals from main *)
   let main_func =
-  	try Cilutility.find_fundec_by_name file "main"
+  	try FindCil.fundec_by_name file "main"
   	with Not_found -> failwith "No main function found!"
   in
   let rec computeReachableCodeThroughFunCall queue = 
@@ -132,7 +133,7 @@ let computeReachableCode file =
     match globals with
       | [] -> ()
       | g::globals -> 
-          (match (Cilutility.find_varinit file g).init with
+          (match (FindCil.global_varinit_by_varinfo file g).init with
              | None -> computeReachableCodeThroughGlobalInit globals
              | Some init ->
                 let vis = new getGlobalInitVisitor in

@@ -1,4 +1,5 @@
 open OcamlUtilities
+open CilUtilities
 open Executeargs
 open Types
 
@@ -43,7 +44,7 @@ let intercept_function_by_name_external target_name replace_name job job_queue i
 		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::t when varinfo.Cil.vname = target_name ->
 			let job = 
 				{job with
-					instrList = Cil.Call(retopt, Cil.Lval(Cil.Var((Cilutility.find_fundec_by_name job.file replace_name).Cil.svar), Cil.NoOffset), exps, loc)::t;
+					instrList = Cil.Call(retopt, Cil.Lval(Cil.Var((FindCil.fundec_by_name job.file replace_name).Cil.svar), Cil.NoOffset), exps, loc)::t;
 				}
 			in
 			Output.set_mode Output.MSG_REG;
@@ -59,7 +60,7 @@ let intercept_function_by_name_external_cascading target_name replace_name job j
 		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::t when varinfo.Cil.vname = target_name ->
 			let job = 
 				{job with
-					instrList = Cil.Call(retopt, Cil.Lval(Cil.Var((Cilutility.find_fundec_by_name job.file replace_name).Cil.svar), Cil.NoOffset), exps, loc)::t;
+					instrList = Cil.Call(retopt, Cil.Lval(Cil.Var((FindCil.fundec_by_name job.file replace_name).Cil.svar), Cil.NoOffset), exps, loc)::t;
 				}
 			in
 			Output.set_mode Output.MSG_REG;
