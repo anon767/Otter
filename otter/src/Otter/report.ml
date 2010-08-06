@@ -2,6 +2,7 @@ open DataStructures
 open OcamlUtilities
 open Cil
 open Executeargs
+open OtterBytes
 open Bytes
 open Types
 

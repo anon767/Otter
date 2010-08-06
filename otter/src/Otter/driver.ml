@@ -1,6 +1,7 @@
 open DataStructures
 open OcamlUtilities
 open Executeargs
+open OtterBytes
 open Bytes
 open Types
 open Interceptors

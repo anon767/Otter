@@ -7,6 +7,7 @@ This module contains a library of built-in functions for Otter.
 open DataStructures
 open OcamlUtilities
 open Cil
+open OtterBytes
 open Bytes
 open BytesUtility
 open Types

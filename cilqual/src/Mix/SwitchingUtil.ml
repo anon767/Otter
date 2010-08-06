@@ -106,6 +106,7 @@ open TypedBlock
 
 module Aliasing = TypeQual.QualSolver.Aliasing (G.QualGraph)
 
+open OtterBytes
 open Otter
 
 

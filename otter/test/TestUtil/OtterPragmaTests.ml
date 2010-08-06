@@ -34,6 +34,7 @@
 open MyOUnit
 open DataStructures
 open OcamlUtilities
+open OtterBytes
 open Otter
 
 

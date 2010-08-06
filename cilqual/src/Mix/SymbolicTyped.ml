@@ -7,6 +7,7 @@ open TypedBlock.GOps
 open TypedBlock.DiscreteSolver
 open TypedBlock
 
+open OtterBytes
 open Otter
 
 open SwitchingUtil

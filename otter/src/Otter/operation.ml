@@ -7,6 +7,7 @@
 open DataStructures
 open OcamlUtilities
 open Cil
+open OtterBytes
 open Bytes
 
 let run op operands = op operands

@@ -1,6 +1,7 @@
 open DataStructures
 open OcamlUtilities
 open Cil
+open OtterBytes
 open Bytes
 open BytesUtility
 open Types

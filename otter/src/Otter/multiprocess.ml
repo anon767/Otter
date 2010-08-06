@@ -1,4 +1,5 @@
 open OcamlUtilities
+open OtterBytes
 
 (* TODO: implement shared memory by one of the following:
  * - move block_to_bytes into shared_state, and add some sort of copy-on-write/indirection mechanism

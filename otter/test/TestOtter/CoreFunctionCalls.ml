@@ -1,6 +1,7 @@
 open TestUtil.MyOUnit
 open TestUtil.OtterUtil
 open Format
+open OtterBytes
 open Otter
 open Bytes
 open Types
