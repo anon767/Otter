@@ -3,10 +3,8 @@ open OcamlUtilities
 open Cil
 open OtterBytes
 open Bytes
-open BytesUtility
 open Types
 open Executeargs
-open MemOp
 (*open InvInput*)
 
 let doExecute (f: file) =
