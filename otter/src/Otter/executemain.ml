@@ -22,10 +22,10 @@ let doExecute (f: file) =
 	(* Set signal handlers to catch timeouts and interrupts *)
 	let old_ALRM_handler =
 		Sys.signal Sys.sigalrm
-			(Sys.Signal_handle (fun _ -> signalStringOpt := Some "Timed out!"))
+			(Sys.Signal_handle (fun _ -> raise (SignalException "Timed out!")))
 	and old_INT_handler =
 		Sys.signal Sys.sigint
-			(Sys.Signal_handle (fun _ -> signalStringOpt := Some "User interrupt!"))
+			(Sys.Signal_handle (fun _ -> raise (SignalException "User interrupt!")))
 	in
 	(* Set a timer *)
 	ignore (Unix.alarm Executeargs.run_args.arg_timeout);

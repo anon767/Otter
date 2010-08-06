@@ -27,7 +27,10 @@ module BytesMap = Map.Make (struct
 	let compare = Pervasives.compare
 end)
 
-	
+
+exception SignalException of string
+
+
 (** A calling context may either be the symbolic executor, represented by
 		[Runtime], or from another function in the source code, represented
 		either by a tuple [Source (destOpt,callStmt,callInstr,nextStmt)] if the
@@ -147,9 +150,6 @@ let emptyHistory = {
 	executionPath = [];
 	bytesToVars = [];
 }
-
-let signalStringOpt : string option ref = ref None
-exception SignalException
 
 let job_counter = Counter.make ()
 
