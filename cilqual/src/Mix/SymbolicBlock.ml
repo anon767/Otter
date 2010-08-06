@@ -9,10 +9,10 @@ module Interpreter (S : Config.BlockConfig) = struct
     let prepare_file file =
         let verbose = !Errormsg.verboseFlag in
         (* Suppress most output from the symbolic executor *)
-        Output.arg_print_reg := verbose;
-        Output.arg_print_stmt := verbose;
-        Output.arg_print_func := verbose;
-        Output.arg_print_assign := verbose;
+        OcamlUtilities.Output.arg_print_reg := verbose;
+        OcamlUtilities.Output.arg_print_stmt := verbose;
+        OcamlUtilities.Output.arg_print_func := verbose;
+        OcamlUtilities.Output.arg_print_assign := verbose;
         Driver.prepare_file file
 
 

@@ -96,9 +96,9 @@ let printf format =
 
 let kprintf k format =
 	if (need_print (!current_msg_type)) then
-		 !formatter#kprintf k format
+		!formatter#kprintf k format
  	else
-		OcamlUtilities.FormatPlus.ikfprintf (fun _ -> k !formatter) Format.std_formatter format
+		FormatPlus.ikfprintf (fun _ -> k !formatter) Format.std_formatter format
 
 
 let mprint_formatter =

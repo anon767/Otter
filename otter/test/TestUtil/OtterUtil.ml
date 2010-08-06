@@ -1,6 +1,7 @@
 (** Utilities for testing Otter. *)
 
 open MyOUnit
+open OcamlUtilities
 open Otter
 
 
