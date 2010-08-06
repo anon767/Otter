@@ -18,7 +18,7 @@ let set_output_formatter_interceptor job job_queue interceptor =
 		old_job_id := job.jid
 	);
 	let depth = List.length job.state.path_condition in
-	let loc = Core.get_job_loc job in
+	let loc = Statement.get_job_loc job in
 	let label =
 		if loc = Cil.locUnknown then
 			Format.sprintf "[%d,%d] : " job.jid depth
@@ -49,7 +49,7 @@ let intercept_function_by_name_external target_name replace_name job job_queue i
 			Output.set_mode Output.MSG_REG;
 			Output.printf "Transformed Call %s to Call %s@\n" target_name replace_name;
 			(* Don't allow any other intercepters to transform the name again *)
-			Core.step job job_queue 
+			Statement.step job job_queue 
 		| _ -> 
 			interceptor job job_queue
 

@@ -1,6 +1,6 @@
 open TestUtil.MyOUnit
 open TestUtil.OtterPragmaTests
-open Otter
+open OtterCore
 
 
 (* directory containing tests for SystemTests *)

@@ -4,7 +4,7 @@ open Executeargs
 open OtterBytes
 open Bytes
 open Types
-open Interceptors
+open Interceptor
 
 
 let unreachable_global varinfo = not (Cilutility.VarinfoSet.mem varinfo (!GetProgInfo.reachable_globals))
@@ -60,8 +60,8 @@ let init_globalvars state globals =
 			let rec myInit (offset:Cil.offset) (i:Cil.init) (state, acc) =
 				match i with
 					| Cil.SingleInit(exp) ->
-						let state, off, typ = Eval.flatten_offset state lhost_typ offset in
-						let state, off_bytes = Eval.rval state exp in
+						let state, off, typ = Expression.flatten_offset state lhost_typ offset in
+						let state, off_bytes = Expression.rval state exp in
 						let size = (Cil.bitsSizeOf typ) / 8 in
 						let init_bytes = BytesUtility.bytes__write acc off size off_bytes in
 						(state, init_bytes)
@@ -383,8 +383,8 @@ let run job =
 		get_job_list
 		(
 			set_output_formatter_interceptor @@
-			Builtin_function.interceptor @@
-			Core.step
+			BuiltinFunctions.interceptor @@
+			Statement.step
 		)
 		process_result
 		[job]
@@ -394,9 +394,9 @@ let run_with_libc job =
 		get_job_list
 		(
 			set_output_formatter_interceptor @@
-			Builtin_function.interceptor @@
-			Builtin_function.libc_interceptor @@
-			Core.step
+			BuiltinFunctions.interceptor @@
+			BuiltinFunctions.libc_interceptor @@
+			Statement.step
 		)
 		process_result
 		[job]

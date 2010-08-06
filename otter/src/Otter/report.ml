@@ -1,10 +1,11 @@
 open DataStructures
 open OcamlUtilities
 open Cil
-open Executeargs
 open OtterBytes
+open OtterCore
 open Bytes
 open Types
+open Executeargs
 
 type coverageType = Line | Block | Edge | Cond | Path
 

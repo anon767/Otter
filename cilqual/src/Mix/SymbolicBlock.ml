@@ -1,4 +1,4 @@
-open Otter
+open OtterCore
 
 
 module Interpreter (S : Config.BlockConfig) = struct
@@ -33,7 +33,7 @@ module Interpreter (S : Config.BlockConfig) = struct
             if S.should_enter_block (List.hd job.Types.state.Types.callstack).Cil.svar.Cil.vattr then begin
                 (* execute this function *)
 
-                let state, job_queue = Builtin_function.interceptor job job_queue Core.step in
+                let state, job_queue = BuiltinFunctions.interceptor job job_queue Statement.step in
                 let rec process_job_states completed job_queue = function
                     | Types.Active job ->
                         (completed, (job::job_queue))
@@ -65,7 +65,7 @@ module Interpreter (S : Config.BlockConfig) = struct
                                     let state = MemOp.state__end_fcall state in
                                     let state = match destopt, retopt with
                                         | Some dest, Some ret ->
-                                            let state, lval = Eval.lval state dest in
+                                            let state, lval = Expression.lval state dest in
                                             MemOp.state__assign state lval ret
                                         | _, _ ->
                                             state

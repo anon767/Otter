@@ -1,7 +1,7 @@
 open Str
 open MyOUnit
 
-open Otter
+open OtterCore
 
 
 let preprocess str =

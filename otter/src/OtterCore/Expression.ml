@@ -6,7 +6,7 @@ open OtterBytes
 open Bytes
 open BytesUtility
 open Types
-open Operation
+open Operator
 
 (* Print an error message saying that the assertion [bytes] failed in
 	 state [state]. [exps] is the expression representing [bytes].
@@ -141,8 +141,8 @@ let checkBounds state lvals cil_lval useSize =
 	and useSizeBytes = int_to_offset_bytes useSize in
 
 	(* Prepare the first bounds check: {offsets <= sizes - useSize} *)
-	let sizesMinusUseSize = Operation.minus [(sizesBytes, !Cil.upointType); (useSizeBytes, !Cil.upointType)] in
-	let offsetsLeSizesMinusUseSize = Operation.le [(offsetsBytes, !Cil.upointType); (sizesMinusUseSize, !Cil.upointType)]
+	let sizesMinusUseSize = Operator.minus [(sizesBytes, !Cil.upointType); (useSizeBytes, !Cil.upointType)] in
+	let offsetsLeSizesMinusUseSize = Operator.le [(offsetsBytes, !Cil.upointType); (sizesMinusUseSize, !Cil.upointType)]
 	and expRepresentingBoundsCheck1 = BinOp (Eq, Lval cil_lval, SizeOfStr "Checking that offset is in bounds", voidType) in
 
 	(* Do the check and keep the resulting state *)
@@ -154,7 +154,7 @@ let checkBounds state lvals cil_lval useSize =
 		 function) to simplify {useSizeLeSizes}. It will almost always
 		 have concrete 'true's at every leaf. If we don't simplify, we'll
 		 end up calling the solver. *)
-	let useSizeLeSizes = Operation.le [(useSizeBytes, !Cil.upointType); (sizesBytes, !Cil.upointType)]
+	let useSizeLeSizes = Operator.le [(useSizeBytes, !Cil.upointType); (sizesBytes, !Cil.upointType)]
 	and expRepresentingBoundsCheck2 = BinOp (Eq, Lval cil_lval, SizeOfStr "Checking that size of type does not exceed allocated size", voidType) in
 
 	(* Do the second check *)
@@ -163,7 +163,7 @@ let checkBounds state lvals cil_lval useSize =
 
 let add_offset state offset lvals : state * (Types.MemoryBlockMap.key * Bytes.bytes) Bytes.conditional =
 	conditional__fold_map begin fun newState _ (block, offset2) ->
-		let newOffset = Operation.plus [(offset, !Cil.upointType); (offset2, !Cil.upointType)] in
+		let newOffset = Operator.plus [(offset, !Cil.upointType); (offset2, !Cil.upointType)] in
 		(newState, conditional__lval_block (block, newOffset))
 	end state lvals
 	
@@ -411,13 +411,13 @@ flatten_offset state lhost_typ offset : state * bytes * typ (* type of (lhost,of
 							in
 							let base_typ = match Cil.unrollType lhost_typ with TArray(typ2, _, _) -> typ2 | _ -> failwith "Must be array" in
 							let base_size = (Cil.bitsSizeOf base_typ) / 8 in (* must be known *)
-							let index = Operation.mult [(int_to_offset_bytes base_size,!Cil.upointType);(rv,!Cil.upointType)] in 
+							let index = Operator.mult [(int_to_offset_bytes base_size,!Cil.upointType);(rv,!Cil.upointType)] in 
 							(state, index, base_typ, offset2)
 					| _ -> failwith "Unreachable"
 				end
 			in
 				let (state, index2, base_typ2) = flatten_offset state base_typ offset2 in
-				let index3 = Operation.plus [(index,!Cil.upointType);(index2,!Cil.upointType)] in
+				let index3 = Operator.plus [(index,!Cil.upointType);(index2,!Cil.upointType)] in
 					(state, index3, base_typ2)
 
 and
@@ -433,25 +433,25 @@ and
 rval_unop state unop exp =
 	let state, rv = rval state exp in
 	let typ = Cil.typeOf exp in
-	let conditional = conditional__bytes (Operation.run (Operation.of_unop unop) [(rv,typ)]) in
+	let conditional = conditional__bytes (Operator.run (Operator.of_unop unop) [(rv,typ)]) in
 	let conditional = conditional__prune ~test:(Stp.query_guard state.path_condition) ~eq:bytes__equal conditional in
 	(state, make_Bytes_Conditional conditional)
 
 and
 
 rval_binop state binop exp1 exp2 =
-	let op = (Operation.of_binop binop) in
+	let op = (Operator.of_binop binop) in
 	let state, rv1 = rval state exp1 in
 	let typ1 = Cil.typeOf exp1 in
 	(* shortcircuiting *)
-	if op == Operation.logand && isConcrete_bytes rv1 && bytes_to_bool rv1 = false then
+	if op == Operator.logand && isConcrete_bytes rv1 && bytes_to_bool rv1 = false then
 		(state, int_to_bytes 0)
-	else if op == Operation.logor && isConcrete_bytes rv1 && bytes_to_bool rv1 = true then
+	else if op == Operator.logor && isConcrete_bytes rv1 && bytes_to_bool rv1 = true then
 		(state, int_to_bytes 1)
 	else 
 		let state, rv2 = rval state exp2 in
 		let typ2 = Cil.typeOf exp2 in
-		let conditional = conditional__bytes (Operation.run op [(rv1,typ1);(rv2,typ2)]) in
+		let conditional = conditional__bytes (Operator.run op [(rv1,typ1);(rv2,typ2)]) in
 		let conditional = conditional__prune ~test:(Stp.query_guard state.path_condition) ~eq:bytes__equal conditional in
 		(state, make_Bytes_Conditional conditional)
 

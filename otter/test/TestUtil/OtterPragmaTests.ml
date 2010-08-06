@@ -35,7 +35,7 @@ open MyOUnit
 open DataStructures
 open OcamlUtilities
 open OtterBytes
-open Otter
+open OtterCore
 
 
 (** Flags for setting up the tests. *)
@@ -130,12 +130,12 @@ let assert_exp file loc exp result return_opt exit_opt =
 
         | Cil.AUnOp (unop, exp) ->
             let state, bytes = parse_exp state exp in
-            (state, Operation.of_unop unop [ (bytes, Cil.intType) ])
+            (state, Operator.of_unop unop [ (bytes, Cil.intType) ])
 
         | Cil.ABinOp (binop, exp1, exp2) ->
             let state, bytes1 = parse_exp state exp1 in
             let state, bytes2 = parse_exp state exp2 in
-            (state, Operation.of_binop binop [ (bytes1, Cil.intType); (bytes2, Cil.intType) ])
+            (state, Operator.of_binop binop [ (bytes1, Cil.intType); (bytes2, Cil.intType) ])
 
         | exp' ->
             assert_loc_failure file loc "In assertion %a: unsupported operation %a." Printcil.f_attrparam exp Printcil.f_attrparam exp'

@@ -11,7 +11,7 @@ open OtterBytes
 open Bytes
 open BytesUtility
 open Types
-open Interceptors
+open Interceptor
 
 (*
 
@@ -45,7 +45,7 @@ let eval_join_exps state exps binop =
 		| x::xs -> BinOp(binop, x, join_exps xs, Cil.intType)
 		| [] -> failwith "AND/OR must take at least 1 argument"
 	in
-	Eval.rval state (join_exps exps)
+	Expression.rval state (join_exps exps)
 
 
 (** Convenience function to assign a value to an optional return lvalue.
@@ -62,7 +62,7 @@ let set_return_value state retopt bytes =
 		| None ->
 			state
 		| Some cil_lval ->
-			let state, lval = Eval.lval state cil_lval in
+			let state, lval = Expression.lval state cil_lval in
 			MemOp.state__assign state lval bytes
 
 
@@ -89,7 +89,7 @@ let end_function_call job =
 			 explicit return (because we handle the call internally), we
 			 have to add the edge now. *)
 		if job.inTrackedFn && Executeargs.run_args.Executeargs.arg_line_coverage then
-			let loc = Core.get_job_loc job in
+			let loc = Statement.get_job_loc job in
 			{ exHist with coveredLines = LineSet.add (loc.Cil.file, loc.Cil.line) exHist.coveredLines; }
 		else
 			exHist
@@ -126,12 +126,12 @@ let wrap_state_function fn =
 (** Function Implimentations **)
 
 let libc___builtin_va_arg = wrap_state_function begin fun state retopt exps ->
-	let state, key = Eval.rval state (List.hd exps) in
+	let state, key = Expression.rval state (List.hd exps) in
 	let state, ret = MemOp.vargs_table__get state key in
 	let lastarg = List.nth exps 2 in
 	match lastarg with
 		| CastE(_, AddrOf(cil_lval)) ->
-			let state, lval = Eval.lval state cil_lval in
+			let state, lval = Expression.lval state cil_lval in
 			let state = MemOp.state__assign state lval ret in
 			set_return_value state retopt ret
 		| _ -> failwith "Last argument of __builtin_va_arg must be of the form CastE(_,AddrOf(lval))"
@@ -139,12 +139,12 @@ end
 
 
 let libc___builtin_va_copy = wrap_state_function begin fun state retopt exps ->
-	let state, keyOfSource = Eval.rval state (List.nth exps 1) in
+	let state, keyOfSource = Expression.rval state (List.nth exps 1) in
 	let srcList = MemOp.vargs_table__get_list state keyOfSource in
 	let state, key = MemOp.vargs_table__add state srcList in
 	match List.hd exps with
 		| Lval(cil_lval) ->
-			let state, lval = Eval.lval state cil_lval in
+			let state, lval = Expression.lval state cil_lval in
 			let state = MemOp.state__assign state lval key in
 			set_return_value state retopt bytes__zero
 		| _ -> failwith "First argument of va_copy must have lval"
@@ -152,7 +152,7 @@ end
 
 
 let libc___builtin_va_end = wrap_state_function begin fun state retopt exps ->
-	let state, key = Eval.rval state (List.hd exps) in
+	let state, key = Expression.rval state (List.hd exps) in
 	let state = MemOp.vargs_table__remove state key in
 	set_return_value state retopt bytes__zero
 end
@@ -163,7 +163,7 @@ let libc___builtin_va_start = wrap_state_function begin fun state retopt exps ->
 	match List.hd exps with
 		| Lval(cil_lval) ->
 			let state, key = MemOp.vargs_table__add state (List.hd state.va_arg) in
-			let state, lval = Eval.lval state cil_lval in
+			let state, lval = Expression.lval state cil_lval in
 			let state = MemOp.state__assign state lval key in
 			set_return_value state retopt bytes__zero
 		| _ -> failwith "First argument of va_start must have lval"
@@ -180,7 +180,7 @@ let libc_free = wrap_state_function begin fun state retopt exps ->
 	behaviour is undefined.  Any use of a pointer that refers to freed space causes
 	undefined behaviour.  *)
 	let warning format = Output.kprintf (fun _ -> set_return_value state retopt bytes__zero) format in
-	let state, ptr = Eval.rval state (List.hd exps) in
+	let state, ptr = Expression.rval state (List.hd exps) in
 	match ptr with
 		| Bytes_Address (block, _) ->
 			if block.memory_block_type != Block_type_Heap
@@ -196,12 +196,12 @@ end
 
 
 let libc_memset = wrap_state_function begin fun state retopt exps ->
-	let state, bytes = Eval.rval state (List.hd exps) in
+	let state, bytes = Expression.rval state (List.hd exps) in
 	let block, offset = bytes_to_address bytes in
 	let state, old_whole_bytes = MemOp.state__get_bytes_from_block state block in
-	let state, char_bytes = Eval.rval state (List.nth exps 1) in
+	let state, char_bytes = Expression.rval state (List.nth exps 1) in
 	let c = bytes__get_byte char_bytes 0 (* little endian *) in
-	let state, n_bytes = Eval.rval state (List.nth exps 2) in
+	let state, n_bytes = Expression.rval state (List.nth exps 2) in
 	if isConcrete_bytes n_bytes then
 		let n = bytes_to_int_auto n_bytes in
 		let newbytes = bytes__make_default n c in
@@ -232,7 +232,7 @@ let libc___builtin_alloca_size state size bytes loc =
 	(state, addrof_block)
 
 let libc___builtin_alloca job retopt exps =
-	let state, b_size = Eval.rval job.state (List.hd exps) in
+	let state, b_size = Expression.rval job.state (List.hd exps) in
 	let size =
 		if isConcrete_bytes b_size then
 			bytes_to_int_auto b_size (*safe to use bytes_to_int as arg should be small *)
@@ -244,7 +244,7 @@ let libc___builtin_alloca job retopt exps =
 	  then bytes__make size (* initially zero, as though malloc were calloc *)
 	  else bytes__make_default size byte__undef (* initially the symbolic 'undef' byte *)
 	in
-	let state, bytes = libc___builtin_alloca_size state size bytes (Core.get_job_loc job) in
+	let state, bytes = libc___builtin_alloca_size state size bytes (Statement.get_job_loc job) in
 	let job = end_function_call { job with state = set_return_value state retopt bytes } in
 	Active job
 
@@ -263,7 +263,7 @@ let libc_malloc_size state size bytes loc =
 	(state, addrof_block)
 
 let libc_malloc job retopt exps =
-	let state, b_size = Eval.rval job.state (List.hd exps) in
+	let state, b_size = Expression.rval job.state (List.hd exps) in
 	let size =
 		if isConcrete_bytes b_size then
 			bytes_to_int_auto b_size (*safe to use bytes_to_int as arg should be small *)
@@ -275,7 +275,7 @@ let libc_malloc job retopt exps =
 	  then bytes__make size (* initially zero, as though malloc were calloc *)
 	  else bytes__make_default size byte__undef (* initially the symbolic 'undef' byte *)
 	in
-	let state, bytes = libc_malloc_size state size bytes (Core.get_job_loc job) in
+	let state, bytes = libc_malloc_size state size bytes (Statement.get_job_loc job) in
 	let job = end_function_call { job with state = set_return_value state retopt bytes } in
 	Active job
 
@@ -285,8 +285,8 @@ let otter_given = wrap_state_function begin fun state retopt exps ->
 		failwith "__GIVEN takes 2 arguments"
 	else
 		let truthvalue =
-			let state, given = Eval.rval state (List.nth exps 0) in
-			let state, rv = Eval.rval state (List.nth exps 1 ) in
+			let state, given = Expression.rval state (List.nth exps 0) in
+			let state, rv = Expression.rval state (List.nth exps 1 ) in
 			let state, truth = MemOp.eval_with_cache state (given::state.path_condition) rv in
 			match truth with
 				| Ternary.True -> int_to_bytes 1
@@ -303,7 +303,7 @@ let otter_truth_value = wrap_state_function begin fun state retopt exps ->
 		begin
 			if List.length exps = 0 then 0 
 			else
-				let state, rv = Eval.rval state (List.hd exps) in
+				let state, rv = Expression.rval state (List.hd exps) in
 				let state, truth = MemOp.eval_with_cache state state.path_condition rv in
 				match truth with
 					| Ternary.True -> 1
@@ -320,8 +320,8 @@ let libc_exit job retopt exps =
 	let exit_code = 
 		match exps with
 			| exp1::_ -> 
-				Output.printf "exit() called with code@ @[%a@]@\n" BytesPrinter.bytes (snd (Eval.rval job.state exp1));
-				Some ((snd (Eval.rval job.state exp1)))
+				Output.printf "exit() called with code@ @[%a@]@\n" BytesPrinter.bytes (snd (Expression.rval job.state exp1));
+				Some ((snd (Expression.rval job.state exp1)))
 			| [] -> 
 				Output.printf "exit() called with code (NONE)@\n";
 				None
@@ -339,11 +339,11 @@ end
 let otter_evaluate_string = wrap_state_function begin fun state retopt exps ->
 	let exp = List.hd exps in
 	let sizeexp = List.nth exps 1 in
-	let state, addr_bytes = Eval.rval state exp in
+	let state, addr_bytes = Expression.rval state exp in
 	Output.set_mode Output.MSG_MUSTPRINT;
 	match addr_bytes with
 		| Bytes_Address(block, offset) ->
-			let state, size_bytes = Eval.rval state sizeexp in
+			let state, size_bytes = Expression.rval state sizeexp in
 			let size =
 				try
 					bytes_to_int_auto size_bytes
@@ -401,14 +401,14 @@ end
 
 let otter_assert = wrap_state_function begin fun state retopt exps ->
 	let state, assertion = eval_join_exps state exps Cil.LAnd in
-	Eval.check state assertion exps
+	Expression.check state assertion exps
 end
 
 
 let otter_if_then_else = wrap_state_function begin fun state retopt exps ->
-	let state, bytes0 = Eval.rval state (List.nth exps 0) in
-	let state, bytes1 = Eval.rval state (List.nth exps 1) in
-	let state, bytes2 = Eval.rval state (List.nth exps 2) in
+	let state, bytes0 = Expression.rval state (List.nth exps 0) in
+	let state, bytes1 = Expression.rval state (List.nth exps 1) in
+	let state, bytes2 = Expression.rval state (List.nth exps 2) in
 	let c = IfThenElse (
 		guard__bytes bytes0, conditional__bytes bytes1, conditional__bytes bytes2
 	) in
@@ -424,7 +424,7 @@ end
 
 
 let otter_boolean_not = wrap_state_function begin fun state retopt exps ->
-	let state, rv = Eval.rval state (UnOp(Cil.LNot, List.hd exps, Cil.voidType)) in
+	let state, rv = Expression.rval state (UnOp(Cil.LNot, List.hd exps, Cil.voidType)) in
 	set_return_value state retopt rv
 end
 
@@ -529,7 +529,7 @@ end
 
 
 let otter_current_state = wrap_state_function begin fun state retopt exps ->
-	let state, bytes = Eval.rval state (List.hd exps) in
+	let state, bytes = Expression.rval state (List.hd exps) in
 	let key = bytes_to_int_auto bytes in
 	Output.set_mode Output.MSG_MUSTPRINT;
 	Output.printf "Record state %d\n" key;
@@ -539,8 +539,8 @@ end
 
 
 let otter_compare_state = wrap_state_function begin fun state retopt exps ->
-	let state, bytes0 = Eval.rval state (List.nth exps 0) in
-	let state, bytes1 = Eval.rval state (List.nth exps 1) in
+	let state, bytes0 = Expression.rval state (List.nth exps 0) in
+	let state, bytes1 = Expression.rval state (List.nth exps 1) in
 	let key0 = bytes_to_int_auto bytes0 in
 	let key1 = bytes_to_int_auto bytes1 in
 	Output.set_mode Output.MSG_MUSTPRINT;
@@ -572,7 +572,7 @@ end
 
 
 let otter_assert_equal_state = wrap_state_function begin fun state retopt exps ->
-	let state, bytes0 = Eval.rval state (List.nth exps 0) in
+	let state, bytes0 = Expression.rval state (List.nth exps 0) in
 	let key0 = bytes_to_int_auto bytes0 in
 	begin try 
 		let s0 = MemOp.index_to_state__get key0 in
@@ -614,7 +614,7 @@ let intercept_symbolic job job_queue interceptor =
 					then Errormsg.s
 						(Errormsg.error "Can't assign two tracked values to variable %s" varinf.vname);
 
-					let state, (_, size as lval) = Eval.lval state cil_lval in
+					let state, (_, size as lval) = Expression.lval state cil_lval in
 					let symbBytes = bytes__symbolic size in
 					Output.set_mode Output.MSG_MUSTPRINT;
 					Output.printf "%s@ = @[%a@]@\n" varinf.vname BytesPrinter.bytes symbBytes;
@@ -630,11 +630,11 @@ let intercept_symbolic job job_queue interceptor =
 					begin match retopt with
 						| None -> failwith "Incorrect usage of __SYMBOLIC(): symbolic value generated and ignored"
 						| Some lval ->
-							let state, (_, size as lval) = Eval.lval state lval in
+							let state, (_, size as lval) = Expression.lval state lval in
 							let state, size = match exps with
 								| [] -> (state, size)
 								| [CastE (_, h)] | [h] ->
-									let state, bytes = Eval.rval state h in
+									let state, bytes = Expression.rval state h in
 									let newsize = bytes_to_int_auto bytes in
 									(state, if newsize <= 0 then size else newsize)
 								| _ -> failwith "__SYMBOLIC takes at most one argument"
@@ -655,7 +655,7 @@ let libc_setjmp job retopt exps =
 			let state = job.state in
 	
 			(* assign value to the environment argument *)
-			let state, (_, size as lval) = Eval.lval state cil_lval in
+			let state, (_, size as lval) = Expression.lval state cil_lval in
 			let stmtPtrAddr = (Counter.next libc___builtin_alloca__id) in
 			let state = MemOp.state__assign state lval (int_to_bytes stmtPtrAddr) in
 
@@ -684,13 +684,13 @@ let libc_longjmp job retopt exps =
 			(* get the return value to send to setjmp *)
 			let state, bytes =
 				match value with
-					| CastE (_, v) | v -> Eval.rval state v
+					| CastE (_, v) | v -> Expression.rval state v
 			in
 			
 			(* get the statment pointer *)
 			let state, lval = 
 				try
-					Eval.lval state cil_lval
+					Expression.lval state cil_lval
 				with
 					| _ -> failwith "longjmp with invalid statement pointer"
 			in
@@ -742,7 +742,7 @@ let libc_longjmp job retopt exps =
 						 explicit return (because we handle the call internally), we
 						 have to add the edge now. *)
 					if job.inTrackedFn && Executeargs.run_args.Executeargs.arg_line_coverage then
-						let loc = Core.get_job_loc job in
+						let loc = Statement.get_job_loc job in
 						{ exHist with coveredLines = LineSet.add (loc.Cil.file, loc.Cil.line) exHist.coveredLines; }
 					else
 						exHist
@@ -786,8 +786,8 @@ let libc_get_block_size = wrap_state_function begin fun state retopt exps ->
 		| [CastE (_, Lval cil_lval)] 
 		| [AddrOf (_, NoOffset as cil_lval)]
 		| [CastE (_, AddrOf (_, NoOffset as cil_lval))]->
-			let state, bytes = Eval.rval state (Lval cil_lval) in
-			let lvals = Eval.deref state bytes in
+			let state, bytes = Expression.rval state (Lval cil_lval) in
+			let lvals = Expression.deref state bytes in
 			let size = make_Bytes_Conditional (conditional__map 
 				~test:(Stp.query_guard state.path_condition) 
 				(fun (x, y) -> Unconditional (int_to_bytes x.memory_block_size)) 
@@ -842,7 +842,7 @@ let interceptor job job_queue interceptor =
 	with Failure msg ->
 		if Executeargs.run_args.Executeargs.arg_failfast then failwith msg;
 		let result = { result_file = job.file; result_state = job.state; result_history = job.exHist } in
-		(Complete (Types.Abandoned (msg, Core.get_job_loc job, result)), job_queue)
+		(Complete (Types.Abandoned (msg, Statement.get_job_loc job, result)), job_queue)
 
 let libc_interceptor job job_queue interceptor = 
 	try
@@ -932,4 +932,4 @@ let libc_interceptor job job_queue interceptor =
 	with Failure msg ->
 		if Executeargs.run_args.Executeargs.arg_failfast then failwith msg;
 		let result = { result_file = job.file; result_state = job.state; result_history = job.exHist } in
-		(Complete (Types.Abandoned (msg, Core.get_job_loc job, result)), job_queue)
+		(Complete (Types.Abandoned (msg, Statement.get_job_loc job, result)), job_queue)

@@ -1,5 +1,6 @@
 open OcamlUtilities
 open OtterBytes
+open OtterCore
 
 (* TODO: implement shared memory by one of the following:
  * - move block_to_bytes into shared_state, and add some sort of copy-on-write/indirection mechanism
@@ -149,7 +150,7 @@ let get_job multijob = match multijob.processes with
 
 let multi_set_output_formatter_interceptor job job_queue interceptor = 
 	let j, m = job in
-	let loc = Core.get_job_loc j in
+	let loc = Statement.get_job_loc j in
 	let label =
 		if loc = Cil.locUnknown then
 			Format.sprintf "[jid: %d, pid: %d] : " m.jid m.current_pid
@@ -184,12 +185,12 @@ let intercept_fork job job_queue interceptor =
 					let child_job = { job with
 						(* TODO: make the pid symbolic *)
 						Types.state =
-							let state, lval = Eval.lval job.Types.state cil_lval in
+							let state, lval = Expression.lval job.Types.state cil_lval in
 							MemOp.state__assign state lval (Bytes.int_to_bytes multijob.next_pid)
 					} in
 					let job = { job with
 						Types.state =
-							let state, lval = Eval.lval job.Types.state cil_lval in
+							let state, lval = Expression.lval job.Types.state cil_lval in
 							MemOp.state__assign state lval (Bytes.bytes__zero)
 					} in
 					(job, child_job)
@@ -261,15 +262,15 @@ let run job =
 	let multijob = put_job job multijob 0 in
 
 	(* start executing *)
-	let (@@) = Interceptors.(@@) in
+	let (@@) = Interceptor.(@@) in
 	Driver.main_loop 
 		get_job_multijob
 		(
 			multi_set_output_formatter_interceptor @@
 			intercept_fork @@
 			repack_job_interceptor @@
-			Builtin_function.interceptor @@ 
-			Core.step
+			BuiltinFunctions.interceptor @@ 
+			Statement.step
 		)
 		process_result
 		[ multijob ]

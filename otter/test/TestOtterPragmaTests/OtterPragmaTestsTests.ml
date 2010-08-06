@@ -1,6 +1,5 @@
 open TestUtil.MyOUnit
 open TestUtil.OtterPragmaTests
-open Otter
 
 
 (* Test helpers that checks that pragma tests passes or fails as expected *)

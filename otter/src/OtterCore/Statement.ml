@@ -103,7 +103,7 @@ let function_from_exp job state exp args: (state * fundec) list =
 
 
 		| Lval(Mem(exp2), NoOffset) ->
-			let state, bytes = Eval.rval state exp2 in
+			let state, bytes = Expression.rval state exp2 in
 			let rec getall fp =
 				let fold_func acc pre leaf =
 					match leaf with
@@ -139,7 +139,7 @@ let exec_fundec job state instr fundec lvalopt exps =
 
 	(* evaluate the arguments *)
 	let state, argvs = List.fold_right begin fun exp (state, argvs) ->
-		let state, bytes = Eval.rval state exp in
+		let state, bytes = Expression.rval state exp in
 		(state, bytes::argvs)
 	end exps (state, []) in
 
@@ -215,8 +215,8 @@ let exec_instr job =
 		 | Set(cil_lval, exp, loc) ->
 			printInstr instr;
 			let state = job.state in
-			let state, lval = Eval.lval state cil_lval in
-			let state, rv = Eval.rval state exp in
+			let state, lval = Expression.lval state cil_lval in
+			let state, rv = Expression.rval state exp in
 			let state = MemOp.state__assign state lval rv in
 			let nextStmt = if tail = [] then List.hd job.stmt.succs else job.stmt in
 			Active { job with state = state; stmt = nextStmt }
@@ -282,7 +282,7 @@ let exec_stmt job =
 									| None ->
 										(state, None)
 									| Some exp ->
-										let state, retval = Eval.rval state exp in
+										let state, retval = Expression.rval state exp in
 										(state, Some retval)
 								in
 								Complete (Types.Return
@@ -292,10 +292,10 @@ let exec_stmt job =
 									match expopt, destOpt with
 										| Some exp, Some dest ->
 												(* evaluate the return expression in the callee frame *)
-												let state, rv = Eval.rval state exp in
+												let state, rv = Expression.rval state exp in
 												let state = MemOp.state__end_fcall state in
 												(* evaluate the assignment in the caller frame *)
-												let state, lval = Eval.lval state dest in
+												let state, lval = Expression.lval state dest in
 												MemOp.state__assign state lval rv
 										| _, _ ->
 												(* If we are not returning a value, or if we
@@ -360,7 +360,7 @@ let exec_stmt job =
 						(nextState, nextStmt)
 					in
  
-					let state, rv = Eval.rval state exp in
+					let state, rv = Expression.rval state exp in
  
 					Output.set_mode Output.MSG_GUARD;
 					if(Output.need_print Output.MSG_GUARD) then

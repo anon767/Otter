@@ -8,7 +8,7 @@ open TypedBlock.DiscreteSolver
 open TypedBlock
 
 open OtterBytes
-open Otter
+open OtterCore
 
 open SwitchingUtil
 

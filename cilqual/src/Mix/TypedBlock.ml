@@ -1,5 +1,6 @@
 open Control.Monad
 open Control.Graph
+open OtterCore
 
 (* setup CilQual interpreter monad stack *)
 module G =

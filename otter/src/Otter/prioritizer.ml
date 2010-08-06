@@ -1,4 +1,5 @@
 open OcamlUtilities
+open OtterCore
 open Types
 open Cil
 open Hashtbl

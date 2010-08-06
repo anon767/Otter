@@ -4,7 +4,7 @@ open TestUtil.MixUtil
 
 open Mix.Feature
 
-open Otter
+open OtterCore
 
 
 (* Test helper for compilation units (files) *)

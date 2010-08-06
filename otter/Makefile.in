@@ -29,9 +29,7 @@ all : native libs doc
 native : ocamlbuild//runotter.native config
 debug : ocamlbuild//runotter.d.byte config
 
-libs : ocamlbuild//Otter.cmxa ocamlbuild//Otter.a ocamlbuild//Otter.cma ocamlbuild//Otter.cmi \
-		ocamlbuild//OtterBytes.cmxa ocamlbuild//OtterBytes.a ocamlbuild//OtterBytes.cma ocamlbuild//OtterBytes.cmi \
-		ocamlbuild//OcamlUtilities.cmxa ocamlbuild//OcamlUtilities.a ocamlbuild//OcamlUtilities.cma ocamlbuild//OcamlUtilities.cmi
+libs : $(foreach foo,OcamlUtilities OtterBytes OtterCore Otter,$(addprefix ocamlbuild//$(foo),.cmxa .a .cma .cmi))
 
 test : ounit//runtestotter.d.byte
 ounit//runtestotter.d.byte : debug
@@ -48,8 +46,7 @@ otter.pl.config : Makefile $(CIL_SRCDIR)/config.mk
 	$$::compile_after_merge = 0;\n\
 	1;" > $@
 
-doc : ocamlbuild//CilUtilities.docdir ocamlbuild//DataStructures.docdir ocamlbuild//OcamlUtilities.docdir \
-		ocamlbuild//OtterBytes.docdir ocamlbuild//Otter.docdir ocamlbuild//TestUtil.docdir
+doc : $(foreach foo,CilUtilities DataStructures OcamlUtilities OtterBytes OtterCore Otter TestUtil,ocamlbuild//$(foo).docdir)
 
 clean : clean-ocamlbuild
 	$(RM) otter.pl.config

@@ -5,7 +5,7 @@ open OtterBytes
 open Bytes
 open BytesUtility
 open Types
-open Operation
+open Operator
 
 (**
  *	memory frame

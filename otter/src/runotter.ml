@@ -6,6 +6,7 @@ module OcamlbuildDependencies = struct
     open DataStructures
     open OcamlUtilities
     open OtterBytes
+    open OtterCore
 end
 
 let _ =

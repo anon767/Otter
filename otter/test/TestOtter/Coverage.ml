@@ -1,6 +1,6 @@
 open TestUtil.MyOUnit
 open TestUtil.OtterUtil
-open Otter
+open OtterCore
 open Types
 
 (* test helper that runs the symbolic executor on a file given a source code as a string, and calculates coverage *)

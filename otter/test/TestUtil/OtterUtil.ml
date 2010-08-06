@@ -2,7 +2,7 @@
 
 open MyOUnit
 open OcamlUtilities
-open Otter
+open OtterCore
 
 
 (** Test helper that runs Otter on a file.
@@ -75,7 +75,7 @@ let test_otter
     end
 
 
-(** As with {!test_otter}, but sets [main_loop] to call only {!Core.step} and no interceptors.
+(** As with {!test_otter}, but sets [main_loop] to call only {!Statement.step} and no interceptors.
             @param code is the source code
             @param label is the label for the test (default: [code])
             @param setup is an optional setup function to be called before parsing
@@ -84,5 +84,5 @@ let test_otter
             @param test is the test to apply to the result from Otter
             @return a {!MyOUnit.TestCase} that runs Otter
 *)
-let test_otter_core = test_otter ~main_loop:(fun job -> Driver.main_loop Driver.get_job_list Core.step Driver.process_result [job])
+let test_otter_core = test_otter ~main_loop:(fun job -> Driver.main_loop Driver.get_job_list Statement.step Driver.process_result [job])
 

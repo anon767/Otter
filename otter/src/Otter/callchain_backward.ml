@@ -2,6 +2,7 @@ open DataStructures
 open OcamlUtilities
 open OcamlBase
 open OtterBytes
+open OtterCore
 open Bytes
 open Types
 open Cil
@@ -54,12 +55,12 @@ let pass_targets targets job fexp exps =
   let fundecs = 
 	List.fold_left 
 	  ( fun lst (_,ft) -> ft::lst
-	  ) [] (Core.function_from_exp job state fexp exps) in
+	  ) [] (Statement.function_from_exp job state fexp exps) in
   (* convert args to bytes. argvs are from left to right *)
   let _, argvs = 
 	List.fold_right 
 	  ( fun exp (state, argvs) ->
-		  let state, bytes = Eval.rval state exp in
+		  let state, bytes = Expression.rval state exp in
 			(state, bytes::argvs)
 	  ) exps (state, []) 
   in
@@ -79,9 +80,9 @@ let pass_targets targets job fexp exps =
 			  let connecting_bytes = 
 				List.fold_left2
 				  ( fun b argv formal ->
-					  let _,fargv = Eval.rval target.entry_state (Lval(Var(formal),NoOffset)) in
-					  let equation = Operation.eq [(fargv,formal.vtype);(argv,formal.vtype)] in
-						Operation.bytes__land equation b 
+					  let _,fargv = Expression.rval target.entry_state (Lval(Var(formal),NoOffset)) in
+					  let equation = Operator.eq [(fargv,formal.vtype);(argv,formal.vtype)] in
+						Operator.bytes__land equation b 
 				  ) bytes__one argvs fundec.sformals
 			  in
 				(*
@@ -89,9 +90,9 @@ let pass_targets targets job fexp exps =
 				 (Output.banner_printf 0  "Path condition: %s\n" (String.concat "&&" (List.map To_string.bytes state.path_condition)));
 				 (Output.banner_printf 0  "Connection : %s\n" (To_string.bytes connecting_bytes));
 				 *)
-			  let _, truth = MemOp.eval_with_cache state (connecting_bytes::state.path_condition)  (Operation.bytes__not target.failing_condition) in
-			  let total_failing_condition = Operation.bytes__land target.failing_condition connecting_bytes in
-			  let total_failing_condition = Operation.bytes__lor total_failing_condition fc in
+			  let _, truth = MemOp.eval_with_cache state (connecting_bytes::state.path_condition)  (Operator.bytes__not target.failing_condition) in
+			  let total_failing_condition = Operator.bytes__land target.failing_condition connecting_bytes in
+			  let total_failing_condition = Operator.bytes__lor total_failing_condition fc in
 
 			  let print_failed_assertion isUnknown =
 				let _ = Output.set_mode Output.MSG_MUSTPRINT in
@@ -205,24 +206,24 @@ let callchain_backward_se callergraph entryfn assertfn job_init : job_completion
 	  ( fun b job_completion ->
 		  match job_completion with
 			| Abandoned (_,_,job_result) ->
-				let this_fc = List.fold_left Operation.bytes__land Bytes.bytes__one job_result.result_state.path_condition in
-				  Operation.bytes__lor b this_fc 
+				let this_fc = List.fold_left Operator.bytes__land Bytes.bytes__one job_result.result_state.path_condition in
+				  Operator.bytes__lor b this_fc 
 			| _ -> b
 	  )
 	  Bytes.bytes__zero result
   in
 
-  let (@@) = Interceptors.(@@) in
+  let (@@) = Interceptor.(@@) in
   let call_Otter_main_loop targets job =
 	let jobs = new prioritized_job_queue targets in
 	jobs#queue job;
 	Driver.main_loop
 	  (fun jobs -> jobs#get)
 	  (
-		Interceptors.set_output_formatter_interceptor @@
+		Interceptor.set_output_formatter_interceptor @@
 		(terminate_job_at_targets_interceptor targets) @@
-		Builtin_function.interceptor @@
-		Core.step
+		BuiltinFunctions.interceptor @@
+		Statement.step
 	  )
 	  process_result
 	  jobs

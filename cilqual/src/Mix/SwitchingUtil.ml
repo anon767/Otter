@@ -107,7 +107,7 @@ open TypedBlock
 module Aliasing = TypeQual.QualSolver.Aliasing (G.QualGraph)
 
 open OtterBytes
-open Otter
+open OtterCore
 
 
 (** Prepare a Cil file for block switching
