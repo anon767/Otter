@@ -31,6 +31,6 @@ let test_integration main_loop dir =
  *)
 
 let testsuite = "System" >::: [
-	test_integration Driver.init_with_libc "OtterCore";
+	test_integration Driver.run_with_libc "OtterCore";
 ]
 

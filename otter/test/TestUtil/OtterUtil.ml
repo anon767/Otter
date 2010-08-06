@@ -7,7 +7,7 @@ open Otter
 (** Test helper that runs Otter on a file.
             @param path is the path to the file
             @param setup is an optional setup function to be called before parsing
-            @param main_loop is the Otter main loop to use (default: {!Driver.init})
+            @param main_loop is the Otter main loop to use (default: {!Driver.run})
             @param command_line is an optional command line to provide to the executed file
             @param has_failing_assertions indicates whether failing assertions are expected (default: [false])
             @param test is the test to apply to the result from Otter
@@ -16,7 +16,7 @@ open Otter
 let test_otter_on_file
         path
         ?(setup=(fun _ -> ()))
-        ?(main_loop=Driver.init)
+        ?(main_loop=Driver.run)
         ?(command_line=[])
         ?(has_failing_assertions=false)
         (test : Types.job_completion list -> unit) =

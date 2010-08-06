@@ -244,7 +244,7 @@ let process_result result completed job_queue =
 	let multijob, multijob_queue = job_queue in
 	process_job_states result multijob completed multijob_queue
 
-let init job = 
+let run job = 
 	let multijob = {
 		file = job.Types.file;
 		processes = [];
@@ -288,7 +288,7 @@ let doit file =
 	in
 
 	(* run the job *)
-	let result = init job in
+	let result = run job in
 
 	(* print the results *)
 	Output.printf "%s@\n" (Executedebug.get_log ());

@@ -58,7 +58,7 @@ let doExecute (f: file) =
               Driver.job_for_middle f entryfn
         in
 	    (* run the job *)
-        	[ Driver.init job ]
+        	[ Driver.run job ]
     in
 
 	(* Turn off the alarm and reset the signal handlers *)

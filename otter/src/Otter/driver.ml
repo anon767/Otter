@@ -371,7 +371,7 @@ let main_loop get_job interceptor process_result job_queue : job_completion list
 	in
 	main_loop job_queue []
 
-let init job =
+let run job =
 	main_loop
 		get_job_list
 		(
@@ -382,7 +382,7 @@ let init job =
 		process_result
 		[job]
 
-let init_with_libc job =
+let run_with_libc job =
 	main_loop
 		get_job_list
 		(

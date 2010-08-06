@@ -23,7 +23,7 @@ let test_integration main_loop dir =
  *)
 
 let testsuite = "Integration" >::: [
-	test_integration Driver.init "OtterCore";
-	test_integration Multiprocess.init "MultiprocessOtter";
+	test_integration Driver.run "OtterCore";
+	test_integration Multiprocess.run "MultiprocessOtter";
 ]
 

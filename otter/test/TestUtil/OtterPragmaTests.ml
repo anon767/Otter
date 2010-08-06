@@ -291,11 +291,11 @@ let parse_pragmas file =
 
 
 (** Test helper that runs Otter on a file, using #pragmas to define test expectations.
-            @param main_loop is the Otter main loop to use (default: {!Driver.init})
+            @param main_loop is the Otter main loop to use (default: {!Driver.run})
             @param path is the path to the file
             @return a {!TestCase} that runs Otter
 *)
-let test_otter_with_pragma ?(main_loop=Driver.init) path = fun () ->
+let test_otter_with_pragma ?(main_loop=Driver.run) path = fun () ->
     (* reset the error flag and suppress all output from the symbolic executor *)
     Errormsg.hadErrors := false;
     Output.arg_print_nothing := true;
