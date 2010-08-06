@@ -17,12 +17,13 @@ define OCAMLBUILD.build
 	$(OCAMLBUILD) -build-dir $(OCAMLBUILD_BUILDDIR) -no-links \
 		$(OCAMLBUILD_FLAGS) $(VPATH:%=-I %) $(OCAMLBUILD_EXTRATARGETS) $(1) && \
 	if [ -n "$(2)" ]; then \
-		mkdir -p $(2) && \
+		mkdir -p "$(2)" && \
 		for foo in $(or $(3),$(1)); do \
 			for v in . $(VPATH); do \
-				target=$(OCAMLBUILD_BUILDDIR)/$$v/$$foo; \
-				if [ -e "$$target" ]; then \
-					cp -R "$$target" "$(2)"; \
+				build="$(OCAMLBUILD_BUILDDIR)/$$v/$$foo"; \
+				product="$(2)/`basename $$foo`"; \
+				if [ -e "$$build" -a ! "$$build" -ot "$$product" ]; then \
+					cp -R "$$build" "$(2)"; \
 					break; \
 				fi; \
 			done; \
