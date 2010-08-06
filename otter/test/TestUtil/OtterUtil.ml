@@ -33,8 +33,8 @@ let test_otter_on_file
         assert_bool "Cil parse error" (not !Errormsg.hadErrors);
 
         (* prepare the file and run the symbolic executor *)
-        Executemain.prepare_file file;
-        let job = Executemain.job_for_file file command_line in
+        Driver.prepare_file file;
+        let job = Driver.job_for_file file command_line in
         let results = main_loop job in
 
         (* perform tests in order of expressiveness of potential errors *)

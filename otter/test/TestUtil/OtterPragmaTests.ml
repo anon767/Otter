@@ -308,8 +308,8 @@ let test_otter_with_pragma ?(main_loop=Driver.init) path = fun () ->
     let flags, test = parse_pragmas file in
 
     (* prepare the file and run the symbolic executor *)
-    Executemain.prepare_file file;
-    let job = Executemain.job_for_file file flags.command_line in
+    Driver.prepare_file file;
+    let job = Driver.job_for_file file flags.command_line in
     let results = main_loop job in
 
     (* first, test if assertions passed *)

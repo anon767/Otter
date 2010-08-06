@@ -275,16 +275,16 @@ let init job =
 let doit file =
 	(* TODO: do something about signal handlers/run statistics from Executemain.doExecute *)
 
-	Executemain.prepare_file file;
-	let entryfn = Executemain.find_entryfn file in
+	Driver.prepare_file file;
+	let entryfn = Driver.find_entryfn file in
 	let job =
 		if Executeargs.run_args.Executeargs.arg_entryfn = "main" then
 			(* create a job for the file, with the commandline arguments set to the file name
 			 * and the arguments from the '--arg' option *)
-			Executemain.job_for_file file (file.Cil.fileName::Executeargs.run_args.Executeargs.arg_cmdline_argvs)
+			Driver.job_for_file file (file.Cil.fileName::Executeargs.run_args.Executeargs.arg_cmdline_argvs)
 		else
 			(* create a job to start in the middle of entryfn *)
-			Executemain.job_for_middle file entryfn Executeargs.run_args.Executeargs.arg_yaml
+			Driver.job_for_middle file entryfn
 	in
 
 	(* run the job *)

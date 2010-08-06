@@ -7,332 +7,6 @@ open Executeargs
 open MemOp
 (*open InvInput*)
 
-let unreachable_global varinfo = not (Cilutility.VarinfoSet.mem varinfo (!GetProgInfo.reachable_globals))
-
-let init_symbolic_pointer state varinfo size =
-  (* TODO: what's the right size?
-   * For now, assume that each pointer points to an array of size 1.
-   *)
-  let name = Printf.sprintf "Two-fold Sym Ptr (%s)" varinfo.vname in
-  let block =  block__make name size Block_type_Aliased in 
-  let addrof_block = make_Bytes_Address (block, bytes__zero) in
-  let state = MemOp.state__add_block state block (bytes__symbolic size) in
-    state,make_Bytes_Conditional (conditional__from_list [Unconditional bytes__zero; Unconditional addrof_block])
-
-
-let init_symbolic_varinfo state varinfo =
-  let typ = varinfo.vtype in
-  let size = (Cil.bitsSizeOf (typ)) / 8 in
-  let size = if size <= 0 then 1 else size in
-    match typ with
-      | TPtr (basetyp,_) -> 
-          assert (size==4);
-          Output.set_mode Output.MSG_REG;
-          Output.printf "Initialize %s to ITE(?,null,non-null)\n" varinfo.vname;
-          init_symbolic_pointer state varinfo size
-      | _ ->
-          Output.set_mode Output.MSG_REG;
-          Output.printf "Initialize %s to symbolic\n" varinfo.vname;
-          state,bytes__symbolic size 
-
-
-let init_symbolic_globalvars state globals =
-	List.fold_left begin fun state g -> match g with
-		| GVar (varinfo, _, _)
-		| GVarDecl (varinfo, _)
-				when not (Cil.isFunctionType varinfo.vtype)
-					 && not (Executeargs.run_args.arg_noinit_unreachable_globals && unreachable_global varinfo) ->
-         let state,init_bytes = init_symbolic_varinfo state varinfo in
-           MemOp.state__add_global state varinfo init_bytes
-		| _ ->
-			state
-	end state globals
-
-
-
-let init_globalvars state globals =
-	List.fold_left begin fun state g -> match g with
-		| GVar(varinfo, { init=Some init }, _)
-				when not (Executeargs.run_args.arg_noinit_unreachable_globals && unreachable_global varinfo) ->
-			Output.set_mode Output.MSG_MUSTPRINT;
-			let lhost_typ = varinfo.vtype in
-			let size = (Cil.bitsSizeOf (varinfo.vtype)) / 8 in
-			let zeros = bytes__make size in
-			let rec myInit (offset:Cil.offset) (i:Cil.init) (state, acc) =
-				match i with
-					| SingleInit(exp) ->
-						let state, off, typ = Eval.flatten_offset state lhost_typ offset in
-						let state, off_bytes = Eval.rval state exp in
-						let size = (Cil.bitsSizeOf typ) / 8 in
-						let init_bytes = bytes__write acc off size off_bytes in
-						(state, init_bytes)
-					| CompoundInit(typ, list) ->
-						foldLeftCompound
-							~implicit: false
-							~doinit: (fun off' i' t' (state, acc) -> myInit (addOffset off' offset) i' (state, acc))
-							~ct: typ
-							~initl: list
-							~acc: (state, acc)
-			in
-            let state, init_bytes = myInit NoOffset init (state, zeros) in
-
-			Output.set_mode Output.MSG_REG;
-			if init_bytes == zeros then
-				Output.printf "Initialize %s to zeros@\n" varinfo.vname
-			else
-				Output.printf "Initialize %s to@ @[%a@]@\n" varinfo.vname BytesPrinter.bytes init_bytes;
-
-            MemOp.state__add_global state varinfo init_bytes
-
-		| GVar(varinfo, _, _)
-		| GVarDecl(varinfo, _)
-				when not (Cil.isFunctionType varinfo.vtype)
-					 && not (Executeargs.run_args.arg_noinit_unreachable_globals && unreachable_global varinfo) ->
-				(* I think the list of globals is always in the same order as in the source
-					 code. In particular, I think there will never be a declaration of a
-					 variable after that variable has been defined, since CIL gets rid of
-					 such extra declarations. If this is true, then this should work fine. If
-					 not, a declaration occuring *after* a definition will wipe out the
-					 definition, replacing the value with zeros. *)
-			let size = (Cil.bitsSizeOf (varinfo.vtype)) / 8 in
-			let size = if size <= 0 then 1 else size in
-			let init_bytes = bytes__make size (* zeros *) in
-
-			Output.set_mode Output.MSG_REG;
-			Output.printf "Initialize %s to zeros\n" varinfo.vname;
-
-			MemOp.state__add_global state varinfo init_bytes
-
-		| _ ->
-			state
-	end state globals
-
-
-
-(* Initialize arguments for an entry function to purely symbolic *)
-let init_symbolic_argvs state (entryfn:fundec) : (state*bytes list*executionHistory) =
-  let state = state__add_frame state in
-  let state,args,bytesToVars = 
-    List.fold_right  (* TODO: Does ordering matter? *)
-      (fun varinfo (state,args,bytesToVars) ->
-        let state,init = init_symbolic_varinfo state varinfo in
-        (state__add_formal state varinfo init,init::args,(init,varinfo)::bytesToVars)
-      ) 
-      entryfn.sformals
-      (state,[],[])
-  in
-  let exHist = 
-    {emptyHistory with
-         bytesToVars = bytesToVars
-    }
-  in
-  (state,args,exHist)
-
-
-(* To initialize the arguments, we need to create a bytes which represents argc and
-	 one which represents argv. The one for argc is simple: count how many arguments
-	 and make that value into a bytes. For argv, we need a bytes which is the address
-	 of a byteArray of byte-s, each of which is the address of some offset into one
-	 big memory block which holds all of the arguments (as strings). This last memory
-	 block is itself a byteArray of concrete byte-s (the characters in the arguments).
-	 Because of the way things point to each other, we construct these three layers
-	 bottom-up. *)
-let init_cmdline_argvs state argstr =
-	(* How many arguments were there? *)
-	let num_args = List.length argstr in
-
-	(* Convert the number of arguments into a 'bytes' *)
-	let argc = int_to_bytes num_args in
-
-	(* C's standard is to have the arguments be consecutive strings. For example, if the
-		 executed code were "./run abc de fgh", this would lead to the following chunk of
-		 memory:
-		 ['.','/','r','u','n','\000','a','b','c','\000','d','e','\000','f','g','h','\000']
-		 Let's create this bytes. *)
-	(* First we make the concatenated string *)
-	let argv_strings = String.concat "\000" argstr in
-
-	(* Then we make a bytes (specifically, a make_Bytes_ByteArray) out of this string *)
-	let argv_strings_bytes = string_to_bytes argv_strings in
-
-	(* Make a block to point to this bytes. *)
-	(* The block's size will be one more than the length of argv_strings (because of the
-		 terminating null byte). *)
-	let argv_strings_block = block__make "argv_strings" ((String.length argv_strings) + 1) Block_type_Local in
-
-	(* Map the block we just made to the bytes we just made *)
-	let state' = MemOp.state__add_block state argv_strings_block argv_strings_bytes in
-
-    let charPtrSize = bitsSizeOf charPtrType / 8 in
-
-(* TODO: argv[argc] is supposed to be a null pointer. [Standard 5.1.2.2.1] *)
-	(* Now, make a block for the array of pointers, with room for a pointer for each argument *)
-	let argv_ptrs_block = block__make "argv_pointers" (num_args * charPtrSize) Block_type_Local in
-
-	(* Make the byteArray of pointers by making each individual pointer and putting them
-		 into the array using MemOp's bytes__write function. *)
-	let rec impl argstr ptrsSoFar charsSoFar bytes : bytes =
-		match argstr with
-			[] -> bytes
-		| h::t ->
-				(* Print out each argument *)
-				Output.set_mode Output.MSG_DEBUG;
-				Output.printf "With arguments: \"%s\"@\n" h;
-				let h_bytes =
-					make_Bytes_Address (argv_strings_block, int_to_bytes charsSoFar) in
-				impl t (ptrsSoFar + 1)
-					(charsSoFar + String.length h + 1 (* '+ 1' for the null character *))
-					(bytes__write bytes (int_to_bytes (ptrsSoFar * charPtrSize)) charPtrSize h_bytes)
-	in
-	let argv_ptrs_bytes =
-		impl argstr 0 0 (make_Bytes_ByteArray (ImmutableArray.make (num_args * charPtrSize) byte__zero)) in
-
-	(* Map the pointers block to its bytes *)
-	let state'' = MemOp.state__add_block state' argv_ptrs_block argv_ptrs_bytes in
-
-	(* Make the top-level address that is the actual argv. It is the address of
-		 argv_ptrs_bytes. We do not have to map this to anything; we just pass it as the
-		 argument to main. *)
-	let argv = make_Bytes_Address (argv_ptrs_block, bytes__zero) in
-
-	(* Finally, return the updated state and the list of arguments *)
-	(state'', [argc; argv])
-
-
-(* set up the file for symbolic execution *)
-let prepare_file file =
-	(* makeCFGFeature must precede the call to getProgInfo. *)
-	Cilly.makeCFGFeature.fd_doit file;
-
-	Cil.iterGlobals file begin function
-		| GFun(fundec,_) ->
-			(* Reset sids to be unique only within a function, rather than globally, so that they will be given
-			   consistent sids across different analysis runs even if different files are merged
-			 *)
-			ignore (List.fold_left (fun n stmt -> stmt.sid <- n; succ n) 0 fundec.sallstmts);
-
-		| _ ->
-			()
-	end;
-
-    if Executeargs.run_args.arg_noinit_unreachable_globals then (
-        GetProgInfo.computeReachableCode file 
-    ) else ();
-    (* Output.print_endline "(* computed reachable globals from main *)"; *)
-
-	(* Find all lines, blocks, edges, and conditions. *)
-	(* TODO: wrap the listings of Lines,Edges,etc... *)
-	let (setOfLines,setOfBlocks,setOfEdges,setOfConds) = GetProgInfo.getProgInfo file run_args.arg_fns in
-	run_args.arg_num_lines <- LineSet.cardinal setOfLines;
-	run_args.arg_num_blocks <- StmtInfoSet.cardinal setOfBlocks;
-	run_args.arg_num_edges <- EdgeSet.cardinal setOfEdges;
-	run_args.arg_num_conds <- CondSet.cardinal setOfConds;
-	if run_args.arg_list_lines then (
-		Output.printf "Total number of %s: %d\n" "Lines" run_args.arg_num_lines;
-		LineSet.iter
-			(fun (file,lineNum) -> Output.printf "%s:%d\n" file lineNum)
-			setOfLines
-		;Output.printf "\n"
-	);
-	if run_args.arg_list_blocks then (
-		Output.printf "Total number of %s: %d\n" "Blocks" run_args.arg_num_blocks;
-		StmtInfoSet.iter
-			(fun stmtInfo ->
-				 Output.printf "%a\n" TypesPrinter.stmtInfo stmtInfo)
-		setOfBlocks
-		;Output.printf "\n"
-	);
-	if run_args.arg_list_edges then (
-		Output.printf "Total number of %s: %d\n" "Edges" run_args.arg_num_edges;
-		EdgeSet.iter
-			(fun (srcStmtInfo,destStmtInfo) ->
-				 Output.printf "%a -> %a\n"
-					 TypesPrinter.stmtInfo srcStmtInfo
-					 TypesPrinter.stmtInfo destStmtInfo)
-		setOfEdges
-		;Output.printf "\n"
-	);
-	if run_args.arg_list_conds then (
-		Output.printf "Total number of %s: %d\n" "Conditions" run_args.arg_num_conds;
-		CondSet.iter
-			(fun (stmtInfo, truth) -> Output.printf "%a %c\n" TypesPrinter.stmtInfo stmtInfo (if truth then 'T' else 'F'))
-		setOfConds
-		;Output.printf "\n"
-	)
-
-(* create a job that begins at a function, given an initial state *)
-let job_for_function ?(exHist=emptyHistory) file state fn argvs =
-	let state = MemOp.state__start_fcall state Runtime fn argvs in
-	let trackedFns = List.fold_left (fun set elt -> StringSet.add elt set) StringSet.empty run_args.arg_fns in
-	(* create a new job *)
-	{
-		file = file;
-		state = state;
-		exHist = exHist;
-		instrList = [];
-		stmt = List.hd fn.sallstmts;
-		trackedFns = trackedFns;
-		inTrackedFn = StringSet.mem fn.svar.vname trackedFns;
-		jid = Counter.next Types.job_counter;
-	}
-
-
-(* create a job that begins in the middle of a file at some entry function with some optional constraints *)
-let job_for_middle file entryfn yamlconstraints =
-
-    (* Initialize the state with symbolic globals *)
-    let state = MemOp.state__empty in
-    let state = init_symbolic_globalvars state file.globals in
-
-    let state, entryargs, exHist = init_symbolic_argvs state entryfn in
-
-    (* create a job starting at entryfn *)
-    let job = job_for_function ~exHist:exHist file state entryfn entryargs in
-
-    (* apply constraints if provided *)
-    if yamlconstraints = "" then
-        job
-    else begin
-        (* Prepare the invariant input *)
-      (*
-      let objectMap = InvInput.parse yamlconstraints in
-      let _,new_state = InvInput.constrain job.state entryfn objectMap in
-        { job with state = new_state }
-       *)
-      failwith "YAML input not supported"
-    end
-    
-
-(* create a job that begins at the main function of a file, with the initial state set up for the file *)
-let job_for_file file cmdline =
-	let main_func =
-		try Cilutility.find_fundec_by_name file "main"
-		with Not_found -> failwith "No main function found!"
-	in
-
-	(* Initialize the state with zeroed globals *)
-	let state = MemOp.state__empty in
-	let state = init_globalvars state file.globals in
-
-	(* prepare the command line arguments, if needed *)
-	let state, main_args =
-		match main_func.svar.vtype with
-			| TFun (_, Some [], _, _) -> state, [] (* main has no arguments *)
-			| _ -> init_cmdline_argvs state cmdline
-	in
-
-	(* create a job starting at main *)
-	job_for_function file state main_func main_args
-
-
-let find_entryfn file =
-	let fname = Executeargs.run_args.arg_entryfn in
-	try
-		Cilutility.find_fundec_by_name file fname
-	with Not_found ->
-		failwith (Printf.sprintf "Entry function %s not found" fname)
-
-
 let doExecute (f: file) =
 
 	Random.init 226; (* Random is used in Bytes *)
@@ -357,9 +31,9 @@ let doExecute (f: file) =
 	ignore (Unix.alarm Executeargs.run_args.arg_timeout);
 
 	(* prepare the file for symbolic execution *)
-	prepare_file f;
+	Driver.prepare_file f;
 
-    let entryfn = find_entryfn f in
+    let entryfn = Driver.find_entryfn f in
 
     let results =
       if Executeargs.run_args.arg_callchain_backward then
@@ -369,19 +43,19 @@ let doExecute (f: file) =
             try Cilutility.find_fundec_by_name f fname
             with Not_found -> failwith (Printf.sprintf "Assserton function %s not found" fname )
           in
-          let job_init = function entryfn -> job_for_middle f entryfn ""(* no yaml file *)
+          let job_init = function entryfn -> Driver.job_for_middle f entryfn
           in
             Callchain_backward.callchain_backward_se (Cilutility.make_callergraph f) entryfn assertfn job_init
         )
       else
         let job = 
           if Executeargs.run_args.arg_entryfn = "main" then
-            (* create a job for the file, with the commandline arguments set to the file name
-             * and the arguments from the '--arg' option *)
-            job_for_file f (f.fileName::Executeargs.run_args.arg_cmdline_argvs)
+              (* create a job for the file, with the commandline arguments set to the file name
+               * and the arguments from the '--arg' option *)
+              Driver.job_for_file f (f.fileName::Executeargs.run_args.arg_cmdline_argvs)
           else
               (* create a job to start in the middle of entryfn *)
-              job_for_middle f entryfn Executeargs.run_args.arg_yaml
+              Driver.job_for_middle f entryfn
         in
 	    (* run the job *)
         	[ Driver.init job ]

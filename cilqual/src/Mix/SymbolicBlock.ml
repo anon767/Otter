@@ -13,7 +13,7 @@ module Interpreter (S : Config.BlockConfig) = struct
         Output.arg_print_stmt := verbose;
         Output.arg_print_func := verbose;
         Output.arg_print_assign := verbose;
-        Executemain.prepare_file file
+        Driver.prepare_file file
 
 
     let call dispatch stack file job k =
@@ -98,7 +98,7 @@ module Interpreter (S : Config.BlockConfig) = struct
 
 
     let exec file args =
-        let job = Executemain.job_for_file file (file.Cil.fileName::args) in
+        let job = Driver.job_for_file file (file.Cil.fileName::args) in
 
         let completion stack results =
             Format.eprintf "Completing symbolic block...@.";
