@@ -8,7 +8,7 @@ open Types
 open Interceptor
 
 
-let unreachable_global varinfo = not (Cilutility.VarinfoSet.mem varinfo (!GetProgInfo.reachable_globals))
+let unreachable_global varinfo = not (GetProgInfo.VarinfoSet.mem varinfo (!GetProgInfo.reachable_globals))
 
 let init_symbolic_pointer state varinfo size =
 	(* TODO: what's the right size?

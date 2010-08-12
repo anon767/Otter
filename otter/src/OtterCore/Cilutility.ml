@@ -1,32 +1,4 @@
 open Cil
-open CilUtilities
-
-module VarinfoMap = Map.Make (struct
-	type t = Cil.varinfo
-	let compare a b = Pervasives.compare a.Cil.vid b.Cil.vid
-end)
-
-module VarinfoSet = Set.Make (struct
-	type t = Cil.varinfo
-	let compare a b = Pervasives.compare a.Cil.vid b.Cil.vid
-end)
-
-module TypeMap = Map.Make (struct
-	type t = typ
-	let compare x y =
-		let canonicalize t = typeSigWithAttrs (fun _ -> []) t in
-		Pervasives.compare (canonicalize x) (canonicalize y)
-end)
-
-module FundecMap = Map.Make (struct
-	type t = Cil.fundec
-	let compare a b = let id x = x.svar.vid in Pervasives.compare (id a) (id b)
-end)
-
-module FundecSet = Set.Make (struct
-	type t = Cil.fundec
-	let compare a b = let id x = x.svar.vid in Pervasives.compare (id a) (id b)
-end)
 
 (* Implicit definition of basic block *)
 

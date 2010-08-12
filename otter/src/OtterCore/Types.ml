@@ -2,8 +2,17 @@ open DataStructures
 open OtterBytes
 open Bytes
 
-module VarinfoMap = Cilutility.VarinfoMap
-module TypeMap = Cilutility.TypeMap
+module VarinfoMap = Map.Make (struct
+	type t = Cil.varinfo
+	let compare a b = Pervasives.compare a.Cil.vid b.Cil.vid
+end)
+
+module TypeMap = Map.Make (struct
+	type t = Cil.typ
+	let compare x y =
+		let canonicalize t = Cil.typeSigWithAttrs (fun _ -> []) t in
+		Pervasives.compare (canonicalize x) (canonicalize y)
+end)
 
 module StringSet = Set.Make(String)
 

@@ -3,6 +3,16 @@ open CilUtilities
 open Types
 open Cilutility
 
+module FundecMap = Map.Make (struct
+	type t = Cil.fundec
+	let compare a b = let id x = x.svar.vid in Pervasives.compare (id a) (id b)
+end)
+
+module VarinfoSet = Set.Make (struct
+	type t = Cil.varinfo
+	let compare a b = Pervasives.compare a.Cil.vid b.Cil.vid
+end)
+
 let reachable_functions: (fundec list) FundecMap.t ref = ref FundecMap.empty
 let reachable_globals: VarinfoSet.t ref = ref VarinfoSet.empty
 
