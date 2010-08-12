@@ -18,7 +18,7 @@ class prioritized_job_queue targets = object (self)
 			let first = PriorityQueue.first queue in
 			PriorityQueue.remove_first queue;
 			Some (first#job, self)
-		with Not_found ->
+		with Failure "PriorityQueue.first: empty queue" ->
 			None
 
 	method queue job =
