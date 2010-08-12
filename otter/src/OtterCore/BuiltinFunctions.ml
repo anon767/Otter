@@ -99,8 +99,8 @@ let end_function_call job =
 		if job.inTrackedFn && Executeargs.run_args.Executeargs.arg_edge_coverage then
 			let fn = (List.hd job.state.callstack).svar.vname in
 			let edge = (
-				{ siFuncName = fn; siStmt = Cilutility.stmtAtEndOfBlock job.stmt; },
-				{ siFuncName = fn; siStmt = Cilutility.stmtAtEndOfBlock stmt; }
+				{ siFuncName = fn; siStmt = GetProgInfo.stmtAtEndOfBlock job.stmt; },
+				{ siFuncName = fn; siStmt = GetProgInfo.stmtAtEndOfBlock stmt; }
 			) in
 			{ exHist with coveredEdges = EdgeSet.add edge exHist.coveredEdges; }
 		else
@@ -764,8 +764,8 @@ let libc_longjmp job retopt exps =
 					if job.inTrackedFn && Executeargs.run_args.Executeargs.arg_edge_coverage then
 						let fn = (List.hd job.state.callstack).svar.vname in
 						let edge = (
-							{ siFuncName = fn; siStmt = Cilutility.stmtAtEndOfBlock job.stmt; },
-							{ siFuncName = fn; siStmt = Cilutility.stmtAtEndOfBlock stmt; }
+							{ siFuncName = fn; siStmt = GetProgInfo.stmtAtEndOfBlock job.stmt; },
+							{ siFuncName = fn; siStmt = GetProgInfo.stmtAtEndOfBlock stmt; }
 						) in
 						{ exHist with coveredEdges = EdgeSet.add edge exHist.coveredEdges; }
 					else
