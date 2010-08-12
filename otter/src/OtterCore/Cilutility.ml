@@ -20,20 +20,3 @@ let rec stmtAtEndOfBlock stmt = match stmt.succs with
 				 | _ -> stmtAtEndOfBlock succ)
 	| _ -> stmt (* (4) *)
 
-
-let rec isConstType typ =
-  let rec isconst atts = match atts with
-      [] -> false
-    | Attr(s,_)::atts -> if s = "const" then true else isconst atts
-  in
-  match typ with
-   | TVoid a 
-   | TInt(_, a) 
-   | TFloat(_, a) 
-   | TNamed (_, a) 
-   | TEnum(_,a) 
-   | TFun(_,_,_,a) 
-   | TComp (_, a) 
-   | TBuiltin_va_list a -> isconst a
-   | TArray(t,_,a) 
-   | TPtr(t, a) -> isConstType t

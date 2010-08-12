@@ -488,8 +488,20 @@ let otter_print_state = wrap_state_function begin fun state retopt exps ->
 	let printVarBytes var bytes =
 		printVarFieldsBytes var.vname var.vtype bytes 0 
 	in
+	let rec is_or_points_to_const = function
+		| TVoid a 
+		| TInt(_, a) 
+		| TFloat(_, a) 
+		| TNamed (_, a) 
+		| TEnum(_,a) 
+		| TFun(_,_,_,a) 
+		| TComp (_, a) 
+		| TBuiltin_va_list a -> Cil.hasAttribute "const" a
+		| TArray(t,_,a) 
+		| TPtr(t, a) -> is_or_points_to_const t
+	in
 	let printVar var lval_block =
-		if Cilutility.isConstType var.vtype then () 
+		if is_or_points_to_const var.vtype then () 
 		else
 			match lval_block with
 				| Immediate (Unconditional (block, _)) ->
