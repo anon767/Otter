@@ -14,6 +14,7 @@ let _ =
     Cilly.run [
         Otter.Executemain.feature;
         Otter.Multiprocess.feature;
+        Otter.Callchain_backward.feature;
         Marshal_feature.feature;
         CilUtilities.FindFns.feature;
         CilUtilities.TraceLines.feature;

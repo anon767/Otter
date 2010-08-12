@@ -10,8 +10,8 @@ open Cil
 open Executeargs
 
 
-class prioritized_job_queue targets = object (self)
-	val get_priority = Prioritizer.prioritize targets
+class prioritized_job_queue assertfn targets = object (self)
+	val get_priority = Prioritizer.prioritize assertfn targets
 	val queue = PriorityQueue.make (fun j1 j2 -> j1#priority >= j2#priority)
 
 	method get =
@@ -216,7 +216,7 @@ let callchain_backward_se file entryfn assertfn job_init : job_completion list l
 
   let (@@) = Interceptor.(@@) in
   let call_Otter_main_loop targets job =
-	let jobs = new prioritized_job_queue targets in
+	let jobs = new prioritized_job_queue assertfn targets in
 	jobs#queue job;
 	Driver.main_loop
 	  (fun jobs -> jobs#get)
@@ -284,3 +284,45 @@ let callchain_backward_se file entryfn assertfn job_init : job_completion list l
 		 let new_result = callchain_backward_main_loop job [] in
 		   new_result::results
 	  ) [] callers
+
+
+
+(* Cil feature for call-chain backwards Otter *)
+
+let arg_assertfn = ref "__ASSERT"
+
+let prepare_file file =
+	run_args.arg_cfg_pruning <- true;
+	Driver.prepare_file file
+
+let doit file =
+	(* TODO: do something about signal handlers/run statistics from Executemain.doExecute *)
+
+	prepare_file file;
+	let entryfn = Driver.find_entryfn file in
+	let assertfn =
+		let fname = !arg_assertfn in
+		try FindCil.fundec_by_name file fname
+		with Not_found -> FormatPlus.failwith "Assertion function %s not found" fname
+	in
+	let job_init = fun entryfn -> Driver.job_for_middle file entryfn in
+	let results = callchain_backward_se file entryfn assertfn job_init in
+
+	(* print the results *)
+	Output.formatter := new Output.plain;
+	Output.printf "%s@\n" (Executedebug.get_log ());
+	List.iter (fun result -> Report.print_report result) results
+
+
+let feature = {
+	Cil.fd_name = "backotter";
+	Cil.fd_enabled = ref false;
+	Cil.fd_description = "Call-chain backwards symbolic executor for C";
+	Cil.fd_extraopt = [
+		("--assertfn",
+		Arg.Set_string arg_assertfn,
+		"<fname> Assertion function to look for in the call-chain-backward mode (default: __ASSERT) \n");
+	];
+	Cil.fd_post_check = true;
+	Cil.fd_doit = doit
+}

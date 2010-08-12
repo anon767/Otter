@@ -36,31 +36,18 @@ let doExecute (f: file) =
 
     let entryfn = Driver.find_entryfn f in
 
-    let results =
-      if Executeargs.run_args.arg_callchain_backward then
-        (
-          let assertfn =
-            let fname = Executeargs.run_args.arg_assertfn in
-            try FindCil.fundec_by_name f fname
-            with Not_found -> failwith (Printf.sprintf "Assserton function %s not found" fname )
-          in
-          let job_init = function entryfn -> Driver.job_for_middle f entryfn
-          in
-            Callchain_backward.callchain_backward_se f entryfn assertfn job_init
-        )
-      else
-        let job = 
-          if Executeargs.run_args.arg_entryfn = "main" then
-              (* create a job for the file, with the commandline arguments set to the file name
-               * and the arguments from the '--arg' option *)
-              Driver.job_for_file f (f.fileName::Executeargs.run_args.arg_cmdline_argvs)
-          else
-              (* create a job to start in the middle of entryfn *)
-              Driver.job_for_middle f entryfn
-        in
-	    (* run the job *)
-        	[ Driver.run job ]
+    let job =
+        if Executeargs.run_args.arg_entryfn = "main" then
+            (* create a job for the file, with the commandline arguments set to the file name
+             * and the arguments from the '--arg' option *)
+            Driver.job_for_file f (f.fileName::Executeargs.run_args.arg_cmdline_argvs)
+        else
+            (* create a job to start in the middle of entryfn *)
+            Driver.job_for_middle f entryfn
     in
+
+    (* run the job *)
+    let result = Driver.run job in
 
 	(* Turn off the alarm and reset the signal handlers *)
 	ignore (Unix.alarm 0);
@@ -105,7 +92,7 @@ let doExecute (f: file) =
         ()
   end;
      *)
-	List.iter (fun result -> Report.print_report result) results
+    Report.print_report result
 
 
 let feature : featureDescr = 
@@ -128,10 +115,6 @@ let feature : featureDescr =
 			("--cfgPruning",
 			Arg.Unit (fun () -> run_args.arg_cfg_pruning <- true),
 			" Enable CFG pruning\n");
-
-			("--callchainBackward",
-			Arg.Unit (fun () -> run_args.arg_cfg_pruning <- true;run_args.arg_callchain_backward <- true),
-			" Enable call-chain backward symbolic execution (will enable CFG pruning)\n");
 
 			(**
 					Printing options
@@ -252,10 +235,6 @@ let feature : featureDescr =
 			("--entryfn",
 			Arg.String (fun fname -> Executeargs.run_args.arg_entryfn <- fname),
 			"<fname> Entry function (default: main) \n");
-
-			("--assertfn",
-			Arg.String (fun fname -> Executeargs.run_args.arg_assertfn <- fname),
-			"<fname> Assertion function to look for in the call-chain-backward mode (default: __ASSERT) \n");
 
 			("--examfn",
 			Arg.String (fun fname -> Executeargs.run_args.arg_examfn <- fname),

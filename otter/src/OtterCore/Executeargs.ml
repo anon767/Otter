@@ -26,7 +26,6 @@ type run_args =
 		mutable arg_fns : string list;
 		mutable arg_yaml : string;
 		mutable arg_entryfn : string;
-		mutable arg_assertfn : string;
 		mutable arg_examfn : string;
 		mutable arg_timeout : int;
 		(** How many seconds to allow the executor to run. *)
@@ -60,7 +59,6 @@ let run_args =
 		arg_fns = [];
 		arg_yaml = "";
 		arg_entryfn = "main";
-		arg_assertfn = "__ASSERT";
 		arg_examfn = ""; (* none *)
 		arg_timeout = 0;
 		arg_marshal_file = ""; (* File to which to marshal coverage information *)

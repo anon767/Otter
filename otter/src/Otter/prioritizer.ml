@@ -248,7 +248,7 @@ end
 
 open Graph
 
-let prioritize targets job = 
+let prioritize assertfn targets job = 
   if (Executeargs.run_args.Executeargs.arg_cfg_pruning) then
     begin
       let graph,root = make_graph (List.hd job.state.callstack) in
@@ -257,7 +257,7 @@ let prioritize targets job =
           begin
             fun node -> match node.obj with
               | Instr((Call(_,Lval(Var(varinfo),_),exps,_))::_,_)  ->
-                  if varinfo.vname = Executeargs.run_args.Executeargs.arg_assertfn then true else (* TODO: make this as arugment *)
+                  if varinfo = assertfn.svar then true else
                     List.fold_left (fun b t -> if t.func.svar == varinfo then true else b) false targets
               | _ -> false
           end
