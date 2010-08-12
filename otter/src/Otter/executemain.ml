@@ -1,4 +1,3 @@
-open DataStructures
 open OcamlUtilities
 open Cil
 open CilUtilities
