@@ -1,6 +1,7 @@
 open DataStructures
 open OcamlUtilities
 open OcamlBase
+open CilUtilities
 open OtterBytes
 open OtterCore
 open Bytes
@@ -194,7 +195,7 @@ let terminate_job_at_targets_interceptor targets job job_queue interceptor =
 		| None ->
 			interceptor job job_queue
 
-let callchain_backward_se callergraph entryfn assertfn job_init : job_completion list list =
+let callchain_backward_se file entryfn assertfn job_init : job_completion list list =
   let job_init fn ts =
 	let _ = Output.banner_printf 1 "Start forward SE on function %s with target(s)\n%s\n%!"
 			(fn.svar.vname) (let s=(String.concat "," (List.map (fun t -> t.func.svar.vname) ts)) in if s="" then "(none)" else s)
@@ -229,6 +230,18 @@ let callchain_backward_se callergraph entryfn assertfn job_init : job_completion
 	  jobs
   in
 
+  (* compute call graph and provide a helper function for finding callers *)
+  let callgraph = Callgraph.computeGraph file in
+  let get_callers f =
+    let function_node = Hashtbl.find callgraph f.svar.vname in
+    let callers_hash = function_node.Callgraph.cnCallers in
+    let caller_nodes = Inthash.tolist callers_hash in
+    List.fold_left begin fun callers (_, caller) -> match caller.Callgraph.cnInfo with
+        | Callgraph.NIVar (v, defined) when !defined -> (FindCil.fundec_by_varinfo file v)::callers
+        | _ -> callers
+    end [] caller_nodes
+  in
+
   (* The implementation of main loop *)
   let rec callchain_backward_main_loop job targets =
 	(* Assume we start at f *)
@@ -249,7 +262,7 @@ let callchain_backward_se callergraph entryfn assertfn job_init : job_completion
 		  entry_state = job.state;
 		  failing_condition = failing_condition;
 		} in
-		let callers = Cilutility.get_callers callergraph f in
+		let callers = get_callers f in
 		  Output.banner_printf 1 "Function %s's caller(s): " f.svar.vname;
 		  List.iter (fun caller -> Output.banner_printf 1 " %s\n" caller.svar.vname) callers;
 		  Output.banner_printf 1 "%!";
@@ -263,7 +276,7 @@ let callchain_backward_se callergraph entryfn assertfn job_init : job_completion
 		  ) 
 		  [] callers
   in
-  let callers = Cilutility.get_callers callergraph assertfn in
+  let callers = get_callers assertfn in
 	List.fold_left 
 	  (fun results caller ->
 		 Output.banner_printf 2 "Call-chain backward Symbolic Execution of target function %s\n%!" caller.svar.vname;
