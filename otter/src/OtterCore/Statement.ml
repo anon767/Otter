@@ -7,7 +7,6 @@ open Bytes
 open BytesUtility
 open Types
 open Executeargs
-open Cilutility
 
 (** Get the file location for the current job instruction.
 		@param job the job to get the current location from

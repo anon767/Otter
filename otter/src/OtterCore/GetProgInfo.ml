@@ -1,7 +1,6 @@
 open Cil
 open CilUtilities
 open Types
-open Cilutility
 
 module FundecMap = Map.Make (struct
 	type t = Cil.fundec
