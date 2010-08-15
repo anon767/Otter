@@ -42,14 +42,15 @@ ocamlbuild//%.byte : $(OCAMLBUILD_BUILDDIR)
 ocamlbuild//%.cmxa ocamlbuild//%.a ocamlbuild//%.cma ocamlbuild//%.cmi : $(OCAMLBUILD_BUILDDIR)
 	$(call OCAMLBUILD.build,$*.cmxa $*.a $*.cma $*.cmi,$(OCAMLBUILD_PRODUCTDIR))
 
+ocamlbuild//%.dot : $(OCAMLBUILD_BUILDDIR)
+	$(call OCAMLBUILD.build,$*.dot,$(OCAMLBUILD_DOCDIR))
+
 
 # %.docdir requires a workaround because:
 # - ocamlbuild will not search -I include paths for targets with directory components such as %.docdir/html.stamp;
-# - the ocamlbuild rule for %.docdir/html.stamp deletes %.docdir, which means that %.docdir/$*.dot has to be built
-#   after %.docdir/html.stamp.
 ocamlbuild//%.docdir : DOCDIR = $(patsubst %.odocl,%.docdir,$(call vpath_for,$*.odocl))
 ocamlbuild//%.docdir : $(OCAMLBUILD_BUILDDIR)
-	$(call OCAMLBUILD.build,$(addprefix $(DOCDIR)/,html.stamp $*.dot),$(OCAMLBUILD_DOCDIR),$(DOCDIR))
+	$(call OCAMLBUILD.build,$(addprefix $(DOCDIR)/,html.stamp),$(OCAMLBUILD_DOCDIR),$(DOCDIR))
 
 
 # recompile everything if an external dependency is newer than the build directory
