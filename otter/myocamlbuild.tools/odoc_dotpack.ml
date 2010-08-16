@@ -110,7 +110,9 @@ module Graph = struct
         include Map.Make (String)
         let mem key value map = NodeSet.mem value (find key map)
         let find key map = try find key map with Not_found -> NodeSet.empty
-        let remove key value map = add key (NodeSet.remove value (find key map)) map
+        let remove key value map =
+            let values = NodeSet.remove value (find key map) in
+            if NodeSet.is_empty values then remove key map else add key values map
         let add key value map = add key (NodeSet.add value (find key map)) map
     end
     let empty = (Adjacency.empty, Adjacency.empty)
@@ -118,6 +120,7 @@ module Graph = struct
     let remove_edge src dest (forward, backward) = (Adjacency.remove src dest forward, Adjacency.remove dest src backward)
     let add_edge src dest (forward, backward) = (Adjacency.add src dest forward, Adjacency.add dest src backward)
     let fold_edges f (forward, _) = Adjacency.fold (fun key -> NodeSet.fold (f key)) forward
+    let fold_nodes f (forward, _) = Adjacency.fold (fun key value -> f key) forward
     let fold_successors f src (forward, _) = NodeSet.fold f (Adjacency.find src forward)
     let fold_predecessors f dest (_, backward) = NodeSet.fold f (Adjacency.find dest backward)
     let transitive_reduction graph =
@@ -185,8 +188,13 @@ let resolve_dependencies m =
 (* ocamldoc generator *)
 let dotpack =
     object (self)
-        method colorscheme = "purples9"
+        method style : ('a, 'b, 'c) format =
+            "\
+            graph [ style = \"filled, rounded\", colorscheme = \"purples9\" ]@\n\
+            node [ style = \"filled\", colorscheme = \"purples9\" ]\
+            "
         method initialcolor = 3
+        method lastcolor = 9
 
         method generate_nodes ff pack_list =
             (* print modules in hierarchical clusters *)
@@ -200,20 +208,17 @@ let dotpack =
                                 "\
                                 subgraph \"cluster_%s\" {@\n\
                                 \  label = \"%s\"@\n\
-                                \  style = \"filled\"@\n\
-                                \  color = \"/%s/%d\"@\n\
+                                \  color = \"%d\"@\n\
                                 \  @[%a@]@\n\
                                 }\
                                 "
                                 pack_name
                                 pack_name
-                                self#colorscheme
                                 color
-                                (generate_nodes (min (color + 1) 9)) (List.map (fun p -> (fqn, p)) pack_list);
+                                (generate_nodes (min (color + 1) self#lastcolor)) (List.map (fun p -> (fqn, p)) pack_list);
 
                         | Module (module_name, module_deps) ->
-                            Format.fprintf ff "\"%s\" [ label = \"%s\", style = \"filled\", color = \"/%s/%d\" ]"
-                                fqn module_name self#colorscheme color
+                            Format.fprintf ff "\"%s\" [ label = \"%s\", color = \"%d\" ]" fqn module_name color
                     end;
                     "@\n"
                 end "" pack_list end
@@ -237,8 +242,12 @@ let dotpack =
             let graph = Graph.transitive_reduction graph in
 
             (* print the edges *)
-            ignore begin Graph.fold_edges begin fun node adjacent sep ->
-                Format.fprintf ff "%(%)\"%s\" -> \"%s\"" sep node adjacent;
+            ignore begin Graph.fold_nodes begin fun node sep ->
+                Format.fprintf ff "%(%)@[<hv>\"%s\" -> {@;<1 2>@[%t@]@ }@]" sep node
+                    begin fun ff -> ignore begin Graph.fold_successors begin fun successor sep ->
+                        Format.fprintf ff "%(%)\"%s\"" sep successor;
+                        ";@ "
+                    end node graph "" end end;
                 "@\n"
             end graph "" end
 
@@ -250,11 +259,13 @@ let dotpack =
             Format.fprintf ff
                 "\
                 digraph \"%s\" {@\n\
+                \  @[%(%)@]@\n\
                 \  @[%a@]@\n\
                 \  @[%a@]@\n\
                 }@.\
                 "
                 pack_name
+                self#style
                 self#generate_nodes pack_list
                 self#generate_edges pack_list;
 
