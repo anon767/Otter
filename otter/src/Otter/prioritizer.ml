@@ -1,8 +1,18 @@
 open OcamlUtilities
+open OtterBytes
 open OtterCore
 open Types
 open Cil
 open Hashtbl
+
+
+(* target to be used in prioritizer *)
+type target = {
+  func: Cil.fundec;
+  entry_state: state;
+  failing_condition: Bytes.bytes;
+}
+
 
 (** 
   * Simple prioritizer

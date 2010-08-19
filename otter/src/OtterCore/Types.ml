@@ -201,11 +201,3 @@ module JobSet = Set.Make
 			 if c = 0 then Pervasives.compare job1.jid job2.jid
 			 else c
 	 end)
-
-(* target to be used in prioritizer *)
-type target = {
-  func: Cil.fundec;
-  entry_state: state;
-  failing_condition: bytes;
-}
-
