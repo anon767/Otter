@@ -191,13 +191,3 @@ type job_state =
 	| Fork of job_state list
 	| Complete of job_completion
 	| Paused of job
-
-module JobSet = Set.Make
-	(struct
-		 type t = job
-		 let compare (job1:t) job2 =
-			 (* I want the job with earliest stmt.sid to be first in the ordering *)
-			 let c = Pervasives.compare job1.stmt.Cil.sid job2.stmt.Cil.sid in
-			 if c = 0 then Pervasives.compare job1.jid job2.jid
-			 else c
-	 end)
