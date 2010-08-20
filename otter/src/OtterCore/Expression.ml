@@ -161,11 +161,10 @@ let checkBounds state lvals cil_lval useSize =
 	check state useSizeLeSizes [expRepresentingBoundsCheck2]
 
 
-let add_offset state offset lvals : state * (Types.MemoryBlockMap.key * Bytes.bytes) Bytes.conditional =
-	conditional__fold_map begin fun newState _ (block, offset2) ->
-		let newOffset = Operator.plus [(offset, !Cil.upointType); (offset2, !Cil.upointType)] in
-		(newState, conditional__lval_block (block, newOffset))
-	end state lvals
+let add_offset offset lvals =
+	conditional__map begin fun (block, offset2) ->
+		conditional__lval_block (block, Operator.plus [(offset, !Cil.upointType); (offset2, !Cil.upointType)])
+	end lvals
 	
 
 let rec
@@ -325,7 +324,7 @@ lval ?(justGetAddr=false) state (lhost, offset_exp as cil_lval) =
 	in
 	let state, offset, _ = flatten_offset state lhost_type offset_exp in
 	(* Add the offset, then see if it was in bounds *)
-	let state, lvals = add_offset state offset lvals in
+	let lvals = add_offset offset lvals in
 	(* Omit the bounds check if we're only getting the address of the
 		 lval---not actually reading from or writing to it---or if bounds
 		 checking is turned off *)
