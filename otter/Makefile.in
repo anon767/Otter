@@ -29,7 +29,8 @@ all : native libs doc
 native : ocamlbuild//runotter.native config
 debug : ocamlbuild//runotter.d.byte config
 
-libs : $(foreach foo,CilUtilities OcamlUtilities OtterBytes OtterCore Otter,$(addprefix ocamlbuild//$(foo),.cmxa .a .cma .cmi))
+libs : $(addprefix ocamlbuild//,Otter.cmxa Otter.a Otter.cma Otter.cmi)
+libs : OCAMLBUILD_MORE_CMI=DataStructures.cmi CilUtilities.cmi OcamlUtilities.cmi OtterBytes.cmi OtterCore.cmi
 
 test : ounit//runtestotter.d.byte
 ounit//runtestotter.d.byte : debug
