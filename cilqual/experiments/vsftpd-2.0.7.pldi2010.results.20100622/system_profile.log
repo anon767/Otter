@@ -1,0 +1,19 @@
+Darwin 129-2-135-121.wireless.umd.edu 10.4.0 Darwin Kernel Version 10.4.0: Fri Apr 23 18:28:53 PDT 2010; root:xnu-1504.7.4~1/RELEASE_I386 i386
+Hardware:
+
+    Hardware Overview:
+
+      Model Name: MacBook
+      Model Identifier: MacBook3,1
+      Processor Name: Intel Core 2 Duo
+      Processor Speed: 2.2 GHz
+      Number Of Processors: 1
+      Total Number Of Cores: 2
+      L2 Cache: 4 MB
+      Memory: 4 GB
+      Bus Speed: 800 MHz
+      Boot ROM Version: MB31.008E.B02
+      SMC Version (system): 1.24f2
+      Sudden Motion Sensor:
+          State: Enabled
+

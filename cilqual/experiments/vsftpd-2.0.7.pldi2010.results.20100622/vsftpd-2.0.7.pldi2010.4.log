@@ -1,0 +1,253 @@
+/usr/bin/make -C vsftpd-2.0.7.pldi2010.experiment CC="env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h " clean vsftpd
+rm -f *.o *.swp vsftpd
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c main.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 main.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-D5RPOzLm.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c utility.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 utility.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-j3YUKIsT.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c prelogin.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 prelogin.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-iZApVrN1.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c ftpcmdio.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 ftpcmdio.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-v8lMk8FK.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c postlogin.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 postlogin.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-PM76XT2L.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c privsock.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 privsock.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-ivgdgvt0.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c tunables.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 tunables.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-cQopbRIk.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c ftpdataio.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 ftpdataio.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-KqkBGEPG.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c secbuf.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 secbuf.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-ImwOraaW.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c ls.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 ls.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-KMuCbJ5o.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c postprivparent.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 postprivparent.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-mxJZDZzp.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c logging.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 logging.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-s2HKtQg8.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c str.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 str.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-kjyB3J9c.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c netstr.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 netstr.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-VOMgYPn4.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c sysstr.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 sysstr.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-6MQoRBJ3.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c strlist.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 strlist.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-QCCuD8Y7.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c banner.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 banner.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-dyGbWqHb.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c filestr.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 filestr.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-7JphM96O.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c parseconf.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 parseconf.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-rrq2xQkC.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c secutil.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 secutil.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-dubV6CQQ.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c ascii.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 ascii.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-GmNHYjqL.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c oneprocess.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 oneprocess.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-K3tRG2ar.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c twoprocess.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 twoprocess.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-4yNoqu4b.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c privops.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 privops.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-DBYsvkaU.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c standalone.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 standalone.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-4ki6CsJA.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c hash.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 hash.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-wvrUrarj.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c tcpwrap.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 tcpwrap.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-c6BRHw11.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c ipaddrparse.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 ipaddrparse.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-sQtworoi.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c access.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 access.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-qyamQAdO.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c features.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 features.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-LJ0UHLzA.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c readwrite.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 readwrite.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-wpes9cVO.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c opts.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 opts.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-PhTE4Z1G.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c ssl.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 ssl.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-NIJXiP2v.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c sysutil.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 sysutil.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-4gqrBAK3.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -c sysdeputil.c -O2 -Wall -W -Wshadow  -idirafter dummyinc
+cc -D_GNUCC -U__BLOCKS__ -E -D_FORTIFY_SOURCE=0 -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h -O2 -idirafter dummyinc -DCIL=1 sysdeputil.c -o /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-tOPzaD7q.i
+env OCAMLRUNPARAM=b /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/../cilqual.pl --domix --merge --keepmerged -D_FORTIFY_SOURCE=0 --stats -DEXPERIMENT_CONDITION=4 -include /Users/khooyp/Projects/Research/cilqual/cilqual/experiments/vsftpd-2.0.7.pldi2010.experiment.h  -o vsftpd main.o utility.o prelogin.o ftpcmdio.o postlogin.o privsock.o tunables.o ftpdataio.o secbuf.o ls.o postprivparent.o logging.o str.o netstr.o sysstr.o strlist.o banner.o filestr.o parseconf.o secutil.o ascii.o oneprocess.o twoprocess.o privops.o standalone.o hash.o tcpwrap.o ipaddrparse.o access.o features.o readwrite.o opts.o ssl.o sysutil.o sysdeputil.o -Wl,-s `./vsf_findlibs.sh` 
+/Users/khooyp/Projects/Research/cilqual/cilqual/_product/runcilqual.native --out /var/folders/iT/iTeP1YBJG1WNWfG+sh9o0++++TI/-Tmp-/cil-VktYD5Hn.cil.c --domix --stats --extrafiles ___extra_files --mergedout ./vsftpd_comb.c
+Evaluating typed block at main...
+sysutil.c:554: warning:Function pointer call *curr_func: vsf_auth_shutdown
+sysutil.c:149: warning:Function pointer call *(s_sig_details[i].sync_sig_handler):
+                       handle_sigalrm, handle_sigurg, handle_alarm_timeout
+sysutil.c:138: warning:Function pointer call *s_io_handler: handle_io
+hash.c:123: warning:Function pointer call *(p_hash->hash_func): 
+Doing fixpoint for main...
+Switching from typed to symbolic at main_BLOCK1...
+Unsatisfiable solution entering TypedSymbolic at main_BLOCK1
+Evaluating symbolic block main_BLOCK1...
+Branching on (int __attribute__((__cilqual_cil_inserted__))  )hent->h_addrtype == 2 at sysutil.c:2227. 
+Job 1 is the true branch and job 0 is the false branch.
+
+[0,1] main.c:38 : Program execution finished
+[1,1] main.c:38 : Program execution finished
+Returning from symbolic to typed at main_BLOCK1 (2 executions returned)...
+Reevaluating fixpoint for main due to added constraints...
+Switching from typed to symbolic at main_BLOCK1...
+Unsatisfiable solution entering TypedSymbolic at main_BLOCK1
+Evaluating symbolic block main_BLOCK1...
+Branching on (int __attribute__((__cilqual_cil_inserted__))  )hent->h_addrtype == 2 at sysutil.c:2227. 
+Job 3 is the true branch and job 2 is the false branch.
+
+[2,1] main.c:38 : Program execution finished
+[3,1] main.c:38 : Program execution finished
+Returning from symbolic to typed at main_BLOCK1 (2 executions returned)...
+Completing typed block...
+
+Shortest paths between $null and $nonnull:
+  nonnull == null
+   $nonnull
+  sysutil.c:491 p_ptr:sysutil.c:491
+  sysutil.h:159 &arg0(vsf_sysutil_free:sysutil.h:159)
+  sysutil.c:1860 *p_sockptr:sysutil.c:1856
+  sysutil.c:1861 &(void * __attribute__((__cilqual__(null))) )0:sysutil.c:1861
+  sysutil.c:1861 $null
+  
+  nonnull == null
+   $nonnull
+  sysutil.h:159 &arg0(vsf_sysutil_free:sysutil.h:159)
+  sysutil.c:1860 *p_sockptr:sysutil.c:1856
+  sysutil.c:1861 &(void * __attribute__((__cilqual__(null))) )0:sysutil.c:1861
+  sysutil.c:1861 $null
+  
+  null == nonnull
+   $null
+  sysutil.c:985 &(void * __attribute__((__cilqual__(null))) )0:sysutil.c:985
+  sysutil.h:69 &<Fresh 185>
+  sysutil.h:69 return(vsf_sysutil_next_dirent:sysutil.h:69)
+  sysstr.c:142 __cil_tmp
+  sysstr.c:142 p_filename:sysstr.c:142
+  sysstr.c:146 &arg1(str_alloc_text:str.h:27)
+  twoprocess.c:116 tunable_secure_chroot_dir:tunables.c:107
+  <aliasing> &haddr:sysutil.c:2196
+  <aliasing> tunable_pasv_address:tunables.h:117
+  main.c:128 &<Fresh 0>
+  main.c:128 &arg0(vsf_sysutil_free:sysutil.h:159)
+  sysutil.h:159 $nonnull
+  
+  null == nonnull
+   $null
+  sysutil.c:985 &(void * __attribute__((__cilqual__(null))) )0:sysutil.c:985
+  sysutil.h:69 &<Fresh 185>
+  sysutil.h:69 return(vsf_sysutil_next_dirent:sysutil.h:69)
+  sysstr.c:142 __cil_tmp
+  sysstr.c:142 p_filename:sysstr.c:142
+  sysstr.c:146 &arg1(str_alloc_text:str.h:27)
+  str.h:27 p_src:str.c:74
+  str.c:77 &arg1(private_str_alloc_memchunk:str.c:40)
+  str.c:548 mystr.PRIVATE_HANDS_OFF_p_buf:str.h:12
+  str.c:122 &arg0(vsf_sysutil_free:sysutil.h:159)
+  sysutil.h:159 $nonnull
+  
+  null == nonnull
+   $null
+  sysutil.c:1861 &(void * __attribute__((__cilqual__(null))) )0:sysutil.c:1861
+  sysutil.c:1861 *p_sockptr:sysutil.c:1856
+  sysutil.c:1860 &arg0(vsf_sysutil_free:sysutil.h:159)
+  sysutil.h:159 $nonnull
+  
+  null == nonnull
+   $null
+  main.c:35 addr_list:sysutil.c:2199
+  <aliasing> &haddr:sysutil.c:2196
+  <aliasing> tunable_pasv_address:tunables.h:117
+  main.c:128 &<Fresh 0>
+  main.c:128 &arg0(vsf_sysutil_free:sysutil.h:159)
+  sysutil.h:159 $nonnull
+  
+  null == nonnull
+   $null
+  main.c:35 addr_list:sysutil.c:2199
+  <aliasing> &haddr:sysutil.c:2196
+  <aliasing> tunable_pasv_address:tunables.h:117
+  parseconf.c:142 *parseconf_str_setting.p_variable:parseconf.c:145
+  parseconf.c:256 *p_curr_setting:parseconf.c:256
+  parseconf.c:259 &<Fresh 121>
+  parseconf.c:259 &arg0(vsf_sysutil_free:sysutil.h:159)
+  sysutil.h:159 $nonnull
+
+Shortest no-aliasing paths between $null and $nonnull:
+  nonnull == null
+   $nonnull
+  sysutil.c:491 p_ptr:sysutil.c:491
+  sysutil.h:159 &arg0(vsf_sysutil_free:sysutil.h:159)
+  sysutil.c:1860 *p_sockptr:sysutil.c:1856
+  sysutil.c:1861 &(void * __attribute__((__cilqual__(null))) )0:sysutil.c:1861
+  sysutil.c:1861 $null
+  
+  nonnull == null
+   $nonnull
+  sysutil.h:159 &arg0(vsf_sysutil_free:sysutil.h:159)
+  sysutil.c:1860 *p_sockptr:sysutil.c:1856
+  sysutil.c:1861 &(void * __attribute__((__cilqual__(null))) )0:sysutil.c:1861
+  sysutil.c:1861 $null
+  
+  null == nonnull
+   $null
+  sysutil.c:985 &(void * __attribute__((__cilqual__(null))) )0:sysutil.c:985
+  sysutil.h:69 &<Fresh 185>
+  sysutil.h:69 return(vsf_sysutil_next_dirent:sysutil.h:69)
+  sysstr.c:142 __cil_tmp
+  sysstr.c:142 p_filename:sysstr.c:142
+  sysstr.c:146 &arg1(str_alloc_text:str.h:27)
+  twoprocess.c:116 tunable_secure_chroot_dir:tunables.c:107
+  parseconf.c:142 *parseconf_str_setting.p_variable:parseconf.c:145
+  parseconf.c:142 tunable_pasv_address:tunables.h:117
+  main.c:128 &<Fresh 0>
+  main.c:128 &arg0(vsf_sysutil_free:sysutil.h:159)
+  sysutil.h:159 $nonnull
+  
+  null == nonnull
+   $null
+  sysutil.c:985 &(void * __attribute__((__cilqual__(null))) )0:sysutil.c:985
+  sysutil.h:69 &<Fresh 185>
+  sysutil.h:69 return(vsf_sysutil_next_dirent:sysutil.h:69)
+  sysstr.c:142 __cil_tmp
+  sysstr.c:142 p_filename:sysstr.c:142
+  sysstr.c:146 &arg1(str_alloc_text:str.h:27)
+  str.h:27 p_src:str.c:74
+  str.c:77 &arg1(private_str_alloc_memchunk:str.c:40)
+  str.c:548 mystr.PRIVATE_HANDS_OFF_p_buf:str.h:12
+  str.c:122 &arg0(vsf_sysutil_free:sysutil.h:159)
+  sysutil.h:159 $nonnull
+  
+  null == nonnull
+   $null
+  sysutil.c:1861 &(void * __attribute__((__cilqual__(null))) )0:sysutil.c:1861
+  sysutil.c:1861 *p_sockptr:sysutil.c:1856
+  sysutil.c:1860 &arg0(vsf_sysutil_free:sysutil.h:159)
+  sysutil.h:159 $nonnull
+Unsatisfiable solution in TypedBlock.exec:
+  5 unsolvable annotated qualifier variables found in 4 equivalence classes.
+  7 shortest paths between $null and $nonnull reported.
+  
+Timings:
+TOTAL                          23.04604 s
+  parse                           0.31158 s
+  convert to CIL                  0.25459 s
+  merge                           0.04622 s
+  printMerged                     0.07693 s
+  mix                            22.20549 s
+    STP assert                      2.30818 s
+      STP construct                   1.77286 s
+      STP doassert                    0.03761 s
+    convert guard                   0.02297 s
+    STP query_guard                10.75763 s
+    convert pre-condition           0.14928 s
+    STP.do_assert pre-condition       0.00539 s
+    STP                             0.04123 s
+      STP assert                      0.00082 s
+        STP construct                   0.00067 s
+        STP doassert                    0.00001 s
+      convert conditional             0.01332 s
+      STP query                       0.01681 s
+  printCIL                        0.15124 s
+Timing used Pentium performance counters
+Memory statistics: total=2855.92Mb, max=56.47Mb, minor=2843.22Mb, major=148.21Mb, promoted=135.51Mb
+    minor collections=21696  major collections=39 compactions=0
