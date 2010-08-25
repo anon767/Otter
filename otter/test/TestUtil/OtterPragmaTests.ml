@@ -86,7 +86,7 @@ let results_printer =
     let completion_printer ff = function
         | Types.Exit (exit_opt, _) -> Format.fprintf ff "Exit(@[%a@])" (option_printer BytesPrinter.bytes) exit_opt
         | Types.Return (return_opt, _) -> Format.fprintf ff "Return(@[%a@])" (option_printer BytesPrinter.bytes) return_opt
-        | Types.Abandoned (`Failure msg, loc, _) -> Format.fprintf ff "Abandoned(`Failure \"@[%s@@%d: %s@]\")" loc.Cil.file loc.Cil.line msg
+        | Types.Abandoned (reason, loc, _) -> Format.fprintf ff "Abandoned(`Failure \"@[%s@@%d: %a@]\")" loc.Cil.file loc.Cil.line Report.abandoned_reason reason
         | Types.Truncated (left, right) -> Format.fprintf ff "Truncated(...)"
     in
     list_printer completion_printer "@\n"

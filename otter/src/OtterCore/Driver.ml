@@ -326,10 +326,10 @@ let get_job_list = function
 let output_completion_info completion =
 (* log some interesting errors *)
 	match completion with
-		| Types.Abandoned (`Failure msg, loc, { result_state=state; result_history=hist }) ->
+		| Types.Abandoned (reason, loc, { result_state=state; result_history=hist }) ->
 			Output.set_mode Output.MSG_MUSTPRINT;
-			Output.printf "Error \"%s\"@ occurs at %a.@\n"
-				msg Printcil.f_loc loc;
+			Output.printf "Error \"%a\"@ occurs at %a.@\n"
+				Report.abandoned_reason reason Printcil.f_loc loc;
 			if Executeargs.print_args.arg_print_callstack then
 				Output.printf "Call stack:@\n  @[%a@]@\n" (TypesPrinter.callingContext_list "@\n") state.callContexts;
 			Output.printf "Abandoning path.@\n"

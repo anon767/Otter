@@ -224,16 +224,15 @@ let rec process_job_states result multijob completed multijob_queue =
 		| Types.Complete completion ->
 			(* store the results *)
 			let multijob = put_completion completion multijob in
-			let completion = match completion with
-				| Types.Abandoned (`Failure msg, loc, job_result) ->
+			begin match completion with
+				| Types.Abandoned (reason, loc, job_result) ->
 					Output.set_mode Output.MSG_MUSTPRINT;
 					Output.printf
-						"Error \"%s\" occurs at %a.@\nAbandoning path.@\n"
-						msg Printcil.f_loc loc;
-					Types.Abandoned (`Failure (msg ^ (Printexc.get_backtrace ())), loc, job_result)
+						"Error \"%a\" occurs at %a.@\nAbandoning path.@\n"
+						Report.abandoned_reason reason Printcil.f_loc loc
 				| _ ->
-					completion
-			in
+                            ()
+			end;
 			((completion::completed), (multijob::multijob_queue))
 
 		| _ ->
