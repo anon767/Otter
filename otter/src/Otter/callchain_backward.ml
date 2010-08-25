@@ -183,7 +183,7 @@ let terminate_job_at_targets targets job =
 				if run_args.arg_failfast then failwith msg;
 				let state = { job.state with path_condition = failing_condition::job.state.path_condition } in
 				let result = { result_file = job.Types.file; result_state = state; result_history = job.exHist } in
-				Some (Complete (Types.Abandoned (msg, loc, result)))
+				Some (Complete (Types.Abandoned (`Failure msg, loc, result)))
 			end
 		| _ ->
 			None
@@ -195,7 +195,7 @@ let terminate_job_at_targets_interceptor targets job job_queue interceptor =
 		| None ->
 			interceptor job job_queue
 
-let callchain_backward_se file entryfn assertfn job_init : job_completion list list =
+let callchain_backward_se file entryfn assertfn job_init : _ job_completion list list =
   let job_init fn ts =
 	let _ = Output.banner_printf 1 "Start forward SE on function %s with target(s)\n%s\n%!"
 			(fn.svar.vname) (let s=(String.concat "," (List.map (fun t -> t.Prioritizer.func.svar.vname) ts)) in if s="" then "(none)" else s)

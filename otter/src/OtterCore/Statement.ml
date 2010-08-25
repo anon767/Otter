@@ -180,7 +180,7 @@ let exec_instr_call job instr lvalopt fexp exps =
 					with Failure msg ->
 						if run_args.arg_failfast then failwith msg;
 						let result = { result_file = job.file; result_state = state; result_history = exHist } in
-						Complete (Types.Abandoned (msg, get_job_loc job, result))
+						Complete (Types.Abandoned (`Failure msg, get_job_loc job, result))
 				in
 				job_state::(process_func_list t)
 	in
@@ -438,4 +438,4 @@ let step job job_queue =
 		| Failure msg ->
 			if run_args.arg_failfast then failwith msg;
 			let result = { result_file = job.file; result_state = job.state; result_history = job.exHist } in
-			(Complete (Types.Abandoned (msg, get_job_loc job, result)), job_queue)
+			(Complete (Types.Abandoned (`Failure msg, get_job_loc job, result)), job_queue)

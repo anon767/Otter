@@ -854,7 +854,7 @@ let interceptor job job_queue interceptor =
 	with Failure msg ->
 		if Executeargs.run_args.Executeargs.arg_failfast then failwith msg;
 		let result = { result_file = job.file; result_state = job.state; result_history = job.exHist } in
-		(Complete (Types.Abandoned (msg, Statement.get_job_loc job, result)), job_queue)
+		(Complete (Types.Abandoned (`Failure msg, Statement.get_job_loc job, result)), job_queue)
 
 let libc_interceptor job job_queue interceptor = 
 	try
@@ -944,4 +944,4 @@ let libc_interceptor job job_queue interceptor =
 	with Failure msg ->
 		if Executeargs.run_args.Executeargs.arg_failfast then failwith msg;
 		let result = { result_file = job.file; result_state = job.state; result_history = job.exHist } in
-		(Complete (Types.Abandoned (msg, Statement.get_job_loc job, result)), job_queue)
+		(Complete (Types.Abandoned (`Failure msg, Statement.get_job_loc job, result)), job_queue)

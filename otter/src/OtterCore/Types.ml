@@ -180,14 +180,14 @@ type job_result = {
 	result_history : executionHistory;
 }
 
-type job_completion =
+type 'reason job_completion =
 	| Return of bytes option * job_result
 	| Exit of bytes option * job_result
-	| Abandoned of string * Cil.location * job_result
+	| Abandoned of 'reason * Cil.location * job_result
 	| Truncated of job_result * job_result
 
-type job_state =
+type 'reason job_state =
 	| Active of job
-	| Fork of job_state list
-	| Complete of job_completion
+	| Fork of 'reason job_state list
+	| Complete of 'reason job_completion
 	| Paused of job

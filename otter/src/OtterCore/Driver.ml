@@ -326,7 +326,7 @@ let get_job_list = function
 let output_completion_info completion =
 (* log some interesting errors *)
 	match completion with
-		| Types.Abandoned (msg, loc, { result_state=state; result_history=hist }) ->
+		| Types.Abandoned (`Failure msg, loc, { result_state=state; result_history=hist }) ->
 			Output.set_mode Output.MSG_MUSTPRINT;
 			Output.printf "Error \"%s\"@ occurs at %a.@\n"
 				msg Printcil.f_loc loc;
