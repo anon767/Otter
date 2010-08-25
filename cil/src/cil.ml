@@ -2973,6 +2973,33 @@ let initMsvcBuiltins () : unit =
   H.add h "__annotation" (voidType, [ ], true);
   ()
 
+
+(** Custom built-ins are loaded right after the Cil's GCC and MSVC built-ins by
+   initCIL, which should be called before parsing. Since initCIL can only be
+   called once, this limits the built-ins to a fixed set that cannot vary
+   between files. *)
+
+(** Construct a hash to temporarily store custom built-in functions *)
+let customBuiltinFunctions : (string, typ * typ list * bool) H.t = 
+  H.create 0
+
+(** Add a custom built-in function that will be loaded by initCIL, to be used
+    when parsing a file.
+        @param name is the name of the built-in function.
+        @param function_type is a tuple of:
+            - the type that the function returns;
+            - a list of types corresponding to the function parameters;
+            - a boolean indicating whether the function is variadic.
+*)
+let addCustomBuiltin name function_type =
+    if H.mem customBuiltinFunctions name then invalid_arg (name ^ " already exists");
+    H.add customBuiltinFunctions name function_type
+
+(** Augments the built-in functions hash with custom built-in functions *)
+let initCustomBuiltins () =
+    H.iter (H.add builtinFunctions) customBuiltinFunctions
+
+
 (** This is used as the location of the prototypes of builtin functions. *)
 let builtinLoc: location = { line = 1; 
                              file = "<compiler builtins>"; 
@@ -6585,6 +6612,7 @@ let initCIL () =
       initMsvcBuiltins ()
     else
       initGccBuiltins ();
+    initCustomBuiltins ();
     ()
   end
     

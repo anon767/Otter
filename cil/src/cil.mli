@@ -1259,7 +1259,16 @@ val gccBuiltins: (string, typ * typ list * bool) Hashtbl.t
 (** @deprecated.  For compatibility with older programs, these are
   aliases for {!Cil.builtinFunctions} *)
 val msvcBuiltins: (string, typ * typ list * bool) Hashtbl.t
-  
+
+(** Add a custom built-in function that will be loaded by initCIL, to be used
+    when parsing a file.
+        @param name is the name of the built-in function
+        @param function_type is a tuple of the type that the function returns,
+               a list of types corresponding to the function parameters, and
+               a boolean indicating whether the function is variadic
+*)
+val addCustomBuiltin : string -> (typ * typ list * bool) -> unit
+
 (** This is used as the location of the prototypes of builtin functions. *)
 val builtinLoc: location
 
