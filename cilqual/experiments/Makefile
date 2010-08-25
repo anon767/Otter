@@ -1,14 +1,17 @@
 MIXDIR=$(CURDIR)/..
 
 MIX=env OCAMLRUNPARAM=b $(MIXDIR)/cilqual.pl \
-		--domix --merge --keepmerged -D_FORTIFY_SOURCE=0 \
 		$(MIX_FLAGS) $(MIX_EXTRAFLAGS) $(MIX_PRELUDE)
+MIX.mix=$(MIX) --domix
+MIX.merge=$(MIX) --merge --keepmerged -D_FORTIFY_SOURCE=0
+
 MIX_FLAGS=--stats
 
 all : vsftpd
 
 vsftpd : experiment//vsftpd-2.0.7.pldi2010
 experiment//vsftpd-2.0.7.pldi2010 : MIX_GOAL=vsftpd
+experiment//vsftpd-2.0.7.pldi2010 : MIX_COMB=vsftpd_comb.c
 
 clean : clean-experiment//vsftpd-2.0.7.pldi2010
 
@@ -28,16 +31,15 @@ clean : clean-experiment//vsftpd-2.0.7.pldi2010
 	mkdir -p $@
 
 
-# Run the experiment by building the target repeatedly. The file %.experiment.h, along with a macro counter named
-# EXPERIMENT_CONDITION is used to customize the build. EXPERIMENT_CONDITION starts with 0, and is incremented for
-# each build. The file %.experiment.h must signal the final build by returning an error using the compiler directive
-# "#error No more experiment conditions.".
+# Run the experiment by first taking a snapshot of the date and system profile, then building the target repeatedly.
+# The file %.experiment.h, along with a macro counter named EXPERIMENT_CONDITION is used to customize the build.
+# EXPERIMENT_CONDITION starts with 0, and is incremented for each build. The file %.experiment.h must signal the final
+# build by returning an error using the compiler directive "#error No more experiment conditions.".
 experiment//% : %.experiment %.experiment.h | %.results
-	# First, take a snapshot of the system profile
-	(uname -a; \
+	(date; \
+			uname -a; \
 			which -s system_profiler && system_profiler -detailLevel mini SPHardwareDataType;) \
 		| tee $*.results/system_profile.log; \
-	# Then, run the experiment
 	for ((EXPERIMENT_CONDITION=0; ; EXPERIMENT_CONDITION++)); do \
 		if $(CC) -DEXPERIMENT_CONDITION=$$EXPERIMENT_CONDITION -E $(CURDIR)/$*.experiment.h 2>&1 \
 				| grep -q "No more experiment conditions."; then \
@@ -45,6 +47,7 @@ experiment//% : %.experiment %.experiment.h | %.results
 		fi; \
 		$(MAKE) \
 			MIX_GOAL=$(MIX_GOAL) \
+			MIX_COMB=$(MIX_COMB) \
 			MIX_EXTRAFLAGS="-DEXPERIMENT_CONDITION=$$EXPERIMENT_CONDITION -include $(CURDIR)/$*.experiment.h" \
 			mix//$*.experiment 2>&1 | tee $*.results/$*.$$EXPERIMENT_CONDITION.log; \
 	done;
@@ -67,9 +70,11 @@ clean-experiment//% : %.experiment.patch %.experiment.h
 	$(RM) -r $*.experiment $*.results
 
 
-# Rebuild and run Mix on the target.
-mix//% : MAKEGOALS=CC="$(MIX)" clean $(MIX_GOAL)
-mix//% : make//% ;
+# Rebuild and run Mix on the target. Do it in two passes, since running Cil's merger and Mix's analysis in one pass
+# is unreliable (Cil's merger does not seem to merge all Cil metadata correctly).
+mix//% : MAKEGOALS=CC="$(MIX.merge)" clean $(MIX_GOAL)
+mix//% : make//%
+	$(MIX.mix) $*/$(MIX_COMB)
 
 
 .PRECIOUS : %/Makefile
