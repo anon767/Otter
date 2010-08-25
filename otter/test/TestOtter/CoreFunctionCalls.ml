@@ -355,10 +355,12 @@ let undefined_calls_testsuite = "Undefined calls" >:::
     let test_undefined_calls content ?label name =
         test_otter_core content ?label
             begin function
-                | [ Abandoned (msg, loc, result) ] when msg = "Function "^name^" not found." ->
+                | [ Abandoned (`Failure msg, loc, result) ] when msg = "Function "^name^" not found." ->
                     ()
-                | [ Abandoned (msg, loc, result) ] ->
-                    assert_failure "Expected a single Abandoned reporting \"Function %s not found\",@ but got Abandoned reporting %s" name msg
+                | [ Abandoned (`Failure msg, loc, result) ] ->
+                    assert_failure "Expected a single Abandoned `Failure \"Function %s not found\",@ but got Abandoned `Failure %s" name msg
+                | [ Abandoned (_, loc, result) ] ->
+                    assert_failure "Expected a single Abandoned `Failure \"Function %s not found\",@ but got another Abandoned" name
                 | [ _ ] ->
                     assert_failure "Expected a single Abandoned, but got another completion result"
                 | [] ->

@@ -20,7 +20,7 @@ let test_otter_on_file
         ?(main_loop=Driver.run)
         ?(command_line=[])
         ?(has_failing_assertions=false)
-        (test : Types.job_completion list -> unit) =
+        (test : _ Types.job_completion list -> unit) =
     fun () ->
         (* reset the error flag and suppress all output from the symbolic executor *)
         Errormsg.hadErrors := false;

@@ -86,7 +86,7 @@ let results_printer =
     let completion_printer ff = function
         | Types.Exit (exit_opt, _) -> Format.fprintf ff "Exit(@[%a@])" (option_printer BytesPrinter.bytes) exit_opt
         | Types.Return (return_opt, _) -> Format.fprintf ff "Return(@[%a@])" (option_printer BytesPrinter.bytes) return_opt
-        | Types.Abandoned (msg, loc, _) -> Format.fprintf ff "Abandoned(\"@[%s@@%d: %s@]\")" loc.Cil.file loc.Cil.line msg
+        | Types.Abandoned (`Failure msg, loc, _) -> Format.fprintf ff "Abandoned(`Failure \"@[%s@@%d: %s@]\")" loc.Cil.file loc.Cil.line msg
         | Types.Truncated (left, right) -> Format.fprintf ff "Truncated(...)"
     in
     list_printer completion_printer "@\n"
@@ -190,7 +190,7 @@ let expect_abandoned file loc reason asserts results k =
     let reason' = Str.regexp reason in
     let asserts' = assert_exps file loc asserts in
     let is_abandoned = function
-        | Types.Abandoned (reason, loc, result) -> Str.string_match reason' reason 0 && asserts' result None None
+        | Types.Abandoned (`Failure reason, loc, result) -> Str.string_match reason' reason 0 && asserts' result None None
         | _ -> false
     in
     match list_remove is_abandoned results with
