@@ -39,8 +39,8 @@ ocamlbuild//%.native : $(OCAMLBUILD_BUILDDIR)
 ocamlbuild//%.byte : $(OCAMLBUILD_BUILDDIR)
 	$(call OCAMLBUILD.build,$*.byte,$(OCAMLBUILD_PRODUCTDIR))
 
-ocamlbuild//%.cmx ocamlbuild//%.a ocamlbuild//%.cmo ocamlbuild//%.cmi : $(OCAMLBUILD_BUILDDIR)
-	$(call OCAMLBUILD.build,$*.cmx $*.a $*.cmo $*.cmi $(OCAMLBUILD_MORE_CMI),$(OCAMLBUILD_PRODUCTDIR))
+ocamlbuild//%.cmxa ocamlbuild//%.a ocamlbuild//%.cma ocamlbuild//%.cmi : $(OCAMLBUILD_BUILDDIR)
+	$(call OCAMLBUILD.build,$*.cmxa $*.a $*.cma $*.cmi $(OCAMLBUILD_MORE_CMI),$(OCAMLBUILD_PRODUCTDIR))
 
 ocamlbuild//%.dot : $(OCAMLBUILD_BUILDDIR)
 	$(call OCAMLBUILD.build,$*.dot,$(OCAMLBUILD_DOCDIR))
