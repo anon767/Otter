@@ -1,5 +1,4 @@
 open OcamlUtilities
-open OtterCore
 open Executeargs
 
 let print_report results =
