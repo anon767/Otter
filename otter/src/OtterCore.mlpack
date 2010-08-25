@@ -1,9 +1,9 @@
 OtterCore/BuiltinFunctions
+OtterCore/Coverage
 OtterCore/Driver
 OtterCore/Executeargs
 OtterCore/Executedebug
 OtterCore/Expression
-OtterCore/GetProgInfo
 OtterCore/Interceptor
 OtterCore/MemOp
 OtterCore/Operator

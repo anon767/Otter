@@ -8,7 +8,7 @@ open Types
 open Interceptor
 
 
-let unreachable_global varinfo = not (GetProgInfo.VarinfoSet.mem varinfo (!GetProgInfo.reachable_globals))
+let unreachable_global varinfo = not (Coverage.VarinfoSet.mem varinfo (!Coverage.reachable_globals))
 
 let init_symbolic_pointer state varinfo size =
 	(* TODO: what's the right size?
@@ -211,11 +211,11 @@ let prepare_file file =
 	end;
 
 	if Executeargs.run_args.arg_noinit_unreachable_globals then
-		GetProgInfo.computeReachableCode file;
+		Coverage.computeReachableCode file;
 
 	(* Find all lines, blocks, edges, and conditions. *)
 	(* TODO: wrap the listings of Lines,Edges,etc... *)
-	let setOfLines, setOfBlocks, setOfEdges, setOfConds = GetProgInfo.getProgInfo file run_args.arg_fns in
+	let setOfLines, setOfBlocks, setOfEdges, setOfConds = Coverage.getProgInfo file run_args.arg_fns in
 	run_args.arg_num_lines <- LineSet.cardinal setOfLines;
 	run_args.arg_num_blocks <- StmtInfoSet.cardinal setOfBlocks;
 	run_args.arg_num_edges <- EdgeSet.cardinal setOfEdges;

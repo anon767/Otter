@@ -24,7 +24,7 @@ let get_job_loc job =
 
 let stmtInfo_of_job job =
 	{ siFuncName = (List.hd job.state.callstack).svar.vname;
-		siStmt = GetProgInfo.stmtAtEndOfBlock job.stmt; }
+		siStmt = Coverage.stmtAtEndOfBlock job.stmt; }
 
 (** Return a new exHist with
 		- block coverage updated by the addition of the statement at the
@@ -61,12 +61,12 @@ let addStmtCoverage job whichBranch nextStmtOpt =
 				if run_args.arg_edge_coverage
 				then (
 					match nextStmtOpt with
-							Some nextStmt when job.stmt == GetProgInfo.stmtAtEndOfBlock job.stmt ->
+							Some nextStmt when job.stmt == Coverage.stmtAtEndOfBlock job.stmt ->
 									let funcName = (List.hd job.state.callstack).svar.vname in
 									EdgeSet.add
 										({ siFuncName = funcName; siStmt = job.stmt; },
 										 { siFuncName = funcName;
-											 siStmt = GetProgInfo.stmtAtEndOfBlock nextStmt; })
+											 siStmt = Coverage.stmtAtEndOfBlock nextStmt; })
 										job.exHist.coveredEdges
 						| _ -> job.exHist.coveredEdges
 				) else EdgeSet.empty;
@@ -78,7 +78,7 @@ let addStmtCoverage job whichBranch nextStmtOpt =
 						| _ -> job.exHist.coveredConds
 				) else CondSet.empty;
 			executionPath =
-				if run_args.arg_path_coverage && job.stmt == GetProgInfo.stmtAtEndOfBlock job.stmt
+				if run_args.arg_path_coverage && job.stmt == Coverage.stmtAtEndOfBlock job.stmt
 				then (
 					{ siFuncName = (List.hd job.state.callstack).svar.vname; siStmt = job.stmt; } :: job.exHist.executionPath
 				) else (
