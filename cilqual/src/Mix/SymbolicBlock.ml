@@ -113,7 +113,7 @@ module Interpreter (S : Config.BlockConfig) = struct
 
             if abandoned != [] then begin
                 let printer ff abandoned = ignore begin List.iter begin fun (s, l, b) ->
-                    Format.fprintf ff "@[%s:%d: %s@]@\n" l.Cil.file l.Cil.line s;
+                    Format.fprintf ff "@[%s:%d: %a@]@\n" l.Cil.file l.Cil.line Report.abandoned_reason s;
                 end abandoned end in
 
                 Format.eprintf "@.";

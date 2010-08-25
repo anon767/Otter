@@ -7,6 +7,7 @@ open TypedBlock.GOps
 open TypedBlock.DiscreteSolver
 open TypedBlock
 
+open OcamlUtilities
 open OtterBytes
 open OtterCore
 
@@ -149,13 +150,14 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
                             return block_errors
                         end
 
-                    | Types.Abandoned (msg, loc, result), None ->
+                    | Types.Abandoned (reason, loc, result), None ->
                         Format.fprintf Format.str_formatter
-                            "Block errors returning from TypedSymbolic at %s: %s"
-                            fn.Cil.svar.Cil.vname msg;
+                            "Block errors returning from TypedSymbolic at %s: %a"
+                            fn.Cil.svar.Cil.vname Report.abandoned_reason reason;
                         Format.eprintf
-                            "Block errors returning from TypedSymbolic at %s: %s@."
-                            fn.Cil.svar.Cil.vname msg;
+                            "Block errors returning from TypedSymbolic at %s: %a@."
+                            fn.Cil.svar.Cil.vname Report.abandoned_reason reason;
+                        let msg = FormatPlus.as_string Report.abandoned_reason reason in
                         return ((Format.flush_str_formatter (), loc, `TypedSymbolicError (result, msg))::block_errors)
 
                     | Types.Abandoned _, Some e ->

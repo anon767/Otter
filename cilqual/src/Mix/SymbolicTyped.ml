@@ -105,7 +105,7 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
                         Types.result_history = job.Types.exHist;
                     } in
                     let msg = "Block errors returning from SymbolicTyped at " ^ fn.Cil.svar.Cil.vname in
-                    k stack [ (Types.Abandoned (msg, loc, result),
+                    k stack [ (Types.Abandoned (`Failure msg, loc, result),
                                Some (msg, loc, `SymbolicTypedError (result, block_errors))) ]
 
                 end else begin
@@ -138,7 +138,7 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
                             DiscreteSolver.Explanation.printer explanation;
 
                         let msg = Format.flush_str_formatter () in
-                        let completed loc = [ (Types.Abandoned (msg, loc, result), None) ] in
+                        let completed loc = [ (Types.Abandoned (`Failure msg, loc, result), None) ] in
 
                         (* cache the result and return *)
                         let stack = cache stack fn context completed in
@@ -209,7 +209,8 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
                 "Unsatisfiable solution for context entering SymbolicTyped at %s:@\n  @[%a@]@."
                 fn.Cil.svar.Cil.vname
                 DiscreteSolver.Explanation.printer explanation;
-            k stack [ (Types.Abandoned (Format.flush_str_formatter (), loc, result),
+            let msg = Format.flush_str_formatter () in
+            k stack [ (Types.Abandoned (`Failure msg, loc, result),
                        None) ]
 
         end else begin
