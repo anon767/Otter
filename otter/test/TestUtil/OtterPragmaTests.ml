@@ -15,10 +15,13 @@
         - [#pragma expect_exit(<assertion expression>, ...)] specifies that there should be a {!Types.Exit} in which
             a list of assertions hold. The first matching result will be removed from further processing.
             E.g., [#pragma expect_exit(x == 1, y == __exit_code__, z == 1)].
-        - [#pragma expect_abandoned(<reason as an regular expression string>, <assertion expression>, ...)]
-            specifies that there should be a {!Types.Abandoned} of a particular reason in which a list of assertions
-            hold. The first matching result will be removed from further processing.
-            E.g., [#pragma expect_abandoned("Function .* not found", x == 1, y == 2, z == 3)].
+        - [#pragma expect_abandoned(<reason>, <assertion expression>, ...)] specifies that there should be a
+            {!Types.Abandoned} of a particular reason in which a list of assertions hold. The first matching result
+            will be removed from further processing. Reasons include: {ul
+                {- [failure("<regular expression>")] for [`Failure msg] reason, where the argument is a regular
+                    expression as a string to match [msg]. E.g.,
+                    [#pragma expect_abandoned(failure("Function .* not found"), x == 1, y == 2, z == 3)].}
+            }
         - [#pragma no_other_return] specifies that no other {!Types.Return} should be in the remaining results.
         - [#pragma no_other_exit] specifies that no other {!Types.Exit} should be in the remaining results.
         - [#pragma no_other_abandoned] specifies that no other {!Types.Abandoned} should be in the remaining results.
@@ -185,22 +188,22 @@ let expect_exit file loc asserts results k =
                 attrparams_printer asserts results_printer results
 
 
-(** CPS test that the results contains a {!Types.Abandoned} with a specific reason, passing the remaining results to the next test. *)
-let expect_abandoned file loc reason asserts results k =
+(** CPS test that the results contains a {!Types.Abandoned} with a [`Failure] reason, passing the remaining results to the next test. *)
+let expect_abandoned_failure file loc reason asserts results k =
     let reason' = Str.regexp reason in
     let asserts' = assert_exps file loc asserts in
-    let is_abandoned = function
+    let is_abandoned_failure = function
         | Types.Abandoned (`Failure reason, loc, result) -> Str.string_match reason' reason 0 && asserts' result None None
         | _ -> false
     in
-    match list_remove is_abandoned results with
+    match list_remove is_abandoned_failure results with
         | Some (_, results) ->
             k results
         | None when asserts = [] ->
-            assert_loc_failure file loc "@[Did not find Abandoned with reason:@\n  %s@\nGot:@\n  @[%a@]@]"
+            assert_loc_failure file loc "@[Did not find Abandoned `Failure with reason:@\n  %s@\nGot:@\n  @[%a@]@]"
                 reason results_printer results
         | None ->
-            assert_loc_failure file loc "@[Did not find Abandoned with reason:@\n  %s@\nand assertions:@\n  @[%a@]@\nGot:@\n  @[%a@]@]"
+            assert_loc_failure file loc "@[Did not find Abandoned `Failure with reason:@\n  %s@\nand assertions:@\n  @[%a@]@\nGot:@\n  @[%a@]@]"
                 reason attrparams_printer asserts results_printer results
 
 
@@ -259,10 +262,12 @@ let parse_pragmas file =
                 | "expect_exit", asserts ->
                     (flags, test >>> expect_exit file loc asserts)
 
-                | "expect_abandoned", (Cil.AStr reason)::asserts ->
-                    (flags, test >>> expect_abandoned file loc reason asserts)
+                | "expect_abandoned", (Cil.ACons ("failure", [ Cil.AStr reason ]))::asserts ->
+                    (flags, test >>> expect_abandoned_failure file loc reason asserts)
+                | "expect_abandoned", (Cil.ACons ("failure", _))::asserts ->
+                    assert_loc_failure file loc "Invalid failure (should have exactly one regex string argument to match the failure reason)."
                 | "expect_abandoned", _ ->
-                    assert_loc_failure file loc "Invalid expect_abandoned (first argument should be a regex string to match the abandoned reason)."
+                    assert_loc_failure file loc "Invalid expect_abandoned (first argument should be one of: failure(...))."
 
                 | "no_other_return", [] ->
                     (flags, test >>> no_other_return file loc)

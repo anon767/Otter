@@ -557,28 +557,6 @@ let expect_exit_testsuite = "expect_exit" >::: [
 ]
 
 let expect_abandoned_testsuite = "expect_abandoned" >::: [
-    should_pass_pragma_tests ~label:"One abandoned due to failing assertion"
-        "#pragma has_failing_assertions
-        #pragma expect_abandoned(\"Assertion was false\")
-        int main(void) {
-            __ASSERT(0);
-            return 0;
-        }";
-
-    should_pass_pragma_tests ~label:"One abandoned due to bad dereference"
-        "#pragma expect_abandoned(\"Dereference something not an address\")
-        int main(void) {
-            int *x = 0, y = *x;
-            return 0;
-        }";
-
-    should_pass_pragma_tests ~label:"One abandoned due to missing function"
-        "#pragma expect_abandoned(\"Function .* not found\")
-        int main(void) {
-            foo();
-            return 0;
-        }";
-
     should_fail_pragma_tests ~label:"No parameter list"
         "#pragma expect_abandoned
         int main(void) {
@@ -592,37 +570,75 @@ let expect_abandoned_testsuite = "expect_abandoned" >::: [
             foo();
             return 0;
         }";
+]
 
-    should_fail_pragma_tests ~label:"One abandoned but exit"
-        "#pragma expect_abandoned(\"\")
+let expect_abandoned_failure_testsuite = "expect_abandoned(failure(...))" >::: [
+    should_pass_pragma_tests ~label:"One abandoned failure due to failing assertion"
+        "#pragma has_failing_assertions
+        #pragma expect_abandoned(failure(\"Assertion was false\"))
         int main(void) {
-            _exit(0);
+            __ASSERT(0);
             return 0;
         }";
 
-    should_fail_pragma_tests ~label:"One abandoned but return"
-        "#pragma expect_abandoned(\"\")
+    should_pass_pragma_tests ~label:"One abandoned failure due to bad dereference"
+        "#pragma expect_abandoned(failure(\"Dereference something not an address\"))
         int main(void) {
+            int *x = 0, y = *x;
             return 0;
         }";
 
-    should_fail_pragma_tests ~label:"One abandoned checking invalid __return_code__"
-        "#pragma expect_abandoned(\"\", __return_code__ == 0)
+    should_pass_pragma_tests ~label:"One abandoned failure due to missing function"
+        "#pragma expect_abandoned(failure(\"Function .* not found\"))
+        int main(void) {
+            foo();
+            return 0;
+        }";
+
+    should_fail_pragma_tests ~label:"No abandoned failure parameter list"
+        "#pragma expect_abandoned(failure)
         int main(void) {
             foo();
             return 0;
         }";
 
-    should_fail_pragma_tests ~label:"One abandoned checking invalid __exit_code__"
-        "#pragma expect_abandoned(\"\", __exit_code__ == 0)
+    should_fail_pragma_tests ~label:"Empty abandoned failure parameter list"
+        "#pragma expect_abandoned(failure())
+        int main(void) {
+            foo();
+            return 0;
+        }";
+
+    should_fail_pragma_tests ~label:"One abandoned failure but exit"
+        "#pragma expect_abandoned(failure(\"\"))
+        int main(void) {
+            _exit(0);
+            return 0;
+        }";
+
+    should_fail_pragma_tests ~label:"One abandoned failure but return"
+        "#pragma expect_abandoned(failure(\"\"))
+        int main(void) {
+            return 0;
+        }";
+
+    should_fail_pragma_tests ~label:"One abandoned failure checking invalid __return_code__"
+        "#pragma expect_abandoned(failure(\"\"), __return_code__ == 0)
+        int main(void) {
+            foo();
+            return 0;
+        }";
+
+    should_fail_pragma_tests ~label:"One abandoned failure checking invalid __exit_code__"
+        "#pragma expect_abandoned(failure(\"\"), __exit_code__ == 0)
         int main(void) {
             foo();
             _exit(0);
             return 0;
         }";
 
-    should_pass_pragma_tests ~label:"One abandoned checking global variable"
-        "#pragma expect_abandoned(\"\", x == 1)
+    should_pass_pragma_tests ~label:"One abandoned failure checking global variable"
+        "#pragma expect_abandoned(failure(\"\"), x == 1)
         int x;
         int main(void) {
             x = 1;
@@ -630,8 +646,8 @@ let expect_abandoned_testsuite = "expect_abandoned" >::: [
             return 0;
         }";
 
-    should_fail_pragma_tests ~label:"One abandoned checking global variable but fails"
-        "#pragma expect_abandoned(\"\", x == 2)
+    should_fail_pragma_tests ~label:"One abandoned failure checking global variable but fails"
+        "#pragma expect_abandoned(failure(\"\"), x == 2)
         int x;
         int main(void) {
             x = 1;
@@ -639,15 +655,15 @@ let expect_abandoned_testsuite = "expect_abandoned" >::: [
             return 0;
         }";
 
-    should_fail_pragma_tests ~label:"One abandoned checking invalid global variable"
-        "#pragma expect_abandoned(\"\", x == 1)
+    should_fail_pragma_tests ~label:"One abandoned failure checking invalid global variable"
+        "#pragma expect_abandoned(failure(\"\"), x == 1)
         int main(void) {
             foo();
             return 0;
         }";
 
-    should_pass_pragma_tests ~label:"One abandoned checking two global variables"
-        "#pragma expect_abandoned(\"\", x == 1, y == 2)
+    should_pass_pragma_tests ~label:"One abandoned failure checking two global variables"
+        "#pragma expect_abandoned(failure(\"\"), x == 1, y == 2)
         int x, y;
         int main(void) {
             x = 1;
@@ -656,8 +672,8 @@ let expect_abandoned_testsuite = "expect_abandoned" >::: [
             return 0;
         }";
 
-    should_pass_pragma_tests ~label:"One abandoned comparing two global variables"
-        "#pragma expect_abandoned(\"\", x < y)
+    should_pass_pragma_tests ~label:"One abandoned failure comparing two global variables"
+        "#pragma expect_abandoned(failure(\"\"), x < y)
         int x, y;
         int main(void) {
             x = 1;
@@ -666,8 +682,8 @@ let expect_abandoned_testsuite = "expect_abandoned" >::: [
             return 0;
         }";
 
-    should_fail_pragma_tests ~label:"One abandoned comparing two global variables but fails"
-        "#pragma expect_abandoned(\"\", x > y)
+    should_fail_pragma_tests ~label:"One abandoned failure comparing two global variables but fails"
+        "#pragma expect_abandoned(failure(\"\"), x > y)
         int x, y;
         int main(void) {
             x = 1;
@@ -676,8 +692,8 @@ let expect_abandoned_testsuite = "expect_abandoned" >::: [
             return 0;
         }";
 
-    should_pass_pragma_tests ~label:"One abandoned checking one global variable shadowed by local variable"
-        "#pragma expect_abandoned(\"\", x == 1)
+    should_pass_pragma_tests ~label:"One abandoned failure checking one global variable shadowed by local variable"
+        "#pragma expect_abandoned(failure(\"\"), x == 1)
         int x = 1;
         int main(void) {
             int x = 2;
@@ -685,26 +701,26 @@ let expect_abandoned_testsuite = "expect_abandoned" >::: [
             return 0;
         }";
 
-    should_fail_pragma_tests ~label:"One abandoned but expecting two"
-        "#pragma expect_abandoned(\"\")
-        #pragma expect_abandoned(\"\")
+    should_fail_pragma_tests ~label:"One abandoned failure but expecting two"
+        "#pragma expect_abandoned(failure(\"\"))
+        #pragma expect_abandoned(failure(\"\"))
         int main(void) {
             foo();
             return 0;
         }";
 
-    should_pass_pragma_tests ~label:"Two abandoned"
-        "#pragma expect_abandoned(\"\")
-        #pragma expect_abandoned(\"\")
+    should_pass_pragma_tests ~label:"Two abandoned failure"
+        "#pragma expect_abandoned(failure(\"\"))
+        #pragma expect_abandoned(failure(\"\"))
         int main(void) {
             if (__SYMBOLIC()) foo();
             foo();
             return 2;
         }";
 
-    should_pass_pragma_tests ~label:"Two abandoned checking global variable"
-        "#pragma expect_abandoned(\"\", x == 0)
-        #pragma expect_abandoned(\"\", x == 1)
+    should_pass_pragma_tests ~label:"Two abandoned failure checking global variable"
+        "#pragma expect_abandoned(failure(\"\"), x == 0)
+        #pragma expect_abandoned(failure(\"\"), x == 1)
         int x;
         int main(void) {
             if (__SYMBOLIC()) x = 0;
@@ -713,9 +729,9 @@ let expect_abandoned_testsuite = "expect_abandoned" >::: [
             return 2;
         }";
 
-    should_pass_pragma_tests ~label:"Two abandoned checking global variable (swapped)"
-        "#pragma expect_abandoned(\"\", x == 1)
-        #pragma expect_abandoned(\"\", x == 0)
+    should_pass_pragma_tests ~label:"Two abandoned failure checking global variable (swapped)"
+        "#pragma expect_abandoned(failure(\"\"), x == 1)
+        #pragma expect_abandoned(failure(\"\"), x == 0)
         int x;
         int main(void) {
             if (__SYMBOLIC()) x = 0;
@@ -724,9 +740,9 @@ let expect_abandoned_testsuite = "expect_abandoned" >::: [
             return 2;
         }";
 
-    should_fail_pragma_tests ~label:"Two abandoned checking global variable but one fails"
-        "#pragma expect_abandoned(\"\", x == 0)
-        #pragma expect_abandoned(\"\", x == 2)
+    should_fail_pragma_tests ~label:"Two abandoned failure checking global variable but one fails"
+        "#pragma expect_abandoned(failure(\"\"), x == 0)
+        #pragma expect_abandoned(failure(\"\"), x == 2)
         int x;
         int main(void) {
             if (__SYMBOLIC()) x = 0;
@@ -735,9 +751,9 @@ let expect_abandoned_testsuite = "expect_abandoned" >::: [
             return 2;
         }";
 
-    should_fail_pragma_tests ~label:"Two abandoned checking global variable but one fails (swapped)"
-        "#pragma expect_abandoned(x == 2)
-        #pragma expect_abandoned(x == 0)
+    should_fail_pragma_tests ~label:"Two abandoned failure checking global variable but one fails (swapped)"
+        "#pragma expect_abandoned(failure(\"\"), x == 2)
+        #pragma expect_abandoned(failure(\"\"), x == 0)
         int x;
         int main(void) {
             if (__SYMBOLIC()) x = 0;
@@ -746,9 +762,9 @@ let expect_abandoned_testsuite = "expect_abandoned" >::: [
             return 2;
         }";
 
-    should_fail_pragma_tests ~label:"Two abandoned checking global variable but both fails"
-        "#pragma expect_abandoned(x == 2)
-        #pragma expect_abandoned(x == 3)
+    should_fail_pragma_tests ~label:"Two abandoned failure checking global variable but both fails"
+        "#pragma expect_abandoned(failure(\"\"), x == 2)
+        #pragma expect_abandoned(failure(\"\"), x == 3)
         int x;
         int main(void) {
             if (__SYMBOLIC()) x = 0;
@@ -757,9 +773,9 @@ let expect_abandoned_testsuite = "expect_abandoned" >::: [
             return 2;
         }";
 
-    should_fail_pragma_tests ~label:"Two exits, checking different global variables, but matching the same path"
-        "#pragma expect_abandoned(x == 0)
-        #pragma expect_abandoned(y == 1)
+    should_fail_pragma_tests ~label:"Two abandoned failure, checking different global variables, but matching the same path"
+        "#pragma expect_abandoned(failure(\"\"), x == 0)
+        #pragma expect_abandoned(failure(\"\"), y == 1)
         int x, y;
         int main(void) {
             if (__SYMBOLIC()) { x = 0; y = 1; }
@@ -768,9 +784,9 @@ let expect_abandoned_testsuite = "expect_abandoned" >::: [
             return 4;
         }";
 
-    should_fail_pragma_tests ~label:"Two exits, checking different global variables, but matching the same path (swapped)"
-        "#pragma expect_abandoned(y == 1)
-        #pragma expect_abandoned(x == 0)
+    should_fail_pragma_tests ~label:"Two abandoned failure, checking different global variables, but matching the same path (swapped)"
+        "#pragma expect_abandoned(failure(\"\"), y == 1)
+        #pragma expect_abandoned(failure(\"\"), x == 0)
         int x, y;
         int main(void) {
             if (__SYMBOLIC()) { x = 0; y = 1; }
@@ -871,7 +887,7 @@ let no_other_abandoned_testsuite = "no_other_abandoned" >::: [
         }";
 
     should_pass_pragma_tests ~label:"One abandoned only"
-        "#pragma expect_abandoned(\"\")
+        "#pragma expect_abandoned(failure(\"\"))
         #pragma no_other_abandoned
         int main(void) {
             foo();
@@ -879,7 +895,7 @@ let no_other_abandoned_testsuite = "no_other_abandoned" >::: [
         }";
 
     should_fail_pragma_tests ~label:"One abandoned but got two"
-        "#pragma expect_abandoned(\"\")
+        "#pragma expect_abandoned(failure(\"\"))
         #pragma no_other_abandoned
         int main(void) {
             if (__SYMBOLIC()) foo();
@@ -889,15 +905,15 @@ let no_other_abandoned_testsuite = "no_other_abandoned" >::: [
 
     should_fail_pragma_tests ~label:"Expected no other abandoned before one abandoned"
         "#pragma no_other_abandoned
-        #pragma expect_abandoned(\"\")
+        #pragma expect_abandoned(failure(\"\"))
         int main(void) {
             foo();
             return 0;
         }";
 
     should_pass_pragma_tests ~label:"Two abandoned only"
-        "#pragma expect_abandoned(\"\")
-        #pragma expect_abandoned(\"\")
+        "#pragma expect_abandoned(failure(\"\"))
+        #pragma expect_abandoned(failure(\"\"))
         #pragma no_other_abandoned
         int main(void) {
             if (__SYMBOLIC()) foo();
@@ -929,7 +945,7 @@ let no_other_results_testsuite = "no_other_results" >::: [
         }";
 
     should_pass_pragma_tests ~label:"One abandoned only"
-        "#pragma expect_abandoned(\"\")
+        "#pragma expect_abandoned(failure(\"\"))
         #pragma no_other_results
         int main(void) {
             foo();
@@ -954,7 +970,7 @@ let no_other_results_testsuite = "no_other_results" >::: [
         }";
 
     should_fail_pragma_tests ~label:"One abandoned but got two"
-        "#pragma expect_abandoned(\"\")
+        "#pragma expect_abandoned(failure(\"\"))
         #pragma no_other_results
         int main(void) {
             if (__SYMBOLIC()) foo();
@@ -979,7 +995,7 @@ let no_other_results_testsuite = "no_other_results" >::: [
 
     should_fail_pragma_tests ~label:"Expected no other results before one abandoned"
         "#pragma no_other_results
-        #pragma expect_abandoned(\"\")
+        #pragma expect_abandoned(failure(\"\"))
         int main(void) {
             foo();
             return 0;
@@ -996,7 +1012,7 @@ let no_other_results_testsuite = "no_other_results" >::: [
 
     should_pass_pragma_tests ~label:"One exit, one abandoned only"
         "#pragma expect_exit()
-        #pragma expect_abandoned(\"\")
+        #pragma expect_abandoned(failure(\"\"))
         #pragma no_other_results
         int main(void) {
             if (__SYMBOLIC()) _exit(0);
@@ -1006,7 +1022,7 @@ let no_other_results_testsuite = "no_other_results" >::: [
 
     should_pass_pragma_tests ~label:"One return, one abandoned only"
         "#pragma expect_return()
-        #pragma expect_abandoned(\"\")
+        #pragma expect_abandoned(failure(\"\"))
         #pragma no_other_results
         int main(void) {
             if (__SYMBOLIC()) foo();
@@ -1016,7 +1032,7 @@ let no_other_results_testsuite = "no_other_results" >::: [
     should_pass_pragma_tests ~label:"One return, one exit, one abandoned only"
         "#pragma expect_return()
         #pragma expect_exit()
-        #pragma expect_abandoned(\"\")
+        #pragma expect_abandoned(failure(\"\"))
         #pragma no_other_results
         int main(void) {
             if (__SYMBOLIC()) foo();
@@ -1031,6 +1047,7 @@ let testsuite = "OtterPragmaTests" >::: [
     expect_return_testsuite;
     expect_exit_testsuite;
     expect_abandoned_testsuite;
+    expect_abandoned_failure_testsuite;
     no_other_return_testsuite;
     no_other_exit_testsuite;
     no_other_abandoned_testsuite;
