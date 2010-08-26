@@ -2,7 +2,7 @@ open OcamlUtilities
 open Executeargs
 
 let abandoned_reason ff = function
-    | `Failure msg -> Format.fprintf ff "`Failure %s" msg
+    | `Failure msg -> Format.fprintf ff "`Failure:%s" msg
 
 let print_report results =
 	let coverage, completed, truncated, abandoned =
