@@ -1,0 +1,103 @@
+#ifndef _OTTER_FS_H
+#define _OTTER_FS_H
+
+#define __otter_fs_BLOCK_SIZE 256
+#define __otter_fs_PIPE_SIZE 1024 /* this is often 64k, but that would be too big for Otter to have lots of copies of */
+
+#define __otter_fs_TYP_FILE 0
+#define __otter_fs_TYP_DIR 1
+
+#define __otter_fs_TYP_FIFO 0x0040
+#define __otter_fs_TYP_TTY  0x00C0
+#define __otter_fs_TYP_NULL 0x0140
+
+#define __otter_fs_IS_TYP_SPECIAL(x) = ((x) & 64)
+
+#define __otter_fs_STATUS_OK 0
+#define __otter_fs_STATUS_EOF 1
+
+#define NULL 0
+
+struct __otter_fs_block;
+struct __otter_fs_inode;
+struct __otter_fs_filelist;
+struct __otter_fs_dirlist;
+struct __otter_fs_dnode;
+
+struct __otter_fs_inode
+{
+	int linkno;
+	int size;
+	int numblocks;
+	int type;
+	int permissions;
+	char* data;
+};
+
+struct __otter_fs_filelist
+{
+	char* name;
+	struct __otter_fs_inode* inode;
+	struct __otter_fs_filelist* next;
+};
+
+struct __otter_fs_dirlist
+{
+	char* name;
+	struct __otter_fs_dnode* dnode;
+	struct __otter_fs_dirlist* next;
+};
+
+struct __otter_fs_dnode
+{
+	int linkno;
+	int numdirs;
+	int numfiles;
+	struct __otter_fs_dirlist* dirs;
+	struct __otter_fs_filelist* files;
+	int permissions;
+};
+
+struct __otter_fs_dnode* __otter_fs_root;
+struct __otter_fs_dnode* __otter_fs_pwd;
+
+struct __otter_fs_inode* __otter_fs_find_inode_in_dir(const char* name, struct __otter_fs_dnode* dir);
+struct __otter_fs_dnode* __otter_fs_find_dnode_in_dir(const char* name, struct __otter_fs_dnode* dir);
+struct __otter_fs_inode* __otter_fs_find_inode_in_tree(const char* name, struct __otter_fs_dnode* tree);
+struct __otter_fs_dnode* __otter_fs_find_dnode_in_tree(const char* name, struct __otter_fs_dnode* tree);
+struct __otter_fs_inode* __otter_fs_find_inode(const char* name);
+struct __otter_fs_dnode* __otter_fs_find_dnode(const char* name);
+
+struct __otter_fs_ft
+{
+	int mode;
+	int offset;
+	int type;
+	void* vnode;
+	int openno;
+	int status;
+};
+
+int* __otter_fs_files;
+struct __otter_fs_ft* __otter_fs_open_files;
+
+int __otter_fs_next_fd();
+int __otter_fs_next_global_fd();
+int __otter_fs_open_file(struct __otter_fs_inode* inode, int mode);
+int __otter_fs_open_dir(struct __otter_fs_dnode* dnode, int mode);
+struct __otter_fs_inode* __otter_fs_get_inode_from_fd(int file);
+struct __otter_fs_dnode* __otter_fs_get_dnode_from_fd(int file);
+
+int __otter_fs_legal_name(const char* name);
+
+struct __otter_fs_dnode* __otter_fs_chmod_dir(int mode, struct __otter_fs_dnode* dir);
+struct __otter_fs_inode* __otter_fs_chmod_file(int mode, struct __otter_fs_inode* file);
+struct __otter_fs_dnode* __otter_fs_mkdir(const char* name, struct __otter_fs_dnode* dir);
+struct __otter_fs_inode* __otter_fs_touch(const char* name, struct __otter_fs_dnode* dir);
+struct __otter_fs_inode* __otter_fs_link_file(const char* name, struct __otter_fs_inode* target, struct __otter_fs_dnode* dir);
+struct __otter_fs_dnode* __otter_fs_link_dir(const char* name, struct __otter_fs_dnode* target, struct __otter_fs_dnode* dir);
+
+void __otter_fs_mount();
+
+#endif
+

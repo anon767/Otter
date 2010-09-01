@@ -44,10 +44,10 @@ int srand();
 
 /* Memory managment (7.20.3) */
 void* malloc(int bytes);
-void* calloc(int amount, int bytes);
-void* realloc(void* ptr, int bytes);
+void* calloc(size_t amount, size_t bytes);
+void* realloc(void* ptr, size_t bytes);
 void free(void* ptr);
-int __libc_get_block_size(void* ptr);
+size_t __libc_get_block_size(void* ptr);
 
 /* System environment (7.20.4) */
 #define EXIT_FAILURE 1
@@ -60,8 +60,8 @@ char* getenv(const char* name);
 int system(const char* command);
 
 /* Search and Sort (7.20.5) */
-void* bsearch(const void* key, const void* base, int nmemb, int size, int (*compar)(const void*, const void*));
-void qsort(void* base, int nmemb, int size, int (*compar)(const void*, const void*));
+void* bsearch(const void* key, const void* base, size_t nmemb, size_t size, int (*compar)(const void*, const void*));
+void qsort(void* base, size_t nmemb, size_t size, int (*compar)(const void*, const void*));
 
 /* Integer arithmatic (7.20.6) */
 int abs(int i);
@@ -74,10 +74,10 @@ lldiv_t lldiv(long long p, long long q);
 
 /* Multibyte <-> wide char conversion functions (7.20.7, 7.20.8) */
 /* No multibyte character codes are defined so these are fancy type casts*/
-int mblen(const char* s, int n);
-int mbtowc(int* pwc, const char* s, int n);
-int wctomb(char* s, int wc);
-int mbstowcs(int* pwcs, const char* s, int n);
-int wcstombs(char* s, const int* pwcs, int n);
+int mblen(const char* s, size_t n);
+int mbtowc(wchar_t* pwc, const char* s, size_t n);
+int wctomb(char* s, wchar_t wc);
+size_t mbstowcs(wchar_t* pwcs, const char* s, size_t n);
+size_t wcstombs(char* s, const wchar_t* pwcs, size_t n);
 
 #endif

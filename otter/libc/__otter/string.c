@@ -1,6 +1,6 @@
 #include <string.h>
 
-void* __otter_libc_memcpy(void* s1, const void* s2, int n)
+void* __otter_libc_memcpy(void* s1, const void* s2, size_t n)
 {
 	if(s1 && s2 && n)
 	{
@@ -13,7 +13,7 @@ void* __otter_libc_memcpy(void* s1, const void* s2, int n)
 	return (s1);
 }
 
-void* __otter_libc_memmove(void* s1, const void* s2, int n)
+void* __otter_libc_memmove(void* s1, const void* s2, size_t n)
 {
 	if(s1 && s2 && n)
 	{
@@ -47,7 +47,7 @@ char* __otter_libc_strcpy(char* s1, const char* s2)
 	return (s1);
 }
 
-char* __otter_libc_strncpy(char* s1, const char* s2, int n)
+char* __otter_libc_strncpy(char* s1, const char* s2, size_t n)
 {
 	if(s1 && s2 && n)
 	{
@@ -81,7 +81,7 @@ char* __otter_libc_strcat(char* s1, const char* s2)
 	return (s1);
 }
 
-char* __otter_libc_strncat(char* s1, const char* s2, int n)
+char* __otter_libc_strncat(char* s1, const char* s2, size_t n)
 {
 	if(s1 && s2 && n)
 	{
@@ -100,7 +100,7 @@ char* __otter_libc_strncat(char* s1, const char* s2, int n)
 	return (s1);
 }
 
-int __otter_libc_memcmp(const void* s1, const void* s2, int n)
+int __otter_libc_memcmp(const void* s1, const void* s2, size_t n)
 {
 	if(s1 && s2 && n)
 	{
@@ -135,7 +135,7 @@ int __otter_libc_strcmp(const char* s1, const char* s2)
 	return (0);
 }
 
-/* locale is basically no used, so strcoll does nothing extra */
+/* locale is basically not used, so strcoll does nothing extra */
 int __otter_libc_strcoll(const char* s1, const char* s2)
 {
 	return strcmp(s1, s2);
@@ -166,7 +166,7 @@ int __otter_libc_strxfrm(char* s1, const char* s2, int n)
 }
 
 
-void* __otter_libc_memchr(const void* s, int c, int n)
+void* __otter_libc_memchr(const void* s, int c, size_t n)
 {
 	for(int i = 0; i < n; s++)
 	{
@@ -190,7 +190,7 @@ char* __otter_libc_strchr(const char* s, int c)
 	return (0);
 }
 
-int __otter_libc_strcspn(const char* s1, const char* s2)
+size_t __otter_libc_strcspn(const char* s1, const char* s2)
 {
 	int i = 0;
 	for(; ; i++)
@@ -220,7 +220,7 @@ char* __otter_libc_strrchr(const char* s, int c)
 	return strchr(s, c);
 }
 
-int __otter_libc_strspn(const char* s1, const char* s2)
+size_t __otter_libc_strspn(const char* s1, const char* s2)
 {
 	int i = 0;
 	for(; ; i++)
@@ -259,15 +259,8 @@ char* __otter_libc_strstr(const char* s1, const char* s2)
 	return (0);
 }
 
-char* __otter_libc_strtok(char* s1, const char* s2)
+char* __otter_libc_strtok_param(char* s, const char* s2)
 {
-	static char* s = 0;
-
-	if(s1)
-	{
-		s = s1;
-	}
-
 	s += strspn(s, s2); /* find end of seperator sequence */
 	if(*s == 0) /* only seperators left */
 		return (0);
@@ -279,7 +272,19 @@ char* __otter_libc_strtok(char* s1, const char* s2)
 	
 }
 
-void* memset(void* s, int c, int n)
+char* __otter_libc_strtok(char* s1, const char* s2)
+{
+	static char* s = 0;
+
+	if(s1)
+	{
+		s = s1;
+	}
+
+	return __otter_libc_strtok_param(s, s2);
+}
+
+void* __otter_libc_memset(void* s, int c, size_t n)
 {
 	for(int i = 0; i < n; i++)
 	{
@@ -288,12 +293,12 @@ void* memset(void* s, int c, int n)
 	return s;
 }
 
-char* strerror(int errnum)
+char* __otter_libc_strerror(int errnum)
 {
 	return "Error of some kind";
 }
 
-int strlen(const char* s)
+int __otter_libc_strlen(const char* s)
 {
 	int i = 0;
 	while(s[i] != 0)

@@ -4,3 +4,17 @@
 #include "ctype.c"
 #include "stdlib.c"
 #include "string.c"
+
+/* I/O */
+#include "otter_fs.c"
+#include "stat.c"
+#include "fcntl.c"
+#include "stdio.c"
+
+#include "unistd.c"
+
+__otter_libc_init()
+{
+	__otter_fs_mount();
+	return (0);
+}

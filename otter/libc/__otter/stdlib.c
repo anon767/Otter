@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <limits.h>
 #include <ctype.h>
+#include <unistd.h>
 
 int __otter_libc_atoi(const char* nptr)
 {
@@ -144,7 +145,7 @@ void __libc_srand(unsigned int seed)
 	__libc_rand_next = seed;
 }
 
-void* __otter_libc_calloc(int amount, int bytes)
+void* __otter_libc_calloc(size_t amount, size_t bytes)
 {
 	char *ptr = malloc(bytes * amount);
 	for(int i = 0; i < bytes * amount; i++)
@@ -155,7 +156,7 @@ void* __otter_libc_calloc(int amount, int bytes)
 	return (void*)ptr;
 }
 
-void* __otter_libc_realloc(void* ptr, int bytes)
+void* __otter_libc_realloc(void* ptr, size_t bytes)
 {
 	if (ptr == 0)
 		return malloc(bytes);
@@ -311,7 +312,7 @@ lldiv_t __otter_libc_lldiv(long long p, long long q)
  */
 
 /* the compar(a,b) > 0 iff a > b, < 0 iff a < b, and == 0 iff a == b */
-void* __otter_libc_bsearch(const void* key, const void* base, int nmemb, int size, int (*compar)(const void*, const void*))
+void* __otter_libc_bsearch(const void* key, const void* base, size_t nmemb, size_t size, int (*compar)(const void*, const void*))
 {
 	if(size <= 0) /* Standard says to return NULL if the objects have no size */
 	{
@@ -346,8 +347,8 @@ void* __otter_libc_bsearch(const void* key, const void* base, int nmemb, int siz
 }
 
 void __otter_libc_qsort(void  *base,
-           int nel,
-           int width,
+           size_t nel,
+           size_t width,
            int (*comp)(const void *, const void *))
 {
 	int wgap, i, j, k;
@@ -393,7 +394,7 @@ void __otter_libc_qsort(void  *base,
 
 /********************************************/
 
-int __otter_libc_mblen(const char* s, int n)
+int __otter_libc_mblen(const char* s, size_t n)
 {
 	if(!s || n <= 0) 
 		return(0); /* encoding is not state dependent; need atleast one character to look at */
@@ -401,7 +402,7 @@ int __otter_libc_mblen(const char* s, int n)
 	return (*s != 0); /* 0 if end of string, 1 for size of the next multichar */
 }
 
-int __otter_libc_mbtowc(int* pwc, const char* s, int n)
+int __otter_libc_mbtowc(wchar_t* pwc, const char* s, size_t n)
 {
 	if(!s || n <= 0) 
 		return(0); /* encoding is not state dependent; need atleast one character to look at */
@@ -412,7 +413,7 @@ int __otter_libc_mbtowc(int* pwc, const char* s, int n)
 	return (*s != 0);
 }
 
-int __otter_libc_wctomb(char* s, int wc)
+int __otter_libc_wctomb(char* s, wchar_t wc)
 {
 	if(!s) 
 		return(0); /* encoding is not state dependent */
@@ -429,7 +430,7 @@ int __otter_libc_wctomb(char* s, int wc)
 	}
 }
 
-int __otter_libc_mbstowcs(int* pwcs, const char* s, int n)
+size_t __otter_libc_mbstowcs(wchar_t* pwcs, const char* s, size_t n)
 {
 	int r;
 	for(int i = 0; i < n; i++)
@@ -447,7 +448,7 @@ int __otter_libc_mbstowcs(int* pwcs, const char* s, int n)
 	return (n);
 }
 
-int __otter_libc_wcstombs(char* s, const int* pwcs, int n)
+size_t __otter_libc_wcstombs(char* s, const wchar_t* pwcs, size_t n)
 {
 	int r;
 	for(int i = 0; i < n; i++)
