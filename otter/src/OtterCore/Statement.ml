@@ -195,7 +195,7 @@ let exec_instr job =
 	assert (job.instrList <> []);
 	let printInstr instr =
 		Output.set_mode Output.MSG_STMT;
-		Output.printf "%a@\n" Printcil.f_instr instr
+		Output.printf "%a@\n" Printcil.instr instr
 	in
 
 	let instr,tail = match job.instrList with i::tl -> i,tl | _ -> assert false in
@@ -411,7 +411,7 @@ let exec_stmt job =
 							Output.set_mode Output.MSG_MUSTPRINT;
 							Output.printf "Branching on @[%a@]@ at %a.@\n"
 								 TypesPrinter.exp exp
-								 Printcil.f_loc loc;
+								 Printcil.loc loc;
 							if Executeargs.print_args.arg_print_callstack then
 								Output.printf "Call stack:@\n  @[%a@]@\n" (TypesPrinter.callingContext_list "@\n") state.callContexts;
 							Output.printf "Job %d is the true branch and job %d is the false branch.@\n@\n"

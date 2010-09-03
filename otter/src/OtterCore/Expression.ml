@@ -130,7 +130,7 @@ let rec getBlockSizesAndOffsets lvals = match lvals with
 
 
 let checkBounds state lvals cil_lval useSize =
-	Output.printf "Checking bounds of @[%a@]@\n" Printcil.f_lval cil_lval;
+	Output.printf "Checking bounds of @[%a@]@\n" Printcil.lval cil_lval;
 
 	(* Get the block sizes and offsets *)
 	let sizesTree, offsetsTree = getBlockSizesAndOffsets lvals in
@@ -191,7 +191,7 @@ rval state exp : state * bytes =
 					let exp2 = Cil.sizeOf typ in
 					begin match exp2 with
 						| SizeOf(_) ->
-							FormatPlus.failwith "Cannot determine sizeof(%a)" Printcil.f_type typ
+							FormatPlus.failwith "Cannot determine sizeof(%a)" Printcil.typ typ
 						| _ ->
 							let state, bytes = rval state exp2 in
 							begin match bytes with

@@ -329,7 +329,7 @@ let output_completion_info completion =
 		| Types.Abandoned (reason, loc, { result_state=state; result_history=hist }) ->
 			Output.set_mode Output.MSG_MUSTPRINT;
 			Output.printf "Error \"%a\"@ occurs at %a.@\n"
-				Report.abandoned_reason reason Printcil.f_loc loc;
+				Report.abandoned_reason reason Printcil.loc loc;
 			if Executeargs.print_args.arg_print_callstack then
 				Output.printf "Call stack:@\n  @[%a@]@\n" (TypesPrinter.callingContext_list "@\n") state.callContexts;
 			Output.printf "Abandoning path.@\n"

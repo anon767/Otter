@@ -81,7 +81,7 @@ let assert_loc_failure file loc format =
 
 
 (** Helper to print Cil.attrparam list. *)
-let attrparams_printer = list_printer Printcil.f_attrparam ",@ "
+let attrparams_printer = list_printer Printcil.attrparam ",@ "
 
 
 (** Helper to print Otter.Types.job_completion list. *)
@@ -122,11 +122,11 @@ let assert_exp file loc exp result return_opt exit_opt =
             begin match varinfo_opt with
                 | Some varinfo ->
                     if varinfo.Cil.vtype <> Cil.intType then
-                        assert_loc_failure file loc "In assertion %a: global variable %s is not an int." Printcil.f_attrparam exp name;
+                        assert_loc_failure file loc "In assertion %a: global variable %s is not an int." Printcil.attrparam exp name;
                     let state, lval = MemOp.state__varinfo_to_lval_block state varinfo in
                     MemOp.state__deref state (lval, (Cil.bitsSizeOf Cil.intType)/8)
                 | None ->
-                    assert_loc_failure file loc "In assertion %a: global variable %s not found." Printcil.f_attrparam exp name
+                    assert_loc_failure file loc "In assertion %a: global variable %s not found." Printcil.attrparam exp name
             end
 
         | Cil.AInt i ->
@@ -142,7 +142,7 @@ let assert_exp file loc exp result return_opt exit_opt =
             (state, Operator.of_binop binop [ (bytes1, Cil.intType); (bytes2, Cil.intType) ])
 
         | exp' ->
-            assert_loc_failure file loc "In assertion %a: unsupported operation %a." Printcil.f_attrparam exp Printcil.f_attrparam exp'
+            assert_loc_failure file loc "In assertion %a: unsupported operation %a." Printcil.attrparam exp Printcil.attrparam exp'
     in
     try
         let state, bytes = parse_exp state exp in

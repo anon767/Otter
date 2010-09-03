@@ -12,7 +12,7 @@ let print_stmtInfo_locs = ref false
 		@param v is the {!Cil.varinfo} to print
 *)
 let varinfo ff v =
-	Format.fprintf ff "%s@@@[%a@]" v.Cil.vname Printcil.f_loc v.Cil.vdecl
+	Format.fprintf ff "%s@@@[%a@]" v.Cil.vname Printcil.loc v.Cil.vdecl
 
 
 (** Print a {!Cil.exp}.
@@ -20,8 +20,8 @@ let varinfo ff v =
 		@param e is the {!Cil.exp} to print
 *)
 let exp ff = function
-	| Cil.StartOf _ as e -> Format.fprintf ff "StartOf(@[%a@]@,)" Printcil.f_exp e
-	| e -> Printcil.f_exp ff e
+	| Cil.StartOf _ as e -> Format.fprintf ff "StartOf(@[%a@]@,)" Printcil.exp e
+	| e -> Printcil.exp ff e
 
 
 (** Print an abbreviated representation of a {!Cil.stmt}. In particular, the following {!Cil.stmt} are abbreviated:
@@ -37,7 +37,7 @@ let stmt_abbr ff s = match s.Cil.skind with
 	| Cil.Instr _ -> Format.pp_print_string ff "(INSTRS)"
 	| Cil.Loop _ -> Format.pp_print_string ff "(LOOP)"
 	| Cil.Block _ -> Format.pp_print_string ff "(BLOCK)"
-	| _ -> Printcil.f_stmt ff s
+	| _ -> Printcil.stmt ff s
 
 
 (** Print the kind of a {!Cil.stmt} (i.e., [s.Cil.skind] for a {!Cil.stmt} [s]).
@@ -66,7 +66,7 @@ let stmt_kind ff s =
 		@param fn is the {!Cil.fundec} to print
 *)
 let fundec ff fn =
-	Format.fprintf ff "%s@;<1 2>: @[%a@]" fn.Cil.svar.Cil.vname Printcil.f_type fn.Cil.svar.Cil.vtype
+	Format.fprintf ff "%s@;<1 2>: @[%a@]" fn.Cil.svar.Cil.vname Printcil.typ fn.Cil.svar.Cil.vtype
 
 
 (** Print a list of {!Types.callingContext}.
@@ -77,8 +77,8 @@ let fundec ff fn =
 let callingContext_list sep ff list =
 	let context ff = function
 		| Types.Runtime -> Format.pp_print_string ff "(Runtime)"
-		| Types.Source (_, _, instr, _) -> Printcil.f_loc ff (Cil.get_instrLoc instr)
-		| Types.NoReturn instr -> Format.fprintf ff "NoReturn@@%a" Printcil.f_loc (Cil.get_instrLoc instr)
+		| Types.Source (_, _, instr, _) -> Printcil.loc ff (Cil.get_instrLoc instr)
+		| Types.NoReturn instr -> Format.fprintf ff "NoReturn@@%a" Printcil.loc (Cil.get_instrLoc instr)
 	in
 	FormatPlus.pp_print_list context sep ff list
 
@@ -90,5 +90,5 @@ let callingContext_list sep ff list =
 let stmtInfo ff si =
 	Format.fprintf ff "%s %d" si.Types.siFuncName si.Types.siStmt.Cil.sid;
 	if !print_stmtInfo_locs then
-		Format.fprintf ff " (%a)" Printcil.f_loc (Cil.get_stmtLoc si.Types.siStmt.Cil.skind)
+		Format.fprintf ff " (%a)" Printcil.loc (Cil.get_stmtLoc si.Types.siStmt.Cil.skind)
 

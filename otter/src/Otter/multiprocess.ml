@@ -229,7 +229,7 @@ let rec process_job_states result multijob completed multijob_queue =
 					Output.set_mode Output.MSG_MUSTPRINT;
 					Output.printf
 						"Error \"%a\" occurs at %a.@\nAbandoning path.@\n"
-						Report.abandoned_reason reason Printcil.f_loc loc
+						Report.abandoned_reason reason Printcil.loc loc
 				| _ ->
                             ()
 			end;

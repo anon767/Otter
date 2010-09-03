@@ -220,7 +220,7 @@ let libc___builtin_alloca_size state size bytes loc =
 		(List.hd state.callstack).svar.vname
 		size
 		(Counter.next libc___builtin_alloca__id)
-		Printcil.f_loc loc
+		Printcil.loc loc
 		(MemOp.state__trace state)
 	in
 	let block = block__make name size Block_type_Local in
@@ -254,7 +254,7 @@ let libc_malloc_size state size bytes loc =
 		(List.hd state.callstack).svar.vname
 		size
 		(Counter.next libc___builtin_alloca__id)
-		Printcil.f_loc loc
+		Printcil.loc loc
 		(MemOp.state__trace state)
 	in
 	let block = block__make name size Block_type_Heap in

@@ -179,10 +179,10 @@ and bytes ff = bytes_named [] ff
 and bytes_named bytes_to_names ff =
 	let rec bytes ff = function
 		| Bytes_Constant (Cil.CInt64 (n, ikind, _)) ->
-			fprintf ff "Bytes(@[<hov>%a@]@,)" Printcil.f_const (Cil.CInt64 (n, ikind, None))
+			fprintf ff "Bytes(@[<hov>%a@]@,)" Printcil.const (Cil.CInt64 (n, ikind, None))
 
 		| Bytes_Constant n ->
-			fprintf ff "Bytes(@[<hov>%a@]@,)" Printcil.f_const n
+			fprintf ff "Bytes(@[<hov>%a@]@,)" Printcil.const n
 
 		| Bytes_ByteArray arr as bytes ->
 			begin try
