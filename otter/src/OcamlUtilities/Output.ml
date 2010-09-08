@@ -67,6 +67,8 @@ let set_formatter ff =
 	!formatter#flush;
 	formatter := ff
 
+let () = at_exit (fun () -> !formatter#flush)
+
 type msg_type = 
 	| MSG_REG
 	| MSG_STMT
