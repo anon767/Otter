@@ -19,6 +19,9 @@ class virtual t =
 
 		method kprintf : 'a 'b . ('self -> 'a) -> ('b, Format.formatter, unit, 'a) format4 -> 'b = fun k ->
 			Format.kfprintf (fun _ -> k self) formatter
+
+		method flush =
+			Format.pp_print_flush formatter ()
 	end
 
 class plain =
@@ -59,6 +62,10 @@ class labeled label =
 	end
 
 let formatter = ref (new plain)
+
+let set_formatter ff =
+	!formatter#flush;
+	formatter := ff
 
 type msg_type = 
 	| MSG_REG

@@ -26,7 +26,7 @@ let set_output_formatter_interceptor job job_queue interceptor =
 		else
 			Format.sprintf "[%d,%d] %s:%d : " job.jid depth loc.Cil.file loc.Cil.line
 	in
-	Output.formatter := new Output.labeled label;
+	Output.set_formatter (new Output.labeled label);
 	interceptor job job_queue
 
 let intercept_function_by_name_internal target_name replace_func job job_queue interceptor =

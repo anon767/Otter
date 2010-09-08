@@ -309,7 +309,7 @@ let doit file =
 	let results = callchain_backward_se file entryfn assertfn job_init in
 
 	(* print the results *)
-	Output.formatter := new Output.plain;
+	Output.set_formatter (new Output.plain);
 	Output.printf "%s@\n" (Executedebug.get_log ());
 	List.iter (fun result -> Report.print_report result) results
 

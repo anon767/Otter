@@ -157,7 +157,7 @@ let multi_set_output_formatter_interceptor job job_queue interceptor =
 		else
 			Format.sprintf "[jid: %d, pid: %d] %s:%d : " m.jid m.current_pid loc.Cil.file loc.Cil.line
 	in
-	Output.formatter := new Output.labeled label;
+	Output.set_formatter (new Output.labeled label);
 	interceptor job job_queue
 
 let intercept_fork job job_queue interceptor =

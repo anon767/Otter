@@ -54,7 +54,7 @@ let doExecute (f: file) =
 	Sys.set_signal Sys.sigalrm old_ALRM_handler;
 	Sys.set_signal Sys.sigint old_INT_handler;
 
-	Output.formatter := new Output.plain;
+	Output.set_formatter (new Output.plain);
 	Output.printf "%s@\n" (Executedebug.get_log ());
 		(* function stat 
 		Output.print_endline "\nFunction call stat:";
