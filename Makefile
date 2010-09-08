@@ -17,7 +17,7 @@ make//cil : \
 	CONFIGURE_FLAGS= \
 		EXTRALIBDIRS='$(EXTRALIBDIRS)' \
 		EXTRAOCAMLPATH='$(EXTRAOCAMLPATH)' \
-		CC='gcc -m32'
+		CC='$(CC) -m32'
 
 
 otter : make//otter
