@@ -60,6 +60,8 @@ let bnot operands =
 	in
 	unop op_conc OP_BNOT operands 
 
+let zero_bytearray = ImmutableArray.of_list [byte__zero;byte__zero;byte__zero;byte__zero]
+let one_bytearray = ImmutableArray.of_list [byte__make '\001';byte__zero;byte__zero;byte__zero]
 
 let lnot operands = (* should return int (32-bit) *)
 	let op_conc arr typ = 
@@ -68,15 +70,15 @@ let lnot operands = (* should return int (32-bit) *)
 			| _ -> failwith "lnot: unreachable"
 		) false arr 
 		then (* 0 *)
-			ImmutableArray.of_list [make_Byte_Concrete('\000');make_Byte_Concrete('\000');make_Byte_Concrete('\000');make_Byte_Concrete('\000')]
+			zero_bytearray
 		else (* 1 *)
-			ImmutableArray.of_list [make_Byte_Concrete('\001');make_Byte_Concrete('\000');make_Byte_Concrete('\000');make_Byte_Concrete('\000')]
+			one_bytearray
 	in
 	unop op_conc OP_LNOT operands 
 
-let ikind_of_TInt = function
+let ikind_of_TInt typ = match unrollType typ with
 		TInt (ikind,_) -> ikind
-	| t -> invalid_arg ("Trying to get ikind from something other than a TInt: " ^ (Pretty.sprint 50 (d_type()t)))
+	| typ -> invalid_arg ("Trying to get ikind from something other than a TInt: " ^ (Pretty.sprint 50 (d_type () typ)))
 
 (* TODO: each op must also have typ of par as arg.
 
