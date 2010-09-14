@@ -569,11 +569,13 @@ let getValues pathCondition symbolList =
 	if Stpc.query vc negatedPcExpr
 	then FormatPlus.failwith "The path condition is unsatisfiable!@\n@[  %a@]" (FormatPlus.pp_print_list BytesPrinter.bytes "@\nAND@\n  ") pathCondition;
 	(* Extract the value of a symbol from STP's counterexample *)
+    (* TODO (martin): getOneVal s fails when s is the guard in an ITE pointer *)
 	let getOneVal s =
 		let bv = Stpc.e_var vc (make_var s) (Stpc.bitvector_t vc 8) in
-		(s, Char.chr (Stpc.int_of_e (Stpc.get_counterexample vc bv)))
+        let counter_example = (Stpc.get_counterexample vc bv) in
+		(s, Char.chr (Stpc.int_of_e counter_example))
 	in
-	List.map getOneVal symbolList
+	List.map getOneVal (List.rev symbolList)
 
 
 let getAllValues pathCondition =

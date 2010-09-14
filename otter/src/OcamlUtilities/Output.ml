@@ -131,6 +131,6 @@ let banner_flush () =
 
 let banner_formatter = Format.make_formatter banner_out banner_flush
 let banner_printf level format = 
-  if level == 0 then Format.ifprintf banner_formatter format
-  else Format.fprintf banner_formatter format
+  (* TODO (martin): different scale of banner for different level *)
+    Format.fprintf banner_formatter format
 

@@ -76,7 +76,7 @@ let pass_targets targets job fexp exps =
 			   * callee's input values from caller: target.state 
 			   * at the end, use caller's state as the state of quirying 
 			   *)
-			  Output.banner_printf 0  "Check if the failing condition is hit\n";
+			  Output.banner_printf 0 "Check if the failing condition is hit\n%!";
 			  (* TODO: add globals *)
 			  let connecting_bytes = 
 				List.fold_left2
@@ -86,11 +86,11 @@ let pass_targets targets job fexp exps =
 						Operator.bytes__land equation b 
 				  ) bytes__one argvs fundec.sformals
 			  in
-				(*
-				 (Output.banner_printf 0  "Failing condition: %s\n" (To_string.bytes target.failing_condition));
-				 (Output.banner_printf 0  "Path condition: %s\n" (String.concat "&&" (List.map To_string.bytes state.path_condition)));
-				 (Output.banner_printf 0  "Connection : %s\n" (To_string.bytes connecting_bytes));
-				 *)
+                (Format.printf "Failing condition: %a\n%!" BytesPrinter.bytes target.Prioritizer.failing_condition);
+                (Format.printf "Path condition: %!");
+                (List.iter (Format.printf "%a && %!" BytesPrinter.bytes) state.path_condition);
+                (Format.printf "\n%!");
+                (Format.printf "Connection : %a\n%!" BytesPrinter.bytes connecting_bytes);
 			  let _, truth = MemOp.eval_with_cache state (connecting_bytes::state.path_condition)  (Operator.bytes__not target.Prioritizer.failing_condition) in
 			  let total_failing_condition = Operator.bytes__land target.Prioritizer.failing_condition connecting_bytes in
 			  let total_failing_condition = Operator.bytes__lor total_failing_condition fc in
@@ -160,15 +160,15 @@ let pass_targets targets job fexp exps =
 			)
 	  ) (true,Bytes.bytes__zero) fundecs
   in
-  let rec pass_targets targets =
+  let rec pass_targets_impl targets =
 	match targets with 
 	  | [] -> true,Bytes.bytes__zero
 	  | t::ts -> 
 		  let truth,failing_condition = pass_target t in
-		  if truth then pass_targets ts 
+		  if truth then pass_targets_impl ts 
 		  else false,failing_condition (* TODO: can proceed, to find more failing targets *)
   in
-	pass_targets targets
+	pass_targets_impl targets
 
 let terminate_job_at_targets targets job =
 	(* if job meets one of the targets, do checking *)
