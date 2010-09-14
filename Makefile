@@ -2,7 +2,8 @@
 SUBDIRS=cilqual cil ocamlstp stp camlidl ocaml-base-noparser
 EXTRALIBDIRS=$(addprefix $(CURDIR)/,camlidl/runtime stp/lib ocamlstp)
 EXTRAOCAMLPATH=$(CURDIR)
-CTAGS_FILE=$(CURDIR)/tags
+CTAGS_FILE=tags
+CTAGS_SOURCE_PATHS=otter/src cil/src ocaml-base-noparser/lib ocamlstp
 
 
 # augment configuration from Makefile.local, if it exists
@@ -72,11 +73,8 @@ ocaml-base-noparser : make//ocaml-base-noparser
 make//ocaml-base-noparser : MAKEGOALS=
 
 ctags :
-	rm -f $(CTAGS_FILE) 
-	for d in otter/src cil/src ocaml-base-noparser/lib ocamlstp; \
-		do \
-		find $$d -iname "*.ml" -exec ctags -a -f $(CTAGS_FILE) {} \; ; \
-		done
+	$(RM) $(CTAGS_FILE) && \
+	find $(CTAGS_SOURCE_PATHS) -iname "*.ml" -exec ctags -a -f $(CTAGS_FILE) {} \;
 
 clean :
 	$(foreach foo,$(SUBDIRS),$(MAKE) -C $(foo) clean;) true
