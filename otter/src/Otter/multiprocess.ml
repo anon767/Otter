@@ -2,6 +2,9 @@ open OcamlUtilities
 open OtterBytes
 open OtterCore
 
+let (@@) = Interceptor.(@@)
+let (@@@) i1 i2 = fun a b c -> i1 a b c i2
+
 (* TODO: implement shared memory by one of the following:
  * - move block_to_bytes into shared_state, and add some sort of copy-on-write/indirection mechanism
  * - add a table to shared_state to keep track of shared locations, and copy them between processes at each step
@@ -148,20 +151,18 @@ let get_job multijob = match multijob.processes with
 		Some (job, multijob)
 
 
-let multi_set_output_formatter_interceptor job job_queue interceptor = 
-	let j, m = job in
-	let loc = Statement.get_job_loc j in
+let multi_set_output_formatter_interceptor job multijob job_queue interceptor = 
+	let loc = Statement.get_job_loc job in
 	let label =
 		if loc = Cil.locUnknown then
-			Format.sprintf "[jid: %d, pid: %d] : " m.jid m.current_pid
+			Format.sprintf "[jid: %d, pid: %d] : " multijob.jid multijob.current_pid
 		else
-			Format.sprintf "[jid: %d, pid: %d] %s:%d : " m.jid m.current_pid loc.Cil.file loc.Cil.line
+			Format.sprintf "[jid: %d, pid: %d] %s:%d : " multijob.jid multijob.current_pid loc.Cil.file loc.Cil.line
 	in
 	Output.set_formatter (new Output.labeled label);
-	interceptor job job_queue
+	interceptor job multijob job_queue
 
-let intercept_fork job job_queue interceptor =
-	let job, multijob = job in
+let intercept_fork job multijob job_queue interceptor =
 	match job.Types.instrList with
 		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), _, _)::_ when varinfo.Cil.vname = "fork" -> 
 
@@ -197,9 +198,9 @@ let intercept_fork job job_queue interceptor =
 			in
 			let multijob = (put_job child_job multijob multijob.next_pid) in
 			let multijob = {multijob with next_pid = multijob.next_pid + 1 } in
-			interceptor (job, multijob) job_queue
+			(Types.Active job, (multijob, job_queue))
 		| _ -> 
-			interceptor (job, multijob) job_queue
+			interceptor job multijob job_queue
 
 let rec get_job_multijob job_queue = 
 	match job_queue with
@@ -207,7 +208,7 @@ let rec get_job_multijob job_queue =
 		| multijob::t ->
 			match get_job multijob with
 				| None -> get_job_multijob t
-				| Some job -> Some (job, t)
+				| Some (job, multijob) -> Some (job, (multijob, t))
 
 (* process the results *)
 let rec process_job_states result multijob completed multijob_queue =
@@ -231,15 +232,18 @@ let rec process_job_states result multijob completed multijob_queue =
 						"Error \"%a\" occurs at %a.@\nAbandoning path.@\n"
 						Report.abandoned_reason reason Printcil.loc loc
 				| _ ->
-                            ()
+					()
 			end;
 			((completion::completed), (multijob::multijob_queue))
 
 		| _ ->
 			(completed, multijob_queue)
 
-let repack_job_interceptor job job_queue interceptor =
-	let job, multijob = job in
+let unpack_job_interceptor job job_queue interceptor =
+	let multijob, job_queue = job_queue in
+	interceptor job multijob job_queue
+
+let repack_job_interceptor job multijob job_queue interceptor =
 	interceptor job (multijob, job_queue)
 
 let process_result result completed job_queue =
@@ -261,13 +265,13 @@ let run job =
 	let multijob = put_job job multijob 0 in
 
 	(* start executing *)
-	let (@@) = Interceptor.(@@) in
 	Driver.main_loop 
 		get_job_multijob
 		(
-			multi_set_output_formatter_interceptor @@
-			intercept_fork @@
-			repack_job_interceptor @@
+			unpack_job_interceptor @@
+			(*multi_set_output_formatter_interceptor @@@*)
+			(*intercept_fork @@@*)
+			repack_job_interceptor @@@
 			BuiltinFunctions.interceptor @@ 
 			BuiltinFunctions.libc_interceptor @@
 			Statement.step
