@@ -6,9 +6,6 @@
 #include <stdlib.h>
 #include <fcntl.h>
 
-#define __otter_fs_MAXOPEN 64
-#define __otter_fs_GLOBALMAXOPEN 128
-
 #define __otter_fs_error(e) {errno = (e); return NULL;}
 
 /* file system access functions */
@@ -236,9 +233,9 @@ struct __otter_fs_dnode* __otter_fs_mkdir(const char* name, struct __otter_fs_dn
 			dirs = (*dirs).next;
 		}
 
-		struct __otter_fs_dnode* newdir = malloc(sizeof(struct __otter_fs_dnode));
-		struct __otter_fs_dirlist* basic_dir_entries1 = malloc(sizeof(struct __otter_fs_dirlist));
-		struct __otter_fs_dirlist* basic_dir_entries0 = malloc(sizeof(struct __otter_fs_dirlist));
+		struct __otter_fs_dnode* newdir = __otter_multi_gmalloc(sizeof(struct __otter_fs_dnode));
+		struct __otter_fs_dirlist* basic_dir_entries1 = __otter_multi_gmalloc(sizeof(struct __otter_fs_dirlist));
+		struct __otter_fs_dirlist* basic_dir_entries0 = __otter_multi_gmalloc(sizeof(struct __otter_fs_dirlist));
 		(*basic_dir_entries1).name = "..";
 		(*basic_dir_entries1).dnode = dir;
 		(*basic_dir_entries1).next = NULL;
@@ -251,7 +248,7 @@ struct __otter_fs_dnode* __otter_fs_mkdir(const char* name, struct __otter_fs_dn
 		(*newdir).files = NULL;
 		(*newdir).dirs = basic_dir_entries0;
 		(*newdir).permissions = __otter_fs_umask;
-		struct __otter_fs_dirlist* newdirlist = malloc(sizeof(struct __otter_fs_dirlist));
+		struct __otter_fs_dirlist* newdirlist = __otter_multi_gmalloc(sizeof(struct __otter_fs_dirlist));
 		(*newdirlist).name = name;
 		(*newdirlist).dnode = newdir;
 		(*newdirlist).next = NULL;
@@ -286,14 +283,14 @@ struct __otter_fs_inode* __otter_fs_touch(const char* name, struct __otter_fs_dn
 			files = (*files).next;
 		}
 
-		struct __otter_fs_inode* newfile = malloc(sizeof(struct __otter_fs_inode));
+		struct __otter_fs_inode* newfile = __otter_multi_gmalloc(sizeof(struct __otter_fs_inode));
 		(*newfile).linkno = 1;
 		(*newfile).size = 0;
 		(*newfile).type = __otter_fs_TYP_FILE;
 		(*newfile).permissions = __otter_fs_umask;
 		(*newfile).data = NULL;
 		(*newfile).numblocks = 0;
-		struct __otter_fs_filelist* newfilelist = malloc(sizeof(struct __otter_fs_filelist));
+		struct __otter_fs_filelist* newfilelist = __otter_multi_gmalloc(sizeof(struct __otter_fs_filelist));
 		(*newfilelist).name = name;
 		(*newfilelist).inode = newfile;
 		(*newfilelist).next = NULL;
@@ -305,6 +302,109 @@ struct __otter_fs_inode* __otter_fs_touch(const char* name, struct __otter_fs_dn
 	}
 
 	return NULL;
+}
+
+int __otter_fs_unlink_in_dir(const char* name, struct __otter_fs_dnode* dir)
+{
+	if(!__otter_fs_can_permission((*dir).permissions, 2)) /* can't write to dir */
+		__otter_fs_error(EACCESS);
+
+	if(__otter_fs_find_dnode_in_dir(name, dir)) /* name is a dir */
+		__otter_fs_error(EPERM);
+
+	if((*dir).numfiles == 0) /* no files in dir */
+		__otter_fs_error(ENOENT);
+
+	struct __otter_fs_filelist* files = (*dir).files;
+	struct __otter_fs_filelist* pfiles = NULL;
+
+	while(files)
+	{
+		int cmp = strcmp((*files).name, name);
+		if(cmp == 0) /* found the file */
+		{
+			struct __otter_fs_inode* inode = (*files).inode;
+			(*inode).linkno--;
+
+			if(pfiles = NULL) /* file was the first entry */
+			{
+				(*dir).files = (*files).next;
+			}
+			else
+			{
+				(*pfiles).next = (*files).next;
+			}
+
+			if((*inode).linkno == 0) /* all links to file are removed, file is deleated */
+			{
+				if(!((*inode).r_openno | (*inode).w_openno)) /* file isn't open; free contents */
+				{
+					free((*inode).data);
+					free(inode);
+				}
+			}
+
+			return (1);
+		}
+		pfiles = files;
+		files = (*files).next;
+	}
+
+	__otter_fs_error(ENOENT);
+
+}
+
+int __otter_fs_rmdir_in_dir(const char* name, struct __otter_fs_dnode* dir)
+{
+	if(!__otter_fs_can_permission((*dir).permissions, 2)) /* can't write to dir */
+		__otter_fs_error(EACCESS);
+
+	if(__otter_fs_find_inode_in_dir(name, dir)) /* name is a dir */
+		__otter_fs_error(ENOTDIR);
+
+	if((*dir).numdirs == 0) /* no directories in dir */
+		__otter_fs_error(ENOENT);
+
+	struct __otter_fs_dirlist* dirs = (*dir).dirs;
+	struct __otter_fs_dirlist* pdirs = NULL;
+
+	while(dirs)
+	{
+		int cmp = strcmp((*dirs).name, name);
+		if(cmp == 0) /* found the file */
+		{
+			struct __otter_fs_dnode* dnode = (*dirs).dnode;
+
+			if((*dnode).numfiles || (*dnode).numdirs) /* directory is not empty */
+				__otter_fs_error(ENOTEMPTY);
+
+			(*dnode).linkno--;
+
+			if(pdirs = NULL) /* directory was the first entry */
+			{
+				(*dir).dirs = (*dirs).next;
+			}
+			else
+			{
+				(*pdirs).next = (*dirs).next;
+			}
+
+			if((*dnode).linkno == 0) /* all links to directory are removed, file is deleated */
+			{
+				if(!((*dnode).r_openno)) /* directory isn't open; free contents */
+				{
+					free(dnode);
+				}
+			}
+
+			return (1);
+		}
+		pdirs = dirs;
+		dirs = (*dirs).next;
+	}
+
+	__otter_fs_error(ENOENT);
+
 }
 
 struct __otter_fs_inode* __otter_fs_link_file(const char* name, struct __otter_fs_inode* target, struct __otter_fs_dnode* dir)
@@ -328,7 +428,7 @@ struct __otter_fs_inode* __otter_fs_link_file(const char* name, struct __otter_f
 			files = (*files).next;
 		}
 
-		struct __otter_fs_filelist* newfilelist = malloc(sizeof(struct __otter_fs_filelist));
+		struct __otter_fs_filelist* newfilelist = __otter_multi_gmalloc(sizeof(struct __otter_fs_filelist));
 		(*newfilelist).name = name;
 		(*newfilelist).inode = target;
 		(*newfilelist).next = NULL;
@@ -365,7 +465,7 @@ struct __otter_fs_dnode* __otter_fs_link_dir(const char* name, struct __otter_fs
 			dirs = (*dirs).next;
 		}
 
-		struct __otter_fs_dirlist* newdirlist = malloc(sizeof(struct __otter_fs_dirlist));
+		struct __otter_fs_dirlist* newdirlist = __otter_multi_gmalloc(sizeof(struct __otter_fs_dirlist));
 		(*newdirlist).name = name;
 		(*newdirlist).dnode = target;
 		(*newdirlist).next = NULL;
@@ -435,6 +535,11 @@ int __otter_fs_open_file(struct __otter_fs_inode* inode, int mode)
 		return (-1);
 	}
 
+	if(mode & O_RDONLY)
+		(*inode).r_openno++;
+	if(mode & O_WRONLY)
+		(*inode).w_openno++;
+
 	__otter_fs_files[fd] = ft;
 	__otter_fs_open_files[ft].mode = mode;
 	__otter_fs_open_files[ft].type = (*inode).type;
@@ -479,6 +584,8 @@ int __otter_fs_open_dir(struct __otter_fs_dnode* dnode, int mode)
 		errno = ENFILE;
 		return (-1);
 	}
+
+	(*dnode).r_openno++;
 
 	__otter_fs_files[fd] = ft;
 	__otter_fs_open_files[ft].mode = mode;
@@ -539,9 +646,9 @@ struct __otter_fs_dnode* __otter_fs_get_dnode_from_fd(int file)
 
 struct __otter_fs_dnode* __otter_fs_mkroot()
 {
-	struct __otter_fs_dnode* newdir = malloc(sizeof(struct __otter_fs_dnode));
-	struct __otter_fs_dirlist* basic_dir_entries1 = malloc(sizeof(struct __otter_fs_dirlist));
-	struct __otter_fs_dirlist* basic_dir_entries0 = malloc(sizeof(struct __otter_fs_dirlist));
+	struct __otter_fs_dnode* newdir = __otter_multi_gmalloc(sizeof(struct __otter_fs_dnode));
+	struct __otter_fs_dirlist* basic_dir_entries1 = __otter_multi_gmalloc(sizeof(struct __otter_fs_dirlist));
+	struct __otter_fs_dirlist* basic_dir_entries0 = __otter_multi_gmalloc(sizeof(struct __otter_fs_dirlist));
 	(*basic_dir_entries1).name = "..";
 	(*basic_dir_entries1).dnode = newdir;
 	(*basic_dir_entries1).next = NULL;
@@ -581,9 +688,9 @@ void __otter_fs_mount()
 	__otter_fs_pwd = wrk;
 
 	/* mark all file descriptors and file table entries as unused */
-	__otter_fs_files = malloc(sizeof(int)*__otter_fs_MAXOPEN);
+	__otter_fs_files = malloc(sizeof(int)*__otter_fs_MAXOPEN); /* local */
 	memset(__otter_fs_files, -1, __otter_fs_MAXOPEN*sizeof(int));
-	__otter_fs_open_files = malloc(sizeof(struct __otter_fs_ft)*__otter_fs_GLOBALMAXOPEN);
+	__otter_fs_open_files = __otter_multi_gmalloc(sizeof(struct __otter_fs_ft)*__otter_fs_GLOBALMAXOPEN);
 	memset(__otter_fs_open_files, 0, __otter_fs_GLOBALMAXOPEN*sizeof(struct __otter_fs_ft));
 }
 

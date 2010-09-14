@@ -269,6 +269,7 @@ let run job =
 			intercept_fork @@
 			repack_job_interceptor @@
 			BuiltinFunctions.interceptor @@ 
+			BuiltinFunctions.libc_interceptor @@
 			Statement.step
 		)
 		process_result

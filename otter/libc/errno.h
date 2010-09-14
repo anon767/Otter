@@ -20,6 +20,8 @@
 #define EINVAL 15
 #define EAGAIN 16
 #define ESPIPE 17
+#define EPIPE 18
+#define ENOTEMPTY 19
 
 int errno = 0;
 

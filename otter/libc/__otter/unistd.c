@@ -22,25 +22,44 @@ int __otter_libc_close(int fd)
 
 	__otter_fs_open_files[ft].openno--;
 
-	struct __otter_fs_inode* inode = __otter_fs_get_inode_from_fd(fd);
-
-	if(__otter_fs_open_files[ft].openno == 0) /* file is no longer open */
+	if(__otter_fs_open_files[ft].type == __otter_fs_TYP_DIR)
 	{
-		if(__otter_fs_open_files[ft].type == __otter_fs_TYP_FIFO) /* discard data if this is a fifo */
+		struct __otter_fs_dnode* dnode = __otter_fs_get_dnode_from_fd(fd);
+		(*dnode).r_openno--;
+
+		if((*dnode).linkno == 0 && (*dnode).r_openno == 0) /* directory was deleted, but left available until closed */
 		{
-			(*inode).size = 0;
-			free((*inode).data);
-			(*inode).data = NULL;
-		}		
-		
-		if((*inode).linkno == 0) /* file was deleted, but left available until closed */
-		{
-			free((*inode).data);
-			free(inode);	
+			free((*dnode).dirs);
+			free((*dnode).files);
+			free(dnode);
 		}
+
+		return (0);
 	}
 
-	return (-1);
+	struct __otter_fs_inode* inode = __otter_fs_get_inode_from_fd(fd);
+	if(__otter_fs_open_files[ft].mode & O_RDONLY)
+		(*inode).r_openno--;
+	if(__otter_fs_open_files[ft].mode & O_WRONLY)
+		(*inode).w_openno--;
+
+	if((*inode).r_openno | (*inode).w_openno) /* file is still open */
+		return (0);
+
+	if(__otter_fs_open_files[ft].type == __otter_fs_TYP_FIFO) /* discard data if this is a fifo */
+	{
+		(*inode).size = 0;
+		free((*inode).data);
+		(*inode).data = NULL;
+	}
+	
+	if((*inode).linkno == 0) /* file was deleted, but left available until closed */
+	{
+		free((*inode).data);
+		free(inode);	
+	}
+
+	return (0);
 }
 
 ssize_t __otter_libc_read(int fd, void* buf, size_t num)
@@ -246,7 +265,7 @@ ssize_t __otter_libc_write2(int ft, void* buf, size_t num, off_t offset)
 
 			for(int i = 0; i < num; i++)
 			{
-					(*inode).data[i + offset] = ((char*)buf)[i];
+				(*inode).data[i + offset] = ((char*)buf)[i];
 			}
 
 			if((*inode).size < offset + num)
@@ -260,6 +279,12 @@ ssize_t __otter_libc_write2(int ft, void* buf, size_t num, off_t offset)
 		/* circular buffer */
 		case __otter_fs_TYP_FIFO:;
 			struct __otter_fs_inode* inode = (struct __otter_fs_inode*)__otter_fs_open_files[ft].vnode;
+			if((*inode).r_openno == 0) /* not open for reading somewhere */
+			{
+				errno = EPIPE;
+				/* raise(SIGPIPE); */
+				return (-1);
+			}
 
 			offset = (*inode).size;
 
@@ -359,3 +384,63 @@ ssize_t __otter_libc_pwrite(int fd, const void* buf, size_t num, off_t offset)
 	return __otter_libc_write2(ft, buf, num, offset);
 }
 
+int __otter_libc_unlink(const char* path)
+{
+	char* a = path;
+
+	while(*a != 0)
+		a++;
+
+	while(a != path && (*a) != '/')
+		a--;
+	
+	struct __otter_fs_dnode* dnode;
+	if(a == path)
+	{
+		dnode = __otter_fs_pwd;
+	}
+	else
+	{
+		*a = 0;
+		dnode = __otter_fs_find_dnode(path);
+		*a = '/';
+	}
+
+	if(!dnode) /* can't find path */
+		return (-1);
+
+	a++;
+
+	return (__otter_fs_unlink_in_dir(a, dnode) - 1);
+
+}
+
+int __otter_libc_rmdir(const char* path)
+{
+	char* a = path;
+
+	while(*a != 0)
+		a++;
+
+	while(a != path && (*a) != '/')
+		a--;
+	
+	struct __otter_fs_dnode* dnode;
+	if(a == path)
+	{
+		dnode = __otter_fs_pwd;
+	}
+	else
+	{
+		*a = 0;
+		dnode = __otter_fs_find_dnode(path);
+		*a = '/';
+	}
+
+	if(!dnode) /* can't find path */
+		return (-1);
+
+	a++;
+
+	return (__otter_fs_rmdir_in_dir(a, dnode) - 1);
+}

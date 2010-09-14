@@ -16,6 +16,9 @@
 #define __otter_fs_STATUS_OK 0
 #define __otter_fs_STATUS_EOF 1
 
+#define __otter_fs_MAXOPEN 64
+#define __otter_fs_GLOBALMAXOPEN 128
+
 #define NULL 0
 
 struct __otter_fs_block;
@@ -32,6 +35,8 @@ struct __otter_fs_inode
 	int type;
 	int permissions;
 	char* data;
+	int r_openno;
+	int w_openno;
 };
 
 struct __otter_fs_filelist
@@ -56,6 +61,7 @@ struct __otter_fs_dnode
 	struct __otter_fs_dirlist* dirs;
 	struct __otter_fs_filelist* files;
 	int permissions;
+	int r_openno;
 };
 
 struct __otter_fs_dnode* __otter_fs_root;
@@ -94,6 +100,8 @@ struct __otter_fs_dnode* __otter_fs_chmod_dir(int mode, struct __otter_fs_dnode*
 struct __otter_fs_inode* __otter_fs_chmod_file(int mode, struct __otter_fs_inode* file);
 struct __otter_fs_dnode* __otter_fs_mkdir(const char* name, struct __otter_fs_dnode* dir);
 struct __otter_fs_inode* __otter_fs_touch(const char* name, struct __otter_fs_dnode* dir);
+int __otter_fs_unlink_in_dir(const char* name, struct __otter_fs_dnode* dir);
+int __otter_fs_rmdir_in_dir(const char* name, struct __otter_fs_dnode* dir);
 struct __otter_fs_inode* __otter_fs_link_file(const char* name, struct __otter_fs_inode* target, struct __otter_fs_dnode* dir);
 struct __otter_fs_dnode* __otter_fs_link_dir(const char* name, struct __otter_fs_dnode* target, struct __otter_fs_dnode* dir);
 
