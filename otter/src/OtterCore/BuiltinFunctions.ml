@@ -809,6 +809,16 @@ let libc_get_block_size = wrap_state_function begin fun state retopt exps ->
 		| _ -> failwith "libc_get_block_size invalid arguments"
 end
 
+let otter_mute = wrap_state_function begin fun state retopt exps ->
+	Output.arg_print_mute := !Output.arg_print_mute + 1;
+	state
+end
+
+let otter_voice = wrap_state_function begin fun state retopt exps ->
+	Output.arg_print_mute := !Output.arg_print_mute - 1;
+	state
+end
+
 
 let interceptor job job_queue interceptor =
 	try
@@ -846,6 +856,8 @@ let interceptor job job_queue interceptor =
 		(intercept_function_by_name_internal "__CURRENT_STATE"         otter_current_state) @@
 		(intercept_function_by_name_internal "__COMPARE_STATE"         otter_compare_state) @@
 		(intercept_function_by_name_internal "__ASSERT_EQUAL_STATE"    otter_assert_equal_state) @@
+		(intercept_function_by_name_internal "__otter_mute"            otter_mute) @@
+		(intercept_function_by_name_internal "__otter_voice"           otter_voice) @@
 
 		(* pass on the job when none of those match *)
 		interceptor

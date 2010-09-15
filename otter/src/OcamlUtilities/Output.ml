@@ -1,5 +1,5 @@
 
-let arg_print_nothing = ref false
+let arg_print_mute = ref 0
 let arg_print_reg = ref true
 let arg_print_stmt = ref true
 let arg_print_assign = ref false
@@ -85,7 +85,7 @@ let set_mode msg_type = current_msg_type := msg_type
 let get_mode () = !current_msg_type 
 
 let need_print msg_type =
-	if !arg_print_nothing then false else
+	if !arg_print_mute > 0 then false else
 	match msg_type with
 		| MSG_REG 		-> !arg_print_reg
 		| MSG_STMT		-> !arg_print_stmt

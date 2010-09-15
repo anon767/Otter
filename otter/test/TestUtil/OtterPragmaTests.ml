@@ -306,7 +306,7 @@ let parse_pragmas file =
 let test_otter_with_pragma ?(main_loop=Driver.run) path = fun () ->
     (* reset the error flag and suppress all output from the symbolic executor *)
     Errormsg.hadErrors := false;
-    Output.arg_print_nothing := true;
+    Output.arg_print_mute := 1;
 
     (* parse and ensure no errors *)
     let file = Frontc.parse path () in

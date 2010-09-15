@@ -199,7 +199,7 @@ let libc_fork job multijob retopt exps =
 	(Active job, multijob)
 
 (* allocates on the global heap *)
-let libc_malloc_size (state:Types.state) size bytes loc =
+let otter_gmalloc_size (state:Types.state) size bytes loc =
 	let name = FormatPlus.sprintf "%s(%d)#%d/%a%s"
 		(List.hd state.Types.callstack).Cil.svar.Cil.vname
 		size
@@ -225,9 +225,9 @@ let otter_gmalloc job multijob retopt exps =
 	  then Bytes.bytes__make size (* initially zero, as though malloc were calloc *)
 	  else Bytes.bytes__make_default size Bytes.byte__undef (* initially the symbolic 'undef' byte *)
 	in
-	let state, block, bytes = libc_malloc_size state size bytes (Statement.get_job_loc job) in
-
+	let state, block, bytes = otter_gmalloc_size state size bytes (Statement.get_job_loc job) in
 	let job = BuiltinFunctions.end_function_call { job with state = BuiltinFunctions.set_return_value state retopt bytes } in
+
 	let rec push_to_all procs block bytes =
 		match procs with
 			| [] -> []

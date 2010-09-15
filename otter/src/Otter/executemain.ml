@@ -150,7 +150,7 @@ let feature : featureDescr =
 			" Suppress most output");
 
 			("--printNothing",
-			 Arg.Set Output.arg_print_nothing,
+			 Arg.Unit (fun () -> Output.arg_print_mute := 1),
 			" Suppress (pretty much) all output. This trumps all other --print* options");
 
 			("--printCharAsInt",
