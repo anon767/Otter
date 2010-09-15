@@ -12,6 +12,7 @@
 #include "stdio.c"
 
 #include "unistd.c"
+#include "signal.c"
 
 __otter_libc_init()
 {
