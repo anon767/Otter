@@ -18,7 +18,8 @@ define OCAMLBUILD.build
 		$(OCAMLBUILD_FLAGS) $(VPATH:%=-I %) $(OCAMLBUILD_EXTRATARGETS) $(1) && \
 	if [ -n "$(2)" ]; then \
 		mkdir -p "$(2)" && \
-		for foo in $(or $(3),$(1)); do \
+		if [ -n "$(3)" ]; then target="$(3)"; else target="$(1)"; fi && \
+		for foo in $$target; do \
 			for v in . $(VPATH); do \
 				build="$(OCAMLBUILD_BUILDDIR)/$$v/$$foo"; \
 				product="$(2)/`basename $$foo`"; \
