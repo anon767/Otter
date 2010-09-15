@@ -1,14 +1,20 @@
 open OcamlUtilities
 open OtterBytes
 open OtterCore
+open Types
 
 let (@@) = Interceptor.(@@)
 let (@@@) i1 i2 = fun a b c -> i1 a b c i2
 
-(* TODO: implement shared memory by one of the following:
- * - move block_to_bytes into shared_state, and add some sort of copy-on-write/indirection mechanism
- * - add a table to shared_state to keep track of shared locations, and copy them between processes at each step
- *)
+let intercept_multi_function_by_name_internal target_name replace_func job multijob job_queue interceptor =
+	(* Replace a C function with Otter code *)
+	(* replace_func retopt exps loc job job_queue *)
+	match job.instrList with
+		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::_ when varinfo.Cil.vname = target_name ->
+			let (job_result, multijob) = replace_func job multijob retopt exps in
+				(job_result, (multijob, job_queue))
+		| _ -> 
+			interceptor job multijob job_queue
 
 type program_counter = {
 	instrList : Cil.instr list;
@@ -16,21 +22,21 @@ type program_counter = {
 }
 
 type local_state = {
-	global : Types.memory_frame;
-	formals : Types.memory_frame list;
-	locals : Types.memory_frame list;
+	global : memory_frame;
+	formals : memory_frame list;
+	locals : memory_frame list;
 	callstack : Cil.fundec list;
-	callContexts : Types.callingContext list;
-	stmtPtrs : Types.callingContext Types.IndexMap.t;
+	callContexts : callingContext list;
+	stmtPtrs : callingContext IndexMap.t;
 	va_arg : Bytes.bytes list list;
-	va_arg_map : Bytes.bytes list Types.VargsMap.t;
-	block_to_bytes : Bytes.bytes Types.deferred Types.MemoryBlockMap.t;
+	va_arg_map : Bytes.bytes list VargsMap.t;
+	block_to_bytes : Bytes.bytes deferred MemoryBlockMap.t;
 	pid : int;
 }
 
 type shared_state = {
 	path_condition : Bytes.bytes list;
-	shared_block_to_bytes : Bytes.bytes Types.deferred Types.MemoryBlockMap.t;
+	shared_block_to_bytes : Bytes.bytes deferred MemoryBlockMap.t;
 }
 
 type multijob = {
@@ -44,21 +50,21 @@ type multijob = {
 
 let update_to_shared_memory shared_block_to_bytes local_block_to_bytes =
 	let map_func key value =
-		if Types.MemoryBlockMap.mem key local_block_to_bytes then
-			Types.MemoryBlockMap.find key local_block_to_bytes
+		if MemoryBlockMap.mem key local_block_to_bytes then
+			MemoryBlockMap.find key local_block_to_bytes
 		else
 			value (* process lost the shared memory binding *)
 	in
-	Types.MemoryBlockMap.mapi map_func shared_block_to_bytes
+	MemoryBlockMap.mapi map_func shared_block_to_bytes
 
 let update_from_shared_memory shared_block_to_bytes local_block_to_bytes =
 	let map_func key value =
-		if Types.MemoryBlockMap.mem key shared_block_to_bytes then
-			Types.MemoryBlockMap.find key shared_block_to_bytes
+		if MemoryBlockMap.mem key shared_block_to_bytes then
+			MemoryBlockMap.find key shared_block_to_bytes
 		else
 			value (* not shared memory *)
 	in
-	Types.MemoryBlockMap.mapi map_func local_block_to_bytes
+	MemoryBlockMap.mapi map_func local_block_to_bytes
 
 (* put a job back into the multijob and update the shared state *)
 let put_job job multijob pid =
@@ -94,9 +100,9 @@ let put_job job multijob pid =
 
 (* update the multijob with a completed job *)
 let put_completion completion multijob = match completion with
-	| Types.Return (_, job_result)
-	| Types.Exit (_, job_result)
-	| Types.Abandoned (_, _, job_result) ->
+	| Return (_, job_result)
+	| Exit (_, job_result)
+	| Abandoned (_, _, job_result) ->
 		let shared = {
 			path_condition = job_result.Types.result_state.Types.path_condition;
 			shared_block_to_bytes = update_to_shared_memory 
@@ -106,7 +112,7 @@ let put_completion completion multijob = match completion with
 		{ multijob with
 			shared = shared;
 		}
-	| Types.Truncated _ ->
+	| Truncated _ ->
 		failwith "TODO"
 
 
@@ -128,20 +134,20 @@ let get_job multijob = match multijob.processes with
 			Types.block_to_bytes = update_from_shared_memory multijob.shared.shared_block_to_bytes process.block_to_bytes;
 			Types.path_condition = multijob.shared.path_condition;
 			(* TODO *)
-			Types.extra = Types.VarinfoMap.empty;
-			Types.malloc = Types.VarinfoMap.empty;
+			Types.extra = VarinfoMap.empty;
+			Types.malloc = VarinfoMap.empty;
 			Types.path_condition_tracked = [];
-			Types.bytes_eval_cache = Types.BytesMap.empty;
+			Types.bytes_eval_cache = BytesMap.empty;
 		} in
 		let job = {
 			Types.file = multijob.file;
 			Types.state = state;
-			Types.exHist = Types.emptyHistory;
+			Types.exHist = emptyHistory;
 			Types.instrList = program_counter.instrList;
 			Types.stmt = program_counter.stmt;
 			Types.jid = multijob.jid;
 			(* TODO *)
-			Types.trackedFns = Types.StringSet.empty;
+			Types.trackedFns = StringSet.empty;
 			Types.inTrackedFn = false;
 		} in
 		let multijob = { multijob with
@@ -162,45 +168,84 @@ let multi_set_output_formatter_interceptor job multijob job_queue interceptor =
 	Output.set_formatter (new Output.labeled label);
 	interceptor job multijob job_queue
 
-let intercept_fork job multijob job_queue interceptor =
-	match job.Types.instrList with
-		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), _, _)::_ when varinfo.Cil.vname = "fork" -> 
+let libc_fork job multijob retopt exps =
+	(* update instruction pointer, history, and such *)
+	let job = BuiltinFunctions.end_function_call job in
 
-			(* update the program counter *)
-			assert(List.length job.Types.instrList = 1);
-			let next_stmt = match job.Types.stmt.Cil.succs with
-				| [ h ] -> h
-				| _ -> failwith "Impossible!"
-			in
-			let job = { job with Types.instrList = []; Types.stmt = next_stmt; } in
+	Output.set_mode Output.MSG_REG;
+	Output.printf "fork(): parent: %d, child: %d@\n" multijob.current_pid multijob.next_pid;
 
-			Output.set_mode Output.MSG_REG;
-			Output.printf "fork(): parent: %d, child: %d@\n" multijob.current_pid multijob.next_pid;
+	(* clone the job *)
+	let job, child_job = match retopt with
+		| None ->
+			(job, job)
+		| Some cil_lval ->
 
-			(* clone the job *)
-			let job, child_job = match retopt with
-				| None ->
-					(job, job)
-				| Some cil_lval ->
+			let child_job = { job with
+				(* TODO: make the pid symbolic *)
+				state =
+					let state, lval = Expression.lval job.state cil_lval in
+					MemOp.state__assign state lval (Bytes.int_to_bytes multijob.next_pid)
+			} in
+			let job = { job with
+				state =
+					let state, lval = Expression.lval job.state cil_lval in
+					MemOp.state__assign state lval (Bytes.bytes__zero)
+			} in
+			(job, child_job)
+	in
+	let multijob = (put_job child_job multijob multijob.next_pid) in
+	let multijob = {multijob with next_pid = multijob.next_pid + 1 } in
+	(Active job, multijob)
 
-					let child_job = { job with
-						(* TODO: make the pid symbolic *)
-						Types.state =
-							let state, lval = Expression.lval job.Types.state cil_lval in
-							MemOp.state__assign state lval (Bytes.int_to_bytes multijob.next_pid)
-					} in
-					let job = { job with
-						Types.state =
-							let state, lval = Expression.lval job.Types.state cil_lval in
-							MemOp.state__assign state lval (Bytes.bytes__zero)
-					} in
-					(job, child_job)
-			in
-			let multijob = (put_job child_job multijob multijob.next_pid) in
-			let multijob = {multijob with next_pid = multijob.next_pid + 1 } in
-			(Types.Active job, (multijob, job_queue))
-		| _ -> 
-			interceptor job multijob job_queue
+(* allocates on the global heap *)
+let libc_malloc_size (state:Types.state) size bytes loc =
+	let name = FormatPlus.sprintf "%s(%d)#%d/%a%s"
+		(List.hd state.Types.callstack).Cil.svar.Cil.vname
+		size
+		(DataStructures.Counter.next BuiltinFunctions.libc___builtin_alloca__id)
+		Printcil.loc loc
+		(MemOp.state__trace state)
+	in
+	let block = Bytes.block__make name size Bytes.Block_type_Heap in
+	let addrof_block = Bytes.make_Bytes_Address (block, Bytes.bytes__zero) in
+	let state = MemOp.state__add_block state block bytes in
+	(state, block, addrof_block)
+
+let otter_gmalloc job multijob retopt exps =
+	let state, b_size = Expression.rval job.Types.state (List.hd exps) in
+	let size =
+		if Bytes.isConcrete_bytes b_size then
+			Bytes.bytes_to_int_auto b_size (*safe to use bytes_to_int as arg should be small *)
+		else
+			1 (* currently bytearray have unbounded length *)
+	in
+	let bytes =
+	  if Executeargs.run_args.Executeargs.arg_init_malloc_zero
+	  then Bytes.bytes__make size (* initially zero, as though malloc were calloc *)
+	  else Bytes.bytes__make_default size Bytes.byte__undef (* initially the symbolic 'undef' byte *)
+	in
+	let state, block, bytes = libc_malloc_size state size bytes (Statement.get_job_loc job) in
+
+	let job = BuiltinFunctions.end_function_call { job with state = BuiltinFunctions.set_return_value state retopt bytes } in
+	let rec push_to_all procs block bytes =
+		match procs with
+			| [] -> []
+			| (pc, ls)::t -> 
+				let ls = { ls with block_to_bytes = MemoryBlockMap.add block (Immediate bytes) ls.block_to_bytes; } in
+				(pc, ls)::(push_to_all t block bytes)
+	in
+	let multijob = 
+		{multijob with
+			shared = 
+				{multijob.shared with
+					shared_block_to_bytes = MemoryBlockMap.add block (Immediate bytes) multijob.shared.shared_block_to_bytes;
+				};
+			processes = push_to_all multijob.processes block bytes;
+		}
+	in
+
+	(Active job, multijob)
 
 let rec get_job_multijob job_queue = 
 	match job_queue with
@@ -213,20 +258,20 @@ let rec get_job_multijob job_queue =
 (* process the results *)
 let rec process_job_states result multijob completed multijob_queue =
 	match result with
-		| Types.Active job ->
+		| Active job ->
 			(* put the job back into the multijob and queue it *)
 			let multijob = put_job job multijob multijob.current_pid in
 			(completed, (multijob::multijob_queue))
-		| Types.Fork states ->
+		| Fork states ->
 			(* process all forks *)
 			List.fold_left begin fun (completed, multijob_queue) state ->
 				process_job_states state multijob completed multijob_queue
 			end (completed, multijob_queue) states
-		| Types.Complete completion ->
+		| Complete completion ->
 			(* store the results *)
 			let multijob = put_completion completion multijob in
 			begin match completion with
-				| Types.Abandoned (reason, loc, job_result) ->
+				| Abandoned (reason, loc, job_result) ->
 					Output.set_mode Output.MSG_MUSTPRINT;
 					Output.printf
 						"Error \"%a\" occurs at %a.@\nAbandoning path.@\n"
@@ -256,7 +301,7 @@ let run job =
 		processes = [];
 		shared = {
 			path_condition = [];
-			shared_block_to_bytes = Types.MemoryBlockMap.empty;
+			shared_block_to_bytes = MemoryBlockMap.empty;
 		};
 		jid = job.Types.jid;
 		next_pid = 1;
@@ -269,8 +314,9 @@ let run job =
 		get_job_multijob
 		(
 			unpack_job_interceptor @@
-			(*multi_set_output_formatter_interceptor @@@*)
-			(*intercept_fork @@@*)
+			multi_set_output_formatter_interceptor @@@
+			(intercept_multi_function_by_name_internal "fork"                       libc_fork) @@@
+			(intercept_multi_function_by_name_internal "__otter_multi_gmalloc"      otter_gmalloc) @@@
 			repack_job_interceptor @@@
 			BuiltinFunctions.interceptor @@ 
 			BuiltinFunctions.libc_interceptor @@
