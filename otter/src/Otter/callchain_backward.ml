@@ -91,7 +91,10 @@ let pass_targets targets job fexp exps =
                 (List.iter (Format.printf "%a && %!" BytesPrinter.bytes) state.path_condition);
                 (Format.printf "\n%!");
                 (Format.printf "Connection : %a\n%!" BytesPrinter.bytes connecting_bytes);
-			  let _, truth = MemOp.eval_with_cache state (connecting_bytes::state.path_condition)  (Operator.bytes__not target.Prioritizer.failing_condition) in
+			  let _, truth = MemOp.eval_with_cache state (connecting_bytes::state.path_condition)  (target.Prioritizer.failing_condition) in
+              (* TODO (martin): why the total_failing_condition does not include
+               * state.path_condition? 
+               *)
 			  let total_failing_condition = Operator.bytes__land target.Prioritizer.failing_condition connecting_bytes in
 			  let total_failing_condition = Operator.bytes__lor total_failing_condition fc in
 
@@ -152,10 +155,10 @@ let pass_targets targets job fexp exps =
 				  ()
 			  in
 				match truth with 
-				  | Ternary.True -> true,Bytes.bytes__zero
+				  | Ternary.False -> true,Bytes.bytes__zero
 				  | Ternary.Unknown -> 
 					  print_failed_assertion true; false,total_failing_condition
-				  | Ternary.False -> 
+				  | Ternary.True -> 
 					  print_failed_assertion false; false,total_failing_condition
 			)
 	  ) (true,Bytes.bytes__zero) fundecs

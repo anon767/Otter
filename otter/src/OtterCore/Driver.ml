@@ -18,7 +18,7 @@ let init_symbolic_pointer state varinfo size =
 	let block = block__make name size Block_type_Aliased in
 	let addrof_block = make_Bytes_Address (block, bytes__zero) in
 	let state = MemOp.state__add_block state block (bytes__symbolic size) in
-	(state, make_Bytes_Conditional (conditional__from_list [Unconditional bytes__zero; Unconditional addrof_block]))
+    (state, make_Bytes_Conditional (conditional__from_list [Unconditional bytes__zero; Unconditional addrof_block]))
 
 
 let init_symbolic_varinfo state varinfo =
@@ -28,9 +28,10 @@ let init_symbolic_varinfo state varinfo =
 	match typ with
 		| Cil.TPtr (basetyp,_) ->
 			assert (size==4);
+	        let basesize = (Cil.bitsSizeOf (basetyp)) / 8 in
 			Output.set_mode Output.MSG_REG;
 			Output.printf "Initialize %s to ITE(?,null,non-null)\n" varinfo.Cil.vname;
-			init_symbolic_pointer state varinfo size
+			init_symbolic_pointer state varinfo basesize
 		| _ ->
 			Output.set_mode Output.MSG_REG;
 			Output.printf "Initialize %s to symbolic\n" varinfo.Cil.vname;
