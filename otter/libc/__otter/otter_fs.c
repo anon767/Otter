@@ -96,9 +96,9 @@ struct __otter_fs_inode* __otter_fs_find_inode_in_tree(const char* name, struct 
 
 	while(*s == '/')
 	{
+		s++; /* skip any extra '/' between dirs, posix says they should be ignored */
 		if(*s == 0)
 			__otter_fs_error(ENOENT); /* path ended in a directory name not a file */
-		s++; /* skip any extra '/' between dirs, posix says they should be ignored */
 	}
 
 	return __otter_fs_find_inode_in_tree(s, d); /* search for the shortened path in the subtree */
@@ -128,9 +128,9 @@ struct __otter_fs_dnode* __otter_fs_find_dnode_in_tree(const char* name, struct 
 
 	while(*s == '/')
 	{
+		s++; /* skip any extra '/' between dirs, posix says they should be ignored */
 		if(*s == 0)
 			__otter_fs_error(ENOENT); /* path ended in a directory name not a file */
-		s++; /* skip any extra '/' between dirs, posix says they should be ignored */
 	}
 
 	return __otter_fs_find_dnode_in_tree(s, d); /* search for the shortened path in the subtree */
@@ -164,7 +164,7 @@ struct __otter_fs_dnode* __otter_fs_find_dnode(const char* name)
 
 int __otter_fs_legal_char(char c)
 {
-	return (isalnum(c) | c == '-');
+	return (isalnum(c) | c == '-' | c == '_');
 }
 
 /* OtterFS only allows posix portable names */
@@ -179,10 +179,10 @@ int __otter_fs_legal_name(const char* name)
 			
 		for(; ; name++)
 		{
-			if(!__otter_fs_legal_char(*name))
-				return (0);
 			if(*name == 0)
 				return (1);
+			if(!__otter_fs_legal_char(*name))
+				return (0);
 		}
 
 	}
@@ -254,7 +254,11 @@ struct __otter_fs_dnode* __otter_fs_mkdir(const char* name, struct __otter_fs_dn
 		(*newdirlist).next = NULL;
 
 		(*dir).numdirs++;
-		(*dirs).next = newdirlist;
+
+		if(pdirs)
+			(*pdirs).next = newdirlist;
+		else
+			(*dir).dirs = newdirlist;
 
 		return newdir;
 	}
@@ -274,8 +278,8 @@ struct __otter_fs_inode* __otter_fs_touch(const char* name, struct __otter_fs_dn
 		if(d || f) /* file or directory already exists */
 			__otter_fs_error(EEXIST);
 
-		struct __otter_fs_dirlist* files = (*dir).files;
-		struct __otter_fs_dirlist* pfiles = NULL;
+		struct __otter_fs_filelist* files = (*dir).files;
+		struct __otter_fs_filelist* pfiles = NULL;
 
 		while(files)
 		{
@@ -296,7 +300,11 @@ struct __otter_fs_inode* __otter_fs_touch(const char* name, struct __otter_fs_dn
 		(*newfilelist).next = NULL;
 
 		(*dir).numfiles++;
-		(*files).next = newfilelist;
+
+		if(pfiles)
+			(*pfiles).next = newfilelist;
+		else
+			(*dir).files = newfilelist;
 
 		return newfile;
 	}
@@ -436,7 +444,10 @@ struct __otter_fs_inode* __otter_fs_link_file(const char* name, struct __otter_f
 		(*target).linkno++;
 
 		(*dir).numfiles++;
-		(*files).next = newfilelist;
+		if(pfiles)
+			(*pfiles).next = newfilelist;
+		else
+			(*dir).files = newfilelist;
 
 		return target;
 	}
@@ -473,7 +484,10 @@ struct __otter_fs_dnode* __otter_fs_link_dir(const char* name, struct __otter_fs
 		(*target).linkno++;
 
 		(*dir).numdirs++;
-		(*dirs).next = newdirlist;
+		if(pdirs)
+			(*pdirs).next = newdirlist;
+		else
+			(*dir).dirs = newdirlist;
 
 		return target;
 	}
