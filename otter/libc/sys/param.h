@@ -1,4 +1,4 @@
-#ifndef _PARAM_H
-#define _PARAM_H
+#ifndef _SYS_PARAM_H
+#define _SYS_PARAM_H
 
 #endif

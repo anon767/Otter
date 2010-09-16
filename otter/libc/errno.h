@@ -22,6 +22,7 @@
 #define ESPIPE 17
 #define EPIPE 18
 #define ENOTEMPTY 19
+#define EINTR 20
 
 int errno = 0;
 

@@ -1,3 +1,5 @@
+#include<signal.h>
+
 int sigaltstack(const stack_t *ss, stack_t *oss)
 {
   return 0;

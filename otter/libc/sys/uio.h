@@ -1,4 +1,12 @@
-#ifndef _UIO_H
-#define _UIO_H
+#ifndef _SYS_UIO_H
+#define _SYS_UIO_H
+
+#include<sys/types.h>
+
+struct iovec
+{
+	void* iov_base;
+	size_t iov_len;
+};
 
 #endif
