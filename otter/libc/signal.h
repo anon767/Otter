@@ -52,8 +52,8 @@ typedef struct
 	int ss_flags;
 } stack_t;
 
-void (*signal(int sig, void (*func)(int)))(int);
-int raise(int sig);
+/*void (*signal(int sig, void (*func)(int)))(int);
+int raise(int sig);*/
 
 int sigaltstack(const stack_t *ss, stack_t *oss);
 int sigfillset(sigset_t *set);

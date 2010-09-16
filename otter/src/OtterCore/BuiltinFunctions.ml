@@ -893,6 +893,14 @@ let libc_interceptor job job_queue interceptor =
 		(intercept_function_by_name_internal "__libc_setjmp"           libc_setjmp) @@		
 		(intercept_function_by_name_internal "__libc_longjmp"          libc_longjmp) @@
 
+		(* signal.h *)
+		(intercept_function_by_name_external "sigaltstack"             "__otter_libc_sigaltstack") @@
+		(intercept_function_by_name_external "sigfillset"              "__otter_libc_sigfillset") @@
+		(intercept_function_by_name_external "sigaction"               "__otter_libc_sigaction") @@
+		(intercept_function_by_name_external "sigemptyset"             "__otter_libc_sigemptyset") @@
+		(intercept_function_by_name_external "sigaddset"               "__otter_libc_sigaddset") @@
+		(intercept_function_by_name_external "sigprocmask"             "__otter_libc_sigprocmask") @@
+
 		(* stdlib.h *)
 		(intercept_function_by_name_external "atoi"                    "__otter_libc_atoi") @@
 		(intercept_function_by_name_external "atol"                    "__otter_libc_atol") @@
@@ -948,6 +956,31 @@ let libc_interceptor job job_queue interceptor =
 		(intercept_function_by_name_external "memset"                  "__otter_libc_memset") @@
 		(intercept_function_by_name_external "strerror"                "__otter_libc_strerror") @@
 		(intercept_function_by_name_external "strlen"                  "__otter_libc_strlen") @@
+
+		(* unistd.h *)
+		(intercept_function_by_name_external "close"                   "__otter_libc_close") @@
+		(intercept_function_by_name_external "read"                    "__otter_libc_read") @@
+		(intercept_function_by_name_external "pread"                   "__otter_libc_pread") @@
+		(intercept_function_by_name_external "write"                   "__otter_libc_write") @@
+		(intercept_function_by_name_external "pwrite"                  "__otter_libc_pwrite") @@
+		(intercept_function_by_name_external "unlink"                  "__otter_libc_unlink") @@
+		(intercept_function_by_name_external "rmdir"                   "__otter_libc_rmdir") @@
+
+		(* sys/fcntl.h *)
+		(intercept_function_by_name_external "creat"                   "__otter_libc_creat") @@
+		(intercept_function_by_name_external "fcntl"                   "__otter_libc_fcntl") @@
+		(intercept_function_by_name_external "open"                    "__otter_libc_open") @@
+
+		(* sys/stat.h *)
+		(intercept_function_by_name_external "chmod"                   "__otter_libc_chmod") @@
+		(intercept_function_by_name_external "fchmod"                  "__otter_libc_fchmod") @@
+		(intercept_function_by_name_external "fstat"                   "__otter_libc_fstat") @@
+		(intercept_function_by_name_external "lstat"                   "__otter_libc_lstat") @@
+		(intercept_function_by_name_external "mkdir"                   "__otter_libc_mkdir") @@
+		(intercept_function_by_name_external "mkfifo"                  "__otter_libc_mkfifo") @@
+		(intercept_function_by_name_external "mknod"                   "__otter_libc_mknod") @@
+		(intercept_function_by_name_external "stat"                    "__otter_libc_stat") @@
+		(intercept_function_by_name_external "umask"                   "__otter_libc_umask") @@
 
 		(* pass on the job when none of those match *)
 		interceptor

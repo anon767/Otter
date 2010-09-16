@@ -62,35 +62,6 @@ int __otter_libc_close(int fd)
 	return (0);
 }
 
-ssize_t __otter_libc_read(int fd, void* buf, size_t num)
-{	
-	if(fd > -1 && fd < __otter_fs_MAXOPEN) /* is file a possible valid file? */
-	{
-		int ft = __otter_fs_files[fd];
-
-		if(ft != -1) /* is file a valid file entry? */
-		{
-
-			if(!(__otter_fs_open_files[ft].mode & O_RDONLY)) /* open for reading? */
-			{
-				errno = EBADF;
-				return(-1);
-			}
-
-			int numread = __otter_libc_read2(fd, buf, num, __otter_fs_open_files[ft].offset);
-
-			if(numread == -1)
-				return (-1);
-
-			__otter_fs_open_files[ft].offset += numread;
-			return (numread);
-		}
-	}
-
-	errno = EBADF;
-	return(-1);
-}
-
 ssize_t __otter_libc_read2(int ft, void* buf, size_t num, off_t offset)
 {
 	if(num == 0)
@@ -197,6 +168,35 @@ ssize_t __otter_libc_read2(int ft, void* buf, size_t num, off_t offset)
 	}
 
 	return (0);
+}
+
+ssize_t __otter_libc_read(int fd, void* buf, size_t num)
+{	
+	if(fd > -1 && fd < __otter_fs_MAXOPEN) /* is file a possible valid file? */
+	{
+		int ft = __otter_fs_files[fd];
+
+		if(ft != -1) /* is file a valid file entry? */
+		{
+
+			if(!(__otter_fs_open_files[ft].mode & O_RDONLY)) /* open for reading? */
+			{
+				errno = EBADF;
+				return(-1);
+			}
+
+			int numread = __otter_libc_read2(fd, buf, num, __otter_fs_open_files[ft].offset);
+
+			if(numread == -1)
+				return (-1);
+
+			__otter_fs_open_files[ft].offset += numread;
+			return (numread);
+		}
+	}
+
+	errno = EBADF;
+	return(-1);
 }
 
 ssize_t __otter_libc_pread(int fd, void* buf, size_t num, off_t offset)
