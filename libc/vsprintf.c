@@ -2,9 +2,8 @@
  * vsprintf.c
  */
 
-#include "stdio.h"
+#include <stdio.h>
 #include <unistd.h>
-#include <stdarg.h>
 
 int vsprintf(char *buffer, const char *format, va_list ap)
 {

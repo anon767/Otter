@@ -1,9 +1,10 @@
+#define TYPE int
+#define NAME atoi
 #include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "strntoumax.c"
 
-int atoi(const char *nptr)
+TYPE NAME(const char *nptr)
 {
-	return (int) strntoumax(nptr, (char **)0, 10, ~(size_t) 0);
+	return (TYPE) strntoumax(nptr, (char **)NULL, 10, ~(size_t) 0);
 }

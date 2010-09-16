@@ -1,4 +1,6 @@
 /*
+ * vsnprintf.c
+ *
  * vsnprintf(), from which the rest of the printf()
  * family is built
  */
@@ -163,11 +165,8 @@ format_int(char *q, size_t n, uintmax_t val, enum flags flags,
 	return o;
 }
 
-int vsnprintf(char *buffer, size_t n, const char *format, va_list ap){
-#ifdef __FAVORITE_SE__
-	strcpy(buffer,format);
-	return 0;
-#else
+int vsnprintf(char *buffer, size_t n, const char *format, va_list ap)
+{
 	const char *p = format;
 	char ch;
 	char *q = buffer;
@@ -486,5 +485,4 @@ int vsnprintf(char *buffer, size_t n, const char *format, va_list ap){
 		buffer[n - 1] = '\0';	/* Overflow - terminate at end of buffer */
 
 	return o;
-#endif
 }

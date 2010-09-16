@@ -6,7 +6,6 @@
 #include <stdarg.h>
 #include <unistd.h>
 
-
 int sprintf(char *buffer, const char *format, ...)
 {
 	va_list ap;

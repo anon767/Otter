@@ -5,7 +5,6 @@
  */
 
 #include <stdio.h>
-#include "fwrite.c"
 
 int fputc(int c, FILE *f)
 {

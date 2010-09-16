@@ -8,7 +8,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "fwrite.c"
 
 int fputs(const char *s, FILE *file)
 {

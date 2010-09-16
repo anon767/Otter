@@ -6,15 +6,11 @@
 #include <string.h>
 #include <stdarg.h>
 #include <unistd.h>
-#include "fwrite.c"
 
 #define BUFFER_SIZE	32768
 
 int vfprintf(FILE * file, const char *format, va_list ap)
 {
-//#ifdef __STUB_SIMPLIFY__
-//	return 0;
-//#else
 	int rv;
 	char buffer[BUFFER_SIZE];
 
@@ -27,5 +23,4 @@ int vfprintf(FILE * file, const char *format, va_list ap)
 		rv = BUFFER_SIZE - 1;
 
 	return _fwrite(buffer, rv, file);
-//#endif
 }

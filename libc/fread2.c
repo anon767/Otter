@@ -6,7 +6,6 @@
 
 #define __NO_FREAD_FWRITE_INLINES
 #include <stdio.h>
-#include "fread.c"
 
 size_t fread(void *ptr, size_t size, size_t nmemb, FILE * f)
 {
