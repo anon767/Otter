@@ -18,7 +18,7 @@ let test_integration main_loop dir =
             close_out tempout;
 
             (* TODO: add standard search paths to otter.pl *)
-            if (Sys.command ("./otter.pl -nostdlib -I./libc/ -include./libc/__otter/all.h -E -o"^temppath^" "^fullpath^" 2>/dev/null")) <> 0 then
+            if (Sys.command ("./otter.pl -nostdinc -I./libc/ -include./libc/__otter/all.h -E -o"^temppath^" "^fullpath^" 2>/dev/null")) <> 0 then
                 assert_failure "Preprocessor parse error.";
 
             test_otter_with_pragma ~main_loop temppath ()

@@ -7,6 +7,8 @@
     The following [#pragma] directives are understood:
         - [#pragma command_line(<string argument>, ...)] specifies the command line arguments to be passed to
             [main()]. E.g., [#pragma command_line("foo", "bar")].
+        - [#pragma cil_options(<string argument>, ...)] specifies the command line arguments to be passed to
+            CIL. E.g., [#pragma command_line("--useLogicalOperators")].
         - [#pragma has_failing_assertions] specifies that failing assertions should be expected. Conversely, {e not
             providing} this directive specifies that failing assertions should not be expected.
         - [#pragma expect_return(<assertion expression>, ...)] specifies that there should be a {!Types.Return}
@@ -44,6 +46,7 @@ open OtterCore
 
 (** Flags for setting up the tests. *)
 type flags = {
+    cil_options : string list;      (** The command line options to pass to CIL. *)
     command_line : string list;     (** The command line to use to run the test. *)
     has_failing_assertions : bool;  (** If failing assertions are expected in the test. *)
 }
@@ -51,6 +54,7 @@ type flags = {
 
 (** The default test flags. *)
 let default_flags = {
+    cil_options = [];
     command_line = [];
     has_failing_assertions = false;
 }
@@ -243,6 +247,15 @@ let parse_pragmas file =
                     if command_line = [] then assert_loc_failure file loc "Invalid command line (must have at least one argument).";
                     ({ flags with command_line = command_line }, test)
 
+                | "cil_options", args ->
+                    if flags.cil_options <> [] then assert_loc_failure file loc "CIL options already defined.";
+                    let cil_options = List.map begin function
+                        | Cil.AStr arg -> arg
+                        | _ -> assert_loc_failure file loc "Invalid CIL option (arguments should be \"<argument string>\")."
+                    end args in
+                    if cil_options = [] then assert_loc_failure file loc "Invalid CIL option (must have at least one argument).";
+                    ({ flags with cil_options = cil_options }, test)
+
                 | "has_failing_assertions", [] ->
                     ({ flags with has_failing_assertions = true }, test)
                 | "has_failing_assertions", _ ->
@@ -314,6 +327,16 @@ let test_otter_with_pragma ?(main_loop=Driver.run) path = fun () ->
 
     (* load the configuration from the file *)
     let flags, test = parse_pragmas file in
+
+    (* See if any CIL options were defined. If so, parse the file again with those options *)
+    if flags.cil_options <> [] then
+    Arg.parse_argv
+      ~current:(ref 0)
+      (Array.of_list ("otterTest"::flags.cil_options)) (* Give a fake program name, then the options *)
+      Ciloptions.options (* Use these options *)
+      (fun _ -> ()) (* Ignore any anonymous arguments *)
+      ""; (* We don't need a help message here *)
+    let file = Frontc.parse path () in
 
     (* prepare the file and run the symbolic executor *)
     Driver.prepare_file file;
