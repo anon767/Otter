@@ -348,7 +348,8 @@ let analyze_function (f : fundec ) : unit =
     H.add fun_access_map f (H.create 8);
     A.assign oldlv newf;
     current_ret := Some ret;
-    analyze_block f.sbody
+    analyze_block f.sbody;
+    current_fundec := None
 
 let analyze_global (g : global ) : unit =
   match g with
@@ -375,9 +376,11 @@ let analyze_file (f : file) : unit =
 (*                                                                     *)
 (***********************************************************************)
 
-(* Same as analyze_expr, but no constraints. *)
+(* Use solution computed from analyze_file, if found; otherwise, compute for the new expression.
+ * Existing solutions should not change, since no new assignment constraints are added (which occurs
+ * in analyze_instr and above only). *)
 let rec traverse_expr (e : exp) : A.tau =
-  H.find expressions e
+  try H.find expressions e with Not_found -> analyze_expr e
 
 and traverse_expr_as_lval (e : exp) : A.lvalue =
   match e with
@@ -385,7 +388,7 @@ and traverse_expr_as_lval (e : exp) : A.lvalue =
     | _ -> assert false (* todo -- other kinds of expressions? *)
 
 and traverse_lval (lv : lval ) : A.lvalue =
-  H.find lvalues lv
+  try H.find lvalues lv with Not_found -> analyze_lval lv
 
 let may_alias (e1 : exp) (e2 : exp) : bool =
   let tau1,tau2 = traverse_expr e1, traverse_expr e2 in

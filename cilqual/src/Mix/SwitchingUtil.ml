@@ -240,20 +240,7 @@ let points_to file exp =
     let base_type = Cil.unrollType (Cil.typeOf exp) in
     match base_type with
         | Cil.TPtr (target_type, _) when not (Cil.isFunctionType target_type) ->
-            (* Don't really know what sort of expressions Ptranal.resolve_exp will work with; it doesn't even seem to
-               handle Cil.Lval consistently. *)
-            let targets = match exp with
-                | Cil.Lval lval ->
-                    begin try
-                        Ptranal.resolve_lval lval
-                    with
-                        | Not_found ->
-                            (* seems to occur for unused variable *)
-                            []
-                    end
-                | exp ->
-                    Ptranal.resolve_exp exp
-            in
+            let targets = Ptranal.resolve_exp exp in
 
             let malloc_list, targets =
                 List.partition (fun p -> List.mem p.Cil.vname Ptranal.alloc_names) targets
