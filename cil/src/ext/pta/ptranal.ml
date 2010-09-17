@@ -407,16 +407,23 @@ let may_alias (e1 : exp) (e2 : exp) : bool =
       end;
     result
 
-let resolve_lval (lv : lval) : varinfo list =
-  A.points_to (traverse_lval lv)
+let separate_allocs ptset =
+  (* given a points-to set result from Olf/Golf, separate it into a list of varinfos and
+   * a list of strings denoting dynamic allocation sites *)
+  List.fold_left begin fun (vs, allocs) (name, v) ->
+    if List.mem v.vname alloc_names then (vs, (v, name)::allocs) else (v::vs, allocs)
+  end ([], []) ptset
 
-let resolve_exp (e : exp) : varinfo list =
-  A.epoints_to (traverse_expr e)
+let resolve_lval (lv : lval) : varinfo list * (varinfo * string) list =
+  separate_allocs (A.points_to (traverse_lval lv))
+
+let resolve_exp (e : exp) : varinfo list * (varinfo * string) list =
+  separate_allocs (A.epoints_to (traverse_expr e))
 
 let resolve_funptr (e : exp) : fundec list =
   let varinfos = A.epoints_to (traverse_expr e) in
     List.fold_left
-      (fun fdecs -> fun vinf ->
+      (fun fdecs (_, vinf) ->
          try F.find vinf !fun_varinfo_map :: fdecs
          with Not_found -> fdecs)
       []
@@ -542,10 +549,10 @@ let absloc_lval_aliases lv =
 
 (* all abslocs that e transitively points to *)
 let absloc_e_transitive_points_to (e : Cil.exp) : absloc list =
-  let rec lv_trans_ptsto (worklist : varinfo list) (acc : varinfo list) : absloc list =
+  let rec lv_trans_ptsto (worklist : (string * varinfo) list) (acc : varinfo list) : absloc list =
     match worklist with
         [] -> List.map absloc_of_varinfo acc
-      | vi :: wklst'' ->
+      | (_, vi) :: wklst'' ->
           if List.mem vi acc then lv_trans_ptsto wklst'' acc
           else
             lv_trans_ptsto

@@ -240,11 +240,8 @@ let points_to file exp =
     let base_type = Cil.unrollType (Cil.typeOf exp) in
     match base_type with
         | Cil.TPtr (target_type, _) when not (Cil.isFunctionType target_type) ->
-            let targets = Ptranal.resolve_exp exp in
-
-            let malloc_list, targets =
-                List.partition (fun p -> List.mem p.Cil.vname Ptranal.alloc_names) targets
-            in
+            let targets, malloc_list = Ptranal.resolve_exp exp in
+            let malloc_list = List.map fst malloc_list in
 
             let accept_type typ =
                 (* filter types that are compatible with the target type *)

@@ -1405,19 +1405,11 @@ let points_to_aux (t : tau) : constant list =
 let points_to_names (lv : lvalue) : string list =
   List.map (fun (_, str, _) -> str) (points_to_aux lv.contents)
 
-let points_to (lv : lvalue) : Cil.varinfo list =
-  let rec get_vinfos l : Cil.varinfo list = match l with
-    | (_, _, h) :: t -> h :: get_vinfos t
-    | [] -> []
-  in
-    get_vinfos (points_to_aux lv.contents)
+let points_to (lv : lvalue) : (string * Cil.varinfo) list =
+  List.map (fun (_, name, vinfo) -> (name, vinfo)) (points_to_aux lv.contents)
 
-let epoints_to (t : tau) : Cil.varinfo list =
-  let rec get_vinfos l : Cil.varinfo list = match l with
-    | (_, _, h) :: t -> h :: get_vinfos t
-    | [] -> []
-  in
-    get_vinfos (points_to_aux t)
+let epoints_to (t : tau) : (string * Cil.varinfo) list =
+  List.map (fun (_, name, vinfo) -> (name, vinfo)) (points_to_aux t)
 
 let smart_alias_query (l : label) (l' : label) : bool =
   (* Set of dead configurations *)

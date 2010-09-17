@@ -1076,25 +1076,25 @@ let points_to_aux (t : tau) : absloc list =
       NoContents -> []
     | ReachedTop -> raise UnknownLocation
 
-let points_to (lv : lvalue) : Cil.varinfo list =
-  let rec get_vinfos l : Cil.varinfo list =
+let points_to (lv : lvalue) : (string * Cil.varinfo) list =
+  let rec get_vinfos l : (string * Cil.varinfo) list =
     match l with
         [] -> []
-      | (_, _, Some h) :: t -> h :: get_vinfos t
+      | (_, name, Some h) :: t -> (name, h) :: get_vinfos t
       | (_, _, None) :: t -> get_vinfos t
   in
     get_vinfos (points_to_aux lv.contents)
 
-let epoints_to (t : tau) : Cil.varinfo list =
-  let rec get_vinfos l : Cil.varinfo list = match l with
+let epoints_to (t : tau) : (string * Cil.varinfo) list =
+  let rec get_vinfos l : (string * Cil.varinfo) list = match l with
       [] -> []
-    | (_, _, Some h) :: t -> h :: get_vinfos t
+    | (_, name, Some h) :: t -> (name, h) :: get_vinfos t
     | (_, _, None) :: t -> get_vinfos t
   in
     get_vinfos (points_to_aux t)
 
 let points_to_names (lv : lvalue) : string list =
-  List.map (fun v -> v.vname) (points_to lv)
+  List.map (fun (_, v) -> v.vname) (points_to lv)
 
 let absloc_points_to (lv : lvalue) : absloc list =
   points_to_aux lv.contents

@@ -66,8 +66,8 @@ val bottom : unit -> tau
 val return : tau -> tau -> unit
 val make_fresh : string -> tau
 val points_to_names : lvalue -> string list
-val points_to : lvalue -> Cil.varinfo list
-val epoints_to : tau -> Cil.varinfo list
+val points_to : lvalue -> (string * Cil.varinfo) list
+val epoints_to : tau -> (string * Cil.varinfo) list
 val string_of_lvalue : lvalue -> string
 val global_lvalue : lvalue -> bool
 val alias_query : bool -> lvalue list -> int * int

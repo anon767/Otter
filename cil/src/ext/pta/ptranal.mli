@@ -97,13 +97,11 @@ val print_types : unit -> unit
   high-level queries may raise this exception *)
 exception UnknownLocation
 
-val alloc_names : string list
-
 val may_alias : Cil.exp -> Cil.exp -> bool
 
-val resolve_lval : Cil.lval -> (Cil.varinfo list)
+val resolve_lval : Cil.lval -> Cil.varinfo list * (Cil.varinfo * string) list
 
-val resolve_exp : Cil.exp -> (Cil.varinfo list)
+val resolve_exp : Cil.exp -> Cil.varinfo list * (Cil.varinfo * string) list
 
 val resolve_funptr : Cil.exp -> (Cil.fundec list)
 
