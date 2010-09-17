@@ -123,7 +123,7 @@ unsigned long long __otter_libc_strtoull(const char* nptr, char** endptr, int ba
 
 int __otter_libc_rand()
 {
-	return __SYMBOLIC(4)%RAND_MAX;
+	return (short)__SYMBOLIC(2);
 }
 
 void __otter_libc_srand(int seed)

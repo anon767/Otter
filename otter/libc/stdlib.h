@@ -38,7 +38,7 @@ unsigned long long strtoull(const char* nptr, char** endptr, int base);
 
 
 /* Random number generator (7.20.2) */
-#define RAND_MAX 32767
+#define RAND_MAX 0xffff
 int rand();
 int srand();
 

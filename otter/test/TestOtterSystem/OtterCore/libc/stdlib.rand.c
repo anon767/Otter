@@ -8,7 +8,7 @@ int main()
 	int i = rand();
 
 	__ASSERT(i >= 0);
-	__ASSERT(i < RAND_MAX);
+	__ASSERT(i <= RAND_MAX);
 
 	return(0);
 }
