@@ -2,6 +2,8 @@
 #include <__otter/otter_fs.h>
 #include <stdarg.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
 
 int __otter_libc_creat(const char* name, mode_t mode)
 {
@@ -13,6 +15,8 @@ int __otter_libc_fcntl(int fd, int cmd, ...)
 {
 	va_list varargs;
 	va_start(varargs, cmd);
+
+	int r = -1;
 	
 	switch (cmd)
 	{
@@ -22,7 +26,28 @@ int __otter_libc_fcntl(int fd, int cmd, ...)
 			break;
 		case F_SETFD: 
 			break;
-		case F_SETFL: 
+		case F_GETFL:
+			if(fd > -1 && fd < __otter_fs_MAXOPEN) /* is file a possible valid file? */
+			{
+				int ft = __otter_fs_files[fd];
+
+				if(ft > -1) /* is file a valid file entry? */
+				{
+					r = __otter_fs_open_files[ft].mode;
+				}
+			}
+			break;
+		case F_SETFL:
+			if(fd > -1 && fd < __otter_fs_MAXOPEN) /* is file a possible valid file? */
+			{
+				int ft = __otter_fs_files[fd];
+
+				if(ft > -1) /* is file a valid file entry? */
+				{
+					__otter_fs_open_files[ft].mode = va_arg(varargs, int);
+					r = 0;
+				}
+			}
 			break;
 		case F_GETLK: 
 			break;
@@ -34,15 +59,21 @@ int __otter_libc_fcntl(int fd, int cmd, ...)
 			break;
 		case F_SETOWN: 
 			break;
+		default:
+			errno = EINVAL;
+			break;
 	}
 
 	va_end(varargs);
 
-	return (-1);
+	return r;
 }
 
-int __otter_libc_open(const char* name, int oflag, ...)
+int __otter_libc_open(const char* name2, int oflag, ...)
 {
+	char* name = malloc(__libc_get_block_size(name2));
+	strcpy(name, name2);
+
 	if(O_NONBLOCK & oflag) /* non blocking I/O not supported */
 	{
 		__ASSERT(0);
@@ -88,7 +119,9 @@ int __otter_libc_open(const char* name, int oflag, ...)
 	}
 
 	if(!dnode) /* can't find path */
+	{
 		return (-1);
+	}
 
 	a++;
 

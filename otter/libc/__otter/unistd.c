@@ -162,6 +162,16 @@ ssize_t __otter_libc_read2(int ft, void* buf, size_t num, off_t offset)
 			__otter_fs_open_files[ft].status = __otter_fs_STATUS_EOF;
 			return (0);
 			break;
+		case __otter_fs_TYP_ZERO:
+			__otter_fs_open_files[ft].status = __otter_fs_STATUS_OK;
+			for(int i = 0; i < num; i++)
+			{
+					buf[i] = 0;
+			}
+
+			return (num);
+
+			break;
 		default: /* this should never happen as all cases should be enumerated */
 			__ASSERT(0);
 			break;
@@ -308,6 +318,7 @@ ssize_t __otter_libc_write2(int ft, void* buf, size_t num, off_t offset)
 			__ASSERT(0); /* should not be possible to open a dir for writing */
 			break;
 		case __otter_fs_TYP_NULL:
+		case __otter_fs_TYP_ZERO:
 			__otter_fs_open_files[ft].status = __otter_fs_STATUS_EOF;
 			return (num);
 			break;

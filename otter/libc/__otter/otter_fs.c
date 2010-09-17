@@ -17,7 +17,7 @@ int __otter_fs_can_permission(int filep, int wantp)
 	else if(filep & 0x1000)
 		wantp = wantp << 3;
 
-	return (filep & wantp == wantp);
+	return ((filep & wantp) == wantp);
 }
 
 int __otter_fs_is_owner(int filep)
@@ -141,7 +141,10 @@ struct __otter_fs_inode* __otter_fs_find_inode(const char* name)
 	if(name)
 	{
 		if(*name == '/') /* absolute path */
+		{
+			name++;
 			return __otter_fs_find_inode_in_tree(name, __otter_fs_root);
+		}
 		else /* relative path */
 			return __otter_fs_find_inode_in_tree(name, __otter_fs_pwd);
 	}
@@ -154,7 +157,10 @@ struct __otter_fs_dnode* __otter_fs_find_dnode(const char* name)
 	if(name)
 	{
 		if(*name == '/') /* absolute path */
+		{
+			name++;
 			return __otter_fs_find_dnode_in_tree(name, __otter_fs_root);
+		}
 		else /* relative path */
 			return __otter_fs_find_dnode_in_tree(name, __otter_fs_pwd);
 	}
@@ -688,10 +694,16 @@ void __otter_fs_mount()
 
 	struct __otter_fs_inode* tty = __otter_fs_touch("tty", dev);
 	struct __otter_fs_inode* null = __otter_fs_touch("null", dev);
+	struct __otter_fs_inode* zero = __otter_fs_touch("zero", dev);
 	__otter_fs_link_file("console", tty, dev);
 
 	(*tty).permissions = 0x01B6;
 	(*null).permissions = 0x01B6;
+	(*zero).permissions = 0x01B6;
+
+	(*tty).type = __otter_fs_TYP_TTY;
+	(*null).type = __otter_fs_TYP_NULL;
+	(*zero).type = __otter_fs_TYP_ZERO;
 
 	(*wrk).permissions = 0x01FF;
 	(*tmp).permissions = 0x03FF;

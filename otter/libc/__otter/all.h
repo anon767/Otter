@@ -17,5 +17,10 @@
 __otter_libc_init()
 {
 	__otter_fs_mount();
+
+	open("/dev/tty", O_RDONLY);
+	open("/dev/tty", O_WRONLY);
+	open("/dev/tty", O_WRONLY);
+
 	return (0);
 }

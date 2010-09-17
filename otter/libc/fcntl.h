@@ -6,14 +6,15 @@
 #define F_DUPFD 1
 #define F_GETFD 2
 #define F_SETFD 3
-#define F_SETFL 4
-#define F_GETLK 5
-#define F_SETLK 6
-#define F_SETLKW 7
-#define F_GETOWN 8
-#define F_SETOWN 9
+#define F_GETFL 4
+#define F_SETFL 5
+#define F_GETLK 6
+#define F_SETLK 7
+#define F_SETLKW 8
+#define F_GETOWN 9
+#define F_SETOWN 10
 
-#define FD_CLOEXEC 10
+#define FD_CLOEXEC 8
 
 #define F_RDLCK 1
 #define F_UNLCK 0

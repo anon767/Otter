@@ -10,6 +10,7 @@
 #define __otter_fs_TYP_FIFO 0x0040
 #define __otter_fs_TYP_TTY  0x00C0
 #define __otter_fs_TYP_NULL 0x0140
+#define __otter_fs_TYP_ZERO 0x01C0
 
 #define __otter_fs_IS_TYP_SPECIAL(x) = ((x) & 64)
 

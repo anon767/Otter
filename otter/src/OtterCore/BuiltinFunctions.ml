@@ -912,6 +912,7 @@ let libc_interceptor job job_queue interceptor =
 		(intercept_function_by_name_external "rand"                    "__otter_libc_rand") @@
 		(intercept_function_by_name_external "srand"                   "__otter_libc_srand") @@
 		(intercept_function_by_name_internal "malloc"                  libc_malloc) @@
+		(intercept_function_by_name_internal "__otter_multi_gmalloc"   libc_malloc) @@
 		(intercept_function_by_name_external "calloc"                  "__otter_libc_calloc") @@
 		(intercept_function_by_name_external "realloc"                 "__otter_libc_realloc") @@
 		(intercept_function_by_name_internal "free"                    libc_free) @@
