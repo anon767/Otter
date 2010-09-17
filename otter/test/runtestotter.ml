@@ -13,8 +13,8 @@ end
 
 let _ =
     run_test_tt_main begin TestList [
+        TestOtterCore.FunctionCalls.testsuite;
         TestOtter.FileJobs.testsuite;
-        TestOtter.CoreFunctionCalls.testsuite;
         TestOtter.Coverage.testsuite;
         TestOtter.BoundsChecking.testsuite;
         TestOtterPragmaTests.OtterPragmaTestsTests.testsuite;
