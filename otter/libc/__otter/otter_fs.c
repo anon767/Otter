@@ -654,6 +654,89 @@ struct __otter_fs_dnode* __otter_fs_get_dnode_from_fd(int file)
 	__otter_fs_error(EBADF);
 }
 
+int __otter_fs_change_file_open_mode(int file, int mode)
+{
+	if(file > -1 && file < __otter_fs_MAXOPEN) /* is file a possible valid file? */
+	{
+		int ft = __otter_fs_files[file];
+
+		if(ft > -1) /* is file a valid file entry? */
+		{
+			if(__otter_fs_open_files[ft].type == __otter_fs_TYP_FILE)
+			{
+				struct __otter_fs_inode* inode = ((struct __otter_fs_inode*)__otter_fs_open_files[ft].vnode);
+
+				int old_mode = __otter_fs_open_files[ft].mode;
+				int changed = old_mode ^ mode;
+
+				int permissions = 0;
+				if(changed & O_RDONLY)
+					permissions += 2;
+				if(changed & O_WRONLY)
+					permissions += 4;
+
+				if(!__otter_fs_can_permission((*inode).permissions, permissions))
+				{
+					errno = EACCESS;
+					return (-1);
+				}
+
+				__otter_fs_open_files[ft].mode = mode;
+
+				if(changed & O_RDONLY)
+					(*inode).r_openno++;
+				if(changed & O_WRONLY)
+					(*inode).w_openno++;
+			}
+		}
+	}
+
+	__otter_fs_error(EBADF);
+
+}
+
+int __otter_fs_change_dir_open_mode(int file, int mode)
+{
+	if(file > -1 && file < __otter_fs_MAXOPEN) /* is file a possible valid file? */
+	{
+		int ft = __otter_fs_files[file];
+
+		if(ft > -1) /* is file a valid file entry? */
+		{
+			if(__otter_fs_open_files[ft].type == __otter_fs_TYP_FILE)
+			{
+				struct __otter_fs_dnode* dnode = ((struct __otter_fs_dnode*)__otter_fs_open_files[ft].vnode);
+
+				int old_mode = __otter_fs_open_files[ft].mode;
+				int changed = old_mode ^ mode;
+
+				int permissions = 0;
+				if(changed & O_RDONLY)
+					permissions = 2;
+				if(mode & O_WRONLY) /* can't have write access to a directory */
+				{
+					errno = EISDIR;
+					return (-1);
+				}
+
+				if(!__otter_fs_can_permission((*dnode).permissions, permissions))
+				{
+					errno = EACCESS;
+					return (-1);
+				}
+
+				__otter_fs_open_files[ft].mode = mode;
+
+				if(changed & O_RDONLY)
+					(*dnode).r_openno++;
+			}
+		}
+	}
+
+	__otter_fs_error(EBADF);
+
+}
+
 /* file system initilization */
 
 /*

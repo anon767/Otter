@@ -94,6 +94,8 @@ int __otter_fs_open_file(struct __otter_fs_inode* inode, int mode);
 int __otter_fs_open_dir(struct __otter_fs_dnode* dnode, int mode);
 struct __otter_fs_inode* __otter_fs_get_inode_from_fd(int file);
 struct __otter_fs_dnode* __otter_fs_get_dnode_from_fd(int file);
+int __otter_fs_change_file_open_mode(int file, int mode);
+int __otter_fs_change_dir_open_mode(int file, int mode);
 
 int __otter_fs_legal_name(const char* name);
 

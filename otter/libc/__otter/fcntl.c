@@ -37,15 +37,19 @@ int __otter_libc_fcntl(int fd, int cmd, ...)
 				}
 			}
 			break;
-		case F_SETFL:
+		case F_SETFL:;
+			int mode = va_arg(varargs, int);
+
 			if(fd > -1 && fd < __otter_fs_MAXOPEN) /* is file a possible valid file? */
 			{
 				int ft = __otter_fs_files[fd];
 
 				if(ft > -1) /* is file a valid file entry? */
 				{
-					__otter_fs_open_files[ft].mode = va_arg(varargs, int);
-					r = 0;
+					if(__otter_fs_open_files[ft].type == __otter_fs_TYP_DIR)
+						r = __otter_fs_change_dir_open_mode(fd, mode);
+					else
+						r = __otter_fs_change_file_open_mode(fd, mode);
 				}
 			}
 			break;
