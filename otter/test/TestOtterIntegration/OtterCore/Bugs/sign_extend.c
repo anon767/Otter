@@ -3,7 +3,7 @@
 #pragma expect_return()
 
 int main(){
-  unsigned char c;
+  signed char c;
   __SYMBOLIC(&c);
   if ((int)c < 0);
 
