@@ -179,7 +179,11 @@ let exec_instr_call job instr lvalopt fexp exps =
 						(exec_fundec job state instr fundec lvalopt exps)
 					with Failure msg ->
 						if run_args.arg_failfast then failwith msg;
-						let result = { result_file = job.file; result_state = state; result_history = exHist } in
+						let result = { 
+                            result_file = job.file; 
+                            result_state = state; 
+                            result_history = exHist;
+                            result_decision_path = job.decisionPath; } in
 						Complete (Types.Abandoned (`Failure msg, get_job_loc job, result))
 				in
 				job_state::(process_func_list t)
@@ -286,7 +290,11 @@ let exec_stmt job =
 										(state, Some retval)
 								in
 								Complete (Types.Return
-									(retval, { result_file = job.file; result_state = state; result_history = nextExHist None; }))
+									(retval, { 
+                                        result_file = job.file; 
+                                        result_state = state; 
+                                        result_history = nextExHist None;
+                                        result_decision_path = job.decisionPath; }))
 						| (Source (destOpt,callStmt,_,nextStmt))::_ ->
 								let state2 =
 									match expopt, destOpt with
@@ -374,19 +382,27 @@ let exec_stmt job =
 						end;
  
 					let state, truth = MemOp.eval_with_cache state state.path_condition rv in
+                    let stmtInfo = stmtInfo_of_job job in
  
 					Output.set_mode Output.MSG_REG;
+                    
 					match truth with
 						| Ternary.True ->
 							Output.printf "True@\n";
 							let nextState,nextStmt = try_branch state None block1 in
-							let job' = { job with state = nextState; stmt = nextStmt; } in
+							let job' = { job with 
+                              state = nextState; 
+                              stmt = nextStmt; 
+                              decisionPath = (stmtInfo, true)::job.decisionPath; } in
 							Active { job' with exHist = nextExHist (Some nextStmt) ~whichBranch:true; }
 
 						| Ternary.False ->
 							Output.printf "False@\n";
 							let nextState,nextStmt = try_branch state None block2 in
-							let job' = { job with state = nextState; stmt = nextStmt; } in
+							let job' = { job with 
+                              state = nextState; 
+                              stmt = nextStmt; 
+                              decisionPath = (stmtInfo, false)::job.decisionPath; } in
 							Active { job' with exHist = nextExHist (Some nextStmt) ~whichBranch:false; }
 
 						| Ternary.Unknown ->
@@ -403,11 +419,13 @@ let exec_stmt job =
 								state = nextStateT;
 								stmt = nextStmtT;
 								exHist = nextExHist (Some nextStmtT) ~whichBranch:true;
+                                decisionPath = (stmtInfo, true)::job.decisionPath; 
 								jid = Counter.next Types.job_counter; } in
 							let falseJob = { job with
-								 state = nextStateF;
-								 stmt = nextStmtF;
-								 exHist =  nextExHist (Some nextStmtF) ~whichBranch:false; } in
+								state = nextStateF;
+								stmt = nextStmtF;
+                                decisionPath = (stmtInfo, false)::job.decisionPath; 
+								exHist =  nextExHist (Some nextStmtF) ~whichBranch:false; } in
 							Output.set_mode Output.MSG_MUSTPRINT;
 							Output.printf "Branching on @[%a@]@ at %a.@\n"
 								 TypesPrinter.exp exp
@@ -437,5 +455,9 @@ let step job job_queue =
 	with
 		| Failure msg ->
 			if run_args.arg_failfast then failwith msg;
-			let result = { result_file = job.file; result_state = job.state; result_history = job.exHist } in
+			let result = { 
+                result_file = job.file; 
+                result_state = job.state; 
+                result_history = job.exHist; 
+                result_decision_path = job.decisionPath; } in
 			(Complete (Types.Abandoned (`Failure msg, get_job_loc job, result)), job_queue)

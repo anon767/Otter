@@ -173,18 +173,19 @@ type job = {
 	file : Cil.file;
 	state : state;
 	exHist : executionHistory;
+    decisionPath :  (stmtInfo * bool) list; (** The decision path is a list of (conditional statement, boolean) pair. Most recent statement first. *)
 	instrList : Cil.instr list; (** [instr]s to execute before moving to the next [stmt] *)
 	stmt : Cil.stmt;            (** The next statement the job should execute *)
 	trackedFns : StringSet.t;	(** The set of functions (names) in which to track coverage *)
 	inTrackedFn : bool;         (** Is stmt in a function in the original program (as opposed to in a library or system call)? *)
 	jid : int; (** A unique identifier for the job *)
-    (* parent : job option; (** The parent that leads to this; None for the first job *) *)
 }
 
 type job_result = {
 	result_file : Cil.file;
 	result_state : state;
 	result_history : executionHistory;
+    result_decision_path : (stmtInfo * bool) list;
 }
 
 type 'reason job_completion =

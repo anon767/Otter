@@ -143,6 +143,7 @@ let get_job multijob = match multijob.processes with
 			Types.file = multijob.file;
 			Types.state = state;
 			Types.exHist = emptyHistory;
+            Types.decisionPath = [];
 			Types.instrList = program_counter.instrList;
 			Types.stmt = program_counter.stmt;
 			Types.jid = multijob.jid;

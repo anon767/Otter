@@ -263,6 +263,7 @@ let job_for_function ?(exHist=emptyHistory) file state fn argvs =
 		file = file;
 		state = state;
 		exHist = exHist;
+        decisionPath = [];
 		instrList = [];
 		stmt = List.hd fn.Cil.sallstmts;
 		trackedFns = trackedFns;

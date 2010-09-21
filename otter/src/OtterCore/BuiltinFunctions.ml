@@ -326,7 +326,11 @@ let libc_exit job retopt exps =
 				Output.printf "exit() called with code (NONE)@\n";
 				None
 	in
-	Complete (Types.Exit (exit_code, { result_file = job.file; result_state = job.state; result_history = job.exHist; }))
+	Complete (Types.Exit (exit_code, { 
+        result_file = job.file; 
+        result_state = job.state; 
+        result_history = job.exHist;
+        result_decision_path = job.decisionPath; }))
 
 let otter_evaluate = wrap_state_function begin fun state retopt exps ->
 	let state, bytes = eval_join_exps state exps Cil.LAnd in
@@ -865,7 +869,11 @@ let interceptor job job_queue interceptor =
 		) job job_queue
 	with Failure msg ->
 		if Executeargs.run_args.Executeargs.arg_failfast then failwith msg;
-		let result = { result_file = job.file; result_state = job.state; result_history = job.exHist } in
+		let result = { 
+            result_file = job.file; 
+            result_state = job.state; 
+            result_history = job.exHist; 
+            result_decision_path = job.decisionPath; } in
 		(Complete (Types.Abandoned (`Failure msg, Statement.get_job_loc job, result)), job_queue)
 
 let libc_interceptor job job_queue interceptor = 
@@ -989,5 +997,9 @@ let libc_interceptor job job_queue interceptor =
 		) job job_queue
 	with Failure msg ->
 		if Executeargs.run_args.Executeargs.arg_failfast then failwith msg;
-		let result = { result_file = job.file; result_state = job.state; result_history = job.exHist } in
+		let result = { 
+            result_file = job.file; 
+            result_state = job.state; 
+            result_history = job.exHist; 
+            result_decision_path = job.decisionPath; } in
 		(Complete (Types.Abandoned (`Failure msg, Statement.get_job_loc job, result)), job_queue)
