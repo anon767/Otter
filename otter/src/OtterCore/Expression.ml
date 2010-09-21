@@ -322,15 +322,18 @@ lval ?(justGetAddr=false) state (lhost, offset_exp as cil_lval) =
 			let lvals = deref state rv in
 			(state, lvals, Cil.typeOf exp)
 	in
-	let state, offset, _ = flatten_offset state lhost_type offset_exp in
-	(* Add the offset, then see if it was in bounds *)
-	let lvals = add_offset offset lvals in
-	(* Omit the bounds check if we're only getting the address of the
-		 lval---not actually reading from or writing to it---or if bounds
-		 checking is turned off *)
-	if justGetAddr || not run_args.arg_bounds_checking
-	then state, (lvals, size)
-	else (checkBounds state lvals cil_lval size), (lvals, size)
+	match cil_lval with
+		| Var _, NoOffset -> state, (lvals, size)
+		| _ ->
+			let state, offset, _ = flatten_offset state lhost_type offset_exp in
+			(* Add the offset, then see if it was in bounds *)
+			let lvals = add_offset offset lvals in
+			(* Omit the bounds check if we're only getting the address of the
+				 lval---not actually reading from or writing to it---or if bounds
+				 checking is turned off *)
+			if justGetAddr || not run_args.arg_bounds_checking
+			then state, (lvals, size)
+			else (checkBounds state lvals cil_lval size), (lvals, size)
 
 and
 
