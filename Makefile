@@ -24,8 +24,14 @@ make//cil : \
 
 otter : make//otter
 otter : MAKEGOALS=
+libs-otter : make//otter
+libs-otter : MAKEGOALS=libs
 test-otter : make//otter
 test-otter : MAKEGOALS=test
+doc-otter : make//otter
+doc-otter : MAKEGOALS=doc
+dot-otter : make//otter
+dot-otter : MAKEGOALS=dot
 make//otter : \
 	CONFIGURE_FLAGS= \
 		EXTRALIBDIRS='$(EXTRALIBDIRS)' \
@@ -48,7 +54,7 @@ make//cilqual : \
 		EXTRAOCAMLPATH='$(EXTRAOCAMLPATH)' \
 		--with-cil='$(CURDIR)/cil' \
 		--with-otter='$(CURDIR)/otter'
-make//cilqual : otter
+make//cilqual : libs-otter
 
 
 ocamlstp : make//ocamlstp
