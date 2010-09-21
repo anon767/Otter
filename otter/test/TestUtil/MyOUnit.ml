@@ -164,6 +164,19 @@ let (>::) label testfn = OUnit.(>::) label (fork_test testfn)
 let (>:::) = OUnit.(>:::)
 let run_test_tt_main = OUnit.run_test_tt_main
 
+let test_permutations list test =
+    if List.length list > 4 then invalid_arg "permutation limited to 4 items";
+    (* from: http://caml.inria.fr/pub/ml-archives/caml-list/2001/06/d4059d1cf784e6eeff6978245ffcb319.fr.html *)
+    let rec distribute elt = function
+        | (hd::tl) as list -> (elt::list)::(List.map (fun x -> hd::x) (distribute elt tl))
+        | [] -> [ [elt] ]
+    and permute = function
+        | x::rest -> List.flatten (List.map (distribute x) (permute rest))
+        | [] -> [ [] ]
+    in
+    let permutations = permute list in
+    TestList (List.map test permutations)
+
 let assert_failure format =
     Format.kfprintf (fun _ -> raise MyOUnitFailure) formatter format
 
@@ -177,6 +190,18 @@ let assert_equal ?(eq=Pervasives.(=)) ?printer ?(msg="") expected actual =
     if not (eq expected actual) then begin match printer with
         | Some p -> assert_failure "@[%s@]@\n  @[@[<2>expected:@ %a@]@ @[<2>but got:@ %a@]@]" msg p expected p actual
         | None -> assert_failure "@[%s@]@\n  not equal" msg
+    end
+
+let assert_at_least ?(cmp=Pervasives.compare) ?printer ?(msg="") expected actual =
+    if cmp expected actual < 0 then begin match printer with
+        | Some p -> assert_failure "@[%s@]@\n  @[@[<2>expected at least:@ %a@]@ @[<2>but got:@ %a@]@]" msg p expected p actual
+        | None -> assert_failure "@[%s@]@\n  less than" msg
+    end
+
+let assert_at_most ?(cmp=Pervasives.compare) ?printer ?(msg="") expected actual =
+    if cmp expected actual > 0 then begin match printer with
+        | Some p -> assert_failure "@[%s@]@\n  @[@[<2>expected at most:@ %a@]@ @[<2>but got:@ %a@]@]" msg p expected p actual
+        | None -> assert_failure "@[%s@]@\n  more than" msg
     end
 
 
