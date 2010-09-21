@@ -26,8 +26,8 @@ let frame__add_varinfo frame block_to_bytes varinfo bytes_opt block_type =
 (*		| None -> make_Bytes_ByteArray ({ImmutableArray.empty with ImmutableArray.length = size}) in (* initially undefined (so any accesses will crash the executor) *) *)
 (*		| None -> bytes__symbolic size in (* initially symbolic *) *)
 	in
-	let frame = VarinfoMap.add varinfo (Immediate (conditional__lval_block (block, bytes__zero))) frame in
-	let block_to_bytes = MemoryBlockMap.add block (Immediate bytes) block_to_bytes in
+	let frame = VarinfoMap.add varinfo (Deferred.Immediate (conditional__lval_block (block, bytes__zero))) frame in
+	let block_to_bytes = MemoryBlockMap.add block (Deferred.Immediate bytes) block_to_bytes in
 	(frame, block_to_bytes)
 
 
@@ -45,7 +45,7 @@ let frame__clear_varinfos frame block_to_bytes =
 			| _                -> block_to_bytes
 	end in
 	VarinfoMap.fold begin fun varinfo deferred block_to_bytes -> match deferred with
-		| Immediate lvals -> remove_locals block_to_bytes lvals
+		| Deferred.Immediate lvals -> remove_locals block_to_bytes lvals
 		| _ -> block_to_bytes
 	end frame block_to_bytes
 
@@ -115,20 +115,6 @@ let state__empty =
 	}
 
 
-let state__force state = function
-	| Immediate x -> (state, x)
-	| Deferred f -> f state
-
-
-let state__force_with_update state update = function
-	| Immediate x ->
-		(state, x)
-	| Deferred f ->
-		(* update with the forced value *)
-		let state, x = f state in
-		(update state x, x)
-
-
 let state__has_block state block =
 	if block.memory_block_type == Block_type_StringLiteral then
 		string_table__mem block
@@ -169,41 +155,41 @@ let state__varinfo_to_lval_block state varinfo =
 	if VarinfoMap.mem varinfo local then
 		let deferred = frame__varinfo_to_lval_block local varinfo in
 		let update state lval =
-			let local = VarinfoMap.add varinfo (Immediate lval) local in
+			let local = VarinfoMap.add varinfo (Deferred.Immediate lval) local in
 			{ state with locals=local::List.tl state.locals }
 		in
-		state__force_with_update state update deferred
+		Deferred.force_with_update state update deferred
 	else
 		let formal = List.hd state.formals in
 		if VarinfoMap.mem varinfo formal then
 			let deferred = frame__varinfo_to_lval_block formal varinfo in
 			let update state lval =
-				let formal = VarinfoMap.add varinfo (Immediate lval) formal in
+				let formal = VarinfoMap.add varinfo (Deferred.Immediate lval) formal in
 				{ state with formals=formal::List.tl state.formals }
 			in
-			state__force_with_update state update deferred
+			Deferred.force_with_update state update deferred
 		else
 			let global = state.global in
 			if VarinfoMap.mem varinfo global then
 				let deferred = frame__varinfo_to_lval_block global varinfo in
 				let update state lval =
-					let global = VarinfoMap.add varinfo (Immediate lval) global in
+					let global = VarinfoMap.add varinfo (Deferred.Immediate lval) global in
 					{ state with global=global }
 				in
-				state__force_with_update state update deferred
+				Deferred.force_with_update state update deferred
 			else (* varinfo may be a function *)
 				failwith ("Varinfo "^(varinfo.vname)^" not found.")
 
 
 let state__add_block state block bytes =
 	{ state with
-		block_to_bytes = MemoryBlockMap.add block (Immediate bytes) state.block_to_bytes;
+		block_to_bytes = MemoryBlockMap.add block (Deferred.Immediate bytes) state.block_to_bytes;
 	}
 
 
 let state__add_deferred_block state block deferred =
 	{ state with
-		block_to_bytes = MemoryBlockMap.add block (Deferred deferred) state.block_to_bytes;
+		block_to_bytes = MemoryBlockMap.add block (Deferred.Deferred deferred) state.block_to_bytes;
 	}
 
 
@@ -218,12 +204,12 @@ let state__get_bytes_from_block state block =
 		(state, string_table__get block)
 	else
 		let deferred = MemoryBlockMap.find block state.block_to_bytes in
-		state__force_with_update state (fun state bytes -> state__add_block state block bytes) deferred
+		Deferred.force_with_update state (fun state bytes -> state__add_block state block bytes) deferred
 
 
 let state__get_deferred_from_block state block =
 	if block.memory_block_type == Block_type_StringLiteral then
-		Immediate (string_table__get block)
+		Deferred.Immediate (string_table__get block)
 	else
 		MemoryBlockMap.find block state.block_to_bytes
 
@@ -244,7 +230,7 @@ let rec state__assign state (lvals, size) bytes =
 			failwith "Error: write to a constant string literal"
 		else
 
-		let state, oldbytes = state__force state (MemoryBlockMap.find block state.block_to_bytes) in
+		let state, oldbytes = Deferred.force state (MemoryBlockMap.find block state.block_to_bytes) in
 
 		(* TODO: pruning the conditional bytes here leads to repeated work if it is subsequently read via state__deref;
 		 * however, not pruning leads to O(k^(2^n)) leaves in the conditional bytes for n consecutive assignments. *)
@@ -413,13 +399,13 @@ let cmp_states (s1:state) (s2:state) =
 	let sharedBlocksComparison =
 		let f block deferred1 result =
 			(* TODO: should the forced state of s1 be propagated? *)
-			let _, bytes1 = state__force s1 deferred1 in
+			let _, bytes1 = Deferred.force s1 deferred1 in
 			let typ = block.memory_block_type in
 			if typ!=Block_type_Global && typ!=Block_type_Heap then result else (* only care about globals and heap content *)
 	          try
 	    		let deferred2 = MemoryBlockMap.find block s2.block_to_bytes in
 				(* TODO: should the forced state of s2 be propagated? *)
-				let _, bytes2 = state__force s2 deferred2 in
+				let _, bytes2 = Deferred.force s2 deferred2 in
 	    		if bytes__equal bytes1 bytes2 then
 					result
 				else begin
@@ -434,7 +420,7 @@ let cmp_states (s1:state) (s2:state) =
 	(* List blocks (memory allocations) that only one of the states has *)
 	let unsharedBlocksComparison =
 	  let h prefix state1 state2 block1 deferred1 result =
-			let _, bytes1 = state__force state1 deferred1 in
+			let _, bytes1 = Deferred.force state1 deferred1 in
 			let typ = block1.memory_block_type in
 				if typ!=Block_type_Global && typ!=Block_type_Heap then result else (* only care about globals and heap content *)
 	        if MemoryBlockMap.mem block1 state2.block_to_bytes then result else (

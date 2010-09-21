@@ -1,3 +1,4 @@
+open DataStructures
 open OcamlUtilities
 open OtterBytes
 open OtterCore
@@ -30,13 +31,13 @@ type local_state = {
 	stmtPtrs : callingContext IndexMap.t;
 	va_arg : Bytes.bytes list list;
 	va_arg_map : Bytes.bytes list VargsMap.t;
-	block_to_bytes : Bytes.bytes deferred MemoryBlockMap.t;
+	block_to_bytes : (state, Bytes.bytes) Deferred.t MemoryBlockMap.t;
 	pid : int;
 }
 
 type shared_state = {
 	path_condition : Bytes.bytes list;
-	shared_block_to_bytes : Bytes.bytes deferred MemoryBlockMap.t;
+	shared_block_to_bytes : (state, Bytes.bytes) Deferred.t MemoryBlockMap.t;
 }
 
 type multijob = {
@@ -233,14 +234,14 @@ let otter_gmalloc job multijob retopt exps =
 		match procs with
 			| [] -> []
 			| (pc, ls)::t -> 
-				let ls = { ls with block_to_bytes = MemoryBlockMap.add block (Immediate bytes) ls.block_to_bytes; } in
+				let ls = { ls with block_to_bytes = MemoryBlockMap.add block (Deferred.Immediate bytes) ls.block_to_bytes; } in
 				(pc, ls)::(push_to_all t block bytes)
 	in
 	let multijob = 
 		{multijob with
 			shared = 
 				{multijob.shared with
-					shared_block_to_bytes = MemoryBlockMap.add block (Immediate bytes) multijob.shared.shared_block_to_bytes;
+					shared_block_to_bytes = MemoryBlockMap.add block (Deferred.Immediate bytes) multijob.shared.shared_block_to_bytes;
 				};
 			processes = push_to_all multijob.processes block bytes;
 		}

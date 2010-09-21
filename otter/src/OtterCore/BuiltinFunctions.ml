@@ -227,7 +227,7 @@ let libc___builtin_alloca_size state size bytes loc =
 	let addrof_block = make_Bytes_Address (block, bytes__zero) in
 	let state = MemOp.state__add_block state block bytes in
 	let local = (List.hd state.locals) in
-	let local = VarinfoMap.add (Cil.makeVarinfo false "alloca" Cil.voidType) (Immediate (conditional__lval_block (block, bytes__zero))) local in
+	let local = VarinfoMap.add (Cil.makeVarinfo false "alloca" Cil.voidType) (Deferred.Immediate (conditional__lval_block (block, bytes__zero))) local in
 	let state = {state with locals = local::(List.tl state.locals); } in
 	(state, addrof_block)
 
@@ -508,15 +508,15 @@ let otter_print_state = wrap_state_function begin fun state retopt exps ->
 		if is_or_points_to_const var.vtype then () 
 		else
 			match lval_block with
-				| Immediate (Unconditional (block, _)) ->
+				| Deferred.Immediate (Unconditional (block, _)) ->
 					begin match (MemoryBlockMap.find block state.block_to_bytes) with
-						| Immediate bytes -> printVarBytes var bytes
-						| Deferred _ -> Output.printf "%s@ = (Deferred)@\n" var.vname
+						| Deferred.Immediate bytes -> printVarBytes var bytes
+						| Deferred.Deferred _ -> Output.printf "%s@ = (Deferred)@\n" var.vname
 					end
 				(* TODO: print something useful *)
-				| Immediate (IfThenElse _) ->
+				| Deferred.Immediate (IfThenElse _) ->
 					Output.printf "%s@ = (IfThenElse)@\n" var.vname
-				| Deferred _ ->
+				| Deferred.Deferred _ ->
 					Output.printf "%s@ = (Deferred)@\n" var.vname
 	in
 	

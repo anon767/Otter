@@ -70,6 +70,7 @@
 
 (* TODO: this module currently assumes that _the entire memory_ is initialized via this module *)
 
+open DataStructures
 open OcamlUtilities
 open CilUtilities
 open OtterBytes
@@ -305,7 +306,7 @@ let init_lval_block state var block_name deferred =
         (* finally, return a Lval_May pointing to the targets *)
         (state, Bytes.conditional__from_list target_list)
     in
-    (state, Types.Deferred deferred_lval_block)
+    (state, Deferred.Deferred deferred_lval_block)
 
 
 

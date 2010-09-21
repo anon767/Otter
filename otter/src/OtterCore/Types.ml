@@ -62,11 +62,8 @@ type callingContext =
 
 
 
-type 'a deferred =
-	| Immediate of 'a
-	| Deferred of (state -> (state * 'a))
-and memory_frame = 
-	lval_block deferred VarinfoMap.t
+type memory_frame = 
+	(state, lval_block) Deferred.t VarinfoMap.t
 and state =
 	{
 		global : memory_frame;                  (* Map global lvals to blocks *)
@@ -75,7 +72,7 @@ and state =
 		aliases : memory_block list VarinfoMap.t; (* Map from varinfos to aliased blocks, e.g., from unknown call stack recursion *)
 		mallocs : memory_block list TypeMap.t MallocMap.t; (* Map from malloc sites to aliased blocks from unknown allocation *)
 		callstack : Cil.fundec list;            (* Function call stack *)
-		block_to_bytes : bytes deferred MemoryBlockMap.t;
+		block_to_bytes : (state, bytes) Deferred.t MemoryBlockMap.t;
 		path_condition : bytes list;
 		path_condition_tracked : bool list;
 		callContexts : callingContext list;
