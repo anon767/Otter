@@ -11,7 +11,7 @@ open OtterCore
             @param setup is an optional setup function to be called before parsing
             @param main_loop is the Otter main loop to use (default: {!Driver.run})
             @param entry_function is the function at which to begin symbolic execution; if not "main", pointers will
-                    be initialized via {!SymbolicPointers.job_for_middle) (default: ["main"])
+                    be initialized via {!SymbolicPointers.job_for_middle} (default: ["main"])
             @param command_line is an optional command line to provide to the executed file; ignored if
                     [entry_function] is not "main"
             @param has_failing_assertions indicates whether failing assertions are expected (default: [false])
