@@ -20,7 +20,7 @@ export OCAMLPATH:=$(CURDIR):@EXTRAOCAMLPATH@
 
 OCAMLBUILD_DEPS = \
 	pa_monad ocamlgraph configure Makefile Makefile.rules \
-	$(EXTRALIBDIRS)/* $(CIL_OBJDIR)/* $(OTTER_OBJDIR)/*
+	$(wildcard $(EXTRALIBDIRS) $(CIL_OBJDIR) $(OTTER_OBJDIR) $(EXTRALIBDIRS:%=%/*) $(CIL_OBJDIR)/* $(OTTER_OBJDIR)/*)
 
 OUNIT_FLAGS = -verbose
 
