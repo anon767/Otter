@@ -12,7 +12,7 @@
 #define __otter_fs_TYP_NULL 0x0140
 #define __otter_fs_TYP_ZERO 0x01C0
 
-#define __otter_fs_IS_TYP_SPECIAL(x) = ((x) & 64)
+#define __otter_fs_IS_TYP_SPECIAL(x) ((x) & 64)
 
 #define __otter_fs_STATUS_OK 0
 #define __otter_fs_STATUS_EOF 1
