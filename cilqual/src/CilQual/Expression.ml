@@ -82,7 +82,8 @@ module InterpreterT (E : Environment.InterpreterMonad) = struct
                     qt <-- interpret_exp e;
                     join qt cast
 
-        | Cil.BinOp (u, e1, e2, t) -> perform
+        | Cil.Question (_, e1, e2, _)
+        | Cil.BinOp (_, e1, e2, _) -> perform
             (* least-upper-bound of the operands *)
             qt1 <-- interpret_exp e1;
             qt2 <-- interpret_exp e2;

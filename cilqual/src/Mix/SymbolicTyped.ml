@@ -66,17 +66,18 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
         end state.Types.locals (state, []) in
 
         let state = { state with
-            Types.global=global;
-            Types.locals=locals;
-            Types.formals=formals;
-            Types.extra=Types.VarinfoMap.empty;
-            Types.malloc=Types.VarinfoMap.empty;
+            Types.global = global;
+            Types.locals = locals;
+            Types.formals = formals;
+            Types.aliases = Types.VarinfoMap.empty;
+            Types.mallocs = Types.MallocMap.empty;
         } in
 
         [ (Types.Return (retopt, {
-                Types.result_file=job.Types.file;
-                Types.result_state=state;
-                Types.result_history=job.Types.exHist;
+                Types.result_file = job.Types.file;
+                Types.result_state = state;
+                Types.result_history = job.Types.exHist;
+                Types.result_decision_path = job.Types.decisionPath;
             }), None) ]
 
 
@@ -100,9 +101,10 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
 
                 if block_errors != [] then begin
                     let result = {
-                        Types.result_file=job.Types.file;
+                        Types.result_file = job.Types.file;
                         Types.result_state = job.Types.state;
                         Types.result_history = job.Types.exHist;
+                        Types.result_decision_path = job.Types.decisionPath;
                     } in
                     let msg = "Block errors returning from SymbolicTyped at " ^ fn.Cil.svar.Cil.vname in
                     k stack [ (Types.Abandoned (`Failure msg, loc, result),
@@ -123,9 +125,10 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
 
                         (* TODO: need a better mechanism for explaining errors *)
                         let result = {
-                            Types.result_file=job.Types.file;
+                            Types.result_file = job.Types.file;
                             Types.result_state = job.Types.state;
                             Types.result_history = job.Types.exHist;
+                            Types.result_decision_path = job.Types.decisionPath;
                         } in
                         let explanation = DiscreteSolver.explain solution in
                         Format.fprintf Format.str_formatter
@@ -196,9 +199,10 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
         if DiscreteSolver.Solution.is_unsatisfiable context then begin
             (* don't switch; it'll return an error anyway *)
             let result = {
-                Types.result_file=job.Types.file;
+                Types.result_file = job.Types.file;
                 Types.result_state = job.Types.state;
                 Types.result_history = job.Types.exHist;
+                Types.result_decision_path = job.Types.decisionPath;
             } in
             let explanation = DiscreteSolver.explain context in
             Format.fprintf Format.str_formatter

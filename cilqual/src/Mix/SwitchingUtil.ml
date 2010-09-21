@@ -106,6 +106,7 @@ open TypedBlock
 
 module Aliasing = TypeQual.QualSolver.Aliasing (G.QualGraph)
 
+open DataStructures
 open OtterBytes
 open OtterCore
 
@@ -241,7 +242,6 @@ let points_to file exp =
     match base_type with
         | Cil.TPtr (target_type, _) when not (Cil.isFunctionType target_type) ->
             let targets, malloc_list = Ptranal.resolve_exp exp in
-            let malloc_list = List.map fst malloc_list in
 
             let accept_type typ =
                 (* filter types that are compatible with the target type *)
@@ -375,7 +375,7 @@ let qt_to_bytes file expState solution state exp qt =
 
                 (* point to mallocs *)
                 let state, target_bytes_list = List.fold_left begin fun (state, target_bytes_list) malloc ->
-                    let mallocs_map = try Types.VarinfoMap.find malloc state.Types.malloc
+                    let mallocs_map = try Types.MallocMap.find malloc state.Types.mallocs
                                       with Not_found -> Types.TypeMap.empty
                     in
                     let mallocs = try Types.TypeMap.find typ mallocs_map
@@ -383,7 +383,7 @@ let qt_to_bytes file expState solution state exp qt =
                     in
                     let state =
                         let mallocs_map = Types.TypeMap.add typ (extra::mallocs) mallocs_map in
-                        { state with Types.malloc=Types.VarinfoMap.add malloc mallocs_map state.Types.malloc }
+                        { state with Types.mallocs=Types.MallocMap.add malloc mallocs_map state.Types.mallocs }
                     in
                     (state, List.fold_left map_offsets target_bytes_list mallocs)
                 end (state, target_bytes_list) malloc_list in
@@ -391,11 +391,11 @@ let qt_to_bytes file expState solution state exp qt =
                 (* and point to all targets *)
                 let state, target_bytes_list = List.fold_left begin fun (state, target_bytes_list) v ->
                     (* for every target variable *)
-                    let extras = try Types.VarinfoMap.find v state.Types.extra
+                    let aliases = try Types.VarinfoMap.find v state.Types.aliases
                                  with Not_found -> []
                     in
-                    let state = { state with Types.extra=Types.VarinfoMap.add v (extra::extras) state.Types.extra } in
-                    (state, List.fold_left map_offsets target_bytes_list extras)
+                    let state = { state with Types.aliases=Types.VarinfoMap.add v (extra::aliases) state.Types.aliases } in
+                    (state, List.fold_left map_offsets target_bytes_list aliases)
                 end (state, target_bytes_list) target_vars in
                 (state, target_bytes_list)
             end
@@ -559,12 +559,12 @@ let qt_to_lval_block file expState solution state v qt =
         in
         let state = MemOp.state__add_deferred_block state extra extra_deferred in
 
-        let extras = try Types.VarinfoMap.find v state.Types.extra
+        let extras = try Types.VarinfoMap.find v state.Types.aliases
                      with Not_found -> []
         in
         let extras = extra::extras in
         let state = { state with
-            Types.extra=Types.VarinfoMap.add v extras state.Types.extra
+            Types.aliases=Types.VarinfoMap.add v extras state.Types.aliases
         } in
 
         (* generate an lval to each block it may alias that was previously initialized via another pointer *)
@@ -575,7 +575,7 @@ let qt_to_lval_block file expState solution state v qt =
         (* finally, return a Lval_May pointing to the targets *)
         (state, Bytes.conditional__from_list target_list)
     in
-    (state, Types.Deferred deferred_lval_block)
+    (state, Deferred.Deferred deferred_lval_block)
 
 
 (** Re-initialize a symbolic memory frame by coverting all corresponding qualified types to new symbolic values in the
@@ -611,7 +611,7 @@ let aliasing_to_qt file expState exp qt = perform
         targets <-- if malloc_list == [] then
             return []
         else begin perform
-            foldM begin fun targets malloc -> perform
+            foldM begin fun targets (malloc, _) -> perform
                 qtmalloc <-- lookup_var malloc;
                 qtmalloc_return <-- retval qtmalloc;
                 assign qt qtmalloc_return;
@@ -903,7 +903,7 @@ let bytes_to_qt file expState state pre bytes exp qt = perform
 let frame_to_qt file expState state frame =
     Types.VarinfoMap.fold begin fun v deferred_lval expM -> perform
         expM;
-        let state, lval_block = MemOp.state__force state deferred_lval in
+        let state, lval_block = Deferred.force state deferred_lval in
         let lval = Cil.var v in
         let exp = Cil.Lval lval in
         qtl <-- access_rval lval;
