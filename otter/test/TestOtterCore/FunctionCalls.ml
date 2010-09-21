@@ -42,7 +42,7 @@ let direct_calls_testsuite = "Direct calls" >:::
                 | [ Return (exit_opt, result) ] ->
                     (* make sure that the call stack has only main() on it *)
                     assert_equal
-                        ~cmp:(list_equal (=))
+                        ~eq:(list_equal (=))
                         ~printer:(list_printer pp_print_string ",@ ")
                         ~msg:"Call stack"
                         [ "main" ]

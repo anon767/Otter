@@ -173,8 +173,8 @@ let assert_bool msg flag =
 let assert_string msg =
     if not (msg = "") then assert_failure "@[%s@]@." msg
 
-let assert_equal ?(cmp=Pervasives.(=)) ?printer ?(msg="") expected actual =
-    if not (cmp expected actual) then begin match printer with
+let assert_equal ?(eq=Pervasives.(=)) ?printer ?(msg="") expected actual =
+    if not (eq expected actual) then begin match printer with
         | Some p -> assert_failure "@[%s@]@\n  @[@[<2>expected:@ %a@]@ @[<2>but got:@ %a@]@]" msg p expected p actual
         | None -> assert_failure "@[%s@]@\n  not equal" msg
     end
