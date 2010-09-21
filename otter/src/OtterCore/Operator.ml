@@ -76,9 +76,10 @@ let lnot operands = (* should return int (32-bit) *)
 	in
 	unop op_conc OP_LNOT operands 
 
-let ikind_of_TInt typ = match unrollType typ with
+let typ_to_ikind typ = match unrollType typ with
 		TInt (ikind,_) -> ikind
-	| typ -> invalid_arg ("Trying to get ikind from something other than a TInt: " ^ (Pretty.sprint 50 (d_type () typ)))
+	| TPtr _ -> Lazy.force kindOfUpointType
+	| typ -> invalid_arg ("Trying to get ikind from something other than a TInt or TPtr: " ^ (Pretty.sprint 50 (d_type () typ)))
 
 (* TODO: each op must also have typ of par as arg.
 
@@ -185,8 +186,8 @@ let rec binop op_const op_symb operands : bytes (* * typ *)=
 	impl (ibytes1,ibytes2) =
 	match (ibytes1, ibytes2) with
 		| (Bytes_Constant(CInt64(i1, _, _)), Bytes_Constant(CInt64(i2, _, _))) ->
-				let kind1 = ikind_of_TInt typ1
-				and kind2 = ikind_of_TInt typ2 in
+				let kind1 = typ_to_ikind typ1
+				and kind2 = typ_to_ikind typ2 in
 				let isSigned = 	Cil.isSigned kind1 || Cil.isSigned kind2 in
 				let n64 = op_const isSigned i1 i2 in
 				let (n64,_) = Cil.truncateInteger64 kind1 n64 in

@@ -280,9 +280,9 @@ let options : (string * Arg.spec * string) list =
     (" Prevent small chunks of code from being duplicated" ^
        is_default (not !Cabs2cil.allowDuplication));
 
-    "--useLogicalOperators",
-    Arg.Set Cil.useLogicalOperators,
-    " Where possible, don't convert && and || to conditionals" ^ is_default !Cil.useLogicalOperators;
+    "--unfoldLogicalOperators",
+    Arg.Clear Cil.useLogicalOperators,
+    " Transform all uses of &&, ||, and ?: into If statements";
 
     "--keepunused",
     Arg.Set Rmtmps.keepUnused,

@@ -3789,7 +3789,7 @@ and doExp (asconst: bool)   (* This expression is used as a constant *)
         match ce with
           CEExp (se, ((Const _) as c)) -> 
             finishExp se (if isConstTrue c then one else zero) intType
-	| CEExp (se, ((UnOp(LNot, _, _)|BinOp((Eq|Ne|Le|Lt|Ge|Gt|LAnd|LOr),_,_,_)) as e)) ->
+    | CEExp (se, ((UnOp(LNot, _, _)|BinOp((Lt|Gt|Le|Ge|Eq|Ne|LAnd|LOr), _, _, _)) as e)) ->
 	    (* already normalized to 0 or 1 *)
 	    finishExp se e intType
         | CEExp (se, e) ->
@@ -4158,7 +4158,15 @@ and doExp (asconst: bool)   (* This expression is used as a constant *)
              | Some e2' -> 
                  finishExp (se1 @@ se2) (snd (castTo t2 tresult e2')) tresult
            end
-
+        | CEExp (se1, e1') when !useLogicalOperators && isEmpty se2 && isEmpty se3 ->
+           let e2' = match e2'o with
+               None -> (* use e1' *)
+                 snd (castTo t2 tresult e1')
+             | Some e2' -> 
+                 snd (castTo t2 tresult e2')
+           in
+           let e3' = snd (castTo t3 tresult e3') in
+           finishExp se1 (Question (e1', e2', e3', tresult)) tresult
         | _ -> (* Use a conditional *) begin
             match e2 with 
               A.NOTHING -> 
@@ -4431,11 +4439,14 @@ and doCondExp (asconst: bool) (** Try to evaluate the conditional expression
               ce1 
             else 
               CEAnd (ce1, ce2)
+      | CEExp(se1, _), CEExp (se2, ((Const _) as ci2)) when isEmpty se2 ->
+          if isConstTrue ci2 then (* The second argument is true, so drop it *)
+            ce1
+          else (* The second argument is false, so evaluate to false *)
+            CEExp (se1, zero)
       | CEExp(se1, e1'), CEExp (se2, e2') when 
-              !useLogicalOperators && (* isEmpty se1 && *) isEmpty se2 -> 
-          CEExp (se1 (* empty *) , BinOp(LAnd, 
-                              makeCast e1' intType, 
-                              makeCast e2' intType, intType))
+              !useLogicalOperators && isEmpty se2 -> 
+          CEExp (se1, BinOp(LAnd, e1', e2', intType))
       | _ -> CEAnd (ce1, ce2)
     end
 
@@ -4452,11 +4463,14 @@ and doCondExp (asconst: bool) (** Try to evaluate the conditional expression
               ce1 
             else 
               CEOr (ce1, ce2)
-
+      | CEExp(se1, _), CEExp (se2, ((Const _) as ci2)) when isEmpty se2 ->
+          if isConstFalse ci2 then (* The second argument is false, so drop it *)
+            ce1
+          else (* The second argument is true, so evaluate to true *)
+            CEExp (se1, one)
       | CEExp (se1, e1'), CEExp (se2, e2') when 
-              !useLogicalOperators && (* isEmpty se1 && *) isEmpty se2 ->
-          CEExp (se1 (* empty *), BinOp(LOr, makeCast e1' intType, 
-                              makeCast e2' intType, intType))
+              !useLogicalOperators && isEmpty se2 ->
+          CEExp (se1, BinOp(LOr, e1', e2', intType))
       | _ -> CEOr (ce1, ce2)
     end
 

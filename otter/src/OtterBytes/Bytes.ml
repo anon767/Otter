@@ -292,6 +292,7 @@ let rec bytes_to_constant bytes typ : Cil.constant =
 		| TEnum (enuminf,_) ->
 				(* An enum has type int. [Standard 6.7.2.2.2, but I'm confused by 6.7.2.2.4] *)
 				bytes_to_constant bytes Cil.intType
+		| TPtr _ -> bytes_to_constant bytes !Cil.upointType  
 		| t ->
 			begin match bytes with
 				| Bytes_Constant(c) -> c

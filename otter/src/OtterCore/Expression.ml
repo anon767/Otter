@@ -218,6 +218,8 @@ rval state exp : state * bytes =
 					rval_unop state unop exp1
 			|	BinOp (binop, exp1, exp2, _) ->
 					rval_binop state binop exp1 exp2
+			| Question (guard, exp1, exp2, _) ->
+					rval_question state guard exp1 exp2
 			|	AddrOf (Var varinfo, _) when Cil.isFunctionType (varinfo.Cil.vtype) ->
 					let f_addr = bytes__random (Cil.bitsSizeOf Cil.voidPtrType / 8) in (* TODO: assign an addr for each function ptr *)
 					(state, make_Bytes_FunPtr(varinfo,f_addr))
@@ -457,4 +459,13 @@ rval_binop state binop exp1 exp2 =
 		let conditional = conditional__prune ~test:(Stp.query_guard state.path_condition) ~eq:bytes__equal conditional in
 		(state, make_Bytes_Conditional conditional)
 
-	
+and
+
+(** Evaluate a ?: expression, creating a Bytes_Conditional(IfThenElse _). *)
+rval_question	state e1 e2 e3 =
+	(* The order in which we evaluate these really shouldn't matter.
+	If it does, there's a problem, and I don't know what to do. *)
+	let state, rv1 = rval state e1 in
+	let state, rv2 = rval state e2 in
+	let state, rv3 = rval state e3 in
+	(state, make_Bytes_Conditional (IfThenElse (guard__bytes rv1, Unconditional rv2, Unconditional rv3)))
