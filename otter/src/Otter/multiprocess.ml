@@ -134,8 +134,8 @@ let get_job multijob = match multijob.processes with
 			Types.block_to_bytes = update_from_shared_memory multijob.shared.shared_block_to_bytes process.block_to_bytes;
 			Types.path_condition = multijob.shared.path_condition;
 			(* TODO *)
-			Types.extra = VarinfoMap.empty;
-			Types.malloc = VarinfoMap.empty;
+			Types.aliases = VarinfoMap.empty;
+			Types.mallocs = MallocMap.empty;
 			Types.path_condition_tracked = [];
 			Types.bytes_eval_cache = BytesMap.empty;
 		} in

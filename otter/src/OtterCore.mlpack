@@ -9,5 +9,6 @@ OtterCore/MemOp
 OtterCore/Operator
 OtterCore/Report
 OtterCore/Statement
+OtterCore/SymbolicPointers
 OtterCore/Types
 OtterCore/TypesPrinter

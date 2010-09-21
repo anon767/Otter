@@ -16,6 +16,13 @@ end)
 
 module StringSet = Set.Make(String)
 
+module MallocMap = Map.Make (struct
+    type t = Cil.varinfo * string
+    let compare (va, sa) (vb, sb) = match Pervasives.compare va.Cil.vid vb.Cil.vid with
+        | 0 -> String.compare sa sb
+        | i -> i
+end)
+
 module IndexMap = Map.Make (struct
 	type t = int
 	let compare (a : int) (b : int) = Pervasives.compare a b
@@ -65,8 +72,8 @@ and state =
 		global : memory_frame;                  (* Map global lvals to blocks *)
 		formals : memory_frame list;            (* Map formal lvals to blocks *)
 		locals : memory_frame list;             (* Map local lvals to blocks *)
-		extra : memory_block list VarinfoMap.t; (* Map for extra blocks, e.g., from unknown call stack recursion *)
-		malloc : memory_block list TypeMap.t VarinfoMap.t; (* Map for malloc blocks from unknown allocation *)
+		aliases : memory_block list VarinfoMap.t; (* Map from varinfos to aliased blocks, e.g., from unknown call stack recursion *)
+		mallocs : memory_block list TypeMap.t MallocMap.t; (* Map from malloc sites to aliased blocks from unknown allocation *)
 		callstack : Cil.fundec list;            (* Function call stack *)
 		block_to_bytes : bytes deferred MemoryBlockMap.t;
 		path_condition : bytes list;

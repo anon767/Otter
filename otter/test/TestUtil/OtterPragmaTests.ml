@@ -5,8 +5,12 @@
     [#pragma has_failing_assertions], the directives will be interpreted in the order they are written.
 
     The following [#pragma] directives are understood:
+        - [#pragma entry_function(<string function name>)] specifies the entry function at which to begin symbolic
+            execution. If an entry function is given and not "main", pointers will be initialized via
+            {!SymbolicPointers.job_for_middle}. E.g., [#pragma entry_function("foo")].
         - [#pragma command_line(<string argument>, ...)] specifies the command line arguments to be passed to
-            [main()]. E.g., [#pragma command_line("foo", "bar")].
+            [main()]. Ignore if [#pragma entry_function(...)] is given and not "main".
+            E.g., [#pragma command_line("foo", "bar")].
         - [#pragma cil_options(<string argument>, ...)] specifies the command line arguments to be passed to
             CIL. E.g., [#pragma command_line("--useLogicalOperators")].
         - [#pragma has_failing_assertions] specifies that failing assertions should be expected. Conversely, {e not
@@ -46,6 +50,7 @@ open OtterCore
 
 (** Flags for setting up the tests. *)
 type flags = {
+    entry_function : string option; (** The function at which to begin symbolic execution. *)
     cil_options : string list;      (** The command line options to pass to CIL. *)
     command_line : string list;     (** The command line to use to run the test. *)
     has_failing_assertions : bool;  (** If failing assertions are expected in the test. *)
@@ -54,6 +59,7 @@ type flags = {
 
 (** The default test flags. *)
 let default_flags = {
+    entry_function = None;
     cil_options = [];
     command_line = [];
     has_failing_assertions = false;
@@ -238,22 +244,29 @@ let parse_pragmas file =
     let flags, test = Cil.foldGlobals file begin fun (flags, test as config) global -> match global with
         | Cil.GPragma (Cil.Attr (name, params), loc) ->
             begin match name, params with
+                | "entry_function", [ Cil.AStr entry_function ] ->
+                    if flags.entry_function <> None then assert_loc_failure file loc "Entry function already defined.";
+                    if entry_function = "" then assert_loc_failure file loc "Invalid entry function (should not be blank).";
+                    ({ flags with entry_function = Some entry_function }, test)
+                | "entry_function", _ ->
+                    assert_loc_failure file loc "Invalid entry function (should have exactly one string argument that is the function name)."
+
                 | "command_line", args ->
                     if flags.command_line <> [] then assert_loc_failure file loc "Command line already defined.";
                     let command_line = List.map begin function
                         | Cil.AStr arg -> arg
                         | _ -> assert_loc_failure file loc "Invalid command line (arguments should be \"<argument string>\")."
                     end args in
-                    if command_line = [] then assert_loc_failure file loc "Invalid command line (must have at least one argument).";
+                    if command_line = [] then assert_loc_failure file loc "Invalid command line (should have at least one argument).";
                     ({ flags with command_line = command_line }, test)
 
                 | "cil_options", args ->
                     if flags.cil_options <> [] then assert_loc_failure file loc "CIL options already defined.";
                     let cil_options = List.map begin function
                         | Cil.AStr arg -> arg
-                        | _ -> assert_loc_failure file loc "Invalid CIL option (arguments should be \"<argument string>\")."
+                        | _ -> assert_loc_failure file loc "Invalid CIL options (arguments should be \"<argument string>\")."
                     end args in
-                    if cil_options = [] then assert_loc_failure file loc "Invalid CIL option (must have at least one argument).";
+                    if cil_options = [] then assert_loc_failure file loc "Invalid CIL options (should have at least one argument).";
                     ({ flags with cil_options = cil_options }, test)
 
                 | "has_failing_assertions", [] ->
@@ -340,7 +353,12 @@ let test_otter_with_pragma ?(main_loop=Driver.run) path = fun () ->
 
     (* prepare the file and run the symbolic executor *)
     Driver.prepare_file file;
-    let job = Driver.job_for_file file flags.command_line in
+    let job = match flags.entry_function with
+        | Some fn when fn <> "main" ->
+            SymbolicPointers.job_for_middle file (CilPtranal.points_to file) (FindCil.fundec_by_name file fn)
+        | _ ->
+            Driver.job_for_file file flags.command_line
+    in
     let results = main_loop job in
 
     (* first, test if assertions passed *)

@@ -2,6 +2,7 @@
 
 open MyOUnit
 open OcamlUtilities
+open CilUtilities
 open OtterCore
 
 
@@ -9,7 +10,10 @@ open OtterCore
             @param path is the path to the file
             @param setup is an optional setup function to be called before parsing
             @param main_loop is the Otter main loop to use (default: {!Driver.run})
-            @param command_line is an optional command line to provide to the executed file
+            @param entry_function is the function at which to begin symbolic execution; if not "main", pointers will
+                    be initialized via {!SymbolicPointers.job_for_middle) (default: ["main"])
+            @param command_line is an optional command line to provide to the executed file; ignored if
+                    [entry_function] is not "main"
             @param has_failing_assertions indicates whether failing assertions are expected (default: [false])
             @param test is the test to apply to the result from Otter
             @return a {!TestCase} that runs Otter
@@ -18,6 +22,7 @@ let test_otter_on_file
         path
         ?(setup=(fun _ -> ()))
         ?(main_loop=Driver.run)
+        ?(entry_function="main")
         ?(command_line=[])
         ?(has_failing_assertions=false)
         test =
@@ -35,7 +40,12 @@ let test_otter_on_file
 
         (* prepare the file and run the symbolic executor *)
         Driver.prepare_file file;
-        let job = Driver.job_for_file file command_line in
+        let job =
+            if entry_function = "main" then
+                Driver.job_for_file file command_line
+            else
+                SymbolicPointers.job_for_middle file (CilPtranal.points_to file) (FindCil.fundec_by_name file entry_function)
+        in
         let results = main_loop job in
 
         (* perform tests in order of expressiveness of potential errors *)
@@ -57,6 +67,7 @@ let test_otter_on_file
             @param label is the label for the test (default: [code])
             @param setup is an optional setup function to be called before parsing
             @param main_loop is the Otter main loop to use
+            @param entry_function is the function at which to begin symbolic execution
             @param command_line is an optional command line to provide to the executed file
             @param has_failing_assertions indicates whether failing assertions are expected
             @param test is the test to apply to the result from Otter
@@ -67,11 +78,12 @@ let test_otter
         ?(label=code)
         ?setup
         ?main_loop
+        ?entry_function
         ?command_line
         ?has_failing_assertions
         test =
     label >:: test_string_as_file "OtterTest." ".c" code begin fun filename ->
-        test_otter_on_file filename ?setup ?main_loop ?command_line ?has_failing_assertions test ()
+        test_otter_on_file filename ?setup ?main_loop ?entry_function ?command_line ?has_failing_assertions test ()
     end
 
 
@@ -79,6 +91,7 @@ let test_otter
             @param code is the source code
             @param label is the label for the test (default: [code])
             @param setup is an optional setup function to be called before parsing
+            @param entry_function is the function at which to begin symbolic execution
             @param command_line is an optional command line to provide to the executed file
             @param has_failing_assertions indicates whether failing assertions are expected
             @param test is the test to apply to the result from Otter
