@@ -21,12 +21,12 @@ Quick-start Guide
 * Adding a new module to Otter:
 
     1. Add your module `MyModule.ml` to `src/Otter`
-    2. Edit `src/Otter.mlpack` and add a line `Otter/MyModule`
+    2. Edit `src/Otter.{mlpack,odocl}` and add a line `Otter/MyModule`
 
 * Adding a new test module to Otter:
 
     1. Add your test module `TestMyModule.ml` to `test/TestOtter`
-    2. Edit `test/TestOtter.mlpack and add a line `TestOtter/TestMyModule`
+    2. Edit `test/TestOtter.mlpack` and add a line `TestOtter/TestMyModule`
     3. Edit `test/runtestotter.ml` and add your test module's testsuite to the
        list of tests to run:
 
@@ -36,16 +36,28 @@ Quick-start Guide
                 ...
             ] end
 
-* Adding an integration test case to Otter:
+* Adding an integration test case to Otter (does not invoke `otter.pl`):
 
-    1. Add your C file test case (that should not fail any assertions) to one
-       of the directories under `test/TestOtterIntegration`:
+    1. Add your C file test case to one of the directories under
+       `test/TestOtterIntegration`:
 
         * For single-process test cases, add it under `OtterCore`
         * For multi-process test cases, add it under `MultiprocessOtter`
 
     2. You may create additional directories under `OtterCore` or
        `MultiprocessOtter` to group your test cases.
+
+* Adding an system test case to Otter (invokes `otter.pl`):
+
+    * Similar to the integration tests, but in `test/TestOtterSystem`
+
+* Building Otter's documentation:
+
+    1. Either run `make doc-otter` in the top directory, or `make doc` in
+       `otter`
+    2. View the documentation in `doc/api`: ocamldoc documentation for various
+       module packs will be in `*.docdir`, and a module dependency diagram
+       in the `All.dot` GraphViz file
 
 * Debugging Otter:
 
@@ -168,22 +180,25 @@ to be compiled into an executable. For example:
         * `Module1.ml`
         * `Module2.ml`
     * `Otter.mlpack`
+    * `Otter.odocl`
     * `runotter.ml`
 
 The `Otter` directory contains the source code to various Otter modules, and
 `runotter.ml` is the driver module. In addition to the source files, there are
-two meta files---`_tags` and `Otter.mlpack`---that instruct Ocamlbuild to
-compile the directory into a module pack (e.g., `Otter.cma`). The `_tags` file
-contain compilation directives for each `.ml` file in the directory, while the
-`Otter.mlpack` file contains a list of modules to compile into a module pack.
+three meta files---`_tags`, `Otter.mlpack` and `Otter.odocl`---that instruct
+Ocamlbuild to compile the directory into a module pack (e.g., `Otter.cma`).
+The `_tags` file contain compilation directives for each `.ml` file in the
+directory, while the `Otter.mlpack` file contains a list of modules to compile
+into a module pack, whereas `Otter.odocl` contains a list of modules for which
+to generate documentation, which may be a subset of `Otter.mlpack`.
 (Unfortunately, these files are not very well documented in the [Ocamlbuild][]
 user guide).
 
-When writing a new module, e.g., `NewModule.ml`, put the file into a module pack
-directory, and add a reference to it in the corresponding `.mlpack` file.
-Additionally, when writing a new test module in the `test` directory, a
-reference to the new module's test suite should also be added to the
-`runtestotter.ml` driver:
+When writing a new module, e.g., `NewModule.ml`, put the file into a module
+pack directory, and add a reference to it in the corresponding `.mlpack` and
+`.odocl` files. Additionally, when writing a new test module in the `test`
+directory, a reference to the new module's test suite should also be added to
+the `runtestotter.ml` driver:
 
     (* in test/runtestotter.ml *)
     run_test_tt_main begin TestList [
@@ -193,7 +208,7 @@ reference to the new module's test suite should also be added to the
     ] end
 
 
-Note that when writing a module, references to module in the same directory
+Note that when writing a module, references to modules in the same directory
 should be unqualified:
 
     (* in Module1.ml *)
@@ -207,12 +222,18 @@ Whereas references to modules in other directories must be qualified:
 New module packs may also be created by following the above guidelines.
 
 
-Adding Integration Tests to Otter
-=================================
+Adding Integration or System Tests to Otter
+===========================================
 
-Otter also contains a integration testing framework that may also be used
-for testing in `test/TestOtterIntegration`. The framework is currently limited
-to testing C files that should not fail any assertions in Otter.
+Otter also contains testing framework for integration testing in
+`test/TestOtterIntegration` which invokes only Otter, as well as system testing
+in `test/TestOtterSystem` which additionally invokes the `otter.pl` wrapper
+for preprocessing.
+
+The core of this testing framework is implemented in
+`test/TestUtil/OtterPragmaTests.ml`. Test cases as simply written as C files
+with special `#pragma` directives to specify test expectations. Please refer
+to `OtterPragmaTests.ml` for documentation of these directives.
 
 To add a new integration test case, simply add a C file to one of the
 directories under `test/TestOtterIntegration`:
@@ -226,6 +247,29 @@ You may also create additional directories under `OtterCore` or
 nested in other directories for convenience. The framework will recursively
 traverse the entire directory structure to find test cases, and will label the
 test cases by their path.
+
+System tests are similarly organized in `test/TestOtterSystem`.
+
+
+Generating Documentation for Otter
+==================================
+
+Other than this README file, Otter is mainly documented using `ocamldoc`
+annotations in the source code. It is more convenient to peruse these
+documentation as HTML documents, which may be generated from the top directory
+by running:
+
+    make doc-otter
+
+or locally by running:
+
+    cd otter
+    make doc
+
+This will generate HTML documentation in `otter/doc/api/*.docdir` for
+each module pack in Otter. Additionally, this will also generate a module
+dependency diagram between Otter's modules as a GraphViz file
+`otter/doc/All.dot`.
 
 
 Debugging Otter using the Ocaml debugger
@@ -247,7 +291,7 @@ to the debugger:
     directory src/Otter [... list of other directories ...]
 
 To allow Otter to be started separately using the `otter.pl` script, set up the
-debugger in remote debugging mode with the commands: 
+debugger in remote debugging mode with the commands:
 
     set socket <debug socket>
     set loadingmode manual
