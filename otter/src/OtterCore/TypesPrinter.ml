@@ -83,9 +83,9 @@ let callingContext_list sep ff list =
 	FormatPlus.pp_print_list context sep ff list
 
 
-(** Print the name and type of a {!Cil.fundec}.
+(** Print the name and type of a {!Types.stmtInfo}.
 		@param ff is the formatter to which to print
-		@param fn is the {!Cil.fundec} to print
+		@param fn is the {!Types.stmtInfo} to print
 *)
 let stmtInfo ff si =
 	Format.fprintf ff "%s %d" si.Types.siFuncName si.Types.siStmt.Cil.sid;
