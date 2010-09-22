@@ -231,7 +231,7 @@ let prepare_file file =
 	if run_args.arg_list_blocks then begin
 		Output.printf "Total number of %s: %d\n" "Blocks" run_args.arg_num_blocks;
 		StmtInfoSet.iter
-			(fun stmtInfo -> Output.printf "%a\n" TypesPrinter.stmtInfo stmtInfo)
+			(fun stmtInfo -> Output.printf "%a\n" Printer.stmtInfo stmtInfo)
 			setOfBlocks;
 		Output.printf "\n"
 	end;
@@ -240,15 +240,15 @@ let prepare_file file =
 		EdgeSet.iter
 			(fun (srcStmtInfo, destStmtInfo) ->
 				 Output.printf "%a -> %a\n"
-					 TypesPrinter.stmtInfo srcStmtInfo
-					 TypesPrinter.stmtInfo destStmtInfo)
+					 Printer.stmtInfo srcStmtInfo
+					 Printer.stmtInfo destStmtInfo)
 			setOfEdges;
 		Output.printf "\n"
 	end;
 	if run_args.arg_list_conds then begin
 		Output.printf "Total number of %s: %d\n" "Conditions" run_args.arg_num_conds;
 		CondSet.iter
-			(fun (stmtInfo, truth) -> Output.printf "%a %c\n" TypesPrinter.stmtInfo stmtInfo (if truth then 'T' else 'F'))
+			(fun (stmtInfo, truth) -> Output.printf "%a %c\n" Printer.stmtInfo stmtInfo (if truth then 'T' else 'F'))
 		setOfConds;
 		Output.printf "\n"
 	end
@@ -333,7 +333,7 @@ let output_completion_info completion =
 			Output.printf "Error \"%a\"@ occurs at %a.@\n"
 				Report.abandoned_reason reason Printcil.loc loc;
 			if Executeargs.print_args.arg_print_callstack then
-				Output.printf "Call stack:@\n  @[%a@]@\n" (TypesPrinter.callingContext_list "@\n") state.callContexts;
+				Output.printf "Call stack:@\n  @[%a@]@\n" (Printer.callingContext_list "@\n") state.callContexts;
 			Output.printf "Abandoning path.@\n"
 
 		| _ ->

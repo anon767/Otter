@@ -60,9 +60,9 @@ struct
         Format.fprintf ff "%0.3d" v
     in
     match instr_stmt with
-      | Instr ([],stmt)     -> FormatPlus.sprintf "%a(%s,%a)" location_special (Cil.get_stmtLoc stmt.skind) "[]" TypesPrinter.stmt_kind stmt
-      | Instr (instrs,stmt) -> FormatPlus.sprintf "%a(%s,%a)" location_special (Cil.get_instrLoc (List.hd instrs)) "instrs" TypesPrinter.stmt_kind stmt
-      | Stmt (stmt)         -> FormatPlus.sprintf "%a(%s,%a)" location_special (Cil.get_stmtLoc stmt.skind) "stmt" TypesPrinter.stmt_kind stmt
+      | Instr ([],stmt)     -> FormatPlus.sprintf "%a(%s,%a)" location_special (Cil.get_stmtLoc stmt.skind) "[]" Printer.stmt_kind stmt
+      | Instr (instrs,stmt) -> FormatPlus.sprintf "%a(%s,%a)" location_special (Cil.get_instrLoc (List.hd instrs)) "instrs" Printer.stmt_kind stmt
+      | Stmt (stmt)         -> FormatPlus.sprintf "%a(%s,%a)" location_special (Cil.get_stmtLoc stmt.skind) "stmt" Printer.stmt_kind stmt
   
 end
 

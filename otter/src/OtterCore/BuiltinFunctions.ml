@@ -184,14 +184,14 @@ let libc_free = wrap_state_function begin fun state retopt exps ->
 	match ptr with
 		| Bytes_Address (block, _) ->
 			if block.memory_block_type != Block_type_Heap
-			then warning "Freeing a non-malloced pointer:@ @[%a@]@ = @[%a@]@\n" TypesPrinter.exp (List.hd exps) BytesPrinter.bytes ptr else
+			then warning "Freeing a non-malloced pointer:@ @[%a@]@ = @[%a@]@\n" Printer.exp (List.hd exps) BytesPrinter.bytes ptr else
 			if not (MemOp.state__has_block state block)
-			then warning "Double-free:@ @[%a@]@ = @[%a@]@\n" TypesPrinter.exp (List.hd exps) BytesPrinter.bytes ptr else
+			then warning "Double-free:@ @[%a@]@ = @[%a@]@\n" Printer.exp (List.hd exps) BytesPrinter.bytes ptr else
 			let state = MemOp.state__remove_block state block in
 			set_return_value state retopt bytes__zero
 		| _ ->
 			Output.set_mode Output.MSG_MUSTPRINT;
-			warning "Freeing something that is not a valid pointer:@ @[%a@]@ = @[%a@]@\n" TypesPrinter.exp (List.hd exps) BytesPrinter.bytes ptr
+			warning "Freeing something that is not a valid pointer:@ @[%a@]@ = @[%a@]@\n" Printer.exp (List.hd exps) BytesPrinter.bytes ptr
 end
 
 
@@ -436,7 +436,7 @@ end
 let otter_comment = wrap_state_function begin fun state retopt exps ->
 	let exp = List.hd exps in
 	Output.set_mode Output.MSG_MUSTPRINT;
-	Output.printf "COMMENT:@ @[%a@]@\n" TypesPrinter.exp exp;
+	Output.printf "COMMENT:@ @[%a@]@\n" Printer.exp exp;
 	state
 end
 

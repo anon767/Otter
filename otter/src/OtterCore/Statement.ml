@@ -129,10 +129,10 @@ let function_from_exp job state exp args: (state * fundec) list =
 					(getall c)
 
 				| _ ->
-					FormatPlus.failwith "Non-constant function ptr not supported :@ @[%a@]" TypesPrinter.exp exp2
+					FormatPlus.failwith "Non-constant function ptr not supported :@ @[%a@]" Printer.exp exp2
 			end
 		| _ ->
-			FormatPlus.failwith "Non-constant function ptr not supported :@ @[%a@]" TypesPrinter.exp exp
+			FormatPlus.failwith "Non-constant function ptr not supported :@ @[%a@]" Printer.exp exp
 
 let exec_fundec job state instr fundec lvalopt exps = 
 	let stmt = job.stmt in
@@ -249,7 +249,7 @@ let exec_stmt job =
 	in
 
 	Output.set_mode Output.MSG_STMT;
-	Output.printf "%a@\n" TypesPrinter.stmt_abbr stmt;
+	Output.printf "%a@\n" Printer.stmt_abbr stmt;
 	match stmt.skind with
 		| Instr [] ->
 				let nextStmt = match stmt.succs with [x] -> x | _ -> assert false in
@@ -430,10 +430,10 @@ let exec_stmt job =
 								exHist =  nextExHist (Some nextStmtF) ~whichBranch:false; } in
 							Output.set_mode Output.MSG_MUSTPRINT;
 							Output.printf "Branching on @[%a@]@ at %a.@\n"
-								 TypesPrinter.exp exp
+								 Printer.exp exp
 								 Printcil.loc loc;
 							if Executeargs.print_args.arg_print_callstack then
-								Output.printf "Call stack:@\n  @[%a@]@\n" (TypesPrinter.callingContext_list "@\n") state.callContexts;
+								Output.printf "Call stack:@\n  @[%a@]@\n" (Printer.callingContext_list "@\n") state.callContexts;
 							Output.printf "Job %d is the true branch and job %d is the false branch.@\n@\n"
 								trueJob.jid falseJob.jid;
 							Fork [Active trueJob; Active falseJob]

@@ -19,7 +19,7 @@ let frame__varinfo_to_lval_block frame varinfo =
 
 let frame__add_varinfo frame block_to_bytes varinfo bytes_opt block_type =
 	let size = (Cil.bitsSizeOf varinfo.vtype) / 8 in
-	let block = block__make (FormatPlus.as_string TypesPrinter.varinfo varinfo) size block_type in
+	let block = block__make (FormatPlus.as_string Printer.varinfo varinfo) size block_type in
 	let bytes = match bytes_opt with
 		| Some bytes -> bytes
 		| None -> bytes__make_default size byte__undef (* initially the symbolic 'undef' byte *)
@@ -255,7 +255,7 @@ let state__start_fcall state callContext fundec argvs =
     (* Output.print_endline (">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
      *)
 
-    Output.printf "Enter function %a@\n" TypesPrinter.fundec fundec;
+    Output.printf "Enter function %a@\n" Printer.fundec fundec;
     (* set up the new stack frame *)
 	let block_to_bytes = state.block_to_bytes in
 	let formal, block_to_bytes = frame__add_varinfos frame__empty block_to_bytes fundec.Cil.sformals Block_type_Local in
@@ -290,7 +290,7 @@ let state__start_fcall state callContext fundec argvs =
 
 let state__end_fcall state =
 	Output.set_mode Output.MSG_FUNC;
-	Output.printf "Exit function %a@\n" TypesPrinter.fundec (List.hd state.callstack);
+	Output.printf "Exit function %a@\n" Printer.fundec (List.hd state.callstack);
 	(* Output.print_endline ("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
      *)
 	let block_to_bytes = state.block_to_bytes in
@@ -380,7 +380,7 @@ let state__get_bytes_eval_cache state bytes =
 
 
 let state__trace state =
-	FormatPlus.as_string (TypesPrinter.callingContext_list "/") (List.rev state.callContexts)
+	FormatPlus.as_string (Printer.callingContext_list "/") (List.rev state.callContexts)
 
 
 (** map address to state (!) *)

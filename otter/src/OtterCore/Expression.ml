@@ -29,7 +29,7 @@ let print_failed_assertion state bytes exps ~isUnknown =
 		\  @[  %t@]@\n\
 		****************************)@\n\
 		"
-		(FormatPlus.pp_print_list TypesPrinter.exp "@ and ") exps
+		(FormatPlus.pp_print_list Printer.exp "@ and ") exps
 		BytesPrinter.bytes bytes
 		(if isUnknown then "can be" else "is")
 		begin fun ff ->

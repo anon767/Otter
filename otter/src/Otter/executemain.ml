@@ -158,7 +158,7 @@ let feature : featureDescr =
 			" Print char as int");
 
 			("--printStmtLocs",
-			Arg.Set TypesPrinter.print_stmtInfo_locs,
+			Arg.Set Printer.print_stmtInfo_locs,
 			" Print file and line number for statements, in addition to function name an id number, for block and edge coverage\n");
 
 			(** 

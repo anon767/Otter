@@ -7,8 +7,8 @@ OtterCore/Expression
 OtterCore/Interceptor
 OtterCore/MemOp
 OtterCore/Operator
+OtterCore/Printer
 OtterCore/Report
 OtterCore/Statement
 OtterCore/SymbolicPointers
 OtterCore/Types
-OtterCore/TypesPrinter
