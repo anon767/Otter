@@ -4,37 +4,38 @@
 /* TODO: revisit these definitions as the types get used */
 #include <stddef.h>
 
-#define blkcnt_t int
-#define blksize_t unsigned int
-#define clock_t int
-#define clockid_t unsigned int
-#define dev_t unsigned int
-#define fsblkcnt_t unsigned int
-#define fsfilcnt_t unsigned int
-#define gid_t unsigned int
-#define id_t unsigned int
-#define ino_t unsigned int
-#define mode_t unsigned int
-#define nlink_t unsigned int
-#define off_t int
-#define pid_t unsigned int
-#define ssize_t unsigned int
-#define suseconds_t unsigned int
-#define time_t int
-#define uid_t unsigned int
-#define useconds_t unsigned int
+// See http://opengroup.org/onlinepubs/007908799/xsh/systypes.h.html
+typedef int blkcnt_t;
+typedef int blksize_t;
+typedef int clock_t;
+typedef unsigned int clockid_t;
+typedef unsigned int dev_t;
+typedef unsigned int fsblkcnt_t;
+typedef unsigned int fsfilcnt_t;
+typedef unsigned int gid_t;
+typedef unsigned int id_t;
+typedef unsigned int ino_t;
+typedef unsigned int mode_t;
+typedef unsigned int nlink_t;
+typedef int off_t;
+typedef int pid_t;
+typedef int ssize_t;
+typedef int suseconds_t;
+typedef int time_t;
+typedef unsigned int uid_t;
+typedef unsigned int useconds_t;
 
 /* most of these should be structs */
-#define key_t int
-#define pthread_attr_t int
-#define pthread_cond_t int
-#define pthread_condattr_t int
-#define pthread_key_t int
-#define pthread_mutex_t int
-#define pthread_mutexattr_t int
-#define pthread_once_t int
-#define pthread_rwlock_t int
-#define pthread_rwlockattr_t int
-#define pthread_t int
+typedef int key_t;
+typedef int pthread_attr_t;
+typedef int pthread_cond_t;
+typedef int pthread_condattr_t;
+typedef int pthread_key_t;
+typedef int pthread_mutex_t;
+typedef int pthread_mutexattr_t;
+typedef int pthread_once_t;
+typedef int pthread_rwlock_t;
+typedef int pthread_rwlockattr_t;
+typedef int pthread_t;
 
 #endif
