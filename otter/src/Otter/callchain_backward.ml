@@ -69,8 +69,11 @@ let pass_targets targets job fexp exps =
   let pass_target target : bool*bytes =
 	List.fold_left 
 	  ( fun (b,fc) fundec -> 
-		  if fundec != target.Prioritizer.func then true,Bytes.bytes__zero
-		  else
+		  if fundec != target.Prioritizer.target_func then true,Bytes.bytes__zero
+		  else match target.Prioritizer.target_predicate with
+          (* TODO (martin): implement FailingPaths *)
+          | Prioritizer.FailingPaths (_) ->  failwith "FailingPaths: Not yet implemented"
+          | Prioritizer.FailingConditions (entry_state, failing_condition) ->
 			(
 			  (* caller's input values to callee: argvs
 			   * callee's input values from caller: target.state 
@@ -81,21 +84,21 @@ let pass_targets targets job fexp exps =
 			  let connecting_bytes = 
 				List.fold_left2
 				  ( fun b argv formal ->
-					  let _,fargv = Expression.rval target.Prioritizer.entry_state (Lval(Var(formal),NoOffset)) in
+					  let _,fargv = Expression.rval entry_state (Lval(Var(formal),NoOffset)) in
 					  let equation = Operator.eq [(fargv,formal.vtype);(argv,formal.vtype)] in
 						Operator.bytes__land equation b 
 				  ) bytes__one argvs fundec.sformals
 			  in
-                (Format.printf "Failing condition: %a\n%!" BytesPrinter.bytes target.Prioritizer.failing_condition);
+                (Format.printf "Failing condition: %a\n%!" BytesPrinter.bytes failing_condition);
                 (Format.printf "Path condition: %!");
                 (List.iter (Format.printf "%a && %!" BytesPrinter.bytes) state.path_condition);
                 (Format.printf "\n%!");
                 (Format.printf "Connection : %a\n%!" BytesPrinter.bytes connecting_bytes);
-			  let _, truth = MemOp.eval_with_cache state (connecting_bytes::state.path_condition)  (target.Prioritizer.failing_condition) in
+			  let _, truth = MemOp.eval_with_cache state (connecting_bytes::state.path_condition) failing_condition in
               (* TODO (martin): why the total_failing_condition does not include
                * state.path_condition? 
                *)
-			  let total_failing_condition = Operator.bytes__land target.Prioritizer.failing_condition connecting_bytes in
+			  let total_failing_condition = Operator.bytes__land failing_condition connecting_bytes in
 			  let total_failing_condition = Operator.bytes__lor total_failing_condition fc in
 
 			  let print_failed_assertion isUnknown =
@@ -106,11 +109,11 @@ let pass_targets targets job fexp exps =
 				let _ = Output.banner_printf 1  "Failing condition %s be hit (see error log).\n%!" mustmay in
 				let _ = log "(****************************@\n" in
 				let _ = log "The following failure %s happen in function %s:@\n" mustmay caller.svar.vname in
-				let _ = log "Failing condition:@;<1 2>@[%a@]@\n" BytesPrinter.bytes target.Prioritizer.failing_condition in
+				let _ = log "Failing condition:@;<1 2>@[%a@]@\n" BytesPrinter.bytes failing_condition in
 				let _ = log "Path condition:@;<1 2>@[  %a@]@\n" (FormatPlus.pp_print_list BytesPrinter.bytes "@\nAND@\n  ") state.path_condition in
 				let _ = log "Connection:@;<1 2>@[%a@]@\n" BytesPrinter.bytes connecting_bytes in
 				let _ = log "Consult STP for an example...@\n" in
-				let valuesForSymbols = Stp.getAllValues (target.Prioritizer.failing_condition::connecting_bytes::state.path_condition) in
+				let valuesForSymbols = Stp.getAllValues (failing_condition::connecting_bytes::state.path_condition) in
 				let getVal = function
 				  | Bytes_ByteArray bytArr ->
 					  let byteOptArray =
@@ -205,10 +208,11 @@ let terminate_job_at_targets_interceptor targets job job_queue interceptor =
 let callchain_backward_se file entryfn assertfn job_init : _ job_completion list list =
   let job_init fn ts =
 	let _ = Output.banner_printf 1 "Start forward SE on function %s with target(s)\n%s\n%!"
-			(fn.svar.vname) (let s=(String.concat "," (List.map (fun t -> t.Prioritizer.func.svar.vname) ts)) in if s="" then "(none)" else s)
+			(fn.svar.vname) (let s=(String.concat "," (List.map (fun t -> t.Prioritizer.target_func.svar.vname) ts)) in if s="" then "(none)" else s)
 	in
 	job_init fn
   in
+
   let get_failing_condition result = 
 	List.fold_left 
 	  ( fun b job_completion ->
@@ -259,19 +263,14 @@ let callchain_backward_se file entryfn assertfn job_init : _ job_completion list
 	 * A job is either successful, if no assertion failure, or unsuccessful.
 	 *)
 
-    (* TODO (martin): use failing paths instead of failing conditions *)
-    (* let _ = get_failing_paths result in *)
-
-	(* Get a failing condition *)
-	let failing_condition = get_failing_condition result in
+    let failing_condition = get_failing_condition result in
 	  if f == entryfn then 
 		(* If f is main(), we are done *)
 		result 
 	  else
 		let new_target = {
-		  Prioritizer.func = f;
-		  Prioritizer.entry_state = job.state;
-		  Prioritizer.failing_condition = failing_condition;
+		  Prioritizer.target_func = f;
+          Prioritizer.target_predicate = Prioritizer.FailingConditions(job.state, failing_condition);
 		} in
 		let callers = get_callers f in
 		  Output.banner_printf 1 "Function %s's caller(s): " f.svar.vname;
@@ -287,6 +286,7 @@ let callchain_backward_se file entryfn assertfn job_init : _ job_completion list
 		  ) 
 		  [] callers
   in
+
   let callers = get_callers assertfn in
 	List.fold_left 
 	  (fun results caller ->

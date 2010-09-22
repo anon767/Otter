@@ -6,11 +6,14 @@ open Cil
 open Hashtbl
 
 
+type failing_predicate =
+    | FailingConditions of state * Bytes.bytes (* TODO (martin): make the condition a list of bytes *)
+    | FailingPaths of fork_decision list list
+
 (* target to be used in prioritizer *)
 type target = {
-  func: Cil.fundec;
-  entry_state: state;
-  failing_condition: Bytes.bytes;
+  target_func: Cil.fundec;
+  target_predicate: failing_predicate;
 }
 
 
@@ -268,7 +271,7 @@ let prioritize assertfn targets job =
             fun node -> match node.obj with
               | Instr((Call(_,Lval(Var(varinfo),_),exps,_))::_,_)  ->
                   if varinfo = assertfn.svar then true else
-                    List.fold_left (fun b t -> if t.func.svar == varinfo then true else b) false targets
+                    List.fold_left (fun b t -> if t.target_func.svar == varinfo then true else b) false targets
               | _ -> false
           end
       in
