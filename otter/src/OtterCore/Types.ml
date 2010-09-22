@@ -166,11 +166,16 @@ let emptyHistory = {
 
 let job_counter = Counter.make ()
 
+type fork_decision =
+    | ForkConditional of bool
+    | ForkFunptr of Cil.fundec
+    | ForkLongjmp of callingContext (* TODO (martin): verify if this is the right type to use *)
+
 type job = {
 	file : Cil.file;
 	state : state;
 	exHist : executionHistory;
-    decisionPath :  (stmtInfo * bool) list; (** The decision path is a list of (conditional statement, boolean) pair. Most recent statement first. *)
+    decisionPath :  (stmtInfo * fork_decision) list; (** The decision path is a list of (conditional statement, fork_decision) pair. Most recent statement first. *)
 	instrList : Cil.instr list; (** [instr]s to execute before moving to the next [stmt] *)
 	stmt : Cil.stmt;            (** The next statement the job should execute *)
 	trackedFns : StringSet.t;	(** The set of functions (names) in which to track coverage *)
@@ -182,7 +187,7 @@ type job_result = {
 	result_file : Cil.file;
 	result_state : state;
 	result_history : executionHistory;
-    result_decision_path : (stmtInfo * bool) list;
+    result_decision_path : (stmtInfo * fork_decision) list;
 }
 
 type 'reason job_completion =

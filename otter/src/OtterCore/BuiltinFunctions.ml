@@ -776,6 +776,7 @@ let libc_longjmp job retopt exps =
 						exHist
 				in
 
+                (* TODO (martin): update job.decisionPath *)
 				(* Update the state, program counter, and coverage  *)
 				let job = { 
 					job with stmt = stmt; 

@@ -175,6 +175,8 @@ let exec_instr_call job instr lvalopt fexp exps =
 			| [] -> []
 			| (state, fundec)::t -> 
 				let job_state =
+                    let job = {job with
+                        decisionPath = (stmtInfo_of_job job, ForkFunptr(fundec))::job.decisionPath;} in
 					try
 						(exec_fundec job state instr fundec lvalopt exps)
 					with Failure msg ->
@@ -393,7 +395,7 @@ let exec_stmt job =
 							let job' = { job with 
                               state = nextState; 
                               stmt = nextStmt; 
-                              decisionPath = (stmtInfo, true)::job.decisionPath; } in
+                              decisionPath = (stmtInfo, ForkConditional(true))::job.decisionPath; } in
 							Active { job' with exHist = nextExHist (Some nextStmt) ~whichBranch:true; }
 
 						| Ternary.False ->
@@ -402,7 +404,7 @@ let exec_stmt job =
 							let job' = { job with 
                               state = nextState; 
                               stmt = nextStmt; 
-                              decisionPath = (stmtInfo, false)::job.decisionPath; } in
+                              decisionPath = (stmtInfo, ForkConditional(false))::job.decisionPath; } in
 							Active { job' with exHist = nextExHist (Some nextStmt) ~whichBranch:false; }
 
 						| Ternary.Unknown ->
@@ -419,12 +421,12 @@ let exec_stmt job =
 								state = nextStateT;
 								stmt = nextStmtT;
 								exHist = nextExHist (Some nextStmtT) ~whichBranch:true;
-                                decisionPath = (stmtInfo, true)::job.decisionPath; 
+                                decisionPath = (stmtInfo, ForkConditional(true))::job.decisionPath; 
 								jid = Counter.next Types.job_counter; } in
 							let falseJob = { job with
 								state = nextStateF;
 								stmt = nextStmtF;
-                                decisionPath = (stmtInfo, false)::job.decisionPath; 
+                                decisionPath = (stmtInfo, ForkConditional(false))::job.decisionPath; 
 								exHist =  nextExHist (Some nextStmtF) ~whichBranch:false; } in
 							Output.set_mode Output.MSG_MUSTPRINT;
 							Output.printf "Branching on @[%a@]@ at %a.@\n"
