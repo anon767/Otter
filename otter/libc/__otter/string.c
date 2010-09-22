@@ -216,8 +216,15 @@ char* __otter_libc_strpbrk(const char* s1, const char* s2)
 }
 
 char* __otter_libc_strrchr(const char* s, int c)
-{
-	return strchr(s, c);
+{ // Taken (and slightly modified) from uClibc
+	const char *p = NULL;
+	do {
+		if (*s == (char) c) {
+			p = s;
+		}
+	} while (*s++);
+
+	return (char *) p;
 }
 
 size_t __otter_libc_strspn(const char* s1, const char* s2)

@@ -75,7 +75,8 @@ int __otter_libc_fcntl(int fd, int cmd, ...)
 
 int __otter_libc_open(const char* name2, int oflag, ...)
 {
-	char* name = malloc(__libc_get_block_size(name2));
+	// alloca so we don't have to worry about calling free
+	char* name = alloca(__libc_get_block_size(name2));
 	strcpy(name, name2);
 
 	if(O_NONBLOCK & oflag) /* non blocking I/O not supported */
@@ -103,31 +104,26 @@ int __otter_libc_open(const char* name2, int oflag, ...)
 
 	/* we are looking for a file */
 	
-	char* a = name;
+	char* a = strrchr(name,'/');
 
-	while(*a != 0)
-		a++;
-
-	while(a != name && (*a) != '/')
-		a--;
-
-	if(a == name)
-	{
-		dnode = __otter_fs_pwd;
-	}
-	else
+	if(a)
 	{
 		*a = 0;
 		dnode = __otter_fs_find_dnode(name);
-		*a = '/';
+		// We never use name again, so we don't have to restore the '/' that we wrote over
+		a++;
+	}
+	else
+	{
+		dnode = __otter_fs_pwd;
+		a = name;
 	}
 
 	if(!dnode) /* can't find path */
 	{
+		errno = ENOENT;
 		return (-1);
 	}
-
-	a++;
 
 	struct __otter_fs_inode* inode = __otter_fs_find_inode_in_dir(a, dnode);
 	if(!inode) /* file not found or need permission to browse dir */

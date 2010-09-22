@@ -831,6 +831,7 @@ let interceptor job job_queue interceptor =
 		(* intercept builtin functions *)
 		(                                  (*"__SYMBOLIC"*)            intercept_symbolic) @@
 		(intercept_function_by_name_internal "__builtin_alloca"        libc___builtin_alloca) @@
+		(intercept_function_by_name_internal "alloca"                  libc___builtin_alloca) @@
 		(intercept_function_by_name_internal "malloc"                  libc_malloc) @@
 		(intercept_function_by_name_internal "free"                    libc_free) @@
 		(intercept_function_by_name_internal "__builtin_va_arg_fixed"  libc___builtin_va_arg) @@
