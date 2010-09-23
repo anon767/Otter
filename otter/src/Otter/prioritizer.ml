@@ -262,7 +262,7 @@ end
 open Graph
 
 let prioritize assertfn targets job = 
-  if (Executeargs.run_args.Executeargs.arg_cfg_pruning) then
+  if (!Executeargs.arg_cfg_pruning) then
     begin
       let graph,root = make_graph (List.hd job.state.callstack) in
       let target_nodes = 

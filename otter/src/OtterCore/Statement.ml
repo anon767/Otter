@@ -6,7 +6,6 @@ open OtterBytes
 open Bytes
 open BytesUtility
 open Types
-open Executeargs
 
 (** Get the file location for the current job instruction.
 		@param job the job to get the current location from
@@ -44,7 +43,7 @@ let stmtInfo_of_job job =
 let addStmtCoverage job whichBranch nextStmtOpt =
 	{ job.exHist with
 			coveredLines =
-				if run_args.arg_line_coverage
+				if !Executeargs.arg_line_coverage
 				then match job.stmt.skind with
 						If(_,_,_,loc)
 					| Cil.Return(_,loc)
@@ -54,11 +53,11 @@ let addStmtCoverage job whichBranch nextStmtOpt =
 					| _ -> job.exHist.coveredLines
 				else LineSet.empty;
 			coveredBlocks =
-				if run_args.arg_block_coverage
+				if !Executeargs.arg_block_coverage
 				then StmtInfoSet.add (stmtInfo_of_job job) job.exHist.coveredBlocks
 				else StmtInfoSet.empty;
 			coveredEdges =
-				if run_args.arg_edge_coverage
+				if !Executeargs.arg_edge_coverage
 				then (
 					match nextStmtOpt with
 							Some nextStmt when job.stmt == Coverage.stmtAtEndOfBlock job.stmt ->
@@ -71,14 +70,14 @@ let addStmtCoverage job whichBranch nextStmtOpt =
 						| _ -> job.exHist.coveredEdges
 				) else EdgeSet.empty;
 			coveredConds =
-				if run_args.arg_cond_coverage
+				if !Executeargs.arg_cond_coverage
 				then (
 						match job.stmt.skind with
 								If _ -> CondSet.add (stmtInfo_of_job job,whichBranch) job.exHist.coveredConds
 						| _ -> job.exHist.coveredConds
 				) else CondSet.empty;
 			executionPath =
-				if run_args.arg_path_coverage && job.stmt == Coverage.stmtAtEndOfBlock job.stmt
+				if !Executeargs.arg_path_coverage && job.stmt == Coverage.stmtAtEndOfBlock job.stmt
 				then (
 					{ siFuncName = (List.hd job.state.callstack).svar.vname; siStmt = job.stmt; } :: job.exHist.executionPath
 				) else (
@@ -180,7 +179,7 @@ let exec_instr_call job instr lvalopt fexp exps =
 					try
 						(exec_fundec job state instr fundec lvalopt exps)
 					with Failure msg ->
-						if run_args.arg_failfast then failwith msg;
+						if !Executeargs.arg_failfast then failwith msg;
 						let result = { 
                             result_file = job.file; 
                             result_state = state; 
@@ -210,7 +209,7 @@ let exec_instr job =
 	(* Within instructions, we have to update line coverage (but not
 		 statement or edge coverage). *)
 	let job =
-		if job.inTrackedFn && run_args.arg_line_coverage
+		if job.inTrackedFn && !Executeargs.arg_line_coverage
 		then { job with exHist = addInstrCoverage job instr; }
 		else job
 	in
@@ -333,7 +332,7 @@ let exec_stmt job =
 											 future'; so we have to check whether we should
 											 in fact record coverage. (We have to use job'
 											 (not job) here and in a few lines.) *)
-										if job'.inTrackedFn && run_args.arg_edge_coverage
+										if job'.inTrackedFn && !Executeargs.arg_edge_coverage
 										then { exHist with coveredEdges =
 												EdgeSet.add
 													({ siFuncName = callingFuncName; siStmt = callStmt; }, (* A call ends a block, so use callStmt directly *)
@@ -432,7 +431,7 @@ let exec_stmt job =
 							Output.printf "Branching on @[%a@]@ at %a.@\n"
 								 Printer.exp exp
 								 Printcil.loc loc;
-							if Executeargs.print_args.arg_print_callstack then
+							if !Executeargs.arg_print_callstack then
 								Output.printf "Call stack:@\n  @[%a@]@\n" (Printer.callingContext_list "@\n") state.callContexts;
 							Output.printf "Job %d is the true branch and job %d is the false branch.@\n@\n"
 								trueJob.jid falseJob.jid;
@@ -456,7 +455,7 @@ let step job job_queue =
 			| _ -> (exec_instr job, job_queue)
 	with
 		| Failure msg ->
-			if run_args.arg_failfast then failwith msg;
+			if !Executeargs.arg_failfast then failwith msg;
 			let result = { 
                 result_file = job.file; 
                 result_state = job.state; 

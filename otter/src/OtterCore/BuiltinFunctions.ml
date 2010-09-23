@@ -88,7 +88,7 @@ let end_function_call job =
 			 call might have never returned. Since there isn't an
 			 explicit return (because we handle the call internally), we
 			 have to add the edge now. *)
-		if job.inTrackedFn && Executeargs.run_args.Executeargs.arg_line_coverage then
+		if job.inTrackedFn && !Executeargs.arg_line_coverage then
 			let loc = Statement.get_job_loc job in
 			{ exHist with coveredLines = LineSet.add (loc.Cil.file, loc.Cil.line) exHist.coveredLines; }
 		else
@@ -96,7 +96,7 @@ let end_function_call job =
 	in
 	let exHist =
 		(* Update edge coverage. *)
-		if job.inTrackedFn && Executeargs.run_args.Executeargs.arg_edge_coverage then
+		if job.inTrackedFn && !Executeargs.arg_edge_coverage then
 			let fn = (List.hd job.state.callstack).svar.vname in
 			let edge = (
 				{ siFuncName = fn; siStmt = Coverage.stmtAtEndOfBlock job.stmt; },
@@ -240,7 +240,7 @@ let libc___builtin_alloca job retopt exps =
 			1 (* currently bytearray have unbounded length *)
 	in
 	let bytes =
-	  if Executeargs.run_args.Executeargs.arg_init_malloc_zero
+	  if !Executeargs.arg_init_malloc_zero
 	  then bytes__make size (* initially zero, as though malloc were calloc *)
 	  else bytes__make_default size byte__undef (* initially the symbolic 'undef' byte *)
 	in
@@ -271,7 +271,7 @@ let libc_malloc job retopt exps =
 			1 (* currently bytearray have unbounded length *)
 	in
 	let bytes =
-	  if Executeargs.run_args.Executeargs.arg_init_malloc_zero
+	  if !Executeargs.arg_init_malloc_zero
 	  then bytes__make size (* initially zero, as though malloc were calloc *)
 	  else bytes__make_default size byte__undef (* initially the symbolic 'undef' byte *)
 	in
@@ -757,7 +757,7 @@ let libc_longjmp job retopt exps =
 						 call might have never returned. Since there isn't an
 						 explicit return (because we handle the call internally), we
 						 have to add the edge now. *)
-					if job.inTrackedFn && Executeargs.run_args.Executeargs.arg_line_coverage then
+					if job.inTrackedFn && !Executeargs.arg_line_coverage then
 						let loc = Statement.get_job_loc job in
 						{ exHist with coveredLines = LineSet.add (loc.Cil.file, loc.Cil.line) exHist.coveredLines; }
 					else
@@ -765,7 +765,7 @@ let libc_longjmp job retopt exps =
 				in
 				let exHist =
 					(* Update edge coverage. *)
-					if job.inTrackedFn && Executeargs.run_args.Executeargs.arg_edge_coverage then
+					if job.inTrackedFn && !Executeargs.arg_edge_coverage then
 						let fn = (List.hd job.state.callstack).svar.vname in
 						let edge = (
 							{ siFuncName = fn; siStmt = Coverage.stmtAtEndOfBlock job.stmt; },
@@ -870,7 +870,7 @@ let interceptor job job_queue interceptor =
 
 		) job job_queue
 	with Failure msg ->
-		if Executeargs.run_args.Executeargs.arg_failfast then failwith msg;
+		if !Executeargs.arg_failfast then failwith msg;
 		let result = { 
             result_file = job.file; 
             result_state = job.state; 
@@ -998,7 +998,7 @@ let libc_interceptor job job_queue interceptor =
 
 		) job job_queue
 	with Failure msg ->
-		if Executeargs.run_args.Executeargs.arg_failfast then failwith msg;
+		if !Executeargs.arg_failfast then failwith msg;
 		let result = { 
             result_file = job.file; 
             result_state = job.state; 

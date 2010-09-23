@@ -223,7 +223,7 @@ let otter_gmalloc job multijob retopt exps =
 			1 (* currently bytearray have unbounded length *)
 	in
 	let bytes =
-	  if Executeargs.run_args.Executeargs.arg_init_malloc_zero
+	  if !Executeargs.arg_init_malloc_zero
 	  then Bytes.bytes__make size (* initially zero, as though malloc were calloc *)
 	  else Bytes.bytes__make_default size Bytes.byte__undef (* initially the symbolic 'undef' byte *)
 	in
@@ -333,10 +333,10 @@ let doit file =
 	Driver.prepare_file file;
 	let entryfn = Driver.find_entryfn file in
 	let job =
-		if Executeargs.run_args.Executeargs.arg_entryfn = "main" then
+		if !Executeargs.arg_entryfn = "main" then
 			(* create a job for the file, with the commandline arguments set to the file name
 			 * and the arguments from the '--arg' option *)
-			Driver.job_for_file file (file.Cil.fileName::Executeargs.run_args.Executeargs.arg_cmdline_argvs)
+			Driver.job_for_file file (file.Cil.fileName::!Executeargs.arg_cmdline_argvs)
 		else
 			(* create a job to start in the middle of entryfn *)
 			Driver.job_for_middle file entryfn

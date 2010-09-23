@@ -188,10 +188,10 @@ let covTypeToStr = function
 	| Path -> "paths"
 
 let getTotal = function
-	| Line -> Executeargs.run_args.Executeargs.arg_num_lines
-	| Block -> Executeargs.run_args.Executeargs.arg_num_blocks
-	| Edge -> Executeargs.run_args.Executeargs.arg_num_edges
-	| Cond -> Executeargs.run_args.Executeargs.arg_num_conds
+	| Line -> !Executeargs.arg_num_lines
+	| Block -> !Executeargs.arg_num_blocks
+	| Edge -> !Executeargs.arg_num_edges
+	| Cond -> !Executeargs.arg_num_conds
 	| Path -> invalid_arg "Cannot compute the total number of paths"
 
 let getNumCovered covType hist = match covType with
@@ -383,7 +383,7 @@ let printCoveringConfigs coveringSet covType =
 	end
 
 let printCoverageInfo resultList =
-	if Executeargs.run_args.Executeargs.arg_line_coverage then (
+	if !Executeargs.arg_line_coverage then (
 		Output.printf "Line coverage:\n\n";
 		let allLinesCovered =
  			(List.fold_left
@@ -404,7 +404,7 @@ let printCoverageInfo resultList =
 		printCoveringConfigs coveringSet Line
 	);
 
-	if Executeargs.run_args.Executeargs.arg_block_coverage then (
+	if !Executeargs.arg_block_coverage then (
 		Output.printf "Block coverage:\n\n";
 		let allBlocksCovered =
  			(List.fold_left
@@ -425,7 +425,7 @@ let printCoverageInfo resultList =
 		printCoveringConfigs coveringSet Block
 	);
 
-	if Executeargs.run_args.Executeargs.arg_edge_coverage then (
+	if !Executeargs.arg_edge_coverage then (
 		Output.printf "Edge coverage:\n\n";
 		let allEdgesCovered =
  			(List.fold_left
@@ -446,7 +446,7 @@ let printCoverageInfo resultList =
 		printCoveringConfigs coveringSet Edge
 	);
 
-  if Executeargs.run_args.Executeargs.arg_cond_coverage then (
+  if !Executeargs.arg_cond_coverage then (
 		Output.printf "Condition coverage:\n\n";
 		let allCondsCovered =
  			(List.fold_left
@@ -467,7 +467,7 @@ let printCoverageInfo resultList =
 		printCoveringConfigs coveringSet Cond
 	);
 
-	if Executeargs.run_args.Executeargs.arg_path_coverage then (
+	if !Executeargs.arg_path_coverage then (
 		(* I don't compute covering sets here because I assume each path
 			 is unique. However, if two paths x and y differ only within
 			 untracked functions, [x.executionPath = y.executionPath] will

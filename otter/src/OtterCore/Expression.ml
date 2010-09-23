@@ -1,6 +1,5 @@
 open DataStructures
 open OcamlUtilities
-open Executeargs
 open Cil
 open OtterBytes
 open Bytes
@@ -333,7 +332,7 @@ lval ?(justGetAddr=false) state (lhost, offset_exp as cil_lval) =
 			(* Omit the bounds check if we're only getting the address of the
 				 lval---not actually reading from or writing to it---or if bounds
 				 checking is turned off *)
-			if justGetAddr || not run_args.arg_bounds_checking
+			if justGetAddr || not !Executeargs.arg_bounds_checking
 			then state, (lvals, size)
 			else (checkBounds state lvals cil_lval size), (lvals, size)
 

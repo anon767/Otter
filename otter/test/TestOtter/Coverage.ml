@@ -8,11 +8,11 @@ let test_coverage content ?label tracked_fns test =
 	test_otter content ?label
 		~setup:begin fun _ ->
 			(* enable coverage tracking *)
-			Executeargs.run_args.Executeargs.arg_edge_coverage <- true;
-			Executeargs.run_args.Executeargs.arg_block_coverage <- true;
-			Executeargs.run_args.Executeargs.arg_line_coverage <- true;
+			Executeargs.arg_edge_coverage := true;
+			Executeargs.arg_block_coverage := true;
+			Executeargs.arg_line_coverage := true;
 			(* enable tracking on given functions *)
-			Executeargs.run_args.Executeargs.arg_fns <- tracked_fns;
+			Executeargs.arg_fns := tracked_fns;
 		end
 		begin fun results ->
 			(* figure out the coverage *)

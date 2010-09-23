@@ -7,7 +7,6 @@ open OtterCore
 open Bytes
 open Types
 open Cil
-open Executeargs
 
 
 class prioritized_job_queue assertfn targets = object (self)
@@ -186,7 +185,7 @@ let terminate_job_at_targets targets job =
 				None
 			else begin
 				let msg = Printf.sprintf "Job %d hits the failing condition" job.jid in
-				if run_args.arg_failfast then failwith msg;
+				if !Executeargs.arg_failfast then failwith msg;
 				let state = { job.state with path_condition = failing_condition::job.state.path_condition } in
 				let result = { 
                     result_file = job.Types.file; 
@@ -303,7 +302,7 @@ let callchain_backward_se file entryfn assertfn job_init : _ job_completion list
 let arg_assertfn = ref "__ASSERT"
 
 let prepare_file file =
-	run_args.arg_cfg_pruning <- true;
+	Executeargs.arg_cfg_pruning := true;
 	Driver.prepare_file file
 
 let doit file =

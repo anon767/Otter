@@ -1,6 +1,5 @@
 open OcamlUtilities
 open CilUtilities
-open Executeargs
 open Types
 
 let (@@) i1 i2 = fun a b -> i1 a b i2
@@ -11,7 +10,7 @@ let identity_interceptor job job_queue interceptor =
 let old_job_id = ref 0
 let set_output_formatter_interceptor job job_queue interceptor = 
 	if !old_job_id <> job.jid then (
-		if not Executeargs.run_args.arg_cfg_pruning then
+		if not !Executeargs.arg_cfg_pruning then
 		(
 			Output.set_mode Output.MSG_REG;
 			Output.printf "***** Changing running job *****@\n"

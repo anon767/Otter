@@ -1,5 +1,4 @@
 open OcamlUtilities
-open Executeargs
 
 let abandoned_reason ff = function
     | `Failure msg -> Format.fprintf ff "`Failure:%s" msg
@@ -21,18 +20,21 @@ let print_report results =
 		Output.printf "%d paths ran to completion; %d had errors.\n" completed abandoned;
 		Output.printf "There are %d truncated paths.\n" truncated;
 
-		if run_args.arg_line_coverage || run_args.arg_block_coverage || run_args.arg_edge_coverage || run_args.arg_cond_coverage || run_args.arg_path_coverage
-		then begin
+		if !Executeargs.arg_line_coverage
+				|| !Executeargs.arg_block_coverage
+				|| !Executeargs.arg_edge_coverage
+				|| !Executeargs.arg_cond_coverage
+				|| !Executeargs.arg_path_coverage then begin
 			(* Print coverage information, if it was gathered, regardless of anything else.*)
 			Output.set_mode Output.MSG_MUSTPRINT;
 			Coverage.printCoverageInfo coverage;
 
 			(* Marshal out (coverage : Types.job_result list) so that we can
 				 read it back in later. *)
-			if run_args.arg_marshal_file <> ""
+			if !Executeargs.arg_marshal_file <> ""
 			then (
-				Output.printf "Marshalling results to %s\n" run_args.arg_marshal_file;
-				let outChan = open_out_bin run_args.arg_marshal_file in
+				Output.printf "Marshalling results to %s\n" !Executeargs.arg_marshal_file;
+				let outChan = open_out_bin !Executeargs.arg_marshal_file in
 					Marshal.to_channel outChan coverage [];
 					close_out outChan
 			);

@@ -345,7 +345,7 @@ let state__extract_path_condition state bytes =
 
 let state__add_path_condition state bytes tracked=
   let path_condition,path_condition_tracked =
-    if Executeargs.run_args.Executeargs.arg_simplify_path_condition then
+    if !Executeargs.arg_simplify_path_condition then
       Stats.time "Simplify PC" (state__extract_path_condition state) bytes
     else
       state.path_condition,state.path_condition_tracked

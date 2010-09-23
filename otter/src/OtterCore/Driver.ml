@@ -1,7 +1,6 @@
 open DataStructures
 open OcamlUtilities
 open CilUtilities
-open Executeargs
 open OtterBytes
 open Bytes
 open Types
@@ -43,7 +42,7 @@ let init_symbolic_globalvars state globals =
 		| Cil.GVar (varinfo, _, _)
 		| Cil.GVarDecl (varinfo, _)
 				when not (Cil.isFunctionType varinfo.Cil.vtype)
-					 && not (Executeargs.run_args.arg_noinit_unreachable_globals && unreachable_global varinfo) ->
+					 && not (!Executeargs.arg_noinit_unreachable_globals && unreachable_global varinfo) ->
 			let state,init_bytes = init_symbolic_varinfo state varinfo in
 			MemOp.state__add_global state varinfo init_bytes
 		| _ ->
@@ -54,7 +53,7 @@ let init_symbolic_globalvars state globals =
 let init_globalvars state globals =
 	List.fold_left begin fun state g -> match g with
 		| Cil.GVar(varinfo, { Cil.init=Some init }, _)
-				when not (Executeargs.run_args.arg_noinit_unreachable_globals && unreachable_global varinfo) ->
+				when not (!Executeargs.arg_noinit_unreachable_globals && unreachable_global varinfo) ->
 			Output.set_mode Output.MSG_MUSTPRINT;
 			let lhost_typ = varinfo.Cil.vtype in
 			let size = (Cil.bitsSizeOf (lhost_typ)) / 8 in
@@ -88,7 +87,7 @@ let init_globalvars state globals =
 		| Cil.GVar(varinfo, _, _)
 		| Cil.GVarDecl(varinfo, _)
 				when not (Cil.isFunctionType varinfo.Cil.vtype)
-					&& not (Executeargs.run_args.arg_noinit_unreachable_globals && unreachable_global varinfo) ->
+					&& not (!Executeargs.arg_noinit_unreachable_globals && unreachable_global varinfo) ->
 				(* I think the list of globals is always in the same order as in the source
 					code. In particular, I think there will never be a declaration of a
 					variable after that variable has been defined, since CIL gets rid of
@@ -211,32 +210,32 @@ let prepare_file file =
 			()
 	end;
 
-	if Executeargs.run_args.arg_noinit_unreachable_globals then
+	if !Executeargs.arg_noinit_unreachable_globals then
 		Coverage.computeReachableCode file;
 
 	(* Find all lines, blocks, edges, and conditions. *)
 	(* TODO: wrap the listings of Lines,Edges,etc... *)
-	let setOfLines, setOfBlocks, setOfEdges, setOfConds = Coverage.getProgInfo file run_args.arg_fns in
-	run_args.arg_num_lines <- LineSet.cardinal setOfLines;
-	run_args.arg_num_blocks <- StmtInfoSet.cardinal setOfBlocks;
-	run_args.arg_num_edges <- EdgeSet.cardinal setOfEdges;
-	run_args.arg_num_conds <- CondSet.cardinal setOfConds;
-	if run_args.arg_list_lines then begin
-		Output.printf "Total number of %s: %d\n" "Lines" run_args.arg_num_lines;
+	let setOfLines, setOfBlocks, setOfEdges, setOfConds = Coverage.getProgInfo file !Executeargs.arg_fns in
+	Executeargs.arg_num_lines := LineSet.cardinal setOfLines;
+	Executeargs.arg_num_blocks := StmtInfoSet.cardinal setOfBlocks;
+	Executeargs.arg_num_edges := EdgeSet.cardinal setOfEdges;
+	Executeargs.arg_num_conds := CondSet.cardinal setOfConds;
+	if !Executeargs.arg_list_lines then begin
+		Output.printf "Total number of %s: %d\n" "Lines" !Executeargs.arg_num_lines;
 		LineSet.iter
 			(fun (file, lineNum) -> Output.printf "%s:%d\n" file lineNum)
 			setOfLines;
 		Output.printf "\n"
 	end;
-	if run_args.arg_list_blocks then begin
-		Output.printf "Total number of %s: %d\n" "Blocks" run_args.arg_num_blocks;
+	if !Executeargs.arg_list_blocks then begin
+		Output.printf "Total number of %s: %d\n" "Blocks" !Executeargs.arg_num_blocks;
 		StmtInfoSet.iter
 			(fun stmtInfo -> Output.printf "%a\n" Printer.stmtInfo stmtInfo)
 			setOfBlocks;
 		Output.printf "\n"
 	end;
-	if run_args.arg_list_edges then begin
-		Output.printf "Total number of %s: %d\n" "Edges" run_args.arg_num_edges;
+	if !Executeargs.arg_list_edges then begin
+		Output.printf "Total number of %s: %d\n" "Edges" !Executeargs.arg_num_edges;
 		EdgeSet.iter
 			(fun (srcStmtInfo, destStmtInfo) ->
 				 Output.printf "%a -> %a\n"
@@ -245,8 +244,8 @@ let prepare_file file =
 			setOfEdges;
 		Output.printf "\n"
 	end;
-	if run_args.arg_list_conds then begin
-		Output.printf "Total number of %s: %d\n" "Conditions" run_args.arg_num_conds;
+	if !Executeargs.arg_list_conds then begin
+		Output.printf "Total number of %s: %d\n" "Conditions" !Executeargs.arg_num_conds;
 		CondSet.iter
 			(fun (stmtInfo, truth) -> Output.printf "%a %c\n" Printer.stmtInfo stmtInfo (if truth then 'T' else 'F'))
 		setOfConds;
@@ -257,7 +256,7 @@ let prepare_file file =
 (* create a job that begins at a function, given an initial state *)
 let job_for_function ?(exHist=emptyHistory) file state fn argvs =
 	let state = MemOp.state__start_fcall state Runtime fn argvs in
-	let trackedFns = List.fold_left (fun set elt -> StringSet.add elt set) StringSet.empty run_args.arg_fns in
+	let trackedFns = List.fold_left (fun set elt -> StringSet.add elt set) StringSet.empty !Executeargs.arg_fns in
 	(* create a new job *)
 	{
 		file = file;
@@ -308,7 +307,7 @@ let job_for_file file cmdline =
 
 
 let find_entryfn file =
-	let fname = Executeargs.run_args.arg_entryfn in
+	let fname = !Executeargs.arg_entryfn in
 	try
 		FindCil.fundec_by_name file fname
 	with Not_found ->
@@ -332,7 +331,7 @@ let output_completion_info completion =
 			Output.set_mode Output.MSG_MUSTPRINT;
 			Output.printf "Error \"%a\"@ occurs at %a.@\n"
 				Report.abandoned_reason reason Printcil.loc loc;
-			if Executeargs.print_args.arg_print_callstack then
+			if !Executeargs.arg_print_callstack then
 				Output.printf "Call stack:@\n  @[%a@]@\n" (Printer.callingContext_list "@\n") state.callContexts;
 			Output.printf "Abandoning path.@\n"
 
