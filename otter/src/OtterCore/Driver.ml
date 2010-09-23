@@ -213,44 +213,7 @@ let prepare_file file =
 	if !Executeargs.arg_noinit_unreachable_globals then
 		Coverage.computeReachableCode file;
 
-	(* Find all lines, blocks, edges, and conditions. *)
-	(* TODO: wrap the listings of Lines,Edges,etc... *)
-	let setOfLines, setOfBlocks, setOfEdges, setOfConds = Coverage.getProgInfo file !Executeargs.arg_fns in
-	Executeargs.arg_num_lines := LineSet.cardinal setOfLines;
-	Executeargs.arg_num_blocks := StmtInfoSet.cardinal setOfBlocks;
-	Executeargs.arg_num_edges := EdgeSet.cardinal setOfEdges;
-	Executeargs.arg_num_conds := CondSet.cardinal setOfConds;
-	if !Executeargs.arg_list_lines then begin
-		Output.printf "Total number of %s: %d\n" "Lines" !Executeargs.arg_num_lines;
-		LineSet.iter
-			(fun (file, lineNum) -> Output.printf "%s:%d\n" file lineNum)
-			setOfLines;
-		Output.printf "\n"
-	end;
-	if !Executeargs.arg_list_blocks then begin
-		Output.printf "Total number of %s: %d\n" "Blocks" !Executeargs.arg_num_blocks;
-		StmtInfoSet.iter
-			(fun stmtInfo -> Output.printf "%a\n" Printer.stmtInfo stmtInfo)
-			setOfBlocks;
-		Output.printf "\n"
-	end;
-	if !Executeargs.arg_list_edges then begin
-		Output.printf "Total number of %s: %d\n" "Edges" !Executeargs.arg_num_edges;
-		EdgeSet.iter
-			(fun (srcStmtInfo, destStmtInfo) ->
-				 Output.printf "%a -> %a\n"
-					 Printer.stmtInfo srcStmtInfo
-					 Printer.stmtInfo destStmtInfo)
-			setOfEdges;
-		Output.printf "\n"
-	end;
-	if !Executeargs.arg_list_conds then begin
-		Output.printf "Total number of %s: %d\n" "Conditions" !Executeargs.arg_num_conds;
-		CondSet.iter
-			(fun (stmtInfo, truth) -> Output.printf "%a %c\n" Printer.stmtInfo stmtInfo (if truth then 'T' else 'F'))
-		setOfConds;
-		Output.printf "\n"
-	end
+	Coverage.prepare_file file
 
 
 (* create a job that begins at a function, given an initial state *)

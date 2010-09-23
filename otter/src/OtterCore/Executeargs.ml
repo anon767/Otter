@@ -31,12 +31,6 @@ let arg_list_edges = ref false
 let arg_list_conds = ref false
 let arg_marshal_file = ref "" (** File to which to marshal coverage information *)
 
-let arg_num_lines = ref (-1)
-let arg_num_blocks = ref (-1)
-let arg_num_edges = ref (-1)
-let arg_num_conds = ref (-1)
-
-
 
 let options = [
 	(*

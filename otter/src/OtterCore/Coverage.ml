@@ -6,6 +6,9 @@ open OtterBytes
 open Bytes
 open Types
 
+
+let coverage_totals : (Cil.file, <lines : int; blocks : int; edges : int; conds : int>) Hashtbl.t = Hashtbl.create 0
+
 module FundecMap = Map.Make (struct
 	type t = Cil.fundec
 	let compare a b = let id x = x.svar.vid in Pervasives.compare (id a) (id b)
@@ -128,7 +131,8 @@ class getGlobalInitVisitor = object (self)
 
 end
 
-let getProgInfo (file : Cil.file) fnNames =
+let prepare_file file =
+	let fnNames = !Executeargs.arg_fns in
 	let vis = new getStatsVisitor in
 	iterGlobals
 		file
@@ -138,7 +142,48 @@ let getProgInfo (file : Cil.file) fnNames =
 					 then ignore (visitCilFunction (vis:>cilVisitor) fundec)
 			 | _ -> ()
 		);
-	(vis#lines,vis#blocks,vis#edges,vis#conds)
+	(* Find all lines, blocks, edges, and conditions. *)
+	(* TODO: wrap the listings of Lines,Edges,etc... *)
+	let totals = object
+		method lines = LineSet.cardinal vis#lines
+		method blocks = StmtInfoSet.cardinal vis#blocks
+		method edges = EdgeSet.cardinal vis#edges
+		method conds = CondSet.cardinal vis#conds
+	end in
+	Hashtbl.add coverage_totals file totals;
+
+	if !Executeargs.arg_list_lines then begin
+		Output.printf "Total number of %s: %d\n" "Lines" totals#lines;
+		LineSet.iter
+			(fun (file, lineNum) -> Output.printf "%s:%d\n" file lineNum)
+			vis#lines;
+		Output.printf "\n"
+	end;
+	if !Executeargs.arg_list_blocks then begin
+		Output.printf "Total number of %s: %d\n" "Blocks" totals#blocks;
+		StmtInfoSet.iter
+			(fun stmtInfo -> Output.printf "%a\n" Printer.stmtInfo stmtInfo)
+			vis#blocks;
+		Output.printf "\n"
+	end;
+	if !Executeargs.arg_list_edges then begin
+		Output.printf "Total number of %s: %d\n" "Edges" totals#edges;
+		EdgeSet.iter
+			(fun (srcStmtInfo, destStmtInfo) ->
+				 Output.printf "%a -> %a\n"
+					 Printer.stmtInfo srcStmtInfo
+					 Printer.stmtInfo destStmtInfo)
+			vis#edges;
+		Output.printf "\n"
+	end;
+	if !Executeargs.arg_list_conds then begin
+		Output.printf "Total number of %s: %d\n" "Conditions" totals#conds;
+		CondSet.iter
+			(fun (stmtInfo, truth) -> Output.printf "%a %c\n" Printer.stmtInfo stmtInfo (if truth then 'T' else 'F'))
+		vis#conds;
+		Output.printf "\n"
+	end
+
 
 (* TODO: a global can be reachable by another global init! *)
 let computeReachableCode file =
@@ -187,11 +232,11 @@ let covTypeToStr = function
 	| Cond -> "conditions"
 	| Path -> "paths"
 
-let getTotal = function
-	| Line -> !Executeargs.arg_num_lines
-	| Block -> !Executeargs.arg_num_blocks
-	| Edge -> !Executeargs.arg_num_edges
-	| Cond -> !Executeargs.arg_num_conds
+let getTotal file = function
+	| Line -> (Hashtbl.find coverage_totals file)#lines
+	| Block -> (Hashtbl.find coverage_totals file)#blocks
+	| Edge -> (Hashtbl.find coverage_totals file)#edges
+	| Cond -> (Hashtbl.find coverage_totals file)#conds
 	| Path -> invalid_arg "Cannot compute the total number of paths"
 
 let getNumCovered covType hist = match covType with
@@ -323,8 +368,8 @@ let printPath state hist =
 	);
 	Output.printf "\n"
 
-let printCov covType hist =
-	let total = getTotal covType
+let printCov file covType hist =
+	let total = getTotal file covType
 	and numCovered = getNumCovered covType hist
 	in
 	Output.printf "%d out of %d %s (%.2f%%)\n\n"
@@ -362,7 +407,7 @@ let printConditions condset =
 	CondSet.iter printCondition condset;
 	Output.printf "\n"
 
-let printCoveringConfigs coveringSet covType =
+let printCoveringConfigs file coveringSet covType =
 	let name = covTypeToStr covType in
 	if coveringSet = [] then Output.printf "No constraints: any run covers all %s\n" name
 	else begin
@@ -371,7 +416,7 @@ let printCoveringConfigs coveringSet covType =
 		List.iter
         (fun { result_state=state; result_history=hist} ->
 				 printPath state hist;
-				 printCov covType hist;
+				 printCov file covType hist;
 				 (match covType with
 							Line -> printLines hist.coveredLines
 						| Block -> printBlocks hist.coveredBlocks
@@ -383,6 +428,10 @@ let printCoveringConfigs coveringSet covType =
 	end
 
 let printCoverageInfo resultList =
+	let file = (List.hd resultList).result_file in
+	if not (List.for_all (fun r -> r.result_file = file) resultList) then
+		failwith "Cannot report coverage from different files!";
+
 	if !Executeargs.arg_line_coverage then (
 		Output.printf "Line coverage:\n\n";
 		let allLinesCovered =
@@ -392,7 +441,7 @@ let printCoverageInfo resultList =
 				 LineSet.empty
 				 resultList)
 		in
-		printCov Line { emptyHistory with coveredLines = allLinesCovered; };
+		printCov file Line { emptyHistory with coveredLines = allLinesCovered; };
 		let coveringSet = greedySetCover
 			LineSet.is_empty
 			(fun job remaining ->
@@ -401,7 +450,7 @@ let printCoverageInfo resultList =
 			resultList
 			allLinesCovered
 		in
-		printCoveringConfigs coveringSet Line
+		printCoveringConfigs file coveringSet Line
 	);
 
 	if !Executeargs.arg_block_coverage then (
@@ -413,7 +462,7 @@ let printCoverageInfo resultList =
 				 StmtInfoSet.empty
 				 resultList)
 		in
-		printCov Block { emptyHistory with coveredBlocks = allBlocksCovered; };
+		printCov file Block { emptyHistory with coveredBlocks = allBlocksCovered; };
 		let coveringSet = greedySetCover
 			StmtInfoSet.is_empty
 			(fun job remaining ->
@@ -422,7 +471,7 @@ let printCoverageInfo resultList =
 			resultList
 			allBlocksCovered
 		in
-		printCoveringConfigs coveringSet Block
+		printCoveringConfigs file coveringSet Block
 	);
 
 	if !Executeargs.arg_edge_coverage then (
@@ -434,7 +483,7 @@ let printCoverageInfo resultList =
 				 EdgeSet.empty
 				 resultList)
 		in
-		printCov Edge { emptyHistory with coveredEdges = allEdgesCovered; };
+		printCov file Edge { emptyHistory with coveredEdges = allEdgesCovered; };
 		let coveringSet = greedySetCover
 			EdgeSet.is_empty
 			(fun job remaining ->
@@ -443,7 +492,7 @@ let printCoverageInfo resultList =
 			resultList
 			allEdgesCovered
 		in
-		printCoveringConfigs coveringSet Edge
+		printCoveringConfigs file coveringSet Edge
 	);
 
   if !Executeargs.arg_cond_coverage then (
@@ -455,7 +504,7 @@ let printCoverageInfo resultList =
 				 CondSet.empty
 				 resultList)
 		in
-		printCov Cond { emptyHistory with coveredConds = allCondsCovered; };
+		printCov file Cond { emptyHistory with coveredConds = allCondsCovered; };
 		let coveringSet = greedySetCover
 			CondSet.is_empty
 			(fun job remaining ->
@@ -464,7 +513,7 @@ let printCoverageInfo resultList =
 			resultList
 			allCondsCovered
 		in
-		printCoveringConfigs coveringSet Cond
+		printCoveringConfigs file coveringSet Cond
 	);
 
 	if !Executeargs.arg_path_coverage then (
