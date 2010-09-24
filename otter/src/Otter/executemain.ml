@@ -39,7 +39,7 @@ let doExecute (f: file) =
             Driver.job_for_file f (f.fileName::!Executeargs.arg_cmdline_argvs)
         else
             (* create a job to start in the middle of entryfn *)
-            SymbolicPointers.job_for_middle f (CilPtranal.points_to f) entryfn
+            SymbolicPointers.job_for_middle f entryfn
     in
 
     (* run the job *)

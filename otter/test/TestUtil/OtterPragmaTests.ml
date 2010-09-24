@@ -355,7 +355,7 @@ let test_otter_with_pragma ?(main_loop=Driver.run) path = fun () ->
     Driver.prepare_file file;
     let job = match flags.entry_function with
         | Some fn when fn <> "main" ->
-            SymbolicPointers.job_for_middle file (CilPtranal.points_to file) (FindCil.fundec_by_name file fn)
+            SymbolicPointers.job_for_middle file (FindCil.fundec_by_name file fn)
         | _ ->
             Driver.job_for_file file flags.command_line
     in

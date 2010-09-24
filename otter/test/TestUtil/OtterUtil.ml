@@ -44,7 +44,7 @@ let test_otter_on_file
             if entry_function = "main" then
                 Driver.job_for_file file command_line
             else
-                SymbolicPointers.job_for_middle file (CilPtranal.points_to file) (FindCil.fundec_by_name file entry_function)
+                SymbolicPointers.job_for_middle file (FindCil.fundec_by_name file entry_function)
         in
         let results = main_loop job in
 

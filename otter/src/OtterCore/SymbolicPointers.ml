@@ -411,11 +411,11 @@ let rec init_bytes_with_pointers state typ points_to exps = match Cil.unrollType
     the symbolic state.
 
         @param file is the file to symbolically execute
-        @param points_to is a function for computing pointer targets to be passed to {!init_pointer}
+        @param points_to is a function for computing pointer targets to be passed to {!init_pointer} (default:[CilPtranal.points_to file])
         @param fn is list the function at which to begin symbolic execution
         @return [Types.job] the created job
 *)
-let job_for_middle file points_to fn =
+let job_for_middle file ?(points_to=CilPtranal.points_to file) fn =
     (* initialize the state with symbolic globals *)
     let state = MemOp.state__empty in
 
