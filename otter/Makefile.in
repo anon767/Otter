@@ -30,7 +30,7 @@ native : ocamlbuild//runotter.native config
 debug : ocamlbuild//runotter.d.byte config
 
 libs : $(addprefix ocamlbuild//,Otter.cmxa Otter.a Otter.cma Otter.cmi)
-libs : OCAMLBUILD_MORE_CMI=DataStructures.cmi CilUtilities.cmi OcamlUtilities.cmi OtterBytes.cmi OtterCore.cmi
+libs : OCAMLBUILD_MORE_CMI=DataStructures.cmi CilUtilities.cmi OcamlUtilities.cmi OtterBytes.cmi OtterCore.cmi OtterJob.cmi OtterDriver.cmi
 
 test : ounit//runtestotter.d.byte
 ounit//runtestotter.d.byte : debug

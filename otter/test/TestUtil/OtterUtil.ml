@@ -4,6 +4,8 @@ open MyOUnit
 open OcamlUtilities
 open CilUtilities
 open OtterCore
+open OtterJob
+open OtterDriver
 
 
 (** Test helper that runs Otter on a file.
@@ -42,9 +44,9 @@ let test_otter_on_file
         Driver.prepare_file file;
         let job =
             if entry_function = "main" then
-                Driver.job_for_file file command_line
+                FileJob.make file command_line
             else
-                SymbolicPointers.job_for_middle file (FindCil.fundec_by_name file entry_function)
+                FunctionJob.make file (FindCil.fundec_by_name file entry_function)
         in
         let results = main_loop job in
 

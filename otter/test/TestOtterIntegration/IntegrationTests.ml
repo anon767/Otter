@@ -1,6 +1,6 @@
 open TestUtil.MyOUnit
 open TestUtil.OtterPragmaTests
-open OtterCore
+open OtterDriver
 open Otter
 
 

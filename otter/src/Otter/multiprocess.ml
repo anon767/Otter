@@ -2,6 +2,8 @@ open DataStructures
 open OcamlUtilities
 open OtterBytes
 open OtterCore
+open OtterJob
+open OtterDriver
 open Types
 open Job
 
@@ -337,10 +339,10 @@ let doit file =
 		if !Executeargs.arg_entryfn = "main" then
 			(* create a job for the file, with the commandline arguments set to the file name
 			 * and the arguments from the '--arg' option *)
-			Driver.job_for_file file (file.Cil.fileName::!Executeargs.arg_cmdline_argvs)
+			FileJob.make file (file.Cil.fileName::!Executeargs.arg_cmdline_argvs)
 		else
 			(* create a job to start in the middle of entryfn *)
-			SymbolicPointers.job_for_middle file entryfn
+			FunctionJob.make file entryfn
 	in
 
 	(* run the job *)

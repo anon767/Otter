@@ -3,4 +3,6 @@ OcamlUtilities
 CilUtilities
 OtterBytes
 OtterCore
+OtterJob
+OtterDriver
 Otter

@@ -1,4 +1,6 @@
 open OtterCore
+open OtterJob
+open OtterDriver
 
 
 module Interpreter (S : Config.BlockConfig) = struct
@@ -98,7 +100,7 @@ module Interpreter (S : Config.BlockConfig) = struct
 
 
     let exec file args =
-        let job = Driver.job_for_file file (file.Cil.fileName::args) in
+        let job = FileJob.make file (file.Cil.fileName::args) in
 
         let completion stack results =
             Format.eprintf "Completing symbolic block...@.";

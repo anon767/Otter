@@ -1,9 +1,9 @@
 open OcamlUtilities
 open Cil
-open CilUtilities
 open OtterBytes
 open OtterCore
-open Bytes
+open OtterJob
+open OtterDriver
 open Types
 (*open InvInput*)
 
@@ -36,10 +36,10 @@ let doExecute (f: file) =
         if !Executeargs.arg_entryfn = "main" then
             (* create a job for the file, with the commandline arguments set to the file name
              * and the arguments from the '--arg' option *)
-            Driver.job_for_file f (f.fileName::!Executeargs.arg_cmdline_argvs)
+            FileJob.make f (f.fileName::!Executeargs.arg_cmdline_argvs)
         else
             (* create a job to start in the middle of entryfn *)
-            SymbolicPointers.job_for_middle f entryfn
+            FunctionJob.make f entryfn
     in
 
     (* run the job *)
@@ -74,7 +74,7 @@ let doExecute (f: file) =
          (Stats.lookupTime "Simplify PC")
     else ());
    
-    Output.printf "Hash-consing: hits=%d misses=%d\n" (!hash_consing_bytes_hits) (!hash_consing_bytes_misses);
+    Output.printf "Hash-consing: hits=%d misses=%d\n" (!Bytes.hash_consing_bytes_hits) (!Bytes.hash_consing_bytes_misses);
     Output.printf "Bytes eval caching: hits=%d misses=%d\n\n" (!MemOp.bytes_eval_cache_hits) (!MemOp.bytes_eval_cache_misses);
 
     (*

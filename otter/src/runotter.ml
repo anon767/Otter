@@ -7,6 +7,8 @@ module OcamlbuildDependencies = struct
     open OcamlUtilities
     open OtterBytes
     open OtterCore
+    open OtterJob
+    open OtterDriver
 end
 
 let _ =

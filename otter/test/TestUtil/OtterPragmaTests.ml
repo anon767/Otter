@@ -46,6 +46,8 @@ open OcamlUtilities
 open CilUtilities
 open OtterBytes
 open OtterCore
+open OtterJob
+open OtterDriver
 
 
 (** Flags for setting up the tests. *)
@@ -355,9 +357,9 @@ let test_otter_with_pragma ?(main_loop=Driver.run) path = fun () ->
     Driver.prepare_file file;
     let job = match flags.entry_function with
         | Some fn when fn <> "main" ->
-            SymbolicPointers.job_for_middle file (FindCil.fundec_by_name file fn)
+            FunctionJob.make file (FindCil.fundec_by_name file fn)
         | _ ->
-            Driver.job_for_file file flags.command_line
+            FileJob.make file flags.command_line
     in
     let results = main_loop job in
 

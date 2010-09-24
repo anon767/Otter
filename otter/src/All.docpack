@@ -3,5 +3,7 @@ DataStructures
 OcamlUtilities
 OtterBytes
 OtterCore
+OtterJob
+OtterDriver
 Otter
 Runotter
