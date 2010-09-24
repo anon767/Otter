@@ -9,46 +9,6 @@ open Interceptor
 
 let unreachable_global varinfo = not (Coverage.VarinfoSet.mem varinfo (!Coverage.reachable_globals))
 
-let init_symbolic_pointer state varinfo size =
-	(* TODO: what's the right size?
-	* For now, assume that each pointer points to an array of size 1.
-	*)
-	let name = FormatPlus.sprintf "Two-fold Sym Ptr (%s)" varinfo.Cil.vname in
-	let block = block__make name size Block_type_Aliased in
-	let addrof_block = make_Bytes_Address (block, bytes__zero) in
-	let state = MemOp.state__add_block state block (bytes__symbolic size) in
-    (state, make_Bytes_Conditional (conditional__from_list [Unconditional bytes__zero; Unconditional addrof_block]))
-
-
-let init_symbolic_varinfo state varinfo =
-	let typ = varinfo.Cil.vtype in
-	let size = (Cil.bitsSizeOf (typ)) / 8 in
-	let size = if size <= 0 then 1 else size in
-	match typ with
-		| Cil.TPtr (basetyp,_) ->
-			assert (size==4);
-	        let basesize = (Cil.bitsSizeOf (basetyp)) / 8 in
-			Output.set_mode Output.MSG_REG;
-			Output.printf "Initialize %s to ITE(?,null,non-null)\n" varinfo.Cil.vname;
-			init_symbolic_pointer state varinfo basesize
-		| _ ->
-			Output.set_mode Output.MSG_REG;
-			Output.printf "Initialize %s to symbolic\n" varinfo.Cil.vname;
-			(state, bytes__symbolic size)
-
-
-let init_symbolic_globalvars state globals =
-	List.fold_left begin fun state g -> match g with
-		| Cil.GVar (varinfo, _, _)
-		| Cil.GVarDecl (varinfo, _)
-				when not (Cil.isFunctionType varinfo.Cil.vtype)
-					 && not (!Executeargs.arg_noinit_unreachable_globals && unreachable_global varinfo) ->
-			let state,init_bytes = init_symbolic_varinfo state varinfo in
-			MemOp.state__add_global state varinfo init_bytes
-		| _ ->
-			state
-	end state globals
-
 
 let init_globalvars state globals =
 	List.fold_left begin fun state g -> match g with
@@ -107,22 +67,6 @@ let init_globalvars state globals =
 			state
 	end state globals
 
-
-
-(* Initialize arguments for an entry function to purely symbolic *)
-let init_symbolic_argvs state entryfn =
-	let state = MemOp.state__add_frame state in
-	let state, args, bytesToVars =
-		List.fold_right (* TODO: Does ordering matter? *)
-			begin fun varinfo (state, args, bytesToVars) ->
-				let state,init = init_symbolic_varinfo state varinfo in
-				(MemOp.state__add_formal state varinfo init, init::args, (init, varinfo)::bytesToVars)
-			end
-			entryfn.Cil.sformals
-			(state, [], [])
-	in
-	let exHist = { emptyHistory with bytesToVars = bytesToVars } in
-	(state, args, exHist)
 
 
 (* To initialize the arguments, we need to create a bytes which represents argc and
@@ -225,26 +169,13 @@ let job_for_function ?(exHist=emptyHistory) file state fn argvs =
 		file = file;
 		state = state;
 		exHist = exHist;
-        decisionPath = [];
+		decisionPath = [];
 		instrList = [];
 		stmt = List.hd fn.Cil.sallstmts;
 		trackedFns = trackedFns;
 		inTrackedFn = StringSet.mem fn.Cil.svar.Cil.vname trackedFns;
 		jid = Counter.next Types.job_counter;
 	}
-
-
-(* create a job that begins in the middle of a file at some entry function with some optional constraints *)
-let job_for_middle file entryfn =
-
-    (* Initialize the state with symbolic globals *)
-    let state = MemOp.state__empty in
-    let state = init_symbolic_globalvars state file.Cil.globals in
-
-    let state, entryargs, exHist = init_symbolic_argvs state entryfn in
-
-    (* create a job starting at entryfn *)
-    job_for_function ~exHist:exHist file state entryfn entryargs
 
 
 (* create a job that begins at the main function of a file, with the initial state set up for the file *)

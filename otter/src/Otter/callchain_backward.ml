@@ -315,7 +315,7 @@ let doit file =
 		try FindCil.fundec_by_name file fname
 		with Not_found -> FormatPlus.failwith "Assertion function %s not found" fname
 	in
-	let job_init = fun entryfn -> Driver.job_for_middle file entryfn in
+	let job_init = fun entryfn -> SymbolicPointers.job_for_middle file entryfn in
 	let results = callchain_backward_se file entryfn assertfn job_init in
 
 	(* print the results *)

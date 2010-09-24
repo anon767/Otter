@@ -339,7 +339,7 @@ let doit file =
 			Driver.job_for_file file (file.Cil.fileName::!Executeargs.arg_cmdline_argvs)
 		else
 			(* create a job to start in the middle of entryfn *)
-			Driver.job_for_middle file entryfn
+			SymbolicPointers.job_for_middle file entryfn
 	in
 
 	(* run the job *)
