@@ -7,10 +7,10 @@ let print_report results =
 	let coverage, completed, truncated, abandoned =
 		List.fold_left begin fun (coverage, completed, truncated, abandoned) result ->
 			match result with
-				| Types.Return (_, c)
-				| Types.Exit (_, c)      -> (c::coverage, completed + 1, truncated, abandoned)
-				| Types.Truncated (c, d) -> (c::d::coverage, completed, truncated + 2, abandoned)
-				| Types.Abandoned _      -> (coverage, completed, truncated, abandoned + 1)
+				| Job.Return (_, c)
+				| Job.Exit (_, c)      -> (c::coverage, completed + 1, truncated, abandoned)
+				| Job.Truncated (c, d) -> (c::d::coverage, completed, truncated + 2, abandoned)
+				| Job.Abandoned _      -> (coverage, completed, truncated, abandoned + 1)
 		end ([], 0, 0, 0) results in
 		if completed = 0 then (
 			Output.printf "All %d paths had errors.\n" abandoned
@@ -29,7 +29,7 @@ let print_report results =
 			Output.set_mode Output.MSG_MUSTPRINT;
 			Coverage.printCoverageInfo coverage;
 
-			(* Marshal out (coverage : Types.job_result list) so that we can
+			(* Marshal out (coverage : Job.job_result list) so that we can
 				 read it back in later. *)
 			if !Executeargs.arg_marshal_file <> ""
 			then (

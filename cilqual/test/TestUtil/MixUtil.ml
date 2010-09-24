@@ -84,7 +84,7 @@ let assert_no_block_errors block_errors = assert_has_block_errors 0 block_errors
 let assert_has_abandoned expected_count results =
     (* count jobs that were abandoned *)
     let abandoned = List.fold_left begin fun abandoned result -> match result with
-        | Types.Abandoned (s, loc, _), block_errors -> (s, loc, block_errors)::abandoned
+        | Job.Abandoned (s, loc, _), block_errors -> (s, loc, block_errors)::abandoned
         | _, _ -> abandoned
     end [] results in
     let actual_count = List.length abandoned in

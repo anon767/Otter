@@ -5,6 +5,7 @@ open OtterBytes
 open OtterCore
 open Bytes
 open Types
+open Job
 
 
 
@@ -53,7 +54,7 @@ let direct_calls_testsuite = "Direct calls" >:::
                         let rec find = function
                             | Cil.GVarDecl (v, _)::_
                             | Cil.GVar (v, _, _)::_ when v.Cil.vname = name ->
-                                let _, actual = Expression.rval result.Types.result_state (Cil.Lval (Cil.var v)) in
+                                let _, actual = Expression.rval result.result_state (Cil.Lval (Cil.var v)) in
                                 if bytes__equal actual bytes then
                                     (not_found, unequal)
                                 else
@@ -63,7 +64,7 @@ let direct_calls_testsuite = "Direct calls" >:::
                             | _::tail ->
                                 find tail
                         in
-                        find result.Types.result_file.Cil.globals
+                        find result.result_file.Cil.globals
                     end ([], []) match_globals in
 
                     if not_found <> [] then
@@ -83,7 +84,7 @@ let direct_calls_testsuite = "Direct calls" >:::
 
                     (* check that the right number of global variables and variables in main() are allocated *)
                     let module VarInfoSet = Set.Make (struct type t = Cil.varinfo let compare = Pervasives.compare end) in
-                    let var_set = Cil.foldGlobals result.Types.result_file begin fun var_set global -> match global with
+                    let var_set = Cil.foldGlobals result.result_file begin fun var_set global -> match global with
                         | Cil.GVarDecl (v, _)
                         | Cil.GVar (v, _, _) when not (Cil.isFunctionType v.Cil.vtype) ->
                             VarInfoSet.add v var_set

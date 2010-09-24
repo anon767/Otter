@@ -6,6 +6,7 @@ open OtterBytes
 open OtterCore
 open Bytes
 open Types
+open Job
 open Cil
 
 
@@ -188,11 +189,11 @@ let terminate_job_at_targets targets job =
 				if !Executeargs.arg_failfast then failwith msg;
 				let state = { job.state with path_condition = failing_condition::job.state.path_condition } in
 				let result = { 
-                    result_file = job.Types.file; 
-                    result_state = state; 
-                    result_history = job.exHist; 
-                    result_decision_path = job.decisionPath; } in
-				Some (Complete (Types.Abandoned (`Failure msg, loc, result)))
+					result_file = job.Job.file; 
+					result_state = state; 
+					result_history = job.exHist; 
+					result_decision_path = job.decisionPath; } in
+				Some (Complete (Abandoned (`Failure msg, loc, result)))
 			end
 		| _ ->
 			None

@@ -2,6 +2,7 @@ open TestUtil.MyOUnit
 open TestUtil.OtterUtil
 open OtterCore
 open Types
+open Job
 
 (* test helper that runs the symbolic executor on a file given a source code as a string *)
 let test_bounds content ?label ?has_failing_assertions test =

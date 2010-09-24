@@ -6,6 +6,7 @@ open OtterBytes
 open Bytes
 open BytesUtility
 open Types
+open Job
 
 (** Get the file location for the current job instruction.
 		@param job the job to get the current location from
@@ -185,7 +186,7 @@ let exec_instr_call job instr lvalopt fexp exps =
                             result_state = state; 
                             result_history = exHist;
                             result_decision_path = job.decisionPath; } in
-						Complete (Types.Abandoned (`Failure msg, get_job_loc job, result))
+						Complete (Abandoned (`Failure msg, get_job_loc job, result))
 				in
 				job_state::(process_func_list t)
 	in
@@ -290,7 +291,7 @@ let exec_stmt job =
 										let state, retval = Expression.rval state exp in
 										(state, Some retval)
 								in
-								Complete (Types.Return
+								Complete (Return
 									(retval, { 
                                         result_file = job.file; 
                                         result_state = state; 
@@ -421,7 +422,7 @@ let exec_stmt job =
 								stmt = nextStmtT;
 								exHist = nextExHist (Some nextStmtT) ~whichBranch:true;
                                 decisionPath = (stmtInfo, ForkConditional(true))::job.decisionPath; 
-								jid = Counter.next Types.job_counter; } in
+								jid = Counter.next job_counter; } in
 							let falseJob = { job with
 								state = nextStateF;
 								stmt = nextStmtF;
@@ -461,4 +462,4 @@ let step job job_queue =
                 result_state = job.state; 
                 result_history = job.exHist; 
                 result_decision_path = job.decisionPath; } in
-			(Complete (Types.Abandoned (`Failure msg, get_job_loc job, result)), job_queue)
+			(Complete (Abandoned (`Failure msg, get_job_loc job, result)), job_queue)

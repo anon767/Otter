@@ -413,7 +413,7 @@ let rec init_bytes_with_pointers state typ points_to exps = match Cil.unrollType
         @param file is the file to symbolically execute
         @param points_to is a function for computing pointer targets to be passed to {!init_pointer} (default:[CilPtranal.points_to file])
         @param fn is list the function at which to begin symbolic execution
-        @return [Types.job] the created job
+        @return [Job.job] the created job
 *)
 let job_for_middle file ?(points_to=CilPtranal.points_to file) fn =
     (* initialize the state with symbolic globals *)
@@ -439,5 +439,5 @@ let job_for_middle file ?(points_to=CilPtranal.points_to file) fn =
     end (state, []) fn.Cil.sformals in
 
     (* finally, prepare the function call job *)
-    Driver.job_for_function file state fn (List.rev rev_args_bytes)
+    Job.make file state fn (List.rev rev_args_bytes)
 

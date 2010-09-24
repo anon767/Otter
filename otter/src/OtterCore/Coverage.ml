@@ -5,6 +5,7 @@ open CilUtilities
 open OtterBytes
 open Bytes
 open Types
+open Job
 
 
 let coverage_totals : (Cil.file, <lines : int; blocks : int; edges : int; conds : int>) Hashtbl.t = Hashtbl.create 0
@@ -136,9 +137,9 @@ end
 		@param fn is the {!Types.stmtInfo} to print
 *)
 let printStmtInfo ff si =
-	Format.fprintf ff "%s %d" si.Types.siFuncName si.Types.siStmt.Cil.sid;
+	Format.fprintf ff "%s %d" si.siFuncName si.siStmt.Cil.sid;
 	if !Executeargs.arg_print_stmtInfo_locs then
-		Format.fprintf ff " (%a)" Printcil.loc (Cil.get_stmtLoc si.Types.siStmt.Cil.skind)
+		Format.fprintf ff " (%a)" Printcil.loc (Cil.get_stmtLoc si.siStmt.Cil.skind)
 
 let prepare_file file =
 	let fnNames = !Executeargs.arg_fns in

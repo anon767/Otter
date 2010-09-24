@@ -4,6 +4,8 @@ open OcamlUtilities
 open CilUtilities
 open OtterCore
 open Types
+open Job
+
 
 (* test helper that runs the symbolic executor on a file given a source code as a string, and counts jobs that were
    merged *)

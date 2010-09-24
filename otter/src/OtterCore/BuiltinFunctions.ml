@@ -11,6 +11,7 @@ open OtterBytes
 open Bytes
 open BytesUtility
 open Types
+open Job
 open Interceptor
 
 (*
@@ -326,7 +327,7 @@ let libc_exit job retopt exps =
 				Output.printf "exit() called with code (NONE)@\n";
 				None
 	in
-	Complete (Types.Exit (exit_code, { 
+	Complete (Exit (exit_code, { 
         result_file = job.file; 
         result_state = job.state; 
         result_history = job.exHist;
@@ -614,7 +615,7 @@ end
 	 'x = __SYMBOLIC();' past CIL despite the disagreement in the number
 	 of arguments, this behaves like the n <= 0 case.) *)
 let intercept_symbolic job job_queue interceptor =
-	match job.Types.instrList with
+	match job.instrList with
 		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::_ when varinfo.vname = "__SYMBOLIC" ->
 
 			let job = match exps with
@@ -683,7 +684,7 @@ let libc_setjmp job retopt exps =
 					| [h] -> h
 					| _ -> assert false
 			in
-			let stmtPtr = Source (retopt, job.stmt, (List.hd job.Types.instrList), nextStmt) in
+			let stmtPtr = Source (retopt, job.stmt, (List.hd job.instrList), nextStmt) in
 			let state = {state with stmtPtrs = Types.IndexMap.add stmtPtrAddr stmtPtr state.stmtPtrs; } in
 
 			let job = end_function_call { job with state = set_return_value state retopt bytes__zero } in
@@ -876,7 +877,7 @@ let interceptor job job_queue interceptor =
             result_state = job.state; 
             result_history = job.exHist; 
             result_decision_path = job.decisionPath; } in
-		(Complete (Types.Abandoned (`Failure msg, Statement.get_job_loc job, result)), job_queue)
+		(Complete (Abandoned (`Failure msg, Statement.get_job_loc job, result)), job_queue)
 
 let libc_interceptor job job_queue interceptor = 
 	try
@@ -1004,4 +1005,4 @@ let libc_interceptor job job_queue interceptor =
             result_state = job.state; 
             result_history = job.exHist; 
             result_decision_path = job.decisionPath; } in
-		(Complete (Types.Abandoned (`Failure msg, Statement.get_job_loc job, result)), job_queue)
+		(Complete (Abandoned (`Failure msg, Statement.get_job_loc job, result)), job_queue)

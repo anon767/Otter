@@ -17,7 +17,7 @@ module Interpreter (S : Config.BlockConfig) = struct
 
 
     let call dispatch stack file job k =
-        let fn = List.hd job.Types.state.Types.callstack in
+        let fn = List.hd job.Job.state.Types.callstack in
         Format.eprintf "Evaluating symbolic block %s...@." fn.Cil.svar.Cil.vname;
 
         let rec symbolic_loop stack completed job job_queue =
@@ -30,16 +30,16 @@ module Interpreter (S : Config.BlockConfig) = struct
                     k stack completed
             in
 
-            if S.should_enter_block (List.hd job.Types.state.Types.callstack).Cil.svar.Cil.vattr then begin
+            if S.should_enter_block (List.hd job.Job.state.Types.callstack).Cil.svar.Cil.vattr then begin
                 (* execute this function *)
 
                 let state, job_queue = BuiltinFunctions.interceptor job job_queue Statement.step in
                 let rec process_job_states completed job_queue = function
-                    | Types.Active job ->
+                    | Job.Active job ->
                         (completed, (job::job_queue))
-                    | Types.Fork states ->
+                    | Job.Fork states ->
                         List.fold_left (fun (completed, job_queue) state -> process_job_states completed job_queue state) (completed, job_queue) states
-                    | Types.Complete result ->
+                    | Job.Complete result ->
                         (((result, None)::completed), job_queue)
                     | _ ->
                         failwith "TODO: handle other results"
@@ -54,7 +54,7 @@ module Interpreter (S : Config.BlockConfig) = struct
                 let completion stack results =
 
                     let completed, job_queue = List.fold_left begin fun (completed, job_queue) result -> match result with
-                        | (Types.Return (retopt, { Types.result_state=state; Types.result_history=history }), None) ->
+                        | (Job.Return (retopt, { Job.result_state=state; Job.result_history=history }), None) ->
                             begin match List.hd state.Types.callContexts with
                                 | Types.Runtime ->
                                     (* occurs when main() is not symbolic, so there's nothing left to execute *)
@@ -71,9 +71,9 @@ module Interpreter (S : Config.BlockConfig) = struct
                                             state
                                     in
                                     let job = { job with
-                                        Types.state=state;
-                                        Types.stmt=nextstmt;
-                                        Types.exHist=history;
+                                        Job.state=state;
+                                        Job.stmt=nextstmt;
+                                        Job.exHist=history;
                                         (* TODO: update inTrackFn and coverage? *)
                                     } in
                                     (completed, job::job_queue)
@@ -82,7 +82,7 @@ module Interpreter (S : Config.BlockConfig) = struct
                                     failwith "TODO: handle return from @noreturn"
                             end
 
-                        | (Types.Abandoned _, _) ->
+                        | (Job.Abandoned _, _) ->
                             (result::completed, job_queue)
 
                         | _ ->
@@ -105,7 +105,7 @@ module Interpreter (S : Config.BlockConfig) = struct
 
             (* report jobs that were abandoned *)
             let abandoned = List.fold_left begin fun abandoned result -> match result with
-                | Types.Abandoned (s, loc, _), block_errors ->
+                | Job.Abandoned (s, loc, _), block_errors ->
                     (s, loc, block_errors)::abandoned
                 | _, _ ->
                     abandoned
@@ -131,7 +131,7 @@ module Interpreter (S : Config.BlockConfig) = struct
 
     let dispatch chain dispatch stack = function
         | `SymbolicBlock (file, job, k)
-                when S.should_enter_block (List.hd job.Types.state.Types.callstack).Cil.svar.Cil.vattr ->
+                when S.should_enter_block (List.hd job.Job.state.Types.callstack).Cil.svar.Cil.vattr ->
             call dispatch stack file job k
         | work ->
             chain stack work

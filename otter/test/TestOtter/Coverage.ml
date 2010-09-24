@@ -2,6 +2,7 @@ open TestUtil.MyOUnit
 open TestUtil.OtterUtil
 open OtterCore
 open Types
+open Job
 
 (* test helper that runs the symbolic executor on a file given a source code as a string, and calculates coverage *)
 let test_coverage content ?label tracked_fns test =

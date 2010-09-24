@@ -73,11 +73,11 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
             Types.mallocs = Types.MallocMap.empty;
         } in
 
-        [ (Types.Return (retopt, {
-                Types.result_file = job.Types.file;
-                Types.result_state = state;
-                Types.result_history = job.Types.exHist;
-                Types.result_decision_path = job.Types.decisionPath;
+        [ (Job.Return (retopt, {
+                Job.result_file = job.Job.file;
+                Job.result_state = state;
+                Job.result_history = job.Job.exHist;
+                Job.result_decision_path = job.Job.decisionPath;
             }), None) ]
 
 
@@ -101,13 +101,13 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
 
                 if block_errors != [] then begin
                     let result = {
-                        Types.result_file = job.Types.file;
-                        Types.result_state = job.Types.state;
-                        Types.result_history = job.Types.exHist;
-                        Types.result_decision_path = job.Types.decisionPath;
+                        Job.result_file = job.Job.file;
+                        Job.result_state = job.Job.state;
+                        Job.result_history = job.Job.exHist;
+                        Job.result_decision_path = job.Job.decisionPath;
                     } in
                     let msg = "Block errors returning from SymbolicTyped at " ^ fn.Cil.svar.Cil.vname in
-                    k stack [ (Types.Abandoned (`Failure msg, loc, result),
+                    k stack [ (Job.Abandoned (`Failure msg, loc, result),
                                Some (msg, loc, `SymbolicTypedError (result, block_errors))) ]
 
                 end else begin
@@ -125,10 +125,10 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
 
                         (* TODO: need a better mechanism for explaining errors *)
                         let result = {
-                            Types.result_file = job.Types.file;
-                            Types.result_state = job.Types.state;
-                            Types.result_history = job.Types.exHist;
-                            Types.result_decision_path = job.Types.decisionPath;
+                            Job.result_file = job.Job.file;
+                            Job.result_state = job.Job.state;
+                            Job.result_history = job.Job.exHist;
+                            Job.result_decision_path = job.Job.decisionPath;
                         } in
                         let explanation = DiscreteSolver.explain solution in
                         Format.fprintf Format.str_formatter
@@ -141,7 +141,7 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
                             DiscreteSolver.Explanation.printer explanation;
 
                         let msg = Format.flush_str_formatter () in
-                        let completed loc = [ (Types.Abandoned (`Failure msg, loc, result), None) ] in
+                        let completed loc = [ (Job.Abandoned (`Failure msg, loc, result), None) ] in
 
                         (* cache the result and return *)
                         let stack = cache stack fn context completed in
@@ -170,11 +170,11 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
 
         (* initialize state *)
         let expState = ((((((), G.QualGraph.empty), (G.emptyContext)), 0), G.emptyUnionTable), G.emptyEnv) in
-        let state = job.Types.state in
+        let state = job.Job.state in
         let fn = List.hd state.Types.callstack in
 
         (* get the location of the caller statement, for error reporting purposes *)
-        let loc = match List.hd job.Types.state.Types.callContexts with
+        let loc = match List.hd job.Job.state.Types.callContexts with
             | Types.Runtime                 -> Cil.locUnknown
             | Types.Source (_, _, instr, _)
             | Types.NoReturn instr          -> Cil.get_instrLoc instr
@@ -199,10 +199,10 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
         if DiscreteSolver.Solution.is_unsatisfiable context then begin
             (* don't switch; it'll return an error anyway *)
             let result = {
-                Types.result_file = job.Types.file;
-                Types.result_state = job.Types.state;
-                Types.result_history = job.Types.exHist;
-                Types.result_decision_path = job.Types.decisionPath;
+                Job.result_file = job.Job.file;
+                Job.result_state = job.Job.state;
+                Job.result_history = job.Job.exHist;
+                Job.result_decision_path = job.Job.decisionPath;
             } in
             let explanation = DiscreteSolver.explain context in
             Format.fprintf Format.str_formatter
@@ -214,7 +214,7 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
                 fn.Cil.svar.Cil.vname
                 DiscreteSolver.Explanation.printer explanation;
             let msg = Format.flush_str_formatter () in
-            k stack [ (Types.Abandoned (`Failure msg, loc, result),
+            k stack [ (Job.Abandoned (`Failure msg, loc, result),
                        None) ]
 
         end else begin
@@ -251,7 +251,7 @@ module Switcher (S : Config.BlockConfig)  (T : Config.BlockConfig) = struct
 
     let dispatch chain dispatch stack = function
         | `SymbolicBlock (file, job, k)
-                when T.should_enter_block (List.hd job.Types.state.Types.callstack).Cil.svar.Cil.vattr ->
+                when T.should_enter_block (List.hd job.Job.state.Types.callstack).Cil.svar.Cil.vattr ->
             inspect_stack dispatch stack file job k
         | work ->
             chain stack work

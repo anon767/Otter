@@ -97,7 +97,7 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
         end (state, []) fn.Cil.sformals in
 
         (* next, prepare the function call job *)
-        let job = Driver.job_for_function file state fn (List.rev rev_args_bytes) in
+        let job = Job.make file state fn (List.rev rev_args_bytes) in
 
         (* finally, set up the recursion fixpoint operation *)
         let rec do_fixpoint stack tentative =
@@ -120,7 +120,7 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
 
                 (* prepare a monad that represents the symbolic result *)
                 let expM = foldM begin fun block_errors results -> match results with
-                    | Types.Return (retopt, { Types.result_state=state; Types.result_history=history }), _ ->
+                    | Job.Return (retopt, { Job.result_state=state; Job.result_history=history }), _ ->
                         inContext (fun _ -> fn.Cil.svar.Cil.vdecl) begin perform
                             (* first, the return value *)
                             begin match retopt with
@@ -150,7 +150,7 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
                             return block_errors
                         end
 
-                    | Types.Abandoned (reason, loc, result), None ->
+                    | Job.Abandoned (reason, loc, result), None ->
                         Format.fprintf Format.str_formatter
                             "Block errors returning from TypedSymbolic at %s: %a"
                             fn.Cil.svar.Cil.vname Report.abandoned_reason reason;
@@ -160,11 +160,11 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
                         let msg = FormatPlus.as_string Report.abandoned_reason reason in
                         return ((Format.flush_str_formatter (), loc, `TypedSymbolicError (result, msg))::block_errors)
 
-                    | Types.Abandoned _, Some e ->
+                    | Job.Abandoned _, Some e ->
                         return (e::block_errors)
 
-                    | Types.Exit _, _         (* a program that exits cannot possibly affect the outer context *)
-                    | Types.Truncated _, _ -> (* truncated paths are those merged with other paths *)
+                    | Job.Exit _, _         (* a program that exits cannot possibly affect the outer context *)
+                    | Job.Truncated _, _ -> (* truncated paths are those merged with other paths *)
                         return block_errors
 
                 end [] completed in

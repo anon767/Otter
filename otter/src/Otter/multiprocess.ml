@@ -3,6 +3,7 @@ open OcamlUtilities
 open OtterBytes
 open OtterCore
 open Types
+open Job
 
 let (@@) = Interceptor.(@@)
 let (@@@) i1 i2 = fun a b c -> i1 a b c i2
@@ -70,30 +71,30 @@ let update_from_shared_memory shared_block_to_bytes local_block_to_bytes =
 (* put a job back into the multijob and update the shared state *)
 let put_job job multijob pid =
 	let program_counter = {
-		instrList = job.Types.instrList;
-		stmt = job.Types.stmt;
+		instrList = job.Job.instrList;
+		stmt = job.Job.stmt;
 	} in
 	let process = {
-		global = job.Types.state.Types.global;
-		formals = job.Types.state.Types.formals;
-		locals = job.Types.state.Types.locals;
-		callstack = job.Types.state.Types.callstack;
-		callContexts = job.Types.state.Types.callContexts;
-		stmtPtrs = job.Types.state.Types.stmtPtrs;
-		va_arg = job.Types.state.Types.va_arg;
-		va_arg_map = job.Types.state.Types.va_arg_map;
-		block_to_bytes = job.Types.state.Types.block_to_bytes;
+		global = job.Job.state.Types.global;
+		formals = job.Job.state.Types.formals;
+		locals = job.Job.state.Types.locals;
+		callstack = job.Job.state.Types.callstack;
+		callContexts = job.Job.state.Types.callContexts;
+		stmtPtrs = job.Job.state.Types.stmtPtrs;
+		va_arg = job.Job.state.Types.va_arg;
+		va_arg_map = job.Job.state.Types.va_arg_map;
+		block_to_bytes = job.Job.state.Types.block_to_bytes;
 		pid = pid;
 	} in
 	let shared = {
-		path_condition = job.Types.state.Types.path_condition;
-		shared_block_to_bytes = update_to_shared_memory multijob.shared.shared_block_to_bytes job.Types.state.Types.block_to_bytes;
+		path_condition = job.Job.state.Types.path_condition;
+		shared_block_to_bytes = update_to_shared_memory multijob.shared.shared_block_to_bytes job.Job.state.Types.block_to_bytes;
 	} in
 	{
-		file = job.Types.file;
+		file = job.Job.file;
 		processes = List.append multijob.processes [ (program_counter, process) ];
 		shared = shared;
-		jid = job.Types.jid;
+		jid = job.Job.jid;
 		next_pid = multijob.next_pid;
 		current_pid = multijob.current_pid;
 	}
@@ -105,10 +106,10 @@ let put_completion completion multijob = match completion with
 	| Exit (_, job_result)
 	| Abandoned (_, _, job_result) ->
 		let shared = {
-			path_condition = job_result.Types.result_state.Types.path_condition;
+			path_condition = job_result.Job.result_state.Types.path_condition;
 			shared_block_to_bytes = update_to_shared_memory 
 				multijob.shared.shared_block_to_bytes 
-				job_result.Types.result_state.Types.block_to_bytes;
+				job_result.Job.result_state.Types.block_to_bytes;
 		} in
 		{ multijob with
 			shared = shared;
@@ -141,16 +142,16 @@ let get_job multijob = match multijob.processes with
 			Types.bytes_eval_cache = BytesMap.empty;
 		} in
 		let job = {
-			Types.file = multijob.file;
-			Types.state = state;
-			Types.exHist = emptyHistory;
-            Types.decisionPath = [];
-			Types.instrList = program_counter.instrList;
-			Types.stmt = program_counter.stmt;
-			Types.jid = multijob.jid;
+			Job.file = multijob.file;
+			Job.state = state;
+			Job.exHist = emptyHistory;
+			Job.decisionPath = [];
+			Job.instrList = program_counter.instrList;
+			Job.stmt = program_counter.stmt;
+			Job.jid = multijob.jid;
 			(* TODO *)
-			Types.trackedFns = StringSet.empty;
-			Types.inTrackedFn = false;
+			Job.trackedFns = StringSet.empty;
+			Job.inTrackedFn = false;
 		} in
 		let multijob = { multijob with
 			processes = processes;
@@ -215,7 +216,7 @@ let otter_gmalloc_size (state:Types.state) size bytes loc =
 	(state, block, addrof_block)
 
 let otter_gmalloc job multijob retopt exps =
-	let state, b_size = Expression.rval job.Types.state (List.hd exps) in
+	let state, b_size = Expression.rval job.Job.state (List.hd exps) in
 	let size =
 		if Bytes.isConcrete_bytes b_size then
 			Bytes.bytes_to_int_auto b_size (*safe to use bytes_to_int as arg should be small *)
@@ -299,13 +300,13 @@ let process_result result completed job_queue =
 
 let run job = 
 	let multijob = {
-		file = job.Types.file;
+		file = job.Job.file;
 		processes = [];
 		shared = {
 			path_condition = [];
 			shared_block_to_bytes = MemoryBlockMap.empty;
 		};
-		jid = job.Types.jid;
+		jid = job.Job.jid;
 		next_pid = 1;
 		current_pid = 0;
 	} in

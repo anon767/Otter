@@ -15,22 +15,22 @@
             CIL. E.g., [#pragma command_line("--useLogicalOperators")].
         - [#pragma has_failing_assertions] specifies that failing assertions should be expected. Conversely, {e not
             providing} this directive specifies that failing assertions should not be expected.
-        - [#pragma expect_return(<assertion expression>, ...)] specifies that there should be a {!Types.Return}
+        - [#pragma expect_return(<assertion expression>, ...)] specifies that there should be a {!Job.Return}
             in which a list of assertions hold. The first matching result will be removed from further processing.
             E.g., [#pragma expect_return(__return_code__ == 0, x < y, z)].
-        - [#pragma expect_exit(<assertion expression>, ...)] specifies that there should be a {!Types.Exit} in which
+        - [#pragma expect_exit(<assertion expression>, ...)] specifies that there should be a {!Job.Exit} in which
             a list of assertions hold. The first matching result will be removed from further processing.
             E.g., [#pragma expect_exit(x == 1, y == __exit_code__, z == 1)].
         - [#pragma expect_abandoned(<reason>, <assertion expression>, ...)] specifies that there should be a
-            {!Types.Abandoned} of a particular reason in which a list of assertions hold. The first matching result
+            {!Job.Abandoned} of a particular reason in which a list of assertions hold. The first matching result
             will be removed from further processing. Reasons include: {ul
                 {- [failure("<regular expression>")] for [`Failure msg] reason, where the argument is a regular
                     expression as a string to match [msg]. E.g.,
                     [#pragma expect_abandoned(failure("Function .* not found"), x == 1, y == 2, z == 3)].}
             }
-        - [#pragma no_other_return] specifies that no other {!Types.Return} should be in the remaining results.
-        - [#pragma no_other_exit] specifies that no other {!Types.Exit} should be in the remaining results.
-        - [#pragma no_other_abandoned] specifies that no other {!Types.Abandoned} should be in the remaining results.
+        - [#pragma no_other_return] specifies that no other {!Job.Return} should be in the remaining results.
+        - [#pragma no_other_exit] specifies that no other {!Job.Exit} should be in the remaining results.
+        - [#pragma no_other_abandoned] specifies that no other {!Job.Abandoned} should be in the remaining results.
         - [#pragma no_other_results] specifies that there should no remaining results.
 
     In particular, [#pragma expect_return], [#pragma expect_exit], and [#pragma expect_abandoned] accept a
@@ -97,10 +97,10 @@ let attrparams_printer = list_printer Printcil.attrparam ",@ "
 (** Helper to print Otter.Types.job_completion list. *)
 let results_printer =
     let completion_printer ff = function
-        | Types.Exit (exit_opt, _) -> Format.fprintf ff "Exit(@[%a@])" (option_printer BytesPrinter.bytes) exit_opt
-        | Types.Return (return_opt, _) -> Format.fprintf ff "Return(@[%a@])" (option_printer BytesPrinter.bytes) return_opt
-        | Types.Abandoned (reason, loc, _) -> Format.fprintf ff "Abandoned(\"@[%s@@%d: %a@]\")" loc.Cil.file loc.Cil.line Report.abandoned_reason reason
-        | Types.Truncated (left, right) -> Format.fprintf ff "Truncated(...)"
+        | Job.Exit (exit_opt, _) -> Format.fprintf ff "Exit(@[%a@])" (option_printer BytesPrinter.bytes) exit_opt
+        | Job.Return (return_opt, _) -> Format.fprintf ff "Return(@[%a@])" (option_printer BytesPrinter.bytes) return_opt
+        | Job.Abandoned (reason, loc, _) -> Format.fprintf ff "Abandoned(\"@[%s@@%d: %a@]\")" loc.Cil.file loc.Cil.line Report.abandoned_reason reason
+        | Job.Truncated (left, right) -> Format.fprintf ff "Truncated(...)"
     in
     list_printer completion_printer "@\n"
 
@@ -111,7 +111,7 @@ let results_printer =
     and [__exit_code__] correspond to the values returned from [main()] and via [exit()] respectively.
  *)
 let assert_exp file loc exp result return_opt exit_opt =
-    let file, state = result.Types.result_file, result.Types.result_state in
+    let file, state = result.Job.result_file, result.Job.result_state in
 
     (* translate from Cil.attrparam to bytes *)
     let rec parse_exp state = function
@@ -172,10 +172,10 @@ let assert_exps file loc exps result return_opt exit_opt =
     List.for_all (fun exp -> assert_exp file loc exp result return_opt exit_opt) exps
 
 
-(** CPS test that the results contains a {!Types.Return}, passing the remaining results to the next test. *)
+(** CPS test that the results contains a {!Job.Return}, passing the remaining results to the next test. *)
 let expect_return file loc asserts results k =
     let asserts' = assert_exps file loc asserts in
-    match list_remove (function Types.Return (return_opt, result) -> asserts' result return_opt None | _ -> false) results with
+    match list_remove (function Job.Return (return_opt, result) -> asserts' result return_opt None | _ -> false) results with
         | Some (_, results) ->
             k results
         | None when asserts = [] ->
@@ -185,10 +185,10 @@ let expect_return file loc asserts results k =
                 attrparams_printer asserts results_printer results
 
 
-(** CPS test that the results contains a {!Types.Exit}, passing the remaining results to the next test. *)
+(** CPS test that the results contains a {!Job.Exit}, passing the remaining results to the next test. *)
 let expect_exit file loc asserts results k =
     let asserts' = assert_exps file loc asserts in
-    match list_remove (function Types.Exit (exit_opt, result) -> asserts' result None exit_opt | _ -> false) results with
+    match list_remove (function Job.Exit (exit_opt, result) -> asserts' result None exit_opt | _ -> false) results with
         | Some (_, results) ->
             k results
         | None when asserts = [] ->
@@ -198,12 +198,12 @@ let expect_exit file loc asserts results k =
                 attrparams_printer asserts results_printer results
 
 
-(** CPS test that the results contains a {!Types.Abandoned} with a [`Failure] reason, passing the remaining results to the next test. *)
+(** CPS test that the results contains a {!Job.Abandoned} with a [`Failure] reason, passing the remaining results to the next test. *)
 let expect_abandoned_failure file loc reason asserts results k =
     let reason' = Str.regexp reason in
     let asserts' = assert_exps file loc asserts in
     let is_abandoned_failure = function
-        | Types.Abandoned (`Failure reason, loc, result) -> Str.string_match reason' reason 0 && asserts' result None None
+        | Job.Abandoned (`Failure reason, loc, result) -> Str.string_match reason' reason 0 && asserts' result None None
         | _ -> false
     in
     match list_remove is_abandoned_failure results with
@@ -225,14 +225,14 @@ let no_other_x f x file loc = fun results k ->
         assert_loc_failure file loc "@[<h2>Expected no other %s but got:@\n%a@]" x results_printer results;
     k results
 
-(** CPS test that there are no other {!Types.Return}, passing the remaining results to the next test. *)
-let no_other_return = no_other_x (function Types.Return _ -> true | _ -> false) "Return"
+(** CPS test that there are no other {!Job.Return}, passing the remaining results to the next test. *)
+let no_other_return = no_other_x (function Job.Return _ -> true | _ -> false) "Return"
 
-(** CPS test that there are no other {!Types.Exit}, passing the remaining results to the next test. *)
-let no_other_exit = no_other_x (function Types.Exit _ -> true | _ -> false) "Exit"
+(** CPS test that there are no other {!Job.Exit}, passing the remaining results to the next test. *)
+let no_other_exit = no_other_x (function Job.Exit _ -> true | _ -> false) "Exit"
 
-(** CPS test that there are no other {!Types.Abandoned}, passing the remaining results to the next test. *)
-let no_other_abandoned = no_other_x (function Types.Abandoned _ -> true | _ -> false) "Abandoned"
+(** CPS test that there are no other {!Job.Abandoned}, passing the remaining results to the next test. *)
+let no_other_abandoned = no_other_x (function Job.Abandoned _ -> true | _ -> false) "Abandoned"
 
 (** CPS test that there are no other {!Types.job_completion} at all *)
 let no_other_results = no_other_x (fun _ -> true) "results"

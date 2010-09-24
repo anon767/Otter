@@ -4,6 +4,7 @@ open CilUtilities
 open OtterBytes
 open Bytes
 open Types
+open Job
 open Interceptor
 
 
@@ -160,24 +161,6 @@ let prepare_file file =
 	Coverage.prepare_file file
 
 
-(* create a job that begins at a function, given an initial state *)
-let job_for_function ?(exHist=emptyHistory) file state fn argvs =
-	let state = MemOp.state__start_fcall state Runtime fn argvs in
-	let trackedFns = List.fold_left (fun set elt -> StringSet.add elt set) StringSet.empty !Executeargs.arg_fns in
-	(* create a new job *)
-	{
-		file = file;
-		state = state;
-		exHist = exHist;
-		decisionPath = [];
-		instrList = [];
-		stmt = List.hd fn.Cil.sallstmts;
-		trackedFns = trackedFns;
-		inTrackedFn = StringSet.mem fn.Cil.svar.Cil.vname trackedFns;
-		jid = Counter.next Types.job_counter;
-	}
-
-
 (* create a job that begins at the main function of a file, with the initial state set up for the file *)
 let job_for_file file cmdline =
 	let main_func =
@@ -197,7 +180,7 @@ let job_for_file file cmdline =
 	in
 
 	(* create a job starting at main *)
-	job_for_function file state main_func main_args
+	Job.make file state main_func main_args
 
 
 let find_entryfn file =
@@ -221,7 +204,7 @@ let get_job_list = function
 let output_completion_info completion =
 (* log some interesting errors *)
 	match completion with
-		| Types.Abandoned (reason, loc, { result_state=state; result_history=hist }) ->
+		| Abandoned (reason, loc, { result_state=state; result_history=hist }) ->
 			Output.set_mode Output.MSG_MUSTPRINT;
 			Output.printf "Error \"%a\"@ occurs at %a.@\n"
 				Report.abandoned_reason reason Printcil.loc loc;
