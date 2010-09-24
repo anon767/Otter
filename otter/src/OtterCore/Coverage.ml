@@ -131,6 +131,15 @@ class getGlobalInitVisitor = object (self)
 
 end
 
+(** Print the name and type of a {!Types.stmtInfo}.
+		@param ff is the formatter to which to print
+		@param fn is the {!Types.stmtInfo} to print
+*)
+let printStmtInfo ff si =
+	Format.fprintf ff "%s %d" si.Types.siFuncName si.Types.siStmt.Cil.sid;
+	if !Executeargs.arg_print_stmtInfo_locs then
+		Format.fprintf ff " (%a)" Printcil.loc (Cil.get_stmtLoc si.Types.siStmt.Cil.skind)
+
 let prepare_file file =
 	let fnNames = !Executeargs.arg_fns in
 	let vis = new getStatsVisitor in
@@ -162,7 +171,7 @@ let prepare_file file =
 	if !Executeargs.arg_list_blocks then begin
 		Output.printf "Total number of %s: %d\n" "Blocks" totals#blocks;
 		StmtInfoSet.iter
-			(fun stmtInfo -> Output.printf "%a\n" Printer.stmtInfo stmtInfo)
+			(fun stmtInfo -> Output.printf "%a\n" printStmtInfo stmtInfo)
 			vis#blocks;
 		Output.printf "\n"
 	end;
@@ -171,15 +180,15 @@ let prepare_file file =
 		EdgeSet.iter
 			(fun (srcStmtInfo, destStmtInfo) ->
 				 Output.printf "%a -> %a\n"
-					 Printer.stmtInfo srcStmtInfo
-					 Printer.stmtInfo destStmtInfo)
+					 printStmtInfo srcStmtInfo
+					 printStmtInfo destStmtInfo)
 			vis#edges;
 		Output.printf "\n"
 	end;
 	if !Executeargs.arg_list_conds then begin
 		Output.printf "Total number of %s: %d\n" "Conditions" totals#conds;
 		CondSet.iter
-			(fun (stmtInfo, truth) -> Output.printf "%a %c\n" Printer.stmtInfo stmtInfo (if truth then 'T' else 'F'))
+			(fun (stmtInfo, truth) -> Output.printf "%a %c\n" printStmtInfo stmtInfo (if truth then 'T' else 'F'))
 		vis#conds;
 		Output.printf "\n"
 	end
@@ -384,23 +393,21 @@ let printLines lineset =
 
 let printEdge (srcStmtInfo,destStmtInfo) =
 	Output.printf "%a -> %a\n"
-		Printer.stmtInfo srcStmtInfo
-		Printer.stmtInfo destStmtInfo
+		printStmtInfo srcStmtInfo
+		printStmtInfo destStmtInfo
 let printEdges edgeset =
 	Output.printf "The edges hit were:\n";
 	EdgeSet.iter printEdge edgeset;
 	Output.printf "\n"
 
-let printStmtInfo stmtInfo =
-	Output.printf "%a\n" Printer.stmtInfo stmtInfo
 let printBlocks blockset =
 	Output.printf "The blocks hit were:\n";
-	StmtInfoSet.iter printStmtInfo blockset;
+	StmtInfoSet.iter (Output.printf "%a\n" printStmtInfo) blockset;
 	Output.printf "\n"
 
 let printCondition (stmtInfo, truth) =
 	Output.printf "%a %c\n"
-		Printer.stmtInfo stmtInfo
+		printStmtInfo stmtInfo
 		(if truth then 'T' else 'F')
 let printConditions condset =
 	Output.printf "The conditions hit were:\n";

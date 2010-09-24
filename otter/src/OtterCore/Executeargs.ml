@@ -29,6 +29,7 @@ let arg_list_lines = ref false
 let arg_list_blocks = ref false
 let arg_list_edges = ref false
 let arg_list_conds = ref false
+let arg_print_stmtInfo_locs = ref false (** Option to print the location of {!Types.stmtInfo}. *)
 let arg_marshal_file = ref "" (** File to which to marshal coverage information *)
 
 
@@ -128,7 +129,7 @@ let options = [
 		" Print char as int");
 
 	("--printStmtLocs",
-		Arg.Set Printer.print_stmtInfo_locs,
+		Arg.Set arg_print_stmtInfo_locs,
 		" Print file and line number for statements, in addition to function name an id number, for block and edge coverage\n");
 
 	(*

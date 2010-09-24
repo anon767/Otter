@@ -3,10 +3,6 @@
 open OcamlUtilities
 
 
-(** Option to print the location of {!Types.stmtInfo}. *)
-let print_stmtInfo_locs = ref false
-
-
 (** Print the name and location of a {!Cil.varinfo}.
 		@param ff is the formatter to which to print
 		@param v is the {!Cil.varinfo} to print
@@ -82,13 +78,4 @@ let callingContext_list sep ff list =
 	in
 	FormatPlus.pp_print_list context sep ff list
 
-
-(** Print the name and type of a {!Types.stmtInfo}.
-		@param ff is the formatter to which to print
-		@param fn is the {!Types.stmtInfo} to print
-*)
-let stmtInfo ff si =
-	Format.fprintf ff "%s %d" si.Types.siFuncName si.Types.siStmt.Cil.sid;
-	if !print_stmtInfo_locs then
-		Format.fprintf ff " (%a)" Printcil.loc (Cil.get_stmtLoc si.Types.siStmt.Cil.skind)
 
