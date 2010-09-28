@@ -246,7 +246,7 @@ let arg_assertfn = ref "__ASSERT"
 
 let prepare_file file =
 	Executeargs.arg_cfg_pruning := true;
-	Driver.prepare_file file
+	Core.prepare_file file
 
 let doit file =
 	(* TODO: do something about signal handlers/run statistics from Executemain.doExecute *)

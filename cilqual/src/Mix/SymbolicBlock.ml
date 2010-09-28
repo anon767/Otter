@@ -15,7 +15,7 @@ module Interpreter (S : Config.BlockConfig) = struct
         OcamlUtilities.Output.arg_print_stmt := verbose;
         OcamlUtilities.Output.arg_print_func := verbose;
         OcamlUtilities.Output.arg_print_assign := verbose;
-        Driver.prepare_file file
+        Core.prepare_file file
 
 
     let call dispatch stack file job k =

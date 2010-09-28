@@ -41,7 +41,7 @@ let test_otter_on_file
         assert_bool "Cil parse error" (not !Errormsg.hadErrors);
 
         (* prepare the file and run the symbolic executor *)
-        Driver.prepare_file file;
+        Core.prepare_file file;
         let job =
             if entry_function = "main" then
                 FileJob.make file command_line

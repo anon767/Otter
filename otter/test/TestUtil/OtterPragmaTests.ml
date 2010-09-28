@@ -357,7 +357,7 @@ let test_otter_with_pragma ?(main_loop=Driver.run) path = fun () ->
     let file = Frontc.parse path () in
 
     (* prepare the file and run the symbolic executor *)
-    Driver.prepare_file file;
+    Core.prepare_file file;
     let job = match flags.entry_function with
         | Some fn when fn <> "main" ->
             FunctionJob.make file (FindCil.fundec_by_name file fn)

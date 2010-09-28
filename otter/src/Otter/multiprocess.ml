@@ -334,7 +334,7 @@ let run job =
 let doit file =
 	(* TODO: do something about signal handlers/run statistics from Executemain.doExecute *)
 
-	Driver.prepare_file file;
+	Core.prepare_file file;
 	let entryfn = Driver.find_entryfn file in
 	let job =
 		if !Executeargs.arg_entryfn = "main" then

@@ -28,7 +28,7 @@ let doExecute (f: file) =
 	ignore (Unix.alarm !Executeargs.arg_timeout);
 
 	(* prepare the file for symbolic execution *)
-	Driver.prepare_file f;
+	Core.prepare_file f;
 
     let entryfn = Driver.find_entryfn f in
 
