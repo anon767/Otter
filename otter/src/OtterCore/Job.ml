@@ -71,16 +71,18 @@ let emptyHistory = {
 	bytesToVars = [];
 }
 
+(* TODO (martin): rename fork_decision to something like "decision" or "execute_decsion" *)
 type fork_decision =
-    | ForkConditional of bool
-    | ForkFunptr of Cil.fundec
-    | ForkLongjmp of Types.callingContext (* TODO (martin): verify if this is the right type to use *)
+    | ForkConditional of Cil.stmt * bool (* if-statement *)
+    | ForkFunptr of Cil.instr * Cil.fundec (* function call *)
+    (* TODO (martin): define ForkLongjmp *)
 
 type job = {
 	file : Cil.file;
 	state : Types.state;
 	exHist : executionHistory;
-	decisionPath :  (stmtInfo * fork_decision) list; (** The decision path is a list of (conditional statement, fork_decision) pair. Most recent statement first. *)
+	decisionPath : fork_decision list; (** The decision path is a list of fork_decision. Most recent decision first. *)
+    boundingPaths : fork_decision list list option; (** The execution can only run on these paths, if exist *)
 	instrList : Cil.instr list; (** [instr]s to execute before moving to the next [stmt] *)
 	stmt : Cil.stmt;            (** The next statement the job should execute *)
 	trackedFns : StringSet.t;	(** The set of functions (names) in which to track coverage *)
@@ -92,7 +94,7 @@ type job_result = {
 	result_file : Cil.file;
 	result_state : Types.state;
 	result_history : executionHistory;
-	result_decision_path : (stmtInfo * fork_decision) list;
+	result_decision_path : fork_decision list;
 }
 
 type 'reason job_completion =
@@ -118,7 +120,8 @@ let make file state fn argvs =
 		file = file;
 		state = state;
 		exHist = emptyHistory;
-            decisionPath = [];
+        decisionPath = [];
+        boundingPaths = None;
 		instrList = [];
 		stmt = List.hd fn.Cil.sallstmts;
 		trackedFns = trackedFns;

@@ -33,7 +33,6 @@ class prioritized_job_queue assertfn targets = object (self)
 			PriorityQueue.add queue (object method job=job method priority=priority end)
 end
 
-
 let rec process_result result completed job_queue =
 	match result with
 		| Active job ->
@@ -50,192 +49,116 @@ let rec process_result result completed job_queue =
 		| _ ->
 			(completed, job_queue)
 
-
-let pass_targets targets job fexp exps =
-  (* convert fexp to fundec *) 
-  let state = job.state in
-  let hist = job.exHist in
-  let fundecs = 
-	List.fold_left 
-	  ( fun lst (_,ft) -> ft::lst
-	  ) [] (Statement.function_from_exp job state fexp exps) in
-  (* convert args to bytes. argvs are from left to right *)
-  let _, argvs = 
-	List.fold_right 
-	  ( fun exp (state, argvs) ->
-		  let state, bytes = Expression.rval state exp in
-			(state, bytes::argvs)
-	  ) exps (state, []) 
-  in
-  (* check if all fundecs pass target *)
-  let pass_target target : bool*bytes =
-	List.fold_left 
-	  ( fun (b,fc) fundec -> 
-		  if fundec != target.Prioritizer.target_func then true,Bytes.bytes__zero
-		  else match target.Prioritizer.target_predicate with
-          (* TODO (martin): implement FailingPaths *)
-          | Prioritizer.FailingPaths (_) ->  failwith "FailingPaths: Not yet implemented"
-          | Prioritizer.FailingConditions (entry_state, failing_condition) ->
-			(
-			  (* caller's input values to callee: argvs
-			   * callee's input values from caller: target.state 
-			   * at the end, use caller's state as the state of quirying 
-			   *)
-			  Output.banner_printf 0 "Check if the failing condition is hit\n%!";
-			  (* TODO: add globals *)
-			  let connecting_bytes = 
-				List.fold_left2
-				  ( fun b argv formal ->
-					  let _,fargv = Expression.rval entry_state (Lval(Var(formal),NoOffset)) in
-					  let equation = Operator.eq [(fargv,formal.vtype);(argv,formal.vtype)] in
-						Operator.bytes__land equation b 
-				  ) bytes__one argvs fundec.sformals
-			  in
-                (Format.printf "Failing condition: %a\n%!" BytesPrinter.bytes failing_condition);
-                (Format.printf "Path condition: %!");
-                (List.iter (Format.printf "%a && %!" BytesPrinter.bytes) state.path_condition);
-                (Format.printf "\n%!");
-                (Format.printf "Connection : %a\n%!" BytesPrinter.bytes connecting_bytes);
-			  let _, truth = MemOp.eval_with_cache state (connecting_bytes::state.path_condition) failing_condition in
-              (* TODO (martin): why the total_failing_condition does not include
-               * state.path_condition? 
-               *)
-			  let total_failing_condition = Operator.bytes__land failing_condition connecting_bytes in
-			  let total_failing_condition = Operator.bytes__lor total_failing_condition fc in
-
-			  let print_failed_assertion isUnknown =
-				let _ = Output.set_mode Output.MSG_MUSTPRINT in
-				let caller = List.hd state.callstack in
-				let mustmay = (if isUnknown then "may" else "must") in
-				let log format = FormatPlus.ksprintf Executedebug.log format in
-				let _ = Output.banner_printf 1  "Failing condition %s be hit (see error log).\n%!" mustmay in
-				let _ = log "(****************************@\n" in
-				let _ = log "The following failure %s happen in function %s:@\n" mustmay caller.svar.vname in
-				let _ = log "Failing condition:@;<1 2>@[%a@]@\n" BytesPrinter.bytes failing_condition in
-				let _ = log "Path condition:@;<1 2>@[  %a@]@\n" (FormatPlus.pp_print_list BytesPrinter.bytes "@\nAND@\n  ") state.path_condition in
-				let _ = log "Connection:@;<1 2>@[%a@]@\n" BytesPrinter.bytes connecting_bytes in
-				let _ = log "Consult STP for an example...@\n" in
-				let valuesForSymbols = Stp.getAllValues (failing_condition::connecting_bytes::state.path_condition) in
-				let getVal = function
-				  | Bytes_ByteArray bytArr ->
-					  let byteOptArray =
-						ImmutableArray.map
-						  (function
-							 | Byte_Symbolic s ->
-								 (try
-									let valueForS = List.assq s valuesForSymbols in
-									  Some (make_Byte_Concrete valueForS)
-								  with Not_found -> None
-								 )
-							 | _ -> failwith "Impossible: tracked symbolic value must be fully symbolic"
-						  )
-						  bytArr
-					  in
-						if ImmutableArray.exists (* Check if any byte is constrained *)
-							 (function Some _ -> true | _ -> false)
-							 byteOptArray
-						then (Some (make_Bytes_ByteArray
-								  (ImmutableArray.map
-									 (function Some b -> b | None -> byte__zero)
-									 byteOptArray))
-						) 
-						else None
-				  | _ -> failwith "Impossible: symbolic bytes must be a ByteArray"
-				in
-				let _ = List.iter 
-						  ( fun (bytes,varinf) -> 
-							  match getVal bytes with 
-								| None -> () 
-								| Some concreteByteArray -> 
-									(
-									  match bytes_to_constant concreteByteArray varinf.vtype with
-										| CInt64 (n,_,_) ->
-											log "%s=%Ld@\n" varinf.vname n
-										| _ -> failwith "Unimplemented: non-integer symbolic"
-									)
-						  )
-						  hist.bytesToVars
-				in
-				let _ = log "(****************************@\n" in
-				  ()
-			  in
-				match truth with 
-				  | Ternary.False -> true,Bytes.bytes__zero
-				  | Ternary.Unknown -> 
-					  print_failed_assertion true; false,total_failing_condition
-				  | Ternary.True -> 
-					  print_failed_assertion false; false,total_failing_condition
-			)
-	  ) (true,Bytes.bytes__zero) fundecs
-  in
-  let rec pass_targets_impl targets =
-	match targets with 
-	  | [] -> true,Bytes.bytes__zero
-	  | t::ts -> 
-		  let truth,failing_condition = pass_target t in
-		  if truth then pass_targets_impl ts 
-		  else false,failing_condition (* TODO: can proceed, to find more failing targets *)
-  in
-	pass_targets_impl targets
-
-let terminate_job_at_targets targets job =
+let test_job_at_targets targets job =
 	(* if job meets one of the targets, do checking *)
 	(* if fails, return Some (Complete Abandoned) *)
 	match job.instrList with
-		| Call(_,fexp,exps,loc)::_ ->
-			let truth, failing_condition = pass_targets targets job fexp exps in
-			if truth then
-				None
-			else begin
-				let msg = Printf.sprintf "Job %d hits the failing condition" job.jid in
-				if !Executeargs.arg_failfast then failwith msg;
-				let state = { job.state with path_condition = failing_condition::job.state.path_condition } in
-				let result = { 
-					result_file = job.Job.file; 
-					result_state = state; 
-					result_history = job.exHist; 
-					result_decision_path = job.decisionPath; } in
-				Some (Complete (Abandoned (`Failure msg, loc, result)))
-			end
+		| (Call(lvalopt,fexp,exps,loc) as instr)::_ ->
+            let job_state = Statement.exec_instr_call job instr lvalopt fexp exps in
+            let active_jobs = 
+              let rec get_active_jobs job_state = 
+                  match job_state with
+                  | Active(job) -> [job]
+                  | Fork(job_states) ->
+                      List.fold_left (fun active_jobs job_state ->
+                        let active_jobs' = get_active_jobs job_state in
+                          List.rev_append active_jobs' active_jobs
+                      ) [] job_states
+                  | _ -> []
+              in
+                get_active_jobs job_state 
+            in
+            Format.printf "Number of active_jobs = %d\n%!" (List.length active_jobs);
+            let targetted_jobs : (Job.job * Prioritizer.target) list = 
+                List.fold_left (fun targetted_jobs job ->
+                    let fundec = List.hd job.state.callstack in
+                    let matched_targets = List.filter (fun target -> fundec == target.Prioritizer.target_func) targets in
+                    assert (List.length matched_targets <= 1);
+                    if List.length matched_targets = 0 then
+                        targetted_jobs
+                    else
+                        (job, List.hd matched_targets)::targetted_jobs
+                ) [] active_jobs
+            in
+            Format.printf "Number of targetted_jobs = %d\n%!" (List.length targetted_jobs);
+            let forward_otter_bounded_by_paths job paths =
+              let bounding_paths_interceptor job job_queue interceptor =
+                (* TODO (martin): implement *)
+                interceptor job job_queue
+              in
+              let (@@) = Interceptor.(@@) in
+              Driver.main_loop
+                Driver.get_job_list
+                (
+              	  Interceptor.set_output_formatter_interceptor @@
+                  bounding_paths_interceptor @@
+              	  BuiltinFunctions.interceptor @@
+              	  Statement.step
+                )
+                Driver.process_result
+                [{job with boundingPaths = Some paths;}]
+            in
+            let failing_paths : fork_decision list list = 
+                List.fold_left (
+                    fun failing_paths (job,target) ->
+                        let partial_failing_paths = 
+                          match target.Prioritizer.target_predicate with
+                          | Prioritizer.FailingCondition (_,_) -> failwith "Not implemented yet"
+                          | Prioritizer.FailingPaths (paths) ->  
+                              let results : 'reason job_completion list = forward_otter_bounded_by_paths job paths in
+                                List.fold_left (fun failing_paths result ->
+                                    match result with 
+                                    | Abandoned (`FailingPaths(paths), _, _) ->
+                                        (* Insert a "function call decision" for function call *)
+                                        let paths = 
+                                            List.map (fun path -> ForkFunptr(instr,target.Prioritizer.target_func)::path) paths
+                                        in List.rev_append paths failing_paths
+                                    | _ -> failing_paths
+                                ) [] results
+                        in
+                          List.rev_append partial_failing_paths failing_paths
+                ) [] targetted_jobs
+            in
+			  if List.length failing_paths = 0 then
+			  	None
+			  else 
+			  	let result = { 
+			  		result_file = job.Job.file; 
+			  		result_state = job.state;  (* TODO (martin): state before or after evaluating exps? *)
+			  		result_history = job.exHist; 
+			  		result_decision_path = job.decisionPath; 
+                    (* joining decisionPath with failing_paths forms the failng paths of the new target *)
+                } in
+			  	  Some (Complete (Abandoned (`FailingPaths failing_paths, loc, result)))
 		| _ ->
 			None
 
-let terminate_job_at_targets_interceptor targets job job_queue interceptor =
-	match terminate_job_at_targets targets job with
-		| Some result ->
-			(result, job_queue)
+let test_job_at_targets_interceptor targets job job_queue interceptor =
+	match test_job_at_targets targets job with
+	    | Some (Complete (Abandoned (`FailingPaths _, _, _)) as job_state) ->
+			(job_state, job_queue)
 		| None ->
 			interceptor job job_queue
+        | _ -> failwith "test_job_at_targets: unreachable program point"
 
 let callchain_backward_se file entryfn assertfn job_init : _ job_completion list list =
-  let job_init fn ts =
-	let _ = Output.banner_printf 1 "Start forward SE on function %s with target(s)\n%s\n%!"
-			(fn.svar.vname) (let s=(String.concat "," (List.map (fun t -> t.Prioritizer.target_func.svar.vname) ts)) in if s="" then "(none)" else s)
-	in
-	job_init fn
+
+  let print_targets fn ts =
+	Output.banner_printf 1 "Start forward SE on function %s with target(s)\n%s\n%!"
+	  (fn.svar.vname) 
+      (let s=(String.concat "," (List.map (fun t -> t.Prioritizer.target_func.svar.vname) ts)) in if s="" then "(none)" else s)
   in
 
-  let get_failing_condition result = 
-	List.fold_left 
-	  ( fun b job_completion ->
-		  match job_completion with
-			| Abandoned (_,_,job_result) ->
-				let this_fc = List.fold_left Operator.bytes__land Bytes.bytes__one job_result.result_state.path_condition in
-				  Operator.bytes__lor b this_fc 
-			| _ -> b
-	  )
-	  Bytes.bytes__zero result
-  in
-
-  let (@@) = Interceptor.(@@) in
+  (* Run forward SE on the examining function (job), given the targets. *)
   let call_Otter_main_loop targets job =
+    let (@@) = Interceptor.(@@) in
 	let jobs = new prioritized_job_queue assertfn targets in
 	jobs#queue job;
 	Driver.main_loop
 	  (fun jobs -> jobs#get)
 	  (
 		Interceptor.set_output_formatter_interceptor @@
-		(terminate_job_at_targets_interceptor targets) @@
+		(test_job_at_targets_interceptor targets) @@
 		BuiltinFunctions.interceptor @@
 		Statement.step
 	  )
@@ -244,6 +167,7 @@ let callchain_backward_se file entryfn assertfn job_init : _ job_completion list
   in
 
   (* compute call graph and provide a helper function for finding callers *)
+  (* TODO (martin): move this to its own helper module *)
   let callgraph = Callgraph.computeGraph file in
   let get_callers f =
     let function_node = Hashtbl.find callgraph f.svar.vname in
@@ -260,19 +184,29 @@ let callchain_backward_se file entryfn assertfn job_init : _ job_completion list
 	(* Assume we start at f *)
 	let f = List.hd job.state.callstack in
 	(* Run forward SE based on the targets *)
-	let result = call_Otter_main_loop targets job in
-	(* result is a (may not be completed) list of finished jobs.
-	 * A job is either successful, if no assertion failure, or unsuccessful.
-	 *)
-
-    let failing_condition = get_failing_condition result in
+	let results : 'reason job_completion list = call_Otter_main_loop targets job in
 	  if f == entryfn then 
 		(* If f is main(), we are done *)
-		result 
+		results
 	  else
+        let join_paths prefix suffixes =
+            List.map (fun suffix -> List.append prefix suffix) suffixes
+        in
+        let failing_paths = List.fold_left 
+          ( fun all_paths job_completion ->
+              match job_completion with
+              | Abandoned (`FailingPaths(paths),_,job_result) -> 
+                      let joined_paths = join_paths job_result.result_decision_path paths in
+                        List.rev_append joined_paths all_paths
+              | _ -> all_paths
+          ) [] results
+        in
+        (* TODO (martin): based on the properties of the function, and the failing_paths,
+         *                decide if the failing predicate is a condition or paths
+         *)
 		let new_target = {
 		  Prioritizer.target_func = f;
-          Prioritizer.target_predicate = Prioritizer.FailingConditions(job.state, failing_condition);
+          Prioritizer.target_predicate = Prioritizer.FailingPaths(failing_paths);
 		} in
 		let callers = get_callers f in
 		  Output.banner_printf 1 "Function %s's caller(s): " f.svar.vname;
@@ -281,27 +215,33 @@ let callchain_backward_se file entryfn assertfn job_init : _ job_completion list
 		  List.fold_left 
 		  (
 			fun lst caller -> 
-			  let targets = (new_target::targets) in
-			  let newjob = job_init caller targets in
-			  let newlst = callchain_backward_main_loop newjob targets  in
-				List.rev_append newlst lst
+			  let targets' = (new_target::targets) in
+              let _ = print_targets caller targets' in
+			  let job' = job_init caller in
+			  let lst' = callchain_backward_main_loop job' targets'  in
+				List.rev_append lst' lst
 		  ) 
 		  [] callers
   in
 
+  let assert_target = {
+      Prioritizer.target_func = assertfn;
+      Prioritizer.target_predicate = Prioritizer.FailingPaths([]);
+  } in
   let callers = get_callers assertfn in
 	List.fold_left 
 	  (fun results caller ->
 		 Output.banner_printf 2 "Call-chain backward Symbolic Execution of target function %s\n%!" caller.svar.vname;
-		 let job = job_init caller [] in 
-		 let new_result = callchain_backward_main_loop job [] in
+         let targets = [assert_target] in
+         let _ = print_targets caller targets in
+		 let job = job_init caller in 
+		 let new_result = callchain_backward_main_loop job targets in
 		   new_result::results
 	  ) [] callers
 
 
 
 (* Cil feature for call-chain backwards Otter *)
-
 let arg_assertfn = ref "__ASSERT"
 
 let prepare_file file =

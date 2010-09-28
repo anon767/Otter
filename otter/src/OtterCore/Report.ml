@@ -2,6 +2,7 @@ open OcamlUtilities
 
 let abandoned_reason ff = function
     | `Failure msg -> Format.fprintf ff "`Failure:%s" msg
+    | `FailingPaths (_:(Job.fork_decision list list)) -> Format.fprintf ff "" (* TODO (martin): print something meaningful *)
 
 let print_report results =
 	let coverage, completed, truncated, abandoned =
@@ -9,7 +10,7 @@ let print_report results =
 			match result with
 				| Job.Return (_, c)
 				| Job.Exit (_, c)      -> (c::coverage, completed + 1, truncated, abandoned)
-				| Job.Truncated (c, d) -> (c::d::coverage, completed, truncated + 2, abandoned)
+				| Job.Truncated (c, d) -> (c::d::coverage, completed, truncated + 3, abandoned)
 				| Job.Abandoned _      -> (coverage, completed, truncated, abandoned + 1)
 		end ([], 0, 0, 0) results in
 		if completed = 0 then (

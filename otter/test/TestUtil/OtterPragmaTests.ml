@@ -97,14 +97,14 @@ let attrparams_printer = list_printer Printcil.attrparam ",@ "
 
 
 (** Helper to print Otter.Types.job_completion list. *)
-let results_printer =
+let results_printer list =
     let completion_printer ff = function
         | Job.Exit (exit_opt, _) -> Format.fprintf ff "Exit(@[%a@])" (option_printer BytesPrinter.bytes) exit_opt
         | Job.Return (return_opt, _) -> Format.fprintf ff "Return(@[%a@])" (option_printer BytesPrinter.bytes) return_opt
         | Job.Abandoned (reason, loc, _) -> Format.fprintf ff "Abandoned(\"@[%s@@%d: %a@]\")" loc.Cil.file loc.Cil.line Report.abandoned_reason reason
         | Job.Truncated (left, right) -> Format.fprintf ff "Truncated(...)"
     in
-    list_printer completion_printer "@\n"
+    list_printer completion_printer "@\n" list
 
 
 (** Test that an expression holds in the given result.
@@ -228,16 +228,19 @@ let no_other_x f x file loc = fun results k ->
     k results
 
 (** CPS test that there are no other {!Job.Return}, passing the remaining results to the next test. *)
-let no_other_return = no_other_x (function Job.Return _ -> true | _ -> false) "Return"
+let no_other_return arg = 
+    no_other_x (function Job.Return _ -> true | _ -> false) "Return" arg
 
 (** CPS test that there are no other {!Job.Exit}, passing the remaining results to the next test. *)
-let no_other_exit = no_other_x (function Job.Exit _ -> true | _ -> false) "Exit"
+let no_other_exit arg = 
+    no_other_x (function Job.Exit _ -> true | _ -> false) "Exit" arg
 
 (** CPS test that there are no other {!Job.Abandoned}, passing the remaining results to the next test. *)
-let no_other_abandoned = no_other_x (function Job.Abandoned _ -> true | _ -> false) "Abandoned"
+let no_other_abandoned arg = 
+    no_other_x (function Job.Abandoned _ -> true | _ -> false) "Abandoned" arg
 
 (** CPS test that there are no other {!Types.job_completion} at all *)
-let no_other_results = no_other_x (fun _ -> true) "results"
+let no_other_results arg = no_other_x (fun _ -> true) "results" arg
 
 
 (** Parse [#pragma] directives in a {!Cil.file} for test flags and expectations, and generate a test function. *)

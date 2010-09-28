@@ -7,8 +7,10 @@ open Cil
 open Hashtbl
 
 
+(* TODO (martin): move failing_predicate and target to another module *)
 type failing_predicate =
-    | FailingConditions of state * Bytes.bytes (* TODO (martin): make the condition a list of bytes *)
+    (* TODO (martin): make the condition a list of bytes *)
+    | FailingCondition of state * Bytes.bytes 
     | FailingPaths of fork_decision list list
 
 (* target to be used in prioritizer *)

@@ -176,7 +176,7 @@ let exec_instr_call job instr lvalopt fexp exps =
 			| (state, fundec)::t -> 
 				let job_state =
                     let job = {job with
-                        decisionPath = (stmtInfo_of_job job, ForkFunptr(fundec))::job.decisionPath;} in
+                        decisionPath = ForkFunptr(instr, fundec)::job.decisionPath;} in
 					try
 						(exec_fundec job state instr fundec lvalopt exps)
 					with Failure msg ->
@@ -384,10 +384,7 @@ let exec_stmt job =
 						end;
  
 					let state, truth = MemOp.eval_with_cache state state.path_condition rv in
-                    let stmtInfo = stmtInfo_of_job job in
- 
 					Output.set_mode Output.MSG_REG;
-                    
 					match truth with
 						| Ternary.True ->
 							Output.printf "True@\n";
@@ -395,7 +392,7 @@ let exec_stmt job =
 							let job' = { job with 
                               state = nextState; 
                               stmt = nextStmt; 
-                              decisionPath = (stmtInfo, ForkConditional(true))::job.decisionPath; } in
+                              decisionPath = (ForkConditional(stmt, true))::job.decisionPath; } in
 							Active { job' with exHist = nextExHist (Some nextStmt) ~whichBranch:true; }
 
 						| Ternary.False ->
@@ -404,7 +401,7 @@ let exec_stmt job =
 							let job' = { job with 
                               state = nextState; 
                               stmt = nextStmt; 
-                              decisionPath = (stmtInfo, ForkConditional(false))::job.decisionPath; } in
+                              decisionPath = (ForkConditional(stmt, false))::job.decisionPath; } in
 							Active { job' with exHist = nextExHist (Some nextStmt) ~whichBranch:false; }
 
 						| Ternary.Unknown ->
@@ -421,12 +418,12 @@ let exec_stmt job =
 								state = nextStateT;
 								stmt = nextStmtT;
 								exHist = nextExHist (Some nextStmtT) ~whichBranch:true;
-                                decisionPath = (stmtInfo, ForkConditional(true))::job.decisionPath; 
+                                decisionPath = (ForkConditional(stmt, true))::job.decisionPath; 
 								jid = Counter.next job_counter; } in
 							let falseJob = { job with
 								state = nextStateF;
 								stmt = nextStmtF;
-                                decisionPath = (stmtInfo, ForkConditional(false))::job.decisionPath; 
+                                decisionPath = (ForkConditional(stmt, false))::job.decisionPath; 
 								exHist =  nextExHist (Some nextStmtF) ~whichBranch:false; } in
 							Output.set_mode Output.MSG_MUSTPRINT;
 							Output.printf "Branching on @[%a@]@ at %a.@\n"
