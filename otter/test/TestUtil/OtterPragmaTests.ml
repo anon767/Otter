@@ -228,15 +228,15 @@ let no_other_x f x file loc = fun results k ->
     k results
 
 (** CPS test that there are no other {!Job.Return}, passing the remaining results to the next test. *)
-let no_other_return arg = 
+let no_other_return arg =
     no_other_x (function Job.Return _ -> true | _ -> false) "Return" arg
 
 (** CPS test that there are no other {!Job.Exit}, passing the remaining results to the next test. *)
-let no_other_exit arg = 
+let no_other_exit arg =
     no_other_x (function Job.Exit _ -> true | _ -> false) "Exit" arg
 
 (** CPS test that there are no other {!Job.Abandoned}, passing the remaining results to the next test. *)
-let no_other_abandoned arg = 
+let no_other_abandoned arg =
     no_other_x (function Job.Abandoned _ -> true | _ -> false) "Abandoned" arg
 
 (** CPS test that there are no other {!Types.job_completion} at all *)
@@ -330,11 +330,11 @@ let parse_pragmas file =
 
 
 (** Test helper that runs Otter on a file, using #pragmas to define test expectations.
-            @param main_loop is the Otter main loop to use (default: {!Driver.run})
+            @param main_loop is the Otter main loop to use (default: {!Driver.run_basic})
             @param path is the path to the file
             @return a {!TestCase} that runs Otter
 *)
-let test_otter_with_pragma ?(main_loop=Driver.run) path = fun () ->
+let test_otter_with_pragma ?(main_loop=Driver.run_basic) path = fun () ->
     (* reset the error flag and suppress all output from the symbolic executor *)
     Errormsg.hadErrors := false;
     Output.arg_print_mute := 1;

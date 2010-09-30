@@ -11,7 +11,7 @@ open OtterDriver
 (** Test helper that runs Otter on a file.
             @param path is the path to the file
             @param setup is an optional setup function to be called before parsing
-            @param main_loop is the Otter main loop to use (default: {!Driver.run})
+            @param driver is the Otter main loop to use (default: {!Driver.run_basic})
             @param entry_function is the function at which to begin symbolic execution; if not "main", pointers will
                     be initialized via {!SymbolicPointers.job_for_middle} (default: ["main"])
             @param command_line is an optional command line to provide to the executed file; ignored if
@@ -23,7 +23,7 @@ open OtterDriver
 let test_otter_on_file
         path
         ?(setup=(fun _ -> ()))
-        ?(main_loop=Driver.run)
+        ?(driver=Driver.run_basic)
         ?(entry_function="main")
         ?(command_line=[])
         ?(has_failing_assertions=false)
@@ -48,7 +48,7 @@ let test_otter_on_file
             else
                 FunctionJob.make file (FindCil.fundec_by_name file entry_function)
         in
-        let results = main_loop job in
+        let results = driver job in
 
         (* perform tests in order of expressiveness of potential errors *)
         (* first, test if assertions passed *)
@@ -68,7 +68,7 @@ let test_otter_on_file
             @param code is the source code
             @param label is the label for the test (default: [code])
             @param setup is an optional setup function to be called before parsing
-            @param main_loop is the Otter main loop to use
+            @param driver is the Otter main loop to use
             @param entry_function is the function at which to begin symbolic execution
             @param command_line is an optional command line to provide to the executed file
             @param has_failing_assertions indicates whether failing assertions are expected
@@ -79,17 +79,17 @@ let test_otter
         code
         ?(label=code)
         ?setup
-        ?main_loop
+        ?driver
         ?entry_function
         ?command_line
         ?has_failing_assertions
         test =
     label >:: test_string_as_file "OtterTest." ".c" code begin fun filename ->
-        test_otter_on_file filename ?setup ?main_loop ?entry_function ?command_line ?has_failing_assertions test ()
+        test_otter_on_file filename ?setup ?driver ?entry_function ?command_line ?has_failing_assertions test ()
     end
 
 
-(** As with {!test_otter}, but sets [main_loop] to call only {!Statement.step} and no interceptors.
+(** As with {!test_otter}, but sets [driver] to call only {!Statement.step} and no interceptors.
             @param code is the source code
             @param label is the label for the test (default: [code])
             @param setup is an optional setup function to be called before parsing
@@ -99,5 +99,5 @@ let test_otter
             @param test is the test to apply to the result from Otter
             @return a {!MyOUnit.TestCase} that runs Otter
 *)
-let test_otter_core = test_otter ~main_loop:(fun job -> Driver.main_loop Driver.get_job_list Statement.step Driver.process_result [job])
+let test_otter_core = test_otter ~driver:Driver.run_core
 

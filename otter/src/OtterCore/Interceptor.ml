@@ -4,6 +4,7 @@ open Types
 open Job
 
 let (@@) i1 i2 = fun a b -> i1 a b i2
+let (>>>) i1 i2 = fun a b k -> i1 a b (fun a b -> i2 a b k)
 
 let identity_interceptor job job_queue interceptor =
 	interceptor job job_queue

@@ -1,12 +1,16 @@
 open OcamlUtilities
 open CilUtilities
 open OtterCore
-open Executeargs
-open Types
-open Job
-open Interceptor
+open OtterQueue
+open OtterReporter
 
+(**/**)
+let (>>>) = Interceptor.(>>>)
+(**/**)
 
+let default_bound = ref 0
+
+(** Locate the function corresponding to {!Executeargs.entryfn}. *)
 let find_entryfn file =
 	let fname = !Executeargs.arg_entryfn in
 	try
@@ -14,93 +18,76 @@ let find_entryfn file =
 	with Not_found ->
 		FormatPlus.failwith "Entry function %s not found" fname
 
+(** Main symbolic execution loop. *)
+let main_loop ?(bound=0) ?interceptor:interceptor_opt ?(queue=Queue.get_default ()) reporter job =
+    (* compose the interceptor with the core symbolic executor *)
+    (* TODO: remove job_queue from interceptors/Statement.step *)
+    let step = match interceptor_opt with
+        | Some interceptor -> fun job -> fst (interceptor job () Statement.step)
+        | None -> fun job -> fst (Statement.step job ())
+    in
+    let queue = queue#put job in
+    let rec run count queue reporter = match queue#get with
+        | Some (queue, job) ->
+            let result_opt =
+                try
+                    let result = step job in
+                    let rec process_result (queue, reporter) = function
+                        | Job.Active job -> (queue#put job, reporter)
+                        | Job.Fork results -> List.fold_left process_result (queue, reporter) results
+                        | Job.Complete completion -> (queue, reporter#report completion)
+                        | Job.Paused _ -> invalid_arg "unexpected Job.Paused"
+                    in
+                    let queue, reporter = process_result (queue, reporter) result in
+                    Some (queue, reporter)
+                with Types.SignalException s ->
+                    (* if we got a signal, stop and return the completed results *)
+                    Output.set_mode Output.MSG_MUSTPRINT;
+                    Output.printf "%s@\n" s;
+                    None
+            in
+            begin match result_opt with
+                | Some (queue, reporter) when bound = 0 || count < bound -> run (count + 1) queue reporter
+                | _ -> reporter
+            end
+        | None ->
+            reporter
+    in
+    run 0 queue reporter
 
 
-(** GET JOB **)
+(** {1 Precomposed drivers for common use cases} *)
 
-let get_job_list = function
-	| [] -> None
-	| h::t -> Some (h, t)
+let run ?interceptor ?queue job =
+    (main_loop ?interceptor ?queue (new BasicReporter.t) job)#completed
 
+(** Driver using the core symbolic executor only. *)
+let run_core job =
+    run job
 
-(** PROCESS RESULT **)
+(** Driver using the core symbolic executor and the core built-in functions *)
+let run_basic job =
+    let interceptor =
+        Interceptor.set_output_formatter_interceptor
+        >>> BuiltinFunctions.interceptor
+    in
+    run ~interceptor job
 
-let output_completion_info completion =
-(* log some interesting errors *)
-	match completion with
-		| Abandoned (reason, loc, { result_state=state; result_history=hist }) ->
-			Output.set_mode Output.MSG_MUSTPRINT;
-			Output.printf "Error \"%a\"@ occurs at %a.@\n"
-				Report.abandoned_reason reason Printcil.loc loc;
-			if !Executeargs.arg_print_callstack then
-				Output.printf "Call stack:@\n  @[%a@]@\n" (Printer.callingContext_list "@\n") state.callContexts;
-			Output.printf "Abandoning path.@\n"
-
-		| _ ->
-			()
-
-let rec process_result result completed job_queue =
-	match result with
-		| Active job ->
-			(completed, job::job_queue)
-
-		| Fork states ->
-			List.fold_left (fun (completed, job_queue) state -> process_result state completed job_queue) (completed, job_queue) states
-
-		| Complete completion ->
-			output_completion_info completion;
-			((completion::completed), job_queue)
-
-		| _ ->
-			(completed, job_queue)
-
-
-(** MAIN LOOP **)
-
-let main_loop get_job interceptor process_result job_queue =
-	let rec main_loop job_queue completed =
-		match get_job job_queue with
-			| Some (job, job_queue) ->
-				let result_opt =
-					try
-						let result, job_queue = interceptor job job_queue in
-						let completed, job_queue = process_result result completed job_queue in
-						Some (job_queue, completed)
-					with SignalException s ->
-						(* if we got a signal, stop and return the completed results *)
-						Output.set_mode Output.MSG_MUSTPRINT;
-						Output.printf "%s@\n" s;
-						None
-				in
-				begin match result_opt with
-					| Some (job_queue, completed) -> main_loop job_queue completed
-					| None -> completed
-				end
-			| None ->
-				completed
-	in
-	main_loop job_queue []
-
-let run job =
-	main_loop
-		get_job_list
-		(
-			set_output_formatter_interceptor @@
-			BuiltinFunctions.interceptor @@
-			Statement.step
-		)
-		process_result
-		[job]
-
+(** Driver using the core symbolic executor, core built-in functions and libc built-in functions *)
 let run_with_libc job =
-	main_loop
-		get_job_list
-		(
-			set_output_formatter_interceptor @@
-			BuiltinFunctions.interceptor @@
-			BuiltinFunctions.libc_interceptor @@
-			Statement.step
-		)
-		process_result
-		[job]
+    let interceptor =
+        Interceptor.set_output_formatter_interceptor
+        >>> BuiltinFunctions.libc_interceptor
+        >>> BuiltinFunctions.interceptor
+    in
+    run ~interceptor job
+
+
+(** {1 Command-line options} *)
+
+let options = [
+    "--bound",
+        Arg.Set_int default_bound,
+        "<bound> Bound the number of paths to symbolically execute to completion (default: unbounded)";
+]
 

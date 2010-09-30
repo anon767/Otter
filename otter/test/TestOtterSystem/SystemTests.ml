@@ -8,7 +8,7 @@ let dir_prefix = Filename.concat "test" "TestOtterSystem"
 
 
 (* test helper that runs the symbolic executor on all files relative to dir_prefix/dir *)
-let test_integration main_loop dir =
+let test_system main_loop dir =
     let fulldir = Filename.concat dir_prefix dir in
 
     dir >: test_dir fulldir begin fun relpath ->
@@ -31,6 +31,6 @@ let test_integration main_loop dir =
  *)
 
 let testsuite = "System" >::: [
-	test_integration Driver.run_with_libc "OtterCore";
+	test_system Driver.run_with_libc "OtterCore";
 ]
 

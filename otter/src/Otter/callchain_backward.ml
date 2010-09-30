@@ -5,6 +5,8 @@ open CilUtilities
 open OtterBytes
 open OtterCore
 open OtterJob
+open OtterQueue
+open OtterReporter
 open OtterDriver
 open Bytes
 open Types
@@ -54,35 +56,20 @@ class prioritized_job_queue (prioritizer : (job -> float)) = object (self)
 		try
 			let first = PriorityQueue.first queue in
 			PriorityQueue.remove_first queue;
-			Some (first#job, self)
+			Some (self, first#job)
 		with Failure "PriorityQueue.first: empty queue" ->
 			None
 
-	method queue job =
+	method put job =
 		let priority = get_priority job in
         (* TODO (martin): well define epsilon? *)
 		if priority < threshold +. 0.1 then
 			Output.printf "Warning: job %d not continued\n" job.jid
 		else
 			(* Output.printf "Add Job %d with priority %0.1f\n%!" job.jid priority; *)
-			PriorityQueue.add queue (object method job=job method priority=priority end)
+			PriorityQueue.add queue (object method job=job method priority=priority end);
+		self
 end
-
-let rec process_result result completed job_queue =
-	match result with
-		| Active job ->
-			job_queue#queue job;
-			(completed, job_queue)
-
-		| Fork states ->
-			List.fold_left (fun (completed, job_queue) state -> process_result state completed job_queue) (completed, job_queue) states
-
-		| Complete completion ->
-			Driver.output_completion_info completion;
-			((completion::completed), job_queue)
-
-		| _ ->
-			(completed, job_queue)
 
 let test_job_at_targets targets job =
 	(* if job meets one of the targets, do checking *)
@@ -188,20 +175,13 @@ let test_job_at_targets targets job =
                                 interceptor job' job_queue
 
               in
-              let (@@) = Interceptor.(@@) in
-              let job = {job with boundingPaths = Some paths;} in
-              let return =
-                Driver.main_loop
-                  Driver.get_job_list
-                  (
-                	  Interceptor.set_output_formatter_interceptor @@
-                	  BuiltinFunctions.interceptor @@
-                      subset_bounding_paths_interceptor @@
-                	  Statement.step
-                  )
-                  Driver.process_result
-                [job]
-              in
+                let (>>>) = Interceptor.(>>>) in
+                let interceptor =
+                    Interceptor.set_output_formatter_interceptor
+                    >>> BuiltinFunctions.interceptor
+                    >>> subset_bounding_paths_interceptor
+                in
+                let return = Driver.run ~interceptor { job with boundingPaths = Some paths; } in
                 Format.printf "***** End forward_otter_bounded_by_paths\n%!";
                 return
             in
@@ -263,19 +243,13 @@ let callchain_backward_se file entryfn assertfn job_init : _ job_completion list
 
   (* Run forward SE on the examining function (job), given the targets. *)
   let call_Otter_main_loop targets job =
-    let (@@) = Interceptor.(@@) in
-	let jobs = new prioritized_job_queue (Prioritizer.prioritize assertfn targets) in
-	jobs#queue job;
-	Driver.main_loop
-	  (fun jobs -> jobs#get)
-	  (
-		Interceptor.set_output_formatter_interceptor @@
-		(test_job_at_targets_interceptor targets) @@
-		BuiltinFunctions.interceptor @@
-		Statement.step
-	  )
-	  process_result
-	  jobs
+      let (>>>) = Interceptor.(>>>) in
+      let interceptor =
+          Interceptor.set_output_formatter_interceptor
+          >>> (test_job_at_targets_interceptor targets)
+          >>> BuiltinFunctions.interceptor in
+	let queue = (new prioritized_job_queue (Prioritizer.prioritize assertfn targets)) in
+	Driver.run ~interceptor ~queue job
   in
 
   (* compute call graph and provide a helper function for finding callers *)

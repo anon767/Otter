@@ -3,6 +3,8 @@ open Cil
 open OtterBytes
 open OtterCore
 open OtterJob
+open OtterQueue
+open OtterReporter
 open OtterDriver
 open Types
 (*open InvInput*)
@@ -42,8 +44,8 @@ let doExecute (f: file) =
             FunctionJob.make f entryfn
     in
 
-    (* run the job *)
-    let result = Driver.run job in
+	(* run the job *)
+	let completed = Driver.run_basic job in
 
 	(* Turn off the alarm and reset the signal handlers *)
 	ignore (Unix.alarm 0);
@@ -88,14 +90,14 @@ let doExecute (f: file) =
         ()
   end;
      *)
-    Report.print_report result
+    Report.print_report completed
 
 
 let feature : featureDescr = {
 	fd_name = "execute";
 	fd_enabled = ref false;
 	fd_description = "(symbolic) executor for C";
-	fd_extraopt = Executeargs.options;
+	fd_extraopt = Executeargs.options @ Queue.options @ Driver.options;
 	fd_post_check = true;
 	fd_doit = doExecute;
 }

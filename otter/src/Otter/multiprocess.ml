@@ -316,7 +316,7 @@ let run job =
 	let multijob = put_job job multijob 0 in
 
 	(* start executing *)
-	Driver.main_loop 
+	LegacyDriver.main_loop 
 		get_job_multijob
 		(
 			unpack_job_interceptor @@
