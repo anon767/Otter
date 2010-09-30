@@ -1,4 +1,6 @@
 DataStructures/Deferred
 DataStructures/Counter
 DataStructures/ImmutableArray
+DataStructures/RandomAccessList
+DataStructures/RandomBag
 DataStructures/Ternary
