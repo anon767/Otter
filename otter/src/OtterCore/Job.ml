@@ -82,7 +82,7 @@ type job = {
 	state : Types.state;
 	exHist : executionHistory;
 	decisionPath : fork_decision list; (** The decision path is a list of fork_decision. Most recent decision first. *)
-    boundingPaths : fork_decision list list option; (** The execution can only run on these paths, if exist *)
+    boundingPaths : fork_decision list list option; (** The execution can only run on these paths, if exist. Paths have most recent decision first. *)
 	instrList : Cil.instr list; (** [instr]s to execute before moving to the next [stmt] *)
 	stmt : Cil.stmt;            (** The next statement the job should execute *)
 	trackedFns : StringSet.t;	(** The set of functions (names) in which to track coverage *)
