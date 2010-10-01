@@ -116,21 +116,3 @@ let mprint_formatter =
     (fun () -> ())
 let mprintf format = Format.fprintf mprint_formatter format
 
-
-let banner_buffer = Buffer.create 100
-let banner_out = Buffer.add_substring banner_buffer
-let banner_flush () = 
-  let s = Buffer.contents banner_buffer in
-    Buffer.reset banner_buffer;
-    let ss = Str.split (Str.regexp "\n") s in
-    let max = List.fold_left (fun x s -> let l=String.length s in if l>x then l else x) 0 ss in
-      mprintf "\n%s\n" (String.make (max) '{');
-      List.iter (mprintf "%s\n") ss;
-      mprintf "%s\n\n" (String.make (max) '}')
-
-
-let banner_formatter = Format.make_formatter banner_out banner_flush
-let banner_printf level format = 
-  (* TODO (martin): different scale of banner for different level *)
-    Format.fprintf banner_formatter format
-

@@ -13,7 +13,7 @@ let doExecute (f: file) =
 
 	Random.init 226; (* Random is used in Bytes *)
 
-	Output.banner_printf 3 "Otter, a symbolic executor for C\n%!";
+	Output.printf "Otter, a symbolic executor for C@\n@\n";
 
 	(* Keep track of how long we run *)
 	let startTime = Unix.gettimeofday () in

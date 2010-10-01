@@ -2,7 +2,7 @@ open OcamlUtilities
 
 let abandoned_reason ff = function
     | `Failure msg -> Format.fprintf ff "`Failure:%s" msg
-    | `FailingPaths (_:(Job.fork_decision list list)) -> Format.fprintf ff "" (* TODO (martin): print something meaningful *)
+    | `FailingPaths (_:(Job.fork_decision list list)) -> Format.fprintf ff "(FailingPaths)" (* TODO (martin): print something meaningful *)
 
 let print_report results =
 	let coverage, completed, truncated, abandoned =

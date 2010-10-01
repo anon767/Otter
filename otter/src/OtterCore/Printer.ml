@@ -62,7 +62,7 @@ let stmt_kind ff s =
 		@param fn is the {!Cil.fundec} to print
 *)
 let fundec ff fn =
-	Format.fprintf ff "%s@;<1 2>: @[%a@]" fn.Cil.svar.Cil.vname Printcil.typ fn.Cil.svar.Cil.vtype
+	Format.fprintf ff "%s: @[%a@]" fn.Cil.svar.Cil.vname Printcil.typ fn.Cil.svar.Cil.vtype
 
 
 (** Print a list of {!Types.callingContext}.
