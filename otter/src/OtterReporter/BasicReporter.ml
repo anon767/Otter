@@ -23,3 +23,5 @@ class ['reason] t = object
     method completed = completed
 
 end
+
+let make () = new t

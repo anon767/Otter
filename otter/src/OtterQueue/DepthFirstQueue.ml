@@ -11,3 +11,5 @@ class ['job] t = object
         | job::rest -> Some ({< stack = rest >}, job)
         | [] -> None
 end
+
+let make () = new t

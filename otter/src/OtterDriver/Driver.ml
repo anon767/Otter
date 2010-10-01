@@ -59,7 +59,7 @@ let main_loop ?(bound=0) ?interceptor:interceptor_opt ?(queue=Queue.get_default 
 (** {1 Precomposed drivers for common use cases} *)
 
 let run ?interceptor ?queue job =
-    (main_loop ?interceptor ?queue (new BasicReporter.t) job)#completed
+    (main_loop ?interceptor ?queue (BasicReporter.make ()) job)#completed
 
 (** Driver using the core symbolic executor only. *)
 let run_core job =

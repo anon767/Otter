@@ -13,3 +13,5 @@ class ['job] t = object
         | [], job::rest -> Some ({< current = rest; next = [] >}, job)
         | [], [] -> None
 end
+
+let make () = new t

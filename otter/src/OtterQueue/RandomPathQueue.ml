@@ -54,3 +54,5 @@ class ['job] t = object
         in
         descend `Top tree
 end
+
+let make () = new t
