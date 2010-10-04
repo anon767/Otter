@@ -54,7 +54,7 @@ let is_empty (list : 'a t) = list = []
 
 let length (list : 'a t) = List.fold_left (fun n (size, _) -> n + size) 0 list
 
-let single value : 'a t = [ (1, Leaf value) ]
+let singleton value : 'a t = [ (1, Leaf value) ]
 
 let cons x (list : 'a t) = match list with
     | (size1, t1)::(size2, t2)::rest when size1 = size2 -> (1 + size1 + size2, Node (x, t1, t2))::rest
