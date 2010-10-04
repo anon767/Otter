@@ -4,6 +4,7 @@ CilUtilities
 OtterBytes
 OtterCore
 OtterJob
+OtterQueue
 OtterReporter
 OtterDriver
 Otter
