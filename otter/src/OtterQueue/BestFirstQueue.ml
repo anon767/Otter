@@ -19,7 +19,8 @@ class ['job] t prioritizer max_priority = object
         Some ({< heap = Heap.delete_min heap >}, job)
 end
 
-let make prioritizer max_priority = new t prioritizer max_priority
 let default_prioritizer job = 0.0
 let default_max_priority = 1.0
+
+let make prioritizer max_priority = new t prioritizer max_priority
 let make_default () = make default_prioritizer default_max_priority

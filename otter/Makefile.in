@@ -31,7 +31,7 @@ debug : ocamlbuild//runotter.d.byte config
 
 libs : $(addprefix ocamlbuild//,Otter.cmxa Otter.a Otter.cma Otter.cmi)
 libs : OCAMLBUILD_MORE_CMI= \
-		DataStructures.cmi CilUtilities.cmi OcamlUtilities.cmi OtterBytes.cmi \
+		DataStructures.cmi CilUtilities.cmi OcamlUtilities.cmi OtterBytes.cmi OtterGraph.cmi\
 		OtterCore.cmi OtterJob.cmi OtterQueue.cmi OtterReporter.cmi OtterDriver.cmi
 
 test : ounit//runtestotter.d.byte
@@ -53,7 +53,7 @@ doc : api dot
 
 api : $(foreach foo, \
 		CilUtilities DataStructures OcamlUtilities OtterBytes OtterCore OtterJob \
-		OtterQueue OtterReporter OtterDriver Otter TestUtil, \
+		OtterGraph OtterQueue OtterReporter OtterDriver Otter TestUtil, \
 		ocamlbuild//$(foo).docdir)
 
 dot : ocamlbuild//All.dot
