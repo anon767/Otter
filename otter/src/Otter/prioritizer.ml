@@ -6,6 +6,7 @@ open Job
 open Cil
 open Hashtbl
 
+(* TODO (martin) refactor this module *)
 
 (* TODO (martin): move failing_predicate and target to another module *)
 type failing_predicate =
@@ -26,11 +27,6 @@ type target = {
 let time = ref 0.0
 let timer () =
     (time:=(!time+.1.0);!time)
-
-
-let lifo job = timer () 
-let fifo job = -. (timer ()) 
-
 
 
 module InstrStmt =
@@ -307,9 +303,10 @@ let prioritize assertfn targets job =
                                                   min d d'
                                              )
                                              max_int target_nodes
-      in -. (float_of_int backward_distance_from_targets)
+      in (float_of_int backward_distance_from_targets)
     end
   else 
-    lifo job
+    timer ()
 
+let max_priority = 1073741822.0
 

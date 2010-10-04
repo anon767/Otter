@@ -13,9 +13,6 @@ open Types
 open Job
 open Cil
 
-(* TODO (martin): move this to somewhere else *)
-let threshold = -.(float_of_int (max_int - 1))
-
 let print_decisions ff decisions =
     let print_decision ff decision = 
         match decision with
@@ -46,29 +43,6 @@ let print_list name print_function lst =
     List.iter (Format.printf "Element: @[%a@]@\n" print_function) lst;
     Format.printf "-----------------------------------------@\n"
 
-
-class prioritized_job_queue (prioritizer : (job -> float)) = object (self)
-	val get_priority = prioritizer 
-	val queue = PriorityQueue.make (fun j1 j2 -> j1#priority >= j2#priority)
-
-	method get =
-		try
-			let first = PriorityQueue.first queue in
-			PriorityQueue.remove_first queue;
-			Some (self, first#job)
-		with Failure "PriorityQueue.first: empty queue" ->
-			None
-
-	method put job =
-		let priority = get_priority job in
-        (* TODO (martin): well define epsilon? *)
-		if priority < threshold +. 0.1 then
-			Output.printf "Warning: job %d not continued@\n" job.jid
-		else
-			(* Output.printf "Add Job %d with priority %0.1f@\n" job.jid priority; *)
-			PriorityQueue.add queue (object method job=job method priority=priority end);
-		self
-end
 
 let test_job_at_targets targets job =
 	(* if job meets one of the targets, do checking *)
@@ -237,8 +211,8 @@ let callchain_backward_se file entryfn assertfn job_init : _ job_completion list
           Interceptor.set_output_formatter_interceptor
           >>> (test_job_at_targets_interceptor targets)
           >>> BuiltinFunctions.interceptor in
-	let queue = (new prioritized_job_queue (Prioritizer.prioritize assertfn targets)) in
-	Driver.run ~interceptor ~queue job
+	let queue = BestFirstQueue.make (Prioritizer.prioritize assertfn targets) Prioritizer.max_priority in 
+    Driver.run ~interceptor ~queue job
   in
 
   (* compute call graph and provide a helper function for finding callers *)
@@ -255,7 +229,7 @@ let callchain_backward_se file entryfn assertfn job_init : _ job_completion list
   in
 
   (* The implementation of main loop *)
-  let rec callchain_backward_main_loop job targets =
+  let rec callchain_backward_main_loop job targets : 'reason job_completion list =
 	(* Assume we start at f *)
 	let f = List.hd job.state.callstack in
 	(* Run forward SE based on the targets *)
@@ -291,24 +265,28 @@ let callchain_backward_se file entryfn assertfn job_init : _ job_completion list
         (* TODO (martin): based on the properties of the function, and the failing_paths,
          *                decide if the failing predicate is a condition or paths
          *)
-		let new_target = {
-		  Prioritizer.target_func = f;
-          Prioritizer.target_predicate = Prioritizer.FailingPaths(failing_paths);
-		} in
-        Format.printf "Create new target for function %s with bounding paths:@\n" f.svar.vname;
-        print_list "Bounding Path" print_decisions failing_paths;
-		let callers = get_callers f in
-          print_list (Format.sprintf "Function %s's caller" f.svar.vname) Printer.fundec callers;
-		  List.fold_left 
-		  (
-			fun lst caller -> 
-			  let targets' = (new_target::targets) in
-              let _ = print_targets caller targets' in
-			  let job' = job_init caller in
-			  let lst' = callchain_backward_main_loop job' targets'  in
-				List.rev_append lst' lst
-		  ) 
-		  [] callers
+        if failing_paths = [] then
+            let _ = Format.printf "No failing paths from calling function %s.@\n" f.svar.vname in
+            []
+        else
+		    let new_target = {
+		      Prioritizer.target_func = f;
+              Prioritizer.target_predicate = Prioritizer.FailingPaths(failing_paths);
+		    } in
+            Format.printf "Create new target for function %s with bounding paths:@\n" f.svar.vname;
+            print_list "Bounding Path" print_decisions failing_paths;
+		    let callers = get_callers f in
+              print_list (Format.sprintf "Function %s's caller" f.svar.vname) Printer.fundec callers;
+		      List.fold_left 
+		      (
+		    	fun lst caller -> 
+		    	  let targets' = (new_target::targets) in
+                  let _ = print_targets caller targets' in
+		    	  let job' = job_init caller in
+		    	  let lst' = callchain_backward_main_loop job' targets'  in
+		    		List.rev_append lst' lst
+		      ) 
+		      [] callers
   in
 
   let assert_target = {
@@ -352,7 +330,7 @@ let doit file =
 
 	(* print the results *)
 	Output.set_formatter (new Output.plain);
-	Output.printf "%s@@\n" (Executedebug.get_log ());
+	Output.printf "%s@\n@\n" (Executedebug.get_log ());
 	List.iter (fun result -> Report.print_report result) results
 
 
