@@ -12,6 +12,7 @@ module OcamlbuildDependencies = struct
     open OtterQueue
     open OtterReporter
     open OtterDriver
+    open OtterGraph
     open Otter
 end
 
