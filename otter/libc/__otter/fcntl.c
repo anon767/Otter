@@ -43,7 +43,7 @@ int __otter_libc_fcntl(int fd, int cmd, ...)
 
 			if(open_file) /* is file a valid file entry? */
 			{
-				r = __otter_fs_change_open_mode(fd, mode);
+				r = __otter_fs_change_open_mode(open_file, mode);
 			}
 			break;
 		}

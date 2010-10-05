@@ -96,14 +96,15 @@ int __otter_fs_change_dir_open_mode(int file, int mode);
 
 int __otter_fs_legal_name(const char* name);
 
-struct __otter_fs_dnode* __otter_fs_chmod_dir(int mode, struct __otter_fs_dnode* dir);
-struct __otter_fs_inode* __otter_fs_chmod_file(int mode, struct __otter_fs_inode* file);
+int __otter_fs_chmod_dir(int mode, struct __otter_fs_dnode* dir);
+int __otter_fs_chmod_file(int mode, struct __otter_fs_inode* file);
 struct __otter_fs_dnode* __otter_fs_mkdir(const char* name, struct __otter_fs_dnode* dir);
 struct __otter_fs_inode* __otter_fs_touch(const char* name, struct __otter_fs_dnode* dir);
 int __otter_fs_unlink_in_dir(const char* name, struct __otter_fs_dnode* dir);
 int __otter_fs_rmdir_in_dir(const char* name, struct __otter_fs_dnode* dir);
-struct __otter_fs_inode* __otter_fs_link_file(const char* name, struct __otter_fs_inode* target, struct __otter_fs_dnode* dir);
-struct __otter_fs_dnode* __otter_fs_link_dir(const char* name, struct __otter_fs_dnode* target, struct __otter_fs_dnode* dir);
+int __otter_fs_link_file(const char* name, struct __otter_fs_inode* target, struct __otter_fs_dnode* dir);
+int __otter_fs_link_dir(const char* name, struct __otter_fs_dnode* target, struct __otter_fs_dnode* dir);
+int __otter_fs_change_open_mode(struct __otter_fs_open_file_table_entry* open_file, int mode);
 
 void __otter_fs_mount();
 

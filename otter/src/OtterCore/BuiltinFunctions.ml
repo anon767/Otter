@@ -977,6 +977,9 @@ let libc_interceptor job job_queue interceptor =
 		(intercept_function_by_name_external "pwrite"                  "__otter_libc_pwrite") @@
 		(intercept_function_by_name_external "unlink"                  "__otter_libc_unlink") @@
 		(intercept_function_by_name_external "rmdir"                   "__otter_libc_rmdir") @@
+		(intercept_function_by_name_external "lseek"                   "__otter_libc_lseek") @@
+		(intercept_function_by_name_external "getuid"                  "__otter_libc_getuid") @@
+		(intercept_function_by_name_external "setuid"                  "__otter_libc_setuid") @@
 
 		(* sys/fcntl.h *)
 		(intercept_function_by_name_external "creat"                   "__otter_libc_creat") @@

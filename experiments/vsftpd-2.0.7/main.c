@@ -45,6 +45,7 @@ main(int argc, const char* argv[])
   __otter_fs_mount();
   __otter_fs_touch("foo.txt", __otter_fs_pwd);
   open("foo.txt", O_RDWR);
+  setuid(__otter_UID_ROOT);
 
   struct vsf_session the_session =
   {
@@ -118,8 +119,6 @@ main(int argc, const char* argv[])
     }
     vsf_sysutil_free(p_statbuf);
   }
-
-	symtest_initialize(); // ADDED FOR PURPOSES OF SYMBOLIC TESTING
 
   /* Resolve pasv_address if required */
   if (tunable_pasv_address && tunable_pasv_addr_resolve)

@@ -1,4 +1,5 @@
 #include <__otter/otter_fs.h>
+#include <__otter/otter_user.h>
 
 #include <string.h>
 #include <ctype.h>
@@ -12,9 +13,9 @@
 
 int __otter_fs_can_permission(int filep, int wantp)
 {
-	if(filep & 0x2000)
+	if(__otter_fs_is_owner(filep))
 		wantp = wantp << 6;
-	else if(filep & 0x1000)
+	else if(__otter_fs_is_group(filep))
 		wantp = wantp << 3;
 
 	return ((filep & wantp) == wantp);
@@ -22,12 +23,12 @@ int __otter_fs_can_permission(int filep, int wantp)
 
 int __otter_fs_is_owner(int filep)
 {
-	return (filep & 0x2000);
+	return ((filep & 0x2000 && __otter_uid == __otter_UID_USER) || (__otter_uid == __otter_UID_ROOT));
 }
 
 int __otter_fs_is_group(int filep)
 {
-	return (filep & 0x1000);
+	return ((filep & 0x1000 && __otter_uid == __otter_GID_USER) || (__otter_uid == __otter_GID_ROOT));
 }
 
 struct __otter_fs_inode* __otter_fs_find_inode_in_dir(const char* name, struct __otter_fs_dnode* dir)
@@ -210,24 +211,24 @@ int __otter_fs_legal_name(const char* name)
 	return (0);
 }
 
-struct __otter_fs_dnode* __otter_fs_chmod_dir(int mode, struct __otter_fs_dnode* dir)
+int __otter_fs_chmod_dir(int mode, struct __otter_fs_dnode* dir)
 {
 	if(__otter_fs_is_owner((*dir).permissions)) /* can't chmod unless user owns */
 		__otter_fs_error(EPERM);
 
 	(*dir).permissions = mode & 0x0FFF;
 
-	return dir;
+	return(1);
 }
 
-struct __otter_fs_inode* __otter_fs_chmod_file(int mode, struct __otter_fs_inode* file)
+int __otter_fs_chmod_file(int mode, struct __otter_fs_inode* file)
 {
 	if(__otter_fs_is_owner((*file).permissions)) /* can't chmod unless user owns */
 		__otter_fs_error(EPERM);
 
 	(*file).permissions = mode & 0x0FFF;
 
-	return file;
+	return(1);
 }
 
 int __otter_fs_umask = 0x31ED;
@@ -283,7 +284,7 @@ struct __otter_fs_dnode* __otter_fs_mkdir(const char* name, struct __otter_fs_dn
 		return newdir;
 	}
 
-	return NULL;
+	__otter_fs_error(EINVAL);
 }
 
 struct __otter_fs_inode* __otter_fs_touch(const char* name, struct __otter_fs_dnode* dir)
@@ -329,7 +330,7 @@ struct __otter_fs_inode* __otter_fs_touch(const char* name, struct __otter_fs_dn
 		return newfile;
 	}
 
-	return NULL;
+	__otter_fs_error(EINVAL);
 }
 
 int __otter_fs_unlink_in_dir(const char* name, struct __otter_fs_dnode* dir)
@@ -435,7 +436,7 @@ int __otter_fs_rmdir_in_dir(const char* name, struct __otter_fs_dnode* dir)
 
 }
 
-struct __otter_fs_inode* __otter_fs_link_file(const char* name, struct __otter_fs_inode* target, struct __otter_fs_dnode* dir)
+int __otter_fs_link_file(const char* name, struct __otter_fs_inode* target, struct __otter_fs_dnode* dir)
 {
 	if(!__otter_fs_can_permission((*dir).permissions, 2)) /* can't write to dir */
 		__otter_fs_error(EACCESS);
@@ -445,7 +446,7 @@ struct __otter_fs_inode* __otter_fs_link_file(const char* name, struct __otter_f
 		struct __otter_fs_dnode* d = __otter_fs_find_dnode_in_dir(name, dir);
 		struct __otter_fs_inode* f = __otter_fs_find_inode_in_dir(name, dir);
 		if(d || f) /* file or directory already exists */
-			return NULL;
+			__otter_fs_error(EEXIST);
 
 		struct __otter_fs_dirlist* files = (*dir).files;
 		struct __otter_fs_dirlist* pfiles = NULL;
@@ -469,13 +470,13 @@ struct __otter_fs_inode* __otter_fs_link_file(const char* name, struct __otter_f
 		else
 			(*dir).files = newfilelist;
 
-		return target;
+		return(1);
 	}
 
-	return NULL;
+	__otter_fs_error(EINVAL);
 }
 
-struct __otter_fs_dnode* __otter_fs_link_dir(const char* name, struct __otter_fs_dnode* target, struct __otter_fs_dnode* dir)
+int __otter_fs_link_dir(const char* name, struct __otter_fs_dnode* target, struct __otter_fs_dnode* dir)
 {
 	if(!__otter_fs_can_permission((*dir).permissions, 2)) /* can't write to dir */
 		__otter_fs_error(EACCESS);
@@ -485,7 +486,7 @@ struct __otter_fs_dnode* __otter_fs_link_dir(const char* name, struct __otter_fs
 		struct __otter_fs_dnode* d = __otter_fs_find_dnode_in_dir(name, dir);
 		struct __otter_fs_inode* f = __otter_fs_find_inode_in_dir(name, dir);
 		if(d || f) /* file or directory already exists */
-			return NULL;
+			__otter_fs_error(EEXIST);
 
 		struct __otter_fs_dirlist* dirs = (*dir).dirs;
 		struct __otter_fs_dirlist* pdirs = NULL;
@@ -509,10 +510,10 @@ struct __otter_fs_dnode* __otter_fs_link_dir(const char* name, struct __otter_fs
 		else
 			(*dir).dirs = newdirlist;
 
-		return target;
+		return(1);
 	}
 
-	return NULL;
+	__otter_fs_error(EINVAL);
 }
 
 /* file descriptors */
@@ -632,78 +633,67 @@ int __otter_fs_open_dir(struct __otter_fs_dnode* dnode, int mode)
 	return (fd);
 }
 
-int __otter_fs_change_file_open_mode(int file, int mode)
+int __otter_fs_change_open_mode(struct __otter_fs_open_file_table_entry* open_file, int mode)
 {
-	if(file > -1 && file < __otter_fs_MAXOPEN) /* is file a possible valid file? */
+	int old_mode = (*open_file).mode;
+	int changed = old_mode ^ mode;
+	int add = changed & mode;
+	int remove = changed & old_mode;
+
+	int permissions = 0;
+	if(add & O_RDONLY)
+		permissions += 2;
+	if(add & O_WRONLY)
 	{
-		int ft = __otter_fs_fd_table[file];
+		permissions += 4;
 
-		if(ft > -1) /* is file a valid file entry? */
+		if((*open_file).type == __otter_fs_TYP_DIR) /* can't have write access to a directory */
 		{
-			int old_mode = __otter_fs_open_file_table[ft].mode;
-			int changed = old_mode ^ mode;
-			int add = changed & mode;
-			int remove = changed & old_mode;
-
-			int permissions = 0;
-			if(add & O_RDONLY)
-				permissions += 2;
-			if(add & O_WRONLY)
-			{
-				permissions += 4;
-
-				if(__otter_fs_open_file_table[ft].type == __otter_fs_TYP_DIR) /* can't have write access to a directory */
-				{
-					errno = EISDIR;
-					return (-1);
-				}
-			}
-
-			if(__otter_fs_open_file_table[ft].type == __otter_fs_TYP_FILE)
-			{
-				struct __otter_fs_inode* inode = ((struct __otter_fs_inode*)__otter_fs_open_file_table[ft].vnode);
-
-				if(!__otter_fs_can_permission((*inode).permissions, permissions))
-				{
-					errno = EACCESS;
-					return (-1);
-				}
-
-				if(add & O_RDONLY)
-					(*inode).r_openno++;
-				if(add & O_WRONLY)
-					(*inode).w_openno++;
-
-				if(remove & O_RDONLY)
-					(*inode).r_openno--;
-				if(remove & O_WRONLY)
-					(*inode).w_openno--;
-			}
-			else
-			{
-				struct __otter_fs_dnode* dnode = ((struct __otter_fs_dnode*)__otter_fs_open_file_table[ft].vnode);
-
-				if(!__otter_fs_can_permission((*dnode).permissions, permissions))
-				{
-					errno = EACCESS;
-					return (-1);
-				}
-
-				if(add & O_RDONLY)
-					(*dnode).r_openno++;
-
-				if(remove & O_RDONLY)
-					(*dnode).r_openno--;
-			}
-
-			__otter_fs_open_file_table[ft].mode = mode;
-
-			return(1);
+			errno = EISDIR;
+			return (-1);
 		}
 	}
 
-	__otter_fs_error(EBADF);
+	if((*open_file).type == __otter_fs_TYP_FILE)
+	{
+		struct __otter_fs_inode* inode = ((struct __otter_fs_inode*)(*open_file).vnode);
 
+		if(!__otter_fs_can_permission((*inode).permissions, permissions))
+		{
+			errno = EACCESS;
+			return (-1);
+		}
+
+		if(add & O_RDONLY)
+			(*inode).r_openno++;
+		if(add & O_WRONLY)
+			(*inode).w_openno++;
+
+		if(remove & O_RDONLY)
+			(*inode).r_openno--;
+		if(remove & O_WRONLY)
+			(*inode).w_openno--;
+	}
+	else
+	{
+		struct __otter_fs_dnode* dnode = ((struct __otter_fs_dnode*)(*open_file).vnode);
+
+		if(!__otter_fs_can_permission((*dnode).permissions, permissions))
+		{
+			errno = EACCESS;
+			return (-1);
+		}
+
+		if(add & O_RDONLY)
+			(*dnode).r_openno++;
+
+		if(remove & O_RDONLY)
+			(*dnode).r_openno--;
+	}
+
+	(*open_file).mode = mode;
+
+	return(1);
 }
 
 /* file system initilization */

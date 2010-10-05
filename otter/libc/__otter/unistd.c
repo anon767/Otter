@@ -2,6 +2,7 @@
 #include<stdlib.h>
 #include<string.h>
 #include<fcntl.h>
+#include<__otter/otter_user.h>
 
 int __otter_libc_close(int fd)
 {
@@ -384,7 +385,7 @@ int __otter_libc_rmdir(const char* path)
 	return (__otter_fs_rmdir_in_dir(filename, dnode) - 1);
 }
 
-off_t lseek(int fd, off_t offset, int whence)
+off_t __otter_libc_lseek(int fd, off_t offset, int whence)
 {
 	struct __otter_fs_open_file_table_entry* open_file = get_open_file_from_fd(fd);
 	if (!open_file) return -1;
@@ -422,4 +423,29 @@ off_t lseek(int fd, off_t offset, int whence)
 	open_file->offset = newOffset;
 	
 	return newOffset;
+}
+
+uid_t __otter_libc_getuid(void)
+{
+	return(__otter_uid);
+}
+
+int __otter_libc_setuid(uid_t uid)
+{
+	if(uid == __otter_UID_ROOT || uid == __otter_UID_USER) /* only two valid users */
+	{
+		/*Assume that the user would authenticate as needed*/
+
+		if(__otter_uid ^ uid) /*uid changed*/
+		{
+			__otter_fs_umask = __otter_fs_umask ^ 0x3000;  /* flip owner and user bits */
+			__otter_uid = uid;
+
+		}
+
+		return(0);
+	}
+
+	errno = EINVAL;
+	return(-1);
 }
