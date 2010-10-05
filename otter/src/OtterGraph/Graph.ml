@@ -1,23 +1,23 @@
 open Cil
 open InstrStmt
 
-type graph_node = 
+type node = 
     { 
-        mutable obj: instr_stmt;
-        mutable prevs: graph_node list;
-        mutable nexts: graph_node list;
+        mutable obj: InstrStmt.t;
+        mutable prevs: node list;
+        mutable nexts: node list;
         mutable color: int;
     }
 
+type t = (InstrStmt.t,node) Hashtbl.t 
 
-type graph = (instr_stmt,graph_node) Hashtbl.t 
 let print_node node = 
-  let s = Printf.sprintf "Node: \x1b[34m%s\x1b[m Color: \x1b[31m%s\x1b[m\n" (print_instr_stmt ~obj:(Some node) node.obj) (if node.color = max_int then "inf" else string_of_int node.color)
+  let s = Printf.sprintf "Node: \x1b[34m%s\x1b[m Color: \x1b[31m%s\x1b[m\n" (InstrStmt.print ~obj:(Some node) node.obj) (if node.color = max_int then "inf" else string_of_int node.color)
   in
   let s = List.fold_left 
       begin
         fun str next -> 
-          let s = Printf.sprintf "\tNext: %s\n" (print_instr_stmt ~obj:(Some next) next.obj) in
+          let s = Printf.sprintf "\tNext: %s\n" (InstrStmt.print ~obj:(Some next) next.obj) in
             str^s
       end
       s node.nexts
@@ -25,7 +25,7 @@ let print_node node =
   let s = List.fold_left 
       begin
         fun str next -> 
-          let s = Printf.sprintf "\tPrev: %s\n" (print_instr_stmt ~obj:(Some next) next.obj) in
+          let s = Printf.sprintf "\tPrev: %s\n" (InstrStmt.print ~obj:(Some next) next.obj) in
             str^s
       end
       s node.prevs
@@ -38,7 +38,7 @@ let print_graph graph =
     List.iter (fun s -> Format.printf "%s" s) lst;
   ()
 
-let graph__set_color graph color =
+let set_color graph color =
   Hashtbl.iter (fun _ node -> node.color <-color) graph
 
 let make_graph_node graph instr_stmt =
@@ -68,29 +68,29 @@ let make_graph fundec =
           | Stmt(stmt) -> 
               begin match stmt.skind with
                 | Cil.Instr (instrs) -> 
-                    let succ = make_instr_stmt_Instr (instrs,stmt) in
+                    let succ = InstrStmt.make_instr (instrs,stmt) in
                       explore_succ graph node succ
                 | Cil.Switch _ 
                 | Cil.Break _ 
                 | Cil.Continue _ -> failwith "Cil programs after prepareCFG should not contain switches, breaks or continues"
                 | Cil.Goto (stmtref,_) ->
                     assert( !stmtref == List.hd stmt.succs);
-                    List.iter (explore_succ graph node) (List.map make_instr_stmt_Stmt stmt.succs)
+                    List.iter (explore_succ graph node) (List.map InstrStmt.make_stmt stmt.succs)
                 | Cil.Block (block)
                 | Cil.Loop (block,_,_,_) ->
                     (* From driver.ml, it seems that Loop's succs is bogus.
                      * We have to look at block.bstmts
                      *)
 				    let nextStmt = List.hd block.bstmts in
-                    explore_succ graph node (make_instr_stmt_Stmt nextStmt)
+                    explore_succ graph node (InstrStmt.make_stmt nextStmt)
                 | _ -> 
-                    List.iter (explore_succ graph node) (List.map make_instr_stmt_Stmt stmt.succs)
+                    List.iter (explore_succ graph node) (List.map InstrStmt.make_stmt stmt.succs)
               end
           | Instr(instr::instrs,stmt) ->
-              let succ = make_instr_stmt_Instr (instrs,stmt) in
+              let succ = InstrStmt.make_instr (instrs,stmt) in
                 explore_succ graph node succ
           | Instr([],stmt) ->
-              List.iter (explore_succ graph node) (List.map make_instr_stmt_Stmt stmt.succs)
+              List.iter (explore_succ graph node) (List.map InstrStmt.make_stmt stmt.succs)
       end
   and explore_succ graph node succ =
     let node' = make_graph_node graph succ in
@@ -112,13 +112,13 @@ let make_graph fundec =
   in
   let graph = Hashtbl.create 100 in
   let stmt = List.hd fundec.sallstmts in
-  let root = make_graph_node graph (make_instr_stmt_Stmt stmt) in
+  let root = make_graph_node graph (InstrStmt.make_stmt stmt) in
     make_graph_forward graph root;
     make_graph_backward graph ;
     graph,root
 
 
-let graph__get_nodes_satisfying graph predicate =
+let filter_nodes graph predicate : node list =
   Hashtbl.fold 
     begin
       fun _ node lst ->
@@ -126,24 +126,6 @@ let graph__get_nodes_satisfying graph predicate =
     end
     graph []
 
-(*
-let backward_reachable graph src tar =
-  let rec dfs tar =
-    if tar == src then true
-    else if tar.color = 1 then false 
-    else
-      begin
-        tar.color <- 1;
-        List.fold_left 
-          begin
-            fun t prev -> if t then true else dfs prev 
-          end false tar.prevs
-      end
-  in
-    graph__set_color graph 0;
-    dfs tar 
-
- *)
 let backward_distance graph src tar =
   let rec bfs tars =
     let tars' = 
@@ -183,8 +165,6 @@ let backward_distance graph src tar =
       else if tars' = [] then max_int 
       else bfs tars'
   in
-    graph__set_color graph max_int;
+    set_color graph max_int;
     tar.color <- 0;
     bfs [tar] 
-
-

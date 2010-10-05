@@ -8,10 +8,60 @@ open OtterJob
 open OtterQueue
 open OtterReporter
 open OtterDriver
+open OtterGraph
+open Graph
 open Bytes
 open Types
 open Job
 open Cil
+
+type failing_predicate =
+    | FailingCondition of state * Bytes.bytes (* TODO (martin): make the condition a list of bytes *)
+    | FailingPaths of fork_decision list list
+
+type target = {
+  target_func: Cil.fundec;
+  target_predicate: failing_predicate;
+}
+
+let distance_to_targets_prioritizer callstack target_fundecs job = 
+    if (List.length job.state.callstack) = (List.length callstack) then
+      let graph,root = make_graph (List.hd job.state.callstack) in
+      let target_nodes = 
+        Graph.filter_nodes graph 
+          begin
+            fun node -> match node.obj with
+              | InstrStmt.Instr((Call(_,Lval(Var(varinfo),_),exps,_))::_,_)  ->
+                  List.fold_left (fun b t -> if t.svar == varinfo then true else b) false target_fundecs
+              | _ -> false
+          end
+      in
+      let get_predicate job node = 
+        match job.instrList,job.stmt,node.obj with
+          | [],stmt,InstrStmt.Stmt(stmt') when stmt==stmt' -> true
+          | [],_,_ -> false
+          | instrs,_,InstrStmt.Instr(instrs',_) when instrs==instrs' -> true
+          | _ -> false
+      in
+      let sources = Graph.filter_nodes graph (get_predicate job) in
+      assert(List.length sources = 1);
+      let source = List.hd sources in
+      Graph.set_color graph max_int;
+      let backward_distance_from_targets = 
+          List.fold_left (fun d tar -> 
+              let d' = Graph.backward_distance graph source tar in
+                  min d d'
+          ) max_int target_nodes
+      in 
+          if backward_distance_from_targets = max_int then
+              BestFirstQueue.Drop (Printf.sprintf "Warning: job %d dropped" job.jid)
+          else
+              BestFirstQueue.Rank (float_of_int backward_distance_from_targets)
+    else
+        (* If not in entry function (through function calls), avoid running it early.
+         * TODO (martin): give a rank equal to the rank of the function call in the entry function?
+         *)
+        BestFirstQueue.Rank (max_float)
 
 let print_decisions ff decisions =
     let print_decision ff decision = 
@@ -67,10 +117,10 @@ let test_job_at_targets targets job =
             in
             print_list "Active Job" print_job active_jobs;
             (* Match jobs with their corresponding targets *)
-            let targetted_jobs : (Job.job * Prioritizer.target) list = 
+            let targetted_jobs : (Job.job * target) list = 
                 List.fold_left (fun targetted_jobs job ->
                     let fundec = List.hd job.state.callstack in
-                    let matched_targets = List.filter (fun target -> fundec == target.Prioritizer.target_func) targets in
+                    let matched_targets = List.filter (fun target -> fundec == target.target_func) targets in
                     assert (List.length matched_targets <= 1);
                     if List.length matched_targets = 0 then
                         targetted_jobs
@@ -158,11 +208,11 @@ let test_job_at_targets targets job =
             let failing_paths : fork_decision list list = 
                 List.fold_left (
                     fun failing_paths (job,target) ->
-                        Format.printf "Test job %d at target function @[%a@]@\n" job.jid Printer.fundec target.Prioritizer.target_func;
+                        Format.printf "Test job %d at target function @[%a@]@\n" job.jid Printer.fundec target.target_func;
                         let partial_failing_paths = 
-                          match target.Prioritizer.target_predicate with
-                          | Prioritizer.FailingCondition (_,_) -> failwith "Not implemented yet"
-                          | Prioritizer.FailingPaths (paths) ->  
+                          match target.target_predicate with
+                          | FailingCondition (_,_) -> failwith "Not implemented yet"
+                          | FailingPaths (paths) ->  
                               (* paths have most recent decision first. Therefore we need to reverse them *)
                               let bounding_paths = List.map List.rev paths in
                               let job_completions : 'reason job_completion list = forward_otter_bounded_by_paths job bounding_paths in
@@ -201,7 +251,7 @@ let callchain_backward_se file entryfn assertfn job_init : _ job_completion list
   let print_targets fn ts =
 	Format.printf "@\nStart forward SE on function %s with target(s): %s@\n@\n"
 	  (fn.svar.vname) 
-      (let s=(String.concat "," (List.map (fun t -> t.Prioritizer.target_func.svar.vname) ts)) in if s="" then "(none)" else s)
+      (let s=(String.concat "," (List.map (fun t -> t.target_func.svar.vname) ts)) in if s="" then "(none)" else s)
   in
 
   (* Run forward SE on the examining function (job), given the targets. *)
@@ -211,8 +261,13 @@ let callchain_backward_se file entryfn assertfn job_init : _ job_completion list
           Interceptor.set_output_formatter_interceptor
           >>> (test_job_at_targets_interceptor targets)
           >>> BuiltinFunctions.interceptor in
-	let queue = BestFirstQueue.make (Prioritizer.prioritize assertfn targets) Prioritizer.max_priority in 
-    Driver.run ~interceptor ~queue job
+	let queue = 
+        if (!Executeargs.arg_cfg_pruning) then 
+            BestFirstQueue.make (distance_to_targets_prioritizer job.state.callstack (assertfn::(List.map (fun t -> t.target_func) targets)))
+        else
+            Queue.get_default ()
+    in 
+        Driver.run ~interceptor ~queue job
   in
 
   (* compute call graph and provide a helper function for finding callers *)
@@ -270,8 +325,8 @@ let callchain_backward_se file entryfn assertfn job_init : _ job_completion list
             []
         else
 		    let new_target = {
-		      Prioritizer.target_func = f;
-              Prioritizer.target_predicate = Prioritizer.FailingPaths(failing_paths);
+		      target_func = f;
+              target_predicate = FailingPaths(failing_paths);
 		    } in
             Format.printf "Create new target for function %s with bounding paths:@\n" f.svar.vname;
             print_list "Bounding Path" print_decisions failing_paths;
@@ -290,8 +345,8 @@ let callchain_backward_se file entryfn assertfn job_init : _ job_completion list
   in
 
   let assert_target = {
-      Prioritizer.target_func = assertfn;
-      Prioritizer.target_predicate = Prioritizer.FailingPaths([]);
+      target_func = assertfn;
+      target_predicate = FailingPaths([]);
   } in
   let callers = get_callers assertfn in
 	List.fold_left 
