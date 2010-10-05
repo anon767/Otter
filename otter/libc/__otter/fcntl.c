@@ -5,9 +5,9 @@
 #include <unistd.h>
 #include <string.h>
 
-int __otter_libc_creat(const char* name, mode_t mode)
+int __otter_libc_creat(const char* path, mode_t mode)
 {
-	return open(name, O_WRONLY | O_CREAT | O_TRUNC, mode);
+	return open(path, O_WRONLY | O_CREAT | O_TRUNC, mode);
 }
 
 /* TODO: when teh functions this should be calling are done finish this one */
@@ -17,7 +17,7 @@ int __otter_libc_fcntl(int fd, int cmd, ...)
 	va_start(varargs, cmd);
 
 	int r = -1;
-	
+
 	switch (cmd)
 	{
 		case F_DUPFD:
@@ -27,29 +27,26 @@ int __otter_libc_fcntl(int fd, int cmd, ...)
 		case F_SETFD: 
 			break;
 		case F_GETFL:
-			if(fd > -1 && fd < __otter_fs_MAXOPEN) /* is file a possible valid file? */
+		{
+			struct __otter_fs_open_file_table_entry* open_file = get_open_file_from_fd(fd);
+			if(open_file) /* is file a valid file entry? */
 			{
-				int ft = __otter_fs_files[fd];
-
-				if(ft > -1) /* is file a valid file entry? */
-				{
-					r = __otter_fs_open_files[ft].mode;
-				}
+				r = open_file->mode;
 			}
 			break;
-		case F_SETFL:;
+		}
+		case F_SETFL:
+		{
 			int mode = va_arg(varargs, int);
 
-			if(fd > -1 && fd < __otter_fs_MAXOPEN) /* is file a possible valid file? */
-			{
-				int ft = __otter_fs_files[fd];
+			struct __otter_fs_open_file_table_entry* open_file = get_open_file_from_fd(fd);
 
-				if(ft > -1) /* is file a valid file entry? */
-				{
-					r = __otter_fs_change_open_mode(fd, mode) - 1;
-				}
+			if(open_file) /* is file a valid file entry? */
+			{
+				r = __otter_fs_change_open_mode(fd, mode);
 			}
 			break;
+		}
 		case F_GETLK: 
 			break;
 		case F_SETLK: 
@@ -70,12 +67,8 @@ int __otter_libc_fcntl(int fd, int cmd, ...)
 	return r;
 }
 
-int __otter_libc_open(const char* name2, int oflag, ...)
+int __otter_libc_open(const char* path, int oflag, ...)
 {
-	// alloca so we don't have to worry about calling free
-	char* name = alloca(__libc_get_block_size(name2));
-	strcpy(name, name2);
-
 	if(O_NONBLOCK & oflag) /* non blocking I/O not supported */
 	{
 		__ASSERT(0);
@@ -87,8 +80,8 @@ int __otter_libc_open(const char* name2, int oflag, ...)
 		return (-1);
 	}
 
-	struct __otter_fs_dnode* dnode = __otter_fs_find_dnode(name);
-	if(dnode) /* is name a directory that already exists? */
+	struct __otter_fs_dnode* dnode = __otter_fs_find_dnode(path);
+	if(dnode) /* is path a directory that already exists? */
 	{
 		if (O_TRUNC & oflag) /* undefined behavior */
 		{
@@ -101,20 +94,8 @@ int __otter_libc_open(const char* name2, int oflag, ...)
 
 	/* we are looking for a file */
 	
-	char* a = strrchr(name,'/');
-
-	if(a)
-	{
-		*a = 0;
-		dnode = __otter_fs_find_dnode(name);
-		// We never use name again, so we don't have to restore the '/' that we wrote over
-		a++;
-	}
-	else
-	{
-		dnode = __otter_fs_pwd;
-		a = name;
-	}
+	char *filename;
+	dnode = find_filename_and_dnode(path, &filename);
 
 	if(!dnode) /* can't find path */
 	{
@@ -122,7 +103,7 @@ int __otter_libc_open(const char* name2, int oflag, ...)
 		return (-1);
 	}
 
-	struct __otter_fs_inode* inode = __otter_fs_find_inode_in_dir(a, dnode);
+	struct __otter_fs_inode* inode = __otter_fs_find_inode_in_dir(filename, dnode);
 	if(!inode) /* file not found or need permission to browse dir */
 	{
 		if(O_CREAT & oflag) /* should the file be created? */
@@ -135,7 +116,7 @@ int __otter_libc_open(const char* name2, int oflag, ...)
 				mode_t mode = va_arg(varargs, mode_t);
 				va_end(varargs);
 				/* attempt to create the file */
-				inode = __otter_fs_touch(a, dnode);
+				inode = __otter_fs_touch(filename, dnode);
 				if(!inode)
 					return (-1);
 				(*inode).permissions = (mode & 0x0FFF) | 0x3000;

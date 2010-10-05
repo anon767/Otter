@@ -5,26 +5,16 @@
 
 int __otter_libc_close(int fd)
 {
-	if(fd < 0 || fd >= __otter_fs_MAXOPEN)
-	{
-		errno = EBADF;
-		return(-1);
-	}
-	
-	int ft = __otter_fs_files[fd];
-	__otter_fs_files[fd] = -1;
+	struct __otter_fs_open_file_table_entry* open_file = get_open_file_from_fd(fd);
+	if (!open_file) return -1;
 
-	if(ft == -1) /* is file a valid file entry? */
-	{
-		errno = EBADF;
-		return(-1);
-	}
+	__otter_fs_fd_table[fd] = -1;
 
-	__otter_fs_open_files[ft].openno--;
+	open_file->openno--;
 
-	if(__otter_fs_open_files[ft].type == __otter_fs_TYP_DIR)
+	if(open_file->type == __otter_fs_TYP_DIR)
 	{
-		struct __otter_fs_dnode* dnode = __otter_fs_get_dnode_from_fd(fd);
+		struct __otter_fs_dnode* dnode = (struct __otter_fs_dnode*)open_file->vnode;
 		(*dnode).r_openno--;
 
 		if((*dnode).linkno == 0 && (*dnode).r_openno == 0) /* directory was deleted, but left available until closed */
@@ -37,16 +27,16 @@ int __otter_libc_close(int fd)
 		return (0);
 	}
 
-	struct __otter_fs_inode* inode = __otter_fs_get_inode_from_fd(fd);
-	if(__otter_fs_open_files[ft].mode & O_RDONLY)
+	struct __otter_fs_inode* inode = (struct __otter_fs_inode*)open_file->vnode;
+	if(open_file->mode & O_RDONLY)
 		(*inode).r_openno--;
-	if(__otter_fs_open_files[ft].mode & O_WRONLY)
+	if(open_file->mode & O_WRONLY)
 		(*inode).w_openno--;
 
 	if((*inode).r_openno | (*inode).w_openno) /* file is still open */
 		return (0);
 
-	if(__otter_fs_open_files[ft].type == __otter_fs_TYP_FIFO) /* discard data if this is a fifo */
+	if(open_file->type == __otter_fs_TYP_FIFO) /* discard data if this is a fifo */
 	{
 		(*inode).size = 0;
 		free((*inode).data);
@@ -62,7 +52,11 @@ int __otter_libc_close(int fd)
 	return (0);
 }
 
-ssize_t __otter_libc_read2(int ft, void* buf, size_t num, off_t offset)
+ssize_t __otter_libc_read2(
+	struct __otter_fs_open_file_table_entry* open_file,
+	void* buf,
+	size_t num,
+	off_t offset)
 {
 	if(num == 0)
 		return(0);
@@ -73,11 +67,12 @@ ssize_t __otter_libc_read2(int ft, void* buf, size_t num, off_t offset)
 		return (-1);
 	}
 
-	switch (__otter_fs_open_files[ft].type)
+	switch (open_file->type)
 	{
 		/* linear buffer */
-		case __otter_fs_TYP_FILE:;
-			struct __otter_fs_inode* inode = (struct __otter_fs_inode*)(__otter_fs_open_files[ft].vnode);
+		case __otter_fs_TYP_FILE:
+		{
+			struct __otter_fs_inode* inode = (struct __otter_fs_inode*)(open_file->vnode);
 
 			for(int i = 0; i < num; i++)
 			{
@@ -87,16 +82,17 @@ ssize_t __otter_libc_read2(int ft, void* buf, size_t num, off_t offset)
 				}
 				else
 				{
-					__otter_fs_open_files[ft].status = __otter_fs_STATUS_EOF;
+					open_file->status = __otter_fs_STATUS_EOF;
 					return (i);
 				}
 			}
 
 			return (num);
 			break;
-
+		}
 		/* generate symbolic data */
-		case __otter_fs_TYP_TTY:;
+		case __otter_fs_TYP_TTY:
+		{
 			char data;
 			for(int i = 0; i < num; i++)
 			{
@@ -114,20 +110,21 @@ ssize_t __otter_libc_read2(int ft, void* buf, size_t num, off_t offset)
 
 			return (num);
 			break;
-
+		}
 		/* circular buffer */
-		case __otter_fs_TYP_FIFO:;
-			struct __otter_fs_inode* inode = (struct __otter_fs_inode*)__otter_fs_open_files[ft].vnode;
-			if(__otter_fs_open_files[ft].status == __otter_fs_STATUS_EOF)
+		case __otter_fs_TYP_FIFO:
+		{
+			struct __otter_fs_inode* inode = (struct __otter_fs_inode*)open_file->vnode;
+			if(open_file->status == __otter_fs_STATUS_EOF)
 			{
-				if(__otter_fs_open_files[ft].mode & O_NONBLOCK)
+				if(open_file->mode & O_NONBLOCK)
 				{
 					errno = EAGAIN;
 					return (-1);
 				}
 
 				/* block until data becomes available */
-				while(__otter_fs_open_files[ft].status == __otter_fs_STATUS_EOF)
+				while(open_file->status == __otter_fs_STATUS_EOF)
 				{
 					__ASSERT(0); /* TODO: if this is multiOtter, don't fail here */
 				}
@@ -144,7 +141,7 @@ ssize_t __otter_libc_read2(int ft, void* buf, size_t num, off_t offset)
 				}
 				else
 				{
-					__otter_fs_open_files[ft].status = __otter_fs_STATUS_EOF;
+					open_file->status = __otter_fs_STATUS_EOF;
 					(*inode).numblocks = ((*inode).numblocks + i) % __otter_fs_PIPE_SIZE;
 					return (i);
 				}
@@ -153,17 +150,17 @@ ssize_t __otter_libc_read2(int ft, void* buf, size_t num, off_t offset)
 			(*inode).numblocks = ((*inode).numblocks + num) % __otter_fs_PIPE_SIZE;
 			return (num);
 			break;
-
+		}
 		case __otter_fs_TYP_DIR: /* reading from directories is not supported */
 			errno = EISDIR;
 			return (-1);
 			break;
 		case __otter_fs_TYP_NULL:
-			__otter_fs_open_files[ft].status = __otter_fs_STATUS_EOF;
+			open_file->status = __otter_fs_STATUS_EOF;
 			return (0);
 			break;
 		case __otter_fs_TYP_ZERO:
-			__otter_fs_open_files[ft].status = __otter_fs_STATUS_OK;
+			open_file->status = __otter_fs_STATUS_OK;
 			for(int i = 0; i < num; i++)
 			{
 					buf[i] = 0;
@@ -181,66 +178,50 @@ ssize_t __otter_libc_read2(int ft, void* buf, size_t num, off_t offset)
 }
 
 ssize_t __otter_libc_read(int fd, void* buf, size_t num)
-{	
-	if(fd > -1 && fd < __otter_fs_MAXOPEN) /* is file a possible valid file? */
+{
+	struct __otter_fs_open_file_table_entry* open_file = get_open_file_from_fd(fd);
+	if (!open_file) return -1;
+
+	if(!(open_file->mode & O_RDONLY)) /* open for reading? */
 	{
-		int ft = __otter_fs_files[fd];
-
-		if(ft != -1) /* is file a valid file entry? */
-		{
-
-			if(!(__otter_fs_open_files[ft].mode & O_RDONLY)) /* open for reading? */
-			{
-				errno = EBADF;
-				return(-1);
-			}
-
-			int numread = __otter_libc_read2(fd, buf, num, __otter_fs_open_files[ft].offset);
-
-			if(numread == -1)
-				return (-1);
-
-			__otter_fs_open_files[ft].offset += numread;
-			return (numread);
-		}
+		errno = EBADF;
+		return(-1);
 	}
 
-	errno = EBADF;
-	return(-1);
+	int numread = __otter_libc_read2(open_file, buf, num, open_file->offset);
+
+	if(numread == -1)
+		return (-1);
+
+	open_file->offset += numread;
+	return (numread);
 }
 
 ssize_t __otter_libc_pread(int fd, void* buf, size_t num, off_t offset)
 {
-	if(fd < 0 || fd >= __otter_fs_MAXOPEN)
+	struct __otter_fs_open_file_table_entry* open_file = get_open_file_from_fd(fd);
+	if (!open_file) return -1;
+
+	if(!(open_file->mode & O_RDONLY)) /* open for reading? */
 	{
 		errno = EBADF;
 		return(-1);
 	}
 
-	int ft = __otter_fs_files[fd];
-
-	if(ft == -1) /* is file a valid file entry? */
-	{
-		errno = EBADF;
-		return(-1);
-	}
-
-	if(!(__otter_fs_open_files[ft].mode & O_RDONLY)) /* open for reading? */
-	{
-		errno = EBADF;
-		return(-1);
-	}
-
-	if(__otter_fs_open_files[ft].type != __otter_fs_TYP_FILE) /* can only seek on normal files */
+	if(open_file->type != __otter_fs_TYP_FILE) /* can only seek on normal files */
 	{
 		errno = ESPIPE;
 		return (-1);
 	}
 
-	return __otter_libc_read2(ft, buf, num, offset);
+	return __otter_libc_read2(open_file, buf, num, offset);
 }
 
-ssize_t __otter_libc_write2(int ft, void* buf, size_t num, off_t offset)
+ssize_t __otter_libc_write2(
+	struct __otter_fs_open_file_table_entry* open_file,
+	void* buf,
+	size_t num,
+	off_t offset)
 {
 	if(num == 0)
 		return(0);
@@ -251,12 +232,13 @@ ssize_t __otter_libc_write2(int ft, void* buf, size_t num, off_t offset)
 		return (-1);
 	}
 
-	switch (__otter_fs_open_files[ft].type)
+	switch (open_file->type)
 	{
 		/* linear buffer */
 		case __otter_fs_TYP_FILE:
-		case __otter_fs_TYP_TTY:;
-			struct __otter_fs_inode* inode = (struct __otter_fs_inode*)(__otter_fs_open_files[ft].vnode);
+		case __otter_fs_TYP_TTY:
+		{
+			struct __otter_fs_inode* inode = (struct __otter_fs_inode*)(open_file->vnode);
 
 			int physicalsize = __otter_fs_BLOCK_SIZE * (*inode).numblocks; /* get the amount of allocated space */
 
@@ -285,10 +267,11 @@ ssize_t __otter_libc_write2(int ft, void* buf, size_t num, off_t offset)
 
 			return (num);
 			break;
-
+		}
 		/* circular buffer */
-		case __otter_fs_TYP_FIFO:;
-			struct __otter_fs_inode* inode = (struct __otter_fs_inode*)__otter_fs_open_files[ft].vnode;
+		case __otter_fs_TYP_FIFO:
+		{
+			struct __otter_fs_inode* inode = (struct __otter_fs_inode*)open_file->vnode;
 			if((*inode).r_openno == 0) /* not open for reading somewhere */
 			{
 				errno = EPIPE;
@@ -313,13 +296,13 @@ ssize_t __otter_libc_write2(int ft, void* buf, size_t num, off_t offset)
 			(*inode).size = ((*inode).size + num) % __otter_fs_PIPE_SIZE;
 			return (num);
 			break;
-
+		}
 		case __otter_fs_TYP_DIR: /* writing to directories is not supported */
 			__ASSERT(0); /* should not be possible to open a dir for writing */
 			break;
 		case __otter_fs_TYP_NULL:
 		case __otter_fs_TYP_ZERO:
-			__otter_fs_open_files[ft].status = __otter_fs_STATUS_EOF;
+			open_file->status = __otter_fs_STATUS_EOF;
 			return (num);
 			break;
 		default: /* this should never happen as all cases should be enumerated */
@@ -332,126 +315,111 @@ ssize_t __otter_libc_write2(int ft, void* buf, size_t num, off_t offset)
 
 ssize_t __otter_libc_write(int fd, const void* buf, size_t num)
 {	
-	if(fd > -1 && fd < __otter_fs_MAXOPEN) /* is file a possible valid file? */
+	struct __otter_fs_open_file_table_entry* open_file = get_open_file_from_fd(fd);
+	if (!open_file) return -1;
+
+	if(!(open_file->mode & O_WRONLY)) /* open for writing? */
 	{
-		int ft = __otter_fs_files[fd];
-
-		if(ft != -1) /* is file a valid file entry? */
-		{
-
-			if(!(__otter_fs_open_files[ft].mode & O_WRONLY)) /* open for writing? */
-			{
-				errno = EBADF;
-				return(-1);
-			}
-
-			if(__otter_fs_open_files[ft].mode & O_APPEND)
-			{
-				__otter_fs_open_files[ft].offset = (*((struct __otter_fs_inode*)__otter_fs_open_files[ft].vnode)).size;
-			}
-
-			int numwrite = __otter_libc_write2(fd, buf, num, __otter_fs_open_files[ft].offset);
-
-			if(numwrite == -1)
-				return (-1);
-
-			__otter_fs_open_files[ft].offset += numwrite;
-			return (numwrite);
-		}
+		errno = EBADF;
+		return(-1);
 	}
 
-	errno = EBADF;
-	return(-1);
+	if(open_file->mode & O_APPEND)
+	{
+		open_file->offset = (*((struct __otter_fs_inode*)open_file->vnode)).size;
+	}
+
+	int numwrite = __otter_libc_write2(open_file, buf, num, open_file->offset);
+
+	if(numwrite == -1)
+		return (-1);
+
+	/* Is there a race condition here if two processes both have
+		 references to the same __otter_fs_open_file? What is the offset
+		 supposed to be while a write is happening? */
+	open_file->offset += numwrite;
+	return (numwrite);
 }
 
 ssize_t __otter_libc_pwrite(int fd, const void* buf, size_t num, off_t offset)
 {
-	if(fd < 0 || fd >= __otter_fs_MAXOPEN)
+	struct __otter_fs_open_file_table_entry* open_file = get_open_file_from_fd(fd);
+	if (!open_file) return -1;
+
+	if(!(open_file->mode & O_WRONLY)) /* open for writing? */
 	{
 		errno = EBADF;
 		return(-1);
 	}
 
-	int ft = __otter_fs_files[fd];
-
-	if(ft == -1) /* is file a valid file entry? */
-	{
-		errno = EBADF;
-		return(-1);
-	}
-
-	if(!(__otter_fs_open_files[ft].mode & O_WRONLY)) /* open for writing? */
-	{
-		errno = EBADF;
-		return(-1);
-	}
-
-	if(__otter_fs_open_files[ft].type != __otter_fs_TYP_FILE) /* can only seek on normal files */
+	if(open_file->type != __otter_fs_TYP_FILE) /* can only seek on normal files */
 	{
 		errno = ESPIPE;
 		return (-1);
 	}
 
-	return __otter_libc_write2(ft, buf, num, offset);
+	return __otter_libc_write2(open_file, buf, num, offset);
 }
 
 int __otter_libc_unlink(const char* path)
 {
-	char* a = path;
-
-	while(*a != 0)
-		a++;
-
-	while(a != path && (*a) != '/')
-		a--;
-	
-	struct __otter_fs_dnode* dnode;
-	if(a == path)
-	{
-		dnode = __otter_fs_pwd;
-	}
-	else
-	{
-		*a = 0;
-		dnode = __otter_fs_find_dnode(path);
-		*a = '/';
-	}
+	char *filename;
+	struct __otter_fs_dnode* dnode = find_filename_and_dnode(path, &filename);
 
 	if(!dnode) /* can't find path */
 		return (-1);
 
-	a++;
-
-	return (__otter_fs_unlink_in_dir(a, dnode) - 1);
+	return (__otter_fs_unlink_in_dir(filename, dnode) - 1);
 
 }
 
 int __otter_libc_rmdir(const char* path)
 {
-	char* a = path;
-
-	while(*a != 0)
-		a++;
-
-	while(a != path && (*a) != '/')
-		a--;
-	
-	struct __otter_fs_dnode* dnode;
-	if(a == path)
-	{
-		dnode = __otter_fs_pwd;
-	}
-	else
-	{
-		*a = 0;
-		dnode = __otter_fs_find_dnode(path);
-		*a = '/';
-	}
+	char *filename;
+	struct __otter_fs_dnode* dnode = find_filename_and_dnode(path, &filename);
 
 	if(!dnode) /* can't find path */
 		return (-1);
 
-	a++;
+	return (__otter_fs_rmdir_in_dir(filename, dnode) - 1);
+}
 
-	return (__otter_fs_rmdir_in_dir(a, dnode) - 1);
+off_t lseek(int fd, off_t offset, int whence)
+{
+	struct __otter_fs_open_file_table_entry* open_file = get_open_file_from_fd(fd);
+	if (!open_file) return -1;
+	
+	if(open_file->type != __otter_fs_TYP_FILE) /* can only seek on normal files */
+	{
+		errno = ESPIPE;
+		return (-1);
+	}
+	
+	off_t newOffset;
+	
+	switch (whence)
+	{
+		case SEEK_SET:
+			newOffset = offset;
+			break;
+		case SEEK_CUR:
+			newOffset = open_file->offset + offset;
+			break;
+		case SEEK_END:
+		{
+			struct __otter_fs_inode* inode = open_file->vnode;
+			newOffset = inode->size + offset;
+			break;
+		}
+		default:
+			errno = EINVAL;
+			return -1;
+	}
+	if (newOffset < 0) {
+		errno = EINVAL;
+		return -1;
+	}
+	open_file->offset = newOffset;
+	
+	return newOffset;
 }

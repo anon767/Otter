@@ -7,6 +7,7 @@
 
 /* I/O */
 #include "otter_fs.c"
+#include "otter_fs_util.c"
 #include "stat.c"
 #include "fcntl.c"
 #include "stdio.c"

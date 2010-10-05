@@ -72,7 +72,7 @@ struct __otter_fs_dnode* __otter_fs_find_dnode_in_dir(const char* name, struct _
 	__otter_fs_error(ENOENT);
 }
 
-struct __otter_fs_inode* __otter_fs_find_inode_in_tree(const char* name, struct __otter_fs_dnode* tree)
+struct __otter_fs_inode* __otter_fs_find_inode_in_tree(char* name, struct __otter_fs_dnode* tree)
 {
 	if(!__otter_fs_can_permission((*tree).permissions, 1)) /* can't traverse dir */
 		__otter_fs_error(EACCESS);
@@ -84,11 +84,11 @@ struct __otter_fs_inode* __otter_fs_find_inode_in_tree(const char* name, struct 
 		return __otter_fs_find_inode_in_dir(name, tree);
 	}
 
-	/* otherwise recursivly decend file system */
+	/* otherwise recursively descend file system */
 	*s = 0; /* change the first '/' into an end of string */
 	struct __otter_fs_dnode* d = __otter_fs_find_dnode_in_dir(name, tree);
 	*s = '/'; /* change it back */
-
+	
 	if(d == 0); /* no such directory */
 	{
 		__otter_fs_error(ENOENT); /* cannot find file */
@@ -104,7 +104,7 @@ struct __otter_fs_inode* __otter_fs_find_inode_in_tree(const char* name, struct 
 	return __otter_fs_find_inode_in_tree(s, d); /* search for the shortened path in the subtree */
 }
 
-struct __otter_fs_dnode* __otter_fs_find_dnode_in_tree(const char* name, struct __otter_fs_dnode* tree)
+struct __otter_fs_dnode* __otter_fs_find_dnode_in_tree(char* name, struct __otter_fs_dnode* tree)
 {
 	if(!__otter_fs_can_permission((*tree).permissions, 1)) /* can't traverse dir */
 		__otter_fs_error(EACCESS);
@@ -136,33 +136,47 @@ struct __otter_fs_dnode* __otter_fs_find_dnode_in_tree(const char* name, struct 
 	return __otter_fs_find_dnode_in_tree(s, d); /* search for the shortened path in the subtree */
 }
 
-struct __otter_fs_inode* __otter_fs_find_inode(const char* name)
+struct __otter_fs_inode* __otter_fs_find_inode(const char* name_in)
 {
+	char* name = malloc(__libc_get_block_size(name_in));
+	strcpy(name, name_in);
+
 	if(name)
 	{
+		struct __otter_fs_inode* inode;
 		if(*name == '/') /* absolute path */
 		{
 			name++;
-			return __otter_fs_find_inode_in_tree(name, __otter_fs_root);
+			inode = __otter_fs_find_inode_in_tree(name, __otter_fs_root);
 		}
 		else /* relative path */
-			return __otter_fs_find_inode_in_tree(name, __otter_fs_pwd);
+			inode = __otter_fs_find_inode_in_tree(name, __otter_fs_pwd);
+
+		free(name);
+		return inode;
 	}
 
 	__otter_fs_error(ENOENT);
 }
 
-struct __otter_fs_dnode* __otter_fs_find_dnode(const char* name)
+struct __otter_fs_dnode* __otter_fs_find_dnode(const char* name_in)
 {
+	char* name = malloc(__libc_get_block_size(name_in));
+	strcpy(name, name_in);
+
 	if(name)
 	{
+		struct __otter_fs_dnode* dnode;
 		if(*name == '/') /* absolute path */
 		{
 			name++;
-			return __otter_fs_find_dnode_in_tree(name, __otter_fs_root);
+			dnode = __otter_fs_find_dnode_in_tree(name, __otter_fs_root);
 		}
 		else /* relative path */
-			return __otter_fs_find_dnode_in_tree(name, __otter_fs_pwd);
+			dnode = __otter_fs_find_dnode_in_tree(name, __otter_fs_pwd);
+
+		free(name);
+		return dnode;
 	}
 
 	__otter_fs_error(ENOENT);
@@ -508,7 +522,7 @@ int __otter_fs_next_fd()
 {
 	for(int i = 0; i < __otter_fs_MAXOPEN; i++)
 	{
-		if(__otter_fs_files[i] == -1)
+		if(__otter_fs_fd_table[i] == -1)
 			return (i);
 	}
 
@@ -520,7 +534,7 @@ int __otter_fs_next_global_fd()
 {
 	for(int i = 0; i < __otter_fs_GLOBALMAXOPEN; i++)
 	{
-		if(__otter_fs_open_files[i].openno == 0)
+		if(__otter_fs_open_file_table[i].openno == 0)
 			return (i);
 	}
 
@@ -560,16 +574,16 @@ int __otter_fs_open_file(struct __otter_fs_inode* inode, int mode)
 	if(mode & O_WRONLY)
 		(*inode).w_openno++;
 
-	__otter_fs_files[fd] = ft;
-	__otter_fs_open_files[ft].mode = mode;
-	__otter_fs_open_files[ft].type = (*inode).type;
-	__otter_fs_open_files[ft].vnode = (void*)inode;
-	__otter_fs_open_files[ft].offset = 0;
-	__otter_fs_open_files[ft].openno = 1;
-	__otter_fs_open_files[ft].status = __otter_fs_STATUS_OK;
+	__otter_fs_fd_table[fd] = ft;
+	__otter_fs_open_file_table[ft].mode = mode;
+	__otter_fs_open_file_table[ft].type = (*inode).type;
+	__otter_fs_open_file_table[ft].vnode = (void*)inode;
+	__otter_fs_open_file_table[ft].offset = 0;
+	__otter_fs_open_file_table[ft].openno = 1;
+	__otter_fs_open_file_table[ft].status = __otter_fs_STATUS_OK;
 
 	if((*inode).size == 0)
-		__otter_fs_open_files[ft].status = __otter_fs_STATUS_EOF;
+		__otter_fs_open_file_table[ft].status = __otter_fs_STATUS_EOF;
 
 	return (fd);
 }
@@ -607,63 +621,26 @@ int __otter_fs_open_dir(struct __otter_fs_dnode* dnode, int mode)
 
 	(*dnode).r_openno++;
 
-	__otter_fs_files[fd] = ft;
-	__otter_fs_open_files[ft].mode = mode;
-	__otter_fs_open_files[ft].type = __otter_fs_TYP_DIR;
-	__otter_fs_open_files[ft].vnode = (void*)dnode;
-	__otter_fs_open_files[ft].offset = 0;
-	__otter_fs_open_files[ft].openno = 1;
-	__otter_fs_open_files[ft].status = __otter_fs_STATUS_OK;
+	__otter_fs_fd_table[fd] = ft;
+	__otter_fs_open_file_table[ft].mode = mode;
+	__otter_fs_open_file_table[ft].type = __otter_fs_TYP_DIR;
+	__otter_fs_open_file_table[ft].vnode = (void*)dnode;
+	__otter_fs_open_file_table[ft].offset = 0;
+	__otter_fs_open_file_table[ft].openno = 1;
+	__otter_fs_open_file_table[ft].status = __otter_fs_STATUS_OK;
 
 	return (fd);
 }
 
-struct __otter_fs_inode* __otter_fs_get_inode_from_fd(int file)
+int __otter_fs_change_file_open_mode(int file, int mode)
 {
 	if(file > -1 && file < __otter_fs_MAXOPEN) /* is file a possible valid file? */
 	{
-		int globalfile = __otter_fs_files[file];
-
-		if(globalfile > -1) /* is file a valid file entry? */
-		{
-			if(__otter_fs_open_files[globalfile].type != __otter_fs_TYP_DIR)
-			{
-				return ((struct __otter_fs_inode*)__otter_fs_open_files[globalfile].vnode);
-			}
-		}
-	}
-
-	__otter_fs_error(EBADF);
-}
-
-struct __otter_fs_dnode* __otter_fs_get_dnode_from_fd(int file)
-{
-	if(file > -1 && file < __otter_fs_MAXOPEN) /* is file a possible valid file? */
-	{
-		int globalfile = __otter_fs_files[file];
-
-		if(globalfile > -1) /* is file a valid file entry? */
-		{
-			if(__otter_fs_open_files[globalfile].type == __otter_fs_TYP_DIR)
-			{
-				return ((struct __otter_fs_dnode*)__otter_fs_open_files[globalfile].vnode);
-			}
-		}
-	}
-
-	__otter_fs_error(EBADF);
-}
-
-int __otter_fs_change_open_mode(int file, int mode)
-{
-	if(file > -1 && file < __otter_fs_MAXOPEN) /* is file a possible valid file? */
-	{
-		int ft = __otter_fs_files[file];
+		int ft = __otter_fs_fd_table[file];
 
 		if(ft > -1) /* is file a valid file entry? */
 		{
-	
-			int old_mode = __otter_fs_open_files[ft].mode;
+			int old_mode = __otter_fs_open_file_table[ft].mode;
 			int changed = old_mode ^ mode;
 			int add = changed & mode;
 			int remove = changed & old_mode;
@@ -675,16 +652,16 @@ int __otter_fs_change_open_mode(int file, int mode)
 			{
 				permissions += 4;
 
-				if(__otter_fs_open_files[ft].type == __otter_fs_TYP_DIR) /* can't have write access to a directory */
+				if(__otter_fs_open_file_table[ft].type == __otter_fs_TYP_DIR) /* can't have write access to a directory */
 				{
 					errno = EISDIR;
 					return (-1);
 				}
 			}
 
-			if(__otter_fs_open_files[ft].type == __otter_fs_TYP_FILE)
+			if(__otter_fs_open_file_table[ft].type == __otter_fs_TYP_FILE)
 			{
-				struct __otter_fs_inode* inode = ((struct __otter_fs_inode*)__otter_fs_open_files[ft].vnode);
+				struct __otter_fs_inode* inode = ((struct __otter_fs_inode*)__otter_fs_open_file_table[ft].vnode);
 
 				if(!__otter_fs_can_permission((*inode).permissions, permissions))
 				{
@@ -704,7 +681,7 @@ int __otter_fs_change_open_mode(int file, int mode)
 			}
 			else
 			{
-				struct __otter_fs_dnode* dnode = ((struct __otter_fs_dnode*)__otter_fs_open_files[ft].vnode);
+				struct __otter_fs_dnode* dnode = ((struct __otter_fs_dnode*)__otter_fs_open_file_table[ft].vnode);
 
 				if(!__otter_fs_can_permission((*dnode).permissions, permissions))
 				{
@@ -719,7 +696,7 @@ int __otter_fs_change_open_mode(int file, int mode)
 					(*dnode).r_openno--;
 			}
 
-			__otter_fs_open_files[ft].mode = mode;
+			__otter_fs_open_file_table[ft].mode = mode;
 
 			return(1);
 		}
@@ -728,7 +705,6 @@ int __otter_fs_change_open_mode(int file, int mode)
 	__otter_fs_error(EBADF);
 
 }
-
 
 /* file system initilization */
 
@@ -790,9 +766,9 @@ void __otter_fs_mount()
 	__otter_fs_pwd = wrk;
 
 	/* mark all file descriptors and file table entries as unused */
-	__otter_fs_files = malloc(sizeof(int)*__otter_fs_MAXOPEN); /* local */
-	memset(__otter_fs_files, -1, __otter_fs_MAXOPEN*sizeof(int));
-	__otter_fs_open_files = __otter_multi_gmalloc(sizeof(struct __otter_fs_ft)*__otter_fs_GLOBALMAXOPEN);
-	memset(__otter_fs_open_files, 0, __otter_fs_GLOBALMAXOPEN*sizeof(struct __otter_fs_ft));
+	__otter_fs_fd_table = malloc(sizeof(int)*__otter_fs_MAXOPEN); /* local */
+	memset(__otter_fs_fd_table, -1, __otter_fs_MAXOPEN*sizeof(int));
+	__otter_fs_open_file_table = __otter_multi_gmalloc(sizeof(struct __otter_fs_open_file_table_entry)*__otter_fs_GLOBALMAXOPEN);
+	memset(__otter_fs_open_file_table, 0, __otter_fs_GLOBALMAXOPEN*sizeof(struct __otter_fs_open_file_table_entry));
 }
 

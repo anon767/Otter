@@ -22,26 +22,21 @@ int __otter_libc_chmod(const char* name, mode_t mode)
 	return (0);
 }
 
-int __otter_libc_fchmod(int file, mode_t mode)
+int __otter_libc_fchmod(int fd, mode_t mode)
 {
-	
-	struct __otter_fs_inode* inode = __otter_fs_get_inode_from_file(file);
-	if(!inode)
+	struct __otter_fs_open_file_table_entry* open_file = get_open_file_from_fd(fd);
+	if (!open_file) return -1;
+
+	void* retval;
+	if (open_file->type == __otter_fs_TYP_FILE)
 	{
-		struct __otter_fs_dnode* dnode = __otter_fs_get_dnode_from_file(file);
-		if(!dnode)
-			return (-1);
-
-		dnode = __otter_fs_chmod_dir(mode, dnode);
-		if(!dnode)
-			return (-1);
+		retval = __otter_fs_chmod_file(mode, open_file->vnode);
 	}
-
-	inode = __otter_fs_chmod_file(mode, inode);
-	if(!inode)
-		return (-1);
-
-	return (0);
+	else
+	{
+		retval = __otter_fs_chmod_dir(mode, open_file->vnode);
+	}
+	return retval;
 }
 
 mode_t __otter_fs_type_to_mode(int type)
@@ -59,15 +54,14 @@ mode_t __otter_fs_type_to_mode(int type)
 	return (0);
 }
 
-int __otter_libc_fstat(int file, struct stat* s)
+int __otter_libc_fstat(int fd, struct stat* s)
 {
-	struct __otter_fs_inode* inode = __otter_fs_get_inode_from_file(file);
-	if(!inode)
-	{
-		struct __otter_fs_dnode* dnode = __otter_fs_get_dnode_from_file(file);
-		if(!dnode)
-			return (-1);
+	struct __otter_fs_open_file_table_entry* open_file = get_open_file_from_fd(fd);
+	if (!open_file) return -1;
 
+	if (open_file->type == __otter_fs_TYP_DIR)
+	{
+		struct __otter_fs_dnode* dnode = (struct __otter_fs_dnode*)open_file->vnode;
 		(*s).st_dev = 0;
 		(*s).st_ino = (int)dnode;
 		(*s).st_mode = (*dnode).permissions | S_IFDIR;
@@ -82,6 +76,7 @@ int __otter_libc_fstat(int file, struct stat* s)
 		return (0);
 	}
 
+	struct __otter_fs_inode* inode = (struct __otter_fs_inode*)open_file->vnode;
 	(*s).st_dev = 0;
 	(*s).st_ino = (int)inode;
 	(*s).st_mode = (*inode).permissions | __otter_fs_type_to_mode((*inode).type);

@@ -4,7 +4,7 @@
 /* TODO: revisit these definitions as the types get used */
 #include <stddef.h>
 
-// See http://opengroup.org/onlinepubs/007908799/xsh/systypes.h.html
+// See http://www.opengroup.org/onlinepubs/009695399/basedefs/sys/types.h.html
 typedef int blkcnt_t;
 typedef int blksize_t;
 typedef int clock_t;

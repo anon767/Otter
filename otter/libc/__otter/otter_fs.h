@@ -22,7 +22,6 @@
 
 #define NULL 0
 
-struct __otter_fs_block;
 struct __otter_fs_inode;
 struct __otter_fs_filelist;
 struct __otter_fs_dirlist;
@@ -70,12 +69,12 @@ struct __otter_fs_dnode* __otter_fs_pwd;
 
 struct __otter_fs_inode* __otter_fs_find_inode_in_dir(const char* name, struct __otter_fs_dnode* dir);
 struct __otter_fs_dnode* __otter_fs_find_dnode_in_dir(const char* name, struct __otter_fs_dnode* dir);
-struct __otter_fs_inode* __otter_fs_find_inode_in_tree(const char* name, struct __otter_fs_dnode* tree);
-struct __otter_fs_dnode* __otter_fs_find_dnode_in_tree(const char* name, struct __otter_fs_dnode* tree);
+struct __otter_fs_inode* __otter_fs_find_inode_in_tree(char* name, struct __otter_fs_dnode* tree);
+struct __otter_fs_dnode* __otter_fs_find_dnode_in_tree(char* name, struct __otter_fs_dnode* tree);
 struct __otter_fs_inode* __otter_fs_find_inode(const char* name);
 struct __otter_fs_dnode* __otter_fs_find_dnode(const char* name);
 
-struct __otter_fs_ft
+struct __otter_fs_open_file_table_entry
 {
 	int mode;
 	int offset;
@@ -85,15 +84,13 @@ struct __otter_fs_ft
 	int status;
 };
 
-int* __otter_fs_files;
-struct __otter_fs_ft* __otter_fs_open_files;
+int* __otter_fs_fd_table;
+struct __otter_fs_open_file_table_entry* __otter_fs_open_file_table;
 
 int __otter_fs_next_fd();
 int __otter_fs_next_global_fd();
 int __otter_fs_open_file(struct __otter_fs_inode* inode, int mode);
 int __otter_fs_open_dir(struct __otter_fs_dnode* dnode, int mode);
-struct __otter_fs_inode* __otter_fs_get_inode_from_fd(int file);
-struct __otter_fs_dnode* __otter_fs_get_dnode_from_fd(int file);
 int __otter_fs_change_file_open_mode(int file, int mode);
 int __otter_fs_change_dir_open_mode(int file, int mode);
 
@@ -109,6 +106,10 @@ struct __otter_fs_inode* __otter_fs_link_file(const char* name, struct __otter_f
 struct __otter_fs_dnode* __otter_fs_link_dir(const char* name, struct __otter_fs_dnode* target, struct __otter_fs_dnode* dir);
 
 void __otter_fs_mount();
+
+// Utility functions
+struct __otter_fs_dnode* find_filename_and_dnode(const char* path, char** basename);
+struct __otter_fs_open_file_table_entry* get_open_file_from_fd(int fd);
 
 #endif
 
