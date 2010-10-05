@@ -129,3 +129,11 @@ let make file state fn argvs =
 		jid = Counter.next job_counter;
 	}
 
+(** Get the file location for the current job instruction.
+		@param job the job to get the current location from
+		@return the file location
+*)
+let get_loc job = match job.instrList with
+    | [] -> Cil.get_stmtLoc job.stmt.Cil.skind
+    | instr::_ -> Cil.get_instrLoc instr
+

@@ -8,19 +8,6 @@ open BytesUtility
 open Types
 open Job
 
-(** Get the file location for the current job instruction.
-		@param job the job to get the current location from
-		@return the file location
-*)
-let get_job_loc job =
-	match job.instrList with
-		| [] -> (Cil.get_stmtLoc job.stmt.skind)
-		| _ -> 
-			let instr = match job.instrList with 
-				| i::tl -> i 
-				| _ -> assert false 
-			in
-			(Cil.get_instrLoc instr)
 
 let stmtInfo_of_job job =
 	{ siFuncName = (List.hd job.state.callstack).svar.vname;
@@ -186,7 +173,7 @@ let exec_instr_call job instr lvalopt fexp exps =
                             result_state = state; 
                             result_history = exHist;
                             result_decision_path = job.decisionPath; } in
-						Complete (Abandoned (`Failure msg, get_job_loc job, result))
+						Complete (Abandoned (`Failure msg, Job.get_loc job, result))
 				in
 				job_state::(process_func_list t)
 	in
@@ -459,4 +446,4 @@ let step job job_queue =
                 result_state = job.state; 
                 result_history = job.exHist; 
                 result_decision_path = job.decisionPath; } in
-			(Complete (Abandoned (`Failure msg, get_job_loc job, result)), job_queue)
+			(Complete (Abandoned (`Failure msg, Job.get_loc job, result)), job_queue)

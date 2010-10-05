@@ -20,7 +20,7 @@ let set_output_formatter_interceptor job job_queue interceptor =
 		old_job_id := job.jid
 	);
 	let depth = List.length job.state.path_condition in
-	let loc = Statement.get_job_loc job in
+	let loc = Job.get_loc job in
 	let label =
 		if loc = Cil.locUnknown then
 			Format.sprintf "[%d,%d] : " job.jid depth

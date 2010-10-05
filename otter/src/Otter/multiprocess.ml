@@ -164,7 +164,7 @@ let get_job multijob = match multijob.processes with
 
 
 let multi_set_output_formatter_interceptor job multijob job_queue interceptor = 
-	let loc = Statement.get_job_loc job in
+	let loc = Job.get_loc job in
 	let label =
 		if loc = Cil.locUnknown then
 			Format.sprintf "[jid: %d, pid: %d] : " multijob.jid multijob.current_pid
@@ -231,7 +231,7 @@ let otter_gmalloc job multijob retopt exps =
 	  then Bytes.bytes__make size (* initially zero, as though malloc were calloc *)
 	  else Bytes.bytes__make_default size Bytes.byte__undef (* initially the symbolic 'undef' byte *)
 	in
-	let state, block, bytes = otter_gmalloc_size state size bytes (Statement.get_job_loc job) in
+	let state, block, bytes = otter_gmalloc_size state size bytes (Job.get_loc job) in
 	let job = BuiltinFunctions.end_function_call { job with state = BuiltinFunctions.set_return_value state retopt bytes } in
 
 	let rec push_to_all procs block bytes =

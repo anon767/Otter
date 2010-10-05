@@ -90,7 +90,7 @@ let end_function_call job =
 			 explicit return (because we handle the call internally), we
 			 have to add the edge now. *)
 		if job.inTrackedFn && !Executeargs.arg_line_coverage then
-			let loc = Statement.get_job_loc job in
+			let loc = Job.get_loc job in
 			{ exHist with coveredLines = LineSet.add (loc.Cil.file, loc.Cil.line) exHist.coveredLines; }
 		else
 			exHist
@@ -245,7 +245,7 @@ let libc___builtin_alloca job retopt exps =
 	  then bytes__make size (* initially zero, as though malloc were calloc *)
 	  else bytes__make_default size byte__undef (* initially the symbolic 'undef' byte *)
 	in
-	let state, bytes = libc___builtin_alloca_size state size bytes (Statement.get_job_loc job) in
+	let state, bytes = libc___builtin_alloca_size state size bytes (Job.get_loc job) in
 	let job = end_function_call { job with state = set_return_value state retopt bytes } in
 	Active job
 
@@ -276,7 +276,7 @@ let libc_malloc job retopt exps =
 	  then bytes__make size (* initially zero, as though malloc were calloc *)
 	  else bytes__make_default size byte__undef (* initially the symbolic 'undef' byte *)
 	in
-	let state, bytes = libc_malloc_size state size bytes (Statement.get_job_loc job) in
+	let state, bytes = libc_malloc_size state size bytes (Job.get_loc job) in
 	let job = end_function_call { job with state = set_return_value state retopt bytes } in
 	Active job
 
@@ -759,7 +759,7 @@ let libc_longjmp job retopt exps =
 						 explicit return (because we handle the call internally), we
 						 have to add the edge now. *)
 					if job.inTrackedFn && !Executeargs.arg_line_coverage then
-						let loc = Statement.get_job_loc job in
+						let loc = Job.get_loc job in
 						{ exHist with coveredLines = LineSet.add (loc.Cil.file, loc.Cil.line) exHist.coveredLines; }
 					else
 						exHist
@@ -877,7 +877,7 @@ let interceptor job job_queue interceptor =
             result_state = job.state; 
             result_history = job.exHist; 
             result_decision_path = job.decisionPath; } in
-		(Complete (Abandoned (`Failure msg, Statement.get_job_loc job, result)), job_queue)
+		(Complete (Abandoned (`Failure msg, Job.get_loc job, result)), job_queue)
 
 let libc_interceptor job job_queue interceptor = 
 	try
@@ -1005,4 +1005,4 @@ let libc_interceptor job job_queue interceptor =
             result_state = job.state; 
             result_history = job.exHist; 
             result_decision_path = job.decisionPath; } in
-		(Complete (Abandoned (`Failure msg, Statement.get_job_loc job, result)), job_queue)
+		(Complete (Abandoned (`Failure msg, Job.get_loc job, result)), job_queue)
