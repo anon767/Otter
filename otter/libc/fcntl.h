@@ -27,13 +27,13 @@
 #define O_RDWR 3
 
 #define O_CREAT 4
-#define O_EXCL 6
-#define O_NOCTTY 8
-#define O_TRUNC 16
+#define O_EXCL 8
+#define O_NOCTTY 16
+#define O_TRUNC 32
 
-#define O_APPEND 16
-#define O_NONBLOCK 32
-#define O_SYNC 64
+#define O_APPEND 64
+#define O_NONBLOCK 128
+#define O_SYNC 256
 
 struct flock
 {

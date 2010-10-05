@@ -624,9 +624,9 @@ struct __otter_fs_inode* __otter_fs_get_inode_from_fd(int file)
 	{
 		int globalfile = __otter_fs_files[file];
 
-		if(globalfile > -1 && globalfile < __otter_fs_GLOBALMAXOPEN) /* is file a valid file entry? */
+		if(globalfile > -1) /* is file a valid file entry? */
 		{
-			if(__otter_fs_open_files[globalfile].type == __otter_fs_TYP_FILE)
+			if(__otter_fs_open_files[globalfile].type != __otter_fs_TYP_DIR)
 			{
 				return ((struct __otter_fs_inode*)__otter_fs_open_files[globalfile].vnode);
 			}
@@ -642,7 +642,7 @@ struct __otter_fs_dnode* __otter_fs_get_dnode_from_fd(int file)
 	{
 		int globalfile = __otter_fs_files[file];
 
-		if(globalfile > -1 && globalfile < __otter_fs_GLOBALMAXOPEN) /* is file a valid file entry? */
+		if(globalfile > -1) /* is file a valid file entry? */
 		{
 			if(__otter_fs_open_files[globalfile].type == __otter_fs_TYP_DIR)
 			{
@@ -654,7 +654,7 @@ struct __otter_fs_dnode* __otter_fs_get_dnode_from_fd(int file)
 	__otter_fs_error(EBADF);
 }
 
-int __otter_fs_change_file_open_mode(int file, int mode)
+int __otter_fs_change_open_mode(int file, int mode)
 {
 	if(file > -1 && file < __otter_fs_MAXOPEN) /* is file a possible valid file? */
 	{
@@ -662,18 +662,29 @@ int __otter_fs_change_file_open_mode(int file, int mode)
 
 		if(ft > -1) /* is file a valid file entry? */
 		{
+	
+			int old_mode = __otter_fs_open_files[ft].mode;
+			int changed = old_mode ^ mode;
+			int add = changed & mode;
+			int remove = changed & old_mode;
+
+			int permissions = 0;
+			if(add & O_RDONLY)
+				permissions += 2;
+			if(add & O_WRONLY)
+			{
+				permissions += 4;
+
+				if(__otter_fs_open_files[ft].type == __otter_fs_TYP_DIR) /* can't have write access to a directory */
+				{
+					errno = EISDIR;
+					return (-1);
+				}
+			}
+
 			if(__otter_fs_open_files[ft].type == __otter_fs_TYP_FILE)
 			{
 				struct __otter_fs_inode* inode = ((struct __otter_fs_inode*)__otter_fs_open_files[ft].vnode);
-
-				int old_mode = __otter_fs_open_files[ft].mode;
-				int changed = old_mode ^ mode;
-
-				int permissions = 0;
-				if(changed & O_RDONLY)
-					permissions += 2;
-				if(changed & O_WRONLY)
-					permissions += 4;
 
 				if(!__otter_fs_can_permission((*inode).permissions, permissions))
 				{
@@ -681,43 +692,19 @@ int __otter_fs_change_file_open_mode(int file, int mode)
 					return (-1);
 				}
 
-				__otter_fs_open_files[ft].mode = mode;
-
-				if(changed & O_RDONLY)
+				if(add & O_RDONLY)
 					(*inode).r_openno++;
-				if(changed & O_WRONLY)
+				if(add & O_WRONLY)
 					(*inode).w_openno++;
+
+				if(remove & O_RDONLY)
+					(*inode).r_openno--;
+				if(remove & O_WRONLY)
+					(*inode).w_openno--;
 			}
-		}
-	}
-
-	__otter_fs_error(EBADF);
-
-}
-
-int __otter_fs_change_dir_open_mode(int file, int mode)
-{
-	if(file > -1 && file < __otter_fs_MAXOPEN) /* is file a possible valid file? */
-	{
-		int ft = __otter_fs_files[file];
-
-		if(ft > -1) /* is file a valid file entry? */
-		{
-			if(__otter_fs_open_files[ft].type == __otter_fs_TYP_FILE)
+			else
 			{
 				struct __otter_fs_dnode* dnode = ((struct __otter_fs_dnode*)__otter_fs_open_files[ft].vnode);
-
-				int old_mode = __otter_fs_open_files[ft].mode;
-				int changed = old_mode ^ mode;
-
-				int permissions = 0;
-				if(changed & O_RDONLY)
-					permissions = 2;
-				if(mode & O_WRONLY) /* can't have write access to a directory */
-				{
-					errno = EISDIR;
-					return (-1);
-				}
 
 				if(!__otter_fs_can_permission((*dnode).permissions, permissions))
 				{
@@ -725,17 +712,23 @@ int __otter_fs_change_dir_open_mode(int file, int mode)
 					return (-1);
 				}
 
-				__otter_fs_open_files[ft].mode = mode;
-
-				if(changed & O_RDONLY)
+				if(add & O_RDONLY)
 					(*dnode).r_openno++;
+
+				if(remove & O_RDONLY)
+					(*dnode).r_openno--;
 			}
+
+			__otter_fs_open_files[ft].mode = mode;
+
+			return(1);
 		}
 	}
 
 	__otter_fs_error(EBADF);
 
 }
+
 
 /* file system initilization */
 

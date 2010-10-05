@@ -46,10 +46,7 @@ int __otter_libc_fcntl(int fd, int cmd, ...)
 
 				if(ft > -1) /* is file a valid file entry? */
 				{
-					if(__otter_fs_open_files[ft].type == __otter_fs_TYP_DIR)
-						r = __otter_fs_change_dir_open_mode(fd, mode);
-					else
-						r = __otter_fs_change_file_open_mode(fd, mode);
+					r = __otter_fs_change_open_mode(fd, mode) - 1;
 				}
 			}
 			break;
@@ -154,11 +151,6 @@ int __otter_libc_open(const char* name2, int oflag, ...)
 		if((O_CREAT | O_EXCL) & oflag) /* O_EXCL requires that the file did not exist with O_CREAT */
 		{
 			errno = EEXIST;
-			return (-1);
-		}
-		else if(O_CREAT & oflag) /* undefined behavior */
-		{
-			assert(0);
 			return (-1);
 		}
 	}

@@ -41,6 +41,11 @@ unsigned int confFileSize = sizeof(confFileContents) - 1;
 int
 main(int argc, const char* argv[])
 {
+  /*__otter_libc_init();*/
+  __otter_fs_mount();
+  __otter_fs_touch("foo.txt", __otter_fs_pwd);
+  open("foo.txt", O_RDWR);
+
   struct vsf_session the_session =
   {
     /* Control connection */
