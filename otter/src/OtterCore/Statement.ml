@@ -236,7 +236,7 @@ let exec_stmt job =
 	in
 
 	Output.set_mode Output.MSG_STMT;
-	Output.printf "%a@\n" Printer.stmt_abbr stmt;
+	Output.printf "@[%a@\n@]" Printer.stmt_abbr stmt;
 	match stmt.skind with
 		| Instr [] ->
 				let nextStmt = match stmt.succs with [x] -> x | _ -> assert false in

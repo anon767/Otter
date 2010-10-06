@@ -86,10 +86,10 @@ let rec byte ff = function
 and bytearray ff arr =
 	let byte_n b c =
 		byte ff b;
-		if c <> 1 then fprintf ff "\\{%d}" c;
-		pp_print_cut ff ()
+		if c = 2 then byte ff b
+		else if c > 2 then fprintf ff "\\{%d}@," c;
 	in
-	pp_print_string ff "Bytearray(";
+	fprintf ff "@[Bytearray(";
 	let last = ImmutableArray.fold_left begin fun b' b -> match b' with
 		| Some (b', n) when match b with Byte_Bytes _ -> false | _ -> b = b' ->
 			Some (b', n + 1)
@@ -102,7 +102,7 @@ and bytearray ff arr =
 	match last with
 		| Some (b, n) ->
 			byte_n b n;
-			pp_print_string ff ")"
+			fprintf ff ")@]"
 		| None ->
 			failwith "Unreachable"
 
@@ -179,10 +179,10 @@ and bytes ff = bytes_named [] ff
 and bytes_named bytes_to_names ff =
 	let rec bytes ff = function
 		| Bytes_Constant (Cil.CInt64 (n, ikind, _)) ->
-			fprintf ff "Bytes(@[<hov>%a@]@,)" Printcil.const (Cil.CInt64 (n, ikind, None))
+			fprintf ff "@[Bytes(@[<hov>%a@]@,)@]" Printcil.const (Cil.CInt64 (n, ikind, None))
 
 		| Bytes_Constant n ->
-			fprintf ff "Bytes(@[<hov>%a@]@,)" Printcil.const n
+			fprintf ff "@[Bytes(@[<hov>%a@]@,)@]" Printcil.const n
 
 		| Bytes_ByteArray arr as bytes ->
 			begin try
@@ -193,25 +193,25 @@ and bytes_named bytes_to_names ff =
 			end
 
 		| Bytes_Address (block, offset) ->
-			fprintf ff "Addr(@[<hov>%a@]@ + @[<hov>%a@]@,)" memory_block block bytes offset
+			fprintf ff "@[Addr(@[<hov>%a@]@ + @[<hov>%a@]@,)@]" memory_block block bytes offset
 
 		| Bytes_Conditional c ->
 			conditional bytes ff c
 
 		| Bytes_Op (op, operands) ->
-			fprintf ff "%a(@[<hov>%a@]@,)" operator op (pp_print_list (fun ff (x, _) -> bytes ff x) ",@ ") operands
+			fprintf ff "@[%a(@[<hov>%a@]@,)@]" operator op (pp_print_list (fun ff (x, _) -> bytes ff x) ",@ ") operands
 
 		| Bytes_Read (content, off, len) ->
-			fprintf ff "Read(@[<hov>%a@],@ @[<hov>%a@],@ %d@,)" bytes content bytes off len
+			fprintf ff "@[Read(@[<hov>%a@],@ @[<hov>%a@],@ %d@,)@]" bytes content bytes off len
 
 		| Bytes_Write (content, off, len, newbytes) ->
-			fprintf ff "Write(@[<hov>%a@],@ @[<hov>%a@],@ %d,@ @[<hov>%a@]@,)" bytes content bytes off len bytes newbytes
+			fprintf ff "@[Write(@[<hov>%a@],@ @[<hov>%a@],@ %d,@ @[<hov>%a@]@,)@]" bytes content bytes off len bytes newbytes
 
 		| Bytes_FunPtr (v, _) ->
-			fprintf ff "Funptr(%s)" v.Cil.vname
+			fprintf ff "@[Funptr(%s)@]" v.Cil.vname
 
 		| Bytes_Unbounded (name, id, size) ->
-			fprintf ff "Unbounded(%s,@ %d,@ @[<hov>%a@]@,)" name id bytes size
+			fprintf ff "@[Unbounded(%s,@ %d,@ @[<hov>%a@]@,)@]" name id bytes size
 	in
 	bytes ff
 
@@ -228,7 +228,7 @@ and memory_block ff block =
 		| Block_type_Heap -> "Heap"
 		| Block_type_Aliased -> "Aliased"
 	in
-	fprintf ff "\"%s\"@@%s(@[<hov>%a@]@,)" block.memory_block_name block_type bytes block.memory_block_addr
+	fprintf ff "@[\"%s\"@@%s(@[<hov>%a@]@,)@]" block.memory_block_name block_type bytes block.memory_block_addr
 
 
 (** Print a {!type:Bytes.bytes}, formatting the outermost unary/binary expressions as a tree.
