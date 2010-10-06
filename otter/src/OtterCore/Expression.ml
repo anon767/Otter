@@ -7,7 +7,7 @@ open BytesUtility
 open Types
 open Operator
 
-exception ConditionalFailureException of (guard * string) list
+exception ConditionalFailureException of Bytes.bytes * string
 
 (* Print an error message saying that the assertion [bytes] failed in
 	 state [state]. [exps] is the expression representing [bytes].
@@ -166,7 +166,7 @@ let add_offset offset lvals =
 	conditional__map begin fun (block, offset2) ->
 		conditional__lval_block (block, Operator.plus [(offset, !Cil.upointType); (offset2, !Cil.upointType)])
 	end lvals
-	
+
 
 let rec
 
@@ -174,7 +174,7 @@ rval state exp : state * bytes =
 	(*try*)
 	let result =
 		match exp with
-			| Const (constant) -> 
+			| Const (constant) ->
 					begin match constant with
 						| CStr(str) ->
 							let bytes = constant_to_bytes constant in
@@ -202,15 +202,15 @@ rval state exp : state * bytes =
 									state, b
 							end
 					end
-					
+
 			|	SizeOfE (exp2) ->
 					rval state (SizeOf (Cil.typeOf exp2))
-					
+
 			|	SizeOfStr (str) ->
 					let len = (String.length str)+1  in
 					let exp2 = Cil.integer len in
-					rval state  exp2			
-					
+					rval state  exp2
+
 			|	AlignOf (typ) ->
 					failwith "__align_of not implemented"
 			|	AlignOfE (exp2) ->
@@ -236,55 +236,55 @@ rval state exp : state * bytes =
 					(state, rval_cast typ bytes (Cil.typeOf exp2))
 	in
 	result
-	
+
 and
-   
+
 (** rvtyp: the type of rv. if rv is a signed int then we will need logical shifting; no otherwise. *)
 rval_cast typ rv rvtyp =
 	begin
 	match rv,typ with
 		(* optimize for casting among int family *)
-		| Bytes_Constant(CInt64(n,ikind,_)),TInt(new_ikind,_) -> 
+		| Bytes_Constant(CInt64(n,ikind,_)),TInt(new_ikind,_) ->
 			begin match Cil.kinteger64 new_ikind n with
 			    Const (const) -> make_Bytes_Constant(const)
 			  | _ -> failwith "rval_cast, const: unreachable"
-			end						
+			end
 		(* optimize for casting among float family *)
-		| Bytes_Constant(CReal(f,fkind,s)),TFloat(new_fkind,_) -> 
+		| Bytes_Constant(CReal(f,fkind,s)),TFloat(new_fkind,_) ->
 			let const = CReal(f,new_fkind,s) in
          make_Bytes_Constant(const)
 		(* added so that from now on there'll be no make_Bytes_Constant *)
 		| Bytes_Constant(const),_ ->
 			rval_cast typ (constant_to_bytes const) rvtyp
-			
-		| _ ->	
+
+		| _ ->
 			begin
 			let old_len = bytes__length rv in
 			let new_len = (Cil.bitsSizeOf typ) / 8 in
 			let worst_case () = (* as function so that it's not always evaluated *)
-					if new_len < old_len 
+					if new_len < old_len
 					then bytes__read rv (int_to_bytes 0) new_len
-					else 
+					else
 						(* TODO: should call STP's sign extension operation *)
-						bytes__write (bytes__make new_len) (int_to_bytes 0) old_len rv 
+						bytes__write (bytes__make new_len) (int_to_bytes 0) old_len rv
 
 			in
 			if new_len = old_len then rv (* do nothing *)
 			else begin match rv with
-				| Bytes_ByteArray(bytearray) ->	
-					if new_len > old_len 
+				| Bytes_ByteArray(bytearray) ->
+					if new_len > old_len
 					then
-						if isConcrete_bytearray bytearray 
-						then 
-							begin			
+						if isConcrete_bytearray bytearray
+						then
+							begin
 								let newbytes = (ImmutableArray.sub bytearray 0 new_len) in
 								let isSigned = match rvtyp with TInt(ikind,_) when Cil.isSigned ikind -> true | _ -> false in
-								let leftmost_is_one = 
+								let leftmost_is_one =
 									match ImmutableArray.get bytearray ((ImmutableArray.length bytearray)-1) with
 										| Byte_Concrete (c) -> Char.code c >= 0x80
 										| _ -> failwith "unreachable (bytearray is concrete)"
 								in
-								let sth = if isSigned && leftmost_is_one 
+								let sth = if isSigned && leftmost_is_one
 										then byte__111 (* For some reason, this seems not to happen in practice *)
 										else byte__zero
 								in
@@ -303,7 +303,7 @@ rval_cast typ rv rvtyp =
 				end
 			end
 	end
-(*																														
+(*
 			else if new_len > old_len then
 
 *)
@@ -343,22 +343,22 @@ and
 
 deref state bytes =
 	match bytes with
-		| Bytes_Constant (c) -> 
+		| Bytes_Constant (c) ->
 			FormatPlus.failwith "Dereference something not an address:@ constant @[%a@]" BytesPrinter.bytes bytes
 
 		| Bytes_ByteArray(bytearray) ->
-         (* 
+         (*
           * Special treatment: look for
           * "==(Bytearray(bytearray),make_Bytes_Address(b,f))" in PC.
           * If found, return deref state make_Bytes_Address(b,f).
           * Otherwise, throw exception
           * *)
-         let rec find_match pc = match pc with 
-           | [] -> 
+         let rec find_match pc = match pc with
+           | [] ->
                FormatPlus.failwith "Dereference something not an address (bytearray)@ @[%a@]@." BytesPrinter.bytes bytes
-           | Bytes_Op(OP_EQ,(bytes1,_)::(bytes2,_)::[])::pc' -> 
+           | Bytes_Op(OP_EQ,(bytes1,_)::(bytes2,_)::[])::pc' ->
                begin
-                 let bytes_tentative = if bytes1=bytes then bytes2 else if bytes2=bytes then bytes1 else bytes__zero in 
+                 let bytes_tentative = if bytes1=bytes then bytes2 else if bytes2=bytes then bytes1 else bytes__zero in
                    match bytes_tentative with Bytes_Address(_,_) -> deref state bytes_tentative | _ -> find_match pc'
                end
            | Bytes_Op(OP_LAND,btlist)::pc' ->
@@ -370,52 +370,61 @@ deref state bytes =
 		| Bytes_Address(block, offset) ->
 			if MemOp.state__has_block state block then
            conditional__lval_block (block, offset)
-			else 
+			else
            failwith "Dereference into an expired stack frame"
 
 		| Bytes_Conditional c ->
             let make_dummy_lval () =
                 Unconditional (block__make_string_literal "@dummy_block" 4, bytes__zero)
             in
-            let acc, conditional = 
-			  conditional__fold_map (fun acc guard c ->
-                  try 
-                      acc, deref state c
-                  with 
+            let (acc_pass, acc_fail), conditional =
+			  conditional__fold_map (fun (acc_pass, acc_fail) guard c ->
+                  try
+                      (guard::acc_pass, acc_fail), deref state c
+                  with
                       Failure msg ->
                           (* Collect a list of failing guard/message pairs *)
-                          (guard, msg)::acc, make_dummy_lval ()
-              ) [] c
-            in 
-                if acc = [] then 
+                          (acc_pass, (guard, msg)::acc_fail), make_dummy_lval ()
+              ) ([],[]) c
+            in
+                if acc_fail = [] then
                     conditional
-                else 
-                    (* Caught in Statement.step *)
-                    raise (ConditionalFailureException acc)
+                else
+                    let failing_condition, aggregated_msg = List.fold_left (
+                        fun (failing_condition, aggregated_msg) (guard, msg) ->
+                        let bytes_of_guard = Bytes.guard__to_bytes guard in
+                            (Bytes.bytes_or failing_condition bytes_of_guard, aggregated_msg ^ "/" ^ msg)
+                        ) (Bytes.fls, "(aggregated failure)") acc_fail
+                    in
+                    if acc_pass = [] then
+                        failwith aggregated_msg
+                    else
+                        (* Caught in Statement.step *)
+                        raise (ConditionalFailureException (failing_condition, aggregated_msg))
 
-		| Bytes_Op(op, operands) -> 
+		| Bytes_Op(op, operands) ->
           FormatPlus.failwith "Dereference something not an address:@ operation @[%a@]" BytesPrinter.bytes bytes
 
-		| Bytes_Read(bytes,off,len) -> 
+		| Bytes_Read(bytes,off,len) ->
 			conditional__map ~test:(Stp.query_guard state.path_condition)
 				(deref state) (expand_read_to_conditional bytes off len)
 
 		| Bytes_Write(bytes,off,len,newbytes) ->
           failwith "Dereference of Bytes_Write not implemented"
 
-		| Bytes_FunPtr(_) -> 
+		| Bytes_FunPtr(_) ->
           failwith "Dereference of Bytes_FunPtr not implemented"
 
 		| Bytes_Unbounded(_,_,_) ->
           failwith "Dereference of Bytes_Unbounded not implemented"
-			
+
 and
 
 (* Assume index's ikind is IInt *)
 flatten_offset state lhost_typ offset : state * bytes * typ (* type of (lhost,offset) *) =
 	match offset with
 		| NoOffset -> (state, bytes__zero, lhost_typ)
-		| _ -> 
+		| _ ->
 			let (state, index, base_typ, offset2) =
 				begin match offset with
 					| Field(fieldinfo, offset2) ->
@@ -427,13 +436,13 @@ flatten_offset state lhost_typ offset : state * bytes * typ (* type of (lhost,of
 							let state, rv0 = rval state exp in
 							(* We require that offsets be values of type !upointType *)
 							let rv =
-								if bytes__length rv0 <> (Cil.bitsSizeOf !Cil.upointType / 8) 
+								if bytes__length rv0 <> (Cil.bitsSizeOf !Cil.upointType / 8)
 								then rval_cast !Cil.upointType rv0 (Cil.typeOf exp)
 								else rv0
 							in
 							let base_typ = match Cil.unrollType lhost_typ with TArray(typ2, _, _) -> typ2 | _ -> failwith "Must be array" in
 							let base_size = (Cil.bitsSizeOf base_typ) / 8 in (* must be known *)
-							let index = Operator.mult [(int_to_offset_bytes base_size,!Cil.upointType);(rv,!Cil.upointType)] in 
+							let index = Operator.mult [(int_to_offset_bytes base_size,!Cil.upointType);(rv,!Cil.upointType)] in
 							(state, index, base_typ, offset2)
 					| _ -> failwith "Unreachable"
 				end
@@ -449,7 +458,7 @@ and
 field_offset f : int =
     let offset, _ = bitsOffset (TComp (f.fcomp, [])) (Field (f, NoOffset)) in
     offset / 8
- 
+
 and
 
 rval_unop state unop exp =
@@ -470,7 +479,7 @@ rval_binop state binop exp1 exp2 =
 		(state, int_to_bytes 0)
 	else if op == Operator.logor && isConcrete_bytes rv1 && bytes_to_bool rv1 = true then
 		(state, int_to_bytes 1)
-	else 
+	else
 		let state, rv2 = rval state exp2 in
 		let typ2 = Cil.typeOf exp2 in
 		let conditional = conditional__bytes (Operator.run op [(rv1,typ1);(rv2,typ2)]) in

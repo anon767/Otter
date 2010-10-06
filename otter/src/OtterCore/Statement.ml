@@ -81,7 +81,7 @@ let addInstrCoverage job instr =
 let function_from_exp job state exp args: (state * fundec) list =
 	match exp with
 		| Lval(Var(varinfo), NoOffset) ->
-			begin			
+			begin
 				try
 					[(state, FindCil.fundec_by_varinfo job.file varinfo)]
 				with Not_found ->
@@ -108,7 +108,7 @@ let function_from_exp job state exp args: (state * fundec) list =
 					(* the varinfo should always map to a valid fundec (if the file was parsed by Cil) *)
 					let fundec = FindCil.fundec_by_varinfo job.file varinfo in
 					[(state, fundec)]
-				| Bytes_Read(bytes2, offset, len) -> 
+				| Bytes_Read(bytes2, offset, len) ->
 					let fp = (BytesUtility.expand_read_to_conditional bytes2 offset len) in
 					(*Output.print_endline (To_string.bytes (Bytes_Conditional(fp)));*)
 					(getall fp)
@@ -121,7 +121,7 @@ let function_from_exp job state exp args: (state * fundec) list =
 		| _ ->
 			FormatPlus.failwith "Non-constant function ptr not supported :@ @[%a@]" Printer.exp exp
 
-let exec_fundec job state instr fundec lvalopt exps = 
+let exec_fundec job state instr fundec lvalopt exps =
 	let stmt = job.stmt in
 
 	(* evaluate the arguments *)
@@ -160,7 +160,7 @@ let exec_instr_call job instr lvalopt fexp exps =
 	let rec process_func_list func_list =
 		match func_list with
 			| [] -> []
-			| (state, fundec)::t -> 
+			| (state, fundec)::t ->
 				let job_state =
                     let job = {job with
                         decisionPath = ForkFunptr(instr, fundec)::job.decisionPath;} in
@@ -168,9 +168,9 @@ let exec_instr_call job instr lvalopt fexp exps =
 						(exec_fundec job state instr fundec lvalopt exps)
 					with Failure msg ->
 						if !Executeargs.arg_failfast then failwith msg;
-						let result = { 
-                            result_file = job.file; 
-                            result_state = state; 
+						let result = {
+                            result_file = job.file;
+                            result_state = state;
                             result_history = exHist;
                             result_decision_path = job.decisionPath; } in
 						Complete (Abandoned (`Failure msg, Job.get_loc job, result))
@@ -279,9 +279,9 @@ let exec_stmt job =
 										(state, Some retval)
 								in
 								Complete (Return
-									(retval, { 
-                                        result_file = job.file; 
-                                        result_state = state; 
+									(retval, {
+                                        result_file = job.file;
+                                        result_state = state;
                                         result_history = nextExHist None;
                                         result_decision_path = job.decisionPath; }))
 						| (Source (destOpt,callStmt,_,nextStmt))::_ ->
@@ -356,9 +356,9 @@ let exec_stmt job =
 						in
 						(nextState, nextStmt)
 					in
- 
+
 					let state, rv = Expression.rval state exp in
- 
+
 					Output.set_mode Output.MSG_GUARD;
 					if(Output.need_print Output.MSG_GUARD) then
 						begin
@@ -369,31 +369,31 @@ let exec_stmt job =
 							else
 								Output.printf "  @[%a@]@\n" (FormatPlus.pp_print_list BytesPrinter.bytes "@ AND ") state.path_condition;
 						end;
- 
+
 					let state, truth = MemOp.eval_with_cache state state.path_condition rv in
 					Output.set_mode Output.MSG_REG;
 					match truth with
 						| Ternary.True ->
 							Output.printf "True@\n";
 							let nextState,nextStmt = try_branch state None block1 in
-							let job' = { job with 
-                              state = nextState; 
-                              stmt = nextStmt; 
+							let job' = { job with
+                              state = nextState;
+                              stmt = nextStmt;
                               decisionPath = (ForkConditional(stmt, true))::job.decisionPath; } in
 							Active { job' with exHist = nextExHist (Some nextStmt) ~whichBranch:true; }
 
 						| Ternary.False ->
 							Output.printf "False@\n";
 							let nextState,nextStmt = try_branch state None block2 in
-							let job' = { job with 
-                              state = nextState; 
-                              stmt = nextStmt; 
+							let job' = { job with
+                              state = nextState;
+                              stmt = nextStmt;
                               decisionPath = (ForkConditional(stmt, false))::job.decisionPath; } in
 							Active { job' with exHist = nextExHist (Some nextStmt) ~whichBranch:false; }
 
 						| Ternary.Unknown ->
 							Output.printf "Unknown@\n";
-							
+
 							let nextStateT,nextStmtT = try_branch state (Some rv) block1 in
 							let nextStateF,nextStmtF = try_branch state (Some (logicalNot rv)) block2 in
 
@@ -405,12 +405,12 @@ let exec_stmt job =
 								state = nextStateT;
 								stmt = nextStmtT;
 								exHist = nextExHist (Some nextStmtT) ~whichBranch:true;
-                                decisionPath = (ForkConditional(stmt, true))::job.decisionPath; 
+                                decisionPath = (ForkConditional(stmt, true))::job.decisionPath;
 								jid = Counter.next job_counter; } in
 							let falseJob = { job with
 								state = nextStateF;
 								stmt = nextStmtF;
-                                decisionPath = (ForkConditional(stmt, false))::job.decisionPath; 
+                                decisionPath = (ForkConditional(stmt, false))::job.decisionPath;
 								exHist =  nextExHist (Some nextStmtF) ~whichBranch:false; } in
 							Output.set_mode Output.MSG_MUSTPRINT;
 							Output.printf "Branching on @[%a@]@ at %a.@\n"
@@ -433,37 +433,34 @@ let exec_stmt job =
 		| _ -> failwith "Not implemented yet"
 
 
+(* TODO (martin): the recursive call is never called twice. Change this to a non-recursive function. *)
 let rec step job job_queue =
     try
     	match job.instrList with
     		| [] -> (exec_stmt job, job_queue)
     		| _ -> (exec_instr job, job_queue)
     with
+        (* TODO (martin): combine the two patterns *)
     	| Failure msg ->
     		if !Executeargs.arg_failfast then failwith msg;
-    		let result = { 
-                result_file = job.file; 
-                result_state = job.state; 
-                result_history = job.exHist; 
+    		let result = {
+                result_file = job.file;
+                result_state = job.state;
+                result_history = job.exHist;
                 result_decision_path = job.decisionPath; } in
     		(Complete (Abandoned (`Failure msg, Job.get_loc job, result)), job_queue)
-        | Expression.ConditionalFailureException guardmsgs ->
-            let failing_condition, aggregated_msg = List.fold_left (
-                fun (failing_condition, aggregated_msg) (guard, msg) ->
-                let bytes_of_guard = Bytes.guard__to_bytes guard in
-                    (Bytes.bytes_or failing_condition bytes_of_guard, aggregated_msg ^ "/" ^ msg)
-                ) (Bytes.fls, "(aggregated failure)") guardmsgs 
-            in
-            let abandoned_job_state = 
+        | Expression.ConditionalFailureException (failing_condition, aggregated_msg) ->
+            (* assert: failing_condition is never true *)
+            let abandoned_job_state =
                 (* TODO (martin): implement a function that extracts job_result from job *)
-				let result = { 
-                    result_file = job.file; 
-                    result_state = job.state; 
+				let result = {
+                    result_file = job.file;
+                    result_state = job.state;
                     result_history = job.exHist;
                     result_decision_path = job.decisionPath; } in
 				Complete (Abandoned (`Failure aggregated_msg, Job.get_loc job, result))
             in
-            let job' = {job with 
+            let job' = {job with
                 state = {job.state with
                     path_condition = (Bytes.bytes_not failing_condition)::job.state.path_condition
             }} in
