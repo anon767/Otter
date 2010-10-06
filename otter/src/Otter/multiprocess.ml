@@ -234,24 +234,51 @@ let otter_gmalloc job multijob retopt exps =
 	let state, block, bytes = otter_gmalloc_size state size bytes (Job.get_loc job) in
 	let job = BuiltinFunctions.end_function_call { job with state = BuiltinFunctions.set_return_value state retopt bytes } in
 
-	let rec push_to_all procs block bytes =
-		match procs with
-			| [] -> []
-			| (pc, ls)::t -> 
-				let ls = { ls with block_to_bytes = MemoryBlockMap.add block (Deferred.Immediate bytes) ls.block_to_bytes; } in
-				(pc, ls)::(push_to_all t block bytes)
-	in
 	let multijob = 
 		{multijob with
 			shared = 
 				{multijob.shared with
 					shared_block_to_bytes = MemoryBlockMap.add block (Deferred.Immediate bytes) multijob.shared.shared_block_to_bytes;
 				};
-			processes = push_to_all multijob.processes block bytes;
+			processes = List.map 
+				(fun (pc, ls) -> 
+					(pc, { ls with block_to_bytes = MemoryBlockMap.add block (Deferred.Immediate bytes) ls.block_to_bytes; }) 
+				)
+				multijob.processes;
 		}
 	in
 
 	(Active job, multijob)
+
+let otter_gfree job multijob retopt exps =
+	let state, ptr = Expression.rval job.state (List.hd exps) in
+	match ptr with
+		| Bytes.Bytes_Address (block, _) ->
+			if block.Bytes.memory_block_type != Bytes.Block_type_Heap then
+				FormatPlus.failwith "gfreeing a non-gmalloced pointer:@ @[%a@]@ = @[%a@]@\n" Printer.exp (List.hd exps) BytesPrinter.bytes ptr
+			else if not (MemoryBlockMap.mem block multijob.shared.shared_block_to_bytes) then
+				FormatPlus.failwith "gfreeing a non-gmalloced pointer or double-gfree:@ @[%a@]@ = @[%a@]@\n" Printer.exp (List.hd exps) BytesPrinter.bytes ptr
+			else if not (MemoryBlockMap.mem block state.Types.block_to_bytes) then
+				FormatPlus.failwith "gfreeing after free:@ @[%a@]@ = @[%a@]@\n" Printer.exp (List.hd exps) BytesPrinter.bytes ptr
+			else
+				let multijob = 
+					{multijob with
+						shared =
+							{multijob.shared with
+								shared_block_to_bytes = MemoryBlockMap.remove block multijob.shared.shared_block_to_bytes;
+							};
+						processes = List.map 
+							(fun (pc, ls) -> 
+								(pc, { ls with block_to_bytes = MemoryBlockMap.remove block ls.block_to_bytes; }) 
+							)
+							multijob.processes;
+					}
+				in
+				(Active job, multijob)
+				
+		| _ ->
+			Output.set_mode Output.MSG_MUSTPRINT;
+			FormatPlus.failwith "gfreeing something that is not a valid pointer:@ @[%a@]@ = @[%a@]@\n" Printer.exp (List.hd exps) BytesPrinter.bytes ptr
 
 let rec get_job_multijob job_queue = 
 	match job_queue with
@@ -323,6 +350,7 @@ let run job =
 			multi_set_output_formatter_interceptor @@@
 			(intercept_multi_function_by_name_internal "fork"                       libc_fork) @@@
 			(intercept_multi_function_by_name_internal "__otter_multi_gmalloc"      otter_gmalloc) @@@
+			(intercept_multi_function_by_name_internal "__otter_multi_gfree"        otter_gfree) @@@
 			repack_job_interceptor @@@
 			BuiltinFunctions.interceptor @@ 
 			BuiltinFunctions.libc_interceptor @@
@@ -363,3 +391,4 @@ let feature = {
 	Cil.fd_post_check = true;
 	Cil.fd_doit = doit
 }
+

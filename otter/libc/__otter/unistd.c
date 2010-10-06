@@ -250,7 +250,7 @@ ssize_t __otter_libc_write2(
 				 * it will probably be needed.
 				 */
 				int newblocks = (((offset + num) / __otter_fs_BLOCK_SIZE) + 1);
-				(*inode).data = (char*)realloc((*inode).data, newblocks * __otter_fs_BLOCK_SIZE);
+				(*inode).data = (char*)__otter_multi_grealloc((*inode).data, newblocks * __otter_fs_BLOCK_SIZE);
 				/* initilize new blocks to 0; if the write was past then end of the file, the gap should be set to 0 */
 				memset((*inode).data + physicalsize, 0, (newblocks - (*inode).numblocks) * __otter_fs_BLOCK_SIZE);
 				(*inode).numblocks = newblocks;
@@ -436,7 +436,7 @@ int __otter_libc_setuid(uid_t uid)
 	{
 		/*Assume that the user would authenticate as needed*/
 
-		if(__otter_uid ^ uid) /*uid changed*/
+		if(__otter_uid != uid) /*uid changed*/
 		{
 			__otter_fs_umask = __otter_fs_umask ^ 0x3000;  /* flip owner and user bits */
 			__otter_uid = uid;

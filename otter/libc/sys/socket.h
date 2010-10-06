@@ -8,8 +8,8 @@
 
 #define SCM_RIGHTS 1234
 
-#define SOCK_DGRAM 1
-#define SOCK_STREAM 2
+#define SOCK_DGRAM 1 /* UDP */
+#define SOCK_STREAM 2 /* TCP */
 #define SOCK_SEQPACKET 3
 
 #define SOL_SOCKET -1
@@ -39,9 +39,9 @@
 #define MSG_TRUNC 32
 #define MSG_WAITALL 64
 
+#define AF_UNSPEC 0
 #define AF_UNIX 1
-#define AF_UNSPEC 2
-#define AF_INET 3
+#define AF_INET 2
 
 #define SHUT_RD 1
 #define SHUT_WR 2
@@ -76,5 +76,7 @@ struct linger
 	int l_onoff;
 	int l_linger;
 };
+
+int socket(int domain, int type, int protocol);
 
 #endif

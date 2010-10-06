@@ -825,7 +825,6 @@ let otter_voice = wrap_state_function begin fun state retopt exps ->
 	state
 end
 
-
 let interceptor job job_queue interceptor =
 	try
 		(
@@ -873,10 +872,10 @@ let interceptor job job_queue interceptor =
 	with Failure msg ->
 		if !Executeargs.arg_failfast then failwith msg;
 		let result = { 
-            result_file = job.file; 
-            result_state = job.state; 
-            result_history = job.exHist; 
-            result_decision_path = job.decisionPath; } in
+			result_file = job.file; 
+			result_state = job.state; 
+			result_history = job.exHist; 
+			result_decision_path = job.decisionPath; } in
 		(Complete (Abandoned (`Failure msg, Job.get_loc job, result)), job_queue)
 
 let libc_interceptor job job_queue interceptor = 
@@ -1004,8 +1003,8 @@ let libc_interceptor job job_queue interceptor =
 	with Failure msg ->
 		if !Executeargs.arg_failfast then failwith msg;
 		let result = { 
-            result_file = job.file; 
-            result_state = job.state; 
-            result_history = job.exHist; 
-            result_decision_path = job.decisionPath; } in
+			result_file = job.file; 
+			result_state = job.state; 
+			result_history = job.exHist; 
+			result_decision_path = job.decisionPath; } in
 		(Complete (Abandoned (`Failure msg, Job.get_loc job, result)), job_queue)

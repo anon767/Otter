@@ -177,10 +177,46 @@ void* __otter_libc_realloc(void* ptr, size_t bytes)
 		ptr2[i] = ptr[i];
 	}
 	free(ptr);
-	__libc_get_block_size(ptr2);
+
 	return ptr2;
 	
 }
+
+void* __otter_multi_gcalloc(size_t amount, size_t bytes)
+{
+	char *ptr = __otter_multi_gmalloc(bytes * amount);
+	for(int i = 0; i < bytes * amount; i++)
+	{
+		ptr[i] = 0;
+	}
+
+	return (void*)ptr;
+}
+
+void* __otter_multi_grealloc(void* ptr, size_t bytes)
+{
+	if (ptr == 0)
+		return __otter_multi_gmalloc(bytes);
+	if (bytes == 0)
+	{
+		free(ptr);
+		return 0;
+	}
+
+	int old_size = __libc_get_block_size(ptr);
+	void* ptr2 = __otter_multi_gmalloc(bytes);
+	__libc_get_block_size(ptr2);
+	int max = (bytes > old_size) ? old_size : bytes;
+	for(int i = 0; i < max; i++)
+	{
+		ptr2[i] = ptr[i];
+	}
+	__otter_multi_gfree(ptr);
+
+	return ptr2;
+	
+}
+
 
 void __otter_libc_abort()
 {

@@ -47,6 +47,10 @@ void* malloc(int bytes);
 void* calloc(size_t amount, size_t bytes);
 void* realloc(void* ptr, size_t bytes);
 void free(void* ptr);
+void* __otter_multi_gmalloc(int bytes);
+void* __otter_multi_gcalloc(size_t amount, size_t bytes);
+void* __otter_multi_grealloc(void* ptr, size_t bytes);
+void __otter_multi_free(void* ptr);
 size_t __libc_get_block_size(void* ptr);
 
 /* System environment (7.20.4) */
