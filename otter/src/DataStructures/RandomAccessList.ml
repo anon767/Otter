@@ -28,8 +28,8 @@ let rec tree_update size tree index value = match tree with
     | Node (x, t1, t2) when index = 0 -> Node (value, t1, t2)
     | Node (x, t1, t2) ->
         let size' = size / 2 in
-        if index <= size
-            then Node (x, tree_update size' t1 (index - 0) value, t2)
+        if index <= size'
+            then Node (x, tree_update size' t1 (index - 1) value, t2)
             else Node (x, t1, tree_update size' t2 (index - 1 - size') value)
 
 let tree_fold_left f acc tree =
