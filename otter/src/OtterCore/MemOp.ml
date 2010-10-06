@@ -227,7 +227,7 @@ let rec state__assign state (lvals, size) bytes =
 	let assign state pre (block, offset) =
 		(* TODO: provide some way to report partial error *)
 		if block.memory_block_type == Block_type_StringLiteral then
-			failwith "Error: write to a constant string literal"
+			failwith "Error: write to a string literal"
 		else
 
 		let state, oldbytes = Deferred.force state (MemoryBlockMap.find block state.block_to_bytes) in
@@ -242,7 +242,7 @@ let rec state__assign state (lvals, size) bytes =
 			| _          -> make_Bytes_Conditional ( IfThenElse (pre, conditional__bytes newbytes, conditional__bytes oldbytes) )
 		in
 		Output.set_mode Output.MSG_ASSIGN;
-		Output.printf "Assign@ @[%a@]@ to @[%a, %a@]@\n" BytesPrinter.bytes bytes BytesPrinter.memory_block block BytesPrinter.bytes offset;
+		Output.printf "Assign@ @[%a@]@ to @[%a@], @[%a@]@\n" BytesPrinter.bytes bytes BytesPrinter.memory_block block BytesPrinter.bytes offset;
 		state__add_block state block newbytes
 	in
 	conditional__fold assign state lvals
@@ -255,7 +255,7 @@ let state__start_fcall state callContext fundec argvs =
     (* Output.print_endline (">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
      *)
 
-    Output.printf "Enter function @[%a@]@\n" Printer.fundec fundec;
+    Output.printf "@[Enter function %a@]@\n" Printer.fundec fundec;
     (* set up the new stack frame *)
 	let block_to_bytes = state.block_to_bytes in
 	let formal, block_to_bytes = frame__add_varinfos frame__empty block_to_bytes fundec.Cil.sformals Block_type_Local in
@@ -290,7 +290,7 @@ let state__start_fcall state callContext fundec argvs =
 
 let state__end_fcall state =
 	Output.set_mode Output.MSG_FUNC;
-	Output.printf "Exit function %a@\n" Printer.fundec (List.hd state.callstack);
+	Output.printf "@[Exit function %a@]@\n" Printer.fundec (List.hd state.callstack);
 	(* Output.print_endline ("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
      *)
 	let block_to_bytes = state.block_to_bytes in
