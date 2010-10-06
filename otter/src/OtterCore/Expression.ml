@@ -7,6 +7,8 @@ open BytesUtility
 open Types
 open Operator
 
+exception ConditionalFailureException of (guard * string) list
+
 (* Print an error message saying that the assertion [bytes] failed in
 	 state [state]. [exps] is the expression representing [bytes].
 	 [isUnknown] specifies whether the assertion returned
@@ -372,7 +374,24 @@ deref state bytes =
            failwith "Dereference into an expired stack frame"
 
 		| Bytes_Conditional c ->
-			conditional__map (deref state) c
+            let make_dummy_lval () =
+                Unconditional (block__make_string_literal "@dummy_block" 4, bytes__zero)
+            in
+            let acc, conditional = 
+			  conditional__fold_map (fun acc guard c ->
+                  try 
+                      acc, deref state c
+                  with 
+                      Failure msg ->
+                          (* Collect a list of failing guard/message pairs *)
+                          (guard, msg)::acc, make_dummy_lval ()
+              ) [] c
+            in 
+                if acc = [] then 
+                    conditional
+                else 
+                    (* Caught in Statement.step *)
+                    raise (ConditionalFailureException acc)
 
 		| Bytes_Op(op, operands) -> 
           FormatPlus.failwith "Dereference something not an address:@ operation @[%a@]" BytesPrinter.bytes bytes

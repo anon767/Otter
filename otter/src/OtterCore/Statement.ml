@@ -433,17 +433,43 @@ let exec_stmt job =
 		| _ -> failwith "Not implemented yet"
 
 
-let step job job_queue =
-	try
-		match job.instrList with
-			| [] -> (exec_stmt job, job_queue)
-			| _ -> (exec_instr job, job_queue)
-	with
-		| Failure msg ->
-			if !Executeargs.arg_failfast then failwith msg;
-			let result = { 
+let rec step job job_queue =
+    try
+    	match job.instrList with
+    		| [] -> (exec_stmt job, job_queue)
+    		| _ -> (exec_instr job, job_queue)
+    with
+    	| Failure msg ->
+    		if !Executeargs.arg_failfast then failwith msg;
+    		let result = { 
                 result_file = job.file; 
                 result_state = job.state; 
                 result_history = job.exHist; 
                 result_decision_path = job.decisionPath; } in
-			(Complete (Abandoned (`Failure msg, Job.get_loc job, result)), job_queue)
+    		(Complete (Abandoned (`Failure msg, Job.get_loc job, result)), job_queue)
+        | Expression.ConditionalFailureException guardmsgs ->
+            let failing_condition, aggregated_msg = List.fold_left (
+                fun (failing_condition, aggregated_msg) (guard, msg) ->
+                let bytes_of_guard = Bytes.guard__to_bytes guard in
+                    (Bytes.bytes_or failing_condition bytes_of_guard, aggregated_msg ^ "/" ^ msg)
+                ) (Bytes.fls, "(aggregated failure)") guardmsgs 
+            in
+            let abandoned_job_state = 
+                (* TODO (martin): implement a function that extracts job_result from job *)
+				let result = { 
+                    result_file = job.file; 
+                    result_state = job.state; 
+                    result_history = job.exHist;
+                    result_decision_path = job.decisionPath; } in
+				Complete (Abandoned (`Failure aggregated_msg, Job.get_loc job, result))
+            in
+            let job' = {job with 
+                state = {job.state with
+                    path_condition = (Bytes.bytes_not failing_condition)::job.state.path_condition
+            }} in
+            let job_state, job_queue = step job' job_queue in
+            let job_state' = match job_state with
+                | Fork (lst) -> Fork(abandoned_job_state::lst)
+                | _ -> Fork([abandoned_job_state; job_state])
+            in
+                job_state', job_queue

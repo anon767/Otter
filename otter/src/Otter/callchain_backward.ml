@@ -24,11 +24,11 @@ type target = {
   target_predicate: failing_predicate;
 }
 
-let distance_to_targets_prioritizer callstack target_fundecs job = 
+let distance_to_targets_prioritizer callstack target_fundecs job =
     if (List.length job.state.callstack) = (List.length callstack) then
       let graph,root = make_graph (List.hd job.state.callstack) in
-      let target_nodes = 
-        Graph.filter_nodes graph 
+      let target_nodes =
+        Graph.filter_nodes graph
           begin
             fun node -> match node.obj with
               | InstrStmt.Instr((Call(_,Lval(Var(varinfo),_),exps,_))::_,_)  ->
@@ -36,7 +36,7 @@ let distance_to_targets_prioritizer callstack target_fundecs job =
               | _ -> false
           end
       in
-      let get_predicate job node = 
+      let get_predicate job node =
         match job.instrList,job.stmt,node.obj with
           | [],stmt,InstrStmt.Stmt(stmt') when stmt==stmt' -> true
           | [],_,_ -> false
@@ -47,12 +47,12 @@ let distance_to_targets_prioritizer callstack target_fundecs job =
       assert(List.length sources = 1);
       let source = List.hd sources in
       Graph.set_color graph max_int;
-      let backward_distance_from_targets = 
-          List.fold_left (fun d tar -> 
+      let backward_distance_from_targets =
+          List.fold_left (fun d tar ->
               let d' = Graph.backward_distance graph source tar in
                   min d d'
           ) max_int target_nodes
-      in 
+      in
           if backward_distance_from_targets = max_int then
               BestFirstQueue.Drop (Printf.sprintf "Warning: job %d dropped" job.jid)
           else
@@ -64,14 +64,19 @@ let distance_to_targets_prioritizer callstack target_fundecs job =
         BestFirstQueue.Rank (max_float)
 
 let print_decisions ff decisions =
-    let print_decision ff decision = 
+    let print_decision ff decision =
         match decision with
-        | ForkConditional(stmt,truth) -> 
+        | ForkConditional(stmt,truth) ->
                 Format.fprintf ff "Decision: @[%a@]: %s@\n" Printer.stmt_abbr stmt (if truth then "true" else "false")
         | ForkFunptr(instr,fundec) ->
                 Format.fprintf ff "Decision: @[%a@]@\n" Printer.fundec fundec
+        | ForkEnd ->
+                Format.fprintf ff "Decision: END@\n"
     in
-        List.iter (print_decision ff) decisions
+        if decisions = [] then
+            Format.fprintf ff "Decision: (none)@\n"
+        else
+            List.iter (print_decision ff) decisions
 
 let print_job_completion ff job_completion =
     match job_completion with
@@ -81,7 +86,7 @@ let print_job_completion ff job_completion =
     | Job.Abandoned(_,_,_) -> Format.fprintf ff "Abandoned@\n"
     | Job.Truncated(_,_) -> Format.fprintf ff "Truncated@\n"
 
-let print_job ff job = 
+let print_job ff job =
     Format.fprintf ff "Job (first statement):@\n";
     match job.instrList with
     | instr::_ -> Format.fprintf ff "@[%a@]@\n" Printcil.instr instr
@@ -89,7 +94,7 @@ let print_job ff job =
 
 let print_list name print_function lst =
     Format.printf "-----------------------------------------@\n";
-    Format.printf "List of %s(s) with length %d@\n" name (List.length lst);
+    Format.printf "List of %s(s) (length %d)@\n" name (List.length lst);
     List.iter (Format.printf "Element: @[%a@]@\n" print_function) lst;
     Format.printf "-----------------------------------------@\n"
 
@@ -102,8 +107,8 @@ let test_job_at_targets targets job =
             (* Advance the current instruction to the next *)
 	        let job = { job with instrList = tail; } in
             let job_state = Statement.exec_instr_call job instr lvalopt fexp exps in
-            let active_jobs = 
-              let rec get_active_jobs job_state = 
+            let active_jobs =
+              let rec get_active_jobs job_state =
                   match job_state with
                   | Active(job) -> [job]
                   | Fork(job_states) ->
@@ -113,11 +118,11 @@ let test_job_at_targets targets job =
                       ) [] job_states
                   | _ -> []
               in
-                get_active_jobs job_state 
+                get_active_jobs job_state
             in
             print_list "Active Job" print_job active_jobs;
             (* Match jobs with their corresponding targets *)
-            let targetted_jobs : (Job.job * target) list = 
+            let targetted_jobs : (Job.job * target) list =
                 List.fold_left (fun targetted_jobs job ->
                     let fundec = List.hd job.state.callstack in
                     let matched_targets = List.filter (fun target -> fundec == target.target_func) targets in
@@ -128,11 +133,11 @@ let test_job_at_targets targets job =
                         (job, List.hd matched_targets)::targetted_jobs
                 ) [] active_jobs
             in
-            print_list "Targetted Job" 
+            print_list "Targetted Job"
               (fun ff (job,target) -> print_job ff job) targetted_jobs;
-            (* 
-             * Forward SE test. 
-             * See if the current job (state) can follow the bounding paths 
+            (*
+             * Forward SE test.
+             * See if the current job (state) can follow the bounding paths
              *)
             let forward_otter_bounded_by_paths job paths =
               Format.printf "***** Begin forward_otter_bounded_by_paths@\n";
@@ -149,7 +154,7 @@ let test_job_at_targets targets job =
                   match job.decisionPath, job.boundingPaths with
                   | [], _
                   | _, None -> interceptor job job_queue (* END *)
-                  | last_decision::_, Some(bounding_paths) -> 
+                  | last_decision::_, Some(bounding_paths) ->
                        (* For each bounding_path, if the first element corresponds to the last decision
                         * check if that decision agrees with the path
                         *)
@@ -158,13 +163,23 @@ let test_job_at_targets targets job =
                                     (true, decision1=decision2)
                             | ForkFunptr(instr1, fundec1), ForkFunptr(instr2, fundec2) when instr1==instr2 ->
                                     (true, fundec1==fundec2)
-                            | _ -> 
+                            | _ ->
                                     (false, false)
                         in
+                        (* Match the heads of bounding paths with the tail of the decision path.
+                         * They are always "in-sync" (compatible/talking about the same decision point), except
+                         * 1. At the beginning, when there's no decision made yet;
+                         * 2. At the end, when the SE runs beyond the bounding paths.
+                         * ForkEnd is set up to mark the end point of a bounding path. This is because the decision
+                         * path does not keep track of how many (non-branching) instructions. And we know that the
+                         * SE must have run beyond the bounding path if we reach the end point.
+                         *)
                         let agreed_bounding_paths = List.fold_left
-                            (fun agreed_bounding_paths bounding_path -> 
+                            (fun agreed_bounding_paths bounding_path ->
                                 match bounding_path with
-                                | [] -> []::agreed_bounding_paths
+                                | [] -> agreed_bounding_paths
+                                | ForkEnd::[] -> []::agreed_bounding_paths
+                                | _::[] -> failwith "Error in computing agreed_bounding_paths"
                                 | first_bound::rest_bounds ->
                                     let (compatible, same_decision) = compare_decision last_decision first_bound in
                                     if compatible then
@@ -179,7 +194,7 @@ let test_job_at_targets targets job =
                             bounding_paths
                         in
                             print_list "Agreed Bounding Path" print_decisions agreed_bounding_paths;
-                            if agreed_bounding_paths = [] then 
+                            if agreed_bounding_paths = [] then
                                 (* stop this job *)
                                 let job_result = {
                                     result_file = job.Job.file;
@@ -205,19 +220,20 @@ let test_job_at_targets targets job =
             in
 
 
-            let failing_paths : fork_decision list list = 
+            let failing_paths : fork_decision list list =
                 List.fold_left (
                     fun failing_paths (job,target) ->
                         Format.printf "Test job %d at target function @[%a@]@\n" job.jid Printer.fundec target.target_func;
-                        let partial_failing_paths = 
+                        let partial_failing_paths =
                           match target.target_predicate with
                           | FailingCondition (_,_) -> failwith "Not implemented yet"
-                          | FailingPaths (paths) ->  
-                              (* paths have most recent decision first. Therefore we need to reverse them *)
-                              let bounding_paths = List.map List.rev paths in
+                          | FailingPaths (paths) ->
+                              (* paths have most recent decision first. Therefore we need to reverse them
+                               * Also, add an ForkEnd to mark the end of a bounding path *)
+                              let bounding_paths = List.map (fun path -> List.rev (ForkEnd::path)) paths in
                               let job_completions : 'reason job_completion list = forward_otter_bounded_by_paths job bounding_paths in
                                 List.fold_left (fun failing_paths job_completion ->
-                                    match job_completion with 
+                                    match job_completion with
                                     | Abandoned (`Failure(_),_,result) -> result.result_decision_path::failing_paths
                                     | _ -> failing_paths
                                 ) [] job_completions
@@ -227,12 +243,12 @@ let test_job_at_targets targets job =
             in
 			  if List.length failing_paths = 0 then
 			  	None
-			  else 
-			  	let result = { 
-			  		result_file = job.Job.file; 
+			  else
+			  	let result = {
+			  		result_file = job.Job.file;
                     result_state = job.state;  (* Doesn't matter what state is; won't be used *)
-			  		result_history = job.exHist; 
-			  		result_decision_path = job.decisionPath; 
+			  		result_history = job.exHist;
+			  		result_decision_path = job.decisionPath;
                 } in
 			  	  Some (Complete (Abandoned (`FailingPaths failing_paths, loc, result)))
 		| _ ->
@@ -250,7 +266,7 @@ let callchain_backward_se file entryfn assertfn job_init : _ job_completion list
 
   let print_targets fn ts =
 	Format.printf "@\nStart forward SE on function %s with target(s): %s@\n@\n"
-	  (fn.svar.vname) 
+	  (fn.svar.vname)
       (let s=(String.concat "," (List.map (fun t -> t.target_func.svar.vname) ts)) in if s="" then "(none)" else s)
   in
 
@@ -261,12 +277,12 @@ let callchain_backward_se file entryfn assertfn job_init : _ job_completion list
           Interceptor.set_output_formatter_interceptor
           >>> (test_job_at_targets_interceptor targets)
           >>> BuiltinFunctions.interceptor in
-	let queue = 
-        if (!Executeargs.arg_cfg_pruning) then 
+	let queue =
+        if (!Executeargs.arg_cfg_pruning) then
             BestFirstQueue.make (distance_to_targets_prioritizer job.state.callstack (assertfn::(List.map (fun t -> t.target_func) targets)))
         else
             Queue.get_default ()
-    in 
+    in
         Driver.run ~interceptor ~queue job
   in
 
@@ -289,9 +305,9 @@ let callchain_backward_se file entryfn assertfn job_init : _ job_completion list
 	let f = List.hd job.state.callstack in
 	(* Run forward SE based on the targets *)
 	let results : 'reason job_completion list = call_Otter_main_loop targets job in
-	  if f == entryfn then 
+	  if f == entryfn then
 		(* If f is main(), we are done *)
-        let _ = List.iter ( function 
+        let _ = List.iter ( function
             Abandoned(`FailingPaths(paths),_,_) ->
                 print_list "Final failing path" print_decisions paths
           | _ -> ()
@@ -304,14 +320,14 @@ let callchain_backward_se file entryfn assertfn job_init : _ job_completion list
             (* If suffixes is empty, that means no failing paths are satisfied. *)
             List.map (fun suffix -> List.append suffix prefix) suffixes
         in
-        let failing_paths = List.fold_left 
+        let failing_paths = List.fold_left
           ( fun all_paths job_completion ->
               match job_completion with
-              | Abandoned (`FailingPaths(paths),_,job_result) -> 
+              | Abandoned (`FailingPaths(paths),_,job_result) ->
                       (* TODO (martin): this join may be unecessary, because forward_otter_bounded_by_paths already returns joined paths *)
                       let joined_paths = join_paths job_result.result_decision_path paths in
                         List.rev_append joined_paths all_paths
-              | Abandoned (_,_,job_result) -> 
+              | Abandoned (_,_,job_result) ->
                       job_result.result_decision_path::all_paths
               | _ -> all_paths
           ) [] results
@@ -328,19 +344,19 @@ let callchain_backward_se file entryfn assertfn job_init : _ job_completion list
 		      target_func = f;
               target_predicate = FailingPaths(failing_paths);
 		    } in
-            Format.printf "Create new target for function %s with bounding paths:@\n" f.svar.vname;
-            print_list "Bounding Path" print_decisions failing_paths;
+            Format.printf "Create new target for function %s with failing paths:@\n" f.svar.vname;
+            print_list "Failing Path" print_decisions failing_paths;
 		    let callers = get_callers f in
               print_list (Format.sprintf "Function %s's caller" f.svar.vname) Printer.fundec callers;
-		      List.fold_left 
+		      List.fold_left
 		      (
-		    	fun lst caller -> 
+		    	fun lst caller ->
 		    	  let targets' = (new_target::targets) in
                   let _ = print_targets caller targets' in
 		    	  let job' = job_init caller in
 		    	  let lst' = callchain_backward_main_loop job' targets'  in
 		    		List.rev_append lst' lst
-		      ) 
+		      )
 		      [] callers
   in
 
@@ -349,13 +365,13 @@ let callchain_backward_se file entryfn assertfn job_init : _ job_completion list
       target_predicate = FailingPaths([]);
   } in
   let callers = get_callers assertfn in
-	List.fold_left 
+	List.fold_left
 	  (fun results caller ->
           (* let targets = [assert_target] in *)
           let _ = assert_target in
           let targets = [] in
           let _ = print_targets caller targets in
-		  let job = job_init caller in 
+		  let job = job_init caller in
 		  let new_result = callchain_backward_main_loop job targets in
 		    new_result::results
 	  ) [] callers

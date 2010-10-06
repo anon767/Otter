@@ -75,6 +75,7 @@ let emptyHistory = {
 type fork_decision =
     | ForkConditional of Cil.stmt * bool (* if-statement *)
     | ForkFunptr of Cil.instr * Cil.fundec (* function call *)
+    | ForkEnd (* Mark the end of a decision path *)
     (* TODO (martin): define ForkLongjmp *)
 
 type job = {

@@ -556,6 +556,7 @@ let guard__bytes b = Guard_Bytes b
 let guard__to_bytes = function
 	| Guard_True -> bytes__one
 	| Guard_Not Guard_True -> bytes__zero
+    | Guard_Bytes b -> b
 	| g -> make_Bytes_Conditional (IfThenElse (g, Unconditional bytes__one, Unconditional bytes__zero))
 
 
