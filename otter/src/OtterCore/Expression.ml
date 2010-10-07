@@ -7,7 +7,7 @@ open BytesUtility
 open Types
 open Operator
 
-exception ConditionalFailureException of Bytes.bytes * string
+exception ConditionalFailureException of Types.state * Bytes.bytes * string
 
 (* Print an error message saying that the assertion [bytes] failed in
 	 state [state]. [exps] is the expression representing [bytes].
@@ -388,6 +388,7 @@ deref state bytes =
               ) ([],[]) c
             in
                 if acc_fail = [] then
+                    (* All conditional branches were dereferenced successfully: return the dereferenced conditional. *)
                     conditional
                 else
                     let failing_condition, aggregated_msg = List.fold_left (
@@ -397,10 +398,17 @@ deref state bytes =
                         ) (Bytes.fls, "(aggregated failure)") acc_fail
                     in
                     if acc_pass = [] then
+                        (* No conditional branches were dereferenced successfully: just fail. *)
                         failwith aggregated_msg
                     else
-                        (* Caught in Statement.step *)
-                        raise (ConditionalFailureException (failing_condition, aggregated_msg))
+                        (* Not all conditional branches were dereferenced successfully: capture the most recent state
+                           and failing condition in terms of the most recent state, and raise a ConditionalFailure.
+                           The failing condition is only guaranteed to be consistent with the most recent state:
+                           because the state may have been further initialized (lazily), re-running the instruction
+                           with the original state may result in a different state (due to the use of global counters
+                           and random numbers). The most recent state may be forked using the failing condition,
+                           e.g., as in Statement.step. *)
+                        raise (ConditionalFailureException (state, failing_condition, aggregated_msg))
 
 		| Bytes_Op(op, operands) ->
           FormatPlus.failwith "Dereference something not an address:@ operation @[%a@]" BytesPrinter.bytes bytes

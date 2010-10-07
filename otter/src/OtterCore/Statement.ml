@@ -449,19 +449,20 @@ let rec step job job_queue =
                 result_history = job.exHist;
                 result_decision_path = job.decisionPath; } in
     		(Complete (Abandoned (`Failure msg, Job.get_loc job, result)), job_queue)
-        | Expression.ConditionalFailureException (failing_condition, aggregated_msg) ->
+        | Expression.ConditionalFailureException (state, failing_condition, aggregated_msg) ->
             (* assert: failing_condition is never true *)
+		(* fork the job by adding the failing condition to the most recent state *)
             let abandoned_job_state =
-                (* TODO (martin): implement a function that extracts job_result from job *)
-				let result = {
+                (* TODO: add a forking decision here *)
+                let result = {
                     result_file = job.file;
-                    result_state = job.state;
+                    result_state = { state with path_condition = failing_condition::state.path_condition };
                     result_history = job.exHist;
                     result_decision_path = job.decisionPath; } in
 				Complete (Abandoned (`Failure aggregated_msg, Job.get_loc job, result))
             in
             let job' = {job with
-                state = {job.state with
+                state = {state with
                     path_condition = (Bytes.bytes_not failing_condition)::job.state.path_condition
             }} in
             let job_state, job_queue = step job' job_queue in
