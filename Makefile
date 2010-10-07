@@ -1,7 +1,9 @@
 
-SUBDIRS=cilqual cil ocamlstp stp camlidl ocaml-base-noparser
+SUBDIRS=cilqual cil ocamlstp stp camlidl ocaml-base-noparser ocamlgraph
+
 EXTRALIBDIRS=$(addprefix $(CURDIR)/,camlidl/runtime stp/lib ocamlstp)
 EXTRAOCAMLPATH=$(CURDIR)
+
 CTAGS_FILE=tags
 CTAGS_SOURCE_PATHS=otter/src cil/src ocaml-base-noparser/lib ocamlstp
 
@@ -54,7 +56,7 @@ make//cilqual : \
 		EXTRAOCAMLPATH='$(EXTRAOCAMLPATH)' \
 		--with-cil='$(CURDIR)/cil' \
 		--with-otter='$(CURDIR)/otter'
-make//cilqual : libs-otter
+make//cilqual : libs-otter ocamlgraph
 
 
 ocamlstp : make//ocamlstp
@@ -77,6 +79,11 @@ make//camlidl : MAKEGOALS=
 
 ocaml-base-noparser : make//ocaml-base-noparser
 make//ocaml-base-noparser : MAKEGOALS=
+
+
+ocamlgraph : make//ocamlgraph
+make//ocamlgraph : MAKEGOALS=
+
 
 ctags :
 	$(RM) $(CTAGS_FILE) && \

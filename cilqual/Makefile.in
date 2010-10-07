@@ -10,7 +10,7 @@ OTTER_OBJDIR = $(OTTER_SRCDIR)/_product
 OCAMLBUILD_CIL = -cflags -I,$(CIL_OBJDIR) -lflags -I,$(CIL_OBJDIR) -tags pkg_unix,pkg_str -libs cil
 OCAMLBUILD_OTTER = -cflags -I,$(OTTER_OBJDIR) -lflags -I,$(OTTER_OBJDIR) -tag pkg_ocaml-base-noparser -libs stpvc,Otter
 OCAMLBUILD_PA_MONAD = -X pa_monad -tag syntax_camlp4o -tag pkg_pa_monad
-OCAMLBUILD_GRAPH = -X ocamlgraph -tag pkg_ocamlgraph
+OCAMLBUILD_GRAPH = -tag pkg_ocamlgraph
 OCAMLBUILD_OUNIT = -tag pkg_oUnit
 
 OCAMLBUILD_FLAGS = -j 0 -cflags -warn-error,A -X experiments
@@ -19,7 +19,7 @@ OCAMLBUILD_FLAGS += $(EXTRALIBDIRS:%=-cflags -I,%) $(EXTRALIBDIRS:%=-lflags -I,%
 export OCAMLPATH:=$(CURDIR):@EXTRAOCAMLPATH@
 
 OCAMLBUILD_DEPS = \
-	pa_monad ocamlgraph configure Makefile Makefile.rules \
+	pa_monad configure Makefile Makefile.rules \
 	$(wildcard $(EXTRALIBDIRS) $(CIL_OBJDIR) $(OTTER_OBJDIR) $(EXTRALIBDIRS:%=%/*) $(CIL_OBJDIR)/* $(OTTER_OBJDIR)/*)
 
 OUNIT_FLAGS = -verbose
@@ -42,9 +42,6 @@ pa_monad : pa_monad/pa_monad.cmo
 pa_monad/pa_monad.cmo : make//pa_monad
 make//pa_monad : MAKEGOALS=all META
 
-ocamlgraph : ocamlgraph/graph.cma ocamlgraph/graph.cmxa
-ocamlgraph/graph.cma ocamlgraph/graph.cmxa : make//ocamlgraph
-
 cilqual.pl.config : Makefile $(CIL_SRCDIR)/config.mk
 	printf "\
 	$$::cilhome = '$(CILHOME)';\n\
@@ -58,14 +55,12 @@ cilqual.pl.config : Makefile $(CIL_SRCDIR)/config.mk
 
 clean : clean-cilqual
 	[ -e pa_monad/Makefile ] && $(MAKE) -C pa_monad clean
-	[ -e ocamlgraph/Makefile ] && $(MAKE) -C ocamlgraph clean
 
 clean-cilqual : clean-ocamlbuild
 	$(RM) cilqual.pl.config *.native *.byte
 
 distclean : clean-cilqual
 	[ -e pa_monad/Makefile ] && $(MAKE) -C pa_monad distclean
-	[ -e ocamlgraph/Makefile ] && $(MAKE) -C ocamlgraph distclean
 	$(RM) config.cache config.log config.status
 
 maintainer-clean : distclean
