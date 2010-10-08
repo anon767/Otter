@@ -144,85 +144,70 @@ let test_job_at_targets targets job =
              * See if the current job (state) can follow the bounding paths
              *)
             let forward_otter_bounded_by_paths job paths =
-              Format.printf "***** Begin forward_otter_bounded_by_paths@\n";
-              let subset_bounding_paths_interceptor job job_queue interceptor =
-                  Format.printf "Decision path:@\n";
-                  Format.printf "@[%a@]@\n" print_decisions job.decisionPath;
+                Format.printf "@\nBegin forward_otter_bounded_by_paths@\n";
+                let subset_bounding_paths_interceptor job job_queue interceptor =
+                    (* The decision path has the prefix (things happened before the checking function) taken out *)
+                    Format.printf "Decision path:@\n";
+                    Format.printf "@[%a@]@\n" print_decisions job.decisionPath;
 
-                  let bounding_paths = match job.boundingPaths with
-                  | None -> []
-                  | Some(boundingPaths) -> boundingPaths
-                  in
-                    print_list "Bounding Path" print_decisions bounding_paths;
+                    let bounding_paths = match job.boundingPaths with
+                    | None -> []
+                    | Some(boundingPaths) -> boundingPaths
+                    in
+                        print_list "Bounding Path" print_decisions bounding_paths;
 
-                  match job.decisionPath, job.boundingPaths with
-                  | [], _
-                  | _, None -> interceptor job job_queue (* END *)
-                  | last_decision::_, Some(bounding_paths) ->
-                       (* For each bounding_path, if the first element corresponds to the last decision
-                        * check if that decision agrees with the path
-                        *)
-                        let compare_decision d1 d2 = match d1, d2 with
-                            | ForkConditional(stmt1, decision1), ForkConditional(stmt2, decision2) when stmt1==stmt2 ->
-                                    (true, decision1=decision2)
-                            | ForkFunptr(instr1, fundec1), ForkFunptr(instr2, fundec2) when instr1==instr2 ->
-                                    (true, fundec1==fundec2)
-                            | _ ->
-                                    (false, false)
+                    (* A bounding path agrees with the decision path if the decision path is a prefix of it
+                     * Since paths have most recent decision first, prefix becomes suffix *)
+                    let paths_agree decision_path bounding_path =
+                        let rec is_prefix eq pre lst =
+                            match pre, lst with
+                            | d1::pre', d2::lst' -> if eq d1 d2 then is_prefix eq pre' lst' else false
+                            | [], _ -> true
+                            | _, _ -> false
                         in
-                        (* Match the heads of bounding paths with the tail of the decision path.
-                         * They are always "in-sync" (compatible/talking about the same decision point), except
-                         * 1. At the beginning, when there's no decision made yet;
-                         * 2. At the end, when the SE runs beyond the bounding paths.
-                         * ForkEnd is set up to mark the end point of a bounding path. This is because the decision
-                         * path does not keep track of how many (non-branching) instructions. And we know that the
-                         * SE must have run beyond the bounding path if we reach the end point.
-                         *)
-                        let agreed_bounding_paths = List.fold_left
-                            (fun agreed_bounding_paths bounding_path ->
-                                match bounding_path with
-                                | [] -> agreed_bounding_paths
-                                | ForkEnd::[] -> []::agreed_bounding_paths
-                                | _::[] -> failwith "Error in computing agreed_bounding_paths"
-                                | first_bound::rest_bounds ->
-                                    let (compatible, same_decision) = compare_decision last_decision first_bound in
-                                    if compatible then
-                                        if same_decision then
-                                            rest_bounds::agreed_bounding_paths
-                                        else
-                                            agreed_bounding_paths
-                                    else
-                                        bounding_path::agreed_bounding_paths
-                            )
-                            []
-                            bounding_paths
-                        in
-                            print_list "Agreed Bounding Path" print_decisions agreed_bounding_paths;
-                            if agreed_bounding_paths = [] then
-                                (* stop this job *)
-                                let job_result = {
-                                    result_file = job.Job.file;
-                                    result_state = job.Job.state;
-                                    result_history = job.Job.exHist;
-                                    result_decision_path = job.Job.decisionPath;
-                                } in
-			  	                (Complete (Exit (None, job_result)), job_queue)
-                            else
-                                let job' = {job with boundingPaths = Some(agreed_bounding_paths);} in
-                                interceptor job' job_queue
-
-              in
-                let (>>>) = Interceptor.(>>>) in
-                let interceptor =
-                    Interceptor.set_output_formatter_interceptor
-                    >>> BuiltinFunctions.interceptor
-                    >>> subset_bounding_paths_interceptor
+                            is_prefix decision_equals (List.rev decision_path) (List.rev bounding_path)
+                    in
+                    let agreed_bounding_paths = List.filter (paths_agree job.decisionPath) bounding_paths in
+                        print_list "Agreed Bounding Path" print_decisions agreed_bounding_paths;
+                        if agreed_bounding_paths = [] then
+                            (* stop this job *)
+                            let job_result = {
+                                result_file = job.Job.file;
+                                result_state = job.Job.state;
+                                result_history = job.Job.exHist;
+                                result_decision_path = job.Job.decisionPath;
+                            } in
+                              (Complete (Exit (None, job_result)), job_queue)
+                        else
+                            let job' = {job with boundingPaths = Some(agreed_bounding_paths);} in
+                            interceptor job' job_queue
                 in
-                let return = Driver.run ~interceptor { job with boundingPaths = Some paths; } in
-                Format.printf "***** End forward_otter_bounded_by_paths@\n";
-                return
+                    let (>>>) = Interceptor.(>>>) in
+                    let interceptor =
+                        Interceptor.set_output_formatter_interceptor
+                        >>> BuiltinFunctions.interceptor
+                        >>> subset_bounding_paths_interceptor
+                    in
+                    (* Cut out the prefix of the decision path, so that we can compare the decision
+                     * path with the bounding paths side by side. Put the prefix back when done *)
+                    let job' = {job with
+                        boundingPaths = Some paths;
+                        decisionPath = [];
+                    } in
+                    let return = Driver.run ~interceptor job' in
+                    Format.printf "@\nEnd forward_otter_bounded_by_paths@\n";
+                    let add_prefix job_result =
+                        {job_result with
+                            result_decision_path = List.append job_result.result_decision_path job.decisionPath;
+                        }
+                    in
+                    List.map (function
+                        | Job.Return (bytes_opt, job_result) -> Job.Return (bytes_opt, add_prefix job_result)
+                        | Exit (bytes_opt, job_result) -> Exit (bytes_opt, add_prefix job_result)
+                        | Abandoned (reason, loc, job_result) -> Abandoned (reason, loc, add_prefix job_result)
+                        | Truncated (job_result1, job_result2) -> Truncated (add_prefix job_result1, add_prefix job_result2)
+                    ) return
             in
-
 
             let failing_paths : fork_decision list list =
                 List.fold_left (
@@ -232,9 +217,8 @@ let test_job_at_targets targets job =
                           match target.target_predicate with
                           | FailingCondition (_,_) -> failwith "Not implemented yet"
                           | FailingPaths (paths) ->
-                              (* paths have most recent decision first. Therefore we need to reverse them
-                               * Also, add an ForkEnd to mark the end of a bounding path *)
-                              let bounding_paths = List.map (fun path -> List.rev (ForkEnd::path)) paths in
+                              (* add an ForkEnd to mark the end of a bounding path *)
+                              let bounding_paths = List.map (fun path -> ForkEnd::path) paths in
                               let job_completions : 'reason job_completion list = forward_otter_bounded_by_paths job bounding_paths in
                                 List.fold_left (fun failing_paths job_completion ->
                                     match job_completion with

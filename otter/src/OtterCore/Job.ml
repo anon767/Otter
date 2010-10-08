@@ -78,6 +78,13 @@ type fork_decision =
     | ForkEnd (* Mark the end of a decision path *)
     (* TODO (martin): define ForkLongjmp *)
 
+let decision_equals d1 d2 =
+    match d1, d2 with
+    | ForkConditional (stmt1, bool1), ForkConditional (stmt2, bool2) when stmt1 == stmt2 && bool1 = bool2 -> true
+    | ForkFunptr (instr1, fundec1), ForkFunptr (instr2, fundec2) when instr1 == instr2 && fundec1 == fundec2 -> true
+    | ForkEnd, ForkEnd -> true
+    | _, _ -> false
+
 type job = {
 	file : Cil.file;
 	state : Types.state;

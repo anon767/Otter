@@ -436,30 +436,36 @@ let exec_stmt job =
 (* TODO (martin): the recursive call is never called twice. Change this to a non-recursive function. *)
 let rec step job job_queue =
     try
-    	match job.instrList with
-    		| [] -> (exec_stmt job, job_queue)
-    		| _ -> (exec_instr job, job_queue)
+        match job.instrList with
+            | [] -> (exec_stmt job, job_queue)
+            | _ -> (exec_instr job, job_queue)
     with
         (* TODO (martin): combine the two patterns *)
-    	| Failure msg ->
-    		if !Executeargs.arg_failfast then failwith msg;
-    		let result = {
+        | Failure msg ->
+            if !Executeargs.arg_failfast then failwith msg;
+            let result = {
                 result_file = job.file;
                 result_state = job.state;
                 result_history = job.exHist;
-                result_decision_path = job.decisionPath; } in
-    		(Complete (Abandoned (`Failure msg, Job.get_loc job, result)), job_queue)
+                result_decision_path = job.decisionPath;
+            } in
+                (Complete (Abandoned (`Failure msg, Job.get_loc job, result)), job_queue)
         | Expression.ConditionalFailureException (state, failing_condition, aggregated_msg) ->
             (* assert: failing_condition is never true *)
-		(* fork the job by adding the failing condition to the most recent state *)
+            (* fork the job by adding the failing condition to the most recent state *)
             let abandoned_job_state =
-                (* TODO: add a forking decision here *)
+                (* TODO: add a forking decision here
+                 * (martin) the benefit of adding a fork_decision here is we know a potential error
+                 * at this program point. But it's fine to omit it, since the failing path checking run
+                 * would fail if it's ought to fail, and if it doesn't fail, it will eventually stop when
+                 * comes to the next fork_decision. *)
                 let result = {
                     result_file = job.file;
                     result_state = { state with path_condition = failing_condition::state.path_condition };
                     result_history = job.exHist;
-                    result_decision_path = job.decisionPath; } in
-				Complete (Abandoned (`Failure aggregated_msg, Job.get_loc job, result))
+                    result_decision_path = job.decisionPath;
+                } in
+                    Complete (Abandoned (`Failure aggregated_msg, Job.get_loc job, result))
             in
             let job' = {job with
                 state = {state with
