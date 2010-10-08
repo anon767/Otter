@@ -51,7 +51,7 @@ debug-cilqual : MAKEGOALS=debug
 experiments-cilqual : make//cilqual
 experiments-cilqual : MAKEGOALS=experiments
 make//cilqual : \
-	CONFIGURE_FLAGS=\
+	CONFIGURE_FLAGS= \
 		EXTRALIBDIRS='$(EXTRALIBDIRS)' \
 		EXTRAOCAMLPATH='$(EXTRAOCAMLPATH)' \
 		--with-cil='$(CURDIR)/cil' \
@@ -75,14 +75,17 @@ make//stp : CONFIGURE_FLAGS=--with-prefix=.
 
 camlidl : make//camlidl
 make//camlidl : MAKEGOALS=
+make//camlidl : CONFIGURE_FLAGS=
 
 
 ocaml-base-noparser : make//ocaml-base-noparser
 make//ocaml-base-noparser : MAKEGOALS=
+make//ocaml-base-noparser : CONFIGURE_FLAGS=
 
 
 ocamlgraph : make//ocamlgraph
 make//ocamlgraph : MAKEGOALS=
+make//ocamlgraph : CONFIGURE_FLAGS=
 
 
 ctags :
