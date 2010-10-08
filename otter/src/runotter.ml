@@ -19,7 +19,7 @@ let _ =
     (* setup and run CilQual *)
     Cilly.run [
         Otter.Executemain.feature;
-        MultiOtter.Multiprocess.feature;
+        MultiOtter.MultiDriver.feature;
         Otter.Callchain_backward.feature;
         Marshal_feature.feature;
         CilUtilities.FindFns.feature;
