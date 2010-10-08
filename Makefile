@@ -39,7 +39,7 @@ make//otter : \
 		EXTRALIBDIRS='$(EXTRALIBDIRS)' \
 		EXTRAOCAMLPATH='$(EXTRAOCAMLPATH)' \
 		--with-cil='$(CURDIR)/cil'
-make//otter : cil ocamlstp ocaml-base-noparser
+make//otter : cil ocamlstp ocaml-base-noparser ocamlgraph
 
 
 cilqual : make//cilqual
