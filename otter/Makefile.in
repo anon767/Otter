@@ -7,10 +7,11 @@ CIL_OBJDIR = $(CILHOME)/obj/$(ARCHOS)
 
 OCAMLBUILD_CIL = -cflags -I,$(CIL_OBJDIR) -lflags -I,$(CIL_OBJDIR) -tags pkg_unix,pkg_str -libs cil
 OCAMLBUILD_OTTER = -tags pkg_ocaml-base-noparser -libs stpvc
+OCAMLBUILD_OCAMLGRAPH = -tags pkg_ocamlgraph
 OCAMLBUILD_OUNIT = -tags pkg_oUnit
 
 OCAMLBUILD_FLAGS = -j 0 -Xs doc,examples,libc,util -tags warn_error_A
-OCAMLBUILD_FLAGS += $(OCAMLBUILD_CIL) $(OCAMLBUILD_OTTER) $(OCAMLBUILD_OUNIT)
+OCAMLBUILD_FLAGS += $(OCAMLBUILD_CIL) $(OCAMLBUILD_OTTER) $(OCAMLBUILD_OCAMLGRAPH) $(OCAMLBUILD_OUNIT)
 OCAMLBUILD_FLAGS += $(EXTRALIBDIRS:%=-cflags -I,%) $(EXTRALIBDIRS:%=-lflags -I,%) $(OCAMLBUILD_EXTRAFLAGS)
 export OCAMLPATH:=$(CURDIR):@EXTRAOCAMLPATH@
 
