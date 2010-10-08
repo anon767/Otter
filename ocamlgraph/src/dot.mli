@@ -1,7 +1,7 @@
 (**************************************************************************)
 (*                                                                        *)
 (*  Ocamlgraph: a generic graph library for OCaml                         *)
-(*  Copyright (C) 2004-2008                                               *)
+(*  Copyright (C) 2004-2010                                               *)
 (*  Sylvain Conchon, Jean-Christophe Filliatre and Julien Signoles        *)
 (*                                                                        *)
 (*  This software is free software; you can redistribute it and/or        *)
@@ -19,6 +19,10 @@
 
 open Dot_ast
 
+val parse_dot_ast : string -> Dot_ast.file
+
+type clusters_hash = (string, attr list) Hashtbl.t
+
 (** Provide a parser for DOT file format. *)
 module Parse 
   (B : Builder.S)
@@ -29,5 +33,13 @@ module Parse
        (** How to build the edge label out of the set of attributes *)
    end) :
 sig
+
+  (** Parses a dot file *)
   val parse : string -> B.G.t
+
+  (** Parses a dot file and returns the graph, its bounding box and 
+      a hash table from clusters to dot attributes *)
+  val parse_bounding_box_and_clusters :
+    string -> B.G.t * string * clusters_hash
+
 end

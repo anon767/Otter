@@ -1,7 +1,7 @@
 (**************************************************************************)
 (*                                                                        *)
 (*  Ocamlgraph: a generic graph library for OCaml                         *)
-(*  Copyright (C) 2004-2008                                               *)
+(*  Copyright (C) 2004-2010                                               *)
 (*  Sylvain Conchon, Jean-Christophe Filliatre and Julien Signoles        *)
 (*                                                                        *)
 (*  This software is free software; you can redistribute it and/or        *)
@@ -47,6 +47,7 @@ module type S = sig
   (** Imperative Unlabeled Graphs. *)
   module Concrete (V: COMPARABLE) : 
     Sig.I with type V.t = V.t and type V.label = V.t and type E.t = V.t * V.t
+	  and type E.label = unit
 
   (** Abstract Imperative Unlabeled Graphs. *)
   module Abstract(V: ANY_TYPE) : 
@@ -65,12 +66,27 @@ end
 
 (** Imperative Directed Graphs. *)
 module Digraph : sig 
-  include S   
 
-  (** Imperative Unlabeled, bidirectional graph (gives predecessors in
-      constant time). *)
+  include S   
+    
+  (** {2 Bidirectional graphs}
+
+      Bidirectional graphs use more memory space (at worse the double) that
+      standard concrete directional graphs. But accessing predecessors is in
+      O(1) amortized instead of O(max(|V|,|E|)) and removing a vertex is in
+      O(D*ln(D)) instead of O(|V|*ln(D)). D is the maximal degree of the
+      graph. *)
+
+  (** Imperative Unlabeled, bidirectional graph. *)
   module ConcreteBidirectional (V: COMPARABLE) : 
     Sig.I with type V.t = V.t and type V.label = V.t and type E.t = V.t * V.t 
+          and type E.label = unit
+
+  (** Imperative Labeled and bidirectional graph. *)
+  module ConcreteBidirectionalLabeled(V:COMPARABLE)(E:ORDERED_TYPE_DFT) :
+    Sig.I with type V.t = V.t and type V.label = V.t
+          and type E.t = V.t * E.t * V.t and type E.label = E.t
+
 end
 
 (** Imperative Undirected Graphs. *)
@@ -92,7 +108,8 @@ module Matrix : sig
         Thus [make] must be used instead of [create]. *)
     val make : int -> t
 
-    (** Note: [add_vertex] and [remove_vertex] have no effect. *)
+  (** Note: [add_vertex] and [remove_vertex] have no effect. 
+      [clear] only removes edges, not vertices. *)
 
   end
 

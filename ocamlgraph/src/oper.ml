@@ -1,7 +1,7 @@
 (**************************************************************************)
 (*                                                                        *)
 (*  Ocamlgraph: a generic graph library for OCaml                         *)
-(*  Copyright (C) 2004-2008                                               *)
+(*  Copyright (C) 2004-2010                                               *)
 (*  Sylvain Conchon, Jean-Christophe Filliatre and Julien Signoles        *)
 (*                                                                        *)
 (*  This software is free software; you can redistribute it and/or        *)
@@ -53,15 +53,19 @@ module Make(B : Builder.S) = struct
 
   let mirror g =
     if G.is_directed then begin
-      let g' = B.empty () in
-        G.fold_edges_e
-	  (fun e g' -> 
-	     let v1 = (G.E.src e) in
-	     let v2 = (G.E.dst e) in
-	     B.add_edge_e g' (G.E.create v2 (G.E.label e) v1))
-	  g g'
+      let g' = 
+	G.fold_vertex
+	  (fun v g' -> B.add_vertex g' v)
+	  g (B.empty ())
+      in
+      G.fold_edges_e
+	(fun e g' -> 
+	   let v1 = G.E.src e in
+	   let v2 = G.E.dst e in
+	   B.add_edge_e g' (G.E.create v2 (G.E.label e) v1))
+	g g'
     end else
-      B.copy g
+      g
 
   let complement g =
     G.fold_vertex

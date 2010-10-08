@@ -1,7 +1,7 @@
 (**************************************************************************)
 (*                                                                        *)
 (*  Ocamlgraph: a generic graph library for OCaml                         *)
-(*  Copyright (C) 2004-2008                                               *)
+(*  Copyright (C) 2004-2010                                               *)
 (*  Sylvain Conchon, Jean-Christophe Filliatre and Julien Signoles        *)
 (*                                                                        *)
 (*  This software is free software; you can redistribute it and/or        *)
@@ -83,6 +83,10 @@ module type S = sig
         vertices that will be in the graph (for hash tables-based
         implementations).  The graph grows as needed, so [size] is
         just an initial guess. *)
+
+  val clear: t -> unit
+    (** Remove all vertices and edges from the given graph. 
+	@since ocamlgraph 1.4 *)
 
   val copy : t -> t
     (** [copy g] returns a copy of [g]. Vertices and edges (and eventually

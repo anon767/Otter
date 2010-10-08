@@ -1,7 +1,7 @@
 (**************************************************************************)
 (*                                                                        *)
 (*  Ocamlgraph: a generic graph library for OCaml                         *)
-(*  Copyright (C) 2004-2008                                               *)
+(*  Copyright (C) 2004-2010                                               *)
 (*  Sylvain Conchon, Jean-Christophe Filliatre and Julien Signoles        *)
 (*                                                                        *)
 (*  This software is free software; you can redistribute it and/or        *)
@@ -25,10 +25,12 @@ module type S = sig
   (** Imperative Unlabeled Graphs *)
   module Concrete (V: COMPARABLE) : 
     Sig.I with type V.t = V.t and type V.label = V.t and type E.t = V.t * V.t
+	  and type E.label = unit
 
   (** Abstract Imperative Unlabeled Graphs *)
   module Abstract(V: sig type t end) : 
     Sig.IM with type V.label = V.t and type E.label = unit
+	   and type E.label = unit
 
   (** Imperative Labeled Graphs *)
   module ConcreteLabeled (V: COMPARABLE)(E: ORDERED_TYPE_DFT) :
@@ -125,6 +127,26 @@ module Digraph = struct
 	let remove v = S.filter (fun (v2, _) -> not (V.equal v v2)) in
 	HM.iter (fun k s -> ignore (HM.add k (remove v s) g)) g
       end
+  end
+
+  module ConcreteBidirectionalLabeled(V:COMPARABLE)(E:ORDERED_TYPE_DFT) = struct
+
+    include I.Digraph.ConcreteBidirectionalLabeled(V)(E)
+
+    let add_vertex g v = ignore (add_vertex g v)
+    let add_edge g v1 v2 = ignore (add_edge g v1 v2)
+    let add_edge_e g e = ignore (add_edge_e g e)
+
+    let remove_vertex g v =
+      if HM.mem v g then begin
+        iter_pred_e (fun e -> ignore (remove_edge_e g e)) g v;
+        iter_succ_e (fun e -> ignore (remove_edge_e g e)) g v;
+        ignore (HM.remove v g)
+      end
+
+    let remove_edge g v1 v2 = ignore (remove_edge g v1 v2)
+    let remove_edge_e g e = ignore (remove_edge_e g e)
+
   end
 
   module Abstract(V: sig type t end) = struct
@@ -360,7 +382,7 @@ module Matrix = struct
     let create ?size () = 
       failwith 
 	"[ocamlgraph] do not use Matrix.create; please use Matrix.make instead"
-		      
+
     let make n =
       if n < 0 then invalid_arg "[ocamlgraph] Matrix.make";
       Array.init n (fun _ -> Bitv.create n false)
@@ -391,6 +413,9 @@ module Matrix = struct
 				  
     let remove_vertex g _ = ()
     let add_vertex g _ = ()
+		      
+    let clear g = 
+      Array.iter (fun b -> Bitv.iteri (fun j _ -> Bitv.set b j false) b) g
 			   
     let copy g = Array.init (nb_vertex g) (fun i -> Bitv.copy g.(i))
 		   

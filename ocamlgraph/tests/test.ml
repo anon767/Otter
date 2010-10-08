@@ -15,6 +15,33 @@
 (*                                                                        *)
 (**************************************************************************)
 
+open Format
+open Graph
+
+module Int = struct 
+  type t = int 
+  let compare = compare 
+  let hash = Hashtbl.hash 
+  let equal = (=) 
+  let default = 0
+  let tostring v = string_of_int v
+end
+module G = Imperative.Digraph.AbstractLabeled(Int)(Int)
+
+module T = Traverse.Dfs(G)
+
+let test_hash_cycle n =
+  let g = G.create () in
+  let h = Hashtbl.create 5003 in
+  for i = 0 to n-1 do Hashtbl.add h i (G.V.create i) done;
+  Hashtbl.iter (fun _ v -> G.add_vertex g v) h;
+  let v = Hashtbl.find h in
+  for i = 0 to n-2 do G.add_edge g (v i) (v (i+1)) done;
+  assert (not (T.has_cycle g));
+  G.add_edge g (v (n-1)) (v 0);
+  assert (T.has_cycle g)
+
+let () = test_hash_cycle 1_000
 
 (*
 module Int = struct 
@@ -192,31 +219,31 @@ let l = K.spanningtree g
 let _ = List.iter (fun e -> printf "%d - %d\n" (G.E.src e) (G.E.dst e) ) l
 	*)
 
-open Graph
-module IntInt = struct
-  type t = int * int
-end
-module String = struct
-  type t = string
-  let compare = compare
-  let hash = Hashtbl.hash
-  let equal = (=)
-  let default = ""
-end
-module G = Imperative.Graph.AbstractLabeled(IntInt)(String)
-module Display = struct
-  include G
-  let vertex_name v = 
-    let x,y = V.label v in string_of_int x^","^string_of_int y
-  let graph_attributes _ = []
-  let default_vertex_attributes _ = []
-  let vertex_attributes _ = []
-  let default_edge_attributes _ = []
-  let edge_attributes e = let s = E.label e in [`Label s]
-  let get_subgraph _ = None
-end
-module Dot = Graphviz.Dot(Display)
-module Neato = Graphviz.Neato(Display)
+(* open Graph *)
+(* module IntInt = struct *)
+(*   type t = int * int *)
+(* end *)
+(* module String = struct *)
+(*   type t = string *)
+(*   let compare = compare *)
+(*   let hash = Hashtbl.hash *)
+(*   let equal = (=) *)
+(*   let default = "" *)
+(* end *)
+(* module G = Imperative.Graph.AbstractLabeled(IntInt)(String) *)
+(* module Display = struct *)
+(*   include G *)
+(*   let vertex_name v =  *)
+(*     let x,y = V.label v in string_of_int x^","^string_of_int y *)
+(*   let graph_attributes _ = [] *)
+(*   let default_vertex_attributes _ = [] *)
+(*   let vertex_attributes _ = [] *)
+(*   let default_edge_attributes _ = [] *)
+(*   let edge_attributes e = let s = E.label e in [`Label s] *)
+(*   let get_subgraph _ = None *)
+(* end *)
+(* module Dot = Graphviz.Dot(Display) *)
+(* module Neato = Graphviz.Neato(Display) *)
 
 (*
 module Int = struct 
@@ -261,6 +288,4 @@ let g = G.add_edge g v8 v1
 module Toposort = Topological.Make(G)
 
 let _ = Toposort.iter (fun v-> Printf.printf "%d " v) g
-
 *)
-
