@@ -54,7 +54,7 @@ let fold_array f acc len_opt =
         @param file is the file being analyzed
         @param exp is the expression to resolve
         @return [(targets_list, mallocs)] where [target_list] contains the points to target lvals and offset;
-                and [mallocs] contains a list of malloc targets.
+                and [mallocs] contains a list of malloc targets
 *)
 let points_to file exp =
         init_file file;
@@ -123,4 +123,14 @@ let points_to file exp =
             end target_lvals (to_offsets v.Cil.vtype)
         end [] targets in
         (target_lvals, mallocs)
+
+
+(** Wrapper for Cil's {!Ptranal.resolve_fundec}.
+        @param file is the file being analyzed
+        @param exp is the expression to resolve
+        @return [fundec_list] which is a list of target functions
+*)
+let points_to_fundec file exp =
+        init_file file;
+        Ptranal.resolve_funptr exp
 

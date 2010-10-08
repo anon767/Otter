@@ -274,19 +274,6 @@ let callchain_backward_se file entryfn assertfn job_init : _ job_completion list
         Driver.run ~max_abandoned_jobs:(!arg_max_abandoned_jobs) ~interceptor ~queue job
   in
 
-  (* compute call graph and provide a helper function for finding callers *)
-  (* TODO (martin): move this to its own helper module *)
-  let callgraph = Callgraph.computeGraph file in
-  let get_callers f =
-    let function_node = Hashtbl.find callgraph f.svar.vname in
-    let callers_hash = function_node.Callgraph.cnCallers in
-    let caller_nodes = Inthash.tolist callers_hash in
-    List.fold_left begin fun callers (_, caller) -> match caller.Callgraph.cnInfo with
-        | Callgraph.NIVar (v, defined) when !defined -> (FindCil.fundec_by_varinfo file v)::callers
-        | _ -> callers
-    end [] caller_nodes
-  in
-
   (* The implementation of main loop *)
   let rec callchain_backward_main_loop job targets : 'reason job_completion list =
 	(* Assume we start at f *)
@@ -334,7 +321,7 @@ let callchain_backward_se file entryfn assertfn job_init : _ job_completion list
 		    } in
             Format.printf "Create new target for function %s with failing paths:@\n" f.svar.vname;
             print_list "Failing Path" print_decisions failing_paths;
-		    let callers = get_callers f in
+		    let callers = CilCallgraph.find_callers file f in
               print_list (Format.sprintf "Function %s's caller" f.svar.vname) Printer.fundec callers;
 		      List.fold_left
 		      (
@@ -352,7 +339,7 @@ let callchain_backward_se file entryfn assertfn job_init : _ job_completion list
       target_func = assertfn;
       target_predicate = FailingPaths([]);
   } in
-  let callers = get_callers assertfn in
+  let callers = CilCallgraph.find_callers file assertfn in
 	List.fold_left
 	  (fun results caller ->
           (* let targets = [assert_target] in *)
