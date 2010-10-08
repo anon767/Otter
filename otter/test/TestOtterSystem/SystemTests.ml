@@ -1,6 +1,7 @@
 open TestUtil.MyOUnit
 open TestUtil.OtterPragmaTests
 open OtterDriver
+open Otter
 
 
 (* directory containing tests for SystemTests *)
@@ -32,5 +33,6 @@ let test_system main_loop dir =
 
 let testsuite = "System" >::: [
 	test_system Driver.run_with_libc "OtterCore";
+	test_system MultiProcess.run "MultiProcessOtter";
 ]
 
