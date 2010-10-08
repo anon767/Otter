@@ -26,7 +26,6 @@ type target = {
 
 (* Cil feature for call-chain backwards Otter *)
 let arg_assertfn = ref "__ASSERT"
-let arg_max_abandoned_jobs = ref max_int
 
 let distance_to_targets_prioritizer callstack target_fundecs job =
     if (List.length job.state.callstack) = (List.length callstack) then
@@ -271,7 +270,7 @@ let callchain_backward_se file entryfn assertfn job_init : _ job_completion list
         else
             Queue.get_default ()
     in
-        Driver.run ~max_abandoned_jobs:(!arg_max_abandoned_jobs) ~interceptor ~queue job
+        Driver.run ~interceptor ~queue job
   in
 
   (* The implementation of main loop *)
@@ -382,10 +381,6 @@ let feature = {
 		("--assertfn",
 		Arg.Set_string arg_assertfn,
 		"<fname> Assertion function to look for in the call-chain-backward mode (default: __ASSERT) @\n");
-
-		("--max_abandoned_paths",
-		Arg.Set_int arg_max_abandoned_jobs,
-		"<int> Maximum number of abandoned paths explored before returning (default: unlimited) @\n");
 	];
 	Cil.fd_post_check = true;
 	Cil.fd_doit = doit
