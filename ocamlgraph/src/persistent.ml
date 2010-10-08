@@ -74,6 +74,17 @@ module Digraph = struct
 	g
   end
 
+  module ConcreteBidirectional(V:COMPARABLE) = struct
+    include P.Digraph.ConcreteBidirectional(V)
+    let remove_vertex g v =
+      if HM.mem v g then
+        let g = fold_pred_e (fun e g -> remove_edge_e g e) g v g in
+        let g = fold_succ_e (fun e g -> remove_edge_e g e) g v g in
+        HM.remove v g
+      else
+        g
+  end
+
   module ConcreteLabeled(V:COMPARABLE)(E:ORDERED_TYPE_DFT) = struct
     include P.Digraph.ConcreteLabeled(V)(E)
     let remove_vertex g v =

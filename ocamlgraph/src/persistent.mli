@@ -68,8 +68,20 @@ end
 module Digraph : sig
     include S
 
-    (** Persistent Labeled, Bidirectional Graphs (gives predecessors in
-        constant time *)
+    (** {2 Bidirectional graphs}
+
+        Bidirectional graphs use more memory space (at worse the double) that
+        standard concrete directional graphs. But accessing predecessors is in
+        O(1) amortized instead of O(max(|V|,|E|)) and removing a vertex is in
+        O(D*ln(D)) instead of O(|V|*ln(D)). D is the maximal degree of the
+        graph. *)
+
+    (** Persistent, unlabeled, and bidirectional graph. *)
+    module ConcreteBidirectional (V: COMPARABLE) :
+      Sig.P with type V.t = V.t and type V.label = V.t and type E.t = V.t * V.t
+          and type E.label = unit
+
+    (** Persistent, labeled, and bidirectional graph. *)
     module ConcreteBidirectionalLabeled (V: COMPARABLE)(E: ORDERED_TYPE_DFT) :
       Sig.P with type V.t = V.t and type V.label = V.t
           and type E.t = V.t * E.t * V.t and type E.label = E.t
