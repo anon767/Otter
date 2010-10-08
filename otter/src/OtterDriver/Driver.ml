@@ -91,7 +91,7 @@ let run ?max_nodes ?max_paths ?max_abandoned ?interceptor ?queue job =
 let run_core job =
     run job
 
-(** As with {!run}, using the core symbolic executor and the core built-in functions, as well as default bounds. *)
+(** As with {!run}, using the core symbolic executor and core built-in functions, as well as default bounds. *)
 let run_basic job =
     let interceptor =
         Interceptor.set_output_formatter_interceptor
@@ -99,7 +99,7 @@ let run_basic job =
     in
     run ~interceptor job
 
-(** As with {!run}, using the core symbolic executor, core and libc built-in functions, as well as default bound. *)
+(** As with {!run}, using the core symbolic executor, core and libc built-in functions, as well as default bounds. *)
 let run_with_libc job =
     let interceptor =
         Interceptor.set_output_formatter_interceptor
@@ -114,7 +114,7 @@ let run_with_libc job =
 let options = [
     "--max-nodes",
         Arg.Set_int default_max_nodes,
-        "<bound> Bound the number of nodes in the exeuction tree to explore (default: unbounded)";
+        "<bound> Bound the number of nodes in the execution tree to explore (default: unbounded)";
     "--max-paths",
         Arg.Set_int default_max_paths,
         "<bound> Bound the number of paths to execute to completion (default: unbounded)";
