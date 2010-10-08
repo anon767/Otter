@@ -86,6 +86,8 @@ module OCamlDoc = struct
         (* Provide flags for ocamldoc *)
         flag ["ocaml"; "doc"; "quiet"] (A "-hide-warnings");
         flag ["ocaml"; "doc"; "colorize_code"] (A "-colorize-code");
+
+        copy_rule "ocamldoc: mlpack -> odocl" "%.mlpack" "%.odocl";
 end
 
 (**

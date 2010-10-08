@@ -21,7 +21,7 @@ Quick-start Guide
 * Adding a new module to Otter:
 
     1. Add your module `MyModule.ml` to `src/Otter`
-    2. Edit `src/Otter.{mlpack,odocl}` and add a line `Otter/MyModule`
+    2. Edit `src/Otter.mlpack` and add a line `Otter/MyModule`
 
 * Adding a new test module to Otter:
 
@@ -180,25 +180,24 @@ to be compiled into an executable. For example:
         * `Module1.ml`
         * `Module2.ml`
     * `Otter.mlpack`
-    * `Otter.odocl`
     * `runotter.ml`
 
 The `Otter` directory contains the source code to various Otter modules, and
 `runotter.ml` is the driver module. In addition to the source files, there are
-three meta files---`_tags`, `Otter.mlpack` and `Otter.odocl`---that instruct
-Ocamlbuild to compile the directory into a module pack (e.g., `Otter.cma`).
-The `_tags` file contain compilation directives for each `.ml` file in the
-directory, while the `Otter.mlpack` file contains a list of modules to compile
-into a module pack, whereas `Otter.odocl` contains a list of modules for which
-to generate documentation, which may be a subset of `Otter.mlpack`.
-(Unfortunately, these files are not very well documented in the [Ocamlbuild][]
-user guide).
+two meta files---`_tags` and `Otter.mlpack`---that instruct Ocamlbuild to
+compile the directory into a module pack (e.g., `Otter.cma`). The `_tags` file
+contain compilation directives for each `.ml` file in the directory, while the
+`Otter.mlpack` file contains a list of modules to compile into a module pack.
+`Otter.mlpack` is also used when generating documentation; if desired, an
+`Otter.odocl` file may be used to customize the list of modules for which
+documentation should be generated. (Unfortunately, these files are not very
+well documented in the [Ocamlbuild][] user guide).
 
 When writing a new module, e.g., `NewModule.ml`, put the file into a module
-pack directory, and add a reference to it in the corresponding `.mlpack` and
-`.odocl` files. Additionally, when writing a new test module in the `test`
-directory, a reference to the new module's test suite should also be added to
-the `runtestotter.ml` driver:
+pack directory, and add a reference to it in the corresponding `.mlpack` file.
+Additionally, when writing a new test module in the `test` directory, a
+reference to the new module's test suite should also be added to the
+`runtestotter.ml` driver:
 
     (* in test/runtestotter.ml *)
     run_test_tt_main begin TestList [

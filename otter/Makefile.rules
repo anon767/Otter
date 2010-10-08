@@ -6,8 +6,8 @@ OCAMLBUILD_BUILDDIR ?= _build
 OCAMLBUILD_PRODUCTDIR ?= _product
 OCAMLBUILD_DOCDIR ?= doc/api
 
-# helper to find where $(1) is in . or $(VPATH)
-vpath_for = $(foreach foo,$(1),$(firstword $(wildcard $(addsuffix /$(foo),. $(VPATH)))))
+# helper to find the location of the first existing $(1) in . or $(VPATH)
+vpath_for = $(firstword $(wildcard $(foreach foo,$(1),$(addsuffix /$(foo),. $(VPATH)))))
 
 # ocamlbuild helper to build a target $(1), and copy the product into a directory $(2) if given;
 # if the $(3) is also given, then it will be copied instead of $(1).
@@ -49,9 +49,9 @@ ocamlbuild//%.dot : $(OCAMLBUILD_BUILDDIR)
 
 # %.docdir requires a workaround because:
 # - ocamlbuild will not search -I include paths for targets with directory components such as %.docdir/html.stamp;
-ocamlbuild//%.docdir : DOCDIR = $(patsubst %.odocl,%.docdir,$(call vpath_for,$*.odocl))
+ocamlbuild//%.docdir : DOCDIR = $(addsuffix .docdir,$(basename $(call vpath_for,$*.mlpack $*.odocl)))
 ocamlbuild//%.docdir : $(OCAMLBUILD_BUILDDIR)
-	$(call OCAMLBUILD.build,$(addprefix $(DOCDIR)/,html.stamp),$(OCAMLBUILD_DOCDIR),$(DOCDIR))
+	$(call OCAMLBUILD.build,$(DOCDIR)/html.stamp,$(OCAMLBUILD_DOCDIR),$(DOCDIR))
 
 
 # recompile everything if an external dependency is newer than the build directory
