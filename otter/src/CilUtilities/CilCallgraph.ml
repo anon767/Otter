@@ -31,8 +31,11 @@ let output_dot_file = ref "cilcallgraph.dot"
 (**/**)
 
 
-(** Resolve a {!Cil.exp} to a list of {!Cil.fundec}. *)
-let resolve_fexp = CilPtranal.points_to_fundec
+(** Resolve a {!Cil.exp} to a list of {!Cil.fundec}, using {!CilPtranal.points_to_fundec} to resolve function pointers. *)
+let resolve_exp_to_fundecs file = function
+    | Cil.Lval (Cil.Var fn, Cil.NoOffset) -> [ FindCil.fundec_by_varinfo file fn ]
+    | Cil.Lval (Cil.Mem ptrexp, Cil.NoOffset) -> CilPtranal.points_to_fundec file ptrexp
+    | _ -> failwith "Does Cil generate other variations of function call expressions?"
 
 
 (** Compute the callgraph of a file. *)
@@ -50,11 +53,7 @@ let compute_callgraph =
                         inherit Cil.nopCilVisitor
                         method vinst = function
                             | Cil.Call (_, fexp, _, _) ->
-                                let targets = match fexp with
-                                    | Cil.Lval (Cil.Var fn, Cil.NoOffset) -> [ FindCil.fundec_by_varinfo file fn ]
-                                    | Cil.Lval (Cil.Mem ptrexp, Cil.NoOffset) -> resolve_fexp file ptrexp
-                                    | _ -> failwith "Does Cil generate other variations of function call expressions?"
-                                in
+                                let targets = resolve_exp_to_fundecs file fexp in
                                 List.iter (fun target -> callgraph := Callgraph.add_edge !callgraph fundec target) targets;
                                 Cil.SkipChildren
                             | _ ->
