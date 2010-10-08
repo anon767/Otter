@@ -2,6 +2,7 @@ open TestUtil.MyOUnit
 open TestUtil.OtterPragmaTests
 open OtterDriver
 open Otter
+open MultiOtter
 
 
 (* directory containing tests for SystemTests *)

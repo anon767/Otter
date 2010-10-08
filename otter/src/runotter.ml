@@ -12,13 +12,14 @@ module OcamlbuildDependencies = struct
     open OtterReporter
     open OtterDriver
     open OtterGraph
+    open MultiOtter
 end
 
 let _ =
     (* setup and run CilQual *)
     Cilly.run [
         Otter.Executemain.feature;
-        Otter.Multiprocess.feature;
+        MultiOtter.Multiprocess.feature;
         Otter.Callchain_backward.feature;
         Marshal_feature.feature;
         CilUtilities.FindFns.feature;

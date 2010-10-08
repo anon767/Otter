@@ -1,6 +1,6 @@
-CilUtilities
 DataStructures
 OcamlUtilities
+CilUtilities
 OtterGraph
 OtterBytes
 OtterCore
@@ -8,6 +8,4 @@ OtterJob
 OtterQueue
 OtterReporter
 OtterDriver
-Otter
 MultiOtter
-Runotter
