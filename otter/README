@@ -36,6 +36,33 @@ Quick-start Guide
                 ...
             ] end
 
+* Adding a new module pack to Otter:
+
+    1. Add the contents of your new module pack to `src` with the following
+       organization:
+
+        * `src`
+            * `MyModulePack`
+                * `_tags`
+                * `Module1.ml`
+                * `Module2.ml`
+            * `MyModulePack.mlpack`
+
+    2. Add a file `MyModulePack/_tags` with a single line:
+
+            <*.cm*>: for-pack(MyModulePack)
+
+    3. Add a file `MyModulePack.mlpack` listing the modules to include:
+
+            MyModulePack/Module1
+            MyModulePack/Module2
+
+    4. To export `MyModulePack` in the `Otter.cm[x]a` library, add it to
+       `Otter.mllib` as well as the `libs` target in `Makefile.in`.
+
+    5. To have `ocamldoc` documentation automatically generated for
+       `MyModulePack`, add it to the `api` target in `Makefile.in`.
+
 * Adding an integration test case to Otter (does not invoke `otter.pl`):
 
     1. Add your C file test case to one of the directories under
@@ -195,9 +222,17 @@ well documented in the [Ocamlbuild][] user guide).
 
 When writing a new module, e.g., `NewModule.ml`, put the file into a module
 pack directory, and add a reference to it in the corresponding `.mlpack` file.
-Additionally, when writing a new test module in the `test` directory, a
-reference to the new module's test suite should also be added to the
-`runtestotter.ml` driver:
+If the module provides a new Cil feature, add it to the `runotter.ml` driver:
+
+    (* in src/runotter.ml *)
+    Cilly.run [
+        ...
+        Otter.NewModule.feature;
+        ...
+    ] ()
+
+Likewise, when writing a new test module in the `test` directory, add the new
+module's test suite to the `runtestotter.ml` driver:
 
     (* in test/runtestotter.ml *)
     run_test_tt_main begin TestList [
@@ -205,7 +240,6 @@ reference to the new module's test suite should also be added to the
         TestOtter.TestNewModule.testsuite;
         ...
     ] end
-
 
 Note that when writing a module, references to modules in the same directory
 should be unqualified:
@@ -218,7 +252,13 @@ Whereas references to modules in other directories must be qualified:
     (* in Module1.ml *)
     let foo = OtherDirectory.Module.bar;;
 
-New module packs may also be created by following the above guidelines.
+New module packs may also be created by following the above guidelines, with
+an additional caveat: due to a (as yet unresolved) quirk in Ocamlbuild, module
+packs should be added to both `runotter.ml` and `runtestotter.ml` the under
+`OcamlbuildDependencies`. To export module packs as part of the
+`Otter.cma`/`Otter.cmxa` libraries, add them to `Otter.mllib` as well as the
+`libs` target in `Makefile.in`. To have `ocamldoc` documentation automatically
+generated for module packs, add them to the `api` target in `Makefile.in`.
 
 
 Adding Integration or System Tests to Otter
@@ -266,9 +306,9 @@ or locally by running:
     make doc
 
 This will generate HTML documentation in `otter/doc/api/*.docdir` for
-each module pack in Otter. Additionally, this will also generate a module
-dependency diagram between Otter's modules as a GraphViz file
-`otter/doc/All.dot`.
+each module pack listed under the `api` target of `Makefile.in` in Otter.
+Additionally, this will also generate a module dependency diagram between
+Otter's modules as a GraphViz file `otter/doc/All.dot`.
 
 
 Debugging Otter using the Ocaml debugger
