@@ -24,5 +24,6 @@ let _ =
         Marshal_feature.feature;
         CilUtilities.FindFns.feature;
         CilUtilities.TraceLines.feature;
+        CilUtilities.CilCallgraph.feature;
     ] ()
 
