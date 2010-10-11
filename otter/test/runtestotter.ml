@@ -14,6 +14,7 @@ module OcamlbuildDependencies = struct
     open OtterDriver
     open OtterGraph
     open Otter
+    open MultiOtter
 end
 
 let _ =
