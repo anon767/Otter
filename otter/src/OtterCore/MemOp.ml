@@ -149,7 +149,7 @@ let state__add_frame state =
   }
 
 
-	
+
 let state__varinfo_to_lval_block state varinfo =
 	let local = List.hd state.locals in
 	if VarinfoMap.mem varinfo local then
@@ -215,12 +215,14 @@ let state__get_deferred_from_block state block =
 
 
 let state__deref ?pre state (lvals, size) =
-	let deref state pre (block, offset) =
-		let state, bytes = state__get_bytes_from_block state block in
-		(state, conditional__bytes (bytes__read ~test:(Stp.query_guard state.path_condition) ~pre bytes offset size))
-	in
-	let state, c = conditional__fold_map ?pre deref state lvals in
-	(state, make_Bytes_Conditional c)
+    let deref state pre (block, offset) =
+        let state, bytes = state__get_bytes_from_block state block in
+        (state, conditional__bytes (bytes__read ~test:(Stp.query_guard state.path_condition) ~pre bytes offset size))
+    in
+    (* Prune dummy_blocks created in Expression.deref *)
+    let lvals = conditional__prune ~test:(Stp.query_guard state.path_condition) lvals in
+    let state, c = conditional__fold_map ?pre deref state lvals in
+        (state, make_Bytes_Conditional c)
 
 
 let rec state__assign state (lvals, size) bytes =
@@ -306,7 +308,7 @@ let state__end_fcall state =
 
 let state__get_callContext state = List.hd state.callContexts
 
-let state__extract_path_condition state bytes = 
+let state__extract_path_condition state bytes =
 (**
   *   remove pc \in PC if bytes -> pc
   *   This should be faster
@@ -374,7 +376,7 @@ let state__get_bytes_eval_cache state bytes =
       try
         let ret = Some (BytesMap.find bytes state.bytes_eval_cache) in
           incr bytes_eval_cache_hits; ret
-      with Not_found -> 
+      with Not_found ->
         incr bytes_eval_cache_misses; None
     end
 
@@ -385,10 +387,10 @@ let state__trace state =
 
 (** map address to state (!) *)
 let index_to_state: state Types.IndexMap.t ref = ref (Types.IndexMap.empty)
-let index_to_state__add index state = 
+let index_to_state__add index state =
 	index_to_state := Types.IndexMap.add index state (!index_to_state)
 
-let index_to_state__get index = 
+let index_to_state__get index =
 	Types.IndexMap.find index (!index_to_state)
 
 
@@ -442,11 +444,11 @@ let cmp_states (s1:state) (s2:state) =
 	in
 	sharedBlocksComparison && unsharedBlocksComparison && callStackComparison
 
-	
+
 (*
 let function_stat: int Cilutility.FundecMap.t ref = ref Cilutility.FundecMap.empty
 let function_stat_increment fundec =
-	let count = if Cilutility.FundecMap.mem fundec (!function_stat) 
+	let count = if Cilutility.FundecMap.mem fundec (!function_stat)
 	then
 		Cilutility.FundecMap.find fundec (!function_stat)
 	else 0
@@ -461,13 +463,13 @@ let rec state__eval state pc bytes =
 	(*
 	if not Executeargs.args.Executeargs.arg_print_queries then () else
 	Output.print_endline ("Is the following not equal to zero? \n"^(To_string.bytes bytes));*)
-  let nontrivial () = 
+  let nontrivial () =
     Output.set_mode Output.MSG_REG;
     Output.printf "Ask STP...@\n";
     (state,Stats.time "STP" (Stp.consult_stp pc) bytes)
 
   in
-	let is_comparison op = match op with	
+	let is_comparison op = match op with
 		| OP_LT -> true
 		| OP_GT -> true
 
@@ -477,7 +479,7 @@ let rec state__eval state pc bytes =
 		| OP_NE -> true
 		| _ -> false
 	in
-	let operation_of op = match op with	
+	let operation_of op = match op with
 		| OP_LT -> lt
 		| OP_GT -> gt
 		| OP_LE -> le
@@ -486,10 +488,10 @@ let rec state__eval state pc bytes =
 		| OP_NE -> ne
 		| _ -> failwith "operation_of: operation is not comparison"
 	in
-   let state,truth = 
+   let state,truth =
      match bytes with
        (* The following cases are simple enough to not consult STP *)
-       | Bytes_Constant (CInt64(n,_,_)) -> state,if n = 0L then Ternary.False else Ternary.True			
+       | Bytes_Constant (CInt64(n,_,_)) -> state,if n = 0L then Ternary.False else Ternary.True
 
        | Bytes_ByteArray (bytearray) ->
            begin try
@@ -501,26 +503,26 @@ let rec state__eval state pc bytes =
          | Bytes_Address (_,_) -> state,Ternary.True
 
              (* nullity check *)
-             | Bytes_Op(OP_LNOT,(b1,_)::[]) -> 
+             | Bytes_Op(OP_LNOT,(b1,_)::[]) ->
                  let state,bb = state__eval state pc b1 in
                    state,Ternary.not bb
 
              (* Comparison of (ptr+i) and (ptr+j) *)
-             | Bytes_Op(op,(Bytes_Address(block1,offset1),_)::(Bytes_Address(block2,offset2),_)::[]) 
+             | Bytes_Op(op,(Bytes_Address(block1,offset1),_)::(Bytes_Address(block2,offset2),_)::[])
                  when is_comparison op ->
-                 if block1!=block2 then 
+                 if block1!=block2 then
                    (if op==OP_EQ then state,Ternary.False else if op==OP_NE then state,Ternary.True else nontrivial())
-                 else  
+                 else
                    state__eval state pc (run (operation_of op) [(offset1,Cil.intType);(offset2,Cil.intType)])
 
              (* Comparison of (ptr+i) and c (usually zero) *)
-             | Bytes_Op(op,(Bytes_Address(block,offset1),_)::(bytes2,_)::[]) 
+             | Bytes_Op(op,(Bytes_Address(block,offset1),_)::(bytes2,_)::[])
                  when is_comparison op  &&  isConcrete_bytes bytes2 ->
                  if op==OP_EQ then state,Ternary.False else if op==OP_NE then state,Ternary.True else nontrivial()
              (* Function pointer is always true *)
              | Bytes_FunPtr(_,_) -> state,Ternary.True
 	   	(* Consult STP *)
-	   	| _ -> 
+	   	| _ ->
 	   		nontrivial()
    in
      state,truth

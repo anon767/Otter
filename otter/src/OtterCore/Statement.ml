@@ -416,6 +416,7 @@ let exec_stmt job channel =
                             Fork [Active trueJob; Active falseJob]
                 in
                     job_state, channel
+
             end
         | Block(block)
         | Loop (block, _, _, _) ->
@@ -428,21 +429,36 @@ let exec_stmt job channel =
         | _ -> failwith "Not implemented yet"
 
 
-(* TODO (martin): the recursive call is never called twice. Change this to a non-recursive function. *)
-let rec step job job_queue =
-    let channel = Channel in
+let step job job_queue =
     try
-        match job.instrList with
-        | [] ->
-            let job_state, channel = exec_stmt job channel in
-                ignore channel;
-                (job_state, job_queue)
-        | _ ->
-            let job_state, channel = exec_instr job channel in
-                ignore channel;
-                (job_state, job_queue)
+        let channel = MultiChannel({error_channel=[]}) in
+        let job_state, channel =
+            match job.instrList with
+            | [] -> exec_stmt job channel
+            | _ -> exec_instr job channel
+        in
+            match channel with
+            | Channel -> failwith "Invalid Channel"
+            | MultiChannel (multi_channel) ->
+                let abandoned_job_states = List.map (
+                    fun (state, failing_condition, error_msg) ->
+                        (* assert: failing_condition is never true *)
+                        Format.printf "Caught Conditional Exception: %s@\n" error_msg;
+                        let result = {
+                            result_file = job.file;
+                            result_state = { state with path_condition = failing_condition::state.path_condition };
+                            result_history = job.exHist;
+                            result_decision_path = job.decisionPath;
+                        } in
+                            Complete (Abandoned (`Failure error_msg, Job.get_loc job, result))
+                    ) multi_channel.error_channel
+                in
+                    if abandoned_job_states = [] then
+                        job_state, job_queue
+                    else
+                        Fork (job_state :: abandoned_job_states), job_queue
+
     with
-        (* TODO (martin): combine the two patterns *)
         | Failure msg ->
             if !Executeargs.arg_failfast then failwith msg;
             let result = {
@@ -452,30 +468,3 @@ let rec step job job_queue =
                 result_decision_path = job.decisionPath;
             } in
                 (Complete (Abandoned (`Failure msg, Job.get_loc job, result)), job_queue)
-        | Expression.ConditionalFailureException (state, failing_condition, aggregated_msg) ->
-            (* assert: failing_condition is never true *)
-            (* fork the job by adding the failing condition to the most recent state *)
-            let abandoned_job_state =
-                (* TODO: add a forking decision here
-                 * (martin) the benefit of adding a fork_decision here is we know a potential error
-                 * at this program point. But it's fine to omit it, since the failing path checking run
-                 * would fail if it's ought to fail, and if it doesn't fail, it will eventually stop when
-                 * comes to the next fork_decision. *)
-                let result = {
-                    result_file = job.file;
-                    result_state = { state with path_condition = failing_condition::state.path_condition };
-                    result_history = job.exHist;
-                    result_decision_path = job.decisionPath;
-                } in
-                    Complete (Abandoned (`Failure aggregated_msg, Job.get_loc job, result))
-            in
-            let job' = {job with
-                state = {state with
-                    path_condition = (Bytes.bytes_not failing_condition)::job.state.path_condition
-            }} in
-            let job_state, job_queue = step job' job_queue in
-            let job_state' = match job_state with
-                | Fork (lst) -> Fork(abandoned_job_state::lst)
-                | _ -> Fork([abandoned_job_state; job_state])
-            in
-                job_state', job_queue

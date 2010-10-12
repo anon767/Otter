@@ -7,8 +7,6 @@ open BytesUtility
 open Types
 open Operator
 
-exception ConditionalFailureException of Types.state * Bytes.bytes * string
-
 (* Print an error message saying that the assertion [bytes] failed in
      state [state]. [exps] is the expression representing [bytes].
      [isUnknown] specifies whether the assertion returned
@@ -184,6 +182,8 @@ rval state exp channel =
 
         | Lval (cil_lval) ->
             let state, lvals, channel = lval state cil_lval channel in
+            (* TODO (martin): this raises Not_found when seeing a
+             * dummy_block. *)
             let state, bytes = MemOp.state__deref state lvals in
                 state, bytes, channel
 
@@ -319,7 +319,7 @@ lval ?(justGetAddr=false) state (lhost, offset_exp as cil_lval) channel =
             state, lvals, varinfo.vtype, channel
         | Mem(exp) ->
             let state, rv, channel = rval state exp channel in
-            let lvals, channel = deref state rv channel in
+            let state, lvals, channel = deref state rv channel in
                 state, lvals, Cil.typeOf exp, channel
     in
     match cil_lval with
@@ -337,7 +337,7 @@ lval ?(justGetAddr=false) state (lhost, offset_exp as cil_lval) channel =
 
 and
 
-deref state bytes channel : lval_block * channel =
+deref state bytes channel : state * lval_block * channel =
     match bytes with
         | Bytes_Constant (c) ->
             FormatPlus.failwith "Dereference something not an address:@ constant @[%a@]" BytesPrinter.bytes bytes
@@ -371,7 +371,7 @@ deref state bytes channel : lval_block * channel =
 
         | Bytes_Address(block, offset) ->
             if MemOp.state__has_block state block then
-                conditional__lval_block (block, offset), channel
+                state, conditional__lval_block (block, offset), channel
             else
                 failwith "Dereference into an expired stack frame"
 
@@ -379,20 +379,20 @@ deref state bytes channel : lval_block * channel =
             let make_dummy_lval () =
                 Unconditional (block__make_string_literal "@dummy_block" 4, bytes__zero)
             in
-            let (acc_pass, acc_fail, channel), conditional =
-                conditional__fold_map (fun (acc_pass, acc_fail, channel) guard c ->
+            let (acc_pass, acc_fail, state, channel), conditional =
+                conditional__fold_map (fun (acc_pass, acc_fail, state, channel) guard c ->
                     try
-                        let lval, channel = deref state c channel in
-                            (guard::acc_pass, acc_fail, channel), lval
+                        let state, lval, channel = deref state c channel in
+                            (guard::acc_pass, acc_fail, state, channel), lval
                     with
                         Failure msg ->
                             (* Collect a list of failing guard/message pairs *)
-                            (acc_pass, (guard, msg)::acc_fail, channel), make_dummy_lval ()
-                ) ([],[], channel) c
+                            (acc_pass, (guard, msg)::acc_fail, state, channel), make_dummy_lval ()
+                ) ([],[], state, channel) c
             in
                 if acc_fail = [] then
                     (* All conditional branches were dereferenced successfully: return the dereferenced conditional. *)
-                    conditional, channel
+                    state, conditional, channel
                 else
                     let failing_condition, aggregated_msg = List.fold_left (
                         fun (failing_condition, aggregated_msg) (guard, msg) ->
@@ -404,14 +404,22 @@ deref state bytes channel : lval_block * channel =
                         (* No conditional branches were dereferenced successfully: just fail. *)
                         failwith aggregated_msg
                     else
-                        (* Not all conditional branches were dereferenced successfully: capture the most recent state
-                           and failing condition in terms of the most recent state, and raise a ConditionalFailure.
-                           The failing condition is only guaranteed to be consistent with the most recent state:
-                           because the state may have been further initialized (lazily), re-running the instruction
-                           with the original state may result in a different state (due to the use of global counters
-                           and random numbers). The most recent state may be forked using the failing condition,
-                           e.g., as in Statement.step. *)
-                        raise (ConditionalFailureException (state, failing_condition, aggregated_msg))
+                        (* Not all conditional branches were dereferenced successfully:
+                         * Add (Bytes.bytes_not failing_condition) into state.path_condition and keep running.
+                         * Also, add (state, failing_condition, aggregated_msg) into the error channel.
+                         * Here, the state is the exact program state when the error occurs.
+                         *)
+                        begin match channel with
+                        | Channel -> failwith "Invalid Channel"
+                        | MultiChannel (multi_channel) ->
+                            let multi_channel' = { (* multi_channel with *)
+                                error_channel = (state, failing_condition, aggregated_msg) :: multi_channel.error_channel;
+                            } in
+                            let state' = { state with
+                                path_condition = (Bytes.bytes_not failing_condition) :: state.path_condition;
+                            } in
+                                state', conditional, MultiChannel(multi_channel')
+                        end
 
         | Bytes_Op(op, operands) ->
             FormatPlus.failwith "Dereference something not an address:@ operation @[%a@]" BytesPrinter.bytes bytes

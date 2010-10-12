@@ -94,4 +94,10 @@ let (string_table : bytes MemoryBlockMap.t ref) = ref MemoryBlockMap.empty
 
 (*let (vargs_table : bytes list VargsMap.t ref) = ref VargsMap.empty*)
 
-type channel = Channel
+(* TODO (martin): make channel a class type, for easier extension. *)
+type multi_channel = {
+    error_channel: (state * bytes * string) list;
+}
+type channel =
+    | Channel
+    | MultiChannel of multi_channel
