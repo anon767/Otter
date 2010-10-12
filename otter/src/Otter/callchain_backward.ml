@@ -109,7 +109,7 @@ let test_job_at_targets targets job =
 		| (Call(lvalopt,fexp,exps,loc) as instr)::tail ->
             (* Advance the current instruction to the next *)
 	        let job = { job with instrList = tail; } in
-            let job_state = Statement.exec_instr_call job instr lvalopt fexp exps in
+            let job_state, _ = Statement.exec_instr_call job instr lvalopt fexp exps Types.Channel in
             let active_jobs =
               let rec get_active_jobs job_state =
                   match job_state with

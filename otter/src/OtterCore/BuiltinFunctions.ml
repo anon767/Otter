@@ -40,13 +40,13 @@ A function call operates on a job and returns one or more job results:
 		@param binop is the binary operator used to join the list of expressions
 		@return the updated state and the evaluated, joined expression
 *)
-let eval_join_exps state exps binop =
+let eval_join_exps state exps binop channel =
 	let rec join_exps = function
 		| x::[] -> x
 		| x::xs -> BinOp(binop, x, join_exps xs, Cil.intType)
 		| [] -> failwith "AND/OR must take at least 1 argument"
 	in
-	Expression.rval state (join_exps exps)
+	    Expression.rval state (join_exps exps) channel
 
 
 (** Convenience function to assign a value to an optional return lvalue.
@@ -55,16 +55,16 @@ let eval_join_exps state exps binop =
 		@param bytes is the value to assign to the return lvalue
 		@return the updated state
 *)
-let set_return_value state retopt bytes =
+let set_return_value state retopt bytes channel =
 	(* TODO: also cast bytes to the expected return type of the function, since, according to
 	   cil/doc/api/Cil.html#TYPEinstr, the return lvalue may not match the return type of the
 	   function *)
 	match retopt with
 		| None ->
-			state
+			state, channel
 		| Some cil_lval ->
-			let state, lval = Expression.lval state cil_lval in
-			MemOp.state__assign state lval bytes
+			let state, lval, channel = Expression.lval state cil_lval channel in
+			    MemOp.state__assign state lval bytes, channel
 
 
 (** Convenience function to end a function call in a symbolic executor job with the standard epilogue of incrementing
@@ -118,60 +118,61 @@ let end_function_call job =
 		@return a function call handler
 *)
 let wrap_state_function fn =
-	fun job retopt exps ->
-		let job = { job with state = fn job.state retopt exps } in
+	fun job retopt exps channel ->
+        let state, channel = fn job.state retopt exps channel in
+		let job = { job with state = state } in
 		let job = end_function_call job in
-		Active job
+		    Active job, channel
 
 
 (** Function Implimentations **)
 
-let libc___builtin_va_arg = wrap_state_function begin fun state retopt exps ->
-	let state, key = Expression.rval state (List.hd exps) in
+let libc___builtin_va_arg = wrap_state_function begin fun state retopt exps channel ->
+	let state, key, channel = Expression.rval state (List.hd exps) channel in
 	let state, ret = MemOp.vargs_table__get state key in
 	let lastarg = List.nth exps 2 in
 	match lastarg with
 		| CastE(_, AddrOf(cil_lval)) ->
-			let state, lval = Expression.lval state cil_lval in
+			let state, lval, channe = Expression.lval state cil_lval channel in
 			let state = MemOp.state__assign state lval ret in
-			set_return_value state retopt ret
+			    set_return_value state retopt ret channel
 		| _ -> failwith "Last argument of __builtin_va_arg must be of the form CastE(_,AddrOf(lval))"
 end
 
 
-let libc___builtin_va_copy = wrap_state_function begin fun state retopt exps ->
-	let state, keyOfSource = Expression.rval state (List.nth exps 1) in
+let libc___builtin_va_copy = wrap_state_function begin fun state retopt exps channel ->
+	let state, keyOfSource, channel = Expression.rval state (List.nth exps 1) channel in
 	let srcList = MemOp.vargs_table__get_list state keyOfSource in
 	let state, key = MemOp.vargs_table__add state srcList in
 	match List.hd exps with
 		| Lval(cil_lval) ->
-			let state, lval = Expression.lval state cil_lval in
+			let state, lval, channel = Expression.lval state cil_lval channel in
 			let state = MemOp.state__assign state lval key in
-			set_return_value state retopt bytes__zero
+			    set_return_value state retopt bytes__zero channel
 		| _ -> failwith "First argument of va_copy must have lval"
 end
 
 
-let libc___builtin_va_end = wrap_state_function begin fun state retopt exps ->
-	let state, key = Expression.rval state (List.hd exps) in
+let libc___builtin_va_end = wrap_state_function begin fun state retopt exps channel ->
+	let state, key, channel = Expression.rval state (List.hd exps) channel in
 	let state = MemOp.vargs_table__remove state key in
-	set_return_value state retopt bytes__zero
+	set_return_value state retopt bytes__zero channel
 end
 
 
-let libc___builtin_va_start = wrap_state_function begin fun state retopt exps ->
+let libc___builtin_va_start = wrap_state_function begin fun state retopt exps channel ->
 	(* TODO: assign first arg with new bytes that maps to vargs *)
 	match List.hd exps with
 		| Lval(cil_lval) ->
 			let state, key = MemOp.vargs_table__add state (List.hd state.va_arg) in
-			let state, lval = Expression.lval state cil_lval in
+			let state, lval, channel = Expression.lval state cil_lval channel in
 			let state = MemOp.state__assign state lval key in
-			set_return_value state retopt bytes__zero
+			set_return_value state retopt bytes__zero channel
 		| _ -> failwith "First argument of va_start must have lval"
 end
 
 
-let libc_free = wrap_state_function begin fun state retopt exps ->
+let libc_free = wrap_state_function begin fun state retopt exps channel ->
 	(* Remove the mapping of (block,bytes) in the state. *)
 	(* From opengroup: The free() function causes the space pointed to by
 	ptr to be deallocated; that is, made available for further allocation. If ptr
@@ -180,8 +181,8 @@ let libc_free = wrap_state_function begin fun state retopt exps ->
 	function, or if the space is deallocated by a call to free() or realloc(), the
 	behaviour is undefined.  Any use of a pointer that refers to freed space causes
 	undefined behaviour.  *)
-	let warning format = Output.kprintf (fun _ -> set_return_value state retopt bytes__zero) format in
-	let state, ptr = Expression.rval state (List.hd exps) in
+	let warning format = Output.kprintf (fun _ -> set_return_value state retopt bytes__zero channel) format in
+	let state, ptr, channel = Expression.rval state (List.hd exps) channel in
 	match ptr with
 		| Bytes_Address (block, _) ->
 			if block.memory_block_type != Block_type_Heap
@@ -189,26 +190,26 @@ let libc_free = wrap_state_function begin fun state retopt exps ->
 			if not (MemOp.state__has_block state block)
 			then warning "Double-free:@ @[%a@]@ = @[%a@]@\n" Printer.exp (List.hd exps) BytesPrinter.bytes ptr else
 			let state = MemOp.state__remove_block state block in
-			set_return_value state retopt bytes__zero
+			set_return_value state retopt bytes__zero channel
 		| _ ->
 			Output.set_mode Output.MSG_MUSTPRINT;
 			warning "Freeing something that is not a valid pointer:@ @[%a@]@ = @[%a@]@\n" Printer.exp (List.hd exps) BytesPrinter.bytes ptr
 end
 
 
-let libc_memset = wrap_state_function begin fun state retopt exps ->
-	let state, bytes = Expression.rval state (List.hd exps) in
+let libc_memset = wrap_state_function begin fun state retopt exps channel ->
+	let state, bytes, channel = Expression.rval state (List.hd exps) channel in
 	let block, offset = bytes_to_address bytes in
 	let state, old_whole_bytes = MemOp.state__get_bytes_from_block state block in
-	let state, char_bytes = Expression.rval state (List.nth exps 1) in
+	let state, char_bytes, channel = Expression.rval state (List.nth exps 1) channel in
 	let c = bytes__get_byte char_bytes 0 (* little endian *) in
-	let state, n_bytes = Expression.rval state (List.nth exps 2) in
+	let state, n_bytes, channel = Expression.rval state (List.nth exps 2) channel in
 	if isConcrete_bytes n_bytes then
 		let n = bytes_to_int_auto n_bytes in
 		let newbytes = bytes__make_default n c in
 		let finalbytes = bytes__write old_whole_bytes offset n newbytes in
 		let state = MemOp.state__add_block state block finalbytes in
-		set_return_value state retopt bytes
+		set_return_value state retopt bytes channel
 	else
 		failwith "libc_memset: n is symbolic (TODO)"
 end
@@ -232,8 +233,8 @@ let libc___builtin_alloca_size state size bytes loc =
 	let state = {state with locals = local::(List.tl state.locals); } in
 	(state, addrof_block)
 
-let libc___builtin_alloca job retopt exps =
-	let state, b_size = Expression.rval job.state (List.hd exps) in
+let libc___builtin_alloca job retopt exps channel =
+	let state, b_size, channel = Expression.rval job.state (List.hd exps) channel in
 	let size =
 		if isConcrete_bytes b_size then
 			bytes_to_int_auto b_size (*safe to use bytes_to_int as arg should be small *)
@@ -246,8 +247,9 @@ let libc___builtin_alloca job retopt exps =
 	  else bytes__make_default size byte__undef (* initially the symbolic 'undef' byte *)
 	in
 	let state, bytes = libc___builtin_alloca_size state size bytes (Job.get_loc job) in
-	let job = end_function_call { job with state = set_return_value state retopt bytes } in
-	Active job
+    let state, channel = set_return_value state retopt bytes channel in
+	let job = end_function_call { job with state = state} in
+	    Active job, channel
 
 (* allocates on the heap *)
 let libc_malloc_size state size bytes loc =
@@ -263,8 +265,8 @@ let libc_malloc_size state size bytes loc =
 	let state = MemOp.state__add_block state block bytes in
 	(state, addrof_block)
 
-let libc_malloc job retopt exps =
-	let state, b_size = Expression.rval job.state (List.hd exps) in
+let libc_malloc job retopt exps channel =
+	let state, b_size, channel = Expression.rval job.state (List.hd exps) channel in
 	let size =
 		if isConcrete_bytes b_size then
 			bytes_to_int_auto b_size (*safe to use bytes_to_int as arg should be small *)
@@ -277,34 +279,35 @@ let libc_malloc job retopt exps =
 	  else bytes__make_default size byte__undef (* initially the symbolic 'undef' byte *)
 	in
 	let state, bytes = libc_malloc_size state size bytes (Job.get_loc job) in
-	let job = end_function_call { job with state = set_return_value state retopt bytes } in
-	Active job
+    let state, channel = set_return_value state retopt bytes channel in
+	let job = end_function_call { job with state = state } in
+	Active job, channel
 
 
-let otter_given = wrap_state_function begin fun state retopt exps ->
-	if List.length exps <> 2 then 
+let otter_given = wrap_state_function begin fun state retopt exps channel ->
+	if List.length exps <> 2 then
 		failwith "__GIVEN takes 2 arguments"
 	else
 		let truthvalue =
-			let state, given = Expression.rval state (List.nth exps 0) in
-			let state, rv = Expression.rval state (List.nth exps 1 ) in
+			let state, given, channel = Expression.rval state (List.nth exps 0) channel in
+			let state, rv, channel = Expression.rval state (List.nth exps 1 ) channel in
 			let state, truth = MemOp.eval_with_cache state (given::state.path_condition) rv in
 			match truth with
 				| Ternary.True -> int_to_bytes 1
 				| Ternary.False -> int_to_bytes 0
 				| Ternary.Unknown ->bytes__symbolic (bitsSizeOf intType / 8)
 		in
-		set_return_value state retopt truthvalue
+		set_return_value state retopt truthvalue channel
 end
 
 
-let otter_truth_value = wrap_state_function begin fun state retopt exps ->
-	let truthvalue = 
+let otter_truth_value = wrap_state_function begin fun state retopt exps channel ->
+	let truthvalue =
 		int_to_bytes
 		begin
-			if List.length exps = 0 then 0 
+			if List.length exps = 0 then 0
 			else
-				let state, rv = Expression.rval state (List.hd exps) in
+				let state, rv, channel = Expression.rval state (List.hd exps) channel in
 				let state, truth = MemOp.eval_with_cache state state.path_condition rv in
 				match truth with
 					| Ternary.True -> 1
@@ -312,43 +315,45 @@ let otter_truth_value = wrap_state_function begin fun state retopt exps ->
 					| Ternary.Unknown -> 0
 		end
 	in
-	set_return_value state retopt truthvalue
+	set_return_value state retopt truthvalue channel
 end
 
 
-let libc_exit job retopt exps =
+let libc_exit job retopt exps channel =
 	Output.set_mode Output.MSG_MUSTPRINT;
-	let exit_code = 
+	let exit_code, channel =
 		match exps with
-			| exp1::_ -> 
-				Output.printf "exit() called with code@ @[%a@]@\n" BytesPrinter.bytes (snd (Expression.rval job.state exp1));
-				Some ((snd (Expression.rval job.state exp1)))
-			| [] -> 
+			| exp1::_ ->
+                let _, bytes, channel = Expression.rval job.state exp1 channel in
+				Output.printf "exit() called with code@ @[%a@]@\n" BytesPrinter.bytes bytes;
+                let _, bytes, channel = Expression.rval job.state exp1 channel in
+				Some (bytes), channel
+			| [] ->
 				Output.printf "exit() called with code (NONE)@\n";
-				None
+				None, channel
 	in
-	Complete (Exit (exit_code, { 
-        result_file = job.file; 
-        result_state = job.state; 
+	Complete (Exit (exit_code, {
+        result_file = job.file;
+        result_state = job.state;
         result_history = job.exHist;
-        result_decision_path = job.decisionPath; }))
+        result_decision_path = job.decisionPath; })), channel
 
-let otter_evaluate = wrap_state_function begin fun state retopt exps ->
-	let state, bytes = eval_join_exps state exps Cil.LAnd in
+let otter_evaluate = wrap_state_function begin fun state retopt exps channel ->
+	let state, bytes, channel = eval_join_exps state exps Cil.LAnd channel in
 	Output.set_mode Output.MSG_MUSTPRINT;
 	Output.printf "Evaluates to@ @[%a@]@\n" BytesPrinter.bytes bytes;
-	state
+	state, channel
 end
 
 
-let otter_evaluate_string = wrap_state_function begin fun state retopt exps ->
+let otter_evaluate_string = wrap_state_function begin fun state retopt exps channel ->
 	let exp = List.hd exps in
 	let sizeexp = List.nth exps 1 in
-	let state, addr_bytes = Expression.rval state exp in
+	let state, addr_bytes, channel = Expression.rval state exp channel in
 	Output.set_mode Output.MSG_MUSTPRINT;
 	match addr_bytes with
 		| Bytes_Address(block, offset) ->
-			let state, size_bytes = Expression.rval state sizeexp in
+			let state, size_bytes, channel = Expression.rval state sizeexp channel in
 			let size =
 				try
 					bytes_to_int_auto size_bytes
@@ -364,15 +369,15 @@ let otter_evaluate_string = wrap_state_function begin fun state retopt exps ->
 				| _ ->
 					Output.printf "Evaluates to a complicated string.@\n"
 			end;
-			state
+			state, channel
 		| _ ->
 			Output.printf "Evaluates to an invalid string.@\n";
-			state
+			state, channel
 end
 
 
-let otter_symbolic_state = wrap_state_function begin fun state retopt exps ->
-	MemoryBlockMap.fold 
+let otter_symbolic_state = wrap_state_function begin fun state retopt exps channel ->
+	MemoryBlockMap.fold
 		begin fun block _ state ->
 			(* TODO: what about deferred bytes? *)
 			(* TODO: handle pointers with an alias analysis *)
@@ -382,131 +387,131 @@ let otter_symbolic_state = wrap_state_function begin fun state retopt exps ->
 						state
 					| _ ->
 						MemOp.state__add_block state block (bytes__symbolic (bytes__length bytes))
-		end 
+		end
 		state.block_to_bytes
-		state
+		state, channel
 end
 
 
-let otter_assume = wrap_state_function begin fun state retopt exps ->
-	let state, pc = eval_join_exps state exps Cil.LAnd in
-	MemOp.state__add_path_condition state pc false
+let otter_assume = wrap_state_function begin fun state retopt exps channel ->
+	let state, pc, channel = eval_join_exps state exps Cil.LAnd channel in
+	MemOp.state__add_path_condition state pc false, channel
 end
 
 
-let otter_path_condition = wrap_state_function begin fun state retopt exps ->
+let otter_path_condition = wrap_state_function begin fun state retopt exps channel ->
 	Output.set_mode Output.MSG_MUSTPRINT;
 	if state.path_condition = [] then
 		Output.printf "(nil)@\n"
 	else
 		Output.printf "@[%a@]@\n" (FormatPlus.pp_print_list BytesPrinter.bytes "@\n  AND@\n") state.path_condition;
-	state
+	state, channel
 end
 
 
-let otter_assert = wrap_state_function begin fun state retopt exps ->
-	let state, assertion = eval_join_exps state exps Cil.LAnd in
-	Expression.check state assertion exps
+let otter_assert = wrap_state_function begin fun state retopt exps channel ->
+	let state, assertion, channel = eval_join_exps state exps Cil.LAnd channel in
+	Expression.check state assertion exps, channel
 end
 
 
-let otter_if_then_else = wrap_state_function begin fun state retopt exps ->
-	let state, bytes0 = Expression.rval state (List.nth exps 0) in
-	let state, bytes1 = Expression.rval state (List.nth exps 1) in
-	let state, bytes2 = Expression.rval state (List.nth exps 2) in
+let otter_if_then_else = wrap_state_function begin fun state retopt exps channel ->
+	let state, bytes0, channel = Expression.rval state (List.nth exps 0) channel in
+	let state, bytes1, channel = Expression.rval state (List.nth exps 1) channel in
+	let state, bytes2, channel = Expression.rval state (List.nth exps 2) channel in
 	let c = IfThenElse (
 		guard__bytes bytes0, conditional__bytes bytes1, conditional__bytes bytes2
 	) in
 	let rv = make_Bytes_Conditional c in
-	set_return_value state retopt rv
+	set_return_value state retopt rv channel
 end
 
 
-let otter_boolean_op binop = wrap_state_function begin fun state retopt exps ->
-	let state, rv = eval_join_exps state exps binop in
-	set_return_value state retopt rv
+let otter_boolean_op binop = wrap_state_function begin fun state retopt exps channel ->
+	let state, rv, channel = eval_join_exps state exps binop channel in
+	set_return_value state retopt rv channel
 end
 
 
-let otter_boolean_not = wrap_state_function begin fun state retopt exps ->
-	let state, rv = Expression.rval state (UnOp(Cil.LNot, List.hd exps, Cil.voidType)) in
-	set_return_value state retopt rv
+let otter_boolean_not = wrap_state_function begin fun state retopt exps channel ->
+	let state, rv, channel = Expression.rval state (UnOp(Cil.LNot, List.hd exps, Cil.voidType)) channel in
+	set_return_value state retopt rv channel
 end
 
 
-let otter_comment = wrap_state_function begin fun state retopt exps ->
+let otter_comment = wrap_state_function begin fun state retopt exps channel ->
 	let exp = List.hd exps in
 	Output.set_mode Output.MSG_MUSTPRINT;
 	Output.printf "COMMENT:@ @[%a@]@\n" Printer.exp exp;
-	state
+	state, channel
 end
 
 
-let otter_break_pt = wrap_state_function begin fun state retopt exps ->
+let otter_break_pt = wrap_state_function begin fun state retopt exps channel ->
 	Output.set_mode Output.MSG_REG;
 	Output.printf "Option (h for help):@\n";
-	Scanf.scanf "%d\n" 
+	Scanf.scanf "%d\n"
 	begin
 		fun p1->
-			Output.printf "sth\n";	
+			Output.printf "sth\n";
 			state
-	end
+	end, channel
 end
 
 
-let otter_print_state = wrap_state_function begin fun state retopt exps ->
+let otter_print_state = wrap_state_function begin fun state retopt exps channel ->
 	Output.set_mode Output.MSG_MUSTPRINT;
 	let module BOSMap = Map.Make (struct
 		type t = memory_block * bytes * int  (* block, offset, size *)
-		let compare = Pervasives.compare				
-	end)	 in
+		let compare = Pervasives.compare
+	end) in
 	let bosmap = ref BOSMap.empty in
 	let rec printVarFieldsBytes varname typ bytes off =
 		(* break down each local by its fields *)
 		(* canonicalize concrete values by their array rep*)
 		match typ with
-			| TComp (compinfo,_) -> 
-				List.iter 
-					(fun fieldinfo -> 
-						printVarFieldsBytes 
-							(varname^"."^fieldinfo.fname) 
-							fieldinfo.ftype bytes 
+			| TComp (compinfo,_) ->
+				List.iter
+					(fun fieldinfo ->
+						printVarFieldsBytes
+							(varname^"."^fieldinfo.fname)
+							fieldinfo.ftype bytes
 							(off + fst(Cil.bitsOffset typ (Field(fieldinfo,NoOffset)))/8)
 					)
 				  compinfo.cfields
-			| _ -> 
+			| _ ->
 				let size = (Cil.bitsSizeOf typ/8) in
 				let rec p ff b =
 					match b with
 						| Bytes_Constant const ->  p ff (constant_to_bytes const)
 						| Bytes_ByteArray ba -> BytesPrinter.bytes ff (Bytes_ByteArray(ImmutableArray.sub ba off size))
-						| Bytes_Address (block, boff) -> 
+						| Bytes_Address (block, boff) ->
 							if off = 0 && size = (bitsSizeOf voidPtrType / 8) then begin
 								bosmap := BOSMap.add (block,boff,size) None (!bosmap);
 								BytesPrinter.bytes ff b
 							end else
 								FormatPlus.failwith "PRINT STATE: Reading part of a Bytes_Address: %a %d %d" BytesPrinter.bytes b off size
 						| _ -> Format.fprintf ff "(@[%a@],@ %d,@ %d@,)" BytesPrinter.bytes b off size
-				in 
+				in
 				Output.printf "%s@ = @[%a@]@\n" varname p bytes
 	in
 	let printVarBytes var bytes =
-		printVarFieldsBytes var.vname var.vtype bytes 0 
+		printVarFieldsBytes var.vname var.vtype bytes 0
 	in
 	let rec is_or_points_to_const = function
-		| TVoid a 
-		| TInt(_, a) 
-		| TFloat(_, a) 
-		| TNamed (_, a) 
-		| TEnum(_,a) 
-		| TFun(_,_,_,a) 
-		| TComp (_, a) 
+		| TVoid a
+		| TInt(_, a)
+		| TFloat(_, a)
+		| TNamed (_, a)
+		| TEnum(_,a)
+		| TFun(_,_,_,a)
+		| TComp (_, a)
 		| TBuiltin_va_list a -> Cil.hasAttribute "const" a
-		| TArray(t,_,a) 
+		| TArray(t,_,a)
 		| TPtr(t, a) -> is_or_points_to_const t
 	in
 	let printVar var lval_block =
-		if is_or_points_to_const var.vtype then () 
+		if is_or_points_to_const var.vtype then ()
 		else
 			match lval_block with
 				| Deferred.Immediate (Unconditional (block, _)) ->
@@ -520,7 +525,7 @@ let otter_print_state = wrap_state_function begin fun state retopt exps ->
 				| Deferred.Deferred _ ->
 					Output.printf "%s@ = (Deferred)@\n" var.vname
 	in
-	
+
 	Output.printf "#BEGIN PRINTSTATE@\n";
 	Output.printf "#Globals:@\n";
 	VarinfoMap.iter printVar state.global;
@@ -534,36 +539,36 @@ let otter_print_state = wrap_state_function begin fun state retopt exps ->
 		| None -> Some (snd(MemOp.state__deref state (conditional__lval_block (block, off), size)))
 	end (!bosmap);
 	Output.printf "#Memory: (one level)@\n";
-	BOSMap.iter (fun (block,off,size) des -> 
+	BOSMap.iter (fun (block,off,size) des ->
 		match des with
 			| None -> Output.printf "@[%a@]@ -> None@\n" BytesPrinter.bytes (Bytes_Address(block, off))
 			| Some b -> Output.printf "@[%a@]@ -> @[%a@]@\n" BytesPrinter.bytes (Bytes_Address(block, off)) BytesPrinter.bytes b
 	)
 	(!bosmap);
 	Output.printf "#END PRINTSTATE@\n";
-	state
+	state, channel
 end
 
 
-let otter_current_state = wrap_state_function begin fun state retopt exps ->
-	let state, bytes = Expression.rval state (List.hd exps) in
+let otter_current_state = wrap_state_function begin fun state retopt exps channel ->
+	let state, bytes, channel = Expression.rval state (List.hd exps) channel in
 	let key = bytes_to_int_auto bytes in
 	Output.set_mode Output.MSG_MUSTPRINT;
 	Output.printf "Record state %d\n" key;
 	MemOp.index_to_state__add key state;
-	state
+	state, channel
 end
 
 
-let otter_compare_state = wrap_state_function begin fun state retopt exps ->
-	let state, bytes0 = Expression.rval state (List.nth exps 0) in
-	let state, bytes1 = Expression.rval state (List.nth exps 1) in
+let otter_compare_state = wrap_state_function begin fun state retopt exps channel ->
+	let state, bytes0, channel = Expression.rval state (List.nth exps 0) channel in
+	let state, bytes1, channel = Expression.rval state (List.nth exps 1) channel in
 	let key0 = bytes_to_int_auto bytes0 in
 	let key1 = bytes_to_int_auto bytes1 in
 	Output.set_mode Output.MSG_MUSTPRINT;
 	Output.printf "Compare states %d and %d\n" key0 key1;
 	begin try
-		let s0 = try MemOp.index_to_state__get key0 
+		let s0 = try MemOp.index_to_state__get key0
 		with Not_found -> (
 		   	Output.set_mode Output.MSG_MUSTPRINT;
 		   	Output.printf "Warning: snapshot %d is absent\n" key0;
@@ -579,28 +584,28 @@ let otter_compare_state = wrap_state_function begin fun state retopt exps ->
 		in
 		Output.set_mode Output.MSG_MUSTPRINT;
 		ignore (MemOp.cmp_states s0 s1);
-		state
-	with Not_found -> 
+		state, channel
+	with Not_found ->
 	   	Output.set_mode Output.MSG_MUSTPRINT;
 	   	Output.printf "Compare states fail\n";
-		state
+		state, channel
 	end
 end
 
 
-let otter_assert_equal_state = wrap_state_function begin fun state retopt exps ->
-	let state, bytes0 = Expression.rval state (List.nth exps 0) in
+let otter_assert_equal_state = wrap_state_function begin fun state retopt exps channel ->
+	let state, bytes0, channel = Expression.rval state (List.nth exps 0) channel in
 	let key0 = bytes_to_int_auto bytes0 in
-	begin try 
+	begin try
 		let s0 = MemOp.index_to_state__get key0 in
 		Output.set_mode Output.MSG_MUSTPRINT;
 		if MemOp.cmp_states s0 state then
 			Output.printf "AssertEqualState satisfied@\n";
-			MemOp.index_to_state__add key0 state; 
-			state
-	with Not_found -> 
-		MemOp.index_to_state__add key0 state; 
-		state
+			MemOp.index_to_state__add key0 state;
+			state, channel
+	with Not_found ->
+		MemOp.index_to_state__add key0 state;
+		state, channel
 	end
 end
 
@@ -614,11 +619,11 @@ end
 	 to the size of x is returned. (If you manage to get something like
 	 'x = __SYMBOLIC();' past CIL despite the disagreement in the number
 	 of arguments, this behaves like the n <= 0 case.) *)
-let intercept_symbolic job job_queue interceptor =
+let intercept_symbolic job job_queue interceptor channel =
 	match job.instrList with
 		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::_ when varinfo.vname = "__SYMBOLIC" ->
 
-			let job = match exps with
+			let job, channel = match exps with
 				| [AddrOf (Var varinf, NoOffset as cil_lval)]
 				| [CastE (_, AddrOf (Var varinf, NoOffset as cil_lval))] ->
 
@@ -631,7 +636,7 @@ let intercept_symbolic job job_queue interceptor =
 					then Errormsg.s
 						(Errormsg.error "Can't assign two tracked values to variable %s" varinf.vname);
 
-					let state, (_, size as lval) = Expression.lval state cil_lval in
+					let state, (_, size as lval), channel = Expression.lval state cil_lval channel in
 					let symbBytes = bytes__symbolic size in
 					Output.set_mode Output.MSG_MUSTPRINT;
 					Output.printf "%s@ = @[%a@]@\n" varinf.vname BytesPrinter.bytes symbBytes;
@@ -639,7 +644,7 @@ let intercept_symbolic job job_queue interceptor =
 					let exHist = { exHist with bytesToVars = (symbBytes,varinf)::exHist.bytesToVars } in
 					let state = MemOp.state__assign state lval symbBytes in
 
-					end_function_call { job with state = state; exHist = exHist }
+					end_function_call { job with state = state; exHist = exHist }, channel
 
 				| _ ->
 
@@ -647,32 +652,33 @@ let intercept_symbolic job job_queue interceptor =
 					begin match retopt with
 						| None -> failwith "Incorrect usage of __SYMBOLIC(): symbolic value generated and ignored"
 						| Some lval ->
-							let state, (_, size as lval) = Expression.lval state lval in
+							let state, (_, size as lval), channel = Expression.lval state lval channel in
 							let state, size = match exps with
 								| [] -> (state, size)
 								| [CastE (_, h)] | [h] ->
-									let state, bytes = Expression.rval state h in
+									let state, bytes, channel = Expression.rval state h channel in
 									let newsize = bytes_to_int_auto bytes in
 									(state, if newsize <= 0 then size else newsize)
 								| _ -> failwith "__SYMBOLIC takes at most one argument"
 							in
 							let state = MemOp.state__assign state lval (bytes__symbolic size) in
-							end_function_call { job with state = state }
+							end_function_call { job with state = state }, channel
 					end
 			in
-			(Active job, job_queue)
+			    Active job, job_queue, channel
 
-		| _ -> 
-			interceptor job job_queue
+		| _ ->
+            let job, job_queue = interceptor job job_queue in
+                job, job_queue, channel
 
-let libc_setjmp job retopt exps =
+let libc_setjmp job retopt exps channel =
 	match exps with
 		| [Lval cil_lval]
 		| [CastE (_, Lval cil_lval)] ->
 			let state = job.state in
-	
+
 			(* assign value to the environment argument *)
-			let state, (_, size as lval) = Expression.lval state cil_lval in
+			let state, (_, size as lval), channel = Expression.lval state cil_lval channel in
 			let stmtPtrAddr = (Counter.next libc___builtin_alloca__id) in
 			let state = MemOp.state__assign state lval (int_to_bytes stmtPtrAddr) in
 
@@ -687,11 +693,12 @@ let libc_setjmp job retopt exps =
 			let stmtPtr = Source (retopt, job.stmt, (List.hd job.instrList), nextStmt) in
 			let state = {state with stmtPtrs = Types.IndexMap.add stmtPtrAddr stmtPtr state.stmtPtrs; } in
 
-			let job = end_function_call { job with state = set_return_value state retopt bytes__zero } in
-			Active job
+            let state, channel = set_return_value state retopt bytes__zero channel in
+			let job = end_function_call { job with state = state } in
+			    Active job, channel
 		| _ -> failwith "setjmp invalid arguments"
 
-let libc_longjmp job retopt exps =
+let libc_longjmp job retopt exps channel =
 	match exps with
 		| [Lval cil_lval; value]
 		| [CastE (_, Lval cil_lval); value] ->
@@ -699,15 +706,15 @@ let libc_longjmp job retopt exps =
 			let state = job.state in
 
 			(* get the return value to send to setjmp *)
-			let state, bytes =
+			let state, bytes, channel =
 				match value with
-					| CastE (_, v) | v -> Expression.rval state v
+					| CastE (_, v) | v -> Expression.rval state v channel
 			in
-			
+
 			(* get the statment pointer *)
-			let state, lval = 
+			let state, lval, channel =
 				try
-					Expression.lval state cil_lval
+					Expression.lval state cil_lval channel
 				with
 					| _ -> failwith "longjmp with invalid statement pointer"
 			in
@@ -715,11 +722,11 @@ let libc_longjmp job retopt exps =
 			let fold_func acc pre leaf =
 				(bytes_to_int_auto leaf)::acc
 			in
-			let stmtPtrAddrs = 
+			let stmtPtrAddrs =
 				match stmtPtrAddrBytes with
 					| Bytes_Constant _
 					| Bytes_ByteArray _ -> [bytes_to_int_auto stmtPtrAddrBytes]
-					| Bytes_Read(bytes2, offset, len) -> 
+					| Bytes_Read(bytes2, offset, len) ->
 						let sp = BytesUtility.expand_read_to_conditional bytes2 offset len in
 						conditional__fold ~test:(Stp.query_guard state.path_condition) fold_func [] sp
 					| Bytes_Conditional(c) ->
@@ -727,7 +734,7 @@ let libc_longjmp job retopt exps =
 					| _ -> failwith "Non-constant statement ptr not supported"
 			in
 
-			let process_stmtPtr stmtPtrAddr =
+			let process_stmtPtr stmtPtrAddr channel =
 				let stmtPtr = Types.IndexMap.find stmtPtrAddr state.stmtPtrs in
 				let retopt, stmt =
 					match stmtPtr with
@@ -737,19 +744,19 @@ let libc_longjmp job retopt exps =
 				in
 
 				(* find correct stack frame to jump to *)
-				let rec unwind_stack state =
+				let rec unwind_stack state channel =
 					match retopt with
 						| None -> (* try to use sentinal value to find stack fram by detecting when it is missing *)
 							(try
 								let state, _ = MemOp.state__deref state lval in
-								unwind_stack (MemOp.state__end_fcall state)
-							with | _ -> state)
+								unwind_stack (MemOp.state__end_fcall state) channel
+							with | _ -> state, channel)
 						| Some _ -> (* try to use return lval to find stack frame by detecting when it appears *)
 							(try
-								set_return_value state retopt bytes__zero
-							with | _ -> unwind_stack (MemOp.state__end_fcall state))
+								set_return_value state retopt bytes__zero channel
+							with | _ -> unwind_stack (MemOp.state__end_fcall state) channel)
 				in
-				let state = unwind_stack state in
+				let state, channel = unwind_stack state channel in
 
 				(* Update coverage. *)
 				let exHist = job.exHist in
@@ -779,57 +786,70 @@ let libc_longjmp job retopt exps =
 
                 (* TODO (martin): update job.decisionPath *)
 				(* Update the state, program counter, and coverage  *)
-				let job = { 
-					job with stmt = stmt; 
-					exHist = exHist; 
-					instrList = []; 
-					state = set_return_value state retopt bytes; } 
+                let state, channel = set_return_value state retopt bytes channel in
+				let job = {
+					job with stmt = stmt;
+					exHist = exHist;
+					instrList = [];
+					state = state; }
 				in
-				Active job
+				    Active job, channel
 			in
 
-			let jobs = List.map process_stmtPtr stmtPtrAddrs in
+            let jobs, channel = List.fold_left (fun (jobs, channel) arg ->
+                let job, channel = process_stmtPtr arg channel in
+                    job::jobs, channel
+                ) ([], channel) stmtPtrAddrs in
+            (* Reverse the job list to maintain original order *)
+            let jobs = List.rev jobs in
 			match jobs with
-				| _::_::_ -> Fork(jobs)
-				| [a] -> a
+				| _::_::_ -> Fork(jobs), channel
+				| [a] -> a, channel
 				| [] -> failwith "No valid jongjmp target found!"
 		end
 
 		| _ -> failwith "longjmp invalid arguments"
 
 
-let libc_get_block_size = wrap_state_function begin fun state retopt exps ->
+let libc_get_block_size = wrap_state_function begin fun state retopt exps channel ->
 	match exps with
 		| [Lval cil_lval]
-		| [CastE (_, Lval cil_lval)] 
+		| [CastE (_, Lval cil_lval)]
 		| [AddrOf (_, NoOffset as cil_lval)]
 		| [CastE (_, AddrOf (_, NoOffset as cil_lval))]->
-			let state, bytes = Expression.rval state (Lval cil_lval) in
-			let lvals = Expression.deref state bytes in
-			let size = make_Bytes_Conditional (conditional__map 
-				~test:(Stp.query_guard state.path_condition) 
-				(fun (x, y) -> Unconditional (int_to_bytes x.memory_block_size)) 
+			let state, bytes, channel = Expression.rval state (Lval cil_lval) channel in
+			let lvals, channel = Expression.deref state bytes channel in
+			let size = make_Bytes_Conditional (conditional__map
+				~test:(Stp.query_guard state.path_condition)
+				(fun (x, y) -> Unconditional (int_to_bytes x.memory_block_size))
 				lvals)
 			in
-			set_return_value state retopt size
+			set_return_value state retopt size channel
 		| _ -> failwith "libc_get_block_size invalid arguments"
 end
 
-let otter_mute = wrap_state_function begin fun state retopt exps ->
+let otter_mute = wrap_state_function begin fun state retopt exps channel ->
 	Output.arg_print_mute := !Output.arg_print_mute + 1;
-	state
+	state, channel
 end
 
-let otter_voice = wrap_state_function begin fun state retopt exps ->
+let otter_voice = wrap_state_function begin fun state retopt exps channel ->
 	Output.arg_print_mute := !Output.arg_print_mute - 1;
-	state
+	state, channel
 end
 
-let interceptor job job_queue interceptor =
+(* TODO (martin): connect the channel to Statement.step? *)
+let interceptor job job_queue interceptor : 'reason job_state * 'a =
 	try
+        (* Temporary disable channel in intercept_symbolic
+         *)
+        let intercept_symbolic_no_channel job job_queue interceptor =
+            let job_state, job_queue , _ = intercept_symbolic job job_queue interceptor Types.Channel in
+                job_state, job_queue
+        in
 		(
 		(* intercept builtin functions *)
-		(                                  (*"__SYMBOLIC"*)            intercept_symbolic) @@
+		(                                  (*"__SYMBOLIC"*)            intercept_symbolic_no_channel) @@
 		(intercept_function_by_name_internal "__builtin_alloca"        libc___builtin_alloca) @@
 		(intercept_function_by_name_internal "alloca"                  libc___builtin_alloca) @@
 		(intercept_function_by_name_internal "malloc"                  libc_malloc) @@
@@ -871,14 +891,15 @@ let interceptor job job_queue interceptor =
 		) job job_queue
 	with Failure msg ->
 		if !Executeargs.arg_failfast then failwith msg;
-		let result = { 
-			result_file = job.file; 
-			result_state = job.state; 
-			result_history = job.exHist; 
-			result_decision_path = job.decisionPath; } in
-		(Complete (Abandoned (`Failure msg, Job.get_loc job, result)), job_queue)
+		let result = {
+			result_file = job.file;
+			result_state = job.state;
+			result_history = job.exHist;
+			result_decision_path = job.decisionPath; }
+        in
+            (Complete (Abandoned (`Failure msg, Job.get_loc job, result)), job_queue) (* TODO (see above) *)
 
-let libc_interceptor job job_queue interceptor = 
+let libc_interceptor job job_queue interceptor =
 	try
 		(
 		(* assert.h *)
@@ -900,7 +921,7 @@ let libc_interceptor job job_queue interceptor =
 		(intercept_function_by_name_external "toupper"                 "__otter_libc_toupper") @@
 
 		(* setjmp.h *)
-		(intercept_function_by_name_internal "__libc_setjmp"           libc_setjmp) @@		
+		(intercept_function_by_name_internal "__libc_setjmp"           libc_setjmp) @@
 		(intercept_function_by_name_internal "__libc_longjmp"          libc_longjmp) @@
 
 		(* signal.h *)
@@ -1002,9 +1023,9 @@ let libc_interceptor job job_queue interceptor =
 		) job job_queue
 	with Failure msg ->
 		if !Executeargs.arg_failfast then failwith msg;
-		let result = { 
-			result_file = job.file; 
-			result_state = job.state; 
-			result_history = job.exHist; 
+		let result = {
+			result_file = job.file;
+			result_state = job.state;
+			result_history = job.exHist;
 			result_decision_path = job.decisionPath; } in
 		(Complete (Abandoned (`Failure msg, Job.get_loc job, result)), job_queue)

@@ -60,7 +60,7 @@ type callingContext =
 
 
 
-type memory_frame = 
+type memory_frame =
 	(state, lval_block) Deferred.t VarinfoMap.t
 and state =
 	{
@@ -80,7 +80,7 @@ and state =
 				the fundec called by the [Instr] at the nth position in
 				callContexts. *)
 		stmtPtrs : callingContext IndexMap.t;     (* Pointers into code.  Used for longjump. *)
-		
+
 		va_arg : bytes list list;			(* A stack of va_arg *)
 		va_arg_map : bytes list VargsMap.t;
 		bytes_eval_cache : bool BytesMap.t; (* Map bytes to boolean value, if exists *)
@@ -94,3 +94,4 @@ let (string_table : bytes MemoryBlockMap.t ref) = ref MemoryBlockMap.empty
 
 (*let (vargs_table : bytes list VargsMap.t ref) = ref VargsMap.empty*)
 
+type channel = Channel

@@ -54,7 +54,7 @@ let direct_calls_testsuite = "Direct calls" >:::
                         let rec find = function
                             | Cil.GVarDecl (v, _)::_
                             | Cil.GVar (v, _, _)::_ when v.Cil.vname = name ->
-                                let _, actual = Expression.rval result.result_state (Cil.Lval (Cil.var v)) in
+                                let _, actual, _ = Expression.rval result.result_state (Cil.Lval (Cil.var v)) Types.Channel in
                                 if bytes__equal actual bytes then
                                     (not_found, unequal)
                                 else

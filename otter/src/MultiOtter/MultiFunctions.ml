@@ -25,12 +25,12 @@ let libc_fork job multijob retopt exps =
 			let child_job = { job with
 				(* TODO: make the pid symbolic *)
 				state =
-					let state, lval = Expression.lval job.state cil_lval in
+					let state, lval, _ = Expression.lval job.state cil_lval Types.Channel in
 					MemOp.state__assign state lval (Bytes.int_to_bytes multijob.next_pid)
 			} in
 			let job = { job with
 				state =
-					let state, lval = Expression.lval job.state cil_lval in
+					let state, lval, _ = Expression.lval job.state cil_lval Types.Channel in
 					MemOp.state__assign state lval (Bytes.bytes__zero)
 			} in
 			(job, child_job)
@@ -54,7 +54,7 @@ let otter_gmalloc_size (state:Types.state) size bytes loc =
 	(state, block, addrof_block)
 
 let otter_gmalloc job multijob retopt exps =
-	let state, b_size = Expression.rval job.Job.state (List.hd exps) in
+	let state, b_size, _ = Expression.rval job.Job.state (List.hd exps) Types.Channel in
 	let size =
 		if Bytes.isConcrete_bytes b_size then
 			Bytes.bytes_to_int_auto b_size (*safe to use bytes_to_int as arg should be small *)
@@ -67,17 +67,18 @@ let otter_gmalloc job multijob retopt exps =
 	  else Bytes.bytes__make_default size Bytes.byte__undef (* initially the symbolic 'undef' byte *)
 	in
 	let state, block, bytes = otter_gmalloc_size state size bytes (Job.get_loc job) in
-	let job = BuiltinFunctions.end_function_call { job with state = BuiltinFunctions.set_return_value state retopt bytes } in
+    let state', _ = BuiltinFunctions.set_return_value state retopt bytes Types.Channel in
+	let job = BuiltinFunctions.end_function_call { job with state = state' } in
 
-	let multijob = 
+	let multijob =
 		{multijob with
-			shared = 
+			shared =
 				{multijob.shared with
 					shared_block_to_bytes = MemoryBlockMap.add block (Deferred.Immediate bytes) multijob.shared.shared_block_to_bytes;
 				};
-			processes = List.map 
-				(fun (pc, ls) -> 
-					(pc, { ls with MultiTypes.block_to_bytes = MemoryBlockMap.add block (Deferred.Immediate bytes) ls.MultiTypes.block_to_bytes; }) 
+			processes = List.map
+				(fun (pc, ls) ->
+					(pc, { ls with MultiTypes.block_to_bytes = MemoryBlockMap.add block (Deferred.Immediate bytes) ls.MultiTypes.block_to_bytes; })
 				)
 				multijob.processes;
 		}
@@ -86,7 +87,7 @@ let otter_gmalloc job multijob retopt exps =
 	(Active job, multijob)
 
 let otter_gfree job multijob retopt exps =
-	let state, ptr = Expression.rval job.state (List.hd exps) in
+	let state, ptr, _ = Expression.rval job.state (List.hd exps) Types.Channel in
 	match ptr with
 		| Bytes.Bytes_Address (block, _) ->
 			if block.Bytes.memory_block_type != Bytes.Block_type_Heap then
@@ -96,29 +97,29 @@ let otter_gfree job multijob retopt exps =
 			else if not (MemoryBlockMap.mem block state.Types.block_to_bytes) then
 				FormatPlus.failwith "gfreeing after free:@ @[%a@]@ = @[%a@]@\n" Printer.exp (List.hd exps) BytesPrinter.bytes ptr
 			else
-				let multijob = 
+				let multijob =
 					{multijob with
 						shared =
 							{multijob.shared with
 								shared_block_to_bytes = MemoryBlockMap.remove block multijob.shared.shared_block_to_bytes;
 							};
-						processes = List.map 
-							(fun (pc, ls) -> 
-								(pc, { ls with MultiTypes.block_to_bytes = MemoryBlockMap.remove block ls.MultiTypes.block_to_bytes; }) 
+						processes = List.map
+							(fun (pc, ls) ->
+								(pc, { ls with MultiTypes.block_to_bytes = MemoryBlockMap.remove block ls.MultiTypes.block_to_bytes; })
 							)
 							multijob.processes;
 					}
 				in
 				(Active job, multijob)
-				
+
 		| _ ->
 			Output.set_mode Output.MSG_MUSTPRINT;
 			FormatPlus.failwith "gfreeing something that is not a valid pointer:@ @[%a@]@ = @[%a@]@\n" Printer.exp (List.hd exps) BytesPrinter.bytes ptr
 
-let interceptor job multijob job_queue interceptor = 
+let interceptor job multijob job_queue interceptor =
 	try
 		(
-		
+
 		(intercept_multi_function_by_name_internal "fork"                       libc_fork) @@@
 		(intercept_multi_function_by_name_internal "__otter_multi_gmalloc"      otter_gmalloc) @@@
 		(intercept_multi_function_by_name_internal "__otter_multi_gfree"        otter_gfree) @@@
@@ -129,9 +130,9 @@ let interceptor job multijob job_queue interceptor =
 		) job multijob job_queue
 	with Failure msg ->
 		if !Executeargs.arg_failfast then failwith msg;
-		let result = { 
-			result_file = job.file; 
-			result_state = job.state; 
-			result_history = job.exHist; 
+		let result = {
+			result_file = job.file;
+			result_state = job.state;
+			result_history = job.exHist;
 			result_decision_path = job.decisionPath; } in
 		(Complete (Abandoned (`Failure msg, Job.get_loc job, result)), (multijob, job_queue))
