@@ -425,11 +425,16 @@ deref state bytes channel : state * lval_block * channel =
             FormatPlus.failwith "Dereference something not an address:@ operation @[%a@]" BytesPrinter.bytes bytes
 
         | Bytes_Read(bytes,off,len) ->
-            (*
-            conditional__map ~test:(Stp.query_guard state.path_condition)
-                (deref state) (expand_read_to_conditional bytes off len), channel
-                *)
-            failwith "TODO: use conditional__fold_map"
+            (* TODO (martin): create a test that covers this code *)
+            let (state, channel), conditional =
+                conditional__fold_map ~test:(Stp.query_guard state.path_condition)
+                    (fun (state, channel) _ bytes ->
+                        let state, conditional, channel = deref state bytes channel in
+                            (state, channel), conditional
+                    )
+                    (state, channel) (expand_read_to_conditional bytes off len)
+            in
+                state, conditional, channel
 
         | Bytes_Write(bytes,off,len,newbytes) ->
             failwith "Dereference of Bytes_Write not implemented"
