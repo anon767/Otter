@@ -222,6 +222,21 @@ let assert_mem ?printer mem list collection =
     end
 
 
+(* assert a time limit for the test (note: uses [Unix.setitimer Unix.ITIMER_PROF]) *)
+let assert_time_limit time_limit fn =
+    let old_handler = Sys.signal Sys.sigprof (Sys.Signal_handle (fun _ -> assert_failure "Exceeded time limit (%f seconds)" time_limit)) in
+    ignore (Unix.setitimer Unix.ITIMER_PROF { Unix.it_interval = 0.; Unix.it_value = time_limit; });
+    try
+        let result = fn () in
+        ignore (Unix.setitimer Unix.ITIMER_PROF { Unix.it_interval = 0.; Unix.it_value = 0.; });
+        Sys.set_signal Sys.sigalrm old_handler;
+        result
+    with e ->
+        ignore (Unix.setitimer Unix.ITIMER_PROF { Unix.it_interval = 0.; Unix.it_value = 0.; });
+        Sys.set_signal Sys.sigalrm old_handler;
+        raise e
+
+
 (*
  * Convenience functions comparing as well as printing option and list types
  *)
