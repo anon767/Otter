@@ -24,10 +24,31 @@ type target = {
   target_predicate: failing_predicate;
 }
 
+(* Cil feature for call-chain backwards Otter *)
+let arg_assertfn = ref "__FAILURE"
+let arg_exceptions_as_failures = ref false
+
+let otter_failure_interceptor job job_queue interceptor =
+	match job.instrList with
+		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::_ when varinfo.Cil.vname = (!arg_assertfn) ->
+            let job_result = {
+                result_file = job.Job.file;
+                result_state = job.Job.state;
+                result_history = job.Job.exHist;
+                result_decision_path = job.Job.decisionPath;
+            } in
+            let loc = Job.get_loc job in
+            let job_state = Complete (Abandoned (`FailureReached, loc, job_result)) in
+                job_state, job_queue
+		| _ ->
+			interceptor job job_queue
+
+
 let run ?interceptor ?queue job =
     let (>>>) = Interceptor.(>>>) in
     let default_interceptor =
         Interceptor.set_output_formatter_interceptor
+        >>> otter_failure_interceptor
         >>> BuiltinFunctions.libc_interceptor
         >>> BuiltinFunctions.interceptor
     in
@@ -37,9 +58,6 @@ let run ?interceptor ?queue job =
     in
         Driver.run ~interceptor:integrated_interceptor ?queue job
 
-
-(* Cil feature for call-chain backwards Otter *)
-let arg_assertfn = ref "__FAILURE"
 
 let distance_to_targets_prioritizer callstack target_fundecs job =
     if (List.length job.state.callstack) = (List.length callstack) then
@@ -116,6 +134,9 @@ let print_list name print_function lst =
     Format.printf "-----------------------------------------@\n"
 
 
+(* TODO (martin): test if this abandoned path is due to a call to
+ * __FAILURE(), or something else. We might want to discard the latter.
+ *)
 let test_job_at_targets targets job =
 	(* if job meets one of the targets, do checking *)
 	(* if fails, return Some (Complete Abandoned) *)
@@ -235,7 +256,8 @@ let test_job_at_targets targets job =
                               let job_completions : 'reason job_completion list = forward_otter_bounded_by_paths job bounding_paths in
                                 List.fold_left (fun failing_paths job_completion ->
                                     match job_completion with
-                                    | Abandoned (`Failure(_),_,result) -> result.result_decision_path::failing_paths
+                                    | Abandoned (`Failure(_),_,result)
+                                    | Abandoned (`FailureReached, _, result) -> result.result_decision_path::failing_paths
                                     | _ -> failing_paths
                                 ) [] job_completions
                         in
@@ -258,6 +280,7 @@ let test_job_at_targets targets job =
 let test_job_at_targets_interceptor targets job job_queue interceptor =
 	match test_job_at_targets targets job with
 	    | Some (Complete (Abandoned (`FailingPaths _, _, _)) as job_state) ->
+            (* TODO (martin) the SE is incomplete if we stop here. *)
 			(job_state, job_queue)
 		| None ->
 			interceptor job job_queue
@@ -278,13 +301,13 @@ let callchain_backward_se file entryfn assertfn job_init : _ job_completion list
           Interceptor.set_output_formatter_interceptor
           >>> (test_job_at_targets_interceptor targets)
           >>> BuiltinFunctions.interceptor in
-	let queue =
-        if (!Executeargs.arg_cfg_pruning) then
-            BestFirstQueue.make (distance_to_targets_prioritizer job.state.callstack (assertfn::(List.map (fun t -> t.target_func) targets)))
-        else
-            Queue.get_default ()
-    in
-        run ~interceptor ~queue job
+	  let queue =
+          if (!Executeargs.arg_cfg_pruning) then
+              BestFirstQueue.make (distance_to_targets_prioritizer job.state.callstack (assertfn::(List.map (fun t -> t.target_func) targets)))
+          else
+              Queue.get_default ()
+      in
+          run ~interceptor ~queue job
   in
 
   (* The implementation of main loop *)
@@ -296,11 +319,11 @@ let callchain_backward_se file entryfn assertfn job_init : _ job_completion list
 	  if f == entryfn then
 		(* If f is main(), we are done *)
         let _ = List.iter ( function
-            Abandoned(`FailingPaths(paths),_,_) ->
+            | Abandoned(`FailingPaths(paths),_,_) ->
                 print_list "Final failing path" print_decisions paths
-          | _ -> ()
+            | _ -> ()
         ) results in
-		results
+		    results
 	  else
         let _ = print_list "Completed Job" print_job_completion results in
         let join_paths prefix suffixes =
@@ -312,10 +335,11 @@ let callchain_backward_se file entryfn assertfn job_init : _ job_completion list
           ( fun all_paths job_completion ->
               match job_completion with
               | Abandoned (`FailingPaths(paths),_,job_result) ->
-                      (* TODO (martin): this join may be unecessary, because forward_otter_bounded_by_paths already returns joined paths *)
                       let joined_paths = join_paths job_result.result_decision_path paths in
                         List.rev_append joined_paths all_paths
-              | Abandoned (_,_,job_result) ->
+              | Abandoned (`FailureReached,_,job_result) ->
+                      job_result.result_decision_path::all_paths
+              | Abandoned (`Failure(_),_,job_result) when (!arg_exceptions_as_failures) ->
                       job_result.result_decision_path::all_paths
               | _ -> all_paths
           ) [] results
@@ -387,6 +411,7 @@ let doit file =
 	Output.printf "%s@\n@\n" (Executedebug.get_log ());
 	List.iter (fun result -> Report.print_report result) results
 
+
 let feature = {
 	Cil.fd_name = "backotter";
 	Cil.fd_enabled = ref false;
@@ -395,6 +420,9 @@ let feature = {
 		("--assertfn",
 		Arg.Set_string arg_assertfn,
 		"<fname> Assertion function to look for in the call-chain-backward mode (default: __FAILURE) @\n");
+		("--exceptions-as-failures",
+		Arg.Set arg_exceptions_as_failures,
+		" Treat general exceptions (e.g., dereferencing a non-pointer) as assertion failures (i.e., contribute failure paths) @\n");
 	];
 	Cil.fd_post_check = true;
 	Cil.fd_doit = doit
