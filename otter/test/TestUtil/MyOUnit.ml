@@ -18,7 +18,7 @@ let fork_call (f : ('a -> 'b)) (x : 'a) : 'b =
     Format.pp_print_flush Format.std_formatter ();
     Format.pp_print_flush Format.err_formatter ();
 
-    (* create a pipe to proxy the test configuration from child to parent *)
+    (* create a pipe to proxy the result from child to parent *)
     let fdin, fdout = Unix.pipe () in
 
     let child = Unix.fork () in
