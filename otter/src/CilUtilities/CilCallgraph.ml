@@ -33,7 +33,7 @@ let output_dot_file = ref "cilcallgraph.dot"
 
 (** Resolve a {!Cil.exp} to a list of {!Cil.fundec}, using {!CilPtranal.points_to_fundec} to resolve function pointers. *)
 let resolve_exp_to_fundecs file = function
-    | Cil.Lval (Cil.Var fn, Cil.NoOffset) -> [ FindCil.fundec_by_varinfo file fn ]
+    | Cil.Lval (Cil.Var fn, Cil.NoOffset) -> (try [ FindCil.fundec_by_varinfo file fn ] with Not_found -> [])
     | Cil.Lval (Cil.Mem ptrexp, Cil.NoOffset) -> CilPtranal.points_to_fundec file ptrexp
     | _ -> failwith "Does Cil generate other variations of function call expressions?"
 
