@@ -366,7 +366,7 @@ let printPath state hist =
 									 (* Is it okay to ignore the type? Or might we have to truncate? *)
 									 Output.printf "%s=%Ld\n" varinf.vname n
 							 | _ -> failwith "Unimplemented: non-integer symbolic")
-		hist.bytesToVars;
+		(List.rev hist.bytesToVars);
 
 	(* Check to see if we've bound all of the symbols in the path condition *)
 	if not (Stp.SymbolSet.is_empty !unboundSymbols)

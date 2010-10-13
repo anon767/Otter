@@ -626,15 +626,8 @@ let intercept_symbolic job job_queue interceptor channel =
 			let job, channel = match exps with
 				| [AddrOf (Var varinf, NoOffset as cil_lval)]
 				| [CastE (_, AddrOf (Var varinf, NoOffset as cil_lval))] ->
-
 					let state = job.state in
 					let exHist = job.exHist in
-
-					(* If we are given a variable's address, we track the symbolic value.
-						 But make sure we don't give the same variable two different values. *)
-					if List.exists (fun (_,v) -> v == varinf) exHist.bytesToVars
-					then Errormsg.s
-						(Errormsg.error "Can't assign two tracked values to variable %s" varinf.vname);
 
 					let state, (_, size as lval), channel = Expression.lval state cil_lval channel in
 					let symbBytes = bytes__symbolic size in
