@@ -8,6 +8,7 @@
         - [#pragma entry_function(<string function name>)] specifies the entry function at which to begin symbolic
             execution. If an entry function is given and not "main", pointers will be initialized via
             {!SymbolicPointers.job_for_middle}. E.g., [#pragma entry_function("foo")].
+        - [#pragma time_limit(<time in seconds>)] specifies the time limit for the symbolic execution to complete.
         - [#pragma command_line(<string argument>, ...)] specifies the command line arguments to be passed to
             [main()]. Ignore if [#pragma entry_function(...)] is given and not "main".
             E.g., [#pragma command_line("foo", "bar")].
@@ -53,6 +54,7 @@ open OtterDriver
 (** Flags for setting up the tests. *)
 type flags = {
     entry_function : string option; (** The function at which to begin symbolic execution. *)
+    time_limit : int option;        (** The time limit for symbolic execution. *)
     cil_options : string list;      (** The command line options to pass to CIL. *)
     command_line : string list;     (** The command line to use to run the test. *)
     has_failing_assertions : bool;  (** If failing assertions are expected in the test. *)
@@ -62,6 +64,7 @@ type flags = {
 (** The default test flags. *)
 let default_flags = {
     entry_function = None;
+    time_limit = None;
     cil_options = [];
     command_line = [];
     has_failing_assertions = false;
@@ -256,6 +259,13 @@ let parse_pragmas file =
                 | "entry_function", _ ->
                     assert_loc_failure file loc "Invalid entry function (should have exactly one string argument that is the function name)."
 
+                | "time_limit", [ Cil.AInt time_limit ] ->
+                    if flags.time_limit <> None then assert_loc_failure file loc "Time limit already defined.";
+                    if time_limit <= 0 then assert_loc_failure file loc "Invalid time limit (should not be greater than 0).";
+                    ({ flags with time_limit = Some time_limit }, test)
+                | "time_limit", _ ->
+                    assert_loc_failure file loc "Invalid time limit (should have exactly one integer argument that is the time limit in seconds)."
+
                 | "command_line", args ->
                     if flags.command_line <> [] then assert_loc_failure file loc "Command line already defined.";
                     let command_line = List.map begin function
@@ -356,15 +366,23 @@ let test_otter_with_pragma ?(main_loop=Driver.run_basic) path = fun () ->
       ""; (* We don't need a help message here *)
     let file = Frontc.parse path () in
 
-    (* prepare the file and run the symbolic executor *)
-    Core.prepare_file file;
-    let job = match flags.entry_function with
-        | Some fn when fn <> "main" ->
-            FunctionJob.make file (FindCil.fundec_by_name file fn)
-        | _ ->
-            FileJob.make file flags.command_line
+    (* set the time limit, if provided *)
+    let run = match flags.time_limit with
+        | Some time_limit -> assert_time_limit (float_of_int time_limit)
+        | None -> fun f -> f ()
     in
-    let results = main_loop job in
+
+    (* prepare the file and run the symbolic executor *)
+    let results = run begin fun () ->
+        Core.prepare_file file;
+        let job = match flags.entry_function with
+            | Some fn when fn <> "main" ->
+                FunctionJob.make file (FindCil.fundec_by_name file fn)
+            | _ ->
+                FileJob.make file flags.command_line
+        in
+        main_loop job
+    end in
 
     (* first, test if assertions passed *)
     let log = Executedebug.get_log () in

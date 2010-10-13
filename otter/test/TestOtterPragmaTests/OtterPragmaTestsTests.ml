@@ -23,6 +23,45 @@ let should_fail_pragma_tests = test_otter_pragma_tests ~should_fail:true
  * OUnit test suite
  *)
 
+let time_limit_testsuite = "time_limit" >::: [
+    should_fail_pragma_tests ~label:"No parameter list"
+        "#pragma time_limit
+        int main(void) {
+            return 0;
+        }";
+
+    should_fail_pragma_tests ~label:"No arguments"
+        "#pragma time_limit()
+        int main(void) {
+            return 0;
+        }";
+
+    should_fail_pragma_tests ~label:"Negative time limit"
+        "#pragma time_limit(-1)
+        int main(void) {
+            return 0;
+        }";
+
+    should_fail_pragma_tests ~label:"Zero time limit"
+        "#pragma time_limit(0)
+        int main(void) {
+            return 0;
+        }";
+
+    should_pass_pragma_tests ~label:"Within time limit"
+        "#pragma time_limit(1)
+        int main(void) {
+            return 0;
+        }";
+
+    should_fail_pragma_tests ~label:"Exceeding time limit"
+        "#pragma time_limit(1)
+        int main(void) {
+            for (;;);
+            return 0;
+        }";
+]
+
 let has_failing_assertions_testsuite = "has_failing_assertions" >::: [
     should_fail_pragma_tests ~label:"No assertions"
         "#pragma has_failing_assertions
@@ -1042,6 +1081,7 @@ let no_other_results_testsuite = "no_other_results" >::: [
 ]
 
 let testsuite = "OtterPragmaTests" >::: [
+    time_limit_testsuite;
     has_failing_assertions_testsuite;
     command_line_testsuite;
     expect_return_testsuite;
