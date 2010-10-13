@@ -1,5 +1,5 @@
 /*
- * ./otter.pl --dobackotter --noboundsChecking --max-abandoned=(any number) test/TestBackOtter/test3.c
+ * ./otter.pl --dobackotter --noboundsChecking --max-abandoned=(any) -Ilibc test/TestBackOtter/test3.c
  */
 #include "otter.h"
 
@@ -15,7 +15,7 @@ void f(struct s* p) {
         p = p->next;
     }
     if (n > 2) {
-        __ASSERT(0);
+        __FAILURE();
     }
 }
 

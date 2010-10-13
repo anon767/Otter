@@ -414,6 +414,10 @@ let otter_assert = wrap_state_function begin fun state retopt exps channel ->
 	Expression.check state assertion exps, channel
 end
 
+let otter_failure = wrap_state_function begin fun state retopt exps channel ->
+    failwith "__FAILURE() is called"
+end
+
 
 let otter_if_then_else = wrap_state_function begin fun state retopt exps channel ->
 	let state, bytes0, channel = Expression.rval state (List.nth exps 0) channel in
@@ -872,6 +876,7 @@ let interceptor job job_queue interceptor : 'reason job_state * 'a =
 		(intercept_function_by_name_internal "__ASSUME"                otter_assume) @@
 		(intercept_function_by_name_internal "__PATHCONDITION"         otter_path_condition) @@
 		(intercept_function_by_name_internal "__ASSERT"                otter_assert) @@
+		(intercept_function_by_name_internal "__FAILURE"               otter_failure) @@
 		(intercept_function_by_name_internal "__ITE"                   otter_if_then_else) @@
 		(intercept_function_by_name_internal "AND"                     (otter_boolean_op Cil.LAnd)) @@
 		(intercept_function_by_name_internal "OR"                      (otter_boolean_op Cil.LOr)) @@

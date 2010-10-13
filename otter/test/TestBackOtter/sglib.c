@@ -1,5 +1,5 @@
 /*
- * ./otter.pl --dobackotter --noboundsChecking --max-abandoned=(any number) test/TestBackOtter/sglib.c
+ * ./otter.pl --dobackotter --noboundsChecking --max-abandoned=(any) -Ilibc test/TestBackOtter/sglib.c
  * (This test becomes not working after functions are made call-by-reference.
  *  Likely the Conditional Exception stuff is not working here.)
  */
@@ -24,7 +24,7 @@ void sglib_dl_list_add_after(DL** place, DL** elem) {
   if ((*place) == NULL) {
     sglib___dl_list_create_singleton(place, elem);
   } else {
-    if (*elem == 0) __ASSERT(0);
+    if (*elem == 0) __FAILURE();
     (*elem)->next = (*place)->next;
     (*elem)->prev = (*place);
     (*place)->next = (*elem);

@@ -398,7 +398,7 @@ deref state bytes channel : state * lval_block * channel =
                         fun (failing_condition, aggregated_msg) (guard, msg) ->
                         let bytes_of_guard = Bytes.guard__to_bytes guard in
                             (Bytes.bytes_or failing_condition bytes_of_guard, aggregated_msg ^ "/" ^ msg)
-                        ) (Bytes.fls, "(aggregated failure)") acc_fail
+                        ) (Bytes.fls, "(Conditional Exception(s))") acc_fail
                     in
                     if acc_pass = [] then
                         (* No conditional branches were dereferenced successfully: just fail. *)

@@ -443,7 +443,6 @@ let step job job_queue =
                 let abandoned_job_states = List.map (
                     fun (state, failing_condition, error_msg) ->
                         (* assert: failing_condition is never true *)
-                        Format.printf "Caught Conditional Exception: %s@\n" error_msg;
                         let result = {
                             result_file = job.file;
                             result_state = { state with path_condition = failing_condition::state.path_condition };

@@ -1,6 +1,5 @@
 /*
- * ./otter.pl --dobackotter --noboundsChecking --max-abandoned=2 test/TestBackOtter/test1.c
- * (TODO: see why it doesn't work with --max-abandoned=1)
+ * ./otter.pl --dobackotter --noboundsChecking --max-abandoned=(any) -Ilibc test/TestBackOtter/test1.c
  */
 #include "otter.h"
 
@@ -13,7 +12,7 @@ void g(int x) {
     nothing();
     if (x > 0) {
         if (x < 10) {
-            __ASSERT(0);
+            __FAILURE();
         }
     }
 }

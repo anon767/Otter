@@ -24,8 +24,22 @@ type target = {
   target_predicate: failing_predicate;
 }
 
+let run ?interceptor ?queue job =
+    let (>>>) = Interceptor.(>>>) in
+    let default_interceptor =
+        Interceptor.set_output_formatter_interceptor
+        >>> BuiltinFunctions.libc_interceptor
+        >>> BuiltinFunctions.interceptor
+    in
+    let integrated_interceptor = match interceptor with
+    | None -> default_interceptor
+    | Some (interceptor) -> default_interceptor >>> interceptor
+    in
+        Driver.run ~interceptor:integrated_interceptor ?queue job
+
+
 (* Cil feature for call-chain backwards Otter *)
-let arg_assertfn = ref "__ASSERT"
+let arg_assertfn = ref "__FAILURE"
 
 let distance_to_targets_prioritizer callstack target_fundecs job =
     if (List.length job.state.callstack) = (List.length callstack) then
@@ -193,7 +207,7 @@ let test_job_at_targets targets job =
                         boundingPaths = Some paths;
                         decisionPath = [];
                     } in
-                    let return = Driver.run ~interceptor job' in
+                    let return = run ~interceptor job' in
                     Format.printf "@\nEnd forward_otter_bounded_by_paths@\n";
                     let add_prefix job_result =
                         {job_result with
@@ -270,7 +284,7 @@ let callchain_backward_se file entryfn assertfn job_init : _ job_completion list
         else
             Queue.get_default ()
     in
-        Driver.run ~interceptor ~queue job
+        run ~interceptor ~queue job
   in
 
   (* The implementation of main loop *)
@@ -380,7 +394,7 @@ let feature = {
 	Cil.fd_extraopt = [
 		("--assertfn",
 		Arg.Set_string arg_assertfn,
-		"<fname> Assertion function to look for in the call-chain-backward mode (default: __ASSERT) @\n");
+		"<fname> Assertion function to look for in the call-chain-backward mode (default: __FAILURE) @\n");
 	];
 	Cil.fd_post_check = true;
 	Cil.fd_doit = doit
