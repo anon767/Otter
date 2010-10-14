@@ -5,7 +5,7 @@
     In this file, this case occurs when dereferencing *y in foo(): y is a Bytes_Conditional pointer initialized by
     SymbolicPointers. To work correctly, Bytes_Conditional leaf nodes inconsistent with the path condition
     must be pruned away in BytesUtility.bytes__read before reaching Expression.deref.
-    
+
     There have been several symptoms:
         -   without specifically handling Bytes_Conditional during dereferences before r10002, this leads to a single
             "Dereference something not an address" error, because no fork occurs and the null value in y is not
