@@ -82,7 +82,7 @@ let check state bytes exps =
 
      You might think that you only need to check
      {offsets + useSize <= sizes}, where {useSize} is the size with
-     which {lvals} is about to be read or written). But this isn't
+     which {lvals} is about to be read or written. But this isn't
      enough because of possible overflow (e.g., if {offsets} contains
      the value -1 == 0xffffffff). To catch overflow, you need to
      additionally check that {offsets < offsets + useSize}.
@@ -91,7 +91,7 @@ let check state bytes exps =
      {offsets < sizes} and {offsets + useSize <= sizes}, actually does
      not work properly, because it does not catch the possible overflow
      of the addition. This pair of checks would fail to catch an error
-     in a case where {offsets + size < offsets < sizes}. This can only
+     in a case where {offsets + useSize < offsets < sizes}. This can only
      happen if {useSize} or {sizes} is very large, which is quite
      unlikely---{useSize} is the size of a type, so it is almost
      certainly small; and {sizes} holds the sizes of allocated regions,
@@ -108,7 +108,7 @@ let check state bytes exps =
      okay if they are equal.) This seems to be simpler than the second
      check above, {offsets < offsets + useSize}, in two ways: first,
      there is only one conditional tree in this check instead of two.
-     Second, {size} is concrete, and each leaf of {sizes} is concrete;
+     Second, {useSize} is concrete, and each leaf of {sizes} is concrete;
      and even if we allow symbolic sized allocations in the future, most
      allocations will probably still be concrete. *)
 
@@ -141,11 +141,10 @@ let checkBounds state lvals cil_lval useSize =
 
     (* Prepare the first bounds check: {offsets <= sizes - useSize} *)
     let sizesMinusUseSize = Operator.minus [(sizesBytes, !Cil.upointType); (useSizeBytes, !Cil.upointType)] in
-    let offsetsLeSizesMinusUseSize = Operator.le [(offsetsBytes, !Cil.upointType); (sizesMinusUseSize, !Cil.upointType)]
-    and expRepresentingBoundsCheck1 = BinOp (Eq, Lval cil_lval, SizeOfStr "Checking that offset is in bounds", voidType) in
+    let offsetsLeSizesMinusUseSize = Operator.le [(offsetsBytes, !Cil.upointType); (sizesMinusUseSize, !Cil.upointType)] in
 
     (* Do the check and keep the resulting state *)
-    let state = check state offsetsLeSizesMinusUseSize [expRepresentingBoundsCheck1] in
+    let state = check state offsetsLeSizesMinusUseSize [Lval cil_lval; mkString "offset is in bounds (i.e., offset <= allocated size - size of access)"] in
 
     (* Prepare the second bounds check: {useSize <= sizes} *)
     (* TODO: If {sizes} is a conditional tree (rather than a single
@@ -153,11 +152,10 @@ let checkBounds state lvals cil_lval useSize =
          function) to simplify {useSizeLeSizes}. It will almost always
          have concrete 'true's at every leaf. If we don't simplify, we'll
          end up calling the solver. *)
-    let useSizeLeSizes = Operator.le [(useSizeBytes, !Cil.upointType); (sizesBytes, !Cil.upointType)]
-    and expRepresentingBoundsCheck2 = BinOp (Eq, Lval cil_lval, SizeOfStr "Checking that size of type does not exceed allocated size", voidType) in
+    let useSizeLeSizes = Operator.le [(useSizeBytes, !Cil.upointType); (sizesBytes, !Cil.upointType)] in
 
     (* Do the second check *)
-    check state useSizeLeSizes [expRepresentingBoundsCheck2]
+    check state useSizeLeSizes [Lval cil_lval; mkString "size of access <= allocated size"]
 
 
 let add_offset offset lvals =

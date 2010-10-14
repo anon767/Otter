@@ -314,3 +314,11 @@ int __otter_libc_strlen(const char* s)
 	return (i);
 }
 
+char* __otter_libc_strdup(const char* s) {
+	size_t len = strlen(s);
+	char* theCopy = malloc(len + 1); // '+ 1' for the null terminator
+	if (theCopy) {
+		strcpy(theCopy, s);
+	}
+	return theCopy;
+}

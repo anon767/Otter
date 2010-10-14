@@ -981,6 +981,7 @@ let libc_interceptor job job_queue interceptor =
 		(intercept_function_by_name_external "memset"                  "__otter_libc_memset") @@
 		(intercept_function_by_name_external "strerror"                "__otter_libc_strerror") @@
 		(intercept_function_by_name_external "strlen"                  "__otter_libc_strlen") @@
+		(intercept_function_by_name_external "strdup"                  "__otter_libc_strdup") @@
 
 		(* unistd.h *)
 		(intercept_function_by_name_external "close"                   "__otter_libc_close") @@
