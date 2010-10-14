@@ -25,7 +25,7 @@ let set_output_formatter_interceptor job job_queue interceptor =
 		if loc = Cil.locUnknown then
 			Format.sprintf "[%d,%d] : " job.jid depth
 		else
-			Format.sprintf "[%d,%d] %s:%d : " job.jid depth loc.Cil.file loc.Cil.line
+			Format.sprintf "[%d,%d] %s:%d : " job.jid depth (Filename.basename loc.Cil.file) loc.Cil.line
 	in
 	Output.set_formatter (new Output.labeled label);
 	interceptor job job_queue
