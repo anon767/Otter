@@ -760,8 +760,6 @@ and add_constraint_int (c : tconstraint) (toplev : bool) =
     end
   else
     if !debug_constraints then print_constraint c else ();
-  insist (can_add_constraints ()) 
-    "can't add constraints after compute_results is called";
   begin
     match c with
         Unification _ -> Q.add c eq_worklist
@@ -865,9 +863,13 @@ let instantiate (lv : lvalue) (i : int) : lvalue =
 
 (** Constraint generated from assigning [t] to [lv]. *)
 let assign (lv : lvalue) (t : tau) : unit =
+  insist (can_add_constraints ()) 
+    "can't add assign constraints after compute_results is called";
   add_toplev_constraint (Leq (t, lv.contents))
 
 let assign_ret (i : int) (lv : lvalue) (t : tau) : unit =
+  insist (can_add_constraints ()) 
+    "can't add assign_ret constraints after compute_results is called";
   add_toplev_constraint (Leq (t, lv.contents))
 
 (** Project out the first (ref) component or a pair. If the argument
@@ -908,6 +910,8 @@ let get_finfo (t : tau) : finfo =
 
     For this analysis, the application site is always 0 *)
 let apply (t : tau) (al : tau list) : (tau * int) =
+  insist (can_add_constraints ()) 
+    "can't add apply constraints after compute_results is called";
   let f = proj_fun t in
   let actuals = ref al in
   let fi, ret =
@@ -939,9 +943,13 @@ let make_undefined_rvalue () =
   make_var true "undefined"
 
 let assign_undefined (lv : lvalue) : unit =
+  insist (can_add_constraints ()) 
+    "can't add assign_undefined constraints after compute_results is called";
   assign lv (make_undefined_rvalue ())
 
 let apply_undefined (al : tau list) : (tau * int) =
+  insist (can_add_constraints ()) 
+    "can't add apply_undefined constraints after compute_results is called";
     List.iter
       (fun actual ->  assign (make_undefined_lvalue ()) actual)
       al;
@@ -971,6 +979,8 @@ let bottom () : tau =
 
 (** Unify the result of a function with its return value. *)
 let return (t : tau) (t' : tau) =
+  insist (can_add_constraints ()) 
+    "can't add return constraints after compute_results is called";
   add_toplev_constraint (Leq (t', t))
 
 (***********************************************************************)
