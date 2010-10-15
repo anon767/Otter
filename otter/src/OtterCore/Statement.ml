@@ -218,15 +218,14 @@ let exec_instr job channel =
             assert (tail = []);
             printInstr instr;
             exec_instr_call job instr lvalopt fexp exps channel
-        | Asm _ ->
-            Output.set_mode Output.MSG_MUSTPRINT;
-            Output.printf "Warning: ASM unsupported@\n";
-            printInstr instr;
-            Active (
-                if tail = [] then
-                    (* Update job.stmt if this instr ends this stmt *)
-                    { job with stmt = List.hd job.stmt.succs }
-                else job), channel
+        | Asm (_,_,_,_,_,loc) ->
+            let result = {
+                result_file = job.file;
+                result_state = job.state;
+                result_history = job.exHist;
+                result_decision_path = job.decisionPath;
+            } in
+            Complete (Abandoned (`Failure "Cannot handle assembly", loc, result)), channel
 
 let exec_stmt job channel =
     assert (job.instrList = []);
