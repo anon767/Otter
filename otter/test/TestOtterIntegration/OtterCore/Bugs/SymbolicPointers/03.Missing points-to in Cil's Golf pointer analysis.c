@@ -4,9 +4,9 @@
 */
 
 #pragma entry_function("foo")
-#pragma expect_return(__exit_code__ == 0)
-#pragma expect_return(__exit_code__ == 1)
-#pragma expect_return(__exit_code__ == 2)
+#pragma expect_return(__return_code__ == 0)
+#pragma expect_return(__return_code__ == 1)
+#pragma expect_return(__return_code__ == 2)
 #pragma no_other_results
 
 typedef unsigned long size_t;
