@@ -214,12 +214,14 @@ let soundness_testsuite = "Soundness" >::: [
     ];
 
     "Linked list" >::: [
-        (* since the nodes are statically allocated and do not alias, there should be exactly 4 iterations:
+        (* since the nodes are statically allocated and do not alias, but the pointer analysis may perform unification,
+           there should be at least 4 iterations:
                list == NULL, and list of lengths 1 to 3 *)
         test_symbolic_pointers ~label:"Static" "
             struct node { struct node * next; };
             void foo(struct node * list) {
-                for (struct node * el = list; el; el = el->next) {
+                int x = 0;
+                for (struct node * el = list; el && x < 5; el = el->next, x++) {
                 }
             }
             void main(void) {
@@ -230,7 +232,7 @@ let soundness_testsuite = "Soundness" >::: [
                 foo(&x);
             }
         " begin fun results return exit abandoned truncated ->
-            assert_equal return 4;
+            assert_at_least return 4;
             assert_equal exit 0;
             assert_equal abandoned 0;
             assert_equal truncated 0;
