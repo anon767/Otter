@@ -60,3 +60,33 @@ struct __otter_fs_open_file_table_entry* get_open_file_from_fd(int fd)
 	}
 	return &__otter_fs_open_file_table[open_file_index];
 }
+
+struct __otter_fs_pipe_data* __otter_fs_init_new_pipe_data()
+{
+	struct __otter_fs_pipe_data* pipe = __otter_multi_gmalloc(sizeof(struct __otter_fs_pipe_data));
+	pipe->rhead = -1;
+	pipe->whead = 0;
+	pipe->data = __otter_multi_gmalloc(__otter_fs_PIPE_SIZE);
+	return pipe;
+}
+
+struct __otter_fs_sock_data* ___otter_fs_init_new_socket_data()
+{
+	struct __otter_fs_sock_data* sock = __otter_multi_gmalloc(sizeof(struct __otter_fs_sock_data));
+	sock->addr = NULL;
+	sock->state = 0;
+	sock->recv_data = __otter_fs_init_new_pipe_data();
+	return sock;
+}
+
+struct __otter_fs_inode* __otter_fs_init_new_socket()
+{
+	struct __otter_fs_inode* inode = __otter_multi_gmalloc(sizeof(struct __otter_fs_inode));
+	inode->linkno = 0;
+	inode->size = 0;
+	inode->type = __otter_fs_TYP_SOCK;
+	inode->permissions = __otter_fs_umask;
+	inode->data = (void*)__otter_fs_init_new_sock_data();
+	inode->numblocks = 0;
+	return inode;
+}

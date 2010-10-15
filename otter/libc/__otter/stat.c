@@ -48,6 +48,7 @@ mode_t __otter_fs_type_to_mode(int type)
 		case __otter_fs_TYP_FIFO: return (S_IFIFO);
 		case __otter_fs_TYP_TTY: return (S_IFCHR);
 		case __otter_fs_TYP_NULL: return (S_IFCHR);
+		case __otter_fs_TYP_SOCK: return (S_IFSOCK);
 		default: return (0);
 	}
 
@@ -155,6 +156,8 @@ int __otter_libc_mknod(const char* name, mode_t mode, dev_t dev)
 	} /* dev is ignored if this is not a character (or block) special file */
 	else if(mode & S_IFIFO)
 		dev = __otter_fs_TYP_FIFO;
+	else if(mode & S_IFSOCK)
+		dev = __otter_fs_TYP_SOCK;
 	else
 		dev = __otter_fs_TYP_FILE;
 
@@ -199,6 +202,12 @@ int __otter_libc_mknod(const char* name, mode_t mode, dev_t dev)
 
 	if(!newfile)
 		return (-1);
+		
+	if(mode & S_IFIFO)
+	{
+		struct __otter_fs_pipe_data* pipe = __otter_fs_init_new_pipe_data();
+		newfile->data = (void*)pipe;
+	}
 
 	(*newfile).permissions = (mode & 0x0FFF) | 0x3000;
 	(*newfile).type = dev;

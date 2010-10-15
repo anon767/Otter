@@ -21,7 +21,23 @@ int __otter_libc_fcntl(int fd, int cmd, ...)
 	switch (cmd)
 	{
 		case F_DUPFD:
-			break;
+			{
+				int start = va_arg(varargs, int);
+				int fd2 = __otter_fs_more_fd(start);
+				if(fd2 == -1)
+				{
+					errno = EMFILE;
+					break;
+				}
+
+				struct __otter_fs_open_file_table_entry* open_file = get_open_file_from_fd(fd);
+				if(open_file) /* is file a valid file entry? */
+				{
+					__otter_fs_fd_table[fd2] = __otter_fs_fd_table[fd];
+					r = fd2;
+				}
+				break;
+			}
 		case F_GETFD: 
 			break;
 		case F_SETFD: 

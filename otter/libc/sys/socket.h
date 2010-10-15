@@ -1,10 +1,8 @@
 #ifndef _SYS_SOCKET_H
 #define _SYS_SOCKET_H
 
-#include<sys/uio.h>
-
-#define socklen_t unsigned int
-#define sa_family_t unsigned int
+#include <sys/uio.h>
+#include <__otter/otter_fs.h>
 
 #define SCM_RIGHTS 1234
 
@@ -47,10 +45,28 @@
 #define SHUT_WR 2
 #define SHUT_RDWR 4
 
+#define __otter_sock_ST_CLOSED 0
+#define __otter_sock_ST_LISTEN 1
+#define __otter_sock_ST_SYN_RCVD 2
+#define __otter_sock_ST_SYN_SENT 3
+#define __otter_sock_ST_ESTABLISHED 4
+#define __otter_sock_ST_CLOSE_WAIT 5
+#define __otter_sock_ST_LAST_ACK 6
+#define __otter_sock_ST_FIN_WAIT_1 7
+#define __otter_sock_ST_FIN_WAIT_2 8
+#define __otter_sock_ST_CLOSING 9
+#define __otter_sock_ST_TIME_WAIT 10
+#define __otter_sock_ST_UDP 11
+
+#define socklen_t unsigned int
+#define sa_family_t unsigned short
+
+#define __SOCKADDR_SHARED_LEN 16
+
 struct sockaddr
 {
 	sa_family_t sa_family;
-	char sa_data[];
+	char sa_data[14];
 };
 
 struct msghdr
@@ -78,5 +94,8 @@ struct linger
 };
 
 int socket(int domain, int type, int protocol);
+int bind(int socket, const struct sockaddr *address, socklen_t address_len);
+
+void __otter_libc_free_socket(struct __otter_fs_inode* inode);
 
 #endif

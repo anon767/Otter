@@ -30,16 +30,18 @@ struct stat
 #define S_IFSMQ 0x00200000
 #define S_IFSEM 0x00400000
 #define S_IFSHM 0x00800000
+#define S_IFSOCK 0x01000000
 
-#define S_ISBLK(s) ((s).st_mode & S_IFBLK)
-#define S_ISCHR(s) ((s).st_mode & S_IFCHR)
-#define S_ISFIFO(s) ((s).st_mode & S_IFIFO)
-#define S_ISREG(s) ((s).st_mode & S_IFREG)
-#define S_ISDIR(s) ((s).st_mode & S_IFDIR)
-#define S_ISLNK(s) ((s).st_mode & S_IFLNK)
-#define S_ISSMQ(s) ((s).st_mode & S_IFSMQ)
-#define S_ISSEM(s) ((s).st_mode & S_IFSEM)
-#define S_ISSHM(s) ((s).st_mode & S_IFSHM)
+#define S_ISBLK(s) (s & S_IFBLK)
+#define S_ISCHR(s) (s & S_IFCHR)
+#define S_ISFIFO(s) (s & S_IFIFO)
+#define S_ISREG(s) (s & S_IFREG)
+#define S_ISDIR(s) (s & S_IFDIR)
+#define S_ISLNK(s) (s & S_IFLNK)
+#define S_ISSMQ(s) (s & S_IFSMQ)
+#define S_ISSEM(s) (s & S_IFSEM)
+#define S_ISSHM(s) (s & S_IFSHM)
+#define S_ISSOCK(s) (s & S_IFSOCK)
 
 #define S_TYPEISMQ(s) S_ISSMQ(s)
 #define S_TYPEISEM(s) S_ISSEM(s)

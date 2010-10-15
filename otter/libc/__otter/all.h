@@ -14,6 +14,8 @@
 
 #include "unistd.c"
 #include "signal.c"
+#include "socket.c"
+#include "arpa_inet.c"
 
 __otter_libc_init()
 {

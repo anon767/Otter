@@ -23,6 +23,8 @@
 #define EPIPE 18
 #define ENOTEMPTY 19
 #define EINTR 20
+#define ENOTCONN 21
+#define EAFNOSUPPORT 22
 
 int errno = 0;
 

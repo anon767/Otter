@@ -1,6 +1,8 @@
 #ifndef _OTTER_FS_H
 #define _OTTER_FS_H
 
+#include <sys/socket.h>
+
 #define __otter_fs_BLOCK_SIZE 256
 #define __otter_fs_PIPE_SIZE 1024 /* this is often 64k, but that would be too big for Otter to have lots of copies of */
 
@@ -11,6 +13,7 @@
 #define __otter_fs_TYP_TTY  0x00C0
 #define __otter_fs_TYP_NULL 0x0140
 #define __otter_fs_TYP_ZERO 0x01C0
+#define __otter_fs_TYP_SOCK 0x0240
 
 #define __otter_fs_IS_TYP_SPECIAL(x) ((x) & 64)
 
@@ -37,6 +40,21 @@ struct __otter_fs_inode
 	char* data;
 	int r_openno;
 	int w_openno;
+};
+
+struct __otter_fs_pipe_data
+{
+	int rhead; /* last read char */
+	int whead; /* next char to write */
+	char* data;
+};
+
+struct __otter_fs_sock_data
+{
+	struct sockaddr* addr; /* bound ip and port */
+	int state; /* socket state machine */
+	struct __otter_fs_pipe_data* recv_data;
+	struct __otter_fs_sock_data* send_sock;
 };
 
 struct __otter_fs_filelist
@@ -88,6 +106,7 @@ int* __otter_fs_fd_table;
 struct __otter_fs_open_file_table_entry* __otter_fs_open_file_table;
 
 int __otter_fs_next_fd();
+int __otter_fs_more_fd(int arg);
 int __otter_fs_next_global_fd();
 int __otter_fs_open_file(struct __otter_fs_inode* inode, int mode);
 int __otter_fs_open_dir(struct __otter_fs_dnode* dnode, int mode);

@@ -530,6 +530,18 @@ int __otter_fs_next_fd()
 	return (-1);
 }
 
+/* first free file greater than arg */
+int __otter_fs_more_fd(int arg)
+{
+	for(int i = arg; i < __otter_fs_MAXOPEN; i++)
+	{
+		if(__otter_fs_fd_table[i] == -1)
+			return (i);
+	}
+
+	return (-1);
+}
+
 /* first free file table entry */
 int __otter_fs_next_global_fd()
 {

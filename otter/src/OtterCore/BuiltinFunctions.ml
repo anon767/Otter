@@ -994,11 +994,25 @@ let libc_interceptor job job_queue interceptor =
 		(intercept_function_by_name_external "lseek"                   "__otter_libc_lseek") @@
 		(intercept_function_by_name_external "getuid"                  "__otter_libc_getuid") @@
 		(intercept_function_by_name_external "setuid"                  "__otter_libc_setuid") @@
+		(intercept_function_by_name_external "dup"                     "__otter_libc_dup") @@
+		(intercept_function_by_name_external "dup2"                    "__otter_libc_dup2") @@
+		
+		(* arpa/inet.h *)
+		(intercept_function_by_name_external "inet_addr"               "__otter_libc_inet_addr") @@
+		(intercept_function_by_name_external "inet_lnaof"              "__otter_libc_inet_lnaof") @@
+		(intercept_function_by_name_external "inet_makeaddr"           "__otter_libc_inet_makeaddr") @@
+		(intercept_function_by_name_external "inet_netof"              "__otter_libc_inet_netof") @@
+		(intercept_function_by_name_external "inet_network"            "__otter_libc_inet_network") @@
+		(intercept_function_by_name_external "inet_ntoa"               "__otter_libc_inet_ntoa") @@
+		(intercept_function_by_name_external "inet_aton"               "__otter_libc_inet_aton") @@
 
 		(* sys/fcntl.h *)
 		(intercept_function_by_name_external "creat"                   "__otter_libc_creat") @@
 		(intercept_function_by_name_external "fcntl"                   "__otter_libc_fcntl") @@
 		(intercept_function_by_name_external "open"                    "__otter_libc_open") @@
+
+		(* sys/socket.h *)
+		(intercept_function_by_name_external "socket"                  "__otter_libc_socket") @@
 
 		(* sys/stat.h *)
 		(intercept_function_by_name_external "chmod"                   "__otter_libc_chmod") @@

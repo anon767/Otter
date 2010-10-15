@@ -3,6 +3,7 @@
 #include<string.h>
 #include<fcntl.h>
 #include<__otter/otter_user.h>
+#include <sys/socket.h>
 
 int __otter_libc_close(int fd)
 {
@@ -53,6 +54,256 @@ int __otter_libc_close(int fd)
 	return (0);
 }
 
+/* linear buffer */
+ssize_t __otter_libc_read_file(
+	struct __otter_fs_open_file_table_entry* open_file,
+	void* buf,
+	size_t num,
+	off_t offset)
+{
+	struct __otter_fs_inode* inode = (struct __otter_fs_inode*)(open_file->vnode);
+
+	for(int i = 0; i < num; i++)
+	{
+		if(i + offset < (*inode).size)
+		{
+			buf[i] = (*inode).data[i + offset];
+		}
+		else
+		{
+			open_file->status = __otter_fs_STATUS_EOF;
+			return (i);
+		}
+	}
+
+	return (num);
+}
+
+ssize_t __otter_libc_write_file(
+	struct __otter_fs_open_file_table_entry* open_file,
+	void* buf,
+	size_t num,
+	off_t offset)
+{
+	struct __otter_fs_inode* inode = (struct __otter_fs_inode*)(open_file->vnode);
+
+	int physicalsize = __otter_fs_BLOCK_SIZE * (*inode).numblocks; /* get the amount of allocated space */
+
+	if(offset + num > physicalsize) /* there isn't enough space */
+	{
+		/* make more space 
+		 * In the even that the new size would exactly fill a new block, allocating an extra one won't hurt;
+		 * it will probably be needed.
+		 */
+		int newblocks = (((offset + num) / __otter_fs_BLOCK_SIZE) + 1);
+		(*inode).data = (char*)__otter_multi_grealloc((*inode).data, newblocks * __otter_fs_BLOCK_SIZE);
+		/* initilize new blocks to 0; if the write was past then end of the file, the gap should be set to 0 */
+		memset((*inode).data + physicalsize, 0, (newblocks - (*inode).numblocks) * __otter_fs_BLOCK_SIZE);
+		(*inode).numblocks = newblocks;
+	}
+
+	for(int i = 0; i < num; i++)
+	{
+		(*inode).data[i + offset] = ((char*)buf)[i];
+	}
+
+	if((*inode).size < offset + num)
+	{
+		(*inode).size = offset + num;
+	}
+
+	return (num);
+}
+
+/* generate symbolic data */
+ssize_t __otter_libc_read_tty(void* buf, size_t num)
+{
+	char data;
+	for(int i = 0; i < num; i++)
+	{
+		data = __SYMBOLIC(1);
+		/* This is a device not a file redirected to stdin; use 0 to indicate crtl+D was pressed to stop input */
+		if(data != 0)
+		{
+			buf[i] = data;
+		}
+		else /* it might be nice to make '\n' terminate lines, but that might not happen in general */
+		{
+			return (i);
+		}
+	}
+	return (num);
+}
+
+/* circular buffer */
+ssize_t __otter_libc_read_pipe_data(
+	struct __otter_fs_pipe_data* pipe,
+	void* buf,
+	size_t num)
+{
+	for(int i = 0; i < num; i++)
+	{
+		/* next unread char is not the next char to be written to*/
+		if((i + pipe->rhead + 1) % __otter_fs_PIPE_SIZE != pipe->whead)
+		{
+			buf[i] = pipe->data[(i + pipe->rhead + 1) % __otter_fs_PIPE_SIZE];
+		}
+		else /* no more new chars to read */
+		{
+			pipe->rhead = (i + pipe->rhead) % __otter_fs_PIPE_SIZE;
+			return (i);
+		}
+	}
+
+	pipe->rhead = (pipe->rhead + num) % __otter_fs_PIPE_SIZE; /* move rhead to last char read */
+	return (num);
+}
+
+ssize_t __otter_libc_write_pipe_data(
+	struct __otter_fs_pipe_data* pipe,
+	void* buf,
+	size_t num)
+{
+	for(int i = 0; i < num; i++)
+	{
+		/* current char is not the last char read */
+		if((i + pipe->whead) % __otter_fs_PIPE_SIZE != pipe->rhead)
+		{
+			buf[i] = pipe->data[(i + pipe->whead) % __otter_fs_PIPE_SIZE];
+		}
+		else /* write head has run out of space; must block until some has be read */
+		{
+			__ASSERT(0); /* TODO: make the work right for multiotter */
+		}
+	}
+
+	pipe->whead = (pipe->whead + num) % __otter_fs_PIPE_SIZE; /* move whead to next free char to write */
+	return (num);
+}
+
+ssize_t __otter_libc_read_pipe(
+	struct __otter_fs_open_file_table_entry* open_file,
+	void* buf,
+	size_t num)
+{
+	struct __otter_fs_inode* inode = (struct __otter_fs_inode*)open_file->vnode;
+	struct __otter_fs_pipe_data* pipe = (struct __otter_fs_pipe_data*)inode->data;
+	if(open_file->status == __otter_fs_STATUS_EOF)
+	{
+		if(open_file->mode & O_NONBLOCK)
+		{
+			errno = EAGAIN;
+			return (-1);
+		}
+
+		/* block until data becomes available */
+		while(open_file->status == __otter_fs_STATUS_EOF)
+		{
+			__ASSERT(0); /* TODO: if this is multiOtter, don't fail here */
+		}
+
+	}
+
+	int num = __otter_libc_read_pipe_data(pipe, buf, num);
+	if((pipe->rhead + 1) % __otter_fs_PIPE_SIZE == pipe->whead) /* set EOF if there are no more chars left to read */
+	{
+		open_file->status = __otter_fs_STATUS_EOF;
+	}
+	
+	return(num);
+}
+
+ssize_t __otter_libc_write_pipe(
+	struct __otter_fs_open_file_table_entry* open_file,
+	void* buf,
+	size_t num)
+{
+	struct __otter_fs_inode* inode = (struct __otter_fs_inode*)open_file->vnode;
+	struct __otter_fs_pipe_data* pipe = (struct __otter_fs_pipe_data*)inode->data;
+	if((*inode).r_openno == 0) /* not open for reading somewhere; must be open for reading before actually writing */
+	{
+		errno = EPIPE;
+		/* raise(SIGPIPE); */
+		return (-1);
+	}
+	
+	return __otter_libc_write_pipe_data(pipe, buf, num);
+}
+
+/* double dircular buffer */
+ssize_t __otter_libc_read_socket(
+	struct __otter_fs_open_file_table_entry* open_file,
+	void* buf,
+	size_t num)
+{
+	struct __otter_fs_inode* inode = (struct __otter_fs_inode*)open_file->vnode;
+	struct __otter_fs_sock_data* sock = (struct __otter_fs_sock_data*)inode->data;
+	
+	switch(sock->state)
+	{
+		case __otter_sock_ST_CLOSED:
+		case __otter_sock_ST_LISTEN:
+		case __otter_sock_ST_SYN_RCVD:
+		case __otter_sock_ST_SYN_SENT:
+		case __otter_sock_ST_CLOSE_WAIT:
+		case __otter_sock_ST_LAST_ACK:
+		case __otter_sock_ST_CLOSING:
+		case __otter_sock_ST_TIME_WAIT:
+			/* can't read in these states */
+			errno = ENOTCONN;
+			return(-1);
+			break;
+
+		case __otter_sock_ST_ESTABLISHED:
+		case __otter_sock_ST_FIN_WAIT_1:
+		case __otter_sock_ST_FIN_WAIT_2:
+		case __otter_sock_ST_UDP:
+			return __otter_libc_read_pipe_data(sock->recv_data);
+			break;
+			
+		default:
+			__ASSERT(0);
+	}
+	return(-1);
+}
+
+ssize_t __otter_libc_write_socket(
+	struct __otter_fs_open_file_table_entry* open_file,
+	void* buf,
+	size_t num)
+{
+	struct __otter_fs_inode* inode = (struct __otter_fs_inode*)open_file->vnode;
+	struct __otter_fs_sock_data* sock = (struct __otter_fs_sock_data*)inode->data;
+	
+	switch(sock->state)
+	{
+		case __otter_sock_ST_CLOSED:
+		case __otter_sock_ST_LISTEN:
+		case __otter_sock_ST_SYN_RCVD:
+		case __otter_sock_ST_SYN_SENT:
+		case __otter_sock_ST_LAST_ACK:
+		case __otter_sock_ST_FIN_WAIT_1:
+		case __otter_sock_ST_FIN_WAIT_2:
+		case __otter_sock_ST_CLOSING:
+		case __otter_sock_ST_TIME_WAIT:
+			/* can't write in these states */
+			errno = ENOTCONN;
+			return(-1);
+			break;
+
+		case __otter_sock_ST_ESTABLISHED:
+		case __otter_sock_ST_CLOSE_WAIT:
+		case __otter_sock_ST_UDP:
+			return __otter_libc_write_pipe_data(sock->recv_data);
+			break;
+			
+		default:
+			__ASSERT(0);
+	}
+	
+	return(-1);
+}
+
 ssize_t __otter_libc_read2(
 	struct __otter_fs_open_file_table_entry* open_file,
 	void* buf,
@@ -70,88 +321,18 @@ ssize_t __otter_libc_read2(
 
 	switch (open_file->type)
 	{
-		/* linear buffer */
 		case __otter_fs_TYP_FILE:
-		{
-			struct __otter_fs_inode* inode = (struct __otter_fs_inode*)(open_file->vnode);
-
-			for(int i = 0; i < num; i++)
-			{
-				if(i + offset < (*inode).size)
-				{
-					buf[i] = (*inode).data[i + offset];
-				}
-				else
-				{
-					open_file->status = __otter_fs_STATUS_EOF;
-					return (i);
-				}
-			}
-
-			return (num);
+			return __otter_libc_read_file(open_file, buf, num, offset);
 			break;
-		}
-		/* generate symbolic data */
 		case __otter_fs_TYP_TTY:
-		{
-			char data;
-			for(int i = 0; i < num; i++)
-			{
-				data = __SYMBOLIC(1);
-				/* This is a device not a file redirected to stdin; use 0 to indicate crtl+D was pressed to stop input */
-				if(data != 0)
-				{
-					buf[i] = data;
-				}
-				else /* it might be nice to make '\n' terminate lines, but that might not happen in general */
-				{
-					return (i);
-				}
-			}
-
-			return (num);
+			return __otter_libc_read_tty(buf, num);
 			break;
-		}
-		/* circular buffer */
 		case __otter_fs_TYP_FIFO:
-		{
-			struct __otter_fs_inode* inode = (struct __otter_fs_inode*)open_file->vnode;
-			if(open_file->status == __otter_fs_STATUS_EOF)
-			{
-				if(open_file->mode & O_NONBLOCK)
-				{
-					errno = EAGAIN;
-					return (-1);
-				}
-
-				/* block until data becomes available */
-				while(open_file->status == __otter_fs_STATUS_EOF)
-				{
-					__ASSERT(0); /* TODO: if this is multiOtter, don't fail here */
-				}
-				
-			}
-
-			offset = (*inode).numblocks;
-
-			for(int i = 0; i < num; i++)
-			{
-				if((i + offset) % __otter_fs_PIPE_SIZE != (*inode).size)
-				{
-					buf[i] = (*inode).data[(i + offset) % __otter_fs_PIPE_SIZE];
-				}
-				else
-				{
-					open_file->status = __otter_fs_STATUS_EOF;
-					(*inode).numblocks = ((*inode).numblocks + i) % __otter_fs_PIPE_SIZE;
-					return (i);
-				}
-			}
-
-			(*inode).numblocks = ((*inode).numblocks + num) % __otter_fs_PIPE_SIZE;
-			return (num);
+			return __otter_libc_read_pipe(open_file, buf, num);
 			break;
-		}
+		case __otter_fs_TYP_SOCK:
+			return __otter_libc_read_socket(open_file, buf, num);
+			break;
 		case __otter_fs_TYP_DIR: /* reading from directories is not supported */
 			errno = EISDIR;
 			return (-1);
@@ -235,69 +416,16 @@ ssize_t __otter_libc_write2(
 
 	switch (open_file->type)
 	{
-		/* linear buffer */
 		case __otter_fs_TYP_FILE:
 		case __otter_fs_TYP_TTY:
-		{
-			struct __otter_fs_inode* inode = (struct __otter_fs_inode*)(open_file->vnode);
-
-			int physicalsize = __otter_fs_BLOCK_SIZE * (*inode).numblocks; /* get the amount of allocated space */
-
-			if(offset + num > physicalsize) /* there isn't enough space */
-			{
-				/* make more space 
-				 * In the even that the new size would exactly fill a new block, allocating an extra one won't hurt;
-				 * it will probably be needed.
-				 */
-				int newblocks = (((offset + num) / __otter_fs_BLOCK_SIZE) + 1);
-				(*inode).data = (char*)__otter_multi_grealloc((*inode).data, newblocks * __otter_fs_BLOCK_SIZE);
-				/* initilize new blocks to 0; if the write was past then end of the file, the gap should be set to 0 */
-				memset((*inode).data + physicalsize, 0, (newblocks - (*inode).numblocks) * __otter_fs_BLOCK_SIZE);
-				(*inode).numblocks = newblocks;
-			}
-
-			for(int i = 0; i < num; i++)
-			{
-				(*inode).data[i + offset] = ((char*)buf)[i];
-			}
-
-			if((*inode).size < offset + num)
-			{
-				(*inode).size = offset + num;
-			}
-
-			return (num);
+			return __otter_libc_write_file(open_file, buf, num, offset);
 			break;
-		}
-		/* circular buffer */
 		case __otter_fs_TYP_FIFO:
-		{
-			struct __otter_fs_inode* inode = (struct __otter_fs_inode*)open_file->vnode;
-			if((*inode).r_openno == 0) /* not open for reading somewhere */
-			{
-				errno = EPIPE;
-				/* raise(SIGPIPE); */
-				return (-1);
-			}
-
-			offset = (*inode).size;
-
-			for(int i = 0; i < num; i++)
-			{
-				if((i + offset) % __otter_fs_PIPE_SIZE != (*inode).numblocks)
-				{
-					buf[i] = (*inode).data[(i + offset) % __otter_fs_PIPE_SIZE];
-				}
-				else /* write head has run out of space; must block until some has be read */
-				{
-					__ASSERT(0); /* TODO: make the work right for multiotter */
-				}
-			}
-
-			(*inode).size = ((*inode).size + num) % __otter_fs_PIPE_SIZE;
-			return (num);
+			return __otter_libc_write_pipe(open_file, buf, num);
 			break;
-		}
+		case __otter_fs_TYP_SOCK:
+			return __otter_libc_write_socket(open_file, buf, num);
+			break;
 		case __otter_fs_TYP_DIR: /* writing to directories is not supported */
 			__ASSERT(0); /* should not be possible to open a dir for writing */
 			break;
@@ -448,4 +576,36 @@ int __otter_libc_setuid(uid_t uid)
 
 	errno = EINVAL;
 	return(-1);
+}
+
+int __otter_libc_dup(int fd)
+{
+	return fcntl(fd, F_DUPFD, 0);
+}
+
+int __otter_libc_dup2(int fd1, int fd2)
+{
+	if(fd2 < 0 || fd2 >= __otter_fs_MAXOPEN)
+	{
+		errno = EBADF;
+		return(-1);
+	}
+
+	struct __otter_fs_open_file_table_entry* open_file = get_open_file_from_fd(fd1);
+	if(!open_file)
+	{
+		errno = EBADF;
+		return(-1);
+	}
+
+	if(__otter_fs_fd_table[fd1] == __otter_fs_fd_table[fd2])
+		return(fd2);
+
+	open_file = get_open_file_from_fd(fd2);
+	if(open_file) /* is file a valid file entry? */
+	{
+		close(fd2);
+	}
+
+	return fcntl(fd1, F_DUPFD, fd2);
 }

@@ -115,6 +115,11 @@ let otter_gfree job multijob retopt exps =
 		| _ ->
 			Output.set_mode Output.MSG_MUSTPRINT;
 			FormatPlus.failwith "gfreeing something that is not a valid pointer:@ @[%a@]@ = @[%a@]@\n" Printer.exp (List.hd exps) BytesPrinter.bytes ptr
+			
+let otter_get_pid job multijob retopt exps =
+	let state', _ = BuiltinFunctions.set_return_value job.state retopt (int_to_bytes multijob.current_pid) Types.Channel in
+	let job = BuiltinFunctions.end_function_call { job with state = state' } in
+	(Active job, multijob)
 
 let interceptor job multijob job_queue interceptor =
 	try
@@ -123,6 +128,7 @@ let interceptor job multijob job_queue interceptor =
 		(intercept_multi_function_by_name_internal "fork"                       libc_fork) @@@
 		(intercept_multi_function_by_name_internal "__otter_multi_gmalloc"      otter_gmalloc) @@@
 		(intercept_multi_function_by_name_internal "__otter_multi_gfree"        otter_gfree) @@@
+		(intercept_multi_function_by_name_internal "__otter_multi_get_pid"      otter_get_pid) @@@
 
 		(* pass on the job when none of those match *)
 		interceptor
