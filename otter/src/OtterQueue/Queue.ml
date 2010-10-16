@@ -27,6 +27,6 @@ let get_default () = match !default_queue with
 let options = [
     "--driver",
         Arg.Symbol (fst (List.split queues), fun name -> default_queue := List.assoc name queues),
-        "<queue name> Set the default job queue (default: generational:breadth-first)";
+        "<queue name> Set the default job queue (default: " ^ (fst (List.find (fun (_, x) -> x = !default_queue) queues)) ^ ")";
 ]
 
