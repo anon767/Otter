@@ -12,46 +12,58 @@ let test_coverage content ?label tracked_fns test =
             Executeargs.arg_edge_coverage := true;
             Executeargs.arg_block_coverage := true;
             Executeargs.arg_line_coverage := true;
+            Executeargs.arg_cond_coverage := true;
+            Executeargs.arg_path_coverage := true;
             (* enable tracking on given functions *)
             Executeargs.arg_fns := tracked_fns;
         end
         begin fun results ->
             (* figure out the coverage *)
-            let (all_edges, all_blocks, all_lines) = List.fold_left begin fun (edges, blocks, lines) result ->
+            let (all_edges, all_blocks, all_lines, all_conds, all_paths_count) = List.fold_left begin fun (edges, blocks, lines, conds, paths_count) result ->
                 match result with
                     | Return (_, c)
                     | Exit (_, c) ->
                         let edges = EdgeSet.union edges c.result_history.coveredEdges in
                         let blocks = StmtInfoSet.union blocks c.result_history.coveredBlocks in
                         let lines = LineSet.union lines c.result_history.coveredLines in
-                        (edges, blocks, lines)
+                        let conds = CondSet.union conds c.result_history.coveredConds in
+                        (edges, blocks, lines, conds, paths_count + 1)
                     | Truncated (c, d) ->
                         let edges = EdgeSet.union
-                            (EdgeSet.union edges c.result_history.coveredEdges)
-                            d.result_history.coveredEdges
+                            c.result_history.coveredEdges
+                            (EdgeSet.union edges d.result_history.coveredEdges)
                         in
                         let blocks = StmtInfoSet.union
-                            (StmtInfoSet.union blocks c.result_history.coveredBlocks)
-                            d.result_history.coveredBlocks
+                            c.result_history.coveredBlocks
+                            (StmtInfoSet.union blocks d.result_history.coveredBlocks)
                         in
                         let lines = LineSet.union
-                            (LineSet.union lines c.result_history.coveredLines)
-                            d.result_history.coveredLines
+                            c.result_history.coveredLines
+                            (LineSet.union lines d.result_history.coveredLines)
                         in
-                        (edges, blocks, lines)
+                        let conds = CondSet.union
+                            c.result_history.coveredConds
+                            (CondSet.union conds d.result_history.coveredConds)
+                        in
+                        (edges, blocks, lines, conds, paths_count + 2)
                     | Abandoned _ ->
-                        (edges, blocks, lines)
-            end (EdgeSet.empty, StmtInfoSet.empty, LineSet.empty) results in
+                        (edges, blocks, lines, conds, paths_count)
+            end (EdgeSet.empty, StmtInfoSet.empty, LineSet.empty, CondSet.empty, 0) results in
             let all_edges_count = EdgeSet.cardinal all_edges in
             let all_blocks_count = StmtInfoSet.cardinal all_blocks in
             let all_lines_count = LineSet.cardinal all_lines in
+            let all_conds_count = CondSet.cardinal all_conds in
 
             (* finally run the test *)
-            test results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count
+            test results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count all_conds_count all_paths_count
         end
 
 (* assert_equal helper with a descriptive error message *)
+let assert_edges_count = assert_equal ~printer:(fun ff -> Format.fprintf ff "%d") ~msg:"Wrong number of edges"
 let assert_blocks_count = assert_equal ~printer:(fun ff -> Format.fprintf ff "%d") ~msg:"Wrong number of blocks"
+let assert_lines_count = assert_equal ~printer:(fun ff -> Format.fprintf ff "%d") ~msg:"Wrong number of lines"
+let assert_conds_count = assert_equal ~printer:(fun ff -> Format.fprintf ff "%d") ~msg:"Wrong number of conditionals"
+let assert_paths_count = assert_equal ~printer:(fun ff -> Format.fprintf ff "%d") ~msg:"Wrong number of paths"
 
 
 (*
@@ -64,7 +76,7 @@ let simple_coverage_testsuite = "Simple" >::: [
             return 0; /* 1 */
         }
     " ["main"]
-    begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
+    begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count all_conds_count all_paths_count ->
         assert_blocks_count 1 all_blocks_count
     end;
 
@@ -79,7 +91,7 @@ let simple_coverage_testsuite = "Simple" >::: [
             return i; /* 3 */
         }
     " ["main"]
-    begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
+    begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count all_conds_count all_paths_count ->
         assert_blocks_count 3 all_blocks_count
     end;
 ]
@@ -92,7 +104,7 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
             return 0; /* 3 */
         }
     " ["main"; "foo"]
-    begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
+    begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count all_conds_count all_paths_count ->
         assert_blocks_count 3 all_blocks_count
     end;
 
@@ -105,7 +117,7 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
             return 0; /* 3 */
         }
     " ["main"; "foo"]
-    begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
+    begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count all_conds_count all_paths_count ->
         assert_blocks_count 3 all_blocks_count
     end;
 
@@ -118,7 +130,7 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
             return 0; /* 5 */
         }
     " ["main"; "foo"; "bar"]
-    begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
+    begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count all_conds_count all_paths_count ->
         assert_blocks_count 5 all_blocks_count
     end;
 
@@ -134,7 +146,7 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
             return 0; /* 5 */
         }
     " ["main"; "foo"; "bar"]
-    begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
+    begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count all_conds_count all_paths_count ->
         assert_blocks_count 5 all_blocks_count
     end;
 
@@ -146,7 +158,7 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
             return 0; /* 5 */
         }
     " ["main"; "foo"; "bar"]
-    begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
+    begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count all_conds_count all_paths_count ->
         assert_blocks_count 5 all_blocks_count
     end;
 ]
@@ -173,7 +185,7 @@ let function_pointers_coverage_testsuite = "Function pointers" >::: [
             return 0;
         }
     " ["main"; "foo0"; "foo1"; "foo2"; "foo3"]
-    begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
+    begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count all_conds_count all_paths_count ->
         assert_blocks_count 7 all_blocks_count
     end;
 
@@ -199,7 +211,7 @@ let function_pointers_coverage_testsuite = "Function pointers" >::: [
             return 0;
         }
     " ["main"; "foo0"; "foo1"; "foo2"; "foo3"]
-    begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
+    begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count all_conds_count all_paths_count ->
         assert_blocks_count 7 all_blocks_count
     end;
 
@@ -225,7 +237,7 @@ let function_pointers_coverage_testsuite = "Function pointers" >::: [
             return 0;
         }
     " ["main"; "foo0"; "foo1"; "foo2"; "foo3"]
-    begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
+    begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count all_conds_count all_paths_count ->
         assert_blocks_count 6 all_blocks_count
     end;
 
@@ -248,7 +260,7 @@ let function_pointers_coverage_testsuite = "Function pointers" >::: [
             return 0;
         }
     " ["main"; "foo0"; "foo1"]
-    begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
+    begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count all_conds_count all_paths_count ->
         assert_blocks_count 5 all_blocks_count
     end;
 ]
