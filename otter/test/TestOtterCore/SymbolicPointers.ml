@@ -13,15 +13,14 @@ let test_symbolic_pointers content ?label test =
     test_otter_core content ?label ~entry_function:"foo"
         begin fun results ->
             (* count jobs *)
-            let return, exit, abandoned, truncated = List.fold_left begin fun (r, e, a, t) result -> match result with
-                | Return _ -> (r + 1, e, a, t)
-                | Exit _ ->  (r, e + 1, a, t)
-                | Abandoned _ -> (r, e, a + 1, t)
-                | Truncated _ -> (r, e, a, t + 1)
-            end (0, 0, 0, 0) results in
+            let return, exit, abandoned = List.fold_left begin fun (r, e, a) result -> match result with
+                | Return _ -> (r + 1, e, a)
+                | Exit _ ->  (r, e + 1, a)
+                | Abandoned _ -> (r, e, a + 1)
+            end (0, 0, 0) results in
 
             (* finally run the test *)
-            test results return exit abandoned truncated
+            test results return exit abandoned
         end
 
 
@@ -59,11 +58,10 @@ let soundness_testsuite = "Soundness" >::: [
                                 z = &y;
                             }
                         "] end
-                        begin fun results return exit abandoned truncated ->
+                        begin fun results return exit abandoned ->
                             assert_at_least return 3;
                             assert_equal exit 0;
                             assert_equal abandoned 0;
-                            assert_equal truncated 0;
                         end
                 end;
 
@@ -84,11 +82,10 @@ let soundness_testsuite = "Soundness" >::: [
                     z = &x;
                     z = &y;
                 }
-                " begin fun results return exit abandoned truncated ->
+                " begin fun results return exit abandoned ->
                     assert_at_least return 3;
                     assert_equal exit 0;
                     assert_equal abandoned 0;
-                    assert_equal truncated 0;
                 end;
         ];
 
@@ -115,11 +112,10 @@ let soundness_testsuite = "Soundness" >::: [
                                 y = &z;
                             }
                         "] end
-                        begin fun results return exit abandoned truncated ->
+                        begin fun results return exit abandoned ->
                             assert_at_least return 4;
                             assert_equal exit 0;
                             assert_equal abandoned 0;
-                            assert_equal truncated 0;
                         end
                 end;
         ];
@@ -148,11 +144,10 @@ let soundness_testsuite = "Soundness" >::: [
                                 foo(&y);
                             }
                         "] end
-                        begin fun results return exit abandoned truncated ->
+                        begin fun results return exit abandoned ->
                             assert_at_least return 3;
                             assert_equal exit 0;
                             assert_equal abandoned 0;
-                            assert_equal truncated 0;
                         end
                 end;
 
@@ -173,11 +168,10 @@ let soundness_testsuite = "Soundness" >::: [
                     foo(&x);
                     foo(&y);
                 }
-                " begin fun results return exit abandoned truncated ->
+                " begin fun results return exit abandoned ->
                     assert_at_least return 3;
                     assert_equal exit 0;
                     assert_equal abandoned 0;
-                    assert_equal truncated 0;
                 end;
         ];
 
@@ -203,11 +197,10 @@ let soundness_testsuite = "Soundness" >::: [
                                 foo(&z, &z);
                             }
                         "] end
-                        begin fun results return exit abandoned truncated ->
+                        begin fun results return exit abandoned ->
                             assert_at_least return 4;
                             assert_equal exit 0;
                             assert_equal abandoned 0;
-                            assert_equal truncated 0;
                         end
                 end;
         ];
@@ -231,11 +224,10 @@ let soundness_testsuite = "Soundness" >::: [
                 z.next = 0;
                 foo(&x);
             }
-        " begin fun results return exit abandoned truncated ->
+        " begin fun results return exit abandoned ->
             assert_at_least return 4;
             assert_equal exit 0;
             assert_equal abandoned 0;
-            assert_equal truncated 0;
         end;
 
         (* since the nodes are allocated on the stack and the analysis does not handle recursion, there should be
@@ -266,11 +258,10 @@ let soundness_testsuite = "Soundness" >::: [
             void main(void) {
                 bar(0);
             }
-        " begin fun results return exit abandoned truncated ->
+        " begin fun results return exit abandoned ->
             assert_at_least return 4;
             assert_equal exit 0;
             assert_equal abandoned 0;
-            assert_equal truncated 0;
         end;
 
         (* since the nodes are dynamically allocated, there should be at least 4 iterations:
@@ -292,11 +283,10 @@ let soundness_testsuite = "Soundness" >::: [
                 x->next = 0;
                 foo(head);
             }
-        " begin fun results return exit abandoned truncated ->
+        " begin fun results return exit abandoned ->
             assert_at_least return 4;
             assert_equal exit 0;
             assert_equal abandoned 0;
-            assert_equal truncated 0;
         end;
 
         (* since the nodes are allocated on the stack and the analysis does not handle recursion, there should be
@@ -321,11 +311,10 @@ let soundness_testsuite = "Soundness" >::: [
             void main(void) {
                 bar(0, 0);
             }
-        " begin fun results return exit abandoned truncated ->
+        " begin fun results return exit abandoned ->
             assert_at_least return 4;
             assert_equal exit 0;
             assert_equal abandoned 0;
-            assert_equal truncated 0;
         end;
     ]
 ]

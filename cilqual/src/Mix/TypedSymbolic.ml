@@ -163,8 +163,8 @@ module Switcher (T : Config.BlockConfig)  (S : Config.BlockConfig) = struct
                     | Job.Abandoned _, Some e ->
                         return (e::block_errors)
 
-                    | Job.Exit _, _         (* a program that exits cannot possibly affect the outer context *)
-                    | Job.Truncated _, _ -> (* truncated paths are those merged with other paths *)
+                    | Job.Exit _, _ ->
+                        (* a program that exits cannot possibly affect the outer context *)
                         return block_errors
 
                 end [] completed in

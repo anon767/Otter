@@ -70,8 +70,6 @@ let put_completion completion multijob = match completion with
 		{ multijob with
 			shared = shared;
 		}
-	| Truncated _ ->
-		failwith "TODO"
 
 
 (* get a job from a multijob *)

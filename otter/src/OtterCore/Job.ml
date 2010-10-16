@@ -109,7 +109,6 @@ type 'reason job_completion =
 	| Return of Bytes.bytes option * job_result
 	| Exit of Bytes.bytes option * job_result
 	| Abandoned of 'reason * Cil.location * job_result
-	| Truncated of job_result * job_result
 
 type 'reason job_state =
 	| Active of job

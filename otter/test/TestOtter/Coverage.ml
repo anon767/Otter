@@ -28,24 +28,6 @@ let test_coverage content ?label tracked_fns test =
                         let lines = LineSet.union lines c.result_history.coveredLines in
                         let conds = CondSet.union conds c.result_history.coveredConds in
                         (edges, blocks, lines, conds, paths_count + 1)
-                    | Truncated (c, d) ->
-                        let edges = EdgeSet.union
-                            c.result_history.coveredEdges
-                            (EdgeSet.union edges d.result_history.coveredEdges)
-                        in
-                        let blocks = StmtInfoSet.union
-                            c.result_history.coveredBlocks
-                            (StmtInfoSet.union blocks d.result_history.coveredBlocks)
-                        in
-                        let lines = LineSet.union
-                            c.result_history.coveredLines
-                            (LineSet.union lines d.result_history.coveredLines)
-                        in
-                        let conds = CondSet.union
-                            c.result_history.coveredConds
-                            (CondSet.union conds d.result_history.coveredConds)
-                        in
-                        (edges, blocks, lines, conds, paths_count + 2)
                     | Abandoned _ ->
                         (edges, blocks, lines, conds, paths_count)
             end (EdgeSet.empty, StmtInfoSet.empty, LineSet.empty, CondSet.empty, 0) results in

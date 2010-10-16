@@ -12,20 +12,17 @@ let test_bounds content ?label ?has_failing_assertions test =
 
 
 (* Baseline testing function *)
-let expectedResultCounts r e a t results =
-  (* count completion types *)
-	assert_equal
-		~printer:(fun ff (r,e,a,t) -> Format.fprintf ff "%d returned; %d exited; %d abandoned; %d truncated" r e a t)
-		(r,e,a,t)
-		(List.fold_left
-			 (fun (r,e,a,t) -> function
-					| Return _ -> succ r, e, a, t
-					| Exit _ -> r, succ e, a, t
-					| Abandoned _ -> r, e, succ a, t
-					| Truncated _ -> r, e, a, succ t)
-			 (0,0,0,0)
-			 results)
-
+let expectedResultCounts r e a results =
+    (* count completion types *)
+    let counts = List.fold_left begin fun (r,e,a) -> function
+        | Return _ -> (succ r, e, a)
+        | Exit _ -> (r, succ e, a)
+        | Abandoned _ -> (r, e, succ a)
+    end (0, 0, 0) results in
+    assert_equal
+        ~printer:(fun ff (r,e,a) -> Format.fprintf ff "%d returned; %d exited; %d abandoned" r e a)
+        (r, e, a)
+        counts
 
 (*
  * OUnit test suite
@@ -40,7 +37,7 @@ let simple_testsuite = "Simple" >::: [
   p = &x[10];
   return 0;
 }"
-	(fun res -> expectedResultCounts 1 0 0 0 res);
+	(fun res -> expectedResultCounts 1 0 0 res);
 
   test_bounds ~label:"Acceptable negative offset"
 "int main() {
@@ -48,7 +45,7 @@ let simple_testsuite = "Simple" >::: [
   p[-1] = 1;
   return 0;
 }"
-	(fun res -> expectedResultCounts 1 0 0 0 res);
+	(fun res -> expectedResultCounts 1 0 0 res);
 
   test_bounds ~label:"Explicit buffer overrun"
 "int main() {
@@ -56,7 +53,7 @@ let simple_testsuite = "Simple" >::: [
   return x[2];
 }"
 	~has_failing_assertions:true
-	(fun res -> expectedResultCounts 0 0 1 0 res);
+	(fun res -> expectedResultCounts 0 0 1 res);
 
   test_bounds ~label:"Explicit buffer underrun"
 "int main() {
@@ -64,7 +61,7 @@ let simple_testsuite = "Simple" >::: [
   return x[-1];
 }"
 	~has_failing_assertions:true
-	(fun res -> expectedResultCounts 0 0 1 0 res);
+	(fun res -> expectedResultCounts 0 0 1 res);
 
   test_bounds ~label:"Explicit malloc overrun"
 "int main() {
@@ -72,7 +69,7 @@ let simple_testsuite = "Simple" >::: [
   return x[3];
 }"
 	~has_failing_assertions:true
-	(fun res -> expectedResultCounts 0 0 1 0 res);
+	(fun res -> expectedResultCounts 0 0 1 res);
 
   test_bounds ~label:"Explicit malloc underrun"
 "int main() {
@@ -80,7 +77,7 @@ let simple_testsuite = "Simple" >::: [
   return x[-1];
 }"
 	~has_failing_assertions:true
-	(fun res -> expectedResultCounts 0 0 1 0 res);
+	(fun res -> expectedResultCounts 0 0 1 res);
 
   (* This test is barely different from the next one, because we treat offsets as unsigned anyway *)
   test_bounds ~label:"Possible buffer over- or underrun"
@@ -91,7 +88,7 @@ let simple_testsuite = "Simple" >::: [
 }"
 	~has_failing_assertions:true (* Warnings printed for over- and underrun *)
 	(fun res ->
-			 expectedResultCounts 1 0 0 0 res;
+			 expectedResultCounts 1 0 0 res;
 			 (* Make sure the path condition is the right length *)
 			 match res with
 					 [Return (_,res)] ->
@@ -109,7 +106,7 @@ let simple_testsuite = "Simple" >::: [
 }"
 	~has_failing_assertions:true (* Warnings printed for overrun *)
 	(fun res ->
-			 expectedResultCounts 1 0 0 0 res;
+			 expectedResultCounts 1 0 0 res;
 			 (* Make sure the path condition is the right length *)
 			 match res with
 					 [Return (_,res)] ->
@@ -125,7 +122,7 @@ let simple_testsuite = "Simple" >::: [
 	*p = 9;
   return 0;
 }"
-	(fun res -> expectedResultCounts 1 0 0 0 res);
+	(fun res -> expectedResultCounts 1 0 0 res);
 
 	test_bounds ~label:"Underrun on then branch; overrun on else branch"
 "int main() {
@@ -138,7 +135,7 @@ let simple_testsuite = "Simple" >::: [
 }"
 	~has_failing_assertions:true (* Warnings printed for over- and underrun *)
 	(fun res ->
-			 expectedResultCounts 0 0 2 0 res;
+			 expectedResultCounts 0 0 2 res;
 			 (* Make sure the path conditions are each length 1 *)
 			 match res with
 					 [Abandoned (_,_,res1); Abandoned (_,_,res2)] ->
@@ -165,7 +162,7 @@ let simple_testsuite = "Simple" >::: [
   return x[i];
 }"
 	~has_failing_assertions:true (* Warnings printed for overrun *)
-	(fun res -> expectedResultCounts 1 0 0 0 res);
+	(fun res -> expectedResultCounts 1 0 0 res);
 
 	(* This __ASSUME works because the cast to unsigned makes the
 		 inequality function in unsigned arithmetic, so it successfully
@@ -177,7 +174,7 @@ let simple_testsuite = "Simple" >::: [
   __ASSUME(0 <= i, (unsigned)i*sizeof(x[0]) < sizeof(x));
   return x[i];
 }"
-	(fun res -> expectedResultCounts 1 0 0 0 res);
+	(fun res -> expectedResultCounts 1 0 0 res);
 
   test_bounds ~label:"Offset in bounds but offset+length out of bounds on read"
 "int main() {
@@ -186,7 +183,7 @@ let simple_testsuite = "Simple" >::: [
   return *p;
 }"
 	~has_failing_assertions:true (* Warnings printed for overrun *)
-	(fun res -> expectedResultCounts 0 0 1 0 res);
+	(fun res -> expectedResultCounts 0 0 1 res);
 
   test_bounds ~label:"Offset in bounds but offset+length out of bounds on write"
 "int main() {
@@ -196,7 +193,7 @@ let simple_testsuite = "Simple" >::: [
   return 0;
 }"
 	~has_failing_assertions:true (* Warnings printed for overrun *)
-	(fun res -> expectedResultCounts 0 0 1 0 res);
+	(fun res -> expectedResultCounts 0 0 1 res);
 ]
 
 let testsuite = "BoundsChecking" >::: [
