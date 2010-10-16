@@ -43,5 +43,3 @@ class ['job] t empty_generation = object
                 let next = RandomBag.fold (fun x next -> next#put x) work next in
                 Some ({< work = RandomBag.empty; next = next >}, job)
 end
-
-let make empty_generation = new t empty_generation

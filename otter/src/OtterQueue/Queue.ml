@@ -17,12 +17,12 @@ let default_queue = ref (`Generational `BreadthFirst)
 (* need get_default to get around value restriction that limits polymorphism in the queues list *)
 let get_default () = match !default_queue with
     | `BestFirst -> BestFirstQueue.make_default () 
-    | `BreadthFirst -> BreadthFirstQueue.make ()
-    | `DepthFirst -> DepthFirstQueue.make ()
-    | `RandomPath -> RandomPathQueue.make ()
-    | `Generational `BreadthFirst -> GenerationalQueue.make (BreadthFirstQueue.make ())
-    | `Generational `DepthFirst -> GenerationalQueue.make (DepthFirstQueue.make ())
-    | `Generational `RandomPath -> GenerationalQueue.make (RandomPathQueue.make ())
+    | `BreadthFirst -> new BreadthFirstQueue.t
+    | `DepthFirst -> new DepthFirstQueue.t
+    | `RandomPath -> new RandomPathQueue.t
+    | `Generational `BreadthFirst -> new GenerationalQueue.t (new BreadthFirstQueue.t)
+    | `Generational `DepthFirst -> new GenerationalQueue.t (new DepthFirstQueue.t)
+    | `Generational `RandomPath -> new GenerationalQueue.t (new RandomPathQueue.t)
 
 let options = [
     "--driver",

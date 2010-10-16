@@ -16,5 +16,3 @@ class ['job] t = object
                 | [] -> None
             end
 end
-
-let make () = new t
