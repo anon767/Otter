@@ -1,11 +1,11 @@
 
-SUBDIRS=cilqual cil ocamlstp stp camlidl ocaml-base-noparser ocamlgraph
+SUBDIRS=cilqual cil ocamlstp stp camlidl ocamlgraph
 
 EXTRALIBDIRS=$(addprefix $(CURDIR)/,camlidl/runtime stp/lib ocamlstp)
 EXTRAOCAMLPATH=$(CURDIR)
 
 CTAGS_FILE=tags
-CTAGS_SOURCE_PATHS=otter/src cil/src ocaml-base-noparser/lib ocamlstp
+CTAGS_SOURCE_PATHS=otter/src cil/src ocamlstp
 
 
 # augment configuration from Makefile.local, if it exists
@@ -39,7 +39,7 @@ make//otter : \
 		EXTRALIBDIRS='$(EXTRALIBDIRS)' \
 		EXTRAOCAMLPATH='$(EXTRAOCAMLPATH)' \
 		--with-cil='$(CURDIR)/cil'
-make//otter : cil ocamlstp ocaml-base-noparser ocamlgraph
+make//otter : cil ocamlstp ocamlgraph
 
 
 cilqual : make//cilqual
@@ -76,11 +76,6 @@ make//stp : CONFIGURE_FLAGS=--with-prefix=.
 camlidl : make//camlidl
 make//camlidl : MAKEGOALS=
 make//camlidl : CONFIGURE_FLAGS=
-
-
-ocaml-base-noparser : make//ocaml-base-noparser
-make//ocaml-base-noparser : MAKEGOALS=
-make//ocaml-base-noparser : CONFIGURE_FLAGS=
 
 
 ocamlgraph : make//ocamlgraph
