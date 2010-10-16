@@ -6,43 +6,49 @@ open Job
 
 (* test helper that runs the symbolic executor on a file given a source code as a string, and calculates coverage *)
 let test_coverage content ?label tracked_fns test =
-	test_otter content ?label
-		~setup:begin fun _ ->
-			(* enable coverage tracking *)
-			Executeargs.arg_edge_coverage := true;
-			Executeargs.arg_block_coverage := true;
-			Executeargs.arg_line_coverage := true;
-			(* enable tracking on given functions *)
-			Executeargs.arg_fns := tracked_fns;
-		end
-		begin fun results ->
-			(* figure out the coverage *)
-			let (all_edges, all_blocks, all_lines) = List.fold_left begin fun (edges, blocks, lines) result ->
-				match result with
-					| Return (_, c)
-					| Exit (_, c) ->
-						let edges = EdgeSet.union edges c.result_history.coveredEdges in
-						let blocks = StmtInfoSet.union blocks c.result_history.coveredBlocks in
-						let lines = LineSet.union lines c.result_history.coveredLines in
-						(edges, blocks, lines)
-					| Truncated (c, d) ->
-						let edges = EdgeSet.union (EdgeSet.union edges c.result_history.coveredEdges)
-												 d.result_history.coveredEdges in
-						let blocks = StmtInfoSet.union (StmtInfoSet.union blocks c.result_history.coveredBlocks)
-												 d.result_history.coveredBlocks in
-						let lines = LineSet.union (LineSet.union lines c.result_history.coveredLines)
-												 d.result_history.coveredLines in
-						(edges, blocks, lines)
-					| Abandoned _ ->
-						(edges, blocks, lines)
-			end (EdgeSet.empty, StmtInfoSet.empty, LineSet.empty) results in
-			let all_edges_count = EdgeSet.cardinal all_edges in
-			let all_blocks_count = StmtInfoSet.cardinal all_blocks in
-			let all_lines_count = LineSet.cardinal all_lines in
+    test_otter content ?label
+        ~setup:begin fun _ ->
+            (* enable coverage tracking *)
+            Executeargs.arg_edge_coverage := true;
+            Executeargs.arg_block_coverage := true;
+            Executeargs.arg_line_coverage := true;
+            (* enable tracking on given functions *)
+            Executeargs.arg_fns := tracked_fns;
+        end
+        begin fun results ->
+            (* figure out the coverage *)
+            let (all_edges, all_blocks, all_lines) = List.fold_left begin fun (edges, blocks, lines) result ->
+                match result with
+                    | Return (_, c)
+                    | Exit (_, c) ->
+                        let edges = EdgeSet.union edges c.result_history.coveredEdges in
+                        let blocks = StmtInfoSet.union blocks c.result_history.coveredBlocks in
+                        let lines = LineSet.union lines c.result_history.coveredLines in
+                        (edges, blocks, lines)
+                    | Truncated (c, d) ->
+                        let edges = EdgeSet.union
+                            (EdgeSet.union edges c.result_history.coveredEdges)
+                            d.result_history.coveredEdges
+                        in
+                        let blocks = StmtInfoSet.union
+                            (StmtInfoSet.union blocks c.result_history.coveredBlocks)
+                            d.result_history.coveredBlocks
+                        in
+                        let lines = LineSet.union
+                            (LineSet.union lines c.result_history.coveredLines)
+                            d.result_history.coveredLines
+                        in
+                        (edges, blocks, lines)
+                    | Abandoned _ ->
+                        (edges, blocks, lines)
+            end (EdgeSet.empty, StmtInfoSet.empty, LineSet.empty) results in
+            let all_edges_count = EdgeSet.cardinal all_edges in
+            let all_blocks_count = StmtInfoSet.cardinal all_blocks in
+            let all_lines_count = LineSet.cardinal all_lines in
 
-			(* finally run the test *)
-			test results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count
-		end
+            (* finally run the test *)
+            test results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count
+        end
 
 (* assert_equal helper with a descriptive error message *)
 let assert_blocks_count = assert_equal ~printer:(fun ff -> Format.fprintf ff "%d") ~msg:"Wrong number of blocks"
@@ -70,7 +76,7 @@ let simple_coverage_testsuite = "Simple" >::: [
             } else {
                 i = 1; /* 2 */
             }
-            return i;  /* 3 */
+            return i; /* 3 */
         }
     " ["main"]
     begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
@@ -82,7 +88,7 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
     test_coverage ~label:"foo();" "
         void foo(void) { /* return:2 */ }
         int main(int argc, char *argv[]) {
-            foo();    /* 1 */
+            foo(); /* 1 */
             return 0; /* 3 */
         }
     " ["main"; "foo"]
@@ -95,7 +101,7 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
         int main(int argc, char *argv[]) {
             int x;
             x = 1;
-            foo();    /* 1 */
+            foo(); /* 1 */
             return 0; /* 3 */
         }
     " ["main"; "foo"]
@@ -107,8 +113,8 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
         void foo(void) { /* return:2 */ }
         void bar(void) { /* return:4 */ }
         int main(int argc, char *argv[]) {
-            foo();    /* 1 */
-            bar();    /* 3 */
+            foo(); /* 1 */
+            bar(); /* 3 */
             return 0; /* 5 */
         }
     " ["main"; "foo"; "bar"]
@@ -122,9 +128,9 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
         int main(int argc, char *argv[]) {
             int x, y;
             x = 1;
-            foo();    /* 1 */
+            foo(); /* 1 */
             y = 2;
-            bar();    /* 3 */
+            bar(); /* 3 */
             return 0; /* 5 */
         }
     " ["main"; "foo"; "bar"]
@@ -136,7 +142,7 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
         void bar(void) { /* return:3 */ }
         void foo(void) { bar(); /* 2, return:4 */ }
         int main(int argc, char *argv[]) {
-            foo();    /* 1 */
+            foo(); /* 1 */
             return 0; /* 5 */
         }
     " ["main"; "foo"; "bar"]
@@ -148,24 +154,24 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
 let function_pointers_coverage_testsuite = "Function pointers" >::: [
     test_coverage ~label:"Call with symbolic index" "
         int foo0() {return 0;}
-	int foo1() {return 1;}
-	int foo2() {return 2;}
-	int foo3() {return 3;}
+        int foo1() {return 1;}
+        int foo2() {return 2;}
+        int foo3() {return 3;}
 
-	typedef int (*FP)();
+        typedef int (*FP)();
 
-	int main()
-	{
-		FP a[4];
-		a[0] = foo0;
-		a[1] = foo1;
-		a[2] = foo2;
-		a[3] = foo3;
-	
-		int x = a[__SYMBOLIC() % 4]();
+        int main()
+        {
+            FP a[4];
+            a[0] = foo0;
+            a[1] = foo1;
+            a[2] = foo2;
+            a[3] = foo3;
 
-		return 0;
-	}
+            int x = a[__SYMBOLIC() % 4]();
+
+            return 0;
+        }
     " ["main"; "foo0"; "foo1"; "foo2"; "foo3"]
     begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
         assert_blocks_count 7 all_blocks_count
@@ -173,74 +179,74 @@ let function_pointers_coverage_testsuite = "Function pointers" >::: [
 
    test_coverage ~label:"Call with symbolic pointer" "
         int foo0() {return 0;}
-	int foo1() {return 1;}
-	int foo2() {return 2;}
-	int foo3() {return 3;}
+        int foo1() {return 1;}
+        int foo2() {return 2;}
+        int foo3() {return 3;}
 
-	typedef int (*FP)();
+        typedef int (*FP)();
 
-	int main()
-	{
-		FP a[4];
-		a[0] = foo0;
-		a[1] = foo1;
-		a[2] = foo2;
-		a[3] = foo3;
-	
-		FP x = a[__SYMBOLIC() % 4];
-		x();
+        int main()
+        {
+            FP a[4];
+            a[0] = foo0;
+            a[1] = foo1;
+            a[2] = foo2;
+            a[3] = foo3;
 
-		return 0;
-	}
+            FP x = a[__SYMBOLIC() % 4];
+            x();
+
+            return 0;
+        }
     " ["main"; "foo0"; "foo1"; "foo2"; "foo3"]
     begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
         assert_blocks_count 7 all_blocks_count
     end;
 
-   test_coverage ~label:"Call on subset" "
+    test_coverage ~label:"Call on subset" "
         int foo0() {return 0;}
-	int foo1() {return 1;}
-	int foo2() {return 2;}
-	int foo3() {return 3;}
+        int foo1() {return 1;}
+        int foo2() {return 2;}
+        int foo3() {return 3;}
 
-	typedef int (*FP)();
+        typedef int (*FP)();
 
-	int main()
-	{
-		FP a[4];
-		a[0] = foo0;
-		a[1] = foo1;
-		a[2] = foo2;
-		a[3] = foo3;
-	
-		FP x = a[__SYMBOLIC() % 3];
-		x();
+        int main()
+        {
+            FP a[4];
+            a[0] = foo0;
+            a[1] = foo1;
+            a[2] = foo2;
+            a[3] = foo3;
 
-		return 0;
-	}
+            FP x = a[__SYMBOLIC() % 3];
+            x();
+
+            return 0;
+        }
     " ["main"; "foo0"; "foo1"; "foo2"; "foo3"]
     begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
         assert_blocks_count 6 all_blocks_count
     end;
 
-   test_coverage ~label:"Call with broken functions." "
-	int foo0(int a) {return 1;}
-	int foo1(int a) {return 1;}
+    test_coverage ~label:"Call with broken functions." "
+        int foo0(int a) {return 1;}
+        int foo1(int a) {return 1;}
 
-	typedef int (*FP)(int);
+        typedef int (*FP)(int);
 
-	int main()
-	{
-		FP a[4];
-		a[0] = foo0;
-		a[1] = 0;
-		a[2] = foo1;
-	
-		FP x = a[__SYMBOLIC() % 4];
-		x(0);
+        int main()
+        {
+            FP a[4];
+            a[0] = foo0;
+            a[1] = 0;
+            a[2] = foo1;
 
-		return 0;
-	}
+            FP x = a[__SYMBOLIC() % 4];
+            x(0);
+
+            return 0;
+        }
     " ["main"; "foo0"; "foo1"]
     begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count ->
         assert_blocks_count 5 all_blocks_count
