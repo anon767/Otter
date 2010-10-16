@@ -276,50 +276,56 @@ let exec_stmt job channel =
                             result_history = nextExHist None;
                             result_decision_path = job.decisionPath; })), channel
                 | (Source (destOpt,callStmt,_,nextStmt))::_ ->
-                        let state2, channel =
+                        let state, channel =
                             match expopt, destOpt with
                                 | Some exp, Some dest ->
-                                     (* evaluate the return expression in the callee frame *)
-                                     let state, rv, channel = Expression.rval state exp channel in
-                                     let state = MemOp.state__end_fcall state in
-                                     (* evaluate the assignment in the caller frame *)
-                                     let state, lval, channel = Expression.lval state dest channel in
-                                        MemOp.state__assign state lval rv, channel
+                                    (* evaluate the return expression in the callee frame *)
+                                    let state, rv, channel = Expression.rval state exp channel in
+                                    let state = MemOp.state__end_fcall state in
+                                    (* evaluate the assignment in the caller frame *)
+                                    let state, lval, channel = Expression.lval state dest channel in
+                                    (MemOp.state__assign state lval rv, channel)
                                 | _, _ ->
                                      (* If we are not returning a value, or if we
                                         ignore the result, just end the call *)
-                                     MemOp.state__end_fcall state, channel
+                                    (MemOp.state__end_fcall state, channel)
                         in
-                        let callingFuncName = (List.hd state2.callstack).svar.vname in
-                        (* Update the state, stmt, exHist, and whether or not
-                             we're in a tracked function *)
-                        let job' = { job with
-                            state = state2;
-                            stmt = nextStmt;
-                            inTrackedFn = StringSet.mem callingFuncName job.trackedFns;
-                        } in
+
+                        let callingFuncName = (List.hd state.callstack).svar.vname in
+                        let inTrackedFn = StringSet.mem callingFuncName job.trackedFns in
+
                         (* When a function returns, we have to record the
                            coverage within the returning function and also the
                            *edge* in the calling function from the call
                            instruction's block to the next block. *)
-                        (* First, record coverage for the returning function: *)
-                        let exHist = nextExHist None in (* [None] because we don't currently track returns as edges for purposes of coverage *)
-                            Active { job' with exHist =
-                                (* Now record the edge in the calling function. We
-                                     can't use nextExHist because the edge we want
-                                     is 'from the past' rather than 'into the
-                                     future'; so we have to check whether we should
-                                     in fact record coverage. (We have to use job'
-                                     (not job) here and in a few lines.) *)
-                                if job'.inTrackedFn && !Executeargs.arg_edge_coverage then
-                                    { exHist with coveredEdges =
-                                        EdgeSet.add
-                                            ({ siFuncName = callingFuncName; siStmt = callStmt; }, (* A call ends a block, so use callStmt directly *)
-                                             stmtInfo_of_job job')
-                                            exHist.coveredEdges
-                                    }
-                                else exHist
-                            }, channel
+                        let exHist =
+                            (* First, record coverage for the returning function: *)
+                            let exHist = nextExHist None in (* [None] because we don't currently track returns as edges for purposes of coverage *)
+
+                            (* Now record the edge in the calling function. We
+                                 can't use nextExHist because the edge we want
+                                 is 'from the past' rather than 'into the
+                                 future'; so we have to check whether we should
+                                 in fact record coverage. *)
+                            if inTrackedFn && !Executeargs.arg_edge_coverage then
+                                let coveredEdges = EdgeSet.add
+                                    ({ siFuncName = callingFuncName; siStmt = callStmt; }, (* A call ends a block, so use callStmt directly *)
+                                        { siFuncName = callingFuncName; siStmt = Coverage.stmtAtEndOfBlock nextStmt })
+                                    exHist.coveredEdges
+                                in
+                                { exHist with coveredEdges = coveredEdges; }
+                            else
+                                exHist
+                        in
+
+                        let job = { job with
+                            state = state;
+                            stmt = nextStmt;
+                            inTrackedFn = inTrackedFn;
+                            exHist = exHist;
+                        } in
+                        (Active job, channel)
+
                 | (NoReturn _)::_ ->
                         failwith "Return from @noreturn function"
                 | [] ->
