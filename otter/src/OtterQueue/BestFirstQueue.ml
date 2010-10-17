@@ -21,8 +21,3 @@ class ['job] t prioritizer = object
         let (job, _) = Heap.find_min heap in
         Some ({< heap = Heap.delete_min heap >}, job)
 end
-
-let default_prioritizer job = Drop "This is the default prioritizer; please implement your own."
-
-let make prioritizer = new t prioritizer 
-let make_default () = make default_prioritizer 

@@ -300,7 +300,7 @@ let callchain_backward_se file entryfn assertfn job_init : _ job_completion list
           >>> BuiltinFunctions.interceptor in
 	  let queue =
           if (!Executeargs.arg_cfg_pruning) then
-              BestFirstQueue.make (distance_to_targets_prioritizer job.state.callstack (assertfn::(List.map (fun t -> t.target_func) targets)))
+              new BestFirstQueue.t (distance_to_targets_prioritizer job.state.callstack (assertfn::(List.map (fun t -> t.target_func) targets)))
           else
               Queue.get_default ()
       in

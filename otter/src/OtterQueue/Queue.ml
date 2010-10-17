@@ -3,7 +3,6 @@
 open OcamlUtilities
 
 let queues = [
-    "best-first", `BestFirst;
     "breadth-first", `BreadthFirst;
     "depth-first", `DepthFirst;
     "random-path", `RandomPath;
@@ -16,7 +15,6 @@ let default_queue = ref (`Generational `BreadthFirst)
 
 (* need get_default to get around value restriction that limits polymorphism in the queues list *)
 let get_default () = match !default_queue with
-    | `BestFirst -> BestFirstQueue.make_default () 
     | `BreadthFirst -> new BreadthFirstQueue.t
     | `DepthFirst -> new DepthFirstQueue.t
     | `RandomPath -> new RandomPathQueue.t
