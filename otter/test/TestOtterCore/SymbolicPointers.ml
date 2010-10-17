@@ -7,8 +7,7 @@ open Types
 open Job
 
 
-(* test helper that runs the symbolic executor on a file given a source code as a string, and counts jobs that were
-   merged *)
+(* test helper that runs the symbolic executor on a file given a source code as a string, and counts the results *)
 let test_symbolic_pointers content ?label test =
     test_otter_core content ?label ~entry_function:"foo"
         begin fun results ->
