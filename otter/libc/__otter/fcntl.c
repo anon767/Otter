@@ -87,7 +87,8 @@ int __otter_libc_open(const char* path, int oflag, ...)
 {
 	if(O_NONBLOCK & oflag) /* non blocking I/O not supported */
 	{
-		__ASSERT(0);
+		/*__ASSERT(0);*/
+		/* ignore nonblock */
 	}
 
 	if (O_TRUNC & oflag && !(O_WRONLY & oflag)) /* undefined behavior */
