@@ -32,10 +32,7 @@ static void session_init(struct vsf_session* p_sess);
 static void env_init(void);
 
  // ADDED FOR PURPOSES OF SYMBOLIC TESTING
-extern void symtest_initialize(void);
-extern int dup2(int,int);
-extern int socket(int,int,int);
-char confFileContents[] = "chown_upload_mode=00600\nmax_login_fails=3\n\nanonymous_enable=1\nport_enable=TRUE\npasv_enable=YES\nlocal_enable=0\nchroot_local_user=FALSE\nwrite_enable=NO\n#\npam_service_name=ftp\nlisten_address6=\n";
+char confFileContents[] = "chown_upload_mode=00600\nmax_login_fails=3\n\nanonymous_enable=1\nport_enable=TRUE\npasv_enable=YES\nlocal_enable=0\nchroot_local_user=FALSE\nwrite_enable=NO\n#\npam_service_name=ftp\nlisten_address6=\nlisten=1\n";
 unsigned int confFileSize = sizeof(confFileContents) - 1;
 
 int
@@ -46,6 +43,11 @@ main(int argc, const char* argv[])
   __otter_fs_touch("foo.txt", __otter_fs_pwd);
   open("foo.txt", O_RDWR);
   setuid(__otter_UID_ROOT);
+  struct __otter_fs_dnode* dnode = __otter_fs_mkdir("etc", __otter_fs_root);
+  __otter_fs_touch("vsftpd.conf", dnode);
+  int conffd = open("/etc/vsftpd.conf", O_RDWR);
+  write(conffd, confFileContents, confFileSize);
+  close(conffd);
 
   struct vsf_session the_session =
   {
