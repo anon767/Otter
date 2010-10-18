@@ -185,7 +185,7 @@ struct __otter_fs_dnode* __otter_fs_find_dnode(const char* name_in)
 
 int __otter_fs_legal_char(char c)
 {
-	return (isalnum(c) | c == '-' | c == '_');
+	return (isalnum(c) | c == '-' | c == '_' | c == '.');
 }
 
 /* OtterFS only allows posix portable names */
@@ -268,6 +268,7 @@ struct __otter_fs_dnode* __otter_fs_mkdir(const char* name, struct __otter_fs_dn
 		(*newdir).numdirs = 2;
 		(*newdir).files = NULL;
 		(*newdir).dirs = basic_dir_entries0;
+		(*newdir).r_openno = 0;
 		(*newdir).permissions = __otter_fs_umask;
 		struct __otter_fs_dirlist* newdirlist = __otter_multi_gmalloc(sizeof(struct __otter_fs_dirlist));
 		(*newdirlist).name = name;
@@ -315,6 +316,8 @@ struct __otter_fs_inode* __otter_fs_touch(const char* name, struct __otter_fs_dn
 		(*newfile).permissions = __otter_fs_umask;
 		(*newfile).data = NULL;
 		(*newfile).numblocks = 0;
+		(*newfile).r_openno = 0;
+		(*newfile).w_openno = 0;
 		struct __otter_fs_filelist* newfilelist = __otter_multi_gmalloc(sizeof(struct __otter_fs_filelist));
 		(*newfilelist).name = name;
 		(*newfilelist).inode = newfile;

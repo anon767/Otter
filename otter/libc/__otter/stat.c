@@ -55,66 +55,8 @@ mode_t __otter_fs_type_to_mode(int type)
 	return (0);
 }
 
-int __otter_libc_fstat(int fd, struct stat* s)
+int __otter_libc_inode_stat(struct __otter_fs_inode* inode, struct stat* s)
 {
-	struct __otter_fs_open_file_table_entry* open_file = get_open_file_from_fd(fd);
-	if (!open_file) return -1;
-
-	if (open_file->type == __otter_fs_TYP_DIR)
-	{
-		struct __otter_fs_dnode* dnode = (struct __otter_fs_dnode*)open_file->vnode;
-		(*s).st_dev = 0;
-		(*s).st_ino = (int)dnode;
-		(*s).st_mode = (*dnode).permissions | S_IFDIR;
-		(*s).st_nlink = (*dnode).linkno;
-		(*s).st_uid = ((*dnode).permissions & S_ISUSR) >> 14;
-		(*s).st_gid = ((*dnode).permissions & S_ISGRP) >> 13;
-		(*s).st_rdev = 0;
-		(*s).st_size = (*dnode).numfiles + (*dnode).numdirs;
-		(*s).st_blksize = __otter_fs_BLOCK_SIZE;
-		(*s).st_blocks = (((*dnode).numfiles + (*dnode).numdirs) / __otter_fs_BLOCK_SIZE) + 1;
-
-		return (0);
-	}
-
-	struct __otter_fs_inode* inode = (struct __otter_fs_inode*)open_file->vnode;
-	(*s).st_dev = 0;
-	(*s).st_ino = (int)inode;
-	(*s).st_mode = (*inode).permissions | __otter_fs_type_to_mode((*inode).type);
-	(*s).st_nlink = (*inode).linkno;
-	(*s).st_uid = ((*inode).permissions & S_ISUSR) >> 14;
-	(*s).st_gid = ((*inode).permissions & S_ISGRP) >> 13;
-	(*s).st_rdev = 0;
-	(*s).st_size = (*inode).size;
-	(*s).st_blksize = __otter_fs_BLOCK_SIZE;
-	(*s).st_blocks = (*inode).numblocks;
-
-	return (0);
-}
-
-int __otter_libc_lstat(const char* name, struct stat* s)
-{
-	struct __otter_fs_inode* inode = __otter_fs_find_inode(name);
-	if(!inode)
-	{
-		struct __otter_fs_dnode* dnode = __otter_fs_find_dnode(name);
-		if(!dnode)
-			return (-1);
-
-		(*s).st_dev = 0;
-		(*s).st_ino = (int)dnode;
-		(*s).st_mode = (*dnode).permissions | S_IFDIR;
-		(*s).st_nlink = (*dnode).linkno;
-		(*s).st_uid = ((*dnode).permissions & S_ISUSR) >> 14;
-		(*s).st_gid = ((*dnode).permissions & S_ISGRP) >> 13;
-		(*s).st_rdev = 0;
-		(*s).st_size = (*dnode).numfiles + (*dnode).numdirs;
-		(*s).st_blksize = __otter_fs_BLOCK_SIZE;
-		(*s).st_blocks = (((*dnode).numfiles + (*dnode).numdirs) / __otter_fs_BLOCK_SIZE) + 1;
-
-		return (0);
-	}
-
 	(*s).st_dev = 0;
 	(*s).st_ino = (int)inode;
 	(*s).st_mode = (*inode).permissions | __otter_fs_type_to_mode((*inode).type);
@@ -136,6 +78,52 @@ int __otter_libc_lstat(const char* name, struct stat* s)
 	(*s).st_blocks = (*inode).numblocks;
 
 	return (0);
+}
+
+int __otter_libc_dnode_stat(struct __otter_fs_dnode* dnode, struct stat* s)
+{
+	(*s).st_dev = 0;
+	(*s).st_ino = (int)dnode;
+	(*s).st_mode = (*dnode).permissions | S_IFDIR;
+	(*s).st_nlink = (*dnode).linkno;
+	(*s).st_uid = ((*dnode).permissions & S_ISUSR) >> 13;
+	(*s).st_gid = ((*dnode).permissions & S_ISGRP) >> 12;
+	(*s).st_rdev = 0;
+	(*s).st_size = (*dnode).numfiles + (*dnode).numdirs;
+	(*s).st_blksize = __otter_fs_BLOCK_SIZE;
+	(*s).st_blocks = (((*dnode).numfiles + (*dnode).numdirs) / __otter_fs_BLOCK_SIZE) + 1;
+
+	return (0);
+}
+
+int __otter_libc_fstat(int fd, struct stat* s)
+{
+	struct __otter_fs_open_file_table_entry* open_file = get_open_file_from_fd(fd);
+	if (!open_file) return -1;
+
+	if (open_file->type == __otter_fs_TYP_DIR)
+	{
+		struct __otter_fs_dnode* dnode = (struct __otter_fs_dnode*)open_file->vnode;
+		return __otter_libc_dnode_stat(dnode, s);
+	}
+
+	struct __otter_fs_inode* inode = (struct __otter_fs_inode*)open_file->vnode;
+	return __otter_libc_inode_stat(inode, s);
+}
+
+int __otter_libc_lstat(const char* name, struct stat* s)
+{
+	struct __otter_fs_inode* inode = __otter_fs_find_inode(name);
+	if(!inode)
+	{
+		struct __otter_fs_dnode* dnode = __otter_fs_find_dnode(name);
+		if(!dnode)
+			return (-1);
+
+		return __otter_libc_dnode_stat(dnode, s);
+	}
+
+	return __otter_libc_inode_stat(inode, s);
 }
 
 int __otter_libc_mknod(const char* name, mode_t mode, dev_t dev)

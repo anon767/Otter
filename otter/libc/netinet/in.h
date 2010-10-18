@@ -54,6 +54,7 @@ struct sockaddr_in
 	unsigned char sin_zero[8];
 };
 
+#define IPPROTO_AUTO 0
 #define IPPROTO_IP 1
 #define IPPROTO_ICMP 2
 #define IPPROTO_TCP 3
@@ -61,6 +62,6 @@ struct sockaddr_in
 
 #define INADDR_ANY 1
 #define INADDR_BROADCAST 2
-#define INADDR_NONE (0xFFFF)
+#define INADDR_NONE 0xFFFFFFFF
 
 #endif

@@ -206,13 +206,17 @@ size_t __otter_libc_strcspn(const char* s1, const char* s2)
 
 char* __otter_libc_strpbrk(const char* s1, const char* s2)
 {
+	int loc = 0;
 	for(; ; s1++)
 	{
-		if(strchr(s2, *s1)) /* search for s1[i] in s2 */
-			return (s1); /* both s1 and s2 should contain 0 eventually */
+		if(*s1 == 0) /* ran out of chars  from s1 to search for in s2 */
+			return NULL;
+		loc = strchr(s2, *s1); /* search for s1[i] in s2 */
+		if(loc != 0)
+			return (s2 + loc); /* return pointer to s2[loc] */
 	}
 	
-	return (0); /* only if s2 does not contain 0 shoudl this happen */
+	return (0);
 }
 
 char* __otter_libc_strrchr(const char* s, int c)
