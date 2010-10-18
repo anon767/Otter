@@ -466,7 +466,7 @@ let rec state__eval state pc bytes =
   let nontrivial () =
     Output.set_mode Output.MSG_REG;
     Output.printf "Ask STP...@\n";
-    (state,Stats.time "STP" (Stp.query_bytes pc) bytes)
+    (state, Stp.query_bytes pc bytes)
 
   in
 	let is_comparison op = match op with

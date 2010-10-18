@@ -454,6 +454,7 @@ let stpcache_find pc pre guard =
             Some (ans)
         else raise Not_found
     with Not_found ->
+        incr cacheMisses;
         None
 
 let stpcache_add answer pc pre guard =
@@ -463,60 +464,66 @@ let stpcache_add answer pc pre guard =
 
 (** return (True) False if bytes (not) evaluates to all zeros. Unknown otherwise.  *)
 let query_stp pc pre guard =
-    (* TODO (yit):
-     * The way doassert returns global_vc feels dangerous to me, since it hides the fact that there's a single, shared,
-     * stateful vc. Is it that costly to create a new vc? The "pop; push" pattern is also very strange and unintuitive.
-     *)
-    let doassert pc =
-        let vc = global_vc in
-        Stpc.e_pop vc;
-        Stpc.e_push vc;
-
-        Output.set_mode Output.MSG_STP;
-        Output.printf "%% STP Program: %%@\n";
-
-        let rec do_assert pc = match pc with
-            | [] -> ()
-            | head::tail ->
-                let (bv, len) = Stats.time "STP construct" (fun ()-> to_stp_bv vc head) () in (* 1 *)
-                Stats.time "STP doassert" (fun () -> Stpc.assert_ctrue vc len bv) () ; (* 2 *)
-                Output.set_mode Output.MSG_STP;
-                Output.printf "ASSERT(%s@ != 0);@\n" (Stpc.to_string bv);
-                do_assert tail
-        in
-        (*Stats.time "STP assert" do_assert relevantAssumptions;*)
-        Stats.time "STP assert" do_assert pc;
-        vc
-    in
-    match stpcache_find pc pre guard with
-    | Some (answer) -> answer
-    | None ->
-        let vc = doassert pc in
-        if pre != Guard_True then begin
-            let pre_exp = Stats.time "convert pre-condition" (to_stp_guard vc) pre in
-            Stats.time "STP.do_assert pre-condition" (Stpc.do_assert vc) pre_exp
-        end;
-
-        let guard_exp = Stats.time "convert guard" (to_stp_guard vc) guard in
-        Output.set_mode Output.MSG_STP;
-        let query exp =
-            Stpc.e_push vc;
-            let result = Stats.time "STP query_guard" (Stpc.query vc) exp in
+    let query_stp pc pre guard =
+        (* TODO (yit):
+         * The way doassert returns global_vc feels dangerous to me,
+         * since it hides the fact that there's a single, shared,
+         * stateful vc. Is it that costly to create a new vc?
+         * The "pop; push" pattern is also very strange and unintuitive.
+         *)
+        let doassert pc =
+            let vc = global_vc in
             Stpc.e_pop vc;
-            result
-        in
-        let answer =
-            if query guard_exp then
-                Ternary.True
-            else if query (Stpc.e_not vc guard_exp) then
-                Ternary.False
-            else
-                Ternary.Unknown
-        in
-            stpcache_add answer pc pre guard;
-            answer
+            Stpc.e_push vc;
 
-(* Called in MemOp *)
+            Output.set_mode Output.MSG_STP;
+            Output.printf "%% STP Program: %%@\n";
+
+            let rec do_assert pc = match pc with
+                | [] -> ()
+                | head::tail ->
+                    let (bv, len) = Stats.time "STP construct" (fun ()-> to_stp_bv vc head) () in (* 1 *)
+                    Stats.time "STP doassert" (fun () -> Stpc.assert_ctrue vc len bv) () ; (* 2 *)
+                    Output.set_mode Output.MSG_STP;
+                    Output.printf "ASSERT(%s@ != 0);@\n" (Stpc.to_string bv);
+                    do_assert tail
+            in
+            (*Stats.time "STP assert" do_assert relevantAssumptions;*)
+            Stats.time "STP assert" do_assert pc;
+            vc
+        in
+        match stpcache_find pc pre guard with
+        | Some (answer) -> answer
+        | None ->
+            let vc = doassert pc in
+            if pre != Guard_True then begin
+                let pre_exp = Stats.time "convert pre-condition" (to_stp_guard vc) pre in
+                Stats.time "STP.do_assert pre-condition" (Stpc.do_assert vc) pre_exp
+            end;
+
+            let guard_exp = Stats.time "convert guard" (to_stp_guard vc) guard in
+            Output.set_mode Output.MSG_STP;
+            let query exp =
+                Stpc.e_push vc;
+                stp_count := (!stp_count) + 1;
+                let result = Stats.time "STP query" (Stpc.query vc) exp in
+                Stpc.e_pop vc;
+                result
+            in
+            let answer =
+                if query guard_exp then
+                    Ternary.True
+                else if query (Stpc.e_not vc guard_exp) then
+                    Ternary.False
+                else
+                    Ternary.Unknown
+            in
+                stpcache_add answer pc pre guard;
+                answer
+    in
+        Stats.time "STP" (query_stp pc pre) guard
+
+
 let query_bytes pc bytes =
     query_stp pc Guard_True (guard__bytes bytes)
 

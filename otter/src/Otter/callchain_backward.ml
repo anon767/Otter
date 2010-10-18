@@ -393,6 +393,7 @@ let doit file =
 	(* TODO: do something about signal handlers/run statistics from Executemain.doExecute *)
 
     Format.printf "@\n@\nCall-chain backward Symbolic Execution@\n@\n";
+	let startTime = Unix.gettimeofday () in
 	prepare_file file;
 	let entryfn = Driver.find_entryfn file in
 	let assertfn =
@@ -406,6 +407,26 @@ let doit file =
 	(* print the results *)
 	Output.set_formatter (new Output.plain);
 	Output.printf "%s@\n@\n" (Executedebug.get_log ());
+	Output.printf "\nSTP was invoked %d times. (%d cache hits; %d misses)\n" !Stp.stp_count !Stp.cacheHits !Stp.cacheMisses;
+
+	let executionTime = (Unix.gettimeofday ()) -. startTime
+	and stpTime = Stats.lookupTime "STP" in
+	Output.printf "It ran for %.2f s, which is %.2f%% of the total %.2f s execution.\n"
+		stpTime (100. *. stpTime /. executionTime) executionTime;
+	Output.printf "  It took %.2f s to construct the formulas for the expressions inside 'if(...)'s,
+  %.2f s to construct and %.2f s to assert the path conditions,
+  and %.2f s to solve the resulting formulas.\n\n"
+		(Stats.lookupTime "convert conditional")
+		(Stats.lookupTime "STP construct")
+		(Stats.lookupTime "STP doassert")
+		(Stats.lookupTime "STP query");
+   (if !Executeargs.arg_simplify_path_condition then
+      Output.printf "It took %.2f s to simplify path conditions.\n"
+         (Stats.lookupTime "Simplify PC")
+    else ());
+
+    Output.printf "Hash-consing: hits=%d misses=%d\n" (!Bytes.hash_consing_bytes_hits) (!Bytes.hash_consing_bytes_misses);
+    Output.printf "Bytes eval caching: hits=%d misses=%d\n\n" (!MemOp.bytes_eval_cache_hits) (!MemOp.bytes_eval_cache_misses);
 	List.iter (fun result -> Report.print_report result) results
 
 
