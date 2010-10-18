@@ -50,22 +50,25 @@ let direct_calls_testsuite = "Direct calls" >:::
                         (List.map (fun x -> x.Cil.svar.Cil.vname) result.result_state.callstack);
 
                     (* check the values of specific global variables and variables in main() *)
-                    let not_found, unequal = List.fold_left begin fun (not_found, unequal) (name, bytes) ->
+                    let not_found, unequal, errors = List.fold_left begin fun (not_found, unequal, errors) (name, bytes) ->
                         let rec find = function
                             | Cil.GVarDecl (v, _)::_
                             | Cil.GVar (v, _, _)::_ when v.Cil.vname = name ->
-                                let _, actual, _ = Expression.rval result.result_state (Cil.Lval (Cil.var v)) Types.Channel in
+                                let _, actual, errors = Expression.rval result.result_state (Cil.Lval (Cil.var v)) errors in
                                 if bytes__equal actual bytes then
-                                    (not_found, unequal)
+                                    (not_found, unequal, errors)
                                 else
-                                    (not_found, (name, bytes, actual)::unequal)
+                                    (not_found, (name, bytes, actual)::unequal, errors)
                             | [] ->
-                                (name::not_found, unequal)
+                                (name::not_found, unequal, errors)
                             | _::tail ->
                                 find tail
                         in
                         find result.result_file.Cil.globals
-                    end ([], []) match_globals in
+                    end ([], [], []) match_globals in
+
+                    if errors <> [] then
+                        assert_log "Errors detected:@ @[%a@]@\n" (list_printer (fun ff (_, _, s) -> Report.abandoned_reason ff s) ",@ ") errors;
 
                     if not_found <> [] then
                         assert_log "Variables not found:@ @[%a@]@\n" (list_printer pp_print_string ",@ ") not_found;

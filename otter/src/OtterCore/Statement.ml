@@ -78,19 +78,19 @@ let addInstrCoverage job instr =
     { job.exHist with coveredLines =
             LineSet.add (instrLoc.Cil.file,instrLoc.Cil.line) job.exHist.coveredLines; }
 
-let function_from_exp job state exp args channel : (state * fundec) list * channel =
+let function_from_exp job state exp args errors =
     match exp with
         | Lval(Var(varinfo), NoOffset) ->
             begin
                 try
-                    [(state, FindCil.fundec_by_varinfo job.file varinfo)], channel
+                    ([ (state, FindCil.fundec_by_varinfo job.file varinfo) ], errors)
                 with Not_found ->
                     failwith ("Function "^varinfo.vname^" not found.")
             end
 
 
         | Lval(Mem(exp2), NoOffset) ->
-            let state, bytes, channel  = Expression.rval state exp2 channel in
+            let state, bytes, errors  = Expression.rval state exp2 errors in
             let rec getall fp =
                 let fold_func acc pre leaf =
                     match leaf with
@@ -107,12 +107,12 @@ let function_from_exp job state exp args channel : (state * fundec) list * chann
                 | Bytes_FunPtr(varinfo,_) ->
                     (* the varinfo should always map to a valid fundec (if the file was parsed by Cil) *)
                     let fundec = FindCil.fundec_by_varinfo job.file varinfo in
-                        [(state, fundec)], channel
+                    ([ (state, fundec) ], errors)
                 | Bytes_Read(bytes2, offset, len) ->
                     let fp = (BytesUtility.expand_read_to_conditional bytes2 offset len) in
-                        (getall fp), channel
+                    (getall fp, errors)
                 | Bytes_Conditional(c) ->
-                    (getall c), channel
+                    (getall c, errors)
 
                 | _ ->
                     FormatPlus.failwith "Non-constant function ptr not supported :@ @[%a@]" Printer.exp exp2
@@ -120,14 +120,14 @@ let function_from_exp job state exp args channel : (state * fundec) list * chann
         | _ ->
             FormatPlus.failwith "Non-constant function ptr not supported :@ @[%a@]" Printer.exp exp
 
-let exec_fundec job state instr fundec lvalopt exps channel =
+let exec_fundec job state instr fundec lvalopt exps errors =
     let stmt = job.stmt in
 
     (* evaluate the arguments *)
-    let state, argvs, channel = List.fold_right begin fun exp (state, argvs, channel) ->
-        let state, bytes, channel = Expression.rval state exp channel in
-        (state, bytes::argvs, channel)
-    end exps (state, [], channel) in
+    let state, argvs, errors = List.fold_right begin fun exp (state, argvs, errors) ->
+        let state, bytes, errors = Expression.rval state exp errors in
+        (state, bytes::argvs, errors)
+    end exps (state, [], errors) in
 
     (* [stmt] is an [Instr], so it can't have two successors. If
      [func] returns, then [stmt] has exactly one successor. If
@@ -148,44 +148,47 @@ let exec_fundec job state instr fundec lvalopt exps channel =
 
     (* Update the state, the next stmt to execute, and whether or
      not we're in a tracked function. *)
-    Active { job with
+    let job = { job with
             state = state;
             stmt = List.hd fundec.sallstmts;
-            inTrackedFn = StringSet.mem fundec.svar.vname job.trackedFns; }, channel
+            inTrackedFn = StringSet.mem fundec.svar.vname job.trackedFns;
+    } in
+    (Active job, errors)
 
-let exec_instr_call job instr lvalopt fexp exps channel =
+let exec_instr_call job instr lvalopt fexp exps errors =
     let state, exHist = job.state, job.exHist in
 
-    let rec process_func_list func_list channel : 'reason job_state list * channel =
+    let rec process_func_list func_list errors =
         match func_list with
-            | [] -> [], channel
+            | [] -> ([], errors)
             | (state, fundec)::t ->
-                let job_state, channel =
+                let job_state, errors =
                     let job = {job with
                         decisionPath = ForkFunptr(instr, fundec)::job.decisionPath;} in
                     try
-                        (exec_fundec job state instr fundec lvalopt exps channel)
+                        (exec_fundec job state instr fundec lvalopt exps errors)
                     with Failure msg ->
                         if !Executeargs.arg_failfast then failwith msg;
                         let result = {
                             result_file = job.file;
                             result_state = state;
                             result_history = exHist;
-                            result_decision_path = job.decisionPath; } in
-                        Complete (Abandoned (`Failure msg, Job.get_loc job, result)), channel
+                            result_decision_path = job.decisionPath;
+                        } in
+                        (Complete (Abandoned (`Failure msg, Job.get_loc job, result)), errors)
                 in
-                    let func_list, channel = process_func_list t channel in
-                        job_state::func_list, channel
+                let func_list, errors = process_func_list t errors in
+                (job_state::func_list, errors)
     in
-    let func_list, channel = function_from_exp job state fexp exps channel in
-    let f, channel = process_func_list func_list channel in
+    let func_list, errors = function_from_exp job state fexp exps errors in
+    let f, errors = process_func_list func_list errors in
     match f with
-        | _::_::_ -> Fork(f), channel
-        | [a] -> a, channel
+        | _::_::_ -> (Fork(f), errors)
+        | [a] -> (a, errors)
         | [] -> failwith "No valid function found!"
 
 
-let exec_instr job channel =
+let exec_instr job errors =
     assert (job.instrList <> []);
     let printInstr instr =
         Output.set_mode Output.MSG_STMT;
@@ -209,15 +212,15 @@ let exec_instr job channel =
          | Set(cil_lval, exp, loc) ->
             printInstr instr;
             let state = job.state in
-            let state, lval, channel = Expression.lval state cil_lval channel in
-            let state, rv, channel = Expression.rval state exp channel in
+            let state, lval, errors = Expression.lval state cil_lval errors in
+            let state, rv, errors = Expression.rval state exp errors in
             let state = MemOp.state__assign state lval rv in
             let nextStmt = if tail = [] then List.hd job.stmt.succs else job.stmt in
-                Active { job with state = state; stmt = nextStmt }, channel
+            (Active { job with state = state; stmt = nextStmt }, errors)
         | Call(lvalopt, fexp, exps, loc) ->
             assert (tail = []);
             printInstr instr;
-            exec_instr_call job instr lvalopt fexp exps channel
+            exec_instr_call job instr lvalopt fexp exps errors
         | Asm (_,_,_,_,_,loc) ->
             let result = {
                 result_file = job.file;
@@ -225,9 +228,9 @@ let exec_instr job channel =
                 result_history = job.exHist;
                 result_decision_path = job.decisionPath;
             } in
-            Complete (Abandoned (`Failure "Cannot handle assembly", loc, result)), channel
+            (Complete (Abandoned (`Failure "Cannot handle assembly", loc, result)), errors)
 
-let exec_stmt job channel =
+let exec_stmt job errors =
     assert (job.instrList = []);
     let state,stmt = job.state,job.stmt in
 
@@ -242,7 +245,7 @@ let exec_stmt job channel =
     match stmt.skind with
         | Instr [] ->
              let nextStmt = match stmt.succs with [x] -> x | _ -> assert false in
-                 Active { job with stmt = nextStmt; exHist = nextExHist (Some nextStmt); }, channel
+             (Active { job with stmt = nextStmt; exHist = nextExHist (Some nextStmt); }, errors)
         | Instr (instrs) ->
             (* We can certainly update block coverage here, but not
              * necessarily edge coverage. If instrs contains a call, we
@@ -256,39 +259,40 @@ let exec_stmt job channel =
                 then None
                 else Some (match stmt.succs with [x] -> x | _ -> assert false)
             in
-                Active { job with instrList = instrs; exHist = nextExHist nextStmtOpt; }, channel
+            (Active { job with instrList = instrs; exHist = nextExHist nextStmtOpt; }, errors)
         | Cil.Return (expopt, loc) ->
             begin match state.callContexts with
                 | Runtime::_ -> (* completed symbolic execution (e.g., return from main) *)
                     Output.set_mode Output.MSG_MUSTPRINT;
                     Output.printf "Program execution finished.@\n";
-                    let state, retval, channel = match expopt with
+                    let state, retval, errors = match expopt with
                         | None ->
-                            state, None, channel
+                            (state, None, errors)
                         | Some exp ->
-                            let state, retval, channel = Expression.rval state exp channel in
-                                state, Some retval, channel
+                            let state, retval, errors = Expression.rval state exp errors in
+                            (state, Some retval, errors)
                     in
-                    Complete (Return
-                        (retval, {
+                    let result = {
                             result_file = job.file;
                             result_state = state;
                             result_history = nextExHist None;
-                            result_decision_path = job.decisionPath; })), channel
+                            result_decision_path = job.decisionPath;
+                    } in
+                    (Complete (Return (retval, result)), errors)
                 | (Source (destOpt,callStmt,_,nextStmt))::_ ->
-                        let state, channel =
+                        let state, errors =
                             match expopt, destOpt with
                                 | Some exp, Some dest ->
                                     (* evaluate the return expression in the callee frame *)
-                                    let state, rv, channel = Expression.rval state exp channel in
+                                    let state, rv, errors = Expression.rval state exp errors in
                                     let state = MemOp.state__end_fcall state in
                                     (* evaluate the assignment in the caller frame *)
-                                    let state, lval, channel = Expression.lval state dest channel in
-                                    (MemOp.state__assign state lval rv, channel)
+                                    let state, lval, errors = Expression.lval state dest errors in
+                                    (MemOp.state__assign state lval rv, errors)
                                 | _, _ ->
                                      (* If we are not returning a value, or if we
                                         ignore the result, just end the call *)
-                                    (MemOp.state__end_fcall state, channel)
+                                    (MemOp.state__end_fcall state, errors)
                         in
 
                         let callingFuncName = (List.hd state.callstack).svar.vname in
@@ -324,7 +328,7 @@ let exec_stmt job channel =
                             inTrackedFn = inTrackedFn;
                             exHist = exHist;
                         } in
-                        (Active job, channel)
+                        (Active job, errors)
 
                 | (NoReturn _)::_ ->
                         failwith "Return from @noreturn function"
@@ -333,7 +337,7 @@ let exec_stmt job channel =
                         assert false
             end
         | Goto (stmtref, loc) ->
-            Active { job with stmt = !stmtref; exHist = nextExHist (Some !stmtref); }, channel
+            (Active { job with stmt = !stmtref; exHist = nextExHist (Some !stmtref); }, errors)
         | If (exp, block1, block2, loc) ->
             begin
             (* try a branch *)
@@ -354,7 +358,7 @@ let exec_stmt job channel =
                     (nextState, nextStmt)
                 in
 
-                let state, rv, channel = Expression.rval state exp channel in
+                let state, rv, errors = Expression.rval state exp errors in
 
                 Output.set_mode Output.MSG_GUARD;
                 if(Output.need_print Output.MSG_GUARD) then
@@ -420,7 +424,7 @@ let exec_stmt job channel =
                             Output.printf "Job %d is the true branch and job %d is the false branch.@\n@\n" trueJob.jid falseJob.jid;
                             Fork [Active trueJob; Active falseJob]
                 in
-                    job_state, channel
+                (job_state, errors)
 
             end
         | Block(block)
@@ -430,37 +434,34 @@ let exec_stmt job channel =
                This is not true for [Block]s, but it *does* seem to be
                true for [Block]s which are not under [If]s, so we're okay. *)
             let nextStmt = List.hd block.bstmts in
-                Active { job with stmt = nextStmt; exHist = nextExHist (Some nextStmt); }, channel
+            (Active { job with stmt = nextStmt; exHist = nextExHist (Some nextStmt); }, errors)
         | _ -> failwith "Not implemented yet"
+
+
+let errors_to_abandoned_list job errors =
+    List.map begin fun (state, failing_condition, error) ->
+        (* assert: failing_condition is never true *)
+        let result = {
+            result_file = job.file;
+            result_state = { state with path_condition = failing_condition::state.path_condition };
+            result_history = job.exHist;
+            result_decision_path = job.decisionPath;
+        } in
+        Complete (Abandoned (error, Job.get_loc job, result))
+    end errors
 
 
 let step job job_queue =
     try
-        let channel = MultiChannel({error_channel=[]}) in
-        let job_state, channel =
-            match job.instrList with
-            | [] -> exec_stmt job channel
-            | _ -> exec_instr job channel
+        let job_state, errors = match job.instrList with
+            | [] -> exec_stmt job []
+            | _ -> exec_instr job []
         in
-            match channel with
-            | Channel -> failwith "Invalid Channel"
-            | MultiChannel (multi_channel) ->
-                let abandoned_job_states = List.map (
-                    fun (state, failing_condition, error_msg) ->
-                        (* assert: failing_condition is never true *)
-                        let result = {
-                            result_file = job.file;
-                            result_state = { state with path_condition = failing_condition::state.path_condition };
-                            result_history = job.exHist;
-                            result_decision_path = job.decisionPath;
-                        } in
-                            Complete (Abandoned (`Failure error_msg, Job.get_loc job, result))
-                    ) multi_channel.error_channel
-                in
-                    if abandoned_job_states = [] then
-                        job_state, job_queue
-                    else
-                        Fork (job_state :: abandoned_job_states), job_queue
+        if errors = [] then
+            (job_state, job_queue)
+        else
+            let abandoned_job_states = errors_to_abandoned_list job errors in
+            (Fork (job_state::abandoned_job_states), job_queue)
 
     with
         | Failure msg ->

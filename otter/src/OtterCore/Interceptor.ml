@@ -35,10 +35,12 @@ let intercept_function_by_name_internal target_name replace_func job job_queue i
 	(* replace_func retopt exps loc job job_queue *)
 	match job.instrList with
 		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::_ when varinfo.Cil.vname = target_name ->
-            (* TODO (martin): should we "enable" channel here? *)
-            let state, channel = replace_func job retopt exps Channel in
-                ignore channel;
-			    (state, job_queue)
+			let job_state, errors = replace_func job retopt exps [] in
+			if errors = [] then
+				(job_state, job_queue)
+			else
+				let abandoned_job_states = Statement.errors_to_abandoned_list job errors in
+				(Fork (job_state::abandoned_job_states), job_queue)
 		| _ ->
 			interceptor job job_queue
 

@@ -136,13 +136,15 @@ let print_list name print_function lst =
  * __FAILURE(), or something else. We might want to discard the latter.
  *)
 let test_job_at_targets targets job =
-	(* if job meets one of the targets, do checking *)
-	(* if fails, return Some (Complete Abandoned) *)
-	match job.instrList with
-		| (Call(lvalopt,fexp,exps,loc) as instr)::tail ->
+    (* if job meets one of the targets, do checking *)
+    (* if fails, return Some (Complete Abandoned) *)
+    match job.instrList with
+        | (Call(lvalopt,fexp,exps,loc) as instr)::tail ->
             (* Advance the current instruction to the next *)
-	        let job = { job with instrList = tail; } in
-            let job_state, _ = Statement.exec_instr_call job instr lvalopt fexp exps Types.Channel in
+            let job = { job with instrList = tail; } in
+            let errors = [] in
+            let job_state, errors = Statement.exec_instr_call job instr lvalopt fexp exps errors in
+            assert(errors = []); (* TODO: do something smarter about errors, e.g., fork them into Abandoned jobs *)
             let active_jobs =
               let rec get_active_jobs job_state =
                   match job_state with

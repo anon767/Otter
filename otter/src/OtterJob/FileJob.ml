@@ -8,30 +8,32 @@ open OtterCore
 let unreachable_global varinfo = not (Coverage.VarinfoSet.mem varinfo (!Coverage.reachable_globals))
 
 
-let init_globalvars state globals channel =
-	List.fold_left begin fun (state, channel) g -> match g with
+let init_globalvars state globals =
+	List.fold_left begin fun state g -> match g with
 		| Cil.GVar(varinfo, { Cil.init=Some init }, _)
 				when not (!Executeargs.arg_noinit_unreachable_globals && unreachable_global varinfo) ->
 			let lhost_typ = varinfo.Cil.vtype in
 			let size = (Cil.bitsSizeOf (lhost_typ)) / 8 in
 			let zeros = Bytes.bytes__make size in
-			let rec myInit (offset:Cil.offset) (i:Cil.init) (state, acc, channel) =
+			let rec myInit (offset:Cil.offset) (i:Cil.init) (state, acc) =
 				match i with
 					| Cil.SingleInit(exp) ->
-						let state, off, typ, channel  = Expression.flatten_offset state lhost_typ offset channel in
-						let state, off_bytes, channel = Expression.rval state exp channel in
+						let state, off, typ, errors  = Expression.flatten_offset state lhost_typ offset [] in
+						let state, off_bytes, errors = Expression.rval state exp errors in
+						assert(errors = []); (* there shouldn't be any errors during initialization *)
+
 						let size = (Cil.bitsSizeOf typ) / 8 in
 						let init_bytes = BytesUtility.bytes__write acc off size off_bytes in
-						    state, init_bytes, channel
+						(state, init_bytes)
 					| Cil.CompoundInit(typ, list) ->
 						Cil.foldLeftCompound
 							~implicit:false
-							~doinit:(fun off i t (state, acc, channel) -> myInit (Cil.addOffset off offset) i (state, acc, channel))
+							~doinit:(fun off i t (state, acc) -> myInit (Cil.addOffset off offset) i (state, acc))
 							~ct:typ
 							~initl:list
-							~acc:(state, acc, channel)
+							~acc:(state, acc)
 			in
-			let state, init_bytes, channel = myInit Cil.NoOffset init (state, zeros, channel) in
+			let state, init_bytes = myInit Cil.NoOffset init (state, zeros) in
 
 			Output.set_mode Output.MSG_REG;
 			if init_bytes == zeros then
@@ -39,7 +41,7 @@ let init_globalvars state globals channel =
 			else
 				Output.printf "Initialize %s to@ @[%a@]@\n" varinfo.Cil.vname BytesPrinter.bytes init_bytes;
 
-			MemOp.state__add_global state varinfo init_bytes, channel
+			MemOp.state__add_global state varinfo init_bytes
 
 		| Cil.GVar(varinfo, _, _)
 		| Cil.GVarDecl(varinfo, _)
@@ -58,11 +60,11 @@ let init_globalvars state globals channel =
 			Output.set_mode Output.MSG_REG;
 			Output.printf "Initialize %s to zeros\n" varinfo.Cil.vname;
 
-			MemOp.state__add_global state varinfo init_bytes, channel
+			MemOp.state__add_global state varinfo init_bytes
 
 		| _ ->
-			state, channel
-	end (state, channel) globals
+			state
+	end state globals
 
 
 (* To initialize the arguments, we need to create a bytes which represents argc and
@@ -143,7 +145,7 @@ let make file cmdline =
 
 	(* Initialize the state with zeroed globals *)
 	let state = MemOp.state__empty in
-	let state, _ = init_globalvars state file.Cil.globals Types.Channel in
+	let state = init_globalvars state file.Cil.globals in
 
 	(* prepare the command line arguments, if needed *)
 	let state, main_args =

@@ -166,24 +166,24 @@ let add_offset offset lvals =
 
 let rec
 
-rval state exp channel =
+rval state exp errors =
     match exp with
         | Const (constant) ->
             begin match constant with
                 | CStr(str) ->
                     let bytes = constant_to_bytes constant in
                     let block = MemOp.string_table__add bytes in
-                        state, make_Bytes_Address(block, bytes__zero), channel
+                    (state, make_Bytes_Address(block, bytes__zero), errors)
                 | _ ->
-                    state, constant_to_bytes constant, channel
+                    (state, constant_to_bytes constant, errors)
             end
 
         | Lval (cil_lval) ->
-            let state, lvals, channel = lval state cil_lval channel in
+            let state, lvals, errors = lval state cil_lval errors in
             (* TODO (martin): this raises Not_found when seeing a
              * dummy_block. *)
             let state, bytes = MemOp.state__deref state lvals in
-                state, bytes, channel
+            (state, bytes, errors)
 
         | SizeOf (typ) ->
              let exp2 = Cil.sizeOf typ in
@@ -191,67 +191,66 @@ rval state exp channel =
                  | SizeOf(_) ->
                      FormatPlus.failwith "Cannot determine sizeof(%a)" Printcil.typ typ
                  | _ ->
-                     let state, bytes, channel = rval state exp2 channel in
+                     let state, bytes, errors = rval state exp2 errors in
                      begin match bytes with
                          | Bytes_Constant(CInt64(n,_,stropt)) ->
-                             state, make_Bytes_Constant(CInt64(n,!kindOfSizeOf,stropt)), channel
+                            (state, make_Bytes_Constant(CInt64(n,!kindOfSizeOf,stropt)), errors)
                          | b ->
-                             state, b, channel
+                            (state, b, errors)
                      end
              end
 
         | SizeOfE (exp2) ->
-            rval state (SizeOf (Cil.typeOf exp2)) channel
+            rval state (SizeOf (Cil.typeOf exp2)) errors
 
         | SizeOfStr (str) ->
             let len = (String.length str)+1  in
             let exp2 = Cil.integer len in
-                rval state exp2 channel
+            rval state exp2 errors
 
         | AlignOf (typ) ->
             failwith "__align_of not implemented"
         | AlignOfE (exp2) ->
             failwith "__align_of not implemented"
         | UnOp (unop, exp1, _) ->
-            rval_unop state unop exp1 channel
+            rval_unop state unop exp1 errors
         | BinOp (binop, exp1, exp2, _) ->
-            rval_binop state binop exp1 exp2 channel
+            rval_binop state binop exp1 exp2 errors
         | Question (guard, exp1, exp2, _) ->
-            rval_question state guard exp1 exp2 channel
+            rval_question state guard exp1 exp2 errors
         | AddrOf (Var varinfo, _) when Cil.isFunctionType (varinfo.Cil.vtype) ->
             let f_addr = bytes__random (Cil.bitsSizeOf Cil.voidPtrType / 8) in (* TODO: assign an addr for each function ptr *)
-                state, make_Bytes_FunPtr(varinfo,f_addr), channel
+            (state, make_Bytes_FunPtr(varinfo,f_addr), errors)
         | AddrOf (cil_lval)
         | StartOf (cil_lval) ->
-            let state, (lvals, _), channel = lval ~justGetAddr:true state cil_lval channel in
+            let state, (lvals, _), errors = lval ~justGetAddr:true state cil_lval errors in
             let c = conditional__map (fun (block, offset) ->
                 conditional__bytes (make_Bytes_Address(block, offset))
-                ) lvals in
-                state, make_Bytes_Conditional c, channel
+            ) lvals in
+            (state, make_Bytes_Conditional c, errors)
         | CastE (typ, exp2) ->
-             let state, bytes, channel = rval state exp2 channel in
-             let bytes, channel = rval_cast typ bytes (Cil.typeOf exp2) channel in
-             state, bytes, channel
+            let state, bytes, errors = rval state exp2 errors in
+            let bytes, errors = rval_cast typ bytes (Cil.typeOf exp2) errors in
+            (state, bytes, errors)
 
 and
 
 (** rvtyp: the type of rv. if rv is a signed int then we will need logical shifting; no otherwise. *)
-rval_cast typ rv rvtyp channel =
-    begin
-        match rv,typ with
+rval_cast typ rv rvtyp errors =
+    begin match rv,typ with
         (* optimize for casting among int family *)
         | Bytes_Constant(CInt64(n,ikind,_)),TInt(new_ikind,_) ->
             begin match Cil.kinteger64 new_ikind n with
-            | Const (const) -> make_Bytes_Constant(const), channel
-            | _ -> failwith "rval_cast, const: unreachable"
+                | Const (const) -> (make_Bytes_Constant(const), errors)
+                | _ -> failwith "rval_cast, const: unreachable"
             end
         (* optimize for casting among float family *)
         | Bytes_Constant(CReal(f,fkind,s)),TFloat(new_fkind,_) ->
             let const = CReal(f,new_fkind,s) in
-                make_Bytes_Constant(const), channel
+            (make_Bytes_Constant(const), errors)
         (* added so that from now on there'll be no make_Bytes_Constant *)
         | Bytes_Constant(const),_ ->
-            rval_cast typ (constant_to_bytes const) rvtyp channel
+            rval_cast typ (constant_to_bytes const) rvtyp errors
 
         | _ ->
             begin
@@ -265,42 +264,43 @@ rval_cast typ rv rvtyp channel =
                             bytes__write (bytes__make new_len) (int_to_bytes 0) old_len rv
 
                 in
-                     if new_len = old_len then rv, channel (* do nothing *)
-                     else begin match rv with
-                         | Bytes_ByteArray(bytearray) ->
-                             if new_len > old_len then
-                                 if isConcrete_bytearray bytearray then
-                                     begin
-                                         let newbytes = (ImmutableArray.sub bytearray 0 new_len) in
-                                         let isSigned = match rvtyp with
-                                             | TInt(ikind,_) when Cil.isSigned ikind -> true
-                                             | _ -> false
-                                         in
-                                         let leftmost_is_one =
-                                             match ImmutableArray.get bytearray ((ImmutableArray.length bytearray)-1) with
-                                             | Byte_Concrete (c) -> Char.code c >= 0x80
-                                             | _ -> failwith "unreachable (bytearray is concrete)"
-                                         in
-                                         let sth = if isSigned && leftmost_is_one then
-                                             byte__111 (* For some reason, this seems not to happen in practice *)
-                                         else
-                                             byte__zero
-                                         in
-                                         let rec pack_sth newbytes old_len new_len =
-                                             if old_len>=new_len then newbytes else
-                                                 let newbytes2 = ImmutableArray.set newbytes old_len sth in
-                                                 pack_sth newbytes2 (old_len+1) new_len
-                                                 in
-                                             make_Bytes_ByteArray (pack_sth newbytes old_len new_len), channel
-                                     end
-                                 else worst_case (), channel (* don't know how to do if new_len > old_len && bytearray is NOT concrete *)
-                             else (* new_len < old_len *)
-                                 make_Bytes_ByteArray (ImmutableArray.sub bytearray 0 new_len), channel (* simply truncate *)
-                         | Bytes_Constant(const) -> failwith "unreachable"
-                         | _ -> worst_case (), channel
-                    end
+                if new_len = old_len then
+                    (rv, errors) (* do nothing *)
+                else begin match rv with
+                    | Bytes_ByteArray(bytearray) when isConcrete_bytearray bytearray ->
+                        if new_len > old_len then
+                            let newbytes = (ImmutableArray.sub bytearray 0 new_len) in
+                            let isSigned = match rvtyp with
+                                | TInt(ikind,_) when Cil.isSigned ikind -> true
+                                | _ -> false
+                            in
+                            let leftmost_is_one =
+                                match ImmutableArray.get bytearray ((ImmutableArray.length bytearray)-1) with
+                                | Byte_Concrete (c) -> Char.code c >= 0x80
+                                | _ -> failwith "unreachable (bytearray is concrete)"
+                            in
+                            let sth = if isSigned && leftmost_is_one then
+                                byte__111 (* For some reason, this seems not to happen in practice *)
+                            else
+                                byte__zero
+                            in
+                            let rec pack_sth newbytes old_len new_len =
+                                if old_len>=new_len then newbytes else
+                                let newbytes2 = ImmutableArray.set newbytes old_len sth in
+                                pack_sth newbytes2 (old_len+1) new_len
+                            in
+                            (make_Bytes_ByteArray (pack_sth newbytes old_len new_len), errors)
+                        else (* new_len < old_len *)
+                            (make_Bytes_ByteArray (ImmutableArray.sub bytearray 0 new_len), errors) (* simply truncate *)
+
+                    | Bytes_Constant(const) ->
+                        failwith "unreachable"
+
+                    | _ ->
+                        (worst_case (), errors)
                 end
             end
+    end
 
 and
 
@@ -308,34 +308,34 @@ and
      address-of operator, '&'. For example, &x[i] is legal even if i is
      not in bounds. (Sort of. The spec (6.5.6.8) implies that this is
      only defined if i is *one* past the end of x.) *)
-lval ?(justGetAddr=false) state (lhost, offset_exp as cil_lval) channel =
+lval ?(justGetAddr=false) state (lhost, offset_exp as cil_lval) errors =
     let size = (Cil.bitsSizeOf (Cil.typeOfLval cil_lval))/8 in
-    let state, lvals, lhost_type, channel =
-       match lhost with
+    let state, lvals, lhost_type, errors = match lhost with
         | Var(varinfo) ->
             let state, lvals = MemOp.state__varinfo_to_lval_block state varinfo in
-            state, lvals, varinfo.vtype, channel
+            (state, lvals, varinfo.vtype, errors)
         | Mem(exp) ->
-            let state, rv, channel = rval state exp channel in
-            let state, lvals, channel = deref state rv channel in
-                state, lvals, Cil.typeOf exp, channel
+            let state, rv, errors = rval state exp errors in
+            let state, lvals, errors = deref state rv errors in
+            (state, lvals, Cil.typeOf exp, errors)
     in
     match cil_lval with
-        | Var _, NoOffset -> state, (lvals, size), channel
+        | Var _, NoOffset -> (state, (lvals, size), errors)
         | _ ->
-            let state, offset, _, channel = flatten_offset state lhost_type offset_exp channel in
+            let state, offset, _, errors = flatten_offset state lhost_type offset_exp errors in
             (* Add the offset, then see if it was in bounds *)
             let lvals = add_offset offset lvals in
             (* Omit the bounds check if we're only getting the address of the
                  lval---not actually reading from or writing to it---or if bounds
                  checking is turned off *)
             if justGetAddr || not !Executeargs.arg_bounds_checking then
-                state, (lvals, size), channel
-            else (checkBounds state lvals cil_lval size), (lvals, size), channel
+                (state, (lvals, size), errors)
+            else
+                (checkBounds state lvals cil_lval size, (lvals, size), errors)
 
 and
 
-deref state bytes channel : state * lval_block * channel =
+deref state bytes errors =
     match bytes with
         | Bytes_Constant (c) ->
             FormatPlus.failwith "Dereference something not an address:@ constant @[%a@]" BytesPrinter.bytes bytes
@@ -347,7 +347,7 @@ deref state bytes channel : state * lval_block * channel =
              * If found, return deref state make_Bytes_Address(b,f).
              * Otherwise, throw exception
              * *)
-            let rec find_match pc channel = match pc with
+            let rec find_match pc errors = match pc with
                 | [] ->
                     FormatPlus.failwith "Dereference something not an address (bytearray)@ @[%a@]@." BytesPrinter.bytes bytes
                 | Bytes_Op(OP_EQ,(bytes1,_)::(bytes2,_)::[])::pc' ->
@@ -358,81 +358,75 @@ deref state bytes channel : state * lval_block * channel =
                             else bytes__zero
                         in
                             match bytes_tentative with
-                            | Bytes_Address(_,_) -> deref state bytes_tentative channel
-                            | _ -> find_match pc' channel
+                            | Bytes_Address(_,_) -> deref state bytes_tentative errors
+                            | _ -> find_match pc' errors
                     end
                 | Bytes_Op(OP_LAND,btlist)::pc' ->
-                    find_match (List.rev_append (List.fold_left (fun a (b,_) -> b::a) [] btlist) pc') channel
-                | _::pc' -> find_match pc' channel
+                    find_match (List.rev_append (List.fold_left (fun a (b,_) -> b::a) [] btlist) pc') errors
+                | _::pc' -> find_match pc' errors
             in
-                find_match state.path_condition channel
+            find_match state.path_condition errors
 
         | Bytes_Address(block, offset) ->
             if MemOp.state__has_block state block then
-                state, conditional__lval_block (block, offset), channel
+                (state, conditional__lval_block (block, offset), errors)
             else
                 failwith "Dereference into an expired stack frame"
 
         | Bytes_Conditional c ->
-            let make_dummy_lval () =
+            let make_dummy_lval =
                 Unconditional (block__make_string_literal "@dummy_block" 4, bytes__zero)
             in
-            let (acc_pass, acc_fail, state, channel), conditional =
-                conditional__fold_map (fun (acc_pass, acc_fail, state, channel) guard c ->
+            let (acc_pass, acc_fail, state, errors), conditional =
+                conditional__fold_map begin fun (acc_pass, acc_fail, state, errors) guard c ->
                     try
-                        let state, lval, channel = deref state c channel in
-                            (guard::acc_pass, acc_fail, state, channel), lval
+                        let state, lval, errors = deref state c errors in
+                        ((guard::acc_pass, acc_fail, state, errors), lval)
                     with
-                        Failure msg ->
+                        | Failure msg ->
                             (* Collect a list of failing guard/message pairs *)
-                            (acc_pass, (guard, msg)::acc_fail, state, channel), make_dummy_lval ()
-                ) ([],[], state, channel) c
+                            ((acc_pass, (guard, msg)::acc_fail, state, errors), make_dummy_lval)
+                end ([],[], state, errors) c
             in
-                if acc_fail = [] then
-                    (* All conditional branches were dereferenced successfully: return the dereferenced conditional. *)
-                    state, conditional, channel
-                else
-                    let failing_condition, aggregated_msg = List.fold_left (
-                        fun (failing_condition, aggregated_msg) (guard, msg) ->
+            if acc_fail = [] then
+                (* All conditional branches were dereferenced successfully: return the dereferenced conditional. *)
+                (state, conditional, errors)
+            else
+                let failing_condition, aggregated_msg =
+                    List.fold_left begin fun (failing_condition, aggregated_msg) (guard, msg) ->
                         let bytes_of_guard = Bytes.guard__to_bytes guard in
-                            (Bytes.bytes_or failing_condition bytes_of_guard, aggregated_msg ^ "/" ^ msg)
-                        ) (Bytes.fls, "(Conditional Exception(s))") acc_fail
-                    in
-                    if acc_pass = [] then
-                        (* No conditional branches were dereferenced successfully: just fail. *)
-                        failwith aggregated_msg
-                    else
-                        (* Not all conditional branches were dereferenced successfully:
-                         * Add (Bytes.bytes_not failing_condition) into state.path_condition and keep running.
-                         * Also, add (state, failing_condition, aggregated_msg) into the error channel.
-                         * Here, the state is the exact program state when the error occurs.
-                         *)
-                        begin match channel with
-                        | Channel -> failwith "Invalid Channel"
-                        | MultiChannel (multi_channel) ->
-                            let multi_channel' = { (* multi_channel with *)
-                                error_channel = (state, failing_condition, aggregated_msg) :: multi_channel.error_channel;
-                            } in
-                            let state' = { state with
-                                path_condition = (Bytes.bytes_not failing_condition) :: state.path_condition;
-                            } in
-                                state', conditional, MultiChannel(multi_channel')
-                        end
+                        (Bytes.bytes_or failing_condition bytes_of_guard, aggregated_msg ^ "/" ^ msg)
+                    end (Bytes.fls, "(Conditional Exception(s))") acc_fail
+                in
+                if acc_pass = [] then
+                    (* No conditional branches were dereferenced successfully: just fail. *)
+                    failwith aggregated_msg
+                else
+                    (* Not all conditional branches were dereferenced successfully:
+                     * Add (Bytes.bytes_not failing_condition) into state.path_condition and keep running.
+                     * Also, add (state, failing_condition, aggregated_msg) into the error errors.
+                     * Here, the state is the exact program state when the error occurs.
+                     *)
+                    let errors = (state, failing_condition, `Failure aggregated_msg)::errors in
+                    let state = { state with
+                        path_condition = (Bytes.bytes_not failing_condition)::state.path_condition;
+                    } in
+                    (state, conditional, errors)
 
         | Bytes_Op(op, operands) ->
             FormatPlus.failwith "Dereference something not an address:@ operation @[%a@]" BytesPrinter.bytes bytes
 
         | Bytes_Read(bytes,off,len) ->
             (* TODO (martin): create a test that covers this code *)
-            let (state, channel), conditional =
+            let (state, errors), conditional =
                 conditional__fold_map ~test:(Stp.query_stp state.path_condition)
-                    (fun (state, channel) _ bytes ->
-                        let state, conditional, channel = deref state bytes channel in
-                            (state, channel), conditional
-                    )
-                    (state, channel) (expand_read_to_conditional bytes off len)
+                    begin fun (state, errors) _ bytes ->
+                        let state, conditional, errors = deref state bytes errors in
+                        ((state, errors), conditional)
+                    end
+                    (state, errors) (expand_read_to_conditional bytes off len)
             in
-                state, conditional, channel
+            (state, conditional, errors)
 
         | Bytes_Write(bytes,off,len,newbytes) ->
             failwith "Dereference of Bytes_Write not implemented"
@@ -446,35 +440,35 @@ deref state bytes channel : state * lval_block * channel =
 and
 
 (* Assume index's ikind is IInt *)
-flatten_offset state lhost_typ offset channel =
+flatten_offset state lhost_typ offset errors =
     match offset with
-        | NoOffset -> state, bytes__zero, lhost_typ, channel
+        | NoOffset -> (state, bytes__zero, lhost_typ, errors)
         | _ ->
-            let state, index, base_typ, offset2, channel =
+            let state, index, base_typ, offset2, errors =
                 begin match offset with
                     | Field(fieldinfo, offset2) ->
                             let n = field_offset fieldinfo in
                             let index = int_to_offset_bytes n in
                             let base_typ = fieldinfo.ftype in
-                                state, index, base_typ, offset2, channel
+                            (state, index, base_typ, offset2, errors)
                     | Index(exp, offset2) ->
-                            let state, rv0, channel = rval state exp channel in
+                            let state, rv0, errors = rval state exp errors in
                             (* We require that offsets be values of type !upointType *)
-                            let rv, channel =
+                            let rv, errors =
                                 if bytes__length rv0 <> (Cil.bitsSizeOf !Cil.upointType / 8)
-                                then rval_cast !Cil.upointType rv0 (Cil.typeOf exp) channel
-                                else rv0, channel
+                                then rval_cast !Cil.upointType rv0 (Cil.typeOf exp) errors
+                                else (rv0, errors)
                             in
                             let base_typ = match Cil.unrollType lhost_typ with TArray(typ2, _, _) -> typ2 | _ -> failwith "Must be array" in
                             let base_size = (Cil.bitsSizeOf base_typ) / 8 in (* must be known *)
                             let index = Operator.mult [(int_to_offset_bytes base_size,!Cil.upointType);(rv,!Cil.upointType)] in
-                                state, index, base_typ, offset2, channel
+                            (state, index, base_typ, offset2, errors)
                     | _ -> failwith "Unreachable"
                 end
             in
-                let state, index2, base_typ2, channel = flatten_offset state base_typ offset2 channel in
+                let state, index2, base_typ2, errors = flatten_offset state base_typ offset2 errors in
                 let index3 = Operator.plus [(index,!Cil.upointType);(index2,!Cil.upointType)] in
-                    state, index3, base_typ2, channel
+                (state, index3, base_typ2, errors)
 
 and
 
@@ -486,38 +480,38 @@ field_offset f : int =
 
 and
 
-rval_unop state unop exp channel =
-    let state, rv, channel = rval state exp channel in
+rval_unop state unop exp errors =
+    let state, rv, errors = rval state exp errors in
     let typ = Cil.typeOf exp in
     let conditional = conditional__bytes (Operator.run (Operator.of_unop unop) [(rv,typ)]) in
     let conditional = conditional__prune ~test:(Stp.query_stp state.path_condition) ~eq:bytes__equal conditional in
-        (state, make_Bytes_Conditional conditional, channel)
+    (state, make_Bytes_Conditional conditional, errors)
 
 and
 
-rval_binop state binop exp1 exp2 channel =
+rval_binop state binop exp1 exp2 errors =
     let op = (Operator.of_binop binop) in
-    let state, rv1, channel = rval state exp1 channel in
+    let state, rv1, errors = rval state exp1 errors in
     let typ1 = Cil.typeOf exp1 in
     (* shortcircuiting *)
     if op == Operator.logand && isConcrete_bytes rv1 && bytes_to_bool rv1 = false then
-        (state, int_to_bytes 0, channel)
+        (state, int_to_bytes 0, errors)
     else if op == Operator.logor && isConcrete_bytes rv1 && bytes_to_bool rv1 = true then
-        (state, int_to_bytes 1, channel)
+        (state, int_to_bytes 1, errors)
     else
-        let state, rv2, channel = rval state exp2 channel in
+        let state, rv2, errors = rval state exp2 errors in
         let typ2 = Cil.typeOf exp2 in
         let conditional = conditional__bytes (Operator.run op [(rv1,typ1);(rv2,typ2)]) in
         let conditional = conditional__prune ~test:(Stp.query_stp state.path_condition) ~eq:bytes__equal conditional in
-            (state, make_Bytes_Conditional conditional, channel)
+        (state, make_Bytes_Conditional conditional, errors)
 
 and
 
 (** Evaluate a ?: expression, creating a Bytes_Conditional(IfThenElse _). *)
-rval_question state e1 e2 e3 channel =
+rval_question state e1 e2 e3 errors =
     (* The order in which we evaluate these really shouldn't matter.
      * If it does, there's a problem, and I don't know what to do. *)
-    let state, rv1, channel = rval state e1 channel in
-    let state, rv2, channel = rval state e2 channel in
-    let state, rv3, channel = rval state e3 channel in
-        state, make_Bytes_Conditional (IfThenElse (guard__bytes rv1, Unconditional rv2, Unconditional rv3)), channel
+    let state, rv1, errors = rval state e1 errors in
+    let state, rv2, errors = rval state e2 errors in
+    let state, rv3, errors = rval state e3 errors in
+    (state, make_Bytes_Conditional (IfThenElse (guard__bytes rv1, Unconditional rv2, Unconditional rv3)), errors)
