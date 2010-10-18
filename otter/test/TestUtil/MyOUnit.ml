@@ -193,13 +193,13 @@ let assert_equal ?(eq=Pervasives.(=)) ?printer ?(msg="") expected actual =
     end
 
 let assert_at_least ?(cmp=Pervasives.compare) ?printer ?(msg="") expected actual =
-    if cmp expected actual < 0 then begin match printer with
+    if cmp expected actual > 0 then begin match printer with
         | Some p -> assert_failure "@[%s@]@\n  @[@[<2>expected at least:@ %a@]@ @[<2>but got:@ %a@]@]" msg p expected p actual
         | None -> assert_failure "@[%s@]@\n  less than" msg
     end
 
 let assert_at_most ?(cmp=Pervasives.compare) ?printer ?(msg="") expected actual =
-    if cmp expected actual > 0 then begin match printer with
+    if cmp expected actual < 0 then begin match printer with
         | Some p -> assert_failure "@[%s@]@\n  @[@[<2>expected at most:@ %a@]@ @[<2>but got:@ %a@]@]" msg p expected p actual
         | None -> assert_failure "@[%s@]@\n  more than" msg
     end

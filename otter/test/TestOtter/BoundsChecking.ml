@@ -92,7 +92,7 @@ let simple_testsuite = "Simple" >::: [
 			 (* Make sure the path condition is the right length *)
 			 match res with
 					 [Return (_,res)] ->
-						 assert_equal (List.length res.result_state.path_condition) 1
+						 assert_equal 1 (List.length res.result_state.path_condition)
 							 ~msg:"Incorrect path condition"
 				 | _ -> assert false
 		);
@@ -110,7 +110,7 @@ let simple_testsuite = "Simple" >::: [
 			 (* Make sure the path condition is the right length *)
 			 match res with
 					 [Return (_,res)] ->
-						 assert_equal (List.length res.result_state.path_condition) 1
+						 assert_equal 1 (List.length res.result_state.path_condition)
 							 ~msg:"Incorrect path condition"
 				 | _ -> assert false
 		);
@@ -139,9 +139,9 @@ let simple_testsuite = "Simple" >::: [
 			 (* Make sure the path conditions are each length 1 *)
 			 match res with
 					 [Abandoned (_,_,res1); Abandoned (_,_,res2)] ->
-						 assert_equal (List.length res1.result_state.path_condition) 1
+						 assert_equal 1 (List.length res1.result_state.path_condition)
 							 ~msg:"Incorrect path condition";
-						 assert_equal (List.length res2.result_state.path_condition) 1
+						 assert_equal 1 (List.length res2.result_state.path_condition)
 							 ~msg:"Incorrect path condition"
 				 | _ -> assert false
 		);

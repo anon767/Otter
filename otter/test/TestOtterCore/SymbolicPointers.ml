@@ -58,9 +58,9 @@ let soundness_testsuite = "Soundness" >::: [
                             }
                         "] end
                         begin fun results return exit abandoned ->
-                            assert_at_least return 3;
-                            assert_equal exit 0;
-                            assert_equal abandoned 0;
+                            assert_at_least 3 return;
+                            assert_equal 0 exit;
+                            assert_equal 0 abandoned;
                         end
                 end;
 
@@ -82,9 +82,9 @@ let soundness_testsuite = "Soundness" >::: [
                     z = &y;
                 }
                 " begin fun results return exit abandoned ->
-                    assert_at_least return 3;
-                    assert_equal exit 0;
-                    assert_equal abandoned 0;
+                    assert_at_least 3 return;
+                    assert_equal 0 exit;
+                    assert_equal 0 abandoned;
                 end;
         ];
 
@@ -112,9 +112,9 @@ let soundness_testsuite = "Soundness" >::: [
                             }
                         "] end
                         begin fun results return exit abandoned ->
-                            assert_at_least return 4;
-                            assert_equal exit 0;
-                            assert_equal abandoned 0;
+                            assert_at_least 4 return;
+                            assert_equal 0 exit;
+                            assert_equal 0 abandoned;
                         end
                 end;
         ];
@@ -144,9 +144,9 @@ let soundness_testsuite = "Soundness" >::: [
                             }
                         "] end
                         begin fun results return exit abandoned ->
-                            assert_at_least return 3;
-                            assert_equal exit 0;
-                            assert_equal abandoned 0;
+                            assert_at_least 3 return;
+                            assert_equal 0 exit;
+                            assert_equal 0 abandoned;
                         end
                 end;
 
@@ -168,9 +168,9 @@ let soundness_testsuite = "Soundness" >::: [
                     foo(&y);
                 }
                 " begin fun results return exit abandoned ->
-                    assert_at_least return 3;
-                    assert_equal exit 0;
-                    assert_equal abandoned 0;
+                    assert_at_least 3 return;
+                    assert_equal 0 exit;
+                    assert_equal 0 abandoned;
                 end;
         ];
 
@@ -197,9 +197,9 @@ let soundness_testsuite = "Soundness" >::: [
                             }
                         "] end
                         begin fun results return exit abandoned ->
-                            assert_at_least return 4;
-                            assert_equal exit 0;
-                            assert_equal abandoned 0;
+                            assert_at_least 4 return;
+                            assert_equal 0 exit;
+                            assert_equal 0 abandoned;
                         end
                 end;
         ];
@@ -224,9 +224,9 @@ let soundness_testsuite = "Soundness" >::: [
                 foo(&x);
             }
         " begin fun results return exit abandoned ->
-            assert_at_least return 4;
-            assert_equal exit 0;
-            assert_equal abandoned 0;
+            assert_at_least 4 return;
+            assert_equal 0 exit;
+            assert_equal 0 abandoned;
         end;
 
         (* since the nodes are allocated on the stack and the analysis does not handle recursion, there should be
@@ -258,9 +258,9 @@ let soundness_testsuite = "Soundness" >::: [
                 bar(0);
             }
         " begin fun results return exit abandoned ->
-            assert_at_least return 4;
-            assert_equal exit 0;
-            assert_equal abandoned 0;
+            assert_at_least 4 return;
+            assert_equal 0 exit;
+            assert_equal 0 abandoned;
         end;
 
         (* since the nodes are dynamically allocated, there should be at least 4 iterations:
@@ -283,9 +283,9 @@ let soundness_testsuite = "Soundness" >::: [
                 foo(head);
             }
         " begin fun results return exit abandoned ->
-            assert_at_least return 4;
-            assert_equal exit 0;
-            assert_equal abandoned 0;
+            assert_at_least 4 return;
+            assert_equal 0 exit;
+            assert_equal 0 abandoned;
         end;
 
         (* since the nodes are allocated on the stack and the analysis does not handle recursion, there should be
@@ -311,9 +311,9 @@ let soundness_testsuite = "Soundness" >::: [
                 bar(0, 0);
             }
         " begin fun results return exit abandoned ->
-            assert_at_least return 4;
-            assert_equal exit 0;
-            assert_equal abandoned 0;
+            assert_at_least 4 return;
+            assert_equal 0 exit;
+            assert_equal 0 abandoned;
         end;
     ]
 ]
