@@ -427,6 +427,17 @@ let doit file =
 
     Output.printf "Hash-consing: hits=%d misses=%d\n" (!Bytes.hash_consing_bytes_hits) (!Bytes.hash_consing_bytes_misses);
     Output.printf "Bytes eval caching: hits=%d misses=%d\n\n" (!MemOp.bytes_eval_cache_hits) (!MemOp.bytes_eval_cache_misses);
+    if (!Stp.print_stp_queries) then (
+        Format.printf "Stp queries: @\n";
+        List.iter (fun (pc, pre, guard, truth_value, time) ->
+            List.iter (Format.printf "PC: @[%a@]@\n" BytesPrinter.bytes) pc;
+            Format.printf "PRE: @[%a@]@\n" BytesPrinter.guard pre;
+            Format.printf "QUERY: @[%a@]@\n" BytesPrinter.guard guard;
+            Format.printf "TRUTH: @[%s@]@\n" (if truth_value then "True" else "False");
+            Format.printf "TIME: @[%.2f@]@\n" time;
+            Format.printf "--------------------------------------------------@\n"
+        ) (!Stp.stp_queries)
+    );
 	List.iter (fun result -> Report.print_report result) results
 
 

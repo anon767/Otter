@@ -11,6 +11,9 @@ module SymbolSet = Set.Make
 
 let stp_count = ref 0
 
+let print_stp_queries = ref false
+let stp_queries = ref []
+
 let global_vc = Stpc.create_validity_checker ()
 
 module BytesMagicMap = Map.Make (struct
@@ -424,18 +427,20 @@ to_stp_bv_impl vc bytes =
             failwith "Oh no!"
 
 (* TODO (martin) improve Stp Cache *)
-
 (* Map a pc and a query *)
 module StpCache = Map.Make
     (struct
-         type t = bytes list * bytes (* pc, query *)
+         type t = bytes list * guard * guard * bool (* pc * pre * guard * truth_value *)
          (* It might be better to have this be set-based equality rather
             than list-based. *)
-         let compare ((pc1,query1):t) ((pc2,query2):t) = (* Type annotation to remove polymorphism *)
-             let result1 = Pervasives.compare query1 query2 in
-             if result1 = 0
-             then Pervasives.compare pc1 pc2
-             else result1
+         let compare ((pc1,pre1,guard1,truth1):t) ((pc2,pre2,guard2,truth2):t) = (* Type annotation to remove polymorphism *)
+             let result = Pervasives.compare truth1 truth2 in
+             if result <> 0 then result else
+             let result = Pervasives.compare guard1 guard2 in
+             if result <> 0 then result else
+             let result = Pervasives.compare pre1 pre2 in
+             if result <> 0 then result else
+                Pervasives.compare pc1 pc2
      end)
 
 let cacheHits = ref 0
@@ -444,27 +449,23 @@ let stpCacheRef = ref StpCache.empty
 
 (* This is extracted from consult_stp, modified to work with query_stp (guard).
  * Will be replaced. *)
-let stpcache_find pc pre guard =
-    let bytes = guard__to_bytes guard in
-    let pc = getRelevantAssumptions pc bytes in
+let stpcache_find pc pre guard truth =
     try
-        if pre = Guard_True then
-            let ans = StpCache.find (pc,bytes) !stpCacheRef in
-            incr cacheHits;
-            Some (ans)
-        else raise Not_found
+        let ans = StpCache.find (pc,pre,guard,truth) !stpCacheRef in
+        incr cacheHits;
+        Some (ans)
     with Not_found ->
         incr cacheMisses;
         None
 
-let stpcache_add answer pc pre guard =
-    let bytes =  guard__to_bytes guard in
-    stpCacheRef := StpCache.add (pc,bytes) answer !stpCacheRef
+let stpcache_add answer pc pre guard truth =
+    stpCacheRef := StpCache.add (pc,pre,guard,truth) answer !stpCacheRef
 
 
 (** return (True) False if bytes (not) evaluates to all zeros. Unknown otherwise.  *)
 let query_stp pc pre guard =
     let query_stp pc pre guard =
+        let pc = getRelevantAssumptions pc (guard__to_bytes guard) in
         (* TODO (yit):
          * The way doassert returns global_vc feels dangerous to me,
          * since it hides the fact that there's a single, shared,
@@ -492,34 +493,36 @@ let query_stp pc pre guard =
             Stats.time "STP assert" do_assert pc;
             vc
         in
-        match stpcache_find pc pre guard with
-        | Some (answer) -> answer
-        | None ->
-            let vc = doassert pc in
-            if pre != Guard_True then begin
-                let pre_exp = Stats.time "convert pre-condition" (to_stp_guard vc) pre in
-                Stats.time "STP.do_assert pre-condition" (Stpc.do_assert vc) pre_exp
-            end;
+        (* TODO: avoid creating vc if cache hit for both T and F *)
+        let vc = doassert pc in
+        if pre != Guard_True then begin
+            let pre_exp = Stats.time "convert pre-condition" (to_stp_guard vc) pre in
+            Stats.time "STP.do_assert pre-condition" (Stpc.do_assert vc) pre_exp
+        end;
 
-            let guard_exp = Stats.time "convert guard" (to_stp_guard vc) guard in
-            Output.set_mode Output.MSG_STP;
-            let query exp =
+        let guard_exp = Stats.time "convert guard" (to_stp_guard vc) guard in
+        Output.set_mode Output.MSG_STP;
+
+        let query exp truth_value =
+            match stpcache_find pc pre guard truth_value with
+            | Some (answer) -> answer
+            | None ->
                 Stpc.e_push vc;
                 stp_count := (!stp_count) + 1;
-                let result = Stats.time "STP query" (Stpc.query vc) exp in
+	            let startTime = Unix.gettimeofday () in
+                let answer = Stats.time "STP query" (Stpc.query vc) exp in
+                stpcache_add answer pc pre guard truth_value;
+	            let endTime = Unix.gettimeofday () in
+                stp_queries := (pc, pre, guard, truth_value, endTime -. startTime)::(!stp_queries);
                 Stpc.e_pop vc;
-                result
-            in
-            let answer =
-                if query guard_exp then
-                    Ternary.True
-                else if query (Stpc.e_not vc guard_exp) then
-                    Ternary.False
-                else
-                    Ternary.Unknown
-            in
-                stpcache_add answer pc pre guard;
                 answer
+        in
+        if query guard_exp true then
+            Ternary.True
+        else if query (Stpc.e_not vc guard_exp) false then
+            Ternary.False
+        else
+            Ternary.Unknown
     in
         Stats.time "STP" (query_stp pc pre) guard
 
@@ -572,4 +575,12 @@ let getValues pathCondition symbolList =
 let getAllValues pathCondition =
   getValues pathCondition (SymbolSet.elements (allSymbolsInList pathCondition))
 
+
+(** {1 Command-line options} *)
+
+let options = [
+    "--printStpQueries",
+        Arg.Set print_stp_queries,
+        " Print STP queries (Path condition * pre * query * truth_value)";
+]
 

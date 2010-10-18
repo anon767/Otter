@@ -54,9 +54,9 @@ let doExecute (f: file) =
 
 	Output.set_formatter (new Output.plain);
 	Output.printf "%s@\n" (Executedebug.get_log ());
-		(* function stat 
+		(* function stat
 		Output.print_endline "\nFunction call stat:";
-		Cilutility.FundecMap.iter (fun f c -> Output.print_endline ((To_string.fundec f)^" : "^(string_of_int c))) (!MemOp.function_stat);	
+		Cilutility.FundecMap.iter (fun f c -> Output.print_endline ((To_string.fundec f)^" : "^(string_of_int c))) (!MemOp.function_stat);
 		*)
 	Output.printf "\nSTP was invoked %d times. (%d cache hits; %d misses)\n" !Stp.stp_count !Stp.cacheHits !Stp.cacheMisses;
 
@@ -75,7 +75,7 @@ let doExecute (f: file) =
       Output.printf "It took %.2f s to simplify path conditions.\n"
          (Stats.lookupTime "Simplify PC")
     else ());
-   
+
     Output.printf "Hash-consing: hits=%d misses=%d\n" (!Bytes.hash_consing_bytes_hits) (!Bytes.hash_consing_bytes_misses);
     Output.printf "Bytes eval caching: hits=%d misses=%d\n\n" (!MemOp.bytes_eval_cache_hits) (!MemOp.bytes_eval_cache_misses);
 
@@ -97,8 +97,8 @@ let feature : featureDescr = {
 	fd_name = "execute";
 	fd_enabled = ref false;
 	fd_description = "(symbolic) executor for C";
-	fd_extraopt = Executeargs.options @ Queue.options @ Driver.options;
+	fd_extraopt = Executeargs.options @ Queue.options @ Driver.options @ Stp.options;
 	fd_post_check = true;
 	fd_doit = doExecute;
 }
-	
+
