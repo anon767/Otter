@@ -425,7 +425,7 @@ deref state bytes channel : state * lval_block * channel =
         | Bytes_Read(bytes,off,len) ->
             (* TODO (martin): create a test that covers this code *)
             let (state, channel), conditional =
-                conditional__fold_map ~test:(Stp.query_guard state.path_condition)
+                conditional__fold_map ~test:(Stp.query_stp state.path_condition)
                     (fun (state, channel) _ bytes ->
                         let state, conditional, channel = deref state bytes channel in
                             (state, channel), conditional
@@ -490,7 +490,7 @@ rval_unop state unop exp channel =
     let state, rv, channel = rval state exp channel in
     let typ = Cil.typeOf exp in
     let conditional = conditional__bytes (Operator.run (Operator.of_unop unop) [(rv,typ)]) in
-    let conditional = conditional__prune ~test:(Stp.query_guard state.path_condition) ~eq:bytes__equal conditional in
+    let conditional = conditional__prune ~test:(Stp.query_stp state.path_condition) ~eq:bytes__equal conditional in
         (state, make_Bytes_Conditional conditional, channel)
 
 and
@@ -508,7 +508,7 @@ rval_binop state binop exp1 exp2 channel =
         let state, rv2, channel = rval state exp2 channel in
         let typ2 = Cil.typeOf exp2 in
         let conditional = conditional__bytes (Operator.run op [(rv1,typ1);(rv2,typ2)]) in
-        let conditional = conditional__prune ~test:(Stp.query_guard state.path_condition) ~eq:bytes__equal conditional in
+        let conditional = conditional__prune ~test:(Stp.query_stp state.path_condition) ~eq:bytes__equal conditional in
             (state, make_Bytes_Conditional conditional, channel)
 
 and

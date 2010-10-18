@@ -217,10 +217,10 @@ let state__get_deferred_from_block state block =
 let state__deref ?pre state (lvals, size) =
     let deref state pre (block, offset) =
         let state, bytes = state__get_bytes_from_block state block in
-        (state, conditional__bytes (bytes__read ~test:(Stp.query_guard state.path_condition) ~pre bytes offset size))
+        (state, conditional__bytes (bytes__read ~test:(Stp.query_stp state.path_condition) ~pre bytes offset size))
     in
     (* Prune dummy_blocks created in Expression.deref *)
-    let lvals = conditional__prune ~test:(Stp.query_guard state.path_condition) lvals in
+    let lvals = conditional__prune ~test:(Stp.query_stp state.path_condition) lvals in
     let state, c = conditional__fold_map ?pre deref state lvals in
         (state, make_Bytes_Conditional c)
 
@@ -236,7 +236,7 @@ let rec state__assign state (lvals, size) bytes =
 
 		(* TODO: pruning the conditional bytes here leads to repeated work if it is subsequently read via state__deref;
 		 * however, not pruning leads to O(k^(2^n)) leaves in the conditional bytes for n consecutive assignments. *)
-		let newbytes = bytes__write ~test:(Stp.query_guard state.path_condition) ~pre oldbytes offset size bytes in
+		let newbytes = bytes__write ~test:(Stp.query_stp state.path_condition) ~pre oldbytes offset size bytes in
 
 		(* Morris' axiom of assignment *)
 		let newbytes = match pre with
@@ -315,7 +315,7 @@ let state__extract_path_condition state bytes =
   *)
   (*
   let bytes_implies_pc bytes pc =
-    match Stp.consult_stp [bytes] pc with
+    match Stp.query_bytes [bytes] pc with
       | Ternary.True -> true
       | _ -> false
   in
@@ -327,7 +327,7 @@ let state__extract_path_condition state bytes =
   *   TODO: maybe we can have a combination of these 2 methods?
   *)
   let bytes_and_others_implies_pc bytes_lst pc =
-    match Stp.consult_stp bytes_lst pc with
+    match Stp.query_bytes bytes_lst pc with
       | Ternary.True -> true
       | _ -> false
   in
@@ -466,7 +466,7 @@ let rec state__eval state pc bytes =
   let nontrivial () =
     Output.set_mode Output.MSG_REG;
     Output.printf "Ask STP...@\n";
-    (state,Stats.time "STP" (Stp.consult_stp pc) bytes)
+    (state,Stats.time "STP" (Stp.query_bytes pc) bytes)
 
   in
 	let is_comparison op = match op with

@@ -721,9 +721,9 @@ let libc_longjmp job retopt exps channel =
 					| Bytes_ByteArray _ -> [bytes_to_int_auto stmtPtrAddrBytes]
 					| Bytes_Read(bytes2, offset, len) ->
 						let sp = BytesUtility.expand_read_to_conditional bytes2 offset len in
-						conditional__fold ~test:(Stp.query_guard state.path_condition) fold_func [] sp
+						conditional__fold ~test:(Stp.query_stp state.path_condition) fold_func [] sp
 					| Bytes_Conditional(c) ->
-						conditional__fold ~test:(Stp.query_guard state.path_condition) fold_func [] c
+						conditional__fold ~test:(Stp.query_stp state.path_condition) fold_func [] c
 					| _ -> failwith "Non-constant statement ptr not supported"
 			in
 
@@ -813,7 +813,7 @@ let libc_get_block_size = wrap_state_function begin fun state retopt exps channe
 			let state, bytes, channel = Expression.rval state (Lval cil_lval) channel in
 			let state, lvals, channel = Expression.deref state bytes channel in
 			let size = make_Bytes_Conditional (conditional__map
-				~test:(Stp.query_guard state.path_condition)
+				~test:(Stp.query_stp state.path_condition)
 				(fun (x, y) -> Unconditional (int_to_bytes x.memory_block_size))
 				lvals)
 			in
@@ -996,7 +996,7 @@ let libc_interceptor job job_queue interceptor =
 		(intercept_function_by_name_external "setuid"                  "__otter_libc_setuid") @@
 		(intercept_function_by_name_external "dup"                     "__otter_libc_dup") @@
 		(intercept_function_by_name_external "dup2"                    "__otter_libc_dup2") @@
-		
+
 		(* arpa/inet.h *)
 		(intercept_function_by_name_external "inet_addr"               "__otter_libc_inet_addr") @@
 		(intercept_function_by_name_external "inet_lnaof"              "__otter_libc_inet_lnaof") @@

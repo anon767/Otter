@@ -57,6 +57,7 @@ let main_loop
                         | Job.Fork [] ->
                             k work
                         | Job.Complete completion ->
+                            (* TODO (martin) separate __FAILURE paths from non __FAILURE paths *)
                             let reporter = reporter#report completion in
                             if (max_paths = 0 || paths < max_paths)
                                     && (max_abandoned = 0 || abandoned < max_abandoned) then

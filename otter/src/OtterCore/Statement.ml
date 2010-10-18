@@ -101,7 +101,7 @@ let function_from_exp job state exp args channel : (state * fundec) list * chann
                             (state, fundec)::acc
                         | _ -> acc (* should give a warning here about a non-valid function pointer*)
                 in
-                Bytes.conditional__fold ~test:(Stp.query_guard state.path_condition) fold_func [] fp
+                Bytes.conditional__fold ~test:(Stp.query_stp state.path_condition) fold_func [] fp
             in
             begin match bytes with
                 | Bytes_FunPtr(varinfo,_) ->
