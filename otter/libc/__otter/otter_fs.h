@@ -89,8 +89,10 @@ struct __otter_fs_inode* __otter_fs_find_inode_in_dir(const char* name, struct _
 struct __otter_fs_dnode* __otter_fs_find_dnode_in_dir(const char* name, struct __otter_fs_dnode* dir);
 struct __otter_fs_inode* __otter_fs_find_inode_in_tree(char* name, struct __otter_fs_dnode* tree);
 struct __otter_fs_dnode* __otter_fs_find_dnode_in_tree(char* name, struct __otter_fs_dnode* tree);
+void* __otter_fs_find_vnode_in_tree(char* name, struct __otter_fs_dnode* tree, void* (*find_vnode)(char*, struct __otter_fs_dnode*));
 struct __otter_fs_inode* __otter_fs_find_inode(const char* name);
 struct __otter_fs_dnode* __otter_fs_find_dnode(const char* name);
+void* __otter_fs_find_vnode(const char* name, void* (*find_vnode)(char*, struct __otter_fs_dnode*));
 
 struct __otter_fs_open_file_table_entry
 {

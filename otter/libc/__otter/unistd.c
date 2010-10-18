@@ -47,7 +47,6 @@ int __otter_libc_close(int fd)
 	
 	if((*inode).linkno == 0) /* file was deleted, but left available until closed */
 	{
-		__ASSERT(0);
 		free((*inode).data);
 		free(inode);	
 	}

@@ -11,16 +11,6 @@
 
 /* file system access functions */
 
-int __otter_fs_can_permission(int filep, int wantp)
-{
-	if(__otter_fs_is_owner(filep))
-		wantp = wantp << 6;
-	else if(__otter_fs_is_group(filep))
-		wantp = wantp << 3;
-
-	return ((filep & wantp) == wantp);
-}
-
 int __otter_fs_is_owner(int filep)
 {
 	return ((filep & 0x2000 && __otter_uid == __otter_UID_USER) || (__otter_uid == __otter_UID_ROOT));
@@ -29,6 +19,16 @@ int __otter_fs_is_owner(int filep)
 int __otter_fs_is_group(int filep)
 {
 	return ((filep & 0x1000 && __otter_uid == __otter_GID_USER) || (__otter_uid == __otter_GID_ROOT));
+}
+
+int __otter_fs_can_permission(int filep, int wantp)
+{
+	if(__otter_fs_is_owner(filep))
+		wantp = wantp << 6;
+	else if(__otter_fs_is_group(filep))
+		wantp = wantp << 3;
+
+	return ((filep & wantp) == wantp);
 }
 
 struct __otter_fs_inode* __otter_fs_find_inode_in_dir(const char* name, struct __otter_fs_dnode* dir)
@@ -75,37 +75,15 @@ struct __otter_fs_dnode* __otter_fs_find_dnode_in_dir(const char* name, struct _
 
 struct __otter_fs_inode* __otter_fs_find_inode_in_tree(char* name, struct __otter_fs_dnode* tree)
 {
-	if(!__otter_fs_can_permission((*tree).permissions, 1)) /* can't traverse dir */
-		__otter_fs_error(EACCESS);
-
-	char* s = strchr(name, '/');
-
-	if(s == NULL) /* no leading directory */
-	{
-		return __otter_fs_find_inode_in_dir(name, tree);
-	}
-
-	/* otherwise recursively descend file system */
-	*s = 0; /* change the first '/' into an end of string */
-	struct __otter_fs_dnode* d = __otter_fs_find_dnode_in_dir(name, tree);
-	*s = '/'; /* change it back */
-	
-	if(d == 0); /* no such directory */
-	{
-		__otter_fs_error(ENOENT); /* cannot find file */
-	}
-
-	while(*s == '/')
-	{
-		s++; /* skip any extra '/' between dirs, posix says they should be ignored */
-		if(*s == 0)
-			__otter_fs_error(ENOENT); /* path ended in a directory name not a file */
-	}
-
-	return __otter_fs_find_inode_in_tree(s, d); /* search for the shortened path in the subtree */
+	return (struct __otter_fs_inode*)__otter_fs_find_vnode_in_tree(name, tree, __otter_fs_find_inode_in_dir);
 }
 
 struct __otter_fs_dnode* __otter_fs_find_dnode_in_tree(char* name, struct __otter_fs_dnode* tree)
+{
+	return (struct __otter_fs_dnode*)__otter_fs_find_vnode_in_tree(name, tree, __otter_fs_find_dnode_in_dir);
+}
+
+void* __otter_fs_find_vnode_in_tree(char* name, struct __otter_fs_dnode* tree, void* (*find_vnode)(char*, struct __otter_fs_dnode*))
 {
 	if(!__otter_fs_can_permission((*tree).permissions, 1)) /* can't traverse dir */
 		__otter_fs_error(EACCESS);
@@ -114,7 +92,7 @@ struct __otter_fs_dnode* __otter_fs_find_dnode_in_tree(char* name, struct __otte
 
 	if(s == NULL) /* no leading directory */
 	{
-		return __otter_fs_find_dnode_in_dir(name, tree);
+		return find_vnode(name, tree);
 	}
 
 	/* otherwise recursivly decend file system */
@@ -122,7 +100,7 @@ struct __otter_fs_dnode* __otter_fs_find_dnode_in_tree(char* name, struct __otte
 	struct __otter_fs_dnode* d = __otter_fs_find_dnode_in_dir(name, tree);
 	*s = '/'; /* change it back */
 
-	if(d == 0); /* no such directory */
+	if(d == 0) /* no such directory */
 	{
 		__otter_fs_error(ENOENT); /* cannot find file */
 	}
@@ -134,50 +112,37 @@ struct __otter_fs_dnode* __otter_fs_find_dnode_in_tree(char* name, struct __otte
 			__otter_fs_error(ENOENT); /* path ended in a directory name not a file */
 	}
 
-	return __otter_fs_find_dnode_in_tree(s, d); /* search for the shortened path in the subtree */
+	return __otter_fs_find_vnode_in_tree(s, d, find_vnode); /* search for the shortened path in the subtree */
 }
 
-struct __otter_fs_inode* __otter_fs_find_inode(const char* name_in)
+struct __otter_fs_inode* __otter_fs_find_inode(const char* name)
+{
+	return (struct __otter_fs_inode*)__otter_fs_find_vnode(name, __otter_fs_find_inode_in_dir);
+}
+
+struct __otter_fs_dnode* __otter_fs_find_dnode(const char* name)
+{
+	return (struct __otter_fs_dnode*)__otter_fs_find_vnode(name, __otter_fs_find_dnode_in_dir);
+}
+
+void* __otter_fs_find_vnode(const char* name_in, void* (*find_vnode)(char*, struct __otter_fs_dnode*))
 {
 	char* name = malloc(__libc_get_block_size(name_in));
 	strcpy(name, name_in);
 
 	if(name)
 	{
-		struct __otter_fs_inode* inode;
+		void* vnode;
 		if(*name == '/') /* absolute path */
 		{
 			name++;
-			inode = __otter_fs_find_inode_in_tree(name, __otter_fs_root);
+			vnode = __otter_fs_find_vnode_in_tree(name, __otter_fs_root, find_vnode);
 		}
 		else /* relative path */
-			inode = __otter_fs_find_inode_in_tree(name, __otter_fs_pwd);
+			vnode = __otter_fs_find_vnode_in_tree(name, __otter_fs_pwd, find_vnode);
 
 		free(name);
-		return inode;
-	}
-
-	__otter_fs_error(ENOENT);
-}
-
-struct __otter_fs_dnode* __otter_fs_find_dnode(const char* name_in)
-{
-	char* name = malloc(__libc_get_block_size(name_in));
-	strcpy(name, name_in);
-
-	if(name)
-	{
-		struct __otter_fs_dnode* dnode;
-		if(*name == '/') /* absolute path */
-		{
-			name++;
-			dnode = __otter_fs_find_dnode_in_tree(name, __otter_fs_root);
-		}
-		else /* relative path */
-			dnode = __otter_fs_find_dnode_in_tree(name, __otter_fs_pwd);
-
-		free(name);
-		return dnode;
+		return vnode;
 	}
 
 	__otter_fs_error(ENOENT);
