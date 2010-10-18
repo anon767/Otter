@@ -4,6 +4,7 @@
 #include<fcntl.h>
 #include<__otter/otter_user.h>
 #include <sys/socket.h>
+#include <errno.h>
 
 int __otter_libc_close(int fd)
 {
@@ -608,4 +609,22 @@ int __otter_libc_dup2(int fd1, int fd2)
 	}
 
 	return fcntl(fd1, F_DUPFD, fd2);
+}
+
+int __otter_libc_getpagesize()
+{
+	return((int)sysconf(_SC_PAGE_SIZE));
+}
+
+long __otter_libc_sysconf(int name)
+{
+	switch(name)
+	{
+		case _SC_PAGE_SIZE: /* _SC_PAGESIZE as well */
+			return(4096);
+		/* TODO: Impliment other system contants */
+	}
+	
+	errno = EINVAL;
+	return(-1);
 }

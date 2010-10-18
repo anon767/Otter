@@ -16,6 +16,7 @@
 #include "signal.c"
 #include "socket.c"
 #include "arpa_inet.c"
+#include "sys_mman.c"
 
 __otter_libc_init()
 {

@@ -90,3 +90,11 @@ struct __otter_fs_inode* __otter_fs_init_new_socket()
 	inode->numblocks = 0;
 	return inode;
 }
+
+void __otter_libc_free_socket(struct __otter_fs_inode* inode)
+{
+	free(((struct __otter_fs_sock_data*)inode->data)->recv_data->data);
+	free(((struct __otter_fs_sock_data*)inode->data)->recv_data);
+	free(inode->data);
+	free(inode);
+}

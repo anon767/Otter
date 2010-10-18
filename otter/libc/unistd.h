@@ -5,7 +5,8 @@
 #include <sys/types.h>
 /*#include <inttypes.h>*/
 
-#endif
+#define _SC_PAGE_SIZE 1
+#define _SC_PAGESIZE 1
 
 /* copied function prototypes from http://opengroup.org/onlinepubs/007908799/xsh/unistd.h.html */
 int          access(const char *, int);
@@ -93,4 +94,6 @@ int          unlink(const char *);
 int          usleep(useconds_t);
 pid_t        vfork(void);
 ssize_t      write(int, const void *, size_t);
+
+#endif
 

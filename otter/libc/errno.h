@@ -25,6 +25,9 @@
 #define EINTR 20
 #define ENOTCONN 21
 #define EAFNOSUPPORT 22
+#define EXIO 23
+#define EOVERFLOW 24
+#define ENODEV 25
 
 int errno = 0;
 

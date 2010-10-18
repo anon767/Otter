@@ -96,6 +96,4 @@ struct linger
 int socket(int domain, int type, int protocol);
 int bind(int socket, const struct sockaddr *address, socklen_t address_len);
 
-void __otter_libc_free_socket(struct __otter_fs_inode* inode);
-
 #endif

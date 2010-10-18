@@ -1003,6 +1003,8 @@ let libc_interceptor job job_queue interceptor =
 		(intercept_function_by_name_external "setuid"                  "__otter_libc_setuid") @@
 		(intercept_function_by_name_external "dup"                     "__otter_libc_dup") @@
 		(intercept_function_by_name_external "dup2"                    "__otter_libc_dup2") @@
+		(intercept_function_by_name_external "getpagesize"             "__otter_libc_getpagesize") @@
+		(intercept_function_by_name_external "sysconf"                 "__otter_libc_sysconf") @@
 
 		(* arpa/inet.h *)
 		(intercept_function_by_name_external "inet_addr"               "__otter_libc_inet_addr") @@
@@ -1017,6 +1019,10 @@ let libc_interceptor job job_queue interceptor =
 		(intercept_function_by_name_external "creat"                   "__otter_libc_creat") @@
 		(intercept_function_by_name_external "fcntl"                   "__otter_libc_fcntl") @@
 		(intercept_function_by_name_external "open"                    "__otter_libc_open") @@
+		
+		(* sys/mman.h *)
+		(intercept_function_by_name_external "mmap"                    "__otter_libc_mmap") @@
+		(intercept_function_by_name_external "munmap"                  "__otter_libc_munmap") @@
 
 		(* sys/socket.h *)
 		(intercept_function_by_name_external "socket"                  "__otter_libc_socket") @@

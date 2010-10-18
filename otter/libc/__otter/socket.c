@@ -37,11 +37,3 @@ int __otter_libc_socket(int domain, int type, int protocol)
 	
 	return(fd);
 }
-
-void __otter_libc_free_socket(struct __otter_fs_inode* inode)
-{
-	free(((struct __otter_fs_sock_data*)inode->data)->recv_data->data);
-	free(((struct __otter_fs_sock_data*)inode->data)->recv_data);
-	free(inode->data);
-	free(inode);
-}
