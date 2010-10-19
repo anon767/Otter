@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <sys/socket.h>
 
 /** Returns a pointer to the dnode representing the path's directory,
 		and sets the second argument to the path's basename. If the path contains
@@ -75,6 +76,7 @@ struct __otter_fs_sock_data* __otter_fs_init_new_socket_data()
 	struct __otter_fs_sock_data* sock = __otter_multi_gmalloc(sizeof(struct __otter_fs_sock_data));
 	sock->addr = NULL;
 	sock->state = 0;
+	sock->options = 
 	sock->recv_data = __otter_fs_init_new_pipe_data();
 	return sock;
 }

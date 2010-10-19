@@ -53,6 +53,7 @@ struct __otter_fs_sock_data
 {
 	struct sockaddr* addr; /* bound ip and port */
 	int state; /* socket state machine */
+	int options;
 	struct __otter_fs_pipe_data* recv_data;
 	struct __otter_fs_sock_data* send_sock;
 };

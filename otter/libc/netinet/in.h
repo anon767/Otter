@@ -60,8 +60,4 @@ struct sockaddr_in
 #define IPPROTO_TCP 3
 #define IPPROTO_UDP 4
 
-#define INADDR_ANY 1
-#define INADDR_BROADCAST 2
-#define INADDR_NONE 0xFFFFFFFF
-
 #endif

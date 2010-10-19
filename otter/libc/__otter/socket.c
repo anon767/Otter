@@ -37,3 +37,13 @@ int __otter_libc_socket(int domain, int type, int protocol)
 	
 	return(fd);
 }
+
+int __otter_libc_setsockopt(int socket, int level, int option_name, const void *option_value, socklen_t option_len)
+{
+	return(0);
+}
+
+int __otter_libc_getsockopt(int socket, int level, int option_name, void *option_value, socklen_t *option_len)
+{
+	return(0);
+}

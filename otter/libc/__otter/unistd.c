@@ -250,7 +250,8 @@ ssize_t __otter_libc_read_socket(
 		case __otter_sock_ST_LAST_ACK:
 		case __otter_sock_ST_CLOSING:
 		case __otter_sock_ST_TIME_WAIT:
-			/* can't read in these states */
+		case __otter_sock_ST_UDP:
+			/* can't read() in these states */
 			errno = ENOTCONN;
 			return(-1);
 			break;
@@ -258,8 +259,7 @@ ssize_t __otter_libc_read_socket(
 		case __otter_sock_ST_ESTABLISHED:
 		case __otter_sock_ST_FIN_WAIT_1:
 		case __otter_sock_ST_FIN_WAIT_2:
-		case __otter_sock_ST_UDP:
-			return __otter_libc_read_pipe_data(sock->recv_data);
+			return __otter_libc_read_pipe_data(sock->recv_data, buf, num);
 			break;
 			
 		default:
@@ -287,15 +287,16 @@ ssize_t __otter_libc_write_socket(
 		case __otter_sock_ST_FIN_WAIT_2:
 		case __otter_sock_ST_CLOSING:
 		case __otter_sock_ST_TIME_WAIT:
-			/* can't write in these states */
+		case __otter_sock_ST_UDP:
+			/* can't write() in these states */
 			errno = ENOTCONN;
 			return(-1);
 			break;
 
 		case __otter_sock_ST_ESTABLISHED:
 		case __otter_sock_ST_CLOSE_WAIT:
-		case __otter_sock_ST_UDP:
-			return __otter_libc_write_pipe_data(sock->recv_data);
+			struct __otter_fs_sock_data* send_sock = sock->send_sock;
+			return __otter_libc_write_pipe_data(send_sock->recv_data, buf, num);
 			break;
 			
 		default:
@@ -622,7 +623,7 @@ long __otter_libc_sysconf(int name)
 	{
 		case _SC_PAGE_SIZE: /* _SC_PAGESIZE as well */
 			return(4096);
-		/* TODO: Impliment other system contants */
+		/* TODO: Impliment other system constants */
 	}
 	
 	errno = EINVAL;

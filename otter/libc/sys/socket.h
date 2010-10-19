@@ -97,5 +97,7 @@ struct linger
 
 int socket(int domain, int type, int protocol);
 int bind(int socket, const struct sockaddr *address, socklen_t address_len);
+int setsockopt(int socket, int level, int option_name, const void *option_value, socklen_t option_len);
+int getsockopt(int socket, int level, int option_name, void *option_value, socklen_t *option_len);
 
 #endif

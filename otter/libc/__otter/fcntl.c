@@ -34,6 +34,7 @@ int __otter_libc_fcntl(int fd, int cmd, ...)
 				if(open_file) /* is file a valid file entry? */
 				{
 					__otter_fs_fd_table[fd2] = __otter_fs_fd_table[fd];
+					open_file->openno++;
 					r = fd2;
 				}
 				break;
