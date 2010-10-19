@@ -54,6 +54,20 @@ struct sockaddr_in
 	unsigned char sin_zero[8];
 };
 
+struct in6_addr
+{
+	unsigned char s6_addr[16];
+};
+
+struct sockaddr_in6 
+{
+	unsigned char sin6_len;
+	unsigned char sin6_family;
+	in_port_t sin6_port;
+	int sin6_flowinfo;
+	struct in6_addr sin6_addr;
+};
+
 #define IPPROTO_AUTO 0
 #define IPPROTO_IP 1
 #define IPPROTO_ICMP 2
