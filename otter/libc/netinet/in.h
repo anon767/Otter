@@ -1,8 +1,6 @@
 #ifndef __NETINET_IN_H
 #define __NETINET_IN_H
 
-#include <arpa/inet.h>
-
 /* adapted from uclibc */
 
 #define	IN_CLASSA(a)		((((in_addr_t)(a)) & 0x80000000) == 0)
@@ -40,6 +38,8 @@
 
 typedef unsigned short in_port_t;
 typedef unsigned int in_addr_t;
+
+#include <arpa/inet.h>
 
 struct in_addr
 {

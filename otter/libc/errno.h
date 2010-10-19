@@ -28,6 +28,8 @@
 #define EXIO 23
 #define EOVERFLOW 24
 #define ENODEV 25
+#define ENOTSOCK 26
+#define EFAULT 27;
 
 int errno = 0;
 

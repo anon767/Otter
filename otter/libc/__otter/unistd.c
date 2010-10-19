@@ -295,9 +295,11 @@ ssize_t __otter_libc_write_socket(
 
 		case __otter_sock_ST_ESTABLISHED:
 		case __otter_sock_ST_CLOSE_WAIT:
-			struct __otter_fs_sock_data* send_sock = sock->send_sock;
-			return __otter_libc_write_pipe_data(send_sock->recv_data, buf, num);
-			break;
+			{
+				struct __otter_fs_sock_data* send_sock = sock->send_sock;
+				return __otter_libc_write_pipe_data(send_sock->recv_data, buf, num);
+				break;
+			}
 			
 		default:
 			__ASSERT(0);

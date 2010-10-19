@@ -1027,6 +1027,8 @@ let libc_interceptor job job_queue interceptor =
 
 		(* sys/socket.h *)
 		(intercept_function_by_name_external "socket"                  "__otter_libc_socket") @@
+		(intercept_function_by_name_external "getsockopt"              "__otter_libc_getsockopt") @@
+		(intercept_function_by_name_external "setsockopt"              "__otter_libc_setsockopt") @@
 
 		(* sys/stat.h *)
 		(intercept_function_by_name_external "chmod"                   "__otter_libc_chmod") @@

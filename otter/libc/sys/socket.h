@@ -12,22 +12,23 @@
 
 #define SOL_SOCKET -1
 
-#define SO_ACCEPTCONN 1
-#define SO_BROADCAST 2
-#define SO_DEBUG 3
-#define SO_DONTROUTE 4
-#define SO_ERROR 5
-#define SO_KEEPALIVE 6
-#define SO_LINGER 7
-#define SO_OOBINLINE 8
-#define SO_RCVBUF 9
-#define SO_RVCLOWAT 10
-#define SO_RCVTIMEO 11
-#define SO_REUSEADDR 12
-#define SO_SNDBUF 13
-#define SO_SNDLOWAT 14
-#define SO_SNDTIMEO 15
-#define SO_TYPE 16
+/* these don't need to be bit flags in the spec, but it makes storing these values easier */
+#define SO_ACCEPTCONN  0x00000001
+#define SO_BROADCAST   0x00000002
+#define SO_DEBUG       0x00000004
+#define SO_DONTROUTE   0x00000008
+#define SO_ERROR       0x00000010
+#define SO_KEEPALIVE   0x00000020
+#define SO_LINGER      0x00000040
+#define SO_OOBINLINE   0x00000080
+#define SO_RCVBUF      0x00000100
+#define SO_RVCLOWAT    0x00000200
+#define SO_RCVTIMEO    0x00000400
+#define SO_REUSEADDR   0x00000800
+#define SO_SNDBUF      0x00001000
+#define SO_SNDLOWAT    0x00002000
+#define SO_SNDTIMEO    0x00004000
+#define SO_TYPE        0x00008000
 
 #define MSG_CTRUNC 1
 #define MSG_DONTROUTE 2
