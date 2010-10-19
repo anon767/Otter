@@ -26,8 +26,8 @@
 
 #pragma entry_function("foo")
 #pragma time_limit(1)
-#pragma expect_abandoned(failure("Dereference something not an address (bytearray)")) /* for the null leaf node of y */
-#pragma expect_abandoned(failure("Dereference something not an address (bytearray)")) /* for the null leaf node of x */
+#pragma expect_abandoned(failure("Dereference something not an address")) /* for the null leaf node of y */
+#pragma expect_abandoned(failure("Dereference something not an address")) /* for the null leaf node of x */
 #pragma expect_return() /* for the non-null leaf node */
 #pragma no_other_results
 
