@@ -202,7 +202,8 @@ let state__get_bytes_from_block state block =
 		(state, string_table__get block)
 	else
 		let deferred = MemoryBlockMap.find block state.block_to_bytes in
-		Deferred.force_with_update state (fun state bytes -> state__add_block state block bytes) deferred
+		let state, bytes = Deferred.force state deferred in
+		(state__add_block state block bytes, bytes)
 
 
 let state__get_deferred_from_block state block =
