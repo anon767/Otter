@@ -219,10 +219,8 @@ let state__deref ?pre state (lvals, size) =
         let state, bytes = state__get_bytes_from_block state block in
         (state, conditional__bytes (bytes__read ~test:(Stp.query_stp state.path_condition) ~pre bytes offset size))
     in
-    (* Prune dummy_blocks created in Expression.deref *)
-    let lvals = conditional__prune ~test:(Stp.query_stp state.path_condition) lvals in
     let state, c = conditional__fold_map ?pre deref state lvals in
-        (state, make_Bytes_Conditional c)
+    (state, make_Bytes_Conditional c)
 
 
 let rec state__assign state (lvals, size) bytes =

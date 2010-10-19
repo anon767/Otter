@@ -374,44 +374,34 @@ deref state bytes errors =
                 failwith "Dereference into an expired stack frame"
 
         | Bytes_Conditional c ->
-            let make_dummy_lval =
-                Unconditional (block__make_string_literal "@dummy_block" 4, bytes__zero)
-            in
-            let (acc_pass, acc_fail, state, errors), conditional =
-                conditional__fold_map begin fun (acc_pass, acc_fail, state, errors) guard c ->
+            let (guard, state, errors), conditional_opt =
+                conditional__fold_map_opt begin fun (guard, state, errors) guard' c ->
                     try
                         let state, lval, errors = deref state c errors in
-                        ((guard::acc_pass, acc_fail, state, errors), lval)
-                    with
-                        | Failure msg ->
-                            (* Collect a list of failing guard/message pairs *)
-                            ((acc_pass, (guard, msg)::acc_fail, state, errors), make_dummy_lval)
-                end ([],[], state, errors) c
+                        ((guard, state, errors), Some lval)
+                    with Failure msg ->
+                        (* Guard against this failure, add it to the error list, and remove this leaf. *)
+                        let guard = guard__and_not guard guard' in
+                        let errors = (state, Bytes.guard__to_bytes guard, `Failure msg)::errors in
+                        ((guard, state, errors), None)
+                end (Bytes.guard__true, state, errors) c
             in
-            if acc_fail = [] then
-                (* All conditional branches were dereferenced successfully: return the dereferenced conditional. *)
-                (state, conditional, errors)
-            else
-                let failing_condition, aggregated_msg =
-                    List.fold_left begin fun (failing_condition, aggregated_msg) (guard, msg) ->
-                        let bytes_of_guard = Bytes.guard__to_bytes guard in
-                        (Bytes.bytes_or failing_condition bytes_of_guard, aggregated_msg ^ "/" ^ msg)
-                    end (Bytes.fls, "(Conditional Exception(s))") acc_fail
-                in
-                if acc_pass = [] then
-                    (* No conditional branches were dereferenced successfully: just fail. *)
-                    failwith aggregated_msg
-                else
-                    (* Not all conditional branches were dereferenced successfully:
-                     * Add (Bytes.bytes_not failing_condition) into state.path_condition and keep running.
-                     * Also, add (state, failing_condition, aggregated_msg) into the error errors.
-                     * Here, the state is the exact program state when the error occurs.
-                     *)
-                    let errors = (state, failing_condition, `Failure aggregated_msg)::errors in
+            begin match conditional_opt, guard with
+                | Some conditional, Guard_True ->
+                    (* All conditional branches were dereferenced successfully: return the dereferenced conditional. *)
+                    (state, conditional, errors)
+                | Some conditional, guard ->
+                    (* Not all conditional branches were dereferenced successfully: add the guard and continue. *)
                     let state = { state with
-                        path_condition = (Bytes.bytes_not failing_condition)::state.path_condition;
+                        path_condition = (Bytes.guard__to_bytes guard)::state.path_condition;
                     } in
                     (state, conditional, errors)
+                | None, _ ->
+                    (* No conditional branches were dereferenced successfully: just fail. *)
+                    (* TODO: Yit: The only way to return a polymorphic error in Ocaml is to use an exception monad,
+                        and that takes a wholesale change to Expression. *)
+                    failwith "Dereferece of invalid conditional pointer"
+            end
 
         | Bytes_Op(op, operands) ->
             FormatPlus.failwith "Dereference something not an address:@ operation @[%a@]" BytesPrinter.bytes bytes
