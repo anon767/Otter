@@ -1023,6 +1023,7 @@ let libc_interceptor job job_queue interceptor =
 		(* sys/mman.h *)
 		(intercept_function_by_name_external "mmap"                    "__otter_libc_mmap") @@
 		(intercept_function_by_name_external "munmap"                  "__otter_libc_munmap") @@
+		(intercept_function_by_name_external "mprotect"                "__otter_libc_mprotect") @@
 
 		(* sys/socket.h *)
 		(intercept_function_by_name_external "socket"                  "__otter_libc_socket") @@

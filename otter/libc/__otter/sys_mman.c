@@ -149,19 +149,13 @@ void *__otter_libc_mmap(void *start, size_t len, int prot, int flags, int fd, of
  */
 int __otter_libc_munmap(void *addr, size_t len)
 {
-	if(len == 0)
-	{
-		errno = EINVAL;
-		return(-1);
-	}
-	
-	long pagesize = sysconf(_SC_PAGE_SIZE);
-	if(!(len % pagesize == 0)) /* len must corrispond to an integer multiple of pages */
-	{
-		errno = EINVAL;
-		return MAP_FAILED;
-	}
 
 	/* TODO: figure out a way to track when it is appropriate to free memory */
+	return(0);
+}
+
+int __otter_libc_mprotect(void *addr, size_t len, int prot)
+{
+	/* There isn't support for protecting memory so this function does nothing. */
 	return(0);
 }
