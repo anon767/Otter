@@ -150,33 +150,31 @@ let state__add_frame state =
 
 
 
-let state__varinfo_to_lval_block state varinfo =
+let state__varinfo_to_lval_block ?pre state varinfo =
+	(* lookup varinfo in locals, formals and globals, prune and update the store, and return the result *)
 	let local = List.hd state.locals in
 	if VarinfoMap.mem varinfo local then
 		let deferred = frame__varinfo_to_lval_block local varinfo in
-		let update state lval =
-			let local = VarinfoMap.add varinfo (Deferred.Immediate lval) local in
-			{ state with locals=local::List.tl state.locals }
-		in
-		Deferred.force_with_update state update deferred
+		let state, lval = Deferred.force state deferred in
+		let lval = conditional__prune ~test:(Stp.query_stp state.path_condition) ?pre lval in
+		let local = VarinfoMap.add varinfo (Deferred.Immediate lval) local in
+		({ state with locals=local::List.tl state.locals }, lval)
 	else
 		let formal = List.hd state.formals in
 		if VarinfoMap.mem varinfo formal then
 			let deferred = frame__varinfo_to_lval_block formal varinfo in
-			let update state lval =
-				let formal = VarinfoMap.add varinfo (Deferred.Immediate lval) formal in
-				{ state with formals=formal::List.tl state.formals }
-			in
-			Deferred.force_with_update state update deferred
+			let state, lval = Deferred.force state deferred in
+			let lval = conditional__prune ~test:(Stp.query_stp state.path_condition) ?pre lval in
+			let formal = VarinfoMap.add varinfo (Deferred.Immediate lval) formal in
+			({ state with formals=formal::List.tl state.formals }, lval)
 		else
 			let global = state.global in
 			if VarinfoMap.mem varinfo global then
 				let deferred = frame__varinfo_to_lval_block global varinfo in
-				let update state lval =
-					let global = VarinfoMap.add varinfo (Deferred.Immediate lval) global in
-					{ state with global=global }
-				in
-				Deferred.force_with_update state update deferred
+				let state, lval = Deferred.force state deferred in
+				let lval = conditional__prune ~test:(Stp.query_stp state.path_condition) ?pre lval in
+				let global = VarinfoMap.add varinfo (Deferred.Immediate lval) global in
+				({ state with global=global }, lval)
 			else (* varinfo may be a function *)
 				failwith ("Varinfo "^(varinfo.vname)^" not found.")
 
