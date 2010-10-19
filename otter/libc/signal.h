@@ -19,10 +19,18 @@ typedef struct
 #define SIGINT 4
 #define SIGSEGV 5
 #define SIGTERM 6
+#define SIGALRM 7
+#define SIGTERM 8
+#define SIGCHLD 9
+#define SIGPIPE 10
+#define SIGURG 11
+#define SIGHUP 12
+#define SIG_BLOCK 13
+#define SIG_UNBLOCK 14
 
 #define SIGMIN 0
-#define SIGMAX 6
-#define NSIG 7
+#define SIGMAX 14
+#define NSIG (SIGMAX + 1)
 
 union sigval
 {
