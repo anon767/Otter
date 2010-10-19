@@ -25,7 +25,6 @@ type target = {
 
 (* Cil feature for call-chain backwards Otter *)
 let arg_assertfn = ref "__FAILURE"
-let arg_exceptions_as_failures = ref false
 
 let otter_failure_interceptor job job_queue interceptor =
 	match job.instrList with
@@ -144,7 +143,7 @@ let test_job_at_targets targets job =
             let job = { job with instrList = tail; } in
             let errors = [] in
             let job_state, errors = Statement.exec_instr_call job instr lvalopt fexp exps errors in
-            assert(errors = []); (* TODO: do something smarter about errors, e.g., fork them into Abandoned jobs *)
+            List.iter (fun (_,_,error) -> Format.printf "An error caught in test_job_at_targets when initializing the function call: %a @\n" Report.abandoned_reason error) errors;
             let active_jobs =
               let rec get_active_jobs job_state =
                   match job_state with
@@ -263,18 +262,18 @@ let test_job_at_targets targets job =
                           List.rev_append partial_failing_paths failing_paths
                 ) [] targetted_jobs
             in
-			  if List.length failing_paths = 0 then
-			  	None
-			  else
-			  	let result = {
-			  		result_file = job.Job.file;
+            if List.length failing_paths = 0 then
+                None
+            else
+                let result = {
+                    result_file = job.Job.file;
                     result_state = job.state;  (* Doesn't matter what state is; won't be used *)
-			  		result_history = job.exHist;
-			  		result_decision_path = job.decisionPath;
-                } in
-			  	  Some (Complete (Abandoned (`FailingPaths failing_paths, loc, result)))
-		| _ ->
-			None
+                    result_history = job.exHist;
+                    result_decision_path = job.decisionPath; }
+                in
+                Some (Complete (Abandoned (`FailingPaths failing_paths, loc, result)))
+        | _ ->
+            None
 
 let test_job_at_targets_interceptor targets job job_queue interceptor =
 	match test_job_at_targets targets job with
@@ -338,7 +337,7 @@ let callchain_backward_se file entryfn assertfn job_init : _ job_completion list
                         List.rev_append joined_paths all_paths
               | Abandoned (`FailureReached,_,job_result) ->
                       job_result.result_decision_path::all_paths
-              | Abandoned (`Failure(_),_,job_result) when (!arg_exceptions_as_failures) ->
+              | Abandoned (`Failure(_),_,job_result) when (not !Driver.arg_no_exceptions_as_failures) ->
                       job_result.result_decision_path::all_paths
               | _ -> all_paths
           ) [] results
@@ -392,10 +391,20 @@ let prepare_file file =
 	Core.prepare_file file
 
 let doit file =
-	(* TODO: do something about signal handlers/run statistics from Executemain.doExecute *)
 
     Format.printf "@\n@\nCall-chain backward Symbolic Execution@\n@\n";
 	let startTime = Unix.gettimeofday () in
+	(* Set signal handlers to catch timeouts and interrupts *)
+	let old_ALRM_handler =
+		Sys.signal Sys.sigalrm
+			(Sys.Signal_handle (fun _ -> raise (SignalException "Timed out!")))
+	and old_INT_handler =
+		Sys.signal Sys.sigint
+			(Sys.Signal_handle (fun _ -> raise (SignalException "User interrupt!")))
+	in
+	(* Set a timer *)
+	ignore (Unix.alarm !Executeargs.arg_timeout);
+
 	prepare_file file;
 	let entryfn = Driver.find_entryfn file in
 	let assertfn =
@@ -405,6 +414,11 @@ let doit file =
 	in
 	let job_init = fun entryfn -> FunctionJob.make file entryfn in
 	let results = callchain_backward_se file entryfn assertfn job_init in
+
+	(* Turn off the alarm and reset the signal handlers *)
+	ignore (Unix.alarm 0);
+	Sys.set_signal Sys.sigalrm old_ALRM_handler;
+	Sys.set_signal Sys.sigint old_INT_handler;
 
 	(* print the results *)
 	Output.set_formatter (new Output.plain);
@@ -451,9 +465,6 @@ let feature = {
 		("--assertfn",
 		Arg.Set_string arg_assertfn,
 		"<fname> Assertion function to look for in the call-chain-backward mode (default: __FAILURE) @\n");
-		("--exceptions-as-failures",
-		Arg.Set arg_exceptions_as_failures,
-		" Treat general exceptions (e.g., dereferencing a non-pointer) as assertion failures (i.e., contribute failure paths) @\n");
 	];
 	Cil.fd_post_check = true;
 	Cil.fd_doit = doit

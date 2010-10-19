@@ -11,6 +11,7 @@ let (>>>) = Interceptor.(>>>)
 let default_max_nodes = ref 0
 let default_max_paths = ref 0
 let default_max_abandoned = ref 0
+let arg_no_exceptions_as_failures = ref false
 
 (** Locate the function corresponding to {!Executeargs.entryfn}. *)
 let find_entryfn file =
@@ -41,7 +42,7 @@ let main_loop
             let result_opt =
                 try
                     Some (step job)
-                with Types.SignalException s ->
+                 with Types.SignalException s ->
                     (* if we got a signal, stop and return the completed results *)
                     Output.set_mode Output.MSG_MUSTPRINT;
                     Output.printf "%s@\n" s;
@@ -57,29 +58,39 @@ let main_loop
                         | Job.Fork [] ->
                             k work
                         | Job.Complete completion ->
-                            (* TODO (martin) separate __FAILURE paths from non __FAILURE paths *)
+                            let paths = paths + 1 in
+                            let abandoned = abandoned +
+                                match completion with
+                                    (* TODO (martin) : could we separate the notion of exceptions_as_failures
+                                     * out of this function? *)
+                                    | Job.Abandoned (`FailureReached,_,_) -> 1
+                                    | Job.Abandoned _ when (not !arg_no_exceptions_as_failures) -> 1
+                                    | _ -> 0
+                            in
                             let reporter = reporter#report completion in
                             if (max_paths = 0 || paths < max_paths)
                                     && (max_abandoned = 0 || abandoned < max_abandoned) then
-                                k (nodes, paths + 1, abandoned + (match completion with Job.Abandoned _ -> 1 | _ -> 0), queue, reporter)
+                                k (nodes, paths, abandoned, queue, reporter)
                             else
                                 reporter
                         | Job.Paused _ ->
                             invalid_arg "unexpected Job.Paused"
                     in
-                    process_result (nodes, paths, abandoned, queue, reporter) result begin fun (nodes, paths, abandoned, queue, reporter) ->
-                        if max_nodes = 0 || nodes < max_nodes then
-                            run (nodes + 1, paths, abandoned, queue, reporter)
-                        else
-                            reporter
-                    end
+                    process_result (nodes, paths, abandoned, queue, reporter) result
+                        begin fun (nodes, paths, abandoned, queue, reporter) ->
+                            let nodes = nodes + 1 in
+                            if max_nodes = 0 || nodes < max_nodes then
+                                run (nodes, paths, abandoned, queue, reporter)
+                            else
+                                reporter
+                        end
                 | None ->
                     reporter
             end
         | None ->
             reporter
     in
-    run (1, 1, 1, queue, reporter)
+    run (0, 0, 0, queue, reporter)
 
 
 (** {1 Precomposed drivers for common use cases} *)
@@ -122,5 +133,8 @@ let options = [
     "--max-abandoned",
         Arg.Set_int default_max_abandoned,
         "<bound> Bound the number of abandoned paths to return (default: unbounded)";
+    "--no-exceptions-as-failures",
+    Arg.Set arg_no_exceptions_as_failures,
+    " Do not treat general exceptions (e.g., dereferencing a non-pointer) as assertion failures (i.e., contribute failure paths) @\n";
 ]
 
