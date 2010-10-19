@@ -530,7 +530,7 @@ let asBoolean bytes =
 (** Remove a NOT from a bytes, if doing so leaves it boolean. Otherwise, add a
 	NOT. *)
 let logicalNot = function
-		Bytes_Op(OP_LNOT,[bytes,_]) when isBoolean bytes -> bytes
+	| Bytes_Op(OP_LNOT,[bytes,_]) when isBoolean bytes -> bytes
 	| bytes -> make_Bytes_Op(OP_LNOT,[(bytes, Cil.intType)])
 
 (**
@@ -556,7 +556,7 @@ let guard__bytes b = Guard_Bytes b
 let guard__to_bytes = function
 	| Guard_True -> bytes__one
 	| Guard_Not Guard_True -> bytes__zero
-    | Guard_Bytes b -> b
+	| Guard_Bytes b -> b
 	| g -> make_Bytes_Conditional (IfThenElse (g, Unconditional bytes__one, Unconditional bytes__zero))
 
 
@@ -564,38 +564,65 @@ let guard__to_bytes = function
  *  conditional
  *)
 
-(** Map and fold simultaneously over the leaves of conditionals.
+(** Fold and map simultaneously over the leaves of conditionals, optionally removing leaves.
     @param test is an optional test function to filter by the guard condition : [guard -> guard -> Ternary.t]
     @param eq is an optional equality function to prune identical leaves : ['target -> 'target -> bool]
     @param pre is an optional precondition
-    @param map_fold is the map and fold function : ['acc -> guard -> 'source -> 'acc * 'target conditional]
+    @param fold_map_opt is the fold and map function, which may map to [None] to remove leaves
+            : ['acc -> guard -> 'source -> 'acc * 'target conditional option]
+    @param acc is the initial accumulator
+    @param source is the original conditional to map from
+    @return [('acc, 'target conditional option)] the final accumulator and mapped conditional, which may be [None]
+            if all leaves were removed
+*)
+let conditional__fold_map_opt ?(test=fun _ _ -> Ternary.Unknown) ?(eq=(==)) ?(pre=Guard_True) fold_map_opt acc source =
+    let rec conditional__fold_map_opt acc pre = function
+        | IfThenElse (guard, x, y) ->
+            begin match test pre guard with
+                | Ternary.True ->
+                    (* test pre ==> guard *)
+                    conditional__fold_map_opt acc pre x
+                | Ternary.False ->
+                    (* test pre ==> !guard *)
+                    conditional__fold_map_opt acc pre y
+                | Ternary.Unknown ->
+                    let acc, x_opt = conditional__fold_map_opt acc (guard__and pre guard) x in
+                    let acc, y_opt = conditional__fold_map_opt acc (guard__and_not pre guard) y in
+                    match x_opt, y_opt with
+                        | Some x, Some y when conditional__equal eq x y ->
+                            (* prune away unnecessary IfThenElse *)
+                            (acc, x_opt)
+                        | Some x, Some y ->
+                            (acc, Some (IfThenElse (guard, x, y)))
+                        | x_opt, None ->
+                            (acc, x_opt)
+                        | None, y_opt ->
+                            (acc, y_opt)
+            end
+        | Unconditional x ->
+            fold_map_opt acc pre x
+    in
+    conditional__fold_map_opt acc pre source
+
+
+(** Fold and map simultaneously over the leaves of conditionals.
+    @param test is an optional test function to filter by the guard condition : [guard -> guard -> Ternary.t]
+    @param eq is an optional equality function to prune identical leaves : ['target -> 'target -> bool]
+    @param pre is an optional precondition
+    @param fold_map is the fold and map function : ['acc -> guard -> 'source -> 'acc * 'target conditional]
     @param acc is the initial accumulator
     @param source is the original conditional to map from
     @return [('acc, 'target conditional)] the final accumulator and mapped conditional
 *)
-let conditional__fold_map ?(test=fun _ _ -> Ternary.Unknown) ?(eq=(==)) ?(pre=Guard_True) map_fold acc source =
-	let rec conditional__fold_map acc pre = function
-		| IfThenElse (guard, x, y) ->
-			begin match test pre guard with
-				| Ternary.True ->
-					(* test pre ==> guard *)
-					conditional__fold_map acc pre x
-				| Ternary.False ->
-					(* test pre ==> !guard *)
-					conditional__fold_map acc pre y
-				| Ternary.Unknown ->
-					let acc, x = conditional__fold_map acc (guard__and pre guard) x in
-					let acc, y = conditional__fold_map acc (guard__and_not pre guard) y in
-					(* prune away unnecessary IfThenElse *)
-					if conditional__equal eq x y then
-						(acc, x)
-					else
-						(acc, IfThenElse (guard, x, y))
-			end
-		| Unconditional x ->
-			map_fold acc pre x
-	in
-	conditional__fold_map acc pre source
+let conditional__fold_map ?test ?eq ?pre fold_map acc source =
+    let fold_map_opt acc pre x =
+        let acc, x = fold_map acc pre x in
+        (acc, Some x)
+    in
+    let acc, result_opt = conditional__fold_map_opt ?test ?eq ?pre fold_map_opt acc source in
+    match result_opt with
+        | Some result -> (acc, result)
+        | None -> failwith "Impossible!" (* because fold_map_opt never returns [(_, None)] *)
 
 
 (** Fold over the leaves of conditionals.
