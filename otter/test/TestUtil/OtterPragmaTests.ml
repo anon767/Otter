@@ -58,6 +58,7 @@ type flags = {
     cil_options : string list;      (** The command line options to pass to CIL. *)
     command_line : string list;     (** The command line to use to run the test. *)
     has_failing_assertions : bool;  (** If failing assertions are expected in the test. *)
+    no_bounds_checking : bool;      (** Disable bounds checking (corrsponds to Otter option --noboundsChecking) *)
 }
 
 
@@ -68,6 +69,7 @@ let default_flags = {
     cil_options = [];
     command_line = [];
     has_failing_assertions = false;
+    no_bounds_checking = false;
 }
 
 
@@ -283,6 +285,11 @@ let parse_pragmas file =
                     if cil_options = [] then assert_loc_failure file loc "Invalid CIL options (should have at least one argument).";
                     ({ flags with cil_options = cil_options }, test)
 
+                | "no_bounds_checking", [] ->
+                    ({ flags with no_bounds_checking = true }, test)
+                | "no_bounds_checking", _ ->
+                    assert_loc_failure file loc "Invalid no_bounds_checking (should have no arguments)."
+
                 | "has_failing_assertions", [] ->
                     ({ flags with has_failing_assertions = true }, test)
                 | "has_failing_assertions", _ ->
@@ -354,6 +361,10 @@ let test_otter_with_pragma ?(main_loop=Driver.run_basic) path = fun () ->
 
     (* load the configuration from the file *)
     let flags, test = parse_pragmas file in
+
+    (* disable bounds checking if required *)
+    if flags.no_bounds_checking then
+        Executeargs.arg_bounds_checking := false;
 
     (* See if any CIL options were defined. If so, parse the file again with those options *)
     if flags.cil_options <> [] then
