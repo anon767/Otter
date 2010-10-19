@@ -13,7 +13,7 @@
             [main()]. Ignore if [#pragma entry_function(...)] is given and not "main".
             E.g., [#pragma command_line("foo", "bar")].
         - [#pragma cil_options(<string argument>, ...)] specifies the command line arguments to be passed to
-            CIL. E.g., [#pragma command_line("--useLogicalOperators")].
+            CIL. E.g., [#pragma cil_options("--useLogicalOperators")].
         - [#pragma has_failing_assertions] specifies that failing assertions should be expected. Conversely, {e not
             providing} this directive specifies that failing assertions should not be expected.
         - [#pragma expect_return(<assertion expression>, ...)] specifies that there should be a {!Job.Return}
