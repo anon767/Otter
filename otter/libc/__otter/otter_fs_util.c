@@ -70,7 +70,7 @@ struct __otter_fs_pipe_data* __otter_fs_init_new_pipe_data()
 	return pipe;
 }
 
-struct __otter_fs_sock_data* ___otter_fs_init_new_socket_data()
+struct __otter_fs_sock_data* __otter_fs_init_new_socket_data()
 {
 	struct __otter_fs_sock_data* sock = __otter_multi_gmalloc(sizeof(struct __otter_fs_sock_data));
 	sock->addr = NULL;
@@ -86,7 +86,7 @@ struct __otter_fs_inode* __otter_fs_init_new_socket()
 	inode->size = 0;
 	inode->type = __otter_fs_TYP_SOCK;
 	inode->permissions = __otter_fs_umask;
-	inode->data = (void*)__otter_fs_init_new_sock_data();
+	inode->data = (void*)__otter_fs_init_new_socket_data();
 	inode->numblocks = 0;
 	return inode;
 }

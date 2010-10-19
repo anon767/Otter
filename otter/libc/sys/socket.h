@@ -41,6 +41,8 @@
 #define AF_UNIX 1
 #define AF_INET 2
 
+#define PF_INET AF_INET
+
 #define SHUT_RD 1
 #define SHUT_WR 2
 #define SHUT_RDWR 4
