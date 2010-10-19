@@ -1,7 +1,27 @@
 /*
- * ./otter.pl --dobackotter --noboundsChecking --max-abandoned=(any) -Ilibc test/TestBackOtter/sglib.c
- * (This test becomes not working after functions are made call-by-reference.
- *  Likely the Conditional Exception stuff is not working here.)
+ * ./otter.pl --dobackotter --noboundsChecking --max-abandoned=1 --no-exceptions-as-failures -Ilibc test/TestBackOtter/sglib.c
+ *
+ * Expected output:
+ * -----------------------------------------
+ * List of Final failing path(s) (length 1)
+ * Element: Decision: IF ((unsigned int )*elem == (unsigned int )((struct doubly_linkedlist *)0)
+ *                    ): true
+ *          Decision: IF ((unsigned int )*place == (unsigned int )((struct doubly_linkedlist *)0)
+ *                    ): false
+ *          Decision: sglib_dl_list_add_after: void (struct doubly_linkedlist **place ,
+ *                                                    struct doubly_linkedlist **elem )
+ *          Decision: IF ((unsigned int )_dlp_->next != (unsigned int )((struct doubly_linkedlist *)0)
+ *                    ): false
+ *          Decision: IF ((unsigned int )*first == (unsigned int )((struct doubly_linkedlist *)0)
+ *                    ): false
+ *          Decision: sglib_dl_list_concat: void (struct doubly_linkedlist **first ,
+ *                                                 struct doubly_linkedlist **second )
+ *
+ * -----------------------------------------
+ * TODO: The SE gets stuck at reasoning about several symbolic pointers. Currently, the above desired result can be
+ *       obtained by manually stopping (ctrl-c) stuck paths. We want
+ *       1. Automatic stopping a freezing path;
+ *       2. Better Stp Caching technique.
  */
 #include "otter.h"
 

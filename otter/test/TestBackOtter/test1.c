@@ -1,5 +1,27 @@
 /*
  * ./otter.pl --dobackotter --noboundsChecking --max-abandoned=(any) -Ilibc test/TestBackOtter/test1.c
+ *
+ * Expected output:
+ * -----------------------------------------
+ * List of Final failing path(s) (length 1)
+ * Element: Decision: IF (x < 10): true
+ *          Decision: IF (x > 0): true
+ *          Decision: nothing: void (void)
+ *          Decision: g: void (int x )
+ *          Decision: IF (x > -5): true
+ *          Decision: f: void (int x )
+ *
+ * -----------------------------------------
+ * -----------------------------------------
+ * List of Final failing path(s) (length 1)
+ * Element: Decision: IF (x < 10): true
+ *          Decision: IF (x > 0): true
+ *          Decision: nothing: void (void)
+ *          Decision: g: void (int x )
+ *          Decision: IF (x > -5): false
+ *          Decision: f: void (int x )
+ *
+ * -----------------------------------------
  */
 #include "otter.h"
 

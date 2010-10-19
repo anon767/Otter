@@ -1,5 +1,35 @@
 /*
- * ./otter.pl --dobackotter --noboundsChecking --max-abandoned=(any) -Ilibc test/TestBackOtter/test3.c
+ * ./otter.pl --dobackotter --noboundsChecking --max-abandoned=2 -Ilibc test/TestBackOtter/test3.c
+ *
+ * Expected output:
+ * -----------------------------------------
+ * List of Final failing path(s) (length 1)
+ * Element: Decision: IF (n > 2): true
+ *          Decision: IF (p): false
+ *          Decision: IF (p): true
+ *          Decision: IF (p): true
+ *          Decision: IF (p): true
+ *          Decision: IF (p): true
+ *          Decision: f: void (struct s *p )
+ *          Decision: IF (n > 0): false
+ *          Decision: IF (n > 0): true
+ *          Decision: IF (n > 0): true
+ *          Decision: IF (n > 0): true
+ *
+ * -----------------------------------------
+ * -----------------------------------------
+ * List of Final failing path(s) (length 1)
+ * Element: Decision: IF (n > 2): true
+ *          Decision: IF (p): false
+ *          Decision: IF (p): true
+ *          Decision: IF (p): true
+ *          Decision: IF (p): true
+ *          Decision: f: void (struct s *p )
+ *          Decision: IF (n > 0): false
+ *          Decision: IF (n > 0): true
+ *          Decision: IF (n > 0): true
+ *
+ * -----------------------------------------
  */
 #include "otter.h"
 

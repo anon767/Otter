@@ -54,7 +54,7 @@ let run ?interceptor ?queue job =
     | None -> default_interceptor
     | Some (interceptor) -> default_interceptor >>> interceptor
     in
-        Driver.run ~interceptor:integrated_interceptor ?queue job
+    Driver.run ~interceptor:integrated_interceptor ?queue job
 
 
 let distance_to_targets_prioritizer callstack target_fundecs job =
@@ -215,30 +215,25 @@ let test_job_at_targets targets job =
                             let job' = {job with boundingPaths = Some(agreed_bounding_paths);} in
                             interceptor job' job_queue
                 in
-                    let (>>>) = Interceptor.(>>>) in
-                    let interceptor =
-                        Interceptor.set_output_formatter_interceptor
-                        >>> BuiltinFunctions.interceptor
-                        >>> subset_bounding_paths_interceptor
-                    in
-                    (* Cut out the prefix of the decision path, so that we can compare the decision
-                     * path with the bounding paths side by side. Put the prefix back when done *)
-                    let job' = {job with
-                        boundingPaths = Some paths;
-                        decisionPath = [];
-                    } in
-                    let return = run ~interceptor job' in
-                    Format.printf "@\nEnd forward_otter_bounded_by_paths@\n";
-                    let add_prefix job_result =
-                        {job_result with
-                            result_decision_path = List.append job_result.result_decision_path job.decisionPath;
-                        }
-                    in
-                    List.map (function
-                        | Job.Return (bytes_opt, job_result) -> Job.Return (bytes_opt, add_prefix job_result)
-                        | Exit (bytes_opt, job_result) -> Exit (bytes_opt, add_prefix job_result)
-                        | Abandoned (reason, loc, job_result) -> Abandoned (reason, loc, add_prefix job_result)
-                    ) return
+                (* Cut out the prefix of the decision path, so that we can compare the decision
+                 * path with the bounding paths side by side. Put the prefix back when done *)
+                let job' = {job with
+                    boundingPaths = Some paths;
+                    decisionPath = [];
+                } in
+                let interceptor = subset_bounding_paths_interceptor in
+                let return = run ~interceptor job' in
+                Format.printf "@\nEnd forward_otter_bounded_by_paths@\n";
+                let add_prefix job_result =
+                    {job_result with
+                        result_decision_path = List.append job_result.result_decision_path job.decisionPath;
+                    }
+                in
+                List.map (function
+                    | Job.Return (bytes_opt, job_result) -> Job.Return (bytes_opt, add_prefix job_result)
+                    | Exit (bytes_opt, job_result) -> Exit (bytes_opt, add_prefix job_result)
+                    | Abandoned (reason, loc, job_result) -> Abandoned (reason, loc, add_prefix job_result)
+                ) return
             in
 
             let failing_paths : fork_decision list list =
@@ -294,18 +289,16 @@ let callchain_backward_se file entryfn assertfn job_init : _ job_completion list
 
   (* Run forward SE on the examining function (job), given the targets. *)
   let call_Otter_main_loop targets job =
-      let (>>>) = Interceptor.(>>>) in
-      let interceptor =
-          Interceptor.set_output_formatter_interceptor
-          >>> (test_job_at_targets_interceptor targets)
-          >>> BuiltinFunctions.interceptor in
 	  let queue =
           if (!Executeargs.arg_cfg_pruning) then
               new BestFirstQueue.t (distance_to_targets_prioritizer job.state.callstack (assertfn::(List.map (fun t -> t.target_func) targets)))
           else
               Queue.get_default ()
       in
-          run ~interceptor ~queue job
+      (* TODO (martin): test_job_at_targets_interceptor will be invoked AFTER BuiltinFunctions.interceptor.
+       *                Is this what we want? *)
+      let interceptor = test_job_at_targets_interceptor targets in
+      run ~interceptor ~queue job
   in
 
   (* The implementation of main loop *)
