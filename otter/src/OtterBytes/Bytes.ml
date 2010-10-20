@@ -281,13 +281,12 @@ let bytes_to_bool bytes : bool =
 
 (** Convert a bytes of typ to Cil constant. Exception if bytes is not concrete *)
 let rec bytes_to_constant bytes typ : Cil.constant =
-	match typ with
+	match unrollType typ with
 		| TInt(ikind,_)->
 			let (len,isSigned) = ikind_to_len_isSigned ikind in
 			let n64 = bytes_to_int64 bytes isSigned in
 			let exp =	Cil.kinteger64 ikind n64 in
 				(match exp with Const(const) -> const | _ -> failwith "unreachable")
-		| TNamed(tinfo,_) -> bytes_to_constant bytes tinfo.ttype
 		| TFloat(fkind,_) -> (*TMP*) CReal(0.1,fkind,None)
 		| TEnum (enuminf,_) ->
 				(* An enum has type int. [Standard 6.7.2.2.2, but I'm confused by 6.7.2.2.4] *)

@@ -286,7 +286,7 @@ let rec opPI op operands =
 	let (bytes2, typ2) = List.nth operands 1 in
 	match (bytes1, bytes2) with
 		| (Bytes_Address(block, offset), offset2) ->
-			begin match typ1 with
+			begin match unrollType typ1 with
 				| TPtr(basetyp,_) ->
 					let base_size = (Cil.bitsSizeOf basetyp)/8 in
 					let (offset3) = mult [(int_to_bytes base_size,!Cil.upointType);(offset2,typ2)] in
@@ -295,7 +295,7 @@ let rec opPI op operands =
 				| _ -> failwith "type of Bytes_Address not TPtr"
 			end
 		| Bytes_ByteArray(_),_ -> (* Doing pointer arithmetic off of a non-pointer, probably NULL *)
-			begin match typ1 with
+			begin match unrollType typ1 with
 				| TPtr(basetyp,_) ->
 					let base_size = (Cil.bitsSizeOf basetyp)/8 in
 					let (offset3) = mult [(bytes2,typ2);(int_to_bytes base_size,!Cil.upointType)] in
@@ -338,7 +338,7 @@ let minusPP operands : bytes =
 			if block1 <> block2 then 
 				failwith "minusPP: different base addresss"
 			else
-			begin match typ1 with
+			begin match unrollType typ1 with
 				| TPtr(basetyp,_) ->
 					let base_size = (Cil.bitsSizeOf basetyp)/8 in
 					let (offset3) = minus [(offset1,!Cil.upointType);(offset2,!Cil.upointType)] in (* TODO: do we need to cast the offsets? *)

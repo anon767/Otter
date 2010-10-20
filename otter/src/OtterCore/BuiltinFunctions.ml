@@ -472,7 +472,7 @@ let otter_print_state job = wrap_state_function begin fun state retopt exps erro
 	let rec printVarFieldsBytes varname typ bytes off =
 		(* break down each local by its fields *)
 		(* canonicalize concrete values by their array rep*)
-		match typ with
+		match unrollType typ with
 			| TComp (compinfo,_) ->
 				List.iter
 					(fun fieldinfo ->
