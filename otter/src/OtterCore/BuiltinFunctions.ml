@@ -825,7 +825,7 @@ let libc_get_block_size job = wrap_state_function begin fun state retopt exps er
 		| [AddrOf (_, NoOffset as cil_lval)]
 		| [CastE (_, AddrOf (_, NoOffset as cil_lval))]->
 			let state, bytes, errors = Expression.rval state (Lval cil_lval) errors in
-			let state, lvals, errors = Expression.deref state bytes errors in
+			let state, lvals, errors = Expression.deref state bytes (Cil.typeOfLval cil_lval) errors in
 			let size = make_Bytes_Conditional (conditional__map
 				~test:(Stp.query_stp state.path_condition)
 				(fun (x, y) -> Unconditional (int_to_bytes x.memory_block_size))

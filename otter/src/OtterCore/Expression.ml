@@ -315,8 +315,9 @@ lval ?(justGetAddr=false) state (lhost, offset_exp as cil_lval) errors =
             let state, lvals = MemOp.state__varinfo_to_lval_block state varinfo in
             (state, lvals, varinfo.vtype, errors)
         | Mem(exp) ->
+            let typ = Cil.typeOf exp in
             let state, rv, errors = rval state exp errors in
-            let state, lvals, errors = deref state rv errors in
+            let state, lvals, errors = deref state rv typ errors in
             (state, lvals, Cil.typeOf exp, errors)
     in
     match cil_lval with
@@ -335,7 +336,7 @@ lval ?(justGetAddr=false) state (lhost, offset_exp as cil_lval) errors =
 
 and
 
-deref state bytes errors =
+deref state bytes typ errors =
     match bytes with
         | Bytes_Constant (c) ->
             FormatPlus.failwith "Dereference something not an address:@ constant @[%a@]" BytesPrinter.bytes bytes
@@ -358,7 +359,7 @@ deref state bytes errors =
                             else bytes__zero
                         in
                             match bytes_tentative with
-                            | Bytes_Address(_,_) -> deref state bytes_tentative errors
+                            | Bytes_Address(_,_) -> deref state bytes_tentative typ errors
                             | _ -> find_match pc' errors
                     end
                 | Bytes_Op(OP_LAND,btlist)::pc' ->
@@ -374,17 +375,22 @@ deref state bytes errors =
                 failwith "Dereference into an expired stack frame"
 
         | Bytes_Conditional c ->
-            let (guard, state, errors), conditional_opt =
-                conditional__fold_map_opt begin fun (guard, state, errors) guard' c ->
-                    try
-                        let state, lval, errors = deref state c errors in
-                        ((guard, state, errors), Some lval)
-                    with Failure msg ->
-                        (* Guard against this failure, add it to the error list, and remove this leaf. *)
-                        let guard = guard__and_not guard guard' in
-                        let errors = (state, Bytes.guard__to_bytes guard, `Failure msg)::errors in
-                        ((guard, state, errors), None)
-                end (Bytes.guard__true, state, errors) c
+            let (guard, state, errors, _), conditional_opt =
+                conditional__fold_map_opt begin fun (guard, state, errors, removed) _ c ->
+                    if List.exists (Bytes.bytes__equal c) removed then
+                        ((guard, state, errors, removed), None)
+                    else
+                        try
+                            let state, lval, errors = deref state c typ errors in
+                            ((guard, state, errors, removed), Some lval)
+                        with Failure msg ->
+                            (* Guard against this failure, add it to the error list, and remove this leaf. *)
+                            let failing_bytes = Operator.eq [ (bytes, typ); (c, typ) ] in
+                            let guard = guard__and_not guard (Bytes.guard__bytes failing_bytes) in
+                            let errors = (state, failing_bytes, `Failure msg)::errors in
+                            let removed = c::removed in
+                            ((guard, state, errors, removed), None)
+                end (Bytes.guard__true, state, errors, []) c
             in
             begin match conditional_opt, guard with
                 | Some conditional, Guard_True ->
@@ -411,7 +417,7 @@ deref state bytes errors =
             let (state, errors), conditional =
                 conditional__fold_map ~test:(Stp.query_stp state.path_condition)
                     begin fun (state, errors) _ bytes ->
-                        let state, conditional, errors = deref state bytes errors in
+                        let state, conditional, errors = deref state bytes typ errors in
                         ((state, errors), conditional)
                     end
                     (state, errors) (expand_read_to_conditional bytes off len)
