@@ -4,6 +4,17 @@
 #include <sys/uio.h>
 #include <__otter/otter_fs.h>
 
+#define __otter_array_fold(source_t, dest_t, expr, array, len, init) \
+({ \
+	dest_t prev = init; \
+	source_t* cur = array; \
+	for(int i = 0; i < len; i++, cur++) \
+	{ \
+		prev = (expr);\
+	} \
+	prev; \
+})
+
 #define SCM_RIGHTS 1234
 
 #define SOCK_DGRAM 1 /* UDP */
@@ -30,6 +41,8 @@
 #define SO_SNDTIMEO    0x00004000
 #define SO_TYPE        0x00008000
 
+#define SO_BOUND       0x00010000
+
 #define MSG_CTRUNC 1
 #define MSG_DONTROUTE 2
 #define MSG_EOR 4
@@ -41,6 +54,7 @@
 #define AF_UNSPEC 0
 #define AF_UNIX 1
 #define AF_INET 2
+#define AF_INET6 3
 
 #define PF_INET AF_INET
 
@@ -98,7 +112,11 @@ struct linger
 
 int socket(int domain, int type, int protocol);
 int bind(int socket, const struct sockaddr *address, socklen_t address_len);
+int listen(int socket, int backlog);
+
 int setsockopt(int socket, int level, int option_name, const void *option_value, socklen_t option_len);
 int getsockopt(int socket, int level, int option_name, void *option_value, socklen_t *option_len);
+
+struct __otter_fs_sock_data* __otter_libc_get_sock_data(int fd);
 
 #endif

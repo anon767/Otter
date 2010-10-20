@@ -74,10 +74,12 @@ struct __otter_fs_pipe_data* __otter_fs_init_new_pipe_data()
 struct __otter_fs_sock_data* __otter_fs_init_new_socket_data()
 {
 	struct __otter_fs_sock_data* sock = __otter_multi_gmalloc(sizeof(struct __otter_fs_sock_data));
-	sock->addr = NULL;
+	sock->addr = __otter_multi_gcalloc(__SOCKADDR_SHARED_LEN, 1);
 	sock->state = 0;
 	sock->options = 
-	sock->recv_data = __otter_fs_init_new_pipe_data();
+	sock->recv_data = NULL; /* allocate this when connected or creating UDP */
+	sock->sock_queue = NULL; /* allocate this when listen() */
+	sock->backlog = 0;
 	return sock;
 }
 
@@ -93,10 +95,14 @@ struct __otter_fs_inode* __otter_fs_init_new_socket()
 	return inode;
 }
 
-void __otter_libc_free_socket(struct __otter_fs_inode* inode)
+void __otter_fs_free_socket(struct __otter_fs_inode* inode)
 {
-	free(((struct __otter_fs_sock_data*)inode->data)->recv_data->data);
-	free(((struct __otter_fs_sock_data*)inode->data)->recv_data);
-	free(inode->data);
-	free(inode);
+	__otter_multi_gfree(((struct __otter_fs_sock_data*)inode->data)->recv_data->data);
+	__otter_multi_gfree(((struct __otter_fs_sock_data*)inode->data)->recv_data);
+	__otter_multi_gfree(((struct __otter_fs_sock_data*)inode->data)->sock_queue);
+	__otter_multi_gfree(((struct __otter_fs_sock_data*)inode->data)->addr);
+	__otter_multi_gfree(inode->data);
+	__otter_multi_gfree(inode);
 }
+
+

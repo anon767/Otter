@@ -947,6 +947,7 @@ let libc_interceptor job job_queue interceptor =
 		(intercept_function_by_name_external "calloc"                  "__otter_libc_calloc") @@
 		(intercept_function_by_name_external "realloc"                 "__otter_libc_realloc") @@
 		(intercept_function_by_name_internal "free"                    libc_free) @@
+		(intercept_function_by_name_internal "__otter_multi_gfree"     libc_free) @@
 		(intercept_function_by_name_internal "__libc_get_block_size"   libc_get_block_size) @@
 		(intercept_function_by_name_external "abort"                   "__otter_libc_abort") @@
 		(intercept_function_by_name_external "atexit"                  "__otter_libc_atexit") @@

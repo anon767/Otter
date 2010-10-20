@@ -56,6 +56,8 @@ struct __otter_fs_sock_data
 	int options;
 	struct __otter_fs_pipe_data* recv_data;
 	struct __otter_fs_sock_data* send_sock;
+	struct __otter_fs_sock_data* sock_queue;
+	int backlog;
 };
 
 struct __otter_fs_filelist

@@ -29,7 +29,11 @@
 #define EOVERFLOW 24
 #define ENODEV 25
 #define ENOTSOCK 26
-#define EFAULT 27;
+#define EFAULT 27
+#define EADDRINUSE 28
+#define EISCONN 29
+#define EOPNOTSUPP 30
+#define EDESTADDRREQ 31
 
 int errno = 0;
 
