@@ -244,14 +244,19 @@ let init_pointer state target_type points_to exps ?(maybe_null=true) ?(maybe_uni
     let target_bytes_set = if maybe_null then BytesSet.add Bytes.bytes__zero target_bytes_set else target_bytes_set in
 
     (* add an uninitialized pointer *)
-    let target_bytes_set = if maybe_uninit then BytesSet.add Bytes.bytes__zero target_bytes_set else target_bytes_set in
+    let target_bytes_set =
+        if BytesSet.is_empty target_bytes_set || maybe_uninit then
+            BytesSet.add (Bytes.bytes__symbolic (Cil.bitsSizeOf Cil.voidPtrType / 8)) target_bytes_set (* uninitialized pointer *)
+        else
+            target_bytes_set
+    in
 
     (* finally, return a MayBytes pointing to the targets *)
-    let target_bytes = match BytesSet.elements target_bytes_set with
-        | [] -> Bytes.conditional__bytes (Bytes.bytes__symbolic (Cil.bitsSizeOf Cil.voidPtrType / 8)) (* uninitialized pointer *)
-        | target_bytes_list  -> Bytes.conditional__from_list (List.map Bytes.conditional__bytes target_bytes_list)
+    let target_bytes =
+        let conditional_bytes_list = List.map Bytes.conditional__bytes (BytesSet.elements target_bytes_set) in
+        Bytes.make_Bytes_Conditional (Bytes.conditional__from_list conditional_bytes_list)
     in
-    (state, Bytes.make_Bytes_Conditional target_bytes)
+    (state, target_bytes)
 
 
 
