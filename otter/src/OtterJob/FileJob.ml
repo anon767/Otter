@@ -155,7 +155,7 @@ let make file cmdline =
 	in
 
 	(* create a job starting at main *)
-	Job.make file state main_func main_args
+	OtterCore.Job.make file state main_func main_args
 
 
 

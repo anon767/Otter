@@ -52,7 +52,6 @@ open OcamlUtilities
 open CilUtilities
 open OtterBytes
 open OtterCore
-open OtterJob
 open OtterDriver
 
 
@@ -391,9 +390,9 @@ let test_otter_with_pragma ?(main_loop=Driver.run_basic) path = fun () ->
         Core.prepare_file file;
         let job = match flags.entry_function with
             | Some fn when fn <> "main" ->
-                FunctionJob.make file (FindCil.fundec_by_name file fn)
+                OtterJob.FunctionJob.make file (FindCil.fundec_by_name file fn)
             | _ ->
-                FileJob.make file flags.command_line
+                OtterJob.FileJob.make file flags.command_line
         in
         main_loop job
     end in

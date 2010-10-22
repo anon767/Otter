@@ -12,10 +12,7 @@ let arg_cfg_pruning = ref false
 let arg_init_malloc_zero = ref false
 let arg_noinit_unreachable_globals = ref false
 let arg_simplify_path_condition = ref false
-let arg_entryfn = ref "main"
 let arg_examfn = ref "" (* none *)
-
-let arg_cmdline_argvs = ref []
 
 let arg_print_callstack = ref false
 
@@ -67,21 +64,9 @@ let options = [
 		Arg.Set arg_simplify_path_condition,
 		" Check if a newly added constraint implies any previous ones\n");
 
-	("--entryfn",
-		Arg.Set_string arg_entryfn,
-		"<fname> Entry function (default: main) \n");
-
 	("--examfn",
 		Arg.Set_string arg_examfn,
 		"<fname> Function to be examined (default: none) \n");
-
-	(*
-		Argvs
-	*)
-	("--arg",
-		Arg.String (fun argv -> arg_cmdline_argvs := !arg_cmdline_argvs @ [argv]),
-		"<argv> Run with command line argument <argv>\
-		\t\t\t\t(This option can be repeated to give multiple arguments.)\n");
 
 	(*
 		Printing options

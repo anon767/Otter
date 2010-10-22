@@ -32,17 +32,7 @@ let doExecute (f: file) =
 	(* prepare the file for symbolic execution *)
 	Core.prepare_file f;
 
-    let entryfn = Driver.find_entryfn f in
-
-    let job =
-        if !Executeargs.arg_entryfn = "main" then
-            (* create a job for the file, with the commandline arguments set to the file name
-             * and the arguments from the '--arg' option *)
-            FileJob.make f (f.fileName::!Executeargs.arg_cmdline_argvs)
-        else
-            (* create a job to start in the middle of entryfn *)
-            FunctionJob.make f entryfn
-    in
+	let job = Job.get_default f in
 
 	(* run the job *)
 	let completed = Driver.run_basic job in
@@ -97,7 +87,7 @@ let feature : featureDescr = {
 	fd_name = "execute";
 	fd_enabled = ref false;
 	fd_description = "(symbolic) executor for C";
-	fd_extraopt = Executeargs.options @ Queue.options @ Driver.options @ Stp.options;
+	fd_extraopt = Executeargs.options @ Queue.options @ Driver.options @ Driver.options @ Stp.options;
 	fd_post_check = true;
 	fd_doit = doExecute;
 }

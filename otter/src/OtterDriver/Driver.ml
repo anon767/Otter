@@ -13,13 +13,6 @@ let default_max_paths = ref 0
 let default_max_abandoned = ref 0
 let arg_no_exceptions_as_failures = ref false
 
-(** Locate the function corresponding to {!Executeargs.entryfn}. *)
-let find_entryfn file =
-	let fname = !Executeargs.arg_entryfn in
-	try
-		FindCil.fundec_by_name file fname
-	with Not_found ->
-		FormatPlus.failwith "Entry function %s not found" fname
 
 (** Main symbolic execution loop. *)
 let main_loop

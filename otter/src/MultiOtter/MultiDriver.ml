@@ -2,7 +2,6 @@ open DataStructures
 open OcamlUtilities
 open OtterBytes
 open OtterCore
-open OtterJob
 open OtterDriver
 open Types
 open Job
@@ -98,16 +97,7 @@ let doit file =
 	(* TODO: do something about signal handlers/run statistics from Executemain.doExecute *)
 
 	Core.prepare_file file;
-	let entryfn = Driver.find_entryfn file in
-	let job =
-		if !Executeargs.arg_entryfn = "main" then
-			(* create a job for the file, with the commandline arguments set to the file name
-			 * and the arguments from the '--arg' option *)
-			FileJob.make file (file.Cil.fileName::!Executeargs.arg_cmdline_argvs)
-		else
-			(* create a job to start in the middle of entryfn *)
-			FunctionJob.make file entryfn
-	in
+	let job = OtterJob.Job.get_default file in
 
 	(* run the job *)
 	let result = run job in

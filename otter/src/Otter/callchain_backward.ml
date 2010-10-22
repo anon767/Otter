@@ -3,7 +3,6 @@ open OcamlUtilities
 open CilUtilities
 open OtterBytes
 open OtterCore
-open OtterJob
 open OtterQueue
 open OtterReporter
 open OtterDriver
@@ -279,8 +278,9 @@ let test_job_at_targets_interceptor targets job job_queue interceptor =
 			interceptor job job_queue
         | _ -> failwith "test_job_at_targets: unreachable program point"
 
-let callchain_backward_se file entryfn assertfn job_init : _ job_completion list list =
-
+let callchain_backward_se assertfn job : _ job_completion list list =
+  let file = job.Job.file in
+  let entryfn = List.hd job.state.callstack in
   let print_targets fn ts =
 	Format.printf "@\nStart forward SE on function %s with target(s): %s@\n@\n"
 	  (fn.svar.vname)
@@ -356,7 +356,7 @@ let callchain_backward_se file entryfn assertfn job_init : _ job_completion list
 		    	fun lst caller ->
 		    	  let targets' = (new_target::targets) in
                   let _ = print_targets caller targets' in
-		    	  let job' = job_init caller in
+		    	  let job' = OtterJob.FunctionJob.make file caller in
 		    	  let lst' = callchain_backward_main_loop job' targets'  in
 		    		List.rev_append lst' lst
 		      )
@@ -374,7 +374,7 @@ let callchain_backward_se file entryfn assertfn job_init : _ job_completion list
           let _ = assert_target in
           let targets = [] in
           let _ = print_targets caller targets in
-		  let job = job_init caller in
+		  let job = OtterJob.FunctionJob.make file caller in
 		  let new_result = callchain_backward_main_loop job targets in
 		    new_result::results
 	  ) [] callers
@@ -399,14 +399,13 @@ let doit file =
 	ignore (Unix.alarm !Executeargs.arg_timeout);
 
 	prepare_file file;
-	let entryfn = Driver.find_entryfn file in
 	let assertfn =
 		let fname = !arg_assertfn in
 		try FindCil.fundec_by_name file fname
 		with Not_found -> FormatPlus.failwith "Assertion function %s not found" fname
 	in
-	let job_init = fun entryfn -> FunctionJob.make file entryfn in
-	let results = callchain_backward_se file entryfn assertfn job_init in
+	let job = OtterJob.Job.get_default file in
+	let results = callchain_backward_se assertfn job in
 
 	(* Turn off the alarm and reset the signal handlers *)
 	ignore (Unix.alarm 0);
