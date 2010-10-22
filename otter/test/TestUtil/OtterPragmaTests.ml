@@ -7,15 +7,19 @@
     The following [#pragma] directives are understood:
         - [#pragma entry_function(<string function name>)] specifies the entry function at which to begin symbolic
             execution. If an entry function is given and not "main", pointers will be initialized via
-            {!SymbolicPointers.job_for_middle}. E.g., [#pragma entry_function("foo")].
-        - [#pragma time_limit(<time in seconds>)] specifies the time limit for the symbolic execution to complete.
+            {!SymbolicPointers.job_for_middle}. This corresponds to Otter's [--entryfn] command-line option.
+            E.g., [#pragma entry_function("foo")].
         - [#pragma command_line(<string argument>, ...)] specifies the command line arguments to be passed to
-            [main()]. Ignore if [#pragma entry_function(...)] is given and not "main".
-            E.g., [#pragma command_line("foo", "bar")].
+            [main()]. Ignore if [#pragma entry_function(...)] is given and not "main". This corresponds to Otter's
+            [--arg] command-line option. E.g., [#pragma command_line("foo", "bar")].
+        - [#pragma time_limit(<time in seconds>)] specifies the time limit for the symbolic execution to complete.
         - [#pragma cil_options(<string argument>, ...)] specifies the command line arguments to be passed to
-            CIL. E.g., [#pragma cil_options("--useLogicalOperators")].
+            CIL. E.g., [#pragma cil_options("--unfoldLogicalOperators")].
         - [#pragma has_failing_assertions] specifies that failing assertions should be expected. Conversely, {e not
             providing} this directive specifies that failing assertions should not be expected.
+        - [#pragma no_bounds_checking] specifies that bounds checking should be disabled. Conversely, {e not
+            providing} this directive specifies that bounds checking should be enabled. This corresponds to Otter's
+            [--noboundsChecking] command-line option.
         - [#pragma expect_return(<assertion expression>, ...)] specifies that there should be a {!Job.Return}
             in which a list of assertions hold. The first matching result will be removed from further processing.
             E.g., [#pragma expect_return(__return_code__ == 0, x < y, z)].
@@ -53,21 +57,21 @@ open OtterDriver
 
 (** Flags for setting up the tests. *)
 type flags = {
-    entry_function : string option; (** The function at which to begin symbolic execution. *)
+    entry_function : string option; (** The function at which to begin symbolic execution (corresponds to [--entryfn]). *)
+    command_line : string list;     (** The command line to use to run the test (corresponds to [--arg]). *)
     time_limit : int option;        (** The time limit for symbolic execution. *)
     cil_options : string list;      (** The command line options to pass to CIL. *)
-    command_line : string list;     (** The command line to use to run the test. *)
     has_failing_assertions : bool;  (** If failing assertions are expected in the test. *)
-    no_bounds_checking : bool;      (** Disable bounds checking (corrsponds to Otter option --noboundsChecking) *)
+    no_bounds_checking : bool;      (** Disable bounds checking (corresponds to [--noboundsChecking]). *)
 }
 
 
 (** The default test flags. *)
 let default_flags = {
     entry_function = None;
+    command_line = [];
     time_limit = None;
     cil_options = [];
-    command_line = [];
     has_failing_assertions = false;
     no_bounds_checking = false;
 }
@@ -260,13 +264,6 @@ let parse_pragmas file =
                 | "entry_function", _ ->
                     assert_loc_failure file loc "Invalid entry function (should have exactly one string argument that is the function name)."
 
-                | "time_limit", [ Cil.AInt time_limit ] ->
-                    if flags.time_limit <> None then assert_loc_failure file loc "Time limit already defined.";
-                    if time_limit <= 0 then assert_loc_failure file loc "Invalid time limit (should not be greater than 0).";
-                    ({ flags with time_limit = Some time_limit }, test)
-                | "time_limit", _ ->
-                    assert_loc_failure file loc "Invalid time limit (should have exactly one integer argument that is the time limit in seconds)."
-
                 | "command_line", args ->
                     if flags.command_line <> [] then assert_loc_failure file loc "Command line already defined.";
                     let command_line = List.map begin function
@@ -285,15 +282,22 @@ let parse_pragmas file =
                     if cil_options = [] then assert_loc_failure file loc "Invalid CIL options (should have at least one argument).";
                     ({ flags with cil_options = cil_options }, test)
 
-                | "no_bounds_checking", [] ->
-                    ({ flags with no_bounds_checking = true }, test)
-                | "no_bounds_checking", _ ->
-                    assert_loc_failure file loc "Invalid no_bounds_checking (should have no arguments)."
+                | "time_limit", [ Cil.AInt time_limit ] ->
+                    if flags.time_limit <> None then assert_loc_failure file loc "Time limit already defined.";
+                    if time_limit <= 0 then assert_loc_failure file loc "Invalid time limit (should not be greater than 0).";
+                    ({ flags with time_limit = Some time_limit }, test)
+                | "time_limit", _ ->
+                    assert_loc_failure file loc "Invalid time limit (should have exactly one integer argument that is the time limit in seconds)."
 
                 | "has_failing_assertions", [] ->
                     ({ flags with has_failing_assertions = true }, test)
                 | "has_failing_assertions", _ ->
                     assert_loc_failure file loc "Invalid has_failing_assertions (should have no arguments)."
+
+                | "no_bounds_checking", [] ->
+                    ({ flags with no_bounds_checking = true }, test)
+                | "no_bounds_checking", _ ->
+                    assert_loc_failure file loc "Invalid no_bounds_checking (should have no arguments)."
 
                 | "expect_return", [ Cil.ACons ("", []) ] -> (* strangely, expect_return() parses to this *)
                     (flags, test >>> expect_return file loc [])
@@ -363,17 +367,16 @@ let test_otter_with_pragma ?(main_loop=Driver.run_basic) path = fun () ->
     let flags, test = parse_pragmas file in
 
     (* disable bounds checking if required *)
-    if flags.no_bounds_checking then
-        Executeargs.arg_bounds_checking := false;
+    Executeargs.arg_bounds_checking := not flags.no_bounds_checking;
 
     (* See if any CIL options were defined. If so, parse the file again with those options *)
     if flags.cil_options <> [] then
     Arg.parse_argv
-      ~current:(ref 0)
-      (Array.of_list ("otterTest"::flags.cil_options)) (* Give a fake program name, then the options *)
-      Ciloptions.options (* Use these options *)
-      (fun _ -> ()) (* Ignore any anonymous arguments *)
-      ""; (* We don't need a help message here *)
+        ~current:(ref 0)
+        (Array.of_list ("otterTest"::flags.cil_options)) (* Give a fake program name, then the options *)
+        Ciloptions.options (* Use these options *)
+        (fun _ -> ()) (* Ignore any anonymous arguments *)
+        ""; (* We don't need a help message here *)
     let file = Frontc.parse path () in
 
     (* set the time limit, if provided *)
