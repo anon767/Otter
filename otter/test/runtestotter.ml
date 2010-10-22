@@ -15,6 +15,7 @@ module OcamlbuildDependencies = struct
     open OtterGraph
     open Otter
     open MultiOtter
+    open BackOtter
 end
 
 let _ =

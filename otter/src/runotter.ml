@@ -12,7 +12,6 @@ module OcamlbuildDependencies = struct
     open OtterReporter
     open OtterDriver
     open OtterGraph
-    open MultiOtter
 end
 
 let _ =
@@ -20,7 +19,7 @@ let _ =
     Cilly.run [
         Otter.Executemain.feature;
         MultiOtter.MultiDriver.feature;
-        Otter.Callchain_backward.feature;
+        BackOtter.Callchain_backward.feature;
         Marshal_feature.feature;
         CilUtilities.FindFns.feature;
         CilUtilities.TraceLines.feature;
