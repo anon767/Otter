@@ -24,11 +24,12 @@ let get_default file =
 let options = [
     "--entryfn",
         Arg.Set_string entry_function,
-        "<fname> Entry function (default: main) \n";
+        "<fname> The entry function at which to begin symbolic execution;";
+    "", Arg.Tuple [], " if not \"main\", the state will be initialized symbolically (default: \"main\")";
 
     "--arg",
         Arg.String (fun argv -> command_line := !command_line @ [argv]),
-        "<argv> Run with command line argument <argv>\
-        \t\t\t\t(This option can be repeated to give multiple arguments.)\n";
+        "<argv> Run with command line argument <argv> (repeat for each argument);";
+    "", Arg.Tuple [], " ignored if --entryfn is given and not \"main\"";
 ]
 
