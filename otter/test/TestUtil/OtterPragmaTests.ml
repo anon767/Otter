@@ -10,8 +10,9 @@
             {!SymbolicPointers.job_for_middle}. This corresponds to Otter's [--entryfn] command-line option.
             E.g., [#pragma entry_function("foo")].
         - [#pragma command_line(<string argument>, ...)] specifies the command line arguments to be passed to
-            [main()]. Ignore if [#pragma entry_function(...)] is given and not "main". This corresponds to Otter's
-            [--arg] command-line option. E.g., [#pragma command_line("foo", "bar")].
+            [main()]. Ignore if [#pragma entry_function(...)] is given and not "main". Unlike Otter's [--arg]
+            command-line option, the first argument corresponds to [argv[0]], not [argv[1]].
+            E.g., [#pragma command_line("foo", "bar")].
         - [#pragma time_limit(<time in seconds>)] specifies the time limit for the symbolic execution to complete.
         - [#pragma cil_options(<string argument>, ...)] specifies the command line arguments to be passed to
             CIL. E.g., [#pragma cil_options("--unfoldLogicalOperators")].
@@ -58,7 +59,7 @@ open OtterDriver
 (** Flags for setting up the tests. *)
 type flags = {
     entry_function : string option; (** The function at which to begin symbolic execution (corresponds to [--entryfn]). *)
-    command_line : string list;     (** The command line to use to run the test (corresponds to [--arg]). *)
+    command_line : string list;     (** The command line to use to run the test. *)
     time_limit : int option;        (** The time limit for symbolic execution. *)
     cil_options : string list;      (** The command line options to pass to CIL. *)
     has_failing_assertions : bool;  (** If failing assertions are expected in the test. *)
