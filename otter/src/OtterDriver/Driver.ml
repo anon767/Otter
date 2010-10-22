@@ -127,7 +127,7 @@ let options = [
         Arg.Set_int default_max_abandoned,
         "<bound> Bound the number of abandoned paths to return (default: unbounded)";
     "--no-exceptions-as-failures",
-    Arg.Set arg_no_exceptions_as_failures,
-    " Do not treat general exceptions (e.g., dereferencing a non-pointer) as assertion failures (i.e., contribute failure paths) @\n";
+        Arg.Set arg_no_exceptions_as_failures,
+        " Do not treat general exceptions (e.g., dereferencing a non-pointer) as assertion failures (i.e., contribute failure paths)";
 ]
 

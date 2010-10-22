@@ -456,7 +456,7 @@ let feature = {
 	Cil.fd_extraopt = [
 		("--assertfn",
 		Arg.Set_string arg_assertfn,
-		"<fname> Assertion function to look for in the call-chain-backward mode (default: __FAILURE) @\n");
+		"<fname> Assertion function to look for in the call-chain-backward mode (default: __FAILURE)");
 	];
 	Cil.fd_post_check = true;
 	Cil.fd_doit = doit
