@@ -87,7 +87,7 @@ let feature : featureDescr = {
 	fd_name = "execute";
 	fd_enabled = ref false;
 	fd_description = "(symbolic) executor for C";
-	fd_extraopt = Executeargs.options @ Queue.options @ Driver.options @ Driver.options @ Stp.options;
+	fd_extraopt = Executeargs.options @ Queue.options @ Job.options @ Driver.options @ Stp.options;
 	fd_post_check = true;
 	fd_doit = doExecute;
 }
