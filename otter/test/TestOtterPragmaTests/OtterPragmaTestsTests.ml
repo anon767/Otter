@@ -136,20 +136,26 @@ let command_line_testsuite = "command_line" >::: [
             return 0;
         }";
 
+    should_pass_pragma_tests ~label:"No command_line"
+        "int main(int argc, char *argv[]) {
+            __ASSERT(argc == 1);
+            return 0;
+        }";
+
     should_pass_pragma_tests ~label:"One argument command_line"
         "#pragma command_line(\"a\")
         int main(int argc, char *argv[]) {
-            __ASSERT(argc == 1);
-            __ASSERT(argv[0][0] == 'a');
+            __ASSERT(argc == 2);
+            __ASSERT(argv[1][0] == 'a');
             return 0;
         }";
 
     should_pass_pragma_tests ~label:"Two arguments command_line"
         "#pragma command_line(\"a\", \"b\")
         int main(int argc, char *argv[]) {
-            __ASSERT(argc == 2);
-            __ASSERT(argv[0][0] == 'a');
-            __ASSERT(argv[1][0] == 'b');
+            __ASSERT(argc == 3);
+            __ASSERT(argv[1][0] == 'a');
+            __ASSERT(argv[2][0] == 'b');
             return 0;
         }";
 ]
