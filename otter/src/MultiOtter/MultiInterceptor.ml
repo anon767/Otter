@@ -1,5 +1,4 @@
 open OtterCore
-open OtterJob
 
 let (@@) = Interceptor.(@@)
 let (@@@) i1 i2 = fun a b c -> i1 a b c i2

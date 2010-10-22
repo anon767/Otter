@@ -2,7 +2,6 @@ open DataStructures
 open OcamlUtilities
 open OtterCore
 open OtterBytes
-open OtterJob
 open MultiTypes
 open Types
 open Job
