@@ -278,9 +278,15 @@ let test_job_at_targets_interceptor targets job job_queue interceptor =
 			interceptor job job_queue
         | _ -> failwith "test_job_at_targets: unreachable program point"
 
-let callchain_backward_se assertfn job : _ job_completion list list =
+let callchain_backward_se job : _ job_completion list =
   let file = job.Job.file in
   let entryfn = List.hd job.state.callstack in
+  let assertfn =
+    let fname = !arg_assertfn in
+    try FindCil.fundec_by_name file fname
+    with Not_found -> FormatPlus.failwith "Assertion function %s not found" fname
+  in
+
   let print_targets fn ts =
 	Format.printf "@\nStart forward SE on function %s with target(s): %s@\n@\n"
 	  (fn.svar.vname)
@@ -376,7 +382,7 @@ let callchain_backward_se assertfn job : _ job_completion list list =
           let _ = print_targets caller targets in
 		  let job = OtterJob.FunctionJob.make file caller in
 		  let new_result = callchain_backward_main_loop job targets in
-		    new_result::results
+		  List.rev_append new_result results
 	  ) [] callers
 
 let prepare_file file =
@@ -399,13 +405,8 @@ let doit file =
 	ignore (Unix.alarm !Executeargs.arg_timeout);
 
 	prepare_file file;
-	let assertfn =
-		let fname = !arg_assertfn in
-		try FindCil.fundec_by_name file fname
-		with Not_found -> FormatPlus.failwith "Assertion function %s not found" fname
-	in
 	let job = OtterJob.Job.get_default file in
-	let results = callchain_backward_se assertfn job in
+	let results = callchain_backward_se job in
 
 	(* Turn off the alarm and reset the signal handlers *)
 	ignore (Unix.alarm 0);
@@ -446,7 +447,7 @@ let doit file =
             Format.printf "--------------------------------------------------@\n"
         ) (!Stp.stp_queries)
     );
-	List.iter (fun result -> Report.print_report result) results
+    Report.print_report results
 
 
 let feature = {
