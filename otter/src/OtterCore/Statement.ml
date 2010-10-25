@@ -164,7 +164,7 @@ let exec_instr_call job instr lvalopt fexp exps errors =
             | (state, fundec)::t ->
                 let job_state, errors =
                     let job = {job with
-                        decisionPath = ForkFunptr(instr, fundec)::job.decisionPath;} in
+                        decisionPath = DecisionFuncall(instr, fundec)::job.decisionPath;} in
                     try
                         (exec_fundec job state instr fundec lvalopt exps errors)
                     with Failure msg ->
@@ -380,7 +380,7 @@ let exec_stmt job errors =
                         let job' = { job with
                             state = nextState;
                             stmt = nextStmt;
-                            decisionPath = (ForkConditional(stmt, true))::job.decisionPath; }
+                            decisionPath = (DecisionConditional(stmt, true))::job.decisionPath; }
                         in
                             Active { job' with exHist = nextExHist (Some nextStmt) ~whichBranch:true; }
 
@@ -390,7 +390,7 @@ let exec_stmt job errors =
                         let job' = { job with
                             state = nextState;
                             stmt = nextStmt;
-                            decisionPath = (ForkConditional(stmt, false))::job.decisionPath; }
+                            decisionPath = (DecisionConditional(stmt, false))::job.decisionPath; }
                         in
                             Active { job' with exHist = nextExHist (Some nextStmt) ~whichBranch:false; }
 
@@ -408,12 +408,12 @@ let exec_stmt job errors =
                             state = nextStateT;
                             stmt = nextStmtT;
                             exHist = nextExHist (Some nextStmtT) ~whichBranch:true;
-                            decisionPath = (ForkConditional(stmt, true))::job.decisionPath;
+                            decisionPath = (DecisionConditional(stmt, true))::job.decisionPath;
                             jid = Counter.next job_counter; } in
                         let falseJob = { job with
                             state = nextStateF;
                             stmt = nextStmtF;
-                            decisionPath = (ForkConditional(stmt, false))::job.decisionPath;
+                            decisionPath = (DecisionConditional(stmt, false))::job.decisionPath;
                             exHist =  nextExHist (Some nextStmtF) ~whichBranch:false; } in
                             Output.set_mode Output.MSG_MUSTPRINT;
                             Output.printf "Branching on @[%a@]@ at %a.@\n"

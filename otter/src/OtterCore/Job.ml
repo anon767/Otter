@@ -71,26 +71,26 @@ let emptyHistory = {
 	bytesToVars = [];
 }
 
-(* TODO (martin): rename fork_decision to something like "decision" or "execute_decsion" *)
-type fork_decision =
-    | ForkConditional of Cil.stmt * bool (* if-statement *)
-    | ForkFunptr of Cil.instr * Cil.fundec (* function call *)
-    | ForkEnd (* Mark the end of a decision path *)
-    (* TODO (martin): define ForkLongjmp *)
+(* TODO: move decision to its own module *)
+type decision =
+    | DecisionConditional of Cil.stmt * bool (* if-statement *)
+    | DecisionFuncall of Cil.instr * Cil.fundec (* function call *)
+    | DecisionEnd (* Mark the end of a decision path *)
+    (* TODO (martin): define DecisionLongjmp *)
 
 let decision_equals d1 d2 =
     match d1, d2 with
-    | ForkConditional (stmt1, bool1), ForkConditional (stmt2, bool2) when stmt1 == stmt2 && bool1 = bool2 -> true
-    | ForkFunptr (instr1, fundec1), ForkFunptr (instr2, fundec2) when instr1 == instr2 && fundec1 == fundec2 -> true
-    | ForkEnd, ForkEnd -> true
+    | DecisionConditional (stmt1, bool1), DecisionConditional (stmt2, bool2) when stmt1 == stmt2 && bool1 = bool2 -> true
+    | DecisionFuncall (instr1, fundec1), DecisionFuncall (instr2, fundec2) when instr1 == instr2 && fundec1 == fundec2 -> true
+    | DecisionEnd, DecisionEnd -> true
     | _, _ -> false
 
 type job = {
 	file : Cil.file;
 	state : Types.state;
 	exHist : executionHistory;
-	decisionPath : fork_decision list; (** The decision path is a list of fork_decision. Most recent decision first. *)
-    boundingPaths : fork_decision list list option; (** The execution can only run on these paths, if exist. Paths have most recent decision first. *)
+	decisionPath : decision list; (** The decision path is a list of decision. Most recent decision first. *)
+    boundingPaths : decision list list option; (** The execution can only run on these paths, if exist. Paths have most recent decision first. *)
 	instrList : Cil.instr list; (** [instr]s to execute before moving to the next [stmt] *)
 	stmt : Cil.stmt;            (** The next statement the job should execute *)
 	trackedFns : StringSet.t;	(** The set of functions (names) in which to track coverage *)
@@ -102,7 +102,7 @@ type job_result = {
 	result_file : Cil.file;
 	result_state : Types.state;
 	result_history : executionHistory;
-	result_decision_path : fork_decision list;
+	result_decision_path : decision list;
 }
 
 type 'reason job_completion =

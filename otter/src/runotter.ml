@@ -19,7 +19,8 @@ let _ =
     Cilly.run [
         Otter.Executemain.feature;
         MultiOtter.MultiDriver.feature;
-        BackOtter.Callchain_backward.feature;
+        BackOtter.BackOtterDriver.feature;
+        BackOtter.LegacyBackOtter.feature;
         Marshal_feature.feature;
         CilUtilities.FindFns.feature;
         CilUtilities.TraceLines.feature;

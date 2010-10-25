@@ -15,7 +15,7 @@ open Cil
 
 type failing_predicate =
     | FailingCondition of state * Bytes.bytes (* TODO (martin): make the condition a list of bytes *)
-    | FailingPaths of fork_decision list list
+    | FailingPaths of decision list list (* most recent decision first *)
 
 type target = {
   target_func: Cil.fundec;
@@ -98,11 +98,11 @@ let distance_to_targets_prioritizer callstack target_fundecs job =
 let print_decisions ff decisions =
     let print_decision ff decision =
         match decision with
-        | ForkConditional(stmt,truth) ->
+        | DecisionConditional(stmt,truth) ->
                 Format.fprintf ff "Decision: @[%a@]: %s@\n" Printer.stmt_abbr stmt (if truth then "true" else "false")
-        | ForkFunptr(instr,fundec) ->
+        | DecisionFuncall(instr,fundec) ->
                 Format.fprintf ff "Decision: @[%a@]@\n" Printer.fundec fundec
-        | ForkEnd ->
+        | DecisionEnd ->
                 Format.fprintf ff "Decision: END@\n"
     in
         if decisions = [] then
@@ -235,7 +235,7 @@ let test_job_at_targets targets job =
                 ) return
             in
 
-            let failing_paths : fork_decision list list =
+            let failing_paths : decision list list =
                 List.fold_left (
                     fun failing_paths (job,target) ->
                         Format.printf "Test job %d at target function @[%a@]@\n" job.jid Printer.fundec target.target_func;
@@ -243,8 +243,8 @@ let test_job_at_targets targets job =
                           match target.target_predicate with
                           | FailingCondition (_,_) -> failwith "Not implemented yet"
                           | FailingPaths (paths) ->
-                              (* add an ForkEnd to mark the end of a bounding path *)
-                              let bounding_paths = List.map (fun path -> ForkEnd::path) paths in
+                              (* add an DecisionEnd to mark the end of a bounding path *)
+                              let bounding_paths = List.map (fun path -> DecisionEnd::path) paths in
                               let job_completions : 'reason job_completion list = forward_otter_bounded_by_paths job bounding_paths in
                                 List.fold_left (fun failing_paths job_completion ->
                                     match job_completion with
@@ -278,8 +278,8 @@ let test_job_at_targets_interceptor targets job job_queue interceptor =
 			interceptor job job_queue
         | _ -> failwith "test_job_at_targets: unreachable program point"
 
-let callchain_backward_se job : _ job_completion list =
-  let file = job.Job.file in
+let callchain_backward_se_legacy file : _ job_completion list =
+  let job = OtterJob.Job.get_default file in
   let entryfn = List.hd job.state.callstack in
   let assertfn =
     let fname = !arg_assertfn in
@@ -385,6 +385,7 @@ let callchain_backward_se job : _ job_completion list =
 		  List.rev_append new_result results
 	  ) [] callers
 
+
 let prepare_file file =
 	Executeargs.arg_cfg_pruning := true;
 	Core.prepare_file file
@@ -405,8 +406,7 @@ let doit file =
 	ignore (Unix.alarm !Executeargs.arg_timeout);
 
 	prepare_file file;
-	let job = OtterJob.Job.get_default file in
-	let results = callchain_backward_se job in
+	let results = callchain_backward_se_legacy file in
 
 	(* Turn off the alarm and reset the signal handlers *)
 	ignore (Unix.alarm 0);
@@ -451,7 +451,7 @@ let doit file =
 
 
 let feature = {
-	Cil.fd_name = "backotter";
+	Cil.fd_name = "legacybackotter";
 	Cil.fd_enabled = ref false;
 	Cil.fd_description = "Call-chain backwards symbolic executor for C";
 	Cil.fd_extraopt = [
