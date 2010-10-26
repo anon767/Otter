@@ -15,6 +15,27 @@ open Decision
 open Cil
 
 
+class ['reason] target_tracker delegate targets_ref =
+object (_ : 'self)
+    val delegate = delegate
+    val targets_ref = targets_ref
+    method report (job_state : 'reason Job.job_state) : 'self * bool =
+        begin match job_state with
+            (* TODO: also include `Failure when --exceptions-as-failures is enabled *)
+            | Complete (Abandoned (`FailureReached, _ , job_result)) ->
+                let fundec = List.hd (List.rev job_result.result_state.callstack) in
+                let failing_path = job_result.result_decision_path in
+                targets_ref := BackOtterTargets.add fundec failing_path (!targets_ref)
+            | _ -> ()
+        end;
+        let delegate, more = delegate#report job_state in
+        ({< delegate = delegate >}, more)
+
+    method completed : 'reason Job.job_completion list =
+        delegate#completed
+end
+
+
 (* Cil feature for call-chain backwards Otter *)
 let arg_assertfn = ref "__FAILURE"
 
@@ -92,7 +113,7 @@ let print_function_switch_interceptor job job_queue interceptor =
             end;
             interceptor job job_queue
 
-let callchain_backward_se job =
+let callchain_backward_se reporter job =
     let file = job.Job.file in
     (* Entry function set by --entryfn (default: main) *)
     let entry_fn = List.hd job.state.callstack in
@@ -118,7 +139,8 @@ let callchain_backward_se job =
     (* Add these jobs into the queue *)
     let queue = List.fold_left (fun queue job -> queue#put job) queue jobs in
 
-    let reporter = new BackOtterReporter.t targets_ref in
+    (* Overlay the target tracker on the reporter *)
+    let target_tracker = new target_tracker reporter targets_ref in
 
     (* Define interceptor *)
     let interceptor =
@@ -131,13 +153,13 @@ let callchain_backward_se job =
         >>> BuiltinFunctions.libc_interceptor
         >>> BuiltinFunctions.interceptor
     in
-    let reporter = Driver.main_loop ~interceptor ~queue reporter job in
+    let reporter = Driver.main_loop ~interceptor ~queue target_tracker job in
     (* Output failing paths for entry_fn *)
     Output.dprintf "@\n@\n";
     List.iter (fun decisions ->
         Output.dprintf "Failing path: @[%a@]@\n" Decision.print_decisions decisions)
         (BackOtterTargets.find entry_fn (!targets_ref));
-    reporter#completed
+    reporter
 
 
 let doit file =
@@ -159,7 +181,7 @@ let doit file =
     Core.prepare_file file;
 
     let entry_job = OtterJob.Job.get_default file in
-    let results = callchain_backward_se entry_job in
+    let results = callchain_backward_se (new BackOtterReporter.t ()) entry_job in
 
     (* Turn off the alarm and reset the signal handlers *)
     ignore (Unix.alarm 0);
