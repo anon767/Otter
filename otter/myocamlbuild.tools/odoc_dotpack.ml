@@ -145,7 +145,7 @@ end
 let resolve_dependencies m =
     (* read the .annot file for the module and look for ext_ref *)
     let find_dependencies m =
-        let module_ref_regexp = Str.regexp "[^.A-Za-z0-9'_]\\([A-Z].+\\)\\.[a-z_]" in
+        let module_ref_regexp = Str.regexp "[^.A-Za-z0-9'_]\\([A-Z][A-Za-z0-9'_.]+\\)\\.[a-z_]" in
         let annot_path = (Filename.chop_extension m.m_file) ^ ".annot" in
         let annot_in = open_in annot_path in
         let rec find_dependencies deps =
