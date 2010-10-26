@@ -16,3 +16,8 @@ let add fundec decision targets =
 let mem = FundecMap.mem
 let find = FundecMap.find
 let empty = FundecMap.empty
+
+let get_fundecs targets =
+    FundecMap.fold (
+        fun target_fundec _ target_fundecs -> target_fundec :: target_fundecs
+    ) targets []
