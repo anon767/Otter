@@ -3,6 +3,9 @@ open TestUtil.OtterPragmaTests
 open OtterDriver
 open Otter
 open MultiOtter
+open BackOtter
+
+module CorePragmaTest = TestUtil.OtterPragmaTests.Make (OtterCore.Errors) 
 
 
 (* directory containing tests for SystemTests *)
@@ -10,7 +13,7 @@ let dir_prefix = Filename.concat "test" "TestOtterSystem"
 
 
 (* test helper that runs the symbolic executor on all files relative to dir_prefix/dir *)
-let test_system driver dir =
+let test_system test_otter_with_pragma driver dir =
     let fulldir = Filename.concat dir_prefix dir in
 
     dir >: test_dir fulldir begin fun relpath ->
@@ -23,7 +26,7 @@ let test_system driver dir =
             if (Sys.command ("./otter.pl -nostdinc -isystem./libc/ -include./libc/__otter/all.h -E -o"^temppath^" "^fullpath^" 2>/dev/null")) <> 0 then
                 assert_failure "Preprocessor parse error.";
 
-            test_otter_with_pragma ~driver temppath ()
+            test_otter_with_pragma driver temppath ()
         end
     end
 
@@ -33,7 +36,7 @@ let test_system driver dir =
  *)
 
 let testsuite = "System" >::: [
-	test_system Driver.run_with_libc "OtterCore";
-	test_system MultiDriver.run "MultiProcessOtter";
+	test_system CorePragmaTest.test_otter_with_pragma Driver.run_with_libc "OtterCore";
+	test_system CorePragmaTest.test_otter_with_pragma MultiDriver.run "MultiProcessOtter";
 ]
 

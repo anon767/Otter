@@ -94,7 +94,8 @@ let doit file =
 	let job = OtterJob.Job.get_default file in
 
 	(* run the job *)
-	let result = run (new BasicReporter.t ()) job in
+	let module Reporter = BasicReporter.Make (OtterCore.Errors) in
+	let result = run (new Reporter.t ()) job in
 
 	(* print the results *)
 	Output.printf "%s@\n" (Executedebug.get_log ());

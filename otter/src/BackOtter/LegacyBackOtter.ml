@@ -14,6 +14,8 @@ open Job
 open Decision
 open Cil
 
+module Reporter = BasicReporter.Make (BackOtterErrors)
+
 type failing_predicate =
     | FailingCondition of state * Bytes.bytes (* TODO (martin): make the condition a list of bytes *)
     | FailingPaths of Decision.t list list (* most recent decision first *)
@@ -54,7 +56,7 @@ let run ?interceptor ?queue job =
     | None -> default_interceptor
     | Some (interceptor) -> default_interceptor >>> interceptor
     in
-    (Driver.main_loop ~interceptor:integrated_interceptor ?queue (new BasicReporter.t ()) job)#completed
+    (Driver.main_loop ~interceptor:integrated_interceptor ?queue (new Reporter.t ()) job)#completed
 
 
 let distance_to_targets_prioritizer callstack target_fundecs job =
@@ -143,7 +145,7 @@ let test_job_at_targets targets job =
             let job = { job with instrList = tail; } in
             let errors = [] in
             let job_state, errors = Statement.exec_instr_call job instr lvalopt fexp exps errors in
-            List.iter (fun (_,_,error) -> Format.printf "An error caught in test_job_at_targets when initializing the function call: %a @\n" Report.abandoned_reason error) errors;
+            List.iter (fun (_,_,error) -> Format.printf "An error caught in test_job_at_targets when initializing the function call: %a @\n" Errors.printer error) errors;
             let active_jobs =
               let rec get_active_jobs job_state =
                   match job_state with

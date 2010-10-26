@@ -68,7 +68,7 @@ let direct_calls_testsuite = "Direct calls" >:::
                     end ([], [], []) match_globals in
 
                     if errors <> [] then
-                        assert_log "Errors detected:@ @[%a@]@\n" (list_printer (fun ff (_, _, s) -> Report.abandoned_reason ff s) ",@ ") errors;
+                        assert_log "Errors detected:@ @[%a@]@\n" (list_printer (fun ff (_, _, s) -> Errors.printer ff s) ",@ ") errors;
 
                     if not_found <> [] then
                         assert_log "Variables not found:@ @[%a@]@\n" (list_printer pp_print_string ",@ ") not_found;
@@ -362,7 +362,7 @@ let undefined_calls_testsuite = "Undefined calls" >:::
                 | [ Abandoned (`Failure msg, loc, result) ] when msg = "Function "^name^" not found." ->
                     ()
                 | [ Abandoned (reason, loc, result) ] ->
-                    assert_failure "Expected a single Abandoned `Failure \"Function %s not found\",@ but got Abandoned %a" name Report.abandoned_reason reason
+                    assert_failure "Expected a single Abandoned `Failure \"Function %s not found\",@ but got Abandoned %a" name Errors.printer reason
                 | [ _ ] ->
                     assert_failure "Expected a single Abandoned, but got another completion result"
                 | [] ->

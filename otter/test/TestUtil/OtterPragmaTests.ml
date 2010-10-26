@@ -54,359 +54,370 @@ open OtterCore
 open OtterDriver
 
 
-(** Flags for setting up the tests. *)
-type flags = {
-    entry_function : string option; (** The function at which to begin symbolic execution (corresponds to [--entryfn]). *)
-    command_line : string list;     (** The command line to use to run the test (corresponds to [--arg]). *)
-    time_limit : int option;        (** The time limit for symbolic execution. *)
-    cil_options : string list;      (** The command line options to pass to CIL. *)
-    has_failing_assertions : bool;  (** If failing assertions are expected in the test. *)
-    no_bounds_checking : bool;      (** Disable bounds checking (corresponds to [--noboundsChecking]). *)
-}
+module type Errors = sig
+    type t
+    val printer : Format.formatter -> t -> unit
+    val matcher : string -> Cil.attrparam list -> t -> bool
+end
+
+module Make (Errors : Errors) = struct
+    (** Flags for setting up the tests. *)
+    type flags = {
+        entry_function : string option; (** The function at which to begin symbolic execution (corresponds to [--entryfn]). *)
+        command_line : string list;     (** The command line to use to run the test (corresponds to [--arg]). *)
+        time_limit : int option;        (** The time limit for symbolic execution. *)
+        cil_options : string list;      (** The command line options to pass to CIL. *)
+        has_failing_assertions : bool;  (** If failing assertions are expected in the test. *)
+        no_bounds_checking : bool;      (** Disable bounds checking (corresponds to [--noboundsChecking]). *)
+    }
 
 
-(** The default test flags. *)
-let default_flags = {
-    entry_function = None;
-    command_line = [];
-    time_limit = None;
-    cil_options = [];
-    has_failing_assertions = false;
-    no_bounds_checking = false;
-}
+    (** The default test flags. *)
+    let default_flags = {
+        entry_function = None;
+        command_line = [];
+        time_limit = None;
+        cil_options = [];
+        has_failing_assertions = false;
+        no_bounds_checking = false;
+    }
 
 
-(** CPS identity function. *)
-let id = fun x k -> k x
+    (** CPS identity function. *)
+    let id = fun x k -> k x
 
 
-(** CPS reverse composition. *)
-let (>>>) f g = fun x k -> f x (fun x -> g x k)
+    (** CPS reverse composition. *)
+    let (>>>) f g = fun x k -> f x (fun x -> g x k)
 
 
-(** Helper to to remove a matching item from a list. *)
-let list_remove f list =
-    let rec list_remove list = function
-        | item::rest when f item -> Some (item, List.rev_append list rest)
-        | item::rest -> list_remove (item::list) rest
-        | [] -> None
-    in
-    list_remove [] list
+    (** Helper to to remove a matching item from a list. *)
+    let list_remove f list =
+        let rec list_remove list = function
+            | item::rest when f item -> Some (item, List.rev_append list rest)
+            | item::rest -> list_remove (item::list) rest
+            | [] -> None
+        in
+        list_remove [] list
 
 
-(** Wrapper to assert_failure that also prints the location. *)
-let assert_loc_failure file loc format =
-    assert_log "%s:%d:error:@;<1 2>" file.Cil.fileName loc.Cil.line;
-    assert_failure format
+    (** Wrapper to assert_failure that also prints the location. *)
+    let assert_loc_failure file loc format =
+        assert_log "%s:%d:error:@;<1 2>" file.Cil.fileName loc.Cil.line;
+        assert_failure format
 
 
-(** Helper to print Cil.attrparam list. *)
-let attrparams_printer = list_printer Printcil.attrparam ",@ "
+    (** Helper to print Cil.attrparam list. *)
+    let attrparams_printer = list_printer Printcil.attrparam ",@ "
 
 
-(** Helper to print Otter.Types.job_completion list. *)
-let results_printer list =
-    let completion_printer ff = function
-        | Job.Exit (exit_opt, _) -> Format.fprintf ff "Exit(@[%a@])" (option_printer BytesPrinter.bytes) exit_opt
-        | Job.Return (return_opt, _) -> Format.fprintf ff "Return(@[%a@])" (option_printer BytesPrinter.bytes) return_opt
-        | Job.Abandoned (reason, loc, _) -> Format.fprintf ff "Abandoned(\"@[%s@@%d: %a@]\")" loc.Cil.file loc.Cil.line Report.abandoned_reason reason
-    in
-    list_printer completion_printer "@\n" list
+    (** Helper to print Otter.Types.job_completion list. *)
+    let results_printer list =
+        let completion_printer ff = function
+            | Job.Exit (exit_opt, _) -> Format.fprintf ff "Exit(@[%a@])" (option_printer BytesPrinter.bytes) exit_opt
+            | Job.Return (return_opt, _) -> Format.fprintf ff "Return(@[%a@])" (option_printer BytesPrinter.bytes) return_opt
+            | Job.Abandoned (reason, loc, _) -> Format.fprintf ff "Abandoned(\"@[%s@@%d: %a@]\")" loc.Cil.file loc.Cil.line Errors.printer reason
+        in
+        list_printer completion_printer "@\n" list
 
 
-(** Test that an expression holds in the given result.
+    (** Test that an expression holds in the given result.
 
-    Only integer constants, variables, expressions are supported. Additionally, the special variables [__return_code__]
-    and [__exit_code__] correspond to the values returned from [main()] and via [exit()] respectively.
- *)
-let assert_exp file loc exp result return_opt exit_opt =
-    let file, state = result.Job.result_file, result.Job.result_state in
+        Only integer constants, variables, expressions are supported. Additionally, the special variables [__return_code__]
+        and [__exit_code__] correspond to the values returned from [main()] and via [exit()] respectively.
+     *)
+    let assert_exp file loc exp result return_opt exit_opt =
+        let file, state = result.Job.result_file, result.Job.result_state in
 
-    (* translate from Cil.attrparam to bytes *)
-    let rec parse_exp state = function
-        | Cil.ACons ("__return_code__", []) ->
-            begin match return_opt with
-                | Some return -> (state, return)
-                | None -> raise Exit
-            end
+        (* translate from Cil.attrparam to bytes *)
+        let rec parse_exp state = function
+            | Cil.ACons ("__return_code__", []) ->
+                begin match return_opt with
+                    | Some return -> (state, return)
+                    | None -> raise Exit
+                end
 
-        | Cil.ACons ("__exit_code__", []) ->
-            begin match exit_opt with
-                | Some exit -> (state, exit)
-                | None -> raise Exit
-            end
+            | Cil.ACons ("__exit_code__", []) ->
+                begin match exit_opt with
+                    | Some exit -> (state, exit)
+                    | None -> raise Exit
+                end
 
-        | Cil.ACons (name, []) ->
-            let varinfo_opt = try Some (FindCil.global_varinfo_by_name file name) with Not_found -> None in
-            begin match varinfo_opt with
-                | Some varinfo ->
-                    if varinfo.Cil.vtype <> Cil.intType then
-                        assert_loc_failure file loc "In assertion %a: global variable %s is not an int." Printcil.attrparam exp name;
-                    let state, lval = MemOp.state__varinfo_to_lval_block state varinfo in
-                    MemOp.state__deref state (lval, (Cil.bitsSizeOf Cil.intType)/8)
-                | None ->
-                    assert_loc_failure file loc "In assertion %a: global variable %s not found." Printcil.attrparam exp name
-            end
+            | Cil.ACons (name, []) ->
+                let varinfo_opt = try Some (FindCil.global_varinfo_by_name file name) with Not_found -> None in
+                begin match varinfo_opt with
+                    | Some varinfo ->
+                        if varinfo.Cil.vtype <> Cil.intType then
+                            assert_loc_failure file loc "In assertion %a: global variable %s is not an int." Printcil.attrparam exp name;
+                        let state, lval = MemOp.state__varinfo_to_lval_block state varinfo in
+                        MemOp.state__deref state (lval, (Cil.bitsSizeOf Cil.intType)/8)
+                    | None ->
+                        assert_loc_failure file loc "In assertion %a: global variable %s not found." Printcil.attrparam exp name
+                end
 
-        | Cil.AInt i ->
-            (state, Bytes.int_to_bytes i)
+            | Cil.AInt i ->
+                (state, Bytes.int_to_bytes i)
 
-        | Cil.AUnOp (unop, exp) ->
+            | Cil.AUnOp (unop, exp) ->
+                let state, bytes = parse_exp state exp in
+                (state, Operator.of_unop unop [ (bytes, Cil.intType) ])
+
+            | Cil.ABinOp (binop, exp1, exp2) ->
+                let state, bytes1 = parse_exp state exp1 in
+                let state, bytes2 = parse_exp state exp2 in
+                (state, Operator.of_binop binop [ (bytes1, Cil.intType); (bytes2, Cil.intType) ])
+
+            | exp' ->
+                assert_loc_failure file loc "In assertion %a: unsupported operation %a." Printcil.attrparam exp Printcil.attrparam exp'
+        in
+        try
             let state, bytes = parse_exp state exp in
-            (state, Operator.of_unop unop [ (bytes, Cil.intType) ])
-
-        | Cil.ABinOp (binop, exp1, exp2) ->
-            let state, bytes1 = parse_exp state exp1 in
-            let state, bytes2 = parse_exp state exp2 in
-            (state, Operator.of_binop binop [ (bytes1, Cil.intType); (bytes2, Cil.intType) ])
-
-        | exp' ->
-            assert_loc_failure file loc "In assertion %a: unsupported operation %a." Printcil.attrparam exp Printcil.attrparam exp'
-    in
-    try
-        let state, bytes = parse_exp state exp in
-        let state, truth = MemOp.state__eval state state.Types.path_condition bytes in
-        begin match truth with
-            | Ternary.True -> true
-            | Ternary.False
-            | Ternary.Unknown -> false
-        end
-    with Exit ->
-        (* __return_code__ or __exit_code__ not available *)
-        false
-
-
-(** Test that a list of expressions in a pragma test directive hold in the given result. *)
-let assert_exps file loc exps result return_opt exit_opt =
-    List.for_all (fun exp -> assert_exp file loc exp result return_opt exit_opt) exps
-
-
-(** CPS test that the results contains a {!Job.Return}, passing the remaining results to the next test. *)
-let expect_return file loc asserts results k =
-    let asserts' = assert_exps file loc asserts in
-    match list_remove (function Job.Return (return_opt, result) -> asserts' result return_opt None | _ -> false) results with
-        | Some (_, results) ->
-            k results
-        | None when asserts = [] ->
-            assert_loc_failure file loc "@[Did not find Return@\nGot:@\n  @[%a@]@]" results_printer results
-        | None ->
-            assert_loc_failure file loc "@[Did not find Return with assertions:@\n  @[%a@]@\nGot:@\n  @[%a@]@]"
-                attrparams_printer asserts results_printer results
-
-
-(** CPS test that the results contains a {!Job.Exit}, passing the remaining results to the next test. *)
-let expect_exit file loc asserts results k =
-    let asserts' = assert_exps file loc asserts in
-    match list_remove (function Job.Exit (exit_opt, result) -> asserts' result None exit_opt | _ -> false) results with
-        | Some (_, results) ->
-            k results
-        | None when asserts = [] ->
-            assert_loc_failure file loc "@[Did not find Exit@\nGot:@\n  @[%a@]@]" results_printer results
-        | None ->
-            assert_loc_failure file loc "@[Did not find Exit with assertions:@\n  @[%a@]@\nGot:@\n  @[%a@]@]"
-                attrparams_printer asserts results_printer results
-
-
-(** CPS test that the results contains a {!Job.Abandoned} with a [`Failure] reason, passing the remaining results to the next test. *)
-let expect_abandoned_failure file loc reason asserts results k =
-    let reason' = Str.regexp reason in
-    let asserts' = assert_exps file loc asserts in
-    let is_abandoned_failure = function
-        | Job.Abandoned (`Failure reason, loc, result) -> Str.string_match reason' reason 0 && asserts' result None None
-        | _ -> false
-    in
-    match list_remove is_abandoned_failure results with
-        | Some (_, results) ->
-            k results
-        | None when asserts = [] ->
-            assert_loc_failure file loc "@[Did not find Abandoned `Failure with reason:@\n  %s@\nGot:@\n  @[%a@]@]"
-                reason results_printer results
-        | None ->
-            assert_loc_failure file loc "@[Did not find Abandoned `Failure with reason:@\n  %s@\nand assertions:@\n  @[%a@]@\nGot:@\n  @[%a@]@]"
-                reason attrparams_printer asserts results_printer results
-
-
-(** CPS test that there are no other {!Types.job_completion} of a particular type, passing the remaining results to the next test. *)
-let no_other_x f x file loc = fun results k ->
-    (* count jobs that matched f *)
-    let abandoned = List.filter f results in
-    if abandoned <> [] then
-        assert_loc_failure file loc "@[<h2>Expected no other %s but got:@\n%a@]" x results_printer results;
-    k results
-
-(** CPS test that there are no other {!Job.Return}, passing the remaining results to the next test. *)
-let no_other_return arg =
-    no_other_x (function Job.Return _ -> true | _ -> false) "Return" arg
-
-(** CPS test that there are no other {!Job.Exit}, passing the remaining results to the next test. *)
-let no_other_exit arg =
-    no_other_x (function Job.Exit _ -> true | _ -> false) "Exit" arg
-
-(** CPS test that there are no other {!Job.Abandoned}, passing the remaining results to the next test. *)
-let no_other_abandoned arg =
-    no_other_x (function Job.Abandoned _ -> true | _ -> false) "Abandoned" arg
-
-(** CPS test that there are no other {!Types.job_completion} at all *)
-let no_other_results arg = no_other_x (fun _ -> true) "results" arg
-
-
-(** Parse [#pragma] directives in a {!Cil.file} for test flags and expectations, and generate a test function. *)
-let parse_pragmas file =
-    (* get test configuration from pragmas *)
-    let flags, test = Cil.foldGlobals file begin fun (flags, test as config) global -> match global with
-        | Cil.GPragma (Cil.Attr (name, params), loc) ->
-            begin match name, params with
-                | "entry_function", [ Cil.AStr entry_function ] ->
-                    if flags.entry_function <> None then assert_loc_failure file loc "Entry function already defined.";
-                    if entry_function = "" then assert_loc_failure file loc "Invalid entry function (should not be blank).";
-                    ({ flags with entry_function = Some entry_function }, test)
-                | "entry_function", _ ->
-                    assert_loc_failure file loc "Invalid entry function (should have exactly one string argument that is the function name)."
-
-                | "command_line", args ->
-                    if flags.command_line <> [] then assert_loc_failure file loc "Command line already defined.";
-                    let command_line = List.map begin function
-                        | Cil.AStr arg -> arg
-                        | _ -> assert_loc_failure file loc "Invalid command line (arguments should be \"<argument string>\")."
-                    end args in
-                    if command_line = [] then assert_loc_failure file loc "Invalid command line (should have at least one argument).";
-                    ({ flags with command_line = command_line }, test)
-
-                | "cil_options", args ->
-                    if flags.cil_options <> [] then assert_loc_failure file loc "CIL options already defined.";
-                    let cil_options = List.map begin function
-                        | Cil.AStr arg -> arg
-                        | _ -> assert_loc_failure file loc "Invalid CIL options (arguments should be \"<argument string>\")."
-                    end args in
-                    if cil_options = [] then assert_loc_failure file loc "Invalid CIL options (should have at least one argument).";
-                    ({ flags with cil_options = cil_options }, test)
-
-                | "time_limit", [ Cil.AInt time_limit ] ->
-                    if flags.time_limit <> None then assert_loc_failure file loc "Time limit already defined.";
-                    if time_limit <= 0 then assert_loc_failure file loc "Invalid time limit (should not be greater than 0).";
-                    ({ flags with time_limit = Some time_limit }, test)
-                | "time_limit", _ ->
-                    assert_loc_failure file loc "Invalid time limit (should have exactly one integer argument that is the time limit in seconds)."
-
-                | "has_failing_assertions", [] ->
-                    ({ flags with has_failing_assertions = true }, test)
-                | "has_failing_assertions", _ ->
-                    assert_loc_failure file loc "Invalid has_failing_assertions (should have no arguments)."
-
-                | "no_bounds_checking", [] ->
-                    ({ flags with no_bounds_checking = true }, test)
-                | "no_bounds_checking", _ ->
-                    assert_loc_failure file loc "Invalid no_bounds_checking (should have no arguments)."
-
-                | "expect_return", [ Cil.ACons ("", []) ] -> (* strangely, expect_return() parses to this *)
-                    (flags, test >>> expect_return file loc [])
-                | "expect_return", [] ->
-                    assert_loc_failure file loc "Invalid expect_return (should have argument list \"expect_return(...)\")."
-                | "expect_return", asserts ->
-                    (flags, test >>> expect_return file loc asserts)
-
-                | "expect_exit", [ Cil.ACons ("", []) ] -> (* strangely, expect_exit() parses to this *)
-                    (flags, test >>> expect_exit file loc [])
-                | "expect_exit", [] ->
-                    assert_loc_failure file loc "Invalid expect_exit (should have argument list \"expect_exit(...)\")."
-                | "expect_exit", asserts ->
-                    (flags, test >>> expect_exit file loc asserts)
-
-                | "expect_abandoned", (Cil.ACons ("failure", [ Cil.AStr reason ]))::asserts ->
-                    (flags, test >>> expect_abandoned_failure file loc reason asserts)
-                | "expect_abandoned", (Cil.ACons ("failure", _))::asserts ->
-                    assert_loc_failure file loc "Invalid failure (should have exactly one regex string argument to match the failure reason)."
-                | "expect_abandoned", _ ->
-                    assert_loc_failure file loc "Invalid expect_abandoned (first argument should be one of: failure(...))."
-
-                | "no_other_return", [] ->
-                    (flags, test >>> no_other_return file loc)
-                | "no_other_return", _ ->
-                    assert_loc_failure file loc "Invalid no_other_return (should have no arguments)."
-
-                | "no_other_exit", [] ->
-                    (flags, test >>> no_other_exit file loc)
-                | "no_other_exit", _ ->
-                    assert_loc_failure file loc "Invalid no_other_exit (should have no arguments)."
-
-                | "no_other_abandoned", [] ->
-                    (flags, test >>> no_other_abandoned file loc)
-                | "no_other_abandoned", _ ->
-                    assert_loc_failure file loc "Invalid no_other_abandoned (should have no arguments)."
-
-                | "no_other_results", [] ->
-                    (flags, test >>> no_other_results file loc)
-                | "no_other_results", _ ->
-                    assert_loc_failure file loc "Invalid no_other_results (should have no arguments)."
-
-                | _ ->
-                    assert_loc_failure file loc "Unknown test configuration: %s(%a)." name attrparams_printer params
+            let state, truth = MemOp.state__eval state state.Types.path_condition bytes in
+            begin match truth with
+                | Ternary.True -> true
+                | Ternary.False
+                | Ternary.Unknown -> false
             end
-        | _ ->
-            config
-    end (default_flags, id) in
-    (flags, (fun results -> test results (fun _ -> ())))
+        with Exit ->
+            (* __return_code__ or __exit_code__ not available *)
+            false
 
 
-(** Test helper that runs Otter on a file, using #pragmas to define test expectations.
-            @param driver is the Otter main loop to use (default: {!Driver.run_basic})
-            @param path is the path to the file
-            @return a {!TestCase} that runs Otter
-*)
-let test_otter_with_pragma ?(driver=Driver.run_basic) path = fun () ->
-    (* reset the error flag and suppress all output from the symbolic executor *)
-    Errormsg.hadErrors := false;
-    Output.arg_print_mute := 1;
+    (** Test that a list of expressions in a pragma test directive hold in the given result. *)
+    let assert_exps file loc exps result return_opt exit_opt =
+        List.for_all (fun exp -> assert_exp file loc exp result return_opt exit_opt) exps
 
-    (* parse and ensure no errors *)
-    let file = Frontc.parse path () in
-    assert_bool "Cil parse error" (not !Errormsg.hadErrors);
 
-    (* load the configuration from the file *)
-    let flags, test = parse_pragmas file in
+    (** CPS test that the results contains a {!Job.Return}, passing the remaining results to the next test. *)
+    let expect_return file loc asserts results k =
+        let asserts' = assert_exps file loc asserts in
+        match list_remove (function Job.Return (return_opt, result) -> asserts' result return_opt None | _ -> false) results with
+            | Some (_, results) ->
+                k results
+            | None when asserts = [] ->
+                assert_loc_failure file loc "@[Did not find Return@\nGot:@\n  @[%a@]@]" results_printer results
+            | None ->
+                assert_loc_failure file loc "@[Did not find Return with assertions:@\n  @[%a@]@\nGot:@\n  @[%a@]@]"
+                    attrparams_printer asserts results_printer results
 
-    (* set the entry function and command line *)
-    begin match flags.entry_function with
-        | Some fn -> OtterJob.Job.entry_function := fn
-        | _ -> ()
-    end;
-    OtterJob.Job.command_line := flags.command_line;
 
-    (* disable bounds checking if required *)
-    Executeargs.arg_bounds_checking := not flags.no_bounds_checking;
+    (** CPS test that the results contains a {!Job.Exit}, passing the remaining results to the next test. *)
+    let expect_exit file loc asserts results k =
+        let asserts' = assert_exps file loc asserts in
+        match list_remove (function Job.Exit (exit_opt, result) -> asserts' result None exit_opt | _ -> false) results with
+            | Some (_, results) ->
+                k results
+            | None when asserts = [] ->
+                assert_loc_failure file loc "@[Did not find Exit@\nGot:@\n  @[%a@]@]" results_printer results
+            | None ->
+                assert_loc_failure file loc "@[Did not find Exit with assertions:@\n  @[%a@]@\nGot:@\n  @[%a@]@]"
+                    attrparams_printer asserts results_printer results
 
-    (* See if any CIL options were defined. If so, parse the file again with those options *)
-    if flags.cil_options <> [] then
-    Arg.parse_argv
-        ~current:(ref 0)
-        (Array.of_list ("otterTest"::flags.cil_options)) (* Give a fake program name, then the options *)
-        Ciloptions.options (* Use these options *)
-        (fun _ -> ()) (* Ignore any anonymous arguments *)
-        ""; (* We don't need a help message here *)
-    let file = Frontc.parse path () in
 
-    (* set the time limit, if provided *)
-    let run = match flags.time_limit with
-        | Some time_limit -> assert_time_limit (float_of_int time_limit)
-        | None -> fun f -> f ()
-    in
+    (** CPS test that the results contains a {!Job.Abandoned}, passing the remaining results to the next test. *)
+    let expect_abandoned file loc reason args asserts =
+        let reason' =
+            try
+                Errors.matcher reason args
+            with Failure s ->
+                assert_loc_failure file loc "%s" s
+        in
+        let asserts' = assert_exps file loc asserts in
+        let is_abandoned = function
+            | Job.Abandoned (reason, loc, result) -> reason' reason && asserts' result None None
+            | _ -> false
+        in
+        fun results k -> match list_remove is_abandoned results with
+            | Some (_, results) ->
+                k results
+            | None when asserts = [] ->
+                assert_loc_failure file loc "@[Did not find Abandoned `Failure with reason:@\n  %s@\nGot:@\n  @[%a@]@]"
+                    reason results_printer results
+            | None ->
+                assert_loc_failure file loc "@[Did not find Abandoned `Failure with reason:@\n  %s@\nand assertions:@\n  @[%a@]@\nGot:@\n  @[%a@]@]"
+                    reason attrparams_printer asserts results_printer results
 
-    (* prepare the file and run the symbolic executor *)
-    let results = run begin fun () ->
-        Core.prepare_file file;
-        let job = OtterJob.Job.get_default file in
-        driver (new ListReporter.t) job
-    end in
 
-    (* first, test if assertions passed *)
-    let log = Executedebug.get_log () in
-    if not flags.has_failing_assertions then
-        assert_string log;
+    (** CPS test that there are no other {!Types.job_completion} of a particular type, passing the remaining results to the next test. *)
+    let no_other_x f x file loc = fun results k ->
+        (* count jobs that matched f *)
+        let abandoned = List.filter f results in
+        if abandoned <> [] then
+            assert_loc_failure file loc "@[<h2>Expected no other %s but got:@\n%a@]" x results_printer results;
+        k results
 
-    (* then, run the given test *)
-    let () = test results#completed in
+    (** CPS test that there are no other {!Job.Return}, passing the remaining results to the next test. *)
+    let no_other_return arg =
+        no_other_x (function Job.Return _ -> true | _ -> false) "Return" arg
 
-    (* finally, test if assertions passed *)
-    if flags.has_failing_assertions then
-        assert_bool "Expected some failing assertions but got none." (log <> "")
+    (** CPS test that there are no other {!Job.Exit}, passing the remaining results to the next test. *)
+    let no_other_exit arg =
+        no_other_x (function Job.Exit _ -> true | _ -> false) "Exit" arg
+
+    (** CPS test that there are no other {!Job.Abandoned}, passing the remaining results to the next test. *)
+    let no_other_abandoned arg =
+        no_other_x (function Job.Abandoned _ -> true | _ -> false) "Abandoned" arg
+
+    (** CPS test that there are no other {!Types.job_completion} at all *)
+    let no_other_results arg = no_other_x (fun _ -> true) "results" arg
+
+
+    (** Parse [#pragma] directives in a {!Cil.file} for test flags and expectations, and generate a test function. *)
+    let parse_pragmas file =
+        (* get test configuration from pragmas *)
+        let flags, test = Cil.foldGlobals file begin fun (flags, test as config) global -> match global with
+            | Cil.GPragma (Cil.Attr (name, params), loc) ->
+                begin match name, params with
+                    | "entry_function", [ Cil.AStr entry_function ] ->
+                        if flags.entry_function <> None then assert_loc_failure file loc "Entry function already defined.";
+                        if entry_function = "" then assert_loc_failure file loc "Invalid entry function (should not be blank).";
+                        ({ flags with entry_function = Some entry_function }, test)
+                    | "entry_function", _ ->
+                        assert_loc_failure file loc "Invalid entry function (should have exactly one string argument that is the function name)."
+
+                    | "command_line", args ->
+                        if flags.command_line <> [] then assert_loc_failure file loc "Command line already defined.";
+                        let command_line = List.map begin function
+                            | Cil.AStr arg -> arg
+                            | _ -> assert_loc_failure file loc "Invalid command line (arguments should be \"<argument string>\")."
+                        end args in
+                        if command_line = [] then assert_loc_failure file loc "Invalid command line (should have at least one argument).";
+                        ({ flags with command_line = command_line }, test)
+
+                    | "cil_options", args ->
+                        if flags.cil_options <> [] then assert_loc_failure file loc "CIL options already defined.";
+                        let cil_options = List.map begin function
+                            | Cil.AStr arg -> arg
+                            | _ -> assert_loc_failure file loc "Invalid CIL options (arguments should be \"<argument string>\")."
+                        end args in
+                        if cil_options = [] then assert_loc_failure file loc "Invalid CIL options (should have at least one argument).";
+                        ({ flags with cil_options = cil_options }, test)
+
+                    | "time_limit", [ Cil.AInt time_limit ] ->
+                        if flags.time_limit <> None then assert_loc_failure file loc "Time limit already defined.";
+                        if time_limit <= 0 then assert_loc_failure file loc "Invalid time limit (should not be greater than 0).";
+                        ({ flags with time_limit = Some time_limit }, test)
+                    | "time_limit", _ ->
+                        assert_loc_failure file loc "Invalid time limit (should have exactly one integer argument that is the time limit in seconds)."
+
+                    | "has_failing_assertions", [] ->
+                        ({ flags with has_failing_assertions = true }, test)
+                    | "has_failing_assertions", _ ->
+                        assert_loc_failure file loc "Invalid has_failing_assertions (should have no arguments)."
+
+                    | "no_bounds_checking", [] ->
+                        ({ flags with no_bounds_checking = true }, test)
+                    | "no_bounds_checking", _ ->
+                        assert_loc_failure file loc "Invalid no_bounds_checking (should have no arguments)."
+
+                    | "expect_return", [ Cil.ACons ("", []) ] -> (* strangely, expect_return() parses to this *)
+                        (flags, test >>> expect_return file loc [])
+                    | "expect_return", [] ->
+                        assert_loc_failure file loc "Invalid expect_return (should have argument list \"expect_return(...)\")."
+                    | "expect_return", asserts ->
+                        (flags, test >>> expect_return file loc asserts)
+
+                    | "expect_exit", [ Cil.ACons ("", []) ] -> (* strangely, expect_exit() parses to this *)
+                        (flags, test >>> expect_exit file loc [])
+                    | "expect_exit", [] ->
+                        assert_loc_failure file loc "Invalid expect_exit (should have argument list \"expect_exit(...)\")."
+                    | "expect_exit", asserts ->
+                        (flags, test >>> expect_exit file loc asserts)
+
+                    | "expect_abandoned", (Cil.ACons (reason, args))::asserts ->
+                        (flags, test >>> expect_abandoned file loc reason args asserts)
+                    | "expect_abandoned", _ ->
+                        assert_loc_failure file loc "Invalid expect_abandoned (first argument should be an abandoned type)."
+
+                    | "no_other_return", [] ->
+                        (flags, test >>> no_other_return file loc)
+                    | "no_other_return", _ ->
+                        assert_loc_failure file loc "Invalid no_other_return (should have no arguments)."
+
+                    | "no_other_exit", [] ->
+                        (flags, test >>> no_other_exit file loc)
+                    | "no_other_exit", _ ->
+                        assert_loc_failure file loc "Invalid no_other_exit (should have no arguments)."
+
+                    | "no_other_abandoned", [] ->
+                        (flags, test >>> no_other_abandoned file loc)
+                    | "no_other_abandoned", _ ->
+                        assert_loc_failure file loc "Invalid no_other_abandoned (should have no arguments)."
+
+                    | "no_other_results", [] ->
+                        (flags, test >>> no_other_results file loc)
+                    | "no_other_results", _ ->
+                        assert_loc_failure file loc "Invalid no_other_results (should have no arguments)."
+
+                    | _ ->
+                        assert_loc_failure file loc "Unknown test configuration: %s(%a)." name attrparams_printer params
+                end
+            | _ ->
+                config
+        end (default_flags, id) in
+        (flags, (fun results -> test results (fun _ -> ())))
+
+
+    (** Test helper that runs Otter on a file, using #pragmas to define test expectations.
+                @param driver is the Otter main loop to use
+                @param path is the path to the file
+                @return a {!TestCase} that runs Otter
+    *)
+    let test_otter_with_pragma driver path = fun () ->
+        (* reset the error flag and suppress all output from the symbolic executor *)
+        Errormsg.hadErrors := false;
+        Output.arg_print_mute := 1;
+
+        (* parse and ensure no errors *)
+        let file = Frontc.parse path () in
+        assert_bool "Cil parse error" (not !Errormsg.hadErrors);
+
+        (* load the configuration from the file *)
+        let flags, test = parse_pragmas file in
+
+        (* set the entry function and command line *)
+        begin match flags.entry_function with
+            | Some fn -> OtterJob.Job.entry_function := fn
+            | _ -> ()
+        end;
+        OtterJob.Job.command_line := flags.command_line;
+
+        (* disable bounds checking if required *)
+        Executeargs.arg_bounds_checking := not flags.no_bounds_checking;
+
+        (* See if any CIL options were defined. If so, parse the file again with those options *)
+        if flags.cil_options <> [] then
+        Arg.parse_argv
+            ~current:(ref 0)
+            (Array.of_list ("otterTest"::flags.cil_options)) (* Give a fake program name, then the options *)
+            Ciloptions.options (* Use these options *)
+            (fun _ -> ()) (* Ignore any anonymous arguments *)
+            ""; (* We don't need a help message here *)
+        let file = Frontc.parse path () in
+
+        (* set the time limit, if provided *)
+        let run = match flags.time_limit with
+            | Some time_limit -> assert_time_limit (float_of_int time_limit)
+            | None -> fun f -> f ()
+        in
+
+        (* prepare the file and run the symbolic executor *)
+        let results = run begin fun () ->
+            Core.prepare_file file;
+            let job = OtterJob.Job.get_default file in
+            driver (new ListReporter.t) job
+        end in
+
+        (* first, test if assertions passed *)
+        let log = Executedebug.get_log () in
+        if not flags.has_failing_assertions then
+            assert_string log;
+
+        (* then, run the given test *)
+        let () = test results#completed in
+
+        (* finally, test if assertions passed *)
+        if flags.has_failing_assertions then
+            assert_bool "Expected some failing assertions but got none." (log <> "")
+end
 

@@ -1,12 +1,13 @@
 open TestUtil.MyOUnit
-open TestUtil.OtterPragmaTests
+
+module CorePragmaTests = TestUtil.OtterPragmaTests.Make (OtterCore.Errors)
 
 
 (* Test helpers that checks that pragma tests passes or fails as expected *)
 let test_otter_pragma_tests ~label ~should_fail code =
     label >:: test_string_as_file "TestOtterPragmaTest." ".c" code begin fun path ->
         let success = try
-            let () = test_otter_with_pragma path () in
+            let () = CorePragmaTests.test_otter_with_pragma OtterDriver.Driver.run_basic path () in
             true
         with MyOUnitFailure ->
             false

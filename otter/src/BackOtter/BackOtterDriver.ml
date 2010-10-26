@@ -15,11 +15,11 @@ open Decision
 open Cil
 
 
-class ['reason] target_tracker delegate targets_ref =
+class target_tracker delegate targets_ref =
 object (_ : 'self)
     val delegate = delegate
     val targets_ref = targets_ref
-    method report (job_state : 'reason Job.job_state) : 'self * bool =
+    method report (job_state : BackOtterErrors.t Job.job_state) : 'self * bool =
         begin match job_state with
             (* TODO: also include `Failure when --exceptions-as-failures is enabled *)
             | Complete (Abandoned (`FailureReached, _ , job_result)) ->
@@ -31,7 +31,7 @@ object (_ : 'self)
         let delegate, more = delegate#report job_state in
         ({< delegate = delegate >}, more)
 
-    method completed : 'reason Job.job_completion list =
+    method completed : BackOtterErrors.t Job.job_completion list =
         delegate#completed
 end
 

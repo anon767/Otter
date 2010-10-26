@@ -1,10 +1,5 @@
 open OcamlUtilities
 
-let abandoned_reason ff = function
-    | `Failure msg -> Format.fprintf ff "`Failure:%s" msg
-    | `FailureReached -> Format.fprintf ff "`FailureReached"
-    | `FailingPaths (_:(Decision.t list list)) -> Format.fprintf ff "(FailingPaths)" (* TODO (martin): print something meaningful *)
-
 let print_report results =
 	let coverage, completed, abandoned =
 		List.fold_left begin fun (coverage, completed, abandoned) result ->
