@@ -5,6 +5,7 @@ open MultiOtter
 open BackOtter
 
 module CorePragmaTest = TestUtil.OtterPragmaTests.Make (OtterCore.Errors) 
+module BackOtterPragmaTest = TestUtil.OtterPragmaTests.Make (BackOtter.BackOtterErrors)
 
 
 (* directory containing tests for IntegrationTests *)
@@ -29,5 +30,6 @@ let test_integration test_otter_with_pragma driver dir =
 let testsuite = "Integration" >::: [
     test_integration CorePragmaTest.test_otter_with_pragma Driver.run_basic "OtterCore";
     test_integration CorePragmaTest.test_otter_with_pragma MultiDriver.run "MultiprocessOtter";
+    test_integration BackOtterPragmaTest.test_otter_with_pragma BackOtterDriver.callchain_backward_se "BackOtter";
 ]
 
