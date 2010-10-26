@@ -69,7 +69,7 @@ let set_formatter ff =
 
 let () = at_exit (fun () -> !formatter#flush)
 
-type msg_type = 
+type msg_type =
 	| MSG_REG
 	| MSG_STMT
 	| MSG_ASSIGN
@@ -79,10 +79,9 @@ type msg_type =
 	| MSG_DEBUG
 	| MSG_MUSTPRINT
 
-
 let current_msg_type = ref MSG_REG
 let set_mode msg_type = current_msg_type := msg_type
-let get_mode () = !current_msg_type 
+let get_mode () = !current_msg_type
 
 let need_print msg_type =
 	if !arg_print_mute > 0 then false else
@@ -103,6 +102,10 @@ let printf format =
 	else
 		Format.ifprintf Format.std_formatter format
 
+(* Same as printf, but bypass the checking of need_print *)
+let dprintf format =
+    !formatter#printf format
+
 let kprintf k format =
 	if (need_print (!current_msg_type)) then
 		!formatter#kprintf k format
@@ -111,8 +114,8 @@ let kprintf k format =
 
 
 let mprint_formatter =
-  Format.make_formatter 
-    (fun  str pos len -> output stdout str pos len; flush stdout) 
+  Format.make_formatter
+    (fun  str pos len -> output stdout str pos len; flush stdout)
     (fun () -> ())
 let mprintf format = Format.fprintf mprint_formatter format
 

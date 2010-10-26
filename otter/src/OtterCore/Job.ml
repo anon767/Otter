@@ -85,6 +85,21 @@ let decision_equals d1 d2 =
     | DecisionEnd, DecisionEnd -> true
     | _, _ -> false
 
+let print_decisions ff decisions =
+    let print_decision ff decision =
+        match decision with
+        | DecisionConditional(stmt,truth) ->
+            Format.fprintf ff "Decision: @[%a@]: %s@\n" Printer.stmt_abbr stmt (if truth then "true" else "false")
+        | DecisionFuncall(instr,fundec) ->
+            Format.fprintf ff "Decision: @[%a@]@\n" Printer.fundec fundec
+        | DecisionEnd ->
+            Format.fprintf ff "Decision: END@\n"
+    in
+    if decisions = [] then
+        Format.fprintf ff "Decision: (none)@\n"
+    else
+        List.iter (print_decision ff) decisions
+
 type job = {
 	file : Cil.file;
 	state : Types.state;

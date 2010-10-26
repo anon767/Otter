@@ -28,17 +28,21 @@ class ['job] t targets_ref entry_fn = object
             0
         in
         let score_function job =
+            let origin_function = List.hd (List.rev job.state.callstack) in
             if forward_search then
-                if List.hd (List.rev job.state.callstack) = entry_fn then
+                if origin_function == entry_fn then
                     -. (float_of_int (List.length job.decisionPath)) (* Almost BFS *)
                 else
                     low_score
             else
-                let distance = float_of_int (distance_to_target job (!targets_ref)) in
-                match job.boundingPaths with
-                | Some(_::_) -> base_score *. 2.0 -. distance (* bounding paths have higher importance *)
-                | Some([]) -> low_score
-                | _ -> base_score -. distance
+                if origin_function == entry_fn then
+                    low_score
+                else
+                    let distance = float_of_int (distance_to_target job (!targets_ref)) in
+                    match job.boundingPaths with
+                    | Some(_::_) -> base_score *. 2.0 -. distance (* bounding paths have higher importance *)
+                    | Some([]) -> low_score
+                    | _ -> base_score -. distance
         in
         let rest_jobs, returned_job_opt, _ = List.fold_left (
             fun (rest_jobs, returned_job_opt, score) job ->

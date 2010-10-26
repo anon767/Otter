@@ -13,21 +13,6 @@ open Types
 open Job
 open Cil
 
-class ['reason] reporter ?max_nodes ?max_paths ?max_abandoned ?no_exceptions_as_failures targets_ref =
-object
-    inherit ['reason] BackOtterReporter.t ?max_nodes ?max_paths ?max_abandoned ?no_exceptions_as_failures () as super
-    val targets_ref = targets_ref
-    method report completion =
-        begin match completion with
-            (* TODO: also include `Failure when --exceptions-as-failures is enabled *)
-            | Complete (Abandoned (`FailureReached, _ , job_result)) ->
-                let fundec = List.hd (List.rev job_result.result_state.callstack) in
-                let failing_path = job_result.result_decision_path in
-                targets_ref := BackOtterTargets.add fundec failing_path (!targets_ref)
-            | _ -> ()
-        end;
-        super#report completion
-end
 
 (* Cil feature for call-chain backwards Otter *)
 let arg_assertfn = ref "__FAILURE"
@@ -60,6 +45,7 @@ let bounding_path_insertion_interceptor targets_ref job job_queue interceptor =
         | DecisionFuncall(_, fundec) :: decisions ->
             let targets = !targets_ref in
             if BackOtterTargets.mem fundec targets then
+                let _ = Output.dprintf "@\n=> Hit target function %s@\n@\n" fundec.svar.vname in
                 let failing_paths = BackOtterTargets.find fundec targets in
                 let bounding_paths = List.map (fun path -> List.append path job.decisionPath) failing_paths in
                 let job = {job with boundingPaths = Some bounding_paths} in
@@ -90,8 +76,24 @@ let bounding_path_elimination_interceptor targets_ref job job_queue interceptor 
     | None ->
         interceptor job job_queue
 
+let previous_function : fundec option ref = ref None
+let print_function_switch_interceptor job job_queue interceptor =
+        let this_function = List.hd (List.rev job.state.callstack) in
+        match !previous_function with
+        | None ->
+            previous_function := Some this_function;
+            Output.dprintf "@\n*** Start running function %s ***@\n@\n" this_function.svar.vname;
+            interceptor job job_queue
+        | Some f ->
+            if f != this_function then begin
+                previous_function := Some this_function;
+                Output.dprintf "@\n*** Switch to function %s ***@\n@\n" this_function.svar.vname
+            end;
+            interceptor job job_queue
+
 let callchain_backward_se job =
     let file = job.Job.file in
+    (* Entry function set by --entryfn (default: main) *)
     let entry_fn = List.hd job.state.callstack in
 
     (* Map fundecs to potential decision lists
@@ -115,12 +117,13 @@ let callchain_backward_se job =
     (* Add these jobs into the queue *)
     let queue = List.fold_left (fun queue job -> queue#put job) queue jobs in
 
-    let reporter = new reporter targets_ref in
+    let reporter = new BackOtterReporter.t targets_ref in
 
     (* Define interceptor *)
     let interceptor =
         let (>>>) = Interceptor.(>>>) in
-        Interceptor.set_output_formatter_interceptor
+        print_function_switch_interceptor
+        >>> Interceptor.set_output_formatter_interceptor
         >>> (bounding_path_insertion_interceptor targets_ref)
         >>> (bounding_path_elimination_interceptor targets_ref)
         >>> otter_failure_interceptor
@@ -128,12 +131,17 @@ let callchain_backward_se job =
         >>> BuiltinFunctions.interceptor
     in
     let reporter = Driver.main_loop ~interceptor ~queue reporter job in
+    (* Output failing paths for entry_fn *)
+    Output.dprintf "@\n@\n";
+    List.iter (fun decisions ->
+        Output.dprintf "Failing path: @[%a@]@\n" Job.print_decisions decisions)
+        (BackOtterTargets.find entry_fn (!targets_ref));
     reporter#completed
 
 
 let doit file =
 
-    Format.printf "@\n@\nCall-chain backward Symbolic Execution@\n@\n";
+    Output.dprintf "@\n@\nCall-chain backward Symbolic Execution@\n@\n";
     let startTime = Unix.gettimeofday () in
     (* Set signal handlers to catch timeouts and interrupts *)
     let old_ALRM_handler =
@@ -181,14 +189,14 @@ let doit file =
     Output.printf "Hash-consing: hits=%d misses=%d\n" (!Bytes.hash_consing_bytes_hits) (!Bytes.hash_consing_bytes_misses);
     Output.printf "Bytes eval caching: hits=%d misses=%d\n\n" (!MemOp.bytes_eval_cache_hits) (!MemOp.bytes_eval_cache_misses);
     if (!Stp.print_stp_queries) then (
-        Format.printf "Stp queries: @\n";
+        Output.dprintf "Stp queries: @\n";
         List.iter (fun (pc, pre, guard, truth_value, time) ->
-            List.iter (Format.printf "PC: @[%a@]@\n" BytesPrinter.bytes) pc;
-            Format.printf "PRE: @[%a@]@\n" BytesPrinter.guard pre;
-            Format.printf "QUERY: @[%a@]@\n" BytesPrinter.guard guard;
-            Format.printf "TRUTH: @[%s@]@\n" (if truth_value then "True" else "False");
-            Format.printf "TIME: @[%.2f@]@\n" time;
-            Format.printf "--------------------------------------------------@\n"
+            List.iter (Output.dprintf "PC: @[%a@]@\n" BytesPrinter.bytes) pc;
+            Output.printf "PRE: @[%a@]@\n" BytesPrinter.guard pre;
+            Output.printf "QUERY: @[%a@]@\n" BytesPrinter.guard guard;
+            Output.printf "TRUTH: @[%s@]@\n" (if truth_value then "True" else "False");
+            Output.printf "TIME: @[%.2f@]@\n" time;
+            Output.printf "--------------------------------------------------@\n"
         ) (!Stp.stp_queries)
     );
     (* TODO: output results *)

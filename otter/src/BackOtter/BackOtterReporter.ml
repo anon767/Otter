@@ -1,5 +1,9 @@
+open OcamlUtilities
 open OtterCore
 open OtterReporter
+open Types
+open Job
+open Cil
 
 let arg_no_exceptions_as_failures = ref false
 
@@ -10,8 +14,15 @@ class ['reason] t ?max_nodes ?max_paths ?max_abandoned
     method super_report = super#report
 
     method report result = match result with
-        | Job.Complete (Job.Abandoned (`FailureReached, _, _)) ->
-            super#report result
+        | Job.Complete (Job.Abandoned (`FailureReached, _, job_result)) ->
+            let self = super#report result in
+            (* Add a failing path to the target function *)
+            (* TODO: do the same thing for `Failure when --exceptions-as-failures is enabled *)
+            let fundec = List.hd (List.rev job_result.result_state.callstack) in
+            let failing_path = job_result.result_decision_path in
+            Output.dprintf "@\n=> Create Target for function %s@\n@\n" fundec.svar.vname;
+            targets_ref := BackOtterTargets.add fundec failing_path (!targets_ref);
+            self
 
         | Job.Complete (Job.Abandoned (_, _, _)) when no_exceptions_as_failures ->
             (* munge the statistics then call super indirectly *)
