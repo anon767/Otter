@@ -1,8 +1,8 @@
 OtterCore/BuiltinFunctions
 OtterCore/Core
 OtterCore/Coverage
-OtterCore/Errors
 OtterCore/Decision
+OtterCore/Errors
 OtterCore/Executeargs
 OtterCore/Executedebug
 OtterCore/Expression
