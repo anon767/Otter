@@ -90,6 +90,9 @@ let run reporter job =
 let doit file =
 	(* TODO: do something about signal handlers/run statistics from Executemain.doExecute *)
 
+	(* connect Cil's debug flag to Output *)
+	Output.arg_print_debug := !Errormsg.debugFlag;
+
 	Core.prepare_file file;
 	let job = OtterJob.Job.get_default file in
 

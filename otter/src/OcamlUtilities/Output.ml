@@ -102,15 +102,21 @@ let printf format =
 	else
 		Format.ifprintf Format.std_formatter format
 
-(* Same as printf, but bypass the checking of need_print *)
-let dprintf format =
-    !formatter#printf format
-
 let kprintf k format =
 	if (need_print (!current_msg_type)) then
 		!formatter#kprintf k format
  	else
 		FormatPlus.ikfprintf (fun _ -> k !formatter) Format.std_formatter format
+
+let must_printf format =
+    let old_mode = get_mode () in
+    set_mode MSG_MUSTPRINT;
+    kprintf (fun _ -> set_mode old_mode) format
+
+let debug_printf format =
+    let old_mode = get_mode () in
+    set_mode MSG_DEBUG;
+    kprintf (fun _ -> set_mode old_mode) format
 
 
 let mprint_formatter =

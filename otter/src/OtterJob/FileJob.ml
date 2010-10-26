@@ -114,8 +114,7 @@ let init_cmdline_argvs state argstr =
 			| [] -> bytes
 			| h::t ->
 				(* Print out each argument *)
-				Output.set_mode Output.MSG_DEBUG;
-				Output.printf "With arguments: \"%s\"@\n" h;
+				Output.debug_printf "With arguments: \"%s\"@\n" h;
 				let h_bytes = Bytes.make_Bytes_Address (argv_strings_block, Bytes.int_to_bytes charsSoFar) in
 				impl t (ptrsSoFar + 1)
 					(charsSoFar + String.length h + 1 (* '+ 1' for the null character *))
