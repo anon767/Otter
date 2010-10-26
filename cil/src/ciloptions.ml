@@ -39,9 +39,9 @@
 
 module E = Errormsg
 
-let setDebugFlag v name = 
+let setDebugFlag v () = 
   E.debugFlag := v;
-  if v then Pretty.flushOften := true
+  Pretty.flushOften := v
 
 type outfile = 
     { fname: string;
@@ -135,12 +135,12 @@ let options : (string * Arg.spec * string) list =
     " Suppress warning about truncating integer constants";
 
     "--debug",
-    Arg.String (setDebugFlag true),
-    "<xxx> Turn on debugging flag xxx";
+    Arg.Unit (setDebugFlag true),
+    " Turn on debugging messages";
 
     "--nodebug",
-    Arg.String (setDebugFlag false),
-    "<xxx> Turn off debugging flag xxx";
+    Arg.Unit (setDebugFlag false),
+    " Turn off debugging messages";
 
     "--flush",
     Arg.Set Pretty.flushOften,
