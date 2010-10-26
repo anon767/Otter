@@ -63,28 +63,24 @@ let main_loop
 
 (** {1 Precomposed drivers for common use cases} *)
 
-(** Driver using {!OtterReporter.BasicReporter}. *)
-let run ?interceptor ?queue job =
-    (main_loop ?interceptor ?queue (new BasicReporter.t ()) job)#completed
+(** Driver using the core symbolic executor only. *)
+let run_core reporter job =
+    main_loop reporter job
 
-(** As with {!run}, using the core symbolic executor only as well as default bounds. *)
-let run_core job =
-    run job
-
-(** As with {!run}, using the core symbolic executor and core built-in functions, as well as default bounds. *)
-let run_basic job =
+(** As with {!run}, using the core symbolic executor and core built-in functions. *)
+let run_basic reporter job =
     let interceptor =
         Interceptor.set_output_formatter_interceptor
         >>> BuiltinFunctions.interceptor
     in
-    run ~interceptor job
+    main_loop ~interceptor reporter job
 
-(** As with {!run}, using the core symbolic executor, core and libc built-in functions, as well as default bounds. *)
-let run_with_libc job =
+(** As with {!run}, using the core symbolic executor, core and libc built-in functions. *)
+let run_with_libc reporter job =
     let interceptor =
         Interceptor.set_output_formatter_interceptor
         >>> BuiltinFunctions.libc_interceptor
         >>> BuiltinFunctions.interceptor
     in
-    run ~interceptor job
+    main_loop ~interceptor reporter job
 

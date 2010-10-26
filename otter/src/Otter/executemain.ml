@@ -35,7 +35,7 @@ let doExecute (f: file) =
 	let job = Job.get_default f in
 
 	(* run the job *)
-	let completed = Driver.run_basic job in
+	let completed = Driver.run_basic (new BasicReporter.t ()) job in
 
 	(* Turn off the alarm and reset the signal handlers *)
 	ignore (Unix.alarm 0);
@@ -80,7 +80,7 @@ let doExecute (f: file) =
         ()
   end;
      *)
-    Report.print_report completed
+    Report.print_report completed#completed
 
 
 let feature : featureDescr = {

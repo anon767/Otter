@@ -395,7 +395,7 @@ let test_otter_with_pragma ?(driver=Driver.run_basic) path = fun () ->
     let results = run begin fun () ->
         Core.prepare_file file;
         let job = OtterJob.Job.get_default file in
-        driver job
+        driver (new ListReporter.t) job
     end in
 
     (* first, test if assertions passed *)
@@ -404,7 +404,7 @@ let test_otter_with_pragma ?(driver=Driver.run_basic) path = fun () ->
         assert_string log;
 
     (* then, run the given test *)
-    test results;
+    let () = test results#completed in
 
     (* finally, test if assertions passed *)
     if flags.has_failing_assertions then

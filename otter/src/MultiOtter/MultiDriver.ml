@@ -2,6 +2,7 @@ open DataStructures
 open OcamlUtilities
 open OtterBytes
 open OtterCore
+open OtterReporter
 open OtterDriver
 open Types
 open Job
@@ -32,39 +33,31 @@ let rec get_job_multijob job_queue =
 				| Some (job, multijob) -> Some (job, (multijob, t))
 
 (* process the results *)
-let rec process_job_states result multijob completed multijob_queue =
+let rec process_job_states result multijob reporter multijob_queue =
+	let reporter, _more = reporter#report result in (* TODO: actually respond to the _more flag *)
 	match result with
 		| Active job ->
 			(* put the job back into the multijob and queue it *)
 			let multijob = put_job job multijob multijob.current_pid in
-			(completed, (multijob::multijob_queue))
+			(reporter, (multijob::multijob_queue))
 		| Fork states ->
 			(* process all forks *)
-			List.fold_left begin fun (completed, multijob_queue) state ->
-				process_job_states state multijob completed multijob_queue
-			end (completed, multijob_queue) states
+			List.fold_left begin fun (reporter, multijob_queue) state ->
+				process_job_states state multijob reporter multijob_queue
+			end (reporter, multijob_queue) states
 		| Complete completion ->
 			(* store the results *)
 			let multijob = put_completion completion multijob in
-			begin match completion with
-				| Abandoned (reason, loc, job_result) ->
-					Output.set_mode Output.MSG_MUSTPRINT;
-					Output.printf
-						"Error \"%a\" occurs at %a.@\nAbandoning path.@\n"
-						Report.abandoned_reason reason Printcil.loc loc
-				| _ ->
-					()
-			end;
-			((completion::completed), (multijob::multijob_queue))
+			(reporter, (multijob::multijob_queue))
 
 		| _ ->
-			(completed, multijob_queue)
+			(reporter, multijob_queue)
 
-let process_result result completed job_queue =
+let process_result result reporter job_queue =
 	let multijob, multijob_queue = job_queue in
-	process_job_states result multijob completed multijob_queue
+	process_job_states result multijob reporter multijob_queue
 
-let run job = 
+let run reporter job = 
 	let multijob = {
 		file = job.Job.file;
 		processes = [];
@@ -91,6 +84,7 @@ let run job =
 			Statement.step
 		)
 		process_result
+		reporter
 		[ multijob ]
 
 let doit file =
@@ -100,11 +94,11 @@ let doit file =
 	let job = OtterJob.Job.get_default file in
 
 	(* run the job *)
-	let result = run job in
+	let result = run (new BasicReporter.t ()) job in
 
 	(* print the results *)
 	Output.printf "%s@\n" (Executedebug.get_log ());
-	Report.print_report result
+	Report.print_report result#completed
 
 
 (* Cil feature for multi-process Otter *)

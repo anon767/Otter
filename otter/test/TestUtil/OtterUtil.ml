@@ -48,7 +48,7 @@ let test_otter_on_file
             else
                 FunctionJob.make file (FindCil.fundec_by_name file entry_function)
         in
-        let results = driver job in
+        let results = driver (new ListReporter.t) job in
 
         (* perform tests in order of expressiveness of potential errors *)
         (* first, test if assertions passed *)
@@ -57,7 +57,7 @@ let test_otter_on_file
             assert_string log;
 
         (* then, run the given test *)
-        let () = test results in
+        let () = test results#completed in
 
         (* finally, test if assertions passed *)
         if has_failing_assertions then
