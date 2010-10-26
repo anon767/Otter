@@ -11,6 +11,7 @@ open Graph
 open Bytes
 open Types
 open Job
+open Decision
 open Cil
 
 
@@ -65,7 +66,7 @@ let bounding_path_elimination_interceptor targets_ref job job_queue interceptor 
             | [], _ -> 1
             | _, _ -> -1
         in
-        prefix decision_equals (List.rev decision_path) (List.rev bounding_path)
+        prefix Decision.equals (List.rev decision_path) (List.rev bounding_path)
     in
     match job.boundingPaths with
     | Some paths ->
@@ -134,7 +135,7 @@ let callchain_backward_se job =
     (* Output failing paths for entry_fn *)
     Output.dprintf "@\n@\n";
     List.iter (fun decisions ->
-        Output.dprintf "Failing path: @[%a@]@\n" Job.print_decisions decisions)
+        Output.dprintf "Failing path: @[%a@]@\n" Decision.print_decisions decisions)
         (BackOtterTargets.find entry_fn (!targets_ref));
     reporter#completed
 

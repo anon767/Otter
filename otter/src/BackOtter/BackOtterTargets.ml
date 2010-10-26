@@ -3,7 +3,7 @@ module FundecMap = Map.Make (struct
 	let compare a b = let id x = x.Cil.svar.Cil.vid in Pervasives.compare (id a) (id b)
 end)
 
-type t = OtterCore.Job.decision list list FundecMap.t
+type t = OtterCore.Decision.t list list FundecMap.t
 
 let add fundec decision targets =
     let failing_paths =

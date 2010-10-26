@@ -11,11 +11,12 @@ open Graph
 open Bytes
 open Types
 open Job
+open Decision
 open Cil
 
 type failing_predicate =
     | FailingCondition of state * Bytes.bytes (* TODO (martin): make the condition a list of bytes *)
-    | FailingPaths of decision list list (* most recent decision first *)
+    | FailingPaths of Decision.t list list (* most recent decision first *)
 
 type target = {
   target_func: Cil.fundec;
@@ -197,7 +198,7 @@ let test_job_at_targets targets job =
                             | [], _ -> true
                             | _, _ -> false
                         in
-                            is_prefix decision_equals (List.rev decision_path) (List.rev bounding_path)
+                            is_prefix Decision.equals (List.rev decision_path) (List.rev bounding_path)
                     in
                     let agreed_bounding_paths = List.filter (paths_agree job.decisionPath) bounding_paths in
                         print_list "Agreed Bounding Path" print_decisions agreed_bounding_paths;
@@ -235,7 +236,7 @@ let test_job_at_targets targets job =
                 ) return
             in
 
-            let failing_paths : decision list list =
+            let failing_paths =
                 List.fold_left (
                     fun failing_paths (job,target) ->
                         Format.printf "Test job %d at target function @[%a@]@\n" job.jid Printer.fundec target.target_func;
