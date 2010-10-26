@@ -7,7 +7,6 @@ open OtterCore
 let default_max_nodes = ref 0
 let default_max_paths = ref 0
 let default_max_abandoned = ref 0
-let arg_no_exceptions_as_failures = ref false
 
 
 class ['reason] t
@@ -36,14 +35,7 @@ class ['reason] t
             end;
             let nodes = nodes + 1 in
             let paths = paths + 1 in
-            let abandoned = abandoned +
-                match completion with
-                    (* TODO (martin) : could we separate the notion of exceptions_as_failures
-                     * out of this function? *)
-                    | Job.Abandoned (`FailureReached,_,_) -> 1
-                    | Job.Abandoned _ when (not !arg_no_exceptions_as_failures) -> 1
-                    | _ -> 0
-            in
+            let abandoned = abandoned + (match completion with Job.Abandoned _ -> 1 | _ -> 0) in
             let reporter = {< nodes = nodes; paths = paths; abandoned = abandoned; completed = completion::completed >} in
             if (max_nodes = 0 || nodes < max_nodes)
                     &&(max_paths = 0 || paths < max_paths)
@@ -80,8 +72,5 @@ let options = [
     "--max-abandoned",
         Arg.Set_int default_max_abandoned,
         "<bound> Bound the number of abandoned paths to return (default: unbounded)";
-    "--no-exceptions-as-failures",
-        Arg.Set arg_no_exceptions_as_failures,
-        " Do not treat general exceptions (e.g., dereferencing a non-pointer) as assertion failures (i.e., contribute failure paths)";
 ]
 

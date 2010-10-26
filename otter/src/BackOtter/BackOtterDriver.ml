@@ -13,9 +13,9 @@ open Types
 open Job
 open Cil
 
-class ['reason] reporter ?max_nodes ?max_paths ?max_abandoned targets_ref =
+class ['reason] reporter ?max_nodes ?max_paths ?max_abandoned ?no_exceptions_as_failures targets_ref =
 object
-    inherit ['reason] BasicReporter.t ?max_nodes ?max_paths ?max_abandoned () as super
+    inherit ['reason] BackOtterReporter.t ?max_nodes ?max_paths ?max_abandoned ?no_exceptions_as_failures () as super
     val targets_ref = targets_ref
     method report completion =
         begin match completion with
@@ -202,7 +202,7 @@ let feature = {
         ("--assertfn",
         Arg.Set_string arg_assertfn,
         "<fname> Assertion function to look for in the call-chain-backward mode (default: __FAILURE)");
-    ];
+    ] @ BackOtterReporter.options;
     Cil.fd_post_check = true;
     Cil.fd_doit = doit
 }
