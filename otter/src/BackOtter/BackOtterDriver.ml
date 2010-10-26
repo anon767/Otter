@@ -90,9 +90,9 @@ let bounding_path_elimination_interceptor targets_ref job job_queue interceptor 
     | None ->
         interceptor job job_queue
 
-let callchain_backward_se file =
-    (* Entry function set by --entryfn (default: main) *)
-    let entry_fn = FindCil.fundec_by_name file (!OtterJob.Job.entry_function) in
+let callchain_backward_se job =
+    let file = job.Job.file in
+    let entry_fn = List.hd job.state.callstack in
 
     (* Map fundecs to potential decision lists
      * This is a reference used by the queue and the two interceptors. *)
@@ -149,7 +149,8 @@ let doit file =
     Executeargs.arg_cfg_pruning := true;
     Core.prepare_file file;
 
-    let results = callchain_backward_se file in
+    let entry_job = OtterJob.Job.get_default file in
+    let results = callchain_backward_se entry_job in
 
     (* Turn off the alarm and reset the signal handlers *)
     ignore (Unix.alarm 0);
