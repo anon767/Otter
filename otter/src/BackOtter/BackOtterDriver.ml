@@ -127,8 +127,8 @@ let callchain_backward_se job =
         >>> BuiltinFunctions.libc_interceptor
         >>> BuiltinFunctions.interceptor
     in
-    let reporter = Driver.main_loop ~interceptor ~queue reporter (OtterJob.Job.get_default file) in
-    reporter
+    let reporter = Driver.main_loop ~interceptor ~queue reporter job in
+    reporter#completed
 
 
 let doit file =
