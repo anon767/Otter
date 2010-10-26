@@ -10,13 +10,13 @@ let dir_prefix = Filename.concat "test" "TestOtterIntegration"
 
 
 (* test helper that runs the symbolic executor on all files relative to dir_prefix/dir *)
-let test_integration main_loop dir =
+let test_integration driver dir =
     let fulldir = Filename.concat dir_prefix dir in
 
     dir >: test_dir fulldir begin fun relpath ->
         (* load the file at fullpath, but label with relpath *)
         let fullpath = Filename.concat fulldir relpath in
-        relpath >:: test_otter_with_pragma ~main_loop fullpath
+        relpath >:: test_otter_with_pragma ~driver fullpath
     end
 
 

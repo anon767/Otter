@@ -349,11 +349,11 @@ let parse_pragmas file =
 
 
 (** Test helper that runs Otter on a file, using #pragmas to define test expectations.
-            @param main_loop is the Otter main loop to use (default: {!Driver.run_basic})
+            @param driver is the Otter main loop to use (default: {!Driver.run_basic})
             @param path is the path to the file
             @return a {!TestCase} that runs Otter
 *)
-let test_otter_with_pragma ?(main_loop=Driver.run_basic) path = fun () ->
+let test_otter_with_pragma ?(driver=Driver.run_basic) path = fun () ->
     (* reset the error flag and suppress all output from the symbolic executor *)
     Errormsg.hadErrors := false;
     Output.arg_print_mute := 1;
@@ -395,7 +395,7 @@ let test_otter_with_pragma ?(main_loop=Driver.run_basic) path = fun () ->
     let results = run begin fun () ->
         Core.prepare_file file;
         let job = OtterJob.Job.get_default file in
-        main_loop job
+        driver job
     end in
 
     (* first, test if assertions passed *)
