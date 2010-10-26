@@ -8,17 +8,9 @@ open OtterReporter
 let (>>>) = Interceptor.(>>>)
 (**/**)
 
-let default_max_nodes = ref 0
-let default_max_paths = ref 0
-let default_max_abandoned = ref 0
-let arg_no_exceptions_as_failures = ref false
-
 
 (** Main symbolic execution loop. *)
 let main_loop
-        ?(max_nodes=max 0 !default_max_nodes)
-        ?(max_paths=max 0 !default_max_paths)
-        ?(max_abandoned=max 0 !default_max_abandoned)
         ?interceptor:interceptor_opt
         ?(queue=Queue.get_default ())
         reporter
@@ -30,7 +22,7 @@ let main_loop
         | None -> fun job -> fst (Statement.step job ())
     in
     let queue = queue#put job in
-    let rec run (nodes, paths, abandoned, queue, reporter) = match queue#get with
+    let rec run (queue, reporter) = match queue#get with
         | Some (queue, job) ->
             let result_opt =
                 try
@@ -43,54 +35,37 @@ let main_loop
             in
             begin match result_opt with
                 | Some result ->
-                    let rec process_result (nodes, paths, abandoned, queue, reporter as work) result k = match result with
-                        | Job.Active job ->
-                            k (nodes, paths, abandoned, queue#put job, reporter)
-                        | Job.Fork (result::results) ->
-                            process_result work result (fun work -> process_result work (Job.Fork results) k)
-                        | Job.Fork [] ->
-                            k work
-                        | Job.Complete completion ->
-                            let paths = paths + 1 in
-                            let abandoned = abandoned +
-                                match completion with
-                                    (* TODO (martin) : could we separate the notion of exceptions_as_failures
-                                     * out of this function? *)
-                                    | Job.Abandoned (`FailureReached,_,_) -> 1
-                                    | Job.Abandoned _ when (not !arg_no_exceptions_as_failures) -> 1
-                                    | _ -> 0
-                            in
-                            let reporter = reporter#report completion in
-                            if (max_paths = 0 || paths < max_paths)
-                                    && (max_abandoned = 0 || abandoned < max_abandoned) then
-                                k (nodes, paths, abandoned, queue, reporter)
-                            else
-                                reporter
-                        | Job.Paused _ ->
-                            invalid_arg "unexpected Job.Paused"
+                    let rec process_result (queue, reporter as work) result k =
+                        let reporter, more = reporter#report result in
+                        if more then match result with
+                            | Job.Active job ->
+                                k (queue#put job, reporter)
+                            | Job.Fork (result::results) ->
+                                process_result work result (fun work -> process_result work (Job.Fork results) k)
+                            | Job.Fork [] ->
+                                k work
+                            | Job.Complete completion ->
+                                k (queue, reporter)
+                            | Job.Paused _ ->
+                                invalid_arg "unexpected Job.Paused"
+                        else
+                            reporter
                     in
-                    process_result (nodes, paths, abandoned, queue, reporter) result
-                        begin fun (nodes, paths, abandoned, queue, reporter) ->
-                            let nodes = nodes + 1 in
-                            if max_nodes = 0 || nodes < max_nodes then
-                                run (nodes, paths, abandoned, queue, reporter)
-                            else
-                                reporter
-                        end
+                    process_result (queue, reporter) result run
                 | None ->
                     reporter
             end
         | None ->
             reporter
     in
-    run (0, 0, 0, queue, reporter)
+    run (queue, reporter)
 
 
 (** {1 Precomposed drivers for common use cases} *)
 
 (** Driver using {!OtterReporter.BasicReporter}. *)
-let run ?max_nodes ?max_paths ?max_abandoned ?interceptor ?queue job =
-    (main_loop ?max_nodes ?max_paths ?max_abandoned ?interceptor ?queue (BasicReporter.make ()) job)#completed
+let run ?interceptor ?queue job =
+    (main_loop ?interceptor ?queue (new BasicReporter.t ()) job)#completed
 
 (** As with {!run}, using the core symbolic executor only as well as default bounds. *)
 let run_core job =
@@ -112,22 +87,4 @@ let run_with_libc job =
         >>> BuiltinFunctions.interceptor
     in
     run ~interceptor job
-
-
-(** {1 Command-line options} *)
-
-let options = [
-    "--max-nodes",
-        Arg.Set_int default_max_nodes,
-        "<bound> Bound the number of nodes in the execution tree to explore (default: unbounded)";
-    "--max-paths",
-        Arg.Set_int default_max_paths,
-        "<bound> Bound the number of paths to execute to completion (default: unbounded)";
-    "--max-abandoned",
-        Arg.Set_int default_max_abandoned,
-        "<bound> Bound the number of abandoned paths to return (default: unbounded)";
-    "--no-exceptions-as-failures",
-        Arg.Set arg_no_exceptions_as_failures,
-        " Do not treat general exceptions (e.g., dereferencing a non-pointer) as assertion failures (i.e., contribute failure paths)";
-]
 

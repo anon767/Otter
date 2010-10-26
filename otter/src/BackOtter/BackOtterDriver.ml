@@ -13,19 +13,19 @@ open Types
 open Job
 open Cil
 
-class ['reason] reporter targets_ref =
+class ['reason] reporter ?max_nodes ?max_paths ?max_abandoned targets_ref =
 object
-    inherit ['reason] BasicReporter.t as super
+    inherit ['reason] BasicReporter.t ?max_nodes ?max_paths ?max_abandoned () as super
     val targets_ref = targets_ref
     method report completion =
-        let _ = match completion with
-        (* TODO: also include `Failure when --exceptions-as-failures is enabled *)
-        | Abandoned (`FailureReached, _ , job_result) ->
-            let fundec = List.hd (List.rev job_result.result_state.callstack) in
-            let failing_path = job_result.result_decision_path in
-            targets_ref := BackOtterTargets.add fundec failing_path (!targets_ref)
-        | _ -> ()
-        in
+        begin match completion with
+            (* TODO: also include `Failure when --exceptions-as-failures is enabled *)
+            | Complete (Abandoned (`FailureReached, _ , job_result)) ->
+                let fundec = List.hd (List.rev job_result.result_state.callstack) in
+                let failing_path = job_result.result_decision_path in
+                targets_ref := BackOtterTargets.add fundec failing_path (!targets_ref)
+            | _ -> ()
+        end;
         super#report completion
 end
 

@@ -336,7 +336,7 @@ let callchain_backward_se_legacy file : _ job_completion list =
                         List.rev_append joined_paths all_paths
               | Abandoned (`FailureReached,_,job_result) ->
                       job_result.result_decision_path::all_paths
-              | Abandoned (`Failure(_),_,job_result) when (not !Driver.arg_no_exceptions_as_failures) ->
+              | Abandoned (`Failure(_),_,job_result) when (not !BasicReporter.arg_no_exceptions_as_failures) ->
                       job_result.result_decision_path::all_paths
               | _ -> all_paths
           ) [] results

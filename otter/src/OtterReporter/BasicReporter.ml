@@ -3,25 +3,85 @@
 open OcamlUtilities
 open OtterCore
 
-class ['reason] t = object
+
+let default_max_nodes = ref 0
+let default_max_paths = ref 0
+let default_max_abandoned = ref 0
+let arg_no_exceptions_as_failures = ref false
+
+
+class ['reason] t
+        ?(max_nodes=max 0 !default_max_nodes)
+        ?(max_paths=max 0 !default_max_paths)
+        ?(max_abandoned=max 0 !default_max_abandoned)
+        ()
+        = object
+    val nodes = 0
+    val paths = 0
+    val abandoned = 0
     val completed = []
 
     method report = function
-        (* log some interesting errors *)
-        | Job.Abandoned ((reason : 'reason), loc, { Job.result_state=state; Job.result_history=hist }) as c ->
-            Output.set_mode Output.MSG_MUSTPRINT;
-            Output.printf "Error \"%a\"@ occurs at %a.@\n"
-                Report.abandoned_reason reason Printcil.loc loc;
-            if !Executeargs.arg_print_callstack then
-                Output.printf "Call stack:@\n  @[%a@]@\n" (Printer.callingContext_list "@\n") state.Types.callContexts;
-            Output.printf "Abandoning path.@\n";
-            {< completed = c::completed >}
+        | Job.Complete completion ->
+            begin match completion with
+                | Job.Abandoned ((reason : 'reason), loc, { Job.result_state=state; Job.result_history=hist }) ->
+                    Output.set_mode Output.MSG_MUSTPRINT;
+                    Output.printf "Error \"%a\"@ occurs at %a.@\n"
+                        Report.abandoned_reason reason Printcil.loc loc;
+                    if !Executeargs.arg_print_callstack then
+                        Output.printf "Call stack:@\n  @[%a@]@\n" (Printer.callingContext_list "@\n") state.Types.callContexts;
+                    Output.printf "Abandoning path.@\n"
+                | _ ->
+                    ()
+            end;
+            let nodes = nodes + 1 in
+            let paths = paths + 1 in
+            let abandoned = abandoned +
+                match completion with
+                    (* TODO (martin) : could we separate the notion of exceptions_as_failures
+                     * out of this function? *)
+                    | Job.Abandoned (`FailureReached,_,_) -> 1
+                    | Job.Abandoned _ when (not !arg_no_exceptions_as_failures) -> 1
+                    | _ -> 0
+            in
+            let reporter = {< nodes = nodes; paths = paths; abandoned = abandoned; completed = completion::completed >} in
+            if (max_nodes = 0 || nodes < max_nodes)
+                    &&(max_paths = 0 || paths < max_paths)
+                    && (max_abandoned = 0 || abandoned < max_abandoned) then
+                (reporter, true)
+            else
+                (reporter, false)
 
-        | c ->
-            {< completed = c::completed >}
+        | Job.Active _
+        | Job.Fork _ ->
+            let nodes = nodes + 1 in
+            let reporter = {< nodes = nodes >} in
+            if max_nodes = 0 || nodes < max_nodes then
+                (reporter, true)
+            else
+                (reporter, false)
+
+        | Job.Paused _ ->
+            invalid_arg "unexpected Job.Paused"
 
     method completed = completed
-
 end
 
-let make () = new t
+
+(** {1 Command-line options} *)
+
+let options = [
+    "--max-nodes",
+        Arg.Set_int default_max_nodes,
+        "<bound> Bound the number of nodes in the execution tree to explore (default: unbounded)";
+    "--max-paths",
+        Arg.Set_int default_max_paths,
+        "<bound> Bound the number of paths to execute to completion (default: unbounded)";
+    "--max-abandoned",
+        Arg.Set_int default_max_abandoned,
+        "<bound> Bound the number of abandoned paths to return (default: unbounded)";
+    "--no-exceptions-as-failures",
+        Arg.Set arg_no_exceptions_as_failures,
+        " Do not treat general exceptions (e.g., dereferencing a non-pointer) as assertion failures (i.e., contribute failure paths)";
+]
+
