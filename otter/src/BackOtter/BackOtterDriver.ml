@@ -15,14 +15,13 @@ open Decision
 open Cil
 
 
-class target_tracker delegate targets_ref =
+class target_tracker delegate entry_fn targets_ref =
 object (_ : 'self)
     val delegate = delegate
-    val targets_ref = targets_ref
     method report (job_state : BackOtterErrors.t Job.job_state) : 'self * bool =
         begin match job_state with
             (* TODO: also include `Failure when --exceptions-as-failures is enabled *)
-            | Complete (Abandoned (`FailureReached, _ , job_result)) ->
+            | Job.Complete (Job.Abandoned (`FailureReached, _ , job_result)) ->
                 let fundec = List.hd (List.rev job_result.result_state.callstack) in
                 let failing_path = job_result.result_decision_path in
                 targets_ref := BackOtterTargets.add fundec failing_path (!targets_ref)
@@ -32,7 +31,10 @@ object (_ : 'self)
         ({< delegate = delegate >}, more)
 
     method completed : BackOtterErrors.t Job.job_completion list =
-        delegate#completed
+        List.filter begin function
+            | Job.Return (_, job_result) | Job.Exit (_, job_result) | Job.Abandoned (_, _, job_result) ->
+                List.hd (List.rev job_result.result_state.callstack) == entry_fn
+        end delegate#completed
 end
 
 
@@ -140,7 +142,7 @@ let callchain_backward_se reporter job =
     let queue = List.fold_left (fun queue job -> queue#put job) queue jobs in
 
     (* Overlay the target tracker on the reporter *)
-    let target_tracker = new target_tracker reporter targets_ref in
+    let target_tracker = new target_tracker reporter entry_fn targets_ref in
 
     (* Define interceptor *)
     let interceptor =
