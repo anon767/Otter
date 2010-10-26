@@ -82,19 +82,13 @@ module OffsetSet = Set.Make (struct
 end)
 
 module VarinfoMap = struct
-    include Map.Make (struct
-        type t = Cil.varinfo
-        let compare x y = Pervasives.compare x.Cil.vid y.Cil.vid
-    end)
+    include Map.Make (CilUtilities.CilData.CilVar)
     let add var offset var_map =
         let offsets = try find var var_map with Not_found -> OffsetSet.empty in
         add var (OffsetSet.add offset offsets) var_map
 end
 
-module VarinfoSet = Set.Make (struct
-    type t = Cil.varinfo
-    let compare x y = Pervasives.compare x.Cil.vid y.Cil.vid
-end)
+module VarinfoSet = Set.Make (CilUtilities.CilData.CilVar)
 
 module TypeAndOffsetSetMap = struct
     include Map.Make (struct

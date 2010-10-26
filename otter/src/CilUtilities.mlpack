@@ -1,4 +1,5 @@
 CilUtilities/CilCallgraph
+CilUtilities/CilData
 CilUtilities/CilPtranal
 CilUtilities/FindCil
 CilUtilities/FindFns

@@ -2,10 +2,7 @@ open DataStructures
 open OtterBytes
 open Bytes
 
-module VarinfoMap = Map.Make (struct
-	type t = Cil.varinfo
-	let compare a b = Pervasives.compare a.Cil.vid b.Cil.vid
-end)
+module VarinfoMap = Map.Make (CilUtilities.CilData.CilVar)
 
 module TypeMap = Map.Make (struct
 	type t = Cil.typ

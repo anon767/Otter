@@ -1,7 +1,4 @@
-module FundecMap = Map.Make (struct
-	type t = Cil.fundec
-	let compare a b = let id x = x.Cil.svar.Cil.vid in Pervasives.compare (id a) (id b)
-end)
+module FundecMap = Map.Make (CilUtilities.CilData.CilFundec)
 
 type t = OtterCore.Decision.t list list FundecMap.t
 
