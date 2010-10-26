@@ -27,7 +27,7 @@ let main_loop
             let result_opt =
                 try
                     Some (step job)
-                 with Types.SignalException s ->
+                with Types.SignalException s ->
                     (* if we got a signal, stop and return the completed results *)
                     Output.set_mode Output.MSG_MUSTPRINT;
                     Output.printf "%s@\n" s;
