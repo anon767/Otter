@@ -56,7 +56,7 @@ let run ?interceptor ?queue job =
     | None -> default_interceptor
     | Some (interceptor) -> default_interceptor >>> interceptor
     in
-    (Driver.main_loop ~interceptor:integrated_interceptor ?queue (new Reporter.t ()) job)#completed
+    (Driver.run ~interceptor:integrated_interceptor ?queue (new Reporter.t ()) job)#completed
 
 
 let distance_to_targets_prioritizer callstack target_fundecs job =

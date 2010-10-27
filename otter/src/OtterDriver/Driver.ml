@@ -10,18 +10,10 @@ let (>>>) = Interceptor.(>>>)
 
 
 (** Main symbolic execution loop. *)
-let main_loop
-        ?interceptor:interceptor_opt
-        ?(queue=Queue.get_default ())
-        reporter
-        job =
+let main_loop interceptor queue reporter =
     (* compose the interceptor with the core symbolic executor *)
     (* TODO: remove job_queue from interceptors/Statement.step *)
-    let step = match interceptor_opt with
-        | Some interceptor -> fun job -> fst (interceptor job () Statement.step)
-        | None -> fun job -> fst (Statement.step job ())
-    in
-    let queue = queue#put job in
+    let step = fun job -> fst (interceptor job () Statement.step) in
     let rec run (queue, reporter) = match queue#get with
         | Some (queue, job) ->
             let result_opt =
@@ -60,12 +52,18 @@ let main_loop
     in
     run (queue, reporter)
 
+let run ?(interceptor=Interceptor.identity_interceptor)
+        ?(queue=Queue.get_default ())
+        reporter
+        job =
+    let queue = queue#put job in
+    main_loop interceptor queue reporter
 
 (** {1 Precomposed drivers for common use cases} *)
 
 (** Driver using the core symbolic executor only. *)
 let run_core reporter job =
-    main_loop reporter job
+    run reporter job
 
 (** As with {!run}, using the core symbolic executor and core built-in functions. *)
 let run_basic reporter job =
@@ -73,7 +71,7 @@ let run_basic reporter job =
         Interceptor.set_output_formatter_interceptor
         >>> BuiltinFunctions.interceptor
     in
-    main_loop ~interceptor reporter job
+    run ~interceptor reporter job
 
 (** As with {!run}, using the core symbolic executor, core and libc built-in functions. *)
 let run_with_libc reporter job =
@@ -82,5 +80,5 @@ let run_with_libc reporter job =
         >>> BuiltinFunctions.libc_interceptor
         >>> BuiltinFunctions.interceptor
     in
-    main_loop ~interceptor reporter job
+    run ~interceptor reporter job
 

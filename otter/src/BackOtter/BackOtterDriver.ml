@@ -155,7 +155,7 @@ let callchain_backward_se reporter job =
         >>> BuiltinFunctions.libc_interceptor
         >>> BuiltinFunctions.interceptor
     in
-    let reporter = Driver.main_loop ~interceptor ~queue target_tracker job in
+    let reporter = Driver.run ~interceptor ~queue target_tracker job in
     (* Output failing paths for entry_fn *)
     Output.must_printf "@\n@\n";
     List.iter (fun decisions ->
