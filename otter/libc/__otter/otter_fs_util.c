@@ -78,7 +78,7 @@ struct __otter_fs_sock_data* __otter_fs_init_new_socket_data()
 	sock->state = 0;
 	sock->options = 
 	sock->recv_data = NULL; /* allocate this when connected or creating UDP */
-	sock->sock_queue = NULL; /* allocate this when listen() */
+	sock->sock_queue = NULL; /* allocate this when listen() or connect() */
 	sock->backlog = 0;
 	return sock;
 }
@@ -91,6 +91,8 @@ struct __otter_fs_inode* __otter_fs_init_new_socket()
 	inode->type = __otter_fs_TYP_SOCK;
 	inode->permissions = __otter_fs_umask;
 	inode->data = (void*)__otter_fs_init_new_socket_data();
+	inode->r_openno = 0;
+	inode->w_openno = 0;
 	inode->numblocks = 0;
 	return inode;
 }

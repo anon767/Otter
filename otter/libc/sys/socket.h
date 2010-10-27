@@ -4,17 +4,6 @@
 #include <sys/uio.h>
 #include <__otter/otter_fs.h>
 
-#define __otter_array_fold(source_t, dest_t, expr, array, len, init) \
-({ \
-	dest_t prev = init; \
-	source_t* cur = array; \
-	for(int i = 0; i < len; i++, cur++) \
-	{ \
-		prev = (expr);\
-	} \
-	prev; \
-})
-
 #define SCM_RIGHTS 1234
 
 #define SOCK_DGRAM 1 /* UDP */
@@ -111,12 +100,17 @@ struct linger
 };
 
 int socket(int domain, int type, int protocol);
-int bind(int socket, const struct sockaddr *address, socklen_t address_len);
-int listen(int socket, int backlog);
+int bind(int socket_fd, const struct sockaddr *address, socklen_t address_len);
+int listen(int socket_fd, int backlog);
+int accept (int socket_fd, struct sockaddr *address, socklen_t *address_len);
+int connect(int socket_fd, const struct sockaddr *address, socklen_t address_len);
+int shutdownn(int socket_fd, int how);
 
-int setsockopt(int socket, int level, int option_name, const void *option_value, socklen_t option_len);
-int getsockopt(int socket, int level, int option_name, void *option_value, socklen_t *option_len);
+int setsockopt(int socket_fd, int level, int option_name, const void *option_value, socklen_t option_len);
+int getsockopt(int socket_fd, int level, int option_name, void *option_value, socklen_t *option_len);
 
+unsigned short __otter_sock_free_port = 5000;
 struct __otter_fs_sock_data* __otter_libc_get_sock_data(int fd);
+void __otter_libc_flush_sock_queue(struct __otter_fs_sock_data* sock);
 
 #endif

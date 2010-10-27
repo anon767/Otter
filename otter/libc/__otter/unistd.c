@@ -30,26 +30,91 @@ int __otter_libc_close(int fd)
 		return (0);
 	}
 
-	struct __otter_fs_inode* inode = (struct __otter_fs_inode*)open_file->vnode;
-	if(open_file->mode & O_RDONLY)
-		(*inode).r_openno--;
-	if(open_file->mode & O_WRONLY)
-		(*inode).w_openno--;
-
-	if((*inode).r_openno | (*inode).w_openno) /* file is still open */
-		return (0);
-
-	if(open_file->type == __otter_fs_TYP_FIFO) /* discard data if this is a fifo */
+	if(open_file->openno == 0) /* open file table entry is no longer in use */
 	{
-		(*inode).size = 0;
-		free((*inode).data);
-		(*inode).data = NULL;
-	}
+		struct __otter_fs_inode* inode = (struct __otter_fs_inode*)open_file->vnode;
+		if(open_file->mode & O_RDONLY)
+			(*inode).r_openno--;
+		if(open_file->mode & O_WRONLY)
+			(*inode).w_openno--;
+
+		if((*inode).r_openno | (*inode).w_openno) /* file is still open */
+			return (0);
+		
+		if(open_file->type == __otter_fs_TYP_SOCK) /* shutdown socket */
+		{
+			struct __otter_fs_sock_data* sock = __otter_libc_get_sock_data(fd);
+			if(!sock)
+			{
+				return(-1);
+			}
+		
+			shutdown(fd, SHUT_RDWR);
+			switch(sock->state)
+			{
+				case __otter_sock_ST_CLOSED:
+					break;
+				case __otter_sock_ST_LISTEN:
+				case __otter_sock_ST_SYN_RCVD:
+					__otter_libc_flush_sock_queue(sock);
+					break;
+				case __otter_sock_ST_SYN_SENT:
+					{
+						int	found = 0;
+						for(int i = 0; i < sock->sock_queue[0]->backlog; i++)
+						{
+							if(sock->sock_queue[0]->sock_queue[i] == sock)
+							{
+								found = 1;
+							}
+							
+							if(found)
+							{
+								sock->sock_queue[0]->sock_queue[i] = sock->sock_queue[0]->sock_queue[i + 1];
+							}
+						}
+						
+						if(found)
+							sock->sock_queue[0]->sock_queue[sock->sock_queue[0]->backlog + 1] = NULL;
+						else if(sock->sock_queue[0]->sock_queue[sock->sock_queue[0]->backlog + 1] == sock)
+							sock->sock_queue[0]->sock_queue[sock->sock_queue[0]->backlog + 1] = NULL;
+						else
+							__ASSERT(0);
+					}
+					break;
+				case __otter_sock_ST_ESTABLISHED:
+				case __otter_sock_ST_CLOSE_WAIT:
+					shutdown(fd, SHUT_RDWR);
+					break;
+				case __otter_sock_ST_LAST_ACK:
+					break;
+				case __otter_sock_ST_FIN_WAIT_1:
+				case __otter_sock_ST_FIN_WAIT_2:
+					shutdown(fd, SHUT_RDWR);
+					break;
+				case __otter_sock_ST_CLOSING:
+				case __otter_sock_ST_TIME_WAIT:
+				case __otter_sock_ST_UDP:
+					break;
+				default:
+					__ASSERT(0);
+			}
+			
+			__otter_fs_free_socket(inode);
+		}
+
+		if(open_file->type == __otter_fs_TYP_FIFO) /* discard data if this is a fifo */
+		{
+			(*inode).size = 0;
+			free((*inode).data);
+			(*inode).data = NULL;
+		}
 	
-	if((*inode).linkno == 0) /* file was deleted, but left available until closed */
-	{
-		free((*inode).data);
-		free(inode);	
+		if((*inode).linkno == 0) /* file was deleted, but left available until closed */
+		{
+			free((*inode).data);
+			free(inode);	
+		}
 	}
 
 	return (0);
@@ -296,8 +361,7 @@ ssize_t __otter_libc_write_socket(
 		case __otter_sock_ST_ESTABLISHED:
 		case __otter_sock_ST_CLOSE_WAIT:
 			{
-				struct __otter_fs_sock_data* send_sock = sock->send_sock;
-				return __otter_libc_write_pipe_data(send_sock->recv_data, buf, num);
+				return __otter_libc_write_pipe_data(sock->sock_queue[0]->recv_data, buf, num);
 				break;
 			}
 			

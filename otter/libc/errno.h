@@ -34,6 +34,8 @@
 #define EISCONN 29
 #define EOPNOTSUPP 30
 #define EDESTADDRREQ 31
+#define EADDRNOTAVAIL 32
+#define ECONNREFUSED 33
 
 int errno = 0;
 

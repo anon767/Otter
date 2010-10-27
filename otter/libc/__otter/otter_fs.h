@@ -55,8 +55,7 @@ struct __otter_fs_sock_data
 	int state; /* socket state machine */
 	int options;
 	struct __otter_fs_pipe_data* recv_data;
-	struct __otter_fs_sock_data* send_sock;
-	struct __otter_fs_sock_data* sock_queue;
+	struct __otter_fs_sock_data** sock_queue;
 	int backlog;
 };
 

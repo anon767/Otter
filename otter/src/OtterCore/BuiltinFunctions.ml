@@ -1028,6 +1028,10 @@ let libc_interceptor job job_queue interceptor =
 
 		(* sys/socket.h *)
 		(intercept_function_by_name_external "socket"                  "__otter_libc_socket") @@
+		(intercept_function_by_name_external "bind"                    "__otter_libc_bind") @@
+		(intercept_function_by_name_external "listen"                  "__otter_libc_listen") @@
+		(intercept_function_by_name_external "accept"                  "__otter_libc_accept") @@
+		(intercept_function_by_name_external "connect"                 "__otter_libc_connect") @@
 		(intercept_function_by_name_external "getsockopt"              "__otter_libc_getsockopt") @@
 		(intercept_function_by_name_external "setsockopt"              "__otter_libc_setsockopt") @@
 
