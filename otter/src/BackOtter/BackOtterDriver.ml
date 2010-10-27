@@ -115,10 +115,10 @@ let print_function_switch_interceptor job job_queue interceptor =
             end;
             interceptor job job_queue
 
-let callchain_backward_se reporter job =
-    let file = job.Job.file in
+let callchain_backward_se reporter entry_job =
+    let file = entry_job.Job.file in
     (* Entry function set by --entryfn (default: main) *)
-    let entry_fn = List.hd job.state.callstack in
+    let entry_fn = List.hd entry_job.state.callstack in
 
     (* Map fundecs to potential decision lists
      * This is a reference used by the queue and the two interceptors. *)
@@ -127,8 +127,7 @@ let callchain_backward_se reporter job =
     (* A queue that prioritizes jobs *)
     let queue = new BackOtterQueue.t targets_ref entry_fn in
 
-    (* Create one job for each function containing __FAILURE, and for main.
-     * Job for main is put below *)
+    (* Create one job for each function containing __FAILURE, and for main. *)
     let jobs =
         let assertfn =
           let fname = !arg_assertfn in
@@ -138,7 +137,10 @@ let callchain_backward_se reporter job =
         List.map (fun fundec -> OtterJob.FunctionJob.make file fundec)
             (CilCallgraph.find_callers file assertfn)
     in
+    let jobs = entry_job :: jobs in
+
     (* Add these jobs into the queue *)
+    (* TODO: Consider separating entry_job (forward search) from the remaining *)
     let queue = List.fold_left (fun queue job -> queue#put job) queue jobs in
 
     (* Overlay the target tracker on the reporter *)
@@ -155,7 +157,7 @@ let callchain_backward_se reporter job =
         >>> BuiltinFunctions.libc_interceptor
         >>> BuiltinFunctions.interceptor
     in
-    let reporter = Driver.run ~interceptor ~queue target_tracker job in
+    let reporter = Driver.main_loop interceptor queue target_tracker in
     (* Output failing paths for entry_fn *)
     Output.must_printf "@\n@\n";
     List.iter (fun decisions ->
