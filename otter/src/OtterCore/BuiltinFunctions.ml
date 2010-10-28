@@ -1045,6 +1045,10 @@ let libc_interceptor job job_queue interceptor =
 		(intercept_function_by_name_external "mknod"                   "__otter_libc_mknod") @@
 		(intercept_function_by_name_external "stat"                    "__otter_libc_stat") @@
 		(intercept_function_by_name_external "umask"                   "__otter_libc_umask") @@
+		
+		(* sys/uio.h *)
+		(intercept_function_by_name_external "readv"                   "__otter_libc_readv") @@
+		(intercept_function_by_name_external "writev"                  "__otter_libc_writev") @@		
 
 		(* pass on the job when none of those match *)
 		interceptor

@@ -17,6 +17,8 @@
 #include "socket.c"
 #include "arpa_inet.c"
 #include "sys_mman.c"
+#include "sys_uio.c"
+#include "syslog.c"
 
 __otter_libc_init()
 {

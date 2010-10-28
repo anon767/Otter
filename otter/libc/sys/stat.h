@@ -31,6 +31,7 @@ struct stat
 #define S_IFSEM 0x00400000
 #define S_IFSHM 0x00800000
 #define S_IFSOCK 0x01000000
+#define S_IFMT 0x00000000
 
 #define S_ISBLK(s) (s & S_IFBLK)
 #define S_ISCHR(s) (s & S_IFCHR)

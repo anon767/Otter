@@ -38,4 +38,7 @@ typedef int pthread_rwlock_t;
 typedef int pthread_rwlockattr_t;
 typedef int pthread_t;
 
+#define IOV_MAX 256
+#define UIO_MAXIOV IOV_MAX
+
 #endif
