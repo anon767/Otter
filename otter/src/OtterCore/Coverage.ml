@@ -437,7 +437,7 @@ let printCoveringConfigs file coveringSet covType =
 
 let printCoverageInfo resultList =
 	let file = (List.hd resultList).result_file in
-	if not (List.for_all (fun r -> r.result_file = file) resultList) then
+	if not (List.for_all (fun r -> r.result_file == file) resultList) then
 		failwith "Cannot report coverage from different files!";
 
 	if !Executeargs.arg_line_coverage then (
