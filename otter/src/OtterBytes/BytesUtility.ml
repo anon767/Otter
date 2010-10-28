@@ -119,43 +119,38 @@ let bytes__write ?test ?pre bytes off len newbytes =
 	else
 		do_write bytes off len newbytes
 
+let is_Bytes_Read = function Bytes_Read _ -> true | _ -> false
 
-
-(*let rec getMaxBlockSizes cond = 
-        match cond with
-                | IfThenElse (guard, x, y) -> max (getMaxBlockSizes x) (getMaxBlockSizes y)
-                | Unconditional bytes -> 
-                        match bytes with
-                                | Bytes_Address(block, offset) -> (block.memory_block_size)
-                                | Bytes_Conditional(c) -> getMaxBlockSizes c
-                                | Bytes_ByteArray(a) -> (ImmutableArray.length a)
-                                | _ -> failwith ("Not a valid array.  : "^(To_string.bytes bytes))
+(** Create a bytes conditional representing all values that could result from reading from the given bytes at the given index.
+    This function assumes that symIndex is within the bounds of the memory region being read; any possible out-of-bounds accesses will be silently discarded.
+    @param bytes is the bytes being read from : [bytes]
+    @param symIndex is the index into bytes : [bytes]
+    @param len is the width of the read : [int]
+    @return a conditional representing ITE(symIndex=0, bytes[0..len-1], ITE(symIndex=1, bytes[1..len], ... ITE(symIndex=size-len-1, bytes[size-len-1..size-2], bytes[size-len..size-1])...))
 *)
-let rec expand_read_to_conditional2 bytes index len symIndex = 
-        let max = match bytes with
-                | Bytes_ByteArray(a) -> (ImmutableArray.length a)
-                | Bytes_Conditional(c) -> failwith "Unexpected Bytes_Conditional"(*getMaxBlockSizes c*)
-                | _ -> FormatPlus.failwith "Not a valid array:@ @[%a@]" BytesPrinter.bytes bytes
-        in
-        if (index < max - len) then (*don't read past the end of the array*)
-                IfThenElse(
-                        Guard_Bytes(make_Bytes_Op (
-                                OP_EQ,
-                                [(symIndex, Cil.intType); ((int_to_bytes index), Cil.intType)]
-                        )),
-                        (
-                                match bytes__read bytes (int_to_bytes (index)) len with
-                                        | Bytes_Conditional(c) -> c
-                                        | b -> Unconditional(b)
-                        ),
-                        (expand_read_to_conditional2 bytes (index+1(*len*)) len symIndex)
-                )
-        else (*last read that fits in the memory block*)
-                (
-                        match bytes__read bytes (int_to_bytes (index)) len with
-                                | Bytes_Conditional c -> c
-                                | b -> Unconditional(b)
-                )
+let expand_read_to_conditional2 bytes symIndex len = 
+    let rec expand index =
+        let read_at_index = bytes__read bytes (int_to_bytes index) len in
+        if is_Bytes_Read read_at_index then failwith "bytes__read with constant offset unexpectedly evaluated to a Bytes_Read";
+        let read_at_index = conditional__bytes read_at_index in
+        assert (index >= 0);
+        if index = 0 then read_at_index else
+        IfThenElse (
+            Guard_Bytes (make_Bytes_Op (
+                OP_EQ,
+                [(symIndex, !Cil.upointType); ((int_to_bytes index), !Cil.upointType)]
+            )),
+            read_at_index,
+            expand (index - 1)
+        )
+    in
+    let block_size = match bytes with
+        | Bytes_ByteArray(a) -> (ImmutableArray.length a)
+        | Bytes_Conditional(c) -> failwith "Unexpected Bytes_Conditional"
+        | _ -> FormatPlus.failwith "Not a valid array:@ @[%a@]" BytesPrinter.bytes bytes
+    in
+    if block_size < len then failwith "Error in expand_read_to_conditional2: the read is wider than the memory block";
+    expand (block_size - len)
 
 let rec expand_read_to_conditional (bytes:bytes) (symIndex:bytes) (len:int) = 
         let bytes = match bytes with
@@ -188,8 +183,9 @@ let rec expand_read_to_conditional (bytes:bytes) (symIndex:bytes) (len:int) =
 							(Unconditional v),	
 							(expand_read_to_conditional a symIndex len)
 						)*)
-	                                | _ -> expand_read_to_conditional2 bytes 0 len symIndex
+					(* TODO: 'bytes' on the next line looks very suspicious. Should it be 'leaf' instead? *)
+	        | _ -> (*expand_read_to_conditional2 bytes symIndex len*)
+              failwith "Error in expand_read_to_conditional"
 			in
 			conditional__map map_func c
-		| _ -> expand_read_to_conditional2 bytes 0 len symIndex
-
+		| _ -> expand_read_to_conditional2 bytes symIndex len
