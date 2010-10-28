@@ -1046,6 +1046,13 @@ let libc_interceptor job job_queue interceptor =
 		(intercept_function_by_name_external "stat"                    "__otter_libc_stat") @@
 		(intercept_function_by_name_external "umask"                   "__otter_libc_umask") @@
 		
+		(*sys/syslog*)
+		(intercept_function_by_name_external "closelog"                "__otter_libc_closelog") @@
+		(intercept_function_by_name_external "openlog"                 "__otter_libc_openlog") @@
+		(intercept_function_by_name_external "setlogmask"              "__otter_libc_setlogmask") @@
+		(intercept_function_by_name_external "syslog"                  "__otter_libc_syslog") @@
+		(intercept_function_by_name_external "vsyslog"                 "__otter_libc_vsyslog") @@
+		
 		(* sys/uio.h *)
 		(intercept_function_by_name_external "readv"                   "__otter_libc_readv") @@
 		(intercept_function_by_name_external "writev"                  "__otter_libc_writev") @@		
