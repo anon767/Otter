@@ -217,4 +217,7 @@ struct ip_timestamp
 
 #define	IP_MSS		576		/* default maximum segment size */
 
+/* sockopt */
+#define IP_TOS 0x10000000
+
 #endif

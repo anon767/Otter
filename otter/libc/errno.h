@@ -44,6 +44,7 @@
 #define ENOSYS 34
 #define IPPORT_RESERVED 35
 #define EINPROGRESS 36
+#define ECHILD 37
 
 int errno = 0;
 
