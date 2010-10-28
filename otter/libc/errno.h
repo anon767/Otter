@@ -1,6 +1,11 @@
 #ifndef _ERRNO_H
 #define _ERRNO_H
 
+/* not an error */
+#define E_OK 0
+#define EOK 0
+#define ENOERROR 0
+
 #define EDOM 1
 #define ERANGE 2
 
@@ -36,6 +41,9 @@
 #define EDESTADDRREQ 31
 #define EADDRNOTAVAIL 32
 #define ECONNREFUSED 33
+#define ENOSYS 34
+#define IPPORT_RESERVED 35
+#define EINPROGRESS 36
 
 int errno = 0;
 
