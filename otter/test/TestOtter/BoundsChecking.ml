@@ -18,6 +18,7 @@ let expectedResultCounts r e a results =
         | Return _ -> (succ r, e, a)
         | Exit _ -> (r, succ e, a)
         | Abandoned _ -> (r, e, succ a)
+        | Truncated _ -> (r, e, a) (* ignored *)
     end (0, 0, 0) results in
     assert_equal
         ~printer:(fun ff (r,e,a) -> Format.fprintf ff "%d returned; %d exited; %d abandoned" r e a)

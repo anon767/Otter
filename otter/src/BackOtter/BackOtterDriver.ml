@@ -27,16 +27,19 @@ object
                 targets_ref := BackOtterTargets.add fundec failing_path (!targets_ref)
             | _ -> ()
         end;
+        (* convert Abandoned due to execution from non-entry functions to Truncated *)
+        let job_state = match job_state with
+            | Job.Complete (Job.Abandoned (reason, location, job_result))
+                    when List.hd (List.rev job_result.result_state.callstack) == entry_fn ->
+                Job.Complete (Job.Truncated (reason, location, job_result))
+            | _ ->
+                job_state
+        in
         {< delegate = delegate#report job_state >}
 
-    method should_continue : bool =
-        delegate#should_continue
+    method should_continue : bool = delegate#should_continue
 
-    method completed : BackOtterErrors.t Job.job_completion list =
-        List.filter begin function
-            | Job.Return (_, job_result) | Job.Exit (_, job_result) | Job.Abandoned (_, _, job_result) ->
-                List.hd (List.rev job_result.result_state.callstack) == entry_fn
-        end delegate#completed
+    method completed = delegate#completed
 
     method delegate : 'delegate = delegate
 end
@@ -161,13 +164,13 @@ let callchain_backward_se reporter entry_job =
         >>> BuiltinFunctions.libc_interceptor
         >>> BuiltinFunctions.interceptor
     in
-    let reporter = Driver.main_loop interceptor queue target_tracker in
+    let target_tracker = Driver.main_loop interceptor queue target_tracker in
     (* Output failing paths for entry_fn *)
     Output.must_printf "@\n@\n";
     List.iter (fun decisions ->
         Output.must_printf "Failing path: @[%a@]@\n" Decision.print_decisions decisions)
         (BackOtterTargets.find entry_fn (!targets_ref));
-    reporter
+    target_tracker#delegate
 
 
 let doit file =

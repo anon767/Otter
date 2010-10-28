@@ -28,7 +28,8 @@ let test_coverage content ?label tracked_fns test =
                         let lines = LineSet.union lines c.result_history.coveredLines in
                         let conds = CondSet.union conds c.result_history.coveredConds in
                         (edges, blocks, lines, conds, paths_count + 1)
-                    | Abandoned _ ->
+                    | Abandoned _
+                    | Truncated _ -> (* TODO: should they be counted? *)
                         (edges, blocks, lines, conds, paths_count)
             end (EdgeSet.empty, StmtInfoSet.empty, LineSet.empty, CondSet.empty, 0) results in
             let all_edges_count = EdgeSet.cardinal all_edges in

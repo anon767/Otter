@@ -40,7 +40,7 @@ module Make (Errors : Errors) = struct
                 end;
                 {<
                     nodes = nodes + 1;
-                    paths = paths + 1;
+                    paths = paths + (match completion with Job.Truncated _ -> 0 | _ -> 1);
                     abandoned = abandoned + (match completion with Job.Abandoned _ -> 1 | _ -> 0);
                     completed = completion::completed;
                 >}

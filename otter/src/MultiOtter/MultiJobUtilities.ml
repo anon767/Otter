@@ -59,7 +59,8 @@ let put_job job multijob pid =
 let put_completion completion multijob = match completion with
 	| Return (_, job_result)
 	| Exit (_, job_result)
-	| Abandoned (_, _, job_result) ->
+	| Abandoned (_, _, job_result)
+	| Truncated (_, _, job_result) ->
 		let shared = {
 			MultiTypes.path_condition = job_result.Job.result_state.Types.path_condition;
 			shared_block_to_bytes = update_to_shared_memory 

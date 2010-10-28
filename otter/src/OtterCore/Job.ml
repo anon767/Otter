@@ -92,9 +92,10 @@ type job_result = {
 }
 
 type 'reason job_completion =
-	| Return of Bytes.bytes option * job_result
-	| Exit of Bytes.bytes option * job_result
-	| Abandoned of 'reason * Cil.location * job_result
+    | Return of Bytes.bytes option * job_result (* Jobs that successfully completed by returning from the entry function *)
+    | Exit of Bytes.bytes option * job_result (* Jobs that successfully completed by calling _exit *)
+    | Abandoned of 'reason * Cil.location * job_result (* Jobs that are terminated due to an error in the source program *)
+    | Truncated of 'reason * Cil.location * job_result (* Jobs that are terminated for other reasons *)
 
 type 'reason job_state =
 	| Active of job

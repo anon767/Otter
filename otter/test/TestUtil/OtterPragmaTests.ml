@@ -117,6 +117,7 @@ module Make (Errors : Errors) = struct
             | Job.Exit (exit_opt, _) -> Format.fprintf ff "Exit(@[%a@])" (option_printer BytesPrinter.bytes) exit_opt
             | Job.Return (return_opt, _) -> Format.fprintf ff "Return(@[%a@])" (option_printer BytesPrinter.bytes) return_opt
             | Job.Abandoned (reason, loc, _) -> Format.fprintf ff "Abandoned(\"@[%s@@%d: %a@]\")" loc.Cil.file loc.Cil.line Errors.printer reason
+            | Job.Truncated (reason, loc, _) -> Format.fprintf ff "Truncated(\"@[%s@@%d: %a@]\")" loc.Cil.file loc.Cil.line Errors.printer reason
         in
         list_printer completion_printer "@\n" list
 

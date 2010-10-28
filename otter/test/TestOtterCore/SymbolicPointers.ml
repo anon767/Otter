@@ -16,6 +16,7 @@ let test_symbolic_pointers content ?label test =
                 | Return _ -> (r + 1, e, a)
                 | Exit _ ->  (r, e + 1, a)
                 | Abandoned _ -> (r, e, a + 1)
+                | Truncated _ -> (r, e, a)  (* ignored *)
             end (0, 0, 0) results in
 
             (* finally run the test *)

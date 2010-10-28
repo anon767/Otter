@@ -119,6 +119,7 @@ let print_job_completion ff job_completion =
     | Job.Exit(_,_) -> Format.fprintf ff "Exit@\n"
     | Job.Abandoned(`FailingPaths(_),_,_) -> Format.fprintf ff "Abandoned(FailingPaths)@\n"
     | Job.Abandoned(_,_,_) -> Format.fprintf ff "Abandoned@\n"
+    | Job.Truncated _ -> failwith "Not implemented"
 
 let print_job ff job =
     Format.fprintf ff "Job (first statement):@\n";
@@ -235,6 +236,7 @@ let test_job_at_targets targets job =
                     | Job.Return (bytes_opt, job_result) -> Job.Return (bytes_opt, add_prefix job_result)
                     | Exit (bytes_opt, job_result) -> Exit (bytes_opt, add_prefix job_result)
                     | Abandoned (reason, loc, job_result) -> Abandoned (reason, loc, add_prefix job_result)
+                    | Job.Truncated _ -> failwith "Not implemented"
                 ) return
             in
 

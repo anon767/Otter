@@ -30,7 +30,10 @@
 #pragma expect_return()
 #pragma expect_return()
 #pragma expect_return()
-#pragma no_other_results
+#pragma no_other_abandoned
+#pragma no_other_return
+#pragma no_other_exit
+/* there may be truncated jobs */
 
 int x;
 
