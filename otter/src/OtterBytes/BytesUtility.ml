@@ -133,7 +133,6 @@ let bytes__write ?test ?pre bytes off len newbytes =
 *)
 let rec expand_read_to_conditional2 bytes index len symIndex = 
         let max = match bytes with
-                | Bytes_Address(block, offset) -> (block.memory_block_size)
                 | Bytes_ByteArray(a) -> (ImmutableArray.length a)
                 | Bytes_Conditional(c) -> failwith "Unexpected Bytes_Conditional"(*getMaxBlockSizes c*)
                 | _ -> FormatPlus.failwith "Not a valid array:@ @[%a@]" BytesPrinter.bytes bytes

@@ -10,8 +10,11 @@ int main(char** argc, int argv)
 		a[v] = malloc(sizeof(int)*4);
 	}
 
-	int i = __SYMBOLIC()%2;
-	int j = __SYMBOLIC()%4;
+	unsigned int i, j;
+	__SYMBOLIC(&i);
+	__ASSUME(i < 2);
+	__SYMBOLIC(&j);
+	__ASSUME(j < 4);
 
 	int* b = a[i];
 
