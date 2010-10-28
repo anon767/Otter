@@ -72,16 +72,16 @@ let emptyHistory = {
 }
 
 type job = {
-	file : Cil.file;
-	state : Types.state;
-	exHist : executionHistory;
-	decisionPath : Decision.t list; (** The decision path is a list of decision. Most recent decision first. *)
+    file : Cil.file;
+    state : Types.state;
+    exHist : executionHistory;
+    decisionPath : Decision.t list; (** The decision path is a list of decision. Most recent decision first. *)
     boundingPaths : Decision.t list list option; (** The execution can only run on these paths, if exist. Paths have most recent decision first. *)
-	instrList : Cil.instr list; (** [instr]s to execute before moving to the next [stmt] *)
-	stmt : Cil.stmt;            (** The next statement the job should execute *)
-	trackedFns : StringSet.t;	(** The set of functions (names) in which to track coverage *)
-	inTrackedFn : bool;         (** Is stmt in a function in the original program (as opposed to in a library or system call)? *)
-	jid : int; (** A unique identifier for the job *)
+    instrList : Cil.instr list; (** [instr]s to execute before moving to the next [stmt] *)
+    stmt : Cil.stmt;            (** The next statement the job should execute *)
+    trackedFns : StringSet.t;	(** The set of functions (names) in which to track coverage *)
+    inTrackedFn : bool;         (** Is stmt in a function in the original program (as opposed to in a library or system call)? *)
+    jid : int; (** A unique identifier for the job *)
 }
 
 type job_result = {
@@ -106,21 +106,21 @@ let job_counter = Counter.make ()
 
 (* create a job that begins at a function, given an initial state *)
 let make file state fn argvs =
-	let state = MemOp.state__start_fcall state Types.Runtime fn argvs in
-	let trackedFns = List.fold_left (fun set elt -> StringSet.add elt set) StringSet.empty !Executeargs.arg_fns in
-	(* create a new job *)
-	{
-		file = file;
-		state = state;
-		exHist = emptyHistory;
+    let state = MemOp.state__start_fcall state Types.Runtime fn argvs in
+    let trackedFns = List.fold_left (fun set elt -> StringSet.add elt set) StringSet.empty !Executeargs.arg_fns in
+    (* create a new job *)
+    {
+        file = file;
+        state = state;
+        exHist = emptyHistory;
         decisionPath = [];
         boundingPaths = None;
-		instrList = [];
-		stmt = List.hd fn.Cil.sallstmts;
-		trackedFns = trackedFns;
-		inTrackedFn = StringSet.mem fn.Cil.svar.Cil.vname trackedFns;
-		jid = Counter.next job_counter;
-	}
+        instrList = [];
+        stmt = List.hd fn.Cil.sallstmts;
+        trackedFns = trackedFns;
+        inTrackedFn = StringSet.mem fn.Cil.svar.Cil.vname trackedFns;
+        jid = Counter.next job_counter;
+    }
 
 (** Get the file location for the current job instruction.
 		@param job the job to get the current location from
