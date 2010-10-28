@@ -1,9 +1,17 @@
 
-type t = [ `FailureReached | `FailingPaths of OtterCore.Decision.t list list | OtterCore.Errors.t ]
+type t = [
+    | `FailureReached
+    | `FailingPaths of OtterCore.Decision.t list list
+    | `SummaryReturn of OtterBytes.Bytes.bytes option
+    | `SummaryExit of OtterBytes.Bytes.bytes option
+    | OtterCore.Errors.t
+]
 
 let printer ff (error : t) = match error with
     | `FailureReached -> Format.fprintf ff "`FailureReached"
     | `FailingPaths (_:(OtterCore.Decision.t list list)) -> Format.fprintf ff "(FailingPaths)" (* TODO (martin): print something meaningful *)
+    | `SummaryReturn _ -> Format.fprintf ff "`SummaryReturn"
+    | `SummaryExit _ -> Format.fprintf ff "`SummaryExit"
     | #OtterCore.Errors.t as x -> OtterCore.Errors.printer ff x
 
 

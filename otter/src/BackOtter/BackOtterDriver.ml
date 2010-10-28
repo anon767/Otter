@@ -27,10 +27,17 @@ object
                 targets_ref := BackOtterTargets.add fundec failing_path (!targets_ref)
             | _ -> ()
         end;
-        (* convert Abandoned due to execution from non-entry functions to Truncated *)
+
+        (* convert executions from non-entry functions to Truncated *)
         let job_state = match job_state with
+            | Job.Complete (Job.Return (return_code, job_result))
+                    when List.hd (List.rev job_result.result_state.callstack) != entry_fn ->
+                Job.Complete (Job.Truncated (`SummaryReturn return_code, Cil.locUnknown, job_result))
+            | Job.Complete (Job.Exit (return_code, job_result))
+                    when List.hd (List.rev job_result.result_state.callstack) != entry_fn ->
+                Job.Complete (Job.Truncated (`SummaryExit return_code, Cil.locUnknown, job_result))
             | Job.Complete (Job.Abandoned (reason, location, job_result))
-                    when List.hd (List.rev job_result.result_state.callstack) == entry_fn ->
+                    when List.hd (List.rev job_result.result_state.callstack) != entry_fn ->
                 Job.Complete (Job.Truncated (reason, location, job_result))
             | _ ->
                 job_state
