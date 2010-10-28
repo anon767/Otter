@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <string.h>
+#include <netinet/tcp.h>
 
 int __otter_libc_socket(int domain, int type, int protocol)
 {
@@ -157,6 +158,32 @@ int __otter_libc_getsockopt_sol_socket(struct __otter_fs_sock_data* sock, int op
 	}
 }
 
+int __otter_libc_getsockopt_ipproto_tcp(struct __otter_fs_sock_data* sock, int option_name, const void* option_value, socklen_t option_len)
+{
+	switch(option_name)
+	{
+		case TCP_NODELAY:
+			return(0);
+		/* TODO: impliment more of these */
+		default:
+			errno = EINVAL;
+			return(-1);
+	}
+}
+
+int __otter_libc_setsockopt_ipproto_tcp(struct __otter_fs_sock_data* sock, int option_name, const void* option_value, socklen_t option_len)
+{
+	switch(option_name)
+	{
+		case TCP_NODELAY:
+			return(0);
+		/* TODO: impliment more of these */
+		default:
+			errno = EINVAL;
+			return(-1);
+	}
+}
+
 int __otter_libc_setsockopt(int socket_fd, int level, int option_name, const void *option_value, socklen_t option_len)
 {
 	struct __otter_fs_sock_data* sock = __otter_libc_get_sock_data(socket_fd);
@@ -169,9 +196,10 @@ int __otter_libc_setsockopt(int socket_fd, int level, int option_name, const voi
 	{
 		case SOL_SOCKET:
 			return __otter_libc_setsockopt_sol_socket(sock, option_name, option_value, option_len);
+		case IPPROTO_TCP:
+			return __otter_libc_setsockopt_ipproto_tcp(sock, option_name, option_value, option_len);
 		case IPPROTO_IP:
 		case IPPROTO_ICMP:
-		case IPPROTO_TCP:
 		case IPPROTO_UDP:
 			/* TODO: impliment somthing that makes sense so these (non-existant) protocol layers */
 		default:
@@ -194,9 +222,10 @@ int __otter_libc_getsockopt(int socket_fd, int level, int option_name, void *opt
 	{
 		case SOL_SOCKET:
 			return __otter_libc_getsockopt_sol_socket(sock, option_name, option_value, option_len);
+		case IPPROTO_TCP:
+			return __otter_libc_getsockopt_ipproto_tcp(sock, option_name, option_value, option_len);
 		case IPPROTO_IP:
 		case IPPROTO_ICMP:
-		case IPPROTO_TCP:
 		case IPPROTO_UDP:
 			/* TODO: impliment somthing that makes sense so these (non-existant) protocol layers */
 		default:
@@ -641,7 +670,7 @@ int __otter_libc_connect(int socket_fd, const struct sockaddr *address, socklen_
 
 int __otter_libc_shutdown(int socket_fd, int how)
 {
-struct __otter_fs_sock_data* sock = __otter_libc_get_sock_data(socket_fd);
+	struct __otter_fs_sock_data* sock = __otter_libc_get_sock_data(socket_fd);
 	if(!sock)
 	{
 		return(-1);
