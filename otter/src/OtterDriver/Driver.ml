@@ -28,8 +28,8 @@ let main_loop interceptor queue reporter =
             begin match result_opt with
                 | Some result ->
                     let rec process_result (queue, reporter as work) result k =
-                        let reporter, more = reporter#report result in
-                        if more then match result with
+                        let reporter = reporter#report result in
+                        if reporter#should_continue then match result with
                             | Job.Active job ->
                                 k (queue#put job, reporter)
                             | Job.Fork (result::results) ->

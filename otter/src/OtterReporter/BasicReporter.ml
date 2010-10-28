@@ -38,28 +38,24 @@ module Make (Errors : Errors) = struct
                     | _ ->
                         ()
                 end;
-                let nodes = nodes + 1 in
-                let paths = paths + 1 in
-                let abandoned = abandoned + (match completion with Job.Abandoned _ -> 1 | _ -> 0) in
-                let reporter = {< nodes = nodes; paths = paths; abandoned = abandoned; completed = completion::completed >} in
-                if (max_nodes = 0 || nodes < max_nodes)
-                        &&(max_paths = 0 || paths < max_paths)
-                        && (max_abandoned = 0 || abandoned < max_abandoned) then
-                    (reporter, true)
-                else
-                    (reporter, false)
+                {<
+                    nodes = nodes + 1;
+                    paths = paths + 1;
+                    abandoned = abandoned + (match completion with Job.Abandoned _ -> 1 | _ -> 0);
+                    completed = completion::completed;
+                >}
 
             | Job.Active _
             | Job.Fork _ ->
-                let nodes = nodes + 1 in
-                let reporter = {< nodes = nodes >} in
-                if max_nodes = 0 || nodes < max_nodes then
-                    (reporter, true)
-                else
-                    (reporter, false)
+                {< nodes = nodes + 1 >}
 
             | Job.Paused _ ->
                 invalid_arg "unexpected Job.Paused"
+
+        method should_continue =
+            (max_nodes = 0 || nodes < max_nodes)
+                && (max_paths = 0 || paths < max_paths)
+                && (max_abandoned = 0 || abandoned < max_abandoned)
 
         method completed = completed
     end

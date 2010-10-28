@@ -15,10 +15,10 @@ open Decision
 open Cil
 
 
-class target_tracker delegate entry_fn targets_ref =
-object (_ : 'self)
+class ['delegate] target_tracker delegate entry_fn targets_ref =
+object
     val delegate = delegate
-    method report (job_state : BackOtterErrors.t Job.job_state) : 'self * bool =
+    method report (job_state : BackOtterErrors.t Job.job_state) =
         begin match job_state with
             (* TODO: also include `Failure when --exceptions-as-failures is enabled *)
             | Job.Complete (Job.Abandoned (`FailureReached, _ , job_result)) ->
@@ -27,14 +27,18 @@ object (_ : 'self)
                 targets_ref := BackOtterTargets.add fundec failing_path (!targets_ref)
             | _ -> ()
         end;
-        let delegate, more = delegate#report job_state in
-        ({< delegate = delegate >}, more)
+        {< delegate = delegate#report job_state >}
+
+    method should_continue : bool =
+        delegate#should_continue
 
     method completed : BackOtterErrors.t Job.job_completion list =
         List.filter begin function
             | Job.Return (_, job_result) | Job.Exit (_, job_result) | Job.Abandoned (_, _, job_result) ->
                 List.hd (List.rev job_result.result_state.callstack) == entry_fn
         end delegate#completed
+
+    method delegate : 'delegate = delegate
 end
 
 

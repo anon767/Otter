@@ -34,7 +34,7 @@ let rec get_job_multijob job_queue =
 
 (* process the results *)
 let rec process_job_states result multijob reporter multijob_queue =
-	let reporter, _more = reporter#report result in (* TODO: actually respond to the _more flag *)
+	let reporter = reporter#report result in  (* TODO: use the #should_continue flag *)
 	match result with
 		| Active job ->
 			(* put the job back into the multijob and queue it *)
