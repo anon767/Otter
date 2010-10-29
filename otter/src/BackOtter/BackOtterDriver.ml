@@ -20,7 +20,7 @@ object (_ : 'self)
     val delegate = delegate
     method report job_state =
         (* convert executions from non-entry functions to Truncated *)
-        let job_state = match job_state with
+        let job_state' = match job_state with
             | Job.Complete (Job.Return (return_code, job_result))
                     when List.hd (List.rev job_result.result_state.callstack) != entry_fn ->
                 Job.Complete (Job.Truncated (`SummaryReturn return_code, job_result))
@@ -33,7 +33,7 @@ object (_ : 'self)
             | _ ->
                 job_state
         in
-        let delegate' = delegate#report job_state in
+        let delegate' = delegate#report job_state' in
         (* Extract failing path from failure, and create target function.
          * This is run after the delegate so that the "Extract..." message is output after the failure message. *)
         let extract_failing_path job_result =
