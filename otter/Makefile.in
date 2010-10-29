@@ -21,7 +21,7 @@ OCAMLBUILD_DEPS = \
 
 OUNIT_FLAGS = -verbose
 
-VPATH = src test
+VPATH = src test benchmark
 
 .PHONY : all native debug config test experiments
 
@@ -37,6 +37,13 @@ libs : OCAMLBUILD_MORE_CMI= \
 
 test : ounit//runtestotter.d.byte
 ounit//runtestotter.d.byte : debug
+
+benchmark-otter : ounit//runbenchmarkotter.native
+ounit//runbenchmarkotter.native : native
+
+debug-benchmark-otter : ounit//runbenchmarkotter.d.byte
+ounit//runbenchmarkotter.d.byte : debug
+
 
 config : otter.pl.config
 otter.pl.config : Makefile $(CIL_SRCDIR)/config.mk

@@ -30,6 +30,8 @@ libs-otter : make//otter
 libs-otter : MAKEGOALS=libs
 test-otter : make//otter
 test-otter : MAKEGOALS=test
+benchmark-otter : make//otter
+benchmark-otter : MAKEGOALS=benchmark-otter
 doc-otter : make//otter
 doc-otter : MAKEGOALS=doc
 dot-otter : make//otter

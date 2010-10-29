@@ -359,12 +359,14 @@ module Make (Errors : Errors) = struct
         (flags, (fun results -> test results (fun _ -> ())))
 
 
-    (** Test helper that runs Otter on a file, using #pragmas to define test expectations.
+    (** Test helper that runs Otter on a file, using #pragmas to define test expectations. A [reporter] must be
+        provided to record the results.
                 @param driver is the Otter main loop to use
+                @param reporter is a reporter to collect the results for additional analysis
                 @param path is the path to the file
-                @return a {!TestCase} that runs Otter
+                @return a test case that runs Otter and returns the [reporter]
     *)
-    let test_otter_with_pragma driver path = fun () ->
+    let eval_otter_with_pragma driver reporter path = fun () ->
         (* reset the error flag and suppress all output from the symbolic executor *)
         Errormsg.hadErrors := false;
         Output.arg_print_mute := 1;
@@ -403,11 +405,9 @@ module Make (Errors : Errors) = struct
         in
 
         (* prepare the file and run the symbolic executor *)
-        let results = run begin fun () ->
-            Core.prepare_file file;
-            let job = OtterJob.Job.get_default file in
-            driver (new ListReporter.t) job
-        end in
+        Core.prepare_file file;
+        let job = OtterJob.Job.get_default file in
+        let reporter = run (fun () -> driver (reporter ()) job) in
 
         (* first, test if assertions passed *)
         let log = Executedebug.get_log () in
@@ -415,10 +415,19 @@ module Make (Errors : Errors) = struct
             assert_string log;
 
         (* then, run the given test *)
-        let () = test results#completed in
+        let () = test reporter#completed in
 
         (* finally, test if assertions passed *)
         if flags.has_failing_assertions then
-            assert_bool "Expected some failing assertions but got none." (log <> "")
+            assert_bool "Expected some failing assertions but got none." (log <> "");
+
+        reporter
+
+    (** Creates an OUnit {!TestCase} using {!eval_otter_with_pragma} with {!ListReporter.t} as the reporter.
+                @param driver is the Otter main loop to use
+                @param path is the path to the file
+                @return a {!TestCase} that runs Otter
+    *)
+    let test_otter_with_pragma driver path () = ignore (eval_otter_with_pragma driver (fun () -> new ListReporter.t) path ())
 end
 
