@@ -473,7 +473,7 @@ size_t __otter_libc_mbstowcs(wchar_t* pwcs, const char* s, size_t n)
 	int r;
 	for(int i = 0; i < n; i++)
 	{
-		r = mbtowc(pwcs, s);
+		r = mbtowc(pwcs, s, 1);
 		if(r == -1)
 			return (-1);
 		else if (r == 0);

@@ -205,12 +205,12 @@ int __otter_libc_mknod(const char* name, mode_t mode, dev_t dev)
 
 int __otter_libc_mkdir(const char* name, mode_t mode)
 {
-	return mknod(name, mode | S_IFDIR);
+	return mknod(name, mode | S_IFDIR, 0/*ignored*/);
 }
 
 int __otter_libc_mkfifo(const char* name, mode_t mode)
 {
-	return mknod(name, mode | S_IFIFO);
+	return mknod(name, mode | S_IFIFO, 0/*ignored*/);
 }
 
 int __otter_libc_stat(const char* name, struct stat* s)
