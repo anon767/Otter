@@ -102,8 +102,8 @@ module Make (Errors : Errors) = struct
 
 
     (** Wrapper to assert_failure that also prints the location. *)
-    let assert_loc_failure file loc format =
-        assert_log "%s:%d:error:@;<1 2>" file.Cil.fileName loc.Cil.line;
+    let assert_loc_failure loc format =
+        assert_log "%s:%d:error:@;<1 2>" (Filename.basename loc.Cil.file) loc.Cil.line;
         assert_failure format
 
 
@@ -149,11 +149,11 @@ module Make (Errors : Errors) = struct
                 begin match varinfo_opt with
                     | Some varinfo ->
                         if varinfo.Cil.vtype <> Cil.intType then
-                            assert_loc_failure file loc "In assertion %a: global variable %s is not an int." Printcil.attrparam exp name;
+                            assert_loc_failure loc "In assertion %a: global variable %s is not an int." Printcil.attrparam exp name;
                         let state, lval = MemOp.state__varinfo_to_lval_block state varinfo in
                         MemOp.state__deref state (lval, (Cil.bitsSizeOf Cil.intType)/8)
                     | None ->
-                        assert_loc_failure file loc "In assertion %a: global variable %s not found." Printcil.attrparam exp name
+                        assert_loc_failure loc "In assertion %a: global variable %s not found." Printcil.attrparam exp name
                 end
 
             | Cil.AInt i ->
@@ -169,7 +169,7 @@ module Make (Errors : Errors) = struct
                 (state, Operator.of_binop binop [ (bytes1, Cil.intType); (bytes2, Cil.intType) ])
 
             | exp' ->
-                assert_loc_failure file loc "In assertion %a: unsupported operation %a." Printcil.attrparam exp Printcil.attrparam exp'
+                assert_loc_failure loc "In assertion %a: unsupported operation %a." Printcil.attrparam exp Printcil.attrparam exp'
         in
         try
             let state, bytes = parse_exp state exp in
@@ -196,9 +196,9 @@ module Make (Errors : Errors) = struct
             | Some (_, results) ->
                 k results
             | None when asserts = [] ->
-                assert_loc_failure file loc "@[Did not find Return@\nGot:@\n  @[%a@]@]" results_printer results
+                assert_loc_failure loc "@[Did not find Return@\nGot:@\n  @[%a@]@]" results_printer results
             | None ->
-                assert_loc_failure file loc "@[Did not find Return with assertions:@\n  @[%a@]@\nGot:@\n  @[%a@]@]"
+                assert_loc_failure loc "@[Did not find Return with assertions:@\n  @[%a@]@\nGot:@\n  @[%a@]@]"
                     attrparams_printer asserts results_printer results
 
 
@@ -209,9 +209,9 @@ module Make (Errors : Errors) = struct
             | Some (_, results) ->
                 k results
             | None when asserts = [] ->
-                assert_loc_failure file loc "@[Did not find Exit@\nGot:@\n  @[%a@]@]" results_printer results
+                assert_loc_failure loc "@[Did not find Exit@\nGot:@\n  @[%a@]@]" results_printer results
             | None ->
-                assert_loc_failure file loc "@[Did not find Exit with assertions:@\n  @[%a@]@\nGot:@\n  @[%a@]@]"
+                assert_loc_failure loc "@[Did not find Exit with assertions:@\n  @[%a@]@\nGot:@\n  @[%a@]@]"
                     attrparams_printer asserts results_printer results
 
 
@@ -221,7 +221,7 @@ module Make (Errors : Errors) = struct
             try
                 Errors.matcher reason args
             with Failure s ->
-                assert_loc_failure file loc "%s" s
+                assert_loc_failure loc "%s" s
         in
         let asserts' = assert_exps file loc asserts in
         let is_abandoned = function
@@ -232,10 +232,10 @@ module Make (Errors : Errors) = struct
             | Some (_, results) ->
                 k results
             | None when asserts = [] ->
-                assert_loc_failure file loc "@[Did not find Abandoned `Failure with reason:@\n  %s@\nGot:@\n  @[%a@]@]"
+                assert_loc_failure loc "@[Did not find Abandoned `Failure with reason:@\n  %s@\nGot:@\n  @[%a@]@]"
                     reason results_printer results
             | None ->
-                assert_loc_failure file loc "@[Did not find Abandoned `Failure with reason:@\n  %s@\nand assertions:@\n  @[%a@]@\nGot:@\n  @[%a@]@]"
+                assert_loc_failure loc "@[Did not find Abandoned `Failure with reason:@\n  %s@\nand assertions:@\n  @[%a@]@\nGot:@\n  @[%a@]@]"
                     reason attrparams_printer asserts results_printer results
 
 
@@ -244,7 +244,7 @@ module Make (Errors : Errors) = struct
         (* count jobs that matched f *)
         let abandoned = List.filter f results in
         if abandoned <> [] then
-            assert_loc_failure file loc "@[<h2>Expected no other %s but got:@\n%a@]" x results_printer results;
+            assert_loc_failure loc "@[<h2>Expected no other %s but got:@\n%a@]" x results_printer results;
         k results
 
     (** CPS test that there are no other {!Job.Return}, passing the remaining results to the next test. *)
@@ -270,88 +270,88 @@ module Make (Errors : Errors) = struct
             | Cil.GPragma (Cil.Attr (name, params), loc) ->
                 begin match name, params with
                     | "entry_function", [ Cil.AStr entry_function ] ->
-                        if flags.entry_function <> None then assert_loc_failure file loc "Entry function already defined.";
-                        if entry_function = "" then assert_loc_failure file loc "Invalid entry function (should not be blank).";
+                        if flags.entry_function <> None then assert_loc_failure loc "Entry function already defined.";
+                        if entry_function = "" then assert_loc_failure loc "Invalid entry function (should not be blank).";
                         ({ flags with entry_function = Some entry_function }, test)
                     | "entry_function", _ ->
-                        assert_loc_failure file loc "Invalid entry function (should have exactly one string argument that is the function name)."
+                        assert_loc_failure loc "Invalid entry function (should have exactly one string argument that is the function name)."
 
                     | "command_line", args ->
-                        if flags.command_line <> [] then assert_loc_failure file loc "Command line already defined.";
+                        if flags.command_line <> [] then assert_loc_failure loc "Command line already defined.";
                         let command_line = List.map begin function
                             | Cil.AStr arg -> arg
-                            | _ -> assert_loc_failure file loc "Invalid command line (arguments should be \"<argument string>\")."
+                            | _ -> assert_loc_failure loc "Invalid command line (arguments should be \"<argument string>\")."
                         end args in
-                        if command_line = [] then assert_loc_failure file loc "Invalid command line (should have at least one argument).";
+                        if command_line = [] then assert_loc_failure loc "Invalid command line (should have at least one argument).";
                         ({ flags with command_line = command_line }, test)
 
                     | "cil_options", args ->
-                        if flags.cil_options <> [] then assert_loc_failure file loc "CIL options already defined.";
+                        if flags.cil_options <> [] then assert_loc_failure loc "CIL options already defined.";
                         let cil_options = List.map begin function
                             | Cil.AStr arg -> arg
-                            | _ -> assert_loc_failure file loc "Invalid CIL options (arguments should be \"<argument string>\")."
+                            | _ -> assert_loc_failure loc "Invalid CIL options (arguments should be \"<argument string>\")."
                         end args in
-                        if cil_options = [] then assert_loc_failure file loc "Invalid CIL options (should have at least one argument).";
+                        if cil_options = [] then assert_loc_failure loc "Invalid CIL options (should have at least one argument).";
                         ({ flags with cil_options = cil_options }, test)
 
                     | "time_limit", [ Cil.AInt time_limit ] ->
-                        if flags.time_limit <> None then assert_loc_failure file loc "Time limit already defined.";
-                        if time_limit <= 0 then assert_loc_failure file loc "Invalid time limit (should not be greater than 0).";
+                        if flags.time_limit <> None then assert_loc_failure loc "Time limit already defined.";
+                        if time_limit <= 0 then assert_loc_failure loc "Invalid time limit (should not be greater than 0).";
                         ({ flags with time_limit = Some time_limit }, test)
                     | "time_limit", _ ->
-                        assert_loc_failure file loc "Invalid time limit (should have exactly one integer argument that is the time limit in seconds)."
+                        assert_loc_failure loc "Invalid time limit (should have exactly one integer argument that is the time limit in seconds)."
 
                     | "has_failing_assertions", [] ->
                         ({ flags with has_failing_assertions = true }, test)
                     | "has_failing_assertions", _ ->
-                        assert_loc_failure file loc "Invalid has_failing_assertions (should have no arguments)."
+                        assert_loc_failure loc "Invalid has_failing_assertions (should have no arguments)."
 
                     | "no_bounds_checking", [] ->
                         ({ flags with no_bounds_checking = true }, test)
                     | "no_bounds_checking", _ ->
-                        assert_loc_failure file loc "Invalid no_bounds_checking (should have no arguments)."
+                        assert_loc_failure loc "Invalid no_bounds_checking (should have no arguments)."
 
                     | "expect_return", [ Cil.ACons ("", []) ] -> (* strangely, expect_return() parses to this *)
                         (flags, test >>> expect_return file loc [])
                     | "expect_return", [] ->
-                        assert_loc_failure file loc "Invalid expect_return (should have argument list \"expect_return(...)\")."
+                        assert_loc_failure loc "Invalid expect_return (should have argument list \"expect_return(...)\")."
                     | "expect_return", asserts ->
                         (flags, test >>> expect_return file loc asserts)
 
                     | "expect_exit", [ Cil.ACons ("", []) ] -> (* strangely, expect_exit() parses to this *)
                         (flags, test >>> expect_exit file loc [])
                     | "expect_exit", [] ->
-                        assert_loc_failure file loc "Invalid expect_exit (should have argument list \"expect_exit(...)\")."
+                        assert_loc_failure loc "Invalid expect_exit (should have argument list \"expect_exit(...)\")."
                     | "expect_exit", asserts ->
                         (flags, test >>> expect_exit file loc asserts)
 
                     | "expect_abandoned", (Cil.ACons (reason, args))::asserts ->
                         (flags, test >>> expect_abandoned file loc reason args asserts)
                     | "expect_abandoned", _ ->
-                        assert_loc_failure file loc "Invalid expect_abandoned (first argument should be an abandoned type)."
+                        assert_loc_failure loc "Invalid expect_abandoned (first argument should be an abandoned type)."
 
                     | "no_other_return", [] ->
                         (flags, test >>> no_other_return file loc)
                     | "no_other_return", _ ->
-                        assert_loc_failure file loc "Invalid no_other_return (should have no arguments)."
+                        assert_loc_failure loc "Invalid no_other_return (should have no arguments)."
 
                     | "no_other_exit", [] ->
                         (flags, test >>> no_other_exit file loc)
                     | "no_other_exit", _ ->
-                        assert_loc_failure file loc "Invalid no_other_exit (should have no arguments)."
+                        assert_loc_failure loc "Invalid no_other_exit (should have no arguments)."
 
                     | "no_other_abandoned", [] ->
                         (flags, test >>> no_other_abandoned file loc)
                     | "no_other_abandoned", _ ->
-                        assert_loc_failure file loc "Invalid no_other_abandoned (should have no arguments)."
+                        assert_loc_failure loc "Invalid no_other_abandoned (should have no arguments)."
 
                     | "no_other_results", [] ->
                         (flags, test >>> no_other_results file loc)
                     | "no_other_results", _ ->
-                        assert_loc_failure file loc "Invalid no_other_results (should have no arguments)."
+                        assert_loc_failure loc "Invalid no_other_results (should have no arguments)."
 
                     | _ ->
-                        assert_loc_failure file loc "Unknown test configuration: %s(%a)." name attrparams_printer params
+                        assert_loc_failure loc "Unknown test configuration: %s(%a)." name attrparams_printer params
                 end
             | _ ->
                 config
