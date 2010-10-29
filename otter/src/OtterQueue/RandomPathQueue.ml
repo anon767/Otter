@@ -35,12 +35,13 @@ class ['job] t = object
 
     method get =
         (* first, zip the tree, making sure no branches are empty unless the tree is empty *)
-        let rec zip tree = function
-            | `Top -> tree
-            | `Node (siblings, context) when RandomBag.is_empty siblings -> zip tree context
-            | `Node (siblings, context) -> zip (`Branches (RandomBag.put tree siblings)) context
+        let rec zip branches = function
+            | `Top -> `Branches branches
+            | `Node (siblings, context) when RandomBag.is_empty siblings -> zip branches context
+            | `Node (siblings, context) when RandomBag.is_empty branches -> zip siblings context
+            | `Node (siblings, context) -> zip (RandomBag.put (`Branches branches) siblings) context
         in
-        let tree = zip (`Branches leaves) context in
+        let tree = zip leaves context in
 
         (* then, descend randomly to a job *)
         let rec descend context = function
