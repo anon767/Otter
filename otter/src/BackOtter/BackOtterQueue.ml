@@ -140,6 +140,9 @@ class ['job] t file targets_ref entry_fn failure_fn = object (self)
         try
             (* Check if any job is on bounding paths (i.e., being verified) *)
             let job = List.find has_bounding_paths (List.rev_append entryfn_jobs' otherfn_jobs') in
+            Output.debug_printf "Job %d is run under influence of bounding path(s):@\n" job.jid;
+            (match job.boundingPaths with | None -> () | Some bounding_paths ->
+                List.iter (fun path -> Output.debug_printf "Path: @[%a@]@\n" Decision.print_decisions path) bounding_paths);
             let entryfn_jobs'' = List.filter (fun j -> j != job) entryfn_jobs' in
             let otherfn_jobs'' = List.filter (fun j -> j != job) otherfn_jobs' in
             Some ({< entryfn_jobs = entryfn_jobs'';
