@@ -13,14 +13,16 @@ let queues = [
 
 let default_queue = ref (`Generational `BreadthFirst)
 
-(* need get_default to get around value restriction that limits polymorphism in the queues list *)
-let get_default () = match !default_queue with
+(* to get around value restriction that limits polymorphism in the queues list *)
+let get = function
     | `BreadthFirst -> new BreadthFirstQueue.t
     | `DepthFirst -> new DepthFirstQueue.t
     | `RandomPath -> new RandomPathQueue.t
     | `Generational `BreadthFirst -> new GenerationalQueue.t (new BreadthFirstQueue.t)
     | `Generational `DepthFirst -> new GenerationalQueue.t (new DepthFirstQueue.t)
     | `Generational `RandomPath -> new GenerationalQueue.t (new RandomPathQueue.t)
+
+let get_default () = get !default_queue
 
 let options = [
     "--queue",
