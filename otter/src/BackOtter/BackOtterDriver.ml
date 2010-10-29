@@ -24,6 +24,7 @@ object
             | Job.Complete (Job.Abandoned (`FailureReached, _ , job_result)) ->
                 let fundec = List.hd (List.rev job_result.result_state.callstack) in
                 let failing_path = job_result.result_decision_path in
+                let _ = Output.must_printf "@\n=> Create target for function %s@\n@\n" fundec.svar.vname in
                 targets_ref := BackOtterTargets.add fundec failing_path (!targets_ref)
             | _ -> ()
         end;
@@ -52,14 +53,14 @@ object
 end
 
 
-(* Cil feature for call-chain backwards Otter *)
-let arg_assertfn = ref "__FAILURE"
+(* Cil feature for BackOtter *)
+let arg_failurefn = ref "__FAILURE"
 
 (* __FAILURE() *)
 let otter_failure_interceptor job job_queue interceptor =
     match job.instrList with
         | Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::_
-            when varinfo.Cil.vname = (!arg_assertfn) ->
+            when varinfo.Cil.vname = (!arg_failurefn) ->
             let job_result = {
                 result_file = job.Job.file;
                 result_state = job.Job.state;
@@ -72,47 +73,6 @@ let otter_failure_interceptor job job_queue interceptor =
         | _ ->
             interceptor job job_queue
 
-
-(* If it's a call to a target, insert bounding paths
- * If bounding_paths already exist, bypass *)
-let bounding_path_insertion_interceptor targets_ref job job_queue interceptor =
-    if job.boundingPaths != None then
-        interceptor job job_queue
-    else
-        match job.decisionPath with
-        | DecisionFuncall(_, fundec) :: decisions ->
-            let targets = !targets_ref in
-            if BackOtterTargets.mem fundec targets then
-                let _ = Output.must_printf "@\n=> Hit target function %s@\n@\n" fundec.svar.vname in
-                let failing_paths = BackOtterTargets.find fundec targets in
-                let bounding_paths = List.map (fun path -> List.append path job.decisionPath) failing_paths in
-                let job = {job with boundingPaths = Some bounding_paths} in
-                interceptor job job_queue
-            else
-                interceptor job job_queue
-        | _ -> interceptor job job_queue
-
-(* Eliminate inconsistent bounding paths *)
-let bounding_path_elimination_interceptor targets_ref job job_queue interceptor =
-    let suffix decision_path bounding_path =
-        (* Return 0 if pre==lst, 1 if pre is strictly prefix, -1 if pre is not a prefix *)
-        let rec prefix eq pre lst =
-            match pre, lst with
-            | d1::pre', d2::lst' -> if eq d1 d2 then prefix eq pre' lst' else -1
-            | [], [] -> 0
-            | [], _ -> 1
-            | _, _ -> -1
-        in
-        prefix Decision.equals (List.rev decision_path) (List.rev bounding_path)
-    in
-    match job.boundingPaths with
-    | Some paths ->
-        let agreed_bounding_paths = List.filter (fun path -> suffix job.decisionPath path >= 0) paths in
-        (* TODO: catch the oncoming failure? *)
-        let job = {job with boundingPaths = Some agreed_bounding_paths} in
-        interceptor job job_queue
-    | None ->
-        interceptor job job_queue
 
 let previous_function : fundec option ref = ref None
 let print_function_switch_interceptor job job_queue interceptor =
@@ -131,6 +91,7 @@ let print_function_switch_interceptor job job_queue interceptor =
 
 let callchain_backward_se reporter entry_job =
     let file = entry_job.Job.file in
+
     (* Entry function set by --entryfn (default: main) *)
     let entry_fn = List.hd entry_job.state.callstack in
 
@@ -138,24 +99,18 @@ let callchain_backward_se reporter entry_job =
      * This is a reference used by the queue and the two interceptors. *)
     let targets_ref = ref BackOtterTargets.empty in
 
-    (* A queue that prioritizes jobs *)
-    let queue = new BackOtterQueue.t targets_ref entry_fn in
-
-    (* Create one job for each function containing __FAILURE, and for main. *)
-    let jobs =
-        let assertfn =
-          let fname = !arg_assertfn in
-          try FindCil.fundec_by_name file fname
-          with Not_found -> FormatPlus.failwith "Assertion function %s not found" fname
-        in
-        List.map (fun fundec -> OtterJob.FunctionJob.make file fundec)
-            (CilCallgraph.find_callers file assertfn)
+    (* Failure function set by --failurefn (default: __FAILURE) *)
+    let failure_fn =
+      let fname = !arg_failurefn in
+      try FindCil.fundec_by_name file fname
+      with Not_found -> FormatPlus.failwith "Failure function %s not found" fname
     in
-    let jobs = entry_job :: jobs in
 
-    (* Add these jobs into the queue *)
-    (* TODO: Consider separating entry_job (forward search) from the remaining *)
-    let queue = List.fold_left (fun queue job -> queue#put job) queue jobs in
+    (* A queue that prioritizes jobs *)
+    let queue = new BackOtterQueue.t file targets_ref entry_fn failure_fn in
+
+    (* Add entry_job into the queue *)
+    let queue = queue#put entry_job in
 
     (* Overlay the target tracker on the reporter *)
     let target_tracker = new target_tracker reporter entry_fn targets_ref in
@@ -165,18 +120,17 @@ let callchain_backward_se reporter entry_job =
         let (>>>) = Interceptor.(>>>) in
         print_function_switch_interceptor
         >>> Interceptor.set_output_formatter_interceptor
-        >>> (bounding_path_insertion_interceptor targets_ref)
-        >>> (bounding_path_elimination_interceptor targets_ref)
         >>> otter_failure_interceptor
         >>> BuiltinFunctions.libc_interceptor
         >>> BuiltinFunctions.interceptor
     in
     let target_tracker = Driver.main_loop interceptor queue target_tracker in
+
     (* Output failing paths for entry_fn *)
     Output.must_printf "@\n@\n";
     List.iter (fun decisions ->
         Output.must_printf "Failing path: @[%a@]@\n" Decision.print_decisions decisions)
-        (BackOtterTargets.find entry_fn (!targets_ref));
+        (BackOtterTargets.get entry_fn (!targets_ref));
     target_tracker#delegate
 
 
@@ -251,10 +205,10 @@ let feature = {
     Cil.fd_enabled = ref false;
     Cil.fd_description = "Call-chain backwards symbolic executor for C";
     Cil.fd_extraopt = [
-        ("--assertfn",
-        Arg.Set_string arg_assertfn,
-        "<fname> Assertion function to look for in the call-chain-backward mode (default: __FAILURE)");
-    ] @ BackOtterReporter.options;
+        ("--failurefn",
+        Arg.Set_string arg_failurefn,
+        "<fname> Failure function to look for in BackOtter (default: __FAILURE)");
+    ] @ BackOtterReporter.options @ BackOtterQueue.options;
     Cil.fd_post_check = true;
     Cil.fd_doit = doit
 }
