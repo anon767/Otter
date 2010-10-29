@@ -19,16 +19,6 @@ class ['self] target_tracker delegate entry_fn targets_ref =
 object (_ : 'self)
     val delegate = delegate
     method report job_state =
-        begin match job_state with
-            (* TODO: also include `Failure when --exceptions-as-failures is enabled *)
-            | Job.Complete (Job.Abandoned (`FailureReached, _ , job_result)) ->
-                let fundec = List.hd (List.rev job_result.result_state.callstack) in
-                let failing_path = job_result.result_decision_path in
-                let _ = Output.must_printf "@\n=> Create target for function %s@\n@\n" fundec.svar.vname in
-                targets_ref := BackOtterTargets.add fundec failing_path (!targets_ref)
-            | _ -> ()
-        end;
-
         (* convert executions from non-entry functions to Truncated *)
         let job_state = match job_state with
             | Job.Complete (Job.Return (return_code, job_result))
@@ -43,7 +33,22 @@ object (_ : 'self)
             | _ ->
                 job_state
         in
-        {< delegate = delegate#report job_state >}
+        let delegate' = delegate#report job_state in
+        (* Extract failing path from failure, and create target function.
+         * This is run after the delegate so that the "Extract..." message is output after the failure message. *)
+        let extract_failing_path job_result =
+            let fundec = List.hd (List.rev job_result.result_state.callstack) in
+            let failing_path = job_result.result_decision_path in
+            let _ = Output.must_printf "@\n=> Extract the following failing path for function %s:@\n" fundec.svar.vname in
+            let _ = Output.must_printf "@[%a@]@\n@\n" Decision.print_decisions failing_path in
+            targets_ref := BackOtterTargets.add fundec failing_path (!targets_ref)
+        in
+        begin match job_state with
+            | Job.Complete (Job.Abandoned (`FailureReached, _ , job_result)) -> extract_failing_path job_result
+            | Job.Complete (Job.Abandoned (_, _, job_result)) when !BackOtterReporter.arg_exceptions_as_failures -> extract_failing_path job_result
+            | _ -> ()
+        end;
+        {< delegate = delegate' >}
 
     method should_continue = delegate#should_continue
 
@@ -138,7 +143,7 @@ let doit file =
     (* connect Cil's debug flag to Output *)
     Output.arg_print_debug := !Errormsg.debugFlag;
 
-    Output.must_printf "@\n@\nCall-chain backward Symbolic Execution@\n@\n";
+    Output.must_printf "@\n@\nBackOtter: Bi-directional Symbolic Executor@\n@\n";
     let startTime = Unix.gettimeofday () in
     (* Set signal handlers to catch timeouts and interrupts *)
     let old_ALRM_handler =
