@@ -23,7 +23,7 @@ let get_default () = match !default_queue with
     | `Generational `RandomPath -> new GenerationalQueue.t (new RandomPathQueue.t)
 
 let options = [
-    "--driver",
+    "--queue",
         Arg.Symbol (fst (List.split queues), fun name -> default_queue := List.assoc name queues),
         "<queue name> Set the default job queue (default: " ^ (fst (List.find (fun (_, x) -> x = !default_queue) queues)) ^ ")";
 ]
