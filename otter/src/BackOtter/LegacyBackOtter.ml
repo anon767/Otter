@@ -250,7 +250,7 @@ let test_job_at_targets targets job =
                           | FailingPaths (paths) ->
                               (* add an DecisionEnd to mark the end of a bounding path *)
                               let bounding_paths = List.map (fun path -> DecisionEnd::path) paths in
-                              let job_completions : 'reason job_completion list = forward_otter_bounded_by_paths job bounding_paths in
+                              let job_completions = forward_otter_bounded_by_paths job bounding_paths in
                                 List.fold_left (fun failing_paths job_completion ->
                                     match job_completion with
                                     | Abandoned (`Failure(_),_,result)
@@ -283,7 +283,7 @@ let test_job_at_targets_interceptor targets job job_queue interceptor =
 			interceptor job job_queue
         | _ -> failwith "test_job_at_targets: unreachable program point"
 
-let callchain_backward_se_legacy file : _ job_completion list =
+let callchain_backward_se_legacy file =
   let job = OtterJob.Job.get_default file in
   let entryfn = List.hd job.state.callstack in
   let assertfn =
@@ -313,11 +313,11 @@ let callchain_backward_se_legacy file : _ job_completion list =
   in
 
   (* The implementation of main loop *)
-  let rec callchain_backward_main_loop job targets : 'reason job_completion list =
+  let rec callchain_backward_main_loop job targets =
 	(* Assume we start at f *)
 	let f = List.hd job.state.callstack in
 	(* Run forward SE based on the targets *)
-	let results : 'reason job_completion list = call_Otter_main_loop targets job in
+	let results = call_Otter_main_loop targets job in
 	  if f == entryfn then
 		(* If f is main(), we are done *)
         let _ = List.iter ( function

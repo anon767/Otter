@@ -1,10 +1,10 @@
 open OtterCore
 
-class ['reason] t = object (self)
+class ['self] t = object (self : 'self)
     val completed = []
 
     method report = function
-        | Job.Complete (completion : 'reason Job.job_completion) -> {< completed = completion::completed >}
+        | Job.Complete completion -> {< completed = completion::completed >}
         | _ -> self
 
     method should_continue = true

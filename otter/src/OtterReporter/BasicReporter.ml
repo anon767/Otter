@@ -14,12 +14,12 @@ let default_max_abandoned = ref 0
 
 
 module Make (Errors : Errors) = struct
-    class t
+    class ['self] t
             ?(max_nodes=max 0 !default_max_nodes)
             ?(max_paths=max 0 !default_max_paths)
             ?(max_abandoned=max 0 !default_max_abandoned)
             ()
-            = object
+            = object (_ : 'self)
         val nodes = 0
         val paths = 0
         val abandoned = 0

@@ -1,23 +1,29 @@
+open OtterBytes
+open OtterCore
+
 
 type t = [
     | `FailureReached
-    | `FailingPaths of OtterCore.Decision.t list list
-    | `SummaryReturn of OtterBytes.Bytes.bytes option
-    | `SummaryExit of OtterBytes.Bytes.bytes option
-    | OtterCore.Errors.t
+    | `FailingPaths of Decision.t list list
+    | `SummaryReturn of Bytes.bytes option
+    | `SummaryExit of Bytes.bytes option
+    | `SummaryAbandoned of t * Cil.location
+    | Errors.t
 ]
+
 
 let option_printer printer ff = function
     | Some x -> Format.fprintf ff "Some (@[%a@]@,)" printer x
     | None -> Format.fprintf ff "None"
 
 
-let printer ff (error : t) = match error with
+let rec printer ff (error : t) = match error with
     | `FailureReached -> Format.fprintf ff "`FailureReached"
-    | `FailingPaths (_:(OtterCore.Decision.t list list)) -> Format.fprintf ff "(FailingPaths)" (* TODO (martin): print something meaningful *)
-    | `SummaryReturn return_opt -> Format.fprintf ff "`SummaryReturn(@[%a@])" (option_printer OtterBytes.BytesPrinter.bytes) return_opt
-    | `SummaryExit exit_opt -> Format.fprintf ff "`SummaryExit(@[%a@])" (option_printer OtterBytes.BytesPrinter.bytes) exit_opt
-    | #OtterCore.Errors.t as x -> OtterCore.Errors.printer ff x
+    | `FailingPaths _ -> Format.fprintf ff "(FailingPaths)" (* TODO (martin): print something meaningful *)
+    | `SummaryReturn return_opt -> Format.fprintf ff "`SummaryReturn(@[%a@])" (option_printer BytesPrinter.bytes) return_opt
+    | `SummaryExit exit_opt -> Format.fprintf ff "`SummaryExit(@[%a@])" (option_printer BytesPrinter.bytes) exit_opt
+    | `SummaryAbandoned (reason, loc) -> Format.fprintf ff "`SummaryAbandoned(@[%s@@%d: %a@])" loc.Cil.file loc.Cil.line printer reason
+    | #Errors.t as x -> Errors.printer ff x
 
 
 let matcher name args =
@@ -40,4 +46,4 @@ let matcher name args =
             failwith "Invalid failing_paths (takes no arguments)."
 
         | _ ->
-            OtterCore.Errors.matcher name args
+            Errors.matcher name args

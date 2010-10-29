@@ -15,10 +15,10 @@ open Decision
 open Cil
 
 
-class ['delegate] target_tracker delegate entry_fn targets_ref =
-object
+class ['self] target_tracker delegate entry_fn targets_ref =
+object (_ : 'self)
     val delegate = delegate
-    method report (job_state : BackOtterErrors.t Job.job_state) =
+    method report job_state =
         begin match job_state with
             (* TODO: also include `Failure when --exceptions-as-failures is enabled *)
             | Job.Complete (Job.Abandoned (`FailureReached, _ , job_result)) ->
@@ -33,23 +33,23 @@ object
         let job_state = match job_state with
             | Job.Complete (Job.Return (return_code, job_result))
                     when List.hd (List.rev job_result.result_state.callstack) != entry_fn ->
-                Job.Complete (Job.Truncated (`SummaryReturn return_code, Cil.locUnknown, job_result))
+                Job.Complete (Job.Truncated (`SummaryReturn return_code, job_result))
             | Job.Complete (Job.Exit (return_code, job_result))
                     when List.hd (List.rev job_result.result_state.callstack) != entry_fn ->
-                Job.Complete (Job.Truncated (`SummaryExit return_code, Cil.locUnknown, job_result))
+                Job.Complete (Job.Truncated (`SummaryExit return_code, job_result))
             | Job.Complete (Job.Abandoned (reason, location, job_result))
                     when List.hd (List.rev job_result.result_state.callstack) != entry_fn ->
-                Job.Complete (Job.Truncated (reason, location, job_result))
+                Job.Complete (Job.Truncated (`SummaryAbandoned (reason, location), job_result))
             | _ ->
                 job_state
         in
         {< delegate = delegate#report job_state >}
 
-    method should_continue : bool = delegate#should_continue
+    method should_continue = delegate#should_continue
 
     method completed = delegate#completed
 
-    method delegate : 'delegate = delegate
+    method delegate = delegate
 end
 
 

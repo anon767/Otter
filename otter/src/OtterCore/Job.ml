@@ -91,16 +91,17 @@ type job_result = {
 	result_decision_path : Decision.t list;
 }
 
-type 'reason job_completion =
+type ('abandoned, 'truncated) job_completion =
     | Return of Bytes.bytes option * job_result (* Jobs that successfully completed by returning from the entry function *)
     | Exit of Bytes.bytes option * job_result (* Jobs that successfully completed by calling _exit *)
-    | Abandoned of 'reason * Cil.location * job_result (* Jobs that are terminated due to an error in the source program *)
-    | Truncated of 'reason * Cil.location * job_result (* Jobs that are terminated for other reasons *)
+    | Abandoned of 'abandoned * Cil.location * job_result (* Jobs that are terminated due to an error in the source program *)
+    | Truncated of 'truncated * job_result (* Jobs that are terminated for other reasons *)
+    (* TODO: change Abandoned to be like Truncated *)
 
-type 'reason job_state =
+type ('abandoned, 'truncated) job_state =
 	| Active of job
-	| Fork of 'reason job_state list
-	| Complete of 'reason job_completion
+	| Fork of ('abandoned, 'truncated) job_state list
+	| Complete of ('abandoned, 'truncated) job_completion
 	| Paused of job
 
 let job_counter = Counter.make ()

@@ -5,9 +5,9 @@ module Reporter = BasicReporter.Make (BackOtterErrors)
 
 let arg_no_exceptions_as_failures = ref false
 
-class t ?max_nodes ?max_paths ?max_abandoned
+class ['self] t ?max_nodes ?max_paths ?max_abandoned
         ?(no_exceptions_as_failures= !arg_no_exceptions_as_failures) () = object
-    inherit Reporter.t ?max_nodes ?max_paths ?max_abandoned () as super
+    inherit ['self] Reporter.t ?max_nodes ?max_paths ?max_abandoned () as super
 
     method super_report = super#report
 
