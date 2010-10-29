@@ -919,6 +919,15 @@ let libc_interceptor job job_queue interceptor =
 		(intercept_function_by_name_external "isxdigit"                "__otter_libc_isxdigit") @@
 		(intercept_function_by_name_external "tolower"                 "__otter_libc_tolower") @@
 		(intercept_function_by_name_external "toupper"                 "__otter_libc_toupper") @@
+		
+		(* grp.h *)
+		(intercept_function_by_name_external "getgrgid"                "__otter_libc_getgrgid") @@
+		(intercept_function_by_name_external "getgrnam"                "__otter_libc_getgrnam") @@
+		(intercept_function_by_name_external "getgrgid_r"              "__otter_libc_getgrgid_r") @@
+		(intercept_function_by_name_external "getgrnam_r"              "__otter_libc_getgrnam_r") @@
+		(intercept_function_by_name_external "getgrent"                "__otter_libc_getgrent") @@
+		(intercept_function_by_name_external "endgrent"                "__otter_libc_endgrent") @@
+		(intercept_function_by_name_external "setgrent"                "__otter_libc_setgrent") @@
 
 		(* setjmp.h *)
 		(intercept_function_by_name_internal "__libc_setjmp"           libc_setjmp) @@
@@ -1046,7 +1055,7 @@ let libc_interceptor job job_queue interceptor =
 		(intercept_function_by_name_external "stat"                    "__otter_libc_stat") @@
 		(intercept_function_by_name_external "umask"                   "__otter_libc_umask") @@
 		
-		(*sys/syslog*)
+		(* sys/syslog *)
 		(intercept_function_by_name_external "closelog"                "__otter_libc_closelog") @@
 		(intercept_function_by_name_external "openlog"                 "__otter_libc_openlog") @@
 		(intercept_function_by_name_external "setlogmask"              "__otter_libc_setlogmask") @@
