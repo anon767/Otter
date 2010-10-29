@@ -1,17 +1,11 @@
-open DataStructures
 open OcamlUtilities
 open CilUtilities
 open OtterBytes
 open OtterCore
-open OtterQueue
-open OtterReporter
 open OtterDriver
-open OtterGraph
-open Graph
 open Bytes
 open Types
 open Job
-open Decision
 open Cil
 
 
