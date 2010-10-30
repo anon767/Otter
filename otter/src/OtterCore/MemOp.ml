@@ -7,6 +7,9 @@ open BytesUtility
 open Types
 open Operator
 
+(* Track Stp calls *)
+let counted_query_stp name = NamedCounter.incr name; Stp.query_stp
+
 (**
  *	memory frame
  *)
@@ -149,14 +152,13 @@ let state__add_frame state =
   }
 
 
-
 let state__varinfo_to_lval_block ?pre state varinfo =
 	(* lookup varinfo in locals, formals and globals, prune and update the store, and return the result *)
 	let local = List.hd state.locals in
 	if VarinfoMap.mem varinfo local then
 		let deferred = frame__varinfo_to_lval_block local varinfo in
 		let state, lval = Deferred.force state deferred in
-		let lval = conditional__prune ~test:(Stp.query_stp state.path_condition) ?pre lval in
+		let lval = conditional__prune ~test:(counted_query_stp "query_stp/state__varinfo_to_lval_block/locals" state.path_condition) ?pre lval in
 		let local = VarinfoMap.add varinfo (Deferred.Immediate lval) local in
 		({ state with locals=local::List.tl state.locals }, lval)
 	else
@@ -164,7 +166,7 @@ let state__varinfo_to_lval_block ?pre state varinfo =
 		if VarinfoMap.mem varinfo formal then
 			let deferred = frame__varinfo_to_lval_block formal varinfo in
 			let state, lval = Deferred.force state deferred in
-			let lval = conditional__prune ~test:(Stp.query_stp state.path_condition) ?pre lval in
+			let lval = conditional__prune ~test:(counted_query_stp "query_stp/state__varinfo_to_lval_block/formals" state.path_condition) ?pre lval in
 			let formal = VarinfoMap.add varinfo (Deferred.Immediate lval) formal in
 			({ state with formals=formal::List.tl state.formals }, lval)
 		else
@@ -172,7 +174,7 @@ let state__varinfo_to_lval_block ?pre state varinfo =
 			if VarinfoMap.mem varinfo global then
 				let deferred = frame__varinfo_to_lval_block global varinfo in
 				let state, lval = Deferred.force state deferred in
-				let lval = conditional__prune ~test:(Stp.query_stp state.path_condition) ?pre lval in
+				let lval = conditional__prune ~test:(counted_query_stp "query_stp/state__varinfo_to_lval_block/globals" state.path_condition) ?pre lval in
 				let global = VarinfoMap.add varinfo (Deferred.Immediate lval) global in
 				({ state with global=global }, lval)
 			else (* varinfo may be a function *)
@@ -216,7 +218,7 @@ let state__get_deferred_from_block state block =
 let state__deref ?pre state (lvals, size) =
     let deref state pre (block, offset) =
         let state, bytes = state__get_bytes_from_block state block in
-        (state, conditional__bytes (bytes__read ~test:(Stp.query_stp state.path_condition) ~pre bytes offset size))
+        (state, conditional__bytes (bytes__read ~test:(counted_query_stp "query_stp/state__deref" state.path_condition) ~pre bytes offset size))
     in
     let state, c = conditional__fold_map ?pre deref state lvals in
     (state, make_Bytes_Conditional c)
@@ -233,7 +235,7 @@ let rec state__assign state (lvals, size) bytes =
 
 		(* TODO: pruning the conditional bytes here leads to repeated work if it is subsequently read via state__deref;
 		 * however, not pruning leads to O(k^(2^n)) leaves in the conditional bytes for n consecutive assignments. *)
-		let newbytes = bytes__write ~test:(Stp.query_stp state.path_condition) ~pre oldbytes offset size bytes in
+		let newbytes = bytes__write ~test:(counted_query_stp "query_stp/state__assign" state.path_condition) ~pre oldbytes offset size bytes in
 
 		(* Morris' axiom of assignment *)
 		let newbytes = match pre with

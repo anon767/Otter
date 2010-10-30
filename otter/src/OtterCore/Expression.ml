@@ -7,6 +7,9 @@ open BytesUtility
 open Types
 open Operator
 
+(* Track Stp calls *)
+let counted_query_stp name = NamedCounter.incr name; Stp.query_stp
+
 (* Print an error message saying that the assertion [bytes] failed in
      state [state]. [exps] is the expression representing [bytes].
      [isUnknown] specifies whether the assertion returned
@@ -415,7 +418,7 @@ deref state bytes typ errors =
         | Bytes_Read(bytes,off,len) ->
             (* TODO (martin): create a test that covers this code *)
             let (state, errors), conditional =
-                conditional__fold_map ~test:(Stp.query_stp state.path_condition)
+                conditional__fold_map ~test:(counted_query_stp "query_stp/Expression.deref/Bytes_Read" state.path_condition)
                     begin fun (state, errors) _ bytes ->
                         let state, conditional, errors = deref state bytes typ errors in
                         ((state, errors), conditional)
@@ -480,7 +483,7 @@ rval_unop state unop exp errors =
     let state, rv, errors = rval state exp errors in
     let typ = Cil.typeOf exp in
     let conditional = conditional__bytes (Operator.run (Operator.of_unop unop) [(rv,typ)]) in
-    let conditional = conditional__prune ~test:(Stp.query_stp state.path_condition) ~eq:bytes__equal conditional in
+    let conditional = conditional__prune ~test:(counted_query_stp "query_stp/Expression.rval_unop" state.path_condition) ~eq:bytes__equal conditional in
     (state, make_Bytes_Conditional conditional, errors)
 
 and
@@ -498,7 +501,7 @@ rval_binop state binop exp1 exp2 errors =
         let state, rv2, errors = rval state exp2 errors in
         let typ2 = Cil.typeOf exp2 in
         let conditional = conditional__bytes (Operator.run op [(rv1,typ1);(rv2,typ2)]) in
-        let conditional = conditional__prune ~test:(Stp.query_stp state.path_condition) ~eq:bytes__equal conditional in
+        let conditional = conditional__prune ~test:(counted_query_stp "query_stp/Expression.rval_binop" state.path_condition) ~eq:bytes__equal conditional in
         (state, make_Bytes_Conditional conditional, errors)
 
 and

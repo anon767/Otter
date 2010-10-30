@@ -2,6 +2,7 @@ DataStructures/Deferred
 DataStructures/Counter
 DataStructures/Heap
 DataStructures/ImmutableArray
+DataStructures/NamedCounter
 DataStructures/RandomAccessList
 DataStructures/RandomBag
 DataStructures/Ternary
