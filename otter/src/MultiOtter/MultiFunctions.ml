@@ -9,10 +9,9 @@ open Job
 open Bytes
 open MultiInterceptor
 
-let libc_fork job multijob retopt exps =
+let libc_fork job multijob retopt exps errors =
 	(* update instruction pointer, history, and such *)
 	let job = BuiltinFunctions.end_function_call job in
-	let errors = [] in
 
 	Output.set_mode Output.MSG_REG;
 	Output.printf "fork(): parent: %d, child: %d@\n" multijob.current_pid multijob.next_pid;
@@ -32,11 +31,7 @@ let libc_fork job multijob retopt exps =
 	in
 	let multijob = (MultiJobUtilities.put_job child_job multijob multijob.next_pid) in
 	let multijob = {multijob with next_pid = multijob.next_pid + 1 } in
-	if errors = [] then
-		(Active job, multijob)
-	else
-		let abandoned_job_states = Statement.errors_to_abandoned_list job errors in
-		(Fork ((Active job)::abandoned_job_states), multijob)
+	(Active job, multijob, errors)
 
 (* allocates on the global heap *)
 let otter_gmalloc_size (state:Types.state) size bytes loc =
@@ -52,8 +47,7 @@ let otter_gmalloc_size (state:Types.state) size bytes loc =
 	let state = MemOp.state__add_block state block bytes in
 	(state, block, addrof_block)
 
-let otter_gmalloc job multijob retopt exps =
-	let errors = [] in
+let otter_gmalloc job multijob retopt exps errors =
 	let state, b_size, errors = Expression.rval job.Job.state (List.hd exps) errors in
 	let size =
 		if Bytes.isConcrete_bytes b_size then
@@ -84,14 +78,9 @@ let otter_gmalloc job multijob retopt exps =
 		}
 	in
 
-	if errors = [] then
-		(Active job, multijob)
-	else
-		let abandoned_job_states = Statement.errors_to_abandoned_list job errors in
-		(Fork ((Active job)::abandoned_job_states), multijob)
+	(Active job, multijob, errors)
 
-let otter_gfree job multijob retopt exps =
-	let errors = [] in
+let otter_gfree job multijob retopt exps errors =
 	let state, ptr, errors = Expression.rval job.state (List.hd exps) errors in
 	match ptr with
 		| Bytes.Bytes_Address (block, _) ->
@@ -115,29 +104,19 @@ let otter_gfree job multijob retopt exps =
 							multijob.processes;
 					}
 				in
-				if errors = [] then
-					(Active job, multijob)
-				else
-					let abandoned_job_states = Statement.errors_to_abandoned_list job errors in
-					(Fork ((Active job)::abandoned_job_states), multijob)
+				(Active job, multijob, errors)
 
 		| _ ->
 			Output.set_mode Output.MSG_MUSTPRINT;
 			FormatPlus.failwith "gfreeing something that is not a valid pointer:@ @[%a@]@ = @[%a@]@\n" Printer.exp (List.hd exps) BytesPrinter.bytes ptr
 			
-let otter_get_pid job multijob retopt exps =
-	let errors = [] in
+let otter_get_pid job multijob retopt exps errors =
 	let state, errors = BuiltinFunctions.set_return_value job.state retopt (int_to_bytes multijob.current_pid) errors in
 	let job = BuiltinFunctions.end_function_call { job with state = state } in
-	if errors = [] then
-		(Active job, multijob)
-	else
-		let abandoned_job_states = Statement.errors_to_abandoned_list job errors in
-		(Fork ((Active job)::abandoned_job_states), multijob)
-
+	(Active job, multijob, errors)
 
 (* takes a vardic list of pointers to blocks to watch *)
-let otter_io_block job multijob retopt exps =  
+let otter_io_block job multijob retopt exps errors = 
 	let rec find_blocks state exps errors =
 		match exps with
 			| [] -> ([], state, errors)
@@ -158,7 +137,6 @@ let otter_io_block job multijob retopt exps =
 			| _ -> failwith "io_block invalid arguments"
 	in
 	
-	let errors = [] in
 	let blocks, state, errors = find_blocks job.state exps errors in
 	
 	let multijob =
@@ -179,29 +157,24 @@ let otter_io_block job multijob retopt exps =
 	
 	let state, errors = BuiltinFunctions.set_return_value state retopt (Bytes.bytes__zero) errors in
 	let job = BuiltinFunctions.end_function_call { job with state = state } in
-	if errors = [] then
-		(Active job, multijob)
-	else
-		let abandoned_job_states = Statement.errors_to_abandoned_list job errors in
-		(Fork ((Active job)::abandoned_job_states), multijob)
+	(Active job, multijob, errors)
 
-let otter_time_wait job multijob retopt exps = 
+let otter_time_wait job multijob retopt exps errors = 
 	match exps with
 		| [CastE (_, h)] | [h] ->
-			let errors = [] in
 			let state, bytes, errors = Expression.rval job.state h errors in
 			let time = bytes_to_int_auto bytes in
 			if time <= 0 then 
-				(Active job, multijob) 
+				(Active job, multijob, errors) 
 			else
-				(Active job, { multijob with priority = TimeWait time; })
+				(Active job, { multijob with priority = TimeWait time; }, errors)
 		| _ -> failwith "timewait invalid arguments"
 
-let otter_begin_atomic job multijob retopt exps = 
-	(Active job, { multijob with priority = Atomic; })
+let otter_begin_atomic job multijob retopt exps errors = 
+	(Active job, { multijob with priority = Atomic; }, errors)
 
-let otter_end_atomic job multijob retopt exps = 
-	(Active job, { multijob with priority = Running; })
+let otter_end_atomic job multijob retopt exps errors = 
+	(Active job, { multijob with priority = Running; }, errors)
 
 let interceptor job multijob job_queue interceptor =
 	try
