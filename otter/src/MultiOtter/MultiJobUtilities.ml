@@ -90,11 +90,12 @@ let rec schedule_process_list multijob processes =
 						(pc, ls, TimeWait (n-1))::(schedule_process_list multijob t)
 				| IOBlock io_block_to_bytes -> (* look for changed blocks *)
 					let fold_func key value prev =
-						if MemoryBlockMap.mem key multijob.shared.shared_block_to_bytes then
+						prev || (* stop checking if one changed *)
+						try
 							let new_value = MemoryBlockMap.find key multijob.shared.shared_block_to_bytes in
 							new_value != value (* this is more efficient, but may cause waking up on reads due to deferred state *)
-						else
-							true (* block was gfreed and so counts as changed *)
+						with
+							| Not_found -> true (* block was gfreed and so counts as changed *)
 					in
 					if(MemoryBlockMap.fold fold_func io_block_to_bytes false) then
 						(pc, ls, Running)::(schedule_process_list multijob t) (* something changed, wake up process *)
@@ -119,10 +120,10 @@ let rec schedule_process_list multijob processes =
 
 (* get a job from a multijob *)
 let get_job multijob = 
-	match schedule_process_list multijob multijob.processes with
+	match schedule_process_list multijob multijob.processes with (* TODO: use a priority queue instead *)
 	| [] ->
 		None
-	| (_, _, IOBlock _)::processes -> None (* Deadlock; give up *)
+	| (_, _, IOBlock _)::processes -> None (* The best job availiable is blocking. Deadlock and return that there are no valid jobs for this multijob *)
 	| (program_counter, process, priority)::processes ->
 		(* extract the first job from a multijob *)
 		let state = {

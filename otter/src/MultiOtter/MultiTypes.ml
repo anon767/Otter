@@ -24,7 +24,7 @@ type local_state = {
 
 type scheduling_data =
 	| Running (* Nomal round robin *)
-	| TimeWait of int (* Letting other processes go fo a while *)
+	| TimeWait of int (* Letting other processes go for a while; uses a counter that is decremented each time a job is stepped *)
 	| IOBlock of (state, Bytes.bytes) Deferred.t MemoryBlockMap.t (* Blocking until a shared value changes *)
 	| Atomic (* Exclusive control, used when several opeations must be done without preemption *)
 
