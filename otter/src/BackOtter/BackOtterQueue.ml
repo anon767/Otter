@@ -1,3 +1,4 @@
+open CilUtilities
 open OcamlUtilities
 open OtterGraph
 open OtterCore
@@ -100,6 +101,21 @@ let has_bounding_paths job = match job.boundingPaths with
     | Some (_ :: _) -> true
     | _ -> false
 
+(* TODO: cache the result. Or maybe this is already implemented somewhere. *)
+let distance_from file f1 f2 =
+    let rec bfs = function
+        | [] -> max_int
+        | (f, d) :: tail ->
+            if f == f2 then d else
+            let callees = CilCallgraph.find_callees file f in
+            let tail = List.fold_left (fun tail callee ->
+                if List.exists (fun (k,_) -> k == callee) tail then tail
+                else tail @ [(callee, d+1)]
+            ) tail callees in
+            bfs tail
+    in
+    bfs [(f1, 0)]
+
 
 class ['job] t file targets_ref entry_fn failure_fn = object (self)
     val entryfn_jobs = []
@@ -134,14 +150,23 @@ class ['job] t file targets_ref entry_fn failure_fn = object (self)
                                 caller :: origin_fundecs, job :: otherfn_jobs
                     ) (origin_fundecs, otherfn_jobs) callers
             ) (origin_fundecs, otherfn_jobs) (failure_fn :: target_fundecs) in
+
         Output.debug_printf "Number of entry function jobs: %d@\n" (List.length entryfn_jobs);
         Output.debug_printf "Number of other function jobs: %d@\n" (List.length otherfn_jobs);
         List.iter (fun f -> Output.debug_printf "Target function: %s@\n" f.svar.vname) (BackOtterTargets.get_fundecs targets);
-        let update_bounding_paths_with_targets = update_bounding_paths targets in
-        let entryfn_jobs' = List.map update_bounding_paths_with_targets entryfn_jobs in
-        let otherfn_jobs' = List.map update_bounding_paths_with_targets otherfn_jobs in
+        List.iter (fun f -> Output.debug_printf "Origin function: %s@\n" f.svar.vname) (origin_fundecs');
+
+        let distance_from_entryfn = distance_from file entry_fn in
         try
+            let update_bounding_paths_with_targets = update_bounding_paths targets in
+            let entryfn_jobs' = List.map update_bounding_paths_with_targets entryfn_jobs in
+            let otherfn_jobs' = List.map update_bounding_paths_with_targets otherfn_jobs in
             (* Check if any job is on bounding paths (i.e., being verified) *)
+            (* Prioritize by
+             * 1. entryfn_job
+             * 2. otherfn_job whose origin function is closer to entry_fn
+             *)
+            let otherfn_jobs' = List.sort (fun j1 j2 -> (distance_from_entryfn (get_origin_function j1)) - (distance_from_entryfn (get_origin_function j2))) otherfn_jobs' in
             let job = List.find has_bounding_paths (List.rev_append entryfn_jobs' otherfn_jobs') in
             Output.debug_printf "Job %d is run under influence of bounding path(s) from function %s:@\n" job.jid (get_origin_function job).svar.vname;
             (match job.boundingPaths with | None -> () | Some bounding_paths ->
@@ -162,10 +187,11 @@ class ['job] t file targets_ref entry_fn failure_fn = object (self)
                          entryfn_processed = entryfn_processed + 1 >}, job)
             else if otherfn_jobs <> [] then
                 (* Do "backward" search *)
-                (* TODO: include closest to entryfn first *)
                 let score job =
-                    let distance = get_distance_to_targets (failure_fn :: target_fundecs) job in
-                    -. (float_of_int distance)
+                    let distance_from_entryfn = distance_from_entryfn (get_origin_function job) in
+                    let distance_to_target = get_distance_to_targets (failure_fn :: target_fundecs) job in
+                        -. (float_of_int distance_to_target)
+                        -. (float_of_int distance_from_entryfn)
                 in
                 let otherfn_jobs', job = get_job_with_highest_score score otherfn_jobs in
                 Some ({< otherfn_jobs = otherfn_jobs';
