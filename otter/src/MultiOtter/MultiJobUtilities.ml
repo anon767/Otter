@@ -47,11 +47,16 @@ let put_job job multijob pid =
 	} in
 	{
 		MultiTypes.file = job.Job.file;
-		processes = List.append multijob.processes [ (program_counter, process) ];
+		processes = 
+			(match multijob.priority with
+				| Atomic -> (program_counter, process, multijob.priority)::multijob.processes (* save time sorting by putting an atomic process on the front *)
+				| _ -> List.append multijob.processes [ (program_counter, process, multijob.priority) ])
+			;
 		shared = shared;
 		jid = job.Job.jid;
 		next_pid = multijob.next_pid;
-		current_pid = multijob.current_pid;
+		current_pid = -1;
+		priority = multijob.priority;
 	}
 
 
@@ -71,12 +76,54 @@ let put_completion completion multijob = match completion with
 			shared = shared;
 		}
 
+let rec schedule_process_list multijob processes =
+	let processes = match processes with
+		| [] -> []
+		| (pc, ls, pi)::t ->
+			match pi with
+				| Atomic
+				| Running -> (pc, ls, pi)::(schedule_process_list multijob t)
+				| TimeWait n ->
+					if n <= 0 then
+						(pc, ls, Running)::(schedule_process_list multijob t)
+					else
+						(pc, ls, TimeWait (n-1))::(schedule_process_list multijob t)
+				| IOBlock io_block_to_bytes -> (* look for changed blocks *)
+					let fold_func key value prev =
+						if MemoryBlockMap.mem key multijob.shared.shared_block_to_bytes then
+							let new_value = MemoryBlockMap.find key multijob.shared.shared_block_to_bytes in
+							new_value != value (* this is more efficient, but may cause waking up on reads due to deferred state *)
+						else
+							true (* block was gfreed and so counts as changed *)
+					in
+					if(MemoryBlockMap.fold fold_func io_block_to_bytes false) then
+						(pc, ls, Running)::(schedule_process_list multijob t) (* something changed, wake up process *)
+					else
+						(pc, ls, pi)::(schedule_process_list multijob t) (* nothing changed, keep thread asleep *)
+	in
+	List.stable_sort (* TODO: use a priority queue instead *)
+		begin fun (_, _, pi1) (_, _, pi2) -> 
+			match pi1, pi2 with
+				| Atomic, Atomic -> 0
+				| Atomic, _ -> 1
+				| _, Atomic -> -1
+				| Running, Running -> 0
+				| Running, _ -> 1
+				| _, Running -> -1
+				| TimeWait _, TimeWait _ -> 0
+				| TimeWait _, _ -> 1
+				| _, TimeWait _ -> -1
+				| _, _ -> 0
+		end
+		processes
 
 (* get a job from a multijob *)
-let get_job multijob = match multijob.processes with
+let get_job multijob = 
+	match schedule_process_list multijob multijob.processes with
 	| [] ->
 		None
-	| (program_counter, process)::processes ->
+	| (_, _, IOBlock _)::processes -> None (* Deadlock; give up *)
+	| (program_counter, process, priority)::processes ->
 		(* extract the first job from a multijob *)
 		let state = {
 			Types.global = process.MultiTypes.global;
@@ -111,6 +158,7 @@ let get_job multijob = match multijob.processes with
 		let multijob = { multijob with
 			processes = processes;
 			current_pid = process.MultiTypes.pid;
+			priority = priority;
 		} in
 		Some (job, multijob)
 

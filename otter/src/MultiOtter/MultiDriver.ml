@@ -68,6 +68,7 @@ let run reporter job =
 		jid = job.Job.jid;
 		next_pid = 1;
 		current_pid = 0;
+		priority = Running;
 	} in
 	let multijob = put_job job multijob 0 in
 

@@ -1,5 +1,6 @@
 open DataStructures
 open OcamlUtilities
+open Cil
 open OtterCore
 open OtterBytes
 open MultiTypes
@@ -76,8 +77,8 @@ let otter_gmalloc job multijob retopt exps =
 					shared_block_to_bytes = MemoryBlockMap.add block (Deferred.Immediate bytes) multijob.shared.shared_block_to_bytes;
 				};
 			processes = List.map
-				(fun (pc, ls) ->
-					(pc, { ls with MultiTypes.block_to_bytes = MemoryBlockMap.add block (Deferred.Immediate bytes) ls.MultiTypes.block_to_bytes; })
+				(fun (pc, ls, pi) ->
+					(pc, { ls with MultiTypes.block_to_bytes = MemoryBlockMap.add block (Deferred.Immediate bytes) ls.MultiTypes.block_to_bytes; }, pi)
 				)
 				multijob.processes;
 		}
@@ -108,8 +109,8 @@ let otter_gfree job multijob retopt exps =
 								shared_block_to_bytes = MemoryBlockMap.remove block multijob.shared.shared_block_to_bytes;
 							};
 						processes = List.map
-							(fun (pc, ls) ->
-								(pc, { ls with MultiTypes.block_to_bytes = MemoryBlockMap.remove block ls.MultiTypes.block_to_bytes; })
+							(fun (pc, ls, pi) ->
+								(pc, { ls with MultiTypes.block_to_bytes = MemoryBlockMap.remove block ls.MultiTypes.block_to_bytes; }, pi)
 							)
 							multijob.processes;
 					}
@@ -134,6 +135,74 @@ let otter_get_pid job multijob retopt exps =
 		let abandoned_job_states = Statement.errors_to_abandoned_list job errors in
 		(Fork ((Active job)::abandoned_job_states), multijob)
 
+
+(* takes a vardic list of pointers to blocks to watch *)
+let otter_io_block job multijob retopt exps =  
+	let rec find_blocks state exps errors =
+		match exps with
+			| [] -> ([], state, errors)
+			| (Lval cil_lval)::t
+			| (CastE (_, Lval cil_lval))::t
+			| (AddrOf (_, NoOffset as cil_lval))::t
+			| (CastE (_, AddrOf (_, NoOffset as cil_lval)))::t ->
+				let state, bytes, errors = Expression.rval state (Lval cil_lval) errors in
+				let state, lvals, errors = Expression.deref state bytes (Cil.typeOfLval cil_lval) errors in
+				let blocks = conditional__fold
+					~test:(Stp.query_stp state.path_condition)
+					(fun acc guard (x, y) -> x::acc)
+					[]
+					lvals
+				in
+				let blocks2, state, errors = find_blocks state t errors in
+				((List.rev_append blocks blocks2), state, errors)
+			| _ -> failwith "io_block invalid arguments"
+	in
+	
+	let errors = [] in
+	let blocks, state, errors = find_blocks job.state exps errors in
+	
+	let multijob =
+		if blocks = [] then
+			failwith "io_block with no underlying blocks"
+		else
+			let block_to_bytes = 
+				try
+					List.fold_left
+						(fun acc block -> MemoryBlockMap.add block (MemoryBlockMap.find block state.block_to_bytes) acc)
+						MemoryBlockMap.empty
+						blocks
+				with
+					| Not_found -> failwith "io_block missing underlying block"
+			in
+			{ multijob with priority = IOBlock block_to_bytes; }
+	in
+	
+	let state, errors = BuiltinFunctions.set_return_value state retopt (Bytes.bytes__zero) errors in
+	let job = BuiltinFunctions.end_function_call { job with state = state } in
+	if errors = [] then
+		(Active job, multijob)
+	else
+		let abandoned_job_states = Statement.errors_to_abandoned_list job errors in
+		(Fork ((Active job)::abandoned_job_states), multijob)
+
+let otter_time_wait job multijob retopt exps = 
+	match exps with
+		| [CastE (_, h)] | [h] ->
+			let errors = [] in
+			let state, bytes, errors = Expression.rval job.state h errors in
+			let time = bytes_to_int_auto bytes in
+			if time <= 0 then 
+				(Active job, multijob) 
+			else
+				(Active job, { multijob with priority = TimeWait time; })
+		| _ -> failwith "timewait invalid arguments"
+
+let otter_begin_atomic job multijob retopt exps = 
+	(Active job, { multijob with priority = Atomic; })
+
+let otter_end_atomic job multijob retopt exps = 
+	(Active job, { multijob with priority = Running; })
+
 let interceptor job multijob job_queue interceptor =
 	try
 		(
@@ -142,6 +211,10 @@ let interceptor job multijob job_queue interceptor =
 		(intercept_multi_function_by_name_internal "__otter_multi_gmalloc"      otter_gmalloc) @@@
 		(intercept_multi_function_by_name_internal "__otter_multi_gfree"        otter_gfree) @@@
 		(intercept_multi_function_by_name_internal "__otter_multi_get_pid"      otter_get_pid) @@@
+		(intercept_multi_function_by_name_internal "__otter_multi_io_block"     otter_io_block) @@@
+		(intercept_multi_function_by_name_internal "__otter_multi_time_wait"    otter_time_wait) @@@
+		(intercept_multi_function_by_name_internal "__otter_multi_begin_atomic" otter_begin_atomic) @@@
+		(intercept_multi_function_by_name_internal "__otter_multi_end_atomic"   otter_end_atomic) @@@
 
 		(* pass on the job when none of those match *)
 		interceptor

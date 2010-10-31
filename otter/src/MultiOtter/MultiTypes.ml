@@ -22,6 +22,12 @@ type local_state = {
 	pid : int;
 }
 
+type scheduling_data =
+	| Running (* Nomal round robin *)
+	| TimeWait of int (* Letting other processes go fo a while *)
+	| IOBlock of (state, Bytes.bytes) Deferred.t MemoryBlockMap.t (* Blocking until a shared value changes *)
+	| Atomic (* Exclusive control, used when several opeations must be done without preemption *)
+
 type shared_state = {
 	path_condition : Bytes.bytes list;
 	shared_block_to_bytes : (state, Bytes.bytes) Deferred.t MemoryBlockMap.t;
@@ -29,9 +35,10 @@ type shared_state = {
 
 type multijob = {
 	file : Cil.file;
-	processes : (program_counter * local_state) list;
+	processes : (program_counter * local_state * scheduling_data) list;
 	shared : shared_state;
 	jid : int;
 	next_pid : int;
 	current_pid : int;
+	priority : scheduling_data;
 }
