@@ -313,19 +313,20 @@ and
      only defined if i is *one* past the end of x.) *)
 lval ?(justGetAddr=false) state (lhost, offset_exp as cil_lval) errors =
     let size = (Cil.bitsSizeOf (Cil.typeOfLval cil_lval))/8 in
-    let state, lvals, lhost_type, errors = match lhost with
+    let state, lvals, errors = match lhost with
         | Var(varinfo) ->
             let state, lvals = MemOp.state__varinfo_to_lval_block state varinfo in
-            (state, lvals, varinfo.vtype, errors)
+            (state, lvals, errors)
         | Mem(exp) ->
             let typ = Cil.typeOf exp in
             let state, rv, errors = rval state exp errors in
             let state, lvals, errors = deref state rv typ errors in
-            (state, lvals, Cil.typeOf exp, errors)
+            (state, lvals, errors)
     in
     match cil_lval with
         | Var _, NoOffset -> (state, (lvals, size), errors)
         | _ ->
+            let lhost_type = Cil.typeOfLval (lhost, NoOffset) in
             let state, offset, _, errors = flatten_offset state lhost_type offset_exp errors in
             (* Add the offset, then see if it was in bounds *)
             let lvals = add_offset offset lvals in
