@@ -115,6 +115,9 @@ class ['job] t file targets_ref entry_fn failure_fn = object (self)
             {< otherfn_jobs = job :: otherfn_jobs >}
 
     method get =
+        (* If there's no more entry jobs, the forward search has ended. So we terminate. *)
+        if entryfn_jobs = [] then None else
+
         let targets = !targets_ref in
         let target_fundecs = BackOtterTargets.get_fundecs targets in
         (* Create new jobs for callers of new targets/failure_fn *)

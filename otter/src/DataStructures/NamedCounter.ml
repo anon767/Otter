@@ -14,3 +14,5 @@ let incr ?(step=1) name = let next = (get name) + step in set name next
 
 (* TODO: use StringMap.bindings for Ocaml 3.12 *)
 let report () = StringMap.fold (fun k v l -> (k,v)::l) (!counters) []
+
+let reset () = counters := StringMap.empty
