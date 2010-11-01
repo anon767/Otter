@@ -95,8 +95,8 @@ let schedule_process_list multijob =
 						try
 							let new_value = MemoryBlockMap.find key multijob.shared.shared_block_to_bytes in
 							match new_value, value with
-								| DataStructures.Deferred.Immediate x, DataStructures.Deferred.Immediate y -> Bytes.bytes__equal x y
-								| _, _ -> new_value == value
+								| DataStructures.Deferred.Immediate x, DataStructures.Deferred.Immediate y -> not (Bytes.bytes__equal x y)
+								| _, _ -> new_value != value
 						with
 							| Not_found -> true (* block was gfreed and so counts as changed *)
 					in

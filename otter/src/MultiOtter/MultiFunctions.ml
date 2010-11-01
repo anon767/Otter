@@ -104,6 +104,9 @@ let otter_gfree job multijob retopt exps errors =
 							multijob.processes;
 					}
 				in
+				let state = MemOp.state__remove_block job.state block in
+				let state, errors = BuiltinFunctions.set_return_value state retopt bytes__zero errors in
+				let job = BuiltinFunctions.end_function_call { job with state = state } in
 				(Active job, multijob, errors)
 
 		| _ ->
@@ -148,7 +151,7 @@ let otter_io_block job multijob retopt exps errors =
 							MemoryBlockMap.add block (MemoryBlockMap.find block multijob.shared.shared_block_to_bytes) acc
 						with
 							| Not_found -> 
-								if (MemoryBlockMap.mem block multijob.shared.shared_block_to_bytes) then
+								if (MemoryBlockMap.mem block state.block_to_bytes) then
 									acc (* don't add non shared blocks as these will always trigger unblocking *)
 								else
 									failwith "io_block missing underlying block"
