@@ -1,9 +1,12 @@
+#pragma expect_return(a == 10)
+#pragma expect_return(a == 100)
+#pragma no_other_abandoned
 
+int a = 5;
 
 int main(char** argc, int argv)
 {
-	int a = 5;
-	int pid = fork();
+	int pid = __otter_multi_fork();
 
 	if (pid == 0)
 	{
