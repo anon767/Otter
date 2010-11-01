@@ -115,7 +115,7 @@ let predecessors ({ file = file; fundec = fundec; stmt = stmt; instrs = instrs }
         List.map (of_statement_last file fundec) stmt.Cil.preds
 
 
-(** Find the all the call sites of this instruction (if it is the first instruction of its function). *)
+(** Find all the call sites of this instruction (if it is the first instruction of its function). *)
 let call_sites =
     let memotable = Hashtbl.create 0 in
     fun ({ file = file; fundec = fundec } as instruction) ->
@@ -158,7 +158,7 @@ let call_sites =
             [] (* or raise some exception? *)
 
 
-(** Find the all the (first instruction of the) call targets of this instruction. *)
+(** Find all the (first instruction of the) call targets of this instruction (if it is a call instruction). *)
 let call_targets =
     let memotable = Hashtbl.create 0 in
     fun { file = file; instrs = instrs } ->
