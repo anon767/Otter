@@ -10,7 +10,7 @@ typedef struct
 	size_t pos;	
 } fpos_t;
 
-struct FILE
+typedef struct
 {
 	int desc;
 	int eof;
@@ -18,7 +18,7 @@ struct FILE
 	int offset;
 	int bufmode;
 	char* buf;
-};
+} FILE;
 
 #define _IOFBF 1 /* block buffered */
 #define _IOLBF 2 /* line buffered */

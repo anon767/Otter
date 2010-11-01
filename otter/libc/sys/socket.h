@@ -67,8 +67,8 @@
 #define __otter_sock_ST_TIME_WAIT 10
 #define __otter_sock_ST_UDP 11
 
-#define socklen_t unsigned int
-#define sa_family_t unsigned short
+typedef unsigned int socklen_t;
+typedef unsigned short sa_family_t;
 
 #define __SOCKADDR_SHARED_LEN 16
 
