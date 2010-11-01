@@ -695,3 +695,22 @@ long __otter_libc_sysconf(int name)
 	errno = EINVAL;
 	return(-1);
 }
+
+int fork()
+{
+	__otter_multi_begin_atomic();
+	struct __otter_fs_open_file_table_entry* open_file;
+
+	for(int i = 0; i < __otter_fs_MAXOPEN; i++)
+	{
+		open_file = get_open_file_from_fd(i);
+		if(open_file)
+		{
+			open_file->openno++;
+		}
+	}
+	
+	__otter_multi_end_atomic();
+	
+	return __otter_multi_fork();
+}
