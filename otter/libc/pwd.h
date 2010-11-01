@@ -13,13 +13,13 @@ struct passwd
 	char* pw_passwd;
 };
 
-/*struct passwd *getpwnam(const char *name);
+struct passwd *getpwnam(const char *name);
 struct passwd *getpwuid(uid_t uid);
 int getpwnam_r(const char *name, struct passwd *pwd, char *buffer, size_t bufsize, struct passwd **result);
 int getpwuid_r(uid_t uid, struct passwd *pwd, char *buffer, size_t bufsize, struct passwd **result);
 void endpwent();
 struct passwd *getpwent();
-void setpwent();*/
+void setpwent();
 
 
 #endif

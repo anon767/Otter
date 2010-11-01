@@ -9,8 +9,8 @@ struct group *__otter_libc_getgrgid(gid_t gid)
 	char* buf = malloc((sizeof(char*) * 2) + 5);
 	struct group** r = NULL;
 	
-	if(getgrgid(gid, grp, buf, (sizeof(char*) * 2) + 5, r) == 0)
-		return(g);
+	if(getgrgid_r(gid, grp, buf, (sizeof(char*) * 2) + 5, r) == 0)
+		return(grp);
 	
 	free(grp);
 	free(buf);
@@ -41,14 +41,14 @@ int __otter_libc_getgrgid_r(gid_t gid, struct group *grp, char *buffer, size_t b
 			else
 			{
 				*result = NULL;
-				retunr(ERANGE);
+				return(ERANGE);
 			}
 			
 			*result = grp;
 			return(0);
 		case __otter_GID_USER:
 			grp->gr_name = "user";
-			grp->gr_gid = __otter_GID_ROOT;
+			grp->gr_gid = __otter_GID_USER;
 			grp->gr_mem = buffer;
 			
 			char* sbuf = (char*)(buffer + 2);
@@ -66,13 +66,14 @@ int __otter_libc_getgrgid_r(gid_t gid, struct group *grp, char *buffer, size_t b
 			else
 			{
 				*result = NULL;
-				retunr(ERANGE);
+				return(ERANGE);
 			}
 			
 			*result = grp;
 			return(0);
 		default:
 			*result = NULL;
+			return(0);
 	}
 }
 
@@ -107,7 +108,6 @@ int __otter_libc_getgrnam_r(const char *name, struct group *grp, char *buffer, s
 gid_t __otter_libc_getgrent_gid = __otter_GID_ROOT;
 struct group *getgrent()
 {
-
 	gid_t gid = __otter_libc_getgrent_gid;
 	switch(__otter_libc_getgrent_gid)
 	{
@@ -119,7 +119,7 @@ struct group *getgrent()
 			return NULL;
 	}
 	
-	return __otter_libc_getgrent_gid(gid);
+	return __otter_libc_getgrent_r(gid);
 }
 
 void __otter_libc_endgrent()

@@ -19,6 +19,8 @@
 #include "sys_mman.c"
 #include "sys_uio.c"
 #include "syslog.c"
+#include "grp.c"
+#include "pwd.c"
 
 __otter_libc_init()
 {
