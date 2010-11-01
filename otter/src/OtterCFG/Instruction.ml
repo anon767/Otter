@@ -28,17 +28,17 @@ include (struct
         | _ -> { file = file; fundec = fundec; stmt = stmt; instrs = instrs }
 
     (** Make an instruction from a {!Cil.stmt} only, taking the first instruction if it is a {!Cil.Instr}. *)
-    let of_statement_first file fundec stmt = match stmt.Cil.skind with
+    let of_stmt_first file fundec stmt = match stmt.Cil.skind with
         | Cil.Instr instrs -> { file = file; fundec = fundec; stmt = stmt; instrs = instrs }
         | _ -> { file = file; fundec = fundec; stmt = stmt; instrs = [] }
 
     (** Make an instruction from a {!Cil.stmt} only, taking the last instruction if it is a {!Cil.Instr}. *)
-    let of_statement_last file fundec stmt = match stmt.Cil.skind with
+    let of_stmt_last file fundec stmt = match stmt.Cil.skind with
         | Cil.Instr instrs -> { file = file; fundec = fundec; stmt = stmt; instrs = [ List.hd (List.rev instrs) ] }
         | _ -> { file = file; fundec = fundec; stmt = stmt; instrs = [] }
 
     (** Make an instruction from a {!Cil.fundec} only, taking the first statement. *)
-    let of_fundec file fundec = of_statement_first file fundec (List.hd fundec.Cil.sbody.Cil.bstmts)
+    let of_fundec file fundec = of_stmt_first file fundec (List.hd fundec.Cil.sbody.Cil.bstmts)
 
     (** Make an instruction by updating {instr} in an instruction. *)
     let with_instrs instruction instrs = match instruction.stmt.Cil.skind, instrs with
@@ -54,8 +54,8 @@ end : sig
         instrs : Cil.instr list;
     }
     val make : Cil.file -> Cil.fundec -> Cil.stmt -> Cil.instr list -> t
-    val of_statement_first : Cil.file -> Cil.fundec -> Cil.stmt -> t
-    val of_statement_last : Cil.file -> Cil.fundec -> Cil.stmt -> t
+    val of_stmt_first : Cil.file -> Cil.fundec -> Cil.stmt -> t
+    val of_stmt_last : Cil.file -> Cil.fundec -> Cil.stmt -> t
     val of_fundec : Cil.file -> Cil.fundec -> t
     val with_instrs : t -> Cil.instr list -> t
 end)
@@ -92,11 +92,19 @@ let hash { file = file; fundec = fundec; stmt = stmt; instrs = instrs } =
     Hashtbl.hash (file, fundec, stmt, List.length instrs)
 
 
+(** Print an instruction. *)
+let printer ff { stmt = stmt; instrs = instrs } =
+    let loc = Cil.get_stmtLoc stmt.Cil.skind in
+    match stmt.Cil.skind with
+        | Cil.Instr _ -> Format.fprintf ff "%a:%a:%d" Printcil.loc loc Printcil.n_stmt stmt (List.length instrs)
+        | _ -> Format.fprintf ff "%a:%a" Printcil.loc loc Printcil.n_stmt stmt
+
+
 (** Find the successors for an instruction. *)
 let successors ({ file = file; fundec = fundec; stmt = stmt; instrs = instrs } as instruction) = match instrs with
     | _::[] | [] ->
         (* last Cil.instr in a Cil.Instr, or a non-Cil.Instr *)
-        List.map (of_statement_first file fundec) stmt.Cil.succs
+        List.map (of_stmt_first file fundec) stmt.Cil.succs
     | _::rest ->
         (* the remaining Cil.instr in a Cil.Instr *)
         [ with_instrs instruction rest ]
@@ -106,13 +114,13 @@ let successors ({ file = file; fundec = fundec; stmt = stmt; instrs = instrs } a
 let predecessors ({ file = file; fundec = fundec; stmt = stmt; instrs = instrs } as instruction) = match stmt.Cil.skind with
     | Cil.Instr instrs' when (List.length instrs) = (List.length instrs') ->
         (* first Cil.instr in a Cil.Instr or non-Cil.Instr *)
-        List.map (of_statement_last file fundec) stmt.Cil.preds
+        List.map (of_stmt_last file fundec) stmt.Cil.preds
     | Cil.Instr instrs' ->
         (* some instruction in the middle of a Cil.Instr *)
         [ with_instrs instruction ((List.nth instrs' (List.length instrs))::instrs) ]
     | _ ->
         (* non-Cil.Instr *)
-        List.map (of_statement_last file fundec) stmt.Cil.preds
+        List.map (of_stmt_last file fundec) stmt.Cil.preds
 
 
 (** Find all the call sites of this instruction (if it is the first instruction of its function). *)
@@ -204,7 +212,7 @@ let return_sites =
                                 inherit Cil.nopCilVisitor
                                 method vstmt stmt = match stmt.Cil.skind with
                                     | Cil.Return _ ->
-                                        return_sites := (of_statement_first file fundec stmt)::!return_sites;
+                                        return_sites := (of_stmt_first file fundec stmt)::!return_sites;
                                         Cil.SkipChildren
                                     | _ ->
                                         Cil.SkipChildren
