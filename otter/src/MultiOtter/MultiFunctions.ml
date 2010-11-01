@@ -121,9 +121,7 @@ let otter_io_block job multijob retopt exps errors =
 		match exps with
 			| [] -> ([], state, errors)
 			| (Lval cil_lval)::t
-			| (CastE (_, Lval cil_lval))::t
-			| (AddrOf (_, NoOffset as cil_lval))::t
-			| (CastE (_, AddrOf (_, NoOffset as cil_lval)))::t ->
+			| (CastE (_, Lval cil_lval))::t ->
 				let state, bytes, errors = Expression.rval state (Lval cil_lval) errors in
 				let state, lvals, errors = Expression.deref state bytes (Cil.typeOfLval cil_lval) errors in
 				let blocks = conditional__fold

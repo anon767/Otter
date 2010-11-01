@@ -55,7 +55,7 @@ let put_job job multijob pid =
 		shared = shared;
 		jid = job.Job.jid;
 		next_pid = multijob.next_pid;
-		current_pid = -1;
+		current_pid = multijob.current_pid;
 		priority = multijob.priority;
 	}
 
@@ -93,7 +93,7 @@ let rec schedule_process_list multijob processes =
 						prev || (* stop checking if one changed *)
 						try
 							let new_value = MemoryBlockMap.find key multijob.shared.shared_block_to_bytes in
-							new_value != value (* this is more efficient, but may cause waking up on reads due to deferred state *)
+							new_value <> value (* this is more efficient, but may cause waking up on reads due to deferred state *)
 						with
 							| Not_found -> true (* block was gfreed and so counts as changed *)
 					in
@@ -106,14 +106,14 @@ let rec schedule_process_list multijob processes =
 		begin fun (_, _, pi1) (_, _, pi2) -> 
 			match pi1, pi2 with
 				| Atomic, Atomic -> 0
-				| Atomic, _ -> 1
-				| _, Atomic -> -1
+				| Atomic, _ -> -1
+				| _, Atomic -> 1
 				| Running, Running -> 0
-				| Running, _ -> 1
-				| _, Running -> -1
+				| Running, _ -> -1
+				| _, Running -> 1
 				| TimeWait _, TimeWait _ -> 0
-				| TimeWait _, _ -> 1
-				| _, TimeWait _ -> -1
+				| TimeWait _, _ -> -1
+				| _, TimeWait _ -> 1
 				| _, _ -> 0
 		end
 		processes
