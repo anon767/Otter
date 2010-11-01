@@ -774,3 +774,48 @@ int __otter_libc_shutdown(int socket_fd, int how)
 	__ASSERT(0);	
 	return (-1);
 }
+
+int getpeername(int socket_fd, struct sockaddr *address, socklen_t *address_len)
+{
+	struct __otter_fs_sock_data* sock = __otter_libc_get_sock_data(socket_fd);
+	if(!sock)
+	{
+		return(-1);
+	}
+	
+	/* verify address is valid */
+	if(address == NULL)
+	{
+		errno = EFAULT;
+		return(-1);
+	}
+	
+	switch(sock->state)
+	{
+		case __otter_sock_ST_CLOSED:
+			errno = EINVAL;
+			return(-1);
+		case __otter_sock_ST_LISTEN:
+		case __otter_sock_ST_SYN_RCVD:
+		case __otter_sock_ST_SYN_SENT:
+			errno = ENOTCONN;
+			return(-1);
+		case __otter_sock_ST_ESTABLISHED:
+		case __otter_sock_ST_CLOSE_WAIT:
+		case __otter_sock_ST_LAST_ACK:
+		case __otter_sock_ST_FIN_WAIT_1:
+		case __otter_sock_ST_FIN_WAIT_2:
+		case __otter_sock_ST_CLOSING:
+		case __otter_sock_ST_TIME_WAIT:
+			memcpy(address, sock->addr, __SOCKADDR_SHARED_LEN);
+			*address_len = __SOCKADDR_SHARED_LEN;
+			break;
+		case __otter_sock_ST_UDP: /* UDP dosn't listen */
+			errno = EOPNOTSUPP;
+			return(-1);
+		default:
+			__ASSERT(0);
+	}
+	
+	return(0);
+}

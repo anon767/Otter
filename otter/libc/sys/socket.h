@@ -112,6 +112,8 @@ int shutdownn(int socket_fd, int how);
 int setsockopt(int socket_fd, int level, int option_name, const void *option_value, socklen_t option_len);
 int getsockopt(int socket_fd, int level, int option_name, void *option_value, socklen_t *option_len);
 
+int getpeername(int socket, struct sockaddr *address, socklen_t *address_len);
+
 unsigned short __otter_sock_free_port = 5000;
 struct __otter_fs_sock_data* __otter_libc_get_sock_data(int fd);
 void __otter_libc_flush_sock_queue(struct __otter_fs_sock_data* sock);
