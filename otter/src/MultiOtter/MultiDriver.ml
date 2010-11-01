@@ -77,8 +77,8 @@ let run reporter job =
 		get_job_multijob
 		(
 			MultiInterceptor.unpack_job_interceptor @@
-			MultiInterceptor.abandon_io_block_deadlock_interceptor @@@
 			multi_set_output_formatter_interceptor @@@
+			MultiInterceptor.abandon_io_block_deadlock_interceptor @@@
 			MultiFunctions.interceptor @@@
 			MultiInterceptor.repack_job_interceptor @@@
 			BuiltinFunctions.interceptor @@ 
