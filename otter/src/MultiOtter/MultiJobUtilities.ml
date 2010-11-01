@@ -76,32 +76,36 @@ let put_completion completion multijob = match completion with
 			shared = shared;
 		}
 
-let rec schedule_process_list multijob processes =
-	let processes = match processes with
+let schedule_process_list multijob =
+	let rec update_process_list processes =
+		match processes with
 		| [] -> []
 		| (pc, ls, pi)::t ->
 			match pi with
 				| Atomic
-				| Running -> (pc, ls, pi)::(schedule_process_list multijob t)
+				| Running -> (pc, ls, pi)::(update_process_list t)
 				| TimeWait n ->
 					if n <= 0 then
-						(pc, ls, Running)::(schedule_process_list multijob t)
+						(pc, ls, Running)::(update_process_list t)
 					else
-						(pc, ls, TimeWait (n-1))::(schedule_process_list multijob t)
+						(pc, ls, TimeWait (n-1))::(update_process_list t)
 				| IOBlock io_block_to_bytes -> (* look for changed blocks *)
 					let fold_func key value prev =
 						prev || (* stop checking if one changed *)
 						try
 							let new_value = MemoryBlockMap.find key multijob.shared.shared_block_to_bytes in
-							new_value <> value (* this is more efficient, but may cause waking up on reads due to deferred state *)
+							match new_value, value with
+								| DataStructures.Deferred.Immediate x, DataStructures.Deferred.Immediate y -> Bytes.bytes__equal x y
+								| _, _ -> new_value == value
 						with
 							| Not_found -> true (* block was gfreed and so counts as changed *)
 					in
 					if(MemoryBlockMap.fold fold_func io_block_to_bytes false) then
-						(pc, ls, Running)::(schedule_process_list multijob t) (* something changed, wake up process *)
+						(pc, ls, Running)::(update_process_list t) (* something changed, wake up process *)
 					else
-						(pc, ls, pi)::(schedule_process_list multijob t) (* nothing changed, keep thread asleep *)
+						(pc, ls, pi)::(update_process_list t) (* nothing changed, keep thread asleep *)
 	in
+	let processes = update_process_list multijob.processes in
 	List.stable_sort (* TODO: use a priority queue instead *)
 		begin fun (_, _, pi1) (_, _, pi2) -> 
 			match pi1, pi2 with
@@ -120,10 +124,9 @@ let rec schedule_process_list multijob processes =
 
 (* get a job from a multijob *)
 let get_job multijob = 
-	match schedule_process_list multijob multijob.processes with (* TODO: use a priority queue instead *)
+	match schedule_process_list multijob with (* TODO: use a priority queue instead *)
 	| [] ->
 		None
-	| (_, _, IOBlock _)::processes -> None (* The best job availiable is blocking. Deadlock and return that there are no valid jobs for this multijob *)
 	| (program_counter, process, priority)::processes ->
 		(* extract the first job from a multijob *)
 		let state = {

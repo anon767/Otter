@@ -142,15 +142,24 @@ let otter_io_block job multijob retopt exps errors =
 			failwith "io_block with no underlying blocks"
 		else
 			let block_to_bytes = 
-				try
-					List.fold_left
-						(fun acc block -> MemoryBlockMap.add block (MemoryBlockMap.find block state.block_to_bytes) acc)
-						MemoryBlockMap.empty
-						blocks
-				with
-					| Not_found -> failwith "io_block missing underlying block"
+				List.fold_left
+					(fun acc block -> 
+						try
+							MemoryBlockMap.add block (MemoryBlockMap.find block multijob.shared.shared_block_to_bytes) acc
+						with
+							| Not_found -> 
+								if (MemoryBlockMap.mem block multijob.shared.shared_block_to_bytes) then
+									acc (* don't add non shared blocks as these will always trigger unblocking *)
+								else
+									failwith "io_block missing underlying block"
+					)
+					MemoryBlockMap.empty
+					blocks
 			in
-			{ multijob with priority = IOBlock block_to_bytes; }
+			if MemoryBlockMap.is_empty block_to_bytes then
+				failwith "Deadlock" (* not blocking on any shared bytes *)
+			else
+				{ multijob with priority = IOBlock block_to_bytes; }
 	in
 	
 	let state, errors = BuiltinFunctions.set_return_value state retopt (Bytes.bytes__zero) errors in

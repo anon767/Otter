@@ -1,4 +1,6 @@
 open OtterCore
+open MultiTypes
+open Job
 
 let (@@) = Interceptor.(@@)
 let (@@@) i1 i2 = fun a b c -> i1 a b c i2
@@ -23,3 +25,14 @@ let unpack_job_interceptor job job_queue interceptor =
 
 let repack_job_interceptor job multijob job_queue interceptor =
 	interceptor job (multijob, job_queue)
+
+let abandon_io_block_deadlock_interceptor job multijob job_queue interceptor =
+	match multijob.priority with
+		| IOBlock _ -> (* The best job availiable is blocking. This is a deadlock. Each job will be abandoned one at a time. *)
+			let result = {
+				result_file = job.file;
+				result_state = job.state;
+				result_history = job.exHist;
+				result_decision_path = job.decisionPath; } in
+			(Complete (Abandoned (`Failure "Deadlock", Job.get_loc job, result)), (multijob, job_queue))
+		| _ -> interceptor job multijob job_queue
