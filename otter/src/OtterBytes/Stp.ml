@@ -444,7 +444,6 @@ module StpCache = Map.Make
      end)
 
 let cacheHits = ref 0
-let cacheMisses = ref 0
 let stpCacheRef = ref StpCache.empty
 
 (* This is extracted from consult_stp, modified to work with query_stp (guard).
@@ -455,7 +454,6 @@ let stpcache_find pc pre guard truth =
         incr cacheHits;
         Some (ans)
     with Not_found ->
-        incr cacheMisses;
         None
 
 let stpcache_add answer pc pre guard truth =
@@ -508,7 +506,7 @@ let query_stp pc pre guard =
             | Some (answer) -> answer
             | None ->
                 Stpc.e_push vc;
-                stp_count := (!stp_count) + 1;
+                incr stp_count;
 	            let startTime = Unix.gettimeofday () in
                 let answer = Stats.time "STP query" (Stpc.query vc) exp in
                 stpcache_add answer pc pre guard truth_value;

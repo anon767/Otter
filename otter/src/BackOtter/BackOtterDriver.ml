@@ -164,7 +164,7 @@ let doit file =
     (* print the results *)
     Output.set_formatter (new Output.plain);
     Output.printf "%s@\n@\n" (Executedebug.get_log ());
-    Output.printf "\nSTP was invoked %d times. (%d cache hits; %d misses)\n" !Stp.stp_count !Stp.cacheHits !Stp.cacheMisses;
+    Output.printf "\nSTP was invoked %d times (%d cache hits).\n" !Stp.stp_count !Stp.cacheHits;
 
     let executionTime = (Unix.gettimeofday ()) -. startTime
     and stpTime = Stats.lookupTime "STP" in
