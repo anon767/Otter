@@ -11,37 +11,48 @@ let find =
             Hashtbl.find memotable instr
 
         with Not_found ->
-            let lookup instr worklist = try (Hashtbl.find memotable instr, worklist) with Not_found -> (max_int, InstructionSet.add instr worklist) in
             let calc_dist instrs worklist = match instrs with
-                | [] -> (0, worklist)
-                | instrs -> List.fold_left (fun (dist, worklist) instr -> let dist', worklist = lookup instr worklist in (min dist dist', worklist)) (max_int, worklist) instrs
+                | [] ->
+                    (0, worklist)
+                | instrs ->
+                    List.fold_left begin fun (dist, worklist) instr ->
+                        try (min dist (Hashtbl.find memotable instr), worklist)
+                        with Not_found -> (min dist max_int, InstructionSet.add instr worklist)
+                    end (max_int, worklist) instrs
             in
             let rec update worklist =
                 let instr = InstructionSet.choose worklist in
+                let dist = try Hashtbl.find memotable instr with Not_found -> max_int in
 
-                (* compute the distance by taking 1 + the minumum of its successors, and the minimum distances of its call targets,
+                (* compute the new distance by taking 1 + the minumum of its successors, and the minimum distances of its call targets,
                    adding uncomputed successors and call targets to a new worklist *)
                 let worklist' = worklist in
                 let succ_dist, worklist' = calc_dist (Instruction.successors instr) worklist' in
                 let target_dist, worklist' = calc_dist (Instruction.call_targets instr) worklist' in
-                let dist =
-                    let dist = 1 + succ_dist in
-                    if dist < 0 then
-                        max_int (* overflow *)
+                let dist' =
+                    let dist' = 1 + succ_dist in
+                    if dist' < 0 then
+                        dist (* overflow *)
                     else
-                        let dist = dist + target_dist in
-                        if dist < 0 then
-                            max_int (* overflow *)
+                        let dist' = dist' + target_dist in
+                        if dist' < 0 then
+                            dist (* overflow *)
                         else
-                            dist
+                            dist'
                 in
-                Hashtbl.add memotable instr dist;
+                (* update the distance if changed *)
+                if dist' <> dist then Hashtbl.replace memotable instr dist';
 
-                (* if worklist is not updated, add the predecessors and call sites to worklist *)
                 let worklist =
+                    (* if worklist is updated, use it because this instruction will have to be updated again later. *)
                     if not (InstructionSet.equal worklist' worklist) then worklist' else
-                    List.fold_left (fun instrs instr -> InstructionSet.add instr instrs) worklist
-                        (List.rev_append (Instruction.predecessors instr) (Instruction.call_sites instr))
+
+                    (* if the worklist is not updated and the distance has changed, then add the predecessors and call sites to the worklist. *)
+                    if dist' <> dist then
+                        List.fold_left (fun instrs instr -> InstructionSet.add instr instrs) worklist
+                            (List.rev_append (Instruction.predecessors instr) (Instruction.call_sites instr))
+                    else
+                        worklist
                 in
 
                 (* recurse on the remainder of the worklist *)
