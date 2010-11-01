@@ -25,8 +25,8 @@ let find =
                 let instr = InstructionSet.choose worklist in
                 let dist = try InstructionHash.find memotable instr with Not_found -> max_int in
 
-                (* compute the new distance by taking 1 + the minimum of its successors, and the minimum distances of its call targets,
-                   adding uncomputed successors and call targets to a new worklist *)
+                (* compute the new distance by taking 1 + the minimum distance of its successors + the minimum distance
+                   of its call targets, adding uncomputed successors and call targets to the worklist *)
                 let worklist' = worklist in
                 let succ_dist, worklist' = calc_dist (Instruction.successors instr) worklist' in
                 let target_dist, worklist' = calc_dist (Instruction.call_targets instr) worklist' in
@@ -48,9 +48,10 @@ let find =
                     (* if worklist is updated, use it because this instruction will have to be updated again later. *)
                     if not (InstructionSet.equal worklist' worklist) then worklist' else
 
-                    (* if the worklist is not updated and the distance has changed, then add the predecessors and call sites to the worklist. *)
+                    (* if the worklist is not updated and the distance has changed, then add the predecessors and
+                       call sites to the worklist. *)
                     if dist' <> dist then
-                        List.fold_left (fun instrs instr -> InstructionSet.add instr instrs) worklist
+                        List.fold_left (fun worklist instr -> InstructionSet.add instr worklist) worklist
                             (List.rev_append (Instruction.predecessors instr) (Instruction.call_sites instr))
                     else
                         worklist
