@@ -135,9 +135,5 @@ let get_loc job = match job.instrList with
 
 (** Get the {!OtterCFG.Instruction.t} for current instruction in a job. *)
 let get_instruction job =
-    (* TODO: refactor Statement to conform to OtterCFG, to not need the below *)
-    match job.stmt.Cil.skind with
-        | Cil.Instr instrs when job.instrList = [] ->
-            OtterCFG.Instruction.make job.file (List.hd job.state.Types.callstack) job.stmt instrs
-        | _ ->
-            OtterCFG.Instruction.make job.file (List.hd job.state.Types.callstack) job.stmt job.instrList
+    (* TODO: refactor Statement to use OtterCFG.Instruction, to not need this function *)
+    OtterCFG.Instruction.make job.file (List.hd job.state.Types.callstack) job.stmt job.instrList

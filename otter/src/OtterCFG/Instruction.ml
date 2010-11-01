@@ -22,10 +22,10 @@ include (struct
 
     (** Make an instruction. *)
     let make file fundec stmt instrs = match stmt.Cil.skind with
-        | Cil.Instr _ when instrs = [] -> invalid_arg "make: instrs must be non-empty when stmt is Cil.Instr"
-        | Cil.Instr _ -> { file = file; fundec = fundec; stmt = stmt; instrs = instrs }
-        | _ when instrs <> [] -> invalid_arg "make: instrs must be empty when stmt is not Cil.Instr"
-        | _ -> { file = file; fundec = fundec; stmt = stmt; instrs = instrs }
+        | Cil.Instr instrs' when List.length instrs <= List.length instrs' -> { file = file; fundec = fundec; stmt = stmt; instrs = instrs }
+        | Cil.Instr _ -> invalid_arg "Instruction.make: instrs must be equal or shorter in length to the Cil.Instr in stmt"
+        | _ when instrs = [] -> { file = file; fundec = fundec; stmt = stmt; instrs = instrs }
+        | _ -> invalid_arg "Instruction.make: instrs must be empty when stmt is not Cil.Instr"
 
     (** Make an instruction from a {!Cil.stmt} only, taking the first instruction if it is a {!Cil.Instr}. *)
     let of_stmt_first file fundec stmt = match stmt.Cil.skind with
@@ -41,11 +41,10 @@ include (struct
     let of_fundec file fundec = of_stmt_first file fundec (List.hd fundec.Cil.sbody.Cil.bstmts)
 
     (** Make an instruction by updating {instr} in an instruction. *)
-    let with_instrs instruction instrs = match instruction.stmt.Cil.skind, instrs with
-        | Cil.Instr instrs', [] -> invalid_arg "with_instrs: instrs must be non-empty"
-        | Cil.Instr instrs', _ when List.length instrs > List.length instrs' -> invalid_arg "with_instrs: instrs must not be longer than the Cil.Instr in stmt"
-        | Cil.Instr instrs', _ -> { instruction with instrs = instrs' }
-        | _, _ -> invalid_arg "with_instrs: instruction.stmt must be Cil.Instr"
+    let with_instrs instruction instrs = match instruction.stmt.Cil.skind with
+        | Cil.Instr instrs' when List.length instrs <= List.length instrs' -> { instruction with instrs = instrs' }
+        | Cil.Instr _ -> invalid_arg "Instruction.with_instrs: instrs must be equal or shorter in length to the Cil.Instr in instruction.stmt"
+        | _ -> invalid_arg "Instruction.with_instrs: instruction.stmt must be Cil.Instr"
 end : sig
     type t = private {
         file : Cil.file;
@@ -103,7 +102,7 @@ let printer ff { stmt = stmt; instrs = instrs } =
 (** Find the successors for an instruction. *)
 let successors ({ file = file; fundec = fundec; stmt = stmt; instrs = instrs } as instruction) = match instrs with
     | _::[] | [] ->
-        (* last Cil.instr in a Cil.Instr, or a non-Cil.Instr *)
+        (* last Cil.instr in a Cil.Instr, an empty Cil.Instr, or a non-Cil.Instr *)
         List.map (of_stmt_first file fundec) stmt.Cil.succs
     | _::rest ->
         (* the remaining Cil.instr in a Cil.Instr *)
@@ -113,7 +112,7 @@ let successors ({ file = file; fundec = fundec; stmt = stmt; instrs = instrs } a
 (** Find the predecessors for an instruction. *)
 let predecessors ({ file = file; fundec = fundec; stmt = stmt; instrs = instrs } as instruction) = match stmt.Cil.skind with
     | Cil.Instr instrs' when (List.length instrs) = (List.length instrs') ->
-        (* first Cil.instr in a Cil.Instr or non-Cil.Instr *)
+        (* first Cil.instr in a Cil.Instr, an empty Cil.Instr, or non-Cil.Instr *)
         List.map (of_stmt_last file fundec) stmt.Cil.preds
     | Cil.Instr instrs' ->
         (* some instruction in the middle of a Cil.Instr *)
