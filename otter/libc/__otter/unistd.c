@@ -701,12 +701,15 @@ int fork()
 	__otter_multi_begin_atomic();
 	struct __otter_fs_open_file_table_entry* open_file;
 
-	for(int i = 0; i < __otter_fs_MAXOPEN; i++)
+	if(__otter_fs_open_file_table)
 	{
-		open_file = get_open_file_from_fd(i);
-		if(open_file)
+		for(int i = 0; i < __otter_fs_MAXOPEN; i++)
 		{
-			open_file->openno++;
+			open_file = get_open_file_from_fd(i);
+			if(open_file)
+			{
+				open_file->openno++;
+			}
 		}
 	}
 	
