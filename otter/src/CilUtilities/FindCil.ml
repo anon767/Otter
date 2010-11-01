@@ -47,8 +47,7 @@ let globals_memotables =
 		@raise Not_found if a {!Cil.fundec} for [varinfo] does not exist in [file]
 *)
 let fundec_by_varinfo file varinfo =
-    try (globals_memotables file)#varinfo_to_fundec varinfo
-    with Not_found -> failwith ("Cannot find fundec for varinfo " ^ varinfo.Cil.vname)
+	(globals_memotables file)#varinfo_to_fundec varinfo
 
 
 (** Find the {!Cil.initinfo} for a {!Cil.varinfo} from a {!Cil.file}.
@@ -58,8 +57,7 @@ let fundec_by_varinfo file varinfo =
 		@raise Not_found if a global [varinfo] does not exist in [file]
 *)
 let global_varinit_by_varinfo file varinfo =
-    try (globals_memotables file)#varinfo_to_varinit varinfo
-    with Not_found -> failwith ("Cannot find initialization value for varinfo " ^ varinfo.Cil.vname)
+	(globals_memotables file)#varinfo_to_varinit varinfo
 
 
 (** Find a {!Cil.fundec} by name from a {!Cil.file}.
@@ -69,8 +67,7 @@ let global_varinit_by_varinfo file varinfo =
 		@raise Not_found if a {!Cil.fundec} named [name] does not exist in [file]
 *)
 let fundec_by_name file name =
-    try (globals_memotables file)#name_to_fundec name
-    with Not_found -> failwith ("Cannot find fundec for " ^ name)
+	(globals_memotables file)#name_to_fundec name
 
 
 (** Find a global {!Cil.varinfo} by name from a {!Cil.file}.
@@ -80,5 +77,6 @@ let fundec_by_name file name =
 		@raise Not_found if a global {!Cil.varinfo} named [name] does not exist in [file]
 *)
 let global_varinfo_by_name file name =
-    try (globals_memotables file)#name_to_global_varinfo name
-    with Not_found -> failwith ("Cannot varinfo for " ^ name)
+	(globals_memotables file)#name_to_global_varinfo name
+
+
