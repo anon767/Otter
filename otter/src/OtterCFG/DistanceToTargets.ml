@@ -88,3 +88,34 @@ let find =
             in
             update (InstructionSet.singleton instr);
             InstructionTargetsHash.find memotable (instr, targets)
+
+
+(** Find the shortest distance from an {!Instruction.t} to a list of target {!Instruction.t}s through function returns
+    in a calling context given as a list of {!Instruction.t} successors of function calls.
+
+    Distances through function returns are computed by recursively unwinding the calling context, taking the
+    shortest distance from the source instruction through function returns down the calling context to targets in the
+    calling context.
+
+    @return the shortest distance to one of the targets, or {!max_int} if none of the targets are reachable.
+*)
+let find_in_context instr targets context =
+    (* compute the distance from the instr through function returns to targets in the call context *)
+    let rec unwind dist return_dist = function
+        | call_return::context ->
+            let dist =
+                let dist' = return_dist + find call_return targets in
+                if dist' < 0 then dist (* overflow *) else min dist dist'
+            in
+            let return_dist = return_dist + DistanceToReturn.find call_return in
+            if return_dist < 0 then
+                dist (* overflow; terminate since further unwindings will also overflow *)
+            else
+                unwind dist return_dist context
+        | [] ->
+            dist
+    in
+    (* compute the initial distance to targets and distance to function returns *)
+    let dist = find instr targets in
+    let return_dist = DistanceToReturn.find instr in
+    unwind dist return_dist context
