@@ -18,12 +18,18 @@ let find =
                 | instrs ->
                     List.fold_left begin fun (dist, worklist) instr ->
                         try (min dist (InstructionHash.find memotable instr), worklist)
-                        with Not_found -> (min dist max_int, InstructionSet.add instr worklist)
+                        with Not_found -> (dist, InstructionSet.add instr worklist)
                     end (max_int, worklist) instrs
             in
             let rec update worklist =
                 let instr = InstructionSet.choose worklist in
-                let dist = try InstructionHash.find memotable instr with Not_found -> max_int in
+                let dist =
+                    try
+                        InstructionHash.find memotable instr
+                    with Not_found ->
+                        InstructionHash.add memotable instr max_int;
+                        max_int
+                in
 
                 (* compute the new distance by taking 1 + the minimum distance of its successors + the minimum distance
                    of its call targets, adding uncomputed successors and call targets to the worklist *)
