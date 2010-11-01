@@ -87,6 +87,11 @@ let compare x y = if x == y then 0 else
 let equal x y = compare x y = 0
 
 
+(** Compute a hash for an instruction. *)
+let hash { file = file; fundec = fundec; stmt = stmt; instrs = instrs } =
+    Hashtbl.hash (file, fundec, stmt, List.length instrs)
+
+
 (** Find the successors for an instruction. *)
 let successors ({ file = file; fundec = fundec; stmt = stmt; instrs = instrs } as instruction) = match instrs with
     | _::[] | [] ->

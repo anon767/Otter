@@ -1,14 +1,15 @@
 
 (**/**) (* various helpers *)
 module InstructionSet = Set.Make (Instruction)
+module InstructionHash = Hashtbl.Make (Instruction)
 (**/**)
 
 (** Find the shortest distance from an {!Instruction.t} to a function return. *)
 let find =
-    let memotable = Hashtbl.create 0 in
+    let memotable = InstructionHash.create 0 in
     fun instr ->
         try
-            Hashtbl.find memotable instr
+            InstructionHash.find memotable instr
 
         with Not_found ->
             let calc_dist instrs worklist = match instrs with
@@ -16,13 +17,13 @@ let find =
                     (0, worklist)
                 | instrs ->
                     List.fold_left begin fun (dist, worklist) instr ->
-                        try (min dist (Hashtbl.find memotable instr), worklist)
+                        try (min dist (InstructionHash.find memotable instr), worklist)
                         with Not_found -> (min dist max_int, InstructionSet.add instr worklist)
                     end (max_int, worklist) instrs
             in
             let rec update worklist =
                 let instr = InstructionSet.choose worklist in
-                let dist = try Hashtbl.find memotable instr with Not_found -> max_int in
+                let dist = try InstructionHash.find memotable instr with Not_found -> max_int in
 
                 (* compute the new distance by taking 1 + the minumum of its successors, and the minimum distances of its call targets,
                    adding uncomputed successors and call targets to a new worklist *)
@@ -41,7 +42,7 @@ let find =
                             dist'
                 in
                 (* update the distance if changed *)
-                if dist' <> dist then Hashtbl.replace memotable instr dist';
+                if dist' <> dist then InstructionHash.replace memotable instr dist';
 
                 let worklist =
                     (* if worklist is updated, use it because this instruction will have to be updated again later. *)
@@ -60,4 +61,4 @@ let find =
                 if not (InstructionSet.is_empty worklist) then update worklist
             in
             update (InstructionSet.singleton instr);
-            Hashtbl.find memotable instr
+            InstructionHash.find memotable instr
