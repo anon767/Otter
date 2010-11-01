@@ -1,3 +1,5 @@
+(** Instruction-level control-flow graph abstraction for Otter. *)
+
 open CilUtilities
 
 (* TODO: Refactor OtterCore to use this module for it's program counter, as the one canonical abstraction for Otter.
@@ -40,7 +42,7 @@ include (struct
     (** Make an instruction from a {!Cil.fundec} only, taking the first statement. *)
     let of_fundec file fundec = of_stmt_first file fundec (List.hd fundec.Cil.sbody.Cil.bstmts)
 
-    (** Make an instruction by updating {instr} in an instruction. *)
+    (** Make an instruction by updating {!instr} in an instruction. *)
     let with_instrs instruction instrs = match instruction.stmt.Cil.skind with
         | Cil.Instr instrs' when List.length instrs <= List.length instrs' -> { instruction with instrs = instrs' }
         | Cil.Instr _ -> invalid_arg "Instruction.with_instrs: instrs must be equal or shorter in length to the Cil.Instr in instruction.stmt"

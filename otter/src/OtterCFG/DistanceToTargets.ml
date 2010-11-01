@@ -1,3 +1,5 @@
+(** Find distances between instructions. *)
+
 
 (**/**) (* various helpers *)
 module InstructionSet = Set.Make (Instruction)
@@ -8,7 +10,15 @@ module InstructionTargetsHash = Hashtbl.Make (struct
 end)
 (**/**)
 
-(** Find the shortest distance from an {!Instruction.t} to a list of target {!Instruction.t}s. *)
+
+(** Find the shortest distance from an {!Instruction.t} to a list of target {!Instruction.t}s.
+
+    Distances are calculated by counting instructions along a path up to a function return within the function of
+    the source instruction. If a function call occurs along a path, the minimum of the distance from the first
+    instruction to the targets in the call targets, or the shortest distance through the call targets, is added.
+
+    @return the shortest distance to one of the targets, or {!max_int} if none of the targets are reachable.
+*)
 let find =
     let memotable = InstructionTargetsHash.create 0 in
     fun instr targets ->

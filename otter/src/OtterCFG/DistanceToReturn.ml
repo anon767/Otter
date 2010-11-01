@@ -1,10 +1,20 @@
+(** Find distances from instructions to function returns. *)
+
 
 (**/**) (* various helpers *)
 module InstructionSet = Set.Make (Instruction)
 module InstructionHash = Hashtbl.Make (Instruction)
 (**/**)
 
-(** Find the shortest distance from an {!Instruction.t} to a function return. *)
+
+(** Find the shortest distance from an {!Instruction.t} to a function return.
+
+    Distances are calculated by counting instructions along a path to a function return within the function of
+    the source instruction. If a function call occurs along a path, the shortest distance through the call targets is
+    added.
+
+    @return the shortest distance to a function return, or {!max_int} if no function returns are reachable.
+*)
 let find =
     let memotable = InstructionHash.create 0 in
     fun instr ->
