@@ -36,6 +36,7 @@ include (struct
 
     (** Make an instruction from a {!Cil.stmt} only, taking the last instruction if it is a {!Cil.Instr}. *)
     let of_stmt_last file fundec stmt = match stmt.Cil.skind with
+        | Cil.Instr [] -> { file = file; fundec = fundec; stmt = stmt; instrs = [] }
         | Cil.Instr instrs -> { file = file; fundec = fundec; stmt = stmt; instrs = [ List.hd (List.rev instrs) ] }
         | _ -> { file = file; fundec = fundec; stmt = stmt; instrs = [] }
 
