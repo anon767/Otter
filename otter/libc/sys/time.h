@@ -1,7 +1,7 @@
 #ifndef _SYS_TIME_H
 #define _SYS_TIME_H
 
-#include<sys/types.h>
+#include <sys/types.h>
 
 struct timeval
 {
@@ -19,5 +19,11 @@ typedef struct
 {
 	long fd_bits[];
 } fd_set;
+
+int   getitimer(int, struct itimerval *);
+int   setitimer(int, const struct itimerval *, struct itimerval *);
+int   gettimeofday(struct timeval *, void *);
+int   select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
+int   utimes(const char *, const struct timeval [2]);
 
 #endif

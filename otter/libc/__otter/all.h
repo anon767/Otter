@@ -21,6 +21,7 @@
 #include "syslog.c"
 #include "grp.c"
 #include "pwd.c"
+#include "time.c"
 
 __otter_libc_init()
 {
