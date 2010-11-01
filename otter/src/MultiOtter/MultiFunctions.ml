@@ -164,6 +164,7 @@ let otter_time_wait job multijob retopt exps errors =
 		| [CastE (_, h)] | [h] ->
 			let state, bytes, errors = Expression.rval job.state h errors in
 			let time = bytes_to_int_auto bytes in
+			let job = BuiltinFunctions.end_function_call { job with state = state } in
 			if time <= 0 then 
 				(Active job, multijob, errors) 
 			else
@@ -171,16 +172,18 @@ let otter_time_wait job multijob retopt exps errors =
 		| _ -> failwith "timewait invalid arguments"
 
 let otter_begin_atomic job multijob retopt exps errors = 
+	let job = BuiltinFunctions.end_function_call job in
 	(Active job, { multijob with priority = Atomic; }, errors)
 
 let otter_end_atomic job multijob retopt exps errors = 
+	let job = BuiltinFunctions.end_function_call job in
 	(Active job, { multijob with priority = Running; }, errors)
 
 let interceptor job multijob job_queue interceptor =
 	try
 		(
 
-		(intercept_multi_function_by_name_internal "fork"                       libc_fork) @@@
+		(intercept_multi_function_by_name_internal "__otter_multi_fork"         libc_fork) @@@
 		(intercept_multi_function_by_name_internal "__otter_multi_gmalloc"      otter_gmalloc) @@@
 		(intercept_multi_function_by_name_internal "__otter_multi_gfree"        otter_gfree) @@@
 		(intercept_multi_function_by_name_internal "__otter_multi_get_pid"      otter_get_pid) @@@
