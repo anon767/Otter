@@ -14,27 +14,27 @@ open Cil
  *
  * TODO:
  * 1. Target-driven followed by coverage-driven
- * 2. Include distance-from-entry.
  * 3. Better implementation of get_distance_to_targets
  * 4. More efficient implementation of update_bounding_paths_with_targets. Basically we only need to update jobs that are affected by the last discovery of failing path.
  *)
 let default_bidirectional_search_ratio = ref 0.5
+let max_distance = 10000000
 
 let get_origin_function job = List.hd (List.rev job.state.callstack)
 
-let get_job_with_highest_score score_fn jobs =
-    let jobs, jobopt, score = List.fold_left (fun (jobs, jobopt, score) job' ->
+let get_job_with_highest_score ?(compare=Pervasives.compare) score_fn jobs =
+    let jobs, maxopt = List.fold_left (fun (jobs, maxopt) job' ->
         let score' = score_fn job' in
-        match jobopt with
-        | Some job ->
-            if score' > score then
-                job :: jobs, Some job', score'
+        match maxopt with
+        | Some (job, score) ->
+            if compare score score' < 0 then
+                job :: jobs, Some (job', score')
             else
-                job' :: jobs, Some job, score
-        | None -> jobs, Some job', score'
-    ) ([], None, 0.0) jobs in
-    match jobopt with
-    | Some job -> jobs, job
+                job' :: jobs, Some (job, score)
+        | None -> jobs, Some (job', score')
+    ) ([], None) jobs in
+    match maxopt with
+    | Some (job, _) -> jobs, job
     | None -> failwith "get_job_with_highest_score assumes a non empty list"
 
 let get_distance_to_targets target_fundecs job =
@@ -58,12 +58,12 @@ let get_distance_to_targets target_fundecs job =
     let sources = Graph.filter_nodes graph (get_predicate job) in
     assert(List.length sources = 1);
     let source = List.hd sources in
-    Graph.set_color graph max_int;
+    Graph.set_color graph max_distance;
     let backward_distance_from_targets =
         List.fold_left (fun d tar ->
             let d' = Graph.backward_distance graph source tar in
             min d d'
-        ) max_int target_nodes
+        ) max_distance target_nodes
     in
     backward_distance_from_targets
 
@@ -104,7 +104,7 @@ let has_bounding_paths job = match job.boundingPaths with
 (* TODO: cache the result. Or maybe this is already implemented somewhere. *)
 let distance_from file f1 f2 =
     let rec bfs = function
-        | [] -> max_int
+        | [] -> max_distance
         | (f, d) :: tail ->
             if f == f2 then d else
             let callees = CilCallgraph.find_callees file f in
@@ -177,9 +177,15 @@ class ['job] t file targets_ref entry_fn failure_fn = object (self)
                      otherfn_jobs = otherfn_jobs'';
                      origin_fundecs = origin_fundecs' >}, job)
         with Not_found ->
-            if entryfn_jobs <> [] && (otherfn_jobs = [] || self#want_process_entryfn)  then
+            let want_process_entryfn =
+                let total_processed = entryfn_processed + otherfn_processed in
+                let ratio = !default_bidirectional_search_ratio in
+                if total_processed = 0 then ratio > 0.0
+                else (float_of_int entryfn_processed) /. (float_of_int total_processed) <= ratio
+            in
+            if entryfn_jobs <> [] && (otherfn_jobs = [] || want_process_entryfn)  then
                 (* Do forward search *)
-                let score job = -. (float_of_int (List.length job.decisionPath)) in (* Approximated execution path length *)
+                let score job = - ((List.length job.decisionPath)) in (* Approximated execution path length *)
                 let entryfn_jobs', job = get_job_with_highest_score score entryfn_jobs in
                 Some ({< entryfn_jobs = entryfn_jobs';
                          otherfn_jobs = otherfn_jobs;
@@ -188,10 +194,10 @@ class ['job] t file targets_ref entry_fn failure_fn = object (self)
             else if otherfn_jobs <> [] then
                 (* Do "backward" search *)
                 let score job =
+                    let execution_path_length = List.length job.exHist.executionPath in
                     let distance_from_entryfn = distance_from_entryfn (get_origin_function job) in
                     let distance_to_target = get_distance_to_targets (failure_fn :: target_fundecs) job in
-                        -. (float_of_int distance_to_target)
-                        -. (float_of_int distance_from_entryfn)
+                    [- (distance_to_target) - (distance_from_entryfn); execution_path_length]
                 in
                 let otherfn_jobs', job = get_job_with_highest_score score otherfn_jobs in
                 Some ({< otherfn_jobs = otherfn_jobs';
@@ -200,11 +206,6 @@ class ['job] t file targets_ref entry_fn failure_fn = object (self)
             else
                 None
 
-    method private want_process_entryfn =
-        let total_processed = entryfn_processed + otherfn_processed in
-        let ratio = !default_bidirectional_search_ratio in
-        if total_processed = 0 then ratio > 0.0
-        else (float_of_int entryfn_processed) /. (float_of_int total_processed) <= ratio
 
 end
 
