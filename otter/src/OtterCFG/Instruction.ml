@@ -178,3 +178,43 @@ let call_targets =
             | _ ->
                 [] (* or raise some exception? *)
 
+
+(** Find all the return targets of this instruction (if it is a return instruction). *)
+let return_targets ({ file = file; fundec = fundec } as instruction) =
+    match successors instruction with
+        | [] -> call_sites (of_fundec file fundec)
+        | _ -> [] (* or raise some exception? *)
+
+
+(** Find all the return sites of this instruction (if it is a call instruction). *)
+let return_sites =
+    let module InstructionHash = Hashtbl.Make (struct type t' = t type t = t' let equal = equal let hash = hash end) in
+    let memotable = InstructionHash.create 0 in
+    fun instruction ->
+        match call_targets instruction with
+            | _::_ as targets ->
+                begin
+                    try
+                        InstructionHash.find memotable instruction
+                    with Not_found ->
+                        let return_sites = ref [] in
+                        List.iter begin fun { file = file; fundec = fundec } ->
+                            (* iterate over statements in target functions and extract Cil.Return *)
+                            ignore begin Cil.visitCilFunction begin object
+                                inherit Cil.nopCilVisitor
+                                method vstmt stmt = match stmt.Cil.skind with
+                                    | Cil.Return _ ->
+                                        return_sites := (of_statement_first file fundec stmt)::!return_sites;
+                                        Cil.SkipChildren
+                                    | _ ->
+                                        Cil.SkipChildren
+                            end end fundec end
+                        end targets;
+
+                        InstructionHash.add memotable instruction !return_sites;
+                        !return_sites
+                end
+            | [] ->
+                [] (* or raise some exception? *)
+
+
