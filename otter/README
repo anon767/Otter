@@ -99,10 +99,12 @@ Quick-start Guide
             ocamldebug _product/runotter.d.byte
 
             (In the debugger)
-            directory src/Otter
+            directory _build/src/OtterCore _build/src ../cil/obj/x86_DARWIN
             set socket debugsocket
             set loadingmode manual
             step 0
+
+    The 'x86_DARWIN' directory is for Macs. Substitute 'x86_LINUX' or the like for other systems.
 
     3. Start Otter in debug mode:
 
@@ -327,7 +329,7 @@ Before debugging, it's useful to provide the debugger with a list of directories
 to find source code files (e.g., `src/Otter`), by typing the following command
 to the debugger:
 
-    directory src/Otter [... list of other directories ...]
+    directory _build/src/Otter [... list of other directories ...]
 
 To allow Otter to be started separately using the `otter.pl` script, set up the
 debugger in remote debugging mode with the commands:
