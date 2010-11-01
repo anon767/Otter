@@ -51,17 +51,17 @@ let find =
                         - or, 1 + the minimum distance of it's call targets;
                    adding uncomputed successors and call targets to the worklist *)
                 let worklist' = worklist in
-                let targets = Instruction.call_targets instr in
+                let call_targets = Instruction.call_targets instr in
                 let succ_dist, worklist' =
                     let succ_dist, worklist' = calc_dist (Instruction.successors instr) worklist' in
-                    let succ_dist = match targets with
+                    let succ_dist = match call_targets with
                         | [] -> succ_dist
-                        | targets -> succ_dist + List.fold_left (fun d target -> min d (DistanceToReturn.find target)) max_int targets
+                        | call_targets -> succ_dist + List.fold_left (fun d call_target -> min d (DistanceToReturn.find call_target)) max_int call_targets
                     in
                     let succ_dist = if succ_dist < 0 then dist (* overflow *) else succ_dist in
                     (succ_dist, worklist')
                 in
-                let target_dist, worklist' = calc_dist targets worklist' in
+                let target_dist, worklist' = calc_dist call_targets worklist' in
                 let dist' =
                     let dist' = 1 + min succ_dist target_dist in
                     if dist' < 0 then dist (* overflow *) else dist'
