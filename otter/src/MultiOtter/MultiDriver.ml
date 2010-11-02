@@ -17,9 +17,9 @@ let multi_set_output_formatter_interceptor job multijob job_queue interceptor =
 	let loc = Job.get_loc job in
 	let label =
 		if loc = Cil.locUnknown then
-			Format.sprintf "[jid: %d, pid: %d] : " multijob.jid multijob.current_pid
+			Format.sprintf "[jid: %d, pid: %d] : " multijob.jid multijob.current_metadata.pid
 		else
-			Format.sprintf "[jid: %d, pid: %d] %s:%d : " multijob.jid multijob.current_pid loc.Cil.file loc.Cil.line
+			Format.sprintf "[jid: %d, pid: %d] %s:%d : " multijob.jid multijob.current_metadata.pid loc.Cil.file loc.Cil.line
 	in
 	Output.set_formatter (new Output.labeled label);
 	interceptor job multijob job_queue
@@ -38,7 +38,7 @@ let rec process_job_states result multijob reporter multijob_queue =
 	match result with
 		| Active job ->
 			(* put the job back into the multijob and queue it *)
-			let multijob = put_job job multijob multijob.current_pid in
+			let multijob = put_job job multijob multijob.current_metadata in
 			(reporter, (multijob::multijob_queue))
 		| Fork states ->
 			(* process all forks *)
@@ -62,13 +62,17 @@ let run reporter job =
 		file = job.Job.file;
 		processes = [];
 		shared = {
-			path_condition = [];
+			shared_path_condition = [];
 			shared_block_to_bytes = MemoryBlockMap.empty;
 		};
 		jid = job.Job.jid;
 		next_pid = 1;
-		current_pid = 0;
-		priority = Running;
+		current_metadata = 
+		{
+			pid = 0;
+			parent_pid = 0;
+			priority = Running;
+		};
 	} in
 	let multijob = put_job job multijob 0 in
 

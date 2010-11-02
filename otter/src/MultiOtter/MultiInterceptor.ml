@@ -27,7 +27,7 @@ let repack_job_interceptor job multijob job_queue interceptor =
 	interceptor job (multijob, job_queue)
 
 let abandon_io_block_deadlock_interceptor job multijob job_queue interceptor =
-	match multijob.priority with
+	match multijob.current_metadata.priority with
 		| IOBlock _ -> (* The best job availiable is blocking. This is a deadlock. Each job will be abandoned one at a time. *)
 			let result = {
 				result_file = job.file;

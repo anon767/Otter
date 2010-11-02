@@ -14,7 +14,7 @@ let libc_fork job multijob retopt exps errors =
 	let job = BuiltinFunctions.end_function_call job in
 
 	Output.set_mode Output.MSG_REG;
-	Output.printf "fork(): parent: %d, child: %d@\n" multijob.current_pid multijob.next_pid;
+	Output.printf "fork(): parent: %d, child: %d@\n" multijob.current_metadata.pid multijob.next_pid;
 
 	(* clone the job *)
 	let job, child_job, errors = match retopt with
@@ -71,8 +71,8 @@ let otter_gmalloc job multijob retopt exps errors =
 					shared_block_to_bytes = MemoryBlockMap.add block (Deferred.Immediate bytes) multijob.shared.shared_block_to_bytes;
 				};
 			processes = List.map
-				(fun (pc, ls, pi) ->
-					(pc, { ls with MultiTypes.block_to_bytes = MemoryBlockMap.add block (Deferred.Immediate bytes) ls.MultiTypes.block_to_bytes; }, pi)
+				(fun (pc, ls, md) ->
+					(pc, { ls with block_to_bytes = MemoryBlockMap.add block (Deferred.Immediate bytes) ls.block_to_bytes; }, md)
 				)
 				multijob.processes;
 		}
@@ -98,8 +98,8 @@ let otter_gfree job multijob retopt exps errors =
 								shared_block_to_bytes = MemoryBlockMap.remove block multijob.shared.shared_block_to_bytes;
 							};
 						processes = List.map
-							(fun (pc, ls, pi) ->
-								(pc, { ls with MultiTypes.block_to_bytes = MemoryBlockMap.remove block ls.MultiTypes.block_to_bytes; }, pi)
+							(fun (pc, ls, md) ->
+								(pc, { ls with block_to_bytes = MemoryBlockMap.remove block ls.block_to_bytes; }, md)
 							)
 							multijob.processes;
 					}
@@ -114,7 +114,7 @@ let otter_gfree job multijob retopt exps errors =
 			FormatPlus.failwith "gfreeing something that is not a valid pointer:@ @[%a@]@ = @[%a@]@\n" Printer.exp (List.hd exps) BytesPrinter.bytes ptr
 			
 let otter_get_pid job multijob retopt exps errors =
-	let state, errors = BuiltinFunctions.set_return_value job.state retopt (int_to_bytes multijob.current_pid) errors in
+	let state, errors = BuiltinFunctions.set_return_value job.state retopt (int_to_bytes multijob.current_metadata.pid) errors in
 	let job = BuiltinFunctions.end_function_call { job with state = state } in
 	(Active job, multijob, errors)
 
@@ -162,7 +162,9 @@ let otter_io_block job multijob retopt exps errors =
 			if MemoryBlockMap.is_empty block_to_bytes then
 				failwith "Deadlock" (* not blocking on any shared bytes *)
 			else
-				{ multijob with priority = IOBlock block_to_bytes; }
+				{multijob with
+					current_metadata = { multijob.current_metadata with priority = IOBlock block_to_bytes; };
+				}
 	in
 	
 	let state, errors = BuiltinFunctions.set_return_value state retopt (Bytes.bytes__zero) errors in
@@ -178,16 +180,34 @@ let otter_time_wait job multijob retopt exps errors =
 			if time <= 0 then 
 				(Active job, multijob, errors) 
 			else
-				(Active job, { multijob with priority = TimeWait time; }, errors)
+				(
+					Active job, 
+					{multijob with
+						current_metadata = { multijob.current_metadata with priority = TimeWait time; };
+					}, 
+					errors
+				)
 		| _ -> failwith "timewait invalid arguments"
 
 let otter_begin_atomic job multijob retopt exps errors = 
 	let job = BuiltinFunctions.end_function_call job in
-	(Active job, { multijob with priority = Atomic; }, errors)
+	(
+		Active job, 
+		{multijob with
+			current_metadata = { multijob.current_metadata with priority  = Atomic; };
+		},
+		errors
+	)
 
 let otter_end_atomic job multijob retopt exps errors = 
 	let job = BuiltinFunctions.end_function_call job in
-	(Active job, { multijob with priority = Running; }, errors)
+	(
+		Active job, 
+		{multijob with
+			current_metadata = { multijob.current_metadata with priority  = Running; };
+		},
+		errors
+	)
 
 let interceptor job multijob job_queue interceptor =
 	try

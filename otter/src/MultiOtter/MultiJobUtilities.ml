@@ -29,34 +29,22 @@ let put_job job multijob pid =
 		MultiTypes.instrList = job.Job.instrList;
 		stmt = job.Job.stmt;
 	} in
-	let process = {
-		MultiTypes.global = job.Job.state.Types.global;
-		formals = job.Job.state.Types.formals;
-		locals = job.Job.state.Types.locals;
-		callstack = job.Job.state.Types.callstack;
-		callContexts = job.Job.state.Types.callContexts;
-		stmtPtrs = job.Job.state.Types.stmtPtrs;
-		va_arg = job.Job.state.Types.va_arg;
-		va_arg_map = job.Job.state.Types.va_arg_map;
-		block_to_bytes = job.Job.state.Types.block_to_bytes;
-		pid = pid;
-	} in
+	let state = { job.state with path_condition = []; } in
 	let shared = {
-		MultiTypes.path_condition = job.Job.state.Types.path_condition;
-		shared_block_to_bytes = update_to_shared_memory multijob.shared.shared_block_to_bytes job.Job.state.Types.block_to_bytes;
+		shared_path_condition = job.state.path_condition;
+		shared_block_to_bytes = update_to_shared_memory multijob.shared.shared_block_to_bytes job.state.block_to_bytes;
 	} in
 	{
 		MultiTypes.file = job.Job.file;
 		processes = 
-			(match multijob.priority with
-				| Atomic -> (program_counter, process, multijob.priority)::multijob.processes (* save time sorting by putting an atomic process on the front *)
-				| _ -> List.append multijob.processes [ (program_counter, process, multijob.priority) ])
+			(match multijob.current_metadata.priority with
+				| Atomic -> (program_counter, state, multijob.current_metadata)::multijob.processes (* save time sorting by putting an atomic process on the front *)
+				| _ -> List.append multijob.processes [ (program_counter, state, multijob.current_metadata) ])
 			;
 		shared = shared;
 		jid = job.Job.jid;
 		next_pid = multijob.next_pid;
-		current_pid = multijob.current_pid;
-		priority = multijob.priority;
+		current_metadata = multijob.current_metadata;
 	}
 
 
@@ -67,10 +55,10 @@ let put_completion completion multijob = match completion with
 	| Abandoned (_, _, job_result)
 	| Truncated (_, job_result) ->
 		let shared = {
-			MultiTypes.path_condition = job_result.Job.result_state.Types.path_condition;
+			shared_path_condition = job_result.result_state.path_condition;
 			shared_block_to_bytes = update_to_shared_memory 
 				multijob.shared.shared_block_to_bytes 
-				job_result.Job.result_state.Types.block_to_bytes;
+				job_result.result_state.block_to_bytes;
 		} in
 		{ multijob with
 			shared = shared;
@@ -80,15 +68,15 @@ let schedule_process_list multijob =
 	let rec update_process_list processes =
 		match processes with
 		| [] -> []
-		| (pc, ls, pi)::t ->
-			match pi with
+		| (pc, ls, md)::t ->
+			match md.priority with
 				| Atomic
-				| Running -> (pc, ls, pi)::(update_process_list t)
+				| Running -> (pc, ls, md)::(update_process_list t)
 				| TimeWait n ->
 					if n <= 0 then
-						(pc, ls, Running)::(update_process_list t)
+						(pc, ls, { md with priority = Running; })::(update_process_list t)
 					else
-						(pc, ls, TimeWait (n-1))::(update_process_list t)
+						(pc, ls, { md with priority = TimeWait (n-1); })::(update_process_list t)
 				| IOBlock io_block_to_bytes -> (* look for changed blocks *)
 					let fold_func key value prev =
 						prev || (* stop checking if one changed *)
@@ -101,14 +89,14 @@ let schedule_process_list multijob =
 							| Not_found -> true (* block was gfreed and so counts as changed *)
 					in
 					if(MemoryBlockMap.fold fold_func io_block_to_bytes false) then
-						(pc, ls, Running)::(update_process_list t) (* something changed, wake up process *)
+						(pc, ls, { md with priority = Running; })::(update_process_list t) (* something changed, wake up process *)
 					else
-						(pc, ls, pi)::(update_process_list t) (* nothing changed, keep thread asleep *)
+						(pc, ls, md)::(update_process_list t) (* nothing changed, keep thread asleep *)
 	in
 	let processes = update_process_list multijob.processes in
 	List.stable_sort (* TODO: use a priority queue instead *)
-		begin fun (_, _, pi1) (_, _, pi2) -> 
-			match pi1, pi2 with
+		begin fun (_, _, ls1) (_, _, ls2) -> 
+			match ls1.priority, ls2.priority with
 				| Atomic, Atomic -> 0
 				| Atomic, _ -> -1
 				| _, Atomic -> 1
@@ -127,24 +115,11 @@ let get_job multijob =
 	match schedule_process_list multijob with (* TODO: use a priority queue instead *)
 	| [] ->
 		None
-	| (program_counter, process, priority)::processes ->
+	| (program_counter, local_state, metadata)::processes ->
 		(* extract the first job from a multijob *)
-		let state = {
-			Types.global = process.MultiTypes.global;
-			Types.formals = process.MultiTypes.formals;
-			Types.locals = process.MultiTypes.locals;
-			Types.callstack = process.MultiTypes.callstack;
-			Types.callContexts = process.MultiTypes.callContexts;
-			Types.stmtPtrs = process.MultiTypes.stmtPtrs;
-			Types.va_arg = process.MultiTypes.va_arg;
-			Types.va_arg_map = process.MultiTypes.va_arg_map;
-			Types.block_to_bytes = update_from_shared_memory multijob.shared.shared_block_to_bytes process.MultiTypes.block_to_bytes;
-			Types.path_condition = multijob.MultiTypes.shared.MultiTypes.path_condition;
-			(* TODO *)
-			Types.aliases = VarinfoMap.empty;
-			Types.mallocs = MallocMap.empty;
-			Types.path_condition_tracked = [];
-			Types.bytes_eval_cache = BytesMap.empty;
+		let state = { local_state with
+			Types.block_to_bytes = update_from_shared_memory multijob.shared.shared_block_to_bytes local_state.block_to_bytes;
+			Types.path_condition = multijob.shared.shared_path_condition;
 		} in
 		let job = {
 			Job.file = multijob.MultiTypes.file;
@@ -161,8 +136,7 @@ let get_job multijob =
 		} in
 		let multijob = { multijob with
 			processes = processes;
-			current_pid = process.MultiTypes.pid;
-			priority = priority;
+			current_metadata = metadata;
 		} in
 		Some (job, multijob)
 
