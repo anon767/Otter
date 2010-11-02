@@ -43,6 +43,7 @@ let compute_callgraph =
             Cil.visitCilFileSameGlobals begin object
                 inherit Cil.nopCilVisitor
                 method vfunc fundec =
+                    callgraph := Callgraph.add_vertex !callgraph fundec;
                     ignore begin Cil.visitCilFunction begin object
                         inherit Cil.nopCilVisitor
                         method vinst = function
