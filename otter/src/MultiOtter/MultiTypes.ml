@@ -24,6 +24,7 @@ type local_state = state
 type program_counter = {
 	instrList : Cil.instr list;
 	stmt : Cil.stmt;
+	inTrackedFn : bool;
 }
 
 (* Data about how the process relates to other processes.
@@ -41,6 +42,8 @@ type process_metadata = {
 type shared_state = {
 	shared_path_condition : Bytes.bytes list;
 	shared_block_to_bytes : (state, Bytes.bytes) Deferred.t MemoryBlockMap.t;
+	trackedFns : Job.StringSet.t;
+	exHist : Job.executionHistory;
 }
 
 type multijob = {

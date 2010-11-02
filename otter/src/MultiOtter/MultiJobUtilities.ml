@@ -28,11 +28,14 @@ let put_job job multijob metadata =
 	let program_counter = {
 		MultiTypes.instrList = job.Job.instrList;
 		stmt = job.Job.stmt;
+		inTrackedFn = job.Job.inTrackedFn; 
 	} in
 	let local_state = { job.state with path_condition = []; } in
 	let shared = {
 		shared_path_condition = job.state.path_condition;
 		shared_block_to_bytes = update_to_shared_memory multijob.shared.shared_block_to_bytes job.state.block_to_bytes;
+		MultiTypes.trackedFns = job.Job.trackedFns;
+		exHist = job.Job.exHist;
 	} in
 	{
 		MultiTypes.file = job.Job.file;
@@ -69,6 +72,8 @@ let put_completion completion multijob = match completion with
 			shared_block_to_bytes = update_to_shared_memory 
 				multijob.shared.shared_block_to_bytes 
 				job_result.result_state.block_to_bytes;
+			MultiTypes.trackedFns = multijob.shared.MultiTypes.trackedFns;
+			exHist = job_result.result_history;
 		} in
 		{ multijob with
 			processes = processes;
@@ -138,10 +143,10 @@ let get_job multijob =
 			Job.instrList = program_counter.MultiTypes.instrList;
 			Job.stmt = program_counter.MultiTypes.stmt;
 			Job.jid = multijob.MultiTypes.jid;
+			Job.trackedFns = multijob.shared.MultiTypes.trackedFns;
+			Job.inTrackedFn = program_counter.MultiTypes.inTrackedFn;
+			Job.exHist = multijob.shared.MultiTypes.exHist;
 			(* TODO *)
-			Job.trackedFns = StringSet.empty;
-			Job.inTrackedFn = false;
-			Job.exHist = emptyHistory;
 			Job.decisionPath = [];
 			Job.boundingPaths = None;
 		} in

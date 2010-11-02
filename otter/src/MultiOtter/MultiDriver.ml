@@ -61,9 +61,12 @@ let run reporter job =
 	let multijob = {
 		file = job.Job.file;
 		processes = [];
-		shared = {
+		shared =
+		{
 			shared_path_condition = [];
 			shared_block_to_bytes = MemoryBlockMap.empty;
+			trackedFns = Job.StringSet.empty;
+			exHist = Job.emptyHistory;
 		};
 		jid = job.Job.jid;
 		next_pid = 1;
