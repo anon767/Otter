@@ -50,14 +50,17 @@ let get_distance_to_targets target_fundecs job =
             | Instr (instrs) -> let rec behead = function [] -> [] | h::t -> if h == instr then h::t else behead t in behead instrs
             | _ -> invalid_arg "stmt must be a list of instrs"
         in
-        let context = List.map2 (
-            fun call fundec -> match call with
-            | Runtime -> failwith "callContexts should not have Runtime as its last element at this point"
-            | Source (_,stmt,instr,_)
-            | NoReturn (stmt,instr) -> Instruction.make file fundec stmt (remaining_instrs stmt instr)
+        let context = List.fold_right2 (
+            fun call fundec context -> match call with
+            | Source (_,stmt,instr,_) -> (Instruction.make file fundec stmt (remaining_instrs stmt instr)) :: context
+            | _ -> context
+                (* Don't need to capture the calling context beyond a Types.NoReturn,
+                 * since Otter will return an error if it returns from a NoReturn function,
+                 * i.e., any targets beyond a NoReturn will be unreachable. *)
             )
             (List.rev (List.tl (List.rev job.state.callContexts))) (* Discard the last element Runtime from callContexts *)
             (List.tl job.state.callstack)                          (* Discard the first function from the callstack *)
+            []
         in
         DistanceToTargets.find_in_context source target_instrs context
 
