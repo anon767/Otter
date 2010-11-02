@@ -10,6 +10,30 @@ let arg_print_debug = ref false
 let arg_print_mustprint = ref true
 
 
+let get_console_width () =
+    (* if on a terminal, use xterm (?) escape sequence to query for column width *)
+    if Unix.isatty Unix.stdin && Unix.isatty Unix.stdout then
+        let attr = Unix.tcgetattr Unix.stdin in
+        try
+            (* turn off line buffering and echoing on stdin and flush the input *)
+            Unix.tcsetattr Unix.stdin Unix.TCSADRAIN { attr with Unix.c_icanon = false; Unix.c_echo = false };
+            Unix.tcflush Unix.stdin Unix.TCIFLUSH;
+            (* send the "query screen size" escape sequence *)
+            ignore (Unix.write Unix.stdout "\027[18t" 0 5);
+            (* read the result *)
+            let s = String.create 16 in
+            ignore (Unix.read Unix.stdin s 0 16);
+            (* restore stdin line buffering *)
+            Unix.tcsetattr Unix.stdin Unix.TCSANOW attr;
+            (* parse the result *)
+            Scanf.sscanf s "\027[8;%d;%dt" (fun _ w -> w)
+        with Unix.Unix_error _ | Scanf.Scan_failure _ ->
+            Unix.tcsetattr Unix.stdin Unix.TCSANOW attr;
+            80
+    else
+        80
+
+
 class virtual t =
 	object (self : 'self)
 		val virtual formatter : Format.formatter
@@ -36,11 +60,11 @@ class colored color =
 	object
 		inherit t
 		val formatter =
-			(* flush after every write *)
+                (* flush after every write *)
 			Format.make_formatter (fun str pos len ->
                 output_string stdout "\027";
-                output_string stdout color;
-                output stdout str pos len;
+                    output_string stdout color;
+                    output stdout str pos len;
                 output_string stdout "\027[0m";
                 flush stdout) (fun () -> ())
 	end
@@ -50,7 +74,7 @@ class labeled label =
 		inherit t
 		val formatter =
 			(* flush after every line, prefixing each line with a label *)
-			let buffer = Buffer.create 80 in
+			let buffer = Buffer.create (get_console_width ()) in
 			let rec labeled_output str pos len =
 				let newline_index = 1 + try String.index_from str pos '\n' - pos with Not_found -> len in
 				if newline_index <= len then begin
@@ -70,7 +94,7 @@ class labeled label =
 			in
 			let formatter = Format.make_formatter labeled_output (fun () -> ()) in
 			(* adjust the margin to account for the length of the label *)
-			Format.pp_set_margin formatter (Format.pp_get_margin formatter () - (String.length label));
+			Format.pp_set_margin formatter (get_console_width () - (String.length label));
 			formatter
 	end
 
