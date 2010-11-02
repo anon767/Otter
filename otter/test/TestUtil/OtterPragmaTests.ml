@@ -20,6 +20,12 @@
         - [#pragma no_bounds_checking] specifies that bounds checking should be disabled. Conversely, {e not
             providing} this directive specifies that bounds checking should be enabled. This corresponds to Otter's
             [--noboundsChecking] command-line option.
+        - [#pragma max_nodes(<integer bound>)] bounds the number of nodes in the execution tree to explore. This
+            corresponds to Otter's [--max-nodes] command-line option.
+        - [#pragma max_paths(<integer bound>)] bounds the number of paths to execute to completion. This corresponds
+            to Otter's [--max-paths] command-line option.
+        - [#pragma max_abandoned(<integer bound>)] bounds the number of abandoned paths to return. This corresponds
+            to Otter's [--max-abandoned] command-line option.
         - [#pragma expect_return(<assertion expression>, ...)] specifies that there should be a {!Job.Return}
             in which a list of assertions hold. The first matching result will be removed from further processing.
             E.g., [#pragma expect_return(__return_code__ == 0, x < y, z)].
@@ -70,6 +76,9 @@ module Make (Errors : Errors) = struct
         cil_options : string list;      (** The command line options to pass to CIL. *)
         has_failing_assertions : bool;  (** If failing assertions are expected in the test. *)
         no_bounds_checking : bool;      (** Disable bounds checking (corresponds to [--noboundsChecking]). *)
+        max_nodes : int option;         (** Bound the number of nodes in the execution tree to explore (corresponds to [--max-nodes]). *)
+        max_paths : int option;         (** Bound the number of paths to execute to completion (corresponds to [--max-paths]). *)
+        max_abandoned : int option;     (** Bound the number of abandoned paths to return (corresponds to [--max-abandoned]). *)
     }
 
 
@@ -81,6 +90,9 @@ module Make (Errors : Errors) = struct
         cil_options = [];
         has_failing_assertions = false;
         no_bounds_checking = false;
+        max_nodes = None;
+        max_paths = None;
+        max_abandoned = None;
     }
 
 
@@ -312,6 +324,27 @@ module Make (Errors : Errors) = struct
                     | "no_bounds_checking", _ ->
                         assert_loc_failure loc "Invalid no_bounds_checking (should have no arguments)."
 
+                    | "max_nodes", [ Cil.AInt max_nodes ] ->
+                        if flags.max_nodes <> None then assert_loc_failure loc "max_nodes already defined.";
+                        if max_nodes <= 0 then assert_loc_failure loc "Invalid max_nodes bound (should be greater than 0).";
+                        ({ flags with max_nodes = Some max_nodes }, test)
+                    | "max_nodes", _ ->
+                        assert_loc_failure loc "Invalid max_nodes (should have exactly one integer argument that is the bound)."
+
+                    | "max_paths", [ Cil.AInt max_paths ] ->
+                        if flags.max_paths <> None then assert_loc_failure loc "max_paths already defined.";
+                        if max_paths <= 0 then assert_loc_failure loc "Invalid max_paths bound (should be greater than 0).";
+                        ({ flags with max_paths = Some max_paths }, test)
+                    | "max_paths", _ ->
+                        assert_loc_failure loc "Invalid max_paths (should have exactly one integer argument that is the bound)."
+
+                    | "max_abandoned", [ Cil.AInt max_abandoned ] ->
+                        if flags.max_abandoned <> None then assert_loc_failure loc "max_abandoned already defined.";
+                        if max_abandoned <= 0 then assert_loc_failure loc "Invalid max_abandoned bound (should be greater than 0).";
+                        ({ flags with max_abandoned = Some max_abandoned }, test)
+                    | "max_abandoned", _ ->
+                        assert_loc_failure loc "Invalid max_abandoned (should have exactly one integer argument that is the bound)."
+
                     | "expect_return", [ Cil.ACons ("", []) ] -> (* strangely, expect_return() parses to this *)
                         (flags, test >>> expect_return file loc [])
                     | "expect_return", [] ->
@@ -408,7 +441,8 @@ module Make (Errors : Errors) = struct
         (* prepare the file and run the symbolic executor *)
         Core.prepare_file file;
         let job = OtterJob.Job.get_default file in
-        let reporter = run (fun () -> driver (reporter ()) job) in
+        let reporter = reporter ?max_nodes:flags.max_nodes ?max_paths:flags.max_paths ?max_abandoned:flags.max_abandoned () in
+        let reporter = run (fun () -> driver reporter job) in
 
         (* first, test if assertions passed *)
         let log = Executedebug.get_log () in
