@@ -74,7 +74,7 @@ let run reporter job =
 			priority = Running;
 		};
 	} in
-	let multijob = put_job job multijob 0 in
+	let multijob = put_job job multijob multijob.current_metadata in
 
 	(* start executing *)
 	LegacyDriver.main_loop 

@@ -24,12 +24,12 @@ let update_from_shared_memory shared_block_to_bytes local_block_to_bytes =
 	MemoryBlockMap.mapi map_func local_block_to_bytes
 
 (* put a job back into the multijob and update the shared state *)
-let put_job job multijob pid =
+let put_job job multijob metadata =
 	let program_counter = {
 		MultiTypes.instrList = job.Job.instrList;
 		stmt = job.Job.stmt;
 	} in
-	let state = { job.state with path_condition = []; } in
+	let local_state = { job.state with path_condition = []; } in
 	let shared = {
 		shared_path_condition = job.state.path_condition;
 		shared_block_to_bytes = update_to_shared_memory multijob.shared.shared_block_to_bytes job.state.block_to_bytes;
@@ -37,9 +37,9 @@ let put_job job multijob pid =
 	{
 		MultiTypes.file = job.Job.file;
 		processes = 
-			(match multijob.current_metadata.priority with
-				| Atomic -> (program_counter, state, multijob.current_metadata)::multijob.processes (* save time sorting by putting an atomic process on the front *)
-				| _ -> List.append multijob.processes [ (program_counter, state, multijob.current_metadata) ])
+			(match metadata.priority with
+				| Atomic -> (program_counter, local_state, metadata)::multijob.processes (* save time sorting by putting an atomic process on the front *)
+				| _ -> List.append multijob.processes [ (program_counter, local_state, metadata) ])
 			;
 		shared = shared;
 		jid = job.Job.jid;

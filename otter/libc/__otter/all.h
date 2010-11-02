@@ -22,6 +22,7 @@
 #include "grp.c"
 #include "pwd.c"
 #include "time.c"
+#include "wait.c"
 
 __otter_libc_init()
 {
