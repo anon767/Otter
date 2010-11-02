@@ -69,8 +69,20 @@ let compute_callgraph =
 let find_callers file fundec = Callgraph.pred (compute_callgraph file) fundec
 
 
-(** Find the {!Cil.fundecs} of callees of a function. *)
+(** find the {!cil.fundecs} of callees of a function. *)
 let find_callees file fundec = Callgraph.succ (compute_callgraph file) fundec
+
+
+(** find the {!cil.fundecs} of transitive callees of a function. *)
+let find_transitive_callees file fundec =
+    let rec find_transitive_callees fundec all_callees =
+        let callees = Callgraph.succ (compute_callgraph file) fundec in
+        List.fold_left (fun all_callees callee ->
+            if List.memq callee all_callees then all_callees
+            else find_transitive_callees callee (callee :: all_callees)
+        ) all_callees callees
+    in
+    find_transitive_callees fundec []
 
 
 (** Save the callgraph of a file to a GraphViz dot file. *)

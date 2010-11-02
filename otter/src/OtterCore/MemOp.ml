@@ -251,12 +251,6 @@ let rec state__assign state (lvals, size) bytes =
 
 (* start a new function call frame *)
 let state__start_fcall state callContext fundec argvs =
-
-    Output.set_mode Output.MSG_FUNC;
-    (* Output.print_endline (">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-     *)
-
-    Output.printf "@[Enter function %a@]@\n" Printer.fundec fundec;
     (* set up the new stack frame *)
 	let block_to_bytes = state.block_to_bytes in
 	let formal, block_to_bytes = frame__add_varinfos frame__empty block_to_bytes fundec.Cil.sformals Block_type_Local in

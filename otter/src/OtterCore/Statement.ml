@@ -122,6 +122,9 @@ let function_from_exp job state exp args errors =
             FormatPlus.failwith "Non-constant function ptr not supported :@ @[%a@]" Printer.exp exp
 
 let exec_fundec job state instr fundec lvalopt exps errors =
+    Output.set_mode Output.MSG_FUNC;
+    Output.printf "@[Enter function %a@]@\n" Printer.fundec fundec;
+
     let stmt = job.stmt in
 
     (* evaluate the arguments *)

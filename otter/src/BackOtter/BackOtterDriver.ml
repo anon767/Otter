@@ -73,26 +73,31 @@ let otter_failure_interceptor job job_queue interceptor =
             interceptor job job_queue
 
 
-let previous_function : fundec option ref = ref None
-let print_function_switch_interceptor job job_queue interceptor =
-        let this_function = List.hd (List.rev job.state.callstack) in
-        match !previous_function with
-        | None ->
-            previous_function := Some this_function;
-            Output.must_printf "@\n*** Start running function %s ***@\n@\n" this_function.svar.vname;
-            interceptor job job_queue
-        | Some f ->
-            if f != this_function then begin
-                previous_function := Some this_function;
-                Output.must_printf "@\n*** Switch to function %s ***@\n@\n" this_function.svar.vname
-            end;
-            interceptor job job_queue
+let max_function_name_length = ref 0
+let set_output_formatter_interceptor job job_queue interceptor =
+    let origin_function_name = (List.hd (List.rev job.state.callstack)).svar.vname in
+    let depth = List.length job.state.path_condition in
+    let loc = Job.get_loc job in
+    let label =
+        if loc = Cil.locUnknown then
+            Format.sprintf "%*s [%d,%d] : " (!max_function_name_length) origin_function_name job.jid depth
+        else
+            Format.sprintf "%*s [%d,%d] %s:%d : " (!max_function_name_length) origin_function_name job.jid depth (Filename.basename loc.Cil.file) loc.Cil.line
+    in
+    Output.set_formatter (new Output.labeled label);
+    interceptor job job_queue
+
 
 let callchain_backward_se reporter entry_job =
     let file = entry_job.Job.file in
 
     (* Entry function set by --entryfn (default: main) *)
     let entry_fn = List.hd entry_job.state.callstack in
+
+    (* Setup max_function_name_length, to be used in set_output_formatter_interceptor *)
+    let all_reachable_functions = entry_fn :: (CilCallgraph.find_transitive_callees file entry_fn) in
+    max_function_name_length := List.fold_left (fun len fundec ->
+        max len (String.length fundec.svar.vname)) 0 all_reachable_functions;
 
     (* Map fundecs to potential decision lists
      * This is a reference used by the queue and the two interceptors. *)
@@ -117,8 +122,7 @@ let callchain_backward_se reporter entry_job =
     (* Define interceptor *)
     let interceptor =
         let (>>>) = Interceptor.(>>>) in
-        print_function_switch_interceptor
-        >>> Interceptor.set_output_formatter_interceptor
+            set_output_formatter_interceptor
         >>> otter_failure_interceptor
         >>> BuiltinFunctions.libc_interceptor
         >>> BuiltinFunctions.interceptor

@@ -128,6 +128,9 @@ class ['job] t file targets_ref entry_fn failure_fn = object (self)
             {< otherfn_jobs = job :: otherfn_jobs >}
 
     method get =
+        (* Clear the label, as anything printed here has no specific job context *)
+        Output.set_formatter (new Output.plain);
+
         (* If there's no more entry jobs, the forward search has ended. So we terminate. *)
         if entryfn_jobs = [] then None else
 
@@ -194,11 +197,8 @@ class ['job] t file targets_ref entry_fn failure_fn = object (self)
                     let execution_path_length = List.length job.exHist.executionPath in
                     let distance_from_entryfn = get_distance_from_entryfn (get_origin_function job) in
                     let distance_to_target = get_distance_to_targets (failure_fn :: target_fundecs) job in
-                    let distance =
-                        if distance_to_target = max_distance || distance_from_entryfn = max_distance then max_distance
-                        else distance_to_target + distance_from_entryfn
-                    in
-                    [- distance; execution_path_length]
+                    (* First pick the one closest to entry_fn, then the one closest to a target, then the most explored one *)
+                    [-distance_from_entryfn; -distance_to_target; execution_path_length]
                 in
                 let otherfn_jobs', job = get_job_with_highest_score score otherfn_jobs in
                 Some ({< otherfn_jobs = otherfn_jobs';

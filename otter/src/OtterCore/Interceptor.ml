@@ -7,28 +7,25 @@ let (@@) i1 i2 = fun a b -> i1 a b i2
 let (>>>) i1 i2 = fun a b k -> i1 a b (fun a b -> i2 a b k)
 
 let identity_interceptor job job_queue interceptor =
-	interceptor job job_queue
+    interceptor job job_queue
 
 let old_job_id = ref 0
 let set_output_formatter_interceptor job job_queue interceptor =
-	if !old_job_id <> job.jid then (
-		if not !Executeargs.arg_cfg_pruning then
-		(
-			Output.set_mode Output.MSG_REG;
-			Output.printf "***** Changing running job *****@\n"
-		);
-		old_job_id := job.jid
-	);
-	let depth = List.length job.state.path_condition in
-	let loc = Job.get_loc job in
-	let label =
-		if loc = Cil.locUnknown then
-			Format.sprintf "[%d,%d] : " job.jid depth
-		else
-			Format.sprintf "[%d,%d] %s:%d : " job.jid depth (Filename.basename loc.Cil.file) loc.Cil.line
-	in
-	Output.set_formatter (new Output.labeled label);
-	interceptor job job_queue
+    if !old_job_id <> job.jid then (
+        Output.set_mode Output.MSG_REG;
+        Output.printf "***** Changing running job *****@\n";
+        old_job_id := job.jid
+    );
+    let depth = List.length job.state.path_condition in
+    let loc = Job.get_loc job in
+    let label =
+        if loc = Cil.locUnknown then
+            Format.sprintf "[%d,%d] : " job.jid depth
+        else
+            Format.sprintf "[%d,%d] %s:%d : " job.jid depth (Filename.basename loc.Cil.file) loc.Cil.line
+    in
+    Output.set_formatter (new Output.labeled label);
+    interceptor job job_queue
 
 let intercept_function_by_name_internal target_name replace_func job job_queue interceptor =
 	(* Replace a C function with Otter code *)
