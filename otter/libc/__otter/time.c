@@ -9,17 +9,17 @@ time_t __otter_libc_current_time = 0;
 time_t __otter_libc_next_time()
 {
 	time_t t = 0;
-	__SYMBOLIC(&a);
+	__SYMBOLIC(&t);
 	__ASSUME(t > __otter_libc_current_time);
 	__otter_libc_current_time = t;
-	return(t)
+	return(t);
 }
 
 time_t time(time_t *tloc)
 {
 	time_t t = __otter_libc_next_time();
 
-	if(tloc != NULL
+	if(tloc != NULL)
 	{
 		*tloc = t;
 	}
@@ -77,7 +77,7 @@ size_t strftime(char *s, size_t maxsize, const char *format, const struct tm *ti
 	return 0;
 }
 
-int gettimeofday(struct timeval *tv, struct timezone *tzp)
+int gettimeofday(struct timeval *tv, void *tzp)
 {
 	tv->tv_sec = __otter_libc_next_time();
 	tv->tv_usec = 0;
