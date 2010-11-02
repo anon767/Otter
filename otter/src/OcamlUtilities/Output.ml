@@ -32,6 +32,19 @@ class plain =
 			Format.make_formatter (fun str pos len -> output stdout str pos len; flush stdout) (fun () -> ())
 	end
 
+class colored color =
+	object
+		inherit t
+		val formatter =
+			(* flush after every write *)
+			Format.make_formatter (fun str pos len ->
+                output_string stdout "\027";
+                output_string stdout color;
+                output stdout str pos len;
+                output_string stdout "\027[0m";
+                flush stdout) (fun () -> ())
+	end
+
 class labeled label =
 	object
 		inherit t
@@ -110,13 +123,17 @@ let kprintf k format =
 
 let must_printf format =
     let old_mode = get_mode () in
+    let old_formatter = !formatter in
     set_mode MSG_MUSTPRINT;
-    kprintf (fun _ -> set_mode old_mode) format
+    set_formatter (new colored "[0;31m");
+    kprintf (fun _ -> set_formatter old_formatter; set_mode old_mode) format
 
 let debug_printf format =
     let old_mode = get_mode () in
+    let old_formatter = !formatter in
     set_mode MSG_DEBUG;
-    kprintf (fun _ -> set_mode old_mode) format
+    set_formatter (new colored "[0;36m");
+    kprintf (fun _ -> set_formatter old_formatter; set_mode old_mode) format
 
 
 let mprint_formatter =
