@@ -5,6 +5,8 @@
  * As of r10258, this test causes BackOtter to crashes.
  */
 
+void __FAILURE(void) { }
+
 int main(void) {
     return 0;
 }
