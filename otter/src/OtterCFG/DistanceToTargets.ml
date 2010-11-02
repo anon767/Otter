@@ -52,14 +52,15 @@ let find =
                    adding uncomputed successors and call targets to the worklist *)
                 let worklist' = worklist in
                 let call_targets = Instruction.call_targets instr in
-                let succ_dist, worklist' =
-                    let succ_dist, worklist' = calc_dist (Instruction.successors instr) worklist' in
+                let terminal, succ_dist, worklist' =
+                    let succs = Instruction.successors instr in
+                    let succ_dist, worklist' = calc_dist succs worklist' in
                     let succ_dist = match call_targets with
                         | [] -> succ_dist
                         | call_targets -> succ_dist + List.fold_left (fun d call_target -> min d (DistanceToReturn.find call_target)) max_int call_targets
                     in
                     let succ_dist = if succ_dist < 0 then dist (* overflow *) else succ_dist in
-                    (succ_dist, worklist')
+                    (succs = [], succ_dist, worklist')
                 in
                 let target_dist, worklist' = calc_dist call_targets worklist' in
                 let dist' =
@@ -74,9 +75,9 @@ let find =
                        instruction will have to be updated again later. *)
                     if dist' > 1 && not (InstructionSet.equal worklist' worklist) then worklist' else
 
-                    (* if the worklist is not updated and the distance has changed, then add the predecessors and
-                       call sites to the worklist. *)
-                    if dist' <> dist then
+                    (* if the worklist is not updated and the distance has changed, or this instruction is a terminal
+                       instruction, add the predecessors and call sites to the worklist. *)
+                    if dist' <> dist || terminal then
                         List.fold_left (fun worklist instr -> InstructionSet.add instr worklist) worklist
                             (List.rev_append (Instruction.predecessors instr) (Instruction.call_sites instr))
                     else
