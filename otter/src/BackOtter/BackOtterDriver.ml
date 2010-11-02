@@ -38,8 +38,12 @@ object (_ : 'self)
             targets_ref := BackOtterTargets.add fundec failing_path (!targets_ref)
         in
         begin match job_state with
-            | Job.Complete (Job.Abandoned (`FailureReached, _ , job_result)) -> extract_failing_path job_result
-            | Job.Complete (Job.Abandoned (_, _, job_result)) when !BackOtterReporter.arg_exceptions_as_failures -> extract_failing_path job_result
+            | Job.Complete (Job.Abandoned (`FailureReached, _ , job_result)) ->
+                Output.printf "target_tracker: FailureReached@\n";
+                extract_failing_path job_result
+            | Job.Complete (Job.Abandoned (`Failure msg, _, job_result)) when !BackOtterReporter.arg_exceptions_as_failures ->
+                Output.printf "target_tracker: Failure (%s)@\n" msg;
+                extract_failing_path job_result
             | _ -> ()
         end;
         {< delegate = delegate' >}

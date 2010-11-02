@@ -284,10 +284,9 @@ let state__start_fcall state callContext fundec argvs =
 
 
 let state__end_fcall state =
+    (* TODO: move this to Statement *)
 	Output.set_mode Output.MSG_FUNC;
 	Output.printf "@[Exit function %a@]@\n" Printer.fundec (List.hd state.callstack);
-	(* Output.print_endline ("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
-     *)
 	let block_to_bytes = state.block_to_bytes in
 	let block_to_bytes = frame__clear_varinfos (List.hd state.locals) block_to_bytes in
 	let block_to_bytes = frame__clear_varinfos (List.hd state.formals) block_to_bytes in
