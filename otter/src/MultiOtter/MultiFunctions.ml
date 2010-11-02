@@ -125,6 +125,11 @@ let otter_get_pid job multijob retopt exps errors =
 	let job = BuiltinFunctions.end_function_call { job with state = state } in
 	(Active job, multijob, errors)
 
+let otter_get_parent_pid job multijob retopt exps errors =
+	let state, errors = BuiltinFunctions.set_return_value job.state retopt (int_to_bytes multijob.current_metadata.parent_pid) errors in
+	let job = BuiltinFunctions.end_function_call { job with state = state } in
+	(Active job, multijob, errors)
+
 (* takes a vardic list of pointers to blocks to watch *)
 let otter_io_block job multijob retopt exps errors = 
 	let rec find_blocks state exps errors =
@@ -220,14 +225,15 @@ let interceptor job multijob job_queue interceptor =
 	try
 		(
 
-		(intercept_multi_function_by_name_internal "__otter_multi_fork"         libc_fork) @@@
-		(intercept_multi_function_by_name_internal "__otter_multi_gmalloc"      otter_gmalloc) @@@
-		(intercept_multi_function_by_name_internal "__otter_multi_gfree"        otter_gfree) @@@
-		(intercept_multi_function_by_name_internal "__otter_multi_get_pid"      otter_get_pid) @@@
-		(intercept_multi_function_by_name_internal "__otter_multi_io_block"     otter_io_block) @@@
-		(intercept_multi_function_by_name_internal "__otter_multi_time_wait"    otter_time_wait) @@@
-		(intercept_multi_function_by_name_internal "__otter_multi_begin_atomic" otter_begin_atomic) @@@
-		(intercept_multi_function_by_name_internal "__otter_multi_end_atomic"   otter_end_atomic) @@@
+		(intercept_multi_function_by_name_internal "__otter_multi_fork"               libc_fork) @@@
+		(intercept_multi_function_by_name_internal "__otter_multi_gmalloc"            otter_gmalloc) @@@
+		(intercept_multi_function_by_name_internal "__otter_multi_gfree"              otter_gfree) @@@
+		(intercept_multi_function_by_name_internal "__otter_multi_get_pid"            otter_get_pid) @@@
+		(intercept_multi_function_by_name_internal "__otter_multi_get_parent_pid"     otter_get_parent_pid) @@@
+		(intercept_multi_function_by_name_internal "__otter_multi_io_block"           otter_io_block) @@@
+		(intercept_multi_function_by_name_internal "__otter_multi_time_wait"          otter_time_wait) @@@
+		(intercept_multi_function_by_name_internal "__otter_multi_begin_atomic"       otter_begin_atomic) @@@
+		(intercept_multi_function_by_name_internal "__otter_multi_end_atomic"         otter_end_atomic) @@@
 
 		(* pass on the job when none of those match *)
 		interceptor
