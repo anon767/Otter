@@ -6,6 +6,7 @@ open TestUtil.MyOUnit
 module OcamlbuildDependencies = struct
     open DataStructures
     open OcamlUtilities
+    open CilUtilities
     open OtterBytes
     open OtterCFG
     open OtterCore
