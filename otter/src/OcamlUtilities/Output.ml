@@ -23,7 +23,7 @@ let get_console_width () =
             (* read the result *)
             let s = String.create 16 in
             ignore (Unix.read Unix.stdin s 0 16);
-            (* restore stdin line buffering *)
+            (* restore stdin line buffering and echoing *)
             Unix.tcsetattr Unix.stdin Unix.TCSANOW attr;
             (* parse the result *)
             Scanf.sscanf s "\027[8;%d;%dt" (fun _ w -> w)
