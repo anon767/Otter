@@ -54,6 +54,16 @@ let put_completion completion multijob = match completion with
 	| Exit (_, job_result)
 	| Abandoned (_, _, job_result)
 	| Truncated (_, job_result) ->
+		(* update process parents of children of the compleated process to point to the compleated process's parent *)
+		let processes = List.map
+			(fun (pc, ls, md) ->
+				if md.parent_pid = multijob.current_metadata.pid then
+					(pc, ls, { md with parent_pid = multijob.current_metadata.parent_pid; })
+				else
+					(pc, ls, md)
+			)
+			multijob.processes
+		in
 		let shared = {
 			shared_path_condition = job_result.result_state.path_condition;
 			shared_block_to_bytes = update_to_shared_memory 
@@ -61,6 +71,7 @@ let put_completion completion multijob = match completion with
 				job_result.result_state.block_to_bytes;
 		} in
 		{ multijob with
+			processes = processes;
 			shared = shared;
 		}
 

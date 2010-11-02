@@ -29,8 +29,15 @@ let libc_fork job multijob retopt exps errors =
 			let job = { job with state = MemOp.state__assign state lval (Bytes.bytes__zero); } in
 			(job, child_job, errors)
 	in
-	let multijob = (MultiJobUtilities.put_job child_job multijob { multijob.current_metadata with pid = multijob.next_pid }) in
-	let multijob = {multijob with next_pid = multijob.next_pid + 1 } in
+	let multijob = MultiJobUtilities.put_job
+		child_job
+		multijob 
+		{multijob.current_metadata with 
+			pid = multijob.next_pid;
+			parent_pid = multijob.current_metadata.pid;
+		}
+	in
+	let multijob = { multijob with next_pid = multijob.next_pid + 1 } in
 	(Active job, multijob, errors)
 
 (* allocates on the global heap *)
