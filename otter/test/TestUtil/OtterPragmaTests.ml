@@ -288,7 +288,7 @@ module Make (Errors : Errors) = struct
 
                     | "time_limit", [ Cil.AInt time_limit ] ->
                         if flags.time_limit <> None then assert_loc_failure loc "Time limit already defined.";
-                        if time_limit <= 0 then assert_loc_failure loc "Invalid time limit (should not be greater than 0).";
+                        if time_limit <= 0 then assert_loc_failure loc "Invalid time limit (should be greater than 0).";
                         ({ flags with time_limit = Some time_limit }, test)
                     | "time_limit", _ ->
                         assert_loc_failure loc "Invalid time limit (should have exactly one integer argument that is the time limit in seconds)."
