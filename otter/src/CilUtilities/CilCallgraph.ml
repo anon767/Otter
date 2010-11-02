@@ -4,6 +4,7 @@
 (**/**) (* various helper modules *)
 
 module Callgraph = Ocamlgraph.Persistent.Digraph.ConcreteBidirectional (CilData.CilFundec)
+module FundecSet = Set.Make (CilData.CilFundec)
 
 module DotCallgraph = Ocamlgraph.Graphviz.Dot (struct
     include Callgraph
@@ -62,20 +63,33 @@ let compute_callgraph =
 let find_callers file fundec = Callgraph.pred (compute_callgraph file) fundec
 
 
-(** find the {!cil.fundecs} of callees of a function. *)
+(** Find the {!Cil.fundecs} of callees of a function. *)
 let find_callees file fundec = Callgraph.succ (compute_callgraph file) fundec
 
 
-(** find the {!cil.fundecs} of transitive callees of a function. *)
-let find_transitive_callees file fundec =
-    let rec find_transitive_callees fundec all_callees =
-        let callees = Callgraph.succ (compute_callgraph file) fundec in
-        List.fold_left (fun all_callees callee ->
-            if List.memq callee all_callees then all_callees
-            else find_transitive_callees callee (callee :: all_callees)
-        ) all_callees callees
+(**/**) (* helper function for transitive queries *)
+let find_transitive_worker dir file fundec =
+    let callgraph = compute_callgraph file in
+    let rec find_transitive_worker result = function
+        | fundec::worklist when not (FundecSet.mem fundec result) ->
+            find_transitive_worker (FundecSet.add fundec result) (List.rev_append (dir callgraph fundec) worklist)
+        | _::worklist ->
+            find_transitive_worker result worklist
+        | [] ->
+            FundecSet.elements result
     in
-    find_transitive_callees fundec []
+    find_transitive_worker FundecSet.empty (dir callgraph fundec)
+(**/**)
+
+
+(** Find the {!Cil.fundecs} of transitive callers of a function. *)
+let find_transitive_callers =
+    find_transitive_worker Callgraph.pred
+
+
+(** Find the {!Cil.fundecs} of transitive callees of a function. *)
+let find_transitive_callees =
+    find_transitive_worker Callgraph.succ
 
 
 (** Save the callgraph of a file to a GraphViz dot file. *)
