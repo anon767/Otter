@@ -33,7 +33,7 @@ let find =
                 else
                     List.fold_left begin fun (dist, worklist) instr ->
                         try (min dist (InstructionTargetsHash.find memotable (instr, targets)), worklist)
-                        with Not_found -> (min dist max_int, InstructionSet.add instr worklist)
+                        with Not_found -> (dist, InstructionSet.add instr worklist)
                     end (max_int, worklist) instrs
             in
             let rec update worklist =
@@ -48,7 +48,7 @@ let find =
 
                 (* compute the new distance by taking the minimum of:
                         - 1 + the minimum distance of its successors + the minimum distance through its call targets,
-                        - or, 1 + the minimum distance of it's call targets;
+                        - or, 1 + the minimum distance of its call targets;
                    adding uncomputed successors and call targets to the worklist *)
                 let worklist' = worklist in
                 let call_targets = Instruction.call_targets instr in
