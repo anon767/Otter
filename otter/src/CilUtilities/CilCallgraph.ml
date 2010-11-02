@@ -3,14 +3,7 @@
 
 (**/**) (* various helper modules *)
 
-module CilFundec = struct
-    type t = Cil.fundec
-    let compare x y = Pervasives.compare x.Cil.svar.Cil.vname y.Cil.svar.Cil.vname
-    let equal x y = compare x y = 0
-    let hash x = Hashtbl.hash x.Cil.svar.Cil.vname
-end
-
-module Callgraph = Ocamlgraph.Persistent.Digraph.ConcreteBidirectional (CilFundec)
+module Callgraph = Ocamlgraph.Persistent.Digraph.ConcreteBidirectional (CilData.CilFundec)
 
 module DotCallgraph = Ocamlgraph.Graphviz.Dot (struct
     include Callgraph
