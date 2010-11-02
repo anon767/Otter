@@ -286,6 +286,13 @@ module Make (Errors : Errors) = struct
                         if command_line = [] then assert_loc_failure loc "Invalid command line (should have at least one argument).";
                         ({ flags with command_line = command_line }, test)
 
+                    | "time_limit", [ Cil.AInt time_limit ] ->
+                        if flags.time_limit <> None then assert_loc_failure loc "Time limit already defined.";
+                        if time_limit <= 0 then assert_loc_failure loc "Invalid time limit (should not be greater than 0).";
+                        ({ flags with time_limit = Some time_limit }, test)
+                    | "time_limit", _ ->
+                        assert_loc_failure loc "Invalid time limit (should have exactly one integer argument that is the time limit in seconds)."
+
                     | "cil_options", args ->
                         if flags.cil_options <> [] then assert_loc_failure loc "CIL options already defined.";
                         let cil_options = List.map begin function
@@ -294,13 +301,6 @@ module Make (Errors : Errors) = struct
                         end args in
                         if cil_options = [] then assert_loc_failure loc "Invalid CIL options (should have at least one argument).";
                         ({ flags with cil_options = cil_options }, test)
-
-                    | "time_limit", [ Cil.AInt time_limit ] ->
-                        if flags.time_limit <> None then assert_loc_failure loc "Time limit already defined.";
-                        if time_limit <= 0 then assert_loc_failure loc "Invalid time limit (should not be greater than 0).";
-                        ({ flags with time_limit = Some time_limit }, test)
-                    | "time_limit", _ ->
-                        assert_loc_failure loc "Invalid time limit (should have exactly one integer argument that is the time limit in seconds)."
 
                     | "has_failing_assertions", [] ->
                         ({ flags with has_failing_assertions = true }, test)
