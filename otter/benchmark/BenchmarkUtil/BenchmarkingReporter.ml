@@ -1,16 +1,16 @@
 open OtterCore
+open OtterReporter
 
-class ['self] t = object (_ : 'self)
+class ['self] t ?max_nodes ?max_paths ?max_abandoned () = object (self : 'self)
+    inherit ['self] BasicReporter.t ?max_nodes ?max_paths ?max_abandoned () as super
     val start_times = Unix.times ()
-    val nodes = 0
-    val paths = 0
     val records = []
 
     method summarize =
         Format.eprintf "@.";
         Format.eprintf "Abandoned jobs in order of discovery (by time, nodes and paths visited):@\n";
         Format.eprintf "  @[";
-        ignore begin List.fold_right begin fun (completion, end_times, nodes, paths) n ->
+        ignore begin List.fold_right2 begin fun completion (end_times, nodes, paths) n ->
             match completion with
                 | Job.Abandoned _ ->
                     let elapsed_user = end_times.Unix.tms_utime -. start_times.Unix.tms_utime in
@@ -20,24 +20,20 @@ class ['self] t = object (_ : 'self)
                     n + 1
                 | _ ->
                     n
-        end records 1 end;
+        end completed records 1 end;
         Format.eprintf "@]@.";
 
-    method report = function
+    method record = function
         | Job.Complete completion ->
-            let nodes = nodes + 1 in
-            let paths = paths + (match completion with Job.Truncated _ -> 0 | _ -> 1) in
-            let records = (completion, Unix.times (), nodes, paths)::records in
-            {< nodes = nodes; paths = paths; records = records >}
+            {< records = (Unix.times (), nodes, paths)::records >}
 
         | Job.Active _
         | Job.Fork _ ->
-            {< nodes = nodes + 1 >}
+            self
 
         | Job.Paused _ ->
             invalid_arg "unexpected Job.Paused"
 
-    method should_continue = true
-
-    method completed = List.map (fun (c, _, _, _) -> c) records
+    method report job_result =
+        (super#report job_result)#record job_result
 end

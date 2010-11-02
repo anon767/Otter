@@ -103,7 +103,7 @@ let doit file =
 	let job = OtterJob.Job.get_default file in
 
 	(* run the job *)
-	let module Reporter = BasicReporter.Make (OtterCore.Errors) in
+	let module Reporter = ErrorReporter.Make (OtterCore.Errors) in
 	let result = run (new Reporter.t ()) job in
 
 	(* print the results *)

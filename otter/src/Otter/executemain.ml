@@ -37,7 +37,7 @@ let doExecute (f: file) =
 	let job = Job.get_default f in
 
 	(* run the job *)
-	let module Reporter = BasicReporter.Make (OtterCore.Errors) in
+	let module Reporter = ErrorReporter.Make (OtterCore.Errors) in
 	let completed = Driver.run_basic (new Reporter.t ()) job in
 
 	(* Turn off the alarm and reset the signal handlers *)

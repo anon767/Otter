@@ -51,6 +51,7 @@ open OcamlUtilities
 open CilUtilities
 open OtterBytes
 open OtterCore
+open OtterReporter
 open OtterDriver
 
 
@@ -423,11 +424,11 @@ module Make (Errors : Errors) = struct
 
         reporter
 
-    (** Creates an OUnit {!TestCase} using {!eval_otter_with_pragma} with {!ListReporter.t} as the reporter.
+    (** Creates an OUnit {!TestCase} using {!eval_otter_with_pragma} with {!BasicReporter.t} as the reporter.
                 @param driver is the Otter main loop to use
                 @param path is the path to the file
                 @return a {!TestCase} that runs Otter
     *)
-    let test_otter_with_pragma driver path () = ignore (eval_otter_with_pragma driver (fun () -> new ListReporter.t) path ())
+    let test_otter_with_pragma driver path () = ignore (eval_otter_with_pragma driver (new BasicReporter.t) path ())
 end
 

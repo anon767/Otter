@@ -14,7 +14,7 @@ open Job
 open Decision
 open Cil
 
-module Reporter = BasicReporter.Make (BackOtterErrors)
+module Reporter = ErrorReporter.Make (BackOtterErrors)
 
 type failing_predicate =
     | FailingCondition of state * Bytes.bytes (* TODO (martin): make the condition a list of bytes *)

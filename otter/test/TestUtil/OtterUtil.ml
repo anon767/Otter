@@ -5,6 +5,7 @@ open OcamlUtilities
 open CilUtilities
 open OtterCore
 open OtterJob
+open OtterReporter
 open OtterDriver
 
 
@@ -48,7 +49,7 @@ let test_otter_on_file
             else
                 FunctionJob.make file (FindCil.fundec_by_name file entry_function)
         in
-        let results = driver (new ListReporter.t) job in
+        let results = driver (new BasicReporter.t ()) job in
 
         (* perform tests in order of expressiveness of potential errors *)
         (* first, test if assertions passed *)

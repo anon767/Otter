@@ -36,7 +36,7 @@ let benchmarks =
                     assert_failure "Preprocessor parse error.";
 
                 (* tests need to be evaluated consistently, so use BackOtter's error reasons for all tests as they are richer *)
-                let reporter = BackOtterPragmaTest.eval_otter_with_pragma driver (fun () -> new BenchmarkUtil.BenchmarkingReporter.t) temppath () in
+                let reporter = BackOtterPragmaTest.eval_otter_with_pragma driver (new BenchmarkUtil.BenchmarkingReporter.t) temppath () in
                 reporter#summarize
             end
         in

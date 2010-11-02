@@ -1,7 +1,7 @@
 open OtterCore
 open OtterReporter
 
-module Reporter = BasicReporter.Make (BackOtterErrors)
+module Reporter = ErrorReporter.Make (BackOtterErrors)
 
 let arg_exceptions_as_failures = ref false
 
