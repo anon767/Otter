@@ -10,28 +10,48 @@ let arg_print_debug = ref false
 let arg_print_mustprint = ref true
 
 
-let get_console_width () =
-    (* if on a terminal, use xterm (?) escape sequence to query for column width *)
-    if Unix.isatty Unix.stdin && Unix.isatty Unix.stdout then
-        let attr = Unix.tcgetattr Unix.stdin in
-        try
-            (* turn off line buffering and echoing on stdin and flush the input *)
-            Unix.tcsetattr Unix.stdin Unix.TCSADRAIN { attr with Unix.c_icanon = false; Unix.c_echo = false };
-            Unix.tcflush Unix.stdin Unix.TCIFLUSH;
-            (* send the "query screen size" escape sequence *)
-            ignore (Unix.write Unix.stdout "\027[18t" 0 5);
-            (* read the result *)
-            let s = String.create 16 in
-            ignore (Unix.read Unix.stdin s 0 16);
-            (* restore stdin line buffering and echoing *)
-            Unix.tcsetattr Unix.stdin Unix.TCSANOW attr;
-            (* parse the result *)
-            Scanf.sscanf s "\027[8;%d;%dt" (fun _ w -> w)
-        with Unix.Unix_error _ | Scanf.Scan_failure _ ->
-            Unix.tcsetattr Unix.stdin Unix.TCSANOW attr;
-            80
-    else
-        80
+let is_console () =
+    (* detecting terminal capabilities is serious black magic; this will at least catch Emacs' shell mode *)
+    Unix.isatty Unix.stdin && Unix.isatty Unix.stdout && (try Unix.getenv "TERM" <> "dumb" with Not_found -> false)
+
+
+let get_console_size =
+    let default_size = (24, 80) in
+    let previous_size = ref default_size in
+    fun () ->
+        if is_console () then
+            (* if on a terminal, use xterm escape sequence to query for column size *)
+            let attr = Unix.tcgetattr Unix.stdin in
+            try
+                (* turn off line buffering, echoing, set the minimum characters for read to return and the
+                   read timeout on stdin and flush the input *)
+                Unix.tcsetattr Unix.stdin Unix.TCSADRAIN
+                    { attr with Unix.c_icanon = false; Unix.c_echo = false; Unix.c_vmin = 0; Unix.c_vtime = 1 };
+                Unix.tcflush Unix.stdin Unix.TCIFLUSH;
+                (* send the "query screen size" escape sequence *)
+                ignore (Unix.write Unix.stdout "\027[18t" 0 5);
+                (* read the result *)
+                let s = String.create 16 in
+                ignore (Unix.read Unix.stdin s 0 16);
+                (* restore the state of stdin *)
+                Unix.tcsetattr Unix.stdin Unix.TCSANOW attr;
+                (* parse the result *)
+                Scanf.sscanf s "\027[8;%d;%dt" begin fun h w ->
+                    previous_size := (h, w);
+                    (h, w)
+                end
+            with e ->
+                (* whatever exceptions arise, restore the terminal and flush it *)
+                Unix.tcsetattr Unix.stdin Unix.TCSANOW attr;
+                Unix.tcflush Unix.stdin Unix.TCIFLUSH;
+                match e with
+                    | Unix.Unix_error _ | Scanf.Scan_failure _ ->
+                        (* if the exception was from here, return the an old result which may still be right *)
+                        !previous_size
+                    | e ->
+                        raise e
+        else
+            default_size
 
 
 class virtual t =
@@ -61,12 +81,17 @@ class colored color =
 		inherit t
 		val formatter =
                 (* flush after every write *)
-			Format.make_formatter (fun str pos len ->
-                output_string stdout "\027";
-                    output_string stdout color;
-                    output stdout str pos len;
-                output_string stdout "\027[0m";
-                flush stdout) (fun () -> ())
+                Format.make_formatter begin fun str pos len ->
+                    if is_console () then begin
+                        output_string stdout "\027";
+                        output_string stdout color;
+                        output stdout str pos len;
+                        output_string stdout "\027[0m"
+                    end else begin
+                        output stdout str pos len
+                    end;
+                    flush stdout
+                end (fun () -> ())
 	end
 
 class labeled label =
@@ -74,7 +99,8 @@ class labeled label =
 		inherit t
 		val formatter =
 			(* flush after every line, prefixing each line with a label *)
-			let buffer = Buffer.create (get_console_width ()) in
+			let _, width = get_console_size () in
+			let buffer = Buffer.create width in
 			let rec labeled_output str pos len =
 				let newline_index = 1 + try String.index_from str pos '\n' - pos with Not_found -> len in
 				if newline_index <= len then begin
@@ -94,7 +120,7 @@ class labeled label =
 			in
 			let formatter = Format.make_formatter labeled_output (fun () -> ()) in
 			(* adjust the margin to account for the length of the label *)
-			Format.pp_set_margin formatter (get_console_width () - (String.length label));
+			Format.pp_set_margin formatter (width - String.length label);
 			formatter
 	end
 
