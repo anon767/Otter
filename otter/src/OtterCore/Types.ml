@@ -45,7 +45,7 @@ exception SignalException of string
 (** A calling context may either be the symbolic executor, represented by
 		[Runtime], or from another function in the source code, represented
 		either by a tuple [Source (destOpt,callStmt,callInstr,nextStmt)] if the
-		function returns or [NoReturn (callInstr)] if the function doesn't return.
+		function returns or [NoReturn (callStmt,callInstr)] if the function doesn't return.
 		[nextStmt] is the [stmt] to execute after the call returns; [callStmt]
 		and [callInstr] are the function call statement and instruction;
 		and [destOpt] is [None] if we ignore the result of the call, or it is
@@ -53,7 +53,7 @@ exception SignalException of string
 type callingContext =
     | Runtime
     | Source of (Cil.lval option * Cil.stmt * Cil.instr * Cil.stmt)
-    | NoReturn of Cil.instr
+    | NoReturn of (Cil.stmt * Cil.instr)
 
 
 

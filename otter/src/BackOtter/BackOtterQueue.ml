@@ -1,5 +1,6 @@
 open CilUtilities
 open OcamlUtilities
+open OtterCFG
 open OtterGraph
 open OtterCore
 open Types
@@ -13,12 +14,12 @@ open Cil
  *    (This results in DFS backward, and gives shortest path from main to failure if the callgraph is like a tree).
  *
  * TODO:
- * 1. Target-driven followed by coverage-driven
- * 3. Better implementation of get_distance_to_targets
- * 4. More efficient implementation of update_bounding_paths_with_targets. Basically we only need to update jobs that are affected by the last discovery of failing path.
+ * 1. Coverage-driven
+ * 2. More efficient implementation of update_bounding_paths_with_targets.
+ *    Basically we only need to update jobs that are affected by the last discovery of failing path.
  *)
 let default_bidirectional_search_ratio = ref 0.5
-let max_distance = 10000000
+let max_distance = max_int
 
 let get_origin_function job = List.hd (List.rev job.state.callstack)
 
@@ -37,35 +38,28 @@ let get_job_with_highest_score ?(compare=Pervasives.compare) score_fn jobs =
     | Some (job, _) -> jobs, job
     | None -> failwith "get_job_with_highest_score assumes a non empty list"
 
+
 let get_distance_to_targets target_fundecs job =
-    let graph,root = Graph.make_graph (List.hd job.state.callstack) in
-    let target_nodes =
-        Graph.filter_nodes graph
-        begin
-            fun node -> match node.Graph.obj with
-            | InstrStmt.Instr((Call(_,Lval(Var(varinfo),_),exps,_))::_,_)  ->
-                    List.fold_left (fun b t -> if t.svar == varinfo then true else b) false target_fundecs
-            | _ -> false
-        end
-    in
-    let get_predicate job node =
-        match job.instrList,job.stmt,node.Graph.obj with
-        | [],stmt,InstrStmt.Stmt(stmt') when stmt==stmt' -> true
-        | [],_,_ -> false
-        | instrs,_,InstrStmt.Instr(instrs',_) when instrs==instrs' -> true
-        | _ -> false
-    in
-    let sources = Graph.filter_nodes graph (get_predicate job) in
-    assert(List.length sources = 1);
-    let source = List.hd sources in
-    Graph.set_color graph max_distance;
-    let backward_distance_from_targets =
-        List.fold_left (fun d tar ->
-            let d' = Graph.backward_distance graph source tar in
-            min d d'
-        ) max_distance target_nodes
-    in
-    backward_distance_from_targets
+    if target_fundecs = [] then
+        max_distance (* = max_int in DistanceToTargets *)
+    else
+        let file = job.Job.file in
+        let source = Job.get_instruction job in
+        let target_instrs = List.map (fun f -> Instruction.of_fundec file f) target_fundecs in
+        let remaining_instrs stmt instr = match stmt.skind with
+            | Instr (instrs) -> let rec behead = function [] -> [] | h::t -> if h == instr then h::t else behead t in behead instrs
+            | _ -> invalid_arg "stmt must be a list of instrs"
+        in
+        let context = List.map2 (
+            fun call fundec -> match call with
+            | Runtime -> failwith "callContexts should not have Runtime as its last element at this point"
+            | Source (_,stmt,instr,_)
+            | NoReturn (stmt,instr) -> Instruction.make file fundec stmt (remaining_instrs stmt instr)
+            )
+            (List.rev (List.tl (List.rev job.state.callContexts))) (* Discard the last element Runtime from callContexts *)
+            (List.tl job.state.callstack)                          (* Discard the first function from the callstack *)
+        in
+        DistanceToTargets.find_in_context source target_instrs context
 
 
 (* Very inefficient, but working *)
@@ -102,7 +96,7 @@ let has_bounding_paths job = match job.boundingPaths with
     | _ -> false
 
 (* TODO: cache the result. Or maybe this is already implemented somewhere. *)
-let distance_from file f1 f2 =
+let get_distance_from file f1 f2 =
     let rec bfs = function
         | [] -> max_distance
         | (f, d) :: tail ->
@@ -156,7 +150,7 @@ class ['job] t file targets_ref entry_fn failure_fn = object (self)
         List.iter (fun f -> Output.debug_printf "Target function: %s@\n" f.svar.vname) (BackOtterTargets.get_fundecs targets);
         List.iter (fun f -> Output.debug_printf "Origin function: %s@\n" f.svar.vname) (origin_fundecs');
 
-        let distance_from_entryfn = distance_from file entry_fn in
+        let get_distance_from_entryfn = get_distance_from file entry_fn in
         try
             let update_bounding_paths_with_targets = update_bounding_paths targets in
             let entryfn_jobs' = List.map update_bounding_paths_with_targets entryfn_jobs in
@@ -166,7 +160,7 @@ class ['job] t file targets_ref entry_fn failure_fn = object (self)
              * 1. entryfn_job
              * 2. otherfn_job whose origin function is closer to entry_fn
              *)
-            let otherfn_jobs' = List.sort (fun j1 j2 -> (distance_from_entryfn (get_origin_function j1)) - (distance_from_entryfn (get_origin_function j2))) otherfn_jobs' in
+            let otherfn_jobs' = List.sort (fun j1 j2 -> (get_distance_from_entryfn (get_origin_function j1)) - (get_distance_from_entryfn (get_origin_function j2))) otherfn_jobs' in
             let job = List.find has_bounding_paths (List.rev_append entryfn_jobs' otherfn_jobs') in
             Output.debug_printf "Job %d is run under influence of bounding path(s) from function %s:@\n" job.jid (get_origin_function job).svar.vname;
             (match job.boundingPaths with | None -> () | Some bounding_paths ->
@@ -195,9 +189,13 @@ class ['job] t file targets_ref entry_fn failure_fn = object (self)
                 (* Do "backward" search *)
                 let score job =
                     let execution_path_length = List.length job.exHist.executionPath in
-                    let distance_from_entryfn = distance_from_entryfn (get_origin_function job) in
+                    let distance_from_entryfn = get_distance_from_entryfn (get_origin_function job) in
                     let distance_to_target = get_distance_to_targets (failure_fn :: target_fundecs) job in
-                    [- (distance_to_target) - (distance_from_entryfn); execution_path_length]
+                    let distance =
+                        if distance_to_target = max_distance || distance_from_entryfn = max_distance then max_distance
+                        else distance_to_target + distance_from_entryfn
+                    in
+                    [- distance; execution_path_length]
                 in
                 let otherfn_jobs', job = get_job_with_highest_score score otherfn_jobs in
                 Some ({< otherfn_jobs = otherfn_jobs';

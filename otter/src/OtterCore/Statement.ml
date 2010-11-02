@@ -135,7 +135,7 @@ let exec_fundec job state instr fundec lvalopt exps errors =
      [func] is [exit] or has the [noreturn] attribute, [stmt]
      has no successor. *)
     let callContext = match stmt.succs with
-        | []  -> NoReturn instr
+        | []  -> NoReturn (stmt,instr)
         | [h] -> Source (lvalopt,stmt,instr,h)
         | _   -> assert false
     in
