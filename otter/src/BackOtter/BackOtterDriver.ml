@@ -33,8 +33,8 @@ object (_ : 'self)
         let extract_failing_path job_result =
             let fundec = List.hd (List.rev job_result.result_state.callstack) in
             let failing_path = job_result.result_decision_path in
-            let _ = Output.must_printf "@\n=> Extract the following failing path for function %s:@\n" fundec.svar.vname in
-            let _ = Output.must_printf "@[%a@]@\n@\n" Decision.print_decisions failing_path in
+            let _ = Output.debug_printf "@\n=> Extract the following failing path for function %s:@\n" fundec.svar.vname in
+            let _ = Output.debug_printf "@[%a@]@\n@\n" Decision.print_decisions failing_path in
             targets_ref := BackOtterTargets.add fundec failing_path (!targets_ref)
         in
         begin match job_state with
