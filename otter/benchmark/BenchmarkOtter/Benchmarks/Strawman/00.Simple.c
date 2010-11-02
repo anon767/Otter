@@ -23,7 +23,7 @@
  *
  * -----------------------------------------
  */
-
+ 
 #pragma expect_abandoned(failure_reached, x > -5)
 #pragma expect_abandoned(failure_reached, x <= -5)
 #pragma expect_return()
