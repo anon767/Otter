@@ -70,8 +70,9 @@ let find =
                 if dist' <> dist then InstructionTargetsHash.replace memotable (instr, targets) dist';
 
                 let worklist =
-                    (* if worklist is updated, use it because this instruction will have to be updated again later. *)
-                    if not (InstructionSet.equal worklist' worklist) then worklist' else
+                    (* if this is not a target and the worklist is updated, process the worklist first because this
+                       instruction will have to be updated again later. *)
+                    if dist' > 1 && not (InstructionSet.equal worklist' worklist) then worklist' else
 
                     (* if the worklist is not updated and the distance has changed, then add the predecessors and
                        call sites to the worklist. *)
