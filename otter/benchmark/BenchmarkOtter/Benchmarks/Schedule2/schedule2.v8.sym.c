@@ -39,6 +39,8 @@
 
 #include <stdio.h>
 
+void __FAILURE() {}
+
 // BEGIN "schedule2.h"
 #define MAXPRIO 3
 #define MAXLOPRIO 2
@@ -93,13 +95,6 @@ struct process
 };
 // END "schedule2.h"
 
-// TODO: get rid of these definitions?
-int abs(int i) {
-    if (i >= 0) return i;
-    else return -i;
-}
-void __FAILURE() {}
-// END TODO
 
 
 static struct process * current_job;

@@ -18,8 +18,15 @@ open Cil
  * 2. More efficient implementation of update_bounding_paths_with_targets.
  *    Basically we only need to update jobs that are affected by the last discovery of failing path.
  *)
+let computation_unit = [
+    "time", `Time;
+    "step", `Step;
+]
+
 let default_bidirectional_search_ratio = ref 0.5
+let default_bidirectional_search_method = ref `Time  (* time | step *)
 let max_distance = max_int
+
 
 let get_origin_function job = List.hd (List.rev job.state.callstack)
 
@@ -121,12 +128,18 @@ let get_distance_from file f1 f2 =
     bfs [(f1, 0)]
 
 
+type job_type = EntryfnJob of job | OtherfnJob of job
+
 class ['job] t file targets_ref entry_fn failure_fn = object (self)
     val entryfn_jobs = []
     val otherfn_jobs = []
     val entryfn_processed = 0
     val otherfn_processed = 0
     val origin_fundecs = [entry_fn] (* fundecs whose FunctionJob-initialized jobs have been created, or entry_fn *)
+    val last_time = None
+    val last_job_type = None
+    val entryfn_time_elapsed = 0.0
+    val otherfn_time_elapsed = 0.0
 
     method put (job : 'job) =
         if get_origin_function job == entry_fn then
@@ -140,6 +153,22 @@ class ['job] t file targets_ref entry_fn failure_fn = object (self)
 
         (* If there's no more entry jobs, the forward search has ended. So we terminate. *)
         if entryfn_jobs = [] then None else
+
+        (* Update time elapsed *)
+        let current_time = Unix.gettimeofday () in
+        let last_job_type, entryfn_time_elapsed, otherfn_time_elapsed = match last_time with
+        | None -> last_job_type, entryfn_time_elapsed, otherfn_time_elapsed
+        | Some t ->
+            let time_elapsed = current_time -. t in
+            let entryfn_time_elapsed, otherfn_time_elapsed =
+                match last_job_type with
+                | Some (EntryfnJob _) -> entryfn_time_elapsed +. time_elapsed, otherfn_time_elapsed
+                | Some (OtherfnJob _) -> entryfn_time_elapsed, otherfn_time_elapsed +. time_elapsed
+                | None -> entryfn_time_elapsed, otherfn_time_elapsed
+            in
+            last_job_type, entryfn_time_elapsed, otherfn_time_elapsed
+        in
+        let last_time = Some current_time in
 
         let targets = !targets_ref in
         let target_fundecs = BackOtterTargets.get_fundecs targets in
@@ -182,7 +211,11 @@ class ['job] t file targets_ref entry_fn failure_fn = object (self)
             let otherfn_jobs'' = List.filter (fun j -> j != job) otherfn_jobs' in
             Some ({< entryfn_jobs = entryfn_jobs'';
                      otherfn_jobs = otherfn_jobs'';
-                     origin_fundecs = origin_fundecs' >}, job)
+                     origin_fundecs = origin_fundecs';
+                     last_time = last_time;
+                     last_job_type = None; (* TODO: distinguish entry/other above *)
+                     entryfn_time_elapsed = entryfn_time_elapsed;
+                     otherfn_time_elapsed = otherfn_time_elapsed; >}, job)
         with Not_found ->
             let want_process_entryfn =
                 (* TODO: right now, we use the ratio of how many steps we run the forward and backward search.
@@ -190,10 +223,16 @@ class ['job] t file targets_ref entry_fn failure_fn = object (self)
                  * A reason why this may be good is that the backward search tends to run slower and slower, and
                  * therefore a "step" in backward search is on average longer.
                  *)
-                let total_processed = entryfn_processed + otherfn_processed in
                 let ratio = !default_bidirectional_search_ratio in
-                if total_processed = 0 then ratio > 0.0
-                else (float_of_int entryfn_processed) /. (float_of_int total_processed) <= ratio
+                match (!default_bidirectional_search_method) with
+                | `Time ->
+                    let total_elapsed = entryfn_time_elapsed +. otherfn_time_elapsed in
+                    if total_elapsed <= 0.0001 then ratio > 0.0
+                    else entryfn_time_elapsed /. total_elapsed <= ratio
+                | `Step ->
+                    let total_processed = entryfn_processed + otherfn_processed in
+                    if total_processed = 0 then ratio > 0.0
+                    else (float_of_int entryfn_processed) /. (float_of_int total_processed) <= ratio
             in
             if entryfn_jobs <> [] && (otherfn_jobs = [] || want_process_entryfn)  then
                 (* Do forward search *)
@@ -207,20 +246,29 @@ class ['job] t file targets_ref entry_fn failure_fn = object (self)
                 Some ({< entryfn_jobs = entryfn_jobs';
                          otherfn_jobs = otherfn_jobs;
                          origin_fundecs = origin_fundecs';
-                         entryfn_processed = entryfn_processed + 1 >}, job)
+                         entryfn_processed = entryfn_processed + 1;
+                         last_time = last_time;
+                         last_job_type = Some (EntryfnJob job);
+                         entryfn_time_elapsed = entryfn_time_elapsed;
+                         otherfn_time_elapsed = otherfn_time_elapsed; >}, job)
             else if otherfn_jobs <> [] then
                 (* Do "backward" search *)
                 let score job =
+                    let num_of_failing_paths = List.length (BackOtterTargets.get (get_origin_function job) targets) in
                     let execution_path_length = List.length job.exHist.executionPath in
                     let distance_from_entryfn = get_distance_from_entryfn (get_origin_function job) in
                     let distance_to_target = get_distance_to_targets (failure_fn :: target_fundecs) job in
                     (* First pick the one closest to entry_fn, then the one closest to a target, then the most explored one *)
-                    [-distance_from_entryfn; -distance_to_target; execution_path_length]
+                    [-num_of_failing_paths; -distance_from_entryfn; -distance_to_target; execution_path_length]
                 in
                 let otherfn_jobs', job = get_job_with_highest_score score otherfn_jobs in
                 Some ({< otherfn_jobs = otherfn_jobs';
                          origin_fundecs = origin_fundecs';
-                         otherfn_processed = otherfn_processed + 1 >}, job)
+                         otherfn_processed = otherfn_processed + 1;
+                         last_time = last_time;
+                         last_job_type = Some (OtherfnJob job);
+                         entryfn_time_elapsed = entryfn_time_elapsed;
+                         otherfn_time_elapsed = otherfn_time_elapsed; >}, job)
             else
                 None
 
@@ -233,5 +281,8 @@ let options = [
     "--bidirectional-search-ratio",
         Arg.Set_float default_bidirectional_search_ratio,
         "<ratio> The fraction of computation dedicated to forward search (default: 0.5)";
+    "--bidirectional-search-method",
+        Arg.Symbol (fst (List.split computation_unit), fun s -> default_bidirectional_search_method := List.assoc s computation_unit),
+        "<time|step> Unit of computations of forward and backward searches (default: \"time\")";
 ]
 
