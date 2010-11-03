@@ -10,9 +10,35 @@ let arg_print_debug = ref false
 let arg_print_mustprint = ref true
 
 
+(* type annotations are needed because a formatter is stored in a ref cell below; it would be nice to get rid of that
+   ref cell eventually. *)
+type color = [ `Black | `Red | `Green | `Yellow | `Blue | `Magenta | `Cyan | `White ]
+type term = [ `Color of color | `Reset ]
+
+
 let is_console () =
     (* detecting terminal capabilities is serious black magic; this will at least catch Emacs' shell mode *)
     Unix.isatty Unix.stdin && Unix.isatty Unix.stdout && (try Unix.getenv "TERM" <> "dumb" with Not_found -> false)
+
+
+let set_term ff (term : term) =
+    (* see http://invisible-island.net/xterm/ctlseqs/ctlseqs.html for a list of xterm control sequences *)
+    if is_console () then
+        let term_string = match term with
+            | `Color `Black -> "[0;30m"
+            | `Color `Red -> "[0;31m"
+            | `Color `Green -> "[0;32m"
+            | `Color `Yellow -> "[0;33m"
+            | `Color `Blue -> "[0;34m"
+            | `Color `Magenta -> "[0;35m"
+            | `Color `Cyan -> "[0;36m"
+            | `Color `White -> "[0;37m"
+            | `Reset -> "[0m"
+        in
+        Format.pp_print_char ff '\027';
+        Format.pp_print_string ff term_string
+    else
+        ()
 
 
 let get_console_size =
@@ -54,49 +80,41 @@ let get_console_size =
             default_size
 
 
-class virtual t =
+class virtual ['self] t =
+    object (self : 'self)
+        val virtual formatter : Format.formatter
+
+        method printf : 'a . ?term:'term list -> ('a, Format.formatter, unit) format -> 'a = fun ?(term=[]) ->
+            try
+                List.iter (set_term formatter) term;
+                Format.kfprintf (fun ff -> set_term ff `Reset) formatter
+            with e ->
+                set_term formatter `Reset;
+                raise e
+
+        method kprintf : 'a 'b . ('self -> 'a) -> ?term:'term list -> ('b, Format.formatter, unit, 'a) format4 -> 'b = fun k ?(term=[]) ->
+            try
+                List.iter (set_term formatter) term;
+                Format.kfprintf (fun ff -> set_term ff `Reset; k self) formatter
+            with e ->
+                set_term formatter `Reset;
+                raise e
+
+        method flush =
+            Format.pp_print_flush formatter ()
+    end
+
+class ['self] plain =
 	object (self : 'self)
-		val virtual formatter : Format.formatter
-
-		method printf : 'a . ('a, Format.formatter, unit) format -> 'a =
-			Format.fprintf formatter
-
-		method kprintf : 'a 'b . ('self -> 'a) -> ('b, Format.formatter, unit, 'a) format4 -> 'b = fun k ->
-			Format.kfprintf (fun _ -> k self) formatter
-
-		method flush =
-			Format.pp_print_flush formatter ()
-	end
-
-class plain =
-	object
-		inherit t
+		inherit ['self] t
 		val formatter =
 			(* flush after every write *)
 			Format.make_formatter (fun str pos len -> output stdout str pos len; flush stdout) (fun () -> ())
 	end
 
-class colored color =
-	object
-		inherit t
-		val formatter =
-                (* flush after every write *)
-                Format.make_formatter begin fun str pos len ->
-                    if is_console () then begin
-                        output_string stdout "\027";
-                        output_string stdout color;
-                        output stdout str pos len;
-                        output_string stdout "\027[0m"
-                    end else begin
-                        output stdout str pos len
-                    end;
-                    flush stdout
-                end (fun () -> ())
-	end
-
-class labeled label =
-	object
-		inherit t
+class ['self] labeled label =
+	object (self : 'self)
+		inherit ['self] t
 		val formatter =
 			(* flush after every line, prefixing each line with a label *)
 			let _, width = get_console_size () in
@@ -159,31 +177,27 @@ let need_print msg_type =
 		| MSG_MUSTPRINT -> !arg_print_mustprint
 
 
-let printf format =
+let printf ?term format =
 	if (need_print (!current_msg_type)) then
-		!formatter#printf format
+		!formatter#printf ?term format
 	else
 		Format.ifprintf Format.std_formatter format
 
-let kprintf k format =
+let kprintf k ?term format =
 	if (need_print (!current_msg_type)) then
-		!formatter#kprintf k format
+		!formatter#kprintf k ?term format
  	else
 		FormatPlus.ikfprintf (fun _ -> k !formatter) Format.std_formatter format
 
-let must_printf format =
+let must_printf ?(term=[]) format =
     let old_mode = get_mode () in
-    let old_formatter = !formatter in
     set_mode MSG_MUSTPRINT;
-    set_formatter (new colored "[0;31m");
-    kprintf (fun _ -> set_formatter old_formatter; set_mode old_mode) format
+    kprintf (fun _ -> set_mode old_mode) ~term:(`Color `Red::term) format
 
-let debug_printf format =
+let debug_printf ?(term=[]) format =
     let old_mode = get_mode () in
-    let old_formatter = !formatter in
     set_mode MSG_DEBUG;
-    set_formatter (new colored "[0;36m");
-    kprintf (fun _ -> set_formatter old_formatter; set_mode old_mode) format
+    kprintf (fun _ -> set_mode old_mode) ~term:(`Color `Cyan::term) format
 
 
 let mprint_formatter =
