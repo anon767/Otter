@@ -64,6 +64,13 @@ let get_distance_to_targets target_fundecs job =
         in
         DistanceToTargets.find_in_context source target_instrs context
 
+let get_distance_to_targets_within_function target_fundecs job =
+    let file = job.Job.file in
+    let current_fundec = List.hd job.state.callstack in
+    let callees = CilCallgraph.find_callees file current_fundec in
+    let target_fundecs = List.filter (fun target_fundec -> List.memq target_fundec callees) target_fundecs in
+    get_distance_to_targets target_fundecs job
+
 
 (* Very inefficient, but working *)
 let update_bounding_paths targets job =
@@ -178,6 +185,11 @@ class ['job] t file targets_ref entry_fn failure_fn = object (self)
                      origin_fundecs = origin_fundecs' >}, job)
         with Not_found ->
             let want_process_entryfn =
+                (* TODO: right now, we use the ratio of how many steps we run the forward and backward search.
+                 * We can try to use the ratio of running time instead.
+                 * A reason why this may be good is that the backward search tends to run slower and slower, and
+                 * therefore a "step" in backward search is on average longer.
+                 *)
                 let total_processed = entryfn_processed + otherfn_processed in
                 let ratio = !default_bidirectional_search_ratio in
                 if total_processed = 0 then ratio > 0.0
@@ -185,7 +197,12 @@ class ['job] t file targets_ref entry_fn failure_fn = object (self)
             in
             if entryfn_jobs <> [] && (otherfn_jobs = [] || want_process_entryfn)  then
                 (* Do forward search *)
-                let score job = - ((List.length job.decisionPath)) in (* Approximated execution path length *)
+                let score job =
+                    (* When some targets are found in the job's current function (i.e., close enough), we bias towards them. *)
+                    let distance_to_target = get_distance_to_targets_within_function (failure_fn :: target_fundecs) job in
+                    let path_length = ((List.length job.decisionPath)) in (* Approximated execution path length *)
+                    [-distance_to_target; -path_length]
+                in
                 let entryfn_jobs', job = get_job_with_highest_score score entryfn_jobs in
                 Some ({< entryfn_jobs = entryfn_jobs';
                          otherfn_jobs = otherfn_jobs;
