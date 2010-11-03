@@ -1,8 +1,9 @@
-DataStructures/Deferred
 DataStructures/Counter
+DataStructures/Deferred
 DataStructures/Heap
 DataStructures/ImmutableArray
 DataStructures/NamedCounter
+DataStructures/PrioritySearchQueue
 DataStructures/RandomAccessList
 DataStructures/RandomBag
 DataStructures/Ternary
