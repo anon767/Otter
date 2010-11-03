@@ -23,7 +23,7 @@ let is_console () =
 
 let set_term ff (term : term) =
     (* see http://invisible-island.net/xterm/ctlseqs/ctlseqs.html for a list of xterm control sequences *)
-    if is_console () then
+    if (try ignore (Unix.getenv "CLICOLOR_FORCE"); true with Not_found -> false) || is_console () then
         let term_string = match term with
             | `Color `Black -> "[0;30m"
             | `Color `Red -> "[0;31m"
