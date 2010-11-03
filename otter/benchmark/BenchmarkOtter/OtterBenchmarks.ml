@@ -1,5 +1,4 @@
 open TestUtil.MyOUnit
-open TestUtil.OtterPragmaTests
 open OtterCore
 open OtterQueue
 open OtterDriver
@@ -28,15 +27,9 @@ let benchmarks =
         (* benchmarks have to be set up individually due to differences in the types of drivers *)
         let benchmark driver =
             (* TODO: avoid preprocessing the file repeatedly *)
-            test_with_temp_file "OtterBenchmark." ".c" begin fun (temppath, tempout) ->
-                close_out tempout;
-
-                (* TODO: add standard search paths to otter.pl *)
-                if (Sys.command ("./otter.pl -nostdinc -isystem./libc/ -include./libc/__otter/all.h -E -o"^temppath^" "^fullpath^" 2>/dev/null")) <> 0 then
-                    assert_failure "Preprocessor parse error.";
-
+            TestUtil.OtterUtil.test_with_preprocessed_file fullpath begin fun fullpath () ->
                 (* tests need to be evaluated consistently, so use BackOtter's error reasons for all tests as they are richer *)
-                let reporter = BackOtterPragmaTest.eval_otter_with_pragma driver (new BenchmarkUtil.BenchmarkingReporter.t) temppath () in
+                let reporter = BackOtterPragmaTest.eval_otter_with_pragma driver (new BenchmarkUtil.BenchmarkingReporter.t) fullpath () in
                 reporter#summarize
             end
         in
