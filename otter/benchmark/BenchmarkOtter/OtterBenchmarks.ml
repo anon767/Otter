@@ -29,8 +29,11 @@ let benchmarks =
             (* TODO: avoid preprocessing the file repeatedly *)
             TestUtil.OtterUtil.test_with_preprocessed_file fullpath begin fun fullpath () ->
                 (* tests need to be evaluated consistently, so use BackOtter's error reasons for all tests as they are richer *)
-                let reporter = BackOtterPragmaTest.eval_otter_with_pragma driver (new BenchmarkUtil.BenchmarkingReporter.t) fullpath () in
-                reporter#summarize
+                let reporter, exn_opt = BackOtterPragmaTest.eval_otter_with_pragma driver (new BenchmarkUtil.BenchmarkingReporter.t) fullpath () in
+                reporter#summarize;
+                match exn_opt with
+                    | Some exn -> raise exn
+                    | None -> ()
             end
         in
 

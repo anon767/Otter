@@ -396,9 +396,10 @@ module Make (Errors : Errors) = struct
     (** Test helper that runs Otter on a file, using #pragmas to define test expectations. A [reporter] must be
         provided to record the results.
                 @param driver is the Otter main loop to use
-                @param reporter is a reporter to collect the results for additional analysis
+                @param reporter is a constructor for a reporter to collect the results for additional analysis
                 @param path is the path to the file
-                @return a test case that runs Otter and returns the [reporter]
+                @return a test case that runs Otter and returns a tuple of the reporter with the results, and an
+                    optional exception if one was raised during the test
     *)
     let eval_otter_with_pragma driver reporter path = fun () ->
         (* reset the error flag and suppress all output from the symbolic executor *)
@@ -442,27 +443,35 @@ module Make (Errors : Errors) = struct
         Core.prepare_file file;
         let job = OtterJob.Job.get_default file in
         let reporter = reporter ?max_nodes:flags.max_nodes ?max_paths:flags.max_paths ?max_abandoned:flags.max_abandoned () in
-        let reporter = run (fun () -> driver reporter job) in
+        try
+            let reporter = run (fun () -> driver reporter job) in
+            try
+                (* first, test if assertions passed *)
+                let log = Executedebug.get_log () in
+                if not flags.has_failing_assertions then
+                    assert_string log;
 
-        (* first, test if assertions passed *)
-        let log = Executedebug.get_log () in
-        if not flags.has_failing_assertions then
-            assert_string log;
+                (* then, run the given test *)
+                let () = test reporter#completed in
 
-        (* then, run the given test *)
-        let () = test reporter#completed in
+                (* finally, test if assertions passed *)
+                if flags.has_failing_assertions then
+                    assert_bool "Expected some failing assertions but got none." (log <> "");
 
-        (* finally, test if assertions passed *)
-        if flags.has_failing_assertions then
-            assert_bool "Expected some failing assertions but got none." (log <> "");
-
-        reporter
+                (reporter, None)
+            with e ->
+                (reporter, Some e)
+        with e ->
+            (reporter, Some e)
 
     (** Creates an OUnit {!TestCase} using {!eval_otter_with_pragma} with {!BasicReporter.t} as the reporter.
                 @param driver is the Otter main loop to use
                 @param path is the path to the file
                 @return a {!TestCase} that runs Otter
     *)
-    let test_otter_with_pragma driver path () = ignore (eval_otter_with_pragma driver (new BasicReporter.t) path ())
+    let test_otter_with_pragma driver path () =
+        match snd (eval_otter_with_pragma driver (new BasicReporter.t) path ()) with
+            | Some e -> raise e
+            | None -> ()
 end
 
