@@ -24,7 +24,8 @@ let test_system test_otter_with_pragma driver dir =
             close_out tempout;
 
             (* TODO: add standard search paths to otter.pl *)
-            if (Sys.command ("./otter.pl -nostdinc -isystem./libc/ -include./libc/__otter/all.h -E -o"^temppath^" "^fullpath^" 2>/dev/null")) <> 0 then
+            (* TODO: fix string escaping for file names with special characters *)
+            if (Sys.command ("./otter.pl -nostdinc -isystem./libc/ -include./libc/__otter/all.h -E -o\""^temppath^"\" \""^fullpath^"\" 2>/dev/null")) <> 0 then
                 assert_failure "Preprocessor parse error.";
 
             test_otter_with_pragma driver temppath ()
