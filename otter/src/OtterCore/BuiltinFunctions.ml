@@ -1043,6 +1043,7 @@ let libc_interceptor job job_queue interceptor =
 		(intercept_function_by_name_external "connect"                 "__otter_libc_connect") @@
 		(intercept_function_by_name_external "getsockopt"              "__otter_libc_getsockopt") @@
 		(intercept_function_by_name_external "setsockopt"              "__otter_libc_setsockopt") @@
+		(intercept_function_by_name_external "shutdown"                "__otter_libc_shutdown") @@
 
 		(* sys/stat.h *)
 		(intercept_function_by_name_external "chmod"                   "__otter_libc_chmod") @@

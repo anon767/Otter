@@ -99,11 +99,20 @@ struct __otter_fs_inode* __otter_fs_init_new_socket()
 
 void __otter_fs_free_socket(struct __otter_fs_inode* inode)
 {
-	__otter_multi_gfree(((struct __otter_fs_sock_data*)inode->data)->recv_data->data);
-	__otter_multi_gfree(((struct __otter_fs_sock_data*)inode->data)->recv_data);
-	__otter_multi_gfree(((struct __otter_fs_sock_data*)inode->data)->sock_queue);
-	__otter_multi_gfree(((struct __otter_fs_sock_data*)inode->data)->addr);
-	__otter_multi_gfree(inode->data);
+	if(!inode)
+		return;
+	
+	if(inode->data)
+	{
+		if(((struct __otter_fs_sock_data*)inode->data)->recv_data)
+		{
+			__otter_multi_gfree(((struct __otter_fs_sock_data*)inode->data)->recv_data->data);
+			__otter_multi_gfree(((struct __otter_fs_sock_data*)inode->data)->recv_data);
+		}
+		__otter_multi_gfree(((struct __otter_fs_sock_data*)inode->data)->sock_queue);
+		__otter_multi_gfree(((struct __otter_fs_sock_data*)inode->data)->addr);
+		__otter_multi_gfree(inode->data);
+	}
 	__otter_multi_gfree(inode);
 }
 

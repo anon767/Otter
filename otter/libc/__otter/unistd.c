@@ -43,7 +43,7 @@ int __otter_libc_close(int fd)
 		
 		if(open_file->type == __otter_fs_TYP_SOCK) /* shutdown socket */
 		{
-			struct __otter_fs_sock_data* sock = __otter_libc_get_sock_data(fd);
+			struct __otter_fs_sock_data* sock = (struct __otter_fs_sock_data*)((struct __otter_fs_inode*)(open_file->vnode))->data;
 			if(!sock)
 			{
 				return(-1);
@@ -101,6 +101,7 @@ int __otter_libc_close(int fd)
 			}
 			
 			__otter_fs_free_socket(inode);
+			return(0);
 		}
 
 		if(open_file->type == __otter_fs_TYP_FIFO) /* discard data if this is a fifo */
