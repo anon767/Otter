@@ -488,10 +488,12 @@ int __otter_libc_accept(int socket_fd, struct sockaddr *address, socklen_t *addr
 	}
 	
 	/* block until there is an incoming connection */
-	while(sock->state = __otter_sock_ST_LISTEN)
+	__otter_multi_begin_atomic();
+	while(sock->state == __otter_sock_ST_LISTEN)
 	{
 		if(sock->sock_queue[0])
 		{
+			__otter_multi_end_atomic();
 			struct __otter_fs_sock_data* sock_other = sock->sock_queue[0];
 			if(sock_other->state != __otter_sock_ST_SYN_SENT) /* something happened to the other end of the socket */
 			{
@@ -516,10 +518,16 @@ int __otter_libc_accept(int socket_fd, struct sockaddr *address, socklen_t *addr
 			sock2->sock_queue[0] = sock_other;
 			sock2->recv_data = __otter_fs_init_new_pipe_data();
 			__otter_sock_pop_queue(sock->sock_queue, sock->backlog + 1);
+			sock_other->sock_queue[0] = sock2;
 			sock_other->state = __otter_sock_ST_ESTABLISHED;
 			
 			return(fd);
 		}
+		else
+		{
+			__otter_multi_io_block(sock, sock->sock_queue);
+		}
+		__otter_multi_begin_atomic();
 	}
 	
 	return(-1);
@@ -620,12 +628,12 @@ int __otter_libc_connect(int socket_fd, const struct sockaddr *address, socklen_
 		/* look for listening sockets */
 		if(__otter_fs_open_file_table[i].type != __otter_fs_TYP_SOCK)
 			continue;
-		struct __otter_fs_sock_data* recv = (struct __otter_fs_sock_data*)__otter_fs_open_file_table[i].vnode;
+		struct __otter_fs_sock_data* recv = (struct __otter_fs_sock_data*)((struct __otter_fs_inode*)__otter_fs_open_file_table[i].vnode)->data;
 		if(recv->state != __otter_sock_ST_LISTEN)
 			continue;
 		
 		/* check that the addresses match */
-		if(memcmp(recv->addr, sock->addr) == 0)
+		if(memcmp(recv->addr, sock->addr, __SOCKADDR_SHARED_LEN) == 0)
 		{
 			int q2 = 0;
 			for(int j = 0; i < recv->backlog + 1; j++)
@@ -660,7 +668,19 @@ int __otter_libc_connect(int socket_fd, const struct sockaddr *address, socklen_
 		if(best_sock->sock_queue[i] == NULL)
 		{
 			best_sock->sock_queue[i] = sock;
-			return(0);
+			
+			__otter_multi_begin_atomic();
+			while(sock->state == __otter_sock_ST_SYN_SENT)
+			{
+				__otter_multi_io_block(sock);
+				__otter_multi_begin_atomic();
+			}
+			__otter_multi_end_atomic();
+			
+			if(sock->state == __otter_sock_ST_ESTABLISHED)
+			{		
+				return(0);
+			}
 		}
 	}
 	

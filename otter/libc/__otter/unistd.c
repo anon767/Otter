@@ -207,6 +207,7 @@ ssize_t __otter_libc_read_pipe_data(
 	void* buf,
 	size_t num)
 {
+	__otter_multi_begin_atomic();
 	for(int i = 0; i < num; i++)
 	{
 		/* next unread char is not the next char to be written to*/
@@ -217,9 +218,11 @@ ssize_t __otter_libc_read_pipe_data(
 		else /* no more new chars to read */
 		{
 			pipe->rhead = (i + pipe->rhead) % __otter_fs_PIPE_SIZE;
+			__otter_multi_end_atomic();
 			return (i);
 		}
 	}
+	__otter_multi_end_atomic();
 
 	pipe->rhead = (pipe->rhead + num) % __otter_fs_PIPE_SIZE; /* move rhead to last char read */
 	return (num);
@@ -230,18 +233,24 @@ ssize_t __otter_libc_write_pipe_data(
 	void* buf,
 	size_t num)
 {
+	__otter_multi_begin_atomic();
 	for(int i = 0; i < num; i++)
 	{
 		/* current char is not the last char read */
 		if((i + pipe->whead) % __otter_fs_PIPE_SIZE != pipe->rhead)
 		{
-			buf[i] = pipe->data[(i + pipe->whead) % __otter_fs_PIPE_SIZE];
+			pipe->data[(i + pipe->whead) % __otter_fs_PIPE_SIZE] = ((char*)buf)[i];
 		}
 		else /* write head has run out of space; must block until some has be read */
 		{
-			__ASSERT(0); /* TODO: make the work right for multiotter */
+			while((i + pipe->whead) % __otter_fs_PIPE_SIZE != pipe->rhead)
+			{
+				__otter_multi_io_block(pipe->data);
+				__otter_multi_begin_atomic();
+			}
 		}
 	}
+	__otter_multi_end_atomic();
 
 	pipe->whead = (pipe->whead + num) % __otter_fs_PIPE_SIZE; /* move whead to next free char to write */
 	return (num);
@@ -263,10 +272,13 @@ ssize_t __otter_libc_read_pipe(
 		}
 
 		/* block until data becomes available */
+		__otter_multi_begin_atomic();
 		while(open_file->status == __otter_fs_STATUS_EOF)
 		{
-			__ASSERT(0); /* TODO: if this is multiOtter, don't fail here */
+			__otter_multi_io_block(open_file);
+			__otter_multi_begin_atomic();
 		}
+		__otter_multi_end_atomic();
 
 	}
 
@@ -670,6 +682,7 @@ int __otter_libc_dup2(int fd1, int fd2)
 		return(fd2);
 
 	open_file = get_open_file_from_fd(fd2);
+	
 	if(open_file) /* is file a valid file entry? */
 	{
 		close(fd2);

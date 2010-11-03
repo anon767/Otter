@@ -105,9 +105,9 @@ struct linger
 int socket(int domain, int type, int protocol);
 int bind(int socket_fd, const struct sockaddr *address, socklen_t address_len);
 int listen(int socket_fd, int backlog);
-int accept (int socket_fd, struct sockaddr *address, socklen_t *address_len);
+int accept(int socket_fd, struct sockaddr *address, socklen_t *address_len);
 int connect(int socket_fd, const struct sockaddr *address, socklen_t address_len);
-int shutdownn(int socket_fd, int how);
+int shutdown(int socket_fd, int how);
 
 int setsockopt(int socket_fd, int level, int option_name, const void *option_value, socklen_t option_len);
 int getsockopt(int socket_fd, int level, int option_name, void *option_value, socklen_t *option_len);
