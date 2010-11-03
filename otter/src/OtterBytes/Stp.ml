@@ -168,7 +168,7 @@ let rec to_stp_array vc arr bytes =
 						Stpc.e_var vc (make_var s) (Stpc.bitvector_t vc 8)
 					| Byte_Bytes(b,i) ->
 						let (bv_condensed,l_condensed) = to_stp_bv vc b in
-						let right_i = l_condensed * 8 in (* This differs from the parallel case in to_stp_bv, and is independent of i. How can this be right? *)
+						let right_i = i * 8 in 
 						let left_i = right_i+7 in
 							Stpc.e_bvextract vc bv_condensed left_i right_i
 				end in
