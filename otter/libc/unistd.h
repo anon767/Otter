@@ -9,7 +9,7 @@
 #define _SC_PAGESIZE 1
 
 /* copied function prototypes from http://opengroup.org/onlinepubs/007908799/xsh/unistd.h.html */
-/* function marked with EXISTS have a (potentially incomplete) implimentation */
+/* functions marked with EXISTS have a (potentially incomplete) implimentation */
 int          access(const char *, int);
 unsigned int alarm(unsigned int);
 int          brk(void *);
@@ -48,7 +48,7 @@ long         gethostid(void);
 char        *getlogin(void);
 int          getlogin_r(char *, size_t);
 int          getopt(int, char * const [], const char *);
-int          getpagesize(void); /*(LEGACY)*/
+int          getpagesize(void); /*(LEGACY)*/ /*EXISTS*/
 char        *getpass(const char *); /*(LEGACY)*/
 pid_t        getpgid(pid_t); /*EXISTS*/
 pid_t        getpgrp(void); /*EXISTS*/
