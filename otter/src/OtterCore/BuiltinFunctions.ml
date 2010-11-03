@@ -418,7 +418,6 @@ let otter_assert job = wrap_state_function begin fun state retopt exps errors ->
 	(Expression.check state assertion exps, errors)
 end job
 
-
 let otter_if_then_else job = wrap_state_function begin fun state retopt exps errors ->
 	let state, bytes0, errors = Expression.rval state (List.nth exps 0) errors in
 	let state, bytes1, errors = Expression.rval state (List.nth exps 1) errors in

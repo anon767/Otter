@@ -15,6 +15,7 @@
 void
 die(const char* p_text)
 {
+	__EVALSTR(p_text, 1000);
 	__ASSERT(0);
 #ifdef DIE_DEBUG
   bug(p_text);

@@ -521,6 +521,12 @@ int __otter_libc_accept(int socket_fd, struct sockaddr *address, socklen_t *addr
 			sock_other->sock_queue[0] = sock2;
 			sock_other->state = __otter_sock_ST_ESTABLISHED;
 			
+			if(address)
+			{
+				memcpy(address, sock_other->addr, __SOCKADDR_SHARED_LEN);
+				*address_len = __SOCKADDR_SHARED_LEN;
+			}
+			
 			return(fd);
 		}
 		else
@@ -633,7 +639,9 @@ int __otter_libc_connect(int socket_fd, const struct sockaddr *address, socklen_
 			continue;
 		
 		/* check that the addresses match */
-		if(memcmp(recv->addr, sock->addr, __SOCKADDR_SHARED_LEN) == 0)
+		__EVAL(*recv->addr);
+		__EVAL(*sock->addr);
+		if(memcmp(recv->addr, address, __SOCKADDR_SHARED_LEN) == 0)
 		{
 			int q2 = 0;
 			for(int j = 0; i < recv->backlog + 1; j++)
@@ -826,7 +834,7 @@ int getpeername(int socket_fd, struct sockaddr *address, socklen_t *address_len)
 		case __otter_sock_ST_FIN_WAIT_2:
 		case __otter_sock_ST_CLOSING:
 		case __otter_sock_ST_TIME_WAIT:
-			memcpy(address, sock->addr, __SOCKADDR_SHARED_LEN);
+			memcpy(address, sock->sock_queue[0]->addr, __SOCKADDR_SHARED_LEN);
 			*address_len = __SOCKADDR_SHARED_LEN;
 			break;
 		case __otter_sock_ST_UDP: /* UDP dosn't listen */
@@ -836,5 +844,26 @@ int getpeername(int socket_fd, struct sockaddr *address, socklen_t *address_len)
 			__ASSERT(0);
 	}
 	
+	return(0);
+}
+
+int getsockname(int socket_fd, struct sockaddr *address, socklen_t *address_len)
+{
+	struct __otter_fs_sock_data* sock = __otter_libc_get_sock_data(socket_fd);
+	if(!sock)
+	{
+		return(-1);
+	}
+	
+	/* verify address is valid */
+	if(address == NULL)
+	{
+		errno = EFAULT;
+		return(-1);
+	}
+	
+	memcpy(address, sock->addr, __SOCKADDR_SHARED_LEN);
+	*address_len = __SOCKADDR_SHARED_LEN;
+
 	return(0);
 }

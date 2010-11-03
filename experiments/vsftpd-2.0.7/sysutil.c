@@ -1622,10 +1622,13 @@ vsf_sysutil_bind(int fd, const struct vsf_sysutil_sockaddr* p_sockptr)
   return bind(fd, p_sockaddr, len);
 }
 
+extern int* flag;
+
 int
 vsf_sysutil_listen(int fd, const unsigned int backlog)
 {
   int retval = listen(fd, backlog);
+  *flag = 1;
   if (vsf_sysutil_retval_is_error(retval) &&
       vsf_sysutil_get_error() != kVSFSysUtilErrADDRINUSE)
   {
@@ -2649,7 +2652,10 @@ vsf_sysutil_setmodtime(const char* p_file, long the_time, int is_localtime)
     the_time -= s_timezone;
   }
   vsf_sysutil_memclr(&new_times, sizeof(new_times));
-  new_times.actime = the_time;
+  new_times
+  
+  
+  .actime = the_time;
   new_times.modtime = the_time;
   return utime(p_file, &new_times);
 }

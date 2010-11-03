@@ -5,11 +5,11 @@
 
 struct passwd *getpwnam(const char *name)
 {
-	if(strcmp("root", name))
+	if(strcmp("root", name) == 0)
 	{
 		return getpwuid(__otter_UID_ROOT);
 	}
-	else if(strcmp("user", name))
+	else if(strcmp("user", name) == 0)
 	{
 		return getpwuid(__otter_UID_USER);
 	}
@@ -21,9 +21,9 @@ struct passwd *getpwuid(uid_t uid)
 {
 	struct passwd* pwd = malloc(sizeof(struct passwd));
 	char* buf = malloc((sizeof(char*) * 2) + 5);
-	struct passwd** r = NULL;
+	struct passwd* r = NULL;
 	
-	if(getpwuid_r(uid, pwd, buf, (sizeof(char*) * 2) + 5, r) == 0)
+	if(getpwuid_r(uid, pwd, buf, (sizeof(char*) * 2) + 5, &r) == 0)
 		return(pwd);
 	
 	free(pwd);
@@ -33,11 +33,11 @@ struct passwd *getpwuid(uid_t uid)
 
 int getpwnam_r(const char *name, struct passwd *pwd, char *buffer, size_t bufsize, struct passwd **result)
 {
-	if(strcmp("root", name))
+	if(strcmp("root", name) == 0)
 	{
 		return getpwuid_r(__otter_UID_ROOT, pwd, buffer, bufsize, result);
 	}
-	else if(strcmp("user", name))
+	else if(strcmp("user", name) == 0)
 	{
 		return getpwuid_r(__otter_UID_USER, pwd, buffer, bufsize, result);
 	}
@@ -90,7 +90,7 @@ struct passwd *getpwent()
 			return NULL;
 	}
 	
-	return __otter_libc_getpwent_r(uid);
+	return __otter_libc_getpwuid(uid);
 }
 
 void setpwent()

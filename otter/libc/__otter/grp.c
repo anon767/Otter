@@ -7,9 +7,9 @@ struct group *__otter_libc_getgrgid(gid_t gid)
 {
 	struct group* grp = malloc(sizeof(struct group));
 	char* buf = malloc((sizeof(char*) * 2) + 5);
-	struct group** r = NULL;
+	struct group* r = NULL;
 	
-	if(getgrgid_r(gid, grp, buf, (sizeof(char*) * 2) + 5, r) == 0)
+	if(getgrgid_r(gid, grp, buf, (sizeof(char*) * 2) + 5, &r) == 0)
 		return(grp);
 	
 	free(grp);
@@ -79,11 +79,11 @@ int __otter_libc_getgrgid_r(gid_t gid, struct group *grp, char *buffer, size_t b
 
 struct group *__otter_libc_getgrnam(const char *name)
 {
-	if(strcmp("root", name))
+	if(strcmp("root", name) == 0)
 	{
 		return getgrgid(__otter_GID_ROOT);
 	}
-	else if(strcmp("user", name))
+	else if(strcmp("user", name) == 0)
 	{
 		return getgrgid(__otter_GID_USER);
 	}
@@ -93,11 +93,11 @@ struct group *__otter_libc_getgrnam(const char *name)
 
 int __otter_libc_getgrnam_r(const char *name, struct group *grp, char *buffer, size_t bufsize, struct group **result)
 {
-	if(strcmp("root", name))
+	if(strcmp("root", name) == 0)
 	{
 		return getgrgid_r(__otter_GID_ROOT, grp, buffer, bufsize, result);
 	}
-	else if(strcmp("user", name))
+	else if(strcmp("user", name) == 0)
 	{
 		return getgrgid_r(__otter_GID_USER, grp, buffer, bufsize, result);
 	}
@@ -119,7 +119,7 @@ struct group *getgrent()
 			return NULL;
 	}
 	
-	return __otter_libc_getgrent_r(gid);
+	return __otter_libc_getgrgid(gid);
 }
 
 void __otter_libc_endgrent()

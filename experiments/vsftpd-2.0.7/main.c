@@ -32,23 +32,60 @@ static void session_init(struct vsf_session* p_sess);
 static void env_init(void);
 
  // ADDED FOR PURPOSES OF SYMBOLIC TESTING
-char confFileContents[] = "chown_upload_mode=00600\nmax_login_fails=3\n\nanonymous_enable=1\nport_enable=TRUE\npasv_enable=YES\nlocal_enable=0\nchroot_local_user=FALSE\nwrite_enable=NO\n#\npam_service_name=ftp\nlisten_address6=\nlisten=1\n";
+#include <__otter/otter_scheduler.h>
+char confFileContents[] = "chown_upload_mode=00600\nmax_login_fails=3\n\nanonymous_enable=1\nport_enable=TRUE\npasv_enable=YES\nlocal_enable=0\nchroot_local_user=FALSE\nwrite_enable=NO\n#\npam_service_name=ftp\nlisten_address6=\nlisten=1\nftp_username=user\n";
 unsigned int confFileSize = sizeof(confFileContents) - 1;
+extern int* flag;
+int vsftpd_main(int argc, const char* argv[]);
+int sym_main();
 
-int
-main(int argc, const char* argv[])
+int main(int argc, const char* argv[])
 {
   /*__otter_libc_init();*/
-  __otter_fs_mount();
-  __otter_fs_touch("foo.txt", __otter_fs_pwd);
-  open("foo.txt", O_RDWR);
-  setuid(__otter_UID_ROOT);
-  struct __otter_fs_dnode* dnode = __otter_fs_mkdir("etc", __otter_fs_root);
-  __otter_fs_touch("vsftpd.conf", dnode);
-  int conffd = open("/etc/vsftpd.conf", O_RDWR);
-  write(conffd, confFileContents, confFileSize);
-  close(conffd);
+	__otter_fs_mount();
+	flag = __otter_multi_gmalloc(sizeof(int));
+	*flag = 0;
+  
+	if(fork())
+	{
+		/* wait until vsftpd has called listen */
+		__otter_multi_block_while_condition(*flag == 0, flag);
+		
+		return dummy_main();
+	}
+	else
+	{
+		/* setup environment for vsftpd */
+		__otter_fs_touch("foo.txt", __otter_fs_pwd);
+		open("foo.txt", O_RDWR);
+		setuid(__otter_UID_ROOT);
+		struct __otter_fs_dnode* dnode = __otter_fs_mkdir("etc", __otter_fs_root);
+		__otter_fs_touch("vsftpd.conf", dnode);
+		int conffd = open("/etc/vsftpd.conf", O_RDWR);
+		write(conffd, confFileContents, confFileSize);
+		close(conffd);
 
+		return vsftpd_main(argc, argv);
+	}
+}
+
+int dummy_main()
+{
+	int fd = socket(AF_INET, SOCK_STREAM, 0);
+	__ASSERT(fd >= 0);
+	struct sockaddr_in* addr = calloc(sizeof(struct sockaddr_in), 1);
+	addr->sin_family = AF_INET;
+	addr->sin_port = 21;
+	addr->sin_addr.s_addr = 0x7F000001;
+	int r = connect(fd, addr, sizeof(struct sockaddr_in));
+	__ASSERT(r != -1);
+	
+	return(0);
+}
+
+int
+vsftpd_main(int argc, const char* argv[])
+{
   struct vsf_session the_session =
   {
     /* Control connection */
