@@ -613,6 +613,27 @@ let otter_assert_equal_state job = wrap_state_function begin fun state retopt ex
 end job
 
 
+(* __FAILURE()
+ * It models "failure" by providing the 'reason `FailureReached, in order to distinguish from
+ * general `Failure.
+ * TODO: make __FAILURE take a string of failure description. *)
+let intercept_failure job job_queue interceptor =
+    match job.instrList with
+        | Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::_
+            when varinfo.Cil.vname = (!Executeargs.arg_failurefn) ->
+            let job_result = {
+                result_file = job.Job.file;
+                result_state = job.Job.state;
+                result_history = job.Job.exHist;
+                result_decision_path = job.Job.decisionPath;
+            } in
+            let loc = Job.get_loc job in
+            let job_state = Complete (Abandoned (`FailureReached, loc, job_result)) in
+            job_state, job_queue
+        | _ ->
+            interceptor job job_queue
+
+
 (* There are 2 ways to use __SYMBOLIC:
 	 (1) '__SYMBOLIC(&x);' gives x a fresh symbolic value and associates
 	 that value with the variable x.
@@ -850,6 +871,7 @@ let interceptor job job_queue interceptor =
 		(
 		(* intercept builtin functions *)
 		(                                  (*"__SYMBOLIC"*)            intercept_symbolic) @@
+		(                                  (*"__FAILURE"*)             intercept_failure) @@
 		(intercept_function_by_name_internal "__builtin_alloca"        libc___builtin_alloca) @@
 		(intercept_function_by_name_internal "alloca"                  libc___builtin_alloca) @@
 		(intercept_function_by_name_internal "malloc"                  libc_malloc) @@
@@ -919,7 +941,7 @@ let libc_interceptor job job_queue interceptor =
 		(intercept_function_by_name_external "isxdigit"                "__otter_libc_isxdigit") @@
 		(intercept_function_by_name_external "tolower"                 "__otter_libc_tolower") @@
 		(intercept_function_by_name_external "toupper"                 "__otter_libc_toupper") @@
-		
+
 		(* grp.h *)
 		(intercept_function_by_name_external "getgrgid"                "__otter_libc_getgrgid") @@
 		(intercept_function_by_name_external "getgrnam"                "__otter_libc_getgrnam") @@
@@ -1029,7 +1051,7 @@ let libc_interceptor job job_queue interceptor =
 		(intercept_function_by_name_external "creat"                   "__otter_libc_creat") @@
 		(intercept_function_by_name_external "fcntl"                   "__otter_libc_fcntl") @@
 		(intercept_function_by_name_external "open"                    "__otter_libc_open") @@
-		
+
 		(* sys/mman.h *)
 		(intercept_function_by_name_external "mmap"                    "__otter_libc_mmap") @@
 		(intercept_function_by_name_external "munmap"                  "__otter_libc_munmap") @@
@@ -1055,17 +1077,17 @@ let libc_interceptor job job_queue interceptor =
 		(intercept_function_by_name_external "mknod"                   "__otter_libc_mknod") @@
 		(intercept_function_by_name_external "stat"                    "__otter_libc_stat") @@
 		(intercept_function_by_name_external "umask"                   "__otter_libc_umask") @@
-		
+
 		(* sys/syslog *)
 		(intercept_function_by_name_external "closelog"                "__otter_libc_closelog") @@
 		(intercept_function_by_name_external "openlog"                 "__otter_libc_openlog") @@
 		(intercept_function_by_name_external "setlogmask"              "__otter_libc_setlogmask") @@
 		(intercept_function_by_name_external "syslog"                  "__otter_libc_syslog") @@
 		(intercept_function_by_name_external "vsyslog"                 "__otter_libc_vsyslog") @@
-		
+
 		(* sys/uio.h *)
 		(intercept_function_by_name_external "readv"                   "__otter_libc_readv") @@
-		(intercept_function_by_name_external "writev"                  "__otter_libc_writev") @@		
+		(intercept_function_by_name_external "writev"                  "__otter_libc_writev") @@
 
 		(* pass on the job when none of those match *)
 		interceptor

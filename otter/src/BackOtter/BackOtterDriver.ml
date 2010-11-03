@@ -56,25 +56,6 @@ object (_ : 'self)
 end
 
 
-(* Cil feature for BackOtter *)
-let arg_failurefn = ref "__FAILURE"
-
-(* __FAILURE() *)
-let otter_failure_interceptor job job_queue interceptor =
-    match job.instrList with
-        | Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::_
-            when varinfo.Cil.vname = (!arg_failurefn) ->
-            let job_result = {
-                result_file = job.Job.file;
-                result_state = job.Job.state;
-                result_history = job.Job.exHist;
-                result_decision_path = job.Job.decisionPath;
-            } in
-            let loc = Job.get_loc job in
-            let job_state = Complete (Abandoned (`FailureReached, loc, job_result)) in
-            job_state, job_queue
-        | _ ->
-            interceptor job job_queue
 
 
 let max_function_name_length = ref 0
@@ -109,7 +90,7 @@ let callchain_backward_se reporter entry_job =
 
     (* Failure function set by --failurefn (default: __FAILURE) *)
     let failure_fn =
-      let fname = !arg_failurefn in
+      let fname = !Executeargs.arg_failurefn in
       try FindCil.fundec_by_name file fname
       with Not_found -> FormatPlus.failwith "Failure function %s not found" fname
     in
@@ -127,7 +108,6 @@ let callchain_backward_se reporter entry_job =
     let interceptor =
         let (>>>) = Interceptor.(>>>) in
             set_output_formatter_interceptor
-        >>> otter_failure_interceptor
         >>> BuiltinFunctions.libc_interceptor
         >>> BuiltinFunctions.interceptor
     in
@@ -214,11 +194,7 @@ let feature = {
     Cil.fd_name = "backotter";
     Cil.fd_enabled = ref false;
     Cil.fd_description = "Call-chain backwards symbolic executor for C";
-    Cil.fd_extraopt = [
-        ("--failurefn",
-        Arg.Set_string arg_failurefn,
-        "<fname> Failure function to look for in BackOtter (default: __FAILURE)");
-    ] @ BackOtterReporter.options @ BackOtterQueue.options;
+    Cil.fd_extraopt = BackOtterReporter.options @ BackOtterQueue.options;
     Cil.fd_post_check = true;
     Cil.fd_doit = doit
 }

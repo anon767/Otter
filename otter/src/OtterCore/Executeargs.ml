@@ -13,6 +13,7 @@ let arg_init_malloc_zero = ref false
 let arg_noinit_unreachable_globals = ref false
 let arg_simplify_path_condition = ref false
 let arg_examfn = ref "" (* none *)
+let arg_failurefn = ref "__FAILURE"
 
 let arg_print_callstack = ref false
 
@@ -68,6 +69,9 @@ let options = [
 		Arg.Set_string arg_examfn,
 		"<fname> Function to be examined (default: none) \n");
 
+    ("--failurefn",
+        Arg.Set_string arg_failurefn,
+        "<fname> Failure function to look for in BackOtter (default: __FAILURE)");
 	(*
 		Printing options
 	*)

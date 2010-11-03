@@ -41,8 +41,7 @@ let benchmarks =
             end
         in
 
-        (* use BackOtter's interceptors so the same types of errors can be detected *)
-        let interceptor = BackOtterDriver.otter_failure_interceptor >>> BuiltinFunctions.libc_interceptor >>> BuiltinFunctions.interceptor in
+        let interceptor = BuiltinFunctions.libc_interceptor >>> BuiltinFunctions.interceptor in
         relpath >:::
             List.map begin fun (name, queue) ->
                 "Otter:" ^ name >:: benchmark (Driver.run ~interceptor ~queue:(Queue.get queue))
