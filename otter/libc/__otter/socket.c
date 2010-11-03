@@ -639,8 +639,6 @@ int __otter_libc_connect(int socket_fd, const struct sockaddr *address, socklen_
 			continue;
 		
 		/* check that the addresses match */
-		__EVAL(*recv->addr);
-		__EVAL(*sock->addr);
 		if(memcmp(recv->addr, address, __SOCKADDR_SHARED_LEN) == 0)
 		{
 			int q2 = 0;

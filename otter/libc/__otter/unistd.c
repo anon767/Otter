@@ -661,6 +661,26 @@ int __otter_libc_setuid(uid_t uid)
 	return(-1);
 }
 
+gid_t getgid()
+{
+	return __otter_gid;
+}
+
+int __otter_libc_setgid(gid_t gid)
+{
+	if(gid == __otter_GID_ROOT || gid == __otter_GID_USER) /* only two valid groups */
+	{
+		/*Assume that the user would authenticate as needed*/
+
+		__otter_gid = gid;
+
+		return(0);
+	}
+
+	errno = EINVAL;
+	return(-1);
+}
+
 int __otter_libc_dup(int fd)
 {
 	return fcntl(fd, F_DUPFD, 0);
@@ -732,4 +752,55 @@ int fork()
 	__otter_multi_end_atomic();
 	
 	return __otter_multi_fork();
+}
+
+pid_t setsid()
+{
+	pid_t parent = getppid();
+	if(parent < 0)
+	{
+		errno = EPERM;
+		return(-1);
+	}
+	
+	pid_t pid = getpid();
+	__otter_multi_set_parent_pid(-pid - 2);
+	return(-pid - 2);
+}
+
+pid_t getpid()
+{
+	return __otter_multi_get_pid();
+}
+
+pid_t getppid()
+{
+	return __otter_multi_get_parent_pid(getpid());
+}
+
+gid_t getegid()
+{
+	return getgid();
+}
+
+uid_t geteuid()
+{
+	return getuid();
+}
+
+pid_t getpgid(pid_t pid)
+{
+	int ppid = pid;
+	while(ppid >= 0)
+	{
+		pid = ppid;
+		ppid = __otter_multi_get_parent_pid(pid);
+	}
+	
+	return pid;
+}
+
+pid_t getpgrp()
+{
+	return getpgid(getpid());
 }

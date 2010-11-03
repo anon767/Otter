@@ -73,7 +73,7 @@ let run reporter job =
 		current_metadata = 
 		{
 			pid = 0;
-			parent_pid = -1;
+			parent_pid = -2;
 			priority = Running;
 		};
 	} in
