@@ -669,17 +669,16 @@ int __otter_libc_connect(int socket_fd, const struct sockaddr *address, socklen_
 		{
 			best_sock->sock_queue[i] = sock;
 			
-			__otter_multi_begin_atomic();
-			while(sock->state == __otter_sock_ST_SYN_SENT)
-			{
-				__otter_multi_io_block(sock);
-				__otter_multi_begin_atomic();
-			}
-			__otter_multi_end_atomic();
+			__otter_multi_block_while_condition(sock->state == __otter_sock_ST_SYN_SENT, sock);
 			
 			if(sock->state == __otter_sock_ST_ESTABLISHED)
 			{		
 				return(0);
+			}
+			else
+			{
+				errno = ECONNREFUSED;
+				return(-1);
 			}
 		}
 	}

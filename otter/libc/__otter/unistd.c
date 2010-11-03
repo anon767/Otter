@@ -5,6 +5,7 @@
 #include<__otter/otter_user.h>
 #include <sys/socket.h>
 #include <errno.h>
+#include <__otter/otter_scheduler.h>
 
 int __otter_libc_close(int fd)
 {
@@ -128,6 +129,8 @@ ssize_t __otter_libc_read_file(
 	size_t num,
 	off_t offset)
 {
+	__otter_multi_begin_atomic();
+
 	struct __otter_fs_inode* inode = (struct __otter_fs_inode*)(open_file->vnode);
 
 	for(int i = 0; i < num; i++)
@@ -142,6 +145,8 @@ ssize_t __otter_libc_read_file(
 			return (i);
 		}
 	}
+	
+	__otter_multi_end_atomic();
 
 	return (num);
 }
@@ -152,6 +157,8 @@ ssize_t __otter_libc_write_file(
 	size_t num,
 	off_t offset)
 {
+	__otter_multi_begin_atomic();
+	
 	struct __otter_fs_inode* inode = (struct __otter_fs_inode*)(open_file->vnode);
 
 	int physicalsize = __otter_fs_BLOCK_SIZE * (*inode).numblocks; /* get the amount of allocated space */
@@ -178,6 +185,8 @@ ssize_t __otter_libc_write_file(
 	{
 		(*inode).size = offset + num;
 	}
+	
+	__otter_multi_end_atomic();
 
 	return (num);
 }
@@ -273,14 +282,7 @@ ssize_t __otter_libc_read_pipe(
 		}
 
 		/* block until data becomes available */
-		__otter_multi_begin_atomic();
-		while(open_file->status == __otter_fs_STATUS_EOF)
-		{
-			__otter_multi_io_block(open_file);
-			__otter_multi_begin_atomic();
-		}
-		__otter_multi_end_atomic();
-
+		__otter_multi_block_while_condition(open_file->status == __otter_fs_STATUS_EOF, open_file);
 	}
 
 	int num = __otter_libc_read_pipe_data(pipe, buf, num);
