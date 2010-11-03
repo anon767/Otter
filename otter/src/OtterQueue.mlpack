@@ -2,5 +2,6 @@ OtterQueue/BestFirstQueue
 OtterQueue/BreadthFirstQueue
 OtterQueue/DepthFirstQueue
 OtterQueue/GenerationalQueue
+OtterQueue/LeastCoveredQueue
 OtterQueue/Queue
 OtterQueue/RandomPathQueue
