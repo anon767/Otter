@@ -6,6 +6,32 @@
  *
  * In v8, the bounds checking of prio is commented out. Here, we turn it into an
  * assertion check (if (...) { __FAILURE(); }).
+ *
+ * Failing path: Decision: IF (prio > 3 || prio < 0): true
+ *               Decision: put_end: int (int prio , struct process *process )
+ *               Decision: enqueue: int (int prio , struct process *new_process )
+ *               Decision: IF (! new_process): false
+ *               Decision: new_job: int (int prio )
+ *               Decision: IF (command == 1): true
+ *               Decision: schedule: int (int command , int prio , float ratio )
+ *               Decision: IF (status > 0): true
+ *               Decision: IF (v_command == 1): true
+ *               Decision: get_command: int (int *command , int *prio , float *ratio )
+ *               Decision: IF (prio > 0): false
+ *               Decision: IF (nprocs > 0): false
+ *               Decision: IF (nprocs < 0): false
+ *               Decision: IF (prio > 0): true
+ *               Decision: IF (nprocs > 0): false
+ *               Decision: IF (nprocs < 0): false
+ *               Decision: IF (prio > 0): true
+ *               Decision: IF (nprocs > 0): false
+ *               Decision: IF (nprocs < 0): false
+ *               Decision: IF (prio > 0): true
+ *               Decision: IF (i <= 3): false
+ *               Decision: IF (i <= 3): true
+ *               Decision: IF (i <= 3): true
+ *               Decision: IF (i <= 3): true
+ *               Decision: IF (argc != 4): false
  */
 #pragma max_abandoned(1)
 #pragma max_nodes(10000)
@@ -99,11 +125,11 @@ static struct queue prio_queue[MAXPRIO + 1]; /* blocked queue is [0] */
 
 
 
-void main() /* n3, n2, n1 : # of processes at prio3 ... */
+void main(void)
 {
     /* BEGIN_OTTER */
     int argc = MAXPRIO + 1;
-    int argv[MAXPRIO + 1];
+    int argv[MAXPRIO + 1]; /* n3, n2, n1 : # of processes at prio3 ... */
     int i;
     /* END_OTTER */
 
