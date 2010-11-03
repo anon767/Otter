@@ -1,5 +1,6 @@
 DataStructures/Counter
 DataStructures/Deferred
+DataStructures/EfficientSequence
 DataStructures/Heap
 DataStructures/ImmutableArray
 DataStructures/NamedCounter
