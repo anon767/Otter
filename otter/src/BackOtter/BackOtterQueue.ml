@@ -136,6 +136,7 @@ class ['job] t file targets_ref entry_fn failure_fn = object (self)
     val entryfn_processed = 0
     val otherfn_processed = 0
     val origin_fundecs = [entry_fn] (* fundecs whose FunctionJob-initialized jobs have been created, or entry_fn *)
+    (* TODO: refactor this mess *)
     val last_time = None
     val last_job_type = None
     val entryfn_time_elapsed = 0.0
@@ -193,51 +194,40 @@ class ['job] t file targets_ref entry_fn failure_fn = object (self)
         List.iter (fun f -> Output.debug_printf "Origin function: %s@\n" f.svar.vname) (origin_fundecs');
 
         let get_distance_from_entryfn = get_distance_from file entry_fn in
-        try
-            let update_bounding_paths_with_targets = update_bounding_paths targets in
-            let entryfn_jobs' = List.map update_bounding_paths_with_targets entryfn_jobs in
-            let otherfn_jobs' = List.map update_bounding_paths_with_targets otherfn_jobs in
-            (* Check if any job is on bounding paths (i.e., being verified) *)
-            (* Prioritize by
-             * 1. entryfn_job
-             * 2. otherfn_job whose origin function is closer to entry_fn
-             *)
-            let otherfn_jobs' = List.sort (fun j1 j2 -> (get_distance_from_entryfn (get_origin_function j1)) - (get_distance_from_entryfn (get_origin_function j2))) otherfn_jobs' in
-            let job = List.find has_bounding_paths (List.rev_append entryfn_jobs' otherfn_jobs') in
-            Output.debug_printf "Job %d is run under influence of bounding path(s) from function %s:@\n" job.jid (get_origin_function job).svar.vname;
-            (match job.boundingPaths with | None -> () | Some bounding_paths ->
-                List.iter (fun path -> Output.debug_printf "Path: @[%a@]@\n" Decision.print_decisions path) bounding_paths);
-            let entryfn_jobs'' = List.filter (fun j -> j != job) entryfn_jobs' in
-            let otherfn_jobs'' = List.filter (fun j -> j != job) otherfn_jobs' in
-            Some ({< entryfn_jobs = entryfn_jobs'';
-                     otherfn_jobs = otherfn_jobs'';
-                     origin_fundecs = origin_fundecs';
-                     last_time = last_time;
-                     last_job_type = None; (* TODO: distinguish entry/other above *)
-                     entryfn_time_elapsed = entryfn_time_elapsed;
-                     otherfn_time_elapsed = otherfn_time_elapsed; >}, job)
-        with Not_found ->
-            let want_process_entryfn =
-                (* TODO: right now, we use the ratio of how many steps we run the forward and backward search.
-                 * We can try to use the ratio of running time instead.
-                 * A reason why this may be good is that the backward search tends to run slower and slower, and
-                 * therefore a "step" in backward search is on average longer.
-                 *)
-                let ratio = !default_bidirectional_search_ratio in
-                match (!default_bidirectional_search_method) with
-                | `Time ->
-                    let total_elapsed = entryfn_time_elapsed +. otherfn_time_elapsed in
-                    if total_elapsed <= 0.0001 then ratio > 0.0
-                    else entryfn_time_elapsed /. total_elapsed <= ratio
-                | `Step ->
-                    let total_processed = entryfn_processed + otherfn_processed in
-                    if total_processed = 0 then ratio > 0.0
-                    else (float_of_int entryfn_processed) /. (float_of_int total_processed) <= ratio
-            in
-            if entryfn_jobs <> [] && (otherfn_jobs = [] || want_process_entryfn)  then
-                (* Do forward search *)
+        let want_process_entryfn =
+            (* TODO: increase this ratio when there're plenty of failing paths discovered, and the backward search
+             * starts taking too long... *)
+            let ratio = !default_bidirectional_search_ratio in
+            match (!default_bidirectional_search_method) with
+            | `Time ->
+                let total_elapsed = entryfn_time_elapsed +. otherfn_time_elapsed in
+                if total_elapsed <= 0.0001 (* epsilon *) then ratio > 0.0
+                else entryfn_time_elapsed /. total_elapsed <= ratio
+            | `Step ->
+                let total_processed = entryfn_processed + otherfn_processed in
+                if total_processed = 0 then ratio > 0.0
+                else (float_of_int entryfn_processed) /. (float_of_int total_processed) <= ratio
+        in
+        if entryfn_jobs <> [] && (otherfn_jobs = [] || want_process_entryfn)  then
+            (* Do forward search *)
+            try
+                let update_bounding_paths_with_targets = update_bounding_paths targets in
+                let entryfn_jobs' = List.map update_bounding_paths_with_targets entryfn_jobs in
+                let job = List.find has_bounding_paths entryfn_jobs' in
+                Output.debug_printf "Job %d is run under influence of bounding path(s) from function %s:@\n" job.jid (get_origin_function job).svar.vname;
+                (match job.boundingPaths with | None -> () | Some bounding_paths ->
+                    List.iter (fun path -> Output.debug_printf "Path: @[%a@]@\n" Decision.print_decisions path) bounding_paths);
+                let entryfn_jobs' = List.filter (fun j -> j != job) entryfn_jobs' in
+                Some ({< entryfn_jobs = entryfn_jobs';
+                         origin_fundecs = origin_fundecs';
+                         last_time = last_time;
+                         last_job_type = Some (EntryfnJob job);
+                         entryfn_time_elapsed = entryfn_time_elapsed;
+                         otherfn_time_elapsed = otherfn_time_elapsed; >}, job)
+            with Not_found ->
                 let score job =
                     (* When some targets are found in the job's current function (i.e., close enough), we bias towards them. *)
+                    (* TODO: sometimes the above strategy may not work well.... *)
                     let distance_to_target = get_distance_to_targets_within_function (failure_fn :: target_fundecs) job in
                     let path_length = ((List.length job.decisionPath)) in (* Approximated execution path length *)
                     [-distance_to_target; -path_length]
@@ -251,8 +241,24 @@ class ['job] t file targets_ref entry_fn failure_fn = object (self)
                          last_job_type = Some (EntryfnJob job);
                          entryfn_time_elapsed = entryfn_time_elapsed;
                          otherfn_time_elapsed = otherfn_time_elapsed; >}, job)
-            else if otherfn_jobs <> [] then
-                (* Do "backward" search *)
+        else if otherfn_jobs <> [] then
+            (* Do "backward" search *)
+            try
+                let update_bounding_paths_with_targets = update_bounding_paths targets in
+                let otherfn_jobs' = List.map update_bounding_paths_with_targets otherfn_jobs in
+                let otherfn_jobs' = List.sort (fun j1 j2 -> (get_distance_from_entryfn (get_origin_function j1)) - (get_distance_from_entryfn (get_origin_function j2))) otherfn_jobs' in
+                let job = List.find has_bounding_paths otherfn_jobs' in
+                Output.debug_printf "Job %d is run under influence of bounding path(s) from function %s:@\n" job.jid (get_origin_function job).svar.vname;
+                (match job.boundingPaths with | None -> () | Some bounding_paths ->
+                    List.iter (fun path -> Output.debug_printf "Path: @[%a@]@\n" Decision.print_decisions path) bounding_paths);
+                let otherfn_jobs' = List.filter (fun j -> j != job) otherfn_jobs' in
+                Some ({< otherfn_jobs = otherfn_jobs';
+                         origin_fundecs = origin_fundecs';
+                         last_time = last_time;
+                         last_job_type = Some (OtherfnJob job);
+                         entryfn_time_elapsed = entryfn_time_elapsed;
+                         otherfn_time_elapsed = otherfn_time_elapsed; >}, job)
+            with Not_found ->
                 let score job =
                     let num_of_failing_paths = List.length (BackOtterTargets.get (get_origin_function job) targets) in
                     let execution_path_length = List.length job.exHist.executionPath in
@@ -271,7 +277,6 @@ class ['job] t file targets_ref entry_fn failure_fn = object (self)
                          otherfn_time_elapsed = otherfn_time_elapsed; >}, job)
             else
                 None
-
 
 end
 
