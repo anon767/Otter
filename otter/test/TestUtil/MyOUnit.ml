@@ -25,6 +25,9 @@ let fork_call (f : ('a -> 'b)) (x : 'a) : 'b =
     if child = 0 then begin
         (* child process runs the function and proxies the result to the parent *)
         Unix.close fdin;
+        (* also close stdin; automated tests really shouldn't rely on input *)
+        Unix.close Unix.stdin;
+
         let result = try `Result (f x) with e -> `Exception e in
         Marshal.to_channel (Unix.out_channel_of_descr fdout) result [Marshal.Closures];
         exit 0
