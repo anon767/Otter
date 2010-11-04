@@ -35,7 +35,7 @@ static void env_init(void);
 #include <__otter/otter_scheduler.h>
 char confFileContents[] = "chown_upload_mode=00600\nmax_login_fails=3\n\nanonymous_enable=1\nport_enable=TRUE\npasv_enable=YES\nlocal_enable=0\nchroot_local_user=FALSE\nwrite_enable=NO\n#\npam_service_name=ftp\nlisten_address6=\nlisten=1\nftp_username=user\n";
 unsigned int confFileSize = sizeof(confFileContents) - 1;
-extern int* flag;
+extern int* vsftpd_has_called_listen;
 int vsftpd_main(int argc, const char* argv[]);
 int sym_main();
 
@@ -43,13 +43,13 @@ int main(int argc, const char* argv[])
 {
   /*__otter_libc_init();*/
 	__otter_fs_mount();
-	flag = __otter_multi_gmalloc(sizeof(int));
-	*flag = 0;
+	vsftpd_has_called_listen = __otter_multi_gmalloc(sizeof(int));
+	*vsftpd_has_called_listen = 0;
   
 	if(fork())
 	{
 		/* wait until vsftpd has called listen */
-		__otter_multi_block_while_condition(*flag == 0, flag);
+		__otter_multi_block_while_condition(*vsftpd_has_called_listen == 0, vsftpd_has_called_listen);
 		
 		return dummy_main();
 	}
@@ -57,6 +57,8 @@ int main(int argc, const char* argv[])
 	{
 		/* setup environment for vsftpd */
 		__otter_fs_touch("foo.txt", __otter_fs_pwd);
+		open("foo.txt", O_RDWR);
+		open("foo.txt", O_RDWR);
 		open("foo.txt", O_RDWR);
 		setuid(__otter_UID_ROOT);
 		struct __otter_fs_dnode* dnode = __otter_fs_mkdir("etc", __otter_fs_root);
@@ -79,6 +81,8 @@ int dummy_main()
 	addr->sin_addr.s_addr = 0x7F000001;
 	int r = connect(fd, addr, sizeof(struct sockaddr_in));
 	__ASSERT(r != -1);
+	__otter_multi_time_wait(10000);
+	close(fd);
 	
 	return(0);
 }

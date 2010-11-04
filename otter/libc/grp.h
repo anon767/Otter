@@ -18,4 +18,7 @@ struct group  *getgrent(void);
 void           endgrent(void);
 void           setgrent(void);
 
+int setgroups(size_t n, const gid_t* groups);
+int initgroups(const char* user, gid_t group);
+
 #endif

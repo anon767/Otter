@@ -323,7 +323,7 @@ int __otter_fs_unlink_in_dir(const char* name, struct __otter_fs_dnode* dir)
 			struct __otter_fs_inode* inode = (*files).inode;
 			(*inode).linkno--;
 
-			if(pfiles = NULL) /* file was the first entry */
+			if(pfiles == NULL) /* file was the first entry */
 			{
 				(*dir).files = (*files).next;
 			}
@@ -377,7 +377,7 @@ int __otter_fs_rmdir_in_dir(const char* name, struct __otter_fs_dnode* dir)
 
 			(*dnode).linkno--;
 
-			if(pdirs = NULL) /* directory was the first entry */
+			if(pdirs == NULL) /* directory was the first entry */
 			{
 				(*dir).dirs = (*dirs).next;
 			}
@@ -521,9 +521,10 @@ int __otter_fs_next_global_fd()
 
 	return (-1);
 }
-
+#include<__otter/otter_scheduler.h>
 int __otter_fs_open_file(struct __otter_fs_inode* inode, int mode)
 {
+	__otter_multi_begin_atomic();
 	int permissions = 0;
 	if(mode & O_RDONLY)
 		permissions += 2;
@@ -533,6 +534,7 @@ int __otter_fs_open_file(struct __otter_fs_inode* inode, int mode)
 	if(!__otter_fs_can_permission((*inode).permissions, permissions))
 	{
 		errno = EACCESS;
+		__otter_multi_end_atomic();
 		return (-1);
 	}
 
@@ -540,6 +542,7 @@ int __otter_fs_open_file(struct __otter_fs_inode* inode, int mode)
 	if(fd == -1)
 	{
 		errno = EMFILE;
+		__otter_multi_end_atomic();
 		return (-1);
 	}
 
@@ -547,6 +550,7 @@ int __otter_fs_open_file(struct __otter_fs_inode* inode, int mode)
 	if(ft == -1)
 	{
 		errno = ENFILE;
+		__otter_multi_end_atomic();
 		return (-1);
 	}
 
@@ -565,7 +569,8 @@ int __otter_fs_open_file(struct __otter_fs_inode* inode, int mode)
 
 	if((*inode).size == 0)
 		__otter_fs_open_file_table[ft].status = __otter_fs_STATUS_EOF;
-
+	
+	__otter_multi_end_atomic();
 	return (fd);
 }
 
@@ -636,7 +641,7 @@ int __otter_fs_change_open_mode(struct __otter_fs_open_file_table_entry* open_fi
 
 	if((*open_file).type == __otter_fs_TYP_FILE)
 	{
-		struct __otter_fs_inode* inode = ((struct __otter_fs_inode*)(*open_file).vnode);
+		struct __otter_fs_inode* inode = (struct __otter_fs_inode*)((*open_file).vnode);
 
 		if(!__otter_fs_can_permission((*inode).permissions, permissions))
 		{
@@ -656,7 +661,7 @@ int __otter_fs_change_open_mode(struct __otter_fs_open_file_table_entry* open_fi
 	}
 	else
 	{
-		struct __otter_fs_dnode* dnode = ((struct __otter_fs_dnode*)(*open_file).vnode);
+		struct __otter_fs_dnode* dnode = (struct __otter_fs_dnode*)((*open_file).vnode);
 
 		if(!__otter_fs_can_permission((*dnode).permissions, permissions))
 		{

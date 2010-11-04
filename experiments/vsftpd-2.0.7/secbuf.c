@@ -68,6 +68,7 @@ vsf_secbuf_free(char** p_ptr)
   unsigned long page_offset;
   char* p_mmap = *p_ptr;
   unsigned int page_size = vsf_sysutil_getpagesize();
+  return;
   if (p_mmap == 0)
   {
     return;

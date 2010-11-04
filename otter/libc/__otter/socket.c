@@ -71,6 +71,9 @@ int __otter_libc_setsockopt_sol_socket(struct __otter_fs_sock_data* sock, int op
 	{
 		/* TODO: impliment more of these */
 		case SO_REUSEADDR:
+		case SO_KEEPALIVE:
+		case SO_DONTROUTE:
+		case SO_OOBINLINE:
 		case SO_BOUND:
 			if(option_len < sizeof(int))
 			{
@@ -90,11 +93,8 @@ int __otter_libc_setsockopt_sol_socket(struct __otter_fs_sock_data* sock, int op
 		case SO_ACCEPTCONN:
 		case SO_BROADCAST:
 		case SO_DEBUG:
-		case SO_DONTROUTE:
 		case SO_ERROR:
-		case SO_KEEPALIVE:
 		case SO_LINGER:
-		case SO_OOBINLINE:
 		case SO_RCVBUF:
 		case SO_RVCLOWAT:
 		case SO_RCVTIMEO:
@@ -493,7 +493,7 @@ int __otter_libc_accept(int socket_fd, struct sockaddr *address, socklen_t *addr
 	{
 		if(sock->sock_queue[0])
 		{
-			__otter_multi_end_atomic();
+
 			struct __otter_fs_sock_data* sock_other = sock->sock_queue[0];
 			if(sock_other->state != __otter_sock_ST_SYN_SENT) /* something happened to the other end of the socket */
 			{
@@ -501,10 +501,12 @@ int __otter_libc_accept(int socket_fd, struct sockaddr *address, socklen_t *addr
 				break;
 			}
 			int fd = socket(sock->addr->sa_family, SOCK_STREAM, 0);
+			__otter_multi_begin_atomic();
 			if(fd == -1) /* failed to allocate new file descriptor */
 			{
 				__otter_sock_pop_queue(sock->sock_queue, sock->backlog + 1);
 				sock_other->state = __otter_sock_ST_CLOSED;
+				__otter_multi_end_atomic();
 				return(-1);
 			}
 			
@@ -527,6 +529,7 @@ int __otter_libc_accept(int socket_fd, struct sockaddr *address, socklen_t *addr
 				*address_len = __SOCKADDR_SHARED_LEN;
 			}
 			
+			__otter_multi_end_atomic();
 			return(fd);
 		}
 		else
@@ -592,7 +595,7 @@ int __otter_libc_connect(int socket_fd, const struct sockaddr *address, socklen_
 		}
 	}
 	
-	/* check that the socket is in an appropriate state for accept() */
+	/* check that the socket is in an appropriate state for connect() */
 	switch(sock->state)
 	{
 		case __otter_sock_ST_CLOSED:
@@ -627,6 +630,7 @@ int __otter_libc_connect(int socket_fd, const struct sockaddr *address, socklen_
 			__ASSERT(0);
 	}
 	
+	__otter_multi_begin_atomic();
 	int q_size = 0;
 	struct __otter_fs_sock_data* best_sock = NULL;
 	for(int i = 0; i < __otter_fs_GLOBALMAXOPEN; i++)
@@ -662,6 +666,7 @@ int __otter_libc_connect(int socket_fd, const struct sockaddr *address, socklen_
 	if(best_sock == NULL) /* no one was listening */
 	{
 		errno = ECONNREFUSED;
+		__otter_multi_end_atomic();
 		return(-1);
 	}
 	
@@ -669,6 +674,8 @@ int __otter_libc_connect(int socket_fd, const struct sockaddr *address, socklen_
 	sock->sock_queue = __otter_multi_gcalloc(1, sizeof(struct __otter_fs_sock_data*));
 	sock->recv_data = __otter_fs_init_new_pipe_data();
 	sock->sock_queue[0] = best_sock;
+	__otter_multi_end_atomic();
+	
 	for(int i = 0; i < best_sock->backlog + 1; i++)
 	{
 		if(best_sock->sock_queue[i] == NULL)
@@ -678,7 +685,7 @@ int __otter_libc_connect(int socket_fd, const struct sockaddr *address, socklen_
 			__otter_multi_block_while_condition(sock->state == __otter_sock_ST_SYN_SENT, sock);
 			
 			if(sock->state == __otter_sock_ST_ESTABLISHED)
-			{		
+			{
 				return(0);
 			}
 			else
@@ -693,14 +700,8 @@ int __otter_libc_connect(int socket_fd, const struct sockaddr *address, socklen_
 	return(-1);
 }
 
-int __otter_libc_shutdown(int socket_fd, int how)
-{
-	struct __otter_fs_sock_data* sock = __otter_libc_get_sock_data(socket_fd);
-	if(!sock)
-	{
-		return(-1);
-	}
-		
+int __otter_libc_shutdown_sock_data(struct __otter_fs_sock_data* sock, int how)
+{		
 	/* check that the socket is in an appropriate state for accept() */
 	switch(sock->state)
 	{
@@ -709,7 +710,7 @@ int __otter_libc_shutdown(int socket_fd, int how)
 		case __otter_sock_ST_SYN_RCVD:
 		case __otter_sock_ST_SYN_SENT:
 			errno = ENOTCONN;
-			retunr(-1);
+			return(-1);
 		case __otter_sock_ST_ESTABLISHED:
 			{
 				struct __otter_fs_sock_data* other = sock->sock_queue[0];
@@ -734,6 +735,8 @@ int __otter_libc_shutdown(int socket_fd, int how)
 						other->state = __otter_sock_ST_TIME_WAIT;
 						sock->state = __otter_sock_ST_CLOSED;
 						other->state = __otter_sock_ST_CLOSED;
+						sock->sock_queue[0] = NULL;
+						other->sock_queue[0] = NULL;
 						return(0);
 					default:
 						errno = EINVAL;
@@ -754,10 +757,12 @@ int __otter_libc_shutdown(int socket_fd, int how)
 						other->state = __otter_sock_ST_TIME_WAIT;
 						sock->state = __otter_sock_ST_CLOSED;
 						other->state = __otter_sock_ST_CLOSED;
+						sock->sock_queue[0] = NULL;
+						other->sock_queue[0] = NULL;
 						return(0);
 					default:
 						errno = EINVAL;
-						retunr(-1);
+						return(-1);
 				}
 			}
 			break;
@@ -778,6 +783,8 @@ int __otter_libc_shutdown(int socket_fd, int how)
 						sock->state = __otter_sock_ST_TIME_WAIT;
 						sock->state = __otter_sock_ST_CLOSED;
 						other->state = __otter_sock_ST_CLOSED;
+						sock->sock_queue[0] = NULL;
+						other->sock_queue[0] = NULL;
 						return(0);
 					default:
 						errno = EINVAL;
@@ -789,7 +796,7 @@ int __otter_libc_shutdown(int socket_fd, int how)
 		case __otter_sock_ST_TIME_WAIT:
 			errno = ENOTCONN;
 			return(-1);
-		case __otter_sock_ST_UDP: /* UDP dosn't listen */
+		case __otter_sock_ST_UDP:
 			errno = EOPNOTSUPP;
 			return(-1);
 		default:
@@ -864,4 +871,65 @@ int getsockname(int socket_fd, struct sockaddr *address, socklen_t *address_len)
 	*address_len = __SOCKADDR_SHARED_LEN;
 
 	return(0);
+}
+
+ssize_t recv(int socket_fd, void *buf, size_t num, int flags)
+{
+	struct __otter_fs_sock_data* sock = __otter_libc_get_sock_data(socket_fd);
+	if(!sock)
+	{
+		return(-1);
+	}
+	
+	switch(sock->state)
+	{
+		case __otter_sock_ST_CLOSED:
+		case __otter_sock_ST_LISTEN:
+		case __otter_sock_ST_SYN_RCVD:
+		case __otter_sock_ST_SYN_SENT:
+		case __otter_sock_ST_CLOSE_WAIT:
+		case __otter_sock_ST_LAST_ACK:
+		case __otter_sock_ST_CLOSING:
+		case __otter_sock_ST_TIME_WAIT:
+		case __otter_sock_ST_UDP:
+			/* can't read() in these states */
+			errno = ENOTCONN;
+			return(-1);
+			break;
+
+		case __otter_sock_ST_ESTABLISHED:
+		case __otter_sock_ST_FIN_WAIT_1:
+		case __otter_sock_ST_FIN_WAIT_2:
+			if(flags & MSG_PEEK)
+				return __otter_libc_pread_pipe_data(sock->recv_data, buf, num);
+			else
+				return __otter_libc_read_pipe_data(sock->recv_data, buf, num);
+			break;
+			
+		default:
+			__ASSERT(0);
+	}
+	return(-1);
+}
+
+int __otter_libc_shutdown(int socket_fd, int how)
+{
+	struct __otter_fs_sock_data* sock = __otter_libc_get_sock_data(socket_fd);
+	if(!sock)
+	{
+		return(-1);
+	}
+	
+	return __otter_libc_shutdown_sock_data(sock, how);
+}
+
+ssize_t send(int socket_fd, const void *buf, size_t num, int flags)
+{
+	struct __otter_fs_sock_data* sock = __otter_libc_get_sock_data(socket_fd);
+	if(!sock)
+	{
+		return(-1);
+	}
+	
+	return __otter_libc_write_socket(sock, buf, num);
 }

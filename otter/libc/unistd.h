@@ -14,7 +14,7 @@ int          access(const char *, int);
 unsigned int alarm(unsigned int);
 int          brk(void *);
 int          chdir(const char *);
-int          chroot(const char *); /*(LEGACY)*/
+int          chroot(const char *); /*(LEGACY)*/ /*EXISTS*/
 int          chown(const char *, uid_t, gid_t);
 int          close(int); /*EXISTS*/
 size_t       confstr(int, char *, size_t);
@@ -43,7 +43,7 @@ int          getdtablesize(void); /*(LEGACY)*/
 gid_t        getegid(void); /*EXISTS*/
 uid_t        geteuid(void); /*EXISTS*/
 gid_t        getgid(void); /*EXISTS*/
-int          getgroups(int, gid_t []);
+int          getgroups(int, gid_t []); /*EXISTS*/
 long         gethostid(void);
 char        *getlogin(void);
 int          getlogin_r(char *, size_t);

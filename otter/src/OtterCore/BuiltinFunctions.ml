@@ -1032,10 +1032,24 @@ let libc_interceptor job job_queue interceptor =
 		(intercept_function_by_name_external "lseek"                   "__otter_libc_lseek") @@
 		(intercept_function_by_name_external "getuid"                  "__otter_libc_getuid") @@
 		(intercept_function_by_name_external "setuid"                  "__otter_libc_setuid") @@
+		(intercept_function_by_name_external "getgid"                  "__otter_libc_getgid") @@
+		(intercept_function_by_name_external "setgid"                  "__otter_libc_setgid") @@
+		(intercept_function_by_name_external "getegid"                 "__otter_libc_getegid") @@
+		(intercept_function_by_name_external "geteuid"                 "__otter_libc_geteuid") @@
 		(intercept_function_by_name_external "dup"                     "__otter_libc_dup") @@
 		(intercept_function_by_name_external "dup2"                    "__otter_libc_dup2") @@
 		(intercept_function_by_name_external "getpagesize"             "__otter_libc_getpagesize") @@
 		(intercept_function_by_name_external "sysconf"                 "__otter_libc_sysconf") @@
+		(intercept_function_by_name_external "setsid"                  "__otter_libc_setsid") @@
+		(intercept_function_by_name_external "getpid"                  "__otter_libc_getpid") @@
+		(intercept_function_by_name_external "getppid"                 "__otter_libc_getppid") @@
+		(intercept_function_by_name_external "getpgid"                 "__otter_libc_getpgid") @@
+		(intercept_function_by_name_external "getpgrp"                 "__otter_libc_getpgrp") @@
+		(intercept_function_by_name_external "getgroups"               "__otter_libc_getgroups") @@
+		(intercept_function_by_name_external "chdir"                   "__otter_libc_chdir") @@
+		(intercept_function_by_name_external "fchdir"                  "__otter_libc_fchdir") @@
+		(intercept_function_by_name_external "chroot"                  "__otter_libc_chroot") @@
+		(intercept_function_by_name_external "alarm"                   "__otter_libc_alarm") @@
 
 		(* arpa/inet.h *)
 		(intercept_function_by_name_external "inet_addr"               "__otter_libc_inet_addr") @@

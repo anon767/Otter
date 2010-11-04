@@ -109,6 +109,9 @@ int accept(int socket_fd, struct sockaddr *address, socklen_t *address_len);
 int connect(int socket_fd, const struct sockaddr *address, socklen_t address_len);
 int shutdown(int socket_fd, int how);
 
+ssize_t recv(int socket, void *buffer, size_t length, int flags);
+ssize_t send(int socket, const void *buffer, size_t length, int flags);
+
 int setsockopt(int socket_fd, int level, int option_name, const void *option_value, socklen_t option_len);
 int getsockopt(int socket_fd, int level, int option_name, void *option_value, socklen_t *option_len);
 

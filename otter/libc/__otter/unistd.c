@@ -12,6 +12,7 @@ int __otter_libc_close(int fd)
 	struct __otter_fs_open_file_table_entry* open_file = get_open_file_from_fd(fd);
 	if (!open_file) return -1;
 
+	__otter_multi_begin_atomic();
 	__otter_fs_fd_table[fd] = -1;
 
 	open_file->openno--;
@@ -28,6 +29,7 @@ int __otter_libc_close(int fd)
 			free(dnode);
 		}
 
+		__otter_multi_end_atomic();
 		return (0);
 	}
 
@@ -39,18 +41,18 @@ int __otter_libc_close(int fd)
 		if(open_file->mode & O_WRONLY)
 			(*inode).w_openno--;
 
-		if((*inode).r_openno | (*inode).w_openno) /* file is still open */
+		if((*inode).r_openno || (*inode).w_openno) /* file is still open */
+		{
+			__otter_multi_end_atomic();
 			return (0);
+		}
 		
 		if(open_file->type == __otter_fs_TYP_SOCK) /* shutdown socket */
 		{
 			struct __otter_fs_sock_data* sock = (struct __otter_fs_sock_data*)((struct __otter_fs_inode*)(open_file->vnode))->data;
-			if(!sock)
-			{
-				return(-1);
-			}
+			
+			__EVAL(sock->state);
 		
-			shutdown(fd, SHUT_RDWR);
 			switch(sock->state)
 			{
 				case __otter_sock_ST_CLOSED:
@@ -81,20 +83,24 @@ int __otter_libc_close(int fd)
 							sock->sock_queue[0]->sock_queue[sock->sock_queue[0]->backlog + 1] = NULL;
 						else
 							__ASSERT(0);
+						
+						sock->sock_queue[0] = NULL;
 					}
 					break;
 				case __otter_sock_ST_ESTABLISHED:
 				case __otter_sock_ST_CLOSE_WAIT:
-					shutdown(fd, SHUT_RDWR);
+					__otter_libc_shutdown_sock_data(sock, SHUT_RDWR);
 					break;
 				case __otter_sock_ST_LAST_ACK:
+					__ASSERT(0);
 					break;
 				case __otter_sock_ST_FIN_WAIT_1:
 				case __otter_sock_ST_FIN_WAIT_2:
-					shutdown(fd, SHUT_RDWR);
+					__otter_libc_shutdown_sock_data(sock, SHUT_RDWR);
 					break;
 				case __otter_sock_ST_CLOSING:
 				case __otter_sock_ST_TIME_WAIT:
+					__ASSERT(0);
 				case __otter_sock_ST_UDP:
 					break;
 				default:
@@ -102,6 +108,7 @@ int __otter_libc_close(int fd)
 			}
 			
 			__otter_fs_free_socket(inode);
+			__otter_multi_end_atomic();
 			return(0);
 		}
 
@@ -118,7 +125,8 @@ int __otter_libc_close(int fd)
 			free(inode);	
 		}
 	}
-
+	
+	__otter_multi_end_atomic();
 	return (0);
 }
 
@@ -212,7 +220,7 @@ ssize_t __otter_libc_read_tty(void* buf, size_t num)
 }
 
 /* circular buffer */
-ssize_t __otter_libc_read_pipe_data(
+ssize_t __otter_libc_pread_pipe_data(
 	struct __otter_fs_pipe_data* pipe,
 	void* buf,
 	size_t num)
@@ -233,6 +241,16 @@ ssize_t __otter_libc_read_pipe_data(
 		}
 	}
 	__otter_multi_end_atomic();
+
+	return (num);
+}
+
+ssize_t __otter_libc_read_pipe_data(
+	struct __otter_fs_pipe_data* pipe,
+	void* buf,
+	size_t num)
+{
+	num = __otter_libc_pread_pipe_data(pipe, buf, num);
 
 	pipe->rhead = (pipe->rhead + num) % __otter_fs_PIPE_SIZE; /* move rhead to last char read */
 	return (num);
@@ -661,7 +679,7 @@ int __otter_libc_setuid(uid_t uid)
 	return(-1);
 }
 
-gid_t getgid()
+gid_t __otter_libc_getgid()
 {
 	return __otter_gid;
 }
@@ -754,7 +772,7 @@ int fork()
 	return __otter_multi_fork();
 }
 
-pid_t setsid()
+pid_t __otter_libc_setsid()
 {
 	pid_t parent = getppid();
 	if(parent < 0)
@@ -768,27 +786,27 @@ pid_t setsid()
 	return(-pid - 2);
 }
 
-pid_t getpid()
+pid_t __otter_libc_getpid()
 {
 	return __otter_multi_get_pid();
 }
 
-pid_t getppid()
+pid_t __otter_libc_getppid()
 {
 	return __otter_multi_get_parent_pid(getpid());
 }
 
-gid_t getegid()
+gid_t __otter_libc_getegid()
 {
 	return getgid();
 }
 
-uid_t geteuid()
+uid_t __otter_libc_geteuid()
 {
 	return getuid();
 }
 
-pid_t getpgid(pid_t pid)
+pid_t __otter_libc_getpgid(pid_t pid)
 {
 	int ppid = pid;
 	while(ppid >= 0)
@@ -800,7 +818,61 @@ pid_t getpgid(pid_t pid)
 	return pid;
 }
 
-pid_t getpgrp()
+pid_t __otter_libc_getpgrp()
 {
 	return getpgid(getpid());
+}
+
+int __otter_libc_getgroups(int size, gid_t* list)
+{
+	/* supplimental groups are not implimented so there are none */
+	return(0);
+}
+
+int __otter_libc_chdir(const char *path)
+{
+	char* name = malloc(strlen(path) + 1);
+	strcpy(name, path);
+	struct __otter_fs_dnode* dnode = __otter_fs_find_dnode(name);
+	
+	if(!dnode)
+	{
+		free(name);
+		return(-1);
+	}
+	
+	__otter_fs_pwd = dnode;
+	
+	free(name);
+	return(0);
+}
+
+int __otter_libc_fchdir(int fd)
+{
+	struct __otter_fs_open_file_table_entry* open_file = get_open_file_from_fd(fd);
+	if(!open_file)
+	{
+		return(-1);
+	}
+	
+	if(open_file->type != __otter_fs_TYP_DIR)
+	{
+		errno = ENOTDIR;
+		return(-1);
+	}
+	
+	__otter_fs_pwd = (struct __otter_fs_dnode*)open_file->vnode;
+	return(0);
+}
+
+int __otter_libc_chroot(const char *)
+{
+	/* there is no reasonable way to impliment this right now */
+	return(0);
+}
+
+unsigned int __otter_libc_alarm(unsigned int seconds)
+{
+	/* signals aren't implimented */
+	return(0);
 }

@@ -51,17 +51,21 @@ int getpwuid_r(uid_t uid, struct passwd *pwd, char *buffer, size_t bufsize, stru
 	{
 		case __otter_UID_ROOT:
 			pwd->pw_name = "root";
-			pwd->pw_gid = __otter_UID_ROOT;
+			pwd->pw_gid = __otter_GID_ROOT;
+			pwd->pw_uid = __otter_UID_ROOT;
 			pwd->pw_dir = "/wrk";
 			pwd->pw_shell = "";
+			pwd->pw_passwd = "";
 			
 			*result = pwd;
 			return(0);
 		case __otter_UID_USER:
 			pwd->pw_name = "user";
-			pwd->pw_gid = __otter_UID_USER;
+			pwd->pw_gid = __otter_GID_USER;
+			pwd->pw_uid = __otter_UID_USER;
 			pwd->pw_dir = "/wrk";
 			pwd->pw_shell = "";
+			pwd->pw_passwd = "";
 			
 			*result = pwd;
 			return(0);

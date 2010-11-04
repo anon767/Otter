@@ -503,3 +503,14 @@ size_t __otter_libc_wcstombs(char* s, const wchar_t* pwcs, size_t n)
 
 	return (n);
 }
+
+char *getenv(const char *name)
+{
+	return NULL;
+}
+
+int putenv(char *string)
+{
+	return 0;
+}
+

@@ -133,4 +133,16 @@ void __otter_libc_setgrent()
 	__otter_libc_getgrent_gid = __otter_GID_ROOT;
 }
 
+int setgroups(size_t n, const gid_t* groups)
+{
+	/* suplimental groups are not implimented */
+	errno = EINVAL;
+	return(-1);
+}
+
+int initgroups(const char* user, gid_t group)
+{
+	/* suplimental groups are not implimented; this does nothing */
+	return(0);
+}
 
