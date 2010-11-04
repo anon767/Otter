@@ -1,11 +1,10 @@
 DataStructures
 OcamlUtilities
 CilUtilities
-OtterGraph
 OtterBytes
+OtterCFG
 OtterCore
 OtterJob
 OtterQueue
 OtterReporter
 OtterDriver
-Otter

@@ -1,7 +1,8 @@
-CilUtilities
 DataStructures
 OcamlUtilities
+CilUtilities
 OtterBytes
+OtterCFG
 OtterCore
 OtterJob
 OtterQueue
