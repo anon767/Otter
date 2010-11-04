@@ -2,7 +2,10 @@
 
 
 (**/**) (* various helpers *)
-module InstructionSet = Set.Make (Instruction)
+module InstructionPriority = struct
+    include DataStructures.PrioritySearchQueue.Make (Instruction) (struct type t = int let compare = Pervasives.compare end)
+    let insert = insert ~combine:(fun (x, ()) (y, ()) -> (min x y, ()))
+end
 module InstructionTargetsHash = Hashtbl.Make (struct
     type t = Instruction.t * Instruction.t list
     let equal (x, xt) (y, yt) = try List.for_all2 Instruction.equal (x::xt) (y::yt) with Invalid_argument "List.for_all2" -> false
@@ -27,68 +30,76 @@ let find =
             InstructionTargetsHash.find memotable (instr, targets)
 
         with Not_found ->
-            let calc_dist instrs worklist =
-                if List.exists (fun instr -> List.exists (Instruction.equal instr) targets) instrs then
-                    (0, worklist)
-                else
-                    List.fold_left begin fun (dist, worklist) instr ->
-                        try (min dist (InstructionTargetsHash.find memotable (instr, targets)), worklist)
-                        with Not_found -> (dist, InstructionSet.add instr worklist)
-                    end (max_int, worklist) instrs
-            in
             let rec update worklist =
-                let instr = InstructionSet.choose worklist in
-                let dist =
-                    try
-                        InstructionTargetsHash.find memotable (instr, targets)
-                    with Not_found ->
-                        InstructionTargetsHash.add memotable (instr, targets) max_int;
-                        max_int
-                in
+                (* pick the highest priority instruction from the worklist *)
+                let instr, priority, () = InstructionPriority.find_min worklist in
+                let worklist = InstructionPriority.delete_min worklist in
 
                 (* compute the new distance by taking the minimum of:
-                        - 1 + the minimum distance of its successors + the minimum distance through its call targets,
+                        - 0 if the instruction is a target;
+                        - or, 1 + the minimum distance of its successors + the minimum distance through its call targets,
                         - or, 1 + the minimum distance of its call targets;
                    adding uncomputed successors and call targets to the worklist *)
-                let worklist' = worklist in
-                let call_targets = Instruction.call_targets instr in
-                let terminal, succ_dist, worklist' =
-                    let succs = Instruction.successors instr in
-                    let succ_dist, worklist' = calc_dist succs worklist' in
-                    let succ_dist = match call_targets with
-                        | [] -> succ_dist
-                        | call_targets -> succ_dist + List.fold_left (fun d call_target -> min d (DistanceToReturn.find call_target)) max_int call_targets
-                    in
-                    let succ_dist = if succ_dist < 0 then dist (* overflow *) else succ_dist in
-                    (succs = [], succ_dist, worklist')
+                let dist, worklist =
+                    if List.exists (Instruction.equal instr) targets then
+                        (0, worklist)
+                    else
+                        let priority = priority - 1 in
+                        let calc_dist instrs worklist =
+                            (* if any dependencies are uncomputed, add them to the front of the worklist *)
+                            List.fold_left begin fun (dist, worklist) instr ->
+                                try (min dist (InstructionTargetsHash.find memotable (instr, targets)), worklist)
+                                with Not_found -> (dist, InstructionPriority.insert instr priority () worklist)
+                            end (max_int, worklist) instrs
+                        in
+
+                        let dist, worklist = calc_dist (Instruction.successors instr) worklist in
+                        let dist, worklist = match Instruction.call_targets instr with
+                            | [] ->
+                                (* no call targets, just successors *)
+                                (dist, worklist)
+                            | call_targets ->
+                                (* compute the distance through call targets and successors *)
+                                let through_dist =
+                                    let through_dist = dist + List.fold_left (fun d call_target -> min d (DistanceToReturn.find call_target)) max_int call_targets in
+                                    if through_dist < 0 then max_int (* overflow *) else through_dist
+                                in
+                                (* compute the distances of call targets *)
+                                let call_target_dist, worklist = calc_dist call_targets worklist in
+                                (* take the minimum of the above *)
+                                (min through_dist call_target_dist, worklist)
+                        in
+                        let dist =
+                            let dist = 1 + dist in
+                            if dist < 0 then max_int (* overflow *) else dist
+                        in
+                        (dist, worklist)
                 in
-                let target_dist, worklist' = calc_dist call_targets worklist' in
-                let dist' =
-                    let dist' = 1 + min succ_dist target_dist in
-                    if dist' < 0 then dist (* overflow *) else dist'
-                in
+
                 (* update the distance if changed *)
-                if dist' <> dist then InstructionTargetsHash.replace memotable (instr, targets) dist';
+                let updated =
+                    try
+                        let dist' = InstructionTargetsHash.find memotable (instr, targets) in
+                        if dist <> dist' then InstructionTargetsHash.replace memotable (instr, targets) dist;
+                        dist <> dist'
+                    with Not_found ->
+                        InstructionTargetsHash.add memotable (instr, targets) dist;
+                        true
+                in
 
+                (* if updated, add this instruction's predecessors and call sites to the worklist. *)
                 let worklist =
-                    (* if this is not a target and the worklist is updated, process the worklist first because this
-                       instruction will have to be updated again later. *)
-                    if dist' > 1 && not (InstructionSet.equal worklist' worklist) then worklist' else
-
-                    (* if the worklist is not updated and the distance has changed, or this instruction is a terminal
-                       instruction, add the predecessors and call sites to the worklist. *)
-                    if dist' <> dist || terminal then
-                        List.fold_left (fun worklist instr -> InstructionSet.add instr worklist) worklist
+                    if updated then
+                        List.fold_left (fun worklist instr -> InstructionPriority.insert instr priority () worklist) worklist
                             (List.rev_append (Instruction.predecessors instr) (Instruction.call_sites instr))
                     else
                         worklist
                 in
 
                 (* recurse on the remainder of the worklist *)
-                let worklist = InstructionSet.remove instr worklist in
-                if not (InstructionSet.is_empty worklist) then update worklist
+                if not (InstructionPriority.is_empty worklist) then update worklist
             in
-            update (InstructionSet.singleton instr);
+            update (InstructionPriority.singleton instr max_int ());
             InstructionTargetsHash.find memotable (instr, targets)
 
 
@@ -121,3 +132,4 @@ let find_in_context instr context targets =
     let dist = find instr targets in
     let return_dist = DistanceToReturn.find instr in
     unwind dist return_dist context
+

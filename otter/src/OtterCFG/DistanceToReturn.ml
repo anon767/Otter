@@ -2,7 +2,7 @@
 
 
 (**/**) (* various helpers *)
-module InstructionSet = Set.Make (Instruction)
+module InstructionPriority = DataStructures.PrioritySearchQueue.Make (Instruction) (struct type t = int let compare = Pervasives.compare end)
 module InstructionHash = Hashtbl.Make (Instruction)
 (**/**)
 
@@ -22,60 +22,69 @@ let find =
             InstructionHash.find memotable instr
 
         with Not_found ->
-            let calc_dist instrs worklist = match instrs with
-                | [] ->
-                    (0, worklist)
-                | instrs ->
-                    List.fold_left begin fun (dist, worklist) instr ->
-                        try (min dist (InstructionHash.find memotable instr), worklist)
-                        with Not_found -> (dist, InstructionSet.add instr worklist)
-                    end (max_int, worklist) instrs
-            in
             let rec update worklist =
-                let instr = InstructionSet.choose worklist in
-                let dist =
-                    try
-                        InstructionHash.find memotable instr
-                    with Not_found ->
-                        InstructionHash.add memotable instr max_int;
-                        max_int
-                in
+                (* pick the highest priority instruction from the worklist *)
+                let instr, priority, () = InstructionPriority.find_min worklist in
+                let worklist = InstructionPriority.delete_min worklist in
 
-                (* compute the new distance by taking 1 + the minimum distance of its successors + the minimum distance
-                   of its call targets, adding uncomputed successors and call targets to the worklist *)
-                let worklist' = worklist in
-                let succ_dist, worklist' = calc_dist (Instruction.successors instr) worklist' in
-                let target_dist, worklist' = calc_dist (Instruction.call_targets instr) worklist' in
-                let dist' =
-                    let dist' = 1 + succ_dist in
-                    if dist' < 0 then
-                        dist (* overflow *)
+                (* compute the new distance by taking the minimum of:
+                        - 0 if the instruction is a return (has no successors);
+                        - or, 1 + the minimum distance of its successors + the minimum distance through its call targets;
+                   adding uncomputed successors and call targets to the worklist *)
+                let dist, worklist =
+                    if Instruction.successors instr = [] then
+                        (0, worklist)
                     else
-                        let dist' = dist' + target_dist in
-                        if dist' < 0 then
-                            dist (* overflow *)
-                        else
-                            dist'
+                        let calc_dist instrs worklist =
+                            List.fold_left begin fun (dist, worklist) instr ->
+                                try (min dist (InstructionHash.find memotable instr), worklist)
+                                with Not_found -> (dist, InstructionPriority.insert instr priority () worklist)
+                            end (max_int, worklist) instrs
+                        in
+
+                        let dist, worklist = calc_dist (Instruction.successors instr) worklist in
+                        let dist, worklist = match Instruction.call_targets instr with
+                            | [] ->
+                                (* no call targets, just successors *)
+                                (dist, worklist)
+                            | call_targets ->
+                                (* compute the distance through call targets and successors *)
+                                let through_dist, worklist = calc_dist call_targets worklist in
+                                let dist =
+                                    let dist = dist + through_dist in
+                                    if dist < 0 then max_int (* overflow *) else dist
+                                in
+                                (dist, worklist)
+                        in
+                        let dist =
+                            let dist = 1 + dist in
+                            if dist < 0 then max_int (* overflow *) else dist
+                        in
+                        (dist, worklist)
                 in
+
                 (* update the distance if changed *)
-                if dist' <> dist then InstructionHash.replace memotable instr dist';
+                let updated =
+                    try
+                        let dist' = InstructionHash.find memotable instr in
+                        if dist <> dist' then InstructionHash.replace memotable instr dist;
+                        dist <> dist'
+                    with Not_found ->
+                        InstructionHash.add memotable instr dist;
+                        true
+                in
 
+                (* if updated, add this instruction's predecessors and call sites to the worklist. *)
                 let worklist =
-                    (* if worklist is updated, use it because this instruction will have to be updated again later. *)
-                    if not (InstructionSet.equal worklist' worklist) then worklist' else
-
-                    (* if the worklist is not updated and the distance has changed, then add the predecessors and
-                       call sites to the worklist. *)
-                    if dist' <> dist then
-                        List.fold_left (fun worklist instr -> InstructionSet.add instr worklist) worklist
+                    if updated then List.fold_left (fun worklist instr -> InstructionPriority.insert instr priority () worklist) worklist
                             (List.rev_append (Instruction.predecessors instr) (Instruction.call_sites instr))
                     else
                         worklist
                 in
 
                 (* recurse on the remainder of the worklist *)
-                let worklist = InstructionSet.remove instr worklist in
-                if not (InstructionSet.is_empty worklist) then update worklist
+                if not (InstructionPriority.is_empty worklist) then update worklist
             in
-            update (InstructionSet.singleton instr);
+            update (InstructionPriority.singleton instr max_int ());
             InstructionHash.find memotable instr
+
