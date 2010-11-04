@@ -32,25 +32,9 @@ let get_distance_to_targets target_fundecs job =
     if target_fundecs = [] then
         max_distance (* = max_int in DistanceToTargets *)
     else
-        let file = job.Job.file in
         let source = Job.get_instruction job in
-        let target_instrs = List.map (fun f -> Instruction.of_fundec file f) target_fundecs in
-        let remaining_instrs stmt instr = match stmt.skind with
-            | Instr (instrs) -> let rec behead = function [] -> [] | h::t -> if h == instr then h::t else behead t in behead instrs
-            | _ -> invalid_arg "stmt must be a list of instrs"
-        in
-        let context = List.fold_right2 (
-            fun call fundec context -> match call with
-            | Source (_,stmt,instr,_) -> (Instruction.make file fundec stmt (remaining_instrs stmt instr)) :: context
-            | _ -> context
-                (* Don't need to capture the calling context beyond a Types.NoReturn,
-                 * since Otter will return an error if it returns from a NoReturn function,
-                 * i.e., any targets beyond a NoReturn will be unreachable. *)
-            )
-            (List.rev (List.tl (List.rev job.state.callContexts))) (* Discard the last element Runtime from callContexts *)
-            (List.tl job.state.callstack)                          (* Discard the first function from the callstack *)
-            []
-        in
+        let target_instrs = List.map (fun f -> Instruction.of_fundec job.Job.file f) target_fundecs in
+        let context = Job.get_instruction_context job in
         DistanceToTargets.find_in_context source target_instrs context
 
 

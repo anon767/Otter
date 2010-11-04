@@ -142,3 +142,18 @@ let get_instruction job =
             OtterCFG.Instruction.make job.file (List.hd job.state.Types.callstack) job.stmt instrs
         | _ ->
             OtterCFG.Instruction.make job.file (List.hd job.state.Types.callstack) job.stmt job.instrList
+
+
+(** Get a list of {!OtterCFG.Instruction.t} representing the current calling context in a job. *)
+let get_instruction_context job =
+    let rec get_instruction_context context return stack = match return, stack with
+        | Types.Source (_, _, _, stmt)::return, fundec::stack ->
+            let context = (OtterCFG.Instruction.of_stmt_first job.file fundec stmt)::context in
+            get_instruction_context context return stack
+        | Types.Source (_, _, _, _)::_, [] ->
+            invalid_arg "get_instruction_context: job with malformed callstack"
+        | _, _ ->
+            List.rev context
+    in
+    get_instruction_context [] job.state.Types.callContexts (List.tl job.state.Types.callstack)
+
