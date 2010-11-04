@@ -13,7 +13,6 @@ module OcamlbuildDependencies = struct
     open OtterQueue
     open OtterReporter
     open OtterDriver
-    open OtterGraph
 end
 
 let _ =
