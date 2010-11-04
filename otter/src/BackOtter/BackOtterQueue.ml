@@ -61,11 +61,11 @@ let has_bounding_paths (_,job) = match job.boundingPaths with
 
 type job_type = EntryfnJob of job | OtherfnJob of job
 
-class ['job] t file targets_ref entry_fn failure_fn = object (self)
+class ['job] t file targets_ref entry_fn failure_fn f_queue = object (self)
 
     (* TODO: refactor this mess *)
     val otherfn_jobs = []
-    val entryfn_jobqueue = new RemovableQueue.t (new SimpleEntryfnQueue.t (BackOtterTargets.get_fundecs (!targets_ref)))
+    val entryfn_jobqueue = new RemovableQueue.t (f_queue)
     val entryfn_processed = 0
     val otherfn_processed = 0
     val origin_fundecs = [entry_fn] (* fundecs whose FunctionJob-initialized jobs have been created, or entry_fn *)

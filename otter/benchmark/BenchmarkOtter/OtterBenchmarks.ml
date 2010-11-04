@@ -39,12 +39,12 @@ let benchmarks =
 
         let interceptor = BuiltinFunctions.libc_interceptor >>> BuiltinFunctions.interceptor in
         relpath >:::
-            List.map begin fun (name, queue) ->
+            (List.map begin fun (name, queue) ->
                 "Otter:" ^ name >:: benchmark (Driver.run ~interceptor ~queue:(Queue.get queue))
-            end Queue.queues
+            end Queue.queues)
             @
-            [
-                "BackOtter" >:: benchmark BackOtterDriver.callchain_backward_se;
-            ]
+            (List.map begin fun (name, queue) ->
+                "BackOtter:" ^ name >:: benchmark (BackOtterDriver.callchain_backward_se (Queue.get queue))
+            end Queue.queues)
     end
 
