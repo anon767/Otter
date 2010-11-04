@@ -11,11 +11,11 @@ let add_into_list item lst =
 (* Given a queue that supports put and get, add "remove" on top of it which takes the
  * job directly out from the queue.
  * Precondition: a job is entered into the queue only once. This is true for our use. *)
-class ['job, 'queue] t queue = object
-    val queue : 'queue = queue
+class ['self] t queue = object (_ : 'self)
+    val queue = queue
     val contents = []
 
-    method put (job : 'job) =
+    method put job =
         {< queue = queue#put job; contents = job :: contents; >}
 
     method get =
@@ -30,7 +30,7 @@ class ['job, 'queue] t queue = object
         in
         get queue contents
 
-    method remove (job : 'job) =
+    method remove job =
         {< contents = remove_from_list job contents; >}
 
     method get_contents = contents
