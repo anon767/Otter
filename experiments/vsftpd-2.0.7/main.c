@@ -37,7 +37,7 @@ char confFileContents[] = "chown_upload_mode=00600\nmax_login_fails=3\n\nanonymo
 unsigned int confFileSize = sizeof(confFileContents) - 1;
 extern int* vsftpd_has_called_listen;
 int vsftpd_main(int argc, const char* argv[]);
-int sym_main();
+int dummy_main();
 
 int main(int argc, const char* argv[])
 {
@@ -81,6 +81,12 @@ int dummy_main()
 	addr->sin_addr.s_addr = 0x7F000001;
 	int r = connect(fd, addr, sizeof(struct sockaddr_in));
 	__ASSERT(r != -1);
+	char buf[] = "abcdefghijklmnopqrstuvwxyz";
+	for(int i = 0; i < 100; i++)
+	{
+		write(fd, buf, 20);
+		read(fd, buf, 20);
+	}
 	__otter_multi_time_wait(10000);
 	close(fd);
 	
