@@ -22,7 +22,6 @@ let _ =
         Otter.Executemain.feature;
         MultiOtter.MultiDriver.feature;
         BackOtter.BackOtterDriver.feature;
-        BackOtter.LegacyBackOtter.feature;
         Marshal_feature.feature;
         CilUtilities.FindFns.feature;
         CilUtilities.TraceLines.feature;
