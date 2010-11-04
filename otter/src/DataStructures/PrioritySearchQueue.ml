@@ -170,40 +170,53 @@ module Make (Key : OrderedType) (Priority : OrderedType) = struct
         | Winner (_, _, _, l, _) -> 1 + LoserTree.size l
 
     (* insertion/deletion/modification *)
-    let rec insert k p v q = match tour_view q with
-        | `Null -> singleton k p v
-        | `Single (k', p', v') ->
-            let i = Key.compare k k' in
-            if i < 0 then
-                play (singleton k p v) (singleton k' p' v')
-            else if i = 0 then
-                singleton k p v
-            else
-                play (singleton k' p' v') (singleton k p v)
-        | `Play (l, r) when Key.compare k (max_key l) <= 0 -> play (insert k p v l) r
-        | `Play (l, r) -> play l (insert k p v r)
+    let insert ?(combine=(fun x _ -> x)) k p v q =
+        let rec insert q = match tour_view q with
+            | `Null -> singleton k p v
+            | `Single (k', p', v') ->
+                let i = Key.compare k k' in
+                if i < 0 then
+                    play (singleton k p v) (singleton k' p' v')
+                else if i = 0 then
+                    let p, v = combine (p, v) (p', v') in
+                    singleton k p v
+                else
+                    play (singleton k' p' v') (singleton k p v)
+            | `Play (l, r) when Key.compare k (max_key l) <= 0 -> play (insert l) r
+            | `Play (l, r) -> play l (insert r)
+        in
+        insert q
 
-    let rec delete k q = match tour_view q with
-        | `Null -> empty
-        | `Single (k', p, _) when Key.compare k k' = 0 -> empty
-        | `Single (k', p, v) -> singleton k' p v
-        | `Play (l, r) when Key.compare k (max_key l) <= 0 -> play (delete k l) r
-        | `Play (l, r) -> play l (delete k r)
+    let delete k q =
+        let rec delete q = match tour_view q with
+            | `Null -> empty
+            | `Single (k', p, _) when Key.compare k k' = 0 -> empty
+            | `Single (k', p, v) -> singleton k' p v
+            | `Play (l, r) when Key.compare k (max_key l) <= 0 -> play (delete l) r
+            | `Play (l, r) -> play l (delete r)
+        in
+        delete q
 
-    let rec adjust f k q = match tour_view q with
-        | `Null -> empty
-        | `Single (k', p, v) when Key.compare k k' = 0 -> singleton k' (f p) v
-        | `Single (k', p, v) -> singleton k' p v
-        | `Play (l, r) when Key.compare k (max_key l) <= 0 -> play (adjust f k l) r
-        | `Play (l, r) -> play l (adjust f k r)
+    let adjust f k q =
+        let rec adjust q = match tour_view q with
+            | `Null -> empty
+            | `Single (k', p, v) when Key.compare k k' = 0 -> singleton k' (f p) v
+            | `Single (k', p, v) -> singleton k' p v
+            | `Play (l, r) when Key.compare k (max_key l) <= 0 -> play (adjust l) r
+            | `Play (l, r) -> play l (adjust r)
+        in
+        adjust q
 
     (* dictionary operations *)
-    let rec lookup k q = match tour_view q with
-        | `Null -> raise Key
-        | `Single (k', p, v) when Key.compare k k' = 0 -> (p, v)
-        | `Single _ -> raise Key
-        | `Play (l, _) when Key.compare k (max_key l) <= 0 -> lookup k l
-        | `Play (_, r) -> lookup k r
+    let lookup k q =
+        let rec lookup q = match tour_view q with
+            | `Null -> raise Key
+            | `Single (k', p, v) when Key.compare k k' = 0 -> (p, v)
+            | `Single _ -> raise Key
+            | `Play (l, _) when Key.compare k (max_key l) <= 0 -> lookup l
+            | `Play (_, r) -> lookup r
+        in
+        lookup q
 
     (* priority queue operations *)
     let find_min = function
