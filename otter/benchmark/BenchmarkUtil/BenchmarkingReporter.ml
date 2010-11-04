@@ -37,7 +37,7 @@ class ['self] t ?(max_nodes=0) ?(max_paths=0) ?(max_abandoned=0) () = object (se
         if not (self#should_continue) then begin
             if max_nodes > 0 && nodes = max_nodes then Format.eprintf "Nodes bound of %d reached.@." nodes;
             if max_paths > 0 && paths = max_paths then Format.eprintf "Paths bound of %d reached.@." paths;
-            if max_abandoned > 0 && abandoned = max_abandoned then Format.eprintf "Paths bound of %d reached.@." paths;
+            if max_abandoned > 0 && abandoned = max_abandoned then Format.eprintf "Abandoned bound of %d reached.@." abandoned;
         end;
 
         Format.eprintf "@..@."
