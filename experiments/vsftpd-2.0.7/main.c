@@ -71,6 +71,14 @@ int main(int argc, const char* argv[])
 	}
 }
 
+void make_symbolic_buf(char* buf, int num)
+{
+	for(int i = 0; i < num; i++)
+	{
+		buf[i] = __SYMBOLIC(1);
+	}
+}
+
 int dummy_main()
 {
 	int fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -82,8 +90,9 @@ int dummy_main()
 	int r = connect(fd, addr, sizeof(struct sockaddr_in));
 	__ASSERT(r != -1);
 	char buf[] = "abcdefghijklmnopqrstuvwxyz";
-	for(int i = 0; i < 100; i++)
+	for(int i = 0; i < 10; i++)
 	{
+		make_symbolic_buf(buf, 20);
 		write(fd, buf, 20);
 		read(fd, buf, 20);
 	}
