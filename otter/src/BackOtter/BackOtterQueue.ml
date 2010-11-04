@@ -166,6 +166,7 @@ class ['job] t file targets_ref entry_fn failure_fn = object (self)
                 let job, job_with_paths = find_job_with_bounding_paths entryfn_jobqueue#get_contents in
                 let entryfn_jobqueue = entryfn_jobqueue#remove job in
                 Some ({< entryfn_jobqueue = entryfn_jobqueue;
+                         otherfn_jobs = otherfn_jobs;  (* Jobs might have been added into ths queue *)
                          origin_fundecs = origin_fundecs';
                          last_time = last_time;
                          last_job_type = Some (EntryfnJob job_with_paths);
@@ -175,6 +176,7 @@ class ['job] t file targets_ref entry_fn failure_fn = object (self)
                 match entryfn_jobqueue#get with
                 | Some (entryfn_jobqueue, job) ->
                     Some ({< entryfn_jobqueue = entryfn_jobqueue;
+                             otherfn_jobs = otherfn_jobs;  (* Same as above *)
                              origin_fundecs = origin_fundecs';
                              entryfn_processed = entryfn_processed + 1;
                              last_time = last_time;
