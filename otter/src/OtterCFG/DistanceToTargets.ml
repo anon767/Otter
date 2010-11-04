@@ -2,10 +2,7 @@
 
 
 (**/**) (* various helpers *)
-module InstructionPriority = struct
-    include DataStructures.PrioritySearchQueue.Make (Instruction) (struct type t = int let compare = Pervasives.compare end)
-    let insert = insert ~combine:(fun (x, ()) (y, ()) -> (min x y, ()))
-end
+module InstructionStack = DataStructures.StackSet.Make (Instruction)
 module InstructionTargetsHash = Hashtbl.Make (struct
     type t = Instruction.t * Instruction.t list
     let equal (x, xt) (y, yt) = try List.for_all2 Instruction.equal (x::xt) (y::yt) with Invalid_argument "List.for_all2" -> false
@@ -31,9 +28,8 @@ let find =
 
         with Not_found ->
             let rec update worklist =
-                (* pick the highest priority instruction from the worklist *)
-                let instr, priority, () = InstructionPriority.find_min worklist in
-                let worklist = InstructionPriority.delete_min worklist in
+                (* pick the an instruction from the worklist *)
+                let instr, worklist = InstructionStack.pop worklist in
 
                 (* compute the new distance by taking the minimum of:
                         - 0 if the instruction is a target;
@@ -44,12 +40,11 @@ let find =
                     if List.exists (Instruction.equal instr) targets then
                         (0, worklist)
                     else
-                        let priority = priority - 1 in
                         let calc_dist instrs worklist =
                             (* if any dependencies are uncomputed, add them to the front of the worklist *)
                             List.fold_left begin fun (dist, worklist) instr ->
                                 try (min dist (InstructionTargetsHash.find memotable (instr, targets)), worklist)
-                                with Not_found -> (dist, InstructionPriority.insert instr priority () worklist)
+                                with Not_found -> (dist, InstructionStack.push instr worklist)
                             end (max_int, worklist) instrs
                         in
 
@@ -90,16 +85,16 @@ let find =
                 (* if updated, add this instruction's predecessors and call sites to the worklist. *)
                 let worklist =
                     if updated then
-                        List.fold_left (fun worklist instr -> InstructionPriority.insert instr priority () worklist) worklist
+                        List.fold_left (fun worklist instr -> InstructionStack.push instr worklist) worklist
                             (List.rev_append (Instruction.predecessors instr) (Instruction.call_sites instr))
                     else
                         worklist
                 in
 
                 (* recurse on the remainder of the worklist *)
-                if not (InstructionPriority.is_empty worklist) then update worklist
+                if not (InstructionStack.is_empty worklist) then update worklist
             in
-            update (InstructionPriority.singleton instr max_int ());
+            update (InstructionStack.singleton instr);
             InstructionTargetsHash.find memotable (instr, targets)
 
 

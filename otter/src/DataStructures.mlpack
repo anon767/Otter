@@ -7,4 +7,5 @@ DataStructures/NamedCounter
 DataStructures/PrioritySearchQueue
 DataStructures/RandomAccessList
 DataStructures/RandomBag
+DataStructures/StackSet
 DataStructures/Ternary
