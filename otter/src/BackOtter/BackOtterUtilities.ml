@@ -35,7 +35,7 @@ let get_distance_to_targets target_fundecs job =
         let source = Job.get_instruction job in
         let target_instrs = List.map (fun f -> Instruction.of_fundec job.Job.file f) target_fundecs in
         let context = Job.get_instruction_context job in
-        DistanceToTargets.find_in_context source target_instrs context
+        DistanceToTargets.find_in_context source context target_instrs
 
 
 let get_distance_to_targets_within_function target_fundecs job =

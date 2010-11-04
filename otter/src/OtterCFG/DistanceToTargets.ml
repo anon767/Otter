@@ -101,7 +101,7 @@ let find =
 
     @return the shortest distance to one of the targets, or {!max_int} if none of the targets are reachable.
 *)
-let find_in_context instr targets context =
+let find_in_context instr context targets =
     (* compute the distance from the instr through function returns to targets in the call context *)
     let rec unwind dist return_dist = function
         | call_return::context ->
