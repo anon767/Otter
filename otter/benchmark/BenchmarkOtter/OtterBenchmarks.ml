@@ -44,7 +44,7 @@ let benchmarks =
             end Queue.queues)
             @
             (List.map begin fun (name, queue) ->
-                "BackOtter:" ^ name >:: benchmark (BackOtterDriver.callchain_backward_se (Queue.get queue))
+                "BackOtter:" ^ name >:: benchmark (BackOtterDriver.callchain_backward_se ~f_queue:(Queue.get queue))
             end Queue.queues)
     end
 

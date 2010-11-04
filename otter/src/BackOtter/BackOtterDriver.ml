@@ -73,7 +73,7 @@ let set_output_formatter_interceptor job job_queue interceptor =
     interceptor job job_queue
 
 
-let callchain_backward_se f_queue reporter entry_job =
+let callchain_backward_se ?(f_queue=OtterQueue.Queue.get_default ()) reporter entry_job =
     let file = entry_job.Job.file in
 
     (* Entry function set by --entryfn (default: main) *)
@@ -142,7 +142,7 @@ let doit file =
     Core.prepare_file file;
 
     let entry_job = OtterJob.Job.get_default file in
-    let results = callchain_backward_se (OtterQueue.Queue.get_default ()) (new BackOtterReporter.t ()) entry_job in
+    let results = callchain_backward_se (new BackOtterReporter.t ()) entry_job in
 
     (* Turn off the alarm and reset the signal handlers *)
     ignore (Unix.alarm 0);
