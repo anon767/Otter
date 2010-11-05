@@ -183,8 +183,6 @@ rval state exp errors =
 
         | Lval (cil_lval) ->
             let state, lvals, errors = lval state cil_lval errors in
-            (* TODO (martin): this raises Not_found when seeing a
-             * dummy_block. *)
             let state, bytes = MemOp.state__deref state lvals in
             (state, bytes, errors)
 
