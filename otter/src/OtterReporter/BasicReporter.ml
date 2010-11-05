@@ -39,6 +39,9 @@ class ['self] t
             && (max_abandoned = 0 || abandoned < max_abandoned)
 
     method completed = completed
+
+    method get_stats = (nodes, paths, abandoned)
+
 end
 
 

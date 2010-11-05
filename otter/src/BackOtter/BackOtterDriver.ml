@@ -142,7 +142,7 @@ let doit file =
     Core.prepare_file file;
 
     let entry_job = OtterJob.Job.get_default file in
-    let results = callchain_backward_se (new BackOtterReporter.t ()) entry_job in
+    let reporter = callchain_backward_se (new BackOtterReporter.t ()) entry_job in
 
     (* Turn off the alarm and reset the signal handlers *)
     ignore (Unix.alarm 0);
@@ -186,8 +186,11 @@ let doit file =
             Output.printf "--------------------------------------------------@\n"
         ) (!Stp.stp_queries)
     );
-    (* TODO: output results *)
-    ignore results
+    let nodes, paths, abandoned = reporter#get_stats in
+    Output.printf "Number of nodes: %d@\n" nodes;
+    Output.printf "Number of paths: %d@\n" paths;
+    Output.printf "Number of abandoned: %d@\n" abandoned;
+    ()
 
 
 let feature = {

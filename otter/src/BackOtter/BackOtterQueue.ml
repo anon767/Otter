@@ -147,9 +147,13 @@ class ['job] t file targets_ref entry_fn failure_fn f_queue = object (self)
         in
         (* Determine whether to run entry function jobs or other function jobs *)
         let want_process_entryfn =
-            (* TODO: increase this ratio when there're plenty of failing paths discovered, and the backward search
-             * starts taking too long... *)
-            let ratio = !default_bidirectional_search_ratio in
+            (* Experimental: increase this ratio when there're plenty of failing paths discovered,
+             * to avoid the backward search from taking too long... *)
+            let num_of_toplevel_failing_paths =
+                let callees = CilUtilities.CilCallgraph.find_callees file entry_fn in
+                List.fold_left (fun num callee -> List.length (BackOtterTargets.get callee targets) + num) 0 callees
+            in
+            let ratio = !default_bidirectional_search_ratio +. ((float_of_int num_of_toplevel_failing_paths) *. 0.1 ) in
             match (!default_bidirectional_search_method) with
             | `Time ->
                 let total_elapsed = entryfn_time_elapsed +. otherfn_time_elapsed in
