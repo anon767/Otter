@@ -50,6 +50,7 @@ let benchmarks =
             (Printf.sprintf "BackOtter:%s(%.2f)" name ratio) >:: benchmark (BackOtterDriver.callchain_backward_se ~f_queue:(Queue.get queue) ~ratio)
         end queues in
 
-        relpath >::: otter_drivers @ (backotter_drivers 0.5) @ (backotter_drivers 0.75)
+        relpath >::: otter_drivers @ (backotter_drivers 0.5) @ (backotter_drivers 0.75) @ (backotter_drivers 1.0)
+
     end
 
