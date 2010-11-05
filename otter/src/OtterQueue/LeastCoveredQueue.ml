@@ -3,12 +3,16 @@
 open DataStructures
 open OtterCore
 
-module InstructionMap = Map.Make (OtterCFG.Instruction)
+module InstructionMap = struct
+    include Map.Make (OtterCFG.Instruction)
+    let find instr coverage = try find instr coverage with Not_found -> 0
+end
 module InstructionPriority = PrioritySearchQueue.Make
     (OtterCFG.Instruction)
     (struct type t = int let compare = Pervasives.compare end)
 
 class ['job] t = object
+    (* coverage is initially zero for every instruction *)
     val coverage = InstructionMap.empty
     val queue = InstructionPriority.empty
 
@@ -19,7 +23,7 @@ class ['job] t = object
             try
                 InstructionPriority.lookup instr queue
             with InstructionPriority.Key ->
-                let count = try InstructionMap.find instr coverage with Not_found -> 0 in
+                let count = InstructionMap.find instr coverage in
                 (count, RandomBag.empty)
         in
         let jobs = RandomBag.put job jobs in

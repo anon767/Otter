@@ -35,6 +35,7 @@ let find =
                         (0, worklist)
                     else
                         let calc_dist instrs worklist =
+                            (* if any dependencies are uncomputed, add them to the worklist *)
                             List.fold_left begin fun (dist, worklist) instr ->
                                 try (min dist (InstructionHash.find memotable instr), worklist)
                                 with Not_found -> (dist, InstructionStack.push instr worklist)
