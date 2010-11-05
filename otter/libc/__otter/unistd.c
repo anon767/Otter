@@ -235,7 +235,6 @@ ssize_t __otter_libc_pread_pipe_data(
 		}
 		else /* no more new chars to read */
 		{
-			pipe->rhead = (i + pipe->rhead) % __otter_fs_PIPE_SIZE;
 			__otter_multi_end_atomic();
 			return (i);
 		}

@@ -90,7 +90,7 @@ int dummy_main()
 	int r = connect(fd, addr, sizeof(struct sockaddr_in));
 	__ASSERT(r != -1);
 	char buf[] = "abcdefghijklmnopqrstuvwxyz";
-	for(int i = 0; i < 10; i++)
+	for(int i = 0; i < 5; i++)
 	{
 		make_symbolic_buf(buf, 20);
 		write(fd, buf, 20);
