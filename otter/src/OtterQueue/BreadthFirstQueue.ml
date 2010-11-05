@@ -1,11 +1,11 @@
 (** Breadth-first Otter job queue. *)
 
-class ['job] t = object
+class ['self] t = object (_ : 'self)
     (* breadth-first is a queue *)
     val current = []
     val next = []
 
-    method put (job : 'job) =
+    method put job =
         {< next = job::next >}
 
     method get = match current with

@@ -5,11 +5,11 @@ type rank =
     | Rank of float
     | Drop of string 
 
-class ['job] t prioritizer = object
+class ['self] t prioritizer = object (_ : 'self)
     (* best-first is a (min) priority queue *)
     val heap = Heap.empty
 
-    method put (job : 'job) =
+    method put job =
         match prioritizer job with
         | Rank (rank) ->
             {< heap = Heap.insert (job, rank) heap >}

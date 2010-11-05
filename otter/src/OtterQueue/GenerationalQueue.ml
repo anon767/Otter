@@ -14,12 +14,12 @@
 
 open DataStructures
 
-class ['job] t empty_generation = object
+class ['self] t empty_generation = object (_ : 'self)
     val work = RandomBag.empty
     val current = empty_generation
     val next = empty_generation
 
-    method put (job : 'job) =
+    method put job =
         {< work = RandomBag.put job work >}
 
     method get =

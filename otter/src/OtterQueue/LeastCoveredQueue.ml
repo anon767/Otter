@@ -11,12 +11,12 @@ module InstructionPriority = PrioritySearchQueue.Make
     (OtterCFG.Instruction)
     (struct type t = int let compare = Pervasives.compare end)
 
-class ['job] t = object
+class ['self] t = object (_ : 'self)
     (* coverage is initially zero for every instruction *)
     val coverage = InstructionMap.empty
     val queue = InstructionPriority.empty
 
-    method put (job : 'job) =
+    method put job =
         (* score and enqueue *)
         let instr = Job.get_instruction job in
         let count, jobs =

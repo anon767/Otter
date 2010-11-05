@@ -1,10 +1,10 @@
 (** Depth-first Otter job queue. *)
 
-class ['job] t = object
+class ['self] t = object (_ : 'self)
     (* depth-first is a stack *)
     val stack = []
 
-    method put (job : 'job) =
+    method put job =
         {< stack = job::stack >}
 
     method get = match stack with

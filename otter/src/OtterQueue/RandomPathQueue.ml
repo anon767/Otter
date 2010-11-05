@@ -25,12 +25,12 @@
 
 open DataStructures
 
-class ['job] t = object
+class ['self] t = object (_ : 'self)
     (* zipper-based search queue context *)
     val context = `Top
     val leaves = RandomBag.empty
 
-    method put (job : 'job) =
+    method put job =
         {< leaves = RandomBag.put (`Job job) leaves >}
 
     method get =
