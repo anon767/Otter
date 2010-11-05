@@ -13,7 +13,7 @@
  * find_nth and it runs over the list iteration when ratio > 1.
  */
 #pragma max_abandoned(1)
-#pragma max_nodes(15000)
+#pragma max_nodes(5000)
 #pragma expect_abandoned(failure_reached)
 
 /*  -*- Last-Edit:  Wed May 7 10:12:52 1993 by Monica; -*- */
@@ -369,12 +369,12 @@ void main(void)
     }
     /* BEGIN_OTTER */
     for(i = 1; i <= MAXPRIO; i++) {
-        int tmp;
-        __SYMBOLIC(&tmp);
-        argv[i] = tmp;
+        // int tmp;
+        // __SYMBOLIC(&tmp);
+        // argv[i] = tmp;
         //
         // Use the above symbolic input to explore more
-        //argv[i] = 3;
+        argv[i] = 3;
     }
     /* END_OTTER */
 

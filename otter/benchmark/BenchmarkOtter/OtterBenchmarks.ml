@@ -46,10 +46,10 @@ let benchmarks =
             "Otter:" ^ name >:: benchmark (Driver.run ~interceptor ~queue:(Queue.get queue))
         end queues in
 
-        let backotter_drivers = List.map begin fun (name, queue) ->
-            "BackOtter:" ^ name >:: benchmark (BackOtterDriver.callchain_backward_se ~f_queue:(Queue.get queue))
+        let backotter_drivers ratio = List.map begin fun (name, queue) ->
+            (Printf.sprintf "BackOtter:%s(%.2f)" name ratio) >:: benchmark (BackOtterDriver.callchain_backward_se ~f_queue:(Queue.get queue) ~ratio)
         end queues in
 
-        relpath >::: otter_drivers @ backotter_drivers
+        relpath >::: otter_drivers @ (backotter_drivers 0.5) @ (backotter_drivers 0.75)
     end
 

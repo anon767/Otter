@@ -61,7 +61,7 @@ let has_bounding_paths (_,job) = match job.boundingPaths with
 
 type job_type = EntryfnJob of job | OtherfnJob of job
 
-class ['job] t file targets_ref entry_fn failure_fn f_queue = object (self)
+class ['job] t ?(ratio=(!default_bidirectional_search_ratio)) file targets_ref entry_fn failure_fn f_queue = object (self)
 
     (* TODO: refactor this mess *)
     val otherfn_jobs = []
@@ -153,7 +153,7 @@ class ['job] t file targets_ref entry_fn failure_fn f_queue = object (self)
                 let callees = CilUtilities.CilCallgraph.find_callees file entry_fn in
                 List.fold_left (fun num callee -> List.length (BackOtterTargets.get callee targets) + num) 0 callees
             in
-            let ratio = !default_bidirectional_search_ratio +. ((float_of_int num_of_toplevel_failing_paths) *. 0.1 ) in
+            let ratio = ratio +. ((float_of_int num_of_toplevel_failing_paths) *. 0.1 ) in
             match (!default_bidirectional_search_method) with
             | `Time ->
                 let total_elapsed = entryfn_time_elapsed +. otherfn_time_elapsed in

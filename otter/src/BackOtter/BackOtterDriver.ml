@@ -73,7 +73,7 @@ let set_output_formatter_interceptor job job_queue interceptor =
     interceptor job job_queue
 
 
-let callchain_backward_se ?(f_queue=OtterQueue.Queue.get_default ()) reporter entry_job =
+let callchain_backward_se ?(f_queue=OtterQueue.Queue.get_default ()) ?ratio reporter entry_job =
     let file = entry_job.Job.file in
 
     (* Entry function set by --entryfn (default: main) *)
@@ -96,7 +96,7 @@ let callchain_backward_se ?(f_queue=OtterQueue.Queue.get_default ()) reporter en
     in
 
     (* A queue that prioritizes jobs *)
-    let queue = new BackOtterQueue.t file targets_ref entry_fn failure_fn f_queue in
+    let queue = new BackOtterQueue.t ?ratio file targets_ref entry_fn failure_fn f_queue in
 
     (* Add entry_job into the queue *)
     let queue = queue#put entry_job in

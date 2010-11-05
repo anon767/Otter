@@ -83,6 +83,8 @@ let doExecute (f: file) =
         ()
   end;
      *)
+    let nodes, _, _ = completed#get_stats in
+    Output.printf "Number of nodes: %d@\n" nodes;
     Report.print_report completed#completed
 
 
