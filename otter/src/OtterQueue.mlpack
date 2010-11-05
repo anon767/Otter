@@ -1,5 +1,6 @@
 OtterQueue/BestFirstQueue
 OtterQueue/BreadthFirstQueue
+OtterQueue/ClosestToUncoveredQueue
 OtterQueue/DepthFirstQueue
 OtterQueue/GenerationalQueue
 OtterQueue/LeastCoveredQueue
