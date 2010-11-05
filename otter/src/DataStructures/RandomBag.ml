@@ -15,8 +15,8 @@ let get bag =
         | 1 -> Some (empty, head bag)
         | n ->
             let n = Random.int n in
-            let x = lookup bag n in
-            let bag = tail (update bag n (head bag)) in
+            let x = lookup n bag in
+            let bag = tail (update n (head bag) bag) in
             Some (bag, x)
 
 let fold f bag acc = fold_left (fun acc x -> f x acc) acc bag
