@@ -55,44 +55,54 @@ end
 
 type 'a t = (int * 'a Tree.t) list
 
+(* views *)
+let list_view (list : 'a t) = match list with
+    | (size, Tree.Node (x, t1, t2))::rest -> `Cons (x, let size' = size / 2 in (size', t1)::(size', t2)::rest)
+    | (size, Tree.Leaf x)::rest -> `Cons (x, rest)
+    | [] -> `Nil
+
+(* constructors *)
 let empty : 'a t = []
 
+let singleton value : 'a t = [ (1, Tree.Leaf value) ]
+
+(* size queries *)
 let is_empty (list : 'a t) = list = []
 
 let length (list : 'a t) = List.fold_left (fun n (size, _) -> n + size) 0 list
 
-let singleton value : 'a t = [ (1, Tree.Leaf value) ]
-
+(* list operations *)
 let cons x (list : 'a t) = match list with
     | (size1, t1)::(size2, t2)::rest when size1 = size2 -> (1 + size1 + size2, Tree.Node (x, t1, t2))::rest
     | xs -> (1, Tree.Leaf x)::xs
 
-let head (list : 'a t) = match list with
-    | (_, Tree.Node (x, _, _))::_ -> x
-    | (_, Tree.Leaf x)::_ -> x
-    | [] -> raise Empty
+let head (list : 'a t) = match list_view list with
+    | `Cons (x, _) -> x
+    | `Nil -> raise Empty
 
-let tail (list : 'a t) = match list with
-    | (size, Tree.Node (_, t1, t2))::rest -> let size' = size / 2 in (size', t1)::(size', t2)::rest
-    | _::rest -> rest
-    | [] -> raise Empty
+let tail (list : 'a t) = match list_view list with
+    | `Cons (_, rest) -> rest
+    | `Nil -> raise Empty
 
+(* random-access operations *)
 let rec lookup (list : 'a t) index = match list with
-        | (size, tree)::rest ->
-            if index < size
-            then Tree.lookup size tree index
-                else lookup rest (index - size)
-        | [] -> raise Subscript
+    | (size, tree)::rest ->
+        if index < size
+        then Tree.lookup size tree index
+        else lookup rest (index - size)
+    | [] -> raise Subscript
 
 let rec update (list : 'a t) index value = match list with
-        | (size, tree)::rest ->
-            if index < size
-            then (size, Tree.update size tree index value)::rest
-            else (size, tree)::update rest (index - size) value
-        | [] -> raise Subscript
+    | (size, tree)::rest ->
+        if index < size
+        then (size, Tree.update size tree index value)::rest
+        else (size, tree)::update rest (index - size) value
+    | [] -> raise Subscript
 
+(* iterators *)
 let rec fold_left f acc (list : 'a t) =
     List.fold_left (fun acc (_, tree) -> Tree.fold_left f acc tree) acc list
 
 let rec map f (list : 'a t) =
     List.map (fun (_, tree) -> Tree.map f tree) list
+
