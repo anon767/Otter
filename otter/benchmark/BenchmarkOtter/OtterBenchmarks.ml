@@ -38,13 +38,18 @@ let benchmarks =
         in
 
         let interceptor = BuiltinFunctions.libc_interceptor >>> BuiltinFunctions.interceptor in
-        relpath >:::
-            (List.map begin fun (name, queue) ->
-                "Otter:" ^ name >:: benchmark (Driver.run ~interceptor ~queue:(Queue.get queue))
-            end Queue.queues)
-            @
-            (List.map begin fun (name, queue) ->
-                "BackOtter:" ^ name >:: benchmark (BackOtterDriver.callchain_backward_se ~f_queue:(Queue.get queue))
-            end Queue.queues)
+
+        (* don't want depth-first, it's really terrible *)
+        let queues = List.filter (fun (_, queue) -> queue <> `DepthFirst) Queue.queues in
+
+        let otter_drivers = List.map begin fun (name, queue) ->
+            "Otter:" ^ name >:: benchmark (Driver.run ~interceptor ~queue:(Queue.get queue))
+        end queues in
+
+        let backotter_drivers = List.map begin fun (name, queue) ->
+            "BackOtter:" ^ name >:: benchmark (BackOtterDriver.callchain_backward_se ~f_queue:(Queue.get queue))
+        end queues in
+
+        relpath >::: otter_drivers @ backotter_drivers
     end
 
