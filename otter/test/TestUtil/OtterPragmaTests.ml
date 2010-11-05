@@ -448,6 +448,13 @@ module Make (Errors : Errors) = struct
             try
                 (* first, test if assertions passed *)
                 let log = Executedebug.get_log () in
+                (* TODO: in BackOtter, a function-job may print failing assertions to Executedebug.
+                 * These failing assertions should not be counted.
+                 * (However, the printing happens in OtterCore.Expression, and it's hard to distinguish
+                 * if the caller is a function-job or not---so that we can disable printing to Executedebug).
+                 *
+                 * The bug here is that a test may pass, but it's still said as fail.
+                 *)
                 if not flags.has_failing_assertions then
                     assert_string log;
 
