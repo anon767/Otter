@@ -42,15 +42,23 @@ let benchmarks =
         (* don't want depth-first, it's really terrible *)
         let queues = List.filter (fun (_, queue) -> queue <> `DepthFirst) Queue.queues in
 
-        let otter_drivers = List.map begin fun (name, queue) ->
+        let otter_driver name queue =
             "Otter:" ^ name >:: benchmark (Driver.run ~interceptor ~queue:(Queue.get queue))
-        end queues in
+        in
 
-        let backotter_drivers ratio = List.map begin fun (name, queue) ->
+        let backotter_driver name queue ratio =
             (Printf.sprintf "BackOtter:%s(%.2f)" name ratio) >:: benchmark (BackOtterDriver.callchain_backward_se ~f_queue:(Queue.get queue) ~ratio)
-        end queues in
+        in
 
-        relpath >::: otter_drivers @ (backotter_drivers 0.5) @ (backotter_drivers 0.75) @ (backotter_drivers 1.0)
+        let combined_drivers_list = List.map begin fun (name, queue) -> [
+            otter_driver name queue;
+            backotter_driver name queue 0.5;
+            backotter_driver name queue 0.75;
+            backotter_driver name queue 1.0;
+        ] end queues in
+        let combined_drivers = List.concat combined_drivers_list in
+
+        relpath >::: combined_drivers
 
     end
 
