@@ -27,31 +27,34 @@ let default_bidirectional_search_method = ref `Time  (* time | step *)
 
 (* Very inefficient, but working *)
 let update_bounding_paths targets job =
-    let is_suffix eq suf lst =
-        let rec is_prefix eq pre lst =
-            match pre, lst with
-            | d1::pre', d2::lst' -> if eq d1 d2 then is_prefix eq pre' lst' else -1
-            | [], [] -> 0
-            | [], _ -> 1
-            | _, _ -> -1
+    let update_bounding_paths () =
+        let is_suffix eq suf lst =
+            let rec is_prefix eq pre lst =
+                match pre, lst with
+                | d1::pre', d2::lst' -> if eq d1 d2 then is_prefix eq pre' lst' else -1
+                | [], [] -> 0
+                | [], _ -> 1
+                | _, _ -> -1
+            in
+            is_prefix eq (List.rev suf) (List.rev lst)
         in
-        is_prefix eq (List.rev suf) (List.rev lst)
+        let rec get_bounding_paths decision_path = match decision_path with
+            | DecisionFuncall (_, fundec) :: decision_tail ->
+                let bounding_paths = get_bounding_paths decision_tail in
+                let failing_paths = BackOtterTargets.get fundec targets in
+                let stitched_failing_paths = List.map (fun p -> List.append p decision_path) failing_paths in
+                List.fold_left (fun paths path ->
+                    if List.exists (fun p -> is_suffix Decision.equals p path = 0) paths then paths else path :: paths
+                ) bounding_paths stitched_failing_paths
+            | _ :: decision_tail -> get_bounding_paths decision_tail
+            | [] -> []
+        in
+        let bounding_paths = get_bounding_paths job.decisionPath in
+        (* Take out paths from bounding_paths where job.decisionPath is not a suffix of them *)
+        let bounding_paths = List.filter (fun p -> is_suffix Decision.equals job.decisionPath p >= 0) bounding_paths in
+        job, {job with boundingPaths = Some bounding_paths;} (* TODO: make boundingPaths not option *)
     in
-    let rec get_bounding_paths decision_path = match decision_path with
-        | DecisionFuncall (_, fundec) :: decision_tail ->
-            let bounding_paths = get_bounding_paths decision_tail in
-            let failing_paths = BackOtterTargets.get fundec targets in
-            let stitched_failing_paths = List.map (fun p -> List.append p decision_path) failing_paths in
-            List.fold_left (fun paths path ->
-                if List.exists (fun p -> is_suffix Decision.equals p path = 0) paths then paths else path :: paths
-            ) bounding_paths stitched_failing_paths
-        | _ :: decision_tail -> get_bounding_paths decision_tail
-        | [] -> []
-    in
-    let bounding_paths = get_bounding_paths job.decisionPath in
-    (* Take out paths from bounding_paths where job.decisionPath is not a suffix of them *)
-    let bounding_paths = List.filter (fun p -> is_suffix Decision.equals job.decisionPath p >= 0) bounding_paths in
-    job, {job with boundingPaths = Some bounding_paths;} (* TODO: make boundingPaths not option *)
+    Stats.time "BackOtterQueue.update_bounding_paths" update_bounding_paths ()
 
 
 let has_bounding_paths (_,job) = match job.boundingPaths with
@@ -80,7 +83,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio)) file targets_ref e
         else
             {< otherfn_jobs = job :: otherfn_jobs >}
 
-    method get =
+    method get = let get () =
         (* Clear the label, as anything printed here has no specific job context *)
         Output.set_formatter (new Output.plain);
 
@@ -223,6 +226,8 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio)) file targets_ref e
                          otherfn_time_elapsed = otherfn_time_elapsed; >}, job)
             else
                 None
+    in
+    Stats.time "BackOtterQueue.t#get" get ()
 
 end
 
