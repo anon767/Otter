@@ -10,6 +10,7 @@ let arg_failfast = ref false
 let arg_bounds_checking = ref true
 let arg_cfg_pruning = ref false
 let arg_init_malloc_zero = ref false
+let arg_init_local_zero = ref false
 let arg_noinit_unreachable_globals = ref false
 let arg_simplify_path_condition = ref false
 let arg_examfn = ref "" (* none *)
@@ -51,11 +52,15 @@ let options = [
 		Arg.Set arg_cfg_pruning,
 		" Enable CFG pruning\n");
 
-	("--initMallocZero",
-		Arg.Set arg_init_malloc_zero,
-		" Initialize memory allocated by malloc() to zero.\
-		\t\t\t\t(By default, such memory contains undefined values which\
-		\t\t\t\tcause an error if they ever get passed to the SMT solver.)\n");
+    ("--initMallocZero",
+        Arg.Set arg_init_malloc_zero,
+        " Initialize memory allocated by malloc() to zero."); ("", Arg.Tuple [],
+        " (By default, such memory contains undefined values which cause an error if they ever get passed to the SMT solver.)\n");
+
+    ("--initLocalZero",
+        Arg.Set arg_init_local_zero,
+        " Initialize local variables to zero."); ("", Arg.Tuple [],
+        " (By default, such memory contains undefined values which cause an error if they ever get passed to the SMT solver.)\n");
 
 	("--noinitUnreachableGlobals",
 		Arg.Set arg_noinit_unreachable_globals,

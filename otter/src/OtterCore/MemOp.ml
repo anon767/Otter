@@ -25,9 +25,12 @@ let frame__add_varinfo frame block_to_bytes varinfo bytes_opt block_type =
 	let block = block__make (FormatPlus.as_string Printer.varinfo varinfo) size block_type in
 	let bytes = match bytes_opt with
 		| Some bytes -> bytes
-		| None -> bytes__make_default size byte__undef (* initially the symbolic 'undef' byte *)
-(*		| None -> make_Bytes_ByteArray ({ImmutableArray.empty with ImmutableArray.length = size}) in (* initially undefined (so any accesses will crash the executor) *) *)
-(*		| None -> bytes__symbolic size in (* initially symbolic *) *)
+		| None -> bytes__make_default size (
+            if !Executeargs.arg_init_local_zero then
+                byte__zero
+            else
+                byte__undef (* initially the symbolic 'undef' byte *)
+        )
 	in
 	let frame = VarinfoMap.add varinfo (Deferred.Immediate (conditional__lval_block (block, bytes__zero))) frame in
 	let block_to_bytes = MemoryBlockMap.add block (Deferred.Immediate bytes) block_to_bytes in
