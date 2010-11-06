@@ -34,3 +34,5 @@ __otter_libc_init()
 
 	return (0);
 }
+
+void __FAILURE() {}

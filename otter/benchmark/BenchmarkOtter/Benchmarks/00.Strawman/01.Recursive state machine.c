@@ -12,7 +12,7 @@
  *               Decision: IF ((int )c == 97): true
  *               Decision: state4: void (void)
  *               Decision: IF ((int )c == 126): true
- *               Decision: state3: void (void) 
+ *               Decision: state3: void (void)
  *               Decision: IF ((int )c == 123): true
  *               Decision: state2: void (void)
  *               Decision: IF ((int )c == 40): true
@@ -27,8 +27,6 @@
 #pragma no_other_abandoned
 #pragma no_other_return
 #pragma no_other_exit
-
-void __FAILURE(void) { }
 
 char input(void) {
     char c;

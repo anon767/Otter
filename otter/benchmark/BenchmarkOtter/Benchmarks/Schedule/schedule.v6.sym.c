@@ -34,7 +34,6 @@ int OTTER_SYMBOLIC_FLOAT() {
     return OTTER_SYMBOLIC_INT();
 }
 
-void __FAILURE() {}
 #define EOF -1
 
 /* A job descriptor. */

@@ -23,7 +23,7 @@
  *
  * -----------------------------------------
  */
- 
+
 #pragma expect_abandoned(failure_reached, x > -5)
 #pragma expect_abandoned(failure_reached, x <= -5)
 #pragma expect_return()
@@ -36,8 +36,6 @@
 /* there may be truncated jobs */
 
 int x;
-
-void __FAILURE(void) { }
 
 void nothing(void) {
     // This function is created to make sure that the cfg-pruning

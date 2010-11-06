@@ -39,8 +39,6 @@
 
 #include <stdio.h>
 
-void __FAILURE() {}
-
 // BEGIN "schedule2.h"
 #define MAXPRIO 3
 #define MAXLOPRIO 2
