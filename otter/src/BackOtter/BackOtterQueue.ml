@@ -16,13 +16,8 @@ open Cil
  * 2. More efficient implementation of update_bounding_paths.
  *    Basically we only need to update jobs that are affected by the last discovery of failing path.
  *)
-let computation_unit = [
-    "time", `Time;
-    "step", `Step;
-]
 
 let default_bidirectional_search_ratio = ref 0.5
-let default_bidirectional_search_method = ref `Time  (* time | step *)
 
 
 (* Given the failing paths for each target, construct bounding paths for the job.
@@ -69,18 +64,11 @@ let has_bounding_paths (_,job,_) = match job.boundingPaths with
 
 type job_type = EntryfnJob of job | OtherfnJob of job
 
-class ['job] t ?(ratio=(!default_bidirectional_search_ratio)) file targets_ref entry_fn failure_fn f_queue = object (self)
+class ['job] t ?(ratio=(!default_bidirectional_search_ratio)) file targets_ref timer_ref entry_fn failure_fn f_queue = object (self)
 
-    (* TODO: refactor this mess *)
     val otherfn_jobs = []
     val entryfn_jobqueue = new RemovableQueue.t (f_queue)
-    val entryfn_processed = 0
-    val otherfn_processed = 0
     val origin_fundecs = [entry_fn] (* fundecs whose FunctionJob-initialized jobs have been created, or entry_fn *)
-    val last_time = None
-    val last_job_type = None
-    val entryfn_time_elapsed = 0.0
-    val otherfn_time_elapsed = 0.0
 
     method put (job : 'job) =
         if get_origin_function job == entry_fn then
@@ -94,22 +82,6 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio)) file targets_ref e
 
         (* If there's no more entry jobs, the forward search has ended. So we terminate. *)
         if entryfn_jobqueue#get_contents = [] then None else
-
-        (* Update time elapsed *)
-        let current_time = Unix.gettimeofday () in
-        let last_job_type, entryfn_time_elapsed, otherfn_time_elapsed = match last_time with
-        | None -> last_job_type, entryfn_time_elapsed, otherfn_time_elapsed
-        | Some t ->
-            let time_elapsed = current_time -. t in
-            let entryfn_time_elapsed, otherfn_time_elapsed =
-                match last_job_type with
-                | Some (EntryfnJob _) -> entryfn_time_elapsed +. time_elapsed, otherfn_time_elapsed
-                | Some (OtherfnJob _) -> entryfn_time_elapsed, otherfn_time_elapsed +. time_elapsed
-                | None -> entryfn_time_elapsed, otherfn_time_elapsed
-            in
-            last_job_type, entryfn_time_elapsed, otherfn_time_elapsed
-        in
-        let last_time = Some current_time in
 
         (* Set up targets, which maps target functions to their failing paths, and
          * target_fundecs, which is basically the key set of targets *)
@@ -164,18 +136,10 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio)) file targets_ref e
                 List.fold_left (fun num callee -> List.length (BackOtterTargets.get callee targets) + num) 0 callees
             in
             ignore num_of_toplevel_failing_paths;
-            (*
-            let ratio = ratio +. ((float_of_int num_of_toplevel_failing_paths) *. 0.1 ) in
-            *)
-            match (!default_bidirectional_search_method) with
-            | `Time ->
-                let total_elapsed = entryfn_time_elapsed +. otherfn_time_elapsed in
-                if total_elapsed <= 0.0001 (* epsilon *) then ratio > 0.0
-                else entryfn_time_elapsed /. total_elapsed <= ratio
-            | `Step ->
-                let total_processed = entryfn_processed + otherfn_processed in
-                if total_processed = 0 then ratio > 0.0
-                else (float_of_int entryfn_processed) /. (float_of_int total_processed) <= ratio
+            let entryfn_time_elapsed, otherfn_time_elapsed = !timer_ref in
+            let total_elapsed = entryfn_time_elapsed +. otherfn_time_elapsed in
+            if total_elapsed <= 0.0001 (* epsilon *) then ratio > 0.0
+            else entryfn_time_elapsed /. total_elapsed <= ratio
         in
         if entryfn_jobqueue#get_contents <> [] && (otherfn_jobs = [] || want_process_entryfn)  then
             (* Do forward search *)
@@ -184,22 +148,13 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio)) file targets_ref e
                 let entryfn_jobqueue = entryfn_jobqueue#remove job in
                 Some ({< entryfn_jobqueue = entryfn_jobqueue;
                          otherfn_jobs = otherfn_jobs;  (* Jobs might have been added into ths queue *)
-                         origin_fundecs = origin_fundecs';
-                         last_time = last_time;
-                         last_job_type = Some (EntryfnJob job_with_paths);
-                         entryfn_time_elapsed = entryfn_time_elapsed;
-                         otherfn_time_elapsed = otherfn_time_elapsed; >}, job_with_paths)
+                         origin_fundecs = origin_fundecs'; >}, job_with_paths)
             with Not_found ->
                 match entryfn_jobqueue#get with
                 | Some (entryfn_jobqueue, job) ->
                     Some ({< entryfn_jobqueue = entryfn_jobqueue;
                              otherfn_jobs = otherfn_jobs;  (* Same as above *)
-                             origin_fundecs = origin_fundecs';
-                             entryfn_processed = entryfn_processed + 1;
-                             last_time = last_time;
-                             last_job_type = Some (EntryfnJob job);
-                             entryfn_time_elapsed = entryfn_time_elapsed;
-                             otherfn_time_elapsed = otherfn_time_elapsed; >}, job)
+                             origin_fundecs = origin_fundecs'; >}, job)
                 | None -> failwith "This is unreachable"
         else if otherfn_jobs <> [] then
             (* Do "backward" search *)
@@ -212,11 +167,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio)) file targets_ref e
                 let job, job_with_paths = find_job_with_bounding_paths otherfn_jobs in
                 let otherfn_jobs = List.filter (fun j -> j != job) otherfn_jobs in
                 Some ({< otherfn_jobs = otherfn_jobs;
-                         origin_fundecs = origin_fundecs';
-                         last_time = last_time;
-                         last_job_type = Some (OtherfnJob job_with_paths);
-                         entryfn_time_elapsed = entryfn_time_elapsed;
-                         otherfn_time_elapsed = otherfn_time_elapsed; >}, job_with_paths)
+                         origin_fundecs = origin_fundecs'; >}, job_with_paths)
             with Not_found ->
                 let score job =
                     let num_of_failing_paths = List.length (BackOtterTargets.get (get_origin_function job) targets) in
@@ -228,12 +179,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio)) file targets_ref e
                 in
                 let otherfn_jobs', job = get_job_with_highest_score score otherfn_jobs in
                 Some ({< otherfn_jobs = otherfn_jobs';
-                         origin_fundecs = origin_fundecs';
-                         otherfn_processed = otherfn_processed + 1;
-                         last_time = last_time;
-                         last_job_type = Some (OtherfnJob job);
-                         entryfn_time_elapsed = entryfn_time_elapsed;
-                         otherfn_time_elapsed = otherfn_time_elapsed; >}, job)
+                         origin_fundecs = origin_fundecs'; >}, job)
             else
                 None
     in
@@ -247,8 +193,5 @@ let options = [
     "--bidirectional-search-ratio",
         Arg.Set_float default_bidirectional_search_ratio,
         "<ratio> The fraction of computation dedicated to forward search (default: 0.5)";
-    "--bidirectional-search-method",
-        Arg.Symbol (fst (List.split computation_unit), fun s -> default_bidirectional_search_method := List.assoc s computation_unit),
-        "<time|step> Unit of computations of forward and backward searches (default: \"time\")";
 ]
 

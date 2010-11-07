@@ -71,14 +71,25 @@ let set_output_formatter_interceptor job job_queue interceptor =
 
 
 (** Main symbolic execution loop. Copied from OtterCore.Driver. *)
-let main_loop interceptor queue reporter =
+let main_loop entry_fn timer_ref interceptor queue reporter =
     (* compose the interceptor with the core symbolic executor *)
     let step = fun job -> fst (interceptor job () Statement.step) in
     let rec run (queue, reporter) = match queue#get with
         | Some (queue, job) ->
             let result_opt =
                 try
-                    Some (step job)
+                    (* The difference between timing here and timing in BackOtterQueue is that
+                     * here we only time the stepping of the job, whereas in BackOtterQueue we
+                     * also include the time of getting a job. *)
+                    let result = Stats.timethis step job in
+                    let time_elapsed = !Stats.lastTime in
+                    let fundec = BackOtterUtilities.get_origin_function job in
+                    let entry_time, other_time = !timer_ref in
+                    timer_ref := (if fundec == entry_fn then
+                        (entry_time +. time_elapsed, other_time)
+                    else
+                        (entry_time, other_time +. time_elapsed));
+                    Some (result)
                 with Types.SignalException s ->
                     (* if we got a signal, stop and return the completed results *)
                     Output.set_mode Output.MSG_MUSTPRINT;
@@ -135,8 +146,11 @@ let callchain_backward_se ?(f_queue=OtterQueue.Queue.get_default ()) ?ratio repo
       with Not_found -> FormatPlus.failwith "Failure function %s not found" fname
     in
 
+    (* Timer. Currently just a pair of times *)
+    let timer_ref = ref (0.0, 0.0) in
+
     (* A queue that prioritizes jobs *)
-    let queue = new BackOtterQueue.t ?ratio file targets_ref entry_fn failure_fn f_queue in
+    let queue = new BackOtterQueue.t ?ratio file targets_ref timer_ref entry_fn failure_fn f_queue in
 
     (* Add entry_job into the queue *)
     let queue = queue#put entry_job in
@@ -151,7 +165,7 @@ let callchain_backward_se ?(f_queue=OtterQueue.Queue.get_default ()) ?ratio repo
         >>> BuiltinFunctions.libc_interceptor
         >>> BuiltinFunctions.interceptor
     in
-    let target_tracker = main_loop interceptor queue target_tracker in
+    let target_tracker = main_loop entry_fn timer_ref interceptor queue target_tracker in
 
     (* Output failing paths for entry_fn *)
     Output.must_printf "@\n@\n";
