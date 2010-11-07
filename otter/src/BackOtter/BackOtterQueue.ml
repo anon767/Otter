@@ -76,112 +76,118 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio)) file targets_ref t
         else
             {< otherfn_jobs = job :: otherfn_jobs >}
 
-    method get = let get () =
-        (* Clear the label, as anything printed here has no specific job context *)
-        Output.set_formatter (new Output.plain);
+    method get =
+        let get () = try
+            (* Clear the label, as anything printed here has no specific job context *)
+            Output.set_formatter (new Output.plain);
 
-        (* If there's no more entry jobs, the forward search has ended. So we terminate. *)
-        if entryfn_jobqueue#get_contents = [] then None else
+            (* If there's no more entry jobs, the forward search has ended. So we terminate. *)
+            if entryfn_jobqueue#get_contents = [] then None else
 
-        (* Set up targets, which maps target functions to their failing paths, and
-         * target_fundecs, which is basically the key set of targets *)
-        let targets = !targets_ref in
-        let target_fundecs = BackOtterTargets.get_fundecs targets in
+            (* Set up targets, which maps target functions to their failing paths, and
+             * target_fundecs, which is basically the key set of targets *)
+            let targets = !targets_ref in
+            let target_fundecs = BackOtterTargets.get_fundecs targets in
 
-        (* Create new jobs for callers of new targets/failure_fn *)
-        let origin_fundecs', otherfn_jobs =
-            List.fold_left (
-                fun (origin_fundecs, otherfn_jobs) target_fundec ->
-                    let callers = CilUtilities.CilCallgraph.find_callers file target_fundec in
-                    List.fold_left (
-                        fun (origin_fundecs, otherfn_jobs) caller ->
-                            if List.memq caller origin_fundecs then
-                                origin_fundecs, otherfn_jobs
-                            else
-                                let job = OtterJob.FunctionJob.make file caller in
-                                caller :: origin_fundecs, job :: otherfn_jobs
-                    ) (origin_fundecs, otherfn_jobs) callers
-            ) (origin_fundecs, otherfn_jobs) (failure_fn :: target_fundecs) in
+            (* Create new jobs for callers of new targets/failure_fn *)
+            let origin_fundecs', otherfn_jobs =
+                List.fold_left (
+                    fun (origin_fundecs, otherfn_jobs) target_fundec ->
+                        let callers = CilUtilities.CilCallgraph.find_callers file target_fundec in
+                        List.fold_left (
+                            fun (origin_fundecs, otherfn_jobs) caller ->
+                                if List.memq caller origin_fundecs then
+                                    origin_fundecs, otherfn_jobs
+                                else
+                                    let job = OtterJob.FunctionJob.make file caller in
+                                    caller :: origin_fundecs, job :: otherfn_jobs
+                        ) (origin_fundecs, otherfn_jobs) callers
+                ) (origin_fundecs, otherfn_jobs) (failure_fn :: target_fundecs) in
 
-        (* debug, Debug, DEBUG *)
-        Output.debug_printf "Number of entry function jobs: %d@\n" (List.length (entryfn_jobqueue#get_contents));
-        Output.debug_printf "Number of other function jobs: %d@\n" (List.length otherfn_jobs);
-        List.iter (fun f -> Output.debug_printf "Target function: %s@\n" f.svar.vname) (BackOtterTargets.get_fundecs targets);
-        List.iter (fun f -> Output.debug_printf "Origin function: %s@\n" f.svar.vname) (origin_fundecs');
+            (* debug, Debug, DEBUG *)
+            Output.debug_printf "Number of entry function jobs: %d@\n" (List.length (entryfn_jobqueue#get_contents));
+            Output.debug_printf "Number of other function jobs: %d@\n" (List.length otherfn_jobs);
+            List.iter (fun f -> Output.debug_printf "Target function: %s@\n" f.svar.vname) (BackOtterTargets.get_fundecs targets);
+            List.iter (fun f -> Output.debug_printf "Origin function: %s@\n" f.svar.vname) (origin_fundecs');
 
-        (* Return a pair, where the first element is the job in jobs that can have bounding paths,
-         * and the second element is the job with bounding paths added.
-         * The first element is used as the key to remove it from jobs.
-         *)
-        let find_job_with_bounding_paths jobs =
-            let job_assocs = List.map (update_bounding_paths targets) jobs in
-            let job_assocs = List.sort (fun (_,_,d1) (_,_,d2) -> d1 - d2) job_assocs in (* shallower depth first *)
-            let (job, job_with_paths, depth) = List.find has_bounding_paths job_assocs in
-            Output.debug_printf "Job %d is run under influence of bounding path(s) from function %s, with depth %d:@\n"
-                job_with_paths.jid
-                (get_origin_function job_with_paths).svar.vname
-                depth;
-            begin match job_with_paths.boundingPaths with
-                | None -> ()
-                | Some bounding_paths -> List.iter (fun path -> Output.debug_printf "Path: @[%a@]@\n" Decision.print_decisions path) bounding_paths
-            end;
-            job, job_with_paths
-        in
-        (* Determine whether to run entry function jobs or other function jobs *)
-        let want_process_entryfn =
-            (* Experimental: increase this ratio when there're plenty of failing paths discovered,
-             * to avoid the backward search from taking too long... *)
-            let num_of_toplevel_failing_paths =
-                let callees = CilUtilities.CilCallgraph.find_callees file entry_fn in
-                List.fold_left (fun num callee -> List.length (BackOtterTargets.get callee targets) + num) 0 callees
+            (* Return a pair, where the first element is the job in jobs that can have bounding paths,
+             * and the second element is the job with bounding paths added.
+             * The first element is used as the key to remove it from jobs.
+             *)
+            let find_job_with_bounding_paths jobs =
+                let job_assocs = List.map (update_bounding_paths targets) jobs in
+                let job_assocs = List.sort (fun (_,_,d1) (_,_,d2) -> d1 - d2) job_assocs in (* shallower depth first *)
+                let (job, job_with_paths, depth) = List.find has_bounding_paths job_assocs in
+                Output.debug_printf "Job %d is run under influence of bounding path(s) from function %s, with depth %d:@\n"
+                    job_with_paths.jid
+                    (get_origin_function job_with_paths).svar.vname
+                    depth;
+                begin match job_with_paths.boundingPaths with
+                    | None -> ()
+                    | Some bounding_paths -> List.iter (fun path -> Output.debug_printf "Path: @[%a@]@\n" Decision.print_decisions path) bounding_paths
+                end;
+                job, job_with_paths
             in
-            ignore num_of_toplevel_failing_paths;
-            let entryfn_time_elapsed, otherfn_time_elapsed = !timer_ref in
-            let total_elapsed = entryfn_time_elapsed +. otherfn_time_elapsed in
-            if total_elapsed <= 0.0001 (* epsilon *) then ratio > 0.0
-            else entryfn_time_elapsed /. total_elapsed <= ratio
-        in
-        if entryfn_jobqueue#get_contents <> [] && (otherfn_jobs = [] || want_process_entryfn)  then
-            (* Do forward search *)
-            try
-                let job, job_with_paths = find_job_with_bounding_paths entryfn_jobqueue#get_contents in
-                let entryfn_jobqueue = entryfn_jobqueue#remove job in
-                Some ({< entryfn_jobqueue = entryfn_jobqueue;
-                         otherfn_jobs = otherfn_jobs;  (* Jobs might have been added into ths queue *)
-                         origin_fundecs = origin_fundecs'; >}, job_with_paths)
-            with Not_found ->
-                match entryfn_jobqueue#get with
-                | Some (entryfn_jobqueue, job) ->
+            (* Determine whether to run entry function jobs or other function jobs *)
+            let want_process_entryfn =
+                (* Experimental: increase this ratio when there're plenty of failing paths discovered,
+                 * to avoid the backward search from taking too long... *)
+                let num_of_toplevel_failing_paths =
+                    let callees = CilUtilities.CilCallgraph.find_callees file entry_fn in
+                    List.fold_left (fun num callee -> List.length (BackOtterTargets.get callee targets) + num) 0 callees
+                in
+                ignore num_of_toplevel_failing_paths;
+                let entryfn_time_elapsed, otherfn_time_elapsed = !timer_ref in
+                let total_elapsed = entryfn_time_elapsed +. otherfn_time_elapsed in
+                if total_elapsed <= 0.0001 (* epsilon *) then ratio > 0.0
+                else entryfn_time_elapsed /. total_elapsed <= ratio
+            in
+            if entryfn_jobqueue#get_contents <> [] && (otherfn_jobs = [] || want_process_entryfn)  then
+                (* Do forward search *)
+                try
+                    let job, job_with_paths = find_job_with_bounding_paths entryfn_jobqueue#get_contents in
+                    let entryfn_jobqueue = entryfn_jobqueue#remove job in
                     Some ({< entryfn_jobqueue = entryfn_jobqueue;
-                             otherfn_jobs = otherfn_jobs;  (* Same as above *)
+                             otherfn_jobs = otherfn_jobs;  (* Jobs might have been added into ths queue *)
+                             origin_fundecs = origin_fundecs'; >}, job_with_paths)
+                with Not_found ->
+                    match entryfn_jobqueue#get with
+                    | Some (entryfn_jobqueue, job) ->
+                        Some ({< entryfn_jobqueue = entryfn_jobqueue;
+                                 otherfn_jobs = otherfn_jobs;  (* Same as above *)
+                                 origin_fundecs = origin_fundecs'; >}, job)
+                    | None -> failwith "This is unreachable"
+            else if otherfn_jobs <> [] then
+                (* Do "backward" search *)
+                let get_distance_from_entryfn = get_distance_from file entry_fn in
+                try
+                    let otherfn_jobs = List.sort (fun j1 j2 ->
+                        (get_distance_from_entryfn (get_origin_function j1)) -
+                        (get_distance_from_entryfn (get_origin_function j2))) otherfn_jobs
+                    in
+                    let job, job_with_paths = find_job_with_bounding_paths otherfn_jobs in
+                    let otherfn_jobs = List.filter (fun j -> j != job) otherfn_jobs in
+                    Some ({< otherfn_jobs = otherfn_jobs;
+                             origin_fundecs = origin_fundecs'; >}, job_with_paths)
+                with Not_found ->
+                    let score job =
+                        let num_of_failing_paths = List.length (BackOtterTargets.get (get_origin_function job) targets) in
+                        let execution_path_length = List.length job.exHist.executionPath in
+                        let distance_from_entryfn = get_distance_from_entryfn (get_origin_function job) in
+                        let distance_to_target = get_distance_to_targets (failure_fn :: target_fundecs) job in
+                        (* First pick the one closest to entry_fn, then the one closest to a target, then the most explored one *)
+                        [-num_of_failing_paths; -distance_from_entryfn; -distance_to_target; execution_path_length]
+                    in
+                    let otherfn_jobs', job = get_job_with_highest_score score otherfn_jobs in
+                    Some ({< otherfn_jobs = otherfn_jobs';
                              origin_fundecs = origin_fundecs'; >}, job)
-                | None -> failwith "This is unreachable"
-        else if otherfn_jobs <> [] then
-            (* Do "backward" search *)
-            let get_distance_from_entryfn = get_distance_from file entry_fn in
-            try
-                let otherfn_jobs = List.sort (fun j1 j2 ->
-                    (get_distance_from_entryfn (get_origin_function j1)) -
-                    (get_distance_from_entryfn (get_origin_function j2))) otherfn_jobs
-                in
-                let job, job_with_paths = find_job_with_bounding_paths otherfn_jobs in
-                let otherfn_jobs = List.filter (fun j -> j != job) otherfn_jobs in
-                Some ({< otherfn_jobs = otherfn_jobs;
-                         origin_fundecs = origin_fundecs'; >}, job_with_paths)
-            with Not_found ->
-                let score job =
-                    let num_of_failing_paths = List.length (BackOtterTargets.get (get_origin_function job) targets) in
-                    let execution_path_length = List.length job.exHist.executionPath in
-                    let distance_from_entryfn = get_distance_from_entryfn (get_origin_function job) in
-                    let distance_to_target = get_distance_to_targets (failure_fn :: target_fundecs) job in
-                    (* First pick the one closest to entry_fn, then the one closest to a target, then the most explored one *)
-                    [-num_of_failing_paths; -distance_from_entryfn; -distance_to_target; execution_path_length]
-                in
-                let otherfn_jobs', job = get_job_with_highest_score score otherfn_jobs in
-                Some ({< otherfn_jobs = otherfn_jobs';
-                         origin_fundecs = origin_fundecs'; >}, job)
-            else
-                None
+                else
+                    None
+        with Types.SignalException s ->
+            (* if we got a signal, return None to indicate "no more job" *)
+            Output.set_mode Output.MSG_MUSTPRINT;
+            Output.printf "BackOtterQueue.get: %s@\n" s;
+            None
     in
     Stats.time "BackOtterQueue.t#get" get ()
 
