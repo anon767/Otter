@@ -149,8 +149,11 @@ let callchain_backward_se ?(f_queue=OtterQueue.Queue.get_default ()) ?ratio repo
     (* Timer. Currently just a pair of times *)
     let timer_ref = ref (0.0, 0.0) in
 
+    (* Backward queue *)
+    let b_queue = new SimpleOtherfnQueue.t entry_fn failure_fn targets_ref in
+
     (* A queue that prioritizes jobs *)
-    let queue = new BackOtterQueue.t ?ratio file targets_ref timer_ref entry_fn failure_fn f_queue in
+    let queue = new BackOtterQueue.t ?ratio file targets_ref timer_ref entry_fn failure_fn f_queue b_queue in
 
     (* Add entry_job into the queue *)
     let queue = queue#put entry_job in
