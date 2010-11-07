@@ -5,7 +5,7 @@ EXTRALIBDIRS=$(addprefix $(CURDIR)/,camlidl/runtime stp/lib ocamlstp)
 EXTRAOCAMLPATH=$(CURDIR)
 
 CTAGS_FILE=tags
-CTAGS_SOURCE_PATHS=otter/src cil/src ocamlstp
+CTAGS_SOURCE_PATHS=otter/src otter/benchmark otter/test cil/src ocamlstp
 
 
 # augment configuration from Makefile.local, if it exists
