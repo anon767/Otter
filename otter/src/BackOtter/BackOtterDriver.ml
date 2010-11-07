@@ -186,7 +186,6 @@ let doit file =
             Output.printf "--------------------------------------------------@\n"
         ) (!Stp.stp_queries)
     );
-    Stats.print stdout "Stats.print:";
     let nodes, paths, abandoned = reporter#get_stats in
     Output.printf "Number of nodes: %d@\n" nodes;
     Output.printf "Number of paths: %d@\n" paths;

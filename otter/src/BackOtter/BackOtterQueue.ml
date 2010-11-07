@@ -25,7 +25,11 @@ let default_bidirectional_search_ratio = ref 0.5
 let default_bidirectional_search_method = ref `Time  (* time | step *)
 
 
-(* Very inefficient, but working *)
+(* Given the failing paths for each target, construct bounding paths for the job.
+ * Very inefficient, but working
+ *
+ * Returns (job, job with bounding paths, smallest depth of the first feasible attachment)
+ * *)
 let update_bounding_paths targets job =
     let update_bounding_paths () =
         let is_suffix eq suf lst =
@@ -40,24 +44,25 @@ let update_bounding_paths targets job =
         in
         let rec get_bounding_paths decision_path = match decision_path with
             | DecisionFuncall (_, fundec) :: decision_tail ->
-                let bounding_paths = get_bounding_paths decision_tail in
                 let failing_paths = BackOtterTargets.get fundec targets in
                 let stitched_failing_paths = List.map (fun p -> List.append p decision_path) failing_paths in
+                (* Take out paths from bounding_paths where job.decisionPath is not a suffix of them *)
+                let stitched_failing_paths = List.filter (fun p -> is_suffix Decision.equals job.decisionPath p >= 0) stitched_failing_paths in
+                let upper_bounding_paths, depth = get_bounding_paths decision_tail in
+                let depth = if upper_bounding_paths = [] then (List.length decision_path) else depth in
                 List.fold_left (fun paths path ->
                     if List.exists (fun p -> is_suffix Decision.equals p path = 0) paths then paths else path :: paths
-                ) bounding_paths stitched_failing_paths
+                ) upper_bounding_paths stitched_failing_paths, depth
             | _ :: decision_tail -> get_bounding_paths decision_tail
-            | [] -> []
+            | [] -> [], max_int
         in
-        let bounding_paths = get_bounding_paths job.decisionPath in
-        (* Take out paths from bounding_paths where job.decisionPath is not a suffix of them *)
-        let bounding_paths = List.filter (fun p -> is_suffix Decision.equals job.decisionPath p >= 0) bounding_paths in
-        job, {job with boundingPaths = Some bounding_paths;} (* TODO: make boundingPaths not option *)
+        let bounding_paths, depth = get_bounding_paths job.decisionPath in
+        job, {job with boundingPaths = Some bounding_paths;}, depth (* TODO: make boundingPaths not option *)
     in
     Stats.time "BackOtterQueue.update_bounding_paths" update_bounding_paths ()
 
 
-let has_bounding_paths (_,job) = match job.boundingPaths with
+let has_bounding_paths (_,job,_) = match job.boundingPaths with
     | Some (_ :: _) -> true
     | _ -> false
 
@@ -138,10 +143,12 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio)) file targets_ref e
          *)
         let find_job_with_bounding_paths jobs =
             let job_assocs = List.map (update_bounding_paths targets) jobs in
-            let (job, job_with_paths) = List.find has_bounding_paths job_assocs in
-            Output.debug_printf "Job %d is run under influence of bounding path(s) from function %s:@\n"
+            let job_assocs = List.sort (fun (_,_,d1) (_,_,d2) -> d1 - d2) job_assocs in (* shallower depth first *)
+            let (job, job_with_paths, depth) = List.find has_bounding_paths job_assocs in
+            Output.debug_printf "Job %d is run under influence of bounding path(s) from function %s, with depth %d:@\n"
                 job_with_paths.jid
-                (get_origin_function job_with_paths).svar.vname;
+                (get_origin_function job_with_paths).svar.vname
+                depth;
             begin match job_with_paths.boundingPaths with
                 | None -> ()
                 | Some bounding_paths -> List.iter (fun path -> Output.debug_printf "Path: @[%a@]@\n" Decision.print_decisions path) bounding_paths
@@ -156,7 +163,10 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio)) file targets_ref e
                 let callees = CilUtilities.CilCallgraph.find_callees file entry_fn in
                 List.fold_left (fun num callee -> List.length (BackOtterTargets.get callee targets) + num) 0 callees
             in
+            ignore num_of_toplevel_failing_paths;
+            (*
             let ratio = ratio +. ((float_of_int num_of_toplevel_failing_paths) *. 0.1 ) in
+            *)
             match (!default_bidirectional_search_method) with
             | `Time ->
                 let total_elapsed = entryfn_time_elapsed +. otherfn_time_elapsed in
