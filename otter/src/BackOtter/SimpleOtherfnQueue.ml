@@ -10,6 +10,7 @@ class ['job] t entry_fn failure_fn targets_ref = object
         {< queue = job :: queue >}
 
     method get =
+        if queue = [] then None else
         let targets = !targets_ref in
         let target_fundecs = failure_fn :: (BackOtterTargets.get_fundecs targets) in
         let score job =
