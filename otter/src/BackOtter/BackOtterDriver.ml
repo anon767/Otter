@@ -2,7 +2,6 @@ open OcamlUtilities
 open CilUtilities
 open OtterBytes
 open OtterCore
-open OtterDriver
 open Bytes
 open Types
 open Job
@@ -56,8 +55,6 @@ object (_ : 'self)
 end
 
 
-
-
 let max_function_name_length = ref 0
 let set_output_formatter_interceptor job job_queue interceptor =
     let origin_function_name = (List.hd (List.rev job.state.callstack)).svar.vname in
@@ -71,6 +68,49 @@ let set_output_formatter_interceptor job job_queue interceptor =
     in
     Output.set_formatter (new Output.labeled label);
     interceptor job job_queue
+
+
+(** Main symbolic execution loop. Copied from OtterCore.Driver. *)
+let main_loop interceptor queue reporter =
+    (* compose the interceptor with the core symbolic executor *)
+    let step = fun job -> fst (interceptor job () Statement.step) in
+    let rec run (queue, reporter) = match queue#get with
+        | Some (queue, job) ->
+            let result_opt =
+                try
+                    Some (step job)
+                with Types.SignalException s ->
+                    (* if we got a signal, stop and return the completed results *)
+                    Output.set_mode Output.MSG_MUSTPRINT;
+                    Output.printf "%s@\n" s;
+                    None
+            in
+            begin match result_opt with
+                | Some result ->
+                    let rec process_result (queue, reporter as work) result k =
+                        let reporter = reporter#report result in
+                        if reporter#should_continue then match result with
+                            | Job.Active job ->
+                                k (queue#put job, reporter)
+                            | Job.Fork (result::results) ->
+                                process_result work result (fun work -> process_result work (Job.Fork results) k)
+                            | Job.Fork [] ->
+                                k work
+                            | Job.Complete completion ->
+                                k (queue, reporter)
+                            | Job.Paused _ ->
+                                invalid_arg "unexpected Job.Paused"
+                        else
+                            reporter
+                    in
+                    process_result (queue, reporter) result run
+                | None ->
+                    reporter
+            end
+        | None ->
+            reporter
+    in
+    run (queue, reporter)
 
 
 let callchain_backward_se ?(f_queue=OtterQueue.Queue.get_default ()) ?ratio reporter entry_job =
@@ -111,7 +151,7 @@ let callchain_backward_se ?(f_queue=OtterQueue.Queue.get_default ()) ?ratio repo
         >>> BuiltinFunctions.libc_interceptor
         >>> BuiltinFunctions.interceptor
     in
-    let target_tracker = Driver.main_loop interceptor queue target_tracker in
+    let target_tracker = main_loop interceptor queue target_tracker in
 
     (* Output failing paths for entry_fn *)
     Output.must_printf "@\n@\n";
