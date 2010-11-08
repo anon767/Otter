@@ -1,13 +1,10 @@
 open OcamlUtilities
-open OtterQueue
-open OtterQueue.Queue
 
 let queues = OtterQueue.Queue.queues
 
 let get targets_ref = function
-    (* TODO: return different queues *)
-    | `ClosestToTargets -> new ClosestToTargetsQueue.t
-    | `Generational `ClosestToTargets -> new GenerationalQueue.t (new ClosestToTargetsQueue.t)
+    | `ClosestToTargets -> new ClosestToTargetsQueue.t targets_ref
+    | `Generational `ClosestToTargets -> new OtterQueue.GenerationalQueue.t (new ClosestToTargetsQueue.t targets_ref)
     | qt -> OtterQueue.Queue.get qt
 
 let get_default targets_ref = get targets_ref !OtterQueue.Queue.default_queue
