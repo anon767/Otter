@@ -4,7 +4,9 @@ BackOtter/BackOtterQueue
 BackOtter/BackOtterReporter
 BackOtter/BackOtterTargets
 BackOtter/BackOtterUtilities
+BackOtter/BackwardRank
 BackOtter/ClosestToTargetsQueue
+BackOtter/FunctionQueue
 BackOtter/Queue
 BackOtter/RemovableQueue
 BackOtter/SimpleOtherfnQueue

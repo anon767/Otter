@@ -51,17 +51,21 @@ let benchmarks =
         let backotter_drivers_list =
             (* don't want depth-first, it's really terrible *)
             let backotter_queues = List.filter (fun (_, queue) -> queue <> `DepthFirst) BackOtter.Queue.queues in
-            let backotter_driver name queue ratio =
+            let backotter_driver name fqueue brank bqueue ratio =
                 (Printf.sprintf "BackOtter:%s(%.2f)" name ratio) >:: benchmark (
                     let targets_ref = ref BackOtterTargets.empty in
-                    BackOtterDriver.callchain_backward_se ~targets_ref ~f_queue:(BackOtter.Queue.get targets_ref queue) ~ratio
+                    BackOtterDriver.callchain_backward_se ~targets_ref
+                                                          ~f_queue:(BackOtter.Queue.get targets_ref fqueue)
+                                                          ~b_queue:(BackOtter.Queue.get_function_backward_queue targets_ref brank bqueue)
+                                                          ~ratio
                 )
             in
             List.map begin fun (name, queue) -> [
-                backotter_driver name queue (-. 0.1);  (* pure-backward *)
-                backotter_driver name queue 0.5;
-                backotter_driver name queue 0.75;
-                backotter_driver name queue 1.0;       (* pure-forward, plus some side-effect *)
+                (* TODO: forall brank bqueue *)
+                backotter_driver name queue `ClosestToEntry `ClosestToTargets (-. 0.1);  (* pure-backward *)
+                backotter_driver name queue `ClosestToEntry `ClosestToTargets 0.5;
+                backotter_driver name queue `ClosestToEntry `ClosestToTargets 0.75;
+                backotter_driver name queue `ClosestToEntry `ClosestToTargets 1.0;       (* pure-forward, plus some side-effect *)
             ] end backotter_queues
         in
         let backotter_drivers = List.concat backotter_drivers_list in
