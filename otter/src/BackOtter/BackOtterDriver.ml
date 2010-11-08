@@ -126,7 +126,7 @@ let main_loop entry_fn timer_ref interceptor queue reporter =
 
 let callchain_backward_se ?(targets_ref=ref BackOtterTargets.empty)
                           ?(f_queue=Queue.get_default_fqueue targets_ref)
-                          ?(b_queue=Queue.get_default_bqueue targets_ref)
+                          ?(b_queue=new SimpleOtherfnQueue.t targets_ref)
                           ?ratio reporter entry_job =
 
     let file = entry_job.Job.file in
