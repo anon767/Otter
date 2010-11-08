@@ -50,7 +50,6 @@ let benchmarks =
 
         let backotter_drivers_list =
             (* don't want depth-first, it's really terrible *)
-            let backotter_queues = List.filter (fun (_, queue) -> queue <> `DepthFirst) BackOtter.Queue.queues in
             let backotter_driver name fqueue brank bqueue ratio =
                 (Printf.sprintf "BackOtter:%s(%.2f)" name ratio) >:: benchmark (
                     let targets_ref = ref BackOtterTargets.empty in
@@ -60,13 +59,27 @@ let benchmarks =
                                                           ~ratio
                 )
             in
-            List.map begin fun (name, queue) -> [
-                (* TODO: forall brank bqueue *)
-                backotter_driver name queue `ClosestToEntry `ClosestToTargets (-. 0.1);  (* pure-backward *)
-                backotter_driver name queue `ClosestToEntry `ClosestToTargets 0.5;
-                backotter_driver name queue `ClosestToEntry `ClosestToTargets 0.75;
-                backotter_driver name queue `ClosestToEntry `ClosestToTargets 1.0;       (* pure-forward, plus some side-effect *)
-            ] end backotter_queues
+            let backotter_queues = List.filter (fun (_, queue) -> queue <> `DepthFirst) BackOtter.Queue.queues in
+            let rec compose fn lst = function
+                | head :: tail -> (List.map (fun ele -> fn ele head) lst) @ (compose fn lst tail)
+                | [] -> []
+            in
+            let backotter_bqueues = compose (fun (rank_name, rank_fn) (bqueue_name, bqueue) ->
+                (Printf.sprintf "%s,%s" rank_name bqueue_name, rank_fn, bqueue))
+                BackOtter.BackwardRank.queues
+                backotter_queues
+            in
+            let backotter_combined_queues = compose (fun (fqueue_name, fqueue) (bqueue_name, rank_fn, bqueue) ->
+                (Printf.sprintf "forward(%s),backward(%s)" fqueue_name bqueue_name), fqueue, rank_fn, bqueue)
+                backotter_queues
+                backotter_bqueues
+            in
+            List.map begin fun (name, fqueue, brank, bqueue) -> [
+                backotter_driver name fqueue brank bqueue (-. 0.1);  (* pure-backward *)
+                backotter_driver name fqueue brank bqueue 0.5;
+                backotter_driver name fqueue brank bqueue 0.75;
+                backotter_driver name fqueue brank bqueue 1.0;       (* pure-forward, plus some side-effect *)
+            ] end backotter_combined_queues
         in
         let backotter_drivers = List.concat backotter_drivers_list in
 
