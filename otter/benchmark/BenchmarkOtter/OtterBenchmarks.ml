@@ -40,14 +40,17 @@ let benchmarks =
         let interceptor = BuiltinFunctions.libc_interceptor >>> BuiltinFunctions.interceptor in
 
         (* don't want depth-first, it's really terrible *)
-        let queues = List.filter (fun (_, queue) -> queue <> `DepthFirst) Queue.queues in
+        let queues = List.filter (fun (_, queue) -> queue <> `DepthFirst) OtterQueue.Queue.queues in
 
         let otter_driver name queue =
-            "Otter:" ^ name >:: benchmark (Driver.run ~interceptor ~queue:(Queue.get queue))
+            "Otter:" ^ name >:: benchmark (Driver.run ~interceptor ~queue:(OtterQueue.Queue.get queue))
         in
 
         let backotter_driver name queue ratio =
-            (Printf.sprintf "BackOtter:%s(%.2f)" name ratio) >:: benchmark (BackOtterDriver.callchain_backward_se ~f_queue:(Queue.get queue) ~ratio)
+            (Printf.sprintf "BackOtter:%s(%.2f)" name ratio) >:: benchmark (
+                let targets_ref = ref BackOtterTargets.empty in
+                BackOtterDriver.callchain_backward_se ~targets_ref ~f_queue:(BackOtter.Queue.get targets_ref queue) ~ratio
+            )
         in
 
         let combined_drivers_list = List.map begin fun (name, queue) -> [

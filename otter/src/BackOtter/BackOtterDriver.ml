@@ -124,7 +124,10 @@ let main_loop entry_fn timer_ref interceptor queue reporter =
     run (queue, reporter)
 
 
-let callchain_backward_se ?(f_queue=OtterQueue.Queue.get_default ()) ?ratio reporter entry_job =
+let callchain_backward_se ?(targets_ref=ref BackOtterTargets.empty)
+                          ?(f_queue=Queue.get_default targets_ref)
+                          ?ratio reporter entry_job =
+
     let file = entry_job.Job.file in
 
     (* Entry function set by --entryfn (default: main) *)
@@ -134,10 +137,6 @@ let callchain_backward_se ?(f_queue=OtterQueue.Queue.get_default ()) ?ratio repo
     let all_reachable_functions = entry_fn :: (CilCallgraph.find_transitive_callees file entry_fn) in
     max_function_name_length := List.fold_left (fun len fundec ->
         max len (String.length fundec.svar.vname)) 0 all_reachable_functions;
-
-    (* Map fundecs to potential decision lists
-     * This is a reference used by the queue and the two interceptors. *)
-    let targets_ref = ref BackOtterTargets.empty in
 
     (* Failure function set by --failurefn (default: __FAILURE) *)
     let failure_fn =
