@@ -11,6 +11,8 @@ let queues = [
     "generational:random-path", `Generational `RandomPath;
     "least-covered", `LeastCovered;
     "closest-to-uncovered", `ClosestToUncovered;
+    "closest-to-targets", `ClosestToTargets;
+    "generational:closest-to-targets", `Generational `ClosestToTargets;
 ]
 
 let default_queue = ref (`Generational `BreadthFirst)
@@ -25,6 +27,8 @@ let get = function
     | `Generational `RandomPath -> new GenerationalQueue.t (new RandomPathQueue.t)
     | `LeastCovered -> new LeastCoveredQueue.t
     | `ClosestToUncovered -> new ClosestToUncoveredQueue.t
+    | `ClosestToTargets -> new ClosestToTargetsQueue.t
+    | `Generational `ClosestToTargets -> new GenerationalQueue.t (new ClosestToTargetsQueue.t)
 
 let get_default () = get !default_queue
 
