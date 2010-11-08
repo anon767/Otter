@@ -6,17 +6,6 @@ open Job
 open Decision
 open Cil
 
-(* In general, during forward search, we want to prioritize based on the following, in decreasing order.
- * 1. Jobs running on bounding paths, because the sooner we verify failing paths, the sooner we have new failing paths for ongoing executions.
- * 2. Jobs from entry_fn: breath-first. Other jobs: split among {closer to targets, origin function closer to entry_fn}.
- *    (This results in DFS backward, and gives shortest path from main to failure if the callgraph is like a tree).
- *
- * TODO:
- * 1. Coverage-driven
- * 2. More efficient implementation of update_bounding_paths.
- *    Basically we only need to update jobs that are affected by the last discovery of failing path.
- *)
-
 let default_bidirectional_search_ratio = ref 0.5
 
 
@@ -64,6 +53,8 @@ let has_bounding_paths (_,job,_) = match job.boundingPaths with
 
 type job_type = EntryfnJob of job | OtherfnJob of job
 
+
+(* TODO: package the long list of arguments into BackOtterProfile.t *)
 class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                file
                targets_ref
@@ -75,10 +66,14 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
 
     val otherfn_jobqueue = new RemovableQueue.t (b_queue)
     val entryfn_jobqueue = new RemovableQueue.t (f_queue)
-    val origin_fundecs = [entry_fn] (* fundecs whose FunctionJob-initialized jobs have been created, or entry_fn *)
+    val origin_fundecs = [entry_fn] (* fundecs whose FunctionJob-initialized jobs have been created, or the entry function *)
+
+    (* ratio < 0.0 denotes purely backward (beware of precision!) *)
+    method private is_pure_backward = ratio < 0.0
+    method private is_bidirectional = not self#is_pure_backward
 
     method put (job : 'job) =
-        if get_origin_function job == entry_fn then
+        if self#is_bidirectional && get_origin_function job == entry_fn then
             {< entryfn_jobqueue = entryfn_jobqueue#put job >}
         else
             {< otherfn_jobqueue = otherfn_jobqueue#put job >}
@@ -89,13 +84,14 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
             Output.set_formatter (new Output.plain);
 
             (* If there's no more entry jobs, the forward search has ended. So we terminate. *)
-            if entryfn_jobqueue#get_contents = [] then None else
+            if self#is_bidirectional && entryfn_jobqueue#get_contents = [] then None else
 
             (* Set up targets, which maps target functions to their failing paths, and
              * target_fundecs, which is basically the key set of targets *)
             let targets = !targets_ref in
             let target_fundecs = BackOtterTargets.get_fundecs targets in
 
+            (* TODO: instead, a job for each function should be inserted into b_queue in the beginning *)
             (* Create new jobs for callers of new targets/failure_fn *)
             let origin_fundecs', otherfn_jobqueue =
                 List.fold_left (
@@ -103,6 +99,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                         let callers = CilUtilities.CilCallgraph.find_callers file target_fundec in
                         List.fold_left (
                             fun (origin_fundecs, otherfn_jobqueue) caller ->
+                                (* The job for entry_fn is added (to either queue) in BackOtterDriver *)
                                 if List.memq caller origin_fundecs then
                                     origin_fundecs, otherfn_jobqueue
                                 else
@@ -137,13 +134,6 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
             in
             (* Determine whether to run entry function jobs or other function jobs *)
             let want_process_entryfn =
-                (* Experimental: increase this ratio when there're plenty of failing paths discovered,
-                 * to avoid the backward search from taking too long... *)
-                let num_of_toplevel_failing_paths =
-                    let callees = CilUtilities.CilCallgraph.find_callees file entry_fn in
-                    List.fold_left (fun num callee -> List.length (BackOtterTargets.get callee targets) + num) 0 callees
-                in
-                ignore num_of_toplevel_failing_paths;
                 let entryfn_time_elapsed, otherfn_time_elapsed = !timer_ref in
                 let total_elapsed = entryfn_time_elapsed +. otherfn_time_elapsed in
                 if total_elapsed <= 0.0001 (* epsilon *) then ratio > 0.0

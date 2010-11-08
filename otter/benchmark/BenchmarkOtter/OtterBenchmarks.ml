@@ -52,9 +52,10 @@ let benchmarks =
 
         let combined_drivers_list = List.map begin fun (name, queue) -> [
             otter_driver name queue;
+            backotter_driver name queue (-. 0.1);  (* pure-backward *)
             backotter_driver name queue 0.5;
             backotter_driver name queue 0.75;
-            backotter_driver name queue 1.0;
+            backotter_driver name queue 1.0;       (* pure-forward, plus some side-effect *)
         ] end queues in
         let combined_drivers = List.concat combined_drivers_list in
 
