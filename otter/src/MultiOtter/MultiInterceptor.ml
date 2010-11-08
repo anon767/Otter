@@ -7,9 +7,10 @@ let (@@@) i1 i2 = fun a b c -> i1 a b c i2
 
 let intercept_multi_function_by_name_internal target_name replace_func (job:Job.job) (multijob:MultiTypes.multijob) job_queue interceptor =
 	(* Replace a C function with Otter code *)
-	(* replace_func retopt exps loc job multijob job_queue *)
 	match job.Job.instrList with
-		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::_ when varinfo.Cil.vname = target_name ->
+		| (Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc) as instr)::_ when varinfo.Cil.vname = target_name ->
+			OcamlUtilities.Output.set_mode OcamlUtilities.Output.MSG_STMT;
+			OcamlUtilities.Output.printf "%a@\n" Printcil.instr instr;
 			let job_state, multijob, errors = replace_func job multijob retopt exps [] in
 			if errors = [] then
 				(job_state, (multijob, job_queue))

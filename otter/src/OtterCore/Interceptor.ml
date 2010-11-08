@@ -29,9 +29,10 @@ let set_output_formatter_interceptor job job_queue interceptor =
 
 let intercept_function_by_name_internal target_name replace_func job job_queue interceptor =
 	(* Replace a C function with Otter code *)
-	(* replace_func retopt exps loc job job_queue *)
 	match job.instrList with
-		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::_ when varinfo.Cil.vname = target_name ->
+		| (Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc) as instr)::_ when varinfo.Cil.vname = target_name ->
+			Output.set_mode Output.MSG_STMT;
+			Output.printf "%a@\n" Printcil.instr instr;
 			let job_state, errors = replace_func job retopt exps [] in
 			if errors = [] then
 				(job_state, job_queue)
