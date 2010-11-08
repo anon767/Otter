@@ -39,6 +39,12 @@ let benchmarks =
 
         let interceptor = BuiltinFunctions.libc_interceptor >>> BuiltinFunctions.interceptor in
 
+        (* TODO: regrouping
+         * Given a queuing method,
+         * Otter (queue)
+         * Pure-backward BackOtter (ratio = -0.1) (rank_fn,queue), for each rank_fn
+         * Bi-dir BackOtter (ratio > 0) (fqueue,rank_fn,queue), for each fqueue in { } and for each rank_fn
+         *)
         let otter_drivers =
             (* don't want depth-first, it's really terrible *)
             let otter_queues = List.filter (fun (_, queue) -> queue <> `DepthFirst) OtterQueue.Queue.queues in
@@ -60,6 +66,10 @@ let benchmarks =
                 )
             in
             let backotter_queues = List.filter (fun (_, queue) -> queue <> `DepthFirst) BackOtter.Queue.queues in
+            let backotter_fqueues = List.filter (fun (_, queue) -> List.mem queue [
+                `BreadthFirst;
+                `Generational `BreadthFirst;
+            ]) BackOtter.Queue.queues in
             let rec compose fn lst = function
                 | head :: tail -> (List.map (fun ele -> fn ele head) lst) @ (compose fn lst tail)
                 | [] -> []
@@ -71,9 +81,10 @@ let benchmarks =
             in
             let backotter_combined_queues = compose (fun (fqueue_name, fqueue) (bqueue_name, rank_fn, bqueue) ->
                 (Printf.sprintf "forward(%s),backward(%s)" fqueue_name bqueue_name), fqueue, rank_fn, bqueue)
-                backotter_queues
+                backotter_fqueues
                 backotter_bqueues
             in
+            (* TODO: there are too many combinations. Discard some of them. *)
             List.map begin fun (name, fqueue, brank, bqueue) -> [
                 backotter_driver name fqueue brank bqueue (-. 0.1);  (* pure-backward *)
                 backotter_driver name fqueue brank bqueue 0.5;

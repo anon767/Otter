@@ -1,3 +1,4 @@
+open DataStructures
 open CilUtilities
 open OtterCFG
 open OtterCore
@@ -12,20 +13,25 @@ let max_distance = max_int
 let get_origin_function job = List.hd (List.rev job.state.callstack)
 
 
+let shuffle lst =
+    (* Hopefully no repeating indices... *)
+    let lst = List.map (fun ele -> ele, Random.int max_int) lst in
+    let lst = List.sort (fun (_,r1) (_,r2) -> Pervasives.compare r1 r2) lst in
+    List.map (fun (ele,_) -> ele) lst
+
+
 let get_job_with_highest_score ?(compare=Pervasives.compare) score_fn jobs =
     let get_job_with_highest_score () =
-        let jobs, maxopt = List.fold_left (fun (jobs, maxopt) job' ->
+        let maxopt = List.fold_left (fun maxopt job' ->
             let score' = score_fn job' in
             match maxopt with
             | Some (job, score) ->
-                if compare score score' < 0 then
-                    job :: jobs, Some (job', score')
-                else
-                    job' :: jobs, Some (job, score)
-            | None -> jobs, Some (job', score')
-        ) ([], None) jobs in
+                if compare score score' < 0 then Some (job', score')
+                else Some (job, score)
+            | None -> Some (job', score')
+        ) None (shuffle jobs) in
         match maxopt with
-        | Some (job, _) -> jobs, job
+        | Some (job, _) -> List.filter (fun j -> j!=job) jobs, job
         | None -> failwith "get_job_with_highest_score assumes a non empty list"
     in
     Stats.time "BackOtterUtilities.get_job_with_highest_score" get_job_with_highest_score ()
