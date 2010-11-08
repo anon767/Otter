@@ -413,6 +413,22 @@ let otter_path_condition job = wrap_state_function begin fun state retopt exps e
 end job
 
 
+(* __FAILURE()
+ * It models "failure" by providing the 'reason `FailureReached, in order to distinguish from
+ * general `Failure.
+ * TODO: make __FAILURE take a string of failure description. *)
+let otter_failure job retopt exps errors =
+    let job_result = {
+        result_file = job.Job.file;
+        result_state = job.Job.state;
+        result_history = job.Job.exHist;
+        result_decision_path = job.Job.decisionPath;
+    } in
+    let loc = Job.get_loc job in
+    let job_state = Complete (Abandoned (`FailureReached, loc, job_result)) in
+    job_state, errors
+
+
 let otter_assert job = wrap_state_function begin fun state retopt exps errors ->
 	let state, assertion, errors = eval_join_exps state exps Cil.LAnd errors in
 	(Expression.check state assertion exps, errors)
@@ -610,27 +626,6 @@ let otter_assert_equal_state job = wrap_state_function begin fun state retopt ex
 		(state, errors)
 	end
 end job
-
-
-(* __FAILURE()
- * It models "failure" by providing the 'reason `FailureReached, in order to distinguish from
- * general `Failure.
- * TODO: make __FAILURE take a string of failure description. *)
-let intercept_failure job job_queue interceptor =
-    match job.instrList with
-        | Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::_
-            when varinfo.Cil.vname = (!Executeargs.arg_failurefn) ->
-            let job_result = {
-                result_file = job.Job.file;
-                result_state = job.Job.state;
-                result_history = job.Job.exHist;
-                result_decision_path = job.Job.decisionPath;
-            } in
-            let loc = Job.get_loc job in
-            let job_state = Complete (Abandoned (`FailureReached, loc, job_result)) in
-            job_state, job_queue
-        | _ ->
-            interceptor job job_queue
 
 
 (* There are 2 ways to use __SYMBOLIC:
@@ -870,7 +865,7 @@ let interceptor job job_queue interceptor =
 		(
 		(* intercept builtin functions *)
 		(                                  (*"__SYMBOLIC"*)            intercept_symbolic) @@
-		(                                  (*"__FAILURE"*)             intercept_failure) @@
+		(intercept_function_by_name_internal (!Executeargs.arg_failurefn) otter_failure) @@
 		(intercept_function_by_name_internal "__builtin_alloca"        libc___builtin_alloca) @@
 		(intercept_function_by_name_internal "alloca"                  libc___builtin_alloca) @@
 		(intercept_function_by_name_internal "malloc"                  libc_malloc) @@
