@@ -34,11 +34,23 @@ let append xs ys =
     else if is_empty ys then xs
     else { length = xs.length + ys.length; seq = fun c a k -> ys.seq c a (fun a -> xs.seq c a k) }
 
-let map f xs = xs.seq (fun x -> cons (f x)) empty (fun xs -> xs)
-
 let fold f xs a = xs.seq f a (fun xs -> xs)
 
+let map f xs = xs.seq (fun x -> cons (f x)) empty (fun xs -> xs)
+
+let map_fold f acc xs = xs.seq (fun x (acc, xs) -> let acc, x = f acc x in (acc, cons x xs)) (acc, empty) (fun xs -> xs)
+
+let concat xss = xss.seq append empty (fun xs -> xs)
+
+let concat_map f xs = xs.seq (fun x -> append (f x)) empty (fun xs -> xs)
+
+let concat_map_fold f acc xs = xs.seq (fun x (acc, xs) -> let acc, x = f acc x in (acc, append x xs)) (acc, empty) (fun xs -> xs)
+
 let filter f xs = xs.seq (fun x -> if f x then cons x else fun xs -> xs) empty (fun xs -> xs)
+
+let map_to_list f xs = xs.seq (fun x a -> (f x)::a) [] (fun xs -> xs)
+
+let to_list xs = xs.seq (fun x a -> x::a) [] (fun xs -> xs)
 
 let rec from_list = function
     | [] ->
@@ -46,6 +58,4 @@ let rec from_list = function
     | xs ->
         let length, xs = List.fold_left (fun (length, xs) x -> (length + 1, x::xs)) (0, []) xs in
         { length = length; seq = fun c a k -> k (List.fold_left (fun xs x -> c x xs) a xs) }
-
-let to_list xs = fold (fun x a -> x::a) xs []
 
