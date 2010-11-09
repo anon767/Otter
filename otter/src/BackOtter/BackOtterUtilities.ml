@@ -15,7 +15,7 @@ let get_origin_function job = List.hd (List.rev job.state.callstack)
 
 let shuffle lst =
     (* Hopefully no repeating indices... *)
-    let lst = List.map (fun ele -> ele, Random.int max_int) lst in
+    let lst = List.map (fun ele -> ele, Random.bits ()) lst in
     let lst = List.sort (fun (_,r1) (_,r2) -> Pervasives.compare r1 r2) lst in
     List.map (fun (ele,_) -> ele) lst
 
