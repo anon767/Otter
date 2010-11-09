@@ -28,10 +28,14 @@ int main(char** argc, int argv)
 
 	events[0] = Handler1;
 	events[1] = Handler2;
-	events[__SYMBOLIC() % 2] = Handler3;
-	events[__SYMBOLIC() % 2] = Handler4;
+	unsigned int i,j,k;
+	__SYMBOLIC(&i); __ASSUME(i < 2);
+	__SYMBOLIC(&j); __ASSUME(j < 2);
+	__SYMBOLIC(&k); __ASSUME(k < 2);
+	events[i] = Handler3;
+	events[j] = Handler4;
 
-	events[__SYMBOLIC() % 2]();
+	events[k]();
 
 	return 0;
 }
