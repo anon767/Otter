@@ -6,13 +6,13 @@ let queues = [
     "breadth-first", `BreadthFirst;
     "depth-first", `DepthFirst;
     "random-path", `RandomPath;
-    "generational:breadth-first", `Generational `BreadthFirst;
-    "generational:depth-first", `Generational `DepthFirst;
-    "generational:random-path", `Generational `RandomPath;
+    "generational*breadth-first", `Generational `BreadthFirst;
+    "generational*depth-first", `Generational `DepthFirst;
+    "generational*random-path", `Generational `RandomPath;
     "least-covered", `LeastCovered;
     "closest-to-uncovered", `ClosestToUncovered;
     "closest-to-targets", `ClosestToTargets;
-    "generational:closest-to-targets", `Generational `ClosestToTargets;
+    "generational*closest-to-targets", `Generational `ClosestToTargets;
 ]
 
 let default_queue = ref (`Generational `BreadthFirst)

@@ -13,7 +13,7 @@ let doExecute (f: file) =
 	(* connect Cil's debug flag to Output *)
 	Output.arg_print_debug := !Errormsg.debugFlag;
 
-	Random.init 226; (* Random is used in Bytes *)
+	Random.init (!Executeargs.arg_random_seed); (* Random is used in Bytes *)
 
 	Output.printf "Otter, a symbolic executor for C@\n@\n";
 

@@ -32,7 +32,7 @@ let partial rank_fn = fun () -> if Random.bool () then rank_fn else random_funct
 let queues = [
     "closest-to-entry", `ClosestToEntry;
     "closest-to-failure", `ClosestToFailure;
-    "partial:closest-to-entry", `Partial `ClosestToEntry;
+    "partial*closest-to-entry", `Partial `ClosestToEntry;
     "random-function", `RandomFunction;
 ]
 

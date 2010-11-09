@@ -31,6 +31,7 @@ let arg_list_conds = ref false
 let arg_print_stmtInfo_locs = ref false (** Option to print the location of {!Types.stmtInfo}. *)
 let arg_marshal_file = ref "" (** File to which to marshal coverage information *)
 
+let arg_random_seed = ref 226
 
 let options = [
 	(*
@@ -77,6 +78,10 @@ let options = [
     ("--failurefn",
         Arg.Set_string arg_failurefn,
         "<fname> Failure function to look for in BackOtter (default: __FAILURE)");
+
+    ("--random-seed",
+        Arg.Set_int arg_random_seed,
+        "<seed> Set the random seed (constant by default)");
 	(*
 		Printing options
 	*)
