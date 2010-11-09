@@ -1,12 +1,18 @@
 #ifndef _DIREND_H
 #define _DIRENT_H
 
-#include<sys/types.h>
+#include <sys/types.h>
+#include <__otter/otter_fs.h>
 
-typedef struct
+struct dirent
 {
 	ino_t d_ino;
 	char d_name[];
+};
+
+typedef struct
+{
+	struct __otter_fs_dnode* dnode;
 } DIR;
 
 /*int closedir(DIR* dirp);

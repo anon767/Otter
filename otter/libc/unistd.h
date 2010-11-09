@@ -8,6 +8,11 @@
 #define _SC_PAGE_SIZE 1
 #define _SC_PAGESIZE 1
 
+#define F_OK 0
+#define X_OK 1
+#define W_OK 2
+#define R_OK 4
+
 /* copied function prototypes from http://opengroup.org/onlinepubs/007908799/xsh/unistd.h.html */
 /* functions marked with EXISTS have a (potentially incomplete) implimentation */
 int          access(const char *, int);
