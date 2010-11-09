@@ -20,7 +20,7 @@ class ['self] t rank_fn queue_constructor = object (_ : 'self)
     method get =
         let fundecs = FundecMap.fold (fun key _ lst -> key :: lst) fundec_map [] in
         let ranked_fundecs = List.map (fun fundec -> (fundec, rank_fn (FundecMap.find fundec example_jobs))) fundecs in
-        let ranked_fundecs = List.sort (fun (f1, r1) (f2, r2) -> -(Pervasives.compare r2 r1)) ranked_fundecs in
+        let ranked_fundecs = List.sort (fun (f1, r1) (f2, r2) -> (Pervasives.compare r2 r1)) ranked_fundecs in
         let rec get = function
             | (fundec, _) :: tail -> (
                 let queue = FundecMap.find fundec fundec_map in

@@ -126,7 +126,7 @@ let main_loop entry_fn timer_ref interceptor queue reporter =
 
 let callchain_backward_se ?(targets_ref=ref BackOtterTargets.empty)
                           ?(f_queue=Queue.get_default_fqueue targets_ref)
-                          ?(b_queue=new SimpleOtherfnQueue.t targets_ref)
+                          ?(b_queue=Queue.get_default_bqueue targets_ref)
                           ?ratio reporter entry_job =
 
     let file = entry_job.Job.file in
@@ -148,6 +148,9 @@ let callchain_backward_se ?(targets_ref=ref BackOtterTargets.empty)
 
     (* Timer. Currently just a pair of times *)
     let timer_ref = ref (0.0, 0.0) in
+
+    (* Add failure_fn as a target *)
+    targets_ref := BackOtterTargets.add failure_fn [] (!targets_ref);
 
     (* A queue that prioritizes jobs *)
     let queue = new BackOtterQueue.t ?ratio file targets_ref timer_ref entry_fn failure_fn entry_job f_queue b_queue in

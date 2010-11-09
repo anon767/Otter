@@ -105,7 +105,9 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                 else
                                     let job =
                                         if caller == entry_fn then entry_job
-                                        else OtterJob.FunctionJob.make file caller
+                                        else (
+                                            Output.debug_printf "Create new job for function %s@\n" caller.svar.vname;
+                                            OtterJob.FunctionJob.make file caller)
                                     in
                                     caller :: origin_fundecs, otherfn_jobqueue#put job
                         ) (origin_fundecs, otherfn_jobqueue) callers
