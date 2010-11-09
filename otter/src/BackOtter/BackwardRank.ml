@@ -24,11 +24,10 @@ let distance_from_failurefn job =
     let distance = get_distance_from file (get_origin_function job) failure_fn in
     -. (float_of_int distance)
 
-let random_function job = Random.float 1.0 (* TODO *)
+let random_function job = Random.float 1.0
 
-(* TODO: this is not correct *)
-let partial rank_fn =
-    if Random.bool () then rank_fn else random_function
+let total rank_fn = fun () -> rank_fn
+let partial rank_fn = fun () -> if Random.bool () then rank_fn else random_function
 
 let queues = [
     "closest-to-entry", `ClosestToEntry;
@@ -38,10 +37,10 @@ let queues = [
 ]
 
 let get = function
-    | `ClosestToEntry -> distance_from_entryfn
+    | `ClosestToEntry -> total distance_from_entryfn
     | `Partial `ClosestToEntry -> partial distance_from_entryfn
-    | `ClosestToFailure -> distance_from_failurefn
-    | `RandomFunction -> random_function
+    | `ClosestToFailure -> total distance_from_failurefn
+    | `RandomFunction -> total random_function
 
 let default_brank = ref `ClosestToEntry
 

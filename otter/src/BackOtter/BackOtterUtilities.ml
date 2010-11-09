@@ -61,20 +61,23 @@ let get_distance_to_targets_within_function target_fundecs job =
     Stats.time "BackOtterUtilities.get_distance_to_targets_within_function" get_distance_to_targets_within_function ()
 
 
-(* TODO: cache the result. Or maybe this is already implemented somewhere. *)
-let get_distance_from file f1 f2 =
-    let get_distance_from () =
-        let rec bfs = function
-            | [] -> max_distance
-            | (f, d) :: tail ->
-                if f == f2 then d else
-                let callees = CilCallgraph.find_callees file f in
-                let tail = List.fold_left (fun tail callee ->
-                    if List.exists (fun (k,_) -> k == callee) tail then tail
-                    else tail @ [(callee, d+1)]
-                ) tail callees in
-                bfs tail
-        in
-        bfs [(f1, 0)]
-    in
-    Stats.time "BackOtterUtilities.get_distance_from" get_distance_from ()
+let get_distance_from =
+    let memotable = Hashtbl.create 0 in
+    fun file f1 f2 ->
+        try
+            Hashtbl.find memotable (file, f1, f2)
+        with Not_found ->
+            let rec bfs = function
+                | [] -> max_distance
+                | (f, d) :: tail ->
+                    if f == f2 then d else
+                    let callees = CilCallgraph.find_callees file f in
+                    let tail = List.fold_left (fun tail callee ->
+                        if List.exists (fun (k,_) -> k == callee) tail then tail
+                        else tail @ [(callee, d+1)]
+                    ) tail callees in
+                    bfs tail
+            in
+            let distance = bfs [(f1, 0)] in
+            Hashtbl.add memotable (file, f1, f2) distance;
+            distance

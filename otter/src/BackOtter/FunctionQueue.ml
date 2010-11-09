@@ -1,6 +1,6 @@
 module FundecMap = Map.Make (CilUtilities.CilData.CilFundec)
 
-class ['self] t rank_fn queue_constructor = object (_ : 'self)
+class ['self] t rank_fn_constructor queue_constructor = object (_ : 'self)
     val fundec_map = FundecMap.empty
     (* Map a fundec to an example job. Required just because Cil.file is not globally available! TODO *)
     val example_jobs = FundecMap.empty
@@ -19,6 +19,7 @@ class ['self] t rank_fn queue_constructor = object (_ : 'self)
 
     method get =
         let fundecs = FundecMap.fold (fun key _ lst -> key :: lst) fundec_map [] in
+        let rank_fn = rank_fn_constructor () in
         let ranked_fundecs = List.map (fun fundec -> (fundec, rank_fn (FundecMap.find fundec example_jobs))) fundecs in
         let ranked_fundecs = List.sort (fun (f1, r1) (f2, r2) -> (Pervasives.compare r2 r1)) ranked_fundecs in
         let rec get = function
