@@ -26,14 +26,20 @@ let distance_from_failurefn job =
 
 let random_function job = Random.float 1.0 (* TODO *)
 
+(* TODO: this is not correct *)
+let partial rank_fn =
+    if Random.bool () then rank_fn else random_function
+
 let queues = [
     "closest-to-entry", `ClosestToEntry;
     "closest-to-failure", `ClosestToFailure;
+    "partial:closest-to-entry", `Partial `ClosestToEntry;
     "random-function", `RandomFunction;
 ]
 
 let get = function
     | `ClosestToEntry -> distance_from_entryfn
+    | `Partial `ClosestToEntry -> partial distance_from_entryfn
     | `ClosestToFailure -> distance_from_failurefn
     | `RandomFunction -> random_function
 

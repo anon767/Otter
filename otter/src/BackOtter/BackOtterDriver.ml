@@ -150,10 +150,7 @@ let callchain_backward_se ?(targets_ref=ref BackOtterTargets.empty)
     let timer_ref = ref (0.0, 0.0) in
 
     (* A queue that prioritizes jobs *)
-    let queue = new BackOtterQueue.t ?ratio file targets_ref timer_ref entry_fn failure_fn f_queue b_queue in
-
-    (* Add entry_job into the queue *)
-    let queue = queue#put entry_job in
+    let queue = new BackOtterQueue.t ?ratio file targets_ref timer_ref entry_fn failure_fn entry_job f_queue b_queue in
 
     (* Overlay the target tracker on the reporter *)
     let target_tracker = new target_tracker reporter entry_fn targets_ref in

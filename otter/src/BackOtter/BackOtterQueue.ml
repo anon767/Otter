@@ -61,19 +61,21 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                timer_ref
                entry_fn
                failure_fn
+               entry_job
                f_queue
                b_queue = object (self)
 
-    val otherfn_jobqueue = new RemovableQueue.t (b_queue)
-    val entryfn_jobqueue = new RemovableQueue.t (f_queue)
-    val origin_fundecs = [entry_fn] (* fundecs whose FunctionJob-initialized jobs have been created, or the entry function *)
-
     (* ratio < 0.0 denotes purely backward (beware of precision!) *)
-    method private is_pure_backward = ratio < 0.0
-    method private is_bidirectional = not self#is_pure_backward
+    val is_bidirectional = ratio >= 0.0
+    val otherfn_jobqueue = new RemovableQueue.t (b_queue)
+    val entryfn_jobqueue =
+        let queue = new RemovableQueue.t (f_queue) in
+        if (ratio >= 0.0) then queue#put entry_job else queue
+    val origin_fundecs = [] (* fundecs whose initialized jobs have been created *)
+
 
     method put (job : 'job) =
-        if self#is_bidirectional && get_origin_function job == entry_fn then
+        if is_bidirectional && get_origin_function job == entry_fn then
             {< entryfn_jobqueue = entryfn_jobqueue#put job >}
         else
             {< otherfn_jobqueue = otherfn_jobqueue#put job >}
@@ -84,14 +86,13 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
             Output.set_formatter (new Output.plain);
 
             (* If there's no more entry jobs, the forward search has ended. So we terminate. *)
-            if self#is_bidirectional && entryfn_jobqueue#get_contents = [] then None else
+            if is_bidirectional && entryfn_jobqueue#get_contents = [] then None else
 
             (* Set up targets, which maps target functions to their failing paths, and
              * target_fundecs, which is basically the key set of targets *)
             let targets = !targets_ref in
             let target_fundecs = BackOtterTargets.get_fundecs targets in
 
-            (* TODO: instead, a job for each function should be inserted into b_queue in the beginning *)
             (* Create new jobs for callers of new targets/failure_fn *)
             let origin_fundecs', otherfn_jobqueue =
                 List.fold_left (
@@ -99,11 +100,13 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                         let callers = CilUtilities.CilCallgraph.find_callers file target_fundec in
                         List.fold_left (
                             fun (origin_fundecs, otherfn_jobqueue) caller ->
-                                (* The job for entry_fn is added (to either queue) in BackOtterDriver *)
-                                if List.memq caller origin_fundecs then
+                                if (is_bidirectional && caller == entry_fn) || List.memq caller origin_fundecs then
                                     origin_fundecs, otherfn_jobqueue
                                 else
-                                    let job = OtterJob.FunctionJob.make file caller in
+                                    let job =
+                                        if caller == entry_fn then entry_job
+                                        else OtterJob.FunctionJob.make file caller
+                                    in
                                     caller :: origin_fundecs, otherfn_jobqueue#put job
                         ) (origin_fundecs, otherfn_jobqueue) callers
                 ) (origin_fundecs, otherfn_jobqueue) (failure_fn :: target_fundecs) in
