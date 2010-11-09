@@ -4,6 +4,7 @@ CilUtilities
 OtterBytes
 OtterCFG
 OtterCore
+OtterExtensions
 OtterJob
 OtterQueue
 OtterReporter
