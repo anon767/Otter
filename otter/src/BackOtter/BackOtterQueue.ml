@@ -95,6 +95,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
 
             (* Create new jobs for callers of new targets/failure_fn *)
             let origin_fundecs', otherfn_jobqueue =
+                let impl () =
                 List.fold_left (
                     fun (origin_fundecs, otherfn_jobqueue) target_fundec ->
                         let callers = CilUtilities.CilCallgraph.find_callers file target_fundec in
@@ -111,7 +112,9 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                     in
                                     caller :: origin_fundecs, otherfn_jobqueue#put job
                         ) (origin_fundecs, otherfn_jobqueue) callers
-                ) (origin_fundecs, otherfn_jobqueue) (failure_fn :: target_fundecs) in
+                ) (origin_fundecs, otherfn_jobqueue) (failure_fn :: target_fundecs)
+                in Stats.time "BackOtterQueue.t#get/create_new_jobs" impl ()
+            in
 
             (* debug, Debug, DEBUG *)
             Output.debug_printf "Number of entry function jobs: %d@\n" (List.length (entryfn_jobqueue#get_contents));

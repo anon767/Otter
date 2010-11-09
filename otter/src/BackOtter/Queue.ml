@@ -23,7 +23,7 @@ let get targets_ref = function
     | `ClosestToTargets -> new ClosestToTargetsQueue.t targets_ref
     | `Generational `ClosestToTargets -> new GenerationalQueue.t (new ClosestToTargetsQueue.t targets_ref)
 
-let default_fqueue = ref `BreadthFirst
+let default_fqueue = ref (`Generational `BreadthFirst)
 let get_default_fqueue targets_ref = get targets_ref !default_fqueue
 
 (* Backward *)

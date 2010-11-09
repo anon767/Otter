@@ -195,6 +195,12 @@ let doit file =
     Executeargs.arg_cfg_pruning := true;
     Core.prepare_file file;
 
+    let find_tag_name tag assocs = List.assoc tag (List.map (fun (a,b)->(b,a)) assocs) in
+    Output.must_printf "Forward strategy: %s@\n" (find_tag_name (!Queue.default_fqueue) Queue.queues);
+    Output.must_printf "Backward function pick: %s@\n" (find_tag_name (!BackwardRank.default_brank) BackwardRank.queues);
+    Output.must_printf "Backward strategy: %s@\n" (find_tag_name (!Queue.default_bqueue) Queue.queues);
+    Output.must_printf "Ratio: %0.2f@\n" !BackOtterQueue.default_bidirectional_search_ratio ;
+
     let entry_job = OtterJob.Job.get_default file in
     let reporter = callchain_backward_se (new BackOtterReporter.t ()) entry_job in
 
@@ -244,6 +250,13 @@ let doit file =
     Output.printf "Number of nodes: %d@\n" nodes;
     Output.printf "Number of paths: %d@\n" paths;
     Output.printf "Number of abandoned: %d@\n" abandoned;
+    List.iter (fun key ->
+        Output.printf "%s: %.2f s@\n" key (Stats.lookupTime key)
+    ) [
+        "BackOtterQueue.t#get";
+        "BackOtterQueue.update_bounding_paths";
+        "BackOtterQueue.t#get/create_new_jobs";
+    ];
     ()
 
 
