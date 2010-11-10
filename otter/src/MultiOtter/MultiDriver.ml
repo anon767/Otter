@@ -25,12 +25,12 @@ let multi_set_output_formatter_interceptor job multijob job_queue interceptor =
 	interceptor job multijob job_queue
 
 let rec get_job_multijob job_queue = 
-	match job_queue with
-		| [] -> None
-		| multijob::t ->
+	match job_queue#get with
+		| None -> None (* no multijobs left; quit *)
+		| Some (job_queue, multijob) ->
 			match get_job multijob with
-				| None -> get_job_multijob t
-				| Some (job, multijob) -> Some (job, (multijob, t))
+				| None -> get_job_multijob job_queue (* this multijob had no processes left; get another *)
+				| Some (job, multijob) -> Some (job, (multijob, job_queue)) (* found a multijob with a job to run *)
 
 (* process the results *)
 let rec process_job_states result multijob reporter multijob_queue =
@@ -39,7 +39,7 @@ let rec process_job_states result multijob reporter multijob_queue =
 		| Active job ->
 			(* put the job back into the multijob and queue it *)
 			let multijob = put_job job multijob multijob.current_metadata in
-			(reporter, (multijob::multijob_queue))
+			(reporter, (multijob_queue#put multijob))
 		| Fork states ->
 			(* process all forks *)
 			List.fold_left begin fun (reporter, multijob_queue) state ->
@@ -48,7 +48,7 @@ let rec process_job_states result multijob reporter multijob_queue =
 		| Complete completion ->
 			(* store the results *)
 			let multijob = put_completion completion multijob in
-			(reporter, (multijob::multijob_queue))
+			(reporter, (multijob_queue#put multijob))
 
 		| _ ->
 			(reporter, multijob_queue)
@@ -79,6 +79,8 @@ let run reporter job =
 	} in
 	let multijob = put_job job multijob multijob.current_metadata in
 
+	let queue = (new GenerationalQueue.t)#put multijob in
+
 	(* start executing *)
 	LegacyDriver.main_loop 
 		get_job_multijob
@@ -94,7 +96,7 @@ let run reporter job =
 		)
 		process_result
 		reporter
-		[ multijob ]
+		queue
 
 let doit file =
 	(* connect Cil's debug flag to Output *)
