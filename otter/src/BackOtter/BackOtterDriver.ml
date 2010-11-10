@@ -79,8 +79,8 @@ let main_loop entry_fn timer_ref interceptor queue reporter =
         | Some (queue, job) ->
             let result_opt =
                 try
-                    (* The difference between timing here and timing in BackOtterQueue is that
-                     * here we only time the stepping of the job, whereas in BackOtterQueue we
+                    (* The difference between timing here and timing in BidirectionalQueue is that
+                     * here we only time the stepping of the job, whereas in BidirectionalQueue we
                      * also include the time of getting a job. *)
                     let result = Stats.timethis step job in
                     let time_elapsed = !Stats.lastTime in
@@ -126,8 +126,8 @@ let main_loop entry_fn timer_ref interceptor queue reporter =
 
 
 let callchain_backward_se ?(targets_ref=ref BackOtterTargets.empty)
-                          ?(f_queue=Queue.get_default_fqueue targets_ref)
-                          ?(b_queue=Queue.get_default_bqueue targets_ref)
+                          ?(f_queue=BackOtterQueue.get_default_fqueue targets_ref)
+                          ?(b_queue=BackOtterQueue.get_default_bqueue targets_ref)
                           ?ratio reporter entry_job =
 
     let file = entry_job.Job.file in
@@ -154,7 +154,7 @@ let callchain_backward_se ?(targets_ref=ref BackOtterTargets.empty)
     targets_ref := BackOtterTargets.add failure_fn [] (!targets_ref);
 
     (* A queue that prioritizes jobs *)
-    let queue = new BackOtterQueue.t ?ratio file targets_ref timer_ref entry_fn failure_fn entry_job f_queue b_queue in
+    let queue = new BidirectionalQueue.t ?ratio file targets_ref timer_ref entry_fn failure_fn entry_job f_queue b_queue in
 
     (* Overlay the target tracker on the reporter *)
     let target_tracker = new target_tracker reporter entry_fn targets_ref in
@@ -204,10 +204,10 @@ let doit file =
     Core.prepare_file file;
 
     let find_tag_name tag assocs = List.assoc tag (List.map (fun (a,b)->(b,a)) assocs) in
-    Output.must_printf "Forward strategy: %s@\n" (find_tag_name (!Queue.default_fqueue) Queue.queues);
+    Output.must_printf "Forward strategy: %s@\n" (find_tag_name (!BackOtterQueue.default_fqueue) BackOtterQueue.queues);
     Output.must_printf "Backward function pick: %s@\n" (find_tag_name (!BackwardRank.default_brank) BackwardRank.queues);
-    Output.must_printf "Backward strategy: %s@\n" (find_tag_name (!Queue.default_bqueue) Queue.queues);
-    Output.must_printf "Ratio: %0.2f@\n" !BackOtterQueue.default_bidirectional_search_ratio ;
+    Output.must_printf "Backward strategy: %s@\n" (find_tag_name (!BackOtterQueue.default_bqueue) BackOtterQueue.queues);
+    Output.must_printf "Ratio: %0.2f@\n" !BidirectionalQueue.default_bidirectional_search_ratio ;
 
     let entry_job = OtterJob.Job.get_default file in
     let reporter = callchain_backward_se (new BackOtterReporter.t ()) entry_job in
@@ -277,7 +277,7 @@ let feature = {
     Cil.fd_name = "backotter";
     Cil.fd_enabled = ref false;
     Cil.fd_description = "Call-chain backwards symbolic executor for C";
-    Cil.fd_extraopt = options @ BackOtterReporter.options @ BackOtterQueue.options @ Queue.options @ BackwardRank.options;
+    Cil.fd_extraopt = options @ BackOtterReporter.options @ BidirectionalQueue.options @ BackOtterQueue.options @ BackwardRank.options;
     Cil.fd_post_check = true;
     Cil.fd_doit = doit
 }
