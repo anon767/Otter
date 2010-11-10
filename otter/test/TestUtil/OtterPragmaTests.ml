@@ -186,7 +186,7 @@ module Make (Errors : Errors) = struct
         in
         try
             let state, bytes = parse_exp state exp in
-            let state, truth = MemOp.state__eval state state.Types.path_condition bytes in
+            let truth = MemOp.eval state.Types.path_condition bytes in
             begin match truth with
                 | Ternary.True -> true
                 | Ternary.False

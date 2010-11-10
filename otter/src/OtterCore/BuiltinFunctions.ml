@@ -291,7 +291,7 @@ let otter_given job = wrap_state_function begin fun state retopt exps errors ->
 		let truthvalue =
 			let state, given, errors = Expression.rval state (List.nth exps 0) errors in
 			let state, rv, errors = Expression.rval state (List.nth exps 1 ) errors in
-			let state, truth = MemOp.eval_with_cache state (given::state.path_condition) rv in
+			let truth = MemOp.eval (given::state.path_condition) rv in
 			match truth with
 				| Ternary.True -> int_to_bytes 1
 				| Ternary.False -> int_to_bytes 0
@@ -308,7 +308,7 @@ let otter_truth_value job = wrap_state_function begin fun state retopt exps erro
 			if List.length exps = 0 then 0
 			else
 				let state, rv, errors = Expression.rval state (List.hd exps) errors in
-				let state, truth = MemOp.eval_with_cache state state.path_condition rv in
+				let truth = MemOp.eval state.path_condition rv in
 				match truth with
 					| Ternary.True -> 1
 					| Ternary.False -> -1

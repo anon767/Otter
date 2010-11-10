@@ -454,14 +454,16 @@ let function_stat_increment fundec =
 let function_stat_get fundec = Cilutility.FundecMap.find fundec (!function_stat)
 *)
 
-let rec state__eval state pc bytes =
-	(*
-	if not Executeargs.args.Executeargs.arg_print_queries then () else
-	Output.print_endline ("Is the following not equal to zero? \n"^(To_string.bytes bytes));*)
+
+(** Is a value true, false, or unknown in the context of a path condition?
+    @param pc a path condition : bytes list
+    @param bytes the value to query : bytes
+    @return whether pc implies that bytes is nonzero : Ternary.t *)
+let rec eval pc bytes =
   let nontrivial () =
     Output.set_mode Output.MSG_REG;
     Output.printf "Ask STP...@\n";
-    (state, Stp.query_bytes pc bytes)
+    Stp.query_bytes pc bytes
 
   in
 	let is_comparison op = match op with
@@ -483,45 +485,47 @@ let rec state__eval state pc bytes =
 		| OP_NE -> ne
 		| _ -> failwith "operation_of: operation is not comparison"
 	in
-   let state,truth =
-     match bytes with
-       (* The following cases are simple enough to not consult STP *)
-       | Bytes_Constant (CInt64(n,_,_)) -> state,if n = 0L then Ternary.False else Ternary.True
+    (* Some cases are simple enough to not consult STP *)
+    match bytes with
+      | Bytes_Constant (CInt64(n,_,_)) -> Ternary.of_bool (n <> 0L)
 
-       | Bytes_ByteArray (bytearray) ->
-           begin try
-             let b = bytes_to_bool bytes in  (* TODO:need to use int64 *)
-               state,
-                                             if b = false then Ternary.False else Ternary.True
-           with Failure(_) -> nontrivial()
-           end
-         | Bytes_Address (_,_) -> state,Ternary.True
+      | Bytes_ByteArray (bytearray) ->
+            begin
+                try Ternary.of_bool (bytes_to_bool bytes) (* TODO:need to use int64 *)
+                with Failure _ -> nontrivial()
+            end
 
-             (* nullity check *)
-             | Bytes_Op(OP_LNOT,(b1,_)::[]) ->
-                 let state,bb = state__eval state pc b1 in
-                   state,Ternary.not bb
+      (* Pointers are always true *)
+      | Bytes_Address _
+      | Bytes_FunPtr _ -> Ternary.True
 
-             (* Comparison of (ptr+i) and (ptr+j) *)
-             | Bytes_Op(op,(Bytes_Address(block1,offset1),_)::(Bytes_Address(block2,offset2),_)::[])
-                 when is_comparison op ->
-                 if block1!=block2 then
-                   (if op==OP_EQ then state,Ternary.False else if op==OP_NE then state,Ternary.True else nontrivial())
-                 else
-                   state__eval state pc (run (operation_of op) [(offset1,Cil.intType);(offset2,Cil.intType)])
+      | Bytes_Op(OP_LNOT,[(b1,_)]) -> Ternary.not (eval pc b1)
 
-             (* Comparison of (ptr+i) and c (usually zero) *)
-             | Bytes_Op(op,(Bytes_Address(block,offset1),_)::(bytes2,_)::[])
-                 when is_comparison op  &&  isConcrete_bytes bytes2 ->
-                 if op==OP_EQ then state,Ternary.False else if op==OP_NE then state,Ternary.True else nontrivial()
-             (* Function pointer is always true *)
-             | Bytes_FunPtr(_,_) -> state,Ternary.True
-	   	(* Consult STP *)
-	   	| _ ->
-	   		nontrivial()
-   in
-     state,truth
+      (* Comparison of two pointers *)
+      | Bytes_Op(op,[(Bytes_Address(block1,offset1),_); (Bytes_Address(block2,offset2),_)])
+              when is_comparison op ->
+            if block1!=block2 then
+                (if op==OP_EQ then Ternary.False else if op==OP_NE then Ternary.True else nontrivial())
+            else
+                eval pc (run (operation_of op) [(offset1,Cil.intType);(offset2,Cil.intType)])
 
-let eval_with_cache state pc bytes =
-	state__eval state pc bytes
+      (* Comparison of pointer and integer *)
+      | Bytes_Op((OP_EQ | OP_NE) as op,[(Bytes_Address(block,offset1),_); (bytes2,_)])
+              when isConcrete_bytes bytes2 ->
+            Ternary.of_bool (op = OP_NE)
 
+      | Bytes_Op(OP_LAND, [(bytes1, _); (bytes2, _)]) ->
+            begin match eval pc bytes1 with
+              | Ternary.False -> Ternary.False
+              | Ternary.True -> eval pc bytes2
+              | Ternary.Unknown -> if eval pc bytes2 = Ternary.False then Ternary.False else Ternary.Unknown
+            end
+      | Bytes_Op(OP_LOR, [(bytes1, _); (bytes2, _)]) ->
+            begin match eval pc bytes1 with
+              | Ternary.True -> Ternary.True
+              | Ternary.False -> eval pc bytes2
+              | Ternary.Unknown -> if eval pc bytes2 = Ternary.True then Ternary.True else Ternary.Unknown
+            end
+      (* Consult STP *)
+      | _ ->
+            nontrivial()

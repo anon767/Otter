@@ -375,7 +375,7 @@ let exec_stmt job errors =
                             Output.printf "  @[%a@]@\n" (FormatPlus.pp_print_list BytesPrinter.bytes "@ AND ") state.path_condition;
                     end;
 
-                let state, truth = MemOp.eval_with_cache state state.path_condition rv in
+                let truth = MemOp.eval state.path_condition rv in
                 Output.set_mode Output.MSG_REG;
                 let job_state = match truth with
                     | Ternary.True ->
