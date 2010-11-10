@@ -7,6 +7,7 @@ open Types
 open Job
 open Cil
 
+let default_conditionals_forking_level = ref max_int
 
 class ['self] target_tracker delegate entry_fn targets_ref =
 object (_ : 'self)
@@ -164,6 +165,13 @@ let callchain_backward_se ?(targets_ref=ref BackOtterTargets.empty)
             set_output_formatter_interceptor
         >>> BuiltinFunctions.libc_interceptor
         >>> BuiltinFunctions.interceptor
+        >>> (
+            let level = !default_conditionals_forking_level  in
+            if level < max_int then
+                OtterExtensions.ConditionalsForking.interceptor ~limit:level
+            else
+                Interceptor.identity_interceptor
+        )
     in
     let target_tracker = main_loop entry_fn timer_ref interceptor queue target_tracker in
 
@@ -251,20 +259,25 @@ let doit file =
     Output.printf "Number of paths: %d@\n" paths;
     Output.printf "Number of abandoned: %d@\n" abandoned;
     List.iter (fun key ->
-        Output.printf "%s: %.2f s@\n" key (Stats.lookupTime key)
-    ) [
-        "BackOtterQueue.t#get";
-        "BackOtterQueue.update_bounding_paths";
-        "BackOtterQueue.t#get/create_new_jobs";
-    ];
+        Output.printf "%s: %.2f s@\n" key (BackOtterUtilities.lookupTime key)
+    ) (BackOtterUtilities.keys ());
     ()
+
+
+(** {1 Command-line options} *)
+
+let options = [
+    "--conditionals-forking-level",
+        Arg.Set_int default_conditionals_forking_level,
+        "<level> Set levels for conditionals forking (default: max_int (== don't use))";
+]
 
 
 let feature = {
     Cil.fd_name = "backotter";
     Cil.fd_enabled = ref false;
     Cil.fd_description = "Call-chain backwards symbolic executor for C";
-    Cil.fd_extraopt = BackOtterReporter.options @ BackOtterQueue.options @ Queue.options @ BackwardRank.options;
+    Cil.fd_extraopt = options @ BackOtterReporter.options @ BackOtterQueue.options @ Queue.options @ BackwardRank.options;
     Cil.fd_post_check = true;
     Cil.fd_doit = doit
 }
