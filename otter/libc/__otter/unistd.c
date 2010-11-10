@@ -875,3 +875,9 @@ unsigned int __otter_libc_alarm(unsigned int seconds)
 	/* signals aren't implimented */
 	return(0);
 }
+
+char *getcwd(char *buf, size_t len)
+{
+	strcpy(buf, "/wrk");
+	return buf;
+}
