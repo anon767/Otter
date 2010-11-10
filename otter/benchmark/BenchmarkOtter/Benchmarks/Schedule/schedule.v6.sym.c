@@ -13,7 +13,7 @@
  * find_nth and it runs over the list iteration when ratio > 1.
  */
 #pragma max_abandoned(1)
-#pragma max_nodes(5000)
+#pragma time_limit(60)
 #pragma expect_abandoned(failure_reached)
 
 /*  -*- Last-Edit:  Wed May 7 10:12:52 1993 by Monica; -*- */

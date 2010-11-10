@@ -34,7 +34,7 @@
  *               Decision: IF (argc != 4): false
  */
 #pragma max_abandoned(1)
-#pragma max_nodes(2000)
+#pragma time_limit(60)
 #pragma expect_abandoned(failure_reached)
 
 #include <stdio.h>
