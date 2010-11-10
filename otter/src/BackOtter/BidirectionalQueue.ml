@@ -48,9 +48,6 @@ let has_bounding_paths (_,job,_) = match job.boundingPaths with
     | _ -> false
 
 
-type job_type = EntryfnJob of job | OtherfnJob of job
-
-
 (* TODO: package the long list of arguments into BackOtterProfile.t *)
 class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                file
@@ -77,7 +74,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                 {< otherfn_jobqueue = otherfn_jobqueue#put job >}
 
         method get =
-            let get () = try
+            let get () =
                 (* Clear the label, as anything printed here has no specific job context *)
                 Output.set_formatter (new Output.plain);
 
@@ -179,11 +176,6 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
 
                     else
                         None
-            with Types.SignalException s ->
-                (* if we got a signal, return None to indicate "no more job" *)
-                Output.set_mode Output.MSG_MUSTPRINT;
-                Output.printf "BidirectionalQueue.get: %s@\n" s;
-                None
         in
         Stats.time "BidirectionalQueue.t#get" get ()
 

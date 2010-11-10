@@ -75,10 +75,11 @@ let set_output_formatter_interceptor job job_queue interceptor =
 let main_loop entry_fn timer_ref interceptor queue reporter =
     (* compose the interceptor with the core symbolic executor *)
     let step = fun job -> fst (interceptor job () Statement.step) in
-    let rec run (queue, reporter) = match queue#get with
-        | Some (queue, job) ->
-            let result_opt =
-                try
+    let rec run (queue, reporter) =
+        try
+            match queue#get with
+            | Some (queue, job) ->
+                let result =
                     (* The difference between timing here and timing in BidirectionalQueue is that
                      * here we only time the stepping of the job, whereas in BidirectionalQueue we
                      * also include the time of getting a job. *)
@@ -86,40 +87,36 @@ let main_loop entry_fn timer_ref interceptor queue reporter =
                     let time_elapsed = !Stats.lastTime in
                     let fundec = BackOtterUtilities.get_origin_function job in
                     let entry_time, other_time = !timer_ref in
-                    timer_ref := (if fundec == entry_fn then
-                        (entry_time +. time_elapsed, other_time)
-                    else
-                        (entry_time, other_time +. time_elapsed));
-                    Some (result)
-                with Types.SignalException s ->
-                    (* if we got a signal, stop and return the completed results *)
-                    Output.set_mode Output.MSG_MUSTPRINT;
-                    Output.printf "%s@\n" s;
-                    None
-            in
-            begin match result_opt with
-                | Some result ->
-                    let rec process_result (queue, reporter as work) result k =
-                        let reporter = reporter#report result in
-                        if reporter#should_continue then match result with
-                            | Job.Active job ->
-                                k (queue#put job, reporter)
-                            | Job.Fork (result::results) ->
-                                process_result work result (fun work -> process_result work (Job.Fork results) k)
-                            | Job.Fork [] ->
-                                k work
-                            | Job.Complete completion ->
-                                k (queue, reporter)
-                            | Job.Paused _ ->
-                                invalid_arg "unexpected Job.Paused"
+                    timer_ref := (
+                        if fundec == entry_fn then
+                            (entry_time +. time_elapsed, other_time)
                         else
-                            reporter
-                    in
-                    process_result (queue, reporter) result run
-                | None ->
-                    reporter
-            end
-        | None ->
+                            (entry_time, other_time +. time_elapsed));
+                    result
+                in
+                let rec process_result (queue, reporter as work) result k =
+                    let reporter = reporter#report result in
+                    if reporter#should_continue then match result with
+                        | Job.Active job ->
+                            k (queue#put job, reporter)
+                        | Job.Fork (result::results) ->
+                            process_result work result (fun work -> process_result work (Job.Fork results) k)
+                        | Job.Fork [] ->
+                            k work
+                        | Job.Complete completion ->
+                            k (queue, reporter)
+                        | Job.Paused _ ->
+                            invalid_arg "unexpected Job.Paused"
+                    else
+                        reporter
+                in
+                process_result (queue, reporter) result run
+            | None ->
+                reporter
+        with Types.SignalException s ->
+            (* if we got a signal, stop and return the completed results *)
+            Output.set_mode Output.MSG_MUSTPRINT;
+            Output.printf "%s@\n" s;
             reporter
     in
     run (queue, reporter)
