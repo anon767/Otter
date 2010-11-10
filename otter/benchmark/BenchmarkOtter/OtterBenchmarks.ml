@@ -60,16 +60,16 @@ let benchmarks =
                 (Printf.sprintf "BackOtter:%s(%.2f)" name ratio) >:: benchmark (
                     let targets_ref = ref BackOtterTargets.empty in
                     BackOtterDriver.callchain_backward_se ~targets_ref
-                                                          ~f_queue:(BackOtter.Queue.get targets_ref fqueue)
-                                                          ~b_queue:(BackOtter.Queue.get_function_backward_queue targets_ref brank bqueue)
+                                                          ~f_queue:(BackOtter.BackOtterQueue.get targets_ref fqueue)
+                                                          ~b_queue:(BackOtter.BackOtterQueue.get_function_backward_queue targets_ref brank bqueue)
                                                           ~ratio
                 )
             in
-            let backotter_queues = List.filter (fun (_, queue) -> queue <> `DepthFirst) BackOtter.Queue.queues in
+            let backotter_queues = List.filter (fun (_, queue) -> queue <> `DepthFirst) BackOtter.BackOtterQueue.queues in
             let backotter_fqueues = List.filter (fun (_, queue) -> List.mem queue [
                 `BreadthFirst;
                 `Generational `BreadthFirst;
-            ]) BackOtter.Queue.queues in
+            ]) BackOtter.BackOtterQueue.queues in
             let rec compose fn lst = function
                 | head :: tail -> (List.map (fun ele -> fn ele head) lst) @ (compose fn lst tail)
                 | [] -> []
