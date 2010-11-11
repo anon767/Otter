@@ -9,7 +9,7 @@ open Cil
 let default_bidirectional_search_ratio = ref 0.5
 
 (*
- * TODO: Improve efficiency of bounding paths update/checking.
+ * Improve efficiency of bounding paths update/checking.
  *
  * Let DP: decision path, BP: bounding path, FP: failing path.
  * Invariants:
@@ -128,7 +128,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                 (* Clear the label, as anything printed here has no specific job context *)
                 Output.set_formatter (new Output.plain);
 
-                (* TODO: first check if there're existing jobs in job_to_bounding_paths.
+                (* First check if there're existing jobs in job_to_bounding_paths.
                  * If so, simply return one of them.
                  *
                  * Else, assert(job_to_bounding_paths is empty)
@@ -170,7 +170,6 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                * For each prefix(DP, k) where k < len(FP) and DP[k] is a call to origin(FP),
                                *     If rev_equal(prefix(DP, k), prefix(FP, k)), "YES", and let BP = suffix(FP, k+1)
                                *     Else "NO"
-                               * TODO: memoization
                                *)
                               let failing_path_length = length failing_path in
                               let jobs = entryfn_jobqueue#get_contents @ otherfn_jobqueue#get_contents in
