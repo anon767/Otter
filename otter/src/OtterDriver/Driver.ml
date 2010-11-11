@@ -56,6 +56,7 @@ let run ?(interceptor=Interceptor.identity_interceptor)
         ?(queue=Queue.get_default ())
         reporter
         job =
+	Random.init (!Executeargs.arg_random_seed);
     let queue = queue#put job in
     main_loop interceptor queue reporter
 

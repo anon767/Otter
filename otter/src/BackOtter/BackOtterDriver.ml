@@ -153,6 +153,8 @@ let callchain_backward_se ?(targets_ref=ref BackOtterTargets.empty)
                           ?(b_queue=BackOtterQueue.get_default_bqueue targets_ref)
                           ?ratio reporter entry_job =
 
+	Random.init (!Executeargs.arg_random_seed);
+
     let file = entry_job.Job.file in
 
     (* Entry function set by --entryfn (default: main) *)

@@ -30,7 +30,7 @@ let default_bidirectional_search_ratio = ref 0.5
  *)
 module JobKey = struct
     type t = Job.job
-    let compare = Pervasives.compare
+    let compare = Pervasives.compare (* TODO: may be slow *)
 end
 module JobMap = Map.Make (JobKey)
 
@@ -60,6 +60,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
         val last_bounded_job_from_get = None
 
         method put (job : 'job) =
+            let put () =
             (* If the job is from a bounded job,
              * if it's still in bound, put it into job_to_bounding_paths,
              * otherwise, discard it.
@@ -122,6 +123,8 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                 {< entryfn_jobqueue = entryfn_jobqueue;
                    otherfn_jobqueue = otherfn_jobqueue;
                    job_to_bounding_paths = job_to_bounding_paths; >}
+        in
+        BackOtterUtilities.time "BidirectionalQueue.t#put" put ()
 
         method get =
             let get () =
@@ -262,7 +265,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                             None
                     end
         in
-        Stats.time "BidirectionalQueue.t#get" get ()
+        BackOtterUtilities.time "BidirectionalQueue.t#get" get ()
 
     end
 
