@@ -5,7 +5,7 @@ OtterQueue/DepthFirstStrategy
 OtterQueue/GenerationalQueue
 OtterQueue/GenerationalStrategy
 OtterQueue/InsertionOrderStrategy
-OtterQueue/LeastCoveredQueue
+OtterQueue/LeastCoveredStrategy
 OtterQueue/Queue
 OtterQueue/RandomPathQueue
 OtterQueue/RankedQueue

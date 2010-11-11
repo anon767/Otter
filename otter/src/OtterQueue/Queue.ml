@@ -25,7 +25,7 @@ let get = function
     | `Generational `BreadthFirst -> new RankedQueue.t [ new GenerationalStrategy.t; new BreadthFirstStrategy.t ]
     | `Generational `DepthFirst -> new RankedQueue.t [ new GenerationalStrategy.t; new DepthFirstStrategy.t ]
     | `Generational `Random -> new RankedQueue.t [ new GenerationalStrategy.t ]
-    | `LeastCovered -> new LeastCoveredQueue.t
+    | `LeastCovered -> new RankedQueue.t  [ new LeastCoveredStrategy.t ]
     | `ClosestToUncovered -> new ClosestToUncoveredQueue.t
     | `ClosestToTargets -> new ClosestToTargetsQueue.t
     | `Generational `ClosestToTargets -> new GenerationalQueue.t (new ClosestToTargetsQueue.t)
