@@ -42,6 +42,6 @@ class ['self] t = object (_ : 'self)
                 end
             | Some (work, job) ->
                 (* pick randomly from the working set, and move the rest into the next generation *)
-                let next = RandomBag.fold (fun x next -> RandomBag.put x next) work next in
+                let next = RandomBag.fold (fun next x -> RandomBag.put x next) next work in
                 Some ({< work = RandomBag.empty; next = next >}, job)
 end

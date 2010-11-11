@@ -19,6 +19,5 @@ let get bag =
             let bag = tail (update n (head bag) bag) in
             Some (bag, x)
 
-let fold f bag acc = fold_left (fun acc x -> f x acc) acc bag
+let fold = fold_left
 
-let map f bag = map
