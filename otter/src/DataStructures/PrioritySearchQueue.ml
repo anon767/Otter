@@ -139,8 +139,18 @@ module Make (Key : OrderedType) (Priority : OrderedType) = struct
     let play q q' = match q, q' with
         | Void, q' -> q'
         | q, Void -> q
-        | Winner (k, p, v, t, m), Winner (k', p', v', t', m') when Priority.compare p p' <= 0 -> Winner (k, p, v, LoserTree.rbalance k' p' v' t m t', m')
-        | Winner (k, p, v, t, m), Winner (k', p', v', t', m') -> Winner (k', p', v', LoserTree.lbalance k p v t m t', m')
+        | Winner (k, p, v, t, m), Winner (k', p', v', t', m') ->
+            let i = Priority.compare p p' in
+            if i < 0 then
+                Winner (k, p, v, LoserTree.rbalance k' p' v' t m t', m')
+            else if i = 0 then
+                let j = Key.compare k k' in
+                if j <= 0 then
+                    Winner (k, p, v, LoserTree.rbalance k' p' v' t m t', m')
+                else
+                    Winner (k', p', v', LoserTree.lbalance k p v t m t', m')
+            else
+                Winner (k', p', v', LoserTree.lbalance k p v t m t', m')
 
     let rec second_best t m' = match t with
         | LoserTree.Start _ -> Void
