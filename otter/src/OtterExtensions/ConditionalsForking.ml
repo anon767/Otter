@@ -31,10 +31,11 @@ let interceptor ?(limit=8) job param k =
                         let px, cx, sx, rx = split gx x in
                         let py, cy, sy, ry = split gy y in
                         let results = EfficientSequence.append rx ry in
-                        if sx > limit then
-                            (Bytes.guard__and_not py gx, y, sy, EfficientSequence.cons (gx, x) results)
-                        else if sy > limit then
-                            (Bytes.guard__and_not px gy, x, sx, EfficientSequence.cons (gy, y) results)
+                        if sx + sy > limit then
+                            if sx > sy then
+                                (Bytes.guard__and_not py gx, y, sy, EfficientSequence.cons (gx, x) results)
+                            else
+                                (Bytes.guard__and_not px gy, x, sx, EfficientSequence.cons (gy, y) results)
                         else
                             (Bytes.guard__and px py, Bytes.IfThenElse (g, cx, cy), sx + sy, results)
                     | Bytes.Unconditional _ as c ->
