@@ -34,7 +34,7 @@ let append xs ys =
     else if is_empty ys then xs
     else { length = xs.length + ys.length; seq = fun c a k -> ys.seq c a (fun a -> xs.seq c a k) }
 
-let fold f xs a = xs.seq f a (fun xs -> xs)
+let fold f acc xs = xs.seq (fun x acc -> f acc x) acc (fun xs -> xs)
 
 let map f xs = xs.seq (fun x -> cons (f x)) empty (fun xs -> xs)
 
