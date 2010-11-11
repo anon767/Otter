@@ -1,8 +1,11 @@
-OtterQueue/BreadthFirstQueue
+OtterQueue/BreadthFirstStrategy
 OtterQueue/ClosestToTargetsQueue
 OtterQueue/ClosestToUncoveredQueue
-OtterQueue/DepthFirstQueue
+OtterQueue/DepthFirstStrategy
 OtterQueue/GenerationalQueue
+OtterQueue/GenerationalStrategy
+OtterQueue/InsertionOrderStrategy
 OtterQueue/LeastCoveredQueue
 OtterQueue/Queue
 OtterQueue/RandomPathQueue
+OtterQueue/RankedQueue
