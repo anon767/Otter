@@ -37,7 +37,7 @@ char confFileContents[] = "chown_upload_mode=00600\nmax_login_fails=3\n\nanonymo
 unsigned int confFileSize = sizeof(confFileContents) - 1;
 extern int* vsftpd_has_called_listen;
 int vsftpd_main(int argc, const char* argv[]);
-int dummy_main();
+extern int client_main();
 
 int main(int argc, const char* argv[])
 {
@@ -51,7 +51,7 @@ int main(int argc, const char* argv[])
 		/* wait until vsftpd has called listen */
 		__otter_multi_block_while_condition(*vsftpd_has_called_listen == 0, vsftpd_has_called_listen);
 		
-		return dummy_main();
+		return client_main();
 	}
 	else
 	{
@@ -69,29 +69,6 @@ int main(int argc, const char* argv[])
 
 		return vsftpd_main(argc, argv);
 	}
-}
-
-int dummy_main()
-{
-	int fd = socket(AF_INET, SOCK_STREAM, 0);
-	__ASSERT(fd >= 0);
-	struct sockaddr_in* addr = calloc(sizeof(struct sockaddr_in), 1);
-	addr->sin_family = AF_INET;
-	addr->sin_port = 21;
-	addr->sin_addr.s_addr = 0x7F000001;
-	int r = connect(fd, addr, sizeof(struct sockaddr_in));
-	__ASSERT(r != -1);
-	char buf[20];
-	for(int i = 0; i < 5; i++)
-	{
-		__SYMBOLIC(&buf);
-		write(fd, buf, 20);
-		read(fd, buf, 20);
-	}
-	__otter_multi_time_wait(10000);
-	close(fd);
-	
-	return(0);
 }
 
 int

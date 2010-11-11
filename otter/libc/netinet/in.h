@@ -46,6 +46,8 @@ struct in_addr
 	in_addr_t s_addr;
 };
 
+#include <sys/socket.h>
+
 struct sockaddr_in
 {
 	sa_family_t sin_family;

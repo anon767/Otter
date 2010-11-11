@@ -996,6 +996,7 @@ let libc_interceptor job job_queue interceptor =
 		(intercept_function_by_name_external "memcpy"                  "__otter_libc_memcpy") @@
 		(intercept_function_by_name_external "memmove"                 "__otter_libc_memmove") @@
 		(intercept_function_by_name_external "strcpy"                  "__otter_libc_strcpy") @@
+		(intercept_function_by_name_external "stpcpy"                  "__otter_libc_stpcpy") @@
 		(intercept_function_by_name_external "strncpy"                 "__otter_libc_strncpy") @@
 		(intercept_function_by_name_external "strcat"                  "__otter_libc_strcat") @@
 		(intercept_function_by_name_external "strncat"                 "__otter_libc_strncat") @@

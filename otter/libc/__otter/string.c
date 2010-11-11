@@ -326,3 +326,10 @@ char* __otter_libc_strdup(const char* s) {
 	}
 	return theCopy;
 }
+
+// Taken (and slightly modified) from uClibc
+char *__otter_libc_stpcpy(char *dst, const char *src)
+{
+	while ( *dst++ = *src++ );
+  return dst-1;
+}
