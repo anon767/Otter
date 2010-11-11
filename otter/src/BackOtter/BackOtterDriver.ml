@@ -31,10 +31,11 @@ object (_ : 'self)
         (* Extract failing path from failure, and create target function.
          * This is run after the delegate so that the "Extract..." message is output after the failure message. *)
         let extract_failing_path job_result =
-            let fundec = List.hd (List.rev job_result.result_state.callstack) in
-            let failing_path = job_result.result_decision_path in
-            let _ = Output.debug_printf "@\n=> Extract the following failing path for function %s:@\n" fundec.svar.vname in
-            let _ = Output.debug_printf "@[%a@]@\n@\n" Decision.print_decisions failing_path in
+            let fundec = BackOtterUtilities.get_origin_function_from_job_result job_result in
+            (* Failing path has least recent decision first. See the comment in BidirectionalQueue. *)
+            let failing_path = List.rev job_result.result_decision_path in
+            Output.debug_printf "@\n=> Extract the following failing path for function %s:@\n" fundec.svar.vname;
+            Output.debug_printf "@[%a@]@\n@\n" Decision.print_decisions failing_path;
             targets_ref := BackOtterTargets.add fundec failing_path (!targets_ref)
         in
         begin match job_state with

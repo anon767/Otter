@@ -9,8 +9,51 @@ open Cil
 
 let max_distance = max_int
 
+let rec length =
+    let memotable = Hashtbl.create 0 in
+    function
+        | [] -> 0
+        | (lst:Decision.t list) ->
+            try
+                Hashtbl.find memotable lst
+            with Not_found ->
+                let len = length (List.tl lst) + 1 in
+                Hashtbl.add memotable lst len;
+                len
 
-let get_origin_function job = List.hd (List.rev job.state.callstack)
+let rec rev_equals =
+    let memotable = Hashtbl.create 0 in
+    fun eq (lst1:Decision.t list) (lst2:Decision.t list) n -> (* Assume length lst1 >= n *)
+        if n <= 0 then
+            true, lst1, lst2
+        else
+            try
+                Hashtbl.find memotable (eq, lst1, lst2, n)
+            with Not_found ->
+                let return =
+                    let b, suf1, suf2 = rev_equals eq (List.tl lst1) lst2 (n-1) in
+                    b && eq (List.hd lst1) (List.hd suf2), suf1, (List.tl suf2)
+                in
+                Hashtbl.add memotable (eq, lst1, lst2, n) return;
+                return
+
+let rec get_last_element =
+    let memotable = Hashtbl.create 0 in
+    function
+        | [] -> invalid_arg "get_last_element: empty list"
+        | [ele] -> ele
+        | _ :: tail as lst ->
+            try
+                Hashtbl.find memotable lst
+            with Not_found ->
+                let last_ele = get_last_element tail in
+                Hashtbl.add memotable lst last_ele;
+                last_ele
+
+
+let get_origin_function job = Stats.time "get_origin_function" get_last_element job.state.callstack
+
+let get_origin_function_from_job_result job_result = Stats.time "get_origin_function_from_job_result" get_last_element job_result.result_state.callstack
 
 
 let shuffle lst =
