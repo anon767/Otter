@@ -47,15 +47,9 @@ class ['self] t = object (self : 'self)
 
     method weights jobs =
         try
+            (* pick any one of the most recent generation *)
             let _, generation, () = JobGeneration.find_min queue in
-            if generation = 0 then
-                (* if there are 0th generation jobs, pick one and force it to completion *)
-                let gen0 = JobGeneration.at_most 0 queue in
-                let job0, _, () = List.nth gen0 (Random.int (List.length gen0)) in
-                List.map (fun job -> if job.Job.jid = job0.Job.jid then 1. else 0.) jobs
-            else
-                (* pick any one of the current generation *)
-                List.map (fun job -> if fst (JobGeneration.lookup job queue) = generation then 1. else 0.) jobs
+            List.map (fun job -> if fst (JobGeneration.lookup job queue) = generation then 1. else 0.) jobs
         with JobGeneration.Key | JobGeneration.Empty ->
             raise Not_found
 end
