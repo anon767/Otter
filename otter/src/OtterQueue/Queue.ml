@@ -8,7 +8,7 @@ let queues = [
     "random-path", `RandomPath;
     "generational*breadth-first", `Generational `BreadthFirst;
     "generational*depth-first", `Generational `DepthFirst;
-    "generational*random-path", `Generational `RandomPath;
+    "generational*random", `Generational `Random;
     "least-covered", `LeastCovered;
     "closest-to-uncovered", `ClosestToUncovered;
     "closest-to-targets", `ClosestToTargets;
@@ -19,12 +19,12 @@ let default_queue = ref (`Generational `BreadthFirst)
 
 (* to get around value restriction that limits polymorphism in the queues list *)
 let get = function
-    | `BreadthFirst -> new BreadthFirstQueue.t
-    | `DepthFirst -> new DepthFirstQueue.t
+    | `BreadthFirst -> new RankedQueue.t [ new BreadthFirstStrategy.t ]
+    | `DepthFirst -> new RankedQueue.t [ new DepthFirstStrategy.t ]
     | `RandomPath -> new RandomPathQueue.t
-    | `Generational `BreadthFirst -> new GenerationalQueue.t (new BreadthFirstQueue.t)
-    | `Generational `DepthFirst -> new GenerationalQueue.t (new DepthFirstQueue.t)
-    | `Generational `RandomPath -> new GenerationalQueue.t (new RandomPathQueue.t)
+    | `Generational `BreadthFirst -> new RankedQueue.t [ new GenerationalStrategy.t; new BreadthFirstStrategy.t ]
+    | `Generational `DepthFirst -> new RankedQueue.t [ new GenerationalStrategy.t; new DepthFirstStrategy.t ]
+    | `Generational `Random -> new RankedQueue.t [ new GenerationalStrategy.t ]
     | `LeastCovered -> new LeastCoveredQueue.t
     | `ClosestToUncovered -> new ClosestToUncoveredQueue.t
     | `ClosestToTargets -> new ClosestToTargetsQueue.t

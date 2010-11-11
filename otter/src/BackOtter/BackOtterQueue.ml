@@ -1,8 +1,10 @@
 open OcamlUtilities
 
 (* Borrow these queues from OtterQueue *)
-module BreadthFirstQueue = OtterQueue.BreadthFirstQueue
-module DepthFirstQueue = OtterQueue.DepthFirstQueue
+module GenerationalStrategy = OtterQueue.GenerationalStrategy
+module BreadthFirstStrategy = OtterQueue.BreadthFirstStrategy
+module DepthFirstStrategy = OtterQueue.DepthFirstStrategy
+module RankedQueue = OtterQueue.RankedQueue
 module RandomPathQueue = OtterQueue.RandomPathQueue
 module GenerationalQueue = OtterQueue.GenerationalQueue
 module LeastCoveredQueue = OtterQueue.LeastCoveredQueue
@@ -12,12 +14,12 @@ module ClosestToUncoveredQueue = OtterQueue.ClosestToUncoveredQueue
 let queues = OtterQueue.Queue.queues
 
 let get targets_ref = function
-    | `BreadthFirst -> new BreadthFirstQueue.t
-    | `DepthFirst -> new DepthFirstQueue.t
+    | `BreadthFirst -> new RankedQueue.t [ new BreadthFirstStrategy.t ]
+    | `DepthFirst -> new RankedQueue.t [ new DepthFirstStrategy.t ]
     | `RandomPath -> new RandomPathQueue.t
-    | `Generational `BreadthFirst -> new GenerationalQueue.t (new BreadthFirstQueue.t)
-    | `Generational `DepthFirst -> new GenerationalQueue.t (new DepthFirstQueue.t)
-    | `Generational `RandomPath -> new GenerationalQueue.t (new RandomPathQueue.t)
+    | `Generational `BreadthFirst -> new RankedQueue.t [ new GenerationalStrategy.t; new BreadthFirstStrategy.t ]
+    | `Generational `DepthFirst -> new RankedQueue.t [ new GenerationalStrategy.t; new DepthFirstStrategy.t ]
+    | `Generational `Random -> new RankedQueue.t [ new GenerationalStrategy.t ]
     | `LeastCovered -> new LeastCoveredQueue.t
     | `ClosestToUncovered -> new ClosestToUncoveredQueue.t
     | `ClosestToTargets -> new ClosestToTargetsQueue.t targets_ref
