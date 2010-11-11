@@ -67,6 +67,7 @@ let run reporter job =
 			shared_block_to_bytes = MemoryBlockMap.empty;
 			trackedFns = Job.StringSet.empty;
 			exHist = Job.emptyHistory;
+			steps = 0;
 		};
 		jid = job.Job.jid;
 		next_pid = 1;

@@ -44,6 +44,7 @@ type shared_state = {
 	shared_block_to_bytes : (state, Bytes.bytes) Deferred.t MemoryBlockMap.t;
 	trackedFns : Job.StringSet.t;
 	exHist : Job.executionHistory;
+	steps : int;
 }
 
 type multijob = {

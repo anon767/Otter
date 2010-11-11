@@ -83,6 +83,7 @@ let main_loop entry_fn timer_ref interceptor queue reporter =
                     (* The difference between timing here and timing in BidirectionalQueue is that
                      * here we only time the stepping of the job, whereas in BidirectionalQueue we
                      * also include the time of getting a job. *)
+                    let job = { job with Job.steps = job.Job.steps + 1 } in
                     let result = Stats.timethis step job in
                     let time_elapsed = !Stats.lastTime in
                     let fundec = BackOtterUtilities.get_origin_function job in
