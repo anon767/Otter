@@ -31,17 +31,17 @@ class ['self] t = object (self : 'self)
 
     method remove job =
         try
+            (* dequeue the job *)
             let generation, () = JobGeneration.lookup job queue in
             let queue = JobGeneration.delete job queue in
-            if generation = 0 then
-                (* move the rest of the 0th generation to the next generation *)
-                let gen0 = JobGeneration.at_most 0 queue in
-                let queue = List.fold_left (fun queue (job, _, ()) -> JobGeneration.adjust (fun _ -> next) job queue) queue gen0 in
-                {< queue = queue >}
-            else
-                (* no 0th generation jobs remaining (i.e. a job has run to completion), update the next generation *)
-                let next = generation + 1 in
-                {< queue = queue; next = next >}
+
+            (* move the (rest of the) 0th generation to the next generation *)
+            let gen0 = JobGeneration.at_most 0 queue in
+            let queue = List.fold_left (fun queue (job, _, ()) -> JobGeneration.adjust (fun _ -> next) job queue) queue gen0 in
+
+            (* if no 0th generation jobs remained (i.e. a job has run to completion), update the next generation *)
+            let next = if generation <> 0 then generation + 1 else next in
+            {< queue = queue; next = next >}
         with JobGeneration.Key ->
             raise Not_found
 
