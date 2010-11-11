@@ -167,8 +167,10 @@ let exec_instr_call job instr lvalopt fexp exps errors =
             | [] -> ([], errors)
             | (state, fundec)::t ->
                 let job_state, errors =
-                    let job = {job with
-                        decisionPath = DecisionFuncall(instr, fundec)::job.decisionPath;} in
+                    let job = { job with
+                        decisionPath = DecisionFuncall(instr, fundec)::job.decisionPath;
+                        jid = if t = [] then job.jid else Counter.next job_counter; (* increment all but the last *)
+                    } in
                     try
                         (exec_fundec job state instr fundec lvalopt exps errors)
                     with Failure msg ->

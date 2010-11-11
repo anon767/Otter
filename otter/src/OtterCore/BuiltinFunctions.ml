@@ -815,11 +815,12 @@ let libc_longjmp job retopt exps errors =
 					instrList = [];
 					state = state; }
 				in
-				(Active job, errors)
+				(job, errors)
 			in
 
 			let jobs, errors = List.fold_left (fun (jobs, errors) arg ->
 				let job, errors = process_stmtPtr arg errors in
+				let job = Active { job with jid = if jobs = [] then job.jid else Counter.next job_counter } in
 				(job::jobs, errors)
 			) ([], errors) stmtPtrAddrs in
 			(* Reverse the job list to maintain original order *)

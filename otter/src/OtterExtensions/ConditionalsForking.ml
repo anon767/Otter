@@ -89,7 +89,11 @@ let interceptor ?(limit=8) job param k =
                 k job param
             else
                 (* otherwise, fork the job with the new states and errors *)
-                let jobs = List.rev_append abandoned (EfficientSequence.map_to_list (fun state -> Job.Active { job with Job.state = state }) states) in
+                let jobs = EfficientSequence.fold begin fun jobs state ->
+                    let job = Job.Active { job with Job.state = state; Job.jid = if jobs = [] then job.Job.jid else Counter.next Job.job_counter } in
+                    job::jobs
+                end [] states in
+                let jobs = List.rev_append abandoned jobs in
                 (Job.Fork jobs, param)
 
         | [] ->
