@@ -148,12 +148,13 @@ let main_loop entry_fn timer_ref interceptor queue reporter =
     run (queue, reporter)
 
 
-let callchain_backward_se ?(targets_ref=ref BackOtterTargets.empty)
+let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
+                          ?(targets_ref=ref BackOtterTargets.empty)
                           ?(f_queue=BackOtterQueue.get_default_fqueue targets_ref)
                           ?(b_queue=BackOtterQueue.get_default_bqueue targets_ref)
                           ?ratio reporter entry_job =
 
-	Random.init (!Executeargs.arg_random_seed);
+	Random.init random_seed;
 
     let file = entry_job.Job.file in
 

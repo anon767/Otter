@@ -52,11 +52,13 @@ let main_loop interceptor queue reporter =
     in
     run (queue, reporter)
 
-let run ?(interceptor=Interceptor.identity_interceptor)
+(* This is "Otter" in OtterBenchmark *)
+let run ?(random_seed=(!Executeargs.arg_random_seed))
+        ?(interceptor=Interceptor.identity_interceptor)
         ?(queue=Queue.get_default ())
         reporter
         job =
-	Random.init (!Executeargs.arg_random_seed);
+	Random.init random_seed;
     let queue = queue#put job in
     main_loop interceptor queue reporter
 
