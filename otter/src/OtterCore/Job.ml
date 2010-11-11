@@ -79,7 +79,6 @@ type job = {
     boundingPaths : Decision.t list list option; (** The execution can only run on these paths, if exist. Paths have most recent decision first. *)
     instrList : Cil.instr list; (** [instr]s to execute before moving to the next [stmt] *)
     stmt : Cil.stmt;            (** The next statement the job should execute *)
-    steps : int;              (** The number of steps that has been taken *)
     trackedFns : StringSet.t;	(** The set of functions (names) in which to track coverage *)
     inTrackedFn : bool;         (** Is stmt in a function in the original program (as opposed to in a library or system call)? *)
     jid : int; (** A unique identifier for the job *)
@@ -120,7 +119,6 @@ let make file state fn argvs =
         boundingPaths = None;
         instrList = [];
         stmt = List.hd fn.Cil.sallstmts;
-        steps = 0;
         trackedFns = trackedFns;
         inTrackedFn = StringSet.mem fn.Cil.svar.Cil.vname trackedFns;
         jid = Counter.next job_counter;

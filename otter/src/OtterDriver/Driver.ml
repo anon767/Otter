@@ -18,7 +18,6 @@ let main_loop interceptor queue reporter =
         | Some (queue, job) ->
             let result_opt =
                 try
-                    let job = { job with Job.steps = job.Job.steps + 1 } in
                     Some (step job)
                 with Types.SignalException s ->
                     (* if we got a signal, stop and return the completed results *)

@@ -36,7 +36,6 @@ let put_job job multijob metadata =
 		shared_block_to_bytes = update_to_shared_memory multijob.shared.shared_block_to_bytes job.state.block_to_bytes;
 		MultiTypes.trackedFns = job.Job.trackedFns;
 		exHist = job.Job.exHist;
-		steps = job.Job.steps;
 	} in
 	{
 		MultiTypes.file = job.Job.file;
@@ -75,7 +74,6 @@ let put_completion completion multijob = match completion with
 				job_result.result_state.block_to_bytes;
 			MultiTypes.trackedFns = multijob.shared.MultiTypes.trackedFns;
 			exHist = job_result.result_history;
-			steps = multijob.shared.MultiTypes.steps;
 		} in
 		{ multijob with
 			processes = processes;
@@ -144,7 +142,6 @@ let get_job multijob =
 			Job.state = state;
 			Job.instrList = program_counter.MultiTypes.instrList;
 			Job.stmt = program_counter.MultiTypes.stmt;
-			Job.steps = multijob.shared.MultiTypes.steps;
 			Job.jid = multijob.MultiTypes.jid;
 			Job.trackedFns = multijob.shared.MultiTypes.trackedFns;
 			Job.inTrackedFn = program_counter.MultiTypes.inTrackedFn;

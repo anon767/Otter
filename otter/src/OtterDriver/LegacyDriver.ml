@@ -7,7 +7,6 @@ let main_loop get_job interceptor process_result reporter job_queue =
 			| Some (job, job_queue) ->
 				let result_opt =
 					try
-						let job = { job with Job.steps = job.Job.steps + 1 } in
 						let result, job_queue = interceptor job job_queue in
 						let reporter, job_queue = process_result result reporter job_queue in
 						Some (job_queue, reporter)
