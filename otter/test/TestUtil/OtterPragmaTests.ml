@@ -434,10 +434,10 @@ module Make (Errors : Errors) = struct
         Executeargs.arg_bounds_checking := not flags.no_bounds_checking;
 
         (* initialize malloc memory to zeros if required *)
-        Executeargs.arg_init_malloc_zero := not flags.init_malloc_zero;
+        Executeargs.arg_init_malloc_zero := flags.init_malloc_zero;
 
         (* initialize locals to zeros if required *)
-        Executeargs.arg_init_local_zero := not flags.init_local_zero;
+        Executeargs.arg_init_local_zero := flags.init_local_zero;
 
         (* See if any CIL options were defined. If so, parse the file again with those options *)
         if flags.cil_options <> [] then
