@@ -28,7 +28,7 @@ class ['self] t strategies = object (_ : 'self)
         else
             (* helper to select the highest weighted jobs using a strategy *)
             let find_max_jobs strategy jobs =
-                let weights = strategy#weights jobs in
+                let weights = List.map strategy#weight jobs in
                 fst begin List.fold_left2 begin fun (max_jobs, max_weight) job weight ->
                     if weight > max_weight then
                         ([ job ], weight)

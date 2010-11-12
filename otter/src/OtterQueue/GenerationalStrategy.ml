@@ -45,11 +45,11 @@ class ['self] t = object (self : 'self)
         with JobGeneration.Key ->
             raise Not_found
 
-    method weights jobs =
+    method weight job =
         try
             (* pick any one of the most recent generation *)
             let _, generation, () = JobGeneration.find_min queue in
-            List.map (fun job -> if fst (JobGeneration.lookup job queue) = generation then 1. else 0.) jobs
+            if fst (JobGeneration.lookup job queue) = generation then 1. else 0.
         with JobGeneration.Key | JobGeneration.Empty ->
             raise Not_found
 end

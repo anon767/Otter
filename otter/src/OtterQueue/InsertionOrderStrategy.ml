@@ -29,10 +29,10 @@ class ['self] t = object (_ : 'self)
         with JobOrder.Key ->
             raise Not_found
 
-    method weights jobs =
+    method weight job =
         try
             (* job ranks are negative, so negate it for positive weights *)
-            List.map (fun job -> -1. /. float_of_int (fst (JobOrder.lookup job queue))) jobs
+            -1. /. float_of_int (fst (JobOrder.lookup job queue))
         with JobOrder.Key ->
             raise Not_found
 end
