@@ -57,6 +57,18 @@ let process_result result reporter job_queue =
 	let multijob, multijob_queue = job_queue in
 	process_job_states result multijob reporter multijob_queue
 
+let rec flush_queue reporter job_queue =
+	match get_job_multijob job_queue with
+		| None -> reporter
+		| Some (job, (multijob, job_queue)) ->
+			let result = {
+				result_file = job.Job.file;
+				result_state = job.Job.state;
+				result_history = job.Job.exHist;
+				result_decision_path = job.Job.decisionPath; } in
+			let reporter = reporter#report (Complete (Abandoned (`Failure "Killed by signal", Job.get_loc job, result))) in
+			flush_queue reporter job_queue
+
 let run reporter job = 
 	let multijob = {
 		file = job.Job.file;
@@ -110,10 +122,10 @@ let doit file =
 	(* Set signal handlers to catch timeouts and interrupts *)
 	let old_ALRM_handler =
 		Sys.signal Sys.sigalrm
-			(Sys.Signal_handle (fun _ -> raise (SignalException "Timed out!")))
+			(Sys.Signal_handle (fun _ -> raise (SignalException "\nTimed out!")))
 	and old_INT_handler =
 		Sys.signal Sys.sigint
-			(Sys.Signal_handle (fun _ -> raise (SignalException "User interrupt!")))
+			(Sys.Signal_handle (fun _ -> raise (SignalException "\nUser interrupt!")))
 	in
 	(* Set a timer *)
 	ignore (Unix.alarm !Executeargs.arg_timeout);
@@ -123,7 +135,8 @@ let doit file =
 
 	(* run the job *)
 	let module Reporter = ErrorReporter.Make (OtterCore.Errors) in
-	let result = run (new Reporter.t ()) job in
+	let result, job_queue = run (new Reporter.t ()) job in
+	let result = flush_queue result job_queue in
 	
 	(* Turn off the alarm and reset the signal handlers *)
 	ignore (Unix.alarm 0);
@@ -155,6 +168,8 @@ let doit file =
 	Output.printf "Bytes eval caching: hits=%d misses=%d\n\n" (!MemOp.bytes_eval_cache_hits) (!MemOp.bytes_eval_cache_misses);
 
 	Output.printf "%s@\n" (Executedebug.get_log ());
+	let nodes, _, _ = result#get_stats in
+    Output.printf "Number of nodes: %d@\n" nodes;
 	Report.print_report result#completed
 
 
