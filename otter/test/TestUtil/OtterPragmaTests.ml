@@ -334,6 +334,16 @@ module Make (Errors : Errors) = struct
                     | "no_bounds_checking", _ ->
                         assert_loc_failure loc "Invalid no_bounds_checking (should have no arguments)."
 
+                    | "init_malloc_zero", [] ->
+                        ({ flags with init_malloc_zero = true }, test)
+                    | "init_malloc_zero", _ ->
+                        assert_loc_failure loc "Invalid init_malloc_zero (should have no arguments)."
+
+                    | "init_local_zero", [] ->
+                        ({ flags with init_local_zero = true }, test)
+                    | "init_local_zero", _ ->
+                        assert_loc_failure loc "Invalid init_local_zero (should have no arguments)."
+
                     | "max_nodes", [ Cil.AInt max_nodes ] ->
                         if flags.max_nodes <> None then assert_loc_failure loc "max_nodes already defined.";
                         if max_nodes <= 0 then assert_loc_failure loc "Invalid max_nodes bound (should be greater than 0).";
