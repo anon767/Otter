@@ -7,7 +7,6 @@ open BackOtter
 
 module BackOtterPragmaTest = TestUtil.OtterPragmaTests.Make (BackOtter.BackOtterErrors)
 
-
 (**/**)
 let (>>>) = Interceptor.(>>>)
 (**/**)
@@ -18,7 +17,7 @@ let dir = Filename.concat "benchmark" (Filename.concat "BenchmarkOtter" "Benchma
 
 
 (* benchmarks as an OUnit test suite *)
-let benchmarks =
+let benchmarks ?(div_num=1) ?(div_base=1) random_seed =
     "Benchmarks" >: test_dir dir begin fun relpath ->
 
         (* load the file at fullpath, but label with relpath *)
@@ -39,17 +38,11 @@ let benchmarks =
 
         let interceptor = BuiltinFunctions.libc_interceptor >>> BuiltinFunctions.interceptor in
 
-        (* TODO: regrouping
-         * Given a queuing method,
-         * Otter (queue)
-         * Pure-backward BackOtter (ratio = -0.1) (rank_fn,queue), for each rank_fn
-         * Bi-dir BackOtter (ratio > 0) (fqueue,rank_fn,queue), for each fqueue in { } and for each rank_fn
-         *)
         let otter_drivers =
             (* don't want depth-first, it's really terrible *)
             let otter_queues = List.filter (fun (_, queue) -> queue <> `DepthFirst) OtterQueue.Queue.queues in
             let otter_driver name queue =
-                "Otter:" ^ name >:: benchmark (Driver.run ~interceptor ~queue:(OtterQueue.Queue.get queue))
+                "Otter:" ^ name >:: benchmark (Driver.run ~random_seed ~interceptor ~queue:(OtterQueue.Queue.get queue))
             in
             List.map begin fun (name, queue) -> otter_driver name queue end otter_queues
         in
@@ -59,42 +52,56 @@ let benchmarks =
             let backotter_driver name fqueue brank bqueue ratio =
                 (Printf.sprintf "BackOtter:%s(%.2f)" name ratio) >:: benchmark (
                     let targets_ref = ref BackOtterTargets.empty in
-                    BackOtterDriver.callchain_backward_se ~targets_ref
+                    BackOtterDriver.callchain_backward_se ~random_seed
+                                                          ~targets_ref
                                                           ~f_queue:(BackOtter.BackOtterQueue.get targets_ref fqueue)
                                                           ~b_queue:(BackOtter.BackOtterQueue.get_function_backward_queue targets_ref brank bqueue)
                                                           ~ratio
                 )
             in
-            let backotter_queues = List.filter (fun (_, queue) -> queue <> `DepthFirst) BackOtter.BackOtterQueue.queues in
-            let backotter_fqueues = List.filter (fun (_, queue) -> List.mem queue [
-                `BreadthFirst;
-                `Generational `BreadthFirst;
-            ]) BackOtter.BackOtterQueue.queues in
+            let backotter_bqueues = List.filter (fun (_, queue) -> queue <> `DepthFirst) BackOtter.BackOtterQueue.queues in
+            let backotter_fqueues = List.filter (fun (_, queue) -> queue <> `DepthFirst) BackOtter.BackOtterQueue.queues in
+
             let rec compose fn lst = function
                 | head :: tail -> (List.map (fun ele -> fn ele head) lst) @ (compose fn lst tail)
                 | [] -> []
             in
-            let backotter_bqueues = compose (fun (rank_name, rank_fn) (bqueue_name, bqueue) ->
+            let backotter_brqueues = compose (fun (rank_name, rank_fn) (bqueue_name, bqueue) ->
                 (Printf.sprintf "%s,%s" rank_name bqueue_name, rank_fn, bqueue))
                 BackOtter.BackwardRank.queues
-                backotter_queues
+                backotter_bqueues
             in
             let backotter_combined_queues = compose (fun (fqueue_name, fqueue) (bqueue_name, rank_fn, bqueue) ->
                 (Printf.sprintf "forward(%s),backward(%s)" fqueue_name bqueue_name), fqueue, rank_fn, bqueue)
                 backotter_fqueues
-                backotter_bqueues
+                backotter_brqueues
             in
-            (* TODO: there are too many combinations. Discard some of them. *)
             List.map begin fun (name, fqueue, brank, bqueue) -> [
                 backotter_driver name fqueue brank bqueue (-. 0.1);  (* pure-backward *)
+                backotter_driver name fqueue brank bqueue 0.25;
                 backotter_driver name fqueue brank bqueue 0.5;
                 backotter_driver name fqueue brank bqueue 0.75;
-                backotter_driver name fqueue brank bqueue 1.0;       (* pure-forward, plus some side-effect *)
+                (*backotter_driver name fqueue brank bqueue 1.0;       (* pure-forward, plus some side-effect *) *)
             ] end backotter_combined_queues
         in
         let backotter_drivers = List.concat backotter_drivers_list in
 
-        relpath >::: otter_drivers @ backotter_drivers
+        let drivers = otter_drivers @ backotter_drivers in
+
+        let division div_base div_num lst =
+            let div_num = div_num - 1 in (* div_num is now in [0 .. (div_base-1)] *)
+            let rec division current lst app =
+                match lst with
+                | [] -> app
+                | head :: tail ->
+                    let app = if current = div_num then head :: app else app in
+                    division ((current + 1) mod div_base) tail app
+            in
+            let lst = division 0 lst [] in
+            List.rev_append lst []
+        in
+
+        relpath >::: (division div_base div_num drivers)
 
     end
 
