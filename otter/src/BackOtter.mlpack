@@ -6,7 +6,7 @@ BackOtter/BackOtterTargets
 BackOtter/BackOtterUtilities
 BackOtter/BackwardRank
 BackOtter/BidirectionalQueue
-BackOtter/ClosestToTargetsQueue
+BackOtter/ClosestToTargetsStrategy
 BackOtter/FunctionQueue
 BackOtter/RemovableQueue
 BackOtter/SimpleOtherfnQueue

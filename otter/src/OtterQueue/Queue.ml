@@ -27,8 +27,8 @@ let get = function
     | `Generational `Random -> new RankedQueue.t [ new GenerationalStrategy.t ]
     | `LeastCovered -> new RankedQueue.t  [ new LeastCoveredStrategy.t ]
     | `ClosestToUncovered -> new ClosestToUncoveredQueue.t
-    | `ClosestToTargets -> new ClosestToTargetsQueue.t
-    | `Generational `ClosestToTargets -> new GenerationalQueue.t (new ClosestToTargetsQueue.t)
+    | `ClosestToTargets -> new RankedQueue.t [ new ClosestToTargetsStrategy.t ]
+    | `Generational `ClosestToTargets -> new RankedQueue.t [ new GenerationalStrategy.t; new ClosestToTargetsStrategy.t ]
 
 let get_default () = get !default_queue
 

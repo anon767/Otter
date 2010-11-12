@@ -1,5 +1,5 @@
 OtterQueue/BreadthFirstStrategy
-OtterQueue/ClosestToTargetsQueue
+OtterQueue/ClosestToTargetsStrategy
 OtterQueue/ClosestToUncoveredQueue
 OtterQueue/DepthFirstStrategy
 OtterQueue/GenerationalQueue

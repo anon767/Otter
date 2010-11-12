@@ -22,8 +22,8 @@ let get targets_ref = function
     | `Generational `Random -> new RankedQueue.t [ new GenerationalStrategy.t ]
     | `LeastCovered -> new RankedQueue.t  [ new LeastCoveredStrategy.t ]
     | `ClosestToUncovered -> new ClosestToUncoveredQueue.t
-    | `ClosestToTargets -> new ClosestToTargetsQueue.t targets_ref
-    | `Generational `ClosestToTargets -> new GenerationalQueue.t (new ClosestToTargetsQueue.t targets_ref)
+    | `ClosestToTargets -> new RankedQueue.t [ new ClosestToTargetsStrategy.t targets_ref ]
+    | `Generational `ClosestToTargets -> new RankedQueue.t [ new GenerationalStrategy.t; new ClosestToTargetsStrategy.t targets_ref ]
 
 let default_fqueue = ref (`Generational `BreadthFirst)
 let get_default_fqueue targets_ref = get targets_ref !default_fqueue
