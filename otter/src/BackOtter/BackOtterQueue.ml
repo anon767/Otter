@@ -7,7 +7,6 @@ module DepthFirstStrategy = OtterQueue.DepthFirstStrategy
 module LeastCoveredStrategy = OtterQueue.LeastCoveredStrategy
 module RankedQueue = OtterQueue.RankedQueue
 module RandomPathQueue = OtterQueue.RandomPathQueue
-module GenerationalQueue = OtterQueue.GenerationalQueue
 module ClosestToUncoveredQueue = OtterQueue.ClosestToUncoveredQueue
 
 (* Forward *)
