@@ -47,10 +47,18 @@ let benchmarks ?(div_num=1) ?(div_base=1) random_seed =
             List.map begin fun (name, queue) -> otter_driver name queue end otter_queues
         in
 
-        let backotter_drivers_list =
-            (* don't want depth-first, it's really terrible *)
+        let backotter_drivers =
+            let pure_backotter_driver name brank bqueue =
+                (Printf.sprintf "BackOtter:%s" name) >:: benchmark (
+                    let targets_ref = ref BackOtterTargets.empty in
+                    BackOtterDriver.callchain_backward_se ~random_seed
+                                                          ~targets_ref
+                                                          ~b_queue:(BackOtter.BackOtterQueue.get_function_backward_queue targets_ref brank bqueue)
+                                                          ~ratio:(-. 0.1) (* Pure backward *)
+                )
+            in
             let backotter_driver name fqueue brank bqueue ratio =
-                (Printf.sprintf "BackOtter:%s(%.2f)" name ratio) >:: benchmark (
+                (Printf.sprintf "BackOtter:%s" name) >:: benchmark (
                     let targets_ref = ref BackOtterTargets.empty in
                     BackOtterDriver.callchain_backward_se ~random_seed
                                                           ~targets_ref
@@ -59,6 +67,7 @@ let benchmarks ?(div_num=1) ?(div_base=1) random_seed =
                                                           ~ratio
                 )
             in
+            (* don't want depth-first, it's really terrible *)
             let backotter_bqueues = List.filter (fun (_, queue) -> queue <> `DepthFirst) BackOtter.BackOtterQueue.queues in
             let backotter_fqueues = List.filter (fun (_, queue) -> queue <> `DepthFirst) BackOtter.BackOtterQueue.queues in
 
@@ -76,15 +85,14 @@ let benchmarks ?(div_num=1) ?(div_base=1) random_seed =
                 backotter_fqueues
                 backotter_brqueues
             in
-            List.map begin fun (name, fqueue, brank, bqueue) -> [
-                backotter_driver name fqueue brank bqueue (-. 0.1);  (* pure-backward *)
-                backotter_driver name fqueue brank bqueue 0.25;
-                backotter_driver name fqueue brank bqueue 0.5;
-                backotter_driver name fqueue brank bqueue 0.75;
-                (*backotter_driver name fqueue brank bqueue 1.0;       (* pure-forward, plus some side-effect *) *)
-            ] end backotter_combined_queues
+            let backotter_combined_queues = compose (fun (name, fqueue, rank_fn, bqueue) ratio ->
+                (Printf.sprintf "%s,ratio(%.2f)" name ratio), fqueue, rank_fn, bqueue, ratio)
+                backotter_combined_queues
+                [0.75; 0.5; 0.25]
+            in
+            (List.map begin fun (name, fqueue, brank, bqueue, ratio) -> backotter_driver name fqueue brank bqueue ratio; end backotter_combined_queues) @
+            (List.map begin fun (name, brank, bqueue) -> pure_backotter_driver (Printf.sprintf "forward(N/A),backward(%s),ratio(0.0)" name) brank bqueue end backotter_brqueues)
         in
-        let backotter_drivers = List.concat backotter_drivers_list in
 
         let drivers = otter_drivers @ backotter_drivers in
 
