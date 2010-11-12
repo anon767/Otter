@@ -17,6 +17,12 @@
             CIL. E.g., [#pragma cil_options("--unfoldLogicalOperators")].
         - [#pragma has_failing_assertions] specifies that failing assertions should be expected. Conversely, {e not
             providing} this directive specifies that failing assertions should not be expected.
+        - [#pragma init_malloc_zero] specifies that memory allocated by malloc should be initialized to zeros. Conversely, {e not
+            providing} this directive specifies that memory allocated by malloc should be initialized to undefined values. This corresponds to Otter's
+            [--initMallocZero] command-line option.
+        - [#pragma init_local_zero] specifies that local variables should be initialized to zeros. Conversely, {e not
+            providing} this directive specifies that local variable should be initialized to undefined values. This corresponds to Otter's
+            [--initLocalZero] command-line option.
         - [#pragma no_bounds_checking] specifies that bounds checking should be disabled. Conversely, {e not
             providing} this directive specifies that bounds checking should be enabled. This corresponds to Otter's
             [--noboundsChecking] command-line option.
@@ -76,6 +82,8 @@ module Make (Errors : Errors) = struct
         cil_options : string list;      (** The command line options to pass to CIL. *)
         has_failing_assertions : bool;  (** If failing assertions are expected in the test. *)
         no_bounds_checking : bool;      (** Disable bounds checking (corresponds to [--noboundsChecking]). *)
+        init_malloc_zero : bool;        (** Initialize mallocs to zeros (corresponds to [--initMallocZero]). *)
+        init_local_zero : bool;         (** Initialize locals to zeros (corresponds to [--initLocalZero]). *)
         max_nodes : int option;         (** Bound the number of nodes in the execution tree to explore (corresponds to [--max-nodes]). *)
         max_paths : int option;         (** Bound the number of paths to execute to completion (corresponds to [--max-paths]). *)
         max_abandoned : int option;     (** Bound the number of abandoned paths to return (corresponds to [--max-abandoned]). *)
@@ -90,6 +98,8 @@ module Make (Errors : Errors) = struct
         cil_options = [];
         has_failing_assertions = false;
         no_bounds_checking = false;
+        init_malloc_zero = false;
+        init_local_zero = false;
         max_nodes = None;
         max_paths = None;
         max_abandoned = None;
@@ -422,6 +432,12 @@ module Make (Errors : Errors) = struct
 
         (* disable bounds checking if required *)
         Executeargs.arg_bounds_checking := not flags.no_bounds_checking;
+
+        (* initialize malloc memory to zeros if required *)
+        Executeargs.arg_init_malloc_zero := not flags.init_malloc_zero;
+
+        (* initialize locals to zeros if required *)
+        Executeargs.arg_init_local_zero := not flags.init_local_zero;
 
         (* See if any CIL options were defined. If so, parse the file again with those options *)
         if flags.cil_options <> [] then
