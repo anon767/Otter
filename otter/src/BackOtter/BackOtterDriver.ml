@@ -7,6 +7,12 @@ open Types
 open Job
 open Cil
 
+let timing_methods = [
+    "real", `TimeReal;
+    "stpcount", `TimeStpCount;
+]
+
+let default_timing_method = ref `TimeStpCount
 let default_conditionals_forking_level = ref max_int
 
 class ['self] target_tracker delegate entry_fn targets_ref =
@@ -97,6 +103,14 @@ let set_output_formatter_interceptor job job_queue interceptor =
     interceptor job job_queue
 
 
+let get_time_now =
+    match !default_timing_method with
+    | `TimeReal -> Unix.gettimeofday
+    | `TimeStpCount ->
+        fun () ->
+            let count = DataStructures.NamedCounter.get "stpc_query" in
+            float_of_int count
+
 (** Main symbolic execution loop. Copied from OtterCore.Driver. *)
 let main_loop entry_fn timer_ref interceptor queue reporter =
     (* compose the interceptor with the core symbolic executor *)
@@ -109,8 +123,9 @@ let main_loop entry_fn timer_ref interceptor queue reporter =
                     (* The difference between timing here and timing in BidirectionalQueue is that
                      * here we only time the stepping of the job, whereas in BidirectionalQueue we
                      * also include the time of getting a job. *)
-                    let result = Stats.timethis step job in
-                    let time_elapsed = !Stats.lastTime in
+                    let time_elapsed = get_time_now () in
+                    let result = step job in
+                    let time_elapsed = get_time_now () -. time_elapsed in
                     let fundec = BackOtterUtilities.get_origin_function job in
                     let entry_time, other_time = !timer_ref in
                     timer_ref := (
@@ -296,6 +311,9 @@ let options = [
     "--conditionals-forking-level",
         Arg.Set_int default_conditionals_forking_level,
         "<level> Set levels for conditionals forking (default: max_int (== don't use))";
+    "--timing-method",
+        Arg.Symbol (fst (List.split timing_methods), fun name -> default_timing_method := List.assoc name timing_methods),
+        "<timing method> Set the default timing method (default: " ^ (fst (List.find (fun (_, x) -> x = !default_timing_method) timing_methods)) ^ ")";
 ]
 
 

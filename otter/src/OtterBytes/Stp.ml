@@ -168,7 +168,7 @@ let rec to_stp_array vc arr bytes =
 						Stpc.e_var vc (make_var s) (Stpc.bitvector_t vc 8)
 					| Byte_Bytes(b,i) ->
 						let (bv_condensed,l_condensed) = to_stp_bv vc b in
-						let right_i = i * 8 in 
+						let right_i = i * 8 in
 						let left_i = right_i+7 in
 							Stpc.e_bvextract vc bv_condensed left_i right_i
 				end in
@@ -509,7 +509,11 @@ let query_stp pc pre guard =
                 Stpc.e_push vc;
                 incr stp_count;
 	            let startTime = Unix.gettimeofday () in
-                let answer = Stats.time "STP query" (Stpc.query vc) exp in
+                let answer = Stats.time "STP query" (
+                    (* Note: the count is used as a proxy of running time in BackOtter *)
+                    DataStructures.NamedCounter.incr "stpc_query";
+                    Stpc.query vc
+                ) exp in
                 stpcache_add answer pc pre guard truth_value;
 	            let endTime = Unix.gettimeofday () in
                 stp_queries := (pc, pre, guard, truth_value, endTime -. startTime)::(!stp_queries);
