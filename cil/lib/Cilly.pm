@@ -1058,7 +1058,7 @@ sub doit {
         # Then we do not do anything
 	my @cmd = (@{$self->{CPP}},
 		   @{$self->{EARLY_PPARGS}},
-		   @{$self->{PPARGS}}, @{$self->{CCARGS}}, 
+		   @{$self->{PPARGS}}, "$self->{DEFARG}CIL=1", @{$self->{CCARGS}}, 
 		   @{$self->{CFILES}}, @{$self->{SFILES}});
 	push @cmd, @{$self->{OUTARG}} if defined $self->{OUTARG};
 
