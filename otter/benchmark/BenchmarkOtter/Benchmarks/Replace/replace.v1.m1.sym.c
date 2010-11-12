@@ -9,8 +9,6 @@
 #define FAULT_V1_M1
 
 #ifdef CIL
-#define fprintf (void)
-#define fputc (void)
 #define MAX_ARGV 10
 
 char *
@@ -381,7 +379,7 @@ omatch(lin, i, pat, j)
     {
 	if (!in_pat_set(pat[j]))
 	{
-	    (void)fprintf(stdout, "in omatch: can't happen\n");
+	    //(void)fprintf(stdout, "in omatch: can't happen\n");
 	    abort();
 	} else
 	{
@@ -432,7 +430,7 @@ patsize(pat, n)
 {
     int size;
     if (!in_pat_set(pat[n])) {
-	(void)fprintf(stdout, "in patsize: can't happen\n");
+	//(void)fprintf(stdout, "in patsize: can't happen\n");
 	abort();
     } else
 	switch (pat[n])
@@ -509,11 +507,11 @@ putsub(lin, s1, s2, sub)
 	if ((sub[i] == DITTO))
 	    for (j = s1; j < s2; j++)
 	    {
-		fputc(lin[j],stdout);
+		//fputc(lin[j],stdout);
 	    }
 	else
 	{
-	    fputc(sub[i],stdout);
+	    //fputc(sub[i],stdout);
 	}
 	i = i + 1;
     }
@@ -537,7 +535,7 @@ subline(lin, pat, sub)
 		lastm = m;
 	    }
 	    if ((m == -1) || (m == i)) {
-		fputc(lin[i],stdout);
+		//fputc(lin[i],stdout);
 		i = i + 1;
 	    } else
 		i = m;
@@ -585,14 +583,14 @@ char	*argv[];
 
    if (argc < 2)
    {
-       (void)fprintf(stdout, "usage: change from [to]\n");
+       //(void)fprintf(stdout, "usage: change from [to]\n");
        exit(1);
    };
 
    result = getpat(argv[1], pat);
    if (!result)
    {
-       (void)fprintf(stdout, "change: illegal \"from\" pattern\n");
+       //(void)fprintf(stdout, "change: illegal \"from\" pattern\n");
        exit(2);
    }
 
@@ -601,7 +599,7 @@ char	*argv[];
        result = getsub(argv[2], sub);
        if (!result)
        {
-	   (void)fprintf(stdout, "change: illegal \"to\" string\n");
+	   //(void)fprintf(stdout, "change: illegal \"to\" string\n");
 	   exit(3);
        }
    } else
@@ -617,6 +615,6 @@ void
 Caseerror(n)
 	int	n;
 {
-	(void)fprintf(stdout, "Missing case limb: line %d\n", n);
+	//(void)fprintf(stdout, "Missing case limb: line %d\n", n);
 	exit(4);
 }
