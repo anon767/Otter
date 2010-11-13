@@ -4,7 +4,7 @@
  * Changes:
  * 1. ratio is converted from float to int, for Otter doesn't handle symbolic float.
  * 2. sscanf(s,"%d",&n) is converted to symbolic int.
- * 3. fprintf is taken out.
+ * 3. fprintf is converted to (void).
  *
  * This program *expects* ratio to be between 0 and 1 inclusive.
  * However it does not check for validity of input.
@@ -18,8 +18,12 @@
 
 /*  -*- Last-Edit:  Wed May 7 10:12:52 1993 by Monica; -*- */
 
+#ifdef CIL
+#define FAULT_V6
+#define fprintf (void)
+#endif
 
-//#include <stdio.h>
+#include <stdio.h>
 
 int OTTER_SYMBOLIC_INT() {
     int tmp;
@@ -135,13 +139,15 @@ int   n;
     if (!f_list)
 	return NULL;
     f_ele = f_list->first;
-    // OTTER: It was originally
-    // for (i=1; f_ele && (i<n); i++)
+#ifdef FAULT_V6
     // When ratio == 1.0, n == block_queue.mem_count + 1
     // E.g., if mem_count == 0, n == 2
     // But at the same time, f_ele == f_list->first is NULL
     // Therefore it crashes when it dereferences f_ele.
     for (i=1; f_list && (i<n); i++) /* operand mutation */
+#else
+    for (i=1; f_ele && (i<n); i++)
+#endif
     {
     if (f_ele == 0) __FAILURE(); // Guarding null dereference next line
 	f_ele = f_ele->next;
@@ -200,7 +206,7 @@ finish_process()
     schedule();
     if (cur_proc)
     {
-	//fprintf(stdout, "%d ", cur_proc->val);
+	fprintf(stdout, "%d ", cur_proc->val);
 	free_ele(cur_proc);
 	num_processes--;
     }
@@ -363,7 +369,7 @@ void main(void)
 
     if (argc < (MAXPRIO+1))
     {
-	//fprintf(stdout, "incorrect usage\n");
+	fprintf(stdout, "incorrect usage\n");
 	return;
     }
     /* BEGIN_OTTER */
@@ -407,7 +413,7 @@ void main(void)
 	    prio = OTTER_SYMBOLIC_INT();
 	    ratio = OTTER_SYMBOLIC_FLOAT();
 	    if (prio > MAXPRIO || prio <= 0) {
-		//fprintf(stdout, "** invalid priority\n");
+		fprintf(stdout, "** invalid priority\n");
 		return;
 	    }
 	    else
@@ -416,7 +422,7 @@ void main(void)
 	case NEW_JOB:
 	    prio = OTTER_SYMBOLIC_INT();
 	    if (prio > MAXPRIO || prio <= 0) {
-		//fprintf(stdout, "** invalid priority\n");
+		fprintf(stdout, "** invalid priority\n");
 		return;
 	    }
 	    else
