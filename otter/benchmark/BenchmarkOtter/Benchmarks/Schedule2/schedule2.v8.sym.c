@@ -37,6 +37,11 @@
 #pragma time_limit(60)
 #pragma expect_abandoned(failure_reached)
 
+#ifdef CIL
+#define FAULT_V8
+#define fprintf (void)
+#endif
+
 #include <stdio.h>
 
 // BEGIN "schedule2.h"
@@ -282,7 +287,7 @@ finish() /* Get current job, print it, and zap it. */
     {
 	current_job = (struct process *)0;
 	reschedule(0);
-	//fprintf(stdout, " %d", job->pid);
+	fprintf(stdout, " %d", job->pid);
 	free(job);
 	return(FALSE);
     }
@@ -293,7 +298,7 @@ int
 flush() /* Get all jobs in priority queues & zap them */
 {
     while(!finish());
-    //fprintf(stdout, "\n");
+    fprintf(stdout, "\n");
     return(OK);
 }
 
@@ -349,7 +354,7 @@ schedule(command, prio, ratio)
 	break;
       case FINISH :
         finish();
-	//fprintf(stdout, "\n");
+	fprintf(stdout, "\n");
 	break;
       case FLUSH :
         status = flush();
@@ -369,10 +374,15 @@ put_end(prio, process) /* Put process at end of queue */
      struct process *process;
 {
     struct process **next;
-    // OTTER: the line below is commented out in v8.
+#ifdef FAULT_V8
     // if(prio > MAXPRIO || prio < 0) return(BADPRIO); /* Somebody goofed */
+#else
+    if(prio > MAXPRIO || prio < 0) return(BADPRIO); /* Somebody goofed */
+#endif
+#ifdef FAULT_V8
     // Therefore, a bad prio will overflow prio_queue below
     if(prio > MAXPRIO || prio < 0) __FAILURE();
+#endif
      /* find end of queue */
     for(next = &prio_queue[prio].head; *next; next = &(*next)->next);
     *next = process;
