@@ -75,23 +75,6 @@ let shuffle lst =
     List.map (fun (ele,_) -> ele) lst
 
 
-let get_job_with_highest_score ?(compare=Pervasives.compare) score_fn jobs =
-    let get_job_with_highest_score () =
-        let maxopt = List.fold_left (fun maxopt job' ->
-            let score' = score_fn job' in
-            match maxopt with
-            | Some (job, score) ->
-                if compare score score' < 0 then Some (job', score')
-                else Some (job, score)
-            | None -> Some (job', score')
-        ) None (shuffle jobs) in
-        match maxopt with
-        | Some (job, _) -> List.filter (fun j -> j!=job) jobs, job
-        | None -> failwith "get_job_with_highest_score assumes a non empty list"
-    in
-    Timer.time "BackOtterUtilities.get_job_with_highest_score" get_job_with_highest_score ()
-
-
 let get_distance_to_targets target_fundecs job =
     let get_distance_to_targets () =
         if target_fundecs = [] then
