@@ -157,3 +157,12 @@ let get_instruction_context job =
     in
     get_instruction_context [] job.state.Types.callContexts (List.tl job.state.Types.callstack)
 
+(* Useful for constructing JobMap/JobSet *)
+module JobOrderedType = struct
+    type t = job
+    (* a work around, since job.jid is NOT UNIQUE *)
+    let compare j1 j2 =
+        if j1.jid = j2.jid then (Hashtbl.hash j1) - (Hashtbl.hash j2)
+        else j1.jid - j2.jid
+
+end

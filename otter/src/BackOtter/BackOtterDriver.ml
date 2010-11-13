@@ -216,11 +216,22 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     in
     let target_tracker = main_loop entry_fn timer_ref interceptor queue target_tracker in
 
+    (* Output failing paths for non-entry_fn *)
+    List.iter (fun fundec ->
+        if fundec != entry_fn then (
+            Output.debug_printf "@\nFailing path(s) for %s:@\n" fundec.svar.vname;
+            List.iter (fun decisions ->
+                Output.debug_printf "Failing path: @[%a@]@\n" Decision.print_decisions decisions)
+                (BackOtterTargets.get fundec (!targets_ref))
+        )
+    ) (BackOtterTargets.get_fundecs (!targets_ref));
+
     (* Output failing paths for entry_fn *)
-    Output.must_printf "@\n@\n";
+    Output.must_printf "@\nFailing path(s) for %s:@\n" entry_fn.svar.vname;
     List.iter (fun decisions ->
         Output.must_printf "Failing path: @[%a@]@\n" Decision.print_decisions decisions)
         (BackOtterTargets.get entry_fn (!targets_ref));
+
     target_tracker#delegate
 
 

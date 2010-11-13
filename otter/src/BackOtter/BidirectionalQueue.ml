@@ -28,11 +28,7 @@ let default_bidirectional_search_ratio = ref 0.5
  * Else assert(tl(DP') == DP), "YES" if hd(DP') == hd(BP)
  *
  *)
-module JobKey = struct
-    type t = Job.job
-    let compare = Pervasives.compare (* TODO: may be slow *)
-end
-module JobMap = Map.Make (JobKey)
+module JobMap = Map.Make (JobOrderedType)
 
 (* TODO: package the long list of arguments into BackOtterProfile.t *)
 class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
@@ -47,10 +43,8 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
     (* ratio < 0.0 denotes purely backward (beware of precision!) *)
     let is_bidirectional = ratio >= 0.0 in
     object (self)
-        val entryfn_jobqueue =
-            let queue = new RemovableQueue.t (f_queue) in
-            if is_bidirectional then queue#put entry_job else queue
-        val otherfn_jobqueue = new RemovableQueue.t (b_queue)
+        val entryfn_jobqueue = let queue = new ContentQueue.t f_queue in if is_bidirectional then queue#put entry_job else queue
+        val otherfn_jobqueue = new ContentQueue.t b_queue
         (* fundecs whose initialized jobs have been created *)
         val origin_fundecs = []
         (* A mapping from job to boundingPaths *)
@@ -148,7 +142,6 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                     | Some job -> JobMap.remove job job_to_bounding_paths
                     | None -> job_to_bounding_paths
                 in
-
                 let get_job_from_job_to_bounding_paths job_to_bounding_paths =
                     (* TODO: choose which job to run first? E.g., closest to entry fn *)
                     (* Ocaml 3.12.0 has Map.choose *)
@@ -167,38 +160,45 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                     let targets, new_failing_path = BackOtterTargets.get_last_failing_path (!targets_ref) in
                     targets_ref := targets;
                     let job_to_bounding_paths = match new_failing_path with
-                        | Some (target_fundec, failing_path) -> (* Update job_to_bounding_paths *)
-                              (*
-                               * To check if a FP can bound a DP:
-                               * For each prefix(DP, k) where k < len(FP) and DP[k] is a call to origin(FP),
-                               *     If rev_equal(prefix(DP, k), prefix(FP, k)), "YES", and let BP = suffix(FP, k+1)
-                               *     Else "NO"
-                               *)
-                              let failing_path_length = length failing_path in
-                              let jobs = entryfn_jobqueue#get_contents @ otherfn_jobqueue#get_contents in
-                              List.fold_left (fun job_to_bounding_paths job ->
-                                  let rec scan decision_path depth =
-                                      if depth <= 0 then [] else
-                                      match decision_path with
-                                      | DecisionFuncall (_, fundec) :: tail when fundec == target_fundec ->
-                                           let bounding_paths = scan tail (depth - 1) in
-                                           let matches, _, failing_tail = rev_equals Decision.equals decision_path failing_path depth in
-                                           if matches then failing_tail :: bounding_paths else bounding_paths
-                                      | _ :: tail -> scan tail (depth - 1)
-                                      | [] -> []
-                                  in
-                                  let bounding_paths = scan job.decisionPath (min failing_path_length (length job.decisionPath)) in
-                                  if bounding_paths = [] then job_to_bounding_paths
-                                  else JobMap.add job bounding_paths job_to_bounding_paths
-                              ) job_to_bounding_paths jobs
+                        | Some (target_fundec, failing_path) ->
+                            let update_job_to_bounding_paths () =
+                                (*
+                                 * To check if a FP can bound a DP:
+                                 * For each prefix(DP, k) where k < len(FP) and DP[k] is a call to origin(FP),
+                                 *     If rev_equal(prefix(DP, k), prefix(FP, k)), "YES", and let BP = suffix(FP, k+1)
+                                 *     Else "NO"
+                                 *)
+                                let failing_path_length = length failing_path in
+                                let jobs =
+                                    (* Usually otherfn_jobqueue is much shorter, unless it's pure-backward *)
+                                    if entryfn_jobqueue#length = 0 then otherfn_jobqueue#get_contents
+                                    else List.rev_append otherfn_jobqueue#get_contents entryfn_jobqueue#get_contents
+                                in
+                                List.fold_left (fun job_to_bounding_paths job ->
+                                    let rec scan decision_path depth =
+                                        if depth <= 0 then [] else
+                                        match decision_path with
+                                        | DecisionFuncall (_, fundec) :: tail when fundec == target_fundec ->
+                                             let bounding_paths = scan tail (depth - 1) in
+                                             let matches, _, failing_tail = rev_equals Decision.equals decision_path failing_path depth in
+                                             if matches then failing_tail :: bounding_paths else bounding_paths
+                                        | _ :: tail -> scan tail (depth - 1)
+                                        | [] -> []
+                                    in
+                                    let bounding_paths = scan job.decisionPath (min failing_path_length (length job.decisionPath)) in
+                                    if bounding_paths = [] then job_to_bounding_paths
+                                    else JobMap.add job bounding_paths job_to_bounding_paths
+                                ) job_to_bounding_paths jobs
+                            in
+                            BackOtterUtilities.time "BidirectionalQueue.t#get/update_job_to_bounding_paths" update_job_to_bounding_paths ()
                         | None -> job_to_bounding_paths
                     in
                     if not (JobMap.is_empty job_to_bounding_paths) then
                         get_job_from_job_to_bounding_paths job_to_bounding_paths
 
-                    else begin (* Regular get *)
+                    else let regular_get () = (* Regular get *)
                         (* If there's no more entry jobs, the forward search has ended. So we terminate. *)
-                        if is_bidirectional && entryfn_jobqueue#get_contents = [] then None else
+                        if is_bidirectional && entryfn_jobqueue#length = 0 then None else
 
                         (* Set up targets, which maps target functions to their failing paths, and
                          * target_fundecs, which is basically the key set of targets *)
@@ -225,12 +225,12 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                                 caller :: origin_fundecs, otherfn_jobqueue#put job
                                     ) (origin_fundecs, otherfn_jobqueue) callers
                             ) (origin_fundecs, otherfn_jobqueue) (failure_fn :: target_fundecs)
-                            in Stats.time "BidirectionalQueue.t#get/create_new_jobs" impl ()
+                            in BackOtterUtilities.time "BidirectionalQueue.t#get/create_new_jobs" impl ()
                         in
 
                         (* debug, Debug, DEBUG *)
-                        Output.debug_printf "Number of entry function jobs: %d@\n" (List.length (entryfn_jobqueue#get_contents));
-                        Output.debug_printf "Number of other function jobs: %d@\n" (List.length (otherfn_jobqueue#get_contents));
+                        Output.debug_printf "Number of entry function jobs: %d@\n" (entryfn_jobqueue#length);
+                        Output.debug_printf "Number of other function jobs: %d@\n" (otherfn_jobqueue#length);
                         List.iter (fun f -> Output.debug_printf "Target function: %s@\n" f.svar.vname) (BackOtterTargets.get_fundecs targets);
                         List.iter (fun f -> Output.debug_printf "Origin function: %s@\n" f.svar.vname) (origin_fundecs');
 
@@ -241,8 +241,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                             if total_elapsed <= 0.0001 (* epsilon *) then ratio > 0.0
                             else entryfn_time_elapsed /. total_elapsed <= ratio
                         in
-                        (* TODO: restructure to get rid of #get_contents *)
-                        if entryfn_jobqueue#get_contents <> [] && (otherfn_jobqueue#get_contents = [] || want_process_entryfn)  then
+                        if (not (entryfn_jobqueue#length = 0)) && (otherfn_jobqueue#length = 0 || want_process_entryfn)  then
                             (* Do forward search *)
                             match entryfn_jobqueue#get with
                             | Some (entryfn_jobqueue, job) ->
@@ -252,7 +251,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                          job_to_bounding_paths = job_to_bounding_paths;
                                          last_bounded_job_from_get = None >}, job)
                             | None -> failwith "This is unreachable"
-                        else if otherfn_jobqueue#get_contents <> [] then
+                        else if otherfn_jobqueue#length > 0 then
                             (* Do "backward" search *)
                             match otherfn_jobqueue#get with
                             | Some (otherfn_jobqueue, job) ->
@@ -263,7 +262,9 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                             | None -> failwith "This is unreachable"
                         else
                             None
-                    end
+                    in
+                    BackOtterUtilities.time "BidirectionalQueue.t#get/regular_get" regular_get ()
+
         in
         BackOtterUtilities.time "BidirectionalQueue.t#get" get ()
 
