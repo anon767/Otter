@@ -61,19 +61,28 @@ int is_eof_token();
 #define FALSE 0
 
 #ifdef CIL
-#define MAX_UNGETC_SIZE 10
-int __UNGETC_STACK[MAX_UNGETC_SIZE];
-int __UNGETC_SIZE = 0;
-int getc(FILE *stream) {
-    if (__UNGETC_SIZE > 0) {
-        return __UNGETC_STACK[--__UNGETC_SIZE];
-    } else {
-        int n; __SYMBOLIC(&n);
-        return n;
+#define STREAM_LENGTH 4
+int __STREAM[STREAM_LENGTH];
+int __STREAM_INDEX = 0;
+void __STREAM_INIT() {
+    int i;
+    for (i=0; i<STREAM_LENGTH-1; i++) {
+        int n;
+        __SYMBOLIC(&n);
+        __ASSUME(n != EOF);
+        __STREAM[i] = n;
     }
+    __STREAM[STREAM_LENGTH-1] = EOF;
+}
+int getc(FILE *stream) {
+    return __STREAM[__STREAM_INDEX++];
 }
 int ungetc(int c, FILE *stream) {
-    __UNGETC_STACK[__UNGETC_SIZE++] = c;
+    if (__STREAM_INDEX <= 0) {
+        __COMMENT("Error: ungetc overflows");
+        exit(1);
+    }
+    __STREAM[--__STREAM_INDEX] = c;
     return c;
 }
 #define fprintf (void)
@@ -84,6 +93,7 @@ main(void)
 {
    int argc = 1; // stdin
    char *argv[3]; // not used
+   __STREAM_INIT();
 #else
 main(argc,argv)
 int argc;
@@ -309,7 +319,12 @@ token tok;
  if(is_keyword(tok))return(keyword);
  if(is_spec_symbol(tok))return(spec_symbol);
  if(is_identifier(tok))return(identifier);
- if(is_num_constant(tok))return(num_constant);
+ if(is_num_constant(tok)) {
+#ifdef FAULTY_V6
+    if(!isdigit(*(tok+1))) __FAILURE();
+#endif
+     return(num_constant);
+ }
  if(is_str_constant(tok))return(str_constant);
  if(is_char_constant(tok))return(char_constant);
  if(is_comment(tok))return(comment);
@@ -431,9 +446,6 @@ static int is_num_constant(str)
 #endif
          i++;
        else {
-#ifdef FAULTY_V6
-         if(isdigit(*(str+i))) __FAILURE();
-#endif
          return(FALSE);
        }
       }                         /* end WHILE */
