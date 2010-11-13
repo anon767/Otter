@@ -475,20 +475,16 @@ let query_stp pc pre guard =
             Stpc.e_pop vc;
             Stpc.e_push vc;
 
-            (*
             Output.set_mode Output.MSG_STP;
             Output.printf "%% STP Program: %%@\n";
-            *)
 
             let rec do_assert pc = match pc with
                 | [] -> ()
                 | head::tail ->
                     let (bv, len) = Stats.time "STP construct" (fun ()-> to_stp_bv vc head) () in (* 1 *)
                     Stats.time "STP doassert" (fun () -> Stpc.assert_ctrue vc len bv) () ; (* 2 *)
-                    (*
                     Output.set_mode Output.MSG_STP;
-                    Output.printf "ASSERT(%s);@\n" (Stpc.to_string bv);
-                    *)
+                    Output.printf "ASSERT(NOT(%t = 0hex00000000));@\n" (fun ff -> Format.pp_print_string ff (Stpc.to_string bv));
                     do_assert tail
             in
             (*Stats.time "STP assert" do_assert relevantAssumptions;*)
@@ -503,10 +499,8 @@ let query_stp pc pre guard =
         end;
 
         let guard_exp = Stats.time "convert guard" (to_stp_guard vc) guard in
-        (*
         Output.set_mode Output.MSG_STP;
-        Output.printf "QUERY(%s);@\n" (Stpc.to_string guard_exp);
-        *)
+        Output.printf "QUERY(%t);@\n" (fun ff -> Format.pp_print_string ff (Stpc.to_string guard_exp));
 
         let query exp truth_value =
             match stpcache_find pc pre guard truth_value with
