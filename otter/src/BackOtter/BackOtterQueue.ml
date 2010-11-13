@@ -34,7 +34,6 @@ let get_function_backward_queue targets_ref function_queue queue =
 let default_bqueue = ref `ClosestToTargets
 let get_default_bqueue targets_ref = get_function_backward_queue targets_ref !BackwardRank.default_brank !default_bqueue
 
-(* TODO: enable SimpleOtherfnQueue *)
 let options = [
     "--forward-queue",
         Arg.Symbol (fst (List.split queues), fun name -> default_fqueue := List.assoc name queues),
