@@ -311,8 +311,8 @@ let doit file =
     Output.printf "Number of paths: %d@\n" paths;
     Output.printf "Number of abandoned: %d@\n" abandoned;
     List.iter (fun key ->
-        Output.printf "%s: %.2f s@\n" key (BackOtterUtilities.lookupTime key)
-    ) (BackOtterUtilities.keys ());
+        Output.printf "%s: %.2f s@\n" key (Timer.lookupTime key)
+    ) (Timer.keys ());
     ()
 
 

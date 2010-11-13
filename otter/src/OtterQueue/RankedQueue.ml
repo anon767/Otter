@@ -23,6 +23,7 @@ class ['self] t strategies = object (_ : 'self)
         {< jobs = jobs; strategies = strategies >}
 
     method get =
+        let get () =
         if JobSet.is_empty jobs then
             None
         else
@@ -52,5 +53,7 @@ class ['self] t strategies = object (_ : 'self)
             let jobs = JobSet.remove job jobs in
             let strategies = List.map (fun strategy -> strategy#remove job) strategies in
             Some ({< jobs = jobs; strategies = strategies >}, job)
+        in
+        OcamlUtilities.Timer.time "RankedQueue.t#get" get ()
 end
 

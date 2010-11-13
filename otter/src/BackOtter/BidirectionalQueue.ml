@@ -118,7 +118,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                    otherfn_jobqueue = otherfn_jobqueue;
                    job_to_bounding_paths = job_to_bounding_paths; >}
         in
-        BackOtterUtilities.time "BidirectionalQueue.t#put" put ()
+        Timer.time "BidirectionalQueue.t#put" put ()
 
         method get =
             let get () =
@@ -190,7 +190,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                     else JobMap.add job bounding_paths job_to_bounding_paths
                                 ) job_to_bounding_paths jobs
                             in
-                            BackOtterUtilities.time "BidirectionalQueue.t#get/update_job_to_bounding_paths" update_job_to_bounding_paths ()
+                            Timer.time "BidirectionalQueue.t#get/update_job_to_bounding_paths" update_job_to_bounding_paths ()
                         | None -> job_to_bounding_paths
                     in
                     if not (JobMap.is_empty job_to_bounding_paths) then
@@ -225,7 +225,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                                 caller :: origin_fundecs, otherfn_jobqueue#put job
                                     ) (origin_fundecs, otherfn_jobqueue) callers
                             ) (origin_fundecs, otherfn_jobqueue) (failure_fn :: target_fundecs)
-                            in BackOtterUtilities.time "BidirectionalQueue.t#get/create_new_jobs" impl ()
+                            in Timer.time "BidirectionalQueue.t#get/create_new_jobs" impl ()
                         in
 
                         (* debug, Debug, DEBUG (warning: these can slow down regular_get) *)
@@ -243,6 +243,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                         in
                         if (not (entryfn_jobqueue#length = 0)) && (otherfn_jobqueue#length = 0 || want_process_entryfn)  then
                             (* Do forward search *)
+                            let forward_search () =
                             match entryfn_jobqueue#get with
                             | Some (entryfn_jobqueue, job) ->
                                 Some ({< entryfn_jobqueue = entryfn_jobqueue;
@@ -251,8 +252,11 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                          job_to_bounding_paths = job_to_bounding_paths;
                                          last_bounded_job_from_get = None >}, job)
                             | None -> failwith "This is unreachable"
+                            in
+                            Timer.time "BidirectionalQueue.t#get/forward_search" forward_search ()
                         else if otherfn_jobqueue#length > 0 then
                             (* Do "backward" search *)
+                            let backward_search () =
                             match otherfn_jobqueue#get with
                             | Some (otherfn_jobqueue, job) ->
                                 Some ({< otherfn_jobqueue = otherfn_jobqueue;
@@ -260,13 +264,15 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                          job_to_bounding_paths = job_to_bounding_paths;
                                          last_bounded_job_from_get = None >}, job)
                             | None -> failwith "This is unreachable"
+                            in
+                            Timer.time "BidirectionalQueue.t#get/backward_search" backward_search ()
                         else
                             None
                     in
-                    BackOtterUtilities.time "BidirectionalQueue.t#get/regular_get" regular_get ()
+                    Timer.time "BidirectionalQueue.t#get/regular_get" regular_get ()
 
         in
-        BackOtterUtilities.time "BidirectionalQueue.t#get" get ()
+        Timer.time "BidirectionalQueue.t#get" get ()
 
     end
 
