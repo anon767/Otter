@@ -1,5 +1,6 @@
 open DataStructures
 open CilUtilities
+open OcamlUtilities
 open OtterCFG
 open OtterCore
 open Types
@@ -51,10 +52,10 @@ let rec get_last_element =
                 last_ele
 
 
-let get_origin_function job = Stats.time "get_origin_function" get_last_element job.state.callstack
+let get_origin_function job = Timer.time "get_origin_function" get_last_element job.state.callstack
 
 
-let get_origin_function_from_job_result job_result = Stats.time "get_origin_function_from_job_result" get_last_element job_result.result_state.callstack
+let get_origin_function_from_job_result job_result = Timer.time "get_origin_function_from_job_result" get_last_element job_result.result_state.callstack
 
 
 let rec lex_compare cmp lst1 lst2 =
@@ -88,7 +89,7 @@ let get_job_with_highest_score ?(compare=Pervasives.compare) score_fn jobs =
         | Some (job, _) -> List.filter (fun j -> j!=job) jobs, job
         | None -> failwith "get_job_with_highest_score assumes a non empty list"
     in
-    Stats.time "BackOtterUtilities.get_job_with_highest_score" get_job_with_highest_score ()
+    Timer.time "BackOtterUtilities.get_job_with_highest_score" get_job_with_highest_score ()
 
 
 let get_distance_to_targets target_fundecs job =
@@ -101,7 +102,7 @@ let get_distance_to_targets target_fundecs job =
             let context = Job.get_instruction_context job in
             DistanceToTargets.find_in_context source context target_instrs
     in
-    Stats.time "BackOtterUtilities.get_distance_to_targets" get_distance_to_targets ()
+    Timer.time "BackOtterUtilities.get_distance_to_targets" get_distance_to_targets ()
 
 
 let get_distance_to_targets_within_function target_fundecs job =
@@ -112,7 +113,7 @@ let get_distance_to_targets_within_function target_fundecs job =
         let target_fundecs = List.filter (fun target_fundec -> List.memq target_fundec callees) target_fundecs in
         get_distance_to_targets target_fundecs job
     in
-    Stats.time "BackOtterUtilities.get_distance_to_targets_within_function" get_distance_to_targets_within_function ()
+    Timer.time "BackOtterUtilities.get_distance_to_targets_within_function" get_distance_to_targets_within_function ()
 
 
 let get_distance_from =
