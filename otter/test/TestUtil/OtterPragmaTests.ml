@@ -470,7 +470,7 @@ module Make (Errors : Errors) = struct
         let job = OtterJob.Job.get_default file in
         let reporter = reporter ?max_nodes:flags.max_nodes ?max_paths:flags.max_paths ?max_abandoned:flags.max_abandoned () in
         try
-            let reporter = run (fun () -> driver reporter job) in
+            let _, reporter = run (fun () -> driver reporter job) in
             try
                 (* first, test if assertions passed *)
                 let log = Executedebug.get_log () in

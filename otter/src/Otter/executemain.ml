@@ -36,7 +36,8 @@ let doExecute (f: file) =
 
 	(* run the job *)
 	let module Reporter = ErrorReporter.Make (OtterCore.Errors) in
-	let completed = Driver.run_with_libc (new Reporter.t ()) job in
+	let reporter = new Reporter.t () in
+	let _, reporter = Driver.run_with_libc reporter job in
 
 	(* Turn off the alarm and reset the signal handlers *)
 	ignore (Unix.alarm 0);
@@ -81,9 +82,9 @@ let doExecute (f: file) =
         ()
   end;
      *)
-    let nodes, _, _ = completed#get_stats in
+    let nodes, _, _ = reporter#get_stats in
     Output.printf "Number of nodes: %d@\n" nodes;
-    Report.print_report completed#completed
+    Report.print_report reporter#completed
 
 
 let feature : featureDescr = {

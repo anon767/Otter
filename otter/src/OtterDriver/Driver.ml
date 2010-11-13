@@ -11,46 +11,43 @@ let (>>>) = Interceptor.(>>>)
 
 (** Main symbolic execution loop. *)
 let main_loop interceptor queue reporter =
-    (* compose the interceptor with the core symbolic executor *)
-    (* TODO: remove job_queue from interceptors/Statement.step *)
-    let step = fun job -> fst (interceptor job () Statement.step) in
-    let rec run (queue, reporter) = match queue#get with
-        | Some (queue, job) ->
-            let result_opt =
-                try
-                    Some (step job)
-                with Types.SignalException s ->
-                    (* if we got a signal, stop and return the completed results *)
-                    Output.set_mode Output.MSG_MUSTPRINT;
-                    Output.printf "%s@\n" s;
-                    None
-            in
-            begin match result_opt with
-                | Some result ->
-                    let rec process_result (queue, reporter as work) result k =
+    (* set up a checkpoint to rollback to upon SignalException *)
+    let checkpoint = ref (queue, reporter) in
+    try
+        (* compose the interceptor with the core symbolic executor *)
+        (* TODO: remove job_queue from interceptors/Statement.step *)
+        let step = fun job -> fst (interceptor job () Statement.step) in
+        let rec run (queue, reporter) =
+            checkpoint := (queue, reporter);
+            match queue#get with
+                | Some (queue, job) ->
+                    let result = step job in
+                    let rec process_result (queue, reporter) result =
                         let reporter = reporter#report result in
-                        if reporter#should_continue then match result with
+                        match result with
                             | Job.Active job ->
-                                k (queue#put job, reporter)
-                            | Job.Fork (result::results) ->
-                                process_result work result (fun work -> process_result work (Job.Fork results) k)
-                            | Job.Fork [] ->
-                                k work
+                                (queue#put job, reporter)
+                            | Job.Fork results ->
+                                List.fold_left process_result (queue, reporter) results
                             | Job.Complete completion ->
-                                k (queue, reporter)
+                                (queue, reporter)
                             | Job.Paused _ ->
                                 invalid_arg "unexpected Job.Paused"
-                        else
-                            reporter
                     in
-                    process_result (queue, reporter) result run
+                    let queue, reporter = process_result (queue, reporter) result in
+                    if reporter#should_continue then
+                        run (queue, reporter)
+                    else
+                        (queue, reporter)
                 | None ->
-                    reporter
-            end
-        | None ->
-            reporter
-    in
-    run (queue, reporter)
+                    (queue, reporter)
+        in
+        run (queue, reporter)
+    with Types.SignalException s ->
+        (* if we got a signal, stop and return the checkpoint results *)
+        Output.set_mode Output.MSG_MUSTPRINT;
+        Output.printf "%s@\n" s;
+        !checkpoint
 
 (* This is "Otter" in OtterBenchmark *)
 let run ?(random_seed=(!Executeargs.arg_random_seed))

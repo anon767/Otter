@@ -113,54 +113,57 @@ let get_time_now =
 
 (** Main symbolic execution loop. Copied from OtterCore.Driver. *)
 let main_loop entry_fn timer_ref interceptor queue reporter =
-    (* compose the interceptor with the core symbolic executor *)
-    let step = fun job -> fst (interceptor job () Statement.step) in
-    let rec run (queue, reporter) =
-        try
+    (* set up a checkpoint to rollback to upon SignalException *)
+    let checkpoint = ref (queue, reporter) in
+    try
+        (* compose the interceptor with the core symbolic executor *)
+        let step = fun job -> fst (interceptor job () Statement.step) in
+        let rec run (queue, reporter) =
+            checkpoint := (queue, reporter);
             match queue#get with
-            | Some (queue, job) ->
-                let result =
-                    (* The difference between timing here and timing in BidirectionalQueue is that
-                     * here we only time the stepping of the job, whereas in BidirectionalQueue we
-                     * also include the time of getting a job. *)
-                    let time_elapsed = get_time_now () in
-                    let result = step job in
-                    let time_elapsed = get_time_now () -. time_elapsed in
-                    let fundec = BackOtterUtilities.get_origin_function job in
-                    let entry_time, other_time = !timer_ref in
-                    timer_ref := (
-                        if fundec == entry_fn then
-                            (entry_time +. time_elapsed, other_time)
-                        else
-                            (entry_time, other_time +. time_elapsed));
-                    result
-                in
-                let rec process_result (queue, reporter as work) result k =
-                    let reporter = reporter#report result in
-                    if reporter#should_continue then match result with
-                        | Job.Active job ->
-                            k (queue#put job, reporter)
-                        | Job.Fork (result::results) ->
-                            process_result work result (fun work -> process_result work (Job.Fork results) k)
-                        | Job.Fork [] ->
-                            k work
-                        | Job.Complete completion ->
-                            k (queue, reporter)
-                        | Job.Paused _ ->
-                            invalid_arg "unexpected Job.Paused"
+                | Some (queue, job) ->
+                    let result =
+                        (* The difference between timing here and timing in BidirectionalQueue is that
+                         * here we only time the stepping of the job, whereas in BidirectionalQueue we
+                         * also include the time of getting a job. *)
+                        let time_elapsed = get_time_now () in
+                        let result = step job in
+                        let time_elapsed = get_time_now () -. time_elapsed in
+                        let fundec = BackOtterUtilities.get_origin_function job in
+                        let entry_time, other_time = !timer_ref in
+                        timer_ref := (
+                            if fundec == entry_fn then
+                                (entry_time +. time_elapsed, other_time)
+                            else
+                                (entry_time, other_time +. time_elapsed));
+                        result
+                    in
+                    let rec process_result (queue, reporter) result =
+                        let reporter = reporter#report result in
+                        match result with
+                            | Job.Active job ->
+                                (queue#put job, reporter)
+                            | Job.Fork results ->
+                                List.fold_left process_result (queue, reporter) results
+                            | Job.Complete completion ->
+                                (queue, reporter)
+                            | Job.Paused _ ->
+                                invalid_arg "unexpected Job.Paused"
+                    in
+                    let queue, reporter = process_result (queue, reporter) result in
+                    if reporter#should_continue then
+                        run (queue, reporter)
                     else
-                        reporter
-                in
-                process_result (queue, reporter) result run
-            | None ->
-                reporter
-        with Types.SignalException s ->
-            (* if we got a signal, stop and return the completed results *)
-            Output.set_mode Output.MSG_MUSTPRINT;
-            Output.printf "%s@\n" s;
-            reporter
-    in
-    run (queue, reporter)
+                        (queue, reporter)
+                | None ->
+                    (queue, reporter)
+        in
+        run (queue, reporter)
+    with Types.SignalException s ->
+        (* if we got a signal, stop and return the checkpoint results *)
+        Output.set_mode Output.MSG_MUSTPRINT;
+        Output.printf "%s@\n" s;
+        !checkpoint
 
 
 let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
@@ -214,7 +217,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
                 Interceptor.identity_interceptor
         )
     in
-    let target_tracker = main_loop entry_fn timer_ref interceptor queue target_tracker in
+    let queue, target_tracker = main_loop entry_fn timer_ref interceptor queue target_tracker in
 
     (* Output failing paths for non-entry_fn *)
     List.iter (fun fundec ->
@@ -232,7 +235,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
         Output.must_printf "Failing path: @[%a@]@\n" Decision.print_decisions decisions)
         (BackOtterTargets.get entry_fn (!targets_ref));
 
-    target_tracker#delegate
+    (queue, target_tracker#delegate)
 
 
 let doit file =
@@ -262,7 +265,7 @@ let doit file =
     Output.must_printf "Ratio: %0.2f@\n" !BidirectionalQueue.default_bidirectional_search_ratio ;
 
     let entry_job = OtterJob.Job.get_default file in
-    let reporter = callchain_backward_se (new BackOtterReporter.t ()) entry_job in
+    let _, reporter = callchain_backward_se (new BackOtterReporter.t ()) entry_job in
 
     (* Turn off the alarm and reset the signal handlers *)
     ignore (Unix.alarm 0);
