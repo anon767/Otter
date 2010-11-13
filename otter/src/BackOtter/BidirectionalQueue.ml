@@ -228,7 +228,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                             in BackOtterUtilities.time "BidirectionalQueue.t#get/create_new_jobs" impl ()
                         in
 
-                        (* debug, Debug, DEBUG *)
+                        (* debug, Debug, DEBUG (warning: these can slow down regular_get) *)
                         Output.debug_printf "Number of entry function jobs: %d@\n" (entryfn_jobqueue#length);
                         Output.debug_printf "Number of other function jobs: %d@\n" (otherfn_jobqueue#length);
                         List.iter (fun f -> Output.debug_printf "Target function: %s@\n" f.svar.vname) (BackOtterTargets.get_fundecs targets);

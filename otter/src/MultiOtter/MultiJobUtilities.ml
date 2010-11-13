@@ -148,7 +148,6 @@ let get_job multijob =
 			Job.exHist = multijob.shared.MultiTypes.exHist;
 			(* TODO *)
 			Job.decisionPath = [];
-			Job.boundingPaths = None;
 		} in
 		let multijob = { multijob with
 			processes = processes;

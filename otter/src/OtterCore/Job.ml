@@ -76,7 +76,6 @@ type job = {
     state : Types.state;
     exHist : executionHistory;
     decisionPath : Decision.t list; (** The decision path is a list of decision. Most recent decision first. *)
-    boundingPaths : Decision.t list list option; (** The execution can only run on these paths, if exist. Paths have most recent decision first. *)
     instrList : Cil.instr list; (** [instr]s to execute before moving to the next [stmt] *)
     stmt : Cil.stmt;            (** The next statement the job should execute *)
     trackedFns : StringSet.t;	(** The set of functions (names) in which to track coverage *)
@@ -116,7 +115,6 @@ let make file state fn argvs =
         state = state;
         exHist = emptyHistory;
         decisionPath = [];
-        boundingPaths = None;
         instrList = [];
         stmt = List.hd fn.Cil.sallstmts;
         trackedFns = trackedFns;
