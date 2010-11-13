@@ -33,29 +33,29 @@ let rec get_job_multijob job_queue =
 				| Some (job, multijob) -> Some (job, (multijob, job_queue)) (* found a multijob with a job to run *)
 
 (* process the results *)
-let rec process_job_states result multijob reporter multijob_queue =
+let rec process_job_states result multijob multijob_queue reporter =
 	let reporter = reporter#report result in  (* TODO: use the #should_continue flag *)
 	match result with
 		| Active job ->
 			(* put the job back into the multijob and queue it *)
 			let multijob = put_job job multijob multijob.current_metadata in
-			(reporter, (multijob_queue#put multijob))
+			((multijob_queue#put multijob), reporter)
 		| Fork states ->
 			(* process all forks *)
-			List.fold_left begin fun (reporter, multijob_queue) state ->
-				process_job_states state multijob reporter multijob_queue
-			end (reporter, multijob_queue) states
+			List.fold_left begin fun (multijob_queue, reporter) state ->
+				process_job_states state multijob multijob_queue reporter
+			end (multijob_queue, reporter) states
 		| Complete completion ->
 			(* store the results *)
 			let multijob = put_completion completion multijob in
-			(reporter, (multijob_queue#put multijob))
+			((multijob_queue#put multijob), reporter)
 
 		| _ ->
-			(reporter, multijob_queue)
+			(multijob_queue, reporter)
 
-let process_result result reporter job_queue =
+let process_result result job_queue reporter =
 	let multijob, multijob_queue = job_queue in
-	process_job_states result multijob reporter multijob_queue
+	process_job_states result multijob multijob_queue reporter
 
 let rec flush_queue reporter job_queue =
 	match get_job_multijob job_queue with
@@ -107,8 +107,8 @@ let run reporter job =
 			Statement.step
 		)
 		process_result
-		reporter
 		queue
+		reporter
 
 let doit file =
 	(* connect Cil's debug flag to Output *)
@@ -135,7 +135,7 @@ let doit file =
 
 	(* run the job *)
 	let module Reporter = ErrorReporter.Make (OtterCore.Errors) in
-	let result, job_queue = run (new Reporter.t ()) job in
+	let job_queue, result = run (new Reporter.t ()) job in
 	let result = flush_queue result job_queue in
 	
 	(* Turn off the alarm and reset the signal handlers *)
