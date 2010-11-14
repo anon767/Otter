@@ -313,10 +313,7 @@ let doit file =
     Output.printf "Number of nodes: %d@\n" nodes;
     Output.printf "Number of paths: %d@\n" paths;
     Output.printf "Number of abandoned: %d@\n" abandoned;
-    List.iter (fun key ->
-        Output.printf "%s: %.2f s@\n" key (Timer.lookupTime key)
-    ) (Timer.keys ());
-    ()
+    Output.printf "Timer:@\n  @[%t@]@\n" Timer.global_printer
 
 
 (** {1 Command-line options} *)

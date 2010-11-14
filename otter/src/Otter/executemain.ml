@@ -71,6 +71,7 @@ let doExecute (f: file) =
     Output.printf "Hash-consing: hits=%d misses=%d\n" (!Bytes.hash_consing_bytes_hits) (!Bytes.hash_consing_bytes_misses);
     Output.printf "Bytes eval caching: hits=%d misses=%d\n\n" (!MemOp.bytes_eval_cache_hits) (!MemOp.bytes_eval_cache_misses);
 
+    Output.printf "Timers:@\n  @[%t@]@\n" Timer.global_printer;
     (*
   begin
     if Executeargs.run_args.arg_examfn = "" then () else
