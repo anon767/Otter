@@ -67,10 +67,9 @@ let get_console_size =
                     (h, w)
                 end
             with e ->
-                (* whatever exceptions arise, flush the terminal and restore it *)
-                ignore (Unix.read Unix.stdin (String.create 16) 0 16);
-                Unix.tcflush Unix.stdin Unix.TCIFLUSH;
+                (* whatever exceptions arise, restore the terminal and flush it *)
                 Unix.tcsetattr Unix.stdin Unix.TCSANOW attr;
+                Unix.tcflush Unix.stdin Unix.TCIFLUSH;
                 match e with
                     | Unix.Unix_error _ | Scanf.Scan_failure _ ->
                         (* if the exception was from here, return the an old result which may still be right *)
