@@ -1,10 +1,11 @@
 open OcamlUtilities
 
 (* Borrow these queues from OtterQueue *)
-module GenerationalStrategy = OtterQueue.GenerationalStrategy
+module BatchQueue = OtterQueue.BatchQueue
 module BreadthFirstStrategy = OtterQueue.BreadthFirstStrategy
 module ClosestToUncoveredStrategy = OtterQueue.ClosestToUncoveredStrategy
 module DepthFirstStrategy = OtterQueue.DepthFirstStrategy
+module GenerationalStrategy = OtterQueue.GenerationalStrategy
 module LeastCoveredStrategy = OtterQueue.LeastCoveredStrategy
 module RankedQueue = OtterQueue.RankedQueue
 module RandomPathQueue = OtterQueue.RandomPathQueue
@@ -25,7 +26,7 @@ let rec get targets_ref = function
     | `ClosestToTargets -> new RankedQueue.t [ new ClosestToTargetsStrategy.t targets_ref ]
     | `Generational `ClosestToTargets -> new RankedQueue.t [ new GenerationalStrategy.t; new ClosestToTargetsStrategy.t targets_ref ]
     | `RoundRobin queues -> new RoundRobinQueue.t (List.map (get targets_ref) queues)
-    | `KLEE -> get targets_ref (`RoundRobin [ `ClosestToUncovered; `RandomPath ])
+    | `KLEE -> new BatchQueue.t (get targets_ref (`RoundRobin [ `ClosestToUncovered; `RandomPath ]))
     | `SAGE -> new RankedQueue.t [ new GenerationalStrategy.t; new ClosestToUncoveredStrategy.t ]
 
 let default_fqueue = ref (`Generational `BreadthFirst)
