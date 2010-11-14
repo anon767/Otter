@@ -51,7 +51,9 @@ let benchmarks ?(div_num=1) ?(div_base=1) argv_array =
 
         let interceptor = BuiltinFunctions.libc_interceptor >>> BuiltinFunctions.interceptor in
 
-        Arg.parse_argv argv_array (Arg.align options) (fun _ -> ()) "Usage:";
+        (* Not sure why using the default current variable will disable stdout *)
+        let current = ref 0 in
+        Arg.parse_argv ~current argv_array (Arg.align options) (fun _ -> ()) "Usage:";
 
         let otter_drivers =
             (* don't want depth-first, it's really terrible *)
