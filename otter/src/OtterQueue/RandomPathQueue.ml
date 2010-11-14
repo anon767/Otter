@@ -26,20 +26,18 @@
 open DataStructures
 open OtterCore
 
-module JobSet = Set.Make (struct type t = Job.job let compare x y = Pervasives.compare x.Job.jid y.Job.jid end)
-
 
 class ['self] t = object (_ : 'self)
     (* zipper-based search queue context *)
     val context = `Top
     val leaves = RandomBag.empty
-    val removed = JobSet.empty
+    val removed = []
 
     method put job =
         {< leaves = RandomBag.put (`Job job) leaves >}
 
     method remove job =
-        {< removed = JobSet.add job removed >}
+        {< removed = job::removed >}
 
     method get =
         (* first, zip the tree, making sure no branches are empty unless the tree is empty *)
@@ -57,8 +55,8 @@ class ['self] t = object (_ : 'self)
                     | None -> None
                     | Some (nodes, node) -> descend removed (`Node (nodes, context)) node
                 end
-            | `Job job when JobSet.mem job removed ->
-                descend (JobSet.remove job removed) `Top (zip RandomBag.empty context)
+            | `Job job when List.memq job removed ->
+                descend (List.filter ((!=) job) removed) `Top (zip RandomBag.empty context)
             | `Job job ->
                 Some ({< context = context; leaves = RandomBag.empty; removed = removed >}, job)
         in
