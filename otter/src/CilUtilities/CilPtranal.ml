@@ -50,15 +50,15 @@ let fold_array f acc len_opt =
     end
 
 
-(** Wrapper for Cil's {!Ptranal.resolve_exp} that resolves to fields conservatively and filters by type.
-        @param file is the file being analyzed
+(** Wrapper that converts a points-to function that resolves expressions to variables, to a function that resolves
+    expressions to fields in variables as well, conservatively and filtered by type.
+        @param points_to_varinfo is the points-to function to wrap : [Cil.exp -> Cil.varinfo list * (Cil.varinfo * string) list]
         @param exp is the expression to resolve
         @return [(targets_list, mallocs)] where [target_list] contains the points to target lvals and offset;
                 and [mallocs] contains a list of malloc targets
 *)
-let points_to file exp =
-    init_file file;
-    let targets, mallocs = Ptranal.resolve_exp exp in
+let wrap_points_to_varinfo points_to_varinfo exp =
+    let targets, mallocs = points_to_varinfo exp in
 
     let canonicalize_type t = Cil.typeSigWithAttrs (fun _ -> []) t in
 
@@ -125,6 +125,18 @@ let points_to file exp =
     (target_lvals, mallocs)
 
 
+(** Wrapper for Cil's {!Ptranal.resolve_exp} that resolves to fields in variables as well, conservatively and
+    filtered by type.
+        @param file is the file being analyzed
+        @param exp is the expression to resolve
+        @return [(targets_list, mallocs)] where [target_list] contains the points to target lvals and offset;
+                and [mallocs] contains a list of malloc targets
+*)
+let points_to file exp =
+    init_file file;
+    wrap_points_to_varinfo Ptranal.resolve_exp exp
+
+
 (** Wrapper for Cil's {!Ptranal.resolve_fundec}.
         @param file is the file being analyzed
         @param exp is the expression to resolve
@@ -133,4 +145,22 @@ let points_to file exp =
 let points_to_fundec file exp =
     init_file file;
     Ptranal.resolve_funptr exp
+
+
+(** Naive point-to that maps anything to everything (including [malloc]), filtered by type.
+        @param file is the file being analyzed
+        @param exp is the expression to resolve
+        @return [(targets_list, mallocs)] where [target_list] contains the points to target lvals and offset;
+                and [mallocs] contains a list of malloc targets
+*)
+let naive_points_to =
+    let memotable = Hashtbl.create 0 in 
+    fun file exp ->
+        try
+            Hashtbl.find memotable file
+        with Not_found ->
+            let malloc = FindCil.global_varinfo_by_name file "malloc" in
+            let targets = wrap_points_to_varinfo (fun _ -> (FindCil.all_varinfos file, [ (malloc, "malloc") ])) exp in
+            Hashtbl.add memotable file targets;
+            targets
 
