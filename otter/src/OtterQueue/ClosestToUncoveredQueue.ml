@@ -31,9 +31,12 @@ class ['self] t = object (self : 'self)
                 if InstructionMap.find instr coverage = 0 then
                     0
                 else
-                    let calc_dist instrs = List.fold_left (fun dist instr -> min dist (InstructionMap.find instr distances)) max_int instrs in
+                    let calc_dist instrs = List.fold_left (fun dist instr ->
+                    min dist (InstructionMap.find instr distances)) max_int instrs in
 
-                    let dist = calc_dist (Instruction.successors instr) in
+                    (* only follow forward successors, to avoid backward loops *)
+                    let successors = List.filter (fun succ -> succ.Instruction.stmt.Cil.sid > instr.Instruction.stmt.Cil.sid) (Instruction.successors instr) in
+                    let dist = calc_dist successors in
                     let dist = match Instruction.call_targets instr with
                         | [] ->
                             (* no call targets, just successors *)
