@@ -19,14 +19,14 @@ let globals_memotables =
 
 			Cil.iterGlobals file begin function
 				| Cil.GFun (fundec ,_) ->
-					Hashtbl.add varinfo_to_fundec fundec.Cil.svar fundec;
-					Hashtbl.add name_to_fundec fundec.Cil.svar.Cil.vname fundec;
+					Hashtbl.replace varinfo_to_fundec fundec.Cil.svar fundec;
+					Hashtbl.replace name_to_fundec fundec.Cil.svar.Cil.vname fundec;
 				| Cil.GVar (varinfo, initinfo, _) ->
-					Hashtbl.add varinfo_to_varinit varinfo initinfo;
-					Hashtbl.add name_to_global_varinfo varinfo.Cil.vname varinfo;
+					Hashtbl.replace varinfo_to_varinit varinfo initinfo;
+					Hashtbl.replace name_to_global_varinfo varinfo.Cil.vname varinfo;
 				| Cil.GVarDecl (varinfo, _) ->
-					Hashtbl.add varinfo_to_varinit varinfo { Cil.init=None };
-					Hashtbl.add name_to_global_varinfo varinfo.Cil.vname varinfo;
+					Hashtbl.replace varinfo_to_varinit varinfo { Cil.init=None };
+					Hashtbl.replace name_to_global_varinfo varinfo.Cil.vname varinfo;
 				| _ -> ()
 			end;
 
@@ -36,7 +36,7 @@ let globals_memotables =
 				method name_to_fundec = Hashtbl.find name_to_fundec
 				method name_to_global_varinfo = Hashtbl.find name_to_global_varinfo
 			end in
-			Hashtbl.add file_memotables file memotables;
+			Hashtbl.replace file_memotables file memotables;
 			memotables
 
 
