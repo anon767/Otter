@@ -33,6 +33,9 @@ all : native libs doc
 native : ocamlbuild//runotter.native config
 debug : ocamlbuild//runotter.d.byte config
 
+profile : OCAMLBUILD_FLAGS += -tag profile
+profile : native
+
 libs : $(addprefix ocamlbuild//,Otter.cmxa Otter.a Otter.cma Otter.cmi)
 libs : OCAMLBUILD_MORE_CMI= \
 		DataStructures.cmi CilUtilities.cmi OcamlUtilities.cmi OtterBytes.cmi OtterCFG.cmi \
