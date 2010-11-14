@@ -1,3 +1,9 @@
+/**
+ * replace.c
+ *
+ * Changes:
+ * 1. The program only takes one line of input (instead of many lines until EOF is reached).
+ */
 /*  -*- Last-Edit:  Mon Dec  7 10:31:51 1992 by Tarak S. Goradia; -*- */
 #pragma max_abandoned(1)
 #pragma time_limit(120)
@@ -5,11 +11,14 @@
 #pragma init_local_zero
 #pragma expect_abandoned(failure_reached)
 
-#define FAULT_V1
-#define FAULT_V1_M1
+// Note: it looks like v1 is correct, and the original version is wrong
+//#define FAULT_V1
+#define FAULT_V10
+//#define FAULT_V11
 
 #ifdef CIL
-#define MAX_ARGV 10
+#define MAX_FGETS_LENGTH  6
+#define MAX_ARGV          MAX_FGETS_LENGTH
 
 char *
 fgets(char * restrict str, int size, FILE * restrict stream) {
@@ -20,6 +29,7 @@ fgets(char * restrict str, int size, FILE * restrict stream) {
     __SYMBOLIC(&symbolic_length);
 
     if (size <= 0) abort();
+    if (size > MAX_FGETS_LENGTH) size = MAX_FGETS_LENGTH;
     __ASSUME(0 < symbolic_length, symbolic_length <= size);
 
     for (i = 0; i < symbolic_length; i++) {
@@ -76,6 +86,10 @@ int	maxsize;
     result = fgets(s, maxsize, stdin);
     return (result != NULL);
 }
+
+/**
+ * outset[(*j)++] = c, unless (*j) exceeds maxset
+ */
 int
 addstr(c, outset, j, maxset)
 char	c;
@@ -94,6 +108,13 @@ int	maxset;
     return result;
 }
 
+/**
+ * \n -> NEWLINE
+ * \t -> TAB
+ * \[ENDSTR] -> \
+ * \[c] -> c
+ * Advance (*i) if escaped
+ */
 char
 esc(s, i)
 char 	*s;
@@ -144,18 +165,29 @@ int	maxset;
 	    escjunk = esc(src, i);
 	    junk = addstr(escjunk, dest, j, maxset);
 	} else
-#ifdef FAULT_V1_M1
-	    __FAILURE();
-#endif
 	    if (src[*i] != DASH)
 		junk = addstr(src[*i], dest, j, maxset);
-	    else if (*j <= 1 || src[*i + 1] == ENDSTR)
+	    else if (*j <= 1 || src[*i + 1] == ENDSTR) // when '-' is the first or last char
 		junk = addstr(DASH, dest, j, maxset);
-	    else if ((isalnum(src[*i - 1])) && (isalnum(src[*i + 1]))
-		&& (src[*i - 1] <= src[*i + 1]))
+	    else if (
+                   (isalnum(src[*i - 1]))
+#ifdef FAULT_V10
+                 /* missing code && (isalnum(src[*i + 1])) */
+#else
+                && (isalnum(src[*i + 1]))
+#endif
+#ifdef FAULT_V11
+                && (src[*i - 1] > src[*i]) /* operator mutation and off by one */
+#else
+	        	&& (src[*i - 1] <= src[*i + 1])
+#endif
+        )
 		{
 		    for (k = src[*i-1]+1; k<=src[*i+1]; k++)
 		    {
+#ifdef FAULT_V10
+                if (!isalnum(k)) __FAILURE();
+#endif
 			junk = addstr(k, dest, j, maxset);
 		    }
 		    *i = *i + 1;
@@ -185,7 +217,7 @@ int	*j;
     jstart = *j;
     junk = addstr(0, pat, j, MAXPAT);
     dodash(CCLEND, arg, i, pat, j, MAXPAT);
-    pat[jstart] = *j - jstart - 1;
+    pat[jstart] = *j - jstart - 1; // size of stuff in [...]
     return (arg[*i] == CCLEND);
 }
 
@@ -243,16 +275,16 @@ char	*pat;
 	lj = j;
 	if ((arg[i] == ANY))
 	    junk = addstr(ANY, pat, &j, MAXPAT);
-	else if ((arg[i] == BOL) && (i == start))
+	else if ((arg[i] == BOL) && (i == start))  // Beginning of Line
 	    junk = addstr(BOL, pat, &j, MAXPAT);
-	else if ((arg[i] == EOL) && (arg[i+1] == delim))
+	else if ((arg[i] == EOL) && (arg[i+1] == delim))  // End of Line
 	    junk = addstr(EOL, pat, &j, MAXPAT);
 	else if ((arg[i] == CCL))
 	{
 	    getres = getccl(arg, &i, pat, &j);
 	    done = (bool)(getres == false);
 	}
-	else if ((arg[i] == CLOSURE) && (i > start))
+	else if ((arg[i] == CLOSURE) && (i > start))  // *
 	{
 	    lj = lastj;
 	    if (in_set_2(pat[lj]))
@@ -292,6 +324,10 @@ char*	pat;
     return (makeres > 0);
 }
 
+/**
+ * Create the sub string out of arg
+ * The sub string is a normal string, plus '&' which copies the "from" pattern
+ */
 int
 makesub(arg, from, delim, sub)
 	char*	arg;
@@ -308,6 +344,7 @@ makesub(arg, from, delim, sub)
     i = from;
     while ((arg[i] != delim) && (arg[i] != ENDSTR)) {
 	if ((arg[i] == (unsigned)('&')))
+        // DITTO: same as the pattern
 	    junk = addstr(DITTO, sub, &j, MAXPAT);
 	else {
 	    escjunk = esc(arg, &i);
@@ -550,10 +587,16 @@ char *pat, *sub;
     bool result;
 
     result = getline(line, MAXSTR);
+#if CIL
+    // Only consider one line of input
+    // (Otherwise, input will be infinite)
+	subline(line, pat, sub);
+#else
     while ((result)) {
 	subline(line, pat, sub);
 	result = getline(line, MAXSTR);
     }
+#endif
 }
 
 #ifdef CIL
@@ -562,7 +605,9 @@ int	argc;
 char argv[3][MAX_ARGV];
 main(void)
 {
-    int mode; __SYMBOLIC(&mode);
+    int mode;
+    //__SYMBOLIC(&mode);
+    mode = 1;  // only has "from" pattern
 
     fgets(argv[1], MAX_ARGV, stdin);
     if (mode) {
@@ -593,6 +638,7 @@ char	*argv[];
        //(void)fprintf(stdout, "change: illegal \"from\" pattern\n");
        exit(2);
    }
+   return 0;
 
    if (argc >= 3)
    {
@@ -604,6 +650,7 @@ char	*argv[];
        }
    } else
    {
+       // "To" string is empty, i.e., remove the "from" pattern
        sub[0] = '\0';
    }
 
