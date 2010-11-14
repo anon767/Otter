@@ -13,13 +13,18 @@ open OtterCore
 module JobSet = Set.Make (struct type t = Job.job let compare x y = Pervasives.compare x.Job.jid y.Job.jid end)
 
 
-class ['self] t strategies = object (_ : 'self)
+class ['self] t strategies = object (self : 'self)
     val jobs = JobSet.empty
     val strategies = strategies
 
     method put job =
         let jobs = JobSet.add job jobs in
         let strategies = List.map (fun strategy -> strategy#add job) strategies in
+        {< jobs = jobs; strategies = strategies >}
+
+    method remove job =
+        let jobs = JobSet.remove job jobs in
+        let strategies = List.map (fun strategy -> strategy#remove job) strategies in
         {< jobs = jobs; strategies = strategies >}
 
     method get = OcamlUtilities.Timer.time "RankedQueue.t#get" begin fun () ->
@@ -49,9 +54,7 @@ class ['self] t strategies = object (_ : 'self)
                     List.nth jobs (Random.int (List.length jobs))
             in
             let job = find_max (JobSet.elements jobs) strategies in
-            let jobs = JobSet.remove job jobs in
-            let strategies = List.map (fun strategy -> strategy#remove job) strategies in
-            Some ({< jobs = jobs; strategies = strategies >}, job)
+            Some (self#remove job, job)
     end ()
 end
 

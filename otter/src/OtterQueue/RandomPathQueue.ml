@@ -3,7 +3,7 @@
     Jobs are organized in a compact execution tree (with no empty or singleton branches), and selected by randomly
     choosing which branch to descend at each branching node. This scheme ensures that:
         - for execution trees before any jobs are completed, branches are choosen fairly;
-        - the above implies that for balances execution trees, paths are choosen fairly.
+        - the above implies that for balanced execution trees, paths are choosen fairly.
 
     When all jobs below a certain branch have been completed, the branch is removed from the execution tree. Because
     remaining branches are choosen randomly, this scheme is biased towards the side of the execution tree where more
@@ -24,14 +24,22 @@
 *)
 
 open DataStructures
+open OtterCore
+
+module JobSet = Set.Make (struct type t = Job.job let compare x y = Pervasives.compare x.Job.jid y.Job.jid end)
+
 
 class ['self] t = object (_ : 'self)
     (* zipper-based search queue context *)
     val context = `Top
     val leaves = RandomBag.empty
+    val removed = JobSet.empty
 
     method put job =
         {< leaves = RandomBag.put (`Job job) leaves >}
+
+    method remove job =
+        {< removed = JobSet.add job removed >}
 
     method get =
         (* first, zip the tree, making sure no branches are empty unless the tree is empty *)
@@ -41,17 +49,18 @@ class ['self] t = object (_ : 'self)
             | `Node (siblings, context) when RandomBag.is_empty branches -> zip siblings context
             | `Node (siblings, context) -> zip (RandomBag.put (`Branches branches) siblings) context
         in
-        let tree = zip leaves context in
 
-        (* then, descend randomly to a job *)
-        let rec descend context = function
+        (* then, descend randomly to a job; if the job is a removed job, repeat the selection *)
+        let rec descend removed context = function
             | `Branches nodes ->
                 begin match RandomBag.get nodes with
                     | None -> None
-                    | Some (nodes, node) -> descend (`Node (nodes, context)) node
+                    | Some (nodes, node) -> descend removed (`Node (nodes, context)) node
                 end
+            | `Job job when JobSet.mem job removed ->
+                descend (JobSet.remove job removed) `Top (zip RandomBag.empty context)
             | `Job job ->
-                Some ({< context = context; leaves = RandomBag.empty >}, job)
+                Some ({< context = context; leaves = RandomBag.empty; removed = removed >}, job)
         in
-        descend `Top tree
+        descend removed `Top (zip leaves context)
 end
