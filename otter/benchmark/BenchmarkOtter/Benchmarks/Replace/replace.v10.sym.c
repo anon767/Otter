@@ -638,7 +638,6 @@ char	*argv[];
        //(void)fprintf(stdout, "change: illegal \"from\" pattern\n");
        exit(2);
    }
-   return 0;
 
    if (argc >= 3)
    {
