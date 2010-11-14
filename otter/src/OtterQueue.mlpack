@@ -8,3 +8,4 @@ OtterQueue/LeastCoveredStrategy
 OtterQueue/Queue
 OtterQueue/RandomPathQueue
 OtterQueue/RankedQueue
+OtterQueue/RoundRobinQueue

@@ -8,11 +8,12 @@ module DepthFirstStrategy = OtterQueue.DepthFirstStrategy
 module LeastCoveredStrategy = OtterQueue.LeastCoveredStrategy
 module RankedQueue = OtterQueue.RankedQueue
 module RandomPathQueue = OtterQueue.RandomPathQueue
+module RoundRobinQueue = OtterQueue.RoundRobinQueue
 
 (* Forward *)
 let queues = OtterQueue.Queue.queues
 
-let get targets_ref = function
+let rec get targets_ref = function
     | `BreadthFirst -> new RankedQueue.t [ new BreadthFirstStrategy.t ]
     | `DepthFirst -> new RankedQueue.t [ new DepthFirstStrategy.t ]
     | `RandomPath -> new RandomPathQueue.t
@@ -23,6 +24,8 @@ let get targets_ref = function
     | `ClosestToUncovered -> new RankedQueue.t [ new ClosestToUncoveredStrategy.t ]
     | `ClosestToTargets -> new RankedQueue.t [ new ClosestToTargetsStrategy.t targets_ref ]
     | `Generational `ClosestToTargets -> new RankedQueue.t [ new GenerationalStrategy.t; new ClosestToTargetsStrategy.t targets_ref ]
+    | `RoundRobin queues -> new RoundRobinQueue.t (List.map (get targets_ref) queues)
+    | `KLEE -> get targets_ref (`RoundRobin [ `ClosestToUncovered; `RandomPath ])
 
 let default_fqueue = ref (`Generational `BreadthFirst)
 let get_default_fqueue targets_ref = get targets_ref !default_fqueue
