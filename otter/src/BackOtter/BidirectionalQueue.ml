@@ -8,6 +8,13 @@ open Cil
 
 let default_bidirectional_search_ratio = ref 0.5
 
+let points_tos = [
+    "regular", CilUtilities.CilPtranal.points_to;
+    "naive", CilUtilities.CilPtranal.naive_points_to;
+    "unsound", CilUtilities.CilPtranal.unsound_points_to;
+]
+let default_points_to = ref CilUtilities.CilPtranal.points_to
+
 (*
  * Improve efficiency of bounding paths update/checking.
  *
@@ -220,7 +227,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                                     if caller == entry_fn then entry_job
                                                     else (
                                                         Output.debug_printf "Create new job for function %s@\n" caller.svar.vname;
-                                                        OtterJob.FunctionJob.make file caller)
+                                                        OtterJob.FunctionJob.make file ~points_to:(!default_points_to file) caller)
                                                 in
                                                 caller :: origin_fundecs, otherfn_jobqueue#put job
                                     ) (origin_fundecs, otherfn_jobqueue) callers
@@ -282,5 +289,8 @@ let options = [
     "--bidirectional-search-ratio",
         Arg.Set_float default_bidirectional_search_ratio,
         "<ratio> The fraction of computation dedicated to forward search (default: 0.5)";
+    "--points-to",
+        Arg.Symbol (fst (List.split points_tos), fun name -> default_points_to := List.assoc name points_tos),
+        "<points_to> Set the default points_to analysis (default: regular)";
 ]
 

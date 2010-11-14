@@ -163,6 +163,7 @@ let main_loop entry_fn timer_ref interceptor queue reporter =
         (* if we got a signal, stop and return the checkpoint results *)
         Output.set_mode Output.MSG_MUSTPRINT;
         Output.printf "%s@\n" s;
+        Printexc.print_backtrace stderr;
         !checkpoint
 
 
