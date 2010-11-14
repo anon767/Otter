@@ -1,4 +1,4 @@
-(** Least-covered-instruction first Otter strategy: jobs are weighted by 1/n where n is the coverage of the job instruction. *)
+(** Least-covered-instruction Otter strategy: jobs are weighted by 1/n where n is the coverage of the job instruction. *)
 
 open DataStructures
 open OtterCore

@@ -1,4 +1,8 @@
-(** Closest-to-uncovered-instruction first Otter job queue, based on KLEE. *)
+(** Closest-to-uncovered-instruction Otter job strategy:jobs are weighted by 1/n where n is the shortest distance to
+    an uncovered instruction.
+
+    Based on a similar strategy from KLEE.
+*)
 
 open DataStructures
 open OtterCFG
@@ -17,7 +21,6 @@ class ['self] t = object (self : 'self)
     (* both coverage and distances are initially zero for every instruction *)
     val coverage = InstructionMap.empty
     val distances = InstructionMap.empty
-    val queue = RandomAccessList.empty
 
     method private update_distances instr coverage =
         let rec update worklist distances =
@@ -107,34 +110,17 @@ class ['self] t = object (self : 'self)
         let return_dist = DistanceToReturn.find instr in
         unwind dist return_dist context
 
-    method put job =
-        {< queue = RandomAccessList.cons job queue >}
+    method add job = self
 
-    method get =
-        match RandomAccessList.list_view queue with
-            | `Nil ->
-                None
-            | `Cons (first, rest) ->
-                (* dequeue the job with the shortest distance to an uncovered instruction *)
-                let rec get job dist index count work = match RandomAccessList.list_view work with
-                    | `Cons (job', rest') ->
-                        let count = count + 1 in
-                        let dist' = self#calculate_distance job' in
-                        if dist' < dist then
-                            get job' dist' count count rest'
-                        else
-                            get job dist index count rest'
-                    | `Nil when index >= 0 ->
-                        (RandomAccessList.update index first rest, job)
-                    | `Nil ->
-                        (rest, job)
-                in
-                let queue, job = get first (self#calculate_distance first) ~-1 ~-1 rest in
+    method remove job =
+        (* update coverage and distances *)
+        let instr = Job.get_instruction job in
+        let count = InstructionMap.find instr coverage + 1 in
+        let coverage = InstructionMap.add instr count coverage in
+        let distances = self#update_distances instr coverage in
+        {< coverage = coverage; distances = distances >}
 
-                (* update coverage and distances, and return *)
-                let instr = Job.get_instruction job in
-                let coverage = InstructionMap.add instr (InstructionMap.find instr coverage + 1) coverage in
-                let distances = self#update_distances instr coverage in
-                Some ({< coverage = coverage; distances = distances; queue = queue >}, job)
+    method weight job =
+        1. /. float_of_int (self#calculate_distance job)
 end
 
