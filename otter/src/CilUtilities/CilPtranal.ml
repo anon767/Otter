@@ -173,7 +173,7 @@ let naive_points_to =
         @param exp is the expression to resolve
         @return [(targets_list, mallocs)] where [target_list] is empty and [mallocs] contains a single malloc target
 *)
-let naive_points_to =
+let unsound_points_to =
     let counter = Counter.make () in
     fun file exp ->
         let malloc = FindCil.global_varinfo_by_name file "malloc" in
