@@ -22,22 +22,21 @@ class ['self] t strategies = object (_ : 'self)
         let strategies = List.map (fun strategy -> strategy#add job) strategies in
         {< jobs = jobs; strategies = strategies >}
 
-    method get =
-        let get () =
+    method get = OcamlUtilities.Timer.time "RankedQueue.t#get" begin fun () ->
         if JobSet.is_empty jobs then
             None
         else
             (* helper to select the highest weighted jobs using a strategy *)
             let find_max_jobs strategy jobs =
-                let weights = List.map strategy#weight jobs in
-                fst begin List.fold_left2 begin fun (max_jobs, max_weight) job weight ->
+                fst begin List.fold_left begin fun (max_jobs, max_weight) job ->
+                    let weight = strategy#weight job in
                     if weight > max_weight then
                         ([ job ], weight)
                     else if weight = max_weight then
                         (job::max_jobs, max_weight)
                     else
                         (max_jobs, max_weight)
-                end ([], neg_infinity) jobs weights end
+                end ([], neg_infinity) jobs end
             in
             (* helper to find the highest weighted job using a list of strategies in order *)
             let rec find_max jobs strategies = match jobs, strategies with
@@ -53,7 +52,6 @@ class ['self] t strategies = object (_ : 'self)
             let jobs = JobSet.remove job jobs in
             let strategies = List.map (fun strategy -> strategy#remove job) strategies in
             Some ({< jobs = jobs; strategies = strategies >}, job)
-        in
-        OcamlUtilities.Timer.time "RankedQueue.t#get" get ()
+    end ()
 end
 
