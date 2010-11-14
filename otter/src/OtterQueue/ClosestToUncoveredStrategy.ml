@@ -20,7 +20,7 @@ end
 class ['self] t = object (self : 'self)
     (* both coverage and distances are initially zero for every instruction *)
     val coverage = InstructionMap.empty
-    val distances = InstructionMap.empty
+    val distances = lazy InstructionMap.empty
 
     method private update_distances instr coverage =
         let rec update worklist distances =
@@ -85,10 +85,11 @@ class ['self] t = object (self : 'self)
             else
                 distances
         in
-        update (InstructionStack.singleton instr) distances
+        update (InstructionStack.singleton instr) (Lazy.force distances)
 
     method private calculate_distance job =
         (* compute the distance from the instr through function returns to uncovered in the call context *)
+        let distances = Lazy.force distances in
         let rec unwind dist return_dist = function
             | call_return::context ->
                 let dist =
@@ -117,7 +118,7 @@ class ['self] t = object (self : 'self)
         let instr = Job.get_instruction job in
         let count = InstructionMap.find instr coverage + 1 in
         let coverage = InstructionMap.add instr count coverage in
-        let distances = self#update_distances instr coverage in
+        let distances = lazy (self#update_distances instr coverage) in
         {< coverage = coverage; distances = distances >}
 
     method weight job =
