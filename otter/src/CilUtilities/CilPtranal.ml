@@ -1,4 +1,7 @@
 
+open DataStructures
+
+
 (** Table to track initialized files. *)
 let initialized = Hashtbl.create 0
 
@@ -154,7 +157,7 @@ let points_to_fundec file exp =
                 and [mallocs] contains a list of malloc targets
 *)
 let naive_points_to =
-    let memotable = Hashtbl.create 0 in 
+    let memotable = Hashtbl.create 0 in
     fun file exp ->
         try
             Hashtbl.find memotable file
@@ -163,4 +166,17 @@ let naive_points_to =
             let targets = wrap_points_to_varinfo (fun _ -> (FindCil.all_varinfos file, [ (malloc, "malloc") ])) exp in
             Hashtbl.add memotable file targets;
             targets
+
+
+(** Unsound point-to that maps anything to just a distinct [malloc].
+        @param file is the file being analyzed
+        @param exp is the expression to resolve
+        @return [(targets_list, mallocs)] where [target_list] is empty and [mallocs] contains a single malloc target
+*)
+let naive_points_to =
+    let counter = Counter.make () in
+    fun file exp ->
+        let malloc = FindCil.global_varinfo_by_name file "malloc" in
+        let name = "malloc" ^ string_of_int (Counter.next counter) in
+        wrap_points_to_varinfo (fun _ -> ([], [ (malloc, name) ])) exp
 
