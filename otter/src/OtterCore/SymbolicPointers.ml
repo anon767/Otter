@@ -181,15 +181,22 @@ let init_pointer state target_type points_to exps ?(maybe_null=true) ?(maybe_uni
 
     let state, target_bytes_set, _ = TypeAndOffsetSetMap.fold
         begin fun (typ, offsets) target_vars (state, target_bytes_set, count) ->
-            (* generate a list of bytes pointing to the given offsets in block *)
-            let map_offsets target_bytes_set block =
-                OffsetSet.fold begin fun offset target_bytes_set ->
-                    (* for every offset, generate bytes pointing to each offset *)
+            (* generate a bytes that represent the given offsets as a conditional value *)
+            let offset_bytes =
+                let offset_bytes_set = OffsetSet.fold begin fun offset offset_bytes_set ->
+                    (* generate bytes pointing for each offset *)
                     let offset_bits, _ = Cil.bitsOffset typ offset in
                     let offset_bytes = Bytes.int_to_bytes (offset_bits / 8) in
-                    let target_bytes = Bytes.make_Bytes_Address (block, offset_bytes) in
-                    BytesSet.add target_bytes target_bytes_set
-                end offsets target_bytes_set
+                    BytesSet.add offset_bytes offset_bytes_set
+                end offsets BytesSet.empty in
+                let conditional_bytes_list = List.map Bytes.conditional__bytes (BytesSet.elements offset_bytes_set) in
+                Bytes.make_Bytes_Conditional (Bytes.conditional__from_list conditional_bytes_list)
+            in
+
+            (* generate a list of bytes pointing to the given offsets in block *)
+            let map_offsets target_bytes_set block =
+                let target_bytes = Bytes.make_Bytes_Address (block, offset_bytes) in
+                BytesSet.add target_bytes target_bytes_set
             in
 
             (* conservatively make a fresh block and point to it; though this is really only necessary if we point into:
@@ -245,7 +252,7 @@ let init_pointer state target_type points_to exps ?(maybe_null=true) ?(maybe_uni
             target_bytes_set
     in
 
-    (* finally, return a MayBytes pointing to the targets *)
+    (* finally, return a Bytes_Conditional pointing to the targets *)
     let target_bytes =
         let conditional_bytes_list = List.map Bytes.conditional__bytes (BytesSet.elements target_bytes_set) in
         Bytes.make_Bytes_Conditional (Bytes.conditional__from_list conditional_bytes_list)
