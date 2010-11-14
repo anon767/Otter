@@ -15,42 +15,55 @@
 open DataStructures
 open OtterCore
 
+module JobSet = Set.Make (struct type t = Job.job let compare x y = Pervasives.compare x.Job.jid y.Job.jid end)
 module JobGeneration = PrioritySearchQueue.Make
     (struct type t = Job.job let compare x y = Pervasives.compare x.Job.jid y.Job.jid end)
     (struct type t = int let compare = Pervasives.compare end)
 
 
 class ['self] t = object (self : 'self)
+    (* it's much cheaper to keep work separate from queue since work is often queried and queue can be much larger *)
+    val work = JobSet.empty
     val queue = JobGeneration.empty
     val next = 1
 
     method add job =
-        (* jobs are added to the 0th generation *)
-        let queue = JobGeneration.insert job 0 () queue in
-        {< queue = queue >}
+        let work = JobSet.add job work in
+        {< work = work >}
 
     method remove job =
-        try
-            (* dequeue the job *)
-            let generation, () = JobGeneration.lookup job queue in
-            let queue = JobGeneration.delete job queue in
+        (* dequeue the job *)
+        let next', work, queue =
+            if JobSet.mem job work then
+                let work = JobSet.remove job work in
+                (next, work, queue)
+            else
+                try
+                    let generation, () = JobGeneration.lookup job queue in
+                    let queue = JobGeneration.delete job queue in
+                    (generation + 1, work, queue)
+                with JobGeneration.Key ->
+                    raise Not_found
+        in
 
-            (* move the (rest of the) 0th generation to the next generation *)
-            let gen0 = JobGeneration.at_most 0 queue in
-            let queue = List.fold_left (fun queue (job, _, ()) -> JobGeneration.adjust (fun _ -> next) job queue) queue gen0 in
+        (* move the rest of work to the next generation *)
+        let queue = JobSet.fold (fun job queue -> JobGeneration.insert job next () queue) work queue in
+        let work = JobSet.empty in
 
-            (* if no 0th generation jobs remained (i.e. a job has run to completion), update the next generation *)
-            let next = if generation <> 0 then generation + 1 else next in
-            {< queue = queue; next = next >}
-        with JobGeneration.Key ->
-            raise Not_found
+        (* update the next generation *)
+        let next = next' in
+
+        {< work = work; queue = queue; next = next >}
 
     method weight job =
-        try
-            (* pick any one of the most recent generation *)
-            let _, generation, () = JobGeneration.find_min queue in
-            if fst (JobGeneration.lookup job queue) = generation then 1. else 0.
-        with JobGeneration.Key | JobGeneration.Empty ->
-            raise Not_found
+        (* pick any one of work or the most recent generation *)
+        if JobSet.is_empty work then
+            try
+                let _, generation, () = JobGeneration.find_min queue in
+                if fst (JobGeneration.lookup job queue) = generation then 1. else 0.
+            with JobGeneration.Key | JobGeneration.Empty ->
+                raise Not_found
+        else
+            if JobSet.mem job work then 1. else 0.
 end
 
