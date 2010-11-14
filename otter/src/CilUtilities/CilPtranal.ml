@@ -57,72 +57,72 @@ let fold_array f acc len_opt =
                 and [mallocs] contains a list of malloc targets
 *)
 let points_to file exp =
-        init_file file;
-        let targets, mallocs = Ptranal.resolve_exp exp in
+    init_file file;
+    let targets, mallocs = Ptranal.resolve_exp exp in
 
-        let canonicalize_type t = Cil.typeSigWithAttrs (fun _ -> []) t in
+    let canonicalize_type t = Cil.typeSigWithAttrs (fun _ -> []) t in
 
-        (* allow pointers to point only to certain types *)
-        let accept_type =
-            let pointer_typesig = canonicalize_type (Cil.typeOf exp) in
-            fun typ ->
-                let rec accept_type x y = match x, y with
-                    | Cil.TSPtr (x, _), y when x = y -> (* pointer matches target *)
-                        true
-                    | Cil.TSPtr (Cil.TSBase (Cil.TVoid _), _), _ -> (* void * points to anything *)
-                        true
-                    | Cil.TSPtr (x, _), Cil.TSArray (y, _, _) when x = y -> (* pointers may point to arrays *)
-                        true
-                    | Cil.TSPtr (x, _), Cil.TSPtr (y, _) -> (* peel off a level and recurse *)
-                        accept_type x y
-                    (*
-                    | Cil.TInt _, _ -> (* allow int types to be pointers too *)
-                        true
-                    *)
-                    (* TODO: what else? enums with ints? structs to sub-structs? *)
-                    | _, _ ->
-                        false
-                in
-                accept_type pointer_typesig (canonicalize_type typ)
-        in
-
-        (* enumerate all field/array offsets that matches the target type *)
-        let to_offsets typ =
-            let rec to_offsets offsets typ base =
-                let offset_type = Cil.unrollType (Cil.typeOffset typ base) in
-                (* collect offsets that matches the target type *)
-                let offsets = if accept_type offset_type then
-                    base::offsets
-                else
-                    offsets
-                in
-                (* recurse over all field, offsets *)
-                match offset_type with
-                    | Cil.TComp (compinfo, _) ->
-                        fold_struct begin fun offsets field ->
-                            to_offsets offsets typ (Cil.addOffset (Cil.Field (field, Cil.NoOffset)) base)
-                        end offsets compinfo
-                    | Cil.TArray (_, len_opt, _) ->
-                        let offsets_opt = fold_array begin fun offsets index ->
-                            to_offsets offsets typ (Cil.addOffset (Cil.Index (index, Cil.NoOffset)) base)
-                        end offsets len_opt in
-                        begin match offsets_opt with
-                            | Some offsets -> offsets
-                            | None -> offsets
-                        end
-                    | _ ->
-                        offsets
+    (* allow pointers to point only to certain types *)
+    let accept_type =
+        let pointer_typesig = canonicalize_type (Cil.typeOf exp) in
+        fun typ ->
+            let rec accept_type x y = match x, y with
+                | Cil.TSPtr (x, _), y when x = y -> (* pointer matches target *)
+                    true
+                | Cil.TSPtr (Cil.TSBase (Cil.TVoid _), _), _ -> (* void * points to anything *)
+                    true
+                | Cil.TSPtr (x, _), Cil.TSArray (y, _, _) when x = y -> (* pointers may point to arrays *)
+                    true
+                | Cil.TSPtr (x, _), Cil.TSPtr (y, _) -> (* peel off a level and recurse *)
+                    accept_type x y
+                (*
+                | Cil.TInt _, _ -> (* allow int types to be pointers too *)
+                    true
+                *)
+                (* TODO: what else? enums with ints? structs to sub-structs? *)
+                | _, _ ->
+                    false
             in
-            to_offsets [] (Cil.unrollType typ) Cil.NoOffset
-        in
+            accept_type pointer_typesig (canonicalize_type typ)
+    in
 
-        (* combine the target varinfos with offsets *)
-        let target_lvals = List.fold_left begin fun target_lvals v ->
-            List.fold_left begin fun target_lvals o ->
-                (v, o)::target_lvals
-            end target_lvals (to_offsets v.Cil.vtype)
-        end [] targets in
-        (target_lvals, mallocs)
+    (* enumerate all field/array offsets that matches the target type *)
+    let to_offsets typ =
+        let rec to_offsets offsets typ base =
+            let offset_type = Cil.unrollType (Cil.typeOffset typ base) in
+            (* collect offsets that matches the target type *)
+            let offsets = if accept_type offset_type then
+                base::offsets
+            else
+                offsets
+            in
+            (* recurse over all field, offsets *)
+            match offset_type with
+                | Cil.TComp (compinfo, _) ->
+                    fold_struct begin fun offsets field ->
+                        to_offsets offsets typ (Cil.addOffset (Cil.Field (field, Cil.NoOffset)) base)
+                    end offsets compinfo
+                | Cil.TArray (_, len_opt, _) ->
+                    let offsets_opt = fold_array begin fun offsets index ->
+                        to_offsets offsets typ (Cil.addOffset (Cil.Index (index, Cil.NoOffset)) base)
+                    end offsets len_opt in
+                    begin match offsets_opt with
+                        | Some offsets -> offsets
+                        | None -> offsets
+                    end
+                | _ ->
+                    offsets
+        in
+        to_offsets [] (Cil.unrollType typ) Cil.NoOffset
+    in
+
+    (* combine the target varinfos with offsets *)
+    let target_lvals = List.fold_left begin fun target_lvals v ->
+        List.fold_left begin fun target_lvals o ->
+            (v, o)::target_lvals
+        end target_lvals (to_offsets v.Cil.vtype)
+    end [] targets in
+    (target_lvals, mallocs)
 
 
 (** Wrapper for Cil's {!Ptranal.resolve_fundec}.
@@ -131,6 +131,6 @@ let points_to file exp =
         @return [fundec_list] which is a list of target functions
 *)
 let points_to_fundec file exp =
-        init_file file;
-        Ptranal.resolve_funptr exp
+    init_file file;
+    Ptranal.resolve_funptr exp
 
