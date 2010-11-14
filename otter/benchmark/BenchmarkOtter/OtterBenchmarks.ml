@@ -15,9 +15,22 @@ let (>>>) = Interceptor.(>>>)
 (* directory containing tests for Benchmarks *)
 let dir = Filename.concat "benchmark" (Filename.concat "BenchmarkOtter" "Benchmarks")
 
+(* options *)
+let options =
+    BackOtter.BackOtterDriver.options @
+    BackOtter.BackOtterQueue.options @
+    BackOtter.BackOtterReporter.options @
+    BackOtter.BackwardRank.options @
+    BackOtter.BidirectionalQueue.options @
+    OtterBytes.Stp.options @
+    OtterCore.Executeargs.options @
+    OtterJob.Job.options @
+    OtterQueue.Queue.options @
+    OtterReporter.BasicReporter.options
+
 
 (* benchmarks as an OUnit test suite *)
-let benchmarks ?(div_num=1) ?(div_base=1) random_seed =
+let benchmarks ?(div_num=1) ?(div_base=1) argv_array =
     "Benchmarks" >: test_dir dir begin fun relpath ->
 
         (* load the file at fullpath, but label with relpath *)
@@ -38,11 +51,13 @@ let benchmarks ?(div_num=1) ?(div_base=1) random_seed =
 
         let interceptor = BuiltinFunctions.libc_interceptor >>> BuiltinFunctions.interceptor in
 
+        Arg.parse_argv argv_array (Arg.align options) (fun _ -> ()) "Usage:";
+
         let otter_drivers =
             (* don't want depth-first, it's really terrible *)
             let otter_queues = List.filter (fun (_, queue) -> queue <> `DepthFirst) OtterQueue.Queue.queues in
             let otter_driver name queue =
-                "Otter:" ^ name >:: benchmark (Driver.run ~random_seed ~interceptor ~queue:(OtterQueue.Queue.get queue))
+                "Otter:" ^ name >:: benchmark (Driver.run ~interceptor ~queue:(OtterQueue.Queue.get queue))
             in
             List.map begin fun (name, queue) -> otter_driver name queue end otter_queues
         in
@@ -51,8 +66,7 @@ let benchmarks ?(div_num=1) ?(div_base=1) random_seed =
             let pure_backotter_driver name brank bqueue =
                 (Printf.sprintf "BackOtter:%s" name) >:: benchmark (
                     let targets_ref = ref BackOtterTargets.empty in
-                    BackOtterDriver.callchain_backward_se ~random_seed
-                                                          ~targets_ref
+                    BackOtterDriver.callchain_backward_se ~targets_ref
                                                           ~b_queue:(BackOtter.BackOtterQueue.get_function_backward_queue targets_ref brank bqueue)
                                                           ~ratio:(-. 0.1) (* Pure backward *)
                 )
@@ -60,8 +74,7 @@ let benchmarks ?(div_num=1) ?(div_base=1) random_seed =
             let backotter_driver name fqueue brank bqueue ratio =
                 (Printf.sprintf "BackOtter:%s" name) >:: benchmark (
                     let targets_ref = ref BackOtterTargets.empty in
-                    BackOtterDriver.callchain_backward_se ~random_seed
-                                                          ~targets_ref
+                    BackOtterDriver.callchain_backward_se ~targets_ref
                                                           ~f_queue:(BackOtter.BackOtterQueue.get targets_ref fqueue)
                                                           ~b_queue:(BackOtter.BackOtterQueue.get_function_backward_queue targets_ref brank bqueue)
                                                           ~ratio

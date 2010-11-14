@@ -21,15 +21,11 @@ module OcamlbuildDependencies = struct
     open BenchmarkUtil
 end
 
-let env_random_seed = "OTTER_RANDOM_SEED"
 let env_division = "OTTER_DIVISION"
+let env_argv = "OTTER_ARGV"
 
 let _ =
-    let random_seed =
-        try int_of_string (Sys.getenv env_random_seed)
-        with Not_found -> failwith "Please provide a random seed"
-    in
-    Format.printf "Random seed: %d@\n" random_seed;
+    (* Divide runs evenly into div_base queues *)
     let div_num, div_base =
         try
             Scanf.sscanf (try (Sys.getenv env_division) with Not_found -> "1/1") "%d/%d" (fun n b -> n, b)
@@ -39,5 +35,13 @@ let _ =
     if div_base <= 0 || div_num <= 0 || div_num > div_base then
         failwith "Bad div_num/div_base";
     Format.printf "Division: %d out of %d@\n" div_num div_base;
-    run_test_tt_main (BenchmarkOtter.OtterBenchmarks.benchmarks ~div_num ~div_base random_seed)
+
+    (* Pass arguments to otter *)
+    let argv_raw =
+        try Sys.getenv env_argv with Not_found -> ""
+    in
+    let argv_array = Array.of_list ("make benchmark-otter" :: (Str.split (Str.regexp "[ \t=]+") argv_raw)) in
+    Array.iter (fun s -> Format.printf "argv: %s@\n" s) argv_array;
+
+    run_test_tt_main (BenchmarkOtter.OtterBenchmarks.benchmarks ~div_num ~div_base argv_array)
 
