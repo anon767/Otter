@@ -165,7 +165,6 @@ let doit file =
 	else ());
 
 	Output.printf "Hash-consing: hits=%d misses=%d\n" (!Bytes.hash_consing_bytes_hits) (!Bytes.hash_consing_bytes_misses);
-	Output.printf "Bytes eval caching: hits=%d misses=%d\n\n" (!MemOp.bytes_eval_cache_hits) (!MemOp.bytes_eval_cache_misses);
 
 	Output.printf "%s@\n" (Executedebug.get_log ());
 	let nodes, _, _ = result#get_stats in

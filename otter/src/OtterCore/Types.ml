@@ -80,7 +80,6 @@ and state =
 
 		va_arg : bytes list list;			(* A stack of va_arg *)
 		va_arg_map : bytes list VargsMap.t;
-		bytes_eval_cache : bool BytesMap.t; (* Map bytes to boolean value, if exists *)
 	}
 
 

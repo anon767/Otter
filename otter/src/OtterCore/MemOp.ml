@@ -117,7 +117,6 @@ let state__empty =
 		stmtPtrs = Types.IndexMap.empty;
 		va_arg = [];
 		va_arg_map = VargsMap.empty;
-		bytes_eval_cache = BytesMap.empty;
 	}
 
 
@@ -351,29 +350,6 @@ let state__add_path_condition state bytes tracked=
 		path_condition = bytes::path_condition;
 		path_condition_tracked = tracked::path_condition_tracked;
 	}
-
-
-let state__add_bytes_eval_cache state bytes boolval =
-  if true then state else
-  if BytesMap.mem bytes state.bytes_eval_cache then
-    failwith "state__add_bytes_eval_cache: value of bytes already set"
-  else
-	{ state with
-       bytes_eval_cache = BytesMap.add bytes boolval state.bytes_eval_cache;
-	}
-
-
-let bytes_eval_cache_hits = ref 0
-let bytes_eval_cache_misses = ref 0
-
-let state__get_bytes_eval_cache state bytes =
-    begin
-      try
-        let ret = Some (BytesMap.find bytes state.bytes_eval_cache) in
-          incr bytes_eval_cache_hits; ret
-      with Not_found ->
-        incr bytes_eval_cache_misses; None
-    end
 
 
 let state__trace state =

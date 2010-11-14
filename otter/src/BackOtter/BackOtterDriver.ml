@@ -294,7 +294,6 @@ let doit file =
     else ());
 
     Output.printf "Hash-consing: hits=%d misses=%d\n" (!Bytes.hash_consing_bytes_hits) (!Bytes.hash_consing_bytes_misses);
-    Output.printf "Bytes eval caching: hits=%d misses=%d\n\n" (!MemOp.bytes_eval_cache_hits) (!MemOp.bytes_eval_cache_misses);
     Output.printf "Counter statistics:@\n";
     let counter_stats = DataStructures.NamedCounter.report () in
     List.iter (fun (name, value) -> Output.printf "%s : %d@\n" name value) counter_stats;
