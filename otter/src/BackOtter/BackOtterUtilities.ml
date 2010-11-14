@@ -68,13 +68,6 @@ let rec lex_compare cmp lst1 lst2 =
         if c = 0 then lex_compare cmp t1 t2 else c
 
 
-let shuffle lst =
-    (* Hopefully no repeating indices... *)
-    let lst = List.map (fun ele -> ele, Random.bits ()) lst in
-    let lst = List.sort (fun (_,r1) (_,r2) -> Pervasives.compare r1 r2) lst in
-    List.map (fun (ele,_) -> ele) lst
-
-
 let get_distance_to_targets target_fundecs job =
     let get_distance_to_targets () =
         if target_fundecs = [] then
@@ -86,17 +79,6 @@ let get_distance_to_targets target_fundecs job =
             DistanceToTargets.find_in_context source context target_instrs
     in
     Timer.time "BackOtterUtilities.get_distance_to_targets" get_distance_to_targets ()
-
-
-let get_distance_to_targets_within_function target_fundecs job =
-    let get_distance_to_targets_within_function () =
-        let file = job.Job.file in
-        let current_fundec = List.hd job.state.callstack in
-        let callees = CilCallgraph.find_callees file current_fundec in
-        let target_fundecs = List.filter (fun target_fundec -> List.memq target_fundec callees) target_fundecs in
-        get_distance_to_targets target_fundecs job
-    in
-    Timer.time "BackOtterUtilities.get_distance_to_targets_within_function" get_distance_to_targets_within_function ()
 
 
 let get_distance_from =

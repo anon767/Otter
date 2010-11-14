@@ -13,7 +13,7 @@ let timing_methods = [
 ]
 
 let default_timing_method = ref `TimeStpCount
-let default_conditionals_forking_level = ref max_int
+let default_conditionals_forking_limit = ref max_int
 
 class ['self] target_tracker delegate entry_fn targets_ref =
 object (_ : 'self)
@@ -210,9 +210,9 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
         >>> BuiltinFunctions.libc_interceptor
         >>> BuiltinFunctions.interceptor
         >>> (
-            let level = !default_conditionals_forking_level  in
-            if level < max_int then
-                OtterExtensions.ConditionalsForking.interceptor ~limit:level
+            let limit = !default_conditionals_forking_limit  in
+            if limit < max_int then
+                OtterExtensions.ConditionalsForking.interceptor ~limit:limit
             else
                 Interceptor.identity_interceptor
         )
@@ -319,9 +319,9 @@ let doit file =
 (** {1 Command-line options} *)
 
 let options = [
-    "--conditionals-forking-level",
-        Arg.Set_int default_conditionals_forking_level,
-        "<level> Set levels for conditionals forking (default: max_int (== don't use))";
+    "--conditionals-forking-limit",
+        Arg.Set_int default_conditionals_forking_limit,
+        "<limit> Set the limit in conditionals forking (default: max_int (== don't use))";
     "--timing-method",
         Arg.Symbol (fst (List.split timing_methods), fun name -> default_timing_method := List.assoc name timing_methods),
         "<timing method> Set the default timing method (default: " ^ (fst (List.find (fun (_, x) -> x = !default_timing_method) timing_methods)) ^ ")";

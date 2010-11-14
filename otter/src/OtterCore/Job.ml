@@ -75,7 +75,7 @@ type job = {
     file : Cil.file;
     state : Types.state;
     exHist : executionHistory;
-    decisionPath : Decision.t list; (** The decision path is a list of decision. Most recent decision first. *)
+    decisionPath : Decision.t list; (** The decision path is a list of decision. Most recent decision first. *)  (* TODO: take this out *)
     instrList : Cil.instr list; (** [instr]s to execute before moving to the next [stmt] *)
     stmt : Cil.stmt;            (** The next statement the job should execute *)
     trackedFns : StringSet.t;	(** The set of functions (names) in which to track coverage *)
