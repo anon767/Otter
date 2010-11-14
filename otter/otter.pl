@@ -32,13 +32,15 @@ BEGIN {
     if (not $::compile_after_merge) {
         $ENV{CILLY_DONT_COMPILE_AFTER_MERGE} = "";
     }
+
+    # always print a backtrace upon abort
+    $ENV{"OCAMLRUNPARAM"} = "b" . $ENV{"OCAMLRUNPARAM"};
 }
 
 sub collectOneArgument {
     my($self, $arg, $pargs) = @_;
     if($arg eq '--bytecode') {
         $CilCompiler::cil_native = $CilCompiler::cil_byte;
-        $ENV{"OCAMLRUNPARAM"} = "b" . $ENV{"OCAMLRUNPARAM"};
         return 1;
     }
     if($arg =~ /^--do/) {

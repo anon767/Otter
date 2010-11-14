@@ -10,7 +10,7 @@ OCAMLBUILD_OTTER = -libs stpvc
 OCAMLBUILD_OCAMLGRAPH = -tags pkg_ocamlgraph
 OCAMLBUILD_OUNIT = -tags pkg_oUnit
 
-OCAMLBUILD_FLAGS = -j 0 -Xs doc,examples,libc,util -tags warn_error_A
+OCAMLBUILD_FLAGS = -j 0 -Xs doc,examples,libc,util -tags warn_error_A,debug
 OCAMLBUILD_FLAGS += $(OCAMLBUILD_CIL) $(OCAMLBUILD_OTTER) $(OCAMLBUILD_OCAMLGRAPH) $(OCAMLBUILD_OUNIT)
 OCAMLBUILD_FLAGS += $(EXTRALIBDIRS:%=-cflags -I,%) $(EXTRALIBDIRS:%=-lflags -I,%) $(OCAMLBUILD_EXTRAFLAGS)
 export OCAMLPATH:=$(CURDIR):@EXTRAOCAMLPATH@
