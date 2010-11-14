@@ -13,7 +13,8 @@ let queues = [
     "closest-to-uncovered", `ClosestToUncovered;
     "closest-to-targets", `ClosestToTargets;
     "generational*closest-to-targets", `Generational `ClosestToTargets;
-    "KLEE", `KLEE
+    "KLEE", `KLEE;
+    "SAGE", `SAGE;
 ]
 
 let default_queue = ref (`Generational `BreadthFirst)
@@ -32,6 +33,7 @@ let rec get = function
     | `Generational `ClosestToTargets -> new RankedQueue.t [ new GenerationalStrategy.t; new ClosestToTargetsStrategy.t ]
     | `RoundRobin queues -> new RoundRobinQueue.t (List.map get queues)
     | `KLEE -> get (`RoundRobin [ `ClosestToUncovered; `RandomPath ])
+    | `SAGE -> new RankedQueue.t [ new GenerationalStrategy.t; new ClosestToUncoveredStrategy.t ]
 
 let get_default () = get !default_queue
 

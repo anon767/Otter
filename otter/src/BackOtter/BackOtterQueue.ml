@@ -26,6 +26,7 @@ let rec get targets_ref = function
     | `Generational `ClosestToTargets -> new RankedQueue.t [ new GenerationalStrategy.t; new ClosestToTargetsStrategy.t targets_ref ]
     | `RoundRobin queues -> new RoundRobinQueue.t (List.map (get targets_ref) queues)
     | `KLEE -> get targets_ref (`RoundRobin [ `ClosestToUncovered; `RandomPath ])
+    | `SAGE -> new RankedQueue.t [ new GenerationalStrategy.t; new ClosestToUncoveredStrategy.t ]
 
 let default_fqueue = ref (`Generational `BreadthFirst)
 let get_default_fqueue targets_ref = get targets_ref !default_fqueue
