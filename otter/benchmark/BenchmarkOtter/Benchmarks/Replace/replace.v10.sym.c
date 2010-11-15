@@ -6,7 +6,7 @@
  */
 /*  -*- Last-Edit:  Mon Dec  7 10:31:51 1992 by Tarak S. Goradia; -*- */
 #pragma max_abandoned(1)
-#pragma time_limit(120)
+#pragma time_limit(180)
 #pragma init_malloc_zero
 #pragma init_local_zero
 #pragma expect_abandoned(failure_reached)
