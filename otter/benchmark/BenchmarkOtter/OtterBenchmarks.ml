@@ -24,6 +24,7 @@ let options =
     BackOtter.BidirectionalQueue.options @
     OtterBytes.Stp.options @
     OtterCore.Executeargs.options @
+    OtterCore.SymbolicPointers.options @
     OtterJob.Job.options @
     OtterQueue.Queue.options @
     OtterReporter.BasicReporter.options

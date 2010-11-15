@@ -34,18 +34,16 @@ let fold_array f acc len_opt =
 (**/**)
 
 
-(** Initialize program values symbolically, using {!init_pointer} to initialize pointers.
+(** Initialize program values symbolically, using {!SymbolicPointers.init_pointer} to initialize pointers.
 
-    Note: this module currently assumes that the initial symbolic state is completely initialized via this module and
-    with the same pointer analysis.
-
+        @scheme optionally indicates the scheme to initialize symbolic pointers (see {!SymbolicPointers.init_pointer})
         @param state is the symbolic executor state in which to initialize the variable
         @param typ is the type of the value to initialize
-        @param points_to is a function for computing pointer targets to be passed to {!init_pointer}
+        @param points_to is a function for computing pointer targets to be passed to {!SymbolicPointers.init_pointer}
         @param exps is list of expressions, which are joined to compute the program value
         @return [(Types.state, Bytes.bytes)] the updated symbolic state and the initialized variable
 *)
-let rec init_bytes_with_pointers state typ points_to exps = match Cil.unrollType typ with
+let rec init_bytes_with_pointers ?scheme state typ points_to exps = match Cil.unrollType typ with
     | Cil.TPtr (Cil.TFun _, _) ->
         (* TODO: use a points to analysis to resolve the target functions *)
         let bytes = Bytes.bytes__symbolic (Cil.bitsSizeOf typ / 8) in
@@ -61,20 +59,20 @@ let rec init_bytes_with_pointers state typ points_to exps = match Cil.unrollType
             if vars = [] then begin
                 let exps = List.map (fun exp -> Cil.Lval (Cil.Mem exp, Cil.NoOffset)) exps in
                 if exps <> [] then
-                    init_bytes_with_pointers state typ points_to exps
+                    init_bytes_with_pointers ?scheme state typ points_to exps
                 else
                     let size = Cil.bitsSizeOf typ / 8 in
                     (state, Bytes.bytes__symbolic size)
             end else
                 let exps = List.map (fun v -> Cil.Lval (Cil.var v)) vars in
-                init_bytes_with_pointers state typ points_to exps
+                init_bytes_with_pointers ?scheme state typ points_to exps
         in
 
         (* give it a name *)
         let block_name = FormatPlus.as_string Printcil.exp (List.hd exps) in
 
         (* finally, make the pointer *)
-        SymbolicPointers.init_pointer state target_type points_to exps block_name init_target
+        SymbolicPointers.init_pointer ?scheme state target_type points_to exps block_name init_target
 
     | Cil.TComp (compinfo, _) when compinfo.Cil.cstruct ->
         (* for structs, initialize and iterate over the fields *)
@@ -86,7 +84,7 @@ let rec init_bytes_with_pointers state typ points_to exps = match Cil.unrollType
                 | Cil.Lval lval -> Cil.Lval (Cil.addOffsetLval field_offset lval)
                 | _ -> failwith "are there any other Cil.exp that can have type Cil.TComp?"
             end exps in
-            let state, field_bytes = init_bytes_with_pointers state (Cil.typeOffset typ field_offset) points_to field_exps in
+            let state, field_bytes = init_bytes_with_pointers ?scheme state (Cil.typeOffset typ field_offset) points_to field_exps in
             let offset, size = Cil.bitsOffset typ field_offset in
             let offset = Bytes.int_to_bytes (offset / 8) in
             let size = size / 8 in
@@ -104,7 +102,7 @@ let rec init_bytes_with_pointers state typ points_to exps = match Cil.unrollType
                 | Cil.Lval lval -> Cil.Lval (Cil.addOffsetLval el_offset lval)
                 | _ -> failwith "are there any other Cil.exp that can have type Cil.TArray?"
             end exps in
-            let state, el_bytes = init_bytes_with_pointers state el_typ points_to el_exps in
+            let state, el_bytes = init_bytes_with_pointers ?scheme state el_typ points_to el_exps in
             let offset, size = Cil.bitsOffset typ el_offset in
             let offset = Bytes.int_to_bytes (offset / 8) in
             let size = size / 8 in
@@ -134,12 +132,14 @@ let rec init_bytes_with_pointers state typ points_to exps = match Cil.unrollType
 (** Create a new symbolic executor job starting at a given function, and using {!init_bytes_with_pointers} to initialize
     the symbolic state.
 
+        @scheme optionally indicates the scheme to initialize symbolic pointers (see {!init_bytes_with_pointers})
         @param file is the file to symbolically execute
-        @param points_to is a function for computing pointer targets to be passed to {!init_pointer} (default:[CilPtranal.points_to file])
+        @param points_to is a function for computing pointer targets to be passed to {!init_bytes_with_pointers}
+                (default:[CilPtranal.points_to file])
         @param fn is list the function at which to begin symbolic execution
         @return [OtterCore.Job.job] the created job
 *)
-let make file ?(points_to=CilPtranal.points_to file) fn =
+let make file ?scheme ?(points_to=CilPtranal.points_to file) fn =
     (* initialize the state with symbolic globals *)
     let state = MemOp.state__empty in
 
@@ -148,7 +148,7 @@ let make file ?(points_to=CilPtranal.points_to file) fn =
         | Cil.GVarDecl (v, _) | Cil.GVar (v, _, _)
                 when not (Cil.isFunctionType v.Cil.vtype (* skip function prototypes; they're not variables *)
                     || Types.VarinfoMap.mem v state.Types.global) ->
-            let deferred state = init_bytes_with_pointers state v.Cil.vtype points_to [ (Cil.Lval (Cil.var v)) ] in
+            let deferred state = init_bytes_with_pointers ?scheme state v.Cil.vtype points_to [ (Cil.Lval (Cil.var v)) ] in
             let state, lval_block = SymbolicPointers.init_lval_block state v v.Cil.vname deferred in
             { state with Types.global = Types.VarinfoMap.add v lval_block state.Types.global }
         | _ ->
@@ -158,7 +158,7 @@ let make file ?(points_to=CilPtranal.points_to file) fn =
     (* then, setup function arguments *)
     (* TODO: handle varargs *)
     let state, rev_args_bytes = List.fold_left begin fun (state, args_bytes) v ->
-        let state, bytes = init_bytes_with_pointers state v.Cil.vtype points_to [ (Cil.Lval (Cil.var v)) ] in
+        let state, bytes = init_bytes_with_pointers ?scheme state v.Cil.vtype points_to [ (Cil.Lval (Cil.var v)) ] in
         (state, bytes::args_bytes)
     end (state, []) fn.Cil.sformals in
 

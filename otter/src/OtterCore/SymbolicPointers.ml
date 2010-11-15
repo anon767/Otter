@@ -116,6 +116,15 @@ end)
 (**/**)
 
 
+(* Options *)
+let schemes = [
+    "one-level", `OneLevel;
+    "two-level", `TwoLevel;
+]
+
+let default_scheme = ref `TwoLevel
+
+
 (** Initialize pointer values symbolically using a pointer analysis.
 
     Three parameters are required to determine the pointer value:
@@ -138,6 +147,11 @@ end)
     Note: this module currently assumes that the initial symbolic state is completely initialized via this module and
     with the same pointer analysis.
 
+        @scheme optionally indicates the scheme to initialize symbolic pointers.
+                Choices are:
+                    - [`OneLevel]: symbolic pointers are initialized as conditionals of base-offset pairs
+                    - [`TwoLevel]: symbolic pointers are initialized as conditionals of bases, and conditionals of
+                            offsets for each distinct base.
         @param state is the symbolic executor state in which to initialize the pointer
         @param target_type is the type of the pointer target (which may not match the pointer type, e.g., for void *
                 pointers)
@@ -155,7 +169,7 @@ end)
                 as well as the pointer itself should be used to initialized the target
         @return [(Types.state, Bytes.bytes)] the updated symbolic state and the initialized pointer value
 *)
-let init_pointer state target_type points_to exps ?(maybe_null=true) ?(maybe_uninit=false) block_name init_target =
+let init_pointer ?(scheme=(!default_scheme)) state target_type points_to exps ?(maybe_null=true) ?(maybe_uninit=false) block_name init_target =
     (* find the points to set for this pointer *)
     let target_lvals, malloc_sites = List.fold_left begin fun (target_lvals, malloc_sites) exp ->
         let t, m = points_to exp in
@@ -181,22 +195,35 @@ let init_pointer state target_type points_to exps ?(maybe_null=true) ?(maybe_uni
 
     let state, target_bytes_set, _ = TypeAndOffsetSetMap.fold
         begin fun (typ, offsets) target_vars (state, target_bytes_set, count) ->
-            (* generate a bytes that represent the given offsets as a conditional value *)
-            let offset_bytes =
-                let offset_bytes_set = OffsetSet.fold begin fun offset offset_bytes_set ->
-                    (* generate bytes pointing for each offset *)
-                    let offset_bits, _ = Cil.bitsOffset typ offset in
-                    let offset_bytes = Bytes.int_to_bytes (offset_bits / 8) in
-                    BytesSet.add offset_bytes offset_bytes_set
-                end offsets BytesSet.empty in
-                let conditional_bytes_list = List.map Bytes.conditional__bytes (BytesSet.elements offset_bytes_set) in
-                Bytes.make_Bytes_Conditional (Bytes.conditional__from_list conditional_bytes_list)
-            in
+            let map_offsets = match scheme with
+                | `OneLevel ->
+                    (* generate a list of bytes pointing to the given offsets in block *)
+                    fun target_bytes_set block ->
+                        OffsetSet.fold begin fun offset target_bytes_set ->
+                            (* for every offset, generate bytes pointing to each offset *)
+                            let offset_bits, _ = Cil.bitsOffset typ offset in
+                            let offset_bytes = Bytes.int_to_bytes (offset_bits / 8) in
+                            let target_bytes = Bytes.make_Bytes_Address (block, offset_bytes) in
+                            BytesSet.add target_bytes target_bytes_set
+                        end offsets target_bytes_set
 
-            (* generate a list of bytes pointing to the given offsets in block *)
-            let map_offsets target_bytes_set block =
-                let target_bytes = Bytes.make_Bytes_Address (block, offset_bytes) in
-                BytesSet.add target_bytes target_bytes_set
+                | `TwoLevel ->
+                    (* generate a bytes that represent the given offsets as a conditional value *)
+                    let offset_bytes =
+                        let offset_bytes_set = OffsetSet.fold begin fun offset offset_bytes_set ->
+                            (* generate bytes pointing for each offset *)
+                            let offset_bits, _ = Cil.bitsOffset typ offset in
+                            let offset_bytes = Bytes.int_to_bytes (offset_bits / 8) in
+                            BytesSet.add offset_bytes offset_bytes_set
+                        end offsets BytesSet.empty in
+                        let conditional_bytes_list = List.map Bytes.conditional__bytes (BytesSet.elements offset_bytes_set) in
+                        Bytes.make_Bytes_Conditional (Bytes.conditional__from_list conditional_bytes_list)
+                    in
+
+                    (* generate a list of bytes pointing to the given offsets in block *)
+                    fun target_bytes_set block ->
+                        let target_bytes = Bytes.make_Bytes_Address (block, offset_bytes) in
+                        BytesSet.add target_bytes target_bytes_set
             in
 
             (* conservatively make a fresh block and point to it; though this is really only necessary if we point into:
@@ -287,4 +314,14 @@ let init_lval_block state var block_name deferred =
         (state, Bytes.conditional__from_list target_list)
     in
     (state, Deferred.Deferred deferred_lval_block)
+
+
+(** {1 Command-line options} *)
+
+let options = [
+    "--symbolic-pointers-scheme",
+        Arg.Symbol (fst (List.split schemes), fun name -> default_scheme := List.assoc name schemes),
+        "<scheme> Set the default offset for symbolic pointers (default: "
+            ^ (fst (List.find (fun (_, x) -> x = !default_scheme) schemes)) ^ ")";
+]
 
