@@ -85,6 +85,8 @@ let benchmarks ?(div_num=1) ?(div_base=1) argv_array =
             (* don't want depth-first, it's really terrible *)
             let backotter_bqueues = List.filter (fun (_, queue) -> queue <> `DepthFirst) BackOtter.BackOtterQueue.queues in
             let backotter_fqueues = List.filter (fun (_, queue) -> queue <> `DepthFirst) BackOtter.BackOtterQueue.queues in
+            (* Disable RandomFunction for now *)
+            let backotter_branks = List.filter (fun (_, queue) -> queue <> `RandomFunction) BackOtter.BackwardRank.queues in
 
             let rec compose fn lst = function
                 | head :: tail -> (List.map (fun ele -> fn ele head) lst) @ (compose fn lst tail)
@@ -92,7 +94,7 @@ let benchmarks ?(div_num=1) ?(div_base=1) argv_array =
             in
             let backotter_brqueues = compose (fun (rank_name, rank_fn) (bqueue_name, bqueue) ->
                 (Printf.sprintf "%s,%s" rank_name bqueue_name, rank_fn, bqueue))
-                BackOtter.BackwardRank.queues
+                backotter_branks
                 backotter_bqueues
             in
             let backotter_combined_queues = compose (fun (fqueue_name, fqueue) (bqueue_name, rank_fn, bqueue) ->
@@ -103,7 +105,8 @@ let benchmarks ?(div_num=1) ?(div_base=1) argv_array =
             let backotter_combined_queues = compose (fun (name, fqueue, rank_fn, bqueue) ratio ->
                 (Printf.sprintf "%s,ratio(%.2f)" name ratio), fqueue, rank_fn, bqueue, ratio)
                 backotter_combined_queues
-                [0.75; 0.5; 0.25]
+                (* Disable 0.25 for now *)
+                [0.75; 0.5; (* 0.25 *)]
             in
             (List.map begin fun (name, fqueue, brank, bqueue, ratio) -> backotter_driver name fqueue brank bqueue ratio; end backotter_combined_queues) @
             (List.map begin fun (name, brank, bqueue) -> pure_backotter_driver (Printf.sprintf "forward(N/A),backward(%s),ratio(0.0)" name) brank bqueue end backotter_brqueues)
