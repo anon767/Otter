@@ -113,6 +113,18 @@ module BytesSet = Set.Make (struct
     type t = Bytes.bytes
     let compare = Pervasives.compare
 end)
+
+let list_foldm f xs =
+    let rec list_foldm xs = function
+        | x::y::ys -> list_foldm ((f x y)::xs) ys
+        | [ x ] -> list_foldm_next (x::xs)
+        | [] -> list_foldm_next xs
+    and list_foldm_next = function
+        | [ x ] -> x
+        | [] -> failwith "No items in list!"
+        | xs -> list_foldm [] xs
+    in
+    list_foldm [] xs
 (**/**)
 
 
@@ -120,6 +132,7 @@ end)
 let schemes = [
     "one-level", `OneLevel;
     "two-level", `TwoLevel;
+    "constraint-offset", `ConstraintOffset;
 ]
 
 let default_scheme = ref `TwoLevel
@@ -195,10 +208,10 @@ let init_pointer ?(scheme=(!default_scheme)) state target_type points_to exps ?(
 
     let state, target_bytes_set, _ = TypeAndOffsetSetMap.fold
         begin fun (typ, offsets) target_vars (state, target_bytes_set, count) ->
-            let map_offsets = match scheme with
+            let state, map_offsets = match scheme with
                 | `OneLevel ->
                     (* generate a list of bytes pointing to the given offsets in block *)
-                    fun target_bytes_set block ->
+                    let map_offsets target_bytes_set block =
                         OffsetSet.fold begin fun offset target_bytes_set ->
                             (* for every offset, generate bytes pointing to each offset *)
                             let offset_bits, _ = Cil.bitsOffset typ offset in
@@ -206,6 +219,8 @@ let init_pointer ?(scheme=(!default_scheme)) state target_type points_to exps ?(
                             let target_bytes = Bytes.make_Bytes_Address (block, offset_bytes) in
                             BytesSet.add target_bytes target_bytes_set
                         end offsets target_bytes_set
+                    in
+                    (state, map_offsets)
 
                 | `TwoLevel ->
                     (* generate a bytes that represent the given offsets as a conditional value *)
@@ -221,9 +236,37 @@ let init_pointer ?(scheme=(!default_scheme)) state target_type points_to exps ?(
                     in
 
                     (* generate a list of bytes pointing to the given offsets in block *)
-                    fun target_bytes_set block ->
+                    let map_offsets target_bytes_set block =
                         let target_bytes = Bytes.make_Bytes_Address (block, offset_bytes) in
                         BytesSet.add target_bytes target_bytes_set
+                    in
+                    (state, map_offsets)
+
+                | `ConstraintOffset ->
+                    (* generate a bytes that represent the given offsets as a symbolic value with constraints *)
+                    let offset_bytes = Bytes.bytes__symbolic (Cil.bitsSizeOf !Cil.upointType / 8) in
+
+                    (* generate constraints for each offset *)
+                    let offset_constraints_set = OffsetSet.fold begin fun offset offset_constraints_set ->
+                        let offset_bits, _ = Cil.bitsOffset typ offset in
+                        let constraint_bytes = Bytes.make_Bytes_Op (Bytes.OP_EQ,
+                            [ (offset_bytes, !Cil.upointType); (Bytes.int_to_offset_bytes (offset_bits / 8), !Cil.upointType) ])
+                        in
+                        BytesSet.add constraint_bytes offset_constraints_set
+                    end offsets BytesSet.empty in
+
+                    (* append the constraints to the path condition *)
+                    let offset_constraints = list_foldm begin fun x y ->
+                        Bytes.make_Bytes_Op (Bytes.OP_LOR, [ (x, Cil.intType); (y, Cil.intType) ])
+                    end (BytesSet.elements offset_constraints_set) in
+                    let state = MemOp.state__add_path_condition state offset_constraints false in
+
+                    (* generate a list of bytes pointing to the given offsets in block *)
+                    let map_offsets target_bytes_set block =
+                        let target_bytes = Bytes.make_Bytes_Address (block, offset_bytes) in
+                        BytesSet.add target_bytes target_bytes_set
+                    in
+                    (state, map_offsets)
             in
 
             (* conservatively make a fresh block and point to it; though this is really only necessary if we point into:
