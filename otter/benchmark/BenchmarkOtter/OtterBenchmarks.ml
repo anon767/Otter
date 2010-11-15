@@ -31,6 +31,9 @@ let options =
 
 (* benchmarks as an OUnit test suite *)
 let benchmarks ?(div_num=1) ?(div_base=1) argv_array =
+    (* Parse argv_array to initialize Otter *)
+    Arg.parse_argv ~current:(ref 0) argv_array (Arg.align options) (fun _ -> ()) "Usage:";
+
     "Benchmarks" >: test_dir dir begin fun relpath ->
 
         (* load the file at fullpath, but label with relpath *)
@@ -50,10 +53,6 @@ let benchmarks ?(div_num=1) ?(div_base=1) argv_array =
         in
 
         let interceptor = BuiltinFunctions.libc_interceptor >>> BuiltinFunctions.interceptor in
-
-        (* Not sure why using the default current variable will disable stdout *)
-        let current = ref 0 in
-        Arg.parse_argv ~current argv_array (Arg.align options) (fun _ -> ()) "Usage:";
 
         let otter_drivers =
             (* don't want depth-first, it's really terrible *)
