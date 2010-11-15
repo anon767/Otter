@@ -36,7 +36,7 @@ let fold_array f acc len_opt =
 
 (** Initialize program values symbolically, using {!SymbolicPointers.init_pointer} to initialize pointers.
 
-        @scheme optionally indicates the scheme to initialize symbolic pointers (see {!SymbolicPointers.init_pointer})
+        @param scheme optionally indicates the scheme to initialize symbolic pointers (see {!SymbolicPointers.init_pointer})
         @param state is the symbolic executor state in which to initialize the variable
         @param typ is the type of the value to initialize
         @param points_to is a function for computing pointer targets to be passed to {!SymbolicPointers.init_pointer}
@@ -132,7 +132,7 @@ let rec init_bytes_with_pointers ?scheme state typ points_to exps = match Cil.un
 (** Create a new symbolic executor job starting at a given function, and using {!init_bytes_with_pointers} to initialize
     the symbolic state.
 
-        @scheme optionally indicates the scheme to initialize symbolic pointers (see {!init_bytes_with_pointers})
+        @param scheme optionally indicates the scheme to initialize symbolic pointers (see {!init_bytes_with_pointers})
         @param file is the file to symbolically execute
         @param points_to is a function for computing pointer targets to be passed to {!init_bytes_with_pointers}
                 (default:[CilPtranal.points_to file])

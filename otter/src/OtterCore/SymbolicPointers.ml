@@ -160,11 +160,11 @@ let default_scheme = ref `TwoLevel
     Note: this module currently assumes that the initial symbolic state is completely initialized via this module and
     with the same pointer analysis.
 
-        @scheme optionally indicates the scheme to initialize symbolic pointers.
-                Choices are:
-                    - [`OneLevel]: symbolic pointers are initialized as conditionals of base-offset pairs
-                    - [`TwoLevel]: symbolic pointers are initialized as conditionals of bases, and conditionals of
-                            offsets for each distinct base.
+        @param scheme optionally indicates the scheme to initialize symbolic pointers, which are
+                    - [`OneLevel]: conditionals of base-offset pairs,
+                    - [`TwoLevel]: conditionals of bases, and conditionals of offsets for each distinct base,
+                    - [`ConstraintOffset]: conditionals of bases, and symbolic offsets with constraints for each distinct base;
+                (default: [`TwoLevel])
         @param state is the symbolic executor state in which to initialize the pointer
         @param target_type is the type of the pointer target (which may not match the pointer type, e.g., for void *
                 pointers)
