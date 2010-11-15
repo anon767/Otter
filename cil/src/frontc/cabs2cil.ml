@@ -1154,6 +1154,10 @@ let integralPromotion (t : typ) : typ = (* c.f. ISO 6.3.1.1 *)
   | TEnum (_, a) -> TInt(IInt, a)
   | t -> E.s (error "integralPromotion: not expecting %a" d_type t)
   
+let defaultArgumentPromotion (t : typ) : typ = (* c.f. ISO 6.5.2.2:6 *)
+  match unrollType t with
+  | TFloat (FFloat, a) -> TFloat (FDouble, a)
+  | _ -> if isIntegralType t then integralPromotion t else t
 
 let arithmeticConversion    (* c.f. ISO 6.3.1.8 *)
     (t1: typ)
@@ -3935,7 +3939,9 @@ and doExp (asconst: bool)   (* This expression is used as a constant *)
                       let (ss, args') = loop args in
                       let (sa, a', at) = force_right_to_left_evaluation 
                           (doExp false a (AExp None)) in
-                      (ss @@ sa, a' :: args')
+                      let promoted_type = defaultArgumentPromotion at in
+                      let _, a'' = castTo at promoted_type a' in
+                      (ss @@ sa, a'' :: args')
                 in
                 loop args
         in
