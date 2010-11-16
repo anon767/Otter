@@ -95,6 +95,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
              *)
             let jid_to_job = JidMap.add job.jid_unique job jid_to_job in
             (* If job comes from a bounded job *)
+            let _ = Output.debug_printf "Job %d has parent %d@\n" job.jid_unique job.jid_parent in
             if JidMap.mem job.jid_parent jid_to_bounding_paths then
                 let parent_job = JidMap.find job.jid_parent jid_to_job in
                 let bounding_paths = JidMap.find parent_job.jid_unique jid_to_bounding_paths in
@@ -131,10 +132,10 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                 let jid_to_job, jid_to_bounding_paths, bounded_jobqueue =
                     match function_call_of_latest_decision job.decisionPath with
                     | Some (fundec) ->
-                        let _ = Output.debug_printf "Call target function %s@\n" fundec.svar.vname in
                         let failing_paths = BackOtterTargets.get fundec (!targets_ref) in
                         if List.length failing_paths = 0 then jid_to_job, jid_to_bounding_paths, bounded_jobqueue (* Not a target function *)
                         else
+                            let _ = Output.debug_printf "Call target function %s@\n" fundec.svar.vname in
                             let bounded_job = {job with jid_unique = Counter.next Job.job_counter_unique;} in
                             let _ = Output.debug_printf "Add job_unique %d into the bounded_jobqueue @\n" bounded_job.jid_unique in
                             JidMap.add bounded_job.jid_unique bounded_job jid_to_job,

@@ -136,18 +136,6 @@ let main_loop entry_fn timer_ref interceptor queue reporter =
                                 (entry_time +. time_elapsed, other_time)
                             else
                                 (entry_time, other_time +. time_elapsed));
-                        (* Set jid_unique and jid_parent if the result is not Fork
-                         * TODO: this should not be put here. *)
-                        let result =
-                            match result with
-                            | Active job -> Active {job with
-                                jid_unique = DataStructures.Counter.next job_counter_unique;
-                                jid_parent = job.jid_unique; }
-                            | Paused job -> Paused {job with
-                                jid_unique = DataStructures.Counter.next job_counter_unique;
-                                jid_parent = job.jid_unique; }
-                            | _ -> result
-                        in
                         result
                     in
                     let rec process_result (queue, reporter) result =
