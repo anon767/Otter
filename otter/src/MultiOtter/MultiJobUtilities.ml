@@ -28,7 +28,7 @@ let put_job job multijob metadata =
 	let program_counter = {
 		MultiTypes.instrList = job.Job.instrList;
 		stmt = job.Job.stmt;
-		inTrackedFn = job.Job.inTrackedFn; 
+		inTrackedFn = job.Job.inTrackedFn;
 	} in
 	let local_state = { job.state with path_condition = []; } in
 	let shared = {
@@ -39,7 +39,7 @@ let put_job job multijob metadata =
 	} in
 	{
 		MultiTypes.file = job.Job.file;
-		processes = 
+		processes =
 			(match metadata.priority with
 				| Atomic -> (program_counter, local_state, metadata)::multijob.processes (* save time sorting by putting an atomic process on the front *)
 				| _ -> List.append multijob.processes [ (program_counter, local_state, metadata) ])
@@ -69,8 +69,8 @@ let put_completion completion multijob = match completion with
 		in
 		let shared = {
 			shared_path_condition = job_result.result_state.path_condition;
-			shared_block_to_bytes = update_to_shared_memory 
-				multijob.shared.shared_block_to_bytes 
+			shared_block_to_bytes = update_to_shared_memory
+				multijob.shared.shared_block_to_bytes
 				job_result.result_state.block_to_bytes;
 			MultiTypes.trackedFns = multijob.shared.MultiTypes.trackedFns;
 			exHist = job_result.result_history;
@@ -111,7 +111,7 @@ let schedule_process_list multijob =
 	in
 	let processes = update_process_list multijob.processes in
 	List.stable_sort (* TODO: use a priority queue instead *)
-		begin fun (_, _, ls1) (_, _, ls2) -> 
+		begin fun (_, _, ls1) (_, _, ls2) ->
 			match ls1.priority, ls2.priority with
 				| Atomic, Atomic -> 0
 				| Atomic, _ -> -1
@@ -127,7 +127,7 @@ let schedule_process_list multijob =
 		processes
 
 (* get a job from a multijob *)
-let get_job multijob = 
+let get_job multijob =
 	match schedule_process_list multijob with (* TODO: use a priority queue instead *)
 	| [] ->
 		None
@@ -148,6 +148,8 @@ let get_job multijob =
 			Job.exHist = multijob.shared.MultiTypes.exHist;
 			(* TODO *)
 			Job.decisionPath = [];
+            Job.jid_unique = -1;
+            Job.jid_parent = -1;
 		} in
 		let multijob = { multijob with
 			processes = processes;

@@ -80,7 +80,9 @@ type job = {
     stmt : Cil.stmt;            (** The next statement the job should execute *)
     trackedFns : StringSet.t;	(** The set of functions (names) in which to track coverage *)
     inTrackedFn : bool;         (** Is stmt in a function in the original program (as opposed to in a library or system call)? *)
-    jid : int; (** A unique identifier for the job *)
+    jid : int; (** An identifier for the job. Not unique. *)
+    jid_unique : int; (** A unique identifier for the job *)
+    jid_parent : int; (** The unique identifier for the parent of the job *)
 }
 
 type job_result = {
@@ -104,6 +106,7 @@ type ('abandoned, 'truncated) job_state =
 	| Paused of job
 
 let job_counter = Counter.make ()
+let job_counter_unique = Counter.make ()
 
 (* create a job that begins at a function, given an initial state *)
 let make file state fn argvs =
@@ -120,6 +123,8 @@ let make file state fn argvs =
         trackedFns = trackedFns;
         inTrackedFn = StringSet.mem fn.Cil.svar.Cil.vname trackedFns;
         jid = Counter.next job_counter;
+        jid_unique = Counter.next job_counter_unique;
+        jid_parent = -1; (* Indicates no parent *)
     }
 
 (** Get the file location for the current job instruction.
@@ -158,9 +163,6 @@ let get_instruction_context job =
 (* Useful for constructing JobMap/JobSet *)
 module JobOrderedType = struct
     type t = job
-    (* a work around, since job.jid is NOT UNIQUE *)
-    let compare j1 j2 =
-        if j1.jid = j2.jid then (Hashtbl.hash j1) - (Hashtbl.hash j2)
-        else j1.jid - j2.jid
+    let compare j1 j2 = j1.jid_unique - j2.jid_unique
 
 end

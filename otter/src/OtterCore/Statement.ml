@@ -170,6 +170,8 @@ let exec_instr_call job instr lvalopt fexp exps errors =
                     let job = { job with
                         decisionPath = DecisionFuncall(instr, fundec)::job.decisionPath;
                         jid = if t = [] then job.jid else Counter.next job_counter; (* increment all but the last *)
+                        jid_unique = Counter.next job_counter_unique;
+                        jid_parent = job.jid_unique;
                     } in
                     try
                         (exec_fundec job state instr fundec lvalopt exps errors)
@@ -415,12 +417,16 @@ let exec_stmt job errors =
                             stmt = nextStmtT;
                             exHist = nextExHist (Some nextStmtT) ~whichBranch:true;
                             decisionPath = (DecisionConditional(stmt, true))::job.decisionPath;
-                            jid = Counter.next job_counter; } in
+                            jid = Counter.next job_counter;
+                            jid_unique = Counter.next job_counter_unique;
+                            jid_parent = job.jid_unique; } in
                         let falseJob = { job with
                             state = nextStateF;
                             stmt = nextStmtF;
                             decisionPath = (DecisionConditional(stmt, false))::job.decisionPath;
-                            exHist =  nextExHist (Some nextStmtF) ~whichBranch:false; } in
+                            exHist =  nextExHist (Some nextStmtF) ~whichBranch:false;
+                            jid_unique = Counter.next job_counter_unique;
+                            jid_parent = job.jid_unique; } in
                             Output.set_mode Output.MSG_MUSTPRINT;
                             Output.printf "Branching on @[%a@]@ at %a.@\n"
                             Printer.exp exp

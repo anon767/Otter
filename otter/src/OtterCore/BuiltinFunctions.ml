@@ -820,6 +820,7 @@ let libc_longjmp job retopt exps errors =
 
 			let jobs, errors = List.fold_left (fun (jobs, errors) arg ->
 				let job, errors = process_stmtPtr arg errors in
+                (* TODO: update jid_unique and jid_parent as well *)
 				let job = Active { job with jid = if jobs = [] then job.jid else Counter.next job_counter } in
 				(job::jobs, errors)
 			) ([], errors) stmtPtrAddrs in
