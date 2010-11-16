@@ -32,6 +32,8 @@ let options =
 
 (* benchmarks as an OUnit test suite *)
 let benchmarks ?(div_num=1) ?(div_base=1) argv_array =
+    (* Parse argv_array to initialize Otter *)
+    Arg.parse_argv ~current:(ref 0) argv_array (Arg.align options) (fun _ -> ()) "Usage:";
 
     "Benchmarks" >: test_dir dir begin fun relpath ->
 
@@ -50,8 +52,6 @@ let benchmarks ?(div_num=1) ?(div_base=1) argv_array =
                     | None -> ()
             end
         in
-        (* Parse argv_array to initialize Otter *)
-        Arg.parse_argv ~current:(ref 0) argv_array (Arg.align options) (fun _ -> ()) "Usage:";
 
         let interceptor = BuiltinFunctions.libc_interceptor >>> BuiltinFunctions.interceptor in
 
