@@ -163,6 +163,6 @@ let get_instruction_context job =
 (* Useful for constructing JobMap/JobSet *)
 module JobOrderedType = struct
     type t = job
-    let compare j1 j2 = j1.jid_unique - j2.jid_unique
+    let compare j1 j2 = Pervasives.compare j1.jid_unique j2.jid_unique
 
 end
