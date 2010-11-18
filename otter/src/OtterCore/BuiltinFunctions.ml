@@ -639,7 +639,7 @@ end job
 	 of arguments, this behaves like the n <= 0 case.) *)
 let intercept_symbolic job job_queue interceptor =
 	match job.instrList with
-		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::_ when varinfo.vname = "__SYMBOLIC" ->
+		| Cil.Call(retopt, Cil.Lval(Cil.Var({vname = "__SYMBOLIC"}), Cil.NoOffset), exps, loc)::_ ->
 			let errors = [] in
 			let job, errors = match exps with
 				| [AddrOf (Var varinf, NoOffset as cil_lval)]
@@ -880,7 +880,6 @@ let interceptor job job_queue interceptor =
 		(* memset defaults to the C implimentation on failure *)
 		(try_with_job_abandoned_interceptor
 		(intercept_function_by_name_internal "memset"                  libc_memset)) @@
-		(intercept_function_by_name_internal "memset__concrete"        libc_memset) @@
 		(intercept_function_by_name_internal "_exit"                   libc_exit) @@
 		(intercept_function_by_name_internal "__TRUTH_VALUE"           otter_truth_value) @@
 		(intercept_function_by_name_internal "__GIVEN"                 otter_given) @@
@@ -916,6 +915,9 @@ let interceptor job job_queue interceptor =
 			result_decision_path = job.decisionPath; }
 		in
 		(Complete (Abandoned (`Failure msg, Job.get_loc job, result)), job_queue) (* TODO (see above) *)
+
+let noop job _ _ errors =
+    Active (end_function_call job), errors
 
 let libc_interceptor job job_queue interceptor =
 	try
@@ -1099,6 +1101,10 @@ let libc_interceptor job job_queue interceptor =
 		(* sys/uio.h *)
 		(intercept_function_by_name_external "readv"                   "__otter_libc_readv") @@
 		(intercept_function_by_name_external "writev"                  "__otter_libc_writev") @@
+
+    (* multiotter functions to be ignored in single-process otter *)
+    (intercept_function_by_name_internal "__otter_multi_begin_atomic" noop) @@
+    (intercept_function_by_name_internal "__otter_multi_end_atomic" noop) @@
 
 		(* pass on the job when none of those match *)
 		interceptor
