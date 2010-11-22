@@ -15,6 +15,6 @@ void f(int ignore,...) {
 
 int main() {
   char c = 1;
-  f(0, c); // CIL fails to cast c to an integer here, so Otter does something weird
+  f(0, c);
 	return 0;
 }
