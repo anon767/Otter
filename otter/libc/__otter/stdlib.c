@@ -149,13 +149,9 @@ void __libc_srand(unsigned int seed)
 
 void* __otter_libc_calloc(size_t amount, size_t bytes)
 {
-	char *ptr = malloc(bytes * amount);
-	for(int i = 0; i < bytes * amount; i++)
-	{
-		ptr[i] = 0;
-	}
-
-	return (void*)ptr;
+	size_t len = bytes * amount;
+	void *ptr = malloc(len);
+	return memset(ptr, 0, len);
 }
 
 void* __otter_libc_realloc(void* ptr, size_t bytes)

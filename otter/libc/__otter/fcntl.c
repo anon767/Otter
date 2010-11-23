@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <errno.h>
 
 int __otter_libc_creat(const char* path, mode_t mode)
 {
@@ -137,7 +138,7 @@ int __otter_libc_open(const char* path, int oflag, ...)
 				inode = __otter_fs_touch(filename, dnode);
 				if(!inode)
 					return (-1);
-				(*inode).permissions = (mode & 0x0FFF) | 0x3000;
+				(*inode).permissions = (mode & 0x0FFF) | 0x3000; // TODO: use the umask?
 			}
 			else
 				return (-1);
@@ -147,7 +148,7 @@ int __otter_libc_open(const char* path, int oflag, ...)
 	}
 	else /* found the file */
 	{
-		if((O_CREAT | O_EXCL) & oflag) /* O_EXCL requires that the file did not exist with O_CREAT */
+		if((O_CREAT & oflag) && (O_EXCL & oflag)) /* O_EXCL requires that the file did not exist with O_CREAT */
 		{
 			errno = EEXIST;
 			return (-1);

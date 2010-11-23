@@ -149,7 +149,7 @@ void __otter_libc_syslog(int pri, const char *fmt, ...)
 void __otter_libc_closelog(void)
 {
 	/*__UCLIBC_MUTEX_LOCK(mylock);*/
-	closelog_intern(0); /* 0: reset LogXXX globals to default */
+	__otter_libc_closelog_intern(0); /* 0: reset LogXXX globals to default */
 	/*__UCLIBC_MUTEX_UNLOCK(mylock);*/
 }
 

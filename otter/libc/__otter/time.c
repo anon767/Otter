@@ -8,7 +8,7 @@ time_t __otter_libc_current_time = 0;
 /* create a larger time evertime the time is asked for */
 time_t __otter_libc_next_time()
 {
-	time_t t = 0;
+	time_t t;
 	__SYMBOLIC(&t);
 	__ASSUME(t > __otter_libc_current_time);
 	__otter_libc_current_time = t;

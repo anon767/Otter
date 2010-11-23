@@ -5,6 +5,7 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <netinet/tcp.h>
+#include <errno.h>
 
 int __otter_libc_socket(int domain, int type, int protocol)
 {
@@ -544,7 +545,7 @@ int __otter_libc_accept(int socket_fd, struct sockaddr *address, socklen_t *addr
 
 void __otter_libc_flush_sock_queue(struct __otter_fs_sock_data* sock)
 {
-	for(int i = 0; i < sock->backlog; i++)
+	for(int i = 0; i < sock->backlog + 1; i++)
 	{
 		if(sock->sock_queue[i] != NULL) /* there is something waiting here */
 		{

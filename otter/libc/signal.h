@@ -53,6 +53,8 @@ struct sigaction
 	void (*sa_sigaction)(int, siginfo_t *, void *);
 };
 
+#include <stddef.h>
+
 typedef struct
 {
 	void *ss_sp;

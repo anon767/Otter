@@ -51,8 +51,6 @@ int __otter_libc_close(int fd)
 		{
 			struct __otter_fs_sock_data* sock = (struct __otter_fs_sock_data*)((struct __otter_fs_inode*)(open_file->vnode))->data;
 			
-			__EVAL(sock->state);
-		
 			switch(sock->state)
 			{
 				case __otter_sock_ST_CLOSED:

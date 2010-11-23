@@ -2,6 +2,7 @@
 #include <__otter/otter_user.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 struct group *__otter_libc_getgrgid(gid_t gid)
 {

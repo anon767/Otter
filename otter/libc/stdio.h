@@ -14,7 +14,6 @@ typedef struct
 typedef struct
 {
 	int desc;
-	int eof;
 	int error;
 	int offset;
 	int bufmode;
@@ -40,9 +39,9 @@ typedef struct
 #define STDOUT_FILENO 1
 #define STDERR_FILENO 2
 
-struct FILE* stdout;
-struct FILE* stdin;
-struct FILE* stderr;
+FILE* stdout;
+FILE* stdin;
+FILE* stderr;
 
 /* copied function prototypes from http://opengroup.org/onlinepubs/007908775/xsh/stdio.h.html */
 /* functions marked with EXISTS have a (potentially incomplete) implimentation */
@@ -57,9 +56,9 @@ int      fflush(FILE *);
 int      fgetc(FILE *);
 int      fgetpos(FILE *, fpos_t *);
 char    *fgets(char *, int, FILE *);
-int      fileno(FILE *);
+int      fileno(FILE *); /*EXISTS*/
 void     flockfile(FILE *);
-FILE    *fopen(const char *, const char *);
+FILE    *fopen(const char *, const char *); /*EXISTS*/
 int      fprintf(FILE *, const char *, ...);
 int      fputc(int, FILE *);
 int      fputs(const char *, FILE *);
@@ -73,7 +72,7 @@ long int ftell(FILE *);
 off_t    ftello(FILE *);
 int      ftrylockfile(FILE *);
 void     funlockfile(FILE *);
-size_t   fwrite(const void *, size_t, size_t, FILE *);
+size_t   fwrite(const void *, size_t, size_t, FILE *); /*EXISTS*/
 int      getc(FILE *);
 int      getchar(void);
 int      getc_unlocked(FILE *);
@@ -103,9 +102,17 @@ char    *tempnam(const char *, const char *);
 FILE    *tmpfile(void);
 char    *tmpnam(char *);
 int      ungetc(int, FILE *);
-int      vfprintf(FILE *, const char *, va_list);
-int      vprintf(const char *, va_list);
+
+#include <stdarg.h>
+
+int      vfprintf(FILE *, const char *, va_list); /*EXISTS*/
+int      vprintf(const char *, va_list); /*EXISTS*/
 int      vsnprintf(char *, size_t, const char *, va_list); /*EXISTS*/
 int      vsprintf(char *, const char *, va_list); /*EXISTS*/
+
+/* These are GNU extensions. They allocate a new string big enough to
+	 hold the result, and return this string in *bufp. */
+int      asprintf(char **bufp, const char *, ...); /*EXISTS*/
+int      vasprintf(char **bufp, const char *, va_list); /*EXISTS*/
 
 #endif

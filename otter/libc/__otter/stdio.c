@@ -11,6 +11,82 @@ int __otter_libc_remove(const char* name)
 	return unlink(name);
 }
 
+int asprintf(char **bufp, const char *format, ...)
+{
+	va_list ap;
+	int rv;
+
+	va_start(ap, format);
+	rv = vasprintf(bufp, format, ap);
+	va_end(ap);
+	return rv;
+}
+
+/* Formats the string into a newly allocated buffer of the needed
+	 size, and points *bufp to that string. */
+int vasprintf(char **bufp, const char *format, va_list ap)
+{
+	char buffer[128];
+
+	/* string_size will be the size that the string should be. If buffer
+		 is too small, the string will be truncated and we'll have
+		 string_size >= sizeof(buffer). See ISO C 7.19.6.5:3 */
+	int string_size = vsnprintf(buffer, sizeof(buffer), format, ap);
+
+	if (string_size < 0) // There was an error
+		return string_size;
+
+	if (string_size < sizeof(buffer)) { // buffer was big enough
+		*bufp = strdup(buffer);
+	} else { // buffer was not big enough; allocate a bigger buffer
+		*bufp = malloc(string_size + 1);
+		__ASSERT(vsnprintf(*bufp, ~(size_t) 0, format, ap) == string_size);
+	}
+
+	return string_size;
+}
+
+int printf(const char *format, ...)
+{
+	va_list ap;
+	int rv;
+
+	va_start(ap, format);
+	rv = vfprintf(stdout, format, ap);
+	va_end(ap);
+	return rv;
+}
+
+int vprintf(const char *format, va_list ap)
+{
+	return vfprintf(stdout, format, ap);
+}
+
+int fprintf(FILE *stream, const char *format, ...)
+{
+	va_list ap;
+	int rv;
+
+	va_start(ap, format);
+	rv = vfprintf(stream, format, ap);
+	va_end(ap);
+	return rv;
+}
+
+int vfprintf(FILE * file, const char *format, va_list ap)
+{
+	char *buffer;
+
+	int string_size = vasprintf(&buffer, format, ap);
+
+	if (string_size < 0) // There was an error
+		return string_size;
+
+	int bytes_written = fwrite(buffer, sizeof(char), string_size, file);
+	free(buffer);
+	return bytes_written;
+}
+
 int sprintf(char *buffer, const char *format, ...)
 {
 	va_list ap;
@@ -476,4 +552,78 @@ int vsnprintf(char *buffer, size_t n, const char *format, va_list ap)
 		buffer[n - 1] = '\0';	/* Overflow - terminate at end of buffer */
 
 	return o;
+}
+
+FILE * fopen (const char * filename, const char * mode)
+{
+	int openFlags, plus = 0;
+	if (!(mode && mode[0])) { // If mode is null or ""
+		errno = EINVAL;
+		return NULL;
+	}
+
+	if (mode[1] == '+' || (mode[1] == 'b' && mode[2] == '+')) {
+		plus = 1;
+	}
+
+	switch (mode[0]) {
+	case 'r':
+		openFlags = plus ? O_RDWR : O_RDONLY;
+		break;
+	case 'w':
+		openFlags = O_CREAT | O_TRUNC | (plus ? O_RDWR : O_WRONLY);
+		break;
+	case 'a':
+		openFlags = O_CREAT | O_APPEND | (plus ? O_RDWR : O_WRONLY);
+		break;
+	default:
+		errno = EINVAL;
+		return NULL;
+	}
+
+	int fd = open(filename, openFlags, 0666); // 0666 is stated in the spec
+	if (fd == -1) {
+		return NULL;
+	}
+	FILE *file = calloc(1, sizeof(FILE));
+	file->desc = fd;
+	/* TODO: What should the buffering be? See ISO 7.19.5.3:7 */
+	file->bufmode = _IONBF;
+	return file;
+}
+
+/* TODO: this should fail with EBADF if stream is an invalid file
+	 stream. How would we detect that? If desc is an invalid
+	 descriptor? */
+int fileno(FILE *stream) { return stream->desc; }
+
+size_t __otter_libc_internal_fwrite(const void *buf, size_t count, FILE *f)
+{
+	size_t bytes = 0;
+	ssize_t rv;
+	const char *p = buf;
+
+	while (count) {
+		rv = write(fileno(f), p, count);
+		if (rv == -1) {
+			if (errno == EINTR) {
+				errno = 0;
+				continue;
+			} else
+				break;
+		} else if (rv == 0) {
+			break;
+		}
+
+		p += rv;
+		bytes += rv;
+		count -= rv;
+	}
+
+	return bytes;
+}
+
+size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE * f)
+{
+	return __otter_libc_internal_fwrite(ptr, size * nmemb, f) / size;
 }

@@ -12,6 +12,9 @@ struct hostent
 	char** h_addr_list;
 };
 
+// Is this right? I got it from http://www.scottklement.com/rpg/socktut/dns.html
+#define h_addr h_addr_list[0]
+
 struct netent
 {
 	char* n_name;

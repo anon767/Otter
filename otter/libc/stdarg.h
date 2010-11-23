@@ -1,7 +1,7 @@
 #ifndef _STDARG_H
 #define _STDARG_H
 
-#define va_list __builtin_va_list
+typedef __builtin_va_list va_list;
 
 /* these have special types, so intercepting by name is not really an option. */
 

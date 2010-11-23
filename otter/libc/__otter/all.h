@@ -23,14 +23,15 @@
 #include "pwd.c"
 #include "time.c"
 #include "wait.c"
+#include "dirent.c"
 
 __otter_libc_init()
 {
 	__otter_fs_mount();
 
-	open("/dev/tty", O_RDONLY);
-	open("/dev/tty", O_WRONLY);
-	open("/dev/tty", O_WRONLY);
+	stdin = fopen("/dev/tty", "r");
+	stdout = fopen("/dev/tty", "w");
+	stderr = fopen("/dev/tty", "w");
 
 	return (0);
 }

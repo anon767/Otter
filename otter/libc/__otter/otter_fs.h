@@ -131,6 +131,8 @@ int __otter_fs_change_open_mode(struct __otter_fs_open_file_table_entry* open_fi
 
 void __otter_fs_mount();
 
+int __otter_fs_umask;
+
 // Utility functions
 struct __otter_fs_dnode* find_filename_and_dnode(const char* path, char** basename);
 struct __otter_fs_open_file_table_entry* get_open_file_from_fd(int fd);

@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <limits.h>
+#include <errno.h>
 
 ssize_t __otter_libc_readv(int fd, const struct iovec *iov, int iovcnt)
 {

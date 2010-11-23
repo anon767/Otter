@@ -17,7 +17,7 @@ struct itimerval
 
 typedef struct
 {
-	long fd_bits[];
+	long fds_bits[];
 } fd_set;
 
 int   getitimer(int, struct itimerval *);

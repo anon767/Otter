@@ -1,5 +1,6 @@
 #include <sys/stat.h>
 #include <__otter/otter_fs.h>
+#include <errno.h>
 
 int __otter_libc_chmod(const char* name, mode_t mode)
 {
