@@ -91,7 +91,7 @@ let feature : featureDescr = {
 	fd_name = "execute";
 	fd_enabled = ref false;
 	fd_description = "(symbolic) executor for C";
-	fd_extraopt = Executeargs.options @ SymbolicPointers.options @ Queue.options @ Job.options @ BasicReporter.options @ Stp.options;
+	fd_extraopt = Executeargs.options @ Executedebug.options @ SymbolicPointers.options @ Queue.options @ Job.options @ BasicReporter.options @ Stp.options;
 	fd_post_check = true;
 	fd_doit = doExecute;
 }
