@@ -42,9 +42,9 @@ let set_term ff (term : term) =
 
 
 let get_console_size =
+    (* probe the console only once, since using xterm escape sequences to do so isn't very robust, and is noticeably slow *)
     let default_size = (24, 80) in
-    let previous_size = ref default_size in
-    fun () ->
+    let size =
         if is_console () then
             (* if on a terminal, use xterm escape sequence to query for column size *)
             let attr = Unix.tcgetattr Unix.stdin in
@@ -63,7 +63,6 @@ let get_console_size =
                 Unix.tcsetattr Unix.stdin Unix.TCSANOW attr;
                 (* parse the result *)
                 Scanf.sscanf s "\027[8;%d;%dt" begin fun h w ->
-                    previous_size := (h, w);
                     (h, w)
                 end
             with e ->
@@ -73,11 +72,13 @@ let get_console_size =
                 match e with
                     | Unix.Unix_error _ | Scanf.Scan_failure _ ->
                         (* if the exception was from here, return the an old result which may still be right *)
-                        !previous_size
+                        default_size
                     | e ->
                         raise e
         else
             default_size
+    in
+    fun () -> size
 
 
 class virtual ['self] t =
