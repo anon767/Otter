@@ -880,6 +880,7 @@ let interceptor job job_queue interceptor =
 		(* memset defaults to the C implimentation on failure *)
 		(try_with_job_abandoned_interceptor
 		(intercept_function_by_name_internal "memset"                  libc_memset)) @@
+		(intercept_function_by_name_external "memset"                  "__otter_libc_memset") @@
 		(intercept_function_by_name_internal "_exit"                   libc_exit) @@
 		(intercept_function_by_name_internal "__TRUTH_VALUE"           otter_truth_value) @@
 		(intercept_function_by_name_internal "__GIVEN"                 otter_given) @@
@@ -1016,7 +1017,6 @@ let libc_interceptor job job_queue interceptor =
 		(intercept_function_by_name_external "strspn"                  "__otter_libc_strspn") @@
 		(intercept_function_by_name_external "strstr"                  "__otter_libc_strstr") @@
 		(intercept_function_by_name_external "strtok"                  "__otter_libc_strtok") @@
-		(intercept_function_by_name_external "memset"                  "__otter_libc_memset") @@
 		(intercept_function_by_name_external "strerror"                "__otter_libc_strerror") @@
 		(intercept_function_by_name_external "strlen"                  "__otter_libc_strlen") @@
 		(intercept_function_by_name_external "strdup"                  "__otter_libc_strdup") @@
