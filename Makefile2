@@ -1,0 +1,127 @@
+
+SUBDIRS=cilqual cil ocamlstp2 stp2 camlidl ocamlgraph
+
+EXTRALIBDIRS=$(addprefix $(CURDIR)/,camlidl/runtime stp2/lib ocamlstp2)
+EXTRAOCAMLPATH=$(CURDIR)
+
+CTAGS_FILE=tags
+CTAGS_SOURCE_PATHS=otter/src otter/benchmark otter/test cil/src ocamlstp2
+
+
+# augment configuration from Makefile.local, if it exists
+-include Makefile.local
+
+
+all : otter
+
+
+cil : make//cil
+cil : MAKEGOALS=
+make//cil : \
+	CONFIGURE_FLAGS= \
+		EXTRALIBDIRS='$(EXTRALIBDIRS)' \
+		EXTRAOCAMLPATH='$(EXTRAOCAMLPATH)' \
+		CC='$(CC) -m32'
+
+
+otter : make//otter
+otter : MAKEGOALS=
+libs-otter : make//otter
+libs-otter : MAKEGOALS=libs
+test-otter : make//otter
+test-otter : MAKEGOALS=test
+benchmark-otter : make//otter
+benchmark-otter : MAKEGOALS=benchmark-otter
+doc-otter : make//otter
+doc-otter : MAKEGOALS=doc
+dot-otter : make//otter
+dot-otter : MAKEGOALS=dot
+make//otter : \
+	CONFIGURE_FLAGS= \
+		EXTRALIBDIRS='$(EXTRALIBDIRS)' \
+		EXTRAOCAMLPATH='$(EXTRAOCAMLPATH)' \
+		--with-cil='$(CURDIR)/cil'
+make//otter : cil ocamlstp2 ocamlgraph
+
+
+cilqual : make//cilqual
+cilqual : MAKEGOALS=
+test-cilqual : make//cilqual
+test-cilqual : MAKEGOALS=test
+debug-cilqual : make//cilqual
+debug-cilqual : MAKEGOALS=debug
+experiments-cilqual : make//cilqual
+experiments-cilqual : MAKEGOALS=experiments
+make//cilqual : \
+	CONFIGURE_FLAGS= \
+		EXTRALIBDIRS='$(EXTRALIBDIRS)' \
+		EXTRAOCAMLPATH='$(EXTRAOCAMLPATH)' \
+		--with-cil='$(CURDIR)/cil' \
+		--with-otter='$(CURDIR)/otter'
+make//cilqual : libs-otter ocamlgraph
+
+
+ocamlstp : make//ocamlstp
+make//ocamlstp : \
+	MAKEGOALS= \
+		CAMLIDL='$(CURDIR)/camlidl/compiler/camlidl' \
+		LIBDIRS='$(CURDIR)/camlidl/runtime $(CURDIR)/stp/lib' \
+		INCDIRS='$(CURDIR)/camlidl/runtime $(CURDIR)/stp/c_interface'
+make//ocamlstp : stp camlidl
+
+
+ocamlstp2 : make//ocamlstp2
+make//ocamlstp2 : \
+	MAKEGOALS= \
+		CAMLIDL='$(CURDIR)/camlidl/compiler/camlidl' \
+		LIBDIRS='$(CURDIR)/camlidl/runtime $(CURDIR)/stp2/lib' \
+		INCDIRS='$(CURDIR)/camlidl/runtime $(CURDIR)/stp2/src/c_interface'
+make//ocamlstp2 : stp2 camlidl
+
+
+stp : make//stp
+make//stp : MAKEGOALS=
+make//stp : CONFIGURE_FLAGS=--with-prefix=. 
+
+
+stp2 : make//stp2
+make//stp2 : MAKEGOALS=
+make//stp2 : CONFIGURE_FLAGS=--with-prefix=.
+
+
+camlidl : make//camlidl
+make//camlidl : MAKEGOALS=
+make//camlidl : CONFIGURE_FLAGS=
+
+
+ocamlgraph : make//ocamlgraph
+make//ocamlgraph : MAKEGOALS=
+make//ocamlgraph : CONFIGURE_FLAGS=
+
+
+ctags :
+	$(RM) $(CTAGS_FILE) && \
+	find $(CTAGS_SOURCE_PATHS) -iname "*.ml" -exec ctags -a -f $(CTAGS_FILE) {} \;
+
+clean :
+	$(foreach foo,$(SUBDIRS),$(MAKE) -C $(foo) clean;) true
+
+distclean :
+	$(foreach foo,$(SUBDIRS),$(MAKE) -C $(foo) clean distclean;) true
+
+.PRECIOUS : %/Makefile
+%/Makefile : %/Makefile.in %/configure Makefile
+	cd $* && ./configure $(CONFIGURE_FLAGS) $(CONFIGURE_EXTRAFLAGS)
+
+%/Makefile : %/configure Makefile
+	cd $* && ./configure $(CONFIGURE_FLAGS) $(CONFIGURE_EXTRAFLAGS)
+
+.PRECIOUS : %/configure
+%/configure : %/configure.ac
+	cd $* && autoreconf
+
+%/configure : %/configure.in
+	cd $* && autoreconf
+
+make//% : %/Makefile
+	$(MAKE) -C $* $(MAKEGOALS)

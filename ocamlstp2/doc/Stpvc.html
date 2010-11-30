@@ -1,0 +1,118 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Stpvc" rel="Chapter" href="Stpvc.html"><title>Stpvc</title>
+</head>
+<body>
+<div class="navbar">&nbsp;<a href="index.html">Up</a>
+&nbsp;</div>
+<center><h1>Module <a href="type_Stpvc.html">Stpvc</a></h1></center>
+<br>
+<pre><span class="keyword">module</span> Stpvc: <code class="code">sig</code> <a href="Stpvc.html">..</a> <code class="code">end</code></pre><hr width="100%">
+<pre><span class="keyword">type</span> <a name="TYPEvc"></a><code class="type"></code>vc = <code class="type">Libstp.vc</code> </pre>
+<div class="info">
+The type of a validity checker<br>
+</div>
+
+<pre><span class="keyword">type</span> <a name="TYPEexp"></a><code class="type"></code>exp = <code class="type">Libstp.expr</code> </pre>
+<div class="info">
+The type of an STP expression<br>
+</div>
+
+<pre><span class="keyword">type</span> <a name="TYPEtyp"></a><code class="type"></code>typ = <code class="type">Libstp.typ</code> </pre>
+<div class="info">
+The STP type of an STP expression<br>
+</div>
+
+<pre><span class="keyword">val</span> <a name="VALcreate_validity_checker"></a>create_validity_checker : <code class="type">unit -> <a href="Stpvc.html#TYPEvc">vc</a></code></pre><div class="info">
+Creates a new validity checker<br>
+</div>
+<pre><span class="keyword">val</span> <a name="VALbool_t"></a>bool_t : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEtyp">typ</a></code></pre><div class="info">
+Create a boolean type<br>
+</div>
+<pre><span class="keyword">val</span> <a name="VALarray_t"></a>array_t : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEtyp">typ</a> -> <a href="Stpvc.html#TYPEtyp">typ</a> -> <a href="Stpvc.html#TYPEtyp">typ</a></code></pre><div class="info">
+<code class="code">array_t vc index_t data_t</code> creates a new array type<br>
+</div>
+<pre><span class="keyword">val</span> <a name="VALbitvector_t"></a>bitvector_t : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> int -> <a href="Stpvc.html#TYPEtyp">typ</a></code></pre><div class="info">
+Create a bitvector type<br>
+</div>
+<pre><span class="keyword">val</span> <a name="VALe_var"></a>e_var : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> string -> <a href="Stpvc.html#TYPEtyp">typ</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><div class="info">
+Create a variable<br>
+</div>
+<pre><span class="keyword">val</span> <a name="VALe_eq"></a>e_eq : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><div class="info">
+Create an equality expression (e1 = e2)<br>
+</div>
+<pre><span class="keyword">val</span> <a name="VALe_true"></a>e_true : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><div class="info">
+Create a true expression (TRUE)<br>
+</div>
+<pre><span class="keyword">val</span> <a name="VALe_false"></a>e_false : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><div class="info">
+Create a false expression (FALSE)<br>
+</div>
+<pre><span class="keyword">val</span> <a name="VALe_not"></a>e_not : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><div class="info">
+Create a not expression (NOT(e1))<br>
+</div>
+<pre><span class="keyword">val</span> <a name="VALe_and"></a>e_and : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><pre><span class="keyword">val</span> <a name="VALe_or"></a>e_or : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><pre><span class="keyword">val</span> <a name="VALe_implies"></a>e_implies : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><pre><span class="keyword">val</span> <a name="VALe_iff"></a>e_iff : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><pre><span class="keyword">val</span> <a name="VALe_ite"></a>e_ite : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><pre><span class="keyword">val</span> <a name="VALe_boolbv"></a>e_boolbv : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><div class="info">
+Create a one bit bitvector out of a boolean<br>
+</div>
+<pre><span class="keyword">val</span> <a name="VALe_read"></a>e_read : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><div class="info">
+Read memory. 
+     <code class="code">e_read vc array index</code> will return the <code class="code">index</code>th element of <code class="code">array</code>.<br>
+</div>
+<pre><span class="keyword">val</span> <a name="VALe_write"></a>e_write : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><div class="info">
+Write to memory. 
+      <code class="code">e_write vc array index new_val</code> will return an array just like <code class="code">array</code>,
+      but with array[index] set to new_val.<br>
+</div>
+<pre><span class="keyword">val</span> <a name="VALe_bv_of_string"></a>e_bv_of_string : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> string -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><div class="info">
+Create a bitvector by parsing the given string<br>
+</div>
+<pre><span class="keyword">val</span> <a name="VALe_bv_of_int"></a>e_bv_of_int : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> int -> int -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><div class="info">
+Create a bitvector from the given int<br>
+</div>
+<pre><span class="keyword">val</span> <a name="VALe_bv_of_int32"></a>e_bv_of_int32 : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> int32 -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><div class="info">
+Create a 32-bit bitvector from the given int32<br>
+</div>
+<pre><span class="keyword">val</span> <a name="VALe_bv_of_int64"></a>e_bv_of_int64 : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> int -> int64 -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><div class="info">
+Create a bitvectr from the given int64<br>
+</div>
+<pre><span class="keyword">val</span> <a name="VALe_bvconcat"></a>e_bvconcat : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><pre><span class="keyword">val</span> <a name="VALe_bvplus"></a>e_bvplus : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> int -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><pre><span class="keyword">val</span> <a name="VALe_bvminus"></a>e_bvminus : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> int -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><pre><span class="keyword">val</span> <a name="VALe_bvmult"></a>e_bvmult : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> int -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><pre><span class="keyword">val</span> <a name="VALe_bvdiv"></a>e_bvdiv : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> int -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><pre><span class="keyword">val</span> <a name="VALe_bvmod"></a>e_bvmod : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> int -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><pre><span class="keyword">val</span> <a name="VALe_bvand"></a>e_bvand : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><pre><span class="keyword">val</span> <a name="VALe_bvor"></a>e_bvor : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><pre><span class="keyword">val</span> <a name="VALe_bvxor"></a>e_bvxor : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><pre><span class="keyword">val</span> <a name="VALe_bvneg"></a>e_bvneg : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><pre><span class="keyword">val</span> <a name="VALe_bvnot"></a>e_bvnot : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><pre><span class="keyword">val</span> <a name="VALe_bvextract"></a>e_bvextract : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> int -> int -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><div class="info">
+Extract a range of bits from a bitvector<br>
+</div>
+<pre><span class="keyword">val</span> <a name="VALe_bvbitextract"></a>e_bvbitextract : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> int -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><div class="info">
+Extract a boolean from a bitvector<br>
+</div>
+<pre><span class="keyword">val</span> <a name="VALe_bvsextend"></a>e_bvsextend : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> int -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><pre><span class="keyword">val</span> <a name="VALe_bvconstshiftleft"></a>e_bvconstshiftleft : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> int -> <a href="Stpvc.html#TYPEexp">exp</a> -> int -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><pre><span class="keyword">val</span> <a name="VALe_bvconstshiftright"></a>e_bvconstshiftright : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> int -> <a href="Stpvc.html#TYPEexp">exp</a> -> int -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><pre><span class="keyword">val</span> <a name="VALe_bvconstshiftright_arith"></a>e_bvconstshiftright_arith : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> int -> <a href="Stpvc.html#TYPEexp">exp</a> -> int -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><pre><span class="keyword">val</span> <a name="VALe_bvshiftleft"></a>e_bvshiftleft : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> int -> <a href="Stpvc.html#TYPEexp">exp</a> -> int -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><pre><span class="keyword">val</span> <a name="VALe_bvshiftright"></a>e_bvshiftright : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> int -> <a href="Stpvc.html#TYPEexp">exp</a> -> int -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><pre><span class="keyword">val</span> <a name="VALe_bvshiftright_arith"></a>e_bvshiftright_arith : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> int -> <a href="Stpvc.html#TYPEexp">exp</a> -> int -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><pre><span class="keyword">val</span> <a name="VALe_bvlt"></a>e_bvlt : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><pre><span class="keyword">val</span> <a name="VALe_bvle"></a>e_bvle : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><pre><span class="keyword">val</span> <a name="VALe_bvgt"></a>e_bvgt : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><pre><span class="keyword">val</span> <a name="VALe_bvge"></a>e_bvge : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><pre><span class="keyword">val</span> <a name="VALe_bvslt"></a>e_bvslt : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><pre><span class="keyword">val</span> <a name="VALe_bvsle"></a>e_bvsle : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><pre><span class="keyword">val</span> <a name="VALe_bvsgt"></a>e_bvsgt : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><pre><span class="keyword">val</span> <a name="VALe_bvsge"></a>e_bvsge : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><pre><span class="keyword">val</span> <a name="VALdo_assert"></a>do_assert : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> unit</code></pre><div class="info">
+Assert an expression in the VC<br>
+</div>
+<pre><span class="keyword">val</span> <a name="VALe_simplify"></a>e_simplify : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><div class="info">
+Simplify an expression<br>
+</div>
+<pre><span class="keyword">val</span> <a name="VALquery"></a>query : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> bool</code></pre><div class="info">
+Query the VC.<br>
+<b>Returns</b> true if the expression can be proven,
+      or false if there is a counterexample, in which case the context of the
+      VC is set to be the counterexample.<br>
+</div>
+<pre><span class="keyword">val</span> <a name="VALget_counterexample"></a>get_counterexample : <code class="type"><a href="Stpvc.html#TYPEvc">vc</a> -> <a href="Stpvc.html#TYPEexp">exp</a> -> <a href="Stpvc.html#TYPEexp">exp</a></code></pre><div class="info">
+Evaluate the given expression in the context of the counterexample<br>
+</div>
+<pre><span class="keyword">val</span> <a name="VALint_of_e"></a>int_of_e : <code class="type"><a href="Stpvc.html#TYPEexp">exp</a> -> int</code></pre><div class="info">
+Convert a constant bitvector expression into an int<br>
+</div>
+<pre><span class="keyword">val</span> <a name="VALint64_of_e"></a>int64_of_e : <code class="type"><a href="Stpvc.html#TYPEexp">exp</a> -> int64</code></pre><div class="info">
+Convert a constant bitvector expression into an int64<br>
+</div>
+<pre><span class="keyword">val</span> <a name="VALto_string"></a>to_string : <code class="type"><a href="Stpvc.html#TYPEexp">exp</a> -> string</code></pre><div class="info">
+<b>Returns</b> the string representation of the given expression<br>
+</div>
+<pre><span class="keyword">val</span> <a name="VALtype_to_string"></a>type_to_string : <code class="type"><a href="Stpvc.html#TYPEtyp">typ</a> -> string</code></pre><div class="info">
+<b>Returns</b> the string representation of the given type<br>
+</div>
+</body></html>

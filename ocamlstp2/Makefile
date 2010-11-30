@@ -1,0 +1,11 @@
+export OCAMLMAKEFILE=OCamlMakefile
+
+SOURCES=libstp_regerrorhandler.c libstp_helper.c libstp.idl stpvc.ml stpvc.mli 
+RESULT=stpvc
+
+LIBDIRS = ..
+CLIBS = stp stdc++ z
+
+all: dcl ncl top
+
+include $(OCAMLMAKEFILE)
