@@ -133,6 +133,7 @@ extern "C" {
   //! Array update; equivalent to "array WITH [index] := newValue"
   Expr vc_writeExpr(VC vc, Expr array, Expr index, Expr newValue);
 
+#if defined(ENABLE_STP_C_INTERFACE_IO)
   // Expr I/O: Parses directly from file in the c_interface. pretty cool!!
   Expr vc_parseExpr(VC vc, const char* s);
 
@@ -186,6 +187,7 @@ extern "C" {
 
   //! Prints query to stdout.
   void vc_printQuery(VC vc);
+#endif
 
   /////////////////////////////////////////////////////////////////////////////
   // Context-related methods                                                 //

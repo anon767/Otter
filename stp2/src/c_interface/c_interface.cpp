@@ -25,7 +25,9 @@ typedef BEEV::BVSolver*                  bvsolverstar;
 typedef BEEV::AbsRefine_CounterExample * ctrexamplestar;
 typedef BEEV::ASTVec                     nodelist;
 typedef BEEV::CompleteCounterExample*    CompleteCEStar;
+#if defined(ENABLE_STP_C_INTERFACE_IO)
 BEEV::ASTVec *decls = NULL;
+#endif
 //vector<BEEV::ASTNode *> created_exprs;
 
 // persist holds a copy of ASTNodes so that the reference count of
@@ -39,40 +41,40 @@ extern int smtparse(void*);
 
 void vc_setFlags(VC vc, char c, int param_value) {
   bmstar b = (bmstar)(((stpstar)vc)->bm);
-  
-  std::string helpstring = 
+
+  std::string helpstring =
     "Usage: stp [-option] [infile]\n\n";
-  helpstring += 
+  helpstring +=
     "STP version: " + BEEV::version + "\n\n";
-  helpstring +=  
+  helpstring +=
     "-a  : switch optimizations off (optimizations are ON by default)\n";
-  helpstring +=  
+  helpstring +=
     "-c  : construct counterexample\n";
-  helpstring +=  
+  helpstring +=
     "-d  : check counterexample\n";
-  helpstring +=  
+  helpstring +=
     "-e  : expand finite-for construct\n";
-  helpstring +=  
+  helpstring +=
     "-f  : number of abstraction-refinement loops\n";
-  helpstring +=  
+  helpstring +=
     "-h  : help\n";
-  helpstring +=  
+  helpstring +=
     "-m  : use the SMTLIB parser\n";
-  helpstring +=  
+  helpstring +=
     "-p  : print counterexample\n";
-  helpstring +=  
+  helpstring +=
     "-r  : switch refinement off (optimizations are ON by default)\n";
-  helpstring +=  
+  helpstring +=
     "-s  : print function statistics\n";
-  helpstring +=  
+  helpstring +=
     "-v  : print nodes \n";
-  helpstring +=  
+  helpstring +=
     "-w  : switch wordlevel solver off (optimizations are ON by default)\n";
-  helpstring +=  
+  helpstring +=
     "-x  : flatten nested XORs\n";
-  helpstring +=  
+  helpstring +=
     "-y  : print counterexample in binary\n";
-  
+
   switch(c) {
   case 'a' :
     b->UserFlags.optimize_flag = false;
@@ -139,7 +141,7 @@ void vc_setFlags(VC vc, char c, int param_value) {
     b->UserFlags.print_sat_varorder_flag = true;
     break;
   default:
-    std::string s = 
+    std::string s =
       "C_interface: "                                                   \
       "vc_setFlags: Unrecognized commandline flag:\n";
     s += helpstring;
@@ -171,28 +173,31 @@ VC vc_createValidityChecker(void) {
   BEEV::Simplifier * simp  = new BEEV::Simplifier(bm);
   BEEV::BVSolver* bvsolver = new BEEV::BVSolver(bm, simp);
   BEEV::ToSAT * tosat      = new BEEV::ToSAT(bm);
-  BEEV::ArrayTransformer * arrayTransformer = 
+  BEEV::ArrayTransformer * arrayTransformer =
     new BEEV::ArrayTransformer(bm, simp);
-  BEEV::AbsRefine_CounterExample * Ctr_Example = 
-    new BEEV::AbsRefine_CounterExample(bm, 
-                                       simp, 
+  BEEV::AbsRefine_CounterExample * Ctr_Example =
+    new BEEV::AbsRefine_CounterExample(bm,
+                                       simp,
                                        arrayTransformer
                                        );
 
   BEEV::ParserBM = bm;
   stpstar stp =
-    new BEEV::STP(bm, simp, 
-                  bvsolver, arrayTransformer, 
+    new BEEV::STP(bm, simp,
+                  bvsolver, arrayTransformer,
                   tosat, Ctr_Example);
-  
+
   BEEV::GlobalSTP = stp;
+#if defined(ENABLE_STP_C_INTERFACE_IO)
   decls = new BEEV::ASTVec();
+#endif
   //created_exprs.clear();
   vc_setFlags(stp,'d');
   return (VC)stp;
 }
 
 // Expr I/O
+#if defined(ENABLE_STP_C_INTERFACE_IO)
 void vc_printExpr(VC vc, Expr e) {
   //do not print in lisp mode
   //bmstar b = (bmstar)vc;
@@ -202,6 +207,7 @@ void vc_printExpr(VC vc, Expr e) {
   //   b->Begin_RemoveWrites = false;
   q.PL_Print(cout);
 }
+#endif
 
 char * vc_printSMTLIB(VC vc, Expr e)
 {
@@ -228,8 +234,8 @@ void vc_printExprCCode(VC vc, Expr e) {
       unsigned int bitWidth = it->GetValueWidth();
       assert(bitWidth % 8 == 0);
       unsigned int byteWidth = bitWidth / 8;
-      cout << "unsigned char " 
-           << name 
+      cout << "unsigned char "
+           << name
            << "[" << byteWidth << "];" << endl;
     }
     else {
@@ -251,6 +257,7 @@ void vc_printExprFile(VC vc, Expr e, int fd) {
   //os.flush();
 }
 
+#if defined(ENABLE_STP_C_INTERFACE_IO)
 static void vc_printVarDeclsToStream(VC vc, ostream &os) {
   for(BEEV::ASTVec::iterator i = decls->begin(),
         iend=decls->end();i!=iend;i++) {
@@ -258,19 +265,19 @@ static void vc_printVarDeclsToStream(VC vc, ostream &os) {
     switch(a.GetType()) {
     case BEEV::BITVECTOR_TYPE:
       a.PL_Print(os);
-      os << " : BITVECTOR(" 
-         << a.GetValueWidth() 
+      os << " : BITVECTOR("
+         << a.GetValueWidth()
          << ");" << endl;
       break;
     case BEEV::ARRAY_TYPE:
       a.PL_Print(os);
-      os << " : ARRAY " 
-         << "BITVECTOR(" 
-         << a.GetIndexWidth() 
+      os << " : ARRAY "
+         << "BITVECTOR("
+         << a.GetIndexWidth()
          << ") OF ";
-      os << "BITVECTOR(" 
-         << a.GetValueWidth() 
-         << ");" 
+      os << "BITVECTOR("
+         << a.GetValueWidth()
+         << ");"
          << endl;
       break;
     case BEEV::BOOLEAN_TYPE:
@@ -283,14 +290,19 @@ static void vc_printVarDeclsToStream(VC vc, ostream &os) {
     }
   }
 }
+#endif
 
+#if defined(ENABLE_STP_C_INTERFACE_IO)
 void vc_printVarDecls(VC vc) {
   vc_printVarDeclsToStream(vc, cout);
 }
+#endif
 
+#if defined(ENABLE_STP_C_INTERFACE_IO)
 void vc_clearDecls(VC vc) {
   decls->clear();
 }
+#endif
 
 static void vc_printAssertsToStream(VC vc, ostream &os, int simplify_print) {
   bmstar b = (bmstar)(((stpstar)vc)->bm);
@@ -298,11 +310,11 @@ static void vc_printAssertsToStream(VC vc, ostream &os, int simplify_print) {
   BEEV::Simplifier * simp = new BEEV::Simplifier(b);
   for(BEEV::ASTVec::iterator i=v.begin(),iend=v.end();i!=iend;i++) {
     b->Begin_RemoveWrites = true;
-    BEEV::ASTNode q = 
-      (simplify_print == 1) ? 
+    BEEV::ASTNode q =
+      (simplify_print == 1) ?
       simp->SimplifyFormula_TopLevel(*i,false) : *i;
-    q = 
-      (simplify_print == 1) ? 
+    q =
+      (simplify_print == 1) ?
       simp->SimplifyFormula_TopLevel(q,false) : q;
     b->Begin_RemoveWrites = false;
     os << "ASSERT( ";
@@ -315,8 +327,8 @@ void vc_printAsserts(VC vc, int simplify_print) {
   vc_printAssertsToStream(vc, cout, simplify_print);
 }
 
-void vc_printQueryStateToBuffer(VC vc, Expr e, 
-                                char **buf, 
+void vc_printQueryStateToBuffer(VC vc, Expr e,
+                                char **buf,
                                 unsigned long *len, int simplify_print){
   assert(vc);
   assert(e);
@@ -327,15 +339,17 @@ void vc_printQueryStateToBuffer(VC vc, Expr e,
 
   // formate the state of the query
   stringstream os;
+#if defined(ENABLE_STP_C_INTERFACE_IO)
   vc_printVarDeclsToStream(vc, os);
+#endif
   os << "%----------------------------------------------------" << endl;
   vc_printAssertsToStream(vc, os, simplify_print);
   os << "%----------------------------------------------------" << endl;
   os << "QUERY( ";
   b->Begin_RemoveWrites = true;
-  BEEV::ASTNode q = 
-    (simplify_print == 1) ? 
-    simp->SimplifyFormula_TopLevel(*((nodestar)e),false) : 
+  BEEV::ASTNode q =
+    (simplify_print == 1) ?
+    simp->SimplifyFormula_TopLevel(*((nodestar)e),false) :
     *(nodestar)e;
   b->Begin_RemoveWrites = false;
   q.PL_Print(os);
@@ -359,7 +373,7 @@ void vc_printCounterExampleToBuffer(VC vc, char **buf, unsigned long *len) {
   assert(buf);
   assert(len);
   bmstar b = (bmstar)(((stpstar)vc)->bm);
-  ctrexamplestar ce = (ctrexamplestar)(((stpstar)vc)->Ctr_Example);  
+  ctrexamplestar ce = (ctrexamplestar)(((stpstar)vc)->Ctr_Example);
 
   // formate the state of the query
   std::ostringstream os;
@@ -431,14 +445,14 @@ Type vc_arrayType(VC vc, Type typeIndex, Type typeData) {
   nodestar ti = (nodestar)typeIndex;
   nodestar td = (nodestar)typeData;
 
-  if(!(ti->GetKind() == BEEV::BITVECTOR 
+  if(!(ti->GetKind() == BEEV::BITVECTOR
        && (*ti)[0].GetKind() == BEEV::BVCONST))
     {
       BEEV::FatalError("Tyring to build array whose"\
                        "indextype i is not a BITVECTOR, where i = ",*ti);
     }
   if(!(td->GetKind()  == BEEV::BITVECTOR
-       && (*td)[0].GetKind() == BEEV::BVCONST)) 
+       && (*td)[0].GetKind() == BEEV::BVCONST))
     {
       BEEV::FatalError("Trying to build an array whose"\
                        "valuetype v is not a BITVECTOR. where a = ",*td);
@@ -518,8 +532,8 @@ int vc_query(VC vc, Expr e) {
   stpstar stp = ((stpstar)vc);
   bmstar b = (bmstar)(stp->bm);
 
-  if(!BEEV::is_Form_kind(a->GetKind())) 
-    {     
+  if(!BEEV::is_Form_kind(a->GetKind()))
+    {
       BEEV::FatalError("CInterface: Trying to QUERY a NON formula: ",*a);
     }
   //a->LispPrint(cout, 0);
@@ -530,18 +544,18 @@ int vc_query(VC vc, Expr e) {
   const BEEV::ASTVec v = b->GetAsserts();
   node o;
   int output;
-  if(!v.empty()) 
+  if(!v.empty())
     {
-      if(v.size()==1) 
+      if(v.size()==1)
         {
           output = stp->TopLevelSTP(v[0],*a);
         }
-      else 
+      else
         {
           output = stp->TopLevelSTP(b->CreateNode(BEEV::AND,v),*a);
         }
     }
-  else 
+  else
     {
       output = stp->TopLevelSTP(b->CreateNode(BEEV::TRUE),*a);
     }
@@ -606,7 +620,7 @@ void vc_printCounterExample(VC vc) {
 Expr vc_getCounterExample(VC vc, Expr e) {
   nodestar a = (nodestar)e;
   bmstar b = (bmstar)(((stpstar)vc)->bm);
-  ctrexamplestar ce = (ctrexamplestar)(((stpstar)vc)->Ctr_Example);  
+  ctrexamplestar ce = (ctrexamplestar)(((stpstar)vc)->Ctr_Example);
 
   bool t = false;
   if(ce->CounterExampleSize())
@@ -618,14 +632,14 @@ Expr vc_getCounterExample(VC vc, Expr e) {
 
 int vc_counterexample_size(VC vc) {
   bmstar b = (bmstar)(((stpstar)vc)->bm);
-  ctrexamplestar ce = (ctrexamplestar)(((stpstar)vc)->Ctr_Example);  
+  ctrexamplestar ce = (ctrexamplestar)(((stpstar)vc)->Ctr_Example);
 
   return ce->CounterExampleSize();
 }
 
 WholeCounterExample vc_getWholeCounterExample(VC vc) {
   bmstar b = (bmstar)(((stpstar)vc)->bm);
-  ctrexamplestar ce = (ctrexamplestar)(((stpstar)vc)->Ctr_Example);  
+  ctrexamplestar ce = (ctrexamplestar)(((stpstar)vc)->Ctr_Example);
 
   CompleteCEStar c =
     new BEEV::CompleteCounterExample(ce->GetCompleteCounterExample(),
@@ -651,7 +665,7 @@ void vc_deleteWholeCounterExample(WholeCounterExample cc) {
 int vc_getBVLength(VC vc, Expr ex) {
   nodestar e = (nodestar)ex;
 
-  if(BEEV::BITVECTOR_TYPE != e->GetType()) 
+  if(BEEV::BITVECTOR_TYPE != e->GetType())
     {
       BEEV::FatalError("c_interface: vc_GetBVLength: "          \
                        "Input expression must be a bit-vector");
@@ -675,7 +689,9 @@ Expr vc_varExpr1(VC vc, const char* name,
   BVTypeCheck(*output);
 
   //store the decls in a vector for printing purposes
+#if defined(ENABLE_STP_C_INTERFACE_IO)
   decls->push_back(o);
+#endif
   return output;
 }
 
@@ -711,7 +727,9 @@ Expr vc_varExpr(VC vc, const char * name, Type type) {
   BVTypeCheck(*output);
 
   //store the decls in a vector for printing purposes
+#if defined(ENABLE_STP_C_INTERFACE_IO)
   decls->push_back(o);
+#endif
   return output;
 }
 
@@ -980,9 +998,9 @@ Type vc_bv32Type(VC vc) {
   return vc_bvType(vc,32);
 }
 
-Expr vc_bvConstExprFromDecStr(VC vc, 
-                              const size_t width, 
-                              const char* decimalInput ) 
+Expr vc_bvConstExprFromDecStr(VC vc,
+                              const size_t width,
+                              const char* decimalInput )
 {
   bmstar b = (bmstar)(((stpstar)vc)->bm);
 
@@ -1357,8 +1375,8 @@ Expr vc_bvLeftShiftExpr(VC vc, int sh_amt, Expr ccc) {
   //convert leftshift to bvconcat
   if(0 != sh_amt) {
     node len = b->CreateBVConst(sh_amt, 0);
-    node o = 
-      b->CreateTerm(BEEV::BVCONCAT, 
+    node o =
+      b->CreateTerm(BEEV::BVCONCAT,
                     a->GetValueWidth() + sh_amt, *a, len);
     BVTypeCheck(o);
     nodestar output = new node(o);
@@ -1431,14 +1449,14 @@ Expr vc_bvVar32LeftShiftExpr(VC vc, Expr sh_amt, Expr child) {
 
   for(int count=32; count >= 0; count--)
     {
-      if(count != 32) 
+      if(count != 32)
         {
           ifpart = vc_eqExpr(vc, sh_amt,
                              vc_bvConstExprFromInt(vc, shift_width, count));
           thenpart = vc_bvExtract(vc,
                                   vc_bvLeftShiftExpr(vc, count, child),
                                   child_width-1, 0);
-                
+
           ite = vc_iteExpr(vc,ifpart,thenpart,elsepart);
           elsepart = ite;
         }
@@ -1458,15 +1476,15 @@ Expr vc_bvVar32DivByPowOfTwoExpr(VC vc, Expr child, Expr rhs) {
 
   for(int count=32; count >= 0; count--)
     {
-      if(count != 32) 
+      if(count != 32)
         {
           ifpart = vc_eqExpr(vc, rhs,
                              vc_bvConstExprFromInt(vc, 32, 1 << count));
           thenpart = vc_bvRightShiftExpr(vc, count, child);
           ite = vc_iteExpr(vc,ifpart,thenpart,elsepart);
           elsepart = ite;
-        } 
-      else 
+        }
+      else
         {
           elsepart = vc_bvConstExprFromInt(vc,32, 0);
         }
@@ -1487,15 +1505,15 @@ Expr vc_bvVar32RightShiftExpr(VC vc, Expr sh_amt, Expr child) {
 
   for(int count=32; count >= 0; count--)
     {
-      if(count != 32) 
+      if(count != 32)
         {
           ifpart = vc_eqExpr(vc, sh_amt,
                              vc_bvConstExprFromInt(vc, shift_width, count));
           thenpart = vc_bvRightShiftExpr(vc, count, child);
           ite = vc_iteExpr(vc,ifpart,thenpart,elsepart);
           elsepart = ite;
-        } 
-      else 
+        }
+      else
         {
           elsepart = vc_bvConstExprFromInt(vc,child_width, 0);
         }
@@ -1645,19 +1663,19 @@ Expr vc_simplify(VC vc, Expr e) {
   nodestar a = (nodestar)e;
   simpstar simp = (simpstar)(((stpstar)vc)->simp);
 
-  if(BEEV::BOOLEAN_TYPE == a->GetType()) 
+  if(BEEV::BOOLEAN_TYPE == a->GetType())
     {
-      nodestar round1 = 
+      nodestar round1 =
         new node(simp->SimplifyFormula_TopLevel(*a,false));
       b->Begin_RemoveWrites = true;
-      nodestar output = 
+      nodestar output =
         new node(simp->SimplifyFormula_TopLevel(*round1,false));
       //if(cinterface_exprdelete_on) created_exprs.push_back(output);
       b->Begin_RemoveWrites = false;
       delete round1;
       return output;
     }
-  else 
+  else
     {
       nodestar round1 = new node(simp->SimplifyTerm(*a));
       b->Begin_RemoveWrites = true;
@@ -1686,11 +1704,11 @@ Expr vc_bvReadMemoryArray(VC vc,
 
   if(numOfBytes == 1)
     return vc_readExpr(vc,array,byteIndex);
-  else 
+  else
     {
       int count = 1;
       Expr a = vc_readExpr(vc,array,byteIndex);
-      while(--numOfBytes > 0) 
+      while(--numOfBytes > 0)
         {
           Expr b = vc_readExpr(vc,array,
                                /*vc_simplify(vc, */
@@ -1725,15 +1743,15 @@ Expr vc_bvWriteToMemoryArray(VC vc,
     while(--numOfBytes > 0) {
       hi = low-1;
       low = low-8;
-            
+
       low_elem = low_elem + 8;
       hi_elem = low_elem + 7;
-            
+
       c = vc_bvExtract(vc, element, hi_elem, low_elem);
       newarray =
         vc_writeExpr(vc, newarray,
-                     vc_bvPlusExpr(vc, 32, 
-                                   byteIndex, 
+                     vc_bvPlusExpr(vc, 32,
+                                   byteIndex,
                                    vc_bvConstExprFromInt(vc,32,count)),
                      c);
       count++;
@@ -1786,12 +1804,12 @@ Expr vc_parseExpr(VC vc, const char* infile) {
 
 
   BEEV::ASTVec * AssertsQuery = new BEEV::ASTVec;
-  if (b->UserFlags.smtlib1_parser_flag) 
+  if (b->UserFlags.smtlib1_parser_flag)
     {
       smtin = cvcin;
       cvcin = NULL;
       smtparse((void*)AssertsQuery);
-    } 
+    }
   else
     {
       cvcparse((void*)AssertsQuery);
@@ -1829,7 +1847,7 @@ Expr getChild(Expr e, int i){
   nodestar a = (nodestar)e;
 
   BEEV::ASTVec c = a->GetChildren();
-  if(0 <=  i && (unsigned)i < c.size()) 
+  if(0 <=  i && (unsigned)i < c.size())
     {
       BEEV::ASTNode o = c[i];
       nodestar output = new node(o);
@@ -1861,7 +1879,7 @@ int vc_getHashQueryStateToBuffer(VC vc, Expr query) {
 
 Type vc_getType(VC vc, Expr ex) {
   nodestar e = (nodestar)ex;
-  
+
   switch(e->GetType()) {
   case BEEV::BOOLEAN_TYPE:
     return vc_boolType(vc);
@@ -1913,7 +1931,9 @@ void vc_Destroy(VC vc) {
     persist.clear();
   }
 
+#if defined(ENABLE_STP_C_INTERFACE_IO)
   delete decls;
+#endif
   delete (stpstar)vc;
   BEEV::GlobalSTP = NULL;
   delete  BEEV::ParserBM;
@@ -1938,18 +1958,18 @@ int getDegree (Expr e) {
 
 int getBVLength(Expr ex) {
   nodestar e = (nodestar)ex;
-  
-  if(BEEV::BITVECTOR_TYPE != e->GetType()) 
+
+  if(BEEV::BITVECTOR_TYPE != e->GetType())
     {
       BEEV::FatalError("c_interface: vc_GetBVLength: "\
                        "Input expression must be a bit-vector");
     }
-  
+
   return e->GetValueWidth();
 }
 
 type_t getType (Expr ex) {
-  nodestar e = (nodestar)ex;  
+  nodestar e = (nodestar)ex;
   return (type_t)(e->GetType());
 }
 
@@ -1966,8 +1986,8 @@ int getIWidth (Expr ex) {
 void vc_printCounterExampleFile(VC vc, int fd) {
   fdostream os(fd);
   bmstar b = (bmstar)(((stpstar)vc)->bm);
-  ctrexamplestar ce = (ctrexamplestar)(((stpstar)vc)->Ctr_Example);  
-  
+  ctrexamplestar ce = (ctrexamplestar)(((stpstar)vc)->Ctr_Example);
+
   bool currentPrint = b->UserFlags.print_counterexample_flag;
   b->UserFlags.print_counterexample_flag = true;
   os << "COUNTEREXAMPLE BEGIN: \n";
@@ -1981,7 +2001,7 @@ const char* exprName(Expr e){
 }
 
 int getExprID (Expr ex) {
-  BEEV::ASTNode q = (*(nodestar)ex);  
+  BEEV::ASTNode q = (*(nodestar)ex);
   return q.GetNodeNum();
 }
 
@@ -2017,19 +2037,19 @@ int vc_parseMemExpr(VC vc, const char* s, Expr* oquery, Expr* oasserts ) {
     return 0;
   }
 #endif
-  
+
   BEEV::ParserInterface pi(*b, b->defaultNodeFactory);
   BEEV::parserInterface = &pi;
 
   BEEV::ASTVec AssertsQuery;
-  if (b->UserFlags.smtlib1_parser_flag) 
+  if (b->UserFlags.smtlib1_parser_flag)
     {
       //YY_BUFFER_STATE bstat = smt_scan_string(s);
       //smt_switch_to_buffer(bstat);
       smt_scan_string(s);
       smtparse((void*)&AssertsQuery);
       //smt_delete_buffer(bstat);
-    } 
+    }
   else
     {
       //YY_BUFFER_STATE bstat = cvc_scan_string(s);
