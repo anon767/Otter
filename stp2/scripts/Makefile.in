@@ -102,6 +102,7 @@ clean:
 .PHONY: configclean
 configclean:
 	rm -rf scripts/config.info
+	rm -f Makefile
 
 .PHONY: regressall
 regressall: all
