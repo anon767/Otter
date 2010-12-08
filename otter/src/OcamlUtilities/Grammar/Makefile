@@ -1,4 +1,4 @@
-all: GrammarLexer.cmx Grammar.cmx GrammarMain.cmx
+grammar: GrammarLexer.cmx Grammar.cmx GrammarMain.cmx
 	ocamlopt -o grammar str.cmxa GrammarTypes.cmx GrammarLexer.cmx Grammar.cmx GrammarMain.cmx
 
 GrammarTypes.cmx: GrammarTypes.ml

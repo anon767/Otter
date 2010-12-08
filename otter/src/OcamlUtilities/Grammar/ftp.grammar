@@ -3,7 +3,7 @@ start ::= "USER " username "\nPASS " password "\n" cmds
 
 cmds ::=
     "QUIT\n"
-  | "REIN\n" start
+//  | "REIN\n" start
   | cmd "\n" cmds
 ;
 
@@ -18,7 +18,7 @@ cmd ::=
   | "MODE " s_b_c
   | "STRU " f_r_p
   | "TYPE " type_param
-  | "PORT " byte "," byte "," byte "," byte "," byte "," byte
+  | "PORT " int "," int "," int "," int "," int "," int
 ;
 
 no_arg_cmd ::= "NOOP" | "CDUP" | "PWD" | "HELP" | "SYST" | "STAT" | "SITE" | "ABOR" | "LIST" | "NLST" | "PASV";
@@ -33,6 +33,9 @@ type_param ::= "A N" | "A T" | "A C" | "E N" | "E T" | "E C" | "I" | "L " int;
 dirname ::= "/" relative_path | relative_path;
 relative_path ::= filename | filename "/" relative_path;
 
-filename ::= alpha | alpha filename;
+// digit, letter, and stringN (for N between 1 and 10) are terminals defined in the generated C code.
+
+filename ::= letter | letter filename;
 username ::= filename;
-password ::= filename;
+password ::= string2;
+int ::= digit | digit int;

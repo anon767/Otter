@@ -31,8 +31,9 @@ let string_literal = (escape_sequence | [^ '\\' '"'])*
 let alpha = [ 'a'-'z' 'A'-'Z' ]
 rule token = parse
   | [' ' '\t' '\n'] { token lexbuf }
+  | "//" [^ '\n']* { token lexbuf } (* Comment until end of line *)
   | "::=" { DEF }
-  | '"' (string_literal as str) '"' { TERM { GrammarTypes.text = "\"" ^ ((*unescape*) str) ^ "\"" } }
+  | '"' (string_literal as str) '"' { TERM { GrammarTypes.text = (*unescape*) str } }
   | alpha (alpha | [ '_' '0'-'9' ])* as str { NONTERM { GrammarTypes.name = str } }
   | '|' { PIPE }
   | ';' { SEMICOLON }
