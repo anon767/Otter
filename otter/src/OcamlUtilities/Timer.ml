@@ -36,8 +36,17 @@ let time key f x =
     end
 
 let global_printer ff =
-    Format.fprintf ff "%40s  %8s %10s@\n" "" "count" "time (s)";
-    StringMap.iter begin fun key time_record ->
-        Format.fprintf ff "%40s: %8d %10.2f@\n" key time_record.count time_record.time_elapsed
-    end !global_timer
+    let assoc_list =
+        StringMap.fold (fun key time_record assoc_list -> (key, time_record) :: assoc_list) !global_timer []
+    in
+    let assoc_list = List.stable_sort (fun (key1, _) (key2, __) -> Pervasives.compare key1 key2) assoc_list in
+    let max_length = List.fold_left (fun m (k, _) -> max m (String.length k)) 0 assoc_list in
+    let dotted str =
+        let len = max_length - String.length str in
+        if len <= 0 then "" else String.make len '.'
+    in
+    Format.fprintf ff "%*s  %8s %10s@\n" max_length "" "count" "time (s)";
+    List.iter begin fun (key, time_record) ->
+        Format.fprintf ff "%s%s: %8d %10.2f@\n" key (dotted key) time_record.count time_record.time_elapsed
+    end assoc_list
 
