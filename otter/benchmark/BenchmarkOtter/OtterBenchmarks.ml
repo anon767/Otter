@@ -83,10 +83,22 @@ let benchmarks ?(div_num=1) ?(div_base=1) argv_array =
                 )
             in
             (* don't want depth-first, it's really terrible *)
-            let backotter_bqueues = List.filter (fun (_, queue) -> queue <> `DepthFirst) BackOtter.BackOtterQueue.queues in
-            let backotter_fqueues = List.filter (fun (_, queue) -> queue <> `DepthFirst) BackOtter.BackOtterQueue.queues in
+            let wanted_queues = [
+                `BreadthFirst;
+                `RandomPath;
+                `ClosestToTargets;
+                `KLEE;
+                `SAGE;
+            ] in
+            let wanted_ranks = [
+                `ClosestToEntry;
+                `ClosestToFailure;
+                `Partial `ClosestToEntry;
+            ] in
+            let backotter_bqueues = List.filter (fun (_, queue) -> List.mem queue wanted_queues) BackOtter.BackOtterQueue.queues in
+            let backotter_fqueues = List.filter (fun (_, queue) -> List.mem queue wanted_queues) BackOtter.BackOtterQueue.queues in
             (* Disable RandomFunction for now *)
-            let backotter_branks = List.filter (fun (_, queue) -> queue <> `RandomFunction) BackOtter.BackwardRank.queues in
+            let backotter_branks = List.filter (fun (_, queue) -> List.mem queue wanted_ranks) BackOtter.BackwardRank.queues in
 
             let rec compose fn lst = function
                 | head :: tail -> (List.map (fun ele -> fn ele head) lst) @ (compose fn lst tail)
