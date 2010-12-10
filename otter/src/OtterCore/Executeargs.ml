@@ -23,7 +23,7 @@ let arg_edge_coverage = ref false
 let arg_block_coverage = ref false
 let arg_line_coverage = ref false
 let arg_path_coverage = ref false
-let arg_fns = ref []
+let arg_untracked_fns = ref []
 let arg_list_lines = ref false
 let arg_list_blocks = ref false
 let arg_list_edges = ref false
@@ -149,17 +149,16 @@ let options = [
 	("--pathCov",
 		Arg.Set arg_path_coverage,
 		" Track path coverage");
-	("--covStats",
+	("--untracked-functions",
 		Arg.String begin fun filename ->
 			let inChan = open_in filename in
 			try
 				while true do
-					arg_fns := (input_line inChan)::!arg_fns
+					arg_untracked_fns := (input_line inChan)::!arg_untracked_fns
 				done
 			with End_of_file -> close_in inChan
 		end,
-		"<filename> File containing coverage statistics\n");
-
+        "<filename> File containing a list of functions whose coverages are not tracked.\n");
 	("--listAllLines",
 		Arg.Set arg_list_lines,
 		" Before execution, print out all of the lines in the program.");

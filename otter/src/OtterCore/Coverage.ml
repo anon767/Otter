@@ -142,13 +142,14 @@ let printStmtInfo ff si =
 		Format.fprintf ff " (%a)" Printcil.loc (Cil.get_stmtLoc si.siStmt.Cil.skind)
 
 let prepare_file file =
-	let fnNames = !Executeargs.arg_fns in
+	let fnNames = CilUtilities.FindFns.get_all_fnames file in
+	let untrackedFnNames = !Executeargs.arg_untracked_fns in
 	let vis = new getStatsVisitor in
 	iterGlobals
 		file
 		(function (* Visit the bodies of the functions we care about *)
 				 GFun(fundec,_) ->
-					 if List.mem fundec.svar.vname fnNames
+					 if List.mem fundec.svar.vname fnNames && not (List.mem fundec.svar.vname untrackedFnNames)
 					 then ignore (visitCilFunction (vis:>cilVisitor) fundec)
 			 | _ -> ()
 		);

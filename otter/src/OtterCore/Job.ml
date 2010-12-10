@@ -111,7 +111,10 @@ let job_counter_unique = Counter.make ()
 (* create a job that begins at a function, given an initial state *)
 let make file state fn argvs =
     let state = MemOp.state__start_fcall state Types.Runtime fn argvs in
-    let trackedFns = List.fold_left (fun set elt -> StringSet.add elt set) StringSet.empty !Executeargs.arg_fns in
+    let trackedFns = List.fold_left (fun set elt ->
+        if List.mem elt !Executeargs.arg_untracked_fns then set
+        else StringSet.add elt set
+    ) StringSet.empty (CilUtilities.FindFns.get_all_fnames file) in
     (* create a new job *)
     {
         file = file;
