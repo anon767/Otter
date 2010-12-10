@@ -1,15 +1,23 @@
 open Cil
 
+let get_all_fnames =
+    let all_fnames = ref [] in
+    function file ->
+        if all_fnames = ref [] then
+	        iterGlobals
+	        	file
+	        	(fun glob ->
+	        		 match glob with
+	        				 GFun(fundec,_) -> all_fnames := fundec.svar.vname :: (!all_fnames)
+	        			 | _ -> ());
+        !all_fnames
+
 let outFile = ref ""
 
 let findFns (file : Cil.file) : unit =
 	let outChan = if !outFile = "" then stdout else open_out !outFile in
-	iterGlobals
-		file
-		(fun glob ->
-			 match glob with
-					 GFun(fundec,_) -> output_string outChan (fundec.svar.vname ^ "\n")
-				 | _ -> ());
+    let all_fnames = get_all_fnames file in
+    List.iter (fun fname -> output_string outChan (fname ^ "\n")) all_fnames;
 	close_out outChan
 
 let feature : Cil.featureDescr = {
