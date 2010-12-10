@@ -34,7 +34,7 @@
  *               Decision: IF (argc != 4): false
  */
 #pragma max_abandoned(1)
-#pragma time_limit(60)
+#pragma time_limit(180)
 #pragma expect_abandoned(failure_reached)
 
 #ifdef CIL
