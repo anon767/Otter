@@ -28,6 +28,8 @@ let arg_list_lines = ref false
 let arg_list_blocks = ref false
 let arg_list_edges = ref false
 let arg_list_conds = ref false
+let arg_print_complement_coverage = ref false
+let arg_print_covering_sets = ref false
 let arg_print_stmtInfo_locs = ref false (** Option to print the location of {!Types.stmtInfo}. *)
 let arg_marshal_file = ref "" (** File to which to marshal coverage information *)
 
@@ -171,6 +173,13 @@ let options = [
 	("--listAllConds",
 		Arg.Set arg_list_conds,
 		" Before execution, print out all of the conditions in the program.\n");
+	("--printCoveringSets",
+		Arg.Set arg_print_covering_sets,
+		" Print covering sets.\n");
+	("--printComplementCoverages",
+		Arg.Set arg_print_complement_coverage,
+		" Print complement coverages (i.e., uncovered entities).\n");
+
 
 	("--marshalCoverageTo",
 		Arg.Set_string arg_marshal_file,

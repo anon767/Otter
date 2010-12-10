@@ -7,7 +7,6 @@ open Bytes
 open Types
 open Job
 
-
 let coverage_totals : (Cil.file, <lines : int; blocks : int; edges : int; conds : int>) Hashtbl.t = Hashtbl.create 0
 
 module FundecMap = Map.Make (struct
@@ -132,6 +131,8 @@ class getGlobalInitVisitor = object (self)
 
 end
 
+let vis = new getStatsVisitor
+
 (** Print the name and type of a {!Types.stmtInfo}.
 		@param ff is the formatter to which to print
 		@param fn is the {!Types.stmtInfo} to print
@@ -144,7 +145,6 @@ let printStmtInfo ff si =
 let prepare_file file =
 	let fnNames = CilUtilities.FindFns.get_all_fnames file in
 	let untrackedFnNames = !Executeargs.arg_untracked_fns in
-	let vis = new getStatsVisitor in
 	iterGlobals
 		file
 		(function (* Visit the bodies of the functions we care about *)
@@ -379,163 +379,149 @@ let printPath state hist =
 	);
 	Output.printf "\n"
 
+let printLine (file,lineNum) = Output.printf "%s:%d\n" file lineNum
+let printLines lineset = LineSet.iter printLine lineset
+
+let printEdge (srcStmtInfo,destStmtInfo) = Output.printf "%a -> %a\n" printStmtInfo srcStmtInfo printStmtInfo destStmtInfo
+let printEdges edgeset = EdgeSet.iter printEdge edgeset
+
+let printBlocks blockset = StmtInfoSet.iter (Output.printf "%a\n" printStmtInfo) blockset
+
+let printCondition (stmtInfo, truth) = Output.printf "%a %c\n" printStmtInfo stmtInfo (if truth then 'T' else 'F')
+let printConditions condset = CondSet.iter printCondition condset
+
 let printCov file covType hist =
-	let total = getTotal file covType
-	and numCovered = getNumCovered covType hist
-	in
-	Output.printf "%d out of %d %s (%.2f%%)\n\n"
-		numCovered total (covTypeToStr covType) (percentage numCovered total)
-
-let printLine (file,lineNum) =
-	Output.printf "%s:%d\n" file lineNum
-let printLines lineset =
-	Output.printf "The lines hit were:\n";
-	LineSet.iter printLine lineset;
-	Output.printf "\n"
-
-let printEdge (srcStmtInfo,destStmtInfo) =
-	Output.printf "%a -> %a\n"
-		printStmtInfo srcStmtInfo
-		printStmtInfo destStmtInfo
-let printEdges edgeset =
-	Output.printf "The edges hit were:\n";
-	EdgeSet.iter printEdge edgeset;
-	Output.printf "\n"
-
-let printBlocks blockset =
-	Output.printf "The blocks hit were:\n";
-	StmtInfoSet.iter (Output.printf "%a\n" printStmtInfo) blockset;
-	Output.printf "\n"
-
-let printCondition (stmtInfo, truth) =
-	Output.printf "%a %c\n"
-		printStmtInfo stmtInfo
-		(if truth then 'T' else 'F')
-let printConditions condset =
-	Output.printf "The conditions hit were:\n";
-	CondSet.iter printCondition condset;
-	Output.printf "\n"
+    let complement = !Executeargs.arg_print_complement_coverage in
+    let total = getTotal file covType and numCovered = getNumCovered covType hist in
+    Output.printf "%d out of %d %s (%.2f%%)\n\n" numCovered total (covTypeToStr covType) (percentage numCovered total);
+    Output.printf "The %s %scovered were:\n" (covTypeToStr covType) (if complement then "un" else "");
+    begin match covType with
+    | Line -> printLines (if complement then LineSet.diff vis#lines hist.coveredLines else hist.coveredLines)
+    | Block -> printBlocks (if complement then StmtInfoSet.diff vis#blocks hist.coveredBlocks else hist.coveredBlocks)
+    | Edge -> printEdges (if complement then EdgeSet.diff vis#edges hist.coveredEdges else hist.coveredEdges)
+    | Cond -> printConditions (if complement then CondSet.diff vis#conds hist.coveredConds else hist.coveredConds)
+    | Path -> failwith "printCoveringConfigs called for path coverage"
+    end;
+    Output.printf "\n"
 
 let printCoveringConfigs file coveringSet covType =
-	let name = covTypeToStr covType in
-	if coveringSet = [] then Output.printf "No constraints: any run covers all %s\n" name
-	else begin
-		Output.printf "Here is a set of %d configurations which covers all the %s ever hit:\n\n"
-				(List.length coveringSet) name;
-		List.iter
+    let name = covTypeToStr covType in
+    if coveringSet = [] then Output.printf "No constraints: any run covers all %s\n" name
+    else begin
+        Output.printf "Here is a set of %d configurations which covers all the %s ever hit:\n\n"
+                (List.length coveringSet) name;
+        List.iter
         (fun { result_state=state; result_history=hist} ->
-				 printPath state hist;
-				 printCov file covType hist;
-				 (match covType with
-							Line -> printLines hist.coveredLines
-						| Block -> printBlocks hist.coveredBlocks
-						| Edge -> printEdges hist.coveredEdges
-						| Cond -> printConditions hist.coveredConds
-						| Path -> failwith "printCoveringConfigs called for path coverage");
-				 Output.printf "-------------\n\n")
-			 coveringSet
-	end
+                 printPath state hist;
+                 printCov file covType hist;
+                 Output.printf "-------------\n\n")
+             coveringSet
+    end
 
 let printCoverageInfo resultList =
-	let file = (List.hd resultList).result_file in
-	if not (List.for_all (fun r -> r.result_file == file) resultList) then
-		failwith "Cannot report coverage from different files!";
+    let file = (List.hd resultList).result_file in
+    if not (List.for_all (fun r -> r.result_file == file) resultList) then
+        failwith "Cannot report coverage from different files!";
 
-	if !Executeargs.arg_line_coverage then (
-		Output.printf "Line coverage:\n\n";
-		let allLinesCovered =
- 			(List.fold_left
-				 (fun acc { result_history=hist } ->
-						LineSet.union acc hist.coveredLines)
-				 LineSet.empty
-				 resultList)
-		in
-		printCov file Line { emptyHistory with coveredLines = allLinesCovered; };
-		let coveringSet = greedySetCover
-			LineSet.is_empty
-			(fun job remaining ->
-				 LineSet.cardinal (LineSet.inter job.result_history.coveredLines remaining))
-			(fun remaining job -> LineSet.diff remaining job.result_history.coveredLines)
-			resultList
-			allLinesCovered
-		in
-		printCoveringConfigs file coveringSet Line
-	);
+    if !Executeargs.arg_line_coverage then (
+        Output.printf "Line coverage:\n\n";
+        let allLinesCovered =
+            (List.fold_left
+                 (fun acc { result_history=hist } ->
+                        LineSet.union acc hist.coveredLines)
+                 LineSet.empty
+                 resultList)
+        in
+        printCov file Line { emptyHistory with coveredLines = allLinesCovered; };
+        if !Executeargs.arg_print_covering_sets then
+            let coveringSet = greedySetCover
+                LineSet.is_empty
+                (fun job remaining ->
+                     LineSet.cardinal (LineSet.inter job.result_history.coveredLines remaining))
+                (fun remaining job -> LineSet.diff remaining job.result_history.coveredLines)
+                resultList
+                allLinesCovered
+            in
+            printCoveringConfigs file coveringSet Line
+    );
 
-	if !Executeargs.arg_block_coverage then (
-		Output.printf "Block coverage:\n\n";
-		let allBlocksCovered =
- 			(List.fold_left
-				 (fun acc { result_history=hist } ->
-						StmtInfoSet.union acc hist.coveredBlocks)
-				 StmtInfoSet.empty
-				 resultList)
-		in
-		printCov file Block { emptyHistory with coveredBlocks = allBlocksCovered; };
-		let coveringSet = greedySetCover
-			StmtInfoSet.is_empty
-			(fun job remaining ->
-				 StmtInfoSet.cardinal (StmtInfoSet.inter job.result_history.coveredBlocks remaining))
-			(fun remaining job -> StmtInfoSet.diff remaining job.result_history.coveredBlocks)
-			resultList
-			allBlocksCovered
-		in
-		printCoveringConfigs file coveringSet Block
-	);
+    if !Executeargs.arg_block_coverage then (
+        Output.printf "Block coverage:\n\n";
+        let allBlocksCovered =
+            (List.fold_left
+                 (fun acc { result_history=hist } ->
+                        StmtInfoSet.union acc hist.coveredBlocks)
+                 StmtInfoSet.empty
+                 resultList)
+        in
+        printCov file Block { emptyHistory with coveredBlocks = allBlocksCovered; };
+        if !Executeargs.arg_print_covering_sets then
+            let coveringSet = greedySetCover
+                StmtInfoSet.is_empty
+                (fun job remaining ->
+                     StmtInfoSet.cardinal (StmtInfoSet.inter job.result_history.coveredBlocks remaining))
+                (fun remaining job -> StmtInfoSet.diff remaining job.result_history.coveredBlocks)
+                resultList
+                allBlocksCovered
+            in
+            printCoveringConfigs file coveringSet Block
+    );
 
-	if !Executeargs.arg_edge_coverage then (
-		Output.printf "Edge coverage:\n\n";
-		let allEdgesCovered =
- 			(List.fold_left
-				 (fun acc { result_history=hist } ->
-						EdgeSet.union acc hist.coveredEdges)
-				 EdgeSet.empty
-				 resultList)
-		in
-		printCov file Edge { emptyHistory with coveredEdges = allEdgesCovered; };
-		let coveringSet = greedySetCover
-			EdgeSet.is_empty
-			(fun job remaining ->
-				 EdgeSet.cardinal (EdgeSet.inter job.result_history.coveredEdges remaining))
-			(fun remaining job -> EdgeSet.diff remaining job.result_history.coveredEdges)
-			resultList
-			allEdgesCovered
-		in
-		printCoveringConfigs file coveringSet Edge
-	);
+    if !Executeargs.arg_edge_coverage then (
+        Output.printf "Edge coverage:\n\n";
+        let allEdgesCovered =
+            (List.fold_left
+                 (fun acc { result_history=hist } ->
+                        EdgeSet.union acc hist.coveredEdges)
+                 EdgeSet.empty
+                 resultList)
+        in
+        printCov file Edge { emptyHistory with coveredEdges = allEdgesCovered; };
+        if !Executeargs.arg_print_covering_sets then
+            let coveringSet = greedySetCover
+                EdgeSet.is_empty
+                (fun job remaining ->
+                     EdgeSet.cardinal (EdgeSet.inter job.result_history.coveredEdges remaining))
+                (fun remaining job -> EdgeSet.diff remaining job.result_history.coveredEdges)
+                resultList
+                allEdgesCovered
+            in
+            printCoveringConfigs file coveringSet Edge
+    );
 
   if !Executeargs.arg_cond_coverage then (
-		Output.printf "Condition coverage:\n\n";
-		let allCondsCovered =
- 			(List.fold_left
-				 (fun acc { result_history=hist } ->
-						CondSet.union acc hist.coveredConds)
-				 CondSet.empty
-				 resultList)
-		in
-		printCov file Cond { emptyHistory with coveredConds = allCondsCovered; };
-		let coveringSet = greedySetCover
-			CondSet.is_empty
-			(fun job remaining ->
-				 CondSet.cardinal (CondSet.inter job.result_history.coveredConds remaining))
-			(fun remaining job -> CondSet.diff remaining job.result_history.coveredConds)
-			resultList
-			allCondsCovered
-		in
-		printCoveringConfigs file coveringSet Cond
-	);
+        Output.printf "Condition coverage:\n\n";
+        let allCondsCovered =
+            (List.fold_left
+                 (fun acc { result_history=hist } ->
+                        CondSet.union acc hist.coveredConds)
+                 CondSet.empty
+                 resultList)
+        in
+        printCov file Cond { emptyHistory with coveredConds = allCondsCovered; };
+        if !Executeargs.arg_print_covering_sets then
+            let coveringSet = greedySetCover
+                CondSet.is_empty
+                (fun job remaining ->
+                     CondSet.cardinal (CondSet.inter job.result_history.coveredConds remaining))
+                (fun remaining job -> CondSet.diff remaining job.result_history.coveredConds)
+                resultList
+                allCondsCovered
+            in
+            printCoveringConfigs file coveringSet Cond
+    );
 
-	if !Executeargs.arg_path_coverage then (
-		(* I don't compute covering sets here because I assume each path
-			 is unique. However, if two paths x and y differ only within
-			 untracked functions, [x.executionPath = y.executionPath] will
-			 be true. *)
-		Output.printf "Path coverage:\n\n";
-		List.iter
-			(fun result ->
-				 printPath result.result_state result.result_history;
-				 Output.printf "The path contains %d statements\n\n" (List.length result.result_history.executionPath);
-				 Output.printf "-------------\n\n")
-			resultList
-	)
+    if !Executeargs.arg_path_coverage then (
+        (* I don't compute covering sets here because I assume each path
+             is unique. However, if two paths x and y differ only within
+             untracked functions, [x.executionPath = y.executionPath] will
+             be true. *)
+        Output.printf "Path coverage:\n\n";
+        List.iter
+            (fun result ->
+                 printPath result.result_state result.result_history;
+                 Output.printf "The path contains %d statements\n\n" (List.length result.result_history.executionPath);
+                 Output.printf "-------------\n\n")
+            resultList
+    )
 
