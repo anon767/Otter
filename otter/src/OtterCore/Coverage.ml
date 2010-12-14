@@ -143,8 +143,14 @@ let printStmtInfo ff si =
 		Format.fprintf ff " (%a)" Printcil.loc (Cil.get_stmtLoc si.siStmt.Cil.skind)
 
 let prepare_file file =
-	let fnNames = CilUtilities.FindFns.get_all_fnames file in
-	let untrackedFnNames = !Executeargs.arg_untracked_fns in
+	let fnNames = match !Executeargs.arg_tracked_fns with
+		| None -> CilUtilities.FindFns.get_all_fnames file
+		| Some fns -> fns
+	in
+	let untrackedFnNames = match !Executeargs.arg_untracked_fns with
+		| None -> []
+		| Some fns -> fns
+	in
 	iterGlobals
 		file
 		(function (* Visit the bodies of the functions we care about *)

@@ -111,11 +111,17 @@ let job_counter_unique = Counter.make ()
 (* create a job that begins at a function, given an initial state *)
 let make file state fn argvs =
     let state = MemOp.state__start_fcall state Types.Runtime fn argvs in
-    let trackedFns = List.fold_left (fun set elt ->
-        if List.mem elt !Executeargs.arg_untracked_fns then set
-        else StringSet.add elt set
-    ) StringSet.empty (CilUtilities.FindFns.get_all_fnames file) in
-    (* create a new job *)
+    let trackedFns =
+    	match !Executeargs.arg_tracked_fns, !Executeargs.arg_untracked_fns with
+    		| None, None -> List.fold_left (fun set elt -> StringSet.add elt set) StringSet.empty (CilUtilities.FindFns.get_all_fnames file)
+    		| None, Some fns -> List.fold_left (fun set elt ->
+    				if List.mem elt fns then set
+    				else StringSet.add elt set
+    			) StringSet.empty (CilUtilities.FindFns.get_all_fnames file)
+    		| Some fns, None -> List.fold_left (fun set elt -> StringSet.add elt set) StringSet.empty fns
+    		| Some _, Some _ -> failwith "whitelist and blacklist both active"
+	in
+	(* create a new job *)
     {
         file = file;
         state = state;
