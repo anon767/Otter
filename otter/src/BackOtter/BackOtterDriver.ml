@@ -15,6 +15,8 @@ let timing_methods = [
 let default_timing_method = ref `TimeStpCount
 let default_conditionals_forking_limit = ref max_int
 
+let arg_line_targets = ref []
+
 class ['self] target_tracker delegate entry_fn targets_ref =
 object (_ : 'self)
     val delegate = delegate
@@ -101,6 +103,21 @@ let set_output_formatter_interceptor job job_queue interceptor =
     in
     Output.set_formatter (new Output.labeled label);
     interceptor job job_queue
+
+
+(** An interceptor that emits FailureReached when some (file, line) in arg_line_targets is encountered. *)
+let line_target_interceptor job job_queue interceptor =
+    let loc = Job.get_loc job in
+    if List.mem (loc.Cil.file, loc.Cil.line) (!arg_line_targets) then
+        let job_result = {
+            result_file = job.Job.file;
+            result_state = job.Job.state;
+            result_history = job.Job.exHist;
+            result_decision_path = job.Job.decisionPath;
+        } in
+        Complete (Abandoned (`FailureReached, loc, job_result)), job_queue
+    else
+        interceptor job job_queue
 
 
 let get_time_now =
@@ -207,6 +224,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     let interceptor =
         let (>>>) = Interceptor.(>>>) in
             set_output_formatter_interceptor
+        >>> line_target_interceptor
         >>> BuiltinFunctions.libc_interceptor
         >>> BuiltinFunctions.interceptor
         >>> (
@@ -312,12 +330,28 @@ let doit file =
     Output.printf "Number of nodes: %d@\n" nodes;
     Output.printf "Number of paths: %d@\n" paths;
     Output.printf "Number of abandoned: %d@\n" abandoned;
-    Output.printf "Timer:@\n  @[%t@]@\n" Timer.global_printer
+    Output.printf "Timer:@\n  @[%t@]@\n" Timer.global_printer;
+    Report.print_report reporter#completed
 
 
 (** {1 Command-line options} *)
 
 let options = [
+    ("--line-targets",
+        Arg.String begin fun str ->
+            let args = Str.split (Str.regexp ",") str in
+            let re = Str.regexp "\\(.*\\):\\(.*\\)" in
+            List.iter (fun arg ->
+                if Str.string_match re arg 0 then
+                    let file = Str.matched_group 1 arg in
+                    let line = int_of_string (Str.matched_group 2 arg) in
+                    arg_line_targets := (file, line)::(!arg_line_targets)
+                else
+                    failwith "Error in parsing --line-targets"
+            ) args
+        end,
+        "<line[,lines]> Lines in the form file:linenum[,file:linenum...]. Default is empty list.\n");
+
     "--conditionals-forking-limit",
         Arg.Set_int default_conditionals_forking_limit,
         "<limit> Set the limit in conditionals forking (default: max_int (== don't use))";
