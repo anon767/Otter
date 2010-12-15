@@ -58,7 +58,7 @@ let simple_coverage_testsuite = "Simple" >::: [
         int main(int argc, char *argv[]) {
             return 0; /* 1 */
         }
-    " []
+    " None
     begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count all_conds all_conds_count all_paths_count ->
         assert_blocks_count 1 all_blocks_count
     end;
@@ -73,7 +73,7 @@ let simple_coverage_testsuite = "Simple" >::: [
             }
             return i; /* 3 */
         }
-    " []
+    " None
     begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count all_conds all_conds_count all_paths_count ->
         assert_blocks_count 3 all_blocks_count
     end;
@@ -86,7 +86,7 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
             foo(); /* 1 */
             return 0; /* 3 */
         }
-    " []
+    " None
     begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count all_conds all_conds_count all_paths_count ->
         assert_blocks_count 3 all_blocks_count
     end;
@@ -99,7 +99,7 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
             foo(); /* 1 */
             return 0; /* 3 */
         }
-    " []
+    " None
     begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count all_conds all_conds_count all_paths_count ->
         assert_blocks_count 3 all_blocks_count
     end;
@@ -112,7 +112,7 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
             bar(); /* 3 */
             return 0; /* 5 */
         }
-    " []
+    " None
     begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count all_conds all_conds_count all_paths_count ->
         assert_blocks_count 5 all_blocks_count
     end;
@@ -128,7 +128,7 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
             bar(); /* 3 */
             return 0; /* 5 */
         }
-    " []
+    " None
     begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count all_conds all_conds_count all_paths_count ->
         assert_blocks_count 5 all_blocks_count
     end;
@@ -140,7 +140,7 @@ let function_calls_coverage_testsuite = "Function calls" >::: [
             foo(); /* 1 */
             return 0; /* 5 */
         }
-    " []
+    " None
     begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count all_conds all_conds_count all_paths_count ->
         assert_blocks_count 5 all_blocks_count
     end;
@@ -167,7 +167,7 @@ let function_pointers_coverage_testsuite = "Function pointers" >::: [
 
             return 0;
         }
-    " []
+    " None
     begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count all_conds all_conds_count all_paths_count ->
         assert_blocks_count 7 all_blocks_count
     end;
@@ -193,7 +193,7 @@ let function_pointers_coverage_testsuite = "Function pointers" >::: [
 
             return 0;
         }
-    " []
+    " None
     begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count all_conds all_conds_count all_paths_count ->
         assert_blocks_count 7 all_blocks_count
     end;
@@ -219,7 +219,7 @@ let function_pointers_coverage_testsuite = "Function pointers" >::: [
 
             return 0;
         }
-    " []
+    " None
     begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count all_conds all_conds_count all_paths_count ->
         assert_blocks_count 6 all_blocks_count
     end;
@@ -242,7 +242,7 @@ let function_pointers_coverage_testsuite = "Function pointers" >::: [
 
             return 0;
         }
-    " []
+    " None
     begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count all_conds all_conds_count all_paths_count ->
         assert_blocks_count 5 all_blocks_count
     end;
