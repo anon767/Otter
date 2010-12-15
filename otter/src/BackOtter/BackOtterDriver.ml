@@ -214,8 +214,23 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     (* Add failure_fn as a target *)
     targets_ref := BackOtterTargets.add failure_fn [] (!targets_ref);
 
+    (* Wrap queues with ContentQueue *)
+    let f_queue = new ContentQueue.t f_queue in
+    let b_queue = new ContentQueue.t b_queue in
+
+    (* when arg_line_targets != [], add appropriate jobs in bqueue *)
+    let starter_fundecs = List.fold_left (fun starter_fundecs (file_name, line_num) ->
+        let fundec = CovToFundec.of_line (file_name, line_num) in
+        if List.memq fundec starter_fundecs then starter_fundecs else fundec::starter_fundecs)
+    [] (!arg_line_targets) in
+    List.iter (fun f -> Output.debug_printf "Function containing coverage targets: %s@\n" f.svar.vname) starter_fundecs;
+    let b_queue = List.fold_left (fun b_queue fundec ->
+        let job = OtterJob.FunctionJob.make file ~points_to:(!BidirectionalQueue.default_points_to file) fundec in
+        b_queue#put job
+    ) b_queue starter_fundecs in
+
     (* A queue that prioritizes jobs *)
-    let queue = new BidirectionalQueue.t ?ratio file targets_ref timer_ref entry_fn failure_fn entry_job f_queue b_queue in
+    let queue = new BidirectionalQueue.t ?ratio file targets_ref timer_ref entry_fn failure_fn entry_job f_queue b_queue starter_fundecs in
 
     (* Overlay the target tracker on the reporter *)
     let target_tracker = new target_tracker reporter entry_fn targets_ref in
@@ -275,6 +290,7 @@ let doit file =
 
     Executeargs.arg_cfg_pruning := true;
     Core.prepare_file file;
+    CovToFundec.prepare_file file;
 
     let find_tag_name tag assocs = List.assoc tag (List.map (fun (a,b)->(b,a)) assocs) in
     Output.must_printf "Forward strategy: %s@\n" (find_tag_name (!BackOtterQueue.default_fqueue) BackOtterQueue.queues);

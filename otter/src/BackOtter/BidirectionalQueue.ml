@@ -61,14 +61,15 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                failure_fn
                entry_job
                f_queue
-               b_queue =
+               b_queue
+               origin_fundecs =
     (* ratio < 0.0 denotes purely backward (beware of precision!) *)
     let is_bidirectional = ratio >= 0.0 in
     object (self)
-        val entryfn_jobqueue = let queue = new ContentQueue.t f_queue in if is_bidirectional then queue#put entry_job else queue
-        val otherfn_jobqueue = new ContentQueue.t b_queue
+        val entryfn_jobqueue = if is_bidirectional then f_queue#put entry_job else f_queue
+        val otherfn_jobqueue = b_queue
         (* fundecs whose initialized jobs have been created *)
-        val origin_fundecs = []
+        val origin_fundecs = origin_fundecs
 
         (* A worklist for bounded jobs. I guess the strategy does not matter. *)
         val bounded_jobqueue = new BackOtterQueue.RankedQueue.t [ new BackOtterQueue.DepthFirstStrategy.t ]
