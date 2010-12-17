@@ -385,16 +385,18 @@ let printPath state hist =
 	);
 	Output.printf "\n"
 
-let printLine (file,lineNum) = Output.printf "%s:%d\n" file lineNum
-let printLines lineset = LineSet.iter printLine lineset
+let printLine ff (file,lineNum) = Format.fprintf ff "%s:%d" file lineNum
+let printEdge ff (srcStmtInfo,destStmtInfo) = Format.fprintf ff "%a -> %a" printStmtInfo srcStmtInfo printStmtInfo destStmtInfo
+let printBlock = printStmtInfo
+let printCondition ff (stmtInfo, truth) = Format.fprintf ff "%a %c" printStmtInfo stmtInfo (if truth then 'T' else 'F')
 
-let printEdge (srcStmtInfo,destStmtInfo) = Output.printf "%a -> %a\n" printStmtInfo srcStmtInfo printStmtInfo destStmtInfo
-let printEdges edgeset = EdgeSet.iter printEdge edgeset
+let printTimedEntity printEntity ff (entity, time) = Format.fprintf ff "[%.2f] %a" time printEntity entity
+let printTimedEntities printEntity elements_extract entityset = List.iter (Output.printf "%a@\n" (printTimedEntity printEntity)) (elements_extract entityset)
 
-let printBlocks blockset = StmtInfoSet.iter (Output.printf "%a\n" printStmtInfo) blockset
-
-let printCondition (stmtInfo, truth) = Output.printf "%a %c\n" printStmtInfo stmtInfo (if truth then 'T' else 'F')
-let printConditions condset = CondSet.iter printCondition condset
+let printLines = printTimedEntities printLine LineSet.elements
+let printEdges = printTimedEntities printEdge EdgeSet.elements
+let printBlocks = printTimedEntities printBlock StmtInfoSet.elements
+let printConditions = printTimedEntities printCondition CondSet.elements
 
 let printCov file covType hist =
     let complement = !Executeargs.arg_print_complement_coverage in

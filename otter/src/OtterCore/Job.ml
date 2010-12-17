@@ -47,10 +47,10 @@ module LineData = struct
    	 else tmp
 end
 
-module CondSet = Set.Make (CondData)
-module EdgeSet = Set.Make (EdgeData)
-module StmtInfoSet = Set.Make (StmtInfoData)
-module LineSet = Set.Make (LineData)
+module CondSet     = TimedSet.Make (CondData)
+module EdgeSet     = TimedSet.Make (EdgeData)
+module StmtInfoSet = TimedSet.Make (StmtInfoData)
+module LineSet     = TimedSet.Make (LineData)
 
 type executionHistory = {
 	coveredLines : LineSet.t; (** Which lines we've hit *)
