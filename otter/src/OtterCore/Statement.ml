@@ -86,16 +86,16 @@ let addInstrCoverage job instr =
 
 let function_from_exp job state exp args errors =
     match exp with
-        | Lval(Var(varinfo), NoOffset) ->
+        | Lval(Var(varinfo), NoOffset) -> 
             begin
                 try
                     ([ (state, FindCil.fundec_by_varinfo job.file varinfo) ], errors)
-                with Not_found ->
+                with Not_found -> 
                     failwith ("Function "^varinfo.vname^" not found.")
             end
 
 
-        | Lval(Mem(exp2), NoOffset) ->
+        | Lval(Mem(exp2), NoOffset) -> 
             let state, bytes, errors  = Expression.rval state exp2 errors in
             let rec getall fp =
                 let fold_func acc pre leaf =
@@ -123,7 +123,7 @@ let function_from_exp job state exp args errors =
                 | _ ->
                     FormatPlus.failwith "Non-constant function ptr not supported :@ @[%a@]" Printer.exp exp2
             end
-        | _ ->
+        | _ -> 
             FormatPlus.failwith "Non-constant function ptr not supported :@ @[%a@]" Printer.exp exp
 
 let exec_fundec job state instr fundec lvalopt exps errors =
@@ -169,8 +169,8 @@ let exec_instr_call job instr lvalopt fexp exps errors =
 
     let rec process_func_list func_list errors =
         match func_list with
-            | [] -> ([], errors)
-            | (state, fundec)::t ->
+            | [] ->  ([], errors) 
+            | (state, fundec)::t -> 
                 let job_state, errors =
                     let job = { job with
                         decisionPath = DecisionFuncall(instr, fundec)::job.decisionPath;
@@ -203,9 +203,9 @@ let exec_instr job errors =
     assert (job.instrList <> []);
     let printInstr instr =
         Output.set_mode Output.MSG_STMT;
-        Output.printf "%a@\n" Printcil.instr instr
+        Output.printf "%a@\n" Printcil.instr instr;
     in
-
+	
     let instr,tail = match job.instrList with i::tl -> i,tl | _ -> assert false in
     let job = { job with instrList = tail; } in
 
@@ -220,7 +220,7 @@ let exec_instr job errors =
     (* Since we've used the makeCFGFeature, an [Instr] is a series of
        [Set]s and [Asm]s, possibly terminated with a [Call]. *)
     match instr with
-         | Set(cil_lval, exp, loc) ->
+         | Set(cil_lval, exp, loc) -> 
             printInstr instr;
             let state = job.state in
             let state, lval, errors = Expression.lval state cil_lval errors in
@@ -228,11 +228,11 @@ let exec_instr job errors =
             let state = MemOp.state__assign state lval rv in
             let nextStmt = if tail = [] then List.hd job.stmt.succs else job.stmt in
             (get_active_state job { job with state = state; stmt = nextStmt }, errors)
-        | Call(lvalopt, fexp, exps, loc) ->
+        | Call(lvalopt, fexp, exps, loc) -> 
             assert (tail = []);
             printInstr instr;
             exec_instr_call job instr lvalopt fexp exps errors
-        | Asm (_,_,_,_,_,loc) ->
+        | Asm (_,_,_,_,_,loc) -> 
             let result = {
                 result_file = job.file;
                 result_state = job.state;
@@ -254,10 +254,10 @@ let exec_stmt job errors =
     Output.set_mode Output.MSG_STMT;
     Output.printf "@[%a@\n@]" Printer.stmt_abbr stmt;
     match stmt.skind with
-        | Instr [] ->
+        | Instr [] -> 
              let nextStmt = match stmt.succs with [x] -> x | _ -> assert false in
              (get_active_state job { job with stmt = nextStmt; exHist = nextExHist (Some nextStmt); }, errors)
-        | Instr (instrs) ->
+        | Instr (instrs) -> 
             (* We can certainly update block coverage here, but not
              * necessarily edge coverage. If instrs contains a call, we
              * don't know for certain that we'll traverse the edge from this
@@ -271,7 +271,7 @@ let exec_stmt job errors =
                 else Some (match stmt.succs with [x] -> x | _ -> assert false)
             in
             (get_active_state job { job with instrList = instrs; exHist = nextExHist nextStmtOpt; }, errors)
-        | Cil.Return (expopt, loc) ->
+        | Cil.Return (expopt, loc) -> 
             begin match state.callContexts with
                 | Runtime::_ -> (* completed symbolic execution (e.g., return from main) *)
                     Output.set_mode Output.MSG_MUSTPRINT;
@@ -347,9 +347,9 @@ let exec_stmt job errors =
                         (* there should always be a Runtime at the start of the list *)
                         assert false
             end
-        | Goto (stmtref, loc) ->
+        | Goto (stmtref, loc) -> 
             (get_active_state job { job with stmt = !stmtref; exHist = nextExHist (Some !stmtref); }, errors)
-        | If (exp, block1, block2, loc) ->
+        | If (exp, block1, block2, loc) -> 
             begin
             (* try a branch *)
                 let try_branch state pcopt block =
@@ -441,14 +441,14 @@ let exec_stmt job errors =
 
             end
         | Block(block)
-        | Loop (block, _, _, _) ->
+        | Loop (block, _, _, _) -> 
             (* A [Loop]'s block always has a non-empty bstmts. (See
                Cil.succpred_stmt.)
                This is not true for [Block]s, but it *does* seem to be
                true for [Block]s which are not under [If]s, so we're okay. *)
             let nextStmt = List.hd block.bstmts in
             (get_active_state job { job with stmt = nextStmt; exHist = nextExHist (Some nextStmt); }, errors)
-        | _ -> failwith "Not implemented yet"
+        | _ ->  failwith "Not implemented yet"
 
 
 let errors_to_abandoned_list job errors =

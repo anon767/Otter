@@ -67,7 +67,7 @@ doc : api dot
 
 api : $(foreach foo, \
 		DataStructures CilUtilities OcamlUtilities OtterBytes OtterCFG OtterCore OtterExtensions \
-		OtterJob OtterQueue OtterReporter OtterDriver Otter MultiOtter BackOtter TestUtil, \
+		OtterJob OtterQueue OtterReporter OtterDriver Otter MultiOtter BackOtter DebugOtter TestUtil, \
 		ocamlbuild//$(foo).docdir)
 
 dot : ocamlbuild//All.dot
