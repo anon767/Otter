@@ -397,10 +397,31 @@ let otter_symbolic_state job = wrap_state_function begin fun state retopt exps e
 end job
 
 
-let otter_assume job = wrap_state_function begin fun state retopt exps errors ->
-	let state, pc, errors = eval_join_exps state exps Cil.LAnd errors in
-	(MemOp.state__add_path_condition state pc false, errors)
-end job
+exception Unsat
+(** [otter_assume job _ exps errors] assumes that each of exps is true.
+		@param job the job in which to assume the list of expressions
+		@param exps the list of expressions to assume
+		@return an empty [Fork []] if the assumptions are unsatisfiable; the input job (unchanged) if the assumptions are valid; and the updated job otherwise
+*)
+let otter_assume job _ exps errors =
+    try
+        let wrapped_func =
+            wrap_state_function begin fun state () exps errors ->
+                let check_exp (state, errors) exp =
+                    let state, query, errors = Expression.rval state exp errors in
+                    match Stp.query_stp state.path_condition guard__true (guard__bytes query) with
+                        | Ternary.True -> (state, errors) (* Ignore true assumptions *)
+                        | Ternary.False -> raise Unsat (* Stop on false assumptions *)
+                        | Ternary.Unknown -> (MemOp.state__add_path_condition state query false, errors) (* Add possible assumptions to path condition *)
+                in List.fold_left check_exp (state, errors) exps
+            end
+        in wrapped_func job () exps errors
+    with Unsat ->
+        (* Use [Fork []] to make this job disappear. Among other things, this
+           means that we ignore coverage from this job, and we also ignore any
+           errors that occurred while evaluating the arguments to __ASSUME. *)
+        Output.printf "Impossible assumption; eliminating job";
+        (Fork [], errors)
 
 
 let otter_path_condition job = wrap_state_function begin fun state retopt exps errors ->
@@ -879,7 +900,7 @@ let interceptor job job_queue interceptor =
 		(intercept_function_by_name_internal "__builtin_va_start"      libc___builtin_va_start) @@
 		(* memset defaults to the C implimentation on failure *)
 		(try_with_job_abandoned_interceptor
-		(intercept_function_by_name_internal "memset"                  libc_memset)) @@
+			(intercept_function_by_name_internal "memset"                  libc_memset)) @@
 		(intercept_function_by_name_external "memset"                  "__otter_libc_memset") @@
 		(intercept_function_by_name_internal "_exit"                   libc_exit) @@
 		(intercept_function_by_name_internal "__TRUTH_VALUE"           otter_truth_value) @@
