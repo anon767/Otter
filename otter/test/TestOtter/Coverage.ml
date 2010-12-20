@@ -163,13 +163,16 @@ let function_pointers_coverage_testsuite = "Function pointers" >::: [
             a[2] = foo2;
             a[3] = foo3;
 
-            int x = a[__SYMBOLIC() % 4]();
+            unsigned int i;
+            __SYMBOLIC(&i);
+            __ASSUME(i < 4);
+            int x = a[i]();
 
             return 0;
         }
     " None
     begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count all_conds all_conds_count all_paths_count ->
-        assert_blocks_count 7 all_blocks_count
+        assert_blocks_count 8 all_blocks_count
     end;
 
    test_coverage ~label:"Call with symbolic pointer" "
@@ -188,14 +191,17 @@ let function_pointers_coverage_testsuite = "Function pointers" >::: [
             a[2] = foo2;
             a[3] = foo3;
 
-            FP x = a[__SYMBOLIC() % 4];
+            unsigned int i;
+            __SYMBOLIC(&i);
+            __ASSUME(i < 4);
+            FP x = a[i];
             x();
 
             return 0;
         }
     " None
     begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count all_conds all_conds_count all_paths_count ->
-        assert_blocks_count 7 all_blocks_count
+        assert_blocks_count 8 all_blocks_count
     end;
 
     test_coverage ~label:"Call on subset" "
@@ -214,14 +220,17 @@ let function_pointers_coverage_testsuite = "Function pointers" >::: [
             a[2] = foo2;
             a[3] = foo3;
 
-            FP x = a[__SYMBOLIC() % 3];
+            unsigned int i;
+            __SYMBOLIC(&i);
+            __ASSUME(i < 3);
+            FP x = a[i];
             x();
 
             return 0;
         }
     " None
     begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count all_conds all_conds_count all_paths_count ->
-        assert_blocks_count 6 all_blocks_count
+        assert_blocks_count 7 all_blocks_count
     end;
 
     test_coverage ~label:"Call with broken functions." "
@@ -237,14 +246,17 @@ let function_pointers_coverage_testsuite = "Function pointers" >::: [
             a[1] = 0;
             a[2] = foo1;
 
-            FP x = a[__SYMBOLIC() % 4];
+            unsigned int i;
+            __SYMBOLIC(&i);
+            __ASSUME(i < 4);
+            FP x = a[i];
             x(0);
 
             return 0;
         }
     " None
     begin fun results all_edges all_edges_count all_blocks all_blocks_count all_lines all_lines_count all_conds all_conds_count all_paths_count ->
-        assert_blocks_count 5 all_blocks_count
+        assert_blocks_count 6 all_blocks_count
     end;
 ]
 
