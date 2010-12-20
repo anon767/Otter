@@ -183,10 +183,6 @@ rval state exp errors =
         | Lval (cil_lval) ->
             let state, lvals, errors = lval state cil_lval errors in
             let state, bytes = MemOp.state__deref state lvals in
-                Output.set_mode Output.MSG_MUSTPRINT;
-
-                            Output.printf "Bytes: %a\n" BytesPrinter.bytes (bytes);
-
             (state, bytes, errors)
 
         | SizeOf (typ) ->
