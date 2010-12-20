@@ -10,7 +10,7 @@ if test "$OCAMLC" = no ; then
                   It is available at <http://caml.inria.fr/>).])
 fi
 OCAMLVERSION=`$OCAMLC -version`
-if test "$OCAMLC" \< "3.11" ; then
+if test "$OCAMLVERSION" \< "3.11" ; then
     AC_MSG_ERROR([Building AC_PACKAGE_NAME requires ocaml version 3.11 or greater.
                   It is available at <http://caml.inria.fr/>).])
 fi
