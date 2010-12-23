@@ -28,14 +28,14 @@ dir_cmd ::= "CWD" | "MKD" | "RMD" | "LIST" | "NLST" | "STAT" | "SMNT";
 file_cmd ::= "DELE" | "RETR" | "LIST" | "NLST" | "STAT";
 s_b_c ::= "S" | "B" | "C";
 f_r_p ::= "F" | "R" | "P";
-type_param ::= "A N" | "A T" | "A C" | "E N" | "E T" | "E C" | "I" | "L " int;
+type_param ::= "A N" | "A T" | "A C" | "E N" | "E T" | "E C" | "I" | "L " digit;
 
 dirname ::= "/" relative_path | relative_path;
 relative_path ::= filename | filename "/" relative_path;
 
-// digit, letter, and stringN (for N between 1 and 10) are terminals defined in the generated C code.
+// digit, letter, and stringN are built-in terminals defined in the generated C code.
 
 filename ::= letter | letter filename;
-username ::= filename;
+username ::= string3;
 password ::= string2;
 int ::= digit | digit int;

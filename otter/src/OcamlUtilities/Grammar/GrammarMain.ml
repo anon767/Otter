@@ -1,9 +1,73 @@
+(** This module takes a context-free grammar and prints out C code that
+    generates symbolic strings in that grammar. The generated strings can be
+    given a maximum size by specifying the preprocessor variable
+    MAX_GRAMMAR_STRING_LENGTH. If this is left undefined, no bound is placed on
+    the generated strings, and all strings in the grammar will (eventually) be
+    generated.
+
+    Warning: left-recursive grammars may cause symbolic execution to fail to
+    terminate.
+*)
+
+(** Reads in a grammar from the given input channel. *)
 let parse_grammar_from_in_chan in_chan =
     let lexbuf = Lexing.from_channel in_chan in
     Grammar.input GrammarLexer.token lexbuf
 
+(** Returns a list of all productions of all nonterminals *)
+let all_productions grammar =
+    GrammarTypes.NontermMap.fold
+        (fun _ productions old_productions ->
+             List.rev_append productions old_productions)
+        grammar
+        []
+
+module StringSet = Set.Make(String)
+
+(** Adds to a set of nonterminals the nonterminals used in a production *)
+let add_nonterminals_from_production nonterm_set production =
+    List.fold_left
+        (fun new_nonterms next_production_elt ->
+             match next_production_elt with
+                 | GrammarTypes.Term _ -> new_nonterms
+                 | GrammarTypes.Nonterm { GrammarTypes.name = name } ->
+                       StringSet.add name new_nonterms)
+        nonterm_set
+        production
+
+(** Returns a set of all nonterminals mentioned in any production in the
+    grammar *)
+let all_rhs_nonterms grammar =
+    List.fold_left
+        add_nonterminals_from_production
+        StringSet.empty
+        (all_productions grammar)
+
+(** Prints code for generate_stringN *)
+let print_generate_string n =
+    Format.printf "const char *generate_string%d() {
+    char *str = malloc(%d), c;
+" n (n + 1);
+    for i = 0 to (n - 1) do
+        Format.printf "    __SYMBOLIC(&c); __ASSUME(c); str[%d] = c;\n" i
+    done;
+    Format.printf "    str[%d] = 0;
+    USE(%d);
+    return str;
+}
+
+" n n
+
+(** Prints some helper code for grammar generation C code *)
 let print_prelude () = Format.printf
-"#include <stdarg.h>
+"#ifdef MAX_GRAMMAR_STRING_LENGTH
+int max_grammar_string_length = MAX_GRAMMAR_STRING_LENGTH;
+#define USE(n) __ASSUME((max_grammar_string_length -= (n)) >= 0)
+#else
+#define USE (void)
+#endif
+
+#include <stdarg.h>
 #include <string.h>
 
 /** Concatenate all of the arguments after the first, and store the result in the first argument. */
@@ -18,28 +82,11 @@ void concat(char *dst, const char *string, ...) {
     va_end(args);
 }
 
-#define GEN_STRING(n) \\
-const char *generate_string##n() {\\
-    char *str = malloc((n) + 1), *p = str + (n), c;\\
-    *p = 0;\\
-    while (p-- > str) {\\
-        __SYMBOLIC(&c);\\
-        *p = c;\\
-    }\\
-    return str;\\
-}
-GEN_STRING(1)
-GEN_STRING(2)
-GEN_STRING(3)
-GEN_STRING(4)
-GEN_STRING(5)
-GEN_STRING(6)
-GEN_STRING(7)
-GEN_STRING(8)
-GEN_STRING(9)
-GEN_STRING(10)
+"
 
-const char *generate_digit() {
+(** Prints the code for generate_digit *)
+let print_generate_digit () = Format.printf
+"const char *generate_digit() {
     char *result = malloc(2);
     unsigned char byte;
     __SYMBOLIC(&byte);
@@ -47,10 +94,15 @@ const char *generate_digit() {
     __ASSUME(byte <= '9');
     result[0] = byte;
     result[1] = 0;
+    USE(1);
     return result;
 }
 
-const char *generate_letter() {
+"
+
+(** Prints the code for generate_letter *)
+let print_generate_letter () = Format.printf
+"const char *generate_letter() {
     char *result = malloc(2);
     unsigned char byte;
     __SYMBOLIC(&byte);
@@ -59,69 +111,115 @@ const char *generate_letter() {
     __ASSUME(OR(byte <= 'Z', byte >= 'a'));
     result[0] = byte;
     result[1] = 0;
+    USE(1);
     return result;
 }
 
 "
 
+(** Prints code for all built-in nonterminals that are used in the grammar. The
+    current built-ins are "letter", "digit", and "stringN" for any positive
+    N. *)
+let print_builtins grammar =
+    let nonterms_used = all_rhs_nonterms grammar in
+    if StringSet.mem "letter" nonterms_used
+    then print_generate_letter ();
+    if StringSet.mem "digit" nonterms_used
+    then print_generate_digit ();
+    StringSet.iter
+        (fun name ->
+             if Str.string_match (Str.regexp "^string\\([0-9]*\\)$") name 0
+             then print_generate_string (int_of_string (Str.matched_group 1 name));
+        )
+        nonterms_used
+
+(** Prints declarations of the C functions for all nonterminals defined by the
+    grammar *)
 let print_declarations grammar =
     GrammarTypes.N.iter
-        (fun nonterm _ -> Format.printf "const char *generate_%s(void);\n" nonterm.GrammarTypes.name)
+        (fun { GrammarTypes.name = name } _ -> Format.printf "const char *generate_%s(void);\n" name)
         grammar;
     Format.printf "\n"
 
-(** Like List.iter, but the function also takes the index of the element in the list. *)
+(** Like List.iter, but the function also takes the index of the element in the
+    list. *)
 let iteri f lst =
     ignore (List.fold_left (fun i x -> f i x; succ i) 0 lst)
 
+(** Is this [either] a terminal? *)
 let is_terminal = function GrammarTypes.Term _ -> true | GrammarTypes.Nonterm _ -> false
 
+(** Is this production just a single terminal? *)
 let is_single_terminal = function [x] -> is_terminal x | _ -> false
 
+(** Prints code to expand all the given nonterminals and store the results in
+    temp variables *)
 let generate_nonterminals nonterminals =
     iteri
-        (fun i { GrammarTypes.name = name } -> Format.printf "        temp%d = generate_%s();\n" i name)
+        (fun i { GrammarTypes.name = name } ->
+             Format.printf "        temp%d = generate_%s();\n" i name)
         nonterminals
 
-let print_terminal { GrammarTypes.text = text } = Format.printf "\"%s\"" text
+(** Returns the text of the terminal enclosed in quotation marks *)
+let terminal_to_string { GrammarTypes.text = text } = Format.sprintf "\"%s\"" text
 
+(** Returns the name of the nonterminal as a string *)
+let nonterminal_to_string { GrammarTypes.name = name } = name
+
+(** Returns the string 'sizeof("...")', where the ellipsis is the concatenation
+    of all the terminals *)
+let sizeof terminals =
+    Format.sprintf "sizeof(\"%s\")"
+        (String.concat ""
+             (List.map (fun { GrammarTypes.text = text } -> text) terminals))
+
+(** Prints code to allocate memory to hold the result of expanding the
+    production with these terminals and nonterminals *)
 let malloc_result terminals nonterminals =
     Format.printf "        result = malloc(";
     iteri (fun i _ -> Format.printf "strlen(temp%d) + " i) nonterminals;
-    (* Concatenate all terminals to find their total length *)
-    Format.printf "sizeof(\"";
-    List.iter (fun { GrammarTypes.text = text } -> Format.printf "%s" text) terminals;
-    Format.printf "\"));\n"
+    (* Find the total length of all terminals, plus terminating null byte. *)
+    Format.printf "%s);\n" (sizeof terminals)
 
+(** Prints code to write the production into the variable 'result' *)
 let write_result production =
     Format.printf "        concat(result, ";
     ignore (List.fold_left
                 (fun nonterminal_index next ->
                      (match next with
-                          | GrammarTypes.Term terminal -> print_terminal terminal; Format.printf ", "
+                          | GrammarTypes.Term terminal -> Format.printf "%s, " (terminal_to_string terminal)
                           | GrammarTypes.Nonterm _ -> Format.printf "temp%d, " nonterminal_index);
                      if is_terminal next then nonterminal_index else succ nonterminal_index) (* Increment the index of temporary variables only when reaching a nonterminal *)
                 0
                 production);
     Format.printf "0);\n"
 
+(** Prints code to free all temporary variables *)
 let free_temps nonterminals =
     iteri (fun i _ -> Format.printf "        free(temp%d);\n" i) nonterminals
 
+(** Prints code to expand all nonterminals in this production, allocate space to
+    concatenate all the results and the terminals, write the result into that
+    allocate memory, and free the temporary variables used *)
 let print_common production =
     let terminals, nonterminals = List.partition is_terminal production in
     let terminals = List.map (function GrammarTypes.Term t -> t | _ -> assert false) terminals
     and nonterminals = List.map (function GrammarTypes.Nonterm n -> n | _ -> assert false) nonterminals in
+    if terminals <> [] then Format.printf "        USE(%s - 1);\n" (sizeof terminals);
     generate_nonterminals nonterminals;
     malloc_result terminals nonterminals;
     write_result production;
     free_temps nonterminals
 
+(** Prints code for one production that is not the final production for a
+    nonterminal. The first argument is which number production this is for the
+    current nonterminal. *)
 let print_production n production =
     Format.printf "    if (choice == %d) {\n" n;
     print_common production;
     Format.printf "    } else "
 
+(** Prints code for the final production of a nonterminal *)
 let print_default production =
     Format.printf "    {\n";
     print_common production;
@@ -129,9 +227,16 @@ let print_default production =
 
 let always_fork = ref false
 (** If true, don't use '?:' to keep terminals merged together in an
-   if-then-else value. Instead, use if-then-else statements, forcing
-   execution to fork. *)
+    if-then-else value. Instead, use if-then-else statements, forcing
+    execution to fork. *)
 
+(** Prints code for all productions that consist of only a terminal. This is
+    treated specially because these do not require forking. In the call
+    [print_terminal_productions start_n terminal terminals], [start_n] is the
+    index of the first terminal production (i.e., one more than the number of
+    productions which involved nonterminals), [terminal] is one terminal which
+    is held aside to be the default value, and [terminals] is the list of all
+    other terminals *)
 let print_terminal_productions start_n terminal terminals =
     if !always_fork then (
         iteri (fun n prod -> print_production (n + start_n) prod)
@@ -140,22 +245,23 @@ let print_terminal_productions start_n terminal terminals =
     ) else (
         Format.printf "    {\n        result = strdup(\n";
         iteri (fun n terminal ->
-                   Format.printf "            choice == %d ? " (n + start_n);
-                   print_terminal terminal;
-                   Format.printf " :\n")
+                   Format.printf "            choice == %d ? %s :\n"
+                       (n + start_n)
+                       (terminal_to_string terminal))
             terminals;
-        Format.printf "            ";
-        print_terminal terminal;
-        Format.printf ");\n    }\n"
+        Format.printf "            %s);\n" (terminal_to_string terminal);
+        Format.printf "        USE(strlen(result));\n    }\n";
     )
 
-(** [count p list] returns how many elements of list satisfy predicate p *)
+(** [count p list] returns how many elements of [list] satisfy predicate [p] *)
 let count p list =
     List.fold_left
         (fun count x -> if p x then succ count else count)
         0
         list
 
+(** Returns the maximum number of nonterminals in any single production from
+    among the given productions *)
 let max_num_nonterminals productions =
     List.fold_left
         (fun max_so_far production ->
@@ -163,6 +269,7 @@ let max_num_nonterminals productions =
         (-1)
         productions
 
+(** Prints code for all the given productions *)
 let print_cases productions =
     let terminals, others = List.partition is_single_terminal productions in
     let terminals = List.map (function [ GrammarTypes.Term t ] -> t | _ -> assert false) terminals in
@@ -176,6 +283,8 @@ let print_cases productions =
                     iteri (fun n prod -> print_production n prod) tl;
                     print_default hd
 
+(** Prints the definition of the function that generates the given nonterminal,
+    which can produce the given productions *)
 let print_definition { GrammarTypes.name = name } productions =
     Format.printf "const char *generate_%s(void) {\n" name;
     Format.printf "    char *result";
@@ -193,57 +302,33 @@ let print_definition { GrammarTypes.name = name } productions =
 
 "
 
-let print_definitions grammar =
-    GrammarTypes.N.iter print_definition grammar
+(** Prints the functions that generate the grammar's nonterminals *)
+let print_definitions grammar = GrammarTypes.N.iter print_definition grammar
 
 let speclist = [
-	("--always-fork",
-	 Arg.Set always_fork,
-	 " Don't use '?:' to keep terminals merged together in an if-then-else value. Instead, use if-then-else statements, forcing execution to fork.");
+    ("--always-fork",
+     Arg.Set always_fork,
+     " Don't use '?:' to keep terminals merged together in an if-then-else value. Instead, use if-then-else statements, forcing execution to fork.");
 ]
 
 let usageMsg =
-	"Usage: grammar takes its input, a file specifying a context-free grammar, on stdin, for example:\n  ./grammar < file\n"
+    "Usage: grammar takes its input, a file specifying a context-free grammar, on stdin, for example:\n  ./grammar < file\n"
 
+(** Prints out C code that generates a string in the grammar *)
 let print_grammar_generation_code grammar =
     print_prelude ();
+    print_builtins grammar;
     print_declarations grammar;
     print_definitions grammar
 
 let main () =
-	  Arg.parse
-		    (Arg.align speclist)
-		    (fun _ -> raise (Arg.Help usageMsg))
-		    usageMsg;
+    Arg.parse
+        (Arg.align speclist)
+        (fun _ -> raise (Arg.Help usageMsg))
+        usageMsg;
     let grammar = parse_grammar_from_in_chan stdin in
     (* TODO: Consider simplifying the grammar, for example by inlining nonterminals with only terminal productions. *)
     print_grammar_generation_code grammar
 ;;
 
 main ()
-
-(* (* What follows is code for printing out the grammar in human-readable form. *)
-
-let print_nonterm { GrammarTypes.name = str } = Format.printf "%s" str
-let print_term { GrammarTypes.text = str } = Format.printf "\"%s\"" (String.escaped str)
-
-let print_production prod =
-    Format.printf "  |";
-    List.iter
-        (fun x ->
-             Format.printf " ";
-             match x with
-                   GrammarTypes.Term term -> print_term term
-                 | GrammarTypes.Nonterm nonterm -> print_nonterm nonterm)
-        prod;
-    Format.printf "\n"
-
-let print_grammar grammar =
-    GrammarTypes.N.iter
-        (fun nonterm productions ->
-             print_nonterm nonterm;
-             Format.printf " ::=\n";
-             List.iter print_production productions)
-        grammar
-
-*)
