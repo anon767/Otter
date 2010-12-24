@@ -100,7 +100,7 @@ void* __otter_fs_find_vnode_in_tree(char* name, struct __otter_fs_dnode* tree, v
 	struct __otter_fs_dnode* d = __otter_fs_find_dnode_in_dir(name, tree);
 	*s = '/'; /* change it back */
 
-	if(d == 0) /* no such directory */
+	if(d == NULL) /* no such directory */
 	{
 		__otter_fs_error(ENOENT); /* cannot find file */
 	}

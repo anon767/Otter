@@ -143,7 +143,7 @@ ssize_t __otter_libc_read_file(
 	{
 		if(i + offset < (*inode).size)
 		{
-			buf[i] = (*inode).data[i + offset];
+			((char *)buf)[i] = (*inode).data[i + offset];
 		}
 		else
 		{
@@ -207,7 +207,7 @@ ssize_t __otter_libc_read_tty(void* buf, size_t num)
 		/* This is a device not a file redirected to stdin; use 0 to indicate crtl+D was pressed to stop input */
 		if(data != 0)
 		{
-			buf[i] = data;
+			((char *)buf)[i] = data;
 		}
 		else /* it might be nice to make '\n' terminate lines, but that might not happen in general */
 		{
@@ -229,7 +229,7 @@ ssize_t __otter_libc_pread_pipe_data(
 		/* next unread char is not the next char to be written to*/
 		if((i + pipe->rhead + 1) % __otter_fs_PIPE_SIZE != pipe->whead)
 		{
-			buf[i] = pipe->data[(i + pipe->rhead + 1) % __otter_fs_PIPE_SIZE];
+			((char *)buf)[i] = pipe->data[(i + pipe->rhead + 1) % __otter_fs_PIPE_SIZE];
 		}
 		else /* no more new chars to read */
 		{
@@ -443,7 +443,7 @@ ssize_t __otter_libc_read2(
 			open_file->status = __otter_fs_STATUS_OK;
 			for(int i = 0; i < num; i++)
 			{
-					buf[i] = 0;
+					((char *)buf)[i] = 0;
 			}
 
 			return (num);
@@ -862,7 +862,7 @@ int __otter_libc_fchdir(int fd)
 	return(0);
 }
 
-int __otter_libc_chroot(const char *)
+int __otter_libc_chroot(const char *s)
 {
 	/* there is no reasonable way to impliment this right now */
 	return(0);
