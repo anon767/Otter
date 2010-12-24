@@ -55,7 +55,7 @@ config : otter.pl.config
 otter.pl.config : Makefile $(CIL_SRCDIR)/config.mk
 	printf "\
 	$$::cilhome = '$(CILHOME)';\n\
-	$$::cc  = '$(CC)';\n\
+	$$::cc  = '$(CILLY_NATIVE_CC)';\n\
 	$$::default_mode = '$(DEFAULT_CIL_MODE)';\n\
 	$$::native = '$(OCAMLBUILD_PRODUCTDIR)/runotter.native';\n\
 	$$::byte = '$(OCAMLBUILD_PRODUCTDIR)/runotter.d.byte';\n\
