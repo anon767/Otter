@@ -43,7 +43,7 @@ int rand();
 int srand();
 
 /* Memory managment (7.20.3) */
-void* malloc(int bytes);
+void* malloc(size_t bytes);
 void* calloc(size_t amount, size_t bytes);
 void* realloc(void* ptr, size_t bytes);
 void free(void* ptr);

@@ -1,11 +1,13 @@
 #ifndef _STDDEF_H
 #define _STDDEF_H
 
-#define NULL 0
+#include <__otter/config.h>
+
+#define NULL ((void *)0)
 #define offsetof(x, y) offsetof(x, y)
 
-typedef unsigned int size_t;
-typedef int wchar_t;
-typedef int ptrdiff_t;
+typedef TYPEDEF_SIZE_T size_t;
+typedef TYPEDEF_WCHAR_T wchar_t;
+typedef TYPEDEF_PTRDIFF_T ptrdiff_t;
 
 #endif

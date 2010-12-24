@@ -51,7 +51,7 @@ debug-benchmark-otter : ounit//runbenchmarkotter.d.byte
 ounit//runbenchmarkotter.d.byte : debug
 
 
-config : otter.pl.config
+config : otter.pl.config libc/__otter/config.h
 otter.pl.config : Makefile $(CIL_SRCDIR)/config.mk
 	printf "\
 	$$::cilhome = '$(CILHOME)';\n\
@@ -62,6 +62,9 @@ otter.pl.config : Makefile $(CIL_SRCDIR)/config.mk
 	$$::do_default = '--doexecute';\n\
 	$$::compile_after_merge = 0;\n\
 	1;" > $@
+
+libc/__otter/config.h : $(CIL_SRCDIR)/config.h
+	cp $< $@
 
 doc : api dot
 

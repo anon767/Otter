@@ -12,7 +12,6 @@ typedef struct
 #define SIG_ERR 2
 #define SIG_IGN 3
 
-#define NULL 0
 #define SIGABRT 1
 #define SIGFPE 2
 #define SIGILL 3

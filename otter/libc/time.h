@@ -1,7 +1,8 @@
 #ifndef _TIME_H
 #define _TIME_H
 
-#define NULL 0
+#include <stddef.h>
+
 #define CLK_TCK 100
 #define CLOCKS_PER_TICK 100
 

@@ -23,8 +23,6 @@
 #define __otter_fs_MAXOPEN 64
 #define __otter_fs_GLOBALMAXOPEN 128
 
-#define NULL 0
-
 struct __otter_fs_inode;
 struct __otter_fs_filelist;
 struct __otter_fs_dirlist;
