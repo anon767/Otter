@@ -31,7 +31,7 @@ int __otter_libc_getgrgid_r(gid_t gid, struct group *grp, char *buffer, size_t b
 			
 			if(bufsize >= (sizeof(char*) * 2) + 5)
 			{
-				buffer[0] = sbuf;
+				buffer[0] = *sbuf;
 				buffer[1] = 0;
 				sbuf[0] = 'r';
 				sbuf[1] = 'o';
@@ -56,7 +56,7 @@ int __otter_libc_getgrgid_r(gid_t gid, struct group *grp, char *buffer, size_t b
 			
 			if(bufsize >= (sizeof(char*) * 2) + 5)
 			{
-				buffer[0] = sbuf;
+				buffer[0] = *sbuf;
 				buffer[1] = 0;
 				sbuf[0] = 'u';
 				sbuf[1] = 's';
