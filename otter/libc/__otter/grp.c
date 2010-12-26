@@ -23,16 +23,21 @@ int __otter_libc_getgrgid_r(gid_t gid, struct group *grp, char *buffer, size_t b
 	switch(gid)
 	{
 		case __otter_GID_ROOT:
+		{
+			char** cbuf = (char**)buffer;
+			char* sbuf = (char*)(cbuf + 2);
+			
 			grp->gr_name = "root";
 			grp->gr_gid = __otter_GID_ROOT;
-			grp->gr_mem = buffer;
+			grp->gr_mem = cbuf;
 			
-			char* sbuf = (char*)(buffer + 2);
+			char** cbuf = (char**)buffer;
+			char* sbuf = (char*)(cbuf + 2);
 			
 			if(bufsize >= (sizeof(char*) * 2) + 5)
 			{
-				buffer[0] = *sbuf;
-				buffer[1] = 0;
+				cbuf[0] = sbuf;
+				cbuf[1] = NULL;
 				sbuf[0] = 'r';
 				sbuf[1] = 'o';
 				sbuf[2] = 'o';
@@ -47,17 +52,20 @@ int __otter_libc_getgrgid_r(gid_t gid, struct group *grp, char *buffer, size_t b
 			
 			*result = grp;
 			return(0);
+		}
 		case __otter_GID_USER:
+		{
+			char** cbuf = (char**)buffer;
+			char* sbuf = (char*)(cbuf + 2);
+			
 			grp->gr_name = "user";
 			grp->gr_gid = __otter_GID_USER;
 			grp->gr_mem = buffer;
 			
-			char* sbuf = (char*)(buffer + 2);
-			
 			if(bufsize >= (sizeof(char*) * 2) + 5)
 			{
-				buffer[0] = *sbuf;
-				buffer[1] = 0;
+				cbuf[0] = sbuf;
+				cbuf[1] = NULL;
 				sbuf[0] = 'u';
 				sbuf[1] = 's';
 				sbuf[2] = 'e';
@@ -72,6 +80,7 @@ int __otter_libc_getgrgid_r(gid_t gid, struct group *grp, char *buffer, size_t b
 			
 			*result = grp;
 			return(0);
+		}
 		default:
 			*result = NULL;
 			return(0);
