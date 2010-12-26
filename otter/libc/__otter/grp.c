@@ -30,10 +30,7 @@ int __otter_libc_getgrgid_r(gid_t gid, struct group *grp, char *buffer, size_t b
 			grp->gr_name = "root";
 			grp->gr_gid = __otter_GID_ROOT;
 			grp->gr_mem = cbuf;
-			
-			char** cbuf = (char**)buffer;
-			char* sbuf = (char*)(cbuf + 2);
-			
+					
 			if(bufsize >= (sizeof(char*) * 2) + 5)
 			{
 				cbuf[0] = sbuf;
