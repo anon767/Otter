@@ -19,7 +19,7 @@ let multi_set_output_formatter_interceptor job multijob job_queue interceptor =
 		if loc = Cil.locUnknown then
 			Format.sprintf "[jid: %d, pid: %d] : " multijob.jid multijob.current_metadata.pid
 		else
-			Format.sprintf "[jid: %d, pid: %d] %s:%d : " multijob.jid multijob.current_metadata.pid loc.Cil.file loc.Cil.line
+			Format.sprintf "[jid: %d, pid: %d] %s:%d : " multijob.jid multijob.current_metadata.pid (Filename.basename loc.Cil.file) loc.Cil.line
 	in
 	Output.set_formatter (new Output.labeled label);
 	interceptor job multijob job_queue
@@ -166,7 +166,6 @@ let doit file =
 
 	Output.printf "Hash-consing: hits=%d misses=%d\n" (!Bytes.hash_consing_bytes_hits) (!Bytes.hash_consing_bytes_misses);
 
-	Output.printf "%s@\n" (Executedebug.get_log ());
 	let nodes, _, _ = result#get_stats in
     Output.printf "Number of nodes: %d@\n" nodes;
 	Report.print_report result#completed
