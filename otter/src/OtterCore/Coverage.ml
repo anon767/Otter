@@ -7,7 +7,7 @@ open Bytes
 open Types
 open Job
 
-let coverage_totals : (Cil.file, <lines : int; blocks : int; edges : int; conds : int>) Hashtbl.t = Hashtbl.create 0
+let coverage_totals : (Cil.file, <lines : LineSet.t; blocks : StmtInfoSet.t; edges : EdgeSet.t; conds : CondSet.t>) Hashtbl.t = Hashtbl.create 0
 
 module FundecMap = Map.Make (struct
 	type t = Cil.fundec
@@ -131,7 +131,6 @@ class getGlobalInitVisitor = object (self)
 
 end
 
-let vis = new getStatsVisitor
 
 (** Print the name and type of a {!Types.stmtInfo}.
 		@param ff is the formatter to which to print
@@ -151,6 +150,7 @@ let prepare_file file =
 		| None -> []
 		| Some fns -> fns
 	in
+    let vis = new getStatsVisitor in
 	iterGlobals
 		file
 		(function (* Visit the bodies of the functions we care about *)
@@ -162,29 +162,29 @@ let prepare_file file =
 	(* Find all lines, blocks, edges, and conditions. *)
 	(* TODO: wrap the listings of Lines,Edges,etc... *)
 	let totals = object
-		method lines = LineSet.cardinal vis#lines
-		method blocks = StmtInfoSet.cardinal vis#blocks
-		method edges = EdgeSet.cardinal vis#edges
-		method conds = CondSet.cardinal vis#conds
+		method lines = vis#lines
+		method blocks = vis#blocks
+		method edges = vis#edges
+		method conds = vis#conds
 	end in
 	Hashtbl.add coverage_totals file totals;
 
 	if !Executeargs.arg_list_lines then begin
-		Output.printf "Total number of %s: %d\n" "Lines" totals#lines;
+		Output.printf "Total number of %s: %d\n" "Lines" (LineSet.cardinal totals#lines);
 		LineSet.iter
 			(fun (file, lineNum) -> Output.printf "%s:%d\n" file lineNum)
 			vis#lines;
 		Output.printf "\n"
 	end;
 	if !Executeargs.arg_list_blocks then begin
-		Output.printf "Total number of %s: %d\n" "Blocks" totals#blocks;
+		Output.printf "Total number of %s: %d\n" "Blocks" (StmtInfoSet.cardinal totals#blocks);
 		StmtInfoSet.iter
 			(fun stmtInfo -> Output.printf "%a\n" printStmtInfo stmtInfo)
 			vis#blocks;
 		Output.printf "\n"
 	end;
 	if !Executeargs.arg_list_edges then begin
-		Output.printf "Total number of %s: %d\n" "Edges" totals#edges;
+		Output.printf "Total number of %s: %d\n" "Edges" (EdgeSet.cardinal totals#edges);
 		EdgeSet.iter
 			(fun (srcStmtInfo, destStmtInfo) ->
 				 Output.printf "%a -> %a\n"
@@ -194,7 +194,7 @@ let prepare_file file =
 		Output.printf "\n"
 	end;
 	if !Executeargs.arg_list_conds then begin
-		Output.printf "Total number of %s: %d\n" "Conditions" totals#conds;
+		Output.printf "Total number of %s: %d\n" "Conditions" (CondSet.cardinal totals#conds);
 		CondSet.iter
 			(fun (stmtInfo, truth) -> Output.printf "%a %c\n" printStmtInfo stmtInfo (if truth then 'T' else 'F'))
 		vis#conds;
@@ -250,11 +250,11 @@ let covTypeToStr = function
 	| Path -> "paths"
 
 let getTotal file = function
-	| Line -> (Hashtbl.find coverage_totals file)#lines
-	| Block -> (Hashtbl.find coverage_totals file)#blocks
-	| Edge -> (Hashtbl.find coverage_totals file)#edges
-	| Cond -> (Hashtbl.find coverage_totals file)#conds
-	| Path -> invalid_arg "Cannot compute the total number of paths"
+	| Line  -> LineSet.cardinal     (Hashtbl.find coverage_totals file)#lines
+	| Block -> StmtInfoSet.cardinal (Hashtbl.find coverage_totals file)#blocks
+	| Edge  -> EdgeSet.cardinal     (Hashtbl.find coverage_totals file)#edges
+	| Cond  -> CondSet.cardinal     (Hashtbl.find coverage_totals file)#conds
+	| Path  -> invalid_arg "Cannot compute the total number of paths"
 
 let getNumCovered covType hist = match covType with
 	| Line -> LineSet.cardinal hist.coveredLines
@@ -401,6 +401,7 @@ let printConditions = printTimedEntities printCondition CondSet.elements
 let printCov file covType hist =
     let complement = !Executeargs.arg_print_complement_coverage in
     let total = getTotal file covType and numCovered = getNumCovered covType hist in
+    let vis = Hashtbl.find coverage_totals file in
     Output.printf "%d out of %d %s (%.2f%%)\n\n" numCovered total (covTypeToStr covType) (percentage numCovered total);
     Output.printf "The %s %scovered were:\n" (covTypeToStr covType) (if complement then "un" else "");
     begin match covType with
