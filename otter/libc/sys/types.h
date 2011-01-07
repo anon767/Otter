@@ -24,6 +24,8 @@ typedef int suseconds_t;
 typedef int time_t;
 typedef unsigned int uid_t;
 typedef unsigned int useconds_t;
+// See http://refspecs.freestandards.org/LSB_4.0.0/LSB-Core-generic/LSB-Core-generic/libc-ddefs.html
+typedef char *caddr_t;
 
 /* most of these should be structs */
 typedef int key_t;

@@ -8,6 +8,7 @@ void* memcpy(void* s1, const void* s2, size_t n);
 void* memmove(void* s1, const void* s2, size_t n);
 char* strcpy(char* s1, const char* s2);
 char* strncpy(char* s1, const char* s2, size_t n);
+char* strncmp(const char* s1, const char* s2, size_t n);
 
 /* Concatination (7.21.3) */
 char* strcat(char* s1, const char* s2);

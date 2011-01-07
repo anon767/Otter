@@ -62,6 +62,22 @@ char* __otter_libc_strncpy(char* s1, const char* s2, size_t n)
 	return (s1);
 }
 
+char* __otter_libc_strncmp(const char* s1, const char* s2, size_t n)
+{
+    if(s1 && s2 && n)
+    {
+        for(int i = 0; i < n; i++)
+        {
+            if(s1[i] != s2[i])
+                return s1[i] - s2[i];
+            else if(s1[i] == 0)
+                return 0;
+        }
+    }
+
+    return 0;
+}
+
 char* __otter_libc_strcat(char* s1, const char* s2)
 {
 	if(s1 && s2)
@@ -173,7 +189,7 @@ void* __otter_libc_memchr(const void* s, int c, size_t n)
 		if(*((unsigned char*)s) == ((unsigned char)c))
 			return s;
 	}
-	
+
 	return (0);
 }
 
@@ -186,7 +202,7 @@ char* __otter_libc_strchr(const char* s, int c)
 		if(*s == 0) /* return NULL here only if c != 0 */
 			return 0;
 	}
-	
+
 	return (0);
 }
 
@@ -200,7 +216,7 @@ size_t __otter_libc_strcspn(const char* s1, const char* s2)
 		if(strchr(s2, s1[i])) /* search for s1[i] in s2 */
 			return(i);
 	}
-	
+
 	return (i);
 }
 
@@ -215,7 +231,7 @@ char* __otter_libc_strpbrk(const char* s1, const char* s2)
 		if(loc != NULL)
 			return loc;
 	}
-	
+
 	return NULL;
 }
 
@@ -241,7 +257,7 @@ size_t __otter_libc_strspn(const char* s1, const char* s2)
 		if(!strchr(s2, s1[i])) /* search for s1[i] in s2 */
 			return(i);
 	}
-	
+
 	return (i);
 }
 
@@ -253,7 +269,7 @@ int __otter_libc_isprefixstr(const char* s1, const char* s2)
 			return (0);
 		if(s1[i] == 0) /* end of both strings */
 			return (1);
-			
+
 	}
 
 	return (0);
@@ -280,7 +296,7 @@ char* __otter_libc_strtok_param(char* s, const char* s2)
 	*s = 0; /* terminate token (replace seperator with null character) */
 	s++;
 	return r; /* return start of token */
-	
+
 }
 
 char* __otter_libc_strtok(char* s1, const char* s2)
