@@ -32,7 +32,7 @@ config.status: configure
 	./$@ --recheck
 
 configure: configure.in
-	autoconf
+	autoreconf
 
 ocamlutil/perfcount.c: config.status ocamlutil/perfcount.c.in
 	./$<
