@@ -3,6 +3,7 @@
 #include <limits.h>
 #include <ctype.h>
 #include <unistd.h>
+#include "otter.h"
 
 int __otter_libc_atoi(const char* nptr)
 {

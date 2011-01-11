@@ -6,7 +6,7 @@
 #define htonl(x) (x)
 #define htons(x) (x)
 #define ntohl(x) (x)
-#define ntohl(x) (x)
+#define ntohs(x) (x)
 
 in_addr_t      inet_addr(const char *cp);
 in_addr_t      inet_lnaof(struct in_addr in);

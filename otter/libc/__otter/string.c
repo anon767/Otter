@@ -62,22 +62,6 @@ char* __otter_libc_strncpy(char* s1, const char* s2, size_t n)
 	return (s1);
 }
 
-char* __otter_libc_strncmp(const char* s1, const char* s2, size_t n)
-{
-    if(s1 && s2 && n)
-    {
-        for(int i = 0; i < n; i++)
-        {
-            if(s1[i] != s2[i])
-                return s1[i] - s2[i];
-            else if(s1[i] == 0)
-                return 0;
-        }
-    }
-
-    return 0;
-}
-
 char* __otter_libc_strcat(char* s1, const char* s2)
 {
 	if(s1 && s2)
@@ -157,6 +141,23 @@ int __otter_libc_strcoll(const char* s1, const char* s2)
 	return strcmp(s1, s2);
 }
 
+/* Grabbed from newlib */
+int __otter_libc_strncmp(const char* s1, const char* s2, size_t n)
+{
+  if (n == 0)
+    return 0;
+
+  while (n-- != 0 && *s1 == *s2)
+    {
+      if (n == 0 || *s1 == '\0')
+        break;
+      s1++;
+      s2++;
+    }
+
+  return (*(unsigned char *) s1) - (*(unsigned char *) s2);
+}
+
 /* similarly strxfrm is basically srtncpy */
 int __otter_libc_strxfrm(char* s1, const char* s2, int n)
 {
@@ -180,7 +181,6 @@ int __otter_libc_strxfrm(char* s1, const char* s2, int n)
 
 	return (0);
 }
-
 
 void* __otter_libc_memchr(const void* s, int c, size_t n)
 {
