@@ -53,7 +53,6 @@ let check state bytes exps =
     match MemOp.eval state.path_condition bytes with
         Ternary.True -> (* The assertion is true *)
             Output.set_mode Output.MSG_REG;
-            Output.printf "Assertion satisfied.@\n";
             state
     | Ternary.False -> (* The assertion is definitely false *)
             print_failed_assertion state bytes exps ~isUnknown:false;
@@ -131,8 +130,6 @@ let rec getBlockSizesAndOffsets lvals = match lvals with
 
 
 let checkBounds state lvals cil_lval useSize =
-    Output.printf "Checking bounds of @[%a@]@\n" Printcil.lval cil_lval;
-
     (* Get the block sizes and offsets *)
     let sizesTree, offsetsTree = getBlockSizesAndOffsets lvals in
 
@@ -190,14 +187,9 @@ rval state exp errors =
              begin match exp2 with
                  | SizeOf(_) ->
                      FormatPlus.failwith "Cannot determine sizeof(%a)" Printcil.typ typ
-                 | _ ->
-                     let state, bytes, errors = rval state exp2 errors in
-                     begin match bytes with
-                         | Bytes_Constant(CInt64(n,_,stropt)) ->
-                            (state, make_Bytes_Constant(CInt64(n,!kindOfSizeOf,stropt)), errors)
-                         | b ->
-                            (state, b, errors)
-                     end
+                 | Const (CInt64 (n, IInt, stropt)) ->
+                       (state, make_Bytes_Constant(CInt64(n, !kindOfSizeOf, stropt)), errors)
+                 | _ -> failwith "Impossible case in rval"
              end
 
         | SizeOfE (exp2) ->
@@ -205,8 +197,11 @@ rval state exp errors =
 
         | SizeOfStr (str) ->
             let len = (String.length str)+1  in
-            let exp2 = Cil.integer len in
-            rval state exp2 errors
+            begin match Cil.integer len with
+                | Const (CInt64 (n, IInt, stropt)) ->
+                      (state, make_Bytes_Constant(CInt64(n, !kindOfSizeOf, stropt)), errors)
+                | _ -> failwith "Impossible case in rval"
+            end
 
         | AlignOf (typ) ->
             failwith "__align_of not implemented"
