@@ -47,7 +47,19 @@ let main_loop interceptor queue reporter =
         (* if we got a signal, stop and return the checkpoint results *)
         Output.set_mode Output.MSG_MUSTPRINT;
         Output.printf "%s@\n" s;
-        !checkpoint
+        let (queue, reporter) = !checkpoint in
+        (* For each job in queue, make it Abandoned and report it *)
+        let rec run (queue, reporter) =
+            match queue#get with
+                | Some (queue, job) ->
+                    let result = Job.Complete(Job.Abandoned(`Failure "Timed Out", Job.get_loc job,Job.get_result_from_job job)) in
+                    let reporter = reporter#report result in
+                    run (queue, reporter)
+                | None ->
+                    (queue, reporter)
+        in
+        run (queue, reporter)
+
 
 (* This is "Otter" in OtterBenchmark *)
 let run ?(random_seed=(!Executeargs.arg_random_seed))
