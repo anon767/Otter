@@ -167,7 +167,7 @@ let rec to_stp_array vc arr bytes =
 					| Byte_Symbolic(s) ->
 						Stpc.e_var vc (make_var s) (Stpc.bitvector_t vc 8)
 					| Byte_Bytes(b,i) ->
-						let (bv_condensed,l_condensed) = to_stp_bv vc b in
+						let bv_condensed, _ = to_stp_bv vc b in
 						let right_i = i * 8 in
 						let left_i = right_i+7 in
 							Stpc.e_bvextract vc bv_condensed left_i right_i
@@ -180,7 +180,7 @@ let rec to_stp_array vc arr bytes =
 
 		| Bytes_Read (content,offset,len) ->
 			let array_content = to_stp_array vc (new_array vc content) content in
-			let (bv_offset,len_offset) = to_stp_bv vc offset in
+			let bv_offset, _ = to_stp_bv vc offset in
 
 			let rec read bv_offset len array =
 				if len < 1 then failwith "Bytes_Read len < 1"
@@ -193,15 +193,16 @@ let rec to_stp_array vc arr bytes =
 				read bv_offset len (new_array vc bytes)
 
 		| Bytes_Write (content,offset,len,newbytes) ->
-			let (bv_offset,len_offset) = to_stp_bv vc offset in
-			let array_source = to_stp_array vc (new_array vc newbytes) newbytes in
+			let bv_offset, _ = to_stp_bv vc offset in
+			let bv_newbytes, _ = to_stp_bv vc newbytes in
 			let rec write array_target bv_offset len  =
+				let extracted_byte = Stpc.e_bvextract vc bv_newbytes (len * 8 + 7) (len * 8) in
 				if len < 1 then failwith "Bytes_Write len < 1"
-				else if len = 1 then Stpc.e_write vc array_target bv_offset (Stpc.e_read vc array_source (Stpc.e_bv_of_int vc 32 0))
+				else if len = 1 then Stpc.e_write vc array_target bv_offset extracted_byte
 				else
 					let array_target2 = write array_target bv_offset (len-1)  in
 					let bv_offset2 = Stpc.e_bv_of_int vc 32 (len-1) in
-						Stpc.e_write vc array_target2 (Stpc.e_bvplus vc 32 bv_offset bv_offset2) (Stpc.e_read vc array_source bv_offset2)
+						Stpc.e_write vc array_target2 (Stpc.e_bvplus vc 32 bv_offset bv_offset2) extracted_byte
 			in
 				write (to_stp_array vc  (new_array vc content) content) bv_offset len
 
@@ -265,8 +266,7 @@ to_stp_bv_impl vc bytes =
 					| Byte_Symbolic(s) ->
 						Stpc.e_var vc (make_var s) (Stpc.bitvector_t vc 8)
 					| Byte_Bytes(b,i) ->
-						let (bv_condensed,l_condensed) = to_stp_bv vc b in
-						(*let right_i = l_condensed * 8 in*)
+						let bv_condensed, _ = to_stp_bv vc b in
 						let right_i = i * 8 in
 						let left_i = right_i+7 in
 							Stpc.e_bvextract vc bv_condensed left_i right_i
@@ -274,15 +274,13 @@ to_stp_bv_impl vc bytes =
 				if len = 1 then
 					(bv8, 8)
 				else
-					let (bv, l) = to_stp_bv vc (make_Bytes_ByteArray (ImmutableArray.sub bytearray 1 (len - 1))) in
-					(*(Stpc.e_bvconcat vc bv bv8, l + 8) (* reversed orientation *)*)
-					(Stpc.e_bvconcat vc bv8 bv, l + 8) (* same orientation *)
+					let bv, l = to_stp_bv vc (make_Bytes_ByteArray (ImmutableArray.sub bytearray 1 (len - 1))) in
+					(Stpc.e_bvconcat vc bv8 bv, l + 8)
 
 		| Bytes_Address (block, offset) ->
-			let (bv_offset,l_offset) = to_stp_bv vc offset in
-			let (bv_blockaddr,l_blockaddr) = to_stp_bv vc block.memory_block_addr in
-			let len = l_blockaddr in
-				(Stpc.e_bvplus vc len bv_blockaddr bv_offset,len)
+			let bv_offset, _ = to_stp_bv vc offset in
+			let bv_blockaddr, len = to_stp_bv vc block.memory_block_addr in
+			(Stpc.e_bvplus vc len bv_blockaddr bv_offset,len)
 
 		| Bytes_Conditional c ->
 			let rec to_stp_bv_conditional = function
@@ -393,7 +391,7 @@ to_stp_bv_impl vc bytes =
 		| Bytes_Read (content,offset,len) ->
 			let arr = new_array vc content in
 			let array_content = to_stp_array vc arr content in
-			let (bv_offset,len_offset) = to_stp_bv vc offset in (* assert(len_offset=32) *)
+			let bv_offset, _ = to_stp_bv vc offset in
 			let rec read bv_offset len =
 				if len < 1 then failwith "to_stp_bv: Bytes_Read len < 1"
 				else if len = 1 then (Stpc.e_read vc array_content bv_offset,8)
@@ -412,16 +410,7 @@ to_stp_bv_impl vc bytes =
 			to_stp_bv vc f_addr
 
 		| Bytes_Write _ ->
-			let len = bytes__length bytes in
-			let arr = to_stp_array vc (new_array vc bytes) bytes in
-			let rec flatten bv_offset len =
-			  if len = 1 then (Stpc.e_read vc arr bv_offset,8)
-				else
-					let (bv_head,len_head) = (Stpc.e_read vc arr bv_offset,8)  in
-					let (bv_tail,len_tail) = flatten (Stpc.e_bvplus vc 32 bv_offset (Stpc.e_bv_of_int vc 32 1)) (len-1) in
-					(Stpc.e_bvconcat vc bv_head bv_tail,len_head+len_tail)
-			in
-				flatten (Stpc.e_bv_of_int vc 32 0) len
+      FormatPlus.failwith "Impossible: converting a Bytes_Write to a bitvector. Is this a Write not under a Read?\n%a" BytesPrinter.bytes bytes
 
 		| Bytes_Unbounded (name,id,size) ->
             failwith "Oh no!"
