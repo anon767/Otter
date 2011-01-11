@@ -119,7 +119,7 @@ let schedule_process_list multijob =
 				| Running, Running -> 0
 				| Running, _ -> -1
 				| _, Running -> 1
-				| TimeWait _, TimeWait _ -> 0
+				| TimeWait x, TimeWait y -> compare x y
 				| TimeWait _, _ -> -1
 				| _, TimeWait _ -> 1
 				| _, _ -> 0

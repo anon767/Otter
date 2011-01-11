@@ -36,4 +36,6 @@ let abandon_io_block_deadlock_interceptor job multijob job_queue interceptor =
 				result_history = job.exHist;
 				result_decision_path = job.decisionPath; } in
 			(Complete (Abandoned (`Failure "Deadlock", Job.get_loc job, result)), (multijob, job_queue))
+    | TimeWait _ -> (* If we choose a TimeWait, convert it to a Running rather than just letting its time tick down *)
+          interceptor job { multijob with current_metadata = { multijob.current_metadata with priority = Running } } job_queue
 		| _ -> interceptor job multijob job_queue
