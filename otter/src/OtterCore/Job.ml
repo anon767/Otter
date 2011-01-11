@@ -93,6 +93,13 @@ type job_result = {
 	result_decision_path : Decision.t list;
 }
 
+let get_result_from_job job = {
+    result_file = job.file;
+    result_state = job.state;
+    result_history = job.exHist;
+    result_decision_path = job.decisionPath;
+}
+
 type ('abandoned, 'truncated) job_completion =
     | Return of Bytes.bytes option * job_result (* Jobs that successfully completed by returning from the entry function *)
     | Exit of Bytes.bytes option * job_result (* Jobs that successfully completed by calling _exit *)
