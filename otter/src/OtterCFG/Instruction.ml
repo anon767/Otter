@@ -119,7 +119,7 @@ let predecessors ({ file = file; fundec = fundec; stmt = stmt; instrs = instrs }
         List.map (of_stmt_last file fundec) stmt.Cil.preds
     | Cil.Instr instrs' ->
         (* some instruction in the middle of a Cil.Instr *)
-        [ with_instrs instruction ((List.nth instrs' (List.length instrs))::instrs) ]
+        [ with_instrs instruction ((List.nth (List.rev instrs') (List.length instrs))::instrs) ]
     | _ ->
         (* non-Cil.Instr *)
         List.map (of_stmt_last file fundec) stmt.Cil.preds
