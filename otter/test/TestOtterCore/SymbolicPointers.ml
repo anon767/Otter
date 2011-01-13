@@ -423,14 +423,14 @@ let soundness_testsuite = "Soundness" >::: [
 
         (* there should be at least 5 aliasing conditions: x == NULL, y == NULL, *x == NULL, *y == NULL
            or *y == &( *x)->f, regardless of order of occurence *)
-        "*y == &(*x)->b" >:
+        "*y == &(*x)->f" >:
             test_permutations ["x"; "y"] begin fun permutation1 ->
                 let [e1; e2] = List.map (fun e -> "nop(" ^ e ^ ");") permutation1 in
                 test_permutations ["*x"; "*y"] begin fun permutation2 ->
                     let [e3; e4] = List.map (fun e -> "nop(" ^ e ^ ");") permutation2 in
                     test_symbolic_pointers ~label:(String.concat "; " (permutation1 @ permutation2))
                         begin String.concat "; " ["
-                            struct { char a; int b; } **x;
+                            struct { char a; int f; } **x;
                             int **y;
                             void nop(void * x) {}
                             void foo(void) {
@@ -447,7 +447,7 @@ let soundness_testsuite = "Soundness" >::: [
                                         return;
                                     } else if (*y == 0) {
                                         return;
-                                    } else if (*y == &(*x)->b) {
+                                    } else if (*y == &(*x)->f) {
                                         return;
                                     }
                                 }
@@ -457,7 +457,7 @@ let soundness_testsuite = "Soundness" >::: [
                                 x = malloc(sizeof(*x));
                                 *x = malloc(sizeof(**x));
                                 y = malloc(sizeof(*y));
-                                *y = &(*x)->b;
+                                *y = &(*x)->f;
                                 foo();
                             }
                         "] end
@@ -545,14 +545,14 @@ let soundness_testsuite = "Soundness" >::: [
 
         (* there should be at least 5 aliasing conditions: x == NULL, y == NULL, *x == NULL, y->f == NULL
            or y->f == &( *x)->f, regardless of order of occurence *)
-        "*y.f == &(*x)->b" >:
+        "*y.f == &(*x)->f" >:
             test_permutations ["x"; "y.f"] begin fun permutation1 ->
                 let [e1; e2] = List.map (fun e -> "nop(" ^ e ^ ");") permutation1 in
                 test_permutations ["*x"; "*y.f"] begin fun permutation2 ->
                     let [e3; e4] = List.map (fun e -> "nop(" ^ e ^ ");") permutation2 in
                     test_symbolic_pointers ~label:(String.concat "; " (permutation1 @ permutation2))
                         begin String.concat "; " ["
-                            struct { char a; int b; } **x;
+                            struct { char a; int f; } **x;
                             struct { char a; int **f; } y;
                             void nop(void * x) {}
                             void foo(void) {
@@ -569,7 +569,7 @@ let soundness_testsuite = "Soundness" >::: [
                                         return;
                                     } else if (*y.f == 0) {
                                         return;
-                                    } else if (*y.f == &(*x)->b) {
+                                    } else if (*y.f == &(*x)->f) {
                                         return;
                                     }
                                 }
@@ -579,7 +579,7 @@ let soundness_testsuite = "Soundness" >::: [
                                 x = malloc(sizeof(*x));
                                 *x = malloc(sizeof(**x));
                                 y.f = malloc(sizeof(*y.f));
-                                y.f = &(*x)->b;
+                                y.f = &(*x)->f;
                                 foo();
                             }
                         "] end
@@ -592,14 +592,14 @@ let soundness_testsuite = "Soundness" >::: [
 
         (* there should be at least 5 aliasing conditions: x == NULL, y == NULL, *x == NULL, y->f == NULL
            or y->f == &( *x)->f, regardless of order of occurence *)
-        "y->f == &(*x)->b" >:
+        "y->f == &(*x)->f" >:
             test_permutations ["x"; "y"] begin fun permutation1 ->
                 let [e1; e2] = List.map (fun e -> "nop(" ^ e ^ ");") permutation1 in
                 test_permutations ["*x"; "y->f"] begin fun permutation2 ->
                     let [e3; e4] = List.map (fun e -> "nop(" ^ e ^ ");") permutation2 in
                     test_symbolic_pointers ~label:(String.concat "; " (permutation1 @ permutation2))
                         begin String.concat "; " ["
-                            struct { char a; int b; } **x;
+                            struct { char a; int f; } **x;
                             struct { char a; int *f; } *y;
                             void nop(void * x) {}
                             void foo(void) {
@@ -616,7 +616,7 @@ let soundness_testsuite = "Soundness" >::: [
                                         return;
                                     } else if (y->f == 0) {
                                         return;
-                                    } else if (y->f == &(*x)->b) {
+                                    } else if (y->f == &(*x)->f) {
                                         return;
                                     }
                                 }
@@ -626,7 +626,7 @@ let soundness_testsuite = "Soundness" >::: [
                                 x = malloc(sizeof(*x));
                                 *x = malloc(sizeof(**x));
                                 y = malloc(sizeof(*y));
-                                y->f = &(*x)->b;
+                                y->f = &(*x)->f;
                                 foo();
                             }
                         "] end
