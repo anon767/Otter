@@ -8,8 +8,7 @@ module VarinfoSet = Set.Make (CilData.CilVar)
 
 (** Get the memoization tables for searching in a file, initializing them if necessary.
         @param file the {!Cil.file} to get the memoization tables for
-        @return [(varinfo_to_fundec, varinfo_to_varinit, name_to_fundec)] a tuple containing the memoization
-                tables for searching the file
+        @return [memotable_object] the object containing the memoization tables for searching the file
 *)
 let memotables =
     let file_memotables = Hashtbl.create 0 in
@@ -63,11 +62,11 @@ let fundec_by_varinfo file varinfo =
     (memotables file)#varinfo_to_fundec varinfo
 
 
-(** Find the {!Cil.initinfo} for a {!Cil.varinfo} from a {!Cil.file}.
+(** Find the {!Cil.initinfo} for a global {!Cil.varinfo} from a {!Cil.file}.
         @param file the {!Cil.file} to find the {!Cil.initinfo} in
         @param varinfo the {!Cil.varinfo} of the {!Cil.initinfo} to find
         @return the {!Cil.initinfo}
-        @raise Not_found if a global [varinfo] does not exist in [file]
+        @raise Not_found if the global [varinfo] does not exist in [file]
 *)
 let global_varinit_by_varinfo file varinfo =
     (memotables file)#varinfo_to_varinit varinfo
@@ -84,8 +83,8 @@ let fundec_by_name file name =
 
 
 (** Find a global {!Cil.varinfo} by name from a {!Cil.file}.
-        @param file the {!Cil.file} to find the {!Cil.fundec} in
-        @param name the name of the {!Cil.fundec} to find
+        @param file the {!Cil.file} to find the {!Cil.varinfo} in
+        @param name the name of the {!Cil.varinfo} to find
         @return the {!Cil.varinfo}
         @raise Not_found if a global {!Cil.varinfo} named [name] does not exist in [file]
 *)
@@ -94,7 +93,7 @@ let global_varinfo_by_name file name =
 
 
 (** Return a list of all {!Cil.varinfo} in a {!Cil.file}.
-        @param file the {!Cil.file} to find the {!Cil.fundec} in
+        @param file the {!Cil.file} to find the {!Cil.varinfo} in
         @return the list of {!Cil.varinfo}
 *)
 let all_varinfos file =
