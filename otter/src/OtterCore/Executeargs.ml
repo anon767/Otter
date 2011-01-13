@@ -54,7 +54,7 @@ let options = [
 
 	("--cfgPruning",
 		Arg.Set arg_cfg_pruning,
-		" Enable CFG pruning\n");
+		" Remove unreachable statements from main (e.g., if(0) induced by switch statements) when calculating coverage\n");
 
     ("--initMallocZero",
         Arg.Set arg_init_malloc_zero,

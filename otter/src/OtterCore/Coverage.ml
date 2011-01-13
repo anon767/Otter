@@ -3,6 +3,7 @@ open OcamlUtilities
 open Cil
 open CilUtilities
 open OtterBytes
+open OtterCFG
 open Bytes
 open Types
 open Job
@@ -42,16 +43,48 @@ let rec stmtAtEndOfBlock stmt = match stmt.succs with
 				 | _ -> stmtAtEndOfBlock succ)
 	| _ -> stmt (* (4) *)
 
-class getStatsVisitor = object (self)
+class getStatsVisitor file = object (self)
 	val lines = ref LineSet.empty
 	val blocks = ref StmtInfoSet.empty
 	val edges = ref EdgeSet.empty
 	val conds = ref CondSet.empty
 
-	val currFuncName = ref ""
+	val currFunc = ref Cil.dummyFunDec
 
 	method private stmtInfo_of_stmt stmt =
-		{ siFuncName = !currFuncName ; siStmt = stmt }
+		{ siFuncName = (!currFunc).svar.vname ; siStmt = stmt }
+
+    val reachable_stmts = Hashtbl.create 0
+    method private is_reachable_stmt stmt =
+        if Hashtbl.length reachable_stmts = 0 then
+            (* Prepare the table *)
+            let source =
+                let mainFunc =
+                    try
+                        FindCil.fundec_by_name file "main"
+                    with Not_found ->
+                        FormatPlus.failwith "main function not found"
+                in Instruction.of_fundec file mainFunc
+            in
+            let processed_instrs = Hashtbl.create 0 in
+            let rec visit instruction =
+                if Hashtbl.mem processed_instrs instruction then
+                    ()
+                else (
+                    Hashtbl.add processed_instrs instruction true;
+                    Hashtbl.add reachable_stmts instruction.Instruction.stmt true;
+                    List.iter visit (Instruction.successors instruction);
+                    List.iter visit (Instruction.call_sites instruction);
+                    ()
+                )
+            in
+            visit source
+        else ()
+        ;
+        try
+            Hashtbl.find reachable_stmts stmt
+        with Not_found -> false
+
 
 	method lines = !lines
 	method blocks = !blocks
@@ -66,32 +99,34 @@ class getStatsVisitor = object (self)
 		SkipChildren (* There's nothing interesting under an [instr] *)
 
 	method vstmt stmt =
-		let stmtInfo = self#stmtInfo_of_stmt stmt in
-		(* Gather lines and conditions. *)
-		(match stmt.skind with
-				 If(_,_,_,loc) ->
-						conds := CondSet.add (stmtInfo,true) (CondSet.add (stmtInfo,false) !conds);
-						lines := LineSet.add (loc.Cil.file,loc.Cil.line) !lines;
-			 | Cil.Return(_,loc)
-			 | Goto(_,loc)
-			 | Loop (_,loc,_,_) ->
-					 lines := LineSet.add (loc.Cil.file,loc.Cil.line) !lines;
-			 | _ -> ()
-		);
-		(* We represent basic blocks by their final statements, so if stmt
-			 is the end of a basic block, add it to the set of basic blocks
-			 and add its outgoing edges to the set of edges. (Edges are
-			 represented as endOfBlock1 -> endOfBlock2.) *)
-		if stmt == stmtAtEndOfBlock stmt
-		then (
-			blocks := StmtInfoSet.add stmtInfo !blocks;
-			List.iter
-				(fun succ -> edges := EdgeSet.add (stmtInfo, self#stmtInfo_of_stmt (stmtAtEndOfBlock succ)) !edges)
-				stmt.succs
-		);
+        if not !Executeargs.arg_cfg_pruning || self#is_reachable_stmt stmt then (
+		    let stmtInfo = self#stmtInfo_of_stmt stmt in
+		    (* Gather lines and conditions. *)
+		    (match stmt.skind with
+		    		 If(_,_,_,loc) ->
+		    				conds := CondSet.add (stmtInfo,true) (CondSet.add (stmtInfo,false) !conds);
+		    				lines := LineSet.add (loc.Cil.file,loc.Cil.line) !lines;
+		    	 | Cil.Return(_,loc)
+		    	 | Goto(_,loc)
+		    	 | Loop (_,loc,_,_) ->
+		    			 lines := LineSet.add (loc.Cil.file,loc.Cil.line) !lines;
+		    	 | _ -> ()
+		    );
+		    (* We represent basic blocks by their final statements, so if stmt
+		    	 is the end of a basic block, add it to the set of basic blocks
+		    	 and add its outgoing edges to the set of edges. (Edges are
+		    	 represented as endOfBlock1 -> endOfBlock2.) *)
+		    if stmt == stmtAtEndOfBlock stmt
+		    then (
+		    	blocks := StmtInfoSet.add stmtInfo !blocks;
+		    	List.iter
+		    		(fun succ -> edges := EdgeSet.add (stmtInfo, self#stmtInfo_of_stmt (stmtAtEndOfBlock succ)) !edges)
+		    		stmt.succs
+		    )
+        );
 		DoChildren (* There could be stmts or instrs inside, which we should visit *)
 
-	method vfunc fundec = currFuncName := fundec.svar.vname; DoChildren
+	method vfunc fundec = currFunc := fundec; DoChildren
 end
 
 class getCallerVisitor file = object (self)
@@ -150,7 +185,7 @@ let prepare_file file =
 		| None -> []
 		| Some fns -> fns
 	in
-    let vis = new getStatsVisitor in
+    let vis = new getStatsVisitor file in
 	iterGlobals
 		file
 		(function (* Visit the bodies of the functions we care about *)

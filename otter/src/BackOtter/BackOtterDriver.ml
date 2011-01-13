@@ -288,7 +288,6 @@ let doit file =
     (* Set a timer *)
     ignore (Unix.alarm !Executeargs.arg_timeout);
 
-    Executeargs.arg_cfg_pruning := true;
     Core.prepare_file file;
     CovToFundec.prepare_file file;
 
