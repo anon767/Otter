@@ -23,6 +23,15 @@ module CilType = struct
     let equal x y = compare x y = 0
 end
 
+module CilCanonicalType = struct
+    type t = typ
+    let canonicalize t = typeSigWithAttrs (fun _ -> []) t
+    let compare x y =
+        Pervasives.compare (canonicalize x) (canonicalize y)
+    let hash x = Hashtbl.hash (canonicalize x)
+    let equal x y = compare x y = 0
+end
+
 module CilVar = struct
     type t = varinfo
     let compare x y = if x == y then 0 else compare x.vid y.vid
@@ -55,6 +64,13 @@ module CilFundec = struct
     let printer ff x = CilVar.printer ff x.svar
 end
 
+module CilLhost = struct
+    type t = Cil.lhost
+    let compare = Pervasives.compare
+    let hash = Hashtbl.hash
+    let equal x y = compare x y = 0
+end
+
 module CilExp = struct
     type t = exp * CilLocation.t
     let compare (xexp, xloc as x) (yexp, yloc as y) = if x == y then 0 else
@@ -65,4 +81,17 @@ module CilExp = struct
     let equal x y = compare x y = 0
     let printer ff (exp, loc) =
         Format.fprintf ff "%s:%a" (Pretty.sprint 0 (d_exp () exp)) CilLocation.printer loc
+end
+
+module Malloc = struct
+    type t = CilVar.t * string * CilCanonicalType.t
+    let compare (xv, xs, xt) (yv, ys, yt) =
+        match CilVar.compare xv yv with
+            | 0 ->
+                begin match String.compare xs ys with
+                    | 0 -> CilCanonicalType.compare xt yt
+                    | i -> i
+                end
+            | i ->
+                i
 end

@@ -228,6 +228,416 @@ let soundness_testsuite = "Soundness" >::: [
         ];
     ];
 
+    "Pointer to malloc'ed" >::: [
+        (* there should be at least 3 aliasing conditions: x == NULL, y == NULL or y == x, regardless of order of
+           occurence *)
+        "y == x" >:
+            test_permutations [ "x"; "y" ] begin fun permutation ->
+                let [e1; e2] = List.map (fun e -> "nop(" ^ e ^ ");") permutation in
+                test_symbolic_pointers ~label:(String.concat "; " permutation)
+                    begin String.concat "; " ["
+                        int *x, *y;
+                        void nop(void * x) {}
+                        void foo(void) {
+                            "; e1; e2; "
+                            if (x == 0) {
+                                return;
+                            } else if (y == 0) {
+                                return;
+                            } else if (y == x) {
+                                return;
+                            }
+                            fail();
+                        }
+                        void main(void) {
+                            x = malloc(sizeof(*x));
+                            y = x;
+                            foo();
+                        }
+                    "] end
+                    begin fun results return exit abandoned ->
+                        assert_at_least 3 return;
+                        assert_equal 0 exit;
+                    end
+            end;
+
+        (* there should be at least 4 aliasing conditions: x == NULL, *x == NULL, y == NULL or y == x, regardless
+           of order of occurence *)
+        "y == *x" >: TestList begin
+            let test (label, e1, e2) =
+                test_symbolic_pointers ~label
+                    begin String.concat "; " ["
+                        int **x, *y;
+                        void nop(void * x) {}
+                        void foo(void) {
+                            "; e1; "
+                            if (x == 0) {
+                                return;
+                            } else {
+                                "; e2; "
+                                if (*x == 0) {
+                                    return;
+                                } else if (y == 0) {
+                                    return;
+                                } else if (y == *x) {
+                                    return;
+                                }
+                            }
+                            fail();
+                        }
+                        void main(void) {
+                            x = malloc(sizeof(*x));
+                            *x = malloc(sizeof(**x));
+                            y = *x;
+                            foo();
+                        }
+                    "] end
+                    begin fun results return exit abandoned ->
+                        assert_at_least 4 return;
+                        assert_equal 0 exit;
+                    end
+            in
+            List.map test [ ("x; *x; y", "0", "0"); ("x; y; *x", "0", "nop(y);"); ("y; x; *x", "nop(y);", "") ]
+        end;
+
+        (* there should be at least 5 aliasing conditions: x == NULL, y == NULL, *x == NULL, *y == NULL or *y == *x,
+           regardless of order of occurence *)
+        "*y == *x" >:
+            test_permutations ["x"; "y"] begin fun permutation1 ->
+                let [e1; e2] = List.map (fun e -> "nop(" ^ e ^ ");") permutation1 in
+                test_permutations ["*x"; "*y"] begin fun permutation2 ->
+                    let [e3; e4] = List.map (fun e -> "nop(" ^ e ^ ");") permutation2 in
+                    test_symbolic_pointers ~label:(String.concat "; " (permutation1 @ permutation2))
+                        begin String.concat "; " ["
+                            int **x, **y;
+                            void nop(void * x) {}
+                            void foo(void) {
+                                "; e1; "
+                                "; e2; "
+                                if (x == 0) {
+                                    return;
+                                } else if (y == 0) {
+                                    return;
+                                } else {
+                                    "; e3; "
+                                    "; e4; "
+                                    if (*x == 0) {
+                                        return;
+                                    } else if (*y == 0) {
+                                        return;
+                                    } else if (*y == *x) {
+                                        return;
+                                    }
+                                }
+                                fail();
+                            }
+                            void main(void) {
+                                x = malloc(sizeof(*x));
+                                *x = malloc(sizeof(**x));
+                                y = malloc(sizeof(*y));
+                                *y = *x;
+                                foo();
+                            }
+                        "] end
+                        begin fun results return exit abandoned ->
+                            assert_at_least 5 return;
+                            assert_equal 0 exit;
+                        end
+                end;
+            end;
+
+        (* there should be at least 3 aliasing conditions: x == NULL, y == NULL or y == &x->f, regardless of order of
+           occurence *)
+        "y == &x->f" >:
+            test_permutations [ "x"; "y" ] begin fun permutation ->
+                let [e1; e2] = List.map (fun e -> "nop(" ^ e ^ ");") permutation in
+                test_symbolic_pointers ~label:(String.concat "; " permutation)
+                    begin String.concat "; " ["
+                        struct { char a; int f; } *x;
+                        int *y;
+                        void nop(void * x) {}
+                        void foo(void) {
+                            "; e1; e2; "
+                            if (x == 0) {
+                                return;
+                            } else {
+                                if (y == 0) {
+                                    return;
+                                } else if (y == &x->f) {
+                                    return;
+                                }
+                            }
+                            fail();
+                        }
+                        void main(void) {
+                            x = malloc(sizeof(*x));
+                            y = &x->f;
+                            foo();
+                        }
+                    "] end
+                    begin fun results return exit abandoned ->
+                        assert_at_least 3 return;
+                        assert_equal 0 exit;
+                    end
+            end;
+
+        (* there should be at least 4 aliasing conditions: x == NULL, *x == NULL, y == NULL or y == &( *x)->f,
+           regardless of order of occurence *)
+        "y == &(*x)->f" >: TestList begin
+            let test (label, e1, e2) =
+                test_symbolic_pointers ~label
+                    begin String.concat "; " ["
+                        struct { char a; int f; } **x;
+                        int *y;
+                        void nop(void * x) {}
+                        void foo(void) {
+                            "; e1; "
+                            if (x == 0) {
+                                return;
+                            } else {
+                                "; e2; "
+                                if (*x == 0) {
+                                    return;
+                                } else if (y == 0) {
+                                    return;
+                                } else if (y == &(*x)->f) {
+                                    return;
+                                }
+                            }
+                            fail();
+                        }
+                        void main(void) {
+                            x = malloc(sizeof(*x));
+                            *x = malloc(sizeof(**x));
+                            y = &(*x)->f;
+                            foo();
+                        }
+                    "] end
+                    begin fun results return exit abandoned ->
+                        assert_at_least 4 return;
+                        assert_equal 0 exit;
+                    end
+            in
+            List.map test [ ("x; *x; y", "0", "0"); ("x; y; *x", "0", "nop(y);"); ("y; x; *x", "nop(y);", "") ]
+        end;
+
+        (* there should be at least 5 aliasing conditions: x == NULL, y == NULL, *x == NULL, *y == NULL
+           or *y == &( *x)->f, regardless of order of occurence *)
+        "*y == &(*x)->b" >:
+            test_permutations ["x"; "y"] begin fun permutation1 ->
+                let [e1; e2] = List.map (fun e -> "nop(" ^ e ^ ");") permutation1 in
+                test_permutations ["*x"; "*y"] begin fun permutation2 ->
+                    let [e3; e4] = List.map (fun e -> "nop(" ^ e ^ ");") permutation2 in
+                    test_symbolic_pointers ~label:(String.concat "; " (permutation1 @ permutation2))
+                        begin String.concat "; " ["
+                            struct { char a; int b; } **x;
+                            int **y;
+                            void nop(void * x) {}
+                            void foo(void) {
+                                "; e1; "
+                                "; e2; "
+                                if (x == 0) {
+                                    return;
+                                } else if (y == 0) {
+                                    return;
+                                } else {
+                                    "; e3; "
+                                    "; e4; "
+                                    if (*x == 0) {
+                                        return;
+                                    } else if (*y == 0) {
+                                        return;
+                                    } else if (*y == &(*x)->b) {
+                                        return;
+                                    }
+                                }
+                                fail();
+                            }
+                            void main(void) {
+                                x = malloc(sizeof(*x));
+                                *x = malloc(sizeof(**x));
+                                y = malloc(sizeof(*y));
+                                *y = &(*x)->b;
+                                foo();
+                            }
+                        "] end
+                        begin fun results return exit abandoned ->
+                            assert_at_least 5 return;
+                            assert_equal 0 exit;
+                        end
+                end;
+            end;
+
+        (* there should be at least 3 aliasing conditions: x == NULL, y == NULL or y.f == &x->f, regardless of order of
+           occurence *)
+        "y.f == &x->f" >:
+            test_permutations [ "x"; "y.f" ] begin fun permutation ->
+                let [e1; e2] = List.map (fun e -> "nop(" ^ e ^ ");") permutation in
+                test_symbolic_pointers ~label:(String.concat "; " permutation)
+                    begin String.concat "; " ["
+                        struct { char a; int f; } *x;
+                        struct { char a; int *f; } y;
+                        void nop(void * x) {}
+                        void foo(void) {
+                            "; e1; e2; "
+                            if (x == 0) {
+                                return;
+                            } else {
+                                if (y.f == 0) {
+                                    return;
+                                } else if (y.f == &x->f) {
+                                    return;
+                                }
+                            }
+                            fail();
+                        }
+                        void main(void) {
+                            x = malloc(sizeof(*x));
+                            y.f = &x->f;
+                            foo();
+                        }
+                    "] end
+                    begin fun results return exit abandoned ->
+                        assert_at_least 3 return;
+                        assert_equal 0 exit;
+                    end
+            end;
+
+        (* there should be at least 4 aliasing conditions: x == NULL, *x == NULL, y == NULL or y.f == &( *x)->f,
+           regardless of order of occurence *)
+        "y.f == &(*x)->f" >: TestList begin
+            let test (label, e1, e2) =
+                test_symbolic_pointers ~label
+                    begin String.concat "; " ["
+                        struct { char a; int f; } **x;
+                        struct { char a; int *f; } y;
+                        void nop(void * x) {}
+                        void foo(void) {
+                            "; e1; "
+                            if (x == 0) {
+                                return;
+                            } else {
+                                "; e2; "
+                                if (*x == 0) {
+                                    return;
+                                } else if (y.f == 0) {
+                                    return;
+                                } else if (y.f == &(*x)->f) {
+                                    return;
+                                }
+                            }
+                            fail();
+                        }
+                        void main(void) {
+                            x = malloc(sizeof(*x));
+                            *x = malloc(sizeof(**x));
+                            y.f = &(*x)->f;
+                            foo();
+                        }
+                    "] end
+                    begin fun results return exit abandoned ->
+                        assert_at_least 4 return;
+                        assert_equal 0 exit;
+                    end
+            in
+            List.map test [ ("x; *x; y.f", "0", "0"); ("x; y.f; *x", "0", "nop(y.f);"); ("y.f; x; *x", "nop(y.f);", "") ]
+        end;
+
+        (* there should be at least 5 aliasing conditions: x == NULL, y == NULL, *x == NULL, y->f == NULL
+           or y->f == &( *x)->f, regardless of order of occurence *)
+        "*y.f == &(*x)->b" >:
+            test_permutations ["x"; "y.f"] begin fun permutation1 ->
+                let [e1; e2] = List.map (fun e -> "nop(" ^ e ^ ");") permutation1 in
+                test_permutations ["*x"; "*y.f"] begin fun permutation2 ->
+                    let [e3; e4] = List.map (fun e -> "nop(" ^ e ^ ");") permutation2 in
+                    test_symbolic_pointers ~label:(String.concat "; " (permutation1 @ permutation2))
+                        begin String.concat "; " ["
+                            struct { char a; int b; } **x;
+                            struct { char a; int **f; } y;
+                            void nop(void * x) {}
+                            void foo(void) {
+                                "; e1; "
+                                "; e2; "
+                                if (x == 0) {
+                                    return;
+                                } else if (y.f == 0) {
+                                    return;
+                                } else {
+                                    "; e3; "
+                                    "; e4; "
+                                    if (*x == 0) {
+                                        return;
+                                    } else if (*y.f == 0) {
+                                        return;
+                                    } else if (*y.f == &(*x)->b) {
+                                        return;
+                                    }
+                                }
+                                fail();
+                            }
+                            void main(void) {
+                                x = malloc(sizeof(*x));
+                                *x = malloc(sizeof(**x));
+                                y.f = malloc(sizeof(*y.f));
+                                y.f = &(*x)->b;
+                                foo();
+                            }
+                        "] end
+                        begin fun results return exit abandoned ->
+                            assert_at_least 5 return;
+                            assert_equal 0 exit;
+                        end
+                end;
+            end;
+
+        (* there should be at least 5 aliasing conditions: x == NULL, y == NULL, *x == NULL, y->f == NULL
+           or y->f == &( *x)->f, regardless of order of occurence *)
+        "y->f == &(*x)->b" >:
+            test_permutations ["x"; "y"] begin fun permutation1 ->
+                let [e1; e2] = List.map (fun e -> "nop(" ^ e ^ ");") permutation1 in
+                test_permutations ["*x"; "y->f"] begin fun permutation2 ->
+                    let [e3; e4] = List.map (fun e -> "nop(" ^ e ^ ");") permutation2 in
+                    test_symbolic_pointers ~label:(String.concat "; " (permutation1 @ permutation2))
+                        begin String.concat "; " ["
+                            struct { char a; int b; } **x;
+                            struct { char a; int *f; } *y;
+                            void nop(void * x) {}
+                            void foo(void) {
+                                "; e1; "
+                                "; e2; "
+                                if (x == 0) {
+                                    return;
+                                } else if (y == 0) {
+                                    return;
+                                } else {
+                                    "; e3; "
+                                    "; e4; "
+                                    if (*x == 0) {
+                                        return;
+                                    } else if (y->f == 0) {
+                                        return;
+                                    } else if (y->f == &(*x)->b) {
+                                        return;
+                                    }
+                                }
+                                fail();
+                            }
+                            void main(void) {
+                                x = malloc(sizeof(*x));
+                                *x = malloc(sizeof(**x));
+                                y = malloc(sizeof(*y));
+                                y->f = &(*x)->b;
+                                foo();
+                            }
+                        "] end
+                        begin fun results return exit abandoned ->
+                            assert_at_least 5 return;
+                            assert_equal 0 exit;
+                        end
+                end;
+            end;
+    ];
+
     "Linked list" >::: [
         (* since the nodes are statically allocated and do not alias, but the pointer analysis may perform unification,
            there should be at least 4 iterations:

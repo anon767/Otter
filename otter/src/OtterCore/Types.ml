@@ -4,19 +4,7 @@ open Bytes
 
 module VarinfoMap = Map.Make (CilUtilities.CilData.CilVar)
 
-module TypeMap = Map.Make (struct
-	type t = Cil.typ
-	let compare x y =
-		let canonicalize t = Cil.typeSigWithAttrs (fun _ -> []) t in
-		Pervasives.compare (canonicalize x) (canonicalize y)
-end)
-
-module MallocMap = Map.Make (struct
-    type t = Cil.varinfo * string
-    let compare (va, sa) (vb, sb) = match Pervasives.compare va.Cil.vid vb.Cil.vid with
-        | 0 -> String.compare sa sb
-        | i -> i
-end)
+module MallocMap = Map.Make (CilUtilities.CilData.Malloc)
 
 module IndexMap = Map.Make (struct
 	type t = int
@@ -65,7 +53,7 @@ and state =
 		formals : memory_frame list;            (* Map formal lvals to blocks *)
 		locals : memory_frame list;             (* Map local lvals to blocks *)
 		aliases : memory_block list VarinfoMap.t; (* Map from varinfos to aliased blocks, e.g., from unknown call stack recursion *)
-		mallocs : memory_block list TypeMap.t MallocMap.t; (* Map from malloc sites to aliased blocks from unknown allocation *)
+		mallocs : memory_block list MallocMap.t; (* Map from malloc sites to aliased blocks from unknown allocation *)
 		callstack : Cil.fundec list;            (* Function call stack *)
 		block_to_bytes : (state, bytes) Deferred.t MemoryBlockMap.t;
 		path_condition : bytes list;

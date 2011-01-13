@@ -72,6 +72,7 @@
 
 open DataStructures
 open OcamlUtilities
+open CilUtilities
 open OtterBytes
 
 
@@ -82,20 +83,27 @@ module OffsetSet = Set.Make (struct
 end)
 
 module VarinfoMap = struct
-    include Map.Make (CilUtilities.CilData.CilVar)
-    let add var offset var_map =
-        let offsets = try find var var_map with Not_found -> OffsetSet.empty in
-        add var (OffsetSet.add offset offsets) var_map
+    include Map.Make (CilData.CilVar)
+    let add varinfo offset varinfo_map =
+        let offsets = try find varinfo varinfo_map with Not_found -> OffsetSet.empty in
+        add varinfo (OffsetSet.add offset offsets) varinfo_map
 end
 
-module VarinfoSet = Set.Make (CilUtilities.CilData.CilVar)
+module MallocMap = struct
+    include Map.Make (CilData.Malloc)
+    let add malloc offset malloc_map =
+        let offsets = try find malloc malloc_map with Not_found -> OffsetSet.empty in
+        add malloc (OffsetSet.add offset offsets) malloc_map
+end
+
+module VarinfoSet = Set.Make (CilData.CilVar)
+module MallocSet = Set.Make (CilData.Malloc)
 
 module TypeAndOffsetSetMap = struct
     include Map.Make (struct
-        type t = Cil.typ * OffsetSet.t
+        type t = CilData.CilCanonicalType.t * OffsetSet.t
         let compare (xt, xo) (yt, yo) =
-            let canonicalize_type t = Cil.typeSigWithAttrs (fun _ -> []) t in
-            match Pervasives.compare (canonicalize_type xt) (canonicalize_type yt) with
+            match CilData.CilCanonicalType.compare xt yt with
                 | 0 -> OffsetSet.compare xo yo
                 | i -> i
     end)
@@ -103,10 +111,13 @@ module TypeAndOffsetSetMap = struct
         if mem type_and_offsets type_and_offsets_map then
             type_and_offsets_map
         else
-            add type_and_offsets VarinfoSet.empty type_and_offsets_map
-    let add type_and_offsets var type_and_offsets_map =
-        let vars = try find type_and_offsets type_and_offsets_map with Not_found -> VarinfoSet.empty in
-        add type_and_offsets (VarinfoSet.add var vars) type_and_offsets_map
+            add type_and_offsets (VarinfoSet.empty, MallocSet.empty) type_and_offsets_map
+    let add_varinfo type_and_offsets varinfo type_and_offsets_map =
+        let varinfos, mallocs = try find type_and_offsets type_and_offsets_map with Not_found -> (VarinfoSet.empty, MallocSet.empty) in
+        add type_and_offsets (VarinfoSet.add varinfo varinfos, mallocs) type_and_offsets_map
+    let add_malloc type_and_offsets malloc type_and_offsets_map =
+        let varinfos, mallocs = try find type_and_offsets type_and_offsets_map with Not_found -> (VarinfoSet.empty, MallocSet.empty) in
+        add type_and_offsets (varinfos, MallocSet.add malloc mallocs) type_and_offsets_map
 end
 
 module BytesSet = Set.Make (struct
@@ -168,14 +179,15 @@ let default_scheme = ref `TwoLevel
         @param state is the symbolic executor state in which to initialize the pointer
         @param target_type is the type of the pointer target (which may not match the pointer type, e.g., for void *
                 pointers)
-        @param points_to is a function of type [Cil.exp -> (Cil.varinfo * Cil.offset) list * (Cil.varinfo * string) list]
+        @param points_to is a function of type [Cil.exp -> (CilData.CilVar.t * Cil.offset) list * (CilData.Malloc.t * Cil.offset) list]
                 that takes an expression and returns the points-to targets of that expression as a list of variables
-                and offsets pairs, and a list of dynamic allocations sites distinguished by unique string names
+                and offsets pairs, and a list of dynamic allocations sites distinguished by unique string names along
+                with the allocated type and target offset
         @param exps is list of expressions, which are joined to compute the pointer value
         @param maybe_null optionally indicates whether the pointer should possibly be null (default: true)
         @param maybe_uninit optionally indicates whether the pointer should possible be uninitialized (default: false)
         @param block_name is a name to give the target block of the pointer
-        @param init_target is a function of type [Cil.typ -> Cil.varinfo list -> (Types.state -> Types.state * Bytes.bytes)]
+        @param init_target is a function of type [Cil.typ -> CilData.CilVar.t list -> CilData.Malloc.t list -> (Types.state -> Types.state * Bytes.bytes)]
                 that takes a type and a list of variables that are the targets of the pointer, and initializes a
                 deferred symbolic value is the join of the values of all the targets of the pointer; the target list
                 may be empty in the case where the target is only dynamically allocated, in which case the target type
@@ -184,30 +196,36 @@ let default_scheme = ref `TwoLevel
 *)
 let init_pointer ?(scheme=(!default_scheme)) state target_type points_to exps ?(maybe_null=true) ?(maybe_uninit=false) block_name init_target =
     (* find the points to set for this pointer *)
-    let target_lvals, malloc_sites = List.fold_left begin fun (target_lvals, malloc_sites) exp ->
+    let target_lvals, target_mallocs = List.fold_left begin fun (target_lvals, target_mallocs) exp ->
         let t, m = points_to exp in
-        (t @ target_lvals, m @ malloc_sites)
+        (t @ target_lvals, m @ target_mallocs)
     end ([], []) exps in
 
-    (* group targets by base varinfo (e.g., root of structs) and offsets, from the list of targets *)
-    let var_to_offsets = List.fold_left (fun var_to_offsets (var, offset) -> VarinfoMap.add var offset var_to_offsets) VarinfoMap.empty target_lvals in
+    (* group targets by type and the sets of offsets pointed into *)
+    let type_and_offsets_to_targets =
+        let type_and_offsets_to_targets = TypeAndOffsetSetMap.empty in
 
-    (* group targets by type and the sets of offsets pointed into (i.e., reverse-grouping the above map) *)
-    let type_and_offsets_to_vars =
-        VarinfoMap.fold
-            (fun var offsets -> TypeAndOffsetSetMap.add (var.Cil.vtype, offsets) var)
-            var_to_offsets TypeAndOffsetSetMap.empty
-    in
+        (* group variable targets by base varinfo (e.g., root of structs) and offsets, then reverse the mapping *)
+        let varinfo_to_offsets = List.fold_left begin fun varinfo_to_offsets (varinfo, offset) ->
+            VarinfoMap.add varinfo offset varinfo_to_offsets
+        end VarinfoMap.empty target_lvals in
+        let type_and_offsets_to_targets = VarinfoMap.fold begin fun varinfo offsets ->
+            TypeAndOffsetSetMap.add_varinfo (varinfo.Cil.vtype, offsets) varinfo
+        end varinfo_to_offsets type_and_offsets_to_targets in
 
-    (* if there are malloc targets, then make sure that target_type is always available *)
-    let type_and_offsets_to_vars = if malloc_sites <> [] then
-        TypeAndOffsetSetMap.add_empty (target_type, OffsetSet.singleton Cil.NoOffset) type_and_offsets_to_vars
-    else
-        type_and_offsets_to_vars
+        (* group malloc targets by allocated type and offsets; then reverse the mapping *)
+        let malloc_to_offsets = List.fold_left begin fun malloc_to_offsets (malloc, offset) ->
+            MallocMap.add malloc offset malloc_to_offsets
+        end MallocMap.empty target_mallocs in
+        let type_and_offsets_to_targets = MallocMap.fold begin fun (_, _, typ as malloc) offsets ->
+            TypeAndOffsetSetMap.add_malloc (typ, offsets) malloc
+        end malloc_to_offsets type_and_offsets_to_targets in
+
+        type_and_offsets_to_targets
     in
 
     let state, target_bytes_set, _ = TypeAndOffsetSetMap.fold
-        begin fun (typ, offsets) target_vars (state, target_bytes_set, count) ->
+        begin fun (typ, offsets) (varinfos, mallocs) (state, target_bytes_set, count) ->
             let state, map_offsets = match scheme with
                 | `OneLevel ->
                     (* generate a list of bytes pointing to the given offsets in block *)
@@ -280,36 +298,31 @@ let init_pointer ?(scheme=(!default_scheme)) state target_type points_to exps ?(
             let state, block, target_bytes_set =
                 let size = Cil.bitsSizeOf (Cil.unrollType typ) / 8 in
                 let block = Bytes.block__make (FormatPlus.sprintf "%s#%d size(%d) type(%a)" block_name count size Printcil.typ typ) size Bytes.Block_type_Aliased in
-                let deferred = init_target typ (VarinfoSet.elements target_vars) in
+                let deferred = init_target typ (VarinfoSet.elements varinfos) (MallocSet.elements mallocs) in
                 let state = MemOp.state__add_deferred_block state block deferred in
                 (state, block, map_offsets target_bytes_set block)
             in
 
-            (* conservatively point to all allocations in the list of allocations of each malloc site (for each type,
-                since we don't know what type is being allocated at each site), and add the above allocated fresh block
-                to the list of allocations for each malloc site *)
-            let state, target_bytes_set = List.fold_left begin fun (state, target_bytes_set) malloc ->
-                let mallocs_map = try Types.MallocMap.find malloc state.Types.mallocs with Not_found -> Types.TypeMap.empty in
-                let mallocs = try Types.TypeMap.find typ mallocs_map with Not_found -> [] in
-                let state =
-                    let mallocs_map = Types.TypeMap.add typ (block::mallocs) mallocs_map in
-                    { state with Types.mallocs = Types.MallocMap.add malloc mallocs_map state.Types.mallocs }
-                in
-                (state, List.fold_left map_offsets target_bytes_set mallocs)
-            end (state, target_bytes_set) malloc_sites in
+            (* conservatively point to all allocations in the list of allocations of each malloc site, and add the
+                above allocated fresh block to the list of allocations for each malloc site *)
+            let state, target_bytes_set = MallocSet.fold begin fun malloc (state, target_bytes_set) ->
+                let blocks = try Types.MallocMap.find malloc state.Types.mallocs with Not_found -> [] in
+                let state = { state with Types.mallocs = Types.MallocMap.add malloc (block::blocks) state.Types.mallocs } in
+                (state, List.fold_left map_offsets target_bytes_set blocks)
+            end mallocs (state, target_bytes_set) in
 
             (* conservatively point to all aliases in the list of aliases of each variable, and add the above allocated
                 fresh block to the list of aliases of each variable; though we don't really need to add to global
                 variables that have been initialized *)
             (* TODO: mark global variables that have been initialized and avoid adding the fresh block to it *)
             let state, target_bytes_set = VarinfoSet.fold begin fun v (state, target_bytes_set) ->
-                let aliases = try Types.VarinfoMap.find v state.Types.aliases with Not_found -> [] in
-                let state = { state with Types.aliases = Types.VarinfoMap.add v (block::aliases) state.Types.aliases } in
-                (state, List.fold_left map_offsets target_bytes_set aliases)
-            end target_vars (state, target_bytes_set) in
+                let blocks = try Types.VarinfoMap.find v state.Types.aliases with Not_found -> [] in
+                let state = { state with Types.aliases = Types.VarinfoMap.add v (block::blocks) state.Types.aliases } in
+                (state, List.fold_left map_offsets target_bytes_set blocks)
+            end varinfos (state, target_bytes_set) in
             (state, target_bytes_set, count + 1)
         end
-    type_and_offsets_to_vars (state, BytesSet.empty, 0) in
+    type_and_offsets_to_targets (state, BytesSet.empty, 0) in
 
     (* add a null pointer *)
     let target_bytes_set = if maybe_null then BytesSet.add Bytes.bytes__zero target_bytes_set else target_bytes_set in
@@ -337,18 +350,18 @@ let init_pointer ?(scheme=(!default_scheme)) state target_type points_to exps ?(
     with the same pointer analysis.
 
         @param state is the symbolic executor state in which to initialize the variable
-        @param var is the variable to initialize
+        @param varinfo is the variable to initialize
         @param block_name is a name to give the target block of the variable
         @param deferred is the deferred symbolic value for the variable
         @return [(Types.state, Bytes.bytes)] the updated symbolic state and the initialized variable
 *)
-let init_lval_block state var block_name deferred =
+let init_lval_block state varinfo block_name deferred =
     let deferred_lval_block state =
         (* make an extra block; for the case where the variable is not-aliased *)
-        let block = Bytes.block__make block_name (Cil.bitsSizeOf (Cil.unrollType var.Cil.vtype) / 8) Bytes.Block_type_Aliased in
+        let block = Bytes.block__make block_name (Cil.bitsSizeOf (Cil.unrollType varinfo.Cil.vtype) / 8) Bytes.Block_type_Aliased in
         let state = MemOp.state__add_deferred_block state block deferred in
-        let aliases = block::(try Types.VarinfoMap.find var state.Types.aliases with Not_found -> []) in
-        let state = { state with Types.aliases = Types.VarinfoMap.add var aliases state.Types.aliases } in
+        let aliases = block::(try Types.VarinfoMap.find varinfo state.Types.aliases with Not_found -> []) in
+        let state = { state with Types.aliases = Types.VarinfoMap.add varinfo aliases state.Types.aliases } in
 
         (* generate an lval to each block it may alias that was previously initialized via another pointer *)
         let target_list = List.map (fun block -> Bytes.conditional__lval_block (block, Bytes.bytes__zero)) aliases in

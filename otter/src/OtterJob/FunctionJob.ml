@@ -55,17 +55,20 @@ let rec init_bytes_with_pointers ?scheme state typ points_to exps = match Cil.un
 
     | Cil.TPtr (target_type, _) ->
         (* for pointers, generate the pointer *)
-        let init_target typ vars state =
-            if vars = [] then begin
-                let exps = List.map (fun exp -> Cil.Lval (Cil.Mem exp, Cil.NoOffset)) exps in
-                if exps <> [] then
-                    init_bytes_with_pointers ?scheme state typ points_to exps
+        let init_target typ vars mallocs state =
+            let var_exps = List.map (fun v -> Cil.Lval (Cil.var v)) vars in
+            let malloc_exps =
+                if mallocs <> [] then
+                    List.map (fun exp -> Cil.Lval (Cil.Mem exp, Cil.NoOffset)) exps
                 else
-                    let size = Cil.bitsSizeOf typ / 8 in
-                    (state, Bytes.bytes__symbolic size)
-            end else
-                let exps = List.map (fun v -> Cil.Lval (Cil.var v)) vars in
+                    []
+            in
+            let exps = var_exps @ malloc_exps in
+            if exps <> [] then
                 init_bytes_with_pointers ?scheme state typ points_to exps
+            else
+                let size = Cil.bitsSizeOf typ / 8 in
+                (state, Bytes.bytes__symbolic size)
         in
 
         (* give it a name *)
