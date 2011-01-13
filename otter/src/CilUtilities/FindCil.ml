@@ -3,6 +3,7 @@
 
 (**/**)
 module VarinfoSet = Set.Make (CilData.CilVar)
+module TypeSet = Set.Make (CilData.CilType)
 (**/**)
 
 
@@ -21,25 +22,31 @@ let memotables =
             let name_to_fundec = Hashtbl.create 100 in
             let name_to_global_varinfo = Hashtbl.create 100 in
             let all_varinfos = ref VarinfoSet.empty in
+            let all_types = ref TypeSet.empty in
 
-            Cil.iterGlobals file begin function
-                | Cil.GFun (fundec ,_) ->
+            Cil.visitCilFile begin object
+                inherit Cil.nopCilVisitor
+                method vtype typ =
+                    all_types := TypeSet.add typ !all_types;
+                    Cil.DoChildren
+                method vvdec varinfo =
+                    if not (Hashtbl.mem varinfo_to_varinit varinfo) then Hashtbl.replace varinfo_to_varinit varinfo { Cil.init = None };
+                    if varinfo.Cil.vglob then Hashtbl.replace name_to_global_varinfo varinfo.Cil.vname varinfo;
+                    all_varinfos := VarinfoSet.add varinfo !all_varinfos;
+                    Cil.DoChildren
+                method vfunc fundec =
                     Hashtbl.replace varinfo_to_fundec fundec.Cil.svar fundec;
                     Hashtbl.replace name_to_fundec fundec.Cil.svar.Cil.vname fundec;
                     List.iter (fun varinfo -> all_varinfos := VarinfoSet.add varinfo !all_varinfos) fundec.Cil.sformals;
                     List.iter (fun varinfo -> all_varinfos := VarinfoSet.add varinfo !all_varinfos) fundec.Cil.slocals;
-                | Cil.GVar (varinfo, initinfo, _) ->
-                    Hashtbl.replace varinfo_to_varinit varinfo initinfo;
-                    Hashtbl.replace name_to_global_varinfo varinfo.Cil.vname varinfo;
-                    all_varinfos := VarinfoSet.add varinfo !all_varinfos;
-                | Cil.GVarDecl (varinfo, _) ->
-                    Hashtbl.replace varinfo_to_varinit varinfo { Cil.init=None };
-                    Hashtbl.replace name_to_global_varinfo varinfo.Cil.vname varinfo;
-                    all_varinfos := VarinfoSet.add varinfo !all_varinfos;
-                | _ -> ()
-            end;
+                    Cil.DoChildren
+                method vinit varinfo _ init =
+                    Hashtbl.replace varinfo_to_varinit varinfo { Cil.init = Some init };
+                    Cil.SkipChildren
+            end end file;
 
             let all_varinfos = VarinfoSet.elements !all_varinfos in
+            let all_types = TypeSet.elements !all_types in
 
             let memotables = object
                 method varinfo_to_fundec = Hashtbl.find varinfo_to_fundec
@@ -47,6 +54,7 @@ let memotables =
                 method name_to_fundec = Hashtbl.find name_to_fundec
                 method name_to_global_varinfo = Hashtbl.find name_to_global_varinfo
                 method all_varinfos = all_varinfos
+                method all_types = all_types
             end in
             Hashtbl.replace file_memotables file memotables;
             memotables
@@ -98,4 +106,12 @@ let global_varinfo_by_name file name =
 *)
 let all_varinfos file =
     (memotables file)#all_varinfos
+
+
+(** Return a list of all {!Cil.type} in a {!Cil.file}.
+        @param file the {!Cil.file} to find the {!Cil.type} in
+        @return the list of {!Cil.type}
+*)
+let all_types file =
+    (memotables file)#all_types
 
