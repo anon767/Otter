@@ -1,8 +1,0 @@
-#!/bin/sh
-OCAMLRUNPARAM=b ./otter.pl --domakeCFG --merge --noPrintLn \
-	--debug-mode \
-	--printUndefined \
-	$@
-	# --printQueries \
-	# --printSTP \
-	# --save-temps \

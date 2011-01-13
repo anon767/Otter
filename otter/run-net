@@ -1,2 +1,0 @@
-#!/bin/sh
-./run-libc libc/sys/NETWORK.c $*
