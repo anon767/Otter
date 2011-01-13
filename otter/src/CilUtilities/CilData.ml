@@ -16,6 +16,13 @@ module CilLocation = struct
             Format.fprintf ff "%s:%d" loc.Cil.file loc.Cil.line
 end
 
+module CilType = struct
+    type t = typ
+    let compare = Pervasives.compare
+    let hash = Hashtbl.hash
+    let equal x y = compare x y = 0
+end
+
 module CilVar = struct
     type t = varinfo
     let compare x y = if x == y then 0 else compare x.vid y.vid
