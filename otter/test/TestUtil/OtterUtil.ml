@@ -74,6 +74,7 @@ let test_with_preprocessed_file path test =
                     be initialized via {!SymbolicPointers.job_for_middle} (default: ["main"])
             @param command_line is an optional command line to provide to the executed file; ignored if
                     [entry_function] is not "main"
+            @param time_limit is the time limit to run symbolic execution (default: 2.0 seconds)
             @param has_failing_assertions indicates whether failing assertions are expected (default: [false])
             @param test is the test to apply to the result from Otter
             @return a {!TestCase} that runs Otter
@@ -84,6 +85,7 @@ let test_otter_on_file
         ?(driver=Driver.run_basic)
         ?(entry_function="main")
         ?(command_line=[])
+        ?(time_limit=2.0)
         ?(has_failing_assertions=false)
         test =
     fun () ->
@@ -98,7 +100,7 @@ let test_otter_on_file
         let file = Frontc.parse path () in
         assert_bool "Cil parse error" (not !Errormsg.hadErrors);
 
-        (* prepare the file and run the symbolic executor *)
+        (* prepare the file and reporter *)
         Core.prepare_file file;
         let job =
             if entry_function = "main" then
@@ -107,7 +109,9 @@ let test_otter_on_file
                 FunctionJob.make file (FindCil.fundec_by_name file entry_function)
         in
         let reporter = new BasicReporter.t () in
-        let _, reporter = driver reporter job in
+
+        (* run the symbolic executor with a time limit *)
+        let _, reporter = assert_time_limit time_limit (fun () -> driver reporter job) in
 
         (* perform tests in order of expressiveness of potential errors *)
         (* first, test if assertions passed *)
@@ -130,6 +134,7 @@ let test_otter_on_file
             @param driver is the Otter main loop to use
             @param entry_function is the function at which to begin symbolic execution
             @param command_line is an optional command line to provide to the executed file
+            @param time_limit is the time limit to run symbolic execution
             @param has_failing_assertions indicates whether failing assertions are expected
             @param test is the test to apply to the result from Otter
             @return a {!TestCase} that runs Otter
@@ -141,10 +146,11 @@ let test_otter
         ?driver
         ?entry_function
         ?command_line
+        ?time_limit
         ?has_failing_assertions
         test =
     label >:: test_string_as_file "OtterTest." ".i" code begin fun filename ->
-        test_otter_on_file filename ?setup ?driver ?entry_function ?command_line ?has_failing_assertions test ()
+        test_otter_on_file filename ?setup ?driver ?entry_function ?command_line ?time_limit ?has_failing_assertions test ()
     end
 
 
@@ -154,9 +160,10 @@ let test_otter
             @param setup is an optional setup function to be called before parsing
             @param entry_function is the function at which to begin symbolic execution
             @param command_line is an optional command line to provide to the executed file
+            @param time_limit is the time limit to run symbolic execution
             @param has_failing_assertions indicates whether failing assertions are expected
             @param test is the test to apply to the result from Otter
-            @return a {!MyOUnit.TestCase} that runs Otter
+            @return a {!TestCase} that runs Otter
 *)
 let test_otter_core = test_otter ~driver:Driver.run_core
 
