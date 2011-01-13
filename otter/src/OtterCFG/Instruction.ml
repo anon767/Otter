@@ -45,7 +45,7 @@ include (struct
 
     (** Make an instruction by updating {!instr} in an instruction. *)
     let with_instrs instruction instrs = match instruction.stmt.Cil.skind with
-        | Cil.Instr instrs' when List.length instrs <= List.length instrs' -> { instruction with instrs = instrs' }
+        | Cil.Instr instrs' when List.length instrs <= List.length instrs' -> { instruction with instrs = instrs }
         | Cil.Instr _ -> invalid_arg "Instruction.with_instrs: instrs must be equal or shorter in length to the Cil.Instr in instruction.stmt"
         | _ -> invalid_arg "Instruction.with_instrs: instruction.stmt must be Cil.Instr"
 end : sig
