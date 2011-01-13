@@ -49,9 +49,13 @@ let soundness_testsuite = "Soundness" >::: [
                             void foo(void) {
                                 "; e1; e2; e3; "
                                 if (z == &x) {
+                                    return;
                                 } else if (z == &y) {
+                                    return;
                                 } else if (z == 0) {
+                                    return;
                                 }
+                                fail();
                             }
                             void main(void) {
                                 z = &x;
@@ -61,7 +65,6 @@ let soundness_testsuite = "Soundness" >::: [
                         begin fun results return exit abandoned ->
                             assert_at_least 3 return;
                             assert_equal 0 exit;
-                            assert_equal 0 abandoned;
                         end
                 end;
 
@@ -69,14 +72,19 @@ let soundness_testsuite = "Soundness" >::: [
             test_symbolic_pointers ~label:"x = 1; y = 2; *z = 3;" "
                 int x, y, *z;
                 void foo(void) {
-                    if (z) {
+                    if (z == 0) {
+                        return;
+                    } else {
                         x = 1;
                         y = 2;
                         *z = 3;
                         if (x == 3) {
+                            return;
                         } else if (y == 3) {
+                            return;
                         }
                     }
+                    fail();
                 }
                 void main(void) {
                     z = &x;
@@ -85,7 +93,6 @@ let soundness_testsuite = "Soundness" >::: [
                 " begin fun results return exit abandoned ->
                     assert_at_least 3 return;
                     assert_equal 0 exit;
-                    assert_equal 0 abandoned;
                 end;
         ];
 
@@ -102,10 +109,15 @@ let soundness_testsuite = "Soundness" >::: [
                             void foo(void) {
                                 "; e1; e2; e3; "
                                 if (x == &z && y == &z) {
+                                    return;
                                 } else if (x == &z && y == 0) {
+                                    return;
                                 } else if (x == 0 && y == &z) {
+                                    return;
                                 } else if (x == 0 && y == 0) {
+                                    return;
                                 }
+                                fail();
                             }
                             void main(void) {
                                 x = &z;
@@ -115,7 +127,6 @@ let soundness_testsuite = "Soundness" >::: [
                         begin fun results return exit abandoned ->
                             assert_at_least 4 return;
                             assert_equal 0 exit;
-                            assert_equal 0 abandoned;
                         end
                 end;
         ];
@@ -135,9 +146,13 @@ let soundness_testsuite = "Soundness" >::: [
                             void foo(int *z) {
                                 "; e1; e2; e3; "
                                 if (z == &x) {
+                                    return;
                                 } else if (z == &y) {
+                                    return;
                                 } else if (z == 0) {
+                                    return;
                                 }
+                                fail();
                             }
                             void main(void) {
                                 foo(&x);
@@ -147,7 +162,6 @@ let soundness_testsuite = "Soundness" >::: [
                         begin fun results return exit abandoned ->
                             assert_at_least 3 return;
                             assert_equal 0 exit;
-                            assert_equal 0 abandoned;
                         end
                 end;
 
@@ -155,14 +169,19 @@ let soundness_testsuite = "Soundness" >::: [
             test_symbolic_pointers ~label:"x = 1; y = 2; *z = 3;" "
                 int x, y;
                 void foo(int *z) {
-                    if (z) {
+                    if (z == 0) {
+                        return;
+                    } else {
                         x = 1;
                         y = 2;
                         *z = 3;
                         if (x == 3) {
+                            return;
                         } else if (y == 3) {
+                            return;
                         }
                     }
+                    fail();
                 }
                 void main(void) {
                     foo(&x);
@@ -171,7 +190,6 @@ let soundness_testsuite = "Soundness" >::: [
                 " begin fun results return exit abandoned ->
                     assert_at_least 3 return;
                     assert_equal 0 exit;
-                    assert_equal 0 abandoned;
                 end;
         ];
 
@@ -188,10 +206,15 @@ let soundness_testsuite = "Soundness" >::: [
                             void foo(int *x, int *y) {
                                 "; e1; e2; e3; "
                                 if (x == &z && y == &z) {
+                                    return;
                                 } else if (x == &z && y == 0) {
+                                    return;
                                 } else if (x == 0 && y == &z) {
+                                    return;
                                 } else if (x == 0 && y == 0) {
+                                    return;
                                 }
+                                fail();
                             }
                             void main(void) {
                                 foo(&z, &z);
@@ -200,7 +223,6 @@ let soundness_testsuite = "Soundness" >::: [
                         begin fun results return exit abandoned ->
                             assert_at_least 4 return;
                             assert_equal 0 exit;
-                            assert_equal 0 abandoned;
                         end
                 end;
         ];
