@@ -7,12 +7,12 @@ open Bytes
 let rec bytes__read ?test ?pre bytes off len =
     let worst_case = make_Bytes_Read (bytes, off, len) in
     let ret_bytes =
-        match bytes,off with
+        match bytes, off with
             | Bytes_ByteArray array, Bytes_Constant (CInt64 (i64, k, _)) ->
                 let i = Int64.to_int i64 in
                 make_Bytes_ByteArray (ImmutableArray.sub array i len)
 
-            | Bytes_Constant constant, Bytes_Constant (CInt64(i64, k, _)) ->
+            | Bytes_Constant constant, Bytes_Constant (CInt64 (i64, k, _)) ->
                 let converted_bytes = constant_to_bytes constant in
                 begin match converted_bytes with
                     | Bytes_ByteArray array ->
@@ -70,10 +70,10 @@ let rec bytes__read ?test ?pre bytes off len =
 
 let bytes__write ?test ?pre bytes off len newbytes =
     let rec do_write bytes off len newbytes =
-        match bytes,off,newbytes with
+        match bytes, off, newbytes with
             (* Optimize for memset  *)
 
-            | Bytes_ByteArray oldarray, Bytes_Constant (CInt64(i64, k, _)), Bytes_ByteArray newarray ->
+            | Bytes_ByteArray oldarray, Bytes_Constant (CInt64 (i64, k, _)), Bytes_ByteArray newarray ->
                 (* from j = 0 to len-1 do oldarray[i+j] = newarray[j] *)
                 (* EXPERIMENT: if contents from oldarray is unwritable, then pass *)
                 let i = Int64.to_int i64 in
@@ -83,30 +83,30 @@ let bytes__write ?test ?pre bytes off len newbytes =
                     else
                         let array2 = impl (j - 1) array in
                         (*
-                        let oldbyte = ImmutableArray.get array2 (i+j) in
+                        let oldbyte = ImmutableArray.get array2 (i + j) in
                         match oldbyte with
-                            | Byte_Symbolic(s) when s.symbol_writable=false -> warning();array2
+                            | Byte_Symbolic s when s.symbol_writable=false -> warning (); array2
                             | _ ->
                         *)
                         ImmutableArray.set array2 (i + j) (ImmutableArray.get newarray j)
                 in
                 make_Bytes_ByteArray (impl (len - 1) oldarray)
 
-            | Bytes_ByteArray oldarray, Bytes_Constant (CInt64(i64, k, _)), Bytes_Constant const ->
+            | Bytes_ByteArray oldarray, Bytes_Constant (CInt64 (i64, k, _)), Bytes_Constant const ->
                 do_write bytes off len (constant_to_bytes const)
 
-            | Bytes_ByteArray oldarray, Bytes_Constant (CInt64(i64,k,_)), _ ->
+            | Bytes_ByteArray oldarray, Bytes_Constant (CInt64 (i64, k, _)), _ ->
                 let rec impl arr i =
                     if i >= len then
                         arr
                     else
-                        impl (ImmutableArray.set arr i (make_Byte_Bytes(newbytes,i))) (i + 1)
+                        impl (ImmutableArray.set arr i (make_Byte_Bytes (newbytes, i))) (i + 1)
                 in
-                do_write bytes off len (make_Bytes_ByteArray(impl (ImmutableArray.make len byte__zero) 0))
+                do_write bytes off len (make_Bytes_ByteArray (impl (ImmutableArray.make len byte__zero) 0))
 
-            | Bytes_ByteArray(oldarray), _, _ when isConcrete_bytes off ->
+            | Bytes_ByteArray oldarray, _, _ when isConcrete_bytes off ->
                 let n_off = bytes_to_constant off Cil.intType in
-                do_write bytes (make_Bytes_Constant(n_off)) len newbytes
+                do_write bytes (make_Bytes_Constant n_off) len newbytes
 
             (* Without this next case, writing to a constant would introduce
                  a Bytes_Write. Aside from not wanting a Bytes_Write if we can
@@ -126,7 +126,8 @@ let bytes__write ?test ?pre bytes off len newbytes =
             | _, Bytes_Conditional c, _ ->
                 failwith "bytes__write: if-then-else offset doesn't happen"
 
-            | _ -> make_Bytes_Write (bytes,off,len,newbytes)
+            | _ ->
+                make_Bytes_Write (bytes, off, len, newbytes)
     in
     if (bytes__length bytes) = len && (isConcrete_bytes off) && (bytes_to_int_auto off = 0) then
         newbytes
@@ -173,8 +174,8 @@ let rec expand_read_to_conditional (bytes : bytes) (symIndex : bytes) (len : int
     in
     match bytes with
         | Bytes_Write (a, x, l, v) ->
-            IfThenElse(
-                Guard_Bytes(make_Bytes_Op (
+            IfThenElse (
+                Guard_Bytes (make_Bytes_Op (
                     OP_EQ,
                     [(symIndex, Cil.intType); (x, Cil.intType)]
                 )),
@@ -191,9 +192,9 @@ let rec expand_read_to_conditional (bytes : bytes) (symIndex : bytes) (len : int
                         expand_read_to_conditional leaf symIndex len
                         (* ^^ someone hid another conditional tree in here*)
 
-                    (*| Bytes_Write(a, x, l, v) ->
-                        IfThenElse(
-                            Guard_Bytes(make_Bytes_Op (
+                    (*| Bytes_Write (a, x, l, v) ->
+                        IfThenElse (
+                            Guard_Bytes (make_Bytes_Op (
                                 OP_EQ,
                                 [(symIndex, Cil.intType); (x, Cil.intType)]
                             )),
