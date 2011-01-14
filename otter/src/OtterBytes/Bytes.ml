@@ -176,10 +176,10 @@ end = struct
     let make_Bytes_Constant const = hash_consing_bytes_create (Bytes_Constant const)
     let make_Bytes_ByteArray bytearray = hash_consing_bytes_create (Bytes_ByteArray bytearray)
     let make_Bytes_Address (block, bs) = hash_consing_bytes_create (Bytes_Address (block, bs))
-    let make_Bytes_Op (op, lst) = hash_consing_bytes_create (Bytes_Op (op ,lst))
+    let make_Bytes_Op (op, lst) = hash_consing_bytes_create (Bytes_Op (op, lst))
     let make_Bytes_Read (src, off, len) = hash_consing_bytes_create (Bytes_Read (src, off, len))
     let make_Bytes_Write (des, off, n, src) = hash_consing_bytes_create (Bytes_Write (des, off, n, src))
-    let make_Bytes_FunPtr (f ,bs ) = hash_consing_bytes_create (Bytes_FunPtr (f ,bs ))
+    let make_Bytes_FunPtr (f, bs) = hash_consing_bytes_create (Bytes_FunPtr (f, bs))
     let make_Bytes_Conditional = function
         | Unconditional b -> b
         | c -> hash_consing_bytes_create (Bytes_Conditional c)
