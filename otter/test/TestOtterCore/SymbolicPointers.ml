@@ -343,7 +343,7 @@ let soundness_testsuite = "Soundness" >::: [
                             assert_at_least 5 return;
                             assert_equal 0 exit;
                         end
-                end;
+                end
             end;
 
         (* there should be at least 3 aliasing conditions: x == NULL, y == NULL or y == &x->f, regardless of order of
@@ -465,7 +465,7 @@ let soundness_testsuite = "Soundness" >::: [
                             assert_at_least 5 return;
                             assert_equal 0 exit;
                         end
-                end;
+                end
             end;
 
         (* there should be at least 3 aliasing conditions: x == NULL, y == NULL or y.f == &x->f, regardless of order of
@@ -587,7 +587,7 @@ let soundness_testsuite = "Soundness" >::: [
                             assert_at_least 5 return;
                             assert_equal 0 exit;
                         end
-                end;
+                end
             end;
 
         (* there should be at least 5 aliasing conditions: x == NULL, y == NULL, *x == NULL, y->f == NULL
@@ -634,7 +634,7 @@ let soundness_testsuite = "Soundness" >::: [
                             assert_at_least 5 return;
                             assert_equal 0 exit;
                         end
-                end;
+                end
             end;
     ];
 
