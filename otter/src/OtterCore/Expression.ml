@@ -426,9 +426,6 @@ deref state bytes typ errors =
         | Bytes_FunPtr(_) ->
             failwith "Dereference of Bytes_FunPtr not implemented"
 
-        | Bytes_Unbounded(_,_,_) ->
-            failwith "Dereference of Bytes_Unbounded not implemented"
-
 and
 
 (* Assume index's ikind is IInt *)

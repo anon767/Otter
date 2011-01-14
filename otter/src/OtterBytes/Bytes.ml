@@ -37,109 +37,155 @@ let returnsBoolean = function
 	| _ -> false
 
 
-type symbol =	
-	{ 
-		symbol_id: int; 	
-		(*symbol_writable: bool;*)
-	}
+module T : sig
+    type symbol =
+        {
+            symbol_id: int;
+        }
 
-type byte = (* corresponds to BV *)
-	| Byte_Concrete of char
-	| Byte_Symbolic of symbol
-	| Byte_Bytes of bytes * int (* condense a bytes into a byte, that can be put into an array *)  
+    type byte = private
+        | Byte_Concrete of char
+        | Byte_Symbolic of symbol
+        | Byte_Bytes of bytes * int
 
-and guard =
-	| Guard_True
-	| Guard_Not of guard
-	| Guard_And of guard * guard
-	| Guard_Symbolic of symbol
-	| Guard_Bytes of bytes
+    and guard =
+        | Guard_True
+        | Guard_Not of guard
+        | Guard_And of guard * guard
+        | Guard_Symbolic of symbol
+        | Guard_Bytes of bytes
 
-and 'a conditional =
-	| IfThenElse of guard * 'a conditional * 'a conditional  (* if guard then a else b *)
-	| Unconditional of 'a
+    and 'a conditional =
+        | IfThenElse of guard * 'a conditional * 'a conditional
+        | Unconditional of 'a
 
-and bytes =
-	| Bytes_Constant of Cil.constant                (* length=Cil.sizeOf (Cil.typeOf (Const(constant))) *)
-	| Bytes_ByteArray of byte ImmutableArray.t      (* content *)
-	| Bytes_Address of memory_block * bytes  (* block, offset *)
-	| Bytes_Op of operator * (bytes * Cil.typ) list
-	| Bytes_Read of bytes * bytes * int             (* less preferrable type *)
-	| Bytes_Write of bytes * bytes * int * bytes    (* least preferrable type*)
-	| Bytes_FunPtr of Cil.varinfo * bytes            (* bytes is the "imaginary address" of the funptr *)
-	| Bytes_Unbounded of string * int * bytes       (* name, id, size *)
-	| Bytes_Conditional of bytes conditional
+    and bytes = private
+        | Bytes_Constant of Cil.constant
+        | Bytes_ByteArray of byte ImmutableArray.t
+        | Bytes_Address of memory_block * bytes
+        | Bytes_Op of operator * (bytes * Cil.typ) list
+        | Bytes_Read of bytes * bytes * int
+        | Bytes_Write of bytes * bytes * int * bytes
+        | Bytes_FunPtr of Cil.varinfo * bytes
+        | Bytes_Conditional of bytes conditional
 
-and memory_block_type =
-	| Block_type_StringLiteral
-	| Block_type_Global
-	| Block_type_Local
-	| Block_type_Heap
-	| Block_type_Aliased (* for blocks allocated prior to symbolic execution, below the call stack *)
+    and memory_block_type =
+        | Block_type_StringLiteral
+        | Block_type_Global
+        | Block_type_Local
+        | Block_type_Heap
+        | Block_type_Aliased
 
-and memory_block =
-	{
-		memory_block_name : string;
-		memory_block_id : int;
-		memory_block_size : int;
-		memory_block_addr : bytes;
-		memory_block_type : memory_block_type; 
-	}
+    and memory_block =
+        {
+            memory_block_name : string;
+            memory_block_id : int;
+            memory_block_size : int;
+            memory_block_addr : bytes;
+            memory_block_type : memory_block_type;
+        }
 
-and lval_block = (memory_block * bytes) conditional
+    and lval_block = (memory_block * bytes) conditional
 
+    val hash_consing_bytes_hits : int ref
+    val hash_consing_bytes_misses : int ref
 
-let hash_consing_bytes_enabled = ref false
-let hash_consing_bytes_hits = ref 0
-let hash_consing_bytes_misses = ref 0
-let hash_consing_bytes_init_size = 1000000
-let hash_consing_bytes_tbl : (bytes,bytes) Hashtbl.t = Hashtbl.create hash_consing_bytes_init_size
-let hash_consing_bytes_create bs = 
-  if not (!hash_consing_bytes_enabled) then bs else
-  try let rv = Hashtbl.find hash_consing_bytes_tbl bs in incr hash_consing_bytes_hits; rv
-  with Not_found -> Hashtbl.add hash_consing_bytes_tbl bs bs; incr hash_consing_bytes_misses; bs
+    val make_Byte_Concrete : char -> byte
+    val make_Byte_Symbolic : symbol -> byte
+    val make_Byte_Bytes : bytes * int -> byte
 
+    val make_Bytes_Constant : Cil.constant -> bytes
+    val make_Bytes_ByteArray : byte ImmutableArray.t -> bytes
+    val make_Bytes_Address : memory_block * bytes -> bytes
+    val make_Bytes_Op : operator * (bytes * Cil.typ) list -> bytes
+    val make_Bytes_Read : bytes * bytes * int -> bytes
+    val make_Bytes_Write : bytes * bytes * int * bytes -> bytes
+    val make_Bytes_FunPtr : Cil.varinfo * bytes -> bytes
+    val make_Bytes_Conditional : bytes conditional -> bytes
+end = struct
+    type symbol =
+        {
+            symbol_id: int;
+        }
 
-(*
- *  Since bytes objects are immutable, and bytes is private type, all *bs* are
- *  created by calling make_Bytes_* and do not require hash consing check.
- *)
-let rec 
-make_Byte_Concrete (c) =
-	Byte_Concrete (c)
-and
-make_Byte_Symbolic (s) =
-	Byte_Symbolic (s)
-and
-make_Byte_Bytes ( bs, n ) =
-	Byte_Bytes ( bs, n )
-and
-make_Bytes_Constant ( const ) =
-	hash_consing_bytes_create (Bytes_Constant ( const ))
-and
-make_Bytes_ByteArray ( bytearray ) =
-	hash_consing_bytes_create (Bytes_ByteArray ( bytearray ))
-and
-make_Bytes_Address ( block , bs ) =
-	hash_consing_bytes_create (Bytes_Address ( block , bs ))
-and
-make_Bytes_Op ( op , lst) =
-	hash_consing_bytes_create (Bytes_Op ( op , lst))
-and
-make_Bytes_Read ( src , off , len ) =
-	hash_consing_bytes_create (Bytes_Read ( src , off , len ))
-and
-make_Bytes_Write ( des , off , n , src ) =
-	hash_consing_bytes_create (Bytes_Write ( des , off , n , src ))
-and
-make_Bytes_FunPtr ( f , bs ) =
-	hash_consing_bytes_create (Bytes_FunPtr ( f , bs ))
-and
-make_Bytes_Conditional = function
-	| Unconditional b -> b
-	| c -> hash_consing_bytes_create (Bytes_Conditional ( c ))
+    type byte = (* corresponds to BV *)
+        | Byte_Concrete of char
+        | Byte_Symbolic of symbol
+        | Byte_Bytes of bytes * int (* condense a bytes into a byte, that can be put into an array *)
 
+    and guard =
+        | Guard_True
+        | Guard_Not of guard
+        | Guard_And of guard * guard
+        | Guard_Symbolic of symbol
+        | Guard_Bytes of bytes
 
+    and 'a conditional =
+        | IfThenElse of guard * 'a conditional * 'a conditional  (* if guard then a else b *)
+        | Unconditional of 'a
+
+    and bytes =
+        | Bytes_Constant of Cil.constant                (* length=Cil.sizeOf (Cil.typeOf (Const(constant))) *)
+        | Bytes_ByteArray of byte ImmutableArray.t      (* content *)
+        | Bytes_Address of memory_block * bytes  (* block, offset *)
+        | Bytes_Op of operator * (bytes * Cil.typ) list
+        | Bytes_Read of bytes * bytes * int             (* less preferrable type *)
+        | Bytes_Write of bytes * bytes * int * bytes    (* least preferrable type*)
+        | Bytes_FunPtr of Cil.varinfo * bytes            (* bytes is the "imaginary address" of the funptr *)
+        | Bytes_Conditional of bytes conditional
+
+    and memory_block_type =
+        | Block_type_StringLiteral
+        | Block_type_Global
+        | Block_type_Local
+        | Block_type_Heap
+        | Block_type_Aliased (* for blocks allocated prior to symbolic execution, below the call stack *)
+
+    and memory_block =
+        {
+            memory_block_name : string;
+            memory_block_id : int;
+            memory_block_size : int;
+            memory_block_addr : bytes;
+            memory_block_type : memory_block_type;
+        }
+
+    and lval_block = (memory_block * bytes) conditional
+
+    let hash_consing_bytes_hits = ref 0
+    let hash_consing_bytes_misses = ref 0
+    let hash_consing_bytes_init_size = 1000000
+    let hash_consing_bytes_tbl : (bytes, bytes) Hashtbl.t = Hashtbl.create hash_consing_bytes_init_size
+    let hash_consing_bytes_create bs = 
+        try
+            let rv = Hashtbl.find hash_consing_bytes_tbl bs in
+            incr hash_consing_bytes_hits;
+            rv
+        with Not_found ->
+            Hashtbl.add hash_consing_bytes_tbl bs bs;
+            incr hash_consing_bytes_misses;
+            bs
+
+    (*
+     *  Since bytes objects are immutable, and bytes is private type, all *bs* are
+     *  created by calling make_Bytes_* and do not require hash consing check.
+     *)
+    let make_Byte_Concrete c = Byte_Concrete c
+    let make_Byte_Symbolic s = Byte_Symbolic s
+    let make_Byte_Bytes (bs, n) = Byte_Bytes (bs, n)
+    let make_Bytes_Constant const = hash_consing_bytes_create (Bytes_Constant const)
+    let make_Bytes_ByteArray bytearray = hash_consing_bytes_create (Bytes_ByteArray bytearray)
+    let make_Bytes_Address (block, bs) = hash_consing_bytes_create (Bytes_Address (block, bs))
+    let make_Bytes_Op (op, lst) = hash_consing_bytes_create (Bytes_Op (op ,lst))
+    let make_Bytes_Read (src, off, len) = hash_consing_bytes_create (Bytes_Read (src, off, len))
+    let make_Bytes_Write (des, off, n, src) = hash_consing_bytes_create (Bytes_Write (des, off, n, src))
+    let make_Bytes_FunPtr (f ,bs ) = hash_consing_bytes_create (Bytes_FunPtr (f ,bs ))
+    let make_Bytes_Conditional = function
+        | Unconditional b -> b
+        | c -> hash_consing_bytes_create (Bytes_Conditional c)
+end
+
+include T
 
 
 let ikind_to_len_isSigned ikind =
@@ -391,7 +437,7 @@ and bytes__equal bytes1 bytes2 = if bytes1 == bytes2 then true else match bytes1
 
 
 (* A single global byte representing uninitialized memory *)
-let byte__undef = Byte_Symbolic({symbol_id = 0}) 
+let byte__undef = make_Byte_Symbolic { symbol_id = 0 }
 
 let max_bytes_size = 0xffff
 
@@ -406,9 +452,6 @@ let rec bytes__length bytes =
 		| Bytes_Write(bytes2,_,_,_) -> bytes__length bytes2
 		| Bytes_Read(_,_,len) -> len
 		| Bytes_FunPtr(_) -> bitsSizeOf voidPtrType / 8
-		| Bytes_Unbounded (_,_,size) ->
-			if isConcrete_bytes bytes then bytes_to_int_auto size
-			else  max_bytes_size
 		| Bytes_Conditional c ->
 			(* all bytes in Bytes_Conditional have the same length *)
 			let rec find_one = function

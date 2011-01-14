@@ -168,7 +168,7 @@ let expand_read_to_conditional2 bytes symIndex len =
 
 let rec expand_read_to_conditional (bytes : bytes) (symIndex : bytes) (len : int) =
     let bytes = match bytes with
-        | Bytes_Read (a, x, l) -> Bytes_Conditional (expand_read_to_conditional a x l)
+        | Bytes_Read (a, x, l) -> make_Bytes_Conditional (expand_read_to_conditional a x l)
         | _ -> bytes
     in
     match bytes with

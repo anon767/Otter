@@ -68,7 +68,6 @@ and allSymbols = function
             (allSymbols bytes3)
             (SymbolSet.union (allSymbols bytes1) (allSymbols bytes2))
     | Bytes_FunPtr (_, bytes) -> allSymbols bytes
-    | Bytes_Unbounded (_, _, _) -> SymbolSet.empty
     | Bytes_Conditional c ->
         let rec allSymbolsInConditional = function
             | IfThenElse (guard, c1, c2) ->
@@ -435,9 +434,6 @@ to_stp_bv_impl vc bytes =
 
         | Bytes_Write _ ->
             FormatPlus.failwith "Impossible: converting a Bytes_Write to a bitvector. Is this a Write not under a Read?\n%a" BytesPrinter.bytes bytes
-
-        | Bytes_Unbounded (name, id, size) ->
-            failwith "Oh no!"
 
 (* TODO (martin) improve Stp Cache *)
 (* Map a pc and a query *)

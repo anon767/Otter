@@ -303,16 +303,16 @@ let rec opPI op operands =
 				| _ -> failwith "type of Bytes_ByteArray (used as a pointer) not TPtr"
 			end
 		| Bytes_Conditional c, _ ->
-			Bytes_Conditional (conditional__map (fun e -> conditional__bytes (opPI op [(e,typ1);(bytes2,typ2)])) c)
+			make_Bytes_Conditional (conditional__map (fun e -> conditional__bytes (opPI op [(e,typ1);(bytes2,typ2)])) c)
 		| _, Bytes_Conditional c ->
-			Bytes_Conditional (conditional__map (fun e -> conditional__bytes (opPI op [(bytes1,typ1);(e,typ2)])) c)
+			make_Bytes_Conditional (conditional__map (fun e -> conditional__bytes (opPI op [(bytes1,typ1);(e,typ2)])) c)
 		| (Bytes_Read(a, x, l)), _ ->
-			Bytes_Conditional (
+			make_Bytes_Conditional (
 				conditional__map (fun e -> conditional__bytes (opPI op [(e,typ1);(bytes2,typ2)])) 
 					(BytesUtility.expand_read_to_conditional a x l)
 			)
 		| _, (Bytes_Read(a, x, l)) ->
-			Bytes_Conditional (
+			make_Bytes_Conditional (
 				conditional__map (fun e -> conditional__bytes (opPI op [(bytes1,typ1);(e,typ2)])) 
 					(BytesUtility.expand_read_to_conditional a x l)
 			)

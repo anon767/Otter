@@ -209,9 +209,6 @@ and bytes_named bytes_to_names ff =
 
 		| Bytes_FunPtr (v, _) ->
 			fprintf ff "Funptr(%s)" v.Cil.vname
-
-		| Bytes_Unbounded (name, id, size) ->
-			fprintf ff "Unbounded(%s,@ %d,@ @[<hov>%a@]@,)" name id bytes size
 	in
 	bytes ff
 

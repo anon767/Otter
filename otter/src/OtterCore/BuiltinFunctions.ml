@@ -523,7 +523,7 @@ let otter_print_state job = wrap_state_function begin fun state retopt exps erro
 				let rec p ff b =
 					match b with
 						| Bytes_Constant const ->  p ff (constant_to_bytes const)
-						| Bytes_ByteArray ba -> BytesPrinter.bytes ff (Bytes_ByteArray(ImmutableArray.sub ba off size))
+						| Bytes_ByteArray ba -> BytesPrinter.bytes ff (make_Bytes_ByteArray(ImmutableArray.sub ba off size))
 						| Bytes_Address (block, boff) ->
 							if off = 0 && size = (bitsSizeOf voidPtrType / 8) then begin
 								bosmap := BOSMap.add (block,boff,size) None (!bosmap);
@@ -580,8 +580,8 @@ let otter_print_state job = wrap_state_function begin fun state retopt exps erro
 	Output.printf "#Memory: (one level)@\n";
 	BOSMap.iter (fun (block,off,size) des ->
 		match des with
-			| None -> Output.printf "@[%a@]@ -> None@\n" BytesPrinter.bytes (Bytes_Address(block, off))
-			| Some b -> Output.printf "@[%a@]@ -> @[%a@]@\n" BytesPrinter.bytes (Bytes_Address(block, off)) BytesPrinter.bytes b
+			| None -> Output.printf "@[%a@]@ -> None@\n" BytesPrinter.bytes (make_Bytes_Address(block, off))
+			| Some b -> Output.printf "@[%a@]@ -> @[%a@]@\n" BytesPrinter.bytes (make_Bytes_Address(block, off)) BytesPrinter.bytes b
 	)
 	(!bosmap);
 	Output.printf "#END PRINTSTATE@\n";
