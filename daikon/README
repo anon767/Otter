@@ -1,8 +1,0 @@
-To setup Daikon:
-
-1. Extract kvasir.tgz and java/daikon_extra.tgz to their own directories.
-2. Run ./source daikon_init.bashrc (or any way to define variables in daikon_init.bashrc).
-2. To compile kvasir (only on Linux), run ./make kvasir .
-3. To compile daikon, run ./make -C java .
-
-
