@@ -262,24 +262,24 @@ to_stp_bv_impl vc bytes =
             to_stp_bv vc bytes2
 
         | Bytes_ByteArray (bytearray) ->
-                let len = ImmutableArray.length bytearray in
-                let bv8 = begin match ImmutableArray.get bytearray 0 with
-                    | Byte_Concrete(c) -> Stpc.e_bv_of_int vc 8 (Char.code c)
-                    | Byte_Symbolic(_) as b when b = byte__undef -> (* Here is where we catch attempts to use the undefined symbolic byte *)
-                        failwith "Conditional depends on undefined value"
-                    | Byte_Symbolic(s) ->
-                        Stpc.e_var vc (make_var s) (Stpc.bitvector_t vc 8)
-                    | Byte_Bytes(b, i) ->
-                        let bv_condensed, _ = to_stp_bv vc b in
-                        let right_i = i * 8 in
-                        let left_i = right_i + 7 in
-                        Stpc.e_bvextract vc bv_condensed left_i right_i
-                end in
-                if len = 1 then
-                    (bv8, 8)
-                else
-                    let bv, l = to_stp_bv vc (make_Bytes_ByteArray (ImmutableArray.sub bytearray 1 (len - 1))) in
-                    (Stpc.e_bvconcat vc bv8 bv, l + 8)
+            let len = ImmutableArray.length bytearray in
+            let bv8 = begin match ImmutableArray.get bytearray 0 with
+                | Byte_Concrete(c) -> Stpc.e_bv_of_int vc 8 (Char.code c)
+                | Byte_Symbolic(_) as b when b = byte__undef -> (* Here is where we catch attempts to use the undefined symbolic byte *)
+                    failwith "Conditional depends on undefined value"
+                | Byte_Symbolic(s) ->
+                    Stpc.e_var vc (make_var s) (Stpc.bitvector_t vc 8)
+                | Byte_Bytes(b, i) ->
+                    let bv_condensed, _ = to_stp_bv vc b in
+                    let right_i = i * 8 in
+                    let left_i = right_i + 7 in
+                    Stpc.e_bvextract vc bv_condensed left_i right_i
+            end in
+            if len = 1 then
+                (bv8, 8)
+            else
+                let bv, l = to_stp_bv vc (make_Bytes_ByteArray (ImmutableArray.sub bytearray 1 (len - 1))) in
+                (Stpc.e_bvconcat vc bv8 bv, l + 8)
 
         | Bytes_Address (block, offset) ->
             let bv_offset, _ = to_stp_bv vc offset in
@@ -301,111 +301,111 @@ to_stp_bv_impl vc bytes =
             to_stp_bv_conditional c
 
         | Bytes_Op(op, [(bytes1, typ1); (bytes2, typ2)]) -> (* BINOP *)
-                (* typ info maybe added to the stp formula later *)
-                let (bv1, len1) = to_stp_bv vc bytes1 in
-                let (bv2, len2) = to_stp_bv vc bytes2 in
-                let len_of_1_0 = 32 in
-                let bv_1 = (Stpc.e_bv_of_int vc len_of_1_0 1) in
-                let bv_0 = (Stpc.e_bv_of_int vc len_of_1_0 0) in
-                let isSigned = match Cil.unrollType typ1 with
-                    | TInt (ikind, _) -> Cil.isSigned ikind
-                    | _ -> false
-                in
-                let op_func bv1 len1 bv2 len2 = match op with
-                    | OP_PLUS ->    (Stpc.e_bvplus vc len1 bv1 bv2, len1)
-                    | OP_SUB -> (Stpc.e_bvminus vc len1 bv1 bv2, len1)
-                    | OP_MULT ->    (Stpc.e_bvmult vc len1 bv1 bv2, len1)
-                    | OP_DIV -> (Stpc.e_bvdiv vc len1 bv1 bv2, len1) (* TODO: add sign support *)
-                    | OP_MOD -> (Stpc.e_bvmod vc len1 bv1 bv2, len1)
-                    (* for left shift, many need to resize the len *)
-(*                    | OP_LSL -> (Stpc.e_bvextract vc (Stpc.e_bvshiftleft vc len1 bv1 len2 bv2) (len1 - 1) 0, len1)                *)
-                    | OP_LSL -> (Stpc.e_bvshiftleft vc len1 bv1 len2 bv2, len1)
-                    | OP_LSR -> (Stpc.e_bvshiftright vc len1 bv1 len2 bv2, len1)
+            (* typ info maybe added to the stp formula later *)
+            let (bv1, len1) = to_stp_bv vc bytes1 in
+            let (bv2, len2) = to_stp_bv vc bytes2 in
+            let len_of_1_0 = 32 in
+            let bv_1 = (Stpc.e_bv_of_int vc len_of_1_0 1) in
+            let bv_0 = (Stpc.e_bv_of_int vc len_of_1_0 0) in
+            let isSigned = match Cil.unrollType typ1 with
+                | TInt (ikind, _) -> Cil.isSigned ikind
+                | _ -> false
+            in
+            let op_func bv1 len1 bv2 len2 = match op with
+                | OP_PLUS ->    (Stpc.e_bvplus vc len1 bv1 bv2, len1)
+                | OP_SUB -> (Stpc.e_bvminus vc len1 bv1 bv2, len1)
+                | OP_MULT ->    (Stpc.e_bvmult vc len1 bv1 bv2, len1)
+                | OP_DIV -> (Stpc.e_bvdiv vc len1 bv1 bv2, len1) (* TODO: add sign support *)
+                | OP_MOD -> (Stpc.e_bvmod vc len1 bv1 bv2, len1)
+                (* for left shift, many need to resize the len *)
+(*              | OP_LSL -> (Stpc.e_bvextract vc (Stpc.e_bvshiftleft vc len1 bv1 len2 bv2) (len1 - 1) 0, len1)                *)
+                | OP_LSL -> (Stpc.e_bvshiftleft vc len1 bv1 len2 bv2, len1)
+                | OP_LSR -> (Stpc.e_bvshiftright vc len1 bv1 len2 bv2, len1)
 
-                    | OP_LT -> (Stpc.e_ite vc (Stpc.e_bvlt isSigned vc len1 bv1 bv2) bv_1 bv_0, len_of_1_0)
-                    | OP_GT -> (Stpc.e_ite vc (Stpc.e_bvgt isSigned vc len1 bv1 bv2) bv_1 bv_0, len_of_1_0)
-                    | OP_LE -> (Stpc.e_ite vc (Stpc.e_bvle isSigned vc len1 bv1 bv2) bv_1 bv_0, len_of_1_0)
-                    | OP_GE -> (Stpc.e_ite vc (Stpc.e_bvge isSigned vc len1 bv1 bv2) bv_1 bv_0, len_of_1_0)
+                | OP_LT -> (Stpc.e_ite vc (Stpc.e_bvlt isSigned vc len1 bv1 bv2) bv_1 bv_0, len_of_1_0)
+                | OP_GT -> (Stpc.e_ite vc (Stpc.e_bvgt isSigned vc len1 bv1 bv2) bv_1 bv_0, len_of_1_0)
+                | OP_LE -> (Stpc.e_ite vc (Stpc.e_bvle isSigned vc len1 bv1 bv2) bv_1 bv_0, len_of_1_0)
+                | OP_GE -> (Stpc.e_ite vc (Stpc.e_bvge isSigned vc len1 bv1 bv2) bv_1 bv_0, len_of_1_0)
 
-                    | OP_EQ -> (Stpc.e_ite vc (Stpc.e_eq vc bv1 bv2) bv_1 bv_0, len_of_1_0)
-                    | OP_NE -> (Stpc.e_ite vc (Stpc.e_eq vc bv1 bv2) bv_0 bv_1, len_of_1_0)
-                    | OP_BAND -> (Stpc.e_bvand vc bv1 bv2, len1)
-                    | OP_BXOR -> (Stpc.e_bvxor vc bv1 bv2, len1)
-                    | OP_BOR ->  (Stpc.e_bvor vc bv1 bv2, len1)
-                    | OP_LAND ->
-                        let bv =
-                            (Stpc.e_ite vc
-                                (Stpc.e_or vc
-                                    (Stpc.e_eq vc bv1 (Stpc.e_bv_of_int vc len1 0))
-                                    (Stpc.e_eq vc bv2 (Stpc.e_bv_of_int vc len2 0))
-                                )
-                                bv_0 bv_1
+                | OP_EQ -> (Stpc.e_ite vc (Stpc.e_eq vc bv1 bv2) bv_1 bv_0, len_of_1_0)
+                | OP_NE -> (Stpc.e_ite vc (Stpc.e_eq vc bv1 bv2) bv_0 bv_1, len_of_1_0)
+                | OP_BAND -> (Stpc.e_bvand vc bv1 bv2, len1)
+                | OP_BXOR -> (Stpc.e_bvxor vc bv1 bv2, len1)
+                | OP_BOR ->  (Stpc.e_bvor vc bv1 bv2, len1)
+                | OP_LAND ->
+                    let bv =
+                        (Stpc.e_ite vc
+                            (Stpc.e_or vc
+                                (Stpc.e_eq vc bv1 (Stpc.e_bv_of_int vc len1 0))
+                                (Stpc.e_eq vc bv2 (Stpc.e_bv_of_int vc len2 0))
                             )
-                        in
-                        (bv, len_of_1_0)
-                    | OP_LOR ->
-                        let bv =
-                            (Stpc.e_ite vc
-                                (Stpc.e_and vc
-                                    (Stpc.e_eq vc bv1 (Stpc.e_bv_of_int vc len1 0))
-                                    (Stpc.e_eq vc bv2 (Stpc.e_bv_of_int vc len2 0))
-                                )
-                                bv_0 bv_1
+                            bv_0 bv_1
+                        )
+                    in
+                    (bv, len_of_1_0)
+                | OP_LOR ->
+                    let bv =
+                        (Stpc.e_ite vc
+                            (Stpc.e_and vc
+                                (Stpc.e_eq vc bv1 (Stpc.e_bv_of_int vc len1 0))
+                                (Stpc.e_eq vc bv2 (Stpc.e_bv_of_int vc len2 0))
                             )
-                        in
-                        (bv, len_of_1_0)
-                    | OP_SX -> (* here bv2 must be constant *)
-                        failwith "not implemented"
-                    | _ ->
-                        FormatPlus.failwith "%a is not a binary operator" BytesPrinter.operator op
-                in
-                op_func bv1 len1 bv2 len2
+                            bv_0 bv_1
+                        )
+                    in
+                    (bv, len_of_1_0)
+                | OP_SX -> (* here bv2 must be constant *)
+                    failwith "not implemented"
+                | _ ->
+                    FormatPlus.failwith "%a is not a binary operator" BytesPrinter.operator op
+            in
+            op_func bv1 len1 bv2 len2
 
         | Bytes_Op(op, [(bytes1, typ1)]) -> (* UNOP *)
-                let (bv1, len1) = to_stp_bv vc bytes1 in
-                let len_of_1_0 = 32 in
-                let bv_1 = (Stpc.e_bv_of_int vc len_of_1_0 1) in
-                let bv_0 = (Stpc.e_bv_of_int vc len_of_1_0 0) in
-                let op_func bv1 len1 = match op with
-                    | OP_UMINUS -> (Stpc.e_bvneg vc bv1 len1, len1)
-                    | OP_BNOT ->(Stpc.e_bvnot vc bv1, len1)
-                    | OP_LNOT ->
-                        let bv =
-                            (Stpc.e_ite vc
-                                (Stpc.e_not vc
-                                    (Stpc.e_eq vc bv1 (Stpc.e_bv_of_int vc len1 0))
-                                )
-                                bv_0 bv_1
+            let (bv1, len1) = to_stp_bv vc bytes1 in
+            let len_of_1_0 = 32 in
+            let bv_1 = (Stpc.e_bv_of_int vc len_of_1_0 1) in
+            let bv_0 = (Stpc.e_bv_of_int vc len_of_1_0 0) in
+            let op_func bv1 len1 = match op with
+                | OP_UMINUS -> (Stpc.e_bvneg vc bv1 len1, len1)
+                | OP_BNOT ->(Stpc.e_bvnot vc bv1, len1)
+                | OP_LNOT ->
+                    let bv =
+                        (Stpc.e_ite vc
+                            (Stpc.e_not vc
+                                (Stpc.e_eq vc bv1 (Stpc.e_bv_of_int vc len1 0))
                             )
-                        in
-                        (bv, len_of_1_0)
-                    | _ ->
-                        FormatPlus.failwith "%a is not a unary operator" BytesPrinter.operator op
-                in
-                op_func bv1 len1
+                            bv_0 bv_1
+                        )
+                    in
+                    (bv, len_of_1_0)
+                | _ ->
+                    FormatPlus.failwith "%a is not a unary operator" BytesPrinter.operator op
+            in
+            op_func bv1 len1
 
         | Bytes_Op(OP_LAND, bytesTypList) -> (* Let AND be variadic *)
-                let bvLenList =
-                    List.map (fun (bytes, _) -> to_stp_bv vc bytes) bytesTypList
-                in
-                let len_of_1_0 = 32 in
-                let bv_1 = (Stpc.e_bv_of_int vc len_of_1_0 1) in
-                let bv_0 = (Stpc.e_bv_of_int vc len_of_1_0 0) in
-                (* If any is false, then 0; otherwise 1. *)
-                let bv =
-                    (Stpc.e_ite vc
-                        (List.fold_left
-                            (fun expr (bv, len) -> Stpc.e_or vc expr (Stpc.e_cfalse vc len bv))
-                            (Stpc.e_false vc)
-                            bvLenList
-                        )
-                        bv_0 bv_1
+            let bvLenList =
+                List.map (fun (bytes, _) -> to_stp_bv vc bytes) bytesTypList
+            in
+            let len_of_1_0 = 32 in
+            let bv_1 = (Stpc.e_bv_of_int vc len_of_1_0 1) in
+            let bv_0 = (Stpc.e_bv_of_int vc len_of_1_0 0) in
+            (* If any is false, then 0; otherwise 1. *)
+            let bv =
+                (Stpc.e_ite vc
+                    (List.fold_left
+                        (fun expr (bv, len) -> Stpc.e_or vc expr (Stpc.e_cfalse vc len bv))
+                        (Stpc.e_false vc)
+                        bvLenList
                     )
-                in
-                (bv, len_of_1_0)
+                    bv_0 bv_1
+                )
+            in
+            (bv, len_of_1_0)
 
         | Bytes_Op(op, _) ->
-                FormatPlus.failwith "Invalid number of operands for %a" BytesPrinter.operator op
+            FormatPlus.failwith "Invalid number of operands for %a" BytesPrinter.operator op
 
         | Bytes_Read (content, offset, len) ->
             let arr = new_array vc content in
