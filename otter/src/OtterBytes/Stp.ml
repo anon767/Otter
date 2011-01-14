@@ -153,19 +153,21 @@ let make_var symbol =
 
 let rec to_stp_array vc arr bytes =
     match bytes with
-        | Bytes_Constant(constant) ->
+        | Bytes_Constant constant ->
             let bytes2 = constant_to_bytes constant in
             to_stp_array vc arr bytes2
-        | Bytes_ByteArray(bytearray) ->
+
+        | Bytes_ByteArray bytearray ->
             let len = ImmutableArray.length bytearray in
             (*    Output.print_endline ("bytearray " ^ (string_of_int len)); *)
             let bv8 = begin match ImmutableArray.get bytearray (len - 1) with
-                | Byte_Concrete(c) -> Stpc.e_bv_of_int vc 8 (Char.code c)
-                | Byte_Symbolic(_) as b when b = byte__undef -> (* Here is where we catch attempts to use the undefined symbolic byte *)
+                | Byte_Concrete c ->
+                    Stpc.e_bv_of_int vc 8 (Char.code c)
+                | Byte_Symbolic _ as b when b = byte__undef -> (* Here is where we catch attempts to use the undefined symbolic byte *)
                     failwith "Conditional depends on undefined value"
-                | Byte_Symbolic(s) ->
+                | Byte_Symbolic s ->
                     Stpc.e_var vc (make_var s) (Stpc.bitvector_t vc 8)
-                | Byte_Bytes(b, i) ->
+                | Byte_Bytes (b, i) ->
                     let bv_condensed, _ = to_stp_bv vc b in
                     let right_i = i * 8 in
                     let left_i = right_i + 7 in
@@ -196,18 +198,18 @@ let rec to_stp_array vc arr bytes =
         | Bytes_Write (content, offset, len, newbytes) ->
             let bv_offset, _ = to_stp_bv vc offset in
             let bv_newbytes, _ = to_stp_bv vc newbytes in
-            let rec write array_target bv_offset len  =
+            let rec write array_target bv_offset len =
                 let extracted_byte = Stpc.e_bvextract vc bv_newbytes (len * 8 + 7) (len * 8) in
                 if len < 1 then
                     failwith "Bytes_Write len < 1"
                 else if len = 1 then
                     Stpc.e_write vc array_target bv_offset extracted_byte
                 else
-                    let array_target2 = write array_target bv_offset (len - 1)  in
+                    let array_target2 = write array_target bv_offset (len - 1) in
                     let bv_offset2 = Stpc.e_bv_of_int vc 32 (len - 1) in
                     Stpc.e_write vc array_target2 (Stpc.e_bvplus vc 32 bv_offset bv_offset2) extracted_byte
             in
-            write (to_stp_array vc  (new_array vc content) content) bv_offset len
+            write (to_stp_array vc (new_array vc content) content) bv_offset len
 
         | _ ->
             let (bv, len) = to_stp_bv vc bytes in
@@ -253,23 +255,24 @@ and
     bv: a 1-d bitvector that describe the bytes
         len: length (bits) of bv
 
-        note: e_bv_of_int (with) (content)  -> bv
+        note: e_bv_of_int (with) (content) -> bv
  *)
 to_stp_bv_impl vc bytes =
     match bytes with
-        | Bytes_Constant (constant) ->
+        | Bytes_Constant constant ->
             let bytes2 = constant_to_bytes constant in
             to_stp_bv vc bytes2
 
-        | Bytes_ByteArray (bytearray) ->
+        | Bytes_ByteArray bytearray ->
             let len = ImmutableArray.length bytearray in
             let bv8 = begin match ImmutableArray.get bytearray 0 with
-                | Byte_Concrete(c) -> Stpc.e_bv_of_int vc 8 (Char.code c)
-                | Byte_Symbolic(_) as b when b = byte__undef -> (* Here is where we catch attempts to use the undefined symbolic byte *)
+                | Byte_Concrete c ->
+                    Stpc.e_bv_of_int vc 8 (Char.code c)
+                | Byte_Symbolic _ as b when b = byte__undef -> (* Here is where we catch attempts to use the undefined symbolic byte *)
                     failwith "Conditional depends on undefined value"
-                | Byte_Symbolic(s) ->
+                | Byte_Symbolic s ->
                     Stpc.e_var vc (make_var s) (Stpc.bitvector_t vc 8)
-                | Byte_Bytes(b, i) ->
+                | Byte_Bytes (b, i) ->
                     let bv_condensed, _ = to_stp_bv vc b in
                     let right_i = i * 8 in
                     let left_i = right_i + 7 in
@@ -300,7 +303,7 @@ to_stp_bv_impl vc bytes =
             in
             to_stp_bv_conditional c
 
-        | Bytes_Op(op, [(bytes1, typ1); (bytes2, typ2)]) -> (* BINOP *)
+        | Bytes_Op (op, [(bytes1, typ1); (bytes2, typ2)]) -> (* BINOP *)
             (* typ info maybe added to the stp formula later *)
             let (bv1, len1) = to_stp_bv vc bytes1 in
             let (bv2, len2) = to_stp_bv vc bytes2 in
@@ -312,9 +315,9 @@ to_stp_bv_impl vc bytes =
                 | _ -> false
             in
             let op_func bv1 len1 bv2 len2 = match op with
-                | OP_PLUS ->    (Stpc.e_bvplus vc len1 bv1 bv2, len1)
-                | OP_SUB -> (Stpc.e_bvminus vc len1 bv1 bv2, len1)
-                | OP_MULT ->    (Stpc.e_bvmult vc len1 bv1 bv2, len1)
+                | OP_PLUS -> (Stpc.e_bvplus vc len1 bv1 bv2, len1)
+                | OP_SUB ->  (Stpc.e_bvminus vc len1 bv1 bv2, len1)
+                | OP_MULT -> (Stpc.e_bvmult vc len1 bv1 bv2, len1)
                 | OP_DIV -> (Stpc.e_bvdiv vc len1 bv1 bv2, len1) (* TODO: add sign support *)
                 | OP_MOD -> (Stpc.e_bvmod vc len1 bv1 bv2, len1)
                 (* for left shift, many need to resize the len *)
@@ -331,7 +334,7 @@ to_stp_bv_impl vc bytes =
                 | OP_NE -> (Stpc.e_ite vc (Stpc.e_eq vc bv1 bv2) bv_0 bv_1, len_of_1_0)
                 | OP_BAND -> (Stpc.e_bvand vc bv1 bv2, len1)
                 | OP_BXOR -> (Stpc.e_bvxor vc bv1 bv2, len1)
-                | OP_BOR ->  (Stpc.e_bvor vc bv1 bv2, len1)
+                | OP_BOR -> (Stpc.e_bvor vc bv1 bv2, len1)
                 | OP_LAND ->
                     let bv =
                         (Stpc.e_ite vc
@@ -361,14 +364,14 @@ to_stp_bv_impl vc bytes =
             in
             op_func bv1 len1 bv2 len2
 
-        | Bytes_Op(op, [(bytes1, typ1)]) -> (* UNOP *)
+        | Bytes_Op (op, [(bytes1, typ1)]) -> (* UNOP *)
             let (bv1, len1) = to_stp_bv vc bytes1 in
             let len_of_1_0 = 32 in
             let bv_1 = (Stpc.e_bv_of_int vc len_of_1_0 1) in
             let bv_0 = (Stpc.e_bv_of_int vc len_of_1_0 0) in
             let op_func bv1 len1 = match op with
                 | OP_UMINUS -> (Stpc.e_bvneg vc bv1 len1, len1)
-                | OP_BNOT ->(Stpc.e_bvnot vc bv1, len1)
+                | OP_BNOT -> (Stpc.e_bvnot vc bv1, len1)
                 | OP_LNOT ->
                     let bv =
                         (Stpc.e_ite vc
@@ -384,7 +387,7 @@ to_stp_bv_impl vc bytes =
             in
             op_func bv1 len1
 
-        | Bytes_Op(OP_LAND, bytesTypList) -> (* Let AND be variadic *)
+        | Bytes_Op (OP_LAND, bytesTypList) -> (* Let AND be variadic *)
             let bvLenList =
                 List.map (fun (bytes, _) -> to_stp_bv vc bytes) bytesTypList
             in
@@ -404,7 +407,7 @@ to_stp_bv_impl vc bytes =
             in
             (bv, len_of_1_0)
 
-        | Bytes_Op(op, _) ->
+        | Bytes_Op (op, _) ->
             FormatPlus.failwith "Invalid number of operands for %a" BytesPrinter.operator op
 
         | Bytes_Read (content, offset, len) ->
@@ -417,7 +420,7 @@ to_stp_bv_impl vc bytes =
                 else if len = 1 then
                     (Stpc.e_read vc array_content bv_offset, 8)
                 else
-                    let (bv_head, len_head) = (Stpc.e_read vc array_content bv_offset, 8)  in
+                    let (bv_head, len_head) = (Stpc.e_read vc array_content bv_offset, 8) in
                     let (bv_tail, len_tail) = read (Stpc.e_bvplus vc 32 bv_offset (Stpc.e_bv_of_int vc 32 1)) (len - 1) in
                     (Stpc.e_bvconcat vc bv_head bv_tail, len_head + len_tail)
             in
@@ -468,7 +471,7 @@ let stpcache_add answer pc pre guard truth =
     stpCacheRef := StpCache.add (pc, pre, guard, truth) answer !stpCacheRef
 
 
-(** return (True) False if bytes (not) evaluates to all zeros. Unknown otherwise.  *)
+(** return (True) False if bytes (not) evaluates to all zeros. Unknown otherwise. *)
 let query_stp pc pre guard =
     let query_stp pc pre guard =
         let pc = getRelevantAssumptions pc (guard__to_bytes guard) in
