@@ -104,7 +104,7 @@ and bytearray ff arr =
 			byte_n b n;
 			fprintf ff ")@]"
 		| None ->
-			failwith "Unreachable"
+			fprintf ff ")@]"
 
 
 (** Print a {!type:Bytes.byte ImmutableArray.t} as if it were a null-terminated C-style string. {!Bytes.Byte_Bytes}

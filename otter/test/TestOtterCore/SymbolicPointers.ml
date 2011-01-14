@@ -636,6 +636,48 @@ let soundness_testsuite = "Soundness" >::: [
                         end
                 end
             end;
+
+        (* empty array fields should not be treated as pointers *)
+        test_symbolic_pointers ~label:"empty array field"
+            begin String.concat "; " ["
+                struct { int *f; int g[]; } x;
+                void foo(void) {
+                    if (x.f == 0) {
+                        return;
+                    } else {
+                        return;
+                    }
+                    fail();
+                }
+                void main(void) {
+                    x.f = malloc(sizeof(int));
+                    foo();
+                }
+            "] end
+            begin fun results return exit abandoned ->
+                assert_at_least 2 return;
+                assert_equal 0 exit;
+            end;
+
+        (* CIL automatically transforms empty array parameters into pointers *)
+        test_symbolic_pointers ~label:"empty array parameter"
+            begin String.concat "; " ["
+                void foo(int x[]) {
+                    if (x == 0) {
+                        return;
+                    } else {
+                        return;
+                    }
+                    fail();
+                }
+                void main(void) {
+                    foo(malloc(sizeof(int)));
+                }
+            "] end
+            begin fun results return exit abandoned ->
+                assert_at_least 2 return;
+                assert_equal 0 exit;
+            end;
     ];
 
     "Linked list" >::: [

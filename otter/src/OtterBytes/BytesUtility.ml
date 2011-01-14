@@ -69,7 +69,9 @@ let rec bytes__read ?test ?pre bytes off len =
 
 
 let bytes__write ?test ?pre bytes off len newbytes =
-    if (bytes__length bytes) = len && (isConcrete_bytes off) && (bytes_to_int_auto off = 0) then
+    if len = 0 then
+        bytes
+    else if (bytes__length bytes) = len && (isConcrete_bytes off) && (bytes_to_int_auto off = 0) then
         newbytes
     else
         let rec do_write bytes off len newbytes =

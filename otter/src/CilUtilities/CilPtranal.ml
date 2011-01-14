@@ -208,12 +208,6 @@ let add_malloc_types =
                                 fold_pointer_offsets updated (Cil.addOffset (Cil.Field (field, Cil.NoOffset)) offset)
                             end updated compinfo
                         | Cil.TArray (target_type, len_opt, _) ->
-                            let updated =
-                                if len_opt = None then
-                                    process_offset_points_to updated offset target_type
-                                else
-                                    updated
-                            in
                             fold_pointer_offsets updated (Cil.addOffset (Cil.Index (Cil.zero, Cil.NoOffset)) offset)
                         | _ ->
                             updated
