@@ -69,69 +69,69 @@ let rec bytes__read ?test ?pre bytes off len =
 
 
 let bytes__write ?test ?pre bytes off len newbytes =
-    let rec do_write bytes off len newbytes =
-        match bytes, off, newbytes with
-            (* Optimize for memset  *)
-
-            | Bytes_ByteArray oldarray, Bytes_Constant (CInt64 (i64, k, _)), Bytes_ByteArray newarray ->
-                (* from j = 0 to len-1 do oldarray[i+j] = newarray[j] *)
-                (* EXPERIMENT: if contents from oldarray is unwritable, then pass *)
-                let i = Int64.to_int i64 in
-                let rec impl j array =
-                    if j < 0 then
-                        array
-                    else
-                        let array2 = impl (j - 1) array in
-                        (*
-                        let oldbyte = ImmutableArray.get array2 (i + j) in
-                        match oldbyte with
-                            | Byte_Symbolic s when s.symbol_writable=false -> warning (); array2
-                            | _ ->
-                        *)
-                        ImmutableArray.set array2 (i + j) (ImmutableArray.get newarray j)
-                in
-                make_Bytes_ByteArray (impl (len - 1) oldarray)
-
-            | Bytes_ByteArray oldarray, Bytes_Constant (CInt64 (i64, k, _)), Bytes_Constant const ->
-                do_write bytes off len (constant_to_bytes const)
-
-            | Bytes_ByteArray oldarray, Bytes_Constant (CInt64 (i64, k, _)), _ ->
-                let rec impl arr i =
-                    if i >= len then
-                        arr
-                    else
-                        impl (ImmutableArray.set arr i (make_Byte_Bytes (newbytes, i))) (i + 1)
-                in
-                do_write bytes off len (make_Bytes_ByteArray (impl (ImmutableArray.make len byte__zero) 0))
-
-            | Bytes_ByteArray oldarray, _, _ when isConcrete_bytes off ->
-                let n_off = bytes_to_constant off Cil.intType in
-                do_write bytes (make_Bytes_Constant n_off) len newbytes
-
-            (* Without this next case, writing to a constant would introduce
-                 a Bytes_Write. Aside from not wanting a Bytes_Write if we can
-                 avoid it (for example, writing a concrete byte to the first
-                 byte of a concrete int), this could cause problems. The
-                 potential problem has to do with writing past the end of an
-                 array that is represented as a Bytes_Constant (which could
-                 exist if, for example, you have a 4-byte ByteArray and write
-                 a Bytes_Constant int to it). *)
-            | Bytes_Constant c, _, _ ->
-                do_write (constant_to_bytes c) off len newbytes
-
-            | Bytes_Conditional c, _, _ ->
-                let c = conditional__map ?test ~eq:bytes__equal ?pre (fun e -> conditional__bytes (do_write e off len newbytes)) c in
-                make_Bytes_Conditional c
-
-            | _, Bytes_Conditional c, _ ->
-                failwith "bytes__write: if-then-else offset doesn't happen"
-
-            | _ ->
-                make_Bytes_Write (bytes, off, len, newbytes)
-    in
     if (bytes__length bytes) = len && (isConcrete_bytes off) && (bytes_to_int_auto off = 0) then
         newbytes
     else
+        let rec do_write bytes off len newbytes =
+            match bytes, off, newbytes with
+                (* Optimize for memset  *)
+
+                | Bytes_ByteArray oldarray, Bytes_Constant (CInt64 (i64, k, _)), Bytes_ByteArray newarray ->
+                    (* from j = 0 to len-1 do oldarray[i+j] = newarray[j] *)
+                    (* EXPERIMENT: if contents from oldarray is unwritable, then pass *)
+                    let i = Int64.to_int i64 in
+                    let rec impl j array =
+                        if j < 0 then
+                            array
+                        else
+                            let array2 = impl (j - 1) array in
+                            (*
+                            let oldbyte = ImmutableArray.get array2 (i + j) in
+                            match oldbyte with
+                                | Byte_Symbolic s when s.symbol_writable=false -> warning (); array2
+                                | _ ->
+                            *)
+                            ImmutableArray.set array2 (i + j) (ImmutableArray.get newarray j)
+                    in
+                    make_Bytes_ByteArray (impl (len - 1) oldarray)
+
+                | Bytes_ByteArray oldarray, Bytes_Constant (CInt64 (i64, k, _)), Bytes_Constant const ->
+                    do_write bytes off len (constant_to_bytes const)
+
+                | Bytes_ByteArray oldarray, Bytes_Constant (CInt64 (i64, k, _)), _ ->
+                    let rec impl arr i =
+                        if i >= len then
+                            arr
+                        else
+                            impl (ImmutableArray.set arr i (make_Byte_Bytes (newbytes, i))) (i + 1)
+                    in
+                    do_write bytes off len (make_Bytes_ByteArray (impl (ImmutableArray.make len byte__zero) 0))
+
+                | Bytes_ByteArray oldarray, _, _ when isConcrete_bytes off ->
+                    let n_off = bytes_to_constant off Cil.intType in
+                    do_write bytes (make_Bytes_Constant n_off) len newbytes
+
+                (* Without this next case, writing to a constant would introduce
+                     a Bytes_Write. Aside from not wanting a Bytes_Write if we can
+                     avoid it (for example, writing a concrete byte to the first
+                     byte of a concrete int), this could cause problems. The
+                     potential problem has to do with writing past the end of an
+                     array that is represented as a Bytes_Constant (which could
+                     exist if, for example, you have a 4-byte ByteArray and write
+                     a Bytes_Constant int to it). *)
+                | Bytes_Constant c, _, _ ->
+                    do_write (constant_to_bytes c) off len newbytes
+
+                | Bytes_Conditional c, _, _ ->
+                    let c = conditional__map ?test ~eq:bytes__equal ?pre (fun e -> conditional__bytes (do_write e off len newbytes)) c in
+                    make_Bytes_Conditional c
+
+                | _, Bytes_Conditional c, _ ->
+                    failwith "bytes__write: if-then-else offset doesn't happen"
+
+                | _ ->
+                    make_Bytes_Write (bytes, off, len, newbytes)
+        in
         do_write bytes off len newbytes
 
 let is_Bytes_Read = function Bytes_Read _ -> true | _ -> false
