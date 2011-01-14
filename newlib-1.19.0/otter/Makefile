@@ -18,16 +18,20 @@ build_complete: otter-ar $(BUILD)/Makefile
 	make -C $(BUILD) && touch build_complete
 
 libc.c: build_complete
-	tar xf $(BUILD)/otter/newlib/libc/libc.a libc.a.cil.a && mv libc.a.cil.a libc.c
+	tar xf $(BUILD)/otter/newlib/libc/libc.a libc.a.cil.a
+	mv libc.a.cil.a libc.c
+	@touch libc.c # Update modification time to prevent re-running this recipe
 
 newlib.c: build_complete
-	tar xf $(BUILD)/otter/newlib/libc.a libc.a.cil.a && mv libc.a.cil.a newlib.c
+	tar xf $(BUILD)/otter/newlib/libc.a libc.a.cil.a
+	mv libc.a.cil.a newlib.c
+	@touch newlib.c # Update modification time to prevent re-running this recipe
 
 otter-ar: otter-ar.in
 	sed 's:@OTTER_TRUNK@:$(OTTER_TRUNK):' otter-ar.in > otter-ar
 	chmod +x otter-ar
 
-$(BUILD)/Makefile: otter-ar $(CONFIG_FILES) $(MAKE_FILES)
+$(BUILD)/Makefile: otter-ar $(CONFIG_FILES) $(MAKE_FILES) $(NEWLIB_1_19_0)/newlib/configure.host
 	mkdir -p $(BUILD)
 	cd $(BUILD) && \
 	$(NEWLIB_1_19_0)/configure --target=otter --with-newlib --disable-multilib \
@@ -37,10 +41,12 @@ $(BUILD)/Makefile: otter-ar $(CONFIG_FILES) $(MAKE_FILES)
 
 .PHONY: clean distclean
 clean:
-	rm -rf otter-ar build_complete libc.c newlib.c $(BUILD)
+	rm -f otter-ar build_complete libc.c newlib.c
+	if [[ -f $(BUILD)/Makefile ]]; then make -C $(BUILD) clean; fi
 
 distclean: clean
 	rm -f $(CONFIG_FILES) $(CONFIG_FILES:configure=aclocal.m4) $(MAKE_FILES)
+	if [[ -f $(BUILD)/Makefile ]]; then make -C $(BUILD) distclean; fi
 
 # I modeled these rules after Otter's top-level makefile. Thanks, Yit.
 .PRECIOUS : %/aclocal.m4 %/configure %/Makefile
