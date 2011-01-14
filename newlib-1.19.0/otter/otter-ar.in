@@ -1,0 +1,48 @@
+# otter-ar is a cilly-specific replacement for ar.
+
+# otter-ar archives files by packaging up 2 files into a single file,
+# to which it gives the extenstion '.a' even though it is really a tar
+# file.
+
+# When otter-ar creates or updates an archive, it does the following:
+#   1. If FILE.a exists, call tar to extract FILE.ar and FILE.cil.a from FILE.a
+#   2. Call 'cilly --merge --mode=AR' to create or update FILE.cil.a with the given CIL object files
+#   3. Call ar to create or update FILE.ar with the given CIL object files
+#   4. Call tar again to package up FILE.ar and FILE.cil.a into FILE.a (overwriting the old FILE.a, if there was one)
+#   5. Delete FILE.ar and FILE.cil.a
+
+# When otter-ar extracts from an archive, it does the following:
+#   1. Call tar to extract FILE.ar from FILE.a
+#   2. Call ar on this file to extract the desired object files
+#   3. Delete FILE.ar
+# Since cilly does not support extracting files from archives, it is not involved when 'otter-ar x' is called.
+
+EXT_AR=.ar
+EXT_CIL=.cil.a
+AR=`which ar`
+TAR=`which tar`
+CILLY=@OTTER_TRUNK@/cil/bin/cilly
+
+OP=$1
+FILE=`basename "$2"`
+DIR=`dirname "$2"`
+FILE_AR=$FILE$EXT_AR
+FILE_CIL=$FILE$EXT_CIL
+
+shift 2
+if [ $OP == "x" ] 
+then
+    $TAR xf "$DIR/$FILE" "$FILE_AR"
+    $AR x "$FILE_AR" $@
+    rm "$FILE_AR"
+else
+    if [ -f "$DIR/$FILE" ] 
+    then
+        $TAR xf "$DIR/$FILE"
+    fi
+    $CILLY --merge --mode=AR $OP "$FILE_CIL" $@
+    $AR $OP "$FILE_AR" $@
+    # Overwrite the old file, if it exists
+    $TAR cf "$DIR/$FILE" "$FILE_CIL" "$FILE_AR"
+		rm "$FILE_CIL" "$FILE_AR"
+fi
