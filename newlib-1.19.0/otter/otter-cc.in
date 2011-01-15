@@ -1,1 +1,1 @@
-@OTTER_TRUNK@/cil/bin/cilly --merge -undef -isystem @OTTER_TRUNK@/newlib-1.19.0/otter/include $@
+@OTTER_TRUNK@/cil/bin/cilly --merge -nostdinc -undef -isystem @OTTER_TRUNK@/newlib-1.19.0/otter/include $@

@@ -8,9 +8,17 @@
 #ifndef	_COMPLEX_H
 #define	_COMPLEX_H
 
-#define complex _Complex
-#define _Complex_I 1.0fi
-#define I _Complex_I
+#ifdef _Complex
+    #define complex _Complex
+    #define _Complex_I 1.0fi
+    #define I _Complex_I
+#else
+    /* Complex not supported. The following is just to make the compiler happy. */
+    #define complex
+    #define _Complex_I 1.0f
+    #define I _Complex_I
+#endif
+
 
 #include <sys/cdefs.h>
 
@@ -95,7 +103,7 @@ double complex csqrt(double complex);
 float complex csqrtf(float complex);
 
 /* 7.3.9 Manipulation functions */
-/* 7.3.9.1 The carg functions */ 
+/* 7.3.9.1 The carg functions */
 double carg(double complex);
 float cargf(float complex);
 

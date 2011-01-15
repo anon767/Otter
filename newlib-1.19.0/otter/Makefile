@@ -12,7 +12,7 @@ BUILD := $(NEWLIB_1_19_0)/build
 CONFIG_FILES := $(addprefix $(NEWLIB_1_19_0)/newlib/libc/machine/, configure otter/configure)
 MAKE_FILES := $(NEWLIB_1_19_0)/newlib/libc/machine/otter/Makefile.in
 
-all: libc.c newlib.c
+all: libc.c libm.c newlib.c
 
 build_complete: otter-cc otter-ar $(BUILD)/Makefile
 	make -C $(BUILD) && touch build_complete
@@ -21,6 +21,11 @@ libc.c: build_complete
 	tar xf $(BUILD)/otter/newlib/libc/libc.a libc.a.cil.a
 	mv libc.a.cil.a libc.c
 	@touch libc.c # Update modification time to prevent re-running this recipe
+
+libm.c: build_complete
+	tar xf $(BUILD)/otter/newlib/libm/libm.a libm.a.cil.a
+	mv libm.a.cil.a libm.c
+	@touch libm.c # Update modification time to prevent re-running this recipe
 
 newlib.c: build_complete
 	tar xf $(BUILD)/otter/newlib/libc.a libc.a.cil.a
@@ -45,7 +50,7 @@ $(BUILD)/Makefile: otter-cc otter-ar $(CONFIG_FILES) $(MAKE_FILES) $(NEWLIB_1_19
 
 .PHONY: clean distclean
 clean:
-	rm -f otter-ar otter-cc build_complete libc.c newlib.c
+	rm -f otter-ar otter-cc build_complete libc.c libm.c newlib.c
 	if [[ -f $(BUILD)/Makefile ]]; then make -C $(BUILD) clean; fi
 
 distclean: clean
