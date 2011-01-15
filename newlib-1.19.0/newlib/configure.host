@@ -226,6 +226,7 @@ case "${host_cpu}" in
 	;;
   otter)
 	machine_dir=otter
+    posix_dir=posix
 	;;
   powerpc*)
 	machine_dir=powerpc

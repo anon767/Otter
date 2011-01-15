@@ -4,6 +4,7 @@
 
 NEWLIB_1_19_0 := $(dir $(CURDIR))
 OTTER_TRUNK := $(realpath $(NEWLIB_1_19_0)/..)
+OTTER_INCLUDE := $(realpath $(CURDIR)/include)
 BUILD := $(NEWLIB_1_19_0)/build
 
 # $(NEWLIB_1_19_0)/configure is not included here because it seems
@@ -35,7 +36,7 @@ $(BUILD)/Makefile: otter-ar $(CONFIG_FILES) $(MAKE_FILES) $(NEWLIB_1_19_0)/newli
 	mkdir -p $(BUILD)
 	cd $(BUILD) && \
 	$(NEWLIB_1_19_0)/configure --target=otter --with-newlib --disable-multilib \
-		CC_FOR_TARGET='$(OTTER_TRUNK)/cil/bin/cilly --merge -undef' \
+		CC_FOR_TARGET='$(OTTER_TRUNK)/cil/bin/cilly --merge -undef -isystem $(OTTER_INCLUDE)' \
 		AR_FOR_TARGET=$(NEWLIB_1_19_0)/otter/otter-ar \
 		RANLIB_FOR_TARGET=true
 
