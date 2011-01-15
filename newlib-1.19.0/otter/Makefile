@@ -4,7 +4,6 @@
 
 NEWLIB_1_19_0 := $(dir $(CURDIR))
 OTTER_TRUNK := $(realpath $(NEWLIB_1_19_0)/..)
-OTTER_INCLUDE := $(realpath $(CURDIR)/include)
 BUILD := $(NEWLIB_1_19_0)/build
 
 # $(NEWLIB_1_19_0)/configure is not included here because it seems
@@ -15,7 +14,7 @@ MAKE_FILES := $(NEWLIB_1_19_0)/newlib/libc/machine/otter/Makefile.in
 
 all: libc.c newlib.c
 
-build_complete: otter-ar $(BUILD)/Makefile
+build_complete: otter-cc otter-ar $(BUILD)/Makefile
 	make -C $(BUILD) && touch build_complete
 
 libc.c: build_complete
@@ -32,17 +31,21 @@ otter-ar: otter-ar.in
 	sed 's:@OTTER_TRUNK@:$(OTTER_TRUNK):' otter-ar.in > otter-ar
 	chmod +x otter-ar
 
-$(BUILD)/Makefile: otter-ar $(CONFIG_FILES) $(MAKE_FILES) $(NEWLIB_1_19_0)/newlib/configure.host
+otter-cc: otter-cc.in
+	sed 's:@OTTER_TRUNK@:$(OTTER_TRUNK):g' otter-cc.in > otter-cc
+	chmod +x otter-cc
+
+$(BUILD)/Makefile: otter-cc otter-ar $(CONFIG_FILES) $(MAKE_FILES) $(NEWLIB_1_19_0)/newlib/configure.host
 	mkdir -p $(BUILD)
 	cd $(BUILD) && \
 	$(NEWLIB_1_19_0)/configure --target=otter --with-newlib --disable-multilib \
-		CC_FOR_TARGET='$(OTTER_TRUNK)/cil/bin/cilly --merge -undef -isystem $(OTTER_INCLUDE)' \
+		CC_FOR_TARGET=$(NEWLIB_1_19_0)/otter/otter-cc \
 		AR_FOR_TARGET=$(NEWLIB_1_19_0)/otter/otter-ar \
 		RANLIB_FOR_TARGET=true
 
 .PHONY: clean distclean
 clean:
-	rm -f otter-ar build_complete libc.c newlib.c
+	rm -f otter-ar otter-cc build_complete libc.c newlib.c
 	if [[ -f $(BUILD)/Makefile ]]; then make -C $(BUILD) clean; fi
 
 distclean: clean
