@@ -1,15 +1,15 @@
-/* $NetBSD: complex.h,v 1.3 2010/09/15 16:11:30 christos Exp $ */
-
 /*
- * Written by Matthias Drochner.
- * Public domain.
+ * Copied from newlib/libc/include/complex.h
+ *
+ * TODO: raise errors when these functions are ever called.
  */
 
 #ifndef	_COMPLEX_H
 #define	_COMPLEX_H
 
+#define _Complex
 #define complex _Complex
-#define _Complex_I 1.0fi
+#define _Complex_I 1.0f    /* This is WRONG! */
 #define I _Complex_I
 
 #include <sys/cdefs.h>
