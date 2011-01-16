@@ -1,3 +1,5 @@
+#!/bin/sh
+
 # otter-ar is a cilly-specific replacement for ar.
 
 # otter-ar archives files by packaging up 2 files into a single file,
