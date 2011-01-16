@@ -12,33 +12,21 @@ BUILD := $(NEWLIB_1_19_0)/build
 CONFIG_FILES := $(addprefix $(NEWLIB_1_19_0)/newlib/libc/machine/, configure otter/configure)
 MAKE_FILES := $(NEWLIB_1_19_0)/newlib/libc/machine/otter/Makefile.in
 
-all: libc.c libm.c newlib.c
+MERGED_FILES := libc/libc.c libm.c libc.c
 
-build_complete: otter-cc otter-ar $(BUILD)/Makefile
-	make -C $(BUILD) && touch build_complete
+all: $(MERGED_FILES)
 
-libc.c: build_complete
-	tar xf $(BUILD)/otter/newlib/libc/libc.a libc.a.cil.a
-	mv libc.a.cil.a libc.c
-	@touch libc.c # Update modification time to prevent re-running this recipe
+$(MERGED_FILES): %.c: $(BUILD)/otter/newlib/%.a
+	tar xmf $< $(notdir $<).cil.a
+	@mkdir -p $(dir $@)
+	mv $(notdir $<).cil.a $@
 
-libm.c: build_complete
-	tar xf $(BUILD)/otter/newlib/libm/libm.a libm.a.cil.a
-	mv libm.a.cil.a libm.c
-	@touch libm.c # Update modification time to prevent re-running this recipe
+$(BUILD)/otter/newlib/%.a: $(BUILD)/Makefile
+	make -C $(BUILD)
 
-newlib.c: build_complete
-	tar xf $(BUILD)/otter/newlib/libc.a libc.a.cil.a
-	mv libc.a.cil.a newlib.c
-	@touch newlib.c # Update modification time to prevent re-running this recipe
-
-otter-ar: otter-ar.in
-	sed 's:@OTTER_TRUNK@:$(OTTER_TRUNK):' otter-ar.in > otter-ar
-	chmod +x otter-ar
-
-otter-cc: otter-cc.in
-	sed 's:@OTTER_TRUNK@:$(OTTER_TRUNK):g' otter-cc.in > otter-cc
-	chmod +x otter-cc
+otter-%: otter-%.in
+	sed 's:@OTTER_TRUNK@:$(OTTER_TRUNK):g' $< > $@
+	chmod +x $@
 
 $(BUILD)/Makefile: otter-cc otter-ar $(CONFIG_FILES) $(MAKE_FILES) $(NEWLIB_1_19_0)/newlib/configure.host
 	mkdir -p $(BUILD)
@@ -50,12 +38,12 @@ $(BUILD)/Makefile: otter-cc otter-ar $(CONFIG_FILES) $(MAKE_FILES) $(NEWLIB_1_19
 
 .PHONY: clean distclean
 clean:
-	rm -f otter-ar otter-cc build_complete libc.c libm.c newlib.c
 	if [[ -f $(BUILD)/Makefile ]]; then make -C $(BUILD) clean; fi
+	rm -f otter-ar otter-cc $(MERGED_FILES)
 
 distclean: clean
-	rm -f $(CONFIG_FILES) $(CONFIG_FILES:configure=aclocal.m4) $(MAKE_FILES)
 	if [[ -f $(BUILD)/Makefile ]]; then make -C $(BUILD) distclean; fi
+	rm -f $(CONFIG_FILES) $(CONFIG_FILES:configure=aclocal.m4) $(MAKE_FILES)
 
 # I modeled these rules after Otter's top-level makefile. Thanks, Yit.
 .PRECIOUS : %/aclocal.m4 %/configure %/Makefile
