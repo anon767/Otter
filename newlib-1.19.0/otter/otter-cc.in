@@ -1,5 +1,2 @@
 #!/bin/sh
-@OTTER_TRUNK@/cil/bin/cilly --merge -nostdinc -Wp,-undef \
-        -isystem @OTTER_TRUNK@/newlib-1.19.0/otter/include \
-        -isystem @OTTER_TRUNK@/newlib-1.19.0/newlib/libc/include \
-        $@
+@OTTER_TRUNK@/cil/bin/cilly --merge -nostdinc -Wp,-undef -isystem @OTTER_TRUNK@/newlib-1.19.0/otter/include $@
