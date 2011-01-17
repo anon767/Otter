@@ -42,7 +42,7 @@ else
     then
         $TAR xf "$DIR/$FILE"
     fi
-    $CILLY --merge --mode=AR $OP "$FILE_CIL" "$@"
+    "$CILLY" --merge --mode=AR $OP "$FILE_CIL" "$@"
     $AR $OP "$FILE_AR" "$@"
     # Overwrite the old file, if it exists
     $TAR cf "$DIR/$FILE" "$FILE_CIL" "$FILE_AR"
