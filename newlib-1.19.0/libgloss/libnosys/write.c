@@ -3,6 +3,7 @@
  */
 
 #include "config.h"
+#include <unistd.h>
 #include <_ansi.h>
 #include <_syslist.h>
 #include <errno.h>
@@ -10,11 +11,11 @@
 extern int errno;
 #include "warning.h"
 
-int
+ssize_t
 _DEFUN (_write, (file, ptr, len),
         int   file  _AND
-        char *ptr   _AND
-        int   len)
+        const void *ptr   _AND
+        size_t   len)
 {
   errno = ENOSYS;
   return -1;
