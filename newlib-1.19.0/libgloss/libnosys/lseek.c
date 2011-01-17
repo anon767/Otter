@@ -3,6 +3,7 @@
  */
 
 #include "config.h"
+#include <sys/types.h>
 #include <_ansi.h>
 #include <_syslist.h>
 #include <errno.h>
@@ -10,10 +11,10 @@
 extern int errno;
 #include "warning.h"
 
-int
+off_t
 _DEFUN (_lseek, (file, ptr, dir),
         int   file  _AND
-        int   ptr   _AND
+        off_t   ptr   _AND
         int   dir)
 {
   errno = ENOSYS;
