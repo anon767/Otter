@@ -2,10 +2,11 @@
 
 #include "config.h"
 #include <_syslist.h>
+#include <unistd.h>
 
 void *
 _sbrk (incr)
-     int incr;
+     ptrdiff_t incr;
 { 
    extern char   end; /* Set by linker.  */
    static char * heap_end; 
