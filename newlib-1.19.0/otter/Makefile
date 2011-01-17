@@ -12,6 +12,7 @@ BUILD := $(NEWLIB_1_19_0)/build
 CONFIG_FILES := $(addprefix $(NEWLIB_1_19_0)/newlib/libc/machine/, configure otter/configure)
 MAKE_FILES := $(NEWLIB_1_19_0)/newlib/libc/machine/otter/Makefile.in
 
+OTTER_EXES := otter-cc otter-ar otter-libc-cc
 MERGED_FILES := libm.c libc.c
 
 all: $(MERGED_FILES)
@@ -29,7 +30,7 @@ otter-%: otter-%.in
 	sed 's:@OTTER_TRUNK@:$(OTTER_TRUNK):g' $< > $@
 	chmod +x $@
 
-$(BUILD)/Makefile: otter-cc otter-ar $(CONFIG_FILES) $(MAKE_FILES) $(NEWLIB_1_19_0)/newlib/configure.host
+$(BUILD)/Makefile: $(OTTER_EXES) $(CONFIG_FILES) $(MAKE_FILES) $(NEWLIB_1_19_0)/newlib/configure.host
 	mkdir -p $(BUILD)
 	cd $(BUILD) && \
 	$(NEWLIB_1_19_0)/configure --target=otter --with-newlib --disable-multilib \
@@ -40,7 +41,7 @@ $(BUILD)/Makefile: otter-cc otter-ar $(CONFIG_FILES) $(MAKE_FILES) $(NEWLIB_1_19
 .PHONY: clean distclean
 clean:
 	if [[ -f $(BUILD)/Makefile ]]; then make -C $(BUILD) clean; fi
-	rm -f otter-ar otter-cc $(MERGED_FILES)
+	rm -f $(OTTER_EXES) $(MERGED_FILES)
 
 distclean: clean
 	if [[ -f $(BUILD)/Makefile ]]; then make -C $(BUILD) distclean; fi
