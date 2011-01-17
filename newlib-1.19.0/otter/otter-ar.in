@@ -35,15 +35,15 @@ shift 2
 if [ $OP == "x" ] 
 then
     $TAR xf "$DIR/$FILE" "$FILE_AR"
-    $AR x "$FILE_AR" $@
+    $AR x "$FILE_AR" "$@"
     rm "$FILE_AR"
 else
     if [ -f "$DIR/$FILE" ] 
     then
         $TAR xf "$DIR/$FILE"
     fi
-    $CILLY --merge --mode=AR $OP "$FILE_CIL" $@
-    $AR $OP "$FILE_AR" $@
+    $CILLY --merge --mode=AR $OP "$FILE_CIL" "$@"
+    $AR $OP "$FILE_AR" "$@"
     # Overwrite the old file, if it exists
     $TAR cf "$DIR/$FILE" "$FILE_CIL" "$FILE_AR"
 		rm "$FILE_CIL" "$FILE_AR"

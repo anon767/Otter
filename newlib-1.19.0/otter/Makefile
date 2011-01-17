@@ -12,14 +12,15 @@ BUILD := $(NEWLIB_1_19_0)/build
 CONFIG_FILES := $(addprefix $(NEWLIB_1_19_0)/newlib/libc/machine/, configure otter/configure)
 MAKE_FILES := $(NEWLIB_1_19_0)/newlib/libc/machine/otter/Makefile.in
 
-MERGED_FILES := libc/libc.c libm.c libc.c
+MERGED_FILES := libm.c libc.c
 
 all: $(MERGED_FILES)
 
-$(MERGED_FILES): %.c: $(BUILD)/otter/newlib/%.a
-	tar xmf $< $(notdir $<).cil.a
-	@mkdir -p $(dir $@)
-	mv $(notdir $<).cil.a $@
+libc.c: $(BUILD)/otter/newlib/libc/libc.a
+libm.c: $(BUILD)/otter/newlib/libm.a
+$(MERGED_FILES):
+	tar xmf $< $(@:.c=.a).cil.a
+	mv $(@:.c=.a).cil.a $@
 
 $(BUILD)/otter/newlib/%.a: $(BUILD)/Makefile
 	make -C $(BUILD)
