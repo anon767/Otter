@@ -13,17 +13,17 @@ CONFIG_FILES := $(addprefix $(NEWLIB_1_19_0)/newlib/libc/machine/, configure ott
 MAKE_FILES := $(NEWLIB_1_19_0)/newlib/libc/machine/otter/Makefile.in
 
 OTTER_EXES := otter-cc otter-ar otter-libc-cc
-MERGED_FILES := libm.c libc.c libnosys.c
+MERGED_FILES := libm.a libc.a libnosys.a
 
 all: $(MERGED_FILES)
 
-libc.c: $(BUILD)/otter/newlib/libc/libc.a
-libm.c: $(BUILD)/otter/newlib/libm.a
-libnosys.c: $(BUILD)/otter/libgloss/libnosys/libnosys.a
+libc.a: $(BUILD)/otter/newlib/libc/libc.a
+libm.a: $(BUILD)/otter/newlib/libm.a
+libnosys.a: $(BUILD)/otter/libgloss/libnosys/libnosys.a
 
 $(MERGED_FILES):
-	tar xmf $< $(@:.c=.a).cil.a
-	mv $(@:.c=.a).cil.a $@
+	tar xmf $< $@.cil.a
+	mv $@.cil.a $@
 
 $(BUILD)/otter/newlib/%.a: $(BUILD)/Makefile
 	make -C $(BUILD)
