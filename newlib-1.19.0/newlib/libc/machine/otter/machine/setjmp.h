@@ -20,7 +20,4 @@ extern int __libc_setjmp(int* s);
 
 typedef int *jmp_buf[1];
 
-#define setjmp(e) ((e)[0] = __builtin_alloca(sizeof(int)), \
-	__libc_setjmp((e)[0]))
-
 #endif
