@@ -1,6 +1,7 @@
 #!/bin/sh
 fullpath=`command -v $0`
 "${fullpath%/*}/otter-cc" \
+    -isystem '@OTTER_TRUNK@/newlib-1.19.0/build/otter/newlib/targ-include' \
     -isystem '@OTTER_TRUNK@/newlib-1.19.0/newlib/libc/include' \
     -isystem '@OTTER_TRUNK@/otter/libc/' \
     -isystem '@OTTER_TRUNK@/otter/libc/__otter' \
