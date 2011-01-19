@@ -68,7 +68,7 @@ struct fooalign
    DEFAULT_ROUNDING.  So we prepare for it to do that.  */
 enum
   {
-    DEFAULT_ALIGNMENT = 16, /* OTTER */ /* offsetof (struct fooalign, u), */
+    DEFAULT_ALIGNMENT = offsetof (struct fooalign, u),
     DEFAULT_ROUNDING = sizeof (union fooround)
   };
 
