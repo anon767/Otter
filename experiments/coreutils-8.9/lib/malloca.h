@@ -116,21 +116,20 @@ enum
 {
 /* The desired alignment of memory allocations is the maximum alignment
    among all elementary types.  */
-  sa_alignment_long = sa_alignof (long),
-  sa_alignment_double = sa_alignof (double),
+  sa_alignment_long = 4, /* OTTER */ /* sa_alignof (long), */
+  sa_alignment_double = 8, /* OTTER */ /* sa_alignof (double), */
 #if HAVE_LONG_LONG_INT
-  sa_alignment_longlong = sa_alignof (long long),
+  sa_alignment_longlong = 8, /* OTTER */ /* sa_alignof (long long), */
 #endif
-  sa_alignment_longdouble = sa_alignof (long double),
-  sa_alignment_max = ((sa_alignment_long - 1) | (sa_alignment_double - 1)
+  sa_alignment_longdouble = 16, /* OTTER */ /* sa_alignof (long double), */
 #if HAVE_LONG_LONG_INT
-                      | (sa_alignment_longlong - 1)
+  sa_alignment_max = 16, /* OTTER */ /* ((sa_alignment_long - 1) | (sa_alignment_double - 1) | (sa_alignment_longlong - 1) | (sa_alignment_longdouble - 1)) + 1, */
+#else
+  sa_alignment_max = 16, /* OTTER */ /* ((sa_alignment_long - 1) | (sa_alignment_double - 1) | (sa_alignment_longdouble - 1)) + 1, */
 #endif
-                      | (sa_alignment_longdouble - 1)
-                     ) + 1,
-/* The increment that guarantees room for a magic word must be >= sizeof (int)
+/* The increment that guarantees room for a magic word must be >= sizeof (int) 
    and a multiple of sa_alignment_max.  */
-  sa_increment = ((sizeof (int) + sa_alignment_max - 1) / sa_alignment_max) * sa_alignment_max
+  sa_increment = 16, /* OTTER */ /* ((sizeof (int) + sa_alignment_max - 1) / sa_alignment_max) * sa_alignment_max */
 };
 
 #endif /* _MALLOCA_H */
