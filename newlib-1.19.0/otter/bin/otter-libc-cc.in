@@ -1,6 +1,7 @@
 #!/bin/sh
-fullpath=`command -v $0`
-"${fullpath%/*}/otter-cc" \
+CILLY_DONT_COMPILE_AFTER_MERGE= "@OTTER_TRUNK@/cil/bin/cilly" \
+    --merge -nostdinc -Wp,-undef \
+    -isystem '@OTTER_TRUNK@/newlib-1.19.0/otter/include' \
     -isystem '@OTTER_TRUNK@/newlib-1.19.0/build/otter/newlib/targ-include' \
     -isystem '@OTTER_TRUNK@/newlib-1.19.0/newlib/libc/include' \
     -isystem '@OTTER_TRUNK@/otter/libc/' \
@@ -8,6 +9,5 @@ fullpath=`command -v $0`
     -nostdlib \
     -L'@OTTER_TRUNK@/newlib-1.19.0/otter/lib' \
     -lc \
-    --merge \
     --keepmerged \
     "$@"
