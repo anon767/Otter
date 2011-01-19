@@ -1,6 +1,3 @@
-#ifndef _SETJMP_H
-#define _SETJMP_H
-
 /* 
  * setjmp uses a macro to force the allocation of the resulting statement
  * pointer in the calling functions stack.  If the function returns, the
@@ -22,5 +19,3 @@ typedef int *jmp_buf[1];
 
 #define setjmp(e) ((e)[0] = __builtin_alloca(sizeof(int)), \
 	__libc_setjmp((e)[0]))
-
-#endif
