@@ -95,7 +95,7 @@ clean :
 distclean :
 	$(foreach foo,$(SUBDIRS),$(MAKE) -C $(foo) clean distclean;) true
 
-.PRECIOUS : %/Makefile
+.PRECIOUS : %/Makefile %/config.h
 %/Makefile %/config.h : %/Makefile.in %/config.h.in %/configure Makefile
 	cd $* && ./configure $(CONFIGURE_FLAGS) $(CONFIGURE_EXTRAFLAGS)
 
@@ -105,7 +105,7 @@ distclean :
 %/Makefile : %/configure Makefile
 	cd $* && ./configure $(CONFIGURE_FLAGS) $(CONFIGURE_EXTRAFLAGS)
 
-.PRECIOUS : %/configure
+.PRECIOUS : %/configure %/config.h.in
 %/configure %/config.h.in : %/configure.ac
 	cd $* && autoreconf
 
