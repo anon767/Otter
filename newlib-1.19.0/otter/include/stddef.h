@@ -19,6 +19,6 @@ typedef long long ptrdiff_t;
 #define NULL ((void *)0)
 
 /* I got this definition from http://en.wikipedia.org/wiki/Offsetof on Jan 13, 2011 */
-#define offsetof(st, m) ((size_t) ( (char *)&((st *)(0))->m - (char *)0 ))
+#define offsetof(st, m) ((size_t) ( (char *)&((st *)(0))->m ))
 
 #endif
