@@ -1,0 +1,2 @@
+#!/bin/sh
+gcc -nostdinc -Wp,-undef -isystem '@OTTER_TRUNK@/newlib-1.19.0/otter/include' "$@"

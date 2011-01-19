@@ -1,0 +1,5 @@
+#!/bin/sh
+SRC="$1"
+F="$2"
+tar xmf "$SRC" "$F.cil.a"
+mv "$F.cil.a" "$F"

@@ -1,13 +1,12 @@
 #!/bin/sh
-fullpath=`command -v $0`
-"${fullpath%/*}/otter-cc" \
+gcc -nostdinc -Wp,-undef \
+    -isystem '@OTTER_TRUNK@/newlib-1.19.0/otter/include' \
     -isystem '@OTTER_TRUNK@/newlib-1.19.0/build/otter/newlib/targ-include' \
     -isystem '@OTTER_TRUNK@/newlib-1.19.0/newlib/libc/include' \
     -isystem '@OTTER_TRUNK@/otter/libc/' \
     -isystem '@OTTER_TRUNK@/otter/libc/__otter' \
     -nostdlib \
-    -L'@OTTER_TRUNK@/newlib-1.19.0/otter' \
+    -L'@OTTER_TRUNK@/newlib-1.19.0/otter/lib.native' \
     -lc \
-    --merge \
-    --keepmerged \
+    /usr/lib/crt1.o \
     "$@"

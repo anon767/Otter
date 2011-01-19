@@ -2,9 +2,12 @@
 # especially chapter 9, for instructions on how to extend newlib to a
 # new target.
 
+SUFFIX = 
 NEWLIB_1_19_0 := $(dir $(CURDIR))
 OTTER_TRUNK := $(realpath $(NEWLIB_1_19_0)/..)
-BUILD := $(NEWLIB_1_19_0)/build
+BUILD := $(NEWLIB_1_19_0)/build$(SUFFIX)
+BIN_DIR := $(NEWLIB_1_19_0)/otter/bin$(SUFFIX)
+LIB_DIR := $(NEWLIB_1_19_0)/otter/lib$(SUFFIX)
 
 # $(NEWLIB_1_19_0)/configure is not included here because it seems
 # especially picky. We'll just take the one we were given, rather than
@@ -12,7 +15,7 @@ BUILD := $(NEWLIB_1_19_0)/build
 CONFIG_FILES := $(addprefix $(NEWLIB_1_19_0)/newlib/libc/machine/, configure otter/configure)
 MAKE_FILES := $(NEWLIB_1_19_0)/newlib/libc/machine/otter/Makefile.in
 
-OTTER_EXES := otter-cc otter-ar otter-libc-cc
+OTTER_EXES := $(addprefix $(BIN_DIR)/, otter-cc otter-ar otter-ranlib otter-mv otter-libc-cc)
 MERGED_FILES := libm.a libc.a libnosys.a
 
 all: $(MERGED_FILES)
@@ -21,14 +24,15 @@ libc.a: $(BUILD)/otter/newlib/libc/libc.a
 libm.a: $(BUILD)/otter/newlib/libm.a
 libnosys.a: $(BUILD)/otter/libgloss/libnosys/libnosys.a
 
-$(MERGED_FILES):
-	tar xmf $< $@.cil.a
-	mv $@.cil.a $@
+$(MERGED_FILES): 
+	mkdir -p $(LIB_DIR)
+	$(BIN_DIR)/otter-mv $< $@
+	mv $@ $(LIB_DIR)/$@
 
 $(BUILD)/otter/newlib/%.a: $(BUILD)/Makefile
 	make -C $(BUILD)
 
-otter-%: otter-%.in
+$(BIN_DIR)/otter-%: $(BIN_DIR)/otter-%.in
 	sed 's:@OTTER_TRUNK@:$(OTTER_TRUNK):g' $< > $@
 	chmod +x $@
 
@@ -36,14 +40,14 @@ $(BUILD)/Makefile: $(OTTER_EXES) $(CONFIG_FILES) $(MAKE_FILES) $(NEWLIB_1_19_0)/
 	mkdir -p $(BUILD)
 	cd $(BUILD) && \
 	$(NEWLIB_1_19_0)/configure --target=otter --with-newlib --disable-multilib \
-		CC_FOR_TARGET=$(NEWLIB_1_19_0)/otter/otter-cc \
-		AR_FOR_TARGET=$(NEWLIB_1_19_0)/otter/otter-ar \
-		RANLIB_FOR_TARGET=true
+		CC_FOR_TARGET=$(BIN_DIR)/otter-cc \
+		AR_FOR_TARGET=$(BIN_DIR)/otter-ar \
+		RANLIB_FOR_TARGET=$(BIN_DIR)/otter-ranlib
 
 .PHONY: clean distclean
 clean:
 	if [[ -f $(BUILD)/Makefile ]]; then make -C $(BUILD) clean; fi
-	rm -f $(OTTER_EXES) $(MERGED_FILES)
+	rm -rf $(OTTER_EXES) $(LIB_DIR)
 
 distclean: clean
 	if [[ -f $(BUILD)/Makefile ]]; then make -C $(BUILD) distclean; fi
