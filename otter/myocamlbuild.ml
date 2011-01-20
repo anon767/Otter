@@ -96,29 +96,25 @@ end
 
 module OCamlDoc_DotPack = struct
     let after_rules () =
-        (* add myocamlbuild.tools/odoc_dotpack.cmo as dependency when tags ocaml, doc and dotpack/dot are enabled *)
-        let odoc_dotpack_ml = myocamlbuild_tool "odoc_dotpack.ml" in
-        let odoc_dotpack_cmo = myocamlbuild_tool "odoc_dotpack.cmo" in
-        tag_file odoc_dotpack_ml ["use_ocamldoc"];
-        flag_and_dep
-            ["ocaml"; "doc"; "dotpack"]
-            (S[A "-g"; Px odoc_dotpack_cmo]);
-        flag_and_dep
-            ["ocaml"; "doc"; "dot"]
-            (S[A "-g"; Px odoc_dotpack_cmo]);
+        (* add myocamlbuild.tools/dotpack.native as dependency when tags ocaml, doc and dotpack/dot are enabled *)
+        let dotpack_native = myocamlbuild_tool "dotpack.native" in
+        dep ["ocaml"; "dotpack"] [ dotpack_native ];
+        dep ["ocaml"; "dot"] [ dotpack_native ];
 
         (* also generate annot file when compiling ocaml source files *)
         tag_any ["annot"];
 
 
-        (* find the -for-pack flag and turn it into -dump *)
+        (* stupid hack to find the -for-pack flag by searching the ocamlopt command line, since Ocamlbuild 3.11.2 did
+           not provide any way to find it otherwise
+         *)
         let for_pack_flag_of env =
             let rec for_pack_flag_of = function
-                | S (A "-for-pack"::A for_pack::_) -> S [A "-dump"; A for_pack]
+                | S (A "-for-pack"::A for_pack::_) -> S [A "-for-pack"; A for_pack]
                 | S (A "-for-pack"::S list::rest) -> for_pack_flag_of (S (A "-for-pack"::(list @ rest)))
                 | S (S list::rest) -> for_pack_flag_of (S (list @ rest))
                 | S (_::rest) -> for_pack_flag_of (S rest)
-                | _ -> S [A "-dump"; A ""]
+                | _ -> S [A "-for-pack"; A ""]
             in
             for_pack_flag_of (Tools.flags_of_pathname (env "%.cmi"))
         in
@@ -127,6 +123,7 @@ module OCamlDoc_DotPack = struct
         (* compile ocaml sources into a dotpack file *)
         let dotpack_source sources env build =
             let sources = List.map env sources in
+            let annot = env "%.annot" in
             let dotpack = env "%.dotpack" in
             let tags = (tags_of_pathname dotpack)++"ocaml" in
 
@@ -141,15 +138,17 @@ module OCamlDoc_DotPack = struct
                 ignore (build to_build)
             end sources;
 
-            Cmd (S [!Options.ocamldoc;
-                T(tags++"doc"++"dotpack");
-                Ocaml_utils.ocaml_ppflags (tags++"pp:doc");
+            Cmd (S [Px dotpack_native;
+                T(tags++"dotpack");
                 Ocaml_utils.ocaml_include_flags (List.hd sources);
                 for_pack_flag_of env;
                 A "-o"; Px dotpack;
-                S (List.map (fun s -> P s) sources)])
+                P annot])
         in
 
+        (* rather than depending on %.annot, depend on %.cmi which will indirectly generate %.annot,
+           since there is no built-in rule for %.annot
+         *)
         rule "dotpack: ml & mli -> dotpack"
             ~prod:"%.dotpack"
             ~deps:["%.ml"; "%.mli"; "%.cmi"]
@@ -181,11 +180,11 @@ module OCamlDoc_DotPack = struct
             end contents in
             let modules = List.map Outcome.good (build to_build) in
 
-            Cmd (S [!Options.ocamldoc;
-                T ((tags_of_pathname out)++"ocaml"++"doc"++tag);
+            Cmd (S [Px dotpack_native;
+                T ((tags_of_pathname out)++"ocaml"++tag);
                 flags;
                 A "-o"; Px out;
-                S (List.map (fun a -> S [A "-load"; P a]) modules)])
+                S (List.map (fun m -> P m) modules)])
         in
 
         rule "dotpack: mlpack -> dotpack"
