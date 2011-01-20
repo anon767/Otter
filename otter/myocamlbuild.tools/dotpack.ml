@@ -162,7 +162,7 @@ end
 let resolve_dependencies annot_file =
     (* read the .annot file for the module and look for ext_ref *)
     let find_dependencies annot_file =
-        let module_ref_regexp = Str.regexp "[^.A-Za-z0-9'_]\\([A-Z][A-Za-z0-9'_.]+\\)\\.[a-z_]" in
+        let module_ref_regexp = Str.regexp "ext_ref[ 	]+\\([A-Z][A-Za-z0-9'_.() 	]+\\)\\.\\(([ 	]+\\)?[^A-Z]" in
         let annot_in = open_in annot_file in
         let rec find_dependencies deps =
             try
@@ -189,7 +189,7 @@ let resolve_dependencies annot_file =
     in
 
     (* for each ext_ref found, try to load its first component and resolve to its fully-qualified name, otherwise drop it *)
-    let dot_regexp = Str.regexp_string "." in
+    let dot_regexp = Str.regexp "[ 	().]+" in
     List.fold_left begin fun dependencies dep ->
         let dep = Str.split dot_regexp dep in
         match load_pack (List.hd dep) with

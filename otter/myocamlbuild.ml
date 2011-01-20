@@ -106,7 +106,8 @@ module OCamlDoc_DotPack = struct
 
 
         (* stupid hack to find the -for-pack flag by searching the ocamlopt command line, since Ocamlbuild 3.11.2 did
-           not provide any way to find it otherwise
+           not provide any way to find it otherwise. Ocamlbuild 3.12.0 does provide a way (parameterized tags), but
+           keep this for compatibility reasons
          *)
         let for_pack_flag_of env =
             let rec for_pack_flag_of = function
@@ -116,7 +117,9 @@ module OCamlDoc_DotPack = struct
                 | S (_::rest) -> for_pack_flag_of (S rest)
                 | _ -> S [A "-for-pack"; A ""]
             in
-            for_pack_flag_of (Tools.flags_of_pathname (env "%.cmi"))
+            match Ocaml_compiler.ocamlopt_c (tags_of_pathname (env "%.cmi")) (env "%.mli") (env "%.cmi") with
+                | Cmd cmd -> for_pack_flag_of (Command.reduce cmd)
+                | _ -> failwith ("Unexpected ocamlopt command for " ^ (env "%.cmi"))
         in
 
 
