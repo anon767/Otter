@@ -2476,6 +2476,11 @@ and constFoldBinOp (machdep: bool) bop e1 e2 tres =
       let rec mkInt = function
           Const(CChr c) -> Const(charConstToInt c)
         | Const(CEnum (v, s, ei)) -> mkInt v
+        (* Special case: casting a float to int *)
+        | CastE(TInt (ik, ta), Const(CReal(f, _, _))) -> 
+            let i = Int64.of_float f in
+            let i, _ = truncateInteger64 ik i in
+            Const(CInt64(i, ik, None))
         | CastE(TInt (ik, ta), e) -> begin
             match mkInt e with
               Const(CInt64(i, _, _)) -> 
