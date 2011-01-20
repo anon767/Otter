@@ -1,3 +1,6 @@
+#ifndef _SETJMP_H_
+#define _SETJMP_H_
+
 /* 
  * Otter's setjmp.h
  *
@@ -7,3 +10,4 @@
  */
 #include <machine/setjmp.h>
 
+#endif
