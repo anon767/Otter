@@ -106,7 +106,7 @@
 #define HOUR(x) ((x) * 60)
 
 /* long_time_t is a signed integer type that contains all time_t values.  */
-/* OTTER */ /* verify (TYPE_IS_INTEGER (time_t)); */
+verify (TYPE_IS_INTEGER (time_t));
 #if TIME_T_FITS_IN_LONG_INT
 typedef long int long_time_t;
 #else
@@ -115,11 +115,8 @@ typedef time_t long_time_t;
 
 /* Lots of this code assumes time_t and time_t-like values fit into
    long_time_t.  */
-/* OTTER */
-/*
 verify (TYPE_MINIMUM (long_time_t) <= TYPE_MINIMUM (time_t)
         && TYPE_MAXIMUM (time_t) <= TYPE_MAXIMUM (long_time_t));
-        */
 
 /* FIXME: It also assumes that signed integer overflow silently wraps around,
    but this is not true any more with recent versions of GCC 4.  */
