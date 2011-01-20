@@ -97,7 +97,7 @@ distclean :
 
 .PRECIOUS : %/Makefile %/config.h
 %/Makefile %/config.h : %/Makefile.in %/config.h.in %/configure Makefile
-	cd $* && ./configure $(CONFIGURE_FLAGS) $(CONFIGURE_EXTRAFLAGS)
+	cd $* && ./configure $(CONFIGURE_FLAGS) $(CONFIGURE_EXTRAFLAGS) && touch config.h
 
 %/Makefile : %/Makefile.in %/configure Makefile
 	cd $* && ./configure $(CONFIGURE_FLAGS) $(CONFIGURE_EXTRAFLAGS)
