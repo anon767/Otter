@@ -1,4 +1,4 @@
-AC_PREREQ(2.61)
+AC_PREREQ(2.59)
 AC_INIT(cilqual, alpha-0, khooyp@cs.umd.edu)
 
 
