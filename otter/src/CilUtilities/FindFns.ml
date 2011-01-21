@@ -40,6 +40,9 @@ let arg_undefined_functions = ref false
 let arg_reachable_functions = ref false
 
 let findFns (file : Cil.file) : unit =
+    if !arg_reachable_functions then 
+        Rmtmps.removeUnusedTemps ~isRoot:Rmtmps.isCompleteProgramRoot file;
+    
 	let outChan = if !outFile = "" then stdout else open_out !outFile in
     let all_fnames = get_all_fnames file in
     let all_fnames =
@@ -49,19 +52,6 @@ let findFns (file : Cil.file) : unit =
             let called_fnames = vis#callee_list in
             List.filter (fun fname -> not (List.mem fname all_fnames) &&
                                       not (List.mem ("__otter_libc_"^fname) all_fnames)) called_fnames
-        ) else all_fnames
-    in
-    let all_fnames =
-        if !arg_reachable_functions then (
-            let main_fundec =
-                try
-                    FindCil.fundec_by_name file "main"
-                with Not_found ->
-                    failwith "main function not found"
-            in 
-            let reachable_fundecs = CilCallgraph.find_transitive_callees file main_fundec in
-            let reachable_fnames = List.map (fun f -> f.svar.vname) reachable_fundecs in
-            List.filter (fun fname -> not (List.mem fname reachable_fnames)) all_fnames
         ) else all_fnames
     in
     let all_fnames = List.sort Pervasives.compare all_fnames in
