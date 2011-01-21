@@ -723,6 +723,10 @@ case "${host}" in
         syscall_dir=syscalls
 	default_newlib_io_long_long="yes"
         ;;
+	otter-*-*)
+	syscall_dir=syscalls
+	newlib_cflags="${newlib_cflags} -DREENTRANT_SYSCALLS_PROVIDED -DMALLOC_PROVIDED"
+	;;
   powerpc*-*-eabialtivec*)
 	default_newlib_io_long_long="yes"
 	newlib_cflags="${newlib_cflags} -DMISSING_SYSCALL_NAMES"
