@@ -725,7 +725,7 @@ case "${host}" in
         ;;
 	otter-*-*)
 	syscall_dir=syscalls
-	newlib_cflags="${newlib_cflags} -DREENTRANT_SYSCALLS_PROVIDED -DMALLOC_PROVIDED"
+	newlib_cflags="${newlib_cflags} -DREENTRANT_SYSCALLS_PROVIDED -DMALLOC_PROVIDED -DABORT_PROVIDED -DHAVE_GETOPT -DHAVE_FCNTL"
 	;;
   powerpc*-*-eabialtivec*)
 	default_newlib_io_long_long="yes"
