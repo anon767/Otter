@@ -16,13 +16,12 @@ CONFIG_FILES := $(addprefix $(NEWLIB_1_19_0)/newlib/libc/machine/, configure ott
 MAKE_FILES := $(NEWLIB_1_19_0)/newlib/libc/machine/otter/Makefile.in
 
 OTTER_EXES := $(addprefix $(BIN_DIR)/, otter-cc otter-ar otter-ranlib otter-mv otter-libc-cc)
-MERGED_FILES := libm.a libc.a libnosys.a
+MERGED_FILES := libm.a libc.a
 
 all: $(MERGED_FILES)
 
 libc.a: $(BUILD)/otter/newlib/libc/libc.a
 libm.a: $(BUILD)/otter/newlib/libm.a
-libnosys.a: $(BUILD)/otter/libgloss/libnosys/libnosys.a
 
 $(MERGED_FILES): 
 	mkdir -p $(LIB_DIR)
@@ -30,7 +29,7 @@ $(MERGED_FILES):
 	mv $@ $(LIB_DIR)/$@
 
 $(BUILD)/otter/newlib/%.a: $(BUILD)/Makefile
-	make -C $(BUILD)
+	make -C $(BUILD) all-target-newlib
 
 $(BIN_DIR)/otter-%: $(BIN_DIR)/otter-%.in
 	sed 's:@OTTER_TRUNK@:$(OTTER_TRUNK):g' $< > $@
