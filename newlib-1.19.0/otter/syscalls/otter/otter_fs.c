@@ -34,7 +34,7 @@ int __otter_fs_can_permission(int filep, int wantp)
 struct __otter_fs_inode* __otter_fs_find_inode_in_dir(const char* name, struct __otter_fs_dnode* dir)
 {
 	if(!__otter_fs_can_permission((*dir).permissions, 1)) /* can't traverse dir */
-		__otter_fs_error(EACCESS);
+		__otter_fs_error(EACCES);
 
 	if((*dir).numfiles == 0) /* no files in dir */
 		__otter_fs_error(ENOENT);
@@ -55,7 +55,7 @@ struct __otter_fs_inode* __otter_fs_find_inode_in_dir(const char* name, struct _
 struct __otter_fs_dnode* __otter_fs_find_dnode_in_dir(const char* name, struct __otter_fs_dnode* dir)
 {
 	if(!__otter_fs_can_permission((*dir).permissions, 1)) /* can't traverse dir */
-		__otter_fs_error(EACCESS);
+		__otter_fs_error(EACCES);
 
 	if((*dir).numdirs == 0) /* no dirs in dir */
 		__otter_fs_error(ENOENT);
@@ -86,7 +86,7 @@ struct __otter_fs_dnode* __otter_fs_find_dnode_in_tree(char* name, struct __otte
 void* __otter_fs_find_vnode_in_tree(char* name, struct __otter_fs_dnode* tree, void* (*find_vnode)(char*, struct __otter_fs_dnode*))
 {
 	if(!__otter_fs_can_permission((*tree).permissions, 1)) /* can't traverse dir */
-		__otter_fs_error(EACCESS);
+		__otter_fs_error(EACCES);
 
 	char* s = strchr(name, '/');
 
@@ -201,7 +201,7 @@ int __otter_fs_umask = 0x31ED;
 struct __otter_fs_dnode* __otter_fs_mkdir(const char* name, struct __otter_fs_dnode* dir)
 {
 	if(!__otter_fs_can_permission((*dir).permissions, 2)) /* can't write to dir */
-		__otter_fs_error(EACCESS);
+		__otter_fs_error(EACCES);
 
 	if(__otter_fs_legal_name(name))
 	{
@@ -256,7 +256,7 @@ struct __otter_fs_dnode* __otter_fs_mkdir(const char* name, struct __otter_fs_dn
 struct __otter_fs_inode* __otter_fs_touch(const char* name, struct __otter_fs_dnode* dir)
 {
 	if(!__otter_fs_can_permission((*dir).permissions, 2)) /* can't write to dir */
-		__otter_fs_error(EACCESS);
+		__otter_fs_error(EACCES);
 
 	if(__otter_fs_legal_name(name))
 	{
@@ -304,7 +304,7 @@ struct __otter_fs_inode* __otter_fs_touch(const char* name, struct __otter_fs_dn
 int __otter_fs_unlink_in_dir(const char* name, struct __otter_fs_dnode* dir)
 {
 	if(!__otter_fs_can_permission((*dir).permissions, 2)) /* can't write to dir */
-		__otter_fs_error(EACCESS);
+		__otter_fs_error(EACCES);
 
 	if(__otter_fs_find_dnode_in_dir(name, dir)) /* name is a dir */
 		__otter_fs_error(EPERM);
@@ -354,7 +354,7 @@ int __otter_fs_unlink_in_dir(const char* name, struct __otter_fs_dnode* dir)
 int __otter_fs_rmdir_in_dir(const char* name, struct __otter_fs_dnode* dir)
 {
 	if(!__otter_fs_can_permission((*dir).permissions, 2)) /* can't write to dir */
-		__otter_fs_error(EACCESS);
+		__otter_fs_error(EACCES);
 
 	if(__otter_fs_find_inode_in_dir(name, dir)) /* name is a dir */
 		__otter_fs_error(ENOTDIR);
@@ -407,7 +407,7 @@ int __otter_fs_rmdir_in_dir(const char* name, struct __otter_fs_dnode* dir)
 int __otter_fs_link_file(const char* name, struct __otter_fs_inode* target, struct __otter_fs_dnode* dir)
 {
 	if(!__otter_fs_can_permission((*dir).permissions, 2)) /* can't write to dir */
-		__otter_fs_error(EACCESS);
+		__otter_fs_error(EACCES);
 
 	if(__otter_fs_legal_name(name))
 	{
@@ -447,7 +447,7 @@ int __otter_fs_link_file(const char* name, struct __otter_fs_inode* target, stru
 int __otter_fs_link_dir(const char* name, struct __otter_fs_dnode* target, struct __otter_fs_dnode* dir)
 {
 	if(!__otter_fs_can_permission((*dir).permissions, 2)) /* can't write to dir */
-		__otter_fs_error(EACCESS);
+		__otter_fs_error(EACCES);
 
 	if(__otter_fs_legal_name(name))
 	{
@@ -533,7 +533,7 @@ int __otter_fs_open_file(struct __otter_fs_inode* inode, int mode)
 
 	if(!__otter_fs_can_permission((*inode).permissions, permissions))
 	{
-		errno = EACCESS;
+		errno = EACCES;
 		__otter_multi_end_atomic();
 		return (-1);
 	}
@@ -587,7 +587,7 @@ int __otter_fs_open_dir(struct __otter_fs_dnode* dnode, int mode)
 
 	if(!__otter_fs_can_permission((*dnode).permissions, permissions))
 	{
-		errno = EACCESS;
+		errno = EACCES;
 		return (-1);
 	}
 
@@ -645,7 +645,7 @@ int __otter_fs_change_open_mode(struct __otter_fs_open_file_table_entry* open_fi
 
 		if(!__otter_fs_can_permission((*inode).permissions, permissions))
 		{
-			errno = EACCESS;
+			errno = EACCES;
 			return (-1);
 		}
 
@@ -665,7 +665,7 @@ int __otter_fs_change_open_mode(struct __otter_fs_open_file_table_entry* open_fi
 
 		if(!__otter_fs_can_permission((*dnode).permissions, permissions))
 		{
-			errno = EACCESS;
+			errno = EACCES;
 			return (-1);
 		}
 
