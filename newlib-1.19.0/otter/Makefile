@@ -45,12 +45,10 @@ $(BUILD)/Makefile: $(OTTER_EXES) $(CONFIG_FILES) $(MAKE_FILES) $(NEWLIB_1_19_0)/
 
 .PHONY: clean distclean
 clean:
-	if [[ -f $(BUILD)/Makefile ]]; then make -C $(BUILD) clean; fi
 	rm -rf $(OTTER_EXES) $(LIB_DIR)
 
 distclean: clean
-	if [[ -f $(BUILD)/Makefile ]]; then make -C $(BUILD) distclean; fi
-	rm -f $(CONFIG_FILES) $(CONFIG_FILES:configure=aclocal.m4) $(MAKE_FILES)
+	rm -rf $(BUILD) $(CONFIG_FILES) $(CONFIG_FILES:configure=aclocal.m4) $(CONFIG_FILES:configure=autom4te.cache) $(MAKE_FILES)
 
 # I modeled these rules after Otter's top-level makefile. Thanks, Yit.
 .PRECIOUS : %/aclocal.m4 %/configure %/Makefile
