@@ -1,4 +1,4 @@
-#include "otter_builtins.h"
+#include <otter/otter_builtins.h>
 #include <sys/time.h>
 
 static time_t __otter_syscalls_current_time;
