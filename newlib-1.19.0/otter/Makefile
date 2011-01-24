@@ -49,9 +49,7 @@ OPTIONS_FOR_USING_LIBC := $(OPTIONS_FOR_BUILDING_LIBC) \
   -isystem $(BUILD_DIR)/otter/newlib/targ-include \
   -isystem $(NEWLIB_1_19_0)/newlib/libc/include \
   -L$(LIB_DIR) \
-  -lc \
-  -lottersys \
-  -lotterposix
+  -lc 
 
 CILLY_CMD := CILLY_DONT_COMPILE_AFTER_MERGE= '$(OTTER_TRUNK)/cil/bin/cilly' --merge --keepmerged
 
@@ -64,7 +62,7 @@ cilly: OTTER_RANLIB:=true
 
 native: MV=mv '$(1)' '$(2)'
 native: OTTER_AR:=ar
-native: OTTER_CC:=gcc
+native: OTTER_CC:=gcc -m32
 native: OTTER_RANLIB:=ranlib
 
 
@@ -87,11 +85,11 @@ otter-ar: otter-ar.in
 	chmod +x $@
 
 gcc-with-libc:
-	echo gcc /usr/lib/crt1.o $(OPTIONS_FOR_USING_LIBC) \"$$\@\" > $@
+	echo gcc -m32 /usr/lib/crt1.o $(OPTIONS_FOR_USING_LIBC) \"$$\@\" > $@
 	chmod +x $@
 
 cilly-with-libc:
-	echo $(CILLY_CMD) $(OPTIONS_FOR_USING_LIBC) \"$$\@\" > $@
+	echo $(CILLY_CMD) $(OPTIONS_FOR_USING_LIBC) -lottersys -lotterposix \"$$\@\" > $@
 	chmod +x $@
 
 
