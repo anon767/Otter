@@ -83,7 +83,7 @@ otter-ar: otter-ar.in
 	chmod +x $@
 
 gcc-with-libc:
-	echo gcc /usr/bin/crt1.o $(OPTIONS_FOR_USING_LIBC) \"$$\@\" > $@
+	echo gcc /usr/lib/crt1.o $(OPTIONS_FOR_USING_LIBC) \"$$\@\" > $@
 	chmod +x $@
 
 cilly-with-libc:
