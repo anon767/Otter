@@ -1,5 +1,6 @@
 #include <otter/otter_fs.h>
 #include <otter/otter_user.h>
+#include <otter/otter_scheduler.h>
 
 #include <string.h>
 #include <ctype.h>
@@ -521,7 +522,7 @@ int __otter_fs_next_global_fd()
 
 	return (-1);
 }
-#include<__otter/otter_scheduler.h>
+
 int __otter_fs_open_file(struct __otter_fs_inode* inode, int mode)
 {
 	__otter_multi_begin_atomic();
