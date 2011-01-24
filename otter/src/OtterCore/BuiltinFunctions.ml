@@ -883,6 +883,9 @@ let otter_voice job = wrap_state_function begin fun state retopt exps errors ->
 	(state, errors)
 end job
 
+let noop job _ _ errors =
+    Active (end_function_call job), errors
+
 let interceptor job job_queue interceptor =
 	try
 		(
@@ -924,6 +927,12 @@ let interceptor job job_queue interceptor =
 		(intercept_function_by_name_internal "__otter_mute"            otter_mute) @@
 		(intercept_function_by_name_internal "__otter_voice"           otter_voice) @@
 
+        (* multiotter functions to be ignored in single-process otter *)
+        (intercept_function_by_name_internal "__otter_multi_begin_atomic" noop) @@
+        (intercept_function_by_name_internal "__otter_multi_end_atomic" noop) @@
+        (intercept_function_by_name_internal "__otter_multi_gmalloc"   libc_malloc) @@
+        (intercept_function_by_name_internal "__otter_multi_gfree"     libc_free) @@
+
 		(* pass on the job when none of those match *)
 		interceptor
 
@@ -937,9 +946,6 @@ let interceptor job job_queue interceptor =
 			result_decision_path = job.decisionPath; }
 		in
 		(Complete (Abandoned (`Failure msg, Job.get_loc job, result)), job_queue) (* TODO (see above) *)
-
-let noop job _ _ errors =
-    Active (end_function_call job), errors
 
 let libc_interceptor job job_queue interceptor =
 	try
@@ -994,11 +1000,9 @@ let libc_interceptor job job_queue interceptor =
 		(intercept_function_by_name_external "rand"                    "__otter_libc_rand") @@
 		(intercept_function_by_name_external "srand"                   "__otter_libc_srand") @@
 		(intercept_function_by_name_internal "malloc"                  libc_malloc) @@
-		(intercept_function_by_name_internal "__otter_multi_gmalloc"   libc_malloc) @@
 		(intercept_function_by_name_external "calloc"                  "__otter_libc_calloc") @@
 		(intercept_function_by_name_external "realloc"                 "__otter_libc_realloc") @@
 		(intercept_function_by_name_internal "free"                    libc_free) @@
-		(intercept_function_by_name_internal "__otter_multi_gfree"     libc_free) @@
 		(intercept_function_by_name_internal "__libc_get_block_size"   libc_get_block_size) @@
 		(intercept_function_by_name_external "abort"                   "__otter_libc_abort") @@
 		(intercept_function_by_name_external "atexit"                  "__otter_libc_atexit") @@
@@ -1123,10 +1127,6 @@ let libc_interceptor job job_queue interceptor =
 		(* sys/uio.h *)
 		(intercept_function_by_name_external "readv"                   "__otter_libc_readv") @@
 		(intercept_function_by_name_external "writev"                  "__otter_libc_writev") @@
-
-    (* multiotter functions to be ignored in single-process otter *)
-    (intercept_function_by_name_internal "__otter_multi_begin_atomic" noop) @@
-    (intercept_function_by_name_internal "__otter_multi_end_atomic" noop) @@
 
 		(* pass on the job when none of those match *)
 		interceptor
