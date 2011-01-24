@@ -1,2 +1,0 @@
-#!/bin/sh
-CILLY_DONT_COMPILE_AFTER_MERGE= "@OTTER_TRUNK@/cil/bin/cilly" --merge -nostdinc -Wp,-undef -isystem '@OTTER_TRUNK@/newlib-1.19.0/otter/include' "$@"

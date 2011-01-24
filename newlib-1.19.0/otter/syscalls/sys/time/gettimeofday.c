@@ -1,4 +1,4 @@
-#include <otter/otter_builtins.h>
+#include "otter/otter_builtins.h"
 #include <sys/time.h>
 
 static time_t __otter_syscalls_current_time;
@@ -13,7 +13,7 @@ static time_t __otter_syscalls_get_current_time()
 	return(t);
 }
 
-int _gettimeofday_r(struct timeval *tv, void *tzp)
+int gettimeofday(struct timeval *tv, void *tzp)
 {
 	__ASSERT(tzp == 0);
 	tv->tv_sec = __otter_syscalls_get_current_time();

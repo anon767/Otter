@@ -1,6 +1,6 @@
-#include <otter/otter_fs.h>
-#include <otter/otter_user.h>
-#include <otter/otter_scheduler.h>
+#include "otter/otter_fs.h"
+#include "otter/otter_user.h"
+#include "otter/otter_scheduler.h"
 
 #include <string.h>
 #include <ctype.h>
