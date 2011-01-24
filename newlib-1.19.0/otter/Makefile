@@ -115,6 +115,7 @@ POSIX_OBJS := \
 	unistd/read.o \
 	unistd/write.o \
 	unistd/__otter_fcntl.o \
+	unistd/__otter_socket.o \
 	unistd/__otter_unistd.o 
 POSIX_OBJS := $(addprefix posix/,$(POSIX_OBJS))
 
