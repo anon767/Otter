@@ -49,7 +49,9 @@ OPTIONS_FOR_USING_LIBC := $(OPTIONS_FOR_BUILDING_LIBC) \
   -isystem $(BUILD_DIR)/otter/newlib/targ-include \
   -isystem $(NEWLIB_1_19_0)/newlib/libc/include \
   -L$(LIB_DIR) \
-  -lc
+  -lc \
+  -lottersys \
+  -lotterposix
 
 CILLY_CMD := CILLY_DONT_COMPILE_AFTER_MERGE= '$(OTTER_TRUNK)/cil/bin/cilly' --merge --keepmerged
 
@@ -114,7 +116,6 @@ POSIX_OBJS := \
 	unistd/write.o \
 	unistd/__otter_fcntl.o \
 	unistd/__otter_unistd.o 
-
 POSIX_OBJS := $(addprefix posix/,$(POSIX_OBJS))
 
 libotterposix.a: CC:='$(CURDIR)/cilly-with-libc' -I posix/include
