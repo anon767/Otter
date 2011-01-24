@@ -137,7 +137,7 @@ struct __otter_fs_open_file_table_entry* get_open_file_from_fd(int fd);
 struct __otter_fs_pipe_data* __otter_fs_init_new_pipe_data();
 struct __otter_fs_sock_data* __otter_fs_init_new_socket_data();
 struct __otter_fs_inode* __otter_fs_init_new_socket();
-void __otter_libc_free_socket(struct __otter_fs_inode* inode);
+void   __otter_fs_free_socket(struct __otter_fs_inode* inode);
 
 #endif
 
