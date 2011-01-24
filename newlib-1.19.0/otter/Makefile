@@ -1,7 +1,7 @@
 # There are two targets that are meant as 'entry points': cilly (the
 # default) and native. Each target creates a ../build* directory
 # containing the output from building newlib, a lib* directory
-# containing libc.a and libm.a (and, for cilly, also libottersys.a),
+# containing libc.a and libm.a (and, for cilly, also libotter{sys,posix}.a),
 # and a *-with-libc script which functions as a compiler that makes
 # use of the generated libraries.
 
@@ -44,6 +44,8 @@ MAKE_FILES := $(NEWLIB_1_19_0)/newlib/libc/machine/otter/Makefile.in
 
 OPTIONS_FOR_BUILDING_LIBC := -nostdinc -nostdlib -Wp,-undef -isystem $(CURDIR)/include
 OPTIONS_FOR_USING_LIBC := $(OPTIONS_FOR_BUILDING_LIBC) \
+  -isystem $(CURDIR)/posix/include \
+  -isystem $(CURDIR)/syscalls/include \
   -isystem $(BUILD_DIR)/otter/newlib/targ-include \
   -isystem $(NEWLIB_1_19_0)/newlib/libc/include \
   -L$(LIB_DIR) \
@@ -71,7 +73,7 @@ MERGED_FILES := $(addprefix $(LIB_DIR)/,libm.a libc.a)
 $(TARGETS): $(MERGED_FILES)
 # Also build the *-with-libc script. For cilly, also build libottersys.a
 native: gcc-with-libc
-cilly: cilly-with-libc libottersys.a
+cilly: cilly-with-libc libottersys.a libotterposix.a
 
 
 # Creating the scripts
@@ -93,7 +95,8 @@ cilly-with-libc:
 
 # Building Otter's system calls
 
-SYSCALL_OBJS := sys/time/gettimeofday.o \
+SYSCALL_OBJS := \
+	sys/time/gettimeofday.o \
 	otter/otter_fs.o \
 	otter/otter_fs_util.o
 SYSCALL_OBJS := $(addprefix syscalls/,$(SYSCALL_OBJS))
@@ -101,6 +104,22 @@ SYSCALL_OBJS := $(addprefix syscalls/,$(SYSCALL_OBJS))
 libottersys.a: CC:='$(CURDIR)/cilly-with-libc' -I syscalls/include
 libottersys.a: $(SYSCALL_OBJS) $(CURDIR)/cilly-with-libc
 	$(CILLY_CMD) --mode=AR cru $(LIB_DIR)/$@ $(SYSCALL_OBJS)
+
+# Building Otter's POSIX calls
+
+POSIX_OBJS := \
+	unistd/open.o \
+	unistd/close.o \
+	unistd/read.o \
+	unistd/write.o \
+	unistd/__otter_fcntl.o \
+	unistd/__otter_unistd.o 
+
+POSIX_OBJS := $(addprefix posix/,$(POSIX_OBJS))
+
+libotterposix.a: CC:='$(CURDIR)/cilly-with-libc' -I posix/include
+libotterposix.a: $(POSIX_OBJS) $(CURDIR)/cilly-with-libc
+	$(CILLY_CMD) --mode=AR cru $(LIB_DIR)/$@ $(POSIX_OBJS)
 
 
 # Building newlib
@@ -140,10 +159,10 @@ distclean-%:
 	if [[ -f $(BUILD_DIR)/Makefile ]]; then make -C $(BUILD_DIR) distclean || rm -rf $(BUILD_DIR); fi
 
 clean: $(addprefix clean-,$(TARGETS))
-	rm -f $(OTTER_EXES) $(SYSCALL_OBJS)
+	rm -f $(OTTER_EXES) $(SYSCALL_OBJS) $(POSIX_OBJS)
 
 distclean: $(addprefix distclean-,$(TARGETS))
-	rm -f $(OTTER_EXES) $(SYSCALL_OBJS)
+	rm -f $(OTTER_EXES) $(SYSCALL_OBJS) $(POSIX_OBJS)
 	rm -rf $(CONFIG_FILES) $(CONFIG_FILES:configure=aclocal.m4) $(CONFIG_FILES:configure=autom4te.cache) $(MAKE_FILES) $(LIB_DIR) $(LIB_DIR).native
 
 
