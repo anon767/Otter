@@ -113,6 +113,7 @@ POSIX_OBJS := \
 	unistd/close.o \
 	unistd/read.o \
 	unistd/write.o \
+	unistd/lseek.o \
 	unistd/__otter_unistd.o \
 	sys/stat/fstat.o \
 	sys/stat/__otter_stat.o \
