@@ -442,16 +442,6 @@ let rec eval pc bytes =
     Stp.query_bytes pc bytes
 
   in
-	let is_comparison op = match op with
-		| OP_LT -> true
-		| OP_GT -> true
-
-		| OP_LE -> true
-		| OP_GE -> true
-		| OP_EQ -> true
-		| OP_NE -> true
-		| _ -> false
-	in
 	let operation_of op = match op with
 		| OP_LT -> lt
 		| OP_GT -> gt
@@ -478,12 +468,12 @@ let rec eval pc bytes =
       | Bytes_Op(OP_LNOT,[(b1,_)]) -> Ternary.not (eval pc b1)
 
       (* Comparison of two pointers *)
-      | Bytes_Op(op,[(Bytes_Address(block1,offset1),_); (Bytes_Address(block2,offset2),_)])
-              when is_comparison op ->
+      | Bytes_Op((OP_LT|OP_GT|OP_LE|OP_GE|OP_EQ|OP_NE as op),
+                 [(Bytes_Address(block1,offset1),_); (Bytes_Address(block2,offset2),_)]) ->
             if block1!=block2 then
                 (if op==OP_EQ then Ternary.False else if op==OP_NE then Ternary.True else nontrivial())
             else
-                eval pc (run (operation_of op) [(offset1,Cil.intType);(offset2,Cil.intType)])
+                eval pc ((operation_of op) [(offset1,Cil.intType);(offset2,Cil.intType)])
 
       (* Comparison of pointer and integer *)
       | Bytes_Op((OP_EQ | OP_NE) as op,[(Bytes_Address(block,offset1),_); (bytes2,_)])

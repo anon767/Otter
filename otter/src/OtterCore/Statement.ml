@@ -274,8 +274,6 @@ let exec_stmt job errors =
         | Cil.Return (expopt, loc) ->
             begin match state.callContexts with
                 | Runtime::_ -> (* completed symbolic execution (e.g., return from main) *)
-                    Output.set_mode Output.MSG_MUSTPRINT;
-                    Output.printf "Program execution finished.@\n";
                     let state, retval, errors = match expopt with
                         | None ->
                             (state, None, errors)
@@ -289,6 +287,8 @@ let exec_stmt job errors =
                             result_history = nextExHist None;
                             result_decision_path = job.decisionPath;
                     } in
+                    Output.set_mode Output.MSG_MUSTPRINT;
+                    Output.printf "Program execution finished.@\n";
                     (Complete (Return (retval, result)), errors)
                 | (Source (destOpt,callStmt,_,nextStmt))::_ ->
                         let state, errors =

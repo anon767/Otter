@@ -5,7 +5,6 @@ open OtterBytes
 open Bytes
 open BytesUtility
 open Types
-open Operator
 
 (* Track Stp calls *)
 let timed_query_stp name pc pre guard = Timer.time name (fun () -> Stp.query_stp pc pre guard) ()
@@ -47,7 +46,7 @@ let print_failed_assertion state bytes exps ~isUnknown =
     @param bytes            the assertion : bytes
     @param exps             the expressions being asserted (used for printing a readable error message) : exp list
     @raise Failure          if the assertion is always false
-    @return state           if the assertion is always true, this is the input state; otherwise, an error message is printed and the return value is the input state with [bytes] added to the path condition
+    @return the input state if the assertion is always true; otherwise, an error message is printed and the return value is the input state with [bytes] added to the path condition
 *)
 let check state bytes exps =
     match MemOp.eval state.path_condition bytes with
@@ -478,21 +477,29 @@ rval_unop state unop exp errors =
 
 and
 
+finish_rval_binop state binop (rv1,typ1) exp2 errors =
+    let state, rv2, errors = rval state exp2 errors in
+    let typ2 = Cil.typeOf exp2 in
+    let conditional = conditional__bytes (Operator.run (Operator.of_binop binop) [(rv1,typ1);(rv2,typ2)]) in
+    let conditional = conditional__prune ~test:(timed_query_stp "query_stp/Expression.rval_binop" state.path_condition) ~eq:bytes__equal conditional in
+    (state, make_Bytes_Conditional conditional, errors)
+
+and
+
 rval_binop state binop exp1 exp2 errors =
-    let op = (Operator.of_binop binop) in
     let state, rv1, errors = rval state exp1 errors in
-    let typ1 = Cil.typeOf exp1 in
-    (* shortcircuiting *)
-    if op == Operator.logand && isConcrete_bytes rv1 && bytes_to_bool rv1 = false then
-        (state, int_to_bytes 0, errors)
-    else if op == Operator.logor && isConcrete_bytes rv1 && bytes_to_bool rv1 = true then
-        (state, int_to_bytes 1, errors)
-    else
-        let state, rv2, errors = rval state exp2 errors in
-        let typ2 = Cil.typeOf exp2 in
-        let conditional = conditional__bytes (Operator.run op [(rv1,typ1);(rv2,typ2)]) in
-        let conditional = conditional__prune ~test:(timed_query_stp "query_stp/Expression.rval_binop" state.path_condition) ~eq:bytes__equal conditional in
-        (state, make_Bytes_Conditional conditional, errors)
+    let finish () = finish_rval_binop state binop (rv1,typeOf exp1) exp2 errors in
+    match binop with
+      | LAnd | LOr -> begin (* Short-circuit, if possible *)
+            match MemOp.eval state.path_condition rv1 with
+              | Ternary.True -> if binop == LAnd then rval state exp2 errors else (state, bytes__one, errors)
+              | Ternary.False -> if binop == LOr then rval state exp2 errors else (state, bytes__zero, errors)
+              | Ternary.Unknown -> finish () (* Short-circuiting not possible *)
+                    (* TODO: Even if exp1 is unknown, it may be that exp2 is
+                       only valid if you assume rv1. For example, 'if (i < len
+                       && a[i])'. Getting that right requires more work. *)
+        end
+      | _ -> finish ()
 
 and
 
