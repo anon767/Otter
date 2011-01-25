@@ -1,0 +1,8 @@
+# A bunch of variables  -*- Mode: makefile -*-
+export ARCHOS=@ARCHOS@
+export HAS_MSVC=@HAS_MSVC@
+export CILHOME=@CILHOME@
+export DEFAULT_CIL_MODE=@DEFAULT_CIL_MODE@
+export DEFAULT_COMPILER=@DEFAULT_COMPILER@
+export @DEFAULT_COMPILER@=1
+export CILLY_NATIVE_CC=@CC@

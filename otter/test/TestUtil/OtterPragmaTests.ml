@@ -14,7 +14,7 @@
             [--arg] command-line option. E.g., [#pragma command_line("foo", "bar")].
         - [#pragma time_limit(<time in seconds>)] specifies the time limit for the symbolic execution to complete.
         - [#pragma cil_options(<string argument>, ...)] specifies the command line arguments to be passed to
-            CIL. E.g., [#pragma cil_options("--unfoldLogicalOperators")].
+            CIL. E.g., [#pragma cil_options("--noUseLogicalOperators")].
         - [#pragma has_failing_assertions] specifies that failing assertions should be expected. Conversely, {e not
             providing} this directive specifies that failing assertions should not be expected.
         - [#pragma init_malloc_zero] specifies that memory allocated by malloc should be initialized to zeros. Conversely, {e not

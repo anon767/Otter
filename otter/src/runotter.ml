@@ -23,9 +23,8 @@ let _ =
         MultiOtter.MultiDriver.feature;
         BackOtter.BackOtterDriver.feature;
         DebugOtter.DebugOtterExecute.feature;
-        Marshal_feature.feature;
         CilUtilities.FindFns.feature;
         CilUtilities.TraceLines.feature;
         CilUtilities.CilCallgraph.feature;
-    ] ()
+    ]
 
