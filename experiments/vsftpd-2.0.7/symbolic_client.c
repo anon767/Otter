@@ -13,7 +13,8 @@ int client_main()
 	char buf[20];
 	for(int i = 0; i < 5; i++)
 	{
-		__SYMBOLIC(&buf);
+		for(int j = 0; j < 20; j++)
+			buf[j] = __SYMBOLIC(1);
 		write(fd, buf, 20);
 		read(fd, buf, 20);
 	}

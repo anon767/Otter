@@ -1,0 +1,92 @@
+localcharset.o: localcharset.c ../src/config.h localcharset.h \
+ /home/yudi/Desktop/Otter/trunk/newlib-1.19.0/otter/include/stddef.h \
+ stdio.h \
+ /home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/stdio.h \
+ /home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/_ansi.h \
+ /home/yudi/Desktop/Otter/trunk/newlib-1.19.0//build/otter/newlib/targ-include/newlib.h \
+ /home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/sys/config.h \
+ /home/yudi/Desktop/Otter/trunk/newlib-1.19.0//build/otter/newlib/targ-include/machine/ieeefp.h \
+ /home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/sys/features.h \
+ /home/yudi/Desktop/Otter/trunk/newlib-1.19.0/otter/include/stdarg.h \
+ /home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/sys/reent.h \
+ /home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/_ansi.h \
+ /home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/sys/_types.h \
+ /home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/machine/_types.h \
+ /home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/machine/_default_types.h \
+ /home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/limits.h \
+ /home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/sys/lock.h \
+ /home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/sys/types.h \
+ /home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/machine/types.h \
+ /home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/sys/stdio.h \
+ string.h \
+ /home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/string.h \
+ /home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/sys/string.h \
+ stdlib.h \
+ /home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/stdlib.h \
+ /home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/machine/stdlib.h \
+ alloca.h \
+ /home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/langinfo.h \
+ /home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/sys/cdefs.h \
+ configmake.h
+
+../src/config.h:
+
+localcharset.h:
+
+/home/yudi/Desktop/Otter/trunk/newlib-1.19.0/otter/include/stddef.h:
+
+stdio.h:
+
+/home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/stdio.h:
+
+/home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/_ansi.h:
+
+/home/yudi/Desktop/Otter/trunk/newlib-1.19.0//build/otter/newlib/targ-include/newlib.h:
+
+/home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/sys/config.h:
+
+/home/yudi/Desktop/Otter/trunk/newlib-1.19.0//build/otter/newlib/targ-include/machine/ieeefp.h:
+
+/home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/sys/features.h:
+
+/home/yudi/Desktop/Otter/trunk/newlib-1.19.0/otter/include/stdarg.h:
+
+/home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/sys/reent.h:
+
+/home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/_ansi.h:
+
+/home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/sys/_types.h:
+
+/home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/machine/_types.h:
+
+/home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/machine/_default_types.h:
+
+/home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/limits.h:
+
+/home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/sys/lock.h:
+
+/home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/sys/types.h:
+
+/home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/machine/types.h:
+
+/home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/sys/stdio.h:
+
+string.h:
+
+/home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/string.h:
+
+/home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/sys/string.h:
+
+stdlib.h:
+
+/home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/stdlib.h:
+
+/home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/machine/stdlib.h:
+
+alloca.h:
+
+/home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/langinfo.h:
+
+/home/yudi/Desktop/Otter/trunk/newlib-1.19.0//newlib/libc/include/sys/cdefs.h:
+
+configmake.h:

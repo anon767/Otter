@@ -1,0 +1,8 @@
+c-ctype.o: c-ctype.c ../src/config.h c-ctype.h \
+ /home/yudi/Desktop/Otter/trunk/newlib-1.19.0/otter/include/stdbool.h
+
+../src/config.h:
+
+c-ctype.h:
+
+/home/yudi/Desktop/Otter/trunk/newlib-1.19.0/otter/include/stdbool.h:
