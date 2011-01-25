@@ -108,13 +108,15 @@ libottersys.a: $(SYSCALL_OBJS) $(CURDIR)/cilly-with-libc
 # Building Otter's POSIX calls
 
 POSIX_OBJS := \
-	unistd/open.o \
+	fcntl/open.o \
+	fcntl/__otter_fcntl.o \
 	unistd/close.o \
 	unistd/read.o \
 	unistd/write.o \
-	unistd/__otter_fcntl.o \
-	unistd/__otter_socket.o \
-	unistd/__otter_unistd.o 
+	unistd/__otter_unistd.o \
+	sys/stat/fstat.o \
+	sys/stat/__otter_stat.o \
+	sys/socket/__otter_socket.o 
 POSIX_OBJS := $(addprefix posix/,$(POSIX_OBJS))
 
 libotterposix.a: CC:='$(CURDIR)/cilly-with-libc' -I posix/include
