@@ -96,6 +96,7 @@ cilly-with-libc:
 # Building Otter's system calls
 
 SYSCALL_OBJS := \
+	malloc/_malloc_r.o \
 	sys/time/gettimeofday.o \
 	otter/otter_fs.o \
 	otter/otter_fs_util.o
