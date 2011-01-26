@@ -892,10 +892,15 @@ let interceptor job job_queue interceptor =
 		(* intercept builtin functions *)
 		(                                  (*"__SYMBOLIC"*)            intercept_symbolic) @@
 		(intercept_function_by_name_internal (!Executeargs.arg_failurefn) otter_failure) @@
-		(intercept_function_by_name_internal "__builtin_alloca"        libc___builtin_alloca) @@
-		(intercept_function_by_name_internal "alloca"                  libc___builtin_alloca) @@
+
+        (* libc functions that are built-in *)
+		(intercept_function_by_name_internal "__libc_get_block_size"   libc_get_block_size) @@
+		(intercept_function_by_name_internal "__libc_setjmp"           libc_setjmp) @@
+		(intercept_function_by_name_internal "__libc_longjmp"          libc_longjmp) @@
 		(intercept_function_by_name_internal "malloc"                  libc_malloc) @@
 		(intercept_function_by_name_internal "free"                    libc_free) @@
+		(intercept_function_by_name_internal "alloca"                  libc___builtin_alloca) @@
+		(intercept_function_by_name_internal "__builtin_alloca"        libc___builtin_alloca) @@
 		(intercept_function_by_name_internal "__builtin_va_arg_fixed"  libc___builtin_va_arg) @@
 		(intercept_function_by_name_internal "__builtin_va_arg"        libc___builtin_va_arg) @@
 		(intercept_function_by_name_internal "__builtin_va_copy"       libc___builtin_va_copy) @@
@@ -977,9 +982,7 @@ let libc_interceptor job job_queue interceptor =
 		(intercept_function_by_name_external "endgrent"                "__otter_libc_endgrent") @@
 		(intercept_function_by_name_external "setgrent"                "__otter_libc_setgrent") @@
 
-		(* setjmp.h *)
-		(intercept_function_by_name_internal "__libc_setjmp"           libc_setjmp) @@
-		(intercept_function_by_name_internal "__libc_longjmp"          libc_longjmp) @@
+		(* setjmp.h: both setjmp and longjmp are built-in functions *)
 
 		(* signal.h *)
 		(intercept_function_by_name_external "sigaltstack"             "__otter_libc_sigaltstack") @@
@@ -999,11 +1002,8 @@ let libc_interceptor job job_queue interceptor =
 		(intercept_function_by_name_external "strtoull"                "__otter_libc_strtoull") @@
 		(intercept_function_by_name_external "rand"                    "__otter_libc_rand") @@
 		(intercept_function_by_name_external "srand"                   "__otter_libc_srand") @@
-		(intercept_function_by_name_internal "malloc"                  libc_malloc) @@
 		(intercept_function_by_name_external "calloc"                  "__otter_libc_calloc") @@
 		(intercept_function_by_name_external "realloc"                 "__otter_libc_realloc") @@
-		(intercept_function_by_name_internal "free"                    libc_free) @@
-		(intercept_function_by_name_internal "__libc_get_block_size"   libc_get_block_size) @@
 		(intercept_function_by_name_external "abort"                   "__otter_libc_abort") @@
 		(intercept_function_by_name_external "atexit"                  "__otter_libc_atexit") @@
 		(intercept_function_by_name_external "exit"                    "__otter_libc_exit") @@
