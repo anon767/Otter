@@ -116,6 +116,7 @@ POSIX_OBJS := \
 	unistd/lseek.o \
 	unistd/__otter_unistd.o \
 	sys/stat/fstat.o \
+	sys/stat/lstat.o \
 	sys/stat/__otter_stat.o \
 	sys/socket/__otter_socket.o 
 POSIX_OBJS := $(addprefix posix/,$(POSIX_OBJS))
