@@ -71,7 +71,7 @@ native: OTTER_RANLIB:=ranlib
 MERGED_FILES := $(addprefix $(LIB_DIR)/,libm.a libc.a)
 
 $(TARGETS): $(MERGED_FILES)
-# Also build the *-with-libc script. For cilly, also build libottersys.a
+# Also build the *-with-libc script. For cilly, also build libotter{sys,posix}.a
 native: gcc-with-libc
 cilly: cilly-with-libc libottersys.a libotterposix.a
 
@@ -148,6 +148,9 @@ $(MERGED_FILES):
 	mkdir -p $(LIB_DIR)
 	$(call MV,$<,$@)
 
+# Listing all functions in newlib, libottersys and libotterposix
+list: 
+	 $(OTTER_TRUNK)/otter/otter.pl --merge --dofindFns -Llib -lc -lm -lottersys -lotterposix > library_functions
 
 # Cleaning up
 
