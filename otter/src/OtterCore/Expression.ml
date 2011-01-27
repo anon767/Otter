@@ -242,10 +242,13 @@ rval_cast typ rv rvtyp errors =
         | Bytes_Constant(CReal(f,fkind,s)),TFloat(new_fkind,_) ->
             let const = CReal(f,new_fkind,s) in
             (make_Bytes_Constant(const), errors)
+        (* Casting to _Bool is essentially '!= 0'. See ISO C99 6.3.1.2 *)
+        | rv, TInt(IBool,_) ->
+            let zero = bytes__make ((bitsSizeOf rvtyp) / 8) in
+            (Operator.ne [ (rv, rvtyp); (zero, rvtyp) ], errors)
         (* added so that from now on there'll be no make_Bytes_Constant *)
         | Bytes_Constant(const),_ ->
             rval_cast typ (constant_to_bytes const) rvtyp errors
-
         | _ ->
             begin
                 let old_len = bytes__length rv in
