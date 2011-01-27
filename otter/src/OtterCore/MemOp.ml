@@ -490,7 +490,7 @@ let rec eval pc bytes =
             begin match eval pc bytes1 with
               | Ternary.True -> Ternary.True
               | Ternary.False -> eval pc bytes2
-              | Ternary.Unknown -> if eval (bytes1 :: pc) bytes2 = Ternary.True then Ternary.True else Ternary.Unknown
+              | Ternary.Unknown -> if eval (logicalNot bytes1 :: pc) bytes2 = Ternary.True then Ternary.True else Ternary.Unknown
             end
       (* Consult STP *)
       | _ ->
