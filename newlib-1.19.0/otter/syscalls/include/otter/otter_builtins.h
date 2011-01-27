@@ -4,13 +4,6 @@
 #include <stdint.h>
 #include <stddef.h>
 
-/* Until we upgrade to CIL 1.3.7, which has the type _Bool, we
-    represent boolean values using uintmax_t to prevent truncation of
-    wide values (such as long long). (We could also use intmax_t, but
-    with uintmax_t widening casts will zero-extend rather than
-    sign-extend, which is presumably simpler.) */
-typedef _Bool uintmax_t;
-
 /* Cause Otter to exit with a failure. */
 void __FAILURE() {}
 
