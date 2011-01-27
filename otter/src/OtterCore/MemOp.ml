@@ -484,13 +484,13 @@ let rec eval pc bytes =
             begin match eval pc bytes1 with
               | Ternary.False -> Ternary.False
               | Ternary.True -> eval pc bytes2
-              | Ternary.Unknown -> if eval pc bytes2 = Ternary.False then Ternary.False else Ternary.Unknown
+              | Ternary.Unknown -> if eval (bytes1 :: pc) bytes2 = Ternary.False then Ternary.False else Ternary.Unknown
             end
       | Bytes_Op(OP_LOR, [(bytes1, _); (bytes2, _)]) ->
             begin match eval pc bytes1 with
               | Ternary.True -> Ternary.True
               | Ternary.False -> eval pc bytes2
-              | Ternary.Unknown -> if eval pc bytes2 = Ternary.True then Ternary.True else Ternary.Unknown
+              | Ternary.Unknown -> if eval (bytes1 :: pc) bytes2 = Ternary.True then Ternary.True else Ternary.Unknown
             end
       (* Consult STP *)
       | _ ->
