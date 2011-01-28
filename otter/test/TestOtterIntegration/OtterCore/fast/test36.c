@@ -17,7 +17,8 @@ int main()
 	
 	int x = a[__SYMBOLIC() % 4]();
 
-	__ASSERT(x >= 0, x <= 4);
+	__ASSERT(x >= 0);
+	__ASSERT(x <= 4);
 
 	return 0;
 }

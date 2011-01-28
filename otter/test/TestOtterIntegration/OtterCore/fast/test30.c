@@ -31,6 +31,8 @@ int main(){
 	int i1=1,i2=2,i3=3;
 	//int i1,i2,i3;
 	int min = minimum (3,i1,i2,i3);
-	__ASSERT(min<=i1,min<=i2,min<=i3);
+	__ASSERT(min<=i1);
+	__ASSERT(min<=i2);
+	__ASSERT(min<=i3);
 	return 0;
 }

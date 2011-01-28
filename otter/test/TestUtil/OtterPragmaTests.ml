@@ -1,8 +1,8 @@
 (** Testing framework for Otter where tests can be written as C files, and test expectations are specified using
     [#pragma] directives in the test files themselves.
 
-    Test expectations are given as [#pragma] directives in test files. Except for [#pragma command_line(...)] and
-    [#pragma has_failing_assertions], the directives will be interpreted in the order they are written.
+    Test expectations are given as [#pragma] directives in test files. Except for [#pragma command_line(...)],
+    the directives will be interpreted in the order they are written.
 
     The following [#pragma] directives are understood:
         - [#pragma entry_function(<string function name>)] specifies the entry function at which to begin symbolic
@@ -15,8 +15,6 @@
         - [#pragma time_limit(<time in seconds>)] specifies the time limit for the symbolic execution to complete.
         - [#pragma cil_options(<string argument>, ...)] specifies the command line arguments to be passed to
             CIL. E.g., [#pragma cil_options("--noUseLogicalOperators")].
-        - [#pragma has_failing_assertions] specifies that failing assertions should be expected. Conversely, {e not
-            providing} this directive specifies that failing assertions should not be expected.
         - [#pragma init_malloc_zero] specifies that memory allocated by malloc should be initialized to zeros. Conversely, {e not
             providing} this directive specifies that memory allocated by malloc should be initialized to undefined values. This corresponds to Otter's
             [--initMallocZero] command-line option.
@@ -44,6 +42,8 @@
                 {- [failure("<regular expression>")] for [`Failure msg] reason, where the argument is a regular
                     expression as a string to match [msg]. E.g.,
                     [#pragma expect_abandoned(failure("Function .* not found"), x == 1, y == 2, z == 3)].}
+                {- [assertion_failure] for [`AssertionFailure exp] reason.}
+                {- [out_of_bounds] for [`OutOfBounds lval] reason.}
             }
         - [#pragma no_other_return] specifies that no other {!Job.Return} should be in the remaining results.
         - [#pragma no_other_exit] specifies that no other {!Job.Exit} should be in the remaining results.
@@ -80,7 +80,6 @@ module Make (Errors : Errors) = struct
         command_line : string list;     (** The command line to use to run the test (corresponds to [--arg]). *)
         time_limit : int option;        (** The time limit for symbolic execution. *)
         cil_options : string list;      (** The command line options to pass to CIL. *)
-        has_failing_assertions : bool;  (** If failing assertions are expected in the test. *)
         no_bounds_checking : bool;      (** Disable bounds checking (corresponds to [--noboundsChecking]). *)
         init_malloc_zero : bool;        (** Initialize mallocs to zeros (corresponds to [--initMallocZero]). *)
         init_local_zero : bool;         (** Initialize locals to zeros (corresponds to [--initLocalZero]). *)
@@ -96,7 +95,6 @@ module Make (Errors : Errors) = struct
         command_line = [];
         time_limit = None;
         cil_options = [];
-        has_failing_assertions = false;
         no_bounds_checking = false;
         init_malloc_zero = false;
         init_local_zero = false;
@@ -324,11 +322,6 @@ module Make (Errors : Errors) = struct
                         if cil_options = [] then assert_loc_failure loc "Invalid CIL options (should have at least one argument).";
                         ({ flags with cil_options = cil_options }, test)
 
-                    | "has_failing_assertions", [] ->
-                        ({ flags with has_failing_assertions = true }, test)
-                    | "has_failing_assertions", _ ->
-                        assert_loc_failure loc "Invalid has_failing_assertions (should have no arguments)."
-
                     | "no_bounds_checking", [] ->
                         ({ flags with no_bounds_checking = true }, test)
                     | "no_bounds_checking", _ ->
@@ -472,25 +465,8 @@ module Make (Errors : Errors) = struct
         try
             let _, reporter = run (fun () -> driver reporter job) in
             try
-                (* first, test if assertions passed *)
-                let log = Executedebug.get_log () in
-                (* TODO: in BackOtter, a function-job may print failing assertions to Executedebug.
-                 * These failing assertions should not be counted.
-                 * (However, the printing happens in OtterCore.Expression, and it's hard to distinguish
-                 * if the caller is a function-job or not---so that we can disable printing to Executedebug).
-                 *
-                 * The bug here is that a test may pass, but it's still said as fail.
-                 *)
-                if not flags.has_failing_assertions then
-                    assert_string log;
-
                 (* then, run the given test *)
-                let () = test reporter#completed in
-
-                (* finally, test if assertions passed *)
-                if flags.has_failing_assertions then
-                    assert_bool "Expected some failing assertions but got none." (log <> "");
-
+                test reporter#completed;
                 (reporter, None)
             with e ->
                 (reporter, Some e)

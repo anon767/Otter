@@ -5,10 +5,7 @@ open Types
 open Job
 
 (* test helper that runs the symbolic executor on a file given a source code as a string *)
-let test_bounds content ?label ?has_failing_assertions test =
-    test_otter content ?label
-        ?has_failing_assertions
-        test
+let test_bounds content ?label test = test_otter content ?label test
 
 
 (* Baseline testing function *)
@@ -53,7 +50,6 @@ let simple_testsuite = "Simple" >::: [
   int x[2];
   return x[2];
 }"
-	~has_failing_assertions:true
 	(fun res -> expectedResultCounts 0 0 1 res);
 
   test_bounds ~label:"Explicit buffer underrun"
@@ -61,7 +57,6 @@ let simple_testsuite = "Simple" >::: [
   int x[2];
   return x[-1];
 }"
-	~has_failing_assertions:true
 	(fun res -> expectedResultCounts 0 0 1 res);
 
   test_bounds ~label:"Explicit malloc overrun"
@@ -69,7 +64,6 @@ let simple_testsuite = "Simple" >::: [
   char *x = malloc(2);
   return x[3];
 }"
-	~has_failing_assertions:true
 	(fun res -> expectedResultCounts 0 0 1 res);
 
   test_bounds ~label:"Explicit malloc underrun"
@@ -77,7 +71,6 @@ let simple_testsuite = "Simple" >::: [
   char *x = malloc(1);
   return x[-1];
 }"
-	~has_failing_assertions:true
 	(fun res -> expectedResultCounts 0 0 1 res);
 
   (* This test is barely different from the next one, because we treat offsets as unsigned anyway *)
@@ -87,16 +80,7 @@ let simple_testsuite = "Simple" >::: [
   __SYMBOLIC(&i);
   return x[i];
 }"
-	~has_failing_assertions:true (* Warnings printed for over- and underrun *)
-	(fun res ->
-			 expectedResultCounts 1 0 0 res;
-			 (* Make sure the path condition is the right length *)
-			 match res with
-					 [Return (_,res)] ->
-						 assert_equal 1 (List.length res.result_state.path_condition)
-							 ~msg:"Incorrect path condition"
-				 | _ -> assert false
-		);
+	(fun res -> expectedResultCounts 1 0 1 res);
 
   test_bounds ~label:"Possible buffer overrun (but no possible underrun)"
 "int main() {
@@ -105,16 +89,7 @@ let simple_testsuite = "Simple" >::: [
   __SYMBOLIC(&i);
   return x[i];
 }"
-	~has_failing_assertions:true (* Warnings printed for overrun *)
-	(fun res ->
-			 expectedResultCounts 1 0 0 res;
-			 (* Make sure the path condition is the right length *)
-			 match res with
-					 [Return (_,res)] ->
-						 assert_equal 1 (List.length res.result_state.path_condition)
-							 ~msg:"Incorrect path condition"
-				 | _ -> assert false
-		);
+	(fun res -> expectedResultCounts 1 0 1 res);
 
 	test_bounds ~label:"Symbolic offset with no problem"
 "int main() {
@@ -134,7 +109,6 @@ let simple_testsuite = "Simple" >::: [
 	p[-1] = 12;
   return 0;
 }"
-	~has_failing_assertions:true (* Warnings printed for over- and underrun *)
 	(fun res ->
 			 expectedResultCounts 0 0 2 res;
 			 (* Make sure the path conditions are each length 1 *)
@@ -162,8 +136,7 @@ let simple_testsuite = "Simple" >::: [
   __ASSUME(0 <= i, i*4 < 8);
   return x[i];
 }"
-	~has_failing_assertions:true (* Warnings printed for overrun *)
-	(fun res -> expectedResultCounts 1 0 0 res);
+	(fun res -> expectedResultCounts 1 0 1 res);
 
 	(* This __ASSUME works because the cast to unsigned makes the
 		 inequality function in unsigned arithmetic, so it successfully
@@ -183,7 +156,6 @@ let simple_testsuite = "Simple" >::: [
   int *p = (int*)x;
   return *p;
 }"
-	~has_failing_assertions:true (* Warnings printed for overrun *)
 	(fun res -> expectedResultCounts 0 0 1 res);
 
   test_bounds ~label:"Offset in bounds but offset+length out of bounds on write"
@@ -193,7 +165,6 @@ let simple_testsuite = "Simple" >::: [
   p[1] = 0;
   return 0;
 }"
-	~has_failing_assertions:true (* Warnings printed for overrun *)
 	(fun res -> expectedResultCounts 0 0 1 res);
 ]
 

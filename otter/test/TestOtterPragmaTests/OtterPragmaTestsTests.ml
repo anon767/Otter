@@ -63,73 +63,6 @@ let time_limit_testsuite = "time_limit" >::: [
         }";
 ]
 
-let has_failing_assertions_testsuite = "has_failing_assertions" >::: [
-    should_fail_pragma_tests ~label:"No assertions"
-        "#pragma has_failing_assertions
-        int main(void) {
-            return 0;
-        }";
-
-    should_fail_pragma_tests ~label:"One passing assertion"
-        "#pragma has_failing_assertions
-        int main(void) {
-            __ASSERT(1);
-            return 0;
-        }";
-
-    should_pass_pragma_tests ~label:"One failing assertion"
-        "#pragma has_failing_assertions
-        int main(void) {
-            __ASSERT(0);
-            return 0;
-        }";
-
-    should_fail_pragma_tests ~label:"One passing assertion on one path, no assertions on the other path"
-        "#pragma has_failing_assertions
-        int main(void) {
-            if (__SYMBOLIC()) __ASSERT(1);
-            return 0;
-        }";
-
-    should_pass_pragma_tests ~label:"One failing assertion on one path, no assertions on the other path"
-        "#pragma has_failing_assertions
-        int main(void) {
-            if (__SYMBOLIC()) __ASSERT(0);
-            return 0;
-        }";
-
-    should_pass_pragma_tests ~label:"One passing assertion on one path, one failing assertion on the other path"
-        "#pragma has_failing_assertions
-        int main(void) {
-            if (__SYMBOLIC()) __ASSERT(1);
-            else __ASSERT(0);
-            return 0;
-        }";
-
-    should_fail_pragma_tests ~label:"One passing assertion on both paths"
-        "#pragma has_failing_assertions
-        int main(void) {
-            if (__SYMBOLIC()) __ASSERT(1);
-            else __ASSERT(1);
-            return 0;
-        }";
-
-    should_pass_pragma_tests ~label:"One failing assertion on both paths"
-        "#pragma has_failing_assertions
-        int main(void) {
-            if (__SYMBOLIC()) __ASSERT(0);
-            else __ASSERT(0);
-            return 0;
-        }";
-
-    should_pass_pragma_tests ~label:"Assertion on symbolic value"
-        "#pragma has_failing_assertions
-        int main(void) {
-            __ASSERT(__SYMBOLIC());
-            return 0;
-        }";
-]
-
 let command_line_testsuite = "command_line" >::: [
     should_fail_pragma_tests ~label:"Invalid no-argument command_line"
         "#pragma command_line()
@@ -618,15 +551,16 @@ let expect_abandoned_testsuite = "expect_abandoned" >::: [
         }";
 ]
 
-let expect_abandoned_failure_testsuite = "expect_abandoned(failure(...))" >::: [
+let expect_abandoned_assertion_failure_testsuite = "expect_abandoned(assertion_failure)" >::: [
     should_pass_pragma_tests ~label:"One abandoned failure due to failing assertion"
-        "#pragma has_failing_assertions
-        #pragma expect_abandoned(failure(\"Assertion was false\"))
+        "#pragma expect_abandoned(assertion_failure)
         int main(void) {
             __ASSERT(0);
             return 0;
         }";
+]
 
+let expect_abandoned_failure_testsuite = "expect_abandoned(failure(...))" >::: [
     should_pass_pragma_tests ~label:"One abandoned failure due to bad dereference"
         "#pragma expect_abandoned(failure(\"Dereference something not an address\"))
         int main(void) {
@@ -1089,11 +1023,11 @@ let no_other_results_testsuite = "no_other_results" >::: [
 
 let testsuite = "OtterPragmaTests" >::: [
     time_limit_testsuite;
-    has_failing_assertions_testsuite;
     command_line_testsuite;
     expect_return_testsuite;
     expect_exit_testsuite;
     expect_abandoned_testsuite;
+    expect_abandoned_assertion_failure_testsuite;
     expect_abandoned_failure_testsuite;
     no_other_return_testsuite;
     no_other_exit_testsuite;

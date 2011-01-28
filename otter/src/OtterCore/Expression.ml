@@ -9,59 +9,18 @@ open Types
 (* Track Stp calls *)
 let timed_query_stp name pc pre guard = Timer.time name (fun () -> Stp.query_stp pc pre guard) ()
 
-(* Print an error message saying that the assertion [bytes] failed in
-     state [state]. [exps] is the expression representing [bytes].
-     [isUnknown] specifies whether the assertion returned
-     Ternary.Unknown (rather than Ternary.False). *)
-let print_failed_assertion state bytes exps ~isUnknown =
-    Output.set_mode Output.MSG_MUSTPRINT;
-    Output.printf "Assertion not-satisfied (see error log).@\n";
-    Output.set_mode Output.MSG_MUSTPRINT;
-    FormatPlus.ksprintf Executedebug.log
-        "\
-        (****************************@\n\
-        Assertion:@\n\
-        \  @[%a@]@\n\
-        @\n\
-        which becomes@\n\
-        \  @[%a@]@\n\
-        @\n\
-        %s false with the path condition:@\n\
-        \  @[  %t@]@\n\
-        ****************************)@\n\
-        "
-        (FormatPlus.pp_print_list Printer.exp "@ and ") exps
-        BytesPrinter.bytes bytes
-        (if isUnknown then "can be" else "is")
-        begin fun ff ->
-            if state.path_condition = [] then
-                Format.pp_print_string ff "true"
-            else
-                FormatPlus.pp_print_list BytesPrinter.bytes "@\nAND@\n  " ff state.path_condition
-        end
-
-
-(** Check an assertion in a given state
-    @param state            the state in which to check the assertion : state
-    @param bytes            the assertion : bytes
-    @param exps             the expressions being asserted (used for printing a readable error message) : exp list
-    @raise Failure          if the assertion is always false
-    @return the input state if the assertion is always true; otherwise, an error message is printed and the return value is the input state with [bytes] added to the path condition
-*)
-let check state bytes exps =
+(** [check state bytes] checks an assertion in a given state
+    @param state the state in which to check the assertion
+    @param bytes the assertion
+    @raises [Failure] if [bytes] is false in [state]
+    @return [state] if [bytes] is true in [state]; otherwise, [bytes]
+    is unknown, and the return value is [state] with [bytes] added to
+    the path condition. *)
+let check state bytes =
     match MemOp.eval state.path_condition bytes with
-        Ternary.True -> (* The assertion is true *)
-            Output.set_mode Output.MSG_REG;
-            state
-    | Ternary.False -> (* The assertion is definitely false *)
-            print_failed_assertion state bytes exps ~isUnknown:false;
-            failwith "Assertion was false"
-    | Ternary.Unknown -> (* The assertion is false in some states but not all *)
-            print_failed_assertion state bytes exps ~isUnknown:true;
-            (* Assume the assertion *)
-            MemOp.state__add_path_condition state bytes true (* This [true] marks the assumption as though it came from an actual branch in the code *)
-   (* CCBSE: we can collect failing conditions here *)
-
+        | Ternary.True -> state
+        | Ternary.False -> FormatPlus.failwith "Assertion failed:\n%a" BytesPrinter.bytes bytes
+        | Ternary.Unknown -> MemOp.state__add_path_condition state bytes true
 
 (* Bounds-checking *)
 (* The next two function are used for bounds-checking. Here are some
@@ -128,7 +87,17 @@ let rec getBlockSizesAndOffsets lvals = match lvals with
                 Unconditional offset
 
 
-let checkBounds state lvals cil_lval useSize =
+(** [checkBounds state lvals useSize] checks whether a dereference is in bounds.
+    @param state the state in which to perform the check
+    @param lvals the conditional tree of lvalues being accessed
+    @param useSize the width, in bytes, of the access
+    @raises [Failure] if the dereference must fail
+
+    @return [state', failing_bytes_opt]. [state'] is [state] augmented
+    (if necessary) with the assumption that the check passed.
+    [failing_bytes_opt] is [None] if the check certainly passes, or a [Some]
+    with the bytes that failed the check. *)
+let checkBounds state_in lvals useSize =
     (* Get the block sizes and offsets *)
     let sizesTree, offsetsTree = getBlockSizesAndOffsets lvals in
 
@@ -142,7 +111,12 @@ let checkBounds state lvals cil_lval useSize =
     let offsetsLeSizesMinusUseSize = Operator.le [(offsetsBytes, !Cil.upointType); (sizesMinusUseSize, !Cil.upointType)] in
 
     (* Do the check and keep the resulting state *)
-    let state = check state offsetsLeSizesMinusUseSize [Lval cil_lval; mkString "offset is in bounds (i.e., offset <= allocated size - size of access)"] in
+    let state' = check state_in offsetsLeSizesMinusUseSize in
+
+    (* Note if the first check failed (that is, evaluated to Unknown;
+       if it had been False, an exception would have been raised and
+       we wouldn't have reached here). *)
+    let check1_failed = (state' != state_in) in
 
     (* Prepare the second bounds check: {useSize <= sizes} *)
     (* TODO: If {sizes} is a conditional tree (rather than a single
@@ -153,8 +127,23 @@ let checkBounds state lvals cil_lval useSize =
     let useSizeLeSizes = Operator.le [(useSizeBytes, !Cil.upointType); (sizesBytes, !Cil.upointType)] in
 
     (* Do the second check *)
-    check state useSizeLeSizes [Lval cil_lval; mkString "size of access <= allocated size"]
+    let state'' = check state' useSizeLeSizes in
 
+    (* Note if the second check failed *)
+    let check2_failed = (state'' != state') in
+
+    (* Report the error, if there were any *)
+    let failing_bytes_opt =
+        if check1_failed then
+            if check2_failed
+            then Some (Operator.bytes__land offsetsLeSizesMinusUseSize useSizeLeSizes)
+            else Some offsetsLeSizesMinusUseSize
+        else
+            if check2_failed
+            then Some useSizeLeSizes
+            else None
+    in
+    (state'', failing_bytes_opt)
 
 let add_offset offset lvals =
     conditional__map begin fun (block, offset2) ->
@@ -242,7 +231,9 @@ rval_cast typ rv rvtyp errors =
         | Bytes_Constant(CReal(f,fkind,s)),TFloat(new_fkind,_) ->
             let const = CReal(f,new_fkind,s) in
             (make_Bytes_Constant(const), errors)
-        (* Casting to _Bool is essentially '!= 0'. See ISO C99 6.3.1.2 *)
+        (* Casting to _Bool is essentially '!= 0'. See ISO C99 6.3.1.2, except
+           that the result, obviously, has type _Bool and not int. I think (or
+           hope) that doesn't matter for Otter, though. *)
         | rv, TInt(IBool,_) ->
             let zero = bytes__make ((bitsSizeOf rvtyp) / 8) in
             (Operator.ne [ (rv, rvtyp); (zero, rvtyp) ], errors)
@@ -330,7 +321,12 @@ lval ?(justGetAddr=false) state (lhost, offset_exp as cil_lval) errors =
             if justGetAddr || not !Executeargs.arg_bounds_checking then
                 (state, (lvals, size), errors)
             else
-                (checkBounds state lvals cil_lval size, (lvals, size), errors)
+                let final_state, failing_bytes_opt = checkBounds state lvals size in
+                let errors = match failing_bytes_opt with
+                    | None -> errors
+                    | Some b -> (state, logicalNot b, `OutOfBounds cil_lval) :: errors
+                in
+                (final_state, (lvals, size), errors)
 
 and
 

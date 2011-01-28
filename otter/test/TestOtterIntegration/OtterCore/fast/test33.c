@@ -30,7 +30,10 @@ int main(){
 	char s[26];
 
 	my_sprintf(s,"%d",365);
-	__ASSERT(s[0]=='3',s[1]=='6',s[2]=='5',s[3]==0);
+	__ASSERT(s[0]=='3');
+	__ASSERT(s[1]=='6');
+	__ASSERT(s[2]=='5');
+	__ASSERT(s[3]==0);
 
 	return 0;
 }

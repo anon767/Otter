@@ -75,7 +75,6 @@ let test_with_preprocessed_file path test =
             @param command_line is an optional command line to provide to the executed file; ignored if
                     [entry_function] is not "main"
             @param time_limit is the time limit to run symbolic execution (default: 2.0 seconds)
-            @param has_failing_assertions indicates whether failing assertions are expected (default: [false])
             @param test is the test to apply to the result from Otter
             @return a {!TestCase} that runs Otter
 *)
@@ -86,7 +85,6 @@ let test_otter_on_file
         ?(entry_function="main")
         ?(command_line=[])
         ?(time_limit=2.0)
-        ?(has_failing_assertions=false)
         test =
     fun () ->
         (* reset the error flag and suppress all output from the symbolic executor *)
@@ -112,19 +110,8 @@ let test_otter_on_file
 
         (* run the symbolic executor with a time limit *)
         let _, reporter = assert_time_limit time_limit (fun () -> driver reporter job) in
-
-        (* perform tests in order of expressiveness of potential errors *)
-        (* first, test if assertions passed *)
-        let log = Executedebug.get_log () in
-        if not has_failing_assertions then
-            assert_string log;
-
-        (* then, run the given test *)
-        let () = test reporter#completed in
-
-        (* finally, test if assertions passed *)
-        if has_failing_assertions then
-            assert_bool "Expected some failing assertions but got none." (log <> "")
+        (* run the given test *)
+        test reporter#completed
 
 
 (** As with {!test_otter_on_file}, but on a source code given as a string, with the same argument defaults.
@@ -135,7 +122,6 @@ let test_otter_on_file
             @param entry_function is the function at which to begin symbolic execution
             @param command_line is an optional command line to provide to the executed file
             @param time_limit is the time limit to run symbolic execution
-            @param has_failing_assertions indicates whether failing assertions are expected
             @param test is the test to apply to the result from Otter
             @return a {!TestCase} that runs Otter
 *)
@@ -147,10 +133,9 @@ let test_otter
         ?entry_function
         ?command_line
         ?time_limit
-        ?has_failing_assertions
         test =
     label >:: test_string_as_file "OtterTest." ".i" code begin fun filename ->
-        test_otter_on_file filename ?setup ?driver ?entry_function ?command_line ?time_limit ?has_failing_assertions test ()
+        test_otter_on_file filename ?setup ?driver ?entry_function ?command_line ?time_limit test ()
     end
 
 
@@ -161,7 +146,6 @@ let test_otter
             @param entry_function is the function at which to begin symbolic execution
             @param command_line is an optional command line to provide to the executed file
             @param time_limit is the time limit to run symbolic execution
-            @param has_failing_assertions indicates whether failing assertions are expected
             @param test is the test to apply to the result from Otter
             @return a {!TestCase} that runs Otter
 *)

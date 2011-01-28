@@ -1,5 +1,4 @@
-#pragma has_failing_assertions
-#pragma expect_abandoned(failure("Assertion was false"), i == 3)
+#pragma expect_abandoned(assertion_failure, i == 3)
 #pragma no_other_results
 
 #include <stdlib.h>

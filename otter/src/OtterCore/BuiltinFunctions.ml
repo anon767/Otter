@@ -449,11 +449,28 @@ let otter_failure job retopt exps errors =
     let job_state = Complete (Abandoned (`FailureReached, loc, job_result)) in
     job_state, errors
 
-
-let otter_assert job = wrap_state_function begin fun state retopt exps errors ->
-	let state, assertion, errors = eval_join_exps state exps Cil.LAnd errors in
-	(Expression.check state assertion exps, errors)
-end job
+let otter_assert job retopt exps errors =
+    let exp =
+        match exps with
+            [ exp ] -> exp
+          | _ -> failwith "__ASSERT takes exactly one argument"
+    in
+    let state, assertion, errors = Expression.rval job.state exp errors in
+    let active j = Active (end_function_call j) in
+    let failure = (* Construct the failing job_state directly; there's no need to use 'errors' here. *)
+        let state = MemOp.state__add_path_condition state (logicalNot assertion) true in
+        let job = { job with state = state } in
+        Complete (Abandoned (`AssertionFailure exp, Job.get_loc job, Job.get_result_from_job job))
+    in
+    try
+        let state' = Expression.check state assertion in
+        if state == state'
+        then (* If the check certainly passes, do nothing *)
+            (active job, errors)
+        else (* If it can fail, record the error, but also assume it passes and continue  *)
+            (Fork [active {job with state = state'} ; failure], errors)
+    with Failure _ -> (* The check certainly fails. Terminate this path. *)
+        (failure, errors)
 
 let otter_if_then_else job = wrap_state_function begin fun state retopt exps errors ->
 	let state, bytes0, errors = Expression.rval state (List.nth exps 0) errors in

@@ -45,7 +45,6 @@ let doExecute (f: file) =
 	Sys.set_signal Sys.sigint old_INT_handler;
 
 	Output.set_formatter (new Output.plain);
-	Output.printf "%s@\n" (Executedebug.get_log ());
 		(* function stat
 		Output.print_endline "\nFunction call stat:";
 		Cilutility.FundecMap.iter (fun f c -> Output.print_endline ((To_string.fundec f)^" : "^(string_of_int c))) (!MemOp.function_stat);
@@ -91,7 +90,7 @@ let feature : featureDescr = {
 	fd_name = "execute";
 	fd_enabled = ref false;
 	fd_description = "(symbolic) executor for C";
-	fd_extraopt = Executeargs.options @ Executedebug.options @ SymbolicPointers.options @ Queue.options @ Job.options @ BasicReporter.options @ Stp.options;
+	fd_extraopt = Executeargs.options @ SymbolicPointers.options @ Queue.options @ Job.options @ BasicReporter.options @ Stp.options;
 	fd_post_check = true;
 	fd_doit = doExecute;
 }
