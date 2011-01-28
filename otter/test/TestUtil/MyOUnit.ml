@@ -1,3 +1,6 @@
+open OcamlUtilities
+
+
 (* include the test type *)
 type test = OUnit.test = TestCase of (unit -> unit) | TestList of test list | TestLabel of string * test
 
@@ -10,59 +13,6 @@ exception MyOUnitFailure
 let buffer = Buffer.create 4096
 let formatter = Format.formatter_of_buffer buffer
 let assert_log format = Format.fprintf formatter format
-
-
-(* helper that runs a function in a forked, child process *)
-let fork_call (f : ('a -> 'b)) (x : 'a) : 'b =
-    (* first, flush stdout/stderr to avoid printing twice *)
-    Format.pp_print_flush Format.std_formatter ();
-    Format.pp_print_flush Format.err_formatter ();
-
-    (* create a pipe to proxy the result from child to parent *)
-    let fdin, fdout = Unix.pipe () in
-
-    let child = Unix.fork () in
-    if child = 0 then begin
-        (* child process runs the function and proxies the result to the parent *)
-        Unix.close fdin;
-        (* also close stdin; automated tests really shouldn't rely on input *)
-        Unix.close Unix.stdin;
-
-        let result = try `Result (f x) with e -> `Exception e in
-        Marshal.to_channel (Unix.out_channel_of_descr fdout) result [Marshal.Closures];
-        exit 0
-    end else begin
-        (* parent process waits for child, and captures the result *)
-        Unix.close fdout;
-
-        (* get the result *)
-        let result = try
-            (Marshal.from_channel (Unix.in_channel_of_descr fdin) : [`Result of 'b | `Exception of exn])
-        with e ->
-            (* kill the child *)
-            Unix.kill child Sys.sigterm;
-            `Exception e
-        in
-
-        (* make sure to not exhaust file descriptors *)
-        Unix.close fdin;
-
-        (* get the child's exit status *)
-        let _, status = Unix.waitpid [] child in
-        match status, result with
-            | Unix.WEXITED 0, `Result res ->
-                res
-            | Unix.WEXITED 0, `Exception e ->
-                (* Marshal does not serialize exceptions faithfully: http://caml.inria.fr/mantis/view.php?id=1624 *)
-                Format.ksprintf failwith "fork_call: child process raised exception %s." (Printexc.to_string e)
-            | Unix.WEXITED i ,_ ->
-                Format.ksprintf failwith "fork_call: child process unexpectedly exited with code %d." i
-            | Unix.WSIGNALED i, _ ->
-                Format.ksprintf failwith "fork_call: child process unexpectedly killed by signal %d." i
-            | Unix.WSTOPPED i, _ ->
-                (* this should never occur since waitpid wasn't given the WUNTRACED flag *)
-                Format.ksprintf failwith "fork_call: Child process unexpectedly stopped by signal %d." i
-    end
 
 
 (* test wrapper that sets up the log and reports unexpected exceptions *)
@@ -97,10 +47,12 @@ let wrap_test testfn = fun () ->
 (* test wrapper that forks the process before running the test *)
 let fork_test testfn = fun () ->
     let helper testfn =
+        (* close stdin: automated tests really shouldn't rely on input *)
+        Unix.close Unix.stdin;
         try wrap_test testfn (); None
         with Failure s -> Some s
     in
-    match fork_call helper testfn with
+    match UnixPlus.fork_call helper testfn with
         | None -> ()
         | Some s -> failwith s
 
