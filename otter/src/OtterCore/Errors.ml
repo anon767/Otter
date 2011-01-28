@@ -42,6 +42,6 @@ let matcher name args =
                 | _ -> false
             end
         | "out_of_bounds", _ ->
-            failwith "Invalid failure_reached (takes no arguments)."
+            failwith "Invalid out_of_bounds (takes no arguments)."
         | s, _ ->
             failwith "Unknown failure reason."
