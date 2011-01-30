@@ -366,7 +366,7 @@ deref state bytes typ errors =
             if MemOp.state__has_block state block then
                 (state, conditional__lval_block (block, offset), errors)
             else
-                failwith "Dereference into an expired stack frame"
+                failwith "Dereference a dangling pointer"
 
         | Bytes_Conditional c ->
             let (guard, state, errors, _), conditional_opt =

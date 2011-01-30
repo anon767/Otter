@@ -1,4 +1,4 @@
-#pragma expect_abandoned(failure("Dereference into an expired stack frame"))
+#pragma expect_abandoned(failure("Dereference a dangling pointer"))
 
 int* foo() 
 { 
