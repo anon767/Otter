@@ -9,19 +9,6 @@ open Types
 (* Track Stp calls *)
 let timed_query_stp name pc pre guard = Timer.time name (fun () -> Stp.query_stp pc pre guard) ()
 
-(** [check state bytes] checks an assertion in a given state
-    @param state the state in which to check the assertion
-    @param bytes the assertion
-    @raises [Failure] if [bytes] is false in [state]
-    @return [state] if [bytes] is true in [state]; otherwise, [bytes]
-    is unknown, and the return value is [state] with [bytes] added to
-    the path condition. *)
-let check state bytes =
-    match MemOp.eval state.path_condition bytes with
-        | Ternary.True -> state
-        | Ternary.False -> FormatPlus.failwith "Assertion failed:\n%a" BytesPrinter.bytes bytes
-        | Ternary.Unknown -> MemOp.state__add_path_condition state bytes true
-
 (* Bounds-checking *)
 (* The next two function are used for bounds-checking. Here are some
      comments:
@@ -92,12 +79,11 @@ let rec getBlockSizesAndOffsets lvals = match lvals with
     @param lvals the conditional tree of lvalues being accessed
     @param useSize the width, in bytes, of the access
     @raises [Failure] if the dereference must fail
-
     @return [state', failing_bytes_opt]. [state'] is [state] augmented
     (if necessary) with the assumption that the check passed.
     [failing_bytes_opt] is [None] if the check certainly passes, or a [Some]
     with the bytes that failed the check. *)
-let checkBounds state_in lvals useSize =
+let checkBounds state lvals useSize =
     (* Get the block sizes and offsets *)
     let sizesTree, offsetsTree = getBlockSizesAndOffsets lvals in
 
@@ -110,40 +96,22 @@ let checkBounds state_in lvals useSize =
     let sizesMinusUseSize = Operator.minus [(sizesBytes, !Cil.upointType); (useSizeBytes, !Cil.upointType)] in
     let offsetsLeSizesMinusUseSize = Operator.le [(offsetsBytes, !Cil.upointType); (sizesMinusUseSize, !Cil.upointType)] in
 
-    (* Do the check and keep the resulting state *)
-    let state' = check state_in offsetsLeSizesMinusUseSize in
-
-    (* Note if the first check failed (that is, evaluated to Unknown;
-       if it had been False, an exception would have been raised and
-       we wouldn't have reached here). *)
-    let check1_failed = (state' != state_in) in
-
     (* Prepare the second bounds check: {useSize <= sizes} *)
-    (* TODO: If {sizes} is a conditional tree (rather than a single
-         value), we may want to call conditional__map (with the identity
-         function) to simplify {useSizeLeSizes}. It will almost always
-         have concrete 'true's at every leaf. If we don't simplify, we'll
-         end up calling the solver. *)
+    (* TODO: If {sizes} is a conditional tree (rather than a single value), we
+       may want to call conditional__map (with the identity function) to
+       simplify {useSizeLeSizes}. It will almost always have concrete 'true's at
+       every leaf. If we don't simplify, we'll end up calling the solver. *)
     let useSizeLeSizes = Operator.le [(useSizeBytes, !Cil.upointType); (sizesBytes, !Cil.upointType)] in
 
-    (* Do the second check *)
-    let state'' = check state' useSizeLeSizes in
+    let both_checks = Operator.bytes__land offsetsLeSizesMinusUseSize useSizeLeSizes in
 
-    (* Note if the second check failed *)
-    let check2_failed = (state'' != state') in
-
-    (* Report the error, if there were any *)
-    let failing_bytes_opt =
-        if check1_failed then
-            if check2_failed
-            then Some (Operator.bytes__land offsetsLeSizesMinusUseSize useSizeLeSizes)
-            else Some offsetsLeSizesMinusUseSize
-        else
-            if check2_failed
-            then Some useSizeLeSizes
-            else None
-    in
-    (state'', failing_bytes_opt)
+    (* Perform the check *)
+    match MemOp.eval state.path_condition both_checks with
+      | Ternary.False -> FormatPlus.failwith "Bounds check failed:\n%a" BytesPrinter.bytes both_checks
+      | Ternary.True -> (state, None) (* Check definitely passes. *)
+      | Ternary.Unknown -> (* If the check can fail, add it to the path condition *)
+            let state = MemOp.state__add_path_condition state both_checks true in
+            (state, Some both_checks)
 
 let add_offset offset lvals =
     conditional__map begin fun (block, offset2) ->

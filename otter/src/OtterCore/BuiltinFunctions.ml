@@ -456,15 +456,12 @@ let otter_assert job retopt exps errors =
         let job = { job with state = state } in
         Complete (Abandoned (`AssertionFailure exp, Job.get_loc job, Job.get_result_from_job job))
     in
-    try
-        let state' = Expression.check state assertion in
-        if state == state'
-        then (* If the check certainly passes, do nothing *)
-            (active job, errors)
-        else (* If it can fail, record the error, but also assume it passes and continue  *)
-            (Fork [active {job with state = state'} ; failure], errors)
-    with Failure _ -> (* The check certainly fails. Terminate this path. *)
-        (failure, errors)
+    match MemOp.eval state.path_condition assertion with
+      | Ternary.True -> (active job, errors) (* assertion passes; do nothing *)
+      | Ternary.False -> (failure, errors) (* assertion definitely fails *)
+      | Ternary.Unknown -> (* assertion can fail and can pass. Record the error, but also assume it passes and continue *)
+            let state = MemOp.state__add_path_condition state assertion true in
+            (Fork [active {job with state = state} ; failure], errors)
 
 let otter_if_then_else job = wrap_state_function begin fun state retopt exps errors ->
 	let state, bytes0, errors = Expression.rval state (List.nth exps 0) errors in
