@@ -135,8 +135,7 @@ void* __otter_fs_find_vnode(const char* name_in, void* (*find_vnode)(char*, stru
 		void* vnode;
 		if(*name == '/') /* absolute path */
 		{
-			name++;
-			vnode = __otter_fs_find_vnode_in_tree(name, __otter_fs_root, find_vnode);
+			vnode = __otter_fs_find_vnode_in_tree(name+1, __otter_fs_root, find_vnode);
 		}
 		else /* relative path */
 			vnode = __otter_fs_find_vnode_in_tree(name, __otter_fs_pwd, find_vnode);

@@ -173,27 +173,21 @@ end job
 
 
 let libc_free job = wrap_state_function begin fun state retopt exps errors ->
-	(* Remove the mapping of (block,bytes) in the state. *)
-	(* From opengroup: The free() function causes the space pointed to by
-	ptr to be deallocated; that is, made available for further allocation. If ptr
-	is a null pointer, no action occurs. Otherwise, if the argument does not match
-	a pointer earlier returned by the calloc(), malloc(), realloc() or valloc()
-	function, or if the space is deallocated by a call to free() or realloc(), the
-	behaviour is undefined.  Any use of a pointer that refers to freed space causes
-	undefined behaviour.  *)
-	let warning format = Output.kprintf (fun _ -> set_return_value state retopt bytes__zero errors) format in
-	let state, ptr, errors = Expression.rval state (List.hd exps) errors in
-	match ptr with
-		| Bytes_Address (block, _) ->
-			if block.memory_block_type != Block_type_Heap
-			then warning "Freeing a non-malloced pointer:@ @[%a@]@ = @[%a@]@\n" Printer.exp (List.hd exps) BytesPrinter.bytes ptr else
-			if not (MemOp.state__has_block state block)
-			then warning "Double-free:@ @[%a@]@ = @[%a@]@\n" Printer.exp (List.hd exps) BytesPrinter.bytes ptr else
-			let state = MemOp.state__remove_block state block in
-			set_return_value state retopt bytes__zero errors
-		| _ ->
-			Output.set_mode Output.MSG_MUSTPRINT;
-			warning "Freeing something that is not a valid pointer:@ @[%a@]@ = @[%a@]@\n" Printer.exp (List.hd exps) BytesPrinter.bytes ptr
+    (* Remove the mapping of (block,bytes) in the state. *)
+    let arg = List.hd exps in
+    let state, ptr, errors = Expression.rval state arg errors in
+    match ptr with
+      | Bytes_Address (block, offset) ->
+            if block.memory_block_type != Block_type_Heap || not (bytes__equal offset bytes__zero)
+            then FormatPlus.failwith "Freeing a non-malloced pointer:@ @[%a@]@ = @[%a@]@\n" Printer.exp arg BytesPrinter.bytes ptr;
+            if not (MemOp.state__has_block state block)
+            then FormatPlus.failwith "Double-free:@ @[%a@]@ = @[%a@]@\n" Printer.exp arg BytesPrinter.bytes ptr;
+            let state = MemOp.state__remove_block state block in
+            (state, errors)
+      | ptr when bytes__equal ptr bytes__zero -> (* Freeing a null pointer. Do nothing. *)
+            (state, errors)
+      | _ ->
+            FormatPlus.failwith "Freeing something that is not a valid pointer:@ @[%a@]@ = @[%a@]@\n" Printer.exp arg BytesPrinter.bytes ptr
 end job
 
 
