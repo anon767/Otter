@@ -88,12 +88,12 @@ let doDebugExecute (f: file) =
 
 
 let feature : featureDescr = {
-	fd_name = "debugotter";
-	fd_enabled = ref false;
-	fd_description = "debugger for the (symbolic) executor for C";
-	fd_extraopt =  Executeargs.options @ Queue.options @ Job.options @ BasicReporter.options @ Stp.options;
-	fd_post_check = true;
-	fd_doit = doDebugExecute;
+    fd_name = "debugotter";
+    fd_enabled = ref false;
+    fd_description = "debugger for the (symbolic) executor for C";
+    fd_extraopt = [];
+    fd_post_check = true;
+    fd_doit = doDebugExecute;
 }
 
 
