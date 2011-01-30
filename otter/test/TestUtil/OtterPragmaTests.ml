@@ -253,11 +253,11 @@ module Make (Errors : Errors) = struct
             | Some (_, results) ->
                 k results
             | None when asserts = [] ->
-                assert_loc_failure loc "@[Did not find Abandoned `Failure with reason:@\n  %s@\nGot:@\n  @[%a@]@]"
-                    reason results_printer results
+                assert_loc_failure loc "@[Did not find Abandoned `Failure with reason:@\n  %s %a@\nGot:@\n  @[%a@]@]"
+                    reason attrparams_printer args results_printer results
             | None ->
-                assert_loc_failure loc "@[Did not find Abandoned `Failure with reason:@\n  %s@\nand assertions:@\n  @[%a@]@\nGot:@\n  @[%a@]@]"
-                    reason attrparams_printer asserts results_printer results
+                assert_loc_failure loc "@[Did not find Abandoned `Failure with reason:@\n  %s %a@\nand assertions:@\n  @[%a@]@\nGot:@\n  @[%a@]@]"
+                    reason attrparams_printer args attrparams_printer asserts results_printer results
 
 
     (** CPS test that there are no other {!Types.job_completion} of a particular type, passing the remaining results to the next test. *)
