@@ -17,8 +17,10 @@ module OcamlbuildDependencies = struct
 end
 
 let _ =
-    (* setup and run CilQual *)
     Cilly.run [
+        (* Features have to be ordered by dependencies. *)
+        Otter.RunRmtmps.feature;
+        (* Features below are mutually exclusive. *)
         Otter.Executemain.feature;
         MultiOtter.MultiDriver.feature;
         BackOtter.BackOtterDriver.feature;
