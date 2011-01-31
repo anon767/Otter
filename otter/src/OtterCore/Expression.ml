@@ -517,9 +517,8 @@ and
 *)
 evaluate_under_condition state_in condition exp =
     let state = MemOp.state__add_path_condition state_in condition true in
-    match
-    try (Some (rval state exp []), "") with Failure msg -> (None, msg)
-    with
+    let result = try (Some (rval state exp []), "") with Failure msg -> (None, msg) in
+    match result with
       | None, msg -> None, msg
       | Some (state, bytes, errors), _ ->
             (* TODO: it might be possible to handle errors when evaluating under
