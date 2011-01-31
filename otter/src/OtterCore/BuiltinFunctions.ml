@@ -192,20 +192,23 @@ end job
 
 
 let libc_memset job = wrap_state_function begin fun state retopt exps errors ->
-	let state, bytes, errors = Expression.rval state (List.hd exps) errors in
-	let block, offset = bytes_to_address bytes in
-	let state, old_whole_bytes = MemOp.state__get_bytes_from_block state block in
-	let state, char_bytes, errors = Expression.rval state (List.nth exps 1) errors in
-	let c = bytes__get_byte char_bytes 0 (* little endian *) in
-	let state, n_bytes, errors = Expression.rval state (List.nth exps 2) errors in
-	if isConcrete_bytes n_bytes then
-		let n = bytes_to_int_auto n_bytes in
-		let newbytes = bytes__make_default n c in
-		let finalbytes = bytes__write old_whole_bytes offset n newbytes in
-		let state = MemOp.state__add_block state block finalbytes in
-		set_return_value state retopt bytes errors
-	else
-		failwith "libc_memset: n is symbolic (TODO)"
+    match exps with
+      | [ dest_exp; value_exp; length_exp ] ->
+            let state, length, errors = Expression.rval state length_exp errors in
+            let length = bytes_to_int_auto length in
+            let state, value, errors = Expression.rval state value_exp errors in
+            let value_byte = bytes__get_byte value 0 (* little endian *) in
+            let state, dest, errors = Expression.rval state dest_exp errors in
+            let state, lvals, errors = Expression.deref state dest (Cil.typeOf dest_exp) errors in
+            let old_state = state in (* Checkpoint the state in case we must report an error *)
+            let state, failing_bytes_opt = Expression.checkBounds state lvals length in
+            let errors = match failing_bytes_opt with
+              | None -> errors
+              | Some b -> (old_state, logicalNot b, `OutOfBounds dest_exp) :: errors
+            in
+            let state = MemOp.state__assign state (lvals, length) (bytes__make_default length value_byte) in
+            set_return_value state retopt dest errors
+      | _ -> failwith "Wrong number of arguments to memset"
 end job
 
 

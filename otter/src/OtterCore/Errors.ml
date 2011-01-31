@@ -3,14 +3,14 @@ type t = [
     | `Failure of string
     | `FailureReached
     | `AssertionFailure of Cil.exp
-    | `OutOfBounds of Cil.lval
+    | `OutOfBounds of Cil.exp
 ]
 
 let printer ff (error : t) = match error with
     | `Failure msg -> Format.fprintf ff "`Failure:%s" msg
     | `FailureReached -> Format.fprintf ff "`FailureReached"
     | `AssertionFailure exp -> Format.fprintf ff "`AssertionFailure: %a" Printcil.exp exp
-    | `OutOfBounds lval -> Format.fprintf ff "`OutOfBounds: %a" Printcil.lval lval
+    | `OutOfBounds exp -> Format.fprintf ff "`OutOfBounds: %a" Printcil.exp exp
 
 let matcher name args =
     match name, args with

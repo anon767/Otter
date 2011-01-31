@@ -43,7 +43,7 @@
                     expression as a string to match [msg]. E.g.,
                     [#pragma expect_abandoned(failure("Function .* not found"), x == 1, y == 2, z == 3)].}
                 {- [assertion_failure] for [`AssertionFailure exp] reason.}
-                {- [out_of_bounds] for [`OutOfBounds lval] reason.}
+                {- [out_of_bounds] for [`OutOfBounds exp] reason.}
             }
         - [#pragma no_other_return] specifies that no other {!Job.Return} should be in the remaining results.
         - [#pragma no_other_exit] specifies that no other {!Job.Exit} should be in the remaining results.

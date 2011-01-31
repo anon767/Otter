@@ -344,25 +344,6 @@ let rec bytes_to_constant bytes typ : Cil.constant =
 				| _ ->
 				failwith ("bytes_to_constant: "^(Pretty.sprint 50 (Cil.d_type () t)))
 			end
-	
-
-(** Convert a possibly-address bytes to make_Bytes_Address *)
-let rec bytes_to_address bytes : memory_block * bytes =
-	let fail () = failwith "bytes_to_address: not an address" in
-	match bytes with
-		| Bytes_Address(block,offset) -> (block,offset)
-		| Bytes_ByteArray(ba) ->
-			if ImmutableArray.length ba <> (bitsSizeOf voidPtrType / 8) then fail ()
-			else let g = ImmutableArray.get ba in
-			begin match g 0,g 1,g 2,g 3 with
-				| Byte_Bytes(b0,0),Byte_Bytes(b1,1),Byte_Bytes(b2,2),Byte_Bytes(b3,3)
-						when b0==b1 && b1==b2 && b2==b3
-						-> bytes_to_address b0
-				| _ -> fail ()
-			end
-		| _ -> fail ()
-
-
 
 (** True if bytearray is concrete *)
 (* Shouldn't a make_Byte_Bytes with concrete values be considered concrete, too? *)

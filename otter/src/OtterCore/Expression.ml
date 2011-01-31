@@ -297,7 +297,7 @@ lval ?(justGetAddr=false) state (lhost, offset_exp as cil_lval) errors =
                 let final_state, failing_bytes_opt = checkBounds state lvals size in
                 let errors = match failing_bytes_opt with
                     | None -> errors
-                    | Some b -> (state, logicalNot b, `OutOfBounds cil_lval) :: errors
+                    | Some b -> (state, logicalNot b, `OutOfBounds (Lval cil_lval)) :: errors
                 in
                 (final_state, (lvals, size), errors)
 
