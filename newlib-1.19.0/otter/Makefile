@@ -127,6 +127,9 @@ $(LIB_DIR)/libotter%.a: CC:='$(CURDIR)/cilly-with-libc' -I syscalls/include
 $(LIB_DIR)/libotter%.a: cilly-with-libc
 	$(CILLY_CMD) --mode=AR cru $@ $(OBJ_FILES)
 
+# Targets that make libotter{sys,posix} alone
+libottersys: $(LIB_DIR)/libottersys.a
+libotterposix: $(LIB_DIR)/libotterposix.a
 
 # Building newlib
 
