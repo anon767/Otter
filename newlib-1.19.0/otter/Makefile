@@ -25,10 +25,8 @@ all: cilly
 
 NEWLIB_1_19_0 := $(dir $(CURDIR))
 OTTER_TRUNK := $(realpath $(NEWLIB_1_19_0)/..)
-# Making these next two variables recursively (i.e., lazily) expanded
-# makes 'clean' a bit easier
-BUILD_DIR = $(NEWLIB_1_19_0)/build$(SUFFIX)
-LIB_DIR = $(CURDIR)/lib$(SUFFIX)
+BUILD_DIR := $(NEWLIB_1_19_0)/build$(SUFFIX)
+LIB_DIR := $(CURDIR)/lib$(SUFFIX)
 
 
 # Specifying some configurations files we depend on
@@ -73,7 +71,7 @@ MERGED_FILES := $(addprefix $(LIB_DIR)/,libm.a libc.a)
 $(TARGETS): $(MERGED_FILES)
 # Also build the *-with-libc script. For cilly, also build libotter{sys,posix}.a
 native: gcc-with-libc
-cilly: cilly-with-libc libottersys.a libotterposix.a
+cilly: cilly-with-libc $(LIB_DIR)/libottersys.a $(LIB_DIR)/libotterposix.a
 
 
 # Creating the scripts
@@ -96,13 +94,15 @@ cilly-with-libc:
 # Building Otter's system calls and POSIX functions
 
 SYSCALL_OBJS := \
+	stdlib/_free_r.o \
 	stdlib/_malloc_r.o \
+	stdlib/realloc.o \
 	sys/time/gettimeofday.o \
 	otter/otter_fs.o \
 	otter/otter_fs_util.o
 SYSCALL_OBJS := $(addprefix syscalls/,$(SYSCALL_OBJS))
-libottersys.a: OBJ_FILES := $(SYSCALL_OBJS)
-libottersys.a: $(SYSCALL_OBJS)
+$(LIB_DIR)/libottersys.a: OBJ_FILES := $(SYSCALL_OBJS)
+$(LIB_DIR)/libottersys.a: $(SYSCALL_OBJS)
 
 POSIX_OBJS := \
 	fcntl/open.o \
@@ -117,15 +117,15 @@ POSIX_OBJS := \
 	sys/stat/__otter_stat.o \
 	sys/socket/__otter_socket.o 
 POSIX_OBJS := $(addprefix posix/,$(POSIX_OBJS))
-libotterposix.a: OBJ_FILES := $(POSIX_OBJS)
-libotterposix.a: $(POSIX_OBJS)
+$(LIB_DIR)/libotterposix.a: OBJ_FILES := $(POSIX_OBJS)
+$(LIB_DIR)/libotterposix.a: $(POSIX_OBJS)
 
 # Make 'make' delete the .o files when it's done
 .INTERMEDIATE: $(SYSCALL_OBJS) $(POSIX_OBJS)
 
-libotter%.a: CC:='$(CURDIR)/cilly-with-libc' -I syscalls/include
-libotter%.a: cilly-with-libc
-	$(CILLY_CMD) --mode=AR cru $(LIB_DIR)/$@ $(OBJ_FILES)
+$(LIB_DIR)/libotter%.a: CC:='$(CURDIR)/cilly-with-libc' -I syscalls/include
+$(LIB_DIR)/libotter%.a: cilly-with-libc
+	$(CILLY_CMD) --mode=AR cru $@ $(OBJ_FILES)
 
 
 # Building newlib
@@ -158,7 +158,8 @@ list:
 
 .PHONY: clean distclean clean-% distclean-%
 
-%-native: SUFFIX:=.native
+%-native: BUILD_DIR:=$(BUILD_DIR).native
+%-native: LIB_DIR:=$(LIB_DIR).native
 
 clean-%:
 	if [[ -f $(BUILD_DIR)/Makefile ]]; then make -C $(BUILD_DIR) clean; fi
