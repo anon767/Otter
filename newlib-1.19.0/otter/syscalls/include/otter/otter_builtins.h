@@ -4,6 +4,9 @@
 #include <stdint.h>
 #include <stddef.h>
 
+/* Returns the allocated size of the block ptr points to */
+size_t __otter_allocated_size(void *ptr);
+
 /* Cause Otter to exit with a failure. */
 void __FAILURE() {}
 

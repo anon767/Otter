@@ -48,6 +48,13 @@ let eval_join_exps state exps binop errors =
 	in
 	Expression.rval state (join_exps exps) errors
 
+(** Gets the argument for a function that takes only one argument
+    @param exps the arguments to the function
+    @raises Failure if given a non-singleton list
+    @return the lone element of the list *)
+let get_lone_arg = function
+  | [ x ] -> x
+  | _ -> failwith "This function takes exactly one argument"
 
 (** Convenience function to assign a value to an optional return lvalue.
 		@param state is the symbolic executor state in which to evaluate the return lvalue
@@ -867,21 +874,16 @@ let libc_longjmp job retopt exps errors =
 		| _ -> failwith "longjmp invalid arguments"
 
 
-let libc_get_block_size job = wrap_state_function begin fun state retopt exps errors ->
-	match exps with
-		| [Lval cil_lval]
-		| [CastE (_, Lval cil_lval)]
-		| [AddrOf (_, NoOffset as cil_lval)]
-		| [CastE (_, AddrOf (_, NoOffset as cil_lval))]->
-			let state, bytes, errors = Expression.rval state (Lval cil_lval) errors in
-			let state, lvals, errors = Expression.deref state bytes (Cil.typeOfLval cil_lval) errors in
-			let size = make_Bytes_Conditional (conditional__map
-				~test:(Stp.query_stp state.path_condition)
-				(fun (x, y) -> Unconditional (int_to_bytes x.memory_block_size))
-				lvals)
-			in
-			set_return_value state retopt size errors
-		| _ -> failwith "libc_get_block_size invalid arguments"
+let otter_get_allocated_size job = wrap_state_function begin fun state retopt exps errors ->
+    let exp = get_lone_arg exps in
+    let state, bytes, errors = Expression.rval state exp errors in
+    let state, lvals, errors = Expression.deref state bytes (Cil.typeOf exp) errors in
+    let size = make_Bytes_Conditional (conditional__map
+        ~test:(Stp.query_stp state.path_condition)
+        (fun (x, y) -> Unconditional (int_to_bytes x.memory_block_size))
+        lvals)
+    in
+    set_return_value state retopt size errors
 end job
 
 let otter_mute job = wrap_state_function begin fun state retopt exps errors ->
@@ -905,7 +907,7 @@ let interceptor job job_queue interceptor =
 		(intercept_function_by_name_internal (!Executeargs.arg_failurefn) otter_failure) @@
 
         (* libc functions that are built-in *)
-		(intercept_function_by_name_internal "__libc_get_block_size"   libc_get_block_size) @@
+		(intercept_function_by_name_internal "__otter_get_allocated_size" otter_get_allocated_size) @@
 		(intercept_function_by_name_internal "__libc_setjmp"           libc_setjmp) @@
 		(intercept_function_by_name_internal "__libc_longjmp"          libc_longjmp) @@
 		(intercept_function_by_name_internal "malloc"                  libc_malloc) @@

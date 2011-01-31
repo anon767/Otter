@@ -165,9 +165,8 @@ void* __otter_libc_realloc(void* ptr, size_t bytes)
 		return 0;
 	}
 
-	int old_size = __libc_get_block_size(ptr);
+	int old_size = __otter_get_allocated_size(ptr);
 	void* ptr2 = malloc(bytes);
-	__libc_get_block_size(ptr2);
 	int max = (bytes > old_size) ? old_size : bytes;
 	for(int i = 0; i < max; i++)
 	{
@@ -200,9 +199,8 @@ void* __otter_multi_grealloc(void* ptr, size_t bytes)
 		return 0;
 	}
 
-	int old_size = __libc_get_block_size(ptr);
+	int old_size = __otter_get_allocated_size(ptr);
 	void* ptr2 = __otter_multi_gmalloc(bytes);
-	__libc_get_block_size(ptr2);
 	int max = (bytes > old_size) ? old_size : bytes;
 	for(int i = 0; i < max; i++)
 	{

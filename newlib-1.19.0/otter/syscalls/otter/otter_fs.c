@@ -128,7 +128,7 @@ struct __otter_fs_dnode* __otter_fs_find_dnode(const char* name)
 
 void* __otter_fs_find_vnode(const char* name_in, void* (*find_vnode)(char*, struct __otter_fs_dnode*))
 {
-	char* name = malloc(__libc_get_block_size(name_in));
+	char* name = malloc(__otter_get_allocated_size(name_in));
 	strcpy(name, name_in);
 
 	if(name)
