@@ -1,7 +1,7 @@
 # There are two targets that are meant as 'entry points': cilly (the
 # default) and native. Each target creates a ../build* directory
 # containing the output from building newlib, a lib* directory
-# containing libc.a and libm.a (and, for cilly, also libotter{sys,posix}.a),
+# containing libc.a and libm.a (and, for cilly, also libottersys.a),
 # and a *-with-libc script which functions as a compiler that makes
 # use of the generated libraries.
 
@@ -42,7 +42,6 @@ MAKE_FILES := $(NEWLIB_1_19_0)/newlib/libc/machine/otter/Makefile.in
 
 OPTIONS_FOR_BUILDING_LIBC := -nostdinc -nostdlib -Wp,-undef -isystem $(CURDIR)/include
 OPTIONS_FOR_USING_LIBC := $(OPTIONS_FOR_BUILDING_LIBC) \
-  -isystem $(CURDIR)/posix/include \
   -isystem $(CURDIR)/syscalls/include \
   -isystem $(BUILD_DIR)/otter/newlib/targ-include \
   -isystem $(NEWLIB_1_19_0)/newlib/libc/include \
@@ -69,9 +68,9 @@ native: OTTER_RANLIB:=ranlib
 MERGED_FILES := $(addprefix $(LIB_DIR)/,libm.a libc.a)
 
 $(TARGETS): $(MERGED_FILES)
-# Also build the *-with-libc script. For cilly, also build libotter{sys,posix}.a
+# Also build the *-with-libc script. For cilly, also build libottersys.a
 native: gcc-with-libc
-cilly: cilly-with-libc $(LIB_DIR)/libottersys.a $(LIB_DIR)/libotterposix.a
+cilly: cilly-with-libc $(LIB_DIR)/libottersys.a
 
 
 # Creating the scripts
@@ -87,49 +86,43 @@ gcc-with-libc:
 	chmod +x $@
 
 cilly-with-libc:
-	echo $(CILLY_CMD) $(OPTIONS_FOR_USING_LIBC) -lottersys -lotterposix \"$$\@\" > $@
+	echo $(CILLY_CMD) $(OPTIONS_FOR_USING_LIBC) -lottersys \"$$\@\" > $@
 	chmod +x $@
 
 
-# Building Otter's system calls and POSIX functions
+# Building Otter's system calls functions
 
 SYSCALL_OBJS := \
+	fcntl/open.o \
+	fcntl/__otter_fcntl.o \
+	otter/otter_fs.o \
+	otter/otter_fs_util.o \
 	stdlib/_free_r.o \
 	stdlib/_malloc_r.o \
 	stdlib/realloc.o \
+	sys/stat/fstat.o \
+	sys/stat/lstat.o \
+	sys/stat/__otter_stat.o \
+	sys/socket/__otter_socket.o \
 	sys/time/gettimeofday.o \
-	otter/otter_fs.o \
-	otter/otter_fs_util.o
-SYSCALL_OBJS := $(addprefix syscalls/,$(SYSCALL_OBJS))
-$(LIB_DIR)/libottersys.a: OBJ_FILES := $(SYSCALL_OBJS)
-$(LIB_DIR)/libottersys.a: $(SYSCALL_OBJS)
-
-POSIX_OBJS := \
-	fcntl/open.o \
-	fcntl/__otter_fcntl.o \
 	unistd/close.o \
 	unistd/read.o \
 	unistd/write.o \
 	unistd/lseek.o \
-	unistd/__otter_unistd.o \
-	sys/stat/fstat.o \
-	sys/stat/lstat.o \
-	sys/stat/__otter_stat.o \
-	sys/socket/__otter_socket.o 
-POSIX_OBJS := $(addprefix posix/,$(POSIX_OBJS))
-$(LIB_DIR)/libotterposix.a: OBJ_FILES := $(POSIX_OBJS)
-$(LIB_DIR)/libotterposix.a: $(POSIX_OBJS)
+	unistd/__otter_unistd.o 
+SYSCALL_OBJS := $(addprefix syscalls/,$(SYSCALL_OBJS))
+$(LIB_DIR)/libottersys.a: OBJ_FILES := $(SYSCALL_OBJS)
+$(LIB_DIR)/libottersys.a: $(SYSCALL_OBJS)
 
 # Make 'make' delete the .o files when it's done
-.INTERMEDIATE: $(SYSCALL_OBJS) $(POSIX_OBJS)
+.INTERMEDIATE: $(SYSCALL_OBJS)
 
 $(LIB_DIR)/libotter%.a: CC:='$(CURDIR)/cilly-with-libc' -I syscalls/include
 $(LIB_DIR)/libotter%.a: cilly-with-libc
 	$(CILLY_CMD) --mode=AR cru $@ $(OBJ_FILES)
 
-# Targets that make libotter{sys,posix} alone
+# Target that makes libottersys alone
 libottersys: $(LIB_DIR)/libottersys.a
-libotterposix: $(LIB_DIR)/libotterposix.a
 
 # Building newlib
 
@@ -153,9 +146,9 @@ $(MERGED_FILES):
 	mkdir -p $(LIB_DIR)
 	$(call MV,$<,$@)
 
-# Listing all functions in newlib, libottersys and libotterposix
+# Listing all functions in newlib and libottersys
 list: 
-	 $(OTTER_TRUNK)/otter/otter.pl --merge --dofindFns -Llib -lc -lm -lottersys -lotterposix > library_functions
+	 $(OTTER_TRUNK)/otter/otter.pl --merge --dofindFns -Llib -lc -lm -lottersys  > library_functions
 
 # Cleaning up
 
@@ -171,7 +164,7 @@ clean-%:
 distclean-%:
 	if [[ -f $(BUILD_DIR)/Makefile ]]; then make -C $(BUILD_DIR) distclean || rm -rf $(BUILD_DIR); fi
 
-CLEAN_CMD :=rm -f $(OTTER_EXES) $(SYSCALL_OBJS) $(POSIX_OBJS)
+CLEAN_CMD :=rm -f $(OTTER_EXES) $(SYSCALL_OBJS) 
 
 clean: $(addprefix clean-,$(TARGETS))
 	$(CLEAN_CMD)
