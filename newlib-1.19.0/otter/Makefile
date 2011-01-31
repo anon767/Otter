@@ -93,7 +93,7 @@ cilly-with-libc:
 	chmod +x $@
 
 
-# Building Otter's system calls
+# Building Otter's system calls and POSIX functions
 
 SYSCALL_OBJS := \
 	stdlib/_malloc_r.o \
@@ -101,12 +101,8 @@ SYSCALL_OBJS := \
 	otter/otter_fs.o \
 	otter/otter_fs_util.o
 SYSCALL_OBJS := $(addprefix syscalls/,$(SYSCALL_OBJS))
-
-libottersys.a: CC:='$(CURDIR)/cilly-with-libc' -I syscalls/include
-libottersys.a: $(SYSCALL_OBJS) $(CURDIR)/cilly-with-libc
-	$(CILLY_CMD) --mode=AR cru $(LIB_DIR)/$@ $(SYSCALL_OBJS)
-
-# Building Otter's POSIX calls
+libottersys.a: OBJ_FILES := $(SYSCALL_OBJS)
+libottersys.a: $(SYSCALL_OBJS)
 
 POSIX_OBJS := \
 	fcntl/open.o \
@@ -121,10 +117,15 @@ POSIX_OBJS := \
 	sys/stat/__otter_stat.o \
 	sys/socket/__otter_socket.o 
 POSIX_OBJS := $(addprefix posix/,$(POSIX_OBJS))
+libotterposix.a: OBJ_FILES := $(POSIX_OBJS)
+libotterposix.a: $(POSIX_OBJS)
 
-libotterposix.a: CC:='$(CURDIR)/cilly-with-libc' -I posix/include
-libotterposix.a: $(POSIX_OBJS) $(CURDIR)/cilly-with-libc
-	$(CILLY_CMD) --mode=AR cru $(LIB_DIR)/$@ $(POSIX_OBJS)
+# Make 'make' delete the .o files when it's done
+.INTERMEDIATE: $(SYSCALL_OBJS) $(POSIX_OBJS)
+
+libotter%.a: CC:='$(CURDIR)/cilly-with-libc' -I syscalls/include
+libotter%.a: cilly-with-libc
+	$(CILLY_CMD) --mode=AR cru $(LIB_DIR)/$@ $(OBJ_FILES)
 
 
 # Building newlib
@@ -166,11 +167,13 @@ clean-%:
 distclean-%:
 	if [[ -f $(BUILD_DIR)/Makefile ]]; then make -C $(BUILD_DIR) distclean || rm -rf $(BUILD_DIR); fi
 
+CLEAN_CMD :=rm -f $(OTTER_EXES) $(SYSCALL_OBJS) $(POSIX_OBJS)
+
 clean: $(addprefix clean-,$(TARGETS))
-	rm -f $(OTTER_EXES) $(SYSCALL_OBJS) $(POSIX_OBJS)
+	$(CLEAN_CMD)
 
 distclean: $(addprefix distclean-,$(TARGETS))
-	rm -f $(OTTER_EXES) $(SYSCALL_OBJS) $(POSIX_OBJS)
+	$(CLEAN_CMD)
 	rm -rf $(CONFIG_FILES) $(CONFIG_FILES:configure=aclocal.m4) $(CONFIG_FILES:configure=autom4te.cache) $(MAKE_FILES) $(LIB_DIR) $(LIB_DIR).native
 
 
