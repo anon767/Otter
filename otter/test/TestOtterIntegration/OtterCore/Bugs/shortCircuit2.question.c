@@ -33,7 +33,7 @@ int i, j;
 int main() {
 	__SYMBOLIC(&i);
 	__SYMBOLIC(&j);
-	if (i >= 2 && a[j]) {
+	if (i >= 2 ? a[j] != 0 : 0) {
 		__ASSERT(0); // Unreachable, because a[j] is either out-of-bounds or 0
 	}
 	if (j < 10) {

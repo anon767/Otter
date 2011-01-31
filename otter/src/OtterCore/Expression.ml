@@ -9,6 +9,11 @@ open Types
 (* Track Stp calls *)
 let timed_query_stp name pc pre guard = Timer.time name (fun () -> Stp.query_stp pc pre guard) ()
 
+let prune_bytes state bytes debug_text =
+    let conditional = conditional__bytes bytes in
+    let conditional = conditional__prune ~test:(timed_query_stp debug_text state.path_condition) ~eq:bytes__equal conditional in
+    make_Bytes_Conditional conditional
+
 (* Bounds-checking *)
 (* The next two function are used for bounds-checking. Here are some
      comments:
@@ -438,43 +443,94 @@ and
 rval_unop state unop exp errors =
     let state, rv, errors = rval state exp errors in
     let typ = Cil.typeOf exp in
-    let conditional = conditional__bytes (Operator.run (Operator.of_unop unop) [(rv,typ)]) in
-    let conditional = conditional__prune ~test:(timed_query_stp "query_stp/Expression.rval_unop" state.path_condition) ~eq:bytes__equal conditional in
-    (state, make_Bytes_Conditional conditional, errors)
-
-and
-
-finish_rval_binop state binop (rv1,typ1) exp2 errors =
-    let state, rv2, errors = rval state exp2 errors in
-    let typ2 = Cil.typeOf exp2 in
-    let conditional = conditional__bytes (Operator.run (Operator.of_binop binop) [(rv1,typ1);(rv2,typ2)]) in
-    let conditional = conditional__prune ~test:(timed_query_stp "query_stp/Expression.rval_binop" state.path_condition) ~eq:bytes__equal conditional in
-    (state, make_Bytes_Conditional conditional, errors)
+    let bytes = (Operator.of_unop unop) [(rv,typ)] in
+    (state, prune_bytes state bytes "query_stp/Expression.rval_unop", errors)
 
 and
 
 rval_binop state binop exp1 exp2 errors =
     let state, rv1, errors = rval state exp1 errors in
-    let finish () = finish_rval_binop state binop (rv1,typeOf exp1) exp2 errors in
     match binop with
       | LAnd | LOr -> begin (* Short-circuit, if possible *)
             match MemOp.eval state.path_condition rv1 with
               | Ternary.True -> if binop == LAnd then rval state exp2 errors else (state, bytes__one, errors)
               | Ternary.False -> if binop == LOr then rval state exp2 errors else (state, bytes__zero, errors)
-              | Ternary.Unknown -> finish () (* Short-circuiting not possible *)
-                    (* TODO: Even if exp1 is unknown, it may be that exp2 is
-                       only valid if you assume rv1. For example, 'if (i < len
-                       && a[i])'. Getting that right requires more work. *)
+              | Ternary.Unknown ->
+                    let no_short_circuit = if binop == LAnd then rv1 else logicalNot rv1 in (* Assume no short-circuit *)
+                    match evaluate_under_condition state no_short_circuit exp2 with
+                      | None, msg -> (* exp2 fails. Report this error, and assume short-circuiting occurs *)
+                            let errors = (state, no_short_circuit, `Failure msg) :: errors in
+                            let state = MemOp.state__add_path_condition state (logicalNot no_short_circuit) true in
+                            let result = if binop == LAnd then bytes__zero else bytes__one in
+                            (state, result, errors)
+                      | Some (state, rv2), _ -> (* exp2 does not fail. Construct the 'and' or 'or' value. *)
+                            let bytes = (Operator.of_binop binop) [ (rv1, typeOf exp1); (rv2, typeOf exp2) ] in
+                            (state, prune_bytes state bytes "query_stp/Expression.rval_binop", errors)
         end
-      | _ -> finish ()
+      | _ ->
+            let state, rv2, errors = rval state exp2 errors in
+            let bytes = (Operator.of_binop binop) [ (rv1, typeOf exp1); (rv2, typeOf exp2) ] in
+            (state, prune_bytes state bytes "query_stp/Expression.rval_binop", errors)
 
 and
 
 (** Evaluate a ?: expression, creating a Bytes_Conditional(IfThenElse _). *)
-rval_question state e1 e2 e3 errors =
-    (* The order in which we evaluate these really shouldn't matter.
-     * If it does, there's a problem, and I don't know what to do. *)
-    let state, rv1, errors = rval state e1 errors in
-    let state, rv2, errors = rval state e2 errors in
-    let state, rv3, errors = rval state e3 errors in
-    (state, make_Bytes_Conditional (IfThenElse (guard__bytes rv1, Unconditional rv2, Unconditional rv3)), errors)
+rval_question state exp1 exp2 exp3 errors =
+    let state, rv1, errors = rval state exp1 errors in
+    (* Is the guard true, false, or unknown? Evaluate the branches accordingly. *)
+    match MemOp.eval state.path_condition rv1 with
+      | Ternary.True -> rval state exp2 errors
+      | Ternary.False -> rval state exp3 errors
+      | Ternary.Unknown ->
+            let not_rv1 = logicalNot rv1 in
+            (* Evaluate exp2, assuming rv1 *)
+            match evaluate_under_condition state rv1 exp2 with
+              | None, msg -> (* exp2 fails. Report this error, assume not_rv1, and evaluate to exp3 *)
+                    let errors = (state, rv1, `Failure msg) :: errors in
+                    let state = MemOp.state__add_path_condition state not_rv1 true in
+                    rval state exp3 errors
+              | Some (state, rv2), _ -> (* exp2 does not fail. Evaluate exp3, assuming not_rv1 *)
+                    match evaluate_under_condition state not_rv1 exp3 with
+                      | None, msg -> (* exp3 fails. Report this error, assume rv1, and evaluate to rv2 *)
+                            let errors = (state, not_rv1, `Failure msg) :: errors in
+                            let state = MemOp.state__add_path_condition state rv1 true in
+                            (state, rv2, errors)
+                      | Some (state, rv3), _ -> (* exp3 does not fail. Evaluate to an IfThenElse. *)
+                            let bytes = make_Bytes_Conditional (IfThenElse (guard__bytes rv1, conditional__bytes rv2, conditional__bytes rv3)) in
+                            (state, prune_bytes state bytes "query_stp/Expression.rval_question", errors)
+
+and
+
+(** [evaluate_under_condition state condition exp] evaluates [exp] in [state]
+    augmented with the assumption that [condition] is true. This can be useful if,
+    for example, [condition] ensures that a pointer dereferenced in [exp] is
+    non-null, or that a dereference is in bounds.
+    @param state the state in which evaluate exp
+    @param condition the assumption to add to state
+    @param exp the expression to evaluate
+    @raise Failure if evaluating [exp] can fail but does not have to
+    @return [(None, msg)] if evaluating [exp] raises [Failure msg]; otherwise,
+    returns [(Some (state', bytes), "")], where [state'] is a state identical to
+    [state] except that some lazy memory initialization may have taken place
+    while evaluating [exp], and [bytes] is the value obtained by evaluating
+    [exp].
+*)
+evaluate_under_condition state_in condition exp =
+    let state = MemOp.state__add_path_condition state_in condition true in
+    match
+    try (Some (rval state exp []), "") with Failure msg -> (None, msg)
+    with
+      | None, msg -> None, msg
+      | Some (state, bytes, errors), _ ->
+            (* TODO: it might be possible to handle errors when evaluating under
+               a condition by adding an assumption to the path condition saying
+               that condition implies that no error occurs. However, this is
+               complicated by lazy memory initialization: in what state are the
+               error bytes valid? They *should* all be valid in the final state,
+               but it's not entirely clear. *)
+            if errors <> [] then failwith "Cannot handle partial errors when evaluating under a condition";
+            (* Roll back the assumption that condition holds. Because of lazy
+               memory initialization, using the old state is dangerous, because
+               new bytes may have been created while evaluating exp. However,
+               just reverting the path condition is fine. *)
+            (Some ({ state with path_condition = state_in.path_condition; }, bytes), "")
