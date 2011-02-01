@@ -151,8 +151,7 @@ let default_scheme = ref `TwoLevel
 
 (** Initialize pointer values symbolically using a pointer analysis.
 
-    Three parameters are required to determine the pointer value:
-        - a [target_type] for the case where the pointer type does not match the target (e.g., void * pointers);
+    Two parameters are required to determine the pointer value:
         - a [points_to] function that takes a pointer expression and returns the targets of that expression
             (i.e., the results of a pointer analysis);
         - and [exps] a list of expression representing possible values of the pointer, i.e., aliases of the pointer
@@ -177,8 +176,6 @@ let default_scheme = ref `TwoLevel
                     - [`ConstraintOffset]: conditionals of bases, and symbolic offsets with constraints for each distinct base;
                 (default: [`TwoLevel])
         @param state is the symbolic executor state in which to initialize the pointer
-        @param target_type is the type of the pointer target (which may not match the pointer type, e.g., for void *
-                pointers)
         @param points_to is a function of type [Cil.exp -> (CilData.CilVar.t * Cil.offset) list * (CilData.Malloc.t * Cil.offset) list]
                 that takes an expression and returns the points-to targets of that expression as a list of variables
                 and offsets pairs, and a list of dynamic allocations sites distinguished by unique string names along
@@ -194,8 +191,8 @@ let default_scheme = ref `TwoLevel
                 as well as the pointer itself should be used to initialized the target
         @return [(Types.state, Bytes.bytes)] the updated symbolic state and the initialized pointer value
 *)
-let init_pointer ?(scheme=(!default_scheme)) state target_type points_to exps ?(maybe_null=true) ?(maybe_uninit=false) block_name init_target =
-    (* find the points to set for this pointer *)
+let init_pointer ?(scheme=(!default_scheme)) state points_to exps ?(maybe_null=true) ?(maybe_uninit=false) block_name init_target =
+    (* find the points-to set for this pointer *)
     let target_lvals, target_mallocs = List.fold_left begin fun (target_lvals, target_mallocs) exp ->
         let t, m = points_to exp in
         (t @ target_lvals, m @ target_mallocs)

@@ -53,7 +53,7 @@ let rec init_bytes_with_pointers ?scheme state typ points_to exps = match Cil.un
         in
         (state, bytes)
 
-    | Cil.TPtr (target_type, _) ->
+    | Cil.TPtr _ ->
         (* for pointers, generate the pointer *)
         let init_target typ vars mallocs state =
             let var_exps = List.map (fun v -> Cil.Lval (Cil.var v)) vars in
@@ -75,7 +75,7 @@ let rec init_bytes_with_pointers ?scheme state typ points_to exps = match Cil.un
         let block_name = FormatPlus.as_string Printcil.exp (List.hd exps) in
 
         (* finally, make the pointer *)
-        SymbolicPointers.init_pointer ?scheme state target_type points_to exps block_name init_target
+        SymbolicPointers.init_pointer ?scheme state points_to exps block_name init_target
 
     | Cil.TComp (compinfo, _) when compinfo.Cil.cstruct ->
         (* for structs, initialize and iterate over the fields *)
