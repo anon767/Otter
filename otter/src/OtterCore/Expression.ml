@@ -517,11 +517,12 @@ and
 *)
 evaluate_under_condition state_in condition exp =
     let state = MemOp.state__add_path_condition state_in condition true in
+    let checkpointed_path_condition = state.path_condition in
     let result = try (Some (rval state exp []), "") with Failure msg -> (None, msg) in
     match result with
       | None, msg -> None, msg
       | Some (state, bytes, errors), _ ->
-            (* TODO: it might be possible to handle errors when evaluating under
+            (* TODO: it should be possible to handle errors when evaluating under
                a condition by adding an assumption to the path condition saying
                that condition implies that no error occurs. However, this is
                complicated by lazy memory initialization: in what state are the
@@ -531,5 +532,9 @@ evaluate_under_condition state_in condition exp =
             (* Roll back the assumption that condition holds. Because of lazy
                memory initialization, using the old state is dangerous, because
                new bytes may have been created while evaluating exp. However,
-               just reverting the path condition is fine. *)
+               just reverting the path condition is fine. Just as an extra
+               check, though, we make sure the path condition didn't change
+               during the evaluation of exp. *)
+            if state.path_condition != checkpointed_path_condition
+            then failwith "Path condition changed unexpectedly while evaluating under a condition";
             (Some ({ state with path_condition = state_in.path_condition; }, bytes), "")
