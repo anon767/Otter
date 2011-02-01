@@ -37,12 +37,8 @@ let get_all_fnames =
 
 let outFile = ref ""
 let arg_undefined_functions = ref false
-let arg_reachable_functions = ref false
 
 let findFns (file : Cil.file) : unit =
-    if !arg_reachable_functions then 
-        Rmtmps.removeUnusedTemps ~isRoot:Rmtmps.isCompleteProgramRoot file;
-    
 	let outChan = if !outFile = "" then stdout else open_out !outFile in
     let all_fnames = get_all_fnames file in
     let all_fnames =
@@ -69,9 +65,6 @@ let feature : Cil.featureDescr = {
 		("--undefined-functions",
 		 Arg.Set arg_undefined_functions,
          " Output undefined functions instead\n");
-		("--reachable-functions",
-		 Arg.Set arg_reachable_functions,
-		 " Only output functions that are reachable from main()\n")
 	];
   Cil.fd_doit = findFns;
   Cil.fd_post_check = false;
