@@ -55,4 +55,8 @@ uintmax_t __SYMBOLIC(void *);
 	 was encountered. */
 void __EVALSTR(char *, size_t);
 
+/* __COMMENT(exp) prints the expression exp, usually a string literal, to the
+	 screen. */
+void __COMMENT(char *);
+
 #endif
