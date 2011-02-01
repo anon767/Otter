@@ -3,4 +3,5 @@ CilUtilities/CilData
 CilUtilities/CilPtranal
 CilUtilities/FindCil
 CilUtilities/FindFns
+CilUtilities/HoistStringLiterals
 CilUtilities/TraceLines

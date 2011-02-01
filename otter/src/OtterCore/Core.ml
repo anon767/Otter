@@ -3,8 +3,9 @@ open CilUtilities
 (* set up the file for symbolic execution *)
 let prepare_file file =
     (* based on Cilly.makeCFGFeature.fd_doit *)
-    ignore (Partial.calls_end_basic_blocks file);
-    ignore (Partial.globally_unique_vids file);
+    HoistStringLiterals.apply file;
+    Partial.calls_end_basic_blocks file;
+    Partial.globally_unique_vids file;
     Cil.iterGlobals file begin function
         | Cil.GFun(fd,_) ->
             Cil.prepareCFG fd; (* reduce switch/break/default/continue to if/goto *)
