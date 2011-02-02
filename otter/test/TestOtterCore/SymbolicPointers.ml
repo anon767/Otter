@@ -9,6 +9,7 @@ open Job
 
 (* test helper that runs the symbolic executor on a file given a source code as a string, and counts the results *)
 let test_symbolic_pointers content ?label test =
+    let content = "void * malloc(unsigned long);" ^ content in
     test_otter_core content ?label ~entry_function:"foo"
         begin fun results ->
             (* count jobs *)
@@ -64,9 +65,11 @@ let soundness_testsuite = "Soundness" >::: [
                                 }
                                 fail();
                             }
-                            void main(void) {
+                            int main(void) {
                                 z = &x;
                                 z = &y;
+                                foo();
+                                return 0;
                             }
                         "] end
                         begin fun results return exit abandoned ->
@@ -93,9 +96,11 @@ let soundness_testsuite = "Soundness" >::: [
                     }
                     fail();
                 }
-                void main(void) {
+                int main(void) {
                     z = &x;
                     z = &y;
+                    foo();
+                    return 0;
                 }
                 " begin fun results return exit abandoned ->
                     assert_at_least 3 return;
@@ -128,9 +133,11 @@ let soundness_testsuite = "Soundness" >::: [
                                 }
                                 fail();
                             }
-                            void main(void) {
+                            int main(void) {
                                 x = &z;
                                 y = &z;
+                                foo();
+                                return 0;
                             }
                         "] end
                         begin fun results return exit abandoned ->
@@ -165,9 +172,10 @@ let soundness_testsuite = "Soundness" >::: [
                                 }
                                 fail();
                             }
-                            void main(void) {
+                            int main(void) {
                                 foo(&x);
                                 foo(&y);
+                                return 0;
                             }
                         "] end
                         begin fun results return exit abandoned ->
@@ -194,9 +202,10 @@ let soundness_testsuite = "Soundness" >::: [
                     }
                     fail();
                 }
-                void main(void) {
+                int main(void) {
                     foo(&x);
                     foo(&y);
+                    return 0;
                 }
                 " begin fun results return exit abandoned ->
                     assert_at_least 3 return;
@@ -229,8 +238,9 @@ let soundness_testsuite = "Soundness" >::: [
                                 }
                                 fail();
                             }
-                            void main(void) {
+                            int main(void) {
                                 foo(&z, &z);
+                                return 0;
                             }
                         "] end
                         begin fun results return exit abandoned ->
@@ -263,10 +273,11 @@ let soundness_testsuite = "Soundness" >::: [
                             }
                             fail();
                         }
-                        void main(void) {
+                        int main(void) {
                             x = malloc(sizeof(*x));
                             y = x;
                             foo();
+                            return 0;
                         }
                     "] end
                     begin fun results return exit abandoned ->
@@ -299,11 +310,12 @@ let soundness_testsuite = "Soundness" >::: [
                             }
                             fail();
                         }
-                        void main(void) {
+                        int main(void) {
                             x = malloc(sizeof(*x));
                             *x = malloc(sizeof(**x));
                             y = *x;
                             foo();
+                            return 0;
                         }
                     "] end
                     begin fun results return exit abandoned ->
@@ -348,12 +360,13 @@ let soundness_testsuite = "Soundness" >::: [
                                 }
                                 fail();
                             }
-                            void main(void) {
+                            int main(void) {
                                 x = malloc(sizeof(*x));
                                 *x = malloc(sizeof(**x));
                                 y = malloc(sizeof(*y));
                                 *y = *x;
                                 foo();
+                                return 0;
                             }
                         "] end
                         begin fun results return exit abandoned ->
@@ -387,10 +400,11 @@ let soundness_testsuite = "Soundness" >::: [
                             }
                             fail();
                         }
-                        void main(void) {
+                        int main(void) {
                             x = malloc(sizeof(*x));
                             y = &x->f;
                             foo();
+                            return 0;
                         }
                     "] end
                     begin fun results return exit abandoned ->
@@ -424,11 +438,12 @@ let soundness_testsuite = "Soundness" >::: [
                             }
                             fail();
                         }
-                        void main(void) {
+                        int main(void) {
                             x = malloc(sizeof(*x));
                             *x = malloc(sizeof(**x));
                             y = &(*x)->f;
                             foo();
+                            return 0;
                         }
                     "] end
                     begin fun results return exit abandoned ->
@@ -474,12 +489,13 @@ let soundness_testsuite = "Soundness" >::: [
                                 }
                                 fail();
                             }
-                            void main(void) {
+                            int main(void) {
                                 x = malloc(sizeof(*x));
                                 *x = malloc(sizeof(**x));
                                 y = malloc(sizeof(*y));
                                 *y = &(*x)->f;
                                 foo();
+                                return 0;
                             }
                         "] end
                         begin fun results return exit abandoned ->
@@ -513,10 +529,11 @@ let soundness_testsuite = "Soundness" >::: [
                             }
                             fail();
                         }
-                        void main(void) {
+                        int main(void) {
                             x = malloc(sizeof(*x));
                             y.f = &x->f;
                             foo();
+                            return 0;
                         }
                     "] end
                     begin fun results return exit abandoned ->
@@ -550,11 +567,12 @@ let soundness_testsuite = "Soundness" >::: [
                             }
                             fail();
                         }
-                        void main(void) {
+                        int main(void) {
                             x = malloc(sizeof(*x));
                             *x = malloc(sizeof(**x));
                             y.f = &(*x)->f;
                             foo();
+                            return 0;
                         }
                     "] end
                     begin fun results return exit abandoned ->
@@ -600,12 +618,13 @@ let soundness_testsuite = "Soundness" >::: [
                                 }
                                 fail();
                             }
-                            void main(void) {
+                            int main(void) {
                                 x = malloc(sizeof(*x));
                                 *x = malloc(sizeof(**x));
                                 y.f = malloc(sizeof(*y.f));
                                 *y.f = &(*x)->f;
                                 foo();
+                                return 0;
                             }
                         "] end
                         begin fun results return exit abandoned ->
@@ -650,12 +669,13 @@ let soundness_testsuite = "Soundness" >::: [
                                 }
                                 fail();
                             }
-                            void main(void) {
+                            int main(void) {
                                 x = malloc(sizeof(*x));
                                 *x = malloc(sizeof(**x));
                                 y = malloc(sizeof(*y));
                                 y->f = &(*x)->f;
                                 foo();
+                                return 0;
                             }
                         "] end
                         begin fun results return exit abandoned ->
@@ -677,9 +697,10 @@ let soundness_testsuite = "Soundness" >::: [
                     }
                     fail();
                 }
-                void main(void) {
+                int main(void) {
                     x.f = malloc(sizeof(int));
                     foo();
+                    return 0;
                 }
             "] end
             begin fun results return exit abandoned ->
@@ -698,8 +719,9 @@ let soundness_testsuite = "Soundness" >::: [
                     }
                     fail();
                 }
-                void main(void) {
+                int main(void) {
                     foo(malloc(sizeof(int)));
+                    return 0;
                 }
             "] end
             begin fun results return exit abandoned ->
@@ -719,12 +741,13 @@ let soundness_testsuite = "Soundness" >::: [
                 for (struct node * el = list; el && x < 5; el = el->next, x++) {
                 }
             }
-            void main(void) {
+            int main(void) {
                 struct node x, y, z;
                 x.next = &y;
                 y.next = &z;
                 z.next = 0;
                 foo(&x);
+                return 0;
             }
         " begin fun results return exit abandoned ->
             assert_at_least 4 return;
@@ -757,8 +780,9 @@ let soundness_testsuite = "Soundness" >::: [
                 head.next = list;
                 baz(&head);
             }
-            void main(void) {
+            int main(void) {
                 bar(0);
+                return 0;
             }
         " begin fun results return exit abandoned ->
             assert_at_least 4 return;
@@ -775,7 +799,7 @@ let soundness_testsuite = "Soundness" >::: [
                 for (struct node * el = list; el && x < 5; el = el->next, x++) {
                 }
             }
-            void main(void) {
+            int main(void) {
                 struct node * head = malloc(sizeof(struct node));
                 struct node * x = head;
                 for (int i = 0; i < 2; i++) {
@@ -784,6 +808,7 @@ let soundness_testsuite = "Soundness" >::: [
                 }
                 x->next = 0;
                 foo(head);
+                return 0;
             }
         " begin fun results return exit abandoned ->
             assert_at_least 4 return;
@@ -810,8 +835,9 @@ let soundness_testsuite = "Soundness" >::: [
                     foo(list);
                 }
             }
-            void main(void) {
+            int main(void) {
                 bar(0, 0);
+                return 0;
             }
         " begin fun results return exit abandoned ->
             assert_at_least 4 return;
