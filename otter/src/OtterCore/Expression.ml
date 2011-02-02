@@ -377,16 +377,7 @@ deref state bytes typ errors =
             FormatPlus.failwith "Dereference something not an address:@ operation @[%a@]" BytesPrinter.bytes bytes
 
         | Bytes_Read(bytes,off,len) ->
-            (* TODO (martin): create a test that covers this code *)
-            let (state, errors), conditional =
-                conditional__fold_map ~test:(timed_query_stp "query_stp/Expression.deref/Bytes_Read" state.path_condition)
-                    begin fun (state, errors) _ bytes ->
-                        let state, conditional, errors = deref state bytes typ errors in
-                        ((state, errors), conditional)
-                    end
-                    (state, errors) (expand_read_to_conditional bytes off len)
-            in
-            (state, conditional, errors)
+            deref state (make_Bytes_Conditional (expand_read_to_conditional bytes off len)) typ errors
 
         | Bytes_Write(bytes,off,len,newbytes) ->
             failwith "Dereference of Bytes_Write not implemented"
