@@ -50,13 +50,9 @@ uintmax_t __SYMBOLIC(void *);
     __SYMBOLIC(p, sizeof(*p)). */
 //void __SYMBOLIC(void *, ...);
 
-/* __EVALSTR(str, len) causes Otter interpret str as a string and
+/* __EVALSTR(str, len) causes Otter to interpret str as a string and
 	 print out its value, but to stop at len bytes even if no null byte
 	 was encountered. */
-void __EVALSTR(char *, size_t);
-
-/* __COMMENT(exp) prints the expression exp, usually a string literal, to the
-	 screen. */
-void __COMMENT(char *);
+void __EVALSTR(const char *, size_t);
 
 #endif

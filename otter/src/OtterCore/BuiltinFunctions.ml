@@ -497,14 +497,6 @@ let otter_boolean_not job = wrap_state_function begin fun state retopt exps erro
 end job
 
 
-let otter_comment job = wrap_state_function begin fun state retopt exps errors ->
-	let exp = List.hd exps in
-	Output.set_mode Output.MSG_MUSTPRINT;
-	Output.printf "COMMENT:@ @[%a@]@\n" Printer.exp exp;
-	(state, errors)
-end job
-
-
 let otter_break_pt job = wrap_state_function begin fun state retopt exps errors ->
 	Output.set_mode Output.MSG_REG;
 	Output.printf "Option (h for help):@\n";
@@ -936,7 +928,6 @@ let interceptor job job_queue interceptor =
 		(intercept_function_by_name_internal "AND"                     (otter_boolean_op Cil.LAnd)) @@
 		(intercept_function_by_name_internal "OR"                      (otter_boolean_op Cil.LOr)) @@
 		(intercept_function_by_name_internal "NOT"                     otter_boolean_not) @@
-		(intercept_function_by_name_internal "__COMMENT"               otter_comment) @@
 		(intercept_function_by_name_internal "__BREAKPT"               otter_break_pt) @@
 		(intercept_function_by_name_internal "__PRINT_STATE"           otter_print_state) @@
 		(intercept_function_by_name_internal "__CURRENT_STATE"         otter_current_state) @@
@@ -948,6 +939,7 @@ let interceptor job job_queue interceptor =
         (* multiotter functions to be ignored in single-process otter *)
         (intercept_function_by_name_internal "__otter_multi_begin_atomic" noop) @@
         (intercept_function_by_name_internal "__otter_multi_end_atomic" noop) @@
+        (intercept_function_by_name_external "__otter_multi_grealloc"  "realloc") @@
         (intercept_function_by_name_internal "__otter_multi_gmalloc"   libc_malloc) @@
         (intercept_function_by_name_internal "__otter_multi_gfree"     libc_free) @@
 

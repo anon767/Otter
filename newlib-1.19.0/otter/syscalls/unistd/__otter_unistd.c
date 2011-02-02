@@ -519,8 +519,7 @@ ssize_t __otter_libc_write2(
 	switch (open_file->type)
 	{
 		case __otter_fs_TYP_TTY:
-			__COMMENT("Writing on TTY:");
-			__EVALSTR(buf,num);
+			__EVALSTR(buf, num);
 			// Fall through
 		case __otter_fs_TYP_FILE:
 			return __otter_libc_write_file(open_file, buf, num, offset);
