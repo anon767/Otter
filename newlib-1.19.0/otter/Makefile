@@ -40,13 +40,14 @@ MAKE_FILES := $(NEWLIB_1_19_0)/newlib/libc/machine/otter/Makefile.in
 
 # Defining some command-line options
 
-OPTIONS_FOR_BUILDING_LIBC := -nostdinc -nostdlib -Wp,-undef -isystem $(CURDIR)/include
+OPTIONS_FOR_BUILDING_LIBC := -nostdinc -nostdlib -Wp,-undef \
+    -isystem $(CURDIR)/include \
+    -isystem $(CURDIR)/syscalls/include
 OPTIONS_FOR_USING_LIBC := $(OPTIONS_FOR_BUILDING_LIBC) \
-  -isystem $(CURDIR)/syscalls/include \
-  -isystem $(BUILD_DIR)/otter/newlib/targ-include \
-  -isystem $(NEWLIB_1_19_0)/newlib/libc/include \
-  -L$(LIB_DIR) \
-  -lc 
+    -isystem $(BUILD_DIR)/otter/newlib/targ-include \
+    -isystem $(NEWLIB_1_19_0)/newlib/libc/include \
+    -L$(LIB_DIR) \
+    -lc 
 
 CILLY_CMD := CILLY_DONT_COMPILE_AFTER_MERGE= '$(OTTER_TRUNK)/cil/bin/cilly' --merge --keepmerged
 
