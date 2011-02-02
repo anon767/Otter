@@ -343,21 +343,23 @@ deref state bytes typ errors =
 
         | Bytes_Conditional c ->
             let (guard, state, errors, _), conditional_opt =
-                conditional__fold_map_opt begin fun (guard, state, errors, removed) _ c ->
-                    if List.exists (Bytes.bytes__equal c) removed then
-                        ((guard, state, errors, removed), None)
-                    else
-                        try
-                            let state, lval, errors = deref state c typ errors in
-                            ((guard, state, errors, removed), Some lval)
-                        with Failure msg ->
-                            (* Guard against this failure, add it to the error list, and remove this leaf. *)
-                            let failing_bytes = Operator.eq [ (bytes, typ); (c, typ) ] in
-                            let guard = guard__and_not guard (Bytes.guard__bytes failing_bytes) in
-                            let errors = (state, failing_bytes, `Failure msg)::errors in
-                            let removed = c::removed in
+                conditional__fold_map_opt
+                    ~test:(timed_query_stp "query_stp/Expression.deref/Bytes_Conditional" state.path_condition)
+                    begin fun (guard, state, errors, removed) _ c ->
+                        if List.exists (Bytes.bytes__equal c) removed then
                             ((guard, state, errors, removed), None)
-                end (Bytes.guard__true, state, errors, []) c
+                        else
+                            try
+                                let state, lval, errors = deref state c typ errors in
+                                ((guard, state, errors, removed), Some lval)
+                            with Failure msg ->
+                                (* Guard against this failure, add it to the error list, and remove this leaf. *)
+                                let failing_bytes = Operator.eq [ (bytes, typ); (c, typ) ] in
+                                let guard = guard__and_not guard (Bytes.guard__bytes failing_bytes) in
+                                let errors = (state, failing_bytes, `Failure msg)::errors in
+                                let removed = c::removed in
+                                ((guard, state, errors, removed), None)
+                    end (Bytes.guard__true, state, errors, []) c
             in
             begin match conditional_opt, guard with
                 | Some conditional, Guard_True ->
