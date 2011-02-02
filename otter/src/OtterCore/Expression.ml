@@ -9,11 +9,6 @@ open Types
 (* Track Stp calls *)
 let timed_query_stp name pc pre guard = Timer.time name (fun () -> Stp.query_stp pc pre guard) ()
 
-let prune_bytes state bytes debug_text =
-    let conditional = conditional__bytes bytes in
-    let conditional = conditional__prune ~test:(timed_query_stp debug_text state.path_condition) ~eq:bytes__equal conditional in
-    make_Bytes_Conditional conditional
-
 (* Bounds-checking *)
 (* The next two function are used for bounds-checking. Here are some
      comments:
@@ -446,7 +441,7 @@ rval_unop state unop exp errors =
     let state, rv, errors = rval state exp errors in
     let typ = Cil.typeOf exp in
     let bytes = (Operator.of_unop unop) [(rv,typ)] in
-    (state, prune_bytes state bytes "query_stp/Expression.rval_unop", errors)
+    (state, bytes, errors)
 
 and
 
@@ -467,12 +462,12 @@ rval_binop state binop exp1 exp2 errors =
                             (state, result, errors)
                       | Some (state, rv2), _ -> (* exp2 does not fail. Construct the 'and' or 'or' value. *)
                             let bytes = (Operator.of_binop binop) [ (rv1, typeOf exp1); (rv2, typeOf exp2) ] in
-                            (state, prune_bytes state bytes "query_stp/Expression.rval_binop", errors)
+                            (state, bytes, errors)
         end
       | _ ->
             let state, rv2, errors = rval state exp2 errors in
             let bytes = (Operator.of_binop binop) [ (rv1, typeOf exp1); (rv2, typeOf exp2) ] in
-            (state, prune_bytes state bytes "query_stp/Expression.rval_binop", errors)
+            (state, bytes, errors)
 
 and
 
@@ -499,7 +494,7 @@ rval_question state exp1 exp2 exp3 errors =
                             (state, rv2, errors)
                       | Some (state, rv3), _ -> (* exp3 does not fail. Evaluate to an IfThenElse. *)
                             let bytes = make_Bytes_Conditional (IfThenElse (guard__bytes rv1, conditional__bytes rv2, conditional__bytes rv3)) in
-                            (state, prune_bytes state bytes "query_stp/Expression.rval_question", errors)
+                            (state, bytes, errors)
 
 and
 
