@@ -34,6 +34,12 @@ let assert_at_most = assert_at_most ~printer:Format.pp_print_int
  * OUnit test suite
  *)
 
+(* Note: the nop(sizeof(x)) idiom is used to force lazy memory initialization.
+    - nop(...) prevents CIL from removing the otherwise side-effect free expression argument;
+    - sizeof(...) is one of the few expressions that evaluates to bottom in CIL's pointer analysis (Ptranal),
+        so that the arguments to nop() won't be inadvertently joined due to context insensitivity.
+*)
+
 let soundness_testsuite = "Soundness" >::: [
     "Global variables" >::: [
         "z = &x; z = &y;" >::: [
@@ -41,11 +47,11 @@ let soundness_testsuite = "Soundness" >::: [
                occurrence *)
             test_permutations [ "x"; "y"; "z" ]
                 begin fun permutation ->
-                    let [e1; e2; e3] = List.map (fun e -> "nop(" ^ e ^ ");") permutation in
+                    let [e1; e2; e3] = List.map (fun e -> "nop(sizeof(" ^ e ^ "));") permutation in
                     test_symbolic_pointers ~label:(String.concat "; " permutation)
                         begin String.concat "" ["
                             int x, y, *z;
-                            void nop(void * x) {}
+                            void nop(int x) {}
                             void foo(void) {
                                 "; e1; e2; e3; "
                                 if (z == &x) {
@@ -101,11 +107,11 @@ let soundness_testsuite = "Soundness" >::: [
                of order of occurrence *)
             test_permutations [ "x"; "y"; "z" ]
                 begin fun permutation ->
-                    let [e1; e2; e3] = List.map (fun e -> "nop(" ^ e ^ ");") permutation in
+                    let [e1; e2; e3] = List.map (fun e -> "nop(sizeof(" ^ e ^ "));") permutation in
                     test_symbolic_pointers ~label:(String.concat "; " permutation)
                         begin String.concat "; " ["
                             int *x, *y, z;
-                            void nop(void * x) {}
+                            void nop(int x) {}
                             void foo(void) {
                                 "; e1; e2; e3; "
                                 if (x == &z && y == &z) {
@@ -138,11 +144,11 @@ let soundness_testsuite = "Soundness" >::: [
                occurrence *)
             test_permutations [ "x"; "y"; "z" ]
                 begin fun permutation ->
-                    let [e1; e2; e3] = List.map (fun e -> "nop(" ^ e ^ ");") permutation in
+                    let [e1; e2; e3] = List.map (fun e -> "nop(sizeof(" ^ e ^ "));") permutation in
                     test_symbolic_pointers ~label:(String.concat "; " permutation)
                         begin String.concat "; " ["
                             int x, y;
-                            void nop(void * x) {}
+                            void nop(int x) {}
                             void foo(int *z) {
                                 "; e1; e2; e3; "
                                 if (z == &x) {
@@ -198,11 +204,11 @@ let soundness_testsuite = "Soundness" >::: [
                of order of occurrence *)
             test_permutations [ "x"; "y"; "z" ]
                 begin fun permutation ->
-                    let [e1; e2; e3] = List.map (fun e -> "nop(" ^ e ^ ");") permutation in
+                    let [e1; e2; e3] = List.map (fun e -> "nop(sizeof(" ^ e ^ "));") permutation in
                     test_symbolic_pointers ~label:(String.concat "; " permutation)
                         begin String.concat "; " ["
                             int z;
-                            void nop(void * x) {}
+                            void nop(int x) {}
                             void foo(int *x, int *y) {
                                 "; e1; e2; e3; "
                                 if (x == &z && y == &z) {
@@ -233,11 +239,11 @@ let soundness_testsuite = "Soundness" >::: [
            occurence *)
         "y == x" >:
             test_permutations [ "x"; "y" ] begin fun permutation ->
-                let [e1; e2] = List.map (fun e -> "nop(" ^ e ^ ");") permutation in
+                let [e1; e2] = List.map (fun e -> "nop(sizeof(" ^ e ^ "));") permutation in
                 test_symbolic_pointers ~label:(String.concat "; " permutation)
                     begin String.concat "; " ["
                         int *x, *y;
-                        void nop(void * x) {}
+                        void nop(int x) {}
                         void foo(void) {
                             "; e1; e2; "
                             if (x == 0) {
@@ -268,7 +274,7 @@ let soundness_testsuite = "Soundness" >::: [
                 test_symbolic_pointers ~label
                     begin String.concat "; " ["
                         int **x, *y;
-                        void nop(void * x) {}
+                        void nop(int x) {}
                         void foo(void) {
                             "; e1; "
                             if (x == 0) {
@@ -297,20 +303,20 @@ let soundness_testsuite = "Soundness" >::: [
                         assert_equal 0 exit;
                     end
             in
-            List.map test [ ("x; *x; y", "0", "0"); ("x; y; *x", "0", "nop(y);"); ("y; x; *x", "nop(y);", "") ]
+            List.map test [ ("x; *x; y", "0", "0"); ("x; y; *x", "0", "nop(sizeof(y));"); ("y; x; *x", "nop(sizeof(y));", "") ]
         end;
 
         (* there should be at least 5 aliasing conditions: x == NULL, y == NULL, *x == NULL, *y == NULL or *y == *x,
            regardless of order of occurence *)
         "*y == *x" >:
             test_permutations ["x"; "y"] begin fun permutation1 ->
-                let [e1; e2] = List.map (fun e -> "nop(" ^ e ^ ");") permutation1 in
+                let [e1; e2] = List.map (fun e -> "nop(sizeof(" ^ e ^ "));") permutation1 in
                 test_permutations ["*x"; "*y"] begin fun permutation2 ->
-                    let [e3; e4] = List.map (fun e -> "nop(" ^ e ^ ");") permutation2 in
+                    let [e3; e4] = List.map (fun e -> "nop(sizeof(" ^ e ^ "));") permutation2 in
                     test_symbolic_pointers ~label:(String.concat "; " (permutation1 @ permutation2))
                         begin String.concat "; " ["
                             int **x, **y;
-                            void nop(void * x) {}
+                            void nop(int x) {}
                             void foo(void) {
                                 "; e1; "
                                 "; e2; "
@@ -350,12 +356,12 @@ let soundness_testsuite = "Soundness" >::: [
            occurence *)
         "y == &x->f" >:
             test_permutations [ "x"; "y" ] begin fun permutation ->
-                let [e1; e2] = List.map (fun e -> "nop(" ^ e ^ ");") permutation in
+                let [e1; e2] = List.map (fun e -> "nop(sizeof(" ^ e ^ "));") permutation in
                 test_symbolic_pointers ~label:(String.concat "; " permutation)
                     begin String.concat "; " ["
                         struct { char a; int f; } *x;
                         int *y;
-                        void nop(void * x) {}
+                        void nop(int x) {}
                         void foo(void) {
                             "; e1; e2; "
                             if (x == 0) {
@@ -389,7 +395,7 @@ let soundness_testsuite = "Soundness" >::: [
                     begin String.concat "; " ["
                         struct { char a; int f; } **x;
                         int *y;
-                        void nop(void * x) {}
+                        void nop(int x) {}
                         void foo(void) {
                             "; e1; "
                             if (x == 0) {
@@ -418,21 +424,21 @@ let soundness_testsuite = "Soundness" >::: [
                         assert_equal 0 exit;
                     end
             in
-            List.map test [ ("x; *x; y", "0", "0"); ("x; y; *x", "0", "nop(y);"); ("y; x; *x", "nop(y);", "") ]
+            List.map test [ ("x; *x; y", "0", "0"); ("x; y; *x", "0", "nop(sizeof(y));"); ("y; x; *x", "nop(sizeof(y));", "") ]
         end;
 
         (* there should be at least 5 aliasing conditions: x == NULL, y == NULL, *x == NULL, *y == NULL
            or *y == &( *x)->f, regardless of order of occurence *)
         "*y == &(*x)->f" >:
             test_permutations ["x"; "y"] begin fun permutation1 ->
-                let [e1; e2] = List.map (fun e -> "nop(" ^ e ^ ");") permutation1 in
+                let [e1; e2] = List.map (fun e -> "nop(sizeof(" ^ e ^ "));") permutation1 in
                 test_permutations ["*x"; "*y"] begin fun permutation2 ->
-                    let [e3; e4] = List.map (fun e -> "nop(" ^ e ^ ");") permutation2 in
+                    let [e3; e4] = List.map (fun e -> "nop(sizeof(" ^ e ^ "));") permutation2 in
                     test_symbolic_pointers ~label:(String.concat "; " (permutation1 @ permutation2))
                         begin String.concat "; " ["
                             struct { char a; int f; } **x;
                             int **y;
-                            void nop(void * x) {}
+                            void nop(int x) {}
                             void foo(void) {
                                 "; e1; "
                                 "; e2; "
@@ -472,12 +478,12 @@ let soundness_testsuite = "Soundness" >::: [
            occurence *)
         "y.f == &x->f" >:
             test_permutations [ "x"; "y.f" ] begin fun permutation ->
-                let [e1; e2] = List.map (fun e -> "nop(" ^ e ^ ");") permutation in
+                let [e1; e2] = List.map (fun e -> "nop(sizeof(" ^ e ^ "));") permutation in
                 test_symbolic_pointers ~label:(String.concat "; " permutation)
                     begin String.concat "; " ["
                         struct { char a; int f; } *x;
                         struct { char a; int *f; } y;
-                        void nop(void * x) {}
+                        void nop(int x) {}
                         void foo(void) {
                             "; e1; e2; "
                             if (x == 0) {
@@ -511,7 +517,7 @@ let soundness_testsuite = "Soundness" >::: [
                     begin String.concat "; " ["
                         struct { char a; int f; } **x;
                         struct { char a; int *f; } y;
-                        void nop(void * x) {}
+                        void nop(int x) {}
                         void foo(void) {
                             "; e1; "
                             if (x == 0) {
@@ -540,21 +546,21 @@ let soundness_testsuite = "Soundness" >::: [
                         assert_equal 0 exit;
                     end
             in
-            List.map test [ ("x; *x; y.f", "0", "0"); ("x; y.f; *x", "0", "nop(y.f);"); ("y.f; x; *x", "nop(y.f);", "") ]
+            List.map test [ ("x; *x; y.f", "0", "0"); ("x; y.f; *x", "0", "nop(sizeof(y.f));"); ("y.f; x; *x", "nop(sizeof(y.f));", "") ]
         end;
 
         (* there should be at least 5 aliasing conditions: x == NULL, y == NULL, *x == NULL, y->f == NULL
            or y->f == &( *x)->f, regardless of order of occurence *)
         "*y.f == &(*x)->f" >:
             test_permutations ["x"; "y.f"] begin fun permutation1 ->
-                let [e1; e2] = List.map (fun e -> "nop(" ^ e ^ ");") permutation1 in
+                let [e1; e2] = List.map (fun e -> "nop(sizeof(" ^ e ^ "));") permutation1 in
                 test_permutations ["*x"; "*y.f"] begin fun permutation2 ->
-                    let [e3; e4] = List.map (fun e -> "nop(" ^ e ^ ");") permutation2 in
+                    let [e3; e4] = List.map (fun e -> "nop(sizeof(" ^ e ^ "));") permutation2 in
                     test_symbolic_pointers ~label:(String.concat "; " (permutation1 @ permutation2))
                         begin String.concat "; " ["
                             struct { char a; int f; } **x;
                             struct { char a; int **f; } y;
-                            void nop(void * x) {}
+                            void nop(int x) {}
                             void foo(void) {
                                 "; e1; "
                                 "; e2; "
@@ -579,7 +585,7 @@ let soundness_testsuite = "Soundness" >::: [
                                 x = malloc(sizeof(*x));
                                 *x = malloc(sizeof(**x));
                                 y.f = malloc(sizeof(*y.f));
-                                y.f = &(*x)->f;
+                                *y.f = &(*x)->f;
                                 foo();
                             }
                         "] end
@@ -594,14 +600,14 @@ let soundness_testsuite = "Soundness" >::: [
            or y->f == &( *x)->f, regardless of order of occurence *)
         "y->f == &(*x)->f" >:
             test_permutations ["x"; "y"] begin fun permutation1 ->
-                let [e1; e2] = List.map (fun e -> "nop(" ^ e ^ ");") permutation1 in
+                let [e1; e2] = List.map (fun e -> "nop(sizeof(" ^ e ^ "));") permutation1 in
                 test_permutations ["*x"; "y->f"] begin fun permutation2 ->
-                    let [e3; e4] = List.map (fun e -> "nop(" ^ e ^ ");") permutation2 in
+                    let [e3; e4] = List.map (fun e -> "nop(sizeof(" ^ e ^ "));") permutation2 in
                     test_symbolic_pointers ~label:(String.concat "; " (permutation1 @ permutation2))
                         begin String.concat "; " ["
                             struct { char a; int f; } **x;
                             struct { char a; int *f; } *y;
-                            void nop(void * x) {}
+                            void nop(int x) {}
                             void foo(void) {
                                 "; e1; "
                                 "; e2; "
