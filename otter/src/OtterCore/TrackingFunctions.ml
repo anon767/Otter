@@ -1,6 +1,6 @@
 module StringSet = Set.Make(String)
 
-let arg_remove_cil_suffices = ref true
+let arg_remove_cil_suffixes = ref true
 let arg_tracked_fns = ref None
 let arg_untracked_fns = ref None
 
@@ -17,7 +17,7 @@ let rec remove_cil_suffix =
 
 let isTracked fname trackedFns = 
     let fname = 
-        if !arg_remove_cil_suffices then
+        if !arg_remove_cil_suffixes then
             remove_cil_suffix fname 
         else fname
     in
@@ -74,7 +74,7 @@ let options = [
 				arg_tracked_fns := None
 		end,
         "<filename> File containing a list of functions whose coverages are not tracked. Not compatable with --tracked-functions. Default is to track all functions.\n");
-	("--no-remove-cil-suffices",
-		Arg.Clear arg_remove_cil_suffices,
-		" Disable removal of cil suffices (___0) during processing tracked functions\n");
+	("--no-remove-cil-suffixes",
+		Arg.Clear arg_remove_cil_suffixes,
+		" Disable removal of cil suffixes (___0) during processing tracked functions\n");
 ]
