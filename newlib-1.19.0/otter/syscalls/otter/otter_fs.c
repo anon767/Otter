@@ -14,6 +14,11 @@
 
 /* file system access functions */
 
+/* Statically set the values of these globals from otter_user.h . Really, these
+	 should probably be set in a function that starts up a process. */
+uid_t __otter_uid = __otter_UID_USER;
+gid_t __otter_gid = __otter_GID_USER;
+
 int __otter_fs_is_owner(int filep)
 {
 	return ((filep & 0x2000 && __otter_uid == __otter_UID_USER) || (__otter_uid == __otter_UID_ROOT));

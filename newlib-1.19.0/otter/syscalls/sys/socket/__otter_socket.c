@@ -11,6 +11,10 @@
 #include <string.h>
 #include <sys/socket.h>
 
+/* Statically set the value of this global from Otter's sys/socket.h . Really,
+	 this should probably be set in a function that starts up a process. */
+unsigned short __otter_sock_free_port = 5000;
+
 int __otter_libc_socket(int domain, int type, int protocol)
 {
 	int fd = -1;
