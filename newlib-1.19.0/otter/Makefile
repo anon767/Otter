@@ -174,13 +174,8 @@ distclean: $(addprefix distclean-,$(TARGETS))
 
 # Running autotools. I modeled these rules after Otter's top-level makefile. Thanks, Yit.
 
-.PRECIOUS : %/aclocal.m4 %/configure %/Makefile
+.PRECIOUS : %/configure %/Makefile.in
 
-%/aclocal.m4: $(NEWLIB_1_19_0)/newlib/acinclude.m4
-	cd $* && aclocal -I $(NEWLIB_1_19_0)/newlib
+%/configure %/Makefile.in : %/configure.in %/Makefile.am
+	cd $* && autoreconf
 
-%/configure : %/configure.in %/aclocal.m4
-	cd $* && autoconf
-
-%/Makefile.in : %/Makefile.am %/configure
-	cd $* && automake --cygnus Makefile
