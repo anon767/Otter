@@ -40,12 +40,14 @@ MAKE_FILES := $(NEWLIB_1_19_0)/newlib/libc/machine/otter/Makefile.in
 
 # Defining some command-line options
 
-OPTIONS_FOR_BUILDING_LIBC := -nostdinc -nostdlib -Wp,-undef \
-    -isystem $(CURDIR)/include \
-    -isystem $(CURDIR)/syscalls/include
-OPTIONS_FOR_USING_LIBC := $(OPTIONS_FOR_BUILDING_LIBC) \
+# Some of these don't exist until after newlib is built, but that's fine.
+INCLUDE_DIRS := -isystem $(CURDIR)/include \
+    -isystem $(CURDIR)/syscalls/include \
     -isystem $(BUILD_DIR)/otter/newlib/targ-include \
-    -isystem $(NEWLIB_1_19_0)/newlib/libc/include \
+    -isystem $(NEWLIB_1_19_0)/newlib/libc/include
+
+OPTIONS_FOR_BUILDING_LIBC := -nostdinc -nostdlib -Wp,-undef $(INCLUDE_DIRS)
+OPTIONS_FOR_USING_LIBC := $(OPTIONS_FOR_BUILDING_LIBC) \
     -L$(LIB_DIR) \
     -lc 
 
@@ -93,34 +95,28 @@ cilly-with-libc:
 
 # Building Otter's system calls functions
 
-SYSCALL_OBJS := \
-	fcntl/open.o \
-	fcntl/__otter_fcntl.o \
-	otter/otter_fs.o \
-	otter/otter_fs_util.o \
-	stdlib/_free_r.o \
-	stdlib/_malloc_r.o \
-	stdlib/realloc.o \
-	sys/stat/fstat.o \
-	sys/stat/lstat.o \
-	sys/stat/__otter_stat.o \
-	sys/socket/__otter_socket.o \
-	sys/time/gettimeofday.o \
-	unistd/close.o \
-	unistd/read.o \
-	unistd/write.o \
-	unistd/lseek.o \
-	unistd/__otter_unistd.o 
-SYSCALL_OBJS := $(addprefix syscalls/,$(SYSCALL_OBJS))
-$(LIB_DIR)/libottersys.a: OBJ_FILES := $(SYSCALL_OBJS)
-$(LIB_DIR)/libottersys.a: $(SYSCALL_OBJS)
+SYSCALL_FILES := \
+	fcntl/open.c \
+	fcntl/__otter_fcntl.c \
+	otter/otter_fs.c \
+	otter/otter_fs_util.c \
+	stdlib/_free_r.c \
+	stdlib/_malloc_r.c \
+	stdlib/realloc.c \
+	sys/stat/fstat.c \
+	sys/stat/lstat.c \
+	sys/stat/__otter_stat.c \
+	sys/socket/__otter_socket.c \
+	sys/time/gettimeofday.c \
+	unistd/close.c \
+	unistd/read.c \
+	unistd/write.c \
+	unistd/lseek.c \
+	unistd/__otter_unistd.c
+SYSCALL_FILES := $(addprefix syscalls/,$(SYSCALL_FILES))
 
-# Make 'make' delete the .o files when it's done
-.INTERMEDIATE: $(SYSCALL_OBJS)
-
-$(LIB_DIR)/libotter%.a: CC:='$(CURDIR)/cilly-with-libc' -I syscalls/include
-$(LIB_DIR)/libotter%.a: cilly-with-libc
-	$(CILLY_CMD) --mode=AR cru $@ $(OBJ_FILES)
+$(LIB_DIR)/libottersys.a: cilly-with-libc $(SYSCALL_FILES)
+	$(CILLY_CMD) $(OPTIONS_FOR_BUILDING_LIBC) --out="$@" $(SYSCALL_FILES)
 
 # Building newlib
 
@@ -162,7 +158,7 @@ clean-%:
 distclean-%:
 	if [[ -f $(BUILD_DIR)/Makefile ]]; then make -C $(BUILD_DIR) distclean || rm -rf $(BUILD_DIR); fi
 
-CLEAN_CMD :=rm -f $(OTTER_EXES) $(SYSCALL_OBJS) 
+CLEAN_CMD :=rm -f $(OTTER_EXES)
 
 clean: $(addprefix clean-,$(TARGETS))
 	$(CLEAN_CMD)
