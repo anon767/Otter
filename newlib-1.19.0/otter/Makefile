@@ -102,6 +102,7 @@ SYSCALL_FILES := \
 	otter/otter_fs_util.c \
 	stdlib/_free_r.c \
 	stdlib/_malloc_r.c \
+	stdlib/malloc.c \
 	stdlib/calloc.c \
 	stdlib/realloc.c \
 	sys/stat/fstat.c \
