@@ -1,7 +1,17 @@
+#include "otter/otter_fs.h"
 #include <sys/stat.h>
 
-extern int __otter_libc_lstat(const char* name, struct stat* s);
+int lstat(const char* name, struct stat* s)
+{
+	struct __otter_fs_inode* inode = __otter_fs_find_inode(name);
+	if(!inode)
+	{
+		struct __otter_fs_dnode* dnode = __otter_fs_find_dnode(name);
+		if(!dnode)
+			return (-1);
 
-int lstat(const char* name, struct stat* s) {
-    return __otter_libc_lstat(name, s);
+		return __otter_libc_dnode_stat(dnode, s);
+	}
+
+	return __otter_libc_inode_stat(inode, s);
 }

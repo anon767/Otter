@@ -119,21 +119,6 @@ int __otter_libc_fstat(int fd, struct stat* s)
 	return __otter_libc_inode_stat(inode, s);
 }
 
-int lstat(const char* name, struct stat* s)
-{
-	struct __otter_fs_inode* inode = __otter_fs_find_inode(name);
-	if(!inode)
-	{
-		struct __otter_fs_dnode* dnode = __otter_fs_find_dnode(name);
-		if(!dnode)
-			return (-1);
-
-		return __otter_libc_dnode_stat(dnode, s);
-	}
-
-	return __otter_libc_inode_stat(inode, s);
-}
-
 int mknod(const char* name, mode_t mode, dev_t dev)
 {
 	if(mode & S_IFCHR || mode & S_IFBLK) /* find out if dev makes sense */
