@@ -46,8 +46,7 @@ let findFns (file : Cil.file) : unit =
             let vis = new getCallerVisitor file in
             let _ = visitCilFile (vis:>cilVisitor) file in
             let called_fnames = vis#callee_list in
-            List.filter (fun fname -> not (List.mem fname all_fnames) &&
-                                      not (List.mem ("__otter_libc_"^fname) all_fnames)) called_fnames
+            List.filter (fun fname -> not (List.mem fname all_fnames)) called_fnames
         ) else all_fnames
     in
     let all_fnames = List.sort Pervasives.compare all_fnames in
