@@ -23,7 +23,7 @@ all: cilly
 
 # Setting some directory names
 
-NEWLIB_1_19_0 := $(dir $(CURDIR))
+NEWLIB_1_19_0 := $(realpath $(dir $(CURDIR)))
 OTTER_TRUNK := $(realpath $(NEWLIB_1_19_0)/..)
 BUILD_DIR := $(NEWLIB_1_19_0)/build$(SUFFIX)
 LIB_DIR := $(CURDIR)/lib$(SUFFIX)
@@ -102,6 +102,7 @@ SYSCALL_FILES := \
 	otter/otter_fs_util.c \
 	stdlib/_free_r.c \
 	stdlib/_malloc_r.c \
+	stdlib/calloc.c \
 	stdlib/realloc.c \
 	sys/stat/fstat.c \
 	sys/stat/lstat.c \
@@ -112,6 +113,7 @@ SYSCALL_FILES := \
 	unistd/read.c \
 	unistd/write.c \
 	unistd/lseek.c \
+	unistd/getpid.c \
 	unistd/__otter_unistd.c
 SYSCALL_FILES := $(addprefix syscalls/,$(SYSCALL_FILES))
 
@@ -174,4 +176,3 @@ distclean: $(addprefix distclean-,$(TARGETS))
 
 %/configure %/Makefile.in : %/configure.in %/Makefile.am
 	cd $* && autoreconf
-

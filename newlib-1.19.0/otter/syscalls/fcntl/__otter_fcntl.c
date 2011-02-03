@@ -1,4 +1,5 @@
 #include "otter/otter_fs.h"
+#include "otter/otter_builtins.h"
 
 #include <fcntl.h>
 #include <stdarg.h>
@@ -96,8 +97,7 @@ int __otter_libc_vopen(const char* path, int oflag, va_list varargs)
 
 	if (O_TRUNC & oflag && !(O_WRONLY & oflag)) /* undefined behavior */
 	{
-		assert(0);
-		return (-1);
+		__ASSERT(0);
 	}
 
 	struct __otter_fs_dnode* dnode = __otter_fs_find_dnode(path);
@@ -105,8 +105,7 @@ int __otter_libc_vopen(const char* path, int oflag, va_list varargs)
 	{
 		if (O_TRUNC & oflag) /* undefined behavior */
 		{
-			assert(0);
-			return (-1);
+			__ASSERT(0);
 		}
 
 		return __otter_fs_open_dir(dnode, oflag);

@@ -8,7 +8,7 @@
 size_t __otter_get_allocated_size(void *ptr);
 
 /* Cause Otter to exit with a failure. */
-void __FAILURE() {}
+void __FAILURE(void) {}
 
 /* __ASSERT(exp) is similar to 'if (!exp) abort();'.
     That is, __ASSERT(exp) checks if the argument is:
@@ -53,6 +53,6 @@ uintmax_t __SYMBOLIC(void *);
 /* __EVALSTR(str, len) causes Otter to interpret str as a string and
 	 print out its value, but to stop at len bytes even if no null byte
 	 was encountered. */
-void __EVALSTR(const char *, size_t);
+void __EVALSTR(const char *str, size_t len);
 
 #endif

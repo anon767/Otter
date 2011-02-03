@@ -118,8 +118,21 @@ int getsockopt(int socket_fd, int level, int option_name, void *option_value, so
 int getpeername(int socket, struct sockaddr *address, socklen_t *address_len);
 int getsockname(int socket, struct sockaddr *address, socklen_t *address_len);
 
-unsigned short __otter_sock_free_port = 5000;
+unsigned short __otter_sock_free_port;
 struct __otter_fs_sock_data* __otter_libc_get_sock_data(int fd);
 void __otter_libc_flush_sock_queue(struct __otter_fs_sock_data* sock);
+ssize_t __otter_libc_read_pipe_data(
+	struct __otter_fs_pipe_data* pipe,
+	void* buf,
+	size_t num);
+ssize_t __otter_libc_pread_pipe_data(
+	struct __otter_fs_pipe_data* pipe,
+	void* buf,
+	size_t num);
+ssize_t __otter_libc_write_socket(
+	struct __otter_fs_open_file_table_entry* open_file,
+	void* buf,
+	size_t num);
+int __otter_libc_shutdown_sock_data(struct __otter_fs_sock_data* sock, int how);
 
 #endif

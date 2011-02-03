@@ -11,7 +11,7 @@
 #define __otter_GID_USER 1
 #define __otter_GID_INVALID -1
 
-uid_t __otter_uid = __otter_UID_USER;
-gid_t __otter_gid = __otter_GID_USER;
+uid_t __otter_uid;
+gid_t __otter_gid;
 
 #endif

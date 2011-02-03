@@ -2,6 +2,7 @@
 #include "otter/otter_builtins.h"
 #include "otter/otter_user.h"
 #include "otter/otter_scheduler.h"
+#include "otter/multiotter_builtins.h"
 
 #include <unistd.h>
 #include <stdio.h>
@@ -787,11 +788,6 @@ pid_t __otter_libc_setsid()
 	pid_t pid = getpid();
 	__otter_multi_set_parent_pid(-pid - 2);
 	return(-pid - 2);
-}
-
-pid_t __otter_libc_getpid()
-{
-	return __otter_multi_get_pid();
 }
 
 pid_t __otter_libc_getppid()
