@@ -15,7 +15,7 @@ let test_coverage content ?label untracked_fns test =
             Executeargs.arg_cond_coverage := true;
             Executeargs.arg_path_coverage := true;
             (* enable tracking on given functions *)
-            Executeargs.arg_untracked_fns := untracked_fns;
+            TrackingFunctions.arg_untracked_fns := untracked_fns;
         end
         begin fun results ->
             (* figure out the coverage *)

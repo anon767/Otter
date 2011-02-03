@@ -23,8 +23,6 @@ let arg_edge_coverage = ref false
 let arg_block_coverage = ref false
 let arg_line_coverage = ref false
 let arg_path_coverage = ref false
-let arg_tracked_fns = ref None
-let arg_untracked_fns = ref None
 let arg_list_lines = ref false
 let arg_list_blocks = ref false
 let arg_list_edges = ref false
@@ -152,36 +150,6 @@ let options = [
 	("--pathCov",
 		Arg.Set arg_path_coverage,
 		" Track path coverage");
-	("--tracked-functions",
-		Arg.String begin fun filename ->
-			let inChan = open_in filename in
-			try
-				while true do
-					match !arg_tracked_fns with
-						| None -> arg_tracked_fns := Some [input_line inChan]
-						| Some fns -> arg_tracked_fns := Some ((input_line inChan)::fns)
-				done
-			with End_of_file ->
-				close_in inChan;
-				arg_untracked_fns := None
-		end,
-		"<filename> File containing a list of functions to track. Not compatable with --untracked-functions. Default is to track all functions.\n"
-	);
-	("--untracked-functions",
-		Arg.String begin fun filename ->
-			let inChan = open_in filename in
-			try
-				while true do
-					match !arg_untracked_fns with
-						| None -> arg_untracked_fns := Some [input_line inChan]
-						| Some fns -> arg_untracked_fns := Some ((input_line inChan)::fns)
-				done
-			with End_of_file ->
-				close_in inChan;
-				arg_tracked_fns := None
-		end,
-        "<filename> File containing a list of functions whose coverages are not tracked. Not compatable with --tracked-functions. Default is to track all functions.\n");
-
 	("--listAllLines",
 		Arg.Set arg_list_lines,
 		" Before execution, print out all of the lines in the program.");

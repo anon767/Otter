@@ -13,4 +13,5 @@ OtterCore/Printer
 OtterCore/Report
 OtterCore/Statement
 OtterCore/SymbolicPointers
+OtterCore/TrackingFunctions
 OtterCore/Types
