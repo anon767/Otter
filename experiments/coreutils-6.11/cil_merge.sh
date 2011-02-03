@@ -15,3 +15,4 @@ sed -i '' 's/#define RMDIR_ERRNO_NOT_EMPTY configure error in rmdir-errno.m4/#de
 
 make CC="$cilly_with_libc" AR="$cilly_ar" RANLIB="echo cilly_ranlib: "
 
+$trunk/otter/otter.pl --merge --dofindFns -Llib -lcoreutils  > libcoreutils_functions
