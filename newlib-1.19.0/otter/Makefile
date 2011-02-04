@@ -13,7 +13,9 @@ ifeq ($(MAKECMDGOALS),native)
   SUFFIX:=.native
 endif
 
-all: cilly
+OTTER_EXES := otter-ar otter-with-libc cilly-with-libc gcc-with-libc
+
+all: cilly $(OTTER_EXES)
 
 
 # See http://www.embecosm.com/appnotes/ean9/ean9-howto-newlib-1.0.pdf,
@@ -66,19 +68,16 @@ native: OTTER_CC:=gcc -m32
 native: OTTER_RANLIB:=ranlib
 
 
-# Each target depends on the corresponding merged files.
+# Each target should create the corresponding merged files.
 
 MERGED_FILES := $(addprefix $(LIB_DIR)/,libm.a libc.a)
 
 $(TARGETS): $(MERGED_FILES)
-# Also build the *-with-libc script. For cilly, also build libottersys.a
-native: gcc-with-libc
-cilly: cilly-with-libc $(LIB_DIR)/libottersys.a
+# For cilly, also build libottersys.a
+cilly: $(LIB_DIR)/libottersys.a
 
 
 # Creating the scripts
-
-OTTER_EXES := otter-ar cilly-with-libc gcc-with-libc
 
 otter-ar: otter-ar.in
 	sed 's:@OTTER_TRUNK@:$(OTTER_TRUNK):g' $< > $@
@@ -89,7 +88,11 @@ gcc-with-libc:
 	chmod +x $@
 
 cilly-with-libc:
-	echo $(CILLY_CMD) $(OPTIONS_FOR_USING_LIBC) -lottersys \"$$\@\" > $@
+	echo $(CILLY_CMD) $(OPTIONS_FOR_BUILDING_LIBC) \"$$\@\" > $@
+	chmod +x $@
+
+otter-with-libc:
+	echo $(OTTER_TRUNK)/otter/otter.pl --merge $(OPTIONS_FOR_USING_LIBC) -lottersys \"$$\@\" > $@
 	chmod +x $@
 
 
