@@ -333,14 +333,15 @@ let minusPI operands =
 let minusPP operands : bytes =
 	let (bytes1, typ1) = List.nth operands 0 in
 	let (bytes2, typ2) = List.nth operands 1 in
-    (* TODO: allow symbolic integers as pointers? *)
     let to_intopt b =
         try Some (Bytes.bytes_to_int_auto b) with Failure _ -> None
     in
     let i1opt = to_intopt bytes1 in
     let i2opt = to_intopt bytes2 in
     match i1opt, i2opt with
-    |   Some i1, Some i2 -> minus operands
+    |   Some 0, Some 0 -> 
+            (* NULL - NULL *)
+            Bytes.bytes__make (Cil.bitsSizeOf typ1/8)
     |   _, _ ->
 	    begin match (bytes1, bytes2) with
 		| (Bytes_Address(block1, offset1), Bytes_Address(block2, offset2)) ->
