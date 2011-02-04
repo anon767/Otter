@@ -1,5 +1,5 @@
-(* Modules used to create Map/Set of Cil types *)
-(* TODO: create something similar for Bytes/Types types *)
+(** Module wrappers and helper functions for various CIL types; useful for creating Set/Map *)
+
 open Cil
 
 module CilLocation = struct
@@ -26,8 +26,7 @@ end
 module CilCanonicalType = struct
     type t = typ
     let canonicalize t = typeSigWithAttrs (fun _ -> []) t
-    let compare x y =
-        Pervasives.compare (canonicalize x) (canonicalize y)
+    let compare x y = if x == y then 0 else Pervasives.compare (canonicalize x) (canonicalize y)
     let hash x = Hashtbl.hash (canonicalize x)
     let equal x y = compare x y = 0
 end
@@ -46,7 +45,7 @@ end
 
 module CilField = struct
     type t = fieldinfo
-    let compare x y = if x == y then 0 else compare (x.fcomp.ckey, x.fname) (y.fcomp.ckey, y.fname)
+    let compare x y = if x == y then 0 else Pervasives.compare (x.fcomp.ckey, x.fname) (y.fcomp.ckey, y.fname)
     let hash x = x.fcomp.ckey
     let equal x y = compare x y = 0
     let printer ff x =
@@ -85,7 +84,7 @@ end
 
 module Malloc = struct
     type t = CilVar.t * string * CilCanonicalType.t
-    let compare (xv, xs, xt) (yv, ys, yt) =
+    let compare (xv, xs, xt as x) (yv, ys, yt as y) = if x == y then 0 else
         match CilVar.compare xv yv with
             | 0 ->
                 begin match String.compare xs ys with
