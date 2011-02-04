@@ -939,7 +939,6 @@ let interceptor job job_queue interceptor =
         (* multiotter functions to be ignored in single-process otter *)
         (intercept_function_by_name_internal "__otter_multi_begin_atomic" noop) @@
         (intercept_function_by_name_internal "__otter_multi_end_atomic" noop) @@
-        (intercept_function_by_name_external "__otter_multi_grealloc"  "realloc") @@
         (intercept_function_by_name_internal "__otter_multi_gmalloc"   libc_malloc) @@
         (intercept_function_by_name_internal "__otter_multi_gfree"     libc_free) @@
 
