@@ -333,7 +333,18 @@ let minusPI operands =
 let minusPP operands : bytes =
 	let (bytes1, typ1) = List.nth operands 0 in
 	let (bytes2, typ2) = List.nth operands 1 in
-	match (bytes1, bytes2) with
+    (* TODO: allow symbolic integers as pointers? *)
+    let to_intopt b =
+        try Some (Bytes.bytes_to_int_auto b) with Failure _ -> None
+    in
+    let i1opt = to_intopt bytes1 in
+    let i2opt = to_intopt bytes2 in
+    match i1opt, i2opt with
+    |   Some i1, Some i2 -> minus operands
+    |   None, Some i2 -> minusPI operands
+    |   Some i1, None -> failwith "Expression is an integer minus a pointer"
+    |   None, None ->
+	    begin match (bytes1, bytes2) with
 		| (Bytes_Address(block1, offset1), Bytes_Address(block2, offset2)) ->
 			if block1 <> block2 then 
 				failwith "minusPP: different base addresss"
@@ -351,6 +362,7 @@ let minusPP operands : bytes =
 				Output.printf "make_Bytes1:@ @[%a@]@\n" BytesPrinter.bytes bytes1;
 				Output.printf "make_Bytes2:@ @[%a@]@\n" BytesPrinter.bytes bytes2;
 				failwith "minusPP (p1,p2) not of type (addr,addr)"
+        end
 
 
 
