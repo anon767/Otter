@@ -124,18 +124,6 @@ module BytesSet = Set.Make (struct
     type t = Bytes.bytes
     let compare = Pervasives.compare
 end)
-
-let list_foldm f xs =
-    let rec list_foldm xs = function
-        | x::y::ys -> list_foldm ((f x y)::xs) ys
-        | [ x ] -> list_foldm_next (x::xs)
-        | [] -> list_foldm_next xs
-    and list_foldm_next = function
-        | [ x ] -> x
-        | [] -> failwith "No items in list!"
-        | xs -> list_foldm [] xs
-    in
-    list_foldm [] xs
 (**/**)
 
 
@@ -271,7 +259,7 @@ let init_pointer ?(scheme=(!default_scheme)) state points_to exps ?(maybe_null=t
                     end offsets BytesSet.empty in
 
                     (* append the constraints to the path condition *)
-                    let offset_constraints = list_foldm begin fun x y ->
+                    let offset_constraints = ListPlus.foldm begin fun x y ->
                         Bytes.make_Bytes_Op (Bytes.OP_LOR, [ (x, Cil.intType); (y, Cil.intType) ])
                     end (BytesSet.elements offset_constraints_set) in
                     let state = MemOp.state__add_path_condition state offset_constraints false in

@@ -112,16 +112,6 @@ module Make (Errors : Errors) = struct
     let (>>>) f g = fun x k -> f x (fun x -> g x k)
 
 
-    (** Helper to to remove a matching item from a list. *)
-    let list_remove f list =
-        let rec list_remove list = function
-            | item::rest when f item -> Some (item, List.rev_append list rest)
-            | item::rest -> list_remove (item::list) rest
-            | [] -> None
-        in
-        list_remove [] list
-
-
     (** Wrapper to assert_failure that also prints the location. *)
     let assert_loc_failure loc format =
         assert_log "%s:%d:error:@;<1 2>" (Filename.basename loc.Cil.file) loc.Cil.line;
@@ -213,7 +203,7 @@ module Make (Errors : Errors) = struct
     (** CPS test that the results contains a {!Job.Return}, passing the remaining results to the next test. *)
     let expect_return file loc asserts results k =
         let asserts' = assert_exps file loc asserts in
-        match list_remove (function Job.Return (return_opt, result) -> asserts' result return_opt None | _ -> false) results with
+        match ListPlus.remove_first (function Job.Return (return_opt, result) -> asserts' result return_opt None | _ -> false) results with
             | Some (_, results) ->
                 k results
             | None when asserts = [] ->
@@ -226,7 +216,7 @@ module Make (Errors : Errors) = struct
     (** CPS test that the results contains a {!Job.Exit}, passing the remaining results to the next test. *)
     let expect_exit file loc asserts results k =
         let asserts' = assert_exps file loc asserts in
-        match list_remove (function Job.Exit (exit_opt, result) -> asserts' result None exit_opt | _ -> false) results with
+        match ListPlus.remove_first (function Job.Exit (exit_opt, result) -> asserts' result None exit_opt | _ -> false) results with
             | Some (_, results) ->
                 k results
             | None when asserts = [] ->
@@ -249,7 +239,7 @@ module Make (Errors : Errors) = struct
             | Job.Abandoned (reason, loc, result) -> reason' reason && asserts' result None None
             | _ -> false
         in
-        fun results k -> match list_remove is_abandoned results with
+        fun results k -> match ListPlus.remove_first is_abandoned results with
             | Some (_, results) ->
                 k results
             | None when asserts = [] ->
