@@ -137,23 +137,6 @@ let state__add_global state varinfo init =
 	}
 
 
-let state__add_formal state varinfo init =
-	let new_formal, new_block_to_bytes =
-		frame__add_varinfo (List.hd state.formals) state.block_to_bytes varinfo (Some init) Block_type_Local
-	in
-	{	state with
-		formals = new_formal::(List.tl state.formals);
-		block_to_bytes = new_block_to_bytes;
-	}
-
-
-let state__add_frame state =
-  {state with
-    formals = frame__empty::(state.formals);
-    locals = frame__empty::(state.locals);
-  }
-
-
 let state__varinfo_to_lval_block ?pre state varinfo =
 	(* lookup varinfo in locals, formals and globals, prune and update the store, and return the result *)
 	let local = List.hd state.locals in
