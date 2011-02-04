@@ -420,8 +420,6 @@ and bytes__equal bytes1 bytes2 = if bytes1 == bytes2 then true else match bytes1
 (* A single global byte representing uninitialized memory *)
 let byte__undef = make_Byte_Symbolic { symbol_id = 0 }
 
-let max_bytes_size = 0xffff
-
 
 let rec bytes__length bytes =
 	match bytes with
