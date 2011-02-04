@@ -115,6 +115,16 @@ SYSCALL_FILES := \
 	unistd/write.c \
 	unistd/lseek.c \
 	unistd/getpid.c \
+	unistd/getgid.c \
+	unistd/getpgrp.c \
+	unistd/getegid.c \
+	unistd/setgid.c \
+	unistd/getuid.c \
+	unistd/getpgid.c \
+	unistd/geteuid.c \
+	unistd/setsid.c \
+	unistd/getppid.c \
+	unistd/setuid.c \
 	unistd/__otter_unistd.c
 SYSCALL_FILES := $(addprefix syscalls/,$(SYSCALL_FILES))
 
@@ -176,4 +186,4 @@ distclean: $(addprefix distclean-,$(TARGETS))
 .PRECIOUS : %/configure %/Makefile.in
 
 %/configure %/Makefile.in : %/configure.in %/Makefile.am
-	cd $* && autoreconf
+	cd $* && autoreconf -v
