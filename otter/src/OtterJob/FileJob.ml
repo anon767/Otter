@@ -8,81 +8,53 @@ open OtterCore
 let unreachable_global varinfo = not (Coverage.VarinfoSet.mem varinfo (!Coverage.reachable_globals))
 
 (** Initializes a global variable to all zeros
-    @param varinfo the variable to initialize
     @param state the state in which to initialize it
+    @param varinfo the variable to initialize
     @return the state, updated with a mapping from [varinfo] to a
     fresh block which has an all-zero bytes as its value *)
-let initialize_to_all_zero varinfo state =
+let initialize_to_all_zero state varinfo =
     let size = (Cil.bitsSizeOf (varinfo.Cil.vtype)) / 8 in
     let size = if size <= 0 then 1 else size in
     let init_bytes = Bytes.bytes__make size (* zeros *) in
-    Output.set_mode Output.MSG_REG;
-    Output.printf "Initialize %s to zeros\n" varinfo.Cil.vname;
     MemOp.state__add_global state varinfo init_bytes
+
 
 let init_globalvars state globals =
     List.fold_left begin fun state g -> match g with
         | Cil.GVar(varinfo, { Cil.init=Some init }, _)
                 when not (!Executeargs.arg_noinit_unreachable_globals && unreachable_global varinfo) ->
-              let lhost_typ = varinfo.Cil.vtype in
-              let size = (Cil.bitsSizeOf (lhost_typ)) / 8 in
-              let zeros = Bytes.bytes__make size in
-              let rec myInit (offset:Cil.offset) (i:Cil.init) (state, acc) =
-                  match i with
-                      | Cil.SingleInit(exp) ->
-                            let state, off, typ, errors  = Expression.flatten_offset state lhost_typ offset [] in
-                            let state, off_bytes, errors =
-                                try
-                                    Expression.rval state exp errors
-                                with Failure _ ->
-                                    (* This might be a recursive initialization,
-                                       such as 'int p = (int)&p;'. Create a
-                                       block for [varinfo] and try again. *)
-                                    let state = initialize_to_all_zero varinfo state in
-                                    Expression.rval state exp errors
-                            in
-                            assert(errors = []); (* there shouldn't be any errors during initialization *)
 
-                            let size = (Cil.bitsSizeOf typ) / 8 in
-                            let init_bytes = BytesUtility.bytes__write acc off size off_bytes in
-                            (state, init_bytes)
-                      | Cil.CompoundInit(typ, list) ->
-                            Cil.foldLeftCompound
-                                ~implicit:false
-                                ~doinit:(fun off i t (state, acc) -> myInit (Cil.addOffset off offset) i (state, acc))
-                                ~ct:typ
-                                ~initl:list
-                                ~acc:(state, acc)
-              in
-              let state, init_bytes = myInit Cil.NoOffset init (state, zeros) in
+            let state =
+                (* Initialize the block first, for recursive initializations such as 'int p = (int)&p;'. *)
+                if not (Types.VarinfoMap.mem varinfo state.Types.global) then
+                    initialize_to_all_zero state varinfo
+                else
+                    state
+            in
+            let state, init_bytes = Expression.evaluate_initializer state varinfo.Cil.vtype init in
 
-              Output.set_mode Output.MSG_REG;
-              if init_bytes == zeros then
-                  Output.printf "Initialize %s to zeros@\n" varinfo.Cil.vname
-              else
-                  Output.printf "Initialize %s to@ @[%a@]@\n" varinfo.Cil.vname BytesPrinter.bytes init_bytes;
+            Output.set_mode Output.MSG_REG;
+            Output.printf "Initialize %s to@ @[%a@]@\n" varinfo.Cil.vname BytesPrinter.bytes init_bytes;
 
-              (* If [varinfo] has not already been declared, create a new
-                 memory_block for it. Otherwise, we created a memory_block for
-                 it before, and we have to assign to that block because there
-                 may be pointers it. *)
-              if not (Types.VarinfoMap.mem varinfo state.Types.global)
-              then MemOp.state__add_global state varinfo init_bytes
-              else (
-                  let state, lvals, errors = Expression.lval state (Cil.Var varinfo, Cil.NoOffset) [] in
-                  assert (errors = []); (* there shouldn't be any errors during initialization *)
-                  MemOp.state__assign state lvals init_bytes
-              )
+            (* TODO: directly overwrite the the mapping in block_to_bytes, rather than going through
+                MemOp.state__assign (MemOp.state__add_global is too coarse for this). *)
+            let state, lvals = MemOp.state__varinfo_to_lval_block state varinfo in
+            MemOp.state__assign state (lvals, Bytes.bytes__length init_bytes) init_bytes
 
         | Cil.GVar(varinfo, _, _)
         | Cil.GVarDecl(varinfo, _)
                 when not (Cil.isFunctionType varinfo.Cil.vtype)
                     && not (!Executeargs.arg_noinit_unreachable_globals && unreachable_global varinfo) ->
-              (* Sanity check: variables are ever declared after being defined, and are never defined twice. *)
-              assert (not (Types.VarinfoMap.mem varinfo state.Types.global));
-              initialize_to_all_zero varinfo state
+            (* Sanity check: variables are ever declared after being defined, and are never defined twice. *)
+            assert (not (Types.VarinfoMap.mem varinfo state.Types.global));
+
+            Output.set_mode Output.MSG_REG;
+            Output.printf "Initialize %s to zeros\n" varinfo.Cil.vname;
+
+            initialize_to_all_zero state varinfo
+
         | _ ->
-              state
+            state
     end state globals
 
 

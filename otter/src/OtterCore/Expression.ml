@@ -526,3 +526,34 @@ evaluate_under_condition state_in condition exp =
             if state.path_condition != checkpointed_path_condition
             then failwith "Path condition changed unexpectedly while evaluating under a condition";
             (Some ({ state with path_condition = state_in.path_condition; }, bytes), "")
+
+
+(** [evaluate_initializer state typ init] evaluates an initializer in a given state.
+        @param state is the state in which evaluate init
+        @param typ is the type of the initializer
+        @param init is the initializer to evaluate
+        @return [(state', bytes)] is the updated state and the result of evaluating [init].
+*)
+let evaluate_initializer state typ init =
+    let size = Cil.bitsSizeOf typ / 8 in
+    let size = if size <= 0 then 1 else size in
+
+    let bytes = Bytes.bytes__make size in
+
+    let rec evaluate_initializer ciloffset init (state, bytes) = match init with
+        | Cil.SingleInit expr ->
+            let state, offset, offset_type, errors  = flatten_offset state typ ciloffset [] in
+            let state, offset_bytes, errors = rval state expr errors in
+            assert(errors = []); (* there shouldn't be any errors during initialization *)
+
+            let offset_size = Cil.bitsSizeOf offset_type / 8 in
+            let offset_size = if offset_size <= 0 then 1 else offset_size in
+            let init_bytes = BytesUtility.bytes__write bytes offset offset_size offset_bytes in
+            (state, init_bytes)
+        | Cil.CompoundInit (ct, initl) ->
+            Cil.foldLeftCompound
+                ~implicit:false ~ct ~initl
+                ~doinit:(fun ciloffset' init _ (state, bytes) -> evaluate_initializer (Cil.addOffset ciloffset' ciloffset) init (state, bytes))
+                ~acc:(state, bytes)
+    in
+    evaluate_initializer Cil.NoOffset init (state, bytes)
