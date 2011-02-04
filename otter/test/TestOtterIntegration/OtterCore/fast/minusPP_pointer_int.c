@@ -1,4 +1,4 @@
-#pragma expect_abandoned(failure("Expression involves an integer and a pointer"))
+#pragma expect_abandoned(failure("minusPP (p1,p2) not of type (addr,addr)"))
 #pragma no_other_results
 
 int main() {

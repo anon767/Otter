@@ -341,9 +341,7 @@ let minusPP operands : bytes =
     let i2opt = to_intopt bytes2 in
     match i1opt, i2opt with
     |   Some i1, Some i2 -> minus operands
-    |   None, Some _
-    |   Some _, None -> failwith "Expression involves an integer and a pointer"
-    |   None, None ->
+    |   _, _ ->
 	    begin match (bytes1, bytes2) with
 		| (Bytes_Address(block1, offset1), Bytes_Address(block2, offset2)) ->
 			if block1 <> block2 then 
