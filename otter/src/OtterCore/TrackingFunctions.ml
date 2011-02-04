@@ -11,7 +11,7 @@ let rec remove_cil_suffix =
         try
             let index = Str.search_forward pat str 0 in
             let str' = String.sub str 0 index in
-            Format.printf "Warning: converting function %s to %s@\n" str str';
+            Format.printf "Tracking %s as though it were %s@\n" str str';
             remove_cil_suffix str'
         with Not_found -> str
 
@@ -33,9 +33,7 @@ let trackedFns =
 	        	| None, None -> List.fold_left (fun set elt -> StringSet.add elt set) StringSet.empty (CilUtilities.FindFns.get_all_fnames file)
 	        	| None, Some fns -> List.fold_left (fun set elt ->
 	        			if List.mem (remove_cil_suffix elt) fns then set
-	        			else 
-                            let _ = Format.printf "Adding function %s into the list of tracked functions@\n" elt in
-                            StringSet.add elt set
+	        			else StringSet.add elt set
 	        		) StringSet.empty (CilUtilities.FindFns.get_all_fnames file)
 	        	| Some fns, None -> List.fold_left (fun set elt -> StringSet.add elt set) StringSet.empty fns
                 (* FIXME: we can allow both lists to be active, e.g., tracedFns = arg_tracked_fns \ arg_untracked_fns *)
