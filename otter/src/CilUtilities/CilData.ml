@@ -41,6 +41,12 @@ module CilVar = struct
             Format.fprintf ff "%s" x.vname
         else
             Format.fprintf ff "%s:%a" x.vname CilLocation.printer x.vdecl
+    let is_const varinfo =
+        if Cil.hasAttribute "const" varinfo.Cil.vattr || Cil.hasAttribute "const" (Cil.typeAttrs varinfo.Cil.vtype) then
+            true
+        else match Cil.unrollType varinfo.Cil.vtype with
+            | Cil.TArray (typ, _, _) -> Cil.hasAttribute "const" (Cil.typeAttrs typ)
+            | _ -> false
 end
 
 module CilField = struct
