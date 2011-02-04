@@ -18,3 +18,8 @@ let force state deferred = match deferred with
     | Immediate x -> (state, x)
     | Deferred f -> f state
 
+
+(** Test if a deferred computation has been forced. *)
+let is_forced deferred = match deferred with
+    | Immediate _ -> true
+    | Deferred _ -> false
