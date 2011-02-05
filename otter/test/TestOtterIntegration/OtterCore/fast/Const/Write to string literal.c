@@ -1,4 +1,4 @@
-#pragma expect_abandoned(failure("Error: write to a const"))
+#pragma expect_abandoned(failure("Write to a const"))
 #pragma no_other_results
 
 char *x = "abc";

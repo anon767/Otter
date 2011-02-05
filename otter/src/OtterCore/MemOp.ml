@@ -227,9 +227,7 @@ let rec state__assign state (lvals, size) bytes =
 		 * of an lvalue with non-const-qualified type, the behavior is undefined. If an attempt is made to refer
 		 * to an object defined with a volatile-qualified type through use of an lvalue with non-volatile-qualified
 		 * type, the behavior is undefined. *)
-		if block.memory_block_type = Block_type_Const then
-			failwith "Error: write to a const"
-		else
+		if block.memory_block_type = Block_type_Const then FormatPlus.failwith "Write to a const: %s" block.memory_block_name;
 
 		let state, oldbytes = Deferred.force state (MemoryBlockMap.find block state.block_to_bytes) in
 
