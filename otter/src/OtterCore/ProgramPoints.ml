@@ -5,8 +5,8 @@ open CilUtilities
 
 (* TODO: make these settings private *)
 (* TODO: move failurefn here *)
-let main_function = ref "main"
-let entry_function = ref (!main_function)
+let main_fname = ref "main"
+let entry_fname = ref ""  (* "" means the same as main_fname *)
 let command_line = ref []
 
 let get_fundec file ftype fname = 
@@ -15,17 +15,21 @@ let get_fundec file ftype fname =
     with Not_found ->
         FormatPlus.failwith "%s function %s not found" ftype fname
 
-let get_main_fundec file = get_fundec file "Main" (!main_function)
-let get_entry_fundec file = get_fundec file "Entry" (!entry_function)
+let set_main fname = main_fname := fname
+let set_entry fname = entry_fname := fname
+let set_cli cli = command_line := cli
+
+let get_main_fundec file = get_fundec file "Main" (!main_fname)
+let get_entry_fundec file = get_fundec file "Entry" (if !entry_fname = "" then !main_fname else !entry_fname)
 
 let options = [
     "--entryfn",
-        Arg.Set_string entry_function,
+        Arg.Set_string entry_fname,
         "<fname> The entry function at which to begin symbolic execution;";
     "", Arg.Tuple [], " if not \"main\", the state will be initialized symbolically (default: same as --mainfn)";
 
     "--mainfn",
-        Arg.Set_string main_function,
+        Arg.Set_string main_fname,
         "<fname> The main function of the program; must either take no argument or (int argc, char** argv) (default: \"main\")";
 
     "--arg",
