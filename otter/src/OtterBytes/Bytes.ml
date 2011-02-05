@@ -484,13 +484,6 @@ let block__make name n t =
 		memory_block_type = t;
 	}
 
-let block__make_string_literal name n =
-	let block = block__make name n Block_type_StringLiteral in
-	{block with
-		memory_block_type = Block_type_StringLiteral;
-	}
-
-
 
 (** Is a bytes 0, 1, or an expression that must be 0 or 1? *)
 let isBoolean = function

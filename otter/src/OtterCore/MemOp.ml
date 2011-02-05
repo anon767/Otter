@@ -60,10 +60,10 @@ let frame__clear_varinfos frame block_to_bytes =
  *	string table
  *)
 let string_table__add bytes : memory_block =
-	let block = block__make_string_literal (FormatPlus.sprintf "@@literal:%a" BytesPrinter.bytes bytes) (bytes__length bytes) in
-	let string_table2 = MemoryBlockMap.add block bytes (!string_table) in
-		string_table := string_table2;
-		block
+    let block = block__make (FormatPlus.sprintf "@@literal:%a" BytesPrinter.bytes bytes) (bytes__length bytes) Block_type_StringLiteral in
+    let string_table2 = MemoryBlockMap.add block bytes (!string_table) in
+    string_table := string_table2;
+    block
 
 
 let string_table__get block =
