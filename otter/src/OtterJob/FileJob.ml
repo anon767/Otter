@@ -4,9 +4,7 @@ open CilUtilities
 open OtterBytes
 open OtterCore
 
-
 let unreachable_global varinfo = not (Coverage.VarinfoSet.mem varinfo (!Coverage.reachable_globals))
-
 
 let init_globalvars state globals =
     let state, _ = List.fold_left begin fun (state, varinfo_to_block) g -> match g with
@@ -117,10 +115,7 @@ let init_cmdline_argvs state argstr =
 
 (* create a job that begins at the main function of a file, with the initial state set up for the file *)
 let make file cmdline =
-	let main_func =
-		try FindCil.fundec_by_name file "main"
-		with Not_found -> failwith "No main function found!"
-	in
+	let main_func = FunctionEntries.get_main_fundec file in
 
 	(* Initialize the state with zeroed globals *)
 	let state = MemOp.state__empty in

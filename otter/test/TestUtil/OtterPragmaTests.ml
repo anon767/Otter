@@ -418,10 +418,10 @@ module Make (Errors : Errors) = struct
 
         (* set the entry function and command line *)
         begin match flags.entry_function with
-            | Some fn -> OtterJob.Job.entry_function := fn
+            | Some fn -> FunctionEntries.entry_function := fn
             | _ -> ()
         end;
-        OtterJob.Job.command_line := flags.command_line;
+        FunctionEntries.command_line := flags.command_line;
 
         (* disable bounds checking if required *)
         Executeargs.arg_bounds_checking := not flags.no_bounds_checking;

@@ -90,7 +90,7 @@ let feature : featureDescr = {
 	fd_name = "execute";
 	fd_enabled = ref false;
 	fd_description = "(symbolic) executor for C";
-	fd_extraopt = Executeargs.options @ TrackingFunctions.options @ SymbolicPointers.options @ Queue.options @ Job.options @ BasicReporter.options @ Stp.options;
+	fd_extraopt = Executeargs.options @ TrackingFunctions.options @ SymbolicPointers.options @ Queue.options @ FunctionEntries.options @ BasicReporter.options @ Stp.options;
 	fd_post_check = true;
 	fd_doit = doExecute;
 }
