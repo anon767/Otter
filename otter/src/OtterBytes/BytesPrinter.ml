@@ -219,7 +219,7 @@ and bytes_named bytes_to_names ff =
 *)
 and memory_block ff block =
 	let block_type = match block.memory_block_type with
-		| Block_type_StringLiteral -> "StringLiteral"
+		| Block_type_Const -> "Const"
 		| Block_type_Global -> "Global"
 		| Block_type_Local -> "Local"
 		| Block_type_Heap -> "Heap"

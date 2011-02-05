@@ -127,7 +127,7 @@ rval state exp errors =
             begin match constant with
                 | CStr(str) ->
                     let bytes = constant_to_bytes constant in
-                    let block = MemOp.string_table__add bytes in
+                    let block = MemOp.const_table__find bytes in
                     (state, make_Bytes_Address(block, bytes__zero), errors)
                 | _ ->
                     (state, constant_to_bytes constant, errors)

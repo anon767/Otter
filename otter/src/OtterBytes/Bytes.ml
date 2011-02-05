@@ -70,7 +70,7 @@ module T : sig
         | Bytes_Conditional of bytes conditional
 
     and memory_block_type =
-        | Block_type_StringLiteral
+        | Block_type_Const
         | Block_type_Global
         | Block_type_Local
         | Block_type_Heap
@@ -135,7 +135,7 @@ end = struct
         | Bytes_Conditional of bytes conditional
 
     and memory_block_type =
-        | Block_type_StringLiteral
+        | Block_type_Const
         | Block_type_Global
         | Block_type_Local
         | Block_type_Heap

@@ -1,5 +1,6 @@
 open DataStructures
 open OcamlUtilities
+open CilUtilities
 open Cil
 open OtterBytes
 open Bytes
@@ -53,21 +54,36 @@ let frame__clear_varinfos frame block_to_bytes =
 
 
 (**
- *	string table
+ *	anonymous const table
  *)
-let string_table__add bytes : memory_block =
-    let block = block__make (FormatPlus.sprintf "@@literal:%a" BytesPrinter.bytes bytes) (bytes__length bytes) Block_type_StringLiteral in
-    let string_table2 = MemoryBlockMap.add block bytes (!string_table) in
-    string_table := string_table2;
+
+module BytesMap = Map.Make (struct
+    type t = bytes
+    let compare = Pervasives.compare
+end)
+
+
+let const_to_block = ref BytesMap.empty
+let block_to_const = ref MemoryBlockMap.empty
+
+
+let const_table__find bytes =
+    try
+        BytesMap.find bytes !const_to_block
+    with Not_found ->
+        let block = block__make (FormatPlus.sprintf "@@const:%a" BytesPrinter.bytes bytes) (bytes__length bytes) Block_type_Const in
+        const_to_block := BytesMap.add bytes block !const_to_block;
+        block_to_const := MemoryBlockMap.add block bytes !block_to_const;
         block
 
 
-let string_table__get block =
-	MemoryBlockMap.find block (!string_table)
+let const_table__get block =
+    if block.memory_block_type <> Block_type_Const then raise Not_found;
+    MemoryBlockMap.find block !block_to_const
 
 
-let string_table__mem block =
-	MemoryBlockMap.mem block (!string_table)
+let const_table__mem block =
+    block.memory_block_type = Block_type_Const && MemoryBlockMap.mem block !block_to_const
 
 
 (** Vargs table
@@ -117,15 +133,13 @@ let state__empty =
 
 
 let state__has_block state block =
-	if block.memory_block_type == Block_type_StringLiteral then
-		string_table__mem block
-    else
-        MemoryBlockMap.mem block state.block_to_bytes
+    const_table__mem block || MemoryBlockMap.mem block state.block_to_bytes
 
 
 let state__add_global state varinfo =
     if not varinfo.Cil.vglob then FormatPlus.invalid_arg "MemOp.state__add_global: %a is not a global variable" Printer.varinfo varinfo;
-    let global, block_to_bytes, block = frame__add_varinfo state.global state.block_to_bytes varinfo true Block_type_Global in
+    let block_type = if CilData.CilVar.is_const varinfo then Block_type_Const else Block_type_Global in
+    let global, block_to_bytes, block = frame__add_varinfo state.global state.block_to_bytes varinfo true block_type in
     let state = { state with global = global; block_to_bytes = block_to_bytes } in
     (state, block)
 
@@ -181,18 +195,18 @@ let state__remove_block state block=
 
 
 let state__get_bytes_from_block state block =
-	if block.memory_block_type == Block_type_StringLiteral then
-		(state, string_table__get block)
-    else
+    try
+        (state, const_table__get block)
+    with Not_found ->
         let deferred = MemoryBlockMap.find block state.block_to_bytes in
         let state, bytes = Deferred.force state deferred in
         (state__add_block state block bytes, bytes)
 
 
 let state__get_deferred_from_block state block =
-	if block.memory_block_type == Block_type_StringLiteral then
-		Deferred.Immediate (string_table__get block)
-    else
+    try
+        Deferred.Immediate (const_table__get block)
+    with Not_found ->
         MemoryBlockMap.find block state.block_to_bytes
 
 
@@ -208,8 +222,13 @@ let state__deref ?pre state (lvals, size) =
 let rec state__assign state (lvals, size) bytes =
 	let assign state pre (block, offset) =
 		(* TODO: provide some way to report partial error *)
-		if block.memory_block_type == Block_type_StringLiteral then
-			failwith "Error: write to a string literal"
+
+		(* C99 6.7.3.5: If an attempt is made to modify an object defined with a const-qualified type through use
+		 * of an lvalue with non-const-qualified type, the behavior is undefined. If an attempt is made to refer
+		 * to an object defined with a volatile-qualified type through use of an lvalue with non-volatile-qualified
+		 * type, the behavior is undefined. *)
+		if block.memory_block_type = Block_type_Const then
+			failwith "Error: write to a const"
 		else
 
 		let state, oldbytes = Deferred.force state (MemoryBlockMap.find block state.block_to_bytes) in

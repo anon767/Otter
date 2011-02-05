@@ -21,12 +21,6 @@ module VargsMap = Map.Make (struct
 	let compare : t -> t -> int = Pervasives.compare
 end)
 
-module BytesMap = Map.Make (struct
-	type t = bytes
-	let compare = Pervasives.compare
-end)
-
-
 exception SignalException of string
 
 
@@ -69,12 +63,4 @@ and state =
 		va_arg : bytes list list;			(* A stack of va_arg *)
 		va_arg_map : bytes list VargsMap.t;
 	}
-
-
-
-(* http://www.c-faq.com/decl/strlitinit.html *)
-
-let (string_table : bytes MemoryBlockMap.t ref) = ref MemoryBlockMap.empty
-
-(*let (vargs_table : bytes list VargsMap.t ref) = ref VargsMap.empty*)
 
