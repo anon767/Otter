@@ -1,4 +1,5 @@
 open DataStructures
+open OcamlUtilities
 open Cil
 
 type operator = 
@@ -642,16 +643,8 @@ let conditional__prune ~test ?eq ?pre source =
     @return ['item conditional] a conditional tree of items
 *)
 let conditional__from_list list =
-	let rec conditional__make_tree outs = function
-		| x::y::rest -> conditional__make_tree ((IfThenElse (guard__symbolic (), x, y))::outs) rest
-		| [x]      -> conditional__make_tree_next (x::outs)
-		| []         -> conditional__make_tree_next outs
-	and conditional__make_tree_next = function
-		| [ x ] -> x
-		| []    -> failwith "No items in list!"
-		| outs  -> conditional__make_tree [] outs
-	in
-	conditional__make_tree [] list
+	ListPlus.foldm (fun x y -> IfThenElse (guard__symbolic (), x, y)) list
+
 
 let conditional__bytes = function
 	| Bytes_Conditional c -> c
