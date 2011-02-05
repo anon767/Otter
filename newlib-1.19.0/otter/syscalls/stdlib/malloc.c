@@ -10,3 +10,7 @@
 void *malloc(size_t s) {
     return malloc(s);
 }
+
+void *__otter_multi_gmalloc(size_t size) {
+    return malloc(size);
+}
