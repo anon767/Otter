@@ -38,6 +38,10 @@ let as_string printer item =
 let failwith format = ksprintf Pervasives.failwith format
 
 
+(** Alternative to {!Pervasives.invalid_arg} that has a {!Format.printf}-like interface. *)
+let invalid_arg format = ksprintf Pervasives.invalid_arg format
+
+
 (** Print a list of elements, given a printer for the element type and a separator.
 		@param printer is the element printer
 		@param sep is the separator string, which may include \@ control operators of {!Format.fprintf}
