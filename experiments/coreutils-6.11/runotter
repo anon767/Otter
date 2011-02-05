@@ -1,0 +1,14 @@
+#!/bin/sh
+TRUNK=../..
+NEWLIB_OTTER=$TRUNK/newlib-1.19.0/otter
+OTTER_CMD=$NEWLIB_OTTER/otter-with-libc 
+
+"$OTTER_CMD" \
+    --doRunRmtmps --doexecute \
+    --queue=KLEE \
+    --lineCov \
+    --untracked-functions="$NEWLIB_OTTER"/library_functions \
+    --untracked-functions=libcoreutils_functions \
+    --untracked-functions=other_functions \
+    __otter_main_driver.c --mainfn=__otter_main_driver \
+    "$@"
