@@ -248,7 +248,7 @@ let soundness_testsuite = "Soundness" >::: [
     "Pointer to malloc'ed" >::: [
         (* there should be at least 3 aliasing conditions: x == NULL, y == NULL or y == x, regardless of order of
            occurence *)
-        "y == x" >:
+        "y = x" >:
             test_permutations [ "x"; "y" ] begin fun permutation ->
                 let [ e1; e2 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "1"; "2" ] permutation in
                 test_symbolic_pointers ~label:(String.concat "; " permutation)
@@ -279,7 +279,7 @@ let soundness_testsuite = "Soundness" >::: [
 
         (* there should be at least 4 aliasing conditions: x == NULL, *x == NULL, y == NULL or y == x, regardless
            of order of occurence *)
-        "y == *x" >: TestList begin
+        "y = *x" >: TestList begin
             let test (label, e1, e2) =
                 test_symbolic_pointers ~label
                     ~expect_return:[ 1; 2; 3; 4 ]
@@ -316,7 +316,7 @@ let soundness_testsuite = "Soundness" >::: [
 
         (* there should be at least 5 aliasing conditions: x == NULL, y == NULL, *x == NULL, *y == NULL or *y == *x,
            regardless of order of occurence *)
-        "*y == *x" >:
+        "*y = *x" >:
             test_permutations ["x"; "y"] begin fun permutation1 ->
                 let [ e1; e2 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "1"; "2" ] permutation1 in
                 test_permutations ["*x"; "*y"] begin fun permutation2 ->
@@ -363,7 +363,7 @@ let soundness_testsuite = "Soundness" >::: [
 
         (* there should be at least 3 aliasing conditions: x == NULL, y == NULL or y == &x->f, regardless of order of
            occurence *)
-        "y == &x->f" >:
+        "y = &x->f" >:
             test_permutations [ "x"; "y" ] begin fun permutation ->
                 let [ e1; e2 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "1"; "2" ] permutation in
                 test_symbolic_pointers ~label:(String.concat "; " permutation)
@@ -397,7 +397,7 @@ let soundness_testsuite = "Soundness" >::: [
 
         (* there should be at least 4 aliasing conditions: x == NULL, *x == NULL, y == NULL or y == &( *x)->f,
            regardless of order of occurence *)
-        "y == &(*x)->f" >: TestList begin
+        "y = &(*x)->f" >: TestList begin
             let test (label, e1, e2) =
                 test_symbolic_pointers ~label
                     ~expect_return:[ 1; 2; 3; 4 ]
@@ -435,7 +435,7 @@ let soundness_testsuite = "Soundness" >::: [
 
         (* there should be at least 5 aliasing conditions: x == NULL, y == NULL, *x == NULL, *y == NULL
            or *y == &( *x)->f, regardless of order of occurence *)
-        "*y == &(*x)->f" >:
+        "*y = &(*x)->f" >:
             test_permutations ["x"; "y"] begin fun permutation1 ->
                 let [ e1; e2 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "1"; "2" ] permutation1 in
                 test_permutations ["*x"; "*y"] begin fun permutation2 ->
@@ -483,7 +483,7 @@ let soundness_testsuite = "Soundness" >::: [
 
         (* there should be at least 3 aliasing conditions: x == NULL, y == NULL or y.f == &x->f, regardless of order of
            occurence *)
-        "y.f == &x->f" >:
+        "y.f = &x->f" >:
             test_permutations [ "x"; "y.f" ] begin fun permutation ->
                 let [ e1; e2 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "1"; "2" ] permutation in
                 test_symbolic_pointers ~label:(String.concat "; " permutation)
@@ -517,7 +517,7 @@ let soundness_testsuite = "Soundness" >::: [
 
         (* there should be at least 4 aliasing conditions: x == NULL, *x == NULL, y == NULL or y.f == &( *x)->f,
            regardless of order of occurence *)
-        "y.f == &(*x)->f" >: TestList begin
+        "y.f = &(*x)->f" >: TestList begin
             let test (label, e1, e2) =
                 test_symbolic_pointers ~label
                     ~expect_return:[ 1; 2; 3; 4 ]
@@ -555,7 +555,7 @@ let soundness_testsuite = "Soundness" >::: [
 
         (* there should be at least 5 aliasing conditions: x == NULL, y == NULL, *x == NULL, y->f == NULL
            or y->f == &( *x)->f, regardless of order of occurence *)
-        "*y.f == &(*x)->f" >:
+        "*y.f = &(*x)->f" >:
             test_permutations ["x"; "y.f"] begin fun permutation1 ->
                 let [ e1; e2 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "1"; "2" ] permutation1 in
                 test_permutations ["*x"; "*y.f"] begin fun permutation2 ->
@@ -603,7 +603,7 @@ let soundness_testsuite = "Soundness" >::: [
 
         (* there should be at least 5 aliasing conditions: x == NULL, y == NULL, *x == NULL, y->f == NULL
            or y->f == &( *x)->f, regardless of order of occurence *)
-        "y->f == &(*x)->f" >:
+        "y->f = &(*x)->f" >:
             test_permutations ["x"; "y"] begin fun permutation1 ->
                 let [ e1; e2 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "1"; "2" ] permutation1 in
                 test_permutations ["*x"; "y->f"] begin fun permutation2 ->
