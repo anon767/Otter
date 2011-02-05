@@ -2,33 +2,41 @@ open TestUtil.MyOUnit
 open TestUtil.OtterUtil
 open OcamlUtilities
 open CilUtilities
+open OtterBytes
 open OtterCore
-open Types
-open Job
 
 
-(* test helper that runs the symbolic executor on a file given a source code as a string, and counts the results *)
-let test_symbolic_pointers content ?label test =
+(* test helper that runs the symbolic executor on a file given a source code as a string, and check against an expected list of results *)
+let test_symbolic_pointers ?label ~expect_return ?(no_return0=false) content =
     let content = "void * malloc(unsigned long);" ^ content in
     test_otter_core content ?label ~entry_function:"foo"
         begin fun results ->
-            (* count jobs *)
-            let return, exit, abandoned = List.fold_left begin fun (r, e, a) result -> match result with
-                | Return _ -> (r + 1, e, a)
-                | Exit _ ->  (r, e + 1, a)
-                | Abandoned _ -> (r, e, a + 1)
-                | Truncated _ -> (r, e, a)  (* ignored *)
-            end (0, 0, 0) results in
+            let actual_return = List.fold_left begin fun actual_return result -> match result with
+                | Job.Return (Some return, _) ->
+                    begin try
+                        (Bytes.bytes_to_int64_auto return)::actual_return
+                    with Failure _ ->
+                        assert_failure "Unexpected Return with symbolic code"
+                    end
+                | Job.Return _ ->
+                    assert_failure "Unexpected Return with no code"
+                | Job.Abandoned _ | Job.Exit _ | Job.Truncated _ ->
+                    assert_failure "Unexpected Abandoned, Exit or Truncated"
+            end [] results in
 
-            (* finally run the test *)
-            test results return exit abandoned
+            let expect_return, has_return0 = List.fold_left begin fun (expect_return, has_return0) return ->
+                let has_return0 = has_return0 || return = Int64.zero in
+                match ListPlus.remove_first (fun x -> Int64.of_int x = return) expect_return with
+                    | Some (_, expect_return) -> (expect_return, has_return0)
+                    | None -> (expect_return, has_return0)
+            end (expect_return, false) actual_return in
+
+            if expect_return <> [] then
+                assert_failure "Did not find Return with code: @[%a@]" (FormatPlus.pp_print_list Format.pp_print_int "@ ") expect_return;
+
+            if no_return0 && has_return0 then
+                assert_failure "Expected no Return with code 0"
         end
-
-
-(* specialize assert helpers with printers for descriptive error messages *)
-let assert_equal = assert_equal ~printer:Format.pp_print_int
-let assert_at_least = assert_at_least ~printer:Format.pp_print_int
-let assert_at_most = assert_at_most ~printer:Format.pp_print_int
 
 
 (*
@@ -49,21 +57,22 @@ let soundness_testsuite = "Soundness" >::: [
                 begin fun permutation ->
                     let [ e1; e2; e3 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "1"; "2"; "3" ] permutation in
                     test_symbolic_pointers ~label:(String.concat "; " permutation)
+                        ~expect_return:[ 1; 2; 3 ]
                         begin String.concat "" ["
                             int x, y, *z;
                             void nop1(int x) {}
                             void nop2(int x) {}
                             void nop3(int x) {}
-                            void foo(void) {
+                            int foo(void) {
                                 "; e1; e2; e3; "
                                 if (z == &x) {
-                                    return;
+                                    return 1;
                                 } else if (z == &y) {
-                                    return;
+                                    return 2;
                                 } else if (z == 0) {
-                                    return;
+                                    return 3;
                                 }
-                                fail();
+                                return 0;
                             }
                             int main(void) {
                                 z = &x;
@@ -72,29 +81,27 @@ let soundness_testsuite = "Soundness" >::: [
                                 return 0;
                             }
                         "] end
-                        begin fun results return exit abandoned ->
-                            assert_at_least 3 return;
-                            assert_equal 0 exit;
-                        end
                 end;
 
             (* another way to test the 3 aliasing conditions: if z != NULL, then *z is equal x or y  *)
-            test_symbolic_pointers ~label:"x = 1; y = 2; *z = 3;" "
+            test_symbolic_pointers ~label:"x = 1; y = 2; *z = 3;"
+                ~expect_return:[ 1; 2; 3 ]
+                "
                 int x, y, *z;
-                void foo(void) {
+                int foo(void) {
                     if (z == 0) {
-                        return;
+                        return 1;
                     } else {
                         x = 1;
                         y = 2;
                         *z = 3;
                         if (x == 3) {
-                            return;
+                            return 2;
                         } else if (y == 3) {
-                            return;
+                            return 3;
                         }
                     }
-                    fail();
+                    return 0;
                 }
                 int main(void) {
                     z = &x;
@@ -102,10 +109,7 @@ let soundness_testsuite = "Soundness" >::: [
                     foo();
                     return 0;
                 }
-                " begin fun results return exit abandoned ->
-                    assert_at_least 3 return;
-                    assert_equal 0 exit;
-                end;
+                ";
         ];
 
         "x = &z; y = &z;" >::: [
@@ -115,23 +119,24 @@ let soundness_testsuite = "Soundness" >::: [
                 begin fun permutation ->
                     let [ e1; e2; e3 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "1"; "2"; "3" ] permutation in
                     test_symbolic_pointers ~label:(String.concat "; " permutation)
+                        ~expect_return:[ 1; 2; 3; 4 ]
                         begin String.concat "; " ["
                             int *x, *y, z;
                             void nop1(int x) {}
                             void nop2(int x) {}
                             void nop3(int x) {}
-                            void foo(void) {
+                            int foo(void) {
                                 "; e1; e2; e3; "
                                 if (x == &z && y == &z) {
-                                    return;
+                                    return 1;
                                 } else if (x == &z && y == 0) {
-                                    return;
+                                    return 2;
                                 } else if (x == 0 && y == &z) {
-                                    return;
+                                    return 3;
                                 } else if (x == 0 && y == 0) {
-                                    return;
+                                    return 4;
                                 }
-                                fail();
+                                return 0;
                             }
                             int main(void) {
                                 x = &z;
@@ -140,10 +145,6 @@ let soundness_testsuite = "Soundness" >::: [
                                 return 0;
                             }
                         "] end
-                        begin fun results return exit abandoned ->
-                            assert_at_least 4 return;
-                            assert_equal 0 exit;
-                        end
                 end;
         ];
     ];
@@ -156,21 +157,22 @@ let soundness_testsuite = "Soundness" >::: [
                 begin fun permutation ->
                     let [ e1; e2; e3 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "1"; "2"; "3" ] permutation in
                     test_symbolic_pointers ~label:(String.concat "; " permutation)
+                        ~expect_return:[ 1; 2; 3 ]
                         begin String.concat "; " ["
                             int x, y;
                             void nop1(int x) {}
                             void nop2(int x) {}
                             void nop3(int x) {}
-                            void foo(int *z) {
+                            int foo(int *z) {
                                 "; e1; e2; e3; "
                                 if (z == &x) {
-                                    return;
+                                    return 1;
                                 } else if (z == &y) {
-                                    return;
+                                    return 2;
                                 } else if (z == 0) {
-                                    return;
+                                    return 3;
                                 }
-                                fail();
+                                return 0;
                             }
                             int main(void) {
                                 foo(&x);
@@ -178,39 +180,34 @@ let soundness_testsuite = "Soundness" >::: [
                                 return 0;
                             }
                         "] end
-                        begin fun results return exit abandoned ->
-                            assert_at_least 3 return;
-                            assert_equal 0 exit;
-                        end
                 end;
 
             (* another way to test the 3 aliasing conditions: if z != NULL, then *z is equal x or y  *)
-            test_symbolic_pointers ~label:"x = 1; y = 2; *z = 3;" "
+            test_symbolic_pointers ~label:"x = 1; y = 2; *z = 3;"
+                ~expect_return:[ 1; 2; 3 ]
+                "
                 int x, y;
-                void foo(int *z) {
+                int foo(int *z) {
                     if (z == 0) {
-                        return;
+                        return 1;
                     } else {
                         x = 1;
                         y = 2;
                         *z = 3;
                         if (x == 3) {
-                            return;
+                            return 2;
                         } else if (y == 3) {
-                            return;
+                            return 3;
                         }
                     }
-                    fail();
+                    return 0;
                 }
                 int main(void) {
                     foo(&x);
                     foo(&y);
                     return 0;
                 }
-                " begin fun results return exit abandoned ->
-                    assert_at_least 3 return;
-                    assert_equal 0 exit;
-                end;
+                ";
         ];
 
         "x = &z; y = &z;" >::: [
@@ -220,33 +217,30 @@ let soundness_testsuite = "Soundness" >::: [
                 begin fun permutation ->
                     let [ e1; e2; e3 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "1"; "2"; "3" ] permutation in
                     test_symbolic_pointers ~label:(String.concat "; " permutation)
+                        ~expect_return:[ 1; 2; 3; 4 ]
                         begin String.concat "; " ["
                             int z;
                             void nop1(int x) {}
                             void nop2(int x) {}
                             void nop3(int x) {}
-                            void foo(int *x, int *y) {
+                            int foo(int *x, int *y) {
                                 "; e1; e2; e3; "
                                 if (x == &z && y == &z) {
-                                    return;
+                                    return 1;
                                 } else if (x == &z && y == 0) {
-                                    return;
+                                    return 2;
                                 } else if (x == 0 && y == &z) {
-                                    return;
+                                    return 3;
                                 } else if (x == 0 && y == 0) {
-                                    return;
+                                    return 4;
                                 }
-                                fail();
+                                return 0;
                             }
                             int main(void) {
                                 foo(&z, &z);
                                 return 0;
                             }
                         "] end
-                        begin fun results return exit abandoned ->
-                            assert_at_least 4 return;
-                            assert_equal 0 exit;
-                        end
                 end;
         ];
     ];
@@ -258,20 +252,21 @@ let soundness_testsuite = "Soundness" >::: [
             test_permutations [ "x"; "y" ] begin fun permutation ->
                 let [ e1; e2 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "1"; "2" ] permutation in
                 test_symbolic_pointers ~label:(String.concat "; " permutation)
+                    ~expect_return:[ 1; 2; 3 ]
                     begin String.concat "; " ["
                         int *x, *y;
                         void nop1(int x) {}
                         void nop2(int x) {}
-                        void foo(void) {
+                        int foo(void) {
                             "; e1; e2; "
                             if (x == 0) {
-                                return;
+                                return 1;
                             } else if (y == 0) {
-                                return;
+                                return 2;
                             } else if (y == x) {
-                                return;
+                                return 3;
                             }
-                            fail();
+                            return 0;
                         }
                         int main(void) {
                             x = malloc(sizeof(*x));
@@ -280,10 +275,6 @@ let soundness_testsuite = "Soundness" >::: [
                             return 0;
                         }
                     "] end
-                    begin fun results return exit abandoned ->
-                        assert_at_least 3 return;
-                        assert_equal 0 exit;
-                    end
             end;
 
         (* there should be at least 4 aliasing conditions: x == NULL, *x == NULL, y == NULL or y == x, regardless
@@ -291,24 +282,25 @@ let soundness_testsuite = "Soundness" >::: [
         "y == *x" >: TestList begin
             let test (label, e1, e2) =
                 test_symbolic_pointers ~label
+                    ~expect_return:[ 1; 2; 3; 4 ]
                     begin String.concat "; " ["
                         int **x, *y;
                         void nop(int x) {}
-                        void foo(void) {
+                        int foo(void) {
                             "; e1; "
                             if (x == 0) {
-                                return;
+                                return 1;
                             } else {
                                 "; e2; "
                                 if (*x == 0) {
-                                    return;
+                                    return 2;
                                 } else if (y == 0) {
-                                    return;
+                                    return 3;
                                 } else if (y == *x) {
-                                    return;
+                                    return 4;
                                 }
                             }
-                            fail();
+                            return 0;
                         }
                         int main(void) {
                             x = malloc(sizeof(*x));
@@ -318,10 +310,6 @@ let soundness_testsuite = "Soundness" >::: [
                             return 0;
                         }
                     "] end
-                    begin fun results return exit abandoned ->
-                        assert_at_least 4 return;
-                        assert_equal 0 exit;
-                    end
             in
             List.map test [ ("x; *x; y", "0", "0"); ("x; y; *x", "0", "nop(y);"); ("y; x; *x", "nop(y);", "") ]
         end;
@@ -334,31 +322,32 @@ let soundness_testsuite = "Soundness" >::: [
                 test_permutations ["*x"; "*y"] begin fun permutation2 ->
                     let [ e3; e4 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "3"; "4" ] permutation2 in
                     test_symbolic_pointers ~label:(String.concat "; " (permutation1 @ permutation2))
+                        ~expect_return:[ 1; 2; 3; 4; 5 ]
                         begin String.concat "; " ["
                             int **x, **y;
                             void nop1(int x) {}
                             void nop2(int x) {}
                             void nop3(int x) {}
                             void nop4(int x) {}
-                            void foo(void) {
+                            int foo(void) {
                                 "; e1; "
                                 "; e2; "
                                 if (x == 0) {
-                                    return;
+                                    return 1;
                                 } else if (y == 0) {
-                                    return;
+                                    return 2;
                                 } else {
                                     "; e3; "
                                     "; e4; "
                                     if (*x == 0) {
-                                        return;
+                                        return 3;
                                     } else if (*y == 0) {
-                                        return;
+                                        return 4;
                                     } else if (*y == *x) {
-                                        return;
+                                        return 5;
                                     }
                                 }
-                                fail();
+                                return 0;
                             }
                             int main(void) {
                                 x = malloc(sizeof(*x));
@@ -369,10 +358,6 @@ let soundness_testsuite = "Soundness" >::: [
                                 return 0;
                             }
                         "] end
-                        begin fun results return exit abandoned ->
-                            assert_at_least 5 return;
-                            assert_equal 0 exit;
-                        end
                 end
             end;
 
@@ -382,23 +367,24 @@ let soundness_testsuite = "Soundness" >::: [
             test_permutations [ "x"; "y" ] begin fun permutation ->
                 let [ e1; e2 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "1"; "2" ] permutation in
                 test_symbolic_pointers ~label:(String.concat "; " permutation)
+                    ~expect_return:[ 1; 2; 3 ]
                     begin String.concat "; " ["
                         struct { char a; int f; } *x;
                         int *y;
                         void nop1(int x) {}
                         void nop2(int x) {}
-                        void foo(void) {
+                        int foo(void) {
                             "; e1; e2; "
                             if (x == 0) {
-                                return;
+                                return 1;
                             } else {
                                 if (y == 0) {
-                                    return;
+                                    return 2;
                                 } else if (y == &x->f) {
-                                    return;
+                                    return 3;
                                 }
                             }
-                            fail();
+                            return 0;
                         }
                         int main(void) {
                             x = malloc(sizeof(*x));
@@ -407,10 +393,6 @@ let soundness_testsuite = "Soundness" >::: [
                             return 0;
                         }
                     "] end
-                    begin fun results return exit abandoned ->
-                        assert_at_least 3 return;
-                        assert_equal 0 exit;
-                    end
             end;
 
         (* there should be at least 4 aliasing conditions: x == NULL, *x == NULL, y == NULL or y == &( *x)->f,
@@ -418,25 +400,26 @@ let soundness_testsuite = "Soundness" >::: [
         "y == &(*x)->f" >: TestList begin
             let test (label, e1, e2) =
                 test_symbolic_pointers ~label
+                    ~expect_return:[ 1; 2; 3; 4 ]
                     begin String.concat "; " ["
                         struct { char a; int f; } **x;
                         int *y;
                         void nop(int x) {}
-                        void foo(void) {
+                        int foo(void) {
                             "; e1; "
                             if (x == 0) {
-                                return;
+                                return 1;
                             } else {
                                 "; e2; "
                                 if (*x == 0) {
-                                    return;
+                                    return 2;
                                 } else if (y == 0) {
-                                    return;
+                                    return 3;
                                 } else if (y == &(*x)->f) {
-                                    return;
+                                    return 4;
                                 }
                             }
-                            fail();
+                            return 0;
                         }
                         int main(void) {
                             x = malloc(sizeof(*x));
@@ -446,10 +429,6 @@ let soundness_testsuite = "Soundness" >::: [
                             return 0;
                         }
                     "] end
-                    begin fun results return exit abandoned ->
-                        assert_at_least 4 return;
-                        assert_equal 0 exit;
-                    end
             in
             List.map test [ ("x; *x; y", "0", "0"); ("x; y; *x", "0", "nop(y);"); ("y; x; *x", "nop(y);", "") ]
         end;
@@ -462,6 +441,7 @@ let soundness_testsuite = "Soundness" >::: [
                 test_permutations ["*x"; "*y"] begin fun permutation2 ->
                     let [ e3; e4 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "3"; "4" ] permutation2 in
                     test_symbolic_pointers ~label:(String.concat "; " (permutation1 @ permutation2))
+                        ~expect_return:[ 1; 2; 3; 4; 5 ]
                         begin String.concat "; " ["
                             struct { char a; int f; } **x;
                             int **y;
@@ -469,25 +449,25 @@ let soundness_testsuite = "Soundness" >::: [
                             void nop2(int x) {}
                             void nop3(int x) {}
                             void nop4(int x) {}
-                            void foo(void) {
+                            int foo(void) {
                                 "; e1; "
                                 "; e2; "
                                 if (x == 0) {
-                                    return;
+                                    return 1;
                                 } else if (y == 0) {
-                                    return;
+                                    return 2;
                                 } else {
                                     "; e3; "
                                     "; e4; "
                                     if (*x == 0) {
-                                        return;
+                                        return 3;
                                     } else if (*y == 0) {
-                                        return;
+                                        return 4;
                                     } else if (*y == &(*x)->f) {
-                                        return;
+                                        return 5;
                                     }
                                 }
-                                fail();
+                                return 0;
                             }
                             int main(void) {
                                 x = malloc(sizeof(*x));
@@ -498,10 +478,6 @@ let soundness_testsuite = "Soundness" >::: [
                                 return 0;
                             }
                         "] end
-                        begin fun results return exit abandoned ->
-                            assert_at_least 5 return;
-                            assert_equal 0 exit;
-                        end
                 end
             end;
 
@@ -511,23 +487,24 @@ let soundness_testsuite = "Soundness" >::: [
             test_permutations [ "x"; "y.f" ] begin fun permutation ->
                 let [ e1; e2 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "1"; "2" ] permutation in
                 test_symbolic_pointers ~label:(String.concat "; " permutation)
+                    ~expect_return:[ 1; 2; 3 ]
                     begin String.concat "; " ["
                         struct { char a; int f; } *x;
                         struct { char a; int *f; } y;
                         void nop1(int x) {}
                         void nop2(int x) {}
-                        void foo(void) {
+                        int foo(void) {
                             "; e1; e2; "
                             if (x == 0) {
-                                return;
+                                return 1;
                             } else {
                                 if (y.f == 0) {
-                                    return;
+                                    return 2;
                                 } else if (y.f == &x->f) {
-                                    return;
+                                    return 3;
                                 }
                             }
-                            fail();
+                            return 0;
                         }
                         int main(void) {
                             x = malloc(sizeof(*x));
@@ -536,10 +513,6 @@ let soundness_testsuite = "Soundness" >::: [
                             return 0;
                         }
                     "] end
-                    begin fun results return exit abandoned ->
-                        assert_at_least 3 return;
-                        assert_equal 0 exit;
-                    end
             end;
 
         (* there should be at least 4 aliasing conditions: x == NULL, *x == NULL, y == NULL or y.f == &( *x)->f,
@@ -547,25 +520,26 @@ let soundness_testsuite = "Soundness" >::: [
         "y.f == &(*x)->f" >: TestList begin
             let test (label, e1, e2) =
                 test_symbolic_pointers ~label
+                    ~expect_return:[ 1; 2; 3; 4 ]
                     begin String.concat "; " ["
                         struct { char a; int f; } **x;
                         struct { char a; int *f; } y;
                         void nop(int x) {}
-                        void foo(void) {
+                        int foo(void) {
                             "; e1; "
                             if (x == 0) {
-                                return;
+                                return 1;
                             } else {
                                 "; e2; "
                                 if (*x == 0) {
-                                    return;
+                                    return 2;
                                 } else if (y.f == 0) {
-                                    return;
+                                    return 3;
                                 } else if (y.f == &(*x)->f) {
-                                    return;
+                                    return 4;
                                 }
                             }
-                            fail();
+                            return 0;
                         }
                         int main(void) {
                             x = malloc(sizeof(*x));
@@ -575,10 +549,6 @@ let soundness_testsuite = "Soundness" >::: [
                             return 0;
                         }
                     "] end
-                    begin fun results return exit abandoned ->
-                        assert_at_least 4 return;
-                        assert_equal 0 exit;
-                    end
             in
             List.map test [ ("x; *x; y.f", "0", "0"); ("x; y.f; *x", "0", "nop(y.f);"); ("y.f; x; *x", "nop(y.f);", "") ]
         end;
@@ -591,6 +561,7 @@ let soundness_testsuite = "Soundness" >::: [
                 test_permutations ["*x"; "*y.f"] begin fun permutation2 ->
                     let [ e3; e4 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "3"; "4" ] permutation2 in
                     test_symbolic_pointers ~label:(String.concat "; " (permutation1 @ permutation2))
+                        ~expect_return:[ 1; 2; 3; 4; 5 ]
                         begin String.concat "; " ["
                             struct { char a; int f; } **x;
                             struct { char a; int **f; } y;
@@ -598,25 +569,25 @@ let soundness_testsuite = "Soundness" >::: [
                             void nop2(int x) {}
                             void nop3(int x) {}
                             void nop4(int x) {}
-                            void foo(void) {
+                            int foo(void) {
                                 "; e1; "
                                 "; e2; "
                                 if (x == 0) {
-                                    return;
+                                    return 1;
                                 } else if (y.f == 0) {
-                                    return;
+                                    return 2;
                                 } else {
                                     "; e3; "
                                     "; e4; "
                                     if (*x == 0) {
-                                        return;
+                                        return 3;
                                     } else if (*y.f == 0) {
-                                        return;
+                                        return 4;
                                     } else if (*y.f == &(*x)->f) {
-                                        return;
+                                        return 5;
                                     }
                                 }
-                                fail();
+                                return 0;
                             }
                             int main(void) {
                                 x = malloc(sizeof(*x));
@@ -627,10 +598,6 @@ let soundness_testsuite = "Soundness" >::: [
                                 return 0;
                             }
                         "] end
-                        begin fun results return exit abandoned ->
-                            assert_at_least 5 return;
-                            assert_equal 0 exit;
-                        end
                 end
             end;
 
@@ -642,6 +609,7 @@ let soundness_testsuite = "Soundness" >::: [
                 test_permutations ["*x"; "y->f"] begin fun permutation2 ->
                     let [ e3; e4 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "3"; "4" ] permutation2 in
                     test_symbolic_pointers ~label:(String.concat "; " (permutation1 @ permutation2))
+                        ~expect_return:[ 1; 2; 3; 4; 5 ]
                         begin String.concat "; " ["
                             struct { char a; int f; } **x;
                             struct { char a; int *f; } *y;
@@ -649,25 +617,25 @@ let soundness_testsuite = "Soundness" >::: [
                             void nop2(int x) {}
                             void nop3(int x) {}
                             void nop4(int x) {}
-                            void foo(void) {
+                            int foo(void) {
                                 "; e1; "
                                 "; e2; "
                                 if (x == 0) {
-                                    return;
+                                    return 1;
                                 } else if (y == 0) {
-                                    return;
+                                    return 2;
                                 } else {
                                     "; e3; "
                                     "; e4; "
                                     if (*x == 0) {
-                                        return;
+                                        return 3;
                                     } else if (y->f == 0) {
-                                        return;
+                                        return 4;
                                     } else if (y->f == &(*x)->f) {
-                                        return;
+                                        return 5;
                                     }
                                 }
-                                fail();
+                                return 0;
                             }
                             int main(void) {
                                 x = malloc(sizeof(*x));
@@ -678,68 +646,61 @@ let soundness_testsuite = "Soundness" >::: [
                                 return 0;
                             }
                         "] end
-                        begin fun results return exit abandoned ->
-                            assert_at_least 5 return;
-                            assert_equal 0 exit;
-                        end
                 end
             end;
 
         (* empty array fields should not be treated as pointers *)
         test_symbolic_pointers ~label:"empty array field"
+            ~expect_return:[ 1; 2 ]
             begin String.concat "; " ["
                 struct { int *f; int g[]; } x;
-                void foo(void) {
+                int foo(void) {
                     if (x.f == 0) {
-                        return;
+                        return 1;
                     } else {
-                        return;
+                        return 2;
                     }
-                    fail();
+                    return 0;
                 }
                 int main(void) {
                     x.f = malloc(sizeof(int));
                     foo();
                     return 0;
                 }
-            "] end
-            begin fun results return exit abandoned ->
-                assert_at_least 2 return;
-                assert_equal 0 exit;
-            end;
+            "] end;
 
         (* CIL automatically transforms empty array parameters into pointers *)
         test_symbolic_pointers ~label:"empty array parameter"
+            ~expect_return:[ 1; 2 ]
             begin String.concat "; " ["
-                void foo(int x[]) {
+                int foo(int x[]) {
                     if (x == 0) {
-                        return;
+                        return 1;
                     } else {
-                        return;
+                        return 2;
                     }
-                    fail();
+                    return 0;
                 }
                 int main(void) {
                     foo(malloc(sizeof(int)));
                     return 0;
                 }
-            "] end
-            begin fun results return exit abandoned ->
-                assert_at_least 2 return;
-                assert_equal 0 exit;
-            end;
+            "] end;
     ];
 
     "Linked list" >::: [
         (* since the nodes are statically allocated and do not alias, but the pointer analysis may perform unification,
            there should be at least 4 iterations:
                list == NULL, and list of lengths 1 to 3 *)
-        test_symbolic_pointers ~label:"Static" "
+        test_symbolic_pointers ~label:"Static"
+            ~expect_return:[ 1; 1; 1; 1 ]
+            "
             struct node { struct node * next; };
-            void foo(struct node * list) {
+            int foo(struct node * list) {
                 int x = 0;
                 for (struct node * el = list; el && x < 5; el = el->next, x++) {
                 }
+                return 1;
             }
             int main(void) {
                 struct node x, y, z;
@@ -749,21 +710,20 @@ let soundness_testsuite = "Soundness" >::: [
                 foo(&x);
                 return 0;
             }
-        " begin fun results return exit abandoned ->
-            assert_at_least 4 return;
-            assert_equal 0 exit;
-            assert_equal 0 abandoned;
-        end;
+        ";
 
         (* since the nodes are allocated on the stack and the analysis does not handle recursion, there should be
            at least 4 iterations:
                list == NULL, and list of lengths 1 to 3 *)
-        test_symbolic_pointers ~label:"Call stack" "
+        test_symbolic_pointers ~label:"Call stack"
+            ~expect_return:[ 1; 1; 1; 1 ]
+            "
             struct node { struct node * next; };
-            void foo(struct node * list) {
+            int foo(struct node * list) {
                 int x = 0;
                 for (struct node * el = list; el && x < 5; el = el->next, x++) {
                 }
+                return 1;
             }
             void qux(struct node * list) {
                 struct node head;
@@ -784,20 +744,19 @@ let soundness_testsuite = "Soundness" >::: [
                 bar(0);
                 return 0;
             }
-        " begin fun results return exit abandoned ->
-            assert_at_least 4 return;
-            assert_equal 0 exit;
-            assert_equal 0 abandoned;
-        end;
+        ";
 
         (* since the nodes are dynamically allocated, there should be at least 4 iterations:
                list == NULL, and list of lengths 1 to 3 *)
-        test_symbolic_pointers ~label:"Dynamic" "
+        test_symbolic_pointers ~label:"Dynamic"
+            ~expect_return:[ 1; 1; 1; 1 ]
+            "
             struct node { struct node * next; };
-            void foo(struct node * list) {
+            int foo(struct node * list) {
                 int x = 0;
                 for (struct node * el = list; el && x < 5; el = el->next, x++) {
                 }
+                return 1;
             }
             int main(void) {
                 struct node * head = malloc(sizeof(struct node));
@@ -810,21 +769,20 @@ let soundness_testsuite = "Soundness" >::: [
                 foo(head);
                 return 0;
             }
-        " begin fun results return exit abandoned ->
-            assert_at_least 4 return;
-            assert_equal 0 exit;
-            assert_equal 0 abandoned;
-        end;
+        ";
 
         (* since the nodes are allocated on the stack and the analysis does not handle recursion, there should be
            at least 4 iterations:
                list == NULL, and list of lengths 1 to 3 *)
-        test_symbolic_pointers ~label:"Recursive call stack" "
+        test_symbolic_pointers ~label:"Recursive call stack"
+            ~expect_return:[ 1; 1; 1; 1 ]
+            "
             struct node { struct node * next; };
-            void foo(struct node * list) {
+            int foo(struct node * list) {
                 int x = 0;
                 for (struct node * el = list; el && x < 5; el = el->next, x++) {
                 }
+                return 1;
             }
             void bar(struct node * list, int n) {
                 if (n < 3) {
@@ -839,11 +797,7 @@ let soundness_testsuite = "Soundness" >::: [
                 bar(0, 0);
                 return 0;
             }
-        " begin fun results return exit abandoned ->
-            assert_at_least 4 return;
-            assert_equal 0 exit;
-            assert_equal 0 abandoned;
-        end;
+        ";
     ]
 ]
 
