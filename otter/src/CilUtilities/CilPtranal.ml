@@ -1,3 +1,4 @@
+(** Wrapper for CIL's Ptranal module additional resolves to field offsets, filtered by type. *)
 
 open DataStructures
 
@@ -152,99 +153,104 @@ let wrap_points_to_varinfo points_to_varinfo exp =
                 allocation sites
 *)
 let add_malloc_types =
+    let module MallocSet = Set.Make (CilData.Malloc) in
+    let module MallocMap = Map.Make (CilData.Malloc) in
+    let module LhostMallocSet = Set.Make (struct
+        type t = CilData.CilLhost.t * CilData.Malloc.t
+        let compare (xl, xm as x) (yl, ym as y) = if x == y then 0 else
+            match CilData.CilLhost.compare xl yl with
+                | 0 -> CilData.Malloc.compare xm ym
+                | i -> i
+    end) in
+    let module SiteMap = Map.Make (struct
+        type t = CilData.CilVar.t * string
+        let compare (xv, xs as x) (yv, ys as y) = if x == y then 0 else
+            match CilData.CilVar.compare xv yv with
+                | 0 -> String.compare xs ys
+                | i -> i
+    end) in
+
     let file_memotable = Hashtbl.create 0 in
     fun file (points_to_varinfo : _ -> Cil.varinfo list * _) ->
-        let malloc_memotable =
+        let site_to_mallocs =
             try
                 Hashtbl.find file_memotable file
             with Not_found ->
                 (* build a map from malloc sites to malloc types *)
-                let module MallocSet = Set.Make (CilData.Malloc) in
-                let module MallocMap = Map.Make (CilData.Malloc) in
-                let module LhostMallocSet = Set.Make (struct
-                    type t = CilData.CilLhost.t * CilData.Malloc.t
-                    let compare (xl, xm) (yl, ym) =
-                        match CilData.CilLhost.compare xl yl with
-                            | 0 -> CilData.Malloc.compare xm ym
-                            | i -> i
-                end) in
-
-                let site_to_mallocs = Hashtbl.create 0 in
+                let site_to_mallocs = SiteMap.empty in
+                let updated = LhostMallocSet.empty in
 
                 (* for each varinfo or malloc pointer given as an lhost, find all malloc targets and infer their types
                  * from the pointer lhost type *)
-                let process_lhost updated lhost source_opt =
+                let process_lhost site_to_mallocs updated lhost source_opt =
                     let lhost_type = Cil.typeOf (Cil.Lval (lhost, Cil.NoOffset)) in
 
                     (* process each offset in the lhost that is a pointer *)
-                    let process_offset_points_to updated offset target_type =
+                    let process_offset_points_to site_to_mallocs updated offset target_type =
                         let pointer = Cil.Lval (lhost, offset) in
                         let _, malloc_sites = points_to_varinfo pointer in
 
-                        List.fold_left begin fun updated (mallocfn, name as site) ->
-                            let malloc = (mallocfn, name, target_type) in
-                            let malloc_types = try Hashtbl.find site_to_mallocs site with Not_found -> MallocMap.empty in
-                            let malloc_sources = try MallocMap.find malloc malloc_types with Not_found -> MallocSet.empty in
-                            let updated, malloc_sources = begin match source_opt with
-                                | Some source when not (MallocSet.mem source malloc_sources) ->
-                                    (LhostMallocSet.add (Cil.Mem pointer, malloc) updated, MallocSet.add source malloc_sources)
+                        List.fold_left begin fun (site_to_mallocs, updated) (malloc_varinfo, malloc_name as site) ->
+                            let malloc = (malloc_varinfo, malloc_name, target_type) in
+                            let malloc_to_sources = try SiteMap.find site site_to_mallocs with Not_found -> MallocMap.empty in
+                            let sources = try MallocMap.find malloc malloc_to_sources with Not_found -> MallocSet.empty in
+                            let updated, sources = begin match source_opt with
+                                | Some source when not (MallocSet.mem source sources) ->
+                                    (LhostMallocSet.add (Cil.Mem pointer, malloc) updated, MallocSet.add source sources)
                                 | Some _ ->
-                                    (updated, malloc_sources)
+                                    (updated, sources)
                                 | None ->
-                                    (LhostMallocSet.add (Cil.Mem pointer, malloc) updated, malloc_sources)
+                                    (LhostMallocSet.add (Cil.Mem pointer, malloc) updated, sources)
                             end in
-                            let malloc_types = MallocMap.add malloc malloc_sources malloc_types in
-                            Hashtbl.replace site_to_mallocs site malloc_types;
-                            updated
-                        end updated malloc_sites
+                            let malloc_to_sources = MallocMap.add malloc sources malloc_to_sources in
+                            let site_to_mallocs = SiteMap.add site malloc_to_sources site_to_mallocs in
+                            (site_to_mallocs, updated)
+                        end (site_to_mallocs, updated) malloc_sites
                     in
 
                     (* find all offsets in the lhost that is a pointer *)
-                    let rec fold_pointer_offsets updated offset = match Cil.typeOffset lhost_type offset with
+                    let rec fold_pointer_offsets site_to_mallocs updated offset = match Cil.typeOffset lhost_type offset with
                         | Cil.TPtr (target_type, _) ->
-                            process_offset_points_to updated offset target_type
+                            process_offset_points_to site_to_mallocs updated offset target_type
                         | Cil.TComp (compinfo, _) ->
-                            fold_struct begin fun updated field ->
-                                fold_pointer_offsets updated (Cil.addOffset (Cil.Field (field, Cil.NoOffset)) offset)
-                            end updated compinfo
+                            fold_struct begin fun (site_to_mallocs, updated) field ->
+                                fold_pointer_offsets site_to_mallocs updated (Cil.addOffset (Cil.Field (field, Cil.NoOffset)) offset)
+                            end (site_to_mallocs, updated) compinfo
                         | Cil.TArray (target_type, len_opt, _) ->
-                            fold_pointer_offsets updated (Cil.addOffset (Cil.Index (Cil.zero, Cil.NoOffset)) offset)
+                            fold_pointer_offsets site_to_mallocs updated (Cil.addOffset (Cil.Index (Cil.zero, Cil.NoOffset)) offset)
                         | _ ->
-                            updated
+                            (site_to_mallocs, updated)
                     in
-                    fold_pointer_offsets updated Cil.NoOffset
+                    fold_pointer_offsets site_to_mallocs updated Cil.NoOffset
                 in
-
-                let updated = LhostMallocSet.empty in
 
                 (* first infer malloc types from varinfo pointers *)
-                let updated = List.fold_left begin fun updated varinfo ->
-                    process_lhost updated (Cil.Var varinfo) None
-                end updated (FindCil.all_varinfos file) in
+                let site_to_mallocs, updated = List.fold_left begin fun (site_to_mallocs, updated) varinfo ->
+                    process_lhost site_to_mallocs updated (Cil.Var varinfo) None
+                end (site_to_mallocs, updated) (FindCil.all_varinfos file) in
 
                 (* then infer malloc types from malloc pointers, iteratively to a fixpoint *)
-                let rec do_fixpoint updated =
-                    if not (LhostMallocSet.is_empty updated) then begin
-                        let updated = LhostMallocSet.fold begin fun (lhost, source) updated ->
-                            process_lhost updated lhost (Some source)
-                        end updated LhostMallocSet.empty in
-                        do_fixpoint updated
-                    end
+                let rec do_fixpoint site_to_mallocs updated =
+                    if LhostMallocSet.is_empty updated then
+                        site_to_mallocs
+                    else
+                        let site_to_mallocs, updated = LhostMallocSet.fold begin fun (lhost, source) (site_to_mallocs, updated) ->
+                            process_lhost site_to_mallocs updated lhost (Some source)
+                        end updated (site_to_mallocs, LhostMallocSet.empty) in
+                        do_fixpoint site_to_mallocs updated
                 in
-                do_fixpoint updated;
+                let site_to_mallocs = do_fixpoint site_to_mallocs updated in
 
-                (* finally, build the map from malloc sites to malloc types *)
-                let malloc_memotable = Hashtbl.create (Hashtbl.length site_to_mallocs) in
-                Hashtbl.iter begin fun malloc malloc_types ->
-                    let malloc_types = MallocMap.fold (fun malloc _ malloc_types -> malloc::malloc_types) malloc_types [] in
-                    Hashtbl.replace malloc_memotable malloc malloc_types
-                end site_to_mallocs;
+                (* finally, transform the map to a suitable form *)
+                let site_to_mallocs = SiteMap.map begin fun malloc_to_sources ->
+                    MallocMap.fold (fun malloc _ mallocs -> malloc::mallocs) malloc_to_sources []
+                end site_to_mallocs in
 
-                Hashtbl.replace file_memotable file malloc_memotable;
-                malloc_memotable
+                Hashtbl.replace file_memotable file site_to_mallocs;
+                site_to_mallocs
         in
         fun mallocs ->
-            List.concat (List.map (Hashtbl.find malloc_memotable) mallocs)
+            List.concat (List.map (fun malloc -> SiteMap.find malloc site_to_mallocs) mallocs)
 
 
 (** Wrapper for Cil's {!Ptranal.resolve_exp} that resolves to fields in variables as well, conservatively and
