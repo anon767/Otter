@@ -8,17 +8,11 @@ let main_loop get_job interceptor process_result job_queue reporter =
         let rec run job_queue reporter =
             checkpoint := (job_queue, reporter);
             match get_job job_queue with
-              | Some (job, job_queue2) ->
-                    let result_opt =
-                        let result, job_queue = interceptor job job_queue2 in
-                        let job_queue, reporter = process_result result job_queue reporter in
-                        Some (job_queue, reporter)
-                    in
-                    begin match result_opt with
-                      | Some (job_queue, reporter) -> run job_queue reporter
-                      | None -> (job_queue, reporter)
-                    end
-              | None ->
+                | Some (job, job_queue2) ->
+                    let result, job_queue = interceptor job job_queue2 in
+                    let job_queue, reporter = process_result result job_queue reporter in
+                    run job_queue reporter
+                | None ->
                     (job_queue, reporter)
         in
         run job_queue reporter
