@@ -801,7 +801,126 @@ let soundness_testsuite = "Soundness" >::: [
     ]
 ]
 
+let accuracy_testsuite = "Accuracy" >::: [
+    "Pointer to global variables" >::: [
+        "p = q = &x;" >:
+            (* if x occurs before p or q, then the there should be exactly 3 aliasing conditions:
+                    p == NULL, q == NULL, and p == q *)
+            test_permutations [ "p"; "q"; ]
+                begin fun permutation ->
+                    let [ e1; e2 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "1"; "2"; ] permutation in
+                    test_symbolic_pointers ~label:(String.concat "; " permutation)
+                        ~expect_return:[ 1; 2; 3 ]
+                        ~no_return0:true
+                        begin String.concat "" ["
+                            int *p, *q, x;
+                            void nop1(int x) {}
+                            void nop2(int x) {}
+                            void nop(int x) {}
+                            int foo(void) {
+                                nop(x);
+                                "; e1; e2; "
+                                if (p == 0) {
+                                    return 1;
+                                } else if (q == 0) {
+                                    return 2;
+                                } else if (p == q) {
+                                    return 3;
+                                }
+                                return 0;
+                            }
+                            int main(void) {
+                                p = q = &x;
+                                foo();
+                                return 0;
+                            }
+                        "] end
+                end;
+
+        "p = q = &x; p = malloc(..);" >:
+            (* if x occurs before p or q, then the there should be exactly 4 aliasing conditions:
+                    p == NULL, q == NULL, p == q && p == &x, and p != q && p != x *)
+            test_permutations [ "p"; "q"; ]
+                begin fun permutation ->
+                    let [ e1; e2 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "1"; "2"; ] permutation in
+                    test_symbolic_pointers ~label:(String.concat "; " permutation)
+                        ~expect_return:[ 1; 2; 3; 4 ]
+                        ~no_return0:true
+                        begin String.concat "" ["
+                            int *p, *q, x;
+                            void nop1(int x) {}
+                            void nop2(int x) {}
+                            void nop(int x) {}
+                            int foo(void) {
+                                nop(x);
+                                "; e1; e2; "
+                                if (p == 0) {
+                                    return 1;
+                                } else if (q == 0) {
+                                    return 2;
+                                } else if (p == q && p == &x) {
+                                    return 3;
+                                } else if (p != q && p != &x) {
+                                    return 4;
+                                }
+                                return 0;
+                            }
+                            int main(void) {
+                                p = q = &x;
+                                p = malloc(sizeof(int));
+                                foo();
+                                return 0;
+                            }
+                        "] end
+                end;
+
+        "p = q = &x; p = q = &y;" >:
+            (* if x and y occurs before p or q, then the there should be exactly 6 aliasing conditions:
+                    p == NULL, q == NULL, p == q == &x, p == q == &y, p == &x && q == &y, and p == &y && q == &x *)
+            test_permutations ["x"; "y"] begin fun permutation1 ->
+                let [ e1; e2 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "1"; "2" ] permutation1 in
+                test_permutations ["p"; "q"] begin fun permutation2 ->
+                    let [ e3; e4 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "3"; "4" ] permutation2 in
+                    test_symbolic_pointers ~label:(String.concat "; " (permutation1 @ permutation2))
+                        ~expect_return:[ 1; 2; 3; 4; 5; 6 ]
+                        ~no_return0:true
+                        begin String.concat "" ["
+                            int *p, *q, x, y;
+                            void nop1(int x) {}
+                            void nop2(int x) {}
+                            void nop3(int x) {}
+                            void nop4(int x) {}
+                            int foo(void) {
+                                "; e1; e2; e3; e4; "
+                                if (p == 0) {
+                                    return 1;
+                                } else if (q == 0) {
+                                    return 2;
+                                } else if (p == q && p == &x) {
+                                    return 3;
+                                } else if (p == q && p == &y) {
+                                    return 4;
+                                } else if (p == &x && q == &y) {
+                                    return 5;
+                                } else if (p == &y && q == &x) {
+                                    return 6;
+                                }
+                                return 0;
+                            }
+                            int main(void) {
+                                p = q = &x;
+                                p = q = &y;
+                                foo();
+                                return 0;
+                            }
+                        "] end
+                end
+            end
+    ];
+]
+
 let testsuite = "SymbolicPointers" >::: [
     soundness_testsuite;
+    accuracy_testsuite;
 ]
 

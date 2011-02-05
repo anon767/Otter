@@ -273,39 +273,76 @@ let init_pointer ?(scheme=(!default_scheme)) state points_to exps ?(maybe_null=t
             in
 
             (* conservatively make a fresh block and point to it; though this is really only necessary if we point into:
-                    - at least one dynamically allocated block (i.e., malloc);
-                    - at least one local variable;
-                    - or more than one variable, local or global, that has not been initialized.
+                    - a dynamically allocated block (i.e., malloc) that could have been allocated before the symbolic
+                        execution entry point, up to the number of pointed-to dynamic allocations that could exist
+                        before that point;
+                    - or a local variable in a stack frame that could occur in the call stack at the symbolic execution
+                        entry point ("below" the call stack), up to the total number of pointed-to-local-variables--by-
+                        -stack-frames that can occur below the call stack;
+                    - or a global variable, up to the number pointed-to global variables.
+
+                In addition, for local variables that can occur only at most once below the stack, or global variables,
+                once they have been allocated a block for storage (i.e., after forcing the deferred allocation from
+                {!init_lval_block}), the fresh block no longer needs to be assigned to them.
+
+                An alternative way to think of the above is:
+                    - there are N allocation slots, where N corresponds to the total number of dynamic allocation calls
+                        that can occur before the symbolic execution entry point, total number of local-variables--by-
+                        stack-frames that could occur below the call stack, and the total number global variables, that
+                        can be pointed into; where N can be infinite;
+                    - the upper bound of the number of fresh blocks that need to be created is the lower of the number
+                        of slots N, or the number of roots (pointers or variables) that can reach those blocks; more
+                        that that is not necessary to distinguish between possible aliasing relationships.
             *)
-            (* TODO: don't make a fresh block if one of the above conditions aren't fulfilled. *)
-            (* TODO: currently, this only initializes a single element, rather than an array; should find some way to
-                    figure out if this pointer points to arrays, and initialize it so. *)
-            let state, block, target_bytes_set =
-                let size = Cil.bitsSizeOf (Cil.unrollType typ) / 8 in
-                let block = Bytes.block__make (FormatPlus.sprintf "%s#%d size(%d) type(%a)" block_name count size Printcil.typ typ) size Bytes.Block_type_Aliased in
-                let deferred = init_target typ (VarinfoSet.elements varinfos) (MallocSet.elements mallocs) in
-                let state = MemOp.state__add_deferred_block state block deferred in
-                (state, block, map_offsets target_bytes_set block)
-            in
+            (* TODO: figure out how to implement the above completely; the below assumes that any local variable may
+                occur infinitely below the call stack *)
 
-            (* conservatively point to all allocations in the list of allocations of each malloc site, and add the
-                above allocated fresh block to the list of allocations for each malloc site *)
-            let state, target_bytes_set = MallocSet.fold begin fun malloc (state, target_bytes_set) ->
-                let blocks = try Types.MallocMap.find malloc state.Types.mallocs with Not_found -> [] in
-                let state = { state with Types.mallocs = Types.MallocMap.add malloc (block::blocks) state.Types.mallocs } in
-                (state, List.fold_left map_offsets target_bytes_set blocks)
-            end mallocs (state, target_bytes_set) in
+            (* first figure out if we need to make a fresh block *)
+            let need_fresh = not begin
+                MallocSet.is_empty mallocs
+                && VarinfoSet.for_all (fun v -> v.Cil.vglob && Deferred.is_forced (Types.VarinfoMap.find v state.Types.global)) varinfos
+            end in
 
-            (* conservatively point to all aliases in the list of aliases of each variable, and add the above allocated
-                fresh block to the list of aliases of each variable; though we don't really need to add to global
-                variables that have been initialized *)
-            (* TODO: mark global variables that have been initialized and avoid adding the fresh block to it *)
-            let state, target_bytes_set = VarinfoSet.fold begin fun v (state, target_bytes_set) ->
-                let blocks = try Types.VarinfoMap.find v state.Types.aliases with Not_found -> [] in
-                let state = { state with Types.aliases = Types.VarinfoMap.add v (block::blocks) state.Types.aliases } in
-                (state, List.fold_left map_offsets target_bytes_set blocks)
-            end varinfos (state, target_bytes_set) in
-            (state, target_bytes_set, count + 1)
+            if need_fresh then
+                (* has mallocs or locals or globals without allocated storage *)
+                (* TODO: currently, this only initializes a single element, rather than an array; should find some way to
+                        figure out if this pointer points to arrays, and initialize it so *)
+                let state, block, target_bytes_set =
+                    let size = Cil.bitsSizeOf typ / 8 in
+                    let block = Bytes.block__make (FormatPlus.sprintf "%s#%d size(%d) type(%a)" block_name count size Printcil.typ typ) size Bytes.Block_type_Aliased in
+                    let deferred = init_target typ (VarinfoSet.elements varinfos) (MallocSet.elements mallocs) in
+                    let state = MemOp.state__add_deferred_block state block deferred in
+                    (state, block, map_offsets target_bytes_set block)
+                in
+
+                (* conservatively point to all allocations in the list of allocations of each malloc site, and add the
+                    above allocated fresh block to the list of allocations for each malloc site *)
+                let state, target_bytes_set = MallocSet.fold begin fun malloc (state, target_bytes_set) ->
+                    let blocks = try Types.MallocMap.find malloc state.Types.mallocs with Not_found -> [] in
+                    let state = { state with Types.mallocs = Types.MallocMap.add malloc (block::blocks) state.Types.mallocs } in
+                    (state, List.fold_left map_offsets target_bytes_set blocks)
+                end mallocs (state, target_bytes_set) in
+
+                (* conservatively point to all aliases in the list of aliases of each variable, and add the above allocated
+                    fresh block to the list of aliases of each variable, except for global variables with allocated storage *)
+                let state, target_bytes_set = VarinfoSet.fold begin fun v (state, target_bytes_set) ->
+                    let blocks = try Types.VarinfoMap.find v state.Types.aliases with Not_found -> [] in
+                    (* assuming that deferred lval_blocks were set up by this module only *)
+                    let state = if v.Cil.vglob && Deferred.is_forced (Types.VarinfoMap.find v state.Types.global) then
+                        state
+                    else
+                        { state with Types.aliases = Types.VarinfoMap.add v (block::blocks) state.Types.aliases }
+                    in
+                    (state, List.fold_left map_offsets target_bytes_set blocks)
+                end varinfos (state, target_bytes_set) in
+                (state, target_bytes_set, count + 1)
+            else
+                (* no mallocs or locals, only globals with allocated storage *)
+                let state, target_bytes_set = VarinfoSet.fold begin fun v (state, target_bytes_set) ->
+                    let blocks = try Types.VarinfoMap.find v state.Types.aliases with Not_found -> [] in
+                    (state, List.fold_left map_offsets target_bytes_set blocks)
+                end varinfos (state, target_bytes_set) in
+                (state, target_bytes_set, count)
         end
     type_and_offsets_to_targets (state, BytesSet.empty, 0) in
 
