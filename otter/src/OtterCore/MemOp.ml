@@ -16,31 +16,27 @@ let timed_query_stp name pc pre guard = Timer.time name (fun () -> Stp.query_stp
 
 let frame__empty = VarinfoMap.empty
 
+
 let frame__varinfo_to_lval_block frame varinfo =
 	VarinfoMap.find varinfo frame
 
 
-let frame__add_varinfo frame block_to_bytes varinfo bytes_opt block_type =
-	let size = (Cil.bitsSizeOf varinfo.vtype) / 8 in
-	let block = block__make (FormatPlus.as_string Printer.varinfo varinfo) size block_type in
-	let bytes = match bytes_opt with
-		| Some bytes -> bytes
-		| None -> bytes__make_default size (
-            if !Executeargs.arg_init_local_zero then
-                byte__zero
-            else
-                byte__undef (* initially the symbolic 'undef' byte *)
-        )
-	in
-	let frame = VarinfoMap.add varinfo (Deferred.Immediate (conditional__lval_block (block, bytes__zero))) frame in
-	let block_to_bytes = MemoryBlockMap.add block (Deferred.Immediate bytes) block_to_bytes in
-	(frame, block_to_bytes)
+let frame__add_varinfo frame block_to_bytes varinfo zero block_type =
+    if VarinfoMap.mem varinfo frame then FormatPlus.invalid_arg "MemOp.frame__add_varinfo: %a already exist" Printer.varinfo varinfo;
+    let size = (Cil.bitsSizeOf varinfo.vtype) / 8 in
+    let size = if size <= 0 then 1 else size in
+    let block = block__make (FormatPlus.as_string Printer.varinfo varinfo) size block_type in
+    let bytes = bytes__make_default size (if zero then byte__zero else byte__undef) in
+    let frame = VarinfoMap.add varinfo (Deferred.Immediate (conditional__lval_block (block, bytes__zero))) frame in
+    let block_to_bytes = MemoryBlockMap.add block (Deferred.Immediate bytes) block_to_bytes in
+    (frame, block_to_bytes, block)
 
 
-let frame__add_varinfos frame block_to_bytes varinfos block_type =
-	List.fold_left begin fun (frame, block_to_bytes) varinfo ->
-		frame__add_varinfo frame block_to_bytes varinfo None block_type
-	end (frame, block_to_bytes) varinfos
+let frame__add_varinfos frame block_to_bytes varinfos zero block_type =
+    List.fold_left begin fun (frame, block_to_bytes) varinfo ->
+        let frame, block_to_bytes, _ = frame__add_varinfo frame block_to_bytes varinfo zero block_type in
+        (frame, block_to_bytes)
+    end (frame, block_to_bytes) varinfos
 
 
 let frame__clear_varinfos frame block_to_bytes =
@@ -63,7 +59,7 @@ let string_table__add bytes : memory_block =
     let block = block__make (FormatPlus.sprintf "@@literal:%a" BytesPrinter.bytes bytes) (bytes__length bytes) Block_type_StringLiteral in
     let string_table2 = MemoryBlockMap.add block bytes (!string_table) in
     string_table := string_table2;
-    block
+        block
 
 
 let string_table__get block =
@@ -123,18 +119,15 @@ let state__empty =
 let state__has_block state block =
 	if block.memory_block_type == Block_type_StringLiteral then
 		string_table__mem block
-	else
-		MemoryBlockMap.mem block state.block_to_bytes
+    else
+        MemoryBlockMap.mem block state.block_to_bytes
 
 
-let state__add_global state varinfo init =
-	let new_global, new_block_to_bytes =
-		frame__add_varinfo state.global state.block_to_bytes varinfo (Some init) Block_type_Global
-	in
-	{	state with
-		global = new_global;
-		block_to_bytes = new_block_to_bytes;
-	}
+let state__add_global state varinfo =
+    if not varinfo.Cil.vglob then FormatPlus.invalid_arg "MemOp.state__add_global: %a is not a global variable" Printer.varinfo varinfo;
+    let global, block_to_bytes, block = frame__add_varinfo state.global state.block_to_bytes varinfo true Block_type_Global in
+    let state = { state with global = global; block_to_bytes = block_to_bytes } in
+    (state, block)
 
 
 let state__varinfo_to_lval_block ?pre state varinfo =
@@ -190,17 +183,17 @@ let state__remove_block state block=
 let state__get_bytes_from_block state block =
 	if block.memory_block_type == Block_type_StringLiteral then
 		(state, string_table__get block)
-	else
-		let deferred = MemoryBlockMap.find block state.block_to_bytes in
-		let state, bytes = Deferred.force state deferred in
-		(state__add_block state block bytes, bytes)
+    else
+        let deferred = MemoryBlockMap.find block state.block_to_bytes in
+        let state, bytes = Deferred.force state deferred in
+        (state__add_block state block bytes, bytes)
 
 
 let state__get_deferred_from_block state block =
 	if block.memory_block_type == Block_type_StringLiteral then
 		Deferred.Immediate (string_table__get block)
-	else
-		MemoryBlockMap.find block state.block_to_bytes
+    else
+        MemoryBlockMap.find block state.block_to_bytes
 
 
 let state__deref ?pre state (lvals, size) =
@@ -241,8 +234,8 @@ let rec state__assign state (lvals, size) bytes =
 let state__start_fcall state callContext fundec argvs =
     (* set up the new stack frame *)
 	let block_to_bytes = state.block_to_bytes in
-	let formal, block_to_bytes = frame__add_varinfos frame__empty block_to_bytes fundec.Cil.sformals Block_type_Local in
-	let local, block_to_bytes = frame__add_varinfos frame__empty block_to_bytes fundec.Cil.slocals Block_type_Local in
+	let formal, block_to_bytes = frame__add_varinfos frame__empty block_to_bytes fundec.Cil.sformals !Executeargs.arg_init_local_zero Block_type_Local in
+	let local, block_to_bytes = frame__add_varinfos frame__empty block_to_bytes fundec.Cil.slocals !Executeargs.arg_init_local_zero Block_type_Local in
 	let state = { state with formals = formal::state.formals;
 	                         locals = local::state.locals;
 	                         callstack = fundec::state.callstack;
