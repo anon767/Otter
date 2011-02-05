@@ -115,7 +115,7 @@ let init_cmdline_argvs state argstr =
 
 (* create a job that begins at the main function of a file, with the initial state set up for the file *)
 let make file cmdline =
-	let main_func = FunctionEntries.get_main_fundec file in
+	let main_func = ProgramPoints.get_main_fundec file in
 
 	(* Initialize the state with zeroed globals *)
 	let state = MemOp.state__empty in

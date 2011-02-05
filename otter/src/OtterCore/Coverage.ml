@@ -59,7 +59,7 @@ class getStatsVisitor file = object (self)
         if Hashtbl.length reachable_stmts = 0 then
             (* Prepare the table *)
             let source =
-                let mainFunc = FunctionEntries.get_main_fundec file in 
+                let mainFunc = ProgramPoints.get_main_fundec file in 
                 Instruction.of_fundec file mainFunc
             in
             let processed_instrs = Hashtbl.create 0 in
@@ -229,7 +229,7 @@ let prepare_file file =
 (* TODO: a global can be reachable by another global init! *)
 let computeReachableCode file =
   (* compute reachable globals from main *)
-  let main_func = FunctionEntries.get_main_fundec file in
+  let main_func = ProgramPoints.get_main_fundec file in
   let rec computeReachableCodeThroughFunCall queue =
     if List.length queue = 0 then () else
       let vis = new getCallerVisitor file in

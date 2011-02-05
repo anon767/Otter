@@ -3,7 +3,7 @@
 open OcamlUtilities
 open CilUtilities
 
-module E = OtterCore.FunctionEntries
+module E = OtterCore.ProgramPoints
 
 let get_default file =
     if !E.entry_function = !E.main_function then

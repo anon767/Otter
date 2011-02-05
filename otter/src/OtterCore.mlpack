@@ -5,7 +5,7 @@ OtterCore/Decision
 OtterCore/Errors
 OtterCore/Executeargs
 OtterCore/Expression
-OtterCore/FunctionEntries
+OtterCore/ProgramPoints
 OtterCore/Interceptor
 OtterCore/Job
 OtterCore/MemOp
