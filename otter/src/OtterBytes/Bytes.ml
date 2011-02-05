@@ -196,19 +196,10 @@ let ikind_to_len_isSigned ikind =
  *	to bytes
  *)
 
-(** Convert constant to make_Bytes_Constant *)
-let constant_to_bytes constant : bytes =
-	make_Bytes_Constant(constant)
-	
-
-(** Convert an (int64 of ikind) to make_Bytes_Constant(CInt64(int64,ikind,None)) *)
-let int64_to_bytes n ikind : bytes =
-	constant_to_bytes (CInt64(n,ikind,None))
-	
 
 (** Convert an ocaml (signed) int to make_Bytes_Constant(CInt64(int64,IInt,None)) *)
 let int_to_bytes n : bytes =
-	int64_to_bytes (Int64.of_int n) IInt
+	make_Bytes_Constant (CInt64 (Int64.of_int n, IInt, None))
 	
 
 (* Make this lazy so that upointType is set correctly (by initCIL) before it is evaluated *)
@@ -220,7 +211,7 @@ let kindOfUpointType = lazy (match !upointType with
 (* Convert an int n to [Bytes_Constant (CInt64 (Int64.of_int n, kindOfUpointType, None))] *)
 let int_to_offset_bytes (n : int) : bytes =
 	make_Bytes_Constant (CInt64 (Int64.of_int n, Lazy.force kindOfUpointType, None))
-
+	
 
 (** Convert in64 of ikind to make_Bytes_ByteArray. Truncate if needed.  *)
 let int64_to_bytes n64 ikind : bytes =
@@ -232,7 +223,7 @@ let int64_to_bytes n64 ikind : bytes =
 				(succ count)
 	in
 	make_Bytes_ByteArray(ImmutableArray.of_list (List.rev (helper n64 [] 0))) (* Reverse because we are little-endian *)
-	
+
 
 let string_map f s =
 	let rec helper i acc =
@@ -247,7 +238,7 @@ let string_to_bytes (s : string) : bytes =
 	make_Bytes_ByteArray (ImmutableArray.of_list (string_map (fun ch -> make_Byte_Concrete ch) (s^"\000")))
 
 
-(** Coonvert real numbers to make_Bytes *)
+(** Convert real numbers to make_Bytes *)
 (* TODO: actually represent the numbers *)
 let float_to_bytes f fkind =
 	let length = bitsSizeOf (TFloat (fkind, [])) / 8 in
@@ -256,25 +247,11 @@ let float_to_bytes f fkind =
 (** Convert constant to make_Bytes_ByteArray *)
 let rec constant_to_bytes constant : bytes =
 	match constant with
-		| CInt64(n64,ikind,_) -> int64_to_bytes n64 ikind
-		| CStr(str) ->
-				let rec impl str =
-					if String.length str = 0 then ['\000'] else
-						(str.[0]) :: (impl (String.sub str 1 ((String.length str) - 1)))
-				in
-				let chars = impl str in
-				let bytes = make_Bytes_ByteArray (ImmutableArray.of_list (List.map (fun x -> make_Byte_Concrete(x)) (chars))) in
-					bytes
-		| CChr(char) ->
-				constant_to_bytes (Cil.charConstToInt char)
-		| CReal (f,fkind,_) -> float_to_bytes f fkind
+		| CInt64 (n64, ikind, _) -> int64_to_bytes n64 ikind
+		| CStr str -> string_to_bytes str
+		| CChr char -> constant_to_bytes (Cil.charConstToInt char)
+		| CReal (f, fkind, _) -> float_to_bytes f fkind
 		| _ -> failwith "constant_to_bytes: unsupported constant type"
-	
-
-let constant_to_bytearray constant : byte ImmutableArray.t =
-	match constant_to_bytes constant with
-		| Bytes_ByteArray(ba) -> ba
-		| _ -> failwith "constant_to_bytearray: error"
 
 
 
