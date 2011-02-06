@@ -10,7 +10,7 @@
 #define MAX_FILE_SIZE    8             // TODO: this should also control the size of stdin
 #define MAX_FILENAME_LENGTH   5
 
-extern int main_orig(int argc, char **argv);
+extern int main(int argc, char **argv);
 
 /* Allocate a char array of length (len+1), 
  * with all characters symbolic except the last one which is \0. */
