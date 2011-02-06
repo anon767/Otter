@@ -158,7 +158,7 @@ $(MERGED_FILES):
 
 # Listing all functions in newlib and libottersys
 list: otter-with-libc
-	./otter-with-libc --dofindFns -lm -lottersys  > library_functions
+	./otter-with-libc --dofindFns -lm  > library_functions
 
 # Cleaning up
 
