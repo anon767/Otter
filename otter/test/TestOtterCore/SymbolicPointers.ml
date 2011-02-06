@@ -317,9 +317,9 @@ let soundness_testsuite = "Soundness" >::: [
         (* there should be at least 5 aliasing conditions: x == NULL, y == NULL, *x == NULL, *y == NULL or *y == *x,
            regardless of order of occurence *)
         "*y = *x" >:
-            test_permutations ["x"; "y"] begin fun permutation1 ->
+            test_permutations [ "x"; "y" ] begin fun permutation1 ->
                 let [ e1; e2 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "1"; "2" ] permutation1 in
-                test_permutations ["*x"; "*y"] begin fun permutation2 ->
+                test_permutations [ "*x"; "*y" ] begin fun permutation2 ->
                     let [ e3; e4 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "3"; "4" ] permutation2 in
                     test_symbolic_pointers ~label:(String.concat "; " (permutation1 @ permutation2))
                         ~expect_return:[ 1; 2; 3; 4; 5 ]
@@ -436,9 +436,9 @@ let soundness_testsuite = "Soundness" >::: [
         (* there should be at least 5 aliasing conditions: x == NULL, y == NULL, *x == NULL, *y == NULL
            or *y == &( *x)->f, regardless of order of occurence *)
         "*y = &(*x)->f" >:
-            test_permutations ["x"; "y"] begin fun permutation1 ->
+            test_permutations [ "x"; "y" ] begin fun permutation1 ->
                 let [ e1; e2 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "1"; "2" ] permutation1 in
-                test_permutations ["*x"; "*y"] begin fun permutation2 ->
+                test_permutations [ "*x"; "*y" ] begin fun permutation2 ->
                     let [ e3; e4 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "3"; "4" ] permutation2 in
                     test_symbolic_pointers ~label:(String.concat "; " (permutation1 @ permutation2))
                         ~expect_return:[ 1; 2; 3; 4; 5 ]
@@ -556,9 +556,9 @@ let soundness_testsuite = "Soundness" >::: [
         (* there should be at least 5 aliasing conditions: x == NULL, y == NULL, *x == NULL, y->f == NULL
            or y->f == &( *x)->f, regardless of order of occurence *)
         "*y.f = &(*x)->f" >:
-            test_permutations ["x"; "y.f"] begin fun permutation1 ->
+            test_permutations [ "x"; "y.f" ] begin fun permutation1 ->
                 let [ e1; e2 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "1"; "2" ] permutation1 in
-                test_permutations ["*x"; "*y.f"] begin fun permutation2 ->
+                test_permutations [ "*x"; "*y.f" ] begin fun permutation2 ->
                     let [ e3; e4 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "3"; "4" ] permutation2 in
                     test_symbolic_pointers ~label:(String.concat "; " (permutation1 @ permutation2))
                         ~expect_return:[ 1; 2; 3; 4; 5 ]
@@ -604,9 +604,9 @@ let soundness_testsuite = "Soundness" >::: [
         (* there should be at least 5 aliasing conditions: x == NULL, y == NULL, *x == NULL, y->f == NULL
            or y->f == &( *x)->f, regardless of order of occurence *)
         "y->f = &(*x)->f" >:
-            test_permutations ["x"; "y"] begin fun permutation1 ->
+            test_permutations [ "x"; "y" ] begin fun permutation1 ->
                 let [ e1; e2 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "1"; "2" ] permutation1 in
-                test_permutations ["*x"; "y->f"] begin fun permutation2 ->
+                test_permutations [ "*x"; "y->f" ] begin fun permutation2 ->
                     let [ e3; e4 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "3"; "4" ] permutation2 in
                     test_symbolic_pointers ~label:(String.concat "; " (permutation1 @ permutation2))
                         ~expect_return:[ 1; 2; 3; 4; 5 ]
@@ -824,11 +824,11 @@ let soundness_testsuite = "Soundness" >::: [
 let accuracy_testsuite = "Accuracy" >::: [
     "Pointer to global variables" >::: [
         "p = q = &x;" >:
-            (* if x occurs before p or q, then the there should be exactly 3 aliasing conditions:
+            (* if x occurs before p or q, then there should be exactly 3 aliasing conditions:
                     p == NULL, q == NULL, and p == q *)
-            test_permutations [ "p"; "q"; ]
+            test_permutations [ "p"; "q" ]
                 begin fun permutation ->
-                    let [ e1; e2 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "1"; "2"; ] permutation in
+                    let [ e1; e2 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "1"; "2" ] permutation in
                     test_symbolic_pointers ~label:(String.concat "; " permutation)
                         ~expect_return:[ 1; 2; 3 ]
                         ~no_return0:true
@@ -858,11 +858,11 @@ let accuracy_testsuite = "Accuracy" >::: [
                 end;
 
         "p = q = &x; p = malloc(..);" >:
-            (* if x occurs before p or q, then the there should be exactly 4 aliasing conditions:
+            (* if x occurs before p or q, then there should be exactly 4 aliasing conditions:
                     p == NULL, q == NULL, p == q && p == &x, and p != q && p != x *)
-            test_permutations [ "p"; "q"; ]
+            test_permutations [ "p"; "q" ]
                 begin fun permutation ->
-                    let [ e1; e2 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "1"; "2"; ] permutation in
+                    let [ e1; e2 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "1"; "2" ] permutation in
                     test_symbolic_pointers ~label:(String.concat "; " permutation)
                         ~expect_return:[ 1; 2; 3; 4 ]
                         ~no_return0:true
@@ -895,11 +895,11 @@ let accuracy_testsuite = "Accuracy" >::: [
                 end;
 
         "p = q = &x; p = q = &y;" >:
-            (* if x and y occurs before p or q, then the there should be exactly 6 aliasing conditions:
+            (* if x and y occurs before p or q, then there should be exactly 6 aliasing conditions:
                     p == NULL, q == NULL, p == q == &x, p == q == &y, p == &x && q == &y, and p == &y && q == &x *)
-            test_permutations ["x"; "y"] begin fun permutation1 ->
+            test_permutations [ "x"; "y" ] begin fun permutation1 ->
                 let [ e1; e2 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "1"; "2" ] permutation1 in
-                test_permutations ["p"; "q"] begin fun permutation2 ->
+                test_permutations [ "p"; "q" ] begin fun permutation2 ->
                     let [ e3; e4 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "3"; "4" ] permutation2 in
                     test_symbolic_pointers ~label:(String.concat "; " (permutation1 @ permutation2))
                         ~expect_return:[ 1; 2; 3; 4; 5; 6 ]
@@ -1038,7 +1038,7 @@ let accuracy_testsuite = "Accuracy" >::: [
         "p = &q; q = &p;" >:
             (* there should be exactly 1 aliasing conditions, regardless of order of occurence:
                     p == &q && q == &p *)
-            test_permutations [ "p"; "q"; ]
+            test_permutations [ "p"; "q" ]
                 begin fun permutation ->
                     let [ e1; e2 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "1"; "2" ] permutation in
                     test_symbolic_pointers ~label:(String.concat "; " permutation)
