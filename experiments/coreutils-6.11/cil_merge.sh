@@ -15,4 +15,9 @@ sed -i '' 's/#define RMDIR_ERRNO_NOT_EMPTY configure error in rmdir-errno.m4/#de
 
 make CC="$cilly_with_libc" AR="$cilly_ar" RANLIB="echo cilly_ranlib: "
 
+# Generate a list of functions defined in lib/.
+# They are excluded from coreutils' coverage.
 $trunk/otter/otter.pl --merge --dofindFns -Llib -lcoreutils  > libcoreutils_functions
+
+# Generate a script to run otter on coreutils' programs.
+sed "s|@OTTER_TRUNK@|\"$(pwd)/../..\"|" runotter.in > runotter && chmod +x runotter
