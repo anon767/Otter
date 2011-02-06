@@ -23,10 +23,10 @@ end
 let _ =
     run_test_tt_main begin TestList [
         TestOtterCore.FunctionCalls.testsuite;
+        TestOtterCore.BoundsChecking.testsuite;
+        TestOtterCore.Coverage.testsuite;
         TestOtterCore.SymbolicPointers.testsuite;
-        TestOtter.FileJobs.testsuite;
-        TestOtter.Coverage.testsuite;
-        TestOtter.BoundsChecking.testsuite;
+        TestOtterJob.FileJobs.testsuite;
         TestOtterPragmaTests.OtterPragmaTestsTests.testsuite;
         TestOtterIntegration.IntegrationTests.testsuite;
         TestOtterSystem.SystemTests.testsuite;
