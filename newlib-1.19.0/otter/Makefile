@@ -92,7 +92,7 @@ cilly-with-libc:
 	chmod +x $@
 
 otter-with-libc:
-	echo $(OTTER_TRUNK)/otter/otter.pl --merge $(OPTIONS_FOR_USING_LIBC) -lottersys \"$$\@\" > $@
+	echo CILLY_DONT_COMPILE_AFTER_MERGE= $(OTTER_TRUNK)/otter/otter.pl --merge $(OPTIONS_FOR_USING_LIBC) -lottersys \"$$\@\" > $@
 	chmod +x $@
 
 
