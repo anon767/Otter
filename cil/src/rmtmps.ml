@@ -379,10 +379,9 @@ let isExportedRoot global =
  * retained in a complete program.
  *)
 
-let isCompleteProgramRoot ?(main_name="main") global =
+let isCompleteProgramRoot global =
   let result = match global with
-  | GFun ({svar = {vname = vname; vstorage = vstorage}}, _) 
-    when vname = main_name ->
+  | GFun ({svar = {vname = "main"; vstorage = vstorage}}, _) ->
       vstorage <> Static
   | GFun (fundec, _)
     when hasExportingAttribute fundec.svar ->

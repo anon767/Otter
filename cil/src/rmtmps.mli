@@ -72,7 +72,7 @@
 type rootsFilter = Cil.global -> bool
 val isDefaultRoot : rootsFilter
 val isExportedRoot : rootsFilter
-val isCompleteProgramRoot : ?main_name:string -> rootsFilter
+val isCompleteProgramRoot : rootsFilter
 
 (* process a complete Cil file *)
 val removeUnusedTemps: ?isRoot:rootsFilter -> Cil.file -> unit

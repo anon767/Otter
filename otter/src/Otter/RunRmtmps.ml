@@ -1,7 +1,7 @@
 open Cil
 
 let doit (file: Cil.file) =
-    Rmtmps.removeUnusedTemps ~isRoot:(Rmtmps.isCompleteProgramRoot ~main_name:(!OtterCore.ProgramPoints.main_fname)) file
+    Rmtmps.removeUnusedTemps ~isRoot:Rmtmps.isCompleteProgramRoot file
 
 let feature : featureDescr = {
     fd_name = "RunRmtmps";
