@@ -366,21 +366,23 @@ let init_pointer ?(scheme=(!default_scheme)) state points_to exps ?(maybe_null=t
 
 
 
-(** Initialize variables symbolically, taking into account aliases that may have been initialized via {!init_pointer}.
+(** Initialize a variable storage lazily and symbolically, taking into account aliases that may have been initialized
+    via {!init_pointer} if necessary. The caller is responsible for assigning the storage to the variable.
 
     Note: this module currently assumes that the initial symbolic state is completely initialized via this module and
     with the same pointer analysis.
 
-        @param state is the symbolic executor state in which to initialize the variable
-        @param varinfo is the variable to initialize
-        @param block_name is a name to give the target block of the variable
+        @param state is the symbolic executor state in which to initialize the variable storage
+        @param varinfo is the variable for which to initialize a storage
         @param deferred is the deferred symbolic value for the variable
-        @return [(Types.state, Bytes.bytes)] the updated symbolic state and the initialized variable
+        @return [(state, lval_block)] the updated symbolic state and the initialized variable storage
 *)
-let init_lval_block state varinfo block_name deferred =
+let init_lval_block state varinfo deferred =
     let deferred_lval_block state =
         (* make an extra block; for the case where the variable is not-aliased *)
-        let block = Bytes.block__make block_name (Cil.bitsSizeOf (Cil.unrollType varinfo.Cil.vtype) / 8) Bytes.Block_type_Aliased in
+        let name = FormatPlus.as_string Printer.varinfo varinfo in
+        let size = Cil.bitsSizeOf varinfo.Cil.vtype / 8 in
+        let block = Bytes.block__make name size Bytes.Block_type_Aliased in
         let state = MemOp.state__add_deferred_block state block deferred in
         let aliases = block::(try Types.VarinfoMap.find varinfo state.Types.aliases with Not_found -> []) in
         let state = { state with Types.aliases = Types.VarinfoMap.add varinfo aliases state.Types.aliases } in

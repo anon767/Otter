@@ -158,7 +158,7 @@ let make file ?scheme ?(points_to=CilPtranal.points_to file) fn =
             SymbolicPointers.init_const_global state v (Some init)
         | Cil.GVarDecl (v, _) | Cil.GVar (v, _, _) when not (Types.VarinfoMap.mem v state.Types.global) ->
             let deferred state = init_bytes_with_pointers ?scheme state v.Cil.vtype points_to [ (Cil.Lval (Cil.var v)) ] in
-            let state, lval_block = SymbolicPointers.init_lval_block state v v.Cil.vname deferred in
+            let state, lval_block = SymbolicPointers.init_lval_block state v deferred in
             { state with Types.global = Types.VarinfoMap.add v lval_block state.Types.global }
         | _ ->
             state
