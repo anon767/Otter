@@ -777,7 +777,7 @@ let libc_longjmp job retopt exps errors =
 						let sp = BytesUtility.expand_read_to_conditional bytes2 offset len in
 						conditional__fold ~test:(Stp.query_stp state.path_condition) fold_func [] sp
 					| Bytes_Conditional(c) ->
-						conditional__fold ~test:(Stp.query_stp state.path_condition) fold_func [] c
+						conditional__fold fold_func [] c
 					| _ -> failwith "Non-constant statement ptr not supported"
 			in
 
@@ -871,7 +871,6 @@ let otter_get_allocated_size job = wrap_state_function begin fun state retopt ex
     let state, bytes, errors = Expression.rval state exp errors in
     let state, lvals, errors = Expression.deref state bytes (Cil.typeOf exp) errors in
     let size = make_Bytes_Conditional (conditional__map
-        ~test:(Stp.query_stp state.path_condition)
         (fun (x, y) -> Unconditional (int_to_bytes x.memory_block_size))
         lvals)
     in

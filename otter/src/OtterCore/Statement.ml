@@ -107,7 +107,7 @@ let function_from_exp job state exp args errors =
                             (state, fundec)::acc
                         | _ -> acc (* should give a warning here about a non-valid function pointer*)
                 in
-                Bytes.conditional__fold ~test:(Stp.query_stp state.path_condition) fold_func [] fp
+                Bytes.conditional__fold fold_func [] fp
             in
             begin match bytes with
                 | Bytes_FunPtr(varinfo,_) ->
@@ -116,6 +116,7 @@ let function_from_exp job state exp args errors =
                     ([ (state, fundec) ], errors)
                 | Bytes_Read(bytes2, offset, len) ->
                     let fp = (BytesUtility.expand_read_to_conditional bytes2 offset len) in
+                    let fp = Bytes.conditional__prune ~test:(Stp.query_stp state.path_condition) fp in
                     (getall fp, errors)
                 | Bytes_Conditional(c) ->
                     (getall c, errors)

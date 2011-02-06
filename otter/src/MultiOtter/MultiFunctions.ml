@@ -173,7 +173,6 @@ let otter_io_block job multijob retopt exps errors =
 				let state, bytes, errors = Expression.rval state (Lval cil_lval) errors in
 				let state, lvals, errors = Expression.deref state bytes (Cil.typeOfLval cil_lval) errors in
 				let blocks = conditional__fold
-					~test:(Stp.query_stp state.path_condition)
 					(fun acc guard (x, y) -> x::acc)
 					[]
 					lvals
