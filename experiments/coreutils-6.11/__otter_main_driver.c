@@ -14,12 +14,15 @@
 #define MAX_ENVVAR_LENGTH   20
 #define MAX_ENVVAL_LENGTH   5
 
-char* __otter_environ[MAX_ENVIRON+1];
 extern char **environ;
 extern int main(int argc, char **argv);
 
+#pragma cilnoremove("__otter_environ")
+char* __otter_environ[MAX_ENVIRON+1];
+
 /* Allocate a char array of length (len+1), 
  * with all characters symbolic except the last one which is \0. */
+#pragma cilnoremove("symbolic_string")
 char* symbolic_string(int len) {
     int i;
     char *s = malloc(len+1);
@@ -32,6 +35,7 @@ char* symbolic_string(int len) {
     return s;
 }
 
+#pragma cilnoremove("__otter_main_driver")
 int __otter_main_driver() {
     int argc;
     char* argv[MAX_ARG+1];
