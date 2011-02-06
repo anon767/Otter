@@ -798,7 +798,27 @@ let soundness_testsuite = "Soundness" >::: [
                 return 0;
             }
         ";
-    ]
+    ];
+
+    "Pointer to string literal" >::: [
+        (* there should at least 2 aliasing conditions: s == NULL, and s[0] equal to 'a' *)
+        test_symbolic_pointers ~label:"s = \"abc\";"
+            ~expect_return:[ 1; 2 ]
+            "
+                int foo(char *s) {
+                    if (s == 0) {
+                        return 1;
+                    } else if (s[0] == 'a') {
+                        return 2;
+                    }
+                    return 0;
+                }
+                int main(void) {
+                    foo(\"abc\");
+                    return 0;
+                }
+            ";
+    ];
 ]
 
 let accuracy_testsuite = "Accuracy" >::: [
@@ -916,6 +936,133 @@ let accuracy_testsuite = "Accuracy" >::: [
                         "] end
                 end
             end
+    ];
+
+    "Pointer to const global variables" >::: [
+        "p = q = &x;" >:
+            (* there should be exactly 3 aliasing conditions, regardless of order of occurence:
+                    p == NULL, q == NULL, and p == q *)
+            test_permutations [ "p"; "q"; "x" ]
+                begin fun permutation ->
+                    let [ e1; e2; e3 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "1"; "2"; "3" ] permutation in
+                    test_symbolic_pointers ~label:(String.concat "; " permutation)
+                        ~expect_return:[ 1; 2; 3 ]
+                        ~no_return0:true
+                        begin String.concat "" ["
+                            int *p, *q;
+                            const int x = 1;
+                            void nop1(int x) {}
+                            void nop2(int x) {}
+                            void nop3(int x) {}
+                            int foo(void) {
+                                "; e1; e2; e3; "
+                                if (p == 0) {
+                                    return 1;
+                                } else if (q == 0) {
+                                    return 2;
+                                } else if (p == q) {
+                                    return 3;
+                                }
+                                return 0;
+                            }
+                            int main(void) {
+                                p = q = &x;
+                                foo();
+                                return 0;
+                            }
+                        "] end
+                end;
+
+        "p = q = &x; p = q = &y;" >:
+            (* there should be exactly 6 aliasing conditions, regardless of order of occurence:
+                    p == NULL, q == NULL, p == q == &x, p == q == &y, p == &x && q == &y, and p == &y && q == &x *)
+            test_permutations [ "p"; "q"; "x"; "y" ]
+                begin fun permutation ->
+                    let [ e1; e2; e3; e4 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "1"; "2"; "3"; "4" ] permutation in
+                    test_symbolic_pointers ~label:(String.concat "; " permutation)
+                        ~expect_return:[ 1; 2; 3; 4; 5; 6 ]
+                        ~no_return0:true
+                        begin String.concat "" ["
+                            int *p, *q;
+                            const int x = 1, y = 2;
+                            void nop1(int x) {}
+                            void nop2(int x) {}
+                            void nop3(int x) {}
+                            void nop4(int x) {}
+                            int foo(void) {
+                                "; e1; e2; e3; e4; "
+                                if (p == 0) {
+                                    return 1;
+                                } else if (q == 0) {
+                                    return 2;
+                                } else if (p == q && p == &x) {
+                                    return 3;
+                                } else if (p == q && p == &y) {
+                                    return 4;
+                                } else if (p == &x && q == &y) {
+                                    return 5;
+                                } else if (p == &y && q == &x) {
+                                    return 6;
+                                }
+                                return 0;
+                            }
+                            int main(void) {
+                                p = q = &x;
+                                p = q = &y;
+                                foo();
+                                return 0;
+                            }
+                        "] end
+                end;
+    ];
+
+    "Const global pointer to const global variables" >::: [
+        (* there should be exactly 1 aliasing conditions: p == &p *)
+        test_symbolic_pointers ~label:"p = &p;"
+            ~expect_return:[ 1 ]
+            ~no_return0:true
+            "
+                void * const p = &p;
+                int foo(void) {
+                    if (p == &p) {
+                        return 1;
+                    }
+                    return 0;
+                }
+                int main(void) {
+                    foo();
+                    return 0;
+                }
+            ";
+
+        "p = &q; q = &p;" >:
+            (* there should be exactly 1 aliasing conditions, regardless of order of occurence:
+                    p == &q && q == &p *)
+            test_permutations [ "p"; "q"; ]
+                begin fun permutation ->
+                    let [ e1; e2 ] = List.map2 (fun n e -> "nop" ^ n ^ "(" ^ e ^ ");") [ "1"; "2" ] permutation in
+                    test_symbolic_pointers ~label:(String.concat "; " permutation)
+                        ~expect_return:[ 1 ]
+                        ~no_return0:true
+                        begin String.concat "" ["
+                            void * const q;
+                            void * const p = &q;
+                            void * const q = &p;
+                            void nop1(int x) {}
+                            void nop2(int x) {}
+                            int foo(void) {
+                                "; e1; e2; "
+                                if (p == &q && q == &p) {
+                                    return 1;
+                                }
+                                return 0;
+                            }
+                            int main(void) {
+                                foo();
+                                return 0;
+                            }
+                        "] end
+                end;
     ];
 ]
 

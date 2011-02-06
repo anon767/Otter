@@ -148,9 +148,15 @@ let make file ?scheme ?(points_to=CilPtranal.points_to file) fn =
 
     (* first, setup global variables *)
     let state = List.fold_left begin fun state g -> match g with
-        | Cil.GVarDecl (v, _) | Cil.GVar (v, _, _)
-                when not (Cil.isFunctionType v.Cil.vtype (* skip function prototypes; they're not variables *)
-                    || Types.VarinfoMap.mem v state.Types.global) ->
+        | Cil.GVarDecl (v, _) | Cil.GVar (v, _, _) when Cil.isFunctionType v.Cil.vtype ->
+            (* skip function prototypes; they're not variables *)
+            state
+        | Cil.GVarDecl (v, _) when CilData.CilVar.is_const v ->
+            (* forward declaration *)
+            SymbolicPointers.init_const_global state v None
+        | Cil.GVar (v, { Cil.init = Some init }, _) when CilData.CilVar.is_const v ->
+            SymbolicPointers.init_const_global state v (Some init)
+        | Cil.GVarDecl (v, _) | Cil.GVar (v, _, _) when not (Types.VarinfoMap.mem v state.Types.global) ->
             let deferred state = init_bytes_with_pointers ?scheme state v.Cil.vtype points_to [ (Cil.Lval (Cil.var v)) ] in
             let state, lval_block = SymbolicPointers.init_lval_block state v v.Cil.vname deferred in
             { state with Types.global = Types.VarinfoMap.add v lval_block state.Types.global }

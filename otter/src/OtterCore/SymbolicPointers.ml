@@ -394,6 +394,45 @@ let init_lval_block state varinfo block_name deferred =
     (state, Deferred.Deferred deferred_lval_block)
 
 
+
+(** Initialize const global variables immediately and concretely.
+
+    Note: this module currently assumes that the initial symbolic state is completely initialized via this module and
+    with the same pointer analysis.
+
+        @param state is the symbolic executor state in which to initialize the const global variable
+        @param varinfo is the const global variable to initialize
+        @param init_opt is either [Some init], an initializer for the const global variable; or [None] for forward
+                declarations
+        @return [state] the symbolic state updated with the initialized const global variable
+*)
+let init_const_global state varinfo init_opt =
+    if not (varinfo.Cil.vglob && CilData.CilVar.is_const varinfo) then
+        FormatPlus.invalid_arg "SymbolicPointers.init_const_global: %a is not a const global variable" Printer.varinfo varinfo;
+
+    let state, block =
+        try
+            match Types.VarinfoMap.find varinfo state.Types.aliases with
+                | [ block ] when Deferred.is_forced (Types.VarinfoMap.find varinfo state.Types.global) -> (state, block)
+                | [] -> raise Not_found
+                | _ -> FormatPlus.invalid_arg "SymbolicPointers.init_const_global: %a already initialized" Printer.varinfo varinfo
+        with Not_found ->
+            (* initialize the block with a dummy value first, for recursive initializations such as 'void * p = &p;' *)
+            let state, block = MemOp.state__add_global state varinfo in
+            let state = { state with Types.aliases = Types.VarinfoMap.add varinfo [ block ] state.Types.aliases } in
+            (state, block)
+    in
+
+    match init_opt with
+        | None ->
+            (* forward declaration; nothing to do *)
+            state
+        | Some init ->
+            let state, init_bytes = Expression.evaluate_initializer state varinfo.Cil.vtype init in
+            MemOp.state__add_block state block init_bytes
+
+
+
 (** {1 Command-line options} *)
 
 let options = [
