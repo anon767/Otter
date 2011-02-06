@@ -10,6 +10,12 @@
 #define MAX_FILE_SIZE    8             // TODO: this should also control the size of stdin
 #define MAX_FILENAME_LENGTH   5
 
+#define MAX_ENVIRON         1
+#define MAX_ENVVAR_LENGTH   20
+#define MAX_ENVVAL_LENGTH   5
+
+char* __otter_environ[MAX_ENVIRON+1];
+extern char **environ;
 extern int main(int argc, char **argv);
 
 /* Allocate a char array of length (len+1), 
@@ -49,7 +55,11 @@ int __otter_main_driver() {
 	int stderr = fopen("/dev/tty", "w"); // assert: fopen returns 2 
 
     // TODO: Set up the file system
-    // TODO: Set up environ
+    
+    for (i=0;i<MAX_ENVIRON;i++)
+        __otter_environ[i] = symbolic_string(MAX_ENVVAR_LENGTH + 1 + MAX_ENVVAL_LENGTH);  // "name=value"
+    __otter_environ[MAX_ENVIRON] = 0;
+    environ = &__otter_environ[0];
 
     return main(argc, argv);
 }
