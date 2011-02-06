@@ -17,12 +17,10 @@
 extern char **environ;
 extern int main(int argc, char **argv);
 
-#pragma cilnoremove("__otter_environ")
 char* __otter_environ[MAX_ENVIRON+1];
 
 /* Allocate a char array of length (len+1), 
  * with all characters symbolic except the last one which is \0. */
-#pragma cilnoremove("symbolic_string")
 char* symbolic_string(int len) {
     int i;
     char *s = malloc(len+1);
