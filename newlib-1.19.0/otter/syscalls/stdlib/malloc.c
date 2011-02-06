@@ -12,5 +12,5 @@ void *malloc(size_t s) {
 }
 
 void *__otter_multi_gmalloc(size_t size) {
-    return malloc(size);
+    return __otter_multi_gmalloc(size);
 }
