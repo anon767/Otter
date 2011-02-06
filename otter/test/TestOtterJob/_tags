@@ -1,2 +1,2 @@
-<*.cm*>: for-pack(TestOtter)
+<*.cm*>: for-pack(TestOtterJob)
 <*.ml>: warn_p
