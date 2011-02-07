@@ -131,6 +131,8 @@ let exec_fundec job state instr fundec lvalopt exps errors =
     Output.set_mode Output.MSG_FUNC;
     Output.printf "@[Enter function %a@]@\n" Printer.fundec fundec;
 
+    (* TODO: Profiler.start_fcall job fundec *)
+
     let stmt = job.stmt in
 
     (* evaluate the arguments *)
@@ -297,6 +299,7 @@ let exec_stmt job errors =
                                 | Some exp, Some dest ->
                                     (* evaluate the return expression in the callee frame *)
                                     let state, rv, errors = Expression.rval state exp errors in
+                                    (* TODO: Profiler.end_fcall job *)
                                     let state = MemOp.state__end_fcall state in
                                     (* evaluate the assignment in the caller frame *)
                                     let state, lval, errors = Expression.lval state dest errors in
@@ -304,6 +307,7 @@ let exec_stmt job errors =
                                 | _, _ ->
                                      (* If we are not returning a value, or if we
                                         ignore the result, just end the call *)
+                                    (* TODO: Profiler.end_fcall job *)
                                     (MemOp.state__end_fcall state, errors)
                         in
 
