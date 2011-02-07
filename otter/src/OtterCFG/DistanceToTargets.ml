@@ -19,9 +19,10 @@ end)
 
     @return the shortest distance to one of the targets, or {!max_int} if none of the targets are reachable.
 *)
-let find =
+let find = 
     let memotable = InstructionTargetsHash.create 0 in
-    fun instr targets ->
+    fun instr targets -> 
+        OcamlUtilities.Timer.time "DistanceToTargets.find" begin fun () ->
         if targets = [] then invalid_arg "find: targets must be a non-empty list";
         try
             InstructionTargetsHash.find memotable (instr, targets)
@@ -96,6 +97,7 @@ let find =
             in
             update (InstructionStack.singleton instr);
             InstructionTargetsHash.find memotable (instr, targets)
+        end()
 
 
 (** Find the shortest distance from an {!Instruction.t} to a list of target {!Instruction.t}s through function returns
@@ -108,6 +110,7 @@ let find =
     @return the shortest distance to one of the targets, or {!max_int} if none of the targets are reachable.
 *)
 let find_in_context instr context targets =
+    OcamlUtilities.Timer.time "DistanceToTargets.find_in_context" begin fun () ->
     (* compute the distance from the instr through function returns to targets in the call context *)
     let rec unwind dist return_dist = function
         | call_return::context ->
@@ -127,4 +130,5 @@ let find_in_context instr context targets =
     let dist = find instr targets in
     let return_dist = DistanceToReturn.find instr in
     unwind dist return_dist context
+    end()
 

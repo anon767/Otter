@@ -18,6 +18,7 @@ module InstructionHash = Hashtbl.Make (Instruction)
 let find =
     let memotable = InstructionHash.create 0 in
     fun instr ->
+        OcamlUtilities.Timer.time "DistanceToReturn.find" begin fun () ->
         try
             InstructionHash.find memotable instr
 
@@ -87,4 +88,5 @@ let find =
             in
             update (InstructionStack.singleton instr);
             InstructionHash.find memotable instr
+        end ()
 
