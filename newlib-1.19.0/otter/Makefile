@@ -106,6 +106,7 @@ SYSCALL_FILES := \
 	grp/grp.c \
 	otter/otter_fs.c \
 	otter/otter_fs_util.c \
+	pthread/self.c \
 	pwd/pwd.c \
 	stdlib/_free_r.c \
 	stdlib/_malloc_r.c \
