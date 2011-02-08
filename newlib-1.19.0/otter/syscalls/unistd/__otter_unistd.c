@@ -754,7 +754,7 @@ int __otter_libc_getgroups(int size, gid_t* list)
 	return(0);
 }
 
-int __otter_libc_chdir(const char *path)
+int chdir(const char *path)
 {
 	char* name = malloc(strlen(path) + 1);
 	strcpy(name, path);
@@ -772,7 +772,7 @@ int __otter_libc_chdir(const char *path)
 	return(0);
 }
 
-int __otter_libc_fchdir(int fd)
+int fchdir(int fd)
 {
 	struct __otter_fs_open_file_table_entry* open_file = get_open_file_from_fd(fd);
 	if(!open_file)
@@ -790,7 +790,7 @@ int __otter_libc_fchdir(int fd)
 	return(0);
 }
 
-unsigned int __otter_libc_alarm(unsigned int seconds)
+unsigned int alarm(unsigned int seconds)
 {
 	/* signals aren't implimented */
 	return(0);
