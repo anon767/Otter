@@ -13,7 +13,7 @@ ifeq ($(MAKECMDGOALS),native)
   SUFFIX:=.native
 endif
 
-OTTER_EXES := otter-ar otter-with-libc cilly-with-libc gcc-with-libc
+OTTER_EXES := otter-ar otter-with-libc cilly-with-libc
 
 all: cilly $(OTTER_EXES)
 
@@ -66,6 +66,7 @@ native: MV=mv '$(1)' '$(2)'
 native: OTTER_AR:=ar
 native: OTTER_CC:=gcc -m32
 native: OTTER_RANLIB:=ranlib
+native: gcc-with-libc
 
 
 # Each target should create the corresponding merged files.
