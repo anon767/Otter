@@ -32,7 +32,12 @@ static void session_init(struct vsf_session* p_sess);
 static void env_init(void);
 
  // ADDED FOR PURPOSES OF SYMBOLIC TESTING
-#include <__otter/otter_scheduler.h>
+#include <otter/otter_scheduler.h>
+#include <otter/otter_builtins.h>
+#include <otter/multiotter_builtins.h>
+#include <otter/otter_user.h>
+#include <otter/otter_fs.h>
+#include <sys/fcntl.h>
 char confFileContents[] = "chown_upload_mode=00600\nmax_login_fails=3\n\nanonymous_enable=1\nport_enable=TRUE\npasv_enable=YES\nlocal_enable=0\nchroot_local_user=FALSE\nwrite_enable=NO\n#\npam_service_name=ftp\nlisten_address6=\nlisten=1\nftp_username=user\n";
 unsigned int confFileSize = sizeof(confFileContents) - 1;
 extern int* vsftpd_has_called_listen;

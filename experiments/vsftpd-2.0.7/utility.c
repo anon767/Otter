@@ -4,6 +4,7 @@
  * Author: Chris Evans
  * utility.c
  */
+#include <otter/otter_builtins.h>
 
 #include "utility.h"
 #include "sysutil.h"
