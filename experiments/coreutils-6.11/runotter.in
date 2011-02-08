@@ -8,6 +8,8 @@ OTTER_CMD="$NEWLIB_OTTER/otter-with-libc"
     --doRunRmtmps --doexecute \
     --queue=KLEE \
     --lineCov \
+    --initMallocZero \
+    --initLocalZero \
     --untracked-functions="$NEWLIB_OTTER/library_functions" \
     --untracked-functions="$COREUTILS/libcoreutils_functions" \
     --untracked-functions="$COREUTILS/other_functions" \
