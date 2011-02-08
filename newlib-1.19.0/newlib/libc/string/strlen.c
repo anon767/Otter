@@ -82,7 +82,10 @@ _DEFUN (strlen, (str),
 
 #endif /* not PREFER_SIZE_OVER_SPEED */
 
-  while (*str)
+  int len = 0;
+  while (*str) {
     str++;
-  return str - start;
+    len++;
+  }
+  return len;
 }
