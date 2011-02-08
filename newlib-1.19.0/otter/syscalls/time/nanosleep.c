@@ -5,7 +5,7 @@
 
 int nanosleep(struct timespec const *rqtp, struct timespec *rmtp)
 {
-	if(rqtp->tv_sec != 0 || rqtp->tv_nsec < 0 || rqtp->tv_nsec > 1000000000)
+	if(rqtp->tv_sec != 0 || rqtp->tv_nsec < 0 || rqtp->tv_nsec >= 1000000000)
 	{
 		errno = EINVAL;
 		return(-1);
