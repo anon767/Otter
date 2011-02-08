@@ -8,7 +8,7 @@ int main() {
 	char *a = malloc(5), *b = malloc(1), x, *p;
 	__SYMBOLIC(&x);
 	p = x ? a : b;
-	memset(p, 1, sizeof(a));
+	memset(p, 1, 5);
 	__ASSERT((x ? a[0] : b[0]) == 1);
 	return 0;
 }
