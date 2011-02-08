@@ -84,27 +84,28 @@ let addInstrCoverage job instr =
     { job.exHist with coveredLines =
             LineSet.add (instrLoc.Cil.file,instrLoc.Cil.line) job.exHist.coveredLines; }
 
-let function_from_exp job state exp args errors =
-    match exp with
+let function_from_exp job instr fexp errors =
+    match fexp with
         | Lval(Var(varinfo), NoOffset) ->
             begin
                 try
-                    ([ (state, FindCil.fundec_by_varinfo job.file varinfo) ], errors)
+                    ([ (job, FindCil.fundec_by_varinfo job.file varinfo) ], errors)
                 with Not_found ->
                     failwith ("Function "^varinfo.vname^" not found.")
             end
 
 
-        | Lval(Mem(exp2), NoOffset) ->
-            let state, bytes, errors  = Expression.rval state exp2 errors in
+        | Lval(Mem(fexp), NoOffset) ->
+            let state = job.state in
+            let state, bytes, errors  = Expression.rval state fexp errors in
             let rec getall fp =
                 let fold_func acc pre leaf =
                     match leaf with
                         | Bytes_FunPtr(varinfo,_) ->
                             (* the varinfo should always map to a valid fundec (if the file was parsed by Cil) *)
-                            let state = MemOp.state__add_path_condition state (Bytes.guard__to_bytes pre) true in
+                            let job = { job with state = MemOp.state__add_path_condition state (Bytes.guard__to_bytes pre) true; } in
                             let fundec = FindCil.fundec_by_varinfo job.file varinfo in
-                            (state, fundec)::acc
+                            (job, fundec)::acc
                         | _ -> acc (* should give a warning here about a non-valid function pointer*)
                 in
                 Bytes.conditional__fold fold_func [] fp
@@ -113,7 +114,8 @@ let function_from_exp job state exp args errors =
                 | Bytes_FunPtr(varinfo,_) ->
                     (* the varinfo should always map to a valid fundec (if the file was parsed by Cil) *)
                     let fundec = FindCil.fundec_by_varinfo job.file varinfo in
-                    ([ (state, fundec) ], errors)
+                    let job = { job with state = state } in
+                    ([ (job, fundec) ], errors)
                 | Bytes_Read(bytes2, offset, len) ->
                     let fp = (BytesUtility.expand_read_to_conditional bytes2 offset len) in
                     let fp = Bytes.conditional__prune ~test:(Stp.query_stp state.path_condition) fp in
@@ -122,18 +124,18 @@ let function_from_exp job state exp args errors =
                     (getall c, errors)
 
                 | _ ->
-                    FormatPlus.failwith "Non-constant function ptr not supported :@ @[%a@]" Printer.exp exp2
+                    FormatPlus.failwith "Non-constant function ptr not supported :@ @[%a@]" Printer.exp fexp
             end
         | _ ->
-            FormatPlus.failwith "Non-constant function ptr not supported :@ @[%a@]" Printer.exp exp
+            FormatPlus.failwith "Non-constant function ptr not supported :@ @[%a@]" Printer.exp fexp
 
-let exec_fundec job state instr fundec lvalopt exps errors =
+let exec_fundec job instr fundec lvalopt exps errors =
     Output.set_mode Output.MSG_FUNC;
     Output.printf "@[Enter function %a@]@\n" Printer.fundec fundec;
 
     (* TODO: Profiler.start_fcall job fundec *)
 
-    let stmt = job.stmt in
+    let state, stmt = job.state, job.stmt in
 
     (* evaluate the arguments *)
     let state, argvs, errors = List.fold_right begin fun exp (state, argvs, errors) ->
@@ -168,33 +170,25 @@ let exec_fundec job state instr fundec lvalopt exps errors =
     (get_active_state job job', errors)
 
 let exec_instr_call job instr lvalopt fexp exps errors =
-    let state, exHist = job.state, job.exHist in
-
     let rec process_func_list func_list errors =
         match func_list with
             | [] -> ([], errors)
-            | (state, fundec)::t ->
+            | (job, fundec)::t ->
                 let job_state, errors =
-                    let job = { job with
-                        decisionPath = DecisionFuncall(instr, fundec)::job.decisionPath;
-                        jid = if t = [] then job.jid else Counter.next job_counter; (* increment all but the last *)
-                    } in
                     try
-                        (exec_fundec job state instr fundec lvalopt exps errors)
+                        let job = { job with
+                            decisionPath = DecisionFuncall(instr, fundec)::job.decisionPath;
+                            jid = if t = [] then job.jid else Counter.next job_counter; (* increment all but the last *)
+                        } in
+                        exec_fundec job instr fundec lvalopt exps errors
                     with Failure msg ->
                         if !Executeargs.arg_failfast then failwith msg;
-                        let result = {
-                            result_file = job.file;
-                            result_state = state;
-                            result_history = exHist;
-                            result_decision_path = job.decisionPath;
-                        } in
-                        (Complete (Abandoned (`Failure msg, Job.get_loc job, result)), errors)
+                        (Complete (Abandoned (`Failure msg, Job.get_loc job, Job.get_result_from_job job)), errors)
                 in
                 let func_list, errors = process_func_list t errors in
                 (job_state::func_list, errors)
     in
-    let func_list, errors = function_from_exp job state fexp exps errors in
+    let func_list, errors = function_from_exp job instr fexp errors in
     let f, errors = process_func_list func_list errors in
     match f with
         | _::_::_ -> (Fork(f), errors)
