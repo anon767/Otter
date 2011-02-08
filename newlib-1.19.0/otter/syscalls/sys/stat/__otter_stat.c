@@ -208,6 +208,7 @@ int mkfifo(const char* name, mode_t mode)
 
 int stat(const char* name, struct stat* s)
 {
+    // This is an approximation of stat. See man stat.
 	return lstat(name, s);
 }
 

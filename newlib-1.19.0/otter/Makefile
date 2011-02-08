@@ -139,6 +139,7 @@ SYSCALL_FILES := \
 	unistd/getuid.c \
 	unistd/lseek.c \
 	unistd/read.c \
+	unistd/rmdir.c \
 	unistd/setgid.c \
 	unistd/setsid.c \
 	unistd/setuid.c \
