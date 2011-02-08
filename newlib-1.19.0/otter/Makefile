@@ -99,36 +99,44 @@ otter-with-libc:
 # Building Otter's system calls functions
 
 SYSCALL_FILES := \
-	fcntl/open.c \
-	fcntl/__otter_fcntl.c \
-	otter/otter_fs.c \
-	otter/otter_fs_util.c \
-	stdlib/_free_r.c \
-	stdlib/_malloc_r.c \
-	stdlib/malloc.c \
-	stdlib/calloc.c \
-	stdlib/realloc.c \
-	sys/stat/fstat.c \
-	sys/stat/lstat.c \
-	sys/stat/__otter_stat.c \
-	sys/socket/__otter_socket.c \
-	sys/time/gettimeofday.c \
-	unistd/close.c \
-	unistd/read.c \
-	unistd/write.c \
-	unistd/lseek.c \
-	unistd/getpid.c \
-	unistd/getgid.c \
-	unistd/getpgrp.c \
-	unistd/getegid.c \
-	unistd/setgid.c \
-	unistd/getuid.c \
-	unistd/getpgid.c \
-	unistd/geteuid.c \
-	unistd/setsid.c \
-	unistd/getppid.c \
-	unistd/setuid.c \
-	unistd/__otter_unistd.c
+	./assert/assert.c \
+	./unistd/getppid.c \
+	./unistd/lseek.c \
+	./unistd/setsid.c \
+	./unistd/getegid.c \
+	./unistd/getpid.c \
+	./unistd/geteuid.c \
+	./unistd/setuid.c \
+	./unistd/getpgrp.c \
+	./unistd/getuid.c \
+	./unistd/close.c \
+	./unistd/write.c \
+	./unistd/setgid.c \
+	./unistd/__otter_unistd.c \
+	./unistd/getgid.c \
+	./unistd/getpgid.c \
+	./unistd/read.c \
+	./fcntl/open.c \
+	./fcntl/__otter_fcntl.c \
+	./time/nanosleep.c \
+	./sys/uio/uio.c \
+	./sys/time/gettimeofday.c \
+	./sys/socket/__otter_socket.c \
+	./sys/mman/mman.c \
+	./sys/stat/fstat.c \
+	./sys/stat/__otter_stat.c \
+	./sys/stat/lstat.c \
+	./otter/otter_fs.c \
+	./otter/otter_fs_util.c \
+	./pwd/pwd.c \
+	./stdlib/_free_r.c \
+	./stdlib/calloc.c \
+	./stdlib/malloc.c \
+	./stdlib/realloc.c \
+	./stdlib/_malloc_r.c \
+	./syslog/syslog.c \
+	./grp/grp.c \
+	./arpa/inet.c
 SYSCALL_FILES := $(addprefix syscalls/,$(SYSCALL_FILES))
 
 $(LIB_DIR)/libottersys.a: cilly-with-libc $(SYSCALL_FILES)
