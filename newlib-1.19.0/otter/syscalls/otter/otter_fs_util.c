@@ -1,5 +1,6 @@
-#include "otter/otter_fs.h"
-#include "otter/multiotter_builtins.h"
+#include <otter/otter_fs.h>
+#include <otter/otter_builtins.h>
+#include <otter/multiotter_builtins.h>
 
 #include <string.h>
 #include <ctype.h>

@@ -66,4 +66,6 @@ void             setnetent(int stayopen);
 void             setprotoent(int stayopen);
 void             setservent(int stayopen);
 
+#define IPPORT_RESERVED 1024
+
 #endif

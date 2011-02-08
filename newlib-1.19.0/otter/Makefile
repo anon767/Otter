@@ -114,6 +114,7 @@ SYSCALL_FILES := \
 	stdlib/free.c \
 	stdlib/malloc.c \
 	stdlib/realloc.c \
+	signal/signal.c \
 	sys/mman/mman.c \
 	sys/socket/__otter_socket.c \
 	sys/stat/__otter_stat.c \
