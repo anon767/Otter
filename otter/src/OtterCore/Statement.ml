@@ -410,10 +410,8 @@ let exec_stmt job errors =
                         let nextStateT,nextStmtT = try_branch state (Some rv) block1 in
                         let nextStateF,nextStmtF = try_branch state (Some (logicalNot rv)) block2 in
 
-                        (* Create two jobs, one for each branch. Since we
-                           continue executing the false branch immediately, let
-                           that job inherit the old jid. Give the true job a new
-                           jid. *)
+                        (* Create two jobs, one for each branch. The false branch
+                           inherits the old jid, and the true job gets a new jid. *)
                         let trueJob = { job with
                             state = nextStateT;
                             stmt = nextStmtT;
