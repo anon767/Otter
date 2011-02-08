@@ -124,10 +124,14 @@ SYSCALL_FILES := \
 	syslog/syslog.c \
 	time/nanosleep.c \
 	unistd/__otter_unistd.c \
+	unistd/chroot.c \
 	unistd/close.c \
+	unistd/dup.c \
+	unistd/dup2.c \
 	unistd/getegid.c \
 	unistd/geteuid.c \
 	unistd/getgid.c \
+	unistd/getpagesize.c \
 	unistd/getpgid.c \
 	unistd/getpgrp.c \
 	unistd/getpid.c \
@@ -138,6 +142,7 @@ SYSCALL_FILES := \
 	unistd/setgid.c \
 	unistd/setsid.c \
 	unistd/setuid.c \
+	unistd/sysconf.c \
 	unistd/write.c
 SYSCALL_FILES := $(addprefix syscalls/,$(SYSCALL_FILES))
 

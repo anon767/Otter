@@ -703,57 +703,6 @@ int __otter_libc_setgid(gid_t gid)
 	return(-1);
 }
 
-int __otter_libc_dup(int fd)
-{
-	return fcntl(fd, F_DUPFD, 0);
-}
-
-int __otter_libc_dup2(int fd1, int fd2)
-{
-	if(fd2 < 0 || fd2 >= __otter_fs_MAXOPEN)
-	{
-		errno = EBADF;
-		return(-1);
-	}
-
-	struct __otter_fs_open_file_table_entry* open_file = get_open_file_from_fd(fd1);
-	if(!open_file)
-	{
-		errno = EBADF;
-		return(-1);
-	}
-
-	if(__otter_fs_fd_table[fd1] == __otter_fs_fd_table[fd2])
-		return(fd2);
-
-	open_file = get_open_file_from_fd(fd2);
-	
-	if(open_file) /* is file a valid file entry? */
-	{
-		close(fd2);
-	}
-
-	return fcntl(fd1, F_DUPFD, fd2);
-}
-
-int __otter_libc_getpagesize()
-{
-	return((int)sysconf(_SC_PAGE_SIZE));
-}
-
-long __otter_libc_sysconf(int name)
-{
-	switch(name)
-	{
-		case _SC_PAGE_SIZE: /* _SC_PAGESIZE as well */
-			return(4096);
-		/* TODO: Impliment other system constants */
-	}
-	
-	errno = EINVAL;
-	return(-1);
-}
-
 int fork()
 {
 	__otter_multi_begin_atomic();
@@ -861,12 +810,6 @@ int __otter_libc_fchdir(int fd)
 	}
 	
 	__otter_fs_pwd = (struct __otter_fs_dnode*)open_file->vnode;
-	return(0);
-}
-
-int __otter_libc_chroot(const char *s)
-{
-	/* there is no reasonable way to impliment this right now */
 	return(0);
 }
 
