@@ -44,7 +44,6 @@ MAKE_FILES := $(NEWLIB_1_19_0)/newlib/libc/machine/otter/Makefile.in
 
 # Some of these don't exist until after newlib is built, but that's fine.
 INCLUDE_DIRS := -isystem $(CURDIR)/include \
-    -isystem $(CURDIR)/syscalls/include \
     -isystem $(BUILD_DIR)/otter/newlib/targ-include \
     -isystem $(NEWLIB_1_19_0)/newlib/libc/include
 
