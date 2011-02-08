@@ -110,6 +110,7 @@ SYSCALL_FILES := \
 	stdlib/_free_r.c \
 	stdlib/_malloc_r.c \
 	stdlib/calloc.c \
+	stdlib/free.c \
 	stdlib/malloc.c \
 	stdlib/realloc.c \
 	sys/mman/mman.c \

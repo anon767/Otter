@@ -10,13 +10,13 @@
    shrinks the size would always return the original pointer), but the ANSI spec
    *does* make it clear that this is acceptable behavior. */
 
-static void* __otter_realloc(void* ptr, size_t size, void *(alloc)(size_t))
+static void* __otter_realloc(void* ptr, size_t size, void *(alloc)(size_t), void (my_free)(void *))
 {
 	if (ptr == NULL)
 		return alloc(size);
 	if (size == 0)
 	{
-		free(ptr);
+		my_free(ptr);
 		return 0;
 	}
 
@@ -24,15 +24,15 @@ static void* __otter_realloc(void* ptr, size_t size, void *(alloc)(size_t))
 	char* ptr2 = alloc(size);
 	size = (size > old_size) ? old_size : size;
 	memcpy(ptr2, ptr, size);
-	free(ptr);
+	my_free(ptr);
 
 	return ptr2;
 }
 
 void* realloc(void* ptr, size_t size) {
-	return __otter_realloc(ptr, size, malloc);
+	return __otter_realloc(ptr, size, malloc, free);
 }
 
 void* __otter_multi_grealloc(void* ptr, size_t size) {
-	return __otter_realloc(ptr, size, __otter_multi_gmalloc);
+	return __otter_realloc(ptr, size, __otter_multi_gmalloc, __otter_multi_gfree);
 }

@@ -14,6 +14,6 @@ void *calloc(size_t count, size_t size) {
 	return __otter_calloc(count, size, malloc);
 }
 
-void *__otter_multi_calloc(size_t count, size_t size) {
+void *__otter_multi_gcalloc(size_t count, size_t size) {
 	return __otter_calloc(count, size, __otter_multi_gmalloc);
 }
