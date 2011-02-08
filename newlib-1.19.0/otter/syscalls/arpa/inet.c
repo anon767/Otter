@@ -5,7 +5,7 @@
 
 /* adapted from uclibc */
 
-int __otter_libc_inet_aton(const char *cp, struct in_addr *addrptr)
+int inet_aton(const char *cp, struct in_addr *addrptr)
 {
 	in_addr_t addr;
 	int value;
@@ -66,7 +66,7 @@ in_addr_t __otter_libc_inet_addr(const char *cp)
 		return a.s_addr;
 }
 
-in_addr_t __otter_libc_inet_lnaof(struct in_addr in)
+in_addr_t inet_lnaof(struct in_addr in)
 {
 	in_addr_t i = ntohl(in.s_addr);
 
@@ -78,7 +78,7 @@ in_addr_t __otter_libc_inet_lnaof(struct in_addr in)
 		return (i & IN_CLASSC_HOST);
 }
 
-struct in_addr __otter_libc_inet_makeaddr(in_addr_t net, in_addr_t host)
+struct in_addr inet_makeaddr(in_addr_t net, in_addr_t host)
 {
 	in_addr_t addr;
 
@@ -94,7 +94,7 @@ struct in_addr __otter_libc_inet_makeaddr(in_addr_t net, in_addr_t host)
 	return *(struct in_addr *)&addr;
 }
 
-in_addr_t __otter_libc_inet_netof(struct in_addr in)
+in_addr_t inet_netof(struct in_addr in)
 {
 	in_addr_t i = ntohl(in.s_addr);
 
@@ -106,7 +106,7 @@ in_addr_t __otter_libc_inet_netof(struct in_addr in)
 		return ((i & IN_CLASSC_NET) >> IN_CLASSC_NSHIFT);
 }
 
-in_addr_t __otter_libc_inet_network(const char *cp)
+in_addr_t inet_network(const char *cp)
 {
 	unsigned char c;
 	int got_data;
@@ -159,7 +159,7 @@ in_addr_t __otter_libc_inet_network(const char *cp)
 	return (res);
 }
 
-char *__otter_libc_inet_ntoa(struct in_addr in)
+char *inet_ntoa(struct in_addr in)
 {
 	in_addr_t addr = ntohl(in.s_addr);
 	

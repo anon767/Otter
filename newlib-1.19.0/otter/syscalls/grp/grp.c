@@ -4,7 +4,7 @@
 #include <string.h>
 #include <errno.h>
 
-struct group *__otter_libc_getgrgid(gid_t gid)
+struct group *getgrgid(gid_t gid)
 {
 	struct group* grp = malloc(sizeof(struct group));
 	char* buf = malloc((sizeof(char*) * 2) + 5);
@@ -18,7 +18,7 @@ struct group *__otter_libc_getgrgid(gid_t gid)
 	return(NULL);
 }
 
-int __otter_libc_getgrgid_r(gid_t gid, struct group *grp, char *buffer, size_t bufsize, struct group **result)
+int getgrgid_r(gid_t gid, struct group *grp, char *buffer, size_t bufsize, struct group **result)
 {
 	switch(gid)
 	{
@@ -84,7 +84,7 @@ int __otter_libc_getgrgid_r(gid_t gid, struct group *grp, char *buffer, size_t b
 	}
 }
 
-struct group *__otter_libc_getgrnam(const char *name)
+struct group *getgrnam(const char *name)
 {
 	if(strcmp("root", name) == 0)
 	{
@@ -98,7 +98,7 @@ struct group *__otter_libc_getgrnam(const char *name)
 	return NULL;
 }
 
-int __otter_libc_getgrnam_r(const char *name, struct group *grp, char *buffer, size_t bufsize, struct group **result)
+int getgrnam_r(const char *name, struct group *grp, char *buffer, size_t bufsize, struct group **result)
 {
 	if(strcmp("root", name) == 0)
 	{
@@ -129,12 +129,12 @@ struct group *getgrent()
 	return __otter_libc_getgrgid(gid);
 }
 
-void __otter_libc_endgrent()
+void endgrent()
 {
 	/* do nothing */
 }
 
-void __otter_libc_setgrent()
+void setgrent()
 {
 	/* reset to first entry */
 	__otter_libc_getgrent_gid = __otter_GID_ROOT;

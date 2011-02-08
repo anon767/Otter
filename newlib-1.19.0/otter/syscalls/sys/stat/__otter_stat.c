@@ -9,7 +9,7 @@
 #define S_ISUSR 0x2000 /* 0010 0000 0000 0000 */
 #define S_ISGRP 0x1000 /* 0001 0000 0000 0000 */
 
-int __otter_libc_chmod(const char* name, mode_t mode)
+int chmod(const char* name, mode_t mode)
 {
 	struct __otter_fs_inode* inode = __otter_fs_find_inode(name);
 	if(!inode)
@@ -30,7 +30,7 @@ int __otter_libc_chmod(const char* name, mode_t mode)
 	return (0);
 }
 
-int __otter_libc_fchmod(int fd, mode_t mode)
+int fchmod(int fd, mode_t mode)
 {
 	struct __otter_fs_open_file_table_entry* open_file = get_open_file_from_fd(fd);
 	if (!open_file) return -1;
@@ -196,22 +196,22 @@ int mknod(const char* name, mode_t mode, dev_t dev)
 	return (0);
 }
 
-int __otter_libc_mkdir(const char* name, mode_t mode)
+int mkdir(const char* name, mode_t mode)
 {
 	return mknod(name, mode | S_IFDIR, 0/*ignored*/);
 }
 
-int __otter_libc_mkfifo(const char* name, mode_t mode)
+int mkfifo(const char* name, mode_t mode)
 {
 	return mknod(name, mode | S_IFIFO, 0/*ignored*/);
 }
 
-int __otter_libc_stat(const char* name, struct stat* s)
+int stat(const char* name, struct stat* s)
 {
 	return lstat(name, s);
 }
 
-mode_t __otter_libc_umask(mode_t mode)
+mode_t umask(mode_t mode)
 {
 	int old = __otter_fs_umask;
 	__otter_fs_umask = (mode & 0x0FFF) | 0x3000;

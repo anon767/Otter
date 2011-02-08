@@ -8,13 +8,13 @@
 #include <string.h>
 #include <errno.h>
 
-int __otter_libc_creat(const char* path, mode_t mode)
+int creat(const char* path, mode_t mode)
 {
 	return open(path, O_WRONLY | O_CREAT | O_TRUNC, mode);
 }
 
-/* TODO: when teh functions this should be calling are done finish this one */
-int __otter_libc_fcntl(int fd, int cmd, ...)
+/* TODO: when the functions this should be calling are done finish this one */
+int fcntl(int fd, int cmd, ...)
 {
 	va_list varargs;
 	va_start(varargs, cmd);

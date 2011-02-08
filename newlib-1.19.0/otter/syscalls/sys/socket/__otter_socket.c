@@ -15,7 +15,7 @@
 	 this should probably be set in a function that starts up a process. */
 unsigned short __otter_sock_free_port = 5000;
 
-int __otter_libc_socket(int domain, int type, int protocol)
+int socket(int domain, int type, int protocol)
 {
 	int fd = -1;
 
@@ -193,7 +193,7 @@ int __otter_libc_setsockopt_ipproto_tcp(struct __otter_fs_sock_data* sock, int o
 	}
 }
 
-int __otter_libc_setsockopt(int socket_fd, int level, int option_name, const void *option_value, socklen_t option_len)
+int setsockopt(int socket_fd, int level, int option_name, const void *option_value, socklen_t option_len)
 {
 	struct __otter_fs_sock_data* sock = __otter_libc_get_sock_data(socket_fd);
 	if(!sock)
@@ -219,7 +219,7 @@ int __otter_libc_setsockopt(int socket_fd, int level, int option_name, const voi
 	return(-1);
 }
 
-int __otter_libc_getsockopt(int socket_fd, int level, int option_name, void *option_value, socklen_t *option_len)
+int getsockopt(int socket_fd, int level, int option_name, void *option_value, socklen_t *option_len)
 {
 	struct __otter_fs_sock_data* sock = __otter_libc_get_sock_data(socket_fd);
 	if(!sock)
@@ -245,7 +245,7 @@ int __otter_libc_getsockopt(int socket_fd, int level, int option_name, void *opt
 	return(-1);
 }
 
-int __otter_libc_bind(int socket_fd, const struct sockaddr *address, socklen_t address_len)
+int bind(int socket_fd, const struct sockaddr *address, socklen_t address_len)
 {
 	struct __otter_fs_sock_data* sock = __otter_libc_get_sock_data(socket_fd);
 	if(!sock)
@@ -397,7 +397,7 @@ int __otter_libc_bind(int socket_fd, const struct sockaddr *address, socklen_t a
 	return(0);
 }
 
-int __otter_libc_listen(int socket_fd, int backlog)
+int listen(int socket_fd, int backlog)
 {
 	struct __otter_fs_sock_data* sock = __otter_libc_get_sock_data(socket_fd);
 	if(!sock)
@@ -462,7 +462,7 @@ void __otter_sock_pop_queue(struct __otter_fd_sock_data** q, int len)
 	q[len - 1] = NULL;
 }
 
-int __otter_libc_accept(int socket_fd, struct sockaddr *address, socklen_t *address_len)
+int accept(int socket_fd, struct sockaddr *address, socklen_t *address_len)
 {
 	struct __otter_fs_sock_data* sock = __otter_libc_get_sock_data(socket_fd);
 	if(!sock)
@@ -564,7 +564,7 @@ void __otter_libc_flush_sock_queue(struct __otter_fs_sock_data* sock)
 	}
 }
 
-int __otter_libc_connect(int socket_fd, const struct sockaddr *address, socklen_t address_len)
+int connect(int socket_fd, const struct sockaddr *address, socklen_t address_len)
 {
 	struct __otter_fs_sock_data* sock = __otter_libc_get_sock_data(socket_fd);
 	if(!sock)
@@ -921,7 +921,7 @@ ssize_t recv(int socket_fd, void *buf, size_t num, int flags)
 	return(-1);
 }
 
-int __otter_libc_shutdown(int socket_fd, int how)
+int shutdown(int socket_fd, int how)
 {
 	struct __otter_fs_sock_data* sock = __otter_libc_get_sock_data(socket_fd);
 	if(!sock)

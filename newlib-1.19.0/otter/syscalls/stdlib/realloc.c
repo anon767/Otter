@@ -1,8 +1,8 @@
 #include <stddef.h> // For size_t
 #include <stdlib.h> // For malloc
 #include <string.h> // For memcpy
-#include "otter/otter_builtins.h" // For __otter_get_allocated_size
-#include "otter/multiotter_builtins.h" // For __otter_multi_gmalloc
+#include <otter/otter_builtins.h> // For __otter_get_allocated_size
+#include <otter/multiotter_builtins.h> // For __otter_multi_gmalloc
 
 /* This realloc *always* frees the original pointer and returns a new one. Some
    specs aren't entirely clear about whether this is valid for a call which

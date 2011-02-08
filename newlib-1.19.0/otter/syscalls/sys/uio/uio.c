@@ -4,7 +4,7 @@
 #include <limits.h>
 #include <errno.h>
 
-ssize_t __otter_libc_readv(int fd, const struct iovec *iov, int iovcnt)
+ssize_t readv(int fd, const struct iovec *iov, int iovcnt)
 {
 	if(iovcnt <= 0 || iovcnt > IOV_MAX)
 	{
@@ -53,7 +53,7 @@ ssize_t __otter_libc_readv(int fd, const struct iovec *iov, int iovcnt)
 	return(r);	
 }
 
-ssize_t __otter_libc_writev(int fd, const struct iovec *iov, int iovcnt)
+ssize_t writev(int fd, const struct iovec *iov, int iovcnt)
 {
 	if(iovcnt <= 0 || iovcnt > IOV_MAX)
 	{

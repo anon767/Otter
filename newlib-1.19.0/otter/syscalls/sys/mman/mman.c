@@ -12,7 +12,7 @@
  * check the protections at the creation of the mapping, but cannot enforce
  * them later.
  */
-void *__otter_libc_mmap(void *start, size_t len, int prot, int flags, int fd, off_t off)
+void *mmap(void *start, size_t len, int prot, int flags, int fd, off_t off)
 {
 	if(len == 0)
 	{
@@ -147,14 +147,14 @@ void *__otter_libc_mmap(void *start, size_t len, int prot, int flags, int fd, of
  * deallocated.  Since Otter does not support freeing part of a memory block,
  * the block must be entirely deallocated or not deallocated at all.
  */
-int __otter_libc_munmap(void *addr, size_t len)
+int munmap(void *addr, size_t len)
 {
 
 	/* TODO: figure out a way to track when it is appropriate to free memory */
 	return(0);
 }
 
-int __otter_libc_mprotect(void *addr, size_t len, int prot)
+int mprotect(void *addr, size_t len, int prot)
 {
 	/* There isn't support for protecting memory so this function does nothing. */
 	return(0);

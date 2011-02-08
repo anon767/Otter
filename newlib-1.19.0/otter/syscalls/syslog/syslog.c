@@ -120,7 +120,7 @@ static void __otter_libc_closelog_intern(int sig)
 /*
  * OPENLOG -- open system log
  */
-void __otter_libc_openlog(const char *ident, int logstat, int logfac)
+void openlog(const char *ident, int logstat, int logfac)
 {
 	/* nothing happens */
 }
@@ -129,12 +129,12 @@ void __otter_libc_openlog(const char *ident, int logstat, int logfac)
  * syslog, vsyslog --
  *     print message on log file; output is intended for syslogd(8).
  */
-void __otter_libc_vsyslog(int pri, const char *fmt, va_list ap)
+void vsyslog(int pri, const char *fmt, va_list ap)
 {
 	/* data goes away */
 }
 
-void __otter_libc_syslog(int pri, const char *fmt, ...)
+void syslog(int pri, const char *fmt, ...)
 {
 	va_list ap;
 
@@ -146,7 +146,7 @@ void __otter_libc_syslog(int pri, const char *fmt, ...)
 /*
  * CLOSELOG -- close the system log
  */
-void __otter_libc_closelog(void)
+void closelog(void)
 {
 	/*__UCLIBC_MUTEX_LOCK(mylock);*/
 	__otter_libc_closelog_intern(0); /* 0: reset LogXXX globals to default */
@@ -154,7 +154,7 @@ void __otter_libc_closelog(void)
 }
 
 /* setlogmask -- set the log mask level */
-int __otter_libc_setlogmask(int pmask)
+int setlogmask(int pmask)
 {
 	int omask;
 
