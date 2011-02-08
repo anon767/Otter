@@ -595,18 +595,6 @@ ssize_t __otter_libc_pwrite(int fd, const void* buf, size_t num, off_t offset)
 	return __otter_libc_write2(open_file, buf, num, offset);
 }
 
-int __otter_libc_unlink(const char* path)
-{
-	char *filename;
-	struct __otter_fs_dnode* dnode = find_filename_and_dnode(path, &filename);
-
-	if(!dnode) /* can't find path */
-		return (-1);
-
-	return (__otter_fs_unlink_in_dir(filename, dnode) - 1);
-
-}
-
 off_t __otter_libc_lseek(int fd, off_t offset, int whence)
 {
 	struct __otter_fs_open_file_table_entry* open_file = get_open_file_from_fd(fd);

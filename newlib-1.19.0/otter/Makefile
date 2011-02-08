@@ -144,6 +144,7 @@ SYSCALL_FILES := \
 	unistd/setsid.c \
 	unistd/setuid.c \
 	unistd/sysconf.c \
+	unistd/unlink.c \
 	unistd/write.c
 SYSCALL_FILES := $(addprefix syscalls/,$(SYSCALL_FILES))
 
