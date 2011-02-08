@@ -48,7 +48,7 @@ INCLUDE_DIRS := -isystem $(CURDIR)/include \
     -isystem $(BUILD_DIR)/otter/newlib/targ-include \
     -isystem $(NEWLIB_1_19_0)/newlib/libc/include
 
-OPTIONS_FOR_BUILDING_LIBC := -nostdinc -nostdlib -Wp,-undef $(INCLUDE_DIRS)
+OPTIONS_FOR_BUILDING_LIBC := -nostdinc -nostdlib -Wp,-undef $(INCLUDE_DIRS) -D_POSIX_THREADS
 OPTIONS_FOR_USING_LIBC := $(OPTIONS_FOR_BUILDING_LIBC) \
     -L$(LIB_DIR) \
     -lc 
@@ -100,44 +100,44 @@ otter-with-libc:
 # Building Otter's system calls functions
 
 SYSCALL_FILES := \
-	./assert/assert.c \
-	./unistd/getppid.c \
-	./unistd/lseek.c \
-	./unistd/setsid.c \
-	./unistd/getegid.c \
-	./unistd/getpid.c \
-	./unistd/geteuid.c \
-	./unistd/setuid.c \
-	./unistd/getpgrp.c \
-	./unistd/getuid.c \
-	./unistd/close.c \
-	./unistd/write.c \
-	./unistd/setgid.c \
-	./unistd/__otter_unistd.c \
-	./unistd/getgid.c \
-	./unistd/getpgid.c \
-	./unistd/read.c \
-	./fcntl/open.c \
-	./fcntl/__otter_fcntl.c \
-	./time/nanosleep.c \
-	./sys/uio/uio.c \
-	./sys/time/gettimeofday.c \
-	./sys/socket/__otter_socket.c \
-	./sys/mman/mman.c \
-	./sys/stat/fstat.c \
-	./sys/stat/__otter_stat.c \
-	./sys/stat/lstat.c \
-	./otter/otter_fs.c \
-	./otter/otter_fs_util.c \
-	./pwd/pwd.c \
-	./stdlib/_free_r.c \
-	./stdlib/calloc.c \
-	./stdlib/malloc.c \
-	./stdlib/realloc.c \
-	./stdlib/_malloc_r.c \
-	./syslog/syslog.c \
-	./grp/grp.c \
-	./arpa/inet.c
+	arpa/inet.c \
+	assert/assert.c \
+	fcntl/__otter_fcntl.c \
+	fcntl/open.c \
+	grp/grp.c \
+	otter/otter_fs.c \
+	otter/otter_fs_util.c \
+	pwd/pwd.c \
+	stdlib/_free_r.c \
+	stdlib/_malloc_r.c \
+	stdlib/calloc.c \
+	stdlib/malloc.c \
+	stdlib/realloc.c \
+	sys/mman/mman.c \
+	sys/socket/__otter_socket.c \
+	sys/stat/__otter_stat.c \
+	sys/stat/fstat.c \
+	sys/stat/lstat.c \
+	sys/time/gettimeofday.c \
+	sys/uio/uio.c \
+	syslog/syslog.c \
+	time/nanosleep.c \
+	unistd/__otter_unistd.c \
+	unistd/close.c \
+	unistd/getegid.c \
+	unistd/geteuid.c \
+	unistd/getgid.c \
+	unistd/getpgid.c \
+	unistd/getpgrp.c \
+	unistd/getpid.c \
+	unistd/getppid.c \
+	unistd/getuid.c \
+	unistd/lseek.c \
+	unistd/read.c \
+	unistd/setgid.c \
+	unistd/setsid.c \
+	unistd/setuid.c \
+	unistd/write.c
 SYSCALL_FILES := $(addprefix syscalls/,$(SYSCALL_FILES))
 
 $(LIB_DIR)/libottersys.a: cilly-with-libc $(SYSCALL_FILES)
