@@ -183,7 +183,7 @@ clean-%:
 distclean-%:
 	if [[ -f $(BUILD_DIR)/Makefile ]]; then make -C $(BUILD_DIR) distclean || rm -rf $(BUILD_DIR); fi
 
-CLEAN_CMD :=rm -f $(OTTER_EXES)
+CLEAN_CMD :=rm -f $(OTTER_EXES) gcc-with-libc
 
 clean: $(addprefix clean-,$(TARGETS))
 	$(CLEAN_CMD)
