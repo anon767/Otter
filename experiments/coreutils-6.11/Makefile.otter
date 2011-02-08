@@ -1,0 +1,29 @@
+trunk=$(PWD)/../..
+newlib=$(trunk)/newlib-1.19.0/otter
+
+gcc_with_libc=$(newlib)/gcc-with-libc
+cilly_with_libc=$(newlib)/cilly-with-libc
+cilly_ar=$(trunk)/cil/bin/cilly --merge --mode=AR
+
+all: configure make list runotter
+
+.PHONY: configure make list runotter
+
+configure:
+	./configure CC="$(gcc_with_libc)" 
+	# THIS IS A HACK (FIXME)
+	# Fix an error of wrong macro value due to a crashing conftest in ./configure
+	sed -i '' 's/#define RMDIR_ERRNO_NOT_EMPTY configure error in rmdir-errno.m4/#define RMDIR_ERRNO_NOT_EMPTY 39/' lib/config.h
+
+make: 
+	make CC="$(cilly_with_libc)" AR="$(cilly_ar)" RANLIB="echo cilly_ranlib: "
+
+# Generate a list of functions defined in lib/.
+# They are excluded from coreutils' coverage.
+list:
+	$(trunk)/otter/otter.pl --merge --dofindFns -Llib -lcoreutils  > libcoreutils_functions
+
+# Generate a script to run otter on coreutils' programs.
+runotter:
+	sed "s|@OTTER_TRUNK@|\"$(PWD)/../..\"|" runotter.in > runotter && chmod +x runotter
+
