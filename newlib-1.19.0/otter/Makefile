@@ -126,6 +126,7 @@ SYSCALL_FILES := \
 	sys/stat/lstat.c \
 	sys/time/gettimeofday.c \
 	sys/uio/uio.c \
+	sys/utsname/uname.c \
 	syslog/syslog.c \
 	time/nanosleep.c \
 	unistd/__otter_unistd.c \
