@@ -22,6 +22,12 @@ patch:
 	sed -i '' 's/#define HAVE_FLOCKFILE 1//' lib/config.h
 	sed -i '' 's/#define HAVE_FUNLOCKFILE 1//' lib/config.h
 	sed -i '' 's/#define HAVE_FORK 1//' lib/config.h
+	sed -i '' 's/#define HAVE_GETGROUPLIST 1//' lib/config.h
+	sed -i '' 's/#define HAVE_GETGROUPS 1//' lib/config.h
+	sed -i '' 's/#define HAVE_GETHOSTID 1//' lib/config.h
+	sed -i '' 's/#define HAVE_PATHCONF 1//' lib/config.h
+	sed -i '' 's/#define HAVE_READLINK 1//' lib/config.h
+
 
 make: 
 	make CC="$(cilly_with_libc)" AR="$(cilly_ar)" RANLIB="echo cilly_ranlib: "
