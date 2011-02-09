@@ -34,10 +34,7 @@ readlink (const char *path, char *buf, size_t bufsize)
 {
   struct stat statbuf;
 
-  /* In general we should use lstat() here, not stat().  But on platforms
-     without symbolic links lstat() - if it exists - would be equivalent to
-     stat(), therefore we can use stat().  This saves us a configure check.  */
-  if (stat (path, &statbuf) >= 0)
+  if (lstat (path, &statbuf) >= 0)
     errno = EINVAL;
   return -1;
 }
