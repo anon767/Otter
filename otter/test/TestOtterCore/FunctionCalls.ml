@@ -536,14 +536,14 @@ let function_pointer_calls_testsuite = "Function pointer calls" >:::
                 }
             ";
 
-        test_function_pointer_calls ~label:"Bugs/Call with broken functions"
+        test_function_pointer_calls ~label:"Call with broken functions"
             ~expect_return:[ 0; 1 ]
             ~expect_abandoned_count:2 (* one NULL, one undefined should be reported, but currently aren't *)
             "
                 int foo0(void) { return 0; }
                 int foo1(void) { return 1; }
 
-                typedef int (*FP)(int);
+                typedef int (*FP)(void);
 
                 int main(void) {
                     FP a[4];

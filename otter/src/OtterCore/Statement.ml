@@ -98,17 +98,18 @@ let function_from_exp job instr fexp errors =
         | Lval(Mem(fexp), NoOffset) ->
             let state = job.state in
             let state, bytes, errors  = Expression.rval state fexp errors in
+            let ftyp = Cil.typeOf fexp in
             let rec getall fp =
-                let fold_func acc pre leaf =
+                let fold_func (acc, errors) pre leaf =
                     match leaf with
                         | Bytes_FunPtr(varinfo,_) ->
                             (* the varinfo should always map to a valid fundec (if the file was parsed by Cil) *)
                             let job = { job with state = MemOp.state__add_path_condition state (Bytes.guard__to_bytes pre) true; } in
                             let fundec = FindCil.fundec_by_varinfo job.file varinfo in
-                            (job, fundec)::acc
-                        | _ -> acc (* should give a warning here about a non-valid function pointer*)
+                            ((job, fundec)::acc, errors)
+                        | _ -> (acc, (state, make_Bytes_Op (OP_EQ, [(bytes, ftyp); (leaf, ftyp)]), `Failure "Invalid function pointer") :: errors)
                 in
-                Bytes.conditional__fold fold_func [] fp
+                Bytes.conditional__fold fold_func ([], errors) fp
             in
             begin match bytes with
                 | Bytes_FunPtr(varinfo,_) ->
@@ -119,9 +120,11 @@ let function_from_exp job instr fexp errors =
                 | Bytes_Read(bytes2, offset, len) ->
                     let fp = (BytesUtility.expand_read_to_conditional bytes2 offset len) in
                     let fp = Bytes.conditional__prune ~test:(Stp.query_stp state.path_condition) fp in
-                    (getall fp, errors)
+                    let fp, errors = getall fp in
+                    (fp, errors)
                 | Bytes_Conditional(c) ->
-                    (getall c, errors)
+                    let fp, errors = getall c in
+                    (fp, errors)
 
                 | _ ->
                     FormatPlus.failwith "Non-constant function ptr not supported :@ @[%a@]" Printer.exp fexp
