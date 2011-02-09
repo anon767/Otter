@@ -517,11 +517,15 @@ let query_stp pc pre guard =
                     Stpc.e_push vc;
                     incr stp_count;
                     let startTime = Unix.gettimeofday () in
-                    let answer = Stats.time "STP query" begin
+                    let answer = Stats.time "STP query" begin fun () ->
                         (* Note: the count is used as a proxy of running time in BackOtter *)
                         DataStructures.NamedCounter.incr "stpc_query";
-                        Stpc.query vc
-                    end exp in
+                        try
+                            Stpc.query vc exp
+                        with Invalid_argument s -> 
+                            (* Caught Invalid_argument s. Transform to Failure s. *)
+                            failwith s
+                    end () in
                     stpcache_add answer pc pre guard truth_value;
                     let endTime = Unix.gettimeofday () in
                     stp_queries := (pc, pre, guard, truth_value, endTime -. startTime)::(!stp_queries);
