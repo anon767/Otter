@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <stdio.h>
 
 #define __otter_fs_error(e) {errno = (e); return NULL;}
 
@@ -754,3 +755,8 @@ void __otter_fs_mount()
 	memset(__otter_fs_open_file_table, 0, __otter_fs_GLOBALMAXOPEN*sizeof(struct __otter_fs_open_file_table_entry));
 }
 
+void __otter_fs_init_stdin_out_err() {
+	stdin = fopen("/dev/tty", "r");
+	stdout = fopen("/dev/tty", "w");
+	stderr = fopen("/dev/tty", "w");
+}
