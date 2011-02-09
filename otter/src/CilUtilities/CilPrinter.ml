@@ -1,5 +1,7 @@
 (** {!Format}-style printers for types in the {!Cil} module *)
 
+(* TODO: put these printers in their corresponding modules in CilData *)
+
 open OcamlUtilities
 
 (** Print the name and location of a {!Cil.varinfo}.
