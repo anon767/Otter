@@ -128,6 +128,7 @@ SYSCALL_FILES := \
 	syslog/syslog.c \
 	time/nanosleep.c \
 	unistd/__otter_unistd.c \
+	unistd/access.c \
 	unistd/chroot.c \
 	unistd/close.c \
 	unistd/dup.c \
