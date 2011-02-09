@@ -5,15 +5,23 @@ gcc_with_libc=$(newlib)/gcc-with-libc
 cilly_with_libc=$(newlib)/cilly-with-libc
 cilly_ar=$(trunk)/cil/bin/cilly --merge --mode=AR
 
-all: configure make list runotter
+procedure=configure patch make list runotter
 
-.PHONY: configure make list runotter
+all: $(procedure)
+
+.PHONY: $(procedure)
 
 configure:
 	./configure CC="$(gcc_with_libc)" 
+
+patch:
 	# THIS IS A HACK (FIXME)
 	# Fix an error of wrong macro value due to a crashing conftest in ./configure
 	sed -i '' 's/#define RMDIR_ERRNO_NOT_EMPTY configure error in rmdir-errno.m4/#define RMDIR_ERRNO_NOT_EMPTY 39/' lib/config.h
+	# Further patching lib/config.h
+	sed -i '' 's/#define HAVE_FLOCKFILE 1//' lib/config.h
+	sed -i '' 's/#define HAVE_FUNLOCKFILE 1//' lib/config.h
+	sed -i '' 's/#define HAVE_FORK 1//' lib/config.h
 
 make: 
 	make CC="$(cilly_with_libc)" AR="$(cilly_ar)" RANLIB="echo cilly_ranlib: "
