@@ -21,6 +21,7 @@ module VargsMap = Map.Make (struct
 	let compare : t -> t -> int = Pervasives.compare
 end)
 
+(* TODO: move this elsewhere; or perhaps use Sys.catch_break *)
 exception SignalException of string
 
 
@@ -40,8 +41,8 @@ type callingContext =
 
 
 type memory_frame =
-	(state, lval_block) Deferred.t VarinfoMap.t
-and state =
+	(t, lval_block) Deferred.t VarinfoMap.t
+and t =
 	{
 		global : memory_frame;                  (* Map global lvals to blocks *)
 		formals : memory_frame list;            (* Map formal lvals to blocks *)
@@ -49,7 +50,7 @@ and state =
 		aliases : memory_block list VarinfoMap.t; (* Map from varinfos to aliased blocks, e.g., from unknown call stack recursion *)
 		mallocs : memory_block list MallocMap.t; (* Map from malloc sites to aliased blocks from unknown allocation *)
 		callstack : Cil.fundec list;            (* Function call stack *)
-		block_to_bytes : (state, bytes) Deferred.t MemoryBlockMap.t;
+		block_to_bytes : (t, bytes) Deferred.t MemoryBlockMap.t;
 		path_condition : bytes list;
 		path_condition_tracked : bool list;
 		callContexts : callingContext list;

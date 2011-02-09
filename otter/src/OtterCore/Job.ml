@@ -74,7 +74,7 @@ let emptyHistory = {
 
 type job = {
     file : Cil.file;
-    state : Types.state;
+    state : State.t;
     exHist : executionHistory;
     decisionPath : Decision.t list; (** The decision path is a list of decision. Most recent decision first. *)  (* TODO: take this out *)
     instrList : Cil.instr list; (** [instr]s to execute before moving to the next [stmt] *)
@@ -88,7 +88,7 @@ type job = {
 
 type job_result = {
 	result_file : Cil.file;
-	result_state : Types.state;
+	result_state : State.t;
 	result_history : executionHistory;
 	result_decision_path : Decision.t list;
 }
@@ -119,7 +119,7 @@ let job_counter_unique = Counter.make ()
 
 (* create a job that begins at a function, given an initial state *)
 let make file state fn argvs =
-    let state = MemOp.state__start_fcall state Types.Runtime fn argvs in
+    let state = MemOp.state__start_fcall state State.Runtime fn argvs in
     let trackedFns = TrackingFunctions.trackedFns file in
 	(* create a new job *)
     {
@@ -151,23 +151,23 @@ let get_instruction job =
     match job.stmt.Cil.skind with
         | Cil.Instr instrs when job.instrList = [] ->
             (* if stmt is Cil.Instr, instrList may be temporarily empty: see handling of Cil.Instr in Statement.exec_stmt *)
-            OtterCFG.Instruction.make job.file (List.hd job.state.Types.callstack) job.stmt instrs
+            OtterCFG.Instruction.make job.file (List.hd job.state.State.callstack) job.stmt instrs
         | _ ->
-            OtterCFG.Instruction.make job.file (List.hd job.state.Types.callstack) job.stmt job.instrList
+            OtterCFG.Instruction.make job.file (List.hd job.state.State.callstack) job.stmt job.instrList
 
 
 (** Get a list of {!OtterCFG.Instruction.t} representing the current calling context in a job. *)
 let get_instruction_context job =
     let rec get_instruction_context context return stack = match return, stack with
-        | Types.Source (_, _, _, stmt)::return, fundec::stack ->
+        | State.Source (_, _, _, stmt)::return, fundec::stack ->
             let context = (OtterCFG.Instruction.of_stmt_first job.file fundec stmt)::context in
             get_instruction_context context return stack
-        | Types.Source (_, _, _, _)::_, [] ->
+        | State.Source (_, _, _, _)::_, [] ->
             invalid_arg "get_instruction_context: job with malformed callstack"
         | _, _ ->
             List.rev context
     in
-    get_instruction_context [] job.state.Types.callContexts (List.tl job.state.Types.callstack)
+    get_instruction_context [] job.state.State.callContexts (List.tl job.state.State.callstack)
 
 (* Useful for constructing JobMap/JobSet *)
 module JobOrderedType = struct

@@ -2,21 +2,21 @@ open DataStructures
 open OcamlUtilities
 open OtterBytes
 open OtterCore
-open Types
+open State
 
 
 
 type scheduling_data =
 	| Running (* Nomal round robin *)
 	| TimeWait of int (* Letting other processes go for a while; uses a counter that is decremented each time a job is stepped *)
-	| IOBlock of (state, Bytes.bytes) Deferred.t MemoryBlockMap.t (* Blocking until a shared value changes *)
+	| IOBlock of (State.t, Bytes.bytes) Deferred.t MemoryBlockMap.t (* Blocking until a shared value changes *)
 	| Atomic (* Exclusive control, used when several opeations must be done without preemption *)
 
 (* Environment state as seen by a process.
  * This includes items that are included in state.
  * path_condition and block_to_bytes are invalid when this is not the active process.
  *)
-type local_state = state
+type local_state = State.t
 
 (* State about the execution of the process.
  * This includes items that are in job, but are process specific.
@@ -41,7 +41,7 @@ type process_metadata = {
  *)
 type shared_state = {
 	shared_path_condition : Bytes.bytes list;
-	shared_block_to_bytes : (state, Bytes.bytes) Deferred.t MemoryBlockMap.t;
+	shared_block_to_bytes : (State.t, Bytes.bytes) Deferred.t MemoryBlockMap.t;
 	trackedFns : Job.StringSet.t;
 	exHist : Job.executionHistory;
 }

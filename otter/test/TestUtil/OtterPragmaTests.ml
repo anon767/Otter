@@ -122,7 +122,7 @@ module Make (Errors : Errors) = struct
     let attrparams_printer = list_printer Printcil.attrparam ",@ "
 
 
-    (** Helper to print Otter.Types.job_completion list. *)
+    (** Helper to print Otter.Job.job_completion list. *)
     let results_printer list =
         let completion_printer ff = function
             | Job.Exit (exit_opt, _) -> Format.fprintf ff "Exit(@[%a@])" (option_printer BytesPrinter.bytes) exit_opt
@@ -184,7 +184,7 @@ module Make (Errors : Errors) = struct
         in
         try
             let state, bytes = parse_exp state exp in
-            let truth = MemOp.eval state.Types.path_condition bytes in
+            let truth = MemOp.eval state.State.path_condition bytes in
             begin match truth with
                 | Ternary.True -> true
                 | Ternary.False
@@ -250,7 +250,7 @@ module Make (Errors : Errors) = struct
                     reason attrparams_printer args attrparams_printer asserts results_printer results
 
 
-    (** CPS test that there are no other {!Types.job_completion} of a particular type, passing the remaining results to the next test. *)
+    (** CPS test that there are no other {!Job.job_completion} of a particular type, passing the remaining results to the next test. *)
     let no_other_x f x file loc = fun results k ->
         (* count jobs that matched f *)
         let abandoned = List.filter f results in
@@ -270,7 +270,7 @@ module Make (Errors : Errors) = struct
     let no_other_abandoned arg =
         no_other_x (function Job.Abandoned _ -> true | _ -> false) "Abandoned" arg
 
-    (** CPS test that there are no other {!Types.job_completion} at all *)
+    (** CPS test that there are no other {!Job.job_completion} at all *)
     let no_other_results arg = no_other_x (fun _ -> true) "results" arg
 
 

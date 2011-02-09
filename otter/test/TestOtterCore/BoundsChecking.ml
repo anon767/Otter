@@ -1,7 +1,7 @@
 open TestUtil.MyOUnit
 open TestUtil.OtterUtil
 open OtterCore
-open Types
+open State
 open Job
 
 (* test helper that runs the symbolic executor on a file given a source code as a string *)

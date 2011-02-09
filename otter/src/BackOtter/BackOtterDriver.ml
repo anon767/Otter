@@ -3,7 +3,7 @@ open CilUtilities
 open OtterBytes
 open OtterCore
 open Bytes
-open Types
+open State
 open Job
 open Cil
 
@@ -176,7 +176,7 @@ let main_loop entry_fn timer_ref interceptor queue reporter =
                     (queue, reporter)
         in
         run (queue, reporter)
-    with Types.SignalException s ->
+    with State.SignalException s ->
         (* if we got a signal, stop and return the checkpoint results *)
         Output.set_mode Output.MSG_MUSTPRINT;
         Output.printf "%s@\n" s;

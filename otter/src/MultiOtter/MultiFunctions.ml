@@ -5,7 +5,7 @@ open Cil
 open OtterCore
 open OtterBytes
 open MultiTypes
-open Types
+open State
 open Job
 open Bytes
 open MultiInterceptor
@@ -42,9 +42,9 @@ let libc_fork job multijob retopt exps errors =
 	(Active job, multijob, errors)
 
 (* allocates on the global heap *)
-let otter_gmalloc_size (state:Types.state) size bytes loc =
+let otter_gmalloc_size state size bytes loc =
 	let name = FormatPlus.sprintf "%s(%d)#%d/%a%s"
-		(List.hd state.Types.callstack).Cil.svar.Cil.vname
+		(List.hd state.State.callstack).Cil.svar.Cil.vname
 		size
 		(DataStructures.Counter.next BuiltinFunctions.libc___builtin_alloca__id)
 		Printcil.loc loc
@@ -96,7 +96,7 @@ let otter_gfree job multijob retopt exps errors =
 				FormatPlus.failwith "gfreeing a non-gmalloced pointer:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp (List.hd exps) BytesPrinter.bytes ptr
 			else if not (MemoryBlockMap.mem block multijob.shared.shared_block_to_bytes) then
 				FormatPlus.failwith "gfreeing a non-gmalloced pointer or double-gfree:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp (List.hd exps) BytesPrinter.bytes ptr
-			else if not (MemoryBlockMap.mem block state.Types.block_to_bytes) then
+			else if not (MemoryBlockMap.mem block state.State.block_to_bytes) then
 				FormatPlus.failwith "gfreeing after free:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp (List.hd exps) BytesPrinter.bytes ptr
 			else
 				let multijob =

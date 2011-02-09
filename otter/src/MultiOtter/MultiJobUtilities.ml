@@ -2,7 +2,7 @@ open OtterCore
 open OtterBytes
 open MultiTypes
 open Bytes
-open Types
+open State
 open Job
 
 let update_to_shared_memory shared_block_to_bytes local_block_to_bytes =
@@ -134,8 +134,8 @@ let get_job multijob =
 	| (program_counter, local_state, metadata)::processes ->
 		(* extract the first job from a multijob *)
 		let state = { local_state with
-			Types.block_to_bytes = update_from_shared_memory multijob.shared.shared_block_to_bytes local_state.block_to_bytes;
-			Types.path_condition = multijob.shared.shared_path_condition;
+			State.block_to_bytes = update_from_shared_memory multijob.shared.shared_block_to_bytes local_state.block_to_bytes;
+			State.path_condition = multijob.shared.shared_path_condition;
 		} in
 		let job = {
 			Job.file = multijob.MultiTypes.file;

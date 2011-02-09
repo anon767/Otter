@@ -2,7 +2,7 @@ open BackOtterUtilities
 open DataStructures
 open OcamlUtilities
 open OtterCore
-open Types
+open State
 open Job
 open Decision
 open Cil

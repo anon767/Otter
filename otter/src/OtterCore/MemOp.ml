@@ -5,7 +5,7 @@ open Cil
 open OtterBytes
 open Bytes
 open BytesUtility
-open Types
+open State
 open Operator
 
 (* Track Stp calls *)
@@ -88,7 +88,7 @@ let const_table__mem block =
 
 (** Vargs table
  *)
-let vargs_table__add state byteslst : state*bytes =
+let vargs_table__add state byteslst =
 	let key = bytes__symbolic (bitsSizeOf (TBuiltin_va_list []) / 8) in
 	let va_arg_map2 = VargsMap.add key byteslst state.va_arg_map in
 		({state with va_arg_map = va_arg_map2;},key)
@@ -98,7 +98,7 @@ let vargs_table__get_list state key : bytes list =
 	VargsMap.find key state.va_arg_map
 
 
-let vargs_table__get state key : state*bytes =
+let vargs_table__get state key =
 	let byteslst = vargs_table__get_list state key in
 	match byteslst with
 		| [] -> failwith "va_list has run to the end"
@@ -106,7 +106,7 @@ let vargs_table__get state key : state*bytes =
 			({state with va_arg_map = (VargsMap.add key tl state.va_arg_map);},	hd)
 
 
-let vargs_table__remove state key : state =
+let vargs_table__remove state key =
 	{state with va_arg_map = (VargsMap.remove key state.va_arg_map);}
 
 
@@ -126,7 +126,7 @@ let state__empty =
 		path_condition_tracked = [];
 		(*return = None;*)
 		callContexts = [];
-		stmtPtrs = Types.IndexMap.empty;
+		stmtPtrs = State.IndexMap.empty;
 		va_arg = [];
 		va_arg_map = VargsMap.empty;
 	}
@@ -353,17 +353,17 @@ let state__trace state =
 
 
 (** map address to state (!) *)
-let index_to_state: state Types.IndexMap.t ref = ref (Types.IndexMap.empty)
+let index_to_state : State.t State.IndexMap.t ref = ref (State.IndexMap.empty)
 let index_to_state__add index state =
-	index_to_state := Types.IndexMap.add index state (!index_to_state)
+	index_to_state := State.IndexMap.add index state (!index_to_state)
 
 let index_to_state__get index =
-	Types.IndexMap.find index (!index_to_state)
+	State.IndexMap.find index (!index_to_state)
 
 
 
 (** Compare two states. Return true if they are the same; false otherwise. *)
-let cmp_states (s1:state) (s2:state) =
+let cmp_states s1 s2 =
 	(* Compare blocks (memory allocations) that both states have *)
 	let sharedBlocksComparison =
 		let f block deferred1 result =

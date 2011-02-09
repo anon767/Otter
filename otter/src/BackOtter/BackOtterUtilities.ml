@@ -3,7 +3,7 @@ open CilUtilities
 open OcamlUtilities
 open OtterCFG
 open OtterCore
-open Types
+open State
 open Job
 open Cil
 

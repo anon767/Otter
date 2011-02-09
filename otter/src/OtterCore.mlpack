@@ -12,7 +12,7 @@ OtterCore/MemOp
 OtterCore/Operator
 OtterCore/Printer
 OtterCore/Report
+OtterCore/State
 OtterCore/Statement
 OtterCore/SymbolicPointers
 OtterCore/TrackingFunctions
-OtterCore/Types

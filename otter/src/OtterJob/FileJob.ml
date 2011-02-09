@@ -14,10 +14,10 @@ let init_globalvars state globals =
             let state, block, varinfo_to_block =
                 (* Initialize the block first, for recursive initializations such as 'int p = (int)&p;'. *)
                 try
-                    (state, Types.VarinfoMap.find varinfo varinfo_to_block, varinfo_to_block)
+                    (state, State.VarinfoMap.find varinfo varinfo_to_block, varinfo_to_block)
                 with Not_found ->
                     let state, block = MemOp.state__add_global state varinfo in
-                    (state, block, Types.VarinfoMap.add varinfo block varinfo_to_block)
+                    (state, block, State.VarinfoMap.add varinfo block varinfo_to_block)
             in
             let state, bytes = Expression.evaluate_initializer state varinfo.Cil.vtype init in
 
@@ -31,17 +31,17 @@ let init_globalvars state globals =
                 when not (Cil.isFunctionType varinfo.Cil.vtype)
                     && not (!Executeargs.arg_noinit_unreachable_globals && unreachable_global varinfo) ->
             (* Sanity check: variables are ever declared after being defined, and are never defined twice. *)
-            assert (not (Types.VarinfoMap.mem varinfo varinfo_to_block));
+            assert (not (State.VarinfoMap.mem varinfo varinfo_to_block));
 
             Output.set_mode Output.MSG_REG;
             Output.printf "@[Initialize %s to zeros@]@\n" varinfo.Cil.vname;
 
             let state, block = MemOp.state__add_global state varinfo in
-            (state, Types.VarinfoMap.add varinfo block varinfo_to_block)
+            (state, State.VarinfoMap.add varinfo block varinfo_to_block)
 
         | _ ->
             (state, varinfo_to_block)
-    end (state, Types.VarinfoMap.empty) globals in
+    end (state, State.VarinfoMap.empty) globals in
     state
 
 

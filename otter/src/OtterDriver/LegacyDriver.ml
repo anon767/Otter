@@ -16,7 +16,7 @@ let main_loop get_job interceptor process_result job_queue reporter =
                     (job_queue, reporter)
         in
         run job_queue reporter
-    with Types.SignalException s ->
+    with State.SignalException s ->
         (* if we got a signal, stop and return the completed results *)
         Output.set_mode Output.MSG_MUSTPRINT;
         Output.printf "%s@\n" s;

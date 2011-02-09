@@ -5,7 +5,7 @@ open CilUtilities
 open OtterBytes
 open OtterCFG
 open Bytes
-open Types
+open State
 open Job
 
 let coverage_totals : (Cil.file, <lines : LineSet.t; blocks : StmtInfoSet.t; edges : EdgeSet.t; conds : CondSet.t>) Hashtbl.t = Hashtbl.create 0
@@ -163,9 +163,9 @@ class getGlobalInitVisitor = object (self)
 end
 
 
-(** Print the name and type of a {!Types.stmtInfo}.
+(** Print the name and type of a {!State.stmtInfo}.
 		@param ff is the formatter to which to print
-		@param fn is the {!Types.stmtInfo} to print
+		@param fn is the {!State.stmtInfo} to print
 *)
 let printStmtInfo ff si =
 	Format.fprintf ff "%s %d" si.siFuncName si.siStmt.Cil.sid;

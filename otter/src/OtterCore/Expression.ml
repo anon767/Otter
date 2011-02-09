@@ -4,7 +4,7 @@ open Cil
 open OtterBytes
 open Bytes
 open BytesUtility
-open Types
+open State
 
 (* Track Stp calls *)
 let timed_query_stp name pc pre guard = Timer.time name (fun () -> Stp.query_stp pc pre guard) ()

@@ -1,6 +1,6 @@
 open OcamlUtilities
 open CilUtilities
-open Types
+open State
 open Job
 
 let (@@) i1 i2 = fun a b -> i1 a b i2

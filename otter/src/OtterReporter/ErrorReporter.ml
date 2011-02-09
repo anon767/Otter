@@ -20,7 +20,7 @@ module Make (Errors : Errors) = struct
                         Output.printf "Error \"%a\"@ occurs at %a.@\n"
                             Errors.printer reason Printcil.loc loc;
                         if !Executeargs.arg_print_callstack then
-                            Output.printf "Call stack:@\n  @[%a@]@\n" (Printer.callingContext_list "@\n") state.Types.callContexts;
+                            Output.printf "Call stack:@\n  @[%a@]@\n" (Printer.callingContext_list "@\n") state.State.callContexts;
                         Output.printf "Abandoning path.@\n"
                 | _ ->
                     ()

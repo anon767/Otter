@@ -41,7 +41,7 @@ let fold_array f acc len_opt =
         @param typ is the type of the value to initialize
         @param points_to is a function for computing pointer targets to be passed to {!SymbolicPointers.init_pointer}
         @param exps is list of expressions, which are joined to compute the program value
-        @return [(Types.state, Bytes.bytes)] the updated symbolic state and the initialized variable
+        @return [(State.t, Bytes.bytes)] the updated symbolic state and the initialized variable
 *)
 let rec init_bytes_with_pointers ?scheme state typ points_to exps = match Cil.unrollType typ with
     | Cil.TPtr (Cil.TFun _, _) ->
@@ -156,10 +156,10 @@ let make file ?scheme ?(points_to=CilPtranal.points_to file) fn =
             SymbolicPointers.init_const_global state v None
         | Cil.GVar (v, { Cil.init = Some init }, _) when CilData.CilVar.is_const v ->
             SymbolicPointers.init_const_global state v (Some init)
-        | Cil.GVarDecl (v, _) | Cil.GVar (v, _, _) when not (Types.VarinfoMap.mem v state.Types.global) ->
+        | Cil.GVarDecl (v, _) | Cil.GVar (v, _, _) when not (State.VarinfoMap.mem v state.State.global) ->
             let deferred state = init_bytes_with_pointers ?scheme state v.Cil.vtype points_to [ (Cil.Lval (Cil.var v)) ] in
             let state, lval_block = SymbolicPointers.init_lval_block state v deferred in
-            { state with Types.global = Types.VarinfoMap.add v lval_block state.Types.global }
+            { state with State.global = State.VarinfoMap.add v lval_block state.State.global }
         | _ ->
             state
     end state file.Cil.globals in

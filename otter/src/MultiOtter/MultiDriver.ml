@@ -4,7 +4,7 @@ open OtterBytes
 open OtterCore
 open OtterReporter
 open OtterDriver
-open Types
+open State
 open Job
 
 open MultiTypes

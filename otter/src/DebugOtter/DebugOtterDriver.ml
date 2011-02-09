@@ -11,7 +11,7 @@ open OtterBytes
 open Bytes
 open BytesUtility
 open Job
-open Types
+open State
 open Printf
 
 (**/**)
@@ -202,7 +202,7 @@ let main_loop interceptor queue reporter =
                     (queue, reporter)
         in
         run (queue, reporter)
-    with Types.SignalException s ->
+    with State.SignalException s ->
         (* if we got a signal, stop and return the checkpoint results *)
         Output.set_mode Output.MSG_MUSTPRINT;
         Output.printf "%s@\n" s;

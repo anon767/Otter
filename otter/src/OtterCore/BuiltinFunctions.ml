@@ -11,7 +11,7 @@ open Cil
 open OtterBytes
 open Bytes
 open BytesUtility
-open Types
+open State
 open Job
 open Interceptor
 
@@ -739,7 +739,7 @@ let libc_setjmp job retopt exps errors =
 					| _ -> assert false
 			in
 			let stmtPtr = Source (retopt, job.stmt, (List.hd job.instrList), nextStmt) in
-			let state = {state with stmtPtrs = Types.IndexMap.add stmtPtrAddr stmtPtr state.stmtPtrs; } in
+			let state = {state with stmtPtrs = State.IndexMap.add stmtPtrAddr stmtPtr state.stmtPtrs; } in
 
 			let state, errors = set_return_value state retopt bytes__zero errors in
 			let job = end_function_call { job with state = state } in
@@ -783,7 +783,7 @@ let libc_longjmp job retopt exps errors =
 			in
 
 			let process_stmtPtr stmtPtrAddr errors =
-				let stmtPtr = Types.IndexMap.find stmtPtrAddr state.stmtPtrs in
+				let stmtPtr = State.IndexMap.find stmtPtrAddr state.stmtPtrs in
 				let retopt, stmt =
 					match stmtPtr with
 						| Source (r, _, _, s) -> r, s
