@@ -2,5 +2,5 @@
 #include <stdlib.h>
 
 uintmax_t strtoumax(const char * restrict nptr, char ** restrict endptr, int base) {
-    return strtoul(nptr, endptr, base);
+    return strtoull(nptr, endptr, base);
 }
