@@ -133,6 +133,7 @@ SYSCALL_FILES := \
 	unistd/getegid.c \
 	unistd/geteuid.c \
 	unistd/getgid.c \
+	unistd/gethostid.c \
 	unistd/getlogin.c \
 	unistd/getpagesize.c \
 	unistd/getpgid.c \
