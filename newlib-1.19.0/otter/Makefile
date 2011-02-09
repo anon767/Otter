@@ -104,6 +104,8 @@ SYSCALL_FILES := \
 	fcntl/__otter_fcntl.c \
 	fcntl/open.c \
 	grp/grp.c \
+	inttypes/strtoimax.c \
+	inttypes/strtoumax.c \
 	otter/otter_fs.c \
 	otter/otter_fs_util.c \
 	pthread/self.c \
