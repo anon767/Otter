@@ -116,6 +116,7 @@ SYSCALL_FILES := \
 	stdlib/realloc.c \
 	signal/signal.c \
 	sys/mman/mman.c \
+	sys/resource/getpriority.c \
 	sys/socket/__otter_socket.c \
 	sys/stat/__otter_stat.c \
 	sys/stat/fstat.c \
@@ -132,6 +133,7 @@ SYSCALL_FILES := \
 	unistd/getegid.c \
 	unistd/geteuid.c \
 	unistd/getgid.c \
+	unistd/getlogin.c \
 	unistd/getpagesize.c \
 	unistd/getpgid.c \
 	unistd/getpgrp.c \

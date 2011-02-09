@@ -19,6 +19,13 @@
 #define	PRIO_MIN	-20
 #define	PRIO_MAX	20
 
+/* id_t is supposed to be defined in sys/types.h
+ * But newlib's sys/types.h does not have it.
+ */
+#ifndef id_t
+typedef int id_t;
+#endif
+
 #include_next <sys/resource.h>
 
 #endif	/* !_SYS_RESOURCE_H_ */
