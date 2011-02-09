@@ -1,6 +1,7 @@
 open TestUtil.MyOUnit
 open TestUtil.OtterUtil
 open Format
+open OcamlUtilities
 open OtterBytes
 open OtterCore
 open Bytes
@@ -391,9 +392,178 @@ let undefined_calls_testsuite = "Undefined calls" >:::
     ]
 
 
+let function_pointer_calls_testsuite = "Function pointer calls" >:::
+    (* Test helper that checks that:
+            - the call stack contains only main() (i.e., function calls push and pop stack frames correctly);
+            - the right number of global variables and variables in main(), and nothing else, are allocated
+              in memory (i.e., memory blocks are allocated and deallocated appropriately);
+            - main() returns the expected values (to probe other behaviors).
+    *)
+    let test_function_pointer_calls ?label ~expect_return ?(expect_abandoned_count=0) content =
+        test_otter ?label content
+            begin fun completed_list ->
+                let expect_return, expect_abandoned_count =
+                    List.fold_left begin fun (expect_return, expect_abandoned_count) completed -> match completed with
+                        | Return (Some return, result) ->
+                            (* make sure that the call stack has only main() on it *)
+                            assert_equal
+                                ~eq:(list_equal (=))
+                                ~printer:(list_printer pp_print_string ",@ ")
+                                ~msg:"Call stack"
+                                [ "main" ]
+                                (List.map (fun x -> x.Cil.svar.Cil.vname) result.result_state.callstack);
+
+                            (* check the return value of main() *)
+                            let actual_return = try
+                                Bytes.bytes_to_int64_auto return
+                            with Failure _ ->
+                                assert_failure "Unexpected Return with symbolic code"
+                            in
+                            let expect_return = match ListPlus.remove_first (fun x -> Int64.of_int x = actual_return) expect_return with
+                                | Some (_, expect_return) -> expect_return
+                                | None -> assert_failure "Unexpected Return with code %Ld" actual_return
+                            in
+
+                            (* check that the right number of global variables and variables in main() are allocated *)
+                            let module VarInfoSet = Set.Make (struct type t = Cil.varinfo let compare = Pervasives.compare end) in
+                            let var_set = Cil.foldGlobals result.result_file begin fun var_set global -> match global with
+                                | Cil.GVarDecl (v, _)
+                                | Cil.GVar (v, _, _) when not (Cil.isFunctionType v.Cil.vtype) ->
+                                    VarInfoSet.add v var_set
+                                | Cil.GFun (fundec, _) when fundec.Cil.svar.Cil.vname = "main" ->
+                                    List.fold_left (fun var_set v -> VarInfoSet.add v var_set)
+                                        var_set (List.rev_append fundec.Cil.slocals fundec.Cil.sformals)
+                                | _ ->
+                                    var_set
+                            end VarInfoSet.empty in
+                            let block_count = MemoryBlockMap.fold (fun k v block_count -> block_count + 1)
+                                result.result_state.block_to_bytes 0 in
+                            assert_equal ~printer:pp_print_int ~msg:"Allocated blocks for variables"
+                                (VarInfoSet.cardinal var_set) block_count;
+
+                            (expect_return, expect_abandoned_count)
+                        | Job.Return _ ->
+                            assert_failure "Unexpected Return with no code"
+                        | Job.Abandoned _ when expect_abandoned_count > 0 ->
+                            (expect_return, expect_abandoned_count - 1)
+                        | Job.Abandoned (error, _, _) ->
+                            assert_failure "Unexpected Abandoned: %a" Errors.printer error
+                        | Job.Exit _ | Job.Truncated _ ->
+                            assert_failure "Unexpected Exit or Truncated"
+                    end (expect_return, expect_abandoned_count) completed_list
+                in
+
+                if expect_return <> [] then
+                    assert_failure "Did not find Return with code: @[%a@]" (FormatPlus.pp_print_list Format.pp_print_int "@ ") expect_return;
+
+                if expect_abandoned_count > 0 then
+                    assert_failure "Expected %d more Abandoned but none left" expect_abandoned_count
+            end
+    in
+    [
+        test_function_pointer_calls ~label:"Call with symbolic index"
+            ~expect_return:[ 0; 1; 2; 3 ]
+            "
+                int foo0(void) { return 0; }
+                int foo1(void) { return 1; }
+                int foo2(void) { return 2; }
+                int foo3(void) { return 3; }
+
+                typedef int (*FP)(void);
+
+                int main(void)
+                {
+                    FP a[4];
+                    a[0] = foo0;
+                    a[1] = foo1;
+                    a[2] = foo2;
+                    a[3] = foo3;
+
+                    unsigned int i;
+                    __SYMBOLIC(&i);
+                    __ASSUME(i < 4);
+                    return a[i]();
+                }
+            ";
+
+       test_function_pointer_calls ~label:"Call with symbolic pointer"
+            ~expect_return:[ 0; 1; 2; 3 ]
+            "
+                int foo0(void) { return 0; }
+                int foo1(void) { return 1; }
+                int foo2(void) { return 2; }
+                int foo3(void) { return 3; }
+
+                typedef int (*FP)(void);
+
+                int main(void) {
+                    FP a[4];
+                    a[0] = foo0;
+                    a[1] = foo1;
+                    a[2] = foo2;
+                    a[3] = foo3;
+
+                    unsigned int i;
+                    __SYMBOLIC(&i);
+                    __ASSUME(i < 4);
+                    FP x = a[i];
+                    return x();
+                }
+            ";
+
+        test_function_pointer_calls ~label:"Call on subset"
+            ~expect_return:[ 0; 1; 2 ]
+            "
+                int foo0(void) { return 0; }
+                int foo1(void) { return 1; }
+                int foo2(void) { return 2; }
+                int foo3(void) { return 3; }
+
+                typedef int (*FP)(void);
+
+                int main(void) {
+                    FP a[4];
+                    a[0] = foo0;
+                    a[1] = foo1;
+                    a[2] = foo2;
+                    a[3] = foo3;
+
+                    unsigned int i;
+                    __SYMBOLIC(&i);
+                    __ASSUME(i < 3);
+                    FP x = a[i];
+                    return x();
+                }
+            ";
+
+        test_function_pointer_calls ~label:"Bugs/Call with broken functions"
+            ~expect_return:[ 0; 1 ]
+            ~expect_abandoned_count:2 (* one NULL, one undefined should be reported, but currently aren't *)
+            "
+                int foo0(void) { return 0; }
+                int foo1(void) { return 1; }
+
+                typedef int (*FP)(int);
+
+                int main(void) {
+                    FP a[4];
+                    a[0] = foo0;
+                    a[1] = 0;
+                    a[2] = foo1;
+
+                    unsigned int i;
+                    __SYMBOLIC(&i);
+                    __ASSUME(i < 4);
+                    FP x = a[i];
+                    return x();
+                }
+            ";
+    ]
+
+
 let testsuite = "FunctionCalls" >::: [
     direct_calls_testsuite;
     undefined_calls_testsuite;
-    (* TODO: calls through function pointers testsuite *)
+    function_pointer_calls_testsuite;
 ]
 
