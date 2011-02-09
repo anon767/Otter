@@ -30,7 +30,7 @@ fgets(char * restrict str, int size, FILE * restrict stream) {
 
     if (size <= 0) abort();
     if (size > MAX_FGETS_LENGTH) size = MAX_FGETS_LENGTH;
-    __ASSUME(0 < symbolic_length, symbolic_length <= size);
+    __ASSUME(0 < symbolic_length && symbolic_length <= size);
 
     for (i = 0; i < symbolic_length; i++) {
         char c;

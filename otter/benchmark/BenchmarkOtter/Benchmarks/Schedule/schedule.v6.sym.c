@@ -354,7 +354,7 @@ void initialize()
 }
 
 /* test driver */
-void main(void)
+int main(void)
 {
     /* BEGIN_OTTER */
     int argc = MAXPRIO + 1;
@@ -370,7 +370,7 @@ void main(void)
     if (argc < (MAXPRIO+1))
     {
 	fprintf(stdout, "incorrect usage\n");
-	return;
+	return 0;
     }
     /* BEGIN_OTTER */
     for(i = 1; i <= MAXPRIO; i++) {
@@ -414,7 +414,7 @@ void main(void)
 	    ratio = OTTER_SYMBOLIC_FLOAT();
 	    if (prio > MAXPRIO || prio <= 0) {
 		fprintf(stdout, "** invalid priority\n");
-		return;
+		return 0;
 	    }
 	    else
 		upgrade_process_prio(prio, ratio);
@@ -423,7 +423,7 @@ void main(void)
 	    prio = OTTER_SYMBOLIC_INT();
 	    if (prio > MAXPRIO || prio <= 0) {
 		fprintf(stdout, "** invalid priority\n");
-		return;
+		return 0;
 	    }
 	    else
 		add_process(prio);
@@ -433,6 +433,7 @@ void main(void)
 	    break;
 	}
     }
+    return 0;
 }
 
 /* A simple input spec:

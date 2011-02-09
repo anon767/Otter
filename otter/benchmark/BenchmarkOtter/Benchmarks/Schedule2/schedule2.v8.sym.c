@@ -123,7 +123,7 @@ static struct queue prio_queue[MAXPRIO + 1]; /* blocked queue is [0] */
 
 
 
-void main(void)
+int main(void)
 {
     /* BEGIN_OTTER */
     int argc = MAXPRIO + 1;
@@ -161,6 +161,7 @@ void main(void)
     }
     if(status < 0) exit_here(status); /* Real bad error */
     exit_here(OK);
+    return 0;
 }
 
 int
