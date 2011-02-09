@@ -1,3 +1,5 @@
+open CilUtilities 
+
 type t =
     | DecisionConditional of Cil.stmt * bool (* if-statement *)
     | DecisionFuncall of Cil.instr * Cil.fundec (* function call *)
@@ -21,9 +23,9 @@ let print_decisions ff decisions =
     let print_decision ff decision =
         match decision with
         | DecisionConditional(stmt,truth) ->
-            Format.fprintf ff "Decision: @[%a@]: %s@\n" Printer.stmt_abbr stmt (if truth then "true" else "false")
+            Format.fprintf ff "Decision: @[%a@]: %s@\n" CilPrinter.stmt_abbr stmt (if truth then "true" else "false")
         | DecisionFuncall(instr,fundec) ->
-            Format.fprintf ff "Decision: @[%a@]@\n" Printer.fundec fundec
+            Format.fprintf ff "Decision: @[%a@]@\n" CilPrinter.fundec fundec
     in
     if decisions = [] then
         Format.fprintf ff "Decision: (none)@\n"

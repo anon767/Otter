@@ -6,6 +6,7 @@ This module contains a library of built-in functions for Otter.
 
 open DataStructures
 open OcamlUtilities
+open CilUtilities
 open Cil
 open OtterBytes
 open Bytes
@@ -186,15 +187,15 @@ let libc_free job = wrap_state_function begin fun state retopt exps errors ->
     match ptr with
       | Bytes_Address (block, offset) ->
             if block.memory_block_type != Block_type_Heap || not (bytes__equal offset bytes__zero)
-            then FormatPlus.failwith "Freeing a non-malloced pointer:@ @[%a@]@ = @[%a@]@\n" Printer.exp arg BytesPrinter.bytes ptr;
+            then FormatPlus.failwith "Freeing a non-malloced pointer:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp arg BytesPrinter.bytes ptr;
             if not (MemOp.state__has_block state block)
-            then FormatPlus.failwith "Double-free:@ @[%a@]@ = @[%a@]@\n" Printer.exp arg BytesPrinter.bytes ptr;
+            then FormatPlus.failwith "Double-free:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp arg BytesPrinter.bytes ptr;
             let state = MemOp.state__remove_block state block in
             (state, errors)
       | ptr when bytes__equal ptr bytes__zero -> (* Freeing a null pointer. Do nothing. *)
             (state, errors)
       | _ ->
-            FormatPlus.failwith "Freeing something that is not a valid pointer:@ @[%a@]@ = @[%a@]@\n" Printer.exp arg BytesPrinter.bytes ptr
+            FormatPlus.failwith "Freeing something that is not a valid pointer:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp arg BytesPrinter.bytes ptr
 end job
 
 

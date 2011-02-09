@@ -389,6 +389,7 @@ let printPath state hist =
 			 match getVal bytes with
 				 | None -> () (* Don't print anything for an unconstrained value *)
 				 | Some concreteByteArray ->
+                         (* FIXME: change bytes_to_constant so that it understands TArray *)
 						 match bytes_to_constant concreteByteArray varinf.vtype with
 							 | CInt64 (n,_,_) ->
 									 (* Is it okay to ignore the type? Or might we have to truncate? *)

@@ -127,14 +127,14 @@ let function_from_exp job instr fexp errors =
                     (fp, errors)
 
                 | _ ->
-                    FormatPlus.failwith "Non-constant function ptr not supported :@ @[%a@]" Printer.exp fexp
+                    FormatPlus.failwith "Non-constant function ptr not supported :@ @[%a@]" CilPrinter.exp fexp
             end
         | _ ->
-            FormatPlus.failwith "Non-constant function ptr not supported :@ @[%a@]" Printer.exp fexp
+            FormatPlus.failwith "Non-constant function ptr not supported :@ @[%a@]" CilPrinter.exp fexp
 
 let exec_fundec job instr fundec lvalopt exps errors =
     Output.set_mode Output.MSG_FUNC;
-    Output.printf "@[Enter function %a@]@\n" Printer.fundec fundec;
+    Output.printf "@[Enter function %a@]@\n" CilPrinter.fundec fundec;
 
     (* TODO: Profiler.start_fcall job fundec *)
 
@@ -252,7 +252,7 @@ let exec_stmt job errors =
     in
 
     Output.set_mode Output.MSG_STMT;
-    Output.printf "@[%a@\n@]" Printer.stmt_abbr stmt;
+    Output.printf "@[%a@\n@]" CilPrinter.stmt_abbr stmt;
     match stmt.skind with
         | Instr [] ->
              let nextStmt = match stmt.succs with [x] -> x | _ -> assert false in
@@ -430,7 +430,7 @@ let exec_stmt job errors =
                             } in
                             Output.set_mode Output.MSG_MUSTPRINT;
                             Output.printf "Branching on @[%a@]@ at %a.@\n"
-                            Printer.exp exp
+                            CilPrinter.exp exp
                             Printcil.loc loc;
                             if !Executeargs.arg_print_callstack then
                                 Output.printf "Call stack:@\n  @[%a@]@\n" (Printer.callingContext_list "@\n") state.callContexts;

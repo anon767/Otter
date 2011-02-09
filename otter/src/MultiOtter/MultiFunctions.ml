@@ -1,5 +1,6 @@
 open DataStructures
 open OcamlUtilities
+open CilUtilities
 open Cil
 open OtterCore
 open OtterBytes
@@ -92,11 +93,11 @@ let otter_gfree job multijob retopt exps errors =
 	match ptr with
 		| Bytes.Bytes_Address (block, _) ->
 			if block.Bytes.memory_block_type != Bytes.Block_type_Heap then
-				FormatPlus.failwith "gfreeing a non-gmalloced pointer:@ @[%a@]@ = @[%a@]@\n" Printer.exp (List.hd exps) BytesPrinter.bytes ptr
+				FormatPlus.failwith "gfreeing a non-gmalloced pointer:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp (List.hd exps) BytesPrinter.bytes ptr
 			else if not (MemoryBlockMap.mem block multijob.shared.shared_block_to_bytes) then
-				FormatPlus.failwith "gfreeing a non-gmalloced pointer or double-gfree:@ @[%a@]@ = @[%a@]@\n" Printer.exp (List.hd exps) BytesPrinter.bytes ptr
+				FormatPlus.failwith "gfreeing a non-gmalloced pointer or double-gfree:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp (List.hd exps) BytesPrinter.bytes ptr
 			else if not (MemoryBlockMap.mem block state.Types.block_to_bytes) then
-				FormatPlus.failwith "gfreeing after free:@ @[%a@]@ = @[%a@]@\n" Printer.exp (List.hd exps) BytesPrinter.bytes ptr
+				FormatPlus.failwith "gfreeing after free:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp (List.hd exps) BytesPrinter.bytes ptr
 			else
 				let multijob =
 					{multijob with
@@ -118,7 +119,7 @@ let otter_gfree job multijob retopt exps errors =
 
 		| _ ->
 			Output.set_mode Output.MSG_MUSTPRINT;
-			FormatPlus.failwith "gfreeing something that is not a valid pointer:@ @[%a@]@ = @[%a@]@\n" Printer.exp (List.hd exps) BytesPrinter.bytes ptr
+			FormatPlus.failwith "gfreeing something that is not a valid pointer:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp (List.hd exps) BytesPrinter.bytes ptr
 			
 let otter_get_pid job multijob retopt exps errors =
 	let state, errors = BuiltinFunctions.set_return_value job.state retopt (int_to_bytes multijob.current_metadata.pid) errors in

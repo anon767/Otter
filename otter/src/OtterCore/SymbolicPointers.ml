@@ -380,7 +380,7 @@ let init_pointer ?(scheme=(!default_scheme)) state points_to exps ?(maybe_null=t
 let init_lval_block state varinfo deferred =
     let deferred_lval_block state =
         (* make an extra block; for the case where the variable is not-aliased *)
-        let name = FormatPlus.as_string Printer.varinfo varinfo in
+        let name = FormatPlus.as_string CilPrinter.varinfo varinfo in
         let size = Cil.bitsSizeOf varinfo.Cil.vtype / 8 in
         let block = Bytes.block__make name size Bytes.Block_type_Aliased in
         let state = MemOp.state__add_deferred_block state block deferred in
@@ -410,14 +410,14 @@ let init_lval_block state varinfo deferred =
 *)
 let init_const_global state varinfo init_opt =
     if not (varinfo.Cil.vglob && CilData.CilVar.is_const varinfo) then
-        FormatPlus.invalid_arg "SymbolicPointers.init_const_global: %a is not a const global variable" Printer.varinfo varinfo;
+        FormatPlus.invalid_arg "SymbolicPointers.init_const_global: %a is not a const global variable" CilPrinter.varinfo varinfo;
 
     let state, block =
         try
             match Types.VarinfoMap.find varinfo state.Types.aliases with
                 | [ block ] when Deferred.is_forced (Types.VarinfoMap.find varinfo state.Types.global) -> (state, block)
                 | [] -> raise Not_found
-                | _ -> FormatPlus.invalid_arg "SymbolicPointers.init_const_global: %a already initialized" Printer.varinfo varinfo
+                | _ -> FormatPlus.invalid_arg "SymbolicPointers.init_const_global: %a already initialized" CilPrinter.varinfo varinfo
         with Not_found ->
             (* initialize the block with a dummy value first, for recursive initializations such as 'void * p = &p;' *)
             let state, block = MemOp.state__add_global state varinfo in

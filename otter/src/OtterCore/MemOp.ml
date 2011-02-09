@@ -23,10 +23,10 @@ let frame__varinfo_to_lval_block frame varinfo =
 
 
 let frame__add_varinfo frame block_to_bytes varinfo zero block_type =
-    if VarinfoMap.mem varinfo frame then FormatPlus.invalid_arg "MemOp.frame__add_varinfo: %a already exist" Printer.varinfo varinfo;
+    if VarinfoMap.mem varinfo frame then FormatPlus.invalid_arg "MemOp.frame__add_varinfo: %a already exist" CilPrinter.varinfo varinfo;
     let size = (Cil.bitsSizeOf varinfo.vtype) / 8 in
     let size = if size <= 0 then 1 else size in
-    let block = block__make (FormatPlus.as_string Printer.varinfo varinfo) size block_type in
+    let block = block__make (FormatPlus.as_string CilPrinter.varinfo varinfo) size block_type in
     let bytes = bytes__make_default size (if zero then byte__zero else byte__undef) in
     let frame = VarinfoMap.add varinfo (Deferred.Immediate (conditional__lval_block (block, bytes__zero))) frame in
     let block_to_bytes = MemoryBlockMap.add block (Deferred.Immediate bytes) block_to_bytes in
@@ -137,7 +137,7 @@ let state__has_block state block =
 
 
 let state__add_global state varinfo =
-    if not varinfo.Cil.vglob then FormatPlus.invalid_arg "MemOp.state__add_global: %a is not a global variable" Printer.varinfo varinfo;
+    if not varinfo.Cil.vglob then FormatPlus.invalid_arg "MemOp.state__add_global: %a is not a global variable" CilPrinter.varinfo varinfo;
     let block_type = if CilData.CilVar.is_const varinfo then Block_type_Const else Block_type_Global in
     let global, block_to_bytes, block = frame__add_varinfo state.global state.block_to_bytes varinfo true block_type in
     let state = { state with global = global; block_to_bytes = block_to_bytes } in
@@ -284,7 +284,7 @@ let state__start_fcall state callContext fundec argvs =
 let state__end_fcall state =
     (* TODO: move this to Statement *)
 	Output.set_mode Output.MSG_FUNC;
-	Output.printf "@[Exit function %a@]@\n" Printer.fundec (List.hd state.callstack);
+	Output.printf "@[Exit function %a@]@\n" CilPrinter.fundec (List.hd state.callstack);
 	let block_to_bytes = state.block_to_bytes in
 	let block_to_bytes = frame__clear_varinfos (List.hd state.locals) block_to_bytes in
 	let block_to_bytes = frame__clear_varinfos (List.hd state.formals) block_to_bytes in
