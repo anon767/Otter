@@ -14,4 +14,5 @@ OTTER_CMD="$NEWLIB_OTTER/otter-with-libc"
     --untracked-functions="$COREUTILS/libcoreutils_functions" \
     --untracked-functions="$COREUTILS/other_functions" \
     "$COREUTILS/__otter_main_driver.c" --mainfn=__otter_main_driver \
+    -lm \
     "$@"
