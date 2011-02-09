@@ -119,6 +119,7 @@ SYSCALL_FILES := \
 	signal/signal.c \
 	sys/mman/mman.c \
 	sys/resource/getpriority.c \
+	sys/select/select.c \
 	sys/socket/__otter_socket.c \
 	sys/stat/__otter_stat.c \
 	sys/stat/fstat.c \
