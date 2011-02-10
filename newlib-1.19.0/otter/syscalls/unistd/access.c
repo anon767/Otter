@@ -3,6 +3,12 @@
 #include <unistd.h>
 #include <errno.h>
 
+/* TODO:
+ * Look at some of the functions that access files or directories.  
+ * There is a helper function find_filename_and_dnode() (this should probably be prefixed with __otter_fs_) 
+ * that finds the dnode of the parent directory so that you can use the 
+ * __otter_fs_find_{inode,dnode}_in_dir() instead of traversing the path again.
+ */
 int access(const char *path, int amode) {
     int filep = 0;
 
