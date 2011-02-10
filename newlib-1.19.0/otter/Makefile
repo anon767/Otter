@@ -84,7 +84,7 @@ otter-ar: otter-ar.in
 	chmod +x $@
 
 gcc-with-libc:
-	echo gcc -m32 /usr/lib/crt1.o $(OPTIONS_FOR_USING_LIBC) \"$$\@\" > $@
+	echo gcc -m32 /usr/lib/crt1.o $(OPTIONS_FOR_USING_LIBC) $$(gcc -m32 -print-libgcc-file-name) \"$$\@\" > $@
 	chmod +x $@
 
 cilly-with-libc:
