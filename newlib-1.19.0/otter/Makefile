@@ -147,6 +147,7 @@ SYSCALL_FILES := \
 	unistd/getpid.c \
 	unistd/getppid.c \
 	unistd/getuid.c \
+	unistd/isatty.c \
 	unistd/lseek.c \
 	unistd/read.c \
 	unistd/readlink.c \
@@ -155,6 +156,7 @@ SYSCALL_FILES := \
 	unistd/setsid.c \
 	unistd/setuid.c \
 	unistd/sysconf.c \
+	unistd/ttyname.c \
 	unistd/unlink.c \
 	unistd/write.c
 SYSCALL_FILES := $(addprefix syscalls/,$(SYSCALL_FILES))
