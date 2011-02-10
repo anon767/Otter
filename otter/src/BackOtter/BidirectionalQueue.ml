@@ -283,7 +283,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                                     if caller == entry_fn then entry_job
                                                     else (
                                                         Output.debug_printf "Create new job for function %s@\n" caller.svar.vname;
-                                                        OtterJob.FunctionJob.make file ~points_to:(!default_points_to file) caller)
+                                                        new OtterJob.FunctionJob.t file ~points_to:(!default_points_to file) caller)
                                                 in
                                                 caller :: origin_fundecs, otherfn_jobqueue#put job
                                     ) (origin_fundecs, otherfn_jobqueue) callers

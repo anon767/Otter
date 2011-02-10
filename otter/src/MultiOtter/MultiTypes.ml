@@ -46,11 +46,13 @@ type shared_state = {
 	exHist : Job.executionHistory;
 }
 
-type multijob = {
+(* TODO: turn multijob into a subclass of Job.t *)
+type 'job multijob = {
 	file : Cil.file;
 	processes : (program_counter * local_state * process_metadata) list;
 	shared : shared_state;
 	jid : int;
 	next_pid : int;
 	current_metadata : process_metadata; (* this is preserved here when a job is running, since it can't be put in job or state *)
-}
+	initial_job : 'job; (* HACK: need to keep a job to modify since job is now polymorphic, and can't be simply constructed (the types won't match otherwise) *)
+} constraint 'job = _ #Job.t

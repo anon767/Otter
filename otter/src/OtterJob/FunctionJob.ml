@@ -142,35 +142,42 @@ let rec init_bytes_with_pointers ?scheme state typ points_to exps = match Cil.un
         @param fn is list the function at which to begin symbolic execution
         @return [OtterCore.Job.job] the created job
 *)
-let make file ?scheme ?(points_to=CilPtranal.points_to file) fn =
-    (* initialize the state with symbolic globals *)
-    let state = MemOp.state__empty in
+class ['self] t file ?scheme ?(points_to=CilPtranal.points_to file) fn =
+    object (self : 'self)
+        inherit ['self] OtterCore.Job.t file fn
+        initializer
+            let job = self in
+            let state = job#state in
 
-    (* first, setup global variables *)
-    let state = List.fold_left begin fun state g -> match g with
-        | Cil.GVarDecl (v, _) | Cil.GVar (v, _, _) when Cil.isFunctionType v.Cil.vtype ->
-            (* skip function prototypes; they're not variables *)
-            state
-        | Cil.GVarDecl (v, _) when CilData.CilVar.is_const v ->
-            (* forward declaration *)
-            SymbolicPointers.init_const_global state v None
-        | Cil.GVar (v, { Cil.init = Some init }, _) when CilData.CilVar.is_const v ->
-            SymbolicPointers.init_const_global state v (Some init)
-        | Cil.GVarDecl (v, _) | Cil.GVar (v, _, _) when not (State.VarinfoMap.mem v state.State.global) ->
-            let deferred state = init_bytes_with_pointers ?scheme state v.Cil.vtype points_to [ (Cil.Lval (Cil.var v)) ] in
-            let state, lval_block = SymbolicPointers.init_lval_block state v deferred in
-            { state with State.global = State.VarinfoMap.add v lval_block state.State.global }
-        | _ ->
-            state
-    end state file.Cil.globals in
+            (* first, setup global variables *)
+            let state = List.fold_left begin fun state g -> match g with
+                | Cil.GVarDecl (v, _) | Cil.GVar (v, _, _) when Cil.isFunctionType v.Cil.vtype ->
+                    (* skip function prototypes; they're not variables *)
+                    state
+                | Cil.GVarDecl (v, _) when CilData.CilVar.is_const v ->
+                    (* forward declaration *)
+                    SymbolicPointers.init_const_global state v None
+                | Cil.GVar (v, { Cil.init = Some init }, _) when CilData.CilVar.is_const v ->
+                    SymbolicPointers.init_const_global state v (Some init)
+                | Cil.GVarDecl (v, _) | Cil.GVar (v, _, _) when not (State.VarinfoMap.mem v state.State.global) ->
+                    let deferred state = init_bytes_with_pointers ?scheme state v.Cil.vtype points_to [ (Cil.Lval (Cil.var v)) ] in
+                    let state, lval_block = SymbolicPointers.init_lval_block state v deferred in
+                    { state with State.global = State.VarinfoMap.add v lval_block state.State.global }
+                | _ ->
+                    state
+            end state file.Cil.globals in
 
-    (* then, setup function arguments *)
-    (* TODO: handle varargs *)
-    let state, rev_args_bytes = List.fold_left begin fun (state, args_bytes) v ->
-        let state, bytes = init_bytes_with_pointers ?scheme state v.Cil.vtype points_to [ (Cil.Lval (Cil.var v)) ] in
-        (state, bytes::args_bytes)
-    end (state, []) fn.Cil.sformals in
+            (* then, setup function arguments *)
+            (* TODO: handle varargs *)
+            let state, rev_args_bytes = List.fold_left begin fun (state, args_bytes) v ->
+                let state, bytes = init_bytes_with_pointers ?scheme state v.Cil.vtype points_to [ (Cil.Lval (Cil.var v)) ] in
+                (state, bytes::args_bytes)
+            end (state, []) fn.Cil.sformals in
 
-    (* finally, prepare the function call job *)
-    OtterCore.Job.make file state fn (List.rev rev_args_bytes)
+            (* finally, enter the function *)
+            let state = MemOp.state__start_fcall state State.Runtime fn (List.rev rev_args_bytes) in
+
+            let job = job#with_state state in
+            self#become job
+    end
 

@@ -83,6 +83,7 @@ let run reporter job =
 			parent_pid = -2;
 			priority = Running;
 		};
+		initial_job = job;
 	} in
 	let multijob = put_job job multijob multijob.current_metadata in
 

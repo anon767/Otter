@@ -102,9 +102,9 @@ let test_otter_on_file
         Core.prepare_file file;
         let job =
             if entry_function = "main" then
-                FileJob.make file command_line
+                new FileJob.t file command_line
             else
-                FunctionJob.make file (FindCil.fundec_by_name file entry_function)
+                new FunctionJob.t file (FindCil.fundec_by_name file entry_function)
         in
         let reporter = new BasicReporter.t () in
 

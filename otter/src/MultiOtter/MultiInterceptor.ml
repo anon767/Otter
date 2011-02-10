@@ -5,7 +5,7 @@ open Job
 let (@@) = Interceptor.(@@)
 let (@@@) i1 i2 = fun a b c -> i1 a b c i2
 
-let intercept_multi_function_by_name_internal target_name replace_func job (multijob : MultiTypes.multijob) job_queue interceptor =
+let intercept_multi_function_by_name_internal target_name replace_func job multijob job_queue interceptor =
 	(* Replace a C function with Otter code *)
 	match job#instrList with
 		| (Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc) as instr)::_ when varinfo.Cil.vname = target_name ->
