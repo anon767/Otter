@@ -1,3 +1,4 @@
+#include <otter/otter_scheduler.h>
 #include <time.h>
 #include <errno.h>
 
