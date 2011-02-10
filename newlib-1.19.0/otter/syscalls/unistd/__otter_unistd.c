@@ -54,7 +54,7 @@ int __otter_libc_close(int fd)
 		
 		if(open_file->type == __otter_fs_TYP_SOCK) /* shutdown socket */
 		{
-			struct __otter_fs_sock_data* sock = (struct __otter_fs_sock_data*)((struct __otter_fs_inode*)(open_file->vnode))->data;
+			struct __otter_fs_sock_data* sock = __otter_libc_get_sock_data_from_open_file(open_file);
 			
 			switch(sock->state)
 			{
@@ -306,7 +306,7 @@ ssize_t __otter_libc_read_pipe(
 	}
 
 	int num = __otter_libc_read_pipe_data(pipe, buf, num);
-	if((pipe->rhead + 1) % __otter_fs_PIPE_SIZE == pipe->whead) /* set EOF if there are no more chars left to read */
+	if(__otter_fs_pipe_is_empty(pipe)) /* set EOF if there are no more chars left to read */
 	{
 		open_file->status = __otter_fs_STATUS_EOF;
 	}
@@ -337,8 +337,7 @@ ssize_t __otter_libc_read_socket(
 	void* buf,
 	size_t num)
 {
-	struct __otter_fs_inode* inode = (struct __otter_fs_inode*)open_file->vnode;
-	struct __otter_fs_sock_data* sock = (struct __otter_fs_sock_data*)inode->data;
+	struct __otter_fs_sock_data* sock = __otter_libc_get_sock_data_from_open_file(open_file);
 	
 	switch(sock->state)
 	{
@@ -373,8 +372,7 @@ ssize_t __otter_libc_write_socket(
 	void* buf,
 	size_t num)
 {
-	struct __otter_fs_inode* inode = (struct __otter_fs_inode*)open_file->vnode;
-	struct __otter_fs_sock_data* sock = (struct __otter_fs_sock_data*)inode->data;
+	struct __otter_fs_sock_data* sock = __otter_libc_get_sock_data_from_open_file(open_file);
 	
 	switch(sock->state)
 	{
