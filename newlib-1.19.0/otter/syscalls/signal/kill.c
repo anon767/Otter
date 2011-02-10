@@ -1,16 +1,12 @@
-#include "otter/otter_builtins.h"
+#include "otter/utils.h"
 
 #include <signal.h>
-#include <errno.h>
 
 int kill(pid_t pid, int sig) {
-    int success;
-    __SYMBOLIC(&success);
 
-    if (success) {
-        return 0;
-    } else {
-        __SYMBOLIC(&errno);
-        return -1;
-    }
+    __OTTER_POSSIBILY_FAILING_SYSCALL_BEGIN__
+
+    return 0;
+
+    __OTTER_POSSIBILY_FAILING_SYSCALL_END__
 }
