@@ -116,6 +116,7 @@ SYSCALL_FILES := \
 	stdlib/free.c \
 	stdlib/malloc.c \
 	stdlib/realloc.c \
+	signal/kill.c \
 	signal/signal.c \
 	sys/mman/mman.c \
 	sys/resource/getpriority.c \
