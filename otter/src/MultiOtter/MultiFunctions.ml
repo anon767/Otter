@@ -42,18 +42,18 @@ let libc_fork job multijob retopt exps errors =
 	(Active job, multijob, errors)
 
 (* allocates on the global heap *)
-let otter_gmalloc_size state size bytes loc =
+let otter_gmalloc_size job size bytes loc =
 	let name = FormatPlus.sprintf "%s(%d)#%d/%a%s"
-		(List.hd state#state.State.callstack).Cil.svar.Cil.vname
+		(List.hd job#state.State.callstack).Cil.svar.Cil.vname
 		size
 		(DataStructures.Counter.next BuiltinFunctions.libc___builtin_alloca__id)
 		Printcil.loc loc
-		(MemOp.state__trace state)
+		(MemOp.state__trace job)
 	in
 	let block = Bytes.block__make name size Bytes.Block_type_Heap in
 	let addrof_block = Bytes.make_Bytes_Address (block, Bytes.bytes__zero) in
-	let state = MemOp.state__add_block state block bytes in
-	(state, block, addrof_block)
+	let job = MemOp.state__add_block job block bytes in
+	(job, block, addrof_block)
 
 let otter_gmalloc job multijob retopt exps errors =
 	let job, b_size, errors = Expression.rval job (List.hd exps) errors in

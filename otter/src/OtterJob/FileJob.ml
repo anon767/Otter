@@ -6,25 +6,25 @@ open OtterCore
 
 let unreachable_global varinfo = not (Coverage.VarinfoSet.mem varinfo (!Coverage.reachable_globals))
 
-let init_globalvars state globals =
-    let state, _ = List.fold_left begin fun (state, varinfo_to_block) g -> match g with
+let init_globalvars job globals =
+    let job, _ = List.fold_left begin fun (job, varinfo_to_block) g -> match g with
         | Cil.GVar(varinfo, { Cil.init=Some init }, _)
                 when not (!Executeargs.arg_noinit_unreachable_globals && unreachable_global varinfo) ->
 
-            let state, block, varinfo_to_block =
+            let job, block, varinfo_to_block =
                 (* Initialize the block first, for recursive initializations such as 'int p = (int)&p;'. *)
                 try
-                    (state, State.VarinfoMap.find varinfo varinfo_to_block, varinfo_to_block)
+                    (job, State.VarinfoMap.find varinfo varinfo_to_block, varinfo_to_block)
                 with Not_found ->
-                    let state, block = MemOp.state__add_global state varinfo in
-                    (state, block, State.VarinfoMap.add varinfo block varinfo_to_block)
+                    let job, block = MemOp.state__add_global job varinfo in
+                    (job, block, State.VarinfoMap.add varinfo block varinfo_to_block)
             in
-            let state, bytes = Expression.evaluate_initializer state varinfo.Cil.vtype init in
+            let job, bytes = Expression.evaluate_initializer job varinfo.Cil.vtype init in
 
             Output.set_mode Output.MSG_REG;
             Output.printf "@[Initialize %s to@ @[%a@]@]@\n" varinfo.Cil.vname BytesPrinter.bytes bytes;
 
-            (MemOp.state__add_block state block bytes, varinfo_to_block)
+            (MemOp.state__add_block job block bytes, varinfo_to_block)
 
         | Cil.GVar(varinfo, _, _)
         | Cil.GVarDecl(varinfo, _)
@@ -36,13 +36,13 @@ let init_globalvars state globals =
             Output.set_mode Output.MSG_REG;
             Output.printf "@[Initialize %s to zeros@]@\n" varinfo.Cil.vname;
 
-            let state, block = MemOp.state__add_global state varinfo in
-            (state, State.VarinfoMap.add varinfo block varinfo_to_block)
+            let job, block = MemOp.state__add_global job varinfo in
+            (job, State.VarinfoMap.add varinfo block varinfo_to_block)
 
         | _ ->
-            (state, varinfo_to_block)
-    end (state, State.VarinfoMap.empty) globals in
-    state
+            (job, varinfo_to_block)
+    end (job, State.VarinfoMap.empty) globals in
+    job
 
 
 (* To initialize the arguments, we need to create a bytes which represents argc and
@@ -53,7 +53,7 @@ let init_globalvars state globals =
 	block is itself a byteArray of concrete byte-s (the characters in the arguments).
 	Because of the way things point to each other, we construct these three layers
 	bottom-up. *)
-let init_cmdline_argvs state argstr =
+let init_cmdline_argvs job argstr =
 	(* How many arguments were there? *)
 	let num_args = List.length argstr in
 
@@ -77,7 +77,7 @@ let init_cmdline_argvs state argstr =
 	let argv_strings_block = Bytes.block__make "argv_strings" ((String.length argv_strings) + 1) Bytes.Block_type_Local in
 
 	(* Map the block we just made to the bytes we just made *)
-	let state = MemOp.state__add_block state argv_strings_block argv_strings_bytes in
+	let job = MemOp.state__add_block job argv_strings_block argv_strings_bytes in
 
 	let charPtrSize = Cil.bitsSizeOf Cil.charPtrType / 8 in
 
@@ -102,7 +102,7 @@ let init_cmdline_argvs state argstr =
 		impl argstr 0 0 (Bytes.make_Bytes_ByteArray (ImmutableArray.make (num_args * charPtrSize) Bytes.byte__zero)) in
 
 	(* Map the pointers block to its bytes *)
-	let state = MemOp.state__add_block state argv_ptrs_block argv_ptrs_bytes in
+	let job = MemOp.state__add_block job argv_ptrs_block argv_ptrs_bytes in
 
 	(* Make the top-level address that is the actual argv. It is the address of
 		argv_ptrs_bytes. We do not have to map this to anything; we just pass it as the
@@ -110,7 +110,7 @@ let init_cmdline_argvs state argstr =
 	let argv = Bytes.make_Bytes_Address (argv_ptrs_block, Bytes.bytes__zero) in
 
 	(* Finally, return the updated state and the list of arguments *)
-	(state, [argc; argv])
+	(job, [argc; argv])
 
 
 (* create a job that begins at the main function of a file, with the initial state set up for the file *)

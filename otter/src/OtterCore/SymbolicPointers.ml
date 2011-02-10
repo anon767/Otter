@@ -155,7 +155,7 @@ let default_scheme = ref `TwoLevel
     so that pointers or their targets may be initialized to represent a number of aliases at once, to minimize the
     size of pointers and targets in the symbolic state.
 
-    Note: this module currently assumes that the initial symbolic state is completely initialized via this module and
+    Note: this module currently assumes that the initial symbolic job is completely initialized via this module and
     with the same pointer analysis.
 
         @param scheme optionally indicates the scheme to initialize symbolic pointers, which are
@@ -163,7 +163,7 @@ let default_scheme = ref `TwoLevel
                     - [`TwoLevel]: conditionals of bases, and conditionals of offsets for each distinct base,
                     - [`ConstraintOffset]: conditionals of bases, and symbolic offsets with constraints for each distinct base;
                 (default: [`TwoLevel])
-        @param state is the symbolic executor state in which to initialize the pointer
+        @param job is the symbolic executor job in which to initialize the pointer
         @param points_to is a function of type [Cil.exp -> (CilData.CilVar.t * Cil.offset) list * (CilData.Malloc.t * Cil.offset) list]
                 that takes an expression and returns the points-to targets of that expression as a list of variables
                 and offsets pairs, and a list of dynamic allocations sites distinguished by unique string names along
@@ -177,9 +177,9 @@ let default_scheme = ref `TwoLevel
                 deferred symbolic value is the join of the values of all the targets of the pointer; the target list
                 may be empty in the case where the target is only dynamically allocated, in which case the target type
                 as well as the pointer itself should be used to initialized the target
-        @return [(state, bytes)] the updated symbolic executor state and the initialized pointer value
+        @return [(job, bytes)] the updated symbolic executor job and the initialized pointer value
 *)
-let init_pointer ?(scheme=(!default_scheme)) state points_to exps ?(maybe_null=true) ?(maybe_uninit=false) block_name init_target =
+let init_pointer ?(scheme=(!default_scheme)) job points_to exps ?(maybe_null=true) ?(maybe_uninit=false) block_name init_target =
     (* find the points-to set for this pointer *)
     let target_lvals, target_mallocs = List.fold_left begin fun (target_lvals, target_mallocs) exp ->
         let t, m = points_to exp in
@@ -209,9 +209,9 @@ let init_pointer ?(scheme=(!default_scheme)) state points_to exps ?(maybe_null=t
         type_and_offsets_to_targets
     in
 
-    let state, target_bytes_set, _ = TypeAndOffsetSetMap.fold
-        begin fun (typ, offsets) (varinfos, mallocs) (state, target_bytes_set, count) ->
-            let state, map_offsets = match scheme with
+    let job, target_bytes_set, _ = TypeAndOffsetSetMap.fold
+        begin fun (typ, offsets) (varinfos, mallocs) (job, target_bytes_set, count) ->
+            let job, map_offsets = match scheme with
                 | `OneLevel ->
                     (* generate a list of bytes pointing to the given offsets in block *)
                     let map_offsets target_bytes_set block =
@@ -223,7 +223,7 @@ let init_pointer ?(scheme=(!default_scheme)) state points_to exps ?(maybe_null=t
                             BytesSet.add target_bytes target_bytes_set
                         end offsets target_bytes_set
                     in
-                    (state, map_offsets)
+                    (job, map_offsets)
 
                 | `TwoLevel ->
                     (* generate a bytes that represent the given offsets as a conditional value *)
@@ -243,7 +243,7 @@ let init_pointer ?(scheme=(!default_scheme)) state points_to exps ?(maybe_null=t
                         let target_bytes = Bytes.make_Bytes_Address (block, offset_bytes) in
                         BytesSet.add target_bytes target_bytes_set
                     in
-                    (state, map_offsets)
+                    (job, map_offsets)
 
                 | `ConstraintOffset ->
                     (* generate a bytes that represent the given offsets as a symbolic value with constraints *)
@@ -262,14 +262,14 @@ let init_pointer ?(scheme=(!default_scheme)) state points_to exps ?(maybe_null=t
                     let offset_constraints = ListPlus.foldm begin fun x y ->
                         Bytes.make_Bytes_Op (Bytes.OP_LOR, [ (x, Cil.intType); (y, Cil.intType) ])
                     end (BytesSet.elements offset_constraints_set) in
-                    let state = MemOp.state__add_path_condition state offset_constraints false in
+                    let job = MemOp.state__add_path_condition job offset_constraints false in
 
                     (* generate a list of bytes pointing to the given offsets in block *)
                     let map_offsets target_bytes_set block =
                         let target_bytes = Bytes.make_Bytes_Address (block, offset_bytes) in
                         BytesSet.add target_bytes target_bytes_set
                     in
-                    (state, map_offsets)
+                    (job, map_offsets)
             in
 
             (* conservatively make a fresh block and point to it; though this is really only necessary if we point into:
@@ -300,51 +300,51 @@ let init_pointer ?(scheme=(!default_scheme)) state points_to exps ?(maybe_null=t
             (* first figure out if we need to make a fresh block *)
             let need_fresh = not begin
                 MallocSet.is_empty mallocs
-                && VarinfoSet.for_all (fun v -> v.Cil.vglob && Deferred.is_forced (State.VarinfoMap.find v state#state.State.global)) varinfos
+                && VarinfoSet.for_all (fun v -> v.Cil.vglob && Deferred.is_forced (State.VarinfoMap.find v job#state.State.global)) varinfos
             end in
 
             if need_fresh then
                 (* has mallocs or locals or globals without allocated storage *)
                 (* TODO: currently, this only initializes a single element, rather than an array; should find some way to
                         figure out if this pointer points to arrays, and initialize it so *)
-                let state, block, target_bytes_set =
+                let job, block, target_bytes_set =
                     let size = Cil.bitsSizeOf typ / 8 in
                     let block = Bytes.block__make (FormatPlus.sprintf "%s#%d size(%d) type(%a)" block_name count size Printcil.typ typ) size Bytes.Block_type_Aliased in
                     let deferred = init_target typ (VarinfoSet.elements varinfos) (MallocSet.elements mallocs) in
-                    let state = MemOp.state__add_deferred_block state block deferred in
-                    (state, block, map_offsets target_bytes_set block)
+                    let job = MemOp.state__add_deferred_block job block deferred in
+                    (job, block, map_offsets target_bytes_set block)
                 in
 
                 (* conservatively point to all allocations in the list of allocations of each malloc site, and add the
                     above allocated fresh block to the list of allocations for each malloc site *)
-                let state, target_bytes_set = MallocSet.fold begin fun malloc (state, target_bytes_set) ->
-                    let blocks = try State.MallocMap.find malloc state#state.State.mallocs with Not_found -> [] in
-                    let state = state#with_state { state#state with State.mallocs = State.MallocMap.add malloc (block::blocks) state#state.State.mallocs } in
-                    (state, List.fold_left map_offsets target_bytes_set blocks)
-                end mallocs (state, target_bytes_set) in
+                let job, target_bytes_set = MallocSet.fold begin fun malloc (job, target_bytes_set) ->
+                    let blocks = try State.MallocMap.find malloc job#state.State.mallocs with Not_found -> [] in
+                    let job = job#with_state { job#state with State.mallocs = State.MallocMap.add malloc (block::blocks) job#state.State.mallocs } in
+                    (job, List.fold_left map_offsets target_bytes_set blocks)
+                end mallocs (job, target_bytes_set) in
 
                 (* conservatively point to all aliases in the list of aliases of each variable, and add the above allocated
                     fresh block to the list of aliases of each variable, except for global variables with allocated storage *)
-                let state, target_bytes_set = VarinfoSet.fold begin fun v (state, target_bytes_set) ->
-                    let blocks = try State.VarinfoMap.find v state#state.State.aliases with Not_found -> [] in
+                let job, target_bytes_set = VarinfoSet.fold begin fun v (job, target_bytes_set) ->
+                    let blocks = try State.VarinfoMap.find v job#state.State.aliases with Not_found -> [] in
                     (* assuming that deferred lval_blocks were set up by this module only *)
-                    let state = if v.Cil.vglob && Deferred.is_forced (State.VarinfoMap.find v state#state.State.global) then
-                        state
+                    let job = if v.Cil.vglob && Deferred.is_forced (State.VarinfoMap.find v job#state.State.global) then
+                        job
                     else
-                        state#with_state { state#state with State.aliases = State.VarinfoMap.add v (block::blocks) state#state.State.aliases }
+                        job#with_state { job#state with State.aliases = State.VarinfoMap.add v (block::blocks) job#state.State.aliases }
                     in
-                    (state, List.fold_left map_offsets target_bytes_set blocks)
-                end varinfos (state, target_bytes_set) in
-                (state, target_bytes_set, count + 1)
+                    (job, List.fold_left map_offsets target_bytes_set blocks)
+                end varinfos (job, target_bytes_set) in
+                (job, target_bytes_set, count + 1)
             else
                 (* no mallocs or locals, only globals with allocated storage *)
-                let state, target_bytes_set = VarinfoSet.fold begin fun v (state, target_bytes_set) ->
-                    let blocks = try State.VarinfoMap.find v state#state.State.aliases with Not_found -> [] in
-                    (state, List.fold_left map_offsets target_bytes_set blocks)
-                end varinfos (state, target_bytes_set) in
-                (state, target_bytes_set, count)
+                let job, target_bytes_set = VarinfoSet.fold begin fun v (job, target_bytes_set) ->
+                    let blocks = try State.VarinfoMap.find v job#state.State.aliases with Not_found -> [] in
+                    (job, List.fold_left map_offsets target_bytes_set blocks)
+                end varinfos (job, target_bytes_set) in
+                (job, target_bytes_set, count)
         end
-    type_and_offsets_to_targets (state, BytesSet.empty, 0) in
+    type_and_offsets_to_targets (job, BytesSet.empty, 0) in
 
     (* add a null pointer *)
     let target_bytes_set = if maybe_null then BytesSet.add Bytes.bytes__zero target_bytes_set else target_bytes_set in
@@ -362,76 +362,76 @@ let init_pointer ?(scheme=(!default_scheme)) state points_to exps ?(maybe_null=t
         let conditional_bytes_list = List.map Bytes.conditional__bytes (BytesSet.elements target_bytes_set) in
         Bytes.make_Bytes_Conditional (Bytes.conditional__from_list conditional_bytes_list)
     in
-    (state, target_bytes)
+    (job, target_bytes)
 
 
 
 (** Initialize a variable storage lazily and symbolically, taking into account aliases that may have been initialized
     via {!init_pointer} if necessary. The caller is responsible for assigning the storage to the variable.
 
-    Note: this module currently assumes that the initial symbolic state is completely initialized via this module and
+    Note: this module currently assumes that the initial symbolic job is completely initialized via this module and
     with the same pointer analysis.
 
-        @param state is the symbolic executor state in which to initialize the variable storage
+        @param job is the symbolic executor job in which to initialize the variable storage
         @param varinfo is the variable for which to initialize a storage
         @param deferred is the deferred symbolic value for the variable
-        @return [(state, lval_block)] the updated symbolic state and the initialized variable storage
+        @return [(job, lval_block)] the updated symbolic job and the initialized variable storage
 *)
-let init_lval_block state varinfo deferred =
-    let deferred_lval_block state =
+let init_lval_block job varinfo deferred =
+    let deferred_lval_block job =
         (* make an extra block; for the case where the variable is not-aliased *)
         let name = FormatPlus.as_string CilPrinter.varinfo varinfo in
         let size = Cil.bitsSizeOf varinfo.Cil.vtype / 8 in
         let block = Bytes.block__make name size Bytes.Block_type_Aliased in
-        let state = MemOp.state__add_deferred_block state block deferred in
-        let aliases = block::(try State.VarinfoMap.find varinfo state#state.State.aliases with Not_found -> []) in
-        let state = state#with_state { state#state with State.aliases = State.VarinfoMap.add varinfo aliases state#state.State.aliases } in
+        let job = MemOp.state__add_deferred_block job block deferred in
+        let aliases = block::(try State.VarinfoMap.find varinfo job#state.State.aliases with Not_found -> []) in
+        let job = job#with_state { job#state with State.aliases = State.VarinfoMap.add varinfo aliases job#state.State.aliases } in
 
         (* generate an lval to each block it may alias that was previously initialized via another pointer *)
         let target_list = List.map (fun block -> Bytes.conditional__lval_block (block, Bytes.bytes__zero)) aliases in
 
         (* finally, return a Lval_May pointing to the targets *)
-        (state, Bytes.conditional__from_list target_list)
+        (job, Bytes.conditional__from_list target_list)
     in
-    (state, Deferred.Deferred deferred_lval_block)
+    (job, Deferred.Deferred deferred_lval_block)
 
 
 
 (** Initialize const global variables immediately and concretely.
 
-    Note: this module currently assumes that the initial symbolic state is completely initialized via this module and
+    Note: this module currently assumes that the initial symbolic job is completely initialized via this module and
     with the same pointer analysis.
 
-        @param state is the symbolic executor state in which to initialize the const global variable
+        @param job is the symbolic executor job in which to initialize the const global variable
         @param varinfo is the const global variable to initialize
         @param init_opt is either [Some init], an initializer for the const global variable; or [None] for forward
                 declarations
-        @return [state] the symbolic state updated with the initialized const global variable
+        @return [job] the symbolic job updated with the initialized const global variable
 *)
-let init_const_global state varinfo init_opt =
+let init_const_global job varinfo init_opt =
     if not (varinfo.Cil.vglob && CilData.CilVar.is_const varinfo) then
         FormatPlus.invalid_arg "SymbolicPointers.init_const_global: %a is not a const global variable" CilPrinter.varinfo varinfo;
 
-    let state, block =
+    let job, block =
         try
-            match State.VarinfoMap.find varinfo state#state.State.aliases with
-                | [ block ] when Deferred.is_forced (State.VarinfoMap.find varinfo state#state.State.global) -> (state, block)
+            match State.VarinfoMap.find varinfo job#state.State.aliases with
+                | [ block ] when Deferred.is_forced (State.VarinfoMap.find varinfo job#state.State.global) -> (job, block)
                 | [] -> raise Not_found
                 | _ -> FormatPlus.invalid_arg "SymbolicPointers.init_const_global: %a already initialized" CilPrinter.varinfo varinfo
         with Not_found ->
             (* initialize the block with a dummy value first, for recursive initializations such as 'void * p = &p;' *)
-            let state, block = MemOp.state__add_global state varinfo in
-            let state = state#with_state { state#state with State.aliases = State.VarinfoMap.add varinfo [ block ] state#state.State.aliases } in
-            (state, block)
+            let job, block = MemOp.state__add_global job varinfo in
+            let job = job#with_state { job#state with State.aliases = State.VarinfoMap.add varinfo [ block ] job#state.State.aliases } in
+            (job, block)
     in
 
     match init_opt with
         | None ->
             (* forward declaration; nothing to do *)
-            state
+            job
         | Some init ->
-            let state, init_bytes = Expression.evaluate_initializer state varinfo.Cil.vtype init in
-            MemOp.state__add_block state block init_bytes
+            let job, init_bytes = Expression.evaluate_initializer job varinfo.Cil.vtype init in
+            MemOp.state__add_block job block init_bytes
 
 
 

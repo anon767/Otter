@@ -57,21 +57,21 @@ let get_lone_arg = function
   | _ -> failwith "This function takes exactly one argument"
 
 (** Convenience function to assign a value to an optional return lvalue.
-		@param state is the symbolic executor state in which to evaluate the return lvalue
+		@param job is the symbolic executor job in which to evaluate the return lvalue
 		@param retopt is the optional return lvalue
 		@param bytes is the value to assign to the return lvalue
-		@return the updated state
+		@return the updated job
 *)
-let set_return_value state retopt bytes errors =
+let set_return_value job retopt bytes errors =
 	(* TODO: also cast bytes to the expected return type of the function, since, according to
 	   cil/doc/api/Cil.html#TYPEinstr, the return lvalue may not match the return type of the
 	   function *)
 	match retopt with
 		| None ->
-			(state, errors)
+			(job, errors)
 		| Some cil_lval ->
-			let state, lval, errors = Expression.lval state cil_lval errors in
-			(MemOp.state__assign state lval bytes, errors)
+			let job, lval, errors = Expression.lval job cil_lval errors in
+			(MemOp.state__assign job lval bytes, errors)
 
 
 (** Convenience function to end a function call in a symbolic executor job with the standard epilogue of incrementing
