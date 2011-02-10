@@ -42,3 +42,10 @@ list:
 runotter:
 	sed "s|@OTTER_TRUNK@|\"$(PWD)/../..\"|" runotter.in > runotter && chmod +x runotter
 
+clean:
+	rm src/*_comb.c
+	rm libcoreutils_functions
+
+distclean: clean
+	make distclean
+
