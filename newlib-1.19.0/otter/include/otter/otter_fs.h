@@ -36,7 +36,7 @@ struct __otter_fs_inode
 	int numblocks;
 	int type;
 	int permissions;
-	char* data;
+	char* data; // This holds the file contents for a FILE, the pipe_data for a FIFO, and the sock_data for a SOCK. TODO: Change this to a void*.
 	int r_openno;
 	int w_openno;
 };
@@ -48,12 +48,20 @@ struct __otter_fs_pipe_data
 	char* data;
 };
 
+int __otter_fs_pipe_is_empty(struct __otter_fs_pipe_data *pipe);
+int __otter_fs_pipe_is_full(struct __otter_fs_pipe_data *pipe);
+
 struct __otter_fs_sock_data
 {
 	struct sockaddr* addr; /* bound ip and port */
 	int state; /* socket state machine */
 	int options;
+	/* The pipe holding incoming data on this socket */
 	struct __otter_fs_pipe_data* recv_data;
+	/* For a listening socket, sock_queue is an array (of length backlog) of
+		 sockets that have 'connect'ed to this socket. For established sockets, this
+		 is just a (double) pointer to the one other socket that is the other end of
+		 this socket pair. Outgoing data is written to that socket's recv_data. */
 	struct __otter_fs_sock_data** sock_queue;
 	int backlog;
 };
@@ -139,10 +147,12 @@ int __otter_fs_umask;
 // Utility functions
 struct __otter_fs_dnode* find_filename_and_dnode(const char* path, char** basename);
 struct __otter_fs_open_file_table_entry* get_open_file_from_fd(int fd);
+
 struct __otter_fs_pipe_data* __otter_fs_init_new_pipe_data(void);
+struct __otter_fs_pipe_data* __otter_libc_get_pipe_data_from_open_file(struct __otter_fs_open_file_table_entry* open_file);
+
 struct __otter_fs_sock_data* __otter_fs_init_new_socket_data(void);
 struct __otter_fs_inode* __otter_fs_init_new_socket(void);
 void   __otter_fs_free_socket(struct __otter_fs_inode* inode);
 
 #endif
-

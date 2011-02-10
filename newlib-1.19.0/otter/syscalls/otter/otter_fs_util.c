@@ -28,8 +28,7 @@ struct __otter_fs_dnode* find_filename_and_dnode(const char* path, char** basena
 	{
 		// Copy path so that we can truncate the string by writing a null in
 		// place of the last '/'.
-		char* name = malloc(strlen(path) + 1);
-		strcpy(name, path);
+		char* name = strdup(path);
 
 		name[basename_finder - path] = 0;
 
@@ -67,10 +66,23 @@ struct __otter_fs_open_file_table_entry* get_open_file_from_fd(int fd)
 struct __otter_fs_pipe_data* __otter_fs_init_new_pipe_data()
 {
 	struct __otter_fs_pipe_data* pipe = __otter_multi_gmalloc(sizeof(struct __otter_fs_pipe_data));
-	pipe->rhead = -1;
+	pipe->rhead = __otter_fs_PIPE_SIZE - 1;
 	pipe->whead = 0;
 	pipe->data = __otter_multi_gmalloc(__otter_fs_PIPE_SIZE);
 	return pipe;
+}
+
+struct __otter_fs_pipe_data *__otter_libc_get_pipe_data_from_open_file(struct __otter_fs_open_file_table_entry* open_file) {
+	__ASSERT(open_file->type == __otter_fs_TYP_FIFO);
+	return ((struct __otter_fs_inode*)open_file->vnode)->data;
+}
+
+int __otter_fs_pipe_is_empty(struct __otter_fs_pipe_data *pipe) {
+	return (pipe->rhead + 1) % __otter_fs_PIPE_SIZE == pipe->whead;
+}
+
+int __otter_fs_pipe_is_full(struct __otter_fs_pipe_data *pipe) {
+	return pipe->rhead == pipe->whead;
 }
 
 struct __otter_fs_sock_data* __otter_fs_init_new_socket_data()
