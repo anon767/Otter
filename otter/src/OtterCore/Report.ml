@@ -5,9 +5,9 @@ let print_report results =
         List.fold_left begin fun (coverage, completed, abandoned) result ->
             match result with
                 | Job.Return (_, c)
-                | Job.Exit (_, c)         -> (c::coverage, completed + 1, abandoned)
-                | Job.Abandoned (_, _, c) -> (c::coverage, completed, abandoned + 1)
-                | Job.Truncated _         -> (coverage, completed, abandoned) (* ignored *)
+                | Job.Exit (_, c)      -> (c::coverage, completed + 1, abandoned)
+                | Job.Abandoned (_, c) -> (c::coverage, completed, abandoned + 1)
+                | Job.Truncated _      -> (coverage, completed, abandoned) (* ignored *)
         end ([], 0, 0) results in
         (if completed = 0 then
             Output.printf "All %d paths had errors.\n" abandoned

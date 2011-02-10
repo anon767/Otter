@@ -125,10 +125,15 @@ module Make (Errors : Errors) = struct
     (** Helper to print Otter.Job.job_completion list. *)
     let results_printer list =
         let completion_printer ff = function
-            | Job.Exit (exit_opt, _) -> Format.fprintf ff "Exit(@[%a@])" (option_printer BytesPrinter.bytes) exit_opt
-            | Job.Return (return_opt, _) -> Format.fprintf ff "Return(@[%a@])" (option_printer BytesPrinter.bytes) return_opt
-            | Job.Abandoned (reason, loc, _) -> Format.fprintf ff "Abandoned(@[%s@@%d: %a@])" loc.Cil.file loc.Cil.line Errors.printer reason
-            | Job.Truncated (reason, _) -> Format.fprintf ff "Truncated(@[%a@])" Errors.printer reason
+            | Job.Exit (exit_opt, _) ->
+                Format.fprintf ff "Exit(@[%a@])" (option_printer BytesPrinter.bytes) exit_opt
+            | Job.Return (return_opt, _) ->
+                Format.fprintf ff "Return(@[%a@])" (option_printer BytesPrinter.bytes) return_opt
+            | Job.Abandoned (reason, job) ->
+                let loc = Job.get_loc job in
+                Format.fprintf ff "Abandoned(@[%s@@%d: %a@])" loc.Cil.file loc.Cil.line Errors.printer reason
+            | Job.Truncated (reason, _) ->
+                Format.fprintf ff "Truncated(@[%a@])" Errors.printer reason
         in
         list_printer completion_printer "@\n" list
 
@@ -236,7 +241,7 @@ module Make (Errors : Errors) = struct
         in
         let asserts' = assert_exps file loc asserts in
         let is_abandoned = function
-            | Job.Abandoned (reason, loc, result) -> reason' reason && asserts' result None None
+            | Job.Abandoned (reason, result) -> reason' reason && asserts' result None None
             | _ -> false
         in
         fun results k -> match ListPlus.remove_first is_abandoned results with

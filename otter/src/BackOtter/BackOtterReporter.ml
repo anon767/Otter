@@ -12,10 +12,10 @@ class ['self] t ?max_nodes ?max_paths ?max_abandoned
     method super_report = super#report
 
     method report result = match result with
-        | Job.Complete (Job.Abandoned (`FailureReached, _, _)) ->
+        | Job.Complete (Job.Abandoned (`FailureReached, _)) ->
             super#report result
 
-        | Job.Complete (Job.Abandoned (_, _, _)) when not exceptions_as_failures ->
+        | Job.Complete (Job.Abandoned (_, _)) when not exceptions_as_failures ->
             (* munge the statistics then call super indirectly *)
             (* TODO: break BasicReporter.report into smaller pieces and get rid of the ugly indirection *)
             {< abandoned = abandoned - 1 >}#super_report result

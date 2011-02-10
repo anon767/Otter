@@ -183,7 +183,7 @@ let exec_instr_call job instr lvalopt fexp exps errors =
                         exec_fundec job instr fundec lvalopt exps errors
                     with Failure msg ->
                         if !Executeargs.arg_failfast then failwith msg;
-                        (Complete (Abandoned (`Failure msg, Job.get_loc job, (job :> Job.job_result))), errors)
+                        (Complete (Abandoned (`Failure msg, job)), errors)
                 in
                 let func_list, errors = process_func_list t errors in
                 (job_state::func_list, errors)
@@ -203,6 +203,7 @@ let exec_instr job errors =
         Output.printf "%a@\n" Printcil.instr instr
     in
 
+    let old_job = job in
     let instr, tail = match job#instrList with i::tl -> (i, tl) | _ -> assert false in
     let job = job#with_instrList tail in
 
@@ -229,8 +230,8 @@ let exec_instr job errors =
             assert (tail = []);
             printInstr instr;
             exec_instr_call job instr lvalopt fexp exps errors
-        | Asm (_,_,_,_,_,loc) ->
-            (Complete (Abandoned (`Failure "Cannot handle assembly", loc, (job :> Job.job_result))), errors)
+        | Asm _ ->
+            (Complete (Abandoned (`Failure "Cannot handle assembly", old_job)), errors)
 
 let exec_stmt job errors =
     assert (job#instrList = []);
@@ -276,7 +277,7 @@ let exec_stmt job errors =
                     let job = job#with_exHist (nextExHist None) in
                     Output.set_mode Output.MSG_MUSTPRINT;
                     Output.printf "Program execution finished.@\n";
-                    (Complete (Return (retval, (job :> Job.job_result))), errors)
+                    (Complete (Return (retval, job)), errors)
                 | (Source (destOpt,callStmt,_,nextStmt))::_ ->
                         let state, errors =
                             match expopt, destOpt with
@@ -441,7 +442,7 @@ let errors_to_abandoned_list job errors =
     List.map begin fun (state, failing_condition, error) ->
         (* assert: failing_condition is never true *)
         let job = job#with_state { state with path_condition = failing_condition::state.path_condition } in
-        Complete (Abandoned (error, Job.get_loc job, (job :> Job.job_result)))
+        Complete (Abandoned (error, job))
     end errors
 
 
@@ -460,4 +461,4 @@ let step job job_queue =
     with
         | Failure msg ->
             if !Executeargs.arg_failfast then failwith msg;
-            (Complete (Abandoned (`Failure msg, Job.get_loc job, (job :> Job.job_result))), job_queue)
+            (Complete (Abandoned (`Failure msg, job)), job_queue)

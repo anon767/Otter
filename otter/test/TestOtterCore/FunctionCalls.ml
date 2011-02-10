@@ -360,9 +360,9 @@ let undefined_calls_testsuite = "Undefined calls" >:::
     let test_undefined_calls content ?label name =
         test_otter_core content ?label
             begin function
-                | [ Abandoned (`Failure msg, loc, result) ] when msg = "Function "^name^" not found." ->
+                | [ Abandoned (`Failure msg, result) ] when msg = "Function "^name^" not found." ->
                     ()
-                | [ Abandoned (reason, loc, result) ] ->
+                | [ Abandoned (reason, result) ] ->
                     assert_failure "Expected a single Abandoned `Failure \"Function %s not found\",@ but got Abandoned %a" name Errors.printer reason
                 | [ _ ] ->
                     assert_failure "Expected a single Abandoned, but got another completion result"
@@ -446,7 +446,7 @@ let function_pointer_calls_testsuite = "Function pointer calls" >:::
                             assert_failure "Unexpected Return with no code"
                         | Job.Abandoned _ when expect_abandoned_count > 0 ->
                             (expect_return, expect_abandoned_count - 1)
-                        | Job.Abandoned (error, _, _) ->
+                        | Job.Abandoned (error, _) ->
                             assert_failure "Unexpected Abandoned: %a" Errors.printer error
                         | Job.Exit _ | Job.Truncated _ ->
                             assert_failure "Unexpected Exit or Truncated"

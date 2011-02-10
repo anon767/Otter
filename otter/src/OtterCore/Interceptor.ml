@@ -82,7 +82,7 @@ let try_with_job_abandoned_interceptor try_interceptor job job_queue interceptor
     try 
         let result, jq = try_interceptor job job_queue (fun j jq -> (Job.Paused j, jq)) in
         match result with
-            | Job.Complete (Job.Abandoned (_, _, _)) -> interceptor job job_queue (* try_interceptor failed; move on *)
+            | Job.Complete (Job.Abandoned (_, _)) -> interceptor job job_queue (* try_interceptor failed; move on *)
             | Job.Paused j -> interceptor j jq (* try_interceptor passed on control *)
             | _ -> (result, jq) (* try_interceptor did not fail and did not pass on control *)
     with Failure _ ->

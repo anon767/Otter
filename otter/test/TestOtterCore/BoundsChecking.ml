@@ -113,7 +113,7 @@ let simple_testsuite = "Simple" >::: [
 			 expectedResultCounts 0 0 2 res;
 			 (* Make sure the path conditions are each length 1 *)
 			 match res with
-					 [Abandoned (_,_,res1); Abandoned (_,_,res2)] ->
+					 [Abandoned (_,res1); Abandoned (_,res2)] ->
 						 assert_equal 1 (List.length res1#state.path_condition)
 							 ~msg:"Incorrect path condition";
 						 assert_equal 1 (List.length res2#state.path_condition)

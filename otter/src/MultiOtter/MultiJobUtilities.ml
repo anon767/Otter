@@ -55,7 +55,7 @@ let put_job job multijob metadata =
 let put_completion completion multijob = match completion with
 	| Return (_, job_result)
 	| Exit (_, job_result)
-	| Abandoned (_, _, job_result)
+	| Abandoned (_, job_result)
 	| Truncated (_, job_result) ->
 		(* update process parents of children of the compleated process to point to the compleated process's parent *)
 		let processes = List.map

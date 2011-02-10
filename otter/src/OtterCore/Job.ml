@@ -73,14 +73,6 @@ let emptyHistory = {
 }
 
 
-class type job_result = object
-    method file : Cil.file
-    method state : State.t
-    method exHist : executionHistory
-    method decision_path : Decision.t list
-end
-
-
 class virtual job = object (self)
     (* TODO: perhaps use a camlp4 syntax extension to deal with this boilerplate? *)
     (* TODO: group methods into logical components that can be composed mix-in style *)
@@ -139,18 +131,19 @@ class virtual job = object (self)
 end
 
 
-type ('abandoned, 'truncated) job_completion =
-    | Return of Bytes.bytes option * job_result (* Jobs that successfully completed by returning from the entry function *)
-    | Exit of Bytes.bytes option * job_result (* Jobs that successfully completed by calling _exit *)
-    | Abandoned of 'abandoned * Cil.location * job_result (* Jobs that are terminated due to an error in the source program *)
-    | Truncated of 'truncated * job_result (* Jobs that are terminated for other reasons *)
-    (* TODO: change Abandoned to be like Truncated *)
+type ('abandoned, 'truncated, 'job) job_completion =
+    | Return of Bytes.bytes option * 'job (* Jobs that successfully completed by returning from the entry function *)
+    | Exit of Bytes.bytes option * 'job (* Jobs that successfully completed by calling _exit *)
+    | Abandoned of 'abandoned * 'job (* Jobs that are terminated due to an error in the source program *)
+    | Truncated of 'truncated * 'job (* Jobs that are terminated for other reasons *)
+    constraint 'job = #job
 
-type ('abandoned, 'truncated) job_state =
-	| Active of job
-	| Fork of ('abandoned, 'truncated) job_state list
-	| Complete of ('abandoned, 'truncated) job_completion
-	| Paused of job
+type ('abandoned, 'truncated, 'job) job_state =
+    | Active of 'job
+    | Fork of ('abandoned, 'truncated, 'job) job_state list
+    | Complete of ('abandoned, 'truncated, 'job) job_completion
+    | Paused of 'job
+    constraint 'job = #job
 
 let job_counter = Counter.make ()
 let job_counter_unique = Counter.make ()

@@ -25,7 +25,7 @@ object (_ : 'self)
 
         (* convert executions that report repeated abandoned paths to Truncated *)
         let job_state = match job_state with
-            | Job.Complete (Job.Abandoned (`FailureReached , location , job_result)) ->
+            | Job.Complete (Job.Abandoned (`FailureReached, job_result)) ->
                 let fundec = BackOtterUtilities.get_origin_function_from_job_result job_result in
                 (* Failing path has least recent decision first. See the comment in BidirectionalQueue. *)
                 let failing_path = List.rev job_result#decision_path in
@@ -33,9 +33,9 @@ object (_ : 'self)
                     targets_ref := BackOtterTargets.add fundec failing_path (!targets_ref);
                     job_state
                 with Invalid_argument _ ->
-                    Job.Complete (Job.Truncated (`SummaryAbandoned (`FailureReached, location), job_result))
+                    Job.Complete (Job.Truncated (`SummaryAbandoned (`FailureReached, Job.get_loc job_result), job_result))
                 end
-            | Job.Complete (Job.Abandoned (`Failure msg, location, job_result)) when !BackOtterReporter.arg_exceptions_as_failures ->
+            | Job.Complete (Job.Abandoned (`Failure msg, job_result)) when !BackOtterReporter.arg_exceptions_as_failures ->
                 let fundec = BackOtterUtilities.get_origin_function_from_job_result job_result in
                 (* Failing path has least recent decision first. See the comment in BidirectionalQueue. *)
                 let failing_path = List.rev job_result#decision_path in
@@ -43,7 +43,7 @@ object (_ : 'self)
                     targets_ref := BackOtterTargets.add fundec failing_path (!targets_ref);
                     job_state
                 with Invalid_argument _ ->
-                    Job.Complete (Job.Truncated (`SummaryAbandoned (`Failure msg, location), job_result))
+                    Job.Complete (Job.Truncated (`SummaryAbandoned (`Failure msg, Job.get_loc job_result), job_result))
                 end
             | _ ->
                 job_state
@@ -56,9 +56,9 @@ object (_ : 'self)
             | Job.Complete (Job.Exit (return_code, job_result))
                     when BackOtterUtilities.get_origin_function_from_job_result job_result != entry_fn ->
                 Job.Complete (Job.Truncated (`SummaryExit return_code, job_result))
-            | Job.Complete (Job.Abandoned (reason, location, job_result))
+            | Job.Complete (Job.Abandoned (reason, job_result))
                     when BackOtterUtilities.get_origin_function_from_job_result job_result != entry_fn ->
-                Job.Complete (Job.Truncated (`SummaryAbandoned (reason, location), job_result))
+                Job.Complete (Job.Truncated (`SummaryAbandoned (reason, Job.get_loc job_result), job_result))
             | _ ->
                 job_state
         in
@@ -72,10 +72,10 @@ object (_ : 'self)
             Output.debug_printf "@[%a@]@\n@\n" Decision.print_decisions failing_path;
         in
         begin match original_job_state with
-            | Job.Complete (Job.Abandoned (`FailureReached, _ , job_result)) ->
+            | Job.Complete (Job.Abandoned (`FailureReached, job_result)) ->
                 Output.printf "target_tracker: FailureReached@\n";
                 print_failing_path job_result
-            | Job.Complete (Job.Abandoned (`Failure msg, _, job_result)) when !BackOtterReporter.arg_exceptions_as_failures ->
+            | Job.Complete (Job.Abandoned (`Failure msg, job_result)) when !BackOtterReporter.arg_exceptions_as_failures ->
                 Output.printf "target_tracker: Failure (%s)@\n" msg;
                 print_failing_path job_result
             | _ -> ()
@@ -109,7 +109,7 @@ let set_output_formatter_interceptor job job_queue interceptor =
 let line_target_interceptor job job_queue interceptor =
     let loc = Job.get_loc job in
     if List.mem (loc.Cil.file, loc.Cil.line) (!arg_line_targets) then
-        Complete (Abandoned (`FailureReached, loc, (job :> Job.job_result))), job_queue
+        Complete (Abandoned (`FailureReached, job)), job_queue
     else
         interceptor job job_queue
 

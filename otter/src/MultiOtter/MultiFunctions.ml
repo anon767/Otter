@@ -275,4 +275,4 @@ let interceptor job multijob job_queue interceptor =
 		) job multijob job_queue
 	with Failure msg ->
 		if !Executeargs.arg_failfast then failwith msg;
-		(Complete (Abandoned (`Failure msg, Job.get_loc job, (job :> Job.job_result))), (multijob, job_queue))
+		(Complete (Abandoned (`Failure msg, job)), (multijob, job_queue))

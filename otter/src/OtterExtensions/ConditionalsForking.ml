@@ -74,7 +74,7 @@ let interceptor ?(limit=8) job param k =
                             (* TODO: Failure really needs to go, ditch this once OtterCore has been switched over to using errors *)
                             if !Executeargs.arg_failfast then failwith msg;
                             let job = job#with_state old_state in
-                            (Job.Complete (Job.Abandoned (`Failure msg, Job.get_loc job, (job :> Job.job_result)))::abandoned, EfficientSequence.empty)
+                            (Job.Complete (Job.Abandoned (`Failure msg, job))::abandoned, EfficientSequence.empty)
                     end abandoned states
                 end ([], EfficientSequence.singleton job#state) !cil_lvals
             in

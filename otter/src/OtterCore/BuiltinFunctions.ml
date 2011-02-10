@@ -336,7 +336,7 @@ let libc_exit job retopt exps errors =
 				Output.printf "exit() called with code (NONE)@\n";
 				(None, errors)
 	in
-	(Job.Complete (Job.Exit (exit_code, (job :> Job.job_result))), errors)
+	(Job.Complete (Job.Exit (exit_code, job)), errors)
 
 let otter_evaluate job = wrap_state_function begin fun state retopt exps errors ->
 	let state, bytes, errors = eval_join_exps state exps Cil.LAnd errors in
@@ -437,8 +437,7 @@ end job
  * general `Failure.
  * TODO: make __FAILURE take a string of failure description. *)
 let otter_failure job retopt exps errors =
-    let loc = Job.get_loc job in
-    let job_state = Job.Complete (Job.Abandoned (`FailureReached, loc, (job :> Job.job_result))) in
+    let job_state = Job.Complete (Job.Abandoned (`FailureReached, job)) in
     job_state, errors
 
 let otter_assert job retopt exps errors =
@@ -452,7 +451,7 @@ let otter_assert job retopt exps errors =
     let failure = (* Construct the failing job_state directly; there's no need to use 'errors' here. *)
         let state = MemOp.state__add_path_condition state (logicalNot assertion) true in
         let job = job#with_state state in
-        Job.Complete (Job.Abandoned (`AssertionFailure exp, Job.get_loc job, (job :> Job.job_result)))
+        Job.Complete (Job.Abandoned (`AssertionFailure exp, job))
     in
     match MemOp.eval state.path_condition assertion with
       | Ternary.True -> (active job, errors) (* assertion passes; do nothing *)
@@ -932,7 +931,7 @@ let interceptor job job_queue interceptor =
 		) job job_queue
 	with Failure msg ->
 		if !Executeargs.arg_failfast then failwith msg;
-		(Job.Complete (Job.Abandoned (`Failure msg, Job.get_loc job, (job :> Job.job_result))), job_queue) (* TODO (see above) *)
+		(Job.Complete (Job.Abandoned (`Failure msg, job)), job_queue) (* TODO (see above) *)
 
 let libc_interceptor job job_queue interceptor =
 	try
@@ -1116,4 +1115,4 @@ let libc_interceptor job job_queue interceptor =
 		) job job_queue
 	with Failure msg ->
 		if !Executeargs.arg_failfast then failwith msg;
-		(Job.Complete (Job.Abandoned (`Failure msg, Job.get_loc job, (job :> Job.job_result))), job_queue)
+		(Job.Complete (Job.Abandoned (`Failure msg, job)), job_queue)

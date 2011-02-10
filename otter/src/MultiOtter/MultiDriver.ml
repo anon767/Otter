@@ -61,7 +61,7 @@ let rec flush_queue reporter job_queue =
 	match get_job_multijob job_queue with
 		| None -> reporter
 		| Some (job, (multijob, job_queue)) ->
-			let reporter = reporter#report (Complete (Abandoned (`Failure "Killed by signal", Job.get_loc job, (job :> Job.job_result)))) in
+			let reporter = reporter#report (Complete (Abandoned (`Failure "Killed by signal", job))) in
 			flush_queue reporter job_queue
 
 let run reporter job =

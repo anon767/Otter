@@ -30,7 +30,7 @@ let repack_job_interceptor job multijob job_queue interceptor =
 let abandon_io_block_deadlock_interceptor job multijob job_queue interceptor =
     match multijob.current_metadata.priority with
       | IOBlock _ -> (* The best job availiable is blocking. This is a deadlock. Each job will be abandoned one at a time. *)
-            (Complete (Abandoned (`Failure "Deadlock", Job.get_loc job, (job :> Job.job_result))), (multijob, job_queue))
+            (Complete (Abandoned (`Failure "Deadlock", job)), (multijob, job_queue))
       | TimeWait _ -> (* If we choose a TimeWait, convert it to a Running rather than just letting its time tick down *)
             interceptor job { multijob with current_metadata = { multijob.current_metadata with priority = Running } } job_queue
       | _ -> interceptor job multijob job_queue
