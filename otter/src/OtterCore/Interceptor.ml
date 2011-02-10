@@ -1,7 +1,7 @@
 open OcamlUtilities
 open CilUtilities
 open State
-open Job
+
 
 let (@@) i1 i2 = fun a b -> i1 a b i2
 let (>>>) i1 i2 = fun a b k -> i1 a b (fun a b -> i2 a b k)
@@ -11,25 +11,25 @@ let identity_interceptor job job_queue interceptor =
 
 let old_job_id = ref 0
 let set_output_formatter_interceptor job job_queue interceptor =
-    if !old_job_id <> job.jid then (
+    if !old_job_id <> job#jid then (
         Output.set_mode Output.MSG_REG;
         Output.printf "***** Changing running job *****@\n";
-        old_job_id := job.jid
+        old_job_id := job#jid
     );
-    let depth = List.length job.state.path_condition in
+    let depth = List.length job#state.path_condition in
     let loc = Job.get_loc job in
     let label =
         if loc = Cil.locUnknown then
-            Format.sprintf "[%d,%d] : " job.jid depth
+            Format.sprintf "[%d,%d] : " job#jid depth
         else
-            Format.sprintf "[%d,%d] %s:%d : " job.jid depth (Filename.basename loc.Cil.file) loc.Cil.line
+            Format.sprintf "[%d,%d] %s:%d : " job#jid depth (Filename.basename loc.Cil.file) loc.Cil.line
     in
     Output.set_formatter (new Output.labeled label);
     interceptor job job_queue
 
 let intercept_function_by_name_internal target_name replace_func job job_queue interceptor =
 	(* Replace a C function with Otter code *)
-	match job.instrList with
+	match job#instrList with
 		| (Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc) as instr)::_ when varinfo.Cil.vname = target_name ->
 			Output.set_mode Output.MSG_STMT;
 			Output.printf "%a@\n" Printcil.instr instr;
@@ -38,18 +38,18 @@ let intercept_function_by_name_internal target_name replace_func job job_queue i
 				(job_state, job_queue)
 			else
 				let abandoned_job_states = Statement.errors_to_abandoned_list job errors in
-				(Fork (job_state::abandoned_job_states), job_queue)
+				(Job.Fork (job_state::abandoned_job_states), job_queue)
 		| _ ->
 			interceptor job job_queue
 
 let intercept_function_by_name_external target_name replace_name job job_queue interceptor =
 	(* Replace a C function with another C function *)
-	match job.instrList with
+	match job#instrList with
 		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::t when varinfo.Cil.vname = target_name ->
 			let job =
 				try
-					let fundec = FindCil.fundec_by_name job.file replace_name in
-					{ job with instrList = Cil.Call(retopt, Cil.Lval(Cil.Var(fundec.Cil.svar), Cil.NoOffset), exps, loc)::t }
+					let fundec = FindCil.fundec_by_name job#file replace_name in
+					job#with_instrList (Cil.Call(retopt, Cil.Lval(Cil.Var(fundec.Cil.svar), Cil.NoOffset), exps, loc)::t)
 				with Not_found ->
 					FormatPlus.failwith "Cannot find fundec for %s" replace_name
 			in
@@ -62,29 +62,29 @@ let intercept_function_by_name_external target_name replace_name job job_queue i
 
 let intercept_function_by_name_external_cascading target_name replace_name job job_queue interceptor =
 	(* Replace a C function with another C function *)
-	match job.instrList with
+	match job#instrList with
 		| Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc)::t when varinfo.Cil.vname = target_name ->
 			let job =
 				try
-					let fundec = FindCil.fundec_by_name job.file replace_name in
-					{ job with instrList = Cil.Call(retopt, Cil.Lval(Cil.Var(fundec.Cil.svar), Cil.NoOffset), exps, loc)::t }
+					let fundec = FindCil.fundec_by_name job#file replace_name in
+					job#with_instrList (Cil.Call(retopt, Cil.Lval(Cil.Var(fundec.Cil.svar), Cil.NoOffset), exps, loc)::t)
 				with Not_found ->
 					FormatPlus.failwith "Cannot find fundec for %s" replace_name
 			in
 			Output.set_mode Output.MSG_REG;
 			Output.printf "Transformed Call %s to Call %s@\n" target_name replace_name;
 			(* allow any intercepters to transform the name again *)
-			(Active job, job_queue)
+			(Job.Active job, job_queue)
 		| _ ->
 			interceptor job job_queue
 
 let try_with_job_abandoned_interceptor try_interceptor job job_queue interceptor =
     try 
-	    let result, jq = try_interceptor job job_queue (fun j jq -> (Paused j, jq)) in
-	    match result with
-	    	| Complete (Abandoned (_, _, _)) -> interceptor job job_queue (* try_interceptor failed; move on *)
-	    	| Paused j -> interceptor j jq (* try_interceptor passed on control *)
-	    	| _ -> (result, jq) (* try_interceptor did not fail and did not pass on control *)
+        let result, jq = try_interceptor job job_queue (fun j jq -> (Job.Paused j, jq)) in
+        match result with
+            | Job.Complete (Job.Abandoned (_, _, _)) -> interceptor job job_queue (* try_interceptor failed; move on *)
+            | Job.Paused j -> interceptor j jq (* try_interceptor passed on control *)
+            | _ -> (result, jq) (* try_interceptor did not fail and did not pass on control *)
     with Failure _ ->
         (* TODO: log this *)
         interceptor job job_queue

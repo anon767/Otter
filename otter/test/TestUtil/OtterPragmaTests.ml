@@ -139,7 +139,7 @@ module Make (Errors : Errors) = struct
         and [__exit_code__] correspond to the values returned from [main()] and via [exit()] respectively.
      *)
     let assert_exp file loc exp result return_opt exit_opt =
-        let file, state = result.Job.result_file, result.Job.result_state in
+        let file, state = result#file, result#state in
 
         (* translate from Cil.attrparam to bytes *)
         let rec parse_exp state = function

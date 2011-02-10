@@ -48,14 +48,14 @@ let direct_calls_testsuite = "Direct calls" >:::
                         ~printer:(list_printer pp_print_string ",@ ")
                         ~msg:"Call stack"
                         [ "main" ]
-                        (List.map (fun x -> x.Cil.svar.Cil.vname) result.result_state.callstack);
+                        (List.map (fun x -> x.Cil.svar.Cil.vname) result#state.callstack);
 
                     (* check the values of specific global variables and variables in main() *)
                     let not_found, unequal, errors = List.fold_left begin fun (not_found, unequal, errors) (name, bytes) ->
                         let rec find = function
                             | Cil.GVarDecl (v, _)::_
                             | Cil.GVar (v, _, _)::_ when v.Cil.vname = name ->
-                                let _, actual, errors = Expression.rval result.result_state (Cil.Lval (Cil.var v)) errors in
+                                let _, actual, errors = Expression.rval result#state (Cil.Lval (Cil.var v)) errors in
                                 if bytes__equal actual bytes then
                                     (not_found, unequal, errors)
                                 else
@@ -65,7 +65,7 @@ let direct_calls_testsuite = "Direct calls" >:::
                             | _::tail ->
                                 find tail
                         in
-                        find result.result_file.Cil.globals
+                        find result#file.Cil.globals
                     end ([], [], []) match_globals in
 
                     if errors <> [] then
@@ -88,7 +88,7 @@ let direct_calls_testsuite = "Direct calls" >:::
 
                     (* check that the right number of global variables and variables in main() are allocated *)
                     let module VarInfoSet = Set.Make (struct type t = Cil.varinfo let compare = Pervasives.compare end) in
-                    let var_set = Cil.foldGlobals result.result_file begin fun var_set global -> match global with
+                    let var_set = Cil.foldGlobals result#file begin fun var_set global -> match global with
                         | Cil.GVarDecl (v, _)
                         | Cil.GVar (v, _, _) when not (Cil.isFunctionType v.Cil.vtype) ->
                             VarInfoSet.add v var_set
@@ -99,7 +99,7 @@ let direct_calls_testsuite = "Direct calls" >:::
                             var_set
                     end VarInfoSet.empty in
                     let block_count = MemoryBlockMap.fold (fun k v block_count -> block_count + 1)
-                        result.result_state.block_to_bytes 0 in
+                        result#state.block_to_bytes 0 in
                     assert_equal ~printer:pp_print_int ~msg:"Allocated blocks for variables"
                         (VarInfoSet.cardinal var_set) block_count
 
@@ -411,7 +411,7 @@ let function_pointer_calls_testsuite = "Function pointer calls" >:::
                                 ~printer:(list_printer pp_print_string ",@ ")
                                 ~msg:"Call stack"
                                 [ "main" ]
-                                (List.map (fun x -> x.Cil.svar.Cil.vname) result.result_state.callstack);
+                                (List.map (fun x -> x.Cil.svar.Cil.vname) result#state.callstack);
 
                             (* check the return value of main() *)
                             let actual_return = try
@@ -426,7 +426,7 @@ let function_pointer_calls_testsuite = "Function pointer calls" >:::
 
                             (* check that the right number of global variables and variables in main() are allocated *)
                             let module VarInfoSet = Set.Make (struct type t = Cil.varinfo let compare = Pervasives.compare end) in
-                            let var_set = Cil.foldGlobals result.result_file begin fun var_set global -> match global with
+                            let var_set = Cil.foldGlobals result#file begin fun var_set global -> match global with
                                 | Cil.GVarDecl (v, _)
                                 | Cil.GVar (v, _, _) when not (Cil.isFunctionType v.Cil.vtype) ->
                                     VarInfoSet.add v var_set
@@ -437,7 +437,7 @@ let function_pointer_calls_testsuite = "Function pointer calls" >:::
                                     var_set
                             end VarInfoSet.empty in
                             let block_count = MemoryBlockMap.fold (fun k v block_count -> block_count + 1)
-                                result.result_state.block_to_bytes 0 in
+                                result#state.block_to_bytes 0 in
                             assert_equal ~printer:pp_print_int ~msg:"Allocated blocks for variables"
                                 (VarInfoSet.cardinal var_set) block_count;
 

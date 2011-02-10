@@ -15,9 +15,9 @@
 open DataStructures
 open OtterCore
 
-module JobSet = Set.Make (struct type t = Job.job let compare x y = Pervasives.compare x.Job.jid y.Job.jid end)
+module JobSet = Set.Make (struct type t = int let compare = Pervasives.compare end)
 module JobGeneration = PrioritySearchQueue.Make
-    (struct type t = Job.job let compare x y = Pervasives.compare x.Job.jid y.Job.jid end)
+    (struct type t = int let compare = Pervasives.compare end)
     (struct type t = int let compare = Pervasives.compare end)
 
 
@@ -28,26 +28,26 @@ class ['self] t = object (self : 'self)
     val next = 1
 
     method add job =
-        let work = JobSet.add job work in
+        let work = JobSet.add job#jid work in
         {< work = work >}
 
     method remove job =
         (* dequeue the job *)
         let next', work, queue =
-            if JobSet.mem job work then
-                let work = JobSet.remove job work in
+            if JobSet.mem job#jid work then
+                let work = JobSet.remove job#jid work in
                 (next, work, queue)
             else
                 try
-                    let generation, () = JobGeneration.lookup job queue in
-                    let queue = JobGeneration.delete job queue in
+                    let generation, () = JobGeneration.lookup job#jid queue in
+                    let queue = JobGeneration.delete job#jid queue in
                     (generation + 1, work, queue)
                 with JobGeneration.Key ->
                     raise Not_found
         in
 
         (* move the rest of work to the next generation *)
-        let queue = JobSet.fold (fun job queue -> JobGeneration.insert job next () queue) work queue in
+        let queue = JobSet.fold (fun jid queue -> JobGeneration.insert jid next () queue) work queue in
         let work = JobSet.empty in
 
         (* update the next generation *)
@@ -60,10 +60,10 @@ class ['self] t = object (self : 'self)
         if JobSet.is_empty work then
             try
                 let _, generation, () = JobGeneration.find_min queue in
-                if fst (JobGeneration.lookup job queue) = generation then 1. else 0.
+                if fst (JobGeneration.lookup job#jid queue) = generation then 1. else 0.
             with JobGeneration.Key | JobGeneration.Empty ->
                 raise Not_found
         else
-            if JobSet.mem job work then 1. else 0.
+            if JobSet.mem job#jid work then 1. else 0.
 end
 

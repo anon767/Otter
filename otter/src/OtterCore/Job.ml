@@ -72,33 +72,72 @@ let emptyHistory = {
 	bytesToVars = [];
 }
 
-type job = {
-    file : Cil.file;
-    state : State.t;
-    exHist : executionHistory;
-    decisionPath : Decision.t list; (** The decision path is a list of decision. Most recent decision first. *)  (* TODO: take this out *)
-    instrList : Cil.instr list; (** [instr]s to execute before moving to the next [stmt] *)
-    stmt : Cil.stmt;            (** The next statement the job should execute *)
-    trackedFns : StringSet.t;	(** The set of functions (names) in which to track coverage *)
-    inTrackedFn : bool;         (** Is stmt in a function in the original program (as opposed to in a library or system call)? *)
-    jid : int; (** An identifier for the job. Not unique. *)
-    jid_unique : int; (** A unique identifier for the job *)
-    jid_parent : int; (** The unique identifier for the parent of the job *)
-}
 
-type job_result = {
-	result_file : Cil.file;
-	result_state : State.t;
-	result_history : executionHistory;
-	result_decision_path : Decision.t list;
-}
+class type job_result = object
+    method file : Cil.file
+    method state : State.t
+    method exHist : executionHistory
+    method decision_path : Decision.t list
+end
 
-let get_result_from_job job = {
-    result_file = job.file;
-    result_state = job.state;
-    result_history = job.exHist;
-    result_decision_path = job.decisionPath;
-}
+
+class virtual job = object (self)
+    (* TODO: perhaps use a camlp4 syntax extension to deal with this boilerplate? *)
+    (* TODO: group methods into logical components that can be composed mix-in style *)
+    (* TODO: currently just a glorified extensible record; but perhaps some core functionality like maintaining job ids? *)
+    val virtual file : Cil.file
+    method file = file
+    method with_file file = {< file = file >}
+
+    val virtual state : State.t
+    method state = state
+    method with_state state = {< state = state >}
+
+    val virtual exHist : executionHistory
+    method exHist = exHist
+    method with_exHist exHist = {< exHist = exHist >}
+
+    (** The decision path is a list of decision. Most recent decision first. *)  (* TODO: take this out *)
+    val virtual decision_path : Decision.t list
+    method decision_path = decision_path
+    method with_decision_path decision_path = {< decision_path = decision_path >}
+
+    (** [instr]s to execute before moving to the next [stmt] *)
+    val virtual instrList : Cil.instr list
+    method instrList = instrList
+    method with_instrList instrList = {< instrList = instrList >}
+
+    (** The next statement the job should execute *)
+    val virtual stmt : Cil.stmt
+    method stmt = stmt
+    method with_stmt stmt = {< stmt = stmt >}
+
+    (** The set of functions (names) in which to track coverage *)
+    val virtual trackedFns : StringSet.t
+    method trackedFns = trackedFns
+    method with_trackedFns trackedFns = {< trackedFns = trackedFns >}
+
+    (** Is stmt in a function in the original program (as opposed to in a library or system call)? *)
+    val virtual inTrackedFn : bool
+    method inTrackedFn = inTrackedFn
+    method with_inTrackedFn inTrackedFn = {< inTrackedFn = inTrackedFn >}
+
+    (** An identifier for the job. Not unique. *)
+    val virtual jid : int
+    method jid = jid
+    method with_jid jid = {< jid = jid >}
+
+    (** A unique identifier for the job *)
+    val virtual jid_unique : int
+    method jid_unique = jid_unique
+    method with_jid_unique jid_unique = {< jid_unique = jid_unique >}
+
+    (** The unique identifier for the parent of the job *)
+    val virtual jid_parent : int
+    method jid_parent = jid_parent
+    method with_jid_parent jid_parent = {< jid_parent = jid_parent >}
+end
+
 
 type ('abandoned, 'truncated) job_completion =
     | Return of Bytes.bytes option * job_result (* Jobs that successfully completed by returning from the entry function *)
@@ -118,60 +157,59 @@ let job_counter_unique = Counter.make ()
 
 
 (* create a job that begins at a function, given an initial state *)
-let make file state fn argvs =
-    let state = MemOp.state__start_fcall state State.Runtime fn argvs in
-    let trackedFns = TrackingFunctions.trackedFns file in
-	(* create a new job *)
-    {
-        file = file;
-        state = state;
-        exHist = emptyHistory;
-        decisionPath = [];
-        instrList = [];
-        stmt = List.hd fn.Cil.sallstmts;
-        trackedFns = trackedFns;
-        inTrackedFn = StringSet.mem fn.Cil.svar.Cil.vname trackedFns;
-        jid = Counter.next job_counter;
-        jid_unique = Counter.next job_counter_unique;
-        jid_parent = -1; (* Indicates no parent *)
-    }
+let make file' state' fn argvs =
+    let trackedFns' = TrackingFunctions.trackedFns file' in
+    object
+        inherit job
+        val file = file'
+        val state = MemOp.state__start_fcall state' State.Runtime fn argvs
+        val exHist = emptyHistory
+        val decision_path = []
+        val instrList = []
+        val stmt = List.hd fn.Cil.sallstmts
+        val trackedFns = trackedFns'
+        val inTrackedFn = StringSet.mem fn.Cil.svar.Cil.vname trackedFns'
+        val jid = Counter.next job_counter
+        val jid_unique = Counter.next job_counter_unique
+        val jid_parent = -1 (* Indicates no parent *)
+    end
+
 
 (** Get the file location for the current job instruction.
 		@param job the job to get the current location from
 		@return the file location
 *)
-let get_loc job = match job.instrList with
-    | [] -> Cil.get_stmtLoc job.stmt.Cil.skind
+let get_loc job = match job#instrList with
+    | [] -> Cil.get_stmtLoc job#stmt.Cil.skind
     | instr::_ -> Cil.get_instrLoc instr
 
 
 (** Get the {!OtterCFG.Instruction.t} for current instruction in a job. *)
 let get_instruction job =
     (* TODO: refactor Statement to use OtterCFG.Instruction, to not need this function *)
-    match job.stmt.Cil.skind with
-        | Cil.Instr instrs when job.instrList = [] ->
+    match job#stmt.Cil.skind with
+        | Cil.Instr instrs when job#instrList = [] ->
             (* if stmt is Cil.Instr, instrList may be temporarily empty: see handling of Cil.Instr in Statement.exec_stmt *)
-            OtterCFG.Instruction.make job.file (List.hd job.state.State.callstack) job.stmt instrs
+            OtterCFG.Instruction.make job#file (List.hd job#state.State.callstack) job#stmt instrs
         | _ ->
-            OtterCFG.Instruction.make job.file (List.hd job.state.State.callstack) job.stmt job.instrList
+            OtterCFG.Instruction.make job#file (List.hd job#state.State.callstack) job#stmt job#instrList
 
 
 (** Get a list of {!OtterCFG.Instruction.t} representing the current calling context in a job. *)
 let get_instruction_context job =
     let rec get_instruction_context context return stack = match return, stack with
         | State.Source (_, _, _, stmt)::return, fundec::stack ->
-            let context = (OtterCFG.Instruction.of_stmt_first job.file fundec stmt)::context in
+            let context = (OtterCFG.Instruction.of_stmt_first job#file fundec stmt)::context in
             get_instruction_context context return stack
         | State.Source (_, _, _, _)::_, [] ->
             invalid_arg "get_instruction_context: job with malformed callstack"
         | _, _ ->
             List.rev context
     in
-    get_instruction_context [] job.state.State.callContexts (List.tl job.state.State.callstack)
+    get_instruction_context [] job#state.State.callContexts (List.tl job#state.State.callstack)
 
 (* Useful for constructing JobMap/JobSet *)
 module JobOrderedType = struct
     type t = job
-    let compare j1 j2 = Pervasives.compare j1.jid_unique j2.jid_unique
-
+    let compare j1 j2 = Pervasives.compare j1#jid_unique j2#jid_unique
 end

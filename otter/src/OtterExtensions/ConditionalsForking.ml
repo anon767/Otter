@@ -7,7 +7,7 @@ open OtterCore
 
 
 let interceptor ?(limit=8) job param k =
-    match job.Job.instrList with
+    match job#instrList with
         | instr::_  ->
             (* grab all lvals *)
             let cil_lvals = ref [] in
@@ -56,7 +56,7 @@ let interceptor ?(limit=8) job param k =
                             (* read the lval, and if conditionals are found, split them and write them back *)
                             let state, lvals, errors = Expression.lval state cil_lval [] in
                             (* TODO: errors should carry the state in which the error occured *)
-                            let abandoned = List.rev_append (Statement.errors_to_abandoned_list { job with Job.state = old_state } errors) abandoned in
+                            let abandoned = List.rev_append (Statement.errors_to_abandoned_list (job#with_state old_state) errors) abandoned in
                             let state, bytes = MemOp.state__deref state lvals in
                             let splits = split (Bytes.conditional__bytes bytes) in
                             let states =
@@ -73,15 +73,10 @@ let interceptor ?(limit=8) job param k =
                         with Failure msg ->
                             (* TODO: Failure really needs to go, ditch this once OtterCore has been switched over to using errors *)
                             if !Executeargs.arg_failfast then failwith msg;
-                            let result = {
-                                Job.result_file = job.Job.file;
-                                Job.result_state = old_state;
-                                Job.result_history = job.Job.exHist;
-                                Job.result_decision_path = job.Job.decisionPath;
-                            } in
-                            (Job.Complete (Job.Abandoned (`Failure msg, Job.get_loc job, result))::abandoned, EfficientSequence.empty)
+                            let job = job#with_state old_state in
+                            (Job.Complete (Job.Abandoned (`Failure msg, Job.get_loc job, (job :> Job.job_result)))::abandoned, EfficientSequence.empty)
                     end abandoned states
-                end ([], EfficientSequence.singleton job.Job.state) !cil_lvals
+                end ([], EfficientSequence.singleton job#state) !cil_lvals
             in
 
             if EfficientSequence.length states = 1 && abandoned = [] then
@@ -90,7 +85,7 @@ let interceptor ?(limit=8) job param k =
             else
                 (* otherwise, fork the job with the new states and errors *)
                 let jobs = EfficientSequence.fold begin fun jobs state ->
-                    let job = Job.Active { job with Job.state = state; Job.jid = if jobs = [] then job.Job.jid else Counter.next Job.job_counter } in
+                    let job = Job.Active ((job#with_state state)#with_jid (if jobs = [] then job#jid else Counter.next Job.job_counter)) in
                     job::jobs
                 end [] states in
                 let jobs = List.rev_append abandoned jobs in

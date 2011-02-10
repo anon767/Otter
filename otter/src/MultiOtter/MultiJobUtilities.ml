@@ -26,26 +26,26 @@ let update_from_shared_memory shared_block_to_bytes local_block_to_bytes =
 (* put a job back into the multijob and update the shared state *)
 let put_job job multijob metadata =
 	let program_counter = {
-		MultiTypes.instrList = job.Job.instrList;
-		stmt = job.Job.stmt;
-		inTrackedFn = job.Job.inTrackedFn;
+		MultiTypes.instrList = job#instrList;
+		stmt = job#stmt;
+		inTrackedFn = job#inTrackedFn;
 	} in
-	let local_state = { job.state with path_condition = []; } in
+	let local_state = { job#state with path_condition = []; } in
 	let shared = {
-		shared_path_condition = job.state.path_condition;
-		shared_block_to_bytes = update_to_shared_memory multijob.shared.shared_block_to_bytes job.state.block_to_bytes;
-		MultiTypes.trackedFns = job.Job.trackedFns;
-		exHist = job.Job.exHist;
+		shared_path_condition = job#state.path_condition;
+		shared_block_to_bytes = update_to_shared_memory multijob.shared.shared_block_to_bytes job#state.block_to_bytes;
+		MultiTypes.trackedFns = job#trackedFns;
+		exHist = job#exHist;
 	} in
 	{
-		MultiTypes.file = job.Job.file;
+		MultiTypes.file = job#file;
 		processes =
 			(match metadata.priority with
 				| Atomic -> (program_counter, local_state, metadata)::multijob.processes (* save time sorting by putting an atomic process on the front *)
 				| _ -> List.append multijob.processes [ (program_counter, local_state, metadata) ])
 			;
 		shared = shared;
-		jid = job.Job.jid;
+		jid = job#jid;
 		next_pid = multijob.next_pid;
 		current_metadata = multijob.current_metadata;
 	}
@@ -68,12 +68,12 @@ let put_completion completion multijob = match completion with
 			multijob.processes
 		in
 		let shared = {
-			shared_path_condition = job_result.result_state.path_condition;
+			shared_path_condition = job_result#state.path_condition;
 			shared_block_to_bytes = update_to_shared_memory
 				multijob.shared.shared_block_to_bytes
-				job_result.result_state.block_to_bytes;
+				job_result#state.block_to_bytes;
 			MultiTypes.trackedFns = multijob.shared.MultiTypes.trackedFns;
-			exHist = job_result.result_history;
+			exHist = job_result#exHist;
 		} in
 		{ multijob with
 			processes = processes;
@@ -133,24 +133,26 @@ let get_job multijob =
 		None
 	| (program_counter, local_state, metadata)::processes ->
 		(* extract the first job from a multijob *)
-		let state = { local_state with
-			State.block_to_bytes = update_from_shared_memory multijob.shared.shared_block_to_bytes local_state.block_to_bytes;
-			State.path_condition = multijob.shared.shared_path_condition;
-		} in
-		let job = {
-			Job.file = multijob.MultiTypes.file;
-			Job.state = state;
-			Job.instrList = program_counter.MultiTypes.instrList;
-			Job.stmt = program_counter.MultiTypes.stmt;
-			Job.jid = multijob.MultiTypes.jid;
-			Job.trackedFns = multijob.shared.MultiTypes.trackedFns;
-			Job.inTrackedFn = program_counter.MultiTypes.inTrackedFn;
-			Job.exHist = multijob.shared.MultiTypes.exHist;
+		(* TODO: make multijob a subtype of Job.job that contains a set of processes, one of which is designated as active, so that
+			it can be used transparently as job without having to go through the trouble of creating a new job like below *)
+		let job = object
+			inherit Job.job
+			val file = multijob.MultiTypes.file
+			val state = { local_state with
+				State.block_to_bytes = update_from_shared_memory multijob.shared.shared_block_to_bytes local_state.block_to_bytes;
+				State.path_condition = multijob.shared.shared_path_condition;
+			}
+			val instrList = program_counter.MultiTypes.instrList
+			val stmt = program_counter.MultiTypes.stmt
+			val jid = multijob.MultiTypes.jid
+			val trackedFns = multijob.shared.MultiTypes.trackedFns
+			val inTrackedFn = program_counter.MultiTypes.inTrackedFn
+			val exHist = multijob.shared.MultiTypes.exHist
 			(* TODO *)
-			Job.decisionPath = [];
-            Job.jid_unique = -1;
-            Job.jid_parent = -1;
-		} in
+			val decision_path = []
+			val jid_unique = -1
+			val jid_parent = -1
+		end in
 		let multijob = { multijob with
 			processes = processes;
 			current_metadata = metadata;

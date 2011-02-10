@@ -28,7 +28,7 @@ object (_ : 'self)
             | Job.Complete (Job.Abandoned (`FailureReached , location , job_result)) ->
                 let fundec = BackOtterUtilities.get_origin_function_from_job_result job_result in
                 (* Failing path has least recent decision first. See the comment in BidirectionalQueue. *)
-                let failing_path = List.rev job_result.result_decision_path in
+                let failing_path = List.rev job_result#decision_path in
                 begin try
                     targets_ref := BackOtterTargets.add fundec failing_path (!targets_ref);
                     job_state
@@ -38,7 +38,7 @@ object (_ : 'self)
             | Job.Complete (Job.Abandoned (`Failure msg, location, job_result)) when !BackOtterReporter.arg_exceptions_as_failures ->
                 let fundec = BackOtterUtilities.get_origin_function_from_job_result job_result in
                 (* Failing path has least recent decision first. See the comment in BidirectionalQueue. *)
-                let failing_path = List.rev job_result.result_decision_path in
+                let failing_path = List.rev job_result#decision_path in
                 begin try
                     targets_ref := BackOtterTargets.add fundec failing_path (!targets_ref);
                     job_state
@@ -67,7 +67,7 @@ object (_ : 'self)
         (* Print failing path. This is run after delegate#report so the failing path is printed after the failure message. *)
         let print_failing_path job_result =
             let fundec = BackOtterUtilities.get_origin_function_from_job_result job_result in
-            let failing_path = List.rev job_result.result_decision_path in
+            let failing_path = List.rev job_result#decision_path in
             Output.debug_printf "@\n=> Extract the following failing path for function %s:@\n" fundec.svar.vname;
             Output.debug_printf "@[%a@]@\n@\n" Decision.print_decisions failing_path;
         in
@@ -92,14 +92,14 @@ end
 
 let max_function_name_length = ref 0
 let set_output_formatter_interceptor job job_queue interceptor =
-    let origin_function_name = (List.hd (List.rev job.state.callstack)).svar.vname in
-    let depth = List.length job.state.path_condition in
+    let origin_function_name = (List.hd (List.rev job#state.callstack)).svar.vname in
+    let depth = List.length job#state.path_condition in
     let loc = Job.get_loc job in
     let label =
         if loc = Cil.locUnknown then
-            Format.sprintf "%*s [%d,%d] : " (!max_function_name_length) origin_function_name job.jid depth
+            Format.sprintf "%*s [%d,%d] : " (!max_function_name_length) origin_function_name job#jid depth
         else
-            Format.sprintf "%*s [%d,%d] %s:%d : " (!max_function_name_length) origin_function_name job.jid depth (Filename.basename loc.Cil.file) loc.Cil.line
+            Format.sprintf "%*s [%d,%d] %s:%d : " (!max_function_name_length) origin_function_name job#jid depth (Filename.basename loc.Cil.file) loc.Cil.line
     in
     Output.set_formatter (new Output.labeled label);
     interceptor job job_queue
@@ -109,13 +109,7 @@ let set_output_formatter_interceptor job job_queue interceptor =
 let line_target_interceptor job job_queue interceptor =
     let loc = Job.get_loc job in
     if List.mem (loc.Cil.file, loc.Cil.line) (!arg_line_targets) then
-        let job_result = {
-            result_file = job.Job.file;
-            result_state = job.Job.state;
-            result_history = job.Job.exHist;
-            result_decision_path = job.Job.decisionPath;
-        } in
-        Complete (Abandoned (`FailureReached, loc, job_result)), job_queue
+        Complete (Abandoned (`FailureReached, loc, (job :> Job.job_result))), job_queue
     else
         interceptor job job_queue
 
@@ -191,10 +185,10 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
 
 	Random.init random_seed;
 
-    let file = entry_job.Job.file in
+    let file = entry_job#file in
 
     (* Entry function set by --entryfn (default: main) *)
-    let entry_fn = List.hd entry_job.state.callstack in
+    let entry_fn = List.hd entry_job#state.callstack in
 
     (* Setup max_function_name_length, to be used in set_output_formatter_interceptor *)
     let all_reachable_functions = entry_fn :: (CilCallgraph.find_transitive_callees file entry_fn) in

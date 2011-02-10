@@ -27,25 +27,25 @@ open DataStructures
 open OtterCore
 
 module JobSet = struct
-    module M = Map.Make (struct type t = Job.job let compare x y = Pervasives.compare x.Job.jid y.Job.jid end)
+    module M = Map.Make (struct type t = int let compare = Pervasives.compare end)
     let empty = M.empty
     let add job set =
-        let jobs = try M.find job set with Not_found -> [] in
-        M.add job (job::jobs) set
+        let jobs = try M.find job#jid set with Not_found -> [] in
+        M.add job#jid (job::jobs) set
     let mem job set =
         try
-            let jobs = M.find job set in
+            let jobs = M.find job#jid set in
             List.memq job jobs
         with Not_found ->
             false
     let remove job set =
         try
-            let jobs = M.find job set in
+            let jobs = M.find job#jid set in
             let jobs = List.filter ((!=) job) jobs in
             if jobs = [] then
-                M.remove job set
+                M.remove job#jid set
             else
-                M.add job jobs set
+                M.add job#jid jobs set
         with Not_found ->
             set
 end

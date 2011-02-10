@@ -4,13 +4,13 @@ open OcamlUtilities
 open OtterCore
 
 let distance_from_entryfn job =
-    let file = job.Job.file in
+    let file = job#file in
     let entry_fn = ProgramPoints.get_entry_fundec file in
     let distance = get_distance_from file entry_fn (get_origin_function job) in
     -. (float_of_int distance)
 
 let distance_from_failurefn job =
-    let file = job.Job.file in
+    let file = job#file in
     let failure_fn =
         let fname = !Executeargs.arg_failurefn in
         try FindCil.fundec_by_name file fname

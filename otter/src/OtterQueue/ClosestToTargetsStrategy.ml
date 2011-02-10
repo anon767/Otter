@@ -18,11 +18,11 @@ class ['self] t = object (self : 'self)
                 max_int (* = max_int in DistanceToTargets *)
             else
                 let source = Job.get_instruction job in
-                let target_instrs = List.map (fun f -> Instruction.of_fundec job.Job.file f) target_fundecs in
+                let target_instrs = List.map (fun f -> Instruction.of_fundec job#file f) target_fundecs in
                 let context = Job.get_instruction_context job in
                 DistanceToTargets.find_in_context source context target_instrs
         in
-        let file = job.Job.file in
+        let file = job#file in
         let failure_fn =
             let fname = !Executeargs.arg_failurefn in
             try FindCil.fundec_by_name file fname

@@ -15,12 +15,12 @@ module Make (Errors : Errors) = struct
 
         method report job_result =
             begin match job_result with
-                | Job.Complete (Job.Abandoned (reason, loc, { Job.result_state=state })) ->
+                | Job.Complete (Job.Abandoned (reason, loc, result)) ->
                         Output.set_mode Output.MSG_MUSTPRINT;
                         Output.printf "Error \"%a\"@ occurs at %a.@\n"
                             Errors.printer reason Printcil.loc loc;
                         if !Executeargs.arg_print_callstack then
-                            Output.printf "Call stack:@\n  @[%a@]@\n" (Printer.callingContext_list "@\n") state.State.callContexts;
+                            Output.printf "Call stack:@\n  @[%a@]@\n" (Printer.callingContext_list "@\n") result#state.State.callContexts;
                         Output.printf "Abandoning path.@\n"
                 | _ ->
                     ()

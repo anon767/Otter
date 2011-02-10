@@ -95,26 +95,26 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
              * If DP == DP', "YES" (there's no new decision)
              * Else assert(tl(DP') == DP), "YES" if hd(DP') == hd(BP)
              *)
-            let jid_to_job = JidMap.add job.jid_unique job jid_to_job in
+            let jid_to_job = JidMap.add job#jid_unique job jid_to_job in
             (* If job comes from a bounded job *)
-            let _ = Output.debug_printf "Job %d has parent %d@\n" job.jid_unique job.jid_parent in
-            if JidMap.mem job.jid_parent jid_to_bounding_paths then
+            let _ = Output.debug_printf "Job %d has parent %d@\n" job#jid_unique job#jid_parent in
+            if JidMap.mem job#jid_parent jid_to_bounding_paths then
                 Timer.time "BidirectionalQueue.t#put/bounded_parent" begin fun () ->
-                let parent_job = JidMap.find job.jid_parent jid_to_job in
-                let bounding_paths = JidMap.find parent_job.jid_unique jid_to_bounding_paths in
-                if parent_job.decisionPath == job.decisionPath then (* no new decision *)
+                let parent_job = JidMap.find job#jid_parent jid_to_job in
+                let bounding_paths = JidMap.find parent_job#jid_unique jid_to_bounding_paths in
+                if parent_job#decision_path == job#decision_path then (* no new decision *)
                     Timer.time "BidirectionalQueue.t#put/bounded_parent/no_new_decision" begin fun () ->
                     let _ = Output.debug_printf "No new decision@\n" in
-                    let _ = Output.debug_printf "Add job_unique %d into the bounded_jobqueue @\n" job.jid_unique in
-                    {< jid_to_bounding_paths = JidMap.add job.jid_unique bounding_paths jid_to_bounding_paths;
+                    let _ = Output.debug_printf "Add job_unique %d into the bounded_jobqueue @\n" job#jid_unique in
+                    {< jid_to_bounding_paths = JidMap.add job#jid_unique bounding_paths jid_to_bounding_paths;
                        jid_to_job = jid_to_job;
                        bounded_jobqueue = bounded_jobqueue#put job; >}
                     end ()
                 else (* has new decision *)
                     Timer.time "BidirectionalQueue.t#put/bounded_parent/new_decision" begin fun () ->
                     let _ = Output.debug_printf "Has new decision@\n" in
-                    let _ = assert(parent_job.decisionPath == List.tl job.decisionPath) in
-                    let bounded_decision = List.hd job.decisionPath in
+                    let _ = assert(parent_job#decision_path == List.tl job#decision_path) in
+                    let bounded_decision = List.hd job#decision_path in
                     let bounding_paths = List.fold_left (
                         fun acc path -> if Decision.equals bounded_decision (List.hd path) then (List.tl path) :: acc else acc
                     ) [] bounding_paths in
@@ -122,8 +122,8 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                         let _ = Output.debug_printf "Out bound@\n" in
                         self (* Discard the job *)
                     else
-                        let _ = Output.debug_printf "Add job_unique %d into the bounded_jobqueue @\n" job.jid_unique in
-                        {< jid_to_bounding_paths = JidMap.add job.jid_unique bounding_paths jid_to_bounding_paths;
+                        let _ = Output.debug_printf "Add job_unique %d into the bounded_jobqueue @\n" job#jid_unique in
+                        {< jid_to_bounding_paths = JidMap.add job#jid_unique bounding_paths jid_to_bounding_paths;
                            jid_to_job = jid_to_job;
                            bounded_jobqueue = bounded_jobqueue#put job; >}
                     end ()
@@ -143,7 +143,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                 let jid_to_job, jid_to_bounding_paths, bounded_jobqueue =
                     match
                         Timer.time "BidirectionalQueue.t#put/regular_parent/function_call_of_latest_decision"
-                        function_call_of_latest_decision job.decisionPath
+                        function_call_of_latest_decision job#decision_path
                     with
                     | Some (fundec) ->
                         let failing_paths = BackOtterTargets.get fundec (!targets_ref) in
@@ -152,10 +152,10 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                             jid_to_job, jid_to_bounding_paths, bounded_jobqueue (* Not a target function *)
                         else
                             let _ = Output.debug_printf "Call target function %s@\n" fundec.svar.vname in
-                            let bounded_job = {job with jid_unique = Counter.next Job.job_counter_unique;} in
-                            let _ = Output.debug_printf "Add job_unique %d into the bounded_jobqueue @\n" bounded_job.jid_unique in
-                            JidMap.add bounded_job.jid_unique bounded_job jid_to_job,
-                            JidMap.add bounded_job.jid_unique failing_paths jid_to_bounding_paths,
+                            let bounded_job = job#with_jid_unique (Counter.next Job.job_counter_unique) in
+                            let _ = Output.debug_printf "Add job_unique %d into the bounded_jobqueue @\n" bounded_job#jid_unique in
+                            JidMap.add bounded_job#jid_unique bounded_job jid_to_job,
+                            JidMap.add bounded_job#jid_unique failing_paths jid_to_bounding_paths,
                             bounded_jobqueue#put bounded_job
                     | None -> jid_to_job, jid_to_bounding_paths, bounded_jobqueue
                 in
@@ -187,14 +187,14 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                 (* TODO
                 let jid_to_bounding_paths =
                     match last_bounded_job_from_get with
-                    | Some job -> JidMap.remove job.jid_unique jid_to_bounding_paths
+                    | Some job -> JidMap.remove job#jid_unique jid_to_bounding_paths
                     | None -> jid_to_bounding_paths
                 in
                 *)
                 match bounded_jobqueue#get with
                 | Some (bounded_jobqueue, job) ->
                     (* Has bounded job to run *)
-                    let _ = Output.debug_printf "Take job_unique %d from bounded_jobqueue@\n" job.jid_unique in
+                    let _ = Output.debug_printf "Take job_unique %d from bounded_jobqueue@\n" job#jid_unique in
                     Some ({< bounded_jobqueue = bounded_jobqueue; >}, job)
                 | None ->
                     (* For each existing job, see if it can be bounded. If so, update bounded_jobqueue et al *)
@@ -235,16 +235,16 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                     in
                                     let bounding_paths =
                                         Timer.time "BidirectionalQueue.t#get/update_bounding_status/scan" begin fun () ->
-                                        (* TODO: job.decisionPath is too long. Maybe maintain a decision path for function calls only. *)
-                                        scan job.decisionPath (min failing_path_length (length job.decisionPath))
+                                        (* TODO: job#decision_path is too long. Maybe maintain a decision path for function calls only. *)
+                                        scan job#decision_path (min failing_path_length (length job#decision_path))
                                         end ()
                                     in
                                     if bounding_paths = [] then (jid_to_job, jid_to_bounding_paths, bounded_jobqueue)
                                     else
-                                        let bounded_job = {job with jid_unique = Counter.next Job.job_counter_unique;} in
-                                        let _ = Output.debug_printf "Add job_unique %d into the bounded_jobqueue @\n" bounded_job.jid_unique in
-                                        JidMap.add bounded_job.jid_unique bounded_job jid_to_job,
-                                        JidMap.add bounded_job.jid_unique bounding_paths jid_to_bounding_paths,
+                                        let bounded_job = job#with_jid_unique (Counter.next Job.job_counter_unique) in
+                                        let _ = Output.debug_printf "Add job_unique %d into the bounded_jobqueue @\n" bounded_job#jid_unique in
+                                        JidMap.add bounded_job#jid_unique bounded_job jid_to_job,
+                                        JidMap.add bounded_job#jid_unique bounding_paths jid_to_bounding_paths,
                                         bounded_jobqueue#put bounded_job
                                 ) (jid_to_job, jid_to_bounding_paths, bounded_jobqueue) jobs
                             end ()

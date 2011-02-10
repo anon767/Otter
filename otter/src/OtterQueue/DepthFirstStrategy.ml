@@ -4,7 +4,7 @@ open DataStructures
 open OtterCore
 
 module JobSteps = Map.Make
-    (struct type t = Job.job let compare x y = Pervasives.compare x.Job.jid y.Job.jid end)
+    (struct type t = int let compare = Pervasives.compare end)
 
 
 class ['self] t = object (_ : 'self)
@@ -12,16 +12,16 @@ class ['self] t = object (_ : 'self)
     val steps = 1
 
     method add job =
-        let queue = JobSteps.add job steps queue in
+        let queue = JobSteps.add job#jid steps queue in
         {< queue = queue >}
 
     method remove job =
-        let steps = JobSteps.find job queue in
-        let queue = JobSteps.remove job queue in
+        let steps = JobSteps.find job#jid queue in
+        let queue = JobSteps.remove job#jid queue in
         let steps = steps + 1 in
         {< queue = queue; steps = steps >}
 
     method weight job =
-        float_of_int (JobSteps.find job queue)
+        float_of_int (JobSteps.find job#jid queue)
 end
 

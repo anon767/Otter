@@ -23,10 +23,10 @@ let test_coverage content ?label untracked_fns test =
                 match result with
                     | Return (_, c)
                     | Exit (_, c) ->
-                        let edges = EdgeSet.union edges c.result_history.coveredEdges in
-                        let blocks = StmtInfoSet.union blocks c.result_history.coveredBlocks in
-                        let lines = LineSet.union lines c.result_history.coveredLines in
-                        let conds = CondSet.union conds c.result_history.coveredConds in
+                        let edges = EdgeSet.union edges c#exHist.coveredEdges in
+                        let blocks = StmtInfoSet.union blocks c#exHist.coveredBlocks in
+                        let lines = LineSet.union lines c#exHist.coveredLines in
+                        let conds = CondSet.union conds c#exHist.coveredConds in
                         (edges, blocks, lines, conds, paths_count + 1)
                     | Abandoned _
                     | Truncated _ -> (* TODO: should they be counted? *)

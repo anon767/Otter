@@ -10,93 +10,93 @@ open Job
 open Decision
 
 
-let get_active_state parent_job job = Active {job with
-    jid_unique = Counter.next job_counter_unique;
-    jid_parent = parent_job.jid_unique;
-}
+let get_active_state parent_job job =
+    let job = job#with_jid_unique (Counter.next job_counter_unique) in
+    let job = job#with_jid_parent (parent_job#jid_unique) in
+    Active job
 
 let stmtInfo_of_job job =
-    { siFuncName = (List.hd job.state.callstack).svar.vname;
-        siStmt = Coverage.stmtAtEndOfBlock job.stmt; }
+    { siFuncName = (List.hd job#state.callstack).svar.vname;
+        siStmt = Coverage.stmtAtEndOfBlock job#stmt; }
 
 (** Return a new exHist with
         - block coverage updated by the addition of the statement at the
-            end of the block containing [job.stmt]
-        - line coverage is updated if [job.stmt] is an if, return, goto,
+            end of the block containing [job#stmt]
+        - line coverage is updated if [job#stmt] is an if, return, goto,
             or loop
-        - if nextStmtOpt is [Some s] and [job.stmt] is the end of a block,
+        - if nextStmtOpt is [Some s] and [job#stmt] is the end of a block,
             edge coverage is updated by the addition of the edge from
-            [job.stmt] to the end of [s]'s block
+            [job#stmt] to the end of [s]'s block
         - whichBranch tells us which branch we are taking for condition
             coverage, which only cares about [If] statements. whichBranch is
             ignored for other types of coverage, and it is entirely ignored
-            if [job.stmt] is not an [If]. (Really, it might be better if
+            if [job#stmt] is not an [If]. (Really, it might be better if
             whichBranch were a bool option, so we could pass in [None] if
             weren't at an [If], but this is more convenient.)
         Each form of coverage is only updated if it was requested. *)
 let addStmtCoverage job whichBranch nextStmtOpt =
-    { job.exHist with
+    { job#exHist with
             coveredLines =
                 if !Executeargs.arg_line_coverage
-                then match job.stmt.skind with
+                then match job#stmt.skind with
                         If(_,_,_,loc)
                     | Cil.Return(_,loc)
                     | Goto(_,loc)
                     | Loop(_,loc,_,_) ->
-                            LineSet.add (loc.Cil.file,loc.Cil.line) job.exHist.coveredLines
-                    | _ -> job.exHist.coveredLines
+                            LineSet.add (loc.Cil.file,loc.Cil.line) job#exHist.coveredLines
+                    | _ -> job#exHist.coveredLines
                 else LineSet.empty;
             coveredBlocks =
                 if !Executeargs.arg_block_coverage
-                then StmtInfoSet.add (stmtInfo_of_job job) job.exHist.coveredBlocks
+                then StmtInfoSet.add (stmtInfo_of_job job) job#exHist.coveredBlocks
                 else StmtInfoSet.empty;
             coveredEdges =
                 if !Executeargs.arg_edge_coverage
                 then (
                     match nextStmtOpt with
-                            Some nextStmt when job.stmt == Coverage.stmtAtEndOfBlock job.stmt ->
-                                    let funcName = (List.hd job.state.callstack).svar.vname in
+                            Some nextStmt when job#stmt == Coverage.stmtAtEndOfBlock job#stmt ->
+                                    let funcName = (List.hd job#state.callstack).svar.vname in
                                     EdgeSet.add
-                                        ({ siFuncName = funcName; siStmt = job.stmt; },
+                                        ({ siFuncName = funcName; siStmt = job#stmt; },
                                          { siFuncName = funcName;
                                              siStmt = Coverage.stmtAtEndOfBlock nextStmt; })
-                                        job.exHist.coveredEdges
-                        | _ -> job.exHist.coveredEdges
+                                        job#exHist.coveredEdges
+                        | _ -> job#exHist.coveredEdges
                 ) else EdgeSet.empty;
             coveredConds =
                 if !Executeargs.arg_cond_coverage
                 then (
-                        match job.stmt.skind with
-                                If _ -> CondSet.add (stmtInfo_of_job job,whichBranch) job.exHist.coveredConds
-                        | _ -> job.exHist.coveredConds
+                        match job#stmt.skind with
+                                If _ -> CondSet.add (stmtInfo_of_job job,whichBranch) job#exHist.coveredConds
+                        | _ -> job#exHist.coveredConds
                 ) else CondSet.empty;
             executionPath =
-                if !Executeargs.arg_path_coverage && job.stmt == Coverage.stmtAtEndOfBlock job.stmt
+                if !Executeargs.arg_path_coverage && job#stmt == Coverage.stmtAtEndOfBlock job#stmt
                 then (
-                    { siFuncName = (List.hd job.state.callstack).svar.vname; siStmt = job.stmt; } :: job.exHist.executionPath
+                    { siFuncName = (List.hd job#state.callstack).svar.vname; siStmt = job#stmt; } :: job#exHist.executionPath
                 ) else (
-                    job.exHist.executionPath
+                    job#exHist.executionPath
                 )
     }
 
 let addInstrCoverage job instr =
     let instrLoc = get_instrLoc instr in
-    { job.exHist with coveredLines =
-            LineSet.add (instrLoc.Cil.file,instrLoc.Cil.line) job.exHist.coveredLines; }
+    { job#exHist with coveredLines =
+            LineSet.add (instrLoc.Cil.file,instrLoc.Cil.line) job#exHist.coveredLines; }
 
 let function_from_exp job instr fexp errors =
     match fexp with
         | Lval(Var(varinfo), NoOffset) ->
             begin
                 try
-                    ([ (job, FindCil.fundec_by_varinfo job.file varinfo) ], errors)
+                    ([ (job, FindCil.fundec_by_varinfo job#file varinfo) ], errors)
                 with Not_found ->
                     failwith ("Function "^varinfo.vname^" not found.")
             end
 
 
         | Lval(Mem(fexp), NoOffset) ->
-            let state = job.state in
+            let state = job#state in
             let state, bytes, errors  = Expression.rval state fexp errors in
             let ftyp = Cil.typeOf fexp in
             let rec getall fp =
@@ -104,8 +104,8 @@ let function_from_exp job instr fexp errors =
                     match leaf with
                         | Bytes_FunPtr(varinfo,_) ->
                             (* the varinfo should always map to a valid fundec (if the file was parsed by Cil) *)
-                            let job = { job with state = MemOp.state__add_path_condition state (Bytes.guard__to_bytes pre) true; } in
-                            let fundec = FindCil.fundec_by_varinfo job.file varinfo in
+                            let job = job#with_state (MemOp.state__add_path_condition state (Bytes.guard__to_bytes pre) true) in
+                            let fundec = FindCil.fundec_by_varinfo job#file varinfo in
                             ((job, fundec)::acc, errors)
                         | _ -> (acc, (state, make_Bytes_Op (OP_EQ, [(bytes, ftyp); (leaf, ftyp)]), `Failure "Invalid function pointer") :: errors)
                 in
@@ -114,8 +114,8 @@ let function_from_exp job instr fexp errors =
             begin match bytes with
                 | Bytes_FunPtr(varinfo,_) ->
                     (* the varinfo should always map to a valid fundec (if the file was parsed by Cil) *)
-                    let fundec = FindCil.fundec_by_varinfo job.file varinfo in
-                    let job = { job with state = state } in
+                    let fundec = FindCil.fundec_by_varinfo job#file varinfo in
+                    let job = job#with_state state in
                     ([ (job, fundec) ], errors)
                 | Bytes_Read(bytes2, offset, len) ->
                     let fp = (BytesUtility.expand_read_to_conditional bytes2 offset len) in
@@ -138,7 +138,7 @@ let exec_fundec job instr fundec lvalopt exps errors =
 
     (* TODO: Profiler.start_fcall job fundec *)
 
-    let state, stmt = job.state, job.stmt in
+    let state, stmt = job#state, job#stmt in
 
     (* evaluate the arguments *)
     let state, argvs, errors = List.fold_right begin fun exp (state, argvs, errors) ->
@@ -165,11 +165,10 @@ let exec_fundec job instr fundec lvalopt exps errors =
 
     (* Update the state, the next stmt to execute, and whether or
      not we're in a tracked function. *)
-    let job' = { job with
-            state = state;
-            stmt = List.hd fundec.sallstmts;
-            inTrackedFn = StringSet.mem fundec.svar.vname job.trackedFns;
-    } in
+    let job' = job in
+    let job' = job'#with_state state in
+    let job' = job'#with_stmt (List.hd fundec.sallstmts) in
+    let job' = job'#with_inTrackedFn (StringSet.mem fundec.svar.vname job#trackedFns) in
     (get_active_state job job', errors)
 
 let exec_instr_call job instr lvalopt fexp exps errors =
@@ -179,14 +178,12 @@ let exec_instr_call job instr lvalopt fexp exps errors =
             | (job, fundec)::t ->
                 let job_state, errors =
                     try
-                        let job = { job with
-                            decisionPath = DecisionFuncall(instr, fundec)::job.decisionPath;
-                            jid = if t = [] then job.jid else Counter.next job_counter; (* increment all but the last *)
-                        } in
+                        let job = job#with_decision_path (DecisionFuncall(instr, fundec)::job#decision_path) in
+                        let job = job#with_jid (if t = [] then job#jid else Counter.next job_counter) in (* increment all but the last *)
                         exec_fundec job instr fundec lvalopt exps errors
                     with Failure msg ->
                         if !Executeargs.arg_failfast then failwith msg;
-                        (Complete (Abandoned (`Failure msg, Job.get_loc job, Job.get_result_from_job job)), errors)
+                        (Complete (Abandoned (`Failure msg, Job.get_loc job, (job :> Job.job_result))), errors)
                 in
                 let func_list, errors = process_func_list t errors in
                 (job_state::func_list, errors)
@@ -200,20 +197,20 @@ let exec_instr_call job instr lvalopt fexp exps errors =
 
 
 let exec_instr job errors =
-    assert (job.instrList <> []);
+    assert (job#instrList <> []);
     let printInstr instr =
         Output.set_mode Output.MSG_STMT;
         Output.printf "%a@\n" Printcil.instr instr
     in
 
-    let instr,tail = match job.instrList with i::tl -> i,tl | _ -> assert false in
-    let job = { job with instrList = tail; } in
+    let instr, tail = match job#instrList with i::tl -> (i, tl) | _ -> assert false in
+    let job = job#with_instrList tail in
 
     (* Within instructions, we have to update line coverage (but not
          statement or edge coverage). *)
     let job =
-        if job.inTrackedFn && !Executeargs.arg_line_coverage
-        then { job with exHist = addInstrCoverage job instr; }
+        if job#inTrackedFn && !Executeargs.arg_line_coverage
+        then job#with_exHist (addInstrCoverage job instr)
         else job
     in
 
@@ -222,33 +219,27 @@ let exec_instr job errors =
     match instr with
          | Set(cil_lval, exp, loc) ->
             printInstr instr;
-            let state = job.state in
+            let state = job#state in
             let state, lval, errors = Expression.lval state cil_lval errors in
             let state, rv, errors = Expression.rval state exp errors in
             let state = MemOp.state__assign state lval rv in
-            let nextStmt = if tail = [] then List.hd job.stmt.succs else job.stmt in
-            (get_active_state job { job with state = state; stmt = nextStmt }, errors)
+            let nextStmt = if tail = [] then List.hd job#stmt.succs else job#stmt in
+            (get_active_state job ((job#with_state state)#with_stmt nextStmt), errors)
         | Call(lvalopt, fexp, exps, loc) ->
             assert (tail = []);
             printInstr instr;
             exec_instr_call job instr lvalopt fexp exps errors
         | Asm (_,_,_,_,_,loc) ->
-            let result = {
-                result_file = job.file;
-                result_state = job.state;
-                result_history = job.exHist;
-                result_decision_path = job.decisionPath;
-            } in
-            (Complete (Abandoned (`Failure "Cannot handle assembly", loc, result)), errors)
+            (Complete (Abandoned (`Failure "Cannot handle assembly", loc, (job :> Job.job_result))), errors)
 
 let exec_stmt job errors =
-    assert (job.instrList = []);
-    let state,stmt = job.state,job.stmt in
+    assert (job#instrList = []);
+    let state, stmt = job#state, job#stmt in
 
     let nextExHist ?(whichBranch=false) nextStmtOpt =
-        if job.inTrackedFn
+        if job#inTrackedFn
         then addStmtCoverage job whichBranch nextStmtOpt
-        else job.exHist
+        else job#exHist
     in
 
     Output.set_mode Output.MSG_STMT;
@@ -256,7 +247,7 @@ let exec_stmt job errors =
     match stmt.skind with
         | Instr [] ->
              let nextStmt = match stmt.succs with [x] -> x | _ -> assert false in
-             (get_active_state job { job with stmt = nextStmt; exHist = nextExHist (Some nextStmt); }, errors)
+             (get_active_state job ((job#with_stmt nextStmt)#with_exHist (nextExHist (Some nextStmt))), errors)
         | Instr (instrs) ->
             (* We can certainly update block coverage here, but not
              * necessarily edge coverage. If instrs contains a call, we
@@ -270,7 +261,7 @@ let exec_stmt job errors =
                 then None
                 else Some (match stmt.succs with [x] -> x | _ -> assert false)
             in
-            (get_active_state job { job with instrList = instrs; exHist = nextExHist nextStmtOpt; }, errors)
+            (get_active_state job ((job#with_instrList instrs)#with_exHist (nextExHist nextStmtOpt)), errors)
         | Cil.Return (expopt, loc) ->
             begin match state.callContexts with
                 | Runtime::_ -> (* completed symbolic execution (e.g., return from main) *)
@@ -281,15 +272,11 @@ let exec_stmt job errors =
                             let state, retval, errors = Expression.rval state exp errors in
                             (state, Some retval, errors)
                     in
-                    let result = {
-                            result_file = job.file;
-                            result_state = state;
-                            result_history = nextExHist None;
-                            result_decision_path = job.decisionPath;
-                    } in
+                    let job = job#with_state state in
+                    let job = job#with_exHist (nextExHist None) in
                     Output.set_mode Output.MSG_MUSTPRINT;
                     Output.printf "Program execution finished.@\n";
-                    (Complete (Return (retval, result)), errors)
+                    (Complete (Return (retval, (job :> Job.job_result))), errors)
                 | (Source (destOpt,callStmt,_,nextStmt))::_ ->
                         let state, errors =
                             match expopt, destOpt with
@@ -309,7 +296,7 @@ let exec_stmt job errors =
                         in
 
                         let callingFuncName = (List.hd state.callstack).svar.vname in
-                        let inTrackedFn = StringSet.mem callingFuncName job.trackedFns in
+                        let inTrackedFn = StringSet.mem callingFuncName job#trackedFns in
 
                         (* When a function returns, we have to record the
                            coverage within the returning function and also the
@@ -335,13 +322,12 @@ let exec_stmt job errors =
                                 exHist
                         in
 
-                        let job' = { job with
-                            state = state;
-                            stmt = nextStmt;
-                            inTrackedFn = inTrackedFn;
-                            exHist = exHist;
-                        } in
-                        (get_active_state job job', errors)
+                        let old_job = job in
+                        let job = job#with_state state in
+                        let job = job#with_stmt nextStmt in
+                        let job = job#with_inTrackedFn inTrackedFn in
+                        let job = job#with_exHist exHist in
+                        (get_active_state old_job job, errors)
 
                 | (NoReturn _)::_ ->
                         failwith "Return from @noreturn function"
@@ -350,7 +336,7 @@ let exec_stmt job errors =
                         assert false
             end
         | Goto (stmtref, loc) ->
-            (get_active_state job { job with stmt = !stmtref; exHist = nextExHist (Some !stmtref); }, errors)
+            (get_active_state job ((job#with_stmt !stmtref)#with_exHist (nextExHist (Some !stmtref))), errors)
         | If (exp, block1, block2, loc) ->
             begin
             (* try a branch *)
@@ -390,22 +376,22 @@ let exec_stmt job errors =
                     | Ternary.True ->
                         Output.printf "True@\n";
                         let nextState,nextStmt = try_branch state None block1 in
-                        let job' = { job with
-                            state = nextState;
-                            stmt = nextStmt;
-                            decisionPath = (DecisionConditional(stmt, true))::job.decisionPath; }
-                        in
-                            get_active_state job { job' with exHist = nextExHist (Some nextStmt) ~whichBranch:true; }
+                        let old_job = job in
+                        let job = job#with_state nextState in
+                        let job = job#with_stmt nextStmt in
+                        let job = job#with_decision_path ((DecisionConditional(stmt, true))::job#decision_path) in
+                        let job = job#with_exHist (nextExHist (Some nextStmt) ~whichBranch:true) in
+                        get_active_state old_job job
 
                     | Ternary.False ->
                         Output.printf "False@\n";
                         let nextState,nextStmt = try_branch state None block2 in
-                        let job' = { job with
-                            state = nextState;
-                            stmt = nextStmt;
-                            decisionPath = (DecisionConditional(stmt, false))::job.decisionPath; }
-                        in
-                            get_active_state job { job' with exHist = nextExHist (Some nextStmt) ~whichBranch:false; }
+                        let old_job = job in
+                        let job = job#with_state nextState in
+                        let job = job#with_stmt nextStmt in
+                        let job = job#with_decision_path ((DecisionConditional(stmt, false))::job#decision_path) in
+                        let job = job#with_exHist  (nextExHist (Some nextStmt) ~whichBranch:false) in
+                        get_active_state old_job job
 
                     | Ternary.Unknown ->
                         Output.printf "Unknown@\n";
@@ -415,26 +401,26 @@ let exec_stmt job errors =
 
                         (* Create two jobs, one for each branch. The false branch
                            inherits the old jid, and the true job gets a new jid. *)
-                        let trueJob = { job with
-                            state = nextStateT;
-                            stmt = nextStmtT;
-                            exHist = nextExHist (Some nextStmtT) ~whichBranch:true;
-                            decisionPath = (DecisionConditional(stmt, true))::job.decisionPath;
-                            jid = Counter.next job_counter;
-                            } in
-                        let falseJob = { job with
-                            state = nextStateF;
-                            stmt = nextStmtF;
-                            decisionPath = (DecisionConditional(stmt, false))::job.decisionPath;
-                            exHist =  nextExHist (Some nextStmtF) ~whichBranch:false;
-                            } in
+                        let trueJob = job in
+                        let trueJob = trueJob#with_state nextStateT in
+                        let trueJob = trueJob#with_stmt nextStmtT in
+                        let trueJob = trueJob#with_exHist (nextExHist (Some nextStmtT) ~whichBranch:true) in
+                        let trueJob = trueJob#with_decision_path ((DecisionConditional(stmt, true))::job#decision_path) in
+                        let trueJob = trueJob#with_jid (Counter.next job_counter) in
+
+                        let falseJob = job in
+                        let falseJob = falseJob#with_state nextStateF in
+                        let falseJob = falseJob#with_stmt nextStmtF in
+                        let falseJob = falseJob#with_decision_path ((DecisionConditional(stmt, false))::job#decision_path) in
+                        let falseJob = falseJob#with_exHist (nextExHist (Some nextStmtF) ~whichBranch:false) in
+
                             Output.set_mode Output.MSG_MUSTPRINT;
                             Output.printf "Branching on @[%a@]@ at %a.@\n"
                             CilPrinter.exp exp
                             Printcil.loc loc;
                             if !Executeargs.arg_print_callstack then
                                 Output.printf "Call stack:@\n  @[%a@]@\n" (Printer.callingContext_list "@\n") state.callContexts;
-                            Output.printf "Job %d is the true branch and job %d is the false branch.@\n@\n" trueJob.jid falseJob.jid;
+                            Output.printf "Job %d is the true branch and job %d is the false branch.@\n@\n" trueJob#jid falseJob#jid;
                             Fork [get_active_state job trueJob; get_active_state job falseJob]
                 in
                 (job_state, errors)
@@ -447,26 +433,21 @@ let exec_stmt job errors =
                This is not true for [Block]s, but it *does* seem to be
                true for [Block]s which are not under [If]s, so we're okay. *)
             let nextStmt = List.hd block.bstmts in
-            (get_active_state job { job with stmt = nextStmt; exHist = nextExHist (Some nextStmt); }, errors)
+            (get_active_state job ((job#with_stmt nextStmt)#with_exHist (nextExHist (Some nextStmt))), errors)
         | _ -> failwith "Not implemented yet"
 
 
 let errors_to_abandoned_list job errors =
     List.map begin fun (state, failing_condition, error) ->
         (* assert: failing_condition is never true *)
-        let result = {
-            result_file = job.file;
-            result_state = { state with path_condition = failing_condition::state.path_condition };
-            result_history = job.exHist;
-            result_decision_path = job.decisionPath;
-        } in
-        Complete (Abandoned (error, Job.get_loc job, result))
+        let job = job#with_state { state with path_condition = failing_condition::state.path_condition } in
+        Complete (Abandoned (error, Job.get_loc job, (job :> Job.job_result)))
     end errors
 
 
 let step job job_queue =
     try
-        let job_state, errors = match job.instrList with
+        let job_state, errors = match job#instrList with
             | [] -> exec_stmt job []
             | _ -> exec_instr job []
         in
@@ -479,10 +460,4 @@ let step job job_queue =
     with
         | Failure msg ->
             if !Executeargs.arg_failfast then failwith msg;
-            let result = {
-                result_file = job.file;
-                result_state = job.state;
-                result_history = job.exHist;
-                result_decision_path = job.decisionPath;
-            } in
-                (Complete (Abandoned (`Failure msg, Job.get_loc job, result)), job_queue)
+            (Complete (Abandoned (`Failure msg, Job.get_loc job, (job :> Job.job_result))), job_queue)

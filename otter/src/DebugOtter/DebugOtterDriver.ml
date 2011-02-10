@@ -45,20 +45,20 @@ let printFileContents job =
 	with End_of_file ->
 		close_in ic
 
-let printPathCondition job = 
+let printPathCondition job =
 	printf "\nPath Condition: \n";
 
     FormatPlus.ksprintf print_string
         "@.  %t @.\n"
 
         begin fun ff ->
-            if job.state.path_condition = [] then
+            if job#state.path_condition = [] then
                 Format.pp_print_string ff "true"
             else
-                FormatPlus.pp_print_list BytesPrinter.bytes "\nAND\n  " ff job.state.path_condition
+                FormatPlus.pp_print_list BytesPrinter.bytes "\nAND\n  " ff job#state.path_condition
         end  
         
-let printCurrentInstruction job =         
+let printCurrentInstruction job =
       let instr = OtterCore.Job.get_instruction job in
 	  Format.printf "@.Current instruction:@ @[%a@]@." OtterCFG.Instruction.printer instr
 
@@ -73,8 +73,8 @@ let findValue value=
 	in
 	findValue'
 	  
-let printValue value job = 
-	let state = job.state in
+let printValue value job =
+	let state = job#state in
 	let f = findValue value in
 	let l = VarinfoMap.fold f (List.hd state.locals) [] in
 		if (List.length l > 0) then 
@@ -88,7 +88,7 @@ let printValue value job =
 	 
 
 	  
-let main_loop interceptor queue reporter job = 
+let main_loop interceptor queue reporter job =
 	let doWork = ref true in
 	let currJob = ref job in
 	let step = fun job -> fst (interceptor job () Statement.step) in
@@ -122,8 +122,8 @@ let main_loop interceptor queue reporter job =
 					printf "Execute true or false job?  Type \"true\" or \"false\"\n"; 
 					pick := read_line () ;
 				done;
-				if !pick = "true" then (printf "job #%d was picked for true\n" job1.jid; currJob := job1)
-				else (printf "job #%d was picked for false\n" job2.jid; currJob := job2 )
+				if !pick = "true" then (printf "job #%d was picked for true\n" job1#jid; currJob := job1)
+				else (printf "job #%d was picked for false\n" job2#jid; currJob := job2 )
 			| Job.Complete completion ->  doWork := false
 			| default -> printf "unmatched job\n"; currJob := !currJob
 			)
@@ -140,8 +140,8 @@ let main_loop interceptor queue reporter job =
 					printf "Execute true or false job?  Type \"true\" or \"false\"\n"; 
 					pick := read_line () ;
 				done;
-				if !pick = "true" then (printf "job #%d was picked for true\n" job1.jid; currJob := job1)
-				else (printf "job #%d was picked for false\n" job2.jid; currJob := job2 )
+				if !pick = "true" then (printf "job #%d was picked for true\n" job1#jid; currJob := job1)
+				else (printf "job #%d was picked for false\n" job2#jid; currJob := job2 )
 			| Job.Complete completion ->  doWork := false
 			| default -> printf "unmatched job\n"; currJob := !currJob				
 			)

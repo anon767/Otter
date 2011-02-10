@@ -442,24 +442,24 @@ let printCoveringConfigs file coveringSet covType =
         Output.printf "Here is a set of %d configurations which covers all the %s ever hit:\n\n"
                 (List.length coveringSet) name;
         List.iter
-        (fun { result_state=state; result_history=hist} ->
-                 printPath state hist;
-                 printCov file covType hist;
+        (fun job_result ->
+                 printPath job_result#state job_result#exHist;
+                 printCov file covType job_result#exHist;
                  Output.printf "-------------\n\n")
              coveringSet
     end
 
 let printCoverageInfo resultList =
-    let file = (List.hd resultList).result_file in
-    if not (List.for_all (fun r -> r.result_file == file) resultList) then
+    let file = (List.hd resultList)#file in
+    if not (List.for_all (fun r -> r#file == file) resultList) then
         failwith "Cannot report coverage from different files!";
 
     if !Executeargs.arg_line_coverage then (
         Output.printf "Line coverage:\n\n";
         let allLinesCovered =
             (List.fold_left
-                 (fun acc { result_history=hist } ->
-                        LineSet.union acc hist.coveredLines)
+                 (fun acc job_result ->
+                        LineSet.union acc job_result#exHist.coveredLines)
                  LineSet.empty
                  resultList)
         in
@@ -467,9 +467,9 @@ let printCoverageInfo resultList =
         if !Executeargs.arg_print_covering_sets then
             let coveringSet = greedySetCover
                 LineSet.is_empty
-                (fun job remaining ->
-                     LineSet.cardinal (LineSet.inter job.result_history.coveredLines remaining))
-                (fun remaining job -> LineSet.diff remaining job.result_history.coveredLines)
+                (fun job_result remaining ->
+                     LineSet.cardinal (LineSet.inter job_result#exHist.coveredLines remaining))
+                (fun remaining job_result -> LineSet.diff remaining job_result#exHist.coveredLines)
                 resultList
                 allLinesCovered
             in
@@ -480,8 +480,8 @@ let printCoverageInfo resultList =
         Output.printf "Block coverage:\n\n";
         let allBlocksCovered =
             (List.fold_left
-                 (fun acc { result_history=hist } ->
-                        StmtInfoSet.union acc hist.coveredBlocks)
+                 (fun acc job_result ->
+                        StmtInfoSet.union acc job_result#exHist.coveredBlocks)
                  StmtInfoSet.empty
                  resultList)
         in
@@ -489,9 +489,9 @@ let printCoverageInfo resultList =
         if !Executeargs.arg_print_covering_sets then
             let coveringSet = greedySetCover
                 StmtInfoSet.is_empty
-                (fun job remaining ->
-                     StmtInfoSet.cardinal (StmtInfoSet.inter job.result_history.coveredBlocks remaining))
-                (fun remaining job -> StmtInfoSet.diff remaining job.result_history.coveredBlocks)
+                (fun job_result remaining ->
+                     StmtInfoSet.cardinal (StmtInfoSet.inter job_result#exHist.coveredBlocks remaining))
+                (fun remaining job_result -> StmtInfoSet.diff remaining job_result#exHist.coveredBlocks)
                 resultList
                 allBlocksCovered
             in
@@ -502,8 +502,8 @@ let printCoverageInfo resultList =
         Output.printf "Edge coverage:\n\n";
         let allEdgesCovered =
             (List.fold_left
-                 (fun acc { result_history=hist } ->
-                        EdgeSet.union acc hist.coveredEdges)
+                 (fun acc job_result ->
+                        EdgeSet.union acc job_result#exHist.coveredEdges)
                  EdgeSet.empty
                  resultList)
         in
@@ -511,9 +511,9 @@ let printCoverageInfo resultList =
         if !Executeargs.arg_print_covering_sets then
             let coveringSet = greedySetCover
                 EdgeSet.is_empty
-                (fun job remaining ->
-                     EdgeSet.cardinal (EdgeSet.inter job.result_history.coveredEdges remaining))
-                (fun remaining job -> EdgeSet.diff remaining job.result_history.coveredEdges)
+                (fun job_result remaining ->
+                     EdgeSet.cardinal (EdgeSet.inter job_result#exHist.coveredEdges remaining))
+                (fun remaining job_result -> EdgeSet.diff remaining job_result#exHist.coveredEdges)
                 resultList
                 allEdgesCovered
             in
@@ -524,8 +524,8 @@ let printCoverageInfo resultList =
         Output.printf "Condition coverage:\n\n";
         let allCondsCovered =
             (List.fold_left
-                 (fun acc { result_history=hist } ->
-                        CondSet.union acc hist.coveredConds)
+                 (fun acc job_result ->
+                        CondSet.union acc job_result#exHist.coveredConds)
                  CondSet.empty
                  resultList)
         in
@@ -533,9 +533,9 @@ let printCoverageInfo resultList =
         if !Executeargs.arg_print_covering_sets then
             let coveringSet = greedySetCover
                 CondSet.is_empty
-                (fun job remaining ->
-                     CondSet.cardinal (CondSet.inter job.result_history.coveredConds remaining))
-                (fun remaining job -> CondSet.diff remaining job.result_history.coveredConds)
+                (fun job_result remaining ->
+                     CondSet.cardinal (CondSet.inter job_result#exHist.coveredConds remaining))
+                (fun remaining job_result -> CondSet.diff remaining job_result#exHist.coveredConds)
                 resultList
                 allCondsCovered
             in
@@ -549,9 +549,9 @@ let printCoverageInfo resultList =
              be true. *)
         Output.printf "Path coverage:\n\n";
         List.iter
-            (fun result ->
-                 printPath result.result_state result.result_history;
-                 Output.printf "The path contains %d statements\n\n" (List.length result.result_history.executionPath);
+            (fun job_result ->
+                 printPath job_result#state job_result#exHist;
+                 Output.printf "The path contains %d statements\n\n" (List.length job_result#exHist.executionPath);
                  Output.printf "-------------\n\n")
             resultList
     )

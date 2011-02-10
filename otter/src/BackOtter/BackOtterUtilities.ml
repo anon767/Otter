@@ -4,7 +4,6 @@ open OcamlUtilities
 open OtterCFG
 open OtterCore
 open State
-open Job
 open Cil
 
 
@@ -52,10 +51,10 @@ let rec get_last_element =
                 last_ele
 
 
-let get_origin_function job = Timer.time "get_origin_function" get_last_element job.state.callstack
+let get_origin_function job = Timer.time "get_origin_function" get_last_element job#state.callstack
 
 
-let get_origin_function_from_job_result job_result = Timer.time "get_origin_function_from_job_result" get_last_element job_result.result_state.callstack
+let get_origin_function_from_job_result job_result = Timer.time "get_origin_function_from_job_result" get_last_element job_result#state.callstack
 
 
 let rec lex_compare cmp lst1 lst2 =
@@ -74,7 +73,7 @@ let get_distance_to_targets target_fundecs job =
             max_distance (* = max_int in DistanceToTargets *)
         else
             let source = Job.get_instruction job in
-            let target_instrs = List.map (fun f -> Instruction.of_fundec job.Job.file f) target_fundecs in
+            let target_instrs = List.map (fun f -> Instruction.of_fundec job#file f) target_fundecs in
             let context = Job.get_instruction_context job in
             DistanceToTargets.find_in_context source context target_instrs
     in

@@ -6,7 +6,6 @@
 open DataStructures
 open OtterCore
 
-module JobSet = Set.Make (struct type t = Job.job let compare x y = Pervasives.compare x.Job.jid y.Job.jid end)
 module Queue = struct
     type 'a t = { front: 'a list; back: 'a list }
     let empty = { front = []; back = [] }

@@ -61,17 +61,12 @@ let rec flush_queue reporter job_queue =
 	match get_job_multijob job_queue with
 		| None -> reporter
 		| Some (job, (multijob, job_queue)) ->
-			let result = {
-				result_file = job.Job.file;
-				result_state = job.Job.state;
-				result_history = job.Job.exHist;
-				result_decision_path = job.Job.decisionPath; } in
-			let reporter = reporter#report (Complete (Abandoned (`Failure "Killed by signal", Job.get_loc job, result))) in
+			let reporter = reporter#report (Complete (Abandoned (`Failure "Killed by signal", Job.get_loc job, (job :> Job.job_result)))) in
 			flush_queue reporter job_queue
 
-let run reporter job = 
+let run reporter job =
 	let multijob = {
-		file = job.Job.file;
+		file = job#file;
 		processes = [];
 		shared =
 		{
@@ -80,7 +75,7 @@ let run reporter job =
 			trackedFns = Job.StringSet.empty;
 			exHist = Job.emptyHistory;
 		};
-		jid = job.Job.jid;
+		jid = job#jid;
 		next_pid = 1;
 		current_metadata = 
 		{

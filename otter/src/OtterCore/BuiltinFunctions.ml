@@ -12,7 +12,6 @@ open OtterBytes
 open Bytes
 open BytesUtility
 open State
-open Job
 open Interceptor
 
 (*
@@ -85,39 +84,39 @@ let end_function_call job =
 	let stmt =
 		(* [stmt] is an [Instr] which doesn't end with a call to a
 			 [noreturn] function, so it has exactly one successor. *)
-		match job.stmt.succs with
+		match job#stmt.succs with
 			| [h] -> h
 			| _ -> assert false
 	in
 
 	(* Update coverage. *)
-	let exHist = job.exHist in
+	let exHist = job#exHist in
 	let exHist =
 		(* We didn't add the outgoing edge in exec_stmt because the
 			 call might have never returned. Since there isn't an
 			 explicit return (because we handle the call internally), we
 			 have to add the edge now. *)
-		if job.inTrackedFn && !Executeargs.arg_line_coverage then
+		if job#inTrackedFn && !Executeargs.arg_line_coverage then
 			let loc = Job.get_loc job in
-			{ exHist with coveredLines = LineSet.add (loc.Cil.file, loc.Cil.line) exHist.coveredLines; }
+			{ exHist with Job.coveredLines = Job.LineSet.add (loc.Cil.file, loc.Cil.line) exHist.Job.coveredLines; }
 		else
 			exHist
 	in
 	let exHist =
 		(* Update edge coverage. *)
-		if job.inTrackedFn && !Executeargs.arg_edge_coverage then
-			let fn = (List.hd job.state.callstack).svar.vname in
+		if job#inTrackedFn && !Executeargs.arg_edge_coverage then
+			let fn = (List.hd job#state.callstack).svar.vname in
 			let edge = (
-				{ siFuncName = fn; siStmt = Coverage.stmtAtEndOfBlock job.stmt; },
-				{ siFuncName = fn; siStmt = Coverage.stmtAtEndOfBlock stmt; }
+				{ Job.siFuncName = fn; Job.siStmt = Coverage.stmtAtEndOfBlock job#stmt; },
+				{ Job.siFuncName = fn; Job.siStmt = Coverage.stmtAtEndOfBlock stmt; }
 			) in
-			{ exHist with coveredEdges = EdgeSet.add edge exHist.coveredEdges; }
+			{ exHist with Job.coveredEdges = Job.EdgeSet.add edge exHist.Job.coveredEdges; }
 		else
 			exHist
 	in
 
 	(* Update the state, program counter, and coverage  *)
-	{ job with stmt = stmt; exHist = exHist; instrList = []; }
+	((job#with_stmt stmt)#with_exHist exHist)#with_instrList []
 
 
 (** Convenience wrapper for creating function call handlers that works on symbolic executor jobs from simplified
@@ -127,10 +126,10 @@ let end_function_call job =
 *)
 let wrap_state_function fn =
     fun job retopt exps errors ->
-        let state, errors = fn job.state retopt exps errors in
-        let job = { job with state = state } in
+        let state, errors = fn job#state retopt exps errors in
+        let job = job#with_state state in
         let job = end_function_call job in
-        (Active job, errors)
+        (Job.Active job, errors)
 
 
 (** Function Implimentations **)
@@ -239,7 +238,7 @@ let libc___builtin_alloca_size state size bytes loc =
 	(state, addrof_block)
 
 let libc___builtin_alloca job retopt exps errors =
-	let state, b_size, errors = Expression.rval job.state (List.hd exps) errors in
+	let state, b_size, errors = Expression.rval job#state (List.hd exps) errors in
 	let size =
 		if isConcrete_bytes b_size then
 			bytes_to_int_auto b_size (*safe to use bytes_to_int as arg should be small *)
@@ -253,8 +252,8 @@ let libc___builtin_alloca job retopt exps errors =
 	in
 	let state, bytes = libc___builtin_alloca_size state size bytes (Job.get_loc job) in
 	let state, errors = set_return_value state retopt bytes errors in
-	let job = end_function_call { job with state = state} in
-	(Active job, errors)
+	let job = end_function_call (job#with_state state) in
+	(Job.Active job, errors)
 
 (* allocates on the heap *)
 let libc_malloc_size state size bytes loc =
@@ -271,7 +270,7 @@ let libc_malloc_size state size bytes loc =
 	(state, addrof_block)
 
 let libc_malloc job retopt exps errors =
-	let state, b_size, errors = Expression.rval job.state (List.hd exps) errors in
+	let state, b_size, errors = Expression.rval job#state (List.hd exps) errors in
 	let size =
 		if isConcrete_bytes b_size then
 			bytes_to_int_auto b_size (*safe to use bytes_to_int as arg should be small *)
@@ -285,8 +284,8 @@ let libc_malloc job retopt exps errors =
 	in
 	let state, bytes = libc_malloc_size state size bytes (Job.get_loc job) in
 	let state, errors = set_return_value state retopt bytes errors in
-	let job = end_function_call { job with state = state } in
-	(Active job, errors)
+	let job = end_function_call (job#with_state state) in
+	(Job.Active job, errors)
 
 
 let otter_given job = wrap_state_function begin fun state retopt exps errors ->
@@ -329,21 +328,15 @@ let libc_exit job retopt exps errors =
 	let exit_code, errors =
 		match exps with
 			| exp1::_ ->
-				let _, bytes, errors = Expression.rval job.state exp1 errors in
+				let _, bytes, errors = Expression.rval job#state exp1 errors in
 				Output.printf "exit() called with code@ @[%a@]@\n" BytesPrinter.bytes bytes;
-				let _, bytes, errors = Expression.rval job.state exp1 errors in
+				let _, bytes, errors = Expression.rval job#state exp1 errors in
 				(Some (bytes), errors)
 			| [] ->
 				Output.printf "exit() called with code (NONE)@\n";
 				(None, errors)
 	in
-	let result = {
-		result_file = job.file;
-		result_state = job.state;
-		result_history = job.exHist;
-		result_decision_path = job.decisionPath;
-	} in
-	(Complete (Exit (exit_code, result)), errors)
+	(Job.Complete (Job.Exit (exit_code, (job :> Job.job_result))), errors)
 
 let otter_evaluate job = wrap_state_function begin fun state retopt exps errors ->
 	let state, bytes, errors = eval_join_exps state exps Cil.LAnd errors in
@@ -426,7 +419,7 @@ let otter_assume job _ exps errors =
            means that we ignore coverage from this job, and we also ignore any
            errors that occurred while evaluating the arguments to __ASSUME. *)
         Output.printf "Impossible assumption; eliminating job";
-        (Fork [], errors)
+        (Job.Fork [], errors)
 
 
 let otter_path_condition job = wrap_state_function begin fun state retopt exps errors ->
@@ -444,14 +437,8 @@ end job
  * general `Failure.
  * TODO: make __FAILURE take a string of failure description. *)
 let otter_failure job retopt exps errors =
-    let job_result = {
-        result_file = job.Job.file;
-        result_state = job.Job.state;
-        result_history = job.Job.exHist;
-        result_decision_path = job.Job.decisionPath;
-    } in
     let loc = Job.get_loc job in
-    let job_state = Complete (Abandoned (`FailureReached, loc, job_result)) in
+    let job_state = Job.Complete (Job.Abandoned (`FailureReached, loc, (job :> Job.job_result))) in
     job_state, errors
 
 let otter_assert job retopt exps errors =
@@ -460,19 +447,19 @@ let otter_assert job retopt exps errors =
             [ exp ] -> exp
           | _ -> failwith "__ASSERT takes exactly one argument"
     in
-    let state, assertion, errors = Expression.rval job.state exp errors in
-    let active j = Active (end_function_call j) in
+    let state, assertion, errors = Expression.rval job#state exp errors in
+    let active j = Job.Active (end_function_call j) in
     let failure = (* Construct the failing job_state directly; there's no need to use 'errors' here. *)
         let state = MemOp.state__add_path_condition state (logicalNot assertion) true in
-        let job = { job with state = state } in
-        Complete (Abandoned (`AssertionFailure exp, Job.get_loc job, Job.get_result_from_job job))
+        let job = job#with_state state in
+        Job.Complete (Job.Abandoned (`AssertionFailure exp, Job.get_loc job, (job :> Job.job_result)))
     in
     match MemOp.eval state.path_condition assertion with
       | Ternary.True -> (active job, errors) (* assertion passes; do nothing *)
       | Ternary.False -> (failure, errors) (* assertion definitely fails *)
       | Ternary.Unknown -> (* assertion can fail and can pass. Record the error, but also assume it passes and continue *)
             let state = MemOp.state__add_path_condition state assertion true in
-            (Fork [active {job with state = state} ; failure], errors)
+            (Job.Fork [ active (job#with_state state); failure ], errors)
 
 let otter_if_then_else job = wrap_state_function begin fun state retopt exps errors ->
 	let state, bytes0, errors = Expression.rval state (List.nth exps 0) errors in
@@ -670,28 +657,28 @@ end job
 	 'x = __SYMBOLIC();' past CIL despite the disagreement in the number
 	 of arguments, this behaves like the n <= 0 case.) *)
 let intercept_symbolic job job_queue interceptor =
-	match job.instrList with
+	match job#instrList with
 		| Cil.Call(retopt, Cil.Lval(Cil.Var({vname = "__SYMBOLIC"}), Cil.NoOffset), exps, loc)::_ ->
 			let errors = [] in
 			let job, errors = match exps with
 				| [AddrOf (Var varinf, NoOffset as cil_lval)]
 				| [CastE (_, AddrOf (Var varinf, NoOffset as cil_lval))] ->
-					let state = job.state in
-					let exHist = job.exHist in
+					let state = job#state in
+					let exHist = job#exHist in
 
 					let state, (_, size as lval), errors = Expression.lval state cil_lval errors in
 					let symbBytes = bytes__symbolic size in
 					Output.set_mode Output.MSG_MUSTPRINT;
 					Output.printf "%s@ = @[%a@]@\n" varinf.vname BytesPrinter.bytes symbBytes;
 
-					let exHist = { exHist with bytesToVars = (symbBytes,varinf)::exHist.bytesToVars } in
+					let exHist = { exHist with Job.bytesToVars = (symbBytes,varinf)::exHist.Job.bytesToVars } in
 					let state = MemOp.state__assign state lval symbBytes in
 
-					(end_function_call { job with state = state; exHist = exHist }, errors)
+					(end_function_call ((job#with_state state)#with_exHist exHist), errors)
 
 				| _ ->
 
-					let state = job.state in
+					let state = job#state in
 					begin match retopt with
 						| None -> failwith "Incorrect usage of __SYMBOLIC(): symbolic value generated and ignored"
 						| Some lval ->
@@ -705,14 +692,14 @@ let intercept_symbolic job job_queue interceptor =
 								| _ -> failwith "__SYMBOLIC takes at most one argument"
 							in
 							let state = MemOp.state__assign state lval (bytes__symbolic size) in
-							(end_function_call { job with state = state }, errors)
+							(end_function_call (job#with_state state), errors)
 					end
 			in
 			if errors = [] then
-				(Active job, job_queue)
+				(Job.Active job, job_queue)
 			else
 				let abandoned_job_states = Statement.errors_to_abandoned_list job errors in
-				(Fork ((Active job)::abandoned_job_states), job_queue)
+				(Job.Fork ((Job.Active job)::abandoned_job_states), job_queue)
 
 		| _ ->
 			let job_state, job_queue = interceptor job job_queue in
@@ -723,7 +710,7 @@ let libc_setjmp job retopt exps errors =
 	match exps with
 		| [Lval cil_lval]
 		| [CastE (_, Lval cil_lval)] ->
-			let state = job.state in
+			let state = job#state in
 
 			(* assign value to the environment argument *)
 			let state, (_, size as lval), errors = Expression.lval state cil_lval errors in
@@ -734,16 +721,16 @@ let libc_setjmp job retopt exps errors =
 			let nextStmt =
 				(* [stmt] is an [Instr] which doesn't end with a call to a
 					 [noreturn] function, so it has exactly one successor. *)
-				match job.stmt.succs with
+				match job#stmt.succs with
 					| [h] -> h
 					| _ -> assert false
 			in
-			let stmtPtr = Source (retopt, job.stmt, (List.hd job.instrList), nextStmt) in
+			let stmtPtr = Source (retopt, job#stmt, (List.hd job#instrList), nextStmt) in
 			let state = {state with stmtPtrs = State.IndexMap.add stmtPtrAddr stmtPtr state.stmtPtrs; } in
 
 			let state, errors = set_return_value state retopt bytes__zero errors in
-			let job = end_function_call { job with state = state } in
-			(Active job, errors)
+			let job = end_function_call (job#with_state state) in
+			(Job.Active job, errors)
 		| _ -> failwith "setjmp invalid arguments"
 
 let libc_longjmp job retopt exps errors =
@@ -751,7 +738,7 @@ let libc_longjmp job retopt exps errors =
 		| [Lval cil_lval; value]
 		| [CastE (_, Lval cil_lval); value] ->
 		begin
-			let state = job.state in
+			let state = job#state in
 
 			(* get the return value to send to setjmp *)
 			let state, bytes, errors =
@@ -813,53 +800,51 @@ let libc_longjmp job retopt exps errors =
 				let state, errors = unwind_stack state errors in
 
 				(* Update coverage. *)
-				let exHist = job.exHist in
+				let exHist = job#exHist in
 				let exHist =
 					(* We didn't add the outgoing edge in exec_stmt because the
 						 call might have never returned. Since there isn't an
 						 explicit return (because we handle the call internally), we
 						 have to add the edge now. *)
-					if job.inTrackedFn && !Executeargs.arg_line_coverage then
+					if job#inTrackedFn && !Executeargs.arg_line_coverage then
 						let loc = Job.get_loc job in
-						{ exHist with coveredLines = LineSet.add (loc.Cil.file, loc.Cil.line) exHist.coveredLines; }
+						{ exHist with Job.coveredLines = Job.LineSet.add (loc.Cil.file, loc.Cil.line) exHist.Job.coveredLines; }
 					else
 						exHist
 				in
 				let exHist =
 					(* Update edge coverage. *)
-					if job.inTrackedFn && !Executeargs.arg_edge_coverage then
-						let fn = (List.hd job.state.callstack).svar.vname in
+					if job#inTrackedFn && !Executeargs.arg_edge_coverage then
+						let fn = (List.hd job#state.callstack).svar.vname in
 						let edge = (
-							{ siFuncName = fn; siStmt = Coverage.stmtAtEndOfBlock job.stmt; },
-							{ siFuncName = fn; siStmt = Coverage.stmtAtEndOfBlock stmt; }
+							{ Job.siFuncName = fn; Job.siStmt = Coverage.stmtAtEndOfBlock job#stmt; },
+							{ Job.siFuncName = fn; Job.siStmt = Coverage.stmtAtEndOfBlock stmt; }
 						) in
-						{ exHist with coveredEdges = EdgeSet.add edge exHist.coveredEdges; }
+						{ exHist with Job.coveredEdges = Job.EdgeSet.add edge exHist.Job.coveredEdges; }
 					else
 						exHist
 				in
 
-                (* TODO (martin): update job.decisionPath *)
+                (* TODO (martin): update job.decision_path *)
 				(* Update the state, program counter, and coverage  *)
 				let state, errors = set_return_value state retopt bytes errors in
-				let job = { job with
-					stmt = stmt;
-					exHist = exHist;
-					instrList = [];
-					state = state; }
-				in
+				let job = job#with_stmt stmt in
+				let job = job#with_exHist exHist in
+				let job = job#with_instrList [] in
+				let job = job#with_state state in
 				(job, errors)
 			in
 
 			let jobs, errors = List.fold_left (fun (jobs, errors) arg ->
 				let job, errors = process_stmtPtr arg errors in
                 (* TODO: update jid_unique and jid_parent as well *)
-				let job = Active { job with jid = if jobs = [] then job.jid else Counter.next job_counter } in
+				let job = Job.Active (job#with_jid (if jobs = [] then job#jid else Counter.next Job.job_counter)) in
 				(job::jobs, errors)
 			) ([], errors) stmtPtrAddrs in
 			(* Reverse the job list to maintain original order *)
 			let jobs = List.rev jobs in
 			match jobs with
-				| _::_::_ -> (Fork jobs, errors)
+				| _::_::_ -> (Job.Fork jobs, errors)
 				| [a] -> (a, errors)
 				| [] -> failwith "No valid jongjmp target found!"
 		end
@@ -889,7 +874,7 @@ let otter_voice job = wrap_state_function begin fun state retopt exps errors ->
 end job
 
 let noop job _ _ errors =
-    Active (end_function_call job), errors
+    Job.Active (end_function_call job), errors
 
 let interceptor job job_queue interceptor =
 	try
@@ -947,13 +932,7 @@ let interceptor job job_queue interceptor =
 		) job job_queue
 	with Failure msg ->
 		if !Executeargs.arg_failfast then failwith msg;
-		let result = {
-			result_file = job.file;
-			result_state = job.state;
-			result_history = job.exHist;
-			result_decision_path = job.decisionPath; }
-		in
-		(Complete (Abandoned (`Failure msg, Job.get_loc job, result)), job_queue) (* TODO (see above) *)
+		(Job.Complete (Job.Abandoned (`Failure msg, Job.get_loc job, (job :> Job.job_result))), job_queue) (* TODO (see above) *)
 
 let libc_interceptor job job_queue interceptor =
 	try
@@ -1137,9 +1116,4 @@ let libc_interceptor job job_queue interceptor =
 		) job job_queue
 	with Failure msg ->
 		if !Executeargs.arg_failfast then failwith msg;
-		let result = {
-			result_file = job.file;
-			result_state = job.state;
-			result_history = job.exHist;
-			result_decision_path = job.decisionPath; } in
-		(Complete (Abandoned (`Failure msg, Job.get_loc job, result)), job_queue)
+		(Job.Complete (Job.Abandoned (`Failure msg, Job.get_loc job, (job :> Job.job_result))), job_queue)
