@@ -100,8 +100,7 @@ static inline void	 swapfunc _PARAMS((char *, char *, int, int));
         } while (--i > 0);				\
 }
 
-#define SWAPINIT(a, es) swaptype = ((char *)a - (char *)0) % sizeof(long) || \
-	es % sizeof(long) ? 2 : es == sizeof(long)? 0 : 1;
+#define SWAPINIT(a, es) swaptype = 2;
 
 static inline void
 _DEFUN(swapfunc, (a, b, n, swaptype),
