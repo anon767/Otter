@@ -19,7 +19,9 @@
         int __otter_success; \
         __SYMBOLIC(&__otter_success); \
         if (!__otter_success) { \
-            __SYMBOLIC(&errno); \
+            int __tmp; \
+            __SYMBOLIC(&__tmp); \
+            errno = __tmp; \
             return -1; \
         } else { 
             /* 
