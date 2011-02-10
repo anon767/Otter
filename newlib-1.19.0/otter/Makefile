@@ -129,6 +129,8 @@ SYSCALL_FILES := \
 	sys/uio/uio.c \
 	sys/utsname/uname.c \
 	syslog/syslog.c \
+	termios/tcgetattr.c \
+	termios/tcsetattr.c \
 	time/nanosleep.c \
 	unistd/__otter_unistd.c \
 	unistd/access.c \
