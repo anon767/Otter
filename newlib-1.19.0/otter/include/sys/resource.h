@@ -5,6 +5,9 @@
  * PRIORITY
  */
 
+// Include the one in newlib/libc
+#include_next <sys/resource.h>
+
 /*
  * Possible values of the first parameter to getpriority()/setpriority(),
  * used to indicate the type of the second parameter.
@@ -22,10 +25,14 @@
 /* id_t is supposed to be defined in sys/types.h
  * But newlib's sys/types.h does not have it.
  */
-#ifndef id_t
 typedef int id_t;
-#endif
 
-#include_next <sys/resource.h>
+/* Otter specific mocking */
+#define _SYS_RESOURCE_MAX_ID 2     
+/* 0 - PRIO_PROCESS, 1 - PRIO_PGRP, 2 - PRIO_USER */
+struct { int prio; int has_set; } _SYS_RESOURCE_PRIORITY_TABLE[3][_SYS_RESOURCE_MAX_ID];
+
+int getpriority(int which, id_t who);
+int setpriority(int which, id_t who, int prio);
 
 #endif	/* !_SYS_RESOURCE_H_ */
