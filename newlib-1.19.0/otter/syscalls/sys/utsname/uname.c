@@ -2,10 +2,16 @@
 #include <string.h>
 
 int uname(struct utsname *name) {
-    int has_uname; 
-    __SYMBOLIC(&has_uname);
+    static int sys_has_uname; 
 
-    if (has_uname) {
+    // Make sure sys_has_uname is initialized only once
+    static int sys_has_uname_set = 0;
+    if (!sys_has_uname_set) {
+        sys_has_uname_set = 1;
+        __SYMBOLIC(&sys_has_uname);
+    }
+
+    if (sys_has_uname) {
         strcpy(name->sysname,"sysname");
         strcpy(name->nodename,"nodename");
         strcpy(name->release,"release");
