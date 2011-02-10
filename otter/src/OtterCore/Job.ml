@@ -201,8 +201,3 @@ let get_instruction_context job =
     in
     get_instruction_context [] job#state.State.callContexts (List.tl job#state.State.callstack)
 
-(* Useful for constructing JobMap/JobSet *)
-module JobOrderedType = struct
-    type t = job
-    let compare j1 j2 = Pervasives.compare j1#jid_unique j2#jid_unique
-end
