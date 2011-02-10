@@ -120,6 +120,7 @@ int getsockname(int socket, struct sockaddr *address, socklen_t *address_len);
 
 unsigned short __otter_sock_free_port;
 struct __otter_fs_sock_data* __otter_libc_get_sock_data(int fd);
+struct __otter_fs_sock_data* __otter_libc_get_sock_data_from_open_file(struct __otter_fs_open_file_table_entry* open_file);
 void __otter_libc_flush_sock_queue(struct __otter_fs_sock_data* sock);
 ssize_t __otter_libc_read_pipe_data(
 	struct __otter_fs_pipe_data* pipe,

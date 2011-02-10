@@ -54,6 +54,11 @@ int socket(int domain, int type, int protocol)
 	return(fd);
 }
 
+struct __otter_fs_sock_data* __otter_libc_get_sock_data_from_open_file(struct __otter_fs_open_file_table_entry* open_file) {
+	__ASSERT(open_file->type == __otter_fs_TYP_SOCK);
+	return ((struct __otter_fs_inode*)open_file->vnode)->data;
+}
+
 struct __otter_fs_sock_data* __otter_libc_get_sock_data(int fd)
 {
 	struct __otter_fs_open_file_table_entry* open_file = get_open_file_from_fd(fd);
@@ -67,11 +72,8 @@ struct __otter_fs_sock_data* __otter_libc_get_sock_data(int fd)
 		errno = ENOTSOCK;
 		return NULL;
 	}
-	
-	struct __otter_fs_inode* inode = (struct __otter_fs_inode*)open_file->vnode;
-	struct __otter_fs_sock_data* sock = (struct __otter_fs_sock_data*)inode->data;
-	
-	return(sock);
+
+	return __otter_libc_get_sock_data_from_open_file(open_file);
 }
 
 int __otter_libc_setsockopt_sol_socket(struct __otter_fs_sock_data* sock, int option_name, const void* option_value, socklen_t option_len)
@@ -647,7 +649,7 @@ int connect(int socket_fd, const struct sockaddr *address, socklen_t address_len
 		/* look for listening sockets */
 		if(__otter_fs_open_file_table[i].type != __otter_fs_TYP_SOCK)
 			continue;
-		struct __otter_fs_sock_data* recv = (struct __otter_fs_sock_data*)((struct __otter_fs_inode*)__otter_fs_open_file_table[i].vnode)->data;
+		struct __otter_fs_sock_data* recv = __otter_libc_get_sock_data_from_open_file(__otter_fs_open_file_table + i);
 		if(recv->state != __otter_sock_ST_LISTEN)
 			continue;
 		
