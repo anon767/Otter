@@ -275,7 +275,7 @@ ssize_t __otter_libc_write_pipe_data(
 		{
 			while((i + pipe->whead) % __otter_fs_PIPE_SIZE != pipe->rhead)
 			{
-				__otter_multi_io_block(pipe->data);
+				__otter_multi_io_block(&pipe->rhead);
 				__otter_multi_begin_atomic();
 			}
 		}
@@ -305,13 +305,14 @@ ssize_t __otter_libc_read_pipe(
 		__otter_multi_block_while_condition(open_file->status == __otter_fs_STATUS_EOF, open_file);
 	}
 
-	int num = __otter_libc_read_pipe_data(pipe, buf, num);
+	int num_read = __otter_libc_read_pipe_data(pipe, buf, num);
+	// TODO: This is probably not the right situation in which to set EOF
 	if(__otter_fs_pipe_is_empty(pipe)) /* set EOF if there are no more chars left to read */
 	{
 		open_file->status = __otter_fs_STATUS_EOF;
 	}
 	
-	return(num);
+	return(num_read);
 }
 
 ssize_t __otter_libc_write_pipe(
