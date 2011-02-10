@@ -144,19 +144,19 @@ module Make (Errors : Errors) = struct
         and [__exit_code__] correspond to the values returned from [main()] and via [exit()] respectively.
      *)
     let assert_exp file loc exp result return_opt exit_opt =
-        let file, state = result#file, result#state in
+        let file = result#file in
 
         (* translate from Cil.attrparam to bytes *)
-        let rec parse_exp state = function
+        let rec parse_exp result = function
             | Cil.ACons ("__return_code__", []) ->
                 begin match return_opt with
-                    | Some return -> (state, return)
+                    | Some return -> (result, return)
                     | None -> raise Exit
                 end
 
             | Cil.ACons ("__exit_code__", []) ->
                 begin match exit_opt with
-                    | Some exit -> (state, exit)
+                    | Some exit -> (result, exit)
                     | None -> raise Exit
                 end
 
@@ -166,30 +166,30 @@ module Make (Errors : Errors) = struct
                     | Some varinfo ->
                         if varinfo.Cil.vtype <> Cil.intType then
                             assert_loc_failure loc "In assertion %a: global variable %s is not an int." Printcil.attrparam exp name;
-                        let state, lval = MemOp.state__varinfo_to_lval_block state varinfo in
-                        MemOp.state__deref state (lval, (Cil.bitsSizeOf Cil.intType)/8)
+                        let result, lval = MemOp.state__varinfo_to_lval_block result varinfo in
+                        MemOp.state__deref result (lval, (Cil.bitsSizeOf Cil.intType)/8)
                     | None ->
                         assert_loc_failure loc "In assertion %a: global variable %s not found." Printcil.attrparam exp name
                 end
 
             | Cil.AInt i ->
-                (state, Bytes.int_to_bytes i)
+                (result, Bytes.int_to_bytes i)
 
             | Cil.AUnOp (unop, exp) ->
-                let state, bytes = parse_exp state exp in
-                (state, Operator.of_unop unop [ (bytes, Cil.intType) ])
+                let result, bytes = parse_exp result exp in
+                (result, Operator.of_unop unop [ (bytes, Cil.intType) ])
 
             | Cil.ABinOp (binop, exp1, exp2) ->
-                let state, bytes1 = parse_exp state exp1 in
-                let state, bytes2 = parse_exp state exp2 in
-                (state, Operator.of_binop binop [ (bytes1, Cil.intType); (bytes2, Cil.intType) ])
+                let result, bytes1 = parse_exp result exp1 in
+                let result, bytes2 = parse_exp result exp2 in
+                (result, Operator.of_binop binop [ (bytes1, Cil.intType); (bytes2, Cil.intType) ])
 
             | exp' ->
                 assert_loc_failure loc "In assertion %a: unsupported operation %a." Printcil.attrparam exp Printcil.attrparam exp'
         in
         try
-            let state, bytes = parse_exp state exp in
-            let truth = MemOp.eval state.State.path_condition bytes in
+            let result, bytes = parse_exp result exp in
+            let truth = MemOp.eval result#state.State.path_condition bytes in
             begin match truth with
                 | Ternary.True -> true
                 | Ternary.False

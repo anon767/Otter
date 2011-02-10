@@ -23,11 +23,11 @@ let libc_fork job multijob retopt exps errors =
 			(job, job, errors)
 		| Some cil_lval ->
 			(* TODO: make the pid symbolic *)
-			let child_state, child_lval, errors = Expression.lval job#state cil_lval errors in
-			let child_job = job#with_state (MemOp.state__assign child_state child_lval (Bytes.int_to_bytes multijob.next_pid)) in
+			let child_job, child_lval, errors = Expression.lval job cil_lval errors in
+			let child_job = MemOp.state__assign child_job child_lval (Bytes.int_to_bytes multijob.next_pid) in
 
-			let state, lval, errors = Expression.lval job#state cil_lval errors in
-			let job = job#with_state (MemOp.state__assign state lval (Bytes.bytes__zero)) in
+			let job, lval, errors = Expression.lval job cil_lval errors in
+			let job = MemOp.state__assign job lval (Bytes.bytes__zero) in
 			(job, child_job, errors)
 	in
 	let multijob = MultiJobUtilities.put_job
@@ -44,7 +44,7 @@ let libc_fork job multijob retopt exps errors =
 (* allocates on the global heap *)
 let otter_gmalloc_size state size bytes loc =
 	let name = FormatPlus.sprintf "%s(%d)#%d/%a%s"
-		(List.hd state.State.callstack).Cil.svar.Cil.vname
+		(List.hd state#state.State.callstack).Cil.svar.Cil.vname
 		size
 		(DataStructures.Counter.next BuiltinFunctions.libc___builtin_alloca__id)
 		Printcil.loc loc
@@ -56,7 +56,7 @@ let otter_gmalloc_size state size bytes loc =
 	(state, block, addrof_block)
 
 let otter_gmalloc job multijob retopt exps errors =
-	let state, b_size, errors = Expression.rval job#state (List.hd exps) errors in
+	let job, b_size, errors = Expression.rval job (List.hd exps) errors in
 	let size =
 		if Bytes.isConcrete_bytes b_size then
 			Bytes.bytes_to_int_auto b_size (*safe to use bytes_to_int as arg should be small *)
@@ -68,9 +68,9 @@ let otter_gmalloc job multijob retopt exps errors =
 	  then Bytes.bytes__make size (* initially zero, as though malloc were calloc *)
 	  else Bytes.bytes__make_default size Bytes.byte__undef (* initially the symbolic 'undef' byte *)
 	in
-	let state, block, bytes = otter_gmalloc_size state size bytes (Job.get_loc job) in
-	let state, errors = BuiltinFunctions.set_return_value state retopt bytes errors in
-	let job = BuiltinFunctions.end_function_call (job#with_state state) in
+	let job, block, bytes = otter_gmalloc_size job size bytes (Job.get_loc job) in
+	let job, errors = BuiltinFunctions.set_return_value job retopt bytes errors in
+	let job = BuiltinFunctions.end_function_call job in
 
 	let multijob =
 		{multijob with
@@ -89,14 +89,14 @@ let otter_gmalloc job multijob retopt exps errors =
 	(Active job, multijob, errors)
 
 let otter_gfree job multijob retopt exps errors =
-	let state, ptr, errors = Expression.rval job#state (List.hd exps) errors in
+	let job, ptr, errors = Expression.rval job (List.hd exps) errors in
 	match ptr with
 		| Bytes.Bytes_Address (block, _) ->
 			if block.Bytes.memory_block_type != Bytes.Block_type_Heap then
 				FormatPlus.failwith "gfreeing a non-gmalloced pointer:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp (List.hd exps) BytesPrinter.bytes ptr
 			else if not (MemoryBlockMap.mem block multijob.shared.shared_block_to_bytes) then
 				FormatPlus.failwith "gfreeing a non-gmalloced pointer or double-gfree:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp (List.hd exps) BytesPrinter.bytes ptr
-			else if not (MemoryBlockMap.mem block state.State.block_to_bytes) then
+			else if not (MemoryBlockMap.mem block job#state.State.block_to_bytes) then
 				FormatPlus.failwith "gfreeing after free:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp (List.hd exps) BytesPrinter.bytes ptr
 			else
 				let multijob =
@@ -112,9 +112,9 @@ let otter_gfree job multijob retopt exps errors =
 							multijob.processes;
 					}
 				in
-				let state = MemOp.state__remove_block job#state block in
-				let state, errors = BuiltinFunctions.set_return_value state retopt bytes__zero errors in
-				let job = BuiltinFunctions.end_function_call (job#with_state state) in
+				let job = MemOp.state__remove_block job block in
+				let job, errors = BuiltinFunctions.set_return_value job retopt bytes__zero errors in
+				let job = BuiltinFunctions.end_function_call job in
 				(Active job, multijob, errors)
 
 		| _ ->
@@ -122,14 +122,14 @@ let otter_gfree job multijob retopt exps errors =
 			FormatPlus.failwith "gfreeing something that is not a valid pointer:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp (List.hd exps) BytesPrinter.bytes ptr
 			
 let otter_get_pid job multijob retopt exps errors =
-	let state, errors = BuiltinFunctions.set_return_value job#state retopt (int_to_bytes multijob.current_metadata.pid) errors in
-	let job = BuiltinFunctions.end_function_call (job#with_state state) in
+	let job, errors = BuiltinFunctions.set_return_value job retopt (int_to_bytes multijob.current_metadata.pid) errors in
+	let job = BuiltinFunctions.end_function_call job in
 	(Active job, multijob, errors)
 
 let otter_get_parent_pid job multijob retopt exps errors =
 	match exps with
 		| [CastE (_, h)] | [h] ->
-			let state, bytes, errors = Expression.rval job#state h errors in
+			let job, bytes, errors = Expression.rval job h errors in
 			let pid = bytes_to_int_auto bytes in
 			let ppid =
 				if pid = multijob.current_metadata.pid then
@@ -145,17 +145,17 @@ let otter_get_parent_pid job multijob retopt exps errors =
 						(-1)
 						multijob.processes
 			in
-			let state, errors = BuiltinFunctions.set_return_value job#state retopt (int_to_bytes ppid) errors in
-			let job = BuiltinFunctions.end_function_call (job#with_state state) in
+			let job, errors = BuiltinFunctions.set_return_value job retopt (int_to_bytes ppid) errors in
+			let job = BuiltinFunctions.end_function_call job in
 			(Active job, multijob, errors)
 		| _ -> failwith "get_parent_id invalid arguments"	
 
 let otter_set_parent_pid job multijob retopt exps errors =
 	match exps with
 		| [CastE (_, h)] | [h] ->
-			let state, bytes, errors = Expression.rval job#state h errors in
+			let job, bytes, errors = Expression.rval job h errors in
 			let pid = bytes_to_int_auto bytes in
-			let job = BuiltinFunctions.end_function_call (job#with_state state) in
+			let job = BuiltinFunctions.end_function_call job in
 			let multijob = 
 				{multijob with
 					current_metadata = { multijob.current_metadata with parent_pid = pid; };
@@ -166,24 +166,24 @@ let otter_set_parent_pid job multijob retopt exps errors =
 
 (* takes a vardic list of pointers to blocks to watch *)
 let otter_io_block job multijob retopt exps errors = 
-	let rec find_blocks state exps errors =
+	let rec find_blocks job exps errors =
 		match exps with
-			| [] -> ([], state, errors)
+			| [] -> ([], job, errors)
 			| (Lval cil_lval)::t
 			| (CastE (_, Lval cil_lval))::t ->
-				let state, bytes, errors = Expression.rval state (Lval cil_lval) errors in
-				let state, lvals, errors = Expression.deref state bytes (Cil.typeOfLval cil_lval) errors in
+				let job, bytes, errors = Expression.rval job (Lval cil_lval) errors in
+				let job, lvals, errors = Expression.deref job bytes (Cil.typeOfLval cil_lval) errors in
 				let blocks = conditional__fold
 					(fun acc guard (x, y) -> x::acc)
 					[]
 					lvals
 				in
-				let blocks2, state, errors = find_blocks state t errors in
-				((List.rev_append blocks blocks2), state, errors)
+				let blocks2, job, errors = find_blocks job t errors in
+				((List.rev_append blocks blocks2), job, errors)
 			| _ -> failwith "io_block invalid arguments"
 	in
 	
-	let blocks, state, errors = find_blocks job#state exps errors in
+	let blocks, job, errors = find_blocks job exps errors in
 	
 	let multijob =
 		if blocks = [] then
@@ -196,7 +196,7 @@ let otter_io_block job multijob retopt exps errors =
 							MemoryBlockMap.add block (MemoryBlockMap.find block multijob.shared.shared_block_to_bytes) acc
 						with
 							| Not_found -> 
-								if (MemoryBlockMap.mem block state.block_to_bytes) then
+								if (MemoryBlockMap.mem block job#state.block_to_bytes) then
 									acc (* don't add non shared blocks as these will always trigger unblocking *)
 								else
 									failwith "io_block missing underlying block"
@@ -212,16 +212,16 @@ let otter_io_block job multijob retopt exps errors =
 				}
 	in
 	
-	let state, errors = BuiltinFunctions.set_return_value state retopt (Bytes.bytes__zero) errors in
-	let job = BuiltinFunctions.end_function_call (job#with_state state) in
+	let job, errors = BuiltinFunctions.set_return_value job retopt (Bytes.bytes__zero) errors in
+	let job = BuiltinFunctions.end_function_call job in
 	(Active job, multijob, errors)
 
 let otter_time_wait job multijob retopt exps errors = 
 	match exps with
 		| [CastE (_, h)] | [h] ->
-			let state, bytes, errors = Expression.rval job#state h errors in
+			let job, bytes, errors = Expression.rval job h errors in
 			let time = bytes_to_int_auto bytes in
-			let job = BuiltinFunctions.end_function_call (job#with_state state) in
+			let job = BuiltinFunctions.end_function_call job in
 			if time <= 0 then 
 				(Active job, multijob, errors) 
 			else

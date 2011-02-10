@@ -15,9 +15,6 @@ let timed_query_stp name pc pre guard = Timer.time name (fun () -> Stp.query_stp
  *	memory frame
  *)
 
-let frame__empty = VarinfoMap.empty
-
-
 let frame__varinfo_to_lval_block frame varinfo =
 	VarinfoMap.find varinfo frame
 
@@ -90,107 +87,88 @@ let const_table__mem block =
  *)
 let vargs_table__add state byteslst =
 	let key = bytes__symbolic (bitsSizeOf (TBuiltin_va_list []) / 8) in
-	let va_arg_map2 = VargsMap.add key byteslst state.va_arg_map in
-		({state with va_arg_map = va_arg_map2;},key)
+	let va_arg_map2 = VargsMap.add key byteslst state#state.va_arg_map in
+	(state#with_state { state#state with va_arg_map = va_arg_map2; },key)
 
 
 let vargs_table__get_list state key : bytes list =
-	VargsMap.find key state.va_arg_map
+	VargsMap.find key state#state.va_arg_map
 
 
 let vargs_table__get state key =
 	let byteslst = vargs_table__get_list state key in
 	match byteslst with
 		| [] -> failwith "va_list has run to the end"
-		| hd::tl ->
-			({state with va_arg_map = (VargsMap.add key tl state.va_arg_map);},	hd)
+		| hd::tl -> (state#with_state { state#state with va_arg_map = (VargsMap.add key tl state#state.va_arg_map); }, hd)
 
 
 let vargs_table__remove state key =
-	{state with va_arg_map = (VargsMap.remove key state.va_arg_map);}
+	state#with_state { state#state with va_arg_map = (VargsMap.remove key state#state.va_arg_map); }
 
 
 (**
  *	state
  *)
-let state__empty =
-	{
-		global = frame__empty;
-		formals = [frame__empty];
-		locals = [frame__empty]; (* permit global init with another global *)
-		aliases = VarinfoMap.empty;
-		mallocs = MallocMap.empty;
-		callstack = [];
-		block_to_bytes = MemoryBlockMap.empty;
-		path_condition = [];
-		path_condition_tracked = [];
-		(*return = None;*)
-		callContexts = [];
-		stmtPtrs = State.IndexMap.empty;
-		va_arg = [];
-		va_arg_map = VargsMap.empty;
-	}
-
 
 let state__has_block state block =
-    const_table__mem block || MemoryBlockMap.mem block state.block_to_bytes
+    const_table__mem block || MemoryBlockMap.mem block state#state.block_to_bytes
 
 
 let state__add_global state varinfo =
     if not varinfo.Cil.vglob then FormatPlus.invalid_arg "MemOp.state__add_global: %a is not a global variable" CilPrinter.varinfo varinfo;
     let block_type = if CilData.CilVar.is_const varinfo then Block_type_Const else Block_type_Global in
-    let global, block_to_bytes, block = frame__add_varinfo state.global state.block_to_bytes varinfo true block_type in
-    let state = { state with global = global; block_to_bytes = block_to_bytes } in
+    let global, block_to_bytes, block = frame__add_varinfo state#state.global state#state.block_to_bytes varinfo true block_type in
+    let state = state#with_state { state#state with global = global; block_to_bytes = block_to_bytes } in
     (state, block)
 
 
 let state__varinfo_to_lval_block ?pre state varinfo =
 	(* lookup varinfo in locals, formals and globals, prune and update the store, and return the result *)
 	if varinfo.Cil.vglob then
-		let global = state.global in
+		let global = state#state.global in
 		if VarinfoMap.mem varinfo global then
 			let deferred = frame__varinfo_to_lval_block global varinfo in
 			let state, lval = Deferred.force state deferred in
-			let lval = conditional__prune ~test:(timed_query_stp "query_stp/state__varinfo_to_lval_block/globals" state.path_condition) ?pre lval in
+			let lval = conditional__prune ~test:(timed_query_stp "query_stp/state__varinfo_to_lval_block/globals" state#state.path_condition) ?pre lval in
 			let global = VarinfoMap.add varinfo (Deferred.Immediate lval) global in
-			({ state with global=global }, lval)
+			(state#with_state { state#state with global=global }, lval)
 		else (* varinfo may be a function *)
 			failwith ("Varinfo "^(varinfo.vname)^" not found.")
 	else
-		let local = List.hd state.locals in
+		let local = List.hd state#state.locals in
 		if VarinfoMap.mem varinfo local then
 			let deferred = frame__varinfo_to_lval_block local varinfo in
 			let state, lval = Deferred.force state deferred in
-			let lval = conditional__prune ~test:(timed_query_stp "query_stp/state__varinfo_to_lval_block/locals" state.path_condition) ?pre lval in
+			let lval = conditional__prune ~test:(timed_query_stp "query_stp/state__varinfo_to_lval_block/locals" state#state.path_condition) ?pre lval in
 			let local = VarinfoMap.add varinfo (Deferred.Immediate lval) local in
-			({ state with locals=local::List.tl state.locals }, lval)
+			(state#with_state { state#state with locals=local::List.tl state#state.locals }, lval)
 		else
-			let formal = List.hd state.formals in
+			let formal = List.hd state#state.formals in
 			if VarinfoMap.mem varinfo formal then
 				let deferred = frame__varinfo_to_lval_block formal varinfo in
 				let state, lval = Deferred.force state deferred in
-				let lval = conditional__prune ~test:(timed_query_stp "query_stp/state__varinfo_to_lval_block/formals" state.path_condition) ?pre lval in
+				let lval = conditional__prune ~test:(timed_query_stp "query_stp/state__varinfo_to_lval_block/formals" state#state.path_condition) ?pre lval in
 				let formal = VarinfoMap.add varinfo (Deferred.Immediate lval) formal in
-				({ state with formals=formal::List.tl state.formals }, lval)
+				(state#with_state { state#state with formals=formal::List.tl state#state.formals }, lval)
 			else (* varinfo may be a function *)
 				failwith ("Varinfo "^(varinfo.vname)^" not found.")
 
 
 let state__add_block state block bytes =
-	{ state with
-		block_to_bytes = MemoryBlockMap.add block (Deferred.Immediate bytes) state.block_to_bytes;
+	state#with_state { state#state with
+		block_to_bytes = MemoryBlockMap.add block (Deferred.Immediate bytes) state#state.block_to_bytes;
 	}
 
 
 let state__add_deferred_block state block deferred =
-	{ state with
-		block_to_bytes = MemoryBlockMap.add block (Deferred.Deferred deferred) state.block_to_bytes;
+	state#with_state { state#state with
+		block_to_bytes = MemoryBlockMap.add block (Deferred.Deferred deferred) state#state.block_to_bytes;
 	}
 
 
 let state__remove_block state block=
-	{ state with
-		block_to_bytes = MemoryBlockMap.remove block state.block_to_bytes;
+	state#with_state { state#state with
+		block_to_bytes = MemoryBlockMap.remove block state#state.block_to_bytes;
 	}
 
 
@@ -198,7 +176,7 @@ let state__get_bytes_from_block state block =
     try
         (state, const_table__get block)
     with Not_found ->
-        let deferred = MemoryBlockMap.find block state.block_to_bytes in
+        let deferred = MemoryBlockMap.find block state#state.block_to_bytes in
         let state, bytes = Deferred.force state deferred in
         (state__add_block state block bytes, bytes)
 
@@ -207,13 +185,13 @@ let state__get_deferred_from_block state block =
     try
         Deferred.Immediate (const_table__get block)
     with Not_found ->
-        MemoryBlockMap.find block state.block_to_bytes
+        MemoryBlockMap.find block state#state.block_to_bytes
 
 
 let state__deref ?pre state (lvals, size) =
     let deref state pre (block, offset) =
         let state, bytes = state__get_bytes_from_block state block in
-        (state, conditional__bytes (bytes__read ~test:(timed_query_stp "query_stp/state__deref" state.path_condition) ~pre bytes offset size))
+        (state, conditional__bytes (bytes__read ~test:(timed_query_stp "query_stp/state__deref" state#state.path_condition) ~pre bytes offset size))
     in
     let state, c = conditional__fold_map ?pre deref state lvals in
     (state, make_Bytes_Conditional c)
@@ -229,11 +207,11 @@ let rec state__assign state (lvals, size) bytes =
 		 * type, the behavior is undefined. *)
 		if block.memory_block_type = Block_type_Const then FormatPlus.failwith "Write to a const: %s" block.memory_block_name;
 
-		let state, oldbytes = Deferred.force state (MemoryBlockMap.find block state.block_to_bytes) in
+		let state, oldbytes = Deferred.force state (MemoryBlockMap.find block state#state.block_to_bytes) in
 
 		(* TODO: pruning the conditional bytes here leads to repeated work if it is subsequently read via state__deref;
 		 * however, not pruning leads to O(k^(2^n)) leaves in the conditional bytes for n consecutive assignments. *)
-		let newbytes = bytes__write ~test:(timed_query_stp "query_stp/state__assign" state.path_condition) ~pre oldbytes offset size bytes in
+		let newbytes = bytes__write ~test:(timed_query_stp "query_stp/state__assign" state#state.path_condition) ~pre oldbytes offset size bytes in
 
 		(* Morris' axiom of assignment *)
 		let newbytes = match pre with
@@ -250,14 +228,16 @@ let rec state__assign state (lvals, size) bytes =
 (* start a new function call frame *)
 let state__start_fcall state callContext fundec argvs =
     (* set up the new stack frame *)
-	let block_to_bytes = state.block_to_bytes in
-	let formal, block_to_bytes = frame__add_varinfos frame__empty block_to_bytes fundec.Cil.sformals !Executeargs.arg_init_local_zero Block_type_Local in
-	let local, block_to_bytes = frame__add_varinfos frame__empty block_to_bytes fundec.Cil.slocals !Executeargs.arg_init_local_zero Block_type_Local in
-	let state = { state with formals = formal::state.formals;
-	                         locals = local::state.locals;
-	                         callstack = fundec::state.callstack;
-	                         block_to_bytes = block_to_bytes;
-	                         callContexts = callContext::state.callContexts } in
+	let block_to_bytes = state#state.block_to_bytes in
+	let formal, block_to_bytes = frame__add_varinfos VarinfoMap.empty block_to_bytes fundec.Cil.sformals !Executeargs.arg_init_local_zero Block_type_Local in
+	let local, block_to_bytes = frame__add_varinfos VarinfoMap.empty block_to_bytes fundec.Cil.slocals !Executeargs.arg_init_local_zero Block_type_Local in
+	let state = state#with_state { state#state with
+		formals = formal::state#state.formals;
+		locals = local::state#state.locals;
+		callstack = fundec::state#state.callstack;
+		block_to_bytes = block_to_bytes;
+		callContexts = callContext::state#state.callContexts;
+	} in
     (* assign arguments to parameters *)
 	let rec assign_argvs state pars argvs = match pars, argvs with
 		| par::pars, argv::argvs ->
@@ -274,7 +254,7 @@ let state__start_fcall state callContext fundec argvs =
 				Output.set_mode Output.MSG_FUNC;
 				Output.printf "Rest of args:@ @[%a@]@\n" (FormatPlus.pp_print_list BytesPrinter.bytes ",@ ") va_arg;
 			);
-			{ state with va_arg = va_arg::state.va_arg }
+			state#with_state { state#state with va_arg = va_arg::state#state.va_arg }
 		| _, [] ->
 			failwith ("Not enough arguments to function " ^ fundec.svar.vname)
 	in
@@ -284,19 +264,21 @@ let state__start_fcall state callContext fundec argvs =
 let state__end_fcall state =
     (* TODO: move this to Statement *)
 	Output.set_mode Output.MSG_FUNC;
-	Output.printf "@[Exit function %a@]@\n" CilPrinter.fundec (List.hd state.callstack);
-	let block_to_bytes = state.block_to_bytes in
-	let block_to_bytes = frame__clear_varinfos (List.hd state.locals) block_to_bytes in
-	let block_to_bytes = frame__clear_varinfos (List.hd state.formals) block_to_bytes in
-    { state with formals = List.tl state.formals;
-                 locals = List.tl state.locals;
-                 callstack = List.tl state.callstack;
-                 block_to_bytes = block_to_bytes;
-                 va_arg = List.tl state.va_arg;
-                 callContexts = List.tl state.callContexts }
+	Output.printf "@[Exit function %a@]@\n" CilPrinter.fundec (List.hd state#state.callstack);
+	let block_to_bytes = state#state.block_to_bytes in
+	let block_to_bytes = frame__clear_varinfos (List.hd state#state.locals) block_to_bytes in
+	let block_to_bytes = frame__clear_varinfos (List.hd state#state.formals) block_to_bytes in
+	state#with_state { state#state with
+		formals = List.tl state#state.formals;
+		locals = List.tl state#state.locals;
+		callstack = List.tl state#state.callstack;
+		block_to_bytes = block_to_bytes;
+		va_arg = List.tl state#state.va_arg;
+		callContexts = List.tl state#state.callContexts;
+	}
 
 
-let state__get_callContext state = List.hd state.callContexts
+let state__get_callContext state = List.hd state#state.callContexts
 
 let state__extract_path_condition state bytes =
 (**
@@ -332,24 +314,24 @@ let state__extract_path_condition state bytes =
     | [] , [] -> [],[]
     | _ -> failwith "Error in state__extract_path_condition"
   in
-    impl state.path_condition state.path_condition_tracked
+    impl state#state.path_condition state#state.path_condition_tracked
 
 
 let state__add_path_condition state bytes tracked=
-  let path_condition,path_condition_tracked =
-    if !Executeargs.arg_simplify_path_condition then
-      Stats.time "Simplify PC" (state__extract_path_condition state) bytes
-    else
-      state.path_condition,state.path_condition_tracked
-  in
-	{ state with
+	let path_condition, path_condition_tracked =
+		if !Executeargs.arg_simplify_path_condition then
+			Stats.time "Simplify PC" (state__extract_path_condition state) bytes
+		else
+			(state#state.path_condition, state#state.path_condition_tracked)
+	in
+	state#with_state { state#state with
 		path_condition = bytes::path_condition;
 		path_condition_tracked = tracked::path_condition_tracked;
 	}
 
 
 let state__trace state =
-	FormatPlus.as_string (Printer.callingContext_list "/") (List.rev state.callContexts)
+	FormatPlus.as_string (Printer.callingContext_list "/") (List.rev state#state.callContexts)
 
 
 (** Compare two states. Return true if they are the same; false otherwise. *)
@@ -362,7 +344,7 @@ let cmp_states s1 s2 =
 			let typ = block.memory_block_type in
 			if typ!=Block_type_Global && typ!=Block_type_Heap then result else (* only care about globals and heap content *)
 	          try
-	    		let deferred2 = MemoryBlockMap.find block s2.block_to_bytes in
+	    		let deferred2 = MemoryBlockMap.find block s2#state.block_to_bytes in
 				(* TODO: should the forced state of s2 be propagated? *)
 				let _, bytes2 = Deferred.force s2 deferred2 in
 	    		if bytes__equal bytes1 bytes2 then
@@ -374,7 +356,7 @@ let cmp_states s1 s2 =
 				end
 	          with Not_found -> result
 		in
-		MemoryBlockMap.fold f s1.block_to_bytes true
+		MemoryBlockMap.fold f s1#state.block_to_bytes true
 	in
 	(* List blocks (memory allocations) that only one of the states has *)
 	let unsharedBlocksComparison =
@@ -382,13 +364,13 @@ let cmp_states s1 s2 =
 			let _, bytes1 = Deferred.force state1 deferred1 in
 			let typ = block1.memory_block_type in
 				if typ!=Block_type_Global && typ!=Block_type_Heap then result else (* only care about globals and heap content *)
-	        if MemoryBlockMap.mem block1 state2.block_to_bytes then result else (
+	        if MemoryBlockMap.mem block1 state2#state.block_to_bytes then result else (
 	    			Output.printf " %s %s@ = @[%a@]@\n" prefix (block1.memory_block_name) BytesPrinter.bytes bytes1;
 						false
 					)
 	  in
-	  MemoryBlockMap.fold (h "(>>)" s1 s2) s1.block_to_bytes true &&
-			MemoryBlockMap.fold (h "(<<)" s2 s1) s2.block_to_bytes true
+	  MemoryBlockMap.fold (h "(>>)" s1 s2) s1#state.block_to_bytes true &&
+			MemoryBlockMap.fold (h "(<<)" s2 s1) s2#state.block_to_bytes true
 	in
 	let callStackComparison =
 		let rec cmpCallStack cs1 cs2 =
@@ -397,7 +379,7 @@ let cmp_states s1 s2 =
 				| h1::cs1',h2::cs2' when h1==h2 -> cmpCallStack cs1' cs2'
 				| _ -> false
 		in
-		cmpCallStack s1.callstack s2.callstack
+		cmpCallStack s1#state.callstack s2#state.callstack
 	in
 	sharedBlocksComparison && unsharedBlocksComparison && callStackComparison
 

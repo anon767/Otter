@@ -88,9 +88,7 @@ class ['self] t file' fn =
         method file = file
         method with_file file = {< file = file >}
 
-        val mutable state : State.t = MemOp.state__empty
-        method state = state
-        method with_state state = {< state = state >}
+        inherit ['self] State.t as state_super
 
         val mutable exHist : executionHistory = emptyHistory
         method exHist = exHist
@@ -155,8 +153,8 @@ class ['self] t file' fn =
 ]}
         *)
         method become (other : 'self) =
+            state_super#become other;
             file <- other#file;
-            state <- other#state;
             exHist <- other#exHist;
             decision_path <- other#decision_path;
             instrList <- other#instrList;

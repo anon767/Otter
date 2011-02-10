@@ -96,18 +96,17 @@ let function_from_exp job instr fexp errors =
 
 
         | Lval(Mem(fexp), NoOffset) ->
-            let state = job#state in
-            let state, bytes, errors  = Expression.rval state fexp errors in
+            let job, bytes, errors  = Expression.rval job fexp errors in
             let ftyp = Cil.typeOf fexp in
             let rec getall fp =
                 let fold_func (acc, errors) pre leaf =
                     match leaf with
                         | Bytes_FunPtr(varinfo,_) ->
                             (* the varinfo should always map to a valid fundec (if the file was parsed by Cil) *)
-                            let job = job#with_state (MemOp.state__add_path_condition state (Bytes.guard__to_bytes pre) true) in
+                            let job = MemOp.state__add_path_condition job (Bytes.guard__to_bytes pre) true in
                             let fundec = FindCil.fundec_by_varinfo job#file varinfo in
                             ((job, fundec)::acc, errors)
-                        | _ -> (acc, (state, make_Bytes_Op (OP_EQ, [(bytes, ftyp); (leaf, ftyp)]), `Failure "Invalid function pointer") :: errors)
+                        | _ -> (acc, (job, make_Bytes_Op (OP_EQ, [(bytes, ftyp); (leaf, ftyp)]), `Failure "Invalid function pointer") :: errors)
                 in
                 Bytes.conditional__fold fold_func ([], errors) fp
             in
@@ -115,11 +114,10 @@ let function_from_exp job instr fexp errors =
                 | Bytes_FunPtr(varinfo,_) ->
                     (* the varinfo should always map to a valid fundec (if the file was parsed by Cil) *)
                     let fundec = FindCil.fundec_by_varinfo job#file varinfo in
-                    let job = job#with_state state in
                     ([ (job, fundec) ], errors)
                 | Bytes_Read(bytes2, offset, len) ->
                     let fp = (BytesUtility.expand_read_to_conditional bytes2 offset len) in
-                    let fp = Bytes.conditional__prune ~test:(Stp.query_stp state.path_condition) fp in
+                    let fp = Bytes.conditional__prune ~test:(Stp.query_stp job#state.path_condition) fp in
                     let fp, errors = getall fp in
                     (fp, errors)
                 | Bytes_Conditional(c) ->
@@ -138,13 +136,13 @@ let exec_fundec job instr fundec lvalopt exps errors =
 
     (* TODO: Profiler.start_fcall job fundec *)
 
-    let state, stmt = job#state, job#stmt in
+    let stmt = job#stmt in
 
     (* evaluate the arguments *)
-    let state, argvs, errors = List.fold_right begin fun exp (state, argvs, errors) ->
-        let state, bytes, errors = Expression.rval state exp errors in
-        (state, bytes::argvs, errors)
-    end exps (state, [], errors) in
+    let job, argvs, errors = List.fold_right begin fun exp (job, argvs, errors) ->
+        let job, bytes, errors = Expression.rval job exp errors in
+        (job, bytes::argvs, errors)
+    end exps (job, [], errors) in
 
     (* [stmt] is an [Instr], so it can't have two successors. If
      [func] returns, then [stmt] has exactly one successor. If
@@ -155,7 +153,7 @@ let exec_fundec job instr fundec lvalopt exps errors =
         | [h] -> Source (lvalopt,stmt,instr,h)
         | _   -> assert false
     in
-    let state = MemOp.state__start_fcall state callContext fundec argvs in
+    let job = MemOp.state__start_fcall job callContext fundec argvs in
 
     (*
     (* If fundec is the function to be examined *)
@@ -166,7 +164,6 @@ let exec_fundec job instr fundec lvalopt exps errors =
     (* Update the state, the next stmt to execute, and whether or
      not we're in a tracked function. *)
     let job' = job in
-    let job' = job'#with_state state in
     let job' = job'#with_stmt (List.hd fundec.sallstmts) in
     let job' = job'#with_inTrackedFn (StringSet.mem fundec.svar.vname job#trackedFns) in
     (get_active_state job job', errors)
@@ -220,12 +217,12 @@ let exec_instr job errors =
     match instr with
          | Set(cil_lval, exp, loc) ->
             printInstr instr;
-            let state = job#state in
-            let state, lval, errors = Expression.lval state cil_lval errors in
-            let state, rv, errors = Expression.rval state exp errors in
-            let state = MemOp.state__assign state lval rv in
-            let nextStmt = if tail = [] then List.hd job#stmt.succs else job#stmt in
-            (get_active_state job ((job#with_state state)#with_stmt nextStmt), errors)
+            let old_job = job in
+            let job, lval, errors = Expression.lval job cil_lval errors in
+            let job, rv, errors = Expression.rval job exp errors in
+            let job = MemOp.state__assign job lval rv in
+            let job = job#with_stmt (if tail = [] then List.hd job#stmt.succs else job#stmt) in
+            (get_active_state old_job job, errors)
         | Call(lvalopt, fexp, exps, loc) ->
             assert (tail = []);
             printInstr instr;
@@ -235,7 +232,7 @@ let exec_instr job errors =
 
 let exec_stmt job errors =
     assert (job#instrList = []);
-    let state, stmt = job#state, job#stmt in
+    let stmt = job#stmt in
 
     let nextExHist ?(whichBranch=false) nextStmtOpt =
         if job#inTrackedFn
@@ -264,39 +261,38 @@ let exec_stmt job errors =
             in
             (get_active_state job ((job#with_instrList instrs)#with_exHist (nextExHist nextStmtOpt)), errors)
         | Cil.Return (expopt, loc) ->
-            begin match state.callContexts with
+            begin match job#state.callContexts with
                 | Runtime::_ -> (* completed symbolic execution (e.g., return from main) *)
-                    let state, retval, errors = match expopt with
+                    let job, retval, errors = match expopt with
                         | None ->
-                            (state, None, errors)
+                            (job, None, errors)
                         | Some exp ->
-                            let state, retval, errors = Expression.rval state exp errors in
-                            (state, Some retval, errors)
+                            let job, retval, errors = Expression.rval job exp errors in
+                            (job, Some retval, errors)
                     in
-                    let job = job#with_state state in
                     let job = job#with_exHist (nextExHist None) in
                     Output.set_mode Output.MSG_MUSTPRINT;
                     Output.printf "Program execution finished.@\n";
                     (Complete (Return (retval, job)), errors)
                 | (Source (destOpt,callStmt,_,nextStmt))::_ ->
-                        let state, errors =
+                        let job, errors =
                             match expopt, destOpt with
                                 | Some exp, Some dest ->
                                     (* evaluate the return expression in the callee frame *)
-                                    let state, rv, errors = Expression.rval state exp errors in
+                                    let job, rv, errors = Expression.rval job exp errors in
                                     (* TODO: Profiler.end_fcall job *)
-                                    let state = MemOp.state__end_fcall state in
+                                    let job = MemOp.state__end_fcall job in
                                     (* evaluate the assignment in the caller frame *)
-                                    let state, lval, errors = Expression.lval state dest errors in
-                                    (MemOp.state__assign state lval rv, errors)
+                                    let job, lval, errors = Expression.lval job dest errors in
+                                    (MemOp.state__assign job lval rv, errors)
                                 | _, _ ->
                                      (* If we are not returning a value, or if we
                                         ignore the result, just end the call *)
                                     (* TODO: Profiler.end_fcall job *)
-                                    (MemOp.state__end_fcall state, errors)
+                                    (MemOp.state__end_fcall job, errors)
                         in
 
-                        let callingFuncName = (List.hd state.callstack).svar.vname in
+                        let callingFuncName = (List.hd job#state.callstack).svar.vname in
                         let inTrackedFn = StringSet.mem callingFuncName job#trackedFns in
 
                         (* When a function returns, we have to record the
@@ -324,7 +320,6 @@ let exec_stmt job errors =
                         in
 
                         let old_job = job in
-                        let job = job#with_state state in
                         let job = job#with_stmt nextStmt in
                         let job = job#with_inTrackedFn inTrackedFn in
                         let job = job#with_exHist exHist in
@@ -341,10 +336,10 @@ let exec_stmt job errors =
         | If (exp, block1, block2, loc) ->
             begin
             (* try a branch *)
-                let try_branch state pcopt block =
-                    let nextState = match pcopt with
-                        | Some(pc) -> MemOp.state__add_path_condition state pc true
-                        | None -> state
+                let try_branch job pcopt block =
+                    let job = match pcopt with
+                        | Some(pc) -> MemOp.state__add_path_condition job pc true
+                        | None -> job
                     in
                     let nextStmt = match stmt.succs with
                             [succ] -> succ (* This happens for 'if (...);', with nothing on either branch *)
@@ -355,74 +350,64 @@ let exec_stmt job errors =
                                 if block == block1 then succT else succF
                         | _ -> assert false (* Impossible: there must be 1 or 2 successors *)
                     in
-                    (nextState, nextStmt)
+                    job#with_stmt nextStmt
                 in
 
-                let state, rv, errors = Expression.rval state exp errors in
+                let job, rv, errors = Expression.rval job exp errors in
 
                 Output.set_mode Output.MSG_GUARD;
                 if(Output.need_print Output.MSG_GUARD) then
                     begin
                         Output.printf "Check if the following holds:@\n  @[%a@]@\n" BytesPrinter.bytes rv;
                         Output.printf "Under the path condition:@\n";
-                        if state.path_condition = [] then
+                        if job#state.path_condition = [] then
                             Output.printf "  (nil)@\n"
                         else
-                            Output.printf "  @[%a@]@\n" (FormatPlus.pp_print_list BytesPrinter.bytes "@ AND ") state.path_condition;
+                            Output.printf "  @[%a@]@\n" (FormatPlus.pp_print_list BytesPrinter.bytes "@ AND ") job#state.path_condition;
                     end;
 
-                let truth = MemOp.eval state.path_condition rv in
+                let truth = MemOp.eval job#state.path_condition rv in
                 Output.set_mode Output.MSG_REG;
                 let job_state = match truth with
                     | Ternary.True ->
                         Output.printf "True@\n";
-                        let nextState,nextStmt = try_branch state None block1 in
                         let old_job = job in
-                        let job = job#with_state nextState in
-                        let job = job#with_stmt nextStmt in
+                        let job = try_branch job None block1 in
                         let job = job#with_decision_path ((DecisionConditional(stmt, true))::job#decision_path) in
-                        let job = job#with_exHist (nextExHist (Some nextStmt) ~whichBranch:true) in
+                        let job = job#with_exHist (nextExHist (Some job#stmt) ~whichBranch:true) in
                         get_active_state old_job job
 
                     | Ternary.False ->
                         Output.printf "False@\n";
-                        let nextState,nextStmt = try_branch state None block2 in
                         let old_job = job in
-                        let job = job#with_state nextState in
-                        let job = job#with_stmt nextStmt in
+                        let job = try_branch job None block2 in
                         let job = job#with_decision_path ((DecisionConditional(stmt, false))::job#decision_path) in
-                        let job = job#with_exHist  (nextExHist (Some nextStmt) ~whichBranch:false) in
+                        let job = job#with_exHist  (nextExHist (Some job#stmt) ~whichBranch:false) in
                         get_active_state old_job job
 
                     | Ternary.Unknown ->
                         Output.printf "Unknown@\n";
 
-                        let nextStateT,nextStmtT = try_branch state (Some rv) block1 in
-                        let nextStateF,nextStmtF = try_branch state (Some (logicalNot rv)) block2 in
+                        let true_job = try_branch job (Some rv) block1 in
+                        let false_job = try_branch job (Some (logicalNot rv)) block2 in
 
                         (* Create two jobs, one for each branch. The false branch
                            inherits the old jid, and the true job gets a new jid. *)
-                        let trueJob = job in
-                        let trueJob = trueJob#with_state nextStateT in
-                        let trueJob = trueJob#with_stmt nextStmtT in
-                        let trueJob = trueJob#with_exHist (nextExHist (Some nextStmtT) ~whichBranch:true) in
-                        let trueJob = trueJob#with_decision_path ((DecisionConditional(stmt, true))::job#decision_path) in
-                        let trueJob = trueJob#with_jid (Counter.next job_counter) in
+                        let true_job = true_job#with_decision_path ((DecisionConditional(stmt, true))::job#decision_path) in
+                        let true_job = true_job#with_exHist (nextExHist (Some true_job#stmt) ~whichBranch:true) in
+                        let true_job = true_job#with_jid (Counter.next job_counter) in
 
-                        let falseJob = job in
-                        let falseJob = falseJob#with_state nextStateF in
-                        let falseJob = falseJob#with_stmt nextStmtF in
-                        let falseJob = falseJob#with_decision_path ((DecisionConditional(stmt, false))::job#decision_path) in
-                        let falseJob = falseJob#with_exHist (nextExHist (Some nextStmtF) ~whichBranch:false) in
+                        let false_job = false_job#with_decision_path ((DecisionConditional(stmt, false))::job#decision_path) in
+                        let false_job = false_job#with_exHist (nextExHist (Some false_job#stmt) ~whichBranch:false) in
 
                             Output.set_mode Output.MSG_MUSTPRINT;
                             Output.printf "Branching on @[%a@]@ at %a.@\n"
                             CilPrinter.exp exp
                             Printcil.loc loc;
                             if !Executeargs.arg_print_callstack then
-                                Output.printf "Call stack:@\n  @[%a@]@\n" (Printer.callingContext_list "@\n") state.callContexts;
-                            Output.printf "Job %d is the true branch and job %d is the false branch.@\n@\n" trueJob#jid falseJob#jid;
-                            Fork [get_active_state job trueJob; get_active_state job falseJob]
+                                Output.printf "Call stack:@\n  @[%a@]@\n" (Printer.callingContext_list "@\n") job#state.callContexts;
+                            Output.printf "Job %d is the true branch and job %d is the false branch.@\n@\n" true_job#jid false_job#jid;
+                            Fork [get_active_state job true_job; get_active_state job false_job]
                 in
                 (job_state, errors)
 
@@ -439,9 +424,10 @@ let exec_stmt job errors =
 
 
 let errors_to_abandoned_list job errors =
-    List.map begin fun (state, failing_condition, error) ->
+    List.map begin fun (job, failing_condition, error) ->
         (* assert: failing_condition is never true *)
-        let job = job#with_state { state with path_condition = failing_condition::state.path_condition } in
+        (* TODO: what is this for? what code needs the failing condition to be added to the path condition? *)
+        let job = job#with_state { job#state with path_condition = failing_condition::job#state.path_condition } in
         Complete (Abandoned (error, job))
     end errors
 

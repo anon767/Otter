@@ -119,126 +119,117 @@ let end_function_call job =
 	((job#with_stmt stmt)#with_exHist exHist)#with_instrList []
 
 
-(** Convenience wrapper for creating function call handlers that works on symbolic executor jobs from simplified
-	function call handlers that works on the symbolic executor states in the jobs.
-		@param fn is the simplified function call handler to wrap
-		@return a function call handler
-*)
-let wrap_state_function fn =
-    fun job retopt exps errors ->
-        let state, errors = fn job#state retopt exps errors in
-        let job = job#with_state state in
-        let job = end_function_call job in
-        (Job.Active job, errors)
-
-
 (** Function Implimentations **)
 
-let libc___builtin_va_arg job = wrap_state_function begin fun state retopt exps errors ->
-	let state, key, errors = Expression.rval state (List.hd exps) errors in
-	let state, ret = MemOp.vargs_table__get state key in
+let libc___builtin_va_arg job retopt exps errors =
+	let job, key, errors = Expression.rval job (List.hd exps) errors in
+	let job, ret = MemOp.vargs_table__get job key in
 	let lastarg = List.nth exps 2 in
 	match lastarg with
 		| CastE(_, AddrOf(cil_lval)) ->
-			let state, lval, channe = Expression.lval state cil_lval errors in
-			let state = MemOp.state__assign state lval ret in
-			set_return_value state retopt ret errors
+			let job, lval, channe = Expression.lval job cil_lval errors in
+			let job = MemOp.state__assign job lval ret in
+			let job, errors = set_return_value job retopt ret errors in
+			let job = end_function_call job in
+			(Job.Active job, errors)
 		| _ -> failwith "Last argument of __builtin_va_arg must be of the form CastE(_,AddrOf(lval))"
-end job
 
 
-let libc___builtin_va_copy job = wrap_state_function begin fun state retopt exps errors ->
-	let state, keyOfSource, errors = Expression.rval state (List.nth exps 1) errors in
-	let srcList = MemOp.vargs_table__get_list state keyOfSource in
-	let state, key = MemOp.vargs_table__add state srcList in
+let libc___builtin_va_copy job retopt exps errors =
+	let job, keyOfSource, errors = Expression.rval job (List.nth exps 1) errors in
+	let srcList = MemOp.vargs_table__get_list job keyOfSource in
+	let job, key = MemOp.vargs_table__add job srcList in
 	match List.hd exps with
 		| Lval(cil_lval) ->
-			let state, lval, errors = Expression.lval state cil_lval errors in
-			let state = MemOp.state__assign state lval key in
-			set_return_value state retopt bytes__zero errors
+			let job, lval, errors = Expression.lval job cil_lval errors in
+			let job = MemOp.state__assign job lval key in
+			let job = end_function_call job in
+			(Job.Active job, errors)
 		| _ -> failwith "First argument of va_copy must have lval"
-end job
 
 
-let libc___builtin_va_end job = wrap_state_function begin fun state retopt exps errors ->
-	let state, key, errors = Expression.rval state (List.hd exps) errors in
-	let state = MemOp.vargs_table__remove state key in
-	set_return_value state retopt bytes__zero errors
-end job
+let libc___builtin_va_end job retopt exps errors =
+	let job, key, errors = Expression.rval job (List.hd exps) errors in
+	let job = MemOp.vargs_table__remove job key in
+	let job = end_function_call job in
+	(Job.Active job, errors)
 
 
-let libc___builtin_va_start job = wrap_state_function begin fun state retopt exps errors ->
+let libc___builtin_va_start job retopt exps errors =
 	(* TODO: assign first arg with new bytes that maps to vargs *)
 	match List.hd exps with
 		| Lval(cil_lval) ->
-			let state, key = MemOp.vargs_table__add state (List.hd state.va_arg) in
-			let state, lval, errors = Expression.lval state cil_lval errors in
-			let state = MemOp.state__assign state lval key in
-			set_return_value state retopt bytes__zero errors
+			let job, key = MemOp.vargs_table__add job (List.hd job#state.va_arg) in
+			let job, lval, errors = Expression.lval job cil_lval errors in
+			let job = MemOp.state__assign job lval key in
+			let job = end_function_call job in
+			(Job.Active job, errors)
 		| _ -> failwith "First argument of va_start must have lval"
-end job
 
 
-let libc_free job = wrap_state_function begin fun state retopt exps errors ->
-    (* Remove the mapping of (block,bytes) in the state. *)
+let libc_free job retopt exps errors =
+    (* Remove the mapping of (block,bytes) in the job. *)
     let arg = List.hd exps in
-    let state, ptr, errors = Expression.rval state arg errors in
-    match ptr with
+    let job, ptr, errors = Expression.rval job arg errors in
+    let job, errors = match ptr with
       | Bytes_Address (block, offset) ->
             if block.memory_block_type != Block_type_Heap || not (bytes__equal offset bytes__zero)
             then FormatPlus.failwith "Freeing a non-malloced pointer:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp arg BytesPrinter.bytes ptr;
-            if not (MemOp.state__has_block state block)
+            if not (MemOp.state__has_block job block)
             then FormatPlus.failwith "Double-free:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp arg BytesPrinter.bytes ptr;
-            let state = MemOp.state__remove_block state block in
-            (state, errors)
+            let job = MemOp.state__remove_block job block in
+            (job, errors)
       | ptr when bytes__equal ptr bytes__zero -> (* Freeing a null pointer. Do nothing. *)
-            (state, errors)
+            (job, errors)
       | _ ->
             FormatPlus.failwith "Freeing something that is not a valid pointer:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp arg BytesPrinter.bytes ptr
-end job
+    in
+    let job = end_function_call job in
+    (Job.Active job, errors)
 
 
-let libc_memset job = wrap_state_function begin fun state retopt exps errors ->
+let libc_memset job retopt exps errors =
     match exps with
       | [ dest_exp; value_exp; length_exp ] ->
-            let state, length, errors = Expression.rval state length_exp errors in
+            let job, length, errors = Expression.rval job length_exp errors in
             let length = bytes_to_int_auto length in
-            let state, value, errors = Expression.rval state value_exp errors in
+            let job, value, errors = Expression.rval job value_exp errors in
             let value_byte = bytes__get_byte value 0 (* little endian *) in
-            let state, dest, errors = Expression.rval state dest_exp errors in
-            let state, lvals, errors = Expression.deref state dest (Cil.typeOf dest_exp) errors in
-            let old_state = state in (* Checkpoint the state in case we must report an error *)
-            let state, failing_bytes_opt = Expression.checkBounds state lvals length in
+            let job, dest, errors = Expression.rval job dest_exp errors in
+            let job, lvals, errors = Expression.deref job dest (Cil.typeOf dest_exp) errors in
+            let old_job = job in (* Checkpoint the job in case we must report an error *)
+            let job, failing_bytes_opt = Expression.checkBounds job lvals length in
             let errors = match failing_bytes_opt with
               | None -> errors
-              | Some b -> (old_state, logicalNot b, `OutOfBounds dest_exp) :: errors
+              | Some b -> (old_job, logicalNot b, `OutOfBounds dest_exp) :: errors
             in
-            let state = MemOp.state__assign state (lvals, length) (bytes__make_default length value_byte) in
-            set_return_value state retopt dest errors
+            let job = MemOp.state__assign job (lvals, length) (bytes__make_default length value_byte) in
+            let job, errors = set_return_value job retopt dest errors in
+            let job = end_function_call job in
+            (Job.Active job, errors)
       | _ -> failwith "Wrong number of arguments to memset"
-end job
 
 
 (* __builtin_alloca is used for local arrays with variable size; creates a dummy local variable so that the memory is deallocated on return *)
 let libc___builtin_alloca__id = Counter.make ()
-let libc___builtin_alloca_size state size bytes loc =
+let libc___builtin_alloca_size job size bytes loc =
 	let name = FormatPlus.sprintf "%s(%d)#%d/%a%s"
-		(List.hd state.callstack).svar.vname
+		(List.hd job#state.callstack).svar.vname
 		size
 		(Counter.next libc___builtin_alloca__id)
 		Printcil.loc loc
-		(MemOp.state__trace state)
+		(MemOp.state__trace job)
 	in
 	let block = block__make name size Block_type_Local in
 	let addrof_block = make_Bytes_Address (block, bytes__zero) in
-	let state = MemOp.state__add_block state block bytes in
-	let local = (List.hd state.locals) in
+	let job = MemOp.state__add_block job block bytes in
+	let local = (List.hd job#state.locals) in
 	let local = VarinfoMap.add (Cil.makeVarinfo false "alloca" Cil.voidType) (Deferred.Immediate (conditional__lval_block (block, bytes__zero))) local in
-	let state = {state with locals = local::(List.tl state.locals); } in
-	(state, addrof_block)
+	let job = job#with_state { job#state with locals = local::(List.tl job#state.locals); } in
+	(job, addrof_block)
 
 let libc___builtin_alloca job retopt exps errors =
-	let state, b_size, errors = Expression.rval job#state (List.hd exps) errors in
+	let job, b_size, errors = Expression.rval job (List.hd exps) errors in
 	let size =
 		if isConcrete_bytes b_size then
 			bytes_to_int_auto b_size (*safe to use bytes_to_int as arg should be small *)
@@ -250,27 +241,27 @@ let libc___builtin_alloca job retopt exps errors =
 	  then bytes__make size (* initially zero, as though malloc were calloc *)
 	  else bytes__make_default size byte__undef (* initially the symbolic 'undef' byte *)
 	in
-	let state, bytes = libc___builtin_alloca_size state size bytes (Job.get_loc job) in
-	let state, errors = set_return_value state retopt bytes errors in
-	let job = end_function_call (job#with_state state) in
+	let job, bytes = libc___builtin_alloca_size job size bytes (Job.get_loc job) in
+	let job, errors = set_return_value job retopt bytes errors in
+	let job = end_function_call job in
 	(Job.Active job, errors)
 
 (* allocates on the heap *)
-let libc_malloc_size state size bytes loc =
+let libc_malloc_size job size bytes loc =
 	let name = FormatPlus.sprintf "%s(%d)#%d/%a%s"
-		(List.hd state.callstack).svar.vname
+		(List.hd job#state.callstack).svar.vname
 		size
 		(Counter.next libc___builtin_alloca__id)
 		Printcil.loc loc
-		(MemOp.state__trace state)
+		(MemOp.state__trace job)
 	in
 	let block = block__make name size Block_type_Heap in
 	let addrof_block = make_Bytes_Address (block, bytes__zero) in
-	let state = MemOp.state__add_block state block bytes in
-	(state, addrof_block)
+	let job = MemOp.state__add_block job block bytes in
+	(job, addrof_block)
 
 let libc_malloc job retopt exps errors =
-	let state, b_size, errors = Expression.rval job#state (List.hd exps) errors in
+	let job, b_size, errors = Expression.rval job (List.hd exps) errors in
 	let size =
 		if isConcrete_bytes b_size then
 			bytes_to_int_auto b_size (*safe to use bytes_to_int as arg should be small *)
@@ -282,45 +273,47 @@ let libc_malloc job retopt exps errors =
 	  then bytes__make size (* initially zero, as though malloc were calloc *)
 	  else bytes__make_default size byte__undef (* initially the symbolic 'undef' byte *)
 	in
-	let state, bytes = libc_malloc_size state size bytes (Job.get_loc job) in
-	let state, errors = set_return_value state retopt bytes errors in
-	let job = end_function_call (job#with_state state) in
+	let job, bytes = libc_malloc_size job size bytes (Job.get_loc job) in
+	let job, errors = set_return_value job retopt bytes errors in
+	let job = end_function_call job in
 	(Job.Active job, errors)
 
 
-let otter_given job = wrap_state_function begin fun state retopt exps errors ->
+let otter_given job retopt exps errors =
 	if List.length exps <> 2 then
 		failwith "__GIVEN takes 2 arguments"
 	else
 		let truthvalue =
-			let state, given, errors = Expression.rval state (List.nth exps 0) errors in
-			let state, rv, errors = Expression.rval state (List.nth exps 1 ) errors in
-			let truth = MemOp.eval (given::state.path_condition) rv in
+			let job, given, errors = Expression.rval job (List.nth exps 0) errors in
+			let job, rv, errors = Expression.rval job (List.nth exps 1 ) errors in
+			let truth = MemOp.eval (given::job#state.path_condition) rv in
 			match truth with
 				| Ternary.True -> int_to_bytes 1
 				| Ternary.False -> int_to_bytes 0
 				| Ternary.Unknown ->bytes__symbolic (bitsSizeOf intType / 8)
 		in
-		set_return_value state retopt truthvalue errors
-end job
+		let job, errors = set_return_value job retopt truthvalue errors in
+		let job = end_function_call job in
+		(Job.Active job, errors)
 
 
-let otter_truth_value job = wrap_state_function begin fun state retopt exps errors ->
+let otter_truth_value job retopt exps errors =
 	let truthvalue =
 		int_to_bytes
 		begin
 			if List.length exps = 0 then 0
 			else
-				let state, rv, errors = Expression.rval state (List.hd exps) errors in
-				let truth = MemOp.eval state.path_condition rv in
+				let job, rv, errors = Expression.rval job (List.hd exps) errors in
+				let truth = MemOp.eval job#state.path_condition rv in
 				match truth with
 					| Ternary.True -> 1
 					| Ternary.False -> -1
 					| Ternary.Unknown -> 0
 		end
 	in
-	set_return_value state retopt truthvalue errors
-end job
+	let job, errors = set_return_value job retopt truthvalue errors in
+	let job = end_function_call job in
+	(Job.Active job, errors)
 
 
 let libc_exit job retopt exps errors =
@@ -328,9 +321,9 @@ let libc_exit job retopt exps errors =
 	let exit_code, errors =
 		match exps with
 			| exp1::_ ->
-				let _, bytes, errors = Expression.rval job#state exp1 errors in
+				let _, bytes, errors = Expression.rval job exp1 errors in
 				Output.printf "exit() called with code@ @[%a@]@\n" BytesPrinter.bytes bytes;
-				let _, bytes, errors = Expression.rval job#state exp1 errors in
+				let _, bytes, errors = Expression.rval job exp1 errors in
 				(Some (bytes), errors)
 			| [] ->
 				Output.printf "exit() called with code (NONE)@\n";
@@ -338,29 +331,30 @@ let libc_exit job retopt exps errors =
 	in
 	(Job.Complete (Job.Exit (exit_code, job)), errors)
 
-let otter_evaluate job = wrap_state_function begin fun state retopt exps errors ->
-	let state, bytes, errors = eval_join_exps state exps Cil.LAnd errors in
+
+let otter_evaluate job retopt exps errors =
+	let job, bytes, errors = eval_join_exps job exps Cil.LAnd errors in
 	Output.set_mode Output.MSG_MUSTPRINT;
 	Output.printf "Evaluates to@ @[%a@]@\n" BytesPrinter.bytes bytes;
-	(state, errors)
-end job
+	let job = end_function_call job in
+	(Job.Active job, errors)
 
 
-let otter_evaluate_string job = wrap_state_function begin fun state retopt exps errors ->
+let otter_evaluate_string job retopt exps errors =
 	let exp = List.hd exps in
 	let sizeexp = List.nth exps 1 in
-	let state, addr_bytes, errors = Expression.rval state exp errors in
+	let job, addr_bytes, errors = Expression.rval job exp errors in
 	Output.set_mode Output.MSG_MUSTPRINT;
-	match addr_bytes with
+	let job, errors = match addr_bytes with
 		| Bytes_Address(block, offset) ->
-			let state, size_bytes, errors = Expression.rval state sizeexp errors in
+			let job, size_bytes, errors = Expression.rval job sizeexp errors in
 			let size =
 				try
 					bytes_to_int_auto size_bytes
 				with Failure s ->
 					Output.printf "%s@\n" s; 32
 			in
-			let state, bytes = MemOp.state__deref state (conditional__lval_block (block, offset), size) in
+			let job, bytes = MemOp.state__deref job (conditional__lval_block (block, offset), size) in
 			begin match bytes with
 				| Bytes_ByteArray bytearray ->
 					Output.printf "Evaluates to string:@ \"@[%a@]\"@\n" BytesPrinter.bytestring bytearray
@@ -369,30 +363,32 @@ let otter_evaluate_string job = wrap_state_function begin fun state retopt exps 
 				| _ ->
 					Output.printf "Evaluates to a complicated string.@\n"
 			end;
-			(state, errors)
+			(job, errors)
 		| _ ->
 			Output.printf "Evaluates to an invalid string.@\n";
-			(state, errors)
-end job
+			(job, errors)
+	in
+	let job = end_function_call job in
+	(Job.Active job, errors)
 
 
-let otter_symbolic_state job = wrap_state_function begin fun state retopt exps errors ->
-	let state = MemoryBlockMap.fold
-		begin fun block _ state ->
+let otter_symbolic_state job retopt exps errors =
+	let job = MemoryBlockMap.fold
+		begin fun block _ job ->
 			(* TODO: what about deferred bytes? *)
 			(* TODO: handle pointers with an alias analysis *)
-			let state, bytes = MemOp.state__get_bytes_from_block state block in
+			let job, bytes = MemOp.state__get_bytes_from_block job block in
 				match bytes with
 					| Bytes_FunPtr(_) ->
-						state
+						job
 					| _ ->
-						MemOp.state__add_block state block (bytes__symbolic (bytes__length bytes))
+						MemOp.state__add_block job block (bytes__symbolic (bytes__length bytes))
 		end
-		state.block_to_bytes
-		state
+		job#state.block_to_bytes
+		job
 	in
-	(state, errors)
-end job
+	let job = end_function_call job in
+	(Job.Active job, errors)
 
 
 exception Unsat
@@ -403,17 +399,16 @@ exception Unsat
 *)
 let otter_assume job _ exps errors =
     try
-        let wrapped_func =
-            wrap_state_function begin fun state () exps errors ->
-                let check_exp (state, errors) exp =
-                    let state, query, errors = Expression.rval state exp errors in
-                    match Stp.query_stp state.path_condition guard__true (guard__bytes query) with
-                        | Ternary.True -> (state, errors) (* Ignore true assumptions *)
-                        | Ternary.False -> raise Unsat (* Stop on false assumptions *)
-                        | Ternary.Unknown -> (MemOp.state__add_path_condition state query false, errors) (* Add possible assumptions to path condition *)
-                in List.fold_left check_exp (state, errors) exps
-            end
-        in wrapped_func job () exps errors
+        let check_exp (job, errors) exp =
+            let job, query, errors = Expression.rval job exp errors in
+            match Stp.query_stp job#state.path_condition guard__true (guard__bytes query) with
+                | Ternary.True -> (job, errors) (* Ignore true assumptions *)
+                | Ternary.False -> raise Unsat (* Stop on false assumptions *)
+                | Ternary.Unknown -> (MemOp.state__add_path_condition job query false, errors) (* Add possible assumptions to path condition *)
+        in
+        let job, errors = List.fold_left check_exp (job, errors) exps in
+        let job = end_function_call job in
+        (Job.Active job, errors)
     with Unsat ->
         (* Use [Fork []] to make this job disappear. Among other things, this
            means that we ignore coverage from this job, and we also ignore any
@@ -422,14 +417,14 @@ let otter_assume job _ exps errors =
         (Job.Fork [], errors)
 
 
-let otter_path_condition job = wrap_state_function begin fun state retopt exps errors ->
+let otter_path_condition job retopt exps errors =
 	Output.set_mode Output.MSG_MUSTPRINT;
-	if state.path_condition = [] then
+	if job#state.path_condition = [] then
 		Output.printf "(nil)@\n"
 	else
-		Output.printf "@[%a@]@\n" (FormatPlus.pp_print_list BytesPrinter.bytes "@\n  AND@\n") state.path_condition;
-	(state, errors)
-end job
+		Output.printf "@[%a@]@\n" (FormatPlus.pp_print_list BytesPrinter.bytes "@\n  AND@\n") job#state.path_condition;
+	let job = end_function_call job in
+	(Job.Active job, errors)
 
 
 (* __FAILURE()
@@ -446,56 +441,59 @@ let otter_assert job retopt exps errors =
             [ exp ] -> exp
           | _ -> failwith "__ASSERT takes exactly one argument"
     in
-    let state, assertion, errors = Expression.rval job#state exp errors in
+    let job, assertion, errors = Expression.rval job exp errors in
     let active j = Job.Active (end_function_call j) in
     let failure = (* Construct the failing job_state directly; there's no need to use 'errors' here. *)
-        let state = MemOp.state__add_path_condition state (logicalNot assertion) true in
-        let job = job#with_state state in
+        let job = MemOp.state__add_path_condition job (logicalNot assertion) true in
         Job.Complete (Job.Abandoned (`AssertionFailure exp, job))
     in
-    match MemOp.eval state.path_condition assertion with
+    match MemOp.eval job#state.path_condition assertion with
       | Ternary.True -> (active job, errors) (* assertion passes; do nothing *)
       | Ternary.False -> (failure, errors) (* assertion definitely fails *)
       | Ternary.Unknown -> (* assertion can fail and can pass. Record the error, but also assume it passes and continue *)
-            let state = MemOp.state__add_path_condition state assertion true in
-            (Job.Fork [ active (job#with_state state); failure ], errors)
+            let job = MemOp.state__add_path_condition job assertion true in
+            (Job.Fork [ active job; failure ], errors)
 
-let otter_if_then_else job = wrap_state_function begin fun state retopt exps errors ->
-	let state, bytes0, errors = Expression.rval state (List.nth exps 0) errors in
-	let state, bytes1, errors = Expression.rval state (List.nth exps 1) errors in
-	let state, bytes2, errors = Expression.rval state (List.nth exps 2) errors in
+let otter_if_then_else job retopt exps errors =
+	let job, bytes0, errors = Expression.rval job (List.nth exps 0) errors in
+	let job, bytes1, errors = Expression.rval job (List.nth exps 1) errors in
+	let job, bytes2, errors = Expression.rval job (List.nth exps 2) errors in
 	let c = IfThenElse (
 		guard__bytes bytes0, conditional__bytes bytes1, conditional__bytes bytes2
 	) in
 	let rv = make_Bytes_Conditional c in
-	set_return_value state retopt rv errors
-end job
+	let job, errors = set_return_value job retopt rv errors in
+	let job = end_function_call job in
+	(Job.Active job, errors)
 
 
-let otter_boolean_op binop job = wrap_state_function begin fun state retopt exps errors ->
-	let state, rv, errors = eval_join_exps state exps binop errors in
-	set_return_value state retopt rv errors
-end job
+let otter_boolean_op binop job retopt exps errors =
+	let job, rv, errors = eval_join_exps job exps binop errors in
+	let job, errors = set_return_value job retopt rv errors in
+	let job = end_function_call job in
+	(Job.Active job, errors)
 
 
-let otter_boolean_not job = wrap_state_function begin fun state retopt exps errors ->
-	let state, rv, errors = Expression.rval state (UnOp(Cil.LNot, List.hd exps, Cil.voidType)) errors in
-	set_return_value state retopt rv errors
-end job
+let otter_boolean_not job retopt exps errors =
+	let job, rv, errors = Expression.rval job (UnOp(Cil.LNot, List.hd exps, Cil.voidType)) errors in
+	let job, errors = set_return_value job retopt rv errors in
+	let job = end_function_call job in
+	(Job.Active job, errors)
 
 
-let otter_break_pt job = wrap_state_function begin fun state retopt exps errors ->
+let otter_break_pt job retopt exps errors =
 	Output.set_mode Output.MSG_REG;
 	Output.printf "Option (h for help):@\n";
-	Scanf.scanf "%d\n"
+	ignore (Scanf.scanf "%d\n"
 		begin fun p1->
 			Output.printf "sth\n";
-			(state, errors)
-		end
-end job
+			(job, errors)
+		end);
+	let job = end_function_call job in
+	(Job.Active job, errors)
 
 
-let otter_print_state job = wrap_state_function begin fun state retopt exps errors ->
+let otter_print_state job retopt exps errors =
 	Output.set_mode Output.MSG_MUSTPRINT;
 	let module BOSMap = Map.Make (struct
 		type t = memory_block * bytes * int  (* block, offset, size *)
@@ -551,7 +549,7 @@ let otter_print_state job = wrap_state_function begin fun state retopt exps erro
 		else
 			match lval_block with
 				| Deferred.Immediate (Unconditional (block, _)) ->
-					begin match (MemoryBlockMap.find block state.block_to_bytes) with
+					begin match (MemoryBlockMap.find block job#state.block_to_bytes) with
 						| Deferred.Immediate bytes -> printVarBytes var bytes
 						| Deferred.Deferred _ -> Output.printf "%s@ = (Deferred)@\n" var.vname
 					end
@@ -564,15 +562,15 @@ let otter_print_state job = wrap_state_function begin fun state retopt exps erro
 
 	Output.printf "#BEGIN PRINTSTATE@\n";
 	Output.printf "#Globals:@\n";
-	VarinfoMap.iter printVar state.global;
+	VarinfoMap.iter printVar job#state.global;
 	Output.printf "#Locals:@\n";
-	VarinfoMap.iter printVar (List.hd state.locals);
+	VarinfoMap.iter printVar (List.hd job#state.locals);
 	Output.printf "#Formals:@\n";
-	VarinfoMap.iter printVar (List.hd state.formals);
+	VarinfoMap.iter printVar (List.hd job#state.formals);
 	(* explore only one level of memory *)
 	bosmap := BOSMap.mapi begin fun (block,off,size) des -> match des with
 		| Some _ -> des
-		| None -> Some (snd(MemOp.state__deref state (conditional__lval_block (block, off), size)))
+		| None -> Some (snd(MemOp.state__deref job (conditional__lval_block (block, off), size)))
 	end (!bosmap);
 	Output.printf "#Memory: (one level)@\n";
 	BOSMap.iter (fun (block,off,size) des ->
@@ -582,8 +580,8 @@ let otter_print_state job = wrap_state_function begin fun state retopt exps erro
 	)
 	(!bosmap);
 	Output.printf "#END PRINTSTATE@\n";
-	(state, errors)
-end job
+	let job = end_function_call job in
+	(Job.Active job, errors)
 
 
 (* There are 2 ways to use __SYMBOLIC:
@@ -602,36 +600,33 @@ let intercept_symbolic job job_queue interceptor =
 			let job, errors = match exps with
 				| [AddrOf (Var varinf, NoOffset as cil_lval)]
 				| [CastE (_, AddrOf (Var varinf, NoOffset as cil_lval))] ->
-					let state = job#state in
 					let exHist = job#exHist in
 
-					let state, (_, size as lval), errors = Expression.lval state cil_lval errors in
+					let job, (_, size as lval), errors = Expression.lval job cil_lval errors in
 					let symbBytes = bytes__symbolic size in
 					Output.set_mode Output.MSG_MUSTPRINT;
 					Output.printf "%s@ = @[%a@]@\n" varinf.vname BytesPrinter.bytes symbBytes;
 
 					let exHist = { exHist with Job.bytesToVars = (symbBytes,varinf)::exHist.Job.bytesToVars } in
-					let state = MemOp.state__assign state lval symbBytes in
+					let job = MemOp.state__assign job lval symbBytes in
 
-					(end_function_call ((job#with_state state)#with_exHist exHist), errors)
+					(end_function_call (job#with_exHist exHist), errors)
 
 				| _ ->
-
-					let state = job#state in
 					begin match retopt with
 						| None -> failwith "Incorrect usage of __SYMBOLIC(): symbolic value generated and ignored"
 						| Some lval ->
-							let state, (_, size as lval), errors = Expression.lval state lval errors in
-							let state, size = match exps with
-								| [] -> (state, size)
+							let job, (_, size as lval), errors = Expression.lval job lval errors in
+							let job, size = match exps with
+								| [] -> (job, size)
 								| [CastE (_, h)] | [h] ->
-									let state, bytes, errors = Expression.rval state h errors in
+									let job, bytes, errors = Expression.rval job h errors in
 									let newsize = bytes_to_int_auto bytes in
-									(state, if newsize <= 0 then size else newsize)
+									(job, if newsize <= 0 then size else newsize)
 								| _ -> failwith "__SYMBOLIC takes at most one argument"
 							in
-							let state = MemOp.state__assign state lval (bytes__symbolic size) in
-							(end_function_call (job#with_state state), errors)
+							let job = MemOp.state__assign job lval (bytes__symbolic size) in
+							(end_function_call job, errors)
 					end
 			in
 			if errors = [] then
@@ -649,12 +644,10 @@ let libc_setjmp job retopt exps errors =
 	match exps with
 		| [Lval cil_lval]
 		| [CastE (_, Lval cil_lval)] ->
-			let state = job#state in
-
 			(* assign value to the environment argument *)
-			let state, (_, size as lval), errors = Expression.lval state cil_lval errors in
+			let job, (_, size as lval), errors = Expression.lval job cil_lval errors in
 			let stmtPtrAddr = (Counter.next libc___builtin_alloca__id) in
-			let state = MemOp.state__assign state lval (int_to_bytes stmtPtrAddr) in
+			let job = MemOp.state__assign job lval (int_to_bytes stmtPtrAddr) in
 
 			(* create statemet pointer to the set_jmp call *)
 			let nextStmt =
@@ -665,10 +658,10 @@ let libc_setjmp job retopt exps errors =
 					| _ -> assert false
 			in
 			let stmtPtr = Source (retopt, job#stmt, (List.hd job#instrList), nextStmt) in
-			let state = {state with stmtPtrs = State.IndexMap.add stmtPtrAddr stmtPtr state.stmtPtrs; } in
+			let job = job#with_state { job#state with stmtPtrs = State.IndexMap.add stmtPtrAddr stmtPtr job#state.stmtPtrs; } in
 
-			let state, errors = set_return_value state retopt bytes__zero errors in
-			let job = end_function_call (job#with_state state) in
+			let job, errors = set_return_value job retopt bytes__zero errors in
+			let job = end_function_call job in
 			(Job.Active job, errors)
 		| _ -> failwith "setjmp invalid arguments"
 
@@ -677,22 +670,20 @@ let libc_longjmp job retopt exps errors =
 		| [Lval cil_lval; value]
 		| [CastE (_, Lval cil_lval); value] ->
 		begin
-			let state = job#state in
-
 			(* get the return value to send to setjmp *)
-			let state, bytes, errors =
+			let job, bytes, errors =
 				match value with
-					| CastE (_, v) | v -> Expression.rval state v errors
+					| CastE (_, v) | v -> Expression.rval job v errors
 			in
 
 			(* get the statment pointer *)
-			let state, lval, errors =
+			let job, lval, errors =
 				try
-					Expression.lval state cil_lval errors
+					Expression.lval job cil_lval errors
 				with
 					| _ -> failwith "longjmp with invalid statement pointer"
 			in
-			let state, stmtPtrAddrBytes = MemOp.state__deref state lval in
+			let job, stmtPtrAddrBytes = MemOp.state__deref job lval in
 			let fold_func acc pre leaf =
 				(bytes_to_int_auto leaf)::acc
 			in
@@ -702,14 +693,14 @@ let libc_longjmp job retopt exps errors =
 					| Bytes_ByteArray _ -> [bytes_to_int_auto stmtPtrAddrBytes]
 					| Bytes_Read(bytes2, offset, len) ->
 						let sp = BytesUtility.expand_read_to_conditional bytes2 offset len in
-						conditional__fold ~test:(Stp.query_stp state.path_condition) fold_func [] sp
+						conditional__fold ~test:(Stp.query_stp job#state.path_condition) fold_func [] sp
 					| Bytes_Conditional(c) ->
 						conditional__fold fold_func [] c
 					| _ -> failwith "Non-constant statement ptr not supported"
 			in
 
 			let process_stmtPtr stmtPtrAddr errors =
-				let stmtPtr = State.IndexMap.find stmtPtrAddr state.stmtPtrs in
+				let stmtPtr = State.IndexMap.find stmtPtrAddr job#state.stmtPtrs in
 				let retopt, stmt =
 					match stmtPtr with
 						| Source (r, _, _, s) -> r, s
@@ -718,25 +709,25 @@ let libc_longjmp job retopt exps errors =
 				in
 
 				(* find correct stack frame to jump to *)
-				let rec unwind_stack state errors =
+				let rec unwind_stack job errors =
 					match retopt with
 						| None -> (* try to use sentinal value to find stack fram by detecting when it is missing *)
 							begin
 								try
-									let state, _ = MemOp.state__deref state lval in
-									unwind_stack (MemOp.state__end_fcall state) errors
+									let job, _ = MemOp.state__deref job lval in
+									unwind_stack (MemOp.state__end_fcall job) errors
 								with _ ->
-									(state, errors)
+									(job, errors)
 							end
 						| Some _ -> (* try to use return lval to find stack frame by detecting when it appears *)
 							begin
 								try
-									set_return_value state retopt bytes__zero errors
+									set_return_value job retopt bytes__zero errors
 								with _ ->
-									unwind_stack (MemOp.state__end_fcall state) errors
+									unwind_stack (MemOp.state__end_fcall job) errors
 							end
 				in
-				let state, errors = unwind_stack state errors in
+				let job, errors = unwind_stack job errors in
 
 				(* Update coverage. *)
 				let exHist = job#exHist in
@@ -766,11 +757,10 @@ let libc_longjmp job retopt exps errors =
 
                 (* TODO (martin): update job.decision_path *)
 				(* Update the state, program counter, and coverage  *)
-				let state, errors = set_return_value state retopt bytes errors in
+				let job, errors = set_return_value job retopt bytes errors in
 				let job = job#with_stmt stmt in
 				let job = job#with_exHist exHist in
 				let job = job#with_instrList [] in
-				let job = job#with_state state in
 				(job, errors)
 			in
 
@@ -791,26 +781,27 @@ let libc_longjmp job retopt exps errors =
 		| _ -> failwith "longjmp invalid arguments"
 
 
-let otter_get_allocated_size job = wrap_state_function begin fun state retopt exps errors ->
+let otter_get_allocated_size job retopt exps errors =
     let exp = get_lone_arg exps in
-    let state, bytes, errors = Expression.rval state exp errors in
-    let state, lvals, errors = Expression.deref state bytes (Cil.typeOf exp) errors in
+    let job, bytes, errors = Expression.rval job exp errors in
+    let job, lvals, errors = Expression.deref job bytes (Cil.typeOf exp) errors in
     let size = make_Bytes_Conditional (conditional__map
         (fun (x, y) -> Unconditional (int_to_bytes x.memory_block_size))
         lvals)
     in
-    set_return_value state retopt size errors
-end job
+    let job, errors = set_return_value job retopt size errors in
+    let job = end_function_call job in
+    (Job.Active job, errors)
 
-let otter_mute job = wrap_state_function begin fun state retopt exps errors ->
+let otter_mute job retopt exps errors =
 	Output.arg_print_mute := !Output.arg_print_mute + 1;
-	(state, errors)
-end job
+	let job = end_function_call job in
+	(Job.Active job, errors)
 
-let otter_voice job = wrap_state_function begin fun state retopt exps errors ->
+let otter_voice job retopt exps errors =
 	Output.arg_print_mute := !Output.arg_print_mute - 1;
-	(state, errors)
-end job
+	let job = end_function_call job in
+	(Job.Active job, errors)
 
 let noop job _ _ errors =
     Job.Active (end_function_call job), errors

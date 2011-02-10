@@ -45,49 +45,47 @@ let interceptor ?(limit=8) job param k =
                 EfficientSequence.cons (p, c) results
             in
 
-            let abandoned, states =
-                (* recursively split states for each lval with conditional values, e.g., starting with an initial
-                   state, split into m states for the first lval, then split into m*n states for the second lval,
+            let abandoned, jobs =
+                (* recursively split jobs for each lval with conditional values, e.g., starting with an initial
+                   job, split into m jobs for the first lval, then split into m*n jobs for the second lval,
                    and so on. *)
-                List.fold_left begin fun (abandoned, states) cil_lval ->
-                    EfficientSequence.concat_map_fold begin fun abandoned state ->
-                        let old_state = state in
+                List.fold_left begin fun (abandoned, jobs) cil_lval ->
+                    EfficientSequence.concat_map_fold begin fun abandoned job ->
                         try
                             (* read the lval, and if conditionals are found, split them and write them back *)
-                            let state, lvals, errors = Expression.lval state cil_lval [] in
-                            (* TODO: errors should carry the state in which the error occured *)
-                            let abandoned = List.rev_append (Statement.errors_to_abandoned_list (job#with_state old_state) errors) abandoned in
-                            let state, bytes = MemOp.state__deref state lvals in
+                            let job, lvals, errors = Expression.lval job cil_lval [] in
+                            (* TODO: errors should carry the job in which the error occured *)
+                            let abandoned = List.rev_append (Statement.errors_to_abandoned_list job errors) abandoned in
+                            let job, bytes = MemOp.state__deref job lvals in
                             let splits = split (Bytes.conditional__bytes bytes) in
-                            let states =
+                            let jobs =
                                 if EfficientSequence.length splits = 1 then
-                                    EfficientSequence.singleton state
+                                    EfficientSequence.singleton job
                                 else
                                     EfficientSequence.map begin fun (p, x) ->
-                                        let state = MemOp.state__add_path_condition state (Bytes.guard__to_bytes p) false in
-                                            MemOp.state__assign state lvals (Bytes.make_Bytes_Conditional x)
+                                        let job = MemOp.state__add_path_condition job (Bytes.guard__to_bytes p) false in
+                                        MemOp.state__assign job lvals (Bytes.make_Bytes_Conditional x)
                                     end splits
                             in
-                            (abandoned, states)
+                            (abandoned, jobs)
 
                         with Failure msg ->
                             (* TODO: Failure really needs to go, ditch this once OtterCore has been switched over to using errors *)
                             if !Executeargs.arg_failfast then failwith msg;
-                            let job = job#with_state old_state in
                             (Job.Complete (Job.Abandoned (`Failure msg, job))::abandoned, EfficientSequence.empty)
-                    end abandoned states
-                end ([], EfficientSequence.singleton job#state) !cil_lvals
+                    end abandoned jobs
+                end ([], EfficientSequence.singleton job) !cil_lvals
             in
 
-            if EfficientSequence.length states = 1 && abandoned = [] then
+            if EfficientSequence.length jobs = 1 && abandoned = [] then
                 (* if no splits and no errors, then just continue the original job *)
                 k job param
             else
-                (* otherwise, fork the job with the new states and errors *)
-                let jobs = EfficientSequence.fold begin fun jobs state ->
-                    let job = Job.Active ((job#with_state state)#with_jid (if jobs = [] then job#jid else Counter.next Job.job_counter)) in
+                (* otherwise, fork the job with the new jobs and errors *)
+                let jobs = EfficientSequence.fold begin fun jobs job ->
+                    let job = Job.Active (job#with_jid (if jobs = [] then job#jid else Counter.next Job.job_counter)) in
                     job::jobs
-                end [] states in
+                end [] jobs in
                 let jobs = List.rev_append abandoned jobs in
                 (Job.Fork jobs, param)
 

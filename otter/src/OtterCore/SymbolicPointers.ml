@@ -177,7 +177,7 @@ let default_scheme = ref `TwoLevel
                 deferred symbolic value is the join of the values of all the targets of the pointer; the target list
                 may be empty in the case where the target is only dynamically allocated, in which case the target type
                 as well as the pointer itself should be used to initialized the target
-        @return [(State.t, Bytes.bytes)] the updated symbolic state and the initialized pointer value
+        @return [(state, bytes)] the updated symbolic executor state and the initialized pointer value
 *)
 let init_pointer ?(scheme=(!default_scheme)) state points_to exps ?(maybe_null=true) ?(maybe_uninit=false) block_name init_target =
     (* find the points-to set for this pointer *)
@@ -300,7 +300,7 @@ let init_pointer ?(scheme=(!default_scheme)) state points_to exps ?(maybe_null=t
             (* first figure out if we need to make a fresh block *)
             let need_fresh = not begin
                 MallocSet.is_empty mallocs
-                && VarinfoSet.for_all (fun v -> v.Cil.vglob && Deferred.is_forced (State.VarinfoMap.find v state.State.global)) varinfos
+                && VarinfoSet.for_all (fun v -> v.Cil.vglob && Deferred.is_forced (State.VarinfoMap.find v state#state.State.global)) varinfos
             end in
 
             if need_fresh then
@@ -318,20 +318,20 @@ let init_pointer ?(scheme=(!default_scheme)) state points_to exps ?(maybe_null=t
                 (* conservatively point to all allocations in the list of allocations of each malloc site, and add the
                     above allocated fresh block to the list of allocations for each malloc site *)
                 let state, target_bytes_set = MallocSet.fold begin fun malloc (state, target_bytes_set) ->
-                    let blocks = try State.MallocMap.find malloc state.State.mallocs with Not_found -> [] in
-                    let state = { state with State.mallocs = State.MallocMap.add malloc (block::blocks) state.State.mallocs } in
+                    let blocks = try State.MallocMap.find malloc state#state.State.mallocs with Not_found -> [] in
+                    let state = state#with_state { state#state with State.mallocs = State.MallocMap.add malloc (block::blocks) state#state.State.mallocs } in
                     (state, List.fold_left map_offsets target_bytes_set blocks)
                 end mallocs (state, target_bytes_set) in
 
                 (* conservatively point to all aliases in the list of aliases of each variable, and add the above allocated
                     fresh block to the list of aliases of each variable, except for global variables with allocated storage *)
                 let state, target_bytes_set = VarinfoSet.fold begin fun v (state, target_bytes_set) ->
-                    let blocks = try State.VarinfoMap.find v state.State.aliases with Not_found -> [] in
+                    let blocks = try State.VarinfoMap.find v state#state.State.aliases with Not_found -> [] in
                     (* assuming that deferred lval_blocks were set up by this module only *)
-                    let state = if v.Cil.vglob && Deferred.is_forced (State.VarinfoMap.find v state.State.global) then
+                    let state = if v.Cil.vglob && Deferred.is_forced (State.VarinfoMap.find v state#state.State.global) then
                         state
                     else
-                        { state with State.aliases = State.VarinfoMap.add v (block::blocks) state.State.aliases }
+                        state#with_state { state#state with State.aliases = State.VarinfoMap.add v (block::blocks) state#state.State.aliases }
                     in
                     (state, List.fold_left map_offsets target_bytes_set blocks)
                 end varinfos (state, target_bytes_set) in
@@ -339,7 +339,7 @@ let init_pointer ?(scheme=(!default_scheme)) state points_to exps ?(maybe_null=t
             else
                 (* no mallocs or locals, only globals with allocated storage *)
                 let state, target_bytes_set = VarinfoSet.fold begin fun v (state, target_bytes_set) ->
-                    let blocks = try State.VarinfoMap.find v state.State.aliases with Not_found -> [] in
+                    let blocks = try State.VarinfoMap.find v state#state.State.aliases with Not_found -> [] in
                     (state, List.fold_left map_offsets target_bytes_set blocks)
                 end varinfos (state, target_bytes_set) in
                 (state, target_bytes_set, count)
@@ -384,8 +384,8 @@ let init_lval_block state varinfo deferred =
         let size = Cil.bitsSizeOf varinfo.Cil.vtype / 8 in
         let block = Bytes.block__make name size Bytes.Block_type_Aliased in
         let state = MemOp.state__add_deferred_block state block deferred in
-        let aliases = block::(try State.VarinfoMap.find varinfo state.State.aliases with Not_found -> []) in
-        let state = { state with State.aliases = State.VarinfoMap.add varinfo aliases state.State.aliases } in
+        let aliases = block::(try State.VarinfoMap.find varinfo state#state.State.aliases with Not_found -> []) in
+        let state = state#with_state { state#state with State.aliases = State.VarinfoMap.add varinfo aliases state#state.State.aliases } in
 
         (* generate an lval to each block it may alias that was previously initialized via another pointer *)
         let target_list = List.map (fun block -> Bytes.conditional__lval_block (block, Bytes.bytes__zero)) aliases in
@@ -414,14 +414,14 @@ let init_const_global state varinfo init_opt =
 
     let state, block =
         try
-            match State.VarinfoMap.find varinfo state.State.aliases with
-                | [ block ] when Deferred.is_forced (State.VarinfoMap.find varinfo state.State.global) -> (state, block)
+            match State.VarinfoMap.find varinfo state#state.State.aliases with
+                | [ block ] when Deferred.is_forced (State.VarinfoMap.find varinfo state#state.State.global) -> (state, block)
                 | [] -> raise Not_found
                 | _ -> FormatPlus.invalid_arg "SymbolicPointers.init_const_global: %a already initialized" CilPrinter.varinfo varinfo
         with Not_found ->
             (* initialize the block with a dummy value first, for recursive initializations such as 'void * p = &p;' *)
             let state, block = MemOp.state__add_global state varinfo in
-            let state = { state with State.aliases = State.VarinfoMap.add varinfo [ block ] state.State.aliases } in
+            let state = state#with_state { state#state with State.aliases = State.VarinfoMap.add varinfo [ block ] state#state.State.aliases } in
             (state, block)
     in
 

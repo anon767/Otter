@@ -74,12 +74,11 @@ let findValue value=
 	findValue'
 	  
 let printValue value job =
-	let state = job#state in
 	let f = findValue value in
-	let l = VarinfoMap.fold f (List.hd state.locals) [] in
+	let l = VarinfoMap.fold f (List.hd job#state.locals) [] in
 		if (List.length l > 0) then 
 		let vinfo = List.hd l in
-		let _,v,_ = Expression.rval state (Cil.Lval (Cil.Var vinfo, Cil.NoOffset)) [] in
+		let _,v,_ = Expression.rval job (Cil.Lval (Cil.Var vinfo, Cil.NoOffset)) [] in
 		printf "length of list %d\n" (List.length l);
 		(*printf "bytes returned from rval @[%a@]@\n\n" (BytesPrinter.bytes Format.std_formatter v);*)
 		printf "Variable %s has value %d in locals" vinfo.Cil.vname (OtterBytes.Bytes.bytes_to_int_auto v );

@@ -106,7 +106,7 @@ let checkBounds state lvals useSize =
     let both_checks = Operator.bytes__land offsetsLeSizesMinusUseSize useSizeLeSizes in
 
     (* Perform the check *)
-    match MemOp.eval state.path_condition both_checks with
+    match MemOp.eval state#state.path_condition both_checks with
       | Ternary.False -> FormatPlus.failwith "Bounds check failed:\n%a" BytesPrinter.bytes both_checks
       | Ternary.True -> (state, None) (* Check definitely passes. *)
       | Ternary.Unknown -> (* If the check can fail, add it to the path condition *)
@@ -328,7 +328,7 @@ deref state bytes typ errors =
                     find_match (List.rev_append (List.fold_left (fun a (b,_) -> b::a) [] btlist) pc') errors
                 | _::pc' -> find_match pc' errors
             in
-            find_match state.path_condition errors
+            find_match state#state.path_condition errors
 
         | Bytes_Address(block, offset) ->
             if MemOp.state__has_block state block then
@@ -339,7 +339,7 @@ deref state bytes typ errors =
         | Bytes_Conditional c ->
             let (guard, state, errors, _), conditional_opt =
                 conditional__fold_map_opt
-                    ~test:(timed_query_stp "query_stp/Expression.deref/Bytes_Conditional" state.path_condition)
+                    ~test:(timed_query_stp "query_stp/Expression.deref/Bytes_Conditional" state#state.path_condition)
                     begin fun (guard, state, errors, removed) _ c ->
                         if List.exists (Bytes.bytes__equal c) removed then
                             ((guard, state, errors, removed), None)
@@ -362,8 +362,8 @@ deref state bytes typ errors =
                     (state, conditional, errors)
                 | Some conditional, guard ->
                     (* Not all conditional branches were dereferenced successfully: add the guard and continue. *)
-                    let state = { state with
-                        path_condition = (Bytes.guard__to_bytes guard)::state.path_condition;
+                    let state = state#with_state { state#state with
+                        path_condition = (Bytes.guard__to_bytes guard)::state#state.path_condition;
                     } in
                     (state, conditional, errors)
                 | None, _ ->
@@ -440,7 +440,7 @@ rval_binop state binop exp1 exp2 errors =
     let state, rv1, errors = rval state exp1 errors in
     match binop with
       | LAnd | LOr -> begin (* Short-circuit, if possible *)
-            match MemOp.eval state.path_condition rv1 with
+            match MemOp.eval state#state.path_condition rv1 with
               | Ternary.True -> if binop == LAnd then rval state exp2 errors else (state, bytes__one, errors)
               | Ternary.False -> if binop == LOr then rval state exp2 errors else (state, bytes__zero, errors)
               | Ternary.Unknown ->
@@ -466,7 +466,7 @@ and
 rval_question state exp1 exp2 exp3 errors =
     let state, rv1, errors = rval state exp1 errors in
     (* Is the guard true, false, or unknown? Evaluate the branches accordingly. *)
-    match MemOp.eval state.path_condition rv1 with
+    match MemOp.eval state#state.path_condition rv1 with
       | Ternary.True -> rval state exp2 errors
       | Ternary.False -> rval state exp3 errors
       | Ternary.Unknown ->
@@ -505,7 +505,7 @@ and
 *)
 evaluate_under_condition state_in condition exp =
     let state = MemOp.state__add_path_condition state_in condition true in
-    let checkpointed_path_condition = state.path_condition in
+    let checkpointed_path_condition = state#state.path_condition in
     let result = try (Some (rval state exp []), "") with Failure msg -> (None, msg) in
     match result with
       | None, msg -> None, msg
@@ -523,9 +523,9 @@ evaluate_under_condition state_in condition exp =
                just reverting the path condition is fine. Just as an extra
                check, though, we make sure the path condition didn't change
                during the evaluation of exp. *)
-            if state.path_condition != checkpointed_path_condition
+            if state#state.path_condition != checkpointed_path_condition
             then failwith "Path condition changed unexpectedly while evaluating under a condition";
-            (Some ({ state with path_condition = state_in.path_condition; }, bytes), "")
+            (Some (state#with_state { state#state with path_condition = state_in#state.path_condition; }, bytes), "")
 
 
 (** [evaluate_initializer state typ init] evaluates an initializer in a given state.
