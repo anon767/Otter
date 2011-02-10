@@ -159,6 +159,7 @@ SYSCALL_FILES := \
 	unistd/setgid.c \
 	unistd/setsid.c \
 	unistd/setuid.c \
+	unistd/sleep.c \
 	unistd/sysconf.c \
 	unistd/ttyname.c \
 	unistd/unlink.c \
