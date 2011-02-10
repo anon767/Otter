@@ -352,16 +352,6 @@ let state__trace state =
 	FormatPlus.as_string (Printer.callingContext_list "/") (List.rev state.callContexts)
 
 
-(** map address to state (!) *)
-let index_to_state : State.t State.IndexMap.t ref = ref (State.IndexMap.empty)
-let index_to_state__add index state =
-	index_to_state := State.IndexMap.add index state (!index_to_state)
-
-let index_to_state__get index =
-	State.IndexMap.find index (!index_to_state)
-
-
-
 (** Compare two states. Return true if they are the same; false otherwise. *)
 let cmp_states s1 s2 =
 	(* Compare blocks (memory allocations) that both states have *)

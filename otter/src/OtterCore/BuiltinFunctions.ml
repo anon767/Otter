@@ -586,66 +586,6 @@ let otter_print_state job = wrap_state_function begin fun state retopt exps erro
 end job
 
 
-let otter_current_state job = wrap_state_function begin fun state retopt exps errors ->
-	let state, bytes, errors = Expression.rval state (List.hd exps) errors in
-	let key = bytes_to_int_auto bytes in
-	Output.set_mode Output.MSG_MUSTPRINT;
-	Output.printf "Record state %d\n" key;
-	MemOp.index_to_state__add key state;
-	(state, errors)
-end job
-
-
-let otter_compare_state job = wrap_state_function begin fun state retopt exps errors ->
-	let state, bytes0, errors = Expression.rval state (List.nth exps 0) errors in
-	let state, bytes1, errors = Expression.rval state (List.nth exps 1) errors in
-	let key0 = bytes_to_int_auto bytes0 in
-	let key1 = bytes_to_int_auto bytes1 in
-	Output.set_mode Output.MSG_MUSTPRINT;
-	Output.printf "Compare states %d and %d\n" key0 key1;
-	begin try
-		let s0 = try MemOp.index_to_state__get key0
-		with Not_found -> (
-		   	Output.set_mode Output.MSG_MUSTPRINT;
-		   	Output.printf "Warning: snapshot %d is absent\n" key0;
-			raise Not_found
-		)
-		in
-		let s1 = try MemOp.index_to_state__get key1
-			with Not_found -> (
-			Output.set_mode Output.MSG_MUSTPRINT;
-			Output.printf "Warning: snapshot %d is absent\n" key1;
-			raise Not_found
-		)
-		in
-		Output.set_mode Output.MSG_MUSTPRINT;
-		ignore (MemOp.cmp_states s0 s1);
-		(state, errors)
-	with Not_found ->
-	   	Output.set_mode Output.MSG_MUSTPRINT;
-	   	Output.printf "Compare states fail\n";
-		(state, errors)
-	end
-end job
-
-
-let otter_assert_equal_state job = wrap_state_function begin fun state retopt exps errors ->
-	let state, bytes0, errors = Expression.rval state (List.nth exps 0) errors in
-	let key0 = bytes_to_int_auto bytes0 in
-	begin try
-		let s0 = MemOp.index_to_state__get key0 in
-		Output.set_mode Output.MSG_MUSTPRINT;
-		if MemOp.cmp_states s0 state then
-			Output.printf "AssertEqualState satisfied@\n";
-		MemOp.index_to_state__add key0 state;
-		(state, errors)
-	with Not_found ->
-		MemOp.index_to_state__add key0 state;
-		(state, errors)
-	end
-end job
-
-
 (* There are 2 ways to use __SYMBOLIC:
 	 (1) '__SYMBOLIC(&x);' gives x a fresh symbolic value and associates
 	 that value with the variable x.
@@ -913,9 +853,6 @@ let interceptor job job_queue interceptor =
 		(intercept_function_by_name_internal "NOT"                     otter_boolean_not) @@
 		(intercept_function_by_name_internal "__BREAKPT"               otter_break_pt) @@
 		(intercept_function_by_name_internal "__PRINT_STATE"           otter_print_state) @@
-		(intercept_function_by_name_internal "__CURRENT_STATE"         otter_current_state) @@
-		(intercept_function_by_name_internal "__COMPARE_STATE"         otter_compare_state) @@
-		(intercept_function_by_name_internal "__ASSERT_EQUAL_STATE"    otter_assert_equal_state) @@
 		(intercept_function_by_name_internal "__otter_mute"            otter_mute) @@
 		(intercept_function_by_name_internal "__otter_voice"           otter_voice) @@
 
