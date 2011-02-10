@@ -6,6 +6,7 @@
 #include "otter/utils.h"
 
 #include <unistd.h>
+#include <stdlib.h>
 
 int _execve(const char *path, char * const argv[], char * const envp[]) {
 
