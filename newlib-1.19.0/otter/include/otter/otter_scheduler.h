@@ -16,9 +16,9 @@
 })
 
 /* prototypes for scheduler functions */
-void __otter_multi_begin_atomic();
-void __otter_multi_end_atomic();
-void __otter_multi_time_wait(int ticks);
+void __otter_multi_begin_atomic(void);
+void __otter_multi_end_atomic(void);
+void __otter_multi_time_wait(unsigned int ticks);
 void __otter_multi_io_block(void*, ...);
 
 #endif
