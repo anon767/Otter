@@ -134,6 +134,7 @@ SYSCALL_FILES := \
 	termios/tcsetattr.c \
 	time/nanosleep.c \
 	unistd/__otter_unistd.c \
+	unistd/_execve.c \
 	unistd/access.c \
 	unistd/chroot.c \
 	unistd/close.c \
