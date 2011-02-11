@@ -228,7 +228,7 @@ int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
 
 	if (nfds == 0) { // The caller is using select as sleep
 		sleep(timeout->tv_sec);
-		nanosleep(timeout->tv_usec * 1000);
+		nanosleep(timeout->tv_usec * 1000, NULL);
 		return 0;
 	}
 
