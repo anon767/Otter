@@ -362,9 +362,7 @@ deref job bytes typ errors =
                     (job, conditional, errors)
                 | Some conditional, guard ->
                     (* Not all conditional branches were dereferenced successfully: add the guard and continue. *)
-                    let job = job#with_state { job#state with
-                        path_condition = (Bytes.guard__to_bytes guard)::job#state.path_condition;
-                    } in
+                    let job = MemOp.state__add_path_condition job (Bytes.guard__to_bytes guard) true in
                     (job, conditional, errors)
                 | None, _ ->
                     (* No conditional branches were dereferenced successfully: just fail. *)
@@ -525,7 +523,10 @@ evaluate_under_condition job_in condition exp =
                during the evaluation of exp. *)
             if job#state.path_condition != checkpointed_path_condition
             then failwith "Path condition changed unexpectedly while evaluating under a condition";
-            (Some (job#with_state { job#state with path_condition = job_in#state.path_condition; }, bytes), "")
+            (Some (job#with_state { job#state with
+                                        path_condition = job_in#state.path_condition;
+                                        path_condition_tracked = job_in#state.path_condition_tracked;
+                                  }, bytes), "")
 
 
 (** [evaluate_initializer job typ init] evaluates an initializer in a given job.
