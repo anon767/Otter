@@ -383,19 +383,47 @@ let printPath state hist =
 		| _ -> failwith "Impossible: symbolic bytes must be a ByteArray"
 	in
 
-	Output.printf "Sample value:\n";
-	List.iter
-		(fun (bytes,varinf) ->
-			 match getVal bytes with
-				 | None -> () (* Don't print anything for an unconstrained value *)
-				 | Some concreteByteArray ->
-                         (* FIXME: change bytes_to_constant so that it understands TArray *)
-						 match bytes_to_constant concreteByteArray varinf.vtype with
-							 | CInt64 (n,_,_) ->
-									 (* Is it okay to ignore the type? Or might we have to truncate? *)
-									 Output.printf "%s=%Ld\n" varinf.vname n
-							 | _ -> failwith "Unimplemented: non-integer symbolic")
-		(List.rev hist.bytesToVars);
+    let bytes_to_constants bytes typ = 
+    	match unrollType typ with
+            | TArray (typ,expopt,_) -> 
+                let n = match expopt with
+                    | Some exp -> (
+                        match Cil.isInteger exp with
+                        | Some i64 -> Int64.to_int i64
+                        | None -> 1
+                    )
+                    | _ -> 1
+                in
+                let len = Cil.bitsSizeOf typ / 8 in
+                let rec impl i =
+                    if i = n then [] 
+                    else 
+                        let sub_bytes = BytesUtility.bytes__read bytes (int_to_bytes (i * len)) len in
+                        (i, bytes_to_constant sub_bytes typ) :: (impl (i + 1))
+                in
+                impl 0
+            | _ -> [ 0, bytes_to_constant bytes typ ]
+    in
+
+    Output.printf "Sample value:\n"; 
+    List.iter (
+        fun (bytes,varinf) ->
+            match getVal bytes with
+                | None -> () (* Don't print anything for an unconstrained value *)
+                | Some concreteByteArray ->
+                    let constants = bytes_to_constants concreteByteArray varinf.vtype in
+                    let isArray = Cil.isArrayType varinf.vtype in
+                    List.iter (fun (i, constant) ->
+                        match constant with
+                            | CInt64 (n,_,_) ->
+                                (* Is it okay to ignore the type? Or might we have to truncate? *)
+                                if isArray then
+                                    Output.printf "%s[%d]=%Ld\n" varinf.vname i n
+                                else
+                                    Output.printf "%s=%Ld\n" varinf.vname n
+                            | _ -> failwith "Unimplemented: non-integer symbolic"
+                    )  constants
+    ) (List.rev hist.bytesToVars);
 
 	(* Check to see if we've bound all of the symbols in the path condition *)
 	if not (Stp.SymbolSet.is_empty !unboundSymbols)
