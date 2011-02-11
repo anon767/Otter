@@ -238,6 +238,50 @@ module Ocamlbuild_patches = struct
             | [] -> spec
         in
         flag ["ocaml"; "doc"] (scan_include_dirs N !Options.ocaml_lflags);
+
+
+        (* Workaround for "The implementation (obtained by packing) does not match the interface" errors, which seems
+           to be due to the presence of the fake mli file.
+        *)
+        (* copied from Ocaml_specific.ml and Ocaml_compiler.ml *)
+        let ocamlopt_p tags deps out =
+            (* from Ocaml_compiler.ml:
+                    Cmd(S[A"touch"; P mli; Sh" ; if "; cmd; Sh" ; then "; rm; Sh" ; else "; rm; Sh" ; exit 1; fi"])
+                extract just the cmd part
+            *)
+            match Ocaml_compiler.ocamlopt_p tags deps out with
+                | Cmd(S[_; _; _; cmd; _; _; _; _; _]) -> Cmd cmd
+                | _ -> failwith "Unknown ocamlopt_p"
+        in
+        let link_from_file link modules_file cmX env build =
+            let modules_file = env modules_file in
+            let contents_list = string_list_of_file modules_file in
+            link contents_list cmX env build
+        in
+        let native_pack_modules x =
+            Ocaml_compiler.pack_modules [("cmx",["cmi"; !Options.ext_obj]); ("cmi",[])] "cmx" "cmxa" !Options.ext_lib ocamlopt_p
+                (fun tags -> tags++"ocaml"++"pack"++"native") x
+        in
+        let native_pack_mlpack = link_from_file native_pack_modules in
+
+        let native_profile_pack_modules x =
+            Ocaml_compiler.pack_modules [("p.cmx",["cmi"; "p" -.- !Options.ext_obj]); ("cmi",[])] "p.cmx" "p.cmxa"
+                ("p" -.- !Options.ext_lib) ocamlopt_p
+                (fun tags -> tags++"ocaml"++"pack"++"native"++"profile") x
+        in
+        let native_profile_pack_mlpack = link_from_file native_profile_pack_modules in
+
+        rule "(override) ocaml: mlpack & cmi & cmx* & o* -> cmx & o"
+            ~tags:["ocaml"; "native"]
+            ~prods:["%.cmx"; "%" -.- !Options.ext_obj]
+            ~deps:["%.mlpack"; "%.cmi"]
+            (native_pack_mlpack "%.mlpack" "%.cmx");
+
+        rule "(override) ocaml: mlpack & cmi & p.cmx* & p.o* -> p.cmx & p.o"
+            ~tags:["ocaml"; "profile"; "native"]
+            ~prods:["%.p.cmx"; "%.p" -.- !Options.ext_obj]
+            ~deps:["%.mlpack"; "%.cmi"]
+            (native_profile_pack_mlpack "%.mlpack" "%.p.cmx");
 end
 
 
