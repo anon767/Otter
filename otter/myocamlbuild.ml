@@ -273,14 +273,14 @@ module Ocamlbuild_patches = struct
 
         rule "(override) ocaml: mlpack & cmi & cmx* & o* -> cmx & o"
             ~tags:["ocaml"; "native"]
-            ~prods:["%.cmx"; "%" -.- !Options.ext_obj]
-            ~deps:["%.mlpack"; "%.cmi"]
+            ~prods:["%.cmx"; "%" -.- !Options.ext_obj; "%.cmi"]
+            ~deps:["%.mlpack"]
             (native_pack_mlpack "%.mlpack" "%.cmx");
 
         rule "(override) ocaml: mlpack & cmi & p.cmx* & p.o* -> p.cmx & p.o"
             ~tags:["ocaml"; "profile"; "native"]
-            ~prods:["%.p.cmx"; "%.p" -.- !Options.ext_obj]
-            ~deps:["%.mlpack"; "%.cmi"]
+            ~prods:["%.p.cmx"; "%.p" -.- !Options.ext_obj; "%.cmi"]
+            ~deps:["%.mlpack"]
             (native_profile_pack_mlpack "%.mlpack" "%.p.cmx");
 end
 
