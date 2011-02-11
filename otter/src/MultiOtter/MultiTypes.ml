@@ -55,4 +55,4 @@ type 'job multijob = {
 	next_pid : int;
 	current_metadata : 'job process_metadata; (* this is preserved here when a job is running, since it can't be put in job or state *)
  	initial_job : 'job; (* HACK: need to keep a job to modify since job is now polymorphic, and can't be simply constructed (the types won't match otherwise) *)
-} constraint 'job = _ #Job.t
+} constraint 'job = #Job.t

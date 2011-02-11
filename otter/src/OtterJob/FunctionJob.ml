@@ -142,9 +142,9 @@ let rec init_bytes_with_pointers ?scheme job typ points_to exps = match Cil.unro
         @param fn is list the function at which to begin symbolic execution
         @return [OtterCore.Job.job] the created job
 *)
-class ['self] t file ?scheme ?(points_to=CilPtranal.points_to file) fn =
+class t file ?scheme ?(points_to=CilPtranal.points_to file) fn =
     object (self : 'self)
-        inherit ['self] OtterCore.Job.t file fn
+        inherit OtterCore.Job.t file fn
         initializer
             let job = self in
 

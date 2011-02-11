@@ -77,7 +77,7 @@ let job_counter = Counter.make ()
 let job_counter_unique = Counter.make ()
 
 
-class ['self] t file' fn =
+class t file' fn =
     let trackedFns' = TrackingFunctions.trackedFns file' in
     object (_ : 'self)
         (* TODO: perhaps use a camlp4 syntax extension to deal with this boilerplate? *)
@@ -88,7 +88,7 @@ class ['self] t file' fn =
         method file = file
         method with_file file = {< file = file >}
 
-        inherit ['self] State.t as state_super
+        inherit State.t as state_super
 
         val mutable exHist : executionHistory = emptyHistory
         method exHist = exHist
@@ -172,14 +172,14 @@ type ('job, 'abandoned, 'truncated) job_completion =
     | Exit of Bytes.bytes option * 'job (* Jobs that successfully completed by calling _exit *)
     | Abandoned of 'abandoned * 'job (* Jobs that are terminated due to an error in the source program *)
     | Truncated of 'truncated * 'job (* Jobs that are terminated for other reasons *)
-    constraint 'job = _ #t
+    constraint 'job = #t
 
 type ('job, 'abandoned, 'truncated) job_state =
     | Active of 'job
     | Fork of ('job, 'abandoned, 'truncated) job_state list
     | Complete of ('job, 'abandoned, 'truncated) job_completion
     | Paused of 'job
-    constraint 'job = _ #t
+    constraint 'job = #t
 
 
 (** Get the file location for the current job instruction.

@@ -98,7 +98,7 @@ type 'job state =
     (* [new a; (new b :> a)] will fail and show that b is not a subtype of a *)
 ]}
 *)
-class ['self] t = object (_ : 'self)
+class t = object (_ : 'self)
     val mutable state = {
         global = (VarinfoMap.empty : 'self memory_frame);
         formals = [(VarinfoMap.empty : 'self memory_frame)];
