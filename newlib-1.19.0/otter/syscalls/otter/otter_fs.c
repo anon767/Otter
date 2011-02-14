@@ -756,7 +756,10 @@ void __otter_fs_mount()
 }
 
 void __otter_fs_init_stdin_out_err() {
-	stdin = fopen("/dev/tty", "r");
+	/* POSIX says: 'The stderr stream is expected to be open for reading and
+		 writing.' It seems, however, that you can write to stdin, too. (Try it.)
+		 Maybe that means you can also read from stdout? */
+	stdin = fopen("/dev/tty", "r+");
 	stdout = fopen("/dev/tty", "w");
-	stderr = fopen("/dev/tty", "w");
+	stderr = fopen("/dev/tty", "r+");
 }
