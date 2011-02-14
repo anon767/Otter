@@ -90,7 +90,7 @@ struct __otter_fs_sock_data* __otter_fs_init_new_socket_data()
 	struct __otter_fs_sock_data* sock = __otter_multi_gmalloc(sizeof(struct __otter_fs_sock_data));
 	sock->addr = __otter_multi_gcalloc(__SOCKADDR_SHARED_LEN, 1);
 	sock->state = 0;
-	sock->options = 
+	sock->options = 0;
 	sock->recv_data = NULL; /* allocate this when connected or creating UDP */
 	sock->sock_queue = NULL; /* allocate this when listen() or connect() */
 	sock->backlog = 0;
