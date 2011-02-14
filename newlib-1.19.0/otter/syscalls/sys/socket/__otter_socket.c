@@ -574,7 +574,6 @@ int connect(int socket_fd, const struct sockaddr *address, socklen_t address_len
 		return(-1);
 	}
 	
-	int	l = 0;
 	/* verify address is valid */
 	if(address == NULL)
 	{
