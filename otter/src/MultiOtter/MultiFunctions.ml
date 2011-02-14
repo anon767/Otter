@@ -89,38 +89,38 @@ let otter_gmalloc job multijob retopt exps errors =
 	(Active job, multijob, errors)
 
 let otter_gfree job multijob retopt exps errors =
-	let job, ptr, errors = Expression.rval job (List.hd exps) errors in
-	match ptr with
-		| Bytes.Bytes_Address (block, _) ->
-			if block.Bytes.memory_block_type != Bytes.Block_type_Heap then
-				FormatPlus.failwith "gfreeing a non-gmalloced pointer:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp (List.hd exps) BytesPrinter.bytes ptr
-			else if not (MemoryBlockMap.mem block multijob.shared.shared_block_to_bytes) then
-				FormatPlus.failwith "gfreeing a non-gmalloced pointer or double-gfree:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp (List.hd exps) BytesPrinter.bytes ptr
-			else if not (MemoryBlockMap.mem block job#state.State.block_to_bytes) then
-				FormatPlus.failwith "gfreeing after free:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp (List.hd exps) BytesPrinter.bytes ptr
-			else
-				let multijob =
-					{multijob with
-						shared =
-							{multijob.shared with
-								shared_block_to_bytes = MemoryBlockMap.remove block multijob.shared.shared_block_to_bytes;
-							};
-						processes = List.map
-							(fun (pc, ls, md) ->
-								(pc, { ls with block_to_bytes = MemoryBlockMap.remove block ls.block_to_bytes; }, md)
-							)
-							multijob.processes;
-					}
-				in
-				let job = MemOp.state__remove_block job block in
-				let job, errors = BuiltinFunctions.set_return_value job retopt bytes__zero errors in
-				let job = BuiltinFunctions.end_function_call job in
-				(Active job, multijob, errors)
+    let job, ptr, errors = Expression.rval job (List.hd exps) errors in
+    match ptr with
+      | Bytes.Bytes_Address (block, _) ->
+            if block.Bytes.memory_block_type != Bytes.Block_type_Heap then
+                FormatPlus.failwith "gfreeing a non-gmalloced pointer:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp (List.hd exps) BytesPrinter.bytes ptr
+            else if not (MemoryBlockMap.mem block multijob.shared.shared_block_to_bytes) then
+                FormatPlus.failwith "gfreeing a non-gmalloced pointer or double-gfree:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp (List.hd exps) BytesPrinter.bytes ptr
+            else if not (MemoryBlockMap.mem block job#state.State.block_to_bytes) then
+                FormatPlus.failwith "gfreeing after free:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp (List.hd exps) BytesPrinter.bytes ptr
+            else
+                let multijob =
+                    {multijob with
+                        shared =
+                            {multijob.shared with
+                                shared_block_to_bytes = MemoryBlockMap.remove block multijob.shared.shared_block_to_bytes;
+                            };
+                        processes = List.map
+                            (fun (pc, ls, md) ->
+                                (pc, { ls with block_to_bytes = MemoryBlockMap.remove block ls.block_to_bytes; }, md)
+                            )
+                            multijob.processes;
+                    }
+                in
+                let job = MemOp.state__remove_block job block in
+                let job, errors = BuiltinFunctions.set_return_value job retopt bytes__zero errors in
+                let job = BuiltinFunctions.end_function_call job in
+                (Active job, multijob, errors)
 
-		| _ ->
-			Output.set_mode Output.MSG_MUSTPRINT;
-			FormatPlus.failwith "gfreeing something that is not a valid pointer:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp (List.hd exps) BytesPrinter.bytes ptr
-			
+      | _ ->
+            Output.set_mode Output.MSG_MUSTPRINT;
+            FormatPlus.failwith "gfreeing something that is not a valid pointer:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp (List.hd exps) BytesPrinter.bytes ptr
+
 let otter_get_pid job multijob retopt exps errors =
 	let job, errors = BuiltinFunctions.set_return_value job retopt (int_to_bytes multijob.current_metadata.pid) errors in
 	let job = BuiltinFunctions.end_function_call job in
