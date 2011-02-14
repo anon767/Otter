@@ -42,6 +42,9 @@
 
 #define AF_UNSPEC 0
 #define AF_UNIX 1
+/* http://www.delorie.com/gnu/docs/glibc/libc_305.html says of AF_UNIX:
+	 'This is a synonym for AF_LOCAL. Although AF_LOCAL is mandated by POSIX.1g, AF_UNIX is portable to more systems.' */
+#define AF_LOCAL AF_UNIX
 #define AF_INET 2
 #define AF_INET6 3
 
