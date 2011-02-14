@@ -118,8 +118,13 @@ let otter_gfree job multijob retopt exps errors =
                 (Active job, multijob, errors)
 
       | _ ->
-            Output.set_mode Output.MSG_MUSTPRINT;
-            FormatPlus.failwith "gfreeing something that is not a valid pointer:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp (List.hd exps) BytesPrinter.bytes ptr
+            if not (bytes__equal ptr bytes__zero) (* Freeing a null pointer is fine; it does nothing. *)
+            then (
+                Output.set_mode Output.MSG_MUSTPRINT;
+                FormatPlus.failwith "gfreeing something that is not a valid pointer:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp (List.hd exps) BytesPrinter.bytes ptr
+            );
+            let job = BuiltinFunctions.end_function_call job in
+            (Active job, multijob, errors)
 
 let otter_get_pid job multijob retopt exps errors =
 	let job, errors = BuiltinFunctions.set_return_value job retopt (int_to_bytes multijob.current_metadata.pid) errors in
