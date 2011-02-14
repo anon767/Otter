@@ -52,7 +52,6 @@ sleep for the specified amount of time. */
 #include <errno.h>
 #include <sys/select.h>
 #include <sys/socket.h>
-#include <unistd.h> // For sleep
 
 /* Checks whether an open file can be read without blocking. If a read would
 	 block, this function returns a pointer to memory that will change when a read
@@ -227,8 +226,8 @@ int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
 	}
 
 	if (nfds == 0) { // The caller is using select as sleep
-		sleep(timeout->tv_sec);
-		nanosleep(timeout->tv_usec * 1000, NULL);
+		struct timespec t = {.tv_sec = timeout->tv_sec, .tv_nsec = timeout->tv_usec * 1000};
+		nanosleep(&t, NULL);
 		return 0;
 	}
 
