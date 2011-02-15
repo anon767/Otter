@@ -5,7 +5,7 @@ module PathSet = Set.Make (struct
     let compare = BackOtterUtilities.lex_compare OtterCore.Decision.compare
 end)
 
-(* TODO: also include coverage information of a target *)
+(* TODO: generalize targets to program points, not just functions *)
 type t = {
     mapping : PathSet.t FundecMap.t;
     last_failing_path : (Cil.fundec * OtterCore.Decision.t list) option;
