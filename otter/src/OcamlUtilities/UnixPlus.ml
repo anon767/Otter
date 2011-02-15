@@ -8,6 +8,9 @@ exception ForkCallKilled of int
 exception ForkCallStopped of int
 (**/**)
 
+exception TimedOut 
+
+
 (** Call a function in a forked process and return the result. Note that {!Format.std_formatter} and
     {!Format.err_formatter} are reset in the forked process.
         @param f is the function to call
@@ -84,4 +87,31 @@ let fork_call (f : ('a -> 'b)) (x : 'a) : 'b =
                 (* this should never occur since waitpid wasn't given the WUNTRACED flag *)
                 raise (ForkCallStopped i)
     end
+
+(* assert a time limit for running fn () (note: uses [Unix.setitimer Unix.ITIMER_PROF]) *)
+let assert_time_limit time_limit fn =
+    let old_handler = Sys.signal Sys.sigprof (Sys.Signal_handle (fun _ -> raise TimedOut)) in
+    ignore (Unix.setitimer Unix.ITIMER_PROF { Unix.it_interval = 0.; Unix.it_value = time_limit; });
+    try
+        let result = fn () in
+        ignore (Unix.setitimer Unix.ITIMER_PROF { Unix.it_interval = 0.; Unix.it_value = 0.; });
+        Sys.set_signal Sys.sigalrm old_handler;
+        result
+    with TimedOut ->
+        ignore (Unix.setitimer Unix.ITIMER_PROF { Unix.it_interval = 0.; Unix.it_value = 0.; });
+        Sys.set_signal Sys.sigalrm old_handler;
+        raise TimedOut
+
+
+(** Call a function in a forked process and return the result, or raise {TimedOut} if timeout occurs. 
+    Note that {!Format.std_formatter} and {!Format.err_formatter} are reset in the forked process.
+        @param time_limit is the time limit in seconds
+        @param fn is the function to call
+
+        @return the result of [fn ()]
+
+        @raise Timedout if timeout occurs
+*)
+let timed_call time_limit fn =
+    assert_time_limit time_limit (fork_call fn)
 

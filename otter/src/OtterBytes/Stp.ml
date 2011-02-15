@@ -12,6 +12,7 @@ module SymbolSet = Set.Make
 let stp_count = ref 0
 
 let print_stp_queries = ref false
+let arg_max_stp_time = ref (-0.1) (* negative means unlimited *)
 let stp_queries = ref []
 
 let global_vc = Stpc.create_validity_checker ()
@@ -520,10 +521,18 @@ let query_stp pc pre guard =
                         (* Note: the count is used as a proxy of running time in BackOtter *)
                         DataStructures.NamedCounter.incr "stpc_query";
                         try
-                            Stpc.query vc exp
-                        with Invalid_argument s -> 
+                            let stp_query () = Stpc.query vc exp in
+                            if (!arg_max_stp_time) < 0.0 then
+                                stp_query ()
+                            else
+                                UnixPlus.timed_call (!arg_max_stp_time) stp_query 
+                        with 
+                        | Invalid_argument s -> 
                             (* Caught Invalid_argument s. Transform to Failure s. *)
                             failwith s
+                        | UnixPlus.TimedOut -> 
+                            (* Caught Invalid_argument s. Transform to Failure s. *)
+                            failwith "Stp query timed out"
                     end () in
                     stpcache_add answer pc pre guard truth_value;
                     let endTime = Unix.gettimeofday () in
@@ -596,5 +605,8 @@ let options = [
     "--printStpQueries",
         Arg.Set print_stp_queries,
         " Print STP queries (Path condition * pre * query * truth_value)";
+    "--max-stp-time",
+        Arg.Set_float arg_max_stp_time,
+        "<t-secs> Maximum amount of time for a single query (default=unlimited)";
 ]
 
