@@ -40,19 +40,17 @@ type 'job process_metadata = {
  * This includes items in state that are shared between processes.
  *)
 type 'job shared_state = {
-	shared_path_condition : Bytes.bytes list;
 	shared_block_to_bytes : ('job, Bytes.bytes) Deferred.t MemoryBlockMap.t;
-	trackedFns : Job.StringSet.t;
-	exHist : Job.executionHistory;
 }
 
 (* TODO: turn multijob into a subclass of Job.t *)
 type 'job multijob = {
-	file : Cil.file;
 	processes : (program_counter * 'job local_state * 'job process_metadata) list;
 	shared : 'job shared_state;
-	jid : int;
 	next_pid : int;
 	current_metadata : 'job process_metadata; (* this is preserved here when a job is running, since it can't be put in job or state *)
- 	initial_job : 'job; (* HACK: need to keep a job to modify since job is now polymorphic, and can't be simply constructed (the types won't match otherwise) *)
+
+	(* the job to run, which will be modified as necessary to represent different processes;
+	   (also, jobs can't be simply constructed, otherwise the types won't match) *)
+	active_job : 'job;
 } constraint 'job = #Job.t

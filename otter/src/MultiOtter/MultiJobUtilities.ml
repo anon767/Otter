@@ -32,22 +32,18 @@ let put_job job multijob metadata =
 	} in
 	let local_state = { job#state with path_condition = []; } in
 	let shared = {
-		shared_path_condition = job#state.path_condition;
 		shared_block_to_bytes = update_to_shared_memory multijob.shared.shared_block_to_bytes job#state.block_to_bytes;
-		MultiTypes.trackedFns = job#trackedFns;
-		exHist = job#exHist;
 	} in
-	{ multijob with
-		MultiTypes.file = job#file;
+	{
 		processes =
 			(match metadata.priority with
 				| Atomic -> (program_counter, local_state, metadata)::multijob.processes (* save time sorting by putting an atomic process on the front *)
 				| _ -> List.append multijob.processes [ (program_counter, local_state, metadata) ])
 			;
 		shared = shared;
-		jid = job#jid;
 		next_pid = multijob.next_pid;
 		current_metadata = multijob.current_metadata;
+		active_job = job;
 	}
 
 
@@ -68,12 +64,9 @@ let put_completion completion multijob = match completion with
 			multijob.processes
 		in
 		let shared = {
-			shared_path_condition = job_result#state.path_condition;
 			shared_block_to_bytes = update_to_shared_memory
 				multijob.shared.shared_block_to_bytes
 				job_result#state.block_to_bytes;
-			MultiTypes.trackedFns = multijob.shared.MultiTypes.trackedFns;
-			exHist = job_result#exHist;
 		} in
 		{ multijob with
 			processes = processes;
@@ -135,21 +128,17 @@ let get_job multijob =
 		(* extract the first job from a multijob *)
 		(* TODO: make multijob a subtype of Job.job that contains a set of processes, one of which is designated as active, so that
 			it can be used transparently as job without having to go through the trouble of creating a new job like below *)
-		let job = multijob.initial_job in
-		let job = job#with_file multijob.file in
+		let job = multijob.active_job in
 		let job = job#with_state { local_state with
 			State.block_to_bytes = update_from_shared_memory multijob.shared.shared_block_to_bytes local_state.block_to_bytes;
-			State.path_condition = multijob.shared.shared_path_condition;
 		} in
 		let job = job#with_instrList (program_counter.MultiTypes.instrList) in
 		let job = job#with_stmt (program_counter.MultiTypes.stmt) in
-		let job = job#with_jid (multijob.MultiTypes.jid) in
-		let job = job#with_trackedFns multijob.shared.MultiTypes.trackedFns in
 		let job = job#with_inTrackedFn program_counter.MultiTypes.inTrackedFn in
-		let job = job#with_exHist multijob.shared.MultiTypes.exHist in
 		let multijob = { multijob with
 			processes = processes;
 			current_metadata = metadata;
+			active_job = job;
 		} in
 		Some (job, multijob)
 

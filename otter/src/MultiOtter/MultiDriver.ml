@@ -17,9 +17,9 @@ let multi_set_output_formatter_interceptor job multijob job_queue interceptor =
 	let loc = Job.get_loc job in
 	let label =
 		if loc = Cil.locUnknown then
-			Format.sprintf "[jid: %d, pid: %d] : " multijob.jid multijob.current_metadata.pid
+			Format.sprintf "[jid: %d, pid: %d] : " multijob.active_job#jid multijob.current_metadata.pid
 		else
-			Format.sprintf "[jid: %d, pid: %d] %s:%d : " multijob.jid multijob.current_metadata.pid (Filename.basename loc.Cil.file) loc.Cil.line
+			Format.sprintf "[jid: %d, pid: %d] %s:%d : " multijob.active_job#jid multijob.current_metadata.pid (Filename.basename loc.Cil.file) loc.Cil.line
 	in
 	Output.set_formatter (new Output.labeled label);
 	interceptor job multijob job_queue
@@ -66,16 +66,11 @@ let rec flush_queue reporter job_queue =
 
 let run reporter job =
 	let multijob = {
-		file = job#file;
 		processes = [];
 		shared =
 		{
-			shared_path_condition = [];
 			shared_block_to_bytes = MemoryBlockMap.empty;
-			trackedFns = Job.StringSet.empty;
-			exHist = Job.emptyHistory;
 		};
-		jid = job#jid;
 		next_pid = 1;
 		current_metadata = 
 		{
@@ -83,7 +78,7 @@ let run reporter job =
 			parent_pid = -2;
 			priority = Running;
 		};
-		initial_job = job;
+		active_job = job;
 	} in
 	let multijob = put_job job multijob multijob.current_metadata in
 

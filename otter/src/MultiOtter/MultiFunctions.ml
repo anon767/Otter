@@ -75,7 +75,7 @@ let otter_gmalloc job multijob retopt exps errors =
 	let multijob =
 		{multijob with
 			shared =
-				{multijob.shared with
+				{
 					shared_block_to_bytes = MemoryBlockMap.add block (Deferred.Immediate bytes) multijob.shared.shared_block_to_bytes;
 				};
 			processes = List.map
@@ -102,7 +102,7 @@ let otter_gfree job multijob retopt exps errors =
                 let multijob =
                     {multijob with
                         shared =
-                            {multijob.shared with
+                            {
                                 shared_block_to_bytes = MemoryBlockMap.remove block multijob.shared.shared_block_to_bytes;
                             };
                         processes = List.map
