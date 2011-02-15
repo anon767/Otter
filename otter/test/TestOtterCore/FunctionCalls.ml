@@ -644,7 +644,7 @@ let function_pointer_calls_testsuite = "Function pointer calls" >:::
 
         test_function_pointer_calls ~label:"Call twice with broken functions"
             ~expect_return:[ 0; 1 ]
-            ~expect_abandoned_count:2 (* one NULL, one undefined should be reported, but currently aren't *)
+            ~expect_abandoned_count:2 (* one NULL, one undefined should be reported *)
             "
                 typedef int (*FP)(void);
                 FP a[4];
