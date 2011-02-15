@@ -282,7 +282,7 @@ let doit file =
     (* Set a timer *)
     ignore (Unix.alarm !Executeargs.arg_timeout);
 
-    try
+    begin try
 
     Core.prepare_file file;
     CovToFundec.prepare_file file;
@@ -342,7 +342,7 @@ let doit file =
     with State.SignalException s ->
         Output.set_mode Output.MSG_MUSTPRINT;
         Output.printf "%s@\n" s
-    ;
+    end;
 
     (* Turn off the alarm and reset the signal handlers *)
     ignore (Unix.alarm 0);
@@ -351,7 +351,9 @@ let doit file =
 
     (** TODO: provide a way to force full-width profile printing *)
     Format.set_margin 120;
-    Format.printf "Global profile:@\n@\n  @[%t@]@." Profiler.global#printer
+    Format.printf "Global profile:@\n@\n  @[%t@]@." Profiler.global#printer;
+
+    Format.printf "Done.@\n"
 
 
 (** {1 Command-line options} *)
