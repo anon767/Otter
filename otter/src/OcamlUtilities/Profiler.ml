@@ -1,11 +1,12 @@
 
-exception Empty
-
 module Label = String
 module Context = struct type t = Label.t list let compare = Pervasives.compare end
 
 module LabelMap = Map.Make (Label)
 module ContextMap = Map.Make (struct type t = string list let compare = Pervasives.compare end)
+
+exception ProfilerCallException of Context.t * exn 
+exception Empty
 
 class virtual ['self] abstract =
     object (self : 'self)
@@ -47,10 +48,20 @@ class virtual ['self] abstract =
                 | _, _ ->
                     raise Empty
 
-        method call : 'a . string -> ('self -> 'self * 'a) -> ('self * 'a) = fun label f ->
+        method call : 'a . string -> ?catch:(exn -> 'self -> 'self * 'a) -> ('self -> 'self * 'a) -> ('self * 'a) = fun label ?catch:catch_opt f ->
             let self = self#push label in
-            let self, x = f self in
-            (self#pop label, x)
+            try
+                let self, x = f self in
+                (self#pop label, x)
+            with
+                | ProfilerCallException (context, exn) ->
+                    raise (ProfilerCallException (label::context, exn))
+                | exn ->
+                    match catch_opt with
+                        | Some catch ->
+                            catch exn (self#pop label)
+                        | None ->
+                            raise (ProfilerCallException (label::[], exn))
 
         method finish =
             match context with
@@ -286,9 +297,13 @@ let global =
 
         method call : 'a . string -> (unit -> 'a) -> 'a = fun label f ->
             actual_profiler <- actual_profiler#push label;
-            let x = f () in
-            actual_profiler <- actual_profiler#pop label;
-            x
+            try
+                let x = f () in
+                actual_profiler <- actual_profiler#pop label;
+                x
+            with exn ->
+                actual_profiler <- actual_profiler#pop label;
+                raise exn
 
         method add (other : #t) =
             actual_profiler <- actual_profiler#add other
