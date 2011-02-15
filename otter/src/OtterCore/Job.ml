@@ -77,60 +77,96 @@ let job_counter = Counter.make ()
 let job_counter_unique = Counter.make ()
 
 
-class t file' fn =
-    let trackedFns' = TrackingFunctions.trackedFns file' in
-    object (_ : 'self)
+class t file' fn :
+    object ('self)
         (* TODO: perhaps use a camlp4 syntax extension to deal with this boilerplate? *)
         (* TODO: group methods into logical components that can be composed mix-in style *)
         (* TODO: currently just a glorified extensible record; but perhaps some core functionality like maintaining job ids? *)
 
-        val mutable file : Cil.file = file'
+        method file : Cil.file
+        method with_file : Cil.file -> 'self
+
+        inherit State.t
+
+        method exHist : executionHistory
+        method with_exHist : executionHistory -> 'self
+
+        method decision_path : Decision.t list
+        method with_decision_path : Decision.t list -> 'self
+
+        method instrList : Cil.instr list
+        method with_instrList : Cil.instr list -> 'self
+
+        method stmt : Cil.stmt
+        method with_stmt : Cil.stmt -> 'self
+
+        method trackedFns : StringSet.t
+        method with_trackedFns : StringSet.t -> 'self
+
+        method inTrackedFn : bool
+        method with_inTrackedFn : bool -> 'self
+
+        method jid : int
+        method with_jid : int -> 'self
+
+        method jid_unique : int
+        method with_jid_unique : int -> 'self
+
+        method jid_parent : int
+        method with_jid_parent : int -> 'self
+
+        method become : 'self -> unit
+    end
+=
+    let trackedFns' = TrackingFunctions.trackedFns file' in
+    object (_ : 'self)
+        val mutable file = file'
         method file = file
         method with_file file = {< file = file >}
 
         inherit State.t as state_super
 
-        val mutable exHist : executionHistory = emptyHistory
+        val mutable exHist = emptyHistory
         method exHist = exHist
         method with_exHist exHist = {< exHist = exHist >}
 
         (** The decision path is a list of decision. Most recent decision first. *)  (* TODO: take this out *)
-        val mutable decision_path : Decision.t list = []
+        val mutable decision_path = []
         method decision_path = decision_path
         method with_decision_path decision_path = {< decision_path = decision_path >}
 
         (** [instr]s to execute before moving to the next [stmt] *)
-        val mutable instrList : Cil.instr list = []
+        val mutable instrList = []
         method instrList = instrList
         method with_instrList instrList = {< instrList = instrList >}
 
         (** The next statement the job should execute *)
-        val mutable stmt : Cil.stmt = List.hd fn.Cil.sallstmts
+        val mutable stmt = List.hd fn.Cil.sallstmts
         method stmt = stmt
         method with_stmt stmt = {< stmt = stmt >}
 
         (** The set of functions (names) in which to track coverage *)
-        val mutable trackedFns : StringSet.t = trackedFns'
+        val mutable trackedFns = trackedFns'
         method trackedFns = trackedFns
         method with_trackedFns trackedFns = {< trackedFns = trackedFns >}
 
         (** Is stmt in a function in the original program (as opposed to in a library or system call)? *)
-        val mutable inTrackedFn : bool = StringSet.mem fn.Cil.svar.Cil.vname trackedFns'
+        val mutable inTrackedFn = StringSet.mem fn.Cil.svar.Cil.vname trackedFns'
         method inTrackedFn = inTrackedFn
         method with_inTrackedFn inTrackedFn = {< inTrackedFn = inTrackedFn >}
 
         (** An identifier for the job. Not unique. *)
-        val mutable jid : int = Counter.next job_counter
+        val mutable jid = Counter.next job_counter
         method jid = jid
         method with_jid jid = {< jid = jid >}
 
         (** A unique identifier for the job *)
-        val mutable jid_unique : int = Counter.next job_counter_unique
+        val mutable jid_unique = Counter.next job_counter_unique
         method jid_unique = jid_unique
         method with_jid_unique jid_unique = {< jid_unique = jid_unique >}
 
         (** The unique identifier for the parent of the job *)
-        val mutable jid_parent : int= -1 (* Indicates no parent *)
+        val mutable jid_parent = -1 (* Indicates no parent *)
         method jid_parent = jid_parent
         method with_jid_parent jid_parent = {< jid_parent = jid_parent >}
 

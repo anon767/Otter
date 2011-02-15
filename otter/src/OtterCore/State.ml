@@ -98,40 +98,46 @@ type 'job state =
     (* [new a; (new b :> a)] will fail and show that b is not a subtype of a *)
 ]}
 *)
-class t = object (_ : 'self)
-    val mutable state = {
-        global = (VarinfoMap.empty : 'self memory_frame);
-        formals = [(VarinfoMap.empty : 'self memory_frame)];
-        locals = [(VarinfoMap.empty : 'self memory_frame)]; (* permit global init with another global *)
-        aliases = VarinfoMap.empty;
-        mallocs = MallocMap.empty;
-        callstack = [];
-        block_to_bytes = (MemoryBlockMap.empty : 'self memory_heap);
-        path_condition = [];
-        path_condition_tracked = [];
-        (*return = None;*)
-        callContexts = [];
-        stmtPtrs = IndexMap.empty;
-        va_arg = [];
-        va_arg_map = VargsMap.empty;
-    }
+class t :
+    object ('self)
+        method state : 'self state
+        method with_state : 'self state -> 'self
+        method become : 'self -> unit
+    end
+=
+    object (_ : 'self)
+        val mutable state = {
+            global = (VarinfoMap.empty : 'self memory_frame);
+            formals = [(VarinfoMap.empty : 'self memory_frame)];
+            locals = [(VarinfoMap.empty : 'self memory_frame)]; (* permit global init with another global *)
+            aliases = VarinfoMap.empty;
+            mallocs = MallocMap.empty;
+            callstack = [];
+            block_to_bytes = (MemoryBlockMap.empty : 'self memory_heap);
+            path_condition = [];
+            path_condition_tracked = [];
+            callContexts = [];
+            stmtPtrs = IndexMap.empty;
+            va_arg = [];
+            va_arg_map = VargsMap.empty;
+        }
 
-    (** Get the symbolic execution state *)
-    method state = state
+        (** Get the symbolic execution state *)
+        method state = state
 
-    (** Set the symbolic execution state *)
-    method with_state state = {< state = state >}
+        (** Set the symbolic execution state *)
+        method with_state state = {< state = state >}
 
-    (** [x#become y] destructively copies all instance variables from [y] to [x]. This should be used sparingly,
-        typically only in object initializers.
+        (** [x#become y] destructively copies all instance variables from [y] to [x]. This should be used sparingly,
+            typically only in object initializers.
 
-        {b Subclasses are responsible for providing [#become] that calls [#become] on all superclasses, in addition to
-        copying their own instance variables.}
+            {b Subclasses are responsible for providing [#become] that calls [#become] on all superclasses, in addition to
+            copying their own instance variables.}
 
-        Unfortunately, Ocaml's object initializers returns [unit], not ['self], and so can't perform initialization via
-        the functional update syntax. As a workaround, we'll declare all instance variables mutable, and provide
-        [#become] which simply copies all instance variables from another object of the same type. Thus, initializers
-        can be used to perform further initialization using the pattern:
+            Unfortunately, Ocaml's object initializers returns [unit], not ['self], and so can't perform initialization via
+            the functional update syntax. As a workaround, we'll declare all instance variables mutable, and provide
+            [#become] which simply copies all instance variables from another object of the same type. Thus, initializers
+            can be used to perform further initialization using the pattern:
 {[
     initializer
         let x = self in;
@@ -139,8 +145,8 @@ class t = object (_ : 'self)
         ...
         self#become x
 ]}
-    *)
-    method become (other : 'self) =
-        state <- other#state
-end
+        *)
+        method become (other : 'self) =
+            state <- other#state
+    end
 
