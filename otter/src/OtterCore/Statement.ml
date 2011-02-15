@@ -101,7 +101,7 @@ let function_from_exp job instr fexp errors =
             let rec getall fp =
                 let fold_func (acc, errors) pre leaf =
                     match leaf with
-                        | Bytes_FunPtr(varinfo,_) ->
+                        | Bytes_FunPtr varinfo ->
                             (* the varinfo should always map to a valid fundec (if the file was parsed by Cil) *)
                             let job = MemOp.state__add_path_condition job (Bytes.guard__to_bytes pre) true in
                             let fundec = FindCil.fundec_by_varinfo job#file varinfo in
@@ -111,7 +111,7 @@ let function_from_exp job instr fexp errors =
                 Bytes.conditional__fold fold_func ([], errors) fp
             in
             begin match bytes with
-                | Bytes_FunPtr(varinfo,_) ->
+                | Bytes_FunPtr varinfo ->
                     (* the varinfo should always map to a valid fundec (if the file was parsed by Cil) *)
                     let fundec = FindCil.fundec_by_varinfo job#file varinfo in
                     ([ (job, fundec) ], errors)

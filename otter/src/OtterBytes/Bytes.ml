@@ -1,5 +1,6 @@
 open DataStructures
 open OcamlUtilities
+open CilUtilities
 open Cil
 
 type operator = 
@@ -67,7 +68,7 @@ module T : sig
         | Bytes_Op of operator * (bytes * Cil.typ) list
         | Bytes_Read of bytes * bytes * int
         | Bytes_Write of bytes * bytes * int * bytes
-        | Bytes_FunPtr of Cil.varinfo * bytes
+        | Bytes_FunPtr of Cil.varinfo
         | Bytes_Conditional of bytes conditional
 
     and memory_block_type =
@@ -101,7 +102,7 @@ module T : sig
     val make_Bytes_Op : operator * (bytes * Cil.typ) list -> bytes
     val make_Bytes_Read : bytes * bytes * int -> bytes
     val make_Bytes_Write : bytes * bytes * int * bytes -> bytes
-    val make_Bytes_FunPtr : Cil.varinfo * bytes -> bytes
+    val make_Bytes_FunPtr : Cil.varinfo -> bytes
     val make_Bytes_Conditional : bytes conditional -> bytes
 end = struct
     type symbol =
@@ -132,7 +133,7 @@ end = struct
         | Bytes_Op of operator * (bytes * Cil.typ) list
         | Bytes_Read of bytes * bytes * int             (* less preferrable type *)
         | Bytes_Write of bytes * bytes * int * bytes    (* least preferrable type*)
-        | Bytes_FunPtr of Cil.varinfo * bytes            (* bytes is the "imaginary address" of the funptr *)
+        | Bytes_FunPtr of Cil.varinfo            (* bytes is the "imaginary address" of the funptr *)
         | Bytes_Conditional of bytes conditional
 
     and memory_block_type =
@@ -174,13 +175,17 @@ end = struct
     let make_Byte_Concrete c = Byte_Concrete c
     let make_Byte_Symbolic s = Byte_Symbolic s
     let make_Byte_Bytes (bs, n) = Byte_Bytes (bs, n)
+
     let make_Bytes_Constant const = hash_consing_bytes_create (Bytes_Constant const)
     let make_Bytes_ByteArray bytearray = hash_consing_bytes_create (Bytes_ByteArray bytearray)
     let make_Bytes_Address (block, bs) = hash_consing_bytes_create (Bytes_Address (block, bs))
     let make_Bytes_Op (op, lst) = hash_consing_bytes_create (Bytes_Op (op, lst))
     let make_Bytes_Read (src, off, len) = hash_consing_bytes_create (Bytes_Read (src, off, len))
     let make_Bytes_Write (des, off, n, src) = hash_consing_bytes_create (Bytes_Write (des, off, n, src))
-    let make_Bytes_FunPtr (f, bs) = hash_consing_bytes_create (Bytes_FunPtr (f, bs))
+    let make_Bytes_FunPtr f =
+        if not (Cil.isFunctionType f.Cil.vtype) then
+            FormatPlus.invalid_arg "not a function: %a" CilPrinter.varinfo f;
+        hash_consing_bytes_create (Bytes_FunPtr f)
     let make_Bytes_Conditional = function
         | Unconditional b -> b
         | c -> hash_consing_bytes_create (Bytes_Conditional c)
@@ -377,7 +382,7 @@ and bytes__equal bytes1 bytes2 = if bytes1 == bytes2 then true else match bytes1
 		s1 = s2 && bytes__equal b1 b2 && bytes__equal off1 off2
 	| Bytes_Write (old1, off1, s1, new1), Bytes_Write (old2, off2, s2, new2) ->
 		s1 = s2 && bytes__equal old1 old2 && bytes__equal off1 off2 && bytes__equal new1 new2
-	| Bytes_FunPtr (f1, addr1), Bytes_FunPtr (f2, addr2) ->
+	| Bytes_FunPtr f1, Bytes_FunPtr f2 ->
 		f1 = f2
 	| Bytes_Conditional c1, Bytes_Conditional c2 ->
 		(* using conditional__equal will make it not polymorphic *)

@@ -170,8 +170,7 @@ rval job exp errors =
         | Question (guard, exp1, exp2, _) ->
             rval_question job guard exp1 exp2 errors
         | AddrOf (Var varinfo, _) when Cil.isFunctionType (varinfo.Cil.vtype) ->
-            let f_addr = bytes__random (Cil.bitsSizeOf Cil.voidPtrType / 8) in (* TODO: assign an addr for each function ptr *)
-            (job, make_Bytes_FunPtr(varinfo,f_addr), errors)
+            (job, make_Bytes_FunPtr varinfo, errors)
         | AddrOf (cil_lval)
         | StartOf (cil_lval) ->
             let job, (lvals, _), errors = lval ~justGetAddr:true job cil_lval errors in

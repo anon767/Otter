@@ -207,7 +207,7 @@ and bytes_named bytes_to_names ff =
 		| Bytes_Write (content, off, len, newbytes) ->
 			fprintf ff "Write(@[<hov>%a@],@ @[<hov>%a@],@ %d,@ @[<hov>%a@]@,)" bytes content bytes off len bytes newbytes
 
-		| Bytes_FunPtr (v, _) ->
+		| Bytes_FunPtr v ->
 			fprintf ff "Funptr(%s)" v.Cil.vname
 	in
 	bytes ff

@@ -67,7 +67,8 @@ and allSymbols = function
         SymbolSet.union
             (allSymbols bytes3)
             (SymbolSet.union (allSymbols bytes1) (allSymbols bytes2))
-    | Bytes_FunPtr (_, bytes) -> allSymbols bytes
+    | Bytes_FunPtr _ ->
+        SymbolSet.empty
     | Bytes_Conditional c ->
         let rec allSymbolsInConditional = function
             | IfThenElse (guard, c1, c2) ->
@@ -425,12 +426,10 @@ to_stp_bv_impl vc bytes =
             in
             read bv_offset len
 
-        | Bytes_FunPtr (fundec, f_addr) ->
-            (*
-            Output.set_mode Output.MSG_DEBUG;
-            Output.print_endline ("STP encodes addr of "^ (To_string.fundec fundec) ^ " to :" ^ (To_string.bytes f_addr));
-            *)
-            to_stp_bv vc f_addr
+        | Bytes_FunPtr varinfo ->
+            (* TODO: make this symbolic s.t. different functions have different addresses *)
+            let len = Cil.bitsSizeOf Cil.voidPtrType in
+            (Stpc.e_bv_of_int vc len (Hashtbl.hash varinfo.Cil.vname), len)
 
         | Bytes_Write _ ->
             FormatPlus.failwith "Impossible: converting a Bytes_Write to a bitvector. Is this a Write not under a Read?\n%a" BytesPrinter.bytes bytes
