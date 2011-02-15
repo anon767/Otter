@@ -187,6 +187,47 @@ let libc_free job retopt exps errors =
     let job = end_function_call job in
     (Job.Active job, errors)
 
+(** [access_with_length job exp errors length] finds the conditional tree of
+    lvalues (that is, [(memory_block, offset)] pairs) that exp can point to. It also
+    checks that these lvalues can be accessed with the given length. That is, if a
+    pointer points to (b, off), this performs a check that off+length is in
+    bounds.
+    @param job the job in which to evaluate [exp]
+    @param exp the expression to evaluate
+    @param errors the errors at the point of this call (TODO: This should not be an input to this function)
+    @param length the size (in bytes) of the read or write
+
+    @return a 4-tuple of (1) the [job] updated, if necessary, with the
+    assumption that the bounds-check passed, (2) the [bytes] that
+    [exp] evaluates to, (3) the conditional tree of lvalues that [exp]
+    can point to, and (4) the errors updated, if necessary, with the
+    failing bounds-check.
+*)
+let access_with_length job exp errors length =
+  let job, addr_bytes, errors = Expression.rval job exp errors in
+  let job, lvals, errors = Expression.deref job addr_bytes (Cil.typeOf exp) errors in
+  let old_job = job in (* Checkpoint the job in case we must report an error *)
+    let job, failing_bytes_opt = Expression.checkBounds job lvals length in
+    let errors = match failing_bytes_opt with
+      | None -> errors
+      | Some b -> (old_job, `OutOfBounds exp) :: errors
+    in
+    (job, addr_bytes, lvals, errors)
+
+let libc_memcpy job retopt exps errors =
+    match exps with
+      | [ dest_exp; src_exp; length_exp ] ->
+            let job, length, errors = Expression.rval job length_exp errors in
+            let length = bytes_to_int_auto length in
+            let job, dest, dest_lvals, errors = access_with_length job dest_exp errors length in
+            let job, _, src_lvals, errors = access_with_length job src_exp errors length in
+            let job, src_bytes = MemOp.state__deref job (src_lvals, length) in
+            let job = MemOp.state__assign job (dest_lvals, length) src_bytes in
+            let job, errors = set_return_value job retopt dest errors in
+            let job = end_function_call job in
+            (Job.Active job, errors)
+      | _ -> failwith "Wrong number of arguments to memcpy"
+
 
 let libc_memset job retopt exps errors =
     match exps with
@@ -195,16 +236,8 @@ let libc_memset job retopt exps errors =
             let length = bytes_to_int_auto length in
             let job, value, errors = Expression.rval job value_exp errors in
             let value_byte = bytes__get_byte value 0 (* little endian *) in
-            let job, dest, errors = Expression.rval job dest_exp errors in
-            let job, lvals, errors = Expression.deref job dest (Cil.typeOf dest_exp) errors in
-            let old_job = job in (* Checkpoint the job in case we must report an error *)
-            let job, failing_bytes_opt = Expression.checkBounds job lvals length in
-            let errors = match failing_bytes_opt with
-              | None -> errors
-              | Some b -> (old_job, `OutOfBounds dest_exp) :: errors
-            in
+            let job, dest, lvals, errors = access_with_length job dest_exp errors length in
             let job = MemOp.state__assign job (lvals, length) (bytes__make_default length value_byte) in
-            let job, errors = set_return_value job retopt dest errors in
             let job = end_function_call job in
             (Job.Active job, errors)
       | _ -> failwith "Wrong number of arguments to memset"
@@ -824,7 +857,9 @@ let interceptor job job_queue interceptor =
 		(intercept_function_by_name_internal "__builtin_va_copy"       libc___builtin_va_copy) @@
 		(intercept_function_by_name_internal "__builtin_va_end"        libc___builtin_va_end) @@
 		(intercept_function_by_name_internal "__builtin_va_start"      libc___builtin_va_start) @@
-		(* memset defaults to the C implimentation on failure *)
+		(* memcpy and memset default to the C implementation on failure *)
+		(try_with_job_abandoned_interceptor
+			(intercept_function_by_name_internal "memcpy"                  libc_memcpy)) @@
 		(try_with_job_abandoned_interceptor
 			(intercept_function_by_name_internal "memset"                  libc_memset)) @@
 		(intercept_function_by_name_internal "_exit"                   libc_exit) @@
