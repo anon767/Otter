@@ -699,7 +699,7 @@ let libc_longjmp job retopt exps errors =
 					| _ -> failwith "Non-constant statement ptr not supported"
 			in
 
-			let process_stmtPtr stmtPtrAddr errors =
+			let process_stmtPtr job stmtPtrAddr errors =
 				let stmtPtr = State.IndexMap.find stmtPtrAddr job#state.stmtPtrs in
 				let retopt, stmt =
 					match stmtPtr with
@@ -764,14 +764,12 @@ let libc_longjmp job retopt exps errors =
 				(job, errors)
 			in
 
-			let jobs, errors = List.fold_left (fun (jobs, errors) arg ->
-				let job, errors = process_stmtPtr arg errors in
+
+			let jobs, errors = (job : #Info.t)#fork begin fun job arg (jobs, errors) ->
+				let job, errors = process_stmtPtr job arg errors in
                 (* TODO: update jid_unique and jid_parent as well *)
-				let job = Job.Active (job#with_jid (if jobs = [] then job#jid else Counter.next Job.job_counter)) in
-				(job::jobs, errors)
-			) ([], errors) stmtPtrAddrs in
-			(* Reverse the job list to maintain original order *)
-			let jobs = List.rev jobs in
+				((Job.Active job)::jobs, errors)
+			end stmtPtrAddrs ([], errors) in
 			match jobs with
 				| _::_::_ -> (Job.Fork jobs, errors)
 				| [a] -> (a, errors)

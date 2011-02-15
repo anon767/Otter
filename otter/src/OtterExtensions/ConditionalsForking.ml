@@ -62,10 +62,11 @@ let interceptor ?(limit=8) job param k =
                                 if EfficientSequence.length splits = 1 then
                                     EfficientSequence.singleton job
                                 else
-                                    EfficientSequence.map begin fun (p, x) ->
+                                    (job : #Info.t)#fork begin fun job (p, x) jobs ->
                                         let job = MemOp.state__add_path_condition job (Bytes.guard__to_bytes p) false in
-                                        MemOp.state__assign job lvals (Bytes.make_Bytes_Conditional x)
-                                    end splits
+                                        let job = MemOp.state__assign job lvals (Bytes.make_Bytes_Conditional x) in
+                                        EfficientSequence.cons job jobs
+                                    end (EfficientSequence.to_list splits) EfficientSequence.empty
                             in
                             (abandoned, jobs)
 
@@ -82,11 +83,7 @@ let interceptor ?(limit=8) job param k =
                 k job param
             else
                 (* otherwise, fork the job with the new jobs and errors *)
-                let jobs = EfficientSequence.fold begin fun jobs job ->
-                    let job = Job.Active (job#with_jid (if jobs = [] then job#jid else Counter.next Job.job_counter)) in
-                    job::jobs
-                end [] jobs in
-                let jobs = List.rev_append abandoned jobs in
+                let jobs = List.rev_append abandoned (EfficientSequence.map_to_list (fun job -> Job.Active job) jobs) in
                 (Job.Fork jobs, param)
 
         | [] ->

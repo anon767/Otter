@@ -98,16 +98,19 @@ let function_from_exp job instr fexp errors =
         | Lval(Mem(fexp), NoOffset) ->
             let job, bytes, errors  = Expression.rval job fexp errors in
             let rec getall fp =
-                let fold_func (acc, errors) pre leaf =
+                let fundecs, errors = Bytes.conditional__fold begin fun (fundecs, errors) pre leaf ->
                     match leaf with
                         | Bytes_FunPtr varinfo ->
-                            (* the varinfo should always map to a valid fundec (if the file was parsed by Cil) *)
-                            let job = MemOp.state__add_path_condition job (Bytes.guard__to_bytes pre) true in
                             let fundec = FindCil.fundec_by_varinfo job#file varinfo in
-                            ((job, fundec)::acc, errors)
-                        | _ -> (acc, (job, `Failure "Invalid function pointer") :: errors)
-                in
-                Bytes.conditional__fold fold_func ([], errors) fp
+                            ((fundec, pre)::fundecs, errors)
+                        | _ ->
+                            (fundecs, (job, `Failure "Invalid function pointer")::errors)
+                end ([], errors) fp in
+                let jobs = (job : #Info.t)#fork begin fun job (fundec, pre) jobs ->
+                    let job = MemOp.state__add_path_condition job (Bytes.guard__to_bytes pre) true in
+                    (job, fundec)::jobs
+                end fundecs [] in
+                (jobs, errors)
             in
             begin match bytes with
                 | Bytes_FunPtr varinfo ->
@@ -175,7 +178,6 @@ let exec_instr_call job instr lvalopt fexp exps errors =
                 let job_state, errors =
                     try
                         let job = job#with_decision_path (DecisionFuncall(instr, fundec)::job#decision_path) in
-                        let job = job#with_jid (if t = [] then job#jid else Counter.next job_counter) in (* increment all but the last *)
                         exec_fundec job instr fundec lvalopt exps errors
                     with Failure msg ->
                         if !Executeargs.arg_failfast then failwith msg;
@@ -387,17 +389,15 @@ let exec_stmt job errors =
                     | Ternary.Unknown ->
                         Output.printf "Unknown@\n";
 
-                        let true_job = try_branch job (Some rv) block1 in
-                        let false_job = try_branch job (Some (logicalNot rv)) block2 in
-
                         (* Create two jobs, one for each branch. The false branch
                            inherits the old jid, and the true job gets a new jid. *)
-                        let true_job = true_job#with_decision_path ((DecisionConditional(stmt, true))::job#decision_path) in
-                        let true_job = true_job#with_exHist (nextExHist (Some true_job#stmt) ~whichBranch:true) in
-                        let true_job = true_job#with_jid (Counter.next job_counter) in
-
-                        let false_job = false_job#with_decision_path ((DecisionConditional(stmt, false))::job#decision_path) in
-                        let false_job = false_job#with_exHist (nextExHist (Some false_job#stmt) ~whichBranch:false) in
+                        let jobs = (job : #Info.t)#fork begin fun job (rv, block, branch) jobs ->
+                            let job = try_branch job (Some rv) block in
+                            let job = job#with_decision_path ((DecisionConditional(stmt, branch))::job#decision_path) in
+                            let job = job#with_exHist (nextExHist (Some job#stmt) ~whichBranch:branch) in
+                            job::jobs
+                        end [ (logicalNot rv, block2, false); (rv, block1, true) ] [] in
+                        let false_job, true_job = match jobs with [ true_job; false_job ] -> (true_job, false_job) | _ -> failwith "Impossible!" in
 
                             Output.set_mode Output.MSG_MUSTPRINT;
                             Output.printf "Branching on @[%a@]@ at %a.@\n"
@@ -405,7 +405,7 @@ let exec_stmt job errors =
                             Printcil.loc loc;
                             if !Executeargs.arg_print_callstack then
                                 Output.printf "Call stack:@\n  @[%a@]@\n" (Printer.callingContext_list "@\n") job#state.callContexts;
-                            Output.printf "Job %d is the true branch and job %d is the false branch.@\n@\n" true_job#jid false_job#jid;
+                            Output.printf "Job %d is the true branch and job %d is the false branch.@\n@\n" true_job#path_id false_job#path_id;
                             Fork [get_active_state job true_job; get_active_state job false_job]
                 in
                 (job_state, errors)

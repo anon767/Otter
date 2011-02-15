@@ -13,8 +13,8 @@ module JobSet = struct
     module M = Map.Make (struct type t = int let compare = Pervasives.compare end)
     let empty = M.empty
     let is_empty = M.is_empty
-    let remove job jobs = M.remove job#jid jobs
-    let add job jobs = M.add job#jid job jobs
+    let remove job jobs = M.remove job#path_id jobs
+    let add job jobs = M.add job#path_id job jobs
     let elements jobs = M.fold (fun _ job jobs -> job::jobs) jobs []
 end
 

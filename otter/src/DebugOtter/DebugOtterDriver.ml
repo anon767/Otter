@@ -121,8 +121,8 @@ let main_loop interceptor queue reporter job =
 					printf "Execute true or false job?  Type \"true\" or \"false\"\n"; 
 					pick := read_line () ;
 				done;
-				if !pick = "true" then (printf "job #%d was picked for true\n" job1#jid; currJob := job1)
-				else (printf "job #%d was picked for false\n" job2#jid; currJob := job2 )
+				if !pick = "true" then (printf "job #%d was picked for true\n" job1#path_id; currJob := job1)
+				else (printf "job #%d was picked for false\n" job2#path_id; currJob := job2 )
 			| Job.Complete completion ->  doWork := false
 			| default -> printf "unmatched job\n"; currJob := !currJob
 			)
@@ -139,8 +139,8 @@ let main_loop interceptor queue reporter job =
 					printf "Execute true or false job?  Type \"true\" or \"false\"\n"; 
 					pick := read_line () ;
 				done;
-				if !pick = "true" then (printf "job #%d was picked for true\n" job1#jid; currJob := job1)
-				else (printf "job #%d was picked for false\n" job2#jid; currJob := job2 )
+				if !pick = "true" then (printf "job #%d was picked for true\n" job1#path_id; currJob := job1)
+				else (printf "job #%d was picked for false\n" job2#path_id; currJob := job2 )
 			| Job.Complete completion ->  doWork := false
 			| default -> printf "unmatched job\n"; currJob := !currJob				
 			)

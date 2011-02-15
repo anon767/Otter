@@ -11,18 +11,18 @@ let identity_interceptor job job_queue interceptor =
 
 let old_job_id = ref 0
 let set_output_formatter_interceptor job job_queue interceptor =
-    if !old_job_id <> job#jid then (
+    if !old_job_id <> job#path_id then (
         Output.set_mode Output.MSG_REG;
         Output.printf "***** Changing running job *****@\n";
-        old_job_id := job#jid
+        old_job_id := job#path_id
     );
     let depth = List.length job#state.path_condition in
     let loc = Job.get_loc job in
     let label =
         if loc = Cil.locUnknown then
-            Format.sprintf "[%d,%d] : " job#jid depth
+            Format.sprintf "[%d,%d] : " job#path_id depth
         else
-            Format.sprintf "[%d,%d] %s:%d : " job#jid depth (Filename.basename loc.Cil.file) loc.Cil.line
+            Format.sprintf "[%d,%d] %s:%d : " job#path_id depth (Filename.basename loc.Cil.file) loc.Cil.line
     in
     Output.set_formatter (new Output.labeled label);
     interceptor job job_queue

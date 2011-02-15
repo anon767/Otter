@@ -29,22 +29,22 @@ module JobSet = struct
     module M = Map.Make (struct type t = int let compare = Pervasives.compare end)
     let empty = M.empty
     let add job set =
-        let jobs = try M.find job#jid set with Not_found -> [] in
-        M.add job#jid (job::jobs) set
+        let jobs = try M.find job#path_id set with Not_found -> [] in
+        M.add job#path_id (job::jobs) set
     let mem job set =
         try
-            let jobs = M.find job#jid set in
+            let jobs = M.find job#path_id set in
             List.memq job jobs
         with Not_found ->
             false
     let remove job set =
         try
-            let jobs = M.find job#jid set in
+            let jobs = M.find job#path_id set in
             let jobs = List.filter ((!=) job) jobs in
             if jobs = [] then
-                M.remove job#jid set
+                M.remove job#path_id set
             else
-                M.add job#jid jobs set
+                M.add job#path_id jobs set
         with Not_found ->
             set
 end

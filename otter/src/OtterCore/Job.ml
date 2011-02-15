@@ -87,6 +87,7 @@ class t file' fn :
         method with_file : Cil.file -> 'self
 
         inherit State.t
+        inherit Info.t
 
         method exHist : executionHistory
         method with_exHist : executionHistory -> 'self
@@ -106,9 +107,6 @@ class t file' fn :
         method inTrackedFn : bool
         method with_inTrackedFn : bool -> 'self
 
-        method jid : int
-        method with_jid : int -> 'self
-
         method jid_unique : int
         method with_jid_unique : int -> 'self
 
@@ -125,6 +123,7 @@ class t file' fn :
         method with_file file = {< file = file >}
 
         inherit State.t as state_super
+        inherit Info.t as info_super
 
         val mutable exHist = emptyHistory
         method exHist = exHist
@@ -155,10 +154,7 @@ class t file' fn :
         method inTrackedFn = inTrackedFn
         method with_inTrackedFn inTrackedFn = {< inTrackedFn = inTrackedFn >}
 
-        (** An identifier for the job. Not unique. *)
-        val mutable jid = Counter.next job_counter
-        method jid = jid
-        method with_jid jid = {< jid = jid >}
+        (* TODO: can jid_unique be replaced by Oo.id? What about jid_parent? *)
 
         (** A unique identifier for the job *)
         val mutable jid_unique = Counter.next job_counter_unique
@@ -190,6 +186,7 @@ class t file' fn :
         *)
         method become (other : 'self) =
             state_super#become other;
+            info_super#become other;
             file <- other#file;
             exHist <- other#exHist;
             decision_path <- other#decision_path;
@@ -197,7 +194,6 @@ class t file' fn :
             stmt <- other#stmt;
             trackedFns <- other#trackedFns;
             inTrackedFn <- other#inTrackedFn;
-            jid <- other#jid;
             jid_unique <- other#jid_unique;
             jid_parent <- other#jid_parent
     end
