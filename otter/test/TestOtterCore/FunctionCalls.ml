@@ -538,7 +538,7 @@ let function_pointer_calls_testsuite = "Function pointer calls" >:::
 
         test_function_pointer_calls ~label:"Call with broken functions"
             ~expect_return:[ 0; 1 ]
-            ~expect_abandoned_count:2 (* one NULL, one undefined should be reported, but currently aren't *)
+            ~expect_abandoned_count:2 (* one NULL, one undefined should be reported *)
             "
                 int foo0(void) { return 0; }
                 int foo1(void) { return 1; }
@@ -556,6 +556,115 @@ let function_pointer_calls_testsuite = "Function pointer calls" >:::
                     __ASSUME(i < 4);
                     FP x = a[i];
                     return x();
+                }
+            ";
+
+        test_function_pointer_calls ~label:"Call twice with symbolic index"
+            ~expect_return:[ 0; 1; 2; 3 ]
+            "
+                typedef int (*FP)(void);
+                FP a[4];
+
+                unsigned int i;
+                int x = 0;
+
+                int foo0(void) { if (!x) { x = 1; return a[i](); } else return 0; }
+                int foo1(void) { if (!x) { x = 1; return a[i](); } else return 1; }
+                int foo2(void) { if (!x) { x = 1; return a[i](); } else return 2; }
+                int foo3(void) { if (!x) { x = 1; return a[i](); } else return 3; }
+
+                int main(void)
+                {
+                    a[0] = foo0;
+                    a[1] = foo1;
+                    a[2] = foo2;
+                    a[3] = foo3;
+
+                    __SYMBOLIC(&i);
+                    __ASSUME(i < 4);
+                    return a[i]();
+                }
+            ";
+
+       test_function_pointer_calls ~label:"Call twice with symbolic pointer"
+            ~expect_return:[ 0; 1; 2; 3 ]
+            "
+                typedef int (*FP)(void);
+                FP foo;
+
+                int x = 0;
+
+                int foo0(void) { if (!x) { x = 1; return foo(); } else return 0; }
+                int foo1(void) { if (!x) { x = 1; return foo(); } else return 1; }
+                int foo2(void) { if (!x) { x = 1; return foo(); } else return 2; }
+                int foo3(void) { if (!x) { x = 1; return foo(); } else return 3; }
+
+                int main(void) {
+                    FP a[4];
+                    a[0] = foo0;
+                    a[1] = foo1;
+                    a[2] = foo2;
+                    a[3] = foo3;
+
+                    unsigned int i;
+                    __SYMBOLIC(&i);
+                    __ASSUME(i < 4);
+                    foo = a[i];
+                    return foo();
+                }
+            ";
+
+        test_function_pointer_calls ~label:"Call twice on subset"
+            ~expect_return:[ 0; 1; 2 ]
+            "
+                typedef int (*FP)(void);
+                FP a[4];
+
+                unsigned int i;
+                int x = 0;
+
+                int foo0(void) { if (!x) { x = 1; return a[i](); } else return 0; }
+                int foo1(void) { if (!x) { x = 1; return a[i](); } else return 1; }
+                int foo2(void) { if (!x) { x = 1; return a[i](); } else return 2; }
+                int foo3(void) { if (!x) { x = 1; return a[i](); } else return 3; }
+
+                int main(void)
+                {
+                    a[0] = foo0;
+                    a[1] = foo1;
+                    a[2] = foo2;
+                    a[3] = foo3;
+
+                    __SYMBOLIC(&i);
+                    __ASSUME(i < 3);
+                    return a[i]();
+                }
+            ";
+
+
+        test_function_pointer_calls ~label:"Call twice with broken functions"
+            ~expect_return:[ 0; 1 ]
+            ~expect_abandoned_count:2 (* one NULL, one undefined should be reported, but currently aren't *)
+            "
+                typedef int (*FP)(void);
+                FP a[4];
+
+                unsigned int i;
+                int x = 0;
+
+                int foo0(void) { if (!x) { x = 1; return a[i](); } else return 0; }
+                int foo1(void) { if (!x) { x = 1; return a[i](); } else return 1; }
+
+                typedef int (*FP)(void);
+
+                int main(void) {
+                    a[0] = foo0;
+                    a[1] = 0;
+                    a[2] = foo1;
+
+                    __SYMBOLIC(&i);
+                    __ASSUME(i < 4);
+                    return a[i]();
                 }
             ";
     ]
