@@ -3,6 +3,7 @@ open CilUtilities
 open OcamlUtilities
 open OtterCore
 
+(* FIXME: this can be inefficient if the function is unreachable from entryfn *)
 let distance_from_entryfn job =
     let file = job#file in
     let entry_fn = ProgramPoints.get_entry_fundec file in
