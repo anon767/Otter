@@ -169,27 +169,33 @@ let otter_set_parent_pid job multijob retopt exps errors =
 			(Active job, multijob, errors)
 		| _ -> failwith "set_parent_id invalid arguments"
 
-(* takes a vardic list of pointers to blocks to watch *)
+(* TODO: make this take an array of pointers as an argument *)
+(* takes a variadic list of pointers to blocks to watch *)
 let otter_io_block job multijob retopt exps errors = 
-	let rec find_blocks job exps errors =
-		match exps with
-			| [] -> ([], job, errors)
-			| (Lval cil_lval)::t
-			| (CastE (_, Lval cil_lval))::t ->
-				let job, bytes, errors = Expression.rval job (Lval cil_lval) errors in
-				let job, lvals, errors = Expression.deref job bytes (Cil.typeOfLval cil_lval) errors in
-				let blocks = conditional__fold
-					(fun acc guard (x, y) -> x::acc)
-					[]
-					lvals
-				in
-				let blocks2, job, errors = find_blocks job t errors in
-				((List.rev_append blocks blocks2), job, errors)
-			| _ -> failwith "io_block invalid arguments"
-	in
-	
-	let blocks, job, errors = find_blocks job exps errors in
-	
+    let find_blocks job exp errors =
+        let job, bytes, errors = Expression.rval job exp errors in
+        let job, lvals, errors = Expression.deref job bytes Cil.voidPtrType errors in
+        let blocks = conditional__fold
+            (fun acc guard (block, _) ->
+                 (* TODO: Failing in this case might be overkill. Printing a warning might be good enough *)
+                 if not (MemoryBlockMap.mem block multijob.shared.shared_block_to_bytes)
+                 then FormatPlus.failwith "Trying to block on non-shared memory: %a" BytesPrinter.memory_block block
+                 else block::acc)
+            []
+            lvals
+        in
+        (blocks, job, errors)
+    in
+
+    let blocks, job, errors =
+        List.fold_left
+            (fun (blocks, job, errors) ptr ->
+                 let new_blocks, job, new_errors = find_blocks job ptr errors in
+                 (List.rev_append new_blocks blocks, job, List.rev_append new_errors errors))
+            ([], job, errors)
+            exps
+    in
+
 	let multijob =
 		if blocks = [] then
 			failwith "io_block with no underlying blocks"
