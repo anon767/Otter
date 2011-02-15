@@ -1,3 +1,4 @@
+open OcamlUtilities
 open OtterCore
 open Job
 
@@ -23,17 +24,24 @@ class ['self] t queue = object (_ : 'self)
     val length = 0
 
     method put job =
+        Profiler.global#call "ContentQueue.t#put" begin fun () ->
         assert(not (JobSet.mem job contents));
         {< queue = queue#put job; contents = JobSet.add job contents; length = length + 1; >}
+        end
 
     method get =
+        Profiler.global#call "ContentQueue.t#get" begin fun () ->
         match queue#get with
         | Some (queue, job) ->
             assert(JobSet.mem job contents);
             Some ({< queue = queue; contents = JobSet.remove job contents; length = length - 1; >}, job)
         | None -> assert(JobSet.is_empty contents); None
+        end
 
-    method get_contents = JobSet.elements contents
+    method get_contents = 
+        Profiler.global#call "ContentQueue.t#get_contents" begin fun () ->
+        JobSet.elements contents
+        end
 
     method length = length
 
