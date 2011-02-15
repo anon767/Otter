@@ -17,7 +17,6 @@ let memotables =
         try
             Hashtbl.find file_memotables file
         with Not_found ->
-            let varinfo_to_fundec = Hashtbl.create 100 in
             let varinfo_to_varinit = Hashtbl.create 100 in
             let name_to_fundec = Hashtbl.create 100 in
             let name_to_global_varinfo = Hashtbl.create 100 in
@@ -35,7 +34,6 @@ let memotables =
                     all_varinfos := VarinfoSet.add varinfo !all_varinfos;
                     Cil.DoChildren
                 method vfunc fundec =
-                    Hashtbl.replace varinfo_to_fundec fundec.Cil.svar fundec;
                     Hashtbl.replace name_to_fundec fundec.Cil.svar.Cil.vname fundec;
                     List.iter (fun varinfo -> all_varinfos := VarinfoSet.add varinfo !all_varinfos) fundec.Cil.sformals;
                     List.iter (fun varinfo -> all_varinfos := VarinfoSet.add varinfo !all_varinfos) fundec.Cil.slocals;
@@ -49,7 +47,6 @@ let memotables =
             let all_types = TypeSet.elements !all_types in
 
             let memotables = object
-                method varinfo_to_fundec = Hashtbl.find varinfo_to_fundec
                 method varinfo_to_varinit = Hashtbl.find varinfo_to_varinit
                 method name_to_fundec = Hashtbl.find name_to_fundec
                 method name_to_global_varinfo = Hashtbl.find name_to_global_varinfo
@@ -67,7 +64,7 @@ let memotables =
         @raise Not_found if a {!Cil.fundec} for [varinfo] does not exist in [file]
 *)
 let fundec_by_varinfo file varinfo =
-    (memotables file)#varinfo_to_fundec varinfo
+    (memotables file)#name_to_fundec varinfo.Cil.vname
 
 
 (** Find the {!Cil.initinfo} for a global {!Cil.varinfo} from a {!Cil.file}.
