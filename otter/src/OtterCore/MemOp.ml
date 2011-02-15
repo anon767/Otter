@@ -9,7 +9,7 @@ open State
 open Operator
 
 (* Track Stp calls *)
-let timed_query_stp name pc pre guard = Timer.time name (fun () -> Stp.query_stp pc pre guard) ()
+let timed_query_stp name pc acc pre guard = Timer.time name (fun acc -> (acc, Stp.query_stp pc pre guard)) acc
 
 (**
  *	memory frame
@@ -129,7 +129,7 @@ let state__varinfo_to_lval_block ?pre job varinfo =
 		if VarinfoMap.mem varinfo global then
 			let deferred = frame__varinfo_to_lval_block global varinfo in
 			let job, lval = Deferred.force job deferred in
-			let lval = conditional__prune ~test:(timed_query_stp "query_stp/state__varinfo_to_lval_block/globals" job#state.path_condition) ?pre lval in
+			let (), lval = conditional__prune ~test:(timed_query_stp "query_stp/state__varinfo_to_lval_block/globals" job#state.path_condition) ?pre () lval in
 			let global = VarinfoMap.add varinfo (Deferred.Immediate lval) global in
 			(job#with_state { job#state with global=global }, lval)
 		else (* varinfo may be a function *)
@@ -139,7 +139,7 @@ let state__varinfo_to_lval_block ?pre job varinfo =
 		if VarinfoMap.mem varinfo local then
 			let deferred = frame__varinfo_to_lval_block local varinfo in
 			let job, lval = Deferred.force job deferred in
-			let lval = conditional__prune ~test:(timed_query_stp "query_stp/state__varinfo_to_lval_block/locals" job#state.path_condition) ?pre lval in
+			let (), lval = conditional__prune ~test:(timed_query_stp "query_stp/state__varinfo_to_lval_block/locals" job#state.path_condition) ?pre () lval in
 			let local = VarinfoMap.add varinfo (Deferred.Immediate lval) local in
 			(job#with_state { job#state with locals=local::List.tl job#state.locals }, lval)
 		else
@@ -147,7 +147,7 @@ let state__varinfo_to_lval_block ?pre job varinfo =
 			if VarinfoMap.mem varinfo formal then
 				let deferred = frame__varinfo_to_lval_block formal varinfo in
 				let job, lval = Deferred.force job deferred in
-				let lval = conditional__prune ~test:(timed_query_stp "query_stp/state__varinfo_to_lval_block/formals" job#state.path_condition) ?pre lval in
+				let (), lval = conditional__prune ~test:(timed_query_stp "query_stp/state__varinfo_to_lval_block/formals" job#state.path_condition) ?pre () lval in
 				let formal = VarinfoMap.add varinfo (Deferred.Immediate lval) formal in
 				(job#with_state { job#state with formals=formal::List.tl job#state.formals }, lval)
 			else (* varinfo may be a function *)
@@ -191,7 +191,8 @@ let state__get_deferred_from_block job block =
 let state__deref ?pre job (lvals, size) =
     let deref job pre (block, offset) =
         let job, bytes = state__get_bytes_from_block job block in
-        (job, conditional__bytes (bytes__read ~test:(timed_query_stp "query_stp/state__deref" job#state.path_condition) ~pre bytes offset size))
+        let (), bytes = bytes__read ~test:(timed_query_stp "query_stp/state__deref" job#state.path_condition) ~pre () bytes offset size in
+        (job, conditional__bytes bytes)
     in
     let job, c = conditional__fold_map ?pre deref job lvals in
     (job, make_Bytes_Conditional c)
@@ -211,7 +212,7 @@ let rec state__assign job (lvals, size) bytes =
 
 		(* TODO: pruning the conditional bytes here leads to repeated work if it is subsequently read via state__deref;
 		 * however, not pruning leads to O(k^(2^n)) leaves in the conditional bytes for n consecutive assignments. *)
-		let newbytes = bytes__write ~test:(timed_query_stp "query_stp/state__assign" job#state.path_condition) ~pre oldbytes offset size bytes in
+		let (), newbytes = bytes__write ~test:(timed_query_stp "query_stp/state__assign" job#state.path_condition) ~pre () oldbytes offset size bytes in
 
 		(* Morris' axiom of assignment *)
 		let newbytes = match pre with

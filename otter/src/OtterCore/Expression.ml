@@ -7,7 +7,7 @@ open BytesUtility
 open State
 
 (* Track Stp calls *)
-let timed_query_stp name pc pre guard = Timer.time name (fun () -> Stp.query_stp pc pre guard) ()
+let timed_query_stp name pc acc pre guard = Timer.time name (fun acc -> (acc, Stp.query_stp pc pre guard)) acc
 
 (* Bounds-checking *)
 (* The next two function are used for bounds-checking. Here are some
@@ -213,10 +213,10 @@ rval_cast typ rv rvtyp errors =
                 let new_len = (Cil.bitsSizeOf typ) / 8 in
                 let worst_case () = (* as function so that it's not always evaluated *)
                     if new_len < old_len
-                        then bytes__read rv (int_to_bytes 0) new_len
+                        then snd (bytes__read () rv (int_to_bytes 0) new_len)
                         else
                             (* TODO: should call STP's sign extension operation *)
-                            bytes__write (bytes__make new_len) (int_to_bytes 0) old_len rv
+                            snd (bytes__write () (bytes__make new_len) (int_to_bytes 0) old_len rv)
 
                 in
                 if new_len = old_len then
@@ -548,7 +548,7 @@ let evaluate_initializer job typ init =
 
             let offset_size = Cil.bitsSizeOf offset_type / 8 in
             let offset_size = if offset_size <= 0 then 1 else offset_size in
-            let init_bytes = BytesUtility.bytes__write bytes offset offset_size offset_bytes in
+            let (), init_bytes = BytesUtility.bytes__write () bytes offset offset_size offset_bytes in
             (job, init_bytes)
         | Cil.CompoundInit (ct, initl) ->
             Cil.foldLeftCompound

@@ -96,7 +96,7 @@ let init_cmdline_argvs job argstr =
 				let h_bytes = Bytes.make_Bytes_Address (argv_strings_block, Bytes.int_to_bytes charsSoFar) in
 				impl t (ptrsSoFar + 1)
 					(charsSoFar + String.length h + 1 (* '+ 1' for the null character *))
-					(BytesUtility.bytes__write bytes (Bytes.int_to_bytes (ptrsSoFar * charPtrSize)) charPtrSize h_bytes)
+					(snd (BytesUtility.bytes__write () bytes (Bytes.int_to_bytes (ptrsSoFar * charPtrSize)) charPtrSize h_bytes))
 	in
 	let argv_ptrs_bytes =
 		impl argstr 0 0 (Bytes.make_Bytes_ByteArray (ImmutableArray.make (num_args * charPtrSize) Bytes.byte__zero)) in

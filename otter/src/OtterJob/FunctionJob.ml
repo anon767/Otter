@@ -91,7 +91,7 @@ let rec init_bytes_with_pointers ?scheme job typ points_to exps = match Cil.unro
             let offset, size = Cil.bitsOffset typ field_offset in
             let offset = Bytes.int_to_bytes (offset / 8) in
             let size = size / 8 in
-            let bytes = BytesUtility.bytes__write bytes offset size field_bytes in
+            let (), bytes = BytesUtility.bytes__write () bytes offset size field_bytes in
             (job, bytes)
         end (job, bytes) compinfo
 
@@ -109,7 +109,7 @@ let rec init_bytes_with_pointers ?scheme job typ points_to exps = match Cil.unro
             let offset, size = Cil.bitsOffset typ el_offset in
             let offset = Bytes.int_to_bytes (offset / 8) in
             let size = size / 8 in
-            let bytes = BytesUtility.bytes__write bytes offset size el_bytes in
+            let (), bytes = BytesUtility.bytes__write () bytes offset size el_bytes in
             (job, bytes)
         end (job, bytes) len_opt in
         begin match result_opt with

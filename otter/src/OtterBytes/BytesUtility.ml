@@ -4,42 +4,45 @@ open Cil
 open Bytes
 
 
-let rec bytes__read ?test ?pre bytes off len =
+let rec bytes__read ?test ?pre acc bytes off len =
     let worst_case = make_Bytes_Read (bytes, off, len) in
-    let ret_bytes =
+    let acc, ret_bytes =
         match bytes, off with
             | Bytes_ByteArray array, Bytes_Constant (CInt64 (i64, k, _)) ->
                 let i = Int64.to_int i64 in
-                make_Bytes_ByteArray (ImmutableArray.sub array i len)
+                (acc, make_Bytes_ByteArray (ImmutableArray.sub array i len))
 
             | Bytes_Constant constant, Bytes_Constant (CInt64 (i64, k, _)) ->
                 let converted_bytes = constant_to_bytes constant in
                 begin match converted_bytes with
                     | Bytes_ByteArray array ->
                         let i = Int64.to_int i64 in
-                        make_Bytes_ByteArray (ImmutableArray.sub array i len)
+                        (acc, make_Bytes_ByteArray (ImmutableArray.sub array i len))
                     | _ ->
-                        worst_case
+                        (acc, worst_case)
                 end
 
             | Bytes_Write (bytes2, off2, len2, newbytes), _ ->
                 if off2 = off && len2 = len then
-                    newbytes (* being a bit tricky... *)
+                    (acc, newbytes)
                 else (* CAUTION: assume [off2, len2] and [off, len] don't overlap.  *)
-                    worst_case
+                    (acc, worst_case)
 
             | Bytes_Conditional c, _ ->
-                let c = conditional__map ?test ~eq:bytes__equal ?pre (fun e -> conditional__bytes (bytes__read e off len)) c in
-                make_Bytes_Conditional c
+                let acc, c = conditional__fold_map ?test ~eq:bytes__equal ?pre begin fun acc pre e ->
+                    let acc, e = bytes__read ?test ~pre acc e off len in
+                    (acc, conditional__bytes e)
+                end acc c in
+                (acc, make_Bytes_Conditional c)
 
             | _, Bytes_Conditional c ->
                 failwith "bytes__read: if-then-else offset doesn't happen"
 
             | _, _ when (bytes__length bytes = len) && (isConcrete_bytes off) && (bytes_to_int_auto off = 0) ->
-                bytes
+                (acc, bytes)
 
             | _ ->
-                worst_case
+                (acc, worst_case)
     in
     (* try to inflate any Bytes_ByteArray of Byte_Bytes *)
     match ret_bytes with
@@ -56,25 +59,25 @@ let rec bytes__read ?test ?pre bytes off len =
                                 | _ -> false
                     in
                     if bytes__length condensed_bytes = len && check_byte 1 then
-                        condensed_bytes
+                        (acc, condensed_bytes)
                     else
-                        ret_bytes
+                        (acc, ret_bytes)
 
                 | _ ->
-                    ret_bytes
+                    (acc, ret_bytes)
             end
 
         | _ ->
-            ret_bytes
+            (acc, ret_bytes)
 
 
-let bytes__write ?test ?pre bytes off len newbytes =
+let bytes__write ?test ?pre acc bytes off len newbytes =
     if len = 0 then
-        bytes
+        (acc, bytes)
     else if (bytes__length bytes) = len && (isConcrete_bytes off) && (bytes_to_int_auto off = 0) then
-        newbytes
+        (acc, newbytes)
     else
-        let rec do_write bytes off len newbytes =
+        let rec do_write ?pre acc bytes off len newbytes =
             match bytes, off, newbytes with
                 (* Optimize for memset  *)
 
@@ -95,10 +98,10 @@ let bytes__write ?test ?pre bytes off len newbytes =
                             *)
                             ImmutableArray.set array2 (i + j) (ImmutableArray.get newarray j)
                     in
-                    make_Bytes_ByteArray (impl (len - 1) oldarray)
+                    (acc, make_Bytes_ByteArray (impl (len - 1) oldarray))
 
                 | Bytes_ByteArray oldarray, Bytes_Constant (CInt64 (i64, k, _)), Bytes_Constant const ->
-                    do_write bytes off len (constant_to_bytes const)
+                    do_write ?pre acc bytes off len (constant_to_bytes const)
 
                 | Bytes_ByteArray oldarray, Bytes_Constant (CInt64 (i64, k, _)), _ ->
                     let rec impl arr i =
@@ -107,11 +110,11 @@ let bytes__write ?test ?pre bytes off len newbytes =
                         else
                             impl (ImmutableArray.set arr i (make_Byte_Bytes (newbytes, i))) (i + 1)
                     in
-                    do_write bytes off len (make_Bytes_ByteArray (impl (ImmutableArray.make len byte__zero) 0))
+                    do_write ?pre acc bytes off len (make_Bytes_ByteArray (impl (ImmutableArray.make len byte__zero) 0))
 
                 | Bytes_ByteArray oldarray, _, _ when isConcrete_bytes off ->
                     let n_off = bytes_to_constant off Cil.intType in
-                    do_write bytes (make_Bytes_Constant n_off) len newbytes
+                    do_write ?pre acc bytes (make_Bytes_Constant n_off) len newbytes
 
                 (* Without this next case, writing to a constant would introduce
                      a Bytes_Write. Aside from not wanting a Bytes_Write if we can
@@ -122,19 +125,22 @@ let bytes__write ?test ?pre bytes off len newbytes =
                      exist if, for example, you have a 4-byte ByteArray and write
                      a Bytes_Constant int to it). *)
                 | Bytes_Constant c, _, _ ->
-                    do_write (constant_to_bytes c) off len newbytes
+                    do_write ?pre acc (constant_to_bytes c) off len newbytes
 
                 | Bytes_Conditional c, _, _ ->
-                    let c = conditional__map ?test ~eq:bytes__equal ?pre (fun e -> conditional__bytes (do_write e off len newbytes)) c in
-                    make_Bytes_Conditional c
+                    let acc, c = conditional__fold_map ?test ~eq:bytes__equal ?pre begin fun acc pre e ->
+                        let acc, e = do_write ~pre acc e off len newbytes in
+                        (acc, conditional__bytes e)
+                    end acc c in
+                    (acc, make_Bytes_Conditional c)
 
                 | _, Bytes_Conditional c, _ ->
                     failwith "bytes__write: if-then-else offset doesn't happen"
 
                 | _ ->
-                    make_Bytes_Write (bytes, off, len, newbytes)
+                    (acc, make_Bytes_Write (bytes, off, len, newbytes))
         in
-        do_write bytes off len newbytes
+        do_write ?pre acc bytes off len newbytes
 
 let is_Bytes_Read = function Bytes_Read _ -> true | _ -> false
 
@@ -147,7 +153,7 @@ let is_Bytes_Read = function Bytes_Read _ -> true | _ -> false
 *)
 let expand_read_to_conditional2 bytes symIndex len =
     let rec expand index =
-        let read_at_index = bytes__read bytes (int_to_bytes index) len in
+        let (), read_at_index = bytes__read () bytes (int_to_bytes index) len in
         if is_Bytes_Read read_at_index then failwith "bytes__read with constant offset unexpectedly evaluated to a Bytes_Read";
         let read_at_index = conditional__bytes read_at_index in
         assert (index >= 0);

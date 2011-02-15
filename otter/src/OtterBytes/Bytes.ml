@@ -548,7 +548,8 @@ let guard__to_bytes = function
  *)
 
 (** Fold and map simultaneously over the leaves of conditionals, optionally removing leaves.
-    @param test is an optional test function to filter by the guard condition : [guard -> guard -> Ternary.t]
+    @param test is an optional test function to filter by the guard condition; the accumulator is passed to the test
+            function as well : ['acc -> guard -> guard -> Ternary.t]
     @param eq is an optional equality function to prune identical leaves : ['target -> 'target -> bool]
     @param pre is an optional precondition
     @param fold_map_opt is the fold and map function, which may map to [None] to remove leaves
@@ -558,10 +559,11 @@ let guard__to_bytes = function
     @return [('acc, 'target conditional option)] the final accumulator and mapped conditional, which may be [None]
             if all leaves were removed
 *)
-let conditional__fold_map_opt ?(test=fun _ _ -> Ternary.Unknown) ?(eq=(==)) ?(pre=Guard_True) fold_map_opt acc source =
+let conditional__fold_map_opt ?(test=fun acc _ _ -> (acc, Ternary.Unknown)) ?(eq=(==)) ?(pre=Guard_True) fold_map_opt acc source =
     let rec conditional__fold_map_opt acc pre = function
         | IfThenElse (guard, x, y) ->
-            begin match test pre guard with
+            let acc, truth = test acc pre guard in
+            begin match truth with
                 | Ternary.True ->
                     (* test pre ==> guard *)
                     conditional__fold_map_opt acc pre x
@@ -589,7 +591,8 @@ let conditional__fold_map_opt ?(test=fun _ _ -> Ternary.Unknown) ?(eq=(==)) ?(pr
 
 
 (** Fold and map simultaneously over the leaves of conditionals.
-    @param test is an optional test function to filter by the guard condition : [guard -> guard -> Ternary.t]
+    @param test is an optional test function to filter by the guard condition; the accumulator is passed to the test
+            function as well : ['acc -> guard -> guard -> Ternary.t]
     @param eq is an optional equality function to prune identical leaves : ['target -> 'target -> bool]
     @param pre is an optional precondition
     @param fold_map is the fold and map function : ['acc -> guard -> 'source -> 'acc * 'target conditional]
@@ -609,7 +612,8 @@ let conditional__fold_map ?test ?eq ?pre fold_map acc source =
 
 
 (** Fold over the leaves of conditionals.
-    @param test is an optional test function to filter by the guard condition : [guard -> guard -> Ternary.t]
+    @param test is an optional test function to filter by the guard condition; the accumulator is passed to the test
+            function as well : ['acc -> guard -> guard -> Ternary.t]
     @param pre is an optional precondition
     @param fold is the fold function : ['acc -> guard -> 'source -> 'acc]
     @param acc is the initial accumulator
@@ -633,14 +637,16 @@ let conditional__map ?test ?eq ?pre map source =
 
 
 (** Prune the leaves of conditionals.
-    @param test is the function to filter by the guard condition : [guard -> guard -> Ternary.t]
+    @param test is an optional test function to filter by the guard condition; an accumulator is passed to the test
+            function as well : ['acc -> guard -> guard -> Ternary.t]
     @param eq is an optional equality function to prune identical leaves : ['target -> 'target -> bool]
     @param pre is an optional precondition
+    @param acc is the initial accumulator for the test function
     @param source is the conditional to fold over
-    @return ['acc] the pruned conditional
+    @return [('acc, 'target conditional)] the final accumulator and pruned conditional
 *)
-let conditional__prune ~test ?eq ?pre source =
-	snd (conditional__fold_map ~test ?eq ?pre (fun () _ x -> ((), Unconditional x)) () source)
+let conditional__prune ~test ?eq ?pre acc source =
+    conditional__fold_map ~test ?eq ?pre (fun acc _ x -> (acc, Unconditional x)) acc source
 
 
 (** Given a list of length n, return a conditional tree of height log(n) containing all items in the list.

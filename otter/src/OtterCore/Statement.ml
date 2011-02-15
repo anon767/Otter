@@ -116,7 +116,7 @@ let function_from_exp job instr fexp errors =
                     ([ (job, fundec) ], errors)
                 | Bytes_Read(bytes2, offset, len) ->
                     let fp = (BytesUtility.expand_read_to_conditional bytes2 offset len) in
-                    let fp = Bytes.conditional__prune ~test:(Stp.query_stp job#state.path_condition) fp in
+                    let (), fp = Bytes.conditional__prune ~test:(fun () pre guard -> ((), Stp.query_stp job#state.path_condition pre guard)) () fp in
                     let fp, errors = getall fp in
                     (fp, errors)
                 | Bytes_Conditional(c) ->
