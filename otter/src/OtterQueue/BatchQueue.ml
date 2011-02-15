@@ -2,7 +2,6 @@
     underlying queue. *)
 
 open DataStructures
-open OtterCore
 
 
 class ['self] t ?(limit=20) queue = object (self : 'self)

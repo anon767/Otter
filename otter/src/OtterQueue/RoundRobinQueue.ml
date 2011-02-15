@@ -4,7 +4,6 @@
 *)
 
 open DataStructures
-open OtterCore
 
 module Queue = struct
     type 'a t = { front: 'a list; back: 'a list }

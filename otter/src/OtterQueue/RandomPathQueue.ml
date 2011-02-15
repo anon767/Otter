@@ -24,7 +24,6 @@
 *)
 
 open DataStructures
-open OtterCore
 
 module JobSet = struct
     module M = Map.Make (struct type t = int let compare = Pervasives.compare end)
