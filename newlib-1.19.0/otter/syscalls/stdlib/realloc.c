@@ -20,7 +20,7 @@ static void* __otter_realloc(void* ptr, size_t size, void *(alloc)(size_t), void
 		return 0;
 	}
 
-	int old_size = __otter_get_allocated_size(ptr);
+	size_t old_size = __otter_get_allocated_size(ptr);
 	char* ptr2 = alloc(size);
 	size = (size > old_size) ? old_size : size;
 	memcpy(ptr2, ptr, size);
