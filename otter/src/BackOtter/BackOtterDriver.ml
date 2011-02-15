@@ -282,6 +282,8 @@ let doit file =
     (* Set a timer *)
     ignore (Unix.alarm !Executeargs.arg_timeout);
 
+    try
+
     Core.prepare_file file;
     CovToFundec.prepare_file file;
 
@@ -293,11 +295,6 @@ let doit file =
 
     let entry_job = OtterJob.Job.get_default file in
     let _, reporter = callchain_backward_se (new BackOtterReporter.t ()) entry_job in
-
-    (* Turn off the alarm and reset the signal handlers *)
-    ignore (Unix.alarm 0);
-    Sys.set_signal Sys.sigalrm old_ALRM_handler;
-    Sys.set_signal Sys.sigint old_INT_handler;
 
     (* print the results *)
     Output.set_formatter (new Output.plain);
@@ -340,10 +337,21 @@ let doit file =
     Output.printf "Number of abandoned: %d@\n" abandoned;
     Output.myflush ();
 
+    Report.print_report reporter#completed
+
+    with State.SignalException s ->
+        Output.set_mode Output.MSG_MUSTPRINT;
+        Output.printf "%s@\n" s
+    ;
+
+    (* Turn off the alarm and reset the signal handlers *)
+    ignore (Unix.alarm 0);
+    Sys.set_signal Sys.sigalrm old_ALRM_handler;
+    Sys.set_signal Sys.sigint old_INT_handler;
+
     (** TODO: provide a way to force full-width profile printing *)
     Format.set_margin 120;
-    Format.printf "Global profile:@\n@\n  @[%t@]@." Profiler.global#printer;
-    Report.print_report reporter#completed
+    Format.printf "Global profile:@\n@\n  @[%t@]@." Profiler.global#printer
 
 
 (** {1 Command-line options} *)
