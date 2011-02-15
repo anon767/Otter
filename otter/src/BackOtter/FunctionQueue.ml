@@ -1,3 +1,5 @@
+open OcamlUtilities
+
 module FundecMap = Map.Make (CilUtilities.CilData.CilFundec)
 
 class ['self] t rank_fn_constructor queue_constructor = object (_ : 'self)
@@ -6,6 +8,7 @@ class ['self] t rank_fn_constructor queue_constructor = object (_ : 'self)
     val example_jobs = FundecMap.empty
 
     method put job =
+        Profiler.global#call "FunctionQueue.t#put" begin fun () ->
         let origin_function = BackOtterUtilities.get_origin_function job in
         let queue, example_jobs =
             try
@@ -16,8 +19,10 @@ class ['self] t rank_fn_constructor queue_constructor = object (_ : 'self)
             FundecMap.add origin_function queue fundec_map
         in
         {< fundec_map = fundec_map; example_jobs = example_jobs >}
+        end
 
     method get =
+        Profiler.global#call "FunctionQueue.t#get" begin fun () ->
         let fundecs = FundecMap.fold (fun key _ lst -> key :: lst) fundec_map [] in
         let rank_fn = rank_fn_constructor () in
         let ranked_fundecs = List.map (fun fundec -> (fundec, rank_fn (FundecMap.find fundec example_jobs))) fundecs in
@@ -34,5 +39,6 @@ class ['self] t rank_fn_constructor queue_constructor = object (_ : 'self)
             | [] -> None
         in
         get ranked_fundecs
+        end
 end
 
