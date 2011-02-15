@@ -35,8 +35,8 @@ let set_term ff (term : term) =
             | `Color `White -> "[0;37m"
             | `Reset -> "[0m"
         in
-        Format.pp_print_char ff '\027';
-        Format.pp_print_string ff term_string
+        Format.pp_print_as ff 0 "\027";
+        Format.pp_print_as ff 0 term_string
     else
         ()
 
