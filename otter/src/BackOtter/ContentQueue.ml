@@ -12,7 +12,11 @@ module JobSet = struct
     let elements jobs = M.fold (fun _ job jobs -> job::jobs) jobs []
 end
 
-(* This queue adds two methods on top of Otter's queues: get_contents and length *)
+(* This queue adds two methods on top of Otter's queues: get_contents and length.
+ * ContentQueue is necessary: when BackOtter finds a new target, it goes through
+ * all existing jobs to see if any of them are calling the target and are ready to 
+ * examine.
+ *)
 class ['self] t queue = object (_ : 'self)
     val queue = queue
     val contents = JobSet.empty
