@@ -21,9 +21,13 @@ module Make (Errors : Errors) = struct
                             Errors.printer reason Printcil.loc (Job.get_loc job);
                         if !Executeargs.arg_print_callstack then
                             Output.printf "Call stack:@\n  @[%a@]@\n" (Printer.callingContext_list "@\n") job#state.State.callContexts;
-                        Output.printf "Abandoning path.@\n"
+                        Output.printf "Abandoning path.@\n";
+                        ignore (job#finish)
+                | Job.Complete (Job.Return (_, job) | Job.Exit (_, job) | Job.Truncated (_, job)) ->
+                        (* TODO: #finish should really occur when Job.Complete is created *)
+                        ignore (job#finish)
                 | _ ->
-                    ()
+                        ()
             end;
             super#report job_result
     end

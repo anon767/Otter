@@ -79,7 +79,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
         val jid_to_job = JidMap.empty
 
         method put (job : 'job) =
-            Timer.time "BidirectionalQueue.t#put" begin fun () ->
+            Profiler.global#call "BidirectionalQueue.t#put" begin fun () ->
             (* If the job is from a bounded job,
              * if it's still in bound, put it into jid_to_bounding_paths,
              * otherwise, discard it.
@@ -99,19 +99,19 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
             (* If job comes from a bounded job *)
             let _ = Output.debug_printf "Job %d has parent %d@\n" job#jid_unique job#jid_parent in
             if JidMap.mem job#jid_parent jid_to_bounding_paths then
-                Timer.time "BidirectionalQueue.t#put/bounded_parent" begin fun () ->
+                Profiler.global#call "BidirectionalQueue.t#put/bounded_parent" begin fun () ->
                 let parent_job = JidMap.find job#jid_parent jid_to_job in
                 let bounding_paths = JidMap.find parent_job#jid_unique jid_to_bounding_paths in
                 if parent_job#decision_path == job#decision_path then (* no new decision *)
-                    Timer.time "BidirectionalQueue.t#put/bounded_parent/no_new_decision" begin fun () ->
+                    Profiler.global#call "BidirectionalQueue.t#put/bounded_parent/no_new_decision" begin fun () ->
                     let _ = Output.debug_printf "No new decision@\n" in
                     let _ = Output.debug_printf "Add job_unique %d into the bounded_jobqueue @\n" job#jid_unique in
                     {< jid_to_bounding_paths = JidMap.add job#jid_unique bounding_paths jid_to_bounding_paths;
                        jid_to_job = jid_to_job;
                        bounded_jobqueue = bounded_jobqueue#put job; >}
-                    end ()
+                    end
                 else (* has new decision *)
-                    Timer.time "BidirectionalQueue.t#put/bounded_parent/new_decision" begin fun () ->
+                    Profiler.global#call "BidirectionalQueue.t#put/bounded_parent/new_decision" begin fun () ->
                     let _ = Output.debug_printf "Has new decision@\n" in
                     let _ = assert(parent_job#decision_path == List.tl job#decision_path) in
                     let bounded_decision = List.hd job#decision_path in
@@ -126,24 +126,24 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                         {< jid_to_bounding_paths = JidMap.add job#jid_unique bounding_paths jid_to_bounding_paths;
                            jid_to_job = jid_to_job;
                            bounded_jobqueue = bounded_jobqueue#put job; >}
-                    end ()
-                end ()
+                    end
+                end
             else
             (* If job does not from a bounded job, i.e., regular *)
-                Timer.time "BidirectionalQueue.t#put/regular_parent" begin fun () ->
+                Profiler.global#call "BidirectionalQueue.t#put/regular_parent" begin fun () ->
                 let entryfn_jobqueue, otherfn_jobqueue =
-                    Timer.time "BidirectionalQueue.t#put/regular_parent/put" begin fun () ->
+                    Profiler.global#call "BidirectionalQueue.t#put/regular_parent/put" begin fun () ->
                     if is_bidirectional && get_origin_function job == entry_fn then
                         entryfn_jobqueue#put job, otherfn_jobqueue
                     else
                         entryfn_jobqueue, otherfn_jobqueue#put job
-                    end ()
+                    end
                 in
                 (* Check if the job is a function call to a target function *)
                 let jid_to_job, jid_to_bounding_paths, bounded_jobqueue =
                     match
-                        Timer.time "BidirectionalQueue.t#put/regular_parent/function_call_of_latest_decision"
-                        function_call_of_latest_decision job#decision_path
+                        Profiler.global#call "BidirectionalQueue.t#put/regular_parent/function_call_of_latest_decision"
+                            (fun () -> function_call_of_latest_decision job#decision_path)
                     with
                     | Some (fundec) ->
                         let failing_paths = BackOtterTargets.get fundec (!targets_ref) in
@@ -164,11 +164,11 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                    jid_to_bounding_paths = jid_to_bounding_paths;
                    jid_to_job = jid_to_job;
                    bounded_jobqueue = bounded_jobqueue; >}
-                end ()
-            end ()
+                end
+            end
 
         method get =
-            Timer.time "BidirectionalQueue.t#get" begin fun () ->
+            Profiler.global#call "BidirectionalQueue.t#get" begin fun () ->
                 (* Clear the label, as anything printed here has no specific job context *)
                 Output.set_formatter (new Output.plain);
 
@@ -203,7 +203,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                     let jid_to_job, jid_to_bounding_paths, bounded_jobqueue =
                         match new_failing_path with
                         | Some (target_fundec, failing_path) ->
-                            Timer.time "BidirectionalQueue.t#get/update_bounding_status" begin fun () ->
+                            Profiler.global#call "BidirectionalQueue.t#get/update_bounding_status" begin fun () ->
                                 (*
                                  * To check if a FP can bound a DP:
                                  * For each prefix(DP, k) where k < len(FP) and DP[k] is a call to origin(FP),
@@ -213,10 +213,10 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                 let failing_path_length = length failing_path in
                                 let jobs =
                                     (* Usually otherfn_jobqueue is much shorter, unless it's pure-backward *)
-                                    Timer.time "BidirectionalQueue.t#get/update_bounding_status/get_contents" begin fun () ->
+                                    Profiler.global#call "BidirectionalQueue.t#get/update_bounding_status/get_contents" begin fun () ->
                                     if entryfn_jobqueue#length = 0 then otherfn_jobqueue#get_contents
                                     else List.rev_append otherfn_jobqueue#get_contents entryfn_jobqueue#get_contents
-                                    end ()
+                                    end
                                 in
                                 List.fold_left (fun (jid_to_job, jid_to_bounding_paths, bounded_jobqueue) job ->
                                     let rec scan decision_path depth =
@@ -225,19 +225,19 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                         | DecisionFuncall (_, fundec) :: tail when fundec == target_fundec ->
                                              let bounding_paths = scan tail (depth - 1) in
                                              let matches, _, failing_tail =
-                                                 Timer.time "BidirectionalQueue.t#get/update_bounding_status/scan/rev_equals" begin fun () ->
+                                                 Profiler.global#call "BidirectionalQueue.t#get/update_bounding_status/scan/rev_equals" begin fun () ->
                                                  rev_equals Decision.equals decision_path failing_path depth
-                                                 end ()
+                                                 end
                                              in
                                              if matches then failing_tail :: bounding_paths else bounding_paths
                                         | _ :: tail -> scan tail (depth - 1)
                                         | [] -> []
                                     in
                                     let bounding_paths =
-                                        Timer.time "BidirectionalQueue.t#get/update_bounding_status/scan" begin fun () ->
+                                        Profiler.global#call "BidirectionalQueue.t#get/update_bounding_status/scan" begin fun () ->
                                         (* TODO: job#decision_path is too long. Maybe maintain a decision path for function calls only. *)
                                         scan job#decision_path (min failing_path_length (length job#decision_path))
-                                        end ()
+                                        end
                                     in
                                     if bounding_paths = [] then (jid_to_job, jid_to_bounding_paths, bounded_jobqueue)
                                     else
@@ -247,7 +247,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                         JidMap.add bounded_job#jid_unique bounding_paths jid_to_bounding_paths,
                                         bounded_jobqueue#put bounded_job
                                 ) (jid_to_job, jid_to_bounding_paths, bounded_jobqueue) jobs
-                            end ()
+                            end
                         | None -> (jid_to_job, jid_to_bounding_paths, bounded_jobqueue)
                     in
                     match bounded_jobqueue#get with
@@ -259,7 +259,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                  jid_to_job = jid_to_job; >}, job)
                     | None -> (* Regular get *)
                         (* assert: jid_to_job and jid_to_bounding_paths are unchanged at this point, and bounded_jobqueue is always empty *)
-                        Timer.time "BidirectionalQueue.t#get/regular_get" begin fun () ->
+                        Profiler.global#call "BidirectionalQueue.t#get/regular_get" begin fun () ->
                         (* If there's no more entry jobs, the forward search has ended. So we terminate. *)
                         if is_bidirectional && entryfn_jobqueue#length = 0 then None else
 
@@ -270,7 +270,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
 
                         (* Create new jobs for callers of new targets/failure_fn *)
                         let origin_fundecs', otherfn_jobqueue =
-                            Timer.time "BidirectionalQueue.t#get/regular_get/create_new_jobs" begin fun () ->
+                            Profiler.global#call "BidirectionalQueue.t#get/regular_get/create_new_jobs" begin fun () ->
                             List.fold_left (
                                 fun (origin_fundecs, otherfn_jobqueue) target_fundec ->
                                     let callers = CilUtilities.CilCallgraph.find_callers file target_fundec in
@@ -288,7 +288,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                                 caller :: origin_fundecs, otherfn_jobqueue#put job
                                     ) (origin_fundecs, otherfn_jobqueue) callers
                             ) (origin_fundecs, otherfn_jobqueue) (failure_fn :: target_fundecs)
-                            end ()
+                            end
                         in
 
                         (* debug, Debug, DEBUG (warning: these can slow down regular_get) *)
@@ -306,7 +306,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                         in
                         if (not (entryfn_jobqueue#length = 0)) && (otherfn_jobqueue#length = 0 || want_process_entryfn)  then
                             (* Do forward search *)
-                            Timer.time "BidirectionalQueue.t#get/regular_get/forward_search" begin fun () ->
+                            Profiler.global#call "BidirectionalQueue.t#get/regular_get/forward_search" begin fun () ->
                             match entryfn_jobqueue#get with
                             | Some (entryfn_jobqueue, job) ->
                                 Some ({< entryfn_jobqueue = entryfn_jobqueue;
@@ -315,10 +315,10 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                          jid_to_bounding_paths = jid_to_bounding_paths;
                                          >}, job)
                             | None -> failwith "This is unreachable"
-                            end ()
+                            end
                         else if otherfn_jobqueue#length > 0 then
                             (* Do "backward" search *)
-                            Timer.time "BidirectionalQueue.t#get/regular_get/backward_search" begin fun () ->
+                            Profiler.global#call "BidirectionalQueue.t#get/regular_get/backward_search" begin fun () ->
                             match otherfn_jobqueue#get with
                             | Some (otherfn_jobqueue, job) ->
                                 Some ({< otherfn_jobqueue = otherfn_jobqueue;
@@ -326,11 +326,11 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                          jid_to_bounding_paths = jid_to_bounding_paths;
                                          >}, job)
                             | None -> failwith "This is unreachable"
-                            end ()
+                            end
                         else
                             None
-                        end ()
-            end ()
+                        end
+            end
     end
 
 (** {1 Command-line options} *)

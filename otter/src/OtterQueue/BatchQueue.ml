@@ -26,7 +26,7 @@ class ['self] t ?(limit=20) queue = object (self : 'self)
         let queue = queue#remove job in
         {< work = work; queue = queue >}
 
-    method get = OcamlUtilities.Timer.time "BatchQueue.t#get" begin fun () ->
+    method get = OcamlUtilities.Profiler.global#call "BatchQueue.t#get" begin fun () ->
         match work with
             | `One job when steps < limit ->
                 let queue = queue#remove job in
@@ -38,6 +38,6 @@ class ['self] t ?(limit=20) queue = object (self : 'self)
                     | None ->
                         None
                 end
-    end ()
+    end
 end
 

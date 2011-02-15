@@ -30,7 +30,7 @@ class ['self] t queues = object (self : 'self)
     method remove job =
         {< queues = Queue.map (fun queue -> queue#remove job) queues >}
 
-    method get = OcamlUtilities.Timer.time "RoundRobinQueue.t#get" begin fun () ->
+    method get = OcamlUtilities.Profiler.global#call "RoundRobinQueue.t#get" begin fun () ->
         let queues, queue = Queue.dequeue queues in
         match queue#get with
             | Some (queue, job) ->
@@ -39,6 +39,6 @@ class ['self] t queues = object (self : 'self)
                 Some ({< queues = queues >}, job)
             | None ->
                 None
-    end ()
+    end
 end
 

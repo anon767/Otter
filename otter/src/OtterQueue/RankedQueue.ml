@@ -33,7 +33,7 @@ class ['self] t strategies = object (self : 'self)
         let strategies = List.map (fun strategy -> strategy#remove job) strategies in
         {< jobs = jobs; strategies = strategies >}
 
-    method get = OcamlUtilities.Timer.time "RankedQueue.t#get" begin fun () ->
+    method get = OcamlUtilities.Profiler.global#call "RankedQueue.t#get" begin fun () ->
         if JobSet.is_empty jobs then
             None
         else
@@ -61,6 +61,6 @@ class ['self] t strategies = object (self : 'self)
             in
             let job = find_max (JobSet.elements jobs) strategies in
             Some (self#remove job, job)
-    end ()
+    end
 end
 

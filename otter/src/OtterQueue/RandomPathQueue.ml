@@ -62,7 +62,7 @@ class ['self] t = object (_ : 'self)
     method remove job =
         {< removed = JobSet.add job removed >}
 
-    method get = OcamlUtilities.Timer.time "RandomPathQueue.t#get" begin fun () ->
+    method get = OcamlUtilities.Profiler.global#call "RandomPathQueue.t#get" begin fun () ->
         (* first, zip the tree, making sure no branches are empty unless the tree is empty *)
         let rec zip branches = function
             | `Top -> `Branches branches
@@ -84,5 +84,5 @@ class ['self] t = object (_ : 'self)
                 Some ({< context = context; leaves = RandomBag.empty; removed = removed >}, job)
         in
         descend removed `Top (zip leaves context)
-    end ()
+    end
 end

@@ -87,6 +87,10 @@ let options = [
 		Printing options
 	*)
 	(* TODO: for each msg type, a --print and --noprint option*)
+	("--printProfiling",
+		Arg.Set Output.arg_print_profiling,
+		" Print profiling statistics");
+
 	(* STP *)
 	("--printSTP",
 		Arg.Set Output.arg_print_stp,

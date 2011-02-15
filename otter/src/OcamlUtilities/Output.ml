@@ -1,6 +1,7 @@
 
 let arg_print_mute = ref 0
 let arg_print_reg = ref true
+let arg_print_profiling = ref false
 let arg_print_stmt = ref true
 let arg_print_assign = ref false
 let arg_print_func = ref true
@@ -156,6 +157,7 @@ let () = at_exit (fun () -> !formatter#flush)
 
 type msg_type =
 	| MSG_REG
+	| MSG_PROFILING
 	| MSG_STMT
 	| MSG_ASSIGN
 	| MSG_FUNC
@@ -172,6 +174,7 @@ let need_print msg_type =
 	if !arg_print_mute > 0 then false else
 	match msg_type with
 		| MSG_REG 		-> !arg_print_reg
+		| MSG_PROFILING	-> !arg_print_profiling
 		| MSG_STMT		-> !arg_print_stmt
 		| MSG_ASSIGN	-> !arg_print_assign
 		| MSG_FUNC		-> !arg_print_func

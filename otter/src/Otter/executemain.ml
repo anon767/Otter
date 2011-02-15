@@ -69,7 +69,7 @@ let doExecute (f: file) =
 
     Output.printf "Hash-consing: hits=%d misses=%d\n" (!Bytes.hash_consing_bytes_hits) (!Bytes.hash_consing_bytes_misses);
 
-    Output.printf "Timers:@\n  @[%t@]@\n" Timer.global_printer;
+    Output.printf "== Global profile ==@\n@[%t@]@\n" Profiler.global#printer;
     (*
   begin
     if Executeargs.run_args.arg_examfn = "" then () else

@@ -1,5 +1,5 @@
 OcamlUtilities/FormatPlus
 OcamlUtilities/ListPlus
 OcamlUtilities/Output
-OcamlUtilities/Timer
+OcamlUtilities/Profiler
 OcamlUtilities/UnixPlus

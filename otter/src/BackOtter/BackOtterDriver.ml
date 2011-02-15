@@ -338,7 +338,11 @@ let doit file =
     Output.printf "Number of nodes: %d@\n" nodes;
     Output.printf "Number of paths: %d@\n" paths;
     Output.printf "Number of abandoned: %d@\n" abandoned;
-    Output.printf "Timer:@\n  @[%t@]@\n" Timer.global_printer;
+    Output.myflush ();
+
+    (** TODO: provide a way to force full-width profile printing *)
+    Format.set_margin 120;
+    Format.printf "Global profile:@\n@\n  @[%t@]@." Profiler.global#printer;
     Report.print_report reporter#completed
 
 
