@@ -46,11 +46,14 @@ end)
 (* TODO: this is expensive, since decisions as keys can be very long. *)
 let function_call_of_latest_decision =
     let memotable = Hashtbl.create 0 in
-    function
-    | DecisionFuncall (_, fundec) :: _ as decisions->
-        if Hashtbl.mem memotable decisions then None
-        else (Hashtbl.add memotable decisions (); Some fundec)
-    | _ -> None
+    fun lst ->
+        Profiler.global#call "BidirectionalQueue.function_call_of_latest_decision" begin fun () ->
+            match lst with
+            | DecisionFuncall (_, fundec) :: _ as decisions->
+                if Hashtbl.mem memotable decisions then None
+                else (Hashtbl.add memotable decisions (); Some fundec)
+            | _ -> None
+        end
 
 (* TODO: package the long list of arguments into BackOtterProfile.t *)
 class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
@@ -283,7 +286,10 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                                     if caller == entry_fn then entry_job
                                                     else (
                                                         Output.debug_printf "Create new job for function %s@\n" caller.svar.vname;
-                                                        new OtterJob.FunctionJob.t file ~points_to:(!default_points_to file) caller)
+                                                        Profiler.global#call "BidirectionalQueue.t#get/regular_get/create_new_jobs/new_functionjob" begin fun () ->
+                                                            new OtterJob.FunctionJob.t file ~points_to:(!default_points_to file) caller
+                                                        end
+                                                    )
                                                 in
                                                 caller :: origin_fundecs, otherfn_jobqueue#put job
                                     ) (origin_fundecs, otherfn_jobqueue) callers
