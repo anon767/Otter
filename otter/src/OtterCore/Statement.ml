@@ -97,7 +97,6 @@ let function_from_exp job instr fexp errors =
 
         | Lval(Mem(fexp), NoOffset) ->
             let job, bytes, errors  = Expression.rval job fexp errors in
-            let ftyp = Cil.typeOf fexp in
             let rec getall fp =
                 let fold_func (acc, errors) pre leaf =
                     match leaf with
@@ -106,7 +105,7 @@ let function_from_exp job instr fexp errors =
                             let job = MemOp.state__add_path_condition job (Bytes.guard__to_bytes pre) true in
                             let fundec = FindCil.fundec_by_varinfo job#file varinfo in
                             ((job, fundec)::acc, errors)
-                        | _ -> (acc, (job, make_Bytes_Op (OP_EQ, [(bytes, ftyp); (leaf, ftyp)]), `Failure "Invalid function pointer") :: errors)
+                        | _ -> (acc, (job, `Failure "Invalid function pointer") :: errors)
                 in
                 Bytes.conditional__fold fold_func ([], errors) fp
             in
@@ -424,10 +423,7 @@ let exec_stmt job errors =
 
 
 let errors_to_abandoned_list job errors =
-    List.map begin fun (job, failing_condition, error) ->
-        (* assert: failing_condition is never true *)
-        (* TODO: what is this for? what code needs the failing condition to be added to the path condition? *)
-        let job = job#with_state { job#state with path_condition = failing_condition::job#state.path_condition } in
+    List.map begin fun (job, error) ->
         Complete (Abandoned (error, job))
     end errors
 

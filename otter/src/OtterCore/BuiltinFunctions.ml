@@ -201,7 +201,7 @@ let libc_memset job retopt exps errors =
             let job, failing_bytes_opt = Expression.checkBounds job lvals length in
             let errors = match failing_bytes_opt with
               | None -> errors
-              | Some b -> (old_job, logicalNot b, `OutOfBounds dest_exp) :: errors
+              | Some b -> (old_job, `OutOfBounds dest_exp) :: errors
             in
             let job = MemOp.state__assign job (lvals, length) (bytes__make_default length value_byte) in
             let job, errors = set_return_value job retopt dest errors in

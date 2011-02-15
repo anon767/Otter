@@ -69,7 +69,7 @@ let direct_calls_testsuite = "Direct calls" >:::
                     end ([], [], []) match_globals in
 
                     if errors <> [] then
-                        assert_log "Errors detected:@ @[%a@]@\n" (list_printer (fun ff (_, _, s) -> Errors.printer ff s) ",@ ") errors;
+                        assert_log "Errors detected:@ @[%a@]@\n" (list_printer (fun ff (_, s) -> Errors.printer ff s) ",@ ") errors;
 
                     if not_found <> [] then
                         assert_log "Variables not found:@ @[%a@]@\n" (list_printer pp_print_string ",@ ") not_found;

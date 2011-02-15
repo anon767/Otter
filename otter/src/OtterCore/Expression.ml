@@ -291,7 +291,7 @@ lval ?(justGetAddr=false) job (lhost, offset_exp as cil_lval) errors =
                 let final_job, failing_bytes_opt = checkBounds job lvals size in
                 let errors = match failing_bytes_opt with
                     | None -> errors
-                    | Some b -> (job, logicalNot b, `OutOfBounds (Lval cil_lval)) :: errors
+                    | Some b -> (job, `OutOfBounds (Lval cil_lval)) :: errors
                 in
                 (final_job, (lvals, size), errors)
 
@@ -350,7 +350,7 @@ deref job bytes typ errors =
                                 (* Guard against this failure, add it to the error list, and remove this leaf. *)
                                 let failing_bytes = Operator.eq [ (bytes, typ); (c, typ) ] in
                                 let guard = guard__and_not guard (Bytes.guard__bytes failing_bytes) in
-                                let errors = (job, failing_bytes, `Failure msg)::errors in
+                                let errors = (job, `Failure msg)::errors in
                                 let removed = c::removed in
                                 ((guard, job, errors, removed), None)
                     end (Bytes.guard__true, job, errors, []) c
@@ -444,7 +444,7 @@ rval_binop job binop exp1 exp2 errors =
                     let no_short_circuit = if binop == LAnd then rv1 else logicalNot rv1 in (* Assume no short-circuit *)
                     match evaluate_under_condition job no_short_circuit exp2 with
                       | None, msg -> (* exp2 fails. Report this error, and assume short-circuiting occurs *)
-                            let errors = (job, no_short_circuit, `Failure msg) :: errors in
+                            let errors = (job, `Failure msg) :: errors in
                             let job = MemOp.state__add_path_condition job (logicalNot no_short_circuit) true in
                             let result = if binop == LAnd then bytes__zero else bytes__one in
                             (job, result, errors)
@@ -471,13 +471,13 @@ rval_question job exp1 exp2 exp3 errors =
             (* Evaluate exp2, assuming rv1 *)
             match evaluate_under_condition job rv1 exp2 with
               | None, msg -> (* exp2 fails. Report this error, assume not_rv1, and evaluate to exp3 *)
-                    let errors = (job, rv1, `Failure msg) :: errors in
+                    let errors = (job, `Failure msg) :: errors in
                     let job = MemOp.state__add_path_condition job not_rv1 true in
                     rval job exp3 errors
               | Some (job, rv2), _ -> (* exp2 does not fail. Evaluate exp3, assuming not_rv1 *)
                     match evaluate_under_condition job not_rv1 exp3 with
                       | None, msg -> (* exp3 fails. Report this error, assume rv1, and evaluate to rv2 *)
-                            let errors = (job, not_rv1, `Failure msg) :: errors in
+                            let errors = (job, `Failure msg) :: errors in
                             let job = MemOp.state__add_path_condition job rv1 true in
                             (job, rv2, errors)
                       | Some (job, rv3), _ -> (* exp3 does not fail. Evaluate to an IfThenElse. *)
