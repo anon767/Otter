@@ -647,7 +647,23 @@ int __otter_fs_change_open_mode(struct __otter_fs_open_file_table_entry* open_fi
 		}
 	}
 
-	if((*open_file).type == __otter_fs_TYP_FILE)
+	if((*open_file).type == __otter_fs_TYP_DIR)
+	{
+		struct __otter_fs_dnode* dnode = (struct __otter_fs_dnode*)((*open_file).vnode);
+
+		if(!__otter_fs_can_permission((*dnode).permissions, permissions))
+		{
+			errno = EACCES;
+			return (-1);
+		}
+
+		if(add & O_RDONLY)
+			(*dnode).r_openno++;
+
+		if(remove & O_RDONLY)
+			(*dnode).r_openno--;
+	}
+	else
 	{
 		struct __otter_fs_inode* inode = (struct __otter_fs_inode*)((*open_file).vnode);
 
@@ -666,22 +682,6 @@ int __otter_fs_change_open_mode(struct __otter_fs_open_file_table_entry* open_fi
 			(*inode).r_openno--;
 		if(remove & O_WRONLY)
 			(*inode).w_openno--;
-	}
-	else
-	{
-		struct __otter_fs_dnode* dnode = (struct __otter_fs_dnode*)((*open_file).vnode);
-
-		if(!__otter_fs_can_permission((*dnode).permissions, permissions))
-		{
-			errno = EACCES;
-			return (-1);
-		}
-
-		if(add & O_RDONLY)
-			(*dnode).r_openno++;
-
-		if(remove & O_RDONLY)
-			(*dnode).r_openno--;
 	}
 
 	(*open_file).mode = mode;

@@ -36,13 +36,13 @@ int fchmod(int fd, mode_t mode)
 	if (!open_file) return -1;
 
 	void* retval;
-	if (open_file->type == __otter_fs_TYP_FILE)
+	if (open_file->type == __otter_fs_TYP_DIR)
 	{
-		retval = __otter_fs_chmod_file(mode, open_file->vnode);
+		retval = __otter_fs_chmod_dir(mode, open_file->vnode);
 	}
 	else
 	{
-		retval = __otter_fs_chmod_dir(mode, open_file->vnode);
+		retval = __otter_fs_chmod_file(mode, open_file->vnode);
 	}
 	return retval;
 }
