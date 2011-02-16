@@ -94,7 +94,6 @@ let run reporter job =
 			MultiFunctions.interceptor @@@
 			MultiInterceptor.repack_job_interceptor @@@
 			BuiltinFunctions.interceptor @@ 
-			BuiltinFunctions.libc_interceptor @@
 			Statement.step
 		)
 		process_result
