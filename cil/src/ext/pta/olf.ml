@@ -1038,8 +1038,12 @@ let collect_ptset_slow (l : c_absloc) : abslocset =
     if top_c_absloc l then raise ReachedTop
     else
       let stamp = get_c_absloc_stamp l in
-        if IntHash.mem onpath stamp then C.empty
-        else
+        if IntHash.mem onpath stamp then
+          C.empty
+        else if get_flow_computed l then begin
+          IntHash.add onpath stamp ();
+          get_aliases l
+        end else
           let li = find l in
             IntHash.add onpath stamp ();
             B.iter
@@ -1051,8 +1055,9 @@ let collect_ptset_slow (l : c_absloc) : abslocset =
     if get_flow_computed l then get_aliases l
     else
       begin
+        let aliases = flow_step l in
         set_flow_computed l;
-        flow_step l
+        aliases
       end
 
 let collect_ptset =
