@@ -214,7 +214,7 @@ let access_with_length job exp errors length =
     in
     (job, addr_bytes, lvals, errors)
 
-let libc_memcpy job retopt exps errors =
+let libc_memmove job retopt exps errors =
     match exps with
       | [ dest_exp; src_exp; length_exp ] ->
             let job, length, errors = Expression.rval job length_exp errors in
@@ -228,6 +228,8 @@ let libc_memcpy job retopt exps errors =
             (Job.Active job, errors)
       | _ -> failwith "Wrong number of arguments to memcpy"
 
+(* TODO: memcpy should check that the source and destination do not overlap *)
+let libc_memcpy = libc_memmove
 
 let libc_memset job retopt exps errors =
     match exps with
@@ -858,11 +860,13 @@ let interceptor job job_queue interceptor =
 		(intercept_function_by_name_internal "__builtin_va_copy"       libc___builtin_va_copy) @@
 		(intercept_function_by_name_internal "__builtin_va_end"        libc___builtin_va_end) @@
 		(intercept_function_by_name_internal "__builtin_va_start"      libc___builtin_va_start) @@
-		(* memcpy and memset default to the C implementation on failure *)
+		(* These default to the C implementation on failure *)
 		(try_with_job_abandoned_interceptor
 			(intercept_function_by_name_internal "memcpy"                  libc_memcpy)) @@
 		(try_with_job_abandoned_interceptor
 			(intercept_function_by_name_internal "memset"                  libc_memset)) @@
+		(try_with_job_abandoned_interceptor
+			(intercept_function_by_name_internal "memmove"                  libc_memmove)) @@
 		(intercept_function_by_name_internal "_exit"                   libc_exit) @@
 		(intercept_function_by_name_internal "__TRUTH_VALUE"           otter_truth_value) @@
 		(intercept_function_by_name_internal "__GIVEN"                 otter_given) @@
