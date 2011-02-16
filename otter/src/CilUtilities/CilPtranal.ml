@@ -1,6 +1,7 @@
 (** Wrapper for CIL's Ptranal module additional resolves to field offsets, filtered by type. *)
 
 open DataStructures
+open OcamlUtilities
 
 
 (** Table to track initialized files. *)
@@ -172,17 +173,18 @@ let add_malloc_types =
 
     let file_memotable = Hashtbl.create 0 in
     fun file (points_to_varinfo : _ -> Cil.varinfo list * _) ->
+        let points_to_varinfo exp = Profiler.global#call "points_to_varinfo" (fun () -> points_to_varinfo exp) in
         let site_to_mallocs =
             try
                 Hashtbl.find file_memotable file
-            with Not_found ->
+            with Not_found -> Profiler.global#call "add_malloc_types (uncached)" begin fun () ->
                 (* build a map from malloc sites to malloc types *)
                 let site_to_mallocs = SiteMap.empty in
                 let updated = LhostMallocSet.empty in
 
                 (* for each varinfo or malloc pointer given as an lhost, find all malloc targets and infer their types
                  * from the pointer lhost type *)
-                let process_lhost site_to_mallocs updated lhost source_opt =
+                let process_lhost site_to_mallocs updated lhost source_opt = Profiler.global#call "process_lhost" begin fun () ->
                     let lhost_type = Cil.typeOf (Cil.Lval (lhost, Cil.NoOffset)) in
 
                     (* process each offset in the lhost that is a pointer *)
@@ -222,7 +224,7 @@ let add_malloc_types =
                             (site_to_mallocs, updated)
                     in
                     fold_pointer_offsets site_to_mallocs updated Cil.NoOffset
-                in
+                end in
 
                 (* first infer malloc types from varinfo pointers *)
                 let site_to_mallocs, updated = List.fold_left begin fun (site_to_mallocs, updated) varinfo ->
@@ -248,6 +250,7 @@ let add_malloc_types =
 
                 Hashtbl.replace file_memotable file site_to_mallocs;
                 site_to_mallocs
+            end
         in
         fun mallocs ->
             List.concat (List.map (fun malloc -> SiteMap.find malloc site_to_mallocs) mallocs)
@@ -260,14 +263,16 @@ let add_malloc_types =
         @return [(target_varinfos, target_mallocs)] where [target_varinfos] contains the points to target varinfos
                 and offsets; and [target_mallocs] contains a list of dynamic allocation sites and offsets
 *)
-let points_to file exp =
+let points_to file exp = Profiler.global#call "CilPtranal.points_to" begin fun () ->
     init_file file;
-    let add_malloc_types = add_malloc_types file Ptranal.resolve_exp in
+    let resolve_exp exp = Profiler.global#call "Ptranal.resolve_exp" (fun () -> Ptranal.resolve_exp exp) in
+    let add_malloc_types = add_malloc_types file resolve_exp in
     let points_to exp =
-        let varinfos, sites = Ptranal.resolve_exp exp in
+        let varinfos, sites = resolve_exp exp in
         (varinfos, add_malloc_types sites)
     in
     wrap_points_to_varinfo points_to exp
+end
 
 
 (** Wrapper for Cil's {!Ptranal.resolve_fundec}.
@@ -275,9 +280,10 @@ let points_to file exp =
         @param exp is the expression to resolve
         @return [fundec_list] which is a list of target functions
 *)
-let points_to_fundec file exp =
+let points_to_fundec file exp = Profiler.global#call "CilPtranal.points_to_fundec" begin fun () ->
     init_file file;
     Ptranal.resolve_funptr exp
+end
 
 
 (** Naive point-to that maps anything to everything (including [malloc]), filtered by type.
@@ -288,7 +294,7 @@ let points_to_fundec file exp =
 *)
 let naive_points_to =
     let memotable = Hashtbl.create 0 in
-    fun file exp ->
+    fun file exp -> Profiler.global#call "CilPtranal.naive_points_to" begin fun () ->
         try
             Hashtbl.find memotable file
         with Not_found ->
@@ -298,6 +304,7 @@ let naive_points_to =
             let targets = wrap_points_to_varinfo (fun _ -> (varinfos, mallocs)) exp in
             Hashtbl.add memotable file targets;
             targets
+    end
 
 
 (** Unsound point-to that maps anything to just a distinct [malloc].
@@ -308,7 +315,7 @@ let naive_points_to =
 *)
 let unsound_points_to =
     let counter = Counter.make () in
-    fun file exp ->
+    fun file exp -> Profiler.global#call "CilPtranal.unsound_points_to" begin fun () ->
         match Cil.unrollType (Cil.typeOf exp) with
             | Cil.TPtr (typ, _) ->
                 let malloc = FindCil.global_varinfo_by_name file "malloc" in
@@ -316,4 +323,5 @@ let unsound_points_to =
                 wrap_points_to_varinfo (fun _ -> ([], [ (malloc, name, typ) ])) exp
             | _ ->
                 ([], [])
+    end
 
