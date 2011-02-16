@@ -133,7 +133,7 @@ end = struct
         | Bytes_Op of operator * (bytes * Cil.typ) list
         | Bytes_Read of bytes * bytes * int             (* less preferrable type *)
         | Bytes_Write of bytes * bytes * int * bytes    (* least preferrable type*)
-        | Bytes_FunPtr of Cil.varinfo            (* bytes is the "imaginary address" of the funptr *)
+        | Bytes_FunPtr of Cil.varinfo
         | Bytes_Conditional of bytes conditional
 
     and memory_block_type =
