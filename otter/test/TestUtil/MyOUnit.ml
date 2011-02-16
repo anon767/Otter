@@ -184,11 +184,11 @@ let assert_time_limit time_limit fn =
     try
         let result = fn () in
         ignore (Unix.setitimer Unix.ITIMER_PROF { Unix.it_interval = 0.; Unix.it_value = 0.; });
-        Sys.set_signal Sys.sigalrm old_handler;
+        Sys.set_signal Sys.sigprof old_handler;
         result
     with e ->
         ignore (Unix.setitimer Unix.ITIMER_PROF { Unix.it_interval = 0.; Unix.it_value = 0.; });
-        Sys.set_signal Sys.sigalrm old_handler;
+        Sys.set_signal Sys.sigprof old_handler;
         raise e
 
 
