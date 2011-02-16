@@ -1,6 +1,10 @@
 (** Useful extensions to the {!Unix} module. *)
 
+
+(** {2 Forking Execution} *)
+
 exception ForkCallException of exn
+exception ForkCallTimedOut
 exception ForkCallFailure of exn
 exception ForkCallExited of int
 exception ForkCallKilled of int
@@ -8,11 +12,11 @@ exception ForkCallKilled of int
 exception ForkCallStopped of int
 (**/**)
 
-exception TimedOut 
-
 
 (** Call a function in a forked process and return the result. Note that {!Format.std_formatter} and
     {!Format.err_formatter} are reset in the forked process.
+        @param ?time_limit optionally specifies the maximum time the forked process is allowed to run
+                (note that this uses [Unix.setitimer Unix.ITIMER_REAL])
         @param f is the function to call
         @param x is the argument to the function
 
@@ -20,11 +24,12 @@ exception TimedOut
 
         @raise ForkCallException if [f x] raises an exception; {e note that the raised exception cannot be
                 pattern-matched due to a limitation in the Ocaml runtime (see http://caml.inria.fr/mantis/view.php?id=1624)}
-        @raise ForkCallFailure if the child process failed to launch or did not return any results
-        @raise ForkCallExited if the child process exited unexpectedly
-        @raise ForkCallKilled if the child process was killed unexpectedly
+        @raise ForkCallTimedOut if the forked process exceeds the time limit
+        @raise ForkCallFailure if the forked process failed to launch or did not return any results
+        @raise ForkCallExited if the forked process exited unexpectedly
+        @raise ForkCallKilled if the forked process was killed unexpectedly
 *)
-let fork_call (f : ('a -> 'b)) (x : 'a) : 'b =
+let fork_call ?time_limit:time_limit_opt (f : ('a -> 'b)) (x : 'a) : 'b =
     (* first, flush stdout/stderr to avoid printing twice *)
     flush stdout;
     flush stderr;
@@ -48,6 +53,15 @@ let fork_call (f : ('a -> 'b)) (x : 'a) : 'b =
 
         (* child process runs the function and proxies the result to the parent *)
         Unix.close fdin;
+
+        (* set an alarm if given a time limit; just overwrite sigalrm since this child will exit anyway *)
+        begin match time_limit_opt with
+            | Some time_limit ->
+                Sys.set_signal Sys.sigalrm Sys.Signal_default;
+                ignore (Unix.setitimer Unix.ITIMER_REAL { Unix.it_interval = 0.; Unix.it_value = time_limit; })
+            | None ->
+                ()
+        end;
 
         let result = try `Result (f x) with e -> `Exception e in
         Marshal.to_channel (Unix.out_channel_of_descr fdout) result [ Marshal.Closures ];
@@ -77,6 +91,8 @@ let fork_call (f : ('a -> 'b)) (x : 'a) : 'b =
                 (* Marshal does not serialize exceptions faithfully: http://caml.inria.fr/mantis/view.php?id=1624 *)
                 (* TODO: provide a helper to match exception by label, using the generic printer trick in Printexc *)
                 raise (ForkCallException e)
+            | Unix.WSIGNALED i, _ when i = Sys.sigalrm ->
+                raise ForkCallTimedOut
             | _, `Failure e ->
                 raise (ForkCallFailure e)
             | Unix.WEXITED i, _ ->
@@ -87,31 +103,4 @@ let fork_call (f : ('a -> 'b)) (x : 'a) : 'b =
                 (* this should never occur since waitpid wasn't given the WUNTRACED flag *)
                 raise (ForkCallStopped i)
     end
-
-(* assert a time limit for running fn () (note: uses [Unix.setitimer Unix.ITIMER_PROF]) *)
-let assert_time_limit time_limit fn =
-    let old_handler = Sys.signal Sys.sigprof (Sys.Signal_handle (fun _ -> raise TimedOut)) in
-    ignore (Unix.setitimer Unix.ITIMER_PROF { Unix.it_interval = 0.; Unix.it_value = time_limit; });
-    try
-        let result = fn () in
-        ignore (Unix.setitimer Unix.ITIMER_PROF { Unix.it_interval = 0.; Unix.it_value = 0.; });
-        Sys.set_signal Sys.sigalrm old_handler;
-        result
-    with TimedOut ->
-        ignore (Unix.setitimer Unix.ITIMER_PROF { Unix.it_interval = 0.; Unix.it_value = 0.; });
-        Sys.set_signal Sys.sigalrm old_handler;
-        raise TimedOut
-
-
-(** Call a function in a forked process and return the result, or raise {TimedOut} if timeout occurs. 
-    Note that {!Format.std_formatter} and {!Format.err_formatter} are reset in the forked process.
-        @param time_limit is the time limit in seconds
-        @param fn is the function to call
-
-        @return the result of [fn ()]
-
-        @raise Timedout if timeout occurs
-*)
-let timed_call time_limit fn =
-    assert_time_limit time_limit (fork_call fn)
 
