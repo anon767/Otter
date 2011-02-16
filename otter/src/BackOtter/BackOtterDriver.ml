@@ -234,7 +234,6 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
         let (>>>) = Interceptor.(>>>) in
             set_output_formatter_interceptor
         >>> line_target_interceptor
-        >>> BuiltinFunctions.libc_interceptor
         >>> BuiltinFunctions.interceptor
         >>> (
             let limit = !default_conditionals_forking_limit  in
