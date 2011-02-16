@@ -238,6 +238,7 @@ let libc_memset job retopt exps errors =
             let value_byte = bytes__get_byte value 0 (* little endian *) in
             let job, dest, lvals, errors = access_with_length job dest_exp errors length in
             let job = MemOp.state__assign job (lvals, length) (bytes__make_default length value_byte) in
+            let job, errors = set_return_value job retopt dest errors in
             let job = end_function_call job in
             (Job.Active job, errors)
       | _ -> failwith "Wrong number of arguments to memset"
