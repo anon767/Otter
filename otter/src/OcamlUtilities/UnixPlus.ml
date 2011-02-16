@@ -15,7 +15,7 @@ exception ForkCallStopped of int
 
 (** Call a function in a forked process and return the result. Note that {!Format.std_formatter} and
     {!Format.err_formatter} are reset in the forked process.
-        @param ?time_limit optionally specifies the maximum time the forked process is allowed to run
+        @param time_limit optionally specifies the maximum time the forked process is allowed to run
                 (note that this uses [Unix.setitimer Unix.ITIMER_REAL])
         @param f is the function to call
         @param x is the argument to the function
