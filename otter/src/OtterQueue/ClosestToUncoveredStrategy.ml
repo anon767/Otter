@@ -16,11 +16,22 @@ module InstructionMap = struct
 end
 (**/**)
 
+let arg_tracked_only = ref false
 
 class ['self] t = object (self : 'self)
     (* both coverage and distances are initially zero for every instruction *)
     val coverage = InstructionMap.empty
     val distances = lazy InstructionMap.empty
+
+    (* Determine if the instr is tracked in this strategy.
+     * An untracked instr is always covered *)
+    method private tracked instr =
+        if (!arg_tracked_only) then
+            let fname = instr.Instruction.fundec.Cil.svar.Cil.vname in
+            let file = instr.Instruction.file in
+            TrackingFunctions.isTracked fname (TrackingFunctions.trackedFns file)
+        else
+            true
 
     method private update_distances instr coverage =
         let rec update worklist distances =
@@ -31,7 +42,8 @@ class ['self] t = object (self : 'self)
                     - 0 if the instruction is uncovered;
                     - or, 1 + the minimum distance of its successors + the minimum distance through its call targets. *)
             let dist =
-                if InstructionMap.find instr coverage = 0 then
+                (* An untracked instr is always covered *)
+                if self#tracked instr && InstructionMap.find instr coverage = 0 then
                     0
                 else
                     let calc_dist instrs = List.fold_left (fun dist instr ->
@@ -124,4 +136,11 @@ class ['self] t = object (self : 'self)
     method weight job =
         1. /. float_of_int (self#calculate_distance job)
 end
+
+let options = [
+	("--distance-to-uncovered-tracked-only",
+		Arg.Set arg_tracked_only,
+        " Instructions in untracked functions (specified by --(un)tracked-functions) are considered covered in the beginning.\n"
+	);
+]
 
