@@ -144,6 +144,7 @@ ssize_t __otter_libc_read_file(
 
 	struct __otter_fs_inode* inode = (struct __otter_fs_inode*)(open_file->vnode);
 
+	// TODO: we can replace this loop with a length check and a memcpy
 	for(int i = 0; i < num; i++)
 	{
 		if(i + offset < (*inode).size)
@@ -187,10 +188,7 @@ ssize_t __otter_libc_write_file(
 		(*inode).numblocks = newblocks;
 	}
 
-	for(int i = 0; i < num; i++)
-	{
-		(*inode).data[i + offset] = ((char*)buf)[i];
-	}
+	memcpy(inode->data + offset, buf, num);
 
 	if((*inode).size < offset + num)
 	{
@@ -229,6 +227,7 @@ ssize_t __otter_libc_pread_pipe_data(
 	size_t num)
 {
 	__otter_multi_begin_atomic();
+	// TODO: we can replace this loop with a length check and one or two calls to memcpy
 	for(int i = 0; i < num; i++)
 	{
 		/* next unread char is not the next char to be written to*/
@@ -264,6 +263,7 @@ ssize_t __otter_libc_write_pipe_data(
 	size_t num)
 {
 	__otter_multi_begin_atomic();
+	// TODO: we should be able to replace this loop with a length check and one or two calls to memcpy
 	for(int i = 0; i < num; i++)
 	{
 		/* current char is not the last char read */
@@ -445,10 +445,7 @@ ssize_t __otter_libc_read2(
 			break;
 		case __otter_fs_TYP_ZERO:
 			open_file->status = __otter_fs_STATUS_OK;
-			for(int i = 0; i < num; i++)
-			{
-					((char *)buf)[i] = 0;
-			}
+			memset(buf, 0, num);
 
 			return (num);
 
