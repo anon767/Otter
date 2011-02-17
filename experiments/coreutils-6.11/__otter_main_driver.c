@@ -19,6 +19,9 @@ extern int main(int argc, char **argv);
 
 char* __otter_environ[MAX_ENVIRON+1];
 
+#pragma cilnoremove("__FAILURE")
+void __FAILURE() {}
+
 /* Allocate a char array of length (len+1), 
  * with all characters symbolic except the last one which is \0. */
 char* symbolic_string(int len) {
@@ -46,7 +49,7 @@ int __otter_main_driver() {
 
     // Set up argv
     int arg_lengths[] = MAX_ARG_LENGTHS;
-    for (i=0;i<=argc;i++) {
+    for (i=0;i<=MAX_ARG;i++) {
         argv[i] = symbolic_string(arg_lengths[i]);
     }
 
