@@ -440,14 +440,39 @@ let rec eval pc bytes =
       | Bytes_Op((OP_LT|OP_GT|OP_LE|OP_GE|OP_EQ|OP_NE as op),
                  [(Bytes_Address(block1,offset1),_); (Bytes_Address(block2,offset2),_)]) ->
             if block1!=block2 then
-                (if op==OP_EQ then Ternary.False else if op==OP_NE then Ternary.True else nontrivial())
+                (if op==OP_EQ then Ternary.False
+                 else if op==OP_NE then Ternary.True
+                 else FormatPlus.failwith "Inequality comparison between two unrelated pointers: %a" BytesPrinter.bytes bytes)
             else
                 eval pc ((operation_of op) [(offset1,Cil.intType);(offset2,Cil.intType)])
 
-      (* Comparison of pointer and integer *)
-      | Bytes_Op((OP_EQ | OP_NE) as op,[(Bytes_Address(block,offset1),_); (bytes2,_)])
-              when isConcrete_bytes bytes2 ->
-            Ternary.of_bool (op = OP_NE)
+      (* Operation on two function pointers. Only equality and disequality are allowed. *)
+      | Bytes_Op(op, [(Bytes_FunPtr f1,_); (Bytes_FunPtr f2,_)]) ->
+            (match op with
+                | OP_EQ -> Ternary.of_bool (f1 = f2)
+                | OP_NE -> Ternary.of_bool (f1 <> f2)
+                | _ -> FormatPlus.failwith "Invalid operation on function pointers: %a" BytesPrinter.bytes bytes
+            )
+
+      (* Operation on (normal) pointer and function pointer. This is an error *)
+      | Bytes_Op(_, [(Bytes_FunPtr _,_); (Bytes_Address _,_)])
+      | Bytes_Op(_, [(Bytes_Address _,_); (Bytes_FunPtr _,_)]) ->
+            FormatPlus.failwith "Operation involving normal pointer and function pointer: %a" BytesPrinter.bytes bytes
+
+      (* Comparison of pointer and something. *)
+      | Bytes_Op(op, [((Bytes_Address _ | Bytes_FunPtr _),_); (bytes2,_)])
+      | Bytes_Op(op, [(bytes2,_); ((Bytes_Address _ | Bytes_FunPtr _),_)]) ->
+            if not (isConcrete_bytes bytes2)
+            then nontrivial () (* Just ask STP in this case *)
+            else (
+                (* Comparison of a pointer and an integer. Only (p == 0) and (p != 0) are allowed, and they return [False] and [True] respectively. *)
+                if bytes__equal bytes2 bytes__zero
+                then match op with
+                    | OP_NE -> Ternary.True
+                    | OP_EQ -> Ternary.False
+                    | _ -> FormatPlus.failwith "Invalid operation: (ptr op 0) where 'op' is neither '==' or '!='\n%a" BytesPrinter.bytes bytes
+                else FormatPlus.failwith "Invalid operation: (ptr op x) where x is a nonzero integer: %a" BytesPrinter.bytes bytes
+            )
 
       | Bytes_Op(OP_LAND, [(bytes1, _); (bytes2, _)]) ->
             begin match eval pc bytes1 with
