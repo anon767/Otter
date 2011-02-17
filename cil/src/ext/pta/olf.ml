@@ -1035,15 +1035,15 @@ let collect_ptset_fast (l : c_absloc) : abslocset =
 let collect_ptset_slow (l : c_absloc) : abslocset =
   let onpath : unit IntHash.t = IntHash.create 101 in
   let rec flow_step (l : c_absloc) : abslocset =
-    if top_c_absloc l then raise ReachedTop
+    if top_c_absloc l then
+      raise ReachedTop
+    else if get_flow_computed l then
+      get_aliases l
     else
       let stamp = get_c_absloc_stamp l in
         if IntHash.mem onpath stamp then
           C.empty
-        else if get_flow_computed l then begin
-          IntHash.add onpath stamp ();
-          get_aliases l
-        end else
+        else
           let li = find l in
             IntHash.add onpath stamp ();
             B.iter
@@ -1052,13 +1052,9 @@ let collect_ptset_slow (l : c_absloc) : abslocset =
             li.aliases
   in
     insist (can_query_graph ()) "collect_ptset_slow can't query graph";
-    if get_flow_computed l then get_aliases l
-    else
-      begin
-        let aliases = flow_step l in
-        set_flow_computed l;
-        aliases
-      end
+    let aliases = flow_step l in
+    set_flow_computed l;
+    aliases
 
 let collect_ptset =
   collect_ptset_slow
