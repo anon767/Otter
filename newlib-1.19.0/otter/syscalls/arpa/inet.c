@@ -56,7 +56,7 @@ int inet_aton(const char *cp, struct in_addr *addrptr)
 	return 1;
 }
 
-in_addr_t __otter_libc_inet_addr(const char *cp)
+in_addr_t inet_addr(const char *cp)
 {
 	struct in_addr a;
 
