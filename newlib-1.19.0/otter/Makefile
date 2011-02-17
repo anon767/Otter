@@ -106,8 +106,10 @@ SYSCALL_FILES := \
 	grp/grp.c \
 	inttypes/strtoimax.c \
 	inttypes/strtoumax.c \
+	otter/multiotter_builtins_stub.c \
 	otter/otter_fs.c \
 	otter/otter_fs_util.c \
+	otter/otter_scheduler_stub.c \
 	pthread/self.c \
 	pwd/pwd.c \
 	stdlib/_free_r.c \

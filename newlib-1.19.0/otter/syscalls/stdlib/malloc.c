@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <otter/multiotter_builtins.h> // For __otter_multi_gmalloc
 
 /* Without a definition of Otter-builtin functions, programs can't call them
 	 through function pointers. However, if we provide a definition that *can* be
@@ -12,6 +11,3 @@ void *malloc(size_t s) {
     return malloc(s);
 }
 
-void *__otter_multi_gmalloc(size_t size) {
-    return __otter_multi_gmalloc(size);
-}

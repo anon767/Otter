@@ -11,6 +11,3 @@ void free(void *p) {
     free(p);
 }
 
-void __otter_multi_gfree(void *p) {
-    __otter_multi_gfree(p);
-}
