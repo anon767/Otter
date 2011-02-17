@@ -113,6 +113,7 @@ SYSCALL_FILES := \
 	stdlib/_free_r.c \
 	stdlib/_malloc_r.c \
 	stdlib/_realloc_r.c \
+	stdlib/abort.c \
 	stdlib/calloc.c \
 	stdlib/free.c \
 	stdlib/malloc.c \
