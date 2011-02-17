@@ -1046,13 +1046,14 @@ let collect_ptset_slow (l : c_absloc) : abslocset =
         else
           let li = find l in
             IntHash.add onpath stamp ();
-            B.iter
-              (fun lb -> li.aliases <- C.union li.aliases (flow_step lb.info))
-              li.lbounds;
-            li.aliases
+            B.fold
+              (fun lb aliases -> C.union aliases (flow_step lb.info))
+              li.lbounds
+              li.aliases
   in
     insist (can_query_graph ()) "collect_ptset_slow can't query graph";
     let aliases = flow_step l in
+    (find l).aliases <- aliases;
     set_flow_computed l;
     aliases
 
