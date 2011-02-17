@@ -82,6 +82,7 @@ int __otter_libc_setsockopt_sol_socket(struct __otter_fs_sock_data* sock, int op
 	{
 		/* TODO: impliment more of these */
 		case SO_REUSEADDR:
+		case SO_ACCEPTCONN:
 		case SO_KEEPALIVE:
 		case SO_DONTROUTE:
 		case SO_OOBINLINE:
@@ -101,7 +102,6 @@ int __otter_libc_setsockopt_sol_socket(struct __otter_fs_sock_data* sock, int op
 				sock->options &= ~option_name;
 			}
 			return(0);
-		case SO_ACCEPTCONN:
 		case SO_BROADCAST:
 		case SO_DEBUG:
 		case SO_ERROR:
