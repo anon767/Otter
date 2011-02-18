@@ -1,6 +1,7 @@
-#pragma expect_return()
-#pragma expect_return()
-#pragma no_other_results
+#pragma entry_function("foo")
+#pragma time_limit(1)
+#pragma expect_return(__return_code__ == 1) /* for the assignment to the non-null leaf node */
+#pragma no_other_abandoned
 
 /* This tests that malloc'ed structs reached via a pointer to a field are initialized correctly. */
 
@@ -9,14 +10,15 @@ struct s {
     int *a;
     int b;
 };
-void foo(void) {
+int foo(void) {
     if (x) {
         *x = 1;
+        return 1;
     }
+    return 0;
 }
 int main(void) {
-    struct s * y = (struct s *)malloc(sizeof(struct s));
+    struct s * y = malloc(sizeof(struct s));
     x = &y->a;
-    foo();
-    return 0;
+    return foo();
 }
