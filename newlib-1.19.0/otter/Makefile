@@ -117,8 +117,6 @@ SYSCALL_FILES := \
 	stdlib/_realloc_r.c \
 	stdlib/abort.c \
 	stdlib/calloc.c \
-	stdlib/free.c \
-	stdlib/malloc.c \
 	stdlib/realloc.c \
 	signal/kill.c \
 	signal/signal.c \
