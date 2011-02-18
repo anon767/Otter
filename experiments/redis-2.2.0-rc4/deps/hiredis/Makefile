@@ -31,7 +31,7 @@ else
   DYLIBNAME?=libhiredis.so
   DYLIB_MAKE_CMD?=gcc -shared -Wl,-soname,${DYLIBNAME} -o ${DYLIBNAME} ${OBJ}
   STLIBNAME?=libhiredis.a
-  STLIB_MAKE_CMD?=ar rcs ${STLIBNAME} ${OBJ}
+  STLIB_MAKE_CMD?=$(AR) rcs ${STLIBNAME} ${OBJ}
 endif
 CCOPT= $(CFLAGS) $(CCLINK)
 DEBUG?= -g -ggdb

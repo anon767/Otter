@@ -90,7 +90,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
-#include <sys/ioctl.h>
+//#include <sys/ioctl.h> // Removed for Otter
 #include <unistd.h>
 #include "linenoise.h"
 
@@ -176,11 +176,13 @@ static void linenoiseAtExit(void) {
     freeHistory();
 }
 
+// Modified for Otter
 static int getColumns(void) {
-    struct winsize ws;
-
-    if (ioctl(1, TIOCGWINSZ, &ws) == -1) return 80;
-    return ws.ws_col;
+  return 80;
+//    struct winsize ws;
+//
+//    if (ioctl(1, TIOCGWINSZ, &ws) == -1) return 80;
+//    return ws.ws_col;
 }
 
 static void refreshLine(int fd, const char *prompt, char *buf, size_t len, size_t pos, size_t cols) {

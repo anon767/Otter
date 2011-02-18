@@ -5,6 +5,11 @@ By Steve Reid <steve@edmweb.com>
 100% Public Domain
 */
 
+// The next 3 lines are needed for Otter/CIL to compile sha1.c
+#include <machine/endian.h>
+#include <stdint.h>
+#define u_int32_t uint32_t
+
 typedef struct {
     u_int32_t state[5];
     u_int32_t count[2];
