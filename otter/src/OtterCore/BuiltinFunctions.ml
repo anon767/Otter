@@ -885,12 +885,6 @@ let interceptor job job_queue interceptor =
 		(intercept_function_by_name_internal "__otter_mute"            otter_mute) @@
 		(intercept_function_by_name_internal "__otter_voice"           otter_voice) @@
 
-        (* multiotter functions to be ignored in single-process otter *)
-        (intercept_function_by_name_internal "__otter_multi_begin_atomic" noop) @@
-        (intercept_function_by_name_internal "__otter_multi_end_atomic" noop) @@
-        (intercept_function_by_name_internal "__otter_multi_gmalloc"   libc_malloc) @@
-        (intercept_function_by_name_internal "__otter_multi_gfree"     libc_free) @@
-
 		(* pass on the job when none of those match *)
 		interceptor
 
