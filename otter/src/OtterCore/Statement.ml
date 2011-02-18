@@ -133,9 +133,6 @@ let function_from_exp job instr fexp errors =
             FormatPlus.failwith "Non-constant function ptr not supported :@ @[%a@]" CilPrinter.exp fexp
 
 let exec_fundec job instr fundec lvalopt exps errors =
-    Output.set_mode Output.MSG_FUNC;
-    Output.printf "@[Enter function %a@]@\n" CilPrinter.fundec fundec;
-
     (* TODO: Profiler.start_fcall job fundec *)
 
     let stmt = job#stmt in
@@ -187,9 +184,16 @@ let exec_instr_call job instr lvalopt fexp exps errors =
                 (job_state::func_list, errors)
     in
     let func_list, errors = function_from_exp job instr fexp errors in
+    begin if List.length func_list > 1 then 
+        Output.set_mode Output.MSG_FUNC;
+        Output.printf "Symbolic function pointer encountered. Fork job %d to " job#path_id;
+        List.iter (fun (job, fundec) -> Output.printf "(job %d,function %s)" job#path_id fundec.svar.vname) func_list;
+        Output.printf "@\n"
+    end;
     let f, errors = process_func_list func_list errors in
     match f with
-        | _::_::_ -> (Fork(f), errors)
+        | _::_::_ -> 
+            (Fork(f), errors)
         | [a] -> (a, errors)
         | [] -> failwith "No valid function found!"
 
@@ -240,6 +244,17 @@ let exec_stmt job errors =
         then addStmtCoverage job whichBranch nextStmtOpt
         else job#exHist
     in
+
+    (* Print "Enter function ..." if it's the first statement of the function *)
+    (* FIXME: That means, if there's a label at the very beginning of the function, then
+     *        every time we go back to the first statement via goto, "Enter function ..."
+     *        will be printed, which can be confusing.
+     *)
+    begin if stmt.sid = 0 then
+        let fundec = List.hd job#state.callstack in
+        Output.set_mode Output.MSG_FUNC;
+        Output.printf "@[Enter function %a@]@\n" CilPrinter.fundec fundec;
+    end;
 
     Output.set_mode Output.MSG_STMT;
     Output.printf "@[%a@\n@]" CilPrinter.stmt_abbr stmt;
