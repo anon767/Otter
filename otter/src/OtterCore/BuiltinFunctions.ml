@@ -840,8 +840,7 @@ let otter_voice job retopt exps errors =
 let noop job _ _ errors =
     Job.Active (end_function_call job), errors
 
-let interceptor job job_queue interceptor =
-    Profiler.global#call "BuiltinFunctions.interceptor" begin fun () ->
+let interceptor job job_queue interceptor = Profiler.global#call "BuiltinFunctions.interceptor" begin fun () ->
 	try
 		(
 		(* intercept builtin functions *)
@@ -893,10 +892,9 @@ let interceptor job job_queue interceptor =
 	with Failure msg ->
 		if !Executeargs.arg_failfast then failwith msg;
 		(Job.Complete (Job.Abandoned (`Failure msg, job)), job_queue) (* TODO (see above) *)
-    end
+end
 
-let libc_interceptor job job_queue interceptor =
-    Profiler.global#call "BuiltinFunctions.libc_interceptor" begin fun () ->
+let libc_interceptor job job_queue interceptor = Profiler.global#call "BuiltinFunctions.libc_interceptor" begin fun () ->
 	try
 		(
 		(* assert.h *)
@@ -1079,4 +1077,4 @@ let libc_interceptor job job_queue interceptor =
 	with Failure msg ->
 		if !Executeargs.arg_failfast then failwith msg;
 		(Job.Complete (Job.Abandoned (`Failure msg, job)), job_queue)
-    end
+end

@@ -443,8 +443,7 @@ let errors_to_abandoned_list job errors =
     end errors
 
 
-let step job job_queue =
-    Profiler.global#call "Statement.step" begin fun () ->
+let step job job_queue = Profiler.global#call "Statement.step" begin fun () ->
     try
         let job_state, errors = match job#instrList with
             | [] -> exec_stmt job []
@@ -460,4 +459,4 @@ let step job job_queue =
         | Failure msg ->
             if !Executeargs.arg_failfast then failwith msg;
             (Complete (Abandoned (`Failure msg, job)), job_queue)
-    end
+end
