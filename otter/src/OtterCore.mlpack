@@ -8,6 +8,7 @@ OtterCore/Expression
 OtterCore/ProgramPoints
 OtterCore/Interceptor
 OtterCore/Job
+OtterCore/Log
 OtterCore/MemOp
 OtterCore/Operator
 OtterCore/Printer

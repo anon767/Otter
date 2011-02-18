@@ -52,6 +52,7 @@ let main_loop interceptor queue reporter =
         let rec run (queue, reporter) =
             match queue#get with
                 | Some (queue, job) ->
+                    Log.set_output_formatter job;
                     let result = Job.Complete (Job.Abandoned (`Failure "(Path execution not finished)", job)) in
                     let reporter = reporter#report result in
                     run (queue, reporter)
