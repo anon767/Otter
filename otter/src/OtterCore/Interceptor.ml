@@ -14,19 +14,33 @@ let set_output_formatter_interceptor job job_queue interceptor =
     interceptor job job_queue
 
 let intercept_function_by_name_internal target_name replace_func job job_queue interceptor =
-	(* Replace a C function with Otter code *)
-	match job#instrList with
-		| (Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc) as instr)::_ when varinfo.Cil.vname = target_name ->
-			Output.set_mode Output.MSG_STMT;
-			Output.printf "%a@\n" Printcil.instr instr;
-			let job_state, errors = replace_func job retopt exps [] in
-			if errors = [] then
-				(job_state, job_queue)
-			else
-				let abandoned_job_states = Statement.errors_to_abandoned_list job errors in
-				(Job.Fork (job_state::abandoned_job_states), job_queue)
-		| _ ->
-			interceptor job job_queue
+    (* Replace a C function with Otter code *)
+    let run_varinfo job retopt varinfo exps instr =
+        Output.set_mode Output.MSG_STMT;
+        Output.printf "%a@\n" Printcil.instr instr;
+        Output.printf "Built-in function %s is run@\n" varinfo.Cil.vname;
+        let job_state, errors = replace_func job retopt exps [] in
+        if errors = [] then
+            (job_state, job_queue)
+        else
+            let abandoned_job_states = Statement.errors_to_abandoned_list job errors in
+            (Job.Fork (job_state::abandoned_job_states), job_queue)
+    in
+    match job#instrList with
+        | (Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, _) as instr)::_ when varinfo.Cil.vname = target_name ->
+            run_varinfo job retopt varinfo exps instr
+        | (Cil.Call(retopt, Cil.Lval(Cil.Mem(fexp), Cil.NoOffset), exps, _) as instr)::_ ->
+            (* Caution: This is done for each call to intercept_function_by_name_internal *)
+            (* Caution: Errors from rval are ignored *)
+            let _, bytes, _  = Expression.rval job fexp [] in 
+            begin match bytes with
+                | OtterBytes.Bytes.Bytes_FunPtr varinfo when varinfo.Cil.vname = target_name ->
+                    run_varinfo job retopt varinfo exps instr
+                | _ ->
+                    interceptor job job_queue
+            end
+        | _ ->
+            interceptor job job_queue
 
 let intercept_function_by_name_external target_name replace_name job job_queue interceptor =
 	(* Replace a C function with another C function *)
