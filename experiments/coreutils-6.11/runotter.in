@@ -6,7 +6,6 @@ OTTER_CMD="$NEWLIB_OTTER/otter-with-libc"
 
 "$OTTER_CMD" \
     --doRunRmtmps --doexecute \
-    --queue=KLEE \
     --lineCov \
     --initMallocZero \
     --initLocalZero \
