@@ -449,7 +449,7 @@ let rec eval pc bytes =
       (* Operation on two function pointers. Only equality and disequality are allowed. *)
       | Bytes_Op(op, [(Bytes_FunPtr f1,_); (Bytes_FunPtr f2,_)]) ->
             (match op with
-                | OP_EQ -> Ternary.of_bool (f1 = f2)
+                | OP_EQ -> Ternary.of_bool (f1 == f2)
                 | OP_NE -> Ternary.of_bool (f1 <> f2)
                 | _ -> FormatPlus.failwith "Invalid operation on function pointers: %a" BytesPrinter.bytes bytes
             )
