@@ -185,10 +185,12 @@ let exec_instr_call job instr lvalopt fexp exps errors =
     in
     let func_list, errors = function_from_exp job instr fexp errors in
     begin if List.length func_list > 1 then 
-        Output.set_mode Output.MSG_FUNC;
-        Output.printf "Symbolic function pointer encountered. Fork job %d to " job#path_id;
-        List.iter (fun (job, fundec) -> Output.printf "(job %d,function %s)" job#path_id fundec.svar.vname) func_list;
-        Output.printf "@\n"
+        begin
+            Output.set_mode Output.MSG_FUNC;
+            Output.printf "Symbolic function pointer encountered. Fork job %d to " job#path_id;
+            List.iter (fun (job, fundec) -> Output.printf "(job %d,function %s)" job#path_id fundec.svar.vname) func_list;
+            Output.printf "@\n"
+        end
     end;
     let f, errors = process_func_list func_list errors in
     match f with
