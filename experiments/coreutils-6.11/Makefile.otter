@@ -36,15 +36,15 @@ make:
 # Generate a list of functions defined in lib/.
 # They are excluded from coreutils' coverage.
 list:
-	$(trunk)/otter/otter.pl --merge --dofindFns -Llib -lcoreutils  > libcoreutils_functions
+	$(trunk)/otter/otter.pl --merge --dofindFns -Llib -lcoreutils  > benchmark/libcoreutils_functions
 
 # Generate a script to run otter on coreutils' programs.
 runotter:
-	sed "s|@OTTER_TRUNK@|\"$(PWD)/../..\"|" runotter.in > runotter && chmod +x runotter
+	sed "s|@OTTER_TRUNK@|\"$(PWD)/../..\"|" benchmark/runotter.in > benchmark/runotter && chmod +x benchmark/runotter
 
 clean:
 	rm src/*_comb.c
-	rm libcoreutils_functions
+	rm benchmark/libcoreutils_functions benchmark/runotter
 
 distclean: clean
 	make distclean

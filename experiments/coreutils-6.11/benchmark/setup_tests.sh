@@ -9,7 +9,7 @@ fi
 base="$1"
 exp_name="$(echo $2|sed 's/ /_/g')"
 exp_base="$base/otter_$(date "+%Y_%m_%d_%H")_$exp_name"
-runotter="$(pwd)/../runotter"
+runotter="$(pwd)/runotter"
 
 mkdir -p "$exp_base"
 chmod 700 "$exp_base"

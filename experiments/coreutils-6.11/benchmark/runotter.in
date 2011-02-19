@@ -10,8 +10,8 @@ OTTER_CMD="$NEWLIB_OTTER/otter-with-libc"
     --initMallocZero \
     --initLocalZero \
     --untracked-functions="$NEWLIB_OTTER/library_functions" \
-    --untracked-functions="$COREUTILS/libcoreutils_functions" \
-    --untracked-functions="$COREUTILS/other_functions" \
-    "$COREUTILS/__otter_main_driver.c" --mainfn=__otter_main_driver \
+    --untracked-functions="$COREUTILS/benchmark/libcoreutils_functions" \
+    --untracked-functions="$COREUTILS/benchmark/other_functions" \
+    "$COREUTILS/benchmark/__otter_main_driver.c" --mainfn=__otter_main_driver \
     -lm \
     "$@"
