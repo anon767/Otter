@@ -27,6 +27,7 @@ let _ =
         TestOtterCore.Coverage.testsuite;
         TestOtterCore.SymbolicPointers.testsuite;
         TestOtterJob.FileJobs.testsuite;
+        TestOtterCFG.DistanceToTargets.testsuite;
         TestOtterPragmaTests.OtterPragmaTestsTests.testsuite;
         TestOtterIntegration.IntegrationTests.testsuite;
         TestOtterSystem.SystemTests.testsuite;
