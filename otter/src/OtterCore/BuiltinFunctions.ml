@@ -858,7 +858,7 @@ let otter_instr_mark job retopt exps errors =
     let job = end_function_call job in
     (Job.Active job, errors)
 
-let otter_distance_from_mark job retopt exps errors =
+let otter_distance_from_instr_mark job retopt exps errors =
     let exp = get_lone_arg exps in
     let index = get_constant_int exp in
     let distance = 
@@ -920,8 +920,8 @@ let interceptor job job_queue interceptor = Profiler.global#call "BuiltinFunctio
 		(intercept_function_by_name_internal "__PRINT_STATE"           otter_print_state) @@
 		(intercept_function_by_name_internal "__otter_mute"            otter_mute) @@
 		(intercept_function_by_name_internal "__otter_voice"           otter_voice) @@
-		(intercept_function_by_name_internal "__otter_instr_mark"          otter_instr_mark) @@
-		(intercept_function_by_name_internal "__otter_distance_from_mark"  otter_distance_from_mark) @@
+		(intercept_function_by_name_internal "__otter_instr_mark"                otter_instr_mark) @@
+		(intercept_function_by_name_internal "__otter_distance_from_instr_mark"  otter_distance_from_instr_mark) @@
 
 		(* pass on the job when none of those match *)
 		interceptor
