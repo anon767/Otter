@@ -861,9 +861,13 @@ let otter_instr_mark job retopt exps errors =
 let otter_distance_from_mark job retopt exps errors =
     let exp = get_lone_arg exps in
     let index = get_constant_int exp in
-    let instruction_src = IndexMap.find index (!instructions_map) in
-    let instruction_des = Job.get_instruction job in
-    let distance = OtterCFG.DistanceToTargets.find instruction_src [instruction_des] in
+    let distance = 
+        try
+            let instruction_src = IndexMap.find index (!instructions_map) in
+            let instruction_des = Job.get_instruction job in
+            OtterCFG.DistanceToTargets.find instruction_src [instruction_des] 
+        with Not_found -> max_int (* denotes infinite distance, same as DistanceToReturn *)
+    in
     let ret = Bytes.int_to_bytes distance in
     let job, errors = set_return_value job retopt ret errors in
     let job = end_function_call job in
