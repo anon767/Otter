@@ -5,9 +5,9 @@ BackOtter/BackOtterReporter
 BackOtter/BackOtterTargets
 BackOtter/BackOtterTimer
 BackOtter/BackOtterUtilities
-BackOtter/BackwardRank
 BackOtter/BidirectionalQueue
 BackOtter/ClosestToTargetsStrategy
 BackOtter/ContentQueue
 BackOtter/CovToFundec
 BackOtter/FunctionQueue
+BackOtter/FunctionRanker
