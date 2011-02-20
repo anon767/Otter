@@ -162,6 +162,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
                           ?ratio reporter entry_job =
 
 	Random.init random_seed;
+    BackOtterTimer.reset_time ();
 
     let file = entry_job#file in
 

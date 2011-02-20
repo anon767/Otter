@@ -5,19 +5,22 @@ let timing_methods = [
 
 let default_timing_method = ref `TimeStpCount
 
-let get_time_now =
-    match !default_timing_method with
-    | `TimeReal -> Unix.gettimeofday
-    | `TimeStpCount ->
-        fun () ->
-            let count = DataStructures.NamedCounter.get "stpc_query" in
-            float_of_int count
 
 (* time of (entry_fn, other_fn) *)
 let timer_ref = ref (0.0, 0.0)
 
+let reset_time () = timer_ref := ref (0.0, 0.0)
+
 (* Non recursion safe *)
 let time tkind fn = 
+    let get_time_now =
+        match !default_timing_method with
+        | `TimeReal -> Unix.gettimeofday
+        | `TimeStpCount ->
+            fun () ->
+                let count = DataStructures.NamedCounter.get "stpc_query" in
+                float_of_int count
+    in
     let time_elapsed = get_time_now () in
     let result = fn () in
     let time_elapsed = get_time_now () -. time_elapsed in
