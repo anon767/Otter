@@ -846,15 +846,14 @@ let otter_voice job retopt exps errors =
 	let job = end_function_call job in
 	(Job.Active job, errors)
 
-(* A global map that maps integer indices to Instruction.t *)
+(* A global map that maps integer indices to jobs *)
 module IndexMap = State.IndexMap
-let instructions_map = ref IndexMap.empty
+let job_map : Job.t IndexMap.t ref = ref IndexMap.empty  (* TODO: can this be polymorphic? *)
 
 let otter_instr_mark job retopt exps errors =
     let exp = get_lone_arg exps in
     let index = get_constant_int exp in
-    let instruction = Job.get_instruction job in
-    instructions_map := IndexMap.add index instruction (!instructions_map);
+    job_map := IndexMap.add index job (!job_map);
     let job = end_function_call job in
     (Job.Active job, errors)
 
@@ -863,9 +862,11 @@ let otter_distance_from_instr_mark job retopt exps errors =
     let index = get_constant_int exp in
     let distance = 
         try
-            let instruction_src = IndexMap.find index (!instructions_map) in
+            let job_src = IndexMap.find index (!job_map) in
+            let instruction_src = Job.get_instruction job_src in
             let instruction_des = Job.get_instruction job in
-            OtterCFG.DistanceToTargets.find instruction_src [instruction_des] 
+            let context = Job.get_instruction_context job_src in
+            OtterCFG.DistanceToTargets.find_in_context instruction_src context [instruction_des] 
         with Not_found -> max_int (* denotes infinite distance, same as DistanceToReturn *)
     in
     let ret = Bytes.int_to_bytes distance in
