@@ -109,7 +109,7 @@ let line_target_interceptor job job_queue interceptor =
 
 
 (** Main symbolic execution loop. Copied from OtterCore.Driver. *)
-let main_loop entry_fn timer_ref interceptor queue reporter =
+let main_loop entry_fn interceptor queue reporter =
     (* set up a checkpoint to rollback to upon SignalException *)
     let checkpoint = ref (queue, reporter) in
     try
@@ -123,17 +123,9 @@ let main_loop entry_fn timer_ref interceptor queue reporter =
                         (* The difference between timing here and timing in BidirectionalQueue is that
                          * here we only time the stepping of the job, whereas in BidirectionalQueue we
                          * also include the time of getting a job. *)
-                        let time_elapsed = BackOtterTimer.get_time_now () in
-                        let result = step job in
-                        let time_elapsed = BackOtterTimer.get_time_now () -. time_elapsed in
                         let fundec = BackOtterUtilities.get_origin_function job in
-                        let entry_time, other_time = !timer_ref in
-                        timer_ref := (
-                            if fundec == entry_fn then
-                                (entry_time +. time_elapsed, other_time)
-                            else
-                                (entry_time, other_time +. time_elapsed));
-                        result
+                        let tkind = if fundec == entry_fn then `TKindEntry else `TKindOther in
+                        BackOtterTimer.time tkind (fun () -> step job)
                     in
                     let rec process_result (queue, reporter) result =
                         let reporter = reporter#report result in
@@ -188,9 +180,6 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
       with Not_found -> FormatPlus.failwith "Failure function %s not found" fname
     in
 
-    (* Timer. Currently just a pair of times *)
-    let timer_ref = ref (0.0, 0.0) in
-
     (* Add failure_fn as a target *)
     targets_ref := BackOtterTargets.add failure_fn [] (!targets_ref);
 
@@ -210,7 +199,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     ) b_queue starter_fundecs in
 
     (* A queue that prioritizes jobs *)
-    let queue = new BidirectionalQueue.t ?ratio file targets_ref timer_ref entry_fn failure_fn entry_job f_queue b_queue starter_fundecs in
+    let queue = new BidirectionalQueue.t ?ratio file targets_ref entry_fn failure_fn entry_job f_queue b_queue starter_fundecs in
 
     (* Overlay the target tracker on the reporter *)
     let target_tracker = new target_tracker reporter entry_fn targets_ref in
@@ -229,7 +218,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
                 Interceptor.identity_interceptor
         )
     in
-    let queue, target_tracker = main_loop entry_fn timer_ref interceptor queue target_tracker in
+    let queue, target_tracker = main_loop entry_fn interceptor queue target_tracker in
 
     (* Output failing paths for non-entry_fn *)
     List.iter (fun fundec ->

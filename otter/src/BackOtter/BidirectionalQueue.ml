@@ -59,7 +59,6 @@ let function_call_of_latest_decision =
 class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                file
                targets_ref
-               timer_ref
                entry_fn
                failure_fn
                entry_job
@@ -305,7 +304,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
 
                         (* Determine whether to run entry function jobs or other function jobs *)
                         let want_process_entryfn =
-                            let entryfn_time_elapsed, otherfn_time_elapsed = !timer_ref in
+                            let entryfn_time_elapsed, otherfn_time_elapsed = !BackOtterTimer.timer_ref in
                             let total_elapsed = entryfn_time_elapsed +. otherfn_time_elapsed in
                             if total_elapsed <= 0.0001 (* epsilon *) then ratio > 0.0
                             else entryfn_time_elapsed /. total_elapsed <= ratio
