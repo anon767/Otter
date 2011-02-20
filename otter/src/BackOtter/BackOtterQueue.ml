@@ -34,10 +34,10 @@ let get_default_fqueue targets_ref = get targets_ref !default_fqueue
 
 (* Backward *)
 let get_function_backward_queue targets_ref function_queue queue =
-    new FunctionQueue.t (BackwardRank.get function_queue) (fun () -> get targets_ref queue)
+    new FunctionQueue.t (FunctionRanker.get function_queue) (fun () -> get targets_ref queue)
 
 let default_bqueue = ref `ClosestToTargets
-let get_default_bqueue targets_ref = get_function_backward_queue targets_ref !BackwardRank.default_brank !default_bqueue
+let get_default_bqueue targets_ref = get_function_backward_queue targets_ref !FunctionRanker.default_brank !default_bqueue
 
 let options = [
     "--forward-queue",

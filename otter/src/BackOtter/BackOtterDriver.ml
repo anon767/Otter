@@ -263,7 +263,7 @@ let doit file =
 
     let find_tag_name tag assocs = List.assoc tag (List.map (fun (a,b)->(b,a)) assocs) in
     Output.must_printf "Forward strategy: %s@\n" (find_tag_name (!BackOtterQueue.default_fqueue) BackOtterQueue.queues);
-    Output.must_printf "Backward function pick: %s@\n" (find_tag_name (!BackwardRank.default_brank) BackwardRank.queues);
+    Output.must_printf "Backward function pick: %s@\n" (find_tag_name (!FunctionRanker.default_brank) FunctionRanker.queues);
     Output.must_printf "Backward strategy: %s@\n" (find_tag_name (!BackOtterQueue.default_bqueue) BackOtterQueue.queues);
     Output.must_printf "Ratio: %0.2f@\n" !BidirectionalQueue.default_bidirectional_search_ratio ;
 
@@ -358,7 +358,7 @@ let feature = {
     Cil.fd_name = "backotter";
     Cil.fd_enabled = ref false;
     Cil.fd_description = "Call-chain backwards symbolic executor for C";
-    Cil.fd_extraopt = options @ BackOtterReporter.options @ BackOtterTimer.options @ BidirectionalQueue.options @ BackOtterQueue.options @ BackwardRank.options;
+    Cil.fd_extraopt = options @ BackOtterReporter.options @ BackOtterTimer.options @ BidirectionalQueue.options @ BackOtterQueue.options @ FunctionRanker.options;
     Cil.fd_post_check = true;
     Cil.fd_doit = doit
 }

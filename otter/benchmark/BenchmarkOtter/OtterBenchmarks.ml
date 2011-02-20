@@ -20,12 +20,15 @@ let options =
     BackOtter.BackOtterDriver.options @
     BackOtter.BackOtterQueue.options @
     BackOtter.BackOtterReporter.options @
-    BackOtter.BackwardRank.options @
+    BackOtter.BackOtterTimer.options @
     BackOtter.BidirectionalQueue.options @
+    BackOtter.FunctionRanker.options @
     OtterBytes.Stp.options @
     OtterCore.Executeargs.options @
+    OtterCore.ProgramPoints.options @
     OtterCore.SymbolicPointers.options @
-    OtterJob.Job.options @
+    OtterCore.TrackingFunctions.options @
+    OtterQueue.ClosestToUncoveredStrategy.options @
     OtterQueue.Queue.options @
     OtterReporter.BasicReporter.options
 
@@ -98,7 +101,7 @@ let benchmarks ?(div_num=1) ?(div_base=1) argv_array =
             let backotter_bqueues = List.filter (fun (_, queue) -> List.mem queue wanted_queues) BackOtter.BackOtterQueue.queues in
             let backotter_fqueues = List.filter (fun (_, queue) -> List.mem queue wanted_queues) BackOtter.BackOtterQueue.queues in
             (* Disable RandomFunction for now *)
-            let backotter_branks = List.filter (fun (_, queue) -> List.mem queue wanted_ranks) BackOtter.BackwardRank.queues in
+            let backotter_branks = List.filter (fun (_, queue) -> List.mem queue wanted_ranks) BackOtter.FunctionRanker.queues in
 
             let rec compose fn lst = function
                 | head :: tail -> (List.map (fun ele -> fn ele head) lst) @ (compose fn lst tail)
