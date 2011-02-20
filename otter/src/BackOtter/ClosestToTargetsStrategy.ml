@@ -6,14 +6,14 @@ open OtterCFG
 open OtterCore
 
 
-class ['self] t targets_ref = object (self : 'self)
+class ['self] t = object (self : 'self)
 
     method add job = self
 
     method remove job = self
 
     method weight job =
-        let target_fundecs = BackOtterTargets.get_fundecs (!targets_ref) in
+        let target_fundecs = BackOtterTargets.get_target_fundecs () in
         (* target_fundecs includes failure_fn *)
         let distance = BackOtterUtilities.get_distance_to_targets target_fundecs job in
         1. /. float_of_int (distance)

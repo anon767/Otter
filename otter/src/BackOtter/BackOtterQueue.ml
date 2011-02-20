@@ -14,7 +14,7 @@ module RoundRobinQueue = OtterQueue.RoundRobinQueue
 (* Forward *)
 let queues = OtterQueue.Queue.queues
 
-let rec get targets_ref = function
+let rec get = function
     | `BreadthFirst -> new RankedQueue.t [ new BreadthFirstStrategy.t ]
     | `DepthFirst -> new RankedQueue.t [ new DepthFirstStrategy.t ]
     | `RandomPath -> new RandomPathQueue.t
@@ -23,21 +23,21 @@ let rec get targets_ref = function
     | `Generational `Random -> new RankedQueue.t [ new GenerationalStrategy.t ]
     | `LeastCovered -> new RankedQueue.t  [ new LeastCoveredStrategy.t ]
     | `ClosestToUncovered -> new RankedQueue.t [ new ClosestToUncoveredStrategy.t ]
-    | `ClosestToTargets -> new RankedQueue.t [ new ClosestToTargetsStrategy.t targets_ref ]
-    | `Generational `ClosestToTargets -> new RankedQueue.t [ new GenerationalStrategy.t; new ClosestToTargetsStrategy.t targets_ref ]
-    | `RoundRobin queues -> new RoundRobinQueue.t (List.map (get targets_ref) queues)
-    | `KLEE -> new BatchQueue.t (get targets_ref (`RoundRobin [ `ClosestToUncovered; `RandomPath ]))
+    | `ClosestToTargets -> new RankedQueue.t [ new ClosestToTargetsStrategy.t ]
+    | `Generational `ClosestToTargets -> new RankedQueue.t [ new GenerationalStrategy.t; new ClosestToTargetsStrategy.t ]
+    | `RoundRobin queues -> new RoundRobinQueue.t (List.map get queues)
+    | `KLEE -> new BatchQueue.t (get (`RoundRobin [ `ClosestToUncovered; `RandomPath ]))
     | `SAGE -> new RankedQueue.t [ new GenerationalStrategy.t; new ClosestToUncoveredStrategy.t ]
 
 let default_fqueue = ref (`Generational `BreadthFirst)
-let get_default_fqueue targets_ref = get targets_ref !default_fqueue
+let get_default_fqueue () = get !default_fqueue
 
 (* Backward *)
-let get_function_backward_queue targets_ref function_queue queue =
-    new FunctionQueue.t (FunctionRanker.get function_queue) (fun () -> get targets_ref queue)
+let get_function_backward_queue function_queue queue =
+    new FunctionQueue.t (FunctionRanker.get function_queue) (fun () -> get queue)
 
 let default_bqueue = ref `ClosestToTargets
-let get_default_bqueue targets_ref = get_function_backward_queue targets_ref !FunctionRanker.default_brank !default_bqueue
+let get_default_bqueue () = get_function_backward_queue !FunctionRanker.default_brank !default_bqueue
 
 let options = [
     "--forward-queue",

@@ -58,7 +58,6 @@ let function_call_of_latest_decision =
 (* TODO: package the long list of arguments into BackOtterProfile.t *)
 class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                file
-               targets_ref
                entry_fn
                failure_fn
                entry_job
@@ -148,7 +147,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                             (fun () -> function_call_of_latest_decision job#decision_path)
                     with
                     | Some (fundec) ->
-                        let failing_paths = BackOtterTargets.get fundec (!targets_ref) in
+                        let failing_paths = BackOtterTargets.get_paths fundec in
                         let failing_paths_length = List.length failing_paths in
                         if failing_paths_length = 0 then
                             jid_to_job, jid_to_bounding_paths, bounded_jobqueue (* Not a target function *)
@@ -200,8 +199,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                     Some ({< bounded_jobqueue = bounded_jobqueue; >}, job)
                 | None ->
                     (* For each existing job, see if it can be bounded. If so, update bounded_jobqueue et al *)
-                    let targets, new_failing_path = BackOtterTargets.get_last_failing_path (!targets_ref) in
-                    targets_ref := targets;
+                    let new_failing_path = BackOtterTargets.get_last_failing_path () in
                     let jid_to_job, jid_to_bounding_paths, bounded_jobqueue =
                         match new_failing_path with
                         | Some (target_fundec, failing_path) ->
@@ -267,8 +265,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
 
                         (* Set up targets, which maps target functions to their failing paths, and
                          * target_fundecs, which is basically the key set of targets *)
-                        let targets = !targets_ref in
-                        let target_fundecs = BackOtterTargets.get_fundecs targets in
+                        let target_fundecs = BackOtterTargets.get_target_fundecs () in
 
                         (* Create new jobs for callers of new targets/failure_fn *)
                         let origin_fundecs', otherfn_jobqueue =
@@ -299,7 +296,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                         (* debug, Debug, DEBUG (warning: these can slow down regular_get) *)
                         Output.debug_printf "Number of entry function jobs: %d@\n" (entryfn_jobqueue#length);
                         Output.debug_printf "Number of other function jobs: %d@\n" (otherfn_jobqueue#length);
-                        List.iter (fun f -> Output.debug_printf "Target function: %s@\n" f.svar.vname) (BackOtterTargets.get_fundecs targets);
+                        List.iter (fun f -> Output.debug_printf "Target function: %s@\n" f.svar.vname) (BackOtterTargets.get_target_fundecs ());
                         List.iter (fun f -> Output.debug_printf "Origin function: %s@\n" f.svar.vname) (origin_fundecs');
 
                         (* Determine whether to run entry function jobs or other function jobs *)

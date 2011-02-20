@@ -11,7 +11,7 @@ let default_conditionals_forking_limit = ref max_int
 
 let arg_line_targets = ref []
 
-class ['self] target_tracker delegate entry_fn targets_ref =
+class ['self] target_tracker delegate entry_fn =
 object (_ : 'self)
     val delegate = delegate
     method report job_state =
@@ -24,7 +24,7 @@ object (_ : 'self)
                 (* Failing path has least recent decision first. See the comment in BidirectionalQueue. *)
                 let failing_path = List.rev job_result#decision_path in
                 begin try
-                    targets_ref := BackOtterTargets.add fundec failing_path (!targets_ref);
+                    BackOtterTargets.add_path fundec failing_path;
                     job_state
                 with Invalid_argument _ ->
                     Job.Complete (Job.Truncated (`SummaryAbandoned (`FailureReached, Job.get_loc job_result), job_result))
@@ -34,7 +34,7 @@ object (_ : 'self)
                 (* Failing path has least recent decision first. See the comment in BidirectionalQueue. *)
                 let failing_path = List.rev job_result#decision_path in
                 begin try
-                    targets_ref := BackOtterTargets.add fundec failing_path (!targets_ref);
+                    BackOtterTargets.add_path fundec failing_path;
                     job_state
                 with Invalid_argument _ ->
                     Job.Complete (Job.Truncated (`SummaryAbandoned (`Failure msg, Job.get_loc job_result), job_result))
@@ -156,13 +156,13 @@ let main_loop entry_fn interceptor queue reporter =
 
 
 let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
-                          ?(targets_ref=ref BackOtterTargets.empty)
-                          ?(f_queue=BackOtterQueue.get_default_fqueue targets_ref)
-                          ?(b_queue=BackOtterQueue.get_default_bqueue targets_ref)
+                          ?(f_queue=BackOtterQueue.get_default_fqueue ())
+                          ?(b_queue=BackOtterQueue.get_default_bqueue ())
                           ?ratio reporter entry_job =
 
 	Random.init random_seed;
     BackOtterTimer.reset_time ();
+    BackOtterTargets.reset_targets ();
 
     let file = entry_job#file in
 
@@ -182,7 +182,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     in
 
     (* Add failure_fn as a target *)
-    targets_ref := BackOtterTargets.add failure_fn [] (!targets_ref);
+    BackOtterTargets.add_path failure_fn [];
 
     (* Wrap queues with ContentQueue *)
     let f_queue = new ContentQueue.t f_queue in
@@ -200,10 +200,10 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     ) b_queue starter_fundecs in
 
     (* A queue that prioritizes jobs *)
-    let queue = new BidirectionalQueue.t ?ratio file targets_ref entry_fn failure_fn entry_job f_queue b_queue starter_fundecs in
+    let queue = new BidirectionalQueue.t ?ratio file entry_fn failure_fn entry_job f_queue b_queue starter_fundecs in
 
     (* Overlay the target tracker on the reporter *)
-    let target_tracker = new target_tracker reporter entry_fn targets_ref in
+    let target_tracker = new target_tracker reporter entry_fn in
 
     (* Define interceptor *)
     let interceptor =
@@ -227,15 +227,15 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
             Output.debug_printf "@\nFailing path(s) for %s:@\n" fundec.svar.vname;
             List.iter (fun decisions ->
                 Output.debug_printf "Failing path: @[%a@]@\n" Decision.print_decisions decisions)
-                (BackOtterTargets.get fundec (!targets_ref))
+                (BackOtterTargets.get_paths fundec)
         )
-    ) (BackOtterTargets.get_fundecs (!targets_ref));
+    ) (BackOtterTargets.get_target_fundecs ());
 
     (* Output failing paths for entry_fn *)
     Output.must_printf "@\nFailing path(s) for %s:@\n" entry_fn.svar.vname;
     List.iter (fun decisions ->
         Output.must_printf "Failing path: @[%a@]@\n" Decision.print_decisions decisions)
-        (BackOtterTargets.get entry_fn (!targets_ref));
+        (BackOtterTargets.get_paths entry_fn);
 
     (queue, target_tracker#delegate)
 
