@@ -7,12 +7,6 @@ open State
 open Job
 open Cil
 
-let timing_methods = [
-    "real", `TimeReal;
-    "stpcount", `TimeStpCount;
-]
-
-let default_timing_method = ref `TimeStpCount
 let default_conditionals_forking_limit = ref max_int
 
 let arg_line_targets = ref []
@@ -114,14 +108,6 @@ let line_target_interceptor job job_queue interceptor =
         interceptor job job_queue
 
 
-let get_time_now =
-    match !default_timing_method with
-    | `TimeReal -> Unix.gettimeofday
-    | `TimeStpCount ->
-        fun () ->
-            let count = DataStructures.NamedCounter.get "stpc_query" in
-            float_of_int count
-
 (** Main symbolic execution loop. Copied from OtterCore.Driver. *)
 let main_loop entry_fn timer_ref interceptor queue reporter =
     (* set up a checkpoint to rollback to upon SignalException *)
@@ -137,9 +123,9 @@ let main_loop entry_fn timer_ref interceptor queue reporter =
                         (* The difference between timing here and timing in BidirectionalQueue is that
                          * here we only time the stepping of the job, whereas in BidirectionalQueue we
                          * also include the time of getting a job. *)
-                        let time_elapsed = get_time_now () in
+                        let time_elapsed = BackOtterTimer.get_time_now () in
                         let result = step job in
-                        let time_elapsed = get_time_now () -. time_elapsed in
+                        let time_elapsed = BackOtterTimer.get_time_now () -. time_elapsed in
                         let fundec = BackOtterUtilities.get_origin_function job in
                         let entry_time, other_time = !timer_ref in
                         timer_ref := (
@@ -376,9 +362,6 @@ let options = [
     "--conditionals-forking-limit",
         Arg.Set_int default_conditionals_forking_limit,
         "<limit> Set the limit in conditionals forking (default: max_int (== don't use))";
-    "--timing-method",
-        Arg.Symbol (fst (List.split timing_methods), fun name -> default_timing_method := List.assoc name timing_methods),
-        "<timing method> Set the default timing method (default: " ^ (fst (List.find (fun (_, x) -> x = !default_timing_method) timing_methods)) ^ ")";
 ]
 
 
@@ -386,7 +369,7 @@ let feature = {
     Cil.fd_name = "backotter";
     Cil.fd_enabled = ref false;
     Cil.fd_description = "Call-chain backwards symbolic executor for C";
-    Cil.fd_extraopt = options @ BackOtterReporter.options @ BidirectionalQueue.options @ BackOtterQueue.options @ BackwardRank.options;
+    Cil.fd_extraopt = options @ BackOtterReporter.options @ BackOtterTimer.options @ BidirectionalQueue.options @ BackOtterQueue.options @ BackwardRank.options;
     Cil.fd_post_check = true;
     Cil.fd_doit = doit
 }
