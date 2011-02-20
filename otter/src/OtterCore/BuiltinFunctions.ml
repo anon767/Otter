@@ -56,6 +56,15 @@ let get_lone_arg = function
   | [ x ] -> x
   | _ -> failwith "This function takes exactly one argument"
 
+(** Convenience function to receive a constant int value from an argument
+		@param exp the argument 
+        @raises Failure if the argument is not a constant int
+		@return the constant int
+*)
+let get_constant_int = function
+    | Const(CInt64(i64, _, _)) -> Int64.to_int i64
+    | _ -> failwith "Argument is not constant integer"
+
 (** Convenience function to assign a value to an optional return lvalue.
 		@param job is the symbolic executor job in which to evaluate the return lvalue
 		@param retopt is the optional return lvalue
@@ -837,6 +846,29 @@ let otter_voice job retopt exps errors =
 	let job = end_function_call job in
 	(Job.Active job, errors)
 
+(* A global map that maps integer indices to Instruction.t *)
+module IndexMap = State.IndexMap
+let instructions_map = ref IndexMap.empty
+
+let otter_instr_mark job retopt exps errors =
+    let exp = get_lone_arg exps in
+    let index = get_constant_int exp in
+    let instruction = Job.get_instruction job in
+    instructions_map := IndexMap.add index instruction (!instructions_map);
+    let job = end_function_call job in
+    (Job.Active job, errors)
+
+let otter_distance_from_mark job retopt exps errors =
+    let exp = get_lone_arg exps in
+    let index = get_constant_int exp in
+    let instruction_src = IndexMap.find index (!instructions_map) in
+    let instruction_des = Job.get_instruction job in
+    let distance = OtterCFG.DistanceToTargets.find instruction_src [instruction_des] in
+    let ret = Bytes.int_to_bytes distance in
+    let job, errors = set_return_value job retopt ret errors in
+    let job = end_function_call job in
+    (Job.Active job, errors)
+
 let noop job _ _ errors =
     Job.Active (end_function_call job), errors
 
@@ -884,6 +916,8 @@ let interceptor job job_queue interceptor = Profiler.global#call "BuiltinFunctio
 		(intercept_function_by_name_internal "__PRINT_STATE"           otter_print_state) @@
 		(intercept_function_by_name_internal "__otter_mute"            otter_mute) @@
 		(intercept_function_by_name_internal "__otter_voice"           otter_voice) @@
+		(intercept_function_by_name_internal "__otter_instr_mark"          otter_instr_mark) @@
+		(intercept_function_by_name_internal "__otter_distance_from_mark"  otter_distance_from_mark) @@
 
 		(* pass on the job when none of those match *)
 		interceptor
