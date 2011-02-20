@@ -9,7 +9,7 @@ let default_timing_method = ref `TimeStpCount
 (* time of (entry_fn, other_fn) *)
 let timer_ref = ref (0.0, 0.0)
 
-let reset_time () = timer_ref := ref (0.0, 0.0)
+let reset_time () = timer_ref := (0.0, 0.0)
 
 (* Non recursion safe *)
 let time tkind fn = 
