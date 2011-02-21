@@ -23,18 +23,13 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     (* Entry function set by --entryfn (default: main) *)
     let entry_fn = List.hd entry_job#state.callstack in
 
+    (* failure function set by --failurefn (default: __FAILURE) *)
+    let failure_fn = ProgramPoints.get_failure_fundec file in
+
+    BackOtterTargets.add_path failure_fn [];
+
     (* Setup max_function_name_length, to be used in set_output_formatter_interceptor *)
     BackOtterInterceptor.set_max_function_name_length (entry_fn :: (CilCallgraph.find_transitive_callees file entry_fn));
-
-    (* Failure function set by --failurefn (default: __FAILURE) *)
-    let failure_fn =
-      let fname = !Executeargs.arg_failurefn in
-      try FindCil.fundec_by_name file fname
-      with Not_found -> FormatPlus.failwith "Failure function %s not found" fname
-    in
-
-    (* Add failure_fn as a target *)
-    BackOtterTargets.add_path failure_fn [];
 
     (* Wrap queues with ContentQueue *)
     let f_queue = new ContentQueue.t f_queue in
@@ -53,7 +48,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     ) b_queue starter_fundecs in
 
     (* A queue that prioritizes jobs *)
-    let queue = new BidirectionalQueue.t ?ratio file entry_fn failure_fn entry_job f_queue b_queue starter_fundecs in
+    let queue = new BidirectionalQueue.t ?ratio file entry_fn entry_job f_queue b_queue starter_fundecs in
 
     (* Overlay the target tracker on the reporter *)
     let target_tracker = new BackOtterTargetTracker.t reporter entry_fn in

@@ -10,13 +10,10 @@ let distance_from_entryfn job =
     let distance = get_distance_from file entry_fn (get_origin_function job) in
     -. (float_of_int distance)
 
+(* TODO: this is not compatible with line-targets *)
 let distance_from_failurefn job =
     let file = job#file in
-    let failure_fn =
-        let fname = !Executeargs.arg_failurefn in
-        try FindCil.fundec_by_name file fname
-        with Not_found -> OcamlUtilities.FormatPlus.failwith "Failure function %s not found" fname
-    in
+    let failure_fn = ProgramPoints.get_failure_fundec file in
     let distance = get_distance_from file (get_origin_function job) failure_fn in
     -. (float_of_int distance)
 

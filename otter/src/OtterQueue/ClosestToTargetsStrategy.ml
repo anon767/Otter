@@ -23,11 +23,7 @@ class ['self] t = object (self : 'self)
                 DistanceToTargets.find_in_context source context target_instrs
         in
         let file = job#file in
-        let failure_fn =
-            let fname = !Executeargs.arg_failurefn in
-            try FindCil.fundec_by_name file fname
-            with Not_found -> OcamlUtilities.FormatPlus.failwith "Failure function %s not found" fname
-        in
+        let failure_fn = ProgramPoints.get_failure_fundec file in
         let distance = get_distance_to_targets [failure_fn] job in
         1. /. float_of_int (distance)
 end

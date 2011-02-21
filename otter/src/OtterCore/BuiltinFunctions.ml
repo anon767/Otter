@@ -845,7 +845,7 @@ let interceptor job job_queue interceptor = Profiler.global#call "BuiltinFunctio
 		(
 		(* intercept builtin functions *)
 		(                                  (*"__SYMBOLIC"*)            intercept_symbolic) @@
-		(intercept_function_by_name_internal (!Executeargs.arg_failurefn) otter_failure) @@
+		(intercept_function_by_name_internal (!ProgramPoints.failure_fname) otter_failure) @@
 
         (* libc functions that are built-in *)
 		(intercept_function_by_name_internal "__otter_get_allocated_size" otter_get_allocated_size) @@

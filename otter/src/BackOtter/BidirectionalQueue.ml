@@ -52,7 +52,6 @@ let function_call_of_latest_decision =
 class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                file
                entry_fn
-               failure_fn
                entry_job
                f_queue
                b_queue
@@ -265,7 +264,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                          * target_fundecs, which is basically the key set of targets *)
                         let target_fundecs = BackOtterTargets.get_target_fundecs () in
 
-                        (* Create new jobs for callers of new targets/failure_fn *)
+                        (* Create new jobs for callers of new targets *)
                         let origin_fundecs', otherfn_jobqueue =
                             Profiler.global#call "BidirectionalQueue.t#get/regular_get/create_new_jobs" begin fun () ->
                             List.fold_left (
@@ -288,7 +287,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                                 in
                                                 caller :: origin_fundecs, otherfn_jobqueue#put job
                                     ) (origin_fundecs, otherfn_jobqueue) callers
-                            ) (origin_fundecs, otherfn_jobqueue) (failure_fn :: target_fundecs)
+                            ) (origin_fundecs, otherfn_jobqueue) target_fundecs
                             end
                         in
 
