@@ -228,6 +228,7 @@ let run_core reporter job =
 let run_basic reporter job =
     let interceptor =
         Interceptor.set_output_formatter_interceptor
+        >>> Interceptor.function_pointer_interceptor
         >>> BuiltinFunctions.interceptor
     in
     run ~interceptor reporter job
@@ -241,6 +242,7 @@ let foo_interceptor job job_queue interceptor =
 let run_with_libc reporter job =
     let interceptor =
         Interceptor.set_output_formatter_interceptor
+        >>> Interceptor.function_pointer_interceptor
         >>> BuiltinFunctions.libc_interceptor
         >>> BuiltinFunctions.interceptor
         >>> foo_interceptor

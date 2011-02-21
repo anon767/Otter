@@ -88,6 +88,7 @@ let run reporter job =
 	LegacyDriver.main_loop 
 		get_job_multijob
 		(
+			Interceptor.function_pointer_interceptor @@
 			MultiInterceptor.unpack_job_interceptor @@
 			multi_set_output_formatter_interceptor @@@
 			MultiInterceptor.abandon_io_block_deadlock_interceptor @@@

@@ -1,7 +1,7 @@
 open OcamlUtilities
 open CilUtilities
 open State
-
+open OtterBytes
 
 let (@@) i1 i2 = fun a b -> i1 a b i2
 let (>>>) i1 i2 = fun a b k -> i1 a b (fun a b -> i2 a b k)
@@ -13,33 +13,71 @@ let set_output_formatter_interceptor job job_queue interceptor =
     Log.set_output_formatter job;
     interceptor job job_queue
 
+(** Interceptor which rewrites calls through function pointers into normal function calls *)
+let function_pointer_interceptor job job_queue interceptor =
+    match job#instrList with
+      | Cil.Call(retopt, Cil.Lval(Cil.Mem(fexp), Cil.NoOffset), exps, loc) as instr::instrs ->
+            let new_instrList varinfo =
+                Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc) :: instrs
+            in
+            let job, bytes, errors  = Expression.rval job fexp [] in
+            let getall fp =
+                let varinfos_and_pres, errors = Bytes.conditional__fold begin fun (varinfos_and_pres, errors) pre leaf ->
+                    match leaf with
+                      | Bytes.Bytes_FunPtr varinfo ->
+                            ((varinfo, pre)::varinfos_and_pres, errors)
+                      | _ ->
+                            (varinfos_and_pres, (job, `Failure "Invalid function pointer")::errors)
+                end ([], errors) fp in
+                let jobs = (job : #Info.t)#fork begin fun job (varinfo, pre) jobs ->
+                    let job = MemOp.state__add_path_condition job (Bytes.guard__to_bytes pre) true in
+                    let job = job#with_instrList (new_instrList varinfo) in
+                    job::jobs
+                end varinfos_and_pres [] in
+                (jobs, varinfos_and_pres, errors)
+            in
+            let jobs, varinfos_and_pres, errors =
+                begin match bytes with
+                  | Bytes.Bytes_FunPtr varinfo ->
+                        let job = job#with_instrList (new_instrList varinfo) in
+                        ([job], [(varinfo, Bytes.Guard_True (* This [Guard_True] is just a placeholder *))], errors)
+                  | Bytes.Bytes_Read(bytes2, offset, len) ->
+                        let fp = (BytesUtility.expand_read_to_conditional bytes2 offset len) in
+                        let (), fp = Bytes.conditional__prune ~test:(fun () pre guard -> ((), Stp.query_stp job#state.path_condition pre guard)) () fp in
+                        getall fp
+                  | Bytes.Bytes_Conditional(c) ->
+                        getall c
+                  | _ ->
+                        FormatPlus.failwith "Invalid function ptr:@ @[%a@]" CilPrinter.exp fexp
+                end
+            in
+            begin match jobs with
+              | _::_::_ -> (* if List.length jobs > 1 *)
+                Output.set_mode Output.MSG_FUNC;
+                Output.printf "Call using symbolic function pointer:\n%a\nFork job %d to " Printcil.instr instr job#path_id;
+                List.iter2
+                    (fun job (varinfo,_) -> Output.printf "(job %d,function %s)" job#path_id varinfo.Cil.vname)
+                    (List.rev jobs) (* The call for #fork above reverses the list of jobs relative to the varinfos *)
+                    varinfos_and_pres;
+                Output.printf "@\n"
+              | _ -> ()
+            end;
+            let job_states = List.rev_map (fun j -> Job.Active j) jobs in
+            let abandoned_job_states = Statement.errors_to_abandoned_list job errors in
+            let job_states = List.rev_append job_states abandoned_job_states in
+            (Job.Fork job_states, job_queue)
+      | _ -> interceptor job job_queue
+
 let intercept_function_by_name_internal target_name replace_func job job_queue interceptor =
     (* Replace a C function with Otter code *)
-    let run_varinfo job retopt varinfo exps instr =
-        Output.set_mode Output.MSG_STMT;
-        Output.printf "%a@\n" Printcil.instr instr;
-        Output.printf "Built-in function %s is run@\n" varinfo.Cil.vname;
-        let job = job#with_decision_path (Decision.DecisionFuncall(instr, varinfo)::job#decision_path) in
-        let job_state, errors = replace_func job retopt exps [] in
-        if errors = [] then
-            (job_state, job_queue)
-        else
-            let abandoned_job_states = Statement.errors_to_abandoned_list job errors in
-            (Job.Fork (job_state::abandoned_job_states), job_queue)
-    in
     match job#instrList with
         | (Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, _) as instr)::_ when varinfo.Cil.vname = target_name ->
-            run_varinfo job retopt varinfo exps instr
-        | (Cil.Call(retopt, Cil.Lval(Cil.Mem(fexp), Cil.NoOffset), exps, _) as instr)::_ ->
-            (* Caution: This is done for each call to intercept_function_by_name_internal *)
-            (* Caution: Errors from rval are ignored *)
-            let _, bytes, _  = Expression.rval job fexp [] in 
-            begin match bytes with
-                | OtterBytes.Bytes.Bytes_FunPtr varinfo when varinfo.Cil.vname = target_name ->
-                    run_varinfo job retopt varinfo exps instr
-                | _ ->
-                    interceptor job job_queue
-            end
+              Output.set_mode Output.MSG_STMT;
+              Output.printf "%a@\n<built-in function>\n" Printcil.instr instr;
+              let job = job#with_decision_path (Decision.DecisionFuncall(instr, varinfo)::job#decision_path) in
+              let job_state, errors = replace_func job retopt exps [] in
+              let abandoned_job_states = Statement.errors_to_abandoned_list job errors in
+              (Job.Fork (job_state::abandoned_job_states), job_queue)
         | _ ->
             interceptor job job_queue
 
