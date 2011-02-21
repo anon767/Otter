@@ -30,6 +30,6 @@ let test_integration test_otter_with_pragma driver dir =
 let testsuite = "Integration" >::: [
     test_integration CorePragmaTest.test_otter_with_pragma Driver.run_basic "OtterCore";
     test_integration CorePragmaTest.test_otter_with_pragma MultiDriver.run "MultiprocessOtter";
-    test_integration BackOtterPragmaTest.test_otter_with_pragma BackOtterDriver.callchain_backward_se "BackOtter";
+    test_integration BackOtterPragmaTest.test_otter_with_pragma BackOtterMain.callchain_backward_se "BackOtter";
 ]
 

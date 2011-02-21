@@ -23,7 +23,7 @@ let _ =
         (* Features below are mutually exclusive. *)
         Otter.Executemain.feature;
         MultiOtter.MultiDriver.feature;
-        BackOtter.BackOtterDriver.feature;
+        BackOtter.BackOtterMain.feature;
         DebugOtter.DebugOtterExecute.feature;
         CilUtilities.FindFns.feature;
         CilUtilities.TraceLines.feature;
