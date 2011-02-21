@@ -115,10 +115,12 @@ let find_in_context instr context targets =
     let rec unwind dist return_dist = function
         | call_return::context ->
             let dist =
-                let dist' = return_dist + find call_return targets in
+                (* "+1" since call_return is the NEXT instruction after the call *)
+                let dist' = return_dist + 1 + find call_return targets in
                 if dist' < 0 then dist (* overflow *) else min dist dist'
             in
-            let return_dist = return_dist + DistanceToReturn.find call_return in
+            (* "+1" since call_return is the NEXT instruction after the call *)
+            let return_dist = return_dist + 1 + DistanceToReturn.find call_return in
             if return_dist < 0 then
                 dist (* overflow; terminate since further unwindings will also overflow *)
             else
