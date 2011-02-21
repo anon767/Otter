@@ -5,6 +5,7 @@ open Cil
 module CilLocation = struct
     type t = location
     let compare = Cil.compareLoc
+    let hash = Hashtbl.hash
     let default = Cil.locUnknown
     let file f = { Cil.file = f.Cil.fileName; Cil.line = -1; Cil.byte = -1 }
     let printer ff loc =
@@ -77,15 +78,23 @@ module CilLhost = struct
 end
 
 module CilExp = struct
-    type t = exp * CilLocation.t
+    type t = Cil.exp
+    let compare = Pervasives.compare
+    let hash = Hashtbl.hash
+    let equal x y = compare x y = 0
+    let printer = Printcil.exp
+end
+
+module CilExpLoc = struct
+    type t = CilExp.t * CilLocation.t
     let compare (xexp, xloc as x) (yexp, yloc as y) = if x == y then 0 else
         match CilLocation.compare xloc yloc with
-            | 0 -> Pervasives.compare xexp yexp
+            | 0 -> CilExp.compare xexp yexp
             | i -> i
-    let hash (_, loc) = Hashtbl.hash loc
+    let hash (exp, loc) = CilExp.hash exp lxor CilLocation.hash loc
     let equal x y = compare x y = 0
     let printer ff (exp, loc) =
-        Format.fprintf ff "%s:%a" (Pretty.sprint 0 (d_exp () exp)) CilLocation.printer loc
+        Format.fprintf ff "%a:%a" CilExp.printer exp CilLocation.printer loc
 end
 
 module Malloc = struct
