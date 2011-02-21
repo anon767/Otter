@@ -41,6 +41,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     let b_queue = new ContentQueue.t b_queue in
 
     (* when arg_line_targets != [], add appropriate jobs in bqueue *)
+    (* TODO: let BidirectionalQueue decide which sub-queue to put into *)
     let starter_fundecs = List.fold_left (fun starter_fundecs (file_name, line_num) ->
         let fundec = CovToFundec.of_line (file_name, line_num) in
         if List.memq fundec starter_fundecs then starter_fundecs else fundec::starter_fundecs)
@@ -189,20 +190,20 @@ let options = [
     "--conditionals-forking-limit",
         Arg.Set_int default_conditionals_forking_limit,
         "<limit> Set the limit in conditionals forking (default: max_int (== don't use))";
-]
+] @
+    BackOtterInterceptor.options @ 
+    BackOtterReporter.options @ 
+    BackOtterTimer.options @ 
+    BackOtterQueue.options @ 
+    BidirectionalQueue.options @ 
+    FunctionRanker.options
 
 
 let feature = {
     Cil.fd_name = "backotter";
     Cil.fd_enabled = ref false;
     Cil.fd_description = "Call-chain backwards symbolic executor for C";
-    Cil.fd_extraopt = options @ 
-        BackOtterInterceptor.options @ 
-        BackOtterReporter.options @ 
-        BackOtterTimer.options @ 
-        BidirectionalQueue.options @ 
-        BackOtterQueue.options @ 
-        FunctionRanker.options;
+    Cil.fd_extraopt = options;
     Cil.fd_post_check = true;
     Cil.fd_doit = doit
 }

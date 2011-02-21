@@ -85,12 +85,20 @@ let doExecute (f: file) =
     Output.printf "Number of nodes: %d@\n" nodes;
     Report.print_report reporter#completed
 
+let options = 
+    Executeargs.options @ 
+    TrackingFunctions.options @ 
+    SymbolicPointers.options @ 
+    Queue.options @ 
+    ProgramPoints.options @ 
+    BasicReporter.options @ 
+    Stp.options
 
 let feature : featureDescr = {
 	fd_name = "execute";
 	fd_enabled = ref false;
 	fd_description = "(symbolic) executor for C";
-	fd_extraopt = Executeargs.options @ TrackingFunctions.options @ SymbolicPointers.options @ Queue.options @ ProgramPoints.options @ BasicReporter.options @ Stp.options;
+    fd_extraopt = options;
 	fd_post_check = true;
 	fd_doit = doExecute;
 }

@@ -17,20 +17,8 @@ let dir = Filename.concat "benchmark" (Filename.concat "BenchmarkOtter" "Benchma
 
 (* options *)
 let options =
-    BackOtter.BackOtterDriver.options @
-    BackOtter.BackOtterQueue.options @
-    BackOtter.BackOtterReporter.options @
-    BackOtter.BackOtterTimer.options @
-    BackOtter.BidirectionalQueue.options @
-    BackOtter.FunctionRanker.options @
-    OtterBytes.Stp.options @
-    OtterCore.Executeargs.options @
-    OtterCore.ProgramPoints.options @
-    OtterCore.SymbolicPointers.options @
-    OtterCore.TrackingFunctions.options @
-    OtterQueue.ClosestToUncoveredStrategy.options @
-    OtterQueue.Queue.options @
-    OtterReporter.BasicReporter.options
+    BackOtter.BackOtterMain.options @
+    Otter.Executemain.options 
 
 
 (* benchmarks as an OUnit test suite *)
@@ -70,18 +58,16 @@ let benchmarks ?(div_num=1) ?(div_base=1) argv_array =
         let backotter_drivers =
             let pure_backotter_driver name brank bqueue =
                 (Printf.sprintf "BackOtter:%s" name) >:: benchmark (
-                    let targets_ref = ref BackOtterTargets.empty in
-                    BackOtterDriver.callchain_backward_se ~targets_ref
-                                                          ~b_queue:(BackOtter.BackOtterQueue.get_function_backward_queue targets_ref brank bqueue)
+                    BackOtterMain.callchain_backward_se 
+                                                          ~b_queue:(BackOtter.BackOtterQueue.get_function_backward_queue brank bqueue)
                                                           ~ratio:(-. 0.1) (* Pure backward *)
                 )
             in
             let backotter_driver name fqueue brank bqueue ratio =
                 (Printf.sprintf "BackOtter:%s" name) >:: benchmark (
-                    let targets_ref = ref BackOtterTargets.empty in
-                    BackOtterDriver.callchain_backward_se ~targets_ref
-                                                          ~f_queue:(BackOtter.BackOtterQueue.get targets_ref fqueue)
-                                                          ~b_queue:(BackOtter.BackOtterQueue.get_function_backward_queue targets_ref brank bqueue)
+                    BackOtterMain.callchain_backward_se 
+                                                          ~f_queue:(BackOtter.BackOtterQueue.get fqueue)
+                                                          ~b_queue:(BackOtter.BackOtterQueue.get_function_backward_queue brank bqueue)
                                                           ~ratio
                 )
             in
