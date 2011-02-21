@@ -80,19 +80,74 @@ let run_with_interceptor reporter job =
     in
     Driver.run ~interceptor reporter job
 
-let testsuite = "Distance-to-targets" >::: [
-    test_otter
-        ~label:"Simple"
-        ~driver:run_with_interceptor
+let test_ottercfg code ?label expected = test_otter code ?label ~driver:run_with_interceptor (expected_return_value expected)
+
+let testsuite_fast = "Fast" >::: [
+
+    test_ottercfg
+        ~label:"Basic"
         "int main(void) {
             __otter_instr_mark(1);
             return __otter_distance_from_instr_mark(1);
         }"
-        (expected_return_value 1);
+        1;
 
-    test_otter
-        ~label:"One-level call context"
-        ~driver:run_with_interceptor
+     test_ottercfg
+        ~label:"Simple instructions between source and target"
+        "int main(void) {
+            __otter_instr_mark(1);
+            int x = 1;
+            int y = 1;
+            int z = 1;
+            return __otter_distance_from_instr_mark(1);
+        }"
+        4;
+
+    test_ottercfg
+        ~label:"Take the shortest path in a function call"
+        "void g(int i) {
+            if (i) {
+                int x = 1;
+                int y = 1;
+                int z = 1;
+            }
+            return;
+        }
+        int main(void) {
+            __otter_instr_mark(1);
+            g(1);
+            return __otter_distance_from_instr_mark(1);
+        }"
+        3;
+
+    test_ottercfg
+        ~label:"Function call"
+        "void g(void) {
+            return;
+        }
+        int main(void) {
+            __otter_instr_mark(1);
+            g();
+            return __otter_distance_from_instr_mark(1);
+        }"
+        2;
+
+    test_ottercfg
+        ~label:"Recursion"
+        "void g(int i) {
+            if (i<=0) 
+                return;
+            g(i-1);
+        }
+        int main(void) {
+            __otter_instr_mark(1);
+            g(10);
+            return __otter_distance_from_instr_mark(1);
+        }"
+        3;
+
+    test_ottercfg
+        ~label:"One-level calling context"
         "void f(void) {
             __otter_instr_mark(1);
             return;
@@ -101,7 +156,47 @@ let testsuite = "Distance-to-targets" >::: [
             f();
             return __otter_distance_from_instr_mark(1);
         }"
-        (expected_return_value 1);
+        2;
+
+    test_ottercfg
+        ~label:"Two-level calling context"
+        "void f(void) {
+            __otter_instr_mark(1);
+            return;
+        }
+        void g(void) {
+            f();
+            return;
+        }
+        int main(void) {
+            g();
+            return __otter_distance_from_instr_mark(1);
+        }"
+        3;
 
 ]
 
+let testsuite_bugs = "Bugs" >::: [
+
+    test_ottercfg
+        ~label:"Nested function call"
+        "void f(void) {
+            return;
+        }
+        void g(void) {
+            f();
+            return;
+        }
+        int main(void) {
+            __otter_instr_mark(1);
+            g();
+            return __otter_distance_from_instr_mark(1);
+        }"
+        3;
+
+]
+
+let testsuite = "Distance-to-targets" >::: [
+    testsuite_fast;
+    testsuite_bugs;
+]
