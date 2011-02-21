@@ -744,7 +744,7 @@ pid_t __otter_libc_getpgrp()
 	return getpgid(getpid());
 }
 
-int __otter_libc_getgroups(int size, gid_t* list)
+int getgroups(int size, gid_t* list)
 {
 	/* supplimental groups are not implimented so there are none */
 	return(0);
