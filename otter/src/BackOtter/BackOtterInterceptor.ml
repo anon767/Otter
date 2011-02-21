@@ -7,6 +7,10 @@ open Cil
 let arg_line_targets = ref []
 let max_function_name_length = ref 0
 
+(* Setup max_function_name_length, to be used in set_output_formatter_interceptor *)
+let set_max_function_name_length fns =
+    max_function_name_length := List.fold_left (fun len fundec -> max len (String.length fundec.svar.vname)) 0 fns
+
 let set_output_formatter_interceptor job job_queue interceptor =
     let origin_function_name = (List.hd (List.rev job#state.callstack)).svar.vname in
     let depth = List.length job#state.path_condition in
@@ -28,6 +32,7 @@ let line_target_interceptor job job_queue interceptor =
         Complete (Abandoned (`FailureReached, job)), job_queue
     else
         interceptor job job_queue
+
 
 (** {1 Command-line options} *)
 

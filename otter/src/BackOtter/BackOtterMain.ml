@@ -24,9 +24,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     let entry_fn = List.hd entry_job#state.callstack in
 
     (* Setup max_function_name_length, to be used in set_output_formatter_interceptor *)
-    let all_reachable_functions = entry_fn :: (CilCallgraph.find_transitive_callees file entry_fn) in
-    BackOtterInterceptor.max_function_name_length := List.fold_left (fun len fundec ->
-        max len (String.length fundec.svar.vname)) 0 all_reachable_functions;
+    BackOtterInterceptor.set_max_function_name_length (entry_fn :: (CilCallgraph.find_transitive_callees file entry_fn));
 
     (* Failure function set by --failurefn (default: __FAILURE) *)
     let failure_fn =
@@ -112,67 +110,66 @@ let doit file =
     (* Set a timer *)
     ignore (Unix.alarm !Executeargs.arg_timeout);
 
-    begin try
+    (try
 
-    Core.prepare_file file;
-    CovToFundec.prepare_file file;
+        Core.prepare_file file;
+        CovToFundec.prepare_file file;
 
-    let find_tag_name tag assocs = List.assoc tag (List.map (fun (a,b)->(b,a)) assocs) in
-    Output.must_printf "Forward strategy: %s@\n" (find_tag_name (!BackOtterQueue.default_fqueue) BackOtterQueue.queues);
-    Output.must_printf "Backward function pick: %s@\n" (find_tag_name (!FunctionRanker.default_brank) FunctionRanker.queues);
-    Output.must_printf "Backward strategy: %s@\n" (find_tag_name (!BackOtterQueue.default_bqueue) BackOtterQueue.queues);
-    Output.must_printf "Ratio: %0.2f@\n" !BidirectionalQueue.default_bidirectional_search_ratio ;
+        let find_tag_name tag assocs = List.assoc tag (List.map (fun (a,b)->(b,a)) assocs) in
+        Output.must_printf "Forward strategy: %s@\n" (find_tag_name (!BackOtterQueue.default_fqueue) BackOtterQueue.queues);
+        Output.must_printf "Backward function pick: %s@\n" (find_tag_name (!FunctionRanker.default_brank) FunctionRanker.queues);
+        Output.must_printf "Backward strategy: %s@\n" (find_tag_name (!BackOtterQueue.default_bqueue) BackOtterQueue.queues);
+        Output.must_printf "Ratio: %0.2f@\n" !BidirectionalQueue.default_bidirectional_search_ratio ;
 
-    let entry_job = OtterJob.Job.get_default file in
-    let _, reporter = callchain_backward_se (new BackOtterReporter.t ()) entry_job in
+        let entry_job = OtterJob.Job.get_default file in
+        let _, reporter = callchain_backward_se (new BackOtterReporter.t ()) entry_job in
 
-    (* print the results *)
-    Output.set_formatter (new Output.plain);
-    Output.printf "\nSTP was invoked %d times (%d cache hits).\n" !Stp.stp_count !Stp.cacheHits;
+        (* print the results *)
+        Output.set_formatter (new Output.plain);
+        Output.printf "\nSTP was invoked %d times (%d cache hits).\n" !Stp.stp_count !Stp.cacheHits;
 
-    let executionTime = (Unix.gettimeofday ()) -. startTime
-    and stpTime = Stats.lookupTime "STP" in
-    Output.printf "It ran for %.2f s, which is %.2f%% of the total %.2f s execution.\n"
-        stpTime (100. *. stpTime /. executionTime) executionTime;
-    Output.printf "  It took %.2f s to construct the formulas for the expressions inside 'if(...)'s,
-        %.2f s to construct and %.2f s to assert the path conditions,
-        and %.2f s to solve the resulting formulas.\n\n"
-        (Stats.lookupTime "convert conditional")
-        (Stats.lookupTime "STP construct")
-        (Stats.lookupTime "STP doassert")
-        (Stats.lookupTime "STP query");
-    (if !Executeargs.arg_simplify_path_condition then
-        Output.printf "It took %.2f s to simplify path conditions.\n"
-           (Stats.lookupTime "Simplify PC")
-    else ());
+        let executionTime = (Unix.gettimeofday ()) -. startTime
+        and stpTime = Stats.lookupTime "STP" in
+        Output.printf "It ran for %.2f s, which is %.2f%% of the total %.2f s execution.\n"
+            stpTime (100. *. stpTime /. executionTime) executionTime;
+        Output.printf "  It took %.2f s to construct the formulas for the expressions inside 'if(...)'s,
+            %.2f s to construct and %.2f s to assert the path conditions,
+            and %.2f s to solve the resulting formulas.\n\n"
+            (Stats.lookupTime "convert conditional")
+            (Stats.lookupTime "STP construct")
+            (Stats.lookupTime "STP doassert")
+            (Stats.lookupTime "STP query");
+        (if !Executeargs.arg_simplify_path_condition then
+            Output.printf "It took %.2f s to simplify path conditions.\n"
+               (Stats.lookupTime "Simplify PC")
+        else ());
 
-    Output.printf "Hash-consing: hits=%d misses=%d\n" (!Bytes.hash_consing_bytes_hits) (!Bytes.hash_consing_bytes_misses);
-    Output.printf "Counter statistics:@\n";
-    let counter_stats = DataStructures.NamedCounter.report () in
-    List.iter (fun (name, value) -> Output.printf "%s : %d@\n" name value) counter_stats;
-    if (!Stp.print_stp_queries) then (
-        Output.must_printf "Stp queries: @\n";
-        List.iter (fun (pc, pre, guard, truth_value, time) ->
-            List.iter (Output.must_printf "PC: @[%a@]@\n" BytesPrinter.bytes) pc;
-            Output.printf "PRE: @[%a@]@\n" BytesPrinter.guard pre;
-            Output.printf "QUERY: @[%a@]@\n" BytesPrinter.guard guard;
-            Output.printf "TRUTH: @[%s@]@\n" (if truth_value then "True" else "False");
-            Output.printf "TIME: @[%.2f@]@\n" time;
-            Output.printf "--------------------------------------------------@\n"
-        ) (!Stp.stp_queries)
-    );
-    let nodes, paths, abandoned = reporter#get_stats in
-    Output.printf "Number of nodes: %d@\n" nodes;
-    Output.printf "Number of paths: %d@\n" paths;
-    Output.printf "Number of abandoned: %d@\n" abandoned;
-    Output.myflush ();
+        Output.printf "Hash-consing: hits=%d misses=%d\n" (!Bytes.hash_consing_bytes_hits) (!Bytes.hash_consing_bytes_misses);
+        Output.printf "Counter statistics:@\n";
+        let counter_stats = DataStructures.NamedCounter.report () in
+        List.iter (fun (name, value) -> Output.printf "%s : %d@\n" name value) counter_stats;
+        if (!Stp.print_stp_queries) then (
+            Output.must_printf "Stp queries: @\n";
+            List.iter (fun (pc, pre, guard, truth_value, time) ->
+                List.iter (Output.must_printf "PC: @[%a@]@\n" BytesPrinter.bytes) pc;
+                Output.printf "PRE: @[%a@]@\n" BytesPrinter.guard pre;
+                Output.printf "QUERY: @[%a@]@\n" BytesPrinter.guard guard;
+                Output.printf "TRUTH: @[%s@]@\n" (if truth_value then "True" else "False");
+                Output.printf "TIME: @[%.2f@]@\n" time;
+                Output.printf "--------------------------------------------------@\n"
+            ) (!Stp.stp_queries)
+        );
+        let nodes, paths, abandoned = reporter#get_stats in
+        Output.printf "Number of nodes: %d@\n" nodes;
+        Output.printf "Number of paths: %d@\n" paths;
+        Output.printf "Number of abandoned: %d@\n" abandoned;
+        Output.myflush ();
 
-    Report.print_report reporter#completed
+        Report.print_report reporter#completed
 
     with State.SignalException s ->
         Output.set_mode Output.MSG_MUSTPRINT;
-        Output.printf "%s@\n" s
-    end;
+        Output.printf "%s@\n" s);
 
     (* Turn off the alarm and reset the signal handlers *)
     ignore (Unix.alarm 0);
@@ -199,7 +196,13 @@ let feature = {
     Cil.fd_name = "backotter";
     Cil.fd_enabled = ref false;
     Cil.fd_description = "Call-chain backwards symbolic executor for C";
-    Cil.fd_extraopt = options @ BackOtterInterceptor.options @ BackOtterReporter.options @ BackOtterTimer.options @ BidirectionalQueue.options @ BackOtterQueue.options @ FunctionRanker.options;
+    Cil.fd_extraopt = options @ 
+        BackOtterInterceptor.options @ 
+        BackOtterReporter.options @ 
+        BackOtterTimer.options @ 
+        BidirectionalQueue.options @ 
+        BackOtterQueue.options @ 
+        FunctionRanker.options;
     Cil.fd_post_check = true;
     Cil.fd_doit = doit
 }
