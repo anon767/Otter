@@ -121,7 +121,10 @@ int __otter_libc_fstat(int fd, struct stat* s)
 
 int mknod(const char* name, mode_t mode, dev_t dev)
 {
-	if(mode & S_IFCHR || mode & S_IFBLK) /* find out if dev makes sense */
+    // newlib's sys/stat.h has S_IFDIR & S_IFBLK == 1
+	if(mode & S_IFDIR)
+		dev = __otter_fs_TYP_DIR;
+    else if(mode & S_IFCHR || mode & S_IFBLK) /* find out if dev makes sense */
 	{
 		switch (dev)
 		{
@@ -142,6 +145,7 @@ int mknod(const char* name, mode_t mode, dev_t dev)
 	else
 		dev = __otter_fs_TYP_FILE;
 
+    name = strdup(name);
 	char* a = name;
 
 	while(*a != 0)
