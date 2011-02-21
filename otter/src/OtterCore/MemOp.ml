@@ -442,7 +442,9 @@ let rec eval pc bytes =
             if block1!=block2 then
                 (if op==OP_EQ then Ternary.False
                  else if op==OP_NE then Ternary.True
-                 else FormatPlus.failwith "Inequality comparison between two unrelated pointers: %a" BytesPrinter.bytes bytes)
+                 else nontrivial()
+                 (* TODO: FormatPlus.warn "Inequality comparison between two unrelated pointers: %a" BytesPrinter.bytes bytes *)
+                )
             else
                 eval pc ((operation_of op) [(offset1,Cil.intType);(offset2,Cil.intType)])
 
