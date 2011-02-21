@@ -127,7 +127,7 @@ int __otter_libc_vopen(const char* path, int oflag, va_list varargs)
 	{
 		if(O_CREAT & oflag) /* should the file be created? */
 		{
-			if(errno != EACCES) /* file dosen't exist */
+			if(errno == ENOENT) /* file dosen't exist */
 			{
 				/* get mode parameter */
 				mode_t mode = va_arg(varargs, mode_t);
@@ -136,6 +136,7 @@ int __otter_libc_vopen(const char* path, int oflag, va_list varargs)
 				if(!inode)
 					return (-1);
 				(*inode).permissions = (mode & 0x0FFF) | 0x3000; // TODO: use the umask?
+                errno = 0;
 			}
 			else
 				return (-1);
