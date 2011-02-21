@@ -1,5 +1,6 @@
 BackOtter/BackOtterDriver
 BackOtter/BackOtterErrors
+BackOtter/BackOtterInterceptor
 BackOtter/BackOtterMain
 BackOtter/BackOtterQueue
 BackOtter/BackOtterReporter

@@ -9,31 +9,6 @@ open Cil
 
 let default_conditionals_forking_limit = ref max_int
 
-let arg_line_targets = ref []
-
-let max_function_name_length = ref 0
-let set_output_formatter_interceptor job job_queue interceptor =
-    let origin_function_name = (List.hd (List.rev job#state.callstack)).svar.vname in
-    let depth = List.length job#state.path_condition in
-    let loc = Job.get_loc job in
-    let label =
-        if loc = Cil.locUnknown then
-            Format.sprintf "%*s [%d,%d] : " (!max_function_name_length) origin_function_name job#path_id depth
-        else
-            Format.sprintf "%*s [%d,%d] %s:%d : " (!max_function_name_length) origin_function_name job#path_id depth (Filename.basename loc.Cil.file) loc.Cil.line
-    in
-    Output.set_formatter (new Output.labeled label);
-    interceptor job job_queue
-
-
-(** An interceptor that emits FailureReached when some (file, line) in arg_line_targets is encountered. *)
-let line_target_interceptor job job_queue interceptor =
-    let loc = Job.get_loc job in
-    if List.mem (loc.Cil.file, loc.Cil.line) (!arg_line_targets) then
-        Complete (Abandoned (`FailureReached, job)), job_queue
-    else
-        interceptor job job_queue
-
 let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
                           ?(f_queue=BackOtterQueue.get_default_fqueue ())
                           ?(b_queue=BackOtterQueue.get_default_bqueue ())
@@ -50,7 +25,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
 
     (* Setup max_function_name_length, to be used in set_output_formatter_interceptor *)
     let all_reachable_functions = entry_fn :: (CilCallgraph.find_transitive_callees file entry_fn) in
-    max_function_name_length := List.fold_left (fun len fundec ->
+    BackOtterInterceptor.max_function_name_length := List.fold_left (fun len fundec ->
         max len (String.length fundec.svar.vname)) 0 all_reachable_functions;
 
     (* Failure function set by --failurefn (default: __FAILURE) *)
@@ -71,7 +46,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     let starter_fundecs = List.fold_left (fun starter_fundecs (file_name, line_num) ->
         let fundec = CovToFundec.of_line (file_name, line_num) in
         if List.memq fundec starter_fundecs then starter_fundecs else fundec::starter_fundecs)
-    [] (!arg_line_targets) in
+    [] (!BackOtterInterceptor.arg_line_targets) in
     List.iter (fun f -> Output.debug_printf "Function containing coverage targets: %s@\n" f.svar.vname) starter_fundecs;
     let b_queue = List.fold_left (fun b_queue fundec ->
         let job = new OtterJob.FunctionJob.t file ~points_to:(!BidirectionalQueue.default_points_to file) fundec in
@@ -87,8 +62,8 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     (* Define interceptor *)
     let interceptor =
         let (>>>) = Interceptor.(>>>) in
-            set_output_formatter_interceptor
-        >>> line_target_interceptor
+            BackOtterInterceptor.set_output_formatter_interceptor
+        >>> BackOtterInterceptor.line_target_interceptor
         >>> Interceptor.function_pointer_interceptor
         >>> BuiltinFunctions.interceptor
         >>> (
@@ -214,21 +189,6 @@ let doit file =
 (** {1 Command-line options} *)
 
 let options = [
-    ("--line-targets",
-        Arg.String begin fun str ->
-            let args = Str.split (Str.regexp ",") str in
-            let re = Str.regexp "\\(.*\\):\\(.*\\)" in
-            List.iter (fun arg ->
-                if Str.string_match re arg 0 then
-                    let file = Str.matched_group 1 arg in
-                    let line = int_of_string (Str.matched_group 2 arg) in
-                    arg_line_targets := (file, line)::(!arg_line_targets)
-                else
-                    failwith "Error in parsing --line-targets"
-            ) args
-        end,
-        "<line[,lines]> Lines in the form file:linenum[,file:linenum...]. Default is empty list.\n");
-
     "--conditionals-forking-limit",
         Arg.Set_int default_conditionals_forking_limit,
         "<limit> Set the limit in conditionals forking (default: max_int (== don't use))";
@@ -239,7 +199,7 @@ let feature = {
     Cil.fd_name = "backotter";
     Cil.fd_enabled = ref false;
     Cil.fd_description = "Call-chain backwards symbolic executor for C";
-    Cil.fd_extraopt = options @ BackOtterReporter.options @ BackOtterTimer.options @ BidirectionalQueue.options @ BackOtterQueue.options @ FunctionRanker.options;
+    Cil.fd_extraopt = options @ BackOtterInterceptor.options @ BackOtterReporter.options @ BackOtterTimer.options @ BidirectionalQueue.options @ BackOtterQueue.options @ FunctionRanker.options;
     Cil.fd_post_check = true;
     Cil.fd_doit = doit
 }
