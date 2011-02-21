@@ -517,30 +517,25 @@ ssize_t __otter_libc_write2(
 	{
 		case __otter_fs_TYP_TTY:
 			__EVALSTR(buf, num);
-			// Fall through
+			/* Do we want to fall through here and
+				actually write to the TTY? I don't see why
+				we would, because you can never read the
+				data back in. */
+			return num;
 		case __otter_fs_TYP_FILE:
 			return __otter_libc_write_file(open_file, buf, num, offset);
-			break;
 		case __otter_fs_TYP_FIFO:
 			return __otter_libc_write_pipe(open_file, buf, num);
-			break;
 		case __otter_fs_TYP_SOCK:
 			return __otter_libc_write_socket(open_file, buf, num);
-			break;
 		case __otter_fs_TYP_DIR: /* writing to directories is not supported */
-			__ASSERT(0); /* should not be possible to open a dir for writing */
-			break;
+			__FAILURE(); /* should not be possible to open a dir for writing */
 		case __otter_fs_TYP_NULL:
 		case __otter_fs_TYP_ZERO:
-			open_file->status = __otter_fs_STATUS_EOF;
+			open_file->status = __otter_fs_STATUS_EOF; // TODO: This seems wrong. /dev/null should *always* have eof set, and /dev/zero *never* should, but this should be set when initializing the file system, not upon a write.
 			return (num);
-			break;
-		default: /* this should never happen as all cases should be enumerated */
-			__ASSERT(0);
-			break;
 	}
-
-	return (0);
+	__FAILURE(); /* this should never happen as all cases should be enumerated */
 }
 
 ssize_t __otter_libc_write(int fd, const void* buf, size_t num)

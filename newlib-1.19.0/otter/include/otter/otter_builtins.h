@@ -8,7 +8,7 @@
 size_t __otter_get_allocated_size(void *ptr);
 
 /* Cause Otter to exit with a failure. */
-void __FAILURE(void) {}
+__attribute__((__noreturn__)) void __FAILURE(void) {}
 
 /* __ASSERT(exp) is similar to 'if (!exp) abort();'.
     That is, __ASSERT(exp) checks if the argument is:
