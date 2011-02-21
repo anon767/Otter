@@ -82,22 +82,11 @@ module OffsetSet = Set.Make (struct
     let compare = Pervasives.compare
 end)
 
-module VarinfoMap = struct
-    include Map.Make (CilData.CilVar)
-    let add varinfo offset varinfo_map =
-        let offsets = try find varinfo varinfo_map with Not_found -> OffsetSet.empty in
-        add varinfo (OffsetSet.add offset offsets) varinfo_map
-end
-
-module MallocMap = struct
-    include Map.Make (CilData.Malloc)
-    let add malloc offset malloc_map =
-        let offsets = try find malloc malloc_map with Not_found -> OffsetSet.empty in
-        add malloc (OffsetSet.add offset offsets) malloc_map
-end
+module VarinfoMap = Map.Make (CilData.CilVar)
+module MallocMap = Map.Make (CilData.Malloc)
 
 module VarinfoSet = Set.Make (CilData.CilVar)
-module MallocSet = Set.Make (CilData.Malloc)
+module LhostSet = Set.Make (CilData.CilLhost)
 
 module TypeAndOffsetSetMap = struct
     include Map.Make (struct
@@ -111,13 +100,16 @@ module TypeAndOffsetSetMap = struct
         if mem type_and_offsets type_and_offsets_map then
             type_and_offsets_map
         else
-            add type_and_offsets (VarinfoSet.empty, MallocSet.empty) type_and_offsets_map
+            add type_and_offsets (VarinfoSet.empty, MallocMap.empty) type_and_offsets_map
     let add_varinfo type_and_offsets varinfo type_and_offsets_map =
-        let varinfos, mallocs = try find type_and_offsets type_and_offsets_map with Not_found -> (VarinfoSet.empty, MallocSet.empty) in
+        let varinfos, mallocs = try find type_and_offsets type_and_offsets_map with Not_found -> (VarinfoSet.empty, MallocMap.empty) in
         add type_and_offsets (VarinfoSet.add varinfo varinfos, mallocs) type_and_offsets_map
-    let add_malloc type_and_offsets malloc type_and_offsets_map =
-        let varinfos, mallocs = try find type_and_offsets type_and_offsets_map with Not_found -> (VarinfoSet.empty, MallocSet.empty) in
-        add type_and_offsets (varinfos, MallocSet.add malloc mallocs) type_and_offsets_map
+    let add_malloc type_and_offsets malloc malloc_lhosts type_and_offsets_map =
+        let varinfos, mallocs = try find type_and_offsets type_and_offsets_map with Not_found -> (VarinfoSet.empty, MallocMap.empty) in
+        let malloc_lhosts' = try MallocMap.find malloc mallocs with Not_found -> LhostSet.empty in
+        let malloc_lhosts = LhostSet.union malloc_lhosts' malloc_lhosts in
+        let mallocs = MallocMap.add malloc malloc_lhosts mallocs in
+        add type_and_offsets (varinfos, mallocs) type_and_offsets_map
 end
 
 module BytesSet = Set.Make (struct
@@ -192,18 +184,22 @@ let init_pointer ?(scheme=(!default_scheme)) job points_to exps ?(maybe_null=tru
 
         (* group variable targets by base varinfo (e.g., root of structs) and offsets, then reverse the mapping *)
         let varinfo_to_offsets = List.fold_left begin fun varinfo_to_offsets (varinfo, offset) ->
-            VarinfoMap.add varinfo offset varinfo_to_offsets
+            let offsets = try VarinfoMap.find varinfo varinfo_to_offsets with Not_found -> OffsetSet.empty in
+            VarinfoMap.add varinfo (OffsetSet.add offset offsets) varinfo_to_offsets
         end VarinfoMap.empty target_lvals in
         let type_and_offsets_to_targets = VarinfoMap.fold begin fun varinfo offsets ->
             TypeAndOffsetSetMap.add_varinfo (varinfo.Cil.vtype, offsets) varinfo
         end varinfo_to_offsets type_and_offsets_to_targets in
 
         (* group malloc targets by allocated type and offsets; then reverse the mapping *)
-        let malloc_to_offsets = List.fold_left begin fun malloc_to_offsets (malloc, offset) ->
-            MallocMap.add malloc offset malloc_to_offsets
+        let malloc_to_offsets = List.fold_left begin fun malloc_to_offsets (malloc, malloc_lhosts', offset) ->
+            let offsets, malloc_lhosts = try MallocMap.find malloc malloc_to_offsets with Not_found -> (OffsetSet.empty, LhostSet.empty) in
+            let offsets = OffsetSet.add offset offsets in
+            let malloc_lhosts = List.fold_left (fun malloc_lhosts malloc_exp -> LhostSet.add malloc_exp malloc_lhosts) malloc_lhosts malloc_lhosts' in
+            MallocMap.add malloc (offsets, malloc_lhosts) malloc_to_offsets
         end MallocMap.empty target_mallocs in
-        let type_and_offsets_to_targets = MallocMap.fold begin fun (_, _, typ as malloc) offsets ->
-            TypeAndOffsetSetMap.add_malloc (typ, offsets) malloc
+        let type_and_offsets_to_targets = MallocMap.fold begin fun (_, _, typ as malloc) (offsets, malloc_lhosts) ->
+            TypeAndOffsetSetMap.add_malloc (typ, offsets) malloc malloc_lhosts
         end malloc_to_offsets type_and_offsets_to_targets in
 
         type_and_offsets_to_targets
@@ -299,7 +295,7 @@ let init_pointer ?(scheme=(!default_scheme)) job points_to exps ?(maybe_null=tru
 
             (* first figure out if we need to make a fresh block *)
             let need_fresh = not begin
-                MallocSet.is_empty mallocs
+                MallocMap.is_empty mallocs
                 && VarinfoSet.for_all (fun v -> v.Cil.vglob && Deferred.is_forced (State.VarinfoMap.find v job#state.State.global)) varinfos
             end in
 
@@ -310,14 +306,16 @@ let init_pointer ?(scheme=(!default_scheme)) job points_to exps ?(maybe_null=tru
                 let job, block, target_bytes_set =
                     let size = Cil.bitsSizeOf typ / 8 in
                     let block = Bytes.block__make (FormatPlus.sprintf "%s#%d size(%d) type(%a)" block_name count size Printcil.typ typ) size Bytes.Block_type_Aliased in
-                    let deferred = init_target typ (VarinfoSet.elements varinfos) (MallocSet.elements mallocs) in
+                    let varinfos = VarinfoSet.elements varinfos in
+                    let mallocs = MallocMap.fold (fun malloc exps mallocs -> (malloc, LhostSet.elements exps)::mallocs) mallocs [] in
+                    let deferred = init_target typ varinfos mallocs in
                     let job = MemOp.state__add_deferred_block job block deferred in
                     (job, block, map_offsets target_bytes_set block)
                 in
 
                 (* conservatively point to all allocations in the list of allocations of each malloc site, and add the
                     above allocated fresh block to the list of allocations for each malloc site *)
-                let job, target_bytes_set = MallocSet.fold begin fun malloc (job, target_bytes_set) ->
+                let job, target_bytes_set = MallocMap.fold begin fun malloc _ (job, target_bytes_set) ->
                     let blocks = try State.MallocMap.find malloc job#state.State.mallocs with Not_found -> [] in
                     let job = job#with_state { job#state with State.mallocs = State.MallocMap.add malloc (block::blocks) job#state.State.mallocs } in
                     (job, List.fold_left map_offsets target_bytes_set blocks)

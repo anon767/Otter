@@ -135,10 +135,10 @@ let wrap_points_to_varinfo points_to_varinfo exp =
         end target_varinfos (to_offsets varinfo.Cil.vtype)
     end [] varinfos in
 
-    (* combine the target varinfos with offsets *)
-    let target_mallocs = List.fold_left begin fun target_mallocs (_, _, typ as malloc) ->
+    (* combine the target mallocs with offsets *)
+    let target_mallocs = List.fold_left begin fun target_mallocs ((_, _, typ as malloc), lhosts) ->
         List.fold_left begin fun target_mallocs offset ->
-            (malloc, offset)::target_mallocs
+            (malloc, lhosts, offset)::target_mallocs
         end target_mallocs (to_offsets typ)
     end [] mallocs in
 
@@ -146,16 +146,17 @@ let wrap_points_to_varinfo points_to_varinfo exp =
 
 
 (** Helper that generates a map from untyped dynamic allocation sites ([Cil.fundec * string] tuple) to typed dynamic
-    allocation sites ([CilData.Malloc.t]), using a points-to analysis to infer the types from pointers that point to
-    those sites.
+    allocation sites ([(CilData.Malloc.t * CilData.CilLhost.t list) list]), using a points-to analysis to find the types and
+    pointer expressions that refer to those sites.
         @param file is the file for which to generate the mapping
         @param points_to_varinfo is the points-to function which is used to infer the types
         @return [malloc_map] which is a function that maps a list of untyped dynamic allocation sites to typed dynamic
                 allocation sites
 *)
-let add_malloc_types =
+let mallocs_of_sites =
     let module MallocSet = Set.Make (CilData.Malloc) in
     let module MallocMap = Map.Make (CilData.Malloc) in
+    let module LhostSet = Set.Make (CilData.CilLhost) in
     let module LhostMallocSet = Set.Make (struct
         type t = CilData.CilLhost.t * CilData.Malloc.t
         let compare (xl, xm as x) (yl, ym as y) = if x == y then 0 else
@@ -177,14 +178,13 @@ let add_malloc_types =
         let site_to_mallocs =
             try
                 Hashtbl.find file_memotable file
-            with Not_found -> Profiler.global#call "add_malloc_types (uncached)" begin fun () ->
-                (* build a map from malloc sites to malloc types *)
+            with Not_found -> Profiler.global#call "mallocs_of_sites (uncached)" begin fun () ->
+                (* build a map from malloc sites to malloc types (Cil.fundec * string => MallocSet.t MallocMap.t) *)
                 let site_to_mallocs = SiteMap.empty in
-                let updated = LhostMallocSet.empty in
 
                 (* for each varinfo or malloc pointer given as an lhost, find all malloc targets and infer their types
                  * from the pointer lhost type *)
-                let process_lhost site_to_mallocs updated lhost source_opt = Profiler.global#call "process_lhost" begin fun () ->
+                let process_lhost site_to_mallocs updated lhost malloc_source_opt = Profiler.global#call "process_lhost" begin fun () ->
                     let lhost_type = Cil.typeOf (Cil.Lval (lhost, Cil.NoOffset)) in
 
                     (* process each offset in the lhost that is a pointer *)
@@ -194,18 +194,19 @@ let add_malloc_types =
 
                         List.fold_left begin fun (site_to_mallocs, updated) (malloc_varinfo, malloc_name as site) ->
                             let malloc = (malloc_varinfo, malloc_name, target_type) in
-                            let malloc_to_sources = try SiteMap.find site site_to_mallocs with Not_found -> MallocMap.empty in
-                            let sources = try MallocMap.find malloc malloc_to_sources with Not_found -> MallocSet.empty in
-                            let updated, sources = begin match source_opt with
-                                | Some source when not (MallocSet.mem source sources) ->
-                                    (LhostMallocSet.add (Cil.Mem pointer, malloc) updated, MallocSet.add source sources)
+                            let malloc_lhost = Cil.Mem pointer in (* an lhost that aliases this malloc *)
+                            let malloc_meta = try SiteMap.find site site_to_mallocs with Not_found -> MallocMap.empty in
+                            let sources, malloc_lhosts = try MallocMap.find malloc malloc_meta with Not_found -> (MallocSet.empty, LhostSet.empty) in
+                            let updated, sources, malloc_lhosts = begin match malloc_source_opt with
+                                | Some source when not (MallocSet.mem source sources) -> (* from a malloc'ed pointer that had not been seen previously *)
+                                    (LhostMallocSet.add (malloc_lhost, malloc) updated, MallocSet.add source sources, LhostSet.add malloc_lhost malloc_lhosts)
                                 | Some _ ->
-                                    (updated, sources)
-                                | None ->
-                                    (LhostMallocSet.add (Cil.Mem pointer, malloc) updated, sources)
+                                    (updated, sources, malloc_lhosts)
+                                | None -> (* from a varinfo *)
+                                    (LhostMallocSet.add (malloc_lhost, malloc) updated, sources, LhostSet.add malloc_lhost malloc_lhosts)
                             end in
-                            let malloc_to_sources = MallocMap.add malloc sources malloc_to_sources in
-                            let site_to_mallocs = SiteMap.add site malloc_to_sources site_to_mallocs in
+                            let malloc_meta = MallocMap.add malloc (sources, malloc_lhosts) malloc_meta in
+                            let site_to_mallocs = SiteMap.add site malloc_meta site_to_mallocs in
                             (site_to_mallocs, updated)
                         end (site_to_mallocs, updated) malloc_sites
                     in
@@ -229,7 +230,7 @@ let add_malloc_types =
                 (* first infer malloc types from varinfo pointers *)
                 let site_to_mallocs, updated = List.fold_left begin fun (site_to_mallocs, updated) varinfo ->
                     process_lhost site_to_mallocs updated (Cil.Var varinfo) None
-                end (site_to_mallocs, updated) (FindCil.all_varinfos file) in
+                end (site_to_mallocs, LhostMallocSet.empty) (FindCil.all_varinfos file) in
 
                 (* then infer malloc types from malloc pointers, iteratively to a fixpoint *)
                 let rec do_fixpoint site_to_mallocs updated =
@@ -244,8 +245,10 @@ let add_malloc_types =
                 let site_to_mallocs = do_fixpoint site_to_mallocs updated in
 
                 (* finally, transform the map to a suitable form *)
-                let site_to_mallocs = SiteMap.map begin fun malloc_to_sources ->
-                    MallocMap.fold (fun malloc _ mallocs -> malloc::mallocs) malloc_to_sources []
+                let site_to_mallocs = SiteMap.map begin fun malloc_meta ->
+                    MallocMap.fold begin fun malloc (_, malloc_lhosts) mallocs ->
+                        (malloc, LhostSet.elements malloc_lhosts)::mallocs
+                    end malloc_meta []
                 end site_to_mallocs in
 
                 Hashtbl.replace file_memotable file site_to_mallocs;
@@ -266,10 +269,10 @@ let add_malloc_types =
 let points_to file exp = Profiler.global#call "CilPtranal.points_to" begin fun () ->
     init_file file;
     let resolve_exp exp = Profiler.global#call "Ptranal.resolve_exp" (fun () -> Ptranal.resolve_exp exp) in
-    let add_malloc_types = add_malloc_types file resolve_exp in
+    let mallocs_of_sites = mallocs_of_sites file resolve_exp in
     let points_to exp =
         let varinfos, sites = resolve_exp exp in
-        (varinfos, add_malloc_types sites)
+        (varinfos, mallocs_of_sites sites)
     in
     wrap_points_to_varinfo points_to exp
 end
@@ -286,6 +289,27 @@ let points_to_fundec file exp = Profiler.global#call "CilPtranal.points_to_funde
 end
 
 
+(**/**)
+(* Helper for naive_points_to/unsound_points_to to generate a dummy host varinfo to refer to malloc'ed locations. *)
+let make_malloc_host file =
+    let malloc_host_name =
+        let rec malloc_host_name n =
+            let name = FormatPlus.sprintf "__cilptranal_points_to_host%d" n in
+            let exists = try ignore (FindCil.global_varinfo_by_name file name); true with Not_found -> false in
+            if exists then
+                malloc_host_name (n + 1)
+            else
+                name
+        in
+        malloc_host_name 0
+    in
+    let malloc_host = Cil.makeGlobalVar malloc_host_name Cil.voidPtrType in
+    (* should it be added to globals? it will never be reachable from code *)
+    (* file.Cil.globals <- (Cil.GVarDecl (malloc_host, Cil.locUnknown))::file.Cil.globals; *)
+    malloc_host
+(**/**)
+
+
 (** Naive point-to that maps anything to everything (including [malloc]), filtered by type.
         @param file is the file being analyzed
         @param exp is the expression to resolve
@@ -298,9 +322,15 @@ let naive_points_to =
         try
             Hashtbl.find memotable file
         with Not_found ->
-            let malloc = FindCil.global_varinfo_by_name file "malloc" in
+            let malloc_host = make_malloc_host file in
             let varinfos = FindCil.all_varinfos file in
-            let mallocs = List.map (fun typ -> (malloc, "malloc", typ)) (FindCil.all_types file) in
+            let malloc_varinfo = FindCil.global_varinfo_by_name file "malloc" in
+            let mallocs = List.map begin fun typ ->
+                let malloc = (malloc_varinfo, "malloc", typ) in
+                let malloc_lhost = Cil.Mem (Cil.mkCast (Cil.Lval (Cil.var malloc_host)) typ) in
+                (malloc, [ malloc_lhost ])
+            end (FindCil.all_types file) in
+
             let targets = wrap_points_to_varinfo (fun _ -> (varinfos, mallocs)) exp in
             Hashtbl.add memotable file targets;
             targets
@@ -318,9 +348,12 @@ let unsound_points_to =
     fun file exp -> Profiler.global#call "CilPtranal.unsound_points_to" begin fun () ->
         match Cil.unrollType (Cil.typeOf exp) with
             | Cil.TPtr (typ, _) ->
-                let malloc = FindCil.global_varinfo_by_name file "malloc" in
+                let malloc_host = make_malloc_host file in
+                let malloc_varinfo = FindCil.global_varinfo_by_name file "malloc" in
                 let name = "malloc" ^ string_of_int (Counter.next counter) in
-                wrap_points_to_varinfo (fun _ -> ([], [ (malloc, name, typ) ])) exp
+                let malloc = (malloc_varinfo, name, typ) in
+                let malloc_lhost = Cil.Mem (Cil.mkCast (Cil.Lval (Cil.var malloc_host)) typ) in
+                wrap_points_to_varinfo (fun _ -> ([], [ (malloc, [ malloc_lhost ]) ])) exp
             | _ ->
                 ([], [])
     end

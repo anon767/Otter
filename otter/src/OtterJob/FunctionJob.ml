@@ -65,12 +65,7 @@ let rec init_bytes_with_pointers ?scheme job typ points_to exps = match Cil.unro
         (* for pointers, generate the pointer *)
         let init_target typ vars mallocs job =
             let var_exps = List.map (fun v -> Cil.Lval (Cil.var v)) vars in
-            let malloc_exps =
-                if mallocs <> [] then
-                    List.map (fun exp -> Cil.Lval (Cil.Mem exp, Cil.NoOffset)) exps
-                else
-                    []
-            in
+            let malloc_exps = List.concat (List.map (fun (_, lhosts) -> List.map (fun lhost -> Cil.Lval (lhost, Cil.NoOffset)) lhosts) mallocs) in
             let exps = var_exps @ malloc_exps in
             if exps <> [] then
                 init_bytes_with_pointers ?scheme job typ points_to exps
