@@ -58,17 +58,15 @@ let benchmarks ?(div_num=1) ?(div_base=1) argv_array =
         let backotter_drivers =
             let pure_backotter_driver name brank bqueue =
                 (Printf.sprintf "BackOtter:%s" name) >:: benchmark (
-                    BackOtterMain.callchain_backward_se 
-                                                          ~b_queue:(BackOtter.BackOtterQueue.get_function_backward_queue brank bqueue)
-                                                          ~ratio:(-. 0.1) (* Pure backward *)
+                    BackOtterMain.callchain_backward_se ~b_queue:(BackOtter.BackOtterQueue.get_function_backward_queue brank bqueue)
+                                                        ~ratio:(-. 0.1) (* Pure backwards *)
                 )
             in
             let backotter_driver name fqueue brank bqueue ratio =
                 (Printf.sprintf "BackOtter:%s" name) >:: benchmark (
-                    BackOtterMain.callchain_backward_se 
-                                                          ~f_queue:(BackOtter.BackOtterQueue.get fqueue)
-                                                          ~b_queue:(BackOtter.BackOtterQueue.get_function_backward_queue brank bqueue)
-                                                          ~ratio
+                    BackOtterMain.callchain_backward_se ~f_queue:(BackOtter.BackOtterQueue.get fqueue)
+                                                        ~b_queue:(BackOtter.BackOtterQueue.get_function_backward_queue brank bqueue)
+                                                        ~ratio
                 )
             in
             (* don't want depth-first, it's really terrible *)
