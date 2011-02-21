@@ -529,13 +529,15 @@ ssize_t __otter_libc_write2(
 		case __otter_fs_TYP_SOCK:
 			return __otter_libc_write_socket(open_file, buf, num);
 		case __otter_fs_TYP_DIR: /* writing to directories is not supported */
-			__FAILURE(); /* should not be possible to open a dir for writing */
+			__ASSERT(0); /* should not be possible to open a dir for writing */
+                        abort();
 		case __otter_fs_TYP_NULL:
 		case __otter_fs_TYP_ZERO:
 			open_file->status = __otter_fs_STATUS_EOF; // TODO: This seems wrong. /dev/null should *always* have eof set, and /dev/zero *never* should, but this should be set when initializing the file system, not upon a write.
 			return (num);
 	}
-	__FAILURE(); /* this should never happen as all cases should be enumerated */
+	__ASSERT(0); /* this should never happen as all cases should be enumerated */
+        abort();
 }
 
 ssize_t __otter_libc_write(int fd, const void* buf, size_t num)
