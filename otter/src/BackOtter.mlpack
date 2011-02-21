@@ -3,6 +3,7 @@ BackOtter/BackOtterErrors
 BackOtter/BackOtterQueue
 BackOtter/BackOtterReporter
 BackOtter/BackOtterTargets
+BackOtter/BackOtterTargetTracker
 BackOtter/BackOtterTimer
 BackOtter/BackOtterUtilities
 BackOtter/BidirectionalQueue
