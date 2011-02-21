@@ -51,7 +51,6 @@ let function_call_of_latest_decision =
 (* TODO: package the long list of arguments into BackOtterProfile.t *)
 class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                file
-               entry_fn
                entry_job
                f_queue
                b_queue
@@ -70,6 +69,8 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
         val jid_to_bounding_paths = JidMap.empty
         (* A mapping from jid to job *)
         val jid_to_job = JidMap.empty
+        (* TODO: the line below will be gone when a better way of distributing jobs to queues is implemented *)
+        val entry_fn = ProgramPoints.get_entry_fundec file
 
         method put (job : 'job) =
             Profiler.global#call "BidirectionalQueue.t#put" begin fun () ->

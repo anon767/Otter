@@ -18,6 +18,7 @@ let main_loop entry_fn interceptor queue reporter =
                          * also include the time of getting a job. *)
                         let fundec = BackOtterUtilities.get_origin_function job in
                         let tkind = if fundec == entry_fn then `TKindEntry else `TKindOther in
+                        (* TODO: count the time somewhere else, so main_loop doesn't depend on entry_fn *)
                         BackOtterTimer.time tkind (fun () -> step job)
                     in
                     let rec process_result (queue, reporter) result =

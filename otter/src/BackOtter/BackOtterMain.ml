@@ -21,7 +21,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     let file = entry_job#file in
 
     (* Entry function set by --entryfn (default: main) *)
-    let entry_fn = List.hd entry_job#state.callstack in
+    let entry_fn = ProgramPoints.get_entry_fundec file in
 
     (* failure function set by --failurefn (default: __FAILURE) *)
     let failure_fn = ProgramPoints.get_failure_fundec file in
@@ -48,7 +48,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     ) b_queue starter_fundecs in
 
     (* A queue that prioritizes jobs *)
-    let queue = new BidirectionalQueue.t ?ratio file entry_fn entry_job f_queue b_queue starter_fundecs in
+    let queue = new BidirectionalQueue.t ?ratio file entry_job f_queue b_queue starter_fundecs in
 
     (* Overlay the target tracker on the reporter *)
     let target_tracker = new BackOtterTargetTracker.t reporter entry_fn in
