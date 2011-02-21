@@ -23,7 +23,7 @@ let rec get = function
     | `Generational `Random -> new RankedQueue.t [ new GenerationalStrategy.t ]
     | `LeastCovered -> new RankedQueue.t  [ new LeastCoveredStrategy.t ]
     | `ClosestToUncovered -> new RankedQueue.t [ new ClosestToUncoveredStrategy.t ]
-    | `ClosestToTargets -> new RankedQueue.t [ new ClosestToTargetsStrategy.t ]
+    | `ClosestToTargets -> new RankedQueue.t [ new ClosestToTargetsStrategy.t ] (* This ClosestToTargetsStrategy is different from that in OtterQueue *)
     | `Generational `ClosestToTargets -> new RankedQueue.t [ new GenerationalStrategy.t; new ClosestToTargetsStrategy.t ]
     | `RoundRobin queues -> new RoundRobinQueue.t (List.map get queues)
     | `KLEE -> new BatchQueue.t (get (`RoundRobin [ `ClosestToUncovered; `RandomPath ]))

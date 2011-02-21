@@ -174,7 +174,7 @@ let exec_instr_call job instr lvalopt fexp exps errors =
             | (job, fundec)::t ->
                 let job_state, errors =
                     try
-                        let job = job#with_decision_path (DecisionFuncall(instr, fundec)::job#decision_path) in
+                        let job = job#with_decision_path (DecisionFuncall(instr, fundec.svar)::job#decision_path) in
                         exec_fundec job instr fundec lvalopt exps errors
                     with Failure msg ->
                         if !Executeargs.arg_failfast then failwith msg;

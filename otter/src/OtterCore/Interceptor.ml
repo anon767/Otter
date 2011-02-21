@@ -19,6 +19,7 @@ let intercept_function_by_name_internal target_name replace_func job job_queue i
         Output.set_mode Output.MSG_STMT;
         Output.printf "%a@\n" Printcil.instr instr;
         Output.printf "Built-in function %s is run@\n" varinfo.Cil.vname;
+        let job = job#with_decision_path (Decision.DecisionFuncall(instr, varinfo)::job#decision_path) in
         let job_state, errors = replace_func job retopt exps [] in
         if errors = [] then
             (job_state, job_queue)

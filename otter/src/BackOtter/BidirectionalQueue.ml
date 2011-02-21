@@ -49,9 +49,9 @@ let function_call_of_latest_decision =
     fun lst ->
         Profiler.global#call "BidirectionalQueue.function_call_of_latest_decision" begin fun () ->
             match lst with
-            | DecisionFuncall (_, fundec) :: _ as decisions->
+            | DecisionFuncall (_, varinfo) :: _ as decisions->
                 if Hashtbl.mem memotable decisions then None
-                else (Hashtbl.add memotable decisions (); Some fundec)
+                else (Hashtbl.add memotable decisions (); Some varinfo)
             | _ -> None
         end
 
@@ -63,14 +63,14 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                entry_job
                f_queue
                b_queue
-               origin_fundecs =
+               starter_fundecs =
     (* ratio < 0.0 denotes purely backward (beware of precision!) *)
     let is_bidirectional = ratio >= 0.0 in
     object (self)
         val entryfn_jobqueue = if is_bidirectional then f_queue#put entry_job else f_queue
         val otherfn_jobqueue = b_queue
         (* fundecs whose initialized jobs have been created *)
-        val origin_fundecs = origin_fundecs
+        val origin_fundecs = starter_fundecs
 
         (* A worklist for bounded jobs. I guess the strategy does not matter. *)
         val bounded_jobqueue = new BackOtterQueue.RankedQueue.t [ new BackOtterQueue.DepthFirstStrategy.t ]
@@ -142,10 +142,15 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                 in
                 (* Check if the job is a function call to a target function *)
                 let jid_to_job, jid_to_bounding_paths, bounded_jobqueue =
-                    match
-                        Profiler.global#call "BidirectionalQueue.t#put/regular_parent/function_call_of_latest_decision"
-                            (fun () -> function_call_of_latest_decision job#decision_path)
-                    with
+                    let fundec_opt =
+                        match 
+                            Profiler.global#call "BidirectionalQueue.t#put/regular_parent/function_call_of_latest_decision"
+                                (fun () -> function_call_of_latest_decision job#decision_path)
+                        with
+                        | Some (varinfo) -> (try Some(CilUtilities.FindCil.fundec_by_varinfo file varinfo) with Not_found -> None)
+                        | None -> None
+                    in
+                    match fundec_opt with
                     | Some (fundec) ->
                         let failing_paths = BackOtterTargets.get_paths fundec in
                         let failing_paths_length = List.length failing_paths in
@@ -222,7 +227,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                     let rec scan decision_path depth =
                                         if depth <= 0 then [] else
                                         match decision_path with
-                                        | DecisionFuncall (_, fundec) :: tail when fundec == target_fundec ->
+                                        | DecisionFuncall (_, varinfo) :: tail when varinfo.vid = target_fundec.svar.vid ->
                                              let bounding_paths = scan tail (depth - 1) in
                                              let matches, _, failing_tail =
                                                  Profiler.global#call "BidirectionalQueue.t#get/update_bounding_status/scan/rev_equals" begin fun () ->
@@ -283,6 +288,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                                     else (
                                                         Output.debug_printf "Create new job for function %s@\n" caller.svar.vname;
                                                         Profiler.global#call "BidirectionalQueue.t#get/regular_get/create_new_jobs/new_functionjob" begin fun () ->
+                                                            (* TODO: let's try a simpler Job initializer *)
                                                             new OtterJob.FunctionJob.t file ~points_to:(!default_points_to file) caller
                                                         end
                                                     )
