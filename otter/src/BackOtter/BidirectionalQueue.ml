@@ -261,6 +261,11 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                         (* If there's no more entry jobs, the forward search has ended. So we terminate. *)
                         if is_bidirectional && entryfn_jobqueue#length = 0 then None else
 
+
+                        (* TODO: This can be done outside of BidirectionalQueue.
+                         * E.g., in main_loop, for each iteration, check if new target_fundecs are found,
+                         * and if so, create new jobs for them.
+                         *)
                         (* Set up targets, which maps target functions to their failing paths, and
                          * target_fundecs, which is basically the key set of targets *)
                         let target_fundecs = BackOtterTargets.get_target_fundecs () in
@@ -282,7 +287,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                                         Output.debug_printf "Create new job for function %s@\n" caller.svar.vname;
                                                         Profiler.global#call "BidirectionalQueue.t#get/regular_get/create_new_jobs/new_functionjob" begin fun () ->
                                                             (* TODO: let's try a simpler Job initializer *)
-                                                            new OtterJob.FunctionJob.t file caller
+                                                            new BackOtterJob.t (new OtterJob.FunctionJob.t file caller)
                                                         end
                                                     )
                                                 in
@@ -290,7 +295,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                     ) (origin_fundecs, otherfn_jobqueue) callers
                             ) (origin_fundecs, otherfn_jobqueue) target_fundecs
                             end
-                        in
+                        in (* END TODO *)
 
                         (* debug, Debug, DEBUG (warning: these can slow down regular_get) *)
                         Output.debug_printf "Number of entry function jobs: %d@\n" (entryfn_jobqueue#length);
