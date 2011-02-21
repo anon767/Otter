@@ -86,13 +86,14 @@ let doExecute (f: file) =
     Report.print_report reporter#completed
 
 let options = 
-    Executeargs.options @ 
-    TrackingFunctions.options @ 
-    SymbolicPointers.options @ 
-    Queue.options @ 
-    ProgramPoints.options @ 
     BasicReporter.options @ 
-    Stp.options
+    Executeargs.options @ 
+    FunctionJob.options @
+    ProgramPoints.options @ 
+    Queue.options @ 
+    Stp.options @
+    SymbolicPointers.options @ 
+    TrackingFunctions.options 
 
 let feature : featureDescr = {
 	fd_name = "execute";

@@ -6,6 +6,14 @@ open OtterBytes
 open OtterCore
 
 
+let points_tos = [
+    "regular", CilUtilities.CilPtranal.points_to;
+    "naive", CilUtilities.CilPtranal.naive_points_to;
+    "unsound", CilUtilities.CilPtranal.unsound_points_to;
+]
+let default_points_to = ref CilUtilities.CilPtranal.points_to
+
+
 (**/**)
 let fold_struct f acc compinfo =
     List.fold_left f acc compinfo.Cil.cfields
@@ -142,7 +150,7 @@ let rec init_bytes_with_pointers ?scheme job typ points_to exps = match Cil.unro
         @param fn is list the function at which to begin symbolic execution
         @return [OtterCore.Job.job] the created job
 *)
-class t file ?scheme ?(points_to=CilPtranal.points_to file) fn =
+class t file ?scheme ?(points_to=(!default_points_to) file) fn =
     object (self : 'self)
         inherit OtterCore.Job.t file fn
         initializer
@@ -178,4 +186,10 @@ class t file ?scheme ?(points_to=CilPtranal.points_to file) fn =
 
             self#become job
     end
+
+let options = [
+    "--points-to-analysis",
+        Arg.Symbol (fst (List.split points_tos), fun name -> default_points_to := List.assoc name points_tos),
+        "<points_to> Set the default points_to analysis (default: regular)";
+]
 

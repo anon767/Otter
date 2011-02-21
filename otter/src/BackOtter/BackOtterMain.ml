@@ -48,7 +48,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     [] (!BackOtterInterceptor.arg_line_targets) in
     List.iter (fun f -> Output.debug_printf "Function containing coverage targets: %s@\n" f.svar.vname) starter_fundecs;
     let b_queue = List.fold_left (fun b_queue fundec ->
-        let job = new OtterJob.FunctionJob.t file ~points_to:(!BidirectionalQueue.default_points_to file) fundec in
+        let job = new OtterJob.FunctionJob.t file fundec in
         b_queue#put job
     ) b_queue starter_fundecs in
 
