@@ -115,6 +115,9 @@ class t :
             let node_profiler, (self, x) = node_profiler#call label begin fun node_profiler ->
                 let self, x = f {< node_profiler = node_profiler >} in
                 (self#node_profiler, (self, x))
+            end ~catch:begin fun exn node_profiler ->
+            (* TODO: turn self into an abandoned job and store node_profiler in it *)
+                raise exn
             end in
             (self#_with_node_profiler node_profiler, x)
 
