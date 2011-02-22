@@ -113,27 +113,28 @@ let init_cmdline_argvs job argstr =
 	(job, [argc; argv])
 
 
+let job_initializer file cmdline main_func job =
+    (* Initialize the state with zeroed globals *)
+    let job = init_globalvars job file.Cil.globals in
+
+    (* prepare the command line arguments, if needed *)
+    let job, main_args =
+        match main_func.Cil.svar.Cil.vtype with
+            | Cil.TFun (_, Some [], _, _) -> (job, []) (* main has no arguments *)
+            | _ -> init_cmdline_argvs job cmdline
+    in
+
+    (* enter the function *)
+    MemOp.state__start_fcall job State.Runtime main_func main_args
+
+
 (* create a job that begins at the main function of a file, with the initial state set up for the file *)
 class t file cmdline =
     let main_func = ProgramPoints.get_main_fundec file in
     object (self : 'self)
         inherit OtterCore.Job.t file main_func
         initializer
-            let job = self in
-
-            (* Initialize the state with zeroed globals *)
-            let job = init_globalvars job file.Cil.globals in
-
-            (* prepare the command line arguments, if needed *)
-            let job, main_args =
-                match main_func.Cil.svar.Cil.vtype with
-                    | Cil.TFun (_, Some [], _, _) -> (job, []) (* main has no arguments *)
-                    | _ -> init_cmdline_argvs job cmdline
-            in
-
-            (* enter the function *)
-            let job = MemOp.state__start_fcall job State.Runtime main_func main_args in
-
+            let job = job_initializer file cmdline main_func self in
             self#become job
     end
 

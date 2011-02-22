@@ -43,7 +43,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     [] (!BackOtterInterceptor.arg_line_targets) in
     List.iter (fun f -> Output.debug_printf "Function containing coverage targets: %s@\n" f.svar.vname) starter_fundecs;
     let b_queue = List.fold_left (fun b_queue fundec ->
-        let job = new OtterJob.FunctionJob.t file fundec in
+        let job = new BackOtterFunctionJob.t file fundec in
         b_queue#put job
     ) b_queue starter_fundecs in
 
@@ -117,7 +117,7 @@ let doit file =
         Output.must_printf "Backward strategy: %s@\n" (find_tag_name (!BackOtterQueue.default_bqueue) BackOtterQueue.queues);
         Output.must_printf "Ratio: %0.2f@\n" !BidirectionalQueue.default_bidirectional_search_ratio ;
 
-        let entry_job = OtterJob.Job.get_default file in
+        let entry_job = BackOtterJob.get_default file in
         let _, reporter = callchain_backward_se (new BackOtterReporter.t ()) entry_job in
 
         (* print the results *)

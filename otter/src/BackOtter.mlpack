@@ -1,6 +1,10 @@
 BackOtter/BackOtterDriver
 BackOtter/BackOtterErrors
+BackOtter/BackOtterFileJob
+BackOtter/BackOtterFunctionJob
 BackOtter/BackOtterInterceptor
+BackOtter/BackOtterJob
+BackOtter/BackOtterJobExtension
 BackOtter/BackOtterMain
 BackOtter/BackOtterQueue
 BackOtter/BackOtterReporter
