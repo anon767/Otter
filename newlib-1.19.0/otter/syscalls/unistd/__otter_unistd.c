@@ -144,18 +144,13 @@ ssize_t __otter_libc_read_file(
 
 	struct __otter_fs_inode* inode = (struct __otter_fs_inode*)(open_file->vnode);
 
-	// TODO: we can replace this loop with a length check and a memcpy
-	for(int i = 0; i < num; i++)
-	{
-		if(i + offset < (*inode).size)
-		{
-			((char *)buf)[i] = (*inode).data[i + offset];
-		}
-		else
-		{
-			return (i);
-		}
-	}
+	/* Copy into buf the bytes between inode->data[offset] and
+		inode->data[offset+num-1], but don't read beyond
+		inode->data[inode->size - 1]. That means that if inode->size <
+		offset+num, we only read inode->size - offset bytes instead of
+		num. */
+	num = inode->size < offset + num ? inode->size - offset : num;
+	memcpy(buf, &inode->data[offset], num);
 	
 	__otter_multi_end_atomic();
 
