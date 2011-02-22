@@ -15,8 +15,5 @@ class t file ?scheme ?(points_to=(!FunctionJob.default_points_to) file) fn :
             job_super#become other;
             b_super#become other
 
-        initializer
-            let job = FunctionJob.job_initializer file ?scheme points_to fn self in
-            self#become job
     end
 

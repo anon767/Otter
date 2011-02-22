@@ -7,7 +7,6 @@ class t file cmdline :
         inherit BackOtterJobExtension.t
     end
 =
-    let main_func = ProgramPoints.get_main_fundec file in
     object (self : 'self)
         inherit FileJob.t file cmdline as job_super
         inherit BackOtterJobExtension.t as b_super
@@ -16,8 +15,5 @@ class t file cmdline :
             job_super#become other;
             b_super#become other
 
-        initializer
-            let job = FileJob.job_initializer file cmdline main_func self in
-            self#become job
     end
 
