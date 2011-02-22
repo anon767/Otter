@@ -269,7 +269,6 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                          * target_fundecs, which is basically the key set of targets *)
                         let target_fundecs = BackOtterTargets.get_target_fundecs () in
 
-                        (* TODO: add new jobs outside BidirectionalQueue. E.g., in BackOtterDriver.main_loop *)
                         (* Create new jobs for callers of new targets *)
                         let origin_fundecs', otherfn_jobqueue =
                             Profiler.global#call "BidirectionalQueue.t#get/regular_get/create_new_jobs" begin fun () ->
@@ -287,7 +286,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                                         Output.debug_printf "Create new job for function %s@\n" caller.svar.vname;
                                                         Profiler.global#call "BidirectionalQueue.t#get/regular_get/create_new_jobs/new_functionjob" begin fun () ->
                                                             (* TODO: let's try a simpler Job initializer *)
-                                                            new BackOtterFunctionJob.t file caller
+                                                            new OtterJob.FunctionJob.t file caller
                                                         end
                                                     )
                                                 in
@@ -295,7 +294,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                     ) (origin_fundecs, otherfn_jobqueue) callers
                             ) (origin_fundecs, otherfn_jobqueue) target_fundecs
                             end
-                        in 
+                        in
 
                         (* debug, Debug, DEBUG (warning: these can slow down regular_get) *)
                         Output.debug_printf "Number of entry function jobs: %d@\n" (entryfn_jobqueue#length);
