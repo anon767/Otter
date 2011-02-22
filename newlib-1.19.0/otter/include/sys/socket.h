@@ -128,7 +128,7 @@ void __otter_libc_flush_sock_queue(struct __otter_fs_sock_data* sock);
 ssize_t __otter_libc_read_pipe_data(
 	struct __otter_fs_pipe_data* pipe,
 	void* buf,
-	size_t num);
+	size_t num, int nonblocking);
 ssize_t __otter_libc_pread_pipe_data(
 	struct __otter_fs_pipe_data* pipe,
 	void* buf,

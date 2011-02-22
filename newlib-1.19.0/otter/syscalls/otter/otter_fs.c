@@ -573,11 +573,7 @@ int __otter_fs_open_file(struct __otter_fs_inode* inode, int mode)
 	__otter_fs_open_file_table[ft].vnode = (void*)inode;
 	__otter_fs_open_file_table[ft].offset = 0;
 	__otter_fs_open_file_table[ft].openno = 1;
-	__otter_fs_open_file_table[ft].status = __otter_fs_STATUS_OK;
 
-	if((*inode).size == 0)
-		__otter_fs_open_file_table[ft].status = __otter_fs_STATUS_EOF;
-	
 	__otter_multi_end_atomic();
 	return (fd);
 }
@@ -621,7 +617,6 @@ int __otter_fs_open_dir(struct __otter_fs_dnode* dnode, int mode)
 	__otter_fs_open_file_table[ft].vnode = (void*)dnode;
 	__otter_fs_open_file_table[ft].offset = 0;
 	__otter_fs_open_file_table[ft].openno = 1;
-	__otter_fs_open_file_table[ft].status = __otter_fs_STATUS_OK;
 
 	return (fd);
 }

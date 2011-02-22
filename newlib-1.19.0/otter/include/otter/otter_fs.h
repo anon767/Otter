@@ -18,9 +18,6 @@
 
 #define __otter_fs_IS_TYP_SPECIAL(x) ((x) & 64)
 
-#define __otter_fs_STATUS_OK 0
-#define __otter_fs_STATUS_EOF 1
-
 #define __otter_fs_MAXOPEN 64
 #define __otter_fs_GLOBALMAXOPEN 128
 
@@ -113,7 +110,6 @@ struct __otter_fs_open_file_table_entry
 	int type;
 	void* vnode;
 	int openno;
-	int status;
 };
 
 int* __otter_fs_fd_table;

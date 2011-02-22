@@ -72,32 +72,32 @@ static void *ready_to_read(struct __otter_fs_open_file_table_entry *open_file) {
 				// The socket becomes ready for reading when someone enters the sock_queue, so monitor that
 				return sock->sock_queue;
 			}
-		// An established socket is ready to read if there is data in its recv_data, or if it is at end-of-file
+		// An established socket is ready to read if there is data in its recv_data
 		case __otter_sock_ST_ESTABLISHED:
-			if (!__otter_fs_pipe_is_empty(sock->recv_data) || open_file->status == __otter_fs_STATUS_EOF) {
+		case __otter_sock_ST_FIN_WAIT_1:
+		case __otter_sock_ST_FIN_WAIT_2:
+			if (!__otter_fs_pipe_is_empty(sock->recv_data)) {
 				return NULL;
 			} else {
 				// The pipe is not ready for reading. Watch its write head, which will move when it's ready for reading.
 				return &sock->recv_data->whead;
 			}
-		// Anything else is not ready to read. Monitor the state to see if it becomes ready.
+		// Any other state will lead to a failing read, but it will not block, so it is ready
 		case __otter_sock_ST_CLOSED:
 		case __otter_sock_ST_SYN_RCVD:
 		case __otter_sock_ST_SYN_SENT:
 		case __otter_sock_ST_CLOSE_WAIT:
 		case __otter_sock_ST_LAST_ACK:
-		case __otter_sock_ST_FIN_WAIT_1:
-		case __otter_sock_ST_FIN_WAIT_2:
 		case __otter_sock_ST_CLOSING:
 		case __otter_sock_ST_TIME_WAIT:
 		case __otter_sock_ST_UDP:
-			return &sock->state;
+			return NULL;
 		}
 		__ASSERT(0); // Unreachable
-		return NULL; // To make CIL happy
+		abort(); // To make CIL happy
 	} else if (open_file->type == __otter_fs_TYP_FIFO) {
 		struct __otter_fs_pipe_data *pipe = __otter_libc_get_pipe_data_from_open_file(open_file);
-		if (!__otter_fs_pipe_is_empty(pipe) || open_file->status == __otter_fs_STATUS_EOF) {
+		if (!__otter_fs_pipe_is_empty(pipe)) {
 			// The pipe is ready for reading
 			return NULL;
 		} else {
@@ -115,12 +115,16 @@ static void *ready_to_read(struct __otter_fs_open_file_table_entry *open_file) {
 static void *ready_to_write(struct __otter_fs_open_file_table_entry *open_file) {
 	if (open_file->type == __otter_fs_TYP_SOCK) {
 		struct __otter_fs_sock_data *sock = __otter_libc_get_sock_data_from_open_file(open_file);
-		// A socket is ready for writing if it is established and there is room in its write buffer
-		if (sock->state == __otter_sock_ST_ESTABLISHED && !__otter_fs_pipe_is_full(sock->sock_queue[0]->recv_data)) {
-			return NULL;
+		if (sock->state == __otter_sock_ST_ESTABLISHED) {
+			if (!__otter_fs_pipe_is_full(sock->sock_queue[0]->recv_data)) {
+				return NULL; // A socket is ready for writing if it is established and there is room in its write buffer
+			} else {
+				// If a socket is established but empty, monitor its write buffer's read head. It is ready for writing when the read head moves.
+				return &sock->sock_queue[0]->recv_data->rhead;
+			}
 		} else {
-			// If a socket is not ready for writing, monitor its write buffer's read head. It is ready for writing when the read head moves.
-			return &sock->sock_queue[0]->recv_data->rhead;
+			// The socket is in the wrong state. Monitor the state to see if it becomes ready.
+			return &sock->state;
 		}
 	} else if (open_file->type == __otter_fs_TYP_FIFO) {
 		struct __otter_fs_pipe_data *pipe = __otter_libc_get_pipe_data_from_open_file(open_file);
@@ -142,19 +146,19 @@ static int is_set(int fd, fd_set *fd_set_p) {
 }
 
 /* A macro to check whether a file descriptor is ready. This refers to local
-	 variables within select_helper's 'for' loop and can only be used there. */
-#define check_for_readiness(fds, ready_check_fn)												\
-	/* See if the pointer is ready for reading */													\
-	if (is_set(fd, (fds))) {																							\
-		void *ptr = (ready_check_fn)(open_file);														\
-		if (ptr) {																													\
-			/* retval is non-null, so the file is not ready. */								\
-			FD_CLR(fd, (fds));																								\
-			watch_list[watch_list_len] = ptr; /* Record the pointer to watch */	\
-			watch_list_len++; /* And increment the index into watch_list */		\
-		} else {																														\
-			num_ready_fds++; /* The file is ready */													\
-		}																																		\
+	variables within select_helper's 'for' loop and can only be used there. */
+#define check_for_readiness(fds, ready_check_fn)\
+	/* See if the pointer is ready for reading */\
+	if (is_set(fd, (fds))) {\
+		void *ptr = (ready_check_fn)(open_file);\
+		if (ptr) {\
+			/* retval is non-null, so the file is not ready. */\
+			FD_CLR(fd, (fds));\
+			watch_list[watch_list_len] = ptr; /* Record the pointer to watch */\
+			watch_list_len++; /* And increment the index into watch_list */\
+		} else {\
+			num_ready_fds++; /* The file is ready */\
+		}\
 	}
 
 // Sentinel value to indicate that we had to block on the requested conditions.

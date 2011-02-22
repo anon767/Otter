@@ -153,7 +153,6 @@ ssize_t __otter_libc_read_file(
 		}
 		else
 		{
-			open_file->status = __otter_fs_STATUS_EOF;
 			return (i);
 		}
 	}
@@ -246,15 +245,29 @@ ssize_t __otter_libc_pread_pipe_data(
 	return (num);
 }
 
+/* Reads up to num bytes from pipe into buf, blocking if pipe is empty and nonblocking is false */
 ssize_t __otter_libc_read_pipe_data(
 	struct __otter_fs_pipe_data* pipe,
 	void* buf,
-	size_t num)
+	size_t num, int nonblocking)
 {
+	/* Unless O_NONBLOCK is set, block until data becomes available. Then read the data. */
+	if (__otter_fs_pipe_is_empty(pipe)) {
+		if(nonblocking)
+		{
+			errno = EAGAIN;
+			__otter_multi_end_atomic();
+			return -1;
+		}
+		__otter_multi_block_while_condition(__otter_fs_pipe_is_empty(pipe), pipe);
+	}
+	/* This is a TOCTTOU problem on whether the pipe is empty, but opengroup says:
+		'The behavior of multiple concurrent reads on the same pipe, FIFO, or terminal device is unspecified.'
+		so this will (hopefully) never cause trouble. */
 	num = __otter_libc_pread_pipe_data(pipe, buf, num);
 
 	pipe->rhead = (pipe->rhead + num) % __otter_fs_PIPE_SIZE; /* move rhead to last char read */
-	return (num);
+	return num;
 }
 
 ssize_t __otter_libc_write_pipe_data(
@@ -291,28 +304,8 @@ ssize_t __otter_libc_read_pipe(
 	void* buf,
 	size_t num)
 {
-	struct __otter_fs_inode* inode = (struct __otter_fs_inode*)open_file->vnode;
-	struct __otter_fs_pipe_data* pipe = (struct __otter_fs_pipe_data*)inode->data;
-	if(open_file->status == __otter_fs_STATUS_EOF)
-	{
-		if(open_file->mode & O_NONBLOCK)
-		{
-			errno = EAGAIN;
-			return (-1);
-		}
-
-		/* block until data becomes available */
-		__otter_multi_block_while_condition(open_file->status == __otter_fs_STATUS_EOF, open_file);
-	}
-
-	int num_read = __otter_libc_read_pipe_data(pipe, buf, num);
-	// TODO: This is probably not the right situation in which to set EOF
-	if(__otter_fs_pipe_is_empty(pipe)) /* set EOF if there are no more chars left to read */
-	{
-		open_file->status = __otter_fs_STATUS_EOF;
-	}
-	
-	return(num_read);
+	struct __otter_fs_pipe_data* pipe = __otter_libc_get_pipe_data_from_open_file(open_file);
+	return __otter_libc_read_pipe_data(pipe, buf, num, open_file->mode & O_NONBLOCK);
 }
 
 ssize_t __otter_libc_write_pipe(
@@ -332,7 +325,7 @@ ssize_t __otter_libc_write_pipe(
 	return __otter_libc_write_pipe_data(pipe, buf, num);
 }
 
-/* double dircular buffer */
+/* double circular buffer */
 ssize_t __otter_libc_read_socket(
 	struct __otter_fs_open_file_table_entry* open_file,
 	void* buf,
@@ -354,18 +347,14 @@ ssize_t __otter_libc_read_socket(
 			/* can't read() in these states */
 			errno = ENOTCONN;
 			return(-1);
-			break;
 
 		case __otter_sock_ST_ESTABLISHED:
 		case __otter_sock_ST_FIN_WAIT_1:
 		case __otter_sock_ST_FIN_WAIT_2:
-			return __otter_libc_read_pipe_data(sock->recv_data, buf, num);
-			break;
-			
-		default:
-			__ASSERT(0);
+			return __otter_libc_read_pipe_data(sock->recv_data, buf, num, open_file->mode & O_NONBLOCK);
 	}
-	return(-1);
+	__ASSERT(0);
+	abort();
 }
 
 ssize_t __otter_libc_write_socket(
@@ -390,20 +379,15 @@ ssize_t __otter_libc_write_socket(
 			/* can't write() in these states */
 			errno = ENOTCONN;
 			return(-1);
-			break;
 
 		case __otter_sock_ST_ESTABLISHED:
 		case __otter_sock_ST_CLOSE_WAIT:
 			{
 				return __otter_libc_write_pipe_data(sock->sock_queue[0]->recv_data, buf, num);
-				break;
 			}
-			
-		default:
-			__ASSERT(0);
 	}
-	
-	return(-1);
+	__ASSERT(0);
+	abort();
 }
 
 ssize_t __otter_libc_read2(
@@ -425,37 +409,23 @@ ssize_t __otter_libc_read2(
 	{
 		case __otter_fs_TYP_FILE:
 			return __otter_libc_read_file(open_file, buf, num, offset);
-			break;
 		case __otter_fs_TYP_TTY:
 			return __otter_libc_read_tty(buf, num);
-			break;
 		case __otter_fs_TYP_FIFO:
 			return __otter_libc_read_pipe(open_file, buf, num);
-			break;
 		case __otter_fs_TYP_SOCK:
 			return __otter_libc_read_socket(open_file, buf, num);
-			break;
 		case __otter_fs_TYP_DIR: /* reading from directories is not supported */
 			errno = EISDIR;
 			return (-1);
-			break;
 		case __otter_fs_TYP_NULL:
-			open_file->status = __otter_fs_STATUS_EOF;
 			return (0);
-			break;
 		case __otter_fs_TYP_ZERO:
-			open_file->status = __otter_fs_STATUS_OK;
 			memset(buf, 0, num);
-
 			return (num);
-
-			break;
-		default: /* this should never happen as all cases should be enumerated */
-			__ASSERT(0);
-			break;
 	}
-
-	return (0);
+	__ASSERT(0); /* this should never happen as all cases should be enumerated */
+	abort();
 }
 
 ssize_t __otter_libc_read(int fd, void* buf, size_t num)
@@ -530,18 +500,17 @@ ssize_t __otter_libc_write2(
 			return __otter_libc_write_socket(open_file, buf, num);
 		case __otter_fs_TYP_DIR: /* writing to directories is not supported */
 			__ASSERT(0); /* should not be possible to open a dir for writing */
-                        abort();
+			abort();
 		case __otter_fs_TYP_NULL:
 		case __otter_fs_TYP_ZERO:
-			open_file->status = __otter_fs_STATUS_EOF; // TODO: This seems wrong. /dev/null should *always* have eof set, and /dev/zero *never* should, but this should be set when initializing the file system, not upon a write.
 			return (num);
 	}
 	__ASSERT(0); /* this should never happen as all cases should be enumerated */
-        abort();
+	abort();
 }
 
 ssize_t __otter_libc_write(int fd, const void* buf, size_t num)
-{	
+{
 	struct __otter_fs_open_file_table_entry* open_file = get_open_file_from_fd(fd);
 	if (!open_file) return -1;
 

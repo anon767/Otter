@@ -911,15 +911,15 @@ ssize_t recv(int socket_fd, void *buf, size_t num, int flags)
 		case __otter_sock_ST_FIN_WAIT_1:
 		case __otter_sock_ST_FIN_WAIT_2:
 			if(flags & MSG_PEEK)
+				/* TODO: Should MSG_PEEK block if there's no data? */
 				return __otter_libc_pread_pipe_data(sock->recv_data, buf, num);
-			else
-				return __otter_libc_read_pipe_data(sock->recv_data, buf, num);
-			break;
-			
-		default:
-			__ASSERT(0);
+			else {
+				struct __otter_fs_open_file_table_entry *open_file = get_open_file_from_fd(socket_fd);
+				return __otter_libc_read_pipe_data(sock->recv_data, buf, num, open_file->mode & O_NONBLOCK);
+			}
 	}
-	return(-1);
+	__ASSERT(0);
+	abort();
 }
 
 int shutdown(int socket_fd, int how)
