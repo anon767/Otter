@@ -65,10 +65,14 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
 
         (* A worklist for bounded jobs. I guess the strategy does not matter. *)
         val bounded_jobqueue = new BackOtterQueue.RankedQueue.t [ new BackOtterQueue.DepthFirstStrategy.t ]
+
+        (* TODO: make bounding_paths an instance field of BackOtterJob.t 
+         *       Then the next two fields can be thrown away. *)
         (* A mapping from jid to boundingPaths *)
         val jid_to_bounding_paths = JidMap.empty
         (* A mapping from jid to job *)
         val jid_to_job = JidMap.empty
+        
         (* TODO: the line below will be gone when a better way of distributing jobs to queues is implemented *)
         val entry_fn = ProgramPoints.get_entry_fundec file
 
@@ -261,11 +265,6 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                         (* If there's no more entry jobs, the forward search has ended. So we terminate. *)
                         if is_bidirectional && entryfn_jobqueue#length = 0 then None else
 
-
-                        (* TODO: This can be done outside of BidirectionalQueue.
-                         * E.g., in main_loop, for each iteration, check if new target_fundecs are found,
-                         * and if so, create new jobs for them.
-                         *)
                         (* Set up targets, which maps target functions to their failing paths, and
                          * target_fundecs, which is basically the key set of targets *)
                         let target_fundecs = BackOtterTargets.get_target_fundecs () in
@@ -287,7 +286,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                                         Output.debug_printf "Create new job for function %s@\n" caller.svar.vname;
                                                         Profiler.global#call "BidirectionalQueue.t#get/regular_get/create_new_jobs/new_functionjob" begin fun () ->
                                                             (* TODO: let's try a simpler Job initializer *)
-                                                            new BackOtterJob.t (new OtterJob.FunctionJob.t file caller)
+                                                            new OtterJob.FunctionJob.t file caller
                                                         end
                                                     )
                                                 in
@@ -295,7 +294,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                     ) (origin_fundecs, otherfn_jobqueue) callers
                             ) (origin_fundecs, otherfn_jobqueue) target_fundecs
                             end
-                        in (* END TODO *)
+                        in
 
                         (* debug, Debug, DEBUG (warning: these can slow down regular_get) *)
                         Output.debug_printf "Number of entry function jobs: %d@\n" (entryfn_jobqueue#length);

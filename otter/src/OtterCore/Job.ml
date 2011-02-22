@@ -77,7 +77,7 @@ let job_counter = Counter.make ()
 let job_counter_unique = Counter.make ()
 
 
-class t file' fn' :
+class t file' fn :
     object ('self)
         (* TODO: perhaps use a camlp4 syntax extension to deal with this boilerplate? *)
         (* TODO: group methods into logical components that can be composed mix-in style *)
@@ -85,9 +85,6 @@ class t file' fn' :
 
         method file : Cil.file
         method with_file : Cil.file -> 'self
-
-        method fn : Cil.fundec
-        method with_fn : Cil.fundec -> 'self
 
         inherit State.t
         inherit Info.t
@@ -122,13 +119,8 @@ class t file' fn' :
     let trackedFns' = TrackingFunctions.trackedFns file' in
     object (_ : 'self)
         val mutable file = file'
-        val mutable fn = fn'
-
         method file = file
         method with_file file = {< file = file >}
-
-        method fn = fn
-        method with_fn fn = {< fn = fn >}
 
         inherit State.t as state_super
         inherit Info.t as info_super
@@ -148,7 +140,7 @@ class t file' fn' :
         method with_instrList instrList = {< instrList = instrList >}
 
         (** The next statement the job should execute *)
-        val mutable stmt = List.hd fn'.Cil.sallstmts
+        val mutable stmt = List.hd fn.Cil.sallstmts
         method stmt = stmt
         method with_stmt stmt = {< stmt = stmt >}
 
@@ -158,7 +150,7 @@ class t file' fn' :
         method with_trackedFns trackedFns = {< trackedFns = trackedFns >}
 
         (** Is stmt in a function in the original program (as opposed to in a library or system call)? *)
-        val mutable inTrackedFn = StringSet.mem fn'.Cil.svar.Cil.vname trackedFns'
+        val mutable inTrackedFn = StringSet.mem fn.Cil.svar.Cil.vname trackedFns'
         method inTrackedFn = inTrackedFn
         method with_inTrackedFn inTrackedFn = {< inTrackedFn = inTrackedFn >}
 
@@ -196,7 +188,6 @@ class t file' fn' :
             state_super#become other;
             info_super#become other;
             file <- other#file;
-            fn <- other#fn;
             exHist <- other#exHist;
             decision_path <- other#decision_path;
             instrList <- other#instrList;
