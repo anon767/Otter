@@ -1,3 +1,5 @@
+#include <stdlib.h>
+#include <string.h>
 #include <sys/uio.h>
 #include <unistd.h>
 #include <sys/types.h>
