@@ -53,8 +53,8 @@ let eval_join_exps state exps binop errors =
     @raises Failure if given a non-singleton list
     @return the lone element of the list *)
 let get_lone_arg = function
-  | [ x ] -> x
-  | _ -> failwith "This function takes exactly one argument"
+  | [ exp ] -> exp
+  | exps -> FormatPlus.failwith "This function takes exactly one argument but got (%a)" (FormatPlus.pp_print_list Printcil.exp ", ") exps
 
 (** Convenience function to assign a value to an optional return lvalue.
 		@param job is the symbolic executor job in which to evaluate the return lvalue
@@ -472,11 +472,7 @@ let otter_failure job retopt exps errors =
     job_state, errors
 
 let otter_assert job retopt exps errors =
-    let exp =
-        match exps with
-            [ exp ] -> exp
-          | _ -> failwith "__ASSERT takes exactly one argument"
-    in
+    let exp = get_lone_arg exps in
     let job, assertion, errors = Expression.rval job exp errors in
     let active j = Job.Active (end_function_call j) in
     let failure () = (* Construct the failing job_state directly; there's no need to use 'errors' here. *)
