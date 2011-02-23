@@ -30,15 +30,14 @@ let put_job job multijob metadata =
 		stmt = job#stmt;
 		inTrackedFn = job#inTrackedFn;
 	} in
-	let local_state = { job#state with path_condition = []; } in
 	let shared = {
 		shared_block_to_bytes = update_to_shared_memory multijob.shared.shared_block_to_bytes job#state.block_to_bytes;
 	} in
 	{
 		processes =
 			(match metadata.priority with
-				| Atomic -> (program_counter, local_state, metadata)::multijob.processes (* save time sorting by putting an atomic process on the front *)
-				| _ -> List.append multijob.processes [ (program_counter, local_state, metadata) ])
+				| Atomic -> (program_counter, job#state, metadata)::multijob.processes (* save time sorting by putting an atomic process on the front *)
+				| _ -> List.append multijob.processes [ (program_counter, job#state, metadata) ])
 			;
 		shared = shared;
 		next_pid = multijob.next_pid;
@@ -130,7 +129,9 @@ let get_job multijob =
 			it can be used transparently as job without having to go through the trouble of creating a new job like below *)
 		let job = multijob.active_job in
 		let job = job#with_state { local_state with
+			(* take the previous process state and update the shared parts *)
 			State.block_to_bytes = update_from_shared_memory multijob.shared.shared_block_to_bytes local_state.block_to_bytes;
+			State.path_condition = job#state.path_condition;
 		} in
 		let job = job#with_instrList (program_counter.MultiTypes.instrList) in
 		let job = job#with_stmt (program_counter.MultiTypes.stmt) in
