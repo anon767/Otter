@@ -255,8 +255,8 @@ let mallocs_of_sites =
                 site_to_mallocs
             end
         in
-        fun mallocs ->
-            List.concat (List.map (fun malloc -> SiteMap.find malloc site_to_mallocs) mallocs)
+        fun sites ->
+            List.concat (List.map (fun site -> SiteMap.find site site_to_mallocs) sites)
 
 
 (** Wrapper for Cil's {!Ptranal.resolve_exp} that resolves to fields in variables as well, conservatively and
