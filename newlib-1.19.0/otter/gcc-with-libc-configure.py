@@ -1,15 +1,20 @@
 #!/usr/bin/env python
-# Usage: ./gcc-with-libc-configure.py gcc-with-libc otter-with-libc [args...]
-import os, sys
+import os, os.path, sys
 
 def call(cmd, argv=[]):
     return os.system(cmd + " " + " ".join(argv))
 
-gcc_with_libc = sys.argv[1]
-otter_with_libc = sys.argv[2]
+newlib_otter_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+gcc_with_libc = os.path.join(newlib_otter_dir, "gcc-with-libc")
+otter_with_libc = os.path.join(newlib_otter_dir, "otter-with-libc")
+
+if not (os.path.exists(gcc_with_libc) and os.path.exists(otter_with_libc)):
+    print "Missing %s or %s" % (gcc_with_libc, otter_with_libc)
+    sys.exit(1)
+
 ld_with_libc = otter_with_libc + " --doLinkCheck"
 
-argv = sys.argv[3:]
+argv = sys.argv[1:]
 conftest = "conftest.c"
 
 ret = call(gcc_with_libc, argv)

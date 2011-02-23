@@ -1,9 +1,7 @@
 trunk=$(PWD)/../..
 newlib=$(trunk)/newlib-1.19.0/otter
 
-gcc_with_libc=$(newlib)/gcc-with-libc
-otter_with_libc=$(newlib)/otter-with-libc
-gcc_with_libc_configure=$(newlib)/gcc-with-libc-configure.py "$(gcc_with_libc)" "$(otter_with_libc)"
+gcc_with_libc_configure=$(newlib)/gcc-with-libc-configure.py
 
 cilly_with_libc=$(newlib)/cilly-with-libc
 cilly_ar=$(trunk)/cil/bin/cilly --merge --mode=AR
