@@ -1,3 +1,3 @@
 #!/bin/sh
-fullpath = command -v $0
+fullpath=`command -v $0`
 ${fullpath%/*}/otter.pl --bytecode "$@"
