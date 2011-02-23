@@ -637,7 +637,13 @@ copy_reg (char const *src_name, char const *dst_name,
 
     if (last_write_made_hole)
       {
-	if (HAVE_FTRUNCATE
+
+	if (
+#ifdef HAVE_FTRUNCATE
+            1
+#else
+            0
+#endif
 	    ? /* ftruncate sets the file size,
 		 so there is no need for a write.  */
 	    ftruncate (dest_desc, n_read_total) < 0
