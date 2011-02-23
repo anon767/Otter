@@ -132,7 +132,8 @@ ssize_t __otter_libc_read_pipe_data(
 ssize_t __otter_libc_pread_pipe_data(
 	struct __otter_fs_pipe_data* pipe,
 	void* buf,
-	size_t num);
+	size_t num,
+	int nonblocking);
 ssize_t __otter_libc_write_socket(
 	struct __otter_fs_open_file_table_entry* open_file,
 	void* buf,

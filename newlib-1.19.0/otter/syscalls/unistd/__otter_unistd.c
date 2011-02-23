@@ -218,9 +218,23 @@ ssize_t __otter_libc_read_tty(void* buf, size_t num)
 ssize_t __otter_libc_pread_pipe_data(
 	struct __otter_fs_pipe_data* pipe,
 	void* buf,
-	size_t num)
+	size_t num,
+	int nonblocking)
 {
+	/* Unless O_NONBLOCK is set, block until data becomes available. Then read the data. */
+	if (__otter_fs_pipe_is_empty(pipe)) {
+		if(nonblocking)
+		{
+			errno = EAGAIN;
+			return -1;
+		}
+		__otter_multi_block_while_condition(__otter_fs_pipe_is_empty(pipe), pipe);
+	}
+	/* This is a TOCTTOU problem on whether the pipe is empty, but opengroup says:
+		'The behavior of multiple concurrent reads on the same pipe, FIFO, or terminal device is unspecified.'
+		so this will (hopefully) never cause trouble. */
 	__otter_multi_begin_atomic();
+	
 	// TODO: we can replace this loop with a length check and one or two calls to memcpy
 	for(int i = 0; i < num; i++)
 	{
@@ -246,20 +260,7 @@ ssize_t __otter_libc_read_pipe_data(
 	void* buf,
 	size_t num, int nonblocking)
 {
-	/* Unless O_NONBLOCK is set, block until data becomes available. Then read the data. */
-	if (__otter_fs_pipe_is_empty(pipe)) {
-		if(nonblocking)
-		{
-			errno = EAGAIN;
-			__otter_multi_end_atomic();
-			return -1;
-		}
-		__otter_multi_block_while_condition(__otter_fs_pipe_is_empty(pipe), pipe);
-	}
-	/* This is a TOCTTOU problem on whether the pipe is empty, but opengroup says:
-		'The behavior of multiple concurrent reads on the same pipe, FIFO, or terminal device is unspecified.'
-		so this will (hopefully) never cause trouble. */
-	num = __otter_libc_pread_pipe_data(pipe, buf, num);
+	num = __otter_libc_pread_pipe_data(pipe, buf, num, nonblocking);
 
 	pipe->rhead = (pipe->rhead + num) % __otter_fs_PIPE_SIZE; /* move rhead to last char read */
 	return num;
