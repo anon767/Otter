@@ -77,6 +77,14 @@ $(TARGETS): $(MERGED_FILES)
 cilly: $(LIB_DIR)/libottersys.a
 
 
+# Determine the OS, and thus the flags to suppress undefined symbols in gcc
+OS := $(shell uname -s)
+ifeq ($(OS),Darwin)
+  SUPPRESS_UNDEFINED = -flat_namespace -undefined suppress 
+else ifeq($(OS,Linux)
+  SUPPRESS_UNDEFINED = -shared
+endif
+
 # Creating the scripts
 
 otter-ar: otter-ar.in
@@ -84,7 +92,7 @@ otter-ar: otter-ar.in
 	chmod +x $@
 
 gcc-with-libc:
-	echo gcc -m32 -flat_namespace -undefined suppress /usr/lib/crt1.o $(OPTIONS_FOR_BUILDING_LIBC) $(LIB_DIR)/libc.a \"$$\@\" > $@
+	echo gcc -m32 $(SUPPRESS_UNDEFINED) /usr/lib/crt1.o $(OPTIONS_FOR_BUILDING_LIBC) $(LIB_DIR)/libc.a \"$$\@\" > $@
 	chmod +x $@
 
 cilly-with-libc:
