@@ -106,6 +106,7 @@ SYSCALL_FILES := \
 	grp/grp.c \
 	inttypes/strtoimax.c \
 	inttypes/strtoumax.c \
+	mntent/getmntent.c \
 	otter/multiotter_builtins_stub.c \
 	otter/otter_fs.c \
 	otter/otter_fs_util.c \
