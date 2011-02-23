@@ -21,6 +21,7 @@ let _ =
         (* Features have to be ordered by dependencies. *)
         Otter.RunRmtmps.feature;
         (* Features below are mutually exclusive. *)
+        Otter.LinkCheck.feature;
         Otter.Executemain.feature;
         MultiOtter.MultiDriver.feature;
         BackOtter.BackOtterMain.feature;

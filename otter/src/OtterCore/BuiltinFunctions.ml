@@ -837,6 +837,7 @@ let noop job _ _ errors =
     Job.Active (end_function_call job), errors
 
 let interceptor job job_queue interceptor = Profiler.global#call "BuiltinFunctions.interceptor" begin fun () ->
+    (* Whenever a new builtin function is added, put it in is_builtin also. *)
 	try
 		(
 		(* intercept builtin functions *)
@@ -1074,3 +1075,43 @@ let libc_interceptor job job_queue interceptor = Profiler.global#call "BuiltinFu
 		if !Executeargs.arg_failfast then failwith msg;
 		(Job.Complete (Job.Abandoned (`Failure msg, job)), job_queue)
 end
+
+let is_builtin = 
+    let builtins = [
+        "__SYMBOLIC";
+        (!ProgramPoints.failure_fname);
+        "__otter_get_allocated_size";
+        "__libc_setjmp";
+        "__libc_longjmp";
+        "malloc";
+        "free";
+        "alloca";
+        "__builtin_alloca";
+        "__builtin_va_arg_fixed";
+        "__builtin_va_arg";
+        "__builtin_va_copy";
+        "__builtin_va_end";
+        "__builtin_va_start";
+        "memcpy";
+        "memset";
+        "memmove";
+        "_exit";
+        "__TRUTH_VALUE";
+        "__GIVEN";
+        "__EVAL";
+        "__EVALSTR";
+        "__SYMBOLIC_STATE";
+        "__ASSUME";
+        "__PATHCONDITION";
+        "__ASSERT";
+        "__ITE";
+        "AND";
+        "OR";
+        "NOT";
+        "__BREAKPT";
+        "__PRINT_STATE";
+        "__otter_mute";
+        "__otter_voice";
+    ]
+    in function name -> List.mem name builtins
+
