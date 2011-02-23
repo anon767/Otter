@@ -10,7 +10,8 @@
 #define MAP_PRIVATE 2
 #define MAP_FIXED 4
 
-#define MAP_FAILED (-1)
+//#define MAP_FAILED (-1)
+#define MAP_FAILED 0
 
 #include <sys/types.h>
 
