@@ -156,10 +156,10 @@ let default_scheme = ref `TwoLevel
                     - [`ConstraintOffset]: conditionals of bases, and symbolic offsets with constraints for each distinct base;
                 (default: [`TwoLevel])
         @param job is the symbolic executor job in which to initialize the pointer
-        @param points_to is a function of type [Cil.exp -> (CilData.CilVar.t * Cil.offset) list * (CilData.Malloc.t * Cil.offset) list]
+        @param points_to is a function of type [Cil.exp -> (CilData.CilVar.t * Cil.offset) list * (CilData.Malloc.t * CilData.CilLhost.t list  * Cil.offset) list]
                 that takes an expression and returns the points-to targets of that expression as a list of variables
                 and offsets pairs, and a list of dynamic allocations sites distinguished by unique string names along
-                with the allocated type and target offset
+                with the allocated type, list of potential lhosts, and target offset
         @param exps is list of expressions, which are joined to compute the pointer value
         @param maybe_null optionally indicates whether the pointer should possibly be null (default: true)
         @param maybe_uninit optionally indicates whether the pointer should possible be uninitialized (default: false)
