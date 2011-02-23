@@ -18,16 +18,12 @@ use strict;
 BEGIN {
     @CilCompiler::ISA = qw(Cilly);
     # default to using the native compiler
-    $CilCompiler::cil_native = "$FindBin::Bin/$::native";
-    $CilCompiler::cil_byte = "$FindBin::Bin/$::byte";
+    $CilCompiler::otter_native = "$FindBin::Bin/$::native";
+    $CilCompiler::otter_byte = "$FindBin::Bin/$::byte";
     $CilCompiler::do_default = "$::do_default";
 
-    # use the most recent version of cil, or whichever is available
-    $CilCompiler::mtime_native = int((stat($CilCompiler::cil_native))[9]);
-    $CilCompiler::mtime_byte = int((stat($CilCompiler::cil_byte))[9]);
-    if($CilCompiler::mtime_native < $CilCompiler::mtime_byte) {
-        $CilCompiler::cil_native = $CilCompiler::cil_byte;
-    }
+    # use the the native version of otter unless asked otherwise
+    $CilCompiler::otter = $CilCompiler::otter_native;
 
     if (not $::compile_after_merge) {
         $ENV{CILLY_DONT_COMPILE_AFTER_MERGE} = "";
@@ -40,7 +36,7 @@ BEGIN {
 sub collectOneArgument {
     my($self, $arg, $pargs) = @_;
     if($arg eq '--bytecode') {
-        $CilCompiler::cil_native = $CilCompiler::cil_byte;
+        $CilCompiler::otter = $CilCompiler::otter_byte;
         return 1;
     }
     if($arg =~ /^--do/) {
@@ -66,7 +62,7 @@ parameters, put '=' between the arguments and the parameter, e.g.,
 '--option=param'.
 
 EOF
-   my @cmd = ($CilCompiler::cil_native, '-help');
+   my @cmd = ($CilCompiler::otter, '-help');
    $self->runShell(@cmd); 
 }
 
@@ -74,10 +70,10 @@ sub CillyCommand {
     my ($self, $ppsrc, $dest) = @_;
 
     my $aftercil;
-    my @cmd = ($CilCompiler::cil_native);
+    my @cmd = ($CilCompiler::otter);
 
     if((not defined $self->{DOCOMMAND}) && (not defined $self->{DOMERGE})) {
-        @cmd = ($CilCompiler::cil_native, $CilCompiler::do_default);
+        @cmd = ($CilCompiler::otter, $CilCompiler::do_default);
     }
     if(defined $self->{CILLY_OUT}) {
         $aftercil = new OutputFile($dest, $self->{CILLY_OUT});
@@ -90,7 +86,7 @@ sub CillyCommand {
 sub MergeCommand {
     my ($self, $ppsrc, $dir, $base) = @_;
 
-    return ('', $CilCompiler::cil_native);
+    return ('', $CilCompiler::otter);
 }
 
 

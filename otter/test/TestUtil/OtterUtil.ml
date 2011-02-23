@@ -24,7 +24,7 @@ let test_with_preprocessed_file path test =
                 (* TODO: add standard search paths to otter.pl, rather than hard-coding it here *)
                 (* launch the preprocessor, redirecting the output to the temporary file *)
                 let pid = Unix.create_process
-                    "./otter.pl" [| "./otter.pl"; "-nostdinc"; "-isystem"; "./libc"; "-include"; "./libc/__otter/all.h"; "-E"; path |]
+                    "./otter.byte" [| "./otter.byte"; "-nostdinc"; "-isystem"; "./libc"; "-include"; "./libc/__otter/all.h"; "-E"; path |]
                     Unix.stdin (Unix.descr_of_out_channel temp_out) err_fdout
                 in
                 (* make sure to not leak and run out of file descriptors *)
