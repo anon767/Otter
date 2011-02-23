@@ -77,16 +77,31 @@ open OtterBytes
 
 
 (**/**) (* Various internal helper modules for init_pointer and init_lval_block *)
-module OffsetSet = Set.Make (struct
-    type t = Cil.offset
-    let compare = Pervasives.compare
-end)
+module OffsetSet = Set.Make (CilData.CilOffset)
+module VarinfoSet = Set.Make (CilData.CilVar)
+module LhostSet = Set.Make (CilData.CilLhost)
 
 module VarinfoMap = Map.Make (CilData.CilVar)
 module MallocMap = Map.Make (CilData.Malloc)
 
-module VarinfoSet = Set.Make (CilData.CilVar)
-module LhostSet = Set.Make (CilData.CilLhost)
+module VarinfoOffsetSet = Set.Make (struct
+    type t = CilData.CilVar.t * CilData.CilOffset.t
+    let compare (xv, xo as x) (yv, yo as y) = if x == y then 0 else match CilData.CilVar.compare xv yv with
+        | 0 -> CilData.CilOffset.compare xo yo
+        | i -> i
+end)
+
+module MallocLhostsOffsetSet = Set.Make (struct
+    type t = CilData.Malloc.t * CilData.CilLhost.t list  * CilData.CilOffset.t
+    let compare (xm, xl, xo as x) (ym, yl, yo as y) = if x == y then 0 else match CilData.Malloc.compare xm ym with
+        | 0 ->
+            begin match Pervasives.compare xl yl with
+                | 0 -> CilData.CilOffset.compare xo yo
+                | i -> i
+            end
+        | i ->
+            i
+end)
 
 module TypeAndOffsetSetMap = struct
     include Map.Make (struct
@@ -156,7 +171,8 @@ let default_scheme = ref `TwoLevel
                     - [`ConstraintOffset]: conditionals of bases, and symbolic offsets with constraints for each distinct base;
                 (default: [`TwoLevel])
         @param job is the symbolic executor job in which to initialize the pointer
-        @param points_to is a function of type [Cil.exp -> (CilData.CilVar.t * Cil.offset) list * (CilData.Malloc.t * CilData.CilLhost.t list  * Cil.offset) list]
+        @param points_to is a function of type [Cil.exp -> (CilData.CilVar.t * CilData.CilOffset) list
+                * (CilData.Malloc.t * CilData.CilLhost.t list  * CilData.CilOffset) list]
                 that takes an expression and returns the points-to targets of that expression as a list of variables
                 and offsets pairs, and a list of dynamic allocations sites distinguished by unique string names along
                 with the allocated type, list of potential lhosts, and target offset
@@ -176,38 +192,39 @@ let init_pointer ?(scheme=(!default_scheme)) job points_to exps ?(maybe_null=tru
        particular has to be treated separately since function addresses do not refer to storage in memory *)
     let target_lvals, target_mallocs, target_functions = List.fold_left begin fun (target_lvals, target_mallocs, target_functions) exp ->
         let t, m = points_to exp in
-        let f, l = List.fold_left begin fun (f, l) (v, o as t) ->
+        let target_functions, target_lvals = List.fold_left begin fun (target_functions, target_lvals) (v, o as t) ->
             if Cil.isFunctionType v.Cil.vtype then
                 if o <> Cil.NoOffset then
                     FormatPlus.invalid_arg "SymbolicPointers.init_pointer: invalid %a offset from function address %s" Printcil.offset o v.Cil.vname
                 else
-                    (v::f, l)
+                    (VarinfoSet.add v target_functions, target_lvals)
             else
-                (f, t::l)
-        end ([], []) t in
-        (l @ target_lvals, m @ target_mallocs, f @ target_functions)
-    end ([], [], []) exps in
+                (target_functions, VarinfoOffsetSet.add t target_lvals)
+        end (target_functions, target_lvals) t in
+        let target_mallocs = List.fold_left (fun target_mallocs m -> MallocLhostsOffsetSet.add m target_mallocs) target_mallocs m in
+        (target_lvals, target_mallocs, target_functions)
+    end (VarinfoOffsetSet.empty, MallocLhostsOffsetSet.empty, VarinfoSet.empty) exps in
 
     (* group targets by type and the sets of offsets pointed into *)
     let type_and_offsets_to_targets =
         let type_and_offsets_to_targets = TypeAndOffsetSetMap.empty in
 
         (* group variable targets by base varinfo (e.g., root of structs) and offsets, then reverse the mapping *)
-        let varinfo_to_offsets = List.fold_left begin fun varinfo_to_offsets (varinfo, offset) ->
+        let varinfo_to_offsets = VarinfoOffsetSet.fold begin fun (varinfo, offset) varinfo_to_offsets ->
             let offsets = try VarinfoMap.find varinfo varinfo_to_offsets with Not_found -> OffsetSet.empty in
             VarinfoMap.add varinfo (OffsetSet.add offset offsets) varinfo_to_offsets
-        end VarinfoMap.empty target_lvals in
+        end target_lvals VarinfoMap.empty in
         let type_and_offsets_to_targets = VarinfoMap.fold begin fun varinfo offsets ->
             TypeAndOffsetSetMap.add_varinfo (varinfo.Cil.vtype, offsets) varinfo
         end varinfo_to_offsets type_and_offsets_to_targets in
 
         (* group malloc targets by allocated type and offsets; then reverse the mapping *)
-        let malloc_to_offsets = List.fold_left begin fun malloc_to_offsets (malloc, malloc_lhosts', offset) ->
+        let malloc_to_offsets = MallocLhostsOffsetSet.fold begin fun (malloc, malloc_lhosts', offset) malloc_to_offsets ->
             let offsets, malloc_lhosts = try MallocMap.find malloc malloc_to_offsets with Not_found -> (OffsetSet.empty, LhostSet.empty) in
             let offsets = OffsetSet.add offset offsets in
             let malloc_lhosts = List.fold_left (fun malloc_lhosts malloc_exp -> LhostSet.add malloc_exp malloc_lhosts) malloc_lhosts malloc_lhosts' in
             MallocMap.add malloc (offsets, malloc_lhosts) malloc_to_offsets
-        end MallocMap.empty target_mallocs in
+        end target_mallocs MallocMap.empty in
         let type_and_offsets_to_targets = MallocMap.fold begin fun (_, _, typ as malloc) (offsets, malloc_lhosts) ->
             TypeAndOffsetSetMap.add_malloc (typ, offsets) malloc malloc_lhosts
         end malloc_to_offsets type_and_offsets_to_targets in
@@ -358,9 +375,9 @@ let init_pointer ?(scheme=(!default_scheme)) job points_to exps ?(maybe_null=tru
     let target_bytes_set = if maybe_null then BytesSet.add Bytes.bytes__zero target_bytes_set else target_bytes_set in
 
     (* add the function addresses *)
-    let target_bytes_set = List.fold_left begin fun target_bytes_set fn ->
+    let target_bytes_set = VarinfoSet.fold begin fun fn target_bytes_set ->
         BytesSet.add (Bytes.make_Bytes_FunPtr fn) target_bytes_set
-    end target_bytes_set target_functions in
+    end target_functions target_bytes_set in
 
     (* add an uninitialized pointer *)
     let target_bytes_set =

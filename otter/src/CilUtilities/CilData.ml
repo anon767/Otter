@@ -62,6 +62,12 @@ module CilField = struct
             Format.fprintf ff "%s.%s:%a" x.fcomp.cname x.fname CilLocation.printer x.floc
 end
 
+module CilOffset = struct
+    type t = Cil.offset
+    let compare = Pervasives.compare
+    let equal x y = compare x y = 0
+end
+
 module CilFundec = struct
     type t = fundec
     let compare x y = if x == y then 0 else compare x.svar.vid y.svar.vid
