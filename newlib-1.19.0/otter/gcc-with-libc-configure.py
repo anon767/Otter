@@ -21,7 +21,7 @@ if ret == 0 and "-E" not in argv and "-c" not in argv:
         # declaring it via "char f ();" and calling it in main().
         # Cil complains if the declared f has different return type than
         # the one in newlib. The command below takes out the declaration.
-        call("sed -i '' 's/char.*();//'", [conftest])
+        call("sed -i='' 's/char.*();//'", [conftest])
     # Remove -c from the arguments, since otter_with_libc has --merge,
     # and --merge plus -c become -E in cilly.
     ret = call(ld_with_libc, filter(lambda x: x!="-c",argv))
