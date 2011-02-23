@@ -172,11 +172,21 @@ let default_scheme = ref `TwoLevel
         @return [(job, bytes)] the updated symbolic executor job and the initialized pointer value
 *)
 let init_pointer ?(scheme=(!default_scheme)) job points_to exps ?(maybe_null=true) ?(maybe_uninit=false) block_name init_target =
-    (* find the points-to set for this pointer *)
-    let target_lvals, target_mallocs = List.fold_left begin fun (target_lvals, target_mallocs) exp ->
+    (* find the points-to set for this pointer, and separate into lvals, mallocs and function addresses, the latter in
+       particular has to be treated separately since function addresses do not refer to storage in memory *)
+    let target_lvals, target_mallocs, target_functions = List.fold_left begin fun (target_lvals, target_mallocs, target_functions) exp ->
         let t, m = points_to exp in
-        (t @ target_lvals, m @ target_mallocs)
-    end ([], []) exps in
+        let f, l = List.fold_left begin fun (f, l) (v, o as t) ->
+            if Cil.isFunctionType v.Cil.vtype then
+                if o <> Cil.NoOffset then
+                    FormatPlus.invalid_arg "SymbolicPointers.init_pointer: invalid %a offset from function address %s" Printcil.offset o v.Cil.vname
+                else
+                    (v::f, l)
+            else
+                (f, t::l)
+        end ([], []) t in
+        (l @ target_lvals, m @ target_mallocs, f @ target_functions)
+    end ([], [], []) exps in
 
     (* group targets by type and the sets of offsets pointed into *)
     let type_and_offsets_to_targets =
@@ -346,6 +356,11 @@ let init_pointer ?(scheme=(!default_scheme)) job points_to exps ?(maybe_null=tru
 
     (* add a null pointer *)
     let target_bytes_set = if maybe_null then BytesSet.add Bytes.bytes__zero target_bytes_set else target_bytes_set in
+
+    (* add the function addresses *)
+    let target_bytes_set = List.fold_left begin fun target_bytes_set fn ->
+        BytesSet.add (Bytes.make_Bytes_FunPtr fn) target_bytes_set
+    end target_bytes_set target_functions in
 
     (* add an uninitialized pointer *)
     let target_bytes_set =

@@ -52,15 +52,6 @@ let fold_array f acc len_opt =
         @return [(job, bytes)] the updated symbolic job and the initialized variable
 *)
 let rec init_bytes_with_pointers ?scheme job typ points_to exps = match Cil.unrollType typ with
-    | Cil.TPtr (Cil.TFun _, _) ->
-        (* TODO: use a points to analysis to resolve the target functions *)
-        let bytes = Bytes.bytes__symbolic (Cil.bitsSizeOf typ / 8) in
-        let null_bytes = Bytes.bytes__zero in
-        let bytes = Bytes.make_Bytes_Conditional (Bytes.IfThenElse (
-                Bytes.guard__symbolic (), Bytes.conditional__bytes bytes, Bytes.conditional__bytes null_bytes))
-        in
-        (job, bytes)
-
     | Cil.TPtr _ ->
         (* for pointers, generate the pointer *)
         let init_target typ vars mallocs job =
