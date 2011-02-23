@@ -175,7 +175,7 @@ static int select_helper(int nfds, fd_set *readfds, fd_set *writefds, fd_set *er
 		 ready now. The length of the array is nfds*3 because each of the fd_sets
 		 might give us a different pointer to watch. */
 	void **watch_list = malloc(sizeof(void*) * nfds * 3);
-	int watch_list_len = 0;
+	size_t watch_list_len = 0;
 
 	for (int fd = 0; fd < nfds; fd++) {
 		if (!(is_set(fd, readfds) || is_set(fd, writefds))) {
@@ -205,12 +205,7 @@ static int select_helper(int nfds, fd_set *readfds, fd_set *writefds, fd_set *er
 	}
 
 	// If nothing is ready, wait on the specified file descriptors.
-	if (watch_list_len == 1) {
-		__otter_multi_io_block(watch_list[0]);
-	} else {
-		__EVALSTR("select can currently only block on a single event", 50);
-		__ASSERT(0);
-	}
+	__otter_multi_io_block_array(watch_list, watch_list_len);
 	free(watch_list);
 	return SELECT_HELPER_BLOCKED;
 }

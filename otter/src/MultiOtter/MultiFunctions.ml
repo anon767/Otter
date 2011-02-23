@@ -169,12 +169,9 @@ let otter_set_parent_pid job multijob retopt exps errors =
 			(Active job, multijob, errors)
 		| _ -> failwith "set_parent_id invalid arguments"
 
-(* TODO: make this take an array of pointers as an argument *)
-(* takes a variadic list of pointers to blocks to watch *)
-let otter_io_block job multijob retopt exps errors = 
-    let find_blocks job exp errors =
-        let job, bytes, errors = Expression.rval job exp errors in
-        let job, lvals, errors = Expression.deref job bytes Cil.voidPtrType errors in
+let otter_io_block_common job multijob pointers errors =
+    let find_blocks job ptr_bytes errors =
+        let job, lvals, errors = Expression.deref job ptr_bytes Cil.voidPtrType errors in
         let blocks = conditional__fold
             (fun acc guard (block, _) ->
                  (* TODO: Failing in this case might be overkill. Printing a warning might be good enough *)
@@ -193,9 +190,8 @@ let otter_io_block job multijob retopt exps errors =
                  let new_blocks, job, new_errors = find_blocks job ptr errors in
                  (List.rev_append new_blocks blocks, job, List.rev_append new_errors errors))
             ([], job, errors)
-            exps
+            pointers
     in
-
 	let multijob =
 		if blocks = [] then
 			failwith "io_block with no underlying blocks"
@@ -222,10 +218,53 @@ let otter_io_block job multijob retopt exps errors =
 					current_metadata = { multijob.current_metadata with priority = IOBlock block_to_bytes; };
 				}
 	in
-	
-	let job, errors = BuiltinFunctions.set_return_value job retopt (Bytes.bytes__zero) errors in
+
 	let job = BuiltinFunctions.end_function_call job in
 	(Active job, multijob, errors)
+
+(* takes a variadic list of pointers to blocks to watch *)
+let otter_io_block job multijob _ exps errors =
+    let job, pointers, errors =
+        List.fold_left
+            (fun (job, pointers, errors) exp ->
+                 let job, pointer, errors = Expression.rval job exp errors in
+                 (job, pointer::pointers, errors)
+            )
+            (job, [], errors)
+            exps
+    in
+    otter_io_block_common job multijob pointers errors
+
+(** [c_array_to_ocaml_list bytes elt_size num_elts] converts a C array into an OCaml list
+    @param bytes the bytes representing the array
+    @param elt_size the size, in bytes, of the elements in the array
+    @param num_elts the number of elements in the array
+    @return a list of bytes representing the elements of the array *)
+let c_array_to_ocaml_list bytes elt_size num_elts =
+    let rec get_elt i acc =
+        if i < 0
+        then acc
+        else
+            let (), elt = BytesUtility.bytes__read () bytes (int_to_bytes i) elt_size in
+            get_elt (i - elt_size) (elt :: acc)
+    in
+    get_elt (elt_size * (num_elts - 1)) []
+
+(* takes an array of pointers to blocks to watch, and the array's length *)
+let otter_io_block_array job multijob _ exps errors =
+    let ptr_to_array_exp, length_exp =
+        match exps with
+          | [ ptr_to_array_exp; length_exp ] -> (ptr_to_array_exp, length_exp)
+          | _ ->
+                FormatPlus.failwith "io_block expects exactly two arguments but got (%a)" (FormatPlus.pp_print_list Printcil.exp ", ") exps
+    in
+    let job, length, errors = Expression.rval job length_exp errors in
+    let length = bytes_to_int_auto length in
+    let ptr_size = Cil.bitsSizeOf Cil.voidPtrType / 8 in
+    let job, _, lvals, errors = BuiltinFunctions.access_exp_with_length job ptr_to_array_exp errors (ptr_size * length) in
+    let job, array_of_ptrs = MemOp.state__deref job (lvals, ptr_size * length) in
+    let pointers = c_array_to_ocaml_list array_of_ptrs ptr_size length in
+    otter_io_block_common job multijob pointers errors
 
 let otter_time_wait job multijob retopt exps errors = 
 	match exps with
@@ -276,6 +315,7 @@ let interceptor job multijob job_queue interceptor =
 		(intercept_multi_function_by_name_internal "__otter_multi_get_parent_pid"     otter_get_parent_pid) @@@
 		(intercept_multi_function_by_name_internal "__otter_multi_set_parent_pid"     otter_set_parent_pid) @@@
 		(intercept_multi_function_by_name_internal "__otter_multi_io_block"           otter_io_block) @@@
+		(intercept_multi_function_by_name_internal "__otter_multi_io_block_array"     otter_io_block_array) @@@
 		(intercept_multi_function_by_name_internal "__otter_multi_time_wait"          otter_time_wait) @@@
 		(intercept_multi_function_by_name_internal "__otter_multi_begin_atomic"       otter_begin_atomic) @@@
 		(intercept_multi_function_by_name_internal "__otter_multi_end_atomic"         otter_end_atomic) @@@
