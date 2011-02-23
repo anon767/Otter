@@ -80,8 +80,8 @@ cilly: $(LIB_DIR)/libottersys.a
 # Determine the OS, and thus the flags to suppress undefined symbols in gcc
 OS := $(shell uname -s)
 ifeq ($(OS),Darwin)
-  SUPPRESS_UNDEFINED = -flat_namespace -undefined suppress 
-else ifeq($(OS,Linux)
+  SUPPRESS_UNDEFINED = -flat_namespace -undefined suppress
+else ifeq ($(OS),Linux)
   SUPPRESS_UNDEFINED = -shared
 endif
 
