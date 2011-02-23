@@ -347,7 +347,7 @@ let exec_stmt job errors =
                             let job = job#with_exHist (nextExHist (Some job#stmt) ~whichBranch:branch) in
                             job::jobs
                         end [ (logicalNot rv, block2, false); (rv, block1, true) ] [] in
-                        let false_job, true_job = match jobs with [ true_job; false_job ] -> (true_job, false_job) | _ -> failwith "Impossible!" in
+                        let true_job, false_job = match jobs with [ true_job; false_job ] -> (true_job, false_job) | _ -> failwith "Impossible!" in
 
                             Output.set_mode Output.MSG_MUSTPRINT;
                             Output.printf "Branching on @[%a@]@ at %a.@\n"
