@@ -15,6 +15,28 @@ let line_target_interceptor job job_queue interceptor =
         interceptor job job_queue
 
 
+let get_line_targets =
+    let memotable = Hashtbl.create 0 in
+    fun file ->
+        try
+            Hashtbl.find memotable file
+        with Not_found ->
+            let line_targets = ref [] in
+            Cil.visitCilFileSameGlobals begin object
+                inherit Cil.nopCilVisitor
+                method vfunc fundec =
+                    List.iter (fun stmt ->
+                        let loc = Cil.get_stmtLoc stmt.skind in
+                        begin if List.mem (loc.Cil.file, loc.Cil.line) (!arg_line_targets) then
+                            line_targets := (OtterCFG.Instruction.of_stmt_first file fundec stmt)::(!line_targets)
+                        end
+                    ) fundec.sallstmts;
+                    Cil.SkipChildren
+            end end file;
+            Hashtbl.add memotable file !line_targets;
+            !line_targets
+
+
 (** {1 Command-line options} *)
 
 let options = [
