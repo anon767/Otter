@@ -82,18 +82,6 @@ let rec lex_compare cmp lst1 lst2 =
         if c = 0 then lex_compare cmp t1 t2 else c
 
 
-let get_distance_to_targets target_fundecs job =
-    Profiler.global#call "BackOtterUtilities.get_distance_to_targets" begin fun () ->
-        if target_fundecs = [] then
-            max_distance (* = max_int in DistanceToTargets *)
-        else
-            let source = Job.get_instruction job in
-            let target_instrs = List.map (fun f -> Instruction.of_fundec job#file f) target_fundecs in
-            let context = Job.get_instruction_context job in
-            DistanceToTargets.find_in_context source context target_instrs
-    end
-
-
 let get_distance_from =
     let memotable = Hashtbl.create 0 in
     fun file f1 f2 ->
