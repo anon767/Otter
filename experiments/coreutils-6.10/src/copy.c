@@ -65,6 +65,10 @@
 # define lchown(name, uid, gid) chown (name, uid, gid)
 #endif
 
+#ifndef HAVE_FTRUNCATE
+# define HAVE_FTRUNCATE false
+#endif
+
 #ifndef USE_ACL
 # define USE_ACL 0
 #endif
