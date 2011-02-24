@@ -5,7 +5,6 @@ open OtterBytes
  * Command line arguments
  *)
 
-let arg_timeout = ref 0 (** How many seconds to allow the executor to run. *)
 let arg_failfast = ref false
 let arg_bounds_checking = ref true
 let arg_cfg_pruning = ref false
@@ -37,10 +36,6 @@ let options = [
 	(*
 		Running options
 	*)
-	("--timeout",
-		Arg.Set_int arg_timeout,
-		"<numSeconds> Set a timeout for the executor\n");
-
 	("--failfast",
 		Arg.Set arg_failfast,
 		" Abort execution if any path encounters an error\n");

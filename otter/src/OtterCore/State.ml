@@ -21,9 +21,6 @@ module VargsMap = Map.Make (struct
 	let compare : t -> t -> int = Pervasives.compare
 end)
 
-(* TODO: move this elsewhere; or perhaps use Sys.catch_break *)
-exception SignalException of string
-
 
 (** A calling context may either be the symbolic executor, represented by
 		[Runtime], or from another function in the source code, represented

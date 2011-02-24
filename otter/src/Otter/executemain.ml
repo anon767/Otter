@@ -18,31 +18,17 @@ let doExecute (f: file) =
 	(* Keep track of how long we run *)
 	let startTime = Unix.gettimeofday () in
 
-	(* Set signal handlers to catch timeouts and interrupts *)
-	let old_ALRM_handler =
-		Sys.signal Sys.sigalrm
-			(Sys.Signal_handle (fun _ -> raise (SignalException "Timed out!")))
-	and old_INT_handler =
-		Sys.signal Sys.sigint
-			(Sys.Signal_handle (fun _ -> raise (SignalException "User interrupt!")))
-	in
-	(* Set a timer *)
-	ignore (Unix.alarm !Executeargs.arg_timeout);
+	let reporter = UserSignal.using_signals begin fun () ->
+		(* prepare the file for symbolic execution *)
+		Core.prepare_file f;
 
-	(* prepare the file for symbolic execution *)
-	Core.prepare_file f;
+		let job = Job.get_default f in
 
-	let job = Job.get_default f in
-
-	(* run the job *)
-	let module Reporter = ErrorReporter.Make (OtterCore.Errors) in
-	let reporter = new Reporter.t () in
-	let _, reporter = Driver.run_basic reporter job in
-
-	(* Turn off the alarm and reset the signal handlers *)
-	ignore (Unix.alarm 0);
-	Sys.set_signal Sys.sigalrm old_ALRM_handler;
-	Sys.set_signal Sys.sigint old_INT_handler;
+		(* run the job *)
+		let module Reporter = ErrorReporter.Make (OtterCore.Errors) in
+		let reporter = new Reporter.t () in
+		snd (Driver.run_basic reporter job)
+	end in
 
 	Output.set_formatter (new Output.plain);
 		(* function stat
@@ -85,21 +71,22 @@ let doExecute (f: file) =
     Output.printf "Number of nodes: %d@\n" nodes;
     Report.print_report reporter#completed
 
-let options = 
-    BasicReporter.options @ 
-    Executeargs.options @ 
+let options =
+    BasicReporter.options @
+    UserSignal.options @
+    Executeargs.options @
     FunctionJob.options @
-    ProgramPoints.options @ 
-    Queue.options @ 
+    ProgramPoints.options @
+    Queue.options @
     Stp.options @
-    SymbolicPointers.options @ 
-    TrackingFunctions.options 
+    SymbolicPointers.options @
+    TrackingFunctions.options
 
 let feature : featureDescr = {
 	fd_name = "execute";
 	fd_enabled = ref false;
 	fd_description = "(symbolic) executor for C";
-    fd_extraopt = options;
+	fd_extraopt = options;
 	fd_post_check = true;
 	fd_doit = doExecute;
 }

@@ -110,29 +110,15 @@ let doit file =
 	(* Keep track of how long we run *)
 	let startTime = Unix.gettimeofday () in
 
-	(* Set signal handlers to catch timeouts and interrupts *)
-	let old_ALRM_handler =
-		Sys.signal Sys.sigalrm
-			(Sys.Signal_handle (fun _ -> raise (SignalException "\nTimed out!")))
-	and old_INT_handler =
-		Sys.signal Sys.sigint
-			(Sys.Signal_handle (fun _ -> raise (SignalException "\nUser interrupt!")))
-	in
-	(* Set a timer *)
-	ignore (Unix.alarm !Executeargs.arg_timeout);
+	let result = UserSignal.using_signals begin fun () ->
+		Core.prepare_file file;
+		let job = OtterJob.Job.get_default file in
 
-	Core.prepare_file file;
-	let job = OtterJob.Job.get_default file in
-
-	(* run the job *)
-	let module Reporter = ErrorReporter.Make (OtterCore.Errors) in
-	let job_queue, result = run (new Reporter.t ()) job in
-	let result = flush_queue result job_queue in
-	
-	(* Turn off the alarm and reset the signal handlers *)
-	ignore (Unix.alarm 0);
-	Sys.set_signal Sys.sigalrm old_ALRM_handler;
-	Sys.set_signal Sys.sigint old_INT_handler;
+		(* run the job *)
+		let module Reporter = ErrorReporter.Make (OtterCore.Errors) in
+		let job_queue, result = run (new Reporter.t ()) job in
+		flush_queue result job_queue
+	end in
 
 	(* print the results *)
 	Output.set_formatter (new Output.plain);

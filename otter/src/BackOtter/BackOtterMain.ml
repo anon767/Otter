@@ -95,19 +95,8 @@ let doit file =
 
     Output.must_printf "@\n@\nBackOtter: Bi-directional Symbolic Executor@\n@\n";
     let startTime = Unix.gettimeofday () in
-    (* Set signal handlers to catch timeouts and interrupts *)
-    let old_ALRM_handler =
-        Sys.signal Sys.sigalrm
-            (Sys.Signal_handle (fun _ -> raise (SignalException "Timed out!")))
-    and old_INT_handler =
-        Sys.signal Sys.sigint
-            (Sys.Signal_handle (fun _ -> raise (SignalException "User interrupt!")))
-    in
-    (* Set a timer *)
-    ignore (Unix.alarm !Executeargs.arg_timeout);
 
-    (try
-
+    UserSignal.using_signals begin fun () -> try
         Core.prepare_file file;
         CovToFundec.prepare_file file;
 
@@ -163,14 +152,11 @@ let doit file =
 
         Report.print_report reporter#completed
 
-    with State.SignalException s ->
+    with UserSignal.UserInterrupt | UserSignal.TimedOut as exn ->
+        (* TODO: move this into callchain_backwards_se *)
         Output.set_mode Output.MSG_MUSTPRINT;
-        Output.printf "%s@\n" s);
-
-    (* Turn off the alarm and reset the signal handlers *)
-    ignore (Unix.alarm 0);
-    Sys.set_signal Sys.sigalrm old_ALRM_handler;
-    Sys.set_signal Sys.sigint old_INT_handler;
+        Output.printf "%s@\n" (Printexc.to_string exn)
+    end;
 
     (** TODO: provide a way to force full-width profile printing *)
     Format.set_margin 120;

@@ -3,3 +3,4 @@ OcamlUtilities/ListPlus
 OcamlUtilities/Output
 OcamlUtilities/Profiler
 OcamlUtilities/UnixPlus
+OcamlUtilities/UserSignal
