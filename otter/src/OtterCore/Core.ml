@@ -4,6 +4,7 @@ open CilUtilities
 let prepare_file file =
     (* based on Cilly.makeCFGFeature.fd_doit *)
     HoistStringLiterals.apply file;
+    WidenBitfields.apply file;
     Partial.calls_end_basic_blocks file;
     Partial.globally_unique_vids file;
     Cil.iterGlobals file begin function
