@@ -12,7 +12,7 @@ let default_timeout = ref 0
 (** Run a function with useful signal handlers:
         - SIGINT from Ctrl-C raises {!UserInterrupt}
         - SIGALRM from an optional timeout raises {!TimedOut}
-        - SIGUSR1 prints a backtrace
+        - SIGQUIT from Ctrl-\ prints a backtrace
 *)
 let using_signals ?(timeout=(!default_timeout)) f =
     (* first, get the original handlers; they can't be taken below since reset requires it *)
@@ -25,7 +25,7 @@ let using_signals ?(timeout=(!default_timeout)) f =
             None
     in
     let old_INT_handler = Sys.signal Sys.sigint Sys.Signal_ignore in
-    let old_USR1_handler = Sys.signal Sys.sigusr1 Sys.Signal_ignore in
+    let old_QUIT_handler = Sys.signal Sys.sigquit Sys.Signal_ignore in
 
     (* clean up after any signal, or just before returning *)
     let reset () =
@@ -37,7 +37,7 @@ let using_signals ?(timeout=(!default_timeout)) f =
                 ()
         end;
         Sys.set_signal Sys.sigint old_INT_handler;
-        Sys.set_signal Sys.sigint old_USR1_handler
+        Sys.set_signal Sys.sigint old_QUIT_handler
     in
     let handle exn =
         Sys.Signal_handle (fun _ -> reset (); raise exn)
@@ -55,8 +55,8 @@ let using_signals ?(timeout=(!default_timeout)) f =
     (* raise UserInterrupt upon Ctrl-C *)
     Sys.set_signal Sys.sigint (handle UserInterrupt);
 
-    (* print a stack trace upon SIGUSR1 *)
-    Sys.set_signal Sys.sigusr1 begin Sys.Signal_handle begin fun _ ->
+    (* print a stack trace upon Ctrl-\ *)
+    Sys.set_signal Sys.sigquit begin Sys.Signal_handle begin fun _ ->
         let child = Unix.fork () in
         if child = 0 then begin
             (* move stderr to a different file descriptor and redirect the original to /dev/null, to avoid printing
