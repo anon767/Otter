@@ -40,7 +40,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     let starter_fundecs = List.fold_left (fun starter_fundecs (file_name, line_num) ->
         let fundec = CovToFundec.of_line (file_name, line_num) in
         if List.memq fundec starter_fundecs then starter_fundecs else fundec::starter_fundecs)
-    [] (!BackOtterInterceptor.arg_line_targets) in
+    [] (!LineTargets.arg_line_targets) in
     List.iter (fun f -> Output.debug_printf "Function containing coverage targets: %s@\n" f.svar.vname) starter_fundecs;
     let b_queue = List.fold_left (fun b_queue fundec ->
         let job = new OtterJob.FunctionJob.t file fundec in
@@ -57,7 +57,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     let interceptor =
         let (>>>) = Interceptor.(>>>) in
             BackOtterInterceptor.set_output_formatter_interceptor
-        >>> BackOtterInterceptor.line_target_interceptor
+        >>> LineTargets.line_target_interceptor
         >>> Interceptor.function_pointer_interceptor
         >>> BuiltinFunctions.interceptor
         >>> (
@@ -172,12 +172,12 @@ let options = [
         Arg.Set_int default_conditionals_forking_limit,
         "<limit> Set the limit in conditionals forking (default: max_int (== don't use))";
 ] @
-    BackOtterInterceptor.options @ 
     BackOtterReporter.options @ 
     BackOtterTimer.options @ 
     BackOtterQueue.options @ 
     BidirectionalQueue.options @ 
-    FunctionRanker.options
+    FunctionRanker.options @
+    LineTargets.options
 
 
 let feature = {
