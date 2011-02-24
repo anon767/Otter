@@ -231,7 +231,7 @@ class virtual record =
         >}
 
         method printer ff =
-            Format.fprintf ff " %6d %7.2f %6.2f"
+            Format.fprintf ff " %8d %8.2f %5.2f"
                 count user system;
             if allocated_bytes >= 1e9 then
                 Format.fprintf ff " %7.2fG" (allocated_bytes /. 1e9)
