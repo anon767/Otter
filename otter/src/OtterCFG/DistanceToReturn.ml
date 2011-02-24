@@ -18,11 +18,10 @@ module InstructionHash = Hashtbl.Make (Instruction)
 let find =
     let memotable = InstructionHash.create 0 in
     fun instr ->
-        OcamlUtilities.Profiler.global#call "DistanceToReturn.find" begin fun () ->
         try
             InstructionHash.find memotable instr
 
-        with Not_found ->
+        with Not_found -> OcamlUtilities.Profiler.global#call "DistanceToReturn.find (uncached)" begin fun () ->
             let rec update worklist =
                 (* pick the an instruction from the worklist *)
                 let instr, worklist = InstructionStack.pop worklist in

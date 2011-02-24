@@ -19,15 +19,14 @@ end)
 
     @return the shortest distance to one of the targets, or {!max_int} if none of the targets are reachable.
 *)
-let find = 
+let find =
     let memotable = InstructionTargetsHash.create 0 in
-    fun instr targets -> 
-        OcamlUtilities.Profiler.global#call "DistanceToTargets.find" begin fun () ->
+    fun instr targets ->
         if targets = [] then invalid_arg "find: targets must be a non-empty list";
         try
             InstructionTargetsHash.find memotable (instr, targets)
 
-        with Not_found ->
+        with Not_found -> OcamlUtilities.Profiler.global#call "DistanceToTargets.find (uncached)" begin fun () ->
             let rec update worklist =
                 (* pick the an instruction from the worklist *)
                 let instr, worklist = InstructionStack.pop worklist in
@@ -109,8 +108,7 @@ let find =
 
     @return the shortest distance to one of the targets, or {!max_int} if none of the targets are reachable.
 *)
-let find_in_context instr context targets =
-    OcamlUtilities.Profiler.global#call "DistanceToTargets.find_in_context" begin fun () ->
+let find_in_context instr context targets = OcamlUtilities.Profiler.global#call "DistanceToTargets.find_in_context" begin fun () ->
     (* compute the distance from the instr through function returns to targets in the call context *)
     let rec unwind dist return_dist = function
         | call_return::context ->
@@ -132,5 +130,5 @@ let find_in_context instr context targets =
     let dist = find instr targets in
     let return_dist = DistanceToReturn.find instr in
     unwind dist return_dist context
-    end
+end
 
