@@ -3,7 +3,7 @@ include Stpvc
 
 let is_little_endian = ref true
 
-(** DONE *)
+(* DONE *)
 let reverse_bytes vc (len:int) bv = 
 	(*Output.print_endline ("Reverse "^(Stpvc.to_string bv)^" of length "^(string_of_int len));*)
 	let rec impl vc len bv index =
@@ -16,19 +16,19 @@ let reverse_bytes vc (len:int) bv =
 		bv
 
 
-(** DONE *)
+(* DONE *)
 let binop_arith op vc len bv1 bv2 = reverse_bytes vc len (op vc len (reverse_bytes vc len bv1) (reverse_bytes vc len bv2))
 let binop_compare op vc len bv1 bv2 =  (op vc  (reverse_bytes vc len bv1) (reverse_bytes vc len bv2))
 let binop_shift op vc len1 bv1 len2 bv2 = reverse_bytes vc len1 (op vc len1 (reverse_bytes vc len1 bv1) len2 (reverse_bytes vc len2 bv2))
 
-(** DONE *)
+(* DONE *)
 let e_bvplus = binop_arith Stpvc.e_bvplus 
 let e_bvminus = binop_arith Stpvc.e_bvminus 
 let e_bvmult = binop_arith Stpvc.e_bvmult 
 let e_bvdiv = binop_arith Stpvc.e_bvdiv 
 let e_bvmod = binop_arith Stpvc.e_bvmod 
 
-(** DONE *)
+(* DONE *)
 (* Note: signed info is specified by argument *)
 let e_bvlt isSigned = binop_compare (if isSigned then Stpvc.e_bvslt else Stpvc.e_bvlt) 
 let e_bvle isSigned = binop_compare (if isSigned then Stpvc.e_bvsle else Stpvc.e_bvle) 
@@ -43,14 +43,14 @@ let e_bvsge ()= failwith "Stpc: unused bvsxx functions"
 
 let e_bvneg vc bv len = reverse_bytes vc len (Stpvc.e_bvneg vc (reverse_bytes vc len bv)) 
 
-(** TODO *)
+(* TODO *)
 let e_bvsextend = Stpvc.e_bvsextend 
 let e_bvconstshiftleft = Stpvc.e_bvconstshiftleft 
 let e_bvconstshiftright = Stpvc.e_bvconstshiftright 
 let e_bvconstshiftright_arith = Stpvc.e_bvconstshiftright_arith 
 
 
-(** DONE *)
+(* DONE *)
 let e_bvshiftleft = binop_shift Stpvc.e_bvshiftleft 
 let e_bvshiftright = binop_shift Stpvc.e_bvshiftright 
 let e_bvshiftright_arith = binop_shift Stpvc.e_bvshiftright_arith 

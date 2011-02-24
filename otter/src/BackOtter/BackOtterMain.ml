@@ -158,7 +158,7 @@ let doit file =
         Output.printf "%s@\n" (Printexc.to_string exn)
     end;
 
-    (** TODO: provide a way to force full-width profile printing *)
+    (* TODO: provide a way to force full-width profile printing *)
     Format.set_margin 120;
     Format.printf "Global profile:@\n@\n  @[%t@]@." Profiler.global#printer;
 

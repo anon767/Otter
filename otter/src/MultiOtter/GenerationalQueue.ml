@@ -12,7 +12,7 @@
     https://www.isoc.org/isoc/conferences/ndss/08/papers/10_automated_whitebox_fuzz.pdf
  *)
 
-(** TODO: it's messy having to duplicate code like this **)
+(* TODO: it's messy having to duplicate code like this *)
 
 open DataStructures
 
