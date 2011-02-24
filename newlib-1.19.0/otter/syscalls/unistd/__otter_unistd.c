@@ -322,15 +322,6 @@ ssize_t __otter_libc_write_pipe(
 	return __otter_libc_write_pipe_data(pipe, buf, num);
 }
 
-/* double circular buffer */
-ssize_t __otter_libc_read_socket(
-	struct __otter_fs_open_file_table_entry* open_file,
-	void* buf,
-	size_t num)
-{
-	return __otter_libc_recv_socket(open_file, buf, num, 0 /*no flags set*/);
-}
-
 ssize_t __otter_libc_write_socket(
 	struct __otter_fs_open_file_table_entry* open_file,
 	void* buf,
@@ -388,7 +379,8 @@ ssize_t __otter_libc_read2(
 		case __otter_fs_TYP_FIFO:
 			return __otter_libc_read_pipe(open_file, buf, num);
 		case __otter_fs_TYP_SOCK:
-			return __otter_libc_read_socket(open_file, buf, num);
+			/* 'If fildes refers to a socket, read() shall be equivalent to recv() with no flags set.' */
+			return __otter_libc_recv_socket(open_file, buf, num, 0);
 		case __otter_fs_TYP_DIR: /* reading from directories is not supported */
 			errno = EISDIR;
 			return (-1);
