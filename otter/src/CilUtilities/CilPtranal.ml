@@ -60,7 +60,7 @@ let fold_array f acc len_opt =
         @param target_type is the target type
         @return whether the pointer can point to the target
 *)
-let accept_points_to pointer_type =
+let accept_points_to pointer_type = Profiler.global#call "accept_points_to" begin fun () ->
     (* allow pointers to point only to certain types *)
     let canonicalize_type t = Cil.typeSigWithAttrs (fun _ -> []) t in
     let pointer_typesig = canonicalize_type pointer_type in
@@ -83,6 +83,7 @@ let accept_points_to pointer_type =
                 false
         in
         accept_points_to pointer_typesig (canonicalize_type target_type)
+end
 
 
 (** Wrapper that converts a points-to function that resolves expressions to variables, to a function that resolves
@@ -92,14 +93,14 @@ let accept_points_to pointer_type =
         @return [(target_varinfos, target_mallocs)] where [target_varinfos] contains the points to target varinfos
                 and offsets; and [target_mallocs] contains a list of dynamic allocation sites and offsets
 *)
-let wrap_points_to_varinfo points_to_varinfo exp =
+let wrap_points_to_varinfo points_to_varinfo exp = Profiler.global#call "wrap_points_to_varinfo" begin fun () ->
     let varinfos, mallocs = points_to_varinfo exp in
 
     let pointer_type = Cil.unrollType (Cil.typeOf exp) in
     let accept_type = accept_points_to pointer_type in
 
     (* enumerate all field/array offsets that matches the target type *)
-    let to_offsets typ =
+    let to_offsets typ = Profiler.global#call "to_offsets" begin fun () ->
         let rec to_offsets offsets typ base =
             let offset_type = Cil.unrollType (Cil.typeOffset typ base) in
             (* collect offsets that matches the target type *)
@@ -126,7 +127,7 @@ let wrap_points_to_varinfo points_to_varinfo exp =
                     offsets
         in
         to_offsets [] (Cil.unrollType typ) Cil.NoOffset
-    in
+    end in
 
     (* combine the target varinfos with offsets *)
     let target_varinfos = List.fold_left begin fun target_varinfos varinfo ->
@@ -143,6 +144,7 @@ let wrap_points_to_varinfo points_to_varinfo exp =
     end [] mallocs in
 
     (target_varinfos, target_mallocs)
+end
 
 
 (** Helper that generates a map from untyped dynamic allocation sites ([Cil.fundec * string] tuple) to typed dynamic
