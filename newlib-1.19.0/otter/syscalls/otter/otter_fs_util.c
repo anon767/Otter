@@ -103,7 +103,7 @@ struct __otter_fs_inode* __otter_fs_init_new_socket()
 	inode->linkno = 0;
 	inode->size = 0;
 	inode->type = __otter_fs_TYP_SOCK;
-	inode->permissions = __otter_fs_umask;
+	inode->permissions = __otter_fs_umask | 0x01FF;
 	inode->data = (void*)__otter_fs_init_new_socket_data();
 	inode->r_openno = 0;
 	inode->w_openno = 0;
