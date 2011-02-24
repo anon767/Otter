@@ -22,9 +22,8 @@ do
         opts_name=$(echo $options|sed 's/ /_/g')
         log_file="$exp_base/results/$prog_name/run_with_$opts_name.log"
         test_sh="$exp_base/tests/${prog_name}_run_with_$opts_name.sh"
-        mkdir -p $(dirname "$test_sh")
-        mkdir -p $(dirname "$log_file")
-        echo "\"$runotter\" \"$prog\" $options 2>&1 | timelines > \"$log_file\"" >> $test_sh
+        mkdir -p "$(dirname "$test_sh")"
+        echo "mkdir -p \"$(dirname "$log_file")\" && \"$runotter\" \"$prog\" $options 2>&1 | timelines > \"$log_file\"" >> $test_sh
     done
 done
 
