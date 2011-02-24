@@ -266,6 +266,11 @@ static int anetListen(char *err, int s, struct sockaddr *sa, socklen_t len) {
         close(s);
         return ANET_ERR;
     }
+// Added for Otter
+#ifdef CIL
+    extern int *redis_has_called_listen;
+    *redis_has_called_listen = 1;
+#endif
     return ANET_OK;
 }
 

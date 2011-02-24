@@ -93,6 +93,8 @@ static void zmalloc_oom(size_t size) {
     abort();
 }
 
+#ifndef NO_ZMALLOC // Added for Otter
+
 void *zmalloc(size_t size) {
     void *ptr = malloc(size+PREFIX_SIZE);
 
@@ -175,6 +177,8 @@ char *zstrdup(const char *s) {
     memcpy(p,s,l);
     return p;
 }
+
+#endif // NO_ZMALLOC
 
 size_t zmalloc_used_memory(void) {
     size_t um;

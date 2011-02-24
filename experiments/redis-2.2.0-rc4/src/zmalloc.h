@@ -31,11 +31,13 @@
 #ifndef _ZMALLOC_H
 #define _ZMALLOC_H
 
+#ifndef NO_ZMALLOC // Added for Otter
 void *zmalloc(size_t size);
 void *zcalloc(size_t size);
 void *zrealloc(void *ptr, size_t size);
 void zfree(void *ptr);
 char *zstrdup(const char *s);
+#endif // NO_ZMALLOC
 size_t zmalloc_used_memory(void);
 void zmalloc_enable_thread_safeness(void);
 float zmalloc_get_fragmentation_ratio(void);

@@ -6,4 +6,15 @@ if [[ "$1" == clean ]]; then
   exit 0
 fi
 
-OTTER_TRUNK=`pwd`/../.. make CC='${OTTER_TRUNK}/newlib-1.19.0/otter/cilly-with-libc' uname_S= AR='${OTTER_TRUNK}/cil/bin/cilly --merge --mode=AR'
+# This forces redis to use malloc, free, etc., instead of zmalloc, zfree, etc.
+zmalloc='-DNO_ZMALLOC -Dzmalloc=malloc -Dzrealloc=realloc -D"zcalloc(size)=calloc(1,size)" -Dzfree=free -Dzstrdup=strdup'
+
+if [[ "$1" == zmalloc ]]; then
+  # Use zmalloc, zfree, etc.
+  zmalloc=
+elif [[ -n "$1" ]]; then
+  echo Unknown command: "$1"
+  exit 1
+fi
+
+OTTER_TRUNK=`pwd`/../.. make CC="\${OTTER_TRUNK}/newlib-1.19.0/otter/cilly-with-libc $zmalloc" uname_S= AR='${OTTER_TRUNK}/cil/bin/cilly --merge --mode=AR'

@@ -107,6 +107,7 @@ int redisContextConnectTcp(redisContext *c, const char *addr, int port) {
     if (!blocking && redisSetNonBlock(c,s) == REDIS_ERR)
         return REDIS_ERR;
 
+    memset(&sa,0,sizeof(sa)); // Added for Otter
     sa.sin_family = AF_INET;
     sa.sin_port = htons(port);
     if (inet_aton(addr, &sa.sin_addr) == 0) {

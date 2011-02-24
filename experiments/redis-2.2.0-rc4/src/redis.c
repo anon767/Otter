@@ -210,7 +210,12 @@ void redisLog(int level, const char *fmt, ...) {
     vsnprintf(msg, sizeof(msg), fmt, ap);
     va_end(ap);
 
+// Changed for Otter
+#ifdef CIL
+    *buf = 0;
+#else
     strftime(buf,sizeof(buf),"%d %b %H:%M:%S",localtime(&now));
+#endif
     fprintf(fp,"[%d] %s %c %s\n",(int)getpid(),buf,c[level],msg);
     fflush(fp);
 
@@ -1529,7 +1534,30 @@ void usage() {
     exit(1);
 }
 
+// Added for Otter
+#ifdef CIL
+#include <otter/otter_fs.h>
+#include <otter/otter_scheduler.h>
+#include <otter/multiotter_builtins.h>
+int *redis_has_called_listen;
+extern void client_main(void);
+
 int main(int argc, char **argv) {
+    __otter_fs_mount();
+    redis_has_called_listen = __otter_multi_gmalloc(sizeof(int));
+    *redis_has_called_listen = 0;
+    /* 'fork()' duplicates file descriptors and then calls otter_multi_fork. We
+       don't want to duplicate fds, because we're modeling creating an entirely
+       separate program, so we call multi_fork directly. */
+    if (__otter_multi_fork()) {
+        __otter_multi_io_block(redis_has_called_listen);
+        client_main();
+        return 0;
+    }
+    __otter_fs_init_stdin_out_err();
+#else
+int main(int argc, char **argv) {
+#endif
     time_t start;
 
     initServerConfig();
