@@ -1,17 +1,41 @@
+(** Useful signal handlers. *)
 
+(** Raised by {!using_signals} upon Ctrl-C *)
 exception UserInterrupt
+
+(** Raised by {!using_signals} upon timeout, if given *)
 exception TimedOut
 
 let default_timeout = ref 0
 
+
+(** Run a function with useful signal handlers:
+        - SIGINT from Ctrl-C raises {!UserInterrupt}
+        - SIGALRM from an optional timeout raises {!TimedOut}
+        - SIGUSR1 prints a backtrace
+*)
 let using_signals ?(timeout=(!default_timeout)) f =
+    (* first, get the original handlers; they can't be taken below since reset requires it *)
+    let old_ALRM_handler_opt =
+        if timeout < 0 then
+            invalid_arg "timeout must not be negative"
+        else if timeout > 0 then
+            Some (Sys.signal Sys.sigalrm Sys.Signal_ignore)
+        else
+            None
+    in
     let old_INT_handler = Sys.signal Sys.sigint Sys.Signal_ignore in
-    let old_ALRM_handler = Sys.signal Sys.sigalrm Sys.Signal_ignore in
     let old_USR1_handler = Sys.signal Sys.sigusr1 Sys.Signal_ignore in
 
+    (* clean up after any signal, or just before returning *)
     let reset () =
-        ignore (Unix.alarm 0);
-        Sys.set_signal Sys.sigalrm old_ALRM_handler;
+        begin match old_ALRM_handler_opt with
+            | Some old_ALRM_handler ->
+                ignore (Unix.alarm 0);
+                Sys.set_signal Sys.sigalrm old_ALRM_handler;
+            | None ->
+                ()
+        end;
         Sys.set_signal Sys.sigint old_INT_handler;
         Sys.set_signal Sys.sigint old_USR1_handler
     in
@@ -19,11 +43,17 @@ let using_signals ?(timeout=(!default_timeout)) f =
         Sys.Signal_handle (fun _ -> reset (); raise exn)
     in
 
-    Sys.set_signal Sys.sigint (handle UserInterrupt);
+    (* raise TimedOut upon a timeout *)
+    begin match old_ALRM_handler_opt with
+        | Some _ ->
+            Sys.set_signal Sys.sigalrm (handle TimedOut);
+            ignore (Unix.alarm timeout);
+        | None ->
+            ()
+    end;
 
-    Sys.set_signal Sys.sigalrm (handle TimedOut);
-    if timeout < 0 then invalid_arg "timeout must not be negative";
-    if timeout > 0 then ignore (Unix.alarm timeout);
+    (* raise UserInterrupt upon Ctrl-C *)
+    Sys.set_signal Sys.sigint (handle UserInterrupt);
 
     (* print a stack trace upon SIGUSR1 *)
     Sys.set_signal Sys.sigusr1 begin Sys.Signal_handle begin fun _ ->
@@ -51,6 +81,7 @@ let using_signals ?(timeout=(!default_timeout)) f =
     let x = f () in
     reset ();
     x
+
 
 let options = [
 	("--timeout",
