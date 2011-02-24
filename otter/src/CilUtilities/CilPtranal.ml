@@ -290,23 +290,11 @@ end
 
 
 (**/**)
-(* Helper for naive_points_to/unsound_points_to to generate a dummy host varinfo to refer to malloc'ed locations. *)
-let make_malloc_host file =
-    let malloc_host_name =
-        let rec malloc_host_name n =
-            let name = FormatPlus.sprintf "__cilptranal_points_to_host%d" n in
-            let exists = try ignore (FindCil.global_varinfo_by_name file name); true with Not_found -> false in
-            if exists then
-                malloc_host_name (n + 1)
-            else
-                name
-        in
-        malloc_host_name 0
-    in
-    let malloc_host = Cil.makeGlobalVar malloc_host_name Cil.voidPtrType in
-    (* should it be added to globals? it will never be reachable from code *)
-    (* file.Cil.globals <- (Cil.GVarDecl (malloc_host, Cil.locUnknown))::file.Cil.globals; *)
-    malloc_host
+(* Helper for naive_points_to/unsound_points_to to generate a dummy lhost to refer to malloc'ed locations. *)
+let make_malloc_lhost =
+    let malloc_host = Cil.makeGlobalVar "__cilptranal_points_to_host" Cil.voidPtrType in
+    fun typ ->
+        Cil.Mem (Cil.mkCast (Cil.Lval (Cil.var malloc_host)) (Cil.TPtr (typ, [])))
 (**/**)
 
 
@@ -322,12 +310,11 @@ let naive_points_to =
         try
             Hashtbl.find memotable file
         with Not_found ->
-            let malloc_host = make_malloc_host file in
             let varinfos = FindCil.all_varinfos file in
             let malloc_varinfo = FindCil.global_varinfo_by_name file "malloc" in
             let mallocs = List.map begin fun typ ->
                 let malloc = (malloc_varinfo, "malloc", typ) in
-                let malloc_lhost = Cil.Mem (Cil.mkCast (Cil.Lval (Cil.var malloc_host)) typ) in
+                let malloc_lhost = make_malloc_lhost typ in
                 (malloc, [ malloc_lhost ])
             end (FindCil.all_types file) in
 
@@ -348,11 +335,10 @@ let unsound_points_to =
     fun file exp -> Profiler.global#call "CilPtranal.unsound_points_to" begin fun () ->
         match Cil.unrollType (Cil.typeOf exp) with
             | Cil.TPtr (typ, _) ->
-                let malloc_host = make_malloc_host file in
                 let malloc_varinfo = FindCil.global_varinfo_by_name file "malloc" in
                 let name = "malloc" ^ string_of_int (Counter.next counter) in
                 let malloc = (malloc_varinfo, name, typ) in
-                let malloc_lhost = Cil.Mem (Cil.mkCast (Cil.Lval (Cil.var malloc_host)) typ) in
+                let malloc_lhost = make_malloc_lhost typ in
                 wrap_points_to_varinfo (fun _ -> ([], [ (malloc, [ malloc_lhost ]) ])) exp
             | _ ->
                 ([], [])
