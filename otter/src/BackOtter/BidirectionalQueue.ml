@@ -38,13 +38,13 @@ end)
  * latest decision won't create bounded job more than once *)
 (* TODO: this is expensive, since decisions as keys can be very long. *)
 let function_call_of_latest_decision =
-    let memotable = Hashtbl.create 0 in
+    let visited_set = Hashtbl.create 0 in
     fun lst ->
         Profiler.global#call "BidirectionalQueue.function_call_of_latest_decision" begin fun () ->
             match lst with
             | DecisionFuncall (_, varinfo) :: _ as decisions->
-                if Hashtbl.mem memotable decisions then None
-                else (Hashtbl.add memotable decisions (); Some varinfo)
+                if Hashtbl.mem visited_set decisions then None
+                else (Hashtbl.add visited_set decisions (); Some varinfo)
             | _ -> None
         end
 
