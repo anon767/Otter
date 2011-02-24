@@ -863,7 +863,6 @@ let interceptor job job_queue interceptor = Profiler.global#call "BuiltinFunctio
 		(intercept_function_by_name_internal "free"                    libc_free) @@
 		(intercept_function_by_name_internal "alloca"                  libc___builtin_alloca) @@
 		(intercept_function_by_name_internal "__builtin_alloca"        libc___builtin_alloca) @@
-		(intercept_function_by_name_internal "__builtin_va_arg_fixed"  libc___builtin_va_arg) @@
 		(intercept_function_by_name_internal "__builtin_va_arg"        libc___builtin_va_arg) @@
 		(intercept_function_by_name_internal "__builtin_va_copy"       libc___builtin_va_copy) @@
 		(intercept_function_by_name_internal "__builtin_va_end"        libc___builtin_va_end) @@
@@ -1098,7 +1097,6 @@ let is_builtin =
         "free";
         "alloca";
         "__builtin_alloca";
-        "__builtin_va_arg_fixed";
         "__builtin_va_arg";
         "__builtin_va_copy";
         "__builtin_va_end";
