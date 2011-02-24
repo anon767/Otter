@@ -216,20 +216,17 @@ class virtual record =
         val virtual count : int
         val virtual user : float
         val virtual system : float
-        val virtual wallclock : float
         val virtual allocated_bytes : float
 
         method count = count
         method user = user
         method system = system
-        method wallclock = wallclock
         method allocated_bytes = allocated_bytes
 
         method add (other : 'self) = {<
             count = self#count + other#count;
             user = self#user +. other#user;
             system = self#system +. other#system;
-            wallclock = self#wallclock +. other#wallclock;
             allocated_bytes = self#allocated_bytes +. other#allocated_bytes;
         >}
 
@@ -249,25 +246,21 @@ class virtual record =
 
 class checkpoint () =
     let times = Unix.times () in
-    let wallclock = Unix.gettimeofday () in
     let allocated_bytes = Gc.allocated_bytes () in
     object
         val start_count = 0
         val start_user = times.Unix.tms_utime
         val start_system = times.Unix.tms_stime
-        val start_wallclock = wallclock
         val start_allocated_bytes = allocated_bytes
 
         method measure =
             let stop_times = Unix.times () in
-            let stop_wallclock = Unix.gettimeofday () in
             let stop_allocated_bytes = Gc.allocated_bytes () in
             object
                 inherit record
                 val count = 1
                 val user = stop_times.Unix.tms_utime -. start_user
                 val system = stop_times.Unix.tms_stime -. start_system
-                val wallclock = stop_wallclock -. start_wallclock
                 val allocated_bytes = stop_allocated_bytes -. start_allocated_bytes
             end
     end
@@ -277,7 +270,7 @@ class t =
     object (_ : 'self)
         inherit ['self] abstract
         val indent = 2
-        val record_width = 31
+        val record_width = 33
 
         method checkpoint = new checkpoint ()
         method record_order x y = if x == y then 0 else match x, y with
@@ -287,7 +280,7 @@ class t =
             | `None, `None -> 0
 
         method header_printer ff =
-            Format.fprintf ff " %6s %7s %6s %8s@\n" "count" "user/s" "sys/s" "alloc/b"
+            Format.fprintf ff " %8s %8s %5s %8s@\n" "count" "user/s" "sys/s" "alloc/b"
     end
 
 
