@@ -1,6 +1,6 @@
 #!/bin/sh
 TRUNK=@OTTER_TRUNK@
-COREUTILS="$TRUNK/experiments/coreutils-6.11"
+COREUTILS="$TRUNK/experiments/coreutils-6.10"
 NEWLIB_OTTER="$TRUNK/newlib-1.19.0/otter"
 OTTER_CMD="$NEWLIB_OTTER/otter-with-libc"
 
