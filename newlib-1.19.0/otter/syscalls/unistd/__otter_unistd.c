@@ -218,21 +218,8 @@ ssize_t __otter_libc_read_tty(void* buf, size_t num)
 ssize_t __otter_libc_pread_pipe_data(
 	struct __otter_fs_pipe_data* pipe,
 	void* buf,
-	size_t num,
-	int nonblocking)
+	size_t num)
 {
-	/* Unless O_NONBLOCK is set, block until data becomes available. Then read the data. */
-	if (__otter_fs_pipe_is_empty(pipe)) {
-		if(nonblocking)
-		{
-			errno = EAGAIN;
-			return -1;
-		}
-		__otter_multi_block_while_condition(__otter_fs_pipe_is_empty(pipe), pipe);
-	}
-	/* This is a TOCTTOU problem on whether the pipe is empty, but opengroup says:
-		'The behavior of multiple concurrent reads on the same pipe, FIFO, or terminal device is unspecified.'
-		so this will (hopefully) never cause trouble. */
 	__otter_multi_begin_atomic();
 	
 	// TODO: we can replace this loop with a length check and one or two calls to memcpy
@@ -258,9 +245,9 @@ ssize_t __otter_libc_pread_pipe_data(
 ssize_t __otter_libc_read_pipe_data(
 	struct __otter_fs_pipe_data* pipe,
 	void* buf,
-	size_t num, int nonblocking)
+	size_t num)
 {
-	num = __otter_libc_pread_pipe_data(pipe, buf, num, nonblocking);
+	num = __otter_libc_pread_pipe_data(pipe, buf, num);
 
 	pipe->rhead = (pipe->rhead + num) % __otter_fs_PIPE_SIZE; /* move rhead to last char read */
 	return num;
@@ -301,7 +288,21 @@ ssize_t __otter_libc_read_pipe(
 	size_t num)
 {
 	struct __otter_fs_pipe_data* pipe = __otter_libc_get_pipe_data_from_open_file(open_file);
-	return __otter_libc_read_pipe_data(pipe, buf, num, open_file->mode & O_NONBLOCK);
+	
+	/* Unless O_NONBLOCK is set, block until data becomes available. Then read the data. */
+	if (__otter_fs_pipe_is_empty(pipe)) {
+		if(open_file->mode & O_NONBLOCK)
+		{
+			errno = EAGAIN;
+			return -1;
+		}
+		__otter_multi_block_while_condition(__otter_fs_pipe_is_empty(pipe), pipe);
+	}
+	/* This is a TOCTTOU problem on whether the pipe is empty, but opengroup says:
+		'The behavior of multiple concurrent reads on the same pipe, FIFO, or terminal device is unspecified.'
+		so this will (hopefully) never cause trouble. */
+
+	return __otter_libc_read_pipe_data(pipe, buf, num);
 }
 
 ssize_t __otter_libc_write_pipe(
@@ -327,30 +328,7 @@ ssize_t __otter_libc_read_socket(
 	void* buf,
 	size_t num)
 {
-	struct __otter_fs_sock_data* sock = __otter_libc_get_sock_data_from_open_file(open_file);
-	
-	switch(sock->state)
-	{
-		case __otter_sock_ST_CLOSED:
-		case __otter_sock_ST_LISTEN:
-		case __otter_sock_ST_SYN_RCVD:
-		case __otter_sock_ST_SYN_SENT:
-		case __otter_sock_ST_CLOSE_WAIT:
-		case __otter_sock_ST_LAST_ACK:
-		case __otter_sock_ST_CLOSING:
-		case __otter_sock_ST_TIME_WAIT:
-		case __otter_sock_ST_UDP:
-			/* can't read() in these states */
-			errno = ENOTCONN;
-			return(-1);
-
-		case __otter_sock_ST_ESTABLISHED:
-		case __otter_sock_ST_FIN_WAIT_1:
-		case __otter_sock_ST_FIN_WAIT_2:
-			return __otter_libc_read_pipe_data(sock->recv_data, buf, num, open_file->mode & O_NONBLOCK);
-	}
-	__ASSERT(0);
-	abort();
+	return __otter_libc_recv_socket(open_file, buf, num, 0 /*no flags set*/);
 }
 
 ssize_t __otter_libc_write_socket(

@@ -886,7 +886,18 @@ int getsockname(int socket_fd, struct sockaddr *address, socklen_t *address_len)
 
 ssize_t recv(int socket_fd, void *buf, size_t num, int flags)
 {
-	struct __otter_fs_sock_data* sock = __otter_libc_get_sock_data(socket_fd);
+	struct __otter_fs_open_file_table_entry* open_file = get_open_file_from_fd(socket_fd);
+	if(!open_file)
+	{
+		return -1;
+	}
+	
+	return __otter_libc_recv_socket(open_file, buf, num, flags);
+}
+
+ssize_t __otter_libc_recv_socket(struct __otter_fs_open_file_table_entry* open_file, void *buf, size_t num, int flags)
+{
+	struct __otter_fs_sock_data* sock = __otter_libc_get_sock_data_from_open_file(open_file);
 	if(!sock)
 	{
 		return(-1);
@@ -912,11 +923,54 @@ ssize_t recv(int socket_fd, void *buf, size_t num, int flags)
 		case __otter_sock_ST_FIN_WAIT_1:
 		case __otter_sock_ST_FIN_WAIT_2:
 			{
-				struct __otter_fs_open_file_table_entry *open_file = get_open_file_from_fd(socket_fd);
+				/* Unless O_NONBLOCK is set, block until data becomes available. Then read the data. */
+				if (__otter_fs_pipe_is_empty(sock->recv_data))
+				{
+					if(open_file->mode & O_NONBLOCK)
+					{
+						errno = EAGAIN;
+						return -1;
+					}
+					
+					__otter_multi_block_while_condition(
+						__otter_fs_pipe_is_empty(sock->recv_data) &&
+						(
+							sock->state == __otter_sock_ST_ESTABLISHED || 
+							sock->state == __otter_sock_ST_FIN_WAIT_1 || 
+							sock->state == __otter_sock_ST_FIN_WAIT_2
+						)
+						,
+						sock->recv_data, sock);
+						
+					/* socket can't be read from anymore? */
+					/* TODO: make this return -1 if the connection is dropped instead of cleanly shutdown */
+					switch(sock->state)
+					{
+						case __otter_sock_ST_CLOSED:
+						case __otter_sock_ST_LISTEN:
+						case __otter_sock_ST_SYN_RCVD:
+						case __otter_sock_ST_SYN_SENT:
+						case __otter_sock_ST_CLOSE_WAIT:
+						case __otter_sock_ST_LAST_ACK:
+						case __otter_sock_ST_CLOSING:
+						case __otter_sock_ST_TIME_WAIT:
+						case __otter_sock_ST_UDP:
+							return(0);
+
+						case __otter_sock_ST_ESTABLISHED:
+						case __otter_sock_ST_FIN_WAIT_1:
+						case __otter_sock_ST_FIN_WAIT_2:
+							break;
+					}
+				}
+				/* This is a TOCTTOU problem on whether the pipe is empty, but opengroup says:
+					'The behavior of multiple concurrent reads on the same pipe, FIFO, or terminal device is unspecified.'
+					so this will (hopefully) never cause trouble. */
+
 				if(flags & MSG_PEEK)
-					return __otter_libc_pread_pipe_data(sock->recv_data, buf, num, open_file->mode & O_NONBLOCK);
+					return __otter_libc_pread_pipe_data(sock->recv_data, buf, num);
 				else {
-					return __otter_libc_read_pipe_data(sock->recv_data, buf, num, open_file->mode & O_NONBLOCK);
+					return __otter_libc_read_pipe_data(sock->recv_data, buf, num);
 				}
 			}
 	}
