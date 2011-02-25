@@ -11,7 +11,11 @@ let points_tos = [
     "naive", CilUtilities.CilPtranal.naive_points_to;
     "unsound", CilUtilities.CilPtranal.unsound_points_to;
 ]
+
 let default_points_to = ref CilUtilities.CilPtranal.points_to
+
+module StringMap = Map.Make(String)
+let points_to_per_function = ref StringMap.empty
 
 
 (**/**)
@@ -136,15 +140,25 @@ end
         @param scheme optionally indicates the scheme to initialize symbolic pointers (see {!init_bytes_with_pointers})
         @param file is the file to symbolically execute
         @param points_to is a function for computing pointer targets to be passed to {!init_bytes_with_pointers}
-                (default:[CilPtranal.points_to file])
+                (default:[CilPtranal.points_to])
         @param fn is list the function at which to begin symbolic execution
         @return [OtterCore.Job.job] the created job
 *)
-class t file ?scheme ?(points_to=(!default_points_to) file) fn =
+class t file ?scheme ?(points_to=(!default_points_to)) fn =
     object (self : 'self)
         inherit OtterCore.Job.t file fn
         initializer
             let job = self in
+            let fname = fn.Cil.svar.Cil.vname in
+
+            (* Check if we want a specific points-to method for this function *)
+            let points_to = try StringMap.find fname (!points_to_per_function) with Not_found -> points_to in
+
+            Output.debug_printf "Initialize %s with %s points-to analysis@\n" fname 
+                (try List.assq points_to (List.map (fun (a,b) -> (b,a)) points_tos) with Not_found -> "unknown");
+
+            (* Call points_to with file *)
+            let points_to = points_to file in
 
             (* first, setup global variables *)
             let job = List.fold_left begin fun job g -> match g with
@@ -181,5 +195,20 @@ let options = [
     "--points-to-analysis",
         Arg.Symbol (fst (List.split points_tos), fun name -> default_points_to := List.assoc name points_tos),
         "<points_to> Set the default points_to analysis (default: regular)";
+    "--points-to-analysis-for-function",
+        Arg.String begin fun str ->
+            let args = Str.split (Str.regexp ",") str in
+            let re = Str.regexp "\\(.*\\):\\(.*\\)" in
+            List.iter (fun arg ->
+                if Str.string_match re arg 0 then
+                    let fname = Str.matched_group 1 arg in
+                    let points_to_name = Str.matched_group 2 arg in
+                    let points_to = List.assoc points_to_name points_tos in
+                    points_to_per_function := StringMap.add fname points_to (!points_to_per_function)
+                else
+                    failwith "Error in parsing --points-to-analysis-for-function"
+            ) args
+        end,
+        "<fname:points_to,...> Set the points_to analysis for function fname (default: the default set by --points-to-analysis)";
 ]
 
