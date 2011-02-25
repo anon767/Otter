@@ -3,10 +3,11 @@
 
 (**/**) (* various helpers *)
 module InstructionStack = DataStructures.StackSet.Make (Instruction)
+module InstructionSet = Set.Make (Instruction)
 module InstructionTargetsHash = Hashtbl.Make (struct
-    type t = Instruction.t * Instruction.t list
-    let equal (x, xt) (y, yt) = try List.for_all2 Instruction.equal (x::xt) (y::yt) with Invalid_argument "List.for_all2" -> false
-    let hash (x, xt) = List.fold_left (fun h x -> 33 * h + Instruction.hash x) 0 (x::xt)
+    type t = Instruction.t * InstructionSet.t
+    let equal (x, xt) (y, yt) = Instruction.equal x y && InstructionSet.equal xt yt
+    let hash (x, xt) = Hashtbl.hash (Instruction.hash x, Hashtbl.hash xt)
 end)
 (**/**)
 
@@ -23,6 +24,7 @@ let find =
     let distance_hash = InstructionTargetsHash.create 0 in
     fun instr targets ->
         if targets = [] then invalid_arg "find: targets must be a non-empty list";
+        let targets = List.fold_left (fun targets target -> InstructionSet.add target targets) InstructionSet.empty targets in
         try
             InstructionTargetsHash.find distance_hash (instr, targets)
 
@@ -37,7 +39,7 @@ let find =
                         - or, 1 + the minimum distance of its call targets;
                    adding uncomputed successors and call targets to the worklist *)
                 let dist, worklist =
-                    if List.exists (Instruction.equal instr) targets then
+                    if InstructionSet.mem instr targets then
                         (0, worklist)
                     else
                         let calc_dist instrs worklist =
