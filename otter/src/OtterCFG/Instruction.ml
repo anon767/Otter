@@ -1,5 +1,6 @@
 (** Instruction-level control-flow graph abstraction for Otter. *)
 
+open OcamlUtilities
 open CilUtilities
 
 (* TODO: Refactor OtterCore to use this module for it's program counter, as the one canonical abstraction for Otter.
@@ -131,12 +132,14 @@ let predecessors ({ file = file; fundec = fundec; stmt = stmt; instrs = instrs }
 
 (** Find all the call sites of this instruction (if it is the first instruction of its function). *)
 let call_sites =
-    let memotable = Hashtbl.create 0 in
-    fun ({ file = file; fundec = fundec } as instruction) ->
-        if equal instruction (of_fundec file fundec) then begin
-            try
-                Hashtbl.find memotable (file, fundec)
-            with Not_found ->
+    let module Memo = Memo.Make (struct
+        type t = CilData.CilFile.t * CilData.CilFundec.t
+        let hash (file, fundec) = Hashtbl.hash (CilData.CilFile.hash file, CilData.CilFundec.hash fundec)
+        let equal (xfile, xfundec as x) (yfile, yfundec as y) = x == y || CilData.CilFile.equal xfile yfile && CilData.CilFundec.equal xfundec yfundec
+    end) in
+    let call_sites =
+        Memo.memo "Instruction.call_sites"
+            begin fun (file, fundec) ->
                 let call_sites = ref [] in
 
                 (* iterate over caller functions *)
@@ -166,31 +169,32 @@ let call_sites =
                     end end caller end
                 end callers;
 
-                Hashtbl.add memotable (file, fundec) !call_sites;
                 !call_sites
-        end else
+            end
+    in
+    fun ({ file = file; fundec = fundec } as instruction) ->
+        if equal instruction (of_fundec file fundec) then
+            call_sites (file, fundec)
+        else
             [] (* or raise some exception? *)
 
 
 (** Find all the (first instruction of the) call targets of this instruction (if it is a call instruction). *)
 let call_targets =
-    let memotable = Hashtbl.create 0 in
-    fun { file = file; instrs = instrs } ->
-        match instrs with
-            | (Cil.Call (_, fexp, _, _))::rest ->
-                begin
-                    try
-                        Hashtbl.find memotable (file, fexp)
-                    with Not_found ->
-                        (* iterate over callee functions and extract the first statement *)
-                        let callees = CilCallgraph.resolve_exp_to_fundecs file fexp in
-                        let call_targets = List.map (of_fundec file) callees in
-
-                        Hashtbl.add memotable (file, fexp) call_targets;
-                        call_targets
-                end
-            | _ ->
-                [] (* or raise some exception? *)
+    let module Memo = Memo.Make (struct
+        type t = CilData.CilFile.t * CilData.CilExp.t
+        let hash (f, e) = Hashtbl.hash (CilData.CilFile.hash f, CilData.CilExp.hash e)
+        let equal (xf, xe as x) (yf, ye as y) = x == y || CilData.CilFile.equal xf yf && CilData.CilExp.equal xe ye
+    end) in
+    let call_targets = Memo.memo "Instruction.call_target" begin fun (file, fexp) ->
+        (* iterate over callee functions and extract the first statement *)
+        List.map (of_fundec file) (CilCallgraph.resolve_exp_to_fundecs file fexp)
+    end in
+    fun { file = file; instrs = instrs } -> match instrs with
+        | (Cil.Call (_, fexp, _, _))::_ ->
+            call_targets (file, fexp)
+        | _ ->
+            [] (* or raise some exception? *)
 
 
 (** Find all the return targets of this instruction (if it is a return instruction). *)
@@ -202,33 +206,28 @@ let return_targets ({ file = file; fundec = fundec } as instruction) =
 
 (** Find all the return sites of this instruction (if it is a call instruction). *)
 let return_sites =
-    let module InstructionHash = Hashtbl.Make (T) in
-    let memotable = InstructionHash.create 0 in
-    fun instruction ->
-        match call_targets instruction with
-            | _::_ as targets ->
-                begin
-                    try
-                        InstructionHash.find memotable instruction
-                    with Not_found ->
-                        let return_sites = ref [] in
-                        List.iter begin fun { file = file; fundec = fundec } ->
-                            (* iterate over statements in target functions and extract Cil.Return *)
-                            ignore begin Cil.visitCilFunction begin object
-                                inherit Cil.nopCilVisitor
-                                method vstmt stmt = match stmt.Cil.skind with
-                                    | Cil.Return _ ->
-                                        return_sites := (of_stmt_first file fundec stmt)::!return_sites;
-                                        Cil.SkipChildren
-                                    | _ ->
-                                        Cil.SkipChildren
-                            end end fundec end
-                        end targets;
+    let module Memo = Memo.Make (T) in
+    let return_sites = Memo.memo "Instruction.return_sites" begin fun instruction ->
+        let return_sites = ref [] in
+        List.iter begin fun { file = file; fundec = fundec } ->
+            (* iterate over statements in target functions and extract Cil.Return *)
+            ignore begin Cil.visitCilFunction begin object
+                inherit Cil.nopCilVisitor
+                method vstmt stmt = match stmt.Cil.skind with
+                    | Cil.Return _ ->
+                        return_sites := (of_stmt_first file fundec stmt)::!return_sites;
+                        Cil.SkipChildren
+                    | _ ->
+                        Cil.SkipChildren
+            end end fundec end
+        end (call_targets instruction);
 
-                        InstructionHash.add memotable instruction !return_sites;
-                        !return_sites
-                end
-            | [] ->
-                [] (* or raise some exception? *)
+        !return_sites
+    end in
+    fun ({ file = file; instrs = instrs } as instruction) -> match instrs with
+        | (Cil.Call _)::_ ->
+            return_sites instruction
+        | _ ->
+            [] (* or raise some exception? *)
 
 

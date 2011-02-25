@@ -16,11 +16,9 @@ let line_target_interceptor job job_queue interceptor =
 
 
 let get_line_targets =
-    let memotable = Hashtbl.create 0 in
-    fun file ->
-        try
-            Hashtbl.find memotable file
-        with Not_found ->
+    let module Memo = Memo.Make (CilUtilities.CilData.CilFile) in
+    Memo.memo "LineTargets.get_line_targets"
+        begin fun file ->
             let line_targets = ref [] in
             Cil.visitCilFileSameGlobals begin object
                 inherit Cil.nopCilVisitor
@@ -33,8 +31,8 @@ let get_line_targets =
                     ) fundec.sallstmts;
                     Cil.SkipChildren
             end end file;
-            Hashtbl.add memotable file !line_targets;
             !line_targets
+        end
 
 
 (** {1 Command-line options} *)

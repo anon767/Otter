@@ -1,3 +1,5 @@
+open OcamlUtilities
+
 module StringSet = Set.Make(String)
 
 let arg_remove_cil_suffixes = ref true
@@ -24,23 +26,18 @@ let isTracked fname trackedFns =
     StringSet.mem fname trackedFns
 
 let trackedFns =
-    let memotable = Hashtbl.create 0 in
-    fun file ->
-        try
-            Hashtbl.find memotable file
-        with Not_found ->
-            let trackedFns = match !arg_tracked_fns, !arg_untracked_fns with
-	        	| None, None -> List.fold_left (fun set elt -> StringSet.add elt set) StringSet.empty (CilUtilities.FindFns.get_all_fnames file)
-	        	| None, Some fns -> List.fold_left (fun set elt ->
-	        			if List.mem (remove_cil_suffix elt) fns then set
-	        			else StringSet.add elt set
-	        		) StringSet.empty (CilUtilities.FindFns.get_all_fnames file)
-	        	| Some fns, None -> List.fold_left (fun set elt -> StringSet.add elt set) StringSet.empty fns
-                (* FIXME: we can allow both lists to be active, e.g., tracedFns = arg_tracked_fns \ arg_untracked_fns *)
-	        	| Some _, Some _ -> failwith "whitelist and blacklist both active"
-            in
-            Hashtbl.add memotable file trackedFns;
-            trackedFns
+    let module Memo = Memo.Make (CilUtilities.CilData.CilFile) in
+    Memo.memo "TrackingFunctions.trackedFns" begin fun file ->
+        match !arg_tracked_fns, !arg_untracked_fns with
+            | None, None -> List.fold_left (fun set elt -> StringSet.add elt set) StringSet.empty (CilUtilities.FindFns.get_all_fnames file)
+            | None, Some fns -> List.fold_left (fun set elt ->
+                    if List.mem (remove_cil_suffix elt) fns then set
+                    else StringSet.add elt set
+                ) StringSet.empty (CilUtilities.FindFns.get_all_fnames file)
+            | Some fns, None -> List.fold_left (fun set elt -> StringSet.add elt set) StringSet.empty fns
+            (* FIXME: we can allow both lists to be active, e.g., tracedFns = arg_tracked_fns \ arg_untracked_fns *)
+            | Some _, Some _ -> failwith "whitelist and blacklist both active"
+    end
 
 let options = [
 	("--tracked-functions",

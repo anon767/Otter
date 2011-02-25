@@ -34,11 +34,9 @@ let resolve_exp_to_fundecs file = function
 
 (** Compute the callgraph of a file. *)
 let compute_callgraph =
-    let memotable = Hashtbl.create 0 in
-    fun file ->
-        try
-            Hashtbl.find memotable file
-        with Not_found ->
+    let module Memo = OcamlUtilities.Memo.Make (CilData.CilFile) in
+    Memo.memo "CilCallGraph.compute_callgraph"
+        begin fun file ->
             let callgraph = ref Callgraph.empty in
             Cil.visitCilFileSameGlobals begin object
                 inherit Cil.nopCilVisitor
@@ -56,8 +54,8 @@ let compute_callgraph =
                     end end fundec end;
                     Cil.SkipChildren
             end end file;
-            Hashtbl.add memotable file !callgraph;
             !callgraph
+        end
 
 
 (** Find the {!Cil.fundecs} of callers of a function. *)

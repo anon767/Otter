@@ -147,7 +147,7 @@ let wrap_points_to_varinfo points_to_varinfo exp = Profiler.global#call "wrap_po
 end
 
 
-(** Helper that generates a map from untyped dynamic allocation sites ([Cil.fundec * string] tuple) to typed dynamic
+(** Helper that generates a map from untyped dynamic allocation sites ([Cil.varinfo * string] tuple) to typed dynamic
     allocation sites ([(CilData.Malloc.t * CilData.CilLhost.t list) list]), using a points-to analysis to find the types and
     pointer expressions that refer to those sites.
         @param file is the file for which to generate the mapping
@@ -174,13 +174,16 @@ let mallocs_of_sites =
                 | i -> i
     end) in
 
-    let file_memotable = Hashtbl.create 0 in
-    fun file (points_to_varinfo : _ -> Cil.varinfo list * _) ->
-        let points_to_varinfo exp = Profiler.global#call "points_to_varinfo" (fun () -> points_to_varinfo exp) in
+    let module Memo = Memo.Make (struct
+        type t = CilData.CilFile.t * (Cil.exp -> Cil.varinfo list * (Cil.varinfo * string) list)
+        let hash (f, p) = Hashtbl.hash (CilData.CilFile.hash f, p)
+        let equal (xf, xp as x) (yf, yp as y) = x == y || CilData.CilFile.equal xf yf && xp == yp
+    end) in
+    let malloc_of_sites = Memo.memo "CilPtranal.malloc_of_sites" begin fun (file, points_to_varinfo) ->
         let site_to_mallocs =
-            try
-                Hashtbl.find file_memotable file
-            with Not_found -> Profiler.global#call "mallocs_of_sites (uncached)" begin fun () ->
+            Profiler.global#call "mallocs_of_sites (uncached)" begin fun () ->
+                let points_to_varinfo exp = Profiler.global#call "points_to_varinfo" (fun () -> points_to_varinfo exp) in
+
                 (* build a map from malloc sites to malloc types (Cil.fundec * string => MallocSet.t MallocMap.t) *)
                 let site_to_mallocs = SiteMap.empty in
 
@@ -253,12 +256,14 @@ let mallocs_of_sites =
                     end malloc_meta []
                 end site_to_mallocs in
 
-                Hashtbl.replace file_memotable file site_to_mallocs;
                 site_to_mallocs
             end
         in
         fun sites ->
             List.concat (List.map (fun site -> SiteMap.find site site_to_mallocs) sites)
+    end in
+    fun file points_to_varinfo ->
+        malloc_of_sites (file, points_to_varinfo)
 
 
 (** Wrapper for Cil's {!Ptranal.resolve_exp} that resolves to fields in variables as well, conservatively and
@@ -307,11 +312,13 @@ let make_malloc_lhost =
                 and [target_mallocs] contains a list of dynamic allocation sites and offsets
 *)
 let naive_points_to =
-    let memotable = Hashtbl.create 0 in
-    fun file exp -> Profiler.global#call "CilPtranal.naive_points_to" begin fun () ->
-        try
-            Hashtbl.find memotable file
-        with Not_found ->
+    let module Memo = Memo.Make (struct
+        type t = CilData.CilFile.t * CilData.CilExp.t
+        let hash (f, e) = Hashtbl.hash (CilData.CilFile.hash f, CilData.CilExp.hash e)
+        let equal (xf, xe as x) (yf, ye as y) = x == y || CilData.CilFile.equal xf yf && CilData.CilExp.equal xe ye
+    end) in
+    let naive_points_to = Memo.memo "CilPtranal.naive_points_to" begin fun (file, exp) ->
+        Profiler.global#call "CilPtranal.naive_points_to" begin fun () ->
             let varinfos = FindCil.all_varinfos file in
             let malloc_varinfo = FindCil.global_varinfo_by_name file "malloc" in
             let mallocs = List.map begin fun typ ->
@@ -320,10 +327,11 @@ let naive_points_to =
                 (malloc, [ malloc_lhost ])
             end (FindCil.all_types file) in
 
-            let targets = wrap_points_to_varinfo (fun _ -> (varinfos, mallocs)) exp in
-            Hashtbl.add memotable file targets;
-            targets
-    end
+            wrap_points_to_varinfo (fun _ -> (varinfos, mallocs)) exp
+        end
+    end in
+    fun file exp ->
+        naive_points_to (file, exp)
 
 
 (** Unsound point-to that maps anything to just a distinct [malloc].

@@ -89,9 +89,6 @@ module T : sig
 
     and lval_block = (memory_block * bytes) conditional
 
-    val hash_consing_bytes_hits : int ref
-    val hash_consing_bytes_misses : int ref
-
     val make_Byte_Concrete : char -> byte
     val make_Byte_Symbolic : symbol -> byte
     val make_Byte_Bytes : bytes * int -> byte
@@ -154,20 +151,6 @@ end = struct
 
     and lval_block = (memory_block * bytes) conditional
 
-    let hash_consing_bytes_hits = ref 0
-    let hash_consing_bytes_misses = ref 0
-    let hash_consing_bytes_init_size = 1000000
-    let hash_consing_bytes_tbl : (bytes, bytes) Hashtbl.t = Hashtbl.create hash_consing_bytes_init_size
-    let hash_consing_bytes_create bs = 
-        try
-            let rv = Hashtbl.find hash_consing_bytes_tbl bs in
-            incr hash_consing_bytes_hits;
-            rv
-        with Not_found ->
-            Hashtbl.add hash_consing_bytes_tbl bs bs;
-            incr hash_consing_bytes_misses;
-            bs
-
     (*
      *  Since bytes objects are immutable, and bytes is private type, all *bs* are
      *  created by calling make_Bytes_* and do not require hash consing check.
@@ -175,6 +158,8 @@ end = struct
     let make_Byte_Concrete c = Byte_Concrete c
     let make_Byte_Symbolic s = Byte_Symbolic s
     let make_Byte_Bytes (bs, n) = Byte_Bytes (bs, n)
+
+    let hash_consing_bytes_create = Memo.make_hashcons "Bytes.bytes"
 
     let make_Bytes_Constant const = hash_consing_bytes_create (Bytes_Constant const)
     let make_Bytes_ByteArray bytearray = hash_consing_bytes_create (Bytes_ByteArray bytearray)

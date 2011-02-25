@@ -112,7 +112,6 @@ let doit file =
         Output.set_formatter (new Output.plain);
         Output.printf "\nSTP was invoked %d times (%d cache hits).\n" !Stp.stp_count !Stp.cacheHits;
 
-        Output.printf "Hash-consing: hits=%d misses=%d\n" (!Bytes.hash_consing_bytes_hits) (!Bytes.hash_consing_bytes_misses);
         Output.printf "Counter statistics:@\n";
         let counter_stats = DataStructures.NamedCounter.report () in
         List.iter (fun (name, value) -> Output.printf "%s : %d@\n" name value) counter_stats;
@@ -144,6 +143,7 @@ let doit file =
     (* TODO: provide a way to force full-width profile printing *)
     Format.set_margin 120;
     Format.printf "Global profile:@\n@\n  @[%t@]@." Profiler.global#printer;
+    Format.printf "@[%t@]@\n" Memo.statistics_printer;
 
     Format.printf "Done.@\n"
 

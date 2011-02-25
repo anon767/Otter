@@ -35,7 +35,7 @@ let doDebugExecute (f: file) =
 		*)
 	Output.printf "\nSTP was invoked %d times (%d cache hits).\n" !Stp.stp_count !Stp.cacheHits;
 
-    Output.printf "Hash-consing: hits=%d misses=%d\n" (!Bytes.hash_consing_bytes_hits) (!Bytes.hash_consing_bytes_misses);
+	Output.printf "@[%t@]@\n" Memo.statistics_printer;
   (*  Output.printf "Bytes eval caching: hits=%d misses=%d\n\n" (!MemOp.bytes_eval_cache_hits) (!MemOp.bytes_eval_cache_misses);*)
 
     (*

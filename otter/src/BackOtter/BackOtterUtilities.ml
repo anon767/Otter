@@ -10,60 +10,50 @@ open Cil
 let max_distance = max_int
 
 let length =
-    let memotable = Hashtbl.create 0 in
-    fun lst ->
-        let rec length = function
+    let length = Memo.memo_rec "BackOtterUtilities.length" begin fun length (lst : Decision.t list) ->
+        match lst with
             | [] -> 0
-            | (lst:Decision.t list) ->
-                try
-                    Hashtbl.find memotable lst
-                with Not_found ->
-                    let len = length (List.tl lst) + 1 in
-                    Hashtbl.add memotable lst len;
-                    len
-        in
-        Profiler.global#call "BackOtterUtilities.length" begin fun () ->
-            length lst
-        end
+            | _::rest -> length rest + 1
+    end in
+    fun lst -> Profiler.global#call "BackOtterUtilities.length" begin fun () ->
+        length lst
+    end
 
 let rev_equals =
-    let memotable = Hashtbl.create 0 in
-    fun eq (lst1:Decision.t list) (lst2:Decision.t list) n -> (* Assume length lst1 >= n *)
-        let rec rev_equals eq lst1 lst2 n =
+    let module Memo = Memo.Make (struct
+        type t = (Decision.t -> Decision.t -> bool) * Decision.t list * Decision.t list * int
+        let hash = Hashtbl.hash
+        let equal (xeq, x1, x2, xb as x) (yeq, y1, y2, yb as y) =
+            (* TODO: should the lists be compared structurally instead? *)
+            x == y || xeq == yeq && x1 == y1 && x2 == y2 && xb == yb
+    end) in
+    let rev_equals = Memo.memo_rec "BackOtterUtilities.rev_equals"
+        begin fun rev_equals (eq, lst1, lst2, n) -> (* Assume length lst1 >= n *)
             if n <= 0 then
-                true, lst1, lst2
+                (true, lst1, lst2)
             else
-                try
-                    Hashtbl.find memotable (eq, lst1, lst2, n)
-                with Not_found ->
-                    let return =
-                        let b, suf1, suf2 = rev_equals eq (List.tl lst1) lst2 (n-1) in
-                        b && eq (List.hd lst1) (List.hd suf2), suf1, (List.tl suf2)
-                    in
-                    Hashtbl.add memotable (eq, lst1, lst2, n) return;
-                    return
-        in
-        Profiler.global#call "BackOtterUtilities.rev_equals" begin fun () ->
-            rev_equals eq lst1 lst2 n
+                let b, suf1, suf2 = rev_equals (eq, List.tl lst1, lst2, n - 1) in
+                (b && eq (List.hd lst1) (List.hd suf2), suf1, (List.tl suf2))
         end
+    in
+    fun eq lst1 lst2 n -> Profiler.global#call "BackOtterUtilities.rev_equals" begin fun () ->
+        rev_equals (eq, lst1, lst2, n)
+    end
 
 let get_last_element =
-    let memotable = Hashtbl.create 0 in
-    fun lst ->
-        let rec get_last_element = function
+    let get_last_element = Memo.memo_rec "BackOtterUtilities.get_last_element"
+        begin fun get_last_element lst -> match lst with
             | [] -> invalid_arg "get_last_element: empty list"
             | [ele] -> ele
-            | _ :: tail as lst ->
-                try
-                    Hashtbl.find memotable lst
-                with Not_found ->
-                    let last_ele = get_last_element tail in
-                    Hashtbl.add memotable lst last_ele;
-                    last_ele
-        in
-        Profiler.global#call "BackOtterUtilities.get_last_element" begin fun () ->
-            get_last_element lst
+            | _ :: tail -> get_last_element tail
         end
+    in
+    fun lst -> Profiler.global#call "BackOtterUtilities.get_last_element" begin fun () ->
+        match lst with
+            | [] -> invalid_arg "get_last_element: empty list"
+            | [ele] -> ele
+            | lst -> get_last_element lst
+    end
 
 
 let get_origin_function job = Profiler.global#call "get_origin_function" (fun () -> get_last_element job#state.callstack)
@@ -83,12 +73,14 @@ let rec lex_compare cmp lst1 lst2 =
 
 
 let get_distance_from =
-    let memotable = Hashtbl.create 0 in
-    fun file f1 f2 ->
-        Profiler.global#call "BackOtterUtilities.get_distance_from" begin fun () ->
-        try
-            Hashtbl.find memotable (file, f1, f2)
-        with Not_found ->
+    let module Memo = Memo.Make (struct
+        type t = CilData.CilFile.t * CilData.CilFundec.t * CilData.CilFundec.t
+        let hash (file, f1, f2) = Hashtbl.hash (CilData.CilFile.hash file, CilData.CilFundec.hash f1, CilData.CilFundec.hash f1)
+        let equal (xfile, xf1, xf2 as x) (yfile, yf1, yf2 as y) =
+            x == y || CilData.CilFile.equal xfile yfile && CilData.CilFundec.equal xf1 yf1 && CilData.CilFundec.equal xf2 yf2
+    end) in
+    let get_distance_from = Memo.memo "BackOtterUtilities.get_distance_from"
+        begin fun (file, f1, f2) ->
             let rec bfs = function
                 | [] -> max_distance
                 | (f, d) :: tail ->
@@ -100,7 +92,10 @@ let get_distance_from =
                     ) tail callees in
                     bfs tail
             in
-            let distance = bfs [(f1, 0)] in
-            Hashtbl.add memotable (file, f1, f2) distance;
-            distance
+            bfs [(f1, 0)]
         end
+    in
+    fun file f1 f2 -> Profiler.global#call "BackOtterUtilities.get_distance_from" begin fun () ->
+        get_distance_from (file, f1, f2)
+    end
+

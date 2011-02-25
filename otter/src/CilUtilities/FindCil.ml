@@ -7,16 +7,13 @@ module TypeSet = Set.Make (CilData.CilType)
 (**/**)
 
 
-(** Get the memoization tables for searching in a file, initializing them if necessary.
-        @param file the {!Cil.file} to get the memoization tables for
-        @return [memotable_object] the object containing the memoization tables for searching the file
+(** Get the search tables for a file, initializing them if necessary.
+        @param file the {!Cil.file} to get the search tables for
+        @return [searchtables] the object containing the search tables for the file
 *)
-let memotables =
-    let file_memotables = Hashtbl.create 0 in
-    fun file ->
-        try
-            Hashtbl.find file_memotables file
-        with Not_found ->
+let searchtables =
+    OcamlUtilities.Memo.memo "FindCil.searchtables"
+        begin fun file ->
             let varinfo_to_varinit = Hashtbl.create 100 in
             let name_to_fundec = Hashtbl.create 100 in
             let name_to_global_varinfo = Hashtbl.create 100 in
@@ -46,16 +43,14 @@ let memotables =
             let all_varinfos = VarinfoSet.elements !all_varinfos in
             let all_types = TypeSet.elements !all_types in
 
-            let memotables = object
+            object
                 method varinfo_to_varinit = Hashtbl.find varinfo_to_varinit
                 method name_to_fundec = Hashtbl.find name_to_fundec
                 method name_to_global_varinfo = Hashtbl.find name_to_global_varinfo
                 method all_varinfos = all_varinfos
                 method all_types = all_types
-            end in
-            Hashtbl.replace file_memotables file memotables;
-            memotables
-
+            end
+        end
 
 (** Find a {!Cil.fundec} by {!Cil.varinfo} from a {!Cil.file}.
         @param file the {!Cil.file} to find the {!Cil.fundec} in
@@ -64,7 +59,7 @@ let memotables =
         @raise Not_found if a {!Cil.fundec} for [varinfo] does not exist in [file]
 *)
 let fundec_by_varinfo file varinfo =
-    (memotables file)#name_to_fundec varinfo.Cil.vname
+    (searchtables file)#name_to_fundec varinfo.Cil.vname
 
 
 (** Find the {!Cil.initinfo} for a global {!Cil.varinfo} from a {!Cil.file}.
@@ -74,7 +69,7 @@ let fundec_by_varinfo file varinfo =
         @raise Not_found if the global [varinfo] does not exist in [file]
 *)
 let global_varinit_by_varinfo file varinfo =
-    (memotables file)#varinfo_to_varinit varinfo
+    (searchtables file)#varinfo_to_varinit varinfo
 
 
 (** Find a {!Cil.fundec} by name from a {!Cil.file}.
@@ -84,7 +79,7 @@ let global_varinit_by_varinfo file varinfo =
         @raise Not_found if a {!Cil.fundec} named [name] does not exist in [file]
 *)
 let fundec_by_name file name =
-    (memotables file)#name_to_fundec name
+    (searchtables file)#name_to_fundec name
 
 
 (** Find a global {!Cil.varinfo} by name from a {!Cil.file}.
@@ -94,7 +89,7 @@ let fundec_by_name file name =
         @raise Not_found if a global {!Cil.varinfo} named [name] does not exist in [file]
 *)
 let global_varinfo_by_name file name =
-    (memotables file)#name_to_global_varinfo name
+    (searchtables file)#name_to_global_varinfo name
 
 
 (** Return a list of all {!Cil.varinfo} in a {!Cil.file}.
@@ -102,7 +97,7 @@ let global_varinfo_by_name file name =
         @return the list of {!Cil.varinfo}
 *)
 let all_varinfos file =
-    (memotables file)#all_varinfos
+    (searchtables file)#all_varinfos
 
 
 (** Return a list of all {!Cil.type} in a {!Cil.file}.
@@ -110,5 +105,5 @@ let all_varinfos file =
         @return the list of {!Cil.type}
 *)
 let all_types file =
-    (memotables file)#all_types
+    (searchtables file)#all_types
 
