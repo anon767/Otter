@@ -314,7 +314,7 @@ int bind(int socket_fd, const struct sockaddr *address, socklen_t address_len)
 				/* 0.0.0.0 */
 				if(a->sin_addr.s_addr == 0)
 				{
-					a->sin_addr.s_addr = 0x7F000001; /* 127.0.0.1 */
+					a->sin_addr.s_addr = 0x0100007F; /* 127.0.0.1 */
 				}
 				
 				if(a->sin_port == 0)
@@ -334,7 +334,7 @@ int bind(int socket_fd, const struct sockaddr *address, socklen_t address_len)
 				/* 0000:0000:0000:0000:0000:0000:0000:0000 */
 				if(a->sin6_addr.s6_addr32[0] == 0 && a->sin6_addr.s6_addr32[1] == 0 && a->sin6_addr.s6_addr32[2] == 0 && a->sin6_addr.s6_addr32[3] == 0)
 				{
-					a->sin6_addr.s6_addr32[3] == 1; /* 0000:0000:0000:0000:0000:0000:0000:0001 */
+					a->sin6_addr.s6_addr32[0] == 0x01000000; /* 0000:0000:0000:0000:0000:0000:0000:0001 */
 				}
 				
 				if(a->sin6_port == 0)

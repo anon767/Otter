@@ -3,10 +3,11 @@
 
 #include <netinet/in.h>
 
-#define htonl(x) (x)
-#define htons(x) (x)
-#define ntohl(x) (x)
-#define ntohs(x) (x)
+/* byte reordering macros */
+#define htonl(x) ((((x) & 0xFF000000) >> 24) | (((x) & 0x00FF0000) >> 8) | (((x) & 0x0000FF00) << 8) | (((x) & 0x000000FF) << 24))
+#define htons(x) ((((x) & 0xFF00) >> 8) | (((x) & 0x00FF) << 8))
+#define ntohl(x) ((((x) & 0xFF000000) >> 24) | (((x) & 0x00FF0000) >> 8) | (((x) & 0x0000FF00) << 8) | (((x) & 0x000000FF) << 24))
+#define ntohs(x) ((((x) & 0xFF00) >> 8) | (((x) & 0x00FF) << 8))
 
 in_addr_t      inet_addr(const char *cp);
 in_addr_t      inet_lnaof(struct in_addr in);
