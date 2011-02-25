@@ -142,6 +142,7 @@ let doit file =
 
 	Output.printf "Hash-consing: hits=%d misses=%d\n" (!Bytes.hash_consing_bytes_hits) (!Bytes.hash_consing_bytes_misses);
 
+        Output.printf "== Global profile ==@\n@[%t@]@\n" Profiler.global#printer;
 	let nodes, _, _ = result#get_stats in
     Output.printf "Number of nodes: %d@\n" nodes;
 	Report.print_report result#completed
