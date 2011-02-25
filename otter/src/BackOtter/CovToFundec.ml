@@ -63,13 +63,10 @@ end
 let vis = new getStatsVisitor
 
 let prepare_file file =
-    let trackedFns = TrackingFunctions.trackedFns file in
 	iterGlobals
 		file
 		(function (* Visit the bodies of the functions we care about *)
-				 GFun(fundec,_) ->
-					 if TrackingFunctions.isTracked fundec.svar.vname trackedFns
-					 then ignore (visitCilFunction (vis:>cilVisitor) fundec)
+				 GFun(fundec,_) -> ignore (visitCilFunction (vis:>cilVisitor) fundec)
 			 | _ -> ()
 		)
 
