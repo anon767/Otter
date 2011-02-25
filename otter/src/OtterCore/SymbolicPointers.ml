@@ -80,6 +80,7 @@ open OtterBytes
 module OffsetSet = Set.Make (CilData.CilOffset)
 module VarinfoSet = Set.Make (CilData.CilVar)
 module LhostSet = Set.Make (CilData.CilLhost)
+module ExpSet = Set.Make (CilData.CilExp)
 
 module VarinfoMap = Map.Make (CilData.CilVar)
 module MallocMap = Map.Make (CilData.Malloc)
@@ -200,8 +201,10 @@ let init_pointer
 
     (* find the points-to set for this pointer, and separate into lvals, mallocs and function addresses, the latter in
        particular has to be treated separately since function addresses do not refer to storage in memory *)
-    let target_lvals, target_mallocs, target_functions = Profiler.global#call "query points-to" begin fun () ->
-        List.fold_left begin fun (target_lvals, target_mallocs, target_functions) exp -> Profiler.global#call "partition" begin fun () ->
+    let target_functions, target_lvals, target_mallocs = Profiler.global#call "query points-to" begin fun () ->
+        (* eliminate duplicates in the input and output; they can add up quickly (>10 times) *)
+        let exps = List.fold_left (fun exps exp -> ExpSet.add exp exps) ExpSet.empty exps in
+        ExpSet.fold begin fun exp (target_functions, target_lvals, target_mallocs) -> Profiler.global#call "partition" begin fun () ->
             let t, m = points_to exp in
             let target_functions, target_lvals = List.fold_left begin fun (target_functions, target_lvals) (v, o as t) ->
                 Profiler.global#call "functions/lvals" begin fun () ->
@@ -217,8 +220,8 @@ let init_pointer
             let target_mallocs = List.fold_left begin fun target_mallocs m ->
                 Profiler.global#call "mallocs" (fun () -> MallocLhostsOffsetSet.add m target_mallocs)
             end target_mallocs m in
-            (target_lvals, target_mallocs, target_functions)
-        end end (VarinfoOffsetSet.empty, MallocLhostsOffsetSet.empty, VarinfoSet.empty) exps
+            (target_functions, target_lvals, target_mallocs)
+        end end exps (VarinfoSet.empty, VarinfoOffsetSet.empty, MallocLhostsOffsetSet.empty)
     end in
 
     (* group targets by type and the sets of offsets pointed into *)
