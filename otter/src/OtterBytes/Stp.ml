@@ -469,7 +469,7 @@ let stpcache_add answer pc pre guard truth =
 
 (** return (True) False if bytes (not) evaluates to all zeros. Unknown otherwise. *)
 let query_stp pc pre guard =
-    let query_stp pc pre guard =
+    Profiler.global#call "Stp.query_stp" begin fun () ->
         let pc = getRelevantAssumptions pc (guard__to_bytes guard) in
         (* TODO (yit):
          * The way doassert returns global_vc feels dangerous to me,
@@ -488,24 +488,24 @@ let query_stp pc pre guard =
             let rec do_assert pc = match pc with
                 | [] -> ()
                 | head::tail ->
-                    let (bv, len) = Stats.time "STP construct" (fun () -> to_stp_bv vc head) () in (* 1 *)
-                    Stats.time "STP doassert" (fun () -> Stpc.assert_ctrue vc len bv) () ; (* 2 *)
+                    let (bv, len) = Profiler.global#call "Stp.query_stp/construct" (fun () -> to_stp_bv vc head) in (* 1 *)
+                    Profiler.global#call "Stp.query_stp/add assertion" (fun () -> Stpc.assert_ctrue vc len bv) ; (* 2 *)
                     Output.set_mode Output.MSG_STP;
                     Output.printf "ASSERT(NOT(%t = 0hex00000000)); @\n" (fun ff -> Format.pp_print_string ff (Stpc.to_string bv));
                     do_assert tail
             in
-            (*Stats.time "STP assert" do_assert relevantAssumptions; *)
-            Stats.time "STP assert" do_assert pc;
+            (*Profiler.global#call "STP assert" do_assert relevantAssumptions; *)
+            Profiler.global#call "Stp.query_stp/doassert" (fun () -> do_assert pc);
             vc
         in
         (* TODO: avoid creating vc if cache hit for both T and F *)
         let vc = doassert pc in
         if pre != Guard_True then begin
-            let pre_exp = Stats.time "convert pre-condition" (to_stp_guard vc) pre in
-            Stats.time "STP.do_assert pre-condition" (Stpc.do_assert vc) pre_exp
+            let pre_exp = Profiler.global#call "Stp.query_stp/convert pre-condition" (fun () -> to_stp_guard vc pre) in
+            Profiler.global#call "Stp.query_stp/do_assert pre-condition" (fun () -> Stpc.do_assert vc pre_exp)
         end;
 
-        let guard_exp = Stats.time "convert guard" (to_stp_guard vc) guard in
+        let guard_exp = Profiler.global#call "Stp.query_stp/convert guard" (fun () -> to_stp_guard vc guard) in
         Output.set_mode Output.MSG_STP;
         Output.printf "QUERY(%t); @\n" (fun ff -> Format.pp_print_string ff (Stpc.to_string guard_exp));
 
@@ -517,7 +517,7 @@ let query_stp pc pre guard =
                     Stpc.e_push vc;
                     incr stp_count;
                     let startTime = Unix.gettimeofday () in
-                    let answer = Stats.time "STP query" begin fun () ->
+                    let answer = Profiler.global#call "Stp.query_stp/query" begin fun () ->
                         (* Note: the count is used as a proxy of running time in BackOtter *)
                         DataStructures.NamedCounter.incr "stpc_query";
                         try
@@ -543,7 +543,7 @@ let query_stp pc pre guard =
                             FormatPlus.failwith "ForkCallStopped (%d) caught in Stpc.query" i
                         | e ->
                             FormatPlus.failwith "Unknown exception caught in Stpc.query" 
-                    end () in
+                    end in
                     stpcache_add answer pc pre guard truth_value;
                     let endTime = Unix.gettimeofday () in
                     stp_queries := (pc, pre, guard, truth_value, endTime -. startTime)::(!stp_queries);
@@ -556,9 +556,7 @@ let query_stp pc pre guard =
             Ternary.False
         else
             Ternary.Unknown
-    in
-    Stats.time "STP" (query_stp pc pre) guard
-
+    end
 
 let query_bytes pc bytes =
     query_stp pc Guard_True (guard__bytes bytes)

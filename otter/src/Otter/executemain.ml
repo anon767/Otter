@@ -15,9 +15,6 @@ let doExecute (f: file) =
 
 	Output.printf "Otter, a symbolic executor for C@\n@\n";
 
-	(* Keep track of how long we run *)
-	let startTime = Unix.gettimeofday () in
-
 	let reporter = UserSignal.using_signals begin fun () ->
 		(* prepare the file for symbolic execution *)
 		Core.prepare_file f;
@@ -36,22 +33,6 @@ let doExecute (f: file) =
 		Cilutility.FundecMap.iter (fun f c -> Output.print_endline ((To_string.fundec f)^" : "^(string_of_int c))) (!MemOp.function_stat);
 		*)
 	Output.printf "\nSTP was invoked %d times (%d cache hits).\n" !Stp.stp_count !Stp.cacheHits;
-
-	let executionTime = (Unix.gettimeofday ()) -. startTime
-	and stpTime = Stats.lookupTime "STP" in
-	Output.printf "It ran for %.2f s, which is %.2f%% of the total %.2f s execution.\n"
-		stpTime (100. *. stpTime /. executionTime) executionTime;
-	Output.printf "  It took %.2f s to construct the formulas for the expressions inside 'if(...)'s,
-  %.2f s to construct and %.2f s to assert the path conditions,
-  and %.2f s to solve the resulting formulas.\n\n"
-		(Stats.lookupTime "convert conditional")
-		(Stats.lookupTime "STP construct")
-		(Stats.lookupTime "STP doassert")
-		(Stats.lookupTime "STP query");
-   (if !Executeargs.arg_simplify_path_condition then
-      Output.printf "It took %.2f s to simplify path conditions.\n"
-         (Stats.lookupTime "Simplify PC")
-    else ());
 
     Output.printf "Hash-consing: hits=%d misses=%d\n" (!Bytes.hash_consing_bytes_hits) (!Bytes.hash_consing_bytes_misses);
 

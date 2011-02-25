@@ -66,7 +66,7 @@ let traceLines (f: file) : unit =
         ignore (visitCilFunction traceLinesVisitor fdec);
     | _ -> ()
   in
-  Stats.time "traceLines" (iterGlobals f) doGlobal;
+  OcamlUtilities.Profiler.global#call "TraceLines.traceLines" (fun () -> iterGlobals f doGlobal);
   if !addProto then begin
      let p = makePrintfFunction () in 
      E.log "Adding prototype for trace logging function %s\n" p.vname;

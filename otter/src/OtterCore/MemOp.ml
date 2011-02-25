@@ -321,7 +321,7 @@ let state__extract_path_condition job bytes =
 let state__add_path_condition job bytes tracked=
 	let path_condition, path_condition_tracked =
 		if !Executeargs.arg_simplify_path_condition then
-			Stats.time "Simplify PC" (state__extract_path_condition job) bytes
+			Profiler.global#call "MemOp.state__add_path_condition/Simplify PC" (fun () -> state__extract_path_condition job bytes)
 		else
 			(job#state.path_condition, job#state.path_condition_tracked)
 	in
