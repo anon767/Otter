@@ -388,7 +388,9 @@ let step job job_queue = Profiler.global#call "Statement.step" begin fun () ->
         (Fork (job_state::abandoned_job_states), job_queue)
 
     with
-        | Failure msg ->
+        | Failure msg -> begin
+            Output.debug_printf "Statement.step: failwith %s@\n" msg;
             if !Executeargs.arg_failfast then failwith msg;
             (Complete (Abandoned (`Failure msg, job)), job_queue)
+        end
 end
