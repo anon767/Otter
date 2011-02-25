@@ -86,6 +86,53 @@ let accept_points_to pointer_type = Profiler.global#call "accept_points_to" begi
 end
 
 
+(** Helper to enumerate all compatible pointer target field/array offsets in a target type.
+        @param pointer_type is the pointer type
+        @param target_type is the target type
+        @return all compatible field/array offsets
+*)
+let to_offsets =
+    let module Memo = Memo.Make (struct
+        type t = CilData.CilCanonicalType.t * CilData.CilCanonicalType.t
+        let hash (p, t) = Hashtbl.hash (CilData.CilCanonicalType.hash p, CilData.CilCanonicalType.hash t)
+        let equal (xp, xt) (yp, yt) = CilData.CilCanonicalType.equal xp yp && CilData.CilCanonicalType.equal xt yt
+    end) in
+    let to_offsets = Memo.memo "CilPtranal.to_offsets" begin fun (pointer_type, target_type) ->
+        Profiler.global#call "to_offsets (uncached)" begin fun () ->
+            let accept_type = accept_points_to pointer_type in
+
+            let rec to_offsets offsets typ base =
+                let offset_type = Cil.unrollType (Cil.typeOffset typ base) in
+                (* collect offsets that matches the target type *)
+                let offsets = if accept_type offset_type then
+                    base::offsets
+                else
+                    offsets
+                in
+                (* recurse over all field, offsets *)
+                match offset_type with
+                    | Cil.TComp (compinfo, _) ->
+                        fold_struct begin fun offsets field ->
+                            to_offsets offsets typ (Cil.addOffset (Cil.Field (field, Cil.NoOffset)) base)
+                        end offsets compinfo
+                    | Cil.TArray (_, len_opt, _) ->
+                        let offsets_opt = fold_array begin fun offsets index ->
+                            to_offsets offsets typ (Cil.addOffset (Cil.Index (index, Cil.NoOffset)) base)
+                        end offsets len_opt in
+                        begin match offsets_opt with
+                            | Some offsets -> offsets
+                            | None -> offsets
+                        end
+                    | _ ->
+                        offsets
+            in
+            to_offsets [] (Cil.unrollType target_type) Cil.NoOffset
+        end
+    end in
+    fun pointer_type target_type ->
+        to_offsets (pointer_type, target_type)
+
+
 (** Wrapper that converts a points-to function that resolves expressions to variables, to a function that resolves
     expressions to fields in variables as well, conservatively and filtered by type.
         @param points_to_varinfo is the points-to function to wrap
@@ -97,37 +144,7 @@ let wrap_points_to_varinfo points_to_varinfo exp = Profiler.global#call "wrap_po
     let varinfos, mallocs = points_to_varinfo exp in
 
     let pointer_type = Cil.unrollType (Cil.typeOf exp) in
-    let accept_type = accept_points_to pointer_type in
-
-    (* enumerate all field/array offsets that matches the target type *)
-    let to_offsets typ = Profiler.global#call "to_offsets" begin fun () ->
-        let rec to_offsets offsets typ base =
-            let offset_type = Cil.unrollType (Cil.typeOffset typ base) in
-            (* collect offsets that matches the target type *)
-            let offsets = if accept_type offset_type then
-                base::offsets
-            else
-                offsets
-            in
-            (* recurse over all field, offsets *)
-            match offset_type with
-                | Cil.TComp (compinfo, _) ->
-                    fold_struct begin fun offsets field ->
-                        to_offsets offsets typ (Cil.addOffset (Cil.Field (field, Cil.NoOffset)) base)
-                    end offsets compinfo
-                | Cil.TArray (_, len_opt, _) ->
-                    let offsets_opt = fold_array begin fun offsets index ->
-                        to_offsets offsets typ (Cil.addOffset (Cil.Index (index, Cil.NoOffset)) base)
-                    end offsets len_opt in
-                    begin match offsets_opt with
-                        | Some offsets -> offsets
-                        | None -> offsets
-                    end
-                | _ ->
-                    offsets
-        in
-        to_offsets [] (Cil.unrollType typ) Cil.NoOffset
-    end in
+    let to_offsets = to_offsets pointer_type in
 
     (* combine the target varinfos with offsets *)
     let target_varinfos = List.fold_left begin fun target_varinfos varinfo ->
