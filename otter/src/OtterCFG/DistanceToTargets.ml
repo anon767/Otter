@@ -20,11 +20,11 @@ end)
     @return the shortest distance to one of the targets, or {!max_int} if none of the targets are reachable.
 *)
 let find =
-    let memotable = InstructionTargetsHash.create 0 in
+    let distance_hash = InstructionTargetsHash.create 0 in
     fun instr targets ->
         if targets = [] then invalid_arg "find: targets must be a non-empty list";
         try
-            InstructionTargetsHash.find memotable (instr, targets)
+            InstructionTargetsHash.find distance_hash (instr, targets)
 
         with Not_found -> OcamlUtilities.Profiler.global#call "DistanceToTargets.find (uncached)" begin fun () ->
             let rec update worklist =
@@ -43,7 +43,7 @@ let find =
                         let calc_dist instrs worklist =
                             (* if any dependencies are uncomputed, add them to the worklist *)
                             List.fold_left begin fun (dist, worklist) instr ->
-                                try (min dist (InstructionTargetsHash.find memotable (instr, targets)), worklist)
+                                try (min dist (InstructionTargetsHash.find distance_hash (instr, targets)), worklist)
                                 with Not_found -> (dist, InstructionStack.push instr worklist)
                             end (max_int, worklist) instrs
                         in
@@ -74,11 +74,11 @@ let find =
                 (* update the distance if changed *)
                 let updated =
                     try
-                        let dist' = InstructionTargetsHash.find memotable (instr, targets) in
-                        if dist <> dist' then InstructionTargetsHash.replace memotable (instr, targets) dist;
+                        let dist' = InstructionTargetsHash.find distance_hash (instr, targets) in
+                        if dist <> dist' then InstructionTargetsHash.replace distance_hash (instr, targets) dist;
                         dist <> dist'
                     with Not_found ->
-                        InstructionTargetsHash.add memotable (instr, targets) dist;
+                        InstructionTargetsHash.add distance_hash (instr, targets) dist;
                         true
                 in
 
@@ -95,7 +95,7 @@ let find =
                 if not (InstructionStack.is_empty worklist) then update worklist
             in
             update (InstructionStack.singleton instr);
-            InstructionTargetsHash.find memotable (instr, targets)
+            InstructionTargetsHash.find distance_hash (instr, targets)
         end
 
 

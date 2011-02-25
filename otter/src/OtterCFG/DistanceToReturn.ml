@@ -16,10 +16,10 @@ module InstructionHash = Hashtbl.Make (Instruction)
     @return the shortest distance to a function return, or {!max_int} if no function returns are reachable.
 *)
 let find =
-    let memotable = InstructionHash.create 0 in
+    let distance_hash = InstructionHash.create 0 in
     fun instr ->
         try
-            InstructionHash.find memotable instr
+            InstructionHash.find distance_hash instr
 
         with Not_found -> OcamlUtilities.Profiler.global#call "DistanceToReturn.find (uncached)" begin fun () ->
             let rec update worklist =
@@ -37,7 +37,7 @@ let find =
                         let calc_dist instrs worklist =
                             (* if any dependencies are uncomputed, add them to the worklist *)
                             List.fold_left begin fun (dist, worklist) instr ->
-                                try (min dist (InstructionHash.find memotable instr), worklist)
+                                try (min dist (InstructionHash.find distance_hash instr), worklist)
                                 with Not_found -> (dist, InstructionStack.push instr worklist)
                             end (max_int, worklist) instrs
                         in
@@ -66,11 +66,11 @@ let find =
                 (* update the distance if changed *)
                 let updated =
                     try
-                        let dist' = InstructionHash.find memotable instr in
-                        if dist <> dist' then InstructionHash.replace memotable instr dist;
+                        let dist' = InstructionHash.find distance_hash instr in
+                        if dist <> dist' then InstructionHash.replace distance_hash instr dist;
                         dist <> dist'
                     with Not_found ->
-                        InstructionHash.add memotable instr dist;
+                        InstructionHash.add distance_hash instr dist;
                         true
                 in
 
@@ -86,6 +86,6 @@ let find =
                 if not (InstructionStack.is_empty worklist) then update worklist
             in
             update (InstructionStack.singleton instr);
-            InstructionHash.find memotable instr
+            InstructionHash.find distance_hash instr
         end
 
