@@ -188,7 +188,11 @@ $(BUILD_DIR)/otter/newlib/%.a: $(BUILD_DIR)/Makefile
 $(BUILD_DIR)/Makefile: otter-ar $(CONFIG_FILES) $(MAKE_FILES) $(NEWLIB_1_19_0)/newlib/configure.host
 	mkdir -p $(BUILD_DIR)
 	cd $(BUILD_DIR) && \
-	$(NEWLIB_1_19_0)/configure --target=otter --with-newlib --disable-multilib \
+	$(NEWLIB_1_19_0)/configure \
+		--target=otter \
+		--with-newlib \
+		--enable-newlib-reent-small \
+		--disable-multilib \
 		CC_FOR_TARGET='$(OTTER_CC) $(OPTIONS_FOR_BUILDING_LIBC)' \
 		AR_FOR_TARGET='$(OTTER_AR)' \
 		RANLIB_FOR_TARGET='$(OTTER_RANLIB)'
