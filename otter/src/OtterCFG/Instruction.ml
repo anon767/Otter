@@ -9,7 +9,22 @@ open CilUtilities
 (* Use a private type to disallow direct construction of the type beyond the module below, so that the instruction must
    be constructed via one of the smart constructors which strictly enforce the invariants of this type.
    (see <http://caml.inria.fr/pub/docs/manual-ocaml/manual021.html#toc76>). *)
-include (struct
+module T : sig
+    type t = private {
+        file : Cil.file;
+        fundec : Cil.fundec;
+        stmt : Cil.stmt;
+        instrs : Cil.instr list;
+    }
+    val make : Cil.file -> Cil.fundec -> Cil.stmt -> Cil.instr list -> t
+    val of_stmt_first : Cil.file -> Cil.fundec -> Cil.stmt -> t
+    val of_stmt_last : Cil.file -> Cil.fundec -> Cil.stmt -> t
+    val of_fundec : Cil.file -> Cil.fundec -> t
+    val with_instrs : t -> Cil.instr list -> t
+    val compare : t -> t -> int
+    val equal : t -> t -> bool
+    val hash : t -> int
+end = struct
     (* An Otter instruction is an optional instruction in a statement in a function in a file; in particular, Cil.Instr
        statements are stored with a list of the current and remaining instructions, whereas other statements are
        stored with an empty instruction list. Note also that the instruction list is compared only by length, since
@@ -48,50 +63,39 @@ include (struct
         | Cil.Instr instrs' when List.length instrs <= List.length instrs' -> { instruction with instrs = instrs }
         | Cil.Instr _ -> invalid_arg "Instruction.with_instrs: instrs must be equal or shorter in length to the Cil.Instr in instruction.stmt"
         | _ -> invalid_arg "Instruction.with_instrs: instruction.stmt must be Cil.Instr"
-end : sig
-    type t = private {
-        file : Cil.file;
-        fundec : Cil.fundec;
-        stmt : Cil.stmt;
-        instrs : Cil.instr list;
-    }
-    val make : Cil.file -> Cil.fundec -> Cil.stmt -> Cil.instr list -> t
-    val of_stmt_first : Cil.file -> Cil.fundec -> Cil.stmt -> t
-    val of_stmt_last : Cil.file -> Cil.fundec -> Cil.stmt -> t
-    val of_fundec : Cil.file -> Cil.fundec -> t
-    val with_instrs : t -> Cil.instr list -> t
-end)
+
+    (** Compare two instructions. *)
+    let compare x y = if x == y then 0 else
+        if x.file == y.file then
+            match CilData.CilFundec.compare x.fundec y.fundec with
+                | 0 ->
+                    (* Note that this relies on Cil.computeCFGInfo, called in OtterCore.Core.prepare_file. *)
+                    begin match Pervasives.compare x.stmt.Cil.sid y.stmt.Cil.sid with
+                        | 0 ->
+                            (* Instructions are compared by length only, since Otter may mutate the instruction. *)
+                            if x.instrs == y.instrs then
+                                0
+                            else
+                                Pervasives.compare (List.length x.instrs) (List.length y.instrs)
+                        | i -> i
+                    end
+                | i -> i
+        else
+            (* TODO: it is possible for fileName's to be the same iff the same file were parsed twice; need some way to
+               attach a unique id to the file. *)
+            Pervasives.compare x.file.Cil.fileName y.file.Cil.fileName
 
 
-(** Compare two instructions. *)
-let compare x y = if x == y then 0 else
-    if x.file == y.file then
-        match CilData.CilFundec.compare x.fundec y.fundec with
-            | 0 ->
-                (* Note that this relies on Cil.computeCFGInfo, called in OtterCore.Core.prepare_file. *)
-                begin match Pervasives.compare x.stmt.Cil.sid y.stmt.Cil.sid with
-                    | 0 ->
-                        (* Instructions are compared by length only, since Otter may mutate the instruction. *)
-                        if x.instrs == y.instrs then
-                            0
-                        else
-                            Pervasives.compare (List.length x.instrs) (List.length y.instrs)
-                    | i -> i
-                end
-            | i -> i
-    else
-        (* TODO: it is possible for fileName's to be the same iff the same file were parsed twice; need some way to
-           attach a unique id to the file. *)
-        Pervasives.compare x.file.Cil.fileName y.file.Cil.fileName
+    (** Compare two instructions for equality. *)
+    let equal x y = compare x y = 0
 
 
-(** Compare two instructions for equality. *)
-let equal x y = compare x y = 0
+    (** Compute a hash for an instruction. *)
+    let hash { file = file; fundec = fundec; stmt = stmt; instrs = instrs } =
+        Hashtbl.hash (file, fundec, stmt, List.length instrs)
+end
 
-
-(** Compute a hash for an instruction. *)
-let hash { file = file; fundec = fundec; stmt = stmt; instrs = instrs } =
-    Hashtbl.hash (file, fundec, stmt, List.length instrs)
+include T
 
 
 (** Print an instruction. *)
@@ -198,7 +202,7 @@ let return_targets ({ file = file; fundec = fundec } as instruction) =
 
 (** Find all the return sites of this instruction (if it is a call instruction). *)
 let return_sites =
-    let module InstructionHash = Hashtbl.Make (struct type t' = t type t = t' let equal = equal let hash = hash end) in
+    let module InstructionHash = Hashtbl.Make (T) in
     let memotable = InstructionHash.create 0 in
     fun instruction ->
         match call_targets instruction with
