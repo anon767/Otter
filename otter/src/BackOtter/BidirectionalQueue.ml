@@ -286,7 +286,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                                         Output.debug_printf "Create new job for function %s@\n" caller.svar.vname;
                                                         Profiler.global#call "BidirectionalQueue.t#get/regular_get/create_new_jobs/new_functionjob" begin fun () ->
                                                             (* TODO: let's try a simpler Job initializer *)
-                                                            new OtterJob.FunctionJob.t file caller
+                                                            BackOtterJob.get_function_job file caller
                                                         end
                                                     )
                                                 in
