@@ -194,7 +194,7 @@ let mallocs_of_sites =
     let module Memo = Memo.Make (struct
         type t = CilData.CilFile.t * (Cil.exp -> Cil.varinfo list * (Cil.varinfo * string) list)
         let hash (f, p) = Hashtbl.hash (CilData.CilFile.hash f, p)
-        let equal (xf, xp as x) (yf, yp as y) = x == y || CilData.CilFile.equal xf yf && xp == yp
+        let equal (xf, xp) (yf, yp) = CilData.CilFile.equal xf yf && xp == yp
     end) in
     let malloc_of_sites = Memo.memo "CilPtranal.malloc_of_sites" begin fun (file, points_to_varinfo) ->
         let site_to_mallocs =
@@ -332,7 +332,7 @@ let naive_points_to =
     let module Memo = Memo.Make (struct
         type t = CilData.CilFile.t * CilData.CilExp.t
         let hash (f, e) = Hashtbl.hash (CilData.CilFile.hash f, CilData.CilExp.hash e)
-        let equal (xf, xe as x) (yf, ye as y) = x == y || CilData.CilFile.equal xf yf && CilData.CilExp.equal xe ye
+        let equal (xf, xe) (yf, ye) = CilData.CilFile.equal xf yf && CilData.CilExp.equal xe ye
     end) in
     let naive_points_to = Memo.memo "CilPtranal.naive_points_to" begin fun (file, exp) ->
         Profiler.global#call "CilPtranal.naive_points_to" begin fun () ->

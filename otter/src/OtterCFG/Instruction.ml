@@ -135,7 +135,7 @@ let call_sites =
     let module Memo = Memo.Make (struct
         type t = CilData.CilFile.t * CilData.CilFundec.t
         let hash (file, fundec) = Hashtbl.hash (CilData.CilFile.hash file, CilData.CilFundec.hash fundec)
-        let equal (xfile, xfundec as x) (yfile, yfundec as y) = x == y || CilData.CilFile.equal xfile yfile && CilData.CilFundec.equal xfundec yfundec
+        let equal (xfile, xfundec) (yfile, yfundec) = CilData.CilFile.equal xfile yfile && CilData.CilFundec.equal xfundec yfundec
     end) in
     let call_sites =
         Memo.memo "Instruction.call_sites"
@@ -184,7 +184,7 @@ let call_targets =
     let module Memo = Memo.Make (struct
         type t = CilData.CilFile.t * CilData.CilExp.t
         let hash (f, e) = Hashtbl.hash (CilData.CilFile.hash f, CilData.CilExp.hash e)
-        let equal (xf, xe as x) (yf, ye as y) = x == y || CilData.CilFile.equal xf yf && CilData.CilExp.equal xe ye
+        let equal (xf, xe) (yf, ye) = CilData.CilFile.equal xf yf && CilData.CilExp.equal xe ye
     end) in
     let call_targets = Memo.memo "Instruction.call_target" begin fun (file, fexp) ->
         (* iterate over callee functions and extract the first statement *)

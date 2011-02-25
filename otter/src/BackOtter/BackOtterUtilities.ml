@@ -23,9 +23,9 @@ let rev_equals =
     let module Memo = Memo.Make (struct
         type t = (Decision.t -> Decision.t -> bool) * Decision.t list * Decision.t list * int
         let hash = Hashtbl.hash
-        let equal (xeq, x1, x2, xb as x) (yeq, y1, y2, yb as y) =
+        let equal (xeq, x1, x2, xb) (yeq, y1, y2, yb) =
             (* TODO: should the lists be compared structurally instead? *)
-            x == y || xeq == yeq && x1 == y1 && x2 == y2 && xb == yb
+            xeq == yeq && x1 == y1 && x2 == y2 && xb == yb
     end) in
     let rev_equals = Memo.memo_rec "BackOtterUtilities.rev_equals"
         begin fun rev_equals (eq, lst1, lst2, n) -> (* Assume length lst1 >= n *)
@@ -76,8 +76,8 @@ let get_distance_from =
     let module Memo = Memo.Make (struct
         type t = CilData.CilFile.t * CilData.CilFundec.t * CilData.CilFundec.t
         let hash (file, f1, f2) = Hashtbl.hash (CilData.CilFile.hash file, CilData.CilFundec.hash f1, CilData.CilFundec.hash f1)
-        let equal (xfile, xf1, xf2 as x) (yfile, yf1, yf2 as y) =
-            x == y || CilData.CilFile.equal xfile yfile && CilData.CilFundec.equal xf1 yf1 && CilData.CilFundec.equal xf2 yf2
+        let equal (xfile, xf1, xf2) (yfile, yf1, yf2) =
+            CilData.CilFile.equal xfile yfile && CilData.CilFundec.equal xf1 yf1 && CilData.CilFundec.equal xf2 yf2
     end) in
     let get_distance_from = Memo.memo "BackOtterUtilities.get_distance_from"
         begin fun (file, f1, f2) ->
