@@ -201,20 +201,24 @@ let init_pointer
     (* find the points-to set for this pointer, and separate into lvals, mallocs and function addresses, the latter in
        particular has to be treated separately since function addresses do not refer to storage in memory *)
     let target_lvals, target_mallocs, target_functions = Profiler.global#call "query points-to" begin fun () ->
-        List.fold_left begin fun (target_lvals, target_mallocs, target_functions) exp ->
+        List.fold_left begin fun (target_lvals, target_mallocs, target_functions) exp -> Profiler.global#call "partition" begin fun () ->
             let t, m = points_to exp in
             let target_functions, target_lvals = List.fold_left begin fun (target_functions, target_lvals) (v, o as t) ->
-                if Cil.isFunctionType v.Cil.vtype then
-                    if o <> Cil.NoOffset then
-                        FormatPlus.invalid_arg "SymbolicPointers.init_pointer: invalid %a offset from function address %s" Printcil.offset o v.Cil.vname
+                Profiler.global#call "functions/lvals" begin fun () ->
+                    if Cil.isFunctionType v.Cil.vtype then
+                        if o <> Cil.NoOffset then
+                            FormatPlus.invalid_arg "SymbolicPointers.init_pointer: invalid %a offset from function address %s" Printcil.offset o v.Cil.vname
+                        else
+                            (VarinfoSet.add v target_functions, target_lvals)
                     else
-                        (VarinfoSet.add v target_functions, target_lvals)
-                else
-                    (target_functions, VarinfoOffsetSet.add t target_lvals)
+                        (target_functions, VarinfoOffsetSet.add t target_lvals)
+                end
             end (target_functions, target_lvals) t in
-            let target_mallocs = List.fold_left (fun target_mallocs m -> MallocLhostsOffsetSet.add m target_mallocs) target_mallocs m in
+            let target_mallocs = List.fold_left begin fun target_mallocs m ->
+                Profiler.global#call "mallocs" (fun () -> MallocLhostsOffsetSet.add m target_mallocs)
+            end target_mallocs m in
             (target_lvals, target_mallocs, target_functions)
-        end (VarinfoOffsetSet.empty, MallocLhostsOffsetSet.empty, VarinfoSet.empty) exps
+        end end (VarinfoOffsetSet.empty, MallocLhostsOffsetSet.empty, VarinfoSet.empty) exps
     end in
 
     (* group targets by type and the sets of offsets pointed into *)
