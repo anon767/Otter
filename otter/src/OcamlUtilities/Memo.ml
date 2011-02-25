@@ -22,7 +22,8 @@ let make label =
             y
         with Not_found ->
             let y = f x in
-            Hashtbl.replace memotable x y;
+            (* don't need Hashtbl.replace, which is slower, as x guaranteed to be unique *)
+            Hashtbl.add memotable x y;
             incr misses;
             y
 
