@@ -162,17 +162,17 @@ in_addr_t inet_network(const char *cp)
 char *inet_ntoa(struct in_addr in)
 {
 	in_addr_t addr = ntohl(in.s_addr);
-	
+	__EVAL(addr);
 	in_addr_t addr2 = addr;
 	int numdigits = 4; /* 3 '.'s and NULL */
 	for(int i = 0; i < 4; i++)
 	{
 		numdigits++; /* 1s */
-		if((addr2 & 0xFF) / 10 > 0) /* 10s */
+		if((addr2 & 0xFF) > 10) /* 10s */
 			numdigits++;
-		if((addr2 & 0xFF) / 100 > 0) /* 100s */
+		if((addr2 & 0xFF) > 100) /* 100s */
 			numdigits++;
-		addr2 >> 8;
+		addr2 >>= 8;
 	}
 	
 	char* buf = malloc(numdigits);
@@ -186,12 +186,12 @@ char *inet_ntoa(struct in_addr in)
 
 		buf[j] = '0' + ((addr & 0xFF) % 10);
 		j--;
-		if((addr2 & 0xFF) / 10 > 0) /* 10s */
+		if((addr & 0xFF) > 10) /* 10s */
 		{
 			buf[j] = '0' + (((addr & 0xFF) / 10) % 10);
 			j--;
 		}
-		if((addr2 & 0xFF) / 100 > 0) /* 100s */
+		if((addr & 0xFF) > 100) /* 100s */
 		{
 			buf[j] = '0' + ((addr & 0xFF) / 100);
 			j--;
@@ -201,6 +201,6 @@ char *inet_ntoa(struct in_addr in)
 	}
 	
 	buf[numdigits - 1] = 0; /* overwrite the last '.' with the null terminator for the string */
-
+	__EVALSTR(buf, numdigits);
 	return buf;
 }
