@@ -1,0 +1,16 @@
+if [[ $# -ne 2 ]]; then
+    echo Usage: test_grammar grammar_file max_string_length
+    exit 0
+fi
+
+./grammar < $1 > test_grammar.c &&
+echo "int main() {
+    // This is a gimmick to get Otter to print out sample values for the grammar
+    const char str[MAX_GRAMMAR_STRING_LENGTH+1];
+    __SYMBOLIC(&str);
+    if (strcmp(str, generate_start())) {
+        __ASSUME(0);
+    }
+    return 0;
+}" >> test_grammar.c &&
+../../../../newlib-1.19.0/otter/otter-with-libc --doexecute --doRunRmtmps test_grammar.c -DMAX_GRAMMAR_STRING_LENGTH=$2 --printLittle --pathCov | grep str=

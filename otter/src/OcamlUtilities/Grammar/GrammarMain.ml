@@ -14,13 +14,13 @@ let parse_grammar_from_in_chan in_chan =
     let lexbuf = Lexing.from_channel in_chan in
     Grammar.input GrammarLexer.token lexbuf
 
-(** Returns a list of all productions of all nonterminals *)
+(** Returns a set of all productions of all nonterminals *)
 let all_productions grammar =
     GrammarTypes.NontermMap.fold
         (fun _ productions old_productions ->
-             List.rev_append productions old_productions)
+             GrammarTypes.SetOfProductions.union productions old_productions)
         grammar
-        []
+        GrammarTypes.SetOfProductions.empty
 
 module StringSet = Set.Make(String)
 
@@ -38,10 +38,10 @@ let add_nonterminals_from_production nonterm_set production =
 (** Returns a set of all nonterminals mentioned in any production in the
     grammar *)
 let all_rhs_nonterms grammar =
-    List.fold_left
-        add_nonterminals_from_production
-        StringSet.empty
+    GrammarTypes.SetOfProductions.fold
+        (fun production nonterm_names -> add_nonterminals_from_production nonterm_names production)
         (all_productions grammar)
+        StringSet.empty
 
 (** Prints code for generate_stringN *)
 let print_generate_string n =
@@ -263,14 +263,15 @@ let count p list =
 (** Returns the maximum number of nonterminals in any single production from
     among the given productions *)
 let max_num_nonterminals productions =
-    List.fold_left
-        (fun max_so_far production ->
+    GrammarTypes.SetOfProductions.fold
+        (fun production max_so_far ->
              max max_so_far (count (fun x -> not (is_terminal x)) production))
-        (-1)
         productions
+        (-1)
 
 (** Prints code for all the given productions *)
 let print_cases productions =
+    let productions = GrammarTypes.SetOfProductions.elements productions in
     let terminals, others = List.partition is_single_terminal productions in
     let terminals = List.map (function [ GrammarTypes.Term t ] -> t | _ -> assert false) terminals in
     match terminals with

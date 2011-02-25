@@ -37,4 +37,10 @@ rule token = parse
   | alpha (alpha | [ '_' '0'-'9' ])* as str { NONTERM { GrammarTypes.name = str } }
   | '|' { PIPE }
   | ';' { SEMICOLON }
+  | '[' { LBRACKET }
+  | ']' { RBRACKET }
+  | '(' { LPAREN }
+  | ')' { RPAREN }
+  | '*' { STAR }
+  | '+' { PLUS }
   | eof { EOF }
