@@ -51,78 +51,82 @@ let fold_array f acc len_opt =
         @param exps is list of expressions, which are joined to compute the program value
         @return [(job, bytes)] the updated symbolic job and the initialized variable
 *)
-let rec init_bytes_with_pointers ?scheme job typ points_to exps = match Cil.unrollType typ with
-    | Cil.TPtr _ ->
-        (* for pointers, generate the pointer *)
-        let init_target typ vars mallocs job =
-            let var_exps = List.map (fun v -> Cil.Lval (Cil.var v)) vars in
-            let malloc_exps = List.concat (List.map (fun (_, lhosts) -> List.map (fun lhost -> Cil.Lval (lhost, Cil.NoOffset)) lhosts) mallocs) in
-            let exps = var_exps @ malloc_exps in
-            if exps <> [] then
-                init_bytes_with_pointers ?scheme job typ points_to exps
-            else
-                let size = Cil.bitsSizeOf typ / 8 in
-                (job, Bytes.bytes__symbolic size)
-        in
+let rec init_bytes_with_pointers ?scheme job typ points_to exps = Profiler.global#call "FunctionJob.init_bytes_with_pointers" begin fun () ->
+    let rec init_bytes_with_pointers_inner job typ points_to exps = match Cil.unrollType typ with
+        | Cil.TPtr _ ->
+            (* for pointers, generate the pointer *)
+            let init_target typ vars mallocs job =
+                let var_exps = List.map (fun v -> Cil.Lval (Cil.var v)) vars in
+                let malloc_exps = List.concat (List.map (fun (_, lhosts) -> List.map (fun lhost -> Cil.Lval (lhost, Cil.NoOffset)) lhosts) mallocs) in
+                let exps = var_exps @ malloc_exps in
+                if exps <> [] then
+                    init_bytes_with_pointers ?scheme job typ points_to exps
+                else
+                    let size = Cil.bitsSizeOf typ / 8 in
+                    (job, Bytes.bytes__symbolic size)
+            in
 
-        (* give it a name *)
-        let block_name = FormatPlus.as_string Printcil.exp (List.hd exps) in
+            (* give it a name *)
+            let block_name = FormatPlus.as_string Printcil.exp (List.hd exps) in
 
-        (* finally, make the pointer *)
-        SymbolicPointers.init_pointer ?scheme job points_to exps block_name init_target
+            (* finally, make the pointer *)
+            SymbolicPointers.init_pointer ?scheme job points_to exps block_name init_target
 
-    | Cil.TComp (compinfo, _) when compinfo.Cil.cstruct ->
-        (* for structs, initialize and iterate over the fields *)
-        let size = Cil.bitsSizeOf typ / 8 in
-        let bytes = Bytes.bytes__symbolic size in
-        fold_struct begin fun (job, bytes) field ->
-            let field_offset = Cil.Field (field, Cil.NoOffset) in
-            let field_exps = List.map begin function
-                | Cil.Lval lval -> Cil.Lval (Cil.addOffsetLval field_offset lval)
-                | _ -> failwith "are there any other Cil.exp that can have type Cil.TComp?"
-            end exps in
-            let job, field_bytes = init_bytes_with_pointers ?scheme job (Cil.typeOffset typ field_offset) points_to field_exps in
-            let offset, size = Cil.bitsOffset typ field_offset in
-            let offset = Bytes.int_to_bytes (offset / 8) in
-            let size = size / 8 in
-            let (), bytes = BytesUtility.bytes__write () bytes offset size field_bytes in
+        | Cil.TComp (compinfo, _) when compinfo.Cil.cstruct ->
+            (* for structs, initialize and iterate over the fields *)
+            let size = Cil.bitsSizeOf typ / 8 in
+            let bytes = Bytes.bytes__symbolic size in
+            fold_struct begin fun (job, bytes) field ->
+                let field_offset = Cil.Field (field, Cil.NoOffset) in
+                let field_exps = List.map begin function
+                    | Cil.Lval lval -> Cil.Lval (Cil.addOffsetLval field_offset lval)
+                    | _ -> failwith "are there any other Cil.exp that can have type Cil.TComp?"
+                end exps in
+                let job, field_bytes = init_bytes_with_pointers_inner job (Cil.typeOffset typ field_offset) points_to field_exps in
+                let offset, size = Cil.bitsOffset typ field_offset in
+                let offset = Bytes.int_to_bytes (offset / 8) in
+                let size = size / 8 in
+                let (), bytes = BytesUtility.bytes__write () bytes offset size field_bytes in
+                (job, bytes)
+            end (job, bytes) compinfo
+
+        | Cil.TArray (el_typ, len_opt, _) ->
+            (* for arrays, initialize each element of the array *)
+            let size = Cil.bitsSizeOf typ / 8 in
+            let bytes = Bytes.bytes__symbolic size in
+            let result_opt = fold_array begin fun (job, bytes) index ->
+                let el_offset = Cil.Index (index, Cil.NoOffset) in
+                let el_exps = List.map begin function
+                    | Cil.Lval lval -> Cil.Lval (Cil.addOffsetLval el_offset lval)
+                    | _ -> failwith "are there any other Cil.exp that can have type Cil.TArray?"
+                end exps in
+                let job, el_bytes = init_bytes_with_pointers_inner job el_typ points_to el_exps in
+                let offset, size = Cil.bitsOffset typ el_offset in
+                let offset = Bytes.int_to_bytes (offset / 8) in
+                let size = size / 8 in
+                let (), bytes = BytesUtility.bytes__write () bytes offset size el_bytes in
+                (job, bytes)
+            end (job, bytes) len_opt in
+            begin match result_opt with
+                | Some result -> result
+                | None -> (job, bytes)
+            end
+
+        | Cil.TComp (compinfo, _) when not compinfo.Cil.cstruct ->
+            (* we can't handle unions *)
+            FormatPlus.failwith "TODO: init_bytes_with_pointers: handle unions: %a" Printcil.typ typ
+
+        | typ when Cil.isArithmeticType typ ->
+            (* arithmetic values are just that *)
+            let size = Cil.bitsSizeOf typ / 8 in
+            let bytes = Bytes.bytes__symbolic size in
             (job, bytes)
-        end (job, bytes) compinfo
 
-    | Cil.TArray (el_typ, len_opt, _) ->
-        (* for arrays, initialize each element of the array *)
-        let size = Cil.bitsSizeOf typ / 8 in
-        let bytes = Bytes.bytes__symbolic size in
-        let result_opt = fold_array begin fun (job, bytes) index ->
-            let el_offset = Cil.Index (index, Cil.NoOffset) in
-            let el_exps = List.map begin function
-                | Cil.Lval lval -> Cil.Lval (Cil.addOffsetLval el_offset lval)
-                | _ -> failwith "are there any other Cil.exp that can have type Cil.TArray?"
-            end exps in
-            let job, el_bytes = init_bytes_with_pointers ?scheme job el_typ points_to el_exps in
-            let offset, size = Cil.bitsOffset typ el_offset in
-            let offset = Bytes.int_to_bytes (offset / 8) in
-            let size = size / 8 in
-            let (), bytes = BytesUtility.bytes__write () bytes offset size el_bytes in
-            (job, bytes)
-        end (job, bytes) len_opt in
-        begin match result_opt with
-            | Some result -> result
-            | None -> (job, bytes)
-        end
-
-    | Cil.TComp (compinfo, _) when not compinfo.Cil.cstruct ->
-        (* we can't handle unions *)
-        FormatPlus.failwith "TODO: init_bytes_with_pointers: handle unions: %a" Printcil.typ typ
-
-    | typ when Cil.isArithmeticType typ ->
-        (* arithmetic values are just that *)
-        let size = Cil.bitsSizeOf typ / 8 in
-        let bytes = Bytes.bytes__symbolic size in
-        (job, bytes)
-
-    | typ ->
-        FormatPlus.failwith "TODO: init_bytes_with_pointers: unhandled type: %a" Printcil.typ typ
+        | typ ->
+            FormatPlus.failwith "TODO: init_bytes_with_pointers: unhandled type: %a" Printcil.typ typ
+    in
+    init_bytes_with_pointers_inner job typ points_to exps
+end
 
 
 

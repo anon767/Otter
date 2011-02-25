@@ -187,26 +187,38 @@ let default_scheme = ref `TwoLevel
                 as well as the pointer itself should be used to initialized the target
         @return [(job, bytes)] the updated symbolic executor job and the initialized pointer value
 *)
-let init_pointer ?(scheme=(!default_scheme)) job points_to exps ?(maybe_null=true) ?(maybe_uninit=false) block_name init_target =
+let init_pointer
+            ?(scheme=(!default_scheme))
+            job
+            points_to
+            exps
+            ?(maybe_null=true)
+            ?(maybe_uninit=false)
+            block_name
+            init_target
+        = Profiler.global#call "SymbolicPointers.init_pointer" begin fun () ->
+
     (* find the points-to set for this pointer, and separate into lvals, mallocs and function addresses, the latter in
        particular has to be treated separately since function addresses do not refer to storage in memory *)
-    let target_lvals, target_mallocs, target_functions = List.fold_left begin fun (target_lvals, target_mallocs, target_functions) exp ->
-        let t, m = points_to exp in
-        let target_functions, target_lvals = List.fold_left begin fun (target_functions, target_lvals) (v, o as t) ->
-            if Cil.isFunctionType v.Cil.vtype then
-                if o <> Cil.NoOffset then
-                    FormatPlus.invalid_arg "SymbolicPointers.init_pointer: invalid %a offset from function address %s" Printcil.offset o v.Cil.vname
+    let target_lvals, target_mallocs, target_functions = Profiler.global#call "query points-to" begin fun () ->
+        List.fold_left begin fun (target_lvals, target_mallocs, target_functions) exp ->
+            let t, m = points_to exp in
+            let target_functions, target_lvals = List.fold_left begin fun (target_functions, target_lvals) (v, o as t) ->
+                if Cil.isFunctionType v.Cil.vtype then
+                    if o <> Cil.NoOffset then
+                        FormatPlus.invalid_arg "SymbolicPointers.init_pointer: invalid %a offset from function address %s" Printcil.offset o v.Cil.vname
+                    else
+                        (VarinfoSet.add v target_functions, target_lvals)
                 else
-                    (VarinfoSet.add v target_functions, target_lvals)
-            else
-                (target_functions, VarinfoOffsetSet.add t target_lvals)
-        end (target_functions, target_lvals) t in
-        let target_mallocs = List.fold_left (fun target_mallocs m -> MallocLhostsOffsetSet.add m target_mallocs) target_mallocs m in
-        (target_lvals, target_mallocs, target_functions)
-    end (VarinfoOffsetSet.empty, MallocLhostsOffsetSet.empty, VarinfoSet.empty) exps in
+                    (target_functions, VarinfoOffsetSet.add t target_lvals)
+            end (target_functions, target_lvals) t in
+            let target_mallocs = List.fold_left (fun target_mallocs m -> MallocLhostsOffsetSet.add m target_mallocs) target_mallocs m in
+            (target_lvals, target_mallocs, target_functions)
+        end (VarinfoOffsetSet.empty, MallocLhostsOffsetSet.empty, VarinfoSet.empty) exps
+    end in
 
     (* group targets by type and the sets of offsets pointed into *)
-    let type_and_offsets_to_targets =
+    let type_and_offsets_to_targets = Profiler.global#call "coalesce" begin fun () ->
         let type_and_offsets_to_targets = TypeAndOffsetSetMap.empty in
 
         (* group variable targets by base varinfo (e.g., root of structs) and offsets, then reverse the mapping *)
@@ -230,10 +242,10 @@ let init_pointer ?(scheme=(!default_scheme)) job points_to exps ?(maybe_null=tru
         end malloc_to_offsets type_and_offsets_to_targets in
 
         type_and_offsets_to_targets
-    in
+    end in
 
-    let job, target_bytes_set, _ = TypeAndOffsetSetMap.fold
-        begin fun (typ, offsets) (varinfos, mallocs) (job, target_bytes_set, count) ->
+    let job, target_bytes_set, _ = Profiler.global#call "make bytes" begin fun () ->
+        TypeAndOffsetSetMap.fold begin fun (typ, offsets) (varinfos, mallocs) (job, target_bytes_set, count) ->
             let job, map_offsets = match scheme with
                 | `OneLevel ->
                     (* generate a list of bytes pointing to the given offsets in block *)
@@ -368,8 +380,8 @@ let init_pointer ?(scheme=(!default_scheme)) job points_to exps ?(maybe_null=tru
                     (job, List.fold_left map_offsets target_bytes_set blocks)
                 end varinfos (job, target_bytes_set) in
                 (job, target_bytes_set, count)
-        end
-    type_and_offsets_to_targets (job, BytesSet.empty, 0) in
+        end type_and_offsets_to_targets (job, BytesSet.empty, 0)
+    end in
 
     (* add a null pointer *)
     let target_bytes_set = if maybe_null then BytesSet.add Bytes.bytes__zero target_bytes_set else target_bytes_set in
@@ -393,6 +405,7 @@ let init_pointer ?(scheme=(!default_scheme)) job points_to exps ?(maybe_null=tru
         Bytes.make_Bytes_Conditional (Bytes.conditional__from_list conditional_bytes_list)
     in
     (job, target_bytes)
+end
 
 
 
@@ -407,7 +420,7 @@ let init_pointer ?(scheme=(!default_scheme)) job points_to exps ?(maybe_null=tru
         @param deferred is the deferred symbolic value for the variable
         @return [(job, lval_block)] the updated symbolic job and the initialized variable storage
 *)
-let init_lval_block job varinfo deferred =
+let init_lval_block job varinfo deferred = Profiler.global#call "SymbolicPointers.init_lval_block" begin fun () ->
     let deferred_lval_block job =
         (* make an extra block; for the case where the variable is not-aliased *)
         let name = FormatPlus.as_string CilPrinter.varinfo varinfo in
@@ -424,6 +437,7 @@ let init_lval_block job varinfo deferred =
         (job, Bytes.conditional__from_list target_list)
     in
     (job, Deferred.Deferred deferred_lval_block)
+end
 
 
 
@@ -438,7 +452,7 @@ let init_lval_block job varinfo deferred =
                 declarations
         @return [job] the symbolic job updated with the initialized const global variable
 *)
-let init_const_global job varinfo init_opt =
+let init_const_global job varinfo init_opt = Profiler.global#call "SymbolicPointers.init_const_global" begin fun () ->
     if not (varinfo.Cil.vglob && CilData.CilVar.is_const varinfo) then
         FormatPlus.invalid_arg "SymbolicPointers.init_const_global: %a is not a const global variable" CilPrinter.varinfo varinfo;
 
@@ -462,6 +476,7 @@ let init_const_global job varinfo init_opt =
         | Some init ->
             let job, init_bytes = Expression.evaluate_initializer job varinfo.Cil.vtype init in
             MemOp.state__add_block job block init_bytes
+end
 
 
 

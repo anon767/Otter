@@ -30,68 +30,68 @@ let find =
 
         with Not_found -> OcamlUtilities.Profiler.global#call "DistanceToTargets.find (uncached)" begin fun () ->
             let rec update worklist =
-                (* pick the an instruction from the worklist *)
-                let instr, worklist = InstructionStack.pop worklist in
+                let worklist = OcamlUtilities.Profiler.global#call "update" begin fun () ->
+                    (* pick the an instruction from the worklist *)
+                    let instr, worklist = InstructionStack.pop worklist in
 
-                (* compute the new distance by taking the minimum of:
-                        - 0 if the instruction is a target;
-                        - or, 1 + the minimum distance of its successors + the minimum distance through its call targets;
-                        - or, 1 + the minimum distance of its call targets;
-                   adding uncomputed successors and call targets to the worklist *)
-                let dist, worklist =
-                    if InstructionSet.mem instr targets then
-                        (0, worklist)
-                    else
-                        let calc_dist instrs worklist =
-                            (* if any dependencies are uncomputed, add them to the worklist *)
-                            List.fold_left begin fun (dist, worklist) instr ->
-                                try (min dist (InstructionTargetsHash.find distance_hash (instr, targets)), worklist)
-                                with Not_found -> (dist, InstructionStack.push instr worklist)
-                            end (max_int, worklist) instrs
-                        in
+                    (* compute the new distance by taking the minimum of:
+                            - 0 if the instruction is a target;
+                            - or, 1 + the minimum distance of its successors + the minimum distance through its call targets;
+                            - or, 1 + the minimum distance of its call targets;
+                       adding uncomputed successors and call targets to the worklist *)
+                    let dist, worklist =
+                        if InstructionSet.mem instr targets then
+                            (0, worklist)
+                        else
+                            let calc_dist instrs worklist =
+                                (* if any dependencies are uncomputed, add them to the worklist *)
+                                List.fold_left begin fun (dist, worklist) instr ->
+                                    try (min dist (InstructionTargetsHash.find distance_hash (instr, targets)), worklist)
+                                    with Not_found -> (dist, InstructionStack.push instr worklist)
+                                end (max_int, worklist) instrs
+                            in
 
-                        let dist, worklist = calc_dist (Instruction.successors instr) worklist in
-                        let dist, worklist = match Instruction.call_targets instr with
-                            | [] ->
-                                (* no call targets, just successors *)
-                                (dist, worklist)
-                            | call_targets ->
-                                (* compute the distance through call targets and successors *)
-                                let through_dist =
-                                    let through_dist = dist + List.fold_left (fun d call_target -> min d (DistanceToReturn.find call_target)) max_int call_targets in
-                                    if through_dist < 0 then max_int (* overflow *) else through_dist
-                                in
-                                (* compute the distances of call targets *)
-                                let call_target_dist, worklist = calc_dist call_targets worklist in
-                                (* take the minimum of the above *)
-                                (min through_dist call_target_dist, worklist)
-                        in
-                        let dist =
-                            let dist = 1 + dist in
-                            if dist < 0 then max_int (* overflow *) else dist
-                        in
-                        (dist, worklist)
-                in
+                            let dist, worklist = calc_dist (Instruction.successors instr) worklist in
+                            let dist, worklist = match Instruction.call_targets instr with
+                                | [] ->
+                                    (* no call targets, just successors *)
+                                    (dist, worklist)
+                                | call_targets ->
+                                    (* compute the distance through call targets and successors *)
+                                    let through_dist =
+                                        let through_dist = dist + List.fold_left (fun d call_target -> min d (DistanceToReturn.find call_target)) max_int call_targets in
+                                        if through_dist < 0 then max_int (* overflow *) else through_dist
+                                    in
+                                    (* compute the distances of call targets *)
+                                    let call_target_dist, worklist = calc_dist call_targets worklist in
+                                    (* take the minimum of the above *)
+                                    (min through_dist call_target_dist, worklist)
+                            in
+                            let dist =
+                                let dist = 1 + dist in
+                                if dist < 0 then max_int (* overflow *) else dist
+                            in
+                            (dist, worklist)
+                    in
 
-                (* update the distance if changed *)
-                let updated =
-                    try
-                        let dist' = InstructionTargetsHash.find distance_hash (instr, targets) in
-                        if dist <> dist' then InstructionTargetsHash.replace distance_hash (instr, targets) dist;
-                        dist <> dist'
-                    with Not_found ->
-                        InstructionTargetsHash.add distance_hash (instr, targets) dist;
-                        true
-                in
+                    (* update the distance if changed *)
+                    let updated =
+                        try
+                            let dist' = InstructionTargetsHash.find distance_hash (instr, targets) in
+                            if dist <> dist' then InstructionTargetsHash.replace distance_hash (instr, targets) dist;
+                            dist <> dist'
+                        with Not_found ->
+                            InstructionTargetsHash.add distance_hash (instr, targets) dist;
+                            true
+                    in
 
-                (* if updated, add this instruction's predecessors and call sites to the worklist. *)
-                let worklist =
+                    (* if updated, add this instruction's predecessors and call sites to the worklist. *)
                     if updated then
                         List.fold_left (fun worklist instr -> InstructionStack.push instr worklist) worklist
                             (List.rev_append (Instruction.predecessors instr) (Instruction.call_sites instr))
                     else
                         worklist
-                in
+                end in
 
                 (* recurse on the remainder of the worklist *)
                 if not (InstructionStack.is_empty worklist) then update worklist
