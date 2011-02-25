@@ -66,29 +66,29 @@ end = struct
 
     (** Compare two instructions. *)
     let compare x y = if x == y then 0 else
-        if x.file == y.file then
-            match CilData.CilFundec.compare x.fundec y.fundec with
-                | 0 ->
-                    (* Note that this relies on Cil.computeCFGInfo, called in OtterCore.Core.prepare_file. *)
-                    begin match Pervasives.compare x.stmt.Cil.sid y.stmt.Cil.sid with
-                        | 0 ->
-                            (* Instructions are compared by length only, since Otter may mutate the instruction. *)
-                            if x.instrs == y.instrs then
-                                0
-                            else
-                                Pervasives.compare (List.length x.instrs) (List.length y.instrs)
-                        | i -> i
-                    end
-                | i -> i
-        else
-            (* TODO: it is possible for fileName's to be the same iff the same file were parsed twice; need some way to
-               attach a unique id to the file. *)
-            Pervasives.compare x.file.Cil.fileName y.file.Cil.fileName
-
+        match CilData.CilFile.compare x.file y.file with
+            | 0 ->
+                begin match CilData.CilFundec.compare x.fundec y.fundec with
+                    | 0 ->
+                        (* Note that this relies on Cil.computeCFGInfo, called in OtterCore.Core.prepare_file. *)
+                        begin match Pervasives.compare x.stmt.Cil.sid y.stmt.Cil.sid with
+                            | 0 ->
+                                (* Instructions are compared by length only, since Otter may mutate the instruction. *)
+                                if x.instrs == y.instrs then
+                                    0
+                                else
+                                    Pervasives.compare (List.length x.instrs) (List.length y.instrs)
+                            | i ->
+                                i
+                        end
+                    | i ->
+                        i
+                end
+            | i ->
+                i
 
     (** Compare two instructions for equality. *)
     let equal x y = compare x y = 0
-
 
     (** Compute a hash for an instruction. *)
     let hash { file = file; fundec = fundec; stmt = stmt; instrs = instrs } =

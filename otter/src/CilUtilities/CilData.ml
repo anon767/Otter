@@ -2,6 +2,14 @@
 
 open Cil
 
+module CilFile = struct
+    type t = Cil.file
+    (* these are only valid if the file is not modified in any way; there's no way to detect mutation *)
+    let hash file = Hashtbl.hash (file.fileName, Hashtbl.hash file.globals)
+    let compare x y = if x == y then 0 else Pervasives.compare (x.Cil.fileName, x.Cil.globals) (y.Cil.fileName, y.Cil.globals)
+    let equal x y = compare x y = 0
+end
+
 module CilLocation = struct
     type t = location
     let compare = Cil.compareLoc
