@@ -6,19 +6,21 @@ AC_INIT(cilqual, alpha-0, khooyp@cs.umd.edu)
 
 AC_CHECK_PROG(OCAMLC,ocamlc,ocamlc,no)
 if test "$OCAMLC" = no ; then
-    AC_MSG_ERROR([Building AC_PACKAGE_NAME requires ocaml version 3.11 or greater.
+    AC_MSG_ERROR([Building AC_PACKAGE_NAME requires Ocaml version 3.12 or greater.
                   It is available at <http://caml.inria.fr/>).])
 fi
 OCAMLVERSION=`$OCAMLC -version`
-if test "$OCAMLVERSION" \< "3.11" ; then
-    AC_MSG_ERROR([Building AC_PACKAGE_NAME requires ocaml version 3.11 or greater.
-                  It is available at <http://caml.inria.fr/>).])
+if test "$OCAMLVERSION" \< "3.12" ; then
+    AC_MSG_ERROR([Building AC_PACKAGE_NAME requires Ocaml version 3.12 or greater.
+                  It is available at <http://caml.inria.fr/>). If you are
+                  upgrading from a previous version, you will have to upgrade
+                  all your Ocaml libraries as well.])
 fi
 
 AC_CHECK_PROG(OCAMLBUILD,ocamlbuild,ocamlbuild,no)
 if test "$OCAMLBUILD" = no ; then
     AC_MSG_ERROR([Building AC_PACKAGE_NAME requires ocamlbuild.
-                  It is distributed with Ocaml as of version 3.10 (available at <http://caml.inria.fr/>).])
+                  It is distributed with Ocaml version 3.12 (available at <http://caml.inria.fr/>).])
 fi
 
 AC_CHECK_PROG(OCAMLFIND,ocamlfind,ocamlfind,no)
