@@ -2,7 +2,7 @@
 
 
 (**/**) (* various helpers *)
-module InstructionStack = DataStructures.StackSet.Make (Instruction)
+module InstructionSet = Set.Make (Instruction)
 module InstructionHash = Hashtbl.Make (Instruction)
 (**/**)
 
@@ -24,8 +24,9 @@ let find =
         with Not_found -> OcamlUtilities.Profiler.global#call "DistanceToReturn.find (uncached)" begin fun () ->
             let rec update worklist =
                 let worklist = OcamlUtilities.Profiler.global#call "update" begin fun () ->
-                    (* pick the an instruction from the worklist *)
-                    let instr, worklist = InstructionStack.pop worklist in
+                    (* pick the instruction from the worklist closest to the end of function *)
+                    let instr = InstructionSet.max_elt worklist in
+                    let worklist = InstructionSet.remove instr worklist in
 
                     (* compute the new distance by taking the minimum of:
                             - 0 if the instruction is a return (has no successors);
@@ -39,7 +40,7 @@ let find =
                                 (* if any dependencies are uncomputed, add them to the worklist *)
                                 List.fold_left begin fun (dist, worklist) instr ->
                                     try (min dist (InstructionHash.find distance_hash instr), worklist)
-                                    with Not_found -> (dist, InstructionStack.push instr worklist)
+                                    with Not_found -> (dist, InstructionSet.add instr worklist)
                                 end (max_int, worklist) instrs
                             in
 
@@ -76,16 +77,16 @@ let find =
                     in
 
                     (* if updated, add this instruction's predecessors and call sites to the worklist. *)
-                    if updated then List.fold_left (fun worklist instr -> InstructionStack.push instr worklist) worklist
+                    if updated then List.fold_left (fun worklist instr -> InstructionSet.add instr worklist) worklist
                             (List.rev_append (Instruction.predecessors instr) (Instruction.call_sites instr))
                     else
                         worklist
                 end in
 
                 (* recurse on the remainder of the worklist *)
-                if not (InstructionStack.is_empty worklist) then update worklist
+                if not (InstructionSet.is_empty worklist) then update worklist
             in
-            update (InstructionStack.singleton instr);
+            update (InstructionSet.singleton instr);
             InstructionHash.find distance_hash instr
         end
 
