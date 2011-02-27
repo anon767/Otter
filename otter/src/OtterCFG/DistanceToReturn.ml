@@ -4,7 +4,6 @@
 (**/**) (* various helpers *)
 module InstructionSet = Set.Make (Instruction)
 module InstructionHash = Hashtbl.Make (Instruction)
-exception Failure of string
 (**/**)
 
 
@@ -70,10 +69,8 @@ let find =
                     let updated =
                         try
                             let dist' = InstructionHash.find distance_hash instr in
-                            begin
-                                if dist < dist' then InstructionHash.replace distance_hash instr dist
-                                else if dist > dist' then raise (Failure "Distance must be monotonically decreasing")
-                            end;
+                            assert(dist <= dist');  (* Distance should be monotonically decreasing *)
+                            if dist < dist' then InstructionHash.replace distance_hash instr dist;
                             dist < dist'
                         with Not_found ->
                             InstructionHash.add distance_hash instr dist;

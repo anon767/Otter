@@ -8,7 +8,6 @@ module InstructionTargetsHash = Hashtbl.Make (struct
     let equal (x, xt) (y, yt) = Instruction.equal x y && InstructionSet.equal xt yt
     let hash (x, xt) = Hashtbl.hash (Instruction.hash x, Hashtbl.hash xt)
 end)
-exception Failure of string
 (**/**)
 
 
@@ -79,10 +78,8 @@ let find =
                     let updated =
                         try
                             let dist' = InstructionTargetsHash.find distance_hash (instr, targets) in
-                            begin
-                                if dist < dist' then InstructionTargetsHash.replace distance_hash (instr, targets) dist
-                                else if dist > dist' then raise (Failure "Distance must be monotonically decreasing")
-                            end;
+                            assert(dist <= dist');  (* Distance should be monotonically decreasing *)
+                            if dist < dist' then InstructionTargetsHash.replace distance_hash (instr, targets) dist;
                             dist < dist'
                         with Not_found ->
                             InstructionTargetsHash.add distance_hash (instr, targets) dist;
