@@ -46,7 +46,7 @@ let main_loop interceptor queue reporter =
     with UserSignal.UserInterrupt | UserSignal.TimedOut as exn ->
         (* if we got a signal, stop and return the checkpoint results *)
         Output.set_mode Output.MSG_MUSTPRINT;
-        Output.printf "%s@\n" (Printexc.to_string exn);
+        Output.printf "%s@." (Printexc.to_string exn);
         let (queue, reporter) = !checkpoint in
         (* For each job in queue, make it Abandoned and report it *)
         let rec run (queue, reporter) =

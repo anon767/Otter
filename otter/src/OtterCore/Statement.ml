@@ -137,7 +137,7 @@ let exec_instr job errors =
     assert (job#instrList <> []);
     let printInstr instr =
         Output.set_mode Output.MSG_STMT;
-        Output.printf "%a@\n" Printcil.instr instr
+        Output.printf "@[%a@]@." Printcil.instr instr
     in
 
     let old_job = job in
@@ -188,11 +188,11 @@ let exec_stmt job errors =
     begin if stmt.sid = 0 then
         let fundec = List.hd job#state.callstack in
         Output.set_mode Output.MSG_FUNC;
-        Output.printf "@[Enter function %a@]@\n" CilPrinter.fundec fundec;
+        Output.printf "@[Enter function %a@]@." CilPrinter.fundec fundec;
     end;
 
     Output.set_mode Output.MSG_STMT;
-    Output.printf "@[%a@\n@]" CilPrinter.stmt_abbr stmt;
+    Output.printf "@[%a@]@." CilPrinter.stmt_abbr stmt;
     match stmt.skind with
         | Instr [] ->
              let nextStmt = match stmt.succs with [x] -> x | _ -> assert false in
@@ -223,7 +223,7 @@ let exec_stmt job errors =
                     in
                     let job = job#with_exHist (nextExHist None) in
                     Output.set_mode Output.MSG_MUSTPRINT;
-                    Output.printf "Program execution finished.@\n";
+                    Output.printf "Program execution finished.@.";
                     (Complete (Return (retval, job)), errors)
                 | (Source (destOpt,callStmt,_,nextStmt))::_ ->
                         let job, errors =
@@ -307,21 +307,19 @@ let exec_stmt job errors =
                 let job, rv, errors = Expression.rval job exp errors in
 
                 Output.set_mode Output.MSG_GUARD;
-                if(Output.need_print Output.MSG_GUARD) then
-                    begin
-                        Output.printf "Check if the following holds:@\n  @[%a@]@\n" BytesPrinter.bytes rv;
-                        Output.printf "Under the path condition:@\n";
-                        if job#state.path_condition = [] then
-                            Output.printf "  (nil)@\n"
-                        else
-                            Output.printf "  @[%a@]@\n" (FormatPlus.pp_print_list BytesPrinter.bytes "@ AND ") job#state.path_condition;
-                    end;
+                Output.printf "Check if the following holds:@\n  @[%a@]@\n" BytesPrinter.bytes rv;
+                Output.printf "Under the path condition:@\n";
+                if job#state.path_condition = [] then
+                    Output.printf "  (nil)"
+                else
+                    Output.printf "  @[%a@]" (FormatPlus.pp_print_list BytesPrinter.bytes "@ AND ") job#state.path_condition;
+                Output.printf "@.";
 
                 let truth = MemOp.eval job#state.path_condition rv in
                 Output.set_mode Output.MSG_REG;
                 let job_state = match truth with
                     | Ternary.True ->
-                        Output.printf "True@\n";
+                        Output.printf "True@.";
                         let old_job = job in
                         let job = try_branch job None block1 in
                         let job = job#with_decision_path ((DecisionConditional(stmt, true))::job#decision_path) in
@@ -329,7 +327,7 @@ let exec_stmt job errors =
                         get_active_state old_job job
 
                     | Ternary.False ->
-                        Output.printf "False@\n";
+                        Output.printf "False@.";
                         let old_job = job in
                         let job = try_branch job None block2 in
                         let job = job#with_decision_path ((DecisionConditional(stmt, false))::job#decision_path) in
@@ -337,7 +335,7 @@ let exec_stmt job errors =
                         get_active_state old_job job
 
                     | Ternary.Unknown ->
-                        Output.printf "Unknown@\n";
+                        Output.printf "Unknown@.";
 
                         (* Create two jobs, one for each branch. The false branch
                            inherits the old jid, and the true job gets a new jid. *)
@@ -349,14 +347,12 @@ let exec_stmt job errors =
                         end [ (logicalNot rv, block2, false); (rv, block1, true) ] [] in
                         let true_job, false_job = match jobs with [ true_job; false_job ] -> (true_job, false_job) | _ -> failwith "Impossible!" in
 
-                            Output.set_mode Output.MSG_MUSTPRINT;
-                            Output.printf "Branching on @[%a@]@ at %a.@\n"
-                            CilPrinter.exp exp
-                            Printcil.loc loc;
-                            if !Executeargs.arg_print_callstack then
-                                Output.printf "Call stack:@\n  @[%a@]@\n" (Printer.callingContext_list "@\n") job#state.callContexts;
-                            Output.printf "Job %d is the true branch and job %d is the false branch.@\n@\n" true_job#path_id false_job#path_id;
-                            Fork [get_active_state job true_job; get_active_state job false_job]
+                        Output.set_mode Output.MSG_MUSTPRINT;
+                        Output.printf "@[Branching on @[%a@]@ at @[%a@].@]@." CilPrinter.exp exp Printcil.loc loc;
+                        if !Executeargs.arg_print_callstack then
+                            Output.printf "Call stack:@\n  @[%a@]@." (Printer.callingContext_list "@\n") job#state.callContexts;
+                        Output.printf "Job %d is the true branch and job %d is the false branch.@\n@." true_job#path_id false_job#path_id;
+                        Fork [get_active_state job true_job; get_active_state job false_job]
                 in
                 (job_state, errors)
 
@@ -389,7 +385,7 @@ let step job job_queue = Profiler.global#call "Statement.step" begin fun () ->
 
     with
         | Failure msg -> begin
-            Output.debug_printf "Statement.step: failwith %s@\n" msg;
+            Output.debug_printf "Statement.step: failwith %s@." msg;
             if !Executeargs.arg_failfast then failwith msg;
             (Complete (Abandoned (`Failure msg, job)), job_queue)
         end

@@ -95,32 +95,32 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
              *)
             let jid_to_job = JidMap.add job#jid_unique job jid_to_job in
             (* If job comes from a bounded job *)
-            let _ = Output.debug_printf "Job %d has parent %d@\n" job#jid_unique job#jid_parent in
+            let _ = Output.debug_printf "Job %d has parent %d@." job#jid_unique job#jid_parent in
             if JidMap.mem job#jid_parent jid_to_bounding_paths then
                 Profiler.global#call "BidirectionalQueue.t#put/bounded_parent" begin fun () ->
                 let parent_job = JidMap.find job#jid_parent jid_to_job in
                 let bounding_paths = JidMap.find parent_job#jid_unique jid_to_bounding_paths in
                 if parent_job#decision_path == job#decision_path then (* no new decision *)
                     Profiler.global#call "BidirectionalQueue.t#put/bounded_parent/no_new_decision" begin fun () ->
-                    let _ = Output.debug_printf "No new decision@\n" in
-                    let _ = Output.debug_printf "Add job_unique %d into the bounded_jobqueue @\n" job#jid_unique in
+                    let _ = Output.debug_printf "No new decision@." in
+                    let _ = Output.debug_printf "Add job_unique %d into the bounded_jobqueue@." job#jid_unique in
                     {< jid_to_bounding_paths = JidMap.add job#jid_unique bounding_paths jid_to_bounding_paths;
                        jid_to_job = jid_to_job;
                        bounded_jobqueue = bounded_jobqueue#put job; >}
                     end
                 else (* has new decision *)
                     Profiler.global#call "BidirectionalQueue.t#put/bounded_parent/new_decision" begin fun () ->
-                    let _ = Output.debug_printf "Has new decision@\n" in
+                    let _ = Output.debug_printf "Has new decision@." in
                     let _ = assert(parent_job#decision_path == List.tl job#decision_path) in
                     let bounded_decision = List.hd job#decision_path in
                     let bounding_paths = List.fold_left (
                         fun acc path -> if Decision.equals bounded_decision (List.hd path) then (List.tl path) :: acc else acc
                     ) [] bounding_paths in
                     if bounding_paths = [] then (* out bound *)
-                        let _ = Output.debug_printf "Out bound@\n" in
+                        let _ = Output.debug_printf "Out bound@." in
                         self (* Discard the job *)
                     else
-                        let _ = Output.debug_printf "Add job_unique %d into the bounded_jobqueue @\n" job#jid_unique in
+                        let _ = Output.debug_printf "Add job_unique %d into the bounded_jobqueue@." job#jid_unique in
                         {< jid_to_bounding_paths = JidMap.add job#jid_unique bounding_paths jid_to_bounding_paths;
                            jid_to_job = jid_to_job;
                            bounded_jobqueue = bounded_jobqueue#put job; >}
@@ -154,9 +154,9 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                         if failing_paths_length = 0 then
                             jid_to_job, jid_to_bounding_paths, bounded_jobqueue (* Not a target function *)
                         else
-                            let _ = Output.debug_printf "Call target function %s@\n" fundec.svar.vname in
+                            let _ = Output.debug_printf "Call target function %s@." fundec.svar.vname in
                             let bounded_job = job#with_jid_unique (Counter.next Job.job_counter_unique) in
-                            let _ = Output.debug_printf "Add job_unique %d into the bounded_jobqueue @\n" bounded_job#jid_unique in
+                            let _ = Output.debug_printf "Add job_unique %d into the bounded_jobqueue@." bounded_job#jid_unique in
                             JidMap.add bounded_job#jid_unique bounded_job jid_to_job,
                             JidMap.add bounded_job#jid_unique failing_paths jid_to_bounding_paths,
                             bounded_jobqueue#put bounded_job
@@ -197,7 +197,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                 match bounded_jobqueue#get with
                 | Some (bounded_jobqueue, job) ->
                     (* Has bounded job to run *)
-                    let _ = Output.debug_printf "Take job_unique %d from bounded_jobqueue@\n" job#jid_unique in
+                    let _ = Output.debug_printf "Take job_unique %d from bounded_jobqueue@." job#jid_unique in
                     Some ({< bounded_jobqueue = bounded_jobqueue; >}, job)
                 | None ->
                     (* For each existing job, see if it can be bounded. If so, update bounded_jobqueue et al *)
@@ -244,7 +244,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                     if bounding_paths = [] then (jid_to_job, jid_to_bounding_paths, bounded_jobqueue)
                                     else
                                         let bounded_job = job#with_jid_unique (Counter.next Job.job_counter_unique) in
-                                        let _ = Output.debug_printf "Add job_unique %d into the bounded_jobqueue @\n" bounded_job#jid_unique in
+                                        let _ = Output.debug_printf "Add job_unique %d into the bounded_jobqueue@." bounded_job#jid_unique in
                                         JidMap.add bounded_job#jid_unique bounded_job jid_to_job,
                                         JidMap.add bounded_job#jid_unique bounding_paths jid_to_bounding_paths,
                                         bounded_jobqueue#put bounded_job
@@ -255,7 +255,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                     match bounded_jobqueue#get with
                     | Some (bounded_jobqueue, job) ->
                         (* Has bounded job to run *)
-                        let _ = Output.debug_printf "Take job from bounded_jobqueue@\n" in
+                        let _ = Output.debug_printf "Take job from bounded_jobqueue@." in
                         Some ({< bounded_jobqueue = bounded_jobqueue;
                                  jid_to_bounding_paths = jid_to_bounding_paths;
                                  jid_to_job = jid_to_job; >}, job)
@@ -285,7 +285,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                                         callee.svar.vname = "main" ||
                                                         match caller.smaxstmtid with Some size -> size < 5 | None -> false  (* TODO: true if caller does not branch *)
                                                     in
-                                                    (if ret then Output.debug_printf "Inline %s in %s@\n" callee.svar.vname caller.svar.vname);
+                                                    (if ret then Output.debug_printf "Inline %s in %s@." callee.svar.vname caller.svar.vname);
                                                     ret
                                                 in
                                                 match CilUtilities.CilCallgraph.find_callers file callee with
@@ -299,7 +299,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                                 let job =
                                                     if caller == entry_fn then entry_job
                                                     else (
-                                                        Output.debug_printf "Create new job for function %s@\n" caller.svar.vname;
+                                                        Output.debug_printf "Create new job for function %s@." caller.svar.vname;
                                                         Profiler.global#call "BidirectionalQueue.t#get/regular_get/create_new_jobs/new_functionjob" begin fun () ->
                                                             (* TODO: let's try a simpler Job initializer *)
                                                             BackOtterJob.get_function_job file caller
@@ -313,10 +313,10 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                         in
 
                         (* debug, Debug, DEBUG (warning: these can slow down regular_get) *)
-                        Output.debug_printf "Number of entry function jobs: %d@\n" (entryfn_jobqueue#length);
-                        Output.debug_printf "Number of other function jobs: %d@\n" (otherfn_jobqueue#length);
-                        List.iter (fun f -> Output.debug_printf "Target function: %s@\n" f.svar.vname) (BackOtterTargets.get_target_fundecs ());
-                        List.iter (fun f -> Output.debug_printf "Origin function: %s@\n" f.svar.vname) (origin_fundecs');
+                        Output.debug_printf "Number of entry function jobs: %d@." (entryfn_jobqueue#length);
+                        Output.debug_printf "Number of other function jobs: %d@." (otherfn_jobqueue#length);
+                        List.iter (fun f -> Output.debug_printf "Target function: %s@." f.svar.vname) (BackOtterTargets.get_target_fundecs ());
+                        List.iter (fun f -> Output.debug_printf "Origin function: %s@." f.svar.vname) (origin_fundecs');
 
                         (* Determine whether to run entry function jobs or other function jobs *)
                         let want_process_entryfn =

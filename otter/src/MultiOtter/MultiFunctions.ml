@@ -15,7 +15,7 @@ let libc_fork job multijob retopt exps errors =
 	let job = BuiltinFunctions.end_function_call job in
 
 	Output.set_mode Output.MSG_REG;
-	Output.printf "fork(): parent: %d, child: %d@\n" multijob.current_metadata.pid multijob.next_pid;
+	Output.printf "fork(): parent: %d, child: %d@." multijob.current_metadata.pid multijob.next_pid;
 
 	(* clone the job *)
 	let job, child_job, errors = match retopt with

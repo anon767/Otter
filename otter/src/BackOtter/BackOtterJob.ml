@@ -15,7 +15,7 @@ let get_function_job file fundec =
     (* Check if we want a specific points-to method for this function *)
     let points_to = try StringMap.find fname (!points_to_per_function) with Not_found -> FunctionJob.(!default_points_to) in
 
-    Output.debug_printf "Initialize %s with %s points-to analysis@\n" fname 
+    Output.debug_printf "Initialize %s with %s points-to analysis@." fname 
         (try List.assq points_to (List.map (fun (a,b) -> (b,a)) FunctionJob.points_tos) with Not_found -> "unknown");
 
     (* Call points_to with file *)

@@ -318,8 +318,8 @@ let rec opPI op operands =
 			)
 		| _ ->
 			Output.set_mode Output.MSG_MUSTPRINT;
-			Output.printf "bytes1:@ @[%a@]@\n" BytesPrinter.bytes bytes1;
-			Output.printf "bytes2:@ @[%a@]@\n" BytesPrinter.bytes bytes2;
+			Output.printf "@[bytes1:@ @[%a@]@]@." BytesPrinter.bytes bytes1;
+			Output.printf "@[bytes2:@ @[%a@]@]@." BytesPrinter.bytes bytes2;
 			failwith "plusPI (p1,p2) not of type (addr,int)"
 
 
@@ -358,8 +358,8 @@ let minusPP operands : bytes =
 			end
 		| _ ->
 				Output.set_mode Output.MSG_MUSTPRINT;
-				Output.printf "make_Bytes1:@ @[%a@]@\n" BytesPrinter.bytes bytes1;
-				Output.printf "make_Bytes2:@ @[%a@]@\n" BytesPrinter.bytes bytes2;
+				Output.printf "@[make_Bytes1:@ @[%a@]@]@." BytesPrinter.bytes bytes1;
+				Output.printf "@[make_Bytes2:@ @[%a@]@]@." BytesPrinter.bytes bytes2;
 				failwith "minusPP (p1,p2) not of type (addr,addr)"
         end
 

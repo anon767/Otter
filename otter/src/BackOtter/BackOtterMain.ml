@@ -41,7 +41,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
         let fundec = CovToFundec.of_line (file_name, line_num) in
         if List.memq fundec starter_fundecs then starter_fundecs else fundec::starter_fundecs)
     [] (!LineTargets.arg_line_targets) in
-    List.iter (fun f -> Output.debug_printf "Function containing coverage targets: %s@\n" f.svar.vname) starter_fundecs;
+    List.iter (fun f -> Output.debug_printf "Function containing coverage targets: %s@." f.svar.vname) starter_fundecs;
     let b_queue = List.fold_left (fun b_queue fundec ->
         let job = BackOtterJob.get_function_job file fundec in
         b_queue#put job
@@ -73,17 +73,17 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     (* Output failing paths for non-entry_fn *)
     List.iter (fun fundec ->
         if fundec != entry_fn then (
-            Output.debug_printf "@\nFailing path(s) for %s:@\n" fundec.svar.vname;
+            Output.debug_printf "@\nFailing path(s) for %s:@." fundec.svar.vname;
             List.iter (fun decisions ->
-                Output.debug_printf "Failing path: @[%a@]@\n" Decision.print_decisions decisions)
+                Output.debug_printf "Failing path: @[%a@]@." Decision.print_decisions decisions)
                 (BackOtterTargets.get_paths fundec)
         )
     ) (BackOtterTargets.get_target_fundecs ());
 
     (* Output failing paths for entry_fn *)
-    Output.must_printf "@\nFailing path(s) for %s:@\n" entry_fn.svar.vname;
+    Output.must_printf "@\nFailing path(s) for %s:@." entry_fn.svar.vname;
     List.iter (fun decisions ->
-        Output.must_printf "Failing path: @[%a@]@\n" Decision.print_decisions decisions)
+        Output.must_printf "Failing path: @[%a@]@." Decision.print_decisions decisions)
         (BackOtterTargets.get_paths entry_fn);
 
     (queue, target_tracker#delegate)
@@ -93,59 +93,58 @@ let doit file =
     (* connect Cil's debug flag to Output *)
     Output.arg_print_debug := !Errormsg.debugFlag;
 
-    Output.must_printf "@\n@\nBackOtter: Bi-directional Symbolic Executor@\n@\n";
+    Output.must_printf "@\n@\nBackOtter: Bi-directional Symbolic Executor@\n@.";
 
     UserSignal.using_signals begin fun () -> try
         Core.prepare_file file;
         CovToFundec.prepare_file file;
 
         let find_tag_name tag assocs = List.assoc tag (List.map (fun (a,b)->(b,a)) assocs) in
-        Output.must_printf "Forward strategy: %s@\n" (find_tag_name (!BackOtterQueue.default_fqueue) BackOtterQueue.queues);
-        Output.must_printf "Backward function pick: %s@\n" (find_tag_name (!FunctionRanker.default_brank) FunctionRanker.queues);
-        Output.must_printf "Backward strategy: %s@\n" (find_tag_name (!BackOtterQueue.default_bqueue) BackOtterQueue.queues);
-        Output.must_printf "Ratio: %0.2f@\n" !BidirectionalQueue.default_bidirectional_search_ratio ;
+        Output.must_printf "Forward strategy: %s@." (find_tag_name (!BackOtterQueue.default_fqueue) BackOtterQueue.queues);
+        Output.must_printf "Backward function pick: %s@." (find_tag_name (!FunctionRanker.default_brank) FunctionRanker.queues);
+        Output.must_printf "Backward strategy: %s@." (find_tag_name (!BackOtterQueue.default_bqueue) BackOtterQueue.queues);
+        Output.must_printf "Ratio: %0.2f@." !BidirectionalQueue.default_bidirectional_search_ratio ;
 
         let entry_job = BackOtterJob.get_default file in
         let _, reporter = callchain_backward_se (new BackOtterReporter.t ()) entry_job in
 
         (* print the results *)
         Output.set_formatter (new Output.plain);
-        Output.printf "\nSTP was invoked %d times (%d cache hits).\n" !Stp.stp_count !Stp.cacheHits;
+        Output.printf "@\nSTP was invoked %d times (%d cache hits).@." !Stp.stp_count !Stp.cacheHits;
 
-        Output.printf "Counter statistics:@\n";
+        Output.printf "Counter statistics:@.";
         let counter_stats = DataStructures.NamedCounter.report () in
-        List.iter (fun (name, value) -> Output.printf "%s : %d@\n" name value) counter_stats;
+        List.iter (fun (name, value) -> Output.printf "%s : %d@." name value) counter_stats;
         if (!Stp.print_stp_queries) then (
-            Output.must_printf "Stp queries: @\n";
+            Output.must_printf "Stp queries:@.";
             List.iter (fun (pc, pre, guard, truth_value, time) ->
-                List.iter (Output.must_printf "PC: @[%a@]@\n" BytesPrinter.bytes) pc;
-                Output.printf "PRE: @[%a@]@\n" BytesPrinter.guard pre;
-                Output.printf "QUERY: @[%a@]@\n" BytesPrinter.guard guard;
-                Output.printf "TRUTH: @[%s@]@\n" (if truth_value then "True" else "False");
-                Output.printf "TIME: @[%.2f@]@\n" time;
-                Output.printf "--------------------------------------------------@\n"
+                List.iter (Output.must_printf "PC: @[%a@]@." BytesPrinter.bytes) pc;
+                Output.printf "PRE: @[%a@]@." BytesPrinter.guard pre;
+                Output.printf "QUERY: @[%a@]@." BytesPrinter.guard guard;
+                Output.printf "TRUTH: %s@." (if truth_value then "True" else "False");
+                Output.printf "TIME: %.2f@." time;
+                Output.printf "--------------------------------------------------@."
             ) (!Stp.stp_queries)
         );
         let nodes, paths, abandoned = reporter#get_stats in
-        Output.printf "Number of nodes: %d@\n" nodes;
-        Output.printf "Number of paths: %d@\n" paths;
-        Output.printf "Number of abandoned: %d@\n" abandoned;
-        Output.myflush ();
+        Output.printf "Number of nodes: %d@." nodes;
+        Output.printf "Number of paths: %d@." paths;
+        Output.printf "Number of abandoned: %d@." abandoned;
 
         Report.print_report reporter#completed
 
     with UserSignal.UserInterrupt | UserSignal.TimedOut as exn ->
         (* TODO: move this into callchain_backwards_se *)
         Output.set_mode Output.MSG_MUSTPRINT;
-        Output.printf "%s@\n" (Printexc.to_string exn)
+        Output.printf "%s@." (Printexc.to_string exn)
     end;
 
     (* TODO: provide a way to force full-width profile printing *)
     Format.set_margin 120;
     Format.printf "Global profile:@\n@\n  @[%t@]@." Profiler.global#printer;
-    Format.printf "@[%t@]@\n" Memo.statistics_printer;
+    Format.printf "@[%t@]@." Memo.statistics_printer;
 
-    Format.printf "Done.@\n"
+    Format.printf "Done.@."
 
 
 (** {1 Command-line options} *)

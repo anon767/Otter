@@ -369,11 +369,11 @@ let libc_exit job retopt exps errors =
 		match exps with
 			| exp1::_ ->
 				let _, bytes, errors = Expression.rval job exp1 errors in
-				Output.printf "exit() called with code@ @[%a@]@\n" BytesPrinter.bytes bytes;
+				Output.printf "@[exit() called with code@ @[%a@]@]@." BytesPrinter.bytes bytes;
 				let _, bytes, errors = Expression.rval job exp1 errors in
 				(Some (bytes), errors)
 			| [] ->
-				Output.printf "exit() called with code (NONE)@\n";
+				Output.printf "exit() called with code (NONE)@.";
 				(None, errors)
 	in
 	(Job.Complete (Job.Exit (exit_code, job)), errors)
@@ -382,7 +382,7 @@ let libc_exit job retopt exps errors =
 let otter_evaluate job retopt exps errors =
 	let job, bytes, errors = eval_join_exps job exps Cil.LAnd errors in
 	Output.set_mode Output.MSG_MUSTPRINT;
-	Output.printf "Evaluates to@ @[%a@]@\n" BytesPrinter.bytes bytes;
+	Output.printf "@[Evaluates to@ @[%a@]@]@." BytesPrinter.bytes bytes;
 	let job = end_function_call job in
 	(Job.Active job, errors)
 
@@ -399,20 +399,20 @@ let otter_evaluate_string job retopt exps errors =
 				try
 					bytes_to_int_auto size_bytes
 				with Failure s ->
-					Output.printf "%s@\n" s; 32
+					Output.printf "%s@." s; 32
 			in
 			let job, bytes = MemOp.state__deref job (conditional__lval_block (block, offset), size) in
 			begin match bytes with
 				| Bytes_ByteArray bytearray ->
-					Output.printf "Evaluates to string:@ \"@[%a@]\"@\n" BytesPrinter.bytestring bytearray
+					Output.printf "@[Evaluates to string:@ \"@[%a@]\"@]@." BytesPrinter.bytestring bytearray
 				| Bytes_Constant (CInt64 (i, _, _)) ->
-					Output.printf "Evaluates to non-string constant: %Ld@\n" i
+					Output.printf "Evaluates to non-string constant: %Ld@." i
 				| _ ->
-					Output.printf "Evaluates to a complicated string.@\n"
+					Output.printf "Evaluates to a complicated string.@."
 			end;
 			(job, errors)
 		| _ ->
-			Output.printf "Evaluates to an invalid string.@\n";
+			Output.printf "Evaluates to an invalid string.@.";
 			(job, errors)
 	in
 	let job = end_function_call job in
@@ -460,16 +460,16 @@ let otter_assume job _ exps errors =
         (* Use [Fork []] to make this job disappear. Among other things, this
            means that we ignore coverage from this job, and we also ignore any
            errors that occurred while evaluating the arguments to __ASSUME. *)
-        Output.printf "Impossible assumption; eliminating job";
+        Output.printf "Impossible assumption; eliminating job@.";
         (Job.Fork [], errors)
 
 
 let otter_path_condition job retopt exps errors =
 	Output.set_mode Output.MSG_MUSTPRINT;
 	if job#state.path_condition = [] then
-		Output.printf "(nil)@\n"
+		Output.printf "(nil)@."
 	else
-		Output.printf "@[%a@]@\n" (FormatPlus.pp_print_list BytesPrinter.bytes "@\n  AND@\n") job#state.path_condition;
+		Output.printf "@[%a@]@." (FormatPlus.pp_print_list BytesPrinter.bytes "@\n  AND@\n") job#state.path_condition;
 	let job = end_function_call job in
 	(Job.Active job, errors)
 
@@ -526,10 +526,10 @@ let otter_boolean_not job retopt exps errors =
 
 let otter_break_pt job retopt exps errors =
 	Output.set_mode Output.MSG_REG;
-	Output.printf "Option (h for help):@\n";
+	Output.printf "Option (h for help):@.";
 	ignore (Scanf.scanf "%d\n"
 		begin fun p1->
-			Output.printf "sth\n";
+			Output.printf "sth@.";
 			(job, errors)
 		end);
 	let job = end_function_call job in
@@ -570,7 +570,7 @@ let otter_print_state job retopt exps errors =
 								FormatPlus.failwith "PRINT STATE: Reading part of a Bytes_Address: %a %d %d" BytesPrinter.bytes b off size
 						| _ -> Format.fprintf ff "(@[%a@],@ %d,@ %d@,)" BytesPrinter.bytes b off size
 				in
-				Output.printf "%s@ = @[%a@]@\n" varname p bytes
+				Output.printf "@[%s@ = @[%a@]@]@." varname p bytes
 	in
 	let printVarBytes var bytes =
 		printVarFieldsBytes var.vname var.vtype bytes 0
@@ -594,35 +594,35 @@ let otter_print_state job retopt exps errors =
 				| Deferred.Immediate (Unconditional (block, _)) ->
 					begin match (MemoryBlockMap.find block job#state.block_to_bytes) with
 						| Deferred.Immediate bytes -> printVarBytes var bytes
-						| Deferred.Deferred _ -> Output.printf "%s@ = (Deferred)@\n" var.vname
+						| Deferred.Deferred _ -> Output.printf "@[%s@ = (Deferred)@]@." var.vname
 					end
 				(* TODO: print something useful *)
 				| Deferred.Immediate (IfThenElse _) ->
-					Output.printf "%s@ = (IfThenElse)@\n" var.vname
+					Output.printf "@[%s@ = (IfThenElse)@]@." var.vname
 				| Deferred.Deferred _ ->
-					Output.printf "%s@ = (Deferred)@\n" var.vname
+					Output.printf "@[%s@ = (Deferred)@]@." var.vname
 	in
 
-	Output.printf "#BEGIN PRINTSTATE@\n";
-	Output.printf "#Globals:@\n";
+	Output.printf "#BEGIN PRINTSTATE@.";
+	Output.printf "#Globals:@.";
 	VarinfoMap.iter printVar job#state.global;
-	Output.printf "#Locals:@\n";
+	Output.printf "#Locals:@.";
 	VarinfoMap.iter printVar (List.hd job#state.locals);
-	Output.printf "#Formals:@\n";
+	Output.printf "#Formals:@.";
 	VarinfoMap.iter printVar (List.hd job#state.formals);
 	(* explore only one level of memory *)
 	bosmap := BOSMap.mapi begin fun (block,off,size) des -> match des with
 		| Some _ -> des
 		| None -> Some (snd(MemOp.state__deref job (conditional__lval_block (block, off), size)))
 	end (!bosmap);
-	Output.printf "#Memory: (one level)@\n";
+	Output.printf "#Memory: (one level)@.";
 	BOSMap.iter (fun (block,off,size) des ->
 		match des with
-			| None -> Output.printf "@[%a@]@ -> None@\n" BytesPrinter.bytes (make_Bytes_Address(block, off))
-			| Some b -> Output.printf "@[%a@]@ -> @[%a@]@\n" BytesPrinter.bytes (make_Bytes_Address(block, off)) BytesPrinter.bytes b
+			| None -> Output.printf "@[@[%a@]@ -> None@]@." BytesPrinter.bytes (make_Bytes_Address(block, off))
+			| Some b -> Output.printf "@[@[%a@]@ -> @[%a@]@]@." BytesPrinter.bytes (make_Bytes_Address(block, off)) BytesPrinter.bytes b
 	)
 	(!bosmap);
-	Output.printf "#END PRINTSTATE@\n";
+	Output.printf "#END PRINTSTATE@.";
 	let job = end_function_call job in
 	(Job.Active job, errors)
 
@@ -648,7 +648,7 @@ let intercept_symbolic job job_queue interceptor =
 					let job, (_, size as lval), errors = Expression.lval job cil_lval errors in
 					let symbBytes = bytes__symbolic size in
 					Output.set_mode Output.MSG_MUSTPRINT;
-					Output.printf "%s@ = @[%a@]@\n" varinf.vname BytesPrinter.bytes symbBytes;
+					Output.printf "@[%s@ = @[%a@]@]@." varinf.vname BytesPrinter.bytes symbBytes;
 
 					let exHist = { exHist with Job.bytesToVars = (symbBytes,varinf)::exHist.Job.bytesToVars } in
 					let job = MemOp.state__assign job lval symbBytes in

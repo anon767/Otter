@@ -65,7 +65,7 @@ class t :
                     (* TODO: fix Output's mode handling *)
                     let old_mode = Output.get_mode () in
                     Output.set_mode Output.MSG_PROFILING;
-                    Output.printf "@[== Profile for node %d ==@\n@[%t@]@]@." node_id node_profiler#printer;
+                    Output.printf "== Profile for node %d ==@\n@[%t@]@." node_id node_profiler#printer;
                     Output.set_mode old_mode;
 
                     let node_profiler = node_profiler#reset in
@@ -96,8 +96,8 @@ class t :
             (* TODO: fix Output's mode handling *)
             let old_mode = Output.get_mode () in
             Output.set_mode Output.MSG_PROFILING;
-            Output.printf "@[== Profile for node %d ==@\n@[%t@]@]@." node_id node_profiler#printer;
-            Output.printf "@[== Profile for path %d ==@\n@[%t@]@]@." path_id path_profiler#printer;
+            Output.printf "== Profile for node %d ==@\n@[%t@]@." node_id node_profiler#printer;
+            Output.printf "== Profile for path %d ==@\n@[%t@]@." path_id path_profiler#printer;
             Output.set_mode old_mode;
 
             {< path_profiler = path_profiler >}

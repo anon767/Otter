@@ -156,8 +156,6 @@ let main_loop interceptor queue reporter job =
 		| "read value" -> (*doesn't currently work *) printf "Which variable?\n"; let value = read_line () in printValue value job
 		| _ -> printf "Invalid Instruction\n"; doWork := true
 		);	
-		
-		Output.myflush ();
 	done;
 	
 	printf "\n\nFinal\n";
@@ -204,7 +202,7 @@ let main_loop interceptor queue reporter =
     with State.SignalException s ->
         (* if we got a signal, stop and return the checkpoint results *)
         Output.set_mode Output.MSG_MUSTPRINT;
-        Output.printf "%s@\n" s;
+        Output.printf "%s@." s;
         !checkpoint
         *)
 

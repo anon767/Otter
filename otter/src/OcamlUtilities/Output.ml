@@ -146,9 +146,6 @@ class ['self] labeled label =
 
 let formatter = ref (new plain)
 
-let myflush () =
-	!formatter#flush
-
 let set_formatter ff =
 	!formatter#flush;
 	formatter := ff

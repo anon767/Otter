@@ -8,13 +8,12 @@ open OtterReporter
 open OtterDriver
 open State
 open DebugOtterDriver
-open Printf
 (*open InvInput*)
 
 let doDebugExecute (f: file) =
 	(* connect Cil's debug flag to Output *)
 	Output.arg_print_debug := !Errormsg.debugFlag;
-	printf "A debugger for Otter, a symbolic executor for C\n\n";
+	Output.printf "A debugger for Otter, a symbolic executor for C@\n@.";
 
 	let reporter = UserSignal.using_signals begin fun () ->
 		(* prepare the file for symbolic execution *)
@@ -29,28 +28,12 @@ let doDebugExecute (f: file) =
 	end in
 
 	Output.set_formatter (new Output.plain);
-		(* function stat
-		Output.print_endline "\nFunction call stat:";
-		Cilutility.FundecMap.iter (fun f c -> Output.print_endline ((To_string.fundec f)^" : "^(string_of_int c))) (!MemOp.function_stat);
-		*)
-	Output.printf "\nSTP was invoked %d times (%d cache hits).\n" !Stp.stp_count !Stp.cacheHits;
+	Output.printf "@\nSTP was invoked %d times (%d cache hits).@." !Stp.stp_count !Stp.cacheHits;
 
-	Output.printf "@[%t@]@\n" Memo.statistics_printer;
-  (*  Output.printf "Bytes eval caching: hits=%d misses=%d\n\n" (!MemOp.bytes_eval_cache_hits) (!MemOp.bytes_eval_cache_misses);*)
+	Output.printf "@[%t@]@." Memo.statistics_printer;
 
-    (*
-  begin
-    if Executeargs.run_args.arg_examfn = "" then () else
-      let print_record r = Output.printf "#true:%d\n#false:%d\n#unknown:%d\n" r.numTrue r.numFalse r.numUnknown in
-        Output.printf "pc -> ct:\n";
-        print_record (!InvInput.pc2ct);
-        Output.printf "ct -> pc:\n";
-        print_record (!InvInput.ct2pc);
-        ()
-  end;
-     *)
     let nodes, _, _ = reporter#get_stats in
-    Output.printf "Number of nodes: %d@\n" nodes;
+    Output.printf "Number of nodes: %d@." nodes;
     Report.print_report reporter#completed
 
 

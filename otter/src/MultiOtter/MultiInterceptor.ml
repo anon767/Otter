@@ -10,7 +10,7 @@ let intercept_multi_function_by_name_internal target_name replace_func job multi
 	match job#instrList with
 		| (Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc) as instr)::_ when varinfo.Cil.vname = target_name ->
 			OcamlUtilities.Output.set_mode OcamlUtilities.Output.MSG_STMT;
-			OcamlUtilities.Output.printf "%a@\n" Printcil.instr instr;
+			OcamlUtilities.Output.printf "@[%a@]@." Printcil.instr instr;
 			let job_state, multijob, errors = replace_func job multijob retopt exps [] in
 			if errors = [] then
 				(job_state, (multijob, job_queue))

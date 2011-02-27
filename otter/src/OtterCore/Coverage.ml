@@ -194,35 +194,35 @@ let prepare_file file =
 	Hashtbl.add coverage_totals file totals;
 
 	if !Executeargs.arg_list_lines then begin
-		Output.printf "Total number of %s: %d\n" "Lines" (LineSet.cardinal totals#lines);
+		Output.printf "Total number of %s: %d@\n" "Lines" (LineSet.cardinal totals#lines);
 		LineSet.iter
-			(fun (file, lineNum) -> Output.printf "%s:%d\n" file lineNum)
+			(fun (file, lineNum) -> Output.printf "%s:%d@\n" file lineNum)
 			vis#lines;
-		Output.printf "\n"
+		Output.printf "@."
 	end;
 	if !Executeargs.arg_list_blocks then begin
-		Output.printf "Total number of %s: %d\n" "Blocks" (StmtInfoSet.cardinal totals#blocks);
+		Output.printf "Total number of %s: %d@\n" "Blocks" (StmtInfoSet.cardinal totals#blocks);
 		StmtInfoSet.iter
-			(fun stmtInfo -> Output.printf "%a\n" printStmtInfo stmtInfo)
+			(fun stmtInfo -> Output.printf "@[%a@]@\n" printStmtInfo stmtInfo)
 			vis#blocks;
-		Output.printf "\n"
+		Output.printf "@."
 	end;
 	if !Executeargs.arg_list_edges then begin
-		Output.printf "Total number of %s: %d\n" "Edges" (EdgeSet.cardinal totals#edges);
+		Output.printf "Total number of %s: %d@\n" "Edges" (EdgeSet.cardinal totals#edges);
 		EdgeSet.iter
 			(fun (srcStmtInfo, destStmtInfo) ->
-				 Output.printf "%a -> %a\n"
+				 Output.printf "@[@[%a@]@ -> @[%a@]@]@\n"
 					 printStmtInfo srcStmtInfo
 					 printStmtInfo destStmtInfo)
 			vis#edges;
-		Output.printf "\n"
+		Output.printf "@."
 	end;
 	if !Executeargs.arg_list_conds then begin
-		Output.printf "Total number of %s: %d\n" "Conditions" (CondSet.cardinal totals#conds);
+		Output.printf "Total number of %s: %d@\n" "Conditions" (CondSet.cardinal totals#conds);
 		CondSet.iter
-			(fun (stmtInfo, truth) -> Output.printf "%a %c\n" printStmtInfo stmtInfo (if truth then 'T' else 'F'))
+			(fun (stmtInfo, truth) -> Output.printf "@[%a@] %c@\n" printStmtInfo stmtInfo (if truth then 'T' else 'F'))
 		vis#conds;
-		Output.printf "\n"
+		Output.printf "@."
 	end
 
 
@@ -337,9 +337,9 @@ let printPath state hist =
     let pc_all = state.path_condition in
     let (pc_branch,pc_assume) = eliminate_untracked (state.path_condition) (state.path_condition_tracked) in
 
-	Output.printf "Path condition:@\n  @[%a@]@\n@\n"
+	Output.printf "Path condition:@\n  @[%a@]@\n@."
 		(FormatPlus.pp_print_list (BytesPrinter.bytes_named hist.bytesToVars) "@\n") pc_branch;
-	Output.printf "Path condition (ASSUMEs):@\n  @[%a@]@\n@\n"
+	Output.printf "Path condition (ASSUMEs):@\n  @[%a@]@\n@."
 		(FormatPlus.pp_print_list (BytesPrinter.bytes_named hist.bytesToVars) "@\n") pc_assume;
 
 	let mentionedSymbols = Stp.allSymbolsInList pc_branch in
@@ -379,7 +379,7 @@ let printPath state hist =
 		| _ -> failwith "Impossible: symbolic bytes must be a ByteArray"
 	in
 
-    Output.printf "Sample value:\n";
+    Output.printf "@[Sample value:@\n";
     List.iter
         (fun (bytes,varinf) ->
             match getVal bytes with
@@ -387,24 +387,24 @@ let printPath state hist =
               | Some concreteByteArray ->
                     match varinf.vtype with
                       | TArray _ ->
-                            Output.printf "%s=%a\n" varinf.vname BytesPrinter.bytearray concreteByteArray
+                            Output.printf "%s@,=@[%a@]@\n" varinf.vname BytesPrinter.bytearray concreteByteArray
                       | _ ->
                             match bytes_to_constant (make_Bytes_ByteArray concreteByteArray) varinf.vtype with
                               | CInt64 (n,_,_) ->
                                     (* Is it okay to ignore the type? Or might we have to truncate? *)
-                                    Output.printf "%s=%Ld\n" varinf.vname n
+                                    Output.printf "%s@,=%Ld@\n" varinf.vname n
                               | _ -> failwith "Unimplemented: non-integer symbolic")
         (List.rev hist.bytesToVars);
 
 	(* Check to see if we've bound all of the symbols in the path condition *)
 	if not (Stp.SymbolSet.is_empty !unboundSymbols)
 	then (
-		Output.printf "but these symbolic values are unaccounted for by tracked variables:\n";
+		Output.printf "but these symbolic values are unaccounted for by tracked variables:@\n";
 		Stp.SymbolSet.iter
 			(fun s -> Output.printf "%d " s.symbol_id)
 			!unboundSymbols
 	);
-	Output.printf "\n"
+	Output.printf "@]@."
 
 let printLine ff (file,lineNum) = Format.fprintf ff "%s:%d" file lineNum
 let printEdge ff (srcStmtInfo,destStmtInfo) = Format.fprintf ff "%a -> %a" printStmtInfo srcStmtInfo printStmtInfo destStmtInfo
@@ -423,8 +423,8 @@ let printCov file covType hist =
     let complement = !Executeargs.arg_print_complement_coverage in
     let total = getTotal file covType and numCovered = getNumCovered covType hist in
     let vis = Hashtbl.find coverage_totals file in
-    Output.printf "%d out of %d %s (%.2f%%)\n\n" numCovered total (covTypeToStr covType) (percentage numCovered total);
-    Output.printf "The %s %scovered were:\n" (covTypeToStr covType) (if complement then "un" else "");
+    Output.printf "%d out of %d %s (%.2f%%)@\n@." numCovered total (covTypeToStr covType) (percentage numCovered total);
+    Output.printf "@[The %s %scovered were:@\n" (covTypeToStr covType) (if complement then "un" else "");
     begin match covType with
     | Line -> printLines (if complement then LineSet.diff vis#lines hist.coveredLines else hist.coveredLines)
     | Block -> printBlocks (if complement then StmtInfoSet.diff vis#blocks hist.coveredBlocks else hist.coveredBlocks)
@@ -432,19 +432,19 @@ let printCov file covType hist =
     | Cond -> printConditions (if complement then CondSet.diff vis#conds hist.coveredConds else hist.coveredConds)
     | Path -> failwith "printCoveringConfigs called for path coverage"
     end;
-    Output.printf "\n"
+    Output.printf "@]@."
 
 let printCoveringConfigs file coveringSet covType =
     let name = covTypeToStr covType in
-    if coveringSet = [] then Output.printf "No constraints: any run covers all %s\n" name
+    if coveringSet = [] then Output.printf "No constraints: any run covers all %s@." name
     else begin
-        Output.printf "Here is a set of %d configurations which covers all the %s ever hit:\n\n"
+        Output.printf "Here is a set of %d configurations which covers all the %s ever hit:@\n@."
                 (List.length coveringSet) name;
         List.iter
         (fun job_result ->
                  printPath job_result#state job_result#exHist;
                  printCov file covType job_result#exHist;
-                 Output.printf "-------------\n\n")
+                 Output.printf "-------------@\n@.")
              coveringSet
     end
 
@@ -454,7 +454,7 @@ let printCoverageInfo resultList =
         failwith "Cannot report coverage from different files!";
 
     if !Executeargs.arg_line_coverage then (
-        Output.printf "Line coverage:\n\n";
+        Output.printf "Line coverage:@\n@.";
         let allLinesCovered =
             (List.fold_left
                  (fun acc job_result ->
@@ -476,7 +476,7 @@ let printCoverageInfo resultList =
     );
 
     if !Executeargs.arg_block_coverage then (
-        Output.printf "Block coverage:\n\n";
+        Output.printf "Block coverage:@\n@.";
         let allBlocksCovered =
             (List.fold_left
                  (fun acc job_result ->
@@ -498,7 +498,7 @@ let printCoverageInfo resultList =
     );
 
     if !Executeargs.arg_edge_coverage then (
-        Output.printf "Edge coverage:\n\n";
+        Output.printf "Edge coverage:@\n@.";
         let allEdgesCovered =
             (List.fold_left
                  (fun acc job_result ->
@@ -520,7 +520,7 @@ let printCoverageInfo resultList =
     );
 
   if !Executeargs.arg_cond_coverage then (
-        Output.printf "Condition coverage:\n\n";
+        Output.printf "Condition coverage:@\n@.";
         let allCondsCovered =
             (List.fold_left
                  (fun acc job_result ->
@@ -546,12 +546,12 @@ let printCoverageInfo resultList =
              is unique. However, if two paths x and y differ only within
              untracked functions, [x.executionPath = y.executionPath] will
              be true. *)
-        Output.printf "Path coverage:\n\n";
+        Output.printf "Path coverage:@\n@.";
         List.iter
             (fun job_result ->
                  printPath job_result#state job_result#exHist;
-                 Output.printf "The path contains %d statements\n\n" (List.length job_result#exHist.executionPath);
-                 Output.printf "-------------\n\n")
+                 Output.printf "The path contains %d statements@\n@." (List.length job_result#exHist.executionPath);
+                 Output.printf "-------------@\n@.")
             resultList
     )
 

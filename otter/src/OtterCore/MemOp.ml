@@ -220,7 +220,7 @@ let rec state__assign job (lvals, size) bytes =
 			| _          -> make_Bytes_Conditional ( IfThenElse (pre, conditional__bytes newbytes, conditional__bytes oldbytes) )
 		in
 		Output.set_mode Output.MSG_ASSIGN;
-		Output.printf "Assign@ @[%a@]@ to @[%a@], @[%a@]@\n" BytesPrinter.bytes bytes BytesPrinter.memory_block block BytesPrinter.bytes offset;
+		Output.printf "@[Assign@ @[%a@]@ to @[%a@], @[%a@]@]@." BytesPrinter.bytes bytes BytesPrinter.memory_block block BytesPrinter.bytes offset;
 		state__add_block job block newbytes
 	in
 	conditional__fold assign job lvals
@@ -253,7 +253,7 @@ let state__start_fcall job callContext fundec argvs =
 					failwith ("Too many arguments to non-vararg function " ^ fundec.svar.vname)
 				);
 				Output.set_mode Output.MSG_FUNC;
-				Output.printf "Rest of args:@ @[%a@]@\n" (FormatPlus.pp_print_list BytesPrinter.bytes ",@ ") va_arg;
+				Output.printf "@[Rest of args:@ @[%a@]@]@." (FormatPlus.pp_print_list BytesPrinter.bytes ",@ ") va_arg;
 			);
 			job#with_state { job#state with va_arg = va_arg::job#state.va_arg }
 		| _, [] ->
@@ -265,7 +265,7 @@ let state__start_fcall job callContext fundec argvs =
 let state__end_fcall job =
     (* TODO: move this to Statement *)
 	Output.set_mode Output.MSG_FUNC;
-	Output.printf "@[Exit function %a@]@\n" CilPrinter.fundec (List.hd job#state.callstack);
+	Output.printf "@[Exit function %a@]@." CilPrinter.fundec (List.hd job#state.callstack);
 	let block_to_bytes = job#state.block_to_bytes in
 	let block_to_bytes = frame__clear_varinfos (List.hd job#state.locals) block_to_bytes in
 	let block_to_bytes = frame__clear_varinfos (List.hd job#state.formals) block_to_bytes in
@@ -351,8 +351,8 @@ let cmp_states job1 job2 =
 	    		if bytes__equal bytes1 bytes2 then
 					result
 				else begin
-	    			Output.printf " >> %s@ = @[%a@]@\n" (block.memory_block_name) BytesPrinter.bytes bytes1;
-	    			Output.printf " << %s@ = @[%a@]@\n" (block.memory_block_name) BytesPrinter.bytes bytes2;
+	    			Output.printf "@[ >> %s@ = @[%a@]@]@." (block.memory_block_name) BytesPrinter.bytes bytes1;
+	    			Output.printf "@[ << %s@ = @[%a@]@]@." (block.memory_block_name) BytesPrinter.bytes bytes2;
 					false
 				end
 	          with Not_found -> result
@@ -366,7 +366,7 @@ let cmp_states job1 job2 =
 			let typ = block1.memory_block_type in
 				if typ!=Block_type_Global && typ!=Block_type_Heap then result else (* only care about globals and heap content *)
 	        if MemoryBlockMap.mem block1 job2#state.block_to_bytes then result else (
-	    			Output.printf " %s %s@ = @[%a@]@\n" prefix (block1.memory_block_name) BytesPrinter.bytes bytes1;
+	    			Output.printf "@[ %s %s@ = @[%a@]@]@." prefix (block1.memory_block_name) BytesPrinter.bytes bytes1;
 						false
 					)
 	  in
@@ -407,7 +407,7 @@ let function_stat_get fundec = Cilutility.FundecMap.find fundec (!function_stat)
 let rec eval pc bytes =
   let nontrivial () =
     Output.set_mode Output.MSG_REG;
-    Output.printf "Ask STP...@\n";
+    Output.printf "Ask STP...@.";
     Stp.query_bytes pc bytes
 
   in

@@ -22,7 +22,7 @@ let init_globalvars job globals =
             let job, bytes = Expression.evaluate_initializer job varinfo.Cil.vtype init in
 
             Output.set_mode Output.MSG_REG;
-            Output.printf "@[Initialize %s to@ @[%a@]@]@\n" varinfo.Cil.vname BytesPrinter.bytes bytes;
+            Output.printf "@[Initialize %s to@ @[%a@]@]@." varinfo.Cil.vname BytesPrinter.bytes bytes;
 
             (MemOp.state__add_block job block bytes, varinfo_to_block)
 
@@ -34,7 +34,7 @@ let init_globalvars job globals =
             assert (not (State.VarinfoMap.mem varinfo varinfo_to_block));
 
             Output.set_mode Output.MSG_REG;
-            Output.printf "@[Initialize %s to zeros@]@\n" varinfo.Cil.vname;
+            Output.printf "Initialize %s to zeros@." varinfo.Cil.vname;
 
             let job, block = MemOp.state__add_global job varinfo in
             (job, State.VarinfoMap.add varinfo block varinfo_to_block)
@@ -92,7 +92,7 @@ let init_cmdline_argvs job argstr =
 			| [] -> bytes
 			| h::t ->
 				(* Print out each argument *)
-				Output.debug_printf "@[With arguments: \"%s\"@]@\n" h;
+				Output.debug_printf "@[With arguments: \"%s\"@]@." h;
 				let h_bytes = Bytes.make_Bytes_Address (argv_strings_block, Bytes.int_to_bytes charsSoFar) in
 				impl t (ptrsSoFar + 1)
 					(charsSoFar + String.length h + 1 (* '+ 1' for the null character *))

@@ -483,7 +483,7 @@ let query_stp pc pre guard =
             Stpc.e_push vc;
 
             Output.set_mode Output.MSG_STP;
-            Output.printf "%% STP Program: %%@\n";
+            Output.printf "%% STP Program: %%@.";
 
             let rec do_assert pc = match pc with
                 | [] -> ()
@@ -491,7 +491,7 @@ let query_stp pc pre guard =
                     let (bv, len) = Profiler.global#call "Stp.query_stp/construct" (fun () -> to_stp_bv vc head) in (* 1 *)
                     Profiler.global#call "Stp.query_stp/add assertion" (fun () -> Stpc.assert_ctrue vc len bv) ; (* 2 *)
                     Output.set_mode Output.MSG_STP;
-                    Output.printf "ASSERT(NOT(%t = 0hex00000000)); @\n" (fun ff -> Format.pp_print_string ff (Stpc.to_string bv));
+                    Output.printf "@[ASSERT(NOT(%t = 0hex00000000));@]@." (fun ff -> Format.pp_print_string ff (Stpc.to_string bv));
                     do_assert tail
             in
             (*Profiler.global#call "STP assert" do_assert relevantAssumptions; *)
@@ -507,7 +507,7 @@ let query_stp pc pre guard =
 
         let guard_exp = Profiler.global#call "Stp.query_stp/convert guard" (fun () -> to_stp_guard vc guard) in
         Output.set_mode Output.MSG_STP;
-        Output.printf "QUERY(%t); @\n" (fun ff -> Format.pp_print_string ff (Stpc.to_string guard_exp));
+        Output.printf "@[QUERY(%t);@]@." (fun ff -> Format.pp_print_string ff (Stpc.to_string guard_exp));
 
         let query exp truth_value =
             match stpcache_find pc pre guard truth_value with

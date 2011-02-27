@@ -7,7 +7,7 @@ let old_job_id = ref 0
 let set_output_formatter job =
     if !old_job_id <> job#path_id then (
         Output.set_mode Output.MSG_REG;
-        Output.printf "***** Changing running job *****@\n";
+        Output.printf "***** Changing running job *****@.";
         old_job_id := job#path_id
     );
     let depth = List.length job#state.path_condition in

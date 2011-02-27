@@ -10,11 +10,11 @@ let print_report results =
                 | Job.Truncated _      -> (coverage, completed, abandoned) (* ignored *)
         end ([], 0, 0) results in
         (if completed = 0 then
-            Output.printf "All %d paths had errors.\n" abandoned
+            Output.printf "All %d paths had errors.@." abandoned
             (* Program execution ends. *)
         else
             (* If there were successful runs *)
-            Output.printf "%d paths ran to completion; %d had errors.\n" completed abandoned
+            Output.printf "%d paths ran to completion; %d had errors.@." completed abandoned
         );
 
         if coverage = [] then
@@ -34,13 +34,13 @@ let print_report results =
                      read it back in later. *)
                 if !Executeargs.arg_marshal_file <> ""
                 then (
-                    Output.printf "Marshalling results to %s\n" !Executeargs.arg_marshal_file;
+                    Output.printf "Marshalling results to %s@." !Executeargs.arg_marshal_file;
                     let outChan = open_out_bin !Executeargs.arg_marshal_file in
                         Marshal.to_channel outChan coverage [];
                         close_out outChan
                 );
 
-                Output.printf "Finished.\n";
+                Output.printf "Finished.@.";
             end
         end
 

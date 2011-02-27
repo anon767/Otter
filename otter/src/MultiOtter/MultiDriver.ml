@@ -105,7 +105,7 @@ let doit file =
 	(* connect Cil's debug flag to Output *)
 	Output.arg_print_debug := !Errormsg.debugFlag;
 	
-	Output.printf "MultiOtter, a multiprocess symbolic executor for C@\n@\n";
+	Output.printf "MultiOtter, a multiprocess symbolic executor for C@\n@.";
 
 	let result = UserSignal.using_signals begin fun () ->
 		Core.prepare_file file;
@@ -119,12 +119,12 @@ let doit file =
 
 	(* print the results *)
 	Output.set_formatter (new Output.plain);
-	Output.printf "\nSTP was invoked %d times (%d cache hits).\n" !Stp.stp_count !Stp.cacheHits;
+	Output.printf "@\nSTP was invoked %d times (%d cache hits).@." !Stp.stp_count !Stp.cacheHits;
 
-	Output.printf "== Global profile ==@\n@[%t@]@\n" Profiler.global#printer;
-	Output.printf "@[%t@]@\n" Memo.statistics_printer;
+	Output.printf "== Global profile ==@\n@[%t@]@." Profiler.global#printer;
+	Output.printf "@[%t@]@." Memo.statistics_printer;
 	let nodes, _, _ = result#get_stats in
-	Output.printf "Number of nodes: %d@\n" nodes;
+	Output.printf "Number of nodes: %d@." nodes;
 	Report.print_report result#completed
 
 
