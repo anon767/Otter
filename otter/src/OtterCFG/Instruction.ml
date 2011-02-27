@@ -218,7 +218,7 @@ let return_sites =
                         return_sites := (of_stmt_first file fundec stmt)::!return_sites;
                         Cil.SkipChildren
                     | _ ->
-                        Cil.SkipChildren
+                        Cil.DoChildren
             end end fundec end
         end (call_targets instruction);
 
