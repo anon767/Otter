@@ -2,6 +2,13 @@
 
 open Cil
 
+module type OrderedType = sig
+    type t
+    val hash: t -> int
+    val compare: t -> t -> int
+    val equal: t -> t -> bool
+end
+
 module CilFile = struct
     type t = Cil.file
     (* these are only valid if the file is not modified in any way; there's no way to detect mutation *)
@@ -9,6 +16,17 @@ module CilFile = struct
     let compare x y = if x == y then 0 else Pervasives.compare (x.Cil.fileName, x.Cil.globals) (y.Cil.fileName, y.Cil.globals)
     let equal x y = compare x y = 0
 end
+
+module WithFile = functor (Data: OrderedType) ->
+    struct
+        type t = CilFile.t * Data.t
+        let hash (file, data) = Hashtbl.hash (file.fileName, Hashtbl.hash file.globals, Data.hash data)
+        let compare (f1, d1) (f2, d2) =
+            match CilFile.compare f1 f2 with
+            | 0 -> Data.compare d1 d2
+            | i -> i
+        let equal x y = compare x y = 0
+    end
 
 module CilLocation = struct
     type t = location
@@ -123,3 +141,4 @@ module Malloc = struct
             | i ->
                 i
 end
+
