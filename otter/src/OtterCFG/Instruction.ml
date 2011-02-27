@@ -146,9 +146,8 @@ let call_sites =
                 let callers = CilCallgraph.find_callers file fundec in
                 List.iter begin fun caller ->
                     (* iterate over statements in caller functions *)
-                    ignore begin Cil.visitCilFunction begin object
-                        inherit Cil.nopCilVisitor
-                        method vstmt stmt = match stmt.Cil.skind with
+                        List.iter (fun stmt ->
+                            match stmt.Cil.skind with
                             | Cil.Instr instrs ->
                                 (* iterate over instructions, which contains Cil.Call *)
                                 let rec traverse = function
@@ -160,23 +159,23 @@ let call_sites =
                                         traverse rest
                                     | _::rest ->
                                         traverse rest
-                                    | [] ->
-                                        Cil.SkipChildren
+                                    | [] -> ()
                                 in
                                 traverse instrs
-                            | _ ->
-                                Cil.SkipChildren
-                    end end caller end
+                            | _ -> ()
+                        ) caller.Cil.sallstmts
                 end callers;
 
                 !call_sites
             end
     in
     fun ({ file = file; fundec = fundec } as instruction) ->
-        if equal instruction (of_fundec file fundec) then
-            call_sites (file, fundec)
-        else
-            [] (* or raise some exception? *)
+        Profiler.global#call "Instruction.call_sites" begin fun () ->
+            if equal instruction (of_fundec file fundec) then
+                call_sites (file, fundec)
+            else
+                [] (* or raise some exception? *)
+        end
 
 
 (** Find all the (first instruction of the) call targets of this instruction (if it is a call instruction). *)

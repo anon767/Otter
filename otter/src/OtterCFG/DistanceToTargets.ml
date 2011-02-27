@@ -2,13 +2,13 @@
 
 
 (**/**) (* various helpers *)
-module InstructionStack = DataStructures.StackSet.Make (Instruction)
 module InstructionSet = Set.Make (Instruction)
 module InstructionTargetsHash = Hashtbl.Make (struct
     type t = Instruction.t * InstructionSet.t
     let equal (x, xt) (y, yt) = Instruction.equal x y && InstructionSet.equal xt yt
     let hash (x, xt) = Hashtbl.hash (Instruction.hash x, Hashtbl.hash xt)
 end)
+exception Failure of string
 (**/**)
 
 
@@ -32,7 +32,8 @@ let find =
             let rec update worklist =
                 let worklist = OcamlUtilities.Profiler.global#call "update" begin fun () ->
                     (* pick the an instruction from the worklist *)
-                    let instr, worklist = InstructionStack.pop worklist in
+                    let instr = InstructionSet.max_elt worklist in
+                    let worklist = InstructionSet.remove instr worklist in
 
                     (* compute the new distance by taking the minimum of:
                             - 0 if the instruction is a target;
@@ -47,7 +48,7 @@ let find =
                                 (* if any dependencies are uncomputed, add them to the worklist *)
                                 List.fold_left begin fun (dist, worklist) instr ->
                                     try (min dist (InstructionTargetsHash.find distance_hash (instr, targets)), worklist)
-                                    with Not_found -> (dist, InstructionStack.push instr worklist)
+                                    with Not_found -> (dist, InstructionSet.add instr worklist)
                                 end (max_int, worklist) instrs
                             in
 
@@ -78,25 +79,28 @@ let find =
                     let updated =
                         try
                             let dist' = InstructionTargetsHash.find distance_hash (instr, targets) in
-                            if dist <> dist' then InstructionTargetsHash.replace distance_hash (instr, targets) dist;
-                            dist <> dist'
+                            begin
+                                if dist < dist' then InstructionTargetsHash.replace distance_hash (instr, targets) dist
+                                else if dist > dist' then raise (Failure "Distance must be monotonically decreasing")
+                            end;
+                            dist < dist'
                         with Not_found ->
                             InstructionTargetsHash.add distance_hash (instr, targets) dist;
-                            true
+                            dist < max_int
                     in
 
                     (* if updated, add this instruction's predecessors and call sites to the worklist. *)
                     if updated then
-                        List.fold_left (fun worklist instr -> InstructionStack.push instr worklist) worklist
+                        List.fold_left (fun worklist instr -> InstructionSet.add instr worklist) worklist
                             (List.rev_append (Instruction.predecessors instr) (Instruction.call_sites instr))
                     else
                         worklist
                 end in
 
                 (* recurse on the remainder of the worklist *)
-                if not (InstructionStack.is_empty worklist) then update worklist
+                if not (InstructionSet.is_empty worklist) then update worklist
             in
-            update (InstructionStack.singleton instr);
+            update (InstructionSet.singleton instr);
             InstructionTargetsHash.find distance_hash (instr, targets)
         end
 
