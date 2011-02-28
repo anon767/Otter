@@ -60,7 +60,7 @@ class ['self] t = object (self : 'self)
                             (* compute the distance through call targets and successors *)
                             let through_dist =
                                 let through_dist =
-                                    dist + List.fold_left (fun d call_target -> min d (DistanceToReturn.find call_target)) max_int call_targets
+                                    dist + List.fold_left (fun d call_target -> min d (Distance.find_return call_target)) max_int call_targets
                                 in
                                 if through_dist < 0 then max_int (* overflow *) else through_dist
                             in
@@ -108,7 +108,7 @@ class ['self] t = object (self : 'self)
                     let dist' = return_dist + InstructionMap.find call_return distances in
                     if dist' < 0 then dist (* overflow *) else min dist dist'
                 in
-                let return_dist = return_dist + DistanceToReturn.find call_return in
+                let return_dist = return_dist + Distance.find_return call_return in
                 if return_dist < 0 then
                     dist (* overflow; terminate since further unwindings will also overflow *)
                 else
@@ -120,7 +120,7 @@ class ['self] t = object (self : 'self)
         let instr = Job.get_instruction job in
         let context = Job.get_instruction_context job in
         let dist = InstructionMap.find instr distances in
-        let return_dist = DistanceToReturn.find instr in
+        let return_dist = Distance.find_return instr in
         unwind dist return_dist context
 
     method add job = self
