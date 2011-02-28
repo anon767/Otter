@@ -28,8 +28,10 @@ let _ =
         TestOtterCore.SymbolicPointers.testsuite;
         TestOtterJob.FileJobs.testsuite;
         TestOtterCFG.DistanceToTargets.testsuite;
+        TestOtterCFG.Distance.testsuite;
         TestOtterPragmaTests.OtterPragmaTestsTests.testsuite;
         TestOtterIntegration.IntegrationTests.testsuite;
         TestOtterSystem.SystemTests.testsuite;
+        TestOcamlUtilities.ProfilerTests.testsuite;
     ] end
 

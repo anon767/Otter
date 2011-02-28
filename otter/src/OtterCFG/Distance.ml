@@ -41,6 +41,9 @@ module V = struct
     let printer ff = function
         | VInstr instr -> Format.fprintf ff "VInstr(%a)" Instruction.printer instr
         | VRet (file, fundec) -> Format.fprintf ff "VRet(%s)" fundec.Cil.svar.Cil.vname
+    let get_fundec = function
+        | VInstr i -> i.Instruction.fundec
+        | VRet (_,fundec) -> fundec
 end 
 
 (* Directed edge specified by the tail node. Edges going out from the head node are specified by G.iter_succ_e.  *)
@@ -70,57 +73,60 @@ module VPairHash = Hashtbl.Make (struct
 end) 
 
 (* Non-transitive; assuming src and des are from the same function. *)
-let rec find_impl =
-
+let find_impl =
     let distance_hash = VPairHash.create 0 in
-
-    fun visited src des ->
-        try
-            VPairHash.find distance_hash (src, des)
-
-        with Not_found -> 
-
-            (* Weight of edges *)
-            let module W = struct
-                type label = V.t
-                type t = int
-                let weight = function
-                    (* label is the pred instr of this instr.
-                     * If label is not a function call, then weight = 1
-                     * else, lookup the weight of the function call.
-                     *)
-                    | V.VInstr i -> 
-                        let call_targets = Instruction.call_targets i in
-                        if call_targets = [] then 1
-                        else
-                            let call_target_distances = List.map (fun call_target ->
-                                let caller = call_target.Instruction.fundec in
-                                if List.memq caller visited then max_int (* Approcimate; don't bother doing fixpoint *)
-                                else find_impl (caller :: visited) (V.VRet (call_target.Instruction.file, call_target.Instruction.fundec)) (V.VInstr call_target) + 1  
-                            ) call_targets in
-                            List.fold_left min max_int call_target_distances
-                    | V.VRet (file, fundec) -> assert(false) (* There won't be edges going into a VRet *)
-                let compare = Pervasives.compare
-                let add x y = let s = x + y in if s < 0 then max_int else s (* avoid overflow *)
-                let zero = 0
-            end in
-            
-            let module Dij = Path.Dijkstra (G) (W) in
-
-            OcamlUtilities.Profiler.global#call "Distance.find_impl (uncached)" begin fun () ->
-
-                let _, dist = 
-                    try Dij.shortest_path () src des
-                    with Not_found -> [], max_int
+    fun visited src des -> OcamlUtilities.Profiler.global#call "Distance.find_impl (all)" begin fun () ->
+        let rec find_impl visited src des =
+            try
+                VPairHash.find distance_hash (src, des)
+        
+            with Not_found -> 
+        
+                (* Weight of edges *)
+                let module W = struct
+                    type label = V.t
+                    type t = int
+                    let weight = function
+                        (* label is the pred instr of this instr.
+                         * If label is not a function call, then weight = 1
+                         * else, lookup the weight of the function call.
+                         *)
+                        | V.VInstr i -> 
+                            let call_targets = Instruction.call_targets i in
+                            if call_targets = [] then 1
+                            else
+                                let call_target_distances = List.map (fun call_target ->
+                                    let caller = call_target.Instruction.fundec in
+                                    if List.memq caller visited then max_int (* Approximate; don't bother doing fixpoint, and don't hash. *)
+                                    else find_impl (caller :: visited) (V.VRet (call_target.Instruction.file, call_target.Instruction.fundec)) (V.VInstr call_target)  (* -1 (exclude the imaginary return) +1 (distance from i's next instr to i) *)
+                                ) call_targets in
+                                List.fold_left min max_int call_target_distances
+                        | V.VRet (file, fundec) -> assert(false) (* There won't be edges going into a VRet *)
+                    let compare = Pervasives.compare
+                    let add x y = let s = x + y in if s < 0 then max_int else s (* avoid overflow *)
+                    let zero = 0
+                end in
+                
+                let module Dij = Path.Dijkstra (G) (W) in
+        
+                let path, dist = 
+                    let worst = [], max_int in
+                    if CilData.CilFundec.equal (V.get_fundec src) (V.get_fundec des) then
+                        try Dij.shortest_path () src des with Not_found -> worst
+                    else worst
                 in
+        
                 VPairHash.replace distance_hash (src, des) dist;
                 dist
-            end
+        in
+        find_impl visited src des
+    end
+
 
 let find_return instr = 
     let vret = V.VRet (instr.Instruction.file, instr.Instruction.fundec) in
     let vinstr = V.VInstr instr in
-    find_impl [] vret vinstr
+    find_impl [] vret vinstr - 1  (* exclude the imaginary return *)
 
 let find instr targets = 
     let vtargets = List.map (fun target -> V.VInstr target) targets in
