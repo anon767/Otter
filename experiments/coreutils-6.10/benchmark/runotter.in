@@ -7,7 +7,8 @@ OTTER_CMD="$NEWLIB_OTTER/otter-with-libc"
 echo "[Command] $0 $*"
 
 "$OTTER_CMD" \
-    --doRunRmtmps --doexecute \
+    --doRunRmtmps \
+    @OTTER_FLAVOR@ \
     --lineCov \
     --initMallocZero \
     --initLocalZero \
