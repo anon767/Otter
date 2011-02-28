@@ -32,6 +32,5 @@ let _ =
         TestOtterPragmaTests.OtterPragmaTestsTests.testsuite;
         TestOtterIntegration.IntegrationTests.testsuite;
         TestOtterSystem.SystemTests.testsuite;
-        TestOcamlUtilities.ProfilerTests.testsuite;
     ] end
 
