@@ -130,14 +130,14 @@ let find_return instr = Profiler.global#call "Distance.find_return" begin fun ()
     find_impl [] vret vinstr - 1  (* exclude the imaginary return *)
 end
 
-let find instr targets = Profiler.global#call "Distance.find_return" begin fun () ->
+let find instr targets = Profiler.global#call "Distance.find" begin fun () ->
     let vtargets = List.map (fun target -> V.VInstr target) targets in
     let vinstr = V.VInstr instr in
     let distances = List.map (fun vtarget -> find_impl [] vtarget vinstr) vtargets in
     List.fold_left min max_int distances
 end
 
-let find_in_context instr context targets = Profiler.global#call "Distance.find_return" begin fun () ->
+let find_in_context instr context targets = Profiler.global#call "Distance.find_in_context" begin fun () ->
     (* compute the distance from the instr through function returns to targets in the call context *)
     let rec unwind dist return_dist = function
         | call_return::context ->
