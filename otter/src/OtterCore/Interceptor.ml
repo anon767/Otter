@@ -51,10 +51,11 @@ let function_pointer_interceptor job job_queue interceptor =
                         FormatPlus.failwith "Invalid function ptr:@ @[%a@]" CilPrinter.exp fexp
                 end
             in
+            Output.set_mode Output.MSG_FUNC;
+            Output.printf "Call using function pointer:@\n@[%a@]@\n" Printcil.instr instr;
             begin match jobs with
               | _::_::_ -> (* if List.length jobs > 1 *)
-                Output.set_mode Output.MSG_FUNC;
-                Output.printf "Call using symbolic function pointer:@\n@[%a@]@\nFork job %d to " Printcil.instr instr job#path_id;
+                Output.printf "Function pointer can take multiple values; fork job %d to " job#path_id;
                 List.iter2
                     (fun job (varinfo,_) -> Output.printf "(job %d,function %s)" job#path_id varinfo.Cil.vname)
                     (List.rev jobs) (* The call for #fork above reverses the list of jobs relative to the varinfos *)
