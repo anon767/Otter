@@ -623,8 +623,17 @@ int connect(int socket_fd, const struct sockaddr *address, socklen_t address_len
 			sock->sock_queue = NULL;
 			
 			break;
-		case __otter_sock_ST_SYN_RCVD:
 		case __otter_sock_ST_SYN_SENT:
+			{
+				struct __otter_fs_open_file_table_entry* open_file = get_open_file_from_fd(socket_fd);
+				if(open_file->mode & O_NONBLOCK)
+				{
+					errno = EALREADY;
+					return -1;
+				}
+			}
+			/* else fall through */
+		case __otter_sock_ST_SYN_RCVD:
 		case __otter_sock_ST_ESTABLISHED:
 		case __otter_sock_ST_CLOSE_WAIT:
 		case __otter_sock_ST_LAST_ACK:
@@ -692,6 +701,13 @@ int connect(int socket_fd, const struct sockaddr *address, socklen_t address_len
 		if(best_sock->sock_queue[i] == NULL)
 		{
 			best_sock->sock_queue[i] = sock;
+			
+			struct __otter_fs_open_file_table_entry* open_file = get_open_file_from_fd(socket_fd);
+			if(sock->state == __otter_sock_ST_SYN_SENT && open_file->mode & O_NONBLOCK)
+			{
+				errno = EINPROGRESS;
+				return -1;
+			}
 			
 			__otter_multi_block_while_condition(sock->state == __otter_sock_ST_SYN_SENT, sock);
 			
