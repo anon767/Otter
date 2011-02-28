@@ -2,6 +2,7 @@
  *  This implementation uses Dijkstra's algorithm from Ocamlgraph.
  *)
 open Ocamlgraph
+open OcamlUtilities
 open CilUtilities
 
 (**/**) (* various helpers *)
@@ -9,7 +10,7 @@ module CilFileFundec = CilData.WithFile(CilData.CilFundec)
 
 (** Find all the return sites in this function. *)
 let return_sites =
-    let module Memo = OcamlUtilities.Memo.Make (CilFileFundec) in
+    let module Memo = Memo.Make (CilFileFundec) in
     Memo.memo "Distance.return_sites" (fun (file, fundec) ->
         let return_sites = ref [] in
         ignore (Cil.visitCilFunction (object
@@ -75,7 +76,7 @@ end)
 (* Non-transitive; assuming src and des are from the same function. *)
 let find_impl =
     let distance_hash = VPairHash.create 0 in
-    fun visited src des -> OcamlUtilities.Profiler.global#call "Distance.find_impl (all)" begin fun () ->
+    fun visited src des -> Profiler.global#call "Distance.find_impl (all)" begin fun () ->
         let rec find_impl visited src des =
             try
                 VPairHash.find distance_hash (src, des)
@@ -123,18 +124,20 @@ let find_impl =
     end
 
 
-let find_return instr = 
+let find_return instr = Profiler.global#call "Distance.find_return" begin fun () ->
     let vret = V.VRet (instr.Instruction.file, instr.Instruction.fundec) in
     let vinstr = V.VInstr instr in
     find_impl [] vret vinstr - 1  (* exclude the imaginary return *)
+end
 
-let find instr targets = 
+let find instr targets = Profiler.global#call "Distance.find_return" begin fun () ->
     let vtargets = List.map (fun target -> V.VInstr target) targets in
     let vinstr = V.VInstr instr in
     let distances = List.map (fun vtarget -> find_impl [] vtarget vinstr) vtargets in
     List.fold_left min max_int distances
+end
 
-let find_in_context instr context targets =
+let find_in_context instr context targets = Profiler.global#call "Distance.find_return" begin fun () ->
     (* compute the distance from the instr through function returns to targets in the call context *)
     let rec unwind dist return_dist = function
         | call_return::context ->
@@ -156,4 +159,5 @@ let find_in_context instr context targets =
     let dist = find instr targets in
     let return_dist = find_return instr in
     unwind dist return_dist context
+end
 
