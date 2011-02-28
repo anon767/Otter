@@ -1030,9 +1030,7 @@ let collect_ptset_fast (l : c_absloc) : abslocset =
         flow_step l
       end
 
-(** this is a quadratic flow step. keep it for debugging the fast
-    version above. *)
-let collect_ptset_slow (l : c_absloc) : abslocset =
+let collect_ptset_medium (l : c_absloc) : abslocset =
   let onpath : unit IntHash.t = IntHash.create 101 in
   let rec flow_step (l : c_absloc) : abslocset =
     if top_c_absloc l then
@@ -1051,14 +1049,39 @@ let collect_ptset_slow (l : c_absloc) : abslocset =
               li.lbounds
               li.aliases
   in
-    insist (can_query_graph ()) "collect_ptset_slow can't query graph";
+    insist (can_query_graph ()) "collect_ptset_medium can't query graph";
     let aliases = flow_step l in
     (find l).aliases <- aliases;
     set_flow_computed l;
     aliases
 
+(** this is a quadratic flow step. keep it for debugging the fast
+    version above. *)
+let collect_ptset_slow (l : c_absloc) : abslocset =
+  let onpath : unit IntHash.t = IntHash.create 101 in
+  let rec flow_step (l : c_absloc) : abslocset =
+    if top_c_absloc l then raise ReachedTop
+    else
+      let stamp = get_c_absloc_stamp l in
+        if IntHash.mem onpath stamp then C.empty
+        else
+          let li = find l in
+            IntHash.add onpath stamp ();
+            B.iter
+              (fun lb -> li.aliases <- C.union li.aliases (flow_step lb.info))
+              li.lbounds;
+            li.aliases
+  in
+    insist (can_query_graph ()) "collect_ptset_slow can't query graph";
+    if get_flow_computed l then get_aliases l
+    else
+      begin
+        set_flow_computed l;
+        flow_step l
+      end
+
 let collect_ptset =
-  collect_ptset_slow
+  collect_ptset_medium
   (* if !debug_flow_step then collect_ptset_slow
      else collect_ptset_fast *)
 
