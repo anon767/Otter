@@ -37,19 +37,33 @@ let get_line_targets =
 
 (** {1 Command-line options} *)
 
+let add_line_to_line_targets =
+    let re = Str.regexp "\\(.*\\):\\(.*\\)" in
+    fun arg ->
+        if Str.string_match re arg 0 then
+            let file = Str.matched_group 1 arg in
+            let line = int_of_string (Str.matched_group 2 arg) in
+            Output.must_printf "Line target: %s:%d@\n" file line;
+            arg_line_targets := (file, line)::(!arg_line_targets)
+        else
+            FormatPlus.failwith "Error in parsing line %s" arg
+
 let options = [
     ("--line-targets",
         Arg.String begin fun str ->
             let args = Str.split (Str.regexp ",") str in
-            let re = Str.regexp "\\(.*\\):\\(.*\\)" in
-            List.iter (fun arg ->
-                if Str.string_match re arg 0 then
-                    let file = Str.matched_group 1 arg in
-                    let line = int_of_string (Str.matched_group 2 arg) in
-                    arg_line_targets := (file, line)::(!arg_line_targets)
-                else
-                    failwith "Error in parsing --line-targets"
-            ) args
+            List.iter add_line_to_line_targets args
         end,
         "<line[,lines]> Lines in the form file:linenum[,file:linenum...]. Default is empty list.\n");
+    ("--line-targets-file",
+		Arg.String begin fun filename ->
+			let inChan = open_in filename in
+			try
+				while true do
+                    add_line_to_line_targets (input_line inChan)
+				done
+			with End_of_file ->
+				close_in inChan
+		end,
+        "<filename> File containing lines in the form file:linenum, one per line.\n");
 ]
