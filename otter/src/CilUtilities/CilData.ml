@@ -2,7 +2,7 @@
 
 open Cil
 
-module type OrderedType = sig
+module type HashedOrderedType = sig
     type t
     val hash: t -> int
     val compare: t -> t -> int
@@ -17,7 +17,7 @@ module CilFile = struct
     let equal x y = compare x y = 0
 end
 
-module WithFile = functor (Data: OrderedType) ->
+module WithFile = functor (Data: HashedOrderedType) ->
     struct
         type t = CilFile.t * Data.t
         let hash (file, data) = Hashtbl.hash (file.fileName, Hashtbl.hash file.globals, Data.hash data)
