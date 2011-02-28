@@ -1551,6 +1551,7 @@ int main(int argc, char **argv) {
        separate program, so we call multi_fork directly. */
     if (__otter_multi_fork()) {
         __otter_multi_io_block(redis_has_called_listen);
+        __otter_fs_init_stdin_out_err();
         client_main();
         return 0;
     }
