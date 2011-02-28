@@ -681,7 +681,7 @@ int __otter_fs_change_open_mode(struct __otter_fs_open_file_table_entry* open_fi
 
 	(*open_file).mode = mode;
 
-	return(1);
+	return(0);
 }
 
 /* file system initilization */
