@@ -67,26 +67,26 @@ struct
       if PQ.is_empty q then raise Not_found;
       let (w,v,p) = PQ.pop_maximum q in
       if G.V.compare v v2 = 0 then 
-	List.rev p, w
+        List.rev p, w
       else begin
-	if not (H.mem visited v) then begin
-	  H.add visited v ();
-	  G.iter_succ_e
-	    (fun e -> 
-	       let ev = dst e in
-	       if not (H.mem visited ev) then begin
-		 let dev = W.add w (W.weight (label e)) in
-		 let improvement =
-		   try W.compare dev (H.find dist ev) < 0 with Not_found -> true
-		 in
-		 if improvement then begin
-		   H.replace dist ev dev;
-		   PQ.add q (dev, ev, e :: p)
-		 end
-	       end)
-	    g v
-	end;
-	loop ()
+        if not (H.mem visited v) then begin
+          H.add visited v ();
+          G.iter_succ_e
+            (fun e -> 
+               let ev = dst e in
+               if not (H.mem visited ev) then begin
+                 let dev = W.add w (W.weight (label e)) in
+                 let improvement =
+                   try W.compare dev (H.find dist ev) < 0 with Not_found -> true
+                 in
+                 if improvement then begin
+                   H.replace dist ev dev;
+                   PQ.add q (dev, ev, e :: p)
+                 end
+               end)
+            g v
+        end;
+        loop ()
       end
     in
     PQ.add q (W.zero, v1, []);
