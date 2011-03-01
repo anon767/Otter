@@ -1,8 +1,8 @@
 #!/bin/sh
 
-if [ $# -ne 2 ]
+if [ $# -ne 4 ]
 then
-    echo "Usage: ./setup_tests.sh <base-directory> <experiment-name>"
+    echo "Usage: ./setup_tests.sh <base-directory> <experiment-name> <programs.in> <options.in>"
     exit 1
 fi
 
@@ -11,12 +11,15 @@ exp_name="$(echo $2|sed 's/ /_/g')"
 exp_base="$base/otter_$(date "+%Y_%m_%d_%H")_$exp_name"
 runotter="$(pwd)/runotter"
 
+programs_in="$3"
+options_in="$4"
+
 mkdir -p "$exp_base"
 chmod 700 "$exp_base"
 
-cat programs.in | while read prog
+cat $programs_in | while read prog
 do 
-    cat options.in | while read options
+    cat $options_in | while read options
     do 
         prog_name=$(basename $prog .c)
         opts_name=$(echo $options|sed 's/ /_/g')
