@@ -71,14 +71,16 @@ and allSymbols = function
     | Bytes_FunPtr _ ->
         SymbolSet.empty
     | Bytes_Conditional c ->
-        let rec allSymbolsInConditional = function
-            | IfThenElse (guard, c1, c2) ->
-                SymbolSet.union (allSymbolsInGuard guard)
-                    (SymbolSet.union (allSymbolsInConditional c1) (allSymbolsInConditional c2))
-            | Unconditional b ->
-                allSymbols b
-        in
-        allSymbolsInConditional c
+        Profiler.global#call "Stp.allSymbols" begin fun () ->
+            let rec allSymbolsInConditional = function
+                | IfThenElse (guard, c1, c2) ->
+                    SymbolSet.union (allSymbolsInGuard guard)
+                        (SymbolSet.union (allSymbolsInConditional c1) (allSymbolsInConditional c2))
+                | Unconditional b ->
+                    allSymbols b
+            in
+            allSymbolsInConditional c
+        end
 
 (** Return a SymbolSet of all symbols in the given list of Bytes *)
 let allSymbolsInList byteslist =
@@ -94,22 +96,24 @@ let allSymbolsInList byteslist =
  * until nothing else mentions any of the symbols we care about. (This
  * will happen eventually, because eventually pc will become empty.) *)
 let getRelevantAssumptions pc query =
-    let rec getRelevantAssumptions_aux acc symbols pc =
-        (* See what clauses mention any of the symbols *)
-        let subPC, relevant = List.partition (fun b -> SymbolSet.is_empty (SymbolSet.inter symbols (allSymbols b))) pc in
-        match subPC, relevant with
-            | _, [] ->
-                 (* Nothing else is relevant *)
-                acc
-            | subPC, relevant ->
-                (* Does using rev_append, rather than (@), mess with the order in a way
-                 * that's bad for the cache? I think not, but I'm not sure. *)
-                getRelevantAssumptions_aux
-                    (List.rev_append relevant acc)
-                    (allSymbolsInList relevant)
-                    subPC
-    in
-    getRelevantAssumptions_aux [] (allSymbols query) pc
+    Profiler.global#call "Stp.getRelevantAssumptions" begin fun () ->
+        let rec getRelevantAssumptions_aux acc symbols pc =
+            (* See what clauses mention any of the symbols *)
+            let subPC, relevant = List.partition (fun b -> SymbolSet.is_empty (SymbolSet.inter symbols (allSymbols b))) pc in
+            match subPC, relevant with
+                | _, [] ->
+                     (* Nothing else is relevant *)
+                    acc
+                | subPC, relevant ->
+                    (* Does using rev_append, rather than (@), mess with the order in a way
+                     * that's bad for the cache? I think not, but I'm not sure. *)
+                    getRelevantAssumptions_aux
+                        (List.rev_append relevant acc)
+                        (allSymbolsInList relevant)
+                        subPC
+        in
+        getRelevantAssumptions_aux [] (allSymbols query) pc
+    end
 
 
 (* TODO: Yit:
