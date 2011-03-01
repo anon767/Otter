@@ -16,7 +16,7 @@ LDFLAGS_BASE = -lstdc++
 #  CFLAGS = $(CFLAGS_BASE) -static
   CFLAGS = $(CFLAGS_BASE)
 
-CXXFLAGS = $(CFLAGS) -Wall 
+CXXFLAGS = $(CFLAGS) -Wall -fPIC
 #LDFLAGS= -lstdc++
 #LDFLAGS= -lstdc++ -pg
 #LDFLAGS= -lstlport_gcc_stldebug
