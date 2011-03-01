@@ -38,9 +38,13 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     (* when arg_line_targets != [], add appropriate jobs in bqueue *)
     (* TODO: let BidirectionalQueue decide which sub-queue to put into *)
     let starter_fundecs = List.fold_left (fun starter_fundecs (file_name, line_num) ->
-        let fundec = CovToFundec.of_line (file_name, line_num) in
-        if List.memq fundec starter_fundecs then starter_fundecs else fundec::starter_fundecs)
-    [] (!LineTargets.arg_line_targets) in
+        try
+            let fundec = CovToFundec.of_line (file_name, line_num) in
+            if List.memq fundec starter_fundecs then starter_fundecs else fundec::starter_fundecs
+        with Not_found -> 
+            Output.must_printf "Line %s:%d is missing@\n" file_name line_num;
+            starter_fundecs (* There're lines that KLEE counts as instructions but Otter doesn't. *)
+    ) [] (!LineTargets.arg_line_targets) in
     List.iter (fun f -> Output.debug_printf "Function containing coverage targets: %s@." f.svar.vname) starter_fundecs;
     let b_queue = List.fold_left (fun b_queue fundec ->
         let job = BackOtterJob.get_function_job file fundec in
