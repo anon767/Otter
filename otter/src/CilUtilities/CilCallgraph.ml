@@ -91,6 +91,35 @@ let find_transitive_callees =
     find_transitive_worker Callgraph.succ
 
 
+(** Find the distance between two {!Cil.fundecs}. *)
+let get_distance =
+    let module Memo = OcamlUtilities.Memo.Make (struct
+        type t = CilData.CilFile.t * CilData.CilFundec.t * CilData.CilFundec.t
+        let hash (file, f1, f2) = Hashtbl.hash (CilData.CilFile.hash file, CilData.CilFundec.hash f1, CilData.CilFundec.hash f1)
+        let equal (xfile, xf1, xf2) (yfile, yf1, yf2) =
+            CilData.CilFile.equal xfile yfile && CilData.CilFundec.equal xf1 yf1 && CilData.CilFundec.equal xf2 yf2
+    end) in
+    let get_distance = Memo.memo "CilCallgraph.get_distance"
+        begin fun (file, f1, f2) ->
+            let rec bfs = function
+                | [] -> max_int
+                | (f, d) :: tail ->
+                    if f == f2 then d else
+                    let callees = find_callees file f in
+                    let tail = List.fold_left (fun tail callee ->
+                        if List.exists (fun (k,_) -> k == callee) tail then tail
+                        else tail @ [(callee, d+1)]
+                    ) tail callees in
+                    bfs tail
+            in
+            bfs [(f1, 0)]
+        end
+    in
+    fun file f1 f2 -> OcamlUtilities.Profiler.global#call "CilCallgraph.get_distance" begin fun () ->
+        get_distance (file, f1, f2)
+    end
+
+
 (** Save the callgraph of a file to a GraphViz dot file. *)
 let save_to_dot file dot_file =
     let dot_out = open_out dot_file in

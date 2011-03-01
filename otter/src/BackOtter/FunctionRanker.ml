@@ -1,4 +1,3 @@
-open BackOtterUtilities
 open CilUtilities
 open OcamlUtilities
 open OtterCore
@@ -7,14 +6,14 @@ open OtterCore
 let distance_from_entryfn job =
     let file = job#file in
     let entry_fn = ProgramPoints.get_entry_fundec file in
-    let distance = get_distance_from file entry_fn (get_origin_function job) in
+    let distance = CilCallgraph.get_distance file entry_fn (BackOtterUtilities.get_origin_function job) in
     -. (float_of_int distance)
 
 (* TODO: this is not compatible with line-targets *)
 let distance_from_failurefn job =
     let file = job#file in
     let failure_fn = ProgramPoints.get_failure_fundec file in
-    let distance = get_distance_from file (get_origin_function job) failure_fn in
+    let distance = CilCallgraph.get_distance file (BackOtterUtilities.get_origin_function job) failure_fn in
     -. (float_of_int distance)
 
 let random_function job = Random.float 1.0
