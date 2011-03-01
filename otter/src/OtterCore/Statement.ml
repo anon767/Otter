@@ -385,6 +385,7 @@ let step job job_queue = Profiler.global#call "Statement.step" begin fun () ->
 
     with
         | Failure msg -> begin
+            Output.set_mode Output.MSG_STMT;
             Output.printf "Statement.step: failwith %s@." msg;
             if !Executeargs.arg_failfast then failwith msg;
             (Complete (Abandoned (`Failure msg, job)), job_queue)
