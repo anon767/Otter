@@ -25,6 +25,7 @@ class ['self] t rank_fn_constructor queue_constructor = object (_ : 'self)
         Profiler.global#call "FunctionQueue.t#get" begin fun () ->
         let fundecs = FundecMap.fold (fun key _ lst -> key :: lst) fundec_map [] in
         let rank_fn = rank_fn_constructor () in
+        (* TODO: doesn't need to recalculate every time (although this is not bottleneck *)
         let ranked_fundecs = List.map (fun fundec -> (fundec, rank_fn (FundecMap.find fundec example_jobs))) fundecs in
         let ranked_fundecs = List.sort (fun (f1, r1) (f2, r2) -> (Pervasives.compare r2 r1)) ranked_fundecs in
         let rec get = function
