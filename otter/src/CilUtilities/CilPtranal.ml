@@ -364,10 +364,13 @@ let unsound_points_to =
             | Cil.TPtr (typ, _) ->
                 let malloc_varinfo = FindCil.global_varinfo_by_name file "malloc" in
                 let name = "malloc" ^ string_of_int (Counter.next counter) in
-                let malloc = (malloc_varinfo, name, typ) in  (* TODO: if typ is void*, guess the type that it's actually used as. *)
+                let malloc = (malloc_varinfo, name, typ) in
                 let malloc_lhost = make_malloc_lhost typ in
                 wrap_points_to_varinfo (fun _ -> ([], [ (malloc, [ malloc_lhost ]) ])) exp
             | _ ->
                 ([], [])
     end
+
+
+(* TODO: make another pointer analysis that infers void * types *)
 
