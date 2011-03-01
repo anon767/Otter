@@ -312,7 +312,7 @@ let exec_stmt job errors =
                 if job#state.path_condition = [] then
                     Output.printf "  (nil)"
                 else
-                    Output.printf "  @[%a@]" (FormatPlus.pp_print_list BytesPrinter.bytes "@ AND ") job#state.path_condition;
+                    Output.printf "  @[%a@]" (FormatPlus.pp_print_list BytesPrinter.bytes "@ AND ") (List.map fst job#state.path_condition);
                 Output.printf "@.";
 
                 let truth = MemOp.eval job#state.path_condition rv in

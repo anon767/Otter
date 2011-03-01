@@ -304,30 +304,28 @@ let state__extract_path_condition job bytes =
       | Ternary.True -> true
       | _ -> false
   in
-  let rec impl pc_lst pct_lst = match pc_lst,pct_lst with
-    | pc::pc_lst' , pct::pct_lst' ->
-        let pc_lst'',pct_lst'' = impl pc_lst' pct_lst' in
+  let rec impl pc_lst = match pc_lst with
+    | pc::pc_lst' ->
+        let pc_lst'' = impl pc_lst' in
           (*if bytes_implies_pc bytes pc then*)
-          if bytes_and_others_implies_pc (bytes::pc_lst'') pc then
-            pc_lst'',pct_lst''
+          if bytes_and_others_implies_pc ((bytes,true)::pc_lst'') (fst pc) then
+            pc_lst''
           else
-            pc::pc_lst'',pct::pct_lst''
-    | [] , [] -> [],[]
-    | _ -> failwith "Error in state__extract_path_condition"
+            pc::pc_lst''
+    | [] -> []
   in
-    impl job#state.path_condition job#state.path_condition_tracked
+    impl job#state.path_condition
 
 
 let state__add_path_condition job bytes tracked=
-	let path_condition, path_condition_tracked =
+	let path_condition =
 		if !Executeargs.arg_simplify_path_condition then
 			Profiler.global#call "MemOp.state__add_path_condition/Simplify PC" (fun () -> state__extract_path_condition job bytes)
 		else
-			(job#state.path_condition, job#state.path_condition_tracked)
+			job#state.path_condition
 	in
 	job#with_state { job#state with
-		path_condition = bytes::path_condition;
-		path_condition_tracked = tracked::path_condition_tracked;
+		path_condition = (bytes,tracked)::path_condition;
 	}
 
 
@@ -480,13 +478,13 @@ let rec eval pc bytes =
             begin match eval pc bytes1 with
               | Ternary.False -> Ternary.False
               | Ternary.True -> eval pc bytes2
-              | Ternary.Unknown -> if eval (bytes1 :: pc) bytes2 = Ternary.False then Ternary.False else Ternary.Unknown
+              | Ternary.Unknown -> if eval ((bytes1,true) :: pc) bytes2 = Ternary.False then Ternary.False else Ternary.Unknown
             end
       | Bytes_Op(OP_LOR, [(bytes1, _); (bytes2, _)]) ->
             begin match eval pc bytes1 with
               | Ternary.True -> Ternary.True
               | Ternary.False -> eval pc bytes2
-              | Ternary.Unknown -> if eval (logicalNot bytes1 :: pc) bytes2 = Ternary.True then Ternary.True else Ternary.Unknown
+              | Ternary.Unknown -> if eval ((logicalNot bytes1,true) :: pc) bytes2 = Ternary.True then Ternary.True else Ternary.Unknown
             end
       (* Consult STP *)
       | _ ->

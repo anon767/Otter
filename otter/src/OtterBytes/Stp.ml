@@ -469,6 +469,7 @@ let stpcache_add answer pc pre guard truth =
 
 (** return (True) False if bytes (not) evaluates to all zeros. Unknown otherwise. *)
 let query_stp pc pre guard =
+    let pc = List.map fst pc in
     Profiler.global#call "Stp.query_stp" begin fun () ->
         let pc = getRelevantAssumptions pc (guard__to_bytes guard) in
         (* TODO (yit):
@@ -566,6 +567,7 @@ let query_bytes pc bytes =
         association list of (symbol, char)s, where each char is the value
         STP gives to that symbol to make the path condition true. *)
 let getValues pathCondition symbolList =
+    let pathCondition = List.map fst pathCondition in
     let vc = global_vc in
     Stpc.e_pop vc;
     Stpc.e_push vc;
@@ -604,7 +606,7 @@ let getValues pathCondition symbolList =
 
 
 let getAllValues pathCondition =
-    getValues pathCondition (SymbolSet.elements (allSymbolsInList pathCondition))
+    getValues pathCondition (SymbolSet.elements (allSymbolsInList (List.map fst pathCondition)))
 
 
 (** {1 Command-line options} *)

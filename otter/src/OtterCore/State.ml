@@ -56,8 +56,7 @@ type 'job state =
 		mallocs : memory_block list MallocMap.t; (* Map from malloc sites to aliased blocks from unknown allocation *)
 		callstack : Cil.fundec list;            (* Function call stack *)
 		block_to_bytes : 'job memory_heap;
-		path_condition : bytes list;
-		path_condition_tracked : bool list;
+		path_condition : (bytes * bool) list;
 		callContexts : callingContext list;
 		(** The last element of callstack is the function at which the
 				executor started execution. The last element of callContexts
@@ -112,7 +111,6 @@ class t :
             callstack = [];
             block_to_bytes = (MemoryBlockMap.empty : 'self memory_heap);
             path_condition = [];
-            path_condition_tracked = [];
             callContexts = [];
             stmtPtrs = IndexMap.empty;
             va_arg = [];

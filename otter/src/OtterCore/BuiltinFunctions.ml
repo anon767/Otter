@@ -326,24 +326,6 @@ let libc_malloc job retopt exps errors =
 	(Job.Active job, errors)
 
 
-let otter_given job retopt exps errors =
-	if List.length exps <> 2 then
-		failwith "__GIVEN takes 2 arguments"
-	else
-		let truthvalue =
-			let job, given, errors = Expression.rval job (List.nth exps 0) errors in
-			let job, rv, errors = Expression.rval job (List.nth exps 1 ) errors in
-			let truth = MemOp.eval (given::job#state.path_condition) rv in
-			match truth with
-				| Ternary.True -> int_to_bytes 1
-				| Ternary.False -> int_to_bytes 0
-				| Ternary.Unknown ->bytes__symbolic (bitsSizeOf intType / 8)
-		in
-		let job, errors = set_return_value job retopt truthvalue errors in
-		let job = end_function_call job in
-		(Job.Active job, errors)
-
-
 let otter_truth_value job retopt exps errors =
 	let truthvalue =
 		int_to_bytes
@@ -469,7 +451,7 @@ let otter_path_condition job retopt exps errors =
 	if job#state.path_condition = [] then
 		Output.printf "(nil)@."
 	else
-		Output.printf "@[%a@]@." (FormatPlus.pp_print_list BytesPrinter.bytes "@\n  AND@\n") job#state.path_condition;
+		Output.printf "@[%a@]@." (FormatPlus.pp_print_list BytesPrinter.bytes "@\n  AND@\n") (List.map fst job#state.path_condition);
 	let job = end_function_call job in
 	(Job.Active job, errors)
 
@@ -876,7 +858,6 @@ let interceptor job job_queue interceptor = Profiler.global#call "BuiltinFunctio
 			(intercept_function_by_name_internal "memmove"                  libc_memmove)) @@
 		(intercept_function_by_name_internal "_exit"                   libc_exit) @@
 		(intercept_function_by_name_internal "__TRUTH_VALUE"           otter_truth_value) @@
-		(intercept_function_by_name_internal "__GIVEN"                 otter_given) @@
 		(intercept_function_by_name_internal "__EVAL"                  otter_evaluate) @@
 		(intercept_function_by_name_internal "__EVALSTR"               otter_evaluate_string) @@
 		(intercept_function_by_name_internal "__SYMBOLIC_STATE"        otter_symbolic_state) @@
@@ -1106,7 +1087,6 @@ let is_builtin =
         "memmove";
         "_exit";
         "__TRUTH_VALUE";
-        "__GIVEN";
         "__EVAL";
         "__EVALSTR";
         "__SYMBOLIC_STATE";

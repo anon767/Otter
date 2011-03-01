@@ -325,17 +325,16 @@ let percentage numer denom = 100. *. float_of_int numer /. float_of_int denom
 	 - coverage information for this path *)
 let printPath state hist =
 
-    let rec eliminate_untracked apc apct =
-      match apc,apct with
-      | [],[]->([],[])
-      | apch::apct,apcth::apctt ->
-          let (apct1,apct2) = eliminate_untracked apct apctt in
+    let rec eliminate_untracked apc =
+      match apc with
+      | [] -> ([], [])
+      | (apch,apcth)::apct ->
+          let (apct1,apct2) = eliminate_untracked apct in
           if apcth then (apch::apct1,apct2) else  (apct1,apch::apct2)
-      | _,_ -> failwith "Impossible: path_condition and path_condition_tracked must be of equal length"
     in
 
     let pc_all = state.path_condition in
-    let (pc_branch,pc_assume) = eliminate_untracked (state.path_condition) (state.path_condition_tracked) in
+    let pc_branch,pc_assume = eliminate_untracked state.path_condition in
 
 	Output.printf "Path condition:@\n  @[%a@]@\n@."
 		(FormatPlus.pp_print_list (BytesPrinter.bytes_named hist.bytesToVars) "@\n") pc_branch;

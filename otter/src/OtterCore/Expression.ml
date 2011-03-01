@@ -310,7 +310,7 @@ deref job bytes typ errors =
             let rec find_match pc errors = match pc with
                 | [] ->
                     FormatPlus.failwith "Dereference something not an address (bytearray)@ @[%a@]@." BytesPrinter.bytes bytes
-                | Bytes_Op(OP_EQ,(bytes1,_)::(bytes2,_)::[])::pc' ->
+                | (Bytes_Op(OP_EQ,[(bytes1,_); (bytes2,_)]), _)::pc' ->
                     begin
                         let bytes_tentative =
                             if bytes1=bytes then bytes2
@@ -321,8 +321,8 @@ deref job bytes typ errors =
                             | Bytes_Address(_,_) -> deref job bytes_tentative typ errors
                             | _ -> find_match pc' errors
                     end
-                | Bytes_Op(OP_LAND,btlist)::pc' ->
-                    find_match (List.rev_append (List.fold_left (fun a (b,_) -> b::a) [] btlist) pc') errors
+                | (Bytes_Op(OP_LAND,btlist), _)::pc' ->
+                    find_match (List.rev_append (List.fold_left (fun a (b,_) -> (b,true)::a) [] btlist) pc') errors
                 | _::pc' -> find_match pc' errors
             in
             find_match job#state.path_condition errors
@@ -528,7 +528,6 @@ evaluate_under_condition job_in condition exp =
             then failwith "Path condition changed unexpectedly while evaluating under a condition";
             (Some (job#with_state { job#state with
                                         path_condition = job_in#state.path_condition;
-                                        path_condition_tracked = job_in#state.path_condition_tracked;
                                   }, bytes), "")
 
 
