@@ -277,22 +277,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                     let callers = CilUtilities.CilCallgraph.find_callers file target_fundec in
                                     List.fold_left (
                                         fun (origin_fundecs, otherfn_jobqueue) caller ->
-                                            (* Returns a function that callee can transitively be inlined in *)
-                                            let rec get_transitive_unique_caller file callee = 
-                                                let can_inline_function caller callee =
-                                                    (* Either caller is "simple", or callee is "main". The latter is a hack. *)
-                                                    let ret = 
-                                                        callee.svar.vname = "main" ||
-                                                        match caller.smaxstmtid with Some size -> size < 5 | None -> false  (* TODO: true if caller does not branch *)
-                                                    in
-                                                    (if ret then Output.debug_printf "Inline %s in %s@." callee.svar.vname caller.svar.vname);
-                                                    ret
-                                                in
-                                                match CilUtilities.CilCallgraph.find_callers file callee with
-                                                | [ caller ] when can_inline_function caller callee -> get_transitive_unique_caller file caller
-                                                | _ -> callee
-                                            in
-                                            let caller = get_transitive_unique_caller file caller in
+                                            let caller = BackOtterUtilities.get_transitive_unique_caller file caller in
                                             if (is_bidirectional && caller == entry_fn) || List.memq caller origin_fundecs then
                                                 origin_fundecs, otherfn_jobqueue
                                             else

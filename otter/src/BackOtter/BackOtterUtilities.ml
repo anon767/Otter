@@ -99,3 +99,17 @@ let get_distance_from =
         get_distance_from (file, f1, f2)
     end
 
+(* Returns a function that callee can transitively be inlined in *)
+let rec get_transitive_unique_caller file callee = 
+    let can_inline_function caller callee =
+        (* Either caller is "simple", or callee is "main". The latter is a hack. *)
+        let ret = 
+            callee.svar.vname = "main" ||
+            match caller.smaxstmtid with Some size -> size < 5 | None -> false  (* TODO: true if caller does not branch *)
+        in
+        (if ret then Output.debug_printf "Inline %s in %s@." callee.svar.vname caller.svar.vname);
+        ret
+    in
+    match CilCallgraph.find_callers file callee with
+    | [ caller ] when can_inline_function caller callee -> get_transitive_unique_caller file caller
+    | _ -> callee

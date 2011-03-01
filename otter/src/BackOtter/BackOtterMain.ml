@@ -40,6 +40,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     let starter_fundecs = List.fold_left (fun starter_fundecs (file_name, line_num) ->
         try
             let fundec = CovToFundec.of_line (file_name, line_num) in
+            let fundec = BackOtterUtilities.get_transitive_unique_caller file fundec in
             if List.memq fundec starter_fundecs then starter_fundecs else fundec::starter_fundecs
         with Not_found -> 
             Output.must_printf "Line %s:%d is missing@\n" file_name line_num;
