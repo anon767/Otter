@@ -81,8 +81,8 @@ class t :
                         >} x acc
                     end acc xs
                 | [] ->
-                    (* TODO: would it be more convenient to allow this? *)
-                    invalid_arg "empty list"
+                    (* TODO: Should we throw an exception? *)
+                    acc
 
 
         (** [x#finish] should be called when the path represented by [x] is considered finished, and will print the
