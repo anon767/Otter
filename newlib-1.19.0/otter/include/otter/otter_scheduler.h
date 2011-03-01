@@ -1,6 +1,12 @@
 #ifndef __OTTER_SCHEDULER_H
 #define __OTTER_SCHEDULER_H
 
+/* Pretend that Otter runs 2**LOG2_OTTER_TICKS_PER_SECOND statements per second. */
+#ifndef LOG2_OTTER_TICKS_PER_SECOND
+#define LOG2_OTTER_TICKS_PER_SECOND 30
+#endif
+#define OTTER_TICKS_PER_SECOND (1 << LOG2_OTTER_TICKS_PER_SECOND)
+
 #include <stddef.h>
 
 /* expr should evaluate to true as long as the process should block.
