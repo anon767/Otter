@@ -15,7 +15,7 @@ let intercept_multi_function_by_name_internal target_name replace_func job multi
 			if errors = [] then
 				(job_state, (multijob, job_queue))
 			else
-				let abandoned_job_states = Statement.errors_to_abandoned_list job errors in
+				let abandoned_job_states = Statement.errors_to_abandoned_list errors in
 				(Job.Fork (job_state::abandoned_job_states), (multijob, job_queue))
 		| _ -> 
 			interceptor job multijob job_queue

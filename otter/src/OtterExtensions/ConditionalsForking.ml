@@ -55,7 +55,7 @@ let interceptor ?(limit=8) job param k =
                             (* read the lval, and if conditionals are found, split them and write them back *)
                             let job, lvals, errors = Expression.lval job cil_lval [] in
                             (* TODO: errors should carry the job in which the error occured *)
-                            let abandoned = List.rev_append (Statement.errors_to_abandoned_list job errors) abandoned in
+                            let abandoned = List.rev_append (Statement.errors_to_abandoned_list errors) abandoned in
                             let job, bytes = MemOp.state__deref job lvals in
                             let splits = split (Bytes.conditional__bytes bytes) in
                             let jobs =

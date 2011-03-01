@@ -64,7 +64,7 @@ let function_pointer_interceptor job job_queue interceptor =
               | _ -> ()
             end;
             let job_states = List.rev_map (fun j -> Job.Active j) jobs in
-            let abandoned_job_states = Statement.errors_to_abandoned_list job errors in
+            let abandoned_job_states = Statement.errors_to_abandoned_list errors in
             let job_states = List.rev_append job_states abandoned_job_states in
             (Job.Fork job_states, job_queue)
       | _ -> interceptor job job_queue
@@ -77,7 +77,7 @@ let intercept_function_by_name_internal target_name replace_func job job_queue i
               Output.printf "@[%a@\n<built-in function>@]@." Printcil.instr instr;
               let job = job#with_decision_path (Decision.DecisionFuncall(instr, varinfo)::job#decision_path) in
               let job_state, errors = replace_func job retopt exps [] in
-              let abandoned_job_states = Statement.errors_to_abandoned_list job errors in
+              let abandoned_job_states = Statement.errors_to_abandoned_list errors in
               (Job.Fork (job_state::abandoned_job_states), job_queue)
         | _ ->
             interceptor job job_queue

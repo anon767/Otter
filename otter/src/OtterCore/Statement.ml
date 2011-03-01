@@ -368,7 +368,7 @@ let exec_stmt job errors =
         | _ -> failwith "Not implemented yet"
 
 
-let errors_to_abandoned_list job errors =
+let errors_to_abandoned_list errors =
     List.map begin fun (job, error) ->
         Complete (Abandoned (error, job))
     end errors
@@ -380,7 +380,7 @@ let step job job_queue = Profiler.global#call "Statement.step" begin fun () ->
             | [] -> exec_stmt job []
             | _ -> exec_instr job []
         in
-        let abandoned_job_states = errors_to_abandoned_list job errors in
+        let abandoned_job_states = errors_to_abandoned_list errors in
         (Fork (job_state::abandoned_job_states), job_queue)
 
     with

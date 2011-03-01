@@ -675,7 +675,7 @@ let intercept_symbolic job job_queue interceptor =
 			if errors = [] then
 				(Job.Active job, job_queue)
 			else
-				let abandoned_job_states = Statement.errors_to_abandoned_list job errors in
+				let abandoned_job_states = Statement.errors_to_abandoned_list errors in
 				(Job.Fork ((Job.Active job)::abandoned_job_states), job_queue)
 
 		| _ ->
