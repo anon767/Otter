@@ -43,7 +43,6 @@ let add_line_to_line_targets =
         if Str.string_match re arg 0 then
             let file = Str.matched_group 1 arg in
             let line = int_of_string (Str.matched_group 2 arg) in
-            Output.must_printf "Line target: %s:%d@\n" file line;
             arg_line_targets := (file, line)::(!arg_line_targets)
         else
             FormatPlus.failwith "Error in parsing line %s" arg
