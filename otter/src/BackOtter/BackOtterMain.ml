@@ -7,6 +7,7 @@ open State
 open Job
 open Cil
 
+let arg_ignore_targets_in_entryfn = ref true
 let default_conditionals_forking_limit = ref max_int
 
 let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
@@ -39,14 +40,22 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     (* TODO: let BidirectionalQueue decide which sub-queue to put into *)
     let starter_fundecs = List.fold_left (fun starter_fundecs (file_name, line_num) ->
         Output.must_printf "Line target: %s:%d in function " file_name line_num;
-        try
-            let fundec = CovToFundec.of_line (file_name, line_num) in
-            Output.must_printf "%s @\n" fundec.svar.vname;
-            let fundec = BackOtterUtilities.get_transitive_unique_caller file fundec in
-            if List.memq fundec starter_fundecs then starter_fundecs else fundec::starter_fundecs
-        with Not_found -> 
-            Output.must_printf "(missing) @\n";
-            starter_fundecs (* There're lines that KLEE counts as instructions but Otter doesn't. *)
+        let r = 
+            try
+                let fundec = CovToFundec.of_line (file_name, line_num) in
+                Output.must_printf "%s " fundec.svar.vname;
+                let fundec = BackOtterUtilities.get_transitive_unique_caller file fundec in
+                if List.memq fundec starter_fundecs then
+                    starter_fundecs 
+                else if !arg_ignore_targets_in_entryfn && CilData.CilFundec.equal fundec entry_fn then 
+                    (Output.must_printf "(ignored)"; starter_fundecs)
+                else fundec::starter_fundecs
+            with Not_found -> 
+                Output.must_printf "(missing) ";
+                starter_fundecs (* There're lines that KLEE counts as instructions but Otter doesn't. *)
+        in
+        Output.must_printf "@\n";
+        r
     ) [] (!LineTargets.arg_line_targets) in
     List.iter (fun f -> Output.debug_printf "Function containing coverage targets: %s@." f.svar.vname) starter_fundecs;
     let b_queue = List.fold_left (fun b_queue fundec ->
@@ -163,6 +172,9 @@ let options = [
     "--conditionals-forking-limit",
         Arg.Set_int default_conditionals_forking_limit,
         "<limit> Set the limit in conditionals forking (default: max_int (== don't use))";
+	"--no-ignore-targets-in-entryfn",
+		Arg.Clear arg_ignore_targets_in_entryfn,
+		" If set, BackOtter will not ignore targets in the entry function.";
 ] @
     BackOtterReporter.options @ 
     BackOtterTimer.options @ 
