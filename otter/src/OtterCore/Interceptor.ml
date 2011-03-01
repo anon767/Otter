@@ -48,7 +48,7 @@ let function_pointer_interceptor job job_queue interceptor =
                   | Bytes.Bytes_Conditional(c) ->
                         getall c
                   | _ ->
-                        FormatPlus.failwith "Invalid function ptr:@ @[%a@]" CilPrinter.exp fexp
+                        ([], [], (job, `Failure (FormatPlus.sprintf "Invalid function ptr:@ @[%a@]" CilPrinter.exp fexp)) :: errors)
                 end
             in
             Output.set_mode Output.MSG_FUNC;
