@@ -48,8 +48,11 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     ) [] (!LineTargets.arg_line_targets) in
     List.iter (fun f -> Output.debug_printf "Function containing coverage targets: %s@." f.svar.vname) starter_fundecs;
     let b_queue = List.fold_left (fun b_queue fundec ->
-        let job = BackOtterJob.get_function_job file fundec in
-        b_queue#put job
+        if CilData.CilFundec.equal fundec entry_fn then 
+            if BidirectionalQueue.is_bidirectional_search ratio then b_queue
+            else b_queue#put entry_job
+        else
+            b_queue#put (BackOtterJob.get_function_job file fundec)
     ) b_queue starter_fundecs in
 
     (* A queue that prioritizes jobs *)

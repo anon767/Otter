@@ -7,7 +7,15 @@ open Job
 open Decision
 open Cil
 
+(* TODO: Refactor this *)
+
 let default_bidirectional_search_ratio = ref 0.5
+
+let is_bidirectional_search ratio_opt = 
+    let ratio = match ratio_opt with
+        | Some ratio -> ratio
+        | None -> (!default_bidirectional_search_ratio)
+    in ratio >= 0.0
 
 (*
  * Improve efficiency of bounding paths update/checking.
