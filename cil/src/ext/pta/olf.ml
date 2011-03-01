@@ -1030,30 +1030,64 @@ let collect_ptset_fast (l : c_absloc) : abslocset =
         flow_step l
       end
 
+
 let collect_ptset_medium (l : c_absloc) : abslocset =
-  let onpath : unit IntHash.t = IntHash.create 101 in
-  let rec flow_step (l : c_absloc) : abslocset =
-    if top_c_absloc l then
-      raise ReachedTop
-    else if get_flow_computed l then
-      get_aliases l
-    else
-      let stamp = get_c_absloc_stamp l in
-        if IntHash.mem onpath stamp then
-          C.empty
+    let module E = struct exception EliminateLoop of c_absloc * unit IntHash.t end in
+    let onpath : unit IntHash.t = IntHash.create 101 in
+    let rec flow_step (l : c_absloc) : abslocset =
+        if top_c_absloc l then raise ReachedTop;
+
+        if get_flow_computed l then
+            (* already computed solution *)
+            get_aliases l
+        else if IntHash.mem onpath (get_c_absloc_stamp l) then
+            (* loop detected: start loop elimination *)
+            raise (E.EliminateLoop (l, IntHash.create 101))
         else
-          let li = find l in
-            IntHash.add onpath stamp ();
-            B.fold
-              (fun lb aliases -> C.union aliases (flow_step lb.info))
-              li.lbounds
-              li.aliases
-  in
+            let visited = IntHash.create 101 in
+            let rec solve () =
+                (* stamp may be changed by loop-elimination *)
+                let stamp = get_c_absloc_stamp l in
+                IntHash.add onpath stamp ();
+                IntHash.add visited stamp ();
+                try
+                    let li = find l in
+                    B.iter begin fun lb ->
+                        (* TODO: B (boundset) is a serious bug, since its elements are mutable and will be updated by
+                         * the union-find unify operation, which violates the set ordering invariant messing up B.
+                         * B.iter and B.mem probably still works, though B.iter may end up visiting duplicates, but
+                         * B.remove won't work. The visited IntHash and the if-statement below is a hack to work
+                         * around this bug: e.g., if x is unified with y and x is in y.lbounds, x can't be removed
+                         * from the unified lbounds due to this bug which would lead to a cycle *)
+                        let stamp = get_c_absloc_stamp lb.info in
+                        if not (IntHash.mem visited stamp) then begin
+                            li.aliases <- C.union li.aliases (flow_step lb.info);
+                            IntHash.add visited stamp ();
+                        end
+                    end li.lbounds;
+                    IntHash.remove onpath stamp;
+                    set_flow_computed l;
+                    li.aliases
+                with E.EliminateLoop (l', visited') ->
+                    IntHash.iter (IntHash.add visited) visited';
+                    IntHash.remove onpath stamp;
+                    if equal_c_absloc l' l then
+                        (* reached the beginning of the loop; restart solver at this c_absloc *)
+                        solve ()
+                    else begin
+                        (* unify along the loop; note that although the stamp of the first element may be changed
+                         * during unification, it is not used during loop-elimination, and the old value will be
+                         * removed from onpath when the first element is reached, and replaced by the new value when
+                         * the solver restarts *)
+                        unify_c_abslocs (l', l);
+                        raise (E.EliminateLoop (l', visited))
+                    end
+            in
+            solve ()
+    in
     insist (can_query_graph ()) "collect_ptset_medium can't query graph";
-    let aliases = flow_step l in
-    (find l).aliases <- aliases;
-    set_flow_computed l;
-    aliases
+    flow_step l
+
 
 (** this is a quadratic flow step. keep it for debugging the fast
     version above. *)
