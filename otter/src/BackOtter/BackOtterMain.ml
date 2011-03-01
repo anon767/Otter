@@ -7,7 +7,7 @@ open State
 open Job
 open Cil
 
-let arg_ignore_targets_in_entryfn = ref true
+let arg_ignore_targets_in_entryfn = ref false
 let default_conditionals_forking_limit = ref max_int
 
 let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
@@ -172,9 +172,9 @@ let options = [
     "--conditionals-forking-limit",
         Arg.Set_int default_conditionals_forking_limit,
         "<limit> Set the limit in conditionals forking (default: max_int (== don't use))";
-	"--no-ignore-targets-in-entryfn",
-		Arg.Clear arg_ignore_targets_in_entryfn,
-		" If set, BackOtter will not ignore targets in the entry function.";
+	"--ignore-targets-in-entryfn",
+		Arg.Set arg_ignore_targets_in_entryfn,
+		" If set, BackOtter will ignore targets in the entry function.";
 ] @
     BackOtterReporter.options @ 
     BackOtterTimer.options @ 
