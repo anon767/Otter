@@ -20,7 +20,7 @@ class ['self] t = object (self : 'self)
                 let source = Job.get_instruction job in
                 let target_instrs = List.map (fun f -> Instruction.of_fundec job#file f) target_fundecs in
                 let context = Job.get_instruction_context job in
-                Distance.find_in_context source context target_instrs
+                Distance.find_in_context (source, context, target_instrs)
         in
         let file = job#file in
         let failure_fn = ProgramPoints.get_failure_fundec file in

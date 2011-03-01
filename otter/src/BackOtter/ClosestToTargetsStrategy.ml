@@ -23,7 +23,7 @@ class ['self] t = object (self : 'self)
                     max_distance
                 else
                     let context = Job.get_instruction_context job in
-                    Distance.find_in_context source context all_targets
+                    Distance.find_in_context (source, context, all_targets)
             end
         in
         let target_fundecs = BackOtterTargets.get_target_fundecs () in

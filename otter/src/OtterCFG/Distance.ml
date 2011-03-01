@@ -73,6 +73,7 @@ module VPairHash = Hashtbl.Make (struct
     let hash (x1,x2) = Hashtbl.hash (V.hash x1, V.hash x2)
 end) 
 
+
 (* Non-transitive; assuming src and des are from the same function. *)
 let find_impl =
     let distance_hash = VPairHash.create 0 in
@@ -130,34 +131,57 @@ let find_return instr = Profiler.global#call "Distance.find_return" begin fun ()
     find_impl [] vret vinstr - 1  (* exclude the imaginary return *)
 end
 
-let find instr targets = Profiler.global#call "Distance.find" begin fun () ->
-    let vtargets = List.map (fun target -> V.VInstr target) targets in
-    let vinstr = V.VInstr instr in
-    let distances = List.map (fun vtarget -> find_impl [] vtarget vinstr) vtargets in
-    List.fold_left min max_int distances
-end
 
-let find_in_context instr context targets = Profiler.global#call "Distance.find_in_context" begin fun () ->
-    (* compute the distance from the instr through function returns to targets in the call context *)
-    let rec unwind dist return_dist = function
-        | call_return::context ->
-            let dist =
-                (* "+1" since call_return is the NEXT instruction after the call *)
-                let dist' = return_dist + 1 + find call_return targets in
-                if dist' < 0 then dist (* overflow *) else min dist dist'
+let find = 
+    let module Memo = Memo.Make (struct
+        type t = Instruction.t * (Instruction.t list)
+        let equal (i1, l1) (i2, l2) = 
+            Instruction.equal i1 i2 && 
+            List.length l1 = List.length l2 && 
+            List.fold_left2 (fun b i1 i2 -> Instruction.equal i1 i2 && b) true l1 l2
+        let hash (i, l) = Instruction.hash i + List.fold_left (fun h i -> h + Instruction.hash i) 0 l
+    end) in
+    Memo.memo "Distance.find" (fun (instr, targets) ->
+        Profiler.global#call "Distance.find" begin fun () ->
+            let vtargets = List.map (fun target -> V.VInstr target) targets in
+            let vinstr = V.VInstr instr in
+            let distances = List.map (fun vtarget -> find_impl [] vtarget vinstr) vtargets in
+            List.fold_left min max_int distances
+        end)
+
+let find_in_context =
+    let module Memo = Memo.Make (struct
+        type t = Instruction.t * (Instruction.t list) * (Instruction.t list)
+        let equal (i1, c1, l1) (i2, c2, l2) = 
+            Instruction.equal i1 i2 && 
+            List.length c1 = List.length c2 && 
+            List.fold_left2 (fun b i1 i2 -> Instruction.equal i1 i2 && b) true c1 c2 
+            && List.length l1 = List.length l2 
+            && List.fold_left2 (fun b i1 i2 -> Instruction.equal i1 i2 && b) true l1 l2
+        let hash (i, c, l) = Instruction.hash i + List.fold_left (fun h i -> h + Instruction.hash i) 0 c + List.fold_left (fun h i -> h + Instruction.hash i) 0 l
+    end) in
+    Memo.memo "Distance.find_in_context" (fun (instr, context, targets) ->
+        Profiler.global#call "Distance.find_in_context" begin fun () ->
+            (* compute the distance from the instr through function returns to targets in the call context *)
+            let rec unwind dist return_dist = function
+                | call_return::context ->
+                    let dist =
+                        (* "+1" since call_return is the NEXT instruction after the call *)
+                        let dist' = return_dist + 1 + find (call_return, targets) in
+                        if dist' < 0 then dist (* overflow *) else min dist dist'
+                    in
+                    (* "+1" since call_return is the NEXT instruction after the call *)
+                    let return_dist = return_dist + 1 + find_return call_return in
+                    if return_dist < 0 then
+                        dist (* overflow; terminate since further unwindings will also overflow *)
+                    else
+                        unwind dist return_dist context
+                | [] ->
+                    dist
             in
-            (* "+1" since call_return is the NEXT instruction after the call *)
-            let return_dist = return_dist + 1 + find_return call_return in
-            if return_dist < 0 then
-                dist (* overflow; terminate since further unwindings will also overflow *)
-            else
-                unwind dist return_dist context
-        | [] ->
-            dist
-    in
-    (* compute the initial distance to targets and distance to function returns *)
-    let dist = find instr targets in
-    let return_dist = find_return instr in
-    unwind dist return_dist context
-end
-
+            (* compute the initial distance to targets and distance to function returns *)
+            let dist = find (instr, targets) in
+            let return_dist = find_return instr in
+            unwind dist return_dist context
+        end)
+    

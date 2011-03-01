@@ -37,7 +37,7 @@ let otter_distance_from_instr_mark job retopt exps errors =
         try
             let instruction_src, context = IndexMap.find index (!instruction_context_map) in
             let instruction_des = Job.get_instruction job in
-            OtterCFG.Distance.find_in_context instruction_src context [instruction_des] 
+            OtterCFG.Distance.find_in_context (instruction_src, context, [instruction_des])
         with Not_found -> max_int (* denotes infinite distance, same as DistanceToReturn *)
     in
     let ret = Bytes.int_to_bytes distance in
