@@ -33,7 +33,7 @@
 #ifndef __AE_H__
 #define __AE_H__
 
-#define AE_SETSIZE (1024*10)    /* Max number of fd supported */
+#define AE_SETSIZE (16)    /* Max number of fd supported */ // Changed for Otter
 
 #define AE_OK 0
 #define AE_ERR -1
