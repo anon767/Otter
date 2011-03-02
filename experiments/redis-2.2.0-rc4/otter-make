@@ -22,3 +22,6 @@ OTTER_TRUNK=`pwd`/../.. make CC="\${OTTER_TRUNK}/newlib-1.19.0/otter/cilly-with-
 cmd='../../otter/otter.pl --dofindFns src/redis-server_comb.c'
 echo $cmd '> redis-functions'
 $cmd > redis-functions
+
+echo ../../otter/src/OcamlUtilities/Grammar/grammar '< redis.grammar > redis-grammar.c'
+../../otter/src/OcamlUtilities/Grammar/grammar < redis.grammar > redis-grammar.c
