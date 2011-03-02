@@ -1,0 +1,3 @@
+  --timeout=1800 --bidirectional-search-ratio=-1   --function-job-points-to=unsound-typed-void --backward-function-rank=round-robin
+  --timeout=1800 --bidirectional-search-ratio=-1   --function-job-points-to=unsound-typed-void --ignore-targets-in-entryfn
+ #--timeout=1800 --bidirectional-search-ratio=0.75 --function-job-points-to=unsound-typed-void --ignore-targets-in-entryfn
