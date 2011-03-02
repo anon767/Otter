@@ -293,10 +293,10 @@ let print_definition { GrammarTypes.name = name } productions =
     for i = 0 to max_num_nonterminals productions - 1 do
         Format.printf ", *temp%d" i
     done;
-    Format.printf ";
-    int choice;
-    __SYMBOLIC(&choice);
-";
+    Format.printf ";\n";
+    (* Create a 'choice' variable unless there is only one production. *)
+    if GrammarTypes.SetOfProductions.cardinal productions > 1
+    then Format.printf "    int choice; __SYMBOLIC(&choice);\n";
     print_cases productions;
     Format.printf "    return result;
 }

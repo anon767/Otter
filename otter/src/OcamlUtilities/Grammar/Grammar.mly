@@ -57,9 +57,11 @@ production:
 production_bit:
   TERM    { (GrammarTypes.Term $1, GrammarTypes.empty_grammar) }
 | NONTERM { (GrammarTypes.Nonterm $1,  GrammarTypes.empty_grammar) }
-| LBRACKET production RBRACKET
-    { let production, grammar = $2 in
-      let optional_nonterm, grammar2 = GrammarTypes.get_optional production in
+| LBRACKET productions RBRACKET
+    { let productions, grammar = $2 in
+      let auxiliary_nonterm, grammar2 = GrammarTypes.get_auxiliary productions in
+      let grammar = GrammarTypes.merge_grammars grammar2 grammar in
+      let optional_nonterm, grammar2 = GrammarTypes.get_optional [auxiliary_nonterm] in
       (optional_nonterm, GrammarTypes.merge_grammars grammar2 grammar) }
 | production STAR
     { let production, grammar = $1 in
