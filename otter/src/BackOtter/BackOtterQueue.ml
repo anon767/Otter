@@ -42,9 +42,9 @@ let get_default_bqueue () = get_function_backward_queue !FunctionRanker.default_
 let options = [
     "--forward-queue",
         Arg.Symbol (fst (List.split queues), fun name -> default_fqueue := List.assoc name queues),
-        "<queue name> Set the default forward job queue in bi-directional BackOtter (default: " ^ (fst (List.find (fun (_, x) -> x = !default_fqueue) queues)) ^ ")";
+        " Set the default forward job queue in bi-directional BackOtter (default: " ^ (fst (List.find (fun (_, x) -> x = !default_fqueue) queues)) ^ ")";
     "--backward-queue",
         Arg.Symbol (fst (List.split queues), fun name -> default_bqueue := List.assoc name queues),
-        "<queue name> Set the default backward job queue in bi-directional BackOtter (default: " ^ (fst (List.find (fun (_, x) -> x = !default_bqueue) queues)) ^ ")";
+        " Set the default backward job queue in bi-directional BackOtter (default: " ^ (fst (List.find (fun (_, x) -> x = !default_bqueue) queues)) ^ ")";
 ]
 

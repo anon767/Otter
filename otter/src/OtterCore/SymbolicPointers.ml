@@ -492,7 +492,7 @@ end
 let options = [
     "--symbolic-pointers-scheme",
         Arg.Symbol (fst (List.split schemes), fun name -> default_scheme := List.assoc name schemes),
-        "<scheme> Set the default offset for symbolic pointers (default: "
+        " Set the default offset for symbolic pointers (default: "
             ^ (fst (List.find (fun (_, x) -> x = !default_scheme) schemes)) ^ ")";
 ]
 

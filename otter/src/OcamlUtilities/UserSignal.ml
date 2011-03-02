@@ -86,6 +86,6 @@ let using_signals ?(timeout=(!default_timeout)) f =
 let options = [
 	("--timeout",
 		Arg.Set_int default_timeout,
-		"<time in seconds> Set a timeout");
+		"<time-in-seconds> Set a timeout");
 ]
 

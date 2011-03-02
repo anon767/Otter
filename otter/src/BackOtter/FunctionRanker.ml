@@ -56,6 +56,6 @@ let get_default_brank () = get !default_brank
 let options = [
     "--backward-function-rank",
         Arg.Symbol (fst (List.split queues), fun name -> default_brank := List.assoc name queues),
-        "<ranking name> Set the default backward function ranking in BackOtter (default: " ^ (fst (List.find (fun (_, x) -> x = !default_brank) queues)) ^ ")";
+        " Set the default backward function ranking in BackOtter (default: " ^ (fst (List.find (fun (_, x) -> x = !default_brank) queues)) ^ ")";
 ]
 

@@ -210,17 +210,17 @@ class t file ?scheme ?uninit_void ?(points_to=(!default_points_to) file) fn =
     end
 
 let options = [
-    "--points-to-analysis",
+    "--function-job-points-to",
         Arg.Symbol (fst (List.split points_tos), fun name -> default_points_to := List.assoc name points_tos),
-        "<points_to> Set the default points_to analysis (default: "
+        " Set the default points_to analysis (default: "
             ^ (fst (List.find (fun (_, x) -> x == !default_points_to) points_tos)) ^ ")";
     if !default_uninit_void then
         "--function-job-not-uninit-void",
         Arg.Clear default_uninit_void,
-        "Specify that targets of void * pointers should be initialized"
+        " Specify that targets of void * pointers should be initialized"
     else
         "--function-job-uninit-void",
         Arg.Set default_uninit_void,
-        "Specify that targets of void * pointers should be uninitialized";
+        " Specify that targets of void * pointers should be uninitialized";
 ]
 
