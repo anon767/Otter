@@ -105,7 +105,7 @@ let checkBounds job lvals useSize =
 
     (* Perform the check *)
     match MemOp.eval job#state.path_condition both_checks with
-      | Ternary.False -> FormatPlus.failwith "Bounds check failed:\n%a" BytesPrinter.bytes both_checks
+      | Ternary.False -> FormatPlus.failwith "@[Bounds check failed:@ %a@]" BytesPrinter.bytes both_checks
       | Ternary.True -> (job, None) (* Check definitely passes. *)
       | Ternary.Unknown -> (* If the check can fail, add it to the path condition *)
             let job = MemOp.state__add_path_condition job both_checks true in
