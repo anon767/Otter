@@ -59,7 +59,7 @@ object (_ : 'self)
         in
         begin match original_job_state with
             | Job.Complete (Job.Abandoned (`TargetReached target, job_result)) ->
-                Output.printf "target_tracker: TargetReached target@.";
+                Output.printf "target_tracker: TargetReached @[%a@]@." Target.printer target;
                 print_failing_path job_result
             | Job.Complete (Job.Abandoned (`Failure msg, job_result)) when !BackOtterReporter.arg_exceptions_as_failures ->
                 Output.printf "target_tracker: Failure (%s)@." msg;

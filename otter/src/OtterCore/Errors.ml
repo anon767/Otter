@@ -8,7 +8,7 @@ type t = [
 
 let printer ff (error : t) = match error with
     | `Failure msg -> Format.fprintf ff "`Failure:%s" msg
-    | `TargetReached target -> Format.fprintf ff "`TargetReached target"
+    | `TargetReached target -> Format.fprintf ff "`TargetReached @[%a@]" Target.printer target
     | `AssertionFailure exp -> Format.fprintf ff "`AssertionFailure: %a" Printcil.exp exp
     | `OutOfBounds exp -> Format.fprintf ff "`OutOfBounds: %a" Printcil.exp exp
 
