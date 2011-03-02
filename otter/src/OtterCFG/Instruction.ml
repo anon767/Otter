@@ -231,3 +231,31 @@ let return_sites =
             [] (* or raise some exception? *)
 
 
+(** Find all the call sites of the callee in the caller *)
+let call_sites_in_caller = 
+    let module Memo = Memo.Make (struct
+        type t = CilData.CilFile.t * CilData.CilFundec.t * CilData.CilFundec.t
+        let hash (file, f1, f2) = Hashtbl.hash (CilData.CilFile.hash file, CilData.CilFundec.hash f1, CilData.CilFundec.hash f2)
+        let equal (xfile, xf1, xf2) (yfile, yf1, yf2) = CilData.CilFile.equal xfile yfile && CilData.CilFundec.equal xf1 yf1 && CilData.CilFundec.equal xf2 yf2
+    end) in
+    Memo.memo "Instruction.call_sites_in_caller" begin fun (file, caller, callee) ->
+        let call_sites_in_caller = ref [] in
+        (* iterate over stmts in caller and extract instr === Cil.Call *)
+        ignore begin Cil.visitCilFunction begin object
+            inherit Cil.nopCilVisitor
+            method vstmt stmt = match stmt.Cil.skind with
+                | Cil.Instr instrs -> 
+                    let rec impl = function
+                        | [] -> Cil.SkipChildren
+                        | (Cil.Call (_, fexp, _, _) :: tail) as instrs ->
+                            let callees = CilCallgraph.resolve_exp_to_fundecs file fexp in
+                            (if List.memq callee callees then call_sites_in_caller := (make file caller stmt instrs)::!call_sites_in_caller);
+                            impl tail
+                        | _ :: instrs -> impl instrs
+                    in impl instrs
+                | _ ->
+                    Cil.DoChildren 
+        end end caller end;
+
+        !call_sites_in_caller
+    end
