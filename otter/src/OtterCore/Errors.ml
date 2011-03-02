@@ -29,13 +29,13 @@ let matcher name args =
             end
         | "failure", _ ->
             failwith "Invalid failure (should have exactly one regex string argument to match the failure reason)."
-        | "failure_reached", [] ->
+        | "target_reached", [] ->
             begin function
                 | `TargetReached target -> true
                 | _ -> false
             end
-        | "failure_reached", _ ->
-            failwith "Invalid failure_reached (takes no arguments)."
+        | "target_reached", _ ->
+            failwith "Invalid target_reached (takes no arguments)."
         | "out_of_bounds", [] ->
             begin function
                 | `OutOfBounds _ -> true
