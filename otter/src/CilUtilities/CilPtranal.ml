@@ -319,6 +319,15 @@ let make_malloc_lhost =
     let malloc_host = Cil.makeGlobalVar "__cilptranal_points_to_host" Cil.voidPtrType in
     fun typ ->
         Cil.Mem (Cil.mkCast (Cil.Lval (Cil.var malloc_host)) (Cil.TPtr (typ, [])))
+
+(* Helper for naive_points_to/unsound_points_to to find the varinfo for malloc. *)
+let find_malloc =
+    let dummy_malloc = Cil.makeGlobalVar "malloc" (Cil.TFun (Cil.voidPtrType, Some [ ("", !Cil.typeOfSizeOf, []) ], false, [])) in
+    fun file ->
+        try
+            FindCil.global_varinfo_by_name file "malloc"
+        with Not_found ->
+            dummy_malloc
 (**/**)
 
 
@@ -337,7 +346,7 @@ let naive_points_to =
     let naive_points_to = Memo.memo "CilPtranal.naive_points_to" begin fun (file, exp) ->
         Profiler.global#call "CilPtranal.naive_points_to" begin fun () ->
             let varinfos = FindCil.all_varinfos file in
-            let malloc_varinfo = FindCil.global_varinfo_by_name file "malloc" in
+            let malloc_varinfo = find_malloc file in
             let mallocs = List.map begin fun typ ->
                 let malloc = (malloc_varinfo, "malloc", typ) in
                 let malloc_lhost = make_malloc_lhost typ in
@@ -362,7 +371,7 @@ let unsound_points_to =
     fun file exp -> Profiler.global#call "CilPtranal.unsound_points_to" begin fun () ->
         match Cil.unrollType (Cil.typeOf exp) with
             | Cil.TPtr (typ, _) ->
-                let malloc_varinfo = FindCil.global_varinfo_by_name file "malloc" in
+                let malloc_varinfo = find_malloc file in
                 let name = "malloc" ^ string_of_int (Counter.next counter) in
                 let malloc = (malloc_varinfo, name, typ) in
                 let malloc_lhost = make_malloc_lhost typ in
@@ -386,7 +395,7 @@ let unsound_typed_void_points_to =
         init_file file;
         match Cil.unrollType (Cil.typeOf exp) with
             | Cil.TPtr (typ, _) ->
-                let malloc_varinfo = FindCil.global_varinfo_by_name file "malloc" in
+                let malloc_varinfo = find_malloc file in
                 let make_malloc typ = ((malloc_varinfo, "malloc" ^ string_of_int (Counter.next counter), typ), [ make_malloc_lhost typ ]) in
                 let targets =
                     if Cil.isVoidType typ then
