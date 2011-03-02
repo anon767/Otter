@@ -1,0 +1,155 @@
+start ::= command+
+;
+
+command ::=
+| "*2\r\n$3\r\nGET\r\n" key
+| "*3\r\n$3\r\nSET\r\n" key value
+| "*3\r\n$5\r\nSETNX\r\n" key value
+| "*4\r\n$5\r\nSETEX\r\n" key seconds value
+| "*3\r\n$6\r\nAPPEND\r\n" key value
+| "*2\r\n$6\r\nSTRLEN\r\n" key
+| "*" digit "\r\n$3\r\nDEL\r\n" key+
+| "*2\r\n$6\r\nEXISTS\r\n" key
+| "*4\r\n$6\r\nSETBIT\r\n" key offset "$1\r\n" ("0"|"1") "\r\n"
+| "*3\r\n$6\r\nGETBIT\r\n" key offset
+| "*4\r\n$8\r\nSETRANGE\r\n" key offset value
+| "*4\r\n$8\r\nGETRANGE\r\n" key begin end
+| "*2\r\n$4\r\nINCR\r\n" key
+| "*2\r\n$4\r\nDECR\r\n" key
+| "*" digit "\r\n$4\r\nMGET\r\n" key+
+| "*3\r\n$5\r\n" ("L"|"R") "PUSH\r\n" key value
+| "*3\r\n$6\r\n" ("L"|"R") "PUSHX\r\n" key value
+| "*5\r\n$7\r\nLINSERT\r\n" key ("$6\r\nBEFORE"|"$5\r\nAFTER") "\r\n" pivot value
+| "*2\r\n$4\r\n" ("L"|"R") "POP\r\n" key
+| "*" digit "\r\n$5\r\nB" ("L"|"R") "POP\r\n" key+ timeout
+| "*4\r\n$10\r\nBRPOPLPUSH\r\n" key key timeout
+| "*2\r\n$4\r\nLLEN\r\n" key
+| "*3\r\n$6\r\nLINDEX\r\n" key index
+| "*4\r\n$4\r\nLSET\r\n" key index value
+| "*4\r\n$6\r\nLRANGE\r\n" key begin end
+| "*4\r\n$5\r\nLTRIM\r\n" key begin end
+| "*4\r\n$4\r\nLREM\r\n" key count value
+| "*3\r\n$9\r\nRPOPLPUSH\r\n" key key
+| "*3\r\n$4\r\nS" ("ADD"|"REM") "\r\n" key member
+| "*4\r\n$5\r\nSMOVE\r\n" key key member
+| "*3\r\n$9\r\nSISMEMBER\r\n" key member
+| "*2\r\n$5\r\nSCARD\r\n" key
+| "*2\r\n$4\r\nSPOP\r\n" key
+| "*2\r\n$11\r\nSRANDMEMBER\r\n" key
+| "*" digit "\r\n$6\r\nSINTER\r\n" key+
+| "*" digit "\r\n$11\r\nSINTERSTORE\r\n" key key+
+| "*" digit "\r\n$6\r\nSUNION\r\n" key+
+| "*" digit "\r\n$11\r\nSUNIONSTORE\r\n" key key+
+| "*" digit "\r\n$5\r\nSDIFF\r\n" key+
+| "*" digit "\r\n$10\r\nSDIFFSTORE\r\n" key key+
+| "*2\r\n$8\r\nSMEMBERS\r\n" key
+| "*4\r\n$4\r\nZADD\r\n" key score member
+| "*4\r\n$7\r\nZINCRBY\r\n" key increment member
+| "*3\r\n$4\r\nZREM\r\n" key member
+| "*4\r\n$16\r\nZREMRANGEBYSCORE\r\n" key min max
+| "*4\r\n$15\r\nZREMRANGEBYRANK\r\n" key begin end
+| "*" digit "\r\n$11\r\nZUNIONSTORE\r\n" key numkeys key+ ["$7\r\nWEIGHTS\r\n" weight+] ["$9\r\nAGGREGATE\r\n$3\r\n" ("SUM"|"MIN"|"MAX") "\r\n"]
+| "*" digit "\r\n$11\r\nZINTERSTORE\r\n" key numkeys key+ ["$7\r\nWEIGHTS\r\n" weight+] ["$9\r\nAGGREGATE\r\n$3\r\n" ("SUM"|"MIN"|"MAX") "\r\n"]
+| "*" digit "\r\n$6\r\nZRANGE\r\n" key begin end ["$10\r\nWITHSCORES\r\n"]
+| "*" digit "\r\n$13\r\nZRANGEBYSCORE\r\n" key min max ["$10\r\nWITHSCORES\r\n"] ["$5\r\nLIMIT\r\n" offset count]
+| "*" digit "\r\n$16\r\nZREVRANGEBYSCORE\r\n" key min max ["$10\r\nWITHSCORES\r\n"] ["$5\r\nLIMIT\r\n" offset count]
+| "*4\r\n$6\r\nZCOUNT\r\n" key min max
+| "*" digit "\r\n$9\r\nZREVRANGE\r\n" key begin end ["$10\r\nWITHSCORES\r\n"]
+| "*2\r\n$5\r\nZCARD\r\n" key
+| "*3\r\n$6\r\nZSCORE\r\n" key member
+| "*3\r\n$5\r\nZRANK\r\n" key member
+| "*3\r\n$8\r\nZREVRANK\r\n" key member
+| "*4\r\n$4\r\nHSET\r\n" key field value
+| "*4\r\n$6\r\nHSETNX\r\n" key field value
+| "*3\r\n$4\r\nHGET\r\n" key field
+| "*" digit "\r\n$5\r\nHMSET\r\n" key (field value)+
+| "*" digit "\r\n$5\r\nHMGET\r\n" key field+
+| "*4\r\n$7\r\nHINCRBY\r\n" key field increment
+| "*3\r\n$4\r\nHDEL\r\n" key field
+| "*2\r\n$4\r\nHLEN\r\n" key
+| "*2\r\n$5\r\nHKEYS\r\n" key
+| "*2\r\n$5\r\nHVALS\r\n" key
+| "*2\r\n$7\r\nHGETALL\r\n" key
+| "*3\r\n$7\r\nHEXISTS\r\n" key field
+| "*3\r\n$6\r\nINCRBY\r\n" key increment
+| "*3\r\n$6\r\nDECRBY\r\n" key decrement
+| "*3\r\n$6\r\nGETSET\r\n" key value
+| "*" digit "\r\n$4\r\nMSET\r\n" (key value)+
+| "*" digit "\r\n$6\r\nMSETNX\r\n" (key value)+
+| "*1\r\n$9\r\nRANDOMKEY\r\n"
+| "*2\r\n$6\r\nSELECT\r\n" db
+| "*3\r\n$4\r\nMOVE\r\n" key db
+| "*3\r\n$6\r\nRENAME\r\n" key key
+| "*3\r\n$8\r\nRENAMENX\r\n" key key
+| "*3\r\n$6\r\nEXPIRE\r\n" key seconds
+| "*3\r\n$8\r\nEXPIREAT\r\n" key timestamp
+| "*2\r\n$4\r\nKEYS\r\n" pattern
+| "*1\r\n$6\r\nDBSIZE\r\n"
+| "*2\r\n$4\r\nAUTH\r\n" password
+| "*1\r\n$4\r\nPING\r\n"
+| "*2\r\n$4\r\nECHO\r\n" message
+| "*1\r\n$4\r\nSAVE\r\n"
+| "*1\r\n$6\r\nBGSAVE\r\n"
+| "*1\r\n$12\r\nBGREWRITEAOF\r\n"
+| "*1\r\n$8\r\nSHUTDOWN\r\n"
+| "*1\r\n$8\r\nLASTSAVE\r\n"
+| "*2\r\n$4\r\nTYPE\r\n" key
+| "*1\r\n$5\r\nMULTI\r\n"
+| "*1\r\n$4\r\nEXEC\r\n"
+| "*1\r\n$7\r\nDISCARD\r\n"
+| "*1\r\n$4\r\nSYNC\r\n"
+| "*1\r\n$7\r\nFLUSHDB\r\n"
+| "*1\r\n$8\r\nFLUSHALL\r\n"
+| "*" digit "\r\n$4\r\nSORT\r\n" key ["$2\r\nBY\r\n" pattern] ["$5\r\nLIMIT\r\n" offset count] ("$3\r\nGET\r\n" ("$1\r\n#\r\n"|pattern))* ["$3\r\nASC\r\n"|"$4\r\nDESC\r\n"] ["$5\r\nALPHA\r\n"] ["$5\r\nSTORE\r\n" key]
+| "*1\r\n$4\r\nINFO\r\n"
+| "*1\r\n$7\r\nMONITOR\r\n"
+| "*2\r\n$3\r\nTTL\r\n" key
+| "*2\r\n$7\r\nPERSIST\r\n" key
+| "*3\r\n$7\r\nSLAVEOF\r\n" host port
+| "*2\r\n$5\r\nDEBUG\r\n$8\r\nSEGFAULT\r\n"
+| "*3\r\n$5\r\nDEBUG\r\n$6\r\nOBJECT\r\n" key
+| "*4\r\n$6\r\nCONFIG\r\n$3\r\nSET\r\n" parameter value
+| "*3\r\n$6\r\nCONFIG\r\n$3\r\nGET\r\n" parameter
+| "*2\r\n$6\r\nCONFIG\r\n$9\r\nRESETSTAT\r\n"
+| "*" digit "\r\n$9\r\nSUBSCRIBE\r\n" channel+
+| "*" digit "\r\n$11\r\nUNSUBSCRIBE\r\n" channel*
+| "*" digit "\r\n$10\r\nPSUBSCRIBE\r\n" pattern+
+| "*" digit "\r\n$12\r\nPUNSUBSCRIBE\r\n" pattern*
+| "*3\r\n$7\r\nPUBLISH\r\n" channel message
+| "*" digit "\r\n$5\r\nWATCH\r\n" key+
+| "*1\r\n$7\r\nUNWATCH\r\n"
+;
+
+one_char_arg ::= "$1\r\n" string1 "\r\n";
+one_digit_arg ::= "$1\r\n" digit "\r\n";
+
+key ::= one_char_arg;
+value ::= one_char_arg;
+pattern ::= one_char_arg;
+channel ::= one_char_arg;
+host ::= one_char_arg;
+port ::= one_char_arg;
+message ::= one_char_arg;
+field ::= one_char_arg;
+member ::= one_char_arg;
+parameter ::= one_char_arg;
+password ::= one_char_arg;
+
+offset ::= one_digit_arg;
+count ::= one_digit_arg;
+seconds ::= one_digit_arg;
+decrement ::= one_digit_arg;
+increment ::= one_digit_arg;
+numkeys ::= one_digit_arg;
+timeout ::= one_digit_arg;
+weight ::= one_digit_arg;
+begin ::= one_digit_arg;
+end ::= one_digit_arg;
+db ::= one_digit_arg;
+index ::= one_digit_arg;
+pivot ::= one_digit_arg;
+score ::= one_digit_arg;
+timestamp ::= one_digit_arg; // Um---this doesn't seem reasonable
+
+min ::= one_digit_arg | "$2\r\n(" digit "\r\n" | "$4\r\n-inf\r\n" | "$3\r\ninf\r\n";
+max ::= min;
