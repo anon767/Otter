@@ -1,6 +1,6 @@
 if [[ "$1" == clean ]]; then
   make clean
-  cmd='rm -rf src/*_comb.c src/___extra_files deps/hiredis/libhiredis.a deps/linenoise/linenoise_example_comb.c'
+  cmd='rm -rf src/*_comb.c src/___extra_files deps/hiredis/libhiredis.a deps/linenoise/linenoise_example_comb.c redis-functions'
   echo $cmd
   $cmd
   exit 0
@@ -18,3 +18,7 @@ elif [[ -n "$1" ]]; then
 fi
 
 OTTER_TRUNK=`pwd`/../.. make CC="\${OTTER_TRUNK}/newlib-1.19.0/otter/cilly-with-libc $zmalloc" uname_S= AR='${OTTER_TRUNK}/cil/bin/cilly --merge --mode=AR'
+
+cmd='../../otter/otter.pl --dofindFns src/redis-server_comb.c'
+echo $cmd '> redis-functions'
+$cmd > redis-functions
