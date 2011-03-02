@@ -14,6 +14,8 @@ let points_tos = [
 ]
 let default_points_to = ref CilUtilities.CilPtranal.points_to
 
+let default_uninit_void = ref false
+
 
 (**/**)
 let fold_struct f acc compinfo =
@@ -46,14 +48,41 @@ let fold_array f acc len_opt =
 (** Initialize program values symbolically, using {!SymbolicPointers.init_pointer} to initialize pointers.
 
         @param scheme optionally indicates the scheme to initialize symbolic pointers (see {!SymbolicPointers.init_pointer})
+        @param uninit_void optionally indicates whether targets of void * pointers should be uninitialized (default: false)
         @param job is the symbolic executor job in which to initialize the variable
         @param typ is the type of the value to initialize
         @param points_to is a function for computing pointer targets to be passed to {!SymbolicPointers.init_pointer}
         @param exps is list of expressions, which are joined to compute the program value
         @return [(job, bytes)] the updated symbolic job and the initialized variable
 *)
-let rec init_bytes_with_pointers ?scheme job typ points_to exps = Profiler.global#call "FunctionJob.init_bytes_with_pointers" begin fun () ->
+let rec init_bytes_with_pointers
+            ?scheme
+            ?(uninit_void=(!default_uninit_void))
+            job
+            typ
+            points_to
+            exps
+        = Profiler.global#call "FunctionJob.init_bytes_with_pointers" begin fun () ->
+
     let rec init_bytes_with_pointers_inner job typ points_to exps = match Cil.unrollType typ with
+        | Cil.TPtr (Cil.TVoid _, _) when uninit_void ->
+            (* for void * pointers that should be uninitialized *)
+
+            (* set up an uninitialized target of the largest target type *)
+            let module TypeSet = Set.Make (CilData.CilCanonicalType) in
+            let size = List.fold_left begin fun size exp ->
+                let target_vars, target_mallocs = points_to exp in
+                let size = List.fold_left (fun size (v, _) -> max size (Cil.bitsSizeOf v.Cil.vtype)) size target_vars in
+                let size = List.fold_left (fun size ((_, _, typ), _, _) -> max size (Cil.bitsSizeOf typ)) size target_mallocs in
+                size
+            end 0 exps in
+            let block = Bytes.block__make "FunctionJob.uninit_void" size Bytes.Block_type_Aliased in
+            let bytes = Bytes.bytes__symbolic size in
+            let job = MemOp.state__add_block job block bytes in
+
+            (* set up the pointer to point to the uninitialized target *)
+            (job, Bytes.make_Bytes_Address (block, Bytes.int_to_offset_bytes 0))
+
         | Cil.TPtr _ ->
             (* for pointers, generate the pointer *)
             let init_target typ vars mallocs job =
@@ -134,14 +163,16 @@ end
 (** Create a new symbolic executor job starting at a given function, and using {!init_bytes_with_pointers} to initialize
     the symbolic job.
 
-        @param scheme optionally indicates the scheme to initialize symbolic pointers (see {!init_bytes_with_pointers})
         @param file is the file to symbolically execute
+        @param scheme optionally indicates the scheme to initialize symbolic pointers (see {!init_bytes_with_pointers})
+        @param uninit_void optionally indicates whether targets of void * pointers should be uninitialized (see
+                {!init_bytes_with_pointers})
         @param points_to is a function for computing pointer targets to be passed to {!init_bytes_with_pointers}
                 (default:[CilPtranal.points_to file])
         @param fn is list the function at which to begin symbolic execution
         @return [OtterCore.Job.job] the created job
 *)
-class t file ?scheme ?(points_to=(!default_points_to) file) fn =
+class t file ?scheme ?uninit_void ?(points_to=(!default_points_to) file) fn =
     object (self : 'self)
         inherit OtterCore.Job.t file fn
         initializer
@@ -183,5 +214,13 @@ let options = [
         Arg.Symbol (fst (List.split points_tos), fun name -> default_points_to := List.assoc name points_tos),
         "<points_to> Set the default points_to analysis (default: "
             ^ (fst (List.find (fun (_, x) -> x == !default_points_to) points_tos)) ^ ")";
+    if !default_uninit_void then
+        "--function-job-not-uninit-void",
+        Arg.Clear default_uninit_void,
+        "Specify that targets of void * pointers should be initialized"
+    else
+        "--function-job-uninit-void",
+        Arg.Set default_uninit_void,
+        "Specify that targets of void * pointers should be uninitialized";
 ]
 
