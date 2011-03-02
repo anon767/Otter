@@ -2,9 +2,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#ifndef LEN
-#define LEN 100
-#endif
+extern const char *generate_start(void);
 
 void client_main()
 {
@@ -16,9 +14,10 @@ void client_main()
 	addr->sin_addr.s_addr = htonl(0x7f000001);
 	int r = connect(fd, addr, sizeof(struct sockaddr_in));
 	__ASSERT(r != -1);
-	char server_input[LEN];
-	__SYMBOLIC(&server_input);
-	write(fd, server_input, LEN);
+	const char *server_input = generate_start();
+	int length = strlen(server_input); // This causes forking based on the length. Is there a way to avoid that?
+	__EVALSTR(server_input, length);
+	write(fd, server_input, length);
 	char server_output[100];
 	/* As long as the server is generating data, this read will block
 	waiting for it. When the server is done processing all of the input,
