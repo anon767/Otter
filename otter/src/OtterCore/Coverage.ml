@@ -164,15 +164,6 @@ class getGlobalInitVisitor = object (self)
 end
 
 
-(** Print the name and type of a {!State.stmtInfo}.
-		@param ff is the formatter to which to print
-		@param fn is the {!State.stmtInfo} to print
-*)
-let printStmtInfo ff si =
-	Format.fprintf ff "%s %d" si.siFuncName si.siStmt.Cil.sid;
-	if !Executeargs.arg_print_stmtInfo_locs then
-		Format.fprintf ff " (%a)" Printcil.loc (Cil.get_stmtLoc si.siStmt.Cil.skind)
-
 let prepare_file file =
     let trackedFns = TrackingFunctions.trackedFns file in
     let vis = new getStatsVisitor file in

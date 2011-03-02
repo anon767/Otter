@@ -8,3 +8,7 @@ type t =
     | Failure 
     | Coverage of CoverageData.t
 
+let printer ff (target : t) = match target with
+    | Failure -> Format.fprintf ff "Target.Failure"
+    | Coverage c -> Format.fprintf ff "Target.Coverage(%a)" CoverageData.printer c
+

@@ -50,3 +50,19 @@ type t =
     | Edge of EdgeData.t
     | Cond of CondData.t
 
+(** Print the name and type of a {!State.stmtInfo}.
+		@param ff is the formatter to which to print
+		@param fn is the {!State.stmtInfo} to print
+*)
+let printStmtInfo ff si =
+	Format.fprintf ff "%s %d" si.siFuncName si.siStmt.Cil.sid;
+	if !Executeargs.arg_print_stmtInfo_locs then
+		Format.fprintf ff " (%a)" Printcil.loc (Cil.get_stmtLoc si.siStmt.Cil.skind)
+
+(* TODO: change Coverage.ml to use this to print stuff *)
+let printer ff (covdata : t) = match covdata with
+    | Line (file, lineno) -> Format.fprintf ff "%s:%d" file lineno
+	| StmtInfo stmtInfo -> Format.fprintf ff "@[%a@]" printStmtInfo stmtInfo
+    | Edge (src, dest) -> Format.fprintf ff "@[@[%a@]@ -> @[%a@]@]" printStmtInfo src printStmtInfo dest
+    | Cond (stmtInfo, truth) -> Format.fprintf ff "@[%a@] %c" printStmtInfo stmtInfo (if truth then 'T' else 'F')
+
