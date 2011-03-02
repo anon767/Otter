@@ -72,7 +72,7 @@ let get_star =
 
 (** [get_plus production] returns a nonterminal producing any positive number of
     repetitions of [production]. That is, the resulting nonterminal N is defined
-    as N ::= production | production N. *)
+    as N ::= production production*. *)
 let get_plus =
     (** Hashtable memoizing production we've already created pluses for *)
     let table : (production, nonterminal) Hashtbl.t = Hashtbl.create 13 in
@@ -87,9 +87,9 @@ let get_plus =
         with Not_found ->
             let new_nonterm = next_nonterm () in
             Hashtbl.add table production new_nonterm;
-            let plus = SetOfProductions.singleton production in
-            let plus = SetOfProductions.add (production @ [Nonterm new_nonterm]) plus in
-            let grammar = N.singleton new_nonterm plus in
+            let star_nonterm, grammar = get_star production in
+            let plus = SetOfProductions.singleton (production @ [star_nonterm]) in
+            let grammar = N.add new_nonterm plus grammar in
             (Nonterm new_nonterm, grammar)
 
 

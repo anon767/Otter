@@ -69,6 +69,7 @@ int max_grammar_string_length = MAX_GRAMMAR_STRING_LENGTH;
 
 #include <stdarg.h>
 #include <string.h>
+#include <stdlib.h>
 
 /** Concatenate all of the arguments after the first, and store the result in the first argument. */
 void concat(char *dst, const char *string, ...) {
@@ -152,19 +153,19 @@ let is_terminal = function GrammarTypes.Term _ -> true | GrammarTypes.Nonterm _ 
 (** Is this production just a single terminal? *)
 let is_single_terminal = function [x] -> is_terminal x | _ -> false
 
-(** Prints code to expand all the given nonterminals and store the results in
-    temp variables *)
-let generate_nonterminals nonterminals =
-    iteri
-        (fun i { GrammarTypes.name = name } ->
-             Format.printf "        temp%d = generate_%s();\n" i name)
-        nonterminals
-
 (** Returns the text of the terminal enclosed in quotation marks *)
 let terminal_to_string { GrammarTypes.text = text } = Format.sprintf "\"%s\"" text
 
 (** Returns the name of the nonterminal as a string *)
 let nonterminal_to_string { GrammarTypes.name = name } = name
+
+(** Prints code to expand all the given nonterminals and store the results in
+    temp variables *)
+let generate_nonterminals nonterminals =
+    iteri
+        (fun i nonterminal ->
+             Format.printf "        temp%d = generate_%s();\n" i (nonterminal_to_string nonterminal))
+        nonterminals
 
 (** Returns the string 'sizeof("...")', where the ellipsis is the concatenation
     of all the terminals *)
@@ -196,7 +197,7 @@ let write_result production =
 
 (** Prints code to free all temporary variables *)
 let free_temps nonterminals =
-    iteri (fun i _ -> Format.printf "        free(temp%d);\n" i) nonterminals
+    iteri (fun i _ -> Format.printf "        free((void*)temp%d);\n" i) nonterminals
 
 (** Prints code to expand all nonterminals in this production, allocate space to
     concatenate all the results and the terminals, write the result into that
@@ -205,11 +206,15 @@ let print_common production =
     let terminals, nonterminals = List.partition is_terminal production in
     let terminals = List.map (function GrammarTypes.Term t -> t | _ -> assert false) terminals
     and nonterminals = List.map (function GrammarTypes.Nonterm n -> n | _ -> assert false) nonterminals in
-    if terminals <> [] then Format.printf "        USE(%s - 1);\n" (sizeof terminals);
-    generate_nonterminals nonterminals;
-    malloc_result terminals nonterminals;
-    write_result production;
-    free_temps nonterminals
+    match terminals, nonterminals with
+      | [], [nonterminal] ->
+            Format.printf "        return generate_%s();\n" (nonterminal_to_string nonterminal)
+      | _ ->
+            if terminals <> [] then Format.printf "        USE(%s - 1);\n" (sizeof terminals);
+            generate_nonterminals nonterminals;
+            malloc_result terminals nonterminals;
+            write_result production;
+            free_temps nonterminals
 
 (** Prints code for one production that is not the final production for a
     nonterminal. The first argument is which number production this is for the
@@ -288,12 +293,17 @@ let print_cases productions =
     which can produce the given productions *)
 let print_definition { GrammarTypes.name = name } productions =
     Format.printf "const char *generate_%s(void) {\n" name;
-    Format.printf "    char *result";
+    Format.printf "    char *result;\n";
     (* Declare all needed temporary variables *)
-    for i = 0 to max_num_nonterminals productions - 1 do
-        Format.printf ", *temp%d" i
-    done;
-    Format.printf ";\n";
+    let num_temps = max_num_nonterminals productions in
+    if num_temps > 0
+    then begin
+        Format.printf "    const char *temp0";
+        for i = 1 to num_temps - 1 do
+            Format.printf ", *temp%d" i
+        done;
+        Format.printf ";\n";
+    end;
     (* Create a 'choice' variable unless there is only one production. *)
     if GrammarTypes.SetOfProductions.cardinal productions > 1
     then Format.printf "    int choice; __SYMBOLIC(&choice);\n";
