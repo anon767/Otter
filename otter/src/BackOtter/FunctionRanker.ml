@@ -2,24 +2,28 @@ open CilUtilities
 open OcamlUtilities
 open OtterCore
 
+let ranker eval lst =
+    (* TODO: doesn't need to recalculate every time (although this is not bottleneck *)
+    let lst = List.map (fun (file, fundec) -> (fundec, eval (file, fundec))) lst in
+    let lst = List.sort (fun (f1, r1) (f2, r2) -> (Pervasives.compare r2 r1)) lst in
+    List.map (fun (f, _) -> f) lst
+
 (* FIXME: this can be inefficient if the function is unreachable from entryfn *)
-let distance_from_entryfn job =
-    let file = job#file in
+let distance_from_entryfn (file, fundec) =
     let entry_fn = ProgramPoints.get_entry_fundec file in
-    let distance = CilCallgraph.get_distance file entry_fn (BackOtterUtilities.get_origin_function job) in
+    let distance = CilCallgraph.get_distance file entry_fn fundec in
     -. (float_of_int distance)
 
 (* TODO: this is not compatible with line-targets *)
-let distance_from_failurefn job =
-    let file = job#file in
+let distance_from_failurefn (file, fundec) =
     let failure_fn = ProgramPoints.get_failure_fundec file in
-    let distance = CilCallgraph.get_distance file (BackOtterUtilities.get_origin_function job) failure_fn in
+    let distance = CilCallgraph.get_distance file fundec failure_fn in
     -. (float_of_int distance)
 
-let random_function job = Random.float 1.0
+let random_function _ = Random.float 1.0
 
-let total rank_fn = fun () -> rank_fn
-let partial rank_fn = fun () -> if Random.bool () then rank_fn else random_function
+let total rank_fn = rank_fn
+let partial rank_fn = if Random.bool () then rank_fn else (ranker random_function)
 
 let queues = [
     "closest-to-entry", `ClosestToEntry;
@@ -29,10 +33,10 @@ let queues = [
 ]
 
 let get = function
-    | `ClosestToEntry -> total distance_from_entryfn
-    | `Partial `ClosestToEntry -> partial distance_from_entryfn
-    | `ClosestToFailure -> total distance_from_failurefn
-    | `RandomFunction -> total random_function
+    | `ClosestToEntry -> total (ranker distance_from_entryfn)
+    | `Partial `ClosestToEntry -> partial (ranker distance_from_entryfn)
+    | `ClosestToFailure -> total (ranker distance_from_failurefn)
+    | `RandomFunction -> total (ranker random_function)
 
 let default_brank = ref `ClosestToEntry
 
