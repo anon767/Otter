@@ -7,7 +7,7 @@ open OtterCore
 
 
 let points_tos = [
-    "regular", CilUtilities.CilPtranal.points_to;
+    "olf", CilUtilities.CilPtranal.points_to;
     "naive", CilUtilities.CilPtranal.naive_points_to;
     "unsound", CilUtilities.CilPtranal.unsound_points_to;
     "unsound-typed-void", CilUtilities.CilPtranal.unsound_typed_void_points_to;
@@ -181,6 +181,7 @@ class t file ?scheme ?(points_to=(!default_points_to) file) fn =
 let options = [
     "--points-to-analysis",
         Arg.Symbol (fst (List.split points_tos), fun name -> default_points_to := List.assoc name points_tos),
-        "<points_to> Set the default points_to analysis (default: regular)";
+        "<points_to> Set the default points_to analysis (default: "
+            ^ (fst (List.find (fun (_, x) -> x == !default_points_to) points_tos)) ^ ")";
 ]
 
