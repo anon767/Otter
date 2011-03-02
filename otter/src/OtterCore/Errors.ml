@@ -1,7 +1,7 @@
 
 type t = [
     | `Failure of string
-    | `TargetReached of unit
+    | `TargetReached of Target.t
     | `AssertionFailure of Cil.exp
     | `OutOfBounds of Cil.exp
 ]

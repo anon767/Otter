@@ -9,8 +9,9 @@ let arg_line_targets = ref []
 (** An interceptor that emits TargetReached target when some (file, line) in arg_line_targets is encountered. *)
 let line_target_interceptor job job_queue interceptor =
     let loc = Job.get_loc job in
-    if List.mem (loc.Cil.file, loc.Cil.line) (!arg_line_targets) then
-        Complete (Abandoned (`TargetReached (), job)), job_queue
+    let line = (loc.Cil.file, loc.Cil.line) in
+    if List.mem line (!arg_line_targets) then
+        Complete (Abandoned (`TargetReached (Target.Coverage (CoverageData.Line line)), job)), job_queue
     else
         interceptor job job_queue
 

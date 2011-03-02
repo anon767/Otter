@@ -1,3 +1,5 @@
+(** Contains 4 basic coverage metrics: line, edge, stmtinfo (block) and cond *)
+
 (* With statement ids which are unique only within functions, we need
 	 to know the function's name in addition to the sid to uniquely
 	 identify a stmt. *)
@@ -41,3 +43,10 @@ module LineData = struct
    	 then Pervasives.compare l1 l2
    	 else tmp
 end
+
+type t =
+    | Line of LineData.t
+    | StmtInfo of StmtInfoData.t
+    | Edge of EdgeData.t
+    | Cond of CondData.t
+
