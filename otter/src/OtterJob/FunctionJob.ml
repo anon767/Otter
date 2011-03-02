@@ -10,6 +10,7 @@ let points_tos = [
     "regular", CilUtilities.CilPtranal.points_to;
     "naive", CilUtilities.CilPtranal.naive_points_to;
     "unsound", CilUtilities.CilPtranal.unsound_points_to;
+    "unsound-typed-void", CilUtilities.CilPtranal.unsound_typed_void_points_to;
 ]
 let default_points_to = ref CilUtilities.CilPtranal.points_to
 

@@ -351,7 +351,7 @@ let naive_points_to =
         naive_points_to (file, exp)
 
 
-(** Unsound point-to that maps anything to just a distinct [malloc].
+(** Unsound point-to that maps each pointer to a distinct [malloc] of the pointer target type.
         @param file is the file being analyzed
         @param exp is the expression to resolve
         @return [(targets_list, target_mallocs)] where [target_list] is empty and [target_mallocs] contains a single
@@ -372,5 +372,37 @@ let unsound_points_to =
     end
 
 
-(* TODO: make another pointer analysis that infers void * types *)
+(** Unsound point-to that maps each void pointer variable to zero or more distinct [malloc]s of types partially
+    determined from a pointer analysis, and every other pointer (variable or malloc'ed) to a distinct [malloc] of the
+    pointer target type.
+        @param file is the file being analyzed
+        @param exp is the expression to resolve
+        @return [(targets_list, target_mallocs)] where [target_list] is empty and [target_mallocs] contains a single
+                dynamic allocation site
+*)
+let unsound_typed_void_points_to =
+    let counter = Counter.make () in
+    fun file exp -> Profiler.global#call "CilPtranal.unsound_typed_void_points_to" begin fun () ->
+        init_file file;
+        match Cil.unrollType (Cil.typeOf exp) with
+            | Cil.TPtr (typ, _) ->
+                let malloc_varinfo = FindCil.global_varinfo_by_name file "malloc" in
+                let make_malloc typ = ((malloc_varinfo, "malloc" ^ string_of_int (Counter.next counter), typ), [ make_malloc_lhost typ ]) in
+                let targets =
+                    if Cil.isVoidType typ then
+                        let module TypeSet = Set.Make (CilData.CilCanonicalType) in
+                        let target_vars, _ = Profiler.global#call "Ptranal.resolve_exp" (fun () -> Ptranal.resolve_exp exp) in
+                        let target_types = List.fold_left begin fun target_types target_var ->
+                            TypeSet.add target_var.Cil.vtype target_types
+                        end TypeSet.empty target_vars in
+                        TypeSet.fold begin fun typ targets ->
+                            (make_malloc typ)::targets
+                        end target_types []
+                    else
+                        [ make_malloc typ ]
+                in
+                wrap_points_to_varinfo (fun _ -> ([], targets)) exp
+            | _ ->
+                ([], [])
+    end
 
