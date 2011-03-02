@@ -8,6 +8,7 @@ open BytesUtility
 open State
 open Job
 open Decision
+open CoverageData
 
 
 let get_active_state parent_job job =

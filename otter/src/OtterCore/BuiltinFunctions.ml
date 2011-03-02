@@ -107,8 +107,8 @@ let end_function_call job =
 		if job#inTrackedFn && !Executeargs.arg_edge_coverage then
 			let fn = (List.hd job#state.callstack).svar.vname in
 			let edge = (
-				{ Job.siFuncName = fn; Job.siStmt = Coverage.stmtAtEndOfBlock job#stmt; },
-				{ Job.siFuncName = fn; Job.siStmt = Coverage.stmtAtEndOfBlock stmt; }
+				{ CoverageData.siFuncName = fn; CoverageData.siStmt = Coverage.stmtAtEndOfBlock job#stmt; },
+				{ CoverageData.siFuncName = fn; CoverageData.siStmt = Coverage.stmtAtEndOfBlock stmt; }
 			) in
 			{ exHist with Job.coveredEdges = Job.EdgeSet.add edge exHist.Job.coveredEdges; }
 		else
@@ -772,8 +772,8 @@ let libc_longjmp job retopt exps errors =
 					if job#inTrackedFn && !Executeargs.arg_edge_coverage then
 						let fn = (List.hd job#state.callstack).svar.vname in
 						let edge = (
-							{ Job.siFuncName = fn; Job.siStmt = Coverage.stmtAtEndOfBlock job#stmt; },
-							{ Job.siFuncName = fn; Job.siStmt = Coverage.stmtAtEndOfBlock stmt; }
+							{ CoverageData.siFuncName = fn; CoverageData.siStmt = Coverage.stmtAtEndOfBlock job#stmt; },
+							{ CoverageData.siFuncName = fn; CoverageData.siStmt = Coverage.stmtAtEndOfBlock stmt; }
 						) in
 						{ exHist with Job.coveredEdges = Job.EdgeSet.add edge exHist.Job.coveredEdges; }
 					else

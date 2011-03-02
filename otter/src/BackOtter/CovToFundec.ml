@@ -1,6 +1,7 @@
 open Cil
 open OtterCore
 open Job
+open CoverageData
 
 module CondMap = Map.Make (CondData)
 module EdgeMap = Map.Make (EdgeData)

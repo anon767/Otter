@@ -7,6 +7,7 @@ open OtterCFG
 open Bytes
 open State
 open Job
+open CoverageData
 
 let coverage_totals : (Cil.file, <lines : LineSet.t; blocks : StmtInfoSet.t; edges : EdgeSet.t; conds : CondSet.t>) Hashtbl.t = Hashtbl.create 0
 
