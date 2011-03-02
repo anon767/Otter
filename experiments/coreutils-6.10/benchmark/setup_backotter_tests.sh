@@ -20,8 +20,10 @@ chmod 700 "$exp_base"
 
 cat $programs_in | while read prog
 do 
+    if [ "$(echo $prog | sed '/^[ ]*#/d')" ]; then echo "Process $prog"; else continue; fi
     cat $options_in | while read options
     do 
+        if [ "$(echo $options | sed '/^[ ]*#/d')" ]; then echo "Process $options"; else continue; fi
         prog_name=$(basename $prog .c)
         opts_name=$(echo $options|sed 's/ /_/g')
         log_file="$exp_base/results/$prog_name/run_with_$opts_name.log"
