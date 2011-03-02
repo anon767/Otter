@@ -10,7 +10,7 @@
  * -----------------------------------------
  */
 
-#pragma expect_abandoned(failure_reached, x != 0)
+#pragma expect_abandoned(target_reached, x != 0)
 #pragma expect_return()
 #pragma no_other_abandoned
 #pragma no_other_return

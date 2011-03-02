@@ -32,8 +32,8 @@
  * -----------------------------------------
  */
 
-#pragma expect_abandoned(failure_reached, n == 3)
-#pragma expect_abandoned(failure_reached, n == 2)
+#pragma expect_abandoned(target_reached, n == 3)
+#pragma expect_abandoned(target_reached, n == 2)
 #pragma expect_return(n == 1)
 #pragma expect_return(n <= 0)
 #pragma no_other_abandoned

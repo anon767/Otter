@@ -1,4 +1,4 @@
-#pragma expect_abandoned(failure_reached)
+#pragma expect_abandoned(target_reached)
 #pragma max_abandoned(1)
 
 int __SYMBOLIC(void *);
