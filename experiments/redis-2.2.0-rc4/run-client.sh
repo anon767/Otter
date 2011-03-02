@@ -1,4 +1,4 @@
-if [ -z "$@" ]; then
+if [[ -z "$@" ]]; then
   echo "Usage: ./run-client.sh <client program> [options...]"
   exit
 fi
