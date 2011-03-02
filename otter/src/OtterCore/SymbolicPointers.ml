@@ -143,7 +143,6 @@ let schemes = [
 ]
 
 let default_scheme = ref `TwoLevel
-let default_unbounded_void = ref false
 
 
 (** Initialize pointer values symbolically using a pointer analysis.
@@ -181,8 +180,6 @@ let default_unbounded_void = ref false
         @param exps is list of expressions, which are joined to compute the pointer value
         @param maybe_null optionally indicates whether the pointer should possibly be null (default: true)
         @param maybe_uninit optionally indicates whether the pointer should possible be uninitialized (default: false)
-        @param unbounded_void optionally indicates whether fresh target blocks of void pointers should be unbounded in
-                size (default: false)
         @param block_name is a name to give the target block of the pointer
         @param init_target is a function of type [Cil.typ -> CilData.CilVar.t list -> CilData.Malloc.t list -> (State.t -> State.t * Bytes.bytes)]
                 that takes a type and a list of variables that are the targets of the pointer, and initializes a
@@ -198,7 +195,6 @@ let init_pointer
             exps
             ?(maybe_null=true)
             ?(maybe_uninit=false)
-            ?(unbounded_void=(!default_unbounded_void))
             block_name
             init_target
         = Profiler.global#call "SymbolicPointers.init_pointer" begin fun () ->
@@ -354,11 +350,7 @@ let init_pointer
                 (* TODO: currently, this only initializes a single element, rather than an array; should find some way to
                         figure out if this pointer points to arrays, and initialize it so *)
                 let job, block, target_bytes_set =
-                    let size = if unbounded_void && Cil.isVoidType typ then
-                        max_int
-                    else
-                        Cil.bitsSizeOf typ / 8
-                    in
+                    let size = Cil.bitsSizeOf typ / 8 in
                     let block = Bytes.block__make (FormatPlus.sprintf "%s#%d size(%d) type(%a)" block_name count size Printcil.typ typ) size Bytes.Block_type_Aliased in
                     let varinfos = VarinfoSet.elements varinfos in
                     let mallocs = MallocMap.fold (fun malloc exps mallocs -> (malloc, LhostSet.elements exps)::mallocs) mallocs [] in
@@ -502,8 +494,5 @@ let options = [
         Arg.Symbol (fst (List.split schemes), fun name -> default_scheme := List.assoc name schemes),
         "<scheme> Set the default offset for symbolic pointers (default: "
             ^ (fst (List.find (fun (_, x) -> x = !default_scheme) schemes)) ^ ")";
-    "--symbolic-pointers-unbounded-void",
-        Arg.Set default_unbounded_void,
-        "Allocated fresh blocks of unbounded size for void pointers (default size is 1)";
 ]
 
