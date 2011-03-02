@@ -12,7 +12,7 @@ class ['self] t ?max_nodes ?max_paths ?max_abandoned
     method super_report = super#report
 
     method report result = match result with
-        | Job.Complete (Job.Abandoned (`FailureReached, _)) ->
+        | Job.Complete (Job.Abandoned (`TargetReached _, _)) ->
             super#report result
 
         | Job.Complete (Job.Abandoned (_, _)) when not exceptions_as_failures ->

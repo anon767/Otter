@@ -457,11 +457,11 @@ let otter_path_condition job retopt exps errors =
 
 
 (* __FAILURE()
- * It models "failure" by providing the 'reason `FailureReached, in order to distinguish from
+ * It models "failure" by providing the 'reason `TargetReached target, in order to distinguish from
  * general `Failure.
  * TODO: make __FAILURE take a string of failure description. *)
 let otter_failure job retopt exps errors =
-    let job_state = Job.Complete (Job.Abandoned (`FailureReached, job)) in
+    let job_state = Job.Complete (Job.Abandoned (`TargetReached (), job)) in
     job_state, errors
 
 let otter_assert job retopt exps errors =

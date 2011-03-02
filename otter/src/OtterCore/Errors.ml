@@ -1,14 +1,14 @@
 
 type t = [
     | `Failure of string
-    | `FailureReached
+    | `TargetReached of unit
     | `AssertionFailure of Cil.exp
     | `OutOfBounds of Cil.exp
 ]
 
 let printer ff (error : t) = match error with
     | `Failure msg -> Format.fprintf ff "`Failure:%s" msg
-    | `FailureReached -> Format.fprintf ff "`FailureReached"
+    | `TargetReached target -> Format.fprintf ff "`TargetReached target"
     | `AssertionFailure exp -> Format.fprintf ff "`AssertionFailure: %a" Printcil.exp exp
     | `OutOfBounds exp -> Format.fprintf ff "`OutOfBounds: %a" Printcil.exp exp
 
@@ -31,7 +31,7 @@ let matcher name args =
             failwith "Invalid failure (should have exactly one regex string argument to match the failure reason)."
         | "failure_reached", [] ->
             begin function
-                | `FailureReached -> true
+                | `TargetReached target -> true
                 | _ -> false
             end
         | "failure_reached", _ ->
