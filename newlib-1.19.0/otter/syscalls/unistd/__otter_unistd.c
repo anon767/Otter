@@ -56,6 +56,13 @@ int __otter_libc_close(int fd)
 		{
 			struct __otter_fs_sock_data* sock = __otter_libc_get_sock_data_from_open_file(open_file);
 			
+			struct linger l;
+			__otter_libc_getsockopt_sol_socket(sock, SO_LINGER, &l, sizeof(struct linger));
+			if(l.l_onoff)
+			{
+				__otter_multi_block_while_condition(__otter_fs_pipe_is_empty(sock->sock_queue[0]->recv_data), sock->sock_queue[0]->recv_data);
+			}
+			
 			switch(sock->state)
 			{
 				case __otter_sock_ST_CLOSED:
@@ -65,7 +72,7 @@ int __otter_libc_close(int fd)
 					__otter_libc_flush_sock_queue(sock);
 					break;
 				case __otter_sock_ST_SYN_SENT:
-					{
+					{														
 						int	found = 0;
 						for(int i = 0; i < sock->sock_queue[0]->backlog; i++)
 						{
@@ -331,10 +338,14 @@ ssize_t __otter_libc_write_socket(
 	
 	switch(sock->state)
 	{
+		case __otter_sock_ST_SYN_SENT:
+			/* block until the socket is really connected */
+			__otter_multi_block_while_condition(sock->state == __otter_sock_ST_SYN_SENT, sock);
+			return __otter_libc_write_socket(open_file, buf, num); //try again
+
 		case __otter_sock_ST_CLOSED:
 		case __otter_sock_ST_LISTEN:
 		case __otter_sock_ST_SYN_RCVD:
-		case __otter_sock_ST_SYN_SENT:
 		case __otter_sock_ST_LAST_ACK:
 		case __otter_sock_ST_FIN_WAIT_1:
 		case __otter_sock_ST_FIN_WAIT_2:

@@ -115,17 +115,34 @@ static void *ready_to_read(struct __otter_fs_open_file_table_entry *open_file) {
 static void *ready_to_write(struct __otter_fs_open_file_table_entry *open_file) {
 	if (open_file->type == __otter_fs_TYP_SOCK) {
 		struct __otter_fs_sock_data *sock = __otter_libc_get_sock_data_from_open_file(open_file);
-		if (sock->state == __otter_sock_ST_ESTABLISHED) {
+		switch (sock->state) {
+		// An established socket is ready to write if there is space in the other socket's recv_data
+		case __otter_sock_ST_ESTABLISHED:
+		case __otter_sock_ST_CLOSE_WAIT:
 			if (!__otter_fs_pipe_is_full(sock->sock_queue[0]->recv_data)) {
 				return NULL; // A socket is ready for writing if it is established and there is room in its write buffer
 			} else {
-				// If a socket is established but empty, monitor its write buffer's read head. It is ready for writing when the read head moves.
+				// If a socket is established but full, monitor its write buffer's read head. It is ready for writing when the read head moves.
 				return &sock->sock_queue[0]->recv_data->rhead;
 			}
-		} else {
-			// The socket is in the wrong state. Monitor the state to see if it becomes ready.
-			return &sock->state;
+		// Asynchronous connect() in progress, wait until ST_ESTABLISHED
+		case __otter_sock_ST_SYN_SENT:
+			//return &sock->state;
+			return NULL;
+		// Any other state will lead to a failing read, but it will not block, so it is ready
+		case __otter_sock_ST_CLOSED:
+		case __otter_sock_ST_LISTEN:
+		case __otter_sock_ST_SYN_RCVD:
+		case __otter_sock_ST_LAST_ACK:
+		case __otter_sock_ST_FIN_WAIT_1:
+		case __otter_sock_ST_FIN_WAIT_2:
+		case __otter_sock_ST_CLOSING:
+		case __otter_sock_ST_TIME_WAIT:
+		case __otter_sock_ST_UDP:
+			return NULL;
 		}
+		__ASSERT(0); // Unreachable
+		abort(); // To make CIL happy
 	} else if (open_file->type == __otter_fs_TYP_FIFO) {
 		struct __otter_fs_pipe_data *pipe = __otter_libc_get_pipe_data_from_open_file(open_file);
 		if (__otter_fs_pipe_is_full(pipe)) {
@@ -206,6 +223,7 @@ static int select_helper(int nfds, fd_set *readfds, fd_set *writefds, fd_set *er
 
 	// If nothing is ready, wait on the specified file descriptors.
 	__otter_multi_io_block_array(watch_list, watch_list_len);
+	__otter_multi_begin_atomic();
 	free(watch_list);
 	return SELECT_HELPER_BLOCKED;
 }
@@ -245,7 +263,9 @@ int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
 		copy_fd_set(read_copy, readfds);
 		copy_fd_set(write_copy, writefds);
 		copy_fd_set(error_copy, errorfds);
+		__otter_multi_begin_atomic();
 		retval = select_helper(nfds, read_copy, write_copy, error_copy);
+		__otter_multi_end_atomic();
 	} while (retval == SELECT_HELPER_BLOCKED);
 
 	/* If there was an error, the original fd_sets should *not* be modified. So

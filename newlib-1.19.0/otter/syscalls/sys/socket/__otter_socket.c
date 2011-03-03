@@ -103,10 +103,28 @@ int __otter_libc_setsockopt_sol_socket(struct __otter_fs_sock_data* sock, int op
 				sock->options &= ~option_name;
 			}
 			return(0);
+		case SO_LINGER:
+			/* Linger is about waiting extra time at close() in the foreground to allow the network to flush extra packets.
+			 * If linger is set close() will block as long at there is data unread in the receiving socket's recv_data.
+			 */
+			if(option_len < sizeof(struct linger))
+			{
+				errno = EFAULT;
+				return(-1);
+			}
+			
+			if(((struct linger*)option_value)->l_onoff) /* drop the time value and only keep the existance flag */
+			{
+				sock->options |= option_name;
+			}
+			else
+			{
+				sock->options &= ~option_name;
+			}
+			return(0);
 		case SO_BROADCAST:
 		case SO_DEBUG:
 		case SO_ERROR:
-		case SO_LINGER:
 		case SO_RCVBUF:
 		case SO_RVCLOWAT:
 		case SO_RCVTIMEO:
@@ -157,7 +175,22 @@ int __otter_libc_getsockopt_sol_socket(struct __otter_fs_sock_data* sock, int op
 			return(0);
 
 		case SO_ERROR:
+			/* There is no support for recoding socket errors, so report that there isn't an error. */
+			return 0;
 		case SO_LINGER:
+			/* Linger is about waiting extra time at close() in the foreground to allow the network to flush extra packets.
+			 * If linger is set close() will block as long at there is data unread in the receiving socket's recv_data.
+			 */
+			if(option_len < sizeof(struct linger))
+			{
+				errno = EFAULT;
+				return(-1);
+			}
+			
+			((struct linger*)option_value)->l_onoff = (sock->options & option_name) ? 1 : 0;
+			((struct linger*)option_value)->l_linger = 16; /* arbitrary value */
+			
+			return 0;
 		case SO_RVCLOWAT:
 		case SO_RCVTIMEO:
 		case SO_SNDLOWAT:
@@ -729,7 +762,7 @@ int connect(int socket_fd, const struct sockaddr *address, socklen_t address_len
 
 int __otter_libc_shutdown_sock_data(struct __otter_fs_sock_data* sock, int how)
 {		
-	/* check that the socket is in an appropriate state for accept() */
+	/* check that the socket is in an appropriate state for shutdown() */
 	switch(sock->state)
 	{
 		case __otter_sock_ST_CLOSED:
@@ -922,6 +955,7 @@ ssize_t __otter_libc_recv_socket(struct __otter_fs_open_file_table_entry* open_f
 	switch(sock->state)
 	{
 		case __otter_sock_ST_CLOSED:
+			return 0;
 		case __otter_sock_ST_LISTEN:
 		case __otter_sock_ST_SYN_RCVD:
 		case __otter_sock_ST_SYN_SENT:
