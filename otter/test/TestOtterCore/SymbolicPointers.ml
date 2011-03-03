@@ -247,7 +247,7 @@ let soundness_testsuite = "Soundness" >::: [
 
     "Unions" >::: [
         (* there should be at least 1 aliasing conditions: p == &u.x *)
-        test_symbolic_pointers ~label:"Pointer to union"
+        test_symbolic_pointers ~label:"Pointer into union"
             ~expect_return:[ 1 ]
             begin String.concat "" ["
                 int *p;
@@ -269,7 +269,7 @@ let soundness_testsuite = "Soundness" >::: [
             "] end;
 
         (* there should be at least 1 aliasing conditions: u.p == &x *)
-        test_symbolic_pointers ~label:"Union pointer"
+        test_symbolic_pointers ~label:"Union containing pointer"
             ~expect_return:[ 1 ]
             begin String.concat "" ["
                 union { char a; int *p; char b; } u;
