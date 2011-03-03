@@ -310,13 +310,12 @@ let greedySetCover emptyCheck scoreFn setdiff setList universe =
 
 let percentage numer denom = 100. *. float_of_int numer /. float_of_int denom
 
-(* Given a path condition and a list of mappings from make_ByteArrays of
-	 symbolic values to variables, print:
-	 - the path condition (in terms of those variables, where possible)
-	 - a sample set of values for those variables which would lead execution down this path
-	 - coverage information for this path *)
-let printPath state hist =
-
+(** Given a job, print the path condition (an attempt is made to print variable
+    names instead of their symbolic values) and a sample set of values which would
+    lead execution down this path *)
+let printPath job =
+    let state = job#state in
+    let hist = job#exHist in
     let rec eliminate_untracked apc =
       match apc with
       | [] -> ([], [])
@@ -328,7 +327,7 @@ let printPath state hist =
     let pc_all = state.path_condition in
     let pc_branch,pc_assume = eliminate_untracked state.path_condition in
 
-	Output.printf "Path condition:@\n  @[%a@]@\n@."
+	Output.printf "Path condition for job %d:@\n  @[%a@]@\n@." job#path_id
 		(FormatPlus.pp_print_list (BytesPrinter.bytes_named hist.bytesToVars) "@\n") pc_branch;
 	Output.printf "Path condition (ASSUMEs):@\n  @[%a@]@\n@."
 		(FormatPlus.pp_print_list (BytesPrinter.bytes_named hist.bytesToVars) "@\n") pc_assume;
@@ -432,9 +431,9 @@ let printCoveringConfigs file coveringSet covType =
         Output.printf "Here is a set of %d configurations which covers all the %s ever hit:@\n@."
                 (List.length coveringSet) name;
         List.iter
-        (fun job_result ->
-                 printPath job_result#state job_result#exHist;
-                 printCov file covType job_result#exHist;
+        (fun job ->
+                 printPath job;
+                 printCov file covType job#exHist;
                  Output.printf "-------------@\n@.")
              coveringSet
     end
@@ -539,9 +538,9 @@ let printCoverageInfo resultList =
              be true. *)
         Output.printf "Path coverage:@\n@.";
         List.iter
-            (fun job_result ->
-                 printPath job_result#state job_result#exHist;
-                 Output.printf "The path contains %d statements@\n@." (List.length job_result#exHist.executionPath);
+            (fun job ->
+                 printPath job;
+                 Output.printf "The path contains %d statements@\n@." (List.length job#exHist.executionPath);
                  Output.printf "-------------@\n@.")
             resultList
     )
