@@ -25,8 +25,18 @@ let get_line_targets =
     let module Memo = Memo.Make (CilData.CilFile) in
     Memo.memo "LineTargets.get_line_targets"
         begin fun file ->
-            List.fold_left begin fun targets line ->
-                let targets' = List.map (fun (fundec, stmt) -> OtterCFG.Instruction.of_stmt_first file fundec stmt) (FindCil.stmts_by_line file line) in
+            List.fold_left begin fun targets (filename, linenumber as line) ->
+                let stmts =
+                    try
+                        FindCil.stmts_by_line file line
+                    with Not_found ->
+                        let output_mode = Output.get_mode () in
+                        Output.set_mode Output.MSG_REG;
+                        Output.printf "Warning: line target %s:%d not found.@." filename linenumber;
+                        Output.set_mode output_mode;
+                        []
+                in
+                let targets' = List.map (fun (fundec, stmt) -> OtterCFG.Instruction.of_stmt_first file fundec stmt) stmts in
                 targets' @ targets
             end [] (!arg_line_targets)
         end
