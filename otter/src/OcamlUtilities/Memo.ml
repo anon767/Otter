@@ -102,7 +102,7 @@ end
 (** Print the statistics of all memoized functions *)
 let statistics_printer ff =
     let table, width = Hashtbl.fold begin fun label { hits; misses; hit_time; miss_time } (table, width) ->
-        let table = if misses > 0 then
+        if misses > 0 then
             let hits' = float_of_int hits in
             let misses' = float_of_int misses in
             let total' = hits' +. misses' in
@@ -110,12 +110,11 @@ let statistics_printer ff =
             let hit_cost' = hit_time /. hits' in
             let miss_cost' = miss_time /. misses' in
             let speedup' = miss_cost' /. hit_cost' in
-            (label, hits, misses, miss_rate', miss_cost', speedup')::table
+            let table = (label, hits, misses, miss_rate', miss_cost', speedup')::table in
+            let width = max (String.length label) width in
+            (table, width)
         else
-            table
-        in
-        let width = max (String.length label) width in
-        (table, width)
+            (table, width)
     end statistics ([], 16) in
     let table = List.fast_sort (fun (_, _, _, x, _, _) (_, _, _, y, _, _) -> Pervasives.compare x y) table in
     let width = width + 2 in
