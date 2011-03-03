@@ -122,7 +122,9 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                     let _ = assert(parent_job#decision_path == List.tl job#decision_path) in
                     let bounded_decision = List.hd job#decision_path in
                     let bounding_paths = List.fold_left (
-                        fun acc path -> if Decision.equals bounded_decision (List.hd path) then (List.tl path) :: acc else acc
+                        fun acc path -> 
+                            if path <> [] && Decision.equals bounded_decision (List.hd path) then (List.tl path) :: acc 
+                            else acc
                     ) [] bounding_paths in
                     if bounding_paths = [] then (* out bound *)
                         let _ = Output.debug_printf "Out bound@." in
