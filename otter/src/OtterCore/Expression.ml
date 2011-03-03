@@ -371,7 +371,7 @@ deref job bytes typ errors =
                     (* No conditional branches were dereferenced successfully: just fail. *)
                     (* TODO: Yit: The only way to return a polymorphic error in Ocaml is to use an exception monad,
                         and that takes a wholesale change to Expression. *)
-                    failwith "Dereferece of invalid conditional pointer"
+                    failwith "Dereference of invalid conditional pointer"
             end
 
         | Bytes_Op(op, operands) ->
