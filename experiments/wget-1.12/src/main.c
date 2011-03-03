@@ -863,7 +863,7 @@ There is NO WARRANTY, to the extent permitted by law.\n"), stdout);
 char *program_name; /* Needed by lib/error.c. */
 
 int
-main (int argc, char **argv)
+wget_main (int argc, char **argv)
 {
   char **url, **t;
   int i, ret, longindex;
@@ -1386,6 +1386,25 @@ redirect_output_signal (int sig)
   signal (sig, redirect_output_signal);
 }
 #endif
+
+/* for symbolic execution */
+#include <otter/otter_builtins.h>
+
+//int main(int argc, char **argv)
+int client_main()
+{
+  char** argv;
+  
+  //__otter_fs_mount();
+  fopen("/dev/tty", "r");
+  fopen("/dev/tty", "w");
+  fopen("/dev/tty", "w");
+  argv = malloc(sizeof(char*)*3);
+  argv[0] = "wget";
+  argv[1] = "ftp://127.0.0.1/foo.txt";
+  argv[2] = "--output-document=/dev/tty";
+  return wget_main(3, argv);
+}
 
 /*
  * vim: et ts=2 sw=2
