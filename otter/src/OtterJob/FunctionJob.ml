@@ -143,8 +143,17 @@ let rec init_bytes_with_pointers
             end
 
         | Cil.TComp (compinfo, _) when not compinfo.Cil.cstruct ->
-            (* we can't handle unions *)
-            FormatPlus.failwith "TODO: init_bytes_with_pointers: handle unions: %a" Printcil.typ typ
+            (* for unions, initialize each field and combine them *)
+            let job, field_bytes_list = fold_struct begin fun (job, field_bytes_list) field ->
+                let field_offset = Cil.Field (field, Cil.NoOffset) in
+                let field_exps = List.map begin function
+                    | Cil.Lval lval -> Cil.Lval (Cil.addOffsetLval field_offset lval)
+                    | _ -> failwith "are there any other Cil.exp that can have type Cil.TComp?"
+                end exps in
+                let job, field_bytes = init_bytes_with_pointers_inner job (Cil.typeOffset typ field_offset) points_to field_exps in
+                (job, (Bytes.conditional__bytes field_bytes)::field_bytes_list)
+            end (job, []) compinfo in
+            (job, Bytes.make_Bytes_Conditional (Bytes.conditional__from_list field_bytes_list))
 
         | typ when Cil.isArithmeticType typ ->
             (* arithmetic values are just that *)

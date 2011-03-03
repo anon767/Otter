@@ -245,6 +245,49 @@ let soundness_testsuite = "Soundness" >::: [
         ];
     ];
 
+    "Unions" >::: [
+        (* there should be at least 1 aliasing conditions: p == &u.x *)
+        test_symbolic_pointers ~label:"Pointer to union"
+            ~expect_return:[ 1 ]
+            begin String.concat "" ["
+                int *p;
+                union { char a; int x; char b; int y; } u;
+                void nop1(int x) {}
+                void nop2(int x) {}
+                void nop3(int x) {}
+                int foo(void) {
+                    if (p == &u.y) {
+                        return 1;
+                    }
+                    return 0;
+                }
+                int main(void) {
+                    p = &u.x;
+                    foo();
+                    return 0;
+                }
+            "] end;
+
+        (* there should be at least 1 aliasing conditions: u.p == &x *)
+        test_symbolic_pointers ~label:"Union pointer"
+            ~expect_return:[ 1 ]
+            begin String.concat "" ["
+                union { char a; int *p; char b; } u;
+                int x;
+                int foo(void) {
+                    if (u.p == &x) {
+                        return 1;
+                    }
+                    return 0;
+                }
+                int main(void) {
+                    u.p = &x;
+                    foo();
+                    return 0;
+                }
+            "] end;
+    ];
+
     "Pointer to malloc'ed" >::: [
         (* there should be at least 3 aliasing conditions: x == NULL, y == NULL or y == x, regardless of order of
            occurence *)
