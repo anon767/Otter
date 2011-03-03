@@ -25,3 +25,5 @@ $cmd > redis-functions
 
 echo ../../otter/src/OcamlUtilities/Grammar/grammar '< redis.grammar > redis-grammar.c'
 ../../otter/src/OcamlUtilities/Grammar/grammar < redis.grammar > redis-grammar.c
+echo ../../otter/src/OcamlUtilities/Grammar/grammar '< redis-simple.grammar > redis-simple-grammar.c'
+../../otter/src/OcamlUtilities/Grammar/grammar < redis-simple.grammar > redis-simple-grammar.c

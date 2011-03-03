@@ -1,0 +1,188 @@
+command ::=
+| generic_command
+| string_command
+| list_command
+| set_command
+| connection_command
+;
+
+string_command ::=
+| "GET " key
+| "SET " key value
+| "SETNX " key value
+| "SETEX " key seconds value
+| "APPEND " key value
+| "STRLEN " key
+| "SETBIT " key offset ("0"|"1")
+| "GETBIT " key offset
+| "SETRANGE " key offset value
+| "GETRANGE " key begin end
+| "INCR " key
+| "DECR " key
+| "MGET " key+
+| "INCRBY " key increment
+| "DECRBY " key decrement
+| "GETSET " key value
+| "MSET " (key value)+
+| "MSETNX " (key value)+
+;
+
+generic_command ::=
+| "DEL " key+
+| "EXISTS " key
+| "RANDOMKEY"
+| "MOVE " key db
+| "RENAME " key key
+| "RENAMENX " key key
+| "EXPIRE " key seconds
+| "EXPIREAT " key timestamp
+| "KEYS " pattern
+| "TYPE " key
+| "SORT " key ["BY " pattern] ["LIMIT " offset count] ("GET " ("# "|pattern))* ["ASC "|"DESC "] ["ALPHA "] ["STORE " key]
+| "TTL " key
+| "PERSIST " key
+;
+
+list_command ::=
+| ("L"|"R") "PUSH " key value
+| ("L"|"R") "PUSHX " key value
+| "LINSERT " key ("BEFORE"|"AFTER ") " " pivot value
+| ("L"|"R") "POP " key
+| "B" ("L"|"R") "POP " key+ timeout
+| "BRPOPLPUSH " key key timeout
+| "LLEN " key
+| "LINDEX " key index
+| "LSET " key index value
+| "LRANGE " key begin end
+| "LTRIM " key begin end
+| "LREM " key count value
+| "RPOPLPUSH " key key
+;
+
+set_command ::=
+| "S" ("ADD"|"REM") " " key member
+| "SMOVE " key key member
+| "SISMEMBER " key member
+| "SCARD " key
+| "SPOP " key
+| "SRANDMEMBER " key
+| "SINTER " key+
+| "SINTERSTORE " key key+
+| "SUNION " key+
+| "SUNIONSTORE " key key+
+| "SDIFF " key+
+| "SDIFFSTORE " key key+
+| "SMEMBERS " key
+;
+
+sorted_set_command ::=
+| "ZADD " key score member
+| "ZINCRBY " key increment member
+| "ZREM " key member
+| "ZREMRANGEBYSCORE " key min max
+| "ZREMRANGEBYRANK " key begin end
+| "ZUNIONSTORE " key numkeys key+ ["WEIGHTS " weight+] ["AGGREGATE " ("SUM"|"MIN"|"MAX")]
+| "ZINTERSTORE " key numkeys key+ ["WEIGHTS " weight+] ["AGGREGATE " ("SUM"|"MIN"|"MAX")]
+| "ZRANGE " key begin end ["WITHSCORES"]
+| "ZRANGEBYSCORE " key min max ["WITHSCORES "] ["LIMIT " offset count]
+| "ZREVRANGEBYSCORE " key min max ["WITHSCORES "] ["LIMIT " offset count]
+| "ZCOUNT " key min max
+| "ZREVRANGE " key begin end ["WITHSCORES"]
+| "ZCARD " key
+| "ZSCORE " key member
+| "ZRANK " key member
+| "ZREVRANK " key member
+;
+
+hash_command ::=
+| "HSET " key field value
+| "HSETNX " key field value
+| "HGET " key field
+| "HMSET " key (field value)+
+| "HMGET " key field+
+| "HINCRBY " key field increment
+| "HDEL " key field
+| "HLEN " key
+| "HKEYS " key
+| "HVALS " key
+| "HGETALL " key
+| "HEXISTS " key field
+;
+
+connection_command ::=
+| "SELECT " db
+| "AUTH " password
+| "PING"
+| "ECHO " message
+| "QUIT"
+;
+
+server_command ::=
+| "DBSIZE"
+| "SAVE"
+| "BGSAVE"
+| "BGREWRITEAOF"
+| "SHUTDOWN"
+| "LASTSAVE"
+| "SYNC"
+| "FLUSHDB"
+| "FLUSHALL"
+| "INFO"
+| "MONITOR"
+| "SLAVEOF " host port
+| "DEBUG SEGFAULT"
+| "DEBUG OBJECT " key
+| "CONFIG SET " parameter value
+| "CONFIG GET " parameter
+| "CONFIG RESETSTAT"
+;
+
+transaction_command ::=
+| "MULTI"
+| "EXEC"
+| "DISCARD"
+| "WATCH " key+
+| "UNWATCH"
+;
+
+pubsub_command ::=
+| "SUBSCRIBE " channel+
+| "UNSUBSCRIBE " channel*
+| "PSUBSCRIBE " pattern+
+| "PUNSUBSCRIBE " pattern*
+| "PUBLISH " channel message
+;
+
+one_char_arg ::= string1 " ";
+one_digit_arg ::= digit " ";
+
+key ::= one_char_arg;
+value ::= one_char_arg;
+pattern ::= one_char_arg;
+channel ::= one_char_arg;
+host ::= one_char_arg;
+port ::= one_char_arg;
+message ::= one_char_arg;
+field ::= one_char_arg;
+member ::= one_char_arg;
+parameter ::= one_char_arg;
+password ::= one_char_arg;
+
+offset ::= one_digit_arg;
+count ::= one_digit_arg;
+seconds ::= one_digit_arg;
+decrement ::= one_digit_arg;
+increment ::= one_digit_arg;
+numkeys ::= one_digit_arg;
+timeout ::= one_digit_arg;
+weight ::= one_digit_arg;
+begin ::= one_digit_arg;
+end ::= one_digit_arg;
+db ::= one_digit_arg;
+index ::= one_digit_arg;
+pivot ::= one_digit_arg;
+score ::= one_digit_arg;
+timestamp ::= one_digit_arg; // Um---this doesn't seem reasonable
+
+min ::= one_digit_arg | "(" digit " " | "-inf " | "inf ";
+max ::= min;
