@@ -205,13 +205,16 @@ let libc_free job retopt exps errors =
 *)
 let access_bytes_with_length ?(exp=Cil.Const (Cil.CStr "exp unavailable")) job bytes errors length =
     let job, lvals, errors = Expression.deref job bytes Cil.voidPtrType errors in
-    let old_job = job in (* Checkpoint the job in case we must report an error *)
-    let job, failing_bytes_opt = Expression.checkBounds job lvals length in
-    let errors = match failing_bytes_opt with
-      | None -> errors
-      | Some b -> (old_job, `OutOfBounds exp) :: errors
-    in
-    (job, lvals, errors)
+    if not !Executeargs.arg_bounds_checking then
+        (job, lvals, errors)
+    else
+        let old_job = job in (* Checkpoint the job in case we must report an error *)
+        let job, failing_bytes_opt = Expression.checkBounds job lvals length in
+        let errors = match failing_bytes_opt with
+          | None -> errors
+          | Some b -> (old_job, `OutOfBounds exp) :: errors
+        in
+        (job, lvals, errors)
 
 (** Like [access_bytes_with_length], but starts from an expression instead of a
     bytes and returns the intermediate bytes.
