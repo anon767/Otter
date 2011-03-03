@@ -38,8 +38,10 @@ static void env_init(void);
 #include <otter/otter_user.h>
 #include <otter/otter_fs.h>
 #include <sys/fcntl.h>
-char confFileContents[] = "chown_upload_mode=00600\nmax_login_fails=3\n\nanonymous_enable=1\nport_enable=TRUE\npasv_enable=YES\nlocal_enable=0\nchroot_local_user=FALSE\nwrite_enable=NO\n#\npam_service_name=ftp\nlisten_address6=\nlisten=1\nftp_username=user\n";
+char confFileContents[] = "chown_upload_mode=00600\nmax_login_fails=3\n\nanonymous_enable=1\nport_enable=TRUE\npasv_enable=YES\nlocal_enable=0\nchroot_local_user=FALSE\nwrite_enable=NO\n#\npam_service_name=ftp\nlisten_address6=\nlisten=1\nftp_username=user\npasv_enable=NO\nlock_upload_files=NO\n";
 unsigned int confFileSize = sizeof(confFileContents) - 1;
+char fooFileContents[] = "foofoofoofoo";
+unsigned int fooFileSize = sizeof(fooFileContents) - 1;
 extern int* vsftpd_has_called_listen;
 int vsftpd_main(int argc, const char* argv[]);
 extern int client_main();
@@ -50,6 +52,12 @@ int main(int argc, const char* argv[])
 	__otter_fs_mount();
 	vsftpd_has_called_listen = __otter_multi_gmalloc(sizeof(int));
 	*vsftpd_has_called_listen = 0;
+	
+	int foofd = open("foo.txt", O_RDWR | O_CREAT, 0x0FFF);
+	__ASSERT(foofd != -1);
+	__ASSERT(write(foofd, fooFileContents, fooFileSize) != -1);
+	close(foofd);
+
   
 	if(fork())
 	{
@@ -61,10 +69,9 @@ int main(int argc, const char* argv[])
 	else
 	{
 		/* setup environment for vsftpd */
-		__otter_fs_touch("foo.txt", __otter_fs_pwd);
-		open("foo.txt", O_RDWR);
-		open("foo.txt", O_RDWR);
-		open("foo.txt", O_RDWR);
+		open("/dev/tty", O_RDONLY);
+		open("/dev/tty", O_WRONLY);
+		open("/dev/tty", O_WRONLY);
 		setuid(__otter_UID_ROOT);
 		struct __otter_fs_dnode* dnode = __otter_fs_mkdir("etc", __otter_fs_root);
 		__otter_fs_touch("vsftpd.conf", dnode);

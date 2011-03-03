@@ -4,8 +4,6 @@
  * Author: Chris Evans
  * utility.c
  */
-#include <otter/otter_builtins.h>
-
 #include "utility.h"
 #include "sysutil.h"
 #include "str.h"
@@ -16,8 +14,6 @@
 void
 die(const char* p_text)
 {
-	__EVALSTR(p_text, 1000);
-	__ASSERT(0);
 #ifdef DIE_DEBUG
   bug(p_text);
 #endif
