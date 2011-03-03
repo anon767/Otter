@@ -21,22 +21,14 @@ let line_target_interceptor job job_queue interceptor =
 
 
 let get_line_targets =
-    let module Memo = Memo.Make (CilUtilities.CilData.CilFile) in
+    let open CilUtilities in
+    let module Memo = Memo.Make (CilData.CilFile) in
     Memo.memo "LineTargets.get_line_targets"
         begin fun file ->
-            let line_targets = ref [] in
-            Cil.visitCilFileSameGlobals begin object
-                inherit Cil.nopCilVisitor
-                method vfunc fundec =
-                    List.iter (fun stmt ->
-                        let loc = Cil.get_stmtLoc stmt.skind in
-                        begin if List.mem (loc.Cil.file, loc.Cil.line) (!arg_line_targets) then
-                            line_targets := (OtterCFG.Instruction.of_stmt_first file fundec stmt)::(!line_targets)
-                        end
-                    ) fundec.sallstmts;
-                    Cil.SkipChildren
-            end end file;
-            !line_targets
+            List.fold_left begin fun targets line ->
+                let targets' = List.map (fun (fundec, stmt) -> OtterCFG.Instruction.of_stmt_first file fundec stmt) (FindCil.stmts_by_line file line) in
+                targets' @ targets
+            end [] (!arg_line_targets)
         end
 
 
