@@ -20,7 +20,7 @@ let get_distance_to_targets =
         Profiler.global#call "ClosestToTargetsStrategy.get_distance_to_targets" begin fun () ->
             let source = Job.get_instruction job in
             let current_fundec = List.hd job#state.State.callstack in
-            let target_instrs = List.fold_left (fun lst f -> (Instruction.call_sites_in_caller (job#file, current_fundec, f)) @ lst) [] target_fundecs in
+            let target_instrs = List.fold_left (fun lst f -> (Instruction.call_sites_in_caller job#file current_fundec f) @ lst) [] target_fundecs in
             let all_targets = target_instrs @ line_targets in
             if all_targets = [] then
                 max_distance
