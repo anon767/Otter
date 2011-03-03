@@ -1,0 +1,1 @@
+make CC="`pwd`/../../newlib-1.19.0/otter/cilly-with-libc" AR="`pwd`/../../cil/bin/cilly --merge --mode=AR" RANLIB=true
