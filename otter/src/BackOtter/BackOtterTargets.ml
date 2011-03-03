@@ -32,14 +32,12 @@ let get_paths fundec =
 let add_path fundec decisions =
     let targets = !targets_ref in
     let failing_paths = get_pathset fundec in
+    if PathSet.mem decisions failing_paths then
+        OcamlUtilities.Output.printf "Warning: failing path already exists"
+    else
     targets_ref :=
         {
-            mapping =
-                if PathSet.mem decisions failing_paths then
-                    invalid_arg "Duplicated failing path"
-                else
-                    FundecMap.add fundec (PathSet.add decisions failing_paths) targets.mapping
-                ;
+            mapping = FundecMap.add fundec (PathSet.add decisions failing_paths) targets.mapping;
             last_failing_path = Some (fundec, decisions);
         }
 
