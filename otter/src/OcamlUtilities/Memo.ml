@@ -15,41 +15,40 @@ let statistics = Hashtbl.create 8
 (**/**)
 
 (** Make a memoization wrapper that can be used to memoized several functions of the same type *)
-let make label =
+let make ?store:(find, add = let memotable = Hashtbl.create initial_size in (Hashtbl.find memotable, Hashtbl.add memotable)) label =
     if Hashtbl.mem statistics label then FormatPlus.invalid_arg "Label %s already exists!" label;
-    let memotable = Hashtbl.create initial_size in
     let record = { hits = 0; misses = 0; hit_time = 0.; miss_time = 0. } in
     Hashtbl.add statistics label record;
     fun f x ->
         let start = Sys.time () in
         try
-            let y = Hashtbl.find memotable x in
+            let y = find x in
             record.hits <- record.hits + 1;
             record.hit_time <- record.hit_time +. (Sys.time () -. start);
             y
         with Not_found ->
             let y = f x in
             (* don't need Hashtbl.replace, which is slower, as x guaranteed to be unique *)
-            Hashtbl.add memotable x y;
+            add x y;
             record.misses <- record.misses + 1;
             record.miss_time <- record.miss_time +. (Sys.time () -. start);
             y
 
 
 (** Make a hashconsing wrapper *)
-let make_hashcons label =
-    (* TODO: use Weak? *)
-    make label (fun x -> x)
+let make_hashcons ?store label =
+    (* TODO: use store? *)
+    make ?store label (fun x -> x)
 
 
 (** Memoize a function *)
-let memo label f =
-    make label f
+let memo ?store label f =
+    make ?store label f
 
 
 (** Memoize a recursive function; the function will be given the memoized version of itself to recurse with *)
-let memo_rec label f =
-    let wrap = make label in
+let memo_rec ?store label f =
+    let wrap = make ?store label in
     let rec g x = wrap (f g) x in
     g
 
@@ -60,24 +59,8 @@ module Make (T : Hashtbl.HashedType) = struct
     (** Make a memoization wrapper that can be used to memoized several functions of the same type *)
     let make label =
         let module H = Hashtbl.Make (T) in
-        if Hashtbl.mem statistics label then FormatPlus.invalid_arg "Label %s already exists!" label;
         let memotable = H.create initial_size in
-        let record = { hits = 0; misses = 0; hit_time = 0.; miss_time = 0. } in
-        Hashtbl.add statistics label record;
-        fun f x ->
-            let start = Sys.time () in
-            try
-                let y = H.find memotable x in
-                record.hits <- record.hits + 1;
-                record.hit_time <- record.hit_time +. (Sys.time () -. start);
-                y
-            with Not_found ->
-                let y = f x in
-                (* don't need Hashtbl.replace, which is slower, as x guaranteed to be unique *)
-                H.add memotable x y;
-                record.misses <- record.misses + 1;
-                record.miss_time <- record.miss_time +. (Sys.time () -. start);
-                y
+        make ~store:(H.find memotable, H.add memotable) label
 
 
     (** Make a hashconsing wrapper *)
