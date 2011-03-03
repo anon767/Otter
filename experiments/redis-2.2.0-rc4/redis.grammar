@@ -159,7 +159,7 @@ pubsub_command ::=
 one_char_arg ::= "$1\r\n" string1 "\r\n";
 one_digit_arg ::= "$1\r\n" digit "\r\n";
 
-key ::= one_char_arg;
+key ::= "$2\r\nk" string1 "\r\n";
 value ::= one_char_arg;
 pattern ::= one_char_arg;
 channel ::= one_char_arg;

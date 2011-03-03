@@ -156,7 +156,7 @@ pubsub_command ::=
 one_char_arg ::= string1 " ";
 one_digit_arg ::= digit " ";
 
-key ::= one_char_arg;
+key ::= "k" one_char_arg;
 value ::= one_char_arg;
 pattern ::= one_char_arg;
 channel ::= one_char_arg;

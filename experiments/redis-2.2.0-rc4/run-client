@@ -5,6 +5,7 @@ fi
 ../../newlib-1.19.0/otter/otter-with-libc\
   src/redis-server_comb.c deps/hiredis/libhiredis.a\
   --domultiotter --doRunRmtmps\
+  --no-remove-cil-suffixes\
   --lineCov --pathCov --edgeCov --blockCov\
   --tracked-functions=redis-functions\
   "$@"
