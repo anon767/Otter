@@ -1,7 +1,7 @@
-uptime.c:121
-uptime.c:122
-uptime.c:123
-uptime.c:136
-uptime.c:138
-uptime.c:156
-uptime.c:182
+# uptime.c:121 # Error handling
+# uptime.c:122 # Error handling
+# uptime.c:123 # Error handling
+# uptime.c:136 # Error handling
+# uptime.c:138 # Error handling
+# uptime.c:156 # Unreachable if HAVE_GETLOADAVG
+# uptime.c:182 # Error handling

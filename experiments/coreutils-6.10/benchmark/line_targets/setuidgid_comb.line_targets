@@ -1,19 +1,19 @@
-setuidgid.c:120
-setuidgid.c:122
-setuidgid.c:123
-setuidgid.c:125
-setuidgid.c:126
-setuidgid.c:166
-setuidgid.c:175
-setuidgid.c:177
-setuidgid.c:186
-setuidgid.c:194
-setuidgid.c:200
-setuidgid.c:201
-setuidgid.c:204
-setuidgid.c:205
-setuidgid.c:209
-setuidgid.c:211
-setuidgid.c:212
-setuidgid.c:214
-setuidgid.c:215
+setuidgid.c:120 # Warning: this might depend on argument length
+setuidgid.c:122 # Warning: this might depend on argument length
+setuidgid.c:123 # Warning: this might depend on argument length
+setuidgid.c:125 # Warning: this might depend on argument length
+setuidgid.c:126 # Warning: this might depend on argument length
+setuidgid.c:166 # Error handling that may be reachable
+setuidgid.c:175 # Error handling that may be reachable
+setuidgid.c:177 # Error handling that may be reachable
+setuidgid.c:186 # Error handling that may be reachable
+setuidgid.c:194 # KLEE fails to cover this as it stops at line 191
+setuidgid.c:200 # KLEE fails to cover this as it stops at line 191
+setuidgid.c:201 # KLEE fails to cover this as it stops at line 191
+setuidgid.c:204 # KLEE fails to cover this as it stops at line 191
+setuidgid.c:205 # KLEE fails to cover this as it stops at line 191
+setuidgid.c:209 # KLEE fails to cover this as it stops at line 191
+setuidgid.c:211 # KLEE fails to cover this as it stops at line 191
+setuidgid.c:212 # KLEE fails to cover this as it stops at line 191
+setuidgid.c:214 # KLEE fails to cover this as it stops at line 191
+setuidgid.c:215 # KLEE fails to cover this as it stops at line 191

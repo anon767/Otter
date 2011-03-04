@@ -1,9 +1,9 @@
-tee.c:125
-tee.c:184
-tee.c:195
-tee.c:196
-tee.c:197
-tee.c:203
-tee.c:204
-tee.c:212
-tee.c:213
+# tee.c:125 # Error handling
+# tee.c:184 # Error handling
+# tee.c:195 # Error handling
+# tee.c:196 # Error handling
+# tee.c:197 # Error handling
+# tee.c:203 # Error handling
+# tee.c:204 # Error handling
+# tee.c:212 # Error handling
+# tee.c:213 # Error handling

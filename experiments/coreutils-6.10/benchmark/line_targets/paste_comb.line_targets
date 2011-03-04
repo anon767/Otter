@@ -1,14 +1,14 @@
-paste.c:141
-paste.c:142
-paste.c:143
-paste.c:152
+# paste.c:141 # Error handling
+# paste.c:142 # Error handling
+# paste.c:143 # Error handling
+# paste.c:152 # Error handling
 paste.c:196
-paste.c:201
-paste.c:228
-paste.c:258
-paste.c:259
-paste.c:277
+# paste.c:201 # Error handling
+# paste.c:228 # Error handling
+# paste.c:258 # Error handling
+# paste.c:259 # Error handling
+# paste.c:277 # Error handling
 paste.c:302
-paste.c:401
-paste.c:402
-paste.c:494
+# paste.c:401 # Error handling
+# paste.c:402 # Error handling
+# paste.c:494 # Error handling

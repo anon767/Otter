@@ -1,17 +1,17 @@
-uname.c:125
-uname.c:127
-uname.c:129
-uname.c:138
-uname.c:148
-uname.c:154
-uname.c:155
-uname.c:156
-uname.c:186
-uname.c:189
-uname.c:191
-uname.c:193
-uname.c:196
-uname.c:199
-uname.c:244
-uname.c:246
-uname.c:291
+# uname.c:125 # Unreachable if argument lengths are too short and cannot hold "--help"
+# uname.c:127 # Unreachable if argument lengths are too short and cannot hold "--help"
+# uname.c:129 # Unreachable if argument lengths are too short and cannot hold "--help"
+# uname.c:138 # Unreachable if argument lengths are too short and cannot hold "--help"
+# uname.c:148 # Unreachable if argument lengths are too short and cannot hold "--help"
+# uname.c:154 # Unreachable if argument lengths are too short and cannot hold "--help"
+# uname.c:155 # Unreachable if argument lengths are too short and cannot hold "--help"
+# uname.c:156 # Unreachable if argument lengths are too short and cannot hold "--help"
+# uname.c:186 # System dependent (unreachable if uname_mode != UNAME_ARCH)
+# uname.c:189 # System dependent (unreachable if uname_mode != UNAME_ARCH)
+# uname.c:191 # System dependent (unreachable if uname_mode != UNAME_ARCH)
+# uname.c:193 # System dependent (unreachable if uname_mode != UNAME_ARCH)
+# uname.c:196 # System dependent (unreachable if uname_mode != UNAME_ARCH)
+# uname.c:199 # System dependent (unreachable if uname_mode != UNAME_ARCH)
+# uname.c:244 # Unreachable if argument lengths are too short and cannot hold "--help"
+# uname.c:246 # Unreachable if argument lengths are too short and cannot hold "--version"
+# uname.c:291 # Error handling
