@@ -13,6 +13,14 @@ let compare co xs ys =
     in
     compare xs ys
 
+(** Check for membership, given an equality function for the elements. *)
+let mem eq x lst =
+    let rec mem x = function
+        | x' :: lst -> x' == x || eq x' x || mem x lst
+        | [] -> false
+    in
+    mem x lst
+
 (** Compare two lists for equality, given an equality function for the elements. *)
 let equal eq xs ys =
     let rec equal xs ys = xs == ys || match xs, ys with
@@ -39,7 +47,7 @@ end
 module MakeHashedList (E : sig type t val equal : t -> t -> bool val hash : t -> int end) = struct
     type t = E.t list
     let equal = equal E.equal
-    let hash = hash E.hash
+    let hash = hash E.hash 
 end
 
 (** Functor for ordered and hashable list of elements. *)

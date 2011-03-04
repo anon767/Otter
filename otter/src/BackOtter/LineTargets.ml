@@ -40,8 +40,10 @@ let get_line_targets =
                         []
                 in
                 (* Use of_stmt_last to ensure that instructions before the last one are covered *)
-                let targets' = List.map (fun (fundec, stmt) -> OtterCFG.Instruction.of_stmt_last file fundec stmt) stmts in (* TODO: remove duplicates *)
-                targets' @ targets
+                List.fold_left (fun targets (fundec, stmt) -> 
+                    let instruction = OtterCFG.Instruction.of_stmt_last file fundec stmt in
+                    if ListPlus.mem OtterCFG.Instruction.equal instruction targets then targets else instruction :: targets
+                ) targets stmts
             end [] (!arg_line_targets)
         end
 
