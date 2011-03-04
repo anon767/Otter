@@ -1,14 +1,14 @@
-wc.c:108
-wc.c:113
-wc.c:121
-wc.c:127
-wc.c:128
-wc.c:129
+# wc.c:108 # Unreachable because status is always not EXIT_SUCCESS 
+# wc.c:113 # Unreachable because status is always not EXIT_SUCCESS
+# wc.c:121 # Unreachable because status is always not EXIT_SUCCESS
+# wc.c:127 # Unreachable because status is always not EXIT_SUCCESS
+# wc.c:128 # Unreachable because status is always not EXIT_SUCCESS
+# wc.c:129 # Unreachable because status is always not EXIT_SUCCESS
 wc.c:203
 wc.c:204
-wc.c:239
-wc.c:240
-wc.c:241
+# wc.c:239 # Unreachable if read never returns -1
+# wc.c:240 # Unreachable if read never returns -1
+# wc.c:241 # Unreachable if read never returns -1
 wc.c:318
 wc.c:320
 wc.c:328

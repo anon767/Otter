@@ -1,1 +1,1 @@
-link.c:97
+# link.c:97 # link() is missing, therefore Otter will stop before reaching the exit
