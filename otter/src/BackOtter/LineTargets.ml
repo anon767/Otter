@@ -11,23 +11,6 @@ let arg_line_targets = ref []
 module FileMap = Map.Make(CilData.CilFile)
 let file_to_line_targets = ref FileMap.empty
 
-(** An interceptor that tracks targets when some (file, line) in arg_line_targets is encountered. *)
-let line_target_interceptor job job_queue interceptor =
-    (* TODO: use Instruction.t instead of (file, line) *)
-    let loc = Job.get_loc job in
-    let line = (loc.Cil.file, loc.Cil.line) in
-    begin if List.mem line (!arg_line_targets) then
-        let _ = Output.must_printf "TargetReached %s:%d@\n" loc.Cil.file loc.Cil.line in
-        let fundec = BackOtterUtilities.get_origin_function job in
-        let entryfn = ProgramPoints.get_entry_fundec job#file in
-        let failing_path = List.rev job#decision_path in
-        BackOtterTargets.add_path fundec failing_path;
-        if CilData.CilFundec.equal fundec entryfn then (* TODO: remove this target and related function targets *)()
-    end;
-    (* FIXME: for bounded jobs, they *should* be terminated once reaching line targets, or else we will have copies of the same job running...
-     *         OR  we change the meaning of bounded jobs? *)
-    interceptor job job_queue
-
 let get_line_targets file =
     try 
         FileMap.find file (!file_to_line_targets)
@@ -53,6 +36,29 @@ let get_line_targets file =
         in
         file_to_line_targets := FileMap.add file line_targets (!file_to_line_targets);
         line_targets
+
+
+(** An interceptor that tracks targets when some (file, line) in arg_line_targets is encountered. *)
+let line_target_interceptor job job_queue interceptor =
+    let instruction = Job.get_instruction job in
+    let line_targets = get_line_targets job#file in
+    begin if ListPlus.mem Instruction.equal instruction line_targets then
+        let loc = Job.get_loc job in
+        let _ = Output.must_printf "TargetReached %s:%d@\n" loc.Cil.file loc.Cil.line in
+        let fundec = BackOtterUtilities.get_origin_function job in
+        let entryfn = ProgramPoints.get_entry_fundec job#file in
+        let failing_path = List.rev job#decision_path in
+        BackOtterTargets.add_path fundec failing_path;
+        if CilData.CilFundec.equal fundec entryfn then
+            (* Remove instruction from line_targets *)
+            let _ = Output.must_printf "Remove target %s:%d@\n" loc.Cil.file loc.Cil.line in
+            file_to_line_targets := FileMap.add job#file (List.filter (fun i -> not (Instruction.equal i instruction)) line_targets) (!file_to_line_targets)
+            (* TODO: Remove failing paths associated with this target *)
+            (* TODO: Remove function targets that have no more failing paths *)
+    end;
+    (* FIXME: for bounded jobs, they *should* be terminated once reaching line targets, or else we will have copies of the same job running...
+     *         OR  we change the meaning of bounded jobs? *)
+    interceptor job job_queue
 
 
 (** {1 Command-line options} *)
