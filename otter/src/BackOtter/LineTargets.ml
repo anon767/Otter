@@ -11,12 +11,15 @@ let line_target_interceptor job job_queue interceptor =
     let loc = Job.get_loc job in
     let line = (loc.Cil.file, loc.Cil.line) in
     begin if List.mem line (!arg_line_targets) then
+        let _ = Output.must_printf "TargetReached %s:%d@\n" loc.Cil.file loc.Cil.line in
         let fundec = BackOtterUtilities.get_origin_function job in
         let entryfn = ProgramPoints.get_entry_fundec job#file in
         let failing_path = List.rev job#decision_path in
         BackOtterTargets.add_path fundec failing_path;
         if CilUtilities.CilData.CilFundec.equal fundec entryfn then (* TODO: remove this target and related function targets *)()
     end;
+    (* FIXME: for bounded jobs, they *should* be terminated once reaching line targets, or else we will have copies of the same job running...
+     *         OR  we change the meaning of bounded jobs? *)
     interceptor job job_queue
 
 
