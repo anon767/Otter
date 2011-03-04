@@ -62,16 +62,6 @@ let get_origin_function job = Profiler.global#call "get_origin_function" (fun ()
 let get_origin_function_from_job_result job_result = Profiler.global#call "get_origin_function_from_job_result" (fun () -> get_last_element job_result#state.callstack)
 
 
-let rec lex_compare cmp lst1 lst2 =
-    match lst1, lst2 with
-    | [], [] -> 0
-    | [], _ -> -1
-    | _, [] -> 1
-    | h1::t1, h2::t2 ->
-        let c = cmp h1 h2 in
-        if c = 0 then lex_compare cmp t1 t2 else c
-
-
 (* Returns a function that callee can transitively be inlined in *)
 let rec get_transitive_unique_caller file callee = 
     let can_inline_function caller callee =

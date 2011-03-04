@@ -1,14 +1,19 @@
+open OtterCore
+open OtterCFG
+
 module FundecMap = Map.Make (CilUtilities.CilData.CilFundec)
 
-module PathSet = Set.Make (struct
-    type t = OtterCore.Decision.t list
-    let compare = BackOtterUtilities.lex_compare OtterCore.Decision.compare
-end)
+module Path = struct
+    type t = Decision.t list (* * Instruction.t*)
+    let compare = OcamlUtilities.ListPlus.compare Decision.compare
+end
+
+module PathSet = Set.Make (Path)
 
 (* TODO: generalize targets to program points, not just functions *)
 type t = {
     mapping : PathSet.t FundecMap.t;
-    last_failing_path : (Cil.fundec * OtterCore.Decision.t list) option;
+    last_failing_path : (Cil.fundec * Path.t) option;
 }
 
 let empty = {
@@ -29,16 +34,16 @@ let get_pathset fundec =
 let get_paths fundec = 
     PathSet.elements (get_pathset fundec)
 
-let add_path fundec decisions =
+let add_path fundec path =
     let targets = !targets_ref in
     let failing_paths = get_pathset fundec in
-    if PathSet.mem decisions failing_paths then
+    if PathSet.mem path failing_paths then
         OcamlUtilities.Output.printf "Warning: failing path already exists"
     else
     targets_ref :=
         {
-            mapping = FundecMap.add fundec (PathSet.add decisions failing_paths) targets.mapping;
-            last_failing_path = Some (fundec, decisions);
+            mapping = FundecMap.add fundec (PathSet.add path failing_paths) targets.mapping;
+            last_failing_path = Some (fundec, path);
         }
 
 let get_last_failing_path () =
