@@ -129,7 +129,6 @@ let doit file =
 
         (* print the results *)
         Output.set_formatter (new Output.plain);
-        Output.printf "@\nSTP was invoked %d times (%d cache hits).@." !Stp.stp_count !Stp.cacheHits;
 
         Output.printf "Counter statistics:@.";
         let counter_stats = DataStructures.NamedCounter.report () in

@@ -9,8 +9,6 @@ module SymbolSet = Set.Make
          let compare (x : t) y = Pervasives.compare x.symbol_id y.symbol_id
      end)
 
-let stp_count = ref 0
-
 let print_stp_queries = ref false
 let arg_max_stp_time = ref (-0.1) (* negative means unlimited *)
 let stp_queries = ref []
@@ -439,129 +437,132 @@ to_stp_bv_impl vc bytes =
         | Bytes_Write _ ->
             FormatPlus.failwith "Impossible: converting a Bytes_Write to a bitvector. Is this a Write not under a Read?\n%a" BytesPrinter.bytes bytes
 
-(* TODO (martin) improve Stp Cache *)
-(* Map a pc and a query *)
-module StpCache = Map.Make (struct
-    type t = bytes list * guard * guard * bool (* pc * pre * guard * truth_value *)
-    (* It might be better to have this be set-based equality rather than list-based. *)
-    let compare ((pc1, pre1, guard1, truth1) : t) ((pc2, pre2, guard2, truth2) : t) = (* Type annotation to remove polymorphism *)
-        let result = Pervasives.compare truth1 truth2 in
-        if result <> 0 then result else
-        let result = Pervasives.compare guard1 guard2 in
-        if result <> 0 then result else
-        let result = Pervasives.compare pre1 pre2 in
-        if result <> 0 then result else
-        Pervasives.compare pc1 pc2
- end)
-
-let cacheHits = ref 0
-let stpCacheRef = ref StpCache.empty
-
-(* This is extracted from consult_stp, modified to work with query_stp (guard).
- * Will be replaced. *)
-let stpcache_find pc pre guard truth =
-    try
-        let ans = StpCache.find (pc, pre, guard, truth) !stpCacheRef in
-        incr cacheHits;
-        Some (ans)
-    with Not_found ->
-        None
-
-let stpcache_add answer pc pre guard truth =
-    stpCacheRef := StpCache.add (pc, pre, guard, truth) answer !stpCacheRef
-
 
 (** return (True) False if bytes (not) evaluates to all zeros. Unknown otherwise. *)
-let query_stp pc pre guard =
-    let pc = List.map fst pc in
-    Profiler.global#call "Stp.query_stp" begin fun () ->
-        let pc = getRelevantAssumptions pc (guard__to_bytes guard) in
-        (* TODO (yit):
-         * The way doassert returns global_vc feels dangerous to me,
-         * since it hides the fact that there's a single, shared,
-         * stateful vc. Is it that costly to create a new vc?
-         * The "pop; push" pattern is also very strange and unintuitive.
-         *)
-        let doassert pc =
-            let vc = global_vc in
+let query_stp =
+    let module PC = ListPlus.MakeHashedList (struct
+        type t = bytes
+        let equal = bytes__equal
+        let hash = Hashtbl.hash
+    end) in
+
+    (* maintain the state of STP, and update only if necessary *)
+    let vc = global_vc in
+    let prev_pc = ref [] in
+    let prev_pre = ref guard__true in
+    let prev_guard = ref guard__true in
+    let prev_guard_stp = ref (Stpc.e_true vc) in
+    let setup pc pre guard =
+        if not (guard__equal pre !prev_pre && PC.equal pc !prev_pc) then begin
             Stpc.e_pop vc;
             Stpc.e_push vc;
-
             Output.set_mode Output.MSG_STP;
             Output.printf "%% STP Program: %%@.";
 
-            let rec do_assert pc = match pc with
-                | [] -> ()
-                | head::tail ->
-                    let (bv, len) = Profiler.global#call "Stp.query_stp/construct" (fun () -> to_stp_bv vc head) in (* 1 *)
-                    Profiler.global#call "Stp.query_stp/add assertion" (fun () -> Stpc.assert_ctrue vc len bv) ; (* 2 *)
-                    Output.set_mode Output.MSG_STP;
-                    Output.printf "@[ASSERT(NOT(%t = 0hex00000000));@]@." (fun ff -> Format.pp_print_string ff (Stpc.to_string bv));
-                    do_assert tail
-            in
-            (*Profiler.global#call "STP assert" do_assert relevantAssumptions; *)
-            Profiler.global#call "Stp.query_stp/doassert" (fun () -> do_assert pc);
-            vc
-        in
-        (* TODO: avoid creating vc if cache hit for both T and F *)
-        let vc = doassert pc in
-        if pre != Guard_True then begin
-            let pre_exp = Profiler.global#call "Stp.query_stp/convert pre-condition" (fun () -> to_stp_guard vc pre) in
-            Profiler.global#call "Stp.query_stp/do_assert pre-condition" (fun () -> Stpc.do_assert vc pre_exp)
+            begin try
+                Profiler.global#call "Stp.query_stp/doassert" begin fun () ->
+                    List.iter begin fun bytes ->
+                        let (pc_stp, len) = Profiler.global#call "Stp.query_stp/construct" (fun () -> to_stp_bv vc bytes) in (* 1 *)
+                        Profiler.global#call "Stp.query_stp/add assertion" (fun () -> Stpc.assert_ctrue vc len pc_stp) ; (* 2 *)
+                        Output.set_mode Output.MSG_STP;
+                        Output.printf "@[ASSERT(NOT(%t = 0hex00000000));@]@." (fun ff -> Format.pp_print_string ff (Stpc.to_string pc_stp))
+                    end pc
+                end;
+
+                if pre != Guard_True then begin
+                    let pre_stp = Profiler.global#call "Stp.query_stp/convert pre-condition" (fun () -> to_stp_guard vc pre) in
+                    Profiler.global#call "Stp.query_stp/do_assert pre-condition" (fun () -> Stpc.do_assert vc pre_stp)
+                end;
+            with exn ->
+                Stpc.e_pop vc;
+                prev_pc := [];
+                prev_pre := guard__true;
+                raise exn
+            end;
+
+            (* set prev_* at the end, only if the above succeeds without an exception *)
+            prev_pc := pc;
+            prev_pre := pre;
         end;
+        if not (guard__equal guard !prev_guard) then begin
+            prev_guard_stp := Profiler.global#call "Stp.query_stp/convert guard" (fun () -> to_stp_guard vc guard);
 
-        let guard_exp = Profiler.global#call "Stp.query_stp/convert guard" (fun () -> to_stp_guard vc guard) in
+            (* set prev_* at the end, only if the above succeeds without an exception *)
+            prev_guard := guard;
+        end;
+        !prev_guard_stp
+    in
+
+    let module Memo = Memo.Make (struct
+        type t = PC.t * guard * guard * bool (* pc * pre * guard * sign *)
+        (* It might be better to have this be set-based equality rather than list-based. *)
+        let equal ((pc1, pre1, guard1, sign1) : t) ((pc2, pre2, guard2, sign2) : t) =
+            sign1 == sign2
+            && guard__equal guard1 guard2
+            && guard__equal pre1 pre2
+            && PC.equal pc1 pc2
+
+        let hash (pc, pre, guard, sign) = Hashtbl.hash (PC.hash pc, pre, guard, sign)
+    end) in
+    let query_stp = Memo.memo "Stp.query_stp" begin fun (pc, pre, guard, sign) ->
+        let guard_stp = setup pc pre guard in
+        let guard_stp = if sign then guard_stp else Stpc.e_not vc guard_stp in
+
         Output.set_mode Output.MSG_STP;
-        Output.printf "@[QUERY(%t);@]@." (fun ff -> Format.pp_print_string ff (Stpc.to_string guard_exp));
+        Output.printf "@[QUERY(%t);@]@." (fun ff -> Format.pp_print_string ff (Stpc.to_string guard_stp));
 
-        let query exp truth_value =
-            match stpcache_find pc pre guard truth_value with
-                | Some answer ->
-                    answer
-                | None ->
-                    Stpc.e_push vc;
-                    incr stp_count;
-                    let startTime = Unix.gettimeofday () in
-                    let answer = Profiler.global#call "Stp.query_stp/query" begin fun () ->
-                        (* Note: the count is used as a proxy of running time in BackOtter *)
-                        DataStructures.NamedCounter.incr "stpc_query";
-                        try
-                            let stp_query () = Stpc.query vc exp in
-                            if (!arg_max_stp_time) < 0.0 then
-                                stp_query ()
-                            else
-                                UnixPlus.fork_call ~time_limit:(!arg_max_stp_time) stp_query ()
-                        with 
-                        | Invalid_argument s -> 
+        Profiler.global#call "Stp.query_stp/query" begin fun () ->
+            (* Note: the count is used as a proxy of running time in BackOtter *)
+            DataStructures.NamedCounter.incr "stpc_query";
+            let stp_query () =
+                Stpc.e_push vc;
+                let answer = Stpc.query vc guard_stp in
+                Stpc.e_pop vc;
+                answer
+            in
+            let start = Sys.time () in
+            let answer =
+                if (!arg_max_stp_time) < 0.0 then
+                    stp_query ()
+                else
+                    try
+                        UnixPlus.fork_call ~time_limit:(!arg_max_stp_time) stp_query ()
+                    with
+                        | Invalid_argument s ->
                             FormatPlus.failwith "Invalid_argument (%s)" s
-                        | UnixPlus.ForkCallTimedOut -> 
+                        | UnixPlus.ForkCallTimedOut ->
                             FormatPlus.failwith "ForkCallTimedOut caught in Stpc.query"
-                        | UnixPlus.ForkCallException _ -> 
+                        | UnixPlus.ForkCallException _ ->
                             FormatPlus.failwith "ForkCallException caught in Stpc.query"
-                        | UnixPlus.ForkCallFailure _ -> 
+                        | UnixPlus.ForkCallFailure _ ->
                             FormatPlus.failwith "ForkCallFailure caught in Stpc.query"
-                        | UnixPlus.ForkCallExited i -> 
+                        | UnixPlus.ForkCallExited i ->
                             FormatPlus.failwith "ForkCallExited (%d) caught in Stpc.query" i
-                        | UnixPlus.ForkCallKilled i -> 
+                        | UnixPlus.ForkCallKilled i ->
                             FormatPlus.failwith "ForkCallKilled (%d) caught in Stpc.query" i
-                        | UnixPlus.ForkCallStopped i -> 
+                        | UnixPlus.ForkCallStopped i ->
                             FormatPlus.failwith "ForkCallStopped (%d) caught in Stpc.query" i
                         | e ->
-                            FormatPlus.failwith "Unknown exception caught in Stpc.query" 
-                    end in
-                    stpcache_add answer pc pre guard truth_value;
-                    let endTime = Unix.gettimeofday () in
-                    stp_queries := (pc, pre, guard, truth_value, endTime -. startTime)::(!stp_queries);
-                    Stpc.e_pop vc;
-                    answer
-        in
-        if query guard_exp true then
-            Ternary.True
-        else if query (Stpc.e_not vc guard_exp) false then
-            Ternary.False
-        else
-            Ternary.Unknown
-    end
+                            FormatPlus.failwith "Unknown exception caught in Stpc.query"
+            in
+            let elapsed = Sys.time () -. start in
+            stp_queries := (pc, pre, guard, answer, elapsed)::(!stp_queries);
+            answer
+        end
+    end in
+
+    fun (pc : (bytes * bool) list) pre guard ->
+        Profiler.global#call "Stp.query_stp" begin fun () ->
+            let pc = List.map fst pc in
+            let pc = getRelevantAssumptions pc (guard__to_bytes guard) in
+            if query_stp (pc, pre, guard, true) then
+                Ternary.True
+            else if query_stp (pc, pre, guard, false) then
+                Ternary.False
+            else
+                Ternary.Unknown
+        end
+
 
 let query_bytes pc bytes =
     query_stp pc Guard_True (guard__bytes bytes)

@@ -119,8 +119,6 @@ let doit file =
 
 	(* print the results *)
 	Output.set_formatter (new Output.plain);
-	Output.printf "@\nSTP was invoked %d times (%d cache hits).@." !Stp.stp_count !Stp.cacheHits;
-
 	Output.printf "== Global profile ==@\n@[%t@]@." Profiler.global#printer;
 	Output.printf "@[%t@]@." Memo.statistics_printer;
 	let nodes, _, _ = result#get_stats in

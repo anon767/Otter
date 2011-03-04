@@ -28,8 +28,6 @@ let doDebugExecute (f: file) =
 	end in
 
 	Output.set_formatter (new Output.plain);
-	Output.printf "@\nSTP was invoked %d times (%d cache hits).@." !Stp.stp_count !Stp.cacheHits;
-
 	Output.printf "@[%t@]@." Memo.statistics_printer;
 
     let nodes, _, _ = reporter#get_stats in

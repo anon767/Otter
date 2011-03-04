@@ -27,9 +27,7 @@ let doExecute (f: file) =
 		snd (Driver.run_basic reporter job)
 	end in
 
-	Output.set_formatter (new Output.plain);
-	Output.printf "@\nSTP was invoked %d times (%d cache hits).@." !Stp.stp_count !Stp.cacheHits;
-
+    Output.set_formatter (new Output.plain);
     Output.printf "== Global profile ==@\n@[%t@]@." Profiler.global#printer;
     Output.printf "@[%t@]@." Memo.statistics_printer;
 
