@@ -1,2 +1,2 @@
-mkfifo.c:117
-mkfifo.c:130
+# mkfifo.c:117 # Error handling
+# mkfifo.c:130 # Error handling
