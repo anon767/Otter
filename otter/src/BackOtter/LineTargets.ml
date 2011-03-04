@@ -64,12 +64,24 @@ let line_target_interceptor job job_queue interceptor =
 (** {1 Command-line options} *)
 
 let add_line_to_line_targets =
-    let re = Str.regexp "\\(.*\\):\\(.*\\)" in
+    (* [spaces]<filename>:<line number>[spaces] *)
+    let re = Str.regexp "^[ \t]*\\(\\(.*\\):\\([0-9]*\\)\\)?[ \t]*$" in
     fun arg ->
+        let arg =
+            (* remove #-delimited comments *)
+            try
+                let stop = String.index arg '#' in
+                String.sub arg 0 stop
+            with Not_found ->
+                arg
+        in
         if Str.string_match re arg 0 then
-            let file = Str.matched_group 1 arg in
-            let line = int_of_string (Str.matched_group 2 arg) in
-            arg_line_targets := (file, line)::(!arg_line_targets)
+            try
+                let file = Str.matched_group 2 arg in
+                let line = int_of_string (Str.matched_group 3 arg) in
+                arg_line_targets := (file, line)::(!arg_line_targets)
+            with Not_found ->
+                () (* blank line *)
         else
             FormatPlus.failwith "Error in parsing line %s" arg
 
