@@ -2,7 +2,7 @@
 import sys, re
 
 line_target_re = re.compile(r'.*Line target: (\S*.c:\d+) in function (.*)')
-target_reached_re = re.compile(r'\s*(\d+\.\d+)\s*(\d+\.\d+)\s*(\S+)\s*\[.*\]\s*(\S*.c:\d+) : Error "`TargetReached.*')
+target_reached_re = re.compile(r'\s*(\d+\.\d+)\s*(\d+\.\d+)\s*(\S+)\s*\[.*\]\s*(\S*.c:\d+) : TargetReached.*')
 
 n_line_targets = 0
 
@@ -26,8 +26,8 @@ for line in open(sys.argv[1]):
         time = float(results.group(2))
         origin_function = results.group(3)
         line = results.group(4)
-        add_covered(line, time)
-        continue
+        if origin_function == "__otter_main_driver":
+            add_covered(line, time)
 
 s = ""
 for k,v in covered.items():
