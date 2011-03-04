@@ -1,8 +1,8 @@
 #!/bin/sh
 
-if [ $# -ne 4 ]
+if [ $# -ne 5 ]
 then
-    echo "Usage: ./setup_tests.sh <base-directory> <experiment-name> <programs.in> <options.in>"
+    echo "Usage: ./setup_tests.sh <base-directory> <experiment-name> <programs_dir> <programs.in> <options.in>"
     exit 1
 fi
 
@@ -11,14 +11,16 @@ exp_name="$(echo $2|sed 's/ /_/g')"
 exp_base="$base/otter_$(date "+%Y_%m_%d_%H")_$exp_name"
 runotter="$(pwd)/runotter"
 
-programs_in="$3"
-options_in="$4"
+programs_dir="$3"
+programs_in="$4"
+options_in="$5"
 
 mkdir -p "$exp_base"
-chmod 700 "$exp_base"
+chmod 755 "$exp_base"
 
 cat $programs_in | while read prog
 do 
+    prog="$programs_dir/$prog"
     if [ "$(echo $prog | sed '/^[ ]*#/d')" ]; then echo "Process $prog"; else continue; fi
     cat $options_in | while read options
     do 

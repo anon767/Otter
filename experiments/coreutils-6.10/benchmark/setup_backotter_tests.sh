@@ -1,8 +1,8 @@
 #!/bin/sh
 
-if [ $# -ne 5 ]
+if [ $# -ne 6 ]
 then
-    echo "Usage: ./setup_backotter_tests.sh <base-directory> <line_targets_dir> <experiment-name> <programs.in> <options.in>"
+    echo "Usage: ./setup_backotter_tests.sh <base-directory> <line_targets_dir> <experiment-name> <programs_dir> <programs.in> <options.in>"
     exit 1
 fi
 
@@ -12,14 +12,16 @@ exp_name="$(echo $3|sed 's/ /_/g')"
 exp_base="$base/backotter_$(date "+%Y_%m_%d_%H")_$exp_name"
 runbackotter="$(pwd)/runbackotter"
 
-programs_in="$4"
-options_in="$5"
+programs_dir="$4"
+programs_in="$5"
+options_in="$6"
 
 mkdir -p "$exp_base"
-chmod 700 "$exp_base"
+chmod 755 "$exp_base"
 
 cat $programs_in | while read prog
 do 
+    prog="$programs_dir/$prog"
     if [ "$(echo $prog | sed '/^[ ]*#/d')" ]; then echo "Process $prog"; else continue; fi
     cat $options_in | while read options
     do 
