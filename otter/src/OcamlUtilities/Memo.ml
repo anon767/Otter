@@ -19,25 +19,36 @@ let make ?store:(find, add = let memotable = Hashtbl.create initial_size in (Has
     if Hashtbl.mem statistics label then FormatPlus.invalid_arg "Label %s already exists!" label;
     let record = { hits = 0; misses = 0; hit_time = 0.; miss_time = 0. } in
     Hashtbl.add statistics label record;
+    let nested = ref 0. in
     fun f x ->
-        let start = Sys.time () in
+        let elapsed =
+            let start = Sys.time () in
+            let nested' = !nested in
+            nested := 0.;
+            fun () ->
+                let elapsed = Sys.time () -. start in
+                (* avoid multi-counting recursion by subtracting nested calls *)
+                let used = elapsed -. !nested in
+                nested := nested' +. elapsed;
+                used
+        in
         try
             let y = find x in
             record.hits <- record.hits + 1;
-            record.hit_time <- record.hit_time +. (Sys.time () -. start);
+            record.hit_time <- record.hit_time +. elapsed ();
             y
         with Not_found ->
             let y = f x in
             (* don't need Hashtbl.replace, which is slower, as x guaranteed to be unique *)
             add x y;
             record.misses <- record.misses + 1;
-            record.miss_time <- record.miss_time +. (Sys.time () -. start);
+            record.miss_time <- record.miss_time +. elapsed ();
             y
 
 
 (** Make a hashconsing wrapper *)
 let make_hashcons ?store label =
-    (* TODO: use store? *)
+    (* TODO: use Weak? *)
     make ?store label (fun x -> x)
 
 
