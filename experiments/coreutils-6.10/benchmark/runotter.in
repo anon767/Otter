@@ -10,6 +10,7 @@ echo "[Command] $0 $*"
     --doRunRmtmps \
     @OTTER_FLAVOR@ \
     --lineCov \
+    --listAllLines \
     --initMallocZero \
     --initLocalZero \
     --untracked-functions="$NEWLIB_OTTER/library_functions" \
