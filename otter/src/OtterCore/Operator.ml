@@ -294,7 +294,8 @@ let rec opPI op operands =
 					(make_Bytes_Address(block, offset4))
 				| _ -> failwith "type of Bytes_Address not TPtr"
 			end
-		| Bytes_ByteArray(_),_ -> (* Doing pointer arithmetic off of a non-pointer, probably NULL *)
+		| Bytes_ByteArray _, _
+		| Bytes_Constant _, _ -> (* Doing pointer arithmetic off of a non-pointer, probably NULL *)
 			begin match unrollType typ1 with
 				| TPtr(basetyp,_) ->
 					let base_size = (Cil.bitsSizeOf basetyp)/8 in
