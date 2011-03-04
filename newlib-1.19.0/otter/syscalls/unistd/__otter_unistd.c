@@ -24,7 +24,7 @@ int __otter_libc_close(int fd)
 
 	if(open_file->type == __otter_fs_TYP_DIR)
 	{
-		struct __otter_fs_dnode* dnode = (struct __otter_fs_dnode*)open_file->vnode;
+		struct __otter_fs_dnode* dnode = open_file->dnode;
 		(*dnode).r_openno--;
 
 		if((*dnode).linkno == 0 && (*dnode).r_openno == 0) /* directory was deleted, but left available until closed */
@@ -40,7 +40,7 @@ int __otter_libc_close(int fd)
 
 	if(open_file->openno == 0) /* open file table entry is no longer in use */
 	{
-		struct __otter_fs_inode* inode = (struct __otter_fs_inode*)open_file->vnode;
+		struct __otter_fs_inode* inode = open_file->inode;
 		if(open_file->mode & O_RDONLY)
 			(*inode).r_openno--;
 		if(open_file->mode & O_WRONLY)
@@ -149,7 +149,7 @@ ssize_t __otter_libc_read_file(
 {
 	__otter_multi_begin_atomic();
 
-	struct __otter_fs_inode* inode = (struct __otter_fs_inode*)(open_file->vnode);
+	struct __otter_fs_inode* inode = open_file->inode;
 
 	/* Copy into buf the bytes between inode->data[offset] and
 		inode->data[offset+num-1], but don't read beyond
@@ -172,7 +172,7 @@ ssize_t __otter_libc_write_file(
 {
 	__otter_multi_begin_atomic();
 	
-	struct __otter_fs_inode* inode = (struct __otter_fs_inode*)(open_file->vnode);
+	struct __otter_fs_inode* inode = open_file->inode;
 
 	int physicalsize = __otter_fs_BLOCK_SIZE * (*inode).numblocks; /* get the amount of allocated space */
 
@@ -317,7 +317,7 @@ ssize_t __otter_libc_write_pipe(
 	void* buf,
 	size_t num)
 {
-	struct __otter_fs_inode* inode = (struct __otter_fs_inode*)open_file->vnode;
+	struct __otter_fs_inode* inode = open_file->inode;
 	struct __otter_fs_pipe_data* pipe = (struct __otter_fs_pipe_data*)inode->data;
 	if((*inode).r_openno == 0) /* not open for reading somewhere; must be open for reading before actually writing */
 	{
@@ -499,7 +499,7 @@ ssize_t __otter_libc_write(int fd, const void* buf, size_t num)
 
 	if(open_file->mode & O_APPEND)
 	{
-		open_file->offset = (*((struct __otter_fs_inode*)open_file->vnode)).size;
+		open_file->offset = open_file->inode->size;
 	}
 
 	int numwrite = __otter_libc_write2(open_file, buf, num, open_file->offset);
@@ -557,7 +557,7 @@ off_t __otter_libc_lseek(int fd, off_t offset, int whence)
 			break;
 		case SEEK_END:
 		{
-			struct __otter_fs_inode* inode = open_file->vnode;
+			struct __otter_fs_inode* inode = open_file->inode;
 			newOffset = inode->size + offset;
 			break;
 		}
@@ -725,7 +725,7 @@ int fchdir(int fd)
 		return(-1);
 	}
 	
-	__otter_fs_pwd = (struct __otter_fs_dnode*)open_file->vnode;
+	__otter_fs_pwd = open_file->dnode;
 	return(0);
 }
 

@@ -66,7 +66,7 @@ void *mmap(void *start, size_t len, int prot, int flags, int fd, off_t off)
 		{
 			case __otter_fs_TYP_FILE:
 				{
-					struct __otter_fs_inode* inode = (struct __otter_fs_inode*)open_file->vnode;
+					struct __otter_fs_inode* inode = open_file->inode;
 					if(off > inode->size)
 					{
 						errno = ENXIO;
@@ -111,7 +111,7 @@ void *mmap(void *start, size_t len, int prot, int flags, int fd, off_t off)
 		{
 			case __otter_fs_TYP_FILE:
 				{
-					struct __otter_fs_inode* inode = (struct __otter_fs_inode*)open_file->vnode;
+					struct __otter_fs_inode* inode = open_file->inode;
 					if(off > inode->size)
 					{
 						errno = ENXIO;

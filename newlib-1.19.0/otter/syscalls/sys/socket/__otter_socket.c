@@ -57,7 +57,7 @@ int socket(int domain, int type, int protocol)
 
 struct __otter_fs_sock_data* __otter_libc_get_sock_data_from_open_file(struct __otter_fs_open_file_table_entry* open_file) {
 	__ASSERT(open_file->type == __otter_fs_TYP_SOCK);
-	return ((struct __otter_fs_inode*)open_file->vnode)->data;
+	return open_file->inode->data;
 }
 
 struct __otter_fs_sock_data* __otter_libc_get_sock_data(int fd)

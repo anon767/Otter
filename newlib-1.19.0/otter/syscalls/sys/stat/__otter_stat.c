@@ -38,11 +38,11 @@ int fchmod(int fd, mode_t mode)
 	void* retval;
 	if (open_file->type == __otter_fs_TYP_DIR)
 	{
-		retval = __otter_fs_chmod_dir(mode, open_file->vnode);
+		retval = __otter_fs_chmod_dir(mode, open_file->dnode);
 	}
 	else
 	{
-		retval = __otter_fs_chmod_file(mode, open_file->vnode);
+		retval = __otter_fs_chmod_file(mode, open_file->inode);
 	}
 	return retval;
 }
@@ -111,12 +111,14 @@ int __otter_libc_fstat(int fd, struct stat* s)
 
 	if (open_file->type == __otter_fs_TYP_DIR)
 	{
-		struct __otter_fs_dnode* dnode = (struct __otter_fs_dnode*)open_file->vnode;
+		struct __otter_fs_dnode* dnode = open_file->dnode;
 		return __otter_libc_dnode_stat(dnode, s);
 	}
-
-	struct __otter_fs_inode* inode = (struct __otter_fs_inode*)open_file->vnode;
-	return __otter_libc_inode_stat(inode, s);
+	else
+	{
+		struct __otter_fs_inode* inode = open_file->inode;
+		return __otter_libc_inode_stat(inode, s);
+	}
 }
 
 int mknod(const char* name, mode_t mode, dev_t dev)

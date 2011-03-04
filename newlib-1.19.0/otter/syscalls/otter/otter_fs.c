@@ -84,16 +84,6 @@ struct __otter_fs_dnode* __otter_fs_find_dnode_in_dir(const char* name, struct _
 
 struct __otter_fs_inode* __otter_fs_find_inode_in_tree(char* name, struct __otter_fs_dnode* tree)
 {
-	return (struct __otter_fs_inode*)__otter_fs_find_vnode_in_tree(name, tree, __otter_fs_find_inode_in_dir);
-}
-
-struct __otter_fs_dnode* __otter_fs_find_dnode_in_tree(char* name, struct __otter_fs_dnode* tree)
-{
-	return (struct __otter_fs_dnode*)__otter_fs_find_vnode_in_tree(name, tree, __otter_fs_find_dnode_in_dir);
-}
-
-void* __otter_fs_find_vnode_in_tree(char* name, struct __otter_fs_dnode* tree, void* (*find_vnode)(char*, struct __otter_fs_dnode*))
-{
 	if(!__otter_fs_can_permission((*tree).permissions, 1)) /* can't traverse dir */
 		__otter_fs_error(EACCES);
 
@@ -101,7 +91,7 @@ void* __otter_fs_find_vnode_in_tree(char* name, struct __otter_fs_dnode* tree, v
 
 	if(s == NULL) /* no leading directory */
 	{
-		return find_vnode(name, tree);
+		return __otter_fs_find_inode_in_dir(name, tree);
 	}
 
 	/* otherwise recursivly decend file system */
@@ -121,36 +111,80 @@ void* __otter_fs_find_vnode_in_tree(char* name, struct __otter_fs_dnode* tree, v
 			__otter_fs_error(ENOENT); /* path ended in a directory name not a file */
 	}
 
-	return __otter_fs_find_vnode_in_tree(s, d, find_vnode); /* search for the shortened path in the subtree */
+	return __otter_fs_find_inode_in_tree(s, d); /* search for the shortened path in the subtree */
 }
 
-struct __otter_fs_inode* __otter_fs_find_inode(const char* name)
+struct __otter_fs_dnode* __otter_fs_find_dnode_in_tree(char* name, struct __otter_fs_dnode* tree)
 {
-	return (struct __otter_fs_inode*)__otter_fs_find_vnode(name, __otter_fs_find_inode_in_dir);
+	if(!__otter_fs_can_permission((*tree).permissions, 1)) /* can't traverse dir */
+		__otter_fs_error(EACCES);
+
+	char* s = strchr(name, '/');
+
+	if(s == NULL) /* no leading directory */
+	{
+		return __otter_fs_find_dnode_in_dir(name, tree);
+	}
+
+	/* otherwise recursivly decend file system */
+	*s = 0; /* change the first '/' into an end of string */
+	struct __otter_fs_dnode* d = __otter_fs_find_dnode_in_dir(name, tree);
+	*s = '/'; /* change it back */
+
+	if(d == NULL) /* no such directory */
+	{
+		__otter_fs_error(ENOENT); /* cannot find file */
+	}
+
+	while(*s == '/')
+	{
+		s++; /* skip any extra '/' between dirs, posix says they should be ignored */
+		if(*s == 0)
+			__otter_fs_error(ENOENT); /* path ended in a directory name not a file */
+	}
+
+	return __otter_fs_find_dnode_in_tree(s, d); /* search for the shortened path in the subtree */
 }
 
-struct __otter_fs_dnode* __otter_fs_find_dnode(const char* name)
-{
-	return (struct __otter_fs_dnode*)__otter_fs_find_vnode(name, __otter_fs_find_dnode_in_dir);
-}
-
-void* __otter_fs_find_vnode(const char* name_in, void* (*find_vnode)(char*, struct __otter_fs_dnode*))
+struct __otter_fs_inode* __otter_fs_find_inode(const char* name_in)
 {
 	char* name = malloc(__otter_get_allocated_size(name_in));
 	strcpy(name, name_in);
 
 	if(name)
 	{
-		void* vnode;
+		struct __otter_fs_inode* inode;
 		if(*name == '/') /* absolute path */
 		{
-			vnode = __otter_fs_find_vnode_in_tree(name+1, __otter_fs_root, find_vnode);
+			inode = __otter_fs_find_inode_in_tree(name+1, __otter_fs_root);
 		}
 		else /* relative path */
-			vnode = __otter_fs_find_vnode_in_tree(name, __otter_fs_pwd, find_vnode);
+			inode = __otter_fs_find_inode_in_tree(name, __otter_fs_pwd);
 
 		free(name);
-		return vnode;
+		return inode;
+	}
+
+	__otter_fs_error(ENOENT);
+}
+
+struct __otter_fs_dnode* __otter_fs_find_dnode(const char* name_in)
+{
+	char* name = malloc(__otter_get_allocated_size(name_in));
+	strcpy(name, name_in);
+
+	if(name)
+	{
+		struct __otter_fs_dnode* dnode;
+		if(*name == '/') /* absolute path */
+		{
+			dnode = __otter_fs_find_dnode_in_tree(name+1, __otter_fs_root);
+		}
+		else /* relative path */
+			dnode = __otter_fs_find_dnode_in_tree(name, __otter_fs_pwd);
+
+		free(name);
+		return dnode;
 	}
 
 	__otter_fs_error(ENOENT);
@@ -570,7 +604,8 @@ int __otter_fs_open_file(struct __otter_fs_inode* inode, int mode)
 	__otter_fs_fd_table[fd] = ft;
 	__otter_fs_open_file_table[ft].mode = mode;
 	__otter_fs_open_file_table[ft].type = (*inode).type;
-	__otter_fs_open_file_table[ft].vnode = (void*)inode;
+	__otter_fs_open_file_table[ft].inode = inode;
+	__otter_fs_open_file_table[ft].dnode = NULL;    
 	__otter_fs_open_file_table[ft].offset = 0;
 	__otter_fs_open_file_table[ft].openno = 1;
 
@@ -614,7 +649,8 @@ int __otter_fs_open_dir(struct __otter_fs_dnode* dnode, int mode)
 	__otter_fs_fd_table[fd] = ft;
 	__otter_fs_open_file_table[ft].mode = mode;
 	__otter_fs_open_file_table[ft].type = __otter_fs_TYP_DIR;
-	__otter_fs_open_file_table[ft].vnode = (void*)dnode;
+	__otter_fs_open_file_table[ft].inode = NULL;
+	__otter_fs_open_file_table[ft].dnode = dnode;
 	__otter_fs_open_file_table[ft].offset = 0;
 	__otter_fs_open_file_table[ft].openno = 1;
 
@@ -644,7 +680,7 @@ int __otter_fs_change_open_mode(struct __otter_fs_open_file_table_entry* open_fi
 
 	if((*open_file).type == __otter_fs_TYP_DIR)
 	{
-		struct __otter_fs_dnode* dnode = (struct __otter_fs_dnode*)((*open_file).vnode);
+		struct __otter_fs_dnode* dnode = (*open_file).dnode;
 
 		if(!__otter_fs_can_permission((*dnode).permissions, permissions))
 		{
@@ -660,7 +696,7 @@ int __otter_fs_change_open_mode(struct __otter_fs_open_file_table_entry* open_fi
 	}
 	else
 	{
-		struct __otter_fs_inode* inode = (struct __otter_fs_inode*)((*open_file).vnode);
+		struct __otter_fs_inode* inode = (*open_file).inode;
 
 		if(!__otter_fs_can_permission((*inode).permissions, permissions))
 		{
