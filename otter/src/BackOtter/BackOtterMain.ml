@@ -179,6 +179,7 @@ let options = [
     BackOtterTimer.options @ 
     BackOtterQueue.options @ 
     BackOtterJob.options @ 
+    BackOtterUtilities.options @ 
     BidirectionalQueue.options @ 
     FunctionRanker.options @
     LineTargets.options

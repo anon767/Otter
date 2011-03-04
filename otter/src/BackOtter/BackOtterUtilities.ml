@@ -7,6 +7,8 @@ open State
 open Cil
 
 
+let arg_function_inlining = ref true
+
 let length =
     let length = Memo.memo_rec "BackOtterUtilities.length" begin fun length (lst : Decision.t list) ->
         match lst with
@@ -73,14 +75,23 @@ let rec lex_compare cmp lst1 lst2 =
 (* Returns a function that callee can transitively be inlined in *)
 let rec get_transitive_unique_caller file callee = 
     let can_inline_function caller callee =
-        (* Either caller is "simple", or callee is "main". The latter is a hack. *)
-        let ret = 
-            callee.svar.vname = "main" ||
-            match caller.smaxstmtid with Some size -> size < 5 | None -> false  (* TODO: true if caller does not branch *)
-        in
-        (if ret then Output.debug_printf "Inline %s in %s@." callee.svar.vname caller.svar.vname);
-        ret
+        if (!arg_function_inlining) then
+            (* Either caller is "simple", or callee is "main". The latter is a hack. *)
+            let ret = 
+                callee.svar.vname = "main" ||
+                match caller.smaxstmtid with Some size -> size < 5 | None -> false  (* TODO: true if caller does not branch *)
+            in
+            (if ret then Output.debug_printf "Inline %s in %s@." callee.svar.vname caller.svar.vname);
+            ret
+        else
+            false
     in
     match CilCallgraph.find_callers file callee with
     | [ caller ] when can_inline_function caller callee -> get_transitive_unique_caller file caller
     | _ -> callee
+
+let options = [
+	"--no-function-inlining",
+		Arg.Clear arg_function_inlining,
+		" Disable function inlining in BackOtter";
+] 

@@ -36,7 +36,7 @@ let get_line_targets =
                         Output.set_mode output_mode;
                         []
                 in
-                let targets' = List.map (fun (fundec, stmt) -> OtterCFG.Instruction.of_stmt_first file fundec stmt) stmts in
+                let targets' = List.map (fun (fundec, stmt) -> OtterCFG.Instruction.of_stmt_first file fundec stmt) stmts in (* TODO: remove duplicates *)
                 targets' @ targets
             end [] (!arg_line_targets)
         end
