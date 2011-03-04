@@ -13,20 +13,22 @@ object (_ : 'self)
         let job_state = match job_state with
             | Job.Complete (Job.Abandoned (`TargetReached target, job_result)) ->
                 let fundec = BackOtterUtilities.get_origin_function_from_job_result job_result in
+                let instruction = Job.get_instruction job_result in
                 (* Failing path has least recent decision first. See the comment in BidirectionalQueue. *)
                 let failing_path = List.rev job_result#decision_path in
                 begin try
-                    BackOtterTargets.add_path fundec failing_path;
+                    BackOtterTargets.add_path fundec failing_path (Some instruction);
                     job_state
                 with Invalid_argument _ ->
                     Job.Complete (Job.Truncated (`SummaryAbandoned (`TargetReached target, Job.get_loc job_result), job_result))
                 end
             | Job.Complete (Job.Abandoned (`Failure msg, job_result)) when !BackOtterReporter.arg_exceptions_as_failures ->
                 let fundec = BackOtterUtilities.get_origin_function_from_job_result job_result in
+                let instruction = Job.get_instruction job_result in
                 (* Failing path has least recent decision first. See the comment in BidirectionalQueue. *)
                 let failing_path = List.rev job_result#decision_path in
                 begin try
-                    BackOtterTargets.add_path fundec failing_path;
+                    BackOtterTargets.add_path fundec failing_path (Some instruction);
                     job_state
                 with Invalid_argument _ ->
                     Job.Complete (Job.Truncated (`SummaryAbandoned (`Failure msg, Job.get_loc job_result), job_result))
