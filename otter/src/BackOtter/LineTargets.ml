@@ -1,13 +1,19 @@
 open OcamlUtilities
+open CilUtilities 
 open OtterCore
+open OtterCFG
 open State
 open Job
 open Cil
 
 let arg_line_targets = ref []
 
+module FileMap = Map.Make(CilData.CilFile)
+let file_to_line_targets = ref FileMap.empty
+
 (** An interceptor that tracks targets when some (file, line) in arg_line_targets is encountered. *)
 let line_target_interceptor job job_queue interceptor =
+    (* TODO: use Instruction.t instead of (file, line) *)
     let loc = Job.get_loc job in
     let line = (loc.Cil.file, loc.Cil.line) in
     begin if List.mem line (!arg_line_targets) then
@@ -16,18 +22,17 @@ let line_target_interceptor job job_queue interceptor =
         let entryfn = ProgramPoints.get_entry_fundec job#file in
         let failing_path = List.rev job#decision_path in
         BackOtterTargets.add_path fundec failing_path;
-        if CilUtilities.CilData.CilFundec.equal fundec entryfn then (* TODO: remove this target and related function targets *)()
+        if CilData.CilFundec.equal fundec entryfn then (* TODO: remove this target and related function targets *)()
     end;
     (* FIXME: for bounded jobs, they *should* be terminated once reaching line targets, or else we will have copies of the same job running...
      *         OR  we change the meaning of bounded jobs? *)
     interceptor job job_queue
 
-
-let get_line_targets =
-    let open CilUtilities in
-    let module Memo = Memo.Make (CilData.CilFile) in
-    Memo.memo "LineTargets.get_line_targets"
-        begin fun file ->
+let get_line_targets file =
+    try 
+        FileMap.find file (!file_to_line_targets)
+    with Not_found ->
+        let line_targets =
             List.fold_left begin fun targets (filename, linenumber as line) ->
                 let stmts =
                     try
@@ -41,11 +46,13 @@ let get_line_targets =
                 in
                 (* Use of_stmt_last to ensure that instructions before the last one are covered *)
                 List.fold_left (fun targets (fundec, stmt) -> 
-                    let instruction = OtterCFG.Instruction.of_stmt_last file fundec stmt in
-                    if ListPlus.mem OtterCFG.Instruction.equal instruction targets then targets else instruction :: targets
+                    let instruction = Instruction.of_stmt_last file fundec stmt in
+                    if ListPlus.mem Instruction.equal instruction targets then targets else instruction :: targets
                 ) targets stmts
             end [] (!arg_line_targets)
-        end
+        in
+        file_to_line_targets := FileMap.add file line_targets (!file_to_line_targets);
+        line_targets
 
 
 (** {1 Command-line options} *)
