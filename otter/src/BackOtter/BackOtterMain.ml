@@ -144,8 +144,8 @@ let doit file =
                 Output.printf "--------------------------------------------------@."
             ) (!Stp.stp_queries)
         );
-        let nodes, paths, abandoned = reporter#get_stats in
-        Output.printf "Number of nodes: %d@." nodes;
+        let steps, paths, abandoned = reporter#get_stats in
+        Output.printf "Number of steps: %d@." steps;
         Output.printf "Number of paths: %d@." paths;
         Output.printf "Number of abandoned: %d@." abandoned;
 

@@ -121,8 +121,8 @@ let doit file =
 	Output.set_formatter (new Output.plain);
 	Output.printf "== Global profile ==@\n@[%t@]@." Profiler.global#printer;
 	Output.printf "@[%t@]@." Memo.statistics_printer;
-	let nodes, _, _ = result#get_stats in
-	Output.printf "Number of nodes: %d@." nodes;
+	let steps, _, _ = result#get_stats in
+	Output.printf "Number of steps: %d@." steps;
 	Report.print_report result#completed
 
 

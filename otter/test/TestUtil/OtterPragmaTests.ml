@@ -24,8 +24,8 @@
         - [#pragma no_bounds_checking] specifies that bounds checking should be disabled. Conversely, {e not
             providing} this directive specifies that bounds checking should be enabled. This corresponds to Otter's
             [--noboundsChecking] command-line option.
-        - [#pragma max_nodes(<integer bound>)] bounds the number of nodes in the execution tree to explore. This
-            corresponds to Otter's [--max-nodes] command-line option.
+        - [#pragma max_steps(<integer bound>)] bounds the number of instruction steps to execute. This
+            corresponds to Otter's [--max-steps] command-line option.
         - [#pragma max_paths(<integer bound>)] bounds the number of paths to execute to completion. This corresponds
             to Otter's [--max-paths] command-line option.
         - [#pragma max_abandoned(<integer bound>)] bounds the number of abandoned paths to return. This corresponds
@@ -83,7 +83,7 @@ module Make (Errors : Errors) = struct
         no_bounds_checking : bool;      (** Disable bounds checking (corresponds to [--noboundsChecking]). *)
         init_malloc_zero : bool;        (** Initialize mallocs to zeros (corresponds to [--initMallocZero]). *)
         init_local_zero : bool;         (** Initialize locals to zeros (corresponds to [--initLocalZero]). *)
-        max_nodes : int option;         (** Bound the number of nodes in the execution tree to explore (corresponds to [--max-nodes]). *)
+        max_steps : int option;         (** Bound the number of steps in the execution tree to explore (corresponds to [--max-steps]). *)
         max_paths : int option;         (** Bound the number of paths to execute to completion (corresponds to [--max-paths]). *)
         max_abandoned : int option;     (** Bound the number of abandoned paths to return (corresponds to [--max-abandoned]). *)
     }
@@ -98,7 +98,7 @@ module Make (Errors : Errors) = struct
         no_bounds_checking = false;
         init_malloc_zero = false;
         init_local_zero = false;
-        max_nodes = None;
+        max_steps = None;
         max_paths = None;
         max_abandoned = None;
     }
@@ -332,12 +332,12 @@ module Make (Errors : Errors) = struct
                     | "init_local_zero", _ ->
                         assert_loc_failure loc "Invalid init_local_zero (should have no arguments)."
 
-                    | "max_nodes", [ Cil.AInt max_nodes ] ->
-                        if flags.max_nodes <> None then assert_loc_failure loc "max_nodes already defined.";
-                        if max_nodes <= 0 then assert_loc_failure loc "Invalid max_nodes bound (should be greater than 0).";
-                        ({ flags with max_nodes = Some max_nodes }, test)
-                    | "max_nodes", _ ->
-                        assert_loc_failure loc "Invalid max_nodes (should have exactly one integer argument that is the bound)."
+                    | "max_steps", [ Cil.AInt max_steps ] ->
+                        if flags.max_steps <> None then assert_loc_failure loc "max_steps already defined.";
+                        if max_steps <= 0 then assert_loc_failure loc "Invalid max_steps bound (should be greater than 0).";
+                        ({ flags with max_steps = Some max_steps }, test)
+                    | "max_steps", _ ->
+                        assert_loc_failure loc "Invalid max_steps (should have exactly one integer argument that is the bound)."
 
                     | "max_paths", [ Cil.AInt max_paths ] ->
                         if flags.max_paths <> None then assert_loc_failure loc "max_paths already defined.";
@@ -456,7 +456,7 @@ module Make (Errors : Errors) = struct
         (* prepare the file and run the symbolic executor *)
         Core.prepare_file file;
         let job = OtterJob.Job.get_default file in
-        let reporter = reporter ?max_nodes:flags.max_nodes ?max_paths:flags.max_paths ?max_abandoned:flags.max_abandoned () in
+        let reporter = reporter ?max_steps:flags.max_steps ?max_paths:flags.max_paths ?max_abandoned:flags.max_abandoned () in
         try
             let _, reporter = run (fun () -> driver reporter job) in
             try

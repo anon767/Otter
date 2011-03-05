@@ -10,8 +10,8 @@ end
 
 
 module Make (Errors : Errors) = struct
-    class ['self] t ?max_nodes ?max_paths ?max_abandoned () = object (_ : 'self)
-        inherit ['self] BasicReporter.t ?max_nodes ?max_paths ?max_abandoned () as super
+    class ['self] t ?max_steps ?max_paths ?max_abandoned () = object (_ : 'self)
+        inherit ['self] BasicReporter.t ?max_steps ?max_paths ?max_abandoned () as super
 
         method report job_result =
             begin match job_result with
