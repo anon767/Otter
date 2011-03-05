@@ -15,7 +15,7 @@ let queues = [
     "generational*closest-to-targets", `Generational `ClosestToTargets;
     "KLEE", `KLEE;
     "SAGE", `SAGE;
-    "generational*random/breadth-first", `RoundRobin [`Generational `Random ; `BreadthFirst];
+    "generational*random,breadth-first", `RoundRobin [`Generational `Random ; `BreadthFirst];
 ]
 
 let default_queue = ref (`Generational `BreadthFirst)

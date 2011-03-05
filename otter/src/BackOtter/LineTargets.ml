@@ -56,8 +56,7 @@ let line_target_interceptor job job_queue interceptor =
             (* Remove instruction-related failing paths and function targets from BackOtterTargets *)
             BackOtterTargets.remove_target_instruction instruction
     end;
-    (* FIXME: for bounded jobs, they *should* be terminated once reaching line targets, or else we will have copies of the same job running...
-     *         OR  we change the meaning of bounded jobs? *)
+    (* Bounded jobs will eventually be removed, due to "out bound" (Bidirectional.ml) *)
     interceptor job job_queue
 
 
