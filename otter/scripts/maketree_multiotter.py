@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import sys, re, getopt
 
 # Return the current path id indicated by the line, or None
