@@ -17,7 +17,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 /* Written by Paul Eggert <eggert@twinsun.com> */
-
+extern void __FAILURE(void); void __otter_assert(int truth) { if (!truth) __FAILURE(); }
 #include <config.h>
 
 #include "quotearg.h"
@@ -245,7 +245,7 @@ quotearg_buffer_restyled (char *buffer, size_t buffersize,
       break;
     }
 
-  for (i = 0;  ! (argsize == SIZE_MAX ? arg[i] == '\0' : i == argsize);  i++)
+  for (i = 0;  ! (argsize == SIZE_MAX ? (__otter_assert(arg != NULL), arg[i] == '\0') : i == argsize);  i++)
     {
       unsigned char c;
       unsigned char esc;
