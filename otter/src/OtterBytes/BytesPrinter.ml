@@ -147,14 +147,11 @@ and guard ff = function
 
 
 (** Print a {!type:Bytes.conditional}.
-		@param unconditional is the printer to print the unconditional leaves. (Caveat: ocaml-3.11 and below do not
-			assign polymorphic types to arguments of [let rec] binding if the argument is used with a concrete type
-			elsewhere, so only {!bytes} can be passed as argument).
+		@param unconditional is the printer to print the unconditional leaves.
 		@param ff is the formatter to which to print
 		@param g is the {!type:Bytes.guard} to print
 *)
-(* TODO: uncomment the polymorphic type annotation after upgrading to ocaml-3.12 *)
-and conditional (* : 'a . (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a conditional -> unit *) = fun unconditional ff ->
+and conditional : 'a . (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a conditional -> unit = fun unconditional ff ->
 	let rec conditional ff = function
 		| IfThenElse (g, t, f) ->
 			fprintf ff "If @[<hov>%a@]@ Then @[<hov>%a@]@ Else @[<hov>%a@]" guard g conditional t conditional f
