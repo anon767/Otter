@@ -9,8 +9,8 @@
 
 // The current setting is the same as KLEE
 #define PROGRAM_NAME     "program"
-#define MAX_ARGC         4
-#define MAX_ARG_LENGTHS  {8, 2, 2, 10} 
+#define MAX_ARGC         5
+#define MAX_ARG_LENGTHS  {1, 2, 2, 2, 2} 
 #define MAX_FILE         2
 #define MAX_FILE_SIZE    8             // TODO: this should also control the size of stdin
 #define MAX_FILENAME_LENGTH   5
@@ -25,7 +25,15 @@ extern int main(int argc, char **argv);
 char* __otter_environ[MAX_ENVIRON+1];
 
 #pragma cilnoremove("__FAILURE")
-void __FAILURE() {}
+void __FAILURE(void) {}
+
+/* FunctionJob-unaffected switches */
+#pragma cilnoremove("__otter_xalloc_die_failure")
+void __otter_xalloc_die_failure(void) {
+#ifdef __OTTER_XALLOC_DIE_FAILURE
+    __FAILURE();
+#endif
+}
 
 /* Allocate a char array of length (len+1), 
  * with all characters symbolic except the last one which is \0. */
@@ -68,18 +76,20 @@ int __otter_main_driver() {
 	stdout = fopen("/dev/tty", "w"); // assert: fopen returns 1   
 	stderr = fopen("/dev/tty", "w"); // assert: fopen returns 2 
 
-    // Set up the file system
+#ifdef __OTTER_SETUP_FILE_SYSTEM
     struct __otter_fs_dnode* dnode = __otter_fs_mkdir("etc", __otter_fs_root);
     __otter_fs_touch("/etc/file", dnode);
     FILE* f = fopen("/etc/file", "w");
     fprintf(f,"Hello world");
     fclose(f);
+#endif
     
-    // Set up env
+#ifdef __OTTER_SETUP_ENVIRON
     for (i=0;i<MAX_ENVIRON;i++)
         __otter_environ[i] = symbolic_string(MAX_ENVVAR_LENGTH + 1 + MAX_ENVVAL_LENGTH);  // "name=value"
     __otter_environ[MAX_ENVIRON] = 0;
     environ = &__otter_environ[0];
+#endif
 
     return main(argc, argv);
 }
