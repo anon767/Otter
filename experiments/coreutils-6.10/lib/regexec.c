@@ -565,7 +565,7 @@ re_copy_regs (struct re_registers *regs, regmatch_t *pmatch, Idx nregs,
   /* Copy the regs.  */
   for (i = 0; i < nregs; ++i)
     {
-      regs->start[i] = pmatch[i].rm_so;
+      /* TODO: this should instead be an assertion stating the failing condition. */__FAILURE(); regs->start[i] = pmatch[i].rm_so;
       regs->end[i] = pmatch[i].rm_eo;
     }
   for ( ; i < regs->num_regs; ++i)
