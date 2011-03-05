@@ -392,7 +392,7 @@ and bytes__equal bytes1 bytes2 = if bytes1 == bytes2 then true else match bytes1
 	| Bytes_Write (old1, off1, s1, new1), Bytes_Write (old2, off2, s2, new2) ->
 		s1 = s2 && bytes__equal old1 old2 && bytes__equal off1 off2 && bytes__equal new1 new2
 	| Bytes_FunPtr f1, Bytes_FunPtr f2 ->
-		f1 = f2
+		CilData.CilVar.equal f1 f2
 	| Bytes_Conditional c1, Bytes_Conditional c2 ->
 		(* using conditional__equal will make it not polymorphic *)
 		let rec bytes_conditional_equal c1 c2 = if c1 == c2 then true else match c1, c2 with
