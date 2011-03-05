@@ -35,7 +35,7 @@ let stmtInfo_of_job job =
             whichBranch were a bool option, so we could pass in [None] if
             weren't at an [If], but this is more convenient.)
         Each form of coverage is only updated if it was requested. *)
-let addStmtCoverage job whichBranch nextStmtOpt =
+let addStmtCoverage job whichBranch nextStmtOpt = Profiler.global#call "Statement.addStmtCoverage" begin fun () ->
     { job#exHist with
             coveredLines =
                 if !Executeargs.arg_line_coverage
@@ -79,20 +79,24 @@ let addStmtCoverage job whichBranch nextStmtOpt =
                     job#exHist.executionPath
                 )
     }
+end
 
-let addInstrCoverage job instr =
+let addInstrCoverage job instr = Profiler.global#call "Statement.addInstrCoverage" begin fun () ->
     let instrLoc = get_instrLoc instr in
     { job#exHist with coveredLines =
             LineSet.add (instrLoc.Cil.file,instrLoc.Cil.line) job#exHist.coveredLines; }
+end
 
-let exec_fundec job instr fundec lvalopt exps errors =
+let exec_fundec job instr fundec lvalopt exps errors = Profiler.global#call "Statement.exec_fundec" begin fun () ->
     (* TODO: Profiler.start_fcall job fundec *)
 
     let stmt = job#stmt in
 
     (* evaluate the arguments *)
     let job, argvs, errors = List.fold_right begin fun exp (job, argvs, errors) ->
-        let job, bytes, errors = Expression.rval job exp errors in
+        let job, bytes, errors = Profiler.global#call "Statement.exec_fundec/rval" begin fun () ->
+            Expression.rval job exp errors 
+    end in
         (job, bytes::argvs, errors)
     end exps (job, [], errors) in
 
@@ -119,8 +123,9 @@ let exec_fundec job instr fundec lvalopt exps errors =
     let job' = job'#with_stmt (List.hd fundec.sallstmts) in
     let job' = job'#with_inTrackedFn (StringSet.mem fundec.svar.vname job#trackedFns) in
     (get_active_state job job', errors)
+end
 
-let exec_instr_call job instr lvalopt fexp exps errors =
+let exec_instr_call job instr lvalopt fexp exps errors = Profiler.global#call "Statement.exec_instr_call" begin fun () ->
     match fexp with
       | Lval(Cil.Var(varinfo), Cil.NoOffset) ->
             let fundec =
@@ -133,8 +138,9 @@ let exec_instr_call job instr lvalopt fexp exps errors =
             FormatPlus.failwith "Function pointer in Statement.exec_instr:\n%a\nPlease use Interceptor.function_pointer_interceptor" Printcil.instr instr
       | _ ->
             FormatPlus.failwith "Bad function call:\n%a" Printcil.instr instr
+end
 
-let exec_instr job errors =
+let exec_instr job errors = Profiler.global#call "Statement.exec_instr" begin fun () ->
     assert (job#instrList <> []);
     let printInstr instr =
         Output.set_mode Output.MSG_STMT;
@@ -170,8 +176,10 @@ let exec_instr job errors =
             exec_instr_call job instr lvalopt fexp exps errors
         | Asm _ ->
             (Complete (Abandoned (`Failure "Cannot handle assembly", old_job)), errors)
+end
 
-let exec_stmt job errors =
+
+let exec_stmt job errors = Profiler.global#call "Statement.exec_stmt" begin fun () ->
     assert (job#instrList = []);
     let stmt = job#stmt in
 
@@ -367,6 +375,7 @@ let exec_stmt job errors =
             let nextStmt = List.hd block.bstmts in
             (get_active_state job ((job#with_stmt nextStmt)#with_exHist (nextExHist (Some nextStmt))), errors)
         | _ -> failwith "Not implemented yet"
+end
 
 
 let errors_to_abandoned_list errors =

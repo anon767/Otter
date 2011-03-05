@@ -161,12 +161,36 @@ end = struct
 
     let hash_consing_bytes_create = Memo.make_hashcons "Bytes.bytes"
 
-    let make_Bytes_Constant const = hash_consing_bytes_create (Bytes_Constant const)
-    let make_Bytes_ByteArray bytearray = hash_consing_bytes_create (Bytes_ByteArray bytearray)
-    let make_Bytes_Address (block, bs) = hash_consing_bytes_create (Bytes_Address (block, bs))
-    let make_Bytes_Op (op, lst) = hash_consing_bytes_create (Bytes_Op (op, lst))
-    let make_Bytes_Read (src, off, len) = hash_consing_bytes_create (Bytes_Read (src, off, len))
-    let make_Bytes_Write (des, off, n, src) = hash_consing_bytes_create (Bytes_Write (des, off, n, src))
+    let make_Bytes_Constant const = 
+        Profiler.global#call "Bytes.make_Bytes_Constant" begin fun () ->
+            hash_consing_bytes_create (Bytes_Constant const)
+        end
+
+    let make_Bytes_ByteArray bytearray = 
+        Profiler.global#call "Bytes.make_Bytes_ByteArray" begin fun () ->
+            hash_consing_bytes_create (Bytes_ByteArray bytearray)
+        end
+
+    let make_Bytes_Address (block, bs) = 
+        Profiler.global#call "Bytes.make_Bytes_Address" begin fun () ->
+            hash_consing_bytes_create (Bytes_Address (block, bs))
+        end
+
+    let make_Bytes_Op (op, lst) = 
+        Profiler.global#call "Bytes.make_Bytes_Op" begin fun () ->
+            hash_consing_bytes_create (Bytes_Op (op, lst))
+        end
+
+    let make_Bytes_Read (src, off, len) = 
+        Profiler.global#call "Bytes.make_Bytes_Read" begin fun () ->
+            hash_consing_bytes_create (Bytes_Read (src, off, len))
+        end
+
+    let make_Bytes_Write (des, off, n, src) = 
+        Profiler.global#call "Bytes.make_Bytes_Write" begin fun () ->
+            hash_consing_bytes_create (Bytes_Write (des, off, n, src))
+        end
+
     let make_Bytes_FunPtr f =
         if not (Cil.isFunctionType f.Cil.vtype) then
             FormatPlus.invalid_arg "not a function: %a" CilPrinter.varinfo f;
@@ -441,9 +465,9 @@ let bytes__make_default n byte = make_Bytes_ByteArray(ImmutableArray.make n byte
 let bytes__make n = bytes__make_default n byte__zero
 let bytes__random n =
 	let rec impl i arr =
-		if i>=n then arr else
-			impl (i+1) (ImmutableArray.set arr i (byte__random ()))
-		in
+		if i>=n then arr 
+        else impl (i+1) (ImmutableArray.set arr i (byte__random ()))
+	in
 	make_Bytes_ByteArray(impl 0 (ImmutableArray.make n byte__zero))
 
 

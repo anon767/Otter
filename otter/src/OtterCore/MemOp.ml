@@ -19,7 +19,7 @@ let frame__varinfo_to_lval_block frame varinfo =
 	VarinfoMap.find varinfo frame
 
 
-let frame__add_varinfo frame block_to_bytes varinfo zero block_type =
+let frame__add_varinfo frame block_to_bytes varinfo zero block_type = Profiler.global#call "MemOp.frame__add_varinfo" begin fun () ->
     if VarinfoMap.mem varinfo frame then FormatPlus.invalid_arg "MemOp.frame__add_varinfo: %a already exist" CilPrinter.varinfo varinfo;
     let size = (Cil.bitsSizeOf varinfo.vtype) / 8 in
     let size = if size <= 0 then 1 else size in
@@ -28,9 +28,10 @@ let frame__add_varinfo frame block_to_bytes varinfo zero block_type =
     let frame = VarinfoMap.add varinfo (Deferred.Immediate (conditional__lval_block (block, bytes__zero))) frame in
     let block_to_bytes = MemoryBlockMap.add block (Deferred.Immediate bytes) block_to_bytes in
     (frame, block_to_bytes, block)
+end
 
 
-let frame__add_varinfos frame block_to_bytes varinfos zero block_type =
+let frame__add_varinfos frame block_to_bytes varinfos zero block_type = 
     List.fold_left begin fun (frame, block_to_bytes) varinfo ->
         let frame, block_to_bytes, _ = frame__add_varinfo frame block_to_bytes varinfo zero block_type in
         (frame, block_to_bytes)
@@ -122,7 +123,7 @@ let state__add_global job varinfo =
     (job, block)
 
 
-let state__varinfo_to_lval_block ?pre job varinfo =
+let state__varinfo_to_lval_block ?pre job varinfo = Profiler.global#call "MemOp.state__varinfo_to_lval_block" begin fun () ->
 	(* lookup varinfo in locals, formals and globals, prune and update the store, and return the result *)
 	if varinfo.Cil.vglob then
 		let global = job#state.global in
@@ -152,6 +153,7 @@ let state__varinfo_to_lval_block ?pre job varinfo =
 				(job#with_state { job#state with formals=formal::List.tl job#state.formals }, lval)
 			else (* varinfo may be a function *)
 				failwith ("Varinfo "^(varinfo.vname)^" not found.")
+end
 
 
 let state__add_block job block bytes =
@@ -198,36 +200,40 @@ let state__deref ?pre job (lvals, size) =
     (job, make_Bytes_Conditional c)
 
 
-let rec state__assign job (lvals, size) bytes =
-	let assign job pre (block, offset) =
-		(* TODO: provide some way to report partial error *)
-
-		(* C99 6.7.3.5: If an attempt is made to modify an object defined with a const-qualified type through use
-		 * of an lvalue with non-const-qualified type, the behavior is undefined. If an attempt is made to refer
-		 * to an object defined with a volatile-qualified type through use of an lvalue with non-volatile-qualified
-		 * type, the behavior is undefined. *)
-		if block.memory_block_type = Block_type_Const then FormatPlus.failwith "Write to a const: %s" block.memory_block_name;
-
-		let job, oldbytes = Deferred.force job (MemoryBlockMap.find block job#state.block_to_bytes) in
-
-		(* TODO: pruning the conditional bytes here leads to repeated work if it is subsequently read via state__deref;
-		 * however, not pruning leads to O(k^(2^n)) leaves in the conditional bytes for n consecutive assignments. *)
-		let job, newbytes = bytes__write ~test:(timed_query_stp "query_stp/state__assign") ~pre job oldbytes offset size bytes in
-
-		(* Morris' axiom of assignment *)
-		let newbytes = match pre with
-			| Guard_True -> newbytes
-			| _          -> make_Bytes_Conditional ( IfThenElse (pre, conditional__bytes newbytes, conditional__bytes oldbytes) )
-		in
-		Output.set_mode Output.MSG_ASSIGN;
-		Output.printf "@[Assign@ @[%a@]@ to @[%a@], @[%a@]@]@." BytesPrinter.bytes bytes BytesPrinter.memory_block block BytesPrinter.bytes offset;
-		state__add_block job block newbytes
-	in
-	conditional__fold assign job lvals
+let state__assign job (lvals, size) bytes = Profiler.global#call "MemOp.state__assign" begin fun () -> 
+    let rec state__assign job (lvals, size) bytes =
+    	let assign job pre (block, offset) =
+    		(* TODO: provide some way to report partial error *)
+    
+    		(* C99 6.7.3.5: If an attempt is made to modify an object defined with a const-qualified type through use
+    		 * of an lvalue with non-const-qualified type, the behavior is undefined. If an attempt is made to refer
+    		 * to an object defined with a volatile-qualified type through use of an lvalue with non-volatile-qualified
+    		 * type, the behavior is undefined. *)
+    		if block.memory_block_type = Block_type_Const then FormatPlus.failwith "Write to a const: %s" block.memory_block_name;
+    
+    		let job, oldbytes = Deferred.force job (MemoryBlockMap.find block job#state.block_to_bytes) in
+    
+    		(* TODO: pruning the conditional bytes here leads to repeated work if it is subsequently read via state__deref;
+    		 * however, not pruning leads to O(k^(2^n)) leaves in the conditional bytes for n consecutive assignments. *)
+    		let job, newbytes = bytes__write ~test:(timed_query_stp "query_stp/state__assign") ~pre job oldbytes offset size bytes in
+    
+    		(* Morris' axiom of assignment *)
+    		let newbytes = match pre with
+    			| Guard_True -> newbytes
+    			| _          -> make_Bytes_Conditional ( IfThenElse (pre, conditional__bytes newbytes, conditional__bytes oldbytes) )
+    		in
+    		Output.set_mode Output.MSG_ASSIGN;
+    		Output.printf "@[Assign@ @[%a@]@ to @[%a@], @[%a@]@]@." BytesPrinter.bytes bytes BytesPrinter.memory_block block BytesPrinter.bytes offset;
+    		state__add_block job block newbytes
+    	in
+    	conditional__fold assign job lvals
+    in
+    state__assign job (lvals, size) bytes
+end
 
 
 (* start a new function call frame *)
-let state__start_fcall job callContext fundec argvs =
+let state__start_fcall job callContext fundec argvs = Profiler.global#call "MemOp.state__start_fcall" begin fun () -> 
     (* set up the new stack frame *)
 	let block_to_bytes = job#state.block_to_bytes in
 	let formal, block_to_bytes = frame__add_varinfos VarinfoMap.empty block_to_bytes fundec.Cil.sformals !Executeargs.arg_init_local_zero Block_type_Local in
@@ -260,6 +266,7 @@ let state__start_fcall job callContext fundec argvs =
 			failwith ("Not enough arguments to function " ^ fundec.svar.vname)
 	in
 	assign_argvs job fundec.Cil.sformals argvs
+end
 
 
 let state__end_fcall job =
