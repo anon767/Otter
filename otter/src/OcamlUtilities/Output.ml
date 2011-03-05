@@ -191,7 +191,7 @@ let kprintf k ?term format =
 	if (need_print (!current_msg_type)) then
 		!formatter#kprintf k ?term format
  	else
-		FormatPlus.ikfprintf (fun _ -> k !formatter) Format.std_formatter format
+		Format.ikfprintf (fun _ -> k !formatter) Format.std_formatter format
 
 let must_printf ?(term=[]) format =
     let old_mode = get_mode () in
