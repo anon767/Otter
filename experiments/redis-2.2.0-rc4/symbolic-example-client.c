@@ -48,7 +48,7 @@ void client_main(void) {
     freeReplyObject(reply);
 
     char counter[LEN+1];
-    __SYMBOLIC(&counte); counter[LEN] = 0;
+    __SYMBOLIC(&counter); counter[LEN] = 0;
     reply = redisCommand(c,"INCR %s", counter);
     printf("INCR counter: %lld\n", reply->integer);
     freeReplyObject(reply);
