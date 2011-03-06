@@ -360,13 +360,15 @@ let naive_points_to =
         naive_points_to (file, exp)
 
 
-(** Unsound point-to that maps each pointer to a distinct [malloc] of the pointer target type.
+(** Unsound point-to that maps each pointer to two distinct [malloc]s: one of the pointer target type, and the other
+    of an array of size 16 of the pointer target type.
         @param file is the file being analyzed
         @param exp is the expression to resolve
         @return [(targets_list, target_mallocs)] where [target_list] is empty and [target_mallocs] contains a single
                 dynamic allocation site
 *)
 let unsound_points_to =
+    let array_size = Some (Cil.integer 16) in
     let counter = Counter.make () in
     fun file exp -> Profiler.global#call "CilPtranal.unsound_points_to" begin fun () ->
         match Cil.unrollType (Cil.typeOf exp) with
@@ -374,16 +376,17 @@ let unsound_points_to =
                 let malloc_varinfo = find_malloc file in
                 let name = "malloc" ^ string_of_int (Counter.next counter) in
                 let malloc = (malloc_varinfo, name, typ) in
+                let malloc_array = (malloc_varinfo, name, Cil.TArray (typ, array_size, [])) in
                 let malloc_lhost = make_malloc_lhost typ in
-                wrap_points_to_varinfo (fun _ -> ([], [ (malloc, [ malloc_lhost ]) ])) exp
+                wrap_points_to_varinfo (fun _ -> ([], [ (malloc, [ malloc_lhost ]); (malloc_array, [ malloc_lhost ]) ])) exp
             | _ ->
                 ([], [])
     end
 
 
 (** Unsound point-to that maps each void pointer variable to zero or more distinct [malloc]s of types partially
-    determined from a pointer analysis, and every other pointer (variable or malloc'ed) to a distinct [malloc] of the
-    pointer target type.
+    determined from a pointer analysis, and every other pointer (variable or malloc'ed) to two distinct [malloc]s:
+    one of the pointer target type, and the other of an array of size 16 of the pointer target type.
         @param file is the file being analyzed
         @param exp is the expression to resolve
         @return [(targets_list, target_mallocs)] where [target_list] is empty and [target_mallocs] contains a single
