@@ -1,3 +1,4 @@
+#line 2 "__otter_poi.c"
 /** Points of interests */
 
 #pragma cilnoremove("__FAILURE")

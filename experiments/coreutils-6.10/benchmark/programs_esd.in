@@ -6,4 +6,4 @@ tac_comb.c      | -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"
 md5sum_comb.c   | -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"    
 pr_comb.c       | -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"    
 ptx_comb.c      | -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"    
-eq_comb.c      | -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_XALLOC_DIE_FAILURE
+seq_comb.c      | -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_XALLOC_DIE_FAILURE
