@@ -394,24 +394,21 @@ let unsound_typed_void_points_to =
     fun file exp -> Profiler.global#call "CilPtranal.unsound_typed_void_points_to" begin fun () ->
         init_file file;
         match Cil.unrollType (Cil.typeOf exp) with
-            | Cil.TPtr (typ, _) ->
+            | Cil.TPtr (typ, _) when Cil.isVoidType typ ->
                 let malloc_varinfo = find_malloc file in
                 let make_malloc typ = ((malloc_varinfo, "malloc" ^ string_of_int (Counter.next counter), typ), [ make_malloc_lhost typ ]) in
-                let targets =
-                    if Cil.isVoidType typ then
-                        let module TypeSet = Set.Make (CilData.CilCanonicalType) in
-                        let target_vars, _ = Profiler.global#call "Ptranal.resolve_exp" (fun () -> Ptranal.resolve_exp exp) in
-                        let target_types = List.fold_left begin fun target_types target_var ->
-                            TypeSet.add target_var.Cil.vtype target_types
-                        end TypeSet.empty target_vars in
-                        TypeSet.fold begin fun typ targets ->
-                            (make_malloc typ)::targets
-                        end target_types []
-                    else
-                        [ make_malloc typ ]
-                in
+
+                let module TypeSet = Set.Make (CilData.CilCanonicalType) in
+                let target_vars, _ = Profiler.global#call "Ptranal.resolve_exp" (fun () -> Ptranal.resolve_exp exp) in
+                let target_types = List.fold_left begin fun target_types target_var ->
+                    TypeSet.add target_var.Cil.vtype target_types
+                end TypeSet.empty target_vars in
+                let targets = TypeSet.fold begin fun typ targets ->
+                    (make_malloc typ)::targets
+                end target_types [] in
+
                 wrap_points_to_varinfo (fun _ -> ([], targets)) exp
             | _ ->
-                ([], [])
+                unsound_points_to file exp
     end
 
