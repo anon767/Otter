@@ -18,8 +18,10 @@ options_in="$5"
 mkdir -p "$exp_base"
 chmod 755 "$exp_base"
 
-cat $programs_in | while read prog
+cat $programs_in | while read prog_opt
 do 
+    prog=$(echo $prog_opt|sed 's/\(.*\.c\).*|.*/\1/')
+    prog_opt=$(echo $prog_opt|sed 's/.*\.c.*|\(.*\)/\1/')
     prog="$programs_dir/$prog"
     if [ "$(echo $prog | sed '/^[ ]*#/d')" ]; then echo "Process $prog"; else continue; fi
     cat $options_in | while read options
