@@ -230,34 +230,44 @@ let access_exp_with_length job exp errors length =
 
 let libc_memmove job retopt exps errors =
     match exps with
-      | [ dest_exp; src_exp; length_exp ] ->
-            let job, length, errors = Expression.rval job length_exp errors in
-            let length = bytes_to_int_auto length in
-            let job, dest, dest_lvals, errors = access_exp_with_length job dest_exp errors length in
-            let job, _, src_lvals, errors = access_exp_with_length job src_exp errors length in
-            let job, src_bytes = MemOp.state__deref job (src_lvals, length) in
-            let job = MemOp.state__assign job (dest_lvals, length) src_bytes in
-            let job, errors = set_return_value job retopt dest errors in
-            let job = end_function_call job in
-            (Job.Active job, errors)
-      | _ -> failwith "Wrong number of arguments to memcpy"
+        | [ dest_exp; src_exp; length_exp ] ->
+            begin try
+                let job, length, errors = Expression.rval job length_exp errors in
+                let length = bytes_to_int_auto length in
+                let job, dest, dest_lvals, errors = access_exp_with_length job dest_exp errors length in
+                let job, _, src_lvals, errors = access_exp_with_length job src_exp errors length in
+                let job, src_bytes = MemOp.state__deref job (src_lvals, length) in
+                let job = MemOp.state__assign job (dest_lvals, length) src_bytes in
+                let job, errors = set_return_value job retopt dest errors in
+                let job = end_function_call job in
+                (Job.Active job, errors)
+            with Failure _ ->
+                raise Not_applicable
+            end
+        | _ ->
+            failwith "Wrong number of arguments to memcpy"
 
 (* TODO: memcpy should check that the source and destination do not overlap *)
 let libc_memcpy = libc_memmove
 
 let libc_memset job retopt exps errors =
     match exps with
-      | [ dest_exp; value_exp; length_exp ] ->
-            let job, length, errors = Expression.rval job length_exp errors in
-            let length = bytes_to_int_auto length in
-            let job, value, errors = Expression.rval job value_exp errors in
-            let value_byte = bytes__get_byte value 0 (* little endian *) in
-            let job, dest, lvals, errors = access_exp_with_length job dest_exp errors length in
-            let job = MemOp.state__assign job (lvals, length) (bytes__make_default length value_byte) in
-            let job, errors = set_return_value job retopt dest errors in
-            let job = end_function_call job in
-            (Job.Active job, errors)
-      | _ -> failwith "Wrong number of arguments to memset"
+        | [ dest_exp; value_exp; length_exp ] ->
+		begin try
+                let job, length, errors = Expression.rval job length_exp errors in
+                let length = bytes_to_int_auto length in
+                let job, value, errors = Expression.rval job value_exp errors in
+                let value_byte = bytes__get_byte value 0 (* little endian *) in
+                let job, dest, lvals, errors = access_exp_with_length job dest_exp errors length in
+                let job = MemOp.state__assign job (lvals, length) (bytes__make_default length value_byte) in
+                let job, errors = set_return_value job retopt dest errors in
+                let job = end_function_call job in
+                (Job.Active job, errors)
+            with Failure _ ->
+                raise Not_applicable
+            end
+        | _ ->
+            failwith "Wrong number of arguments to memset"
 
 
 (* __builtin_alloca is used for local arrays with variable size; creates a dummy local variable so that the memory is deallocated on return *)
@@ -852,13 +862,12 @@ let interceptor job job_queue interceptor = Profiler.global#call "BuiltinFunctio
 		(intercept_function_by_name_internal "__builtin_va_copy"       libc___builtin_va_copy) @@
 		(intercept_function_by_name_internal "__builtin_va_end"        libc___builtin_va_end) @@
 		(intercept_function_by_name_internal "__builtin_va_start"      libc___builtin_va_start) @@
+
 		(* These default to the C implementation on failure *)
-		(try_with_job_abandoned_interceptor
-			(intercept_function_by_name_internal "memcpy"                  libc_memcpy)) @@
-		(try_with_job_abandoned_interceptor
-			(intercept_function_by_name_internal "memset"                  libc_memset)) @@
-		(try_with_job_abandoned_interceptor
-			(intercept_function_by_name_internal "memmove"                  libc_memmove)) @@
+		(intercept_function_by_name_internal "memcpy"                  libc_memcpy) @@
+		(intercept_function_by_name_internal "memset"                  libc_memset) @@
+		(intercept_function_by_name_internal "memmove"                  libc_memmove) @@
+
 		(intercept_function_by_name_internal "_exit"                   libc_exit) @@
 		(intercept_function_by_name_internal "__TRUTH_VALUE"           otter_truth_value) @@
 		(intercept_function_by_name_internal "__EVAL"                  otter_evaluate) @@

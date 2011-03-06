@@ -50,8 +50,6 @@ let rec process_job_states result multijob multijob_queue reporter =
 			let multijob = put_completion completion multijob in
 			((multijob_queue#put multijob), reporter)
 
-		| _ ->
-			(multijob_queue, reporter)
 
 let process_result result job_queue reporter =
 	let multijob, multijob_queue = job_queue in

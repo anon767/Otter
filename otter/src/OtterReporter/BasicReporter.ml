@@ -30,9 +30,6 @@ class ['self] t
         | Job.Fork _ ->
             {< steps = steps + 1 >}
 
-        | Job.Paused _ ->
-            invalid_arg "unexpected Job.Paused"
-
     method should_continue =
         (max_steps = 0 || steps < max_steps)
             && (max_paths = 0 || paths < max_paths)

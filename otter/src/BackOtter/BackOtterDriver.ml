@@ -30,8 +30,6 @@ let main_loop entry_fn interceptor queue reporter =
                                 List.fold_left process_result (queue, reporter) results
                             | Job.Complete completion ->
                                 (queue, reporter)
-                            | Job.Paused _ ->
-                                invalid_arg "unexpected Job.Paused"
                     in
                     let queue, reporter = process_result (queue, reporter) result in
                     if reporter#should_continue then

@@ -167,7 +167,6 @@ type ('job, 'abandoned, 'truncated) job_state =
     | Active of 'job
     | Fork of ('job, 'abandoned, 'truncated) job_state list
     | Complete of ('job, 'abandoned, 'truncated) job_completion
-    | Paused of 'job
     constraint 'job = #t
 
 

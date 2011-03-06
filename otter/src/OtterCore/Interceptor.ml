@@ -69,16 +69,23 @@ let function_pointer_interceptor job job_queue interceptor =
             (Job.Fork job_states, job_queue)
       | _ -> interceptor job job_queue
 
+
+exception Not_applicable
+
 let intercept_function_by_name_internal target_name replace_func job job_queue interceptor =
     (* Replace a C function with Otter code *)
     match job#instrList with
         | (Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, _) as instr)::_ when varinfo.Cil.vname = target_name ->
-              Output.set_mode Output.MSG_STMT;
-              Output.printf "@[%a@\n<built-in function>@]@." Printcil.instr instr;
-              let job = job#with_decision_path (Decision.DecisionFuncall(instr, varinfo)::job#decision_path) in
-              let job_state, errors = replace_func job retopt exps [] in
-              let abandoned_job_states = Statement.errors_to_abandoned_list errors in
-              (Job.Fork (job_state::abandoned_job_states), job_queue)
+            Output.set_mode Output.MSG_STMT;
+            Output.printf "@[%a@\n<built-in function>@]@." Printcil.instr instr;
+            let job = job#with_decision_path (Decision.DecisionFuncall(instr, varinfo)::job#decision_path) in
+            begin try
+                let job_state, errors = replace_func job retopt exps [] in
+                let abandoned_job_states = Statement.errors_to_abandoned_list errors in
+                (Job.Fork (job_state::abandoned_job_states), job_queue)
+            with Not_applicable ->
+                interceptor job job_queue
+            end
         | _ ->
             interceptor job job_queue
 
@@ -117,15 +124,4 @@ let intercept_function_by_name_external_cascading target_name replace_name job j
 			(Job.Active job, job_queue)
 		| _ ->
 			interceptor job job_queue
-
-let try_with_job_abandoned_interceptor try_interceptor job job_queue interceptor =
-    try 
-        let result, jq = try_interceptor job job_queue (fun j jq -> (Job.Paused j, jq)) in
-        match result with
-            | Job.Complete (Job.Abandoned (_, _)) -> interceptor job job_queue (* try_interceptor failed; move on *)
-            | Job.Paused j -> interceptor j jq (* try_interceptor passed on control *)
-            | _ -> (result, jq) (* try_interceptor did not fail and did not pass on control *)
-    with Failure _ ->
-        (* TODO: log this *)
-        interceptor job job_queue
 
