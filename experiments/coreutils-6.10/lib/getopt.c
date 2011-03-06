@@ -1105,7 +1105,7 @@ _getopt_internal (int argc, char **argv, const char *optstring,
 
 /* glibc gets a LSB-compliant getopt.
    Standalone applications get a POSIX-compliant getopt.  */
-#if _LIBC
+#if 1//_LIBC
 enum { POSIXLY_CORRECT = 0 };
 #else
 enum { POSIXLY_CORRECT = 1 };
