@@ -375,10 +375,15 @@ let unsound_points_to =
             | Cil.TPtr (typ, _) ->
                 let malloc_varinfo = find_malloc file in
                 let name = "malloc" ^ string_of_int (Counter.next counter) in
+
                 let malloc = (malloc_varinfo, name, typ) in
-                let malloc_array = (malloc_varinfo, name, Cil.TArray (typ, array_size, [])) in
                 let malloc_lhost = make_malloc_lhost typ in
-                wrap_points_to_varinfo (fun _ -> ([], [ (malloc, [ malloc_lhost ]); (malloc_array, [ malloc_lhost ]) ])) exp
+
+                let array_typ = Cil.TArray (typ, array_size, []) in
+                let malloc_array = (malloc_varinfo, name, array_typ) in
+                let malloc_array_lhost = make_malloc_lhost array_typ in
+
+                wrap_points_to_varinfo (fun _ -> ([], [ (malloc, [ malloc_lhost ]); (malloc_array, [ malloc_array_lhost ]) ])) exp
             | _ ->
                 ([], [])
     end
