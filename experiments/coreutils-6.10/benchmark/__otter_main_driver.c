@@ -10,7 +10,7 @@
 // The current setting is the same as KLEE
 #define PROGRAM_NAME     "program"
 #define MAX_ARGC         5
-#define MAX_ARG_LENGTHS  {1, 2, 2, 2, 2} 
+#define MAX_ARG_LENGTHS  {1, 3, 2, 2, 2} 
 #define MAX_FILE         2
 #define MAX_FILE_SIZE    8             // TODO: this should also control the size of stdin
 #define MAX_FILENAME_LENGTH   5
@@ -32,6 +32,13 @@ void __FAILURE(void) {}
 void __otter_xalloc_die_failure(void) {
 #ifdef __OTTER_XALLOC_DIE_FAILURE
     __FAILURE();
+#endif
+}
+
+#pragma cilnoremove("__otter_quotearg_buffer_restyled_assert")
+void __otter_quotearg_buffer_restyled_assert(int truth) {
+#ifdef __OTTER_QUOTEARG_BUFFER_RESTYLED_ASSERT
+    if (!truth) __FAILURE();
 #endif
 }
 
