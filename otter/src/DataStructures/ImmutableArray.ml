@@ -107,6 +107,8 @@ let equal eq xs ys =
 	xs.length = ys.length && (xs.offset = ys.offset && xs.map == ys.map) || deep_equal xs ys
 
 
+(* TODO: remove everything below, as uses of the below cannot take advantage of the sparsity of ImmutableArrays *)
+
 let fold_left ff a bs =
 	let len = length bs in
 	let rec impl ff a bs i =
@@ -116,7 +118,6 @@ let fold_left ff a bs =
 	in
 		impl ff a bs 0
 
- 
 let map ff bs =
 	let fff lst bb =
 		(ff bb)::lst
@@ -124,18 +125,6 @@ let map ff bs =
 	let l1 = fold_left fff [] bs in
 	let l2 = List.rev_append l1 [] in
 		of_list l2
-
-
-let fold2_left ff a bs1 bs2 =
-	let len = length bs1 in
-	if len <> length bs2 then failwith "fold2_left: input arrays are of unequal length" else
-	let rec impl ff a bs1 bs2 i =
-		if i>=len then a 
-		else let aa = ff a (get bs1 i) (get bs2 i) in
-			impl ff aa bs1 bs2 (i+1)
-	in
-		impl ff a bs1 bs2 0
-
 
 let exists p arr =
 	let len = length arr in
@@ -146,16 +135,6 @@ let exists p arr =
 	in
 	exists_aux 0
 
-let exists2 p arr arr' =
-	let len = length arr in
-	if len <> length arr' then failwith "exists2: input arrays are of unequal length";
-	let rec exists2_aux i =
-		if i >= len
-		then false
-		else p (get arr i) (get arr' i) || exists2_aux (succ i)
-	in
-	exists2_aux 0
-
 let for_all p arr =
 	let len = length arr in
 	let rec for_all_aux i =
@@ -164,13 +143,3 @@ let for_all p arr =
 		else p (get arr i) && for_all_aux (succ i)
 	in
 	for_all_aux 0
-
-let for_all2 p arr arr' =
-	let len = length arr in
-	if len <> length arr' then failwith "for_all2: input arrays are of unequal length";
-	let rec for_all2_aux i =
-		if i >= len
-		then true
-		else p (get arr i) (get arr' i) && for_all2_aux (succ i)
-	in
-	for_all2_aux 0
