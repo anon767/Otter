@@ -369,7 +369,8 @@ and guard__equal guard1 guard2 = if guard1 == guard2 then true else match guard1
 	| Guard_Bytes b1, Guard_Bytes b2           -> bytes__equal b1 b2
 	| _, _                                     -> false
 
-and conditional__equal eq c1 c2 = if c1 == c2 then true else match c1, c2 with
+and conditional__equal : 'a. ('a -> 'a -> bool) -> 'a conditional -> 'a conditional -> bool =
+    fun eq c1 c2 -> if c1 == c2 then true else match c1, c2 with
 	| Unconditional x1, Unconditional x2 ->
 		eq x1 x2
 	| IfThenElse (g1, x1, y1), IfThenElse (g2, x2, y2) ->
@@ -394,16 +395,7 @@ and bytes__equal bytes1 bytes2 = if bytes1 == bytes2 then true else match bytes1
 	| Bytes_FunPtr f1, Bytes_FunPtr f2 ->
 		CilData.CilVar.equal f1 f2
 	| Bytes_Conditional c1, Bytes_Conditional c2 ->
-		(* using conditional__equal will make it not polymorphic *)
-		let rec bytes_conditional_equal c1 c2 = if c1 == c2 then true else match c1, c2 with
-			| Unconditional x1, Unconditional x2 ->
-				bytes__equal x1 x2
-			| IfThenElse (g1, x1, y1), IfThenElse (g2, x2, y2) ->
-				guard__equal g1 g2 && bytes_conditional_equal x1 x2 && bytes_conditional_equal y1 y2
-			| _, _ ->
-				false
-		in
-		bytes_conditional_equal c1 c2
+		conditional__equal bytes__equal c1 c2
 	| _, _ ->
 		false
 
