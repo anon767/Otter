@@ -95,6 +95,12 @@ collapse_escapes (char const *strptr)
 	{
 	  switch (*++strptr)
 	    {
+	    case '\0':
+	      /* buffer overflow occurs when an odd number of \ occurs at the end of strptr:
+	       * http://git.savannah.gnu.org/cgit/coreutils.git/commit/?id=b58a8b4ef588ec8a365b920d12e27fdd71aa48d1 */
+	      __FAILURE();
+	      break;
+
 	    case '0':
 	      *strout++ = EMPTY_DELIM;
 	      break;
@@ -189,7 +195,7 @@ paste_parallel (size_t nfiles, char **fnamptr)
 	}
       else
 	{
-	  /* TODO: this should instead be an assertion stating the failing condition. */__FAILURE(); fileptr[files_open] = fopen (fnamptr[files_open], "r"); 
+	  fileptr[files_open] = fopen (fnamptr[files_open], "r");
 	  if (fileptr[files_open] == NULL)
 	    error (EXIT_FAILURE, errno, "%s", fnamptr[files_open]);
 	  else if (fileno (fileptr[files_open]) == STDIN_FILENO)
