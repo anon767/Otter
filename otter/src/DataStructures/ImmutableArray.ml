@@ -77,6 +77,36 @@ let of_list (lst: 'a list) : 'a t =
 	impl lst 0 
 
 
+let equal eq xs ys =
+	let module E = struct exception Not_equal end in
+	let deep_equal xs ys =
+		try
+			(* compare xs.map bindings in ys.map or against ys.default *)
+			let ymap = IndexMap.fold begin fun xk xv ymap ->
+				try
+					let yk = xk - xs.offset + ys.offset in
+					let yv = IndexMap.find yk ymap in
+					if eq xv yv then
+						IndexMap.remove yk ymap
+					else
+						raise E.Not_equal
+				with Not_found ->
+					match ys.default with
+						| Some yv when eq xv yv -> ymap
+						| _ -> raise E.Not_equal
+			end xs.map ys.map in
+
+			(* compare the remainder of ys.map against xs.default *)
+			IndexMap.is_empty ymap
+			|| match xs.default with
+				| Some xv -> IndexMap.for_all (fun _ yv -> eq xv yv) ymap
+				| None -> false
+		with E.Not_equal ->
+			false
+	in
+	xs.length = ys.length && (xs.offset = ys.offset && xs.map == ys.map) || deep_equal xs ys
+
+
 let fold_left ff a bs =
 	let len = length bs in
 	let rec impl ff a bs i =

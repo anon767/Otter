@@ -382,7 +382,7 @@ and bytes__equal bytes1 bytes2 = if bytes1 == bytes2 then true else match bytes1
 	| b, Bytes_Constant c ->
 		bytes__equal b (constant_to_bytes c)
 	| Bytes_ByteArray a1, Bytes_ByteArray a2 ->
-		ImmutableArray.length a1 = ImmutableArray.length a2 && ImmutableArray.for_all2 byte__equal a1 a2
+		ImmutableArray.length a1 = ImmutableArray.length a2 && ImmutableArray.equal byte__equal a1 a2
 	| Bytes_Address(b1, off1),Bytes_Address(b2, off2) ->
 		b1 = b2 && bytes__equal off1 off2
 	| Bytes_Op (op1, operands1), Bytes_Op (op2, operands2) ->
