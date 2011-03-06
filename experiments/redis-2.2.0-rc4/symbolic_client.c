@@ -25,7 +25,7 @@ void client_main()
 	this will terminate with "`Failure:Deadlock" */
 	while (1) {
 		int read_length = read(fd, server_output, sizeof(server_output));
-		if (read_length == -1) return; // The server closed the socket
+		if (read_length < 1) return; // The server closed the socket
 		__EVALSTR(server_output, read_length);
 	}
 }
