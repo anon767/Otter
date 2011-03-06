@@ -23,16 +23,20 @@ do
     prog=$(echo $prog_opt|sed 's/\(.*\.c\).*|.*/\1/')
     prog_opt=$(echo $prog_opt|sed 's/.*\.c.*|\(.*\)/\1/')
     prog="$programs_dir/$prog"
-    if [ "$(echo $prog | sed '/^[ ]*#/d')" ]; then echo "Process $prog"; else continue; fi
+    if [ "$(echo $prog | sed '/^[ ]*#/d')" ]; then echo "Process $prog with options $prog_opt"; else continue; fi
+    options_id=1
     cat $options_in | while read options
     do 
         if [ "$(echo $options | sed '/^[ ]*#/d')" ]; then echo "Process $options"; else continue; fi
+        options="$prog_opt $options"
         prog_name=$(basename $prog .c)
-        opts_name=$(echo $options|sed 's/ /_/g')
-        log_file="$exp_base/results/$prog_name/run_with_$opts_name.log"
-        test_sh="$exp_base/tests/${prog_name}_run_with_$opts_name.sh"
+        log_file="$exp_base/results/${prog_name}_$options_id.log"
+        test_sh="$exp_base/tests/${prog_name}_$options_id.sh"
+        options_id=$(expr $options_id + 1)
         mkdir -p "$(dirname "$test_sh")"
-        echo "mkdir -p \"$(dirname "$log_file")\" && \"$runotter\" \"$prog\" $options 2>&1 | timelines > \"$log_file\"" >> $test_sh
+        echo "# options: $options" >> $test_sh
+        echo "mkdir -p \"$(dirname "$log_file")\"" >> $test_sh
+        echo "\"$runotter\" \"$prog\" $options 2>&1 | timelines > \"$log_file\"" >> $test_sh
     done
 done
 
