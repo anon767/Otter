@@ -79,7 +79,7 @@ let of_list (lst: 'a list) : 'a t =
 
 let equal eq xs ys =
     (* the use of default values makes this tremendously complicated *)
-    let module E = struct exception Not_equal end in
+    let module E = struct exception Not_equal exception Reached_end end in
     let default_equal () =
         match xs.default, ys.default with
             | Some x, Some y -> eq x y
@@ -94,35 +94,50 @@ let equal eq xs ys =
     let deep_equal () =
         try
             (* compare xs.map bindings in ys.map or against ys.default *)
-            let xcount, ymap, ycount = IndexMap.fold begin fun xk xv (xcount, ymap, ycount) ->
-                try
-                    let yk = xk - xs.offset + ys.offset in
-                    let yv = IndexMap.find yk ymap in
-                    if eq xv yv then
-                        (xcount + 1, IndexMap.remove yk ymap, ycount + 1)
-                    else
-                        raise E.Not_equal
-                with Not_found ->
-                    match ys.default with
-                        | Some yv when eq xv yv -> (xcount + 1, ymap, ycount)
-                        | _ -> raise E.Not_equal
-            end xs.map (0, ys.map, 0) in
+            let xcount = ref 0 in
+            let ymap = ref ys.map in
+            let ycount = ref 0 in
+            begin try
+                IndexMap.iter begin fun xk xv ->
+                    if xk >= xs.offset + xs.length then raise E.Reached_end;
+                    try
+                        let yk = xk - xs.offset + ys.offset in
+                        let yv = IndexMap.find yk !ymap in
+                        if eq xv yv then begin
+                            incr xcount;
+                            ymap := IndexMap.remove yk !ymap;
+                            incr ycount;
+                        end else
+                            raise E.Not_equal
+                    with Not_found ->
+                        match ys.default with
+                            | Some yv when eq xv yv -> incr xcount
+                            | _ -> raise E.Not_equal
+                end xs.map
+            with E.Reached_end ->
+                ()
+            end;
 
-            if IndexMap.is_empty ymap then
+            if IndexMap.is_empty !ymap then
                 (* defaults are equal or unused *)
-                xs.default == ys.default || xcount = xs.length || default_equal ()
+                xs.default == ys.default || !xcount = xs.length || default_equal ()
             else
                 (* compare the remainder of ys.map against xs.default *)
                 begin match xs.default with
                     | Some xv ->
-                        let ycount = IndexMap.fold begin fun _ yv ycount ->
-                            if eq xv yv then
-                                ycount + 1
-                            else
-                                raise E.Not_equal
-                        end ymap ycount in
+                        begin try
+                            IndexMap.iter begin fun yk yv ->
+                                if yk >= ys.offset + ys.length then raise E.Reached_end;
+                                if eq xv yv then
+                                    incr ycount
+                                else
+                                    raise E.Not_equal
+                            end !ymap
+                        with E.Reached_end ->
+                            ()
+                        end;
                         (* defaults are equal or unused *)
-                        xs.default == ys.default || ycount = ys.length || default_equal ()
+                        xs.default == ys.default || !ycount = ys.length || default_equal ()
                     | None ->
                         false
                 end
