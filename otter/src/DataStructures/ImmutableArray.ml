@@ -14,10 +14,7 @@ type 'a t =
 	}
 
 
-let length array =
-	let len = array.length-array.offset in
-		if(len<0) then failwith "Array length can't be less than zero" else
-		len
+let length array = array.length
 
 
 let get array i =
@@ -30,26 +27,24 @@ let get array i =
 
 
 let set array i elm =
-	let ii = i+array.offset in
-	{ array with
-		length = 
-			if (ii+1) > array.length then 
-				(ii+1) 
-			else array.length; (*should expand? *)
-		map = IndexMap.add ii elm array.map;
-	}
+	let ii = i + array.offset in
+	let length =
+		 (* TODO: should disallow silent expansion? *)
+		if ii >= array.offset + array.length then
+			ii + 1
+		else
+			array.length
+	in
+	let map = IndexMap.add ii elm array.map in
+	{ array with length; map }
 
 
 let add array elm =
 	set array (length array) elm
 
 
-let sub array offset2 size = 
-	let offset3 = array.offset+offset2 in
-	{	array with
-		length = size+offset3;
-		offset = offset3;
-	}
+let sub array offset length =
+	{ array with length; offset = array.offset + offset }
 
 	
 let empty =
