@@ -34,7 +34,7 @@
 				start again at its beginning.
    A FILE of `-' means standard input.
    If no FILEs are given, standard input is used. */
-extern void __FAILURE(void);
+extern void __otter_paste_assert(int);
 #include <config.h>
 
 #include <stdio.h>
@@ -93,14 +93,12 @@ collapse_escapes (char const *strptr)
 	*strout++ = *strptr++;	/* No, just transfer it. */
       else
 	{
+	  /* buffer overflow occurs when an odd number of \ occurs at the end of strptr:
+	   * http://git.savannah.gnu.org/cgit/coreutils.git/commit/?id=b58a8b4ef588ec8a365b920d12e27fdd71aa48d1 */
+	  __otter_paste_assert(*(strptr+1) != '\0');
+
 	  switch (*++strptr)
 	    {
-	    case '\0':
-	      /* buffer overflow occurs when an odd number of \ occurs at the end of strptr:
-	       * http://git.savannah.gnu.org/cgit/coreutils.git/commit/?id=b58a8b4ef588ec8a365b920d12e27fdd71aa48d1 */
-	      __FAILURE();
-	      break;
-
 	    case '0':
 	      *strout++ = EMPTY_DELIM;
 	      break;

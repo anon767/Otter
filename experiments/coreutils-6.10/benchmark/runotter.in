@@ -17,5 +17,6 @@ echo "[Command] $0 $*"
     --untracked-functions="$COREUTILS/benchmark/libcoreutils_functions" \
     --untracked-functions="$COREUTILS/benchmark/other_functions" \
     "$COREUTILS/benchmark/__otter_main_driver.c" --mainfn=__otter_main_driver \
+    "$COREUTILS/benchmark/__otter_poi.c" \
     -lm \
     "$@"
