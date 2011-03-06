@@ -99,20 +99,22 @@ let equal eq xs ys =
             let ycount = ref 0 in
             begin try
                 IndexMap.iter begin fun xk xv ->
-                    if xk >= xs.offset + xs.length then raise E.Reached_end;
-                    try
-                        let yk = xk - xs.offset + ys.offset in
-                        let yv = IndexMap.find yk !ymap in
-                        if eq xv yv then begin
-                            incr xcount;
-                            ymap := IndexMap.remove yk !ymap;
-                            incr ycount;
-                        end else
-                            raise E.Not_equal
-                    with Not_found ->
-                        match ys.default with
-                            | Some yv when eq xv yv -> incr xcount
-                            | _ -> raise E.Not_equal
+                    if xk >= xs.offset + xs.length then
+                        raise E.Reached_end
+                    else if xk >= xs.offset then
+                        try
+                            let yk = xk - xs.offset + ys.offset in
+                            let yv = IndexMap.find yk !ymap in
+                            if eq xv yv then begin
+                                incr xcount;
+                                ymap := IndexMap.remove yk !ymap;
+                                incr ycount;
+                            end else
+                                raise E.Not_equal
+                        with Not_found ->
+                            match ys.default with
+                                | Some yv when eq xv yv -> incr xcount
+                                | _ -> raise E.Not_equal
                 end xs.map
             with E.Reached_end ->
                 ()
@@ -127,11 +129,13 @@ let equal eq xs ys =
                     | Some xv ->
                         begin try
                             IndexMap.iter begin fun yk yv ->
-                                if yk >= ys.offset + ys.length then raise E.Reached_end;
-                                if eq xv yv then
-                                    incr ycount
-                                else
-                                    raise E.Not_equal
+                                if yk >= ys.offset + ys.length then
+                                    raise E.Reached_end
+                                else if yk >= ys.offset then
+                                    if eq xv yv then
+                                        incr ycount
+                                    else
+                                        raise E.Not_equal
                             end !ymap
                         with E.Reached_end ->
                             ()
@@ -145,6 +149,19 @@ let equal eq xs ys =
             false
     in
     xs == ys || xs.length = ys.length && (shallow_equal () || deep_equal ())
+
+
+let hash ha xs =
+    (* hash the first 10 elements *)
+    let limit = min xs.length 10 in
+    let rec hash h n =
+        if n < limit then
+            let h = Hashtbl.hash (ha (get xs n), h) in
+            hash h (n + 1)
+        else
+            h
+    in
+    hash (Hashtbl.hash xs.length) 0
 
 
 (* TODO: remove everything below, as uses of the below cannot take advantage of the sparsity of ImmutableArrays *)
