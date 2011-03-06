@@ -1,9 +1,9 @@
-mkdir_comb.c
-mkfifo_comb.c
-mknod_comb.c
-paste_comb.c
-tac_comb.c
-md5_comb.c
-pr_comb.c
-prx_comb.c
-seq_comb.c
+mkdir_comb.c    | -D__OTTER_QUOTEARG_BUFFER_RESTYLED_ASSERT
+mkfifo_comb.c   | -D__OTTER_QUOTEARG_BUFFER_RESTYLED_ASSERT
+mknod_comb.c    | -D__OTTER_QUOTEARG_BUFFER_RESTYLED_ASSERT
+paste_comb.c    |
+tac_comb.c      |
+md5_comb.c      |
+pr_comb.c       |
+prx_comb.c      |
+seq_comb.c      | -D__OTTER_XALLOC_DIE_FAILURE
