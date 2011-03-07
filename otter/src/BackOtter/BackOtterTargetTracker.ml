@@ -12,16 +12,17 @@ let target_matchers = ref (fun (reason : BackOtterErrors.t) (job : Job.t) k -> k
 
 
 let get_line_targets file =
-    TargetSet.fold begin fun (filename, linenumber as line) targets ->
+    TargetSet.fold begin fun (filename, linenumber as line) line_targets ->
         (* Use of_stmt_last to ensure that instructions before the last one are covered *)
         try
-            List.map (fun (fundec, stmt) -> Instruction.of_stmt_last file fundec stmt) (FindCil.stmts_by_line file line) @ targets
+            List.map (fun (fundec, stmt) -> Instruction.of_stmt_last file fundec stmt) (FindCil.stmts_by_line file line) @ line_targets
         with Not_found ->
             let output_mode = Output.get_mode () in
             Output.set_mode Output.MSG_REG;
             Output.printf "Warning: line target %s:%d not found.@." filename linenumber;
+            targets := TargetSet.remove line !targets;
             Output.set_mode output_mode;
-            targets
+            line_targets
     end !targets []
 
 
