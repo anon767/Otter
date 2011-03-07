@@ -12,6 +12,9 @@ exception ForkCallKilled of int
 exception ForkCallStopped of int
 (**/**)
 
+(**/**)
+let marshal_failure_re = Str.regexp "\\(input_value\\|Marshal\\)"
+(**/**)
 
 (** Call a function in a forked process and return the result. Note that {!Format.std_formatter} and
     {!Format.err_formatter} are reset in the forked process.
@@ -76,9 +79,11 @@ let fork_call ?time_limit:time_limit_opt (f : ('a -> 'b)) (x : 'a) : 'b =
         with e ->
             (* kill the child *)
             Unix.kill child Sys.sigterm;
-            (* If an external timeout fired, not the timeout for this particular call, then just re-raise the exception. *)
-            if e = UserSignal.TimedOut then raise UserSignal.TimedOut;
-            `Failure e
+            (* catch only exception that arise from Marshal.from_channel *)
+            match e with
+                | End_of_file -> `Failure e
+                | Failure s when Str.string_match marshal_failure_re s 0 -> `Failure e
+                | e -> raise e
         in
 
         (* make sure to not exhaust file descriptors *)
