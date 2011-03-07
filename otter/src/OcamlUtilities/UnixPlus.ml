@@ -76,6 +76,8 @@ let fork_call ?time_limit:time_limit_opt (f : ('a -> 'b)) (x : 'a) : 'b =
         with e ->
             (* kill the child *)
             Unix.kill child Sys.sigterm;
+            (* If an external timeout fired, not the timeout for this particular call, then just re-raise the exception. *)
+            if e = UserSignal.TimedOut then raise UserSignal.TimedOut;
             `Failure e
         in
 
