@@ -47,7 +47,7 @@ INCLUDE_DIRS := -isystem $(CURDIR)/include \
     -isystem $(BUILD_DIR)/otter/newlib/targ-include \
     -isystem $(NEWLIB_1_19_0)/newlib/libc/include
 
-OPTIONS_FOR_BUILDING_LIBC := -nostdinc -nostdlib -Wp,-undef,-D_POSIX_THREADS,-D_POSIX_TIMERS,-D__GNUC__,-D_GCC_LIMITS_H_ $(INCLUDE_DIRS)
+OPTIONS_FOR_BUILDING_LIBC := -nostdinc -nostdlib -Wp,-undef,-D_POSIX_THREADS,-D__GNUC__,-D_GCC_LIMITS_H_ $(INCLUDE_DIRS)
 OPTIONS_FOR_USING_LIBC := $(OPTIONS_FOR_BUILDING_LIBC) \
     -L$(LIB_DIR) \
     -lc 
