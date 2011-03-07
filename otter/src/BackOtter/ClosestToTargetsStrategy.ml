@@ -32,7 +32,7 @@ let get_distance_to_targets_impl =
 let get_distance_to_targets job =
     Profiler.global#call "ClosestToTargetsStrategy.get_distance_to_targets" begin fun () ->
         let target_fundecs = BackOtterTargets.get_target_fundecs () in
-        let line_targets = LineTargets.get_line_targets job#file in
+        let line_targets = LineTargets.get_line_targets job#file @ BackOtterTargetTracker.get_line_targets job#file in
         let distance = get_distance_to_targets_impl (job, target_fundecs, line_targets) in
         Output.debug_printf "Job %d has distance to target = %d@\n" job#node_id distance;
         distance
