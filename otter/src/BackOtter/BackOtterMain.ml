@@ -56,7 +56,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
         in
         Output.must_printf "@\n";
         r
-    ) [] (!LineTargets.arg_line_targets) in
+    ) [] (!LineTargets.arg_line_targets @ BackOtterTargetTracker.(TargetSet.elements !targets)) in
     List.iter (fun f -> Output.debug_printf "Function containing coverage targets: %s@." f.svar.vname) starter_fundecs;
     let b_queue = List.fold_left (fun b_queue fundec ->
         if CilData.CilFundec.equal fundec entry_fn then 
