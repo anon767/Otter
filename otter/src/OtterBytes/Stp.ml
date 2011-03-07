@@ -522,28 +522,28 @@ let query_stp =
             in
             let start = Sys.time () in
             let answer =
-                if (!arg_max_stp_time) < 0.0 then
-                    stp_query ()
-                else
-                    try
+                try
+                    if (!arg_max_stp_time) < 0.0 then
+                        stp_query ()
+                    else
                         UnixPlus.fork_call ~time_limit:(!arg_max_stp_time) stp_query ()
-                    with
-                        | Invalid_argument s ->
-                            FormatPlus.failwith "Invalid_argument (%s)" s
-                        | UnixPlus.ForkCallTimedOut ->
-                            FormatPlus.failwith "ForkCallTimedOut caught in Stpc.query"
-                        | UnixPlus.ForkCallException _ ->
-                            FormatPlus.failwith "ForkCallException caught in Stpc.query"
-                        | UnixPlus.ForkCallFailure _ ->
-                            FormatPlus.failwith "ForkCallFailure caught in Stpc.query"
-                        | UnixPlus.ForkCallExited i ->
-                            FormatPlus.failwith "ForkCallExited (%d) caught in Stpc.query" i
-                        | UnixPlus.ForkCallKilled i ->
-                            FormatPlus.failwith "ForkCallKilled (%d) caught in Stpc.query" i
-                        | UnixPlus.ForkCallStopped i ->
-                            FormatPlus.failwith "ForkCallStopped (%d) caught in Stpc.query" i
-                        | e ->
-                            FormatPlus.failwith "Unknown exception caught in Stpc.query"
+                with
+                    | Invalid_argument s ->
+                        FormatPlus.failwith "Invalid_argument (%s)" s
+                    | UnixPlus.ForkCallTimedOut ->
+                        FormatPlus.failwith "ForkCallTimedOut caught in Stpc.query"
+                    | UnixPlus.ForkCallException _ ->
+                        FormatPlus.failwith "ForkCallException caught in Stpc.query"
+                    | UnixPlus.ForkCallFailure _ ->
+                        FormatPlus.failwith "ForkCallFailure caught in Stpc.query"
+                    | UnixPlus.ForkCallExited i ->
+                        FormatPlus.failwith "ForkCallExited (%d) caught in Stpc.query" i
+                    | UnixPlus.ForkCallKilled i ->
+                        FormatPlus.failwith "ForkCallKilled (%d) caught in Stpc.query" i
+                    | UnixPlus.ForkCallStopped i ->
+                        FormatPlus.failwith "ForkCallStopped (%d) caught in Stpc.query" i
+                    | e ->
+                        FormatPlus.failwith "Unknown exception caught in Stpc.query"
             in
             let elapsed = Sys.time () -. start in
             stp_queries := (pc, pre, guard, answer, elapsed)::(!stp_queries);
