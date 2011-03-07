@@ -17,4 +17,4 @@ GrammarMain.cmx: GrammarLexer.cmx Grammar.cmx GrammarMain.ml
 	ocamlopt -c GrammarMain.ml
 
 clean:
-	rm Grammar.ml{,i} GrammarLexer.ml $(foreach file, Grammar GrammarLexer GrammarMain GrammarTypes, $(file).cmx $(file).cmi $(file).o)
+	rm -f Grammar.ml{,i} GrammarLexer.ml $(foreach file, Grammar GrammarLexer GrammarMain GrammarTypes, $(file).cmx $(file).cmi $(file).o)
