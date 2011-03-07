@@ -159,45 +159,43 @@ end = struct
     let make_Byte_Symbolic s = Byte_Symbolic s
     let make_Byte_Bytes (bs, n) = Byte_Bytes (bs, n)
 
-    let hash_consing_bytes_create = Memo.make_hashcons "Bytes.bytes"
-
     let make_Bytes_Constant const = 
         Profiler.global#call "Bytes.make_Bytes_Constant" begin fun () ->
-            hash_consing_bytes_create (Bytes_Constant const)
+            Bytes_Constant const
         end
 
     let make_Bytes_ByteArray bytearray = 
         Profiler.global#call "Bytes.make_Bytes_ByteArray" begin fun () ->
-            hash_consing_bytes_create (Bytes_ByteArray bytearray)
+            Bytes_ByteArray bytearray
         end
 
     let make_Bytes_Address (block, bs) = 
         Profiler.global#call "Bytes.make_Bytes_Address" begin fun () ->
-            hash_consing_bytes_create (Bytes_Address (block, bs))
+            Bytes_Address (block, bs)
         end
 
     let make_Bytes_Op (op, lst) = 
         Profiler.global#call "Bytes.make_Bytes_Op" begin fun () ->
-            hash_consing_bytes_create (Bytes_Op (op, lst))
+            Bytes_Op (op, lst)
         end
 
     let make_Bytes_Read (src, off, len) = 
         Profiler.global#call "Bytes.make_Bytes_Read" begin fun () ->
-            hash_consing_bytes_create (Bytes_Read (src, off, len))
+            Bytes_Read (src, off, len)
         end
 
     let make_Bytes_Write (des, off, n, src) = 
         Profiler.global#call "Bytes.make_Bytes_Write" begin fun () ->
-            hash_consing_bytes_create (Bytes_Write (des, off, n, src))
+            Bytes_Write (des, off, n, src)
         end
 
     let make_Bytes_FunPtr f =
         if not (Cil.isFunctionType f.Cil.vtype) then
             FormatPlus.invalid_arg "not a function: %a" CilPrinter.varinfo f;
-        hash_consing_bytes_create (Bytes_FunPtr f)
+        Bytes_FunPtr f
     let make_Bytes_Conditional = function
         | Unconditional b -> b
-        | c -> hash_consing_bytes_create (Bytes_Conditional c)
+        | c -> Bytes_Conditional c
 end
 
 include T
