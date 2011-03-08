@@ -10,42 +10,41 @@ runotter=$(coreutils)/benchmark/runotter
 runbackotter=$(coreutils)/benchmark/runbackotter
 libcoreutils_functions=$(coreutils)/benchmark/libcoreutils_functions
 
-procedure=configure make list runotter runbackotter
+all: make list runotter runbackotter
 
-all: $(procedure)
+make: $(coreutils)/Makefile
+	$(MAKE) -C $(coreutils) CC="$(cilly_with_libc)" AR="$(cilly_ar)" RANLIB="echo cilly_ranlib: " SUBDIRS="lib src"
 
-.PHONY: $(procedure)
-
-configure:
+# coreutils must be built in its source tree because the line-targets benchmark specify files relative to that directory
+$(coreutils)/Makefile:
 	cd $(coreutils) && ./configure SKIP_FTRUNCATE_CHECK=yes CC="$(gcc_with_libc_configure)" LD=ld --host=i386
-
-make: 
-	cd $(coreutils) && make CC="$(cilly_with_libc)" AR="$(cilly_ar)" RANLIB="echo cilly_ranlib: "
 
 # Generate a list of functions defined in lib/.
 # They are excluded from coreutils' coverage.
-list:
-	$(trunk)/otter/otter.pl --merge --dofindFns -L../lib -lcoreutils  > $(libcoreutils_functions)
+list: make
+	$(trunk)/otter/otter.pl --merge --dofindFns -L$(coreutils)/lib -lcoreutils  > $(libcoreutils_functions)
 
 # Generate a script to run Otter on coreutils' programs.
-runotter:
+runotter: runotter.in
 	cat runotter.in \
 		| sed "s|@OTTER_TRUNK@|\"$(trunk)\"|" \
 		| sed "s|@OTTER_FLAVOR@|--doexecute|" \
 		> $(runotter) && chmod +x $(runotter)
 
 # Generate a script to run BackOtter on coreutils' programs.
-runbackotter:
+runbackotter: runotter.in
 	cat runotter.in \
 		| sed "s|@OTTER_TRUNK@|\"$(trunk)\"|" \
 		| sed "s|@OTTER_FLAVOR@|--dobackotter|" \
 		> $(runbackotter) && chmod +x $(runbackotter)
 
 clean:
-	rm $(coreutils)/src/*_comb.c
-	rm $(coreutils)/benchmark/{libcoreutils_functions,runotter,runbackotter}
-	cd $(coreutils) && make clean
+	$(RM) $(coreutils)/src/*_comb.c
+	$(RM) $(coreutils)/benchmark/{libcoreutils_functions,runotter,runbackotter}
+	$(MAKE) -C $(coreutils) clean
 
-distclean: clean
-	cd $(coreutils) && make distclean
+distclean:
+	$(RM) $(coreutils)/src/*_comb.c
+	$(RM) $(coreutils)/benchmark/{libcoreutils_functions,runotter,runbackotter}
+	$(MAKE) -C $(coreutils) distclean
 
