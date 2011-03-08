@@ -360,8 +360,8 @@ let naive_points_to =
         naive_points_to (file, exp)
 
 
-(** Unsound point-to that maps each pointer to two distinct [malloc]s: one of the pointer target type, and the other
-    of an array of size 16 of the pointer target type.
+(** Unsound point-to that maps each pointer to one or two distinct [malloc]s: one of the pointer target type, and if
+    the pointer points to base (numeric) type, another of an array of size 16 of the base type.
         @param file is the file being analyzed
         @param exp is the expression to resolve
         @return [(targets_list, target_mallocs)] where [target_list] is empty and [target_mallocs] contains a single
@@ -378,20 +378,27 @@ let unsound_points_to =
 
                 let malloc = (malloc_varinfo, name, typ) in
                 let malloc_lhost = make_malloc_lhost typ in
+                let malloc_targets = [ (malloc, [ malloc_lhost ]) ] in
 
-                let array_typ = Cil.TArray (typ, array_size, []) in
-                let malloc_array = (malloc_varinfo, name, array_typ) in
-                let malloc_array_lhost = make_malloc_lhost array_typ in
-
-                wrap_points_to_varinfo (fun _ -> ([], [ (malloc, [ malloc_lhost ]); (malloc_array, [ malloc_array_lhost ]) ])) exp
+                let malloc_targets =
+                    if Cil.isArithmeticType typ then
+                        let array_typ = Cil.TArray (typ, array_size, []) in
+                        let malloc_array = (malloc_varinfo, name, array_typ) in
+                        let malloc_array_lhost = make_malloc_lhost array_typ in
+                        (malloc_array, [ malloc_array_lhost ])::malloc_targets
+                    else
+                        malloc_targets
+                in
+                wrap_points_to_varinfo (fun _ -> ([], malloc_targets)) exp
             | _ ->
                 ([], [])
     end
 
 
 (** Unsound point-to that maps each void pointer variable to zero or more distinct [malloc]s of types partially
-    determined from a pointer analysis, and every other pointer (variable or malloc'ed) to two distinct [malloc]s:
-    one of the pointer target type, and the other of an array of size 16 of the pointer target type.
+    determined from a pointer analysis, and every other pointer (variable or malloc'ed) to one or two distinct
+    [malloc]s: one of the pointer target type, and if the pointer points to base (numeric) type, another of an array
+    of size 16 of the base type.
         @param file is the file being analyzed
         @param exp is the expression to resolve
         @return [(targets_list, target_mallocs)] where [target_list] is empty and [target_mallocs] contains a single
