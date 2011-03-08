@@ -14,14 +14,16 @@ void __otter_xalloc_die_failure(void) {
 #pragma cilnoremove("__otter_quotearg_buffer_restyled_assert")
 void __otter_quotearg_buffer_restyled_assert(int truth) {
 #ifdef __OTTER_QUOTEARG_BUFFER_RESTYLED_ASSERT
-    if (!truth) __FAILURE();
+    if (!truth) 
+        __FAILURE();
 #endif
 }
 
 #pragma cilnoremove("__otter_paste_assert")
 void __otter_paste_assert(int truth) {
 #ifdef __OTTER_PASTE_ASSERT
-    if (!truth) __FAILURE();
+    if (!truth) 
+        __FAILURE();
 #endif
 }
 
