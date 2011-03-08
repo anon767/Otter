@@ -1,5 +1,0 @@
-#  --timeout=3600 --noboundsChecking --bidirectional-search-ratio=0.75 --function-job-points-to=unsound-typed-void --backward-function-rank=round-robin
-#  --timeout=3600 --noboundsChecking --bidirectional-search-ratio=-1   --function-job-points-to=unsound-typed-void --backward-function-rank=round-robin
-#  --timeout=3600                    --bidirectional-search-ratio=-1   --function-job-points-to=unsound-typed-void --backward-function-rank=round-robin
-#  --timeout=3600                    --bidirectional-search-ratio=-1   --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry
-  --backward-queue=random-path --timeout=3600 --max-abandoned=1 --bidirectional-search-ratio=-1 --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry 
