@@ -544,11 +544,8 @@ let query_stp =
                             FormatPlus.failwith "ForkCallKilled (%d) caught in Stpc.query" i
                         | UnixPlus.ForkCallStopped i ->
                             FormatPlus.failwith "ForkCallStopped (%d) caught in Stpc.query" i
-                        | UserSignal.TimedOut ->
-                              (* If an external timeout fired, not the timeout for this particular call, then just re-raise the exception. *)
-                              raise UserSignal.TimedOut
-                        | e ->
-                            FormatPlus.failwith "Unknown exception caught in Stpc.query"
+                        | exn ->
+                            raise exn
             in
             let elapsed = Sys.time () -. start in
             stp_queries := (pc, pre, guard, answer, elapsed)::(!stp_queries);
