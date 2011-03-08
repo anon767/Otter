@@ -91,9 +91,9 @@ int __otter_libc_close(int fd)
 						}
 						
 						if(found)
-							sock->sock_queue[0]->sock_queue[sock->sock_queue[0]->backlog + 1] = NULL;
-						else if(sock->sock_queue[0]->sock_queue[sock->sock_queue[0]->backlog + 1] == sock)
-							sock->sock_queue[0]->sock_queue[sock->sock_queue[0]->backlog + 1] = NULL;
+							sock->sock_queue[0]->sock_queue[sock->sock_queue[0]->backlog] = NULL;
+						else if(sock->sock_queue[0]->sock_queue[sock->sock_queue[0]->backlog] == sock)
+							sock->sock_queue[0]->sock_queue[sock->sock_queue[0]->backlog] = NULL;
 						else
 							__ASSERT(0);
 						
