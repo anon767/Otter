@@ -2,15 +2,15 @@
 
 if [ $# -ne 6 ]
 then
-    echo "Usage: ./setup_backotter_tests.sh <base-directory> <line_targets_dir> <experiment-name> <programs_dir> <programs.in> <options.in>"
+    echo "Usage: ./setup_tests.sh <otter-flavor> <output-directory> <experiment-name> <programs_source_dir> <programs.in> <options.in>"
     exit 1
 fi
 
-base="$1"
-line_targets_dir="$2"
+otter_flavor=$1
+base="$2"
 exp_name="$(echo $3|sed 's/ /_/g')"
-exp_base="$base/backotter_$(date "+%Y_%m_%d_%H")_$exp_name"
-runbackotter="$(pwd)/runbackotter"
+exp_base="$base/${otter_flavor}_$(date "+%Y_%m_%d_%H")_$exp_name"
+ottercmd="$(pwd)/run$otter_flavor"
 
 programs_dir="$4"
 programs_in="$5"
@@ -23,8 +23,8 @@ cat $programs_in | while read prog_opt
 do 
     prog=$(echo $prog_opt|sed 's/\(.*\.c\).*|.*/\1/')
     prog_opt=$(echo $prog_opt|sed 's/.*\.c.*|\(.*\)/\1/')
-    prog="$programs_dir/$prog"
     if [ "$(echo $prog | sed '/^[ ]*#/d')" ]; then echo "Process $prog with options $prog_opt"; else continue; fi
+    prog="$programs_dir/$prog"
     options_id=1
     cat $options_in | while read options
     do 
@@ -34,11 +34,10 @@ do
         log_file="$exp_base/results/${prog_name}_$options_id.log"
         test_sh="$exp_base/tests/${prog_name}_$options_id.sh"
         options_id=$(expr $options_id + 1)
-        line_targets_file="$line_targets_dir/$prog_name.line_targets"
         mkdir -p "$(dirname "$test_sh")"
         echo "# options: $options" >> $test_sh
         echo "mkdir -p \"$(dirname "$log_file")\"" >> $test_sh
-        echo "\"$runbackotter\" \"$prog\" --line-targets-file=$line_targets_file $options 2>&1 | timelines > \"$log_file\"" >> $test_sh
+        echo "\"$ottercmd\" \"$prog\" $options 2>&1 | timelines > \"$log_file\"" >> $test_sh
     done
 done
 
