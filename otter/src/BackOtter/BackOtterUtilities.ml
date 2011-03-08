@@ -10,6 +10,14 @@ open Cil
 let arg_function_inlining = ref true
 
 let length =
+    let module Memo = Memo.Make (struct
+        type t = Decision.t list 
+        let hash = Hashtbl.hash
+        let rec equal x y = match x,y with
+            | hx :: x, hy :: y -> Decision.equal hx hy && equal x y
+            | [], [] -> true
+            | _, _ -> false
+    end) in
     let length = Memo.memo_rec "BackOtterUtilities.length" begin fun length (lst : Decision.t list) ->
         match lst with
             | [] -> 0

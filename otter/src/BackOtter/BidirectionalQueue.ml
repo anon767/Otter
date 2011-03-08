@@ -123,7 +123,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                     let bounded_decision = List.hd job#decision_path in
                     let bounding_paths = List.fold_left (
                         fun acc path -> 
-                            if path <> [] && Decision.equals bounded_decision (List.hd path) then (List.tl path) :: acc 
+                            if path <> [] && Decision.equal bounded_decision (List.hd path) then (List.tl path) :: acc 
                             else acc
                     ) [] bounding_paths in
                     if bounding_paths = [] then (* out bound *)
@@ -238,7 +238,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                              let bounding_paths = scan tail (depth - 1) in
                                              let matches, _, failing_tail =
                                                  Profiler.global#call "BidirectionalQueue.t#get/update_bounding_status/scan/rev_equals" begin fun () ->
-                                                 rev_equals Decision.equals decision_path failing_path depth
+                                                 rev_equals Decision.equal decision_path failing_path depth
                                                  end
                                              in
                                              if matches then failing_tail :: bounding_paths else bounding_paths

@@ -6,8 +6,8 @@ type t =
     | DecisionFuncall of Cil.instr * Cil.varinfo (* function call (including functions without bodies, e.g., builtins) *)
     (* TODO (martin): define DecisionLongjmp *)
 
-(* TODO: derive equals from compare *)
-let equals d1 d2 =
+(* TODO: derive equal from compare *)
+let equal d1 d2 =
     match d1, d2 with
     | DecisionConditional (stmt1, bool1), DecisionConditional (stmt2, bool2) when stmt1 == stmt2 && bool1 = bool2 -> true
     | DecisionFuncall (instr1, varinfo1), DecisionFuncall (instr2, varinfo2) when instr1 == instr2 && varinfo1.vid = varinfo2.vid -> true
