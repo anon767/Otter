@@ -526,7 +526,7 @@ let query_stp =
                     if (!arg_max_stp_time) < 0.0 then
                         stp_query ()
                     else
-                        UnixPlus.fork_call ~time_limit:(!arg_max_stp_time) stp_query ()
+                        UnixPlus.fork_call ~time_limit:(!arg_max_stp_time) stp_query
                 with
                     | Invalid_argument s ->
                         FormatPlus.failwith "Invalid_argument (%s)" s

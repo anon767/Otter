@@ -46,13 +46,13 @@ let wrap_test testfn = fun () ->
 
 (* test wrapper that forks the process before running the test *)
 let fork_test testfn = fun () ->
-    let helper testfn =
+    let helper () =
         (* close stdin: automated tests really shouldn't rely on input *)
         Unix.close Unix.stdin;
         try wrap_test testfn (); None
         with Failure s -> Some s
     in
-    match UnixPlus.fork_call helper testfn with
+    match UnixPlus.fork_call helper with
         | None -> ()
         | Some s -> failwith s
 

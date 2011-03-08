@@ -21,18 +21,17 @@ let marshal_failure_re = Str.regexp "\\(input_value\\|Marshal\\)"
         @param time_limit optionally specifies the maximum time the forked process is allowed to run
                 (note that this uses [Unix.setitimer Unix.ITIMER_REAL])
         @param f is the function to call
-        @param x is the argument to the function
 
-        @return the result of [f x]
+        @return the result of [f ()]
 
-        @raise ForkCallException if [f x] raises an exception; {e note that the raised exception cannot be
+        @raise ForkCallException if [f ()] raises an exception; {e note that the raised exception cannot be
                 pattern-matched due to a limitation in the Ocaml runtime (see http://caml.inria.fr/mantis/view.php?id=1624)}
         @raise ForkCallTimedOut if the forked process exceeds the time limit
         @raise ForkCallFailure if the forked process failed to launch or did not return any results
         @raise ForkCallExited if the forked process exited unexpectedly
         @raise ForkCallKilled if the forked process was killed unexpectedly
 *)
-let fork_call ?time_limit:time_limit_opt (f : ('a -> 'b)) (x : 'a) : 'b =
+let fork_call ?time_limit:time_limit_opt (f : (unit -> 'a)) : 'a =
     (* first, flush stdout/stderr to avoid printing twice *)
     flush stdout;
     flush stderr;
@@ -66,7 +65,7 @@ let fork_call ?time_limit:time_limit_opt (f : ('a -> 'b)) (x : 'a) : 'b =
                 ()
         end;
 
-        let result = try `Result (f x) with e -> `Exception e in
+        let result = try `Result (f ()) with e -> `Exception e in
         Marshal.to_channel (Unix.out_channel_of_descr fdout) result [ Marshal.Closures ];
         exit 0
     end else begin
