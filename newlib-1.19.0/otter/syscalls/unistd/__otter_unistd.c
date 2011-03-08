@@ -60,7 +60,10 @@ int __otter_libc_close(int fd)
 			__otter_libc_getsockopt_sol_socket(sock, SO_LINGER, &l, sizeof(struct linger));
 			if(l.l_onoff)
 			{
-				__otter_multi_block_while_condition(__otter_fs_pipe_is_empty(sock->sock_queue[0]->recv_data), sock->sock_queue[0]->recv_data);
+				if(sock->sock_queue && sock->sock_queue[0] && sock->sock_queue[0]->recv_data)
+				{
+					__otter_multi_block_while_condition(__otter_fs_pipe_is_empty(sock->sock_queue[0]->recv_data), sock->sock_queue[0]->recv_data);
+				}
 			}
 			
 			switch(sock->state)
