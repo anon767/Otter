@@ -13,8 +13,6 @@
             [main()]. Ignore if [#pragma entry_function(...)] is given and not "main". This corresponds to Otter's
             [--arg] command-line option. E.g., [#pragma command_line("foo", "bar")].
         - [#pragma time_limit(<time in seconds>)] specifies the time limit for the symbolic execution to complete.
-        - [#pragma cil_options(<string argument>, ...)] specifies the command line arguments to be passed to
-            CIL. E.g., [#pragma cil_options("--noUseLogicalOperators")].
         - [#pragma init_malloc_zero] specifies that memory allocated by malloc should be initialized to zeros. Conversely, {e not
             providing} this directive specifies that memory allocated by malloc should be initialized to undefined values. This corresponds to Otter's
             [--initMallocZero] command-line option.
@@ -79,7 +77,6 @@ module Make (Errors : Errors) = struct
         entry_function : string option; (** The function at which to begin symbolic execution (corresponds to [--entryfn]). *)
         command_line : string list;     (** The command line to use to run the test (corresponds to [--arg]). *)
         time_limit : int option;        (** The time limit for symbolic execution. *)
-        cil_options : string list;      (** The command line options to pass to CIL. *)
         no_bounds_checking : bool;      (** Disable bounds checking (corresponds to [--noboundsChecking]). *)
         init_malloc_zero : bool;        (** Initialize mallocs to zeros (corresponds to [--initMallocZero]). *)
         init_local_zero : bool;         (** Initialize locals to zeros (corresponds to [--initLocalZero]). *)
@@ -94,7 +91,6 @@ module Make (Errors : Errors) = struct
         entry_function = None;
         command_line = [];
         time_limit = None;
-        cil_options = [];
         no_bounds_checking = false;
         init_malloc_zero = false;
         init_local_zero = false;
@@ -308,15 +304,6 @@ module Make (Errors : Errors) = struct
                     | "time_limit", _ ->
                         assert_loc_failure loc "Invalid time limit (should have exactly one integer argument that is the time limit in seconds)."
 
-                    | "cil_options", args ->
-                        if flags.cil_options <> [] then assert_loc_failure loc "CIL options already defined.";
-                        let cil_options = List.map begin function
-                            | Cil.AStr arg -> arg
-                            | _ -> assert_loc_failure loc "Invalid CIL options (arguments should be \"<argument string>\")."
-                        end args in
-                        if cil_options = [] then assert_loc_failure loc "Invalid CIL options (should have at least one argument).";
-                        ({ flags with cil_options = cil_options }, test)
-
                     | "no_bounds_checking", [] ->
                         ({ flags with no_bounds_checking = true }, test)
                     | "no_bounds_checking", _ ->
@@ -437,14 +424,6 @@ module Make (Errors : Errors) = struct
         (* initialize locals to zeros if required *)
         Executeargs.arg_init_local_zero := flags.init_local_zero;
 
-        (* See if any CIL options were defined. If so, parse the file again with those options *)
-        if flags.cil_options <> [] then
-        Arg.parse_argv
-            ~current:(ref 0)
-            (Array.of_list ("otterTest"::flags.cil_options)) (* Give a fake program name, then the options *)
-            Ciloptions.options (* Use these options *)
-            (fun _ -> ()) (* Ignore any anonymous arguments *)
-            ""; (* We don't need a help message here *)
         let file = Frontc.parse path () in
 
         (* set the time limit, if provided *)
