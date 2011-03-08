@@ -7,6 +7,16 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#ifndef MAX_ARGC
+#warning "MAX_ARGC not defined; using default 4"
+#define MAX_ARGC 4
+#endif
+
+#ifndef MAX_ARG_LENGTHS
+#warning "MAX_ARG_LENGTHS not defined; using defaults {1,10,2,2}"
+#define MAX_ARG_LENGTHS {1,10,2,2}
+#endif
+
 #define MAX_FILE         2
 #define MAX_FILE_SIZE    8             // TODO: this should also control the size of stdin
 #define MAX_FILENAME_LENGTH   5
