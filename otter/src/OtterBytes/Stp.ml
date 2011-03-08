@@ -514,39 +514,41 @@ let query_stp =
         Profiler.global#call "Stp.query_stp/query" begin fun () ->
             (* Note: the count is used as a proxy of running time in BackOtter *)
             DataStructures.NamedCounter.incr "stpc_query";
-            let stp_query () =
-                Stpc.e_push vc;
-                let answer = Stpc.query vc guard_stp in
-                Stpc.e_pop vc;
-                answer
-            in
+            let stp_query () = Stpc.query vc guard_stp in
             let start = Sys.time () in
             let answer =
                 try
-                    if (!arg_max_stp_time) < 0.0 then
-                        stp_query ()
-                    else
-                        UnixPlus.fork_call ~time_limit:(!arg_max_stp_time) stp_query
-                with
-                    | Invalid_argument s ->
-                        FormatPlus.failwith "Invalid_argument (%s)" s
-                    | UnixPlus.ForkCallTimedOut ->
-                        FormatPlus.failwith "ForkCallTimedOut caught in Stpc.query"
-                    | UnixPlus.ForkCallException _ ->
-                        FormatPlus.failwith "ForkCallException caught in Stpc.query"
-                    | UnixPlus.ForkCallFailure _ ->
-                        FormatPlus.failwith "ForkCallFailure caught in Stpc.query"
-                    | UnixPlus.ForkCallExited i ->
-                        FormatPlus.failwith "ForkCallExited (%d) caught in Stpc.query" i
-                    | UnixPlus.ForkCallKilled i ->
-                        FormatPlus.failwith "ForkCallKilled (%d) caught in Stpc.query" i
-                    | UnixPlus.ForkCallStopped i ->
-                        FormatPlus.failwith "ForkCallStopped (%d) caught in Stpc.query" i
-                    | UserSignal.TimedOut ->
-                          (* If an external timeout fired, not the timeout for this particular call, then just re-raise the exception. *)
-                          raise UserSignal.TimedOut
-                    | e ->
-                        FormatPlus.failwith "Unknown exception caught in Stpc.query"
+                    Stpc.e_push vc;
+                    let answer =
+                        if (!arg_max_stp_time) < 0.0 then
+                            stp_query ()
+                        else
+                            UnixPlus.fork_call ~time_limit:(!arg_max_stp_time) stp_query
+                    in
+                    Stpc.e_pop vc;
+                    answer
+                with exn ->
+                    Stpc.e_pop vc;
+                    match exn with
+                        | Invalid_argument s ->
+                            FormatPlus.failwith "Invalid_argument (%s)" s
+                        | UnixPlus.ForkCallTimedOut ->
+                            FormatPlus.failwith "ForkCallTimedOut caught in Stpc.query"
+                        | UnixPlus.ForkCallException _ ->
+                            FormatPlus.failwith "ForkCallException caught in Stpc.query"
+                        | UnixPlus.ForkCallFailure _ ->
+                            FormatPlus.failwith "ForkCallFailure caught in Stpc.query"
+                        | UnixPlus.ForkCallExited i ->
+                            FormatPlus.failwith "ForkCallExited (%d) caught in Stpc.query" i
+                        | UnixPlus.ForkCallKilled i ->
+                            FormatPlus.failwith "ForkCallKilled (%d) caught in Stpc.query" i
+                        | UnixPlus.ForkCallStopped i ->
+                            FormatPlus.failwith "ForkCallStopped (%d) caught in Stpc.query" i
+                        | UserSignal.TimedOut ->
+                              (* If an external timeout fired, not the timeout for this particular call, then just re-raise the exception. *)
+                              raise UserSignal.TimedOut
+                        | e ->
+                            FormatPlus.failwith "Unknown exception caught in Stpc.query"
             in
             let elapsed = Sys.time () -. start in
             stp_queries := (pc, pre, guard, answer, elapsed)::(!stp_queries);
