@@ -304,6 +304,20 @@ let global =
         method flat_printer = actual_profiler#flat_printer
         method bottom_printer = actual_profiler#bottom_up_printer
         method top_down_printer = actual_profiler#top_down_printer
-        method printer = actual_profiler#printer
+        method printer ff =
+            actual_profiler#printer ff;
+
+            let max_heap = float_of_int (Gc.quick_stat ()).Gc.top_heap_words *. float_of_int Sys.word_size in            
+            Format.fprintf ff "Max heap: ";
+            if max_heap >= 1e9 then
+                Format.fprintf ff " %7.2fG" (max_heap /. 1e9)
+            else if max_heap >= 1e6 then
+                Format.fprintf ff " %7.2fM" (max_heap /. 1e6)
+            else if max_heap >= 1e3 then
+                Format.fprintf ff " %7.2fk" (max_heap /. 1e3)
+            else
+                Format.fprintf ff " %8.0f" max_heap;
+            Format.fprintf ff "@\n"
+
     end
 
