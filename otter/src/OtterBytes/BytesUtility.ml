@@ -159,7 +159,7 @@ let expand_read_to_conditional2 bytes symIndex len =
         assert (index >= 0);
         if index = 0 then read_at_index else
         IfThenElse (
-            Guard_Bytes (make_Bytes_Op (
+            guard__bytes (make_Bytes_Op (
                 OP_EQ,
                 [(symIndex, !Cil.upointType); ((int_to_bytes index), !Cil.upointType)]
             )),
@@ -183,7 +183,7 @@ let rec expand_read_to_conditional (bytes : bytes) (symIndex : bytes) (len : int
     match bytes with
         | Bytes_Write (a, x, l, v) ->
             IfThenElse (
-                Guard_Bytes (make_Bytes_Op (
+                guard__bytes (make_Bytes_Op (
                     OP_EQ,
                     [(symIndex, Cil.intType); (x, Cil.intType)]
                 )),

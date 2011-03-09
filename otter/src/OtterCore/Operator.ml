@@ -347,7 +347,7 @@ let minusPP operands : bytes =
     |   _, _ ->
 	    begin match (bytes1, bytes2) with
 		| (Bytes_Address(block1, offset1), Bytes_Address(block2, offset2)) ->
-			if block1 <> block2 then 
+			if not (Bytes.block__equal block1 block2) then
 				failwith "minusPP: different base addresss"
 			else
 			begin match unrollType typ1 with

@@ -40,7 +40,7 @@ let returnsBoolean = function
 
 
 module T : sig
-    type symbol =
+    type symbol = private
         {
             symbol_id: int;
         }
@@ -50,7 +50,7 @@ module T : sig
         | Byte_Symbolic of symbol
         | Byte_Bytes of bytes * int
 
-    and guard =
+    and guard = private
         | Guard_True
         | Guard_Not of guard
         | Guard_And of guard * guard
@@ -78,7 +78,7 @@ module T : sig
         | Block_type_Heap
         | Block_type_Aliased
 
-    and memory_block =
+    and memory_block = private
         {
             memory_block_name : string;
             memory_block_id : int;
@@ -90,8 +90,16 @@ module T : sig
     and lval_block = (memory_block * bytes) conditional
 
     val make_Byte_Concrete : char -> byte
-    val make_Byte_Symbolic : symbol -> byte
+    val make_Byte_Symbolic : unit -> byte
     val make_Byte_Bytes : bytes * int -> byte
+
+    val byte__undef : byte
+
+    val guard__true : guard
+    val guard__not : guard -> guard
+    val guard__and : guard -> guard -> guard
+    val guard__symbolic : unit -> guard
+    val guard__bytes : bytes -> guard
 
     val make_Bytes_Constant : Cil.constant -> bytes
     val make_Bytes_ByteArray : byte ImmutableArray.t -> bytes
@@ -101,6 +109,24 @@ module T : sig
     val make_Bytes_Write : bytes * bytes * int * bytes -> bytes
     val make_Bytes_FunPtr : Cil.varinfo -> bytes
     val make_Bytes_Conditional : bytes conditional -> bytes
+
+    val block__make : string -> int -> memory_block_type -> memory_block
+
+    module type HashedType = sig
+        type t
+        val equal : t -> t -> bool
+        val hash : t -> int
+    end
+    module ByteType : HashedType with type t = byte
+    module GuardType : HashedType with type t = guard
+    module ConditionalType : functor (Data : HashedType) -> HashedType with type t = Data.t conditional
+    module ConditionalPolyType : sig
+        type 'a t = 'a conditional
+        val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
+        val hash : ('a -> int) -> 'a t -> int
+    end
+    module BytesType : HashedType with type t = bytes
+    module BlockType : HashedType with type t = memory_block
 end = struct
     type symbol =
         {
@@ -151,51 +177,281 @@ end = struct
 
     and lval_block = (memory_block * bytes) conditional
 
-    (*
-     *  Since bytes objects are immutable, and bytes is private type, all *bs* are
-     *  created by calling make_Bytes_* and do not require hash consing check.
+
+    (**/**)
+    module Internal = struct
+        (* structural equality helpers for byte/guards/conditionals/bytes:
+         *  - the constant in Bytes_Constant is preserved;
+         *  - the types of Bytes_Op operands are preserved.
+         *)
+        let rec byte_equal byte1 byte2 = byte1 == byte2 || match byte1, byte2 with
+            | Byte_Concrete x, Byte_Concrete y -> x = y
+            | Byte_Symbolic x, Byte_Symbolic y -> x = y
+            | Byte_Bytes (b1, off1), Byte_Bytes (b2, off2) -> off1 = off2 && bytes_equal b1 b2
+            | _, _ -> false
+
+        and guard_equal guard1 guard2 = guard1 == guard2 || match guard1, guard2 with
+            | Guard_Not g1, Guard_Not g2 -> guard_equal g1 g2
+            | Guard_And (g1, g2), Guard_And (g1', g2') -> guard_equal g1 g1' && guard_equal g2 g2'
+            | Guard_Symbolic s1, Guard_Symbolic s2 -> s1 = s2
+            | Guard_Bytes b1, Guard_Bytes b2 -> bytes_equal b1 b2
+            | _, _ -> false
+
+        and conditional_equal : 'a . ('a -> 'a -> bool) -> 'a conditional -> 'a conditional -> bool =
+            fun eq c1 c2 -> c1 == c2 || match c1, c2 with
+                | Unconditional x1, Unconditional x2 ->
+                    eq x1 x2
+                | IfThenElse (g1, x1, y1), IfThenElse (g2, x2, y2) ->
+                    guard_equal g1 g2 && conditional_equal eq x1 x2 && conditional_equal eq y1 y2
+                | _, _ -> false
+
+        and bytes_equal bytes1 bytes2 = bytes1 == bytes2 || match bytes1, bytes2 with
+            | Bytes_Constant c1, Bytes_Constant c2 ->
+                c1 = c2
+            | Bytes_ByteArray a1, Bytes_ByteArray a2 ->
+                ImmutableArray.equal byte_equal a1 a2
+            | Bytes_Address(b1, off1),Bytes_Address(b2, off2) ->
+                block_equal b1 b2 && bytes_equal off1 off2
+            | Bytes_Op (op1, operands1), Bytes_Op (op2, operands2) ->
+                op1 = op2 && List.for_all2 (fun (b1, t1) (b2, t2) -> bytes_equal b1 b2 && CilData.CilType.equal t1 t2) operands1 operands2
+            | Bytes_Read (b1, off1, s1), Bytes_Read (b2, off2, s2) ->
+                s1 = s2 && bytes_equal b1 b2 && bytes_equal off1 off2
+            | Bytes_Write (old1, off1, s1, new1), Bytes_Write (old2, off2, s2, new2) ->
+                s1 = s2 && bytes_equal old1 old2 && bytes_equal off1 off2 && bytes_equal new1 new2
+            | Bytes_FunPtr f1, Bytes_FunPtr f2 ->
+                CilData.CilVar.equal f1 f2
+            | Bytes_Conditional c1, Bytes_Conditional c2 ->
+                conditional_equal bytes_equal c1 c2
+            | _, _ ->
+                false
+
+        and block_equal block1 block2 = block1 = block2
+
+
+        (* structural hash helpers for byte/guards/conditionals/bytes:
+         *  - the constant in Bytes_Constant is considered;
+         *  - the types of Bytes_Op operands are considered.
+         *)
+        exception Limit
+        let limit = 20
+        let hash = ref 0
+        let count = ref 0
+        let add_hash x =
+            if !count >= limit then raise Limit;
+            hash := Hashtbl.hash (x, !hash);
+            incr count
+
+        let do_hash ha x =
+            let hash', count' = !hash, !count in
+            hash := 0; count := 0;
+            (try ha x with Limit -> ());
+            let hash'' = !hash in
+            hash := hash'; count := count';
+            hash''
+
+        let rec byte_hash = function
+            | Byte_Concrete _ | Byte_Symbolic _ as b -> add_hash b
+            | Byte_Bytes (bytes, offset) -> add_hash (`Bytes, offset); bytes_hash bytes
+
+        and guard_hash = function
+            | Guard_True -> add_hash `True
+            | Guard_Not g -> add_hash `Not; guard_hash g
+            | Guard_And (g1, g2) -> add_hash `And; guard_hash g1; guard_hash g2
+            | Guard_Symbolic s -> add_hash (`Symbolic, s)
+            | Guard_Bytes b -> add_hash `Bytes; bytes_hash b
+
+        and conditional_hash : 'a . ('a -> unit) -> 'a conditional -> unit =
+            fun ha c -> match c with
+                | Unconditional x -> add_hash `Unconditional; ha x
+                | IfThenElse (g, x, y) -> add_hash `IfThenElse; guard_hash g; conditional_hash ha x; conditional_hash ha y
+
+        and bytes_hash = function
+            | Bytes_Constant c -> add_hash (`Constant, c)
+            | Bytes_ByteArray a -> add_hash (ImmutableArray.hash (do_hash byte_hash) a)
+            | Bytes_Address (a, o) -> add_hash `Address; block_hash a; bytes_hash o
+            | Bytes_Op (op, operands) -> add_hash (`Op, op); List.iter (fun (o, t) -> add_hash (CilData.CilType.hash t); bytes_hash o) operands
+            | Bytes_Read (bytes, offset, size) -> add_hash (`Read, size); bytes_hash bytes; bytes_hash offset
+            | Bytes_Write (bytes, offset, size, value) -> add_hash (`Write, size); bytes_hash bytes; bytes_hash offset; bytes_hash value
+            | Bytes_FunPtr f -> add_hash (`FunPtr, CilData.CilVar.hash f)
+            | Bytes_Conditional c -> add_hash `Conditional; conditional_hash bytes_hash c
+
+        and block_hash = add_hash
+    end
+    (**/**)
+
+
+    (**
+     *  symbol
      *)
-    let make_Byte_Concrete c = Byte_Concrete c
-    let make_Byte_Symbolic s = Byte_Symbolic s
-    let make_Byte_Bytes (bs, n) = Byte_Bytes (bs, n)
+    let symbol__next =
+        (* negative id is used as special symbolic values.
+           0 is used for the symbolic byte representing uninitialized memory *)
+        let symbol_counter = Counter.make ~start:1 () in
+        fun () -> { symbol_id = Counter.next symbol_counter }
+
+
+    (**
+     *  byte
+     *)
+    let hash_consing_byte_create =
+        let module Memo = Memo.Make (struct
+            type t = byte
+            let equal = Internal.byte_equal
+            let hash = Internal.do_hash Internal.byte_hash
+        end) in
+        Memo.make_hashcons "Bytes.make_byte"
+
+    let make_Byte_Concrete c = hash_consing_byte_create (Byte_Concrete c)
+
+    let make_Byte_Symbolic () = Byte_Symbolic (symbol__next ())
+
+    let make_Byte_Bytes (bs, n) = hash_consing_byte_create (Byte_Bytes (bs, n))
+
+
+    (* A single global byte representing uninitialized memory *)
+    let byte__undef = Byte_Symbolic { symbol_id = 0 }
+
+
+    (**
+     *  guard
+     *)
+    let hash_consing_guard_create =
+        let module Memo = Memo.Make (struct
+            type t = guard
+            let equal = Internal.guard_equal
+            let hash = Internal.do_hash Internal.guard_hash
+        end) in
+        Memo.make_hashcons "Bytes.make_guard"
+
+    let guard__true = Guard_True
+
+    let guard__not = function
+        | Guard_Not g -> g
+        | g -> hash_consing_guard_create (Guard_Not g)
+
+    let guard__and g1 g2 = match g1, g2 with
+        | Guard_True, g
+        | g, Guard_True -> g
+        | Guard_Not Guard_True, _
+        | _, Guard_Not Guard_True -> guard__not guard__true
+        | _, _ -> hash_consing_guard_create (Guard_And (g1, g2))
+
+    let guard__symbolic () = Guard_Symbolic (symbol__next ())
+
+    let guard__bytes b = hash_consing_guard_create (Guard_Bytes b)
+
+
+    (**
+     *  bytes
+     *)
+    let hash_consing_bytes_create =
+        let module Memo = Memo.Make (struct
+            type t = bytes
+            let equal = Internal.bytes_equal
+            let hash = Internal.do_hash Internal.bytes_hash
+        end) in
+        Memo.make_hashcons "Bytes.make_bytes"
 
     let make_Bytes_Constant const = 
         Profiler.global#call "Bytes.make_Bytes_Constant" begin fun () ->
-            Bytes_Constant const
+            hash_consing_bytes_create (Bytes_Constant const)
         end
 
     let make_Bytes_ByteArray bytearray = 
         Profiler.global#call "Bytes.make_Bytes_ByteArray" begin fun () ->
-            Bytes_ByteArray bytearray
+            hash_consing_bytes_create (Bytes_ByteArray bytearray)
         end
 
     let make_Bytes_Address (block, bs) = 
         Profiler.global#call "Bytes.make_Bytes_Address" begin fun () ->
-            Bytes_Address (block, bs)
+            hash_consing_bytes_create (Bytes_Address (block, bs))
         end
 
     let make_Bytes_Op (op, lst) = 
         Profiler.global#call "Bytes.make_Bytes_Op" begin fun () ->
-            Bytes_Op (op, lst)
+            hash_consing_bytes_create (Bytes_Op (op, lst))
         end
 
     let make_Bytes_Read (src, off, len) = 
         Profiler.global#call "Bytes.make_Bytes_Read" begin fun () ->
-            Bytes_Read (src, off, len)
+            hash_consing_bytes_create (Bytes_Read (src, off, len))
         end
 
     let make_Bytes_Write (des, off, n, src) = 
         Profiler.global#call "Bytes.make_Bytes_Write" begin fun () ->
-            Bytes_Write (des, off, n, src)
+            hash_consing_bytes_create (Bytes_Write (des, off, n, src))
         end
 
     let make_Bytes_FunPtr f =
         if not (Cil.isFunctionType f.Cil.vtype) then
             FormatPlus.invalid_arg "not a function: %a" CilPrinter.varinfo f;
-        Bytes_FunPtr f
+        hash_consing_bytes_create (Bytes_FunPtr f)
+
     let make_Bytes_Conditional = function
         | Unconditional b -> b
-        | c -> Bytes_Conditional c
+        | c -> hash_consing_bytes_create (Bytes_Conditional c)
+
+
+    (**
+     *  memory block
+     *)
+    let block__make =
+        let block_counter = Counter.make ~start:1 () in
+        fun memory_block_name memory_block_size memory_block_type ->
+            {
+                memory_block_name;
+                memory_block_size;
+                memory_block_type;
+                memory_block_id = Counter.next block_counter;
+                memory_block_addr = Random.bits ();
+            }
+
+
+    (**
+     *  Modularized types
+     *)
+
+    module type HashedType = sig
+        type t
+        val equal : t -> t -> bool
+        val hash : t -> int
+    end
+
+    module ByteType = struct
+        type t = byte
+        let equal = Pervasives.(==)
+        let hash = Internal.do_hash Internal.byte_hash
+    end
+
+    module GuardType = struct
+        type t = guard
+        let equal = Pervasives.(==)
+        let hash = Internal.do_hash Internal.guard_hash
+    end
+
+    module ConditionalType (Data : HashedType) = struct
+        type t = Data.t conditional
+        let equal = Internal.conditional_equal Data.equal (* not hash-cons'ed *)
+        let hash = Internal.do_hash (Internal.conditional_hash (fun x -> Internal.add_hash (Data.hash x)))
+    end
+
+    module ConditionalPolyType = struct
+        type 'a t = 'a conditional
+        let equal eq = Internal.conditional_equal eq
+        let hash ha = Internal.do_hash (Internal.conditional_hash (fun x -> Internal.add_hash (ha x)))
+    end
+
+    module BytesType = struct
+        type t = bytes
+        let equal = Pervasives.(==)
+        let hash = Internal.do_hash Internal.bytes_hash
+    end
+
+    module BlockType = struct
+        type t = memory_block
+        let equal = Pervasives.(==) (* not hash-cons'ed, but is private *)
+        let hash = Internal.do_hash Internal.block_hash
+    end
 end
 
 include T
@@ -351,7 +607,7 @@ let rec isConcrete_bytes (bytes : bytes) =
 
 
 (**
- *  equality for byte/guards/conditionals/bytes
+ *  value equality for byte/guards/conditionals/bytes
  *)
 
 let rec byte__equal byte1 byte2 = if byte1 == byte2 then true else match byte1, byte2 with
@@ -383,7 +639,7 @@ and bytes__equal bytes1 bytes2 = if bytes1 == bytes2 then true else match bytes1
 	| Bytes_ByteArray a1, Bytes_ByteArray a2 ->
 		ImmutableArray.equal byte__equal a1 a2
 	| Bytes_Address(b1, off1),Bytes_Address(b2, off2) ->
-		b1 = b2 && bytes__equal off1 off2
+		block__equal b1 b2 && bytes__equal off1 off2
 	| Bytes_Op (op1, operands1), Bytes_Op (op2, operands2) ->
 		op1 = op2 && List.for_all2 (fun (b1, _) (b2, _) -> bytes__equal b1 b2) operands1 operands2
 	| Bytes_Read (b1, off1, s1), Bytes_Read (b2, off2, s2) ->
@@ -397,10 +653,7 @@ and bytes__equal bytes1 bytes2 = if bytes1 == bytes2 then true else match bytes1
 	| _, _ ->
 		false
 
-
-
-(* A single global byte representing uninitialized memory *)
-let byte__undef = make_Byte_Symbolic { symbol_id = 0 }
+and block__equal = BlockType.equal
 
 
 let rec bytes__length bytes =
@@ -423,24 +676,11 @@ let rec bytes__length bytes =
 
 
 (**
- *  symbol
- *)
-(* negative id is used as special symbolic values.
-   0 is used for the symbolic byte representing uninitialized memory *)
-let symbol__currentID = Counter.make ~start:1 ()
-let symbol__next () = 
-	{	
-		symbol_id = Counter.next symbol__currentID;
-	} 
-
-
-(**
  *	byte 
  *)
 let byte__make c = make_Byte_Concrete c
 let byte__zero = byte__make ('\000')
 let byte__111 = byte__make ('\255')
-let byte__symbolic () = make_Byte_Symbolic (symbol__next ())
 
 
 (**
@@ -455,7 +695,7 @@ let bytes__make n = bytes__make_default n byte__zero
 
 let bytes__symbolic n =
 	let rec impl len = 
-		if len <= 0 then [] else (byte__symbolic ())::(impl (len-1))
+		if len <= 0 then [] else (make_Byte_Symbolic ())::(impl (len-1))
 	in
 		bytes__of_list (impl n)
 
@@ -466,20 +706,6 @@ let rec bytes__get_byte bytes i : byte =
 		| Bytes_ByteArray (bytearray) -> ImmutableArray.get bytearray i 
 		| _ -> make_Byte_Bytes(bytes,i)
 
-
-
-(**
- *	memory block
- *)
-let block__current_id = Counter.make ~start:1 ()
-let block__make name n t =
-	{
-		memory_block_name = name;
-		memory_block_id = Counter.next block__current_id;
-		memory_block_size = n;
-		memory_block_addr = Random.bits (); (* TODO: should this be an int64? only 30-bits now *)
-		memory_block_type = t;
-	}
 
 
 (** Is a bytes 0, 1, or an expression that must be 0 or 1? *)
@@ -507,25 +733,11 @@ let logicalNot = function
 	| Bytes_Op(OP_LNOT,[bytes,_]) when isBoolean bytes -> bytes
 	| bytes -> make_Bytes_Op(OP_LNOT,[(bytes, Cil.intType)])
 
+
 (**
  *  guard
  *)
-let guard__true = Guard_True
-
-let guard__not = function
-	| Guard_Not g -> g
-	| g -> Guard_Not g
-
-let guard__and g1 g2 = match g1, g2 with
-	| Guard_True, g
-	| g, Guard_True -> g
-	| _, _ -> Guard_And (g1, g2)
-
 let guard__and_not g1 g2 = guard__and g1 (guard__not g2)
-
-let guard__symbolic () = Guard_Symbolic (symbol__next ())
-
-let guard__bytes b = Guard_Bytes b
 
 let guard__to_bytes = function
 	| Guard_True -> bytes__one
@@ -550,7 +762,7 @@ let guard__to_bytes = function
     @return [('acc, 'target conditional option)] the final accumulator and mapped conditional, which may be [None]
             if all leaves were removed
 *)
-let conditional__fold_map_opt ?(test=fun acc _ _ -> (acc, Ternary.Unknown)) ?(eq=(==)) ?(pre=Guard_True) fold_map_opt acc source =
+let conditional__fold_map_opt ?(test=fun acc _ _ -> (acc, Ternary.Unknown)) ?(eq=(==)) ?(pre=guard__true) fold_map_opt acc source =
     let rec conditional__fold_map_opt acc pre = function
         | IfThenElse (guard, x, y) ->
             let acc, truth = test acc pre guard in

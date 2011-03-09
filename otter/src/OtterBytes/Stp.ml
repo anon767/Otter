@@ -440,11 +440,7 @@ to_stp_bv_impl vc bytes =
 
 (** return (True) False if bytes (not) evaluates to all zeros. Unknown otherwise. *)
 let query_stp =
-    let module PC = ListPlus.MakeHashedList (struct
-        type t = bytes
-        let equal = bytes__equal
-        let hash = Hashtbl.hash
-    end) in
+    let module PC = ListPlus.MakeHashedList (BytesType) in
 
     (* maintain the state of STP, and update only if necessary *)
     let vc = global_vc in
@@ -469,7 +465,7 @@ let query_stp =
                     end pc
                 end;
 
-                if pre != Guard_True then begin
+                if not (guard__equal pre guard__true) then begin
                     let pre_stp = Profiler.global#call "Stp.query_stp/convert pre-condition" (fun () -> to_stp_guard vc pre) in
                     Profiler.global#call "Stp.query_stp/do_assert pre-condition" (fun () -> Stpc.do_assert vc pre_stp)
                 end;
@@ -498,8 +494,8 @@ let query_stp =
         (* It might be better to have this be set-based equality rather than list-based. *)
         let equal ((pc1, pre1, guard1, sign1) : t) ((pc2, pre2, guard2, sign2) : t) =
             sign1 == sign2
-            && guard__equal guard1 guard2
-            && guard__equal pre1 pre2
+            && GuardType.equal guard1 guard2
+            && GuardType.equal pre1 pre2
             && PC.equal pc1 pc2
 
         let hash (pc, pre, guard, sign) = Hashtbl.hash (PC.hash pc, pre, guard, sign)
@@ -567,7 +563,7 @@ let query_stp =
 
 
 let query_bytes pc bytes =
-    query_stp pc Guard_True (guard__bytes bytes)
+    query_stp pc guard__true (guard__bytes bytes)
 
 
 (** Given a path condition and a list of symbols, return an

@@ -40,7 +40,7 @@ let function_pointer_interceptor job job_queue interceptor =
                 begin match bytes with
                   | Bytes.Bytes_FunPtr varinfo ->
                         let job = job#with_instrList (new_instrList varinfo) in
-                        ([job], [(varinfo, Bytes.Guard_True (* This [Guard_True] is just a placeholder *))], errors)
+                        ([job], [(varinfo, Bytes.guard__true (* This [Guard_True] is just a placeholder *))], errors)
                   | Bytes.Bytes_Read(bytes2, offset, len) ->
                         let fp = (BytesUtility.expand_read_to_conditional bytes2 offset len) in
                         let (), fp = Bytes.conditional__prune ~test:(fun () pre guard -> ((), Stp.query_stp job#state.path_condition pre guard)) () fp in
