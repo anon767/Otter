@@ -121,6 +121,7 @@ let exec_fundec job instr fundec lvalopt exps errors = Profiler.global#call "Sta
      not we're in a tracked function. *)
     let job' = job in
     let job' = job'#with_stmt (List.hd fundec.sallstmts) in
+    let job' = job'#with_instrList [] in
     let job' = job'#with_inTrackedFn (StringSet.mem fundec.svar.vname job#trackedFns) in
     (get_active_state job job', errors)
 end
@@ -149,7 +150,6 @@ let exec_instr job errors = Profiler.global#call "Statement.exec_instr" begin fu
 
     let old_job = job in
     let instr, tail = match job#instrList with i::tl -> (i, tl) | _ -> assert false in
-    let job = job#with_instrList tail in
 
     (* Within instructions, we have to update line coverage (but not
          statement or edge coverage). *)
@@ -169,6 +169,7 @@ let exec_instr job errors = Profiler.global#call "Statement.exec_instr" begin fu
             let job, rv, errors = Expression.rval job exp errors in
             let job = MemOp.state__assign job lval rv in
             let job = job#with_stmt (if tail = [] then List.hd job#stmt.succs else job#stmt) in
+            let job = job#with_instrList tail in
             (get_active_state old_job job, errors)
         | Call(lvalopt, fexp, exps, loc) ->
             assert (tail = []);
