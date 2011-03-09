@@ -109,9 +109,9 @@ module T : sig
     val make_Bytes_Write : bytes * bytes * int * bytes -> bytes
     val make_Bytes_FunPtr : Cil.varinfo -> bytes
     val make_Bytes_Conditional : bytes conditional -> bytes
-    val disable_hash_consing_bytes_create : unit -> unit
 
     val block__make : string -> int -> memory_block_type -> memory_block
+    val disable_hash_consing : unit -> unit
 
     module type HashedType = sig
         type t
@@ -294,7 +294,7 @@ end = struct
     (**
      *  byte
      *)
-    let hash_consing_byte_create =
+    let hash_consing_byte_create_impl =
         let module Memo = Memo.Make (struct
             type t = byte
             let equal = Internal.byte_equal
@@ -302,11 +302,13 @@ end = struct
         end) in
         Memo.make_hashcons "Bytes.make_byte"
 
-    let make_Byte_Concrete c = hash_consing_byte_create (Byte_Concrete c)
+    let hash_consing_byte_create = ref hash_consing_byte_create_impl
+
+    let make_Byte_Concrete c = (!hash_consing_byte_create) (Byte_Concrete c)
 
     let make_Byte_Symbolic () = Byte_Symbolic (symbol__next ())
 
-    let make_Byte_Bytes (bs, n) = hash_consing_byte_create (Byte_Bytes (bs, n))
+    let make_Byte_Bytes (bs, n) = (!hash_consing_byte_create) (Byte_Bytes (bs, n))
 
 
     (* A single global byte representing uninitialized memory *)
@@ -316,7 +318,7 @@ end = struct
     (**
      *  guard
      *)
-    let hash_consing_guard_create =
+    let hash_consing_guard_create_impl =
         let module Memo = Memo.Make (struct
             type t = guard
             let equal = Internal.guard_equal
@@ -324,22 +326,24 @@ end = struct
         end) in
         Memo.make_hashcons "Bytes.make_guard"
 
+    let hash_consing_guard_create = ref hash_consing_guard_create_impl
+
     let guard__true = Guard_True
 
     let guard__not = function
         | Guard_Not g -> g
-        | g -> hash_consing_guard_create (Guard_Not g)
+        | g -> (!hash_consing_guard_create) (Guard_Not g)
 
     let guard__and g1 g2 = match g1, g2 with
         | Guard_True, g
         | g, Guard_True -> g
         | Guard_Not Guard_True, _
         | _, Guard_Not Guard_True -> guard__not guard__true
-        | _, _ -> hash_consing_guard_create (Guard_And (g1, g2))
+        | _, _ -> (!hash_consing_guard_create) (Guard_And (g1, g2))
 
     let guard__symbolic () = Guard_Symbolic (symbol__next ())
 
-    let guard__bytes b = hash_consing_guard_create (Guard_Bytes b)
+    let guard__bytes b = (!hash_consing_guard_create) (Guard_Bytes b)
 
 
     (**
@@ -354,8 +358,6 @@ end = struct
         Memo.make_hashcons "Bytes.make_bytes"
 
     let hash_consing_bytes_create = ref hash_consing_bytes_create_impl
-
-    let disable_hash_consing_bytes_create () = hash_consing_bytes_create := (fun x -> x)
 
     let make_Bytes_Constant const = 
         Profiler.global#call "Bytes.make_Bytes_Constant" begin fun () ->
@@ -411,6 +413,15 @@ end = struct
                 memory_block_addr = Random.bits ();
             }
 
+    (**
+     * Turn off hash consing
+     *)
+    let disable_hash_consing () = 
+        begin
+            hash_consing_byte_create  := (fun x -> x);
+            hash_consing_guard_create := (fun x -> x);
+            hash_consing_bytes_create := (fun x -> x)
+        end
 
     (**
      *  Modularized types
@@ -875,7 +886,7 @@ let conditional__lval_block l =
 
 let options = [
 	("--no-hash-consing",
-		Arg.Unit disable_hash_consing_bytes_create,
+		Arg.Unit disable_hash_consing,
 		" Do not use hash consing in creating bytes\n");
 ]
 
