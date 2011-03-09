@@ -3,6 +3,7 @@ OtterCore/Core
 OtterCore/Coverage
 OtterCore/CoverageData
 OtterCore/Decision
+OtterCore/DecisionPath
 OtterCore/Errors
 OtterCore/Executeargs
 OtterCore/Expression

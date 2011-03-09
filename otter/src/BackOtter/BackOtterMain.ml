@@ -94,7 +94,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
         if fundec != entry_fn then (
             Output.debug_printf "@\nFailing path(s) for %s:@." fundec.svar.vname;
             List.iter (fun decisions ->
-                Output.debug_printf "Failing path: @[%a@]@." Decision.print_decisions decisions)
+                Output.debug_printf "Failing path: @[%a@]@." DecisionPath.print decisions)
                 (BackOtterTargets.get_paths fundec)
         )
     ) (BackOtterTargets.get_target_fundecs ());
@@ -102,7 +102,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     (* Output failing paths for entry_fn *)
     Output.must_printf "@\nFailing path(s) for %s:@." entry_fn.svar.vname;
     List.iter (fun decisions ->
-        Output.must_printf "Failing path: @[%a@]@." Decision.print_decisions decisions)
+        Output.must_printf "Failing path: @[%a@]@." DecisionPath.print decisions)
         (BackOtterTargets.get_paths entry_fn);
 
     (queue, target_tracker#delegate)

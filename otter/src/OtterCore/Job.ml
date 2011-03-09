@@ -49,8 +49,8 @@ class t file' fn :
         method exHist : executionHistory
         method with_exHist : executionHistory -> 'self
 
-        method decision_path : Decision.t list
-        method with_decision_path : Decision.t list -> 'self
+        method decision_path : DecisionPath.t
+        method with_decision_path : DecisionPath.t -> 'self
 
         method instrList : Cil.instr list
         method with_instrList : Cil.instr list -> 'self

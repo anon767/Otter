@@ -4,18 +4,13 @@ open OtterCFG
 module FundecMap = Map.Make (CilUtilities.CilData.CilFundec)
 module InstructionMap = Map.Make (Instruction)
 
-module Path = struct
-    type t = Decision.t list 
-    let compare = OcamlUtilities.ListPlus.compare Decision.compare 
-end
-
-module PathSet = Set.Make (Path)
+module PathSet = Set.Make (DecisionPath)
 
 (* TODO: generalize targets to program points, not just functions *)
 type t = {
     fundec_to_pathset : PathSet.t FundecMap.t;
     instruction_to_pathset: PathSet.t InstructionMap.t;
-    last_failing_path : (Cil.fundec * Path.t) option;
+    last_failing_path : (Cil.fundec * DecisionPath.t) option;
 }
 
 let empty = {

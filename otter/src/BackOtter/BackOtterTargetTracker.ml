@@ -131,7 +131,7 @@ object (_ : 'self)
             let fundec = BackOtterUtilities.get_origin_function_from_job_result job_result in
             let failing_path = List.rev job_result#decision_path in
             Output.debug_printf "@\n=> Extract the following failing path for function %s:@." fundec.svar.vname;
-            Output.debug_printf "@[%a@]@\n@." Decision.print_decisions failing_path;
+            Output.debug_printf "@[%a@]@\n@." DecisionPath.print failing_path;
         in
         begin match original_job_state with
             | Job.Complete (Job.Abandoned (`TargetReached target, job_result)) ->

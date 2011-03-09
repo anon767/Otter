@@ -11,14 +11,14 @@ let arg_function_inlining = ref true
 
 let length =
     let module Memo = Memo.Make (struct
-        type t = Decision.t list 
+        type t = DecisionPath.t 
         let hash = Hashtbl.hash
         let rec equal x y = match x,y with
             | hx :: x, hy :: y -> Decision.equal hx hy && equal x y
             | [], [] -> true
             | _, _ -> false
     end) in
-    let length = Memo.memo_rec "BackOtterUtilities.length" begin fun length (lst : Decision.t list) ->
+    let length = Memo.memo_rec "BackOtterUtilities.length" begin fun length (lst : DecisionPath.t) ->
         match lst with
             | [] -> 0
             | _::rest -> length rest + 1
@@ -29,7 +29,7 @@ let length =
 
 let rev_equals =
     let module Memo = Memo.Make (struct
-        type t = (Decision.t -> Decision.t -> bool) * Decision.t list * Decision.t list * int
+        type t = (Decision.t -> Decision.t -> bool) * DecisionPath.t * DecisionPath.t * int
         let hash = Hashtbl.hash
         let equal (xeq, x1, x2, xb) (yeq, y1, y2, yb) =
             (* TODO: should the lists be compared structurally instead? *)

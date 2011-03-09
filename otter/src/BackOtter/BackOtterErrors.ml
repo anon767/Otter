@@ -3,7 +3,7 @@ open OtterCore
 
 
 type t = [
-    | `FailingPaths of Decision.t list list
+    | `FailingPaths of DecisionPath.t list
     | `SummaryReturn of Bytes.bytes option
     | `SummaryExit of Bytes.bytes option
     | `SummaryAbandoned of t * Cil.location
