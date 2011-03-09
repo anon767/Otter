@@ -78,7 +78,7 @@ let intercept_function_by_name_internal target_name replace_func job job_queue i
         | (Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, _) as instr)::_ when varinfo.Cil.vname = target_name ->
             Output.set_mode Output.MSG_STMT;
             Output.printf "@[%a@\n<built-in function>@]@." Printcil.instr instr;
-            let job = job#with_decision_path (Decision.DecisionFuncall(instr, varinfo)::job#decision_path) in
+            let job = job#with_decision_path (DecisionPath.add (Decision.DecisionFuncall(instr, varinfo)) job#decision_path) in
             begin try
                 let job_state, errors = replace_func job retopt exps [] in
                 let abandoned_job_states = Statement.errors_to_abandoned_list errors in

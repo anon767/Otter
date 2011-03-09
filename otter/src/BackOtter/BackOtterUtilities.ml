@@ -9,24 +9,6 @@ open Cil
 
 let arg_function_inlining = ref true
 
-let length =
-    let module Memo = Memo.Make (struct
-        type t = DecisionPath.t 
-        let hash = Hashtbl.hash
-        let rec equal x y = match x,y with
-            | hx :: x, hy :: y -> Decision.equal hx hy && equal x y
-            | [], [] -> true
-            | _, _ -> false
-    end) in
-    let length = Memo.memo_rec "BackOtterUtilities.length" begin fun length (lst : DecisionPath.t) ->
-        match lst with
-            | [] -> 0
-            | _::rest -> length rest + 1
-    end in
-    fun lst -> Profiler.global#call "BackOtterUtilities.length" begin fun () ->
-        length lst
-    end
-
 let rev_equals =
     let module Memo = Memo.Make (struct
         type t = (Decision.t -> Decision.t -> bool) * DecisionPath.t * DecisionPath.t * int
@@ -40,8 +22,8 @@ let rev_equals =
             if n <= 0 then
                 (true, lst1, lst2)
             else
-                let b, suf1, suf2 = rev_equals (eq, List.tl lst1, lst2, n - 1) in
-                (b && eq (List.hd lst1) (List.hd suf2), suf1, (List.tl suf2))
+                let b, suf1, suf2 = rev_equals (eq, DecisionPath.tl lst1, lst2, n - 1) in
+                (b && eq (DecisionPath.hd lst1) (DecisionPath.hd suf2), suf1, (DecisionPath.tl suf2))
         end
     in
     fun eq lst1 lst2 n -> Profiler.global#call "BackOtterUtilities.rev_equals" begin fun () ->

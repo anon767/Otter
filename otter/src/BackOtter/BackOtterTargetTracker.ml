@@ -49,7 +49,7 @@ let add_target string =
             Output.must_printf "BackOtter target reached %s@\n" string;
             let fundec = BackOtterUtilities.get_origin_function job_result in
             let entryfn = ProgramPoints.get_entry_fundec job_result#file in
-            let failing_path = List.rev job_result#decision_path in
+            let failing_path = DecisionPath.rev job_result#decision_path in
             let instruction = Job.get_instruction job_result in
             BackOtterTargets.add_path fundec failing_path (Some instruction);
             if CilData.CilFundec.equal fundec entryfn then begin
@@ -89,7 +89,7 @@ object (_ : 'self)
                 let fundec = BackOtterUtilities.get_origin_function_from_job_result job_result in
                 let instruction = Job.get_instruction job_result in
                 (* Failing path has least recent decision first. See the comment in BidirectionalQueue. *)
-                let failing_path = List.rev job_result#decision_path in
+                let failing_path = DecisionPath.rev job_result#decision_path in
                 begin try
                     BackOtterTargets.add_path fundec failing_path (Some instruction);
                     job_state
@@ -100,7 +100,7 @@ object (_ : 'self)
                 let fundec = BackOtterUtilities.get_origin_function_from_job_result job_result in
                 let instruction = Job.get_instruction job_result in
                 (* Failing path has least recent decision first. See the comment in BidirectionalQueue. *)
-                let failing_path = List.rev job_result#decision_path in
+                let failing_path = DecisionPath.rev job_result#decision_path in
                 begin try
                     BackOtterTargets.add_path fundec failing_path (Some instruction);
                     job_state
@@ -129,7 +129,7 @@ object (_ : 'self)
         (* Print failing path. This is run after delegate#report so the failing path is printed after the failure message. *)
         let print_failing_path job_result =
             let fundec = BackOtterUtilities.get_origin_function_from_job_result job_result in
-            let failing_path = List.rev job_result#decision_path in
+            let failing_path = DecisionPath.rev job_result#decision_path in
             Output.debug_printf "@\n=> Extract the following failing path for function %s:@." fundec.svar.vname;
             Output.debug_printf "@[%a@]@\n@." DecisionPath.print failing_path;
         in

@@ -87,7 +87,7 @@ class t file' fn :
         method with_exHist exHist = {< exHist = exHist >}
 
         (** The decision path is a list of decision. Most recent decision first. *)  (* TODO: take this out *)
-        val mutable decision_path = []
+        val mutable decision_path = DecisionPath.empty
         method decision_path = decision_path
         method with_decision_path decision_path = {< decision_path = decision_path >}
 

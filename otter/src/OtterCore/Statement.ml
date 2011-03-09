@@ -7,7 +7,6 @@ open Bytes
 open BytesUtility
 open State
 open Job
-open Decision
 open CoverageData
 
 
@@ -133,7 +132,7 @@ let exec_instr_call job instr lvalopt fexp exps errors = Profiler.global#call "S
                 try FindCil.fundec_by_name job#file varinfo.vname
                 with Not_found -> FormatPlus.failwith "Function %s not found." varinfo.vname
             in
-            let job = job#with_decision_path (Decision.DecisionFuncall(instr, varinfo)::job#decision_path) in
+            let job = job#with_decision_path (DecisionPath.add (Decision.DecisionFuncall(instr, varinfo)) job#decision_path) in
             exec_fundec job instr fundec lvalopt exps errors
       | Lval(Cil.Mem _, _) ->
             FormatPlus.failwith "Function pointer in Statement.exec_instr:\n%a\nPlease use Interceptor.function_pointer_interceptor" Printcil.instr instr
@@ -332,7 +331,7 @@ let exec_stmt job errors = Profiler.global#call "Statement.exec_stmt" begin fun 
                         Output.printf "True@.";
                         let old_job = job in
                         let job = try_branch job None block1 in
-                        let job = job#with_decision_path ((DecisionConditional(stmt, true))::job#decision_path) in
+                        let job = job#with_decision_path (DecisionPath.add (Decision.DecisionConditional(stmt, true)) job#decision_path) in
                         let job = job#with_exHist (nextExHist (Some job#stmt) ~whichBranch:true) in
                         get_active_state old_job job
 
@@ -340,7 +339,7 @@ let exec_stmt job errors = Profiler.global#call "Statement.exec_stmt" begin fun 
                         Output.printf "False@.";
                         let old_job = job in
                         let job = try_branch job None block2 in
-                        let job = job#with_decision_path ((DecisionConditional(stmt, false))::job#decision_path) in
+                        let job = job#with_decision_path (DecisionPath.add (Decision.DecisionConditional(stmt, false)) job#decision_path) in
                         let job = job#with_exHist  (nextExHist (Some job#stmt) ~whichBranch:false) in
                         get_active_state old_job job
 
@@ -351,7 +350,7 @@ let exec_stmt job errors = Profiler.global#call "Statement.exec_stmt" begin fun 
                            inherits the old jid, and the true job gets a new jid. *)
                         let jobs = (job : #Info.t)#fork begin fun job (rv, block, branch) jobs ->
                             let job = try_branch job (Some rv) block in
-                            let job = job#with_decision_path ((DecisionConditional(stmt, branch))::job#decision_path) in
+                            let job = job#with_decision_path (DecisionPath.add (Decision.DecisionConditional(stmt, branch)) job#decision_path) in
                             let job = job#with_exHist (nextExHist (Some job#stmt) ~whichBranch:branch) in
                             job::jobs
                         end [ (logicalNot rv, block2, false); (rv, block1, true) ] [] in

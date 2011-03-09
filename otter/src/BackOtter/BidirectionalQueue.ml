@@ -47,7 +47,7 @@ end)
 (* TODO: this is expensive, since decisions as keys can be very long. *)
 let function_call_of_latest_decision =
     let visited_set = Hashtbl.create 0 in
-    fun lst ->
+    fun (lst, len) ->
         Profiler.global#call "BidirectionalQueue.function_call_of_latest_decision" begin fun () ->
             match lst with
             | DecisionFuncall (_, varinfo) :: _ as decisions->
@@ -108,7 +108,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                 Profiler.global#call "BidirectionalQueue.t#put/bounded_parent" begin fun () ->
                 let parent_job = JidMap.find job#jid_parent jid_to_job in
                 let bounding_paths = JidMap.find parent_job#jid_unique jid_to_bounding_paths in
-                if parent_job#decision_path == job#decision_path then (* no new decision *)
+                if DecisionPath.equal parent_job#decision_path job#decision_path then (* no new decision *)
                     Profiler.global#call "BidirectionalQueue.t#put/bounded_parent/no_new_decision" begin fun () ->
                     let _ = Output.debug_printf "No new decision@." in
                     let _ = Output.debug_printf "Add job_unique %d into the bounded_jobqueue@." job#jid_unique in
@@ -119,11 +119,11 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                 else (* has new decision *)
                     Profiler.global#call "BidirectionalQueue.t#put/bounded_parent/new_decision" begin fun () ->
                     let _ = Output.debug_printf "Has new decision@." in
-                    let _ = assert(parent_job#decision_path == List.tl job#decision_path) in
-                    let bounded_decision = List.hd job#decision_path in
+                    let _ = assert(DecisionPath.equal parent_job#decision_path (DecisionPath.tl job#decision_path)) in
+                    let bounded_decision = DecisionPath.hd job#decision_path in
                     let bounding_paths = List.fold_left (
                         fun acc path -> 
-                            if path <> [] && Decision.equal bounded_decision (List.hd path) then (List.tl path) :: acc 
+                            if not (DecisionPath.equal path DecisionPath.empty) && Decision.equal bounded_decision (DecisionPath.hd path) then (DecisionPath.tl path) :: acc 
                             else acc
                     ) [] bounding_paths in
                     if bounding_paths = [] then (* out bound *)
@@ -222,7 +222,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                  *     If rev_equal(prefix(DP, k), prefix(FP, k)), "YES", and let BP = suffix(FP, k+1)
                                  *     Else "NO"
                                  *)
-                                let failing_path_length = length failing_path in
+                                let failing_path_length = DecisionPath.length failing_path in
                                 let jobs =
                                     (* Usually otherfn_jobqueue is much shorter, unless it's pure-backward *)
                                     Profiler.global#call "BidirectionalQueue.t#get/update_bounding_status/get_contents" begin fun () ->
@@ -232,23 +232,22 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                 in
                                 List.fold_left (fun (jid_to_job, jid_to_bounding_paths, bounded_jobqueue) job ->
                                     let rec scan decision_path depth =
-                                        if depth <= 0 then [] else
-                                        match decision_path with
-                                        | DecisionFuncall (_, varinfo) :: tail when varinfo.vid = target_fundec.svar.vid ->
-                                             let bounding_paths = scan tail (depth - 1) in
-                                             let matches, _, failing_tail =
-                                                 Profiler.global#call "BidirectionalQueue.t#get/update_bounding_status/scan/rev_equals" begin fun () ->
-                                                 rev_equals Decision.equal decision_path failing_path depth
-                                                 end
-                                             in
-                                             if matches then failing_tail :: bounding_paths else bounding_paths
-                                        | _ :: tail -> scan tail (depth - 1)
-                                        | [] -> []
+                                        if depth <= 0 || DecisionPath.length decision_path = 0 then []
+                                        else match DecisionPath.hd decision_path with
+                                            | DecisionFuncall (_, varinfo)  when varinfo.vid = target_fundec.svar.vid ->
+                                                 let bounding_paths = scan (DecisionPath.tl decision_path) (depth - 1) in
+                                                 let matches, _, failing_tail =
+                                                     Profiler.global#call "BidirectionalQueue.t#get/update_bounding_status/scan/rev_equals" begin fun () ->
+                                                         rev_equals Decision.equal decision_path failing_path depth
+                                                     end
+                                                 in
+                                                 if matches then failing_tail :: bounding_paths else bounding_paths
+                                            | _ -> scan (DecisionPath.tl decision_path) (depth - 1)
                                     in
                                     let bounding_paths =
                                         Profiler.global#call "BidirectionalQueue.t#get/update_bounding_status/scan" begin fun () ->
                                         (* TODO: job#decision_path is too long. Maybe maintain a decision path for function calls only. *)
-                                        scan job#decision_path (min failing_path_length (length job#decision_path))
+                                        scan job#decision_path (min failing_path_length (DecisionPath.length job#decision_path))
                                         end
                                     in
                                     if bounding_paths = [] then (jid_to_job, jid_to_bounding_paths, bounded_jobqueue)
