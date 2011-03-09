@@ -80,20 +80,18 @@ let of_list (lst: 'a list) : 'a t =
 let equal eq xs ys =
     let module E = struct exception Not_equal end in
     let shallow_equal () =
-        let default_equal () =
+        let default_equal () = xs.default == ys.default ||
             match xs.default, ys.default with
                 | Some x, Some y -> eq x y
                 | _ -> false
         in
         xs.offset = ys.offset
         && xs.map == ys.map
-        (* defaults are equal or unused *)
-        && (xs.default == ys.default || xs.length = IndexMap.cardinal xs.map || default_equal ())
+        && default_equal ()
     in
     let deep_equal () =
         try
-            let length = xs.length in
-            if length > 0 then
+            if xs.length > 0 then
                 for xk = xs.offset to xs.offset + xs.length - 1 do
                     let xv_opt = try Some (IndexMap.find xk xs.map) with Not_found -> xs.default in
 
