@@ -111,11 +111,13 @@ let equal eq xs ys =
 
 
 let hash ha xs =
-    (* hash the first 10 elements *)
-    let limit = min xs.length 10 in
     let rec hash h n =
-        if n < limit then
-            let h = Hashtbl.hash (ha (get xs n), h) in
+        if n < xs.length then
+            let x_opt = try Some (IndexMap.find (n + xs.offset) xs.map) with Not_found -> xs.default in
+            let h = match x_opt with
+                | Some x -> Hashtbl.hash (ha x, h)
+                | None -> Hashtbl.hash (`None, h)
+            in
             hash h (n + 1)
         else
             h
