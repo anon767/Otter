@@ -83,7 +83,7 @@ module T : sig
             memory_block_name : string;
             memory_block_id : int;
             memory_block_size : int;
-            memory_block_addr : bytes;
+            memory_block_addr : int;
             memory_block_type : memory_block_type;
         }
 
@@ -145,7 +145,7 @@ end = struct
             memory_block_name : string;
             memory_block_id : int;
             memory_block_size : int;
-            memory_block_addr : bytes;
+            memory_block_addr : int;
             memory_block_type : memory_block_type;
         }
 
@@ -433,7 +433,6 @@ let symbol__next () =
 		symbol_id = Counter.next symbol__currentID;
 	} 
 
-let char__random () = Char.chr ((Random.int 255)+1)
 
 (**
  *	byte 
@@ -441,7 +440,6 @@ let char__random () = Char.chr ((Random.int 255)+1)
 let byte__make c = make_Byte_Concrete c
 let byte__zero = byte__make ('\000')
 let byte__111 = byte__make ('\255')
-let byte__random () = byte__make (char__random ())
 let byte__symbolic () = make_Byte_Symbolic (symbol__next ())
 
 
@@ -453,12 +451,6 @@ let bytes__one = make_Bytes_Constant(Cil.CInt64(1L,IInt,None))
 let bytes__of_list (lst: byte list) =	make_Bytes_ByteArray (ImmutableArray.of_list lst) 
 let bytes__make_default n byte = make_Bytes_ByteArray(ImmutableArray.make n byte)
 let bytes__make n = bytes__make_default n byte__zero
-let bytes__random n =
-	let rec impl i arr =
-		if i>=n then arr 
-        else impl (i+1) (ImmutableArray.set arr i (byte__random ()))
-	in
-	make_Bytes_ByteArray(impl 0 (ImmutableArray.make n byte__zero))
 
 
 let bytes__symbolic n =
@@ -485,7 +477,7 @@ let block__make name n t =
 		memory_block_name = name;
 		memory_block_id = Counter.next block__current_id;
 		memory_block_size = n;
-		memory_block_addr = bytes__random (bitsSizeOf voidPtrType / 8);
+		memory_block_addr = Random.bits (); (* TODO: should this be an int64? only 30-bits now *)
 		memory_block_type = t;
 	}
 

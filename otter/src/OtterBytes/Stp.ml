@@ -54,7 +54,7 @@ and allSymbols = function
             SymbolSet.empty
             bytearray
     | Bytes_Address (memBlock, bytes) ->
-        SymbolSet.union (allSymbols bytes) (allSymbols memBlock.memory_block_addr)
+        allSymbols bytes
     | Bytes_Op (_, bytes_typ_list) ->
         List.fold_left
             (fun symbSet (b, _) -> SymbolSet.union symbSet (allSymbols b))
@@ -289,8 +289,8 @@ to_stp_bv_impl vc bytes =
 
         | Bytes_Address (block, offset) ->
             let bv_offset, _ = to_stp_bv vc offset in
-            let bv_blockaddr, len = to_stp_bv vc block.memory_block_addr in
-            (Stpc.e_bvplus vc len bv_blockaddr bv_offset, len)
+            let bv_blockaddr = Stpc.e_bv_of_int vc 32 block.memory_block_addr in
+            (Stpc.e_bvplus vc 32 bv_blockaddr bv_offset, 32)
 
         | Bytes_Conditional c ->
             let rec to_stp_bv_conditional = function

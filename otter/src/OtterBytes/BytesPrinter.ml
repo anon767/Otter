@@ -222,7 +222,7 @@ and memory_block ff block =
 		| Block_type_Heap -> "Heap"
 		| Block_type_Aliased -> "Aliased"
 	in
-	fprintf ff "\"%s\"@@%s(@[<hov>%a@]@,)" block.memory_block_name block_type bytes block.memory_block_addr
+	fprintf ff "\"%s\"@@%s(%x)" block.memory_block_name block_type block.memory_block_addr
 
 
 (** Print a {!type:Bytes.bytes}, formatting the outermost unary/binary expressions as a tree.

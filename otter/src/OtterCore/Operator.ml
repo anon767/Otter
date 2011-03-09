@@ -214,12 +214,13 @@ let rec binop op_const op_symb operands : bytes (* * typ *)=
 				let op2Constant = bytes_to_constant op2 !Cil.upointType in
 				begin match offsetConstant,op2Constant with
 					| CInt64 _,CInt64 _ ->
-							let ptrAsNum = plus [(make_Bytes_Constant
-																			(bytes_to_constant blk.memory_block_addr !Cil.upointType),
-																		!Cil.upointType);
-																	 (make_Bytes_Constant offsetConstant, typ2)]
-							in
-							impl (ptrAsNum, make_Bytes_Constant op2Constant)
+						let ikind = match !Cil.upointType with Cil.TInt (ikind, _) -> ikind | _ -> failwith "Impossible!" in
+						let addr = Cil.CInt64 (Int64.of_int blk.memory_block_addr, ikind, None) in
+						let ptrAsNum = plus [
+							(make_Bytes_Constant addr, !Cil.upointType);
+							(make_Bytes_Constant offsetConstant, typ2)
+						] in
+						impl (ptrAsNum, make_Bytes_Constant op2Constant)
 					| _ -> failwith "Unimplemented pointer arithmetic operation"
 				end
 
