@@ -44,16 +44,17 @@ end)
 
 (* This function is to make sure that a decision path with a function call in
  * latest decision won't create bounded job more than once *)
-(* TODO: this is expensive, since decisions as keys can be very long. *)
 let function_call_of_latest_decision =
     let visited_set = Hashtbl.create 0 in
-    fun {DecisionPath.path=lst; DecisionPath.length=len} ->
+    fun decision_path ->
         Profiler.global#call "BidirectionalQueue.function_call_of_latest_decision" begin fun () ->
-            match lst with
-            | DecisionFuncall (_, varinfo) :: _ as decisions->
-                if Hashtbl.mem visited_set decisions then None
-                else (Hashtbl.add visited_set decisions (); Some varinfo)
-            | _ -> None
+            if decision_path = DecisionPath.empty then None 
+            else match DecisionPath.hd decision_path with
+                | DecisionFuncall (_, varinfo) ->
+                    let path_id = DecisionPath.id decision_path in
+                    if Hashtbl.mem visited_set path_id then None
+                    else (Hashtbl.add visited_set path_id (); Some varinfo)
+                | _ -> None
         end
 
 (* TODO: package the long list of arguments into BackOtterProfile.t *)
