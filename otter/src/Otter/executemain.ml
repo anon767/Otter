@@ -44,7 +44,8 @@ let options =
     Queue.options @
     Stp.options @
     SymbolicPointers.options @
-    TrackingFunctions.options
+    TrackingFunctions.options @
+    Bytes.options
 
 let feature : featureDescr = {
 	fd_name = "execute";

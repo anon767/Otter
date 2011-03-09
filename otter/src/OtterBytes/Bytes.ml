@@ -109,6 +109,7 @@ module T : sig
     val make_Bytes_Write : bytes * bytes * int * bytes -> bytes
     val make_Bytes_FunPtr : Cil.varinfo -> bytes
     val make_Bytes_Conditional : bytes conditional -> bytes
+    val disable_hash_consing_bytes_create : unit -> unit
 
     val block__make : string -> int -> memory_block_type -> memory_block
 
@@ -344,7 +345,7 @@ end = struct
     (**
      *  bytes
      *)
-    let hash_consing_bytes_create =
+    let hash_consing_bytes_create_impl =
         let module Memo = Memo.Make (struct
             type t = bytes
             let equal = Internal.bytes_equal
@@ -352,44 +353,48 @@ end = struct
         end) in
         Memo.make_hashcons "Bytes.make_bytes"
 
+    let hash_consing_bytes_create = ref hash_consing_bytes_create_impl
+
+    let disable_hash_consing_bytes_create () = hash_consing_bytes_create := (fun x -> x)
+
     let make_Bytes_Constant const = 
         Profiler.global#call "Bytes.make_Bytes_Constant" begin fun () ->
-            hash_consing_bytes_create (Bytes_Constant const)
+            (!hash_consing_bytes_create) (Bytes_Constant const)
         end
 
     let make_Bytes_ByteArray bytearray = 
         Profiler.global#call "Bytes.make_Bytes_ByteArray" begin fun () ->
-            hash_consing_bytes_create (Bytes_ByteArray bytearray)
+            (!hash_consing_bytes_create) (Bytes_ByteArray bytearray)
         end
 
     let make_Bytes_Address (block, bs) = 
         Profiler.global#call "Bytes.make_Bytes_Address" begin fun () ->
-            hash_consing_bytes_create (Bytes_Address (block, bs))
+            (!hash_consing_bytes_create) (Bytes_Address (block, bs))
         end
 
     let make_Bytes_Op (op, lst) = 
         Profiler.global#call "Bytes.make_Bytes_Op" begin fun () ->
-            hash_consing_bytes_create (Bytes_Op (op, lst))
+            (!hash_consing_bytes_create) (Bytes_Op (op, lst))
         end
 
     let make_Bytes_Read (src, off, len) = 
         Profiler.global#call "Bytes.make_Bytes_Read" begin fun () ->
-            hash_consing_bytes_create (Bytes_Read (src, off, len))
+            (!hash_consing_bytes_create) (Bytes_Read (src, off, len))
         end
 
     let make_Bytes_Write (des, off, n, src) = 
         Profiler.global#call "Bytes.make_Bytes_Write" begin fun () ->
-            hash_consing_bytes_create (Bytes_Write (des, off, n, src))
+            (!hash_consing_bytes_create) (Bytes_Write (des, off, n, src))
         end
 
     let make_Bytes_FunPtr f =
         if not (Cil.isFunctionType f.Cil.vtype) then
             FormatPlus.invalid_arg "not a function: %a" CilPrinter.varinfo f;
-        hash_consing_bytes_create (Bytes_FunPtr f)
+        (!hash_consing_bytes_create) (Bytes_FunPtr f)
 
     let make_Bytes_Conditional = function
         | Unconditional b -> b
-        | c -> hash_consing_bytes_create (Bytes_Conditional c)
+        | c -> (!hash_consing_bytes_create) (Bytes_Conditional c)
 
 
     (**
@@ -867,4 +872,10 @@ let conditional__bytes = function
 
 let conditional__lval_block l =
 	Unconditional l
+
+let options = [
+	("--no-hash-consing",
+		Arg.Unit disable_hash_consing_bytes_create,
+		" Do not use hash consing in creating bytes\n");
+]
 
