@@ -58,7 +58,8 @@ let add_target string =
                 targets := TargetSet.remove (file, line) !targets;
                 (* Remove instruction-related failing paths and function targets from BackOtterTargets *)
                 BackOtterTargets.remove_target_instruction instruction
-            end
+            end;
+            true
         end else
             k reason job_result
     in
@@ -78,7 +79,9 @@ object (_ : 'self)
         (* detect requested targets *)
         begin match job_state with
             | Job.Complete (Job.Abandoned (reason, job_result)) ->
-                !target_matchers reason (job_result :> Job.t) (fun _ _ -> ())
+                if !target_matchers reason (job_result :> Job.t) (fun _ _ -> false) then
+                    (* report the error, but don't record it *)
+                    ignore (delegate#report job_state);
             | _ ->
                 ()
         end;
