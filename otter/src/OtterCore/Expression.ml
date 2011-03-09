@@ -313,8 +313,8 @@ deref job bytes typ errors =
                 | (Bytes_Op(OP_EQ,[(bytes1,_); (bytes2,_)]), _)::pc' ->
                     begin
                         let bytes_tentative =
-                            if bytes1=bytes then bytes2
-                            else if bytes2=bytes then bytes1
+                            if bytes__equal bytes1 bytes then bytes2
+                            else if bytes__equal bytes2 bytes then bytes1
                             else bytes__zero
                         in
                             match bytes_tentative with

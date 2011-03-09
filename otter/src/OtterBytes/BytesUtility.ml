@@ -23,7 +23,7 @@ let rec bytes__read ?test ?pre acc bytes off len =
                 end
 
             | Bytes_Write (bytes2, off2, len2, newbytes), _ ->
-                if off2 = off && len2 = len then
+                if bytes__equal off2 off && len2 = len then
                     (acc, newbytes)
                 else (* CAUTION: assume [off2, len2] and [off, len] don't overlap.  *)
                     (acc, worst_case)
