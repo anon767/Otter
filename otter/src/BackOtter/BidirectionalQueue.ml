@@ -47,7 +47,7 @@ end)
 (* TODO: this is expensive, since decisions as keys can be very long. *)
 let function_call_of_latest_decision =
     let visited_set = Hashtbl.create 0 in
-    fun (lst, len) ->
+    fun {DecisionPath.decision_path=lst; DecisionPath.length=len} ->
         Profiler.global#call "BidirectionalQueue.function_call_of_latest_decision" begin fun () ->
             match lst with
             | DecisionFuncall (_, varinfo) :: _ as decisions->
@@ -286,6 +286,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                     let callers = CilUtilities.CilCallgraph.find_callers file target_fundec in
                                     List.fold_left (
                                         fun (origin_fundecs, otherfn_jobqueue) caller ->
+                                            Output.debug_printf "Function %s is the caller of target function %s@\n" caller.svar.vname target_fundec.svar.vname;
                                             let caller = BackOtterUtilities.get_transitive_unique_caller file caller in
                                             if (is_bidirectional && caller == entry_fn) || List.memq caller origin_fundecs then
                                                 origin_fundecs, otherfn_jobqueue
