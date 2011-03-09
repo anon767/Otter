@@ -47,7 +47,7 @@ end)
 (* TODO: this is expensive, since decisions as keys can be very long. *)
 let function_call_of_latest_decision =
     let visited_set = Hashtbl.create 0 in
-    fun {DecisionPath.decision_path=lst; DecisionPath.length=len} ->
+    fun {DecisionPath.path=lst; DecisionPath.length=len} ->
         Profiler.global#call "BidirectionalQueue.function_call_of_latest_decision" begin fun () ->
             match lst with
             | DecisionFuncall (_, varinfo) :: _ as decisions->
