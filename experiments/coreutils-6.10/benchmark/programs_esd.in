@@ -4,6 +4,7 @@ mknod_comb.c    | -DMAX_ARGC=5 -DMAX_ARG_LENGTHS="{1,10,2,2,2}" -D__OTTER_QUOTEA
 paste_comb.c    | -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_PASTE_ASSERT
 tac_comb.c      | -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"    
 md5sum_comb.c   | -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"    
-pr_comb.c       | -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"    
+# pr contains a buffer overflow : http://git.savannah.gnu.org/cgit/coreutils.git/commit/?id=6856089f7bfaca2709b303f01dae001a30930b61
+pr_comb.c       | -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}" --backotter-target="pr.c,2670,failure,Bounds check failed" --backotter-target="pr.c,2670,out_of_bounds"
 ptx_comb.c      | -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"    
 seq_comb.c      | -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_XALLOC_DIE_FAILURE
