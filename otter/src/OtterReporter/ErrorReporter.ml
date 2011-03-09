@@ -13,8 +13,8 @@ module Make (Errors : Errors) = struct
     class ['self] t ?max_steps ?max_paths ?max_abandoned () = object (_ : 'self)
         inherit ['self] BasicReporter.t ?max_steps ?max_paths ?max_abandoned () as super
 
-        method report job_result =
-            begin match job_result with
+        method report job_state =
+           begin match job_state with
                 | Job.Complete (Job.Abandoned (reason, job)) ->
                         Output.set_mode Output.MSG_MUSTPRINT;
                         Output.printf "@[Error \"@[%a@]\"@ occurs at @[%a@].@\n"
@@ -29,7 +29,7 @@ module Make (Errors : Errors) = struct
                 | _ ->
                         ()
             end;
-            super#report job_result
+            super#report job_state
     end
 end
 
