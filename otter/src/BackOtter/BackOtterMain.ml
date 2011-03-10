@@ -159,7 +159,7 @@ let doit file =
 
     (* TODO: provide a way to force full-width profile printing *)
     Format.set_margin 120;
-    Format.printf "Global profile:@\n@\n  @[%t@]@." Profiler.global#printer;
+    if !Profiler.do_profiling then Format.printf "Global profile:@\n@\n  @[%t@]@." Profiler.global#printer;
     Format.printf "@[%t@]@." Memo.statistics_printer;
 
     Format.printf "Done.@."

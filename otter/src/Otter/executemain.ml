@@ -28,7 +28,7 @@ let doExecute (f: file) =
 	end in
 
     Output.set_formatter (new Output.plain);
-    Output.printf "== Global profile ==@\n@[%t@]@." Profiler.global#printer;
+    if !Profiler.do_profiling then Output.printf "== Global profile ==@\n@[%t@]@." Profiler.global#printer;
     Output.printf "@[%t@]@." Memo.statistics_printer;
 
     let steps, _, _ = reporter#get_stats in
@@ -38,6 +38,7 @@ let doExecute (f: file) =
 let options =
     BasicReporter.options @
     UserSignal.options @
+    Profiler.options @
     Executeargs.options @
     FunctionJob.options @
     ProgramPoints.options @
