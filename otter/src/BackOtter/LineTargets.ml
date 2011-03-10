@@ -48,7 +48,7 @@ let line_target_interceptor job job_queue interceptor =
         let fundec = BackOtterUtilities.get_origin_function job in
         let entryfn = ProgramPoints.get_entry_fundec job#file in
         let failing_path = DecisionPath.rev job#decision_path in
-        BackOtterTargets.add_path fundec failing_path (Some instruction);
+        let _ = BackOtterTargets.add_path fundec failing_path (Some instruction) in (* TODO: do we care if the path is new or not? *)
         if CilData.CilFundec.equal fundec entryfn then
             (* Remove instruction from line_targets *)
             let _ = Output.must_printf "Remove target %s:%d@\n" loc.Cil.file loc.Cil.line in

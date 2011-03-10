@@ -51,7 +51,7 @@ let add_target string =
             let entryfn = ProgramPoints.get_entry_fundec job_result#file in
             let failing_path = DecisionPath.rev job_result#decision_path in
             let instruction = Job.get_instruction job_result in
-            BackOtterTargets.add_path fundec failing_path (Some instruction);
+            let _ = BackOtterTargets.add_path fundec failing_path (Some instruction) in (* TODO: do we care if the path is new or not? *)
             if CilData.CilFundec.equal fundec entryfn then begin
                 (* Remove instruction from line_targets *)
                 Output.must_printf "Remove target %s:%d@\n" file line;
@@ -93,23 +93,17 @@ object (_ : 'self)
                 let instruction = Job.get_instruction job_result in
                 (* Failing path has least recent decision first. See the comment in BidirectionalQueue. *)
                 let failing_path = DecisionPath.rev job_result#decision_path in
-                begin try
-                    BackOtterTargets.add_path fundec failing_path (Some instruction);
-                    job_state
-                with Invalid_argument _ ->
-                    Job.Complete (Job.Truncated (`SummaryAbandoned (`TargetReached target, Job.get_loc job_result), job_result))
-                end
+                let is_new_path = BackOtterTargets.add_path fundec failing_path (Some instruction) in
+                if is_new_path then job_state
+                else Job.Complete (Job.Truncated (`SummaryAbandoned (`TargetReached target, Job.get_loc job_result), job_result))
             | Job.Complete (Job.Abandoned (`Failure msg, job_result)) when !BackOtterReporter.arg_exceptions_as_failures ->
                 let fundec = BackOtterUtilities.get_origin_function_from_job_result job_result in
                 let instruction = Job.get_instruction job_result in
                 (* Failing path has least recent decision first. See the comment in BidirectionalQueue. *)
                 let failing_path = DecisionPath.rev job_result#decision_path in
-                begin try
-                    BackOtterTargets.add_path fundec failing_path (Some instruction);
-                    job_state
-                with Invalid_argument _ ->
-                    Job.Complete (Job.Truncated (`SummaryAbandoned (`Failure msg, Job.get_loc job_result), job_result))
-                end
+                let is_new_path = BackOtterTargets.add_path fundec failing_path (Some instruction) in
+                if is_new_path then job_state
+                else Job.Complete (Job.Truncated (`SummaryAbandoned (`Failure msg, Job.get_loc job_result), job_result))
             | _ ->
                 job_state
         in

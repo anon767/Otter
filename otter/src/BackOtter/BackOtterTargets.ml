@@ -35,13 +35,15 @@ let get_paths fundec =
 let get_pathset_of_instruction instruction =
     try InstructionMap.find instruction (!targets_ref).instruction_to_pathset with Not_found -> PathSet.empty
 
+(**
+ *  @return true if [path] is a new path
+ *)
 let add_path fundec path instruction_opt =
     let targets = !targets_ref in
     let failing_paths = get_pathset fundec in
-    if PathSet.mem path failing_paths then
-        OcamlUtilities.Output.printf "Warning: failing path already exists"
+    if PathSet.mem path failing_paths then false
     else
-    targets_ref :=
+        let _ = targets_ref :=
         {
             fundec_to_pathset = FundecMap.add fundec (PathSet.add path failing_paths) targets.fundec_to_pathset;
             instruction_to_pathset = begin match instruction_opt with
@@ -49,7 +51,8 @@ let add_path fundec path instruction_opt =
                     | None -> targets.instruction_to_pathset
                 end;
             last_failing_path = Some (fundec, path);
-        }
+        } in
+        true
 
 let get_last_failing_path () =
     let targets = !targets_ref in
