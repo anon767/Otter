@@ -60,7 +60,6 @@ class t :
                 | x::xs ->
                     (* TODO: what to do if fork occurs inside a profiled method? *)
                     Profiler.global#add node_profiler;
-                    let path_profiler = path_profiler#add node_profiler in
 
                     (* TODO: fix Output's mode handling *)
                     let old_mode = Output.get_mode () in
@@ -68,14 +67,25 @@ class t :
                     Output.printf "== Profile for node %d ==@\n@[%t@]@." node_id node_profiler#printer;
                     Output.set_mode old_mode;
 
+                    let parent_list = (path_id, node_id)::parent_list in
+                    let path_profiler = path_profiler#add node_profiler in
                     let node_profiler = node_profiler#reset in
 
-                    let acc = f {< path_profiler = path_profiler; node_profiler = node_profiler >} x acc in
+                    let acc = f {<
+                        (* path_id is inherited by the first one, while node_id is updated at every #fork,
+                         * even if it's the only one *)
+                        node_id = Counter.next node_counter;
+                        parent_list = parent_list;
+                        path_profiler = path_profiler;
+                        node_profiler = node_profiler;
+                    >} x acc in
+
                     List.fold_left begin fun acc x ->
                         f {<
+                            (* others get new path_ids and node_ids *)
                             path_id = Counter.next path_counter;
                             node_id = Counter.next node_counter;
-                            parent_list = (path_id, node_id)::parent_list;
+                            parent_list = parent_list;
                             path_profiler = path_profiler;
                             node_profiler = node_profiler;
                         >} x acc
