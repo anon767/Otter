@@ -3,40 +3,40 @@ open OcamlUtilities
 open CilUtilities
 open Cil
 
-type operator = 
-	(* binop *)
-	| OP_PLUS
-	| OP_SUB
-	| OP_MULT
-	| OP_DIV
-	| OP_MOD
-	| OP_LSL
-	| OP_LSR
-	| OP_LT
-	| OP_GT
-	| OP_LE
-	| OP_GE
-	| OP_EQ
-	| OP_NE
-	| OP_BAND
-	| OP_BXOR
-	| OP_BOR
-	| OP_LAND
-	| OP_LOR
-	| OP_SX
-	(* unop *)
-	| OP_UMINUS
-	| OP_BNOT
-	| OP_LNOT
+type operator =
+    (* binop *)
+    | OP_PLUS
+    | OP_SUB
+    | OP_MULT
+    | OP_DIV
+    | OP_MOD
+    | OP_LSL
+    | OP_LSR
+    | OP_LT
+    | OP_GT
+    | OP_LE
+    | OP_GE
+    | OP_EQ
+    | OP_NE
+    | OP_BAND
+    | OP_BXOR
+    | OP_BOR
+    | OP_LAND
+    | OP_LOR
+    | OP_SX
+    (* unop *)
+    | OP_UMINUS
+    | OP_BNOT
+    | OP_LNOT
 
 
 (** Does the operator return a boolean value (i.e., 0 or 1)? *)
 let returnsBoolean = function
-	| OP_LT | OP_GE
-	| OP_GT | OP_LE
-	| OP_EQ | OP_NE
-	| OP_LNOT | OP_LAND | OP_LOR -> true
-	| _ -> false
+    | OP_LT | OP_GE
+    | OP_GT | OP_LE
+    | OP_EQ | OP_NE
+    | OP_LNOT | OP_LAND | OP_LOR -> true
+    | _ -> false
 
 
 module T : sig
@@ -359,32 +359,32 @@ end = struct
 
     let hash_consing_bytes_create = ref hash_consing_bytes_create_impl
 
-    let make_Bytes_Constant const = 
+    let make_Bytes_Constant const =
         Profiler.global#call "Bytes.make_Bytes_Constant" begin fun () ->
             (!hash_consing_bytes_create) (Bytes_Constant const)
         end
 
-    let make_Bytes_ByteArray bytearray = 
+    let make_Bytes_ByteArray bytearray =
         Profiler.global#call "Bytes.make_Bytes_ByteArray" begin fun () ->
             (!hash_consing_bytes_create) (Bytes_ByteArray bytearray)
         end
 
-    let make_Bytes_Address (block, bs) = 
+    let make_Bytes_Address (block, bs) =
         Profiler.global#call "Bytes.make_Bytes_Address" begin fun () ->
             (!hash_consing_bytes_create) (Bytes_Address (block, bs))
         end
 
-    let make_Bytes_Op (op, lst) = 
+    let make_Bytes_Op (op, lst) =
         Profiler.global#call "Bytes.make_Bytes_Op" begin fun () ->
             (!hash_consing_bytes_create) (Bytes_Op (op, lst))
         end
 
-    let make_Bytes_Read (src, off, len) = 
+    let make_Bytes_Read (src, off, len) =
         Profiler.global#call "Bytes.make_Bytes_Read" begin fun () ->
             (!hash_consing_bytes_create) (Bytes_Read (src, off, len))
         end
 
-    let make_Bytes_Write (des, off, n, src) = 
+    let make_Bytes_Write (des, off, n, src) =
         Profiler.global#call "Bytes.make_Bytes_Write" begin fun () ->
             (!hash_consing_bytes_create) (Bytes_Write (des, off, n, src))
         end
@@ -413,15 +413,17 @@ end = struct
                 memory_block_addr = Random.bits ();
             }
 
+
     (**
      * Turn off hash consing
      *)
-    let disable_hash_consing () = 
+    let disable_hash_consing () =
         begin
             hash_consing_byte_create  := (fun x -> x);
             hash_consing_guard_create := (fun x -> x);
             hash_consing_bytes_create := (fun x -> x)
         end
+
 
     (**
      *  Modularized types
@@ -474,152 +476,152 @@ include T
 
 
 let ikind_to_len_isSigned ikind =
-	(bitsSizeOf (TInt (ikind, [])) / 8, isSigned ikind)
+    (bitsSizeOf (TInt (ikind, [])) / 8, isSigned ikind)
 
 
 (**
- *	to bytes
+ *  to bytes
  *)
 
 
 (** Convert an ocaml (signed) int to make_Bytes_Constant(CInt64(int64,IInt,None)) *)
 let int_to_bytes n : bytes =
-	make_Bytes_Constant (CInt64 (Int64.of_int n, IInt, None))
-	
+    make_Bytes_Constant (CInt64 (Int64.of_int n, IInt, None))
+
 
 (* Make this lazy so that upointType is set correctly (by initCIL) before it is evaluated *)
 let kindOfUpointType = lazy (match !upointType with
-		TInt (kind, _) -> kind
-	| _ -> failwith "upointType is not set properly")
+        TInt (kind, _) -> kind
+    | _ -> failwith "upointType is not set properly")
 
 
 (* Convert an int n to [Bytes_Constant (CInt64 (Int64.of_int n, kindOfUpointType, None))] *)
 let int_to_offset_bytes (n : int) : bytes =
-	make_Bytes_Constant (CInt64 (Int64.of_int n, Lazy.force kindOfUpointType, None))
-	
+    make_Bytes_Constant (CInt64 (Int64.of_int n, Lazy.force kindOfUpointType, None))
+
 
 (** Convert in64 of ikind to make_Bytes_ByteArray. Truncate if needed.  *)
 let int64_to_bytes n64 ikind : bytes =
-	let (len,isSigned) = ikind_to_len_isSigned ikind in
-	let rec helper n acc count =
-		if count = len then acc
-		else helper (Int64.shift_right n 8)
-				(make_Byte_Concrete (Char.chr ((Int64.to_int n) land 255)) :: acc)
-				(succ count)
-	in
-	make_Bytes_ByteArray(ImmutableArray.of_list (List.rev (helper n64 [] 0))) (* Reverse because we are little-endian *)
+    let (len,isSigned) = ikind_to_len_isSigned ikind in
+    let rec helper n acc count =
+        if count = len then acc
+        else helper (Int64.shift_right n 8)
+                (make_Byte_Concrete (Char.chr ((Int64.to_int n) land 255)) :: acc)
+                (succ count)
+    in
+    make_Bytes_ByteArray(ImmutableArray.of_list (List.rev (helper n64 [] 0))) (* Reverse because we are little-endian *)
 
 
 let string_map f s =
-	let rec helper i acc =
-		if i < 0 then
-			acc
-		else
-			helper (i-1) (f s.[i] :: acc)
-	in helper (String.length s - 1) []
+    let rec helper i acc =
+        if i < 0 then
+            acc
+        else
+            helper (i-1) (f s.[i] :: acc)
+    in helper (String.length s - 1) []
 
 (** Convert CString to make_Bytes_ByteArray.  *)
 let string_to_bytes (s : string) : bytes =
-	make_Bytes_ByteArray (ImmutableArray.of_list (string_map (fun ch -> make_Byte_Concrete ch) (s^"\000")))
+    make_Bytes_ByteArray (ImmutableArray.of_list (string_map (fun ch -> make_Byte_Concrete ch) (s^"\000")))
 
 
 (** Convert real numbers to make_Bytes *)
 (* TODO: actually represent the numbers *)
 let float_to_bytes f fkind =
-	let length = bitsSizeOf (TFloat (fkind, [])) / 8 in
-	make_Bytes_ByteArray (ImmutableArray.make length (make_Byte_Concrete '\000'))
+    let length = bitsSizeOf (TFloat (fkind, [])) / 8 in
+    make_Bytes_ByteArray (ImmutableArray.make length (make_Byte_Concrete '\000'))
 
 (** Convert constant to make_Bytes_ByteArray *)
 let rec constant_to_bytes constant : bytes =
-	match constant with
-		| CInt64 (n64, ikind, _) -> int64_to_bytes n64 ikind
-		| CStr str -> string_to_bytes str
-		| CChr char -> constant_to_bytes (Cil.charConstToInt char)
-		| CReal (f, fkind, _) -> float_to_bytes f fkind
-		| _ -> failwith "constant_to_bytes: unsupported constant type"
+    match constant with
+        | CInt64 (n64, ikind, _) -> int64_to_bytes n64 ikind
+        | CStr str -> string_to_bytes str
+        | CChr char -> constant_to_bytes (Cil.charConstToInt char)
+        | CReal (f, fkind, _) -> float_to_bytes f fkind
+        | _ -> failwith "constant_to_bytes: unsupported constant type"
 
 
 
 (**
- *	from bytes
+ *  from bytes
  *)
 
 (** Convert a bytes of (len,isSigned) to int64 of (len,isSigned).
-		If (len,isSigned) == IULongLong then interpret int64 as unsigned. (Same treatment throughout the program).
-		Exception if bytes is not concrete int *)
+        If (len,isSigned) == IULongLong then interpret int64 as unsigned. (Same treatment throughout the program).
+        Exception if bytes is not concrete int *)
 let rec bytes_to_int64 bytes isSigned : int64 =
-	match bytes with
-		(* TODO: special case for const==Int64 *)
-		| Bytes_Constant (const) -> bytes_to_int64 (constant_to_bytes const) isSigned
-		| Bytes_ByteArray (bytearray) -> (* This assumes little-endian *)
-				let rec bytearray_to_int64_helper index acc =
-					if index < 0 then acc
-					else
-						bytearray_to_int64_helper
-							(index - 1)
-							(match (ImmutableArray.get bytearray index) with
-							|	Byte_Concrete(c) -> Int64.logor (Int64.shift_left acc 8) (Int64.of_int (Char.code c))
-							|	_ -> failwith "bytes_to_int64: bytearray not concrete")
-				in
-				bytearray_to_int64_helper ((ImmutableArray.length bytearray) - 1) 0L
-		| _ -> failwith "bytes_to_int64: not concrete int"
-	
+    match bytes with
+        (* TODO: special case for const==Int64 *)
+        | Bytes_Constant (const) -> bytes_to_int64 (constant_to_bytes const) isSigned
+        | Bytes_ByteArray (bytearray) -> (* This assumes little-endian *)
+                let rec bytearray_to_int64_helper index acc =
+                    if index < 0 then acc
+                    else
+                        bytearray_to_int64_helper
+                            (index - 1)
+                            (match (ImmutableArray.get bytearray index) with
+                            |    Byte_Concrete(c) -> Int64.logor (Int64.shift_left acc 8) (Int64.of_int (Char.code c))
+                            |    _ -> failwith "bytes_to_int64: bytearray not concrete")
+                in
+                bytearray_to_int64_helper ((ImmutableArray.length bytearray) - 1) 0L
+        | _ -> failwith "bytes_to_int64: not concrete int"
+
 
 (** Convert a bytes to (signed) int64. Exception if bytes is not concrete int *)
 let bytes_to_int64_auto bytes : int64 =
-	bytes_to_int64 bytes true
-	
+    bytes_to_int64 bytes true
+
 
 (** Convert a bytes to (signed) ocaml int.
-	Warning if bytes represents number out of int's range.
-	Exception if bytes is not concrete int *)
+    Warning if bytes represents number out of int's range.
+    Exception if bytes is not concrete int *)
 let bytes_to_int_auto bytes : int =
-	let n64 = bytes_to_int64_auto bytes in
-	let res = Int64.to_int n64 in
-	if n64 <> Int64.of_int res then
-		Errormsg.warn "Int64 %Ld is being truncated to an int" n64;
-	res
-	
+    let n64 = bytes_to_int64_auto bytes in
+    let res = Int64.to_int n64 in
+    if n64 <> Int64.of_int res then
+        Errormsg.warn "Int64 %Ld is being truncated to an int" n64;
+    res
+
 
 (** Convert a bytes to boolean. Exception if bytes is not concrete *int* *)
 let bytes_to_bool bytes : bool =
-	let n64 = bytes_to_int64_auto bytes in
-		n64 <> 0L
-	
+    let n64 = bytes_to_int64_auto bytes in
+        n64 <> 0L
+
 
 (** Convert a bytes of typ to Cil constant. Exception if bytes is not concrete *)
 let rec bytes_to_constant bytes typ : Cil.constant =
-	match unrollType typ with
-		| TInt(ikind,_)->
-			let (len,isSigned) = ikind_to_len_isSigned ikind in
-			let n64 = bytes_to_int64 bytes isSigned in
-			let exp =	Cil.kinteger64 ikind n64 in
-				(match exp with Const(const) -> const | _ -> failwith "unreachable")
-		| TFloat(fkind,_) -> (*TMP*) CReal(0.1,fkind,None)
-		| TEnum (enuminf,_) ->
-				(* An enum has type int. [Standard 6.7.2.2.2, but I'm confused by 6.7.2.2.4] *)
-				bytes_to_constant bytes Cil.intType
-		| TPtr _ -> bytes_to_constant bytes !Cil.upointType  
-		| t ->
-			begin match bytes with
-				| Bytes_Constant(c) -> c
-				| _ ->
-				failwith ("bytes_to_constant: "^(Pretty.sprint 50 (Cil.d_type () t)))
-			end
+    match unrollType typ with
+        | TInt(ikind,_)->
+            let (len,isSigned) = ikind_to_len_isSigned ikind in
+            let n64 = bytes_to_int64 bytes isSigned in
+            let exp =    Cil.kinteger64 ikind n64 in
+                (match exp with Const(const) -> const | _ -> failwith "unreachable")
+        | TFloat(fkind,_) -> (*TMP*) CReal(0.1,fkind,None)
+        | TEnum (enuminf,_) ->
+                (* An enum has type int. [Standard 6.7.2.2.2, but I'm confused by 6.7.2.2.4] *)
+                bytes_to_constant bytes Cil.intType
+        | TPtr _ -> bytes_to_constant bytes !Cil.upointType
+        | t ->
+            begin match bytes with
+                | Bytes_Constant(c) -> c
+                | _ ->
+                failwith ("bytes_to_constant: "^(Pretty.sprint 50 (Cil.d_type () t)))
+            end
 
 (** True if bytearray is concrete *)
 (* Shouldn't a make_Byte_Bytes with concrete values be considered concrete, too? *)
 let isConcrete_bytearray (bytearray : byte ImmutableArray.t) =
-	ImmutableArray.for_all (function Byte_Concrete _ -> true | _ -> false) bytearray
-	
+    ImmutableArray.for_all (function Byte_Concrete _ -> true | _ -> false) bytearray
+
 
 (** True if bytes is concrete *)
 let rec isConcrete_bytes (bytes : bytes) =
-	match bytes with
-		| Bytes_Constant (_) -> true
-		| Bytes_ByteArray (bytearray) -> isConcrete_bytearray bytearray
-		| _ -> false
-	
+    match bytes with
+        | Bytes_Constant (_) -> true
+        | Bytes_ByteArray (bytearray) -> isConcrete_bytearray bytearray
+        | _ -> false
+
 
 
 (**
@@ -627,72 +629,72 @@ let rec isConcrete_bytes (bytes : bytes) =
  *)
 
 let rec byte__equal byte1 byte2 = if byte1 == byte2 then true else match byte1, byte2 with
-	| Byte_Concrete x, Byte_Concrete y            -> x = y
-	| Byte_Symbolic x, Byte_Symbolic y            -> x = y
-	| Byte_Bytes (b1, off1), Byte_Bytes(b2, off2) -> off1 = off2 && bytes__equal b1 b2
-	| _, _                                        -> false
+    | Byte_Concrete x, Byte_Concrete y            -> x = y
+    | Byte_Symbolic x, Byte_Symbolic y            -> x = y
+    | Byte_Bytes (b1, off1), Byte_Bytes(b2, off2) -> off1 = off2 && bytes__equal b1 b2
+    | _, _                                        -> false
 
 and guard__equal guard1 guard2 = if guard1 == guard2 then true else match guard1, guard2 with
-	| Guard_Not g1, Guard_Not g2               -> guard__equal g1 g2
-	| Guard_And (g1, g2), Guard_And (g1', g2') -> guard__equal g1 g1' && guard__equal g2 g2'
-	| Guard_Symbolic s1, Guard_Symbolic s2     -> s1 = s2
-	| Guard_Bytes b1, Guard_Bytes b2           -> bytes__equal b1 b2
-	| _, _                                     -> false
+    | Guard_Not g1, Guard_Not g2               -> guard__equal g1 g2
+    | Guard_And (g1, g2), Guard_And (g1', g2') -> guard__equal g1 g1' && guard__equal g2 g2'
+    | Guard_Symbolic s1, Guard_Symbolic s2     -> s1 = s2
+    | Guard_Bytes b1, Guard_Bytes b2           -> bytes__equal b1 b2
+    | _, _                                     -> false
 
 and conditional__equal : 'a. ('a -> 'a -> bool) -> 'a conditional -> 'a conditional -> bool =
     fun eq c1 c2 -> if c1 == c2 then true else match c1, c2 with
-	| Unconditional x1, Unconditional x2 ->
-		eq x1 x2
-	| IfThenElse (g1, x1, y1), IfThenElse (g2, x2, y2) ->
-		guard__equal g1 g2 && conditional__equal eq x1 x2 && conditional__equal eq y1 y2
-	| _, _ ->
-		false
+    | Unconditional x1, Unconditional x2 ->
+        eq x1 x2
+    | IfThenElse (g1, x1, y1), IfThenElse (g2, x2, y2) ->
+        guard__equal g1 g2 && conditional__equal eq x1 x2 && conditional__equal eq y1 y2
+    | _, _ ->
+        false
 
 and bytes__equal bytes1 bytes2 = if bytes1 == bytes2 then true else match bytes1, bytes2 with
-	| Bytes_Constant c, b
-	| b, Bytes_Constant c ->
-		bytes__equal b (constant_to_bytes c)
-	| Bytes_ByteArray a1, Bytes_ByteArray a2 ->
-		ImmutableArray.equal byte__equal a1 a2
-	| Bytes_Address(b1, off1),Bytes_Address(b2, off2) ->
-		block__equal b1 b2 && bytes__equal off1 off2
-	| Bytes_Op (op1, operands1), Bytes_Op (op2, operands2) ->
-		op1 = op2 && List.for_all2 (fun (b1, _) (b2, _) -> bytes__equal b1 b2) operands1 operands2
-	| Bytes_Read (b1, off1, s1), Bytes_Read (b2, off2, s2) ->
-		s1 = s2 && bytes__equal b1 b2 && bytes__equal off1 off2
-	| Bytes_Write (old1, off1, s1, new1), Bytes_Write (old2, off2, s2, new2) ->
-		s1 = s2 && bytes__equal old1 old2 && bytes__equal off1 off2 && bytes__equal new1 new2
-	| Bytes_FunPtr f1, Bytes_FunPtr f2 ->
-		CilData.CilVar.equal f1 f2
-	| Bytes_Conditional c1, Bytes_Conditional c2 ->
-		conditional__equal bytes__equal c1 c2
-	| _, _ ->
-		false
+    | Bytes_Constant c, b
+    | b, Bytes_Constant c ->
+        bytes__equal b (constant_to_bytes c)
+    | Bytes_ByteArray a1, Bytes_ByteArray a2 ->
+        ImmutableArray.equal byte__equal a1 a2
+    | Bytes_Address(b1, off1),Bytes_Address(b2, off2) ->
+        block__equal b1 b2 && bytes__equal off1 off2
+    | Bytes_Op (op1, operands1), Bytes_Op (op2, operands2) ->
+        op1 = op2 && List.for_all2 (fun (b1, _) (b2, _) -> bytes__equal b1 b2) operands1 operands2
+    | Bytes_Read (b1, off1, s1), Bytes_Read (b2, off2, s2) ->
+        s1 = s2 && bytes__equal b1 b2 && bytes__equal off1 off2
+    | Bytes_Write (old1, off1, s1, new1), Bytes_Write (old2, off2, s2, new2) ->
+        s1 = s2 && bytes__equal old1 old2 && bytes__equal off1 off2 && bytes__equal new1 new2
+    | Bytes_FunPtr f1, Bytes_FunPtr f2 ->
+        CilData.CilVar.equal f1 f2
+    | Bytes_Conditional c1, Bytes_Conditional c2 ->
+        conditional__equal bytes__equal c1 c2
+    | _, _ ->
+        false
 
 and block__equal = BlockType.equal
 
 
 let rec bytes__length bytes =
-	match bytes with
-		| Bytes_Constant (constant) -> (Cil.bitsSizeOf (Cil.typeOf (Const(constant))))/8
-		| Bytes_ByteArray (bytearray) -> ImmutableArray.length bytearray
-		| Bytes_Address (_,_)-> bitsSizeOf voidPtrType / 8
-		| Bytes_Op (op,(bytes2,typ)::tail) -> bytes__length bytes2
-		| Bytes_Op (op,[]) -> 0 (* reachable from diff_bytes *)
-		| Bytes_Write(bytes2,_,_,_) -> bytes__length bytes2
-		| Bytes_Read(_,_,len) -> len
-		| Bytes_FunPtr(_) -> bitsSizeOf voidPtrType / 8
-		| Bytes_Conditional c ->
-			(* all bytes in Bytes_Conditional have the same length *)
-			let rec find_one = function
-				| IfThenElse (_, c1, c2) -> max (find_one c1) (find_one c2)
-				| Unconditional b -> bytes__length b
-			in
-			find_one c
+    match bytes with
+        | Bytes_Constant (constant) -> (Cil.bitsSizeOf (Cil.typeOf (Const(constant))))/8
+        | Bytes_ByteArray (bytearray) -> ImmutableArray.length bytearray
+        | Bytes_Address (_,_)-> bitsSizeOf voidPtrType / 8
+        | Bytes_Op (op,(bytes2,typ)::tail) -> bytes__length bytes2
+        | Bytes_Op (op,[]) -> 0 (* reachable from diff_bytes *)
+        | Bytes_Write(bytes2,_,_,_) -> bytes__length bytes2
+        | Bytes_Read(_,_,len) -> len
+        | Bytes_FunPtr(_) -> bitsSizeOf voidPtrType / 8
+        | Bytes_Conditional c ->
+            (* all bytes in Bytes_Conditional have the same length *)
+            let rec find_one = function
+                | IfThenElse (_, c1, c2) -> max (find_one c1) (find_one c2)
+                | Unconditional b -> bytes__length b
+            in
+            find_one c
 
 
 (**
- *	byte 
+ *    byte
  *)
 let byte__make c = make_Byte_Concrete c
 let byte__zero = byte__make ('\000')
@@ -700,54 +702,54 @@ let byte__111 = byte__make ('\255')
 
 
 (**
- *	bytes
+ *  bytes
  *)
 let bytes__zero = make_Bytes_Constant(Cil.CInt64(0L,IInt,None))
 let bytes__one = make_Bytes_Constant(Cil.CInt64(1L,IInt,None))
-let bytes__of_list (lst: byte list) =	make_Bytes_ByteArray (ImmutableArray.of_list lst) 
+let bytes__of_list (lst: byte list) =    make_Bytes_ByteArray (ImmutableArray.of_list lst)
 let bytes__make_default n byte = make_Bytes_ByteArray(ImmutableArray.make n byte)
 let bytes__make n = bytes__make_default n byte__zero
 
 
 let bytes__symbolic n =
-	let rec impl len = 
-		if len <= 0 then [] else (make_Byte_Symbolic ())::(impl (len-1))
-	in
-		bytes__of_list (impl n)
+    let rec impl len =
+        if len <= 0 then [] else (make_Byte_Symbolic ())::(impl (len-1))
+    in
+        bytes__of_list (impl n)
 
 
 let rec bytes__get_byte bytes i : byte =
-	match bytes with
-		| Bytes_Constant (constant) ->  bytes__get_byte (constant_to_bytes constant) i
-		| Bytes_ByteArray (bytearray) -> ImmutableArray.get bytearray i 
-		| _ -> make_Byte_Bytes(bytes,i)
+    match bytes with
+        | Bytes_Constant (constant) ->  bytes__get_byte (constant_to_bytes constant) i
+        | Bytes_ByteArray (bytearray) -> ImmutableArray.get bytearray i
+        | _ -> make_Byte_Bytes(bytes,i)
 
 
 
 (** Is a bytes 0, 1, or an expression that must be 0 or 1? *)
 let isBoolean = function
-	| Bytes_Op(op,_) when returnsBoolean op -> true
-	| Bytes_Constant (Cil.CInt64 ((0L|1L),_,_)) -> true
-	(* Is it worth testing for a Bytes_ByteArray representing 0 or 1? *)
-	| _ -> false
+    | Bytes_Op(op,_) when returnsBoolean op -> true
+    | Bytes_Constant (Cil.CInt64 ((0L|1L),_,_)) -> true
+    (* Is it worth testing for a Bytes_ByteArray representing 0 or 1? *)
+    | _ -> false
 
 (** Returns a bytes equivalent to !!x, but only adds the double negation if
-	necessary to ensure a boolean value. *)
+    necessary to ensure a boolean value. *)
 let asBoolean bytes =
-	if isBoolean bytes
-	then bytes (* bytes is already boolean-valued *)
-	(* The result of a '!' is an int [Standard 6.5.3.3.5]; hence, the
-		[Cil.intType] below. The [Cil.voidType] is there just as a
-		placeholder, because LNOT doesn't actually care about its
-		argument's type. Actually, this means that we don't really need
-		the intType at all; we could be use voidType in both places. *)
-	else make_Bytes_Op(OP_LNOT,[(make_Bytes_Op(OP_LNOT,[(bytes,Cil.voidType)]),Cil.intType)])
+    if isBoolean bytes
+    then bytes (* bytes is already boolean-valued *)
+    (* The result of a '!' is an int [Standard 6.5.3.3.5]; hence, the
+        [Cil.intType] below. The [Cil.voidType] is there just as a
+        placeholder, because LNOT doesn't actually care about its
+        argument's type. Actually, this means that we don't really need
+        the intType at all; we could be use voidType in both places. *)
+    else make_Bytes_Op(OP_LNOT,[(make_Bytes_Op(OP_LNOT,[(bytes,Cil.voidType)]),Cil.intType)])
 
 (** Remove a NOT from a bytes, if doing so leaves it boolean. Otherwise, add a
-	NOT. *)
+    NOT. *)
 let logicalNot = function
-	| Bytes_Op(OP_LNOT,[bytes,_]) when isBoolean bytes -> bytes
-	| bytes -> make_Bytes_Op(OP_LNOT,[(bytes, Cil.intType)])
+    | Bytes_Op(OP_LNOT,[bytes,_]) when isBoolean bytes -> bytes
+    | bytes -> make_Bytes_Op(OP_LNOT,[(bytes, Cil.intType)])
 
 
 (**
@@ -756,10 +758,10 @@ let logicalNot = function
 let guard__and_not g1 g2 = guard__and g1 (guard__not g2)
 
 let guard__to_bytes = function
-	| Guard_True -> bytes__one
-	| Guard_Not Guard_True -> bytes__zero
-	| Guard_Bytes b -> b
-	| g -> make_Bytes_Conditional (IfThenElse (g, Unconditional bytes__one, Unconditional bytes__zero))
+    | Guard_True -> bytes__one
+    | Guard_Not Guard_True -> bytes__zero
+    | Guard_Bytes b -> b
+    | g -> make_Bytes_Conditional (IfThenElse (g, Unconditional bytes__one, Unconditional bytes__zero))
 
 
 (**
@@ -840,7 +842,7 @@ let conditional__fold_map ?test ?eq ?pre fold_map acc source =
     @return ['acc] the final accumulator
 *)
 let conditional__fold ?test ?pre fold acc source =
-	fst (conditional__fold_map ?test ?pre (fun acc pre x -> (fold acc pre x, Unconditional x)) acc source)
+    fst (conditional__fold_map ?test ?pre (fun acc pre x -> (fold acc pre x, Unconditional x)) acc source)
 
 
 (** Map over the leaves of conditionals.
@@ -852,7 +854,7 @@ let conditional__fold ?test ?pre fold acc source =
     @return ['target conditional] the mapped conditional
 *)
 let conditional__map ?test ?eq ?pre map source =
-	snd (conditional__fold_map ?test ?eq ?pre (fun () _ x -> ((), map x)) () source)
+    snd (conditional__fold_map ?test ?eq ?pre (fun () _ x -> ((), map x)) () source)
 
 
 (** Prune the leaves of conditionals.
@@ -873,20 +875,24 @@ let conditional__prune ~test ?eq ?pre acc source =
     @return ['item conditional] a conditional tree of items
 *)
 let conditional__from_list list =
-	ListPlus.foldm (fun x y -> IfThenElse (guard__symbolic (), x, y)) list
+    ListPlus.foldm (fun x y -> IfThenElse (guard__symbolic (), x, y)) list
 
 
 let conditional__bytes = function
-	| Bytes_Conditional c -> c
-	| b -> Unconditional b
+    | Bytes_Conditional c -> c
+    | b -> Unconditional b
 
 
 let conditional__lval_block l =
-	Unconditional l
+    Unconditional l
 
+
+(**
+ *  Command-line options
+ *)
 let options = [
-	("--no-hash-consing",
-		Arg.Unit disable_hash_consing,
-		" Do not use hash consing in creating bytes\n");
+    ("--no-hash-consing",
+        Arg.Unit disable_hash_consing,
+        " Do not use hash consing in creating bytes\n");
 ]
 
