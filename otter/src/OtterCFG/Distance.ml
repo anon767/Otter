@@ -134,12 +134,13 @@ end
 
 let find = 
     let module Memo = Memo.Make (struct
-        type t = Instruction.t * (Instruction.t list)
-        let equal (i1, l1) (i2, l2) = 
-            Instruction.equal i1 i2 && 
-            List.length l1 = List.length l2 && 
-            List.fold_left2 (fun b i1 i2 -> Instruction.equal i1 i2 && b) true l1 l2
-        let hash (i, l) = Instruction.hash i + List.fold_left (fun h i -> h + Instruction.hash i) 0 l
+        module InstructionList = ListPlus.MakeHashedList (Instruction)
+        type t = Instruction.t * Instruction.t list
+        let equal (instruction, targets) (instruction', targets') =
+            Instruction.equal instruction instruction'
+            && InstructionList.equal targets targets'
+        let hash (instruction, targets) =
+            Hashtbl.hash (Instruction.hash instruction, InstructionList.hash targets)
     end) in
     Memo.memo "Distance.find" (fun (instr, targets) ->
         Profiler.global#call "Distance.find" begin fun () ->
@@ -151,16 +152,16 @@ let find =
 
 let find_in_context =
     let module Memo = Memo.Make (struct
-        type t = Instruction.t * (Instruction.t list) * (Instruction.t list)
-        let equal (i1, c1, l1) (i2, c2, l2) = 
-            Instruction.equal i1 i2 && 
-            List.length c1 = List.length c2 && 
-            List.fold_left2 (fun b i1 i2 -> Instruction.equal i1 i2 && b) true c1 c2 
-            && List.length l1 = List.length l2 
-            && List.fold_left2 (fun b i1 i2 -> Instruction.equal i1 i2 && b) true l1 l2
-        let hash (i, c, l) = Instruction.hash i + List.fold_left (fun h i -> h + Instruction.hash i) 0 c + List.fold_left (fun h i -> h + Instruction.hash i) 0 l
+        module InstructionList = ListPlus.MakeHashedList (Instruction)
+        type t = Instruction.t * Instruction.t list * Instruction.t list
+        let equal (instruction, context, targets) (instruction', context', targets') =
+            Instruction.equal instruction instruction'
+            && InstructionList.equal context context'
+            && InstructionList.equal targets targets'
+        let hash (instruction, context, targets) =
+            Hashtbl.hash (Instruction.hash instruction, InstructionList.hash context, InstructionList.hash targets)
     end) in
-    Memo.memo "Distance.find_in_context" (fun (instr, context, targets) ->
+    Memo.memo "Distance.find_in_context" begin fun (instr, context, targets) ->
         Profiler.global#call "Distance.find_in_context" begin fun () ->
             (* compute the distance from the instr through function returns to targets in the call context *)
             let rec unwind dist return_dist = function
@@ -183,5 +184,6 @@ let find_in_context =
             let dist = find (instr, targets) in
             let return_dist = find_return instr in
             unwind dist return_dist context
-        end)
+        end
+    end
     
