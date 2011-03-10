@@ -350,7 +350,7 @@ let printPath job =
                               (function
                                    | Byte_Symbolic s ->
                                          (try
-                                              let valueForS = List.assq s valuesForSymbols in
+                                              let valueForS = List.assoc s valuesForSymbols in
                                               (* Now s is bound *)
                                               unboundSymbols := Stp.SymbolSet.remove s !unboundSymbols;
                                               Some (make_Byte_Concrete valueForS)

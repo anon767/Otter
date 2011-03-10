@@ -603,13 +603,16 @@ let getValues pathCondition symbolList =
         let counter_example = (Stpc.get_counterexample vc bv) in
         (s, Char.chr (Stpc.int_of_e counter_example))
     in
-    try UnixPlus.fork_call ~time_limit:(!arg_max_stp_time) begin fun () ->
+    let doit () =
         if Stpc.query vc negatedPcExpr then
             FormatPlus.failwith "The path condition is unsatisfiable!@\n@[  %a@]" (FormatPlus.pp_print_list BytesPrinter.bytes "@\nAND@\n  ") pathCondition;
-        Some (List.map getOneVal (List.rev symbolList))
-    end
-    with UnixPlus.ForkCallTimedOut ->
-        None
+        List.map getOneVal (List.rev symbolList)
+    in
+    if (!arg_max_stp_time) < 0.0
+    then Some (doit ())
+    else
+        try UnixPlus.fork_call ~time_limit:(!arg_max_stp_time) (fun () -> Some (doit ()))
+        with UnixPlus.ForkCallTimedOut -> None
 
 
 let getAllValues pathCondition =
