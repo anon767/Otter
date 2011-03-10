@@ -71,8 +71,7 @@ end = struct
             | 0 ->
                 begin match CilData.CilFundec.compare x.fundec y.fundec with
                     | 0 ->
-                        (* Note that this relies on Cil.computeCFGInfo, called in OtterCore.Core.prepare_file. *)
-                        begin match Pervasives.compare x.stmt.Cil.sid y.stmt.Cil.sid with
+                        begin match CilData.CilStmt.compare x.stmt y.stmt with
                             | 0 ->
                                 (* Instructions are compared by length only, since Otter may mutate the instruction. *)
                                 if x.instrs == y.instrs then
@@ -93,7 +92,7 @@ end = struct
 
     (** Compute a hash for an instruction. *)
     let hash { file = file; fundec = fundec; stmt = stmt; instrs = instrs } =
-        Hashtbl.hash (file, fundec, stmt, List.length instrs)
+        Hashtbl.hash (CilData.CilFile.hash file, CilData.CilFundec.hash fundec, CilData.CilStmt.hash stmt, List.length instrs)
 end
 
 include T

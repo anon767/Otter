@@ -109,6 +109,18 @@ module CilLhost = struct
     let equal x y = compare x y = 0
 end
 
+module CilStmt = struct
+    type t = Cil.stmt
+    (* these are only valid if the stmt is not modified in any way; there's no way to detect mutation *)
+    let compare x y =
+        (* compare sids first, if they're set by, e.g., Cil.computeCFGInfo. *)
+        match Pervasives.compare x.Cil.sid y.Cil.sid with
+            | 0 -> Pervasives.compare x y
+            | i -> i
+    let hash = Hashtbl.hash
+    let equal x y = compare x y = 0
+end
+
 module CilExp = struct
     type t = Cil.exp
     let compare = Pervasives.compare
