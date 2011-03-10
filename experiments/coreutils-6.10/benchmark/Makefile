@@ -48,3 +48,16 @@ distclean:
 	$(RM) $(coreutils)/benchmark/{libcoreutils_functions,runotter,runbackotter}
 	$(MAKE) -C $(coreutils) distclean
 
+
+# A ultimate target that builds everything (otter, newlib and coreutils)
+universe:
+	svn up $(trunk)
+	make -C $(trunk)
+	make -C $(newlib) distclean
+	-rm $(newlib)/../build* # Sometimes these directories are not removed by the distclean above
+	make -C $(newlib) 
+	make -C $(newlib) native
+	make -C $(newlib) list
+	make distclean
+	make
+
