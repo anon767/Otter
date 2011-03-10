@@ -9,7 +9,7 @@ fi
 otter_flavor=$1
 base="$2"
 exp_name="$(echo $3|sed 's/ /_/g')"
-exp_base="$base/${otter_flavor}_$(date "+%Y_%m_%d_%H")_$exp_name"
+exp_base="$base/${otter_flavor}_$exp_name"
 ottercmd="$(pwd)/run$otter_flavor"
 
 programs_dir="$4"
@@ -19,14 +19,25 @@ options_in="$6"
 mkdir -p "$exp_base"
 chmod 755 "$exp_base"
 
-cat $programs_in | while read prog_opt
+config="$exp_base/config.log"
+
+echo "Options used to generate this test suite:" >> $config
+echo "$*" >> $config
+echo "" >> $config
+echo "Program settings in $programs_in:" >> $config
+cat "$programs_in" >> $config
+echo "" >> $config
+echo "Option settings in $options_in:" >> $config
+cat "$options_in" >> $config
+
+cat "$programs_in" | while read prog_opt
 do 
     prog=$(echo $prog_opt|sed 's/\(.*\.c\).*|.*/\1/')
     prog_opt=$(echo $prog_opt|sed 's/.*\.c.*|\(.*\)/\1/')
     if [ "$(echo $prog | sed '/^[ ]*#/d')" ]; then echo "Process $prog with options $prog_opt"; else continue; fi
     prog="$programs_dir/$prog"
     options_id=1
-    cat $options_in | while read options
+    cat "$options_in" | while read options
     do 
         if [ "$(echo $options | sed '/^[ ]*#/d')" ]; then echo "Process $options"; else continue; fi
         options="$prog_opt $options"
