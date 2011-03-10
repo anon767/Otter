@@ -327,74 +327,76 @@ let printPath job =
     let pc_all = state.path_condition in
     let pc_branch,pc_assume = eliminate_untracked state.path_condition in
 
-	Output.printf "Path condition for job %d:@\n  @[%a@]@\n@." job#path_id
-		(FormatPlus.pp_print_list (BytesPrinter.bytes_named hist.bytesToVars) "@\n") pc_branch;
-	Output.printf "Path condition (ASSUMEs):@\n  @[%a@]@\n@."
-		(FormatPlus.pp_print_list (BytesPrinter.bytes_named hist.bytesToVars) "@\n") pc_assume;
+    Output.printf "Path condition for job %d:@\n  @[%a@]@\n@." job#path_id
+        (FormatPlus.pp_print_list (BytesPrinter.bytes_named hist.bytesToVars) "@\n") pc_branch;
+    Output.printf "Path condition (ASSUMEs):@\n  @[%a@]@\n@."
+        (FormatPlus.pp_print_list (BytesPrinter.bytes_named hist.bytesToVars) "@\n") pc_assume;
 
-	let mentionedSymbols = Stp.allSymbolsInList pc_branch in
-	let valuesForSymbols = Stp.getValues pc_all (Stp.SymbolSet.elements mentionedSymbols) in
+    let mentionedSymbols = Stp.allSymbolsInList pc_branch in
+    let valuesForSymbols = Stp.getValues pc_all (Stp.SymbolSet.elements mentionedSymbols) in
+    match valuesForSymbols with
+      | None -> Output.printf "@[Unable to generate sample value@\n@]@.";
+      | Some valuesForSymbols ->
+            (* Keep track of which symbols we haven't given values to.
+               This would happen if there are untracked symbolic values in the
+               path condition. *)
+            let unboundSymbols = ref mentionedSymbols in
 
-	(* Keep track of which symbols we haven't given values to.
-		 This would happen if there are untracked symbolic values in the
-		 path condition. *)
-	let unboundSymbols = ref mentionedSymbols in
+            (* Get the value of a symbolic make_ByteArray *)
+            let getVal = function
+                | Bytes_ByteArray bytArr ->
+                      let byteOptArray =
+                          ImmutableArray.map
+                              (function
+                                   | Byte_Symbolic s ->
+                                         (try
+                                              let valueForS = List.assq s valuesForSymbols in
+                                              (* Now s is bound *)
+                                              unboundSymbols := Stp.SymbolSet.remove s !unboundSymbols;
+                                              Some (make_Byte_Concrete valueForS)
+                                          with Not_found -> None)
+                                   | _ -> failwith "Impossible: tracked symbolic value must be fully symbolic")
+                              bytArr
+                      in
+                      if ImmutableArray.exists (* Check if any byte is constrained *)
+                          (function Some _ -> true | _ -> false)
+                          byteOptArray
+                      then (
+                          (* Fill in unconstrained bytes with 0, and return a Some with that bytearray. *)
+                          Some (ImmutableArray.map (function Some b -> b | None -> byte__zero) byteOptArray)
+                      ) else (
+                          (* Return None for a totally unconstrained value *)
+                          None
+                      )
+                | _ -> failwith "Impossible: symbolic bytes must be a ByteArray"
+            in
 
-	(* Get the value of a symbolic make_ByteArray *)
-	let getVal = function
-		| Bytes_ByteArray bytArr ->
-				let byteOptArray =
-					ImmutableArray.map
-						(function
-							 | Byte_Symbolic s ->
-									 (try
-											let valueForS = List.assq s valuesForSymbols in
-											(* Now s is bound *)
-											unboundSymbols := Stp.SymbolSet.remove s !unboundSymbols;
-											Some (make_Byte_Concrete valueForS)
-										with Not_found -> None)
-							 | _ -> failwith "Impossible: tracked symbolic value must be fully symbolic")
-						bytArr
-				in
-				if ImmutableArray.exists (* Check if any byte is constrained *)
-					(function Some _ -> true | _ -> false)
-					byteOptArray
-				then (
-					(* Fill in unconstrained bytes with 0, and return a Some with that bytearray. *)
-					Some (ImmutableArray.map (function Some b -> b | None -> byte__zero) byteOptArray)
-				) else (
-					(* Return None for a totally unconstrained value *)
-					None
-				)
-		| _ -> failwith "Impossible: symbolic bytes must be a ByteArray"
-	in
+            Output.printf "@[Sample value:@\n";
+            List.iter
+                (fun (bytes,varinf) ->
+                     match getVal bytes with
+                       | None -> () (* Don't print anything for an unconstrained value *)
+                       | Some concreteByteArray ->
+                             match varinf.vtype with
+                               | TArray _ ->
+                                     Output.printf "%s@,=@[%a@]@\n" varinf.vname BytesPrinter.bytearray concreteByteArray
+                               | _ ->
+                                     match bytes_to_constant (make_Bytes_ByteArray concreteByteArray) varinf.vtype with
+                                       | CInt64 (n,_,_) ->
+                                             (* Is it okay to ignore the type? Or might we have to truncate? *)
+                                             Output.printf "%s@,=%Ld@\n" varinf.vname n
+                                       | _ -> failwith "Unimplemented: non-integer symbolic")
+                (List.rev hist.bytesToVars);
 
-    Output.printf "@[Sample value:@\n";
-    List.iter
-        (fun (bytes,varinf) ->
-            match getVal bytes with
-              | None -> () (* Don't print anything for an unconstrained value *)
-              | Some concreteByteArray ->
-                    match varinf.vtype with
-                      | TArray _ ->
-                            Output.printf "%s@,=@[%a@]@\n" varinf.vname BytesPrinter.bytearray concreteByteArray
-                      | _ ->
-                            match bytes_to_constant (make_Bytes_ByteArray concreteByteArray) varinf.vtype with
-                              | CInt64 (n,_,_) ->
-                                    (* Is it okay to ignore the type? Or might we have to truncate? *)
-                                    Output.printf "%s@,=%Ld@\n" varinf.vname n
-                              | _ -> failwith "Unimplemented: non-integer symbolic")
-        (List.rev hist.bytesToVars);
-
-	(* Check to see if we've bound all of the symbols in the path condition *)
-	if not (Stp.SymbolSet.is_empty !unboundSymbols)
-	then (
-		Output.printf "but these symbolic values are unaccounted for by tracked variables:@\n";
-		Stp.SymbolSet.iter
-			(fun s -> Output.printf "%d " s.symbol_id)
-			!unboundSymbols
-	);
-	Output.printf "@]@."
+            (* Check to see if we've bound all of the symbols in the path condition *)
+            if not (Stp.SymbolSet.is_empty !unboundSymbols)
+            then (
+                Output.printf "but these symbolic values are unaccounted for by tracked variables:@\n";
+                Stp.SymbolSet.iter
+                    (fun s -> Output.printf "%d " s.symbol_id)
+                    !unboundSymbols
+            );
+            Output.printf "@]@."
 
 let printLine ff (file,lineNum) = Format.fprintf ff "%s:%d" file lineNum
 let printEdge ff (srcStmtInfo,destStmtInfo) = Format.fprintf ff "%a -> %a" printStmtInfo srcStmtInfo printStmtInfo destStmtInfo
