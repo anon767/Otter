@@ -165,7 +165,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                         if failing_paths_length = 0 then
                             jid_to_job, jid_to_bounding_paths, bounded_jobqueue (* Not a target function *)
                         else
-                            let _ = Output.debug_printf "Call target function %s@." fundec.svar.vname in
+                            let _ = Output.must_printf "Call target function %s@." fundec.svar.vname in
                             let bounded_job = job#with_jid_unique (Counter.next Job.job_counter_unique) in
                             let _ = Output.debug_printf "Add job_unique %d into the bounded_jobqueue@." bounded_job#jid_unique in
                             JidMap.add bounded_job#jid_unique bounded_job jid_to_job,
