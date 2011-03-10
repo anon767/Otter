@@ -731,10 +731,12 @@ int connect(int socket_fd, const struct sockaddr *address, socklen_t address_len
 	
 	for(int i = 0; i < best_sock->backlog + 1; i++)
 	{
+		__otter_multi_begin_atomic();
 		if(best_sock->sock_queue[i] == NULL)
 		{
 			best_sock->sock_queue[i] = sock;
-			
+			__otter_multi_end_atomic();
+
 			struct __otter_fs_open_file_table_entry* open_file = get_open_file_from_fd(socket_fd);
 			if(sock->state == __otter_sock_ST_SYN_SENT && open_file->mode & O_NONBLOCK)
 			{
@@ -753,6 +755,8 @@ int connect(int socket_fd, const struct sockaddr *address, socklen_t address_len
 				errno = ECONNREFUSED;
 				return(-1);
 			}
+		} else {
+			__otter_multi_end_atomic();
 		}
 	}
 	
