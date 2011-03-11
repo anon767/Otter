@@ -389,10 +389,16 @@ int bind(int socket_fd, const struct sockaddr *address, socklen_t address_len)
 
 	/* look for a conflict with the address (already assigned and not SO_REUSEADDR) */
 	int addr_used = 0;
-	
-	for(int i = 0; i < __otter_fs_MAXOPEN; i++)
+
+	__otter_multi_begin_atomic();
+	for(int i = 0; i < __otter_fs_MAX_OPEN_FILES; i++)
 	{
-		struct __otter_fs_sock_data* other = __otter_libc_get_sock_data(__otter_fs_fd_table[i]);
+		/* look for sockets. If the entry is not actually open or is not a socket, skip it. */
+		struct __otter_fs_open_file_table_entry* open_file = &__otter_fs_open_file_table[i];
+		if(open_file->openno == 0 || open_file->type != __otter_fs_TYP_SOCK)
+			continue;
+		
+		struct __otter_fs_sock_data* other = __otter_libc_get_sock_data_from_open_file(open_file);
 		if(other == NULL) /* this was not a socket */
 		{
 			continue;
@@ -420,6 +426,7 @@ int bind(int socket_fd, const struct sockaddr *address, socklen_t address_len)
 			}
 		}
 	}
+	__otter_multi_end_atomic();
 
 	if(addr_used)
 	{
@@ -546,7 +553,6 @@ int accept(int socket_fd, struct sockaddr *address, socklen_t *address_len)
 				break;
 			}
 			int fd = socket(sock->addr->sa_family, SOCK_STREAM, 0);
-			__otter_multi_begin_atomic();
 			if(fd == -1) /* failed to allocate new file descriptor */
 			{
 				__otter_sock_pop_queue(sock->sock_queue, sock->backlog + 1);
@@ -686,12 +692,13 @@ int connect(int socket_fd, const struct sockaddr *address, socklen_t address_len
 	__otter_multi_begin_atomic();
 	int q_size = 0;
 	struct __otter_fs_sock_data* best_sock = NULL;
-	for(int i = 0; i < __otter_fs_GLOBALMAXOPEN; i++)
+	for(int i = 0; i < __otter_fs_MAX_OPEN_FILES; i++)
 	{
-		/* look for listening sockets */
-		if(__otter_fs_open_file_table[i].type != __otter_fs_TYP_SOCK)
+		/* look for listening sockets. If the entry is not actually open or is not a socket, skip it. */
+		struct __otter_fs_open_file_table_entry* open_file = &__otter_fs_open_file_table[i];
+		if(open_file->openno == 0 || open_file->type != __otter_fs_TYP_SOCK)
 			continue;
-		struct __otter_fs_sock_data* recv = __otter_libc_get_sock_data_from_open_file(__otter_fs_open_file_table + i);
+		struct __otter_fs_sock_data* recv = __otter_libc_get_sock_data_from_open_file(open_file);
 		if(recv->state != __otter_sock_ST_LISTEN)
 			continue;
 		
@@ -727,11 +734,9 @@ int connect(int socket_fd, const struct sockaddr *address, socklen_t address_len
 	sock->sock_queue = __otter_multi_gcalloc(1, sizeof(struct __otter_fs_sock_data*));
 	sock->recv_data = __otter_fs_init_new_pipe_data();
 	sock->sock_queue[0] = best_sock;
-	__otter_multi_end_atomic();
 	
 	for(int i = 0; i < best_sock->backlog + 1; i++)
 	{
-		__otter_multi_begin_atomic();
 		if(best_sock->sock_queue[i] == NULL)
 		{
 			best_sock->sock_queue[i] = sock;
@@ -755,11 +760,10 @@ int connect(int socket_fd, const struct sockaddr *address, socklen_t address_len
 				errno = ECONNREFUSED;
 				return(-1);
 			}
-		} else {
-			__otter_multi_end_atomic();
 		}
 	}
 	
+	__otter_multi_end_atomic();
 	errno = ECONNREFUSED;
 	return(-1);
 }

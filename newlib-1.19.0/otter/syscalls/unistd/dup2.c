@@ -6,7 +6,7 @@
 
 int dup2(int fd1, int fd2)
 {
-	if(fd2 < 0 || fd2 >= __otter_fs_MAXOPEN)
+	if(fd2 < 0 || fd2 >= __otter_fs_MAX_FDS)
 	{
 		errno = EBADF;
 		return(-1);

@@ -49,7 +49,7 @@ struct __otter_fs_dnode* find_filename_and_dnode(const char* path, char** basena
 		refers to, or returns null if the file descriptor is invalid. */
 struct __otter_fs_open_file_table_entry* get_open_file_from_fd(int fd)
 {
-	if(fd < 0 || fd >= __otter_fs_MAXOPEN)
+	if(fd < 0 || fd >= __otter_fs_MAX_FDS)
 	{
 		errno = EBADF;
 		return NULL;

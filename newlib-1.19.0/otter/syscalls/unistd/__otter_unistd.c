@@ -629,9 +629,9 @@ int fork()
 
 	if(__otter_fs_open_file_table)
 	{
-		for(int i = 0; i < __otter_fs_MAXOPEN; i++)
+		for(int fd = 0; fd < __otter_fs_MAX_FDS; fd++)
 		{
-			open_file = get_open_file_from_fd(i);
+			open_file = get_open_file_from_fd(fd);
 			if(open_file)
 			{
 				open_file->openno++;

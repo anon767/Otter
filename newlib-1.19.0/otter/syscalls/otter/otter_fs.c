@@ -531,10 +531,10 @@ int __otter_fs_link_dir(const char* name, struct __otter_fs_dnode* target, struc
 /* first free file descriptor */
 int __otter_fs_next_fd()
 {
-	for(int i = 0; i < __otter_fs_MAXOPEN; i++)
+	for(int fd = 0; fd < __otter_fs_MAX_FDS; fd++)
 	{
-		if(__otter_fs_fd_table[i] == -1)
-			return (i);
+		if(__otter_fs_fd_table[fd] == -1)
+			return (fd);
 	}
 
 	return (-1);
@@ -543,10 +543,10 @@ int __otter_fs_next_fd()
 /* first free file greater than arg */
 int __otter_fs_more_fd(int arg)
 {
-	for(int i = arg; i < __otter_fs_MAXOPEN; i++)
+	for(int fd = arg; fd < __otter_fs_MAX_FDS; fd++)
 	{
-		if(__otter_fs_fd_table[i] == -1)
-			return (i);
+		if(__otter_fs_fd_table[fd] == -1)
+			return (fd);
 	}
 
 	return (-1);
@@ -555,7 +555,7 @@ int __otter_fs_more_fd(int arg)
 /* first free file table entry */
 int __otter_fs_next_global_fd()
 {
-	for(int i = 0; i < __otter_fs_GLOBALMAXOPEN; i++)
+	for(int i = 0; i < __otter_fs_MAX_OPEN_FILES; i++)
 	{
 		if(__otter_fs_open_file_table[i].openno == 0)
 			return (i);
@@ -780,10 +780,9 @@ void __otter_fs_mount()
 	__otter_fs_pwd = wrk;
 
 	/* mark all file descriptors and file table entries as unused */
-	__otter_fs_fd_table = malloc(sizeof(int)*__otter_fs_MAXOPEN); /* local */
-	memset(__otter_fs_fd_table, -1, __otter_fs_MAXOPEN*sizeof(int));
-	__otter_fs_open_file_table = __otter_multi_gmalloc(sizeof(struct __otter_fs_open_file_table_entry)*__otter_fs_GLOBALMAXOPEN);
-	memset(__otter_fs_open_file_table, 0, __otter_fs_GLOBALMAXOPEN*sizeof(struct __otter_fs_open_file_table_entry));
+	__otter_fs_fd_table = malloc(sizeof(int)*__otter_fs_MAX_FDS); /* local */
+	memset(__otter_fs_fd_table, -1, __otter_fs_MAX_FDS*sizeof(int));
+	__otter_fs_open_file_table = __otter_multi_gcalloc(sizeof(struct __otter_fs_open_file_table_entry), __otter_fs_MAX_OPEN_FILES);
 }
 
 void __otter_fs_init_stdin_out_err() {
