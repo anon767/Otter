@@ -1,20 +1,25 @@
 #!/bin/sh
 
-if [ $# -ne 6 ]
+if [ $# -ne 5 ]
 then
-    echo "Usage: ./setup_tests.sh <otter-flavor> <output-directory> <experiment-name> <programs_source_dir> <programs.in> <options.in>"
+    echo "Usage: ./setup_tests.sh <output_dir> <experiment_name> <trunk_dir> <programs_list> <commands_list>"
     exit 1
 fi
 
-otter_flavor=$1
-base="$2"
-exp_name="$(echo $3|sed 's/ /_/g')"
-exp_base="$base/${otter_flavor}_$exp_name"
-ottercmd="$(pwd)/run$otter_flavor"
+base="$1"
+exp_name="$(echo $2|sed 's/ /_/g')"
+exp_base="$base/$exp_name"
 
-programs_dir="$4"
-programs_in="$5"
-options_in="$6"
+trunk_dir="$3"
+programs_in="$4"
+options_in="$5"
+
+function add_trunk { 
+    echo $1 | sed "s:@TRUNK@:$trunk_dir:g" 
+}
+function not_comment { 
+    echo $1 | sed '/^[ ]*#/d' 
+}
 
 mkdir -p "$exp_base"
 chmod 755 "$exp_base"
@@ -22,33 +27,31 @@ chmod 755 "$exp_base"
 config="$exp_base/config.log"
 
 echo "Options used to generate this test suite:" >> $config
-echo "$*" >> $config
-echo "" >> $config
-echo "Program settings in $programs_in:" >> $config
-cat "$programs_in" >> $config
-echo "" >> $config
-echo "Option settings in $options_in:" >> $config
-cat "$options_in" >> $config
+echo "$*"                                        >> $config
+echo                                             >> $config
+echo "Program settings in $programs_in:"         >> $config
+cat  "$programs_in"                              >> $config
+echo                                             >> $config
+echo "Option settings in $options_in:"           >> $config
+cat  "$options_in"                               >> $config
 
 cat "$programs_in" | while read prog_opt
 do 
-    prog=$(echo $prog_opt|sed 's/\(.*\.c\).*|.*/\1/')
-    prog_opt=$(echo $prog_opt|sed 's/.*\.c.*|\(.*\)/\1/')
-    if [ "$(echo $prog | sed '/^[ ]*#/d')" ]; then echo "Process $prog with options $prog_opt"; else continue; fi
-    prog="$programs_dir/$prog"
+    if [ "$(not_comment "$prog_opt")" ]; then echo "Process $prog_opt"; else continue; fi
+    prog_opt=$(add_trunk "$prog_opt")
+    prog_name=$(basename $(echo $prog_opt|sed 's/"\(.*\.c\)".*/\1/') .c)
     options_id=1
     cat "$options_in" | while read options
     do 
-        if [ "$(echo $options | sed '/^[ ]*#/d')" ]; then echo "Process $options"; else continue; fi
-        options="$prog_opt $options"
-        prog_name=$(basename $prog .c)
+        if [ "$(not_comment "$options")" ]; then echo "Process $options"; else continue; fi
+        options="$(add_trunk "$options")"
         log_file="$exp_base/results/${prog_name}_$options_id.log"
         test_sh="$exp_base/tests/${prog_name}_$options_id.sh"
         options_id=$(expr $options_id + 1)
         mkdir -p "$(dirname "$test_sh")"
-        echo "# options: $options" >> $test_sh
         echo "mkdir -p \"$(dirname "$log_file")\"" >> $test_sh
-        echo "\"$ottercmd\" \"$prog\" $options 2>&1 | timelines > \"$log_file\"" >> $test_sh
+        echo "echo Command: $options $prog_opt >> \"$log_file\"" >> $test_sh
+        echo "$options $prog_opt 2>&1 | timelines >> \"$log_file\"" >> $test_sh
     done
 done
 
