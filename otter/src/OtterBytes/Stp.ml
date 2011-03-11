@@ -552,7 +552,7 @@ let query_stp =
     fun (pc : (bytes * bool) list) pre guard ->
         Profiler.global#call "Stp.query_stp" begin fun () ->
             let pc = List.map fst pc in
-            let pc = getRelevantAssumptions pc (guard__to_bytes guard) in
+            let pc = getRelevantAssumptions ((guard__to_bytes pre)::pc) (guard__to_bytes guard) in
             if query_stp (pc, pre, guard, true) then
                 Ternary.True
             else if query_stp (pc, pre, guard, false) then
