@@ -284,7 +284,8 @@ let otter_time_wait job multijob retopt exps errors =
 				)
 		| _ -> failwith "timewait invalid arguments"
 
-let otter_begin_atomic job multijob retopt exps errors = 
+let otter_begin_atomic job multijob retopt exps errors =
+	assert (multijob.current_metadata.priority <> Atomic); (* Atomic sections can't be nested *)
 	let job = BuiltinFunctions.end_function_call job in
 	(
 		Active job, 
@@ -294,7 +295,8 @@ let otter_begin_atomic job multijob retopt exps errors =
 		errors
 	)
 
-let otter_end_atomic job multijob retopt exps errors = 
+let otter_end_atomic job multijob retopt exps errors =
+	assert (multijob.current_metadata.priority = Atomic); (* end_atomic outside an atomic section doesn't make sense *)
 	let job = BuiltinFunctions.end_function_call job in
 	(
 		Active job, 
