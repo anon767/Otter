@@ -10,7 +10,7 @@ type 'job scheduling_data =
 	| Running (* Nomal round robin *)
 	| TimeWait of int (* Letting other processes go for a while; uses a counter that is decremented each time a job is stepped *)
 	| IOBlock of ('job, Bytes.bytes) Deferred.t MemoryBlockMap.t (* Blocking until a shared value changes *)
-	| Atomic (* Exclusive control, used when several opeations must be done without preemption *)
+	| Atomic of int (* Exclusive control, used when several opeations must be done without preemption. The int is the depth of nested atomic sections. *)
 
 (* Environment state as seen by a process.
  * This includes items that are included in state.

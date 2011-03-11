@@ -73,18 +73,15 @@ let put_completion completion multijob = match completion with
 		}
 
 let schedule_process_list multijob =
-	let rec update_process_list processes =
-		match processes with
-		| [] -> []
-		| (pc, ls, md)::t ->
+	let update_process (pc, ls, md as process) =
 			match md.priority with
-				| Atomic
-				| Running -> (pc, ls, md)::(update_process_list t)
+				| Atomic _
+				| Running -> process
 				| TimeWait n ->
 					if n <= 0 then
-						(pc, ls, { md with priority = Running; })::(update_process_list t)
+						(pc, ls, { md with priority = Running; })
 					else
-						(pc, ls, { md with priority = TimeWait (n-1); })::(update_process_list t)
+						(pc, ls, { md with priority = TimeWait (n-1); })
 				| IOBlock io_block_to_bytes -> (* look for changed blocks *)
 					let fold_func key value prev =
 						prev || (* stop checking if one changed *)
@@ -97,17 +94,17 @@ let schedule_process_list multijob =
 							| Not_found -> true (* block was gfreed and so counts as changed *)
 					in
 					if(MemoryBlockMap.fold fold_func io_block_to_bytes false) then
-						(pc, ls, { md with priority = Running; })::(update_process_list t) (* something changed, wake up process *)
+						(pc, ls, { md with priority = Running; }) (* something changed, wake up process *)
 					else
-						(pc, ls, md)::(update_process_list t) (* nothing changed, keep thread asleep *)
+						process (* nothing changed, keep thread asleep *)
 	in
-	let processes = update_process_list multijob.processes in
+	let processes = List.map update_process multijob.processes in
 	List.stable_sort (* TODO: use a priority queue instead *)
 		begin fun (_, _, ls1) (_, _, ls2) ->
 			match ls1.priority, ls2.priority with
-				| Atomic, Atomic -> 0
-				| Atomic, _ -> -1
-				| _, Atomic -> 1
+				| Atomic _, Atomic _ -> failwith "There are multiple Atomic processes in the process list"
+				| Atomic _, _ -> -1
+				| _, Atomic _ -> 1
 				| Running, Running -> 0
 				| Running, _ -> -1
 				| _, Running -> 1

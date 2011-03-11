@@ -14,6 +14,12 @@ let libc_fork job multijob retopt exps errors =
 	(* update instruction pointer, history, and such *)
 	let job = BuiltinFunctions.end_function_call job in
 
+  (* While we probably could handle it, it's probably safer to disallow forking in atomic sections. *)
+  begin match multijob.current_metadata.priority with
+      Atomic _ -> failwith "Forking within an atomic section"
+    | _ -> ()
+  end;
+
 	Output.set_mode Output.MSG_REG;
 	Output.printf "fork(): parent: %d, child: %d@." multijob.current_metadata.pid multijob.next_pid;
 
@@ -285,23 +291,27 @@ let otter_time_wait job multijob retopt exps errors =
 		| _ -> failwith "timewait invalid arguments"
 
 let otter_begin_atomic job multijob retopt exps errors =
-	assert (multijob.current_metadata.priority <> Atomic); (* Atomic sections can't be nested *)
 	let job = BuiltinFunctions.end_function_call job in
+  let enter_atomic = function Atomic n -> Atomic (succ n) | _ -> Atomic 0 in
 	(
 		Active job, 
 		{multijob with
-			current_metadata = { multijob.current_metadata with priority  = Atomic; };
+			current_metadata = { multijob.current_metadata with priority = enter_atomic multijob.current_metadata.priority; };
 		},
 		errors
 	)
 
 let otter_end_atomic job multijob retopt exps errors =
-	assert (multijob.current_metadata.priority = Atomic); (* end_atomic outside an atomic section doesn't make sense *)
+  let leave_atomic = function
+        Atomic 0 -> Running
+      | Atomic n -> Atomic (pred n)
+      | _ -> failwith "end_atomic outside an atomic section"
+  in
 	let job = BuiltinFunctions.end_function_call job in
 	(
 		Active job, 
 		{multijob with
-			current_metadata = { multijob.current_metadata with priority  = Running; };
+			current_metadata = { multijob.current_metadata with priority = leave_atomic multijob.current_metadata.priority; };
 		},
 		errors
 	)
