@@ -1550,7 +1550,7 @@ int main(int argc, char **argv) {
        don't want to duplicate fds, because we're modeling creating an entirely
        separate program, so we call multi_fork directly. */
     if (__otter_multi_fork()) {
-        __otter_multi_io_block(redis_has_called_listen);
+        __otter_multi_block_while_condition(*redis_has_called_listen == 0, redis_has_called_listen);
         __otter_fs_init_stdin_out_err();
         client_main();
         return 0;
