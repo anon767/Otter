@@ -6,20 +6,12 @@ open OtterCFG
 open OtterCore
 
 
-module JobMap = struct
-    module M = Map.Make (struct type t = int let compare = Pervasives.compare end)
-    let empty = M.empty
-    let remove job jobs = M.remove job#node_id jobs
-    let add job x jobs = M.add job#node_id x jobs
-    let find job jobs = M.find job#node_id jobs
-end
-
 class ['self] t = object (self : 'self)
-    val distances = JobMap.empty
+    method add job = self
 
-    method add job =
-        (* if the targets change, the distance calculated and stored here may be off, but it saves from
-         * having to recalculate at every query *)
+    method remove job = self
+
+    method weight job =
         Profiler.global#call "ClosestToTargetsStrategy.add" begin fun () ->
             let source = Job.get_instruction job in
             let call_sites = Instruction.call_sites (Instruction.fundec_of source) in
@@ -40,13 +32,7 @@ class ['self] t = object (self : 'self)
                     Distance.find_in_context (source, context, all_targets)
             in
             Output.debug_printf "Job %d has distance to target = %d@\n" job#node_id distance;
-            {< distances = JobMap.add job distance distances >}
+            1. /. float_of_int distance
         end
-
-    method remove job =
-        {< distances = JobMap.remove job distances >}
-
-    method weight job =
-        1. /. float_of_int (JobMap.find job distances)
 end
 
