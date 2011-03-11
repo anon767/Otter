@@ -11,12 +11,6 @@ open Cil
 
 let default_bidirectional_search_ratio = ref 0.5
 
-let is_bidirectional_search ratio_opt = 
-    let ratio = match ratio_opt with
-        | Some ratio -> ratio
-        | None -> (!default_bidirectional_search_ratio)
-    in ratio >= 0.0
-
 (*
  * Improve efficiency of bounding paths update/checking.
  *
@@ -64,10 +58,8 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                f_queue
                b_queue
                starter_fundecs =
-    (* ratio < 0.0 denotes purely backward (beware of precision!) *)
-    let is_bidirectional = ratio >= 0.0 in
     object (self)
-        val entryfn_jobqueue = if is_bidirectional then f_queue#put entry_job else f_queue
+        val entryfn_jobqueue = f_queue#put entry_job
         val otherfn_jobqueue = b_queue
         (* fundecs whose initialized jobs have been created *)
         val origin_fundecs = starter_fundecs
@@ -142,7 +134,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                 Profiler.global#call "BidirectionalQueue.t#put/regular_parent" begin fun () ->
                 let entryfn_jobqueue, otherfn_jobqueue =
                     Profiler.global#call "BidirectionalQueue.t#put/regular_parent/put" begin fun () ->
-                    if is_bidirectional && get_origin_function job == entry_fn then
+                    if get_origin_function job == entry_fn then
                         entryfn_jobqueue#put job, otherfn_jobqueue
                     else
                         entryfn_jobqueue, otherfn_jobqueue#put job
@@ -273,7 +265,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                         (* assert: jid_to_job and jid_to_bounding_paths are unchanged at this point, and bounded_jobqueue is always empty *)
                         Profiler.global#call "BidirectionalQueue.t#get/regular_get" begin fun () ->
                         (* If there's no more entry jobs, the forward search has ended. So we terminate. *)
-                        if is_bidirectional && entryfn_jobqueue#length = 0 then None else
+                        if entryfn_jobqueue#length = 0 then None else
 
                         (* Set up targets, which maps target functions to their failing paths, and
                          * target_fundecs, which is basically the key set of targets *)
@@ -289,18 +281,15 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                         fun (origin_fundecs, otherfn_jobqueue) caller ->
                                             Output.debug_printf "Function %s is the caller of target function %s@\n" caller.svar.vname target_fundec.svar.vname;
                                             let caller = BackOtterUtilities.get_transitive_unique_caller file caller in
-                                            if (is_bidirectional && caller == entry_fn) || List.memq caller origin_fundecs then
+                                            if caller == entry_fn || List.memq caller origin_fundecs then
                                                 origin_fundecs, otherfn_jobqueue
                                             else
                                                 let job =
-                                                    if caller == entry_fn then entry_job
-                                                    else (
-                                                        Output.debug_printf "Create new job for function %s@." caller.svar.vname;
-                                                        Profiler.global#call "BidirectionalQueue.t#get/regular_get/create_new_jobs/new_functionjob" begin fun () ->
-                                                            (* TODO: let's try a simpler Job initializer *)
-                                                            BackOtterJob.get_function_job file caller
-                                                        end
-                                                    )
+                                                    Output.debug_printf "Create new job for function %s@." caller.svar.vname;
+                                                    Profiler.global#call "BidirectionalQueue.t#get/regular_get/create_new_jobs/new_functionjob" begin fun () ->
+                                                        (* TODO: let's try a simpler Job initializer *)
+                                                        BackOtterJob.get_function_job file caller
+                                                    end
                                                 in
                                                 caller :: origin_fundecs, otherfn_jobqueue#put job
                                     ) (origin_fundecs, otherfn_jobqueue) callers
