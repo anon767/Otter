@@ -60,6 +60,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     List.iter (fun f -> Output.debug_printf "Function containing coverage targets: %s@." f.svar.vname) starter_fundecs;
     let b_queue = List.fold_left (fun b_queue fundec ->
         if CilData.CilFundec.equal fundec entry_fn then 
+            (* FIXME: this means line targets in entry_fn won't trigger the creation of an entry_job here *)
             b_queue
         else
             b_queue#put (BackOtterJob.get_function_job file fundec)

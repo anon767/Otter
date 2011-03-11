@@ -62,13 +62,14 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                f_queue
                b_queue
                starter_fundecs =
+    let is_bidirectional = ratio > 0.0 in
     object (self)
-        val entryfn_jobqueue = f_queue#put entry_job
+        val entryfn_jobqueue = if is_bidirectional then f_queue#put entry_job else f_queue
         val otherfn_jobqueue = b_queue
         (* fundecs whose initialized jobs have been created *)
         val origin_fundecs = starter_fundecs
 
-        (* A worklist for bounded jobs. I guess the strategy does not matter. *)
+        (* A worklist for bounded jobs. TODO: maybe Random-path is better? *)
         val bounded_jobqueue = new BackOtterQueue.RankedQueue.t [ new BackOtterQueue.DepthFirstStrategy.t ]
 
         (* the bounded_job previously returned by #get*)
@@ -181,7 +182,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                         in
                         let entryfn_jobqueue, otherfn_jobqueue =
                             Profiler.global#call "BidirectionalQueue.t#put/regular_parent/put" begin fun () ->
-                            if get_origin_function job == entry_fn then
+                            if is_bidirectional && get_origin_function job == entry_fn then
                                 entryfn_jobqueue#put job, otherfn_jobqueue
                             else
                                 entryfn_jobqueue, otherfn_jobqueue#put job
@@ -297,7 +298,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                         (* assert: job_to_bounding_paths are unchanged at this point, and bounded_jobqueue is always empty *)
                         Profiler.global#call "BidirectionalQueue.t#get/regular_get" begin fun () ->
                         (* If there's no more entry jobs, the forward search has ended. So we terminate. *)
-                        if entryfn_jobqueue#length = 0 then None else
+                        if is_bidirectional && entryfn_jobqueue#length = 0 then None else
 
                         (* Set up targets, which maps target functions to their failing paths, and
                          * target_fundecs, which is basically the key set of targets *)
@@ -313,16 +314,16 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                         fun (origin_fundecs, otherfn_jobqueue) caller ->
                                             Output.debug_printf "Function %s is the caller of target function %s@\n" caller.svar.vname target_fundec.svar.vname;
                                             let caller = BackOtterUtilities.get_transitive_unique_caller file caller in
-                                            if caller == entry_fn || List.memq caller origin_fundecs then
+                                            if (is_bidirectional && caller == entry_fn) || List.memq caller origin_fundecs then
                                                 origin_fundecs, otherfn_jobqueue
                                             else
-                                                let job =
+                                                let job = if caller == entry_fn then entry_job else (
                                                     Output.debug_printf "Create new job for function %s@." caller.svar.vname;
                                                     Profiler.global#call "BidirectionalQueue.t#get/regular_get/create_new_jobs/new_functionjob" begin fun () ->
                                                         (* TODO: let's try a simpler Job initializer *)
                                                         BackOtterJob.get_function_job file caller
                                                     end
-                                                in
+                                                ) in
                                                 caller :: origin_fundecs, otherfn_jobqueue#put job
                                     ) (origin_fundecs, otherfn_jobqueue) callers
                             ) (origin_fundecs, otherfn_jobqueue) target_fundecs
