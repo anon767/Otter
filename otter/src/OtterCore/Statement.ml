@@ -348,13 +348,23 @@ let exec_stmt job errors = Profiler.global#call "Statement.exec_stmt" begin fun 
 
                         (* Create two jobs, one for each branch. The false branch
                            inherits the old jid, and the true job gets a new jid. *)
-                        let jobs = (job : #Info.t)#fork begin fun job (rv, block, branch) jobs ->
-                            let job = try_branch job (Some rv) block in
-                            let job = job#with_decision_path (DecisionPath.add (Decision.DecisionConditional(stmt, branch)) job#decision_path) in
-                            let job = job#with_exHist (nextExHist (Some job#stmt) ~whichBranch:branch) in
-                            job::jobs
-                        end [ (logicalNot rv, block2, false); (rv, block1, true) ] [] in
-                        let true_job, false_job = match jobs with [ true_job; false_job ] -> (true_job, false_job) | _ -> failwith "Impossible!" in
+                        let true_job, false_job =
+                            (job : #Info.t)#fork2
+                                begin fun job ->
+                                    (* true *)
+                                    let job = try_branch job (Some rv) block1 in
+                                    let job = job#with_decision_path (DecisionPath.add (Decision.DecisionConditional(stmt, true)) job#decision_path) in
+                                    let job = job#with_exHist (nextExHist (Some job#stmt) ~whichBranch:true) in
+                                    job
+                                end
+                                begin fun job ->
+                                    (* false *)
+                                    let job = try_branch job (Some (logicalNot rv)) block2 in
+                                    let job = job#with_decision_path (DecisionPath.add (Decision.DecisionConditional(stmt, false)) job#decision_path) in
+                                    let job = job#with_exHist (nextExHist (Some job#stmt) ~whichBranch:false) in
+                                    job
+                                end
+                        in
 
                         Output.set_mode Output.MSG_MUSTPRINT;
                         Output.printf "@[Branching on @[%a@]@ at @[%a@].@]@." CilPrinter.exp exp Printcil.loc loc;

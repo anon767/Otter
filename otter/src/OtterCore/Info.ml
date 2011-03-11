@@ -16,6 +16,7 @@ class t :
         method _with_node_profiler : Profiler.t -> 'self
 
         method fork : 'a 'b . ('self -> 'a -> 'b -> 'b) -> 'a list -> 'b -> 'b
+        method fork2: 'a 'b . ('self -> 'a) -> ('self -> 'b) -> 'a * 'b
         method finish : 'self
         method profile_call : 'a . string -> ('self -> 'self * 'a) -> ('self * 'a)
 
@@ -93,6 +94,14 @@ class t :
                 | [] ->
                     (* TODO: Should we throw an exception? *)
                     acc
+
+
+        (** A convenience function for forking a job into two. *)
+        method fork2 : 'a 'b . ('self -> 'a) -> ('self -> 'b) -> 'a * 'b = fun left right ->
+            (** reuse #fork to centralize the forking policy *)
+            match self#fork (fun job dir jobs -> match dir with `L -> (`L (left job))::jobs | `R -> (`R (right job))::jobs) [`L; `R] [] with
+                | [ `R right; `L left ] -> (left, right)
+                | _ -> assert false
 
 
         (** [x#finish] should be called when the path represented by [x] is considered finished, and will print the
