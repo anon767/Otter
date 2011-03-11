@@ -111,14 +111,12 @@ end
 
 module CilStmt = struct
     type t = Cil.stmt
-    (* these are only valid if the stmt is not modified in any way; there's no way to detect mutation *)
-    let compare x y =
-        (* compare sids first, if they're set by, e.g., Cil.computeCFGInfo. *)
-        match Pervasives.compare x.Cil.sid y.Cil.sid with
-            | 0 -> Pervasives.compare x y
-            | i -> i
+    (* there's no reliable way to compare stmt unless Cil.computeCFGInfo is called with global_numbering = true,
+     * or by first comparing the fundec in which the statement belongs to, then compare the sid set by
+     * Cil.computeCFGInfo with global_numbering = false; furthermore, the following are only valid if the stmt is not
+     * modified in any way, since there's no way to detect mutation *)
     let hash = Hashtbl.hash
-    let equal x y = compare x y = 0
+    let equal = Pervasives.(==)
 end
 
 module CilExp = struct
