@@ -48,6 +48,10 @@
         - [#pragma no_other_abandoned] specifies that no other {!Job.Abandoned} should be in the remaining results.
         - [#pragma no_other_results] specifies that there should no remaining results.
 
+    The following [#pragma] directives are for BackOtter only (TODO: refactor this)
+        - [#pragma bidirectional_search_ratio(<string ratio>)] specifies BackOtter's Bidirectional search ratio. This
+            corresponds to BackOtter's [--bidirectional-search-ratio] command-line option.
+
     In particular, [#pragma expect_return], [#pragma expect_exit], and [#pragma expect_abandoned] accept a
     comma-separated list of assertion expressions which are written similarly to C expressions. Only integer
     expressions are accepted, including identifiers which are resolved as global variables, integer constants, unary
@@ -83,6 +87,7 @@ module Make (Errors : Errors) = struct
         max_steps : int option;         (** Bound the number of steps in the execution tree to explore (corresponds to [--max-steps]). *)
         max_paths : int option;         (** Bound the number of paths to execute to completion (corresponds to [--max-paths]). *)
         max_abandoned : int option;     (** Bound the number of abandoned paths to return (corresponds to [--max-abandoned]). *)
+        bidirectional_search_ratio : float option;  (** Set the bidirectional search ratio (corresponds to [--bidirectional-search-ratio]). *)
     }
 
 
@@ -97,6 +102,7 @@ module Make (Errors : Errors) = struct
         max_steps = None;
         max_paths = None;
         max_abandoned = None;
+        bidirectional_search_ratio = None;
     }
 
 
@@ -379,6 +385,17 @@ module Make (Errors : Errors) = struct
                     | "no_other_results", _ ->
                         assert_loc_failure loc "Invalid no_other_results (should have no arguments)."
 
+                    | "bidirectional_search_ratio", [ Cil.AStr ratio_string ] ->
+                        if flags.bidirectional_search_ratio <> None then assert_loc_failure loc "Bidirectional search ratio already defined.";
+                        begin try
+                            let ratio = float_of_string ratio_string in
+                            ({ flags with bidirectional_search_ratio = Some ratio }, test)
+                        with Failure "float_of_string" ->
+                            assert_loc_failure loc "Invalid bidirectional search ratio (should be the string representation of the ratio)."
+                        end
+                    | "bidirectional_search_ratio", _ ->
+                        assert_loc_failure loc "Invalid bidirectional search ratio (should have exactly one string argument that is the ratio)."
+
                     | _ ->
                         assert_loc_failure loc "Unknown test configuration: %s(%a)." name attrparams_printer params
                 end
@@ -432,6 +449,12 @@ module Make (Errors : Errors) = struct
             | None -> fun f -> f ()
         in
 
+        (* Set up these BackOtter flags, if provided *)
+        begin match flags.bidirectional_search_ratio with
+        | Some ratio -> BackOtter.BidirectionalQueue.default_bidirectional_search_ratio := ratio
+        | None -> ()
+        end;
+
         (* prepare the file and run the symbolic executor *)
         Core.prepare_file file;
         let job = OtterJob.Job.get_default file in
@@ -446,6 +469,7 @@ module Make (Errors : Errors) = struct
                 (reporter, Some e)
         with e ->
             (reporter, Some e)
+
 
     (** Creates an OUnit {!TestCase} using {!eval_otter_with_pragma} with {!BasicReporter.t} as the reporter.
                 @param driver is the Otter main loop to use
