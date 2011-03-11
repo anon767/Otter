@@ -337,7 +337,7 @@ let exec_stmt job errors = Profiler.global#call "Statement.exec_stmt" begin fun 
 
                         (* Create two jobs, one for each branch. The false branch
                            inherits the old jid, and the true job gets a new jid. *)
-                        let true_job, false_job =
+                        let false_job, true_job =
                             (job : #Info.t)#fork2
                                 begin fun job ->
                                     (* false *)
