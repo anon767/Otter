@@ -54,7 +54,7 @@ class t :
 
             Note that [fork] is an explicitly-annotated polymorphic method. In Ocaml, methods are monomorphic
             unless explicitly annotated, at both declaration and call sites. Call [fork] with, e.g.,
-            [(job : #Info.t)#fork fn list acc].
+            [(x : #Info.t)#fork fn list acc].
         *)
         method fork : 'a 'b . ('self -> 'a -> 'b -> 'b) -> 'a list -> 'b -> 'b = fun f xs acc ->
             match xs with
@@ -96,10 +96,12 @@ class t :
                     acc
 
 
-        (** A convenience function for forking a job into two. *)
+        (** [x#fork2 left right] is a convenience function that calls [fork] and applies two functions to the forked
+            objects, returning the results as a tuple [(left_result, right_result)].
+        *)
         method fork2 : 'a 'b . ('self -> 'a) -> ('self -> 'b) -> 'a * 'b = fun left right ->
             (** reuse #fork to centralize the forking policy *)
-            match self#fork (fun job dir jobs -> match dir with `L -> (`L (left job))::jobs | `R -> (`R (right job))::jobs) [`L; `R] [] with
+            match self#fork (fun x dir xs -> match dir with `L -> (`L (left x))::xs | `R -> (`R (right x))::xs) [`L; `R] [] with
                 | [ `R right; `L left ] -> (left, right)
                 | _ -> assert false
 
@@ -128,7 +130,7 @@ class t :
 
             Note that [profile_call] is an explicitly-annotated polymorphic method. In Ocaml, methods are monomorphic
             unless explicitly annotated, at both declaration and call sites. Call [profile_call] with, e.g.,
-            [(job : #Info.t)#profile_call label fn].
+            [(x : #Info.t)#profile_call label fn].
         *)
         method profile_call : 'a . string -> ('self -> 'self * 'a) -> ('self * 'a) = fun label f ->
             let node_profiler, (self, x) = node_profiler#call label begin fun node_profiler ->
