@@ -351,17 +351,17 @@ let exec_stmt job errors = Profiler.global#call "Statement.exec_stmt" begin fun 
                         let true_job, false_job =
                             (job : #Info.t)#fork2
                                 begin fun job ->
-                                    (* true *)
-                                    let job = try_branch job (Some rv) block1 in
-                                    let job = job#with_decision_path (DecisionPath.add (Decision.DecisionConditional(stmt, true)) job#decision_path) in
-                                    let job = job#with_exHist (nextExHist (Some job#stmt) ~whichBranch:true) in
-                                    job
-                                end
-                                begin fun job ->
                                     (* false *)
                                     let job = try_branch job (Some (logicalNot rv)) block2 in
                                     let job = job#with_decision_path (DecisionPath.add (Decision.DecisionConditional(stmt, false)) job#decision_path) in
                                     let job = job#with_exHist (nextExHist (Some job#stmt) ~whichBranch:false) in
+                                    job
+                                end
+                                begin fun job ->
+                                    (* true *)
+                                    let job = try_branch job (Some rv) block1 in
+                                    let job = job#with_decision_path (DecisionPath.add (Decision.DecisionConditional(stmt, true)) job#decision_path) in
+                                    let job = job#with_exHist (nextExHist (Some job#stmt) ~whichBranch:true) in
                                     job
                                 end
                         in
