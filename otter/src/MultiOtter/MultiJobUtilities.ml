@@ -36,7 +36,7 @@ let put_job job multijob metadata =
 	{
 		processes =
 			(match metadata.priority with
-				| Atomic -> (program_counter, job#state, metadata)::multijob.processes (* save time sorting by putting an atomic process on the front *)
+				| Atomic _ -> (program_counter, job#state, metadata)::multijob.processes (* save time sorting by putting an atomic process on the front *)
 				| _ -> List.append multijob.processes [ (program_counter, job#state, metadata) ])
 			;
 		shared = shared;
