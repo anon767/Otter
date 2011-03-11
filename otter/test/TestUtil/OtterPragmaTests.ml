@@ -47,10 +47,15 @@
         - [#pragma no_other_exit] specifies that no other {!Job.Exit} should be in the remaining results.
         - [#pragma no_other_abandoned] specifies that no other {!Job.Abandoned} should be in the remaining results.
         - [#pragma no_other_results] specifies that there should no remaining results.
+        - [#pragma queue] specifies which queue to use in Otter. This corresponds to Otter's [--queue] command-line option.
 
     The following [#pragma] directives are for BackOtter only (TODO: refactor this)
         - [#pragma bidirectional_search_ratio(<string ratio>)] specifies BackOtter's Bidirectional search ratio. This
             corresponds to BackOtter's [--bidirectional-search-ratio] command-line option.
+        - [#pragma forward_queue] specifies which forward queue to use in BackOtter. This corresponds to BackOtter's [--forward-queue] command-line option.
+        - [#pragma backward_queue] specifies which backward queue to use in BackOtter. This corresponds to BackOtter's [--backward-queue] command-line option.
+        - [#pragma function_ranker] specifies which function ranking strategy to use in BackOtter. This corresponds to 
+            BackOtter's [--backward-function-rank] command-line option.
 
     In particular, [#pragma expect_return], [#pragma expect_exit], and [#pragma expect_abandoned] accept a
     comma-separated list of assertion expressions which are written similarly to C expressions. Only integer
@@ -87,6 +92,10 @@ module Make (Errors : Errors) = struct
         max_steps : int option;         (** Bound the number of steps in the execution tree to explore (corresponds to [--max-steps]). *)
         max_paths : int option;         (** Bound the number of paths to execute to completion (corresponds to [--max-paths]). *)
         max_abandoned : int option;     (** Bound the number of abandoned paths to return (corresponds to [--max-abandoned]). *)
+        queue : string option;          (** Set the queue (corresponds to [--queue]). *)
+        forward_queue : string option;  (** Set the forward queue (corresponds to [--forward-queue]). *)
+        backward_queue : string option; (** Set the backward queue (corresponds to [--backward-queue]). *)
+        function_ranker : string option;(** Set the backward function ranker (corresponds to [--backward-function-rank]). *)
         bidirectional_search_ratio : float option;  (** Set the bidirectional search ratio (corresponds to [--bidirectional-search-ratio]). *)
     }
 
@@ -102,6 +111,10 @@ module Make (Errors : Errors) = struct
         max_steps = None;
         max_paths = None;
         max_abandoned = None;
+        queue = None;
+        forward_queue = None;
+        backward_queue = None;
+        function_ranker = None;
         bidirectional_search_ratio = None;
     }
 
@@ -385,6 +398,34 @@ module Make (Errors : Errors) = struct
                     | "no_other_results", _ ->
                         assert_loc_failure loc "Invalid no_other_results (should have no arguments)."
 
+                    | "queue", [ Cil.AStr queue ] ->
+                        if flags.queue <> None then assert_loc_failure loc "Queue already defined.";
+                        if queue = "" then assert_loc_failure loc "Invalid queue (should not be blank).";
+                        ({ flags with queue = Some queue }, test)
+                    | "queue", _ ->
+                        assert_loc_failure loc "Invalid queue (should have exactly one string argument that is the name of the queue)."
+
+                    | "forward_queue", [ Cil.AStr forward_queue ] ->
+                        if flags.forward_queue <> None then assert_loc_failure loc "Forward queue already defined.";
+                        if forward_queue = "" then assert_loc_failure loc "Invalid queue (should not be blank).";
+                        ({ flags with forward_queue = Some forward_queue }, test)
+                    | "forward_queue", _ ->
+                        assert_loc_failure loc "Invalid forward queue (should have exactly one string argument that is the name of the queue)."
+
+                    | "backward_queue", [ Cil.AStr backward_queue ] ->
+                        if flags.backward_queue <> None then assert_loc_failure loc "backward queue already defined.";
+                        if backward_queue = "" then assert_loc_failure loc "Invalid queue (should not be blank).";
+                        ({ flags with backward_queue = Some backward_queue }, test)
+                    | "backward_queue", _ ->
+                        assert_loc_failure loc "Invalid backward queue (should have exactly one string argument that is the name of the queue)."
+
+                    | "function_ranker", [ Cil.AStr function_ranker ] ->
+                        if flags.function_ranker <> None then assert_loc_failure loc "function ranker already defined.";
+                        if function_ranker = "" then assert_loc_failure loc "Invalid function ranker (should not be blank).";
+                        ({ flags with function_ranker = Some function_ranker }, test)
+                    | "function_ranker", _ ->
+                        assert_loc_failure loc "Invalid function ranker (should have exactly one string argument that is the name of the function ranker)."
+
                     | "bidirectional_search_ratio", [ Cil.AStr ratio_string ] ->
                         if flags.bidirectional_search_ratio <> None then assert_loc_failure loc "Bidirectional search ratio already defined.";
                         begin try
@@ -443,17 +484,35 @@ module Make (Errors : Errors) = struct
 
         let file = Frontc.parse path () in
 
-        (* set the time limit, if provided *)
-        let run = match flags.time_limit with
-            | Some time_limit -> assert_time_limit (float_of_int time_limit)
-            | None -> fun f -> f ()
-        in
+        (* Set the queue, if provided *)
+        begin match flags.queue with
+            | Some queue -> OtterQueue.Queue.default_queue := List.assoc queue OtterQueue.Queue.queues
+            | _ -> ()
+        end;
 
         (* Set up these BackOtter flags, if provided *)
         begin match flags.bidirectional_search_ratio with
         | Some ratio -> BackOtter.BidirectionalQueue.default_bidirectional_search_ratio := ratio
         | None -> ()
         end;
+        begin match flags.forward_queue with
+            | Some forward_queue -> BackOtter.BackOtterQueue.default_fqueue := List.assoc forward_queue BackOtter.BackOtterQueue.queues
+            | _ -> ()
+        end;
+        begin match flags.backward_queue with
+            | Some backward_queue -> BackOtter.BackOtterQueue.default_bqueue := List.assoc backward_queue BackOtter.BackOtterQueue.queues
+            | _ -> ()
+        end;
+        begin match flags.function_ranker with
+            | Some function_ranker -> BackOtter.FunctionRanker.default_brank := List.assoc function_ranker BackOtter.FunctionRanker.queues
+            | _ -> ()
+        end;
+
+        (* set the time limit, if provided *)
+        let run = match flags.time_limit with
+            | Some time_limit -> assert_time_limit (float_of_int time_limit)
+            | None -> fun f -> f ()
+        in
 
         (* prepare the file and run the symbolic executor *)
         Core.prepare_file file;
