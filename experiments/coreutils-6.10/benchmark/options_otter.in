@@ -1,3 +1,0 @@
- --timeout=3600 --printLittle --queue=generational*random,breadth-first
- --timeout=3600 --printLittle --queue=random-path
- --timeout=3600 --printLittle --queue=closest-to-targets

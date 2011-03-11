@@ -1,3 +1,0 @@
-mkdir_1.c   |  -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"
-mkfifo_1.c  |  -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"
-mknod_1.c   |  -DMAX_ARGC=5 -DMAX_ARG_LENGTHS="{1,10,2,2,2}"
