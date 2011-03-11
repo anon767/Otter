@@ -26,14 +26,14 @@ chmod 755 "$exp_base"
 
 config="$exp_base/config.log"
 
-echo "Options used to generate this test suite:" >> $config
-echo "$*"                                        >> $config
-echo                                             >> $config
-echo "Program settings in $programs_in:"         >> $config
-cat  "$programs_in"                              >> $config
-echo                                             >> $config
-echo "Option settings in $options_in:"           >> $config
-cat  "$options_in"                               >> $config
+echo >> $config "Options used to generate this test suite:"
+echo >> $config "$*"                                       
+echo >> $config                                            
+echo >> $config "Program settings in $programs_in:"        
+cat  >> $config "$programs_in"                             
+echo >> $config                                            
+echo >> $config "Option settings in $options_in:"          
+cat  >> $config "$options_in"                              
 
 cat "$programs_in" | while read prog_opt
 do 
@@ -49,9 +49,9 @@ do
         test_sh="$exp_base/tests/${prog_name}_$options_id.sh"
         options_id=$(expr $options_id + 1)
         mkdir -p "$(dirname "$test_sh")"
-        echo "mkdir -p \"$(dirname "$log_file")\"" >> $test_sh
-        echo "echo Command: $options $prog_opt >> \"$log_file\"" >> $test_sh
-        echo "$options $prog_opt 2>&1 | timelines >> \"$log_file\"" >> $test_sh
+        echo >> $test_sh "mkdir -p \"$(dirname "$log_file")\""                 
+        echo >> $test_sh "echo Command: $options $prog_opt >> \"$log_file\""   
+        echo >> $test_sh "$options $prog_opt 2>&1 | timelines >> \"$log_file\""
     done
 done
 
