@@ -7,7 +7,7 @@ open State
 open Cil
 
 
-let arg_function_inlining = ref true
+let arg_function_inlining = ref false
 
 let rev_equals =
     let module Memo = Memo.Make (struct
@@ -71,7 +71,7 @@ let rec get_transitive_unique_caller file callee =
     | _ -> callee
 
 let options = [
-	"--no-function-inlining",
-		Arg.Clear arg_function_inlining,
-		" Disable function inlining in BackOtter";
+	"--function-inlining",
+		Arg.Set arg_function_inlining,
+		" Enable function inlining in BackOtter";
 ] 
