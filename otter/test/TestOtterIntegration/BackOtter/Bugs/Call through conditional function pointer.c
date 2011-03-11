@@ -2,7 +2,7 @@
 
 #pragma expect_abandoned(target_reached, x == 1)
 #pragma expect_abandoned(target_reached, x == 2)
-#pragma no_other_results
+#pragma no_other_abandoned
 
 int x;
 
