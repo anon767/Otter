@@ -314,11 +314,20 @@ end
 
 
 (**/**)
+(* A dummy lhost to refer to malloc'ed locations. *)
+let malloc_host = Cil.makeGlobalVar "__cilptranal_points_to_host" Cil.voidPtrType
+
 (* Helper for naive_points_to/unsound_points_to to generate a dummy lhost to refer to malloc'ed locations. *)
-let make_malloc_lhost =
-    let malloc_host = Cil.makeGlobalVar "__cilptranal_points_to_host" Cil.voidPtrType in
-    fun typ ->
-        Cil.Mem (Cil.mkCast (Cil.Lval (Cil.var malloc_host)) (Cil.TPtr (typ, [])))
+let make_malloc_lhost typ =
+    Cil.Mem (Cil.mkCast (Cil.Lval (Cil.var malloc_host)) (Cil.TPtr (typ, [])))
+
+(* Helper for naive_points_to/unsound_points_to to test if an lhost is a dummy lhost that refers to malloc'ed locations. *)
+let is_malloc_lhost_exp = function
+    | Cil.Lval (Cil.Mem (Cil.Lval (Cil.Var lhost, Cil.NoOffset)), _)
+    | Cil.Lval (Cil.Mem (Cil.CastE (_, Cil.Lval (Cil.Var lhost, Cil.NoOffset))), _) ->
+        lhost == malloc_host
+    | _ ->
+        false
 
 (* Helper for naive_points_to/unsound_points_to to find the varinfo for malloc. *)
 let find_malloc =
@@ -370,26 +379,40 @@ let naive_points_to =
 let unsound_points_to =
     let array_size = Some (Cil.integer 16) in
     let counter = Counter.make () in
+    let resolve_exp exp = Profiler.global#call "Ptranal.resolve_exp" (fun () -> Ptranal.resolve_exp exp) in
     fun file exp -> Profiler.global#call "CilPtranal.unsound_points_to" begin fun () ->
         match Cil.unrollType (Cil.typeOf exp) with
             | Cil.TPtr (typ, _) ->
                 let malloc_varinfo = find_malloc file in
                 let name = "malloc" ^ string_of_int (Counter.next counter) in
 
-                let malloc = (malloc_varinfo, name, typ) in
-                let malloc_lhost = make_malloc_lhost typ in
-                let malloc_targets = [ (malloc, [ malloc_lhost ]) ] in
-
-                let malloc_targets =
-                    if Cil.isArithmeticType typ then
-                        let array_typ = Cil.TArray (typ, array_size, []) in
-                        let malloc_array = (malloc_varinfo, name, array_typ) in
-                        let malloc_array_lhost = make_malloc_lhost array_typ in
-                        (malloc_array, [ malloc_array_lhost ])::malloc_targets
+                let varinfo_targets, malloc_targets =
+                    if is_malloc_lhost_exp exp then
+                        (* since two lhosts are returned every time below, only provide targets for the non-malloc lhost *)
+                        ([], [])
+                    else if Cil.isFunctionType typ then
+                        (* resolve function pointers *)
+                        let varinfo_targets, _ = resolve_exp exp in
+                        (varinfo_targets, [])
                     else
-                        malloc_targets
+                        let deref_lhost = Cil.Mem exp in
+
+                        let malloc = (malloc_varinfo, name, typ) in
+                        let malloc_lhost = make_malloc_lhost typ in
+                        let malloc_targets = [ (malloc, [ deref_lhost; malloc_lhost ]) ] in
+
+                        let malloc_targets =
+                            if Cil.isArithmeticType typ then
+                                let array_typ = Cil.TArray (typ, array_size, []) in
+                                let malloc_array = (malloc_varinfo, name, array_typ) in
+                                let malloc_array_lhost = make_malloc_lhost array_typ in
+                                (malloc_array, [ deref_lhost; malloc_array_lhost ])::malloc_targets
+                            else
+                                malloc_targets
+                        in
+                        ([], malloc_targets)
                 in
-                wrap_points_to_varinfo (fun _ -> ([], malloc_targets)) exp
+                wrap_points_to_varinfo (fun _ -> (varinfo_targets, malloc_targets)) exp
             | _ ->
                 ([], [])
     end
