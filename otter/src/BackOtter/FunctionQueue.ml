@@ -2,7 +2,7 @@ open OcamlUtilities
 
 module FundecMap = Map.Make (CilUtilities.CilData.CilFundec)
 
-class ['self] t rank_fn queue_constructor = object (_ : 'self)
+class ['self] t rank_fn queue_constructor = object (self : 'self)
     val fundec_map = FundecMap.empty
 
     method put job =
@@ -19,6 +19,18 @@ class ['self] t rank_fn queue_constructor = object (_ : 'self)
             in
             {< fundec_map = fundec_map; >}
         end
+
+    method remove job =
+        Profiler.global#call "FunctionQueue.t#remove" begin fun () ->
+            try
+                let origin_function = BackOtterUtilities.get_origin_function job in
+                let file, queue, count = FundecMap.find origin_function fundec_map in
+                let queue = queue#remove job in
+                let fundec_map = FundecMap.add origin_function (file, queue, count - 1) fundec_map in
+                {< fundec_map = fundec_map >}
+            with Not_found ->
+                self
+        end        
 
     method get =
         Profiler.global#call "FunctionQueue.t#get" begin fun () ->

@@ -10,11 +10,6 @@ open Job
 open CoverageData
 
 
-let get_active_state parent_job job =
-    let job = job#with_jid_unique (Counter.next job_counter_unique) in
-    let job = job#with_jid_parent (parent_job#jid_unique) in
-    Active job
-
 let stmtInfo_of_job job =
     { siFuncName = (List.hd job#state.callstack).svar.vname;
         siStmt = Coverage.stmtAtEndOfBlock job#stmt; }
@@ -118,11 +113,10 @@ let exec_fundec job instr fundec lvalopt exps errors = Profiler.global#call "Sta
 
     (* Update the state, the next stmt to execute, and whether or
      not we're in a tracked function. *)
-    let job' = job in
-    let job' = job'#with_stmt (List.hd fundec.sallstmts) in
-    let job' = job'#with_instrList [] in
-    let job' = job'#with_inTrackedFn (StringSet.mem fundec.svar.vname job#trackedFns) in
-    (get_active_state job job', errors)
+    let job = job#with_stmt (List.hd fundec.sallstmts) in
+    let job = job#with_instrList [] in
+    let job = job#with_inTrackedFn (StringSet.mem fundec.svar.vname job#trackedFns) in
+    (Active job, errors)
 end
 
 let exec_instr_call job instr lvalopt fexp exps errors = Profiler.global#call "Statement.exec_instr_call" begin fun () ->
@@ -147,7 +141,6 @@ let exec_instr job errors = Profiler.global#call "Statement.exec_instr" begin fu
         Output.printf "@[%a@]@." Printcil.instr instr
     in
 
-    let old_job = job in
     let instr, tail = match job#instrList with i::tl -> (i, tl) | _ -> assert false in
 
     (* Within instructions, we have to update line coverage (but not
@@ -163,19 +156,18 @@ let exec_instr job errors = Profiler.global#call "Statement.exec_instr" begin fu
     match instr with
          | Set(cil_lval, exp, loc) ->
             printInstr instr;
-            let old_job = job in
             let job, lval, errors = Expression.lval job cil_lval errors in
             let job, rv, errors = Expression.rval job exp errors in
             let job = MemOp.state__assign job lval rv in
             let job = job#with_stmt (if tail = [] then List.hd job#stmt.succs else job#stmt) in
             let job = job#with_instrList tail in
-            (get_active_state old_job job, errors)
+            (Active job, errors)
         | Call(lvalopt, fexp, exps, loc) ->
             assert (tail = []);
             printInstr instr;
             exec_instr_call job instr lvalopt fexp exps errors
         | Asm _ ->
-            (Complete (Abandoned (`Failure "Cannot handle assembly", old_job)), errors)
+            (Complete (Abandoned (`Failure "Cannot handle assembly", job)), errors)
 end
 
 
@@ -205,7 +197,7 @@ let exec_stmt job errors = Profiler.global#call "Statement.exec_stmt" begin fun 
     match stmt.skind with
         | Instr [] ->
              let nextStmt = match stmt.succs with [x] -> x | _ -> assert false in
-             (get_active_state job ((job#with_stmt nextStmt)#with_exHist (nextExHist (Some nextStmt))), errors)
+             (Active ((job#with_stmt nextStmt)#with_exHist (nextExHist (Some nextStmt))), errors)
         | Instr (instrs) ->
             (* We can certainly update block coverage here, but not
              * necessarily edge coverage. If instrs contains a call, we
@@ -219,7 +211,7 @@ let exec_stmt job errors = Profiler.global#call "Statement.exec_stmt" begin fun 
                 then None
                 else Some (match stmt.succs with [x] -> x | _ -> assert false)
             in
-            (get_active_state job ((job#with_instrList instrs)#with_exHist (nextExHist nextStmtOpt)), errors)
+            (Active ((job#with_instrList instrs)#with_exHist (nextExHist nextStmtOpt)), errors)
         | Cil.Return (expopt, loc) ->
             begin match job#state.callContexts with
                 | Runtime::_ -> (* completed symbolic execution (e.g., return from main) *)
@@ -279,11 +271,10 @@ let exec_stmt job errors = Profiler.global#call "Statement.exec_stmt" begin fun 
                                 exHist
                         in
 
-                        let old_job = job in
                         let job = job#with_stmt nextStmt in
                         let job = job#with_inTrackedFn inTrackedFn in
                         let job = job#with_exHist exHist in
-                        (get_active_state old_job job, errors)
+                        (Active job, errors)
 
                 | (NoReturn _)::_ ->
                         failwith "Return from @noreturn function"
@@ -292,7 +283,7 @@ let exec_stmt job errors = Profiler.global#call "Statement.exec_stmt" begin fun 
                         assert false
             end
         | Goto (stmtref, loc) ->
-            (get_active_state job ((job#with_stmt !stmtref)#with_exHist (nextExHist (Some !stmtref))), errors)
+            (Active ((job#with_stmt !stmtref)#with_exHist (nextExHist (Some !stmtref))), errors)
         | If (exp, block1, block2, loc) ->
             begin
             (* try a branch *)
@@ -329,19 +320,17 @@ let exec_stmt job errors = Profiler.global#call "Statement.exec_stmt" begin fun 
                 let job_state = match truth with
                     | Ternary.True ->
                         Output.printf "True@.";
-                        let old_job = job in
                         let job = try_branch job None block1 in
                         let job = job#with_decision_path (DecisionPath.add (Decision.DecisionConditional(stmt, true)) job#decision_path) in
                         let job = job#with_exHist (nextExHist (Some job#stmt) ~whichBranch:true) in
-                        get_active_state old_job job
+                        Active job
 
                     | Ternary.False ->
                         Output.printf "False@.";
-                        let old_job = job in
                         let job = try_branch job None block2 in
                         let job = job#with_decision_path (DecisionPath.add (Decision.DecisionConditional(stmt, false)) job#decision_path) in
                         let job = job#with_exHist  (nextExHist (Some job#stmt) ~whichBranch:false) in
-                        get_active_state old_job job
+                        Active job
 
                     | Ternary.Unknown ->
                         Output.printf "Unknown@.";
@@ -371,7 +360,7 @@ let exec_stmt job errors = Profiler.global#call "Statement.exec_stmt" begin fun 
                         if !Executeargs.arg_print_callstack then
                             Output.printf "Call stack:@\n  @[%a@]@." (Printer.callingContext_list "@\n") job#state.callContexts;
                         Output.printf "Job %d is the true branch and job %d is the false branch.@\n@." true_job#path_id false_job#path_id;
-                        Fork [get_active_state job true_job; get_active_state job false_job]
+                        Fork [Active true_job; Active false_job]
                 in
                 (job_state, errors)
 
@@ -383,7 +372,7 @@ let exec_stmt job errors = Profiler.global#call "Statement.exec_stmt" begin fun 
                This is not true for [Block]s, but it *does* seem to be
                true for [Block]s which are not under [If]s, so we're okay. *)
             let nextStmt = List.hd block.bstmts in
-            (get_active_state job ((job#with_stmt nextStmt)#with_exHist (nextExHist (Some nextStmt))), errors)
+            (Active ((job#with_stmt nextStmt)#with_exHist (nextExHist (Some nextStmt))), errors)
         | _ -> failwith "Not implemented yet"
 end
 

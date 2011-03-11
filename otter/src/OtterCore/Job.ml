@@ -30,10 +30,6 @@ let emptyHistory = {
 }
 
 
-let job_counter = Counter.make ()
-let job_counter_unique = Counter.make ()
-
-
 class t file' fn :
     object ('self)
         (* TODO: perhaps use a camlp4 syntax extension to deal with this boilerplate? *)
@@ -63,12 +59,6 @@ class t file' fn :
 
         method inTrackedFn : bool
         method with_inTrackedFn : bool -> 'self
-
-        method jid_unique : int
-        method with_jid_unique : int -> 'self
-
-        method jid_parent : int
-        method with_jid_parent : int -> 'self
 
         method become : 'self -> unit
     end
@@ -111,18 +101,6 @@ class t file' fn :
         method inTrackedFn = inTrackedFn
         method with_inTrackedFn inTrackedFn = {< inTrackedFn = inTrackedFn >}
 
-        (* TODO: can jid_unique be replaced by Oo.id? What about jid_parent? *)
-
-        (** A unique identifier for the job *)
-        val mutable jid_unique = Counter.next job_counter_unique
-        method jid_unique = jid_unique
-        method with_jid_unique jid_unique = {< jid_unique = jid_unique >}
-
-        (** The unique identifier for the parent of the job *)
-        val mutable jid_parent = -1 (* Indicates no parent *)
-        method jid_parent = jid_parent
-        method with_jid_parent jid_parent = {< jid_parent = jid_parent >}
-
         (** [x#become y] destructively copies all instance variables from [y] to [x]. This should be used sparingly,
             typically only in object initializers.
 
@@ -151,8 +129,6 @@ class t file' fn :
             stmt <- other#stmt;
             trackedFns <- other#trackedFns;
             inTrackedFn <- other#inTrackedFn;
-            jid_unique <- other#jid_unique;
-            jid_parent <- other#jid_parent
     end
 
 

@@ -805,7 +805,6 @@ let libc_longjmp job retopt exps errors =
 
 			let jobs, errors = (job : #Info.t)#fork begin fun job arg (jobs, errors) ->
 				let job, errors = process_stmtPtr job arg errors in
-                (* TODO: update jid_unique and jid_parent as well *)
 				((Job.Active job)::jobs, errors)
 			end stmtPtrAddrs ([], errors) in
 			match jobs with

@@ -1,4 +1,4 @@
-/* This causes an assertion failure as of r11614. */
+/* This tests that BackOtter tracks jobs that fork on function pointers. */
 
 #pragma expect_abandoned(target_reached, x == 1)
 #pragma expect_abandoned(target_reached, x == 2)

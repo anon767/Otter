@@ -18,7 +18,7 @@ let default_bidirectional_search_ratio = ref 0.5
  * Invariants:
  * 1. DP is most recent decision first. FP and BP are least recent decision first.
  * 2. DP and BP do not overlap---(hd BP) is the decision that a job with DP has to follow.
- * 3. jid_to_bounding_paths always has jobs that are mapped to non-empty bounding_paths.
+ * 3. job_to_bounding_paths always has jobs that are mapped to non-empty bounding_paths.
  *
  * To check if a FP can bound a DP:
  * For each prefix(DP, k) where k < len(FP) and DP[k] is a call to origin(FP),
@@ -31,10 +31,14 @@ let default_bidirectional_search_ratio = ref 0.5
  * Else assert(tl(DP') == DP), "YES" if hd(DP') == hd(BP)
  *
  *)
-module JidMap = Map.Make (struct
-    type t = int
-    let compare a b = a - b
-end)
+module JobMap = struct
+    module M = Map.Make (struct type t = int let compare = Pervasives.compare end)
+    let empty = M.empty
+    let remove job map = M.remove job#node_id map
+    let add job property map = M.add job#node_id property map
+    let find job map = M.find job#node_id map
+    let mem job map = M.mem job#node_id map
+end
 
 (* This function is to make sure that a decision path with a function call in
  * latest decision won't create bounded job more than once *)
@@ -67,12 +71,13 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
         (* A worklist for bounded jobs. I guess the strategy does not matter. *)
         val bounded_jobqueue = new BackOtterQueue.RankedQueue.t [ new BackOtterQueue.DepthFirstStrategy.t ]
 
+        (* the bounded_job previously returned by #get*)
+        val previous_bounded_job = None
+
         (* TODO: make bounding_paths an instance field of BackOtterJob.t 
          *       Then the next two fields can be thrown away. *)
-        (* A mapping from jid to boundingPaths *)
-        val jid_to_bounding_paths = JidMap.empty
-        (* A mapping from jid to job *)
-        val jid_to_job = JidMap.empty
+        (* A mapping from jid to bounding paths *)
+        val job_to_bounding_paths = JobMap.empty
         
         (* TODO: the line below will be gone when a better way of distributing jobs to queues is implemented *)
         val entry_fn = ProgramPoints.get_entry_fundec file
@@ -80,12 +85,12 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
         method put (job : 'job) =
             Profiler.global#call "BidirectionalQueue.t#put" begin fun () ->
             (* If the job is from a bounded job,
-             * if it's still in bound, put it into jid_to_bounding_paths,
+             * if it's still in bound, put it into job_to_bounding_paths,
              * otherwise, discard it.
              *
              * Else, put the job into the jobqueue.
              * If the job's next instr is a function call, and if the function has failing paths,
-             * bound the job and put it in jid_to_bounding_paths.
+             * bound the job and put it in job_to_bounding_paths.
              *
              * Idea: in #put, jobs are bounded if they are from bounded jobs or they are calls to
              *       targets.
@@ -94,83 +99,99 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
              * If DP == DP', "YES" (there's no new decision)
              * Else assert(tl(DP') == DP), "YES" if hd(DP') == hd(BP)
              *)
-            let jid_to_job = JidMap.add job#jid_unique job jid_to_job in
-            (* If job comes from a bounded job *)
-            let _ = Output.debug_printf "Job %d has parent %d@." job#jid_unique job#jid_parent in
-            if JidMap.mem job#jid_parent jid_to_bounding_paths then
-                Profiler.global#call "BidirectionalQueue.t#put/bounded_parent" begin fun () ->
-                let parent_job = JidMap.find job#jid_parent jid_to_job in
-                let bounding_paths = JidMap.find parent_job#jid_unique jid_to_bounding_paths in
-                if DecisionPath.equal parent_job#decision_path job#decision_path then (* no new decision *)
-                    Profiler.global#call "BidirectionalQueue.t#put/bounded_parent/no_new_decision" begin fun () ->
-                    let _ = Output.debug_printf "No new decision@." in
-                    let _ = Output.debug_printf "Add job_unique %d into the bounded_jobqueue@." job#jid_unique in
-                    {< jid_to_bounding_paths = JidMap.add job#jid_unique bounding_paths jid_to_bounding_paths;
-                       jid_to_job = jid_to_job;
-                       bounded_jobqueue = bounded_jobqueue#put job; >}
+            match previous_bounded_job with
+                | Some parent ->
+                    Profiler.global#call "BidirectionalQueue.t#put/bounded_parent" begin fun () ->
+                        (* If job comes from a bounded job *)
+                        Output.debug_printf "Job %d has parent %d@." job#node_id (try snd (List.hd job#parent_list) with Failure "hd" -> -1);
+                        Output.debug_printf "Previous bounded job is %d@." parent#node_id;
+                        let previous_bounded_job =
+                            if job#node_id = parent#node_id then
+                                None (* did not fork, make sure #get doesn't clobber this job's bounding paths *)
+                            else
+                                previous_bounded_job
+                        in
+                        let bounding_paths = JobMap.find parent job_to_bounding_paths in
+                        if DecisionPath.equal parent#decision_path job#decision_path then (* no new decision *)
+                            Profiler.global#call "BidirectionalQueue.t#put/bounded_parent/no_new_decision" begin fun () ->
+                            let _ = Output.debug_printf "No new decision@." in
+                            let _ = Output.debug_printf "Add job_unique %d into the bounded_jobqueue@." job#node_id in
+                            {<
+                                job_to_bounding_paths = JobMap.add job bounding_paths job_to_bounding_paths;
+                                previous_bounded_job = previous_bounded_job;
+                                bounded_jobqueue = bounded_jobqueue#put job;
+                            >}
+                            end
+                        else (* has new decision *)
+                            Profiler.global#call "BidirectionalQueue.t#put/bounded_parent/new_decision" begin fun () ->
+                            let _ = Output.debug_printf "Has new decision@." in
+                            let _ = assert(DecisionPath.equal parent#decision_path (DecisionPath.tl job#decision_path)) in
+                            let bounded_decision = DecisionPath.hd job#decision_path in
+                            let bounding_paths = List.fold_left (
+                                fun acc path -> 
+                                    if not (DecisionPath.equal path DecisionPath.empty) && Decision.equal bounded_decision (DecisionPath.hd path) then (DecisionPath.tl path) :: acc 
+                                    else acc
+                            ) [] bounding_paths in
+                            if bounding_paths = [] then (* out bound *)
+                                let _ = Output.debug_printf "Out bound@." in
+                                self (* Discard the job *)
+                            else
+                                let _ = Output.debug_printf "Add job_unique %d into the bounded_jobqueue@." job#node_id in
+                                {<
+                                    job_to_bounding_paths = JobMap.add job bounding_paths job_to_bounding_paths;
+                                    previous_bounded_job = previous_bounded_job;
+                                    bounded_jobqueue = bounded_jobqueue#put job;
+                                >}
+                            end
                     end
-                else (* has new decision *)
-                    Profiler.global#call "BidirectionalQueue.t#put/bounded_parent/new_decision" begin fun () ->
-                    let _ = Output.debug_printf "Has new decision@." in
-                    let _ = assert(DecisionPath.equal parent_job#decision_path (DecisionPath.tl job#decision_path)) in
-                    let bounded_decision = DecisionPath.hd job#decision_path in
-                    let bounding_paths = List.fold_left (
-                        fun acc path -> 
-                            if not (DecisionPath.equal path DecisionPath.empty) && Decision.equal bounded_decision (DecisionPath.hd path) then (DecisionPath.tl path) :: acc 
-                            else acc
-                    ) [] bounding_paths in
-                    if bounding_paths = [] then (* out bound *)
-                        let _ = Output.debug_printf "Out bound@." in
-                        self (* Discard the job *)
-                    else
-                        let _ = Output.debug_printf "Add job_unique %d into the bounded_jobqueue@." job#jid_unique in
-                        {< jid_to_bounding_paths = JidMap.add job#jid_unique bounding_paths jid_to_bounding_paths;
-                           jid_to_job = jid_to_job;
-                           bounded_jobqueue = bounded_jobqueue#put job; >}
+
+                | None ->
+                    Profiler.global#call "BidirectionalQueue.t#put/regular_parent" begin fun () ->
+                        (* If job does not from a bounded job, i.e., regular *)
+                        (* Check if the job is a function call to a target function *)
+                        let job, job_to_bounding_paths, bounded_jobqueue =
+                            let fundec_opt =
+                                match 
+                                    Profiler.global#call "BidirectionalQueue.t#put/regular_parent/function_call_of_latest_decision"
+                                        (fun () -> function_call_of_latest_decision job#decision_path)
+                                with
+                                | Some (varinfo) -> (try Some(CilUtilities.FindCil.fundec_by_varinfo file varinfo) with Not_found -> None)
+                                | None -> None
+                            in
+                            match fundec_opt with
+                            | Some (fundec) ->
+                                let failing_paths = BackOtterTargets.get_paths fundec in
+                                let failing_paths_length = List.length failing_paths in
+                                if failing_paths_length = 0 then
+                                    (job, job_to_bounding_paths, bounded_jobqueue) (* Not a target function *)
+                                else begin
+                                    Output.must_printf "Call target function %s@." fundec.svar.vname;
+
+                                    (* just note that the original job was forked into a bounded job *)
+                                    let job, bounded_job = (job : #Info.t)#fork2 (fun job -> job) (fun job -> job) in
+
+                                    Output.debug_printf "Add job %d into the bounded_jobqueue@." bounded_job#node_id;
+                                    let job_to_bounding_paths = JobMap.add bounded_job failing_paths job_to_bounding_paths in
+                                    let bounded_jobqueue = bounded_jobqueue#put bounded_job in
+
+                                    (job, job_to_bounding_paths, bounded_jobqueue)
+                                end
+                            | None ->
+                                (job, job_to_bounding_paths, bounded_jobqueue)
+                        in
+                        let entryfn_jobqueue, otherfn_jobqueue =
+                            Profiler.global#call "BidirectionalQueue.t#put/regular_parent/put" begin fun () ->
+                            if get_origin_function job == entry_fn then
+                                entryfn_jobqueue#put job, otherfn_jobqueue
+                            else
+                                entryfn_jobqueue, otherfn_jobqueue#put job
+                            end
+                        in
+                        {< entryfn_jobqueue = entryfn_jobqueue;
+                           otherfn_jobqueue = otherfn_jobqueue;
+                           job_to_bounding_paths = job_to_bounding_paths;
+                           bounded_jobqueue = bounded_jobqueue; >}
                     end
-                end
-            else
-            (* If job does not from a bounded job, i.e., regular *)
-                Profiler.global#call "BidirectionalQueue.t#put/regular_parent" begin fun () ->
-                let entryfn_jobqueue, otherfn_jobqueue =
-                    Profiler.global#call "BidirectionalQueue.t#put/regular_parent/put" begin fun () ->
-                    if get_origin_function job == entry_fn then
-                        entryfn_jobqueue#put job, otherfn_jobqueue
-                    else
-                        entryfn_jobqueue, otherfn_jobqueue#put job
-                    end
-                in
-                (* Check if the job is a function call to a target function *)
-                let jid_to_job, jid_to_bounding_paths, bounded_jobqueue =
-                    let fundec_opt =
-                        match 
-                            Profiler.global#call "BidirectionalQueue.t#put/regular_parent/function_call_of_latest_decision"
-                                (fun () -> function_call_of_latest_decision job#decision_path)
-                        with
-                        | Some (varinfo) -> (try Some(CilUtilities.FindCil.fundec_by_varinfo file varinfo) with Not_found -> None)
-                        | None -> None
-                    in
-                    match fundec_opt with
-                    | Some (fundec) ->
-                        let failing_paths = BackOtterTargets.get_paths fundec in
-                        let failing_paths_length = List.length failing_paths in
-                        if failing_paths_length = 0 then
-                            jid_to_job, jid_to_bounding_paths, bounded_jobqueue (* Not a target function *)
-                        else
-                            let _ = Output.must_printf "Call target function %s@." fundec.svar.vname in
-                            let bounded_job = job#with_jid_unique (Counter.next Job.job_counter_unique) in
-                            let _ = Output.debug_printf "Add job_unique %d into the bounded_jobqueue@." bounded_job#jid_unique in
-                            JidMap.add bounded_job#jid_unique bounded_job jid_to_job,
-                            JidMap.add bounded_job#jid_unique failing_paths jid_to_bounding_paths,
-                            bounded_jobqueue#put bounded_job
-                    | None -> jid_to_job, jid_to_bounding_paths, bounded_jobqueue
-                in
-                {< entryfn_jobqueue = entryfn_jobqueue;
-                   otherfn_jobqueue = otherfn_jobqueue;
-                   jid_to_bounding_paths = jid_to_bounding_paths;
-                   jid_to_job = jid_to_job;
-                   bounded_jobqueue = bounded_jobqueue; >}
-                end
             end
 
         method get =
@@ -178,34 +199,32 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                 (* Clear the label, as anything printed here has no specific job context *)
                 Output.set_formatter (new Output.plain);
 
-                (* First check if there're existing jobs in jid_to_bounding_paths.
+                (* First check if there're existing jobs in job_to_bounding_paths.
                  * If so, simply return one of them.
                  *
-                 * Else, assert(jid_to_bounding_paths is empty)
+                 * Else, assert(job_to_bounding_paths is empty)
                  * If there exists a new failing path, update all job's bounding paths.
-                 * And add jobs into jid_to_bounding_paths if they have any.
+                 * And add jobs into job_to_bounding_paths if they have any.
                  *
-                 * If jid_to_bounding_paths is not empty, take a job from it and return.
+                 * If job_to_bounding_paths is not empty, take a job from it and return.
                  * Else, return jobqueue#get.
                  *
                  * Idea: in #get, jobs are bounded if the new failing path has effect on them.
                  *)
-                (* TODO
-                let jid_to_bounding_paths =
-                    match last_bounded_job_from_get with
-                    | Some job -> JidMap.remove job#jid_unique jid_to_bounding_paths
-                    | None -> jid_to_bounding_paths
+
+                let job_to_bounding_paths = match previous_bounded_job with
+                    | Some job -> JobMap.remove job job_to_bounding_paths
+                    | None -> job_to_bounding_paths
                 in
-                *)
                 match bounded_jobqueue#get with
                 | Some (bounded_jobqueue, job) ->
                     (* Has bounded job to run *)
-                    let _ = Output.debug_printf "Take job_unique %d from bounded_jobqueue@." job#jid_unique in
-                    Some ({< bounded_jobqueue = bounded_jobqueue; >}, job)
+                    let _ = Output.debug_printf "Take job_unique %d from bounded_jobqueue@." job#node_id in
+                    Some ({< previous_bounded_job = Some job; bounded_jobqueue = bounded_jobqueue; >}, job)
                 | None ->
                     (* For each existing job, see if it can be bounded. If so, update bounded_jobqueue et al *)
                     let new_failing_path = BackOtterTargets.get_last_failing_path () in
-                    let jid_to_job, jid_to_bounding_paths, bounded_jobqueue =
+                    let entryfn_jobqueue, otherfn_jobqueue, job_to_bounding_paths, bounded_jobqueue =
                         match new_failing_path with
                         | Some (target_fundec, failing_path) ->
                             Profiler.global#call "BidirectionalQueue.t#get/update_bounding_status" begin fun () ->
@@ -216,14 +235,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                  *     Else "NO"
                                  *)
                                 let failing_path_length = DecisionPath.length failing_path in
-                                let jobs =
-                                    (* Usually otherfn_jobqueue is much shorter, unless it's pure-backward *)
-                                    Profiler.global#call "BidirectionalQueue.t#get/update_bounding_status/get_contents" begin fun () ->
-                                    if entryfn_jobqueue#length = 0 then otherfn_jobqueue#get_contents
-                                    else List.rev_append otherfn_jobqueue#get_contents entryfn_jobqueue#get_contents
-                                    end
-                                in
-                                List.fold_left (fun (jid_to_job, jid_to_bounding_paths, bounded_jobqueue) job ->
+                                let find_bounded_jobs job (jobqueue, job_to_bounding_paths, bound_jobqueue) =
                                     let rec scan decision_path depth =
                                         if depth <= 0 || DecisionPath.length decision_path = 0 then []
                                         else match DecisionPath.hd decision_path with
@@ -243,26 +255,46 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                         scan job#decision_path (min failing_path_length (DecisionPath.length job#decision_path))
                                         end
                                     in
-                                    if bounding_paths = [] then (jid_to_job, jid_to_bounding_paths, bounded_jobqueue)
-                                    else
-                                        let bounded_job = job#with_jid_unique (Counter.next Job.job_counter_unique) in
-                                        let _ = Output.debug_printf "Add job_unique %d into the bounded_jobqueue@." bounded_job#jid_unique in
-                                        JidMap.add bounded_job#jid_unique bounded_job jid_to_job,
-                                        JidMap.add bounded_job#jid_unique bounding_paths jid_to_bounding_paths,
-                                        bounded_jobqueue#put bounded_job
-                                ) (jid_to_job, jid_to_bounding_paths, bounded_jobqueue) jobs
+                                    if bounding_paths = [] then
+                                        (jobqueue, job_to_bounding_paths, bounded_jobqueue)
+                                    else begin
+
+                                        (* just note that the original job was forked into a bounded job *)
+                                        let jobqueue = jobqueue#remove job in
+                                        let job, bounded_job = (job : #Info.t)#fork2 (fun job -> job) (fun job -> job) in
+                                        let jobqueue = jobqueue#put job in
+
+                                        Output.debug_printf "Add job %d into the bounded_jobqueue@." bounded_job#node_id;
+                                        let job_to_bounding_paths = JobMap.add bounded_job bounding_paths job_to_bounding_paths in
+                                        let bounded_jobqueue = bounded_jobqueue#put bounded_job in
+
+                                        (jobqueue, job_to_bounding_paths, bounded_jobqueue)
+                                    end
+                                in
+                                let entryfn_jobqueue, job_to_bounding_paths, bounded_jobqueue =
+                                    entryfn_jobqueue#fold find_bounded_jobs (entryfn_jobqueue, job_to_bounding_paths, bounded_jobqueue)
+                                in
+                                let otherfn_jobqueue, job_to_bounding_paths, bounded_jobqueue =
+                                    otherfn_jobqueue#fold find_bounded_jobs (otherfn_jobqueue, job_to_bounding_paths, bounded_jobqueue)
+                                in
+                                (entryfn_jobqueue, otherfn_jobqueue, job_to_bounding_paths, bounded_jobqueue)
                             end
-                        | None -> (jid_to_job, jid_to_bounding_paths, bounded_jobqueue)
+                        | None ->
+                            (entryfn_jobqueue, otherfn_jobqueue, job_to_bounding_paths, bounded_jobqueue)
                     in
                     match bounded_jobqueue#get with
                     | Some (bounded_jobqueue, job) ->
                         (* Has bounded job to run *)
                         let _ = Output.debug_printf "Take job from bounded_jobqueue@." in
-                        Some ({< bounded_jobqueue = bounded_jobqueue;
-                                 jid_to_bounding_paths = jid_to_bounding_paths;
-                                 jid_to_job = jid_to_job; >}, job)
+                        Some ({<
+                            entryfn_jobqueue = entryfn_jobqueue;
+                            otherfn_jobqueue = otherfn_jobqueue;
+                            bounded_jobqueue = bounded_jobqueue;
+                            previous_bounded_job = Some job;
+                            job_to_bounding_paths = job_to_bounding_paths;
+                        >}, job)
                     | None -> (* Regular get *)
-                        (* assert: jid_to_job and jid_to_bounding_paths are unchanged at this point, and bounded_jobqueue is always empty *)
+                        (* assert: job_to_bounding_paths are unchanged at this point, and bounded_jobqueue is always empty *)
                         Profiler.global#call "BidirectionalQueue.t#get/regular_get" begin fun () ->
                         (* If there's no more entry jobs, the forward search has ended. So we terminate. *)
                         if entryfn_jobqueue#length = 0 then None else
@@ -315,11 +347,13 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                             Profiler.global#call "BidirectionalQueue.t#get/regular_get/forward_search" begin fun () ->
                             match entryfn_jobqueue#get with
                             | Some (entryfn_jobqueue, job) ->
-                                Some ({< entryfn_jobqueue = entryfn_jobqueue;
-                                         otherfn_jobqueue = otherfn_jobqueue;  (* might have been added with new jobs from above *)
-                                         origin_fundecs = origin_fundecs';
-                                         jid_to_bounding_paths = jid_to_bounding_paths;
-                                         >}, job)
+                                Some ({<
+                                    entryfn_jobqueue = entryfn_jobqueue;
+                                    otherfn_jobqueue = otherfn_jobqueue;  (* might have been added with new jobs from above *)
+                                    origin_fundecs = origin_fundecs';
+                                    previous_bounded_job = None;
+                                    job_to_bounding_paths = job_to_bounding_paths;
+                                >}, job)
                             | None -> failwith "This is unreachable"
                             end
                         else if otherfn_jobqueue#length > 0 then
@@ -327,10 +361,13 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                             Profiler.global#call "BidirectionalQueue.t#get/regular_get/backward_search" begin fun () ->
                             match otherfn_jobqueue#get with
                             | Some (otherfn_jobqueue, job) ->
-                                Some ({< otherfn_jobqueue = otherfn_jobqueue;
-                                         origin_fundecs = origin_fundecs';
-                                         jid_to_bounding_paths = jid_to_bounding_paths;
-                                         >}, job)
+                                Some ({<
+                                    entryfn_jobqueue = entryfn_jobqueue;
+                                    otherfn_jobqueue = otherfn_jobqueue;
+                                    origin_fundecs = origin_fundecs';
+                                    previous_bounded_job = None;
+                                    job_to_bounding_paths = job_to_bounding_paths;
+                                >}, job)
                             | None -> failwith "This is unreachable"
                             end
                         else
