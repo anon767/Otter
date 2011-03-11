@@ -3,6 +3,9 @@
 open DataStructures
 open OcamlUtilities
 
+let path_counter = Counter.make ()
+let node_counter = Counter.make ()
+
 class t :
     object ('self)
         method path_id : int
@@ -23,8 +26,6 @@ class t :
         method become : 'self -> unit
     end
 =
-    let path_counter = Counter.make () in
-    let node_counter = Counter.make () in
     object (self : 'self)
         val mutable path_id = Counter.next path_counter
         val mutable node_id = Counter.next node_counter
