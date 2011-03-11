@@ -15,7 +15,7 @@ end
 
 (* This queue adds two methods on top of Otter's queues: get_contents and length.
  * ContentQueue is necessary: when BackOtter finds a new target, it goes through
- * all existing jobs to see if any of them are calling the target and are ready to 
+ * all existing jobs to see if any of them are calling the target and are ready to
  * examine.
  *)
 class ['self] t queue = object (_ : 'self)
@@ -25,22 +25,22 @@ class ['self] t queue = object (_ : 'self)
 
     method put job =
         Profiler.global#call "ContentQueue.t#put" begin fun () ->
-        assert(not (JobSet.mem job contents));
-        {< queue = queue#put job; contents = JobSet.add job contents; length = length + 1; >}
+            assert(not (JobSet.mem job contents));
+            {< queue = queue#put job; contents = JobSet.add job contents; length = length + 1; >}
         end
 
     method get =
         Profiler.global#call "ContentQueue.t#get" begin fun () ->
-        match queue#get with
-        | Some (queue, job) ->
-            assert(JobSet.mem job contents);
-            Some ({< queue = queue; contents = JobSet.remove job contents; length = length - 1; >}, job)
-        | None -> assert(JobSet.is_empty contents); None
+            match queue#get with
+                | Some (queue, job) ->
+                    assert(JobSet.mem job contents);
+                    Some ({< queue = queue; contents = JobSet.remove job contents; length = length - 1; >}, job)
+                | None -> assert(JobSet.is_empty contents); None
         end
 
-    method get_contents = 
+    method get_contents =
         Profiler.global#call "ContentQueue.t#get_contents" begin fun () ->
-        JobSet.elements contents
+            JobSet.elements contents
         end
 
     method length = length
