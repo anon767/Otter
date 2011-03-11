@@ -129,6 +129,11 @@ let predecessors ({ file = file; fundec = fundec; stmt = stmt; instrs = instrs }
         List.map (of_stmt_last file fundec) stmt.Cil.preds
 
 
+(** Find the enclosing function for an instruction. *)
+let fundec_of ({ file = file; fundec = fundec; _ }) =
+    of_fundec file fundec
+
+
 (** Find all the call sites of this instruction (if it is the first instruction of its function). *)
 let call_sites =
     let module Memo = Memo.Make (struct
@@ -229,34 +234,3 @@ let return_sites =
         | _ ->
             [] (* or raise some exception? *)
 
-
-(** Find all the call sites of the callee in the caller *)
-let call_sites_in_caller = 
-    let module Memo = Memo.Make (struct
-        type t = CilData.CilFile.t * CilData.CilFundec.t * CilData.CilFundec.t
-        let hash (file, f1, f2) = Hashtbl.hash (CilData.CilFile.hash file, CilData.CilFundec.hash f1, CilData.CilFundec.hash f2)
-        let equal (xfile, xf1, xf2) (yfile, yf1, yf2) = CilData.CilFile.equal xfile yfile && CilData.CilFundec.equal xf1 yf1 && CilData.CilFundec.equal xf2 yf2
-    end) in
-    let call_sites_in_caller = Memo.memo "Instruction.call_sites_in_caller" begin fun (file, caller, callee) ->
-        let call_sites_in_caller = ref [] in
-        (* iterate over stmts in caller and extract instr === Cil.Call *)
-        ignore begin Cil.visitCilFunction begin object
-            inherit Cil.nopCilVisitor
-            method vstmt stmt = match stmt.Cil.skind with
-                | Cil.Instr instrs -> 
-                    let rec impl = function
-                        | [] -> Cil.SkipChildren
-                        | (Cil.Call (_, fexp, _, _) :: tail) as instrs ->
-                            let callees = CilCallgraph.resolve_exp_to_fundecs file fexp in
-                            (if List.memq callee callees then call_sites_in_caller := (make file caller stmt instrs)::!call_sites_in_caller);
-                            impl tail
-                        | _ :: instrs -> impl instrs
-                    in impl instrs
-                | _ ->
-                    Cil.DoChildren 
-        end end caller end;
-
-        !call_sites_in_caller
-    end in
-    fun file caller callee ->
-        call_sites_in_caller (file, caller, callee)
