@@ -11,41 +11,41 @@ open Bytes
 open MultiInterceptor
 
 let libc_fork job multijob retopt exps errors =
-	(* update instruction pointer, history, and such *)
-	let job = BuiltinFunctions.end_function_call job in
+    (* update instruction pointer, history, and such *)
+    let job = BuiltinFunctions.end_function_call job in
 
-  (* While we probably could handle it, it's probably safer to disallow forking in atomic sections. *)
-  begin match multijob.current_metadata.priority with
-      Atomic _ -> failwith "Forking within an atomic section"
-    | _ -> ()
-  end;
+    (* While we probably could handle it, it's probably safer to disallow forking in atomic sections. *)
+    begin match multijob.current_metadata.priority with
+        Atomic _ -> failwith "Forking within an atomic section"
+      | _ -> ()
+    end;
 
-	Output.set_mode Output.MSG_REG;
-	Output.printf "fork(): parent: %d, child: %d@." multijob.current_metadata.pid multijob.next_pid;
+    Output.set_mode Output.MSG_REG;
+    Output.printf "fork(): parent: %d, child: %d@." multijob.current_metadata.pid multijob.next_pid;
 
-	(* clone the job *)
-	let job, child_job, errors = match retopt with
-		| None ->
-			(job, job, errors)
-		| Some cil_lval ->
-			(* TODO: make the pid symbolic *)
-			let child_job, child_lval, errors = Expression.lval job cil_lval errors in
-			let child_job = MemOp.state__assign child_job child_lval (Bytes.int_to_bytes multijob.next_pid) in
+    (* clone the job *)
+    let job, child_job, errors = match retopt with
+      | None ->
+            (job, job, errors)
+      | Some cil_lval ->
+            (* TODO: make the pid symbolic *)
+            let child_job, child_lval, errors = Expression.lval job cil_lval errors in
+            let child_job = MemOp.state__assign child_job child_lval (Bytes.int_to_bytes multijob.next_pid) in
 
-			let job, lval, errors = Expression.lval job cil_lval errors in
-			let job = MemOp.state__assign job lval (Bytes.bytes__zero) in
-			(job, child_job, errors)
-	in
-	let multijob = MultiJobUtilities.put_job
-		child_job
-		multijob 
-		{multijob.current_metadata with 
-			pid = multijob.next_pid;
-			parent_pid = multijob.current_metadata.pid;
-		}
-	in
-	let multijob = { multijob with next_pid = multijob.next_pid + 1 } in
-	(Active job, multijob, errors)
+            let job, lval, errors = Expression.lval job cil_lval errors in
+            let job = MemOp.state__assign job lval (Bytes.bytes__zero) in
+            (job, child_job, errors)
+    in
+    let multijob = MultiJobUtilities.put_job
+        child_job
+        multijob 
+        {multijob.current_metadata with 
+             pid = multijob.next_pid;
+             parent_pid = multijob.current_metadata.pid;
+        }
+    in
+    let multijob = { multijob with next_pid = multijob.next_pid + 1 } in
+    (Active job, multijob, errors)
 
 (* allocates on the global heap *)
 let otter_gmalloc_size job size bytes loc =
@@ -291,30 +291,30 @@ let otter_time_wait job multijob retopt exps errors =
 		| _ -> failwith "timewait invalid arguments"
 
 let otter_begin_atomic job multijob retopt exps errors =
-	let job = BuiltinFunctions.end_function_call job in
-  let enter_atomic = function Atomic n -> Atomic (succ n) | _ -> Atomic 0 in
-	(
-		Active job, 
-		{multijob with
-			current_metadata = { multijob.current_metadata with priority = enter_atomic multijob.current_metadata.priority; };
-		},
-		errors
-	)
+    let job = BuiltinFunctions.end_function_call job in
+    let enter_atomic = function Atomic n -> Atomic (succ n) | _ -> Atomic 0 in
+    (
+        Active job, 
+        {multijob with
+             current_metadata = { multijob.current_metadata with priority = enter_atomic multijob.current_metadata.priority; };
+        },
+        errors
+    )
 
 let otter_end_atomic job multijob retopt exps errors =
-  let leave_atomic = function
-        Atomic 0 -> Running
-      | Atomic n -> Atomic (pred n)
-      | _ -> failwith "end_atomic outside an atomic section"
-  in
-	let job = BuiltinFunctions.end_function_call job in
-	(
-		Active job, 
-		{multijob with
-			current_metadata = { multijob.current_metadata with priority = leave_atomic multijob.current_metadata.priority; };
-		},
-		errors
-	)
+    let leave_atomic = function
+          Atomic 0 -> Running
+        | Atomic n -> Atomic (pred n)
+        | _ -> failwith "end_atomic outside an atomic section"
+    in
+    let job = BuiltinFunctions.end_function_call job in
+    (
+        Active job, 
+        {multijob with
+             current_metadata = { multijob.current_metadata with priority = leave_atomic multijob.current_metadata.priority; };
+        },
+        errors
+    )
 
 let interceptor job multijob job_queue interceptor =
 	try
