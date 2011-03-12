@@ -1,4 +1,4 @@
-(** Generic memoization wrappers. *)
+(** Generic memoization and hashconsing wrappers. *)
 
 (* TODO: weak sets (hashconsing), weak-key maps (property map), weak-key-and-value maps (caching);
  * is there a need for weak-value maps or weak-key-or-value maps? *)
@@ -14,64 +14,45 @@ let initial_size = 128
 let statistics = Hashtbl.create 8
 (**/**)
 
-(** Make a memoization wrapper that can be used to memoized several functions of the same type *)
-let make ?store:(find, add = let memotable = Hashtbl.create initial_size in (Hashtbl.find memotable, Hashtbl.add memotable)) label =
-    if Hashtbl.mem statistics label then FormatPlus.invalid_arg "Label %s already exists!" label;
-    let record = { hits = 0; misses = 0; hit_time = 0.; miss_time = 0. } in
-    Hashtbl.add statistics label record;
-    let nested = ref 0. in
-    fun f x ->
-        let elapsed =
-            let start = Sys.time () in
-            let nested' = !nested in
-            nested := 0.;
-            fun () ->
-                let elapsed = Sys.time () -. start in
-                (* avoid multi-counting recursion by subtracting nested calls *)
-                let used = elapsed -. !nested in
-                nested := nested' +. elapsed;
-                used
-        in
-        try
-            let y = find x in
-            record.hits <- record.hits + 1;
-            record.hit_time <- record.hit_time +. elapsed ();
-            y
-        with Not_found ->
-            let y = f x in
-            (* don't need Hashtbl.replace, which is slower, as x guaranteed to be unique *)
-            add x y;
-            record.misses <- record.misses + 1;
-            record.miss_time <- record.miss_time +. elapsed ();
-            y
 
-
-(** Make a hashconsing wrapper *)
-let make_hashcons ?store label =
-    (* TODO: use Weak? *)
-    make ?store label (fun x -> x)
-
-
-(** Memoize a function *)
-let memo ?store label f =
-    make ?store label f
-
-
-(** Memoize a recursive function; the function will be given the memoized version of itself to recurse with *)
-let memo_rec ?store label f =
-    let wrap = make ?store label in
-    let rec g x = wrap (f g) x in
-    g
-
-
-(** Functorized memoization functions *)
+(** Functorized memoization functions. Polymorphic versions using Ocaml's polymorphic {!Pervasives.(=)} and
+ *  {!Hashtbl.hash} are not provided as memoization is sensitive to the correctness of the equality and hash
+ *  functions: the invariant that [T.equal x y] implies [T.hash x = T.hash y] must hold, otherwise, performance
+ *  will be adversely impacted memory-wise and timing-wise due to duplication in the underlying hashtable. *)
 module Make (T : Hashtbl.HashedType) = struct
-    (* TODO: get rid of this functor somehow since it duplicates code *)
+    module H = Hashtbl.Make (T)
+
     (** Make a memoization wrapper that can be used to memoized several functions of the same type *)
     let make label =
-        let module H = Hashtbl.Make (T) in
+        if Hashtbl.mem statistics label then Format.ksprintf invalid_arg "Label %s already exists!" label;
+        let record = { hits = 0; misses = 0; hit_time = 0.; miss_time = 0. } in
+        Hashtbl.add statistics label record;
         let memotable = H.create initial_size in
-        make ~store:(H.find memotable, H.add memotable) label
+        let nested = ref 0. in
+        fun f x ->
+            let elapsed =
+                let start = Sys.time () in
+                let nested' = !nested in
+                nested := 0.;
+                fun () ->
+                    let elapsed = Sys.time () -. start in
+                    (* avoid multi-counting recursion by subtracting nested calls *)
+                    let used = elapsed -. !nested in
+                    nested := nested' +. elapsed;
+                    used
+            in
+            try
+                let y = H.find memotable x in
+                record.hits <- record.hits + 1;
+                record.hit_time <- record.hit_time +. elapsed ();
+                y
+            with Not_found ->
+                let y = f x in
+                (* don't need Hashtbl.replace, which is slower, as x guaranteed to be unique *)
+                H.add memotable x y;
+                record.misses <- record.misses + 1;
+                record.miss_time <- record.miss_time +. elapsed ();
+                y
 
 
     (** Make a hashconsing wrapper *)

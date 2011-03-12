@@ -12,7 +12,8 @@ module TypeSet = Set.Make (CilData.CilType)
         @return [searchtables] the object containing the search tables for the file
 *)
 let searchtables =
-    OcamlUtilities.Memo.memo "FindCil.searchtables"
+    let module Memo = OcamlUtilities.Memo.Make (CilData.CilFile) in
+    Memo.memo "FindCil.searchtables"
         begin fun file ->
             let varinfo_to_varinit = Hashtbl.create 100 in
             let name_to_fundec = Hashtbl.create 100 in

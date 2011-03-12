@@ -30,23 +30,18 @@ let rev_equals =
         rev_equals (eq, lst1, lst2, n)
     end
 
-let get_last_element =
-    let get_last_element = Memo.memo_rec "BackOtterUtilities.get_last_element"
-        begin fun get_last_element lst -> match lst with
-            | [] -> invalid_arg "get_last_element: empty list"
-            | [ele] -> ele
-            | _ :: tail -> get_last_element tail
-        end
+
+
+let get_origin_function =
+    let rec get_last_element = function
+        | [ x ] -> x
+        | x::xs -> get_last_element xs
+        | [] -> assert false
     in
-    fun lst -> Profiler.global#call "BackOtterUtilities.get_last_element" begin fun () ->
-        match lst with
-            | [] -> invalid_arg "get_last_element: empty list"
-            | [ele] -> ele
-            | lst -> get_last_element lst
-    end
-
-
-let get_origin_function job = Profiler.global#call "get_origin_function" (fun () -> get_last_element job#state.callstack)
+    fun job ->
+        Profiler.global#call "get_origin_function" begin fun () ->
+            get_last_element job#state.callstack
+        end
 
 
 
