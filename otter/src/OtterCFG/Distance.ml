@@ -24,6 +24,11 @@ let return_sites =
         end) fundec);
         !return_sites
     ) 
+
+(** arithmetics on non-negative integers that handle max_int as infinite *)
+let (+) x y = assert(x>=0 && y>=0); let s = x + y in if s < 0 then max_int else s 
+let (-) x y = assert(x>=0 && y>=0); if (x, y) = (max_int, max_int) then 0 else if x = max_int then max_int else x - y
+
 (**/**)
 
 (* G = (V, E) is a reversed CFG *)
@@ -105,7 +110,7 @@ let find_impl =
                                 List.fold_left min max_int call_target_distances
                         | V.VRet (file, fundec) -> assert(false) (* There won't be edges going into a VRet *)
                     let compare = Pervasives.compare
-                    let add x y = let s = x + y in if s < 0 then max_int else s (* avoid overflow *)
+                    let add x y = x + y
                     let zero = 0
                 end in
                 
