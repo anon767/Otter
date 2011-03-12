@@ -633,53 +633,69 @@ let rec isConcrete_bytes (bytes : bytes) =
 
 
 (**
+ *  value reduction for byte/guards/conditionals/bytes
+ *)
+
+(**/**)
+module InternalReduce = struct
+    let byte_wrap =
+        let module Memo = Memo.Make (ByteType) in
+        Memo.make "Bytes.byte__reduce"
+
+    let guard_wrap =
+        let module Memo = Memo.Make (GuardType) in
+        Memo.make "Bytes.guard__reduce"
+
+    let bytes_wrap =
+        let module Memo = Memo.Make (BytesType) in
+        Memo.make "Bytes.bytes__reduce"
+end
+(**/**)
+
+let rec byte__reduce byte =
+    InternalReduce.byte_wrap begin function
+        | Byte_Bytes (bytes, offset) -> make_Byte_Bytes (bytes__reduce bytes, offset)
+        | Byte_Concrete _ | Byte_Symbolic _ as byte -> byte
+    end byte
+
+and guard__reduce guard =
+    InternalReduce.guard_wrap begin function
+        | Guard_Not guard -> guard__not (guard__reduce guard)
+        | Guard_And (guard, guard') -> guard__and (guard__reduce guard) (guard__reduce guard')
+        | Guard_Bytes bytes -> guard__bytes (bytes__reduce bytes)
+        | Guard_True | Guard_Symbolic _ as guard -> guard
+    end guard
+
+and conditional__reduce : 'a . ('a -> 'a) -> 'a conditional -> 'a conditional = fun reduce conditional ->
+    let rec conditional__reduce = function
+        | Unconditional a -> Unconditional (reduce a)
+        | IfThenElse (guard, conditional, conditional') -> IfThenElse (guard__reduce guard, conditional__reduce conditional, conditional__reduce conditional')
+    in
+    conditional__reduce conditional
+
+and bytes__reduce bytes =
+    InternalReduce.bytes_wrap begin function
+        | Bytes_Constant c -> constant_to_bytes c
+        | Bytes_ByteArray array -> make_Bytes_ByteArray (ImmutableArray.map (byte__reduce) array)
+        | Bytes_Address (block, offset) -> make_Bytes_Address (block, bytes__reduce offset)
+        | Bytes_Op (op, operands) -> make_Bytes_Op (op, List.map (fun (bytes, typ) -> (bytes__reduce bytes, typ)) operands)
+        | Bytes_Read (bytes, offset, size) -> make_Bytes_Read (bytes__reduce bytes, bytes__reduce offset, size)
+        | Bytes_Write (bytes, offset, size, bytes') -> make_Bytes_Write (bytes__reduce bytes, bytes__reduce offset, size, bytes__reduce bytes')
+        | Bytes_Conditional conditional -> make_Bytes_Conditional (conditional__reduce bytes__reduce conditional)
+        | Bytes_FunPtr _ as bytes -> bytes
+    end bytes
+
+
+
+(**
  *  value equality for byte/guards/conditionals/bytes
  *)
 
-let rec byte__equal byte1 byte2 = if byte1 == byte2 then true else match byte1, byte2 with
-    | Byte_Concrete x, Byte_Concrete y            -> x = y
-    | Byte_Symbolic x, Byte_Symbolic y            -> x = y
-    | Byte_Bytes (b1, off1), Byte_Bytes(b2, off2) -> off1 = off2 && bytes__equal b1 b2
-    | _, _                                        -> false
-
-and guard__equal guard1 guard2 = if guard1 == guard2 then true else match guard1, guard2 with
-    | Guard_Not g1, Guard_Not g2               -> guard__equal g1 g2
-    | Guard_And (g1, g2), Guard_And (g1', g2') -> guard__equal g1 g1' && guard__equal g2 g2'
-    | Guard_Symbolic s1, Guard_Symbolic s2     -> s1 = s2
-    | Guard_Bytes b1, Guard_Bytes b2           -> bytes__equal b1 b2
-    | _, _                                     -> false
-
-and conditional__equal : 'a. ('a -> 'a -> bool) -> 'a conditional -> 'a conditional -> bool =
-    fun eq c1 c2 -> if c1 == c2 then true else match c1, c2 with
-    | Unconditional x1, Unconditional x2 ->
-        eq x1 x2
-    | IfThenElse (g1, x1, y1), IfThenElse (g2, x2, y2) ->
-        guard__equal g1 g2 && conditional__equal eq x1 x2 && conditional__equal eq y1 y2
-    | _, _ ->
-        false
-
-and bytes__equal bytes1 bytes2 = if bytes1 == bytes2 then true else match bytes1, bytes2 with
-    | Bytes_Constant c, b
-    | b, Bytes_Constant c ->
-        bytes__equal b (constant_to_bytes c)
-    | Bytes_ByteArray a1, Bytes_ByteArray a2 ->
-        ImmutableArray.equal byte__equal a1 a2
-    | Bytes_Address(b1, off1),Bytes_Address(b2, off2) ->
-        block__equal b1 b2 && bytes__equal off1 off2
-    | Bytes_Op (op1, operands1), Bytes_Op (op2, operands2) ->
-        op1 = op2 && List.for_all2 (fun (b1, _) (b2, _) -> bytes__equal b1 b2) operands1 operands2
-    | Bytes_Read (b1, off1, s1), Bytes_Read (b2, off2, s2) ->
-        s1 = s2 && bytes__equal b1 b2 && bytes__equal off1 off2
-    | Bytes_Write (old1, off1, s1, new1), Bytes_Write (old2, off2, s2, new2) ->
-        s1 = s2 && bytes__equal old1 old2 && bytes__equal off1 off2 && bytes__equal new1 new2
-    | Bytes_FunPtr f1, Bytes_FunPtr f2 ->
-        CilData.CilVar.equal f1 f2
-    | Bytes_Conditional c1, Bytes_Conditional c2 ->
-        conditional__equal bytes__equal c1 c2
-    | _, _ ->
-        false
-
-and block__equal = BlockType.equal
+let byte__equal byte byte' = ByteType.equal byte byte' || ByteType.equal (byte__reduce byte) (byte__reduce byte')
+let guard__equal guard guard' = GuardType.equal guard guard' || GuardType.equal (guard__reduce guard) (guard__reduce guard')
+let conditional__equal eq conditional conditional' = ConditionalPolyType.equal eq conditional conditional' (* rely on eq to perform reduction *)
+let bytes__equal bytes bytes' = BytesType.equal bytes bytes' || BytesType.equal (bytes__reduce bytes) (bytes__reduce bytes')
+let block__equal = BlockType.equal
 
 
 let rec bytes__length bytes =
