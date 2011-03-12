@@ -49,8 +49,6 @@ let get_last_element =
 let get_origin_function job = Profiler.global#call "get_origin_function" (fun () -> get_last_element job#state.callstack)
 
 
-let get_origin_function_from_job_result job_result = Profiler.global#call "get_origin_function_from_job_result" (fun () -> get_last_element job_result#state.callstack)
-
 
 (* Returns a function that callee can transitively be inlined in *)
 let rec get_transitive_unique_caller file callee = 
