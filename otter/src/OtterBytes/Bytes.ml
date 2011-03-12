@@ -181,20 +181,22 @@ end = struct
 
     (**/**)
     module Internal = struct
-        (* structural equality helpers for byte/guards/conditionals/bytes:
+        (* structural equality helpers for symbols/byte/guards/conditionals/bytes:
          *  - the constant in Bytes_Constant is preserved;
          *  - the types of Bytes_Op operands are preserved.
          *)
-        let rec byte_equal byte1 byte2 = byte1 == byte2 || match byte1, byte2 with
+        let rec symbol_equal symbol1 symbol2 = symbol1 = symbol2
+
+        and byte_equal byte1 byte2 = byte1 == byte2 || match byte1, byte2 with
             | Byte_Concrete x, Byte_Concrete y -> x = y
-            | Byte_Symbolic x, Byte_Symbolic y -> x = y
+            | Byte_Symbolic x, Byte_Symbolic y -> symbol_equal x y
             | Byte_Bytes (b1, off1), Byte_Bytes (b2, off2) -> off1 = off2 && bytes_equal b1 b2
             | _, _ -> false
 
         and guard_equal guard1 guard2 = guard1 == guard2 || match guard1, guard2 with
             | Guard_Not g1, Guard_Not g2 -> guard_equal g1 g2
             | Guard_And (g1, g2), Guard_And (g1', g2') -> guard_equal g1 g1' && guard_equal g2 g2'
-            | Guard_Symbolic s1, Guard_Symbolic s2 -> s1 = s2
+            | Guard_Symbolic s1, Guard_Symbolic s2 -> symbol_equal s1 s2
             | Guard_Bytes b1, Guard_Bytes b2 -> bytes_equal b1 b2
             | _, _ -> false
 
@@ -229,7 +231,7 @@ end = struct
         and block_equal block1 block2 = block1 = block2
 
 
-        (* structural hash helpers for byte/guards/conditionals/bytes:
+        (* structural hash helpers for symbols/byte/guards/conditionals/bytes:
          *  - the constant in Bytes_Constant is considered;
          *  - the types of Bytes_Op operands are considered.
          *)
@@ -250,7 +252,9 @@ end = struct
             hash := hash'; count := count';
             hash''
 
-        let rec byte_hash = function
+        let rec symbol_hash = add_hash
+        
+        and byte_hash = function
             | Byte_Concrete _ | Byte_Symbolic _ as b -> add_hash b
             | Byte_Bytes (bytes, offset) -> add_hash (`Bytes, offset); bytes_hash bytes
 
@@ -258,7 +262,7 @@ end = struct
             | Guard_True -> add_hash `True
             | Guard_Not g -> add_hash `Not; guard_hash g
             | Guard_And (g1, g2) -> add_hash `And; guard_hash g1; guard_hash g2
-            | Guard_Symbolic s -> add_hash (`Symbolic, s)
+            | Guard_Symbolic s -> add_hash `Symbolic; symbol_hash s
             | Guard_Bytes b -> add_hash `Bytes; bytes_hash b
 
         and conditional_hash : 'a . ('a -> unit) -> 'a conditional -> unit =
@@ -431,6 +435,12 @@ end = struct
         type t
         val equal : t -> t -> bool
         val hash : t -> int
+    end
+
+    module SymbolType = struct
+        type t = symbol
+        let equal = Pervasives.(==) (* not hash-cons'ed, but is private *)
+        let hash = Internal.do_hash Internal.symbol_hash
     end
 
     module ByteType = struct
