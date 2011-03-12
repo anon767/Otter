@@ -49,6 +49,7 @@ def create_table():
         program = program_re.match(filename).group(1)
         filename = os.path.join(directory, filename)
         file = open(filename)
+        time = 100000.0  # Penalty
         for line in file.readlines():
             results = command_re.match(line)
             if results:
@@ -60,13 +61,13 @@ def create_table():
             results = time_re.match(line)
             if results:
                 time = float(results.group(1))
-                table[(program, key)].append(time)
                 break
+        table[(program, key)].append(time)
     return table
 
 table = create_table()
 stat = dict()
 for key, values in table.items():
-    stat[key] = (mean(values), stdev(values))
+    stat[key] = (len(values), mean(values), stdev(values))
     print key, stat[key]
 
