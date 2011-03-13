@@ -80,11 +80,39 @@ let run_with_interceptor reporter job =
     in
     Driver.run ~interceptor reporter job
 
-let test_ottercfg code ?label expected = test_otter code ?label ~driver:run_with_interceptor (expected_return_value expected)
+let test_ottercfg_static code ?(label=code) testfn = 
+    label >:: test_string_as_file "OtterCFGTest." ".i" code begin fun path ->
+        let file = Frontc.parse path () in
+        assert_bool "Cil parse error" (not !Errormsg.hadErrors);
+        Core.prepare_file file;
+        testfn file
+    end
 
-let testsuite_fast = "Fast" >::: [
+let test_ottercfg_execute code ?label expected = test_otter code ?label ~driver:run_with_interceptor (expected_return_value expected)
 
-    test_ottercfg
+let testsuite_static = "Static" >::: [
+
+    test_ottercfg_static
+        ~label:"Distance-to-run is infinite for functions calling exit()"
+        "int f(void) {
+            int i = 0;
+            exit(1);
+        }"
+        begin fun file ->
+            let fundec = CilUtilities.FindCil.fundec_by_name file "f" in
+            let instr = OtterCFG.Instruction.of_fundec file fundec in
+            let distance_to_return = OtterCFG.Distance.find_return instr in
+            assert_equal 
+                ~printer:(fun ff d -> Format.fprintf ff "distance=%d" d)
+                max_int
+                distance_to_return
+        end;
+
+]
+
+let testsuite_execute_fast = "Fast" >::: [
+
+    test_ottercfg_execute
         ~label:"Basic"
         "int main(void) {
             __otter_instr_mark(1);
@@ -92,7 +120,7 @@ let testsuite_fast = "Fast" >::: [
         }"
         1;
 
-     test_ottercfg
+     test_ottercfg_execute
         ~label:"Simple instructions between source and target"
         "int main(void) {
             __otter_instr_mark(1);
@@ -103,7 +131,7 @@ let testsuite_fast = "Fast" >::: [
         }"
         4;
 
-    test_ottercfg
+    test_ottercfg_execute
         ~label:"Take the shortest path in a function call"
         "void g(int i) {
             if (i) {
@@ -120,7 +148,7 @@ let testsuite_fast = "Fast" >::: [
         }"
         3;
 
-    test_ottercfg
+    test_ottercfg_execute
         ~label:"Function call"
         "void g(void) {
             return;
@@ -132,7 +160,7 @@ let testsuite_fast = "Fast" >::: [
         }"
         2;
 
-    test_ottercfg
+    test_ottercfg_execute
         ~label:"Recursion"
         "void g(int i) {
             if (i<=0) 
@@ -146,7 +174,7 @@ let testsuite_fast = "Fast" >::: [
         }"
         3;
 
-    test_ottercfg
+    test_ottercfg_execute
         ~label:"One-level calling context"
         "void f(void) {
             __otter_instr_mark(1);
@@ -158,7 +186,7 @@ let testsuite_fast = "Fast" >::: [
         }"
         2;
 
-    test_ottercfg
+    test_ottercfg_execute
         ~label:"Two-level calling context"
         "void f(void) {
             __otter_instr_mark(1);
@@ -176,9 +204,9 @@ let testsuite_fast = "Fast" >::: [
 
 ]
 
-let testsuite_bugs = "Bugs" >::: [
+let testsuite_execute_bugs = "Bugs" >::: [
 
-    test_ottercfg
+    test_ottercfg_execute
         ~label:"Nested function call"
         "void f(void) {
             return;
@@ -197,6 +225,7 @@ let testsuite_bugs = "Bugs" >::: [
 ]
 
 let testsuite = "Distance" >::: [
-    testsuite_fast;
-    testsuite_bugs;
+    testsuite_static;
+    testsuite_execute_fast;
+    testsuite_execute_bugs;
 ]
