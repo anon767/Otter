@@ -4,6 +4,20 @@
  *
  * For intersection/union, when an element appears in both sets, the earlier time is used.
  *)
+module Record = struct
+    type t = {
+        first_seen: float
+    }
+
+    let empty = {
+        first_seen = max_float
+    }
+    
+    let merge r1 r2 = {
+        first_seen = Pervasives.min r1.first_seen r2.first_seen
+    }
+end
+
 module Make (Ord: Set.OrderedType) = struct
     
     let time_elapsed =
@@ -12,7 +26,7 @@ module Make (Ord: Set.OrderedType) = struct
 
     module M = Map.Make (Ord)
 
-    type t = float M.t
+    type t = Record.t M.t
 
     let empty = M.empty
     let is_empty = M.is_empty
@@ -23,27 +37,27 @@ module Make (Ord: Set.OrderedType) = struct
     let add elt s = 
         let t = time_elapsed () in
         try
-            let t' = M.find elt s in
-            if t' <= t then s else M.add elt t s
-        with Not_found -> M.add elt t s
+            let r = M.find elt s in
+            if r.Record.first_seen <= t then s else M.add elt {Record.first_seen = t} s
+        with Not_found -> M.add elt {Record.first_seen = t} s
 
     let union s1 s2 = M.merge (
-        fun _ t1opt t2opt -> match t1opt, t2opt with
-        | Some t, None
-        | None, Some t -> Some t
-        | Some t1, Some t2 -> Some (Pervasives.min t1 t2)
+        fun _ r1opt r2opt -> match r1opt, r2opt with
+        | Some r, None
+        | None, Some r -> Some r
+        | Some r1, Some r2 -> Some (Record.merge r1 r2)
         | None, None -> None (* Can't happen *)
     ) s1 s2
 
     let inter s1 s2 = M.merge (
-        fun _ t1opt t2opt -> match t1opt, t2opt with
-        | Some t1, Some t2 -> Some (Pervasives.min t1 t2)
+        fun _ r1opt r2opt -> match r1opt, r2opt with
+        | Some r1, Some r2 -> Some (Record.merge r1 r2)
         | _, _ -> None 
     ) s1 s2
 
     let diff s1 s2 =  M.merge (
-        fun _ t1opt t2opt -> match t1opt, t2opt with
-        | Some t, None -> Some t
+        fun _ r1opt r2opt -> match r1opt, r2opt with
+        | Some r, None -> Some r
         | _, _ -> None 
     ) s1 s2
 
