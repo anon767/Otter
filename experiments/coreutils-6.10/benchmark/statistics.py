@@ -34,13 +34,13 @@ time_re = re.compile(r"^\s*\d+\.\d+\s*(\d+\.\d+).*TargetReached.*")
 program_re = re.compile(r"(.*)_\d+\.log")
 
 table = defaultdict(list)
-programs = []
+programs = set()
 
 directory = sys.argv[1]
 filenames = os.listdir(directory)
 for filename in filenames:
     program = program_re.match(filename).group(1)
-    programs.append(program)
+    programs.add(program)
     filename = os.path.join(directory, filename)
     file = open(filename)
     time = 100000.0  # Penalty
@@ -91,7 +91,7 @@ for program in programs:
     for strategy in ["KLEE", "SAGE", "random-path", "depth-first"]:
         # Pure forward
         output.append(format(getstat(program, ["runotter",("queue",strategy)])))
-        for ratio in [ ".25", ".5" ]:
+        for ratio in [ ".75", ".5" ]:
             output.append(format(getstat(program, ["runbackotter",("forward-queue",strategy),("bidirectional-search-ratio",ratio)])))
 
     # Naive distance to targets (TODO)
