@@ -1,8 +1,8 @@
-// Otter:
-// <path>/otter.pl --doexecute --max-abandoned=1 --queue=random-path --random-seed=0 Strawman_Example.c
+// Otter (~6 secs)
+// <path>/otter.pl --doexecute --max-abandoned=1 --queue=random-path --random-seed=0 pro_backotter_2.c
 //
-// BackOtter:
-// <path>/otter.pl --dobackotter --max-abandoned=1 --bidirectional-search-ratio=-1 --backward-queue=random-path --random-seed=0 Strawman_Example.c
+// BackOtter (~1 sec)
+// <path>/otter.pl --dobackotter --max-abandoned=1 --bidirectional-search-ratio=-1 --backward-queue=random-path --random-seed=0 pro_backotter_2.c
 //
 int __SYMBOLIC(void *);
 void __FAILURE(void) { }
