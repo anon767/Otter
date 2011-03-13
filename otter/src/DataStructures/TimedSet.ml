@@ -13,7 +13,7 @@ module Record = struct
 
     let create () = {
         first_seen = time_elapsed ();
-        add_count = 0;
+        add_count = 1;
     }
 
     let touch r = {r with add_count = r.add_count + 1}
@@ -22,6 +22,8 @@ module Record = struct
         first_seen = Pervasives.min r1.first_seen r2.first_seen;
         add_count = r1.add_count + r2.add_count;
     }
+
+    let print ff r = Format.fprintf ff "[%.2f,%d]" r.first_seen r.add_count
 end
 
 (** 

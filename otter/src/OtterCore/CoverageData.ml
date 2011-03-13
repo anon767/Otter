@@ -35,7 +35,7 @@ end
 module LineData = struct
     type t = string * int (** (filename,line number) pair *)
     let compare ((f1,l1):t) (f2,l2) =
-           match String.compare f1 f2 with
+        match String.compare f1 f2 with
         | 0 -> Pervasives.compare l1 l2
         | i -> i
 end

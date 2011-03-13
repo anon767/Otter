@@ -403,7 +403,7 @@ let printEdge ff (srcStmtInfo,destStmtInfo) = Format.fprintf ff "%a -> %a" print
 let printBlock = printStmtInfo
 let printCondition ff (stmtInfo, truth) = Format.fprintf ff "%a %c" printStmtInfo stmtInfo (if truth then 'T' else 'F')
 
-let printTimedEntity printEntity ff (entity, record) = Format.fprintf ff "[%.2f] %a" record.TimedSet.Record.first_seen printEntity entity
+let printTimedEntity printEntity ff (entity, record) = Format.fprintf ff "@[%a@] %a" TimedSet.Record.print record printEntity entity
 let printTimedEntities printEntity elements_extract entityset = List.iter (Output.printf "%a@\n" (printTimedEntity printEntity)) (elements_extract entityset)
 
 let printLines = printTimedEntities printLine LineSet.elements
