@@ -93,7 +93,7 @@ let test_ottercfg_execute code ?label expected = test_otter code ?label ~driver:
 let testsuite_static = "Static" >::: [
 
     test_ottercfg_static
-        ~label:"Distance-to-run is infinite for functions calling exit()"
+        ~label:"Distance-to-return is infinite for functions not returning"
         "int f(void) {
             int i = 0;
             exit(1);
@@ -105,6 +105,22 @@ let testsuite_static = "Static" >::: [
             assert_equal 
                 ~printer:(fun ff d -> Format.fprintf ff "distance=%d" d)
                 max_int
+                distance_to_return
+        end;
+
+    test_ottercfg_static
+        ~label:"Simple distance-to-return"
+        "int f(void) {
+            int i = 0;
+            return 0;
+        }"
+        begin fun file ->
+            let fundec = CilUtilities.FindCil.fundec_by_name file "f" in
+            let instr = OtterCFG.Instruction.of_fundec file fundec in
+            let distance_to_return = OtterCFG.Distance.find_return instr in
+            assert_equal 
+                ~printer:(fun ff d -> Format.fprintf ff "distance=%d" d)
+                1
                 distance_to_return
         end;
 
