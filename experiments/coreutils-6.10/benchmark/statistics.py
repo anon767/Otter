@@ -74,38 +74,33 @@ for key, values in table.items():
 def format(entry):
     return "\\meanstdev{%.2f}{%.2f}" % (entry["mean"], entry["stdev"])
 
-def getstat(opts):
+def getstat(program, opts):
     global stat
-    key = frozenset(opts)
+    key = (program, frozenset(opts))
     if key not in stat:
         return {"mean":-1.0,"stdev":-1.0}
     else:
         return stat[key]
 
-print stat
-
 for program in programs:
     output = [ program ]
 
     # Pure BackOtter
-    output.append(format(getstat(["runbackotter",("bidirectional-search-ratio","-1")])))
+    output.append(format(getstat(program, ["runbackotter",("bidirectional-search-ratio","-1")])))
 
     for strategy in ["KLEE", "SAGE", "random-path", "depth-first"]:
         # Pure forward
-        output.append(format(getstat(["runotter",("queue",strategy)])))
+        output.append(format(getstat(program, ["runotter",("queue",strategy)])))
         for ratio in [ ".25", ".5" ]:
-            output.append(format(getstat(["runbackotter",("forward-queue",strategy),("bidirectional-search-ratio",ratio)])))
+            output.append(format(getstat(program, ["runbackotter",("forward-queue",strategy),("bidirectional-search-ratio",ratio)])))
 
     # Naive distance to targets (TODO)
-    output.append(format(getstat(["runotter",("queue","naive-distance-to-targets")])))
+    output.append(format(getstat(program, ["runotter",("queue","naive-distance-to-targets")])))
 
     # Simple ESD (TODO)
-    output.append(format(getstat(["runotter",("queue","simple-esd")])))
+    output.append(format(getstat(program, ["runotter",("queue","simple-esd")])))
 
     # join
     result = string.join(output, " & ") + " \\\\"
     print result
-
-
-
 
