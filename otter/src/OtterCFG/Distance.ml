@@ -174,11 +174,11 @@ let find_in_context =
                     let dist =
                         (* "+1" since call_return is the NEXT instruction after the call *)
                         let dist' = return_dist + 1 + find (call_return, targets) in
-                        if dist' < 0 then dist (* overflow *) else min dist dist'
+                        min dist dist'
                     in
                     (* "+1" since call_return is the NEXT instruction after the call *)
                     let return_dist = return_dist + 1 + find_return call_return in
-                    if return_dist < 0 then
+                    if return_dist = max_int then
                         dist (* overflow; terminate since further unwindings will also overflow *)
                     else
                         unwind dist return_dist context
