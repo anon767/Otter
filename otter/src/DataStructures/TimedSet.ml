@@ -1,29 +1,37 @@
+(* TODO: rename this module to RecordedSet *)
+
+module Record = struct
+
+    let time_elapsed =
+        let time_start = Unix.gettimeofday () in
+        function () -> Unix.gettimeofday () -. time_start
+
+    type t = {
+        first_seen: float; (* The first time an element is added to the set *)
+        add_count: int;    (* How many times an element is added to the set *)
+    }
+
+    let create () = {
+        first_seen = time_elapsed ();
+        add_count = 0;
+    }
+
+    let touch r = {r with add_count = r.add_count + 1}
+    
+    let merge r1 r2 = {
+        first_seen = Pervasives.min r1.first_seen r2.first_seen;
+        add_count = r1.add_count + r2.add_count;
+    }
+end
+
 (** 
  * A set module that keeps track of times when elements are added.
  * The underlying data-structure is a map from the set elements to times as floats.
  *
  * For intersection/union, when an element appears in both sets, the earlier time is used.
  *)
-module Record = struct
-    type t = {
-        first_seen: float
-    }
-
-    let empty = {
-        first_seen = max_float
-    }
-    
-    let merge r1 r2 = {
-        first_seen = Pervasives.min r1.first_seen r2.first_seen
-    }
-end
-
 module Make (Ord: Set.OrderedType) = struct
     
-    let time_elapsed =
-        let time_start = Unix.gettimeofday () in
-        function () -> Unix.gettimeofday () -. time_start
-
     module M = Map.Make (Ord)
 
     type t = Record.t M.t
@@ -35,11 +43,10 @@ module Make (Ord: Set.OrderedType) = struct
     let elements s = M.fold (fun elt t lst -> (elt, t)::lst) s []
 
     let add elt s = 
-        let t = time_elapsed () in
-        try
+        if M.mem elt s then 
             let r = M.find elt s in
-            if r.Record.first_seen <= t then s else M.add elt {Record.first_seen = t} s
-        with Not_found -> M.add elt {Record.first_seen = t} s
+            M.add elt (Record.touch r) s
+        else M.add elt (Record.create ()) s
 
     let union s1 s2 = M.merge (
         fun _ r1opt r2opt -> match r1opt, r2opt with
