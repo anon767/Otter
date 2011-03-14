@@ -20,6 +20,7 @@ let _ =
     Cilly.run [
         (* Features have to be ordered by dependencies. *)
         Otter.RunRmtmps.feature;
+        Otter.RunReachingDef.feature;
         (* Features below are mutually exclusive. *)
         Otter.LinkCheck.feature;
         Otter.Executemain.feature;
