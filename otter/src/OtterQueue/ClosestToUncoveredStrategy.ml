@@ -133,8 +133,8 @@ class ['self] t = object (self : 'self)
         let distances = lazy (self#update_distances instr coverage) in
         {< coverage = coverage; distances = distances >}
 
-    method weight job =
-        1. /. float_of_int (self#calculate_distance job)
+    method weights jobs =
+        List.map (fun job -> 1. /. float_of_int (self#calculate_distance job)) jobs
 end
 
 let options = [

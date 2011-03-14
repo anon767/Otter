@@ -18,11 +18,13 @@ class ['self] t = object (self : 'self)
 
     method remove job = self
 
-    method weight job =
-        let target_instr = Instruction.of_fundec job#file (ProgramPoints.get_failure_fundec job#file) in
-        let source = Job.get_instruction job in
-        let context = Job.get_instruction_context job in
-        weight_of_distance (Distance.find_in_context (source, context, [ target_instr ]))
+    method weights jobs =
+        List.map begin fun job ->
+            let target_instr = Instruction.of_fundec job#file (ProgramPoints.get_failure_fundec job#file) in
+            let source = Job.get_instruction job in
+            let context = Job.get_instruction_context job in
+            weight_of_distance (Distance.find_in_context (source, context, [ target_instr ]))
+        end jobs
 end
 
 

@@ -21,7 +21,7 @@ class ['self] t = object (_ : 'self)
         let steps = steps + 1 in
         {< queue = queue; steps = steps >}
 
-    method weight job =
-        float_of_int (JobSteps.find job#path_id queue)
+    method weights jobs =
+        List.map (fun job -> float_of_int (JobSteps.find job#path_id queue)) jobs
 end
 

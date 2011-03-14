@@ -21,7 +21,7 @@ class ['self] t = object (self : 'self)
         let coverage = InstructionMap.add instr count coverage in
         {< coverage = coverage >}
 
-    method weight job =
-        1. /. float_of_int (InstructionMap.find (Job.get_instruction job) coverage)
+    method weights jobs =
+        List.map (fun job -> 1. /. float_of_int (InstructionMap.find (Job.get_instruction job) coverage)) jobs
 end
 

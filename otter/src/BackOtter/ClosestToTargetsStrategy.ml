@@ -11,8 +11,8 @@ class ['self] t = object (self : 'self)
 
     method remove job = self
 
-    method weight job =
-        Profiler.global#call "ClosestToTargetsStrategy.add" begin fun () ->
+    method weights jobs = Profiler.global#call "ClosestToTargetsStrategy.add" begin fun () ->
+        List.map begin fun job ->
             let source = Job.get_instruction job in
             let call_sites = Instruction.call_sites (Instruction.fundec_of source) in
 
@@ -33,6 +33,7 @@ class ['self] t = object (self : 'self)
             in
             Output.debug_printf "Job %d has distance to target = %d@\n" job#node_id distance;
             OtterQueue.ClosestToTargetsStrategy.weight_of_distance distance
-        end
+        end jobs
+    end
 end
 
