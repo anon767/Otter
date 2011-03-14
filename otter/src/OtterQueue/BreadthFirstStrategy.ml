@@ -21,9 +21,7 @@ class ['self] t = object (_ : 'self)
         let steps = steps + 1 in
         {< queue = queue; steps = steps >}
 
-    method find_max_jobs =
-        RankedQueue.find_max_jobs begin fun job ->
-            1. /. float_of_int (JobSteps.find job#path_id queue) 
-        end
+    method weight job =
+        1. /. float_of_int (JobSteps.find job#path_id queue)
 end
 
