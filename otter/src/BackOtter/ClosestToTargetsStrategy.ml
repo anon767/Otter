@@ -32,7 +32,7 @@ class ['self] t = object (self : 'self)
                     Distance.find_in_context (source, context, all_targets)
             in
             Output.debug_printf "Job %d has distance to target = %d@\n" job#node_id distance;
-            1. /. float_of_int distance
+            OtterQueue.ClosestToTargetsStrategy.weight_of_distance distance
         end
 end
 

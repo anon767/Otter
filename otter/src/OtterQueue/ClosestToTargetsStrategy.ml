@@ -5,6 +5,12 @@ open DataStructures
 open OtterCFG
 open OtterCore
 
+(* Abstract distance *)
+let weight_of_distance distance =
+    if distance < 5 then 3.0
+    else if distance < max_int then 2.0
+    else 1.0
+
 
 class ['self] t = object (self : 'self)
 
@@ -25,7 +31,7 @@ class ['self] t = object (self : 'self)
         let file = job#file in
         let failure_fn = ProgramPoints.get_failure_fundec file in
         let distance = get_distance_to_targets [failure_fn] job in
-        1. /. float_of_int (distance)
+        weight_of_distance distance
 end
 
 
