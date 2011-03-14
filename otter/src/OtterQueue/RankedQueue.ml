@@ -19,6 +19,19 @@ module JobSet = struct
 end
 
 
+(* helper for strategies to select the highest weighted jobs *)
+let find_max_jobs weight_fn jobs =
+    fst begin List.fold_left begin fun (max_jobs, max_weight) job ->
+        let weight = weight_fn job in
+        if weight > max_weight then
+            ([ job ], weight)
+        else if weight = max_weight then
+            (job::max_jobs, max_weight)
+        else
+            (max_jobs, max_weight)
+    end ([], neg_infinity) jobs end
+
+
 class ['self] t strategies = object (self : 'self)
     val jobs = JobSet.empty
     val strategies = strategies
@@ -37,24 +50,12 @@ class ['self] t strategies = object (self : 'self)
         if JobSet.is_empty jobs then
             None
         else
-            (* helper to select the highest weighted jobs using a strategy *)
-            let find_max_jobs strategy jobs =
-                fst begin List.fold_left begin fun (max_jobs, max_weight) job ->
-                    let weight = strategy#weight job in
-                    if weight > max_weight then
-                        ([ job ], weight)
-                    else if weight = max_weight then
-                        (job::max_jobs, max_weight)
-                    else
-                        (max_jobs, max_weight)
-                end ([], neg_infinity) jobs end
-            in
             (* helper to find the highest weighted job using a list of strategies in order *)
             let rec find_max jobs strategies = match jobs, strategies with
                 | [ job ], _ ->
                     job
                 | jobs, strategy::strategies ->
-                    find_max (find_max_jobs strategy jobs) strategies
+                    find_max (strategy#find_max_jobs jobs) strategies
                 | jobs, [] ->
                     (* more than one job remains after applying all strategies: choose one at random *)
                     List.nth jobs (Random.int (List.length jobs))

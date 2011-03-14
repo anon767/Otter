@@ -55,15 +55,17 @@ class ['self] t = object (self : 'self)
 
         {< work = work; queue = queue; next = next >}
 
-    method weight job =
-        (* pick any one of work or the most recent generation *)
-        if JobSet.is_empty work then
-            try
-                let _, generation, () = JobGeneration.find_min queue in
-                if fst (JobGeneration.lookup job#path_id queue) = generation then 1. else 0.
-            with JobGeneration.Key | JobGeneration.Empty ->
-                raise Not_found
-        else
-            if JobSet.mem job#path_id work then 1. else 0.
+    method find_max_jobs =
+        RankedQueue.find_max_jobs begin fun job ->
+            (* pick any one of work or the most recent generation *)
+            if JobSet.is_empty work then
+                try
+                    let _, generation, () = JobGeneration.find_min queue in
+                    if fst (JobGeneration.lookup job#path_id queue) = generation then 1. else 0.
+                with JobGeneration.Key | JobGeneration.Empty ->
+                    raise Not_found
+            else
+                if JobSet.mem job#path_id work then 1. else 0.
+        end
 end
 

@@ -29,11 +29,13 @@ class ['self] t = object (_ : 'self)
         with JobOrder.Key ->
             raise Not_found
 
-    method weight job =
-        try
-            (* job ranks are negative, so negate it for positive weights *)
-            -1. /. float_of_int (fst (JobOrder.lookup job#path_id queue))
-        with JobOrder.Key ->
-            raise Not_found
+    method find_max_jobs =
+        RankedQueue.find_max_jobs begin fun job ->
+            try
+                (* job ranks are negative, so negate it for positive weights *)
+                -1. /. float_of_int (fst (JobOrder.lookup job#path_id queue))
+            with JobOrder.Key ->
+                raise Not_found
+        end
 end
 

@@ -133,8 +133,10 @@ class ['self] t = object (self : 'self)
         let distances = lazy (self#update_distances instr coverage) in
         {< coverage = coverage; distances = distances >}
 
-    method weight job =
-        1. /. float_of_int (self#calculate_distance job)
+    method find_max_jobs =
+        RankedQueue.find_max_jobs begin fun job ->
+            1. /. float_of_int (self#calculate_distance job)
+        end
 end
 
 let options = [

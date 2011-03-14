@@ -12,7 +12,7 @@ class ['self] t = object (self : 'self)
 
     method remove job = self
 
-    method weight job =
+    method find_max_jobs =
         let get_distance_to_targets target_fundecs job =
             if target_fundecs = [] then
                 max_int (* = max_int in DistanceToTargets *)
@@ -22,10 +22,12 @@ class ['self] t = object (self : 'self)
                 let context = Job.get_instruction_context job in
                 Distance.find_in_context (source, context, target_instrs)
         in
-        let file = job#file in
-        let failure_fn = ProgramPoints.get_failure_fundec file in
-        let distance = get_distance_to_targets [failure_fn] job in
-        1. /. float_of_int (distance)
+        RankedQueue.find_max_jobs begin fun job ->
+            let file = job#file in
+            let failure_fn = ProgramPoints.get_failure_fundec file in
+            let distance = get_distance_to_targets [failure_fn] job in
+            1. /. float_of_int (distance)
+        end
 end
 
 

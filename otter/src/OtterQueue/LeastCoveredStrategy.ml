@@ -21,7 +21,9 @@ class ['self] t = object (self : 'self)
         let coverage = InstructionMap.add instr count coverage in
         {< coverage = coverage >}
 
-    method weight job =
-        1. /. float_of_int (InstructionMap.find (Job.get_instruction job) coverage)
+    method find_max_jobs =
+        RankedQueue.find_max_jobs begin fun job ->
+            1. /. float_of_int (InstructionMap.find (Job.get_instruction job) coverage)
+        end
 end
 
