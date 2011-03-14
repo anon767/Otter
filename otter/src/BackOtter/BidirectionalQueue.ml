@@ -70,7 +70,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
         val origin_fundecs = starter_fundecs
 
         (* A worklist for bounded jobs. TODO: maybe Random-path is better? *)
-        val bounded_jobqueue = new BackOtterQueue.RankedQueue.t [ new BackOtterQueue.DepthFirstStrategy.t ]
+        val bounded_jobqueue = new OtterQueue.RankedQueue.t [ new OtterQueue.DepthFirstStrategy.t ]
 
         (* the bounded_job previously returned by #get*)
         val previous_bounded_job = None

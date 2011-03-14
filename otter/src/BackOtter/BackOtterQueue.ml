@@ -1,33 +1,13 @@
 open OcamlUtilities
 
-(* Borrow these queues from OtterQueue *)
-module BatchQueue = OtterQueue.BatchQueue
-module BreadthFirstStrategy = OtterQueue.BreadthFirstStrategy
-module ClosestToUncoveredStrategy = OtterQueue.ClosestToUncoveredStrategy
-module DepthFirstStrategy = OtterQueue.DepthFirstStrategy
-module GenerationalStrategy = OtterQueue.GenerationalStrategy
-module LeastCoveredStrategy = OtterQueue.LeastCoveredStrategy
-module RankedQueue = OtterQueue.RankedQueue
-module RandomPathQueue = OtterQueue.RandomPathQueue
-module RoundRobinQueue = OtterQueue.RoundRobinQueue
-
 (* Forward *)
 let queues = OtterQueue.Queue.queues
 
+(* BackOtter's ClosestToTargetsStrategy is different from that in OtterQueue *)
 let rec get = function
-    | `BreadthFirst -> new RankedQueue.t [ new BreadthFirstStrategy.t ]
-    | `DepthFirst -> new RankedQueue.t [ new DepthFirstStrategy.t ]
-    | `RandomPath -> new RandomPathQueue.t
-    | `Generational `BreadthFirst -> new RankedQueue.t [ new GenerationalStrategy.t; new BreadthFirstStrategy.t ]
-    | `Generational `DepthFirst -> new RankedQueue.t [ new GenerationalStrategy.t; new DepthFirstStrategy.t ]
-    | `Generational `Random -> new RankedQueue.t [ new GenerationalStrategy.t ]
-    | `LeastCovered -> new RankedQueue.t  [ new LeastCoveredStrategy.t ]
-    | `ClosestToUncovered -> new RankedQueue.t [ new ClosestToUncoveredStrategy.t ]
-    | `ClosestToTargets -> new RankedQueue.t [ new ClosestToTargetsStrategy.t ] (* This ClosestToTargetsStrategy is different from that in OtterQueue *)
-    | `Generational `ClosestToTargets -> new RankedQueue.t [ new GenerationalStrategy.t; new ClosestToTargetsStrategy.t ]
-    | `RoundRobin queues -> new RoundRobinQueue.t (List.map get queues)
-    | `KLEE -> new BatchQueue.t (get (`RoundRobin [ `ClosestToUncovered; `RandomPath ]))
-    | `SAGE -> new RankedQueue.t [ new GenerationalStrategy.t; new ClosestToUncoveredStrategy.t ]
+    | `ClosestToTargets -> new OtterQueue.RankedQueue.t [ new ClosestToTargetsStrategy.t ]
+    | `Generational `ClosestToTargets -> new OtterQueue.RankedQueue.t [ new OtterQueue.GenerationalStrategy.t; new ClosestToTargetsStrategy.t ]
+    | queue -> OtterQueue.Queue.get queue
 
 let default_fqueue = ref (`Generational `BreadthFirst)
 let get_default_fqueue () = get !default_fqueue
