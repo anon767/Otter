@@ -10,6 +10,7 @@ class t :
     object ('self)
         method path_id : int
         method node_id : int
+        method path_length : int
         method parent_path_id : int
         method parent_node_id : int
         method parent_list : (int * int) list
@@ -29,10 +30,12 @@ class t :
     object (self : 'self)
         val mutable path_id = Counter.next path_counter
         val mutable node_id = Counter.next node_counter
+        val mutable path_length = 0
         val mutable parent_list = []
 
         method path_id = path_id
         method node_id = node_id
+        method path_length = path_length
         method parent_path_id = fst (List.hd parent_list)
         method parent_node_id = snd (List.hd parent_list)
         method parent_list = parent_list
@@ -70,6 +73,7 @@ class t :
                     Output.set_mode old_mode;
 
                     let parent_list = (path_id, node_id)::parent_list in
+                    let path_length = path_length + 1 in
                     let path_profiler = path_profiler#add node_profiler in
                     let node_profiler = node_profiler#reset in
 
@@ -78,6 +82,7 @@ class t :
                          * even if it's the only one *)
                         node_id = Counter.next node_counter;
                         parent_list = parent_list;
+                        path_length = path_length;
                         path_profiler = path_profiler;
                         node_profiler = node_profiler;
                     >} x acc in
@@ -88,6 +93,7 @@ class t :
                             path_id = Counter.next path_counter;
                             node_id = Counter.next node_counter;
                             parent_list = parent_list;
+                            path_length = path_length;
                             path_profiler = path_profiler;
                             node_profiler = node_profiler;
                         >} x acc
@@ -147,6 +153,7 @@ class t :
             path_id <- other#path_id;
             node_id <- other#node_id;
             parent_list <- other#parent_list;
+            path_length <- other#path_length;
             path_profiler <- other#path_profiler;
             node_profiler <- other#node_profiler
     end
