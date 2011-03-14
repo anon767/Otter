@@ -19,19 +19,10 @@ class ['self] t = object (self : 'self)
     method remove job = self
 
     method weight job =
-        let get_distance_to_targets target_fundecs job =
-            if target_fundecs = [] then
-                max_int (* = max_int in DistanceToTargets *)
-            else
-                let source = Job.get_instruction job in
-                let target_instrs = List.map (fun f -> Instruction.of_fundec job#file f) target_fundecs in
-                let context = Job.get_instruction_context job in
-                Distance.find_in_context (source, context, target_instrs)
-        in
-        let file = job#file in
-        let failure_fn = ProgramPoints.get_failure_fundec file in
-        let distance = get_distance_to_targets [failure_fn] job in
-        weight_of_distance distance
+        let target_instr = Instruction.of_fundec job#file (ProgramPoints.get_failure_fundec job#file) in
+        let source = Job.get_instruction job in
+        let context = Job.get_instruction_context job in
+        weight_of_distance (Distance.find_in_context (source, context, [ target_instr ]))
 end
 
 
