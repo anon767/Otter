@@ -25,28 +25,28 @@
 
 open DataStructures
 
-module JobSet = struct
+
+(* job set which give a new id to a job upon entry into the set; if the job previously existed, the old id is replaced;
+ * this is to support delayed removal from the internal compact execution tree, while still allowing jobs to be
+ * garbage-collected upon removal *)
+module JobIndirectSet = struct
     module M = Map.Make (struct type t = int let compare = Pervasives.compare end)
-    let empty = M.empty
-    let add job set =
-        let jobs = try M.find job#path_id set with Not_found -> [] in
-        M.add job#path_id (job::jobs) set
-    let mem job set =
+
+    let empty = (M.empty, M.empty, Counter.make ())
+
+    let remove job (job_to_id, id_to_job, counter) =
         try
-            let jobs = M.find job#path_id set in
-            List.memq job jobs
+            (M.remove job#node_id job_to_id, M.remove (M.find job#node_id job_to_id) id_to_job, counter)
         with Not_found ->
-            false
-    let remove job set =
-        try
-            let jobs = M.find job#path_id set in
-            let jobs = List.filter ((!=) job) jobs in
-            if jobs = [] then
-                M.remove job#path_id set
-            else
-                M.add job#path_id jobs set
-        with Not_found ->
-            set
+            (job_to_id, id_to_job, counter)
+
+    let add job (job_to_id, id_to_job, counter) =
+        let job_to_id, id_to_job, counter = remove job (job_to_id, id_to_job, counter) in
+        let new_id = Counter.next counter in
+        ((M.add job#node_id new_id job_to_id, M.add new_id job id_to_job, counter), new_id)
+
+    let mem id (_, id_to_job, _) = M.mem id id_to_job
+    let find id (_, id_to_job, _) = M.find id id_to_job
 end
 
 
@@ -54,13 +54,14 @@ class ['self] t = object (_ : 'self)
     (* zipper-based search queue context *)
     val context = `Top
     val leaves = RandomBag.empty
-    val removed = JobSet.empty
+    val jobs = JobIndirectSet.empty
 
     method put job =
-        {< leaves = RandomBag.put (`Job job) leaves >}
+        let jobs, job_id = JobIndirectSet.add job jobs in
+        {< leaves = RandomBag.put (`Job job_id) leaves; jobs = jobs >}
 
     method remove job =
-        {< removed = JobSet.add job removed >}
+        {< jobs = JobIndirectSet.remove job jobs >}
 
     method get = OcamlUtilities.Profiler.global#call "RandomPathQueue.t#get" begin fun () ->
         (* first, zip the tree, making sure no branches are empty unless the tree is empty *)
@@ -72,17 +73,18 @@ class ['self] t = object (_ : 'self)
         in
 
         (* then, descend randomly to a job; if the job is a removed job, repeat the selection *)
-        let rec descend removed context = function
+        let rec descend jobs context = function
             | `Branches nodes ->
                 begin match RandomBag.get nodes with
                     | None -> None
-                    | Some (nodes, node) -> descend removed (`Node (nodes, context)) node
+                    | Some (nodes, node) -> descend jobs (`Node (nodes, context)) node
                 end
-            | `Job job when JobSet.mem job removed ->
-                descend (JobSet.remove job removed) `Top (zip RandomBag.empty context)
-            | `Job job ->
-                Some ({< context = context; leaves = RandomBag.empty; removed = removed >}, job)
+            | `Job job_id when not (JobIndirectSet.mem job_id jobs) ->
+                descend jobs `Top (zip RandomBag.empty context)
+            | `Job job_id ->
+                let job = JobIndirectSet.find job_id jobs in
+                Some ({< context = context; leaves = RandomBag.empty; jobs = JobIndirectSet.remove job jobs >}, job)
         in
-        descend removed `Top (zip leaves context)
+        descend jobs `Top (zip leaves context)
     end
 end
