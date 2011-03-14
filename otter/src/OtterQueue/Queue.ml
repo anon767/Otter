@@ -12,6 +12,9 @@ let queues = [
     "least-covered", `LeastCovered;
     "closest-to-uncovered", `ClosestToUncovered;
     "closest-to-targets", `ClosestToTargets;
+    "distance-to-uncovered-weighted", `DistanceToUncoveredWeighted;
+    "distance-to-targets-weighted", `DistanceToTargetsWeighted;
+    "path-weighted", `PathWeighted;
     "generational*closest-to-targets", `Generational `ClosestToTargets;
     "KLEE", `KLEE;
     "SAGE", `SAGE;
@@ -31,9 +34,12 @@ let rec get = function
     | `LeastCovered -> new RankedQueue.t  [ new LeastCoveredStrategy.t ]
     | `ClosestToUncovered -> new RankedQueue.t [ new ClosestToUncoveredStrategy.t ]
     | `ClosestToTargets -> new RankedQueue.t [ new ClosestToTargetsStrategy.t ]
+    | `DistanceToUncoveredWeighted -> new RankedQueue.t [ new WeightedRandomStrategy.t (new ClosestToUncoveredStrategy.t) ]
+    | `DistanceToTargetsWeighted -> new RankedQueue.t [ new WeightedRandomStrategy.t (new ClosestToTargetsStrategy.t) ]
+    | `PathWeighted -> new RankedQueue.t [ new WeightedRandomStrategy.t (new PathWeightedStrategy.t) ]
     | `Generational `ClosestToTargets -> new RankedQueue.t [ new GenerationalStrategy.t; new ClosestToTargetsStrategy.t ]
     | `RoundRobin queues -> new RoundRobinQueue.t (List.map get queues)
-    | `KLEE -> new BatchQueue.t (get (`RoundRobin [ `ClosestToUncovered; `RandomPath ]))
+    | `KLEE -> new BatchQueue.t (get (`RoundRobin [ `DistanceToUncoveredWeighted; `PathWeighted ]))
     | `SAGE -> new RankedQueue.t [ new GenerationalStrategy.t; new ClosestToUncoveredStrategy.t ]
 
 let get_default () = get !default_queue
