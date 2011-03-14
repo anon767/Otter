@@ -1,8 +1,27 @@
 open Cil
 
+let vidVarinfoHash = Hashtbl.create 0 
+
+let print_vidmap vidmap = 
+    Reachingdefs.IH.iter 
+        begin fun id set ->
+            Format.printf ":varinfo: %s@\n" (Hashtbl.find vidVarinfoHash id).vname;
+            Reachingdefs.IOS.iter (
+                function
+                    | Some defId -> 
+                        let _ = Format.printf "::DefId: %d, " defId in
+                        let _ = match Reachingdefs.getSimpRhs defId with
+                            | Some (Reachingdefs.RDExp exp) -> Format.printf "exp: %a@\n" Printcil.exp exp
+                            | Some (Reachingdefs.RDCall instr) -> Format.printf "call: %a@\n" Printcil.instr instr
+                            | None -> Format.printf "StmtID: None@\n"
+                        in
+                        ()
+                    | None -> Format.printf "::DefId: None@\n" 
+            ) set
+        end vidmap
+
 let doit (file: Cil.file) =
     Format.printf "Run Cil's Reaching Definitions@\n";
-    let vidVarinfoHash = Hashtbl.create 0 in
     Cil.visitCilFileSameGlobals begin object
         inherit Cil.nopCilVisitor
         method vvdec varinfo =
@@ -22,23 +41,18 @@ let doit (file: Cil.file) =
                         Format.printf "Stmt %d: %a@\n" stmt.sid Printcil.stmt stmt;
                         Format.printf " * * * * *@\n";
                         match Reachingdefs.getRDs stmt.sid with
-                        | Some (_,_,vidmap) -> 
-                            Reachingdefs.IH.iter 
-                                begin fun id set ->
-                                    Format.printf ":varinfo: %s@\n" (Hashtbl.find vidVarinfoHash id).vname;
-                                    Reachingdefs.IOS.iter (
-                                        function
-                                            | Some defId -> 
-                                                let _ = Format.printf "::DefId: %d, " defId in
-                                                let _ = match Reachingdefs.getSimpRhs defId with
-                                                    | Some (Reachingdefs.RDExp exp) -> Format.printf "exp: %a@\n" Printcil.exp exp
-                                                    | Some (Reachingdefs.RDCall instr) -> Format.printf "call: %a@\n" Printcil.instr instr
-                                                    | None -> Format.printf "StmtID: None@\n"
-                                                in
-                                                ()
-                                            | None -> Format.printf "::DefId: None@\n" 
-                                    ) set
-                                end vidmap
+                        | Some (_,_,vidmap as triple) -> 
+                            print_vidmap vidmap;
+                            begin match stmt.skind with
+                            | Instr instrs ->
+                                let triples = Reachingdefs.instrRDs instrs stmt.sid triple false in
+                                List.iter2 (fun instr (_,_,vidmap) ->
+                                    Format.printf "Instr: %a@\n" Printcil.instr instr;
+                                    print_vidmap vidmap
+                                    ) instrs triples
+                            | _ -> ()
+                            end
+
                         | None -> Format.printf ":(None)@\n"
                     end
                     fundec.sallstmts
