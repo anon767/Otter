@@ -1,3 +1,4 @@
+#pragma expect_abandoned(out_of_bounds) /* __SYMBOLIC() % 4 may be negative */
 #pragma no_other_abandoned
 
 int foo0() {return 0;}

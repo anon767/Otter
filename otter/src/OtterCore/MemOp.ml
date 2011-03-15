@@ -9,7 +9,7 @@ open State
 open Operator
 
 (* Track Stp calls *)
-let timed_query_stp name = fun job pre guard -> (job : #Info.t)#profile_call name (fun job -> (job, Stp.query_stp job#state.path_condition pre guard))
+let timed_query_stp name = fun job pre guard -> (job : #Info.t)#profile_call name (fun job -> (job, BytesSTP.query_stp job#state.path_condition pre guard))
 
 (**
  *	memory frame
@@ -295,7 +295,7 @@ let state__extract_path_condition job bytes =
   *)
   (*
   let bytes_implies_pc bytes pc =
-    match Stp.query_bytes [bytes] pc with
+    match BytesSTP.query_bytes [bytes] pc with
       | Ternary.True -> true
       | _ -> false
   in
@@ -307,7 +307,7 @@ let state__extract_path_condition job bytes =
   *   TODO: maybe we can have a combination of these 2 methods?
   *)
   let bytes_and_others_implies_pc bytes_lst pc =
-    match Stp.query_bytes bytes_lst pc with
+    match BytesSTP.query_bytes bytes_lst pc with
       | Ternary.True -> true
       | _ -> false
   in
@@ -413,7 +413,7 @@ let rec eval pc bytes =
   let nontrivial () =
     Output.set_mode Output.MSG_REG;
     Output.printf "Ask STP...@.";
-    Stp.query_bytes pc bytes
+    BytesSTP.query_bytes pc bytes
 
   in
 	let operation_of op = match op with

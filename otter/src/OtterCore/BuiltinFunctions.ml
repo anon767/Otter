@@ -443,7 +443,7 @@ let otter_assume job _ exps errors =
     try
         let check_exp (job, errors) exp =
             let job, query, errors = Expression.rval job exp errors in
-            match Stp.query_stp job#state.path_condition guard__true (guard__bytes query) with
+            match BytesSTP.query_stp job#state.path_condition guard__true (guard__bytes query) with
                 | Ternary.True -> (job, errors) (* Ignore true assumptions *)
                 | Ternary.False -> raise Unsat (* Stop on false assumptions *)
                 | Ternary.Unknown -> (MemOp.state__add_path_condition job query false, errors) (* Add possible assumptions to path condition *)
@@ -731,7 +731,7 @@ let libc_longjmp job retopt exps errors =
 					| Bytes_ByteArray _ -> [bytes_to_int_auto stmtPtrAddrBytes]
 					| Bytes_Read(bytes2, offset, len) ->
 						let sp = BytesUtility.expand_read_to_conditional bytes2 offset len in
-						conditional__fold ~test:(fun acc pre guard -> (acc, Stp.query_stp job#state.path_condition pre guard)) fold_func [] sp
+						conditional__fold ~test:(fun acc pre guard -> (acc, BytesSTP.query_stp job#state.path_condition pre guard)) fold_func [] sp
 					| Bytes_Conditional(c) ->
 						conditional__fold fold_func [] c
 					| _ -> failwith "Non-constant statement ptr not supported"

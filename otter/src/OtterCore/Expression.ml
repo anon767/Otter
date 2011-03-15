@@ -339,7 +339,7 @@ deref job bytes typ errors =
                     ~test:begin fun (guard', job, errors, removed) pre guard ->
                         let job, truth =
                             (job : #Info.t)#profile_call "query_stp/Expression.deref/Bytes_Conditional"
-                                (fun job -> (job, Stp.query_stp job#state.path_condition pre guard))
+                                (fun job -> (job, BytesSTP.query_stp job#state.path_condition pre guard))
                         in
                         ((guard', job, errors, removed), truth)
                     end

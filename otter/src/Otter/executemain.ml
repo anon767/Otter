@@ -43,7 +43,7 @@ let options =
     FunctionJob.options @
     ProgramPoints.options @
     Queue.options @
-    Stp.options @
+    BytesSTP.options @
     SymbolicPointers.options @
     TrackingFunctions.options @
     Bytes.options

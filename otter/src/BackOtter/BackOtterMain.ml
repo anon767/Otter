@@ -133,7 +133,7 @@ let doit file =
         Output.printf "Counter statistics:@.";
         let counter_stats = DataStructures.NamedCounter.report () in
         List.iter (fun (name, value) -> Output.printf "%s : %d@." name value) counter_stats;
-        if (!Stp.print_stp_queries) then (
+        if (!BytesSTP.print_stp_queries) then (
             Output.must_printf "Stp queries:@.";
             List.iter (fun (pc, pre, guard, truth_value, time) ->
                 List.iter (Output.must_printf "PC: @[%a@]@." BytesPrinter.bytes) pc;
@@ -142,7 +142,7 @@ let doit file =
                 Output.printf "TRUTH: %s@." (if truth_value then "True" else "False");
                 Output.printf "TIME: %.2f@." time;
                 Output.printf "--------------------------------------------------@."
-            ) (!Stp.stp_queries)
+            ) (!BytesSTP.stp_queries)
         );
         let steps, paths, abandoned = reporter#get_stats in
         Output.printf "Number of steps: %d@." steps;

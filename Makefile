@@ -1,11 +1,11 @@
 
-SUBDIRS=cilqual cil ocamlstp stp camlidl ocamlgraph
+SUBDIRS=cilqual cil newstp ocamlgraph
 
-EXTRALIBDIRS=$(addprefix $(CURDIR)/,camlidl/runtime stp/lib ocamlstp)
-EXTRAOCAMLPATH=$(CURDIR)
+EXTRALIBDIRS=$(addprefix $(CURDIR)/,newstp/src/OcamlSTP)
+EXTRAOCAMLPATH=$(CURDIR):$(CURDIR)/newstp/src
 
 CTAGS_FILE=tags
-CTAGS_SOURCE_PATHS=otter/src otter/benchmark otter/test cil/src ocamlstp
+CTAGS_SOURCE_PATHS=otter/src otter/benchmark otter/test cil/src
 
 
 # augment configuration from Makefile.local, if it exists
@@ -41,7 +41,7 @@ make//otter : \
 		EXTRALIBDIRS='$(EXTRALIBDIRS)' \
 		EXTRAOCAMLPATH='$(EXTRAOCAMLPATH)' \
 		--with-cil='$(CURDIR)/cil'
-make//otter : cil ocamlstp ocamlgraph
+make//otter : cil newstp-ocamlstp ocamlgraph
 
 
 cilqual : make//cilqual
@@ -61,23 +61,13 @@ make//cilqual : \
 make//cilqual : libs-otter ocamlgraph
 
 
-ocamlstp : make//ocamlstp
-make//ocamlstp : \
-	MAKEGOALS= \
-		CAMLIDL='$(CURDIR)/camlidl/compiler/camlidl' \
-		LIBDIRS='$(CURDIR)/camlidl/runtime $(CURDIR)/stp/lib' \
-		INCDIRS='$(CURDIR)/camlidl/runtime $(CURDIR)/stp/c_interface'
-make//ocamlstp : stp camlidl
-
-
-stp : make//stp
-make//stp : MAKEGOALS=
-make//stp : CONFIGURE_FLAGS=--with-prefix=.
-
-
-camlidl : make//camlidl
-make//camlidl : MAKEGOALS=
-make//camlidl : CONFIGURE_FLAGS=
+newstp-ocamlstp : make//newstp
+newstp-ocamlstp : MAKEGOALS=OcamlSTP
+test-newstp-ocamlstp : make//newstp
+test-newstp-ocamlstp : MAKEGOALS=test-OcamlSTP
+# STP's configure script is non-standard
+newstp/Makefile : newstp/scripts/Makefile.in newstp/scripts/configure
+	cd newstp && scripts/configure --with-fpic
 
 
 ocamlgraph : make//ocamlgraph

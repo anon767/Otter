@@ -332,8 +332,8 @@ let printPath job =
     Output.printf "Path condition (ASSUMEs):@\n  @[%a@]@\n@."
         (FormatPlus.pp_print_list (BytesPrinter.bytes_named hist.bytesToVars) "@\n") pc_assume;
 
-    let mentionedSymbols = Stp.allSymbolsInList pc_branch in
-    let valuesForSymbols = Stp.getValues pc_all (Stp.SymbolSet.elements mentionedSymbols) in
+    let mentionedSymbols = BytesSTP.allSymbolsInList pc_branch in
+    let valuesForSymbols = BytesSTP.getValues pc_all (BytesSTP.SymbolSet.elements mentionedSymbols) in
     match valuesForSymbols with
       | None -> Output.printf "@[Unable to generate sample value@\n@]@.";
       | Some valuesForSymbols ->
@@ -352,7 +352,7 @@ let printPath job =
                                          (try
                                               let valueForS = List.assoc s valuesForSymbols in
                                               (* Now s is bound *)
-                                              unboundSymbols := Stp.SymbolSet.remove s !unboundSymbols;
+                                              unboundSymbols := BytesSTP.SymbolSet.remove s !unboundSymbols;
                                               Some (make_Byte_Concrete valueForS)
                                           with Not_found -> None)
                                    | _ -> failwith "Impossible: tracked symbolic value must be fully symbolic")
@@ -389,10 +389,10 @@ let printPath job =
                 (List.rev hist.bytesToVars);
 
             (* Check to see if we've bound all of the symbols in the path condition *)
-            if not (Stp.SymbolSet.is_empty !unboundSymbols)
+            if not (BytesSTP.SymbolSet.is_empty !unboundSymbols)
             then (
                 Output.printf "but these symbolic values are unaccounted for by tracked variables:@\n";
-                Stp.SymbolSet.iter
+                BytesSTP.SymbolSet.iter
                     (fun s -> Output.printf "%d " s.symbol_id)
                     !unboundSymbols
             );
