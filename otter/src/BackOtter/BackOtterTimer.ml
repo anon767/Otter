@@ -1,9 +1,9 @@
 let timing_methods = [
-    "real", `TimeReal;          (* Wall-clock time *)
-    "stpcount", `TimeStpCount;  (* Time approximated by # of STP queries *)
+    "real", `TimeReal;           (* Wall-clock time *)
+    "stp-calls", `TimeStpCalls;  (* Time approximated by # of STP queries *)
 ]
 
-let default_timing_method = ref `TimeStpCount
+let default_timing_method = ref `TimeStpCalls
 
 
 (* time of (entry_fn, other_fn) *)
@@ -16,7 +16,7 @@ let time tkind fn =
     let get_time_now =
         match !default_timing_method with
         | `TimeReal -> Unix.gettimeofday
-        | `TimeStpCount ->
+        | `TimeStpCalls ->
             fun () ->
                 let count = DataStructures.NamedCounter.get "stpc_query" in
                 float_of_int count
@@ -35,7 +35,7 @@ let time tkind fn =
     result
     
 let options = [
-    "--timing-method",
+    "--backotter-timing-method",
         Arg.Symbol (fst (List.split timing_methods), fun name -> default_timing_method := List.assoc name timing_methods),
         " Set the default timing method (default: " ^ (fst (List.find (fun (_, x) -> x = !default_timing_method) timing_methods)) ^ ")";
 ]
