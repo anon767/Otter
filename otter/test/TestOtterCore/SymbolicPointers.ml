@@ -7,9 +7,9 @@ open OtterCore
 
 
 (* test helper that runs the symbolic executor on a file given a source code as a string, and check against an expected list of results *)
-let test_symbolic_pointers ?label ~expect_return ?(no_return0=false) content =
+let test_symbolic_pointers ?label ?time_limit ~expect_return ?(no_return0=false) content =
     let content = "void * malloc(unsigned long);" ^ content in
-    test_otter_core content ?label ~entry_function:"foo"
+    test_otter_core content ?label ~entry_function:"foo" ?time_limit
         begin fun results ->
             let actual_return = List.fold_left begin fun actual_return result -> match result with
                 | Job.Return (Some return, _) ->
@@ -818,6 +818,7 @@ let soundness_testsuite = "Soundness" >::: [
            at least 4 iterations:
                list == NULL, and list of lengths 1 to 3 *)
         test_symbolic_pointers ~label:"Recursive call stack"
+            ~time_limit:5.0
             ~expect_return:[ 1; 1; 1; 1 ]
             "
             struct node { struct node * next; };
