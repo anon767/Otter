@@ -42,7 +42,7 @@ let rec get = function
     | `RoundRobin queues -> new RoundRobinQueue.t (List.map get queues)
     | `KLEE -> new BatchQueue.t (get (`RoundRobin [ `DistanceToUncoveredWeighted; `PathWeighted ]))
     | `SAGE -> new RankedQueue.t [ new GenerationalStrategy.t; new ClosestToUncoveredStrategy.t ]
-    | `ESD -> new RankedQueue.t [ new OtterESD.ProximityGuidedStrategy.t ]
+    | `ESD -> new RankedQueue.t [ new OtterESD.ProximityGuidedStrategy.t ClosestToTargetsStrategy.quantized]
 
 let get_default () = get !default_queue
 
