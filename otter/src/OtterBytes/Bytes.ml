@@ -118,6 +118,7 @@ module T : sig
         val equal : t -> t -> bool
         val hash : t -> int
     end
+    module SymbolType : HashedType with type t = symbol
     module ByteType : HashedType with type t = byte
     module GuardType : HashedType with type t = guard
     module ConditionalType : functor (Data : HashedType) -> HashedType with type t = Data.t conditional
