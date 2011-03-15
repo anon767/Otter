@@ -42,6 +42,7 @@ let computeRDs =
 *)
 let getRDs instruction = 
     computeRDs instruction;
+    prepareVarinfoHash instruction;
     let get_triple instruction = 
         let stmt = instruction.Instruction.stmt in
         match Reachingdefs.getRDs stmt.sid with
