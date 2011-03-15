@@ -50,6 +50,8 @@ module T : sig
         | Byte_Symbolic of symbol
         | Byte_Bytes of bytes * int
 
+    and bytearray = byte ImmutableArray.t
+
     and guard = private
         | Guard_True
         | Guard_Not of guard
@@ -120,6 +122,7 @@ module T : sig
     end
     module SymbolType : HashedType with type t = symbol
     module ByteType : HashedType with type t = byte
+    module ByteArrayType : HashedType with type t = bytearray
     module GuardType : HashedType with type t = guard
     module ConditionalType : functor (Data : HashedType) -> HashedType with type t = Data.t conditional
     module ConditionalPolyType : sig
@@ -140,6 +143,8 @@ end = struct
         | Byte_Symbolic of symbol
         | Byte_Bytes of bytes * int (* condense a bytes into a byte, that can be put into an array *)
 
+    and bytearray = byte ImmutableArray.t
+
     and guard =
         | Guard_True
         | Guard_Not of guard
@@ -153,8 +158,8 @@ end = struct
 
     and bytes =
         | Bytes_Constant of Cil.constant                (* length=Cil.sizeOf (Cil.typeOf (Const(constant))) *)
-        | Bytes_ByteArray of byte ImmutableArray.t      (* content *)
-        | Bytes_Address of memory_block * bytes  (* block, offset *)
+        | Bytes_ByteArray of bytearray                  (* content *)
+        | Bytes_Address of memory_block * bytes         (* block, offset *)
         | Bytes_Op of operator * (bytes * Cil.typ) list
         | Bytes_Read of bytes * bytes * int             (* less preferrable type *)
         | Bytes_Write of bytes * bytes * int * bytes    (* least preferrable type*)
@@ -194,6 +199,8 @@ end = struct
             | Byte_Bytes (b1, off1), Byte_Bytes (b2, off2) -> off1 = off2 && bytes_equal b1 b2
             | _, _ -> false
 
+        and bytearray_equal bytearray1 bytearray2 = bytearray1 == bytearray2 || ImmutableArray.equal byte_equal bytearray1 bytearray2
+
         and guard_equal guard1 guard2 = guard1 == guard2 || match guard1, guard2 with
             | Guard_Not g1, Guard_Not g2 -> guard_equal g1 g2
             | Guard_And (g1, g2), Guard_And (g1', g2') -> guard_equal g1 g1' && guard_equal g2 g2'
@@ -213,7 +220,7 @@ end = struct
             | Bytes_Constant c1, Bytes_Constant c2 ->
                 c1 = c2
             | Bytes_ByteArray a1, Bytes_ByteArray a2 ->
-                ImmutableArray.equal byte_equal a1 a2
+                bytearray_equal a1 a2
             | Bytes_Address(b1, off1),Bytes_Address(b2, off2) ->
                 block_equal b1 b2 && bytes_equal off1 off2
             | Bytes_Op (op1, operands1), Bytes_Op (op2, operands2) ->
@@ -259,6 +266,8 @@ end = struct
             | Byte_Concrete _ | Byte_Symbolic _ as b -> add_hash b
             | Byte_Bytes (bytes, offset) -> add_hash (`Bytes, offset); bytes_hash bytes
 
+        and bytearray_hash bytearray = add_hash (ImmutableArray.hash (do_hash byte_hash) bytearray)
+
         and guard_hash = function
             | Guard_True -> add_hash `True
             | Guard_Not g -> add_hash `Not; guard_hash g
@@ -273,7 +282,7 @@ end = struct
 
         and bytes_hash = function
             | Bytes_Constant c -> add_hash (`Constant, c)
-            | Bytes_ByteArray a -> add_hash (ImmutableArray.hash (do_hash byte_hash) a)
+            | Bytes_ByteArray a -> add_hash `ByteArray; bytearray_hash a
             | Bytes_Address (a, o) -> add_hash `Address; block_hash a; bytes_hash o
             | Bytes_Op (op, operands) -> add_hash (`Op, op); List.iter (fun (o, t) -> add_hash (CilData.CilType.hash t); bytes_hash o) operands
             | Bytes_Read (bytes, offset, size) -> add_hash (`Read, size); bytes_hash bytes; bytes_hash offset
@@ -448,6 +457,12 @@ end = struct
         type t = byte
         let equal = Pervasives.(==)
         let hash = Internal.do_hash Internal.byte_hash
+    end
+
+    module ByteArrayType = struct
+        type t = bytearray
+        let equal = Internal.bytearray_equal (* not hash-cons'ed *)
+        let hash = Internal.do_hash Internal.bytearray_hash
     end
 
     module GuardType = struct
