@@ -736,6 +736,7 @@ let soundness_testsuite = "Soundness" >::: [
            there should be at least 4 iterations:
                list == NULL, and list of lengths 1 to 3 *)
         test_symbolic_pointers ~label:"Static"
+            ~time_limit:5.0
             ~expect_return:[ 1; 1; 1; 1 ]
             "
             struct node { struct node * next; };
@@ -759,6 +760,7 @@ let soundness_testsuite = "Soundness" >::: [
            at least 4 iterations:
                list == NULL, and list of lengths 1 to 3 *)
         test_symbolic_pointers ~label:"Call stack"
+            ~time_limit:5.0
             ~expect_return:[ 1; 1; 1; 1 ]
             "
             struct node { struct node * next; };
@@ -792,6 +794,7 @@ let soundness_testsuite = "Soundness" >::: [
         (* since the nodes are dynamically allocated, there should be at least 4 iterations:
                list == NULL, and list of lengths 1 to 3 *)
         test_symbolic_pointers ~label:"Dynamic"
+            ~time_limit:5.0
             ~expect_return:[ 1; 1; 1; 1 ]
             "
             struct node { struct node * next; };
