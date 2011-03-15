@@ -1,0 +1,5 @@
+name = "OcamlSTP"
+version = "1.0"
+description = "Ocaml bindings to STP"
+archive(byte) = "OcamlSTP.cma"
+archive(native) = "OcamlSTP.cmxa"
