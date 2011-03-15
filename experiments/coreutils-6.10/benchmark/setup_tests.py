@@ -73,5 +73,5 @@ f_config.close()
 
 at_sh = os.path.join(exp_base, "at.sh")
 f_at_sh = open(at_sh, "w")
-print >> f_at_sh,'find "%s"-type f | xargs -P 15 -n 1 sh" >> "%s"' % (os.path.join(exp_base, "tests"), at_sh)
+print >> f_at_sh,'find "%s" -type f | xargs -P 15 -n 1 sh >> "%s"' % (os.path.join(exp_base, "tests"), at_sh)
 
