@@ -6,7 +6,7 @@ open OtterCFG
 open OtterCore
 
 
-class ['self] t = object (self : 'self)
+class ['self] t weight_fn = object (self : 'self)
     method add job = self
 
     method remove job = self
@@ -32,7 +32,7 @@ class ['self] t = object (self : 'self)
                     Distance.find_in_context (source, context, all_targets)
             in
             Output.debug_printf "Job %d has distance to target = %d@\n" job#node_id distance;
-            OtterQueue.ClosestToTargetsStrategy.weight_of_distance distance
+            weight_fn distance
         end jobs
     end
 end

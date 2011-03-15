@@ -16,9 +16,9 @@ let queues = [
     "distance-to-uncovered-weighted", `DistanceToUncoveredWeighted;
     "distance-to-targets-weighted", `DistanceToTargetsWeighted;
     "path-weighted", `PathWeighted;
-    "generational*closest-to-targets", `Generational `ClosestToTargets;
     "KLEE", `KLEE;
     "SAGE", `SAGE;
+    "ESD", `ESD;
     "generational*random,breadth-first", `RoundRobin [`Generational `Random ; `BreadthFirst];
 ]
 
@@ -34,15 +34,15 @@ let rec get = function
     | `Generational `Random -> new RankedQueue.t [ new GenerationalStrategy.t ]
     | `LeastCovered -> new RankedQueue.t  [ new LeastCoveredStrategy.t ]
     | `ClosestToUncovered -> new RankedQueue.t [ new ClosestToUncoveredStrategy.t ]
-    | `ClosestToTargets -> new RankedQueue.t [ new ClosestToTargetsStrategy.t ]
+    | `ClosestToTargets -> new RankedQueue.t [ new ClosestToTargetsStrategy.t ClosestToTargetsStrategy.inversely_proportional ]
     | `DistanceToUncoveredWeighted -> new RankedQueue.t [ new WeightedRandomStrategy.t (new ClosestToUncoveredStrategy.t) ]
-    | `DistanceToTargetsWeighted -> new RankedQueue.t [ new WeightedRandomStrategy.t (new ClosestToTargetsStrategy.t) ]
+    | `DistanceToTargetsWeighted -> new RankedQueue.t [ new WeightedRandomStrategy.t (new ClosestToTargetsStrategy.t ClosestToTargetsStrategy.quantized) ]
     | `PathWeighted -> new RankedQueue.t [ new WeightedRandomStrategy.t (new PathWeightedStrategy.t) ]
-    | `ClosestToTargetsPathWeighted -> new RankedQueue.t [ new ClosestToTargetsStrategy.t; new WeightedRandomStrategy.t (new PathWeightedStrategy.t) ]
-    | `Generational `ClosestToTargets -> new RankedQueue.t [ new GenerationalStrategy.t; new ClosestToTargetsStrategy.t ]
+    | `ClosestToTargetsPathWeighted -> new RankedQueue.t [ new ClosestToTargetsStrategy.t ClosestToTargetsStrategy.quantized; new WeightedRandomStrategy.t (new PathWeightedStrategy.t) ]
     | `RoundRobin queues -> new RoundRobinQueue.t (List.map get queues)
     | `KLEE -> new BatchQueue.t (get (`RoundRobin [ `DistanceToUncoveredWeighted; `PathWeighted ]))
     | `SAGE -> new RankedQueue.t [ new GenerationalStrategy.t; new ClosestToUncoveredStrategy.t ]
+    | `ESD -> new RankedQueue.t [ new OtterESD.ProximityGuidedStrategy.t ]
 
 let get_default () = get !default_queue
 
