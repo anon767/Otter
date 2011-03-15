@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import sys, os, re
+import sys, os, re, itertools, string
 
 if len(sys.argv) < 5:
     print "Usage: ./setup_tests.py <output_dir> <experiment_name> <trunk_dir> <programs_list> <commands_list> [<commands_list2>...]"
@@ -11,7 +11,7 @@ exp_base = os.path.join(base, exp_name)
 
 trunk_dir = sys.argv[3]
 programs_in = sys.argv[4]
-options_in = sys.argv[5]
+options_ins = sys.argv[5:]
 
 def add_trunk(line, trunk_dir):
     p = re.compile(r"@TRUNK@")
@@ -33,9 +33,15 @@ def mkdir_p(path, mode=0755):
     if not os.path.exists(path):
         os.makedirs(path, mode)
 
+
 mkdir_p(exp_base)
 config = os.path.join(exp_base, "config.log")
 f_config = open(config, "w")
+
+options_list = [""]
+for options_in in options_ins:
+    options = filter(lambda line: not_comment(line), [line.rstrip() for line in open(options_in).readlines()])
+    options_list = [string.join(x) for x in itertools.product(options_list, options)]
 
 for prog_opt in open(programs_in):
     prog_opt = prog_opt.rstrip()
@@ -46,12 +52,9 @@ for prog_opt in open(programs_in):
     prog_opt = add_trunk(prog_opt, trunk_dir)
     prog_name = get_progname(prog_opt)
     options_id = 1
-    for options in open(options_in):
-        options = options.rstrip()
-        if not_comment(options):
-            print "Process %s" % options
-        else:
-            continue
+
+    for options in options_list:
+        print "Process %s" % options
         options = add_trunk(options, trunk_dir)
         log_file = os.path.join(exp_base, "results", "%s_%d.log" % (prog_name, options_id))
         test_sh = os.path.join(exp_base, "tests", "%s_%d.sh" % (prog_name, options_id))
