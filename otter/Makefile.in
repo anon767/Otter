@@ -38,7 +38,7 @@ profile : native
 
 libs : $(addprefix ocamlbuild//,Otter.cmxa Otter.a Otter.cma Otter.cmi)
 libs : OCAMLBUILD_MORE_CMI= \
-		DataStructures.cmi CilUtilities.cmi OcamlUtilities.cmi OtterBytes.cmi OtterCFG.cmi \
+		DataStructures.cmi CilUtilities.cmi OcamlUtilities.cmi OtterBytes.cmi OtterCFG.cmi OtterESD.cmi \
 		OtterCore.cmi OtterExtensions.cmi OtterJob.cmi OtterQueue.cmi OtterReporter.cmi OtterDriver.cmi
 
 test : ounit//runtestotter.d.byte
@@ -69,7 +69,7 @@ libc/__otter/config.h : $(CIL_SRCDIR)/config.h
 doc : api dot
 
 api : $(foreach foo, \
-		DataStructures CilUtilities OcamlUtilities OtterBytes OtterCFG OtterCore OtterExtensions \
+		DataStructures CilUtilities OcamlUtilities OtterBytes OtterCFG OtterESD OtterCore OtterExtensions \
 		OtterJob OtterQueue OtterReporter OtterDriver Otter MultiOtter BackOtter DebugOtter TestUtil, \
 		ocamlbuild//$(foo).docdir)
 

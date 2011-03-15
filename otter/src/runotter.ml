@@ -9,6 +9,7 @@ module OcamlbuildDependencies = struct
     open OtterBytes
     open OtterCFG
     open OtterCore
+    open OtterESD
     open OtterExtensions
     open OtterJob
     open OtterQueue
