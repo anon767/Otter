@@ -127,6 +127,15 @@ let hash ha xs =
 
 (* TODO: remove everything below, as uses of the below cannot take advantage of the sparsity of ImmutableArrays *)
 
+let foldi f acc array =
+    let rec foldi acc index =
+        if index < array.length then
+            foldi (f acc index (get array index)) (index + 1)
+        else
+            acc
+    in
+    foldi acc 0
+
 let fold_left ff a bs =
 	let len = length bs in
 	let rec impl ff a bs i =
