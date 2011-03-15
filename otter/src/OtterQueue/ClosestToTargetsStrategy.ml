@@ -21,9 +21,11 @@ class ['self] t = object (self : 'self)
     method weights jobs =
         List.map begin fun job ->
             let target_instr = Instruction.of_fundec job#file (ProgramPoints.get_failure_fundec job#file) in
+            let call_sites = Instruction.call_sites target_instr in
             let source = Job.get_instruction job in
             let context = Job.get_instruction_context job in
-            weight_of_distance (Distance.find_in_context (source, context, [ target_instr ]))
+            let distance = Distance.find_in_context (source, context, call_sites) in (* = max_int if call_sites = [] *)
+            weight_of_distance distance
         end jobs
 end
 
