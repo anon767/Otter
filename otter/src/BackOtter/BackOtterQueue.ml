@@ -6,6 +6,7 @@ let queues = OtterQueue.Queue.queues
 (* BackOtter's ClosestToTargetsStrategy is different from that in OtterQueue *)
 let rec get = function
     | `ClosestToTargets -> new OtterQueue.RankedQueue.t [ new ClosestToTargetsStrategy.t ]
+    | `ClosestToTargetsPathWeighted -> new OtterQueue.RankedQueue.t [ new ClosestToTargetsStrategy.t; new OtterQueue.WeightedRandomStrategy.t (new OtterQueue.PathWeightedStrategy.t) ]
     | `Generational `ClosestToTargets -> new OtterQueue.RankedQueue.t [ new OtterQueue.GenerationalStrategy.t; new ClosestToTargetsStrategy.t ]
     | queue -> OtterQueue.Queue.get queue
 
