@@ -302,14 +302,15 @@ let points_to file exp = Profiler.global#call "CilPtranal.points_to" begin fun (
 end
 
 
-(** Wrapper for Cil's {!Ptranal.resolve_fundec}.
+(** Wrapper for Cil's {!Ptranal.resolve_fundec} that filters by type.
         @param file is the file being analyzed
         @param exp is the expression to resolve
         @return [fundec_list] which is a list of target functions
 *)
 let points_to_fundec file exp = Profiler.global#call "CilPtranal.points_to_fundec" begin fun () ->
     init_file file;
-    Ptranal.resolve_funptr exp
+    let pointer_type = Cil.typeOf exp in
+    List.filter (fun f -> accept_points_to pointer_type f.Cil.svar.Cil.vtype) (Ptranal.resolve_funptr exp)
 end
 
 
@@ -370,7 +371,8 @@ let naive_points_to =
 
 
 (** Unsound point-to that maps each pointer to one or two distinct [malloc]s: one of the pointer target type, and if
-    the pointer points to base (numeric) type, another of an array of size 16 of the base type.
+    the pointer points to base (numeric) type, another of an array of size 16 of the base type; and if the pointer is
+    a function pointer, all functions returned by {!Ptranal.resolve_exp} filtered by type.
         @param file is the file being analyzed
         @param exp is the expression to resolve
         @return [(targets_list, target_mallocs)] where [target_list] is empty and [target_mallocs] contains a single
@@ -382,7 +384,7 @@ let unsound_points_to =
     let resolve_exp exp = Profiler.global#call "Ptranal.resolve_exp" (fun () -> Ptranal.resolve_exp exp) in
     fun file exp -> Profiler.global#call "CilPtranal.unsound_points_to" begin fun () ->
         match Cil.unrollType (Cil.typeOf exp) with
-            | Cil.TPtr (typ, _) ->
+            | Cil.TPtr (typ, _) as pointer_type ->
                 let malloc_varinfo = find_malloc file in
                 let name = "malloc" ^ string_of_int (Counter.next counter) in
 
@@ -393,6 +395,7 @@ let unsound_points_to =
                     else if Cil.isFunctionType typ then
                         (* resolve function pointers *)
                         let varinfo_targets, _ = resolve_exp exp in
+                        let varinfo_targets = List.filter (fun v -> accept_points_to pointer_type v.Cil.vtype) varinfo_targets in
                         (varinfo_targets, [])
                     else
                         let deref_lhost = Cil.Mem exp in
@@ -421,7 +424,8 @@ let unsound_points_to =
 (** Unsound point-to that maps each void pointer variable to zero or more distinct [malloc]s of types partially
     determined from a pointer analysis, and every other pointer (variable or malloc'ed) to one or two distinct
     [malloc]s: one of the pointer target type, and if the pointer points to base (numeric) type, another of an array
-    of size 16 of the base type.
+    of size 16 of the base type; and if the pointer is a function pointer, all functions returned by {!Ptranal.resolve_exp}
+    filtered by type.
         @param file is the file being analyzed
         @param exp is the expression to resolve
         @return [(targets_list, target_mallocs)] where [target_list] is empty and [target_mallocs] contains a single
