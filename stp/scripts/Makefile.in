@@ -70,9 +70,6 @@ OcamlSTP: lib/libstp.a
 test-OcamlSTP: lib/libstp.a
 	$(MAKE) -C src/OcamlSTP test
 
-install-OcamlSTP: OcamlSTP
-	$(MAKE) -C src/OcamlSTP install
-
 ####
 
 .PHONY: install
@@ -107,6 +104,7 @@ clean:
 	$(MAKE) clean -C $(SRC)/c_interface	
 	$(MAKE) clean -C $(SRC)/parser
 	$(MAKE) clean -C $(SRC)/main
+	$(MAKE) clean -C $(SRC)/OcamlSTP
 	$(MAKE) clean -C tests/c-api-tests
 
 .PHONY: distclean configclean

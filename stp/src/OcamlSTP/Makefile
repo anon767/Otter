@@ -56,7 +56,7 @@ test-byte-code : lib
 clean ::
 	$(RM) libstp.a
 	$(RM) libOcamlSTP.a OcamlSTP_impl.o
-	$(RM) $(addprefix OcamlSTP.,cmi cmxa cmi cmo cmx o a)
+	$(RM) $(addprefix OcamlSTP.,cmi cma cmxa cmi cmo cmx o a)
 	$(RM) $(addprefix TestOcamlSTP.,native byte cmi cmo cmx o)
 	$(RM) -r $(OCAMLDOCDIR)
 	$(RM) depend
