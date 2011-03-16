@@ -1,18 +1,23 @@
-"@TRUNK@/experiments/coreutils-6.10/src/mkdir_comb.c"   -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_QUOTEARG_BUFFER_RESTYLED_ASSERT
-"@TRUNK@/experiments/coreutils-6.10/src/mkfifo_comb.c"  -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_QUOTEARG_BUFFER_RESTYLED_ASSERT
-"@TRUNK@/experiments/coreutils-6.10/src/mknod_comb.c"   -DMAX_ARGC=5 -DMAX_ARG_LENGTHS="{1,10,2,2,2}" -D__OTTER_QUOTEARG_BUFFER_RESTYLED_ASSERT
-"@TRUNK@/experiments/coreutils-6.10/src/paste_comb.c"   -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_PASTE_ASSERT
-"@TRUNK@/experiments/coreutils-6.10/benchmark/planted_targets/mkdir_1.c"     -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"
-"@TRUNK@/experiments/coreutils-6.10/benchmark/planted_targets/mkfifo_1.c"    -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"
-"@TRUNK@/experiments/coreutils-6.10/benchmark/planted_targets/mknod_1.c"     -DMAX_ARGC=5 -DMAX_ARG_LENGTHS="{1,10,2,2,2}"
+mkdir  "@TRUNK@/experiments/coreutils-6.10/src/mkdir_comb.c"   -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_QUOTEARG_BUFFER_RESTYLED_ASSERT
+mkfifo "@TRUNK@/experiments/coreutils-6.10/src/mkfifo_comb.c"  -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_QUOTEARG_BUFFER_RESTYLED_ASSERT
+mknod  "@TRUNK@/experiments/coreutils-6.10/src/mknod_comb.c"   -DMAX_ARGC=5 -DMAX_ARG_LENGTHS="{1,10,2,2,2}" -D__OTTER_QUOTEARG_BUFFER_RESTYLED_ASSERT
+paste  "@TRUNK@/experiments/coreutils-6.10/src/paste_comb.c"   -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_PASTE_ASSERT
+mkdir-inj  "@TRUNK@/experiments/coreutils-6.10/benchmark/planted_targets/mkdir_1.c"     -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"
+mkfifo-inj "@TRUNK@/experiments/coreutils-6.10/benchmark/planted_targets/mkfifo_1.c"    -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"
+mknod-inj  "@TRUNK@/experiments/coreutils-6.10/benchmark/planted_targets/mknod_1.c"     -DMAX_ARGC=5 -DMAX_ARG_LENGTHS="{1,10,2,2,2}"
+
+# These 3 programs below will be replaced the above 3 injected programs
+# mkdir-inj  "@TRUNK@/experiments/coreutils-6.10/src/mkdir_comb.c"   -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_INJECTED_MAKE_NODE_OP_EQUALS_ASSERT
+# mkfifo-inj "@TRUNK@/experiments/coreutils-6.10/src/mkfifo_comb.c"  -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_INJECTED_MAKE_NODE_OP_EQUALS_ASSERT
+# mknod-inj  "@TRUNK@/experiments/coreutils-6.10/src/mknod_comb.c"   -DMAX_ARGC=5 -DMAX_ARG_LENGTHS="{1,10,2,2,2}" -D__OTTER_INJECTED_MAKE_NODE_OP_EQUALS_ASSERT
 
 # Bug reports:
 # pr contains a buffer overflow : http://git.savannah.gnu.org/cgit/coreutils.git/commit/?id=6856089f7bfaca2709b303f01dae001a30930b61
 
 # Work in progress:
-# "@TRUNK@/experiments/coreutils-6.10/src/md5sum_comb.c"    -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"    
-# "@TRUNK@/experiments/coreutils-6.10/src/tac_comb.c"       -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"    
-# "@TRUNK@/experiments/coreutils-6.10/src/pr_comb.c"        -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}" --backotter-target="pr.c,2670,failure,Bounds check failed" --backotter-target="pr.c,2670,out_of_bounds"
-# "@TRUNK@/experiments/coreutils-6.10/src/ptx_comb.c"       -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"    
-# "@TRUNK@/experiments/coreutils-6.10/src/seq_comb.c"       -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_XALLOC_DIE_FAILURE
+# md5sum "@TRUNK@/experiments/coreutils-6.10/src/md5sum_comb.c"    -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"    
+# tac    "@TRUNK@/experiments/coreutils-6.10/src/tac_comb.c"       -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"    
+# pr     "@TRUNK@/experiments/coreutils-6.10/src/pr_comb.c"        -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}" --backotter-target="pr.c,2670,failure,Bounds check failed" --backotter-target="pr.c,2670,out_of_bounds"
+# ptx    "@TRUNK@/experiments/coreutils-6.10/src/ptx_comb.c"       -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"    
+# seq    "@TRUNK@/experiments/coreutils-6.10/src/seq_comb.c"       -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_XALLOC_DIE_FAILURE
 

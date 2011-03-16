@@ -21,11 +21,11 @@ def not_comment(line):
     p = re.compile(r"^\s*(#|$)")
     return p.match(line) == None
 
-def get_progname(line):
-    p = re.compile(r"(.*)\.c.*")
+def get_prog_name_opt(line):
+    p = re.compile(r"\s*(\S*)\s*(.*)")
     results = p.match(line)
     if results:
-        return os.path.basename(results.group(1))
+        return results.group(1), results.group(2)
     else:
         return None
 
@@ -50,7 +50,7 @@ for prog_opt in open(programs_in):
     else:
         continue
     prog_opt = add_trunk(prog_opt, trunk_dir)
-    prog_name = get_progname(prog_opt)
+    prog_name, prog_opt = get_prog_name_opt(prog_opt)
     options_id = 1
 
     for options in options_list:
