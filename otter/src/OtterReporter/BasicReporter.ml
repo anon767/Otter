@@ -4,6 +4,7 @@ open OtterCore
 let default_max_steps = ref 0
 let default_max_paths = ref 0
 let default_max_abandoned = ref 0
+let arg_convert_non_failure_abandoned_to_truncated = ref false
 
 
 class ['self] t
@@ -41,6 +42,20 @@ class ['self] t
 
 end
 
+let convert_non_failure_abandoned_to_truncated job_state = 
+    let rec convert_non_failure_abandoned_to_truncated = function
+        | Job.Fork job_states -> Job.Fork (List.map convert_non_failure_abandoned_to_truncated job_states)
+        | Job.Complete (Job.Abandoned (`TargetReached _, job)) as job_state -> job_state
+        | Job.Complete (Job.Abandoned (reason, job)) -> 
+            let _ = OcamlUtilities.Output.must_printf "Convert abandoned (%a) to truncated@\n" Errors.printer reason in 
+            Job.Complete (Job.Truncated (reason, job))
+        | job_state -> job_state
+    in
+    if (!arg_convert_non_failure_abandoned_to_truncated) then 
+        convert_non_failure_abandoned_to_truncated job_state
+    else
+        job_state
+
 
 (** {1 Command-line options} *)
 
@@ -54,5 +69,8 @@ let options = [
     "--max-abandoned",
         Arg.Set_int default_max_abandoned,
         "<bound> Bound the number of abandoned paths to return (default: unbounded)";
+    "--convert-non-failure-abandoned-to-truncated",
+        Arg.Set arg_convert_non_failure_abandoned_to_truncated,
+        " Convert non __FAILURE generated Abandoned's to Truncated's (default: no)";
 ]
 

@@ -16,7 +16,9 @@ let main_loop interceptor queue reporter =
     try
         (* compose the interceptor with the core symbolic executor *)
         (* TODO: remove job_queue from interceptors/Statement.step *)
-        let step = fun job -> fst (interceptor job () Statement.step) in
+        let step = fun job -> 
+            BasicReporter.convert_non_failure_abandoned_to_truncated (fst (interceptor job () Statement.step))
+        in
         let rec run (queue, reporter) =
             checkpoint := (queue, reporter);
             match queue#get with
