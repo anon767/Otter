@@ -65,7 +65,7 @@ module T : sig
 
     and bytes = private
         | Bytes_Constant of Cil.constant
-        | Bytes_ByteArray of byte ImmutableArray.t
+        | Bytes_ByteArray of bytearray
         | Bytes_Address of memory_block * bytes
         | Bytes_Op of operator * (bytes * Cil.typ) list
         | Bytes_Read of bytes * bytes * int
@@ -104,7 +104,7 @@ module T : sig
     val guard__bytes : bytes -> guard
 
     val make_Bytes_Constant : Cil.constant -> bytes
-    val make_Bytes_ByteArray : byte ImmutableArray.t -> bytes
+    val make_Bytes_ByteArray : bytearray -> bytes
     val make_Bytes_Address : memory_block * bytes -> bytes
     val make_Bytes_Op : operator * (bytes * Cil.typ) list -> bytes
     val make_Bytes_Read : bytes * bytes * int -> bytes
@@ -635,7 +635,7 @@ let rec bytes_to_constant bytes typ : Cil.constant =
 
 (** True if bytearray is concrete *)
 (* Shouldn't a make_Byte_Bytes with concrete values be considered concrete, too? *)
-let isConcrete_bytearray (bytearray : byte ImmutableArray.t) =
+let isConcrete_bytearray (bytearray : bytearray) =
     ImmutableArray.for_all (function Byte_Concrete _ -> true | _ -> false) bytearray
 
 

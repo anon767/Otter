@@ -78,10 +78,10 @@ let rec byte ff = function
 	| Byte_Bytes _ -> pp_print_string ff "\\B"
 
 
-(** Print a {!type:Bytes.byte ImmutableArray.t} as a sequence of {!type:Bytes.byte} using {!byte},
+(** Print a {!type:Bytes.bytearray} as a sequence of {!type:Bytes.byte} using {!byte},
 	representing a {!type:Bytes.byte} repeated {i n} times as ["<byte>\\{n}"].
 		@param ff is the formatter to which to print
-		@param arr is the {!type:Bytes.byte ImmutableArray.t} to print
+		@param arr is the {!type:Bytes.bytearray} to print
 *)
 and bytearray ff arr =
 	let byte_n b c =
