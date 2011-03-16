@@ -22,7 +22,7 @@ let queues = [
     "generational*random,breadth-first", `RoundRobin [`Generational `Random ; `BreadthFirst];
 ]
 
-let default_queue = ref (`Generational `BreadthFirst)
+let default_queue = ref `RandomPath
 
 (* to get around value restriction that limits polymorphism in the queues list *)
 let rec get = function
