@@ -146,7 +146,7 @@ module InternalToSTP = struct
     end))
     let array_counter = Counter.make () (* to make up a unique name for each array *)
     let array_meta =
-        ArrayMemo.memo "array_meta" begin fun (vc, (bytes, length)) ->
+        ArrayMemo.memo "BytesSTP.array_meta" begin fun (vc, (bytes, length)) ->
             let name = "array_symbol_" ^ string_of_int (Counter.next array_counter) in
             let index_width =
                 let rec index_width n m =
