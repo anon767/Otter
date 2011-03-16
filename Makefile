@@ -95,13 +95,7 @@ distclean :
 %/Makefile : %/configure Makefile
 	cd $* && ./configure $(CONFIGURE_FLAGS) $(CONFIGURE_EXTRAFLAGS)
 
-.PRECIOUS : %/configure %/config.h.in
-%/configure %/config.h.in : %/configure.ac
-	cd $* && autoreconf
-
-%/configure %/config.h.in : %/configure.in
-	cd $* && autoreconf
-
+.PRECIOUS : %/configure
 %/configure : %/configure.ac
 	cd $* && autoreconf
 
