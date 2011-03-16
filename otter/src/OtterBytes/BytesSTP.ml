@@ -534,6 +534,10 @@ let query_stp =
         Profiler.global#call "BytesSTP.query_stp/query" begin fun () ->
             (* Note: the count is used as a proxy of running time in BackOtter *)
             DataStructures.NamedCounter.incr "stpc_query";
+
+            (* synchronize OcamlSTP's random number generator to Otter's for reproducibility *)
+            OcamlSTP.set_seed vc (Some (Random.bits ()));
+
             let stp_query () = OcamlSTP.vc_query vc guard_stp in
             let start = Sys.time () in
             let answer =
