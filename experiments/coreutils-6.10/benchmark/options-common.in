@@ -1,1 +1,2 @@
---profile --timeout=1800 --printLittle --max-abandoned=1 --backotter-timing-method=real
+--profile --timeout=1000 --printLittle --backotter-timing-method=real
+--profile --timeout=1000 --printLittle --backotter-timing-method=stp-calls
