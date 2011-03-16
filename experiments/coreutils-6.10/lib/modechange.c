@@ -24,7 +24,7 @@
    because the compiled form requires less computation to use; when
    changing the mode of many files, this probably results in a
    performance gain.  */
-
+extern void __otter_injected_make_node_op_equals_assert(int);
 #include <config.h>
 
 #include "modechange.h"
@@ -115,7 +115,7 @@ make_node_op_equals (mode_t new_mode, mode_t mentioned)
   p->op = '=';
   p->flag = MODE_ORDINARY_CHANGE;
   p->affected = CHMOD_MODE_BITS;
-  p->value = new_mode;
+  p->value = new_mode;               __otter_injected_make_node_op_equals_assert(new_mode!=511);
   p->mentioned = mentioned;
   p[1].flag = MODE_DONE;
   return p;
