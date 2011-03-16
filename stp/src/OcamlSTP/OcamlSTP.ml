@@ -8,6 +8,8 @@ let () = init ()
 
 external make_context : unit -> context = "OcamlSTP_make_context"
 
+external set_seed : context -> int option -> unit = "OcamlSTP_set_seed"
+
 external bool_var : context -> string -> ([`bool], [>`var]) expr = "OcamlSTP_bool_var"
 external bv_var : context -> string -> int -> ([`bv], [>`var]) expr = "OcamlSTP_bv_var"
 external array_var : context -> string -> int -> int -> ([`array], [>`var]) expr = "OcamlSTP_array_var"

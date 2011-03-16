@@ -21,6 +21,9 @@ type validity = Invalid | Valid | Undecided
 (** [make_context ()] creates a new STP context. *)
 external make_context : unit -> context = "OcamlSTP_make_context"
 
+(** [set_seed stp seed] sets an optional seed for the internal random number generator used in the STP context [stp]. *)
+external set_seed : context -> int option -> unit = "OcamlSTP_set_seed"
+
 
 (** {2 Variables} *)
 

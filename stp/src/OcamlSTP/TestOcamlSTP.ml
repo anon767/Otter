@@ -51,6 +51,9 @@ let () =
 
     begin
         let s = make_context () in
+        OcamlSTP.set_seed s None;
+        OcamlSTP.set_seed s (Some 1);
+        OcamlSTP.set_seed s (Some 101);
         let b = bool_var s "b" in
         let v = bv_var s "v" 2 in
         let a = array_var s "a" 2 2 in

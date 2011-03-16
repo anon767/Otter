@@ -178,6 +178,27 @@ extern "C" {
 
 
     /*
+     * Options
+     */
+    CAMLprim value OcamlSTP_set_seed(value v_stp, value v_seed) {
+        CAMLparam2(v_stp, v_seed);
+
+        BEEV::STP *stp = ml2c_STP(v_stp);
+
+        if (Int_val(v_seed) == 0) { /* None */
+            stp->bm->UserFlags.random_seed_flag = false;
+        } else {
+            intnat seed = Long_val(Field(v_seed, 0));
+            stp->bm->UserFlags.random_seed_flag = true;
+            stp->bm->UserFlags.random_seed = seed;
+        }
+        CAMLreturn(Val_unit);
+    }
+
+
+
+
+    /*
      * Helpers
      */
     static inline unsigned check_value_width(const BEEV::ASTNode *left, const BEEV::ASTNode *right) {
