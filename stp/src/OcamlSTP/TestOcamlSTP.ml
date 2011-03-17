@@ -313,6 +313,10 @@ let () =
         test_query s (bv_eq s y z') `Unknown;
         test_query s (bv_eq s z x') `Unknown;
         test_query s (bv_eq s z y') `Unknown;
+        let u = bv_extract s xyz 5 5 in
+        let v = bv_extract s xyz 0 0 in
+        test_query s (bv_eq s (bv_extract s x' 1 1) u) `True;
+        test_query s (bv_eq s (bv_extract s z' 0 0) v) `True;
     end;
 
 

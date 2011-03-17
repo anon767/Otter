@@ -665,8 +665,8 @@ extern "C" {
         if (low_bit < 0) {
             caml_invalid_argument("low bit must be greater or equal to zero");
         }
-        if (high_bit <= low_bit) {
-            caml_invalid_argument("high bit must be greater than low bit");
+        if (high_bit < low_bit) {
+            caml_invalid_argument("high bit must be greater or equal to the low bit");
         }
         if (high_bit >= expr->GetValueWidth()) {
             caml_invalid_argument("high bit must be less than the operand width");
