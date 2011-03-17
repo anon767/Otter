@@ -13,63 +13,103 @@ let print_stp_queries = ref false
 let arg_max_stp_time = ref (-0.1) (* negative means unlimited *)
 let stp_queries = ref []
 
-(** Return a SymbolSet of all symbols in the given Bytes *)
-let rec allSymbolsInGuard = function
-    | Guard_True ->
-        SymbolSet.empty
-    | Guard_Not g ->
-        allSymbolsInGuard g
-    | Guard_And (g1, g2) ->
-        SymbolSet.union (allSymbolsInGuard g1) (allSymbolsInGuard g2)
-    | Guard_Symbolic s ->
-        SymbolSet.singleton s
-    | Guard_Bytes b ->
-        allSymbols b
+(**/**) (* helpers for all_symbols *)
+module InternalAllSymbols = struct
+    module ByteArrayMemo = Memo.Make (ByteArrayType)
+    let wrap_all_symbols_in_bytearray = ByteArrayMemo.make "BytesSTP.all_symbols_in_bytearray"
 
-and allSymbols = function
-    | Bytes_Constant const -> SymbolSet.empty
-    | Bytes_ByteArray bytearray ->
-        ImmutableArray.fold_left
-            begin fun symbSet byte -> match byte with
-                 | Byte_Concrete _ -> symbSet
-                 | Byte_Symbolic symb -> SymbolSet.add symb symbSet
-                 | Byte_Bytes (bytes, _) -> SymbolSet.union symbSet (allSymbols bytes)
-            end
-            SymbolSet.empty
-            bytearray
-    | Bytes_Address (memBlock, bytes) ->
-        allSymbols bytes
-    | Bytes_Op (_, bytes_typ_list) ->
-        List.fold_left
-            (fun symbSet (b, _) -> SymbolSet.union symbSet (allSymbols b))
-            SymbolSet.empty
-            bytes_typ_list
-    | Bytes_Read (bytes1, bytes2, _) ->
-        SymbolSet.union (allSymbols bytes1) (allSymbols bytes2)
-    | Bytes_Write (bytes1, bytes2, _, bytes3) ->
-        SymbolSet.union
-            (allSymbols bytes3)
-            (SymbolSet.union (allSymbols bytes1) (allSymbols bytes2))
-    | Bytes_FunPtr _ ->
-        SymbolSet.empty
-    | Bytes_Conditional c ->
-        Profiler.global#call "BytesSTP.allSymbols" begin fun () ->
-            let rec allSymbolsInConditional = function
-                | IfThenElse (guard, c1, c2) ->
-                    SymbolSet.union (allSymbolsInGuard guard)
-                        (SymbolSet.union (allSymbolsInConditional c1) (allSymbolsInConditional c2))
-                | Unconditional b ->
-                    allSymbols b
-            in
-            allSymbolsInConditional c
-        end
+    module GuardMemo = Memo.Make (GuardType)
+    let wrap_all_symbols_in_guard = GuardMemo.make "BytesSTP.all_symbols_in_guard"
+
+    module ConditionalBytesMemo = Memo.Make (ConditionalType (BytesType))
+    let wrap_all_symbols_in_conditional_bytes = ConditionalBytesMemo.make "BytesSTP.all_symbols_in_conditional_bytes"
+
+    module BytesMemo = Memo.Make (BytesType)
+    let wrap_all_symbols_in_bytes = BytesMemo.make "BytesSTP.all_symbols_in_bytes"
+
+    module BytesListMemo = Memo.Make (ListPlus.MakeHashedList (BytesType))
+    let wrap_all_symbols_in_list = BytesListMemo.make "BytesSTP.all_symbols_in_list"
+
+    let rec all_symbols_in_bytearray bytearray =
+        wrap_all_symbols_in_bytearray begin
+            ImmutableArray.fold_left
+                begin fun symbols byte -> match byte with
+                     | Byte_Concrete _ -> symbols
+                     | Byte_Symbolic s -> SymbolSet.add s symbols
+                     | Byte_Bytes (bytes, _) -> SymbolSet.union symbols (all_symbols_in_bytes bytes)
+                end
+                SymbolSet.empty
+        end bytearray
+
+    and all_symbols_in_guard guard =
+        wrap_all_symbols_in_guard begin function
+            | Guard_True ->
+                SymbolSet.empty
+            | Guard_Not g ->
+                all_symbols_in_guard g
+            | Guard_And (g1, g2) ->
+                SymbolSet.union (all_symbols_in_guard g1) (all_symbols_in_guard g2)
+            | Guard_Symbolic s ->
+                SymbolSet.singleton s
+            | Guard_Bytes b ->
+                all_symbols_in_bytes b
+        end guard
+
+    and all_symbols_in_conditional_bytes conditional_bytes =
+        wrap_all_symbols_in_conditional_bytes begin function
+            | IfThenElse (guard, c1, c2) ->
+                SymbolSet.union (all_symbols_in_guard guard)
+                    (SymbolSet.union (all_symbols_in_conditional_bytes c1) (all_symbols_in_conditional_bytes c2))
+            | Unconditional b ->
+                all_symbols_in_bytes b
+        end conditional_bytes
+
+    and all_symbols_in_bytes bytes =
+        wrap_all_symbols_in_bytes begin function
+            | Bytes_Constant _ ->
+                SymbolSet.empty
+            | Bytes_ByteArray bytearray ->
+                all_symbols_in_bytearray bytearray
+            | Bytes_Address (_, bytes) ->
+                all_symbols_in_bytes bytes
+            | Bytes_Op (_, bytes_typ_list) ->
+                List.fold_left
+                    (fun symbols (b, _) -> SymbolSet.union symbols (all_symbols_in_bytes b))
+                    SymbolSet.empty
+                    bytes_typ_list
+            | Bytes_Read (bytes1, bytes2, _) ->
+                SymbolSet.union (all_symbols_in_bytes bytes1) (all_symbols_in_bytes bytes2)
+            | Bytes_Write (bytes1, bytes2, _, bytes3) ->
+                SymbolSet.union
+                    (all_symbols_in_bytes bytes3)
+                    (SymbolSet.union (all_symbols_in_bytes bytes1) (all_symbols_in_bytes bytes2))
+            | Bytes_FunPtr _ ->
+                SymbolSet.empty
+            | Bytes_Conditional c ->
+                all_symbols_in_conditional_bytes c
+        end bytes
+end
+(**/**)
+
+
+(** Return a SymbolSet of all symbols in the given Bytes *)
+let all_symbols_in_bytes bytes =
+    Profiler.global#call "BytesSTP.all_symbols_in_bytes" begin fun () ->
+        InternalAllSymbols.all_symbols_in_bytes bytes
+    end
+
 
 (** Return a SymbolSet of all symbols in the given list of Bytes *)
-let allSymbolsInList byteslist =
-    List.fold_left
-        (fun symbSet b -> SymbolSet.union symbSet (allSymbols b))
-        SymbolSet.empty
-        byteslist
+let all_symbols_in_list bytes_list =
+    Profiler.global#call "BytesSTP.all_symbols_in_list" begin fun () ->
+        let rec all_symbols_in_list = function
+            | x::[] -> all_symbols_in_bytes x
+            | x::xs as all -> InternalAllSymbols.wrap_all_symbols_in_list (fun _ -> SymbolSet.union (all_symbols_in_bytes x) (all_symbols_in_list xs)) all
+            | [] -> SymbolSet.empty
+        in
+        all_symbols_in_list bytes_list
+    end
+
 
 (* This implements 'constraint independence': it picks out only those
  * clauses from the pc which can have an influence on the given
@@ -81,7 +121,7 @@ let getRelevantAssumptions pc query =
     Profiler.global#call "BytesSTP.getRelevantAssumptions" begin fun () ->
         let rec getRelevantAssumptions_aux acc symbols pc =
             (* See what clauses mention any of the symbols *)
-            let subPC, relevant = List.partition (fun b -> SymbolSet.is_empty (SymbolSet.inter symbols (allSymbols b))) pc in
+            let subPC, relevant = List.partition (fun b -> SymbolSet.is_empty (SymbolSet.inter symbols (all_symbols_in_bytes b))) pc in
             match subPC, relevant with
                 | _, [] ->
                      (* Nothing else is relevant *)
@@ -91,10 +131,10 @@ let getRelevantAssumptions pc query =
                      * that's bad for the cache? I think not, but I'm not sure. *)
                     getRelevantAssumptions_aux
                         (List.rev_append relevant acc)
-                        (allSymbolsInList relevant)
+                        (all_symbols_in_list relevant)
                         subPC
         in
-        getRelevantAssumptions_aux [] (allSymbols query) pc
+        getRelevantAssumptions_aux [] (all_symbols_in_bytes query) pc
     end
 
 
@@ -662,7 +702,7 @@ let getValues pathCondition symbolList =
 
 
 let getAllValues pathCondition =
-    getValues pathCondition (SymbolSet.elements (allSymbolsInList pathCondition))
+    getValues pathCondition (SymbolSet.elements (all_symbols_in_list pathCondition))
 
 
 (** {1 Command-line options} *)

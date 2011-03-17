@@ -331,7 +331,7 @@ let printPath job =
     Output.printf "Path condition (ASSUMEs):@\n  @[%a@]@\n@."
         (FormatPlus.pp_print_list (BytesPrinter.bytes_named hist.bytesToVars) "@\n") pc_assume;
 
-    let mentionedSymbols = BytesSTP.allSymbolsInList pc_branch in
+    let mentionedSymbols = BytesSTP.all_symbols_in_list pc_branch in
     let valuesForSymbols = BytesSTP.getValues pc_all (BytesSTP.SymbolSet.elements mentionedSymbols) in
     match valuesForSymbols with
       | None -> Output.printf "@[Unable to generate sample value@\n@]@.";
