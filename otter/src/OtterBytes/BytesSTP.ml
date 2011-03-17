@@ -179,14 +179,15 @@ module InternalToSTP = struct
     module GuardMemo = Memo.Make (WithSTP (GuardType))
     let wrap_guard_to_stp_bool = GuardMemo.make "BytesSTP.guard_to_stp_bool"
 
-    module ArrayMemo = Memo.Make (WithSTP (struct
+    module ArrayMetaMemo = Memo.Make (WithSTP (struct
         type t = BytesType.t * int
         let equal (xb, xw) (yb, yw) = xw = yw && BytesType.equal xb yb
         let hash (b, w) = Hashtbl.hash (BytesType.hash b, w)
     end))
     let array_counter = Counter.make () (* to make up a unique name for each array *)
     let array_meta =
-        ArrayMemo.memo "BytesSTP.array_meta" begin fun (vc, (bytes, length)) ->
+        (* strictly speaking, this isn't memoization since it's side-effecting, but using Memo is rather convenient *)
+        ArrayMetaMemo.memo "BytesSTP.array_meta" begin fun (vc, (bytes, length)) ->
             let name = "array_symbol_" ^ string_of_int (Counter.next array_counter) in
             let index_width =
                 let rec index_width n m =
@@ -218,21 +219,20 @@ let lookup_stp_array vc bytes length =
 
 
 (* The STP translation functions below are divided into three types:
- * - foo_to_stp_bool translates various Bytes types to STP booleans, in particular, it converts only Bytes.bytes
- *   variants that result in booleans (i.e., logical or comparison operations);
- * - foo_to_stp_bv translates various Bytes types to STP bitvectors, in particular, it converts only Bytes.bytes
- *   variants that results in bitvectors (i.e., arithmetic or bitwise operations);
- * - foo_to_stp_array translates Bytes_ByteArray, Bytes_Read and Bytes_Write to equivalent array operations.
- *
- * Coercion from bool to/from bitvector is done only when needed. Similarly, big-endian to/from little-endian
- * conversion is done only at Bytes_Read into an STP bitvector and Bytes_Write to an STP array.
- *
+    - foo_to_stp_bool translates various Bytes types to STP booleans, in particular, it converts only Bytes.bytes
+        variants that result in booleans (i.e., logical or comparison operations);
+    - foo_to_stp_bv translates various Bytes types to STP bitvectors, in particular, it converts only Bytes.bytes
+        variants that results in bitvectors (i.e., arithmetic or bitwise operations);
+    - foo_to_stp_array translates Bytes_ByteArray, Bytes_Read and Bytes_Write to equivalent array operations.
+
+    Coercion from bool to/from bitvector is done only when needed. Similarly, big-endian to/from little-endian
+    conversion is done only at Bytes_Read into an STP bitvector and Bytes_Write to an STP array.
  *)
 
 (* TODO: OtterBytes should separate the following into different types:
     - unary operations from binary operations (rather than using a list in Bytes_Op);
     - boolean operation from arithmetic operations from comparison operations (rather than overloading Bytes_Op);
-    - simple value vs. compound values (rather than overloading Bytes_Write/Bytes_Read).
+    - simple values from compound values (rather than overloading Bytes_Write/Bytes_Read).
 *)
 
 let rec byte_to_stp_bv vc byte =
@@ -261,7 +261,7 @@ and bytes_to_stp_array vc bytes =
             end array bytearray
 
         | Bytes_Write (array, index, width, (Bytes_ByteArray _ | Bytes_Read _ | Bytes_Write _ as value)) ->
-            (* compound values are already in big-endian *)
+            (* values encode as Bytes_ByteArray or compound values do not need endian conversion *)
             let array = bytes_to_stp_array vc array in
             let index_width = OcamlSTP.array_index_width vc array in
             let index_start = OcamlSTP.bv_extract vc (bytes_to_stp_bv vc index) (index_width - 1) 0 in
