@@ -316,16 +316,15 @@ let percentage numer denom = 100. *. float_of_int numer /. float_of_int denom
 let printPath job =
     let state = job#state in
     let hist = job#exHist in
-    let rec eliminate_untracked apc =
-      match apc with
-      | [] -> ([], [])
-      | (apch,apcth)::apct ->
-          let (apct1,apct2) = eliminate_untracked apct in
-          if apcth then (apch::apct1,apct2) else  (apct1,apch::apct2)
+    let separate_assume apc =
+        let pc_branch, pc_assume = PathCondition.fold begin fun (pc_branch, pc_assume) clause track ->
+            if track then (clause::pc_branch, pc_assume) else (pc_branch, clause::pc_assume)
+        end ([], []) apc in
+        (List.rev pc_branch, List.rev pc_assume)
     in
 
-    let pc_all = state.path_condition in
-    let pc_branch,pc_assume = eliminate_untracked state.path_condition in
+    let pc_all = PathCondition.clauses state.path_condition in
+    let pc_branch, pc_assume = separate_assume state.path_condition in
 
     Output.printf "Path condition for job %d:@\n  @[%a@]@\n@." job#path_id
         (FormatPlus.pp_print_list (BytesPrinter.bytes_named hist.bytesToVars) "@\n") pc_branch;

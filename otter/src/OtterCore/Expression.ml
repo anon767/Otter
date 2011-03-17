@@ -310,7 +310,7 @@ deref job bytes typ errors =
             let rec find_match pc errors = match pc with
                 | [] ->
                     FormatPlus.failwith "Dereference something not an address (bytearray)@ @[%a@]@." BytesPrinter.bytes bytes
-                | (Bytes_Op(OP_EQ,[(bytes1,_); (bytes2,_)]), _)::pc' ->
+                | (Bytes_Op(OP_EQ,[(bytes1,_); (bytes2,_)]))::pc' ->
                     begin
                         let bytes_tentative =
                             if bytes__equal bytes1 bytes then bytes2
@@ -321,11 +321,11 @@ deref job bytes typ errors =
                             | Bytes_Address(_,_) -> deref job bytes_tentative typ errors
                             | _ -> find_match pc' errors
                     end
-                | (Bytes_Op(OP_LAND,btlist), _)::pc' ->
-                    find_match (List.rev_append (List.fold_left (fun a (b,_) -> (b,true)::a) [] btlist) pc') errors
+                | (Bytes_Op(OP_LAND,btlist))::pc' ->
+                    find_match (List.rev_append (List.fold_left (fun a (b,_) -> b::a) [] btlist) pc') errors
                 | _::pc' -> find_match pc' errors
             in
-            find_match job#state.path_condition errors
+            find_match (PathCondition.clauses job#state.path_condition) errors
 
         | Bytes_Address(block, offset) ->
             if MemOp.state__has_block job block then
@@ -339,7 +339,7 @@ deref job bytes typ errors =
                     ~test:begin fun (guard', job, errors, removed) pre guard ->
                         let job, truth =
                             (job : #Info.t)#profile_call "query_stp/Expression.deref/Bytes_Conditional"
-                                (fun job -> (job, BytesSTP.query_stp job#state.path_condition pre guard))
+                                (fun job -> (job, BytesSTP.query_stp (PathCondition.clauses job#state.path_condition) pre guard))
                         in
                         ((guard', job, errors, removed), truth)
                     end

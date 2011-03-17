@@ -9,7 +9,9 @@ open State
 open Operator
 
 (* Track Stp calls *)
-let timed_query_stp name = fun job pre guard -> (job : #Info.t)#profile_call name (fun job -> (job, BytesSTP.query_stp job#state.path_condition pre guard))
+let timed_query_stp name =
+    fun job pre guard ->
+        (job : #Info.t)#profile_call name (fun job -> (job, BytesSTP.query_stp (PathCondition.clauses job#state.path_condition) pre guard))
 
 (**
  *	memory frame
@@ -288,51 +290,10 @@ let state__end_fcall job =
 
 let state__get_callContext job = List.hd job#state.callContexts
 
-let state__extract_path_condition job bytes =
-(**
-  *   remove pc \in PC if bytes -> pc
-  *   This should be faster
-  *)
-  (*
-  let bytes_implies_pc bytes pc =
-    match BytesSTP.query_bytes [bytes] pc with
-      | Ternary.True -> true
-      | _ -> false
-  in
-  *)
-(**
-  *   remove pc \in PC if bytes&&(PC\pc) -> pc
-  *   This can be very slow in some situations
-  *
-  *   TODO: maybe we can have a combination of these 2 methods?
-  *)
-  let bytes_and_others_implies_pc bytes_lst pc =
-    match BytesSTP.query_bytes bytes_lst pc with
-      | Ternary.True -> true
-      | _ -> false
-  in
-  let rec impl pc_lst = match pc_lst with
-    | pc::pc_lst' ->
-        let pc_lst'' = impl pc_lst' in
-          (*if bytes_implies_pc bytes pc then*)
-          if bytes_and_others_implies_pc ((bytes,true)::pc_lst'') (fst pc) then
-            pc_lst''
-          else
-            pc::pc_lst''
-    | [] -> []
-  in
-    impl job#state.path_condition
-
 
 let state__add_path_condition job bytes tracked=
-	let path_condition =
-		if !Executeargs.arg_simplify_path_condition then
-			Profiler.global#call "MemOp.state__add_path_condition/Simplify PC" (fun () -> state__extract_path_condition job bytes)
-		else
-			job#state.path_condition
-	in
 	job#with_state { job#state with
-		path_condition = (bytes,tracked)::path_condition;
+		path_condition = PathCondition.add bytes tracked job#state.path_condition;
 	}
 
 
@@ -413,7 +374,7 @@ let rec eval pc bytes =
   let nontrivial () =
     Output.set_mode Output.MSG_REG;
     Output.printf "Ask STP...@.";
-    BytesSTP.query_bytes pc bytes
+    BytesSTP.query_bytes (PathCondition.clauses pc) bytes
 
   in
 	let operation_of op = match op with
@@ -485,13 +446,13 @@ let rec eval pc bytes =
             begin match eval pc bytes1 with
               | Ternary.False -> Ternary.False
               | Ternary.True -> eval pc bytes2
-              | Ternary.Unknown -> if eval ((bytes1,true) :: pc) bytes2 = Ternary.False then Ternary.False else Ternary.Unknown
+              | Ternary.Unknown -> if eval (PathCondition.add bytes1 true pc) bytes2 = Ternary.False then Ternary.False else Ternary.Unknown
             end
       | Bytes_Op(OP_LOR, [(bytes1, _); (bytes2, _)]) ->
             begin match eval pc bytes1 with
               | Ternary.True -> Ternary.True
               | Ternary.False -> eval pc bytes2
-              | Ternary.Unknown -> if eval ((logicalNot bytes1,true) :: pc) bytes2 = Ternary.True then Ternary.True else Ternary.Unknown
+              | Ternary.Unknown -> if eval (PathCondition.add (logicalNot bytes1) true pc) bytes2 = Ternary.True then Ternary.True else Ternary.Unknown
             end
       (* Consult STP *)
       | _ ->

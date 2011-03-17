@@ -12,7 +12,7 @@ let set_max_function_name_length fns =
 
 let set_output_formatter_interceptor job job_queue interceptor =
     let origin_function_name = (List.hd (List.rev job#state.callstack)).svar.vname in
-    let depth = List.length job#state.path_condition in
+    let depth = PathCondition.length job#state.path_condition in
     let loc = Job.get_loc job in
     let label =
         if loc = Cil.locUnknown then

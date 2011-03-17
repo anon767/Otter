@@ -602,9 +602,9 @@ let query_stp =
         end
     end in
 
-    fun (pc : (bytes * bool) list) pre guard ->
+    fun pc pre guard ->
         Profiler.global#call "BytesSTP.query_stp" begin fun () ->
-            let pc = List.map (fun (bytes, _) -> Bytes.bytes__reduce bytes) pc in
+            let pc = List.map (fun bytes -> Bytes.bytes__reduce bytes) pc in
             let pc = getRelevantAssumptions ((guard__to_bytes pre)::pc) (guard__to_bytes guard) in
             let pre = Bytes.guard__reduce pre in
             let guard = Bytes.guard__reduce guard in
@@ -633,7 +633,7 @@ let getValues pathCondition symbolList =
         let negatedPcExpr =
             let pcExpr =
                 List.fold_left
-                    (fun expr (bytes, _) -> OcamlSTP.bool_and vc expr (bytes_to_stp_bool vc bytes))
+                    (fun expr bytes -> OcamlSTP.bool_and vc expr (bytes_to_stp_bool vc bytes))
                     (OcamlSTP.bool_true vc)
                     pathCondition
             in
@@ -649,7 +649,7 @@ let getValues pathCondition symbolList =
         in
         let doit () =
             if OcamlSTP.vc_query vc negatedPcExpr = OcamlSTP.Valid then
-                FormatPlus.failwith "The path condition is unsatisfiable!@\n@[  %a@]" (FormatPlus.pp_print_list (fun ff (bytes, _) -> BytesPrinter.bytes ff bytes) "@\nAND@\n  ") pathCondition;
+                FormatPlus.failwith "The path condition is unsatisfiable!@\n@[  %a@]" (FormatPlus.pp_print_list (fun ff bytes -> BytesPrinter.bytes ff bytes) "@\nAND@\n  ") pathCondition;
             Some (List.map getOneVal (List.rev symbolList))
         in
         if (!arg_max_stp_time) < 0.0 then
@@ -662,7 +662,7 @@ let getValues pathCondition symbolList =
 
 
 let getAllValues pathCondition =
-    getValues pathCondition (SymbolSet.elements (allSymbolsInList (List.map fst pathCondition)))
+    getValues pathCondition (SymbolSet.elements (allSymbolsInList pathCondition))
 
 
 (** {1 Command-line options} *)

@@ -11,7 +11,6 @@ let arg_cfg_pruning = ref false
 let arg_init_malloc_zero = ref false
 let arg_init_local_zero = ref false
 let arg_noinit_unreachable_globals = ref false
-let arg_simplify_path_condition = ref false
 let arg_examfn = ref "" (* none *)
 
 let arg_print_callstack = ref false
@@ -61,10 +60,6 @@ let options = [
 	("--noinitUnreachableGlobals",
 		Arg.Set arg_noinit_unreachable_globals,
 		" Do NOT initialize unreachable globals\n");
-
-	("--simplifyPathCondition",
-		Arg.Set arg_simplify_path_condition,
-		" Check if a newly added constraint implies any previous ones\n");
 
 	("--examfn",
 		Arg.Set_string arg_examfn,

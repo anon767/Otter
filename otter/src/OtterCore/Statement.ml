@@ -309,10 +309,10 @@ let exec_stmt job errors = Profiler.global#call "Statement.exec_stmt" begin fun 
                 Output.set_mode Output.MSG_GUARD;
                 Output.printf "Check if the following holds:@\n  @[%a@]@\n" BytesPrinter.bytes rv;
                 Output.printf "Under the path condition:@\n";
-                if job#state.path_condition = [] then
+                if PathCondition.is_empty job#state.path_condition then
                     Output.printf "  (nil)"
                 else
-                    Output.printf "  @[%a@]" (FormatPlus.pp_print_list BytesPrinter.bytes "@ AND ") (List.map fst job#state.path_condition);
+                    Output.printf "  @[%a@]" (FormatPlus.pp_print_list BytesPrinter.bytes "@ AND ") (PathCondition.clauses job#state.path_condition);
                 Output.printf "@.";
 
                 let truth = MemOp.eval job#state.path_condition rv in

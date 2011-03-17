@@ -443,7 +443,7 @@ let otter_assume job _ exps errors =
     try
         let check_exp (job, errors) exp =
             let job, query, errors = Expression.rval job exp errors in
-            match BytesSTP.query_stp job#state.path_condition guard__true (guard__bytes query) with
+            match BytesSTP.query_stp (PathCondition.clauses job#state.path_condition) guard__true (guard__bytes query) with
                 | Ternary.True -> (job, errors) (* Ignore true assumptions *)
                 | Ternary.False -> raise Unsat (* Stop on false assumptions *)
                 | Ternary.Unknown -> (MemOp.state__add_path_condition job query false, errors) (* Add possible assumptions to path condition *)
@@ -461,10 +461,10 @@ let otter_assume job _ exps errors =
 
 let otter_path_condition job retopt exps errors =
 	Output.set_mode Output.MSG_MUSTPRINT;
-	if job#state.path_condition = [] then
+	if PathCondition.is_empty job#state.path_condition then
 		Output.printf "(nil)@."
 	else
-		Output.printf "@[%a@]@." (FormatPlus.pp_print_list BytesPrinter.bytes "@\n  AND@\n") (List.map fst job#state.path_condition);
+		Output.printf "@[%a@]@." (FormatPlus.pp_print_list BytesPrinter.bytes "@\n  AND@\n") (PathCondition.clauses job#state.path_condition);
 	let job = end_function_call job in
 	(Job.Active job, errors)
 
@@ -732,7 +732,9 @@ let libc_longjmp job retopt exps errors =
 					| Bytes_ByteArray _ -> [bytes_to_int_auto stmtPtrAddrBytes]
 					| Bytes_Read(bytes2, offset, len) ->
 						let sp = BytesUtility.expand_read_to_conditional bytes2 offset len in
-						conditional__fold ~test:(fun acc pre guard -> (acc, BytesSTP.query_stp job#state.path_condition pre guard)) fold_func [] sp
+						conditional__fold
+							~test:(fun acc pre guard -> (acc, BytesSTP.query_stp (PathCondition.clauses job#state.path_condition) pre guard))
+							fold_func [] sp
 					| Bytes_Conditional(c) ->
 						conditional__fold fold_func [] c
 					| _ -> failwith "Non-constant statement ptr not supported"

@@ -10,7 +10,7 @@ let set_output_formatter job =
         Output.printf "***** Changing running job *****@.";
         old_job_id := job#path_id
     );
-    let depth = List.length job#state.path_condition in
+    let depth = PathCondition.length job#state.path_condition in
     let loc = Job.get_loc job in
     let label =
         if loc = Cil.locUnknown then

@@ -13,6 +13,7 @@ OtterCore/Job
 OtterCore/Log
 OtterCore/MemOp
 OtterCore/Operator
+OtterCore/PathCondition
 OtterCore/Printer
 OtterCore/Report
 OtterCore/State

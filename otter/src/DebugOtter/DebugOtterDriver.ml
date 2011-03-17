@@ -52,10 +52,10 @@ let printPathCondition job =
         "@.  %t @.\n"
 
         begin fun ff ->
-            if job#state.path_condition = [] then
+            if PathCondition.is_empty job#state.path_condition then
                 Format.pp_print_string ff "true"
             else
-                FormatPlus.pp_print_list BytesPrinter.bytes "\nAND\n  " ff (List.map fst job#state.path_condition)
+                FormatPlus.pp_print_list BytesPrinter.bytes "\nAND\n  " ff (PathCondition.clauses job#state.path_condition)
         end  
         
 let printCurrentInstruction job =
