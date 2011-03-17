@@ -2,7 +2,7 @@
 
 # Find the first occurence of "TargetReached" in Otter's output piped to timelines
 
-import sys, re, os, math, string
+import sys, re, os, math, string, subprocess
 from collections import defaultdict
 
 def mean(values):
@@ -10,33 +10,27 @@ def mean(values):
         raise Exception("Empty list")
     return sum(values) / len(values)
 
-def stdev(values):
+def mean_stdev(values):
     if len(values) == 0:
         raise Exception("Empty list")
     m = mean(values)
-    return math.sqrt(mean([(x-m)*(x-m) for x in values]))
+    sd = math.sqrt(mean([(x-m)*(x-m) for x in values]))
+    return {"mean": m, "stdev": sd}
 
-def median_interquartile_range_outliers(values):
+def median_siqr_outliers(values):
     length = len(values)
     if length < 3:
         return None
     values.sort()
-    median_index = length/2
-    median = values[median_index]
-    interquartile_range = values[median_index+1] - values[median_index-1]
-    outliers = filter(lambda x: abs(x-median)>interquartile_range, values)
-    return { "median": median, "interquartile_range": interquartile_range, "outliers": outliers}
+    median = values[length/2]
+    siqr = (values[length*3/4] - values[length/4]) / 2.0
+    outliers = filter(lambda x: abs(x-median)>2*siqr, values)
+    return { "median": median, "siqr": siqr, "outliers": outliers}
 
-def median_and_rest(values):
-    length = len(values)
-    if length < 3:
-        return None
+def normalized_range(values):
     values.sort()
-    median_index = length/2
-    median = values[median_index]
-    rest = values[0:median_index] + values[median_index+1:]
-    return { "median": median, "rest": rest}
-
+    range = values[-1] - values[0]
+    return { "normalized_range": range / mean(values) }
 
 def loose_getopt(args, long_options):
     i = 0
@@ -56,13 +50,11 @@ time_re = re.compile(r"^\s*\d+\.\d+\s*(\d+\.\d+).*TargetReached.*")
 program_re = re.compile(r"(.*)_\d+\.log")
 
 table = defaultdict(list)
-#programs = set()
 
 for directory in sys.argv[1:]:
     filenames = os.listdir(directory)
     for filename in filenames:
         program = program_re.match(filename).group(1)
-        #programs.add(program)
         filename = os.path.join(directory, filename)
         file = open(filename)
         time = 100000.0
@@ -83,7 +75,11 @@ for directory in sys.argv[1:]:
 
 stat = dict()
 for key, values in table.items():
-    stat[key] = median_and_rest(values)
+    stat[key] = { "size": len(values), "values": values }
+    stat[key].update(median_siqr_outliers(values))
+    stat[key].update(normalized_range(values))
+    stat[key].update(mean_stdev(values))
+
 
 # type key = Pure | Mix(strategy, ratio)
 # Pure: runbackotter --bidirectional-search-ratio=-1
@@ -93,28 +89,34 @@ for key, values in table.items():
 # program: filename%_\d+\.log
 # seed: --random-seed=seed
 
-def median_interquartile_range_outliers_format(entry):
+def format(x):
+    return "%.1f" % x if x < 1000.0 else "-"
+
+def show_median_siqr_outliers_format(entry):
     if entry == None:
         return ""
-    elif entry["median"] >= 1000.0 or entry["interquartile_range"] >= 1000.0:
-        return "$\\infty$"
     else:
-        return "\\mio{%.1f}{%.1f}{%s}" % (entry["median"], entry["interquartile_range"], "" if entry["outliers"]==[] else "%d"%len(entry["outliers"]))
+        return "\\mso{%s}{%s}{%s}" % (format(entry["median"]), format(entry["siqr"]), "" if entry["outliers"]==[] else "%d"%len(entry["outliers"]))
+
+def show_mean_stdev_format(entry):
+    if entry == None:
+        return ""
+    else:
+        return "\\msd{%s}{%s}{%d}" % (format(entry["mean"]), format(entry["stdev"]), entry["size"])
 
 def show_all_format(entry):
     if entry == None:
         return ""
     else:
-        f = lambda x: "%.1f" % x if x < 1000.0 else "-"
-        ff = lambda x: "%.0f" % x if x < 1000.0 else "-"
-        g = lambda x, y: ff(x[y]) if y < len(x) else ""
-        return "\\v{%s}{%s}{%s}{%s}{%s}" % (
-                f(entry["median"]),
-                g(entry["rest"],0),
-                g(entry["rest"],1),
-                g(entry["rest"],2),
-                g(entry["rest"],3)
-                )
+        values = [ format(x) for x in entry["values"]]
+        return "\n" + string.join(values, "\n") + "\n"
+
+
+def show_normalized_range_format(entry):
+    if entry == None:
+        return ""
+    else:
+        return "%.1f" % entry["normalized_range"]
 
 def getstat_r(program, opts):
     global stat
@@ -124,37 +126,85 @@ def getstat_r(program, opts):
     else:
         return stat[key]
 
+def gnuplot(program, common_opts, opts):
+    entry = getstat_r(program, opts+common_opts)
+    if entry == None:
+        return ""
+    testname = re.compile(r"[^A-Za-z0-9\.-]").sub("_",str([program]+opts))
+    print "Process %s" % testname
+    plot_sh = os.path.join("gnuplot", "%s.plot" % testname)
+    plot_gif = os.path.join("gnuplot", "%s.gif" % testname)
+    plot_datafile = os.path.join("gnuplot", "%s.dat" % testname)
+    if not os.path.exists("gnuplot"):
+        os.makedirs("gnuplot")
+
+    plot_dat = ""
+    for value in entry["values"]:
+        if value > 2000.0:
+            value = 2000.0
+        plot_dat += "1\t%f\n" % value
+    f = open(plot_datafile, "w")
+    print >>f, plot_dat
+    f.close()
+
+    plot_cmd = """
+set terminal gif
+set output "%s"
+set autoscale
+unset log
+unset label
+set xtic auto
+set ytic auto
+set ylabel "Running time (secs)"
+set xr [.5:1.5]
+set size ratio 10
+plot "%s" using 1:2 with points
+""" % (plot_gif, plot_datafile)
+    f = open(plot_sh, "w")
+    print >>f, plot_cmd
+    f.close()
+    subprocess.call("gnuplot %s" % plot_sh, shell=True)
+    return plot_cmd
+
+
 def getstat(program, common_opts, opts):
-    return getstat_r(program, opts+common_opts)
+    #return gnuplot(program, common_opts, opts)
+    #return show_mean_stdev_format(getstat_r(program, opts+common_opts)) + show_median_siqr_outliers_format(getstat_r(program, opts+common_opts))
+    return show_all_format(getstat_r(program, opts+common_opts))
 
-format = show_all_format
 
+# Add new programs here
 programs = [
-        ("mkdir_comb", "mkdir"),
-        ("mkfifo_comb", "mkfifo"),
-        ("mknod_comb", "mknod"),
-        ("paste_comb", "paste"),
-        ("mkdir_1", "mkdir-inj"),
-        ("mkfifo_1", "mkfifo-inj"),
-        ("mknod_1", "mknod-inj"),
+        ("mkdir", "mkdir"),
+        ("mkfifo", "mkfifo"),
+        ("mknod", "mknod"),
+        ("paste", "paste"),
+        ("mkdir-inj", "mkdir-inj"),
+        ("mkfifo-inj", "mkfifo-inj"),
+        ("mknod-inj", "mknod-inj"),
         ]
 
-for common_opts in [[("backotter-timing-method", "stp-calls")], [("backotter-timing-method", "real")]]:
+common_opt_list = [
+        [("backotter-timing-method", "stp-calls")],
+        #[("backotter-timing-method", "real")],
+    ]
+
+for common_opts in common_opt_list:
 
     print common_opts
 
-    print "General:"
+    print "Un-directed:"
     for program, program_name in programs:
         output = [ program_name ]
 
         # Pure BackOtter
-        output.append(format(getstat(program, common_opts, ["runbackotter",("bidirectional-search-ratio","-1")])))
+        output.append(getstat(program, common_opts, ["runbackotter",("bidirectional-search-ratio","-1")]))
 
         for strategy in ["KLEE", "SAGE", "random-path"]:
             # Pure forward
-            output.append(format(getstat(program, common_opts, ["runotter",("queue",strategy)])))
+            output.append(getstat(program, common_opts, ["runotter",("queue",strategy)]))
             for ratio in [ ".75", ".5" ]:
-                output.append(format(getstat(program, common_opts, ["runbackotter",("forward-queue",strategy),("bidirectional-search-ratio",ratio)])))
+                output.append(getstat(program, common_opts, ["runbackotter",("forward-queue",strategy),("bidirectional-search-ratio",ratio)]))
 
         # join
         result = string.join(output, " & ") + " \\\\"
@@ -165,10 +215,10 @@ for common_opts in [[("backotter-timing-method", "stp-calls")], [("backotter-tim
         output = [ program_name ]
 
         # Pure BackOtter
-        output.append(format(getstat(program, common_opts, ["runbackotter",("bidirectional-search-ratio","-1")])))
+        output.append(getstat(program, common_opts, ["runbackotter",("bidirectional-search-ratio","-1")]))
 
         for strategy in ["closest-to-targets", "closest-to-targets-path-weighted", "distance-to-targets-weighted", "path-weighted", "ESD"]:
-            output.append(format(getstat(program, common_opts, ["runotter",("queue",strategy)])))
+            output.append(getstat(program, common_opts, ["runotter",("queue",strategy)]))
 
         # join
         result = string.join(output, " & ") + " \\\\"
