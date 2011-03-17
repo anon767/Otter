@@ -1,4 +1,4 @@
-#pragma expect_abandoned(assertion_failure)
+#pragma no_other_abandoned
 
 int main(void) {
     char a[1];
