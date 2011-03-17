@@ -189,6 +189,12 @@ let lookup_stp_array vc bytes length =
  *
  *)
 
+(* TODO: OtterBytes should separate the following into different types:
+    - unary operations from binary operations (rather than using a list in Bytes_Op);
+    - boolean operation from arithmetic operations from comparison operations (rather than overloading Bytes_Op);
+    - simple value vs. compound values (rather than overloading Bytes_Write/Bytes_Read).
+*)
+
 let rec byte_to_stp_bv vc byte =
     InternalToSTP.wrap_byte_to_stp_bv begin fun (vc, byte) -> match byte with
         | Byte_Concrete byte ->
@@ -214,7 +220,25 @@ and bytes_to_stp_array vc bytes =
                 OcamlSTP.array_write vc array (OcamlSTP.bv_of_int vc index_width index) (byte_to_stp_bv vc byte)
             end array bytearray
 
-        | Bytes_Write (array, index, width, value) ->
+        | Bytes_Write (array, index, width, (Bytes_ByteArray _ | Bytes_Read _ | Bytes_Write _ as value)) ->
+            (* compound values are already in big-endian *)
+            let array = bytes_to_stp_array vc array in
+            let index_width = OcamlSTP.array_index_width vc array in
+            let index_start = OcamlSTP.bv_extract vc (bytes_to_stp_bv vc index) (index_width - 1) 0 in
+            let src_array = bytes_to_stp_array vc value in
+            let src_index_width = OcamlSTP.array_index_width vc src_array in
+            let rec write array offset =
+                if offset < width then
+                    let bv8 = OcamlSTP.array_read vc src_array (OcamlSTP.bv_of_int vc src_index_width offset) in
+                    let index = OcamlSTP.bv_add vc index_start (OcamlSTP.bv_of_int vc index_width offset) in
+                    write (OcamlSTP.array_write vc array index bv8) (offset + 1)
+                else
+                    array
+            in
+            write array 0
+
+        | Bytes_Write (array, index, width, (Bytes_Constant _ | Bytes_Address _ | Bytes_FunPtr _ | Bytes_Op _ | Bytes_Conditional _ as value)) ->
+            (* simple values need to be converted to little-endian before writing to a compound value *)
             let array = bytes_to_stp_array vc array in
             let index_width = OcamlSTP.array_index_width vc array in
             let index_start = OcamlSTP.bv_extract vc (bytes_to_stp_bv vc index) (index_width - 1) 0 in
@@ -350,6 +374,7 @@ and bytes_to_stp_bv vc bytes =
             end
 
         | Bytes_Read (array, index, width) ->
+            (* a simple value read from a compound value needs to be converted to big-endian *)
             let array = bytes_to_stp_array vc array in
             let index_width = OcamlSTP.array_index_width vc array in
             let index_start = OcamlSTP.bv_extract vc (bytes_to_stp_bv vc index) (index_width - 1) 0 in
