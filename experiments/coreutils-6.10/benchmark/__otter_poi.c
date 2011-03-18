@@ -45,3 +45,14 @@ void __otter_long_double_format_bounds_checking(char const *fmt, int i) {
         __FAILURE();
 #endif
 }
+
+#pragma cilnoremove("__otter_copy_unescaped_string_bounds_checking")
+void __otter_copy_unescaped_string_bounds_checking(char const *base, char const *cur) {
+#ifdef __OTTER_COPY_UNESCAPED_STRING_BOUNDS_CHECKING
+    int len = strlen(base);
+    if (len < cur - base) 
+        __FAILURE();
+#endif
+}
+
+
