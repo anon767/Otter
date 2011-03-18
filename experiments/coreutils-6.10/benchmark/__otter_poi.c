@@ -5,6 +5,15 @@
 #pragma cilnoremove("__FAILURE")
 void __FAILURE(void) {}
 
+#pragma cilnoremove("__otter_poi_noop")
+void __otter_poi_noop(void) {
+    // Some instructions to be covered
+    int x;
+    x = 1;
+    x++;
+    return;
+}
+
 // TODO: remove this
 #pragma cilnoremove("__otter_xalloc_die_failure")
 void __otter_xalloc_die_failure(void) {
@@ -54,5 +63,6 @@ void __otter_copy_unescaped_string_bounds_checking(char const *string, int i) {
         __FAILURE();
 #endif
 }
+
 
 
