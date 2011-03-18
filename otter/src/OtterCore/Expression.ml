@@ -163,8 +163,8 @@ rval job exp errors =
             failwith "__align_of not implemented"
         | UnOp (unop, exp1, _) ->
             rval_unop job unop exp1 errors
-        | BinOp (binop, exp1, exp2, _) ->
-            rval_binop job binop exp1 exp2 errors
+        | BinOp (binop, exp1, exp2, _) as exp ->
+            rval_binop job binop exp1 exp2 exp errors
         | Question (guard, exp1, exp2, _) ->
             rval_question job guard exp1 exp2 errors
         | AddrOf (Var varinfo, _) when Cil.isFunctionType (varinfo.Cil.vtype) ->
@@ -437,7 +437,7 @@ rval_unop job unop exp errors =
 
 and
 
-rval_binop job binop exp1 exp2 errors =
+rval_binop job binop exp1 exp2 exp errors =
     let job, rv1, errors = rval job exp1 errors in
     match binop with
       | LAnd | LOr -> begin (* Short-circuit, if possible *)
@@ -456,6 +456,21 @@ rval_binop job binop exp1 exp2 errors =
                             let bytes = (Operator.of_binop binop) [ (rv1, typeOf exp1); (rv2, typeOf exp2) ] in
                             (job, bytes, errors)
         end
+      | Div | Mod ->
+            (* check for division-by-zero *)
+            let job, rv2, errors = rval job exp2 errors in
+            begin match MemOp.eval job#state.path_condition rv2 with
+                | Ternary.True -> (* non-zero *)
+                    let bytes = (Operator.of_binop binop) [ (rv1, typeOf exp1); (rv2, typeOf exp2) ] in
+                    (job, bytes, errors)
+                | Ternary.False -> (* zero *)
+                    FormatPlus.failwith "%a" Errors.printer (`DivisionByZero exp)
+                | Ternary.Unknown -> (* possibly zero *)
+                    let errors = (job, `DivisionByZero exp)::errors in
+                    let job = MemOp.state__add_path_condition job rv2 true in
+                    let bytes = (Operator.of_binop binop) [ (rv1, typeOf exp1); (rv2, typeOf exp2) ] in
+                    (job, bytes, errors)
+            end
       | _ ->
             let job, rv2, errors = rval job exp2 errors in
             let bytes = (Operator.of_binop binop) [ (rv1, typeOf exp1); (rv2, typeOf exp2) ] in

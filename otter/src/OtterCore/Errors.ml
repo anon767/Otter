@@ -4,6 +4,7 @@ type t = [
     | `TargetReached of Target.t
     | `AssertionFailure of Cil.exp
     | `OutOfBounds of Cil.exp
+    | `DivisionByZero of Cil.exp
 ]
 
 let printer ff (error : t) = match error with
@@ -11,6 +12,7 @@ let printer ff (error : t) = match error with
     | `TargetReached target -> Format.fprintf ff "`TargetReached @[%a@]" Target.printer target
     | `AssertionFailure exp -> Format.fprintf ff "`AssertionFailure: %a" Printcil.exp exp
     | `OutOfBounds exp -> Format.fprintf ff "`OutOfBounds: %a" Printcil.exp exp
+    | `DivisionByZero exp -> Format.fprintf ff "`DivisionByZero: %a" Printcil.exp exp
 
 let matcher name args =
     match name, args with
@@ -42,6 +44,13 @@ let matcher name args =
                 | _ -> false
             end
         | "out_of_bounds", _ ->
-            failwith "Invalid: out_of_bounds takes no arguments."
+            failwith "Invalid out_of_bounds (takes no arguments)."
+        | "division_by_zero", [] ->
+            begin function
+                | `DivisionByZero _ -> true
+                | _ -> false
+            end
+        | "division_by_zero", _ ->
+            failwith "Invalid division_by_zero (takes no arguments)."
         | s, _ ->
             failwith "Unknown failure reason."
