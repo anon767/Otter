@@ -810,7 +810,7 @@ let guard__to_bytes = function
 
 (** Fold and map simultaneously over the leaves of conditionals, optionally removing leaves.
     @param test is an optional test function to filter by the guard condition; the accumulator is passed to the test
-            function as well : ['acc -> guard -> guard -> Ternary.t]
+            function as well : ['acc -> guard -> guard -> 'acc * Ternary.t]
     @param eq is an optional equality function to prune identical leaves : ['target -> 'target -> bool]
     @param pre is an optional precondition
     @param fold_map_opt is the fold and map function, which may map to [None] to remove leaves
@@ -853,7 +853,7 @@ let conditional__fold_map_opt ?(test=fun acc _ _ -> (acc, Ternary.Unknown)) ?(eq
 
 (** Fold and map simultaneously over the leaves of conditionals.
     @param test is an optional test function to filter by the guard condition; the accumulator is passed to the test
-            function as well : ['acc -> guard -> guard -> Ternary.t]
+            function as well : ['acc -> guard -> guard -> 'acc * Ternary.t]
     @param eq is an optional equality function to prune identical leaves : ['target -> 'target -> bool]
     @param pre is an optional precondition
     @param fold_map is the fold and map function : ['acc -> guard -> 'source -> 'acc * 'target conditional]
@@ -874,7 +874,7 @@ let conditional__fold_map ?test ?eq ?pre fold_map acc source =
 
 (** Fold over the leaves of conditionals.
     @param test is an optional test function to filter by the guard condition; the accumulator is passed to the test
-            function as well : ['acc -> guard -> guard -> Ternary.t]
+            function as well : ['acc -> guard -> guard -> 'acc * Ternary.t]
     @param pre is an optional precondition
     @param fold is the fold function : ['acc -> guard -> 'source -> 'acc]
     @param acc is the initial accumulator
@@ -894,12 +894,13 @@ let conditional__fold ?test ?pre fold acc source =
     @return ['target conditional] the mapped conditional
 *)
 let conditional__map ?test ?eq ?pre map source =
+    let test = match test with Some f -> Some (fun () pre guard -> ((), f pre guard)) | None -> None in
     snd (conditional__fold_map ?test ?eq ?pre (fun () _ x -> ((), map x)) () source)
 
 
 (** Prune the leaves of conditionals.
     @param test is an optional test function to filter by the guard condition; an accumulator is passed to the test
-            function as well : ['acc -> guard -> guard -> Ternary.t]
+            function as well : ['acc -> guard -> guard -> 'acc * Ternary.t]
     @param eq is an optional equality function to prune identical leaves : ['target -> 'target -> bool]
     @param pre is an optional precondition
     @param acc is the initial accumulator for the test function
