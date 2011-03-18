@@ -455,6 +455,7 @@ let otter_assume job _ exps errors =
         (* Use [Fork []] to make this job disappear. Among other things, this
            means that we ignore coverage from this job, and we also ignore any
            errors that occurred while evaluating the arguments to __ASSUME. *)
+        Output.set_mode Output.MSG_MUSTPRINT;
         Output.printf "Impossible assumption; eliminating job@.";
         (Job.Fork [], errors)
 
