@@ -16,6 +16,8 @@ seq    "@TRUNK@/experiments/coreutils-6.10/src/seq_comb.c"     -DMAX_ARGC=4 -DMA
 
 # Bug reports:
 # pr contains a buffer overflow : http://git.savannah.gnu.org/cgit/coreutils.git/commit/?id=6856089f7bfaca2709b303f01dae001a30930b61
+# tac http://git.savannah.gnu.org/cgit/coreutils.git/commit/?id=d701f6abb73e36721de5df083df4769786a14528
+# Detail: the bug is due to an implicit dependence between two data structures that cannot be tested for with a simple if-statement, and the bug can actually lead to two different crashes (a realloc with an invalid pointer, or an invalid pointer dereference). We could make the dependence explicit by adding a field, but we're not sure if we should do that as it changes the program semantics a little more invasively. Ideally, we'd have a more specific way of detecting errors than adding "if (cond) __FAILURE()" to programs. the bug requires one field of a local variable (one of the data structures) to be uninitialized and treated as non-zero, but this currently leads to a long unaddressed bug in Otter in the way it detects uninitialized values: it fails if variables containing uninitialized values are converted to STP expressions even if the values are not actually read. We suppose one way around this would be to turn off detection of uninitialized values.
 # seq contains a buffer overflow : http://git.savannah.gnu.org/cgit/coreutils.git/commit/?id=b8108fd2ddf77ae79cd014f4f37798a52be13fd1
 
 # Work in progress:
