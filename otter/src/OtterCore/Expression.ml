@@ -456,8 +456,8 @@ rval_binop job binop exp1 exp2 exp errors =
                             let bytes = (Operator.of_binop binop) [ (rv1, typeOf exp1); (rv2, typeOf exp2) ] in
                             (job, bytes, errors)
         end
-      | Div | Mod ->
-            (* check for division-by-zero *)
+      | Div | Mod when Cil.isIntegralType (Cil.typeOf exp) ->
+            (* check for division-by-zero for integer types (not an error for floating-point, which isn't supported yet anyway) *)
             let job, rv2, errors = rval job exp2 errors in
             begin match MemOp.eval job#state.path_condition rv2 with
                 | Ternary.True -> (* non-zero *)
