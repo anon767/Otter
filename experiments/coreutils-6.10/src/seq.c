@@ -15,7 +15,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 /* Written by Ulrich Drepper.  */
-
+extern void __otter_long_double_format_bounds_checking(char const *fmt, int i);
 #include <config.h>
 #include <getopt.h>
 #include <stdio.h>
@@ -212,7 +212,7 @@ long_double_format (char const *fmt, struct layout *layout)
   if (! strchr ("efgaEFGA", fmt[i]))
     return NULL;
 
-  for (i++; ! (fmt[i] == '%' && fmt[i + 1] != '%'); i += (fmt[i] == '%') + 1)
+  for (i++; __otter_long_double_format_bounds_checking(fmt, i), ! (fmt[i] == '%' && fmt[i + 1] != '%'); i += (fmt[i] == '%') + 1)
     if (fmt[i])
       suffix_len++;
     else

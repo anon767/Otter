@@ -1,9 +1,11 @@
 #line 2 "__otter_poi.c"
 /** Points of interests */
+#include <string.h>
 
 #pragma cilnoremove("__FAILURE")
 void __FAILURE(void) {}
 
+// TODO: remove this
 #pragma cilnoremove("__otter_xalloc_die_failure")
 void __otter_xalloc_die_failure(void) {
 #ifdef __OTTER_XALLOC_DIE_FAILURE
@@ -35,3 +37,11 @@ void __otter_injected_make_node_op_equals_assert(int truth) {
 #endif
 }
 
+#pragma cilnoremove("__otter_long_double_format_bounds_checking")
+void __otter_long_double_format_bounds_checking(char const *fmt, int i) {
+#ifdef __OTTER_LONG_DOUBLE_FORMAT_BOUNDS_CHECKING
+    int len = strlen(fmt);
+    if (len < i) 
+        __FAILURE();
+#endif
+}
