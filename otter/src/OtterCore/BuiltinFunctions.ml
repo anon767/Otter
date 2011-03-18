@@ -170,20 +170,59 @@ let libc___builtin_va_start job retopt exps errors =
 let libc_free job retopt exps errors =
     (* Remove the mapping of (block,bytes) in the job. *)
     let arg = List.hd exps in
+    let typ = Cil.typeOf arg in
     let job, ptr, errors = Expression.rval job arg errors in
-    let job, errors = match ptr with
-      | Bytes_Address (block, offset) ->
-            if block.memory_block_type != Block_type_Heap || not (bytes__equal offset bytes__zero)
-            then FormatPlus.failwith "Freeing a non-malloced pointer:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp arg BytesPrinter.bytes ptr;
-            if not (MemOp.state__has_block job block)
-            then FormatPlus.failwith "Double-free:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp arg BytesPrinter.bytes ptr;
+    let rec libc_free job ptr errors = match ptr with
+        | Bytes_Address (block, offset) ->
+            (* Block_type_Aliased can refer to either malloc'ed or local variables below the stack; we'll assume it's malloc'ed memory for now *)
+            (* TODO: fork and split the cases *)
+            if not ((block.memory_block_type == Block_type_Heap || block.memory_block_type == Block_type_Aliased) && bytes__equal offset bytes__zero) then
+                FormatPlus.failwith "Freeing a non-malloced pointer:@ @[%a@]@ = @[%a@]" CilPrinter.exp arg BytesPrinter.bytes ptr;
+            if not (MemOp.state__has_block job block) then
+                FormatPlus.failwith "Double-free:@ @[%a@]@ = @[%a@]" CilPrinter.exp arg BytesPrinter.bytes ptr;
             let job = MemOp.state__remove_block job block in
             (job, errors)
-      | ptr when bytes__equal ptr bytes__zero -> (* Freeing a null pointer. Do nothing. *)
+        | ptr when bytes__equal ptr bytes__zero -> (* Freeing a null pointer. Do nothing. *)
             (job, errors)
-      | _ ->
-            FormatPlus.failwith "Freeing something that is not a valid pointer:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp arg BytesPrinter.bytes ptr
+        | Bytes_Conditional c ->
+            let guard, job, errors, _, has_success =
+                conditional__fold
+                    ~test:begin fun (guard', job, errors, removed, has_success) pre guard ->
+                        let truth = BytesSTP.query_stp (PathCondition.clauses job#state.path_condition) pre guard in
+                        ((guard', job, errors, removed, has_success), truth)
+                    end
+                    begin fun (guard, job, errors, removed, has_success) _ c ->
+                        if List.exists (Bytes.bytes__equal c) removed then
+                            (guard, job, errors, removed, has_success)
+                        else
+                            try
+                                let job, errors = libc_free job c errors in
+                                (guard, job, errors, removed, true)
+                            with Failure msg ->
+                                (* Guard against this failure, add it to the error list, and remove this leaf. *)
+                                let failing_ptr = Operator.eq [ (ptr, typ); (c, typ) ] in
+                                let guard = guard__and_not guard (Bytes.guard__bytes failing_ptr) in
+                                let errors = (job, `Failure msg)::errors in
+                                let removed = c::removed in
+                                (guard, job, errors, removed, has_success)
+                    end (Bytes.guard__true, job, errors, [], false) c
+            in
+            begin match has_success, guard with
+                | true, Guard_True ->
+                    (* All conditional branches were freed successfully. *)
+                    (job, errors)
+                | true, guard ->
+                    (* Not all conditional branches were freed successfully: add the guard and continue. *)
+                    let job = MemOp.state__add_path_condition job (Bytes.guard__to_bytes guard) true in
+                    (job, errors)
+                | false, _ ->
+                    (* No conditional branches were freed successfully: just fail. *)
+                    FormatPlus.failwith "Free invalid conditional pointer:@ @[%a]@ = @[%a@]" CilPrinter.exp arg BytesPrinter.bytes ptr
+            end
+        | _ ->
+            FormatPlus.failwith "Freeing something that is not a valid pointer:@ @[%a@]@ = @[%a@]" CilPrinter.exp arg BytesPrinter.bytes ptr
     in
+    let job, errors = libc_free job ptr errors in
     let job = end_function_call job in
     (Job.Active job, errors)
 
