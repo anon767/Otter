@@ -16,7 +16,7 @@ all: llvm-tests
 $(llvm_dir)/__otter_poi.o: $(otter_poi_src)
 	cd $(llvm_dir) && $(klee_gcc) $(otter_poi_src) -c
 
-llvm-configure:
+llvm-configure: ../../configure
 	cd $(llvm_dir) && ../../../configure --disable-nls CFLAGS="-g"
 
 $(llvm_dir)/Makefile: llvm-configure
@@ -27,7 +27,7 @@ llvm-make: $(llvm_dir)/Makefile $(coreutils_files) $(llvm_dir)/__otter_poi.o
 $(llvm_dir)/src/*.bc: llvm-make
 
 llvm-tests: $(llvm_dir)/src/*.bc
-	../setup_klee_llvm_tests.sh $(llvm_dir)/src $(llvm_dir)/benchmark $(PWD)/../ktest-monitor.sh
+	setup_klee_llvm_tests.sh $(llvm_dir)/src $(llvm_dir)/benchmark $(PWD)/ktest-monitor.sh
 
 # gcov
 
@@ -36,7 +36,7 @@ gcov_cflags = -g -fprofile-arcs -ftest-coverage
 $(gcov_dir)/__otter_poi.o: $(otter_poi_src)
 	cd $(gcov_dir) && gcc $(otter_poi_src) -c $(gcov_cflags)
 
-gcov-configure:
+gcov-configure: ../../configure
 	cd $(gcov_dir) && ../../../configure --disable-nls CFLAGS="$(gcov_cflags)"
 
 $(gcov_dir)/Makefile: gcov-configure
