@@ -19,8 +19,10 @@ def mean_stdev(values):
 
 def median_siqr_outliers(values):
     length = len(values)
+    if len(values) == 0:
+        raise Exception("Empty list")
     if length < 3:
-        return None
+        print "Warning: list length < 3"
     values.sort()
     median = values[length/2]
     siqr = (values[length*3/4] - values[length/4]) / 2.0
@@ -169,8 +171,8 @@ plot "%s" using 1:2 with points
 
 def getstat(program, common_opts, opts):
     #return gnuplot(program, common_opts, opts)
-    #return show_mean_stdev_format(getstat_r(program, opts+common_opts)) + show_median_siqr_outliers_format(getstat_r(program, opts+common_opts))
-    return show_all_format(getstat_r(program, opts+common_opts))
+    return show_median_siqr_outliers_format(getstat_r(program, opts+common_opts))
+    #return show_all_format(getstat_r(program, opts+common_opts))
 
 
 # Add new programs here
@@ -179,12 +181,15 @@ programs = [
         ("mkfifo", "mkfifo"),
         ("mknod", "mknod"),
         ("paste", "paste"),
+        ("seq", "seq"),
+        ("ptx", "ptx"),
         ("mkdir-inj", "mkdir-inj"),
         ("mkfifo-inj", "mkfifo-inj"),
         ("mknod-inj", "mknod-inj"),
         ]
 
 common_opt_list = [
+        #[],
         [("backotter-timing-method", "stp-calls")],
         #[("backotter-timing-method", "real")],
     ]
