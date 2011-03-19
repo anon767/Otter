@@ -3,6 +3,7 @@
 #include "otter/otter_fs.h"
 #include "otter/otter_user.h"
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -51,18 +52,19 @@ int __otter_main_driver() {
     char* argv[MAX_ARGC+1];  // One for null-termination
     
     // Set up argc
-    // TODO: symbolic argc
-    // __SYMBOLIC(&argc);
-    // __ASSUME(1<=argc);
-    // __ASSUME(argc<=MAX_ARGC);
-    argc = MAX_ARGC;
+    __SYMBOLIC(&argc);
+    __ASSUME(1<=argc);
+    __ASSUME(argc<=MAX_ARGC);
 
     // Set up argv
     int arg_lengths[] = MAX_ARG_LENGTHS;
-    for (i=0;i<MAX_ARGC;i++) {
+    argv[0] = strdup("p");  // name of the program
+    for (i=1;i<MAX_ARGC;i++) {
         argv[i] = symbolic_string(arg_lengths[i]);
     }
-    argv[MAX_ARGC] = 0;
+    // Use i instead of argc since i is concrete
+    // (I'm not sure if the null-termination is necessary. Seems not.)
+    //argv[i] = 0;
 
     // Set up stdin, stdout and stderr
 	__otter_fs_mount();
