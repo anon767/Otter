@@ -311,13 +311,27 @@ let libc_memset job retopt exps errors =
 
 (* __builtin_alloca is used for local arrays with variable size; creates a dummy local variable so that the memory is deallocated on return *)
 let libc___builtin_alloca__id = Counter.make ()
-let libc___builtin_alloca_size job size bytes loc =
-	let name = FormatPlus.sprintf "%s(%d)#%d/%a%s"
-		(List.hd job#state.callstack).svar.vname
-		size
-		(Counter.next libc___builtin_alloca__id)
-		Printcil.loc loc
-		(MemOp.state__trace job)
+let libc___builtin_alloca job retopt exps errors =
+	let job, size, errors = Expression.rval job (List.hd exps) errors in
+	let name, bytes =
+		if isConcrete_bytes size then
+			let name = FormatPlus.sprintf "%s(%d)#%d/%a%s"
+				(List.hd job#state.callstack).svar.vname
+				(bytes_to_int_auto size)
+				(Counter.next libc___builtin_alloca__id)
+				Printcil.loc (Job.get_loc job)
+				(MemOp.state__trace job)
+			in
+			let size = bytes_to_int_auto size in
+			let bytes =
+				if !Executeargs.arg_init_malloc_zero then
+					bytes__make size (* initially zero, as though malloc were calloc *)
+				else
+					bytes__make_default size byte__undef (* initially the symbolic 'undef' byte *)
+			in
+			(name, bytes)
+		else
+			failwith "TODO: implement symbolic-length mallocs"
 	in
 	let block = block__make name size Block_type_Local in
 	let addrof_block = make_Bytes_Address (block, bytes__zero) in
@@ -325,55 +339,38 @@ let libc___builtin_alloca_size job size bytes loc =
 	let local = (List.hd job#state.locals) in
 	let local = VarinfoMap.add (Cil.makeVarinfo false "alloca" Cil.voidType) (Deferred.Immediate (conditional__lval_block (block, bytes__zero))) local in
 	let job = job#with_state { job#state with locals = local::(List.tl job#state.locals); } in
-	(job, addrof_block)
-
-let libc___builtin_alloca job retopt exps errors =
-	let job, b_size, errors = Expression.rval job (List.hd exps) errors in
-	let size =
-		if isConcrete_bytes b_size then
-			bytes_to_int_auto b_size (*safe to use bytes_to_int as arg should be small *)
-		else
-			1 (* currently bytearray have unbounded length *)
-	in
-	let bytes =
-	  if !Executeargs.arg_init_malloc_zero
-	  then bytes__make size (* initially zero, as though malloc were calloc *)
-	  else bytes__make_default size byte__undef (* initially the symbolic 'undef' byte *)
-	in
-	let job, bytes = libc___builtin_alloca_size job size bytes (Job.get_loc job) in
-	let job, errors = set_return_value job retopt bytes errors in
+	let job, errors = set_return_value job retopt addrof_block errors in
 	let job = end_function_call job in
 	(Job.Active job, errors)
 
+
 (* allocates on the heap *)
-let libc_malloc_size job size bytes loc =
-	let name = FormatPlus.sprintf "%s(%d)#%d/%a%s"
-		(List.hd job#state.callstack).svar.vname
-		size
-		(Counter.next libc___builtin_alloca__id)
-		Printcil.loc loc
-		(MemOp.state__trace job)
+let libc_malloc job retopt exps errors =
+	let job, size, errors = Expression.rval job (List.hd exps) errors in
+	let name, bytes =
+		if isConcrete_bytes size then
+			let name = FormatPlus.sprintf "%s(%d)#%d/%a%s"
+				(List.hd job#state.callstack).svar.vname
+				(bytes_to_int_auto size)
+				(Counter.next libc___builtin_alloca__id)
+				Printcil.loc (Job.get_loc job)
+				(MemOp.state__trace job)
+			in
+			let size = bytes_to_int_auto size in
+			let bytes =
+				if !Executeargs.arg_init_malloc_zero then
+					bytes__make size (* initially zero, as though malloc were calloc *)
+				else
+					bytes__make_default size byte__undef (* initially the symbolic 'undef' byte *)
+			in
+			(name, bytes)
+		else
+			failwith "TODO: implement symbolic-length mallocs"
 	in
 	let block = block__make name size Block_type_Heap in
 	let addrof_block = make_Bytes_Address (block, bytes__zero) in
 	let job = MemOp.state__add_block job block bytes in
-	(job, addrof_block)
-
-let libc_malloc job retopt exps errors =
-	let job, b_size, errors = Expression.rval job (List.hd exps) errors in
-	let size =
-		if isConcrete_bytes b_size then
-			bytes_to_int_auto b_size (*safe to use bytes_to_int as arg should be small *)
-		else
-			1 (* currently bytearray have unbounded length *)
-	in
-	let bytes =
-	  if !Executeargs.arg_init_malloc_zero
-	  then bytes__make size (* initially zero, as though malloc were calloc *)
-	  else bytes__make_default size byte__undef (* initially the symbolic 'undef' byte *)
-	in
-	let job, bytes = libc_malloc_size job size bytes (Job.get_loc job) in
-	let job, errors = set_return_value job retopt bytes errors in
+	let job, errors = set_return_value job retopt addrof_block errors in
 	let job = end_function_call job in
 	(Job.Active job, errors)
 
@@ -864,7 +861,7 @@ let otter_get_allocated_size job retopt exps errors =
     let job, bytes, errors = Expression.rval job exp errors in
     let job, lvals, errors = Expression.deref job bytes (Cil.typeOf exp) errors in
     let size = make_Bytes_Conditional (conditional__map
-        (fun (x, y) -> Unconditional (int_to_bytes x.memory_block_size))
+        (fun (x, y) -> Unconditional x.memory_block_size)
         lvals)
     in
     let job, errors = set_return_value job retopt size errors in

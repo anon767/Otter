@@ -76,7 +76,7 @@ let rec init_bytes_with_pointers
                 let size = List.fold_left (fun size ((_, _, typ), _, _) -> max size (Cil.bitsSizeOf typ)) size target_mallocs in
                 size
             end 0 exps in
-            let block = Bytes.block__make "FunctionJob.uninit_void" size Bytes.Block_type_Aliased in
+            let block = Bytes.block__make "FunctionJob.uninit_void" (Bytes.int_to_bytes size) Bytes.Block_type_Aliased in
             let bytes = Bytes.bytes__symbolic size in
             let job = MemOp.state__add_block job block bytes in
 

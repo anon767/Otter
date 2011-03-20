@@ -351,7 +351,11 @@ let init_pointer
                         figure out if this pointer points to arrays, and initialize it so *)
                 let job, block, target_bytes_set =
                     let size = Cil.bitsSizeOf typ / 8 in
-                    let block = Bytes.block__make (FormatPlus.sprintf "%s#%d size(%d) type(%a)" block_name count size Printcil.typ typ) size Bytes.Block_type_Aliased in
+                    let block = Bytes.block__make
+                        (FormatPlus.sprintf "%s#%d size(%d) type(%a)" block_name count size Printcil.typ typ)
+                        (Bytes.int_to_bytes size)
+                        Bytes.Block_type_Aliased
+                    in
                     let varinfos = VarinfoSet.elements varinfos in
                     let mallocs = MallocMap.fold (fun malloc exps mallocs -> (malloc, LhostSet.elements exps)::mallocs) mallocs [] in
                     let deferred = init_target typ varinfos mallocs in
@@ -431,7 +435,7 @@ let init_lval_block job varinfo deferred = Profiler.global#call "SymbolicPointer
     let deferred_lval_block job =
         (* make an extra block; for the case where the variable is not-aliased *)
         let name = FormatPlus.as_string CilPrinter.varinfo varinfo in
-        let size = Cil.bitsSizeOf varinfo.Cil.vtype / 8 in
+        let size = Bytes.int_to_bytes (Cil.bitsSizeOf varinfo.Cil.vtype / 8) in
         let block = Bytes.block__make name size Bytes.Block_type_Aliased in
         let job = MemOp.state__add_deferred_block job block deferred in
         let aliases = block::(try State.VarinfoMap.find varinfo job#state.State.aliases with Not_found -> []) in

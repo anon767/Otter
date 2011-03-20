@@ -74,7 +74,7 @@ let init_cmdline_argvs job argstr =
 	(* Make a block to point to this bytes. *)
 	(* The block's size will be one more than the length of argv_strings (because of the
 		terminating null byte). *)
-	let argv_strings_block = Bytes.block__make "argv_strings" ((String.length argv_strings) + 1) Bytes.Block_type_Local in
+	let argv_strings_block = Bytes.block__make "argv_strings" (Bytes.int_to_bytes (String.length argv_strings + 1)) Bytes.Block_type_Local in
 
 	(* Map the block we just made to the bytes we just made *)
 	let job = MemOp.state__add_block job argv_strings_block argv_strings_bytes in
@@ -83,7 +83,7 @@ let init_cmdline_argvs job argstr =
 
 	(* TODO: argv[argc] is supposed to be a null pointer. [Standard 5.1.2.2.1] *)
 	(* Now, make a block for the array of pointers, with room for a pointer for each argument *)
-	let argv_ptrs_block = Bytes.block__make "argv_pointers" (num_args * charPtrSize) Bytes.Block_type_Local in
+	let argv_ptrs_block = Bytes.block__make "argv_pointers" (Bytes.int_to_bytes (num_args * charPtrSize)) Bytes.Block_type_Local in
 
 	(* Make the byteArray of pointers by making each individual pointer and putting them
 		 into the array using MemOp's bytes__write function. *)

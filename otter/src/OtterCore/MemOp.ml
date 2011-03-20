@@ -25,7 +25,7 @@ let frame__add_varinfo frame block_to_bytes varinfo zero block_type = Profiler.g
     if VarinfoMap.mem varinfo frame then FormatPlus.invalid_arg "MemOp.frame__add_varinfo: %a already exist" CilPrinter.varinfo varinfo;
     let size = (Cil.bitsSizeOf varinfo.vtype) / 8 in
     let size = if size <= 0 then 1 else size in
-    let block = block__make (FormatPlus.as_string CilPrinter.varinfo varinfo) size block_type in
+    let block = block__make (FormatPlus.as_string CilPrinter.varinfo varinfo) (int_to_bytes size) block_type in
     let bytes = bytes__make_default size (if zero then byte__zero else byte__undef) in
     let frame = VarinfoMap.add varinfo (Deferred.Immediate (conditional__lval_block (block, bytes__zero))) frame in
     let block_to_bytes = MemoryBlockMap.add block (Deferred.Immediate bytes) block_to_bytes in
@@ -71,7 +71,7 @@ let const_table__find bytes =
     try
         BytesMap.find bytes !const_to_block
     with Not_found ->
-        let block = block__make (FormatPlus.sprintf "@@const:%a" BytesPrinter.bytes bytes) (bytes__length bytes) Block_type_Const in
+        let block = block__make (FormatPlus.sprintf "@@const:%a" BytesPrinter.bytes bytes) (int_to_offset_bytes (bytes__length bytes)) Block_type_Const in
         const_to_block := BytesMap.add bytes block !const_to_block;
         block_to_const := MemoryBlockMap.add block bytes !block_to_const;
         block

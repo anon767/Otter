@@ -84,7 +84,7 @@ module T : sig
         {
             memory_block_name : string;
             memory_block_id : int;
-            memory_block_size : int;
+            memory_block_size : bytes;
             memory_block_addr : int;
             memory_block_type : memory_block_type;
         }
@@ -112,7 +112,7 @@ module T : sig
     val make_Bytes_FunPtr : Cil.varinfo -> bytes
     val make_Bytes_Conditional : bytes conditional -> bytes
 
-    val block__make : string -> int -> memory_block_type -> memory_block
+    val block__make : string -> bytes -> memory_block_type -> memory_block
     val disable_hash_consing : unit -> unit
 
     module type HashedType = sig
@@ -177,7 +177,7 @@ end = struct
         {
             memory_block_name : string;
             memory_block_id : int;
-            memory_block_size : int;
+            memory_block_size : bytes;
             memory_block_addr : int;
             memory_block_type : memory_block_type;
         }

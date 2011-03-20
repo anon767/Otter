@@ -56,7 +56,7 @@ let otter_gmalloc_size job size bytes loc =
 		Printcil.loc loc
 		(MemOp.state__trace job)
 	in
-	let block = Bytes.block__make name size Bytes.Block_type_Heap in
+	let block = Bytes.block__make name (int_to_offset_bytes size) Bytes.Block_type_Heap in
 	let addrof_block = Bytes.make_Bytes_Address (block, Bytes.bytes__zero) in
 	let job = MemOp.state__add_block job block bytes in
 	(job, block, addrof_block)

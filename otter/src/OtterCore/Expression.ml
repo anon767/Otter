@@ -68,7 +68,7 @@ let rec getBlockSizesAndOffsets lvals = match lvals with
                 IfThenElse (guard, blockSizesX, blockSizesY),
                 IfThenElse (guard, offsetsX, offsetsY)
         | Unconditional (block,offset) ->
-                Unconditional (int_to_offset_bytes block.memory_block_size),
+                Unconditional block.memory_block_size,
                 Unconditional offset
 
 
