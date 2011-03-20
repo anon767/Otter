@@ -11,4 +11,5 @@ OtterQueue/PathWeightedStrategy
 OtterQueue/RandomPathQueue
 OtterQueue/RankedQueue
 OtterQueue/RoundRobinQueue
+OtterQueue/SageQueue
 OtterQueue/WeightedRandomStrategy
