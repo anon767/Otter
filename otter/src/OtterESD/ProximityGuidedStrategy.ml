@@ -21,7 +21,7 @@ class ['self] t weight_fn = object (self : 'self)
             ) [] call_sites in
             let source = Job.get_instruction job in
             let context = Job.get_instruction_context job in
-            let distance = Distance.find_in_context (source, context, intermediate_goals @ call_sites)  in
+            let distance = DistanceToTargets.find_in_context source context (intermediate_goals @ call_sites)  in
             weight_fn distance
         end jobs
 end

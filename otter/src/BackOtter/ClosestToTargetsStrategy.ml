@@ -29,7 +29,7 @@ class ['self] t weight_fn = object (self : 'self)
                     max_int
                 else
                     let context = Job.get_instruction_context job in
-                    Distance.find_in_context (source, context, all_targets)
+                    DistanceToTargets.find_in_context source context all_targets
             in
             Output.debug_printf "Job %d has distance to target = %d@\n" job#node_id distance;
             weight_fn distance

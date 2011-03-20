@@ -1,13 +1,31 @@
 (** Find distances between instructions. *)
 
+open OcamlUtilities
 
 (**/**) (* various helpers *)
 module InstructionSet = Set.Make (Instruction)
-module InstructionTargetsHash = Hashtbl.Make (struct
-    type t = Instruction.t * InstructionSet.t
-    let equal (x, xt) (y, yt) = Instruction.equal x y && InstructionSet.equal xt yt
-    let hash (x, xt) = Hashtbl.hash (Instruction.hash x, Hashtbl.hash xt)
-end)
+module TargetSet = struct
+    include InstructionSet
+
+    exception Limit
+    let limit = 20
+    let hash x =
+        let count = ref 0 in
+        let hash = ref 0 in
+        try
+            InstructionSet.iter begin fun instr ->
+                if !count >= limit then raise Limit;
+                hash := Hashtbl.hash (Instruction.hash instr, hash);
+                incr count
+            end x;
+            !hash
+        with Limit ->
+            !hash
+
+    let of_list = List.fold_left (fun targets target -> InstructionSet.add target targets) InstructionSet.empty
+end
+module TargetsHash = Hashtbl.Make (TargetSet)
+module InstructionHash = Hashtbl.Make (Instruction)
 (**/**)
 
 
@@ -20,42 +38,42 @@ end)
     @return the shortest distance to one of the targets, or {!max_int} if none of the targets are reachable.
 *)
 let find =
-    let distance_hash = InstructionTargetsHash.create 0 in
+    let targets_hash = TargetsHash.create 0 in
     fun instr targets ->
-        if targets = [] then invalid_arg "find: targets must be a non-empty list";
-        let targets = List.fold_left (fun targets target -> InstructionSet.add target targets) InstructionSet.empty targets in
-        try
-            InstructionTargetsHash.find distance_hash (instr, targets)
+        if targets = [] then invalid_arg "DistanceToTargets.find: targets must be a non-empty list";
+        let targets = TargetSet.of_list targets in
 
-        with Not_found -> OcamlUtilities.Profiler.global#call "DistanceToTargets.find (uncached)" begin fun () ->
+        let distance_hash = try
+            TargetsHash.find targets_hash targets
+
+        with Not_found -> Profiler.global#call "DistanceToTargets.find (uncached)" begin fun () ->
+            let distance_hash = InstructionHash.create 0 in
             let rec update worklist =
-                let worklist = OcamlUtilities.Profiler.global#call "update" begin fun () ->
+                let worklist = Profiler.global#call "DistanceToTargets.update" begin fun () ->
                     (* pick the an instruction from the worklist *)
                     let instr = InstructionSet.max_elt worklist in
                     let worklist = InstructionSet.remove instr worklist in
 
                     (* compute the new distance by taking the minimum of:
-                            - 0 if the instruction is a target;
-                            - or, 1 + the minimum distance of its successors + the minimum distance through its call targets;
-                            - or, 1 + the minimum distance of its call targets;
-                       adding uncomputed successors and call targets to the worklist *)
-                    let dist, worklist =
+                            - 0 if the instruction is a target
+                            - or, 1 + the minimum distance of its successors + the minimum distance through its call targets
+                            - or, 1 + the minimum distance of its call targets
+                    *)
+                    let dist =
                         if InstructionSet.mem instr targets then
-                            (0, worklist)
+                            0
                         else
-                            let calc_dist instrs worklist =
-                                (* if any dependencies are uncomputed, add them to the worklist *)
-                                List.fold_left begin fun (dist, worklist) instr ->
-                                    try (min dist (InstructionTargetsHash.find distance_hash (instr, targets)), worklist)
-                                    with Not_found -> (dist, InstructionSet.add instr worklist)
-                                end (max_int, worklist) instrs
+                            let calc_dist instrs =
+                                List.fold_left begin fun dist instr ->
+                                    try min dist (InstructionHash.find distance_hash instr) with Not_found -> dist
+                                end max_int instrs
                             in
 
-                            let dist, worklist = calc_dist (Instruction.successors instr) worklist in
-                            let dist, worklist = match Instruction.call_targets instr with
+                            let dist = calc_dist (Instruction.successors instr) in
+                            let dist = match Instruction.call_targets instr with
                                 | [] ->
                                     (* no call targets, just successors *)
-                                    (dist, worklist)
+                                    dist
                                 | call_targets ->
                                     (* compute the distance through call targets and successors *)
                                     let through_dist =
@@ -63,30 +81,29 @@ let find =
                                         if through_dist < 0 then max_int (* overflow *) else through_dist
                                     in
                                     (* compute the distances of call targets *)
-                                    let call_target_dist, worklist = calc_dist call_targets worklist in
+                                    let call_target_dist = calc_dist call_targets in
                                     (* take the minimum of the above *)
-                                    (min through_dist call_target_dist, worklist)
+                                    min through_dist call_target_dist
                             in
                             let dist =
                                 let dist = 1 + dist in
                                 if dist < 0 then max_int (* overflow *) else dist
                             in
-                            (dist, worklist)
+                            dist
                     in
 
                     (* update the distance if changed *)
                     let updated =
                         try
-                            let dist' = InstructionTargetsHash.find distance_hash (instr, targets) in
-                            assert(dist <= dist');  (* Distance should be monotonically decreasing *)
-                            if dist < dist' then InstructionTargetsHash.replace distance_hash (instr, targets) dist;
+                            let dist' = InstructionHash.find distance_hash instr in
+                            if dist < dist' then InstructionHash.replace distance_hash instr dist;
                             dist < dist'
                         with Not_found ->
-                            InstructionTargetsHash.add distance_hash (instr, targets) dist;
+                            InstructionHash.add distance_hash instr dist;
                             dist < max_int
                     in
 
-                    (* if updated, add this instruction's predecessors and call sites to the worklist. *)
+                    (* if updated, add this instruction's predecessors and call sites to the worklist *)
                     if updated then
                         List.fold_left (fun worklist instr -> InstructionSet.add instr worklist) worklist
                             (List.rev_append (Instruction.predecessors instr) (Instruction.call_sites instr))
@@ -97,9 +114,17 @@ let find =
                 (* recurse on the remainder of the worklist *)
                 if not (InstructionSet.is_empty worklist) then update worklist
             in
-            update (InstructionSet.singleton instr);
-            InstructionTargetsHash.find distance_hash (instr, targets)
-        end
+
+            (* start from the targets *)
+            update targets;
+            TargetsHash.add targets_hash targets distance_hash;
+            distance_hash
+        end in
+
+        try
+            InstructionHash.find distance_hash instr
+        with Not_found ->
+            max_int
 
 
 (** Find the shortest distance from an {!Instruction.t} to a list of target {!Instruction.t}s through function returns
@@ -111,27 +136,28 @@ let find =
 
     @return the shortest distance to one of the targets, or {!max_int} if none of the targets are reachable.
 *)
-let find_in_context instr context targets = OcamlUtilities.Profiler.global#call "DistanceToTargets.find_in_context" begin fun () ->
-    (* compute the distance from the instr through function returns to targets in the call context *)
-    let rec unwind dist return_dist = function
-        | call_return::context ->
-            let dist =
-                (* "+1" since call_return is the NEXT instruction after the call *)
-                let dist' = return_dist + 1 + find call_return targets in
-                if dist' < 0 then dist (* overflow *) else min dist dist'
-            in
-            (* "+1" since call_return is the NEXT instruction after the call *)
-            let return_dist = return_dist + 1 + DistanceToReturn.find call_return in
-            if return_dist < 0 then
-                dist (* overflow; terminate since further unwindings will also overflow *)
-            else
-                unwind dist return_dist context
-        | [] ->
-            dist
-    in
-    (* compute the initial distance to targets and distance to function returns *)
-    let dist = find instr targets in
-    let return_dist = DistanceToReturn.find instr in
-    unwind dist return_dist context
-end
+let find_in_context =
+    let module Memo = Memo.Make (struct
+        module InstructionList = ListPlus.MakeHashedList (Instruction)
+        type t = InstructionList.t * InstructionList.t
+        let equal (xc, xt) (yc, yt) = InstructionList.equal xc yc && InstructionList.equal xt yt
+        let hash (xc, xt) = Hashtbl.hash (InstructionList.hash xc, InstructionList.hash xt)
+    end) in
+    let unwind = Memo.memo_rec "DistanceToTargets.unwind" begin fun unwind (context, targets) ->
+        Profiler.global#call "DistanceToTargets.unwind (uncached)" begin fun () ->
+            (* compute the distance from the instr through function returns to uncovered in the call context *)
+            match context with
+                | instr::rest ->
+                    let dist = find instr targets in
+                    let return_dist =
+                        let return_dist = 1 + DistanceToReturn.find instr + unwind (rest, targets) in
+                        if return_dist < 0 then max_int (* overflow *) else return_dist
+                    in
+                    min dist return_dist
+                | [] ->
+                    max_int
+        end
+    end in
+    fun instr context targets ->
+        unwind (instr::context, targets)
 
