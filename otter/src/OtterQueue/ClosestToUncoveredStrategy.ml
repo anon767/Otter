@@ -9,8 +9,9 @@ open OtterCFG
 open OtterCore
 
 (**/**) (* various helpers *)
-module InstructionStack = StackSet.Make (Instruction)
-module InstructionMap = struct
+module InstructionSet = Set.Make (Instruction)
+module InstructionMap = Map.Make (Instruction)
+module CoverageMap = struct
     include Map.Make (Instruction)
     let find instr coverage = try find instr coverage with Not_found -> 0
 end
@@ -20,8 +21,8 @@ let arg_tracked_only = ref false
 
 class ['self] t = object (self : 'self)
     (* both coverage and distances are initially zero for every instruction *)
-    val coverage = InstructionMap.empty
-    val distances = lazy InstructionMap.empty
+    val coverage = CoverageMap.empty
+    val distances = lazy CoverageMap.empty
 
     (* Determine if the instr is tracked in this strategy.
      * An untracked instr is always covered *)
@@ -36,32 +37,33 @@ class ['self] t = object (self : 'self)
     method private update_distances instr coverage =
         let rec update worklist distances =
             (* pick the an instruction from the worklist *)
-            let instr, worklist = InstructionStack.pop worklist in
+            let instr, visited = InstructionMap.max_binding worklist in
+            let worklist = InstructionMap.remove instr worklist in
 
             (* compute the new distance by taking the minimum of:
                     - 0 if the instruction is uncovered;
                     - or, 1 + the minimum distance of its successors + the minimum distance through its call targets. *)
             let dist =
                 (* An untracked instr is always covered *)
-                if self#tracked instr && InstructionMap.find instr coverage = 0 then
+                if self#tracked instr && CoverageMap.find instr coverage = 0 then
                     0
                 else
-                    let calc_dist instrs = List.fold_left (fun dist instr ->
-                    min dist (InstructionMap.find instr distances)) max_int instrs in
+                    let calc_dist instrs = List.fold_left (fun dist instr -> min dist (CoverageMap.find instr distances)) max_int instrs in
 
-                    (* only follow forward successors, to avoid backward loops *)
+                    (* avoid backward loops, as they may lead to an (almost) infinite loop *)
                     let successors = List.filter (fun succ -> succ.Instruction.stmt.Cil.sid > instr.Instruction.stmt.Cil.sid) (Instruction.successors instr) in
                     let dist = calc_dist successors in
-                    let dist = match Instruction.call_targets instr with
+
+                    (* avoid recursive calls, as they may lead to an (almost) infinite loop *)
+                    let call_targets = List.filter (fun call_target -> not (InstructionSet.mem call_target visited)) (Instruction.call_targets instr) in
+                    let dist = match call_targets with
                         | [] ->
                             (* no call targets, just successors *)
                             dist
                         | call_targets ->
                             (* compute the distance through call targets and successors *)
                             let through_dist =
-                                let through_dist =
-                                    dist + List.fold_left (fun d call_target -> min d (Distance.find_return call_target)) max_int call_targets
-                                in
+                                let through_dist = dist + List.fold_left (fun d call_target -> min d (Distance.find_return call_target)) max_int call_targets in
                                 if through_dist < 0 then max_int (* overflow *) else through_dist
                             in
                             (* compute the distances of call targets *)
@@ -75,9 +77,9 @@ class ['self] t = object (self : 'self)
 
             (* update the distance if changed *)
             let updated, distances =
-                let dist' = InstructionMap.find instr distances in
+                let dist' = CoverageMap.find instr distances in
                 if dist <> dist' then
-                    (true, InstructionMap.add instr dist distances)
+                    (true, CoverageMap.add instr dist distances)
                 else
                     (false, distances)
             in
@@ -85,19 +87,22 @@ class ['self] t = object (self : 'self)
             (* if updated, add this instruction's predecessors and call sites to the worklist. *)
             let worklist =
                 if updated then
-                    List.fold_left (fun worklist instr -> InstructionStack.push instr worklist) worklist
-                        (List.rev_append (Instruction.predecessors instr) (Instruction.call_sites instr))
+                    let visited = if Instruction.equal instr (Instruction.fundec_of instr) then InstructionSet.add instr visited else visited in
+                    List.fold_left begin fun worklist instr ->
+                        let visited' = try InstructionMap.find instr worklist with Not_found -> InstructionSet.empty in
+                        InstructionMap.add instr (InstructionSet.union visited visited') worklist
+                    end worklist (List.rev_append (Instruction.predecessors instr) (Instruction.call_sites instr))
                 else
                     worklist
             in
 
             (* recurse on the remainder of the worklist *)
-            if not (InstructionStack.is_empty worklist) then
+            if not (InstructionMap.is_empty worklist) then
                 update worklist distances
             else
                 distances
         in
-        update (InstructionStack.singleton instr) (Lazy.force distances)
+        update (InstructionMap.singleton instr InstructionSet.empty) (Lazy.force distances)
 
     method private calculate_distance job =
         (* compute the distance from the instr through function returns to uncovered in the call context *)
@@ -105,7 +110,7 @@ class ['self] t = object (self : 'self)
         let rec unwind dist return_dist = function
             | call_return::context ->
                 let dist =
-                    let dist' = return_dist + InstructionMap.find call_return distances in
+                    let dist' = return_dist + CoverageMap.find call_return distances in
                     if dist' < 0 then dist (* overflow *) else min dist dist'
                 in
                 let return_dist = return_dist + Distance.find_return call_return in
@@ -119,7 +124,7 @@ class ['self] t = object (self : 'self)
         (* compute the initial distance to targets and distance to function returns *)
         let instr = Job.get_instruction job in
         let context = Job.get_instruction_context job in
-        let dist = InstructionMap.find instr distances in
+        let dist = CoverageMap.find instr distances in
         let return_dist = Distance.find_return instr in
         unwind dist return_dist context
 
@@ -128,8 +133,8 @@ class ['self] t = object (self : 'self)
     method remove job =
         (* update coverage and distances *)
         let instr = Job.get_instruction job in
-        let count = InstructionMap.find instr coverage + 1 in
-        let coverage = InstructionMap.add instr count coverage in
+        let count = CoverageMap.find instr coverage + 1 in
+        let coverage = CoverageMap.add instr count coverage in
         let distances = lazy (self#update_distances instr coverage) in
         {< coverage = coverage; distances = distances >}
 
