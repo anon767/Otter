@@ -354,13 +354,11 @@ and bytes_to_stp_bv vc bytes =
         | Bytes_Op (OP_UMINUS, [(bytes, _)]) ->
             OcamlSTP.bv_neg vc (bytes_to_stp_bv vc bytes)
 
-        | Bytes_Op (OP_BAND | OP_BOR | OP_BXOR | OP_LSL | OP_LSR | OP_PLUS | OP_SUB | OP_MULT as binop, [(left, _); (right, _)]) ->
+        | Bytes_Op (OP_BAND | OP_BOR | OP_BXOR | OP_PLUS | OP_SUB | OP_MULT as binop, [(left, _); (right, _)]) ->
             let bv_binop = match binop with
                 | OP_BAND -> OcamlSTP.bv_and
                 | OP_BOR -> OcamlSTP.bv_or
                 | OP_BXOR -> OcamlSTP.bv_xor
-                | OP_LSL -> OcamlSTP.bv_shift_left
-                | OP_LSR -> OcamlSTP.bv_shift_right
                 | OP_PLUS -> OcamlSTP.bv_add
                 | OP_SUB -> OcamlSTP.bv_sub
                 | OP_MULT -> OcamlSTP.bv_mul
@@ -368,8 +366,33 @@ and bytes_to_stp_bv vc bytes =
             in
             bv_binop vc (bytes_to_stp_bv vc left) (bytes_to_stp_bv vc right)
 
+        | Bytes_Op (OP_LSL | OP_LSR as binop, [(left, typ); (right, _)]) ->
+            (* C99 6.5.7.5 leaves right-shift undefined, but according to Wikipedia, most compilers use arithmetic shift for signed types *)
+            let signed = match Cil.unrollType typ with
+                | Cil.TInt (ikind, _) -> Cil.isSigned ikind
+                | Cil.TFloat _ -> true (* TODO: actually do something reasonable *)
+                | Cil.TPtr _ -> false
+                | _ -> assert false (* there should be no other comparable type *)
+            in
+            let bv_binop = match binop with
+                | OP_LSL -> OcamlSTP.bv_shift_left
+                | OP_LSR -> if signed then OcamlSTP.bv_signed_shift_right else OcamlSTP.bv_shift_right
+                | _ -> assert false
+            in
+            (* C only requires integer promotion on the left and right operand separately, but STP needs the operands to have the same width *)
+            let value = bytes_to_stp_bv vc left in
+            let value_width = OcamlSTP.bv_width vc value in
+            let shift =
+                let shift = bytes_to_stp_bv vc right in
+                if value_width > OcamlSTP.bv_width vc shift then
+                    OcamlSTP.bv_zero_extend vc shift value_width
+                else
+                    shift
+            in
+            bv_binop vc value shift
+
         | Bytes_Op (OP_DIV | OP_MOD as binop, [(left, typ); (right, _)]) ->
-            (* integer promotion is done by CIL, just need the sign *)
+            (* usual arithmetic conversion is done by CIL, just need the sign *)
             (* TODO: move this out of OtterBytes by having specific signed comparison operators *)
             let signed = match Cil.unrollType typ with
                 | Cil.TInt (ikind, _) -> Cil.isSigned ikind
@@ -486,7 +509,7 @@ and bytes_to_stp_bool vc bytes =
             bool_binop vc (bytes_to_stp_bool vc left) (bytes_to_stp_bool vc right)
 
         | Bytes_Op (OP_EQ | OP_NE | OP_LT | OP_GT | OP_LE | OP_GE as cmp, [(left, typ); (right, _)]) ->
-            (* integer promotion is done by CIL, just need the sign *)
+            (* usual arithmetic conversion is done by CIL, just need the sign *)
             (* TODO: move this out of OtterBytes by having specific signed comparison operators *)
             let signed = match Cil.unrollType typ with
                 | Cil.TInt (ikind, _) -> Cil.isSigned ikind
