@@ -125,7 +125,7 @@ class ['self] t = object (self : 'self)
                         | instr::rest ->
                             let dist = CoverageMap.find instr distances in
                             let return_dist =
-                                let return_dist = unwind rest + DistanceToReturn.find instr in
+                                let return_dist = 1 + DistanceToReturn.find instr + unwind rest in
                                 if return_dist < 0 then max_int (* overflow *) else return_dist
                             in
                             let dist = min dist return_dist in
