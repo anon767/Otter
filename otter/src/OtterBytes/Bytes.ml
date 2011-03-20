@@ -236,7 +236,12 @@ end = struct
             | _, _ ->
                 false
 
-        and block_equal block1 block2 = block1 = block2
+        and block_equal block1 block2 = block1 == block2 ||
+            block1.memory_block_id = block2.memory_block_id
+            && block1.memory_block_type = block2.memory_block_type
+            && block1.memory_block_addr = block2.memory_block_addr
+            && block1.memory_block_name = block2.memory_block_name
+            && bytes_equal block1.memory_block_size block2.memory_block_size
 
 
         (* structural hash helpers for symbols/byte/guards/conditionals/bytes:
@@ -290,7 +295,9 @@ end = struct
             | Bytes_FunPtr f -> add_hash (`FunPtr, CilData.CilVar.hash f)
             | Bytes_Conditional c -> add_hash `Conditional; conditional_hash bytes_hash c
 
-        and block_hash = add_hash
+        and block_hash block =
+            add_hash (block.memory_block_name, block.memory_block_addr, block.memory_block_type, block.memory_block_id);
+            bytes_hash block.memory_block_size
     end
     (**/**)
 
