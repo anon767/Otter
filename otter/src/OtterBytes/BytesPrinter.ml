@@ -181,6 +181,9 @@ and bytes_named bytes_to_names ff =
 		| Bytes_Constant n ->
 			fprintf ff "Bytes(@[<hov>%a@]@,)" Printcil.const n
 
+		| Bytes_Symbolic s ->
+			fprintf ff "Bytes(%a)" symbol s
+
 		| Bytes_ByteArray arr as bytes ->
 			begin try
 				let var = List.assoc bytes bytes_to_names in

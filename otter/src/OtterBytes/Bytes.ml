@@ -65,6 +65,7 @@ module T : sig
 
     and bytes = private
         | Bytes_Constant of Cil.constant
+        | Bytes_Symbolic of symbol
         | Bytes_ByteArray of bytearray
         | Bytes_Address of memory_block * bytes
         | Bytes_Op of operator * (bytes * Cil.typ) list
@@ -104,6 +105,7 @@ module T : sig
     val guard__bytes : bytes -> guard
 
     val make_Bytes_Constant : Cil.constant -> bytes
+    val make_Bytes_Symbolic : unit -> bytes
     val make_Bytes_ByteArray : bytearray -> bytes
     val make_Bytes_Address : memory_block * bytes -> bytes
     val make_Bytes_Op : operator * (bytes * Cil.typ) list -> bytes
@@ -156,8 +158,10 @@ end = struct
         | IfThenElse of guard * 'a conditional * 'a conditional  (* if guard then a else b *)
         | Unconditional of 'a
 
+    (* TODO: merge Bytes_Symbolic and Bytes_ByteArray by making Bytes_ByteArray a sparse array that defaults to pure symbolic *)
     and bytes =
         | Bytes_Constant of Cil.constant                (* length=Cil.sizeOf (Cil.typeOf (Const(constant))) *)
+        | Bytes_Symbolic of symbol                      (* arbitrary-length symbolic bytes *)
         | Bytes_ByteArray of bytearray                  (* content *)
         | Bytes_Address of memory_block * bytes         (* block, offset *)
         | Bytes_Op of operator * (bytes * Cil.typ) list
@@ -219,6 +223,8 @@ end = struct
         and bytes_equal bytes1 bytes2 = bytes1 == bytes2 || match bytes1, bytes2 with
             | Bytes_Constant c1, Bytes_Constant c2 ->
                 c1 = c2
+            | Bytes_Symbolic s1, Bytes_Symbolic s2 ->
+                symbol_equal s1 s2
             | Bytes_ByteArray a1, Bytes_ByteArray a2 ->
                 bytearray_equal a1 a2
             | Bytes_Address(b1, off1),Bytes_Address(b2, off2) ->
@@ -287,6 +293,7 @@ end = struct
 
         and bytes_hash = function
             | Bytes_Constant c -> add_hash (`Constant, c)
+            | Bytes_Symbolic s -> add_hash `Symbolic; symbol_hash s
             | Bytes_ByteArray a -> add_hash `ByteArray; bytearray_hash a
             | Bytes_Address (a, o) -> add_hash `Address; block_hash a; bytes_hash o
             | Bytes_Op (op, operands) -> add_hash (`Op, op); List.iter (fun (o, t) -> add_hash (CilData.CilType.hash t); bytes_hash o) operands
@@ -384,6 +391,9 @@ end = struct
         Profiler.global#call "Bytes.make_Bytes_Constant" begin fun () ->
             hash_consing_bytes_create (Bytes_Constant const)
         end
+
+    let make_Bytes_Symbolic () =
+        Bytes_Symbolic (symbol__next ())
 
     let make_Bytes_ByteArray bytearray =
         Profiler.global#call "Bytes.make_Bytes_ByteArray" begin fun () ->
@@ -705,7 +715,7 @@ and bytes__reduce bytes =
         | Bytes_Read (bytes, offset, size) -> make_Bytes_Read (bytes__reduce bytes, bytes__reduce offset, size)
         | Bytes_Write (bytes, offset, size, bytes') -> make_Bytes_Write (bytes__reduce bytes, bytes__reduce offset, size, bytes__reduce bytes')
         | Bytes_Conditional conditional -> make_Bytes_Conditional (conditional__reduce bytes__reduce conditional)
-        | Bytes_FunPtr _ as bytes -> bytes
+        | Bytes_Symbolic _ | Bytes_FunPtr _ as bytes -> bytes
     end bytes
 
 
@@ -724,6 +734,7 @@ let block__equal = BlockType.equal
 let rec bytes__length bytes =
     match bytes with
         | Bytes_Constant (constant) -> (Cil.bitsSizeOf (Cil.typeOf (Const(constant))))/8
+        | Bytes_Symbolic _ -> 0 (* TODO: bytes__length should be deprecated *)
         | Bytes_ByteArray (bytearray) -> ImmutableArray.length bytearray
         | Bytes_Address (_,_)-> bitsSizeOf voidPtrType / 8
         | Bytes_Op (op,(bytes2,typ)::tail) -> bytes__length bytes2

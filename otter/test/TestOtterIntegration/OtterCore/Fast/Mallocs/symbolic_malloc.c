@@ -6,7 +6,7 @@ int main() {
     unsigned int x;
     __SYMBOLIC(&x);
     __ASSUME(x == 2);
-    int *p = malloc(x);
+    int *p = malloc(x * sizeof(*p));
     p[1] = 0;
     return 0;
 }

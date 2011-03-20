@@ -68,6 +68,8 @@ module InternalAllSymbols = struct
         wrap_all_symbols_in_bytes begin function
             | Bytes_Constant _ ->
                 SymbolSet.empty
+            | Bytes_Symbolic s ->
+                SymbolSet.singleton s
             | Bytes_ByteArray bytearray ->
                 all_symbols_in_bytearray bytearray
             | Bytes_Address (_, bytes) ->
@@ -260,6 +262,9 @@ let rec byte_to_stp_bv vc byte =
 
 and bytes_to_stp_array vc bytes =
     InternalToSTP.wrap_bytes_to_stp_array begin fun (vc, bytes) -> match bytes with
+        | Bytes_Symbolic symbol ->
+            OcamlSTP.array_var vc ("bytes_symbol_" ^ string_of_int symbol.symbol_id) (Cil.bitsSizeOf Cil.voidPtrType) 8
+            
         | Bytes_ByteArray bytearray as bytes ->
             let array = lookup_stp_array vc bytes bytearray.ImmutableArray.length in
             let index_width = OcamlSTP.array_index_width vc array in
@@ -268,7 +273,7 @@ and bytes_to_stp_array vc bytes =
                 OcamlSTP.array_write vc array (OcamlSTP.bv_of_int vc index_width index) (byte_to_stp_bv vc byte)
             end array bytearray
 
-        | Bytes_Write (array, index, width, (Bytes_ByteArray _ | Bytes_Read _ | Bytes_Write _ as value)) ->
+        | Bytes_Write (array, index, width, (Bytes_Symbolic _ | Bytes_ByteArray _ | Bytes_Read _ | Bytes_Write _ as value)) ->
             (* values encode as Bytes_ByteArray or compound values do not need endian conversion *)
             let array = bytes_to_stp_array vc array in
             let index_width = OcamlSTP.array_index_width vc array in
@@ -466,7 +471,7 @@ and bytes_to_stp_bv vc bytes =
                 | None -> assert false (* zero-length array *)
             end
 
-        | Bytes_Write _ ->
+        | Bytes_Symbolic _ | Bytes_Write _ ->
             assert false
     end (vc, bytes)
 

@@ -182,6 +182,7 @@ let rec expand_read_to_conditional (bytes : bytes) (symIndex : bytes) (len : int
     in
     match bytes with
         | Bytes_Write (a, x, l, v) ->
+            (* TODO: this seems to be incorrect: shouldn't the length be checked too? *)
             IfThenElse (
                 guard__bytes (make_Bytes_Op (
                     OP_EQ,
@@ -215,6 +216,9 @@ let rec expand_read_to_conditional (bytes : bytes) (symIndex : bytes) (len : int
                       failwith "Error in expand_read_to_conditional"
             in
             conditional__map map_func c
+
+        | Bytes_Symbolic _ ->
+            Unconditional (make_Bytes_Read (bytes, symIndex, len))
 
         | _ ->
             expand_read_to_conditional2 bytes symIndex len

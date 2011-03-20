@@ -331,7 +331,14 @@ let libc___builtin_alloca job retopt exps errors =
 			in
 			(name, bytes)
 		else
-			failwith "TODO: implement symbolic-length mallocs"
+			let name = FormatPlus.sprintf "%s(%a)#%d/%a%s"
+				(List.hd job#state.callstack).svar.vname
+				BytesPrinter.bytes size
+				(Counter.next libc___builtin_alloca__id)
+				Printcil.loc (Job.get_loc job)
+				(MemOp.state__trace job)
+			in
+			(name, make_Bytes_Symbolic ())
 	in
 	let block = block__make name size Block_type_Local in
 	let addrof_block = make_Bytes_Address (block, bytes__zero) in
@@ -365,7 +372,14 @@ let libc_malloc job retopt exps errors =
 			in
 			(name, bytes)
 		else
-			failwith "TODO: implement symbolic-length mallocs"
+			let name = FormatPlus.sprintf "%s(%a)#%d/%a%s"
+				(List.hd job#state.callstack).svar.vname
+				BytesPrinter.bytes size
+				(Counter.next libc___builtin_alloca__id)
+				Printcil.loc (Job.get_loc job)
+				(MemOp.state__trace job)
+			in
+			(name, make_Bytes_Symbolic ())
 	in
 	let block = block__make name size Block_type_Heap in
 	let addrof_block = make_Bytes_Address (block, bytes__zero) in

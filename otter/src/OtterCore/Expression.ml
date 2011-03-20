@@ -300,6 +300,9 @@ deref job bytes typ errors =
         | Bytes_Constant (c) ->
             FormatPlus.failwith "Dereference something not an address:@ constant @[%a@]" BytesPrinter.bytes bytes
 
+        | Bytes_Symbolic _ ->
+            FormatPlus.failwith "Dereference something not an address:@ @[%a@]" BytesPrinter.bytes bytes
+
         | Bytes_ByteArray(bytearray) ->
             (*
              * Special treatment: look for
