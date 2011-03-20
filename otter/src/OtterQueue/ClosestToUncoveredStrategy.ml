@@ -5,6 +5,7 @@
 *)
 
 open DataStructures
+open OcamlUtilities
 open OtterCFG
 open OtterCore
 
@@ -23,6 +24,7 @@ class ['self] t = object (self : 'self)
     (* both coverage and distances are initially zero for every instruction *)
     val coverage = CoverageMap.empty
     val distances = lazy CoverageMap.empty
+    val memo_unwind = lazy ((fun _ -> 0), CoverageMap.empty)
 
     (* Determine if the instr is tracked in this strategy.
      * An untracked instr is always covered *)
@@ -84,7 +86,7 @@ class ['self] t = object (self : 'self)
                     (false, distances)
             in
 
-            (* if updated, add this instruction's predecessors and call sites to the worklist. *)
+            (* if updated, add this instruction's predecessors and call sites to the worklist *)
             let worklist =
                 if updated then
                     let visited = if Instruction.equal instr (Instruction.fundec_of instr) then InstructionSet.add instr visited else visited in
@@ -104,29 +106,40 @@ class ['self] t = object (self : 'self)
         in
         update (InstructionMap.singleton instr InstructionSet.empty) (Lazy.force distances)
 
-    method private calculate_distance job =
-        (* compute the distance from the instr through function returns to uncovered in the call context *)
+    method private make_memo_unwind distances prev_memo_unwind =
+        (* create memoized unwind function that's only valid for the current computed distances *)
         let distances = Lazy.force distances in
-        let rec unwind dist return_dist = function
-            | call_return::context ->
-                let dist =
-                    let dist' = return_dist + CoverageMap.find call_return distances in
-                    if dist' < 0 then dist (* overflow *) else min dist dist'
-                in
-                let return_dist = return_dist + DistanceToReturn.find call_return in
-                if return_dist < 0 then
-                    dist (* overflow; terminate since further unwindings will also overflow *)
-                else
-                    unwind dist return_dist context
-            | [] ->
-                dist
-        in
-        (* compute the initial distance to targets and distance to function returns *)
+        let _ , prev_distances as prev_memo_unwind = Lazy.force prev_memo_unwind in
+        if CoverageMap.equal (=) distances prev_distances then
+            (* reuse the previous memo_unwind if distances did not change *)
+            prev_memo_unwind
+        else
+            let module H = Hashtbl.Make (ListPlus.MakeHashedList (Instruction)) in
+            let memotable = H.create 0 in
+            let rec unwind context =
+                try
+                    H.find memotable context
+                with Not_found ->
+                    (* compute the distance from the instr through function returns to uncovered in the call context *)
+                    match context with
+                        | instr::rest ->
+                            let dist = CoverageMap.find instr distances in
+                            let return_dist =
+                                let return_dist = unwind rest + DistanceToReturn.find instr in
+                                if return_dist < 0 then max_int (* overflow *) else return_dist
+                            in
+                            let dist = min dist return_dist in
+                            H.add memotable context dist;
+                            dist
+                        | [] ->
+                            max_int
+            in
+            (unwind, distances)
+
+    method private calculate_distance job =
         let instr = Job.get_instruction job in
         let context = Job.get_instruction_context job in
-        let dist = CoverageMap.find instr distances in
-        let return_dist = DistanceToReturn.find instr in
-        unwind dist return_dist context
+        (fst (Lazy.force memo_unwind)) (instr::context)
 
     method add job = self
 
@@ -136,7 +149,8 @@ class ['self] t = object (self : 'self)
         let count = CoverageMap.find instr coverage + 1 in
         let coverage = CoverageMap.add instr count coverage in
         let distances = lazy (self#update_distances instr coverage) in
-        {< coverage = coverage; distances = distances >}
+        let memo_unwind = lazy (self#make_memo_unwind distances memo_unwind) in
+        {< coverage = coverage; distances = distances; memo_unwind = memo_unwind >}
 
     method weights jobs =
         List.map (fun job -> 1. /. float_of_int (self#calculate_distance job)) jobs
