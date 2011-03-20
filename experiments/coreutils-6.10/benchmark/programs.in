@@ -9,6 +9,7 @@
  mkdir-inj  "@TRUNK@/experiments/coreutils-6.10/src/mkdir_comb.c"   -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_INJECTED_MAKE_NODE_OP_EQUALS_ASSERT
  mkfifo-inj "@TRUNK@/experiments/coreutils-6.10/src/mkfifo_comb.c"  -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_INJECTED_MAKE_NODE_OP_EQUALS_ASSERT
  mknod-inj  "@TRUNK@/experiments/coreutils-6.10/src/mknod_comb.c"   -DMAX_ARGC=5 -DMAX_ARG_LENGTHS="{1,10,2,2,2}" -D__OTTER_INJECTED_MAKE_NODE_OP_EQUALS_ASSERT
+ pr     "@TRUNK@/experiments/coreutils-6.10/src/pr_comb.c"        -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}" -D__OTTER_PR_ASSERT
 
 # Inject directly to the merged sources
 # mkdir-inj  "@TRUNK@/experiments/coreutils-6.10/benchmark/planted_targets/mkdir_1.c"     -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"
@@ -26,5 +27,4 @@
 # Work in progress:
 # md5sum "@TRUNK@/experiments/coreutils-6.10/src/md5sum_comb.c"    -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"    
 # tac    "@TRUNK@/experiments/coreutils-6.10/src/tac_comb.c"       -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"    
-# pr     "@TRUNK@/experiments/coreutils-6.10/src/pr_comb.c"        -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}" --backotter-target="pr.c,2670,failure,Bounds check failed" --backotter-target="pr.c,2670,out_of_bounds"
 

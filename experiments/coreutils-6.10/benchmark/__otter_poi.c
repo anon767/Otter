@@ -38,6 +38,14 @@ void __otter_paste_assert(int truth) {
 #endif
 }
 
+#pragma cilnoremove("__otter_pr_assert")
+void __otter_pr_assert(int truth) {
+#ifdef __OTTER_PR_ASSERT
+    if (!truth)
+        __FAILURE();
+#endif
+}
+
 #pragma cilnoremove("__otter_injected_make_node_op_equals_assert")
 void __otter_injected_make_node_op_equals_assert(int truth) {
 #ifdef __OTTER_INJECTED_MAKE_NODE_OP_EQUALS_ASSERT

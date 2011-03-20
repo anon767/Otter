@@ -308,6 +308,7 @@
 */
 
 
+extern void __otter_pr_assert(int);
 #include <config.h>
 
 #include <getopt.h>
@@ -2666,8 +2667,10 @@ char_to_clump (char c)
 
       if (untabify_input)
 	{
-	  for (i = width; i; --i)
+	  for (i = width; i; --i) {
+	    __otter_pr_assert(width - i >= (8 > chars_per_input_tab ? 8 : chars_per_input_tab));
 	    *s++ = ' ';
+	  }
 	  chars = width;
 	}
       else
