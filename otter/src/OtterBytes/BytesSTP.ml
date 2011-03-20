@@ -225,14 +225,22 @@ let lookup_stp_array vc bytes length =
         variants that results in bitvectors (i.e., arithmetic or bitwise operations);
     - foo_to_stp_array translates Bytes_ByteArray, Bytes_Read and Bytes_Write to equivalent array operations.
 
-    Coercion from bool to/from bitvector is done only when needed. Similarly, big-endian to/from little-endian
-    conversion is done only at Bytes_Read into an STP bitvector and Bytes_Write to an STP array.
+    Note that foo_to_stp_vc does not check if operands to Bytes_Op are of the same size: it assumes that CIL inserts
+    casts and OtterCore interprets them correctly so that the sizes are correct.
+
+    Note also that foo_to_stp_array creates STP arrays that are only as large as necessary to hold the size of the
+    Bytes.bytes values (using the helper function InternalToSTP.array_meta), and truncates the width of the index from
+    32-bit (which should be enforced automatically by CIL).
  *)
 
 (* TODO: OtterBytes should separate the following into different types:
     - unary operations from binary operations (rather than using a list in Bytes_Op);
     - boolean operation from arithmetic operations from comparison operations (rather than overloading Bytes_Op);
+    - signed operations from unsigned operations (rather than using CIL types in Bytes_Op);
     - simple values from compound values (rather than overloading Bytes_Write/Bytes_Read).
+
+    Also, OtterBytes should:
+    - enforce that operands to binary operations are of the right sizes.
 *)
 
 let rec byte_to_stp_bv vc byte =
