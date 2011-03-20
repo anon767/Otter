@@ -18,11 +18,15 @@ module InstructionHash = Hashtbl.Make (Instruction)
 let find =
     let distance_hash = InstructionHash.create 0 in
     fun instr ->
-        try
-            InstructionHash.find distance_hash instr
+        let fundec = Instruction.fundec_of instr in
 
-        with Not_found -> OcamlUtilities.Profiler.global#call "DistanceToReturn.find (uncached)" begin fun () ->
-            let rec update worklist =
+        if not (InstructionHash.mem distance_hash fundec) then OcamlUtilities.Profiler.global#call "DistanceToReturn.find (uncached)" begin fun () ->
+            let return_of fundec =
+                List.fold_left begin fun return_of return ->
+                    InstructionSet.add return return_of
+                end InstructionSet.empty (Instruction.return_of fundec)
+            in
+            let rec update worklist = if not (InstructionSet.is_empty worklist) then
                 let worklist = OcamlUtilities.Profiler.global#call "update" begin fun () ->
                     (* pick the instruction from the worklist closest to the end of function *)
                     let instr = InstructionSet.max_elt worklist in
@@ -31,27 +35,30 @@ let find =
                     (* compute the new distance by taking the minimum of:
                             - 0 if the instruction is a return (has no successors);
                             - or, 1 + the minimum distance of its successors + the minimum distance through its call targets;
-                       adding uncomputed successors and call targets to the worklist *)
+                       adding uncomputed call targets to the worklist *)
                     let dist, worklist =
                         if Instruction.successors instr = [] then
                             (0, worklist)
                         else
-                            let calc_dist instrs worklist =
-                                (* if any dependencies are uncomputed, add them to the worklist *)
-                                List.fold_left begin fun (dist, worklist) instr ->
-                                    try (min dist (InstructionHash.find distance_hash instr), worklist)
-                                    with Not_found -> (dist, InstructionSet.add instr worklist)
-                                end (max_int, worklist) instrs
-                            in
+                            (* compute the distance through successors *)
+                            let dist = List.fold_left begin fun dist instr ->
+                                try min dist (InstructionHash.find distance_hash instr) with Not_found -> dist
+                            end max_int (Instruction.successors instr) in
 
-                            let dist, worklist = calc_dist (Instruction.successors instr) worklist in
                             let dist, worklist = match Instruction.call_targets instr with
                                 | [] ->
                                     (* no call targets, just successors *)
                                     (dist, worklist)
                                 | call_targets ->
-                                    (* compute the distance through call targets and successors *)
-                                    let through_dist, worklist = calc_dist call_targets worklist in
+                                    (* compute the distance through call targets; add call targets to worklist if not computed *)
+                                    let through_dist, worklist = List.fold_left begin fun (through_dist, worklist) call_target ->
+                                        (* tag the start of the function so that it won't be recomputed unnecessarily *)
+                                        if not (InstructionHash.mem distance_hash call_target) then begin
+                                            InstructionHash.add distance_hash call_target max_int;
+                                            (through_dist, InstructionSet.fold InstructionSet.add (return_of call_target) worklist)
+                                        end else
+                                            (min through_dist (InstructionHash.find distance_hash call_target), worklist)
+                                    end (max_int, worklist) call_targets in
                                     let dist =
                                         let dist = dist + through_dist in
                                         if dist < 0 then max_int (* overflow *) else dist
@@ -69,7 +76,6 @@ let find =
                     let updated =
                         try
                             let dist' = InstructionHash.find distance_hash instr in
-                            assert(dist <= dist');  (* Distance should be monotonically decreasing *)
                             if dist < dist' then InstructionHash.replace distance_hash instr dist;
                             dist < dist'
                         with Not_found ->
@@ -78,16 +84,27 @@ let find =
                     in
 
                     (* if updated, add this instruction's predecessors and call sites to the worklist. *)
-                    if updated then List.fold_left (fun worklist instr -> InstructionSet.add instr worklist) worklist
+                    if updated then
+                        List.fold_left (fun worklist instr -> InstructionSet.add instr worklist) worklist
                             (List.rev_append (Instruction.predecessors instr) (Instruction.call_sites instr))
                     else
                         worklist
                 end in
 
                 (* recurse on the remainder of the worklist *)
-                if not (InstructionSet.is_empty worklist) then update worklist
+                update worklist
             in
-            update (InstructionSet.singleton instr);
+
+            (* first, tag the start of the function so that it won't be recomputed unnecessarily *)
+            if not (InstructionHash.mem distance_hash fundec) then
+                InstructionHash.add distance_hash fundec max_int;
+
+            (* start from return sites of this fundec *)
+            update (return_of fundec);
+        end;
+
+        try
             InstructionHash.find distance_hash instr
-        end
+        with Not_found ->
+            max_int
 

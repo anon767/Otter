@@ -135,6 +135,32 @@ let fundec_of ({ file = file; fundec = fundec; _ }) =
     of_fundec file fundec
 
 
+(** Find all the return statements of this instruction (if it is the first instruction of its function). *)
+let return_of =
+    let module Memo = Memo.Make (T) in
+    let return_of = Memo.memo "Instruction.return_of" begin fun { file = file; fundec = fundec; _ } ->
+        let return_of = ref [] in
+
+        (* extract Cil.Return of this function *)
+        ignore begin Cil.visitCilFunction begin object
+            inherit Cil.nopCilVisitor
+            method vstmt stmt = match stmt.Cil.skind with
+                | Cil.Return _ ->
+                    return_of := (of_stmt_first file fundec stmt)::!return_of;
+                    Cil.SkipChildren
+                | _ ->
+                    Cil.DoChildren
+        end end fundec end;
+
+        !return_of
+    end in
+    fun instruction ->
+        if equal instruction (fundec_of instruction) then
+            return_of instruction
+        else
+            [] (* or raise some exception? *)
+
+
 (** Find all the call sites of this instruction (if it is the first instruction of its function). *)
 let call_sites =
     let module Memo = Memo.Make (struct
@@ -213,21 +239,7 @@ let return_targets ({ file = file; fundec = fundec } as instruction) =
 let return_sites =
     let module Memo = Memo.Make (T) in
     let return_sites = Memo.memo "Instruction.return_sites" begin fun instruction ->
-        let return_sites = ref [] in
-        List.iter begin fun { file = file; fundec = fundec } ->
-            (* iterate over statements in target functions and extract Cil.Return *)
-            ignore begin Cil.visitCilFunction begin object
-                inherit Cil.nopCilVisitor
-                method vstmt stmt = match stmt.Cil.skind with
-                    | Cil.Return _ ->
-                        return_sites := (of_stmt_first file fundec stmt)::!return_sites;
-                        Cil.SkipChildren
-                    | _ ->
-                        Cil.DoChildren
-            end end fundec end
-        end (call_targets instruction);
-
-        !return_sites
+        List.concat (List.map return_of (call_targets instruction))
     end in
     fun ({ file = file; instrs = instrs } as instruction) -> match instrs with
         | (Cil.Call _)::_ ->
