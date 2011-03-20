@@ -41,14 +41,20 @@ module Path = struct
 end
 
 module PathSet = Set.Make(Path)
+module StmtInfoSet = Job.StmtInfoSet
 
 class ['self] t = object (self : 'self)
 
     val completed_paths = PathSet.empty
+    val global_coveredBlocks = StmtInfoSet.empty
     val branching_points = []
     val cur_parent = None
     val cur_children = RandomBag.empty
     val cur_branching_points = []  (* TODO: make this RandomBag, although real SAGE doesn't specify how this is done *)
+
+
+    (* Enable block coverage *)
+    initializer Executeargs.arg_block_coverage := true
 
     method put job = 
         begin match cur_parent with
@@ -59,31 +65,38 @@ class ['self] t = object (self : 'self)
 
 
     method remove job = 
-        failwith "Method remove does not apply to SageQueue"
+        failwith "#remove does not apply to SageQueue"
 
     method get = 
         match RandomBag.get cur_children with
         | None -> (* The path ended with cur_parent is completed *)
-            let completed_paths = 
+            let completed_paths, global_coveredBlocks = 
                 if cur_branching_points = [] then (* The completed path does not branch, therefore we don't look at it anymore *)
-                    completed_paths
+                    completed_paths, global_coveredBlocks
                 else
                     let parent = 
                         match cur_parent with
                         | Some parent -> parent
                         | None -> failwith "Parent is None"
                     in
-                    let score = (* TODO: calculate score *) 0 in
+                    let score, global_coveredBlocks = 
+                        (* Alert: must enable --blockCov *)
+                        let coveredBlocks = parent#exHist.Job.coveredBlocks in
+                        let score = StmtInfoSet.cardinal (StmtInfoSet.diff coveredBlocks global_coveredBlocks) in
+                        let global_coveredBlocks = StmtInfoSet.union global_coveredBlocks coveredBlocks in
+                        score, global_coveredBlocks
+                    in
                     let path = {
                         Path.path_id = parent#path_id;
                         Path.branching_points = cur_branching_points;
                         Path.score = score;
                     } in
-                    PathSet.add path completed_paths 
+                    PathSet.add path completed_paths, global_coveredBlocks
             in
             begin match branching_points with
                 | branching_point :: branching_points -> 
                     Some({< completed_paths = completed_paths;
+                            global_coveredBlocks = global_coveredBlocks;
                             branching_points =  branching_points;
                             cur_parent = Some branching_point;
                             cur_children = RandomBag.empty;
@@ -98,6 +111,7 @@ class ['self] t = object (self : 'self)
                         (* assert(branching_points <> []) *)
                         let parent = List.hd branching_points in
                         Some({< completed_paths = completed_paths; 
+                                global_coveredBlocks = global_coveredBlocks;
                                 branching_points = List.tl branching_points; 
                                 cur_parent = Some parent;
                                 cur_children = RandomBag.empty;
