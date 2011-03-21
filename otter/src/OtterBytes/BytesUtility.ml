@@ -144,16 +144,17 @@ let bytes__write ?test ?pre acc bytes off len newbytes =
 
 let is_Bytes_Read = function Bytes_Read _ -> true | _ -> false
 
-(** Create a bytes conditional representing all values that could result from reading from the given bytes at the given index.
+(** Create a bytes conditional representing all values that could result from reading from the given bytes (which must be a bytearray) at the given index.
     This function assumes that symIndex is within the bounds of the memory region being read; any possible out-of-bounds accesses will be silently discarded.
     @param bytes is the bytes being read from : [bytes]
     @param symIndex is the index into bytes : [bytes]
     @param len is the width of the read : [int]
-    @return a conditional representing ITE(symIndex=0, bytes[0..len-1], ITE(symIndex=1, bytes[1..len], ... ITE(symIndex=size-len-1, bytes[size-len-1..size-2], bytes[size-len..size-1])...))
+    @param step_size is the increment by which symIndex should be increased : [int]
+    @return a conditional representing a chain of 'if symIndex = n then bytes[n*step_size..n*step_size+len-1] else ...' cases, where n ranges from 0 to ((the size of the bytearray) - len)/step_size.
 *)
-let expand_read_to_conditional2 bytes symIndex len =
+let expand_read_to_conditional2 bytes symIndex len step_size =
     let rec expand index =
-        let (), read_at_index = bytes__read () bytes (int_to_bytes index) len in
+        let (), read_at_index = bytes__read () bytes (int_to_bytes (index * step_size)) len in
         if is_Bytes_Read read_at_index then failwith "bytes__read with constant offset unexpectedly evaluated to a Bytes_Read";
         let read_at_index = conditional__bytes read_at_index in
         assert (index >= 0);
@@ -172,8 +173,9 @@ let expand_read_to_conditional2 bytes symIndex len =
         | Bytes_Conditional c -> failwith "Unexpected Bytes_Conditional"
         | _ -> FormatPlus.failwith "Not a valid array:@ @[%a@]" BytesPrinter.bytes bytes
     in
-    if block_size < len then failwith "Error in expand_read_to_conditional2: the read is wider than the memory block";
-    expand (block_size - len)
+    let largest_index = (block_size - len)/step_size in
+    if largest_index < 0 then failwith "Error in expand_read_to_conditional2: the read is wider than the memory block";
+    expand largest_index
 
 let rec expand_read_to_conditional (bytes : bytes) (symIndex : bytes) (len : int) =
     let bytes = match bytes with
@@ -221,4 +223,14 @@ let rec expand_read_to_conditional (bytes : bytes) (symIndex : bytes) (len : int
             Unconditional (make_Bytes_Read (bytes, symIndex, len))
 
         | _ ->
-            expand_read_to_conditional2 bytes symIndex len
+              (* Handle the common case of indexing into an array of pointers.
+                 In this case, the expression is something like [ptrs[i]], and
+                 the byte offset becomes (0 + (ptr_size * i)). We know such an
+                 offset can only take on values that are multiples of
+                 ptr_size, so we don't need to check every single offset. *)
+              match symIndex with
+                | Bytes_Op (OP_PLUS, [(x, _); (Bytes_Op (OP_MULT, [(Bytes_Constant (CInt64 (n, _, _)), _); (symbolic_index, _)]), _)])
+                        when bytes__equal x bytes__zero ->
+                      expand_read_to_conditional2 bytes symbolic_index len (Cil.i64_to_int n)
+                | _ ->
+                      expand_read_to_conditional2 bytes symIndex len 1
