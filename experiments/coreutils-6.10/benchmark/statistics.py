@@ -111,7 +111,7 @@ def show_all_format(entry):
         return ""
     else:
         values = [ format(x) for x in entry["values"]]
-        return "\n" + string.join(values, "\n") + "\n"
+        return "\\v{" + string.join(values, ",") + "}"
 
 
 def show_normalized_range_format(entry):
@@ -171,8 +171,7 @@ plot "%s" using 1:2 with points
 
 def getstat(program, common_opts, opts):
     #return gnuplot(program, common_opts, opts)
-    return show_median_siqr_outliers_format(getstat_r(program, opts+common_opts))
-    #return show_all_format(getstat_r(program, opts+common_opts))
+    return show_median_siqr_outliers_format(getstat_r(program, opts+common_opts)) + show_all_format(getstat_r(program, opts+common_opts))
 
 
 # Add new programs here
