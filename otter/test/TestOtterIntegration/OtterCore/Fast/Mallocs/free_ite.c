@@ -1,4 +1,4 @@
-#pragma expect_abandoned(failure("Dereference a dangling pointer"))
+#pragma expect_abandoned(failure("Dereference"))
 #pragma no_other_results
 
 int main() {
