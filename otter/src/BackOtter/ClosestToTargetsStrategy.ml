@@ -12,8 +12,10 @@ let get_distances =
     let module InstructionListHash = Hashtbl.Make (ListPlus.MakeHashedList (Instruction)) in
     let module InstructionHash = Hashtbl.Make (Instruction) in
 
-    let source_hash = InstructionHash.create 0 in
-    let get_distances source =
+    let interprocedural_source_hash = InstructionHash.create 0 in
+    let intraprocedural_source_hash = InstructionHash.create 0 in
+    let get_distances interprocedural source =
+        let source_hash = if interprocedural then interprocedural_source_hash else intraprocedural_source_hash in
         let context_hash =
             try
                 InstructionHash.find source_hash source
@@ -69,11 +71,11 @@ let get_distances =
                                 distance
                             end
     in
-    fun ({ Instruction.file = file; _ } as source) context ->
-        get_distances source context (BackOtterTargets.get_target_fundecs ()) (BackOtterTargetTracker.get_line_targets file) (LineTargets.get_line_targets file)
+    fun ?(interprocedural=true) ({ Instruction.file = file; _ } as source) context ->
+        get_distances interprocedural source context (BackOtterTargets.get_target_fundecs ()) (BackOtterTargetTracker.get_line_targets file) (LineTargets.get_line_targets file)
 
 
-class ['self] t weight_fn = object (self : 'self)
+class ['self] t ?interprocedural weight_fn = object (self : 'self)
     method add job = self
 
     method remove job = self
@@ -82,7 +84,7 @@ class ['self] t weight_fn = object (self : 'self)
         List.map begin fun job ->
             let source = Job.get_instruction job in
             let context = Job.get_instruction_context job in
-            let distance = get_distances source context in
+            let distance = get_distances ?interprocedural source context in
             Output.debug_printf "Job %d has distance to target = %d@\n" job#node_id distance;
             weight_fn distance
         end jobs
