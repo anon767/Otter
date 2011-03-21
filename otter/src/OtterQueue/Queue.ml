@@ -2,7 +2,26 @@
 
 open OcamlUtilities
 
-let queues = [
+type queues = [
+    | `BreadthFirst
+    | `DepthFirst
+    | `RandomPath
+    | `Generational of [ `BreadthFirst | `DepthFirst | `Random ]
+    | `LeastCovered
+    | `ClosestToUncovered
+    | `ClosestToTargets
+    | `ClosestToTargetsIntraprocedural
+    | `ClosestToTargetsPathWeighted
+    | `DistanceToUncoveredWeighted
+    | `DistanceToTargetsWeighted
+    | `PathWeighted
+    | `KLEE
+    | `SAGE
+    | `ESD
+    | `RoundRobin of (queues list)
+]
+
+let queues : (string * queues) list = [
     "breadth-first", `BreadthFirst;
     "depth-first", `DepthFirst;
     "random-path", `RandomPath;
@@ -20,7 +39,7 @@ let queues = [
     "KLEE", `KLEE;
     "SAGE", `SAGE;
     "ESD", `ESD;
-    "generational*random,breadth-first", `RoundRobin [`Generational `Random ; `BreadthFirst];
+    "generational*random,breadth-first", `RoundRobin [`Generational `Random ; `BreadthFirst ];
 ]
 
 let default_queue = ref `RandomPath
@@ -44,7 +63,7 @@ let rec get = function
     | `RoundRobin queues -> new RoundRobinQueue.t (List.map get queues)
     | `KLEE -> new BatchQueue.t (get (`RoundRobin [ `DistanceToUncoveredWeighted; `PathWeighted ]))
     | `SAGE -> new SageQueue.t
-    | `ESD -> new RankedQueue.t [ new OtterESD.ProximityGuidedStrategy.t ClosestToTargetsStrategy.quantized]
+    | `ESD -> new RankedQueue.t [ new OtterESD.ProximityGuidedStrategy.t ClosestToTargetsStrategy.quantized ]
 
 let get_default () = get !default_queue
 

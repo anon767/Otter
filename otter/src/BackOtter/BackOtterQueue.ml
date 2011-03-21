@@ -1,10 +1,25 @@
 open OcamlUtilities
 
 (* Forward *)
-let queues = OtterQueue.Queue.queues
+type queues = [
+    | `BackOtterClosestToTargets
+    | `BackOtterClosestToTargetsIntraprocedural
+    | `BackOtterClosestToTargetsPathWeighted
+    | OtterQueue.Queue.queues
+]
 
-(* BackOtter's ClosestToTargetsStrategy is now the same as that in OtterQueue *)
-let get = OtterQueue.Queue.get
+let queues : (string * queues) list = [
+    "backotter-closest-to-targets", `BackOtterClosestToTargets;
+    "backotter-closest-to-targets", `BackOtterClosestToTargetsIntraprocedural;
+    "backotter-closest-to-targets", `BackOtterClosestToTargetsPathWeighted;
+] @ (OtterQueue.Queue.queues :> (string * queues) list)
+
+(* BackOtter's ClosestToTargetsStrategy is different from that in OtterQueue *)
+let rec get = function
+    | `BackOtterClosestToTargets -> new OtterQueue.RankedQueue.t [ new ClosestToTargetsStrategy.t OtterQueue.ClosestToTargetsStrategy.inversely_proportional]
+    | `BackOtterClosestToTargetsIntraprocedural -> new OtterQueue.RankedQueue.t [ new ClosestToTargetsStrategy.t ~interprocedural:true OtterQueue.ClosestToTargetsStrategy.inversely_proportional]
+    | `BackOtterClosestToTargetsPathWeighted -> new OtterQueue.RankedQueue.t [ new ClosestToTargetsStrategy.t OtterQueue.ClosestToTargetsStrategy.quantized; new OtterQueue.WeightedRandomStrategy.t (new OtterQueue.PathWeightedStrategy.t) ]
+    | #OtterQueue.Queue.queues as queue -> OtterQueue.Queue.get queue
 
 let default_fqueue = ref (`Generational `BreadthFirst)
 let get_default_fqueue () = get !default_fqueue
