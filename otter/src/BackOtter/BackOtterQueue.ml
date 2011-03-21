@@ -3,11 +3,8 @@ open OcamlUtilities
 (* Forward *)
 let queues = OtterQueue.Queue.queues
 
-(* BackOtter's ClosestToTargetsStrategy is different from that in OtterQueue *)
-let rec get = function
-    | `ClosestToTargets -> new OtterQueue.RankedQueue.t [ new ClosestToTargetsStrategy.t OtterQueue.ClosestToTargetsStrategy.inversely_proportional]
-    | `ClosestToTargetsPathWeighted -> new OtterQueue.RankedQueue.t [ new ClosestToTargetsStrategy.t OtterQueue.ClosestToTargetsStrategy.quantized; new OtterQueue.WeightedRandomStrategy.t (new OtterQueue.PathWeightedStrategy.t) ]
-    | queue -> OtterQueue.Queue.get queue
+(* BackOtter's ClosestToTargetsStrategy is now the same as that in OtterQueue *)
+let get = OtterQueue.Queue.get
 
 let default_fqueue = ref (`Generational `BreadthFirst)
 let get_default_fqueue () = get !default_fqueue
