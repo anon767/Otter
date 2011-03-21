@@ -24,7 +24,11 @@ module TargetSet = struct
 
     let of_list = List.fold_left (fun targets target -> InstructionSet.add target targets) InstructionSet.empty
 end
-module TargetsHash = Hashtbl.Make (TargetSet)
+module TargetsHash = Hashtbl.Make (struct
+    type t = bool * TargetSet.t
+    let equal (xa, xb) (ya, yb) = xa == ya && TargetSet.equal xb yb
+    let hash (xa, xb) = Hashtbl.hash (xa, TargetSet.hash xb)
+end)
 module InstructionHash = Hashtbl.Make (Instruction)
 (**/**)
 
@@ -39,12 +43,12 @@ module InstructionHash = Hashtbl.Make (Instruction)
 *)
 let find =
     let targets_hash = TargetsHash.create 0 in
-    fun instr targets ->
+    fun instr ?(interprocedural=true) targets ->
         if targets = [] then invalid_arg "DistanceToTargets.find: targets must be a non-empty list";
         let targets = TargetSet.of_list targets in
 
         let distance_hash = try
-            TargetsHash.find targets_hash targets
+            TargetsHash.find targets_hash (interprocedural, targets)
 
         with Not_found -> Profiler.global#call "DistanceToTargets.find (uncached)" begin fun () ->
             let distance_hash = InstructionHash.create 0 in
@@ -75,15 +79,19 @@ let find =
                                     (* no call targets, just successors *)
                                     dist
                                 | call_targets ->
-                                    (* compute the distance through call targets and successors *)
+                                    (* compute the distance through call targets, interprocedurally to targets in calles, and successors *)
                                     let through_dist =
                                         let through_dist = dist + List.fold_left (fun d call_target -> min d (DistanceToReturn.find call_target)) max_int call_targets in
                                         if through_dist < 0 then max_int (* overflow *) else through_dist
                                     in
-                                    (* compute the distances of call targets *)
-                                    let call_target_dist = calc_dist call_targets in
-                                    (* take the minimum of the above *)
-                                    min through_dist call_target_dist
+                                    if interprocedural then
+                                        (* compute the distances of targets in call targets interprocedurally *)
+                                        let call_target_dist = calc_dist call_targets in
+                                        (* take the minimum of the above *)
+                                        min through_dist call_target_dist
+                                    else
+                                        (* intraprocedural *)
+                                        through_dist
                             in
                             let dist =
                                 let dist = 1 + dist in
@@ -117,7 +125,7 @@ let find =
 
             (* start from the targets *)
             update targets;
-            TargetsHash.add targets_hash targets distance_hash;
+            TargetsHash.add targets_hash (interprocedural, targets) distance_hash;
             distance_hash
         end in
 
@@ -139,18 +147,18 @@ let find =
 let find_in_context =
     let module Memo = Memo.Make (struct
         module InstructionList = ListPlus.MakeHashedList (Instruction)
-        type t = InstructionList.t * InstructionList.t
-        let equal (xc, xt) (yc, yt) = InstructionList.equal xc yc && InstructionList.equal xt yt
-        let hash (xc, xt) = Hashtbl.hash (InstructionList.hash xc, InstructionList.hash xt)
+        type t = bool * InstructionList.t * InstructionList.t
+        let equal (xi, xc, xt) (yi, yc, yt) = xi == yi && InstructionList.equal xc yc && InstructionList.equal xt yt
+        let hash (xi, xc, xt) = Hashtbl.hash (xi, InstructionList.hash xc, InstructionList.hash xt)
     end) in
-    let unwind = Memo.memo_rec "DistanceToTargets.unwind" begin fun unwind (context, targets) ->
+    let unwind = Memo.memo_rec "DistanceToTargets.unwind" begin fun unwind (interprocedural, context, targets) ->
         Profiler.global#call "DistanceToTargets.unwind (uncached)" begin fun () ->
             (* compute the distance from the instr through function returns to uncovered in the call context *)
             match context with
                 | instr::rest ->
-                    let dist = find instr targets in
+                    let dist = find instr ~interprocedural targets in
                     let return_dist =
-                        let return_dist = 1 + DistanceToReturn.find instr + unwind (rest, targets) in
+                        let return_dist = 1 + DistanceToReturn.find instr + unwind (interprocedural, rest, targets) in
                         if return_dist < 0 then max_int (* overflow *) else return_dist
                     in
                     min dist return_dist
@@ -158,6 +166,6 @@ let find_in_context =
                     max_int
         end
     end in
-    fun instr context targets ->
-        unwind (instr::context, targets)
+    fun instr context ?(interprocedural=true) targets ->
+        unwind (interprocedural, instr::context, targets)
 

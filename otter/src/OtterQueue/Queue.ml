@@ -12,6 +12,7 @@ let queues = [
     "least-covered", `LeastCovered;
     "closest-to-uncovered", `ClosestToUncovered;
     "closest-to-targets", `ClosestToTargets;
+    "closest-to-targets-intraprocedural", `ClosestToTargetsIntraprocedural;
     "closest-to-targets-path-weighted", `ClosestToTargetsPathWeighted;
     "distance-to-uncovered-weighted", `DistanceToUncoveredWeighted;
     "distance-to-targets-weighted", `DistanceToTargetsWeighted;
@@ -35,6 +36,7 @@ let rec get = function
     | `LeastCovered -> new RankedQueue.t  [ new LeastCoveredStrategy.t ]
     | `ClosestToUncovered -> new RankedQueue.t [ new ClosestToUncoveredStrategy.t ]
     | `ClosestToTargets -> new RankedQueue.t [ new ClosestToTargetsStrategy.t ClosestToTargetsStrategy.inversely_proportional ]
+    | `ClosestToTargetsIntraprocedural -> new RankedQueue.t [ new ClosestToTargetsStrategy.t ~interprocedural:false ClosestToTargetsStrategy.inversely_proportional ]
     | `DistanceToUncoveredWeighted -> new RankedQueue.t [ new WeightedRandomStrategy.t (new ClosestToUncoveredStrategy.t) ]
     | `DistanceToTargetsWeighted -> new RankedQueue.t [ new WeightedRandomStrategy.t (new ClosestToTargetsStrategy.t ClosestToTargetsStrategy.quantized) ]
     | `PathWeighted -> new RankedQueue.t [ new WeightedRandomStrategy.t (new PathWeightedStrategy.t) ]
