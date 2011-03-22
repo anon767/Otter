@@ -8,29 +8,37 @@ void f(int n) {
 }
 
 void g(int n) {
-    if (n) __FAILURE();  /* feasible */
+    if (output(n)) __FAILURE();  /* feasible */
 }
 
 void main() {
     int i, j, n; __SYMBOLIC(&n);
-    if (n) {
-        /* Shorter path to an infeasible failure */
-        for(i=0;i<MAX;i++) j++;
-        for(i=0;i<MAX;i++) j++;
-        for(i=0;i<MAX;i++) j++;
-        for(i=0;i<MAX;i++) j++;
-        f(j);
-    } else {
-        /* Longer path to a feasible failure */
-        for(i=0;i<MAX;i++) j++;
-        for(i=0;i<MAX;i++) j++;
-        for(i=0;i<MAX;i++) j++;
-        for(i=0;i<MAX;i++) j++;
-        for(i=0;i<MAX;i++) j++;
-        for(i=0;i<MAX;i++) j++;
-        for(i=0;i<MAX;i++) j++;
-        for(i=0;i<MAX;i++) j++;
-        g(j);
+    switch (n) {
+        case 1:
+            /* Shorter path to an infeasible failure */
+            for(i=0;i<MAX;i++) { j++; j++; j++; j++; }
+            f(j);
+            break;
+        case 2:
+            /* Shorter path to an infeasible failure */
+            for(i=0;i<MAX;i++) { j++; j++; j++; j++; }
+            f(j);
+            break;
+        case 3:
+            /* Shorter path to an infeasible failure */
+            for(i=0;i<MAX;i++) { j++; j++; j++; j++; }
+            f(j);
+            break;
+        case 4:
+            /* Shorter path to an infeasible failure */
+            for(i=0;i<MAX;i++) { j++; j++; j++; j++; }
+            f(j);
+            break;
+        case 5:
+            /* Longer path to a feasible failure */
+            for(i=0;i<MAX;i++) { j++; j++; j++; j++; j++; }
+            g(j);
+            break;
     }
 }
 
