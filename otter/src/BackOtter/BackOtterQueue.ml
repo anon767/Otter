@@ -10,8 +10,8 @@ type queues = [
 
 let queues : (string * queues) list = [
     "backotter-closest-to-targets", `BackOtterClosestToTargets;
-    "backotter-closest-to-targets", `BackOtterClosestToTargetsIntraprocedural;
-    "backotter-closest-to-targets", `BackOtterClosestToTargetsPathWeighted;
+    "backotter-closest-to-targets-intraprocedural", `BackOtterClosestToTargetsIntraprocedural;
+    "backotter-closest-to-targets-path-weighted", `BackOtterClosestToTargetsPathWeighted;
 ] @ (OtterQueue.Queue.queues :> (string * queues) list)
 
 (* BackOtter's ClosestToTargetsStrategy is different from that in OtterQueue *)
