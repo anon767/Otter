@@ -10,22 +10,20 @@
 void __FAILURE(void) {}
 
 void f(int n) { 
-    int i, c = 0;
+    int i, c = 0, input[MAX];
+    __SYMBOLIC(&input);
     for(i=0;i<MAX;i++) {
-        int m; __SYMBOLIC(&m);
-        c *= 2;
-        if (m) c++;
+        if (input[i]) c++;
     }
     /* rarely satisfied condition */
-    if (c == 226 && n == 128) __FAILURE(); 
+    if (c == 3 && n == 4) __FAILURE(); 
 }
 
 void main() {
-    int i, c = 0;
+    int i, c = 0, input[MAX];
+    __SYMBOLIC(&input);
     for(i=0;i<MAX;i++) {
-        int m; __SYMBOLIC(&m);
-        c *= 2;
-        if (m) c++;
+        if (input[i]) c++;
     }
     f(c);
 }
