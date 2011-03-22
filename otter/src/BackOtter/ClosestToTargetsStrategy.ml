@@ -56,10 +56,11 @@ let get_distances =
                             InstructionListHash.find line_targets_hash line_targets
                         with Not_found ->
                             Profiler.global#call "ClosestToTargetsStrategy.get_distances (uncached)" begin fun () ->
-                                let call_sites = Instruction.call_sites (Instruction.fundec_of source) in
-                                let target_instrs = List.filter begin fun call_site ->
-                                    List.exists (CilData.CilFundec.equal call_site.Instruction.fundec) target_fundecs
-                                end call_sites in
+                                let target_instrs = List.concat begin List.map begin fun target_fundec ->
+                                    List.filter
+                                        (fun call_site -> CilData.CilFundec.equal source.Instruction.fundec call_site.Instruction.fundec)
+                                        (Instruction.call_sites (Instruction.of_fundec source.Instruction.file target_fundec))
+                                end target_fundecs end in
                                 let all_targets = target_instrs @ line_targets @ backotter_line_targets in
                                 let distance =
                                     if all_targets = [] then
