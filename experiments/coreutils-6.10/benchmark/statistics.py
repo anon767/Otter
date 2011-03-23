@@ -48,7 +48,7 @@ def loose_getopt(args, long_options):
     return optlist
 
 command_re = re.compile(r"^Command: .*(runotter|runbackotter) (.*)")
-time_re = re.compile(r"^\s*\d+\.\d+\s*(\d+\.\d+).*TargetReached.*")
+time_re = re.compile(r"^\s*\d+\.\d+\s*(\d+\.\d+).*`TargetReached.*")
 program_re = re.compile(r"(.*)_\d+\.log")
 
 table = defaultdict(list)
@@ -60,27 +60,33 @@ for directory in sys.argv[1:]:
         filename = os.path.join(directory, filename)
         file = open(filename)
         time = 100000.0
+        count = 0
         for line in file.readlines():
             results = command_re.match(line)
             if results:
                 cmd = results.group(1)
                 args = re.split(" |\t|\r|\n|=", results.group(2))
-                optlist = loose_getopt(args, ["queue=", "forward-queue=", "bidirectional-search-ratio=", "backotter-timing-method="])
+                optlist = loose_getopt(args, ["queue=", "forward-queue=", "backward-queue=", "bidirectional-search-ratio=", "backotter-timing-method="])
                 key = frozenset([cmd] + optlist)
                 continue
             results = time_re.match(line)
             if results:
-                time = float(results.group(1))
-                break
-        table[(program, key)].append(time)
+                if count == 0:
+                    time = float(results.group(1))
+                count += 1
+                # Comment out this for full report scan
+                continue
+        table[(program, key)].append((time, count))
         file.close()
 
 stat = dict()
 for key, values in table.items():
-    stat[key] = { "size": len(values), "values": values }
-    stat[key].update(median_siqr_outliers(values))
-    stat[key].update(normalized_range(values))
-    stat[key].update(mean_stdev(values))
+    times = [ time for (time, count) in values ]
+    counts = [ count for (time, count) in values ]
+    stat[key] = { "size": len(times), "times": times, "counts": counts }
+    stat[key].update(median_siqr_outliers(times))
+    stat[key].update(normalized_range(times))
+    stat[key].update(mean_stdev(times))
 
 
 # type key = Pure | Mix(strategy, ratio)
@@ -98,7 +104,11 @@ def show_median_siqr_outliers_format(entry):
     if entry == None:
         return ""
     else:
-        return "\\mso{%s}{%s}{%s}" % (format(entry["median"]), format(entry["siqr"]), "" if entry["outliers"]==[] else "%d"%len(entry["outliers"]))
+        median = format(entry["median"])
+        if median == "-":
+            return "\\mso{--}{}{}"
+        else:
+            return "\\mso{%s}{%s}{%s}" % (median, format(entry["siqr"]), "" if entry["outliers"]==[] else "%d"%len(entry["outliers"]))
 
 def show_mean_stdev_format(entry):
     if entry == None:
@@ -106,12 +116,12 @@ def show_mean_stdev_format(entry):
     else:
         return "\\msd{%s}{%s}{%d}" % (format(entry["mean"]), format(entry["stdev"]), entry["size"])
 
-def show_all_format(entry):
+def show_all_times_format(entry):
     if entry == None:
         return ""
     else:
-        values = [ format(x) for x in entry["values"]]
-        return "\\v{" + string.join(values, ",") + "}"
+        times = [ format(x) for x in entry["times"]]
+        return "\\v{" + string.join(times, ",") + "}"
 
 
 def show_normalized_range_format(entry):
@@ -141,7 +151,7 @@ def gnuplot(program, common_opts, opts):
         os.makedirs("gnuplot")
 
     plot_dat = ""
-    for value in entry["values"]:
+    for value in entry["times"]:
         if value > 2000.0:
             value = 2000.0
         plot_dat += "1\t%f\n" % value
@@ -171,7 +181,7 @@ plot "%s" using 1:2 with points
 
 def getstat(program, common_opts, opts):
     #return gnuplot(program, common_opts, opts)
-    return show_median_siqr_outliers_format(getstat_r(program, opts+common_opts)) + show_all_format(getstat_r(program, opts+common_opts))
+    return show_median_siqr_outliers_format(getstat_r(program, opts+common_opts)) + show_all_times_format(getstat_r(program, opts+common_opts))
 
 
 # Add new programs here
@@ -182,9 +192,12 @@ programs = [
         ("paste", "paste"),
         ("seq", "seq"),
         ("ptx", "ptx"),
-        ("mkdir-inj", "mkdir-inj"),
-        ("mkfifo-inj", "mkfifo-inj"),
-        ("mknod-inj", "mknod-inj"),
+        ("pro_distance_1", "1"),
+        ("pro_backotter_1", "2a"),
+        ("pro_backotter_3", "2b"),
+        #("mkdir-inj", "mkdir-inj"),
+        #("mkfifo-inj", "mkfifo-inj"),
+        #("mknod-inj", "mknod-inj"),
         ]
 
 common_opt_list = [
@@ -193,36 +206,51 @@ common_opt_list = [
         #[("backotter-timing-method", "real")],
     ]
 
+back_strategies = [
+    "random-path",
+    #"closest-to-targets",
+    ]
+
+ratios = [
+    #".75",
+    ".5",
+    ]
+
+
 for common_opts in common_opt_list:
 
     print common_opts
 
-    print "Un-directed:"
     for program, program_name in programs:
         output = [ program_name ]
 
-        # Pure BackOtter
-        output.append(getstat(program, common_opts, ["runbackotter",("bidirectional-search-ratio","-1")]))
-
-        for strategy in ["KLEE", "SAGE", "random-path"]:
-            # Pure forward
+        # Directed
+        for strategy in ["closest-to-targets", "closest-to-targets-intraprocedural"]:
             output.append(getstat(program, common_opts, ["runotter",("queue",strategy)]))
-            for ratio in [ ".75", ".5" ]:
-                output.append(getstat(program, common_opts, ["runbackotter",("forward-queue",strategy),("bidirectional-search-ratio",ratio)]))
+
+        # Pure BackOtter
+        for back_strategy in ["random-path", "backotter-closest-to-targets", "backotter-closest-to-targets-intraprocedural"]:
+            output.append(getstat(program, common_opts, ["runbackotter",("bidirectional-search-ratio","-1"),("backward-queue",back_strategy)]))
 
         # join
         result = string.join(output, " & ") + " \\\\"
         print result
 
-    print "Directed:"
+print
+
+for common_opts in common_opt_list:
+
+    print common_opts
+
     for program, program_name in programs:
         output = [ program_name ]
 
-        # Pure BackOtter
-        output.append(getstat(program, common_opts, ["runbackotter",("bidirectional-search-ratio","-1")]))
-
-        for strategy in ["closest-to-targets", "closest-to-targets-path-weighted", "distance-to-targets-weighted", "path-weighted", "ESD"]:
+        for strategy in ["KLEE", "SAGE", "random-path"]:
+            # Pure forward
             output.append(getstat(program, common_opts, ["runotter",("queue",strategy)]))
+            for ratio in ratios:
+                for back_strategy in back_strategies:
+                    output.append(getstat(program, common_opts, ["runbackotter",("forward-queue",strategy),("backward-queue",back_strategy),("bidirectional-search-ratio",ratio)]))
 
         # join
         result = string.join(output, " & ") + " \\\\"
