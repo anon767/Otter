@@ -23,10 +23,11 @@ void __FAILURE(void) {}
   #endif
 #endif
 
+int n[MAX];
+int m[MAX_F];
+
 void f(int c) { 
     int i, d = 0;
-    int m[MAX_F];
-    symbolic(&m,sizeof(m),"m");
     for(i=0;i<MAX_F;i++) {
         if (m[i]) d++;
     }
@@ -35,8 +36,8 @@ void f(int c) {
 
 void main() {
     int i, c = 0;
-    int n[MAX];
     symbolic(&n,sizeof(n),"n");
+    symbolic(&m,sizeof(m),"m");
     for(i=0;i<MAX;i++) {
         if (n[i]) c++;
     }
