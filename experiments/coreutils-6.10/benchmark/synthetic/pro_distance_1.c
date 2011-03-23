@@ -16,7 +16,9 @@ int main(void) {
     for (i = 0; i < argc; i++) {
         if (*argv[i] == 'b') {
             assert(n < 4);
-            b[n++];
+            b[n++] = 1;
+        } else {
+            getchar();
         }
     }
     for (i = 0; i < 50; i++) {
