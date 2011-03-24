@@ -34,7 +34,7 @@ int main(void) {
             getchar();
         }
     }
-    for (i = 0; i < 50; i++) {
+    while (1) {
         if (getchar())
             /* do something */;
     }
