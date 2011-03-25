@@ -215,7 +215,7 @@ let symbol_to_stp_bv vc symbol =
 
 (* lookup or create an STP array variable with a name computed from a bytes and a sufficiently wide index width for the length of the array *)
 let lookup_stp_array vc bytes length =
-    let name, index_width = InternalToSTP.array_meta (vc, (bytes, length)) in
+    let name, index_width = InternalToSTP.array_meta (vc, (bytes, length - 1)) in (* length-1 is the largest index we need to encode *)
     OcamlSTP.array_var vc name index_width 8
 (**/**)
 
@@ -273,33 +273,24 @@ and bytes_to_stp_array vc bytes =
                 OcamlSTP.array_write vc array (OcamlSTP.bv_of_int vc index_width index) (byte_to_stp_bv vc byte)
             end array bytearray
 
-        | Bytes_Write (array, index, width, (Bytes_Symbolic _ | Bytes_ByteArray _ | Bytes_Read _ | Bytes_Write _ as value)) ->
-            (* values encode as Bytes_ByteArray or compound values do not need endian conversion *)
+        | Bytes_Write (array, index, width, value) ->
             let array = bytes_to_stp_array vc array in
             let index_width = OcamlSTP.array_index_width vc array in
             let index_start = OcamlSTP.bv_extract vc (bytes_to_stp_bv vc index) (index_width - 1) 0 in
-            let src_array = bytes_to_stp_array vc value in
-            let src_index_width = OcamlSTP.array_index_width vc src_array in
-            let rec write array offset =
-                if offset < width then
-                    let bv8 = OcamlSTP.array_read vc src_array (OcamlSTP.bv_of_int vc src_index_width offset) in
-                    let index = OcamlSTP.bv_add vc index_start (OcamlSTP.bv_of_int vc index_width offset) in
-                    write (OcamlSTP.array_write vc array index bv8) (offset + 1)
-                else
-                    array
+            let value_bv = bytes_to_stp_bv vc value in
+            let flip_byte_order = match value with
+              | Bytes_Constant _ | Bytes_Address _ | Bytes_FunPtr _ | Bytes_Op _ | Bytes_Conditional _ ->
+                    (* simple values need to be converted to little-endian before writing to a compound value *)
+                    true
+              | Bytes_Symbolic _ | Bytes_ByteArray _ | Bytes_Read _ | Bytes_Write _ ->
+                    (* values encode as Bytes_ByteArray or compound values do not need endian conversion *)
+                    false
             in
-            write array 0
-
-        | Bytes_Write (array, index, width, (Bytes_Constant _ | Bytes_Address _ | Bytes_FunPtr _ | Bytes_Op _ | Bytes_Conditional _ as value)) ->
-            (* simple values need to be converted to little-endian before writing to a compound value *)
-            let array = bytes_to_stp_array vc array in
-            let index_width = OcamlSTP.array_index_width vc array in
-            let index_start = OcamlSTP.bv_extract vc (bytes_to_stp_bv vc index) (index_width - 1) 0 in
-            let value = bytes_to_stp_bv vc value in
             let rec write array offset =
                 if offset < width then
-                    let bv8 = OcamlSTP.bv_extract vc value (offset * 8 + 7) (offset * 8) in (* write big-endian values as little-endian into arrays *)
-                    let index = OcamlSTP.bv_add vc index_start (OcamlSTP.bv_of_int vc index_width (width - offset - 1)) in
+                    let bv8 = OcamlSTP.bv_extract vc value_bv (offset * 8 + 7) (offset * 8) in
+                    let write_offset = if flip_byte_order then width - offset - 1 else offset in
+                    let index = OcamlSTP.bv_add vc index_start (OcamlSTP.bv_of_int vc index_width write_offset) in
                     write (OcamlSTP.array_write vc array index bv8) (offset + 1)
                 else
                     array
