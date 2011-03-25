@@ -29,10 +29,10 @@ void main() {
     for (i=1;i<1000;i++)
         if (n == i) break;
     switch (i) {
-        case 1: 
-        case 2: 
-        case 3: 
-        case 4: f(1); break;
+        case 1: case 2: case 3: 
+        case 4: case 5: case 6: 
+        case 7: case 8: case 9: 
+            f(1); break;
         default: f(0);
     }
 }
