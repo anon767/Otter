@@ -474,6 +474,20 @@ rval_binop job binop exp1 exp2 exp errors =
                     let bytes = (Operator.of_binop binop) [ (rv1, typeOf exp1); (rv2, typeOf exp2) ] in
                     (job, bytes, errors)
             end
+      | PlusPI | IndexPI | MinusPI ->
+            let type1 = typeOf exp1 in
+            let type2 = typeOf exp2 in
+            let job, rv2, errors = rval job exp2 errors in
+            let rv2, type2, errors =
+                begin match unrollType type1 with
+				          | TPtr _ ->
+                        let rv2, errors = rval_cast !Cil.upointType rv2 type2 errors in
+                        (rv2, !Cil.upointType, errors)
+                  | _ -> (rv2, type2, errors)
+                end
+            in
+            let bytes = (Operator.of_binop binop) [ (rv1, type1); (rv2, type2) ] in
+            (job, bytes, errors)
       | _ ->
             let job, rv2, errors = rval job exp2 errors in
             let bytes = (Operator.of_binop binop) [ (rv1, typeOf exp1); (rv2, typeOf exp2) ] in
