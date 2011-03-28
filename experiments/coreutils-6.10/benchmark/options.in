@@ -1,24 +1,31 @@
+# closest-to-targets
+"@TRUNK@/experiments/coreutils-6.10/benchmark/runotter" --queue=closest-to-targets
+# closest-to-targets-intraprocedural
+"@TRUNK@/experiments/coreutils-6.10/benchmark/runotter" --queue=closest-to-targets-intraprocedural
 # Pure backotter
-"@TRUNK@/experiments/coreutils-6.10/benchmark/runbackotter" --function-inlining   --backward-queue=random-path --bidirectional-search-ratio=-1 --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry
+"@TRUNK@/experiments/coreutils-6.10/benchmark/runbackotter" --function-inlining   --backward-queue=random-path        --bidirectional-search-ratio=-1 --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry
+"@TRUNK@/experiments/coreutils-6.10/benchmark/runbackotter" --function-inlining   --backward-queue=backotter-closest-to-targets --bidirectional-search-ratio=-1 --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry
+"@TRUNK@/experiments/coreutils-6.10/benchmark/runbackotter" --function-inlining   --backward-queue=backotter-closest-to-targets-intraprocedural        --bidirectional-search-ratio=-1 --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry
 # KLEE
 "@TRUNK@/experiments/coreutils-6.10/benchmark/runotter" --queue=KLEE
 "@TRUNK@/experiments/coreutils-6.10/benchmark/runbackotter" --function-inlining   --backward-queue=random-path --bidirectional-search-ratio=.5  --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry --forward-queue=KLEE
-"@TRUNK@/experiments/coreutils-6.10/benchmark/runbackotter" --function-inlining   --backward-queue=random-path --bidirectional-search-ratio=.75 --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry --forward-queue=KLEE
-### # SAGE (to be unlocked)
-### "@TRUNK@/experiments/coreutils-6.10/benchmark/runotter" --queue=SAGE
-### "@TRUNK@/experiments/coreutils-6.10/benchmark/runbackotter" --function-inlining   --backward-queue=random-path --bidirectional-search-ratio=.5  --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry --forward-queue=SAGE
-### "@TRUNK@/experiments/coreutils-6.10/benchmark/runbackotter" --function-inlining   --backward-queue=random-path --bidirectional-search-ratio=.75 --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry --forward-queue=SAGE
+# SAGE
+"@TRUNK@/experiments/coreutils-6.10/benchmark/runotter" --queue=SAGE
+"@TRUNK@/experiments/coreutils-6.10/benchmark/runbackotter" --function-inlining   --backward-queue=random-path --bidirectional-search-ratio=.5  --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry --forward-queue=SAGE
 # random-path
 "@TRUNK@/experiments/coreutils-6.10/benchmark/runotter" --queue=random-path
 "@TRUNK@/experiments/coreutils-6.10/benchmark/runbackotter" --function-inlining   --backward-queue=random-path --bidirectional-search-ratio=.5  --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry --forward-queue=random-path
-"@TRUNK@/experiments/coreutils-6.10/benchmark/runbackotter" --function-inlining   --backward-queue=random-path --bidirectional-search-ratio=.75 --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry --forward-queue=random-path
-# closest-to-targets
-"@TRUNK@/experiments/coreutils-6.10/benchmark/runotter" --queue=closest-to-targets
-# closest-to-targets-path-weighted
-"@TRUNK@/experiments/coreutils-6.10/benchmark/runotter" --queue=closest-to-targets-path-weighted
-# distance-to-targets-weighted
-"@TRUNK@/experiments/coreutils-6.10/benchmark/runotter" --queue=distance-to-targets-weighted
+#
+#
+#"@TRUNK@/experiments/coreutils-6.10/benchmark/runbackotter" --function-inlining   --backward-queue=random-path --bidirectional-search-ratio=.5  --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry --forward-queue=closest-to-targets
+#"@TRUNK@/experiments/coreutils-6.10/benchmark/runbackotter" --function-inlining   --backward-queue=closest-to-targets --bidirectional-search-ratio=-1 --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry
+#
+### Future Work:
+###   # closest-to-targets-path-weighted
+###   "@TRUNK@/experiments/coreutils-6.10/benchmark/runotter" --queue=closest-to-targets-path-weighted
+###   # distance-to-targets-weighted
+###   "@TRUNK@/experiments/coreutils-6.10/benchmark/runotter" --queue=distance-to-targets-weighted
 # path-weighted
-"@TRUNK@/experiments/coreutils-6.10/benchmark/runotter" --queue=path-weighted
+# "@TRUNK@/experiments/coreutils-6.10/benchmark/runotter" --queue=path-weighted
 # ESD (to be unlocked)
 # "@TRUNK@/experiments/coreutils-6.10/benchmark/runotter" --queue=ESD
