@@ -90,7 +90,7 @@ for seed in range(min_seed, max_seed+1):
     for test_sh in test_sh_list:
         print >> f_test_order, test_sh
     f_test_order.close()
-    print >> f_at_sh,'cat "%s" | xargs -P 15 -n 1 sh' % test_order
+    print >> f_at_sh,'cat "%s" | xargs -P 8 -n 1 sh' % test_order
 
 f_config.close()
 f_at_sh.close()
