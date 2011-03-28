@@ -480,7 +480,7 @@ rval_binop job binop exp1 exp2 exp errors =
             let job, rv2, errors = rval job exp2 errors in
             let rv2, type2, errors =
                 begin match unrollType type1 with
-				          | TPtr _ ->
+                  | TPtr _ ->
                         let rv2, errors = rval_cast !Cil.upointType rv2 type2 errors in
                         (rv2, !Cil.upointType, errors)
                   | _ -> (rv2, type2, errors)
