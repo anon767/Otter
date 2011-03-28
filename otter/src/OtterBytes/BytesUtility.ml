@@ -220,6 +220,7 @@ let rec expand_read_to_conditional (bytes : bytes) (symIndex : bytes) (len : int
             conditional__map map_func c
 
         | Bytes_Symbolic _ ->
+            (* TODO: We should flag this as an error; it means we are reading an uninitialized value. *)
             Unconditional (make_Bytes_Read (bytes, symIndex, len))
 
         | _ ->

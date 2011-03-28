@@ -219,6 +219,9 @@ let libc_free job retopt exps errors =
                     (* No conditional branches were freed successfully: just fail. *)
                     FormatPlus.failwith "Free invalid conditional pointer:@ @[%a]@ = @[%a@]" CilPrinter.exp arg BytesPrinter.bytes ptr
             end
+        | Bytes_Read (bytes, offset, length) ->
+            (* FIXME: This can lead to an infinite loop, because expand_read_to_conditional returns a Bytes_Read if [bytes] is a Bytes_Symbolic. *)
+            libc_free job (make_Bytes_Conditional (expand_read_to_conditional bytes offset length)) errors
         | _ ->
             FormatPlus.failwith "Freeing something that is not a valid pointer:@ @[%a@]@ = @[%a@]" CilPrinter.exp arg BytesPrinter.bytes ptr
     in
