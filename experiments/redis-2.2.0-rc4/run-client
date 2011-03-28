@@ -8,5 +8,5 @@ fi
   --no-remove-cil-suffixes\
   --lineCov --pathCov --edgeCov --blockCov\
   --tracked-functions=redis-functions\
-  --timeout=10800 --max-stp-time=120\
+  --timeout=10800\
   "$@"
