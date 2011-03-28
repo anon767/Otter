@@ -371,7 +371,7 @@ let naive_points_to =
 
 
 (** Unsound point-to that maps each pointer to one or two distinct [malloc]s: one of the pointer target type, and if
-    the pointer points to base (numeric) type, another of an array of size 16 of the base type; and if the pointer is
+    the pointer points to base (numeric) type, another of an array of size 4 of the base type; and if the pointer is
     a function pointer, all functions returned by {!Ptranal.resolve_exp} filtered by type.
         @param file is the file being analyzed
         @param exp is the expression to resolve
@@ -379,7 +379,7 @@ let naive_points_to =
                 dynamic allocation site
 *)
 let unsound_points_to =
-    let array_size = Some (Cil.integer 16) in
+    let array_size = Some (Cil.integer 4) in
     let counter = Counter.make () in
     let resolve_exp exp = Profiler.global#call "Ptranal.resolve_exp" (fun () -> Ptranal.resolve_exp exp) in
     fun file exp -> Profiler.global#call "CilPtranal.unsound_points_to" begin fun () ->
