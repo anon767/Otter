@@ -4,6 +4,10 @@
 #pragma expect_return()
 #pragma no_other_results
 
+typedef unsigned long size_t;
+void * malloc(size_t size);
+void * memset(void *b, int c, size_t len);
+
 int main() {
 	char *a = malloc(5), *b = malloc(1), x, *p;
 	__SYMBOLIC(&x);

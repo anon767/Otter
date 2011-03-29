@@ -33,6 +33,7 @@ void foo(void) {
     *x.i = 1;
 }
 int main(void) {
+    foo();
     return 0;
 }
 

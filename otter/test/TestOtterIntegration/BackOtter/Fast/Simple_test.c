@@ -61,7 +61,8 @@ void f(int z) {
     }
 }
 
-void main(void) {
+int main(void) {
     __SYMBOLIC(&x);
     f(x);
+    return 0;
 }

@@ -1,6 +1,10 @@
 #pragma expect_abandoned(failure("Dereference"))
 #pragma no_other_results
 
+typedef unsigned long size_t;
+void * malloc(size_t size);
+void free(void *);
+
 int main() {
 	int x;
 	__SYMBOLIC(&x);

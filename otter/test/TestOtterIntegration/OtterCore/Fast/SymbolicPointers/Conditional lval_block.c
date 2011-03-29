@@ -39,6 +39,6 @@ void foo(void) {
     *x = 1;
 }
 int main(void) {
+    foo();
     return 0;
 }
-

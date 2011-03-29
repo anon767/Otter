@@ -21,7 +21,8 @@ int foo(int * x, int * y) {
     }
 }
 
-void main(void) {
+int main(void) {
     int z;
     foo(&z, &z);
+    return 0;
 }

@@ -27,7 +27,8 @@ void f(int* x) {
     }
 }
 
-void main() {
+int main(void) {
     __SYMBOLIC(&x);
     f(&x);
+    return 0;
 }

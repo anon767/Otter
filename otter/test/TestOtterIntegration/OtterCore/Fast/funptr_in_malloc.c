@@ -1,6 +1,8 @@
 #pragma expect_abandoned(out_of_bounds) /* __SYMBOLIC() % 4 may be negative */
 #pragma no_other_abandoned
 
+typedef unsigned long size_t;
+void * malloc(size_t size);
 typedef void(*EventHandler)();
 
 void Handler1()

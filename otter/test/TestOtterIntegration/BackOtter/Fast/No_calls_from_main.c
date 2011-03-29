@@ -5,7 +5,7 @@
  * As of r10258, this test causes BackOtter to crashes.
  */
 
-void __FAILURE(void) { }
+void __FAILURE(void) __attribute__((used)) { }
 
 int main(void) {
     return 0;

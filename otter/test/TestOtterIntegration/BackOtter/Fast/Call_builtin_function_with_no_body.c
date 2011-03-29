@@ -6,7 +6,7 @@
  */
 
 int __SYMBOLIC(void *);
-void __FAILURE(void) { }
+void __FAILURE(void) __attribute__((used)) { }
 
 int main(void) {
     __SYMBOLIC();

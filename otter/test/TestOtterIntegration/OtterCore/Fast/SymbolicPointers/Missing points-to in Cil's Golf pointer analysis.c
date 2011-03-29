@@ -32,8 +32,9 @@ void bar(dll **w) {
     foo(&y);
 }
 
-void main(void) {
+int main(void) {
     dll *z = malloc(sizeof(dll));
     bar(&z);
+    return 0;
 }
 

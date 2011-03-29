@@ -29,6 +29,8 @@
 int g;
 
 void __FAILURE(void) { }
+typedef unsigned long size_t;
+void * malloc(size_t size);
 
 struct doubly_linkedlist {
     int data;
@@ -63,7 +65,7 @@ void sglib_dl_list_concat(struct doubly_linkedlist** first, struct doubly_linked
   }
 }
 
-void main() {
+int main(void) {
     struct doubly_linkedlist* first;
     struct doubly_linkedlist* second;
 
@@ -76,4 +78,5 @@ void main() {
     first = g?first:0;
     second = 0;
     sglib_dl_list_concat(&first, &second);
+    return 0;
 }

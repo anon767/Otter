@@ -1,6 +1,9 @@
 #pragma expect_return()
 #pragma no_other_results
 
+typedef unsigned long size_t;
+void * memset(void *b, int c, size_t len);
+
 int main() {
 	char a[5], b[5], x, *p;
 	__SYMBOLIC(&x);

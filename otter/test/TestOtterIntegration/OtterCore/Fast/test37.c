@@ -1,5 +1,8 @@
 #pragma no_other_abandoned
 
+typedef unsigned long size_t;
+void * malloc(size_t size);
+
 int main(char** argc, int argv)
 {
 	int** a = malloc(sizeof(int*)*2);

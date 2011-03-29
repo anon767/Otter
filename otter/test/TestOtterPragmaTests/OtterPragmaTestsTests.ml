@@ -202,6 +202,7 @@ let expect_return_testsuite = "expect_return" >::: [
         "#pragma expect_return(x == 1)
         int x = 1;
         int main(void) {
+            int y = x;
             int x = 2;
             return 0;
         }";
@@ -423,6 +424,7 @@ let expect_exit_testsuite = "expect_exit" >::: [
         "#pragma expect_exit(x == 1)
         int x = 1;
         int main(void) {
+            int y = x;
             int x = 2;
             _exit(0);
             return 0;
@@ -676,6 +678,7 @@ let expect_abandoned_failure_testsuite = "expect_abandoned(failure(...))" >::: [
         "#pragma expect_abandoned(failure(\"\"), x == 1)
         int x = 1;
         int main(void) {
+            int y = x;
             int x = 2;
             foo(0);
             return 0;

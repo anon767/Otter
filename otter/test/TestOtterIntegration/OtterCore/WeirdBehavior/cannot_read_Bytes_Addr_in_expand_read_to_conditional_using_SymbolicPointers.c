@@ -13,6 +13,9 @@
 #pragma expect_abandoned(failure("Dereference something not an address")) /* for n[1] == 0 */
 #pragma no_other_abandoned
 
+typedef unsigned long size_t;
+void * malloc(size_t size);
+
 double f(double** n) { /* This test passes if double is changed to int. */
   return n[1][0];
 }

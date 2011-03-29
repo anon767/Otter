@@ -43,6 +43,7 @@
 int n;
 
 void __FAILURE(void) { }
+void * malloc(unsigned long);
 
 struct s {
     struct s* next;
@@ -60,7 +61,7 @@ void f(struct s* p) {
     }
 }
 
-void main() {
+int main(void) {
     struct s* head = malloc(sizeof(struct s));
     struct s* cur = head;
 
@@ -75,4 +76,5 @@ void main() {
     }
     cur->next = 0;
     f(head);
+    return 0;
 }
