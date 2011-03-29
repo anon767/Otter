@@ -2,7 +2,7 @@
 
 # Find the first occurence of "TargetReached" in Otter's output piped to timelines
 
-import sys, re, os, string
+import sys, re, os, csv
 from collections import defaultdict
 
 def loose_getopt(args, long_options):
@@ -84,10 +84,12 @@ for directory in sys.argv[2:]:
         table[(program, strategy)].append(time)
         file.close()
 
-print "Test,Strategy,%s" % string.join(["d%d"%x for x in range(1,num_seed+1)],",")
 
-for (program, strategy), times in table.items():
+csv_writer = csv.writer(sys.stdout, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+csv_writer.writerow(['Test','Strategy'] + ["d%d"%x for x in range(1,num_seed+1)])
+
+for (program, strategy), times in sorted(table.items()):
     if len(times) != num_seed:
         print "(%s,%s) has %d runs, not the same as %d" % (program, strategy, len(times), num_seed)
-    print '"%s","%s",%s' % (program, strategy, string.join([str(x) for x in sorted(times)],","))
+    csv_writer.writerow([program, strategy] + sorted(times))
 
