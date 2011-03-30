@@ -100,9 +100,10 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     ) (BackOtterTargets.get_target_fundecs ());
 
     (* Output failing paths for entry_fn *)
-    Output.must_printf "@\nFailing path(s) for %s:@." entry_fn.svar.vname;
+    Output.set_mode Output.MSG_REPORT;
+    Output.printf "@\nFailing path(s) for %s:@." entry_fn.svar.vname;
     List.iter (fun decisions ->
-        Output.must_printf "Failing path: @[%a@]@." DecisionPath.print decisions)
+        Output.printf "Failing path: @[%a@]@." DecisionPath.print decisions)
         (BackOtterTargets.get_paths entry_fn);
 
     (queue, target_tracker#delegate)
