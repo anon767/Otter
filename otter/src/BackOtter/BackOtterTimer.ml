@@ -1,6 +1,7 @@
 let timing_methods = [
     "real", `TimeReal;           (* Wall-clock time *)
     "stp-calls", `TimeStpCalls;  (* Time approximated by # of STP queries *)
+    "weighted", `TimeWeighted;   (* A weighted formula of #STP calls and regular steps *)
 ]
 
 let default_timing_method = ref `TimeStpCalls
@@ -14,12 +15,18 @@ let reset_time () = timer_ref := (0.0, 0.0)
 (* Non recursion safe *)
 let time tkind fn = 
     let get_time_now =
+        (* TODO: make this a function ref instead of pattern match *)
         match !default_timing_method with
         | `TimeReal -> Unix.gettimeofday
         | `TimeStpCalls ->
             fun () ->
                 let count = DataStructures.NamedCounter.get "stpc_query" in
                 float_of_int count
+        | `TimeWeighted ->
+            fun () ->
+                let stp_count = DataStructures.NamedCounter.get "stpc_query" in
+                let step_count = DataStructures.NamedCounter.get "step" in
+                float_of_int (50 * stp_count + step_count)
     in
     let time_elapsed = get_time_now () in
     let result = fn () in
