@@ -168,7 +168,8 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                 if failing_paths_length = 0 then
                                     (job, job_to_bounding_paths, bounded_jobqueue) (* Not a target function *)
                                 else begin
-                                    Output.must_printf "Call target function %s@." fundec.svar.vname;
+                                    Output.set_mode Output.MSG_REPORT;
+                                    Output.printf "Call target function %s@." fundec.svar.vname;
 
                                     (* just note that the original job was forked into a bounded job *)
                                     let job, bounded_job = (job : #Info.t)#fork2 (fun job -> job) (fun job -> job) in

@@ -39,22 +39,22 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     (* when arg_line_targets != [], add appropriate jobs in bqueue *)
     (* TODO: let BidirectionalQueue decide which sub-queue to put into *)
     let starter_fundecs = List.fold_left (fun starter_fundecs (file_name, line_num) ->
-        Output.must_printf "Line target: %s:%d in function " file_name line_num;
+        Output.debug_printf "Line target: %s:%d in function " file_name line_num;
         let r = 
             try
                 let fundec = CovToFundec.of_line (file_name, line_num) in
-                Output.must_printf "%s " fundec.svar.vname;
+                Output.debug_printf "%s " fundec.svar.vname;
                 let fundec = BackOtterUtilities.get_transitive_unique_caller file fundec in
                 if List.memq fundec starter_fundecs then
                     starter_fundecs 
                 else if !arg_ignore_targets_in_entryfn && CilData.CilFundec.equal fundec entry_fn then 
-                    (Output.must_printf "(ignored)"; starter_fundecs)
+                    (Output.debug_printf "(ignored)"; starter_fundecs)
                 else fundec::starter_fundecs
             with Not_found -> 
-                Output.must_printf "(missing) ";
+                Output.debug_printf "(missing) ";
                 starter_fundecs (* There're lines that KLEE counts as instructions but Otter doesn't. *)
         in
-        Output.must_printf "@\n";
+        Output.debug_printf "@\n";
         r
     ) [] (!LineTargets.arg_line_targets @ BackOtterTargetTracker.(TargetSet.elements !targets)) in
     List.iter (fun f -> Output.debug_printf "Function containing coverage targets: %s@." f.svar.vname) starter_fundecs;
@@ -112,17 +112,17 @@ let doit file =
     (* connect Cil's debug flag to Output *)
     Output.arg_print_debug := !Errormsg.debugFlag;
 
-    Output.must_printf "@\n@\nBackOtter: Bi-directional Symbolic Executor@\n@.";
+    Output.printf "@\n@\nBackOtter: Bi-directional Symbolic Executor@\n@.";
 
     UserSignal.using_signals begin fun () -> try
         Core.prepare_file file;
         CovToFundec.prepare_file file;
 
         let find_tag_name tag assocs = List.assoc tag (List.map (fun (a,b)->(b,a)) assocs) in
-        Output.must_printf "Forward strategy: %s@." (find_tag_name (!BackOtterQueue.default_fqueue) BackOtterQueue.queues);
-        Output.must_printf "Backward function pick: %s@." (find_tag_name (!FunctionRanker.default_brank) FunctionRanker.queues);
-        Output.must_printf "Backward strategy: %s@." (find_tag_name (!BackOtterQueue.default_bqueue) BackOtterQueue.queues);
-        Output.must_printf "Ratio: %0.2f@." !BidirectionalQueue.default_bidirectional_search_ratio ;
+        Output.printf "Forward strategy: %s@." (find_tag_name (!BackOtterQueue.default_fqueue) BackOtterQueue.queues);
+        Output.printf "Backward function pick: %s@." (find_tag_name (!FunctionRanker.default_brank) FunctionRanker.queues);
+        Output.printf "Backward strategy: %s@." (find_tag_name (!BackOtterQueue.default_bqueue) BackOtterQueue.queues);
+        Output.printf "Ratio: %0.2f@." !BidirectionalQueue.default_bidirectional_search_ratio ;
 
         let entry_job = BackOtterJob.get_default file in
         let _, reporter = callchain_backward_se (new BackOtterReporter.t ()) entry_job in
@@ -134,9 +134,9 @@ let doit file =
         let counter_stats = DataStructures.NamedCounter.report () in
         List.iter (fun (name, value) -> Output.printf "%s : %d@." name value) counter_stats;
         if (!BytesSTP.print_stp_queries) then (
-            Output.must_printf "Stp queries:@.";
+            Output.printf "Stp queries:@.";
             List.iter (fun (pc, pre, guard, truth_value, time) ->
-                List.iter (Output.must_printf "PC: @[%a@]@." BytesPrinter.bytes) pc;
+                List.iter (Output.printf "PC: @[%a@]@." BytesPrinter.bytes) pc;
                 Output.printf "PRE: @[%a@]@." BytesPrinter.guard pre;
                 Output.printf "QUERY: @[%a@]@." BytesPrinter.guard guard;
                 Output.printf "TRUTH: %s@." (if truth_value then "True" else "False");

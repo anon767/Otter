@@ -528,7 +528,8 @@ let otter_path_condition job retopt exps errors =
  * general `Failure.
  * TODO: make __FAILURE take a string of failure description. *)
 let otter_failure job retopt exps errors =
-    Output.must_printf "BuiltinFunctions.otter_failure@\n";
+    Output.set_mode Output.MSG_ERROR;
+    Output.printf "BuiltinFunctions.otter_failure@\n";
     let job_state = Job.Complete (Job.Abandoned (`TargetReached Target.Failure, job)) in
     job_state, errors
 

@@ -47,7 +47,8 @@ let convert_non_failure_abandoned_to_truncated job_state =
         | Job.Fork job_states -> Job.Fork (List.map convert_non_failure_abandoned_to_truncated job_states)
         | Job.Complete (Job.Abandoned (`TargetReached _, job)) as job_state -> job_state
         | Job.Complete (Job.Abandoned (reason, job)) -> 
-            let _ = OcamlUtilities.Output.must_printf "Convert abandoned (%a) to truncated@\n" Errors.printer reason in 
+            OcamlUtilities.Output.set_mode OcamlUtilities.Output.MSG_ERROR;
+            OcamlUtilities.Output.printf "Convert abandoned (%a) to truncated@\n" Errors.printer reason; 
             Job.Complete (Job.Truncated (reason, job))
         | job_state -> job_state
     in
