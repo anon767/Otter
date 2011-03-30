@@ -10,6 +10,8 @@ open Cil
 (* TODO: Refactor this *)
 
 let default_bidirectional_search_ratio = ref 0.5
+let arg_backotter_overlap_path_matching = ref true
+
 
 (*
  * Improve efficiency of bounding paths update/checking.
@@ -224,64 +226,67 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                     Some ({< previous_bounded_job = Some job; bounded_jobqueue = bounded_jobqueue; >}, job)
                 | None ->
                     (* For each existing job, see if it can be bounded. If so, update bounded_jobqueue et al *)
-                    let new_failing_path = BackOtterTargets.get_last_failing_path () in
                     let entryfn_jobqueue, otherfn_jobqueue, job_to_bounding_paths, bounded_jobqueue =
-                        match new_failing_path with
-                        | Some (target_fundec, failing_path) ->
-                            Profiler.global#call "BidirectionalQueue.t#get/update_bounding_status" begin fun () ->
-                                (*
-                                 * To check if a FP can bound a DP:
-                                 * For each prefix(DP, k) where k < len(FP) and DP[k] is a call to origin(FP),
-                                 *     If rev_equal(prefix(DP, k), prefix(FP, k)), "YES", and let BP = suffix(FP, k+1)
-                                 *     Else "NO"
-                                 *)
-                                let failing_path_length = DecisionPath.length failing_path in
-                                let find_bounded_jobs job (jobqueue, job_to_bounding_paths, bound_jobqueue) =
-                                    let rec scan decision_path depth =
-                                        if depth <= 0 || DecisionPath.length decision_path = 0 then []
-                                        else match DecisionPath.hd decision_path with
-                                            | DecisionFuncall (_, varinfo)  when varinfo.vid = target_fundec.svar.vid ->
-                                                 let bounding_paths = scan (DecisionPath.tl decision_path) (depth - 1) in
-                                                 let matches, _, failing_tail =
-                                                     Profiler.global#call "BidirectionalQueue.t#get/update_bounding_status/scan/rev_equals" begin fun () ->
-                                                         rev_equals Decision.equal decision_path failing_path depth
-                                                     end
-                                                 in
-                                                 if matches then failing_tail :: bounding_paths else bounding_paths
-                                            | _ -> scan (DecisionPath.tl decision_path) (depth - 1)
-                                    in
-                                    let bounding_paths =
-                                        Profiler.global#call "BidirectionalQueue.t#get/update_bounding_status/scan" begin fun () ->
-                                        (* TODO: job#decision_path is too long. Maybe maintain a decision path for function calls only. *)
-                                        scan job#decision_path (min failing_path_length (DecisionPath.length job#decision_path))
+                        if (!arg_backotter_overlap_path_matching) then 
+                            let new_failing_path = BackOtterTargets.get_last_failing_path () in
+                            match new_failing_path with
+                            | Some (target_fundec, failing_path) ->
+                                Profiler.global#call "BidirectionalQueue.t#get/update_bounding_status" begin fun () ->
+                                    (*
+                                     * To check if a FP can bound a DP:
+                                     * For each prefix(DP, k) where k < len(FP) and DP[k] is a call to origin(FP),
+                                     *     If rev_equal(prefix(DP, k), prefix(FP, k)), "YES", and let BP = suffix(FP, k+1)
+                                     *     Else "NO"
+                                     *)
+                                    let failing_path_length = DecisionPath.length failing_path in
+                                    let find_bounded_jobs job (jobqueue, job_to_bounding_paths, bound_jobqueue) =
+                                        let rec scan decision_path depth =
+                                            if depth <= 0 || DecisionPath.length decision_path = 0 then []
+                                            else match DecisionPath.hd decision_path with
+                                                | DecisionFuncall (_, varinfo)  when varinfo.vid = target_fundec.svar.vid ->
+                                                     let bounding_paths = scan (DecisionPath.tl decision_path) (depth - 1) in
+                                                     let matches, _, failing_tail =
+                                                         Profiler.global#call "BidirectionalQueue.t#get/update_bounding_status/scan/rev_equals" begin fun () ->
+                                                             rev_equals Decision.equal decision_path failing_path depth
+                                                         end
+                                                     in
+                                                     if matches then failing_tail :: bounding_paths else bounding_paths
+                                                | _ -> scan (DecisionPath.tl decision_path) (depth - 1)
+                                        in
+                                        let bounding_paths =
+                                            Profiler.global#call "BidirectionalQueue.t#get/update_bounding_status/scan" begin fun () ->
+                                            (* TODO: job#decision_path is too long. Maybe maintain a decision path for function calls only. *)
+                                            scan job#decision_path (min failing_path_length (DecisionPath.length job#decision_path))
+                                            end
+                                        in
+                                        if bounding_paths = [] then
+                                            (jobqueue, job_to_bounding_paths, bounded_jobqueue)
+                                        else begin
+
+                                            (* just note that the original job was forked into a bounded job *)
+                                            let jobqueue = jobqueue#remove job in
+                                            let job, bounded_job = (job : #Info.t)#fork2 (fun job -> job) (fun job -> job) in
+                                            let jobqueue = jobqueue#put job in
+
+                                            Output.debug_printf "Add job %d into the bounded_jobqueue@." bounded_job#node_id;
+                                            let job_to_bounding_paths = JobMap.add bounded_job bounding_paths job_to_bounding_paths in
+                                            let bounded_jobqueue = bounded_jobqueue#put bounded_job in
+
+                                            (jobqueue, job_to_bounding_paths, bounded_jobqueue)
                                         end
                                     in
-                                    if bounding_paths = [] then
-                                        (jobqueue, job_to_bounding_paths, bounded_jobqueue)
-                                    else begin
-
-                                        (* just note that the original job was forked into a bounded job *)
-                                        let jobqueue = jobqueue#remove job in
-                                        let job, bounded_job = (job : #Info.t)#fork2 (fun job -> job) (fun job -> job) in
-                                        let jobqueue = jobqueue#put job in
-
-                                        Output.debug_printf "Add job %d into the bounded_jobqueue@." bounded_job#node_id;
-                                        let job_to_bounding_paths = JobMap.add bounded_job bounding_paths job_to_bounding_paths in
-                                        let bounded_jobqueue = bounded_jobqueue#put bounded_job in
-
-                                        (jobqueue, job_to_bounding_paths, bounded_jobqueue)
-                                    end
-                                in
-                                let entryfn_jobqueue, job_to_bounding_paths, bounded_jobqueue =
-                                    entryfn_jobqueue#fold find_bounded_jobs (entryfn_jobqueue, job_to_bounding_paths, bounded_jobqueue)
-                                in
-                                let otherfn_jobqueue, job_to_bounding_paths, bounded_jobqueue =
-                                    otherfn_jobqueue#fold find_bounded_jobs (otherfn_jobqueue, job_to_bounding_paths, bounded_jobqueue)
-                                in
+                                    let entryfn_jobqueue, job_to_bounding_paths, bounded_jobqueue =
+                                        entryfn_jobqueue#fold find_bounded_jobs (entryfn_jobqueue, job_to_bounding_paths, bounded_jobqueue)
+                                    in
+                                    let otherfn_jobqueue, job_to_bounding_paths, bounded_jobqueue =
+                                        otherfn_jobqueue#fold find_bounded_jobs (otherfn_jobqueue, job_to_bounding_paths, bounded_jobqueue)
+                                    in
+                                    (entryfn_jobqueue, otherfn_jobqueue, job_to_bounding_paths, bounded_jobqueue)
+                                end
+                            | None ->
                                 (entryfn_jobqueue, otherfn_jobqueue, job_to_bounding_paths, bounded_jobqueue)
-                            end
-                        | None ->
-                            (entryfn_jobqueue, otherfn_jobqueue, job_to_bounding_paths, bounded_jobqueue)
+                        else
+                            entryfn_jobqueue, otherfn_jobqueue, job_to_bounding_paths, bounded_jobqueue
                     in
                     match bounded_jobqueue#get with
                     | Some (bounded_jobqueue, job) ->
@@ -383,5 +388,8 @@ let options = [
     "--bidirectional-search-ratio",
         Arg.Set_float default_bidirectional_search_ratio,
         "<ratio> The fraction of computation dedicated to forward search (default: 0.5)";
+    "--backotter-no-overlap-path-matching",
+        Arg.Clear arg_backotter_overlap_path_matching,
+        " Disable paths match-up by overlapping";
 ]
 
