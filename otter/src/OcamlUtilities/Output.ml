@@ -250,6 +250,24 @@ let options = [
 		),
 		" Suppress most output");
 
+	(* Even sparser printing *)
+	("--printErrorsOnly",
+		Arg.Unit (fun () ->
+            arg_print_reg := false;
+            arg_print_profiling := false;
+            arg_print_stmt := false;
+            arg_print_assign := false;
+            arg_print_func := false;
+            arg_print_stp := false;
+            arg_print_guard := false;
+            arg_print_debug := false;
+            arg_print_branch := false;
+            arg_print_report := false;
+            arg_print_error := true;
+            arg_print_mustprint := true;
+		),
+		" Suppress all output except errors and mustprints");
+
 	("--printNothing",
 		Arg.Unit (fun () -> arg_print_mute := 1),
 		" Suppress (pretty much) all output. This trumps all other --print* options");
