@@ -8,6 +8,9 @@ let arg_print_func = ref true
 let arg_print_stp = ref false
 let arg_print_guard = ref false
 let arg_print_debug = ref false
+let arg_print_error = ref true
+let arg_print_branch = ref true
+let arg_print_report = ref true
 let arg_print_mustprint = ref true
 
 
@@ -153,32 +156,38 @@ let set_formatter ff =
 let () = at_exit (fun () -> !formatter#flush)
 
 type msg_type =
-	| MSG_REG
-	| MSG_PROFILING
-	| MSG_STMT
-	| MSG_ASSIGN
-	| MSG_FUNC
-	| MSG_STP
-	| MSG_GUARD
-	| MSG_DEBUG
-	| MSG_MUSTPRINT
+    | MSG_REG
+    | MSG_PROFILING
+    | MSG_STMT
+    | MSG_ASSIGN
+    | MSG_FUNC
+    | MSG_STP
+    | MSG_GUARD
+    | MSG_DEBUG
+    | MSG_ERROR
+    | MSG_BRANCH
+    | MSG_REPORT
+    | MSG_MUSTPRINT
 
 let current_msg_type = ref MSG_REG
 let set_mode msg_type = current_msg_type := msg_type
 let get_mode () = !current_msg_type
 
 let need_print msg_type =
-	if !arg_print_mute > 0 then false else
-	match msg_type with
-		| MSG_REG 		-> !arg_print_reg
-		| MSG_PROFILING	-> !arg_print_profiling
-		| MSG_STMT		-> !arg_print_stmt
-		| MSG_ASSIGN	-> !arg_print_assign
-		| MSG_FUNC		-> !arg_print_func
-		| MSG_STP		-> !arg_print_stp
-		| MSG_GUARD		-> !arg_print_guard
-		| MSG_DEBUG		-> !arg_print_debug
-		| MSG_MUSTPRINT -> !arg_print_mustprint
+    if !arg_print_mute > 0 then false else
+    match msg_type with
+        | MSG_REG          -> !arg_print_reg
+        | MSG_PROFILING    -> !arg_print_profiling
+        | MSG_STMT         -> !arg_print_stmt
+        | MSG_ASSIGN       -> !arg_print_assign
+        | MSG_FUNC         -> !arg_print_func
+        | MSG_STP          -> !arg_print_stp
+        | MSG_GUARD        -> !arg_print_guard
+        | MSG_ERROR        -> !arg_print_error
+        | MSG_DEBUG        -> !arg_print_debug
+        | MSG_BRANCH       -> !arg_print_branch
+        | MSG_REPORT       -> !arg_print_report
+        | MSG_MUSTPRINT   -> !arg_print_mustprint
 
 
 let printf ?term format =

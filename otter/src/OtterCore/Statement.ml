@@ -223,7 +223,7 @@ let exec_stmt job errors = Profiler.global#call "Statement.exec_stmt" begin fun 
                             (job, Some retval, errors)
                     in
                     let job = job#with_exHist (nextExHist None) in
-                    Output.set_mode Output.MSG_MUSTPRINT;
+                    Output.set_mode Output.MSG_REPORT;
                     Output.printf "Program execution finished.@.";
                     (Complete (Return (retval, job)), errors)
                 | (Source (destOpt,callStmt,_,nextStmt))::_ ->
@@ -355,7 +355,7 @@ let exec_stmt job errors = Profiler.global#call "Statement.exec_stmt" begin fun 
                                 end
                         in
 
-                        Output.set_mode Output.MSG_MUSTPRINT;
+                        Output.set_mode Output.MSG_BRANCH;
                         Output.printf "@[Branching on @[%a@]@ at @[%a@].@]@." CilPrinter.exp exp Printcil.loc loc;
                         if !Executeargs.arg_print_callstack then
                             Output.printf "Call stack:@\n  @[%a@]@." (Printer.callingContext_list "@\n") job#state.callContexts;

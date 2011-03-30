@@ -18,6 +18,6 @@ let main_loop get_job interceptor process_result job_queue reporter =
         run job_queue reporter
     with UserSignal.UserInterrupt | UserSignal.TimedOut as exn ->
         (* if we got a signal, stop and return the completed results *)
-        Output.set_mode Output.MSG_MUSTPRINT;
+        Output.set_mode Output.MSG_REPORT;
         Output.printf "%s@." (Printexc.to_string exn);
         !checkpoint

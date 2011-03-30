@@ -319,7 +319,7 @@ let rec opPI op operands =
 					(BytesUtility.expand_read_to_conditional a x l)
 			)
 		| _ ->
-			Output.set_mode Output.MSG_MUSTPRINT;
+			Output.set_mode Output.MSG_ERROR;
 			Output.printf "@[bytes1:@ @[%a@]@]@." BytesPrinter.bytes bytes1;
 			Output.printf "@[bytes2:@ @[%a@]@]@." BytesPrinter.bytes bytes2;
 			failwith "plusPI (p1,p2) not of type (addr,int)"
@@ -359,7 +359,7 @@ let minusPP operands : bytes =
 				| _ -> failwith "type of Bytes_Address not TPtr"
 			end
 		| _ ->
-				Output.set_mode Output.MSG_MUSTPRINT;
+				Output.set_mode Output.MSG_ERROR;
 				Output.printf "@[make_Bytes1:@ @[%a@]@]@." BytesPrinter.bytes bytes1;
 				Output.printf "@[make_Bytes2:@ @[%a@]@]@." BytesPrinter.bytes bytes2;
 				failwith "minusPP (p1,p2) not of type (addr,addr)"

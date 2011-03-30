@@ -16,7 +16,7 @@ module Make (Errors : Errors) = struct
         method report job_state =
            begin match job_state with
                 | Job.Complete (Job.Abandoned (reason, job)) ->
-                        Output.set_mode Output.MSG_MUSTPRINT;
+                        Output.set_mode Output.MSG_ERROR;
                         Output.printf "@[Error \"@[%a@]\"@ occurs at @[%a@].@\n"
                             Errors.printer reason Printcil.loc (Job.get_loc job);
                         if !Executeargs.arg_print_callstack then

@@ -126,7 +126,7 @@ let otter_gfree job multijob retopt exps errors =
       | _ ->
             if not (bytes__equal ptr bytes__zero) (* Freeing a null pointer is fine; it does nothing. *)
             then (
-                Output.set_mode Output.MSG_MUSTPRINT;
+                Output.set_mode Output.MSG_ERROR;
                 FormatPlus.failwith "gfreeing something that is not a valid pointer:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp (List.hd exps) BytesPrinter.bytes ptr
             );
             let job = BuiltinFunctions.end_function_call job in

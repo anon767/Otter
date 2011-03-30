@@ -412,7 +412,7 @@ let otter_truth_value job retopt exps errors =
 
 
 let libc_exit job retopt exps errors =
-	Output.set_mode Output.MSG_MUSTPRINT;
+	Output.set_mode Output.MSG_DEBUG;
 	let exit_code, errors =
 		match exps with
 			| exp1::_ ->
@@ -429,7 +429,7 @@ let libc_exit job retopt exps errors =
 
 let otter_evaluate job retopt exps errors =
 	let job, bytes, errors = eval_join_exps job exps Cil.LAnd errors in
-	Output.set_mode Output.MSG_MUSTPRINT;
+	Output.set_mode Output.MSG_DEBUG;
 	Output.printf "@[Evaluates to@ @[%a@]@]@." BytesPrinter.bytes bytes;
 	let job = end_function_call job in
 	(Job.Active job, errors)
@@ -439,7 +439,7 @@ let otter_evaluate_string job retopt exps errors =
 	let exp = List.hd exps in
 	let sizeexp = List.nth exps 1 in
 	let job, addr_bytes, errors = Expression.rval job exp errors in
-	Output.set_mode Output.MSG_MUSTPRINT;
+	Output.set_mode Output.MSG_DEBUG;
 	let job, errors = match addr_bytes with
 		| Bytes_Address(block, offset) ->
 			let job, size_bytes, errors = Expression.rval job sizeexp errors in
@@ -508,13 +508,13 @@ let otter_assume job _ exps errors =
         (* Use [Fork []] to make this job disappear. Among other things, this
            means that we ignore coverage from this job, and we also ignore any
            errors that occurred while evaluating the arguments to __ASSUME. *)
-        Output.set_mode Output.MSG_MUSTPRINT;
+        Output.set_mode Output.MSG_ERROR;
         Output.printf "Impossible assumption; eliminating job@.";
         (Job.Fork [], errors)
 
 
 let otter_path_condition job retopt exps errors =
-	Output.set_mode Output.MSG_MUSTPRINT;
+	Output.set_mode Output.MSG_DEBUG;
 	if PathCondition.is_empty job#state.path_condition then
 		Output.printf "(nil)@."
 	else
@@ -587,7 +587,7 @@ let otter_break_pt job retopt exps errors =
 
 
 let otter_print_state job retopt exps errors =
-	Output.set_mode Output.MSG_MUSTPRINT;
+	Output.set_mode Output.MSG_DEBUG;
 	let module BOSMap = Map.Make (struct
 		type t = memory_block * bytes * int  (* block, offset, size *)
 		let compare = Pervasives.compare
@@ -697,7 +697,7 @@ let intercept_symbolic job job_queue interceptor =
 
 					let job, (_, size as lval), errors = Expression.lval job cil_lval errors in
 					let symbBytes = bytes__symbolic size in
-					Output.set_mode Output.MSG_MUSTPRINT;
+					Output.set_mode Output.MSG_DEBUG;
 					Output.printf "@[%s@ = @[%a@]@]@." varinf.vname BytesPrinter.bytes symbBytes;
 
 					let exHist = { exHist with Job.bytesToVars = (symbBytes,varinf)::exHist.Job.bytesToVars } in

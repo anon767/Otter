@@ -27,7 +27,7 @@ let print_report results =
                || !Executeargs.arg_path_coverage then
             begin
                 (* Print coverage information, if it was gathered, regardless of anything else.*)
-                Output.set_mode Output.MSG_MUSTPRINT;
+                Output.set_mode Output.MSG_REPORT;
                 Coverage.printCoverageInfo coverage;
 
                 (* Marshal out (coverage : Job.job_result list) so that we can

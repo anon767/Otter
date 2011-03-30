@@ -45,7 +45,7 @@ let main_loop entry_fn interceptor queue reporter =
         run (queue, reporter)
     with UserSignal.UserInterrupt | UserSignal.TimedOut as exn ->
         (* if we got a signal, stop and return the checkpoint results *)
-        Output.set_mode Output.MSG_MUSTPRINT;
+        Output.set_mode Output.MSG_REPORT;
         Output.printf "%s@." (Printexc.to_string exn);
         !checkpoint
 

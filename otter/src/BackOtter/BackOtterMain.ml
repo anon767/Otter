@@ -153,7 +153,7 @@ let doit file =
 
     with UserSignal.UserInterrupt | UserSignal.TimedOut as exn ->
         (* TODO: move this into callchain_backwards_se *)
-        Output.set_mode Output.MSG_MUSTPRINT;
+        Output.set_mode Output.MSG_REPORT;
         Output.printf "%s@." (Printexc.to_string exn)
     end;
 
