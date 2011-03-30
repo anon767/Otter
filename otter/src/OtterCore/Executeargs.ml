@@ -71,43 +71,9 @@ let options = [
 	(*
 		Printing options
 	*)
-	(* TODO: for each msg type, a --print and --noprint option*)
-	(* STP *)
-	("--printSTP",
-		Arg.Set Output.arg_print_stp,
-		" Print STP programs");
-
-	(* Assignment in the form lval = rval *)
-	("--printAssign",
-		Arg.Set Output.arg_print_assign,
-		" Print assignments (from rval to lval)");
-
-	("--printFunctionCall",
-		Arg.Set Output.arg_print_func,
-		" Print function calls");
-
-	(* Print the guard of an if statement *)
-	("--printIf",
-		Arg.Set Output.arg_print_guard,
-		" Print the guard of an if statement");
-
 	("--printCallStack",
 		Arg.Set arg_print_callstack,
 		" Print call stack (when branching)");
-
-	(* Sparse printing *)
-	("--printLittle",
-		Arg.Unit (fun () ->
-			Output.arg_print_reg := false;
-			Output.arg_print_stmt := false;
-			Output.arg_print_func := false;
-			Output.arg_print_assign := false;
-		),
-		" Suppress most output");
-
-	("--printNothing",
-		Arg.Unit (fun () -> Output.arg_print_mute := 1),
-		" Suppress (pretty much) all output. This trumps all other --print* options");
 
 	("--printCharAsInt",
 		Arg.Set BytesPrinter.print_char_as_int,

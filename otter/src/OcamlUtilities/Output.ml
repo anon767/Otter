@@ -219,3 +219,39 @@ let mprint_formatter =
     (fun () -> ())
 let mprintf format = Format.fprintf mprint_formatter format
 
+let options = [
+	(* TODO: for each msg type, a --print and --noprint option*)
+	(* STP *)
+	("--printSTP",
+		Arg.Set arg_print_stp,
+		" Print STP programs");
+
+	(* Assignment in the form lval = rval *)
+	("--printAssign",
+		Arg.Set arg_print_assign,
+		" Print assignments (from rval to lval)");
+
+	("--printFunctionCall",
+		Arg.Set arg_print_func,
+		" Print function calls");
+
+	(* Print the guard of an if statement *)
+	("--printIf",
+		Arg.Set arg_print_guard,
+		" Print the guard of an if statement");
+
+	(* Sparse printing *)
+	("--printLittle",
+		Arg.Unit (fun () ->
+			arg_print_reg := false;
+			arg_print_stmt := false;
+			arg_print_func := false;
+			arg_print_assign := false;
+		),
+		" Suppress most output");
+
+	("--printNothing",
+		Arg.Unit (fun () -> arg_print_mute := 1),
+		" Suppress (pretty much) all output. This trumps all other --print* options");
+
+]

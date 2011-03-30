@@ -46,7 +46,8 @@ let options =
     BytesSTP.options @
     SymbolicPointers.options @
     TrackingFunctions.options @
-    Bytes.options
+    Bytes.options @
+    Output.options
 
 let feature : featureDescr = {
 	fd_name = "execute";
