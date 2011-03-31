@@ -13,7 +13,7 @@ open MultiJobUtilities
 let (@@) = MultiInterceptor.(@@)
 let (@@@) = MultiInterceptor.(@@@)
 
-let multi_set_output_formatter_interceptor job multijob job_queue interceptor = 
+let multi_set_output_formatter job multijob =
 	let loc = Job.get_loc job in
 	let label =
 		if loc = Cil.locUnknown then
@@ -21,8 +21,11 @@ let multi_set_output_formatter_interceptor job multijob job_queue interceptor =
 		else
 			Format.sprintf "[jid: %d, pid: %d] %s:%d : " multijob.active_job#path_id multijob.current_metadata.pid (Filename.basename loc.Cil.file) loc.Cil.line
 	in
-	Output.set_formatter (new Output.labeled label);
-	interceptor job multijob job_queue
+	Output.set_formatter (new Output.labeled label)
+
+let multi_set_output_formatter_interceptor job multijob job_queue interceptor = 
+    multi_set_output_formatter job multijob;
+    interceptor job multijob job_queue
 
 let rec get_job_multijob job_queue = 
 	match job_queue#get with
@@ -56,11 +59,12 @@ let process_result result job_queue reporter =
 	process_job_states result multijob multijob_queue reporter
 
 let rec flush_queue reporter job_queue =
-	match get_job_multijob job_queue with
-		| None -> reporter
-		| Some (job, (multijob, job_queue)) ->
-			let reporter = reporter#report (Complete (Abandoned (`Failure "Killed by signal", job))) in
-			flush_queue reporter job_queue
+    match get_job_multijob job_queue with
+      | None -> reporter
+      | Some (job, (multijob, job_queue)) ->
+            multi_set_output_formatter job multijob;
+            let reporter = reporter#report (Complete (Abandoned (`Failure "Killed by signal", job))) in
+            flush_queue reporter (job_queue#put multijob) (* Put the other processes back into the queue so that they get reported, too. *)
 
 let run reporter job =
 	let multijob = {
