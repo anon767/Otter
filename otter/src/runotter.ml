@@ -24,7 +24,7 @@ let _ =
         Otter.RunReachingDef.feature;
         (* Features below are mutually exclusive. *)
         Otter.LinkCheck.feature;
-        Otter.Executemain.feature;
+        Otter.OtterMain.feature;
         MultiOtter.MultiDriver.feature;
         BackOtter.BackOtterMain.feature;
         DebugOtter.DebugOtterExecute.feature;

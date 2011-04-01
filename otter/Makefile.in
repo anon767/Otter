@@ -59,7 +59,7 @@ otter.pl.config : Makefile $(CIL_SRCDIR)/config.mk
 	$$::default_mode = '$(DEFAULT_CIL_MODE)';\n\
 	$$::native = '$(OCAMLBUILD_PRODUCTDIR)/runotter.native';\n\
 	$$::byte = '$(OCAMLBUILD_PRODUCTDIR)/runotter.d.byte';\n\
-	$$::do_default = '--doexecute';\n\
+	$$::do_default = '--dootter';\n\
 	$$::compile_after_merge = 0;\n\
 	1;" > $@
 

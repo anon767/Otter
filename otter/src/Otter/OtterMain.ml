@@ -7,9 +7,9 @@ open OtterQueue
 open OtterReporter
 open OtterDriver
 open State
-(*open InvInput*)
 
-let doExecute (f: file) =
+
+let doit (f: file) =
 	(* connect Cil's debug flag to Output *)
 	Output.arg_print_debug := !Errormsg.debugFlag;
 
@@ -50,11 +50,11 @@ let options =
     Output.options
 
 let feature : featureDescr = {
-	fd_name = "execute";
+	fd_name = "otter";
 	fd_enabled = ref false;
 	fd_description = "(symbolic) executor for C";
 	fd_extraopt = options;
 	fd_post_check = true;
-	fd_doit = doExecute;
+	fd_doit = doit;
 }
 
