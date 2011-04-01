@@ -589,7 +589,8 @@ int accept(int socket_fd, struct sockaddr *address, socklen_t *address_len)
 		}
 		__otter_multi_begin_atomic();
 	}
-	
+	__otter_multi_end_atomic();
+
 	return(-1);
 }
 
