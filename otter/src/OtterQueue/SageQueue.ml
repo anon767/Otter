@@ -31,7 +31,6 @@ open OtterCore
 module Path = struct
     type t = {
         path_id : int;
-        branching_points : Job.t list;
         score : int;
     }
     let compare a b = 
@@ -40,12 +39,12 @@ module Path = struct
         | i -> i
 end
 
-module PathSet = Set.Make(Path)
+module PathMap = Map.Make(Path)
 module StmtInfoSet = Job.StmtInfoSet
 
 class ['self] t = object (self : 'self)
 
-    val completed_paths = PathSet.empty
+    val completed_paths = PathMap.empty
     val global_coveredBlocks = StmtInfoSet.empty
     val branching_points = []
     val cur_parent = None
@@ -88,10 +87,9 @@ class ['self] t = object (self : 'self)
                     in
                     let path = {
                         Path.path_id = parent#path_id;
-                        Path.branching_points = cur_branching_points;
                         Path.score = score;
                     } in
-                    PathSet.add path completed_paths, global_coveredBlocks
+                    (PathMap.add path cur_branching_points completed_paths, global_coveredBlocks)
             in
             begin match branching_points with
                 | branching_point :: branching_points -> 
@@ -103,11 +101,10 @@ class ['self] t = object (self : 'self)
                             cur_branching_points = [];
                           >}, branching_point)
                 | [] -> (* NEXT mode *)
-                    if PathSet.is_empty completed_paths then None
+                    if PathMap.is_empty completed_paths then None
                     else
-                        let chosen_path = PathSet.max_elt completed_paths in
-                        let completed_paths = PathSet.remove chosen_path completed_paths in (* Jobs are removed from memory at this point *)
-                        let branching_points = chosen_path.Path.branching_points in
+                        let chosen_path, branching_points = PathMap.max_binding completed_paths in
+                        let completed_paths = PathMap.remove chosen_path completed_paths in (* Jobs are removed from memory at this point *)
                         (* assert(branching_points <> []) *)
                         let parent = List.hd branching_points in
                         Some({< completed_paths = completed_paths; 
