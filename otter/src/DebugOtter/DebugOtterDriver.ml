@@ -90,7 +90,7 @@ let printValue value job =
 let main_loop interceptor queue reporter job =
 	let doWork = ref true in
 	let currJob = ref job in
-	let step = fun job -> fst (interceptor job () Statement.step) in
+	let step = fun job -> interceptor job Statement.step in
 	let run = ref false in
 	let next = ref false in
 	let breakpoint = ref 0 in
@@ -232,10 +232,6 @@ let run_basic reporter job =
     run ~interceptor reporter job
 
 
-let foo_interceptor job job_queue interceptor =
-	interceptor job job_queue	
-
-
 (** As with {!run}, using the core symbolic executor, core and libc built-in functions. *)
 let run_with_libc reporter job =
     let interceptor =
@@ -243,7 +239,6 @@ let run_with_libc reporter job =
         >>> Interceptor.function_pointer_interceptor
         >>> BuiltinFunctions.libc_interceptor
         >>> BuiltinFunctions.interceptor
-        >>> foo_interceptor
     in
     run ~interceptor reporter job
 

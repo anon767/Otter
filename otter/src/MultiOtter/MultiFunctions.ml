@@ -316,7 +316,7 @@ let otter_end_atomic job multijob retopt exps errors =
         errors
     )
 
-let interceptor job multijob job_queue interceptor =
+let interceptor job multijob interceptor =
 	try
 		(
 
@@ -335,7 +335,7 @@ let interceptor job multijob job_queue interceptor =
 		(* pass on the job when none of those match *)
 		interceptor
 
-		) job multijob job_queue
+		) job multijob
 	with Failure msg ->
 		if !Executeargs.arg_failfast then failwith msg;
-		(Complete (Abandoned (`Failure msg, job)), (multijob, job_queue))
+		(Complete (Abandoned (`Failure msg, job)), multijob)

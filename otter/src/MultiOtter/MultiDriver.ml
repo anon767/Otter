@@ -23,10 +23,6 @@ let multi_set_output_formatter job multijob =
 	in
 	Output.set_formatter (new Output.labeled label)
 
-let multi_set_output_formatter_interceptor job multijob job_queue interceptor = 
-    multi_set_output_formatter job multijob;
-    interceptor job multijob job_queue
-
 let rec get_job_multijob job_queue = 
 	match job_queue#get with
 		| None -> None (* no multijobs left; quit *)
@@ -89,16 +85,24 @@ let run reporter job =
 	(* start executing *)
 	LegacyDriver.main_loop 
 		get_job_multijob
-		(
-			Interceptor.function_pointer_interceptor @@
-			MultiInterceptor.unpack_job_interceptor @@
-			multi_set_output_formatter_interceptor @@@
-			MultiInterceptor.abandon_io_block_deadlock_interceptor @@@
-			MultiFunctions.interceptor @@@
-			MultiInterceptor.repack_job_interceptor @@@
-			BuiltinFunctions.interceptor @@ 
-			Statement.step
-		)
+		begin fun job (multijob, job_queue) ->
+			(* TODO: Yit: this is temporary, until I refactor multijob into a subclass of job *)
+			multi_set_output_formatter job multijob;
+			let step job multijob =
+				match Interceptor.function_pointer_interceptor job (fun job -> Active job) with
+					| Active job ->
+						let step =
+							MultiInterceptor.abandon_io_block_deadlock_interceptor @@@
+							MultiFunctions.interceptor @@@
+							(fun job multijob -> ((BuiltinFunctions.interceptor @@ Statement.step) job), multijob)
+						in
+						step job multijob
+					| job_state ->
+						(job_state, multijob)
+			in
+			let job, multijob = step job multijob in
+			(job, (multijob, job_queue))
+		end
 		process_result
 		queue
 		reporter

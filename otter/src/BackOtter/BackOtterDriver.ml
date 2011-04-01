@@ -9,7 +9,7 @@ let main_loop entry_fn interceptor queue reporter =
         (* compose the interceptor with the core symbolic executor *)
         let step = fun job -> 
             DataStructures.NamedCounter.incr "step";
-            fst (interceptor job () Statement.step) 
+            interceptor job Statement.step
         in
         let rec run (queue, reporter) =
             checkpoint := (queue, reporter);

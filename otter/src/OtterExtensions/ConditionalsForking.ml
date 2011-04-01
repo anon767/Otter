@@ -6,7 +6,7 @@ open OtterBytes
 open OtterCore
 
 
-let interceptor ?(limit=8) job param k =
+let interceptor ?(limit=8) job k =
     match job#instrList with
         | instr::_  ->
             (* grab all lvals *)
@@ -80,11 +80,11 @@ let interceptor ?(limit=8) job param k =
 
             if EfficientSequence.length jobs = 1 && abandoned = [] then
                 (* if no splits and no errors, then just continue the original job *)
-                k job param
+                k job
             else
                 (* otherwise, fork the job with the new jobs and errors *)
                 let jobs = List.rev_append abandoned (EfficientSequence.map_to_list (fun job -> Job.Active job) jobs) in
-                (Job.Fork jobs, param)
+                Job.Fork jobs
 
         | [] ->
-            k job param
+            k job

@@ -383,20 +383,18 @@ let errors_to_abandoned_list errors =
     end errors
 
 
-let step job job_queue = Profiler.global#call "Statement.step" begin fun () ->
+let step job = Profiler.global#call "Statement.step" begin fun () ->
     try
         let job_state, errors = match job#instrList with
             | [] -> exec_stmt job []
             | _ -> exec_instr job []
         in
         let abandoned_job_states = errors_to_abandoned_list errors in
-        (Fork (job_state::abandoned_job_states), job_queue)
+        Fork (job_state::abandoned_job_states)
 
-    with
-        | Failure msg -> begin
-            Output.set_mode Output.MSG_ERROR;
-            Output.printf "Statement.step: failwith %s@." msg;
-            if !Executeargs.arg_failfast then failwith msg;
-            (Complete (Abandoned (`Failure msg, job)), job_queue)
-        end
+    with Failure msg ->
+        Output.set_mode Output.MSG_ERROR;
+        Output.printf "Statement.step: failwith %s@." msg;
+        if !Executeargs.arg_failfast then failwith msg;
+        Complete (Abandoned (`Failure msg, job))
 end

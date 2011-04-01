@@ -39,7 +39,7 @@ let get_line_targets file =
 
 
 (** An interceptor that tracks targets when some (file, line) in arg_line_targets is encountered. *)
-let line_target_interceptor job job_queue interceptor =
+let line_target_interceptor job interceptor =
     let instruction = Job.get_instruction job in
     let line_targets = get_line_targets job#file in
     begin if ListPlus.mem Instruction.equal instruction line_targets then
@@ -57,7 +57,7 @@ let line_target_interceptor job job_queue interceptor =
             BackOtterTargets.remove_target_instruction instruction
     end;
     (* Bounded jobs will eventually be removed, due to "out bound" (Bidirectional.ml) *)
-    interceptor job job_queue
+    interceptor job
 
 
 (** {1 Command-line options} *)

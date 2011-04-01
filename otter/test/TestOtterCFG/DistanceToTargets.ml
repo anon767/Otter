@@ -45,17 +45,17 @@ let otter_distance_from_instr_mark job retopt exps errors =
     let job = end_function_call job in
     (Job.Active job, errors)
 
-let builtin_interceptor job job_queue interceptor = 
+let builtin_interceptor job interceptor =
 	try
 		(
 		(intercept_function_by_name_internal "__otter_instr_mark"                otter_instr_mark) @@
 		(intercept_function_by_name_internal "__otter_distance_from_instr_mark"  otter_distance_from_instr_mark) @@
 		(* pass on the job when none of those match *)
 		interceptor
-		) job job_queue
+		) job
 	with Failure msg ->
 		if !Executeargs.arg_failfast then failwith msg;
-		(Job.Complete (Job.Abandoned (`Failure msg, job)), job_queue) 
+		Job.Complete (Job.Abandoned (`Failure msg, job))
 
 let expected_return_value expected results =
     let returned_bytes = match results with

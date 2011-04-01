@@ -687,7 +687,7 @@ let otter_print_state job retopt exps errors =
 	 to the size of x is returned. (If you manage to get something like
 	 'x = __SYMBOLIC();' past CIL despite the disagreement in the number
 	 of arguments, this behaves like the n <= 0 case.) *)
-let intercept_symbolic job job_queue interceptor =
+let intercept_symbolic job interceptor =
 	match job#instrList with
 		| Cil.Call(retopt, Cil.Lval(Cil.Var({vname = "__SYMBOLIC"}), Cil.NoOffset), exps, loc)::_ ->
 			let errors = [] in
@@ -724,14 +724,13 @@ let intercept_symbolic job job_queue interceptor =
 					end
 			in
 			if errors = [] then
-				(Job.Active job, job_queue)
+				Job.Active job
 			else
 				let abandoned_job_states = Statement.errors_to_abandoned_list errors in
-				(Job.Fork ((Job.Active job)::abandoned_job_states), job_queue)
+				Job.Fork ((Job.Active job)::abandoned_job_states)
 
 		| _ ->
-			let job_state, job_queue = interceptor job job_queue in
-			(job_state, job_queue)
+			interceptor job
 
 
 let libc_setjmp job retopt exps errors =
@@ -899,7 +898,7 @@ let otter_voice job retopt exps errors =
 let noop job _ _ errors =
     Job.Active (end_function_call job), errors
 
-let interceptor job job_queue interceptor = Profiler.global#call "BuiltinFunctions.interceptor" begin fun () ->
+let interceptor job interceptor = Profiler.global#call "BuiltinFunctions.interceptor" begin fun () ->
     (* Whenever a new builtin function is added, put it in is_builtin also. *)
 	try
 		(
@@ -945,13 +944,13 @@ let interceptor job job_queue interceptor = Profiler.global#call "BuiltinFunctio
 		(* pass on the job when none of those match *)
 		interceptor
 
-		) job job_queue
+		) job
 	with Failure msg ->
 		if !Executeargs.arg_failfast then failwith msg;
-		(Job.Complete (Job.Abandoned (`Failure msg, job)), job_queue) (* TODO (see above) *)
+		Job.Complete (Job.Abandoned (`Failure msg, job)) (* TODO (see above) *)
 end
 
-let libc_interceptor job job_queue interceptor = Profiler.global#call "BuiltinFunctions.libc_interceptor" begin fun () ->
+let libc_interceptor job interceptor = Profiler.global#call "BuiltinFunctions.libc_interceptor" begin fun () ->
 	try
 		(
 		(* assert.h *)
@@ -1130,10 +1129,10 @@ let libc_interceptor job job_queue interceptor = Profiler.global#call "BuiltinFu
 		(* pass on the job when none of those match *)
 		interceptor
 
-		) job job_queue
+		) job
 	with Failure msg ->
 		if !Executeargs.arg_failfast then failwith msg;
-		(Job.Complete (Job.Abandoned (`Failure msg, job)), job_queue)
+		Job.Complete (Job.Abandoned (`Failure msg, job))
 end
 
 let is_builtin = 
