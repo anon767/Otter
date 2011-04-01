@@ -20,16 +20,16 @@ end
 let _ =
     Cilly.run [
         (* Features have to be ordered by dependencies. *)
-        Otter.RunRmtmps.feature;
-        Otter.RunReachingDef.feature;
+        CilUtilities.RunRmtmps.feature;
+        CilUtilities.RunReachingDef.feature;
+        CilUtilities.FindFns.feature;
+        CilUtilities.TraceLines.feature;
+        CilUtilities.CilCallgraph.feature;
         (* Features below are mutually exclusive. *)
         Otter.LinkCheck.feature;
         Otter.OtterMain.feature;
         MultiOtter.MultiDriver.feature;
         BackOtter.BackOtterMain.feature;
         DebugOtter.DebugOtterExecute.feature;
-        CilUtilities.FindFns.feature;
-        CilUtilities.TraceLines.feature;
-        CilUtilities.CilCallgraph.feature;
     ]
 

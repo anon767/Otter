@@ -5,5 +5,7 @@ CilUtilities/CilPtranal
 CilUtilities/FindCil
 CilUtilities/FindFns
 CilUtilities/HoistStringLiterals
+CilUtilities/RunRmtmps
+CilUtilities/RunReachingDef
 CilUtilities/TraceLines
 CilUtilities/WidenBitfields
