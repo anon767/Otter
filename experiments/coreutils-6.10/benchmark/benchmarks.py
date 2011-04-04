@@ -15,16 +15,13 @@ benchmarks = {
             'paste'  : '"@trunk@/experiments/coreutils-6.10/src/paste_comb.c"   -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_PASTE_ASSERT',
             'ptx'    : '"@trunk@/experiments/coreutils-6.10/src/ptx_comb.c"     -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_COPY_UNESCAPED_STRING_BOUNDS_CHECKING',
             'seq'    : '"@trunk@/experiments/coreutils-6.10/src/seq_comb.c"     -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_LONG_DOUBLE_FORMAT_BOUNDS_CHECKING --noUseLogicalOperators',
-           #'mkdir-inj'  : '"@trunk@/experiments/coreutils-6.10/src/mkdir_comb.c"   -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_INJECTED_MAKE_NODE_OP_EQUALS_ASSERT',
-           #'mkfifo-inj' : '"@trunk@/experiments/coreutils-6.10/src/mkfifo_comb.c"  -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_INJECTED_MAKE_NODE_OP_EQUALS_ASSERT',
-           #'mknod-inj'  : '"@trunk@/experiments/coreutils-6.10/src/mknod_comb.c"   -DMAX_ARGC=5 -DMAX_ARG_LENGTHS="{1,10,2,2,2}" -D__OTTER_INJECTED_MAKE_NODE_OP_EQUALS_ASSERT',
             },
         'command' : '"@trunk@/newlib-1.19.0/otter/otter-with-libc" "@trunk@/experiments/coreutils-6.10/benchmark/__otter_main_driver.c" "@trunk@/experiments/coreutils-6.10/benchmark/__otter_poi.c" --mainfn=__otter_main_driver -lm --timeout=1800'
         },
     'synthetic' : {
         'programs' : {
-            'pro_backotter_3' : "@trunk@/experiments/coreutils-6.10/benchmark/synthetic/pro_backotter_3.c",
-            'pro_distance_1'  : "@trunk@/experiments/coreutils-6.10/benchmark/synthetic/pro_distance_1.c",
+            'Figure2' : "@trunk@/experiments/coreutils-6.10/benchmark/synthetic/pro_distance_1.c",
+            'Figure3' : "@trunk@/experiments/coreutils-6.10/benchmark/synthetic/pro_backotter_3.c",
             },
         'command' : 'CILLY_DONT_COMPILE_AFTER_MERGE= @trunk@/otter/otter.pl --merge -nostdinc -nostdlib -Wp,-undef,-D_POSIX_THREADS,-D__GNUC__,-D_GCC_LIMITS_H_ --timeout=120'
         }
