@@ -6,11 +6,9 @@ gcc_with_libc_configure=$(newlib)/gcc-with-libc-configure.py
 
 cilly_with_libc=$(newlib)/cilly-with-libc
 cilly_ar=$(trunk)/cil/bin/cilly --merge --mode=AR
-runotter=$(coreutils)/benchmark/runotter
-runbackotter=$(coreutils)/benchmark/runbackotter
 libcoreutils_functions=$(coreutils)/benchmark/libcoreutils_functions
 
-all: make list runotter runbackotter
+all: make list 
 
 make: $(coreutils)/Makefile
 	$(MAKE) -C $(coreutils) CC="$(cilly_with_libc)" AR="$(cilly_ar)" RANLIB="echo cilly_ranlib: " SUBDIRS="lib src"
@@ -24,28 +22,14 @@ $(coreutils)/Makefile:
 list: make
 	$(trunk)/otter/otter.pl --merge --dofindFns -L$(coreutils)/lib -lcoreutils  > $(libcoreutils_functions)
 
-# Generate a script to run Otter on coreutils' programs.
-runotter: runotter.in
-	cat runotter.in \
-		| sed "s|@OTTER_TRUNK@|\"$(trunk)\"|" \
-		| sed "s|@OTTER_FLAVOR@|--doexecute|" \
-		> $(runotter) && chmod +x $(runotter)
-
-# Generate a script to run BackOtter on coreutils' programs.
-runbackotter: runotter.in
-	cat runotter.in \
-		| sed "s|@OTTER_TRUNK@|\"$(trunk)\"|" \
-		| sed "s|@OTTER_FLAVOR@|--dobackotter|" \
-		> $(runbackotter) && chmod +x $(runbackotter)
-
 clean:
 	$(RM) $(coreutils)/src/*_comb.c
-	$(RM) $(coreutils)/benchmark/{libcoreutils_functions,runotter,runbackotter}
+	$(RM) $(coreutils)/benchmark/{libcoreutils_functions}
 	$(MAKE) -C $(coreutils) clean
 
 distclean:
 	$(RM) $(coreutils)/src/*_comb.c
-	$(RM) $(coreutils)/benchmark/{libcoreutils_functions,runotter,runbackotter}
+	$(RM) $(coreutils)/benchmark/{libcoreutils_functions}
 	$(MAKE) -C $(coreutils) distclean
 
 
