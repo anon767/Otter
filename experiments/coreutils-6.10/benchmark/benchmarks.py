@@ -20,8 +20,9 @@ benchmarks = {
         },
     'synthetic' : {
         'programs' : {
-            'Figure2' : "@trunk@/experiments/coreutils-6.10/benchmark/synthetic/pro_distance_1.c",
-            'Figure3' : "@trunk@/experiments/coreutils-6.10/benchmark/synthetic/pro_backotter_3.c",
+            'ProSDSE'  : "@trunk@/experiments/coreutils-6.10/benchmark/synthetic/pro_distance_1.c",
+            'ProCCBSE' : "@trunk@/experiments/coreutils-6.10/benchmark/synthetic/pro_backotter_3.c",
+            'ProMix'   : "@trunk@/experiments/coreutils-6.10/benchmark/synthetic/pro_mix_1.c",
             },
         'command' : 'CILLY_DONT_COMPILE_AFTER_MERGE= @trunk@/otter/otter.pl --merge -nostdinc -nostdlib -Wp,-undef,-D_POSIX_THREADS,-D__GNUC__,-D_GCC_LIMITS_H_ --timeout=120'
         }
@@ -42,6 +43,6 @@ strategies = {
 }
 
 options = {
-    'std'  : '--doRunRmtmps --initMallocZero --initLocalZero --max-abandoned=1 --convert-non-failure-abandoned-to-truncated --printErrorsOnly --backotter-timing-method=stp-calls',
+    'weighted'  : '--doRunRmtmps --initMallocZero --initLocalZero --max-abandoned=1 --convert-non-failure-abandoned-to-truncated --printErrorsOnly --backotter-timing-method=weighted',
 }
 
