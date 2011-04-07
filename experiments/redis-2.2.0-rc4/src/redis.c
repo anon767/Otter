@@ -1546,10 +1546,7 @@ int main(int argc, char **argv) {
     __otter_fs_mount();
     redis_has_called_listen = __otter_multi_gmalloc(sizeof(int));
     *redis_has_called_listen = 0;
-    /* 'fork()' duplicates file descriptors and then calls otter_multi_fork. We
-       don't want to duplicate fds, because we're modeling creating an entirely
-       separate program, so we call multi_fork directly. */
-    if (__otter_multi_fork()) {
+    if (!fork()) {
         __otter_multi_block_while_condition(*redis_has_called_listen == 0, redis_has_called_listen);
         __otter_fs_init_stdin_out_err();
         client_main();
