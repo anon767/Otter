@@ -29,12 +29,10 @@ let libc_fork job multijob retopt exps errors =
             (job, job, errors)
       | Some cil_lval ->
             (* TODO: make the pid symbolic *)
-            let child_job, child_lval, errors = Expression.lval job cil_lval errors in
-            let child_job = MemOp.state__assign child_job child_lval (Bytes.int_to_bytes multijob.next_pid) in
-
             let job, lval, errors = Expression.lval job cil_lval errors in
-            let job = MemOp.state__assign job lval (Bytes.bytes__zero) in
-            (job, child_job, errors)
+            let child_job = MemOp.state__assign job lval (Bytes.bytes__zero) in
+            let parent_job = MemOp.state__assign job lval (Bytes.int_to_bytes multijob.next_pid) in
+            (parent_job, child_job, errors)
     in
     let multijob = MultiJobUtilities.put_job
         child_job

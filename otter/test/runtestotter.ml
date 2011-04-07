@@ -22,14 +22,14 @@ end
 
 let _ =
     run_test_tt_main begin TestList [
-        TestOtterCore.FunctionCalls.testsuite;
-        TestOtterCore.BoundsChecking.testsuite;
-        TestOtterCore.Coverage.testsuite;
-        TestOtterCore.SymbolicPointers.testsuite;
-        TestOtterJob.FileJobs.testsuite;
-        TestOtterCFG.DistanceToTargets.testsuite;
-        TestOtterPragmaTests.OtterPragmaTestsTests.testsuite;
+        (* TestOtterCore.FunctionCalls.testsuite; *)
+        (* TestOtterCore.BoundsChecking.testsuite; *)
+        (* TestOtterCore.Coverage.testsuite; *)
+        (* TestOtterCore.SymbolicPointers.testsuite; *)
+        (* TestOtterJob.FileJobs.testsuite; *)
+        (* TestOtterCFG.DistanceToTargets.testsuite; *)
+        (* TestOtterPragmaTests.OtterPragmaTestsTests.testsuite; *)
         TestOtterIntegration.IntegrationTests.testsuite;
-        TestOtterSystem.SystemTests.testsuite;
+        (* TestOtterSystem.SystemTests.testsuite; *)
     ] end
 
