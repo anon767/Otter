@@ -166,6 +166,8 @@ proc ::redis::redis_read_reply fd {
 }
 # Shadow the original redis_read_reply
 proc ::redis::redis_read_reply fd {
+    # Try to prevent too many memory leaks. This should limit to one per function.
+    puts "    if (reply) { freeReplyObject(reply); }"
     puts "    redisGetReply(c, &reply);"
 }
 

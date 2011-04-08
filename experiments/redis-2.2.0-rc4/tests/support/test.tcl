@@ -188,26 +188,27 @@ proc test {name code {okpattern undefined}} {
 proc test {name code {okpattern undefined}} {
     puts -nonewline "void "
     puts -nonewline [string map {" " "_" "(" "lparen" ")" "rparen" "-" "dash" "/" "slash" "." "dot" "," "comma" ":" "colon"} $name]
-    puts "(void) {\n    redisReply *reply;"
+    puts "(void) {\n    redisReply *reply = NULL;"
     uplevel $code
     if {$okpattern ne "undefined"} {
         if {[string length $okpattern] > 100} {
             puts "//truncated expected value"
         } else {
             puts "    __ASSERT(reply->type == REDIS_REPLY_ARRAY);"
-            puts "    for (int i = 0; i < reply->elements; i++) {"
-            foreach expected $okpattern {
+            puts "    __ASSERT(reply->elements == [llength $okpattern]);"
+            for {set i 0} {$i < [llength $okpattern]} {incr i} {
+                set expected [lindex $okpattern $i]
                 if {[string equal $expected ""]} {
-                    puts "        expect_nil(reply->element\[i]);"
+                    puts "    expect_nil(reply->element\[$i]);"
                 } elseif {[string is integer $expected]} {
-                    puts "        expect_int(reply->element\[i], $expected);"
+                    puts "    expect_int(reply->element\[$i], $expected);"
                 } elseif {[llength $expected] > 1} {
-                    puts "        expect_array(reply->element\[i], \"$expected\");"
+                    puts "    expect_array(reply->element\[$i], \"$expected\");"
                 } else {
-                    puts "        expect_string(reply->element\[i], \"$expected\");"
+                    puts "    expect_string(reply->element\[$i], \"$expected\");"
                 }
             }
-            puts "    }"
+            puts "    freeReplyObject(reply);"
         }
     }
     puts "}"
