@@ -1,0 +1,170 @@
+echo '#include <otter/otter_builtins.h>
+#include <otter/otter_scheduler.h>
+
+#include <string.h>
+#include <unistd.h>
+#include <stdlib.h>
+
+#include "deps/hiredis/hiredis.h"
+
+redisContext *c;
+
+/* This regular expression code was taken from http://pubs.opengroup.org/onlinepubs/009695399/functions/regcomp.html */
+#include <regex.h>
+
+/*
+ * Match string against the extended regular expression in
+ * pattern, treating errors as no match.
+ *
+ * Return 1 for match, 0 for no match.
+ */
+
+int
+match(const char *string, char *pattern)
+{
+    int    status;
+    regex_t    re;
+
+
+    if (regcomp(&re, pattern, REG_EXTENDED|REG_NOSUB) != 0) {
+        return(0);      /* Report error. */
+    }
+    status = regexec(&re, string, (size_t) 0, NULL, 0);
+    regfree(&re);
+    if (status != 0) {
+        return(0);      /* Report error. */
+    }
+    return(1);
+}
+
+void assert_error(redisReply *reply, const char *pattern) {
+     __ASSERT(reply->type == REDIS_REPLY_ERROR && match(reply->str, pattern));
+}
+
+void assert_encoding(const char *expected_encoding, const char *key) {
+  redisReply *reply = redisCommand(c, "DEBUG OBJECT %s", key);
+  __ASSERT(reply->type == REDIS_REPLY_STATUS);
+  const char *encoding = strstr(reply->str, "encoding");
+  __ASSERT(encoding);
+  encoding += sizeof("encoding"); // Do not subtract 1 for the null byte, because we also want to skip past the following colon
+  __ASSERT(strncmp(encoding, expected_encoding, strlen(expected_encoding)) == 0);
+  freeReplyObject(reply);
+}
+
+long long get_int(redisReply *reply) {
+    __ASSERT(reply->type == REDIS_REPLY_INTEGER);
+    long long result = reply->integer;
+    return result;
+}
+
+/* The tcl tests do not differentiate nil and the empty list or between singleton lists and single values */
+
+void expect_nil(redisReply *reply) {
+    __ASSERT(reply->type == REDIS_REPLY_NIL ||
+             reply->type == REDIS_REPLY_ARRAY && reply->elements == 0);
+}
+
+void expect_int(redisReply *reply, long long expected) {
+    __ASSERT(reply->type == REDIS_REPLY_INTEGER && expected == reply->integer ||
+             reply->type == REDIS_REPLY_ARRAY && reply->elements == 1 && reply->element[0]->type == REDIS_REPLY_INTEGER && expected == reply->element[0]->integer);
+}
+
+int streq(const char *a, const char *b) {
+    return strcmp(a, b) == 0;
+}
+
+void expect_string(redisReply *reply, const char *expected) {
+    __ASSERT(reply->type == REDIS_REPLY_STRING && streq(expected, reply->str) ||
+             reply->type == REDIS_REPLY_ARRAY && reply->elements == 1 && reply->element[0]->type == REDIS_REPLY_STRING && streq(expected, reply->element[0]->str));
+}
+
+#include "src/sds.h"
+
+void expect_array(redisReply *reply, const char *expected) {
+    __ASSERT(reply->type == REDIS_REPLY_ARRAY);
+    int num_expected;
+    sds *expected_values = sdssplitargs(expected, &num_expected);
+    __ASSERT(reply->elements == num_expected);
+    for (int i = 0; i < num_expected; i++) {
+        if (isdigit(expected_values[i][0])) {
+            expect_int(reply->element[i], strtoll(expected_values[i]));
+        } else {
+            expect_string(reply->element[i], expected_values[i]);
+        }
+        sdsfree(expected_values[i]);
+    }
+    /* sds.c says this should really be zfree, but since I redefine zfree to
+       free with a macro somewhere (but not in run-client), I am just using free */
+    free(expected_values);
+}
+
+/* Concatenate a bunch of strings separated by sep. strings must be an array
+   of strings, and its final element must be NULL, e.g., {"a", "", "b", 0}. */
+sds concat(const char *sep, const char *strings[]) {
+    if (strings[0] == NULL) {
+        return sdsempty();
+    }
+    sds result = sdsnew(strings[0]);
+    strings++;
+    while (*strings) {
+        result = sdscatprintf(result, "%s%s", sep, *strings);
+        strings++;
+    }
+    return result;
+}
+
+/* entries is a space-separated list of strings to put into the list */
+void create_list(const char *key, const char *entries, const char *encoding) {
+    redisCommand(c, "del %s", key);
+    sds command;
+    char *entry = strtok(entries, " ");
+    while (entry) {
+        command = sdscatprintf(sdsempty(), "rpush %s %s", key, entry);
+        redisCommand(c, command);
+        sdsfree(command);
+        entry = strtok(NULL, " ");
+    }
+    assert_encoding(encoding, key);
+}
+
+void create_ziplist(const char *key, const char *entries) {
+    create_list(key, entries, "ziplist");
+}
+
+void create_linkedlist(const char *key, const char *entries) {
+    create_list(key, entries, "linkedlist");
+}
+'
+
+tmpfile=`mktemp temp.XXXX`
+FILE=${1#tests/}
+FILE=${FILE%.tcl}
+tclsh8.5 tests/test_helper.tcl --tags "" --file $FILE > $tmpfile
+
+sed -n '/^void/,/^}$/p' $tmpfile
+
+echo '
+void run_in_child_process(void (*f)(void)) {
+  if (!fork()) {
+    f();
+    exit(0);
+  }
+  __otter_multi_time_wait(10000000);
+}
+
+void client_main()
+{
+  c = redisConnect("127.0.0.1", 6379);
+  if (c->err) {
+    __EVALSTR("Connection error:", 30);
+    __EVALSTR(c->errstr, 100);
+    __ASSERT(0);
+  }'
+
+sed -n 's/^void \([a-zA-Z0-9_]*\).*/  run_in_child_process(\1);/p' $tmpfile
+
+echo '  redisReply *reply = redisCommand(c, "QUIT");
+  __ASSERT(strcmp(reply->str, "OK") == 0);
+}'
+
+rm $tmpfile

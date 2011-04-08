@@ -96,6 +96,7 @@ proc ping_server {host port} {
 
 # doesn't really belong here, but highly coupled to code in start_server
 proc tags {tags code} {
+    if {[string match *slow* $tags]} { return }
     set ::tags [concat $::tags $tags]
     uplevel 1 $code
     set ::tags [lrange $::tags 0 end-[llength $tags]]

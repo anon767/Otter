@@ -1,1 +1,1 @@
-./run-client grammar_based_client.c redis-grammar.c -DPORT_NUMBER=6379 "$@"
+./run-client grammar_based_client.c redis-grammar.c "$@"

@@ -60,13 +60,14 @@ proc ::redis::__dispatch__ {id method args} {
         set args [lrange $args 0 end-1]
     }
     if {[info command ::redis::__method__$method] eq {}} {
-        set cmd "*[expr {[llength $args]+1}]\r\n"
-        append cmd "$[string length $method]\r\n$method\r\n"
-        foreach a $args {
-            append cmd "$[string length $a]\r\n$a\r\n"
-        }
-        ::redis::redis_write $fd $cmd
-        flush $fd
+        puts [string map {"\\" "\\\\"} "    redisAppendCommand(c, \"$method [join $args]\");"]
+#        set cmd "*[expr {[llength $args]+1}]\r\n"
+#        append cmd "$[string length $method]\r\n$method\r\n"
+#        foreach a $args {
+#            append cmd "$[string length $a]\r\n$a\r\n"
+#        }
+#        ::redis::redis_write $fd $cmd
+#        flush $fd
 
         if {!$deferred} {
             if {$blocking} {
@@ -162,6 +163,10 @@ proc ::redis::redis_read_reply fd {
         * {redis_multi_bulk_read $fd}
         default {return -code error "Bad protocol, $type as reply type byte"}
     }
+}
+# Shadow the original redis_read_reply
+proc ::redis::redis_read_reply fd {
+    puts "    redisGetReply(c, &reply);"
 }
 
 proc ::redis::redis_reset_state id {

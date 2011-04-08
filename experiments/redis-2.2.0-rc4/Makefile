@@ -20,3 +20,6 @@ src/help.h:
 	@./utils/generate-command-help.rb > $@
 
 dummy:
+
+otter:
+	$(MAKE) -f otter.makefile

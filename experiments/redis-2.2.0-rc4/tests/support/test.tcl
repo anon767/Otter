@@ -183,3 +183,53 @@ proc test {name code {okpattern undefined}} {
         }
     }
 }
+
+# Shadow a bunch of helper functions
+proc test {name code {okpattern undefined}} {
+    puts -nonewline "void "
+    puts -nonewline [string map {" " "_" "(" "lparen" ")" "rparen" "-" "dash" "/" "slash" "." "dot" "," "comma" ":" "colon"} $name]
+    puts "(void) {\n    redisReply *reply;"
+    uplevel $code
+    if {$okpattern ne "undefined"} {
+        if {[string length $okpattern] > 100} {
+            puts "//truncated expected value"
+        } else {
+            puts "    __ASSERT(reply->type == REDIS_REPLY_ARRAY);"
+            puts "    for (int i = 0; i < reply->elements; i++) {"
+            foreach expected $okpattern {
+                if {[string equal $expected ""]} {
+                    puts "        expect_nil(reply->element\[i]);"
+                } elseif {[string is integer $expected]} {
+                    puts "        expect_int(reply->element\[i], $expected);"
+                } elseif {[llength $expected] > 1} {
+                    puts "        expect_array(reply->element\[i], \"$expected\");"
+                } else {
+                    puts "        expect_string(reply->element\[i], \"$expected\");"
+                }
+            }
+            puts "    }"
+        }
+    }
+    puts "}"
+}
+
+proc assert_equal {expected value} {
+    if {[string equal $expected ""]} {
+        puts "    expect_nil(reply);"
+    } elseif {[string is integer $expected]} {
+        puts "    expect_int(reply, $expected);"
+    } elseif {[llength $expected] > 1} {
+        puts "    expect_array(reply, \"$expected\");"
+    } else {
+        puts "    expect_string(reply, \"$expected\");"
+    }
+}
+
+proc assert_error {pattern code} {
+    uplevel 1 $code
+    puts "    assert_error(reply, \"$pattern\");"
+}
+
+proc assert_encoding {enc key} {
+    puts "    assert_encoding(\"$enc\", \"$key\");"
+}

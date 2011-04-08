@@ -1,1 +1,1 @@
-./run-client symbolic_client.c -DPORT_NUMBER=6379 "$@"
+./run-client symbolic_client.c "$@"

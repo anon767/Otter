@@ -193,8 +193,8 @@
 /* Zip structure related defaults */
 #define REDIS_HASH_MAX_ZIPMAP_ENTRIES 512
 #define REDIS_HASH_MAX_ZIPMAP_VALUE 64
-#define REDIS_LIST_MAX_ZIPLIST_ENTRIES 512
-#define REDIS_LIST_MAX_ZIPLIST_VALUE 64
+#define REDIS_LIST_MAX_ZIPLIST_ENTRIES 256 // 512 // Changed for Otter, to agree with redis's list tests.
+#define REDIS_LIST_MAX_ZIPLIST_VALUE 16 // 64 // Changed for Otter, to agree with redis's list tests.
 #define REDIS_SET_MAX_INTSET_ENTRIES 512
 
 /* Sets operations codes */

@@ -549,7 +549,7 @@ start_server {
     test {RPOPLPUSH against non existing src key} {
         r del srclist dstlist
         assert_equal {} [r rpoplpush srclist dstlist]
-    } {}
+    }
 
     foreach {type large} [array get largevalue] {
         test "Basic LPOP/RPOP - $type" {
@@ -574,18 +574,33 @@ start_server {
     foreach {type num} {ziplist 250 linkedlist 500} {
         test "Mass RPOP/LPOP - $type" {
             r del mylist
-            set sum1 0
-            for {set i 0} {$i < $num} {incr i} {
-                r lpush mylist $i
-                incr sum1 $i
-            }
+#            set sum1 0
+#            for {set i 0} {$i < $num} {incr i} {
+#                r lpush mylist $i
+#                incr sum1 $i
+#            }
+            puts "    int sum1 = 0, sum2 = 0;"
+            puts "    for (int i = 0; i < $num; i++) {"
+            puts "        reply = redisCommand(c, \"lpush mylist i\");"
+            puts "        freeReplyObject(reply);"
+            puts "        sum1 += i;"
+            puts "    }"
             assert_encoding $type mylist
-            set sum2 0
-            for {set i 0} {$i < [expr $num/2]} {incr i} {
-                incr sum2 [r lpop mylist]
-                incr sum2 [r rpop mylist]
-            }
-            assert_equal $sum1 $sum2
+#            set sum2 0
+#            for {set i 0} {$i < [expr $num/2]} {incr i} {
+#                incr sum2 [r lpop mylist]
+#                incr sum2 [r rpop mylist]
+#            }
+            puts "    for (int i = 0; i < [expr $num/2]; i++) {"
+            puts "        reply = redisCommand(c, \"lpop mylist\");"
+            puts "        sum2 += get_int(reply);"
+            puts "        freeReplyObject(reply);"
+            puts "        reply = redisCommand(c, \"lpop mylist\");"
+            puts "        sum2 += get_int(reply);"
+            puts "        freeReplyObject(reply);"
+            puts "    }"
+#            assert_equal $sum1 $sum2
+            puts "    __ASSERT(sum1 == sum2);"
         }
     }
 
@@ -671,7 +686,7 @@ start_server {
                     r ltrim mylist $min $max
                     assert_equal $mylist [r lrange mylist 0 -1]
 
-                    for {set j [r llen mylist]} {$j < $startlen} {incr j} {
+                    for {set j [llength $mylist]} {$j < $startlen} {incr j} {
                         set str [randomInt 9223372036854775807]
                         r rpush mylist $str
                         lappend mylist $str
