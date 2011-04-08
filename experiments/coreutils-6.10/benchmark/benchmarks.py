@@ -46,3 +46,11 @@ options = {
     'weighted'  : '--doRunRmtmps --initMallocZero --initLocalZero --max-abandoned=1 --convert-non-failure-abandoned-to-truncated --printErrorsOnly --backotter-timing-method=weighted',
 }
 
+def make_test(command, program, strategy, option, seed):
+    test_file = '@dest@/tests/%d/%s-%s-%s.sh' % (seed, program[0], strategy[0], option[0])
+    test_out  = '"@dest@/results/%d/%s-%s-%s.log"' % (seed, program[0], strategy[0], option[0])
+    test_cmd  = 'mkdir -p $(dirname %s)' % test_out + "\n"
+    test_cmd += '%s %s %s %s --random-seed=%d 2>&1 | timelines > %s' % (command, strategy[1], option[1], program[1], seed, test_out)
+    # TODO: output time to an entry in csv
+    return (test_file, test_cmd)
+
