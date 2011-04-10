@@ -47,7 +47,8 @@ let options =
     SymbolicPointers.options @
     TrackingFunctions.options @
     Bytes.options @
-    Output.options
+    Output.options @
+    InitBytes.options
 
 let feature : featureDescr = {
 	fd_name = "otter";
