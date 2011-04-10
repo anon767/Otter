@@ -67,11 +67,7 @@ let otter_gmalloc job multijob retopt exps errors =
 		else
 			1 (* currently bytearray have unbounded length *)
 	in
-	let bytes =
-	  if !Executeargs.arg_init_malloc_zero
-	  then Bytes.bytes__make size (* initially zero, as though malloc were calloc *)
-	  else Bytes.bytes__make_default size Bytes.byte__undef (* initially the symbolic 'undef' byte *)
-	in
+	let bytes = bytes__make_default size (!InitBytes.init_malloc ()) in
 	let job, block, bytes = otter_gmalloc_size job size bytes (Job.get_loc job) in
 	let job, errors = BuiltinFunctions.set_return_value job retopt bytes errors in
 	let job = BuiltinFunctions.end_function_call job in

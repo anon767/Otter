@@ -9,6 +9,8 @@ OtterCore/Executeargs
 OtterCore/Expression
 OtterCore/ProgramPoints
 OtterCore/Interceptor
+OtterCore/Info
+OtterCore/InitBytes
 OtterCore/Job
 OtterCore/Log
 OtterCore/MemOp
@@ -21,4 +23,3 @@ OtterCore/Statement
 OtterCore/SymbolicPointers
 OtterCore/Target
 OtterCore/TrackingFunctions
-OtterCore/Info

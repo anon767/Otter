@@ -13,12 +13,10 @@
             [main()]. Ignore if [#pragma entry_function(...)] is given and not "main". This corresponds to Otter's
             [--arg] command-line option. E.g., [#pragma command_line("foo", "bar")].
         - [#pragma time_limit(<time in seconds>)] specifies the time limit for the symbolic execution to complete.
-        - [#pragma init_malloc_zero] specifies that memory allocated by malloc should be initialized to zeros. Conversely, {e not
-            providing} this directive specifies that memory allocated by malloc should be initialized to undefined values. This corresponds to Otter's
-            [--initMallocZero] command-line option.
-        - [#pragma init_local_zero] specifies that local variables should be initialized to zeros. Conversely, {e not
-            providing} this directive specifies that local variable should be initialized to undefined values. This corresponds to Otter's
-            [--initLocalZero] command-line option.
+        - [#pragma init_malloc] specifies how memory allocated by malloc should be initialized. This corresponds to Otter's
+            [--init-malloc] command-line option.
+        - [#pragma init_local] specifies how local variables should be initialized. This corresponds to Otter's
+            [--init-local] command-line option.
         - [#pragma no_bounds_checking] specifies that bounds checking should be disabled. Conversely, {e not
             providing} this directive specifies that bounds checking should be enabled. This corresponds to Otter's
             [--noboundsChecking] command-line option.
@@ -88,8 +86,8 @@ module Make (Errors : Errors) = struct
         command_line : string list;     (** The command line to use to run the test (corresponds to [--arg]). *)
         time_limit : int option;        (** The time limit for symbolic execution. *)
         no_bounds_checking : bool;      (** Disable bounds checking (corresponds to [--noboundsChecking]). *)
-        init_malloc_zero : bool;        (** Initialize mallocs to zeros (corresponds to [--initMallocZero]). *)
-        init_local_zero : bool;         (** Initialize locals to zeros (corresponds to [--initLocalZero]). *)
+        init_malloc : string;           (** Method to initialize mallocs (corresponds to [--init-malloc]). *)
+        init_local : string;            (** Method to initialize locals (corresponds to [--init-local]). *)
         max_steps : int option;         (** Bound the number of steps in the execution tree to explore (corresponds to [--max-steps]). *)
         max_paths : int option;         (** Bound the number of paths to execute to completion (corresponds to [--max-paths]). *)
         max_abandoned : int option;     (** Bound the number of abandoned paths to return (corresponds to [--max-abandoned]). *)
@@ -107,8 +105,8 @@ module Make (Errors : Errors) = struct
         command_line = [];
         time_limit = None;
         no_bounds_checking = false;
-        init_malloc_zero = false;
-        init_local_zero = false;
+        init_malloc = "undefined";
+        init_local = "undefined";
         max_steps = None;
         max_paths = None;
         max_abandoned = None;
@@ -329,15 +327,15 @@ module Make (Errors : Errors) = struct
                     | "no_bounds_checking", _ ->
                         assert_loc_failure loc "Invalid no_bounds_checking (should have no arguments)."
 
-                    | "init_malloc_zero", [] ->
-                        ({ flags with init_malloc_zero = true }, test)
-                    | "init_malloc_zero", _ ->
-                        assert_loc_failure loc "Invalid init_malloc_zero (should have no arguments)."
+                    | "init_malloc", [Cil.AStr init_method] ->
+                        ({ flags with init_malloc = init_method }, test)
+                    | "init_malloc", _ ->
+                        assert_loc_failure loc "Invalid init_malloc (should be a string)."
 
-                    | "init_local_zero", [] ->
-                        ({ flags with init_local_zero = true }, test)
-                    | "init_local_zero", _ ->
-                        assert_loc_failure loc "Invalid init_local_zero (should have no arguments)."
+                    | "init_local", [Cil.AStr init_method] ->
+                        ({ flags with init_local = init_method}, test)
+                    | "init_local", _ ->
+                        assert_loc_failure loc "Invalid init_local (should be a string)."
 
                     | "max_steps", [ Cil.AInt max_steps ] ->
                         if flags.max_steps <> None then assert_loc_failure loc "max_steps already defined.";
@@ -478,10 +476,10 @@ module Make (Errors : Errors) = struct
         Executeargs.arg_bounds_checking := not flags.no_bounds_checking;
 
         (* initialize malloc memory to zeros if required *)
-        Executeargs.arg_init_malloc_zero := flags.init_malloc_zero;
+        InitBytes.init_malloc := InitBytes.get_init_method flags.init_malloc;
 
         (* initialize locals to zeros if required *)
-        Executeargs.arg_init_local_zero := flags.init_local_zero;
+        InitBytes.init_local := InitBytes.get_init_method flags.init_local;
 
         let file = Frontc.parse path () in
 

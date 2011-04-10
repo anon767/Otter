@@ -21,21 +21,21 @@ let frame__varinfo_to_lval_block frame varinfo =
 	VarinfoMap.find varinfo frame
 
 
-let frame__add_varinfo frame block_to_bytes varinfo zero block_type = Profiler.global#call "MemOp.frame__add_varinfo" begin fun () ->
+let frame__add_varinfo frame block_to_bytes varinfo init_method block_type = Profiler.global#call "MemOp.frame__add_varinfo" begin fun () ->
     if VarinfoMap.mem varinfo frame then FormatPlus.invalid_arg "MemOp.frame__add_varinfo: %a already exist" CilPrinter.varinfo varinfo;
     let size = (Cil.bitsSizeOf varinfo.vtype) / 8 in
     let size = if size <= 0 then 1 else size in
     let block = block__make (FormatPlus.as_string CilPrinter.varinfo varinfo) (int_to_bytes size) block_type in
-    let bytes = bytes__make_default size (if zero then byte__zero else byte__undef) in
+    let bytes = bytes__make_default size (init_method ()) in
     let frame = VarinfoMap.add varinfo (Deferred.Immediate (conditional__lval_block (block, bytes__zero))) frame in
     let block_to_bytes = MemoryBlockMap.add block (Deferred.Immediate bytes) block_to_bytes in
     (frame, block_to_bytes, block)
 end
 
 
-let frame__add_varinfos frame block_to_bytes varinfos zero block_type = 
+let frame__add_varinfos frame block_to_bytes varinfos init_method block_type = 
     List.fold_left begin fun (frame, block_to_bytes) varinfo ->
-        let frame, block_to_bytes, _ = frame__add_varinfo frame block_to_bytes varinfo zero block_type in
+        let frame, block_to_bytes, _ = frame__add_varinfo frame block_to_bytes varinfo init_method block_type in
         (frame, block_to_bytes)
     end (frame, block_to_bytes) varinfos
 
@@ -120,7 +120,7 @@ let state__has_block job block =
 let state__add_global job varinfo =
     if not varinfo.Cil.vglob then FormatPlus.invalid_arg "MemOp.state__add_global: %a is not a global variable" CilPrinter.varinfo varinfo;
     let block_type = if CilData.CilVar.is_const varinfo then Block_type_Const else Block_type_Global in
-    let global, block_to_bytes, block = frame__add_varinfo job#state.global job#state.block_to_bytes varinfo true block_type in
+    let global, block_to_bytes, block = frame__add_varinfo job#state.global job#state.block_to_bytes varinfo !InitBytes.init_global block_type in
     let job = job#with_state { job#state with global = global; block_to_bytes = block_to_bytes } in
     (job, block)
 
@@ -238,8 +238,8 @@ end
 let state__start_fcall job callContext fundec argvs = Profiler.global#call "MemOp.state__start_fcall" begin fun () -> 
     (* set up the new stack frame *)
 	let block_to_bytes = job#state.block_to_bytes in
-	let formal, block_to_bytes = frame__add_varinfos VarinfoMap.empty block_to_bytes fundec.Cil.sformals !Executeargs.arg_init_local_zero Block_type_Local in
-	let local, block_to_bytes = frame__add_varinfos VarinfoMap.empty block_to_bytes fundec.Cil.slocals !Executeargs.arg_init_local_zero Block_type_Local in
+	let formal, block_to_bytes = frame__add_varinfos VarinfoMap.empty block_to_bytes fundec.Cil.sformals !InitBytes.init_local Block_type_Local in
+	let local, block_to_bytes = frame__add_varinfos VarinfoMap.empty block_to_bytes fundec.Cil.slocals !InitBytes.init_local Block_type_Local in
 	let job = job#with_state { job#state with
 		formals = formal::job#state.formals;
 		locals = local::job#state.locals;
@@ -457,3 +457,4 @@ let rec eval pc bytes =
       (* Consult STP *)
       | _ ->
             nontrivial()
+

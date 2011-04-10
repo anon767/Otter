@@ -326,12 +326,7 @@ let libc___builtin_alloca job retopt exps errors =
 				(MemOp.state__trace job)
 			in
 			let size = bytes_to_int_auto size in
-			let bytes =
-				if !Executeargs.arg_init_malloc_zero then
-					bytes__make size (* initially zero, as though malloc were calloc *)
-				else
-					bytes__make_default size byte__undef (* initially the symbolic 'undef' byte *)
-			in
+			let bytes = bytes__make_default size (!InitBytes.init_malloc ()) in
 			(name, bytes)
 		else
 			let name = FormatPlus.sprintf "%s(%a)#%d/%a%s"
@@ -367,12 +362,7 @@ let libc_malloc job retopt exps errors =
 				(MemOp.state__trace job)
 			in
 			let size = bytes_to_int_auto size in
-			let bytes =
-				if !Executeargs.arg_init_malloc_zero then
-					bytes__make size (* initially zero, as though malloc were calloc *)
-				else
-					bytes__make_default size byte__undef (* initially the symbolic 'undef' byte *)
-			in
+			let bytes = bytes__make_default size (!InitBytes.init_malloc ()) in
 			(name, bytes)
 		else
 			let name = FormatPlus.sprintf "%s(%a)#%d/%a%s"
