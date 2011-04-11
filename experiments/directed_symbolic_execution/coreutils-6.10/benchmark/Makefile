@@ -1,13 +1,13 @@
-trunk=$(PWD)/../../..
+trunk=$(PWD)/../../../..
 coreutils=$(PWD)/..
-build=$(PWD)/otter
+build=$(PWD)/build.cil
 newlib=$(trunk)/newlib-1.19.0/otter
 
 gcc_with_libc_configure=$(newlib)/gcc-with-libc-configure.py
 
 cilly_with_libc=$(newlib)/cilly-with-libc
 cilly_ar=$(trunk)/cil/bin/cilly --merge --mode=AR
-libcoreutils_functions=$(PWD)/libcoreutils_functions
+libcoreutils_functions=$(build)/libcoreutils_functions
 
 all: make list 
 
@@ -27,13 +27,11 @@ list: make
 
 clean:
 	$(RM) $(build)/src/*_comb.c
-	$(RM) $(build)/benchmark/{libcoreutils_functions}
+	$(RM) $(libcoreutils_functions)
 	$(MAKE) -C $(build) clean
 
 distclean:
-	$(RM) $(build)/src/*_comb.c
-	$(RM) $(build)/benchmark/{libcoreutils_functions}
-	$(MAKE) -C $(build) distclean
+	$(RM) -r $(build)
 
 
 # A ultimate target that builds everything (otter, newlib and coreutils)
