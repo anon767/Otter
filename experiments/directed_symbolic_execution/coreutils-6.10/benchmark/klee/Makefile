@@ -1,46 +1,41 @@
 klee_gcc = $$(which klee-gcc)
 
-coreutils_src_dir := $(PWD)/../../src
-coreutils_lib_dir := $(PWD)/../../lib
-coreutils_files := $(coreutils_src_dir)/*.c $(coreutils_src_dir)/*.h $(coreutils_lib_dir)/*.c $(coreutils_lib_dir)/*.h
+coreutils := $(PWD)/../..
+coreutils_src := $(coreutils)/src
+coreutils_lib := $(coreutils)/lib
+coreutils_files := $(coreutils_src)/*.c $(coreutils_src)/*.h $(coreutils_lib)/*.c $(coreutils_lib)/*.h
 
-llvm_dir := $(PWD)/obj-llvm
-gcov_dir := $(PWD)/obj-gcov
+build_llvm := $(PWD)/build.llvm
+build_gcov := $(PWD)/build.gcov
 
 otter_poi_src := $(PWD)/../__otter_poi.c
 
-all: llvm-tests
+all: llvm-make
 
 # llvm
 
-$(llvm_dir)/__otter_poi.o: $(otter_poi_src)
-	cd $(llvm_dir) && $(klee_gcc) $(otter_poi_src) -c
+$(build_llvm)/__otter_poi.o: $(otter_poi_src)
+	cd $(build_llvm) && $(klee_gcc) $(otter_poi_src) -c
 
-llvm-configure: ../../configure
-	cd $(llvm_dir) && ../../../configure --disable-nls CFLAGS="-g"
+$(build_llvm)/Makefile: 
+	mkdir -p $(build_llvm)
+	cd $(build_llvm) && $(coreutils)/configure --disable-nls CFLAGS="-g"
 
-$(llvm_dir)/Makefile: llvm-configure
+llvm-make: $(build_llvm)/Makefile $(coreutils_files) $(build_llvm)/__otter_poi.o
+	$(MAKE) -C $(build_llvm) CC="$(klee_gcc) $(build_llvm)/__otter_poi.o" SUBDIRS="lib src"
 
-llvm-make: $(llvm_dir)/Makefile $(coreutils_files) $(llvm_dir)/__otter_poi.o
-	cd $(llvm_dir) && make CC="$(klee_gcc) $(llvm_dir)/__otter_poi.o" SUBDIRS="lib src"
-
-$(llvm_dir)/src/*.bc: llvm-make
-
-llvm-tests: $(llvm_dir)/src/*.bc
-	setup_klee_llvm_tests.sh $(llvm_dir)/src $(llvm_dir)/benchmark $(PWD)/ktest-monitor.sh
 
 # gcov
 
 gcov_cflags = -g -fprofile-arcs -ftest-coverage
 
-$(gcov_dir)/__otter_poi.o: $(otter_poi_src)
-	cd $(gcov_dir) && gcc $(otter_poi_src) -c $(gcov_cflags)
+$(build_gcov)/__otter_poi.o: $(otter_poi_src)
+	cd $(build_gcov) && gcc $(otter_poi_src) -c $(gcov_cflags)
 
-gcov-configure: ../../configure
-	cd $(gcov_dir) && ../../../configure --disable-nls CFLAGS="$(gcov_cflags)"
+$(build_gcov)/Makefile: 
+	mkdir -p $(build_gcov)
+	cd $(build_gcov) && $(coreutils)/configure --disable-nls CFLAGS="$(gcov_cflags)"
 
-$(gcov_dir)/Makefile: gcov-configure
-
-gcov-make: $(gcov_dir)/Makefile $(coreutils_files) $(gcov_dir)/__otter_poi.o
-	cd $(gcov_dir) && make CC="gcc $(gcov_dir)/__otter_poi.o" SUBDIRS="lib src"
+gcov-make: $(build_gcov)/Makefile $(coreutils_files) $(build_gcov)/__otter_poi.o
+	$(MAKE) -C $(build_gcov) CC="gcc $(build_gcov)/__otter_poi.o" SUBDIRS="lib src"
 
