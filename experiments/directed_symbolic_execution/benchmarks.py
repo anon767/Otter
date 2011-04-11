@@ -9,20 +9,20 @@
 benchmarks = {
     'coreutils' : {
         'programs' : {
-            'mkdir'  : '"@trunk@/experiments/coreutils-6.10/src/mkdir_comb.c"   -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_QUOTEARG_BUFFER_RESTYLED_ASSERT',
-            'mkfifo' : '"@trunk@/experiments/coreutils-6.10/src/mkfifo_comb.c"  -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_QUOTEARG_BUFFER_RESTYLED_ASSERT',
-            'mknod'  : '"@trunk@/experiments/coreutils-6.10/src/mknod_comb.c"   -DMAX_ARGC=5 -DMAX_ARG_LENGTHS="{1,10,2,2,2}" -D__OTTER_QUOTEARG_BUFFER_RESTYLED_ASSERT',
-            'paste'  : '"@trunk@/experiments/coreutils-6.10/src/paste_comb.c"   -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_PASTE_ASSERT',
-            'ptx'    : '"@trunk@/experiments/coreutils-6.10/src/ptx_comb.c"     -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_COPY_UNESCAPED_STRING_BOUNDS_CHECKING',
-            'seq'    : '"@trunk@/experiments/coreutils-6.10/src/seq_comb.c"     -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_LONG_DOUBLE_FORMAT_BOUNDS_CHECKING --noUseLogicalOperators',
+            'mkdir'  : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/mkdir_comb.c"   -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_QUOTEARG_BUFFER_RESTYLED_ASSERT',
+            'mkfifo' : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/mkfifo_comb.c"  -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_QUOTEARG_BUFFER_RESTYLED_ASSERT',
+            'mknod'  : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/mknod_comb.c"   -DMAX_ARGC=5 -DMAX_ARG_LENGTHS="{1,10,2,2,2}" -D__OTTER_QUOTEARG_BUFFER_RESTYLED_ASSERT',
+            'paste'  : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/paste_comb.c"   -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_PASTE_ASSERT',
+            'ptx'    : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/ptx_comb.c"     -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_COPY_UNESCAPED_STRING_BOUNDS_CHECKING',
+            'seq'    : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/seq_comb.c"     -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_LONG_DOUBLE_FORMAT_BOUNDS_CHECKING --noUseLogicalOperators',
             },
-        'command' : '"@trunk@/newlib-1.19.0/otter/otter-with-libc" "@trunk@/experiments/coreutils-6.10/benchmark/__otter_main_driver.c" "@trunk@/experiments/coreutils-6.10/benchmark/__otter_poi.c" --mainfn=__otter_main_driver -lm --timeout=1800'
+        'command' : '"@trunk@/newlib-1.19.0/otter/otter-with-libc" "@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/__otter_main_driver.c" "@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/__otter_poi.c" --mainfn=__otter_main_driver -lm --timeout=1800'
         },
     'synthetic' : {
         'programs' : {
-            'ProSDSE'  : "@trunk@/experiments/coreutils-6.10/benchmark/synthetic/pro_distance_1.c",
-            'ProCCBSE' : "@trunk@/experiments/coreutils-6.10/benchmark/synthetic/pro_backotter_3.c",
-            'ProMix'   : "@trunk@/experiments/coreutils-6.10/benchmark/synthetic/pro_mix_1.c",
+            'ProSDSE'  : "@trunk@/experiments/directed_symbolic_execution/synthetic/pro_distance_1.c",
+            'ProCCBSE' : "@trunk@/experiments/directed_symbolic_execution/synthetic/pro_backotter_3.c",
+            'ProMix'   : "@trunk@/experiments/directed_symbolic_execution/synthetic/pro_mix_1.c",
             },
         'command' : 'CILLY_DONT_COMPILE_AFTER_MERGE= @trunk@/otter/otter.pl --merge -nostdinc -nostdlib -Wp,-undef,-D_POSIX_THREADS,-D__GNUC__,-D_GCC_LIMITS_H_ --timeout=120'
         }
