@@ -71,7 +71,7 @@ let function_pointer_interceptor job interceptor =
                         let job = MemOp.state__add_path_condition job funptr_condition true in
                         let job = job#with_instrList (new_instrList varinfo) in
                         (Job.Active job)::job_states
-                    end varinfos (Statement.errors_to_abandoned_list errors) in
+                    end varinfos error_states in
                     Output.printf "@]@.";
                     job_states
             in
