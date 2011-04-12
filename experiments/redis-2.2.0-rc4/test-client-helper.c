@@ -72,7 +72,7 @@ int streq(const char *a, const char *b) {
 }
 
 int is_expected_value(redisReply *reply, const char *expected) {
-    if (reply->type == REDIS_REPLY_STRING) {
+    if (reply->type == REDIS_REPLY_STRING || reply->type == REDIS_REPLY_STATUS) {
         // It's a string. Is it the correct value?
         __ASSERT(streq(expected, reply->str));
         return 1;
@@ -120,4 +120,5 @@ void run_in_child_process(void (*f)(void)) {
     exit(0);
   }
   __otter_multi_block_while_condition(*p == 0, p);
+  __otter_multi_gfree(p);
 }
