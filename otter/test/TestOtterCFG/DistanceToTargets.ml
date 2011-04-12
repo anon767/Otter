@@ -78,7 +78,8 @@ let run_with_interceptor reporter job =
         builtin_interceptor
         >>> BuiltinFunctions.interceptor
     in
-    Driver.run ~interceptor reporter job
+    let step job = interceptor job Statement.step in
+    Driver.run ~step reporter job
 
 let test_ottercfg code ?label expected = test_otter code ?label ~driver:run_with_interceptor (expected_return_value expected)
 

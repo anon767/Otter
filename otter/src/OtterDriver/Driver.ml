@@ -10,14 +10,12 @@ let (>>>) = Interceptor.(>>>)
 
 
 (** Main symbolic execution loop. *)
-let main_loop interceptor queue reporter =
+let main_loop step queue reporter =
     (* set up a checkpoint to rollback to upon SignalException *)
     let checkpoint = ref (queue, reporter) in
     try
         (* compose the interceptor with the core symbolic executor *)
-        let step = fun job -> 
-            BasicReporter.convert_non_failure_abandoned_to_truncated (interceptor job Statement.step)
-        in
+        let step job = BasicReporter.convert_non_failure_abandoned_to_truncated (step job) in
         let rec run (queue, reporter) =
             checkpoint := (queue, reporter);
             match queue#get with
@@ -62,7 +60,7 @@ let main_loop interceptor queue reporter =
 
 
 let run ?(random_seed=(!Executeargs.arg_random_seed))
-        ?(interceptor=Interceptor.identity_interceptor)
+        ?(step=Statement.step)
         ?(queue=Queue.get_default ())
         reporter
         file =
@@ -79,7 +77,7 @@ let run ?(random_seed=(!Executeargs.arg_random_seed))
             new OtterJob.FunctionJob.t file entryfn
     in
     let queue = queue#put job in
-    main_loop interceptor queue reporter
+    main_loop step queue reporter
 
 
 (** {1 Precomposed drivers for common use cases} *)
@@ -95,7 +93,8 @@ let run_basic reporter file =
         >>> Interceptor.function_pointer_interceptor
         >>> BuiltinFunctions.interceptor
     in
-    run ~interceptor reporter file
+    let step job = interceptor job Statement.step in
+    run ~step reporter file
 
 (** As with {!run}, using the core symbolic executor, core and libc built-in functions. *)
 let run_with_libc reporter file =
@@ -105,5 +104,6 @@ let run_with_libc reporter file =
         >>> BuiltinFunctions.libc_interceptor
         >>> BuiltinFunctions.interceptor
     in
-    run ~interceptor reporter file
+    let step job = interceptor job Statement.step in
+    run ~step reporter file
 
