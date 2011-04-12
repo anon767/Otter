@@ -3,12 +3,12 @@ zmalloc=-DNO_ZMALLOC -Dzmalloc=malloc -Dzrealloc=realloc -D'zcalloc(size)=calloc
 
 OTTER_TRUNK=$(CURDIR)/../..
 
-files := redis-grammar.c redis-no-varargs-grammar.c list-tests-client.c src/redis-server src/redis-server_comb.c redis-functions
+files := redis-grammar.c redis-no-varargs-grammar.c src/redis-server src/redis-server_comb.c redis-functions test-functions.c test-functions.h
 
 all: $(files)
 
-list-tests-client.c: src/redis-server generate-test-client
-	./generate-test-client unit/type/list > list-tests-client.c
+test-functions.%: src/redis-server generate-test-functions
+	./generate-test-functions unit/type/list
 
 # Create the redis-server executable, but delete everything else
 src/redis-server:

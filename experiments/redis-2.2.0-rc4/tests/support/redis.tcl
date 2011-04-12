@@ -60,14 +60,13 @@ proc ::redis::__dispatch__ {id method args} {
         set args [lrange $args 0 end-1]
     }
     if {[info command ::redis::__method__$method] eq {}} {
-        puts [string map {"\\" "\\\\"} "    redisAppendCommand(c, \"$method [join $args]\");"]
-#        set cmd "*[expr {[llength $args]+1}]\r\n"
-#        append cmd "$[string length $method]\r\n$method\r\n"
-#        foreach a $args {
-#            append cmd "$[string length $a]\r\n$a\r\n"
-#        }
-#        ::redis::redis_write $fd $cmd
-#        flush $fd
+        set cmd "*[expr {[llength $args]+1}]\r\n"
+        append cmd "$[string length $method]\r\n$method\r\n"
+        foreach a $args {
+            append cmd "$[string length $a]\r\n$a\r\n"
+        }
+        ::redis::redis_write $fd $cmd
+        flush $fd
 
         if {!$deferred} {
             if {$blocking} {
@@ -164,12 +163,6 @@ proc ::redis::redis_read_reply fd {
         default {return -code error "Bad protocol, $type as reply type byte"}
     }
 }
-# Shadow the original redis_read_reply
-proc ::redis::redis_read_reply fd {
-    # Try to prevent too many memory leaks. This should limit to one per function.
-    puts "    if (reply) { freeReplyObject(reply); }"
-    puts "    redisGetReply(c, &reply);"
-}
 
 proc ::redis::redis_reset_state id {
     set ::redis::state($id) [dict create buf {} mbulk -1 bulk -1 reply {}]
@@ -245,4 +238,27 @@ proc ::redis::redis_readable {fd id} {
             }
         }
     }
+}
+
+# Shadow the original method dispatch.
+proc ::redis::__dispatch__ {id method args} {
+    set fd $::redis::fd($id)
+    set blocking $::redis::blocking($id)
+    set deferred $::redis::deferred($id)
+    if {$blocking == 0} { error "I don't know how to handle nonblocking mode" }
+    if {[string equal $method "select"]} { # Skip calls to select
+        return 
+    }
+    if {$deferred == 1} {
+        puts "// Using redis_deferring_client: this test will not work properly"
+        if {[string equal $method "read"]} {
+            return
+        }
+    }
+    if {[string equal $method "debug"]} {
+        puts "// The 'debug' command does not work properly in this test harness"
+    }
+    # Try to prevent too many memory leaks. This should limit leaks to one per test case.
+    puts "    if (reply) { freeReplyObject(reply); }"
+    puts [string map {"\\" "\\\\"} "    reply = redisCommand(c, \"$method [join $args]\");"]
 }

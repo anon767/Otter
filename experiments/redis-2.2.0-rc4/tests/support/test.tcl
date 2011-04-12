@@ -194,43 +194,36 @@ proc test {name code {okpattern undefined}} {
         if {[string length $okpattern] > 100} {
             puts "//truncated expected value"
         } else {
-            puts "    __ASSERT(reply->type == REDIS_REPLY_ARRAY);"
-            puts "    __ASSERT(reply->elements == [llength $okpattern]);"
-            for {set i 0} {$i < [llength $okpattern]} {incr i} {
-                set expected [lindex $okpattern $i]
-                if {[string equal $expected ""]} {
-                    puts "    expect_nil(reply->element\[$i]);"
-                } elseif {[string is integer $expected]} {
-                    puts "    expect_int(reply->element\[$i], $expected);"
-                } elseif {[llength $expected] > 1} {
-                    puts "    expect_array(reply->element\[$i], \"$expected\");"
-                } else {
-                    puts "    expect_string(reply->element\[$i], \"$expected\");"
-                }
-            }
+            assert_equal $okpattern "ignored"
             puts "    freeReplyObject(reply);"
         }
     }
     puts "}"
 }
 
-proc assert_equal {expected value} {
-    if {[string equal $expected ""]} {
-        puts "    expect_nil(reply);"
-    } elseif {[string is integer $expected]} {
-        puts "    expect_int(reply, $expected);"
-    } elseif {[llength $expected] > 1} {
-        puts "    expect_array(reply, \"$expected\");"
+proc otter_expect {expected reply} {
+    if {[llength $expected] == 0} {
+        puts "    expect_nil($reply);"
+    } elseif {[llength $expected] == 1} {
+        puts "    expect($reply, \"$expected\");"
     } else {
-        puts "    expect_string(reply, \"$expected\");"
+        puts "    __ASSERT($reply->type == REDIS_REPLY_ARRAY);"
+        puts "    __ASSERT($reply->elements == [llength $expected]);"
+        for {set i 0} {$i < [llength $expected]} {incr i} {
+            otter_expect [lindex $expected $i] "$reply->element\[$i]"
+        }
     }
+}
+
+proc assert_equal {expected value} {
+    return [otter_expect $expected "reply"]
 }
 
 proc assert_error {pattern code} {
     uplevel 1 $code
-    puts "    assert_error(reply, \"$pattern\");"
+    puts "    expect_error(reply, \"$pattern\");"
 }
 
 proc assert_encoding {enc key} {
-    puts "    assert_encoding(\"$enc\", \"$key\");"
+    puts "    expect_encoding(\"$enc\", \"$key\");"
 }

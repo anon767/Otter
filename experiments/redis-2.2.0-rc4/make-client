@@ -1,0 +1,24 @@
+if [[ -z "$1" ]]; then
+   echo Please provide a file containing a list of function declarations naming test functions to be run
+   exit 0
+fi
+
+echo '#include "deps/hiredis/hiredis.h"
+#include "test-client-helper.h"
+#include "test-functions.h"
+
+redisContext *c;
+
+void client_main() {
+  c = redisConnect("127.0.0.1", 6379);
+  if (c->err) {
+    __EVALSTR("Connection error:", 30);
+    __EVALSTR(c->errstr, 100);
+    __ASSERT(0);
+  }'
+
+sed 's/void \(.*\)(void);/  run_in_child_process(\1);/' $1
+
+echo '  redisReply *reply = redisCommand(c, "QUIT");
+  __ASSERT(strcmp(reply->str, "OK") == 0);
+}'

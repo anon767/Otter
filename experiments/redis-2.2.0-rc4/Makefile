@@ -23,3 +23,6 @@ dummy:
 
 otter:
 	$(MAKE) -f otter.makefile
+
+otter-clean:
+	$(MAKE) -f otter.makefile clean
