@@ -216,7 +216,7 @@ proc otter_expect {expected reply} {
 }
 
 proc assert_equal {expected value} {
-    return [otter_expect $expected "reply"]
+    return [otter_expect [string map {"\\" "\\\\"} $expected] "reply"]
 }
 
 proc assert_error {pattern code} {
