@@ -29,10 +29,8 @@ let init_globalvars job globals =
         | Cil.GVar(varinfo, _, _)
         | Cil.GVarDecl(varinfo, _)
                 when not (Cil.isFunctionType varinfo.Cil.vtype)
-                    && not (!Executeargs.arg_noinit_unreachable_globals && unreachable_global varinfo) ->
-            (* Sanity check: variables are ever declared after being defined, and are never defined twice. *)
-            assert (not (State.VarinfoMap.mem varinfo varinfo_to_block));
-
+                    && not (!Executeargs.arg_noinit_unreachable_globals && unreachable_global varinfo)
+                    && not (State.VarinfoMap.mem varinfo varinfo_to_block) ->
             Output.set_mode Output.MSG_REG;
             Output.printf "Initialize %s to zeros@." varinfo.Cil.vname;
 
