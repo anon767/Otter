@@ -221,7 +221,7 @@ proc assert_equal {expected value} {
 
 proc assert_error {pattern code} {
     uplevel 1 $code
-    puts "    expect_error(reply, \"$pattern\");"
+    puts "    expect_error(reply, \"[string map {{*} {.*}} $pattern]\");"
 }
 
 proc assert_encoding {enc key} {
