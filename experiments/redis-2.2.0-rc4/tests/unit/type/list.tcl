@@ -767,8 +767,8 @@ start_server {
         r del l
         r rpush l [lindex $mylist 0]
         r rpush l [lindex $mylist 1]
-        assert_equal [r lindex l 0] [lindex $mylist 0]
-        assert_equal [r lindex l 1] [lindex $mylist 1]
+        assert_equal [lindex $mylist 0] [r lindex l 0]
+        assert_equal [lindex $mylist 1] [r lindex l 1]
     }
 
     tags {slow} {
