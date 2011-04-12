@@ -15,7 +15,7 @@
 		an invalid directory, a null pointer is returned.
 
 		Example:
-		__otter_fs_dnode* dnode;
+		struct __otter_fs_dnode* dnode;
 		char *filename;
 		dnode = find_filename_and_dnode(path, &filename);
  */

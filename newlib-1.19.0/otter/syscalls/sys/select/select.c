@@ -223,7 +223,7 @@ static int select_helper(int nfds, fd_set *readfds, fd_set *writefds, fd_set *er
 
 	// If nothing is ready, wait on the specified file descriptors.
 	__otter_multi_io_block_array(watch_list, watch_list_len);
-	__otter_multi_begin_atomic();
+	__otter_multi_begin_atomic(); // To match the end_atomic in the caller
 	free(watch_list);
 	return SELECT_HELPER_BLOCKED;
 }

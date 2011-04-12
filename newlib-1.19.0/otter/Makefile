@@ -122,6 +122,7 @@ SYSCALL_FILES := \
 	pthread/equal.c \
 	pthread/self.c \
 	pwd/pwd.c \
+	stdio/_rename_r.c \
 	stdlib/_free_r.c \
 	stdlib/_malloc_r.c \
 	stdlib/_realloc_r.c \
@@ -152,6 +153,7 @@ SYSCALL_FILES := \
 	unistd/close.c \
 	unistd/dup.c \
 	unistd/dup2.c \
+	unistd/fsync.c \
 	unistd/getegid.c \
 	unistd/geteuid.c \
 	unistd/getgid.c \
