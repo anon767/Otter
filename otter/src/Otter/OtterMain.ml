@@ -9,7 +9,7 @@ open OtterDriver
 open State
 
 
-let doit (f: file) =
+let doit file =
 	(* connect Cil's debug flag to Output *)
 	Output.arg_print_debug := !Errormsg.debugFlag;
 
@@ -17,14 +17,12 @@ let doit (f: file) =
 
 	let reporter = UserSignal.using_signals begin fun () ->
 		(* prepare the file for symbolic execution *)
-		Core.prepare_file f;
-
-		let job = Job.get_default f in
+		Core.prepare_file file;
 
 		(* run the job *)
 		let module Reporter = ErrorReporter.Make (OtterCore.Errors) in
 		let reporter = new Reporter.t () in
-		snd (Driver.run_basic reporter job)
+		snd (Driver.run_basic reporter file)
 	end in
 
     Output.set_formatter (new Output.plain);

@@ -62,7 +62,8 @@ let rec flush_queue reporter job_queue =
             let reporter = reporter#report (Complete (Abandoned (`Failure "Killed by signal", job))) in
             flush_queue reporter (job_queue#put multijob) (* Put the other processes back into the queue so that they get reported, too. *)
 
-let run reporter job =
+let run reporter file =
+	let job = new OtterJob.FileJob.t file (file.Cil.fileName::!ProgramPoints.command_line) in
 	let multijob = {
 		processes = [];
 		shared =
@@ -115,11 +116,10 @@ let doit file =
 
 	let result = UserSignal.using_signals begin fun () ->
 		Core.prepare_file file;
-		let job = OtterJob.Job.get_default file in
 
 		(* run the job *)
 		let module Reporter = ErrorReporter.Make (OtterCore.Errors) in
-		let job_queue, result = run (new Reporter.t ()) job in
+		let job_queue, result = run (new Reporter.t ()) file in
 		flush_queue result job_queue
 	end in
 

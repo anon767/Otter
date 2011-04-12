@@ -515,10 +515,9 @@ module Make (Errors : Errors) = struct
 
         (* prepare the file and run the symbolic executor *)
         Core.prepare_file file;
-        let job = OtterJob.Job.get_default file in
         let reporter = reporter ?max_steps:flags.max_steps ?max_paths:flags.max_paths ?max_abandoned:flags.max_abandoned () in
         try
-            let _, reporter = run (fun () -> driver reporter job) in
+            let _, reporter = run (fun () -> driver reporter file) in
             try
                 (* then, run the given test *)
                 test reporter#completed;

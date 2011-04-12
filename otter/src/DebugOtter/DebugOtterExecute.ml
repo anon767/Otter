@@ -10,16 +10,16 @@ open State
 open DebugOtterDriver
 (*open InvInput*)
 
-let doDebugExecute (f: file) =
+let doDebugExecute file =
 	(* connect Cil's debug flag to Output *)
 	Output.arg_print_debug := !Errormsg.debugFlag;
 	Output.printf "A debugger for Otter, a symbolic executor for C@\n@.";
 
 	let reporter = UserSignal.using_signals begin fun () ->
 		(* prepare the file for symbolic execution *)
-		Core.prepare_file f;
+		Core.prepare_file file;
 
-		let job = Job.get_default f in
+		let job = new OtterJob.FileJob.t file (file.Cil.fileName::!ProgramPoints.command_line) in
 
 		(* run the job *)
 		let module Reporter = ErrorReporter.Make (OtterCore.Errors) in

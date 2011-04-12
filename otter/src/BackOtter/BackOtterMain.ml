@@ -13,13 +13,13 @@ let default_conditionals_forking_limit = ref max_int
 let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
                           ?(f_queue=BackOtterQueue.get_default_fqueue ())
                           ?(b_queue=BackOtterQueue.get_default_bqueue ())
-                          ?ratio reporter entry_job =
+                          ?ratio reporter file =
 
-	Random.init random_seed;
+    Random.init random_seed;
     BackOtterTimer.reset_time ();
     BackOtterTargets.reset_targets ();
 
-    let file = entry_job#file in
+    let entry_job = BackOtterJob.get_default file in
 
     (* Entry function set by --entryfn (default: main) *)
     let entry_fn = ProgramPoints.get_entry_fundec file in
@@ -125,8 +125,7 @@ let doit file =
         Output.printf "Backward strategy: %s@." (find_tag_name (!BackOtterQueue.default_bqueue) BackOtterQueue.queues);
         Output.printf "Ratio: %0.2f@." !BidirectionalQueue.default_bidirectional_search_ratio ;
 
-        let entry_job = BackOtterJob.get_default file in
-        let _, reporter = callchain_backward_se (new BackOtterReporter.t ()) entry_job in
+        let _, reporter = callchain_backward_se (new BackOtterReporter.t ()) file in
 
         (* print the results *)
         Output.set_formatter (new Output.plain);

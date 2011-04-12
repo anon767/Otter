@@ -61,38 +61,49 @@ let main_loop interceptor queue reporter =
         run (queue, reporter)
 
 
-(* This is "Otter" in OtterBenchmark *)
 let run ?(random_seed=(!Executeargs.arg_random_seed))
         ?(interceptor=Interceptor.identity_interceptor)
         ?(queue=Queue.get_default ())
         reporter
-        job =
-	Random.init random_seed;
+        file =
+    Random.init random_seed;
+    let job =
+        let mainfn = ProgramPoints.get_main_fundec file in
+        let entryfn = ProgramPoints.get_entry_fundec file in
+        if mainfn == entryfn then
+            (* create a job for the file, with the commandline arguments set to the file name
+             * and the arguments from the '--arg' option *)
+            new OtterJob.FileJob.t file (file.Cil.fileName::!ProgramPoints.command_line)
+        else
+            (* create a job that starts at entry_function *)
+            new OtterJob.FunctionJob.t file entryfn
+    in
     let queue = queue#put job in
     main_loop interceptor queue reporter
+
 
 (** {1 Precomposed drivers for common use cases} *)
 
 (** Driver using the core symbolic executor only. *)
-let run_core reporter job =
-    run reporter job
+let run_core reporter file =
+    run reporter file
 
 (** As with {!run}, using the core symbolic executor and core built-in functions. *)
-let run_basic reporter job =
+let run_basic reporter file =
     let interceptor =
         Interceptor.set_output_formatter_interceptor
         >>> Interceptor.function_pointer_interceptor
         >>> BuiltinFunctions.interceptor
     in
-    run ~interceptor reporter job
+    run ~interceptor reporter file
 
 (** As with {!run}, using the core symbolic executor, core and libc built-in functions. *)
-let run_with_libc reporter job =
+let run_with_libc reporter file =
     let interceptor =
         Interceptor.set_output_formatter_interceptor
         >>> Interceptor.function_pointer_interceptor
         >>> BuiltinFunctions.libc_interceptor
         >>> BuiltinFunctions.interceptor
     in
-    run ~interceptor reporter job
+    run ~interceptor reporter file
 

@@ -100,16 +100,11 @@ let test_otter_on_file
 
         (* prepare the file and reporter *)
         Core.prepare_file file;
-        let job =
-            if entry_function = "main" then
-                new FileJob.t file command_line
-            else
-                new FunctionJob.t file (FindCil.fundec_by_name file entry_function)
-        in
+        ProgramPoints.set_entry entry_function;
         let reporter = new BasicReporter.t () in
 
         (* run the symbolic executor with a time limit *)
-        let _, reporter = assert_time_limit time_limit (fun () -> driver reporter job) in
+        let _, reporter = assert_time_limit time_limit (fun () -> driver reporter file) in
         (* run the given test *)
         test reporter#completed
 
