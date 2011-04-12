@@ -337,6 +337,8 @@ deref job bytes typ errors =
                 failwith "Dereference a dangling pointer"
 
         | Bytes_Conditional c ->
+            (* TODO: refactor and lift this pattern as it occurs in three places: Expression.deref, BuiltinFunctions.libc_free,
+             * and Interceptor.function_pointer_interceptor *)
             let (guard, job, errors, _), conditional_opt =
                 conditional__fold_map_opt
                     ~test:begin fun (guard', job, errors, removed) pre guard ->

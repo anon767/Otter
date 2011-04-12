@@ -185,6 +185,8 @@ let libc_free job retopt exps errors =
         | ptr when bytes__equal ptr bytes__zero -> (* Freeing a null pointer. Do nothing. *)
             (job, errors)
         | Bytes_Conditional c ->
+            (* TODO: refactor and lift this pattern as it occurs in three places: Expression.deref, BuiltinFunctions.libc_free,
+             * and Interceptor.function_pointer_interceptor *)
             let guard, job, errors, _, has_success =
                 conditional__fold
                     ~test:begin fun (guard', job, errors, removed, has_success) pre guard ->

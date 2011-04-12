@@ -16,59 +16,64 @@ let set_output_formatter_interceptor job interceptor =
 (** Interceptor which rewrites calls through function pointers into normal function calls *)
 let function_pointer_interceptor job interceptor =
     match job#instrList with
-      | Cil.Call(retopt, Cil.Lval(Cil.Mem(fexp), Cil.NoOffset), exps, loc) as instr::instrs ->
+        | Cil.Call(retopt, Cil.Lval(Cil.Mem(fexp), Cil.NoOffset), exps, loc) as instr::instrs ->
+            Output.set_mode Output.MSG_FUNC;
+            Output.printf "Call using function pointer:@\n@[%a@]@." Printcil.instr instr;
+
             let new_instrList varinfo =
                 Cil.Call(retopt, Cil.Lval(Cil.Var(varinfo), Cil.NoOffset), exps, loc) :: instrs
             in
-            let job, bytes, errors  = Expression.rval job fexp [] in
-            let getall fp =
-                let varinfos_and_pres, errors = Bytes.conditional__fold begin fun (varinfos_and_pres, errors) pre leaf ->
-                    match leaf with
-                      | Bytes.Bytes_FunPtr varinfo ->
-                            ((varinfo, pre)::varinfos_and_pres, errors)
-                      | _ ->
-                            (varinfos_and_pres, (job, `Failure "Invalid function pointer")::errors)
-                end ([], errors) fp in
-                let jobs = (job : #Info.t)#fork begin fun job (varinfo, pre) jobs ->
-                    let job = MemOp.state__add_path_condition job (Bytes.guard__to_bytes pre) true in
-                    let job = job#with_instrList (new_instrList varinfo) in
-                    job::jobs
-                end varinfos_and_pres [] in
-                (jobs, varinfos_and_pres, errors)
+
+            let typ = Cil.typeOf fexp in
+            let length = Cil.bitsSizeOf typ / 8 in
+            let job, bytes, errors = Expression.rval job fexp [] in
+
+            (* get all valid target functions *)
+            let module VarinfoSet = Set.Make (CilData.CilVar) in
+
+            (* TODO: refactor and lift this pattern as it occurs in three places: Expression.deref, BuiltinFunctions.libc_free,
+             * and Interceptor.function_pointer_interceptor *)
+            let rec get_funptr job pre varinfos errors = function
+                | Bytes.Bytes_FunPtr varinfo ->
+                    (job, VarinfoSet.add varinfo varinfos, errors)
+                | Bytes.Bytes_Conditional c ->
+                    Bytes.conditional__fold
+                        ~pre
+                        ~test:begin fun (job, varinfos, errors) pre guard ->
+                            let job, truth =
+                                (job : #Info.t)#profile_call "function_pointer_interceptor/Bytes_Conditional"
+                                    (fun job -> (job, BytesSTP.query_stp (PathCondition.clauses job#state.path_condition) pre guard))
+                            in
+                            ((job, varinfos, errors), truth)
+                        end
+                        begin fun (job, varinfos, errors) pre' bytes ->
+                            try
+                                get_funptr job (Bytes.guard__and pre pre') varinfos errors bytes
+                            with Failure msg ->
+                                (job, varinfos, (job, `Failure msg)::errors)
+                        end (job, varinfos, errors) c
+                | Bytes.Bytes_Read (bytes, offset, len) ->
+                    get_funptr job pre varinfos errors (Bytes.make_Bytes_Conditional (BytesUtility.expand_read_to_conditional bytes offset length))
+                | _ ->
+                    (job, varinfos, (job, `Failure (FormatPlus.sprintf "Invalid function pointer:@ @[%a@]" CilPrinter.exp fexp))::errors)
             in
-            let jobs, varinfos_and_pres, errors =
-                begin match bytes with
-                  | Bytes.Bytes_FunPtr varinfo ->
-                        let job = job#with_instrList (new_instrList varinfo) in
-                        ([job], [(varinfo, Bytes.guard__true (* This [Guard_True] is just a placeholder *))], errors)
-                  | Bytes.Bytes_Read(bytes2, offset, len) ->
-                        let fp = (BytesUtility.expand_read_to_conditional bytes2 offset len) in
-                        let (), fp =
-                            Bytes.conditional__prune
-                                ~test:(fun () pre guard -> ((), BytesSTP.query_stp (PathCondition.clauses job#state.path_condition) pre guard)) () fp
-                        in
-                        getall fp
-                  | Bytes.Bytes_Conditional(c) ->
-                        getall c
-                  | _ ->
-                        ([], [], (job, `Failure (FormatPlus.sprintf "Invalid function ptr:@ @[%a@]" CilPrinter.exp fexp)) :: errors)
-                end
-            in
-            Output.set_mode Output.MSG_FUNC;
-            Output.printf "Call using function pointer:@\n@[%a@]@\n" Printcil.instr instr;
-            begin match jobs with
-              | _::_::_ -> (* if List.length jobs > 1 *)
-                Output.printf "Function pointer can take multiple values; fork job %d to " job#path_id;
-                List.iter2
-                    (fun job (varinfo,_) -> Output.printf "(job %d,function %s)" job#path_id varinfo.Cil.vname)
-                    (List.rev jobs) (* The call for #fork above reverses the list of jobs relative to the varinfos *)
-                    varinfos_and_pres;
-                Output.printf "@."
-              | _ -> ()
-            end;
-            let job_states = List.rev_map (fun j -> Job.Active j) jobs in
-            let abandoned_job_states = Statement.errors_to_abandoned_list errors in
-            let job_states = List.rev_append job_states abandoned_job_states in
+            let job, varinfos, errors = get_funptr job Bytes.guard__true VarinfoSet.empty errors bytes in
+
+            let varinfos_count = VarinfoSet.cardinal varinfos in
+            if varinfos_count > 1 then
+                Output.printf "@[Function pointer can take multiple values; fork job %d to@ " job#path_id
+            else
+                Output.printf "@[";
+
+            let job_states = (job : #Info.t)#fork begin fun job varinfo job_states ->
+                Output.printf "(job %d, function %s)@ " job#path_id varinfo.Cil.vname;
+                let funptr_condition = Operator.eq [ (bytes, typ); (Bytes.make_Bytes_FunPtr varinfo, typ) ] in
+                let job = MemOp.state__add_path_condition job funptr_condition true in
+                let job = job#with_instrList (new_instrList varinfo) in
+                (Job.Active job)::job_states
+            end (VarinfoSet.elements varinfos) (Statement.errors_to_abandoned_list errors) in
+            Output.printf "@]@.";
+
             Job.Fork job_states
       | _ ->
             interceptor job
