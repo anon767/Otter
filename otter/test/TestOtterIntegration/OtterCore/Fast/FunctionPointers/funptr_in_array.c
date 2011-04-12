@@ -8,7 +8,7 @@ int foo3() {return 3;}
 
 typedef int (*FP)();
 
-int main()
+int main(void)
 {
 	FP a[4];
 	a[0] = foo0;

@@ -3,7 +3,7 @@
 
 extern char* malloc(int size);
 
-void main() {
+void main(void) {
     char* (*f)(int) = &malloc;
     char* s = f(1);
 }

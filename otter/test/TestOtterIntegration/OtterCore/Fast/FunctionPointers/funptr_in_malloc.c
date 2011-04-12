@@ -25,7 +25,7 @@ void Handler4()
 	;
 }
 
-int main(char** argc, int argv)
+int main(void)
 {
 	EventHandler* events = (EventHandler*)malloc(4 * sizeof(EventHandler));
 
