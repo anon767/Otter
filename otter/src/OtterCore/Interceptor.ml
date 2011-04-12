@@ -59,21 +59,22 @@ let function_pointer_interceptor job interceptor =
             in
             let job, varinfos, errors = get_funptr job Bytes.guard__true VarinfoSet.empty errors bytes in
 
-            let varinfos_count = VarinfoSet.cardinal varinfos in
-            if varinfos_count > 1 then
-                Output.printf "@[Function pointer can take multiple values; fork job %d to@ " job#path_id
-            else
-                Output.printf "@[";
-
-            let job_states = (job : #Info.t)#fork begin fun job varinfo job_states ->
-                Output.printf "(job %d, function %s)@ " job#path_id varinfo.Cil.vname;
-                let funptr_condition = Operator.eq [ (bytes, typ); (Bytes.make_Bytes_FunPtr varinfo, typ) ] in
-                let job = MemOp.state__add_path_condition job funptr_condition true in
-                let job = job#with_instrList (new_instrList varinfo) in
-                (Job.Active job)::job_states
-            end (VarinfoSet.elements varinfos) (Statement.errors_to_abandoned_list errors) in
-            Output.printf "@]@.";
-
+            let error_states = Statement.errors_to_abandoned_list errors in
+            let job_states = match VarinfoSet.elements varinfos with
+              | [] -> error_states
+              | [varinfo] -> (Job.Active (job#with_instrList (new_instrList varinfo))) :: error_states
+              | varinfos ->
+                    Output.printf "@[Function pointer can take multiple values; fork job %d to@ " job#path_id;
+                    let job_states = (job : #Info.t)#fork begin fun job varinfo job_states ->
+                        Output.printf "(job %d, function %s)@ " job#path_id varinfo.Cil.vname;
+                        let funptr_condition = Operator.eq [ (bytes, typ); (Bytes.make_Bytes_FunPtr varinfo, typ) ] in
+                        let job = MemOp.state__add_path_condition job funptr_condition true in
+                        let job = job#with_instrList (new_instrList varinfo) in
+                        (Job.Active job)::job_states
+                    end varinfos (Statement.errors_to_abandoned_list errors) in
+                    Output.printf "@]@.";
+                    job_states
+            in
             Job.Fork job_states
       | _ ->
             interceptor job
