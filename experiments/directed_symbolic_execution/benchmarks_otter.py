@@ -24,7 +24,7 @@ benchmarks = {
             'ProCCBSE' : "@trunk@/experiments/directed_symbolic_execution/synthetic/pro_backotter_3.c",
             'ProMix'   : "@trunk@/experiments/directed_symbolic_execution/synthetic/pro_mix_1.c",
             },
-        'command' : 'CILLY_DONT_COMPILE_AFTER_MERGE= @trunk@/otter/otter.pl --merge -nostdinc -nostdlib -Wp,-undef,-D_POSIX_THREADS,-D__GNUC__,-D_GCC_LIMITS_H_ --timeout=120'
+        'command' : 'CILLY_DONT_COMPILE_AFTER_MERGE= @trunk@/otter/otter.pl --merge -nostdinc -nostdlib -Wp,-undef,-D_POSIX_THREADS,-D__GNUC__,-D_GCC_LIMITS_H_ --timeout=240'
         }
     }
 
@@ -43,7 +43,7 @@ strategies = {
 }
 
 options = {
-    'weighted'  : '--doRunRmtmps --initMallocZero --initLocalZero --max-abandoned=1 --convert-non-failure-abandoned-to-truncated --printErrorsOnly --backotter-timing-method=weighted',
+    'std'  : '--doRunRmtmps --init-malloc=zero --init-local=zero --max-abandoned=1 --convert-non-failure-abandoned-to-truncated --printErrorsOnly --backotter-timing-method=weighted --backotter-no-overlap-path-matching',
 }
 
 def make_test(command, program, strategy, option, seed):
