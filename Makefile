@@ -41,7 +41,7 @@ make//otter : \
 		EXTRALIBDIRS='$(EXTRALIBDIRS)' \
 		EXTRAOCAMLPATH='$(EXTRAOCAMLPATH)' \
 		--with-cil='$(CURDIR)/cil'
-make//otter : cil stp-ocamlstp ocamlgraph
+make//otter : cil stp-ocamlstp ocamlgraph delimcc
 
 
 cilqual : make//cilqual
@@ -73,6 +73,10 @@ stp/Makefile : stp/scripts/Makefile.in stp/scripts/configure
 ocamlgraph : make//ocamlgraph
 make//ocamlgraph : MAKEGOALS=
 make//ocamlgraph : CONFIGURE_FLAGS=
+
+
+delimcc : make//delimcc
+make//delimcc : MAKEGOALS=all opt
 
 
 ctags :
