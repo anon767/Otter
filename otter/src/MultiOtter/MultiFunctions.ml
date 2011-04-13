@@ -71,7 +71,7 @@ let otter_gmalloc job retopt exps errors =
 	let job = BuiltinFunctions.end_function_call job in
 
 	let job = job#with_state { job#state with block_to_bytes = MemoryBlockMap.add block (Deferred.Immediate bytes) job#state.block_to_bytes; } in
-	let job = job#with_shared_block_to_bytes (MemoryBlockMap.add block (Deferred.Immediate bytes) job#shared_block_to_bytes) in
+	let job = job#with_shared_blocks (SharedBlocks.add block job#shared_blocks) in
 	let job = job#with_other_processes begin List.map
 		begin fun other ->
 			other#with_state { other#state with block_to_bytes = MemoryBlockMap.add block (Deferred.Immediate bytes) other#state.block_to_bytes; }
@@ -86,13 +86,13 @@ let otter_gfree job retopt exps errors =
         | Bytes.Bytes_Address (block, _) ->
             if block.Bytes.memory_block_type != Bytes.Block_type_Heap then
                 FormatPlus.failwith "gfreeing a non-gmalloced pointer:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp (List.hd exps) BytesPrinter.bytes ptr
-            else if not (MemoryBlockMap.mem block job#shared_block_to_bytes) then
+            else if not (SharedBlocks.mem block job#shared_blocks) then
                 FormatPlus.failwith "gfreeing a non-gmalloced pointer or double-gfree:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp (List.hd exps) BytesPrinter.bytes ptr
             else if not (MemoryBlockMap.mem block job#state.State.block_to_bytes) then
                 FormatPlus.failwith "gfreeing after free:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp (List.hd exps) BytesPrinter.bytes ptr
             else
                 let job = job#with_state { job#state with block_to_bytes = MemoryBlockMap.remove block job#state.block_to_bytes; } in
-                let job = job#with_shared_block_to_bytes (MemoryBlockMap.remove block job#shared_block_to_bytes) in
+                let job = job#with_shared_blocks (SharedBlocks.remove block job#shared_blocks) in
                 let job = job#with_other_processes begin List.map
                     begin fun other ->
                         other#with_state { other#state with block_to_bytes = MemoryBlockMap.remove block other#state.block_to_bytes; }
@@ -154,7 +154,7 @@ let otter_io_block_common job pointers errors =
         let blocks = conditional__fold
             (fun acc guard (block, _) ->
                  (* TODO: Failing in this case might be overkill. Printing a warning might be good enough *)
-                 if not (MemoryBlockMap.mem block job#shared_block_to_bytes)
+                 if not (SharedBlocks.mem block job#shared_blocks)
                  then FormatPlus.failwith "Trying to block on non-shared memory: %a" BytesPrinter.memory_block block
                  else block::acc)
             []

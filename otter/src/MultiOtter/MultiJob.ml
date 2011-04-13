@@ -5,6 +5,11 @@ open OtterCore
 open State
 
 
+module SharedBlocks = Set.Make (struct
+    type t = Bytes.memory_block
+    let compare x y = Pervasives.compare x.Bytes.memory_block_id y.Bytes.memory_block_id
+end)
+
 
 type 'job scheduling_data =
     | Running (* Nomal round robin *)
@@ -12,7 +17,7 @@ type 'job scheduling_data =
     | IOBlock of ('job, Bytes.bytes) Deferred.t MemoryBlockMap.t (* Blocking until a shared value changes *)
     | Atomic of int (* Exclusive control, used when several opeations must be done without preemption. The int is the depth of nested atomic sections. *)
     | Complete
-    
+
 
 (* could also simply upcast job, but this will allow unused fields to be GC'ed *)
 class ['job] process_state other =
@@ -60,9 +65,9 @@ class t file cmdline =
         method priority = priority
         method with_priority priority = {< priority = priority >}
 
-        val shared_block_to_bytes : ('self, Bytes.bytes) Deferred.t MemoryBlockMap.t = MemoryBlockMap.empty
-        method shared_block_to_bytes = shared_block_to_bytes
-        method with_shared_block_to_bytes shared_block_to_bytes = {< shared_block_to_bytes = shared_block_to_bytes >}
+        val shared_blocks : SharedBlocks.t = SharedBlocks.empty
+        method shared_blocks = shared_blocks
+        method with_shared_blocks shared_blocks = {< shared_blocks = shared_blocks >}
 
         val next_pid = 1
         method next_pid = next_pid

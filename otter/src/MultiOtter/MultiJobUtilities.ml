@@ -7,23 +7,16 @@ open State
 open Job
 
 
-let update_to_shared_memory shared_block_to_bytes local_block_to_bytes =
-	let map_func key value =
-		if MemoryBlockMap.mem key local_block_to_bytes then
-			MemoryBlockMap.find key local_block_to_bytes
-		else
-			value (* process lost the shared memory binding *)
-	in
-	MemoryBlockMap.mapi map_func shared_block_to_bytes
-
-let update_from_shared_memory shared_block_to_bytes local_block_to_bytes =
-	let map_func key value =
-		if MemoryBlockMap.mem key shared_block_to_bytes then
-			MemoryBlockMap.find key shared_block_to_bytes
-		else
-			value (* not shared memory *)
-	in
-	MemoryBlockMap.mapi map_func local_block_to_bytes
+let update_shared_memory shared_blocks src dest =
+    SharedBlocks.fold begin fun block dest ->
+        if MemoryBlockMap.mem block dest then
+            try
+                MemoryBlockMap.add block (MemoryBlockMap.find block src) dest
+            with Not_found ->
+                dest (* src process lost the shared memory binding *)
+        else
+            dest  (* dest process lost the shared memory binding *)
+    end shared_blocks dest
 
 
 (* update the multijob with a completed job *)
@@ -101,11 +94,9 @@ let schedule_job job =
             | _ -> job#with_other_processes (job_process::other_processes)
         in
 
-        let job = job#with_shared_block_to_bytes (update_to_shared_memory job#shared_block_to_bytes job#state.block_to_bytes) in
-
         let job = job#with_state { max_process#state with
             (* take the previous process state and update the shared parts *)
-            block_to_bytes = update_from_shared_memory job#shared_block_to_bytes max_process#state.block_to_bytes;
+            block_to_bytes = update_shared_memory job#shared_blocks job_process#state.block_to_bytes max_process#state.block_to_bytes;
             path_condition = job#state.path_condition;
         } in
         let job = job#with_instrList max_process#instrList in
