@@ -23,8 +23,8 @@ let multi_set_output_formatter job =
 
 
 let rec process_results = function
-    | Active job ->
-        Active (process_active job)
+    | Active _ as result ->
+        result
     | Fork results ->
         Fork (List.map process_results results)
     | Complete completion ->

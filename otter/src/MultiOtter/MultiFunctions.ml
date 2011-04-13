@@ -23,7 +23,6 @@ let libc_fork job retopt exps errors =
 
     (* TODO: make the pid symbolic *)
     let child_job = job in
-    let child_job = child_job#with_other_processes [] in
     let child_job = child_job#with_pid job#next_pid in
     let child_job = child_job#with_parent_pid job#pid in
     let job = job#with_next_pid (job#next_pid + 1) in
@@ -41,7 +40,7 @@ let libc_fork job retopt exps errors =
             let job = MemOp.state__assign job lval (Bytes.int_to_bytes child_job#pid) in
             (job, child_job, errors)
     in
-    let job = job#with_other_processes (child_job::job#other_processes) in
+    let job = job#with_other_processes ((new process_state child_job)::job#other_processes) in
     (Active job, errors)
 
 (* allocates on the global heap *)
@@ -71,6 +70,7 @@ let otter_gmalloc job retopt exps errors =
 	let job, errors = BuiltinFunctions.set_return_value job retopt bytes errors in
 	let job = BuiltinFunctions.end_function_call job in
 
+	let job = job#with_state { job#state with block_to_bytes = MemoryBlockMap.add block (Deferred.Immediate bytes) job#state.block_to_bytes; } in
 	let job = job#with_shared_block_to_bytes (MemoryBlockMap.add block (Deferred.Immediate bytes) job#shared_block_to_bytes) in
 	let job = job#with_other_processes begin List.map
 		begin fun other ->
@@ -91,6 +91,7 @@ let otter_gfree job retopt exps errors =
             else if not (MemoryBlockMap.mem block job#state.State.block_to_bytes) then
                 FormatPlus.failwith "gfreeing after free:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp (List.hd exps) BytesPrinter.bytes ptr
             else
+                let job = job#with_state { job#state with block_to_bytes = MemoryBlockMap.remove block job#state.block_to_bytes; } in
                 let job = job#with_shared_block_to_bytes (MemoryBlockMap.remove block job#shared_block_to_bytes) in
                 let job = job#with_other_processes begin List.map
                     begin fun other ->
@@ -178,7 +179,7 @@ let otter_io_block_common job pointers errors =
 				List.fold_left
 					(fun acc block -> 
 						try
-							MemoryBlockMap.add block (MemoryBlockMap.find block job#shared_block_to_bytes) acc
+							MemoryBlockMap.add block (MemoryBlockMap.find block job#state.block_to_bytes) acc
 						with
 							| Not_found -> 
 								if (MemoryBlockMap.mem block job#state.block_to_bytes) then
