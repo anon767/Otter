@@ -55,8 +55,8 @@ let run reporter file =
         >>> BuiltinFunctions.interceptor
     in
     let step job =
-        multi_set_output_formatter job;
         let job = MultiJobUtilities.schedule_job job in
+        multi_set_output_formatter job;
         let results = interceptor job Statement.step in
         process_results results
     in
