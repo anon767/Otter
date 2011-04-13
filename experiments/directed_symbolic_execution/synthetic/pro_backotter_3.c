@@ -13,19 +13,22 @@ void __FAILURE(void) {}
   #endif
 #endif
 
-void f(int n) {
-    int g = 0;
 
-    while(1) {
-        if(g > 1000 && n == 9) failure();
-        else g++;
+void f(int m, int n) {
+    int i, a, sum=0;
+    for (i=0;i<5;i++) {
+        a = n%2;
+        if (a) sum += a+1;
+        n/=2;
     }
+    if (sum==0 && m==10) failure();
 }
 
 void main() {
-    int n, i;
+    int m, n, i;
+    symbolic(&m, sizeof(m), "m");
     symbolic(&n, sizeof(n), "n");
 
     for (i=0;i<1000;i++)
-        if (n == i) f(i);
+        if (m == i) f(m, n);
 }
