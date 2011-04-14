@@ -44,19 +44,18 @@ let main_loop step queue reporter =
         (* if we got a signal, stop and return the checkpoint results *)
         Output.set_mode Output.MSG_REPORT;
         Output.printf "%s@." (Printexc.to_string exn);
-        let (queue, reporter) = !checkpoint in
         (* For each job in queue, make it Abandoned and report it *)
-        let rec run (queue, reporter) =
+        let rec abandon_all (queue, reporter) =
             match queue#get with
                 | Some (queue, job) ->
                     Log.set_output_formatter job;
                     let result = Job.Complete (Job.Abandoned (`Failure "(Path execution not finished)", job)) in
                     let reporter = reporter#report result in
-                    run (queue, reporter)
+                    abandon_all (queue, reporter)
                 | None ->
                     (queue, reporter)
         in
-        run (queue, reporter)
+        abandon_all !checkpoint
 
 
 let run ?(random_seed=(!Executeargs.arg_random_seed))
