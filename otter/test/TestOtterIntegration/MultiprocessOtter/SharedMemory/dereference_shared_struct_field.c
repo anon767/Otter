@@ -1,7 +1,7 @@
 /* This tests that dereferencing a field of a shared struct works correctly.
    In r12395, this lead to a "Not a valid array" error rather than a "Dereference" error.
 */
-#pragma expect_abandoned("Dereference")
+#pragma expect_abandoned(failure("Dereference"))
 #pragma no_other_results
 
 struct t {
