@@ -87,7 +87,17 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
                 Interceptor.identity_interceptor
         )
     in
-    let queue, target_tracker = BackOtterDriver.main_loop entry_fn interceptor queue target_tracker in
+    let step job =
+        DataStructures.NamedCounter.incr "step";
+        (* The difference between timing here and timing in BidirectionalQueue is that
+         * here we only time the stepping of the job, whereas in BidirectionalQueue we
+         * also include the time of getting a job. *)
+        let fundec = BackOtterUtilities.get_origin_function job in
+        let tkind = if fundec == entry_fn then `TKindEntry else `TKindOther in
+        (* TODO: count the time somewhere else, so main_loop doesn't depend on entry_fn *)
+        BackOtterTimer.time tkind (fun () -> interceptor job Statement.step)
+    in
+    let queue, target_tracker = OtterDriver.Driver.main_loop step queue target_tracker in
 
     (* Output failing paths for non-entry_fn *)
     List.iter (fun fundec ->

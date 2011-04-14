@@ -42,13 +42,12 @@ class ['self] t
 
 end
 
+(* TODO: remove this function and roll its functionality elsewhere; should consider a more structured notion of targets or error filtering *)
 let convert_non_failure_abandoned_to_truncated job_state = 
     let rec convert_non_failure_abandoned_to_truncated = function
         | Job.Fork job_states -> Job.Fork (List.map convert_non_failure_abandoned_to_truncated job_states)
         | Job.Complete (Job.Abandoned (`TargetReached _, job)) as job_state -> job_state
         | Job.Complete (Job.Abandoned (reason, job)) -> 
-            OcamlUtilities.Output.set_mode OcamlUtilities.Output.MSG_ERROR;
-            OcamlUtilities.Output.printf "Convert abandoned (%a) to truncated@\n" Errors.printer reason; 
             Job.Complete (Job.Truncated (reason, job))
         | job_state -> job_state
     in
