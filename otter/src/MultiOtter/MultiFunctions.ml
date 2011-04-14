@@ -66,17 +66,12 @@ let otter_gmalloc job retopt exps errors =
 			1 (* currently bytearray have unbounded length *)
 	in
 	let bytes = bytes__make_default size (!InitBytes.init_malloc ()) in
-	let job, block, bytes = otter_gmalloc_size job size bytes (Job.get_loc job) in
-	let job, errors = BuiltinFunctions.set_return_value job retopt bytes errors in
+	let job, block, addrof_block = otter_gmalloc_size job size bytes (Job.get_loc job) in
+	let job, errors = BuiltinFunctions.set_return_value job retopt addrof_block errors in
 	let job = BuiltinFunctions.end_function_call job in
 
 	let job = job#with_shared_blocks (SharedBlocks.add block job#shared_blocks) in
-	let job = job#with_other_processes begin List.map
-		begin fun other ->
-			other#with_state { other#state with block_to_bytes = MemoryBlockMap.add block (Deferred.Immediate bytes) other#state.block_to_bytes; }
-		end
-		job#other_processes
-	end in
+	let job = job#with_other_processes (List.map (fun other -> MemOp.state__add_block other block bytes) job#other_processes) in
 	(Active job, errors)
 
 let otter_gfree job retopt exps errors =
@@ -91,12 +86,7 @@ let otter_gfree job retopt exps errors =
                 FormatPlus.failwith "gfreeing after free:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp (List.hd exps) BytesPrinter.bytes ptr
             else
                 let job = job#with_shared_blocks (SharedBlocks.remove block job#shared_blocks) in
-                let job = job#with_other_processes begin List.map
-                    begin fun other ->
-                        other#with_state { other#state with block_to_bytes = MemoryBlockMap.remove block other#state.block_to_bytes; }
-                    end
-                    job#other_processes
-                end in
+                let job = job#with_other_processes (List.map (fun other -> MemOp.state__remove_block other block) job#other_processes) in
                 let job = MemOp.state__remove_block job block in
                 let job, errors = BuiltinFunctions.set_return_value job retopt bytes__zero errors in
                 let job = BuiltinFunctions.end_function_call job in
