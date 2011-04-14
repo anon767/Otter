@@ -70,7 +70,6 @@ let otter_gmalloc job retopt exps errors =
 	let job, errors = BuiltinFunctions.set_return_value job retopt bytes errors in
 	let job = BuiltinFunctions.end_function_call job in
 
-	let job = job#with_state { job#state with block_to_bytes = MemoryBlockMap.add block (Deferred.Immediate bytes) job#state.block_to_bytes; } in
 	let job = job#with_shared_blocks (SharedBlocks.add block job#shared_blocks) in
 	let job = job#with_other_processes begin List.map
 		begin fun other ->
@@ -91,7 +90,6 @@ let otter_gfree job retopt exps errors =
             else if not (MemoryBlockMap.mem block job#state.State.block_to_bytes) then
                 FormatPlus.failwith "gfreeing after free:@ @[%a@]@ = @[%a@]@\n" CilPrinter.exp (List.hd exps) BytesPrinter.bytes ptr
             else
-                let job = job#with_state { job#state with block_to_bytes = MemoryBlockMap.remove block job#state.block_to_bytes; } in
                 let job = job#with_shared_blocks (SharedBlocks.remove block job#shared_blocks) in
                 let job = job#with_other_processes begin List.map
                     begin fun other ->
