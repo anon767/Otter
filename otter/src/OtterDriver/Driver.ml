@@ -9,6 +9,18 @@ let (>>>) = Interceptor.(>>>)
 (**/**)
 
 
+(** Flush the queue, reporting each job as abandoned. *)
+let rec flush_queue queue reporter =
+    match queue#get with
+        | Some (queue, job) ->
+            Log.set_output_formatter job;
+            let result = Job.Complete (Job.Abandoned (`Failure "(Path execution not finished)", job)) in
+            let reporter = reporter#report result in
+            flush_queue queue reporter
+        | None ->
+            reporter
+
+
 (** Main symbolic execution loop. *)
 let main_loop step queue reporter =
     (* set up a checkpoint to rollback to upon SignalException *)
@@ -44,18 +56,7 @@ let main_loop step queue reporter =
         (* if we got a signal, stop and return the checkpoint results *)
         Output.set_mode Output.MSG_REPORT;
         Output.printf "%s@." (Printexc.to_string exn);
-        (* For each job in queue, make it Abandoned and report it *)
-        let rec abandon_all (queue, reporter) =
-            match queue#get with
-                | Some (queue, job) ->
-                    Log.set_output_formatter job;
-                    let result = Job.Complete (Job.Abandoned (`Failure "(Path execution not finished)", job)) in
-                    let reporter = reporter#report result in
-                    abandon_all (queue, reporter)
-                | None ->
-                    (queue, reporter)
-        in
-        abandon_all !checkpoint
+        !checkpoint
 
 
 let run ?(random_seed=(!Executeargs.arg_random_seed))

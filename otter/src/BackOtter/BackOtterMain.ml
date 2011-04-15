@@ -135,7 +135,8 @@ let doit file =
         Output.printf "Backward strategy: %s@." (find_tag_name (!BackOtterQueue.default_bqueue) BackOtterQueue.queues);
         Output.printf "Ratio: %0.2f@." !BidirectionalQueue.default_bidirectional_search_ratio ;
 
-        let _, reporter = callchain_backward_se (new BackOtterReporter.t ()) file in
+        let queue, reporter = callchain_backward_se (new BackOtterReporter.t ()) file in
+        let reporter = OtterDriver.Driver.flush_queue queue reporter in
 
         (* print the results *)
         Output.set_formatter (new Output.plain);

@@ -22,7 +22,8 @@ let doit file =
 		(* run the job *)
 		let module Reporter = ErrorReporter.Make (OtterCore.Errors) in
 		let reporter = new Reporter.t () in
-		snd (Driver.run_basic reporter file)
+		let queue, reporter = Driver.run_basic reporter file in
+		Driver.flush_queue queue reporter
 	end in
 
     Output.set_formatter (new Output.plain);
