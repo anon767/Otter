@@ -7,7 +7,6 @@ open State
 open Job
 open Cil
 
-let arg_ignore_targets_in_entryfn = ref false
 let default_conditionals_forking_limit = ref max_int
 
 let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
@@ -47,8 +46,6 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
                 let fundec = BackOtterUtilities.get_transitive_unique_caller file fundec in
                 if List.memq fundec starter_fundecs then
                     starter_fundecs 
-                else if !arg_ignore_targets_in_entryfn && CilData.CilFundec.equal fundec entry_fn then 
-                    (Output.debug_printf "(ignored)"; starter_fundecs)
                 else fundec::starter_fundecs
             with Not_found -> 
                 Output.debug_printf "(missing) ";
@@ -144,17 +141,6 @@ let doit file =
         Output.printf "Counter statistics:@.";
         let counter_stats = DataStructures.NamedCounter.report () in
         List.iter (fun (name, value) -> Output.printf "%s : %d@." name value) counter_stats;
-        if (!BytesSTP.print_stp_queries) then (
-            Output.printf "Stp queries:@.";
-            List.iter (fun (pc, pre, guard, truth_value, time) ->
-                List.iter (Output.printf "PC: @[%a@]@." BytesPrinter.bytes) pc;
-                Output.printf "PRE: @[%a@]@." BytesPrinter.guard pre;
-                Output.printf "QUERY: @[%a@]@." BytesPrinter.guard guard;
-                Output.printf "TRUTH: %s@." (if truth_value then "True" else "False");
-                Output.printf "TIME: %.2f@." time;
-                Output.printf "--------------------------------------------------@."
-            ) (!BytesSTP.stp_queries)
-        );
         let steps, paths, abandoned = reporter#get_stats in
         Output.printf "Number of steps: %d@." steps;
         Output.printf "Number of paths: %d@." paths;
@@ -182,9 +168,6 @@ let options = [
     "--conditionals-forking-limit",
         Arg.Set_int default_conditionals_forking_limit,
         "<limit> Set the limit in conditionals forking (default: max_int (== don't use))";
-	"--ignore-targets-in-entryfn",
-		Arg.Set arg_ignore_targets_in_entryfn,
-		" If set, BackOtter will ignore targets in the entry function.";
 ] @
     BackOtterReporter.options @ 
     BackOtterTimer.options @ 

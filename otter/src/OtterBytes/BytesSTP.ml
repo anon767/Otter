@@ -9,7 +9,6 @@ module SymbolSet = Set.Make
          let compare (x : t) y = Pervasives.compare x.symbol_id y.symbol_id
      end)
 
-let print_stp_queries = ref false
 let arg_max_stp_time = ref (-0.1) (* negative means unlimited *)
 let stp_queries = ref []
 
@@ -735,9 +734,6 @@ let getAllValues pathCondition =
 (** {1 Command-line options} *)
 
 let options = [
-    "--printStpQueries",
-        Arg.Set print_stp_queries,
-        " Print STP queries (Path condition * pre * query * truth_value)";
     "--max-stp-time",
         Arg.Set_float arg_max_stp_time,
         "<t-secs> Maximum amount of time for a single query (default=unlimited)";
