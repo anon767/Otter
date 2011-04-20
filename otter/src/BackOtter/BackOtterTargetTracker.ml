@@ -8,7 +8,7 @@ open Cil
 (* TODO: replace LineTargets with the below *)
 module TargetSet = Set.Make (struct type t = string * int let compare = Pervasives.compare end)
 let targets = ref TargetSet.empty
-let target_matchers = ref (fun (reason : BackOtterErrors.t) (job : Job.t) k -> k reason job)
+let target_matchers = ref (fun (reason : BackOtterErrors.t) (job : Job.t) k -> (k reason job : BackOtterErrors.t option))
 
 
 let get_line_targets file =
@@ -51,7 +51,7 @@ let add_target string =
             let entryfn = ProgramPoints.get_entry_fundec job#file in
             let failing_path = DecisionPath.rev job#decision_path in
             let instruction = Job.get_instruction job in
-            let _ = BackOtterTargets.add_path fundec failing_path (Some instruction) in (* TODO: do we care if the path is new or not? *)
+            let is_new_path = BackOtterTargets.add_path fundec failing_path (Some instruction) in
             if CilData.CilFundec.equal fundec entryfn then begin
                 (* Remove instruction from line_targets *)
                 Output.must_printf "Remove target %s:%d@\n" file line;
@@ -59,7 +59,8 @@ let add_target string =
                 (* Remove instruction-related failing paths and function targets from BackOtterTargets *)
                 BackOtterTargets.remove_target_instruction instruction
             end;
-            true
+            if is_new_path then Some (`FailingPath (reason, fundec, failing_path))
+            else None
         end else
             k reason job
     in
@@ -74,18 +75,6 @@ class ['self] t delegate entry_fn =
 object (_ : 'self)
     val delegate = delegate
     method report job_state =
-        let original_job_state = job_state in
-
-        (* detect requested targets *)
-        begin match job_state with
-            | Job.Complete (Job.Abandoned (reason, job)) ->
-                if !target_matchers reason (job :> Job.t) (fun _ _ -> false) then
-                    (* report the error, but don't record it *)
-                    ignore (delegate#report job_state);
-            | _ ->
-                ()
-        end;
-
         (* convert executions that report repeated abandoned paths to Truncated *)
         let job_state = match job_state with
             | Job.Complete (Job.Abandoned (`TargetReached target, job)) ->
@@ -94,8 +83,14 @@ object (_ : 'self)
                 (* Failing path has least recent decision first. See the comment in BidirectionalQueue. *)
                 let failing_path = DecisionPath.rev job#decision_path in
                 let is_new_path = BackOtterTargets.add_path fundec failing_path (Some instruction) in
-                if is_new_path then job_state
+                if is_new_path then Job.Complete (Job.Abandoned (`FailingPath (`TargetReached target, fundec, failing_path), job))
                 else Job.Complete (Job.Truncated (`SummaryAbandoned (`TargetReached target), job))
+            | Job.Complete (Job.Abandoned (reason, job)) ->
+                (* TODO: merge the above cases with target_matchers *)
+                begin match !target_matchers reason job (fun _ _ -> None) with
+                    | Some abandoned -> Job.Complete (Job.Abandoned (reason, job))
+                    | None -> Job.Complete (Job.Truncated (`SummaryAbandoned reason, job))
+                end
             | _ ->
                 job_state
         in
@@ -113,22 +108,7 @@ object (_ : 'self)
             | _ ->
                 job_state
         in
-        let delegate = delegate#report job_state in
-
-        (* Print failing path. This is run after delegate#report so the failing path is printed after the failure message. *)
-        let print_failing_path job =
-            let fundec = BackOtterUtilities.get_origin_function job in
-            let failing_path = DecisionPath.rev job#decision_path in
-            Output.debug_printf "@\n=> Extract the following failing path for function %s:@." fundec.svar.vname;
-            Output.debug_printf "@[%a@]@\n@." DecisionPath.print failing_path;
-        in
-        begin match original_job_state with
-            | Job.Complete (Job.Abandoned (`TargetReached target, job)) ->
-                Output.printf "target_tracker: TargetReached @[%a@]@." Target.printer target;
-                print_failing_path job
-            | _ -> ()
-        end;
-        {< delegate = delegate >}
+        {< delegate = delegate#report job_state >}
 
     method should_continue = delegate#should_continue
 
