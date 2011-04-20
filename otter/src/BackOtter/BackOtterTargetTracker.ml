@@ -96,14 +96,6 @@ object (_ : 'self)
                 let is_new_path = BackOtterTargets.add_path fundec failing_path (Some instruction) in
                 if is_new_path then job_state
                 else Job.Complete (Job.Truncated (`SummaryAbandoned (`TargetReached target, Job.get_loc job), job))
-            | Job.Complete (Job.Abandoned (`Failure msg, job)) when !BackOtterReporter.arg_exceptions_as_failures ->
-                let fundec = BackOtterUtilities.get_origin_function job in
-                let instruction = Job.get_instruction job in
-                (* Failing path has least recent decision first. See the comment in BidirectionalQueue. *)
-                let failing_path = DecisionPath.rev job#decision_path in
-                let is_new_path = BackOtterTargets.add_path fundec failing_path (Some instruction) in
-                if is_new_path then job_state
-                else Job.Complete (Job.Truncated (`SummaryAbandoned (`Failure msg, Job.get_loc job), job))
             | _ ->
                 job_state
         in
@@ -133,9 +125,6 @@ object (_ : 'self)
         begin match original_job_state with
             | Job.Complete (Job.Abandoned (`TargetReached target, job)) ->
                 Output.printf "target_tracker: TargetReached @[%a@]@." Target.printer target;
-                print_failing_path job
-            | Job.Complete (Job.Abandoned (`Failure msg, job)) when !BackOtterReporter.arg_exceptions_as_failures ->
-                Output.printf "target_tracker: Failure (%s)@." msg;
                 print_failing_path job
             | _ -> ()
         end;
