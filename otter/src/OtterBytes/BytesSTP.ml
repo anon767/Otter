@@ -10,7 +10,6 @@ module SymbolSet = Set.Make
      end)
 
 let arg_max_stp_time = ref (-0.1) (* negative means unlimited *)
-let stp_queries = ref []
 
 (**/**) (* helpers for all_symbols *)
 module InternalAllSymbols = struct
@@ -630,41 +629,35 @@ let query_stp =
             OcamlSTP.set_seed vc (Some (Random.bits ()));
 
             let stp_query () = OcamlSTP.vc_query vc guard_stp in
-            let start = Sys.time () in
-            let answer =
-                try
-                    OcamlSTP.vc_push vc;
-                    let answer =
-                        if (!arg_max_stp_time) < 0.0 then
-                            stp_query ()
-                        else
-                            UnixPlus.fork_call ~time_limit:(!arg_max_stp_time) stp_query
-                    in
-                    OcamlSTP.vc_pop vc;
-                    answer
-                with exn ->
-                    OcamlSTP.vc_pop vc;
-                    match exn with
-                        | Invalid_argument s ->
-                            FormatPlus.failwith "Invalid_argument (%s)" s
-                        | UnixPlus.ForkCallTimedOut ->
-                            FormatPlus.failwith "ForkCallTimedOut caught in OcamlSTP.vc_query"
-                        | UnixPlus.ForkCallException _ ->
-                            FormatPlus.failwith "ForkCallException caught in OcamlSTP.vc_query"
-                        | UnixPlus.ForkCallFailure _ ->
-                            FormatPlus.failwith "ForkCallFailure caught in OcamlSTP.vc_query"
-                        | UnixPlus.ForkCallExited i ->
-                            FormatPlus.failwith "ForkCallExited (%d) caught in OcamlSTP.vc_query" i
-                        | UnixPlus.ForkCallKilled i ->
-                            FormatPlus.failwith "ForkCallKilled (%d) caught in OcamlSTP.vc_query" i
-                        | UnixPlus.ForkCallStopped i ->
-                            FormatPlus.failwith "ForkCallStopped (%d) caught in OcamlSTP.vc_query" i
-                        | exn ->
-                            raise exn
-            in
-            let elapsed = Sys.time () -. start in
-            stp_queries := (pc, pre, guard, answer = OcamlSTP.Valid, elapsed)::(!stp_queries);
-            answer
+            try
+                OcamlSTP.vc_push vc;
+                let answer =
+                    if (!arg_max_stp_time) < 0.0 then
+                        stp_query ()
+                    else
+                        UnixPlus.fork_call ~time_limit:(!arg_max_stp_time) stp_query
+                in
+                OcamlSTP.vc_pop vc;
+                answer
+            with exn ->
+                OcamlSTP.vc_pop vc;
+                match exn with
+                    | Invalid_argument s ->
+                        FormatPlus.failwith "Invalid_argument (%s)" s
+                    | UnixPlus.ForkCallTimedOut ->
+                        FormatPlus.failwith "ForkCallTimedOut caught in OcamlSTP.vc_query"
+                    | UnixPlus.ForkCallException _ ->
+                        FormatPlus.failwith "ForkCallException caught in OcamlSTP.vc_query"
+                    | UnixPlus.ForkCallFailure _ ->
+                        FormatPlus.failwith "ForkCallFailure caught in OcamlSTP.vc_query"
+                    | UnixPlus.ForkCallExited i ->
+                        FormatPlus.failwith "ForkCallExited (%d) caught in OcamlSTP.vc_query" i
+                    | UnixPlus.ForkCallKilled i ->
+                        FormatPlus.failwith "ForkCallKilled (%d) caught in OcamlSTP.vc_query" i
+                    | UnixPlus.ForkCallStopped i ->
+                        FormatPlus.failwith "ForkCallStopped (%d) caught in OcamlSTP.vc_query" i
+                    | exn ->
+                        raise exn
         end
     end in
 
