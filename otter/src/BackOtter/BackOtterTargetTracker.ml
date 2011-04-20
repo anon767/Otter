@@ -43,14 +43,14 @@ let add_target string =
                 FormatPlus.invalid_arg "Invalid BackOtter target specification %s: %s" string msg
     in
 
-    let target_matcher reason job_result k =
-        let loc = Job.get_loc job_result in
+    let target_matcher reason job k =
+        let loc = Job.get_loc job in
         if loc.Cil.file = file && loc.Cil.line = line && error_matcher reason then begin
             Output.must_printf "BackOtter target reached %s@\n" string;
-            let fundec = BackOtterUtilities.get_origin_function job_result in
-            let entryfn = ProgramPoints.get_entry_fundec job_result#file in
-            let failing_path = DecisionPath.rev job_result#decision_path in
-            let instruction = Job.get_instruction job_result in
+            let fundec = BackOtterUtilities.get_origin_function job in
+            let entryfn = ProgramPoints.get_entry_fundec job#file in
+            let failing_path = DecisionPath.rev job#decision_path in
+            let instruction = Job.get_instruction job in
             let _ = BackOtterTargets.add_path fundec failing_path (Some instruction) in (* TODO: do we care if the path is new or not? *)
             if CilData.CilFundec.equal fundec entryfn then begin
                 (* Remove instruction from line_targets *)
@@ -61,7 +61,7 @@ let add_target string =
             end;
             true
         end else
-            k reason job_result
+            k reason job
     in
 
     targets := TargetSet.add (file, line) !targets;
@@ -78,8 +78,8 @@ object (_ : 'self)
 
         (* detect requested targets *)
         begin match job_state with
-            | Job.Complete (Job.Abandoned (reason, job_result)) ->
-                if !target_matchers reason (job_result :> Job.t) (fun _ _ -> false) then
+            | Job.Complete (Job.Abandoned (reason, job)) ->
+                if !target_matchers reason (job :> Job.t) (fun _ _ -> false) then
                     (* report the error, but don't record it *)
                     ignore (delegate#report job_state);
             | _ ->
@@ -88,55 +88,55 @@ object (_ : 'self)
 
         (* convert executions that report repeated abandoned paths to Truncated *)
         let job_state = match job_state with
-            | Job.Complete (Job.Abandoned (`TargetReached target, job_result)) ->
-                let fundec = BackOtterUtilities.get_origin_function job_result in
-                let instruction = Job.get_instruction job_result in
+            | Job.Complete (Job.Abandoned (`TargetReached target, job)) ->
+                let fundec = BackOtterUtilities.get_origin_function job in
+                let instruction = Job.get_instruction job in
                 (* Failing path has least recent decision first. See the comment in BidirectionalQueue. *)
-                let failing_path = DecisionPath.rev job_result#decision_path in
+                let failing_path = DecisionPath.rev job#decision_path in
                 let is_new_path = BackOtterTargets.add_path fundec failing_path (Some instruction) in
                 if is_new_path then job_state
-                else Job.Complete (Job.Truncated (`SummaryAbandoned (`TargetReached target, Job.get_loc job_result), job_result))
-            | Job.Complete (Job.Abandoned (`Failure msg, job_result)) when !BackOtterReporter.arg_exceptions_as_failures ->
-                let fundec = BackOtterUtilities.get_origin_function job_result in
-                let instruction = Job.get_instruction job_result in
+                else Job.Complete (Job.Truncated (`SummaryAbandoned (`TargetReached target, Job.get_loc job), job))
+            | Job.Complete (Job.Abandoned (`Failure msg, job)) when !BackOtterReporter.arg_exceptions_as_failures ->
+                let fundec = BackOtterUtilities.get_origin_function job in
+                let instruction = Job.get_instruction job in
                 (* Failing path has least recent decision first. See the comment in BidirectionalQueue. *)
-                let failing_path = DecisionPath.rev job_result#decision_path in
+                let failing_path = DecisionPath.rev job#decision_path in
                 let is_new_path = BackOtterTargets.add_path fundec failing_path (Some instruction) in
                 if is_new_path then job_state
-                else Job.Complete (Job.Truncated (`SummaryAbandoned (`Failure msg, Job.get_loc job_result), job_result))
+                else Job.Complete (Job.Truncated (`SummaryAbandoned (`Failure msg, Job.get_loc job), job))
             | _ ->
                 job_state
         in
         (* convert executions from non-entry functions to Truncated *)
         let job_state = match job_state with
-            | Job.Complete (Job.Return (return_code, job_result))
-                    when BackOtterUtilities.get_origin_function job_result != entry_fn ->
-                Job.Complete (Job.Truncated (`SummaryReturn return_code, job_result))
-            | Job.Complete (Job.Exit (return_code, job_result))
-                    when BackOtterUtilities.get_origin_function job_result != entry_fn ->
-                Job.Complete (Job.Truncated (`SummaryExit return_code, job_result))
-            | Job.Complete (Job.Abandoned (reason, job_result))
-                    when BackOtterUtilities.get_origin_function job_result != entry_fn ->
-                Job.Complete (Job.Truncated (`SummaryAbandoned (reason, Job.get_loc job_result), job_result))
+            | Job.Complete (Job.Return (return_code, job))
+                    when BackOtterUtilities.get_origin_function job != entry_fn ->
+                Job.Complete (Job.Truncated (`SummaryReturn return_code, job))
+            | Job.Complete (Job.Exit (return_code, job))
+                    when BackOtterUtilities.get_origin_function job != entry_fn ->
+                Job.Complete (Job.Truncated (`SummaryExit return_code, job))
+            | Job.Complete (Job.Abandoned (reason, job))
+                    when BackOtterUtilities.get_origin_function job != entry_fn ->
+                Job.Complete (Job.Truncated (`SummaryAbandoned (reason, Job.get_loc job), job))
             | _ ->
                 job_state
         in
         let delegate = delegate#report job_state in
 
         (* Print failing path. This is run after delegate#report so the failing path is printed after the failure message. *)
-        let print_failing_path job_result =
-            let fundec = BackOtterUtilities.get_origin_function job_result in
-            let failing_path = DecisionPath.rev job_result#decision_path in
+        let print_failing_path job =
+            let fundec = BackOtterUtilities.get_origin_function job in
+            let failing_path = DecisionPath.rev job#decision_path in
             Output.debug_printf "@\n=> Extract the following failing path for function %s:@." fundec.svar.vname;
             Output.debug_printf "@[%a@]@\n@." DecisionPath.print failing_path;
         in
         begin match original_job_state with
-            | Job.Complete (Job.Abandoned (`TargetReached target, job_result)) ->
+            | Job.Complete (Job.Abandoned (`TargetReached target, job)) ->
                 Output.printf "target_tracker: TargetReached @[%a@]@." Target.printer target;
-                print_failing_path job_result
-            | Job.Complete (Job.Abandoned (`Failure msg, job_result)) when !BackOtterReporter.arg_exceptions_as_failures ->
+                print_failing_path job
+            | Job.Complete (Job.Abandoned (`Failure msg, job)) when !BackOtterReporter.arg_exceptions_as_failures ->
                 Output.printf "target_tracker: Failure (%s)@." msg;
-                print_failing_path job_result
+                print_failing_path job
             | _ -> ()
         end;
         {< delegate = delegate >}
