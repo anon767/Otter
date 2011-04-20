@@ -4,7 +4,7 @@ open OtterReporter
 
 module Reporter = ErrorReporter.Make (BackOtterErrors)
 
-class ['self] t ?max_steps ?max_paths ?max_abandoned () = object (self)
+class ['self] t ?max_steps ?max_paths ?max_abandoned () = object
     inherit ['self] Reporter.t ?max_steps ?max_paths ?max_abandoned () as super
 
     method report result =
