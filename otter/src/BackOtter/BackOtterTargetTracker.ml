@@ -95,7 +95,7 @@ object (_ : 'self)
                 let failing_path = DecisionPath.rev job#decision_path in
                 let is_new_path = BackOtterTargets.add_path fundec failing_path (Some instruction) in
                 if is_new_path then job_state
-                else Job.Complete (Job.Truncated (`SummaryAbandoned (`TargetReached target, Job.get_loc job), job))
+                else Job.Complete (Job.Truncated (`SummaryAbandoned (`TargetReached target), job))
             | _ ->
                 job_state
         in
@@ -109,7 +109,7 @@ object (_ : 'self)
                 Job.Complete (Job.Truncated (`SummaryExit return_code, job))
             | Job.Complete (Job.Abandoned (reason, job))
                     when BackOtterUtilities.get_origin_function job != entry_fn ->
-                Job.Complete (Job.Truncated (`SummaryAbandoned (reason, Job.get_loc job), job))
+                Job.Complete (Job.Truncated (`SummaryAbandoned reason, job))
             | _ ->
                 job_state
         in

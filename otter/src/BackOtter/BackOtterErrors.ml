@@ -6,7 +6,7 @@ type t = [
     | `FailingPaths of DecisionPath.t list
     | `SummaryReturn of Bytes.bytes option
     | `SummaryExit of Bytes.bytes option
-    | `SummaryAbandoned of t * Cil.location
+    | `SummaryAbandoned of t
     | Errors.t
 ]
 
@@ -20,7 +20,7 @@ let rec printer ff (error : t) = match error with
     | `FailingPaths _ -> Format.fprintf ff "(FailingPaths)" (* TODO (martin): print something meaningful *)
     | `SummaryReturn return_opt -> Format.fprintf ff "`SummaryReturn(@[%a@])" (option_printer BytesPrinter.bytes) return_opt
     | `SummaryExit exit_opt -> Format.fprintf ff "`SummaryExit(@[%a@])" (option_printer BytesPrinter.bytes) exit_opt
-    | `SummaryAbandoned (reason, loc) -> Format.fprintf ff "`SummaryAbandoned(@[%s@@%d: %a@])" loc.Cil.file loc.Cil.line printer reason
+    | `SummaryAbandoned reason -> Format.fprintf ff "`SummaryAbandoned(@[%a@])" printer reason
     | #Errors.t as x -> Errors.printer ff x
 
 
