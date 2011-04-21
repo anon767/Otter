@@ -13,21 +13,23 @@ int main()
 	if(__otter_multi_fork())
 	{
 		// Wait until the other process increments *p
-		__otter_multi_begin_atomic();
-		__otter_multi_begin_atomic();
 		while (*p == 0) {
 			__otter_multi_io_block(p);
 		}
+		__otter_multi_begin_atomic();
+		__otter_multi_begin_atomic();
+		(*p)++; /* Step 2 */
+    __otter_multi_io_block(p);
     __otter_multi_end_atomic();
-		(*p)++; /* Step 3 */
 	}
 	else
 	{
 		__otter_multi_begin_atomic();
-		__ASSERT(*p == 0); /* Step 1 */
-		(*p)++; /* Step 2 */
+		__ASSERT(*p == 0);
+		(*p)++; /* Step 1 */
 		__otter_multi_io_block(p); // This should end the atomic section
-		__ASSERT(*p == 2); /* Step 4 */
+		__ASSERT(*p == 2);
+		(*p)++; /* Step 3 */
 	}
 	
 	return(0);
