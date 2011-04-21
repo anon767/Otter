@@ -1,0 +1,1 @@
+./run-client test-functions-symbolic.c test-client-helper.c "$@"
