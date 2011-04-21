@@ -20,21 +20,20 @@ let update_shared_memory shared_blocks src dest =
 
 
 (* update the multijob with a completed job *)
-let process_completed = function
-    | Return (_, job)
-    | Exit (_, job)
-    | Abandoned (_, job)
-    | Truncated (_, job) ->
-        if job#other_processes = [] then
-            None
-        else
-            (* update process parents of children of the compleated process to point to the completed process's parent *)
-            let job = job#with_other_processes begin List.map
+let process_completed (completed, job) =
+    if job#other_processes = [] then
+        (job : _ #Info.t)#finish completed
+    else
+        let job = (job : _ #Info.t)#fork_finish completed in
+        (* update process parents of children of the completed process to point to the completed process's parent *)
+        let other_processes =
+            List.map
                 (fun other -> if other#parent_pid = job#pid then other#with_parent_pid job#parent_pid else other)
                 job#other_processes
-            end in
-            let job = job#with_priority MultiJob.Complete in
-            Some job
+        in
+        let job = job#with_other_processes other_processes in
+        let job = job#with_priority MultiJob.Complete in
+        job
 
 
 (* schedule a process in a job *)

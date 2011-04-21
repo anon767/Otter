@@ -78,7 +78,7 @@ let printValue value job =
 	let l = VarinfoMap.fold f (List.hd job#state.locals) [] in
 		if (List.length l > 0) then 
 		let vinfo = List.hd l in
-		let _,v,_ = Expression.rval job (Cil.Lval (Cil.Var vinfo, Cil.NoOffset)) [] in
+		let _,v = Expression.rval job (Cil.Lval (Cil.Var vinfo, Cil.NoOffset)) in
 		printf "length of list %d\n" (List.length l);
 		(*printf "bytes returned from rval @[%a@]@\n\n" (BytesPrinter.bytes Format.std_formatter v);*)
 		printf "Variable %s has value %d in locals" vinfo.Cil.vname (OtterBytes.Bytes.bytes_to_int_auto v );
@@ -112,10 +112,10 @@ let main_loop interceptor queue reporter job =
 					let loc = OtterCore.Job.get_loc !currJob in 
 					if (loc.Cil.line) == !breakpoint then run := false
 			);
-			let jobstate = step !currJob in 
-			match jobstate with
-			| Job.Active jobr -> currJob := jobr
-			| Job.Fork [Active job1; Active job2] ->  
+			let active, _ = !currJob#run step in
+			match active with
+			| [ jobr ] -> currJob := jobr
+			| [ job1; job2 ] ->
 				let pick = ref "default" in
 				while (!pick <> "true" && !pick <> "false") do
 					printf "Execute true or false job?  Type \"true\" or \"false\"\n"; 
@@ -123,17 +123,17 @@ let main_loop interceptor queue reporter job =
 				done;
 				if !pick = "true" then (printf "job #%d was picked for true\n" job1#path_id; currJob := job1)
 				else (printf "job #%d was picked for false\n" job2#path_id; currJob := job2 )
-			| Job.Complete completion ->  doWork := false
-			| default -> printf "unmatched job\n"; currJob := !currJob
+			| [] ->  doWork := false
+			| default -> printf "unmatched job\n"
 			)
-		|"next" -> ( let jobstate = step !currJob in  
-			match jobstate with
-			| Job.Active jobr -> 
+		|"next" -> ( let active, _ = !currJob#run step in
+			match active with
+			| [ jobr ] ->
 				let loc1 = OtterCore.Job.get_loc !currJob in
 				let loc2 = OtterCore.Job.get_loc jobr in
 				if (loc1 == loc2) then next := true else next := false;
 				currJob := jobr
-			| Job.Fork [Active job1; Active job2] ->  
+			| [ job1; job2 ] ->
 				let pick = ref "default" in
 				while (!pick <> "true" && !pick <> "false") do
 					printf "Execute true or false job?  Type \"true\" or \"false\"\n"; 
@@ -141,8 +141,8 @@ let main_loop interceptor queue reporter job =
 				done;
 				if !pick = "true" then (printf "job #%d was picked for true\n" job1#path_id; currJob := job1)
 				else (printf "job #%d was picked for false\n" job2#path_id; currJob := job2 )
-			| Job.Complete completion ->  doWork := false
-			| default -> printf "unmatched job\n"; currJob := !currJob				
+			| [] ->  doWork := false
+			| default -> printf "unmatched job\n"
 			)
 		(*Cil.dumpStmt Cil.defaultCilPrinter stdout 5 job.stmt;*)
 		|"quit" | "exit" -> doWork := false

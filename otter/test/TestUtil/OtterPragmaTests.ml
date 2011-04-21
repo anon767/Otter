@@ -139,14 +139,14 @@ module Make (Errors : Errors) = struct
     (** Helper to print Otter.Job.job_completion list. *)
     let results_printer list =
         let completion_printer ff = function
-            | Job.Exit (exit_opt, _) ->
+            | Job.Exit exit_opt, _ ->
                 Format.fprintf ff "Exit(@[%a@])" (option_printer BytesPrinter.bytes) exit_opt
-            | Job.Return (return_opt, _) ->
+            | Job.Return return_opt, _ ->
                 Format.fprintf ff "Return(@[%a@])" (option_printer BytesPrinter.bytes) return_opt
-            | Job.Abandoned (reason, job) ->
+            | Job.Abandoned reason, job ->
                 let loc = Job.get_loc job in
                 Format.fprintf ff "Abandoned(@[%s@@%d: %a@])" loc.Cil.file loc.Cil.line Errors.printer reason
-            | Job.Truncated (reason, _) ->
+            | Job.Truncated reason, _ ->
                 Format.fprintf ff "Truncated(@[%a@])" Errors.printer reason
         in
         list_printer completion_printer "@\n" list
@@ -222,7 +222,7 @@ module Make (Errors : Errors) = struct
     (** CPS test that the results contains a {!Job.Return}, passing the remaining results to the next test. *)
     let expect_return file loc asserts results k =
         let asserts' = assert_exps file loc asserts in
-        match ListPlus.remove_first (function Job.Return (return_opt, result) -> asserts' result return_opt None | _ -> false) results with
+        match ListPlus.remove_first (function Job.Return return_opt, result -> asserts' result return_opt None | _ -> false) results with
             | Some (_, results) ->
                 k results
             | None when asserts = [] ->
@@ -235,7 +235,7 @@ module Make (Errors : Errors) = struct
     (** CPS test that the results contains a {!Job.Exit}, passing the remaining results to the next test. *)
     let expect_exit file loc asserts results k =
         let asserts' = assert_exps file loc asserts in
-        match ListPlus.remove_first (function Job.Exit (exit_opt, result) -> asserts' result None exit_opt | _ -> false) results with
+        match ListPlus.remove_first (function Job.Exit exit_opt, result -> asserts' result None exit_opt | _ -> false) results with
             | Some (_, results) ->
                 k results
             | None when asserts = [] ->
@@ -255,7 +255,7 @@ module Make (Errors : Errors) = struct
         in
         let asserts' = assert_exps file loc asserts in
         let is_abandoned = function
-            | Job.Abandoned (reason, result) -> reason' reason && asserts' result None None
+            | Job.Abandoned reason, result -> reason' reason && asserts' result None None
             | _ -> false
         in
         fun results k -> match ListPlus.remove_first is_abandoned results with
@@ -279,18 +279,19 @@ module Make (Errors : Errors) = struct
 
     (** CPS test that there are no other {!Job.Return}, passing the remaining results to the next test. *)
     let no_other_return arg =
-        no_other_x (function Job.Return _ -> true | _ -> false) "Return" arg
+        no_other_x (function Job.Return _, _ -> true | _ -> false) "Return" arg
 
     (** CPS test that there are no other {!Job.Exit}, passing the remaining results to the next test. *)
     let no_other_exit arg =
-        no_other_x (function Job.Exit _ -> true | _ -> false) "Exit" arg
+        no_other_x (function Job.Exit _, _ -> true | _ -> false) "Exit" arg
 
     (** CPS test that there are no other {!Job.Abandoned}, passing the remaining results to the next test. *)
     let no_other_abandoned arg =
-        no_other_x (function Job.Abandoned _ -> true | _ -> false) "Abandoned" arg
+        no_other_x (function Job.Abandoned _, _ -> true | _ -> false) "Abandoned" arg
 
     (** CPS test that there are no other {!Job.job_completion} at all *)
-    let no_other_results arg = no_other_x (fun _ -> true) "results" arg
+    (* TODO: handle Job.Truncated *)
+    let no_other_results arg = no_other_x (function Job.Truncated _, _ -> false | _ -> true) "results" arg
 
 
     (** Parse [#pragma] directives in a {!Cil.file} for test flags and expectations, and generate a test function. *)

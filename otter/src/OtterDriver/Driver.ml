@@ -10,15 +10,17 @@ let (>>>) = Interceptor.(>>>)
 
 
 (** Flush the queue, reporting each job as abandoned. *)
-let rec flush_queue queue reporter =
-    match queue#get with
-        | Some (queue, job) ->
-            Log.set_output_formatter job;
-            let result = Job.Complete (Job.Abandoned (`Failure "(Path execution not finished)", job)) in
-            let reporter = reporter#report result in
-            flush_queue queue reporter
-        | None ->
-            reporter
+let flush_queue queue reporter =
+    let rec flush_queue complete queue =
+        match queue#get with
+            | Some (queue, job) ->
+                flush_queue ((Job.Abandoned (`Failure "(Path execution not finished)"), job)::complete) queue
+            | None ->
+                (complete, queue)
+    in
+    let complete, queue = flush_queue [] queue in
+    let complete = BasicReporter.convert_non_failure_abandoned_to_truncated complete in
+    reporter#report complete
 
 
 (** Main symbolic execution loop. *)
@@ -26,23 +28,14 @@ let main_loop step queue reporter =
     (* set up a checkpoint to rollback to upon SignalException *)
     let checkpoint = ref (queue, reporter) in
     try
-        let step job = BasicReporter.convert_non_failure_abandoned_to_truncated (step job) in
         let rec run (queue, reporter) =
             checkpoint := (queue, reporter);
             match Profiler.global#call "Driver.main_loop/get" (fun () -> queue#get) with
                 | Some (queue, job) ->
-                    let result = Profiler.global#call "Driver.main_loop/step" (fun () -> step job) in
-                    let rec process_result (queue, reporter) result =
-                        let reporter = reporter#report result in
-                        match result with
-                            | Job.Active job ->
-                                (queue#put job, reporter)
-                            | Job.Fork results ->
-                                List.fold_left process_result (queue, reporter) results
-                            | Job.Complete completion ->
-                                (queue, reporter)
-                    in
-                    let queue, reporter = Profiler.global#call "Driver.main_loop/report" (fun () -> process_result (queue, reporter) result) in
+                    let active, complete = Profiler.global#call "Driver.main_loop/step" (fun () -> job#run step) in
+                    let queue = List.fold_left (fun queue job -> queue#put job) queue active in
+                    let complete = BasicReporter.convert_non_failure_abandoned_to_truncated complete in
+                    let reporter = Profiler.global#call "Driver.main_loop/report" (fun () -> reporter#report complete) in
                     if reporter#should_continue then
                         run (queue, reporter)
                     else

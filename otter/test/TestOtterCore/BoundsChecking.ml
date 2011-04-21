@@ -2,7 +2,6 @@ open TestUtil.MyOUnit
 open TestUtil.OtterUtil
 open OtterCore
 open State
-open Job
 
 (* test helper that runs the symbolic executor on a file given a source code as a string *)
 let test_bounds content ?label test = test_otter content ?label test
@@ -12,10 +11,10 @@ let test_bounds content ?label test = test_otter content ?label test
 let expectedResultCounts r e a results =
     (* count completion types *)
     let counts = List.fold_left begin fun (r,e,a) -> function
-        | Return _ -> (succ r, e, a)
-        | Exit _ -> (r, succ e, a)
-        | Abandoned _ -> (r, e, succ a)
-        | Truncated _ -> (r, e, a) (* ignored *)
+        | Job.Return _, _ -> (succ r, e, a)
+        | Job.Exit _, _ -> (r, succ e, a)
+        | Job.Abandoned _, _ -> (r, e, succ a)
+        | Job.Truncated _, _ -> (r, e, a) (* ignored *)
     end (0, 0, 0) results in
     assert_equal
         ~printer:(fun ff (r,e,a) -> Format.fprintf ff "%d returned; %d exited; %d abandoned" r e a)
@@ -113,7 +112,7 @@ let simple_testsuite = "Simple" >::: [
 			 expectedResultCounts 0 0 2 res;
 			 (* Make sure the path conditions are each length 1 *)
 			 match res with
-					 [Abandoned (_,res1); Abandoned (_,res2)] ->
+					 [ (Job.Abandoned _, res1); (Job.Abandoned _, res2)] ->
 						 assert_equal 1 (PathCondition.length res1#state.path_condition)
 							 ~msg:"Incorrect path condition";
 						 assert_equal 1 (PathCondition.length res2#state.path_condition)

@@ -172,8 +172,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                     Output.printf "Call target function %s@." fundec.svar.vname;
 
                                     (* just note that the original job was forked into a bounded job *)
-                                    let job, bounded_job = (job : #Info.t)#fork2 (fun job -> job) (fun job -> job) in
-
+                                    let bounded_job = job#clone in
                                     Output.debug_printf "Add job %d into the bounded_jobqueue@." bounded_job#node_id;
                                     let job_to_bounding_paths = JobMap.add bounded_job failing_paths job_to_bounding_paths in
                                     let bounded_jobqueue = bounded_jobqueue#put bounded_job in
@@ -265,10 +264,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                                         else begin
 
                                             (* just note that the original job was forked into a bounded job *)
-                                            let jobqueue = jobqueue#remove job in
-                                            let job, bounded_job = (job : #Info.t)#fork2 (fun job -> job) (fun job -> job) in
-                                            let jobqueue = jobqueue#put job in
-
+                                            let bounded_job = job#clone in
                                             Output.debug_printf "Add job %d into the bounded_jobqueue@." bounded_job#node_id;
                                             let job_to_bounding_paths = JobMap.add bounded_job bounding_paths job_to_bounding_paths in
                                             let bounded_jobqueue = bounded_jobqueue#put bounded_job in

@@ -7,7 +7,8 @@ int main() {
 	__SYMBOLIC(&x);
 	int *y = x == -1 ? 0 : &x;
 	if (x < 0) {
-		__ASSUME(*y, x == 0);
+		__ASSUME(x == 0);
+		*y = 1;
     /* The possible error of dereferencing y when it's null doesn't
     matter, because x==0 can't be true. Hence, there is no failing
     path. */

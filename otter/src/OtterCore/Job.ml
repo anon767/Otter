@@ -30,7 +30,14 @@ let emptyHistory = {
 }
 
 
-class t file' fn :
+type ('abandoned, 'truncated) complete =
+    | Return of Bytes.bytes option (* Successful completion by returning from the entry function *)
+    | Exit of Bytes.bytes option (* Successful completion by calling _exit *)
+    | Abandoned of 'abandoned (* Termination due to an error in the source program *)
+    | Truncated of 'truncated (* Termination for other reasons *)
+
+
+class ['abandoned, 'truncated] t file' fn :
     object ('self)
         (* TODO: perhaps use a camlp4 syntax extension to deal with this boilerplate? *)
         (* TODO: group methods into logical components that can be composed mix-in style *)
@@ -40,7 +47,7 @@ class t file' fn :
         method with_file : Cil.file -> 'self
 
         inherit State.t
-        inherit Info.t
+        inherit [('abandoned, 'truncated) complete] Info.t
 
         method exHist : executionHistory
         method with_exHist : executionHistory -> 'self
@@ -70,7 +77,7 @@ class t file' fn :
         method with_file file = {< file = file >}
 
         inherit State.t as state_super
-        inherit Info.t as info_super
+        inherit [('abandoned, 'truncated) complete] Info.t as info_super
 
         val mutable exHist = emptyHistory
         method exHist = exHist
@@ -130,20 +137,6 @@ class t file' fn :
             trackedFns <- other#trackedFns;
             inTrackedFn <- other#inTrackedFn;
     end
-
-
-type ('job, 'abandoned, 'truncated) job_completion =
-    | Return of Bytes.bytes option * 'job (* Jobs that successfully completed by returning from the entry function *)
-    | Exit of Bytes.bytes option * 'job (* Jobs that successfully completed by calling _exit *)
-    | Abandoned of 'abandoned * 'job (* Jobs that are terminated due to an error in the source program *)
-    | Truncated of 'truncated * 'job (* Jobs that are terminated for other reasons *)
-    constraint 'job = #t
-
-type ('job, 'abandoned, 'truncated) job_state =
-    | Active of 'job
-    | Fork of ('job, 'abandoned, 'truncated) job_state list
-    | Complete of ('job, 'abandoned, 'truncated) job_completion
-    constraint 'job = #t
 
 
 (** Get the file location for the current job instruction.

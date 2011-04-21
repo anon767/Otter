@@ -4,7 +4,6 @@ open OtterBytes
 open OtterCore
 open Bytes
 open State
-open Job
 
 
 (*
@@ -45,7 +44,7 @@ let exit_code_testsuite = "Exit Code" >::: [
             return 0;
         }"
         begin fun results ->
-            assert_match begin fun [ Return (Some actual, _) ] ->
+            assert_match begin fun [ (Job.Return (Some actual), _) ] ->
                 assert_equal ~eq:bytes__equal bytes__zero actual
             end results
         end;
@@ -57,7 +56,7 @@ let exit_code_testsuite = "Exit Code" >::: [
             return 1;
         }"
         begin fun results ->
-            assert_match begin fun [ Exit (Some actual, _) ] ->
+            assert_match begin fun [ (Job.Exit (Some actual), _) ] ->
                 assert_equal ~eq:bytes__equal bytes__zero actual
             end results
         end;
@@ -69,7 +68,7 @@ let exit_code_testsuite = "Exit Code" >::: [
             return 1;
         }"
         begin fun results ->
-            assert_match begin fun [ Exit (None, _) ] ->
+            assert_match begin fun [ (Job.Exit None, _) ] ->
                 ()
             end results
         end;

@@ -18,18 +18,15 @@ class ['self] t
     val abandoned = 0
     val completed = []
 
-    method report = function
-        | Job.Complete completion ->
-            {<
-                steps = steps + 1;
-                paths = paths + (match completion with Job.Truncated _ -> 0 | _ -> 1);
-                abandoned = abandoned + (match completion with Job.Abandoned _ -> 1 | _ -> 0);
-                completed = completion::completed;
-            >}
-
-        | Job.Active _
-        | Job.Fork _ ->
-            {< steps = steps + 1 >}
+    method report results =
+        let steps = steps + 1 in
+        let paths, abandoned, completed = List.fold_left begin fun (paths, abandoned, completed) (completion, job) ->
+            let paths = paths + (match completion with Job.Truncated _ -> 0 | _ -> 1) in
+            let abandoned = abandoned + (match completion with Job.Abandoned _ -> 1 | _ -> 0) in
+            let completed = (completion, job)::completed in
+            (paths, abandoned, completed)
+        end (paths, abandoned, completed) results in
+        {< steps = steps; paths = paths; abandoned = abandoned; completed = completed >}
 
     method should_continue =
         (max_steps = 0 || steps < max_steps)
@@ -43,18 +40,16 @@ class ['self] t
 end
 
 (* TODO: remove this function and roll its functionality elsewhere; should consider a more structured notion of targets or error filtering *)
-let convert_non_failure_abandoned_to_truncated job_state = 
-    let rec convert_non_failure_abandoned_to_truncated = function
-        | Job.Fork job_states -> Job.Fork (List.map convert_non_failure_abandoned_to_truncated job_states)
-        | Job.Complete (Job.Abandoned (`TargetReached _, job)) as job_state -> job_state
-        | Job.Complete (Job.Abandoned (reason, job)) -> 
-            Job.Complete (Job.Truncated (reason, job))
-        | job_state -> job_state
-    in
-    if (!arg_convert_non_failure_abandoned_to_truncated) then 
-        convert_non_failure_abandoned_to_truncated job_state
+let convert_non_failure_abandoned_to_truncated results =
+    if !arg_convert_non_failure_abandoned_to_truncated then
+        List.map begin function
+            | Job.Abandoned reason, job ->
+                (Job.Truncated reason, job)
+            | result ->
+                result
+        end results
     else
-        job_state
+        results
 
 
 (** {1 Command-line options} *)

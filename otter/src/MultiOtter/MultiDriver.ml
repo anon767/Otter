@@ -5,7 +5,6 @@ open OtterCore
 open OtterReporter
 open OtterDriver
 open State
-open Job
 
 open MultiJobUtilities
 
@@ -22,29 +21,16 @@ let multi_set_output_formatter job =
 	Output.set_formatter (new Output.labeled label)
 
 
-let rec process_results = function
-    | Active _ as result ->
-        result
-    | Fork results ->
-        Fork (List.map process_results results)
-    | Complete completion ->
-        match process_completed completion with
-            | Some job -> Fork [ Active job; Complete completion ]
-            | None -> Complete completion
-
-
 let rec flush_queue reporter job_queue =
     match job_queue#get with
       | None -> reporter
       | Some (job_queue, job) ->
             multi_set_output_formatter job;
-            let completion = Abandoned (`Failure "Killed by signal", job) in
-            let reporter = reporter#report (Complete completion) in
-            match process_completed completion with
-                | Some job ->
-                    flush_queue reporter (job_queue#put job) (* Put the other processes back into the queue so that they get reported, too. *)
-                | None ->
-                    flush_queue reporter job_queue
+            let active, complete = job#run (fun job -> process_completed (Job.Abandoned (`Failure "Killed by signal"), job)) in
+            (* Put the other processes back into the queue so that they get reported, too. *)
+            let job_queue = List.fold_left (fun job_queue job -> job_queue#put job) job_queue active in
+            let reporter = reporter#report complete in
+            flush_queue reporter job_queue
 
 
 let run reporter file =
@@ -57,8 +43,9 @@ let run reporter file =
     let step job =
         let job = MultiJobUtilities.schedule_job job in
         multi_set_output_formatter job;
-        let results = interceptor job Statement.step in
-        process_results results
+        (job : _ #Info.t)#try_run
+            (fun job -> interceptor job Statement.step)
+            ~catch_finish:process_completed
     in
     let job = new MultiJob.t file (file.Cil.fileName::!ProgramPoints.command_line) in
     let queue = (OtterQueue.Queue.get_default ())#put job in

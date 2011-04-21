@@ -21,15 +21,13 @@ let test_coverage content ?label untracked_fns test =
             (* figure out the coverage *)
             let (all_edges, all_blocks, all_lines, all_conds, all_paths_count) = List.fold_left begin fun (edges, blocks, lines, conds, paths_count) result ->
                 match result with
-                    | Return (_, c)
-                    | Exit (_, c) ->
+                    | (Job.Return _ | Job.Exit _), c ->
                         let edges = EdgeSet.union edges c#exHist.coveredEdges in
                         let blocks = StmtInfoSet.union blocks c#exHist.coveredBlocks in
                         let lines = LineSet.union lines c#exHist.coveredLines in
                         let conds = CondSet.union conds c#exHist.coveredConds in
                         (edges, blocks, lines, conds, paths_count + 1)
-                    | Abandoned _
-                    | Truncated _ -> (* TODO: should they be counted? *)
+                    | (Job.Abandoned _ | Job.Truncated _), _ -> (* TODO: should they be counted? *)
                         (edges, blocks, lines, conds, paths_count)
             end (EdgeSet.empty, StmtInfoSet.empty, LineSet.empty, CondSet.empty, 0) results in
             let all_edges_count = EdgeSet.cardinal all_edges in

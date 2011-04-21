@@ -5,6 +5,7 @@ open CilUtilities
 open OtterBytes
 open Bytes
 open BytesUtility
+open Info
 open State
 open Job
 open CoverageData
@@ -81,18 +82,18 @@ let addInstrCoverage job instr = Profiler.global#call "Statement.addInstrCoverag
             LineSet.add (instrLoc.Cil.file,instrLoc.Cil.line) job#exHist.coveredLines; }
 end
 
-let exec_fundec job instr fundec lvalopt exps errors = Profiler.global#call "Statement.exec_fundec" begin fun () ->
+let exec_fundec job instr fundec lvalopt exps = Profiler.global#call "Statement.exec_fundec" begin fun () ->
     (* TODO: Profiler.start_fcall job fundec *)
 
     let stmt = job#stmt in
 
     (* evaluate the arguments *)
-    let job, argvs, errors = List.fold_right begin fun exp (job, argvs, errors) ->
-        let job, bytes, errors = Profiler.global#call "Statement.exec_fundec/rval" begin fun () ->
-            Expression.rval job exp errors 
-    end in
-        (job, bytes::argvs, errors)
-    end exps (job, [], errors) in
+    let job, argvs = List.fold_right begin fun exp (job, argvs) ->
+        let job, bytes = Profiler.global#call "Statement.exec_fundec/rval" begin fun () ->
+            Expression.rval job exp
+        end in
+        (job, bytes::argvs)
+    end exps (job, []) in
 
     (* [stmt] is an [Instr], so it can't have two successors. If
      [func] returns, then [stmt] has exactly one successor. If
@@ -116,10 +117,10 @@ let exec_fundec job instr fundec lvalopt exps errors = Profiler.global#call "Sta
     let job = job#with_stmt (List.hd fundec.sallstmts) in
     let job = job#with_instrList [] in
     let job = job#with_inTrackedFn (StringSet.mem fundec.svar.vname job#trackedFns) in
-    (Active job, errors)
+    job
 end
 
-let exec_instr_call job instr lvalopt fexp exps errors = Profiler.global#call "Statement.exec_instr_call" begin fun () ->
+let exec_instr_call job instr lvalopt fexp exps = Profiler.global#call "Statement.exec_instr_call" begin fun () ->
     match fexp with
       | Lval(Cil.Var(varinfo), Cil.NoOffset) ->
             let fundec =
@@ -127,14 +128,14 @@ let exec_instr_call job instr lvalopt fexp exps errors = Profiler.global#call "S
                 with Not_found -> FormatPlus.failwith "Function %s not found." varinfo.vname
             in
             let job = job#with_decision_path (DecisionPath.add (Decision.DecisionFuncall(instr, varinfo)) job#decision_path) in
-            exec_fundec job instr fundec lvalopt exps errors
+            exec_fundec job instr fundec lvalopt exps
       | Lval(Cil.Mem _, _) ->
             FormatPlus.failwith "Function pointer in Statement.exec_instr:\n%a\nPlease use Interceptor.function_pointer_interceptor" Printcil.instr instr
       | _ ->
             FormatPlus.failwith "Bad function call:\n%a" Printcil.instr instr
 end
 
-let exec_instr job errors = Profiler.global#call "Statement.exec_instr" begin fun () ->
+let exec_instr job = Profiler.global#call "Statement.exec_instr" begin fun () ->
     assert (job#instrList <> []);
     let printInstr instr =
         Output.set_mode Output.MSG_STMT;
@@ -156,22 +157,22 @@ let exec_instr job errors = Profiler.global#call "Statement.exec_instr" begin fu
     match instr with
          | Set(cil_lval, exp, loc) ->
             printInstr instr;
-            let job, lval, errors = Expression.lval job cil_lval errors in
-            let job, rv, errors = Expression.rval job exp errors in
+            let job, lval = Expression.lval job cil_lval in
+            let job, rv = Expression.rval job exp in
             let job = MemOp.state__assign job lval rv in
             let job = job#with_stmt (if tail = [] then List.hd job#stmt.succs else job#stmt) in
             let job = job#with_instrList tail in
-            (Active job, errors)
+            job
         | Call(lvalopt, fexp, exps, loc) ->
             assert (tail = []);
             printInstr instr;
-            exec_instr_call job instr lvalopt fexp exps errors
+            exec_instr_call job instr lvalopt fexp exps
         | Asm _ ->
-            (Complete (Abandoned (`Failure "Cannot handle assembly", job)), errors)
+            (job : _ #Info.t)#finish (Abandoned (`Failure "Cannot handle assembly"))
 end
 
 
-let exec_stmt job errors = Profiler.global#call "Statement.exec_stmt" begin fun () ->
+let exec_stmt job = Profiler.global#call "Statement.exec_stmt" begin fun () ->
     assert (job#instrList = []);
     let stmt = job#stmt in
 
@@ -196,8 +197,8 @@ let exec_stmt job errors = Profiler.global#call "Statement.exec_stmt" begin fun 
     Output.printf "@[%a@]@." CilPrinter.stmt_abbr stmt;
     match stmt.skind with
         | Instr [] ->
-             let nextStmt = match stmt.succs with [x] -> x | _ -> assert false in
-             (Active ((job#with_stmt nextStmt)#with_exHist (nextExHist (Some nextStmt))), errors)
+            let nextStmt = match stmt.succs with [x] -> x | _ -> assert false in
+            (job#with_stmt nextStmt)#with_exHist (nextExHist (Some nextStmt))
         | Instr (instrs) ->
             (* We can certainly update block coverage here, but not
              * necessarily edge coverage. If instrs contains a call, we
@@ -211,37 +212,37 @@ let exec_stmt job errors = Profiler.global#call "Statement.exec_stmt" begin fun 
                 then None
                 else Some (match stmt.succs with [x] -> x | _ -> assert false)
             in
-            (Active ((job#with_instrList instrs)#with_exHist (nextExHist nextStmtOpt)), errors)
+            (job#with_instrList instrs)#with_exHist (nextExHist nextStmtOpt)
         | Cil.Return (expopt, loc) ->
             begin match job#state.callContexts with
                 | Runtime::_ -> (* completed symbolic execution (e.g., return from main) *)
-                    let job, retval, errors = match expopt with
+                    let job, retval = match expopt with
                         | None ->
-                            (job, None, errors)
+                            (job, None)
                         | Some exp ->
-                            let job, retval, errors = Expression.rval job exp errors in
-                            (job, Some retval, errors)
+                            let job, retval = Expression.rval job exp in
+                            (job, Some retval)
                     in
                     let job = job#with_exHist (nextExHist None) in
                     Output.set_mode Output.MSG_REPORT;
                     Output.printf "Program execution finished.@.";
-                    (Complete (Return (retval, job)), errors)
+                    (job : _ #Info.t)#finish (Return retval)
                 | (Source (destOpt,callStmt,_,nextStmt))::_ ->
-                        let job, errors =
+                        let job =
                             match expopt, destOpt with
                                 | Some exp, Some dest ->
                                     (* evaluate the return expression in the callee frame *)
-                                    let job, rv, errors = Expression.rval job exp errors in
+                                    let job, rv = Expression.rval job exp in
                                     (* TODO: Profiler.end_fcall job *)
                                     let job = MemOp.state__end_fcall job in
                                     (* evaluate the assignment in the caller frame *)
-                                    let job, lval, errors = Expression.lval job dest errors in
-                                    (MemOp.state__assign job lval rv, errors)
+                                    let job, lval = Expression.lval job dest in
+                                    MemOp.state__assign job lval rv
                                 | _, _ ->
                                      (* If we are not returning a value, or if we
                                         ignore the result, just end the call *)
                                     (* TODO: Profiler.end_fcall job *)
-                                    (MemOp.state__end_fcall job, errors)
+                                    MemOp.state__end_fcall job
                         in
 
                         let callingFuncName = (List.hd job#state.callstack).svar.vname in
@@ -274,7 +275,7 @@ let exec_stmt job errors = Profiler.global#call "Statement.exec_stmt" begin fun 
                         let job = job#with_stmt nextStmt in
                         let job = job#with_inTrackedFn inTrackedFn in
                         let job = job#with_exHist exHist in
-                        (Active job, errors)
+                        job
 
                 | (NoReturn _)::_ ->
                         failwith "Return from @noreturn function"
@@ -283,7 +284,7 @@ let exec_stmt job errors = Profiler.global#call "Statement.exec_stmt" begin fun 
                         assert false
             end
         | Goto (stmtref, loc) ->
-            (Active ((job#with_stmt !stmtref)#with_exHist (nextExHist (Some !stmtref))), errors)
+            (job#with_stmt !stmtref)#with_exHist (nextExHist (Some !stmtref))
         | If (exp, block1, block2, loc) ->
             begin
             (* try a branch *)
@@ -304,7 +305,7 @@ let exec_stmt job errors = Profiler.global#call "Statement.exec_stmt" begin fun 
                     job#with_stmt nextStmt
                 in
 
-                let job, rv, errors = Expression.rval job exp errors in
+                let job, rv = Expression.rval job exp in
 
                 Output.set_mode Output.MSG_GUARD;
                 Output.printf "Check if the following holds:@\n  @[%a@]@\n" BytesPrinter.bytes rv;
@@ -317,53 +318,48 @@ let exec_stmt job errors = Profiler.global#call "Statement.exec_stmt" begin fun 
 
                 let truth = MemOp.eval job#state.path_condition rv in
                 Output.set_mode Output.MSG_REG;
-                let job_state = match truth with
+                match truth with
                     | Ternary.True ->
                         Output.printf "True@.";
                         let job = try_branch job None block1 in
                         let job = job#with_decision_path (DecisionPath.add (Decision.DecisionConditional(stmt, true)) job#decision_path) in
                         let job = job#with_exHist (nextExHist (Some job#stmt) ~whichBranch:true) in
-                        Active job
+                        job
 
                     | Ternary.False ->
                         Output.printf "False@.";
                         let job = try_branch job None block2 in
                         let job = job#with_decision_path (DecisionPath.add (Decision.DecisionConditional(stmt, false)) job#decision_path) in
                         let job = job#with_exHist  (nextExHist (Some job#stmt) ~whichBranch:false) in
-                        Active job
+                        job
 
                     | Ternary.Unknown ->
                         Output.printf "Unknown@.";
 
                         (* Create two jobs, one for each branch. The false branch
                            inherits the old jid, and the true job gets a new jid. *)
-                        let false_job, true_job =
-                            (job : #Info.t)#fork2
-                                begin fun job ->
-                                    (* false *)
-                                    let job = try_branch job (Some (logicalNot rv)) block2 in
-                                    let job = job#with_decision_path (DecisionPath.add (Decision.DecisionConditional(stmt, false)) job#decision_path) in
-                                    let job = job#with_exHist (nextExHist (Some job#stmt) ~whichBranch:false) in
-                                    job
-                                end
-                                begin fun job ->
-                                    (* true *)
-                                    let job = try_branch job (Some rv) block1 in
-                                    let job = job#with_decision_path (DecisionPath.add (Decision.DecisionConditional(stmt, true)) job#decision_path) in
-                                    let job = job#with_exHist (nextExHist (Some job#stmt) ~whichBranch:true) in
-                                    job
-                                end
-                        in
-
                         Output.set_mode Output.MSG_BRANCH;
                         Output.printf "@[Branching on @[%a@]@ at @[%a@].@]@." CilPrinter.exp exp Printcil.loc loc;
+
                         if !Executeargs.arg_print_callstack then
                             Output.printf "Call stack:@\n  @[%a@]@." (Printer.callingContext_list "@\n") job#state.callContexts;
-                        Output.printf "Job %d is the true branch and job %d is the false branch.@\n@." true_job#path_id false_job#path_id;
-                        Fork [Active true_job; Active false_job]
-                in
-                (job_state, errors)
 
+                        let job, branch = (job : _ #Info.t)#fork [ false; true ] in
+                        if not branch then begin
+                            (* the false branch will be processed first by #fork (giving it the original path id), so print it first *)
+                            Output.printf "Job %d is the false branch " job#path_id;
+                            let job = try_branch job (Some (logicalNot rv)) block2 in
+                            let job = job#with_decision_path (DecisionPath.add (Decision.DecisionConditional(stmt, false)) job#decision_path) in
+                            let job = job#with_exHist (nextExHist (Some job#stmt) ~whichBranch:false) in
+                            job
+                        end else begin
+                            (* then the true branch will be processed, so print it next *)
+                            Output.printf "and job %d is the true branch.@\n@." job#path_id;
+                            let job = try_branch job (Some rv) block1 in
+                            let job = job#with_decision_path (DecisionPath.add (Decision.DecisionConditional(stmt, true)) job#decision_path) in
+                            let job = job#with_exHist (nextExHist (Some job#stmt) ~whichBranch:true) in
+                            job
+                        end
             end
         | Block(block)
         | Loop (block, _, _, _) ->
@@ -372,29 +368,20 @@ let exec_stmt job errors = Profiler.global#call "Statement.exec_stmt" begin fun 
                This is not true for [Block]s, but it *does* seem to be
                true for [Block]s which are not under [If]s, so we're okay. *)
             let nextStmt = List.hd block.bstmts in
-            (Active ((job#with_stmt nextStmt)#with_exHist (nextExHist (Some nextStmt))), errors)
+            (job#with_stmt nextStmt)#with_exHist (nextExHist (Some nextStmt))
         | _ -> failwith "Not implemented yet"
 end
 
 
-let errors_to_abandoned_list errors =
-    List.map begin fun (job, error) ->
-        Complete (Abandoned (error, job))
-    end errors
-
-
 let step job = Profiler.global#call "Statement.step" begin fun () ->
     try
-        let job_state, errors = match job#instrList with
-            | [] -> exec_stmt job []
-            | _ -> exec_instr job []
-        in
-        let abandoned_job_states = errors_to_abandoned_list errors in
-        Fork (job_state::abandoned_job_states)
+        match job#instrList with
+            | [] -> exec_stmt job
+            | _ -> exec_instr job
 
     with Failure msg ->
         Output.set_mode Output.MSG_ERROR;
         Output.printf "Statement.step: failwith %s@." msg;
         if !Executeargs.arg_failfast then failwith msg;
-        Complete (Abandoned (`Failure msg, job))
+        (job : _ #Info.t)#finish (Abandoned (`Failure msg))
 end

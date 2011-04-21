@@ -12,15 +12,15 @@ let test_symbolic_pointers ?label ?time_limit ~expect_return ?(no_return0=false)
     test_otter_core content ?label ~entry_function:"foo" ?time_limit
         begin fun results ->
             let actual_return = List.fold_left begin fun actual_return result -> match result with
-                | Job.Return (Some return, _) ->
+                | Job.Return (Some return), _ ->
                     begin try
                         (Bytes.bytes_to_int64_auto return)::actual_return
                     with Failure _ ->
                         assert_failure "Unexpected Return with symbolic code"
                     end
-                | Job.Return _ ->
+                | Job.Return _, _ ->
                     assert_failure "Unexpected Return with no code"
-                | Job.Abandoned _ | Job.Exit _ | Job.Truncated _ ->
+                | (Job.Abandoned _ | Job.Exit _ | Job.Truncated _), _ ->
                     assert_failure "Unexpected Abandoned, Exit or Truncated"
             end [] results in
 

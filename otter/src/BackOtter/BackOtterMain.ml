@@ -90,7 +90,9 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
         let tkind = if fundec == entry_fn then `TKindEntry else `TKindOther in
         (* TODO: count the time somewhere else, so main_loop doesn't depend on entry_fn *)
         BackOtterTimer.time tkind begin fun () ->
-            BackOtterTargetTracker.process_results entry_fn (interceptor job Statement.step)
+            (job : _ #Info.t)#try_run
+                (fun job -> interceptor job Statement.step)
+                ~catch_finish:(BackOtterTargetTracker.process_completed entry_fn)
         end
     in
     let queue, reporter = OtterDriver.Driver.main_loop step queue reporter in

@@ -8,7 +8,8 @@ open Cil
 (* TODO: replace LineTargets with the below *)
 module TargetSet = Set.Make (struct type t = string * int let compare = Pervasives.compare end)
 let targets = ref TargetSet.empty
-let target_matchers = ref (fun (reason : BackOtterErrors.t) (job : Job.t) k -> (k reason job : BackOtterErrors.t option))
+let target_matchers =
+    ref (fun (reason : BackOtterErrors.t) (job : (BackOtterErrors.t, BackOtterErrors.t) Job.t) k -> k reason job)
 
 
 let get_line_targets file =
@@ -71,48 +72,43 @@ let add_target string =
 
 
 
-let rec process_results entry_fn = function
-    | Job.Active _ as result ->
-        result
-    | Job.Fork results ->
-        Job.Fork (List.map (process_results entry_fn) results)
-    | Job.Complete reason ->
-        (* convert executions that report repeated abandoned paths to Truncated *)
-        let reason = match reason with
-            | Job.Abandoned (`TargetReached target, job) ->
-                let fundec = BackOtterUtilities.get_origin_function job in
-                let instruction = Job.get_instruction job in
-                (* Failing path has least recent decision first. See the comment in BidirectionalQueue. *)
-                let failing_path = DecisionPath.rev job#decision_path in
-                let is_new_path = BackOtterTargets.add_path fundec failing_path (Some instruction) in
-                if is_new_path then Job.Abandoned (`FailingPath (`TargetReached target, fundec, failing_path), job)
-                else Job.Truncated (`SummaryAbandoned (`TargetReached target), job)
-            | Job.Abandoned (reason, job) ->
-                (* TODO: merge the above cases with target_matchers *)
-                begin match !target_matchers reason job (fun _ _ -> None) with
-                    | Some abandoned -> Job.Abandoned (reason, job)
-                    | None -> Job.Truncated (`SummaryAbandoned reason, job)
-                end
-            | _ ->
-                reason
-        in
+let process_completed entry_fn (reason, job) =
+    (* convert executions that report repeated abandoned paths to Truncated *)
+    let reason = match reason with
+        | Job.Abandoned (`TargetReached target) ->
+            let fundec = BackOtterUtilities.get_origin_function job in
+            let instruction = Job.get_instruction job in
+            (* Failing path has least recent decision first. See the comment in BidirectionalQueue. *)
+            let failing_path = DecisionPath.rev job#decision_path in
+            let is_new_path = BackOtterTargets.add_path fundec failing_path (Some instruction) in
+            if is_new_path then Job.Abandoned (`FailingPath (`TargetReached target, fundec, failing_path))
+            else Job.Truncated (`SummaryAbandoned (`TargetReached target))
+        | Job.Abandoned abandoned ->
+            (* TODO: merge the above cases with target_matchers *)
+            begin match !target_matchers abandoned job (fun _ _ -> None) with
+                | Some abandoned -> Job.Abandoned abandoned
+                | None -> Job.Truncated (`SummaryAbandoned abandoned)
+            end
+        | _ ->
+            reason
+    in
 
-        (* convert executions from non-entry functions to Truncated *)
-        let reason = match reason with
-            | Job.Return (return_code, job)
-                    when BackOtterUtilities.get_origin_function job != entry_fn ->
-                Job.Truncated (`SummaryReturn return_code, job)
-            | Job.Exit (return_code, job)
-                    when BackOtterUtilities.get_origin_function job != entry_fn ->
-                Job.Truncated (`SummaryExit return_code, job)
-            | Job.Abandoned (reason, job)
-                    when BackOtterUtilities.get_origin_function job != entry_fn ->
-                Job.Truncated (`SummaryAbandoned reason, job)
-            | _ ->
-                reason
-        in
+    (* convert executions from non-entry functions to Truncated *)
+    let reason = match reason with
+        | Job.Return return_code
+                when BackOtterUtilities.get_origin_function job != entry_fn ->
+            Job.Truncated (`SummaryReturn return_code)
+        | Job.Exit return_code
+                when BackOtterUtilities.get_origin_function job != entry_fn ->
+            Job.Truncated (`SummaryExit return_code)
+        | Job.Abandoned reason
+                when BackOtterUtilities.get_origin_function job != entry_fn ->
+            Job.Truncated (`SummaryAbandoned reason)
+        | _ ->
+            reason
+    in
 
-        Job.Complete reason
+    (job : _ #Info.t)#finish reason
 
 
 

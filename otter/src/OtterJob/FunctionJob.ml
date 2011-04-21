@@ -181,9 +181,9 @@ end
         @param fn is list the function at which to begin symbolic execution
         @return [OtterCore.Job.job] the created job
 *)
-class t file ?scheme ?uninit_void ?(points_to=(!default_points_to) file) fn =
+class ['abandoned, 'truncated] t file ?scheme ?uninit_void ?(points_to=(!default_points_to) file) fn =
     object (self : 'self)
-        inherit OtterCore.Job.t file fn
+        inherit ['abandoned, 'truncated] OtterCore.Job.t file fn
         initializer
             let job = self in
 

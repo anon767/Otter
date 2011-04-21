@@ -48,10 +48,10 @@ class ['job] process_state other =
     end
 
 
-class t file cmdline =
+class ['abandoned, 'truncated] t file cmdline =
     object (self : 'self)
-        constraint 'self = #Job.t
-        inherit OtterJob.FileJob.t file cmdline (* easier to satisfy the type constraint using inheritance *)
+        constraint 'self = ('abandoned, 'truncated) #Job.t
+        inherit ['abandoned, 'truncated] OtterJob.FileJob.t file cmdline (* easier to satisfy the type constraint using inheritance *)
 
         val pid = 0
         method pid = pid

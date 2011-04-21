@@ -5,7 +5,6 @@ open OtterCore
 open OtterDriver
 open BuiltinFunctions
 open Interceptor
-open Job
 open Cil
 
 (** Convenience function to receive a constant int value from an argument
@@ -21,16 +20,15 @@ let get_constant_int = function
 module IndexMap = State.IndexMap
 let instruction_context_map = ref IndexMap.empty 
 
-let otter_instr_mark job retopt exps errors =
+let otter_instr_mark job retopt exps =
     let exp = get_lone_arg exps in
     let index = get_constant_int exp in
     let instruction = Job.get_instruction job in
     let context = Job.get_instruction_context job in
     instruction_context_map := IndexMap.add index (instruction, context) (!instruction_context_map);
-    let job = end_function_call job in
-    (Job.Active job, errors)
+    end_function_call job
 
-let otter_distance_from_instr_mark job retopt exps errors =
+let otter_distance_from_instr_mark job retopt exps =
     let exp = get_lone_arg exps in
     let index = get_constant_int exp in
     let distance = 
@@ -41,9 +39,8 @@ let otter_distance_from_instr_mark job retopt exps errors =
         with Not_found -> max_int (* denotes infinite distance, same as DistanceToReturn *)
     in
     let ret = Bytes.int_to_bytes distance in
-    let job, errors = set_return_value job retopt ret errors in
-    let job = end_function_call job in
-    (Job.Active job, errors)
+    let job = set_return_value job retopt ret in
+    end_function_call job
 
 let builtin_interceptor job interceptor =
 	try
@@ -55,11 +52,11 @@ let builtin_interceptor job interceptor =
 		) job
 	with Failure msg ->
 		if !Executeargs.arg_failfast then failwith msg;
-		Job.Complete (Job.Abandoned (`Failure msg, job))
+		(job : _ #Info.t)#finish (Job.Abandoned (`Failure msg))
 
 let expected_return_value expected results =
     let returned_bytes = match results with
-        | [ Job.Return(Some(bytes), _) ] -> bytes
+        | [ (Job.Return (Some bytes), _) ] -> bytes
         | _ -> assert_failure "This test expects one return value"
     in
     let returned_int = 

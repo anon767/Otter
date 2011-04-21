@@ -11,7 +11,7 @@ open Operator
 (* Track Stp calls *)
 let timed_query_stp name =
     fun job pre guard ->
-        (job : #Info.t)#profile_call name (fun job -> (job, BytesSTP.query_stp (PathCondition.clauses job#state.path_condition) pre guard))
+        (job : _ #Info.t)#profile_call name (fun job -> (job, BytesSTP.query_stp (PathCondition.clauses job#state.path_condition) pre guard))
 
 (**
  *	memory frame

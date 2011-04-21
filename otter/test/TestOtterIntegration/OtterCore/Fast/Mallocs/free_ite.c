@@ -1,3 +1,5 @@
+// there will be one abandoned for each leaf of the conditional pointer
+#pragma expect_abandoned(failure("Dereference"))
 #pragma expect_abandoned(failure("Dereference"))
 #pragma no_other_results
 

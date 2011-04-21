@@ -119,22 +119,22 @@ let add_offset offset lvals =
 
 let rec
 
-rval job exp errors =
+rval job exp =
     match exp with
         | Const (constant) ->
             begin match constant with
                 | CStr(str) ->
                     let bytes = constant_to_bytes constant in
                     let block = MemOp.const_table__find bytes in
-                    (job, make_Bytes_Address(block, bytes__zero), errors)
+                    (job, make_Bytes_Address(block, bytes__zero))
                 | _ ->
-                    (job, constant_to_bytes constant, errors)
+                    (job, constant_to_bytes constant)
             end
 
         | Lval (cil_lval) ->
-            let job, lvals, errors = lval job cil_lval errors in
+            let job, lvals = lval job cil_lval in
             let job, bytes = MemOp.state__deref job lvals in
-            (job, bytes, errors)
+            (job, bytes)
 
         | SizeOf (typ) ->
              let exp2 = Cil.sizeOf typ in
@@ -142,18 +142,18 @@ rval job exp errors =
                  | SizeOf(_) ->
                      FormatPlus.failwith "Cannot determine sizeof(%a)" Printcil.typ typ
                  | Const (CInt64 (n, IInt, stropt)) ->
-                       (job, make_Bytes_Constant(CInt64(n, !kindOfSizeOf, stropt)), errors)
+                       (job, make_Bytes_Constant(CInt64(n, !kindOfSizeOf, stropt)))
                  | _ -> failwith "Impossible case in rval"
              end
 
         | SizeOfE (exp2) ->
-            rval job (SizeOf (Cil.typeOf exp2)) errors
+            rval job (SizeOf (Cil.typeOf exp2))
 
         | SizeOfStr (str) ->
             let len = (String.length str)+1  in
             begin match Cil.integer len with
                 | Const (CInt64 (n, IInt, stropt)) ->
-                      (job, make_Bytes_Constant(CInt64(n, !kindOfSizeOf, stropt)), errors)
+                      (job, make_Bytes_Constant(CInt64(n, !kindOfSizeOf, stropt)))
                 | _ -> failwith "Impossible case in rval"
             end
 
@@ -162,49 +162,49 @@ rval job exp errors =
         | AlignOfE (exp2) ->
             failwith "__align_of not implemented"
         | UnOp (unop, exp1, _) ->
-            rval_unop job unop exp1 errors
+            rval_unop job unop exp1
         | BinOp (binop, exp1, exp2, _) as exp ->
-            rval_binop job binop exp1 exp2 exp errors
+            rval_binop job binop exp1 exp2 exp
         | Question (guard, exp1, exp2, _) ->
-            rval_question job guard exp1 exp2 errors
+            rval_question job guard exp1 exp2
         | AddrOf (Var varinfo, _) when Cil.isFunctionType (varinfo.Cil.vtype) ->
-            (job, make_Bytes_FunPtr varinfo, errors)
+            (job, make_Bytes_FunPtr varinfo)
         | AddrOf (cil_lval)
         | StartOf (cil_lval) ->
-            let job, (lvals, _), errors = lval ~justGetAddr:true job cil_lval errors in
+            let job, (lvals, _) = lval ~justGetAddr:true job cil_lval in
             let c = conditional__map (fun (block, offset) ->
                 conditional__bytes (make_Bytes_Address(block, offset))
             ) lvals in
-            (job, make_Bytes_Conditional c, errors)
+            (job, make_Bytes_Conditional c)
         | CastE (typ, exp2) ->
-            let job, bytes, errors = rval job exp2 errors in
-            let bytes, errors = rval_cast typ bytes (Cil.typeOf exp2) errors in
-            (job, bytes, errors)
+            let job, bytes = rval job exp2 in
+            let bytes = rval_cast typ bytes (Cil.typeOf exp2) in
+            (job, bytes)
 
 and
 
 (** rvtyp: the type of rv. if rv is a signed int then we will need logical shifting; no otherwise. *)
-rval_cast typ rv rvtyp errors =
+rval_cast typ rv rvtyp =
     begin match rv,typ with
         (* optimize for casting among int family *)
         | Bytes_Constant(CInt64(n,ikind,_)),TInt(new_ikind,_) ->
             begin match Cil.kinteger64 new_ikind n with
-                | Const (const) -> (make_Bytes_Constant(const), errors)
+                | Const (const) -> make_Bytes_Constant const
                 | _ -> failwith "rval_cast, const: unreachable"
             end
         (* optimize for casting among float family *)
         | Bytes_Constant(CReal(f,fkind,s)),TFloat(new_fkind,_) ->
             let const = CReal(f,new_fkind,s) in
-            (make_Bytes_Constant(const), errors)
+            make_Bytes_Constant const
         (* Casting to _Bool is essentially '!= 0'. See ISO C99 6.3.1.2, except
            that the result, obviously, has type _Bool and not int. I think (or
            hope) that doesn't matter for Otter, though. *)
         | rv, TInt(IBool,_) ->
             let zero = bytes__make ((bitsSizeOf rvtyp) / 8) in
-            (Operator.ne [ (rv, rvtyp); (zero, rvtyp) ], errors)
+            Operator.ne [ (rv, rvtyp); (zero, rvtyp) ]
         (* added so that from now on there'll be no make_Bytes_Constant *)
         | Bytes_Constant(const),_ ->
-            rval_cast typ (constant_to_bytes const) rvtyp errors
+            rval_cast typ (constant_to_bytes const) rvtyp
         | _ ->
             begin
                 let old_len = bytes__length rv in
@@ -218,7 +218,7 @@ rval_cast typ rv rvtyp errors =
 
                 in
                 if new_len = old_len then
-                    (rv, errors) (* do nothing *)
+                    rv (* do nothing *)
                 else begin match rv with
                     | Bytes_ByteArray(bytearray) when isConcrete_bytearray bytearray ->
                         if new_len > old_len then
@@ -242,15 +242,15 @@ rval_cast typ rv rvtyp errors =
                                 let newbytes2 = ImmutableArray.set newbytes old_len sth in
                                 pack_sth newbytes2 (old_len+1) new_len
                             in
-                            (make_Bytes_ByteArray (pack_sth newbytes old_len new_len), errors)
+                            make_Bytes_ByteArray (pack_sth newbytes old_len new_len)
                         else (* new_len < old_len *)
-                            (make_Bytes_ByteArray (ImmutableArray.sub bytearray 0 new_len), errors) (* simply truncate *)
+                            make_Bytes_ByteArray (ImmutableArray.sub bytearray 0 new_len) (* simply truncate *)
 
                     | Bytes_Constant(const) ->
                         failwith "unreachable"
 
                     | _ ->
-                        (worst_case (), errors)
+                        worst_case ()
                 end
             end
     end
@@ -261,41 +261,42 @@ and
      address-of operator, '&'. For example, &x[i] is legal even if i is
      not in bounds. (Sort of. The spec (6.5.6.8) implies that this is
      only defined if i is *one* past the end of x.) *)
-lval ?(justGetAddr=false) job (lhost, offset_exp as cil_lval) errors =
+lval ?(justGetAddr=false) job (lhost, offset_exp as cil_lval) =
     let size = (Cil.bitsSizeOf (Cil.typeOfLval cil_lval))/8 in
-    let job, lvals, errors = match lhost with
+    let job, lvals = match lhost with
         | Var(varinfo) ->
             let job, lvals = MemOp.state__varinfo_to_lval_block job varinfo in
-            (job, lvals, errors)
+            (job, lvals)
         | Mem(exp) ->
             let typ = Cil.typeOf exp in
-            let job, rv, errors = rval job exp errors in
-            let job, lvals, errors = deref job rv typ errors in
-            (job, lvals, errors)
+            let job, rv = rval job exp in
+            let job, lvals = deref job rv typ in
+            (job, lvals)
     in
     match cil_lval with
-        | Var _, NoOffset -> (job, (lvals, size), errors)
+        | Var _, NoOffset -> (job, (lvals, size))
         | _ ->
             let lhost_type = Cil.typeOfLval (lhost, NoOffset) in
-            let job, offset, _, errors = flatten_offset job lhost_type offset_exp errors in
+            let job, offset, _ = flatten_offset job lhost_type offset_exp in
             (* Add the offset, then see if it was in bounds *)
             let lvals = add_offset offset lvals in
             (* Omit the bounds check if we're only getting the address of the
                  lval---not actually reading from or writing to it---or if bounds
                  checking is turned off *)
             if justGetAddr || not !Executeargs.arg_bounds_checking then
-                (job, (lvals, size), errors)
+                (job, (lvals, size))
             else
-                let final_job, failing_bytes_opt = checkBounds job lvals size in
-                let errors = match failing_bytes_opt with
-                    | None -> errors
-                    | Some b -> (job, `OutOfBounds (Lval cil_lval)) :: errors
-                in
-                (final_job, (lvals, size), errors)
+                let job, failing_bytes_opt = checkBounds job lvals size in
+                match failing_bytes_opt with
+                    | None ->
+                        (job, (lvals, size))
+                    | Some b ->
+                        let job = (job : _ #Info.t)#fork_finish (Job.Abandoned (`OutOfBounds (Lval cil_lval))) in
+                        (job, (lvals, size))
 
 and
 
-deref job bytes typ errors =
+deref job bytes typ =
     match bytes with
         | Bytes_Constant (c) ->
             FormatPlus.failwith "Dereference something not an address:@ constant @[%a@]" BytesPrinter.bytes bytes
@@ -310,7 +311,7 @@ deref job bytes typ errors =
              * If found, return deref job make_Bytes_Address(b,f).
              * Otherwise, throw exception
              * *)
-            let rec find_match pc errors = match pc with
+            let rec find_match pc = match pc with
                 | [] ->
                     FormatPlus.failwith "Dereference something not an address (bytearray)@ @[%a@]@." BytesPrinter.bytes bytes
                 | (Bytes_Op(OP_EQ,[(bytes1,_); (bytes2,_)]))::pc' ->
@@ -321,69 +322,70 @@ deref job bytes typ errors =
                             else bytes__zero
                         in
                             match bytes_tentative with
-                            | Bytes_Address(_,_) -> deref job bytes_tentative typ errors
-                            | _ -> find_match pc' errors
+                            | Bytes_Address(_,_) -> deref job bytes_tentative typ
+                            | _ -> find_match pc'
                     end
                 | (Bytes_Op(OP_LAND,btlist))::pc' ->
-                    find_match (List.rev_append (List.fold_left (fun a (b,_) -> b::a) [] btlist) pc') errors
-                | _::pc' -> find_match pc' errors
+                    find_match (List.rev_append (List.fold_left (fun a (b,_) -> b::a) [] btlist) pc')
+                | _::pc' -> find_match pc'
             in
-            find_match (PathCondition.clauses job#state.path_condition) errors
+            find_match (PathCondition.clauses job#state.path_condition)
 
         | Bytes_Address(block, offset) ->
             if MemOp.state__has_block job block then
-                (job, conditional__lval_block (block, offset), errors)
+                (job, conditional__lval_block (block, offset))
             else
                 failwith "Dereference a dangling pointer"
 
         | Bytes_Conditional c ->
             (* TODO: refactor and lift this pattern as it occurs in three places: Expression.deref, BuiltinFunctions.libc_free,
              * and Interceptor.function_pointer_interceptor *)
-            let (guard, job, errors, _), conditional_opt =
+            let (guard, job, _), conditional_opt =
                 conditional__fold_map_opt
-                    ~test:begin fun (guard', job, errors, removed) pre guard ->
+                    ~test:begin fun (guard', job, removed) pre guard ->
                         let job, truth =
-                            (job : #Info.t)#profile_call "query_stp/Expression.deref/Bytes_Conditional"
+                            (job : _ #Info.t)#profile_call "query_stp/Expression.deref/Bytes_Conditional"
                                 (fun job -> (job, BytesSTP.query_stp (PathCondition.clauses job#state.path_condition) pre guard))
                         in
-                        ((guard', job, errors, removed), truth)
+                        ((guard', job, removed), truth)
                     end
-                    begin fun (guard, job, errors, removed) _ c ->
+                    begin fun (guard, job, removed) _ c ->
                         if List.exists (Bytes.bytes__equal c) removed then
-                            ((guard, job, errors, removed), None)
+                            ((guard, job, removed), None)
                         else
                             try
-                                let job, lval, errors = deref job c typ errors in
-                                ((guard, job, errors, removed), Some lval)
+                                (* TODO: what to do if a job#fork happen? doesn't happen currently, but could
+                                 * potentially be a performance problem *)
+                                let job, lval = deref job c typ in
+                                ((guard, job, removed), Some lval)
                             with Failure msg ->
-                                (* Guard against this failure, add it to the error list, and remove this leaf. *)
+                                (* TODO: handle also errors from job#finish/fork_finish; switch to using the Errors module *)
+                                (* Report this failure, guard against it and remove this leaf. *)
+                                let job = (job : _ #Info.t)#fork_finish (Job.Abandoned (`Failure msg)) in
                                 let failing_bytes = Operator.eq [ (bytes, typ); (c, typ) ] in
                                 let guard = guard__and_not guard (Bytes.guard__bytes failing_bytes) in
-                                let errors = (job, `Failure msg)::errors in
                                 let removed = c::removed in
-                                ((guard, job, errors, removed), None)
-                    end (Bytes.guard__true, job, errors, []) c
+                                ((guard, job, removed), None)
+                    end (Bytes.guard__true, job, []) c
             in
             begin match conditional_opt, guard with
                 | Some conditional, Guard_True ->
                     (* All conditional branches were dereferenced successfully: return the dereferenced conditional. *)
-                    (job, conditional, errors)
+                    (job, conditional)
                 | Some conditional, guard ->
                     (* Not all conditional branches were dereferenced successfully: add the guard and continue. *)
                     let job = MemOp.state__add_path_condition job (Bytes.guard__to_bytes guard) true in
-                    (job, conditional, errors)
+                    (job, conditional)
                 | None, _ ->
                     (* No conditional branches were dereferenced successfully: just fail. *)
-                    (* TODO: Yit: The only way to return a polymorphic error in Ocaml is to use an exception monad,
-                        and that takes a wholesale change to Expression. *)
-                    failwith "Dereference of invalid conditional pointer"
+                    (job : _ #Info.t)#finish (Job.Truncated (`Failure "Dereference of invalid conditional pointer"))
             end
 
         | Bytes_Op(op, operands) ->
             FormatPlus.failwith "Dereference something not an address:@ operation @[%a@]" BytesPrinter.bytes bytes
 
         | Bytes_Read(bytes,off,len) ->
-            deref job (make_Bytes_Conditional (expand_read_to_conditional bytes off len)) typ errors
+            deref job (make_Bytes_Conditional (expand_read_to_conditional bytes off len)) typ
 
         | Bytes_Write(bytes,off,len,newbytes) ->
             failwith "Dereference of Bytes_Write not implemented"
@@ -394,35 +396,35 @@ deref job bytes typ errors =
 and
 
 (* Assume index's ikind is IInt *)
-flatten_offset job lhost_typ offset errors =
+flatten_offset job lhost_typ offset =
     match offset with
-        | NoOffset -> (job, bytes__zero, lhost_typ, errors)
+        | NoOffset -> (job, bytes__zero, lhost_typ)
         | _ ->
-            let job, index, base_typ, offset2, errors =
+            let job, index, base_typ, offset2 =
                 begin match offset with
                     | Field(fieldinfo, offset2) ->
                             let n = field_offset fieldinfo in
                             let index = int_to_offset_bytes n in
                             let base_typ = fieldinfo.ftype in
-                            (job, index, base_typ, offset2, errors)
+                            (job, index, base_typ, offset2)
                     | Index(exp, offset2) ->
-                            let job, rv0, errors = rval job exp errors in
+                            let job, rv0 = rval job exp in
                             (* We require that offsets be values of type !upointType *)
-                            let rv, errors =
+                            let rv =
                                 if bytes__length rv0 <> (Cil.bitsSizeOf !Cil.upointType / 8)
-                                then rval_cast !Cil.upointType rv0 (Cil.typeOf exp) errors
-                                else (rv0, errors)
+                                then rval_cast !Cil.upointType rv0 (Cil.typeOf exp)
+                                else rv0
                             in
                             let base_typ = match Cil.unrollType lhost_typ with TArray(typ2, _, _) -> typ2 | _ -> failwith "Must be array" in
                             let base_size = (Cil.bitsSizeOf base_typ) / 8 in (* must be known *)
                             let index = Operator.mult [(int_to_offset_bytes base_size,!Cil.upointType);(rv,!Cil.upointType)] in
-                            (job, index, base_typ, offset2, errors)
+                            (job, index, base_typ, offset2)
                     | _ -> failwith "Unreachable"
                 end
             in
-                let job, index2, base_typ2, errors = flatten_offset job base_typ offset2 errors in
+                let job, index2, base_typ2 = flatten_offset job base_typ offset2 in
                 let index3 = Operator.plus [(index,!Cil.upointType);(index2,!Cil.upointType)] in
-                (job, index3, base_typ2, errors)
+                (job, index3, base_typ2)
 
 and
 
@@ -434,84 +436,84 @@ field_offset f : int =
 
 and
 
-rval_unop job unop exp errors =
-    let job, rv, errors = rval job exp errors in
+rval_unop job unop exp =
+    let job, rv = rval job exp in
     let typ = Cil.typeOf exp in
     let bytes = (Operator.of_unop unop) [(rv,typ)] in
-    (job, bytes, errors)
+    (job, bytes)
 
 and
 
-rval_binop job binop exp1 exp2 exp errors =
-    let job, rv1, errors = rval job exp1 errors in
+rval_binop job binop exp1 exp2 exp =
+    let job, rv1 = rval job exp1 in
     match binop with
       | LAnd | LOr -> begin (* Short-circuit, if possible *)
             match MemOp.eval job#state.path_condition rv1 with
-              | Ternary.True -> if binop == LAnd then rval job exp2 errors else (job, bytes__one, errors)
-              | Ternary.False -> if binop == LOr then rval job exp2 errors else (job, bytes__zero, errors)
+              | Ternary.True -> if binop == LAnd then rval job exp2 else (job, bytes__one)
+              | Ternary.False -> if binop == LOr then rval job exp2 else (job, bytes__zero)
               | Ternary.Unknown ->
                     let no_short_circuit = if binop == LAnd then rv1 else logicalNot rv1 in (* Assume no short-circuit *)
                     match evaluate_under_condition job no_short_circuit exp2 with
                       | None, msg -> (* exp2 fails. Report this error, and assume short-circuiting occurs *)
-                            let errors = (job, `Failure msg) :: errors in
+                            let job = (job : _ #Info.t)#fork_finish (Job.Abandoned (`Failure msg)) in
                             let job = MemOp.state__add_path_condition job (logicalNot no_short_circuit) true in
                             let result = if binop == LAnd then bytes__zero else bytes__one in
-                            (job, result, errors)
+                            (job, result)
                       | Some (job, rv2), _ -> (* exp2 does not fail. Construct the 'and' or 'or' value. *)
                             let bytes = (Operator.of_binop binop) [ (rv1, typeOf exp1); (rv2, typeOf exp2) ] in
-                            (job, bytes, errors)
+                            (job, bytes)
         end
       | Div | Mod when Cil.isIntegralType (Cil.typeOf exp) ->
             (* check for division-by-zero for integer types (not an error for floating-point, which isn't supported yet anyway) *)
-            let job, rv2, errors = rval job exp2 errors in
+            let job, rv2 = rval job exp2 in
             begin match MemOp.eval job#state.path_condition rv2 with
                 | Ternary.True -> (* non-zero *)
                     let bytes = (Operator.of_binop binop) [ (rv1, typeOf exp1); (rv2, typeOf exp2) ] in
-                    (job, bytes, errors)
+                    (job, bytes)
                 | Ternary.False -> (* zero *)
                     FormatPlus.failwith "%a" Errors.printer (`DivisionByZero exp)
                 | Ternary.Unknown -> (* possibly zero *)
-                    let errors = (job, `DivisionByZero exp)::errors in
+                    let job = (job : _ #Info.t)#fork_finish (Job.Abandoned (`DivisionByZero exp)) in
                     let job = MemOp.state__add_path_condition job rv2 true in
                     let bytes = (Operator.of_binop binop) [ (rv1, typeOf exp1); (rv2, typeOf exp2) ] in
-                    (job, bytes, errors)
+                    (job, bytes)
             end
       | PlusPI | IndexPI | MinusPI ->
-            let job, rv2, errors = rval job exp2 errors in
-            let rv2, errors = rval_cast !Cil.upointType rv2 (typeOf exp2) errors in
+            let job, rv2 = rval job exp2 in
+            let rv2 = rval_cast !Cil.upointType rv2 (typeOf exp2) in
             let bytes = (Operator.of_binop binop) [ (rv1, typeOf exp1); (rv2, !Cil.upointType) ] in
-            (job, bytes, errors)
+            (job, bytes)
       | _ ->
-            let job, rv2, errors = rval job exp2 errors in
+            let job, rv2 = rval job exp2 in
             let bytes = (Operator.of_binop binop) [ (rv1, typeOf exp1); (rv2, typeOf exp2) ] in
-            (job, bytes, errors)
+            (job, bytes)
 
 and
 
 (** Evaluate a ?: expression, creating a Bytes_Conditional(IfThenElse _). *)
-rval_question job exp1 exp2 exp3 errors =
-    let job, rv1, errors = rval job exp1 errors in
+rval_question job exp1 exp2 exp3 =
+    let job, rv1 = rval job exp1 in
     (* Is the guard true, false, or unknown? Evaluate the branches accordingly. *)
     match MemOp.eval job#state.path_condition rv1 with
-      | Ternary.True -> rval job exp2 errors
-      | Ternary.False -> rval job exp3 errors
+      | Ternary.True -> rval job exp2
+      | Ternary.False -> rval job exp3
       | Ternary.Unknown ->
             let not_rv1 = logicalNot rv1 in
             (* Evaluate exp2, assuming rv1 *)
             match evaluate_under_condition job rv1 exp2 with
               | None, msg -> (* exp2 fails. Report this error, assume not_rv1, and evaluate to exp3 *)
-                    let errors = (job, `Failure msg) :: errors in
+                    let job = (job : _ #Info.t)#fork_finish (Job.Abandoned (`Failure msg)) in
                     let job = MemOp.state__add_path_condition job not_rv1 true in
-                    rval job exp3 errors
+                    rval job exp3
               | Some (job, rv2), _ -> (* exp2 does not fail. Evaluate exp3, assuming not_rv1 *)
                     match evaluate_under_condition job not_rv1 exp3 with
                       | None, msg -> (* exp3 fails. Report this error, assume rv1, and evaluate to rv2 *)
-                            let errors = (job, `Failure msg) :: errors in
+                            let job = (job : _ #Info.t)#fork_finish (Job.Abandoned (`Failure msg)) in
                             let job = MemOp.state__add_path_condition job rv1 true in
-                            (job, rv2, errors)
+                            (job, rv2)
                       | Some (job, rv3), _ -> (* exp3 does not fail. Evaluate to an IfThenElse. *)
                             let bytes = make_Bytes_Conditional (IfThenElse (guard__bytes rv1, conditional__bytes rv2, conditional__bytes rv3)) in
-                            (job, bytes, errors)
+                            (job, bytes)
 
 and
 
@@ -532,17 +534,12 @@ and
 evaluate_under_condition job_in condition exp =
     let job = MemOp.state__add_path_condition job_in condition true in
     let checkpointed_path_condition = job#state.path_condition in
-    let result = try (Some (rval job exp []), "") with Failure msg -> (None, msg) in
+    let result = try (Some (rval job exp), "") with Failure msg -> (None, msg) in
     match result with
       | None, msg -> None, msg
-      | Some (job, bytes, errors), _ ->
-            (* TODO: it should be possible to handle errors when evaluating under
-               a condition by adding an assumption to the path condition saying
-               that condition implies that no error occurs. However, this is
-               complicated by lazy memory initialization: in what job are the
-               error bytes valid? They *should* all be valid in the final job,
-               but it's not entirely clear. *)
-            if errors <> [] then failwith "Cannot handle partial errors when evaluating under a condition";
+      | Some (job, bytes), _ ->
+            (* TODO: handle also errors from job#finish/fork_finish; switch to using the Errors module *)
+
             (* Roll back the assumption that condition holds. Because of lazy
                memory initialization, using the old job is dangerous, because
                new bytes may have been created while evaluating exp. However,
@@ -570,9 +567,8 @@ let evaluate_initializer job typ init =
 
     let rec evaluate_initializer ciloffset init (job, bytes) = match init with
         | Cil.SingleInit expr ->
-            let job, offset, offset_type, errors  = flatten_offset job typ ciloffset [] in
-            let job, offset_bytes, errors = rval job expr errors in
-            assert(errors = []); (* there shouldn't be any errors during initialization *)
+            let job, offset, offset_type  = flatten_offset job typ ciloffset in
+            let job, offset_bytes = rval job expr in
 
             let offset_size = Cil.bitsSizeOf offset_type / 8 in
             let offset_size = if offset_size <= 0 then 1 else offset_size in

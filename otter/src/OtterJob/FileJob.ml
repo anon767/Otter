@@ -112,10 +112,10 @@ let init_cmdline_argvs job argstr =
 
 
 (* create a job that begins at the main function of a file, with the initial state set up for the file *)
-class t file cmdline =
+class ['abandoned, 'truncated] t file cmdline =
     let main_func = ProgramPoints.get_main_fundec file in
     object (self : 'self)
-        inherit OtterCore.Job.t file main_func
+        inherit ['abandoned, 'truncated] OtterCore.Job.t file main_func
         initializer
             let job = self in
 

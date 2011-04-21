@@ -4,7 +4,7 @@
 #pragma expect_abandoned(out_of_bounds)
 
 // Assigning through p[1] should fail, because it was freed
-#pragma expect_abandoned(failure("Dereference of invalid conditional pointer"))
+#pragma expect_abandoned(failure("Dereference"))
 
 // Assigning through p[0] should be fine
 #pragma expect_return()

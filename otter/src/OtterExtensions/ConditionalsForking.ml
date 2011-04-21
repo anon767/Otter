@@ -45,46 +45,28 @@ let interceptor ?(limit=8) job k =
                 EfficientSequence.cons (p, c) results
             in
 
-            let abandoned, jobs =
-                (* recursively split jobs for each lval with conditional values, e.g., starting with an initial
-                   job, split into m jobs for the first lval, then split into m*n jobs for the second lval,
-                   and so on. *)
-                List.fold_left begin fun (abandoned, jobs) cil_lval ->
-                    EfficientSequence.concat_map_fold begin fun abandoned job ->
-                        try
-                            (* read the lval, and if conditionals are found, split them and write them back *)
-                            let job, lvals, errors = Expression.lval job cil_lval [] in
-                            (* TODO: errors should carry the job in which the error occured *)
-                            let abandoned = List.rev_append (Statement.errors_to_abandoned_list errors) abandoned in
-                            let job, bytes = MemOp.state__deref job lvals in
-                            let splits = split (Bytes.conditional__bytes bytes) in
-                            let jobs =
-                                if EfficientSequence.length splits = 1 then
-                                    EfficientSequence.singleton job
-                                else
-                                    (job : #Info.t)#fork begin fun job (p, x) jobs ->
-                                        let job = MemOp.state__add_path_condition job (Bytes.guard__to_bytes p) false in
-                                        let job = MemOp.state__assign job lvals (Bytes.make_Bytes_Conditional x) in
-                                        EfficientSequence.cons job jobs
-                                    end (EfficientSequence.to_list splits) EfficientSequence.empty
-                            in
-                            (abandoned, jobs)
+            (* recursively split jobs for each lval with conditional values, e.g., starting with an initial
+               job, split into m jobs for the first lval, then split into m*n jobs for the second lval,
+               and so on. *)
+            List.fold_left begin fun job cil_lval ->
+                try
+                    (* read the lval, and if conditionals are found, split them and write them back *)
+                    let job, lvals = Expression.lval job cil_lval in
+                    let job, bytes = MemOp.state__deref job lvals in
+                    let splits = split (Bytes.conditional__bytes bytes) in
+                    if EfficientSequence.length splits = 1 then
+                        job
+                    else
+                        let job, (p, x) = (job : _ #Info.t)#fork (EfficientSequence.to_list splits) in
+                        let job = MemOp.state__add_path_condition job (Bytes.guard__to_bytes p) false in
+                        let job = MemOp.state__assign job lvals (Bytes.make_Bytes_Conditional x) in
+                        job
 
-                        with Failure msg ->
-                            (* TODO: Failure really needs to go, ditch this once OtterCore has been switched over to using errors *)
-                            if !Executeargs.arg_failfast then failwith msg;
-                            (Job.Complete (Job.Abandoned (`Failure msg, job))::abandoned, EfficientSequence.empty)
-                    end abandoned jobs
-                end ([], EfficientSequence.singleton job) !cil_lvals
-            in
-
-            if EfficientSequence.length jobs = 1 && abandoned = [] then
-                (* if no splits and no errors, then just continue the original job *)
-                k job
-            else
-                (* otherwise, fork the job with the new jobs and errors *)
-                let jobs = List.rev_append abandoned (EfficientSequence.map_to_list (fun job -> Job.Active job) jobs) in
-                Job.Fork jobs
+                with Failure msg ->
+                    (* TODO: Failure really needs to go, ditch this once OtterCore has been switched over to using errors *)
+                    if !Executeargs.arg_failfast then failwith msg;
+                    (job : _ #Info.t)#finish (Job.Abandoned (`Failure msg))
+            end job !cil_lvals
 
         | [] ->
             k job

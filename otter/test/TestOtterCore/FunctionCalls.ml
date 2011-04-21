@@ -6,7 +6,6 @@ open OtterBytes
 open OtterCore
 open Bytes
 open State
-open Job
 
 
 
@@ -41,7 +40,7 @@ let direct_calls_testsuite = "Direct calls" >:::
     let test_function_calls content ?label match_globals =
         test_otter_core content ?label
             begin function
-                | [ Return (exit_opt, result) ] ->
+                | [ (Job.Return exit_opt, result) ] ->
                     (* make sure that the call stack has only main() on it *)
                     assert_equal
                         ~eq:(list_equal (=))
@@ -51,25 +50,22 @@ let direct_calls_testsuite = "Direct calls" >:::
                         (List.map (fun x -> x.Cil.svar.Cil.vname) result#state.callstack);
 
                     (* check the values of specific global variables and variables in main() *)
-                    let not_found, unequal, errors = List.fold_left begin fun (not_found, unequal, errors) (name, bytes) ->
+                    let not_found, unequal = List.fold_left begin fun (not_found, unequal) (name, bytes) ->
                         let rec find = function
                             | Cil.GVarDecl (v, _)::_
                             | Cil.GVar (v, _, _)::_ when v.Cil.vname = name ->
-                                let _, actual, errors = Expression.rval result (Cil.Lval (Cil.var v)) errors in
+                                let _, actual = Expression.rval result (Cil.Lval (Cil.var v)) in
                                 if bytes__equal actual bytes then
-                                    (not_found, unequal, errors)
+                                    (not_found, unequal)
                                 else
-                                    (not_found, (name, bytes, actual)::unequal, errors)
+                                    (not_found, (name, bytes, actual)::unequal)
                             | [] ->
-                                (name::not_found, unequal, errors)
+                                (name::not_found, unequal)
                             | _::tail ->
                                 find tail
                         in
                         find result#file.Cil.globals
-                    end ([], [], []) match_globals in
-
-                    if errors <> [] then
-                        assert_log "Errors detected:@ @[%a@]@\n" (list_printer (fun ff (_, s) -> Errors.printer ff s) ",@ ") errors;
+                    end ([], []) match_globals in
 
                     if not_found <> [] then
                         assert_log "Variables not found:@ @[%a@]@\n" (list_printer pp_print_string ",@ ") not_found;
@@ -360,9 +356,9 @@ let undefined_calls_testsuite = "Undefined calls" >:::
     let test_undefined_calls content ?label name =
         test_otter_core content ?label
             begin function
-                | [ Abandoned (`Failure msg, result) ] when msg = "Function "^name^" not found." ->
+                | [ (Job.Abandoned (`Failure msg), result) ] when msg = "Function "^name^" not found." ->
                     ()
-                | [ Abandoned (reason, result) ] ->
+                | [ (Job.Abandoned reason, result) ] ->
                     assert_failure "Expected a single Abandoned `Failure \"Function %s not found\",@ but got Abandoned %a" name Errors.printer reason
                 | [ _ ] ->
                     assert_failure "Expected a single Abandoned, but got another completion result"
@@ -404,7 +400,7 @@ let function_pointer_calls_testsuite = "Function pointer calls" >:::
             begin fun completed_list ->
                 let expect_return, expect_abandoned_count =
                     List.fold_left begin fun (expect_return, expect_abandoned_count) completed -> match completed with
-                        | Return (Some return, result) ->
+                        | Job.Return (Some return), result ->
                             (* make sure that the call stack has only main() on it *)
                             assert_equal
                                 ~eq:(list_equal (=))
@@ -442,13 +438,13 @@ let function_pointer_calls_testsuite = "Function pointer calls" >:::
                                 (VarInfoSet.cardinal var_set) block_count;
 
                             (expect_return, expect_abandoned_count)
-                        | Job.Return _ ->
+                        | Job.Return _, _ ->
                             assert_failure "Unexpected Return with no code"
-                        | Job.Abandoned _ when expect_abandoned_count > 0 ->
+                        | Job.Abandoned _, _ when expect_abandoned_count > 0 ->
                             (expect_return, expect_abandoned_count - 1)
-                        | Job.Abandoned (error, _) ->
+                        | Job.Abandoned error, _ ->
                             assert_failure "Unexpected Abandoned: %a" Errors.printer error
-                        | Job.Exit _ | Job.Truncated _ ->
+                        | (Job.Exit _ | Job.Truncated _), _ ->
                             assert_failure "Unexpected Exit or Truncated"
                     end (expect_return, expect_abandoned_count) completed_list
                 in
