@@ -66,9 +66,6 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     (* A queue that prioritizes jobs *)
     let queue = new BidirectionalQueue.t ?ratio file entry_job f_queue b_queue starter_fundecs in
 
-    (* Overlay the target tracker on the reporter *)
-    let target_tracker = new BackOtterTargetTracker.t reporter entry_fn in
-
     (* Define interceptor *)
     let interceptor =
         let (>>>) = Interceptor.(>>>) in
@@ -92,9 +89,11 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
         let fundec = BackOtterUtilities.get_origin_function job in
         let tkind = if fundec == entry_fn then `TKindEntry else `TKindOther in
         (* TODO: count the time somewhere else, so main_loop doesn't depend on entry_fn *)
-        BackOtterTimer.time tkind (fun () -> interceptor job Statement.step)
+        BackOtterTimer.time tkind begin fun () ->
+            BackOtterTargetTracker.process_results entry_fn (interceptor job Statement.step)
+        end
     in
-    let queue, target_tracker = OtterDriver.Driver.main_loop step queue target_tracker in
+    let queue, reporter = OtterDriver.Driver.main_loop step queue reporter in
 
     (* Output failing paths for non-entry_fn *)
     List.iter (fun fundec ->
@@ -113,7 +112,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
         Output.printf "Failing path: @[%a@]@." DecisionPath.print decisions)
         (BackOtterTargets.get_paths entry_fn);
 
-    (queue, target_tracker#delegate)
+    (queue, reporter)
 
 
 let doit file =
