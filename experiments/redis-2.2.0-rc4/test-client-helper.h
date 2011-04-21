@@ -39,4 +39,12 @@ void create_linkedlist(const char *name, const char *entries);
    to finish before continuing. */
 void run_in_child_process(void (*f)(void));
 
+/* Initialize the values that make make_symbolic work. */
+void init_symbolic();
+
+/* Replace each occurrence of "\001c" with "x", where 'x' is the c-th
+   symbolic key. Also replace each "\002c" with the c-th symbolic value.
+   This uses the ASCII value of c, so '\1' is 1 and '1' is 49. */
+char *make_symbolic(const char *str);
+
 #endif

@@ -571,6 +571,7 @@ start_server {
         assert_error ERR*kind* {r rpop notalist}
     }
 
+    tags {slow} {
     foreach {type num} {ziplist 250 linkedlist 500} {
         test "Mass RPOP/LPOP - $type" {
             r del mylist
@@ -602,6 +603,7 @@ start_server {
 #            assert_equal $sum1 $sum2
             puts "    __ASSERT(sum1 == sum2);"
         }
+    }
     }
 
     foreach {type large} [array get largevalue] {

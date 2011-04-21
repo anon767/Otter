@@ -122,3 +122,57 @@ void run_in_child_process(void (*f)(void)) {
   __otter_multi_block_while_condition(*p == 0, p);
   __otter_multi_gfree(p);
 }
+
+void init_symbolic_helper(char *array, size_t length) {
+#ifndef VALID
+#define VALID(x) ('a' <= (x) && (x) <= 'z')
+#endif
+    /* We never use array[0], so we don't need to assume it is valid. However,
+       it's fine to assume that it is distinct from the other keys by assuming
+       array[0] < array[1]. */
+    for (int i = 1; i < length; i++) {
+        __ASSUME(VALID(array[i]));
+        /* This ordering constraint is just for distinctness, but this way we
+           only have a linear number of constraints, and it's probably fine to
+           over-constrain in this way. */
+        __ASSUME(array[i-1] < array[i]);
+    }
+}
+
+#ifndef NUM_SYM_KEYS
+#define NUM_SYM_KEYS 20
+#endif
+static char symbolic_keys[NUM_SYM_KEYS];
+
+#ifndef NUM_SYM_VALS
+#define NUM_SYM_VALS 20
+#endif
+static char symbolic_vals[NUM_SYM_VALS];
+
+void init_symbolic() {
+    __SYMBOLIC(&symbolic_keys);
+    init_symbolic_helper(symbolic_keys, NUM_SYM_KEYS);
+    __SYMBOLIC(&symbolic_vals);
+    init_symbolic_helper(symbolic_vals, NUM_SYM_VALS);
+}
+
+/* Replace each occurrence of "\001c" with "x", where 'x' is the c-th
+   symbolic key. Also replace each "\002c" with the c-th symbolic value.
+   This uses the ASCII value of c, so '\1' is 1 and '1' is 49. */
+char *make_symbolic(const char *str) {
+    str = strdup(str); // Copy str so we can modify it
+    char *p = strpbrk(str, "\001\002"); // Find the first sentinel value
+    while (p) {
+        if (*p == 1) {
+            p[0] = symbolic_keys[p[1]];
+        } else {
+            p[0] = symbolic_vals[p[1]];
+        }
+        /* Pull the rest of the string back one character, overwriting the
+           second character of the 'code'. I can't use strcat because the
+           strings overlap */
+        memmove(p+1, p+2, strlen(p+2)+1);
+        p = strpbrk(p+1, "\001\002"); // Move past the sentinel and the digit, and find the next sentinel
+    }
+    return str;
+}

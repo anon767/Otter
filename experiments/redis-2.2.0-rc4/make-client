@@ -10,6 +10,7 @@ echo '#include "deps/hiredis/hiredis.h"
 redisContext *c;
 
 void client_main() {
+  init_symbolic();
   c = redisConnect("127.0.0.1", 6379);
   if (c->err) {
     __EVALSTR("Connection error:", 30);

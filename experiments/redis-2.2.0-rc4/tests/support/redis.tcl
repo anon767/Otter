@@ -260,5 +260,5 @@ proc ::redis::__dispatch__ {id method args} {
     }
     # Try to prevent too many memory leaks. This should limit leaks to one per test case.
     puts "    if (reply) { freeReplyObject(reply); }"
-    puts [string map {"\\" "\\\\"} "    reply = redisCommand(c, \"$method [join $args]\");"]
+    print_command "    reply = redisCommand(c, \"$method [transform {*}$args]\");"
 }
