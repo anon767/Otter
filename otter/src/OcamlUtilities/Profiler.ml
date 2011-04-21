@@ -48,6 +48,21 @@ class virtual ['self] abstract =
                 | _, _ ->
                     raise Empty
 
+        method save =
+            List.rev context
+
+        method restore target =
+            let rec restore pop push = match pop, push with
+                | p::pop, q::push when p = q ->
+                    restore pop push
+                | pop, push ->
+                    let self = List.fold_left (fun self label -> self#pop label) self (List.rev pop) in
+                    let self = List.fold_left (fun self label -> self#push label) self push in
+                    self
+            in
+            restore (List.rev context) target
+
+
         method call : 'a . string -> ?catch:(exn -> 'self -> 'self * 'a) -> ('self -> 'self * 'a) -> ('self * 'a) = fun label ?catch:catch_opt f ->
             let self = self#push label in
             try
@@ -305,6 +320,12 @@ let global =
 
         method add (other : #t) =
             if !do_profiling then actual_profiler <- actual_profiler#add other
+
+        method save =
+            actual_profiler#save
+
+        method restore context =
+            actual_profiler <- actual_profiler#restore context
 
         method flat_printer ff = if !do_profiling then actual_profiler#flat_printer ff
         method bottom_printer ff = if !do_profiling then actual_profiler#bottom_up_printer ff
