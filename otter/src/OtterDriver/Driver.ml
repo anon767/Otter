@@ -29,9 +29,9 @@ let main_loop step queue reporter =
         let step job = BasicReporter.convert_non_failure_abandoned_to_truncated (step job) in
         let rec run (queue, reporter) =
             checkpoint := (queue, reporter);
-            match queue#get with
+            match Profiler.global#call "Driver.main_loop/get" (fun () -> queue#get) with
                 | Some (queue, job) ->
-                    let result = step job in
+                    let result = Profiler.global#call "Driver.main_loop/step" (fun () -> step job) in
                     let rec process_result (queue, reporter) result =
                         let reporter = reporter#report result in
                         match result with
@@ -42,7 +42,7 @@ let main_loop step queue reporter =
                             | Job.Complete completion ->
                                 (queue, reporter)
                     in
-                    let queue, reporter = process_result (queue, reporter) result in
+                    let queue, reporter = Profiler.global#call "Driver.main_loop/report" (fun () -> process_result (queue, reporter) result) in
                     if reporter#should_continue then
                         run (queue, reporter)
                     else
@@ -50,7 +50,7 @@ let main_loop step queue reporter =
                 | None ->
                     (queue, reporter)
         in
-        run (queue, reporter)
+        Profiler.global#call "Driver.main_loop/run" (fun () -> run (queue, reporter))
     with UserSignal.UserInterrupt | UserSignal.TimedOut as exn ->
         (* if we got a signal, stop and return the checkpoint results *)
         Output.set_mode Output.MSG_REPORT;
