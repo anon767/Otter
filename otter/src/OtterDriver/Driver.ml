@@ -26,7 +26,6 @@ let main_loop step queue reporter =
     (* set up a checkpoint to rollback to upon SignalException *)
     let checkpoint = ref (queue, reporter) in
     try
-        (* compose the interceptor with the core symbolic executor *)
         let step job = BasicReporter.convert_non_failure_abandoned_to_truncated (step job) in
         let rec run (queue, reporter) =
             checkpoint := (queue, reporter);
