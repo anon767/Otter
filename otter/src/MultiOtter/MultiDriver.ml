@@ -21,11 +21,11 @@ let multi_set_output_formatter job =
 	Output.set_formatter (new Output.labeled label)
 
 
-let rec flush_queue reporter job_queue =
+let rec flush_queue job_queue reporter =
     match job_queue#get with
-      | None ->
+        | None ->
             (job_queue, reporter)
-      | Some (job_queue, job) ->
+        | Some (job_queue, job) ->
             multi_set_output_formatter job;
             let active, complete = job#run begin fun job ->
                 let job = MultiJobUtilities.schedule_job job in (* schedule an active process, and remove killed ones *)
@@ -34,7 +34,7 @@ let rec flush_queue reporter job_queue =
             (* Put the other processes back into the queue so that they get reported, too. *)
             let job_queue = List.fold_left (fun job_queue job -> job_queue#put job) job_queue active in
             let reporter = reporter#report complete in
-            flush_queue reporter job_queue
+            flush_queue job_queue reporter
 
 
 let run reporter file =
@@ -56,7 +56,7 @@ let run reporter file =
 
     (* start executing *)
     let queue, reporter = Driver.main_loop step queue reporter in
-    flush_queue reporter queue
+    flush_queue queue reporter
 
 
 let doit file =
