@@ -125,7 +125,10 @@ void run_in_child_process(void (*f)(void)) {
 
 void init_symbolic_helper(char *array, size_t length) {
 #ifndef VALID
-#define VALID(x) ('a' <= (x) && (x) <= 'z')
+/* The non-alphabetic characters '[', '\', ']', '^', '_', and '`' are in this
+   range, but I think that's okay. I'd rather not use '||' in the assumption; in
+   general, disjunctions are not good for solvers. */
+#define VALID(x) ('A' <= (x) && (x) <= 'z')
 #endif
     /* We never use array[0], so we don't need to assume it is valid. However,
        it's fine to assume that it is distinct from the other keys by assuming
@@ -145,7 +148,7 @@ void init_symbolic_helper(char *array, size_t length) {
 static char symbolic_keys[NUM_SYM_KEYS];
 
 #ifndef NUM_SYM_VALS
-#define NUM_SYM_VALS 20
+#define NUM_SYM_VALS 40
 #endif
 static char symbolic_vals[NUM_SYM_VALS];
 
