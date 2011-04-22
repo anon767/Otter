@@ -213,7 +213,7 @@ let libc_free job retopt exps =
                     MemOp.state__add_path_condition job (Bytes.guard__to_bytes guard) true
                 | false, _ ->
                     (* No conditional branches were freed successfully: just fail. *)
-                    FormatPlus.failwith "Free invalid conditional pointer:@ @[%a]@ = @[%a@]" CilPrinter.exp arg BytesPrinter.bytes ptr
+                    FormatPlus.failwith "Free invalid conditional pointer:@ @[%a@]@ = @[%a@]" CilPrinter.exp arg BytesPrinter.bytes ptr
             end
         | Bytes_Read (bytes, offset, length) ->
             (* FIXME: This can lead to an infinite loop, because expand_read_to_conditional returns a Bytes_Read if [bytes] is a Bytes_Symbolic. *)
