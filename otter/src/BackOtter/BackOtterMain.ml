@@ -174,8 +174,7 @@ let options = [
     BackOtterUtilities.options @ 
     BidirectionalQueue.options @ 
     FunctionRanker.options @
-    LineTargets.options @
-    BackOtterTargetTracker.options
+    LineTargets.options
 
 
 let feature = {
