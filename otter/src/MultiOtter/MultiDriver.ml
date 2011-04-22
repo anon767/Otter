@@ -26,7 +26,10 @@ let rec flush_queue reporter job_queue =
       | None -> reporter
       | Some (job_queue, job) ->
             multi_set_output_formatter job;
-            let active, complete = job#run (fun job -> process_completed (Job.Abandoned (`Failure "Killed by signal"), job)) in
+            let active, complete = job#run begin fun job ->
+                let job = MultiJobUtilities.schedule_job job in (* schedule an active process, and remove killed ones *)
+                process_completed (Job.Abandoned (`Failure "Killed by signal"), job)
+            end in
             (* Put the other processes back into the queue so that they get reported, too. *)
             let job_queue = List.fold_left (fun job_queue job -> job_queue#put job) job_queue active in
             let reporter = reporter#report complete in
