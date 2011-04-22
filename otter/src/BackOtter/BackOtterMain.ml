@@ -57,11 +57,11 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     List.iter (fun f -> Output.debug_printf "Function containing coverage targets: %s@." f.svar.vname) starter_fundecs;
     let b_queue = List.fold_left (fun b_queue fundec ->
         if CilData.CilFundec.equal fundec entry_fn then 
-            (* FIXME: this means line targets in entry_fn won't trigger the creation of an entry_job here *)
             b_queue
         else
             b_queue#put (BackOtterJob.get_function_job file fundec)
     ) b_queue starter_fundecs in
+    let f_queue = f_queue#put entry_job in
 
     (* A queue that prioritizes jobs *)
     let queue = new BidirectionalQueue.t ?ratio file entry_job f_queue b_queue starter_fundecs in
@@ -88,7 +88,6 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
          * also include the time of getting a job. *)
         let fundec = BackOtterUtilities.get_origin_function job in
         let tkind = if fundec == entry_fn then `TKindEntry else `TKindOther in
-        (* TODO: count the time somewhere else, so main_loop doesn't depend on entry_fn *)
         BackOtterTimer.time tkind begin fun () ->
             (job : _ #Info.t)#try_run
                 (fun job -> interceptor job Statement.step)
