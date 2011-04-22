@@ -23,7 +23,6 @@
 
 #pragma max_abandoned(1)
 #pragma expect_abandoned(target_reached)
-#pragma no_other_abandoned
 #pragma no_other_return
 #pragma no_other_exit
 

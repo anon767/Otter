@@ -113,7 +113,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
         Output.printf "Failing path: @[%a@]@." DecisionPath.print decisions)
         (BackOtterTargets.get_paths entry_fn);
 
-    (queue, reporter)
+    OtterDriver.Driver.flush_queue queue reporter
 
 
 let doit file =
@@ -133,7 +133,6 @@ let doit file =
         Output.printf "Ratio: %0.2f@." !BidirectionalQueue.default_bidirectional_search_ratio ;
 
         let queue, reporter = callchain_backward_se (new BackOtterReporter.t ()) file in
-        let reporter = OtterDriver.Driver.flush_queue queue reporter in
 
         (* print the results *)
         Output.set_formatter (new Output.plain);

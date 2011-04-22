@@ -19,8 +19,7 @@ let flush_queue queue reporter =
                 (complete, queue)
     in
     let complete, queue = flush_queue [] queue in
-    let complete = BasicReporter.convert_non_failure_abandoned_to_truncated complete in
-    reporter#report complete
+    (queue, reporter#report complete)
 
 
 (** Main symbolic execution loop. *)
@@ -69,7 +68,8 @@ let run ?(random_seed=(!Executeargs.arg_random_seed))
             new OtterJob.FunctionJob.t file entryfn
     in
     let queue = queue#put job in
-    main_loop step queue reporter
+    let queue, reporter = main_loop step queue reporter in
+    flush_queue queue reporter
 
 
 (** {1 Precomposed drivers for common use cases} *)

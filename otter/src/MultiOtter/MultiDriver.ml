@@ -23,7 +23,8 @@ let multi_set_output_formatter job =
 
 let rec flush_queue reporter job_queue =
     match job_queue#get with
-      | None -> reporter
+      | None ->
+            (job_queue, reporter)
       | Some (job_queue, job) ->
             multi_set_output_formatter job;
             let active, complete = job#run begin fun job ->
@@ -54,7 +55,8 @@ let run reporter file =
     let queue = (OtterQueue.Queue.get_default ())#put job in
 
     (* start executing *)
-    Driver.main_loop step queue reporter
+    let queue, reporter = Driver.main_loop step queue reporter in
+    flush_queue reporter queue
 
 
 let doit file =
@@ -68,8 +70,8 @@ let doit file =
 
 		(* run the job *)
 		let module Reporter = ErrorReporter.Make (OtterCore.Errors) in
-		let job_queue, reporter = run (new Reporter.t ()) file in
-		flush_queue reporter job_queue
+		let _, reporter = run (new Reporter.t ()) file in
+		reporter
 	end in
 
 	(* print the results *)
