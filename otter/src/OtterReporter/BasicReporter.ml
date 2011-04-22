@@ -43,6 +43,7 @@ end
 let convert_non_failure_abandoned_to_truncated results =
     if !arg_convert_non_failure_abandoned_to_truncated then
         List.map begin function
+            | Job.Abandoned (`TargetReached _), job as result -> result
             | Job.Abandoned reason, job ->
                 (Job.Truncated reason, job)
             | result ->
