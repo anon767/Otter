@@ -20,7 +20,7 @@ let get_function_job file fundec =
 
     (* Call points_to with file *)
     let points_to = points_to file in
-    new FunctionJob.t file ~points_to fundec
+    new BackOtterFunctionJob.t file ~points_to fundec
 
 
 let get_default file =
@@ -29,7 +29,7 @@ let get_default file =
     if mainfn == entryfn then
         (* create a job for the file, with the commandline arguments set to the file name
          * and the arguments from the '--arg' option *)
-        new FileJob.t file (file.Cil.fileName::!E.command_line)
+        new BackOtterFileJob.t file (file.Cil.fileName::!E.command_line)
     else
         (* create a job that starts at entry_function *)
         get_function_job file entryfn
