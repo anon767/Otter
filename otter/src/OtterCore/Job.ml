@@ -53,7 +53,7 @@ class ['abandoned, 'truncated] t file' fn :
         method with_exHist : executionHistory -> 'self
 
         method decision_path : DecisionPath.t
-        method with_decision_path : DecisionPath.t -> 'self
+        method append_decision_path : Decision.t -> 'self
 
         method instrList : Cil.instr list
         method with_instrList : Cil.instr list -> 'self
@@ -86,7 +86,7 @@ class ['abandoned, 'truncated] t file' fn :
         (** The decision path is a list of decision. Most recent decision first. *)  (* TODO: take this out *)
         val mutable decision_path = DecisionPath.empty
         method decision_path = decision_path
-        method with_decision_path decision_path = {< decision_path = decision_path >}
+        method append_decision_path decision = {< decision_path = DecisionPath.add decision decision_path >}
 
         (** [instr]s to execute before moving to the next [stmt] *)
         val mutable instrList = []

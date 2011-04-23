@@ -127,7 +127,7 @@ let exec_instr_call job instr lvalopt fexp exps = Profiler.global#call "Statemen
                 try FindCil.fundec_by_name job#file varinfo.vname
                 with Not_found -> FormatPlus.failwith "Function %s not found." varinfo.vname
             in
-            let job = job#with_decision_path (DecisionPath.add (Decision.DecisionFuncall(instr, varinfo)) job#decision_path) in
+            let job = job#append_decision_path (Decision.DecisionFuncall(instr, varinfo)) in
             exec_fundec job instr fundec lvalopt exps
       | Lval(Cil.Mem _, _) ->
             FormatPlus.failwith "Function pointer in Statement.exec_instr:\n%a\nPlease use Interceptor.function_pointer_interceptor" Printcil.instr instr
@@ -322,14 +322,14 @@ let exec_stmt job = Profiler.global#call "Statement.exec_stmt" begin fun () ->
                     | Ternary.True ->
                         Output.printf "True@.";
                         let job = try_branch job None block1 in
-                        let job = job#with_decision_path (DecisionPath.add (Decision.DecisionConditional(stmt, true)) job#decision_path) in
+                        let job = job#append_decision_path (Decision.DecisionConditional(stmt, true)) in
                         let job = job#with_exHist (nextExHist (Some job#stmt) ~whichBranch:true) in
                         job
 
                     | Ternary.False ->
                         Output.printf "False@.";
                         let job = try_branch job None block2 in
-                        let job = job#with_decision_path (DecisionPath.add (Decision.DecisionConditional(stmt, false)) job#decision_path) in
+                        let job = job#append_decision_path (Decision.DecisionConditional(stmt, false)) in
                         let job = job#with_exHist  (nextExHist (Some job#stmt) ~whichBranch:false) in
                         job
 
@@ -349,14 +349,14 @@ let exec_stmt job = Profiler.global#call "Statement.exec_stmt" begin fun () ->
                             (* the false branch will be processed first by #fork (giving it the original path id), so print it first *)
                             Output.printf "Job %d is the false branch " job#path_id;
                             let job = try_branch job (Some (logicalNot rv)) block2 in
-                            let job = job#with_decision_path (DecisionPath.add (Decision.DecisionConditional(stmt, false)) job#decision_path) in
+                            let job = job#append_decision_path (Decision.DecisionConditional(stmt, false)) in
                             let job = job#with_exHist (nextExHist (Some job#stmt) ~whichBranch:false) in
                             job
                         end else begin
                             (* then the true branch will be processed, so print it next *)
                             Output.printf "and job %d is the true branch.@\n@." job#path_id;
                             let job = try_branch job (Some rv) block1 in
-                            let job = job#with_decision_path (DecisionPath.add (Decision.DecisionConditional(stmt, true)) job#decision_path) in
+                            let job = job#append_decision_path (Decision.DecisionConditional(stmt, true)) in
                             let job = job#with_exHist (nextExHist (Some job#stmt) ~whichBranch:true) in
                             job
                         end
