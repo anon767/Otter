@@ -147,18 +147,18 @@ and guard ff = function
 
 
 (** Print a {!type:Bytes.conditional}.
-		@param unconditional is the printer to print the unconditional leaves.
-		@param ff is the formatter to which to print
-		@param g is the {!type:Bytes.guard} to print
+		@param unconditional the printer to print the unconditional leaves
+		@param ff the formatter to which to print
+		@param c the {!type:Bytes.conditional} to print
 *)
-and conditional : 'a . (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a conditional -> unit = fun unconditional ff ->
+and conditional : 'a . (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a conditional -> unit = fun unconditional ff c ->
 	let rec conditional ff = function
 		| IfThenElse (g, t, f) ->
 			fprintf ff "If @[<hov>%a@]@ Then @[<hov>%a@]@ Else @[<hov>%a@]" guard g conditional t conditional f
 		| Unconditional x ->
 			unconditional ff x
 	in
-	conditional ff
+	conditional ff c
 
 
 (** Print a {!type:Bytes.bytes}.
@@ -258,4 +258,3 @@ let rec bytes_tree ff = function
 	(* everything else *)
 	| bv ->
 		bytes ff bv
-
