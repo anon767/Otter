@@ -162,13 +162,31 @@ let libc___builtin_va_start job retopt exps =
 			end_function_call job
 		| _ -> failwith "First argument of va_start must have lval"
 
-
 let libc_free job retopt exps =
     (* Remove the mapping of (block,bytes) in the job. *)
     let arg = List.hd exps in
-    let typ = Cil.typeOf arg in
     let job, ptr = Expression.rval job arg in
-    let rec libc_free job ptr = match ptr with
+    (* If ptr is a Bytes_Read, expand it to a Bytes_Conditional *)
+    let ptr = match ptr with
+      | Bytes_Read (bytes, offset, length) ->
+            make_Bytes_Conditional (expand_read_to_conditional bytes offset length)
+      | _ -> ptr
+    in
+    (* If ptr is a Bytes_Conditional (including if it was a Bytes_Read), split it into each possible value *)
+    let job, ptr = match ptr with
+      | Bytes_Conditional c ->
+            let job, c = conditional__prune ~test:(MemOp.timed_query_stp "query_stp/libc_free") job c in
+            begin match conditional__to_list c with
+              | [ (_, value) ] -> (job, value)
+              | guards_ands_values ->
+                    let job, (condition, value) = (job : _ #Info.t)#fork guards_ands_values in
+                    let job = MemOp.state__add_path_condition job (Bytes.guard__to_bytes condition) true in
+                    (job, value)
+            end
+      | _ -> (job, ptr)
+    in
+    (* Finally, actually free the pointer *)
+    let job = match ptr with
         | Bytes_Address (block, offset) ->
             (* Block_type_Aliased can refer to either malloc'ed or local variables below the stack; we'll assume it's malloc'ed memory for now *)
             (* TODO: fork and split the cases *)
@@ -179,49 +197,9 @@ let libc_free job retopt exps =
             MemOp.state__remove_block job block
         | ptr when bytes__equal ptr bytes__zero -> (* Freeing a null pointer. Do nothing. *)
             job
-        | Bytes_Conditional c ->
-            (* TODO: refactor and lift this pattern as it occurs in three places: Expression.deref, BuiltinFunctions.libc_free,
-             * and Interceptor.function_pointer_interceptor *)
-            let guard, job, _, has_success =
-                conditional__fold
-                    ~test:begin fun (guard', job, removed, has_success) pre guard ->
-                        let truth = BytesSTP.query_stp (PathCondition.clauses job#state.path_condition) pre guard in
-                        ((guard', job, removed, has_success), truth)
-                    end
-                    begin fun (guard, job, removed, has_success) _ c ->
-                        if List.exists (Bytes.bytes__equal c) removed then
-                            (guard, job, removed, has_success)
-                        else
-                            try
-                                let job = libc_free job c in
-                                (guard, job, removed, true)
-                            with Failure msg ->
-                                (* Report this failure, guard against it and remove this leaf. *)
-                                let job = (job : _ #Info.t)#fork_finish (Job.Abandoned (`Failure msg)) in
-                                let failing_ptr = Operator.eq [ (ptr, typ); (c, typ) ] in
-                                let guard = guard__and_not guard (Bytes.guard__bytes failing_ptr) in
-                                let removed = c::removed in
-                                (guard, job, removed, has_success)
-                    end (Bytes.guard__true, job, [], false) c
-            in
-            begin match has_success, guard with
-                | true, Guard_True ->
-                    (* All conditional branches were freed successfully. *)
-                    job
-                | true, guard ->
-                    (* Not all conditional branches were freed successfully: add the guard and continue. *)
-                    MemOp.state__add_path_condition job (Bytes.guard__to_bytes guard) true
-                | false, _ ->
-                    (* No conditional branches were freed successfully: just fail. *)
-                    FormatPlus.failwith "Free invalid conditional pointer:@ @[%a@]@ = @[%a@]" CilPrinter.exp arg BytesPrinter.bytes ptr
-            end
-        | Bytes_Read (bytes, offset, length) ->
-            (* FIXME: This can lead to an infinite loop, because expand_read_to_conditional returns a Bytes_Read if [bytes] is a Bytes_Symbolic. *)
-            libc_free job (make_Bytes_Conditional (expand_read_to_conditional bytes offset length))
         | _ ->
             FormatPlus.failwith "Freeing something that is not a valid pointer:@ @[%a@]@ = @[%a@]" CilPrinter.exp arg BytesPrinter.bytes ptr
     in
-    let job = libc_free job ptr in
     end_function_call job
 
 

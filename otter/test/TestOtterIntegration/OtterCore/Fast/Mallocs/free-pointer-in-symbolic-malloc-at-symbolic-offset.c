@@ -4,6 +4,9 @@
 #pragma expect_abandoned(out_of_bounds)
 #pragma expect_abandoned(out_of_bounds)
 
+// Freeing p[y] fails if 1 < y < x because p[y] is uninitialized
+#pragma expect_abandoned(failure("Freeing something that is not a valid pointer"))
+
 // Assigning through p[0] fails if y == 0
 #pragma expect_abandoned(failure("Dereference"))
 

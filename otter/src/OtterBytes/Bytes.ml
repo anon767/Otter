@@ -937,6 +937,15 @@ let conditional__from_list list =
     ListPlus.foldm (fun x y -> IfThenElse (guard__symbolic (), x, y)) list
 
 
+(** [conditional__to_list conditional] converts [conditional] into a list of
+    {!type:'a}s, each one paired with the {!type:guard} under which
+    [conditional] takes that value.
+*)
+(* We could collapse multiple occurrences of the same value together. Should we? *)
+let conditional__to_list conditional =
+    conditional__fold (fun result guard bytes -> (guard, bytes) :: result) [] conditional
+
+
 let conditional__bytes = function
     | Bytes_Conditional c -> c
     | b -> Unconditional b
