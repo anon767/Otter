@@ -196,12 +196,8 @@ rval_cast typ rv rvtyp =
         | Bytes_Constant(CReal(f,fkind,s)),TFloat(new_fkind,_) ->
             let const = CReal(f,new_fkind,s) in
             make_Bytes_Constant const
-        (* Casting to _Bool is essentially '!= 0'. See ISO C99 6.3.1.2, except
-           that the result, obviously, has type _Bool and not int. I think (or
-           hope) that doesn't matter for Otter, though. *)
         | rv, TInt(IBool,_) ->
-            let zero = bytes__make ((bitsSizeOf rvtyp) / 8) in
-            Operator.ne [ (rv, rvtyp); (zero, rvtyp) ]
+            asBoolean rv
         (* added so that from now on there'll be no make_Bytes_Constant *)
         | Bytes_Constant(const),_ ->
             rval_cast typ (constant_to_bytes const) rvtyp
