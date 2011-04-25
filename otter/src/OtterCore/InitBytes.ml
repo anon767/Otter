@@ -2,7 +2,7 @@ open OtterBytes
 
 let init_methods : (string*(unit -> Bytes.byte)) list = [
     "zero", (fun () -> Bytes.byte__zero);
-    "undefined", (fun () -> Bytes.byte__undef);
+    "undefined", (fun () -> Bytes.byte__undefined);
     "symbolic", Bytes.make_Byte_Symbolic;
 ]
 

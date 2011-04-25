@@ -32,9 +32,9 @@ module InternalAllSymbols = struct
         wrap_all_symbols_in_bytearray begin
             ImmutableArray.fold_left
                 begin fun symbols byte -> match byte with
-                     | Byte_Concrete _ -> symbols
-                     | Byte_Symbolic s -> SymbolSet.add s symbols
-                     | Byte_Bytes (bytes, _) -> SymbolSet.union symbols (all_symbols_in_bytes bytes)
+                    | Byte_Undefined | Byte_Concrete _ -> symbols
+                    | Byte_Symbolic s -> SymbolSet.add s symbols
+                    | Byte_Bytes (bytes, _) -> SymbolSet.union symbols (all_symbols_in_bytes bytes)
                 end
                 SymbolSet.empty
         end bytearray
@@ -247,7 +247,7 @@ let rec byte_to_stp_bv vc byte =
     InternalToSTP.wrap_byte_to_stp_bv begin fun (vc, byte) -> match byte with
         | Byte_Concrete byte ->
             OcamlSTP.bv_of_int vc 8 (int_of_char byte)
-        | Byte_Symbolic _ as b when b = byte__undef -> (* Here is where we catch attempts to use the undefined symbolic byte *)
+        | Byte_Undefined -> (* Here is where we catch attempts to use the undefined symbolic byte *)
             failwith "Conditional depends on undefined value"
         | Byte_Symbolic s ->
             symbol_to_stp_bv vc s

@@ -72,6 +72,7 @@ let symbol ff s = fprintf ff "\\<%d>" s.symbol_id
 		@param b is the {!type:Bytes.byte} to print
 *)
 let rec byte ff = function
+	| Byte_Undefined -> fprintf ff "\\#"
 	| Byte_Concrete c -> char ff c
 	| Byte_Symbolic s -> symbol ff s
 	| Byte_Bytes (b, 0) -> fprintf ff "BB[@[<hov>%a@]@,]" bytes b
@@ -114,12 +115,10 @@ and bytearray ff arr =
 *)
 and bytestring ff arr =
 	let byte = function
-		| Byte_Concrete c ->
-			char ff c
-		| Byte_Symbolic s ->
-			symbol ff s
 		| Byte_Bytes _ ->
 			pp_print_string ff "\\?"
+		| b ->
+			byte ff b
 	in
 	let rec bytestring n =
 		if n < ImmutableArray.length arr then

@@ -46,6 +46,7 @@ module T : sig
         }
 
     type byte = private
+        | Byte_Undefined
         | Byte_Concrete of char
         | Byte_Symbolic of symbol
         | Byte_Bytes of bytes * int
@@ -96,7 +97,7 @@ module T : sig
     val make_Byte_Symbolic : unit -> byte
     val make_Byte_Bytes : bytes * int -> byte
 
-    val byte__undef : byte
+    val byte__undefined : byte
 
     val guard__true : guard
     val guard__not : guard -> guard
@@ -141,6 +142,7 @@ end = struct
         }
 
     type byte = (* corresponds to BV *)
+        | Byte_Undefined
         | Byte_Concrete of char
         | Byte_Symbolic of symbol
         | Byte_Bytes of bytes * int (* condense a bytes into a byte, that can be put into an array *)
@@ -274,7 +276,7 @@ end = struct
         let rec symbol_hash = add_hash
         
         and byte_hash = function
-            | Byte_Concrete _ | Byte_Symbolic _ as b -> add_hash b
+            | Byte_Undefined | Byte_Concrete _ | Byte_Symbolic _ as b -> add_hash b
             | Byte_Bytes (bytes, offset) -> add_hash (`Bytes, offset); bytes_hash bytes
 
         and bytearray_hash bytearray = add_hash (ImmutableArray.hash (do_hash byte_hash) bytearray)
@@ -313,9 +315,7 @@ end = struct
      *  symbol
      *)
     let symbol__next =
-        (* negative id is used as special symbolic values.
-           0 is used for the symbolic byte representing uninitialized memory *)
-        let symbol_counter = Counter.make ~start:1 () in
+        let symbol_counter = Counter.make () in
         fun () -> { symbol_id = Counter.next symbol_counter }
 
 
@@ -338,9 +338,7 @@ end = struct
 
     let make_Byte_Bytes (bs, n) = hash_consing_byte_create (Byte_Bytes (bs, n))
 
-
-    (* A single global byte representing uninitialized memory *)
-    let byte__undef = Byte_Symbolic { symbol_id = 0 }
+    let byte__undefined = Byte_Undefined
 
 
     (**
@@ -688,7 +686,7 @@ end
 let rec byte__reduce byte =
     InternalReduce.byte_wrap begin function
         | Byte_Bytes (bytes, offset) -> make_Byte_Bytes (bytes__reduce bytes, offset)
-        | Byte_Concrete _ | Byte_Symbolic _ as byte -> byte
+        | Byte_Undefined | Byte_Concrete _ | Byte_Symbolic _ as byte -> byte
     end byte
 
 and guard__reduce guard =
