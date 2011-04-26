@@ -15,6 +15,7 @@ benchmarks = {
             'paste'  : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/paste_comb.c"   -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_PASTE_ASSERT',
             'ptx'    : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/ptx_comb.c"     -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_COPY_UNESCAPED_STRING_BOUNDS_CHECKING',
             'seq'    : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/seq_comb.c"     -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_LONG_DOUBLE_FORMAT_BOUNDS_CHECKING --noUseLogicalOperators',
+            #'tac'    : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/tac_comb.c"     -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_TAC ',
             },
         'command' : '"@trunk@/newlib-1.19.0/otter/otter-with-libc" "@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/__otter_main_driver.c" "@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/__otter_poi.c" --mainfn=__otter_main_driver -lm --timeout=1800'
         },
@@ -24,16 +25,16 @@ benchmarks = {
             'ProCCBSE' : "@trunk@/experiments/directed_symbolic_execution/synthetic/pro_backotter_3.c",
             'ProMix'   : "@trunk@/experiments/directed_symbolic_execution/synthetic/pro_mix_1.c",
             },
-        'command' : 'CILLY_DONT_COMPILE_AFTER_MERGE= @trunk@/otter/otter.pl --merge -nostdinc -nostdlib -Wp,-undef,-D_POSIX_THREADS,-D__GNUC__,-D_GCC_LIMITS_H_ --timeout=240'
+        'command' : 'CILLY_DONT_COMPILE_AFTER_MERGE= @trunk@/otter/otter.pl --merge -nostdinc -nostdlib -Wp,-undef,-D_POSIX_THREADS,-D__GNUC__,-D_GCC_LIMITS_H_ --timeout=600'
         }
     }
 
 strategies = {
     'InterSDSE'         : '--dootter --queue=closest-to-targets',
     'IntraSDSE'         : '--dootter --queue=closest-to-targets-intraprocedural',
-    'CCBSE(RandomPath)' : '--dobackotter --function-inlining --backward-queue=random-path --bidirectional-search-ratio=-1 --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry',
-    'CCBSE(InterSDSE)'  : '--dobackotter --function-inlining --backward-queue=backotter-closest-to-targets --bidirectional-search-ratio=-1 --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry',
-    'CCBSE(IntraSDSE)'  : '--dobackotter --function-inlining --backward-queue=backotter-closest-to-targets-intraprocedural --bidirectional-search-ratio=-1 --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry',
+    'CCBSE(RandomPath)' : '--dobackotter --function-inlining --forward-queue=random-path --backward-queue=random-path --bidirectional-search-ratio=-1 --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry',
+    'CCBSE(InterSDSE)'  : '--dobackotter --function-inlining --forward-queue=backotter-closest-to-targets --backward-queue=backotter-closest-to-targets --bidirectional-search-ratio=-1 --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry',
+    'CCBSE(IntraSDSE)'  : '--dobackotter --function-inlining --forward-queue=backotter-closest-to-targets-intraprocedural --backward-queue=backotter-closest-to-targets-intraprocedural --bidirectional-search-ratio=-1 --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry',
     'OtterKLEE'         : '--dootter --queue=KLEE',
     'Mix(OtterKLEE)'    : '--dobackotter --function-inlining --backward-queue=random-path --bidirectional-search-ratio=.5  --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry --forward-queue=KLEE',
     'OtterSAGE'         : '--dootter --queue=SAGE',
@@ -43,7 +44,8 @@ strategies = {
 }
 
 options = {
-    'std'  : '--doRunRmtmps --init-malloc=zero --init-local=zero --max-abandoned=1 --convert-non-failure-abandoned-to-truncated --printErrorsOnly --backotter-timing-method=weighted --backotter-no-overlap-path-matching',
+    'std'  : '--convert-non-failure-abandoned-to-truncated --doRunRmtmps --init-malloc=zero --init-local=zero --max-abandoned=1 --printErrorsOnly --backotter-timing-method=weighted --backotter-no-overlap-path-matching',
+    #'std'  : '--convert-non-failure-abandoned-to-truncated --doRunRmtmps --init-malloc=undefined --init-local=undefined --max-abandoned=1 --printErrorsOnly --backotter-timing-method=weighted --backotter-no-overlap-path-matching',
 }
 
 def make_test(command, program, strategy, option, seed):
