@@ -1,14 +1,19 @@
 
 type t = [
     | `Failure of string
+    | `FailingPath of t * Cil.fundec * DecisionPath.t   (* TODO: move this back to BackOtterErrors *)
     | `TargetReached of Target.t
     | `AssertionFailure of Cil.exp
     | `OutOfBounds of Cil.exp
     | `DivisionByZero of Cil.exp
 ]
 
-let printer ff (error : t) = match error with
+let rec printer ff (error : t) = match error with
     | `Failure msg -> Format.fprintf ff "`Failure:%s" msg
+    | `FailingPath (reason, fundec, failing_path) ->
+        Format.fprintf ff "`FailingPath(@[%a@])" printer reason;
+        OcamlUtilities.Output.debug_printf "@\n=> Extract the following failing path for function %s:@." fundec.Cil.svar.Cil.vname;
+        OcamlUtilities.Output.debug_printf "@[%a@]@\n@." DecisionPath.print failing_path
     | `TargetReached target -> Format.fprintf ff "`TargetReached @[%a@]" Target.printer target
     | `AssertionFailure exp -> Format.fprintf ff "`AssertionFailure: %a" Printcil.exp exp
     | `OutOfBounds exp -> Format.fprintf ff "`OutOfBounds: %a" Printcil.exp exp
@@ -31,6 +36,15 @@ let matcher name args =
             end
         | "failure", _ ->
             failwith "Invalid failure (should have exactly one regex string argument to match the failure reason)."
+        (* TODO: have some sort of test on the failing path list *)
+        | "failing_path", [] ->
+            begin function
+                | `FailingPath _ -> true
+                | _ -> false
+            end
+        | "failing_path", _ ->
+            failwith "Invalid failing_path (takes no arguments)."
+
         | "target_reached", [] ->
             begin function
                 | `TargetReached target -> true
