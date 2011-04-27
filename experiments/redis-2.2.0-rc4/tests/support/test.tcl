@@ -249,68 +249,78 @@ proc map {f xs} {
     return $result
 }
 
-set transformed_keys [dict create\
-                          blist1      "\\x01\\x01"\
-                          blist2      "\\x01\\x02"\
-                          blist       "\\x01\\x03"\
-                          dstlist     "\\x01\\x04"\
-                          list1       "\\x01\\x05"\
-                          list2       "\\x01\\x06"\
-                          list3       "\\x01\\x07"\
-                          mylist1     "\\x01\\x08"\
-                          mylist2     "\\x01\\x09"\
-                          mylist      "\\x01\\x0a"\
-                          myotherlist "\\x01\\x0b"\
-                          myziplist1  "\\x01\\x0c"\
-                          myziplist2  "\\x01\\x0d"\
-                          newlist     "\\x01\\x0e"\
-                          nolist      "\\x01\\x0f"\
-                          notalist    "\\x01\\x10"\
-                          srclist     "\\x01\\x11"\
-                          xlist       "\\x01\\x12"\
-                          l           "\\x01\\x13"\
-                         ]
+set all_keys {
+    "placeholder because I don't want to use index 0"
+    blist
+    blist1
+    blist2
+    dstlist
+    list1
+    list2
+    list3
+    mylist
+    mylist1
+    mylist2
+    myotherlist
+    myziplist1
+    myziplist2
+    newlist
+    nolist
+    notalist
+    srclist
+    xlist
+    l
+    target
+    target1
+    target2
+}
+for {set i 1} {$i < [llength $all_keys]} {incr i} {
+    dict set transformed_keys [lindex $all_keys $i] [format "\\x01\\x%02x" $i]
+}
 
-set transformed_vals [dict create\
-                          7        "\\x02\\x08"\
-                          8        "\\x02\\x09"\
-                          95       "\\x02\\x0a"\
-                          96       "\\x02\\x0b"\
-                          98       "\\x02\\x0c"\
-                          99       "\\x02\\x0d"\
-                          9        "\\x02\\x0e"\
-                          a        "\\x02\\x0f"\
-                          bar      "\\x02\\x10"\
-                          b        "\\x02\\x11"\
-                          c        "\\x02\\x12"\
-                          d        "\\x02\\x13"\
-                          foobared "\\x02\\x14"\
-                          foobar   "\\x02\\x15"\
-                          foo      "\\x02\\x16"\
-                          f        "\\x02\\x17"\
-                          test     "\\x02\\x18"\
-                          zap      "\\x02\\x19"\
-                          yy       "\\x02\\x1a"\
-                          zz       "\\x02\\x1b"\
-                          aa       "\\x02\\x1c"\
-                          ddd      "\\x02\\x1d"\
-                          dd       "\\x02\\x1e"\
-                          bad      "\\x02\\x1f"\
-                          aaa      "\\x02\\x20"\
-                          42       "\\x02\\x21"
-                     ]
-# It would be nice to set the values 0 to 6 as well, but I can't (given the way
-# I'm doing things) because they would conflict with numbers that are used
-# concretely in the tests (e.g., lengths and indices of lists, numbers of
+set all_vals {
+    "placeholder because I don't want to use index 0"
+    42
+    95
+    96
+    98
+    99
+    a
+    b
+    c
+    d
+    f
+    foo
+    bar
+    foobared
+    foobar
+    test
+    zap
+    aa
+    dd
+    yy
+    zz
+    aaa
+    ddd
+    bad
+}
+# It would be nice to set the values 0-9 symbolic as well, but I can't (given
+# the way I'm doing things) because they would conflict with numbers that are
+# used concretely in the tests (e.g., lengths and indices of lists, numbers of
 # elements removed)
-
-#                      0        "\\x02\\x01"\
-#                      1        "\\x02\\x02"\
-#                      2        "\\x02\\x03"\
-#                      3        "\\x02\\x04"\
-#                      4        "\\x02\\x05"\
-#                      5        "\\x02\\x06"\
-#                      6        "\\x02\\x07"\
+#    0
+#    1
+#    2
+#    3
+#    4
+#    5
+#    6
+#    7
+#    8
+#    9
+for {set i 1} {$i < [llength $all_vals]} {incr i} {
+    dict set transformed_vals [lindex $all_vals $i] [format "\\x02\\x%02x" $i]
+}
 
 proc make_key_symbolic {str} {
     global transformed_keys
