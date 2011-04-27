@@ -10,8 +10,6 @@ open Cil
 let default_conditionals_forking_limit = ref max_int
 
 let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
-                          ?(f_queue=BackOtterQueue.get_default_fqueue ())
-                          ?(b_queue=BackOtterQueue.get_default_bqueue ())
                           ?ratio reporter file =
 
     Random.init random_seed;
@@ -31,12 +29,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     (* Setup max_function_name_length, to be used in set_output_formatter_interceptor *)
     BackOtterInterceptor.set_max_function_name_length (entry_fn :: (CilCallgraph.find_transitive_callees file entry_fn));
 
-    (* Wrap queues with ContentQueue *)
-    let f_queue = new ContentQueue.t f_queue in
-    let b_queue = new ContentQueue.t b_queue in
-
     (* when arg_line_targets != [], add appropriate jobs in bqueue *)
-    (* TODO: let BidirectionalQueue decide which sub-queue to put into *)
     let starter_fundecs = List.fold_left (fun starter_fundecs (file_name, line_num) ->
         Output.debug_printf "Line target: %s:%d in function " file_name line_num;
         let r = 
@@ -55,16 +48,20 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
         r
     ) [] (!LineTargets.arg_line_targets @ BackOtterTargetTracker.(TargetSet.elements !targets)) in
     List.iter (fun f -> Output.debug_printf "Function containing coverage targets: %s@." f.svar.vname) starter_fundecs;
-    let b_queue = List.fold_left (fun b_queue fundec ->
-        if CilData.CilFundec.equal fundec entry_fn then 
-            b_queue
-        else
-            b_queue#put (BackOtterJob.get_function_job file fundec)
-    ) b_queue starter_fundecs in
-    let f_queue = f_queue#put entry_job in
 
     (* A queue that prioritizes jobs *)
-    let queue = new BidirectionalQueue.t ?ratio file f_queue b_queue starter_fundecs in
+    let queue = new BidirectionalQueue.t ?ratio file starter_fundecs in
+
+    (* Add non-entryfn jobs *)
+    let queue = List.fold_left (fun queue fundec ->
+        if CilData.CilFundec.equal fundec entry_fn then 
+            queue
+        else
+            queue#put (BackOtterJob.get_function_job file fundec)
+    ) queue starter_fundecs in
+
+    (* Add entryfn jobs *)
+    let queue = queue#put entry_job in
 
     (* Define interceptor *)
     let interceptor =

@@ -42,13 +42,13 @@ module JobMap = struct
 end
 
 class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
+               ?(f_queue=BackOtterQueue.get_default_fqueue ())
+               ?(b_queue=BackOtterQueue.get_default_bqueue ())
                file
-               f_queue
-               b_queue
                starter_fundecs =
     object (self)
-        val entryfn_jobqueue = f_queue
-        val otherfn_jobqueue = b_queue
+        val entryfn_jobqueue = new ContentQueue.t f_queue
+        val otherfn_jobqueue = new ContentQueue.t b_queue
         (* fundecs whose initialized jobs have been created *)
         val origin_fundecs = starter_fundecs
 
