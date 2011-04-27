@@ -64,7 +64,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     let f_queue = f_queue#put entry_job in
 
     (* A queue that prioritizes jobs *)
-    let queue = new BidirectionalQueue.t ?ratio file entry_job f_queue b_queue starter_fundecs in
+    let queue = new BidirectionalQueue.t ?ratio file f_queue b_queue starter_fundecs in
 
     (* Define interceptor *)
     let interceptor =

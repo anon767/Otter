@@ -43,7 +43,6 @@ end
 
 class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                file
-               entry_job
                f_queue
                b_queue
                starter_fundecs =
