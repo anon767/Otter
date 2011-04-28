@@ -222,11 +222,7 @@ let access_bytes_with_length ?(exp=Cil.Const (Cil.CStr "exp unavailable")) job b
     if not !Executeargs.arg_bounds_checking then
         (job, lvals)
     else
-        let job, failing_bytes_opt = Expression.checkBounds job lvals length in
-        let job = match failing_bytes_opt with
-            | None -> job
-            | Some _ -> (job : _ #Info.t)#fork_finish (Job.Abandoned (`OutOfBounds exp))
-        in
+        let job = Expression.checkBounds job lvals length exp in
         (job, lvals)
 
 (** Like [access_bytes_with_length], but starts from an expression instead of a
@@ -488,19 +484,7 @@ let otter_failure job retopt exps =
 let otter_assert job retopt exps =
     let exp = get_lone_arg exps in
     let job, assertion = Expression.rval job exp in
-    let job = match MemOp.eval job#state.path_condition assertion with
-        | Ternary.True ->
-            (* assertion passes; do nothing *)
-            job
-        | Ternary.False ->
-            (* assertion definitely fails *)
-            (job : _ #Info.t)#finish (Job.Abandoned (`AssertionFailure exp))
-        | Ternary.Unknown ->
-            (* assertion can fail and can pass. Record the error, but also assume it passes and continue *)
-            let job = (job : _ #Info.t)#fork_finish (Job.Abandoned (`AssertionFailure exp)) in
-            let job = MemOp.state__add_path_condition job assertion true in
-            job
-    in
+    let job = Expression.fail_if_not job assertion (`AssertionFailure exp) in
     end_function_call job
 
 

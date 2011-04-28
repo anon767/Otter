@@ -6,6 +6,29 @@ open Bytes
 open BytesUtility
 open State
 
+(* TODO: Where does this function belong? *)
+(** [fail_if_not job condition error] sees if [condition] holds in [job]. If
+    [condition] definitely holds, [job] is simply returned. If [condition]
+    definitely does not hold, [job#finish error] is called. Otherwise,
+    [job#fork] splits [job] into [job_fail] and [job_pass]: [job_fail] gets [not
+    condition] added to its path condition and then calls [job_fail#finish
+    error], and [job_pass] get [condition] added to its path condition and gets
+    returned
+*)
+let fail_if_not job condition error =
+    match MemOp.eval job#state.path_condition condition with
+      | Ternary.False -> (job : _ #Info.t)#finish (Job.Abandoned error)  (* Check definitely fails. *)
+      | Ternary.True -> job (* Check definitely passes. *)
+      | Ternary.Unknown ->
+            (* The check can fail. Spin off a failing path (with the failing condition)
+               and return the successful path (and assume the check succeeds) *)
+            let job, pass_fail = (job : _ #Info.t)#fork [ `Fail; `Pass ] in
+            match pass_fail with
+              | `Fail ->
+                    let job = MemOp.state__add_path_condition job (logicalNot condition) true in
+                    (job : _ #Info.t)#finish (Job.Abandoned error)
+              | `Pass ->
+                    MemOp.state__add_path_condition job condition true
 
 (* Bounds-checking *)
 (* The next two function are used for bounds-checking. Here are some
@@ -72,16 +95,14 @@ let rec getBlockSizesAndOffsets lvals = match lvals with
                 Unconditional offset
 
 
-(** [checkBounds job lvals useSize] checks whether a dereference is in bounds.
+(** [checkBounds job lvals useSize cil_lval] checks whether a dereference is in bounds.
     @param job the job in which to perform the check
     @param lvals the conditional tree of lvalues being accessed
     @param useSize the width, in bytes, of the access
-    @raises [Failure] if the dereference must fail
-    @return [job', failing_bytes_opt]. [job'] is [job] augmented
-    (if necessary) with the assumption that the check passed.
-    [failing_bytes_opt] is [None] if the check certainly passes, or a [Some]
-    with the bytes that failed the check. *)
-let checkBounds job lvals useSize =
+    @param exp the C expression being accessed (for error reporting)
+    @return [job], augmented (if necessary) with the assumption that the check passed.
+*)
+let checkBounds job lvals useSize exp =
     (* Get the block sizes and offsets *)
     let sizesTree, offsetsTree = getBlockSizesAndOffsets lvals in
 
@@ -104,12 +125,7 @@ let checkBounds job lvals useSize =
     let both_checks = Operator.bytes__land offsetsLeSizesMinusUseSize useSizeLeSizes in
 
     (* Perform the check *)
-    match MemOp.eval job#state.path_condition both_checks with
-      | Ternary.False -> FormatPlus.failwith "@[Bounds check failed:@ %a@]" BytesPrinter.bytes both_checks
-      | Ternary.True -> (job, None) (* Check definitely passes. *)
-      | Ternary.Unknown -> (* If the check can fail, add it to the path condition *)
-            let job = MemOp.state__add_path_condition job both_checks true in
-            (job, Some both_checks)
+    fail_if_not job both_checks (`OutOfBounds exp)
 
 let add_offset offset lvals =
     conditional__map begin fun (block, offset2) ->
@@ -279,16 +295,13 @@ lval ?(justGetAddr=false) job (lhost, offset_exp as cil_lval) =
             (* Omit the bounds check if we're only getting the address of the
                  lval---not actually reading from or writing to it---or if bounds
                  checking is turned off *)
-            if justGetAddr || not !Executeargs.arg_bounds_checking then
-                (job, (lvals, size))
-            else
-                let job, failing_bytes_opt = checkBounds job lvals size in
-                match failing_bytes_opt with
-                    | None ->
-                        (job, (lvals, size))
-                    | Some b ->
-                        let job = (job : _ #Info.t)#fork_finish (Job.Abandoned (`OutOfBounds (Lval cil_lval))) in
-                        (job, (lvals, size))
+            let job =
+                if justGetAddr || not !Executeargs.arg_bounds_checking then
+                    job
+                else
+                    checkBounds job lvals size (Lval cil_lval)
+            in
+            (job, (lvals, size))
 
 and
 
@@ -462,18 +475,9 @@ rval_binop job binop exp1 exp2 exp =
       | Div | Mod when Cil.isIntegralType (Cil.typeOf exp) ->
             (* check for division-by-zero for integer types (not an error for floating-point, which isn't supported yet anyway) *)
             let job, rv2 = rval job exp2 in
-            begin match MemOp.eval job#state.path_condition rv2 with
-                | Ternary.True -> (* non-zero *)
-                    let bytes = (Operator.of_binop binop) [ (rv1, typeOf exp1); (rv2, typeOf exp2) ] in
-                    (job, bytes)
-                | Ternary.False -> (* zero *)
-                    FormatPlus.failwith "%a" Errors.printer (`DivisionByZero exp)
-                | Ternary.Unknown -> (* possibly zero *)
-                    let job = (job : _ #Info.t)#fork_finish (Job.Abandoned (`DivisionByZero exp)) in
-                    let job = MemOp.state__add_path_condition job rv2 true in
-                    let bytes = (Operator.of_binop binop) [ (rv1, typeOf exp1); (rv2, typeOf exp2) ] in
-                    (job, bytes)
-            end
+            let job = fail_if_not job rv2 (`DivisionByZero exp) in (* Fail if rv2 is zero *)
+            let bytes = (Operator.of_binop binop) [ (rv1, typeOf exp1); (rv2, typeOf exp2) ] in
+            (job, bytes)
       | PlusPI | IndexPI | MinusPI ->
             let job, rv2 = rval job exp2 in
             let rv2 = rval_cast !Cil.upointType rv2 (typeOf exp2) in
