@@ -198,7 +198,9 @@ let libc_free job retopt exps =
         | ptr when bytes__equal ptr bytes__zero -> (* Freeing a null pointer. Do nothing. *)
             job
         | _ ->
-            FormatPlus.failwith "Freeing something that is not a valid pointer:@ @[%a@]@ = @[%a@]" CilPrinter.exp arg BytesPrinter.bytes ptr
+            Format.fprintf Format.str_formatter "Freeing something that is not a valid pointer:@ @[%a@]@ = @[%a@]" CilPrinter.exp arg BytesPrinter.bytes ptr;
+            let error_msg = Format.flush_str_formatter () in
+            (job : _ #Info.t)#finish (Job.Abandoned (`Failure error_msg))
     in
     end_function_call job
 
