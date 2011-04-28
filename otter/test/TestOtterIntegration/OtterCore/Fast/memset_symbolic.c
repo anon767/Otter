@@ -1,6 +1,6 @@
 /* This tests makes sure that a C implementation of memset is invoked
  * when it's given a symbolic length. */
-#pragma expect_abandoned(failure("Bounds check failed"))
+#pragma expect_abandoned(out_of_bounds)
 #pragma expect_return()
 #pragma expect_return()
 #pragma expect_return()

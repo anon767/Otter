@@ -1,4 +1,4 @@
-#pragma expect_abandoned(out_of_bounds)
+#pragma expect_abandoned(out_of_bounds, i < 0 || i >= 2)
 #pragma expect_return(0 <= i, i < 2)
 #pragma no_other_results
 
