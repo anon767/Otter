@@ -266,7 +266,9 @@ set all_keys {
     myziplist2
     newlist
     nolist
+    not-a-key
     notalist
+    nosuchkey
     srclist
     xlist
     l
@@ -303,6 +305,7 @@ set all_vals {
     aaa
     ddd
     bad
+    nosuchelement
 }
 # It would be nice to set the values 0-9 symbolic as well, but I can't (given
 # the way I'm doing things) because they would conflict with numbers that are
