@@ -292,6 +292,7 @@ set all_vals {
     c
     d
     f
+    x
     foo
     bar
     foobared
