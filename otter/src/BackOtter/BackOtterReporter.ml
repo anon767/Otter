@@ -9,7 +9,7 @@ class ['self] t ?max_steps ?max_paths ?max_abandoned () = object
 
     method report results =
         List.iter begin function
-            | Job.Truncated (`SummaryAbandoned (`FailingPath _) as reason), job ->
+            | Job.Truncated (`SummaryAbandoned reason), job ->
                 Output.set_mode Output.MSG_ERROR;
                 Output.printf "@[Error \"@[%a@]\"@ occurs at @[%a@].@\n"
                     BackOtterErrors.printer reason Printcil.loc (Job.get_loc job)

@@ -2,7 +2,6 @@ open OtterCore
 open OtterCFG
 
 module FundecMap = Map.Make (CilUtilities.CilData.CilFundec)
-module InstructionMap = Map.Make (Instruction)
 
 module PathSet = Set.Make (DecisionPath)
 

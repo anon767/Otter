@@ -2,6 +2,7 @@ open OcamlUtilities
 open CilUtilities
 open OtterBytes
 open OtterCore
+open OtterCFG
 open Bytes
 open State
 open Job
@@ -24,17 +25,18 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     (* failure function set by --failurefn (default: __FAILURE) *)
     let failure_fn = ProgramPoints.get_failure_fundec file in
 
-    assert(BackOtterTargets.add_path failure_fn DecisionPath.empty None);
+    (* call to __FAILURE() must be a line target *)
+    List.iter (BackOtterTargetTracker.add_line_target file) (Instruction.call_sites (Instruction.of_fundec file failure_fn));
 
     (* Setup max_function_name_length, to be used in set_output_formatter_interceptor *)
     BackOtterInterceptor.set_max_function_name_length (entry_fn :: (CilCallgraph.find_transitive_callees file entry_fn));
 
-    (* when arg_line_targets != [], add appropriate jobs in bqueue *)
-    let starter_fundecs = List.fold_left (fun starter_fundecs (file_name, line_num) ->
-        Output.debug_printf "Line target: %s:%d in function " file_name line_num;
+    (* when get_line_targets != [], add appropriate jobs in bqueue *)
+    let starter_fundecs = List.fold_left (fun starter_fundecs instruction ->
+        Output.debug_printf "Line target: %a in function " Instruction.printer instruction;
         let r = 
             try
-                let fundec = CovToFundec.of_line (file_name, line_num) in
+                let fundec = instruction.Instruction.fundec in
                 Output.debug_printf "%s " fundec.svar.vname;
                 let fundec = BackOtterUtilities.get_transitive_unique_caller file fundec in
                 if List.memq fundec starter_fundecs then
@@ -46,7 +48,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
         in
         Output.debug_printf "@\n";
         r
-    ) [] [] in
+    ) [] (BackOtterTargetTracker.get_line_targets file) in
     List.iter (fun f -> Output.debug_printf "Function containing coverage targets: %s@." f.svar.vname) starter_fundecs;
 
     (* A queue that prioritizes jobs *)
@@ -120,7 +122,6 @@ let doit file =
 
     UserSignal.using_signals begin fun () -> try
         Core.prepare_file file;
-        CovToFundec.prepare_file file;
 
         let find_tag_name tag assocs = List.assoc tag (List.map (fun (a,b)->(b,a)) assocs) in
         Output.printf "Forward strategy: %s@." (find_tag_name (!BackOtterQueue.default_fqueue) BackOtterQueue.queues);
@@ -167,6 +168,7 @@ let options = [
     BackOtterTimer.options @ 
     BackOtterQueue.options @ 
     BackOtterJob.options @ 
+    BackOtterTargetTracker.options @ 
     BackOtterUtilities.options @ 
     BidirectionalQueue.options @ 
     FunctionRanker.options 

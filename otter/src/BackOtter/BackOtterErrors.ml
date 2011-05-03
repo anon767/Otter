@@ -29,16 +29,4 @@ let rec printer ff (error : t) = match error with
     | #Errors.t as x -> Errors.printer ff x
 
 
-let matcher name args =
-    match name, args with
-        (* TODO: target_reached and failing_path should be consolidated into one error *)
-        | "target_reached", [] ->
-            begin function
-                | `FailingPath (`TargetReached target, _, _) -> true
-                | error -> Errors.matcher name args error
-            end
-        | "target_reached", _ ->
-            failwith "Invalid target_reached (takes no arguments)."
-
-        | _ ->
-            Errors.matcher name args
+let matcher = Errors.matcher
