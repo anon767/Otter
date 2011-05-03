@@ -93,25 +93,31 @@ Quick-start Guide
             (In the top/otter directory)
             make debug
 
-    2. Start the debugger in remote debugging mode:
+    2. Run the debugger script:
+            (In the top/otter directory)
+            scripts/debug [flags] <some c file>
+
+    Hopefully, that just works, but if the script gives you trouble, do the
+    following (which is basically what the script does, or tries to do):
+
+    2a. Start the debugger in remote debugging mode:
 
             (In the top/otter directory)
-            ocamldebug _product/runotter.d.byte
+            ocamldebug -s debugsocket -I _build/src/OtterCore -I _build/src \
+                -I ../cil/obj/x86_DARWIN -I ../cil/src _product/runotter.d.byte
 
             (In the debugger)
-            directory _build/src/OtterCore _build/src ../cil/obj/x86_DARWIN
-            set socket debugsocket
             set loadingmode manual
             step 0
 
-    The 'x86_DARWIN' directory is for Macs. Substitute 'x86_LINUX' or the like for other systems.
-
-    3. Start Otter in debug mode:
+    2b. Start Otter in debug mode:
 
             (In the top/otter directory)
             env CAML_DEBUG_SOCKET=debugsocket \
                 ./otter.pl --bytecode [flags] <some c file>
 
+    The 'x86_DARWIN' directory (which is also hard-coded into the debug script)
+    is for Macs. Substitute 'x86_LINUX' or the like for other systems.
 
 Building Otter
 ==============

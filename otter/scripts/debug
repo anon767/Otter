@@ -1,0 +1,38 @@
+#!/usr/bin/expect
+
+# This is an 'expect' script meant to make it easier to debug Otter. I think
+# it's rather fragile, but it seems to work. One manifestation of the fragility
+# is that, for some reason I don't understand, the child process doesn't
+# terminate, which is why I have the parent process kill it.
+
+proc start_program {argv} {
+  set child_pid [fork]
+  if {$child_pid == 0} {
+    disconnect
+    system env CAML_DEBUG_SOCKET=debugsocket ./otter.pl --bytecode $argv
+    exit
+  }
+  return $child_pid
+}
+
+# Start the debugger and initialize it
+
+spawn ocamldebug -s debugsocket -I _build/src/OtterCore -I _build/src -I ../cil/obj/x86_DARWIN -I ../cil/src _product/runotter.d.byte
+expect "(ocd)" { send "set loadingmode manual\n" }
+expect "(ocd)" { send "step 0\n" }
+
+# When the debugger is ready, start up Otter itself in another process
+
+expect {
+  Waiting { set child_pid [start_program $argv] }
+  "Address already in use" { send_user "File 'debugsocket' exists; delete it and try again\n"; exit }
+}
+
+# When Otter is started and the debugger is ready, pass control to the user
+
+expect "(ocd)" interact
+
+# After the user exits the debugger, kill the child process, because something
+# seems to be wrong with this script which prevents the child from terminating
+
+exec kill -9 $child_pid
