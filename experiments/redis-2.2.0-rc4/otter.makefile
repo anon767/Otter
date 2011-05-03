@@ -6,7 +6,14 @@ OTTER_TRUNK=$(CURDIR)/../..
 files := redis-grammar.c redis-no-varargs-grammar.c src/redis-server src/redis-server_comb.c redis-functions\
 test-functions.c test-functions-symbolic.c test-functions.h
 
-all: $(files)
+all: $(files) grouped-clients
+
+grouped-clients:
+	num_grouped_clients=`grep -c ^void hand-grouped-test-functions.h`; \
+	mkdir -p grouped-clients && \
+	for i in `jot $$num_grouped_clients`; do\
+	  j=$$((i+1)); sed -n $${j}p hand-grouped-test-functions.h | ./make-client > grouped-clients/client-$${i}.c;\
+	done
 
 test-functions.h: test-functions.c
 	sed -n 's/^\(void .*(void)\).*/\1;/p' test-functions.c > test-functions.h
@@ -42,4 +49,4 @@ with-zmalloc: all
 clean:
 	$(MAKE) clean
 	rm -rf $(wildcard src/*_comb.c) src/___extra_files deps/hiredis/libhiredis.a\
-	deps/linenoise/linenoise_example_comb.c $(files)
+	deps/linenoise/linenoise_example_comb.c $(files) grouped-clients

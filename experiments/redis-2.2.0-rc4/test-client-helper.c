@@ -135,20 +135,22 @@ void init_symbolic_helper(char *array, size_t length) {
        array[0] < array[1]. */
     for (int i = 1; i < length; i++) {
         __ASSUME(VALID(array[i]));
-        /* This ordering constraint is just for distinctness, but this way we
-           only have a linear number of constraints, and it's probably fine to
-           over-constrain in this way. */
+        /* This next ordering constraint is too much: really, we just want
+           distinctness. However, ordering only requires a linear number of
+           constraints (rather than a quadratic number if we really wanted just
+           distinctness), and it's probably fine to over-constrain in this
+           way. */
         __ASSUME(array[i-1] < array[i]);
     }
 }
 
 #ifndef NUM_SYM_KEYS
-#define NUM_SYM_KEYS 20
+#define NUM_SYM_KEYS 30
 #endif
 static char symbolic_keys[NUM_SYM_KEYS];
 
 #ifndef NUM_SYM_VALS
-#define NUM_SYM_VALS 40
+#define NUM_SYM_VALS 30
 #endif
 static char symbolic_vals[NUM_SYM_VALS];
 
