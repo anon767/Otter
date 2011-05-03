@@ -43,37 +43,28 @@ let get_distances =
                         backotter_line_targets_hash
                 in
                 fun backotter_line_targets ->
-                    let line_targets_hash =
-                        try
-                            InstructionListHash.find backotter_line_targets_hash backotter_line_targets
-                        with Not_found ->
-                            let line_targets_hash = InstructionListHash.create 0 in
-                            InstructionListHash.add backotter_line_targets_hash backotter_line_targets line_targets_hash;
-                            line_targets_hash
-                    in
-                    fun line_targets ->
-                        try
-                            InstructionListHash.find line_targets_hash line_targets
-                        with Not_found ->
-                            Profiler.global#call "ClosestToTargetsStrategy.get_distances (uncached)" begin fun () ->
-                                let target_instrs = List.concat begin List.map begin fun target_fundec ->
-                                    List.filter
-                                        (fun call_site -> CilData.CilFundec.equal source.Instruction.fundec call_site.Instruction.fundec)
-                                        (Instruction.call_sites (Instruction.of_fundec source.Instruction.file target_fundec))
-                                end target_fundecs end in
-                                let all_targets = target_instrs @ line_targets @ backotter_line_targets in
-                                let distance =
-                                    if all_targets = [] then
-                                        max_int
-                                    else
-                                        DistanceToTargets.find_in_context source context all_targets
-                                in
-                                InstructionListHash.add line_targets_hash line_targets distance;
-                                distance
-                            end
+                    try
+                        InstructionListHash.find backotter_line_targets_hash backotter_line_targets
+                    with Not_found ->
+                        Profiler.global#call "ClosestToTargetsStrategy.get_distances (uncached)" begin fun () ->
+                            let target_instrs = List.concat begin List.map begin fun target_fundec ->
+                                List.filter
+                                    (fun call_site -> CilData.CilFundec.equal source.Instruction.fundec call_site.Instruction.fundec)
+                                    (Instruction.call_sites (Instruction.of_fundec source.Instruction.file target_fundec))
+                            end target_fundecs end in
+                            let all_targets = target_instrs @ backotter_line_targets in
+                            let distance =
+                                if all_targets = [] then
+                                    max_int
+                                else
+                                    DistanceToTargets.find_in_context source context all_targets
+                            in
+                            InstructionListHash.add backotter_line_targets_hash backotter_line_targets distance;
+                            distance
+                        end
     in
     fun ?(interprocedural=true) ({ Instruction.file = file; _ } as source) context ->
-        get_distances interprocedural source context (BackOtterTargets.get_target_fundecs ()) (BackOtterTargetTracker.get_line_targets file) (LineTargets.get_line_targets file)
+        get_distances interprocedural source context (BackOtterTargets.get_target_fundecs ()) (BackOtterTargetTracker.get_line_targets file)
 
 
 class ['self] t ?interprocedural weight_fn = object (self : 'self)

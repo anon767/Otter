@@ -5,25 +5,8 @@ open OtterCore
 open Job
 open Cil
 
-(* TODO: replace LineTargets with the below *)
-module TargetSet = Set.Make (struct type t = string * int let compare = Pervasives.compare end)
-let targets = ref TargetSet.empty
 
-
-let get_line_targets file =
-    TargetSet.fold begin fun (filename, linenumber as line) line_targets ->
-        (* Use of_stmt_last to ensure that instructions before the last one are covered *)
-        try
-            List.map (fun (fundec, stmt) -> Instruction.of_stmt_last file fundec stmt) (FindCil.stmts_by_line file line) @ line_targets
-        with Not_found ->
-            let output_mode = Output.get_mode () in
-            Output.set_mode Output.MSG_REG;
-            Output.printf "Warning: line target %s:%d not found.@." filename linenumber;
-            targets := TargetSet.remove line !targets;
-            Output.set_mode output_mode;
-            line_targets
-    end !targets []
-
+let get_line_targets file = []
 
 let process_completed entry_fn (reason, job) =
     (* convert executions that report repeated abandoned paths to Truncated *)

@@ -46,7 +46,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
         in
         Output.debug_printf "@\n";
         r
-    ) [] (!LineTargets.arg_line_targets @ BackOtterTargetTracker.(TargetSet.elements !targets)) in
+    ) [] [] in
     List.iter (fun f -> Output.debug_printf "Function containing coverage targets: %s@." f.svar.vname) starter_fundecs;
 
     (* A queue that prioritizes jobs *)
@@ -67,7 +67,6 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     let interceptor =
         let (>>>) = Interceptor.(>>>) in
             BackOtterInterceptor.set_output_formatter_interceptor
-        >>> LineTargets.line_target_interceptor
         >>> Interceptor.function_pointer_interceptor
         >>> BuiltinFunctions.interceptor
         >>> (
@@ -170,8 +169,7 @@ let options = [
     BackOtterJob.options @ 
     BackOtterUtilities.options @ 
     BidirectionalQueue.options @ 
-    FunctionRanker.options @
-    LineTargets.options
+    FunctionRanker.options 
 
 
 let feature = {
