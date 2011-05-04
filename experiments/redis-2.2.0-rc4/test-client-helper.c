@@ -9,6 +9,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #include <regex.h>
 
@@ -125,10 +126,7 @@ void run_in_child_process(void (*f)(void)) {
 
 void init_symbolic_helper(char *array, size_t length) {
 #ifndef VALID
-/* The non-alphabetic characters '[', '\', ']', '^', '_', and '`' are in this
-   range, but I think that's okay. I'd rather not use '||' in the assumption; in
-   general, disjunctions are not good for solvers. */
-#define VALID(x) ('A' <= (x) && (x) <= 'z')
+#define VALID(x) (isalpha(x))
 #endif
     /* We never use array[0], so we don't need to assume it is valid. However,
        it's fine to assume that it is distinct from the other keys by assuming
