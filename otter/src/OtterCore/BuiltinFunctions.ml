@@ -473,14 +473,11 @@ let otter_path_condition job retopt exps =
 	end_function_call job
 
 
-(* __FAILURE()
- * It models "failure" by providing the 'reason `TargetReached target, in order to distinguish from
- * general `Failure.
- * TODO: make __FAILURE take a string of failure description. *)
+(* __FAILURE() : the call to this function is always a line target. Otherwise this function is the same as __ASSERT(0) *)
 let otter_failure job retopt exps =
     Output.set_mode Output.MSG_ERROR;
     Output.printf "BuiltinFunctions.otter_failure@\n";
-    (job : _ #Info.t)#finish (Job.Abandoned (`TargetReached Target.Failure))
+    (job : _ #Info.t)#finish (Job.Abandoned (`AssertionFailure Cil.zero))
 
 
 let otter_assert job retopt exps =

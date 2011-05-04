@@ -1,18 +1,18 @@
 
 type t = [
     | `Failure of string
-    | `TargetReached of Target.t
     | `AssertionFailure of Cil.exp
     | `OutOfBounds of Cil.exp
     | `DivisionByZero of Cil.exp
+    | `TargetReached of t
 ]
 
 let rec printer ff (error : t) = match error with
     | `Failure msg -> Format.fprintf ff "`Failure:%s" msg
-    | `TargetReached target -> Format.fprintf ff "`TargetReached @[%a@]" Target.printer target
     | `AssertionFailure exp -> Format.fprintf ff "`AssertionFailure: %a" Printcil.exp exp
     | `OutOfBounds exp -> Format.fprintf ff "`OutOfBounds: %a" Printcil.exp exp
     | `DivisionByZero exp -> Format.fprintf ff "`DivisionByZero: %a" Printcil.exp exp
+    | `TargetReached reason -> Format.fprintf ff "`TargetReached @[%a@]" printer reason
 
 let matcher name args =
     match name, args with
@@ -33,7 +33,7 @@ let matcher name args =
             failwith "Invalid failure (should have exactly one regex string argument to match the failure reason)."
         | "target_reached", [] ->
             begin function
-                | `TargetReached target -> true
+                | `TargetReached _ -> true
                 | _ -> false
             end
         | "target_reached", _ ->

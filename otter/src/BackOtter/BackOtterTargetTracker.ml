@@ -47,12 +47,12 @@ let process_completed entry_fn (reason, job) =
         if ListPlus.mem Instruction.equal instruction line_targets then
             (* convert executions that report repeated abandoned paths to Truncated *)
             let reason = match reason with
-                | Job.Abandoned reason ->
+                | Job.Abandoned (#Errors.t as reason) ->
                     let fundec = BackOtterUtilities.get_origin_function job in
                     (* Failing path has least recent decision first. See the comment in BidirectionalQueue. *)
                     let failing_path = DecisionPath.rev job#decision_path in
                     let is_new_path = BackOtterTargets.add_path fundec failing_path in
-                    if is_new_path then Job.Abandoned reason
+                    if is_new_path then Job.Abandoned (`TargetReached reason)
                     else Job.Truncated (`SummaryAbandoned reason)
                 | _ ->
                     reason
