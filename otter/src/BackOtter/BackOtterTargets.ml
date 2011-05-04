@@ -1,3 +1,4 @@
+(* TODO: rename this module to PathsToTargets *)
 open OtterCore
 open OtterCFG
 
@@ -5,7 +6,6 @@ module FundecMap = Map.Make (CilUtilities.CilData.CilFundec)
 
 module PathSet = Set.Make (DecisionPath)
 
-(* TODO: generalize targets to program points, not just functions *)
 type t = {
     fundec_to_pathset : PathSet.t FundecMap.t;
     last_failing_path : (Cil.fundec * DecisionPath.t) option;
@@ -32,7 +32,7 @@ let get_paths fundec =
 (**
  *  @return true if [path] is a new path
  *)
-let add_path fundec path instruction_opt =
+let add_path fundec path =
     let targets = !targets_ref in
     let failing_paths = get_pathset fundec in
     if PathSet.mem path failing_paths then false

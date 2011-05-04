@@ -49,31 +49,25 @@ let process_completed entry_fn (reason, job) =
             let reason = match reason with
                 | Job.Abandoned reason ->
                     let fundec = BackOtterUtilities.get_origin_function job in
-                    let instruction = Job.get_instruction job in
                     (* Failing path has least recent decision first. See the comment in BidirectionalQueue. *)
                     let failing_path = DecisionPath.rev job#decision_path in
-                    let is_new_path = BackOtterTargets.add_path fundec failing_path (Some instruction) in
+                    let is_new_path = BackOtterTargets.add_path fundec failing_path in
                     if is_new_path then Job.Abandoned reason
                     else Job.Truncated (`SummaryAbandoned reason)
                 | _ ->
                     reason
-            in
-            reason
+            in reason
         else reason
     in
-    (* convert executions from non-entry functions to Truncated *)
-    let reason = match reason with
-        | Job.Return return_code
-                when BackOtterUtilities.get_origin_function job != entry_fn ->
-            Job.Truncated (`SummaryReturn return_code)
-        | Job.Exit return_code
-                when BackOtterUtilities.get_origin_function job != entry_fn ->
-            Job.Truncated (`SummaryExit return_code)
-        | Job.Abandoned reason
-                when BackOtterUtilities.get_origin_function job != entry_fn ->
-            Job.Truncated (`SummaryAbandoned reason)
-        | _ ->
-            reason
+    let reason = 
+        if BackOtterUtilities.get_origin_function job != entry_fn then
+            (* convert executions from non-entry functions to Truncated *)
+            match reason with
+            | Job.Return return_code -> Job.Truncated (`SummaryReturn return_code)
+            | Job.Exit return_code -> Job.Truncated (`SummaryExit return_code)
+            | Job.Abandoned reason -> Job.Truncated (`SummaryAbandoned reason)
+            | _ -> reason
+        else reason
     in
     (job : _ #Info.t)#finish reason
 
