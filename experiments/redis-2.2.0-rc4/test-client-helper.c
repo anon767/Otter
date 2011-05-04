@@ -126,7 +126,7 @@ void run_in_child_process(void (*f)(void)) {
 
 void init_symbolic_helper(char *array, size_t length) {
 #ifndef VALID
-#define VALID(x) (isalpha(x))
+#define VALID(x) ('A' <= x && x <= 'Z' || 'a' <= x && x <= 'z')
 #endif
     /* We never use array[0], so we don't need to assume it is valid. However,
        it's fine to assume that it is distinct from the other keys by assuming
