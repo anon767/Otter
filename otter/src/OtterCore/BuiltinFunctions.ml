@@ -473,11 +473,13 @@ let otter_path_condition job retopt exps =
 	end_function_call job
 
 
-(* __FAILURE() : the call to this function is always a line target. Otherwise this function is the same as __ASSERT(0) *)
+(* __FAILURE() : the call to this function is always a line target. 
+ * It throws a `TargetReached _, so that BasicReporter.convert_non_failure_abandoned_to_truncated distinguishes this
+ * from __ASSERT(0). *)
 let otter_failure job retopt exps =
     Output.set_mode Output.MSG_ERROR;
     Output.printf "BuiltinFunctions.otter_failure@\n";
-    (job : _ #Info.t)#finish (Job.Abandoned (`AssertionFailure Cil.zero))
+    (job : _ #Info.t)#finish (Job.Abandoned (`TargetReached (`AssertionFailure Cil.zero)))
 
 
 let otter_assert job retopt exps =
