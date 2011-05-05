@@ -17,7 +17,10 @@ def median_siqr_outliers(values):
     return { "median": median, "siqr": siqr, "outliers": outliers}
 
 def pretty_float(f):
-    return "%.1f" % f if f < float('inf') else '\infty'
+    return "%.1f" % f if f < float('inf') else ''
+
+def pretty_int(f):
+    return "%d" % f if f > 0 else ''
 
 csv_reader = csv.reader(sys.stdin, delimiter=',', quotechar='"')
 csv_reader.next()  # skip the first row
@@ -30,8 +33,9 @@ for row in csv_reader:
     table[program][strategy] = median_siqr_outliers(row[2:])
 
 program_list = [
-         #"Figure 2",
-         #"Figure 3",
+         #'ProSDSE'  ,
+         #'ProCCBSE' ,
+         #'ProMix'   ,
          "mkdir",
          "mkfifo",
          "mknod",
@@ -43,29 +47,37 @@ program_list = [
 directed_strategy_list = [
          'InterSDSE',
          'IntraSDSE',
-         'CCBSE(Random Path)',
+         'CCBSE(RandomPath)',
          'CCBSE(InterSDSE)',
          'CCBSE(IntraSDSE)',
         ]
 
+klee_strategy_list = [
+        'KLEE',
+        ]
+
 undirected_strategy_list = [
-         'Otter-KLEE',
-         'Mix-CCBSE(Otter-KLEE)',
-         'Otter-SAGE',
-         'Mix-CCBSE(Otter-SAGE)',
-         'Random Path',
-         'Mix-CCBSE(Random Path)',
+         'OtterKLEE',
+         'Mix(OtterKLEE)',
+         'OtterSAGE',
+         'Mix(OtterSAGE)',
+         'RandomPath',
+         'Mix(RandomPath)',
         ]
 
 total = defaultdict(float)
 
-for strategy_list in [directed_strategy_list, undirected_strategy_list]:
+for strategy_list in [directed_strategy_list, klee_strategy_list, undirected_strategy_list]:
     for program in program_list:
         output = [ program ]
         for strategy in strategy_list:
             try:
                 stats = table[program][strategy]
-                macro = '\mso{%s}{%s}{%d}' % (pretty_float(stats['median']), pretty_float(stats['siqr']), len(stats['outliers']))
+                median = pretty_float(stats['median'])
+                if median == '':
+                    macro = '\\timedout{}'
+                else:
+                    macro = '\\mso{%s}{%s}{%s}' % (median, pretty_float(stats['siqr']), pretty_int(len(stats['outliers'])))
                 output.append(macro)
                 median = stats['median']
                 total[strategy] += median if median < float('inf') else 1800.0
