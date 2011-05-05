@@ -20,18 +20,22 @@ int work() { return 0; }
 
 void f(int m, int n) {
     int i, a, sum=0;
-    for (i=0;i<5;i++) {
+    for (i=0;i<6;i++) {
         a = n%2;
         if (a) sum += a+1;
         n/=2;
     }
-    if (sum==0 && m==39) failure();
+    while (1) {
+        if (sum==0 && m==37) failure();
+    }
 }
 
 void g(int m, int n) {
     int i;
-    for (i=0;i<1000;i++) 
+    for (i=0;i<1000;i++)  {
+        work();
         if (m == i) f(m, n);
+    }
 }
 
 void main() {

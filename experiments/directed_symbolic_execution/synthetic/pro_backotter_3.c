@@ -16,12 +16,14 @@ void __FAILURE(void) {}
 
 void f(int m, int n) {
     int i, a, sum=0;
-    for (i=0;i<5;i++) {
+    for (i=0;i<6;i++) {
         a = n%2;
         if (a) sum += a+1;
         n/=2;
     }
-    if (sum==0 && m==10) failure();
+    while (1) {
+        if (sum==0 && m==7) failure();
+    }
 }
 
 void main() {
