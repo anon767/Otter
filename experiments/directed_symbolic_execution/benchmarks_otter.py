@@ -30,22 +30,21 @@ benchmarks = {
     }
 
 strategies = {
-    'InterSDSE'         : '--dootter --queue=closest-to-targets',
-    'IntraSDSE'         : '--dootter --queue=closest-to-targets-intraprocedural',
+    'InterSDSE'         : '--dobackotter --bidirectiona-search-ratio=1.1 --forward-queue=closest-to-targets',
+    'IntraSDSE'         : '--dobackotter --bidirectiona-search-ratio=1.1 --forward-queue=closest-to-targets-intraprocedural',
     'CCBSE(RandomPath)' : '--dobackotter --function-inlining --forward-queue=random-path --backward-queue=random-path --bidirectional-search-ratio=-1 --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry',
     'CCBSE(InterSDSE)'  : '--dobackotter --function-inlining --forward-queue=backotter-closest-to-targets --backward-queue=backotter-closest-to-targets --bidirectional-search-ratio=-1 --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry',
     'CCBSE(IntraSDSE)'  : '--dobackotter --function-inlining --forward-queue=backotter-closest-to-targets-intraprocedural --backward-queue=backotter-closest-to-targets-intraprocedural --bidirectional-search-ratio=-1 --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry',
-    'OtterKLEE'         : '--dootter --queue=KLEE',
+    'OtterKLEE'         : '--dobackotter --bidirectiona-search-ratio=1.1 --forward-queue=KLEE',
     'Mix(OtterKLEE)'    : '--dobackotter --function-inlining --backward-queue=random-path --bidirectional-search-ratio=.5  --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry --forward-queue=KLEE',
-    'OtterSAGE'         : '--dootter --queue=SAGE',
+    'OtterSAGE'         : '--dobackotter --bidirectiona-search-ratio=1.1 --forward-queue=SAGE',
     'Mix(OtterSAGE)'    : '--dobackotter --function-inlining --backward-queue=random-path --bidirectional-search-ratio=.5  --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry --forward-queue=SAGE',
-    'RandomPath'        : '--dootter --queue=random-path',
+    'RandomPath'        : '--dobackotter --bidirectiona-search-ratio=1.1 --forward-queue=random-path',
     'Mix(RandomPath)'   : '--dobackotter --function-inlining --backward-queue=random-path --bidirectional-search-ratio=.5  --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry --forward-queue=random-path',
 }
 
 options = {
-    'std'  : '--convert-non-failure-abandoned-to-truncated --doRunRmtmps --init-malloc=zero --init-local=zero --max-abandoned=1 --printErrorsOnly --backotter-timing-method=weighted --backotter-no-overlap-path-matching',
-    #'std'  : '--convert-non-failure-abandoned-to-truncated --doRunRmtmps --init-malloc=undefined --init-local=undefined --max-abandoned=1 --printErrorsOnly --backotter-timing-method=weighted --backotter-no-overlap-path-matching',
+    'std'  : '--convert-non-target-reached-abandoned-to-truncated --doRunRmtmps --init-malloc=zero --init-local=zero --max-abandoned=1 --printErrorsOnly --backotter-timing-method=weighted --backotter-no-overlap-path-matching',
 }
 
 def make_test(command, program, strategy, option, seed):
