@@ -2,8 +2,14 @@
 /** Points of interests */
 #include <string.h>
 
+#ifdef KLEE
+#include <assert.h>
+#include "__otter_poi.h"
+void __FAILURE() { assert(0); }
+#else
 #pragma cilnoremove("__FAILURE")
 void __FAILURE(void) {}
+#endif
 
 #pragma cilnoremove("__otter_poi_noop")
 void __otter_poi_noop(void) {
