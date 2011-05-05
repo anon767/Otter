@@ -6,6 +6,8 @@ open Job
 open Cil
 
 let arg_line_numbers = ref []
+let arg_convert_non_target_reached_abandoned_to_truncated = ref false
+
 module FileMap = Map.Make(CilData.CilFile)
 let file_to_line_targets = ref FileMap.empty
 
@@ -43,9 +45,10 @@ let add_line_target file instruction =
 let process_completed entry_fn (reason, job) =
     let instruction = Job.get_instruction job in
     let line_targets = get_line_targets job#file in
+
+    (* Track reached targets, and convert executions that report repeated abandoned paths to Truncated *)
     let reason = 
         if ListPlus.mem Instruction.equal instruction line_targets then
-            (* convert executions that report repeated abandoned paths to Truncated *)
             let reason = match reason with
                 | Job.Abandoned (#Errors.t as reason) ->
                     let fundec = BackOtterUtilities.get_origin_function job in
@@ -59,13 +62,22 @@ let process_completed entry_fn (reason, job) =
             in reason
         else reason
     in
+    (* Convert executions from non-entry functions to Truncated *)
     let reason = 
         if BackOtterUtilities.get_origin_function job != entry_fn then
-            (* convert executions from non-entry functions to Truncated *)
             match reason with
             | Job.Return return_code -> Job.Truncated (`SummaryReturn return_code)
             | Job.Exit return_code -> Job.Truncated (`SummaryExit return_code)
             | Job.Abandoned reason -> Job.Truncated (`SummaryAbandoned reason)
+            | _ -> reason
+        else reason
+    in
+    (* Convert non-TargetReached Abandoned reason to Truncated, if arg_convert_non_target_reached_abandoned_to_truncated is true *)
+    let reason = 
+        if !arg_convert_non_target_reached_abandoned_to_truncated then
+            match reason with
+            | Job.Abandoned (`TargetReached _) -> reason
+            | Job.Abandoned reason -> Job.Truncated reason
             | _ -> reason
         else reason
     in
@@ -114,5 +126,8 @@ let options = [
                 close_in inChan
         end,
         "<filename> File containing lines in the form file:linenum, one per line.\n");
+    ("--convert-non-target-reached-abandoned-to-truncated",
+        Arg.Set arg_convert_non_target_reached_abandoned_to_truncated,
+        " Convert non TargetReached Abandoned's to Truncated's (default: no)");
 ]
 

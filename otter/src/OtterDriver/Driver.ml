@@ -33,7 +33,6 @@ let main_loop step queue reporter =
                 | Some (queue, job) ->
                     let active, complete = Profiler.global#call "Driver.main_loop/step" (fun () -> job#run step) in
                     let queue = List.fold_left (fun queue job -> queue#put job) queue active in
-                    let complete = BasicReporter.convert_non_failure_abandoned_to_truncated complete in
                     let reporter = Profiler.global#call "Driver.main_loop/report" (fun () -> reporter#report complete) in
                     if reporter#should_continue then
                         run (queue, reporter)

@@ -4,7 +4,6 @@ open OtterCore
 let default_max_steps = ref 0
 let default_max_paths = ref 0
 let default_max_abandoned = ref 0
-let arg_convert_non_failure_abandoned_to_truncated = ref false
 
 
 class ['self] t
@@ -39,20 +38,6 @@ class ['self] t
 
 end
 
-(* TODO: remove this function and roll its functionality elsewhere; should consider a more structured notion of targets or error filtering *)
-let convert_non_failure_abandoned_to_truncated results =
-    if !arg_convert_non_failure_abandoned_to_truncated then
-        List.map begin function
-            | Job.Abandoned (`TargetReached _), job as result -> result
-            | Job.Abandoned reason, job ->
-                (Job.Truncated reason, job)
-            | result ->
-                result
-        end results
-    else
-        results
-
-
 (** {1 Command-line options} *)
 
 let options = [
@@ -65,8 +50,4 @@ let options = [
     "--max-abandoned",
         Arg.Set_int default_max_abandoned,
         "<bound> Bound the number of abandoned paths to return (default: unbounded)";
-    "--convert-non-failure-abandoned-to-truncated",
-        Arg.Set arg_convert_non_failure_abandoned_to_truncated,
-        " Convert non __FAILURE generated Abandoned's to Truncated's (default: no)";
 ]
-
