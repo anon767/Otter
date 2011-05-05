@@ -15,7 +15,7 @@ all: llvm-make
 # llvm
 
 $(build_llvm)/__otter_poi.o: $(otter_poi_src)
-	cd $(build_llvm) && $(klee_gcc) $(otter_poi_src) -c
+	cd $(build_llvm) && $(klee_gcc) -DKLEE $(otter_poi_src) -c
 
 $(build_llvm)/Makefile: 
 	mkdir -p $(build_llvm)
