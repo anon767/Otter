@@ -46,7 +46,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                ?(b_queue=BackOtterQueue.get_default_bqueue ())
                file
                starter_fundecs =
-    object (self)
+    object (self : 'self)
         val entryfn_jobqueue = new ContentQueue.t f_queue
         val otherfn_jobqueue = new ContentQueue.t b_queue
         (* fundecs whose initialized jobs have been created *)
@@ -213,6 +213,9 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                         None
                 end
             end 
+
+    method remove (job : 'job) : 'self = failwith "BidirectionalQueue does not support method remove"
+
     end
 
 (** {1 Command-line options} *)

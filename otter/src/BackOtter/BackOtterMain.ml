@@ -31,36 +31,43 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     (* Setup max_function_name_length, to be used in set_output_formatter_interceptor *)
     BackOtterInterceptor.set_max_function_name_length (entry_fn :: (CilCallgraph.find_transitive_callees file entry_fn));
 
-    (* when get_line_targets != [], add appropriate jobs in bqueue *)
-    let starter_fundecs = List.fold_left (fun starter_fundecs instruction ->
-        Output.debug_printf "Line target: %a in function " Instruction.printer instruction;
-        let r = 
-            try
-                let fundec = instruction.Instruction.fundec in
-                Output.debug_printf "%s " fundec.svar.vname;
-                let fundec = BackOtterUtilities.get_transitive_unique_caller file fundec in
-                if List.memq fundec starter_fundecs then
-                    starter_fundecs 
-                else fundec::starter_fundecs
-            with Not_found -> 
-                Output.debug_printf "(missing) ";
-                starter_fundecs (* There're lines that KLEE counts as instructions but Otter doesn't. *)
-        in
-        Output.debug_printf "@\n";
-        r
-    ) [] (BackOtterTargetTracker.get_line_targets file) in
-    List.iter (fun f -> Output.debug_printf "Function containing coverage targets: %s@." f.svar.vname) starter_fundecs;
-
     (* A queue that prioritizes jobs *)
-    let queue = new BidirectionalQueue.t ?ratio file starter_fundecs in
+    let queue = match ratio with
+        | Some ratio when ratio >= 1.0 -> 
+            (* Degenerates to pure forward Otter *)
+            BackOtterQueue.get_default_fqueue ()
+        | _ -> begin
+            (* when get_line_targets != [], add appropriate jobs in bqueue *)
+            let starter_fundecs = List.fold_left (fun starter_fundecs instruction ->
+                Output.debug_printf "Line target: %a in function " Instruction.printer instruction;
+                let r = 
+                    try
+                        let fundec = instruction.Instruction.fundec in
+                        Output.debug_printf "%s " fundec.svar.vname;
+                        let fundec = BackOtterUtilities.get_transitive_unique_caller file fundec in
+                        if List.memq fundec starter_fundecs then
+                            starter_fundecs 
+                        else fundec::starter_fundecs
+                    with Not_found -> 
+                        Output.debug_printf "(missing) ";
+                        starter_fundecs (* There're lines that KLEE counts as instructions but Otter doesn't. *)
+                in
+                Output.debug_printf "@\n";
+                r
+            ) [] (BackOtterTargetTracker.get_line_targets file) in
+            List.iter (fun f -> Output.debug_printf "Function containing coverage targets: %s@." f.svar.vname) starter_fundecs;
 
-    (* Add non-entryfn jobs *)
-    let queue = List.fold_left (fun queue fundec ->
-        if CilData.CilFundec.equal fundec entry_fn then 
-            queue
-        else
-            queue#put (BackOtterJob.get_function_job file fundec)
-    ) queue starter_fundecs in
+            let queue = new BidirectionalQueue.t ?ratio file starter_fundecs in
+
+            (* Add non-entryfn jobs *)
+            let queue = List.fold_left (fun queue fundec ->
+                if CilData.CilFundec.equal fundec entry_fn then 
+                    queue
+                else
+                    queue#put (BackOtterJob.get_function_job file fundec)
+            ) queue starter_fundecs in
+            queue end
+    in
 
     (* Add entryfn jobs *)
     let queue = queue#put entry_job in
