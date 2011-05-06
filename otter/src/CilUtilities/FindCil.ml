@@ -26,6 +26,7 @@ let searchtables =
             Cil.visitCilFile begin object
                 inherit Cil.nopCilVisitor
                 val mutable current_fundec = Cil.dummyFunDec
+                val mutable current_stmt = Cil.dummyStmt
                 method vtype typ =
                     all_types := TypeSet.add typ !all_types;
                     Cil.DoChildren
@@ -41,6 +42,7 @@ let searchtables =
                     List.iter (fun varinfo -> all_varinfos := VarinfoSet.add varinfo !all_varinfos) fundec.Cil.slocals;
                     Cil.DoChildren
                 method vstmt stmt =
+                    current_stmt <- stmt;
                     let loc = Cil.get_stmtLoc stmt.Cil.skind in
                     let line = (loc.Cil.file, loc.Cil.line) in
                     let stmts = try Hashtbl.find line_to_stmts line with Not_found -> [] in
@@ -50,7 +52,7 @@ let searchtables =
                     let loc = Cil.get_instrLoc instr in
                     let line = (loc.Cil.file, loc.Cil.line) in
                     let instrs = try Hashtbl.find line_to_instrs line with Not_found -> [] in
-                    Hashtbl.replace line_to_instrs line ((current_fundec, instr)::instrs);
+                    Hashtbl.replace line_to_instrs line ((current_fundec, current_stmt, instr)::instrs);
                     Cil.DoChildren
                 method vinit varinfo _ init =
                     Hashtbl.replace varinfo_to_varinit varinfo { Cil.init = Some init };
@@ -123,8 +125,8 @@ let stmts_by_line file line =
 
 (** Find a list of instructions by file name and line number from a {!Cil.file}.
         @param file the {!Cil.file} to find the {!Cil.instr} in
-        @param line the line to find the statements, as a [(filename, line)] pair
-        @return the list of instructions as {!Cil.fundec}-by-{!Cil.instr} pairs
+        @param line the line to find the instructions, as a [(filename, line)] pair
+        @return the list of instructions as {!Cil.fundec}-by-{!Cil.stmt}-by-{!Cil.instr} triples
         @raise Not_found if no instructions can be found at [line] in [file]
 *)
 let instrs_by_line file line =
