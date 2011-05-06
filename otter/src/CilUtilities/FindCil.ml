@@ -19,6 +19,7 @@ let searchtables =
             let name_to_fundec = Hashtbl.create 100 in
             let name_to_global_varinfo = Hashtbl.create 100 in
             let line_to_stmts = Hashtbl.create 100 in
+            let line_to_instrs = Hashtbl.create 100 in
             let all_varinfos = ref VarinfoSet.empty in
             let all_types = ref TypeSet.empty in
 
@@ -45,6 +46,12 @@ let searchtables =
                     let stmts = try Hashtbl.find line_to_stmts line with Not_found -> [] in
                     Hashtbl.replace line_to_stmts line ((current_fundec, stmt)::stmts);
                     Cil.DoChildren
+                method vinst instr =
+                    let loc = Cil.get_instrLoc instr in
+                    let line = (loc.Cil.file, loc.Cil.line) in
+                    let instrs = try Hashtbl.find line_to_instrs line with Not_found -> [] in
+                    Hashtbl.replace line_to_instrs line ((current_fundec, instr)::instrs);
+                    Cil.DoChildren
                 method vinit varinfo _ init =
                     Hashtbl.replace varinfo_to_varinit varinfo { Cil.init = Some init };
                     Cil.SkipChildren
@@ -58,6 +65,7 @@ let searchtables =
                 method name_to_fundec = Hashtbl.find name_to_fundec
                 method name_to_global_varinfo = Hashtbl.find name_to_global_varinfo
                 method line_to_stmts = Hashtbl.find line_to_stmts
+                method line_to_instrs = Hashtbl.find line_to_instrs
                 method all_varinfos = all_varinfos
                 method all_types = all_types
             end
@@ -104,13 +112,23 @@ let global_varinfo_by_name file name =
 
 
 (** Find a list of statements by file name and line number from a {!Cil.file}.
-        @param file the {!Cil.file} to find the {!Cil.varinfo} in
+        @param file the {!Cil.file} to find the {!Cil.stmt} in
         @param line the line to find the statements, as a [(filename, line)] pair
         @return the list of statements as {!Cil.fundec}-by-{!Cil.stmt} pairs
         @raise Not_found if no statements can be found at [line] in [file]
 *)
 let stmts_by_line file line =
     (searchtables file)#line_to_stmts line
+
+
+(** Find a list of instructions by file name and line number from a {!Cil.file}.
+        @param file the {!Cil.file} to find the {!Cil.instr} in
+        @param line the line to find the statements, as a [(filename, line)] pair
+        @return the list of instructions as {!Cil.fundec}-by-{!Cil.instr} pairs
+        @raise Not_found if no instructions can be found at [line] in [file]
+*)
+let instrs_by_line file line =
+    (searchtables file)#line_to_instrs line
 
 
 (** Return a list of all {!Cil.varinfo} in a {!Cil.file}.
