@@ -17,21 +17,14 @@ let get_line_targets file =
     with Not_found ->
         let line_targets =
             List.fold_left begin fun targets (filename, linenumber as line) ->
-                let stmts =
-                    try
-                        FindCil.stmts_by_line file line
-                    with Not_found ->
-                        let output_mode = Output.get_mode () in
-                        Output.set_mode Output.MSG_REG;
-                        Output.printf "Warning: line target %s:%d not found.@." filename linenumber;
-                        Output.set_mode output_mode;
-                        []
-                in
-                (* Use of_stmt_last to ensure that instructions before the last one are covered *)
-                List.fold_left (fun targets (fundec, stmt) -> 
-                    let instruction = Instruction.of_stmt_last file fundec stmt in
-                    if ListPlus.mem Instruction.equal instruction targets then targets else instruction :: targets
-                ) targets stmts
+                try
+                    Instruction.by_line file line
+                with Not_found ->
+                    let output_mode = Output.get_mode () in
+                    Output.set_mode Output.MSG_REG;
+                    Output.printf "Warning: line target %s:%d not found.@." filename linenumber;
+                    Output.set_mode output_mode;
+                    []
             end [] (!arg_line_numbers)
         in
         file_to_line_targets := FileMap.add file line_targets (!file_to_line_targets);

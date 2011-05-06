@@ -21,6 +21,7 @@ module T : sig
     val of_stmt_first : Cil.file -> Cil.fundec -> Cil.stmt -> t
     val of_stmt_last : Cil.file -> Cil.fundec -> Cil.stmt -> t
     val of_fundec : Cil.file -> Cil.fundec -> t
+    val of_instr : Cil.file -> Cil.fundec -> Cil.stmt -> Cil.instr -> t
     val with_instrs : t -> Cil.instr list -> t
     val compare : t -> t -> int
     val equal : t -> t -> bool
@@ -63,6 +64,15 @@ end = struct
     let with_instrs instruction instrs = match instruction.stmt.Cil.skind with
         | Cil.Instr instrs' when List.length instrs <= List.length instrs' -> { instruction with instrs = instrs }
         | Cil.Instr _ -> invalid_arg "Instruction.with_instrs: instrs must be equal or shorter in length to the Cil.Instr in instruction.stmt"
+        | _ -> invalid_arg "Instruction.with_instrs: instruction.stmt must be Cil.Instr"
+
+    (** Make an instruction from a {!Cil.instr} only. *)
+    let of_instr file fundec stmt instr = 
+        match stmt.Cil.skind with
+        | Cil.Instr instrs -> 
+            let rec suffix = function [] -> [] | instr'::instrs -> if instr == instr' then instr'::instrs else suffix instrs in
+            let instruction = of_stmt_first file fundec stmt in
+            with_instrs instruction (suffix instrs)
         | _ -> invalid_arg "Instruction.with_instrs: instruction.stmt must be Cil.Instr"
 
     (** Compare two instructions. *)
@@ -246,4 +256,23 @@ let return_sites =
             return_sites instruction
         | _ ->
             [] (* or raise some exception? *)
+
+
+(** Find a list of instructions by file name and line number from a {!Cil.file}.
+        @param file the {!Cil.file} to find the {!Instruction.t} in
+        @param line the line to find the instructions, as a [(filename, line)] pair
+        @return the list of instructions as {!Instruction.t list}
+        @raise Not_found if no instructions can be found at [line] in [file]
+*)
+let by_line file line =
+    try
+        let instrs = FindCil.instrs_by_line file line in
+        List.fold_left (fun instructions (fundec, stmt, instr) ->
+            (of_instr file fundec stmt instr) :: instructions
+        ) [] instrs
+    with Not_found ->
+        let stmts = FindCil.stmts_by_line file line in
+        List.fold_left (fun instructions (fundec, stmt) ->
+            (of_stmt_last file fundec stmt ) :: instructions
+        ) [] stmts
 
