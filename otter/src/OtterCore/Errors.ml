@@ -12,7 +12,7 @@ let rec printer ff (error : t) = match error with
     | `AssertionFailure exp -> Format.fprintf ff "`AssertionFailure: %a" Printcil.exp exp
     | `OutOfBounds exp -> Format.fprintf ff "`OutOfBounds: %a" Printcil.exp exp
     | `DivisionByZero exp -> Format.fprintf ff "`DivisionByZero: %a" Printcil.exp exp
-    | `TargetReached reason -> Format.fprintf ff "`TargetReached @[%a@]" printer reason
+    | `TargetReached reason -> Format.fprintf ff "`TargetReached @[<h>%a@]" printer reason
 
 let matcher name args =
     match name, args with

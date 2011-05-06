@@ -17,7 +17,7 @@ module Make (Errors : Errors) = struct
             List.iter begin function
                 | Job.Abandoned reason, job ->
                         Output.set_mode Output.MSG_ERROR;
-                        Output.printf "@[Error \"@[%a@]\"@ occurs at @[%a@].@\n"
+                        Output.printf "@[<h>Error \"@[<h>%a@]\"@ occurs at @[%a@].@\n"
                             Errors.printer reason Printcil.loc (Job.get_loc job);
                         if !Executeargs.arg_print_callstack then
                             Output.printf "Call stack:@\n  @[%a@]@\n" (Printer.callingContext_list "@\n") job#state.State.callContexts;
