@@ -383,7 +383,7 @@ let libc_exit job retopt exps =
 
 let otter_evaluate job retopt exps =
 	let job, bytes = eval_join_exps job exps Cil.LAnd in
-	Output.set_mode Output.MSG_DEBUG;
+	Output.set_mode Output.MSG_REPORT;
 	Output.printf "@[Evaluates to@ @[%a@]@]@." BytesPrinter.bytes bytes;
 	end_function_call job
 
