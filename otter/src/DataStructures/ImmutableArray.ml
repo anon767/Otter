@@ -39,10 +39,6 @@ let set array i elm =
 	{ array with length; map }
 
 
-let add array elm =
-	set array (length array) elm
-
-
 let sub array offset length =
 	{ array with length; offset = array.offset + offset }
 
