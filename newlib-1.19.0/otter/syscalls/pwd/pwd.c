@@ -56,6 +56,7 @@ int getpwuid_r(uid_t uid, struct passwd *pwd, char *buffer, size_t bufsize, stru
 			pwd->pw_dir = "/wrk";
 			pwd->pw_shell = "";
 			pwd->pw_passwd = "";
+			pwd->pw_gecos = "";
 			
 			*result = pwd;
 			return(0);
@@ -66,6 +67,7 @@ int getpwuid_r(uid_t uid, struct passwd *pwd, char *buffer, size_t bufsize, stru
 			pwd->pw_dir = "/wrk";
 			pwd->pw_shell = "";
 			pwd->pw_passwd = "";
+			pwd->pw_gecos = "";
 			
 			*result = pwd;
 			return(0);
@@ -94,7 +96,7 @@ struct passwd *getpwent()
 			return NULL;
 	}
 	
-	return __otter_libc_getpwuid(uid);
+	return getpwuid(uid);
 }
 
 void setpwent()
