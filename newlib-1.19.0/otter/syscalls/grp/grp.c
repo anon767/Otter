@@ -120,8 +120,10 @@ struct group *getgrent()
 	{
 		case __otter_GID_ROOT:
 			__otter_libc_getgrent_gid = __otter_GID_USER;
+			break;
 		case __otter_GID_USER:
 			__otter_libc_getgrent_gid = __otter_GID_INVALID;
+			break;
 		default:
 			return NULL;
 	}

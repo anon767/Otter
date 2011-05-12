@@ -77,7 +77,7 @@ int getpwuid_r(uid_t uid, struct passwd *pwd, char *buffer, size_t bufsize, stru
 	}
 }
 
-gid_t __otter_libc_getpwent_uid = __otter_UID_ROOT;
+uid_t __otter_libc_getpwent_uid = __otter_UID_ROOT;
 void endpwent()
 {
 	/* do nothing */
@@ -88,10 +88,12 @@ struct passwd *getpwent()
 	uid_t uid = __otter_libc_getpwent_uid;
 	switch(__otter_libc_getpwent_uid)
 	{
-		case __otter_GID_ROOT:
-			__otter_libc_getpwent_uid = __otter_GID_USER;
-		case __otter_GID_USER:
-			__otter_libc_getpwent_uid = __otter_GID_INVALID;
+		case __otter_UID_ROOT:
+			__otter_libc_getpwent_uid = __otter_UID_USER;
+			break;
+		case __otter_UID_USER:
+			__otter_libc_getpwent_uid = __otter_UID_INVALID;
+			break;
 		default:
 			return NULL;
 	}
@@ -102,5 +104,5 @@ struct passwd *getpwent()
 void setpwent()
 {
 	/* reset to first entry */
-	__otter_libc_getpwent_uid = __otter_GID_ROOT;
+	__otter_libc_getpwent_uid = __otter_UID_ROOT;
 }
