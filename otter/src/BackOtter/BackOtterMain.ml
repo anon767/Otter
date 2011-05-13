@@ -28,7 +28,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
 
         (* call to __FAILURE() must be a line target *)
         List.iter (BackOtterTargetTracker.add_line_target file) (Instruction.call_sites (Instruction.of_fundec file failure_fn))
-    with Not_found -> 
+    with Failure _ -> 
         Output.debug_printf "Failure function not found"
     end;
 
