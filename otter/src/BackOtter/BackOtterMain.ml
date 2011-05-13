@@ -22,11 +22,15 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     (* Entry function set by --entryfn (default: main) *)
     let entry_fn = ProgramPoints.get_entry_fundec file in
 
-    (* failure function set by --failurefn (default: __FAILURE) *)
-    let failure_fn = ProgramPoints.get_failure_fundec file in
+    begin try
+        (* failure function set by --failurefn (default: __FAILURE) *)
+        let failure_fn = ProgramPoints.get_failure_fundec file in
 
-    (* call to __FAILURE() must be a line target *)
-    List.iter (BackOtterTargetTracker.add_line_target file) (Instruction.call_sites (Instruction.of_fundec file failure_fn));
+        (* call to __FAILURE() must be a line target *)
+        List.iter (BackOtterTargetTracker.add_line_target file) (Instruction.call_sites (Instruction.of_fundec file failure_fn))
+    with Not_found -> 
+        Output.debug_printf "Failure function not found"
+    end;
 
     (* Setup max_function_name_length, to be used in set_output_formatter_interceptor *)
     BackOtterInterceptor.set_max_function_name_length (entry_fn :: (CilCallgraph.find_transitive_callees file entry_fn));
