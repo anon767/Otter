@@ -78,6 +78,9 @@ $Header: /mnt/leo2/cvs/sabo/hist-040105/wu-ftpd/f3/my-include.h,v 1.1.1.1 2004/0
 
 extern char *fb_realpath(const char *, char *); 
 
+#ifdef CIL
+#define printf if(0) printf
+#endif
 /*
 
 </source>

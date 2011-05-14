@@ -1,3 +1,4 @@
+# make CC="$trunk/newlib-1.19.0/otter/cilly-with-libc"
 
 all:	rp-bad rp-ok
 
