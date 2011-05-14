@@ -170,6 +170,7 @@ SYSCALL_FILES := \
 	unistd/read.c \
 	unistd/readlink.c \
 	unistd/rmdir.c \
+	unistd/seteuid.c \
 	unistd/setgid.c \
 	unistd/setsid.c \
 	unistd/setuid.c \
