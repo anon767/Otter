@@ -218,53 +218,49 @@ rval_cast typ rv rvtyp =
         | Bytes_Constant(const),_ ->
             rval_cast typ (constant_to_bytes const) rvtyp
         | _ ->
-            begin
-                let old_len = bytes__length rv in
-                let new_len = (Cil.bitsSizeOf typ) / 8 in
-                let worst_case () = (* as function so that it's not always evaluated *)
-                    if new_len < old_len
-                        then snd (bytes__read () rv (int_to_bytes 0) new_len)
+            (* TODO: handle float casts *)
+            let old_len = bytes__length rv in
+            let new_len = Cil.bitsSizeOf typ / 8 in
+            if new_len = old_len then
+                rv (* do nothing *)
+            else
+                let is_signed_int = match rvtyp with
+                    | TInt (ikind,_) when Cil.isSigned ikind -> true
+                    | _ -> false
+                in
+                begin match rv with
+                    | Bytes_ByteArray bytearray when isConcrete_bytearray bytearray ->
+                        let bytearray =
+                            if new_len < old_len then
+                                ImmutableArray.sub bytearray 0 new_len (* simply truncate *)
+                            else
+                                let leftmost_is_one =
+                                    match ImmutableArray.get bytearray (ImmutableArray.length bytearray - 1) with
+                                        | Byte_Concrete (c) -> Char.code c >= 0x80
+                                        | _ -> failwith "unreachable (bytearray is concrete)"
+                                in
+                                let ext_byte = if is_signed_int && leftmost_is_one then
+                                    byte__111 (* sign-extend *)
+                                else
+                                    byte__zero (* zero-extend *)
+                                in
+                                (* little-endian extension *)
+                                let rec copy n new_bytearray = if n < old_len then
+                                    copy (n + 1) (ImmutableArray.set new_bytearray n (ImmutableArray.get bytearray n))
+                                else
+                                    new_bytearray
+                                in
+                                copy 0 (ImmutableArray.make new_len ext_byte)
+                        in
+                        make_Bytes_ByteArray bytearray
+
+                    | _ ->
+                        if new_len < old_len then
+                            snd (bytes__read () rv (int_to_bytes 0) new_len)
                         else
                             (* TODO: should call STP's sign extension operation *)
                             snd (bytes__write () (bytes__make new_len) (int_to_bytes 0) old_len rv)
-
-                in
-                if new_len = old_len then
-                    rv (* do nothing *)
-                else begin match rv with
-                    | Bytes_ByteArray(bytearray) when isConcrete_bytearray bytearray ->
-                        if new_len > old_len then
-                            let newbytes = (ImmutableArray.sub bytearray 0 new_len) in
-                            let isSigned = match rvtyp with
-                                | TInt(ikind,_) when Cil.isSigned ikind -> true
-                                | _ -> false
-                            in
-                            let leftmost_is_one =
-                                match ImmutableArray.get bytearray ((ImmutableArray.length bytearray)-1) with
-                                | Byte_Concrete (c) -> Char.code c >= 0x80
-                                | _ -> failwith "unreachable (bytearray is concrete)"
-                            in
-                            let sth = if isSigned && leftmost_is_one then
-                                byte__111 (* For some reason, this seems not to happen in practice *)
-                            else
-                                byte__zero
-                            in
-                            let rec pack_sth newbytes old_len new_len =
-                                if old_len>=new_len then newbytes else
-                                let newbytes2 = ImmutableArray.set newbytes old_len sth in
-                                pack_sth newbytes2 (old_len+1) new_len
-                            in
-                            make_Bytes_ByteArray (pack_sth newbytes old_len new_len)
-                        else (* new_len < old_len *)
-                            make_Bytes_ByteArray (ImmutableArray.sub bytearray 0 new_len) (* simply truncate *)
-
-                    | Bytes_Constant(const) ->
-                        failwith "unreachable"
-
-                    | _ ->
-                        worst_case ()
                 end
-            end
     end
 
 and
