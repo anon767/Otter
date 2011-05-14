@@ -3,6 +3,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef CIL
+char* ret_pw_name;
+char* ret_pw_gecos;
+#endif
+
 void
 taint_data(char *fname, struct passwd* pwd)
 {
@@ -25,12 +30,17 @@ taint_data(char *fname, struct passwd* pwd)
     getline (&(pwd->pw_gecos), &dummy, fp); 
 }
 
-
 struct passwd *
 __wrap_getpwent() 
 {
+#ifdef CIL
+  struct passwd* ret = getpwent();
+  ret->pw_name  = ret_pw_name;
+  ret->pw_gecos = ret_pw_gecos;
+#else
   struct passwd* ret = __real_getpwent();
   taint_data ("testcase", ret);
+#endif
   return ret;
   
 }

@@ -157,7 +157,9 @@ typedef struct envelope	ENVELOPE;
 # define bitset(bit, word)     (((word) & (bit)) != 0)
 
 // Prateek Added to remove debugging printf
-//#define printf if(0) printf
+#ifdef CIL
+#define printf if(0) printf
+#endif
 /*
 
 </source>

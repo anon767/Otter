@@ -1,4 +1,6 @@
-
+#ifdef CIL
+  #define getpwent __wrap_getpwent
+#endif
 /*
 
 MIT Copyright Notice

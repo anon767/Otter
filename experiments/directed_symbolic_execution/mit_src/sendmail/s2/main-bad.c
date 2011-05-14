@@ -67,8 +67,38 @@ $Header: /mnt/leo2/cvs/sabo/hist-040105/sendmail/s2/main-bad.c,v 1.1.1.1 2004/01
 #include <stdio.h>
 #include <stdlib.h>
 #include <sendmail-bad.h>
+#include <string.h>
+
+#ifdef CIL
+#include "otter/otter_builtins.h"
+
+extern char* ret_pw_name;
+extern char* ret_pw_gecos;
+
+char* symbolic_string(int len) {
+    int i;
+    char *s = malloc(len+1);
+
+    for (i=0;i<len;i++) {
+        char c; __SYMBOLIC(&c);
+        s[i] = c;
+    }
+    s[len] = 0;
+    return s;
+}
+#endif
+
 
 int main(){
+
+#ifdef CIL
+  ret_pw_name = symbolic_string(10);
+  ret_pw_gecos = symbolic_string(10);
+
+  // concrete failing test case
+  //ret_pw_name = strdup("root");
+  //ret_pw_gecos = strdup("rootr");
+#endif
 
   ADDRESS **sendq = NULL;
   ADDRESS *ret_address;
