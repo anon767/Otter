@@ -85,20 +85,10 @@ void endpwent()
 
 struct passwd *getpwent()
 {
-	uid_t uid = __otter_libc_getpwent_uid;
-	switch(__otter_libc_getpwent_uid)
-	{
-		case __otter_UID_ROOT:
-			__otter_libc_getpwent_uid = __otter_UID_USER;
-			break;
-		case __otter_UID_USER:
-			__otter_libc_getpwent_uid = __otter_UID_INVALID;
-			break;
-		default:
-			return NULL;
-	}
-	
-	return getpwuid(uid);
+    if (__otter_libc_getpwent_uid == __otter_UID_INVALID)
+        return NULL;
+    else
+        return getpwuid(__otter_libc_getpwent_uid);
 }
 
 void setpwent()
