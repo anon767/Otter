@@ -319,6 +319,45 @@ let () =
         test_query s (bv_eq s (bv_extract s z' 0 0) v) `True;
     end;
 
+    test_query "bv_sign_extend" begin fun test_query _assert_bool ->
+        let s = make_context () in
+        let x = bv_var s "x" 2 in
+        let y = bv_sign_extend s x 4 in
+        let z = bv_sign_extend s y 6 in
+        vc_push s;
+            test_query s (bv_signed_ge s y (bv_of_int s 4 0)) `Unknown;
+            test_query s (bv_signed_ge s z (bv_of_int s 6 0)) `Unknown;
+        vc_pop s;
+        vc_push s;
+            vc_assert s (bv_signed_lt s x (bv_of_int s 2 0));
+            test_query s (bv_signed_lt s y (bv_of_int s 4 0)) `True;
+            test_query s (bv_signed_lt s z (bv_of_int s 6 0)) `True;
+        vc_pop s;
+        vc_push s;
+            vc_assert s (bv_signed_ge s x (bv_of_int s 2 0));
+            test_query s (bv_signed_ge s y (bv_of_int s 4 0)) `True;
+            test_query s (bv_signed_ge s z (bv_of_int s 6 0)) `True;
+        vc_pop s;
+        vc_push s;
+            vc_assert s (bv_signed_lt s y (bv_of_int s 4 0));
+            test_query s (bv_signed_lt s x (bv_of_int s 2 0)) `True;
+            test_query s (bv_signed_lt s z (bv_of_int s 6 0)) `True;
+        vc_pop s;
+        vc_push s;
+            vc_assert s (bv_signed_ge s y (bv_of_int s 4 0));
+            test_query s (bv_signed_ge s x (bv_of_int s 2 0)) `True;
+            test_query s (bv_signed_ge s z (bv_of_int s 6 0)) `True;
+        vc_pop s;
+    end;
+
+    test_query "bv_zero_extend" begin fun test_query _assert_bool ->
+        let s = make_context () in
+        let x = bv_var s "x" 2 in
+        let y = bv_zero_extend s x 4 in
+        let z = bv_zero_extend s y 6 in
+        test_query s (bv_lt s y (bv_of_int s 4 5)) `True;
+        test_query s (bv_lt s z (bv_of_int s 6 5)) `True;
+    end;
 
     test_query "bv_shift_left/bv_shift_right/bv_signed_shift_right" begin fun test_query _assert_bool ->
         let s = make_context () in
