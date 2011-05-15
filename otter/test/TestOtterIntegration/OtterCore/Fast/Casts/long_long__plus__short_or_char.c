@@ -4,7 +4,7 @@
 #pragma no_other_abandoned
 
 int main(void) {
-    long x;
+    long long x;
     short y;
     char z;
     __SYMBOLIC(&x);

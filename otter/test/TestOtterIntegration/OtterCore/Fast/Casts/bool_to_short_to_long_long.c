@@ -1,11 +1,11 @@
-/* This tests extension followed by truncation. */
+/* This tests truncation followed by extension. */
 
 #pragma no_other_abandoned
 
 int main(void) {
     int x;
-    long y;
-    short z;
+    short y;
+    long long z;
     __SYMBOLIC(&x);
     __ASSUME(x == 0);
     y = !x;
