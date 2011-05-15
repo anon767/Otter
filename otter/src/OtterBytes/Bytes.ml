@@ -23,7 +23,6 @@ type operator =
     | OP_BOR
     | OP_LAND
     | OP_LOR
-    | OP_SX
     (* unop *)
     | OP_UMINUS
     | OP_BNOT
@@ -70,6 +69,8 @@ module T : sig
         | Bytes_ByteArray of bytearray
         | Bytes_Address of memory_block * bytes
         | Bytes_Op of operator * (bytes * Cil.typ) list
+        | Bytes_Sign_Extend of bytes * int
+        | Bytes_Zero_Extend of bytes * int
         | Bytes_Read of bytes * bytes * int
         | Bytes_Write of bytes * bytes * int * bytes
         | Bytes_FunPtr of Cil.varinfo
@@ -110,6 +111,8 @@ module T : sig
     val make_Bytes_ByteArray : bytearray -> bytes
     val make_Bytes_Address : memory_block * bytes -> bytes
     val make_Bytes_Op : operator * (bytes * Cil.typ) list -> bytes
+    val make_Bytes_Sign_Extend : bytes * int -> bytes
+    val make_Bytes_Zero_Extend : bytes * int -> bytes
     val make_Bytes_Read : bytes * bytes * int -> bytes
     val make_Bytes_Write : bytes * bytes * int * bytes -> bytes
     val make_Bytes_FunPtr : Cil.varinfo -> bytes
@@ -167,6 +170,8 @@ end = struct
         | Bytes_ByteArray of bytearray                  (* content *)
         | Bytes_Address of memory_block * bytes         (* block, offset *)
         | Bytes_Op of operator * (bytes * Cil.typ) list
+        | Bytes_Sign_Extend of bytes * int
+        | Bytes_Zero_Extend of bytes * int
         | Bytes_Read of bytes * bytes * int             (* less preferrable type *)
         | Bytes_Write of bytes * bytes * int * bytes    (* least preferrable type*)
         | Bytes_FunPtr of Cil.varinfo
@@ -233,6 +238,10 @@ end = struct
                 block_equal b1 b2 && bytes_equal off1 off2
             | Bytes_Op (op1, operands1), Bytes_Op (op2, operands2) ->
                 op1 = op2 && List.for_all2 (fun (b1, t1) (b2, t2) -> bytes_equal b1 b2 && CilData.CilType.equal t1 t2) operands1 operands2
+            | Bytes_Sign_Extend (value1, width1), Bytes_Sign_Extend (value2, width2) ->
+                width1 = width2 && bytes_equal value1 value2
+            | Bytes_Zero_Extend (b1, s1), Bytes_Zero_Extend (b2, s2) ->
+                s1 = s2 && bytes_equal b1 b2
             | Bytes_Read (b1, off1, s1), Bytes_Read (b2, off2, s2) ->
                 s1 = s2 && bytes_equal b1 b2 && bytes_equal off1 off2
             | Bytes_Write (old1, off1, s1, new1), Bytes_Write (old2, off2, s2, new2) ->
@@ -299,6 +308,8 @@ end = struct
             | Bytes_ByteArray a -> add_hash `ByteArray; bytearray_hash a
             | Bytes_Address (a, o) -> add_hash `Address; block_hash a; bytes_hash o
             | Bytes_Op (op, operands) -> add_hash (`Op, op); List.iter (fun (o, t) -> add_hash (CilData.CilType.hash t); bytes_hash o) operands
+            | Bytes_Sign_Extend (value, width) -> add_hash (`Sign_Extend, width); bytes_hash value
+            | Bytes_Zero_Extend (value, width) -> add_hash (`Zero_Extend, width); bytes_hash value
             | Bytes_Read (bytes, offset, size) -> add_hash (`Read, size); bytes_hash bytes; bytes_hash offset
             | Bytes_Write (bytes, offset, size, value) -> add_hash (`Write, size); bytes_hash bytes; bytes_hash offset; bytes_hash value
             | Bytes_FunPtr f -> add_hash (`FunPtr, CilData.CilVar.hash f)
@@ -406,6 +417,16 @@ end = struct
     let make_Bytes_Op (op, lst) =
         Profiler.global#call "Bytes.make_Bytes_Op" begin fun () ->
             hash_consing_bytes_create (Bytes_Op (op, lst))
+        end
+
+    let make_Bytes_Sign_Extend (value, width) =
+        Profiler.global#call "Bytes.make_Bytes_Sign_Extend" begin fun () ->
+            hash_consing_bytes_create (Bytes_Sign_Extend (value, width))
+        end
+
+    let make_Bytes_Zero_Extend (value, width) =
+        Profiler.global#call "Bytes.make_Bytes_Zero_Extend" begin fun () ->
+            hash_consing_bytes_create (Bytes_Zero_Extend (value, width))
         end
 
     let make_Bytes_Read (src, off, len) =
@@ -710,6 +731,8 @@ and bytes__reduce bytes =
         | Bytes_ByteArray array -> make_Bytes_ByteArray (ImmutableArray.map (byte__reduce) array)
         | Bytes_Address (block, offset) -> make_Bytes_Address (block, bytes__reduce offset)
         | Bytes_Op (op, operands) -> make_Bytes_Op (op, List.map (fun (bytes, typ) -> (bytes__reduce bytes, typ)) operands)
+        | Bytes_Sign_Extend (value, width) -> make_Bytes_Sign_Extend (bytes__reduce value, width)
+        | Bytes_Zero_Extend (value, width) -> make_Bytes_Zero_Extend (bytes__reduce value, width)
         | Bytes_Read (bytes, offset, size) -> make_Bytes_Read (bytes__reduce bytes, bytes__reduce offset, size)
         | Bytes_Write (bytes, offset, size, bytes') -> make_Bytes_Write (bytes__reduce bytes, bytes__reduce offset, size, bytes__reduce bytes')
         | Bytes_Conditional conditional -> make_Bytes_Conditional (conditional__reduce bytes__reduce conditional)
@@ -741,8 +764,8 @@ let rec bytes__length bytes =
             bitsSizeOf intType / 8
         | Bytes_Op (op,(bytes2,typ)::tail) -> bytes__length bytes2
         | Bytes_Op (op,[]) -> 0 (* reachable from diff_bytes *)
+        | Bytes_Sign_Extend (_, width) | Bytes_Zero_Extend (_, width) | Bytes_Read (_ ,_ ,width) -> width
         | Bytes_Write(bytes2,_,_,_) -> bytes__length bytes2
-        | Bytes_Read(_,_,len) -> len
         | Bytes_FunPtr(_) -> bitsSizeOf voidPtrType / 8
         | Bytes_Conditional c ->
             (* all bytes in Bytes_Conditional have the same length *)

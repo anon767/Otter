@@ -256,10 +256,11 @@ rval_cast typ rv rvtyp =
 
                     | _ ->
                         if new_len < old_len then
-                            snd (bytes__read () rv (int_to_bytes 0) new_len)
+                            snd (bytes__read () rv (int_to_bytes 0) new_len) (* truncate *)
+                        else if is_signed_int then
+                            make_Bytes_Sign_Extend (rv, new_len)
                         else
-                            (* TODO: should call STP's sign extension operation *)
-                            snd (bytes__write () (bytes__make new_len) (int_to_bytes 0) old_len rv)
+                            make_Bytes_Zero_Extend (rv, new_len)
                 end
     end
 
@@ -386,7 +387,7 @@ deref job bytes typ =
                     (job : _ #Info.t)#finish (Job.Truncated (`Failure "Dereference of invalid conditional pointer"))
             end
 
-        | Bytes_Op(op, operands) ->
+        | Bytes_Op _ | Bytes_Sign_Extend _ | Bytes_Zero_Extend _ ->
             FormatPlus.failwith "Dereference something not an address:@ operation @[%a@]" BytesPrinter.bytes bytes
 
         | Bytes_Read(bytes,off,len) ->

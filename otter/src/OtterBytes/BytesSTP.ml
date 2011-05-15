@@ -77,6 +77,8 @@ module InternalAllSymbols = struct
                     (fun symbols (b, _) -> SymbolSet.union symbols (all_symbols_in_bytes b))
                     SymbolSet.empty
                     bytes_typ_list
+            | Bytes_Sign_Extend (value, _) | Bytes_Zero_Extend (value, _) ->
+                all_symbols_in_bytes value
             | Bytes_Read (bytes1, bytes2, _) ->
                 SymbolSet.union (all_symbols_in_bytes bytes1) (all_symbols_in_bytes bytes2)
             | Bytes_Write (bytes1, bytes2, _, bytes3) ->
@@ -277,7 +279,7 @@ and bytes_to_stp_array vc bytes =
             let index_start = OcamlSTP.bv_extract vc (bytes_to_stp_bv vc index) (index_width - 1) 0 in
             let value_bv = bytes_to_stp_bv vc value in
             let flip_byte_order = match value with
-              | Bytes_Constant _ | Bytes_Address _ | Bytes_FunPtr _ | Bytes_Op _ | Bytes_Conditional _ ->
+              | Bytes_Constant _ | Bytes_Address _ | Bytes_FunPtr _ | Bytes_Op _ | Bytes_Sign_Extend _ | Bytes_Zero_Extend _ | Bytes_Conditional _ ->
                     (* simple values need to be converted to little-endian before writing to a compound value *)
                     true
               | Bytes_Symbolic _ | Bytes_ByteArray _ | Bytes_Read _ | Bytes_Write _ ->
@@ -313,7 +315,7 @@ and bytes_to_stp_array vc bytes =
             in
             write array 0
 
-        | Bytes_Constant _ | Bytes_Address _ | Bytes_FunPtr _ | Bytes_Op _ | Bytes_Conditional _ as bytes ->
+        | Bytes_Constant _ | Bytes_Address _ | Bytes_FunPtr _ | Bytes_Op _ | Bytes_Sign_Extend _ | Bytes_Zero_Extend _ | Bytes_Conditional _ as bytes ->
             (* TODO: ditch this case by enforcing that all Bytes_Write write to Bytes_ByteArray *)
             let value = bytes_to_stp_bv vc bytes in (* big-endian *)
             let width = OcamlSTP.bv_width vc value  / 8 in
@@ -414,13 +416,16 @@ and bytes_to_stp_bv vc bytes =
             (* TODO: separate boolean/arithmetic and unary/binary into different Bytes_X variant *)
             assert false
 
-        | Bytes_Op (OP_SX, _) ->
-            assert false (* TODO: remove OP_SX as it is completely unused *)
-
         | Bytes_Op _ as bytes ->
             (* CIL should enforce that comparisons are casted to int *)
             let width = Cil.bitsSizeOf Cil.intType in
             OcamlSTP.ite vc (bytes_to_stp_bool vc bytes) (OcamlSTP.bv_of_int vc width 1) (OcamlSTP.bv_of_int vc width 0)
+
+        | Bytes_Sign_Extend (value, width) ->
+            OcamlSTP.bv_sign_extend vc (bytes_to_stp_bv vc value) (width * 8)
+
+        | Bytes_Zero_Extend (value, width) ->
+            OcamlSTP.bv_zero_extend vc (bytes_to_stp_bv vc value) (width * 8)
 
         | Bytes_Conditional conditional ->
             conditional_to_stp vc bytes_to_stp_bv conditional

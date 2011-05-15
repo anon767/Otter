@@ -55,7 +55,6 @@ let operator ff op =
 		| OP_UMINUS -> "BVUMINUS"
 		| OP_BNOT -> "~"
 		| OP_LNOT -> "NOT"
-		| OP_SX -> "BVSX"
 	in
 	pp_print_string ff label
 
@@ -199,6 +198,12 @@ and bytes_named bytes_to_names ff =
 
 		| Bytes_Op (op, operands) ->
 			fprintf ff "%a(@[<hov>%a@]@,)" operator op (pp_print_list (fun ff (x, _) -> bytes ff x) ",@ ") operands
+
+		| Bytes_Sign_Extend (value, width) ->
+			fprintf ff "Sign_Extend(@[<hov>%a@],@ %d@,)" bytes value width
+
+		| Bytes_Zero_Extend (value, width) ->
+			fprintf ff "Sign_Extend(@[<hov>%a@],@ %d@,)" bytes value width
 
 		| Bytes_Read (content, off, len) ->
 			fprintf ff "Read(@[<hov>%a@],@ @[<hov>%a@],@ %d@,)" bytes content bytes off len
