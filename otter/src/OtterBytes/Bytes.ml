@@ -735,6 +735,10 @@ let rec bytes__length bytes =
         | Bytes_Symbolic _ -> 0 (* TODO: bytes__length should be deprecated *)
         | Bytes_ByteArray (bytearray) -> ImmutableArray.length bytearray
         | Bytes_Address (_,_)-> bitsSizeOf voidPtrType / 8
+        | Bytes_Op ((OP_LT | OP_GT | OP_LE | OP_GE | OP_EQ | OP_NE | OP_LAND | OP_LOR | OP_LNOT), _) ->
+            (* result has type int per C99 6.5.8 Relational operators, 6.5.9 Equality operators, 6.5.13 Logical AND
+             * operator, 6.5.14 Logical OR operator, 6.5.3.3 Unary arithmetic operators *)
+            bitsSizeOf intType / 8
         | Bytes_Op (op,(bytes2,typ)::tail) -> bytes__length bytes2
         | Bytes_Op (op,[]) -> 0 (* reachable from diff_bytes *)
         | Bytes_Write(bytes2,_,_,_) -> bytes__length bytes2
