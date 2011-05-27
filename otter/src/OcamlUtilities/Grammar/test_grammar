@@ -24,5 +24,5 @@ echo "int main() {
     }
     return 0;
 }" >> test_grammar.c &&
-../../../../newlib-1.19.0/otter/otter-with-libc --doexecute --doRunRmtmps test_grammar.c -DMAX_GRAMMAR_STRING_LENGTH=$2 --printLittle --pathCov |
+../../../../newlib-1.19.0/otter/otter-with-libc --dootter --doRunRmtmps test_grammar.c -DMAX_GRAMMAR_STRING_LENGTH=$2 --printLittle --pathCov |
 sed -n -e '/str=.*)$/p' -e '/str=.*\\n$/,/)$/p' # This funny sed script prints 'str=Bytearray(...)', even if it wraps onto multiple lines because of newlines in the array
