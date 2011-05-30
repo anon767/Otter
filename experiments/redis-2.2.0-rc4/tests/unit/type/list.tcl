@@ -422,16 +422,16 @@ start_server {
     }
 
     foreach {type num} {ziplist 250 linkedlist 500} {
-        proc check_numbered_list_consistency {key} {
-            set len [r llen $key]
+        proc check_numbered_list_consistency {key len} {
+#            set len [r llen $key]
             for {set i 0} {$i < $len} {incr i} {
                 assert_equal $i [r lindex $key $i]
                 assert_equal [expr $len-1-$i] [r lindex $key [expr (-$i)-1]]
             }
         }
 
-        proc check_random_access_consistency {key} {
-            set len [r llen $key]
+        proc check_random_access_consistency {key len} {
+#            set len [r llen $key]
             for {set i 0} {$i < $len} {incr i} {
                 set rint [expr int(rand()*$len)]
                 assert_equal $rint [r lindex $key $rint]
@@ -445,19 +445,19 @@ start_server {
                 r rpush mylist $i
             }
             assert_encoding $type mylist
-            check_numbered_list_consistency mylist
+            check_numbered_list_consistency mylist $num
         }
 
         test "LINDEX random access - $type" {
             assert_encoding $type mylist
-            check_random_access_consistency mylist
+            check_random_access_consistency mylist $num
         }
 
         test "Check if list is still ok after a DEBUG RELOAD - $type" {
             r debug reload
             assert_encoding $type mylist
-            check_numbered_list_consistency mylist
-            check_random_access_consistency mylist
+            check_numbered_list_consistency mylist $num
+            check_random_access_consistency mylist $num
         }
     }
 
