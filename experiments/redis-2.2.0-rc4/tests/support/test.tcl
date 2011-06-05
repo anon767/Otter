@@ -282,11 +282,6 @@ for {set i 1} {$i < [llength $all_keys]} {incr i} {
 
 set all_vals {
     "placeholder because I don't want to use index 0"
-    42
-    95
-    96
-    98
-    99
     a
     b
     c
@@ -308,20 +303,11 @@ set all_vals {
     bad
     nosuchelement
 }
-# It would be nice to set the values 0-9 symbolic as well, but I can't (given
+# It would be nice to set numeric values symbolic as well, but I can't (given
 # the way I'm doing things) because they would conflict with numbers that are
 # used concretely in the tests (e.g., lengths and indices of lists, numbers of
 # elements removed)
-#    0
-#    1
-#    2
-#    3
-#    4
-#    5
-#    6
-#    7
-#    8
-#    9
+
 for {set i 1} {$i < [llength $all_vals]} {incr i} {
     dict set transformed_vals [lindex $all_vals $i] [format "\\x02\\x%02x" $i]
 }
