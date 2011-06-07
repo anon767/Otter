@@ -114,7 +114,7 @@ Quick-start Guide
 
             (In the top/otter directory)
             env CAML_DEBUG_SOCKET=debugsocket \
-                ./otter.pl --bytecode [flags] <some c file>
+                ./otter.byte [flags] <some c file>
 
     The 'x86_DARWIN' directory (which is also hard-coded into the debug script)
     is for Macs. Substitute 'x86_LINUX' or the like for other systems.
@@ -147,6 +147,11 @@ Likewise, the test suite may also be run locally:
 
     cd otter
     make test
+
+For programs that make use of the C standard library, libc must be built
+separately, from the `top/newlib-1.19.0/otter` directory:
+
+    make -C newlib-1.19.0/otter
 
 
 Where are the build products?
@@ -182,10 +187,11 @@ For example:
 `otter.pl` will first run the input files through the C preprocessor (like
 `gcc`), merge all input files, then call the Otter executable on the result.
 
-By default, `otter.pl` will run the newer of the native code executable or the
-bytecode executable. Alternatively, the bytecode executable may be invoked by:
+By default, `otter.pl` will run the native code executable. Alternatively, the
+bytecode executable may be invoked in two ways:
 
     ./otter.pl --bytecode [other flags] <input files>
+    ./otter.byte [flags] <input files>
 
 Additional options to Otter can be listed with:
 
@@ -195,6 +201,27 @@ Furthermore, many `gcc`-style flags are also supported (although not listed in
 the command line help), e.g.:
 
     ./otter.pl -DSOME_MACRO -include somefile.h -Isomedir
+
+Programs which make use of libc need the library functions to be merged in with
+program itself. To this end, build libc generates a script
+
+    newlib-1.19.0/otter/otter-with-libc
+
+which should be used instead of otter.pl. otter-with-libc is simply a wrapper
+around otter.pl which provides extra options to link in libc. It accepts
+additional flags and input files just as otter.pl does:
+
+    newlib-1.19.0/otter/otter-with-libc [flags] <input files>
+
+One useful flag when using libc is '--doRunRmtmps':
+
+    newlib-1.19.0/otter/otter-with-libc --doRunRmtmps --dootter [flags] <input files>
+
+(Specifying '--doRunRmtmps' requires you to explicitly specify which flavor of
+Otter you want, which otherwise defaults to '--dootter'.) Rmtmps is a CIL module
+which removes from the merged file all functions and global variables which are
+not reachable from main. If your program uses only a piece of libc, this can
+make the merged program much smaller.
 
 
 Developing Otter
@@ -352,7 +379,7 @@ Finally, in a different terminal, start Otter in debug mode, giving it the same
 `debug socket` to connect to the debugger:
 
     env CAML_DEBUG_SOCKET=<debug socket> \
-        ./otter.pl --bytecode [other flags] <input files>
+        ./otter.byte [other flags] <input files>
 
 
 References
