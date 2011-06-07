@@ -223,6 +223,18 @@ which removes from the merged file all functions and global variables which are
 not reachable from main. If your program uses only a piece of libc, this can
 make the merged program much smaller.
 
+Additionally, sometimes it is useful to merge a program with libc first and
+then, later, symbolically execute it. To do this, there is a script called
+cilly-with-libc in the same directory as otter-with-libc. This can be useful,
+for example, when merging a program that has a makefile. If, say, you are
+building a program whose makefile produces an executable called 'foo',
+
+    make CC=newlib-1.19.0/otter/cilly-with-libc
+
+will produce a file 'foo_comb.c', which is the program merged using Otter's libc
+and POSIX header files. Later, this can be run using otter-with-libc, which
+merges the libc and POSIX implementations in with the already-merged file.
+
 
 Developing Otter
 ================
