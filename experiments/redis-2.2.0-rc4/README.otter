@@ -1,0 +1,198 @@
+Notes on how to run redis through Otter
+---------------------------------------
+
+This document walks through the process of merging redis with Otter's version of
+libc and POSIX library, and running redis through Otter. This was done on a
+MacBook Pro running OS X 10.5.8.
+
+
+Step 1: Merging redis
+---------------------
+
+The first step when using Otter is always getting CIL to merge the program into
+a single C file. Sometimes, this is as easy as the CIL documentation says:
+
+    make CC='cilly --merge'
+
+However, redis uses libc, so we'll need to link against Otter's libc and POSIX
+header files. So instead of vanilla cilly, we use cilly-with-libc:
+
+    make CC='otter-trunk/newlib-1.19.0/otter/cilly-with-libc --merge'
+
+Unfortunately, running this gives a bunch of error messages which reveal that
+the build process is using libtool rather than ar:
+
+    cd src && remake all
+    remake[1]: Entering directory `.../src'
+    cd ../deps/hiredis && remake static ARCH=""
+    remake[2]: Entering directory `.../deps/hiredis'
+    ...[running cilly-with-libc on some files]...
+    libtool -static -o libhiredis.a - net.o hiredis.o sds.o async.o
+    libtool: file: net.o is not an object file (not allowed in a library)
+    libtool: file: hiredis.o is not an object file (not allowed in a library)
+    libtool: file: sds.o is not an object file (not allowed in a library)
+    libtool: file: async.o is not an object file (not allowed in a library)
+    Makefile:57: *** [libhiredis.a] Error 1
+
+This error came from deps/hiredis/Makefile. Looking there reveals that redis
+checks to see what operating system it is on by doing:
+
+    uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
+
+Then, if uname_S is 'Darwin', redis uses libtool. There are several ways around
+this. One is to just set uname_S on the command line:
+
+    make CC='otter-trunk/newlib-1.19.0/otter/cilly-with-libc --merge' uname_S=
+
+Now redis won't think it's on a Mac. This time, we get the error:
+
+    linenoise.c:93:23: error: sys/ioctl.h: No such file or directory
+
+This is not a part of POSIX, and Otter doesn't have such a file. Rather than
+implement one, a simpler solution is to just remove this #include. It seems like
+a good idea to guard any changes we make with preprocessor conditions, so we
+make the #include:
+
+    #ifndef CIL
+    #include <sys/ioctl.h>
+    #endif
+
+Of course, the #include was there for a reason, so this doesn't work:
+
+    linenoise.c:182: Warning: Calling function ioctl without prototype.
+    linenoise.c:182: Error: Cannot resolve variable TIOCGWINSZ.
+    linenoise.c:183: Error: Cannot find field ws_col
+    Error: There were errors during merging
+
+Those lines seem to be finding out how wide a terminal is:
+
+    static int getColumns(void) {
+        struct winsize ws;
+    
+        if (ioctl(1, TIOCGWINSZ, &ws) == -1) return 80;
+        return ws.ws_col;
+    }
+
+We don't really care about that, so we can just have the function return 80:
+
+    static int getColumns(void) {
+    #ifdef CIL
+        return 80;
+    #else
+        struct winsize ws;
+    
+        if (ioctl(1, TIOCGWINSZ, &ws) == -1) return 80;
+        return ws.ws_col;
+    #endif
+    }
+
+If linenoise.c caused any more trouble, it would quickly transition to the point
+where we'd want to cut it out of the build process altogether, since we don't
+need it if we're just studying the server. But, it turns out this is enough.
+
+Trying 'make' again, we get
+
+    sha1.c:78:2: error: #error "Undefined or invalid BYTE_ORDER"
+    sha1.c:91:2: error: #error "Endianness not defined!"
+    Error running cc at /Users/elnatan/Documents/workspace/symexe4/cil/bin/../lib/Cilly.pm line 1388.
+
+For whatever reason, sha1.c didn't manage to find BYTE_ORDER under our headers.
+One way to fix this is to add
+
+    #include <machine/endian.h>
+
+to sha1.h. (sha1.c would also work.)
+
+Now we get:
+
+    sha1.h[11:0-0] : syntax error
+    Parsing errorFatal error: exception Frontc.ParseError("Parse error")
+
+These errors are hard to understand, but they seem to usually indicate using a
+type that doesn't exist. In this case, u_int32_t is the culprit, which sha1.c
+thinks is in <sys/types.h>, but really this isn't a POSIX type at all. We can
+fix this by adding
+
+    #include <stdint.h>
+    typedef uint32_t u_int32_t;
+
+to sha1.h. (Again, adding this to sha1.c would also work.)
+
+Now, there are no errors. There are still a bunch of warnings, mostly about
+calling functions without prototypes. While not ideal, it's probably fine to
+ignore these. There is one warning from ranlib, though:
+
+    ar rcs libhiredis.a net.o hiredis.o sds.o async.o
+    ranlib: warning for library: libhiredis.a the table of contents is empty (no object file members in the library define global symbols)
+
+The CIL documentation also says how to deal with this---cilly has an AR mode:
+
+    make CC='otter-trunk/newlib-1.19.0/otter/cilly-with-libc --merge' uname_S= AR='otter-trunk/cil/bin/cilly --merge --mode=AR'
+
+Unfortunately, that doesn't do anything. It turns out that deps/hiredis/Makefile
+uses 'ar' rather than '$(AR)':
+
+  STLIB_MAKE_CMD?=ar rcs ${STLIBNAME} ${OBJ}
+
+Replacing that 'ar' with '$(AR)' does the job.
+
+This produced a handful of *_comb.c files and one *.a file:
+
+    deps/hiredis/libhiredis.a
+    deps/linenoise/linenoise_example_comb.c
+    src/redis-benchmark_comb.c
+    src/redis-check-dump_comb.c
+    src/redis-cli_comb.c
+    src/redis-server_comb.c
+
+
+Step 2: Running redis
+---------------------
+
+If you look at redis-server_comb.c, you will see that it contains all of redis's
+code and the type definitions and function prototypes from newlib and Otter's
+POSIX model, but the libc and POSIX implementations are not present. In a sense,
+cilly-with-libc is analogous to compiling a program without linking it to the
+other libraries.
+
+To actually execute redis, we make use of otter-with-libc, which links in libc
+and POSIX and then symbolically executes the resulting program:
+
+    otter-trunk/newlib-1.19.0/otter/otter-with-libc src/redis-server_comb.c --dootter
+
+However, there is a lot in libc that redis doesn't use, and we don't need that
+cluttering up our merged program, so we use another flag to remove the clutter:
+
+    otter-trunk/newlib-1.19.0/otter/otter-with-libc src/redis-server_comb.c --dootter --doRunRmtmps
+
+Running this ends with an error:
+
+    [0,0] otter_fs_util.c:57 : open_file_index = *(__otter_fs_fd_table + fd);
+    [0,0] otter_fs_util.c:57 : Statement.step: failwith Dereference something not an address:
+    [0,0] otter_fs_util.c:57 : constant Bytes(4U)
+
+While a bit cryptic, this indicates that OtterFS was never initialized. Thus,
+__otter_fs_fd_table is null, so (__otter_fs_fd_table + fd) is a number rather
+than a pointer to an element in the table.
+
+OtterFS is initialized by calling __otter_fs_mount, which is declared in
+otter/otter_fs.h, so we add this do the beginning of redis's main function.
+
+    #ifdef CIL
+    #include <otter/otter_fs.h>
+    int main(int argc, char **argv) {
+        __otter_fs_mount();
+    #else
+    int main(int argc, char **argv) {
+    #endif
+
+Now, remaking redis and invoking Otter again runs for a long time. It turns out
+redis initializes 10000 objects when it starts up, which is supposed to save
+memory. Unfortunately, it just seems to get in Otter's way. So, we decrease this
+number for Otter. It is defined in redis.h, and we modify it like this:
+
+    #ifdef CIL
+    #define REDIS_SHARED_INTEGERS 10
+    #else
+    #define REDIS_SHARED_INTEGERS 10000
+    #endif
