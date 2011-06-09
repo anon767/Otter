@@ -33,6 +33,11 @@ segfault, the output file is often empty.  For best results, run each by hand.
   run with: 	ca-ok < ./s1.in
   result: 	buf doesn't get clobbered.
 
+Otter:
+crackaddr crashes when addr is a long sequence of repeating "<>". Its callers transform an input string into some form before passing to crackaddr. Perhaps an example can be made by extracting eatheader which calls expand to transform the input, then calls crackaddr.
+
+---------------------------------------------
+
 2. sendmail/s2
   BAD
   run with:	ge-bad 
@@ -43,6 +48,10 @@ segfault, the output file is often empty.  For best results, run each by hand.
   run with:	ge-ok
   result:	test_buf does not get clobbered.  
 
+Otter:
+Function buildfname, where overflow occurs, was made up by the Lincoln Labs. It's unclear what it corresponds to in the original program.
+
+---------------------------------------------
 
 3. sendmail/s3
   BAD
@@ -54,6 +63,10 @@ segfault, the output file is often empty.  For best results, run each by hand.
   run with: 	m1-ok s3.in
   result: 	canary does not get clobbered.
 
+Otter:
+The overflow happened in mime_fromqp partly depends on the content o infile, a char array. Similar to s1, this could result in an example.
+
+---------------------------------------------
 
 4. sendmail/s4
   BAD
@@ -65,6 +78,9 @@ segfault, the output file is often empty.  For best results, run each by hand.
   run with:	m2-ok s4.in
   result: 	canary does not get clobbered.
 
+Otter: (pass)
+
+---------------------------------------------
 
 5. sendmail/s5
   BAD
@@ -77,6 +93,10 @@ segfault, the output file is often empty.  For best results, run each by hand.
   run with:	prescan-ok
   result: 	canary does not get clobbered.
 
+Otter:
+the call sequence sendtolist -> parseaddr -> prescan may exhibit the transformation pattern.
+
+---------------------------------------------
 
 6. sendmail/s6
   BAD	
@@ -177,3 +197,26 @@ segfault, the output file is often empty.  For best results, run each by hand.
   OK
   run with:	rp-ok /aaa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aaa/aa/aaa
   result:	no overflow in curpath happens.  the canary is unvoilated.
+
+
+
+
+
+(Otter project comments):
+1. Very extensive use of function pointers (sendmail and bind).
+2. Bugs are local, e.g., a short buffer is created locally, either within the function or from the caller, and the buffer is overflowed with values generated in the current function.
+3. Overflow depends on length of buffer, which is concrete. That means failing path is static---depends on the length of the buffer. Hard to verify.
+
+Transformation of symbolic values:
+x -> f -> g  (crash)
+CCBSE may work well here.
+E.g., s1:  h_value -> expand -> crackaddr -> crash
+
+
+BackOtter is about function summary. Therefore, BackOtter is not useful if function summary is not required. Function summary helps when a function is called many times, and only a few of the calls "trigger" the targets. These "calls" can either calls on the same path (i.e., different call sites, or calls in a loop), or calls from different paths (i.e., execution forks and each branch calls the same function with different path conditions).
+
+Examples of patterns that lead to a function being called multiple times.
+1. Multiple call sites with different arguments. E.g., mknod
+2. Different paths call the same function. E.g., CCBSE synthetic example
+3. Caller transforms a (symbolic) value, which is passed to the callee.
+
