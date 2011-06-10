@@ -48,10 +48,10 @@ Now redis won't think it's on a Mac. This time, we get the error:
 
     linenoise.c:93:23: error: sys/ioctl.h: No such file or directory
 
-This is not a part of POSIX, and Otter doesn't have such a file. Rather than
-implement one, a simpler solution is to just remove this #include. It seems like
-a good idea to guard any changes we make with preprocessor conditions, so we
-make the #include:
+sys/ioctl.h is not a part of POSIX, and Otter doesn't have such a file. Rather
+than implement one, a simpler solution is to just remove this #include. It seems
+like a good idea to guard any changes we make with preprocessor conditions, so
+we make the #include:
 
     #ifndef CIL
     #include <sys/ioctl.h>
@@ -108,10 +108,10 @@ Now we get:
     sha1.h[11:0-0] : syntax error
     Parsing errorFatal error: exception Frontc.ParseError("Parse error")
 
-These errors are hard to understand, but they seem to usually indicate using a
-type that doesn't exist. In this case, u_int32_t is the culprit, which sha1.c
-thinks is in <sys/types.h>, but really this isn't a POSIX type at all. We can
-fix this by adding
+These syntax errors don't give much information, but they usually seem to
+indicate using a type that doesn't exist. In this case, u_int32_t is the
+culprit, which sha1.c thinks is in <sys/types.h>, but really this isn't a POSIX
+type at all. We can fix this by adding
 
     #include <stdint.h>
     typedef uint32_t u_int32_t;
@@ -158,12 +158,16 @@ other libraries.
 To actually execute redis, we make use of otter-with-libc, which links in libc
 and POSIX and then symbolically executes the resulting program:
 
-    otter-trunk/newlib-1.19.0/otter/otter-with-libc src/redis-server_comb.c --dootter
+    otter-trunk/newlib-1.19.0/otter/otter-with-libc src/redis-server_comb.c --domultiotter
+
+(At this point, we're only running the server, so we could get away with running
+plain old Otter, but eventually we'll need MultiOtter, so we just use it from
+the start.)
 
 However, there is a lot in libc that redis doesn't use, and we don't need that
 cluttering up our merged program, so we use another flag to remove the clutter:
 
-    otter-trunk/newlib-1.19.0/otter/otter-with-libc src/redis-server_comb.c --dootter --doRunRmtmps
+    otter-trunk/newlib-1.19.0/otter/otter-with-libc src/redis-server_comb.c --domultiotter --doRunRmtmps
 
 Running this ends with an error:
 
@@ -188,11 +192,98 @@ otter/otter_fs.h, so we add this do the beginning of redis's main function.
 
 Now, remaking redis and invoking Otter again runs for a long time. It turns out
 redis initializes 10000 objects when it starts up, which is supposed to save
-memory. Unfortunately, it just seems to get in Otter's way. So, we decrease this
-number for Otter. It is defined in redis.h, and we modify it like this:
+memory. Unfortunately, having so many objects to initialize just seems to get in
+Otter's way. So, we decrease this number for Otter. It is defined in redis.h,
+and we modify it like this:
 
     #ifdef CIL
     #define REDIS_SHARED_INTEGERS 10
     #else
     #define REDIS_SHARED_INTEGERS 10000
     #endif
+
+A similar thing happens with the number of file descriptors in ae.h:
+
+    #ifdef CIL
+    #define AE_SETSIZE 10    /* Max number of fd supported */
+    #else
+    #define AE_SETSIZE (1024*10)    /* Max number of fd supported */
+    #endif
+
+With these changes, Otter can now run redis, but it reaches an infinite loop
+when the server waits for a (non-existent) client to connect. We will have to
+use MultiOtter to run a client process in parallel with the server. Like
+initalizing OtterFS, this requires a small modification to the beginning of
+redis's main() function:
+
+    #ifdef CIL
+    #include <otter/otter_fs.h>
+    #include <otter/otter_scheduler.h>
+    #include <otter/multiotter_builtins.h>
+    int *redis_has_called_listen;
+    extern void client_main(void);
+    
+    int main(int argc, char **argv) {
+        __otter_fs_mount();
+        redis_has_called_listen = __otter_multi_gmalloc(sizeof(int));
+        *redis_has_called_listen = 0;
+        if (!fork()) {
+            __otter_multi_block_while_condition(*redis_has_called_listen == 0, redis_has_called_listen);
+            __otter_fs_init_stdin_out_err();
+            client_main();
+            return 0;
+        }
+        __otter_fs_init_stdin_out_err();
+    #else
+    int main(int argc, char **argv) {
+    #endif
+
+This does several things (and these require adding the #includes you see above).
+Most importantly, it forks a child process which calls and external function,
+client_main. We will provide this function in another file, and it will act as
+the client, connecting to and interacting with redis.
+
+Also, notice the calls to __otter_fs_init_stdin_out_err. This function
+initializes stdin, stdout, and stderr, and each process calls it because each
+has its own copy of these I/O streams.
+
+Finally, the client will have to connect to the server only *after* the server
+has opened a socket for listening. To perform this synchronization, we add a
+global pointer (making it global is the easiest way to make it visible to both
+processes), use gmalloc to allocate shared memory, set the value to 0, and have
+the child process block until this value is set to a nonzero value. Of course,
+we also have to make the server set this value, so we add one line to the place
+where redis calls listen():
+
+        if (listen(s, 511) == -1) { /* the magic 511 constant is from nginx */
+            ... // Report an error
+        }
+    #ifdef CIL
+        extern int *redis_has_called_listen;
+        *redis_has_called_listen = 1;
+    #endif
+        return ANET_OK;
+
+With the modified main() function shown above and this small addition to set the
+redis_has_called_listen flag, the server is ready. Now, we need to write the
+client_main function. A simple client, which feeds purely symbolic data to the
+server, can be found in symbolic-client.c in this directory. This client is
+meant to be general, so it leaves the port number to be specified as a
+preprocessor macro. redis uses port 6379, so we run the server and this client
+together with the command:
+
+    otter-trunk/newlib-1.19.0/otter/otter-with-libc src/redis-server_comb.c symbolic-client.c --domultiotter --doRunRmtmps -DPORT_NUMBER=6379
+
+Purely symbolic data leads to lots of branching, so you'll want a timeout and
+perhaps a different search strategy than the default (which is a "random-path",
+a weight form of breadth-first search). But this is essentially it---this gives
+you a multiprocess symbolic execution.
+
+For other examples, take a look at grammar_based_client.c and
+grouped-clients/client-*.c . The former is a client which feeds data constrained
+by a context-free grammar, although that file itself delegates most of the work
+to an external function called generate_start, which is produced by
+otter-trunk/otter/src/OcamlUtilities/Grammar/grammar . The
+grouped-clients/client-*.c files, which are generated when you run 'make otter'
+in this directory, are symbolic versions of test cases from
+tests/unit/type/list.tcl .
