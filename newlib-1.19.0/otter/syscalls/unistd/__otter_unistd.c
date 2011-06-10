@@ -224,7 +224,9 @@ ssize_t __otter_libc_read_tty(void* buf, size_t num)
 	return (num);
 }
 
-/* circular buffer */
+/* This is a slight abuse of naming because you can't pread on a pipe. However,
+   sockets are implemented over pipes, and peeking on sockets uses this function
+   to get the data without updating the pipe's rhead. */
 ssize_t __otter_libc_pread_pipe_data(
 	struct __otter_fs_pipe_data* pipe,
 	void* buf,
@@ -251,7 +253,7 @@ ssize_t __otter_libc_pread_pipe_data(
 	return (num);
 }
 
-/* Reads up to num bytes from pipe into buf, blocking if pipe is empty and nonblocking is false */
+/* Reads up to num bytes from pipe into buf */
 ssize_t __otter_libc_read_pipe_data(
 	struct __otter_fs_pipe_data* pipe,
 	void* buf,
@@ -269,29 +271,19 @@ ssize_t __otter_libc_write_pipe_data(
 	size_t num)
 {
 	__otter_multi_begin_atomic();
-	// TODO: we should be able to replace this loop with a length check and one or two calls to memcpy
+	// TODO: replace byte-by-byte copying with calls to memcpy
 	for(int i = 0; i < num; i++)
 	{
-		/* current char is not the last char read */
-		if((i + pipe->whead) % __otter_fs_PIPE_SIZE != pipe->rhead)
-		{
-			pipe->data[(i + pipe->whead) % __otter_fs_PIPE_SIZE] = ((char*)buf)[i];
-		}
-		else /* write head has run out of space; must block until some has be read */
-		{
-			while((i + pipe->whead) % __otter_fs_PIPE_SIZE != pipe->rhead)
-			{
-				__otter_multi_io_block(&pipe->rhead);
-				__otter_multi_begin_atomic();
-			}
-		}
+    __otter_multi_block_while_condition(__otter_fs_pipe_is_full(pipe), pipe);
+    pipe->data[pipe->whead] = ((char*)buf)[i];
+    pipe->whead = (pipe->whead + 1) % __otter_fs_PIPE_SIZE; /* move whead to next free char to write */
 	}
 	__otter_multi_end_atomic();
 
-	pipe->whead = (pipe->whead + num) % __otter_fs_PIPE_SIZE; /* move whead to next free char to write */
 	return (num);
 }
 
+/* Reads up to num bytes from pipe into buf, blocking if pipe is empty and nonblocking is false */
 ssize_t __otter_libc_read_pipe(
 	struct __otter_fs_open_file_table_entry* open_file,
 	void* buf,
