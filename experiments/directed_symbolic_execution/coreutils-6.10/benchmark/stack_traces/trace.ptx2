@@ -1,0 +1,106 @@
+$ cat t4.txt
+A
+$ valgrind --dsymutil=yes -v ./ptx x t4.txt
+==34320== Memcheck, a memory error detector
+==34320== Copyright (C) 2002-2010, and GNU GPL'd, by Julian Seward et al.
+==34320== Using Valgrind-3.6.1 and LibVEX; rerun with -h for copyright info
+==34320== Command: ./ptx x t4.txt
+==34320== 
+--34320-- Valgrind options:
+--34320--    --dsymutil=yes
+--34320--    -v
+--34320-- Contents of /proc/version:
+--34320--   can't open /proc/version
+--34320-- Arch and hwcaps: X86, x86-sse1-sse2
+--34320-- Page sizes: currently 4096, max supported 4096
+--34320-- Valgrind library directory: /opt/local/lib/valgrind
+--34320-- ./ptx (0x1000)
+--34320--    reading syms   from primary file (112 1983)
+--34320--    dSYM= ./ptx.dSYM/Contents/Resources/DWARF/ptx
+--34320--    reading dwarf3 from dsyms file
+--34320-- /usr/lib/dyld (0x8fe00000)
+--34320--    reading syms   from primary file (17 982)
+--34320-- Reading suppressions file: /opt/local/lib/valgrind/default.supp
+--34320-- REDIR: 0x8fe21e00 (strlen) redirected to 0x38087982 (???)
+--34320-- REDIR: 0x8fe22000 (strcpy) redirected to 0x380879d5 (???)
+--34320-- REDIR: 0x8fe22177 (strcat) redirected to 0x38087993 (???)
+--34320-- REDIR: 0x8fe220c0 (strcmp) redirected to 0x380879b5 (???)
+--34320-- /opt/local/lib/valgrind/vgpreload_core-x86-darwin.so (0x7c000)
+--34320--    reading syms   from primary file (3 584)
+--34320--    dSYM= /opt/local/lib/valgrind/vgpreload_core-x86-darwin.so.dSYM/Contents/Resources/DWARF/vgpreload_core-x86-darwin.so
+--34320--    reading dwarf3 from dsyms file
+--34320-- /opt/local/lib/valgrind/vgpreload_memcheck-x86-darwin.so (0x86000)
+--34320--    reading syms   from primary file (117 1074)
+--34320--    dSYM= /opt/local/lib/valgrind/vgpreload_memcheck-x86-darwin.so.dSYM/Contents/Resources/DWARF/vgpreload_memcheck-x86-darwin.so
+--34320--    reading dwarf3 from dsyms file
+==34320== WARNING: new redirection conflicts with existing -- ignoring it
+--34320--     new: 0x8fe21ee0 (strlcat             ) R-> 0x0008b660 strlcat
+==34320== WARNING: new redirection conflicts with existing -- ignoring it
+--34320--     new: 0x8fe22000 (strcpy              ) R-> 0x0008b8b0 strcpy
+--34320-- REDIR: 0x8fe22340 (memset) redirected to 0x8ac30 (memset)
+--34320-- /usr/lib/libgcc_s.1.dylib (0x9a000)
+--34320--    reading syms   from primary file (85 0)
+--34320-- /usr/lib/libSystem.B.dylib (0x1f6000)
+--34320--    reading syms   from primary file (4037 3508)
+--34320-- /usr/lib/system/libmathCommon.A.dylib (0xa7000)
+--34320--    reading syms   from primary file (32 33)
+--34320-- REDIR: 0x8fe21ce3 (strrchr) redirected to 0x8a1d0 (strrchr)
+--34320-- REDIR: 0x8fe21e50 (strlcpy) redirected to 0x8bd40 (strlcpy)
+--34320-- REDIR: 0x1f73b8 (memset) redirected to 0x8ab90 (memset)
+--34320-- REDIR: 0x1fd2e0 (memcpy) redirected to 0x8be50 (memcpy)
+--34320-- REDIR: 0x1ff7e4 (calloc) redirected to 0x895c0 (calloc)
+--34320-- REDIR: 0x1f8015 (malloc) redirected to 0x87560 (malloc)
+--34320-- REDIR: 0x1fff00 (strlen) redirected to 0x8a370 (strlen)
+--34320-- REDIR: 0x200110 (strncmp) redirected to 0x8a390 (strncmp)
+--34320-- REDIR: 0x221830 (strcpy) redirected to 0x8b7f0 (strcpy)
+--34320-- REDIR: 0x220221 (strchr) redirected to 0x8a230 (strchr)
+--34320-- REDIR: 0x1fff50 (strcmp) redirected to 0x8a8c0 (strcmp)
+--34320-- REDIR: 0x221cc0 (strcat) redirected to 0x8b230 (strcat)
+--34320-- REDIR: 0x1fd303 (free) redirected to 0x88ac0 (free)
+--34320-- REDIR: 0x201870 (realloc) redirected to 0x897f0 (realloc)
+==34320== Invalid read of size 1
+==34320==    at 0x848F: define_all_fields (ptx.c:1510)
+==34320==    by 0xAEE3: generate_all_output (ptx.c:1840)
+==34320==    by 0xCD0F: main (ptx.c:2212)
+==34320==  Address 0x405a22 is 0 bytes after a block of size 2 alloc'd
+==34320==    at 0x875C3: malloc (vg_replace_malloc.c:236)
+==34320==    by 0x5925F: xmalloc (xmalloc.c:49)
+==34320==    by 0x3B5D: swallow_file_in_memory (ptx.c:541)
+==34320==    by 0xCBE6: main (ptx.c:2197)
+==34320== 
+--34320-- REDIR: 0x8fe22494 (memmove) redirected to 0x8ad60 (memmove)
+--34320-- REDIR: 0x200400 (bcmp) redirected to 0x8aa70 (bcmp)
+==34320== 
+==34320== HEAP SUMMARY:
+==34320==     in use at exit: 87,249 bytes in 81 blocks
+==34320==   total heap usage: 120 allocs, 39 frees, 101,258 bytes allocated
+==34320== 
+==34320== Searching for pointers to 81 not-freed blocks
+==34320== Checked 1,263,304 bytes
+==34320== 
+==34320== LEAK SUMMARY:
+==34320==    definitely lost: 0 bytes in 0 blocks
+==34320==    indirectly lost: 0 bytes in 0 blocks
+==34320==      possibly lost: 0 bytes in 0 blocks
+==34320==    still reachable: 86,949 bytes in 74 blocks
+==34320==         suppressed: 300 bytes in 7 blocks
+==34320== Rerun with --leak-check=full to see details of leaked memory
+==34320== 
+==34320== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)
+==34320== 
+==34320== 1 errors in context 1 of 1:
+==34320== Invalid read of size 1
+==34320==    at 0x848F: define_all_fields (ptx.c:1510)
+==34320==    by 0xAEE3: generate_all_output (ptx.c:1840)
+==34320==    by 0xCD0F: main (ptx.c:2212)
+==34320==  Address 0x405a22 is 0 bytes after a block of size 2 alloc'd
+==34320==    at 0x875C3: malloc (vg_replace_malloc.c:236)
+==34320==    by 0x5925F: xmalloc (xmalloc.c:49)
+==34320==    by 0x3B5D: swallow_file_in_memory (ptx.c:541)
+==34320==    by 0xCBE6: main (ptx.c:2197)
+==34320== 
+--34320-- 
+--34320-- used_suppression:      1 darwin-still-reachable-1
+--34320-- used_suppression:      1 darwin-still-reachable-2
+==34320== 
+==34320== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)
