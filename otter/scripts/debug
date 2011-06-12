@@ -5,11 +5,19 @@
 # is that, for some reason I don't understand, the child process doesn't
 # terminate, which is why I have the parent process kill it.
 
+set otterdir [exec dirname $argv0]/..
+if {[exec uname] == "Darwin"} {
+    set platform "DARWIN"
+} else {
+    set platform "LINUX"
+}
+
 proc start_program {argv} {
+  global otterdir
   set child_pid [fork]
   if {$child_pid == 0} {
     disconnect
-    system env CAML_DEBUG_SOCKET=debugsocket ./otter.pl --bytecode $argv
+    system env CAML_DEBUG_SOCKET=debugsocket "$otterdir/otter.pl" --bytecode $argv
     exit
   }
   return $child_pid
@@ -17,7 +25,11 @@ proc start_program {argv} {
 
 # Start the debugger and initialize it
 
-spawn ocamldebug -s debugsocket -I _build/src/OtterCore -I _build/src -I ../cil/obj/x86_DARWIN -I ../cil/src _product/runotter.d.byte
+spawn ocamldebug -s debugsocket -I "$otterdir/_build/src/OtterCore" \
+                                -I "$otterdir/_build/src" \
+                                -I "$otterdir/../cil/obj/x86_$platform" \
+                                -I "$otterdir/../cil/src" \
+                                   "$otterdir/_product/runotter.d.byte"
 expect "(ocd)" { send "set loadingmode manual\n" }
 expect "(ocd)" { send "step 0\n" }
 
