@@ -392,7 +392,7 @@ let otter_evaluate_string job retopt exps =
 	let exp = List.hd exps in
 	let sizeexp = List.nth exps 1 in
 	let job, addr_bytes = Expression.rval job exp in
-	Output.set_mode Output.MSG_DEBUG;
+	Output.set_mode Output.MSG_REPORT;
 	let job = match addr_bytes with
 		| Bytes_Address(block, offset) ->
 			let job, size_bytes = Expression.rval job sizeexp in
