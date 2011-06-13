@@ -11,7 +11,7 @@ open Cil
 let default_conditionals_forking_limit = ref max_int
 
 let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
-                          ?ratio reporter file =
+                          reporter file =
 
     Random.init random_seed;
     BackOtterTimer.reset_time ();
@@ -36,11 +36,11 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     BackOtterInterceptor.set_max_function_name_length (entry_fn :: (CilCallgraph.find_transitive_callees file entry_fn));
 
     (* A queue that prioritizes jobs *)
-    let queue = match ratio with
-        | Some ratio when ratio >= 1.0 -> 
+    let queue = 
+        if (!BidirectionalQueue.default_bidirectional_search_ratio) >= 1.0 then 
             (* Degenerates to pure forward Otter *)
             BackOtterQueue.get_default_fqueue ()
-        | _ -> begin
+        else
             (* when get_line_targets != [], add appropriate jobs in bqueue *)
             let starter_fundecs = List.fold_left (fun starter_fundecs instruction ->
                 Output.debug_printf "Line target: %a in function " Instruction.printer instruction;
@@ -61,7 +61,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
             ) [] (BackOtterTargetTracker.get_line_targets file) in
             List.iter (fun f -> Output.debug_printf "Function containing coverage targets: %s@." f.svar.vname) starter_fundecs;
 
-            let queue = new BidirectionalQueue.t ?ratio file starter_fundecs in
+            let queue = new BidirectionalQueue.t file starter_fundecs in
 
             (* Add non-entryfn jobs *)
             let queue = List.fold_left (fun queue fundec ->
@@ -70,7 +70,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
                 else
                     queue#put (BackOtterJob.get_function_job file fundec)
             ) queue starter_fundecs in
-            queue end
+            queue
     in
 
     (* Add entryfn jobs *)
