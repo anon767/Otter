@@ -31,7 +31,7 @@ spawn ocamldebug -s debugsocket -I "$otterdir/_build/src/OtterCore" \
                                 -I "$otterdir/../cil/src" \
                                    "$otterdir/_product/runotter.d.byte"
 expect "(ocd)" { send "set loadingmode manual\n" }
-expect "(ocd)" { send "step 0\n" }
+expect "(ocd)" { send "step\n" }
 
 # When the debugger is ready, start up Otter itself in another process
 
