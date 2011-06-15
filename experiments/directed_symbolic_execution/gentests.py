@@ -44,7 +44,7 @@ test_files_map = defaultdict(list)
 
 # For each benchmark module, generate its tests
 for module in args:
-    _temp = __import__(module, globals(), locals(), ['benchmarks', 'strategies', 'options', 'make_test'], -1)
+    _temp = __import__(module[:-3], globals(), locals(), ['benchmarks', 'strategies', 'options', 'make_test'], -1)
     benchmarks = _temp.benchmarks
     strategies = _temp.strategies
     options    = _temp.options
