@@ -3,7 +3,7 @@
 import sys, re
 time = "NA"
 for line in sys.stdin.readlines():
-    results = re.compile(r"^\s*\d+\.\d+\s*(\d+\.\d+).*Error \"`TargetReached `AssertionFailure: 0\".*").match(line)
+    results = re.compile(r"^\s*\d+\.\d+\s*(\d+\.\d+).*Error \"`TargetReached .*").match(line)
     if results:
         time = float(results.group(1))
         break
