@@ -64,7 +64,7 @@ int __otter_main_driver() {
     }
     // Use i instead of argc since i is concrete
     // (I'm not sure if the null-termination is necessary. Seems not.)
-    //argv[i] = 0;
+    argv[i] = 0;
 
     // Set up stdin, stdout and stderr
 	__otter_fs_mount();
@@ -74,11 +74,22 @@ int __otter_main_driver() {
 	stderr = fopen("/dev/tty", "w"); // assert: fopen returns 2 
 
 #ifdef __OTTER_SETUP_FILE_SYSTEM
-    struct __otter_fs_dnode* dnode = __otter_fs_mkdir("etc", __otter_fs_root);
-    __otter_fs_touch("/etc/file", dnode);
-    FILE* f = fopen("/etc/file", "w");
-    fprintf(f,"Hello world");
-    fclose(f);
+    // Two "symbolic" files, each containing 8 symbolic bytes
+    struct __otter_fs_dnode* dnode = __otter_fs_mkdir("e", __otter_fs_root);
+    {
+        __otter_fs_touch("t1.t", dnode);
+        FILE* f = fopen("/e/t1.t", "w");
+        char* s = symbolic_string(8);
+        fputs(s,f);
+        fclose(f);
+    }
+    {
+        __otter_fs_touch("t2.t", dnode);
+        FILE* f = fopen("/e/t2.t", "w");
+        char* s = symbolic_string(8);
+        fputs(s,f);
+        fclose(f);
+    }
 #endif
     
 #ifdef __OTTER_SETUP_ENVIRON
