@@ -14,8 +14,8 @@
 #endif
 
 #ifndef MAX_ARG_LENGTHS
-#warning "MAX_ARG_LENGTHS not defined; using defaults {1,10,2,2}"
-#define MAX_ARG_LENGTHS {1,10,2,2}
+#warning "MAX_ARG_LENGTHS not defined; using defaults 1,10,2,2"
+#define MAX_ARG_LENGTHS 1,10,2,2
 #endif
 
 #define MAX_FILE         2
@@ -57,7 +57,7 @@ int __otter_main_driver() {
     __ASSUME(argc<=MAX_ARGC);
 
     // Set up argv
-    int arg_lengths[] = MAX_ARG_LENGTHS;
+    int arg_lengths[] = {MAX_ARG_LENGTHS};
     argv[0] = strdup("p");  // name of the program
     for (i=1;i<MAX_ARGC;i++) {
         argv[i] = symbolic_string(arg_lengths[i]);

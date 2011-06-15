@@ -5,17 +5,17 @@
 # The underlying cause of the bug is an implicit dependence between two data structures, which cannot be tested for with a simple if-statement, and the bug can actually lead to two different crashes (a realloc with an invalid pointer, or an invalid pointer dereference). We could make the dependence explicit by adding a field, but we're not sure if we should do that as it changes the program semantics a little more invasively. Ideally, we'd have a more specific way of detecting errors than adding "if (cond) __FAILURE()" to programs. the bug requires one field of a local variable (one of the data structures) to be uninitialized and treated as non-zero, but this currently leads to a long unaddressed bug in Otter in the way it detects uninitialized values: it fails if variables containing uninitialized values are converted to STP expressions even if the values are not actually read. We suppose one way around this would be to turn off detection of uninitialized values.
 # seq contains a buffer overflow : http://git.savannah.gnu.org/cgit/coreutils.git/commit/?id=b8108fd2ddf77ae79cd014f4f37798a52be13fd1
 # ptx contains a buffer overflow : http://git.savannah.gnu.org/cgit/coreutils.git/commit/?id=a0851554bd52038ed47e46ee521ce74a5a09f747
+# md5sum contains a buffer underflow : http://git.savannah.gnu.org/cgit/coreutils.git/commit/?id=7cb24684cc4ef96bb25dfc1c819acfc3b98d9442
 
 benchmarks = {
     'coreutils' : {
         'programs' : {
-            'mkdir'  : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/mkdir_comb.c"   -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_QUOTEARG_BUFFER_RESTYLED_ASSERT',
-            'mkfifo' : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/mkfifo_comb.c"  -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_QUOTEARG_BUFFER_RESTYLED_ASSERT',
-            'mknod'  : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/mknod_comb.c"   -DMAX_ARGC=5 -DMAX_ARG_LENGTHS="{1,10,2,2,2}" -D__OTTER_QUOTEARG_BUFFER_RESTYLED_ASSERT',
-            'paste'  : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/paste_comb.c"   -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_PASTE_ASSERT',
-            'ptx'    : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/ptx_comb.c"     -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_COPY_UNESCAPED_STRING_BOUNDS_CHECKING',
-            'seq'    : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/seq_comb.c"     -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_LONG_DOUBLE_FORMAT_BOUNDS_CHECKING --noUseLogicalOperators',
-            #'tac'    : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/tac_comb.c"     -DMAX_ARGC=4 -DMAX_ARG_LENGTHS="{1,10,2,2}"   -D__OTTER_TAC ',
+            'mkdir'  : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/mkdir_comb.c"   -DMAX_ARGC=4 -DMAX_ARG_LENGTHS=1,10,2,2   -D__OTTER_QUOTEARG_BUFFER_RESTYLED_ASSERT',
+            'mkfifo' : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/mkfifo_comb.c"  -DMAX_ARGC=4 -DMAX_ARG_LENGTHS=1,10,2,2   -D__OTTER_QUOTEARG_BUFFER_RESTYLED_ASSERT',
+            'mknod'  : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/mknod_comb.c"   -DMAX_ARGC=5 -DMAX_ARG_LENGTHS=1,10,2,2,2 -D__OTTER_QUOTEARG_BUFFER_RESTYLED_ASSERT',
+            'paste'  : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/paste_comb.c"   -DMAX_ARGC=4 -DMAX_ARG_LENGTHS=1,10,2,2   -D__OTTER_PASTE_ASSERT',
+            'ptx'    : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/ptx_comb.c"     -DMAX_ARGC=4 -DMAX_ARG_LENGTHS=1,10,2,2   -D__OTTER_COPY_UNESCAPED_STRING_BOUNDS_CHECKING',
+            'seq'    : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/seq_comb.c"     -DMAX_ARGC=4 -DMAX_ARG_LENGTHS=1,10,2,2   -D__OTTER_LONG_DOUBLE_FORMAT_BOUNDS_CHECKING --noUseLogicalOperators',
             },
         'command' : '"@trunk@/newlib-1.19.0/otter/otter-with-libc" "@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/__otter_main_driver.c" "@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/__otter_poi.c" --mainfn=__otter_main_driver -lm --timeout=1800'
         },
