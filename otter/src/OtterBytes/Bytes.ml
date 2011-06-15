@@ -685,84 +685,60 @@ let rec isConcrete_bytes (bytes : bytes) =
 
 
 (**
- *  value transformation for byte/guards/conditionals/bytes
+ *  value reduction for byte/guards/conditionals/bytes
  *)
 
 (**/**)
-module InternalTransform = struct
+module InternalReduce = struct
     let byte_wrap =
         let module Memo = Memo.Make (ByteType) in
-        Memo.make "Bytes.byte__transform"
+        Memo.make "Bytes.byte__reduce"
 
     let guard_wrap =
         let module Memo = Memo.Make (GuardType) in
-        Memo.make "Bytes.guard__transform"
+        Memo.make "Bytes.guard__reduce"
 
     let bytes_wrap =
         let module Memo = Memo.Make (BytesType) in
-        Memo.make "Bytes.bytes__transform"
+        Memo.make "Bytes.bytes__reduce"
 end
 (**/**)
 
-let rec byte__transform tf byte =
-    InternalTransform.byte_wrap begin function
-        | Byte_Bytes (bytes, offset) -> make_Byte_Bytes (bytes__transform tf bytes, offset)
-        | Byte_Undefined | Byte_Concrete _ | Byte_Symbolic _ as byte -> tf#byte byte
+let rec byte__reduce byte =
+    InternalReduce.byte_wrap begin function
+        | Byte_Bytes (bytes, offset) -> make_Byte_Bytes (bytes__reduce bytes, offset)
+        | Byte_Undefined | Byte_Concrete _ | Byte_Symbolic _ as byte -> byte
     end byte
 
-and guard__transform tf guard =
-    InternalTransform.guard_wrap begin function
-        | Guard_Not guard -> guard__not (guard__transform tf guard)
-        | Guard_And (guard, guard') -> guard__and (guard__transform tf guard) (guard__transform tf guard')
-        | Guard_Bytes bytes -> guard__bytes (bytes__transform tf bytes)
+and guard__reduce guard =
+    InternalReduce.guard_wrap begin function
+        | Guard_Not guard -> guard__not (guard__reduce guard)
+        | Guard_And (guard, guard') -> guard__and (guard__reduce guard) (guard__reduce guard')
+        | Guard_Bytes bytes -> guard__bytes (bytes__reduce bytes)
         | Guard_True | Guard_Symbolic _ as guard -> guard
     end guard
 
-and conditional__transform transform tf conditional =
-    let rec conditional__transform = function
-        | Unconditional a -> Unconditional (transform tf a)
-        | IfThenElse (guard, conditional, conditional') -> IfThenElse (guard__transform tf guard, conditional__transform conditional, conditional__transform conditional')
+and conditional__reduce : 'a . ('a -> 'a) -> 'a conditional -> 'a conditional = fun reduce conditional ->
+    let rec conditional__reduce = function
+        | Unconditional a -> Unconditional (reduce a)
+        | IfThenElse (guard, conditional, conditional') -> IfThenElse (guard__reduce guard, conditional__reduce conditional, conditional__reduce conditional')
     in
-    conditional__transform conditional
+    conditional__reduce conditional
 
-and bytes__transform tf bytes =
-    InternalTransform.bytes_wrap begin function
-        | Bytes_Constant c -> tf#constant c
-        | Bytes_ByteArray array -> make_Bytes_ByteArray (ImmutableArray.map (byte__transform tf) array)
-        | Bytes_Address (block, offset) -> make_Bytes_Address (block, bytes__transform tf offset)
-        | Bytes_Op (op, operands) -> make_Bytes_Op (op, List.map (fun (bytes, typ) -> (bytes__transform tf bytes, typ)) operands)
-        | Bytes_Sign_Extend (value, width) -> make_Bytes_Sign_Extend (bytes__transform tf value, width)
-        | Bytes_Zero_Extend (value, width) -> make_Bytes_Zero_Extend (bytes__transform tf value, width)
-        | Bytes_Read (bytes, offset, size) -> make_Bytes_Read (bytes__transform tf bytes, bytes__transform tf offset, size)
-        | Bytes_Write (bytes, offset, size, bytes') -> make_Bytes_Write (bytes__transform tf bytes, bytes__transform tf offset, size, bytes__transform tf bytes')
-        | Bytes_Conditional conditional -> make_Bytes_Conditional (conditional__transform bytes__transform tf conditional)
+and bytes__reduce bytes =
+    InternalReduce.bytes_wrap begin function
+        | Bytes_Constant c -> constant_to_bytes c
+        | Bytes_ByteArray array -> make_Bytes_ByteArray (ImmutableArray.map (byte__reduce) array)
+        | Bytes_Address (block, offset) -> make_Bytes_Address (block, bytes__reduce offset)
+        | Bytes_Op (op, operands) -> make_Bytes_Op (op, List.map (fun (bytes, typ) -> (bytes__reduce bytes, typ)) operands)
+        | Bytes_Sign_Extend (value, width) -> make_Bytes_Sign_Extend (bytes__reduce value, width)
+        | Bytes_Zero_Extend (value, width) -> make_Bytes_Zero_Extend (bytes__reduce value, width)
+        | Bytes_Read (bytes, offset, size) -> make_Bytes_Read (bytes__reduce bytes, bytes__reduce offset, size)
+        | Bytes_Write (bytes, offset, size, bytes') -> make_Bytes_Write (bytes__reduce bytes, bytes__reduce offset, size, bytes__reduce bytes')
+        | Bytes_Conditional conditional -> make_Bytes_Conditional (conditional__reduce bytes__reduce conditional)
         | Bytes_Symbolic _ | Bytes_FunPtr _ as bytes -> bytes
     end bytes
 
-class identity_tf = object
-    method byte b : byte = b
-    method constant c : bytes = make_Bytes_Constant c
-end
-
-(** value reduction: convert constant using constant_to_bytes *)
-let reduce_tf = object
-    inherit identity_tf
-    method constant c = constant_to_bytes c
-end
-let byte__reduce = byte__transform reduce_tf
-let guard__reduce = guard__transform reduce_tf
-let conditional__reduce reduce = conditional__transform reduce reduce_tf
-let bytes__reduce = bytes__transform reduce_tf
-
-
-(** return true if bytes contains byte_undefined *)
-let has_undefined =
-    let tf = object 
-        method byte = function Byte_Undefined -> failwith "Byte_Undefined" | b -> b 
-        method constant c = make_Bytes_Constant c
-    end in
-    fun bytes ->
-        try ignore (bytes__transform tf bytes); false with Failure _ -> true
 
 
 (**
