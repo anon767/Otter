@@ -84,6 +84,7 @@ int __otter_libc_inode_stat(struct __otter_fs_inode* inode, struct stat* s)
 	(*s).st_size = (*inode).size;
 	(*s).st_blksize = __otter_fs_BLOCK_SIZE;
 	(*s).st_blocks = (*inode).numblocks;
+	(*s).st_mtime = 0; // or symbolic?
 
 	return (0);
 }
@@ -100,6 +101,7 @@ int __otter_libc_dnode_stat(struct __otter_fs_dnode* dnode, struct stat* s)
 	(*s).st_size = (*dnode).numfiles + (*dnode).numdirs;
 	(*s).st_blksize = __otter_fs_BLOCK_SIZE;
 	(*s).st_blocks = (((*dnode).numfiles + (*dnode).numdirs) / __otter_fs_BLOCK_SIZE) + 1;
+	(*s).st_mtime = 0; // or symbolic?
 
 	return (0);
 }
