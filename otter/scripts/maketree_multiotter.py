@@ -12,7 +12,7 @@ def curjob(line):
         return None
 
 # Return the children path ids indicated by the line, or None
-branch_re = re.compile(r".*\[jid: (.*),.*].*Job (.*) is the true branch and job (.*) is the false branch.")
+branch_re = re.compile(r".*\[jid: (.*),.*].*Job (.*) is the .* branch and job (.*) is the .* branch.")
 fp_re = re.compile(r".*\[jid: (.*),.*].*Function pointer can take multiple values; fork job \d* to ((?:\(job \d*,function \S*\))*)")
 f_re = re.compile(r"(\(job (\d*),function (\S*)\))")
 def branches(line):
