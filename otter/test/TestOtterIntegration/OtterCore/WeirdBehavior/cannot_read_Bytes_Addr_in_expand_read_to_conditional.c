@@ -5,7 +5,10 @@
  * Alternatively, callers of BytesUtility.expand_read_to_conditional should avoid calling it unnecessarily, or
  * otherwise detect and prune unnecessary branches in the returned conditional.
  *
- * As of r10010, this file leads to an infinite recursion in Operator.opPI which calls BytesUtility.expand_read_to_conditional.
+ * As of r10010, this test case leads to an infinite recursion in Operator.opPI which calls BytesUtility.expand_read_to_conditional.
+ *
+ * As of r10149, this test case is detected and simply terminated with a "Not a valid array" failure in
+ * BytesUtility.expand_read_to_conditional.
  */
 #pragma no_bounds_checking
 #pragma expect_abandoned(failure("Dereference something not an address")) /* for z == 0 */
