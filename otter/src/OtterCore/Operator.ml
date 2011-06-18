@@ -309,15 +309,17 @@ let rec opPI op operands =
         | _, Bytes_Conditional c ->
             make_Bytes_Conditional (conditional__map (fun e -> conditional__bytes (opPI op [(bytes1,typ1);(e,typ2)])) c)
         | (Bytes_Read(a, x, l)), _ ->
-            make_Bytes_Conditional (
-                conditional__map (fun e -> conditional__bytes (opPI op [(e,typ1);(bytes2,typ2)])) 
-                    (BytesUtility.expand_read_to_conditional a x l)
-            )
+            let c = (BytesUtility.expand_read_to_conditional a x l) in
+            begin match c with
+            | Unconditional (Bytes_Read _) -> op [(make_Bytes_Conditional c,typ1);(bytes2,typ2)]
+            | _ -> make_Bytes_Conditional (conditional__map (fun e -> conditional__bytes (opPI op [(e,typ1);(bytes2,typ2)])) c)
+            end
         | _, (Bytes_Read(a, x, l)) ->
-            make_Bytes_Conditional (
-                conditional__map (fun e -> conditional__bytes (opPI op [(bytes1,typ1);(e,typ2)])) 
-                    (BytesUtility.expand_read_to_conditional a x l)
-            )
+            let c = (BytesUtility.expand_read_to_conditional a x l) in
+            begin match c with
+            | Unconditional (Bytes_Read _) -> op [(bytes1,typ1);(make_Bytes_Conditional c,typ2)]
+            | _ -> make_Bytes_Conditional (conditional__map (fun e -> conditional__bytes (opPI op [(bytes1,typ1);(e,typ2)])) c)
+            end
         | _ ->
             Output.set_mode Output.MSG_ERROR;
             Output.printf "@[bytes1:@ @[%a@]@]@." BytesPrinter.bytes bytes1;
